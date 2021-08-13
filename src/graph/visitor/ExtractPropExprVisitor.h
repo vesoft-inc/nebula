@@ -6,9 +6,9 @@
 #ifndef GRAPH_VISITOR_EXTRACTPROPEXPRVISITON_H_
 #define GRAPH_VISITOR_EXTRACTPROPEXPRVISITON_H_
 
+#include "graph/context/ValidateContext.h"
 #include "graph/visitor/ExprVisitorImpl.h"
 #include "parser/Clauses.h"
-#include "graph/context/ValidateContext.h"
 
 namespace nebula {
 namespace graph {
@@ -16,67 +16,63 @@ namespace graph {
 class ValidateContext;
 
 class ExtractPropExprVisitor final : public ExprVisitorImpl {
-public:
-    ExtractPropExprVisitor(ValidateContext *vctx,
-                           YieldColumns *srcAndEdgePropCols,
-                           YieldColumns *dstPropCols,
-                           YieldColumns *inputPropCols,
-                           std::unordered_map<std::string, YieldColumn *> &propExprColMap);
+ public:
+  ExtractPropExprVisitor(ValidateContext *vctx,
+                         YieldColumns *srcAndEdgePropCols,
+                         YieldColumns *dstPropCols,
+                         YieldColumns *inputPropCols,
+                         std::unordered_map<std::string, YieldColumn *> &propExprColMap);
 
-    ~ExtractPropExprVisitor() = default;
+  ~ExtractPropExprVisitor() = default;
 
-    bool ok() const override {
-        return status_.ok();
-    }
+  bool ok() const override { return status_.ok(); }
 
-    const Status& status() const {
-        return status_;
-    }
+  const Status &status() const { return status_; }
 
-private:
-    using ExprVisitorImpl::visit;
+ private:
+  using ExprVisitorImpl::visit;
 
-    void visit(ConstantExpression *) override;
-    void visit(LabelExpression *) override;
-    void visit(UUIDExpression *) override;
-    void visit(UnaryExpression *) override;
-    void visit(LabelAttributeExpression *) override;
-    // variable expression
-    void visit(VariableExpression *) override;
-    void visit(VersionedVariableExpression *) override;
-    // property Expression
-    void visit(TagPropertyExpression *) override;
-    void visit(EdgePropertyExpression *) override;
-    void visit(InputPropertyExpression *) override;
-    void visit(VariablePropertyExpression *) override;
-    void visit(DestPropertyExpression *) override;
-    void visit(SourcePropertyExpression *) override;
-    void visit(EdgeSrcIdExpression *) override;
-    void visit(EdgeTypeExpression *) override;
-    void visit(EdgeRankExpression *) override;
-    void visit(EdgeDstIdExpression *) override;
-    // vertex/edge expression
-    void visit(VertexExpression *) override;
-    void visit(EdgeExpression *) override;
-    // binary expression
-    void visit(SubscriptExpression *) override;
-    // column expression
-    void visit(ColumnExpression *) override;
+  void visit(ConstantExpression *) override;
+  void visit(LabelExpression *) override;
+  void visit(UUIDExpression *) override;
+  void visit(UnaryExpression *) override;
+  void visit(LabelAttributeExpression *) override;
+  // variable expression
+  void visit(VariableExpression *) override;
+  void visit(VersionedVariableExpression *) override;
+  // property Expression
+  void visit(TagPropertyExpression *) override;
+  void visit(EdgePropertyExpression *) override;
+  void visit(InputPropertyExpression *) override;
+  void visit(VariablePropertyExpression *) override;
+  void visit(DestPropertyExpression *) override;
+  void visit(SourcePropertyExpression *) override;
+  void visit(EdgeSrcIdExpression *) override;
+  void visit(EdgeTypeExpression *) override;
+  void visit(EdgeRankExpression *) override;
+  void visit(EdgeDstIdExpression *) override;
+  // vertex/edge expression
+  void visit(VertexExpression *) override;
+  void visit(EdgeExpression *) override;
+  // binary expression
+  void visit(SubscriptExpression *) override;
+  // column expression
+  void visit(ColumnExpression *) override;
 
-    void visitVertexEdgePropExpr(PropertyExpression *);
-    void visitPropertyExpr(PropertyExpression *);
-    void reportError(const Expression *);
+  void visitVertexEdgePropExpr(PropertyExpression *);
+  void visitPropertyExpr(PropertyExpression *);
+  void reportError(const Expression *);
 
-private:
-    ValidateContext *vctx_{nullptr};
-    YieldColumns *srcAndEdgePropCols_{nullptr};
-    YieldColumns *dstPropCols_{nullptr};
-    YieldColumns *inputPropCols_{nullptr};
-    std::unordered_map<std::string, YieldColumn *>& propExprColMap_;
+ private:
+  ValidateContext *vctx_{nullptr};
+  YieldColumns *srcAndEdgePropCols_{nullptr};
+  YieldColumns *dstPropCols_{nullptr};
+  YieldColumns *inputPropCols_{nullptr};
+  std::unordered_map<std::string, YieldColumn *> &propExprColMap_;
 
-    Status status_;
+  Status status_;
 };
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula
 
-#endif   // GRAPH_VISITOR_EXTRACTPROPEXPRVISITON_H_
+#endif  // GRAPH_VISITOR_EXTRACTPROPEXPRVISITON_H_

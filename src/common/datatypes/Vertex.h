@@ -7,128 +7,105 @@
 #ifndef COMMON_DATATYPES_VERTEX_H_
 #define COMMON_DATATYPES_VERTEX_H_
 
+#include <sstream>
 #include <unordered_map>
 #include <vector>
-#include <sstream>
 
-#include "common/thrift/ThriftTypes.h"
 #include "common/datatypes/Value.h"
+#include "common/thrift/ThriftTypes.h"
 
 namespace nebula {
 
 struct Tag {
-    std::string name;
-    std::unordered_map<std::string, Value> props;
+  std::string name;
+  std::unordered_map<std::string, Value> props;
 
-    Tag() = default;
-    Tag(Tag&& tag) noexcept
-        : name(std::move(tag.name))
-        , props(std::move(tag.props)) {}
-    Tag(const Tag& tag)
-        : name(tag.name)
-        , props(tag.props) {}
-    Tag(std::string tagName, std::unordered_map<std::string, Value> tagProps)
-        : name(std::move(tagName))
-        , props(std::move(tagProps)) {}
+  Tag() = default;
+  Tag(Tag&& tag) noexcept : name(std::move(tag.name)), props(std::move(tag.props)) {}
+  Tag(const Tag& tag) : name(tag.name), props(tag.props) {}
+  Tag(std::string tagName, std::unordered_map<std::string, Value> tagProps)
+      : name(std::move(tagName)), props(std::move(tagProps)) {}
 
-    void clear() {
-        name.clear();
-        props.clear();
+  void clear() {
+    name.clear();
+    props.clear();
+  }
+
+  void __clear() { clear(); }
+
+  std::string toString() const;
+
+  Tag& operator=(Tag&& rhs) noexcept {
+    if (&rhs != this) {
+      name = std::move(rhs.name);
+      props = std::move(rhs.props);
     }
+    return *this;
+  }
 
-    void __clear() {
-        clear();
+  Tag& operator=(const Tag& rhs) {
+    if (&rhs != this) {
+      name = rhs.name;
+      props = rhs.props;
     }
+    return *this;
+  }
 
-    std::string toString() const;
-
-    Tag& operator=(Tag&& rhs) noexcept {
-        if (&rhs != this) {
-            name = std::move(rhs.name);
-            props = std::move(rhs.props);
-        }
-        return *this;
-    }
-
-    Tag& operator=(const Tag& rhs) {
-        if (&rhs != this) {
-            name = rhs.name;
-            props = rhs.props;
-        }
-        return *this;
-    }
-
-    bool operator==(const Tag& rhs) const {
-        return name == rhs.name && props == rhs.props;
-    }
+  bool operator==(const Tag& rhs) const { return name == rhs.name && props == rhs.props; }
 };
-
 
 struct Vertex {
-    Value vid;
-    std::vector<Tag> tags;
+  Value vid;
+  std::vector<Tag> tags;
 
-    Vertex() = default;
-    Vertex(const Vertex& v) : vid(v.vid), tags(v.tags) {}
-    Vertex(Vertex&& v) noexcept
-        : vid(std::move(v.vid))
-        , tags(std::move(v.tags)) {}
-    Vertex(Value id, std::vector<Tag> t)
-        : vid(std::move(id))
-        , tags(std::move(t)) {}
+  Vertex() = default;
+  Vertex(const Vertex& v) : vid(v.vid), tags(v.tags) {}
+  Vertex(Vertex&& v) noexcept : vid(std::move(v.vid)), tags(std::move(v.tags)) {}
+  Vertex(Value id, std::vector<Tag> t) : vid(std::move(id)), tags(std::move(t)) {}
 
-    void clear() {
-        vid.clear();
-        tags.clear();
-    }
+  void clear() {
+    vid.clear();
+    tags.clear();
+  }
 
-    void __clear() {
-        clear();
-    }
+  void __clear() { clear(); }
 
-    std::string toString() const;
+  std::string toString() const;
 
-    Vertex& operator=(Vertex&& rhs) noexcept;
+  Vertex& operator=(Vertex&& rhs) noexcept;
 
-    Vertex& operator=(const Vertex& rhs);
+  Vertex& operator=(const Vertex& rhs);
 
-    bool operator==(const Vertex& rhs) const {
-        return vid == rhs.vid && tags == rhs.tags;
-    }
+  bool operator==(const Vertex& rhs) const { return vid == rhs.vid && tags == rhs.tags; }
 
-    bool operator<(const Vertex& rhs) const;
+  bool operator<(const Vertex& rhs) const;
 
-    bool contains(const Value &key) const;
+  bool contains(const Value& key) const;
 
-    const Value& value(const std::string &key) const;
+  const Value& value(const std::string& key) const;
 };
 
-
 inline void swap(Vertex& a, Vertex& b) {
-    auto temp = std::move(a);
-    a = std::move(b);
-    b = std::move(temp);
+  auto temp = std::move(a);
+  a = std::move(b);
+  b = std::move(temp);
 }
 
-inline std::ostream &operator<<(std::ostream& os, const Vertex& v) {
-    return os << v.toString();
-}
+inline std::ostream& operator<<(std::ostream& os, const Vertex& v) { return os << v.toString(); }
 
 }  // namespace nebula
-
 
 namespace std {
 
 // Inject a customized hash function
-template<>
+template <>
 struct hash<nebula::Tag> {
-    std::size_t operator()(const nebula::Tag& h) const noexcept;
+  std::size_t operator()(const nebula::Tag& h) const noexcept;
 };
 
-
-template<>
+template <>
 struct hash<nebula::Vertex> {
-    std::size_t operator()(const nebula::Vertex& h) const noexcept;
+  std::size_t operator()(const nebula::Vertex& h) const noexcept;
 };
 
 }  // namespace std

@@ -6,65 +6,64 @@
 
 #include "graph/executor/query/JoinExecutor.h"
 
-#include "graph/planner/plan/Query.h"
-#include "graph/context/QueryExpressionContext.h"
 #include "graph/context/Iterator.h"
+#include "graph/context/QueryExpressionContext.h"
+#include "graph/planner/plan/Query.h"
 
 namespace nebula {
 namespace graph {
 
 Status JoinExecutor::checkInputDataSets() {
-    auto* join = asNode<Join>(node());
-    lhsIter_ = ectx_->getVersionedResult(join->leftVar().first, join->leftVar().second).iter();
-    DCHECK(!!lhsIter_);
-    VLOG(1) << "lhs: " << join->leftVar().first << " " << lhsIter_->size();
-    if (lhsIter_->isGetNeighborsIter() || lhsIter_->isDefaultIter()) {
-        std::stringstream ss;
-        ss << "Join executor does not support " << lhsIter_->kind();
-        return Status::Error(ss.str());
-    }
-    rhsIter_ =
-        ectx_->getVersionedResult(join->rightVar().first, join->rightVar().second).iter();
-    DCHECK(!!rhsIter_);
-    VLOG(1) << "rhs: " << join->rightVar().first << " " << rhsIter_->size();
-    if (rhsIter_->isGetNeighborsIter() || rhsIter_->isDefaultIter()) {
-        std::stringstream ss;
-        ss << "Join executor does not support " << rhsIter_->kind();
-        return Status::Error(ss.str());
-    }
-    colSize_ = join->colNames().size();
-    return Status::OK();
+  auto* join = asNode<Join>(node());
+  lhsIter_ = ectx_->getVersionedResult(join->leftVar().first, join->leftVar().second).iter();
+  DCHECK(!!lhsIter_);
+  VLOG(1) << "lhs: " << join->leftVar().first << " " << lhsIter_->size();
+  if (lhsIter_->isGetNeighborsIter() || lhsIter_->isDefaultIter()) {
+    std::stringstream ss;
+    ss << "Join executor does not support " << lhsIter_->kind();
+    return Status::Error(ss.str());
+  }
+  rhsIter_ = ectx_->getVersionedResult(join->rightVar().first, join->rightVar().second).iter();
+  DCHECK(!!rhsIter_);
+  VLOG(1) << "rhs: " << join->rightVar().first << " " << rhsIter_->size();
+  if (rhsIter_->isGetNeighborsIter() || rhsIter_->isDefaultIter()) {
+    std::stringstream ss;
+    ss << "Join executor does not support " << rhsIter_->kind();
+    return Status::Error(ss.str());
+  }
+  colSize_ = join->colNames().size();
+  return Status::OK();
 }
 
 void JoinExecutor::buildHashTable(
     const std::vector<Expression*>& hashKeys,
     Iterator* iter,
     std::unordered_map<List, std::vector<const Row*>>& hashTable) const {
-    QueryExpressionContext ctx(ectx_);
-    for (; iter->valid(); iter->next()) {
-        List list;
-        list.values.reserve(hashKeys.size());
-        for (auto& col : hashKeys) {
-            Value val = col->eval(ctx(iter));
-            list.values.emplace_back(std::move(val));
-        }
-
-        auto& vals = hashTable[list];
-        vals.emplace_back(iter->row());
+  QueryExpressionContext ctx(ectx_);
+  for (; iter->valid(); iter->next()) {
+    List list;
+    list.values.reserve(hashKeys.size());
+    for (auto& col : hashKeys) {
+      Value val = col->eval(ctx(iter));
+      list.values.emplace_back(std::move(val));
     }
+
+    auto& vals = hashTable[list];
+    vals.emplace_back(iter->row());
+  }
 }
 
 void JoinExecutor::buildSingleKeyHashTable(
     Expression* hashKey,
     Iterator* iter,
     std::unordered_map<Value, std::vector<const Row*>>& hashTable) const {
-    QueryExpressionContext ctx(ectx_);
-    for (; iter->valid(); iter->next()) {
-        auto& val = hashKey->eval(ctx(iter));
+  QueryExpressionContext ctx(ectx_);
+  for (; iter->valid(); iter->next()) {
+    auto& val = hashKey->eval(ctx(iter));
 
-        auto& vals = hashTable[val];
-        vals.emplace_back(iter->row());
-    }
+    auto& vals = hashTable[val];
+    vals.emplace_back(iter->row());
+  }
 }
 
 }  // namespace graph

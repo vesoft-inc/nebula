@@ -17,28 +17,28 @@ class StartVidFinder;
 using StartVidFinderInstantiateFunc = std::function<std::unique_ptr<StartVidFinder>()>;
 
 class StartVidFinder {
-public:
-    virtual ~StartVidFinder() = default;
+ public:
+  virtual ~StartVidFinder() = default;
 
-    static auto& finders() {
-        static std::vector<StartVidFinderInstantiateFunc> finders;
-        return finders;
-    }
+  static auto& finders() {
+    static std::vector<StartVidFinderInstantiateFunc> finders;
+    return finders;
+  }
 
-    bool match(PatternContext* patternCtx);
+  bool match(PatternContext* patternCtx);
 
-    virtual bool matchNode(NodeContext* nodeCtx) = 0;
+  virtual bool matchNode(NodeContext* nodeCtx) = 0;
 
-    virtual bool matchEdge(EdgeContext* nodeCtx) = 0;
+  virtual bool matchEdge(EdgeContext* nodeCtx) = 0;
 
-    StatusOr<SubPlan> transform(PatternContext* patternCtx);
+  StatusOr<SubPlan> transform(PatternContext* patternCtx);
 
-    virtual StatusOr<SubPlan> transformNode(NodeContext* nodeCtx) = 0;
+  virtual StatusOr<SubPlan> transformNode(NodeContext* nodeCtx) = 0;
 
-    virtual StatusOr<SubPlan> transformEdge(EdgeContext* edgeCtx) = 0;
+  virtual StatusOr<SubPlan> transformEdge(EdgeContext* edgeCtx) = 0;
 
-protected:
-    StartVidFinder() = default;
+ protected:
+  StartVidFinder() = default;
 };
 }  // namespace graph
 }  // namespace nebula

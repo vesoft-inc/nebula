@@ -12,26 +12,23 @@
 namespace nebula {
 namespace graph {
 class UseValidator final : public Validator {
-public:
-    UseValidator(Sentence* sentence, QueryContext* context)
-    : Validator(sentence, context) {
-        setNoSpaceRequired();
-    }
+ public:
+  UseValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
+    setNoSpaceRequired();
+  }
 
-private:
-    /**
-     * Will not check the space for use space sentence.
-     */
-    bool spaceChosen() override {
-        return true;
-    }
+ private:
+  /**
+   * Will not check the space for use space sentence.
+   */
+  bool spaceChosen() override { return true; }
 
-    Status validateImpl() override;
+  Status validateImpl() override;
 
-    Status toPlan() override;
+  Status toPlan() override;
 
-private:
-    const std::string         *spaceName_{nullptr};
+ private:
+  const std::string* spaceName_{nullptr};
 };
 }  // namespace graph
 }  // namespace nebula

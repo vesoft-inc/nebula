@@ -17,16 +17,15 @@ namespace nebula {
 namespace storage {
 
 class StopAdminTaskProcessor : public BaseProcessor<cpp2::AdminExecResp> {
-public:
-    static StopAdminTaskProcessor* instance(StorageEnv* env) {
-        return new StopAdminTaskProcessor(env);
-    }
+ public:
+  static StopAdminTaskProcessor* instance(StorageEnv* env) {
+    return new StopAdminTaskProcessor(env);
+  }
 
-    void process(const cpp2::StopAdminTaskRequest& req);
+  void process(const cpp2::StopAdminTaskRequest& req);
 
-private:
-    explicit StopAdminTaskProcessor(StorageEnv* env)
-            : BaseProcessor<cpp2::AdminExecResp>(env) {}
+ private:
+  explicit StopAdminTaskProcessor(StorageEnv* env) : BaseProcessor<cpp2::AdminExecResp>(env) {}
 };
 
 }  // namespace storage

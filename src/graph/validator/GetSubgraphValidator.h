@@ -7,32 +7,30 @@
 #ifndef GRAPH_VALIDATOR_GETSUBGRAPHVALIDATOR_H_
 #define GRAPH_VALIDATOR_GETSUBGRAPHVALIDATOR_H_
 
-#include "graph/validator/TraversalValidator.h"
 #include "graph/context/ast/QueryAstContext.h"
+#include "graph/validator/TraversalValidator.h"
 #include "parser/Clauses.h"
 
 namespace nebula {
 namespace graph {
 class GetSubgraphValidator final : public TraversalValidator {
-public:
-    GetSubgraphValidator(Sentence* sentence, QueryContext* context)
-        : TraversalValidator(sentence, context) {}
+ public:
+  GetSubgraphValidator(Sentence* sentence, QueryContext* context)
+      : TraversalValidator(sentence, context) {}
 
-private:
-    Status validateImpl() override;
+ private:
+  Status validateImpl() override;
 
-    Status validateInBound(InBoundClause* in);
+  Status validateInBound(InBoundClause* in);
 
-    Status validateOutBound(OutBoundClause* out);
+  Status validateOutBound(OutBoundClause* out);
 
-    Status validateBothInOutBound(BothInOutClause* out);
+  Status validateBothInOutBound(BothInOutClause* out);
 
-    AstContext* getAstContext() override {
-        return subgraphCtx_.get();
-    }
+  AstContext* getAstContext() override { return subgraphCtx_.get(); }
 
-private:
-    std::unique_ptr<SubgraphContext> subgraphCtx_;
+ private:
+  std::unique_ptr<SubgraphContext> subgraphCtx_;
 };
 
 }  // namespace graph

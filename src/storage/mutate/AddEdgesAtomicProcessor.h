@@ -20,31 +20,29 @@ namespace storage {
 extern ProcessorCounters kAddEdgesAtomicCounters;
 
 class AddEdgesAtomicProcessor : public BaseProcessor<cpp2::ExecResponse> {
-public:
-    static AddEdgesAtomicProcessor* instance(
-            StorageEnv* env,
-            const ProcessorCounters* counters = &kAddEdgesAtomicCounters) {
-        return new AddEdgesAtomicProcessor(env, counters);
-    }
+ public:
+  static AddEdgesAtomicProcessor* instance(
+      StorageEnv* env, const ProcessorCounters* counters = &kAddEdgesAtomicCounters) {
+    return new AddEdgesAtomicProcessor(env, counters);
+  }
 
-    void process(const cpp2::AddEdgesRequest& req);
+  void process(const cpp2::AddEdgesRequest& req);
 
-    void processByChain(const cpp2::AddEdgesRequest& req);
+  void processByChain(const cpp2::AddEdgesRequest& req);
 
-private:
-    AddEdgesAtomicProcessor(StorageEnv* env, const ProcessorCounters* counters)
-        : BaseProcessor<cpp2::ExecResponse>(env, counters) {}
+ private:
+  AddEdgesAtomicProcessor(StorageEnv* env, const ProcessorCounters* counters)
+      : BaseProcessor<cpp2::ExecResponse>(env, counters) {}
 
-    nebula::cpp2::ErrorCode
-    encodeSingleEdgeProps(const cpp2::NewEdge& e, std::string& encodedVal);
+  nebula::cpp2::ErrorCode encodeSingleEdgeProps(const cpp2::NewEdge& e, std::string& encodedVal);
 
-    GraphSpaceID                                                spaceId_;
-    int64_t                                                     vIdLen_;
-    std::vector<std::string>                                    propNames_;
-    std::unique_ptr<AddEdgesProcessor>                          processor_;
-    std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>> indexes_;
+  GraphSpaceID spaceId_;
+  int64_t vIdLen_;
+  std::vector<std::string> propNames_;
+  std::unique_ptr<AddEdgesProcessor> processor_;
+  std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>> indexes_;
 };
 
-}   // namespace storage
-}   // namespace nebula
-#endif   // STORAGE_MUTATE_ADDEDGESATOMICPROCESSOR_H_
+}  // namespace storage
+}  // namespace nebula
+#endif  // STORAGE_MUTATE_ADDEDGESATOMICPROCESSOR_H_

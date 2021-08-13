@@ -12,12 +12,12 @@
 namespace nebula {
 namespace meta {
 class SchemaUtil final {
-public:
-    SchemaUtil() = default;
-    ~SchemaUtil() = default;
+ public:
+  SchemaUtil() = default;
+  ~SchemaUtil() = default;
 
-public:
-    static bool checkType(std::vector<cpp2::ColumnDef> &columns);
+ public:
+  static bool checkType(std::vector<cpp2::ColumnDef> &columns);
 };
 
 }  // namespace meta

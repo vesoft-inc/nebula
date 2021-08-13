@@ -8,27 +8,28 @@
 #define GRAPH_OPTIMIZER_RULE_PUSHFILTERDOWNLEFTJOINRULE_H_
 
 #include <memory>
+
 #include "graph/optimizer/OptRule.h"
 
 namespace nebula {
 namespace opt {
 
 class PushFilterDownLeftJoinRule final : public OptRule {
-public:
-    const Pattern &pattern() const override;
+ public:
+  const Pattern &pattern() const override;
 
-    StatusOr<OptRule::TransformResult> transform(OptContext *qctx,
-                                                 const MatchedResult &matched) const override;
+  StatusOr<OptRule::TransformResult> transform(OptContext *qctx,
+                                               const MatchedResult &matched) const override;
 
-    std::string toString() const override;
+  std::string toString() const override;
 
-private:
-    PushFilterDownLeftJoinRule();
+ private:
+  PushFilterDownLeftJoinRule();
 
-    static std::unique_ptr<OptRule> kInstance;
+  static std::unique_ptr<OptRule> kInstance;
 };
 
-}   // namespace opt
-}   // namespace nebula
+}  // namespace opt
+}  // namespace nebula
 
-#endif   // GRAPH_OPTIMIZER_RULE_PUSHFILTERDOWNLEFTJOINRULE_H_
+#endif  // GRAPH_OPTIMIZER_RULE_PUSHFILTERDOWNLEFTJOINRULE_H_

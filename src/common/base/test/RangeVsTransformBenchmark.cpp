@@ -3,97 +3,89 @@
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
-#include <folly/init/Init.h>
 #include <folly/Benchmark.h>
+#include <folly/init/Init.h>
+
 #include <algorithm>
 #include <vector>
 
-
 BENCHMARK(Test1_RangeTestStr) {
-    std::vector<int32_t> from;
-    std::vector<std::string> to;
-    BENCHMARK_SUSPEND {
-        from.resize(1000, 0);
-        to.resize(1000);
-    }
-    int32_t index = 0;
-    for (auto& i : from) {
-        to[index++] = std::to_string(i);
-    }
-    folly::doNotOptimizeAway(to);
+  std::vector<int32_t> from;
+  std::vector<std::string> to;
+  BENCHMARK_SUSPEND {
+    from.resize(1000, 0);
+    to.resize(1000);
+  }
+  int32_t index = 0;
+  for (auto& i : from) {
+    to[index++] = std::to_string(i);
+  }
+  folly::doNotOptimizeAway(to);
 }
 BENCHMARK_RELATIVE(Test1_TransformStr) {
-    std::vector<int32_t> from;
-    std::vector<std::string> to;
-    BENCHMARK_SUSPEND {
-        from.resize(1000, 0);
-        to.resize(1000);
-    }
-    std::transform(from.begin(), from.end(), to.begin(), [] (const auto& e) {
-        return std::to_string(e);
-    });
-    folly::doNotOptimizeAway(to);
+  std::vector<int32_t> from;
+  std::vector<std::string> to;
+  BENCHMARK_SUSPEND {
+    from.resize(1000, 0);
+    to.resize(1000);
+  }
+  std::transform(
+      from.begin(), from.end(), to.begin(), [](const auto& e) { return std::to_string(e); });
+  folly::doNotOptimizeAway(to);
 }
 
 BENCHMARK_DRAW_LINE();
 
 BENCHMARK(Test2_RangeTestInt) {
-    std::vector<int32_t> from;
-    std::vector<int32_t> to;
-    BENCHMARK_SUSPEND {
-        from.resize(1000, 0);
-        to.resize(1000);
-    }
-    int32_t index = 0;
-    for (auto& i : from) {
-        to[index++] = i;
-    }
-    folly::doNotOptimizeAway(to);
+  std::vector<int32_t> from;
+  std::vector<int32_t> to;
+  BENCHMARK_SUSPEND {
+    from.resize(1000, 0);
+    to.resize(1000);
+  }
+  int32_t index = 0;
+  for (auto& i : from) {
+    to[index++] = i;
+  }
+  folly::doNotOptimizeAway(to);
 }
 BENCHMARK_RELATIVE(Test2_TransformInt) {
-    std::vector<int32_t> from;
-    std::vector<int32_t> to;
-    BENCHMARK_SUSPEND {
-        from.resize(1000, 0);
-        to.resize(1000);
-    }
-    std::transform(from.begin(), from.end(), to.begin(), [] (const auto& e) {
-        return e;
-    });
-    folly::doNotOptimizeAway(to);
+  std::vector<int32_t> from;
+  std::vector<int32_t> to;
+  BENCHMARK_SUSPEND {
+    from.resize(1000, 0);
+    to.resize(1000);
+  }
+  std::transform(from.begin(), from.end(), to.begin(), [](const auto& e) { return e; });
+  folly::doNotOptimizeAway(to);
 }
 
 BENCHMARK_DRAW_LINE();
 
 BENCHMARK(Test3_RangeTestInt) {
-    std::vector<int32_t> v;
-    BENCHMARK_SUSPEND {
-        v.resize(1000, 0);
-    }
-    for (auto& i : v) {
-        (void)(i);
-        int a{0};
-        folly::doNotOptimizeAway(a);
-    }
+  std::vector<int32_t> v;
+  BENCHMARK_SUSPEND { v.resize(1000, 0); }
+  for (auto& i : v) {
+    (void)(i);
+    int a{0};
+    folly::doNotOptimizeAway(a);
+  }
 }
 
 BENCHMARK_RELATIVE(Test3_ForEachInt) {
-    std::vector<int32_t> v;
-    BENCHMARK_SUSPEND {
-        v.resize(1000, 0);
-    }
-    std::for_each(v.begin(), v.end(), [] (const auto&) {
-        int a{0};
-        folly::doNotOptimizeAway(a);
-    });
+  std::vector<int32_t> v;
+  BENCHMARK_SUSPEND { v.resize(1000, 0); }
+  std::for_each(v.begin(), v.end(), [](const auto&) {
+    int a{0};
+    folly::doNotOptimizeAway(a);
+  });
 }
 
 int main(int argc, char** argv) {
-    folly::init(&argc, &argv, true);
-    folly::runBenchmarks();
-    return 0;
+  folly::init(&argc, &argv, true);
+  folly::runBenchmarks();
+  return 0;
 }
-
 
 /*
 Intel(R) Xeon(R) CPU E5-2690 v2 @ 3.00GHz*
@@ -127,4 +119,3 @@ Test3_ForEachInt                                 102.41%   386.61ns    2.59M
 ============================================================================
 
 */
-

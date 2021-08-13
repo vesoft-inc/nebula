@@ -6,32 +6,32 @@
 
 #include "graph/validator/AssignmentValidator.h"
 
-#include "parser/TraverseSentences.h"
 #include "graph/planner/plan/Query.h"
+#include "parser/TraverseSentences.h"
 
 namespace nebula {
 namespace graph {
 
 Status AssignmentValidator::validateImpl() {
-    auto* assignSentence = static_cast<AssignmentSentence*>(sentence_);
-    NG_RETURN_IF_ERROR(validator_->validate());
+  auto *assignSentence = static_cast<AssignmentSentence *>(sentence_);
+  NG_RETURN_IF_ERROR(validator_->validate());
 
-    auto outputs = validator_->outputCols();
-    var_ = *assignSentence->var();
-    vctx_->registerVariable(var_, std::move(outputs));
-    return Status::OK();
+  auto outputs = validator_->outputCols();
+  var_ = *assignSentence->var();
+  vctx_->registerVariable(var_, std::move(outputs));
+  return Status::OK();
 }
 
 Status AssignmentValidator::toPlan() {
-    root_ = validator_->root();
-    auto *var = qctx_->symTable()->newVariable(var_);
-    for (const auto &outputCol : validator_->outputCols()) {
-        var->colNames.emplace_back(outputCol.name);
-    }
-    root_->setOutputVar(var_);
-    tail_ = validator_->tail();
-    return Status::OK();
+  root_ = validator_->root();
+  auto *var = qctx_->symTable()->newVariable(var_);
+  for (const auto &outputCol : validator_->outputCols()) {
+    var->colNames.emplace_back(outputCol.name);
+  }
+  root_->setOutputVar(var_);
+  tail_ = validator_->tail();
+  return Status::OK();
 }
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula

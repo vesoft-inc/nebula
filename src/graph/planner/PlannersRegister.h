@@ -11,15 +11,15 @@ namespace nebula {
 namespace graph {
 
 class PlannersRegister final {
-public:
-    PlannersRegister() = delete;
-    ~PlannersRegister() = delete;
+ public:
+  PlannersRegister() = delete;
+  ~PlannersRegister() = delete;
 
-    static void registPlanners();
+  static void registPlanners();
 
-private:
-    static void registSequential();
-    static void registMatch();
+ private:
+  static void registSequential();
+  static void registMatch();
 };
 
 }  // namespace graph

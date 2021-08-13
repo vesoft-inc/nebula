@@ -13,20 +13,19 @@
 namespace nebula {
 namespace graph {
 class MatchPlanner final : public Planner {
-public:
-    static std::unique_ptr<MatchPlanner> make() {
-        return std::unique_ptr<MatchPlanner>(new MatchPlanner());
-    }
+ public:
+  static std::unique_ptr<MatchPlanner> make() {
+    return std::unique_ptr<MatchPlanner>(new MatchPlanner());
+  }
 
-    static bool match(AstContext* astCtx);
+  static bool match(AstContext* astCtx);
 
-    StatusOr<SubPlan> transform(AstContext* astCtx) override;
+  StatusOr<SubPlan> transform(AstContext* astCtx) override;
 
-private:
-    StatusOr<SubPlan> connectSegments(
-        AstContext* astCtx,
-        std::vector<SubPlan>& subplans,
-        std::vector<std::unique_ptr<CypherClauseContextBase>>& clauses);
+ private:
+  StatusOr<SubPlan> connectSegments(AstContext* astCtx,
+                                    std::vector<SubPlan>& subplans,
+                                    std::vector<std::unique_ptr<CypherClauseContextBase>>& clauses);
 };
 }  // namespace graph
 }  // namespace nebula

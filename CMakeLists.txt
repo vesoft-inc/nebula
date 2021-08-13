@@ -53,6 +53,13 @@ add_custom_target(
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
 )
 
+
+add_custom_target(
+  clang-format
+  COMMAND "find" "src/" "-type" "f" "\\(" "-iname" "\\*.h" "-o" "-iname" "\\*.cpp" "\\)" "-exec" "clang-format" "-i" "{}" "\\;"
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  )
+
 if (ENABLE_NATIVE)
     message(STATUS "ENABLE_NATIVE is ${ENABLE_NATIVE}")
     add_compile_options(-fPIC)

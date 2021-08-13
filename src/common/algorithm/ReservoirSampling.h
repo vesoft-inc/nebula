@@ -14,37 +14,35 @@ namespace nebula {
 namespace algorithm {
 template <class T>
 class ReservoirSampling final {
-public:
-    explicit ReservoirSampling(uint64_t num) {
-        num_ = num;
-        samples_.reserve(num);
-    }
+ public:
+  explicit ReservoirSampling(uint64_t num) {
+    num_ = num;
+    samples_.reserve(num);
+  }
 
-    bool sampling(T&& sample) {
-        if (cnt_ < num_) {
-            samples_.emplace_back(std::move(sample));
-            ++cnt_;
-            return true;
-        } else {
-            auto index = folly::Random::rand64(cnt_);
-            if (index < num_) {
-                samples_[index] = (std::move(sample));
-                ++cnt_;
-                return true;
-            }
-        }
+  bool sampling(T&& sample) {
+    if (cnt_ < num_) {
+      samples_.emplace_back(std::move(sample));
+      ++cnt_;
+      return true;
+    } else {
+      auto index = folly::Random::rand64(cnt_);
+      if (index < num_) {
+        samples_[index] = (std::move(sample));
         ++cnt_;
-        return false;
+        return true;
+      }
     }
+    ++cnt_;
+    return false;
+  }
 
-    std::vector<T>&& samples() && {
-        return std::move(samples_);
-    }
+  std::vector<T>&& samples() && { return std::move(samples_); }
 
-private:
-    std::vector<T>          samples_;
-    uint64_t                cnt_{0};
-    uint64_t                num_{0};
+ private:
+  std::vector<T> samples_;
+  uint64_t cnt_{0};
+  uint64_t num_{0};
 };
 }  // namespace algorithm
 }  // namespace nebula

@@ -5,6 +5,7 @@
  */
 
 #include "meta/processors/job/JobStatus.h"
+
 #include <folly/String.h>
 
 namespace nebula {
@@ -18,36 +19,33 @@ const int kDeadEnd = 3;
 using Status = cpp2::JobStatus;
 
 int JobStatus::phaseNumber(Status st) {
-    if (st == Status::QUEUE) return kNotStarted;
-    if (st == Status::RUNNING) return kInProgress;
-    if (st == Status::STOPPED) return kStopped;
-    if (st == Status::FINISHED) return kDeadEnd;
-    if (st == Status::FAILED) return kDeadEnd;
-    return INT_MIN;
+  if (st == Status::QUEUE) return kNotStarted;
+  if (st == Status::RUNNING) return kInProgress;
+  if (st == Status::STOPPED) return kStopped;
+  if (st == Status::FINISHED) return kDeadEnd;
+  if (st == Status::FAILED) return kDeadEnd;
+  return INT_MIN;
 }
 
-bool JobStatus::laterThan(Status lhs, Status rhs) {
-    return phaseNumber(lhs) > phaseNumber(rhs);
-}
+bool JobStatus::laterThan(Status lhs, Status rhs) { return phaseNumber(lhs) > phaseNumber(rhs); }
 
 std::string JobStatus::toString(Status st) {
-    switch (st) {
+  switch (st) {
     case Status::QUEUE:
-        return "queue";
+      return "queue";
     case Status::RUNNING:
-        return "running";
+      return "running";
     case Status::FINISHED:
-        return "finished";
+      return "finished";
     case Status::FAILED:
-        return "failed";
+      return "failed";
     case Status::STOPPED:
-        return "stopped";
+      return "stopped";
     case Status::INVALID:
-        return "invalid";
-    }
-    return "invalid status";
+      return "invalid";
+  }
+  return "invalid status";
 }
 
 }  // namespace meta
 }  // namespace nebula
-

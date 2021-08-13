@@ -12,45 +12,45 @@ namespace nebula {
 namespace meta {
 
 class CreateFTIndexProcessor : public BaseProcessor<cpp2::ExecResp> {
-public:
-    static CreateFTIndexProcessor* instance(kvstore::KVStore* kvstore) {
-        return new CreateFTIndexProcessor(kvstore);
-    }
+ public:
+  static CreateFTIndexProcessor* instance(kvstore::KVStore* kvstore) {
+    return new CreateFTIndexProcessor(kvstore);
+  }
 
-    void process(const cpp2::CreateFTIndexReq& req);
+  void process(const cpp2::CreateFTIndexReq& req);
 
-private:
-    explicit CreateFTIndexProcessor(kvstore::KVStore* kvstore)
-        : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+ private:
+  explicit CreateFTIndexProcessor(kvstore::KVStore* kvstore)
+      : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 };
 
 class DropFTIndexProcessor : public BaseProcessor<cpp2::ExecResp> {
-public:
-    static DropFTIndexProcessor* instance(kvstore::KVStore* kvstore) {
-        return new DropFTIndexProcessor(kvstore);
-    }
+ public:
+  static DropFTIndexProcessor* instance(kvstore::KVStore* kvstore) {
+    return new DropFTIndexProcessor(kvstore);
+  }
 
-    void process(const cpp2::DropFTIndexReq& req);
+  void process(const cpp2::DropFTIndexReq& req);
 
-private:
-    explicit DropFTIndexProcessor(kvstore::KVStore* kvstore)
-        : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+ private:
+  explicit DropFTIndexProcessor(kvstore::KVStore* kvstore)
+      : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 };
 
 class ListFTIndexesProcessor : public BaseProcessor<cpp2::ListFTIndexesResp> {
-public:
-    static ListFTIndexesProcessor* instance(kvstore::KVStore* kvstore) {
-        return new ListFTIndexesProcessor(kvstore);
-    }
+ public:
+  static ListFTIndexesProcessor* instance(kvstore::KVStore* kvstore) {
+    return new ListFTIndexesProcessor(kvstore);
+  }
 
-    void process(const cpp2::ListFTIndexesReq&);
+  void process(const cpp2::ListFTIndexesReq&);
 
-private:
-    explicit ListFTIndexesProcessor(kvstore::KVStore* kvstore)
-        : BaseProcessor<cpp2::ListFTIndexesResp>(kvstore) {}
+ private:
+  explicit ListFTIndexesProcessor(kvstore::KVStore* kvstore)
+      : BaseProcessor<cpp2::ListFTIndexesResp>(kvstore) {}
 };
 
 }  // namespace meta
 }  // namespace nebula
 
-#endif   // META_FTINDEXPROCESSOR_H_
+#endif  // META_FTINDEXPROCESSOR_H_

@@ -13,24 +13,22 @@ namespace nebula {
 namespace meta {
 
 class SetConfigProcessor : public BaseProcessor<cpp2::ExecResp> {
-public:
-    static SetConfigProcessor* instance(kvstore::KVStore* kvstore) {
-        return new SetConfigProcessor(kvstore);
-    }
+ public:
+  static SetConfigProcessor* instance(kvstore::KVStore* kvstore) {
+    return new SetConfigProcessor(kvstore);
+  }
 
-    void process(const cpp2::SetConfigReq& req);
+  void process(const cpp2::SetConfigReq& req);
 
-    nebula::cpp2::ErrorCode
-    setConfig(const cpp2::ConfigModule& module,
-              const std::string& name,
-              const Value& value,
-              std::vector<kvstore::KV>& data);
+  nebula::cpp2::ErrorCode setConfig(const cpp2::ConfigModule& module,
+                                    const std::string& name,
+                                    const Value& value,
+                                    std::vector<kvstore::KV>& data);
 
-private:
-    explicit SetConfigProcessor(kvstore::KVStore* kvstore)
-        : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+ private:
+  explicit SetConfigProcessor(kvstore::KVStore* kvstore) : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 
-    static std::unordered_set<std::string> mutableFields_;
+  static std::unordered_set<std::string> mutableFields_;
 };
 
 }  // namespace meta

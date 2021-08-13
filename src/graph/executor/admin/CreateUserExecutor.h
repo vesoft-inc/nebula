@@ -13,17 +13,17 @@ namespace nebula {
 namespace graph {
 
 class CreateUserExecutor final : public Executor {
-public:
-    CreateUserExecutor(const PlanNode *node, QueryContext *qctx)
-        : Executor("CreateUserExecutor", node, qctx) {}
+ public:
+  CreateUserExecutor(const PlanNode *node, QueryContext *qctx)
+      : Executor("CreateUserExecutor", node, qctx) {}
 
-    folly::Future<Status> execute() override;
+  folly::Future<Status> execute() override;
 
-private:
-    folly::Future<Status> createUser();
+ private:
+  folly::Future<Status> createUser();
 };
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula
 
 #endif  // GRAPH_EXECUTOR_ADMIN_CREATEUSEREXECUTOR_H_

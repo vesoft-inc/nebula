@@ -13,16 +13,15 @@ namespace nebula {
 namespace meta {
 
 class DropSpaceProcessor : public BaseProcessor<cpp2::ExecResp> {
-public:
-    static DropSpaceProcessor* instance(kvstore::KVStore* kvstore) {
-        return new DropSpaceProcessor(kvstore);
-    }
+ public:
+  static DropSpaceProcessor* instance(kvstore::KVStore* kvstore) {
+    return new DropSpaceProcessor(kvstore);
+  }
 
-    void process(const cpp2::DropSpaceReq& req);
+  void process(const cpp2::DropSpaceReq& req);
 
-private:
-    explicit DropSpaceProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+ private:
+  explicit DropSpaceProcessor(kvstore::KVStore* kvstore) : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 };
 
 }  // namespace meta

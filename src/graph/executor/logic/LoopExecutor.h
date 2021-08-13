@@ -13,25 +13,21 @@ namespace nebula {
 namespace graph {
 
 class LoopExecutor final : public Executor {
-public:
-    LoopExecutor(const PlanNode *node, QueryContext *qctx);
+ public:
+  LoopExecutor(const PlanNode *node, QueryContext *qctx);
 
-    folly::Future<Status> execute() override;
+  folly::Future<Status> execute() override;
 
-    void setLoopBody(Executor *body) {
-        body_ = DCHECK_NOTNULL(body);
-    }
+  void setLoopBody(Executor *body) { body_ = DCHECK_NOTNULL(body); }
 
-    Executor *loopBody() const {
-        return body_;
-    }
+  Executor *loopBody() const { return body_; }
 
-private:
-    // Hold the last executor node of loop body executors chain
-    Executor *body_{nullptr};
+ private:
+  // Hold the last executor node of loop body executors chain
+  Executor *body_{nullptr};
 };
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula
 
-#endif   // GRAPH_EXECUTOR_LOGIC_LOOPEXECUTOR_H_
+#endif  // GRAPH_EXECUTOR_LOGIC_LOOPEXECUTOR_H_

@@ -13,46 +13,46 @@ namespace nebula {
 namespace meta {
 
 class ListHostsProcessor : public BaseProcessor<cpp2::ListHostsResp> {
-public:
-    static ListHostsProcessor* instance(kvstore::KVStore* kvstore) {
-        return new ListHostsProcessor(kvstore);
-    }
+ public:
+  static ListHostsProcessor* instance(kvstore::KVStore* kvstore) {
+    return new ListHostsProcessor(kvstore);
+  }
 
-    void process(const cpp2::ListHostsReq& req);
+  void process(const cpp2::ListHostsReq& req);
 
-private:
-    explicit ListHostsProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::ListHostsResp>(kvstore) {}
+ private:
+  explicit ListHostsProcessor(kvstore::KVStore* kvstore)
+      : BaseProcessor<cpp2::ListHostsResp>(kvstore) {}
 
-    /**
-     *  return online/offline, gitInfoSHA for the specific HostRole
-     * */
-    nebula::cpp2::ErrorCode allHostsWithStatus(cpp2::HostRole type);
+  /**
+   *  return online/offline, gitInfoSHA for the specific HostRole
+   * */
+  nebula::cpp2::ErrorCode allHostsWithStatus(cpp2::HostRole type);
 
-    nebula::cpp2::ErrorCode fillLeaders();
+  nebula::cpp2::ErrorCode fillLeaders();
 
-    nebula::cpp2::ErrorCode fillAllParts();
+  nebula::cpp2::ErrorCode fillAllParts();
 
-    /**
-     * Get gitInfoSHA from all meta hosts gitInfoSHA
-     * now, assume of of them are equal
-     * */
-    nebula::cpp2::ErrorCode allMetaHostsStatus();
+  /**
+   * Get gitInfoSHA from all meta hosts gitInfoSHA
+   * now, assume of of them are equal
+   * */
+  nebula::cpp2::ErrorCode allMetaHostsStatus();
 
-    // Get map of spaceId -> spaceName
-    nebula::cpp2::ErrorCode getSpaceIdNameMap();
+  // Get map of spaceId -> spaceName
+  nebula::cpp2::ErrorCode getSpaceIdNameMap();
 
-    std::unordered_map<std::string, std::vector<PartitionID>>
-    getLeaderPartsWithSpaceName(const LeaderParts& leaderParts);
+  std::unordered_map<std::string, std::vector<PartitionID>> getLeaderPartsWithSpaceName(
+      const LeaderParts& leaderParts);
 
-    void removeExpiredHosts(std::vector<std::string>&& removeHostsKey);
+  void removeExpiredHosts(std::vector<std::string>&& removeHostsKey);
 
-    void removeInvalidLeaders(std::vector<std::string>&& removeLeadersKey);
+  void removeInvalidLeaders(std::vector<std::string>&& removeLeadersKey);
 
-private:
-    std::vector<GraphSpaceID>                     spaceIds_;
-    std::unordered_map<GraphSpaceID, std::string> spaceIdNameMap_;
-    std::vector<cpp2::HostItem>                   hostItems_;
+ private:
+  std::vector<GraphSpaceID> spaceIds_;
+  std::unordered_map<GraphSpaceID, std::string> spaceIdNameMap_;
+  std::vector<cpp2::HostItem> hostItems_;
 };
 
 }  // namespace meta

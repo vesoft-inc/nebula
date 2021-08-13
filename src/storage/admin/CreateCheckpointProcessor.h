@@ -16,16 +16,15 @@ namespace nebula {
 namespace storage {
 
 class CreateCheckpointProcessor : public BaseProcessor<cpp2::CreateCPResp> {
-public:
-    static CreateCheckpointProcessor* instance(StorageEnv* env) {
-        return new CreateCheckpointProcessor(env);
-    }
+ public:
+  static CreateCheckpointProcessor* instance(StorageEnv* env) {
+    return new CreateCheckpointProcessor(env);
+  }
 
-    void process(const cpp2::CreateCPRequest& req);
+  void process(const cpp2::CreateCPRequest& req);
 
-private:
-    explicit CreateCheckpointProcessor(StorageEnv* env)
-            : BaseProcessor<cpp2::CreateCPResp>(env) {}
+ private:
+  explicit CreateCheckpointProcessor(StorageEnv* env) : BaseProcessor<cpp2::CreateCPResp>(env) {}
 };
 
 }  // namespace storage

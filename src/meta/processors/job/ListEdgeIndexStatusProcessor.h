@@ -8,27 +8,26 @@
 #define META_LISTEDGEINDEXSTATUSPROCESSOR_H
 
 #include "meta/processors/BaseProcessor.h"
-#include "meta/processors/job/JobUtils.h"
 #include "meta/processors/job/JobDescription.h"
+#include "meta/processors/job/JobUtils.h"
 
 namespace nebula {
 namespace meta {
 
 class ListEdgeIndexStatusProcessor : public BaseProcessor<cpp2::ListIndexStatusResp> {
-public:
-    static ListEdgeIndexStatusProcessor* instance(kvstore::KVStore* kvstore) {
-        return new ListEdgeIndexStatusProcessor(kvstore);
-    }
+ public:
+  static ListEdgeIndexStatusProcessor* instance(kvstore::KVStore* kvstore) {
+    return new ListEdgeIndexStatusProcessor(kvstore);
+  }
 
-    void process(const cpp2::ListIndexStatusReq& req);
+  void process(const cpp2::ListIndexStatusReq& req);
 
-private:
-    explicit ListEdgeIndexStatusProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::ListIndexStatusResp>(kvstore) {}
+ private:
+  explicit ListEdgeIndexStatusProcessor(kvstore::KVStore* kvstore)
+      : BaseProcessor<cpp2::ListIndexStatusResp>(kvstore) {}
 };
 
 }  // namespace meta
 }  // namespace nebula
 
 #endif  // META_LISTEDGEINDEXSTATUSPROCESSOR_H
-

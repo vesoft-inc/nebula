@@ -7,126 +7,115 @@
 #ifndef STORAGE_BASEPROCESSOR_H_
 #define STORAGE_BASEPROCESSOR_H_
 
-#include "common/base/Base.h"
-#include "common/time/Duration.h"
-#include "common/stats/StatsManager.h"
 #include <folly/SpinLock.h>
-#include <folly/futures/Promise.h>
 #include <folly/futures/Future.h>
+#include <folly/futures/Promise.h>
 #include <thrift/lib/cpp/util/EnumUtils.h>
-#include "storage/CommonUtils.h"
+
 #include "codec/RowReaderWrapper.h"
 #include "codec/RowWriterV2.h"
+#include "common/base/Base.h"
+#include "common/stats/StatsManager.h"
+#include "common/time/Duration.h"
 #include "common/utils/IndexKeyUtils.h"
+#include "storage/CommonUtils.h"
 
 namespace nebula {
 namespace storage {
 
-
-template<typename RESP>
+template <typename RESP>
 class BaseProcessor {
-public:
-    explicit BaseProcessor(StorageEnv* env, const ProcessorCounters* counters = nullptr)
-            : env_(env)
-            , counters_(counters) {}
+ public:
+  explicit BaseProcessor(StorageEnv* env, const ProcessorCounters* counters = nullptr)
+      : env_(env), counters_(counters) {}
 
-    virtual ~BaseProcessor() = default;
+  virtual ~BaseProcessor() = default;
 
-    folly::Future<RESP> getFuture() {
-        return promise_.getFuture();
+  folly::Future<RESP> getFuture() { return promise_.getFuture(); }
+
+ protected:
+  virtual void onFinished() {
+    if (counters_) {
+      stats::StatsManager::addValue(counters_->numCalls_);
+      if (!this->result_.get_failed_parts().empty()) {
+        stats::StatsManager::addValue(counters_->numErrors_);
+      }
     }
 
-protected:
-    virtual void onFinished() {
-        if (counters_) {
-            stats::StatsManager::addValue(counters_->numCalls_);
-            if (!this->result_.get_failed_parts().empty()) {
-                stats::StatsManager::addValue(counters_->numErrors_);
-            }
-        }
+    this->result_.set_latency_in_us(this->duration_.elapsedInUSec());
+    this->result_.set_failed_parts(this->codes_);
+    this->resp_.set_result(std::move(this->result_));
+    this->promise_.setValue(std::move(this->resp_));
 
-        this->result_.set_latency_in_us(this->duration_.elapsedInUSec());
-        this->result_.set_failed_parts(this->codes_);
-        this->resp_.set_result(std::move(this->result_));
-        this->promise_.setValue(std::move(this->resp_));
-
-        if (counters_) {
-            stats::StatsManager::addValue(counters_->latency_, this->duration_.elapsedInUSec());
-        }
-
-        delete this;
+    if (counters_) {
+      stats::StatsManager::addValue(counters_->latency_, this->duration_.elapsedInUSec());
     }
 
-    nebula::cpp2::ErrorCode getSpaceVidLen(GraphSpaceID spaceId) {
-        auto len = this->env_->schemaMan_->getSpaceVidLen(spaceId);
-        if (!len.ok()) {
-            return nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND;
-        }
-        spaceVidLen_ = len.value();
+    delete this;
+  }
 
-        auto vIdType = this->env_->schemaMan_->getSpaceVidType(spaceId);
-        if (!vIdType.ok()) {
-            return nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND;
-        }
-        isIntId_ = (vIdType.value() == meta::cpp2::PropertyType::INT64);
-
-        return nebula::cpp2::ErrorCode::SUCCEEDED;
+  nebula::cpp2::ErrorCode getSpaceVidLen(GraphSpaceID spaceId) {
+    auto len = this->env_->schemaMan_->getSpaceVidLen(spaceId);
+    if (!len.ok()) {
+      return nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND;
     }
+    spaceVidLen_ = len.value();
 
-    void doPut(GraphSpaceID spaceId, PartitionID partId, std::vector<kvstore::KV>&& data);
+    auto vIdType = this->env_->schemaMan_->getSpaceVidType(spaceId);
+    if (!vIdType.ok()) {
+      return nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND;
+    }
+    isIntId_ = (vIdType.value() == meta::cpp2::PropertyType::INT64);
 
-    nebula::cpp2::ErrorCode
-    doSyncPut(GraphSpaceID spaceId,
-              PartitionID partId,
-              std::vector<kvstore::KV>&& data);
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  }
 
-    void doRemove(GraphSpaceID spaceId,
-                  PartitionID partId,
-                  std::vector<std::string>&& keys);
+  void doPut(GraphSpaceID spaceId, PartitionID partId, std::vector<kvstore::KV>&& data);
 
-    void doRemoveRange(GraphSpaceID spaceId,
-                       PartitionID partId,
-                       const std::string& start,
-                       const std::string& end);
+  nebula::cpp2::ErrorCode doSyncPut(GraphSpaceID spaceId,
+                                    PartitionID partId,
+                                    std::vector<kvstore::KV>&& data);
 
-    nebula::cpp2::ErrorCode writeResultTo(WriteResult code, bool isEdge);
+  void doRemove(GraphSpaceID spaceId, PartitionID partId, std::vector<std::string>&& keys);
 
-    nebula::meta::cpp2::ColumnDef columnDef(std::string name,
-                                            nebula::meta::cpp2::PropertyType type);
-
-    void pushResultCode(nebula::cpp2::ErrorCode code,
-                        PartitionID partId,
-                        HostAddr leader = HostAddr("", 0));
-
-    void handleErrorCode(nebula::cpp2::ErrorCode code,
-                         GraphSpaceID spaceId,
-                         PartitionID partId);
-
-    void handleLeaderChanged(GraphSpaceID spaceId, PartitionID partId);
-
-    void handleAsync(GraphSpaceID spaceId,
+  void doRemoveRange(GraphSpaceID spaceId,
                      PartitionID partId,
-                     nebula::cpp2::ErrorCode code);
+                     const std::string& start,
+                     const std::string& end);
 
-    StatusOr<std::string> encodeRowVal(const meta::NebulaSchemaProvider* schema,
-                                       const std::vector<std::string>& propNames,
-                                       const std::vector<Value>& props,
-                                       WriteResult& wRet);
+  nebula::cpp2::ErrorCode writeResultTo(WriteResult code, bool isEdge);
 
-protected:
-    StorageEnv*                                     env_{nullptr};
-    const ProcessorCounters*                        counters_;
+  nebula::meta::cpp2::ColumnDef columnDef(std::string name, nebula::meta::cpp2::PropertyType type);
 
-    RESP                                            resp_;
-    folly::Promise<RESP>                            promise_;
-    cpp2::ResponseCommon                            result_;
+  void pushResultCode(nebula::cpp2::ErrorCode code,
+                      PartitionID partId,
+                      HostAddr leader = HostAddr("", 0));
 
-    time::Duration                                  duration_;
-    std::vector<cpp2::PartitionResult>              codes_;
-    std::mutex                                      lock_;
-    int32_t                                         callingNum_{0};
-    int32_t                                         spaceVidLen_;
-    bool                                            isIntId_;
+  void handleErrorCode(nebula::cpp2::ErrorCode code, GraphSpaceID spaceId, PartitionID partId);
+
+  void handleLeaderChanged(GraphSpaceID spaceId, PartitionID partId);
+
+  void handleAsync(GraphSpaceID spaceId, PartitionID partId, nebula::cpp2::ErrorCode code);
+
+  StatusOr<std::string> encodeRowVal(const meta::NebulaSchemaProvider* schema,
+                                     const std::vector<std::string>& propNames,
+                                     const std::vector<Value>& props,
+                                     WriteResult& wRet);
+
+ protected:
+  StorageEnv* env_{nullptr};
+  const ProcessorCounters* counters_;
+
+  RESP resp_;
+  folly::Promise<RESP> promise_;
+  cpp2::ResponseCommon result_;
+
+  time::Duration duration_;
+  std::vector<cpp2::PartitionResult> codes_;
+  std::mutex lock_;
+  int32_t callingNum_{0};
+  int32_t spaceVidLen_;
+  bool isIntId_;
 };
 
 }  // namespace storage

@@ -13,20 +13,19 @@ namespace nebula {
 namespace meta {
 
 class GetTagIndexProcessor : public BaseProcessor<cpp2::GetTagIndexResp> {
-public:
-    static GetTagIndexProcessor* instance(kvstore::KVStore* kvstore) {
-        return new GetTagIndexProcessor(kvstore);
-    }
+ public:
+  static GetTagIndexProcessor* instance(kvstore::KVStore* kvstore) {
+    return new GetTagIndexProcessor(kvstore);
+  }
 
-    void process(const cpp2::GetTagIndexReq& req);
+  void process(const cpp2::GetTagIndexReq& req);
 
-private:
-    explicit GetTagIndexProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::GetTagIndexResp>(kvstore) {}
+ private:
+  explicit GetTagIndexProcessor(kvstore::KVStore* kvstore)
+      : BaseProcessor<cpp2::GetTagIndexResp>(kvstore) {}
 };
 
 }  // namespace meta
 }  // namespace nebula
 
 #endif  // META_GETTAGINDEXPROCESSOR_H
-

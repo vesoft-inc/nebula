@@ -8,34 +8,33 @@
 #define KVSTORE_SNAPSHOTMANAGERIMPL_H_
 
 #include "common/base/Base.h"
-#include "kvstore/raftex/SnapshotManager.h"
 #include "kvstore/KVStore.h"
+#include "kvstore/raftex/SnapshotManager.h"
 
 namespace nebula {
 namespace kvstore {
 
 class SnapshotManagerImpl : public raftex::SnapshotManager {
-public:
-    explicit SnapshotManagerImpl(KVStore* kv) : store_(kv) {}
+ public:
+  explicit SnapshotManagerImpl(KVStore* kv) : store_(kv) {}
 
-    void accessAllRowsInSnapshot(GraphSpaceID spaceId,
-                                 PartitionID partId,
-                                 raftex::SnapshotCallback cb) override;
+  void accessAllRowsInSnapshot(GraphSpaceID spaceId,
+                               PartitionID partId,
+                               raftex::SnapshotCallback cb) override;
 
-private:
-    bool accessTable(GraphSpaceID spaceId,
-                     PartitionID partId,
-                     const std::string& prefix,
-                     raftex::SnapshotCallback& cb,
-                     std::vector<std::string>& data,
-                     int64_t& totalCount,
-                     int64_t& totalSize);
+ private:
+  bool accessTable(GraphSpaceID spaceId,
+                   PartitionID partId,
+                   const std::string& prefix,
+                   raftex::SnapshotCallback& cb,
+                   std::vector<std::string>& data,
+                   int64_t& totalCount,
+                   int64_t& totalSize);
 
-    KVStore* store_;
+  KVStore* store_;
 };
 
 }  // namespace kvstore
 }  // namespace nebula
 
 #endif  // KVSTORE_SNAPSHOTMANAGERIMPL_H_
-

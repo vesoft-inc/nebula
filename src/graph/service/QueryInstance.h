@@ -11,8 +11,8 @@
 #include "common/cpp/helpers.h"
 #include "graph/context/QueryContext.h"
 #include "graph/optimizer/Optimizer.h"
-#include "parser/GQLParser.h"
 #include "graph/scheduler/Scheduler.h"
+#include "parser/GQLParser.h"
 
 /**
  * QueryInstance coordinates the execution process,
@@ -24,44 +24,43 @@ namespace nebula {
 namespace graph {
 
 class QueryInstance final : public cpp::NonCopyable, public cpp::NonMovable {
-public:
-    explicit QueryInstance(std::unique_ptr<QueryContext> qctx, opt::Optimizer* optimizer);
-    ~QueryInstance() = default;
+ public:
+  explicit QueryInstance(std::unique_ptr<QueryContext> qctx, opt::Optimizer* optimizer);
+  ~QueryInstance() = default;
 
-    void execute();
+  void execute();
 
-    QueryContext* qctx() const {
-        return qctx_.get();
-    }
+  QueryContext* qctx() const { return qctx_.get(); }
 
-private:
-    /**
-     * If the whole execution was done, `onFinish' would be invoked.
-     * All `onFinish' should do is to ask `executor_' to fill the `qctx()->rctx()->resp()',
-     * which in turn asks the last sub-executor to do the actual job.
-     */
-    void onFinish();
+ private:
+  /**
+   * If the whole execution was done, `onFinish' would be invoked.
+   * All `onFinish' should do is to ask `executor_' to fill the
+   * `qctx()->rctx()->resp()', which in turn asks the last sub-executor to do
+   * the actual job.
+   */
+  void onFinish();
 
-    /**
-     * If any error occurred during the execution, `onError' should
-     * be invoked with a status to indicate the reason.
-     */
-    void onError(Status);
+  /**
+   * If any error occurred during the execution, `onError' should
+   * be invoked with a status to indicate the reason.
+   */
+  void onError(Status);
 
-    Status validateAndOptimize();
-    // return true if continue to execute
-    bool explainOrContinue();
-    void addSlowQueryStats(uint64_t latency) const;
-    void fillRespData(ExecutionResponse* resp);
-    Status findBestPlan();
+  Status validateAndOptimize();
+  // return true if continue to execute
+  bool explainOrContinue();
+  void addSlowQueryStats(uint64_t latency) const;
+  void fillRespData(ExecutionResponse* resp);
+  Status findBestPlan();
 
-    std::unique_ptr<Sentence>                   sentence_;
-    std::unique_ptr<QueryContext>               qctx_;
-    std::unique_ptr<Scheduler>                  scheduler_;
-    opt::Optimizer*                             optimizer_{nullptr};
+  std::unique_ptr<Sentence> sentence_;
+  std::unique_ptr<QueryContext> qctx_;
+  std::unique_ptr<Scheduler> scheduler_;
+  opt::Optimizer* optimizer_{nullptr};
 };
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula
 
 #endif  // GRAPH_QueryInstance_H_

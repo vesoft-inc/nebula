@@ -13,20 +13,19 @@ namespace nebula {
 namespace meta {
 
 class ListEdgeIndexesProcessor : public BaseProcessor<cpp2::ListEdgeIndexesResp> {
-public:
-    static ListEdgeIndexesProcessor* instance(kvstore::KVStore* kvstore) {
-        return new ListEdgeIndexesProcessor(kvstore);
-    }
+ public:
+  static ListEdgeIndexesProcessor* instance(kvstore::KVStore* kvstore) {
+    return new ListEdgeIndexesProcessor(kvstore);
+  }
 
-    void process(const cpp2::ListEdgeIndexesReq& req);
+  void process(const cpp2::ListEdgeIndexesReq& req);
 
-private:
-    explicit ListEdgeIndexesProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::ListEdgeIndexesResp>(kvstore) {}
+ private:
+  explicit ListEdgeIndexesProcessor(kvstore::KVStore* kvstore)
+      : BaseProcessor<cpp2::ListEdgeIndexesResp>(kvstore) {}
 };
 
 }  // namespace meta
 }  // namespace nebula
 
 #endif  // META_LISTEDGEINDEXESPROCESSOR_H
-

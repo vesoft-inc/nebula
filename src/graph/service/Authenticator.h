@@ -13,14 +13,13 @@ namespace nebula {
 namespace graph {
 
 class Authenticator {
-public:
-    virtual ~Authenticator() {}
+ public:
+  virtual ~Authenticator() {}
 
-    virtual bool MUST_USE_RESULT auth(const std::string &user,
-                                      const std::string &password) = 0;
+  virtual bool MUST_USE_RESULT auth(const std::string &user, const std::string &password) = 0;
 };
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula
 
 #endif  // GRAPH_AUTHENTICATOR_H_

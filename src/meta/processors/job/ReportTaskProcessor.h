@@ -12,16 +12,16 @@
 namespace nebula {
 namespace meta {
 class ReportTaskProcessor : public BaseProcessor<cpp2::ExecResp> {
-public:
-    static ReportTaskProcessor* instance(kvstore::KVStore* kvstore) {
-        return new ReportTaskProcessor(kvstore);
-    }
+ public:
+  static ReportTaskProcessor* instance(kvstore::KVStore* kvstore) {
+    return new ReportTaskProcessor(kvstore);
+  }
 
-    void process(const cpp2::ReportTaskReq& req);
+  void process(const cpp2::ReportTaskReq& req);
 
-protected:
-    explicit ReportTaskProcessor(kvstore::KVStore* kvstore)
-        : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+ protected:
+  explicit ReportTaskProcessor(kvstore::KVStore* kvstore)
+      : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 };
 
 }  // namespace meta

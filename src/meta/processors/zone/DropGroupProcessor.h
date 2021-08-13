@@ -13,18 +13,17 @@ namespace nebula {
 namespace meta {
 
 class DropGroupProcessor : public BaseProcessor<cpp2::ExecResp> {
-public:
-    static DropGroupProcessor* instance(kvstore::KVStore* kvstore) {
-        return new DropGroupProcessor(kvstore);
-    }
+ public:
+  static DropGroupProcessor* instance(kvstore::KVStore* kvstore) {
+    return new DropGroupProcessor(kvstore);
+  }
 
-    void process(const cpp2::DropGroupReq& req);
+  void process(const cpp2::DropGroupReq& req);
 
-private:
-    explicit DropGroupProcessor(kvstore::KVStore* kvstore)
-        : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+ private:
+  explicit DropGroupProcessor(kvstore::KVStore* kvstore) : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 
-    nebula::cpp2::ErrorCode checkSpaceDependency(const std::string& groupName);
+  nebula::cpp2::ErrorCode checkSpaceDependency(const std::string& groupName);
 };
 
 }  // namespace meta

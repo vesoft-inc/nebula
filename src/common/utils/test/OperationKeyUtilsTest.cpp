@@ -5,29 +5,30 @@
  */
 
 #include <gtest/gtest.h>
+
 #include "common/utils/OperationKeyUtils.h"
 
 namespace nebula {
 
 TEST(OperationKeyUtilsTest, ModifyKeyTest) {
-    PartitionID part = 1;
-    auto opKey = OperationKeyUtils::modifyOperationKey(part, "modify key");
-    ASSERT_TRUE(OperationKeyUtils::isModifyOperation(opKey));
-    ASSERT_EQ(OperationKeyUtils::getOperationKey(opKey), "modify key");
+  PartitionID part = 1;
+  auto opKey = OperationKeyUtils::modifyOperationKey(part, "modify key");
+  ASSERT_TRUE(OperationKeyUtils::isModifyOperation(opKey));
+  ASSERT_EQ(OperationKeyUtils::getOperationKey(opKey), "modify key");
 }
 
 TEST(OperationKeyUtilsTest, DeleteKeyTest) {
-    PartitionID part = 1;
-    auto opKey = OperationKeyUtils::deleteOperationKey(part);
-    ASSERT_TRUE(OperationKeyUtils::isDeleteOperation(opKey));
+  PartitionID part = 1;
+  auto opKey = OperationKeyUtils::deleteOperationKey(part);
+  ASSERT_TRUE(OperationKeyUtils::isDeleteOperation(opKey));
 }
 
 }  // namespace nebula
 
 int main(int argc, char** argv) {
-    testing::InitGoogleTest(&argc, argv);
-    folly::init(&argc, &argv, true);
-    google::SetStderrLogging(google::INFO);
+  testing::InitGoogleTest(&argc, argv);
+  folly::init(&argc, &argv, true);
+  google::SetStderrLogging(google::INFO);
 
-    return RUN_ALL_TESTS();
+  return RUN_ALL_TESTS();
 }

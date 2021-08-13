@@ -9,27 +9,24 @@
 
 #include "common/base/Base.h"
 #include "common/thrift/ThriftTypes.h"
+#include "interface/gen-cpp2/meta_types.h"
 #include "kvstore/NebulaStore.h"
 #include "storage/BaseProcessor.h"
 #include "storage/StorageFlags.h"
-#include "interface/gen-cpp2/meta_types.h"
 
 namespace nebula {
 namespace storage {
 
 class AdminTaskProcessor : public BaseProcessor<cpp2::AdminExecResp> {
-public:
-    static AdminTaskProcessor* instance(StorageEnv* env) {
-        return new AdminTaskProcessor(env);
-    }
+ public:
+  static AdminTaskProcessor* instance(StorageEnv* env) { return new AdminTaskProcessor(env); }
 
-    void process(const cpp2::AddAdminTaskRequest& req);
+  void process(const cpp2::AddAdminTaskRequest& req);
 
-private:
-    explicit AdminTaskProcessor(StorageEnv* env)
-            : BaseProcessor<cpp2::AdminExecResp>(env) {}
+ private:
+  explicit AdminTaskProcessor(StorageEnv* env) : BaseProcessor<cpp2::AdminExecResp>(env) {}
 
-    void onProcessFinished(nebula::meta::cpp2::StatisItem& result);
+  void onProcessFinished(nebula::meta::cpp2::StatisItem& result);
 };
 
 }  // namespace storage

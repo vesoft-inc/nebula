@@ -15,14 +15,14 @@ namespace graph {
  * The UnwindClausePlanner was designed to generate plan for unwind clause
  */
 class UnwindClausePlanner final : public CypherClausePlanner {
-public:
-    UnwindClausePlanner() = default;
+ public:
+  UnwindClausePlanner() = default;
 
-    StatusOr<SubPlan> transform(CypherClauseContextBase* clauseCtx) override;
+  StatusOr<SubPlan> transform(CypherClauseContextBase* clauseCtx) override;
 
-    Status buildUnwind(UnwindClauseContext* uctx, SubPlan& subPlan);
+  Status buildUnwind(UnwindClauseContext* uctx, SubPlan& subPlan);
 };
 
-}   // namespace graph
-}   // namespace nebula
-#endif   // GRAPH_PLANNER_MATCH_UNWINDCLAUSEPLANNER_H_
+}  // namespace graph
+}  // namespace nebula
+#endif  // GRAPH_PLANNER_MATCH_UNWINDCLAUSEPLANNER_H_
