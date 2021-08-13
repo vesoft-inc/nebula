@@ -9,11 +9,8 @@ on:
     paths-ignore:
       - 'docs/**'
       - 'LICENSES/**'
-      - 'CODE_OF_CONDUCT.md'
-      - 'CONTRIBUTING.md'
       - 'LICENSE'
-      - 'README-CN.md'
-      - 'README.md'
+      - '**.md'
 
 defaults:
   run:
