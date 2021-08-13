@@ -6,6 +6,6 @@ In order to better show the test results, it is recommended to enable the addres
 
 # Running fuzz tests locally
 
-``` shell
-    ./parser_fuzzer -dict=nebula.dict
+```shell
+$ ./parser_fuzzer -dict=nebula.dict
 ```
