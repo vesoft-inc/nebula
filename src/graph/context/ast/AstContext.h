@@ -14,9 +14,9 @@ namespace nebula {
 namespace graph {
 
 struct AstContext {
-    QueryContext*   qctx;
-    Sentence*       sentence;
-    SpaceInfo       space;
+  QueryContext* qctx;
+  Sentence* sentence;
+  SpaceInfo space;
 };
 
 }  // namespace graph

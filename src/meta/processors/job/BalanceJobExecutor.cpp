@@ -4,8 +4,9 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "meta/MetaServiceUtils.h"
 #include "meta/processors/job/BalanceJobExecutor.h"
+
+#include "meta/MetaServiceUtils.h"
 
 namespace nebula {
 namespace meta {
@@ -16,25 +17,18 @@ BalanceJobExecutor::BalanceJobExecutor(JobID jobId,
                                        const std::vector<std::string>& paras)
     : MetaJobExecutor(jobId, kvstore, adminClient, paras) {}
 
+bool BalanceJobExecutor::check() { return false; }
 
-bool BalanceJobExecutor::check() {
-    return false;
-}
+nebula::cpp2::ErrorCode BalanceJobExecutor::prepare() { return nebula::cpp2::ErrorCode::SUCCEEDED; }
 
-nebula::cpp2::ErrorCode BalanceJobExecutor::prepare() {
-    return nebula::cpp2::ErrorCode::SUCCEEDED;
-}
+nebula::cpp2::ErrorCode BalanceJobExecutor::stop() { return nebula::cpp2::ErrorCode::SUCCEEDED; }
 
-nebula::cpp2::ErrorCode BalanceJobExecutor::stop() {
-    return nebula::cpp2::ErrorCode::SUCCEEDED;
-}
-
-folly::Future<Status>
-BalanceJobExecutor::executeInternal(HostAddr&& address, std::vector<PartitionID>&& parts) {
-    UNUSED(address); UNUSED(parts);
-    return Status::OK();
+folly::Future<Status> BalanceJobExecutor::executeInternal(HostAddr&& address,
+                                                          std::vector<PartitionID>&& parts) {
+  UNUSED(address);
+  UNUSED(parts);
+  return Status::OK();
 }
 
 }  // namespace meta
 }  // namespace nebula
-

@@ -17,8 +17,14 @@ FlushJobExecutor::FlushJobExecutor(JobID jobId,
 
 folly::Future<Status> FlushJobExecutor::executeInternal(HostAddr&& address,
                                                         std::vector<PartitionID>&& parts) {
-    return adminClient_->addTask(cpp2::AdminCmd::FLUSH, jobId_, taskId_++, space_,
-                                 {std::move(address)}, {}, std::move(parts), concurrency_);
+  return adminClient_->addTask(cpp2::AdminCmd::FLUSH,
+                               jobId_,
+                               taskId_++,
+                               space_,
+                               {std::move(address)},
+                               {},
+                               std::move(parts),
+                               concurrency_);
 }
 
 }  // namespace meta

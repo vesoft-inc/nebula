@@ -14,13 +14,13 @@ namespace nebula {
 namespace storage {
 
 class StorageHttpStatsHandler : public nebula::GetStatsHandler {
-public:
-    StorageHttpStatsHandler() = default;
-    void onError(proxygen::ProxygenError err) noexcept override;
-    folly::dynamic getStats() const override;
+ public:
+  StorageHttpStatsHandler() = default;
+  void onError(proxygen::ProxygenError err) noexcept override;
+  folly::dynamic getStats() const override;
 
-private:
-    bool statFiltered(const std::string& stat) const;
+ private:
+  bool statFiltered(const std::string& stat) const;
 };
 
 }  // namespace storage

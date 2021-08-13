@@ -13,27 +13,26 @@ namespace nebula {
 namespace graph {
 
 class JoinExecutor : public Executor {
-public:
-    JoinExecutor(const std::string& name, const PlanNode* node, QueryContext* qctx)
-        : Executor(name, node, qctx) {}
+ public:
+  JoinExecutor(const std::string& name, const PlanNode* node, QueryContext* qctx)
+      : Executor(name, node, qctx) {}
 
-    Status checkInputDataSets();
+  Status checkInputDataSets();
 
-    void buildHashTable(const std::vector<Expression*>& hashKeys, Iterator* iter);
+  void buildHashTable(const std::vector<Expression*>& hashKeys, Iterator* iter);
 
-protected:
-    void buildHashTable(const std::vector<Expression*>& hashKeys,
-                        Iterator* iter,
-                        std::unordered_map<List, std::vector<const Row*>>& hashTable) const;
+ protected:
+  void buildHashTable(const std::vector<Expression*>& hashKeys,
+                      Iterator* iter,
+                      std::unordered_map<List, std::vector<const Row*>>& hashTable) const;
 
-    void buildSingleKeyHashTable(
-        Expression* hashKey,
-        Iterator* iter,
-        std::unordered_map<Value, std::vector<const Row*>>& hashTable) const;
+  void buildSingleKeyHashTable(Expression* hashKey,
+                               Iterator* iter,
+                               std::unordered_map<Value, std::vector<const Row*>>& hashTable) const;
 
-    std::unique_ptr<Iterator>                          lhsIter_;
-    std::unique_ptr<Iterator>                          rhsIter_;
-    size_t                                             colSize_{0};
+  std::unique_ptr<Iterator> lhsIter_;
+  std::unique_ptr<Iterator> rhsIter_;
+  size_t colSize_{0};
 };
 }  // namespace graph
 }  // namespace nebula

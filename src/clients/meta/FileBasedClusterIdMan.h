@@ -11,7 +11,6 @@
 #include "common/fs/FileUtils.h"
 #include "common/meta/ClusterIdManBase.h"
 
-
 namespace nebula {
 namespace meta {
 
@@ -19,10 +18,10 @@ namespace meta {
  * This class manages clusterId used for meta server and storage server.
  * */
 class FileBasedClusterIdMan : public ClusterIdManBase {
-public:
-    static bool persistInFile(ClusterID clusterId, const std::string& filename);
+ public:
+  static bool persistInFile(ClusterID clusterId, const std::string& filename);
 
-    static ClusterID getClusterIdFromFile(const std::string& filename);
+  static ClusterID getClusterIdFromFile(const std::string& filename);
 };
 
 }  // namespace meta

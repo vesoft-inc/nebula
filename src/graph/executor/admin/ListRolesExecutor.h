@@ -13,17 +13,17 @@ namespace nebula {
 namespace graph {
 
 class ListRolesExecutor final : public Executor {
-public:
-    ListRolesExecutor(const PlanNode *node, QueryContext *qctx)
-        : Executor("ListRolesExecutor", node, qctx) {}
+ public:
+  ListRolesExecutor(const PlanNode *node, QueryContext *qctx)
+      : Executor("ListRolesExecutor", node, qctx) {}
 
-    folly::Future<Status> execute() override;
+  folly::Future<Status> execute() override;
 
-private:
-    folly::Future<Status> listRoles();
+ private:
+  folly::Future<Status> listRoles();
 };
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula
 
 #endif  // GRAPH_EXECUTOR_ADMIN_LISTROLESEXECUTOR_H_

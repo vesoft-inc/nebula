@@ -5,30 +5,30 @@
  */
 
 #include "graph/executor/admin/DownloadExecutor.h"
-#include "graph/planner/plan/Admin.h"
+
 #include "graph/context/QueryContext.h"
+#include "graph/planner/plan/Admin.h"
 
 namespace nebula {
 namespace graph {
 
 folly::Future<Status> DownloadExecutor::execute() {
-    SCOPED_TIMER(&execTime_);
-    auto *dNode = asNode<Download>(node());
-    auto spaceId = qctx()->rctx()->session()->space().id;
-    return qctx()->getMetaClient()->download(dNode->getHdfsHost(),
-                                             dNode->getHdfsPort(),
-                                             dNode->getHdfsPath(),
-                                             spaceId)
-        .via(runner())
-        .thenValue([this](StatusOr<bool> resp) {
-            SCOPED_TIMER(&execTime_);
-            NG_RETURN_IF_ERROR(resp);
-            if (!resp.value()) {
-                return Status::Error("Download failed!");
-            }
-            return Status::OK();
-        });
+  SCOPED_TIMER(&execTime_);
+  auto *dNode = asNode<Download>(node());
+  auto spaceId = qctx()->rctx()->session()->space().id;
+  return qctx()
+      ->getMetaClient()
+      ->download(dNode->getHdfsHost(), dNode->getHdfsPort(), dNode->getHdfsPath(), spaceId)
+      .via(runner())
+      .thenValue([this](StatusOr<bool> resp) {
+        SCOPED_TIMER(&execTime_);
+        NG_RETURN_IF_ERROR(resp);
+        if (!resp.value()) {
+          return Status::Error("Download failed!");
+        }
+        return Status::OK();
+      });
 }
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula

@@ -13,16 +13,16 @@ namespace nebula {
 namespace meta {
 
 class ListGroupsProcessor : public BaseProcessor<cpp2::ListGroupsResp> {
-public:
-    static ListGroupsProcessor* instance(kvstore::KVStore* kvstore) {
-        return new ListGroupsProcessor(kvstore);
-    }
+ public:
+  static ListGroupsProcessor* instance(kvstore::KVStore* kvstore) {
+    return new ListGroupsProcessor(kvstore);
+  }
 
-    void process(const cpp2::ListGroupsReq& req);
+  void process(const cpp2::ListGroupsReq& req);
 
-private:
-    explicit ListGroupsProcessor(kvstore::KVStore* kvstore)
-        : BaseProcessor<cpp2::ListGroupsResp>(kvstore) {}
+ private:
+  explicit ListGroupsProcessor(kvstore::KVStore* kvstore)
+      : BaseProcessor<cpp2::ListGroupsResp>(kvstore) {}
 };
 
 }  // namespace meta

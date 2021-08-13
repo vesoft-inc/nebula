@@ -5,23 +5,24 @@
  */
 
 #include "storage/admin/StopAdminTaskProcessor.h"
-#include "storage/admin/AdminTaskManager.h"
+
 #include "interface/gen-cpp2/common_types.h"
+#include "storage/admin/AdminTaskManager.h"
 
 namespace nebula {
 namespace storage {
 
 void StopAdminTaskProcessor::process(const cpp2::StopAdminTaskRequest& req) {
-    auto taskManager = AdminTaskManager::instance();
-    auto rc = taskManager->cancelJob(req.get_job_id());
+  auto taskManager = AdminTaskManager::instance();
+  auto rc = taskManager->cancelJob(req.get_job_id());
 
-    if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
-        cpp2::PartitionResult thriftRet;
-        thriftRet.set_code(rc);
-        codes_.emplace_back(std::move(thriftRet));
-    }
+  if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    cpp2::PartitionResult thriftRet;
+    thriftRet.set_code(rc);
+    codes_.emplace_back(std::move(thriftRet));
+  }
 
-    onFinished();
+  onFinished();
 }
 
 }  // namespace storage

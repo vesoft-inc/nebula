@@ -15,12 +15,12 @@ namespace graph {
  * The ReturnClausePlanner was designed to generated plan for return clause.
  */
 class ReturnClausePlanner final : public CypherClausePlanner {
-public:
-    ReturnClausePlanner() = default;
+ public:
+  ReturnClausePlanner() = default;
 
-    StatusOr<SubPlan> transform(CypherClauseContextBase* clauseCtx) override;
+  StatusOr<SubPlan> transform(CypherClauseContextBase* clauseCtx) override;
 
-    Status buildReturn(ReturnClauseContext* rctx, SubPlan& subPlan);
+  Status buildReturn(ReturnClauseContext* rctx, SubPlan& subPlan);
 };
 }  // namespace graph
 }  // namespace nebula

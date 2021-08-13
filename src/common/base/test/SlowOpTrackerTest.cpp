@@ -4,26 +4,26 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include <gtest/gtest.h>
+
 #include "common/base/Base.h"
 #include "common/base/SlowOpTracker.h"
-#include <gtest/gtest.h>
 
 namespace nebula {
 
 TEST(SlowOpTrackerTest, SimpleTest) {
-    SlowOpTracker tracker;
-    usleep(500000);
-    CHECK(tracker.slow());
-    tracker.output("PREFIX", "This is a prefix msg");
+  SlowOpTracker tracker;
+  usleep(500000);
+  CHECK(tracker.slow());
+  tracker.output("PREFIX", "This is a prefix msg");
 }
 
 }  // namespace nebula
 
-
 int main(int argc, char** argv) {
-    testing::InitGoogleTest(&argc, argv);
-    folly::init(&argc, &argv, true);
-    google::SetStderrLogging(google::INFO);
+  testing::InitGoogleTest(&argc, argv);
+  folly::init(&argc, &argv, true);
+  google::SetStderrLogging(google::INFO);
 
-    return RUN_ALL_TESTS();
+  return RUN_ALL_TESTS();
 }

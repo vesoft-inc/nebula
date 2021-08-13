@@ -7,10 +7,25 @@ COPY . /home/nebula/BUILD
 RUN cd /home/nebula/BUILD/package \
   && ./package.sh -v $(git rev-parse --short HEAD) -n OFF -b ${BRANCH}
 
+FROM centos:7 as graphd
+
+COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-common.rpm /usr/local/nebula/nebula-common.rpm
+COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-graph.rpm /usr/local/nebula/nebula-graphd.rpm
+
+WORKDIR /usr/local/nebula
+
+RUN rpm -ivh *.rpm \
+    && mkdir -p ./{logs,data,pids} \
+    && rm -rf *.rpm
+
+EXPOSE 9669 19669 19670
+
+ENTRYPOINT ["/usr/local/nebula/bin/nebula-graphd", "--flagfile=/usr/local/nebula/etc/nebula-graphd.conf", "--daemonize=false"]
+
 FROM centos:7 as metad
 
-COPY --from=builder /home/nebula/BUILD/build/cpack_output/nebula-*-common.rpm /usr/local/nebula/nebula-common.rpm
-COPY --from=builder /home/nebula/BUILD/build/cpack_output/nebula-*-meta.rpm /usr/local/nebula/nebula-metad.rpm
+COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-common.rpm /usr/local/nebula/nebula-common.rpm
+COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-meta.rpm /usr/local/nebula/nebula-metad.rpm
 
 WORKDIR /usr/local/nebula
 
@@ -24,8 +39,8 @@ ENTRYPOINT ["/usr/local/nebula/bin/nebula-metad", "--flagfile=/usr/local/nebula/
 
 FROM centos:7 as storaged
 
-COPY --from=builder /home/nebula/BUILD/build/cpack_output/nebula-*-common.rpm /usr/local/nebula/nebula-common.rpm
-COPY --from=builder /home/nebula/BUILD/build/cpack_output/nebula-*-storage.rpm /usr/local/nebula/nebula-storaged.rpm
+COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-common.rpm /usr/local/nebula/nebula-common.rpm
+COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-storage.rpm /usr/local/nebula/nebula-storaged.rpm
 
 WORKDIR /usr/local/nebula
 
@@ -39,7 +54,7 @@ ENTRYPOINT ["/usr/local/nebula/bin/nebula-storaged", "--flagfile=/usr/local/nebu
 
 FROM centos:7 as tools
 
-COPY --from=builder /home/nebula/BUILD/build/cpack_output/nebula-*-tool.rpm /usr/local/nebula/nebula-tool.rpm
+COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-tool.rpm /usr/local/nebula/nebula-tool.rpm
 
 WORKDIR /usr/local/nebula
 

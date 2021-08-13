@@ -14,6 +14,6 @@ namespace nebula {
 std::string gitInfoSha();
 std::string versionString(bool verbose = true);
 
-}   // namespace nebula
+}  // namespace nebula
 
-#endif   // VERSION_VERSION_H_
+#endif  // VERSION_VERSION_H_

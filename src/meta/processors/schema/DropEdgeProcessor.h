@@ -13,23 +13,21 @@ namespace nebula {
 namespace meta {
 
 class DropEdgeProcessor : public BaseProcessor<cpp2::ExecResp> {
-public:
-    static DropEdgeProcessor* instance(kvstore::KVStore* kvstore) {
-        return new DropEdgeProcessor(kvstore);
-    }
+ public:
+  static DropEdgeProcessor* instance(kvstore::KVStore* kvstore) {
+    return new DropEdgeProcessor(kvstore);
+  }
 
-    void process(const cpp2::DropEdgeReq& req);
+  void process(const cpp2::DropEdgeReq& req);
 
-private:
-    explicit DropEdgeProcessor(kvstore::KVStore* kvstore)
-        : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+ private:
+  explicit DropEdgeProcessor(kvstore::KVStore* kvstore) : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 
-    ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>>
-    getEdgeKeys(GraphSpaceID id, EdgeType edgeType);
+  ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>> getEdgeKeys(GraphSpaceID id,
+                                                                         EdgeType edgeType);
 };
 
 }  // namespace meta
 }  // namespace nebula
 
 #endif  // META_DROPEDGEPROCESSOR_H_
-

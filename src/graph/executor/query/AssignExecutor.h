@@ -13,14 +13,13 @@ namespace nebula {
 namespace graph {
 
 class AssignExecutor final : public Executor {
-public:
-    AssignExecutor(const PlanNode *node, QueryContext *qctx)
-        : Executor("AssignExecutor", node, qctx) {}
+ public:
+  AssignExecutor(const PlanNode *node, QueryContext *qctx)
+      : Executor("AssignExecutor", node, qctx) {}
 
-    folly::Future<Status> execute() override;
+  folly::Future<Status> execute() override;
 };
 
-
-}   // namespace graph
-}   // namespace nebula
-#endif   // GRAPH_EXECUTOR_QUERY_ASSIGNEXECUTOR_H_
+}  // namespace graph
+}  // namespace nebula
+#endif  // GRAPH_EXECUTOR_QUERY_ASSIGNEXECUTOR_H_

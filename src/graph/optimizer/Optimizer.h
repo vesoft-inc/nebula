@@ -9,14 +9,14 @@
 
 #include <memory>
 
-#include "common/base/StatusOr.h"
 #include "common/base/Base.h"
+#include "common/base/StatusOr.h"
 
 namespace nebula {
 namespace graph {
 class PlanNode;
 class QueryContext;
-}   // namespace graph
+}  // namespace graph
 
 namespace opt {
 
@@ -26,30 +26,30 @@ class OptGroupNode;
 class RuleSet;
 
 class Optimizer final {
-public:
-    explicit Optimizer(std::vector<const RuleSet *> ruleSets);
-    ~Optimizer() = default;
+ public:
+  explicit Optimizer(std::vector<const RuleSet *> ruleSets);
+  ~Optimizer() = default;
 
-    StatusOr<const graph::PlanNode *> findBestPlan(graph::QueryContext *qctx);
+  StatusOr<const graph::PlanNode *> findBestPlan(graph::QueryContext *qctx);
 
-private:
-    StatusOr<OptGroup *> prepare(OptContext *ctx, graph::PlanNode *root);
-    Status doExploration(OptContext *octx, OptGroup *rootGroup);
+ private:
+  StatusOr<OptGroup *> prepare(OptContext *ctx, graph::PlanNode *root);
+  Status doExploration(OptContext *octx, OptGroup *rootGroup);
 
-    OptGroup *convertToGroup(OptContext *ctx,
-                             graph::PlanNode *node,
-                             std::unordered_map<int64_t, OptGroup *> *visited);
-    void addBodyToGroupNode(OptContext *ctx,
-                            const graph::PlanNode *node,
-                            OptGroupNode *gnode,
-                            std::unordered_map<int64_t, OptGroup *> *visited);
+  OptGroup *convertToGroup(OptContext *ctx,
+                           graph::PlanNode *node,
+                           std::unordered_map<int64_t, OptGroup *> *visited);
+  void addBodyToGroupNode(OptContext *ctx,
+                          const graph::PlanNode *node,
+                          OptGroupNode *gnode,
+                          std::unordered_map<int64_t, OptGroup *> *visited);
 
-    static constexpr int8_t kMaxIterationRound = 5;
+  static constexpr int8_t kMaxIterationRound = 5;
 
-    std::vector<const RuleSet *> ruleSets_;
+  std::vector<const RuleSet *> ruleSets_;
 };
 
-}   // namespace opt
-}   // namespace nebula
+}  // namespace opt
+}  // namespace nebula
 
-#endif   // GRAPH_OPTIMIZER_OPTIMIZER_H_
+#endif  // GRAPH_OPTIMIZER_OPTIMIZER_H_

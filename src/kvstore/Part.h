@@ -9,11 +9,11 @@
 
 #include "common/base/Base.h"
 #include "common/utils/NebulaKeyUtils.h"
-#include "raftex/RaftPart.h"
 #include "kvstore/Common.h"
 #include "kvstore/KVEngine.h"
 #include "kvstore/raftex/SnapshotManager.h"
 #include "kvstore/wal/FileBasedWal.h"
+#include "raftex/RaftPart.h"
 
 namespace nebula {
 namespace kvstore {
@@ -21,110 +21,101 @@ namespace kvstore {
 using RaftClient = thrift::ThriftClientManager<raftex::cpp2::RaftexServiceAsyncClient>;
 
 class Part : public raftex::RaftPart {
-    friend class SnapshotManager;
-public:
-    Part(GraphSpaceID spaceId,
-         PartitionID partId,
-         HostAddr localAddr,
-         const std::string& walPath,
-         KVEngine* engine,
-         std::shared_ptr<folly::IOThreadPoolExecutor> pool,
-         std::shared_ptr<thread::GenericThreadPool> workers,
-         std::shared_ptr<folly::Executor> handlers,
-         std::shared_ptr<raftex::SnapshotManager> snapshotMan,
-         std::shared_ptr<RaftClient> clientMan,
-         std::shared_ptr<DiskManager> diskMan);
+  friend class SnapshotManager;
 
-    virtual ~Part() {
-        LOG(INFO) << idStr_ << "~Part()";
-    }
+ public:
+  Part(GraphSpaceID spaceId,
+       PartitionID partId,
+       HostAddr localAddr,
+       const std::string& walPath,
+       KVEngine* engine,
+       std::shared_ptr<folly::IOThreadPoolExecutor> pool,
+       std::shared_ptr<thread::GenericThreadPool> workers,
+       std::shared_ptr<folly::Executor> handlers,
+       std::shared_ptr<raftex::SnapshotManager> snapshotMan,
+       std::shared_ptr<RaftClient> clientMan,
+       std::shared_ptr<DiskManager> diskMan);
 
-    KVEngine* engine() {
-        return engine_;
-    }
+  virtual ~Part() { LOG(INFO) << idStr_ << "~Part()"; }
 
-    void asyncPut(folly::StringPiece key, folly::StringPiece value, KVCallback cb);
-    void asyncMultiPut(const std::vector<KV>& keyValues, KVCallback cb);
+  KVEngine* engine() { return engine_; }
 
-    void asyncRemove(folly::StringPiece key, KVCallback cb);
-    void asyncMultiRemove(const std::vector<std::string>& keys, KVCallback cb);
-    void asyncRemoveRange(folly::StringPiece start,
-                          folly::StringPiece end,
-                          KVCallback cb);
+  void asyncPut(folly::StringPiece key, folly::StringPiece value, KVCallback cb);
+  void asyncMultiPut(const std::vector<KV>& keyValues, KVCallback cb);
 
-    void asyncAppendBatch(std::string&& batch, KVCallback cb);
+  void asyncRemove(folly::StringPiece key, KVCallback cb);
+  void asyncMultiRemove(const std::vector<std::string>& keys, KVCallback cb);
+  void asyncRemoveRange(folly::StringPiece start, folly::StringPiece end, KVCallback cb);
 
-    void asyncAtomicOp(raftex::AtomicOp op, KVCallback cb);
+  void asyncAppendBatch(std::string&& batch, KVCallback cb);
 
-    void asyncAddLearner(const HostAddr& learner, KVCallback cb);
+  void asyncAtomicOp(raftex::AtomicOp op, KVCallback cb);
 
-    void asyncTransferLeader(const HostAddr& target, KVCallback cb);
+  void asyncAddLearner(const HostAddr& learner, KVCallback cb);
 
-    void asyncAddPeer(const HostAddr& peer, KVCallback cb);
+  void asyncTransferLeader(const HostAddr& target, KVCallback cb);
 
-    void asyncRemovePeer(const HostAddr& peer, KVCallback cb);
+  void asyncAddPeer(const HostAddr& peer, KVCallback cb);
 
-    void setBlocking(bool sign);
+  void asyncRemovePeer(const HostAddr& peer, KVCallback cb);
 
-    // Sync the information committed on follower.
-    void sync(KVCallback cb);
+  void setBlocking(bool sign);
 
-    void registerNewLeaderCb(NewLeaderCallback cb) {
-        newLeaderCb_ = std::move(cb);
-    }
+  // Sync the information committed on follower.
+  void sync(KVCallback cb);
 
-    void unRegisterNewLeaderCb() {
-        newLeaderCb_ = nullptr;
-    }
+  void registerNewLeaderCb(NewLeaderCallback cb) { newLeaderCb_ = std::move(cb); }
 
-    // clean up all data about this part.
-    void resetPart() {
-        std::lock_guard<std::mutex> g(raftLock_);
-        reset();
-    }
+  void unRegisterNewLeaderCb() { newLeaderCb_ = nullptr; }
 
-private:
-    /**
-     * Methods inherited from RaftPart
-     */
-    std::pair<LogID, TermID> lastCommittedLogId() override;
+  // clean up all data about this part.
+  void resetPart() {
+    std::lock_guard<std::mutex> g(raftLock_);
+    reset();
+  }
 
-    void onLostLeadership(TermID term) override;
+ private:
+  /**
+   * Methods inherited from RaftPart
+   */
+  std::pair<LogID, TermID> lastCommittedLogId() override;
 
-    void onElected(TermID term) override;
+  void onLostLeadership(TermID term) override;
 
-    void onDiscoverNewLeader(HostAddr nLeader) override;
+  void onElected(TermID term) override;
 
-    cpp2::ErrorCode commitLogs(std::unique_ptr<LogIterator> iter, bool wait) override;
+  void onDiscoverNewLeader(HostAddr nLeader) override;
 
-    bool preProcessLog(LogID logId,
-                       TermID termId,
-                       ClusterID clusterId,
-                       const std::string& log) override;
+  cpp2::ErrorCode commitLogs(std::unique_ptr<LogIterator> iter, bool wait) override;
 
-    std::pair<int64_t, int64_t> commitSnapshot(const std::vector<std::string>& data,
-                                               LogID committedLogId,
-                                               TermID committedLogTerm,
-                                               bool finished) override;
+  bool preProcessLog(LogID logId,
+                     TermID termId,
+                     ClusterID clusterId,
+                     const std::string& log) override;
 
-    nebula::cpp2::ErrorCode
-    putCommitMsg(WriteBatch* batch, LogID committedLogId, TermID committedLogTerm);
+  std::pair<int64_t, int64_t> commitSnapshot(const std::vector<std::string>& data,
+                                             LogID committedLogId,
+                                             TermID committedLogTerm,
+                                             bool finished) override;
 
-    void cleanup() override;
+  nebula::cpp2::ErrorCode putCommitMsg(WriteBatch* batch,
+                                       LogID committedLogId,
+                                       TermID committedLogTerm);
 
-    nebula::cpp2::ErrorCode toResultCode(raftex::AppendLogResult res);
+  void cleanup() override;
 
-protected:
-    GraphSpaceID spaceId_;
-    PartitionID partId_;
-    std::string walPath_;
-    NewLeaderCallback newLeaderCb_ = nullptr;
+  nebula::cpp2::ErrorCode toResultCode(raftex::AppendLogResult res);
 
-private:
-    KVEngine* engine_ = nullptr;
+ protected:
+  GraphSpaceID spaceId_;
+  PartitionID partId_;
+  std::string walPath_;
+  NewLeaderCallback newLeaderCb_ = nullptr;
+
+ private:
+  KVEngine* engine_ = nullptr;
 };
 
 }  // namespace kvstore
 }  // namespace nebula
 #endif  // KVSTORE_PART_H_
-

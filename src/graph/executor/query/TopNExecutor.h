@@ -13,23 +13,22 @@ namespace nebula {
 namespace graph {
 
 class TopNExecutor final : public Executor {
-public:
-    TopNExecutor(const PlanNode *node, QueryContext *qctx)
-        : Executor("TopNExecutor", node, qctx) {}
+ public:
+  TopNExecutor(const PlanNode *node, QueryContext *qctx) : Executor("TopNExecutor", node, qctx) {}
 
-    folly::Future<Status> execute() override;
+  folly::Future<Status> execute() override;
 
-private:
-    template<typename U>
-    void executeTopN(Iterator *iter);
+ private:
+  template <typename U>
+  void executeTopN(Iterator *iter);
 
-    int64_t offset_;
-    int64_t maxCount_;
-    int64_t heapSize_;
-    std::function<bool(const Row&, const Row&)> comparator_;
+  int64_t offset_;
+  int64_t maxCount_;
+  int64_t heapSize_;
+  std::function<bool(const Row &, const Row &)> comparator_;
 };
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula
 
-#endif   // GRAPH_EXECUTOR_QUERY_TOPNEXECUTOR_H_
+#endif  // GRAPH_EXECUTOR_QUERY_TOPNEXECUTOR_H_

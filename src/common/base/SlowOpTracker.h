@@ -15,27 +15,26 @@ DECLARE_int64(slow_op_threshhold_ms);
 namespace nebula {
 
 class SlowOpTracker {
-public:
-    SlowOpTracker()
-        : startMs_(time::WallClock::fastNowInMilliSec()) {}
+ public:
+  SlowOpTracker() : startMs_(time::WallClock::fastNowInMilliSec()) {}
 
-    ~SlowOpTracker() = default;
+  ~SlowOpTracker() = default;
 
-    bool slow(int64_t threshhold = 0) {
-        dur_ = time::WallClock::fastNowInMilliSec() - startMs_;
-        if (dur_ < 0) {
-            dur_ = 0;
-        }
-        return threshhold > 0 ? dur_ > threshhold : dur_ > FLAGS_slow_op_threshhold_ms;
+  bool slow(int64_t threshhold = 0) {
+    dur_ = time::WallClock::fastNowInMilliSec() - startMs_;
+    if (dur_ < 0) {
+      dur_ = 0;
     }
+    return threshhold > 0 ? dur_ > threshhold : dur_ > FLAGS_slow_op_threshhold_ms;
+  }
 
-    void output(const std::string& prefix, const std::string& msg) {
-        LOG(INFO) << prefix << "total time:" << dur_ << "ms, " << msg;
-    }
+  void output(const std::string& prefix, const std::string& msg) {
+    LOG(INFO) << prefix << "total time:" << dur_ << "ms, " << msg;
+  }
 
-private:
-    int64_t startMs_ = 0;
-    int64_t dur_ = 0;
+ private:
+  int64_t startMs_ = 0;
+  int64_t dur_ = 0;
 };
 
 }  // namespace nebula

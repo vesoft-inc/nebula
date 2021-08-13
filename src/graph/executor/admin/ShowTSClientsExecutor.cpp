@@ -4,40 +4,36 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "interface/gen-cpp2/meta_types.h"
+#include "graph/executor/admin/ShowTSClientsExecutor.h"
 
 #include "graph/context/QueryContext.h"
-#include "graph/executor/admin/ShowTSClientsExecutor.h"
 #include "graph/planner/plan/Admin.h"
 #include "graph/service/PermissionManager.h"
+#include "interface/gen-cpp2/meta_types.h"
 
 namespace nebula {
 namespace graph {
 
 folly::Future<Status> ShowTSClientsExecutor::execute() {
-    SCOPED_TIMER(&execTime_);
-    return showTSClients();
+  SCOPED_TIMER(&execTime_);
+  return showTSClients();
 }
 
 folly::Future<Status> ShowTSClientsExecutor::showTSClients() {
-return qctx()
-        ->getMetaClient()
-        ->listFTClients()
-        .via(runner())
-        .thenValue([this](auto &&resp) {
-            if (!resp.ok()) {
-                LOG(ERROR) << resp.status();
-                return resp.status();
-            }
-            auto value = std::move(resp).value();
-            DataSet v({"Host", "Port"});
-            for (const auto &client : value) {
-                nebula::Row r({client.host.host, client.host.port});
-                v.emplace_back(std::move(r));
-            }
-            return finish(std::move(v));
-        });
+  return qctx()->getMetaClient()->listFTClients().via(runner()).thenValue([this](auto &&resp) {
+    if (!resp.ok()) {
+      LOG(ERROR) << resp.status();
+      return resp.status();
+    }
+    auto value = std::move(resp).value();
+    DataSet v({"Host", "Port"});
+    for (const auto &client : value) {
+      nebula::Row r({client.host.host, client.host.port});
+      v.emplace_back(std::move(r));
+    }
+    return finish(std::move(v));
+  });
 }
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula

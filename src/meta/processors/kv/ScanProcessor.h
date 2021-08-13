@@ -13,20 +13,16 @@ namespace nebula {
 namespace meta {
 
 class ScanProcessor : public BaseProcessor<cpp2::ScanResp> {
-public:
-    static ScanProcessor* instance(kvstore::KVStore* kvstore) {
-        return new ScanProcessor(kvstore);
-    }
+ public:
+  static ScanProcessor* instance(kvstore::KVStore* kvstore) { return new ScanProcessor(kvstore); }
 
-    void process(const cpp2::ScanReq& req);
+  void process(const cpp2::ScanReq& req);
 
-private:
-    explicit ScanProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::ScanResp>(kvstore) {}
+ private:
+  explicit ScanProcessor(kvstore::KVStore* kvstore) : BaseProcessor<cpp2::ScanResp>(kvstore) {}
 };
 
 }  // namespace meta
 }  // namespace nebula
 
 #endif  // META_SCANPROCESSOR_H_
-

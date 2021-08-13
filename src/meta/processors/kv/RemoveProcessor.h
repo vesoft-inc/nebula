@@ -16,16 +16,15 @@ namespace meta {
  * Remove some rows in custorm kv operations.
  * */
 class RemoveProcessor : public BaseProcessor<cpp2::ExecResp> {
-public:
-    static RemoveProcessor* instance(kvstore::KVStore* kvstore) {
-        return new RemoveProcessor(kvstore);
-    }
+ public:
+  static RemoveProcessor* instance(kvstore::KVStore* kvstore) {
+    return new RemoveProcessor(kvstore);
+  }
 
-    void process(const cpp2::RemoveReq& req);
+  void process(const cpp2::RemoveReq& req);
 
-private:
-    explicit RemoveProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+ private:
+  explicit RemoveProcessor(kvstore::KVStore* kvstore) : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 };
 
 }  // namespace meta

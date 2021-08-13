@@ -13,16 +13,16 @@ namespace nebula {
 namespace meta {
 
 class CreateEdgeProcessor : public BaseProcessor<cpp2::ExecResp> {
-public:
-    static CreateEdgeProcessor* instance(kvstore::KVStore* kvstore) {
-        return new CreateEdgeProcessor(kvstore);
-    }
+ public:
+  static CreateEdgeProcessor* instance(kvstore::KVStore* kvstore) {
+    return new CreateEdgeProcessor(kvstore);
+  }
 
-    void process(const cpp2::CreateEdgeReq& req);
+  void process(const cpp2::CreateEdgeReq& req);
 
-private:
-    explicit CreateEdgeProcessor(kvstore::KVStore* kvstore)
-        : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+ private:
+  explicit CreateEdgeProcessor(kvstore::KVStore* kvstore)
+      : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 };
 
 }  // namespace meta

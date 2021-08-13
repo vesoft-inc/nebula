@@ -13,17 +13,17 @@ namespace nebula {
 namespace graph {
 
 class RevokeRoleExecutor final : public Executor {
-public:
-    RevokeRoleExecutor(const PlanNode *node, QueryContext *qctx)
-        : Executor("RevokeRoleExecutor", node, qctx) {}
+ public:
+  RevokeRoleExecutor(const PlanNode *node, QueryContext *qctx)
+      : Executor("RevokeRoleExecutor", node, qctx) {}
 
-    folly::Future<Status> execute() override;
+  folly::Future<Status> execute() override;
 
-private:
-    folly::Future<Status> revokeRole();
+ private:
+  folly::Future<Status> revokeRole();
 };
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula
 
 #endif  // GRAPH_EXECUTOR_ADMIN_REVOKEROLEEXECUTOR_H_

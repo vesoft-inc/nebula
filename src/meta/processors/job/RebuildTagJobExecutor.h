@@ -13,17 +13,16 @@ namespace nebula {
 namespace meta {
 
 class RebuildTagJobExecutor : public RebuildJobExecutor {
-public:
-    RebuildTagJobExecutor(JobID jobId,
-                          kvstore::KVStore* kvstore,
-                          AdminClient* adminClient,
-                          const std::vector<std::string>& paras)
-        : RebuildJobExecutor(jobId, kvstore, adminClient, std::move(paras)) {}
+ public:
+  RebuildTagJobExecutor(JobID jobId,
+                        kvstore::KVStore* kvstore,
+                        AdminClient* adminClient,
+                        const std::vector<std::string>& paras)
+      : RebuildJobExecutor(jobId, kvstore, adminClient, std::move(paras)) {}
 
-protected:
-    folly::Future<Status>
-    executeInternal(HostAddr&& address,
-                    std::vector<PartitionID>&& parts) override;
+ protected:
+  folly::Future<Status> executeInternal(HostAddr&& address,
+                                        std::vector<PartitionID>&& parts) override;
 };
 
 }  // namespace meta

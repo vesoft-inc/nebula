@@ -13,20 +13,19 @@ namespace nebula {
 namespace meta {
 
 class DropEdgeIndexProcessor : public BaseProcessor<cpp2::ExecResp> {
-public:
-    static DropEdgeIndexProcessor* instance(kvstore::KVStore* kvstore) {
-        return new DropEdgeIndexProcessor(kvstore);
-    }
+ public:
+  static DropEdgeIndexProcessor* instance(kvstore::KVStore* kvstore) {
+    return new DropEdgeIndexProcessor(kvstore);
+  }
 
-    void process(const cpp2::DropEdgeIndexReq& req);
+  void process(const cpp2::DropEdgeIndexReq& req);
 
-private:
-    explicit DropEdgeIndexProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+ private:
+  explicit DropEdgeIndexProcessor(kvstore::KVStore* kvstore)
+      : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 };
 
 }  // namespace meta
 }  // namespace nebula
 
 #endif  // META_DROPEDGEINDEXPROCESSOR_H
-

@@ -4,40 +4,38 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "common/base/Base.h"
 #include <folly/Benchmark.h>
+
+#include "common/base/Base.h"
 #include "common/time/Duration.h"
 
 using nebula::time::Duration;
-using std::chrono::steady_clock;
 using std::chrono::duration_cast;
 using std::chrono::milliseconds;
-
+using std::chrono::steady_clock;
 
 BENCHMARK(steady_clock_timer, iters) {
-    for (uint32_t i = 0; i < iters; i++) {
-        auto start = steady_clock::now();
-        auto end = steady_clock::now();
-        auto diffInMSec = (duration_cast<milliseconds>(end - start)).count();
-        folly::doNotOptimizeAway(diffInMSec);
-    }
+  for (uint32_t i = 0; i < iters; i++) {
+    auto start = steady_clock::now();
+    auto end = steady_clock::now();
+    auto diffInMSec = (duration_cast<milliseconds>(end - start)).count();
+    folly::doNotOptimizeAway(diffInMSec);
+  }
 }
 BENCHMARK_RELATIVE(duration_timer, iters) {
-    for (uint32_t i = 0; i < iters; i++) {
-        Duration d;
-        auto diffInMSec = d.elapsedInMSec();
-        folly::doNotOptimizeAway(diffInMSec);
-    }
+  for (uint32_t i = 0; i < iters; i++) {
+    Duration d;
+    auto diffInMSec = d.elapsedInMSec();
+    folly::doNotOptimizeAway(diffInMSec);
+  }
 }
-
 
 int main(int argc, char** argv) {
-    folly::init(&argc, &argv, true);
+  folly::init(&argc, &argv, true);
 
-    folly::runBenchmarks();
-    return 0;
+  folly::runBenchmarks();
+  return 0;
 }
-
 
 /*
 

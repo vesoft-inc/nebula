@@ -12,22 +12,23 @@
 namespace nebula {
 namespace graph {
 class ReportError final : public Validator {
-public:
-    ReportError(Sentence* sentence, QueryContext* context)
-        : Validator(sentence, context) {
-        setNoSpaceRequired();
-    }
+ public:
+  ReportError(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
+    setNoSpaceRequired();
+  }
 
-private:
-    Status validateImpl() override {
-        return Status::SemanticError("Not support sentence type: %ld, query: %s",
-                static_cast<int64_t>(sentence_->kind()), sentence_->toString().c_str());
-    }
+ private:
+  Status validateImpl() override {
+    return Status::SemanticError("Not support sentence type: %ld, query: %s",
+                                 static_cast<int64_t>(sentence_->kind()),
+                                 sentence_->toString().c_str());
+  }
 
-    Status toPlan() override {
-        return Status::SemanticError("Not support sentence type: %ld, query: %s",
-                static_cast<int64_t>(sentence_->kind()), sentence_->toString().c_str());
-    }
+  Status toPlan() override {
+    return Status::SemanticError("Not support sentence type: %ld, query: %s",
+                                 static_cast<int64_t>(sentence_->kind()),
+                                 sentence_->toString().c_str());
+  }
 };
 }  // namespace graph
 }  // namespace nebula

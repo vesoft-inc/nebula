@@ -12,8 +12,7 @@ namespace graph {
 /*
  * The UnionStrategy was designed to union two subplan by union.
  */
-class UnionStrategy final {
-};
+class UnionStrategy final {};
 }  // namespace graph
 }  // namespace nebula
 #endif  // GRAPH_PLANNER_MATCH_UNIONSTRATEGY_H_

@@ -12,36 +12,34 @@
 namespace nebula {
 
 class UUIDExpression final : public Expression {
-    friend class Expression;
+  friend class Expression;
 
-public:
-    static UUIDExpression* make(ObjectPool* pool, const std::string& field = "") {
-        return pool->add(new UUIDExpression(pool, field));
-    }
+ public:
+  static UUIDExpression* make(ObjectPool* pool, const std::string& field = "") {
+    return pool->add(new UUIDExpression(pool, field));
+  }
 
-    bool operator==(const Expression& rhs) const override;
+  bool operator==(const Expression& rhs) const override;
 
-    const Value& eval(ExpressionContext& ctx) override;
+  const Value& eval(ExpressionContext& ctx) override;
 
-    std::string toString() const override;
+  std::string toString() const override;
 
-    void accept(ExprVisitor* visitor) override;
+  void accept(ExprVisitor* visitor) override;
 
-    Expression* clone() const override {
-        return UUIDExpression::make(pool_, field_);
-    }
+  Expression* clone() const override { return UUIDExpression::make(pool_, field_); }
 
-private:
-    explicit UUIDExpression(ObjectPool* pool, const std::string& field = "")
-        : Expression(pool, Kind::kUUID), field_(field) {}
+ private:
+  explicit UUIDExpression(ObjectPool* pool, const std::string& field = "")
+      : Expression(pool, Kind::kUUID), field_(field) {}
 
-    void writeTo(Encoder& encoder) const override;
-    void resetFrom(Decoder& decoder) override;
+  void writeTo(Encoder& encoder) const override;
+  void resetFrom(Decoder& decoder) override;
 
-private:
-    std::string field_;
-    Value result_;
+ private:
+  std::string field_;
+  Value result_;
 };
 
-}   // namespace nebula
+}  // namespace nebula
 #endif  // EXPRESSION_UUIDEXPRESSION_H_

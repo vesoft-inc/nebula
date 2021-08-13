@@ -13,14 +13,14 @@ namespace nebula {
 namespace graph {
 
 class FilterExecutor final : public Executor {
-public:
-    FilterExecutor(const PlanNode *node, QueryContext *qctx)
-        : Executor("FilterExecutor", node, qctx) {}
+ public:
+  FilterExecutor(const PlanNode *node, QueryContext *qctx)
+      : Executor("FilterExecutor", node, qctx) {}
 
-    folly::Future<Status> execute() override;
+  folly::Future<Status> execute() override;
 };
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula
 
-#endif   // GRAPH_EXECUTOR_QUERY_FILTEREXECUTOR_H_
+#endif  // GRAPH_EXECUTOR_QUERY_FILTEREXECUTOR_H_

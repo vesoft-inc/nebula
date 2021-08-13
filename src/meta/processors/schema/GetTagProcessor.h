@@ -13,16 +13,15 @@ namespace nebula {
 namespace meta {
 
 class GetTagProcessor : public BaseProcessor<cpp2::GetTagResp> {
-public:
-    static GetTagProcessor* instance(kvstore::KVStore* kvstore) {
-        return new GetTagProcessor(kvstore);
-    }
+ public:
+  static GetTagProcessor* instance(kvstore::KVStore* kvstore) {
+    return new GetTagProcessor(kvstore);
+  }
 
-    void process(const cpp2::GetTagReq& req);
+  void process(const cpp2::GetTagReq& req);
 
-private:
-    explicit GetTagProcessor(kvstore::KVStore* kvstore)
-        : BaseProcessor<cpp2::GetTagResp>(kvstore) {}
+ private:
+  explicit GetTagProcessor(kvstore::KVStore* kvstore) : BaseProcessor<cpp2::GetTagResp>(kvstore) {}
 };
 
 }  // namespace meta

@@ -18,40 +18,30 @@ namespace nebula {
  * and expression rewrite.
  */
 class VertexExpression final : public Expression {
-public:
-    static VertexExpression *make(ObjectPool *pool) {
-        return pool->add(new VertexExpression(pool));
-    }
+ public:
+  static VertexExpression *make(ObjectPool *pool) { return pool->add(new VertexExpression(pool)); }
 
-    const Value &eval(ExpressionContext &ctx) override;
+  const Value &eval(ExpressionContext &ctx) override;
 
-    void accept(ExprVisitor *visitor) override;
+  void accept(ExprVisitor *visitor) override;
 
-    Expression* clone() const override {
-        return VertexExpression::make(pool_);
-    }
+  Expression *clone() const override { return VertexExpression::make(pool_); }
 
-    std::string toString() const override {
-        return "VERTEX";
-    }
+  std::string toString() const override { return "VERTEX"; }
 
-    bool operator==(const Expression &expr) const override {
-        return kind() == expr.kind();
-    }
+  bool operator==(const Expression &expr) const override { return kind() == expr.kind(); }
 
-private:
-    explicit VertexExpression(ObjectPool *pool) : Expression(pool, Kind::kVertex) {}
+ private:
+  explicit VertexExpression(ObjectPool *pool) : Expression(pool, Kind::kVertex) {}
 
-    void writeTo(Encoder &encoder) const override {
-        encoder << kind();
-    }
+  void writeTo(Encoder &encoder) const override { encoder << kind(); }
 
-    void resetFrom(Decoder &) override {}
+  void resetFrom(Decoder &) override {}
 
-private:
-    Value                                   result_;
+ private:
+  Value result_;
 };
 
-}   // namespace nebula
+}  // namespace nebula
 
 #endif  // COMMON_EXPRESSION_VERTEXEXPRESSION_H_

@@ -12,55 +12,55 @@
 namespace nebula {
 namespace graph {
 class ConjunctPathExecutor final : public Executor {
-public:
-    ConjunctPathExecutor(const PlanNode* node, QueryContext* qctx)
-        : Executor("ConjunctPathExecutor", node, qctx) {}
+ public:
+  ConjunctPathExecutor(const PlanNode* node, QueryContext* qctx)
+      : Executor("ConjunctPathExecutor", node, qctx) {}
 
-    folly::Future<Status> execute() override;
+  folly::Future<Status> execute() override;
 
-    struct CostPaths {
-        CostPaths(Value& cost, const List& paths) : cost_(cost), paths_(paths) {}
-        Value cost_;
-        const List& paths_;
-    };
+  struct CostPaths {
+    CostPaths(Value& cost, const List& paths) : cost_(cost), paths_(paths) {}
+    Value cost_;
+    const List& paths_;
+  };
 
-private:
-    using CostPathsValMap = std::unordered_map<Value, std::unordered_map<Value, CostPaths>>;
+ private:
+  using CostPathsValMap = std::unordered_map<Value, std::unordered_map<Value, CostPaths>>;
 
-    folly::Future<Status> bfsShortestPath();
+  folly::Future<Status> bfsShortestPath();
 
-    folly::Future<Status> allPaths();
+  folly::Future<Status> allPaths();
 
-    std::vector<Row> findBfsShortestPath(Iterator* iter,
-                                         bool isLatest,
-                                         std::unordered_multimap<Value, const Edge*>& table);
+  std::vector<Row> findBfsShortestPath(Iterator* iter,
+                                       bool isLatest,
+                                       std::unordered_multimap<Value, const Edge*>& table);
 
-    std::unordered_multimap<Value, Path> buildBfsInterimPath(
-        std::unordered_set<Value>& meets,
-        std::vector<std::unordered_multimap<Value, const Edge*>>& hist);
+  std::unordered_multimap<Value, Path> buildBfsInterimPath(
+      std::unordered_set<Value>& meets,
+      std::vector<std::unordered_multimap<Value, const Edge*>>& hist);
 
-    folly::Future<Status> floydShortestPath();
+  folly::Future<Status> floydShortestPath();
 
-    bool findPath(Iterator* backwardPathIter, CostPathsValMap& forwardPathtable, DataSet& ds);
+  bool findPath(Iterator* backwardPathIter, CostPathsValMap& forwardPathtable, DataSet& ds);
 
-    Status conjunctPath(const List& forwardPaths,
-                        const List& backwardPaths,
-                        Value& cost,
-                        DataSet& ds);
-
-    bool findAllPaths(Iterator* backwardPathsIter,
-                      std::unordered_map<Value, const List&>& forwardPathsTable,
+  Status conjunctPath(const List& forwardPaths,
+                      const List& backwardPaths,
+                      Value& cost,
                       DataSet& ds);
-    void delPathFromConditionalVar(const Value& start, const Value& end);
 
-private:
-    std::vector<std::unordered_multimap<Value, const Edge*>> forward_;
-    std::vector<std::unordered_multimap<Value, const Edge*>> backward_;
-    size_t count_{0};
-    // startVid : {endVid, cost}
-    std::unordered_map<Value, std::unordered_map<Value, Value>> historyCostMap_;
-    std::string conditionalVar_;
-    bool noLoop_;
+  bool findAllPaths(Iterator* backwardPathsIter,
+                    std::unordered_map<Value, const List&>& forwardPathsTable,
+                    DataSet& ds);
+  void delPathFromConditionalVar(const Value& start, const Value& end);
+
+ private:
+  std::vector<std::unordered_multimap<Value, const Edge*>> forward_;
+  std::vector<std::unordered_multimap<Value, const Edge*>> backward_;
+  size_t count_{0};
+  // startVid : {endVid, cost}
+  std::unordered_map<Value, std::unordered_map<Value, Value>> historyCostMap_;
+  std::string conditionalVar_;
+  bool noLoop_;
 };
 }  // namespace graph
 }  // namespace nebula

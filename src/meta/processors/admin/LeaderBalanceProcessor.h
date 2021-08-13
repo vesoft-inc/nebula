@@ -8,22 +8,23 @@
 #define META_LEADERCOUNTPROCESSOR_H_
 
 #include <gtest/gtest_prod.h>
+
 #include "meta/processors/BaseProcessor.h"
 
 namespace nebula {
 namespace meta {
 
 class LeaderBalanceProcessor : public BaseProcessor<cpp2::ExecResp> {
-public:
-    static LeaderBalanceProcessor* instance(kvstore::KVStore* kvstore) {
-        return new LeaderBalanceProcessor(kvstore);
-    }
+ public:
+  static LeaderBalanceProcessor* instance(kvstore::KVStore* kvstore) {
+    return new LeaderBalanceProcessor(kvstore);
+  }
 
-    void process(const cpp2::LeaderBalanceReq& req);
+  void process(const cpp2::LeaderBalanceReq& req);
 
-private:
-    explicit LeaderBalanceProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+ private:
+  explicit LeaderBalanceProcessor(kvstore::KVStore* kvstore)
+      : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 };
 
 }  // namespace meta

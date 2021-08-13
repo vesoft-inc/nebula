@@ -9,15 +9,15 @@
 namespace nebula {
 
 std::string SequentialSentences::toString() const {
-    std::string buf;
-    buf.reserve(1024);
-    auto i = 0UL;
-    buf += sentences_[i++]->toString();
-    for ( ; i < sentences_.size(); i++) {
-        buf += "; ";
-        buf += sentences_[i]->toString();
-    }
-    return buf;
+  std::string buf;
+  buf.reserve(1024);
+  auto i = 0UL;
+  buf += sentences_[i++]->toString();
+  for (; i < sentences_.size(); i++) {
+    buf += "; ";
+    buf += sentences_[i]->toString();
+  }
+  return buf;
 }
 
-}   // namespace nebula
+}  // namespace nebula

@@ -5,28 +5,28 @@
  */
 
 #include "graph/executor/admin/SignOutTSServiceExecutor.h"
+
 #include "graph/planner/plan/Admin.h"
 
 namespace nebula {
 namespace graph {
 
 folly::Future<Status> SignOutTSServiceExecutor::execute() {
-    SCOPED_TIMER(&execTime_);
-    return signOutTSService();
+  SCOPED_TIMER(&execTime_);
+  return signOutTSService();
 }
 
 folly::Future<Status> SignOutTSServiceExecutor::signOutTSService() {
-    return qctx()->getMetaClient()->signOutFTService()
-        .via(runner())
-        .thenValue([this](StatusOr<bool> resp) {
-            SCOPED_TIMER(&execTime_);
-            NG_RETURN_IF_ERROR(resp);
-            if (!resp.value()) {
-                return Status::Error("Sign out text service failed!");
-            }
-            return Status::OK();
-        });
+  return qctx()->getMetaClient()->signOutFTService().via(runner()).thenValue(
+      [this](StatusOr<bool> resp) {
+        SCOPED_TIMER(&execTime_);
+        NG_RETURN_IF_ERROR(resp);
+        if (!resp.value()) {
+          return Status::Error("Sign out text service failed!");
+        }
+        return Status::OK();
+      });
 }
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula
