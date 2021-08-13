@@ -42,7 +42,7 @@ class ObjectPool final : private cpp::NonCopyable, private cpp::NonMovable {
   }
 
   template <typename T, typename... Args>
-  T *makeAndAdd(Args &&... args) {
+  T *makeAndAdd(Args &&...args) {
     return add(new T(std::forward<Args>(args)...));
   }
 

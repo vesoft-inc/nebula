@@ -6,6 +6,7 @@
 
 #include <folly/Benchmark.h>
 #include <folly/init/Init.h>
+
 #include <string>
 #include <type_traits>
 
@@ -15,37 +16,37 @@
 namespace nebula {
 
 class TestExpr : public LabelExpression {
-public:
-    explicit TestExpr(const std::string &name = "") : LabelExpression(nullptr, name) {}
+ public:
+  explicit TestExpr(const std::string &name = "") : LabelExpression(nullptr, name) {}
 };
 
 BENCHMARK(DefaultAllocator, iters) {
-    std::size_t round = iters * 1000;
-    for (std::size_t _ = 0; _ < round; ++_) {
-        auto *expr = new TestExpr("Label");
-        delete expr;
-    }
+  std::size_t round = iters * 1000;
+  for (std::size_t _ = 0; _ < round; ++_) {
+    auto *expr = new TestExpr("Label");
+    delete expr;
+  }
 }
 
 BENCHMARK_RELATIVE(ArenaAllocator, iters) {
-    std::size_t round = iters * 1000;
-    Arena a;
-    for (std::size_t _ = 0; _ < round; ++_) {
-        auto *ptr = a.allocateAligned(sizeof(TestExpr));
-        auto *expr = new (ptr) TestExpr("Label");
-        expr->~TestExpr();
-    }
+  std::size_t round = iters * 1000;
+  Arena a;
+  for (std::size_t _ = 0; _ < round; ++_) {
+    auto *ptr = a.allocateAligned(sizeof(TestExpr));
+    auto *expr = new (ptr) TestExpr("Label");
+    expr->~TestExpr();
+  }
 }
 
 BENCHMARK_DRAW_LINE();
 
-}   // namespace nebula
+}  // namespace nebula
 
 int main(int argc, char **argv) {
-    folly::init(&argc, &argv, true);
+  folly::init(&argc, &argv, true);
 
-    folly::runBenchmarks();
-    return 0;
+  folly::runBenchmarks();
+  return 0;
 }
 
 // CPU info
