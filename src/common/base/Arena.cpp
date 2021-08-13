@@ -24,7 +24,9 @@ void* Arena::allocateAligned(const std::size_t alloc) {
   if (consumption <= availableSize_) {
     void* ptr = currentPtr_ + pad;
     currentPtr_ += consumption;
+#ifndef NDEBUG
     allocatedSize_ += consumption;
+#endif
     availableSize_ -= consumption;
     return ptr;
   } else {
@@ -33,7 +35,9 @@ void* Arena::allocateAligned(const std::size_t alloc) {
     DCHECK_EQ(reinterpret_cast<uintptr_t>(currentPtr_) & (kAlignment - 1), 0);
     void* ptr = currentPtr_;
     currentPtr_ += alloc;
+#ifndef NDEBUG
     allocatedSize_ += alloc;
+#endif
     availableSize_ -= alloc;
     return ptr;
   }

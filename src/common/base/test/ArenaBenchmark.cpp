@@ -6,6 +6,7 @@
 
 #include <folly/Benchmark.h>
 #include <folly/init/Init.h>
+#include <folly/memory/Arena.h>
 
 #include <string>
 #include <type_traits>
@@ -33,6 +34,16 @@ BENCHMARK_RELATIVE(ArenaAllocator, iters) {
   Arena a;
   for (std::size_t _ = 0; _ < round; ++_) {
     auto *ptr = a.allocateAligned(sizeof(TestExpr));
+    auto *expr = new (ptr) TestExpr("Label");
+    expr->~TestExpr();
+  }
+}
+
+BENCHMARK_RELATIVE(FollyArenaAllocator, iters) {
+  std::size_t round = iters * 1000;
+  folly::SysArena a;
+  for (std::size_t _ = 0; _ < round; ++_) {
+    auto *ptr = a.allocate(sizeof(TestExpr));
     auto *expr = new (ptr) TestExpr("Label");
     expr->~TestExpr();
   }
@@ -71,7 +82,8 @@ int main(int argc, char **argv) {
 // ============================================================================
 // /home/shylock.huang/nebula/src/common/base/test/ArenaBenchmark.cpprelative  time/iter  iters/s
 // ============================================================================
-// DefaultAllocator                                            26.57us   37.64K
-// ArenaAllocator                                   114.24%    23.26us   43.00K
+// DefaultAllocator                                            36.59us   27.33K
+// ArenaAllocator                                   145.89%    25.08us   39.87K
+// FollyArenaAllocator                              138.96%    26.33us   37.98K
 // ----------------------------------------------------------------------------
 // ============================================================================

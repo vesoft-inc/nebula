@@ -9,7 +9,6 @@
 #include <cstddef>
 #include <limits>
 #include <type_traits>
-#include <vector>
 
 #include "common/base/Logging.h"
 #include "common/cpp/helpers.h"
@@ -21,10 +20,14 @@ namespace nebula {
 class Arena : public cpp::NonCopyable, cpp::NonMovable {
  public:
   ~Arena() {
-    for (auto *ptr : chunks_) {
-      delete[] ptr;
+    while (currentChunk_ != nullptr) {
+      auto *prev = currentChunk_->prev;
+      delete[] currentChunk_;
+      currentChunk_ = prev;
     }
+#ifndef NDEBUG
     allocatedSize_ = 0;
+#endif
     availableSize_ = 0;
     currentPtr_ = nullptr;
   }
@@ -34,7 +37,9 @@ class Arena : public cpp::NonCopyable, cpp::NonMovable {
   // speed up read/write
   void *allocateAligned(const std::size_t alloc);
 
+#ifndef NDEBUG
   std::size_t allocatedSize() const { return allocatedSize_; }
+#endif
 
   std::size_t availableSize() const { return availableSize_; }
 
@@ -43,19 +48,32 @@ class Arena : public cpp::NonCopyable, cpp::NonMovable {
   static constexpr std::size_t kMaxChunkSize = std::numeric_limits<uint16_t>::max();
   static constexpr std::size_t kAlignment = std::alignment_of<std::max_align_t>::value;
 
+  struct Chunk {
+    explicit Chunk(Chunk *p) : prev{p} {}
+
+    union {
+        Chunk *prev{nullptr};
+        uint8_t aligned[kAlignment];
+    };
+  };
+
   // allocate new chunk
+  // The current pointer will keep alignment
   void newChunk(std::size_t size) {
     DCHECK_NE(size, 0);
-    // Expansion the vector first to avoid leak by allocate exception throw
-    chunks_.emplace_back(nullptr);
-    chunks_.back() = new uint8_t[size];
+    uint8_t *ptr = new uint8_t[size + sizeof(Chunk)];
+    currentChunk_ = new (ptr) Chunk(currentChunk_);
     availableSize_ = size;
-    currentPtr_ = chunks_.back();
+    currentPtr_ = (ptr + sizeof(Chunk));
   }
 
-  std::vector<uint8_t *> chunks_;
+  Chunk *currentChunk_{nullptr};
+// These are debug info
+// Remove to speed up in Release build
+#ifndef NDEBUG
   // total size allocated
   std::size_t allocatedSize_{0};
+#endif
   // total size which available to allocate
   std::size_t availableSize_{0};
   // The total chunks size
