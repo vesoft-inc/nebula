@@ -39,8 +39,8 @@ MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool
                        const MetaClientOptions& options)
     : ioThreadPool_(ioThreadPool), addrs_(std::move(addrs)), options_(options) {
   CHECK(ioThreadPool_ != nullptr) << "IOThreadPool is required";
-  CHECK(!addrs_.empty()) << "No meta server address is specified or can be "
-                            "solved. Meta server is required";
+  CHECK(!addrs_.empty())
+      << "No meta server address is specified or can be solved. Meta server is required";
   clientsMan_ = std::make_shared<thrift::ThriftClientManager<cpp2::MetaServiceAsyncClient>>();
   updateActive();
   updateLeader();
@@ -174,6 +174,11 @@ bool MetaClient::loadData() {
 
   if (!loadFulltextIndexes()) {
     LOG(ERROR) << "Load fulltext indexes Failed";
+    return false;
+  }
+
+  if (!loadSessions()) {
+    LOG(ERROR) << "Load roles Failed";
     return false;
   }
 
@@ -992,8 +997,7 @@ void MetaClient::loadRemoteListeners() {
   }
 }
 
-/// ================================== public methods
-/// =================================
+/// ================================== public methods =================================
 
 PartitionID MetaClient::partId(int32_t numParts, const VertexID id) const {
   // If the length of the id is 8, we will treat it as int64_t to be compatible
@@ -2853,8 +2857,7 @@ bool MetaClient::loadCfg() {
   // only load current module's config is enough
   auto ret = listConfigs(gflagsModule_).get();
   if (ret.ok()) {
-    // if we load config from meta server successfully, update gflags and set
-    // configReady_
+    // if we load config from meta server successfully, update gflags and set configReady_
     auto items = ret.value();
     MetaConfigMap metaConfigMap;
     for (auto& item : items) {
@@ -2862,8 +2865,7 @@ bool MetaClient::loadCfg() {
       metaConfigMap.emplace(std::move(key), std::move(item));
     }
     {
-      // For any configurations that is in meta, update in cache to replace
-      // previous value
+      // For any configurations that is in meta, update in cache to replace previous value
       folly::RWSpinLock::WriteHolder holder(configCacheLock_);
       for (const auto& entry : metaConfigMap) {
         auto& key = entry.first;
@@ -2958,9 +2960,8 @@ void MetaClient::loadLeader(const std::vector<cpp2::HostItem>& hostItems,
               << item.get_leader_parts().size() << " space";
   }
   {
-    // todo(doodle): in worst case, storage and meta isolated, so graph may get
-    // a outdate leader info. The problem could be solved if leader term are
-    // cached as well.
+    // todo(doodle): in worst case, storage and meta isolated, so graph may get a outdate
+    // leader info. The problem could be solved if leader term are cached as well.
     LOG(INFO) << "Load leader ok";
     folly::RWSpinLock::WriteHolder wh(leadersLock_);
     leadersInfo_ = std::move(leaderInfo);
@@ -3479,6 +3480,32 @@ folly::Future<StatusOr<bool>> MetaClient::ingest(GraphSpaceID spaceId) {
   };
   return folly::async(func);
 }
-
+bool MetaClient::loadSessions() {
+  auto session_list = listSessions().get();
+  if (!session_list.ok()) {
+    LOG(ERROR) << "List sessions failed, status:" << session_list.status();
+    return false;
+  }
+  decltype(sessionMap_) session_map;
+  for (auto& session : session_list.value().get_sessions()) {
+    session_map[session.get_session_id()] = session;
+  }
+  {
+    folly::RWSpinLock::WriteHolder holder(sessionLock_);
+    sessionMap_ = std::move(session_map);
+  }
+  return true;
+}
+StatusOr<cpp2::Session> MetaClient::getSessionFromCache(const nebula::SessionID& session_id) {
+  if (!ready_) {
+    return Status::Error("Not ready!");
+  }
+  folly::RWSpinLock::ReadHolder holder(sessionLock_);
+  auto it = sessionMap_.find(session_id);
+  if (it != sessionMap_.end()) {
+    return it->second;
+  }
+  return Status::SessionNotFound();
+}
 }  // namespace meta
 }  // namespace nebula

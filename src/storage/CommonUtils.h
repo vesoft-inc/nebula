@@ -137,6 +137,8 @@ class PlanContext {
 
   StorageEnv* env_;
   GraphSpaceID spaceId_;
+  SessionID sessionId_;
+  ExecutionPlanID planId_;
   size_t vIdLen_;
   bool isIntId_;
 
@@ -145,6 +147,9 @@ class PlanContext {
 
   // used for toss version
   int64_t defaultEdgeVer_ = 0L;
+
+  // will be true if query is killed during execution
+  bool isKilled_ = false;
 
   // Manage expressions
   ObjectPool objPool_;

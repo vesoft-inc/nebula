@@ -20,6 +20,7 @@
 #include "common/thread/GenericWorker.h"
 #include "common/thrift/ThriftClientManager.h"
 #include "interface/gen-cpp2/MetaServiceAsyncClient.h"
+#include "interface/gen-cpp2/common_types.h"
 #include "interface/gen-cpp2/meta_types.h"
 
 DECLARE_int32(meta_client_retry_times);
@@ -54,8 +55,7 @@ using NameIndexMap = std::unordered_map<std::pair<GraphSpaceID, std::string>, In
 // Get Index Structure by indexID
 using Indexes = std::unordered_map<IndexID, std::shared_ptr<cpp2::IndexItem>>;
 
-// Listeners is a map of ListenerHost => <PartId + type>, used to add/remove
-// listener on local host
+// Listeners is a map of ListenerHost => <PartId + type>, used to add/remove listener on local host
 using Listeners =
     std::unordered_map<HostAddr, std::vector<std::pair<PartitionID, cpp2::ListenerType>>>;
 
@@ -114,6 +114,7 @@ using FulltextClientsList = std::vector<cpp2::FTClient>;
 
 using FTIndexMap = std::unordered_map<std::string, cpp2::FTIndex>;
 
+using SessionMap = std::unordered_map<SessionID, cpp2::Session>;
 class MetaChangedListener {
  public:
   virtual ~MetaChangedListener() = default;
@@ -550,6 +551,8 @@ class MetaClient {
 
   StatusOr<std::vector<HostAddr>> getStorageHosts() const;
 
+  StatusOr<cpp2::Session> getSessionFromCache(const nebula::SessionID& session_id);
+
   StatusOr<HostAddr> getStorageLeaderFromCache(GraphSpaceID spaceId, PartitionID partId);
 
   void updateStorageLeader(GraphSpaceID spaceId, PartitionID partId, const HostAddr& leader);
@@ -632,6 +635,8 @@ class MetaClient {
   bool loadFulltextClients();
 
   bool loadFulltextIndexes();
+
+  bool loadSessions();
 
   void loadLeader(const std::vector<cpp2::HostItem>& hostItems,
                   const SpaceNameIdMap& spaceIndexByName);
@@ -743,6 +748,8 @@ class MetaClient {
   MetaClientOptions options_;
   std::vector<HostAddr> storageHosts_;
   int64_t heartbeatTime_;
+  SessionMap sessionMap_;
+  folly::RWSpinLock sessionLock_;
 };
 
 }  // namespace meta
