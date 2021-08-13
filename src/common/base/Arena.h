@@ -52,8 +52,8 @@ class Arena : public cpp::NonCopyable, cpp::NonMovable {
     explicit Chunk(Chunk *p) : prev{p} {}
 
     union {
-        Chunk *prev{nullptr};
-        uint8_t aligned[kAlignment];
+      Chunk *prev{nullptr};
+      std::byte aligned[kAlignment];
     };
   };
 
@@ -61,7 +61,7 @@ class Arena : public cpp::NonCopyable, cpp::NonMovable {
   // The current pointer will keep alignment
   void newChunk(std::size_t size) {
     DCHECK_NE(size, 0);
-    uint8_t *ptr = new uint8_t[size + sizeof(Chunk)];
+    std::byte *ptr = new std::byte[size + sizeof(Chunk)];
     currentChunk_ = new (ptr) Chunk(currentChunk_);
     availableSize_ = size;
     currentPtr_ = (ptr + sizeof(Chunk));
@@ -79,7 +79,7 @@ class Arena : public cpp::NonCopyable, cpp::NonMovable {
   // The total chunks size
   // = allocatedSize_ + availableSize_ + Memory Deprecated (Size can't fit allocation)
   // Current pointer to available memory address
-  uint8_t *currentPtr_{nullptr};
+  std::byte *currentPtr_{nullptr};
 };
 
 }  // namespace nebula
