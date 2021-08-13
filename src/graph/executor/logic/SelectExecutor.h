@@ -13,33 +13,25 @@ namespace nebula {
 namespace graph {
 
 class SelectExecutor final : public Executor {
-public:
-    SelectExecutor(const PlanNode* node, QueryContext* qctx);
+ public:
+  SelectExecutor(const PlanNode* node, QueryContext* qctx);
 
-    folly::Future<Status> execute() override;
+  folly::Future<Status> execute() override;
 
-    void setThenBody(Executor* then) {
-        then_ = DCHECK_NOTNULL(then);
-    }
+  void setThenBody(Executor* then) { then_ = DCHECK_NOTNULL(then); }
 
-    void setElseBody(Executor* els) {
-        else_ = DCHECK_NOTNULL(els);
-    }
+  void setElseBody(Executor* els) { else_ = DCHECK_NOTNULL(els); }
 
-    Executor* thenBody() const {
-        return then_;
-    }
+  Executor* thenBody() const { return then_; }
 
-    Executor* elseBody() const {
-        return else_;
-    }
+  Executor* elseBody() const { return else_; }
 
-private:
-    Executor* then_;
-    Executor* else_;
+ private:
+  Executor* then_;
+  Executor* else_;
 };
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula
 
-#endif   // GRAPH_EXECUTOR_LOGIC_SELECTEXECUTOR_H_
+#endif  // GRAPH_EXECUTOR_LOGIC_SELECTEXECUTOR_H_

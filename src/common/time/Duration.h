@@ -13,33 +13,29 @@ namespace nebula {
 namespace time {
 
 class Duration final {
-public:
-    explicit Duration(bool paused = false) {
-        reset(paused);
-    }
+ public:
+  explicit Duration(bool paused = false) { reset(paused); }
 
-    void reset(bool paused = false);
+  void reset(bool paused = false);
 
-    void pause();
-    void resume();
+  void pause();
+  void resume();
 
-    bool isPaused() const {
-        return isPaused_;
-    }
+  bool isPaused() const { return isPaused_; }
 
-    uint64_t elapsedInSec() const;
-    uint64_t elapsedInMSec() const;
-    uint64_t elapsedInUSec() const;
+  uint64_t elapsedInSec() const;
+  uint64_t elapsedInMSec() const;
+  uint64_t elapsedInUSec() const;
 
-private:
-    bool isPaused_;
-    uint64_t accumulated_;
+ private:
+  bool isPaused_;
+  uint64_t accumulated_;
 #if defined(__x86_64__)
-    uint64_t startTick_;
+  uint64_t startTick_;
 #else
-    struct timespec startTick_;
-    uint64_t nanoDiff(struct timespec start, struct timespec end) const;
-    struct timespec now() const;
+  struct timespec startTick_;
+  uint64_t nanoDiff(struct timespec start, struct timespec end) const;
+  struct timespec now() const;
 #endif
 };
 
@@ -47,4 +43,3 @@ private:
 }  // namespace nebula
 
 #endif  // COMMON_TIME_DURATION_H_
-

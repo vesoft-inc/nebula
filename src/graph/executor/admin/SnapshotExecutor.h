@@ -13,39 +13,39 @@ namespace nebula {
 namespace graph {
 
 class CreateSnapshotExecutor final : public Executor {
-public:
-    CreateSnapshotExecutor(const PlanNode *node, QueryContext *qctx)
-        : Executor("CreateSnapshotExecutor", node, qctx) {}
+ public:
+  CreateSnapshotExecutor(const PlanNode *node, QueryContext *qctx)
+      : Executor("CreateSnapshotExecutor", node, qctx) {}
 
-    folly::Future<Status> execute() override;
+  folly::Future<Status> execute() override;
 
-private:
-    folly::Future<Status> descSpace();
+ private:
+  folly::Future<Status> descSpace();
 };
 
 class DropSnapshotExecutor final : public Executor {
-public:
-    DropSnapshotExecutor(const PlanNode *node, QueryContext *qctx)
-            : Executor("DropSnapshotExecutor", node, qctx) {}
+ public:
+  DropSnapshotExecutor(const PlanNode *node, QueryContext *qctx)
+      : Executor("DropSnapshotExecutor", node, qctx) {}
 
-    folly::Future<Status> execute() override;
+  folly::Future<Status> execute() override;
 
-private:
-    folly::Future<Status> descSpace();
+ private:
+  folly::Future<Status> descSpace();
 };
 
 class ShowSnapshotsExecutor final : public Executor {
-public:
-    ShowSnapshotsExecutor(const PlanNode *node, QueryContext *qctx)
-        : Executor("ShowSnapshotsExecutor", node, qctx) {}
+ public:
+  ShowSnapshotsExecutor(const PlanNode *node, QueryContext *qctx)
+      : Executor("ShowSnapshotsExecutor", node, qctx) {}
 
-    folly::Future<Status> execute() override;
+  folly::Future<Status> execute() override;
 
-private:
-    folly::Future<Status> descSpace();
+ private:
+  folly::Future<Status> descSpace();
 };
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula
 
-#endif   // GRAPH_EXECUTOR_ADMIN_SNAPSHOTEXECUTOR_H_
+#endif  // GRAPH_EXECUTOR_ADMIN_SNAPSHOTEXECUTOR_H_

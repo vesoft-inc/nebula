@@ -9,73 +9,69 @@
 
 #include "common/base/Base.h"
 #include "graph/context/ast/QueryAstContext.h"
-#include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/Planner.h"
-#include "graph/util/ExpressionUtils.h"
+#include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Query.h"
+#include "graph/util/ExpressionUtils.h"
 
 namespace nebula {
 namespace graph {
 class GoPlanner final : public Planner {
-public:
-    using EdgeProp = nebula::storage::cpp2::EdgeProp;
-    using VertexProp = nebula::storage::cpp2::VertexProp;
-    using EdgeProps = std::vector<EdgeProp>;
-    using VertexProps = std::vector<VertexProp>;
+ public:
+  using EdgeProp = nebula::storage::cpp2::EdgeProp;
+  using VertexProp = nebula::storage::cpp2::VertexProp;
+  using EdgeProps = std::vector<EdgeProp>;
+  using VertexProps = std::vector<VertexProp>;
 
-    static std::unique_ptr<GoPlanner> make() {
-        return std::unique_ptr<GoPlanner>(new GoPlanner());
-    }
+  static std::unique_ptr<GoPlanner> make() { return std::unique_ptr<GoPlanner>(new GoPlanner()); }
 
-    static bool match(AstContext* astCtx) {
-        return astCtx->sentence->kind() == Sentence::Kind::kGo;
-    }
+  static bool match(AstContext* astCtx) { return astCtx->sentence->kind() == Sentence::Kind::kGo; }
 
-    StatusOr<SubPlan> transform(AstContext* astCtx) override;
+  StatusOr<SubPlan> transform(AstContext* astCtx) override;
 
-private:
-    SubPlan oneStepPlan(SubPlan& startVidPlan);
+ private:
+  SubPlan oneStepPlan(SubPlan& startVidPlan);
 
-    SubPlan nStepsPlan(SubPlan& startVidPlan);
+  SubPlan nStepsPlan(SubPlan& startVidPlan);
 
-    SubPlan mToNStepsPlan(SubPlan& startVidPlan);
+  SubPlan mToNStepsPlan(SubPlan& startVidPlan);
 
-private:
-    std::unique_ptr<VertexProps> buildVertexProps(const ExpressionProps::TagIDPropsMap& propsMap);
+ private:
+  std::unique_ptr<VertexProps> buildVertexProps(const ExpressionProps::TagIDPropsMap& propsMap);
 
-    std::unique_ptr<EdgeProps> buildEdgeProps(bool onlyDst);
+  std::unique_ptr<EdgeProps> buildEdgeProps(bool onlyDst);
 
-    void doBuildEdgeProps(std::unique_ptr<EdgeProps>& edgeProps, bool onlyDst, bool isInEdge);
+  void doBuildEdgeProps(std::unique_ptr<EdgeProps>& edgeProps, bool onlyDst, bool isInEdge);
 
-    Expression* loopCondition(uint32_t steps, const std::string& gnVar);
+  Expression* loopCondition(uint32_t steps, const std::string& gnVar);
 
-    PlanNode* extractSrcEdgePropsFromGN(PlanNode* dep, const std::string& input);
+  PlanNode* extractSrcEdgePropsFromGN(PlanNode* dep, const std::string& input);
 
-    PlanNode* extractSrcDstFromGN(PlanNode* dep, const std::string& input);
+  PlanNode* extractSrcDstFromGN(PlanNode* dep, const std::string& input);
 
-    PlanNode* extractVidFromRuntimeInput(PlanNode* dep);
+  PlanNode* extractVidFromRuntimeInput(PlanNode* dep);
 
-    PlanNode* trackStartVid(PlanNode* left, PlanNode* right);
+  PlanNode* trackStartVid(PlanNode* left, PlanNode* right);
 
-    PlanNode* buildJoinDstPlan(PlanNode* dep);
+  PlanNode* buildJoinDstPlan(PlanNode* dep);
 
-    PlanNode* buildJoinInputPlan(PlanNode* dep);
+  PlanNode* buildJoinInputPlan(PlanNode* dep);
 
-    PlanNode* lastStepJoinInput(PlanNode* left, PlanNode* right);
+  PlanNode* lastStepJoinInput(PlanNode* left, PlanNode* right);
 
-    PlanNode* buildLastStepJoinPlan(PlanNode* gn, PlanNode* join);
+  PlanNode* buildLastStepJoinPlan(PlanNode* gn, PlanNode* join);
 
-    PlanNode* lastStep(PlanNode* dep, PlanNode* join);
+  PlanNode* lastStep(PlanNode* dep, PlanNode* join);
 
-    PlanNode* buildOneStepJoinPlan(PlanNode* gn);
+  PlanNode* buildOneStepJoinPlan(PlanNode* gn);
 
-private:
-    GoPlanner() = default;
+ private:
+  GoPlanner() = default;
 
-    GoContext* goCtx_{nullptr};
+  GoContext* goCtx_{nullptr};
 
-    const int16_t VID_INDEX = 0;
-    const int16_t LAST_COL_INDEX = -1;
+  const int16_t VID_INDEX = 0;
+  const int16_t LAST_COL_INDEX = -1;
 };
 }  // namespace graph
 }  // namespace nebula

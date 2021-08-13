@@ -12,67 +12,55 @@ namespace nebula {
 namespace graph {
 
 PlanNode* StartNode::clone() const {
-    auto* newStart = StartNode::make(qctx_);
-    newStart->cloneMembers(*this);
-    return newStart;
+  auto* newStart = StartNode::make(qctx_);
+  newStart->cloneMembers(*this);
+  return newStart;
 }
 
-void StartNode::cloneMembers(const StartNode& s) {
-    PlanNode::cloneMembers(s);
-}
-
+void StartNode::cloneMembers(const StartNode& s) { PlanNode::cloneMembers(s); }
 
 PlanNode* Select::clone() const {
-    auto* newSelect = Select::make(qctx_, nullptr);
-    newSelect->cloneMembers(*this);
-    return newSelect;
+  auto* newSelect = Select::make(qctx_, nullptr);
+  newSelect->cloneMembers(*this);
+  return newSelect;
 }
 
-void Select::cloneMembers(const Select& s) {
-    BinarySelect::cloneMembers(s);
-}
-
+void Select::cloneMembers(const Select& s) { BinarySelect::cloneMembers(s); }
 
 PlanNode* Loop::clone() const {
-    auto* newLoop = Loop::make(qctx_, nullptr);
-    newLoop->cloneMembers(*this);
-    return newLoop;
+  auto* newLoop = Loop::make(qctx_, nullptr);
+  newLoop->cloneMembers(*this);
+  return newLoop;
 }
 
-void Loop::cloneMembers(const Loop& s) {
-    BinarySelect::cloneMembers(s);
-}
-
+void Loop::cloneMembers(const Loop& s) { BinarySelect::cloneMembers(s); }
 
 PlanNode* PassThroughNode::clone() const {
-    auto* newPt = PassThroughNode::make(qctx_, nullptr);
-    newPt->cloneMembers(*this);
-    return newPt;
+  auto* newPt = PassThroughNode::make(qctx_, nullptr);
+  newPt->cloneMembers(*this);
+  return newPt;
 }
 
-void PassThroughNode::cloneMembers(const PassThroughNode& s) {
-    SingleInputNode::cloneMembers(s);
-}
-
+void PassThroughNode::cloneMembers(const PassThroughNode& s) { SingleInputNode::cloneMembers(s); }
 
 std::unique_ptr<PlanNodeDescription> BinarySelect::explain() const {
-    auto desc = SingleInputNode::explain();
-    addDescription("condition", condition_ ? condition_->toString() : "", desc.get());
-    return desc;
+  auto desc = SingleInputNode::explain();
+  addDescription("condition", condition_ ? condition_->toString() : "", desc.get());
+  return desc;
 }
 
 std::unique_ptr<PlanNodeDescription> Loop::explain() const {
-    auto desc = BinarySelect::explain();
-    addDescription("loopBody", std::to_string(body_->id()), desc.get());
-    return desc;
+  auto desc = BinarySelect::explain();
+  addDescription("loopBody", std::to_string(body_->id()), desc.get());
+  return desc;
 }
 
 std::unique_ptr<PlanNodeDescription> Select::explain() const {
-    auto desc = BinarySelect::explain();
-    addDescription("thenBody", std::to_string(if_->id()), desc.get());
-    addDescription("elseBody", std::to_string(else_->id()), desc.get());
-    return desc;
+  auto desc = BinarySelect::explain();
+  addDescription("thenBody", std::to_string(if_->id()), desc.get());
+  addDescription("elseBody", std::to_string(else_->id()), desc.get());
+  return desc;
 }
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula

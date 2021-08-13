@@ -4,9 +4,9 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include <gflags/gflags.h>
-
 #include "common/time/TimezoneInfo.h"
+
+#include <gflags/gflags.h>
 
 DEFINE_string(timezone_file,
               "share/resources/date_time_zonespec.csv",
@@ -28,25 +28,25 @@ namespace time {
 /*static*/ Timezone Timezone::globalTimezone;
 
 /*static*/ Status Timezone::initializeGlobalTimezone() {
-    // use system timezone configuration if not set.
-    if (FLAGS_timezone_name.empty()) {
-        auto *tz = ::getenv("TZ");
-        if (tz != nullptr) {
-            FLAGS_timezone_name.append(tz);
-        }
+  // use system timezone configuration if not set.
+  if (FLAGS_timezone_name.empty()) {
+    auto *tz = ::getenv("TZ");
+    if (tz != nullptr) {
+      FLAGS_timezone_name.append(tz);
     }
-    if (!FLAGS_timezone_name.empty()) {
-        if (FLAGS_timezone_name.front() == ':') {
-            NG_RETURN_IF_ERROR(Timezone::init());
-            return globalTimezone.loadFromDb(
-                std::string(FLAGS_timezone_name.begin() + 1, FLAGS_timezone_name.end()));
-        } else {
-            return globalTimezone.parsePosixTimezone(FLAGS_timezone_name);
-        }
+  }
+  if (!FLAGS_timezone_name.empty()) {
+    if (FLAGS_timezone_name.front() == ':') {
+      NG_RETURN_IF_ERROR(Timezone::init());
+      return globalTimezone.loadFromDb(
+          std::string(FLAGS_timezone_name.begin() + 1, FLAGS_timezone_name.end()));
     } else {
-        return Status::Error("Don't allowed empty timezone.");
+      return globalTimezone.parsePosixTimezone(FLAGS_timezone_name);
     }
+  } else {
+    return Status::Error("Don't allowed empty timezone.");
+  }
 }
 
-}   // namespace time
-}   // namespace nebula
+}  // namespace time
+}  // namespace nebula

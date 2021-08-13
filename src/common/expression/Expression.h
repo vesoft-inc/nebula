@@ -9,223 +9,202 @@
 
 #include "common/base/Base.h"
 #include "common/base/ObjectPool.h"
-#include "common/datatypes/Value.h"
 #include "common/context/ExpressionContext.h"
+#include "common/datatypes/Value.h"
 
 namespace nebula {
 
 class ExprVisitor;
 
 class Expression {
-public:
-    // Warning: this expression will be encoded and store in meta as default value
-    // So don't add enum in middle, just append it!
-    enum class Kind : uint8_t {
-        kConstant,
-        // Arithmetic
-        kAdd,
-        kMinus,
-        kMultiply,
-        kDivision,
-        kMod,
-        // Unary
-        kUnaryPlus,
-        kUnaryNegate,
-        kUnaryNot,
-        kUnaryIncr,
-        kUnaryDecr,
-        // Relational
-        kRelEQ,
-        kRelNE,
-        kRelLT,
-        kRelLE,
-        kRelGT,
-        kRelGE,
-        kRelREG,
-        kRelIn,
-        kRelNotIn,
-        kContains,
-        kNotContains,
-        kStartsWith,
-        kNotStartsWith,
-        kEndsWith,
-        kNotEndsWith,
+ public:
+  // Warning: this expression will be encoded and store in meta as default value
+  // So don't add enum in middle, just append it!
+  enum class Kind : uint8_t {
+    kConstant,
+    // Arithmetic
+    kAdd,
+    kMinus,
+    kMultiply,
+    kDivision,
+    kMod,
+    // Unary
+    kUnaryPlus,
+    kUnaryNegate,
+    kUnaryNot,
+    kUnaryIncr,
+    kUnaryDecr,
+    // Relational
+    kRelEQ,
+    kRelNE,
+    kRelLT,
+    kRelLE,
+    kRelGT,
+    kRelGE,
+    kRelREG,
+    kRelIn,
+    kRelNotIn,
+    kContains,
+    kNotContains,
+    kStartsWith,
+    kNotStartsWith,
+    kEndsWith,
+    kNotEndsWith,
 
-        kSubscript,
-        kAttribute,
-        kLabelAttribute,
-        kColumn,
-        // Logical
-        kLogicalAnd,
-        kLogicalOr,
-        kLogicalXor,
+    kSubscript,
+    kAttribute,
+    kLabelAttribute,
+    kColumn,
+    // Logical
+    kLogicalAnd,
+    kLogicalOr,
+    kLogicalXor,
 
-        kTypeCasting,
+    kTypeCasting,
 
-        kFunctionCall,
-        // Vertex/Edge/Path
-        kTagProperty,
-        kEdgeProperty,
-        kInputProperty,
-        kVarProperty,
-        kDstProperty,
-        kSrcProperty,
-        kEdgeSrc,
-        kEdgeType,
-        kEdgeRank,
-        kEdgeDst,
-        kVertex,
-        kEdge,
+    kFunctionCall,
+    // Vertex/Edge/Path
+    kTagProperty,
+    kEdgeProperty,
+    kInputProperty,
+    kVarProperty,
+    kDstProperty,
+    kSrcProperty,
+    kEdgeSrc,
+    kEdgeType,
+    kEdgeRank,
+    kEdgeDst,
+    kVertex,
+    kEdge,
 
-        kUUID,
+    kUUID,
 
-        kVar,
-        kVersionedVar,
-        // Container
-        kList,
-        kSet,
-        kMap,
+    kVar,
+    kVersionedVar,
+    // Container
+    kList,
+    kSet,
+    kMap,
 
-        kLabel,
+    kLabel,
 
-        kCase,
+    kCase,
 
-        kPredicate,
-        kListComprehension,
-        kReduce,
+    kPredicate,
+    kListComprehension,
+    kReduce,
 
-        kPathBuild,
-        // text or key word search expression
-        kTSPrefix,
-        kTSWildcard,
-        kTSRegexp,
-        kTSFuzzy,
+    kPathBuild,
+    // text or key word search expression
+    kTSPrefix,
+    kTSWildcard,
+    kTSRegexp,
+    kTSFuzzy,
 
-        kAggregate,
-        kIsNull,
-        kIsNotNull,
-        kIsEmpty,
-        kIsNotEmpty,
+    kAggregate,
+    kIsNull,
+    kIsNotNull,
+    kIsEmpty,
+    kIsNotEmpty,
 
-        kSubscriptRange,
-    };
+    kSubscriptRange,
+  };
 
+  Expression(ObjectPool* pool, Kind kind);
+  virtual ~Expression() = default;
 
-    // explicit Expression(Kind kind) : kind_(kind) {}
+  Expression& operator=(const Expression& rhs) = delete;
+  Expression& operator=(Expression&&) = delete;
+  Expression(const Expression&) = delete;
 
-    explicit Expression(ObjectPool* pool, Kind kind) : pool_(pool), kind_(kind) {}
-    virtual ~Expression() = default;
+  Kind kind() const { return kind_; }
 
-    Expression& operator=(const Expression& rhs) = delete;
-    Expression& operator=(Expression&&) = delete;
-    Expression(const Expression&) = delete;
+  static Value eval(Expression* expr, ExpressionContext& ctx) { return expr->eval(ctx); }
 
-    Kind kind() const {
-        return kind_;
-    }
+  virtual const Value& eval(ExpressionContext& ctx) = 0;
 
-    static Value eval(Expression* expr, ExpressionContext& ctx) {
-        return expr->eval(ctx);
-    }
+  virtual bool operator==(const Expression& rhs) const = 0;
+  bool operator!=(const Expression& rhs) const { return !operator==(rhs); }
 
-    virtual const Value& eval(ExpressionContext& ctx) = 0;
+  virtual std::string toString() const = 0;
 
-    virtual bool operator==(const Expression& rhs) const = 0;
-    bool operator!=(const Expression& rhs) const {
-        return !operator==(rhs);
-    }
+  virtual std::string rawString() const { return toString(); }
 
-    virtual std::string toString() const = 0;
+  virtual void accept(ExprVisitor* visitor) = 0;
 
-    virtual std::string rawString() const {
-        return toString();
-    }
+  // Deep copy
+  virtual Expression* clone() const = 0;
 
-    virtual void accept(ExprVisitor* visitor) = 0;
+  std::string encode() const;
 
-    // Deep copy
-    virtual Expression* clone() const = 0;
+  static std::string encode(const Expression& exp);
 
-    std::string encode() const;
+  static Expression* decode(ObjectPool* pool, folly::StringPiece encoded);
 
-    static std::string encode(const Expression& exp);
+  ObjectPool* getObjPool() const { return pool_; }
 
-    static Expression* decode(ObjectPool* pool, folly::StringPiece encoded);
+  virtual bool isLogicalExpr() const { return false; }
 
-    ObjectPool* getObjPool() const {
-        return pool_;
-    }
+  virtual bool isRelExpr() const { return false; }
 
-    virtual bool isLogicalExpr() const {
-        return false;
-    }
+  virtual bool isArithmeticExpr() const { return false; }
 
-    virtual bool isRelExpr() const {
-        return false;
-    }
+  virtual bool isContainerExpr() const { return false; }
 
-    virtual bool isArithmeticExpr() const {
-        return false;
-    }
+ protected:
+  class Encoder final {
+   public:
+    explicit Encoder(size_t bufSizeHint = 2048);
+    std::string moveStr();
 
-    virtual bool isContainerExpr() const {
-        return false;
-    }
+    Encoder& operator<<(Kind kind) noexcept;
+    Encoder& operator<<(const std::string& str) noexcept;
+    Encoder& operator<<(const Value& val) noexcept;
+    Encoder& operator<<(size_t size) noexcept;
+    Encoder& operator<<(Value::Type vType) noexcept;
+    Encoder& operator<<(const Expression& exp) noexcept;
 
-protected:
-    class Encoder final {
-    public:
-        explicit Encoder(size_t bufSizeHint = 2048);
-        std::string moveStr();
+   private:
+    std::string buf_;
+  };
 
-        Encoder& operator<<(Kind kind) noexcept;
-        Encoder& operator<<(const std::string& str) noexcept;
-        Encoder& operator<<(const Value& val) noexcept;
-        Encoder& operator<<(size_t size) noexcept;
-        Encoder& operator<<(Value::Type vType) noexcept;
-        Encoder& operator<<(const Expression& exp) noexcept;
+  class Decoder final {
+   public:
+    explicit Decoder(folly::StringPiece encoded);
 
-    private:
-        std::string buf_;
-    };
+    bool finished() const;
 
-    class Decoder final {
-    public:
-        explicit Decoder(folly::StringPiece encoded);
+    Kind readKind() noexcept;
+    std::string readStr() noexcept;
+    Value readValue() noexcept;
+    size_t readSize() noexcept;
+    Value::Type readValueType() noexcept;
+    Expression* readExpression(ObjectPool* pool) noexcept;
 
-        bool finished() const;
+    // Convert the unprocessed part into the hex string
+    std::string getHexStr() const;
 
-        Kind readKind() noexcept;
-        std::string readStr() noexcept;
-        Value readValue() noexcept;
-        size_t readSize() noexcept;
-        Value::Type readValueType() noexcept;
-        Expression* readExpression(ObjectPool* pool) noexcept;
+   private:
+    folly::StringPiece encoded_;
+    const char* ptr_;
+  };
 
-        // Convert the unprocessed part into the hex string
-        std::string getHexStr() const;
+ protected:
+  static Expression* decode(ObjectPool* pool, Decoder& decoder);
 
-    private:
-        folly::StringPiece encoded_;
-        const char* ptr_;
-    };
+  // Serialize the content of the expression to the given encoder
+  virtual void writeTo(Encoder& encoder) const = 0;
 
-protected:
-    static Expression* decode(ObjectPool* pool, Decoder& decoder);
+  // Reset the content of the expression from the given decoder
+  virtual void resetFrom(Decoder& decoder) = 0;
 
-    // Serialize the content of the expression to the given encoder
-    virtual void writeTo(Encoder& encoder) const = 0;
+  ObjectPool* pool_{nullptr};
 
-    // Reset the content of the expression from the given decoder
-    virtual void resetFrom(Decoder& decoder) = 0;
-
-    ObjectPool* pool_;
-
-    Kind kind_;
+  Kind kind_;
 };
 
 std::ostream& operator<<(std::ostream& os, Expression::Kind kind);
 
-}   // namespace nebula
+}  // namespace nebula
 
-#endif   // COMMON_EXPRESSION_EXPRESSION_H_
+#endif  // COMMON_EXPRESSION_EXPRESSION_H_

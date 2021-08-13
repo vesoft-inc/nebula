@@ -7,24 +7,24 @@
 #ifndef GRAPH_EXECUTOR_ADMIN_BALANCELEADERSEXECUTOR_H_
 #define GRAPH_EXECUTOR_ADMIN_BALANCELEADERSEXECUTOR_H_
 
-#include "graph/executor/Executor.h"
 #include "graph/context/QueryContext.h"
+#include "graph/executor/Executor.h"
 
 namespace nebula {
 namespace graph {
 
 class BalanceLeadersExecutor final : public Executor {
-public:
-    BalanceLeadersExecutor(const PlanNode *node, QueryContext *qctx)
-        : Executor("BaanceLeadersExecutor", node, qctx) {}
+ public:
+  BalanceLeadersExecutor(const PlanNode *node, QueryContext *qctx)
+      : Executor("BaanceLeadersExecutor", node, qctx) {}
 
-    folly::Future<Status> execute() override;
+  folly::Future<Status> execute() override;
 
-private:
-    folly::Future<Status> balanceLeaders();
+ private:
+  folly::Future<Status> balanceLeaders();
 };
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula
 
 #endif  // GRAPH_EXECUTOR_ADMIN_BALANCELEADERSEXECUTOR_H_

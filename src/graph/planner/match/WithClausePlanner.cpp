@@ -6,67 +6,66 @@
 
 #include "graph/planner/match/WithClausePlanner.h"
 
-#include "graph/planner/plan/Query.h"
 #include "graph/planner/match/OrderByClausePlanner.h"
 #include "graph/planner/match/PaginationPlanner.h"
-#include "graph/planner/match/YieldClausePlanner.h"
 #include "graph/planner/match/SegmentsConnector.h"
 #include "graph/planner/match/WhereClausePlanner.h"
+#include "graph/planner/match/YieldClausePlanner.h"
+#include "graph/planner/plan/Query.h"
 
 namespace nebula {
 namespace graph {
 StatusOr<SubPlan> WithClausePlanner::transform(CypherClauseContextBase* clauseCtx) {
-    if (clauseCtx->kind != CypherClauseKind::kWith) {
-        return Status::Error("Not a valid context for WithClausePlanner.");
-    }
-    auto* withClauseCtx = static_cast<WithClauseContext*>(clauseCtx);
+  if (clauseCtx->kind != CypherClauseKind::kWith) {
+    return Status::Error("Not a valid context for WithClausePlanner.");
+  }
+  auto* withClauseCtx = static_cast<WithClauseContext*>(clauseCtx);
 
-    SubPlan withPlan;
-    NG_RETURN_IF_ERROR(buildWith(withClauseCtx, withPlan));
-    return withPlan;
+  SubPlan withPlan;
+  NG_RETURN_IF_ERROR(buildWith(withClauseCtx, withPlan));
+  return withPlan;
 }
 
 Status WithClausePlanner::buildWith(WithClauseContext* wctx, SubPlan& subPlan) {
-    auto yieldPlan = std::make_unique<YieldClausePlanner>()->transform(wctx->yield.get());
-    NG_RETURN_IF_ERROR(yieldPlan);
-    auto yieldplan = std::move(yieldPlan).value();
-    subPlan.tail = yieldplan.tail;
-    subPlan.root = yieldplan.root;
+  auto yieldPlan = std::make_unique<YieldClausePlanner>()->transform(wctx->yield.get());
+  NG_RETURN_IF_ERROR(yieldPlan);
+  auto yieldplan = std::move(yieldPlan).value();
+  subPlan.tail = yieldplan.tail;
+  subPlan.root = yieldplan.root;
 
-    if (wctx->order != nullptr) {
-        auto orderPlan = std::make_unique<OrderByClausePlanner>()->transform(wctx->order.get());
-        NG_RETURN_IF_ERROR(orderPlan);
-        auto plan = std::move(orderPlan).value();
-        SegmentsConnector::addInput(plan.tail, subPlan.root, true);
-        subPlan.root = plan.root;
-    }
+  if (wctx->order != nullptr) {
+    auto orderPlan = std::make_unique<OrderByClausePlanner>()->transform(wctx->order.get());
+    NG_RETURN_IF_ERROR(orderPlan);
+    auto plan = std::move(orderPlan).value();
+    SegmentsConnector::addInput(plan.tail, subPlan.root, true);
+    subPlan.root = plan.root;
+  }
 
-    if (wctx->pagination != nullptr &&
-        (wctx->pagination->skip != 0 ||
-         wctx->pagination->limit != std::numeric_limits<int64_t>::max())) {
-        auto paginationPlan =
-            std::make_unique<PaginationPlanner>()->transform(wctx->pagination.get());
-        NG_RETURN_IF_ERROR(paginationPlan);
-        auto plan = std::move(paginationPlan).value();
-        SegmentsConnector::addInput(plan.tail, subPlan.root, true);
-        subPlan.root = plan.root;
-    }
+  if (wctx->pagination != nullptr &&
+      (wctx->pagination->skip != 0 ||
+       wctx->pagination->limit != std::numeric_limits<int64_t>::max())) {
+    auto paginationPlan = std::make_unique<PaginationPlanner>()->transform(wctx->pagination.get());
+    NG_RETURN_IF_ERROR(paginationPlan);
+    auto plan = std::move(paginationPlan).value();
+    SegmentsConnector::addInput(plan.tail, subPlan.root, true);
+    subPlan.root = plan.root;
+  }
 
-    if (wctx->where != nullptr) {
-        bool needStableFilter = wctx->order != nullptr;
-        auto wherePlan =
-            std::make_unique<WhereClausePlanner>(needStableFilter)->transform(wctx->where.get());
-        NG_RETURN_IF_ERROR(wherePlan);
-        auto plan = std::move(wherePlan).value();
-        SegmentsConnector::addInput(plan.tail, subPlan.root, true);
-        subPlan.root = plan.root;
-    }
+  if (wctx->where != nullptr) {
+    bool needStableFilter = wctx->order != nullptr;
+    auto wherePlan =
+        std::make_unique<WhereClausePlanner>(needStableFilter)->transform(wctx->where.get());
+    NG_RETURN_IF_ERROR(wherePlan);
+    auto plan = std::move(wherePlan).value();
+    SegmentsConnector::addInput(plan.tail, subPlan.root, true);
+    subPlan.root = plan.root;
+  }
 
-    VLOG(1) << "with root: " << subPlan.root->outputVar()
-            << " colNames: " << folly::join(",", subPlan.root->colNames());
+  VLOG(1) << "with root: " << subPlan.root->outputVar()
+          << " colNames: " << folly::join(",", subPlan.root->colNames());
 
-    return Status::OK();
+  return Status::OK();
 }
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula

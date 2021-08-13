@@ -7,50 +7,47 @@
 #ifndef _EXEC_QUERY_GET_PROP_EXECUTOR_H_
 #define _EXEC_QUERY_GET_PROP_EXECUTOR_H_
 
-#include "graph/executor/StorageAccessExecutor.h"
 #include "clients/storage/StorageClientBase.h"
+#include "graph/executor/StorageAccessExecutor.h"
 #include "graph/service/GraphFlags.h"
 
 namespace nebula {
 namespace graph {
 
 class GetPropExecutor : public StorageAccessExecutor {
-protected:
-    GetPropExecutor(const std::string &name, const PlanNode *node, QueryContext *qctx)
-        : StorageAccessExecutor(name, node, qctx) {}
+ protected:
+  GetPropExecutor(const std::string &name, const PlanNode *node, QueryContext *qctx)
+      : StorageAccessExecutor(name, node, qctx) {}
 
-    Status handleResp(storage::StorageRpcResponse<storage::cpp2::GetPropResponse> &&rpcResp,
-                      const std::vector<std::string> &colNames) {
-        auto result = handleCompleteness(rpcResp, FLAGS_accept_partial_success);
-        NG_RETURN_IF_ERROR(result);
-        auto state = std::move(result).value();
-        // Ok, merge DataSets to one
-        nebula::DataSet v;
-        for (auto &resp : rpcResp.responses()) {
-            if (resp.props_ref().has_value()) {
-                if (UNLIKELY(!v.append(std::move(*resp.props_ref())))) {
-                    // it's impossible according to the interface
-                    LOG(WARNING) << "Heterogeneous props dataset";
-                    state = Result::State::kPartialSuccess;
-                }
-            } else {
-                state = Result::State::kPartialSuccess;
-            }
+  Status handleResp(storage::StorageRpcResponse<storage::cpp2::GetPropResponse> &&rpcResp,
+                    const std::vector<std::string> &colNames) {
+    auto result = handleCompleteness(rpcResp, FLAGS_accept_partial_success);
+    NG_RETURN_IF_ERROR(result);
+    auto state = std::move(result).value();
+    // Ok, merge DataSets to one
+    nebula::DataSet v;
+    for (auto &resp : rpcResp.responses()) {
+      if (resp.props_ref().has_value()) {
+        if (UNLIKELY(!v.append(std::move(*resp.props_ref())))) {
+          // it's impossible according to the interface
+          LOG(WARNING) << "Heterogeneous props dataset";
+          state = Result::State::kPartialSuccess;
         }
-        if (!colNames.empty()) {
-            DCHECK_EQ(colNames.size(), v.colSize());
-            v.colNames = colNames;
-        }
-        VLOG(2) << "Dataset in get props: \n" << v << "\n";
-        return finish(ResultBuilder()
-                      .value(std::move(v))
-                      .iter(Iterator::Kind::kProp)
-                      .state(state)
-                      .finish());
+      } else {
+        state = Result::State::kPartialSuccess;
+      }
     }
+    if (!colNames.empty()) {
+      DCHECK_EQ(colNames.size(), v.colSize());
+      v.colNames = colNames;
+    }
+    VLOG(2) << "Dataset in get props: \n" << v << "\n";
+    return finish(
+        ResultBuilder().value(std::move(v)).iter(Iterator::Kind::kProp).state(state).finish());
+  }
 };
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula
 
 #endif  // _EXEC_QUERY_GET_PROP_EXECUTOR_H_

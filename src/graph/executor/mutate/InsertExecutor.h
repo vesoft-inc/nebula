@@ -13,27 +13,27 @@ namespace nebula {
 namespace graph {
 
 class InsertVerticesExecutor final : public StorageAccessExecutor {
-public:
-    InsertVerticesExecutor(const PlanNode *node, QueryContext *qctx)
-        : StorageAccessExecutor("InsertVerticesExecutor", node, qctx) {}
+ public:
+  InsertVerticesExecutor(const PlanNode *node, QueryContext *qctx)
+      : StorageAccessExecutor("InsertVerticesExecutor", node, qctx) {}
 
-    folly::Future<Status> execute() override;
+  folly::Future<Status> execute() override;
 
-private:
-    folly::Future<Status> insertVertices();
+ private:
+  folly::Future<Status> insertVertices();
 };
 
 class InsertEdgesExecutor final : public StorageAccessExecutor {
-public:
-    InsertEdgesExecutor(const PlanNode *node, QueryContext *qctx)
-        : StorageAccessExecutor("InsertEdgesExecutor", node, qctx) {}
+ public:
+  InsertEdgesExecutor(const PlanNode *node, QueryContext *qctx)
+      : StorageAccessExecutor("InsertEdgesExecutor", node, qctx) {}
 
-    folly::Future<Status> execute() override;
+  folly::Future<Status> execute() override;
 
-private:
-    folly::Future<Status> insertEdges();
+ private:
+  folly::Future<Status> insertEdges();
 };
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula
 
-#endif   // GRAPH_EXECUTOR_MUTATE_INSERTVERTICESEXECUTOR_H_
+#endif  // GRAPH_EXECUTOR_MUTATE_INSERTVERTICESEXECUTOR_H_

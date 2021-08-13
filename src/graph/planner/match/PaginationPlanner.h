@@ -15,12 +15,12 @@ namespace graph {
  * The PaginationPlanner was designed to generate subplan for skip/limit clause.
  */
 class PaginationPlanner final : public CypherClausePlanner {
-public:
-    PaginationPlanner() = default;
+ public:
+  PaginationPlanner() = default;
 
-    StatusOr<SubPlan> transform(CypherClauseContextBase* clauseCtx) override;
+  StatusOr<SubPlan> transform(CypherClauseContextBase* clauseCtx) override;
 
-    Status buildLimit(PaginationContext* pctx, SubPlan& subplan);
+  Status buildLimit(PaginationContext* pctx, SubPlan& subplan);
 };
 }  // namespace graph
 }  // namespace nebula

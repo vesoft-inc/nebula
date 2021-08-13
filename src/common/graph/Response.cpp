@@ -8,36 +8,34 @@
 
 namespace nebula {
 
-bool PlanNodeDescription::operator==(const PlanNodeDescription &rhs) const {
-    if (name != rhs.name) {
-        return false;
-    }
-    if (id != rhs.id) {
-        return false;
-    }
-    if (!checkPointer(description.get(), rhs.description.get())) {
-        return false;
-    }
-    if (!checkPointer(profiles.get(), rhs.profiles.get())) {
-        return false;
-    }
-    if (!checkPointer(branchInfo.get(), rhs.branchInfo.get())) {
-        return false;
-    }
-    return checkPointer(dependencies.get(), rhs.dependencies.get());
+bool PlanNodeDescription::operator==(const PlanNodeDescription& rhs) const {
+  if (name != rhs.name) {
+    return false;
+  }
+  if (id != rhs.id) {
+    return false;
+  }
+  if (!checkPointer(description.get(), rhs.description.get())) {
+    return false;
+  }
+  if (!checkPointer(profiles.get(), rhs.profiles.get())) {
+    return false;
+  }
+  if (!checkPointer(branchInfo.get(), rhs.branchInfo.get())) {
+    return false;
+  }
+  return checkPointer(dependencies.get(), rhs.dependencies.get());
 }
 
-#define X(EnumName, EnumNumber) case ErrorCode::EnumName: \
+#define X(EnumName, EnumNumber) \
+  case ErrorCode::EnumName:     \
     return #EnumName;
 
 const char* errorCode(ErrorCode code) {
-    switch (code) {
-        ErrorCodeEnums
-    }
-    return "Unknown error";
+  switch (code) { ErrorCodeEnums }
+  return "Unknown error";
 }
 
 #undef X
 
 }  // namespace nebula
-

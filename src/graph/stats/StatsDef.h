@@ -12,7 +12,6 @@
 
 DECLARE_int32(slow_query_threshold_us);
 
-
 namespace nebula {
 
 extern stats::CounterId kNumQueries;

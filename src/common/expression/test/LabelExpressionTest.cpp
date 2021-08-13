@@ -10,22 +10,22 @@ namespace nebula {
 class LabelExpressionTest : public ExpressionTest {};
 
 TEST_F(LabelExpressionTest, LabelExprToString) {
-    auto expr = LabelExpression::make(&pool, "name");
-    ASSERT_EQ("name", expr->toString());
+  auto expr = LabelExpression::make(&pool, "name");
+  ASSERT_EQ("name", expr->toString());
 }
 
 TEST_F(LabelExpressionTest, LabelEvaluate) {
-    auto expr = LabelExpression::make(&pool, "name");
-    auto value = Expression::eval(expr, gExpCtxt);
-    ASSERT_TRUE(value.isStr());
-    ASSERT_EQ("name", value.getStr());
+  auto expr = LabelExpression::make(&pool, "name");
+  auto value = Expression::eval(expr, gExpCtxt);
+  ASSERT_TRUE(value.isStr());
+  ASSERT_EQ("name", value.getStr());
 }
-}   // namespace nebula
+}  // namespace nebula
 
 int main(int argc, char **argv) {
-    testing::InitGoogleTest(&argc, argv);
-    folly::init(&argc, &argv, true);
-    google::SetStderrLogging(google::INFO);
+  testing::InitGoogleTest(&argc, argv);
+  folly::init(&argc, &argv, true);
+  google::SetStderrLogging(google::INFO);
 
-    return RUN_ALL_TESTS();
+  return RUN_ALL_TESTS();
 }

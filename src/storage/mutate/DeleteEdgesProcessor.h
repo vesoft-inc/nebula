@@ -8,8 +8,8 @@
 #define STORAGE_MUTATE_DELETEEDGESPROCESSOR_H_
 
 #include "common/base/Base.h"
-#include "storage/BaseProcessor.h"
 #include "kvstore/LogEncoder.h"
+#include "storage/BaseProcessor.h"
 
 namespace nebula {
 namespace storage {
@@ -17,25 +17,24 @@ namespace storage {
 extern ProcessorCounters kDelEdgesCounters;
 
 class DeleteEdgesProcessor : public BaseProcessor<cpp2::ExecResponse> {
-public:
-    static DeleteEdgesProcessor* instance(
-            StorageEnv* env,
-            const ProcessorCounters* counters = &kDelEdgesCounters) {
-        return new DeleteEdgesProcessor(env, counters);
-    }
+ public:
+  static DeleteEdgesProcessor* instance(StorageEnv* env,
+                                        const ProcessorCounters* counters = &kDelEdgesCounters) {
+    return new DeleteEdgesProcessor(env, counters);
+  }
 
-    void process(const cpp2::DeleteEdgesRequest& req);
+  void process(const cpp2::DeleteEdgesRequest& req);
 
-private:
-    explicit DeleteEdgesProcessor(StorageEnv* env, const ProcessorCounters* counters)
-            : BaseProcessor<cpp2::ExecResponse>(env, counters) {}
+ private:
+  explicit DeleteEdgesProcessor(StorageEnv* env, const ProcessorCounters* counters)
+      : BaseProcessor<cpp2::ExecResponse>(env, counters) {}
 
-    ErrorOr<nebula::cpp2::ErrorCode, std::string>
-    deleteEdges(PartitionID partId, const std::vector<cpp2::EdgeKey>& edges);
+  ErrorOr<nebula::cpp2::ErrorCode, std::string> deleteEdges(
+      PartitionID partId, const std::vector<cpp2::EdgeKey>& edges);
 
-private:
-    GraphSpaceID                                                spaceId_;
-    std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>> indexes_;
+ private:
+  GraphSpaceID spaceId_;
+  std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>> indexes_;
 };
 
 }  // namespace storage

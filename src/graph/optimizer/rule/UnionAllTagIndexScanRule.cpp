@@ -14,19 +14,15 @@ namespace opt {
 std::unique_ptr<OptRule> UnionAllTagIndexScanRule::kInstance =
     std::unique_ptr<UnionAllTagIndexScanRule>(new UnionAllTagIndexScanRule());
 
-UnionAllTagIndexScanRule::UnionAllTagIndexScanRule() {
-    RuleSet::DefaultRules().addRule(this);
-}
+UnionAllTagIndexScanRule::UnionAllTagIndexScanRule() { RuleSet::DefaultRules().addRule(this); }
 
 const Pattern& UnionAllTagIndexScanRule::pattern() const {
-    static Pattern pattern =
-        Pattern::create(Kind::kFilter, {Pattern::create(Kind::kTagIndexFullScan)});
-    return pattern;
+  static Pattern pattern =
+      Pattern::create(Kind::kFilter, {Pattern::create(Kind::kTagIndexFullScan)});
+  return pattern;
 }
 
-std::string UnionAllTagIndexScanRule::toString() const {
-    return "UnionAllTagIndexScanRule";
-}
+std::string UnionAllTagIndexScanRule::toString() const { return "UnionAllTagIndexScanRule"; }
 
-}   // namespace opt
-}   // namespace nebula
+}  // namespace opt
+}  // namespace nebula

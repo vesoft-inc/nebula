@@ -10,12 +10,12 @@ namespace nebula {
 namespace graph {
 
 PasswordAuthenticator::PasswordAuthenticator(const meta::MetaClient* client) {
-    metaClient_ = client;
+  metaClient_ = client;
 }
 
 bool PasswordAuthenticator::auth(const std::string& user, const std::string& password) {
-    return metaClient_->authCheckFromCache(user, password);
+  return metaClient_->authCheckFromCache(user, password);
 }
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula

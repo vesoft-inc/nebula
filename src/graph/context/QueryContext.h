@@ -7,10 +7,10 @@
 #ifndef GRAPH_CONTEXT_QUERYCONTEXT_H_
 #define GRAPH_CONTEXT_QUERYCONTEXT_H_
 
-#include "common/base/ObjectPool.h"
-#include "common/charset/Charset.h"
 #include "clients/meta/MetaClient.h"
 #include "clients/storage/GraphStorageClient.h"
+#include "common/base/ObjectPool.h"
+#include "common/charset/Charset.h"
 #include "common/cpp/helpers.h"
 #include "common/datatypes/Value.h"
 #include "common/meta/IndexManager.h"
@@ -18,9 +18,9 @@
 #include "graph/context/ExecutionContext.h"
 #include "graph/context/Symbols.h"
 #include "graph/context/ValidateContext.h"
-#include "parser/SequentialSentences.h"
 #include "graph/service/RequestContext.h"
 #include "graph/util/IdGenerator.h"
+#include "parser/SequentialSentences.h"
 
 namespace nebula {
 namespace graph {
@@ -39,126 +39,86 @@ namespace graph {
  *
  **************************************************************************/
 class QueryContext {
-public:
-    using RequestContextPtr = std::unique_ptr<RequestContext<ExecutionResponse>>;
+ public:
+  using RequestContextPtr = std::unique_ptr<RequestContext<ExecutionResponse>>;
 
-    QueryContext();
-    QueryContext(RequestContextPtr rctx,
-                 meta::SchemaManager* sm,
-                 meta::IndexManager* im,
-                 storage::GraphStorageClient* storage,
-                 meta::MetaClient* metaClient,
-                 CharsetInfo* charsetInfo);
+  QueryContext();
+  QueryContext(RequestContextPtr rctx,
+               meta::SchemaManager* sm,
+               meta::IndexManager* im,
+               storage::GraphStorageClient* storage,
+               meta::MetaClient* metaClient,
+               CharsetInfo* charsetInfo);
 
-    virtual ~QueryContext() = default;
+  virtual ~QueryContext() = default;
 
-    void setRCtx(RequestContextPtr rctx) {
-        rctx_ = std::move(rctx);
-    }
+  void setRCtx(RequestContextPtr rctx) { rctx_ = std::move(rctx); }
 
-    void setSchemaManager(meta::SchemaManager* sm) {
-        sm_ = sm;
-    }
+  void setSchemaManager(meta::SchemaManager* sm) { sm_ = sm; }
 
-    void setIndexManager(meta::IndexManager* im) {
-        im_ = im;
-    }
+  void setIndexManager(meta::IndexManager* im) { im_ = im; }
 
-    void setStorageClient(storage::GraphStorageClient* storage) {
-        storageClient_ = storage;
-    }
+  void setStorageClient(storage::GraphStorageClient* storage) { storageClient_ = storage; }
 
-    void setMetaClient(meta::MetaClient* metaClient) {
-        metaClient_ = metaClient;
-    }
+  void setMetaClient(meta::MetaClient* metaClient) { metaClient_ = metaClient; }
 
-    void setCharsetInfo(CharsetInfo* charsetInfo) {
-        charsetInfo_ = charsetInfo;
-    }
+  void setCharsetInfo(CharsetInfo* charsetInfo) { charsetInfo_ = charsetInfo; }
 
-    RequestContext<ExecutionResponse>* rctx() const {
-        return rctx_.get();
-    }
+  RequestContext<ExecutionResponse>* rctx() const { return rctx_.get(); }
 
-    ValidateContext* vctx() const {
-        return vctx_.get();
-    }
+  ValidateContext* vctx() const { return vctx_.get(); }
 
-    ExecutionContext* ectx() const {
-        return ectx_.get();
-    }
+  ExecutionContext* ectx() const { return ectx_.get(); }
 
-    ExecutionPlan* plan() const {
-        return ep_.get();
-    }
+  ExecutionPlan* plan() const { return ep_.get(); }
 
-    meta::SchemaManager* schemaMng() const {
-        return sm_;
-    }
+  meta::SchemaManager* schemaMng() const { return sm_; }
 
-    meta::IndexManager* indexMng() const {
-        return im_;
-    }
+  meta::IndexManager* indexMng() const { return im_; }
 
-    storage::GraphStorageClient* getStorageClient() const {
-        return storageClient_;
-    }
+  storage::GraphStorageClient* getStorageClient() const { return storageClient_; }
 
-    meta::MetaClient* getMetaClient() const {
-        return metaClient_;
-    }
+  meta::MetaClient* getMetaClient() const { return metaClient_; }
 
-    CharsetInfo* getCharsetInfo() const {
-        return charsetInfo_;
-    }
+  CharsetInfo* getCharsetInfo() const { return charsetInfo_; }
 
-    ObjectPool* objPool() const {
-        return objPool_.get();
-    }
+  ObjectPool* objPool() const { return objPool_.get(); }
 
-    int64_t genId() const {
-        return idGen_->id();
-    }
+  int64_t genId() const { return idGen_->id(); }
 
-    SymbolTable* symTable() const {
-        return symTable_.get();
-    }
+  SymbolTable* symTable() const { return symTable_.get(); }
 
-    void setPartialSuccess() {
-        DCHECK(rctx_ != nullptr);
-        rctx_->resp().errorCode = ErrorCode::E_PARTIAL_SUCCEEDED;
-    }
+  void setPartialSuccess() {
+    DCHECK(rctx_ != nullptr);
+    rctx_->resp().errorCode = ErrorCode::E_PARTIAL_SUCCEEDED;
+  }
 
-    void markKilled() {
-        killed_.exchange(true);
-    }
+  void markKilled() { killed_.exchange(true); }
 
-    bool isKilled() const {
-        return killed_.load();
-    }
+  bool isKilled() const { return killed_.load(); }
 
-private:
-    void init();
+ private:
+  void init();
 
-    RequestContextPtr                                       rctx_;
-    std::unique_ptr<ValidateContext>                        vctx_;
-    std::unique_ptr<ExecutionContext>                       ectx_;
-    std::unique_ptr<ExecutionPlan>                          ep_;
-    meta::SchemaManager*                                    sm_{nullptr};
-    meta::IndexManager*                                     im_{nullptr};
-    storage::GraphStorageClient*                            storageClient_{nullptr};
-    meta::MetaClient*                                       metaClient_{nullptr};
-    CharsetInfo*                                            charsetInfo_{nullptr};
+  RequestContextPtr rctx_;
+  std::unique_ptr<ValidateContext> vctx_;
+  std::unique_ptr<ExecutionContext> ectx_;
+  std::unique_ptr<ExecutionPlan> ep_;
+  meta::SchemaManager* sm_{nullptr};
+  meta::IndexManager* im_{nullptr};
+  storage::GraphStorageClient* storageClient_{nullptr};
+  meta::MetaClient* metaClient_{nullptr};
+  CharsetInfo* charsetInfo_{nullptr};
 
-    // The Object Pool holds all internal generated objects.
-    // e.g. expressions, plan nodes, executors
-    std::unique_ptr<ObjectPool>                             objPool_;
-    std::unique_ptr<IdGenerator>                            idGen_;
-    std::unique_ptr<SymbolTable>                            symTable_;
+  // The Object Pool holds all internal generated objects.
+  // e.g. expressions, plan nodes, executors
+  std::unique_ptr<ObjectPool> objPool_;
+  std::unique_ptr<IdGenerator> idGen_;
+  std::unique_ptr<SymbolTable> symTable_;
 
-    std::atomic<bool>                                       killed_{false};
+  std::atomic<bool> killed_{false};
 };
 
-}   // namespace graph
-}   // namespace nebula
-#endif   // GRAPH_CONTEXT_QUERYCONTEXT_H_
+}  // namespace graph
+}  // namespace nebula
+#endif  // GRAPH_CONTEXT_QUERYCONTEXT_H_

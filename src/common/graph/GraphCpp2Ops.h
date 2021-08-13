@@ -16,7 +16,7 @@ struct PlanDescription;
 struct PlanNodeBranchInfo;
 struct PlanNodeDescription;
 struct ProfilingStats;
-}
+}  // namespace nebula
 
 namespace apache::thrift {
 
@@ -28,6 +28,6 @@ SPECIALIZE_CPP2OPS(nebula::PlanNodeBranchInfo);
 SPECIALIZE_CPP2OPS(nebula::PlanNodeDescription);
 SPECIALIZE_CPP2OPS(nebula::ProfilingStats);
 
-}   // namespace apache::thrift
+}  // namespace apache::thrift
 
 #endif  // COMMON_GRAPH_CPP2OPS_H_

@@ -121,12 +121,6 @@ set_target_properties(
 
 target_compile_options(${file_name}_thrift_obj PRIVATE "-Wno-pedantic")
 target_compile_options(${file_name}_thrift_obj PRIVATE "-Wno-extra")
-export(
-  TARGETS "${file_name}_thrift_obj"
-  NAMESPACE "common_"
-  APPEND
-  FILE ${CMAKE_BINARY_DIR}/${PACKAGE_NAME}-config.cmake
-)
 
 if(NOT "${file_name}" STREQUAL "common")
     add_dependencies(

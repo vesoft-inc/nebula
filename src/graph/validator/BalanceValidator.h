@@ -14,18 +14,15 @@ namespace nebula {
 namespace graph {
 
 class BalanceValidator final : public Validator {
-public:
-    BalanceValidator(Sentence* sentence, QueryContext* context)
-        : Validator(sentence, context) {
-        setNoSpaceRequired();
-    }
+ public:
+  BalanceValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
+    setNoSpaceRequired();
+  }
 
-private:
-    Status validateImpl() override {
-        return Status::OK();
-    }
+ private:
+  Status validateImpl() override { return Status::OK(); }
 
-    Status toPlan() override;
+  Status toPlan() override;
 };
 
 }  // namespace graph

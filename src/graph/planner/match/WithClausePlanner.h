@@ -15,13 +15,13 @@ namespace graph {
  * The WithClausePlanner was designed to generate plan for with clause.
  */
 class WithClausePlanner final : public CypherClausePlanner {
-public:
-    WithClausePlanner() = default;
+ public:
+  WithClausePlanner() = default;
 
-    StatusOr<SubPlan> transform(CypherClauseContextBase* clauseCtx) override;
+  StatusOr<SubPlan> transform(CypherClauseContextBase* clauseCtx) override;
 
-private:
-    Status buildWith(WithClauseContext* wctx, SubPlan& subPlan);
+ private:
+  Status buildWith(WithClauseContext* wctx, SubPlan& subPlan);
 };
 }  // namespace graph
 }  // namespace nebula
