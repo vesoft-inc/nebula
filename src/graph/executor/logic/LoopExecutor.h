@@ -22,9 +22,16 @@ class LoopExecutor final : public Executor {
 
   Executor *loopBody() const { return body_; }
 
+  bool finally() const {
+    return finally_;
+  }
+
  private:
   // Hold the last executor node of loop body executors chain
   Executor *body_{nullptr};
+
+  // mark will loop again
+  bool finally_{false};
 };
 
 }  // namespace graph
