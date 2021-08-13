@@ -34,6 +34,13 @@ TEST(ArenaTest, Construct) {
     auto *obj = new (ptr) int(3);  // NOLINT
     EXPECT_EQ(*obj, 3);
   }
+  {
+    for (std::size_t i = 0; i < 1024; ++i) {
+      void *ptr = a.allocateAligned(sizeof(int));
+      auto *obj = new (ptr) int(i);  // NOLINT
+      EXPECT_EQ(*obj, i);
+    }
+  }
 }
 
 }  // namespace nebula
