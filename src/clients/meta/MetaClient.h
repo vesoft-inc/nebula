@@ -553,6 +553,8 @@ class MetaClient {
 
   StatusOr<cpp2::Session> getSessionFromCache(const nebula::SessionID& session_id);
 
+  bool checkIsPlanKilled(SessionID session_id, ExecutionPlanID plan_id);
+
   StatusOr<HostAddr> getStorageLeaderFromCache(GraphSpaceID spaceId, PartitionID partId);
 
   void updateStorageLeader(GraphSpaceID spaceId, PartitionID partId, const HostAddr& leader);
@@ -750,6 +752,7 @@ class MetaClient {
   int64_t heartbeatTime_;
   SessionMap sessionMap_;
   folly::RWSpinLock sessionLock_;
+  std::set<std::pair<SessionID, ExecutionPlanID>> killedPlans_;
 };
 
 }  // namespace meta

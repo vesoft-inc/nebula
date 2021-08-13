@@ -3487,12 +3487,19 @@ bool MetaClient::loadSessions() {
     return false;
   }
   decltype(sessionMap_) session_map;
+  decltype(killedPlans_) killed_plans;
   for (auto& session : session_list.value().get_sessions()) {
     session_map[session.get_session_id()] = session;
+    for (auto& query : session.get_queries()) {
+      if (query.second.get_status() == cpp2::QueryStatus::KILLING) {
+        killed_plans.insert({session.get_session_id(), query.first});
+      }
+    }
   }
   {
     folly::RWSpinLock::WriteHolder holder(sessionLock_);
     sessionMap_ = std::move(session_map);
+    killedPlans_ = std::move(killed_plans);
   }
   return true;
 }
@@ -3506,6 +3513,11 @@ StatusOr<cpp2::Session> MetaClient::getSessionFromCache(const nebula::SessionID&
     return it->second;
   }
   return Status::SessionNotFound();
+}
+bool MetaClient::checkIsPlanKilled(SessionID sessionId, ExecutionPlanID planId) {
+  // TODO(hs.zhang): Use RCU to avoid write blocking read
+  folly::RWSpinLock::ReadHolder holder(sessionLock_);
+  return killedPlans_.count({sessionId, planId});
 }
 }  // namespace meta
 }  // namespace nebula
