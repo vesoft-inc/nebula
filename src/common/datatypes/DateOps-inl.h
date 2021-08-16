@@ -145,7 +145,7 @@ _loop:
       }
     }
     default: {
-    _skip:
+_skip:
       proto->skip(readState.fieldType);
       readState.readFieldEnd(proto);
       readState.readFieldBeginNoInline(proto);
@@ -345,7 +345,7 @@ _loop:
       }
     }
     default: {
-    _skip:
+_skip:
       proto->skip(readState.fieldType);
       readState.readFieldEnd(proto);
       readState.readFieldBeginNoInline(proto);
@@ -634,7 +634,7 @@ _loop:
       }
     }
     default: {
-    _skip:
+_skip:
       proto->skip(readState.fieldType);
       readState.readFieldEnd(proto);
       readState.readFieldBeginNoInline(proto);
