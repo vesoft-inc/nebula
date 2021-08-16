@@ -26,9 +26,7 @@ class SelectExecutor final : public Executor {
 
   Executor* elseBody() const { return else_; }
 
-  bool condition() const {
-    return condition_;
-  }
+  bool condition() const { return condition_; }
 
  private:
   Executor* then_;

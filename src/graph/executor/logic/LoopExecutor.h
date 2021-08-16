@@ -22,9 +22,7 @@ class LoopExecutor final : public Executor {
 
   Executor *loopBody() const { return body_; }
 
-  bool finally() const {
-    return finally_;
-  }
+  bool finally() const { return finally_; }
 
  private:
   // Hold the last executor node of loop body executors chain

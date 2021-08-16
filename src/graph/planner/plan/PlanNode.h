@@ -7,7 +7,6 @@
 #ifndef GRAPH_PLANNER_PLAN_PLANNODE_H_
 #define GRAPH_PLANNER_PLAN_PLANNODE_H_
 
-#include <bits/c++config.h>
 #include "common/expression/Expression.h"
 #include "common/graph/Response.h"
 #include "graph/context/QueryContext.h"
@@ -243,13 +242,9 @@ class PlanNode {
 
   double cost() const { return cost_; }
 
-  void setLoopLayers(std::size_t c) {
-      loopLayers_ = c;
-  }
+  void setLoopLayers(std::size_t c) { loopLayers_ = c; }
 
-  std::size_t loopLayers() const {
-      return loopLayers_;
-  }
+  std::size_t loopLayers() const { return loopLayers_; }
 
  protected:
   PlanNode(QueryContext* qctx, Kind kind);
@@ -274,7 +269,7 @@ class PlanNode {
   std::vector<Variable*> inputVars_;
   std::vector<Variable*> outputVars_;
   // nested loop layers of current node
-  std::size_t            loopLayers_{0};
+  std::size_t loopLayers_{0};
 };
 
 std::ostream& operator<<(std::ostream& os, PlanNode::Kind kind);
