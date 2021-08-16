@@ -25,9 +25,7 @@ cmake_minimum_required(VERSION 3.9.0)
 project("Nebula Graph" C CXX)
 
 option(ENABLE_PACK_ONE "Whether to package into one" ON)
-option(ENABLE_MODULE_UPDATE "Automatically update module" OFF)
 option(ENABLE_VERBOSE_BISON "Enable Bison to report state" OFF)
-option(ENABLE_MODULE_FORCE_CHECKOUT "Whether checkout branch of module to same as graph." ON)
 
 add_definitions(-DNEBULA_HOME=${CMAKE_SOURCE_DIR})
 
@@ -52,6 +50,13 @@ add_custom_target(
     COMMAND $(MAKE) install
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
 )
+
+
+add_custom_target(
+  clang-format
+  COMMAND "find" "src/" "-type" "f" "\\(" "-iname" "\\*.h" "-o" "-iname" "\\*.cpp" "\\)" "-exec" "clang-format" "-i" "{}" "\\;"
+  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+  )
 
 if (ENABLE_NATIVE)
     message(STATUS "ENABLE_NATIVE is ${ENABLE_NATIVE}")

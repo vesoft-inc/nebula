@@ -13,13 +13,12 @@ namespace nebula {
 namespace opt {
 
 class UnionAllIndexScanBaseRule : public OptRule {
-public:
-    bool match(OptContext *ctx, const MatchedResult &matched) const override;
-    StatusOr<TransformResult> transform(OptContext *ctx,
-                                        const MatchedResult &matched) const override;
+ public:
+  bool match(OptContext *ctx, const MatchedResult &matched) const override;
+  StatusOr<TransformResult> transform(OptContext *ctx, const MatchedResult &matched) const override;
 };
 
-}   // namespace opt
-}   // namespace nebula
+}  // namespace opt
+}  // namespace nebula
 
-#endif   // GRAPH_OPTIMIZER_RULE_UNIONALLINDEXSCANBASERULE_H_
+#endif  // GRAPH_OPTIMIZER_RULE_UNIONALLINDEXSCANBASERULE_H_

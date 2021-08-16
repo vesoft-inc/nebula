@@ -16,14 +16,13 @@ namespace dataman {
 typedef boost::any Value;
 
 class NebulaCodec {
-public:
-    virtual std::string encode(std::vector<Value> values,
-                               std::shared_ptr<const meta::SchemaProviderIf> schema
-                                   = std::shared_ptr<const meta::SchemaProviderIf>()) = 0;
+ public:
+  virtual std::string encode(std::vector<Value> values,
+                             std::shared_ptr<const meta::SchemaProviderIf> schema =
+                                 std::shared_ptr<const meta::SchemaProviderIf>()) = 0;
 
-    virtual StatusOr<std::unordered_map<std::string, Value>>
-    decode(std::string encoded,
-           std::shared_ptr<const meta::SchemaProviderIf> schema) = 0;
+  virtual StatusOr<std::unordered_map<std::string, Value>> decode(
+      std::string encoded, std::shared_ptr<const meta::SchemaProviderIf> schema) = 0;
 };
 
 }  // namespace dataman

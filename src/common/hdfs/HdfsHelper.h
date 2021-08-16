@@ -14,22 +14,22 @@ namespace nebula {
 namespace hdfs {
 
 class HdfsHelper {
-public:
-    virtual ~HdfsHelper() = default;
+ public:
+  virtual ~HdfsHelper() = default;
 
-    virtual StatusOr<std::string> ls(const std::string& hdfsHost,
-                                     int32_t hdfsPort,
-                                     const std::string& hdfsPath) = 0;
+  virtual StatusOr<std::string> ls(const std::string& hdfsHost,
+                                   int32_t hdfsPort,
+                                   const std::string& hdfsPath) = 0;
 
-    virtual StatusOr<std::string> copyToLocal(const std::string& hdfsHost,
-                                              int32_t hdfsPort,
-                                              const std::string& hdfsPath,
-                                              const std::string& localPath) = 0;
+  virtual StatusOr<std::string> copyToLocal(const std::string& hdfsHost,
+                                            int32_t hdfsPort,
+                                            const std::string& hdfsPath,
+                                            const std::string& localPath) = 0;
 
-    virtual bool checkHadoopPath() = 0;
+  virtual bool checkHadoopPath() = 0;
 };
 
-}   // namespace hdfs
-}   // namespace nebula
+}  // namespace hdfs
+}  // namespace nebula
 
 #endif  // COMMON_HDFSHELPER_H

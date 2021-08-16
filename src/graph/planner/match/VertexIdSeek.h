@@ -13,30 +13,31 @@
 namespace nebula {
 namespace graph {
 /*
- * The VertexIdSeek was designed to find if could get the starting vids in filter.
+ * The VertexIdSeek was designed to find if could get the starting vids in
+ * filter.
  */
 class VertexIdSeek final : public StartVidFinder {
-public:
-    static std::unique_ptr<VertexIdSeek> make() {
-        return std::unique_ptr<VertexIdSeek>(new VertexIdSeek());
-    }
+ public:
+  static std::unique_ptr<VertexIdSeek> make() {
+    return std::unique_ptr<VertexIdSeek>(new VertexIdSeek());
+  }
 
-    bool matchNode(NodeContext* nodeCtx) override;
+  bool matchNode(NodeContext* nodeCtx) override;
 
-    bool matchEdge(EdgeContext* edgeCtx) override;
+  bool matchEdge(EdgeContext* edgeCtx) override;
 
-    StatusOr<const Expression*> extractVids(const std::string& alias, const Expression* filter);
+  StatusOr<const Expression*> extractVids(const std::string& alias, const Expression* filter);
 
-    StatusOr<SubPlan> transformNode(NodeContext* nodeCtx) override;
+  StatusOr<SubPlan> transformNode(NodeContext* nodeCtx) override;
 
-    StatusOr<SubPlan> transformEdge(EdgeContext* edgeCtx) override;
+  StatusOr<SubPlan> transformEdge(EdgeContext* edgeCtx) override;
 
-    std::pair<std::string, Expression*> listToAnnoVarVid(QueryContext* qctx, const List& list);
+  std::pair<std::string, Expression*> listToAnnoVarVid(QueryContext* qctx, const List& list);
 
-    std::pair<std::string, Expression*> constToAnnoVarVid(QueryContext* qctx, const Value& v);
+  std::pair<std::string, Expression*> constToAnnoVarVid(QueryContext* qctx, const Value& v);
 
-private:
-    VertexIdSeek() = default;
+ private:
+  VertexIdSeek() = default;
 };
 }  // namespace graph
 }  // namespace nebula

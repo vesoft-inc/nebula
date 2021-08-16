@@ -20,48 +20,38 @@ namespace graph {
 class PlanNode;
 
 class ExecutionPlan final {
-public:
-    explicit ExecutionPlan(PlanNode* root = nullptr);
-    ~ExecutionPlan();
+ public:
+  explicit ExecutionPlan(PlanNode* root = nullptr);
+  ~ExecutionPlan();
 
-    int64_t id() const {
-        return id_;
-    }
+  int64_t id() const { return id_; }
 
-    void setRoot(PlanNode* root) {
-        root_ = root;
-    }
+  void setRoot(PlanNode* root) { root_ = root; }
 
-    PlanNode* root() const {
-        return root_;
-    }
+  PlanNode* root() const { return root_; }
 
-    int32_t* optimizeTimeInUs() {
-        return &optimizeTimeInUs_;
-    }
+  int32_t* optimizeTimeInUs() { return &optimizeTimeInUs_; }
 
-    void addProfileStats(int64_t planNodeId, ProfilingStats&& profilingStats);
+  void addProfileStats(int64_t planNodeId, ProfilingStats&& profilingStats);
 
-    void describe(PlanDescription* planDesc);
+  void describe(PlanDescription* planDesc);
 
-    void setExplainFormat(const std::string& format) {
-        explainFormat_ = format;
-    }
+  void setExplainFormat(const std::string& format) { explainFormat_ = format; }
 
-private:
-    uint64_t makePlanNodeDesc(const PlanNode* node);
-    void descBranchInfo(const PlanNode* node, bool isDoBranch, int64_t id);
-    void setPlanNodeDeps(const PlanNode* dep, PlanNodeDescription* planNodeDesc) const;
+ private:
+  uint64_t makePlanNodeDesc(const PlanNode* node);
+  void descBranchInfo(const PlanNode* node, bool isDoBranch, int64_t id);
+  void setPlanNodeDeps(const PlanNode* dep, PlanNodeDescription* planNodeDesc) const;
 
-    int32_t optimizeTimeInUs_{0};
-    int64_t id_{-1};
-    PlanNode* root_{nullptr};
-    // plan description for explain and profile query
-    PlanDescription* planDescription_{nullptr};
-    std::string explainFormat_;
+  int32_t optimizeTimeInUs_{0};
+  int64_t id_{-1};
+  PlanNode* root_{nullptr};
+  // plan description for explain and profile query
+  PlanDescription* planDescription_{nullptr};
+  std::string explainFormat_;
 };
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula
 
 #endif

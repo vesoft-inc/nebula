@@ -24,7 +24,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:executor_obj>
         $<TARGET_OBJECTS:scheduler_obj>
         $<TARGET_OBJECTS:idgenerator_obj>
-        $<TARGET_OBJECTS:context_obj>
+        $<TARGET_OBJECTS:graph_context_obj>
         $<TARGET_OBJECTS:optimizer_obj>
         $<TARGET_OBJECTS:graph_flags_obj>
         $<TARGET_OBJECTS:graph_auth_obj>
@@ -141,7 +141,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:meta_http_handler>
         $<TARGET_OBJECTS:meta_version_man_obj>
         $<TARGET_OBJECTS:meta_data_upgrade_obj>
-        $<TARGET_OBJECTS:old_meta_thrift_obj>
+        $<TARGET_OBJECTS:meta_v1_thrift_obj>
         ${common_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}

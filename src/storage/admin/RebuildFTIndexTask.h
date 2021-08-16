@@ -16,13 +16,13 @@ namespace nebula {
 namespace storage {
 
 class RebuildFTIndexTask : public AdminTask {
-public:
-    RebuildFTIndexTask(StorageEnv* env, TaskContext&& ctx) : AdminTask(env, std::move(ctx)) {}
+ public:
+  RebuildFTIndexTask(StorageEnv* env, TaskContext&& ctx) : AdminTask(env, std::move(ctx)) {}
 
-    ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>> genSubTasks() override;
+  ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>> genSubTasks() override;
 
-protected:
-    nebula::cpp2::ErrorCode taskByPart(nebula::kvstore::Listener* listener);
+ protected:
+  nebula::cpp2::ErrorCode taskByPart(nebula::kvstore::Listener* listener);
 };
 
 }  // namespace storage

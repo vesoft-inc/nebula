@@ -9,125 +9,105 @@
 
 #include <boost/algorithm/string.hpp>
 
-#include "common/function/FunctionManager.h"
 #include "common/expression/Expression.h"
+#include "common/function/FunctionManager.h"
 
 namespace nebula {
 
 class ArgumentList final {
-public:
-    static ArgumentList* make(ObjectPool* pool, size_t sz = 0) {
-        DCHECK(!!pool);
-        return pool->add(new ArgumentList(sz));
-    }
+ public:
+  static ArgumentList* make(ObjectPool* pool, size_t sz = 0) {
+    return pool->add(new ArgumentList(sz));
+  }
 
-    void addArgument(Expression* arg) {
-        CHECK(!!arg);
-        args_.emplace_back(arg);
-    }
+  void addArgument(Expression* arg) {
+    CHECK(!!arg);
+    args_.emplace_back(arg);
+  }
 
-    const auto& args() const {
-        return args_;
-    }
+  const auto& args() const { return args_; }
 
-    auto& args() {
-        return args_;
-    }
+  auto& args() { return args_; }
 
-    size_t numArgs() const {
-        return args_.size();
-    }
+  size_t numArgs() const { return args_.size(); }
 
-    void setArg(size_t i, Expression* arg) {
-        DCHECK_LT(i, numArgs());
-        args_[i] = arg;
-    }
+  void setArg(size_t i, Expression* arg) {
+    DCHECK_LT(i, numArgs());
+    args_[i] = arg;
+  }
 
-    void setArgs(std::vector<Expression*> args) {
-        args_ = args;
-    }
+  void setArgs(std::vector<Expression*> args) { args_ = args; }
 
-    bool operator==(const ArgumentList& rhs) const;
+  bool operator==(const ArgumentList& rhs) const;
 
-private:
-    ArgumentList() = default;
-    explicit ArgumentList(size_t sz) {
-        args_.reserve(sz);
-    }
+ private:
+  ArgumentList() = default;
+  explicit ArgumentList(size_t sz) { args_.reserve(sz); }
 
-private:
-    std::vector<Expression*> args_;
+ private:
+  std::vector<Expression*> args_;
 };
 
 class FunctionCallExpression final : public Expression {
-    friend class Expression;
+  friend class Expression;
 
-public:
-    FunctionCallExpression& operator=(const FunctionCallExpression& rhs) = delete;
-    FunctionCallExpression& operator=(FunctionCallExpression&&) = delete;
+ public:
+  FunctionCallExpression& operator=(const FunctionCallExpression& rhs) = delete;
+  FunctionCallExpression& operator=(FunctionCallExpression&&) = delete;
 
-    static FunctionCallExpression* make(ObjectPool* pool,
-                                        const std::string& name = "",
-                                        ArgumentList* args = nullptr) {
-        DCHECK(!!pool);
-        return args == nullptr
-                   ? pool->add(new FunctionCallExpression(pool, name, ArgumentList::make(pool)))
-                   : pool->add(new FunctionCallExpression(pool, name, args));
+  static FunctionCallExpression* make(ObjectPool* pool,
+                                      const std::string& name = "",
+                                      ArgumentList* args = nullptr) {
+    return args == nullptr
+               ? pool->add(new FunctionCallExpression(pool, name, ArgumentList::make(pool)))
+               : pool->add(new FunctionCallExpression(pool, name, args));
+  }
+
+  const Value& eval(ExpressionContext& ctx) override;
+
+  bool operator==(const Expression& rhs) const override;
+
+  std::string toString() const override;
+
+  void accept(ExprVisitor* visitor) override;
+
+  Expression* clone() const override {
+    auto arguments = ArgumentList::make(pool_, args_->numArgs());
+    for (auto& arg : args_->args()) {
+      arguments->addArgument(arg->clone());
     }
+    return FunctionCallExpression::make(pool_, name_, arguments);
+  }
 
-    const Value& eval(ExpressionContext& ctx) override;
+  const std::string& name() const { return name_; }
 
-    bool operator==(const Expression& rhs) const override;
+  bool isFunc(const std::string& name) const { return boost::iequals(name, name_); }
 
-    std::string toString() const override;
+  const ArgumentList* args() const { return args_; }
 
-    void accept(ExprVisitor* visitor) override;
+  ArgumentList* args() { return args_; }
 
-    Expression* clone() const override {
-        auto arguments = ArgumentList::make(pool_, args_->numArgs());
-        for (auto& arg : args_->args()) {
-            arguments->addArgument(arg->clone());
-        }
-        return FunctionCallExpression::make(pool_, name_, arguments);
+ private:
+  explicit FunctionCallExpression(ObjectPool* pool, const std::string& name, ArgumentList* args)
+      : Expression(pool, Kind::kFunctionCall), name_(name), args_(args) {
+    if (!name_.empty()) {
+      auto funcResult = FunctionManager::get(name_, DCHECK_NOTNULL(args_)->numArgs());
+      if (funcResult.ok()) {
+        func_ = funcResult.value();
+      }
     }
+  }
 
-    const std::string& name() const {
-        return name_;
-    }
+  void writeTo(Encoder& encoder) const override;
+  void resetFrom(Decoder& decoder) override;
 
-    bool isFunc(const std::string &name) const {
-        return boost::iequals(name, name_);
-    }
+ private:
+  std::string name_;
+  ArgumentList* args_;
 
-    const ArgumentList* args() const {
-        return args_;
-    }
-
-    ArgumentList* args() {
-        return args_;
-    }
-
-private:
-    explicit FunctionCallExpression(ObjectPool* pool, const std::string& name, ArgumentList* args)
-        : Expression(pool, Kind::kFunctionCall), name_(name), args_(args) {
-        if (!name_.empty()) {
-            auto funcResult = FunctionManager::get(name_, DCHECK_NOTNULL(args_)->numArgs());
-            if (funcResult.ok()) {
-                func_ = funcResult.value();
-            }
-        }
-    }
-
-    void writeTo(Encoder& encoder) const override;
-    void resetFrom(Decoder& decoder) override;
-
-private:
-    std::string name_;
-    ArgumentList* args_;
-
-    // runtime cache
-    Value result_;
-    FunctionManager::Function func_;
+  // runtime cache
+  Value result_;
+  FunctionManager::Function func_;
 };
 
 }  // namespace nebula

@@ -18,37 +18,27 @@
 namespace nebula {
 
 class MemInfo final : protected cpp::NonCopyable, protected cpp::NonMovable {
-public:
-    static StatusOr<std::unique_ptr<MemInfo>> make();
+ public:
+  static StatusOr<std::unique_ptr<MemInfo>> make();
 
-    uint64_t totalInKB() const {
-        return (info_->totalram * info_->mem_unit) >> 10;
-    }
+  uint64_t totalInKB() const { return (info_->totalram * info_->mem_unit) >> 10; }
 
-    uint64_t freeInKB() const {
-        return (info_->freeram * info_->mem_unit) >> 10;
-    }
+  uint64_t freeInKB() const { return (info_->freeram * info_->mem_unit) >> 10; }
 
-    uint64_t bufferInKB() const {
-        return (info_->bufferram * info_->mem_unit) >> 10;
-    }
+  uint64_t bufferInKB() const { return (info_->bufferram * info_->mem_unit) >> 10; }
 
-    uint64_t usedInKB() const {
-        return totalInKB() - freeInKB() - bufferInKB();
-    }
+  uint64_t usedInKB() const { return totalInKB() - freeInKB() - bufferInKB(); }
 
-    bool hitsHighWatermark(float ratio = 0.8f) const {
-        return usedInKB() > totalInKB() * ratio;
-    }
+  bool hitsHighWatermark(float ratio = 0.8f) const { return usedInKB() > totalInKB() * ratio; }
 
-private:
-    MemInfo() noexcept;
+ private:
+  MemInfo() noexcept;
 
-    Status init();
+  Status init();
 
-    std::unique_ptr<struct sysinfo> info_;
+  std::unique_ptr<struct sysinfo> info_;
 };
 
-}   // namespace nebula
+}  // namespace nebula
 
-#endif   // COMMON_BASE_MEMORY_H_
+#endif  // COMMON_BASE_MEMORY_H_

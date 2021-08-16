@@ -12,26 +12,27 @@
 namespace nebula {
 
 /**
- * The OperationKeyUtils is use to generate the operation key when rebuilding index. 
+ * The OperationKeyUtils is use to generate the operation key when rebuilding
+ * index.
  * */
 class OperationKeyUtils final {
-public:
-    ~OperationKeyUtils() = default;
+ public:
+  ~OperationKeyUtils() = default;
 
-    static std::string modifyOperationKey(PartitionID part, const std::string& key);
+  static std::string modifyOperationKey(PartitionID part, const std::string& key);
 
-    static std::string deleteOperationKey(PartitionID part);
+  static std::string deleteOperationKey(PartitionID part);
 
-    static bool isModifyOperation(const folly::StringPiece& rawKey);
+  static bool isModifyOperation(const folly::StringPiece& rawKey);
 
-    static bool isDeleteOperation(const folly::StringPiece& rawKey);
+  static bool isDeleteOperation(const folly::StringPiece& rawKey);
 
-    static std::string getOperationKey(const folly::StringPiece& rawValue);
+  static std::string getOperationKey(const folly::StringPiece& rawValue);
 
-    static std::string operationPrefix(PartitionID part);
+  static std::string operationPrefix(PartitionID part);
 
-private:
-    OperationKeyUtils() = delete;
+ private:
+  OperationKeyUtils() = delete;
 };
 
 }  // namespace nebula

@@ -17,31 +17,25 @@ namespace nebula {
 class SequentialSentences;
 
 class ExplainSentence final : public Sentence {
-public:
-    ExplainSentence(SequentialSentences* seqSentences,
-                    bool isProfile = false,
-                    std::string* formatType = nullptr);
+ public:
+  ExplainSentence(SequentialSentences* seqSentences,
+                  bool isProfile = false,
+                  std::string* formatType = nullptr);
 
-    std::string toString() const override;
+  std::string toString() const override;
 
-    bool isProfile() const {
-        return isProfile_;
-    }
+  bool isProfile() const { return isProfile_; }
 
-    const std::string& formatType() const {
-        return *formatType_;
-    }
+  const std::string& formatType() const { return *formatType_; }
 
-    SequentialSentences* seqSentences() const {
-        return seqSentences_.get();
-    }
+  SequentialSentences* seqSentences() const { return seqSentences_.get(); }
 
-private:
-    bool isProfile_{false};
-    std::unique_ptr<std::string> formatType_;
-    std::unique_ptr<SequentialSentences> seqSentences_;
+ private:
+  bool isProfile_{false};
+  std::unique_ptr<std::string> formatType_;
+  std::unique_ptr<SequentialSentences> seqSentences_;
 };
 
-}   // namespace nebula
+}  // namespace nebula
 
-#endif   // PARSER_EXPLAINSENTENCE_H_
+#endif  // PARSER_EXPLAINSENTENCE_H_

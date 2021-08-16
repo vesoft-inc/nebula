@@ -13,17 +13,17 @@ namespace nebula {
 namespace opt {
 
 class UnionAllTagIndexScanRule final : public UnionAllIndexScanBaseRule {
-public:
-    const Pattern &pattern() const override;
-    std::string toString() const override;
+ public:
+  const Pattern &pattern() const override;
+  std::string toString() const override;
 
-private:
-    UnionAllTagIndexScanRule();
+ private:
+  UnionAllTagIndexScanRule();
 
-    static std::unique_ptr<OptRule> kInstance;
+  static std::unique_ptr<OptRule> kInstance;
 };
 
-}   // namespace opt
-}   // namespace nebula
+}  // namespace opt
+}  // namespace nebula
 
-#endif   // GRAPH_OPTIMIZER_RULE_UNIONALLTAGINDEXSCANRULE_H_
+#endif  // GRAPH_OPTIMIZER_RULE_UNIONALLTAGINDEXSCANRULE_H_

@@ -8,9 +8,9 @@
 #define STORAGE_MUTATE_ADDEDGESPROCESSOR_H_
 
 #include "common/base/Base.h"
+#include "kvstore/LogEncoder.h"
 #include "storage/BaseProcessor.h"
 #include "storage/StorageFlags.h"
-#include "kvstore/LogEncoder.h"
 
 namespace nebula {
 namespace storage {
@@ -18,40 +18,40 @@ namespace storage {
 extern ProcessorCounters kAddEdgesCounters;
 
 class AddEdgesProcessor : public BaseProcessor<cpp2::ExecResponse> {
-    friend class TransactionManager;
-    friend class AddEdgesAtomicProcessor;
-public:
-    static AddEdgesProcessor* instance(
-            StorageEnv* env,
-            const ProcessorCounters* counters = &kAddEdgesCounters) {
-        return new AddEdgesProcessor(env, counters);
-    }
+  friend class TransactionManager;
+  friend class AddEdgesAtomicProcessor;
 
-    void process(const cpp2::AddEdgesRequest& req);
+ public:
+  static AddEdgesProcessor* instance(StorageEnv* env,
+                                     const ProcessorCounters* counters = &kAddEdgesCounters) {
+    return new AddEdgesProcessor(env, counters);
+  }
 
-    void doProcess(const cpp2::AddEdgesRequest& req);
+  void process(const cpp2::AddEdgesRequest& req);
 
-    void doProcessWithIndex(const cpp2::AddEdgesRequest& req);
+  void doProcess(const cpp2::AddEdgesRequest& req);
 
-private:
-    AddEdgesProcessor(StorageEnv* env, const ProcessorCounters* counters)
-        : BaseProcessor<cpp2::ExecResponse>(env, counters) {}
+  void doProcessWithIndex(const cpp2::AddEdgesRequest& req);
 
-    ErrorOr<nebula::cpp2::ErrorCode, std::string>
-    addEdges(PartitionID partId, const std::vector<kvstore::KV>& edges);
+ private:
+  AddEdgesProcessor(StorageEnv* env, const ProcessorCounters* counters)
+      : BaseProcessor<cpp2::ExecResponse>(env, counters) {}
 
-    ErrorOr<nebula::cpp2::ErrorCode, std::string>
-    findOldValue(PartitionID partId, const folly::StringPiece& rawKey);
+  ErrorOr<nebula::cpp2::ErrorCode, std::string> addEdges(PartitionID partId,
+                                                         const std::vector<kvstore::KV>& edges);
 
-    std::string indexKey(PartitionID partId,
-                         RowReader* reader,
-                         const folly::StringPiece& rawKey,
-                         std::shared_ptr<nebula::meta::cpp2::IndexItem> index);
+  ErrorOr<nebula::cpp2::ErrorCode, std::string> findOldValue(PartitionID partId,
+                                                             const folly::StringPiece& rawKey);
 
-private:
-    GraphSpaceID                                                spaceId_;
-    std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>> indexes_;
-    bool                                                        ifNotExists_{false};
+  std::string indexKey(PartitionID partId,
+                       RowReader* reader,
+                       const folly::StringPiece& rawKey,
+                       std::shared_ptr<nebula::meta::cpp2::IndexItem> index);
+
+ private:
+  GraphSpaceID spaceId_;
+  std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>> indexes_;
+  bool ifNotExists_{false};
 };
 
 }  // namespace storage

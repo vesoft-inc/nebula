@@ -4,72 +4,71 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include "graph/executor/admin/SnapshotExecutor.h"
+
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
-#include "graph/executor/admin/SnapshotExecutor.h"
-#include "graph/planner/plan/Admin.h"
 #include "graph/context/QueryContext.h"
+#include "graph/planner/plan/Admin.h"
 #include "graph/util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {
 
 folly::Future<Status> CreateSnapshotExecutor::execute() {
-    SCOPED_TIMER(&execTime_);
+  SCOPED_TIMER(&execTime_);
 
-    return qctx()->getMetaClient()->createSnapshot()
-            .via(runner())
-            .thenValue([](StatusOr<bool> resp) {
-                if (!resp.ok()) {
-                    LOG(ERROR) << resp.status();
-                    return resp.status();
-                }
-                return Status::OK();
-            });
+  return qctx()->getMetaClient()->createSnapshot().via(runner()).thenValue([](StatusOr<bool> resp) {
+    if (!resp.ok()) {
+      LOG(ERROR) << resp.status();
+      return resp.status();
+    }
+    return Status::OK();
+  });
 }
 
 folly::Future<Status> DropSnapshotExecutor::execute() {
-    SCOPED_TIMER(&execTime_);
+  SCOPED_TIMER(&execTime_);
 
-    auto *dsNode = asNode<DropSnapshot>(node());
-    return qctx()->getMetaClient()->dropSnapshot(dsNode->getShapshotName())
-            .via(runner())
-            .thenValue([](StatusOr<bool> resp) {
-                if (!resp.ok()) {
-                    LOG(ERROR) << resp.status();
-                    return resp.status();
-                }
-                return Status::OK();
-            });
+  auto *dsNode = asNode<DropSnapshot>(node());
+  return qctx()
+      ->getMetaClient()
+      ->dropSnapshot(dsNode->getShapshotName())
+      .via(runner())
+      .thenValue([](StatusOr<bool> resp) {
+        if (!resp.ok()) {
+          LOG(ERROR) << resp.status();
+          return resp.status();
+        }
+        return Status::OK();
+      });
 }
 
 folly::Future<Status> ShowSnapshotsExecutor::execute() {
-    SCOPED_TIMER(&execTime_);
+  SCOPED_TIMER(&execTime_);
 
-    return qctx()->getMetaClient()->listSnapshots()
-            .via(runner())
-            .thenValue([this](StatusOr<std::vector<meta::cpp2::Snapshot>> resp) {
-                if (!resp.ok()) {
-                    LOG(ERROR) << resp.status();
-                    return resp.status();
-                }
+  return qctx()->getMetaClient()->listSnapshots().via(runner()).thenValue(
+      [this](StatusOr<std::vector<meta::cpp2::Snapshot>> resp) {
+        if (!resp.ok()) {
+          LOG(ERROR) << resp.status();
+          return resp.status();
+        }
 
-                auto snapshots = std::move(resp).value();
-                DataSet dataSet({"Name", "Status", "Hosts"});
+        auto snapshots = std::move(resp).value();
+        DataSet dataSet({"Name", "Status", "Hosts"});
 
-                for (auto &snapshot : snapshots) {
-                    Row row;
-                    row.values.emplace_back(*snapshot.name_ref());
-                    row.values.emplace_back(
-                            apache::thrift::util::enumNameSafe(*snapshot.status_ref()));
-                    row.values.emplace_back(*snapshot.hosts_ref());
-                    dataSet.rows.emplace_back(std::move(row));
-                }
-                return finish(ResultBuilder()
-                                  .value(Value(std::move(dataSet)))
-                                  .iter(Iterator::Kind::kDefault)
-                                  .finish());
-            });
+        for (auto &snapshot : snapshots) {
+          Row row;
+          row.values.emplace_back(*snapshot.name_ref());
+          row.values.emplace_back(apache::thrift::util::enumNameSafe(*snapshot.status_ref()));
+          row.values.emplace_back(*snapshot.hosts_ref());
+          dataSet.rows.emplace_back(std::move(row));
+        }
+        return finish(ResultBuilder()
+                          .value(Value(std::move(dataSet)))
+                          .iter(Iterator::Kind::kDefault)
+                          .finish());
+      });
 }
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula

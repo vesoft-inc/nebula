@@ -5,30 +5,33 @@
  */
 
 #include "graph/executor/admin/ResetBalanceExecutor.h"
+
 #include "graph/planner/plan/Admin.h"
 
 namespace nebula {
 namespace graph {
 
 folly::Future<Status> ResetBalanceExecutor::execute() {
-    SCOPED_TIMER(&execTime_);
-    return resetBalance();
+  SCOPED_TIMER(&execTime_);
+  return resetBalance();
 }
 
 folly::Future<Status> ResetBalanceExecutor::resetBalance() {
-    return qctx()->getMetaClient()->balance({}, false, true)
-        .via(runner())
-        .thenValue([this](StatusOr<int64_t> resp) {
-            SCOPED_TIMER(&execTime_);
-            if (!resp.ok()) {
-                LOG(ERROR) << resp.status();
-                return resp.status();
-            }
-            DataSet v({"ID"});
-            v.emplace_back(Row({resp.value()}));
-            return finish(std::move(v));
-        });
+  return qctx()
+      ->getMetaClient()
+      ->balance({}, false, true)
+      .via(runner())
+      .thenValue([this](StatusOr<int64_t> resp) {
+        SCOPED_TIMER(&execTime_);
+        if (!resp.ok()) {
+          LOG(ERROR) << resp.status();
+          return resp.status();
+        }
+        DataSet v({"ID"});
+        v.emplace_back(Row({resp.value()}));
+        return finish(std::move(v));
+      });
 }
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula

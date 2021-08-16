@@ -9,59 +9,59 @@
 #include <memory>
 
 #include "common/base/Base.h"
-#include "interface/gen-cpp2/storage_types.h"
 #include "common/plugin/fulltext/elasticsearch/ESGraphAdapter.h"
-#include "parser/TraverseSentences.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/validator/Validator.h"
+#include "interface/gen-cpp2/storage_types.h"
+#include "parser/TraverseSentences.h"
 
 namespace nebula {
 
 namespace meta {
 class NebulaSchemaProvider;
-}   // namespace meta
+}  // namespace meta
 
 namespace graph {
 
 struct LookupContext;
 
 class LookupValidator final : public Validator {
-public:
-    LookupValidator(Sentence* sentence, QueryContext* context);
+ public:
+  LookupValidator(Sentence* sentence, QueryContext* context);
 
-    AstContext* getAstContext() override;
+  AstContext* getAstContext() override;
 
-private:
-    Status validateImpl() override;
+ private:
+  Status validateImpl() override;
 
-    Status prepareFrom();
-    Status prepareYield();
-    Status prepareFilter();
+  Status prepareFrom();
+  Status prepareYield();
+  Status prepareFilter();
 
-    StatusOr<Expression*> checkFilter(Expression* expr);
-    StatusOr<Expression*> checkRelExpr(RelationalExpression* expr);
-    StatusOr<std::string> checkTSExpr(Expression* expr);
-    StatusOr<Value> checkConstExpr(Expression* expr,
-                                   const std::string& prop,
-                                   const Expression::Kind kind);
+  StatusOr<Expression*> checkFilter(Expression* expr);
+  StatusOr<Expression*> checkRelExpr(RelationalExpression* expr);
+  StatusOr<std::string> checkTSExpr(Expression* expr);
+  StatusOr<Value> checkConstExpr(Expression* expr,
+                                 const std::string& prop,
+                                 const Expression::Kind kind);
 
-    StatusOr<Expression*> rewriteRelExpr(RelationalExpression* expr);
-    Expression* reverseRelKind(RelationalExpression* expr);
+  StatusOr<Expression*> rewriteRelExpr(RelationalExpression* expr);
+  Expression* reverseRelKind(RelationalExpression* expr);
 
-    const LookupSentence* sentence() const;
-    int32_t schemaId() const;
-    GraphSpaceID spaceId() const;
+  const LookupSentence* sentence() const;
+  int32_t schemaId() const;
+  GraphSpaceID spaceId() const;
 
-private:
-    Status getSchemaProvider(std::shared_ptr<const meta::NebulaSchemaProvider>* provider) const;
-    StatusOr<Expression*> genTsFilter(Expression* filter);
-    StatusOr<Expression*> handleLogicalExprOperands(LogicalExpression* lExpr);
+ private:
+  Status getSchemaProvider(std::shared_ptr<const meta::NebulaSchemaProvider>* provider) const;
+  StatusOr<Expression*> genTsFilter(Expression* filter);
+  StatusOr<Expression*> handleLogicalExprOperands(LogicalExpression* lExpr);
 
-    std::unique_ptr<LookupContext> lookupCtx_;
-    std::vector<nebula::plugin::HttpClient> tsClients_;
+  std::unique_ptr<LookupContext> lookupCtx_;
+  std::vector<nebula::plugin::HttpClient> tsClients_;
 };
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula
 
-#endif   // _VALIDATOR_INDEXSCAN_VALIDATOR_H_
+#endif  // _VALIDATOR_INDEXSCAN_VALIDATOR_H_

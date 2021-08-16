@@ -18,43 +18,33 @@ namespace nebula {
  * and expression rewrite.
  */
 class EdgeExpression final : public Expression {
-public:
-    EdgeExpression& operator=(const EdgeExpression& rhs) = delete;
-    EdgeExpression& operator=(EdgeExpression&&) = delete;
+ public:
+  EdgeExpression& operator=(const EdgeExpression& rhs) = delete;
+  EdgeExpression& operator=(EdgeExpression&&) = delete;
 
-    static EdgeExpression* make(ObjectPool* pool) {
-        return pool->add(new EdgeExpression(pool));
-    }
+  static EdgeExpression* make(ObjectPool* pool) { return pool->add(new EdgeExpression(pool)); }
 
-    const Value& eval(ExpressionContext& ctx) override;
+  const Value& eval(ExpressionContext& ctx) override;
 
-    void accept(ExprVisitor* visitor) override;
+  void accept(ExprVisitor* visitor) override;
 
-    Expression* clone() const override {
-        return EdgeExpression::make(pool_);
-    }
+  Expression* clone() const override { return EdgeExpression::make(pool_); }
 
-    std::string toString() const override {
-        return "EDGE";
-    }
+  std::string toString() const override { return "EDGE"; }
 
-    bool operator==(const Expression& expr) const override {
-        return kind() == expr.kind();
-    }
+  bool operator==(const Expression& expr) const override { return kind() == expr.kind(); }
 
-private:
-    explicit EdgeExpression(ObjectPool* pool) : Expression(pool, Kind::kEdge) {}
+ private:
+  explicit EdgeExpression(ObjectPool* pool) : Expression(pool, Kind::kEdge) {}
 
-    void writeTo(Encoder& encoder) const override {
-        encoder << kind();
-    }
+  void writeTo(Encoder& encoder) const override { encoder << kind(); }
 
-    void resetFrom(Decoder&) override {}
+  void resetFrom(Decoder&) override {}
 
-private:
-    Value result_;
+ private:
+  Value result_;
 };
 
-}   // namespace nebula
+}  // namespace nebula
 
-#endif   // COMMON_EXPRESSION_EDGEEXPRESSION_H_
+#endif  // COMMON_EXPRESSION_EDGEEXPRESSION_H_

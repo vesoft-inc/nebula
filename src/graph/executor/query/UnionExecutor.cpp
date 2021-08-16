@@ -7,36 +7,36 @@
 #include "graph/executor/query/UnionExecutor.h"
 
 #include "graph/context/ExecutionContext.h"
-#include "graph/util/ScopedTimer.h"
 #include "graph/planner/plan/Query.h"
+#include "graph/util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {
 
 folly::Future<Status> UnionExecutor::execute() {
-    SCOPED_TIMER(&execTime_);
+  SCOPED_TIMER(&execTime_);
 
-    NG_RETURN_IF_ERROR(checkInputDataSets());
-    auto left = getLeftInputDataIter();
-    auto right = getRightInputDataIter();
+  NG_RETURN_IF_ERROR(checkInputDataSets());
+  auto left = getLeftInputDataIter();
+  auto right = getRightInputDataIter();
 
-    DataSet ds;
-    ds.colNames = std::move(colNames_);
+  DataSet ds;
+  ds.colNames = std::move(colNames_);
 
-    DCHECK(left->isSequentialIter());
-    auto leftIter = static_cast<SequentialIter*>(left.get());
-    ds.rows.insert(ds.rows.end(),
-                   std::make_move_iterator(leftIter->begin()),
-                   std::make_move_iterator(leftIter->end()));
+  DCHECK(left->isSequentialIter());
+  auto leftIter = static_cast<SequentialIter*>(left.get());
+  ds.rows.insert(ds.rows.end(),
+                 std::make_move_iterator(leftIter->begin()),
+                 std::make_move_iterator(leftIter->end()));
 
-    DCHECK(right->isSequentialIter());
-    auto rightIter = static_cast<SequentialIter*>(right.get());
-    ds.rows.insert(ds.rows.end(),
-                   std::make_move_iterator(rightIter->begin()),
-                   std::make_move_iterator(rightIter->end()));
+  DCHECK(right->isSequentialIter());
+  auto rightIter = static_cast<SequentialIter*>(right.get());
+  ds.rows.insert(ds.rows.end(),
+                 std::make_move_iterator(rightIter->begin()),
+                 std::make_move_iterator(rightIter->end()));
 
-    return finish(ResultBuilder().value(Value(std::move(ds))).finish());
+  return finish(ResultBuilder().value(Value(std::move(ds))).finish());
 }
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula

@@ -16,18 +16,17 @@ namespace storage {
 extern ProcessorCounters kGetValueCounters;
 
 class GetValueProcessor : public BaseProcessor<cpp2::GetValueResponse> {
-public:
-    static GetValueProcessor* instance(
-            StorageEnv* env,
-            const ProcessorCounters* counters = &kGetValueCounters) {
-        return new GetValueProcessor(env, counters);
-    }
+ public:
+  static GetValueProcessor* instance(StorageEnv* env,
+                                     const ProcessorCounters* counters = &kGetValueCounters) {
+    return new GetValueProcessor(env, counters);
+  }
 
-    void process(const cpp2::GetValueRequest& req);
+  void process(const cpp2::GetValueRequest& req);
 
-protected:
-    explicit GetValueProcessor(StorageEnv* env, const ProcessorCounters* counters):
-        BaseProcessor<cpp2::GetValueResponse>(env, counters) {}
+ protected:
+  explicit GetValueProcessor(StorageEnv* env, const ProcessorCounters* counters)
+      : BaseProcessor<cpp2::GetValueResponse>(env, counters) {}
 };
 
 }  // namespace storage

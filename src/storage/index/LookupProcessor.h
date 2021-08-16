@@ -17,33 +17,30 @@ extern ProcessorCounters kLookupCounters;
 
 class LookupProcessor
     : public LookupBaseProcessor<cpp2::LookupIndexRequest, cpp2::LookupIndexResp> {
+ public:
+  static LookupProcessor* instance(StorageEnv* env,
+                                   const ProcessorCounters* counters = &kLookupCounters,
+                                   folly::Executor* executor = nullptr) {
+    return new LookupProcessor(env, counters, executor);
+  }
 
-public:
-    static LookupProcessor* instance(StorageEnv* env,
-                                     const ProcessorCounters* counters = &kLookupCounters,
-                                     folly::Executor* executor = nullptr) {
-        return new LookupProcessor(env, counters, executor);
-    }
+  void process(const cpp2::LookupIndexRequest& req) override;
 
-    void process(const cpp2::LookupIndexRequest& req) override;
-
-protected:
-    LookupProcessor(StorageEnv* env,
-                    const ProcessorCounters* counters,
-                    folly::Executor* executor)
-        : LookupBaseProcessor<cpp2::LookupIndexRequest, cpp2::LookupIndexResp>(
+ protected:
+  LookupProcessor(StorageEnv* env, const ProcessorCounters* counters, folly::Executor* executor)
+      : LookupBaseProcessor<cpp2::LookupIndexRequest, cpp2::LookupIndexResp>(
             env, counters, executor) {}
 
-    void onProcessFinished() override;
+  void onProcessFinished() override;
 
-private:
-    void runInSingleThread(const cpp2::LookupIndexRequest& req);
-    void runInMultipleThread(const cpp2::LookupIndexRequest& req);
+ private:
+  void runInSingleThread(const cpp2::LookupIndexRequest& req);
+  void runInMultipleThread(const cpp2::LookupIndexRequest& req);
 
-    folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>>
-    runInExecutor(IndexFilterItem* filterItem, nebula::DataSet* result, PartitionID partId);
+  folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> runInExecutor(
+      IndexFilterItem* filterItem, nebula::DataSet* result, PartitionID partId);
 
-    void doProcess(const cpp2::LookupIndexRequest& req);
+  void doProcess(const cpp2::LookupIndexRequest& req);
 };
 
 }  // namespace storage
