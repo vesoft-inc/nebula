@@ -58,7 +58,7 @@ fi
 echo "Performing C++ code format check..."
 
 CLANG_HOME=/opt/vesoft/toolset/clang/10.0.0/
-res=$(git diff -U0 --no-color HEAD^ | $CLANG_HOME/share/clang/clang-format-diff.py -p1 -binary $CLANG_HOME/bin/clang-format)
+res=$(git diff -U0 --no-color --staged | $CLANG_HOME/share/clang/clang-format-diff.py -p1 -binary $CLANG_HOME/bin/clang-format)
 if [[ ! -z $res ]]; then
     echo "The code format is not well..."
     echo $res
