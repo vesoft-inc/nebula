@@ -21,12 +21,12 @@ class QueryInstance;
  *
  * The context is NOT thread-safe. The execution plan has to guarantee
  * all accesses to context are safe by pre-allocate all place for variables in
- *semantic analysis and the single variable is accessed sequentially in runtime,
- *so don't add/delete variable in runtime it's safe to access The life span of
- *the context is same as the request. That means a new context object will be
- *created as soon as the query engine receives the query request. The context
- *object will be visible to the parser, the planner, the optimizer, and the
- *executor.
+ * semantic analysis and the single variable is accessed sequentially at runtime,
+ * so don't add/delete variable at runtime it's safe to access The life span of
+ * the context is same as the request. That means a new context object will be
+ * created as soon as the query engine receives the query request. The context
+ * object will be visible to the parser, the planner, the optimizer, and the
+ * executor.
  *
  **************************************************************************/
 class ExecutionContext {
