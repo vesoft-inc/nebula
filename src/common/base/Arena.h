@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include <folly/Likely.h>
+
 #include <cstddef>
 #include <limits>
 #include <type_traits>
@@ -20,7 +22,7 @@ namespace nebula {
 class Arena : public cpp::NonCopyable, cpp::NonMovable {
  public:
   ~Arena() {
-    while (currentChunk_ != nullptr) {
+    while (LIKELY(currentChunk_ != nullptr)) {
       auto *prev = currentChunk_->prev;
       delete[] currentChunk_;
       currentChunk_ = prev;
