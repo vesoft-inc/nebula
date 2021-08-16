@@ -18,7 +18,7 @@ set(VALIDATOR_TEST_LIBS
     $<TARGET_OBJECTS:graph_flags_obj>
     $<TARGET_OBJECTS:parser_obj>
     $<TARGET_OBJECTS:idgenerator_obj>
-    $<TARGET_OBJECTS:context_obj>
+    $<TARGET_OBJECTS:graph_context_obj>
     $<TARGET_OBJECTS:graph_auth_obj>
     $<TARGET_OBJECTS:graph_session_obj>
     $<TARGET_OBJECTS:expression_obj>

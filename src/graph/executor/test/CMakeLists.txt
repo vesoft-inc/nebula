@@ -43,7 +43,7 @@ SET(EXEC_QUERY_TEST_OBJS
     $<TARGET_OBJECTS:executor_obj>
     $<TARGET_OBJECTS:util_obj>
     $<TARGET_OBJECTS:idgenerator_obj>
-    $<TARGET_OBJECTS:context_obj>
+    $<TARGET_OBJECTS:graph_context_obj>
     $<TARGET_OBJECTS:graph_auth_obj>
     $<TARGET_OBJECTS:expr_visitor_obj>
     $<TARGET_OBJECTS:graph_obj>
