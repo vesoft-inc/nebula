@@ -14,21 +14,20 @@ class PlanNode;
 
 namespace graph {
 class IndexScan;
-}   // namespace graph
+}  // namespace graph
 
 namespace opt {
 
 class IndexFullScanBaseRule : public OptRule {
-public:
-    bool match(OptContext *ctx, const MatchedResult &matched) const override;
-    StatusOr<TransformResult> transform(OptContext *ctx,
-                                        const MatchedResult &matched) const override;
+ public:
+  bool match(OptContext *ctx, const MatchedResult &matched) const override;
+  StatusOr<TransformResult> transform(OptContext *ctx, const MatchedResult &matched) const override;
 
-protected:
-    virtual graph::IndexScan *scan(OptContext *ctx, const graph::PlanNode *node) const = 0;
+ protected:
+  virtual graph::IndexScan *scan(OptContext *ctx, const graph::PlanNode *node) const = 0;
 };
 
-}   // namespace opt
-}   // namespace nebula
+}  // namespace opt
+}  // namespace nebula
 
-#endif   // GRAPH_OPTIMIZER_RULE_INDEXFULLSCANBASERULE_H_
+#endif  // GRAPH_OPTIMIZER_RULE_INDEXFULLSCANBASERULE_H_

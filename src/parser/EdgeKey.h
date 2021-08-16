@@ -21,99 +21,79 @@ namespace nebula {
 class Expression;
 
 class EdgeKey final {
-public:
-    EdgeKey(Expression *srcid, Expression *dstid, int64_t rank) {
-        srcid_ = srcid;
-        dstid_ = dstid;
-        rank_ = rank;
-    }
+ public:
+  EdgeKey(Expression *srcid, Expression *dstid, int64_t rank) {
+    srcid_ = srcid;
+    dstid_ = dstid;
+    rank_ = rank;
+  }
 
-    Expression *srcid() const {
-        return srcid_;
-    }
+  Expression *srcid() const { return srcid_; }
 
-    Expression *dstid() const {
-        return dstid_;
-    }
+  Expression *dstid() const { return dstid_; }
 
-    int64_t rank() {
-        return rank_;
-    }
+  int64_t rank() { return rank_; }
 
-    std::string toString() const;
+  std::string toString() const;
 
-private:
-    Expression* srcid_{nullptr};
-    Expression* dstid_{nullptr};
-    EdgeRanking rank_;
+ private:
+  Expression *srcid_{nullptr};
+  Expression *dstid_{nullptr};
+  EdgeRanking rank_;
 };
 
 class EdgeKeys final {
-public:
-    EdgeKeys() = default;
+ public:
+  EdgeKeys() = default;
 
-    void addEdgeKey(EdgeKey *key) {
-        keys_.emplace_back(key);
-    }
+  void addEdgeKey(EdgeKey *key) { keys_.emplace_back(key); }
 
-    std::vector<EdgeKey *> keys() const {
-        std::vector<EdgeKey *> result;
-        result.resize(keys_.size());
-        auto get = [](const auto &key) { return key.get(); };
-        std::transform(keys_.begin(), keys_.end(), result.begin(), get);
-        return result;
-    }
+  std::vector<EdgeKey *> keys() const {
+    std::vector<EdgeKey *> result;
+    result.resize(keys_.size());
+    auto get = [](const auto &key) { return key.get(); };
+    std::transform(keys_.begin(), keys_.end(), result.begin(), get);
+    return result;
+  }
 
-    std::string toString() const;
+  std::string toString() const;
 
-private:
-    std::vector<std::unique_ptr<EdgeKey>> keys_;
+ private:
+  std::vector<std::unique_ptr<EdgeKey>> keys_;
 };
 
 class EdgeKeyRef final {
-public:
-    EdgeKeyRef(Expression *srcid, Expression *dstid, Expression *rank, bool isInputExpr = true) {
-        srcid_ = srcid;
-        dstid_ = dstid;
-        rank_ = rank;
-        isInputExpr_ = isInputExpr;
-    }
+ public:
+  EdgeKeyRef(Expression *srcid, Expression *dstid, Expression *rank, bool isInputExpr = true) {
+    srcid_ = srcid;
+    dstid_ = dstid;
+    rank_ = rank;
+    isInputExpr_ = isInputExpr;
+  }
 
-    Expression *srcid() const {
-        return srcid_;
-    }
+  Expression *srcid() const { return srcid_; }
 
-    Expression *dstid() const {
-        return dstid_;
-    }
+  Expression *dstid() const { return dstid_; }
 
-    Expression *rank() const {
-        return rank_;
-    }
+  Expression *rank() const { return rank_; }
 
-    Expression *type() const {
-        return type_;
-    }
+  Expression *type() const { return type_; }
 
-    void setType(Expression *type) {
-        type_ = type;
-    }
+  void setType(Expression *type) { type_ = type; }
 
-    bool isInputExpr() const {
-        return isInputExpr_;
-    }
+  bool isInputExpr() const { return isInputExpr_; }
 
-    std::string toString() const;
+  std::string toString() const;
 
-private:
-    Expression *srcid_{nullptr};
-    Expression *dstid_{nullptr};
-    Expression *rank_{nullptr};
-    Expression *type_{nullptr};
-    std::unordered_set<std::string> uniqVar_;
-    bool isInputExpr_;
+ private:
+  Expression *srcid_{nullptr};
+  Expression *dstid_{nullptr};
+  Expression *rank_{nullptr};
+  Expression *type_{nullptr};
+  std::unordered_set<std::string> uniqVar_;
+  bool isInputExpr_;
 };
 
-}   // namespace nebula
+}  // namespace nebula
 
-#endif   // PARSER_EDGEKEY_H_
+#endif  // PARSER_EDGEKEY_H_

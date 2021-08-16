@@ -24,7 +24,10 @@ jobs:
         run: |
           ln -snf $PWD/.linters/cpp/hooks/pre-commit.sh $PWD/.linters/cpp/pre-commit.sh
           .linters/cpp/pre-commit.sh $(git --no-pager diff --diff-filter=d --name-only HEAD^ HEAD)
-          git diff -U0 --no-color --staged | "$(dirname "$(which clang-format)")"/../share/clang/clang-format-10/clang-format-diff.py -p1
+      - name: Format check
+        run: |
+          res=$(git diff -U0 --no-color HEAD^ | /usr/share/clang/clang-format-10/clang-format-diff.py -p1)
+          [[ ! -z "$res" ]] && exit 1 || true
       - uses: actions/setup-python@v2
         with:
           python-version: 3.7
@@ -52,7 +55,6 @@ jobs:
     container:
       image: vesoft/nebula-dev:${{ matrix.os }}
       env:
-        TOOLSET_DIR: /opt/vesoft/toolset/clang/9.0.0
         CCACHE_DIR: /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
         CCACHE_MAXSIZE: 8G
       volumes:
@@ -77,8 +79,8 @@ jobs:
             centos7)
               # build with Release type
               cmake \
-                  -DCMAKE_CXX_COMPILER=$TOOLSET_DIR/bin/g++ \
-                  -DCMAKE_C_COMPILER=$TOOLSET_DIR/bin/gcc \
+                  -DCMAKE_CXX_COMPILER=$TOOLSET_CLANG_DIR/bin/g++ \
+                  -DCMAKE_C_COMPILER=$TOOLSET_CLANG_DIR/bin/gcc \
                   -DCMAKE_BUILD_TYPE=Release \
                   -DENABLE_TESTING=on \
                   -B build
@@ -87,11 +89,10 @@ jobs:
             ubuntu2004)
               # build with Debug type
               cmake \
-                  -DCMAKE_CXX_COMPILER=$TOOLSET_DIR/bin/g++ \
-                  -DCMAKE_C_COMPILER=$TOOLSET_DIR/bin/gcc \
+                  -DCMAKE_CXX_COMPILER=$TOOLSET_CLANG_DIR/bin/g++ \
+                  -DCMAKE_C_COMPILER=$TOOLSET_CLANG_DIR/bin/gcc \
                   -DCMAKE_BUILD_TYPE=Debug \
                   -DENABLE_TESTING=on \
-                  -DNEBULA_USE_LINKER=lld \
                   -B build
               echo "::set-output name=j::10"
               ;;
@@ -100,12 +101,11 @@ jobs:
           clang-*)
             # build with Sanitizer
             cmake \
-                -DCMAKE_CXX_COMPILER=$TOOLSET_DIR/bin/clang++ \
-                -DCMAKE_C_COMPILER=$TOOLSET_DIR/bin/clang \
+                -DCMAKE_CXX_COMPILER=$TOOLSET_CLANG_DIR/bin/clang++ \
+                -DCMAKE_C_COMPILER=$TOOLSET_CLANG_DIR/bin/clang \
                 -DCMAKE_BUILD_TYPE=RelWithDebInfo \
                 -DENABLE_ASAN=on \
                 -DENABLE_TESTING=on \
-                -DNEBULA_USE_LINKER=lld \
                 -B build
             echo "::set-output name=j::6"
             ;;
@@ -120,7 +120,7 @@ jobs:
           ASAN_OPTIONS: fast_unwind_on_malloc=1
         run: ctest -j $(($(nproc)/2+1)) --timeout 400 --output-on-failure
         working-directory: build/
-        timeout-minutes: 40
+        timeout-minutes: 20
       - name: Pytest
         run: |
           make up
@@ -140,7 +140,7 @@ jobs:
         run: |
           exit $(grep -P "SUMMARY: AddressSanitizer: \d+ byte\(s\) leaked in \d+ allocation\(s\)\." build/server_*/logs/*stderr.log | wc -l)
       - name: Upload logs
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v1
         if: ${{ failure() }}
         with:
           name: ${{ matrix.os }}-${{ matrix.compiler }}-nebula-test-logs

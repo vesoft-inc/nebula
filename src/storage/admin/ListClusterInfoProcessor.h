@@ -16,18 +16,18 @@ namespace nebula {
 namespace storage {
 
 class ListClusterInfoProcessor : public BaseProcessor<cpp2::ListClusterInfoResp> {
-public:
-    static ListClusterInfoProcessor* instance(StorageEnv* env) {
-        return new ListClusterInfoProcessor(env);
-    }
+ public:
+  static ListClusterInfoProcessor* instance(StorageEnv* env) {
+    return new ListClusterInfoProcessor(env);
+  }
 
-    void process(const cpp2::ListClusterInfoReq& req);
+  void process(const cpp2::ListClusterInfoReq& req);
 
-private:
-    explicit ListClusterInfoProcessor(StorageEnv* env)
-        : BaseProcessor<cpp2::ListClusterInfoResp>(env) {}
+ private:
+  explicit ListClusterInfoProcessor(StorageEnv* env)
+      : BaseProcessor<cpp2::ListClusterInfoResp>(env) {}
 };
 
-}   // namespace storage
-}   // namespace nebula
-#endif   // STORAGE_ADMIN_LISTCLUSTERINFO_H_
+}  // namespace storage
+}  // namespace nebula
+#endif  // STORAGE_ADMIN_LISTCLUSTERINFO_H_

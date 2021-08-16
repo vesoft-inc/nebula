@@ -13,38 +13,32 @@ namespace nebula {
 namespace meta {
 
 class ServerBasedIndexManager : public IndexManager {
-public:
-    ServerBasedIndexManager() = default;
-    ~ServerBasedIndexManager();
+ public:
+  ServerBasedIndexManager() = default;
+  ~ServerBasedIndexManager();
 
-    static std::unique_ptr<ServerBasedIndexManager> create(MetaClient *client);
+  static std::unique_ptr<ServerBasedIndexManager> create(MetaClient *client);
 
-    StatusOr<std::shared_ptr<IndexItem>>
-    getTagIndex(GraphSpaceID space, IndexID index) override;
+  StatusOr<std::shared_ptr<IndexItem>> getTagIndex(GraphSpaceID space, IndexID index) override;
 
-    StatusOr<std::shared_ptr<IndexItem>>
-    getEdgeIndex(GraphSpaceID space, IndexID index) override;
+  StatusOr<std::shared_ptr<IndexItem>> getEdgeIndex(GraphSpaceID space, IndexID index) override;
 
-    StatusOr<std::vector<std::shared_ptr<IndexItem>>>
-    getTagIndexes(GraphSpaceID space) override;
+  StatusOr<std::vector<std::shared_ptr<IndexItem>>> getTagIndexes(GraphSpaceID space) override;
 
-    StatusOr<std::vector<std::shared_ptr<IndexItem>>>
-    getEdgeIndexes(GraphSpaceID space) override;
+  StatusOr<std::vector<std::shared_ptr<IndexItem>>> getEdgeIndexes(GraphSpaceID space) override;
 
-    StatusOr<IndexID>
-    toTagIndexID(GraphSpaceID space, std::string tagName) override;
+  StatusOr<IndexID> toTagIndexID(GraphSpaceID space, std::string tagName) override;
 
-    StatusOr<IndexID>
-    toEdgeIndexID(GraphSpaceID space, std::string edgeName) override;
+  StatusOr<IndexID> toEdgeIndexID(GraphSpaceID space, std::string edgeName) override;
 
-    Status checkTagIndexed(GraphSpaceID space, IndexID index) override;
+  Status checkTagIndexed(GraphSpaceID space, IndexID index) override;
 
-    Status checkEdgeIndexed(GraphSpaceID space, IndexID index) override;
+  Status checkEdgeIndexed(GraphSpaceID space, IndexID index) override;
 
-    void init(MetaClient *client);
+  void init(MetaClient *client);
 
-private:
-    MetaClient             *metaClient_{nullptr};
+ private:
+  MetaClient *metaClient_{nullptr};
 };
 
 }  // namespace meta

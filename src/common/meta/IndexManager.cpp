@@ -5,11 +5,9 @@
  */
 
 #include "common/meta/IndexManager.h"
+
 #include "common/meta/ServerBasedIndexManager.h"
 
 namespace nebula {
-namespace meta {
-
-
-}   // namespace meta
-}   // namespace nebula
+namespace meta {}  // namespace meta
+}  // namespace nebula

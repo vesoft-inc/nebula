@@ -13,14 +13,14 @@ namespace nebula {
 namespace graph {
 
 class SwitchSpaceExecutor final : public Executor {
-public:
-    SwitchSpaceExecutor(const PlanNode *node, QueryContext *qctx)
-        : Executor("SwitchSpaceExecutor", node, qctx) {}
+ public:
+  SwitchSpaceExecutor(const PlanNode *node, QueryContext *qctx)
+      : Executor("SwitchSpaceExecutor", node, qctx) {}
 
-    folly::Future<Status> execute() override;
+  folly::Future<Status> execute() override;
 };
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula
 
-#endif   // GRAPH_EXECUTOR_QUERY_SWITCHSPACEEXECUTOR_H_
+#endif  // GRAPH_EXECUTOR_QUERY_SWITCHSPACEEXECUTOR_H_

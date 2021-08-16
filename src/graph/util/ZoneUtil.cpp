@@ -7,7 +7,5 @@
 #include "graph/util/ZoneUtil.h"
 
 namespace nebula {
-namespace graph {
-
-}   // namespace graph
-}   // namespace nebula
+namespace graph {}  // namespace graph
+}  // namespace nebula

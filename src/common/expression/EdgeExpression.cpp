@@ -10,13 +10,11 @@
 
 namespace nebula {
 
-const Value& EdgeExpression::eval(ExpressionContext &ctx) {
-    result_ = ctx.getEdge();
-    return result_;
+const Value &EdgeExpression::eval(ExpressionContext &ctx) {
+  result_ = ctx.getEdge();
+  return result_;
 }
 
-void EdgeExpression::accept(ExprVisitor *visitor) {
-    visitor->visit(this);
-}
+void EdgeExpression::accept(ExprVisitor *visitor) { visitor->visit(this); }
 
-}   // namespace nebula
+}  // namespace nebula

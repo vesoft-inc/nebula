@@ -15,25 +15,25 @@ namespace nebula {
 namespace graph {
 
 std::string Variable::toString() const {
-    std::stringstream ss;
-    ss << "name: " << name << ", type: " << type << ", colNames: <" << folly::join(",", colNames)
-       << ">, readBy: <" << util::join(readBy, [](auto pn) { return pn->toString(); })
-       << ">, writtenBy: <" << util::join(writtenBy, [](auto pn) { return pn->toString(); }) << ">";
-    return ss.str();
+  std::stringstream ss;
+  ss << "name: " << name << ", type: " << type << ", colNames: <" << folly::join(",", colNames)
+     << ">, readBy: <" << util::join(readBy, [](auto pn) { return pn->toString(); })
+     << ">, writtenBy: <" << util::join(writtenBy, [](auto pn) { return pn->toString(); }) << ">";
+  return ss.str();
 }
 
 std::string SymbolTable::toString() const {
-    std::stringstream ss;
-    ss << "SymTable: [";
-    for (const auto& p : vars_) {
-        ss << "\n" << p.first << ": ";
-        if (p.second) {
-            ss << p.second->toString();
-        }
+  std::stringstream ss;
+  ss << "SymTable: [";
+  for (const auto& p : vars_) {
+    ss << "\n" << p.first << ": ";
+    if (p.second) {
+      ss << p.second->toString();
     }
-    ss << "\n]";
-    return ss.str();
+  }
+  ss << "\n]";
+  return ss.str();
 }
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula

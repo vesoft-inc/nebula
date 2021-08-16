@@ -8,25 +8,24 @@
 #define GRAPH_VALIDATOR_TRAVERSALVALIDATOR_H_
 
 #include "common/base/Base.h"
-#include "graph/validator/Validator.h"
-#include "graph/planner/plan/Query.h"
 #include "graph/context/ast/QueryAstContext.h"
+#include "graph/planner/plan/Query.h"
 #include "graph/util/ExpressionUtils.h"
+#include "graph/validator/Validator.h"
 
 namespace nebula {
 namespace graph {
 
 // some utils for the validator to traverse the graph
 class TraversalValidator : public Validator {
-protected:
-    TraversalValidator(Sentence* sentence, QueryContext* qctx) : Validator(sentence, qctx) {
-    }
+ protected:
+  TraversalValidator(Sentence* sentence, QueryContext* qctx) : Validator(sentence, qctx) {}
 
-    Status validateStarts(const VerticesClause* clause, Starts& starts);
+  Status validateStarts(const VerticesClause* clause, Starts& starts);
 
-    Status validateOver(const OverClause* clause, Over& over);
+  Status validateOver(const OverClause* clause, Over& over);
 
-    Status validateStep(const StepClause* clause, StepClause& step);
+  Status validateStep(const StepClause* clause, StepClause& step);
 };
 
 }  // namespace graph

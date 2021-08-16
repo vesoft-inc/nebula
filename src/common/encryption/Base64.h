@@ -13,10 +13,10 @@ namespace nebula {
 namespace encryption {
 
 class Base64 final {
-public:
-    Base64() = delete;
+ public:
+  Base64() = delete;
 
-    static std::string encode(const std::string &toEncodeStr);
+  static std::string encode(const std::string &toEncodeStr);
 };
 
 }  // namespace encryption

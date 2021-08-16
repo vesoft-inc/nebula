@@ -13,17 +13,17 @@ namespace nebula {
 namespace graph {
 
 class GrantRoleExecutor final : public Executor {
-public:
-    GrantRoleExecutor(const PlanNode *node, QueryContext *qctx)
-        : Executor("GrantRoleExecutor", node, qctx) {}
+ public:
+  GrantRoleExecutor(const PlanNode *node, QueryContext *qctx)
+      : Executor("GrantRoleExecutor", node, qctx) {}
 
-    folly::Future<Status> execute() override;
+  folly::Future<Status> execute() override;
 
-private:
-    folly::Future<Status> grantRole();
+ private:
+  folly::Future<Status> grantRole();
 };
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula
 
 #endif  // GRAPH_EXECUTOR_ADMIN_GRANTROLEEXECUTOR_H_

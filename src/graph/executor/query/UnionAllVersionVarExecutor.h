@@ -13,14 +13,14 @@ namespace nebula {
 namespace graph {
 
 class UnionAllVersionVarExecutor : public Executor {
-public:
-    UnionAllVersionVarExecutor(const PlanNode *node, QueryContext *qctx)
-        : Executor("UnionAllVersionVarExecutor", node, qctx) {}
+ public:
+  UnionAllVersionVarExecutor(const PlanNode *node, QueryContext *qctx)
+      : Executor("UnionAllVersionVarExecutor", node, qctx) {}
 
-    folly::Future<Status> execute() override;
+  folly::Future<Status> execute() override;
 };
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula
 
-#endif   // GRAPH_EXECUTOR_QUERY_UNIONALLVERSIONVAREXECUTOR_H_
+#endif  // GRAPH_EXECUTOR_QUERY_UNIONALLVERSIONVAREXECUTOR_H_

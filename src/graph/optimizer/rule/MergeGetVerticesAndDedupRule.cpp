@@ -22,42 +22,41 @@ std::unique_ptr<OptRule> MergeGetVerticesAndDedupRule::kInstance =
     std::unique_ptr<MergeGetVerticesAndDedupRule>(new MergeGetVerticesAndDedupRule());
 
 MergeGetVerticesAndDedupRule::MergeGetVerticesAndDedupRule() {
-    RuleSet::QueryRules().addRule(this);
+  RuleSet::QueryRules().addRule(this);
 }
 
 const Pattern &MergeGetVerticesAndDedupRule::pattern() const {
-    static Pattern pattern = Pattern::create(graph::PlanNode::Kind::kGetVertices,
-                                             {Pattern::create(graph::PlanNode::Kind::kDedup)});
-    return pattern;
+  static Pattern pattern = Pattern::create(graph::PlanNode::Kind::kGetVertices,
+                                           {Pattern::create(graph::PlanNode::Kind::kDedup)});
+  return pattern;
 }
 
 StatusOr<OptRule::TransformResult> MergeGetVerticesAndDedupRule::transform(
-    OptContext *ctx,
-    const MatchedResult &matched) const {
-    const OptGroupNode *optGV = matched.node;
-    const OptGroupNode *optDedup = matched.dependencies.back().node;
-    DCHECK_EQ(optGV->node()->kind(), PlanNode::Kind::kGetVertices);
-    DCHECK_EQ(optDedup->node()->kind(), PlanNode::Kind::kDedup);
-    auto gv = static_cast<const GetVertices *>(optGV->node());
-    auto dedup = static_cast<const Dedup *>(optDedup->node());
-    auto newGV = static_cast<GetVertices *>(gv->clone());
-    if (!newGV->dedup()) {
-        newGV->setDedup();
-    }
-    newGV->setInputVar(dedup->inputVar());
-    auto newOptGV = OptGroupNode::create(ctx, newGV, optGV->group());
-    for (auto dep : optDedup->dependencies()) {
-        newOptGV->dependsOn(dep);
-    }
-    TransformResult result;
-    result.eraseCurr = true;
-    result.newGroupNodes.emplace_back(newOptGV);
-    return result;
+    OptContext *ctx, const MatchedResult &matched) const {
+  const OptGroupNode *optGV = matched.node;
+  const OptGroupNode *optDedup = matched.dependencies.back().node;
+  DCHECK_EQ(optGV->node()->kind(), PlanNode::Kind::kGetVertices);
+  DCHECK_EQ(optDedup->node()->kind(), PlanNode::Kind::kDedup);
+  auto gv = static_cast<const GetVertices *>(optGV->node());
+  auto dedup = static_cast<const Dedup *>(optDedup->node());
+  auto newGV = static_cast<GetVertices *>(gv->clone());
+  if (!newGV->dedup()) {
+    newGV->setDedup();
+  }
+  newGV->setInputVar(dedup->inputVar());
+  auto newOptGV = OptGroupNode::create(ctx, newGV, optGV->group());
+  for (auto dep : optDedup->dependencies()) {
+    newOptGV->dependsOn(dep);
+  }
+  TransformResult result;
+  result.eraseCurr = true;
+  result.newGroupNodes.emplace_back(newOptGV);
+  return result;
 }
 
 std::string MergeGetVerticesAndDedupRule::toString() const {
-    return "MergeGetVerticesAndDedupRule";
+  return "MergeGetVerticesAndDedupRule";
 }
 
-}   // namespace opt
-}   // namespace nebula
+}  // namespace opt
+}  // namespace nebula

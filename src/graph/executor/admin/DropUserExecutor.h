@@ -13,17 +13,17 @@ namespace nebula {
 namespace graph {
 
 class DropUserExecutor final : public Executor {
-public:
-    DropUserExecutor(const PlanNode *node, QueryContext *qctx)
-        : Executor("DropUserExecutor", node, qctx) {}
+ public:
+  DropUserExecutor(const PlanNode *node, QueryContext *qctx)
+      : Executor("DropUserExecutor", node, qctx) {}
 
-    folly::Future<Status> execute() override;
+  folly::Future<Status> execute() override;
 
-private:
-    folly::Future<Status> dropUser();
+ private:
+  folly::Future<Status> dropUser();
 };
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula
 
 #endif  // GRAPH_EXECUTOR_ADMIN_DROPUSEREXECUTOR_H_

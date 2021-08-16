@@ -10,42 +10,35 @@
 namespace nebula {
 
 struct KeyValue {
-    std::string key;
-    std::string value;
+  std::string key;
+  std::string value;
 
-    KeyValue() {}
-    KeyValue(KeyValue&& rhs) noexcept
-        : key(std::move(rhs.key))
-        , value(std::move(rhs.value)) {}
-    KeyValue(const KeyValue& rhs)
-        : key(rhs.key)
-        , value(rhs.value) {}
-    explicit KeyValue(std::pair<std::string, std::string> kv)
-        : key(std::move(kv.first))
-        , value(std::move(kv.second)) {}
+  KeyValue() {}
+  KeyValue(KeyValue&& rhs) noexcept : key(std::move(rhs.key)), value(std::move(rhs.value)) {}
+  KeyValue(const KeyValue& rhs) : key(rhs.key), value(rhs.value) {}
+  explicit KeyValue(std::pair<std::string, std::string> kv)
+      : key(std::move(kv.first)), value(std::move(kv.second)) {}
 
-    void clear() {
-        key.clear();
-        value.clear();
+  void clear() {
+    key.clear();
+    value.clear();
+  }
+
+  void __clear() { clear(); }
+
+  bool operator==(const KeyValue& rhs) const {
+    if (key != rhs.key) {
+      return false;
     }
+    return value == rhs.value;
+  }
 
-    void __clear() {
-        clear();
+  bool operator<(const KeyValue& rhs) const {
+    if (key != rhs.key) {
+      return key < rhs.key;
     }
-
-    bool operator==(const KeyValue& rhs) const {
-        if (key != rhs.key) {
-            return false;
-        }
-        return value == rhs.value;
-    }
-
-    bool operator<(const KeyValue& rhs) const {
-        if (key != rhs.key) {
-            return key < rhs.key;
-        }
-        return value < rhs.value;
-    }
+    return value < rhs.value;
+  }
 };
 
 }  // namespace nebula

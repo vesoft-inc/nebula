@@ -8,115 +8,115 @@
 #define GRAPH_VALIDATOR_ACLVALIDATOR_H_
 
 #include "common/base/Base.h"
-#include "parser/UserSentences.h"
 #include "graph/validator/Validator.h"
+#include "parser/UserSentences.h"
 
 namespace nebula {
 namespace graph {
 
 class CreateUserValidator final : public Validator {
-public:
-    CreateUserValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
-        setNoSpaceRequired();
-    }
+ public:
+  CreateUserValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
+    setNoSpaceRequired();
+  }
 
-private:
-    Status validateImpl() override;
+ private:
+  Status validateImpl() override;
 
-    Status toPlan() override;
+  Status toPlan() override;
 };
 
 class DropUserValidator final : public Validator {
-public:
-    DropUserValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
-        setNoSpaceRequired();
-    }
+ public:
+  DropUserValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
+    setNoSpaceRequired();
+  }
 
-private:
-    Status validateImpl() override;
+ private:
+  Status validateImpl() override;
 
-    Status toPlan() override;
+  Status toPlan() override;
 };
 
 class UpdateUserValidator final : public Validator {
-public:
-    UpdateUserValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
-        setNoSpaceRequired();
-    }
+ public:
+  UpdateUserValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
+    setNoSpaceRequired();
+  }
 
-private:
-    Status validateImpl() override;
+ private:
+  Status validateImpl() override;
 
-    Status toPlan() override;
+  Status toPlan() override;
 };
 
 class ShowUsersValidator final : public Validator {
-public:
-    ShowUsersValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
-        setNoSpaceRequired();
-    }
+ public:
+  ShowUsersValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
+    setNoSpaceRequired();
+  }
 
-private:
-    Status validateImpl() override;
+ private:
+  Status validateImpl() override;
 
-    Status toPlan() override;
+  Status toPlan() override;
 };
 
 class ChangePasswordValidator final : public Validator {
-public:
-    ChangePasswordValidator(Sentence* sentence, QueryContext* context)
-        : Validator(sentence, context) {
-        setNoSpaceRequired();
-    }
+ public:
+  ChangePasswordValidator(Sentence* sentence, QueryContext* context)
+      : Validator(sentence, context) {
+    setNoSpaceRequired();
+  }
 
-private:
-    Status validateImpl() override;
+ private:
+  Status validateImpl() override;
 
-    Status toPlan() override;
+  Status toPlan() override;
 };
 
 class GrantRoleValidator final : public Validator {
-public:
-    GrantRoleValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
-        setNoSpaceRequired();
-    }
+ public:
+  GrantRoleValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
+    setNoSpaceRequired();
+  }
 
-private:
-    Status validateImpl() override;
+ private:
+  Status validateImpl() override;
 
-    Status toPlan() override;
+  Status toPlan() override;
 };
 
 class RevokeRoleValidator final : public Validator {
-public:
-    RevokeRoleValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
-        setNoSpaceRequired();
-    }
+ public:
+  RevokeRoleValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
+    setNoSpaceRequired();
+  }
 
-private:
-    Status validateImpl() override;
+ private:
+  Status validateImpl() override;
 
-    Status toPlan() override;
+  Status toPlan() override;
 };
 
 class ShowRolesInSpaceValidator final : public Validator {
-public:
-    ShowRolesInSpaceValidator(Sentence* sentence, QueryContext* context)
-        : Validator(sentence, context) {
-        setNoSpaceRequired();
-    }
+ public:
+  ShowRolesInSpaceValidator(Sentence* sentence, QueryContext* context)
+      : Validator(sentence, context) {
+    setNoSpaceRequired();
+  }
 
-private:
-    Status validateImpl() override;
+ private:
+  Status validateImpl() override;
 
-    Status checkPermission() override;
+  Status checkPermission() override;
 
-    Status toPlan() override;
+  Status toPlan() override;
 
-    GraphSpaceID targetSpaceId_{-1};
+  GraphSpaceID targetSpaceId_{-1};
 };
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula
 
 #endif  // GRAPH_VALIDATOR_ACLVALIDATOR_H_

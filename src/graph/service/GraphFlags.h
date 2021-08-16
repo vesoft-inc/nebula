@@ -46,4 +46,4 @@ DECLARE_int64(max_allowed_connections);
 
 DECLARE_string(local_ip);
 
-#endif   // GRAPH_GRAPHFLAGS_H_
+#endif  // GRAPH_GRAPHFLAGS_H_

@@ -16,12 +16,12 @@ namespace nebula {
 namespace storage {
 
 class CompactTask : public AdminTask {
-public:
-    CompactTask(StorageEnv* env, TaskContext&& ctx) : AdminTask(env, std::move(ctx)) {}
+ public:
+  CompactTask(StorageEnv* env, TaskContext&& ctx) : AdminTask(env, std::move(ctx)) {}
 
-    ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>> genSubTasks() override;
+  ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>> genSubTasks() override;
 
-    nebula::cpp2::ErrorCode subTask(nebula::kvstore::KVEngine* engine);
+  nebula::cpp2::ErrorCode subTask(nebula::kvstore::KVEngine* engine);
 };
 
 }  // namespace storage

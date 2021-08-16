@@ -4,25 +4,23 @@
 #
 # introduce the args
 #   -v: The version of package, the version should be match tag name, default value is the `commitId`
-#   -n: Package to one or multi packages, `ON` means one package, `OFF` means multi packages, default value is `ON`
+#   -n: Package to one or multi-packages, `ON` means one package, `OFF` means multi packages, default value is `ON`
 #   -s: Whether to strip the package, default value is `FALSE`
-#   -g: Whether build storage, default is ON
+#   -b: Branch, default master
+#   -d: Whether to enable sanitizer, default OFF
+#   -t: Build type, default Release
 #
-# usage: ./package.sh -v <version> -n <ON/OFF> -s <TRUE/FALSE> -b <BRANCH> -g <ON/OFF>
+# usage: ./package.sh -v <version> -n <ON/OFF> -s <TRUE/FALSE> -b <BRANCH>
 #
 
 set -e
 
 version=""
-build_storage=ON
 package_one=ON
 strip_enable="FALSE"
 usage="Usage: ${0} -v <version> -n <ON/OFF> -s <TRUE/FALSE> -b <BRANCH> -g <ON/OFF>"
 project_dir="$(cd "$(dirname "$0")" && pwd)/.."
 build_dir=${project_dir}/pkg-build
-modules_dir=${project_dir}/modules
-storage_dir=${modules_dir}/storage
-storage_build_dir=${build_dir}/modules/storage
 enablesanitizer="OFF"
 static_sanitizer="OFF"
 build_type="Release"
@@ -54,9 +52,6 @@ do
         t)
             build_type=$OPTARG
             ;;
-        g)
-            build_storage=$OPTARG
-            ;;
         ?)
             echo "Invalid option, use default arguments"
             ;;
@@ -82,31 +77,6 @@ if [[ $strip_enable != TRUE ]] && [[ $strip_enable != FALSE ]]; then
 fi
 
 echo "current version is [ $version ], strip enable is [$strip_enable], enablesanitizer is [$enablesanitizer], static_sanitizer is [$static_sanitizer]"
-
-function _build_storage {
-    if [[ ! -d ${storage_dir} && ! -L ${storage_dir} ]]; then
-        git clone --single-branch --branch ${branch} https://github.com/vesoft-inc/nebula-storage.git ${storage_dir}
-    fi
-
-    pushd ${storage_build_dir}
-    cmake -DCMAKE_BUILD_TYPE=${build_type} \
-          -DNEBULA_BUILD_VERSION=${version} \
-          -DENABLE_ASAN=${san} \
-          -DENABLE_UBSAN=${san} \
-          -DENABLE_STATIC_ASAN=${ssan} \
-          -DENABLE_STATIC_UBSAN=${ssan} \
-          -DCMAKE_INSTALL_PREFIX=/usr/local/nebula \
-          -DENABLE_TESTING=OFF \
-          -DENABLE_PACK_ONE=${package_one} \
-          ${storage_dir}
-
-    if ! ( make -j ${jobs} ); then
-        echo ">>> build nebula storage failed <<<"
-        exit 1
-    fi
-    popd
-    echo ">>> build nebula storage successfully <<<"
-}
 
 function _build_graph {
     pushd ${build_dir}
@@ -139,10 +109,6 @@ function build {
 
     rm -rf ${build_dir} && mkdir -p ${build_dir}
 
-    if [[ "$build_storage" == "ON" ]]; then
-        mkdir -p ${storage_build_dir}
-        _build_storage
-    fi
     _build_graph
 }
 
@@ -160,7 +126,6 @@ function package {
         -DNEBULA_BUILD_VERSION=${version} \
         -DENABLE_PACK_ONE=${package_one} \
         -DCMAKE_INSTALL_PREFIX=/usr/local/nebula \
-        -DENABLE_PACKAGE_STORAGE=${build_storage} \
         ${project_dir}/package/
 
     strip_enable=$1

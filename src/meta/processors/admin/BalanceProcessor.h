@@ -8,23 +8,24 @@
 #define META_BALANCEPROCESSOR_H_
 
 #include <gtest/gtest_prod.h>
-#include "meta/processors/BaseProcessor.h"
+
 #include "meta/ActiveHostsMan.h"
+#include "meta/processors/BaseProcessor.h"
 
 namespace nebula {
 namespace meta {
 
 class BalanceProcessor : public BaseProcessor<cpp2::BalanceResp> {
-public:
-    static BalanceProcessor* instance(kvstore::KVStore* kvstore) {
-        return new BalanceProcessor(kvstore);
-    }
+ public:
+  static BalanceProcessor* instance(kvstore::KVStore* kvstore) {
+    return new BalanceProcessor(kvstore);
+  }
 
-    void process(const cpp2::BalanceReq& req);
+  void process(const cpp2::BalanceReq& req);
 
-private:
-    explicit BalanceProcessor(kvstore::KVStore* kvstore)
-        : BaseProcessor<cpp2::BalanceResp>(kvstore) {}
+ private:
+  explicit BalanceProcessor(kvstore::KVStore* kvstore)
+      : BaseProcessor<cpp2::BalanceResp>(kvstore) {}
 };
 
 }  // namespace meta

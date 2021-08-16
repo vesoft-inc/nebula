@@ -13,27 +13,27 @@ namespace nebula {
 namespace graph {
 
 class ShowFTIndexesExecutor final : public Executor {
-public:
-    ShowFTIndexesExecutor(const PlanNode *node, QueryContext *qctx)
-        : Executor("ShowFTIndexesExecutor", node, qctx) {}
+ public:
+  ShowFTIndexesExecutor(const PlanNode *node, QueryContext *qctx)
+      : Executor("ShowFTIndexesExecutor", node, qctx) {}
 
-    folly::Future<Status> execute() override;
+  folly::Future<Status> execute() override;
 };
 
 class CreateFTIndexExecutor final : public Executor {
-public:
-    CreateFTIndexExecutor(const PlanNode *node, QueryContext *qctx)
-        : Executor("CreateFTIndexExecutor", node, qctx) {}
+ public:
+  CreateFTIndexExecutor(const PlanNode *node, QueryContext *qctx)
+      : Executor("CreateFTIndexExecutor", node, qctx) {}
 
-    folly::Future<Status> execute() override;
+  folly::Future<Status> execute() override;
 };
 
 class DropFTIndexExecutor final : public Executor {
-public:
-    DropFTIndexExecutor(const PlanNode *node, QueryContext *qctx)
-        : Executor("DropFTIndexExecutor", node, qctx) {}
+ public:
+  DropFTIndexExecutor(const PlanNode *node, QueryContext *qctx)
+      : Executor("DropFTIndexExecutor", node, qctx) {}
 
-    folly::Future<Status> execute() override;
+  folly::Future<Status> execute() override;
 };
 
 }  // namespace graph

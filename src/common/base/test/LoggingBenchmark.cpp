@@ -4,15 +4,19 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include <sys/types.h>
-#include <folly/init/Init.h>
 #include <folly/Benchmark.h>
+#include <folly/init/Init.h>
+#include <sys/types.h>
+
 #include <iostream>
 
-#define LOG_SOMETHING(iters) \
-    for (int64_t i = 0; i < iters; i++) { \
-        LOG(INFO) << "Hello" << " " << "Wolrd" << "123"; \
-    }
+#define LOG_SOMETHING(iters)            \
+  for (int64_t i = 0; i < iters; i++) { \
+    LOG(INFO) << "Hello"                \
+              << " "                    \
+              << "Wolrd"                \
+              << "123";                 \
+  }
 
 /***************************
  *
@@ -20,10 +24,7 @@
  *
  **************************/
 #include <glog/logging.h>
-void  loggingUsingGlog(int64_t iters) {
-    LOG_SOMETHING(iters);
-}
-
+void loggingUsingGlog(int64_t iters) { LOG_SOMETHING(iters); }
 
 /***************************
  *
@@ -31,10 +32,7 @@ void  loggingUsingGlog(int64_t iters) {
  *
  **************************/
 #include "common/base/Logging.h"
-void  loggingOptimized(int64_t iters) {
-    LOG_SOMETHING(iters);
-}
-
+void loggingOptimized(int64_t iters) { LOG_SOMETHING(iters); }
 
 /***************************
  *
@@ -42,27 +40,26 @@ void  loggingOptimized(int64_t iters) {
  *
  **************************/
 BENCHMARK(glog_output_logs, iters) {
-    FLAGS_minloglevel = 0;
-    loggingUsingGlog(iters);
+  FLAGS_minloglevel = 0;
+  loggingUsingGlog(iters);
 }
 
 BENCHMARK_RELATIVE(optimized_output_logs, iters) {
-    FLAGS_minloglevel = 0;
-    loggingOptimized(iters);
+  FLAGS_minloglevel = 0;
+  loggingOptimized(iters);
 }
 
 BENCHMARK_DRAW_LINE();
 
 BENCHMARK(glog_skip_logs, iters) {
-    FLAGS_minloglevel = 1;
-    loggingUsingGlog(iters);
+  FLAGS_minloglevel = 1;
+  loggingUsingGlog(iters);
 }
 
 BENCHMARK_RELATIVE(optimized_skip_logs, iters) {
-    FLAGS_minloglevel = 1;
-    loggingOptimized(iters);
+  FLAGS_minloglevel = 1;
+  loggingOptimized(iters);
 }
-
 
 /***************************
  *
@@ -70,12 +67,11 @@ BENCHMARK_RELATIVE(optimized_skip_logs, iters) {
  *
  **************************/
 int main(int argc, char** argv) {
-    folly::init(&argc, &argv, true);
+  folly::init(&argc, &argv, true);
 
-    folly::runBenchmarks();
-    return 0;
+  folly::runBenchmarks();
+  return 0;
 }
-
 
 /*
 Benchmark number is taken from WSL running on i7-8650
