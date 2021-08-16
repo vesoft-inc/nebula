@@ -32,6 +32,8 @@ class ParserUtil final {
                             ReduceExpression *reduce,
                             const std::string &oldAccName,
                             const std::string &oldVarName);
+
+  static void rewriteYieldColumn(QueryContext *qctx, Expression *&expr);
 };
 
 }  // namespace graph
