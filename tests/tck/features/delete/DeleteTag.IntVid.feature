@@ -55,6 +55,7 @@ Feature: Delete int vid of tag
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
       | VertexID |
+    Then drop the used space
 
   Scenario: delete int vid one vertex multiple tag
     Given an empty graph
@@ -106,6 +107,7 @@ Feature: Delete int vid of tag
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
       | VertexID |
+    Then drop the used space
 
   Scenario: delete int vid one vertex all tag
     Given an empty graph
@@ -157,6 +159,7 @@ Feature: Delete int vid of tag
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
       | VertexID |
+    Then drop the used space
 
   Scenario: delete int vid multiple vertex one tag
     Given an empty graph
@@ -221,6 +224,7 @@ Feature: Delete int vid of tag
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
       | VertexID |
+    Then drop the used space
 
   Scenario: delete int vid from pipe
     Given an empty graph
@@ -253,6 +257,13 @@ Feature: Delete int vid of tag
       """
     Then the result should be, in any order:
       | VertexID | team.name |
+    # delete tag from pipe and normal
+    When executing query:
+      """
+      GO FROM hash("Tim Duncan") OVER serve YIELD serve._dst as id | DELETE TAG team FROM $-.id, hash("Lakers")
+      """
+    Then a SyntaxError should be raised at runtime.
+    Then drop the used space
 
   Scenario: delete int vid from var
     Given an empty graph
@@ -285,3 +296,10 @@ Feature: Delete int vid of tag
       """
     Then the result should be, in any order:
       | VertexID | team.name |
+    # delete one tag from var and normal
+    When executing query:
+      """
+      $var = GO FROM hash("Tim Duncan") OVER serve YIELD serve._dst as id; DELETE TAG team FROM $var.id, hash("Lakers")
+      """
+    Then a SyntaxError should be raised at runtime.
+    Then drop the used space

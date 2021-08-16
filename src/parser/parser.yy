@@ -2808,12 +2808,20 @@ delete_vertex_sentence
     ;
 
 delete_tag_sentence
-    : KW_DELETE KW_TAG vid_list name_label_list {
-        auto sentence = new DeleteTagsSentence($3, $4);
+    : KW_DELETE KW_TAG name_label_list KW_FROM vid_list {
+        auto sentence = new DeleteTagsSentence($5, $3);
         $$ = sentence;
     }
-    | KW_DELETE KW_TAG vid_list STAR {
-        auto sentence = new DeleteTagsSentence($3);
+    | KW_DELETE KW_TAG STAR KW_FROM vid_list {
+        auto sentence = new DeleteTagsSentence($5);
+        $$ = sentence;
+    }
+    | KW_DELETE KW_TAG name_label_list KW_FROM vid_ref_expression {
+        auto sentence = new DeleteTagsSentence($5, $3);
+        $$ = sentence;
+    }
+    | KW_DELETE KW_TAG STAR KW_FROM vid_ref_expression {
+        auto sentence = new DeleteTagsSentence($5);
         $$ = sentence;
     }
     ;
