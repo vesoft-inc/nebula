@@ -18,7 +18,8 @@ namespace nebula {
 
 class TestExpr : public LabelExpression {
  public:
-  explicit TestExpr(const std::string &name = "") : LabelExpression(nullptr, name) {}
+  explicit TestExpr(const std::string &name = "")
+      : LabelExpression(reinterpret_cast<ObjectPool *>(1), name) {}
 };
 
 BENCHMARK(DefaultAllocator, iters) {
