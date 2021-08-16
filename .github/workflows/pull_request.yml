@@ -52,7 +52,6 @@ jobs:
     container:
       image: vesoft/nebula-dev:${{ matrix.os }}
       env:
-        TOOLSET_DIR: /opt/vesoft/toolset/clang/9.0.0
         CCACHE_DIR: /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
         CCACHE_MAXSIZE: 8G
       volumes:
@@ -77,8 +76,8 @@ jobs:
             centos7)
               # build with Release type
               cmake \
-                  -DCMAKE_CXX_COMPILER=$TOOLSET_DIR/bin/g++ \
-                  -DCMAKE_C_COMPILER=$TOOLSET_DIR/bin/gcc \
+                  -DCMAKE_CXX_COMPILER=$TOOLSET_CLANG_DIR/bin/g++ \
+                  -DCMAKE_C_COMPILER=$TOOLSET_CLANG_DIR/bin/gcc \
                   -DCMAKE_BUILD_TYPE=Release \
                   -DENABLE_TESTING=on \
                   -B build
@@ -87,11 +86,10 @@ jobs:
             ubuntu2004)
               # build with Debug type
               cmake \
-                  -DCMAKE_CXX_COMPILER=$TOOLSET_DIR/bin/g++ \
-                  -DCMAKE_C_COMPILER=$TOOLSET_DIR/bin/gcc \
+                  -DCMAKE_CXX_COMPILER=$TOOLSET_CLANG_DIR/bin/g++ \
+                  -DCMAKE_C_COMPILER=$TOOLSET_CLANG_DIR/bin/gcc \
                   -DCMAKE_BUILD_TYPE=Debug \
                   -DENABLE_TESTING=on \
-                  -DNEBULA_USE_LINKER=lld \
                   -B build
               echo "::set-output name=j::10"
               ;;
@@ -100,12 +98,11 @@ jobs:
           clang-*)
             # build with Sanitizer
             cmake \
-                -DCMAKE_CXX_COMPILER=$TOOLSET_DIR/bin/clang++ \
-                -DCMAKE_C_COMPILER=$TOOLSET_DIR/bin/clang \
+                -DCMAKE_CXX_COMPILER=$TOOLSET_CLANG_DIR/bin/clang++ \
+                -DCMAKE_C_COMPILER=$TOOLSET_CLANG_DIR/bin/clang \
                 -DCMAKE_BUILD_TYPE=RelWithDebInfo \
                 -DENABLE_ASAN=on \
                 -DENABLE_TESTING=on \
-                -DNEBULA_USE_LINKER=lld \
                 -B build
             echo "::set-output name=j::6"
             ;;
@@ -140,7 +137,7 @@ jobs:
         run: |
           exit $(grep -P "SUMMARY: AddressSanitizer: \d+ byte\(s\) leaked in \d+ allocation\(s\)\." build/server_*/logs/*stderr.log | wc -l)
       - name: Upload logs
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v1
         if: ${{ failure() }}
         with:
           name: ${{ matrix.os }}-${{ matrix.compiler }}-nebula-test-logs
