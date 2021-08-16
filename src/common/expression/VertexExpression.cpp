@@ -10,13 +10,11 @@
 
 namespace nebula {
 
-const Value& VertexExpression::eval(ExpressionContext &ctx) {
-    result_ = ctx.getVertex();
-    return result_;
+const Value &VertexExpression::eval(ExpressionContext &ctx) {
+  result_ = ctx.getVertex();
+  return result_;
 }
 
-void VertexExpression::accept(ExprVisitor *visitor) {
-    visitor->visit(this);
-}
+void VertexExpression::accept(ExprVisitor *visitor) { visitor->visit(this); }
 
-}   // namespace nebula
+}  // namespace nebula

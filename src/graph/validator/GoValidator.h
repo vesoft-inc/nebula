@@ -7,45 +7,42 @@
 #ifndef GRAPH_VALIDATOR_GOVALIDATOR_H_
 #define GRAPH_VALIDATOR_GOVALIDATOR_H_
 
+#include "graph/context/ast/QueryAstContext.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/validator/TraversalValidator.h"
-#include "graph/context/ast/QueryAstContext.h"
 
 namespace nebula {
 namespace graph {
 class GoValidator final : public TraversalValidator {
-public:
-    using VertexProp = nebula::storage::cpp2::VertexProp;
-    using EdgeProp = nebula::storage::cpp2::EdgeProp;
+ public:
+  using VertexProp = nebula::storage::cpp2::VertexProp;
+  using EdgeProp = nebula::storage::cpp2::EdgeProp;
 
-    GoValidator(Sentence* sentence, QueryContext* context)
-        : TraversalValidator(sentence, context) {}
+  GoValidator(Sentence* sentence, QueryContext* context) : TraversalValidator(sentence, context) {}
 
-private:
-    Status validateImpl() override;
+ private:
+  Status validateImpl() override;
 
-    AstContext* getAstContext() override {
-        return goCtx_.get();
-    }
+  AstContext* getAstContext() override { return goCtx_.get(); }
 
-    Status validateWhere(WhereClause* where);
+  Status validateWhere(WhereClause* where);
 
-    Status validateYield(YieldClause* yield);
+  Status validateYield(YieldClause* yield);
 
-    Status validateTruncate(TruncateClause* truncate);
+  Status validateTruncate(TruncateClause* truncate);
 
-    Status buildColumns();
+  Status buildColumns();
 
-    void extractPropExprs(const Expression* expr);
+  void extractPropExprs(const Expression* expr);
 
-    Expression* rewrite2VarProp(const Expression* expr);
+  Expression* rewrite2VarProp(const Expression* expr);
 
-private:
-    std::unique_ptr<GoContext>                      goCtx_;
+ private:
+  std::unique_ptr<GoContext> goCtx_;
 
-    YieldColumns*                                   inputPropCols_{nullptr};
-    std::unordered_map<std::string, YieldColumn*>   propExprColMap_;
+  YieldColumns* inputPropCols_{nullptr};
+  std::unordered_map<std::string, YieldColumn*> propExprColMap_;
 };
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula
 #endif

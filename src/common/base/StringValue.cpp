@@ -4,10 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "common/base/Base.h"
 #include "common/base/StringValue.h"
 
-namespace nebula {
+#include "common/base/Base.h"
 
-
-}  // namespace nebula
+namespace nebula {}  // namespace nebula

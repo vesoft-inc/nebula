@@ -10,10 +10,10 @@ namespace nebula {
 namespace meta {
 
 void RemoveRangeProcessor::process(const cpp2::RemoveRangeReq& req) {
-    CHECK_SEGMENT(req.get_segment());
-    auto start = MetaServiceUtils::assembleSegmentKey(req.get_segment(), req.get_start());
-    auto end   = MetaServiceUtils::assembleSegmentKey(req.get_segment(), req.get_end());
-    doRemoveRange(start, end);
+  CHECK_SEGMENT(req.get_segment());
+  auto start = MetaServiceUtils::assembleSegmentKey(req.get_segment(), req.get_start());
+  auto end = MetaServiceUtils::assembleSegmentKey(req.get_segment(), req.get_end());
+  doRemoveRange(start, end);
 }
 
 }  // namespace meta

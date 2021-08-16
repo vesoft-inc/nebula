@@ -4,7 +4,7 @@
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
 nebula_add_library(
-    context_obj OBJECT
+    graph_context_obj OBJECT
     QueryContext.cpp
     QueryExpressionContext.cpp
     ExecutionContext.cpp

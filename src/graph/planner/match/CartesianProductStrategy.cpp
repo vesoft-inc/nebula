@@ -6,25 +6,25 @@
 
 #include "graph/planner/match/CartesianProductStrategy.h"
 
-#include "graph/planner/plan/Query.h"
-#include "graph/util/ExpressionUtils.h"
 #include "graph/planner/match/MatchSolver.h"
 #include "graph/planner/plan/Algo.h"
+#include "graph/planner/plan/Query.h"
+#include "graph/util/ExpressionUtils.h"
 
 namespace nebula {
 namespace graph {
 PlanNode* CartesianProductStrategy::connect(const PlanNode* left, const PlanNode* right) {
-    return joinDataSet(left, right);
+  return joinDataSet(left, right);
 }
 
 PlanNode* CartesianProductStrategy::joinDataSet(const PlanNode* left, const PlanNode* right) {
-    DCHECK(left->outputVar() != right->outputVar());
+  DCHECK(left->outputVar() != right->outputVar());
 
-    auto* cartesianProduct = CartesianProduct::make(qctx_, nullptr);
-    cartesianProduct->addVar(left->outputVar());
-    cartesianProduct->addVar(right->outputVar());
+  auto* cartesianProduct = CartesianProduct::make(qctx_, nullptr);
+  cartesianProduct->addVar(left->outputVar());
+  cartesianProduct->addVar(right->outputVar());
 
-    return cartesianProduct;
+  return cartesianProduct;
 }
 }  // namespace graph
 }  // namespace nebula

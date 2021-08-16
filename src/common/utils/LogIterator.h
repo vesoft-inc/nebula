@@ -13,20 +13,18 @@
 namespace nebula {
 
 class LogIterator {
-public:
-    virtual ~LogIterator() = default;
+ public:
+  virtual ~LogIterator() = default;
 
-    virtual LogIterator& operator++() = 0;
+  virtual LogIterator& operator++() = 0;
 
-    virtual bool valid() const = 0;
-    virtual operator bool() const {
-        return valid();
-    }
+  virtual bool valid() const = 0;
+  virtual operator bool() const { return valid(); }
 
-    virtual LogID logId() const = 0;
-    virtual TermID logTerm() const = 0;
-    virtual ClusterID logSource() const = 0;
-    virtual folly::StringPiece logMsg() const = 0;
+  virtual LogID logId() const = 0;
+  virtual TermID logTerm() const = 0;
+  virtual ClusterID logSource() const = 0;
+  virtual folly::StringPiece logMsg() const = 0;
 };
 
 }  // namespace nebula

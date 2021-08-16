@@ -4,11 +4,12 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "common/base/Base.h"
-#include "common/fs/TempDir.h"
+#include <folly/Benchmark.h>
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
-#include <folly/Benchmark.h>
+
+#include "common/base/Base.h"
+#include "common/fs/TempDir.h"
 
 DEFINE_bool(do_compact, false, "Do compaction after puts");
 DEFINE_int32(versions, 100, "Total versions");
@@ -17,74 +18,70 @@ namespace nebula {
 namespace kvstore {
 
 std::string genKey(int prefix, int version) {
-    std::string key;
-    key.reserve(8);
-    key.append(reinterpret_cast<const char*>(&prefix), sizeof(prefix));
-    key.append(reinterpret_cast<const char*>(&version), sizeof(version));
-    return key;
+  std::string key;
+  key.reserve(8);
+  key.append(reinterpret_cast<const char*>(&prefix), sizeof(prefix));
+  key.append(reinterpret_cast<const char*>(&version), sizeof(version));
+  return key;
 }
 
 void testFn(bool withVersion) {
-    rocksdb::DB* db = nullptr;
-    BENCHMARK_SUSPEND {
-        fs::TempDir rootPath("/tmp/multi_versions_test.XXXXXX");
-        rocksdb::Options options;
-        options.create_if_missing = true;
-        options.disable_auto_compactions = true;
-        auto status = rocksdb::DB::Open(options, rootPath.path(), &db);
-        CHECK(status.ok());
-        rocksdb::WriteOptions woptions;
-        for (int i = 0; i < 1000; i++) {
-            for (int v = 0; v < FLAGS_versions; v++) {
-                std::string key;
-                if (withVersion) {
-                    key = genKey(i, v);
-                } else {
-                    key = genKey(i, 0);
-                }
-                auto val = folly::stringPrintf("val_%d_%d", i, v);
-                db->Put(woptions,
-                        rocksdb::Slice(key.data(), key.size()),
-                        rocksdb::Slice(val.data(), val.size()));
-            }
+  rocksdb::DB* db = nullptr;
+  BENCHMARK_SUSPEND {
+    fs::TempDir rootPath("/tmp/multi_versions_test.XXXXXX");
+    rocksdb::Options options;
+    options.create_if_missing = true;
+    options.disable_auto_compactions = true;
+    auto status = rocksdb::DB::Open(options, rootPath.path(), &db);
+    CHECK(status.ok());
+    rocksdb::WriteOptions woptions;
+    for (int i = 0; i < 1000; i++) {
+      for (int v = 0; v < FLAGS_versions; v++) {
+        std::string key;
+        if (withVersion) {
+          key = genKey(i, v);
+        } else {
+          key = genKey(i, 0);
         }
-        if (FLAGS_do_compact) {
-            rocksdb::CompactRangeOptions croptions;
-            db->CompactRange(croptions, nullptr, nullptr);
-        }
+        auto val = folly::stringPrintf("val_%d_%d", i, v);
+        db->Put(woptions,
+                rocksdb::Slice(key.data(), key.size()),
+                rocksdb::Slice(val.data(), val.size()));
+      }
     }
-    auto start = genKey(0, 0);
-    rocksdb::ReadOptions roptions;
-    rocksdb::Iterator* iter = db->NewIterator(roptions);
-    if (iter) {
-        iter->Seek(rocksdb::Slice(start));
+    if (FLAGS_do_compact) {
+      rocksdb::CompactRangeOptions croptions;
+      db->CompactRange(croptions, nullptr, nullptr);
     }
+  }
+  auto start = genKey(0, 0);
+  rocksdb::ReadOptions roptions;
+  rocksdb::Iterator* iter = db->NewIterator(roptions);
+  if (iter) {
+    iter->Seek(rocksdb::Slice(start));
+  }
 
-    while (iter->Valid()) {
-        iter->Next();
-    }
-    BENCHMARK_SUSPEND {
-        delete iter;
-        db->Close();
-        delete db;
-    }
+  while (iter->Valid()) {
+    iter->Next();
+  }
+  BENCHMARK_SUSPEND {
+    delete iter;
+    db->Close();
+    delete db;
+  }
 }
 
-BENCHMARK(WithVersionTest) {
-    testFn(true);
-}
+BENCHMARK(WithVersionTest) { testFn(true); }
 
-BENCHMARK(WithOutVersionTest) {
-    testFn(false);
-}
+BENCHMARK(WithOutVersionTest) { testFn(false); }
 
 }  // namespace kvstore
 }  // namespace nebula
 
 int main(int argc, char** argv) {
-    folly::init(&argc, &argv, true);
-    folly::runBenchmarks();
-    return 0;
+  folly::init(&argc, &argv, true);
+  folly::runBenchmarks();
+  return 0;
 }
 
 /**

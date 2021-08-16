@@ -18,30 +18,26 @@ namespace storage {
 extern ProcessorCounters kDelVerticesCounters;
 
 class DeleteVerticesProcessor : public BaseProcessor<cpp2::ExecResponse> {
-public:
-    static DeleteVerticesProcessor* instance(
-            StorageEnv* env,
-            const ProcessorCounters* counters = &kDelVerticesCounters) {
-        return new DeleteVerticesProcessor(env, counters);
-    }
+ public:
+  static DeleteVerticesProcessor* instance(
+      StorageEnv* env, const ProcessorCounters* counters = &kDelVerticesCounters) {
+    return new DeleteVerticesProcessor(env, counters);
+  }
 
-    void process(const cpp2::DeleteVerticesRequest& req);
+  void process(const cpp2::DeleteVerticesRequest& req);
 
-private:
-    DeleteVerticesProcessor(StorageEnv* env,
-                            const ProcessorCounters* counters)
-        : BaseProcessor<cpp2::ExecResponse>(env, counters) {}
+ private:
+  DeleteVerticesProcessor(StorageEnv* env, const ProcessorCounters* counters)
+      : BaseProcessor<cpp2::ExecResponse>(env, counters) {}
 
-    ErrorOr<nebula::cpp2::ErrorCode, std::string>
-    deleteVertices(PartitionID partId,
-                   const std::vector<Value>& vertices,
-                   std::vector<VMLI>& target);
+  ErrorOr<nebula::cpp2::ErrorCode, std::string> deleteVertices(PartitionID partId,
+                                                               const std::vector<Value>& vertices,
+                                                               std::vector<VMLI>& target);
 
-private:
-    GraphSpaceID                                                spaceId_;
-    std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>> indexes_;
+ private:
+  GraphSpaceID spaceId_;
+  std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>> indexes_;
 };
-
 
 }  // namespace storage
 }  // namespace nebula

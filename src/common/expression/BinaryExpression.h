@@ -15,46 +15,34 @@ namespace nebula {
  *  Base class for all binary expressions
  **/
 class BinaryExpression : public Expression {
-    friend class Expression;
+  friend class Expression;
 
-public:
-    bool operator==(const Expression& rhs) const override;
+ public:
+  bool operator==(const Expression& rhs) const override;
 
-    const Expression* left() const {
-        return lhs_;
-    }
+  const Expression* left() const { return lhs_; }
 
-    Expression* left() {
-        return lhs_;
-    }
+  Expression* left() { return lhs_; }
 
-    void setLeft(Expression* expr) {
-        lhs_ = expr;
-    }
+  void setLeft(Expression* expr) { lhs_ = expr; }
 
-    const Expression* right() const {
-        return rhs_;
-    }
+  const Expression* right() const { return rhs_; }
 
-    Expression* right() {
-        return rhs_;
-    }
+  Expression* right() { return rhs_; }
 
-    void setRight(Expression* expr) {
-        rhs_ = expr;
-    }
+  void setRight(Expression* expr) { rhs_ = expr; }
 
-protected:
-    BinaryExpression(ObjectPool* pool, Kind kind, Expression* lhs, Expression* rhs)
-        : Expression(pool, kind), lhs_(lhs), rhs_(rhs) {}
+ protected:
+  BinaryExpression(ObjectPool* pool, Kind kind, Expression* lhs, Expression* rhs)
+      : Expression(pool, kind), lhs_(lhs), rhs_(rhs) {}
 
-    void writeTo(Encoder& encoder) const override;
+  void writeTo(Encoder& encoder) const override;
 
-    void resetFrom(Decoder& decoder) override;
+  void resetFrom(Decoder& decoder) override;
 
-protected:
-    Expression* lhs_ = nullptr;
-    Expression* rhs_ = nullptr;
+ protected:
+  Expression* lhs_ = nullptr;
+  Expression* rhs_ = nullptr;
 };
 
 }  // namespace nebula

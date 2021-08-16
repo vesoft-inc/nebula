@@ -13,21 +13,22 @@ namespace nebula {
 namespace meta {
 
 class ListEdgesProcessor : public BaseProcessor<cpp2::ListEdgesResp> {
-public:
-    /*
-     *  xxxProcessor is self-management.
-     *  The user should get instance when needed and don't care about the instance deleted.
-     *  The instance should be destroyed inside when onFinished method invoked
-     */
-    static ListEdgesProcessor* instance(kvstore::KVStore* kvstore) {
-        return new ListEdgesProcessor(kvstore);
-    }
+ public:
+  /*
+   *  xxxProcessor is self-management.
+   *  The user should get instance when needed and don't care about the instance
+   * deleted. The instance should be destroyed inside when onFinished method
+   * invoked
+   */
+  static ListEdgesProcessor* instance(kvstore::KVStore* kvstore) {
+    return new ListEdgesProcessor(kvstore);
+  }
 
-    void process(const cpp2::ListEdgesReq& req);
+  void process(const cpp2::ListEdgesReq& req);
 
-private:
-    explicit ListEdgesProcessor(kvstore::KVStore* kvstore)
-        : BaseProcessor<cpp2::ListEdgesResp>(kvstore) {}
+ private:
+  explicit ListEdgesProcessor(kvstore::KVStore* kvstore)
+      : BaseProcessor<cpp2::ListEdgesResp>(kvstore) {}
 };
 
 }  // namespace meta

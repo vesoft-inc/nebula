@@ -10,16 +10,15 @@
 // Following hook functions are required by the sanitizer runtime library.
 // So make them exported.
 // Besides, keep these hooks outside the consideration of sanitizer
-#define SANITIZER_HOOK_ATTRIBUTES                                               \
-    __attribute__((visibility("default")))                                      \
-    // __attribute__((no_sanitize("address", "thread", "undefined")))
+#define SANITIZER_HOOK_ATTRIBUTES __attribute__((visibility("default")))
+// __attribute__((no_sanitize("address", "thread", "undefined")))
 
 extern "C" {
 
 SANITIZER_HOOK_ATTRIBUTES
 const char* __asan_default_options() {
-    // You could add new or update existing options via ASAN_OPTIONS at runtime.
-    return ""
+  // You could add new or update existing options via ASAN_OPTIONS at runtime.
+  return ""
            "fast_unwind_on_malloc=0 \n"
            "detect_stack_use_after_return=1 \n"
            "alloc_dealloc_mismatch=1 \n"
@@ -33,39 +32,34 @@ const char* __asan_default_options() {
            "";
 }
 
-
 SANITIZER_HOOK_ATTRIBUTES
 const char* __asan_default_suppressions() {
-    return ""
-           ""
-           "";
+  return ""
+         ""
+         "";
 }
-
 
 SANITIZER_HOOK_ATTRIBUTES
 const char* __lsan_default_options() {
-    return ""
-           ""
-           "";
+  return ""
+         ""
+         "";
 }
-
 
 SANITIZER_HOOK_ATTRIBUTES
 const char* __lsan_default_suppressions() {
-    // NOTE  Don't add extra spaces around the suppression patterns, unless you intend to.
-    return ""
-           "leak:folly::SingletonVault::destroyInstances\n"
-           "leak:__cxa_thread_atexit\n"
-           "";
+  // NOTE  Don't add extra spaces around the suppression patterns, unless you
+  // intend to.
+  return ""
+         "leak:folly::SingletonVault::destroyInstances\n"
+         "leak:__cxa_thread_atexit\n"
+         "";
 }
-
 
 SANITIZER_HOOK_ATTRIBUTES
-const char* __ubsan_default_options() {
-    return "print_stacktrace=1 \n";
-}
+const char* __ubsan_default_options() { return "print_stacktrace=1 \n"; }
 
-}   // extern "C"
+}  // extern "C"
 
 #undef SANITIZER_HOOK_ATTRIBUTES
 

@@ -8,7 +8,6 @@
 #define GRAPH_EXECUTOR_ADMIN_SESSIONEXECUTOR_H_
 
 #include "common/time/TimeUtils.h"
-
 #include "graph/executor/Executor.h"
 #include "graph/service/RequestContext.h"
 
@@ -16,33 +15,33 @@ namespace nebula {
 namespace graph {
 
 class ShowSessionsExecutor final : public Executor {
-public:
-    ShowSessionsExecutor(const PlanNode *node, QueryContext *ectx)
-        : Executor("ShowSessionsExecutor", node, ectx) {}
+ public:
+  ShowSessionsExecutor(const PlanNode *node, QueryContext *ectx)
+      : Executor("ShowSessionsExecutor", node, ectx) {}
 
-    folly::Future<Status> execute() override;
+  folly::Future<Status> execute() override;
 
-private:
-    folly::Future<Status> listSessions();
+ private:
+  folly::Future<Status> listSessions();
 
-    folly::Future<Status> getSession(SessionID sessionId);
+  folly::Future<Status> getSession(SessionID sessionId);
 
-    DateTime microSecToDateTime(int64_t microSec) {
-        auto dateTime = time::TimeConversion::unixSecondsToDateTime(microSec / 1000000);
-        dateTime.microsec = microSec % 1000000;
-        return dateTime;
-    }
+  DateTime microSecToDateTime(int64_t microSec) {
+    auto dateTime = time::TimeConversion::unixSecondsToDateTime(microSec / 1000000);
+    dateTime.microsec = microSec % 1000000;
+    return dateTime;
+  }
 };
 
 class UpdateSessionExecutor final : public Executor {
-public:
-    UpdateSessionExecutor(const PlanNode *node, QueryContext *ectx)
-        : Executor("UpdateSessionExecutor", node, ectx) {}
+ public:
+  UpdateSessionExecutor(const PlanNode *node, QueryContext *ectx)
+      : Executor("UpdateSessionExecutor", node, ectx) {}
 
-    folly::Future<Status> execute() override;
+  folly::Future<Status> execute() override;
 };
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula
 
 #endif  // GRAPH_EXECUTOR_ADMIN_SESSIONEXECUTOR_H_

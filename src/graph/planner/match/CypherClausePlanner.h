@@ -13,11 +13,11 @@
 namespace nebula {
 namespace graph {
 class CypherClausePlanner {
-public:
-    CypherClausePlanner() = default;
-    virtual ~CypherClausePlanner() = default;
+ public:
+  CypherClausePlanner() = default;
+  virtual ~CypherClausePlanner() = default;
 
-    virtual StatusOr<SubPlan> transform(CypherClauseContextBase* clauseCtx) = 0;
+  virtual StatusOr<SubPlan> transform(CypherClauseContextBase* clauseCtx) = 0;
 };
 }  // namespace graph
 }  // namespace nebula

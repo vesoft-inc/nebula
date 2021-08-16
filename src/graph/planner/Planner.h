@@ -10,8 +10,8 @@
 #include <ostream>
 
 #include "common/base/Base.h"
-#include "graph/planner/plan/PlanNode.h"
 #include "graph/context/ast/AstContext.h"
+#include "graph/planner/plan/PlanNode.h"
 
 namespace nebula {
 namespace graph {
@@ -25,9 +25,9 @@ extern const char* kVertices;
 extern const char* kEdges;
 
 struct SubPlan {
-    // root and tail of a subplan.
-    PlanNode*   root{nullptr};
-    PlanNode*   tail{nullptr};
+  // root and tail of a subplan.
+  PlanNode* root{nullptr};
+  PlanNode* tail{nullptr};
 };
 
 std::ostream& operator<<(std::ostream& os, const SubPlan& subplan);
@@ -36,27 +36,27 @@ using MatchFunc = std::function<bool(AstContext* astContext)>;
 using PlannerInstantiateFunc = std::function<std::unique_ptr<Planner>()>;
 
 struct MatchAndInstantiate {
-    MatchAndInstantiate(MatchFunc m, PlannerInstantiateFunc p)
-        : match(std::move(m)), instantiate(std::move(p)) {}
-    MatchFunc match;
-    PlannerInstantiateFunc instantiate;
+  MatchAndInstantiate(MatchFunc m, PlannerInstantiateFunc p)
+      : match(std::move(m)), instantiate(std::move(p)) {}
+  MatchFunc match;
+  PlannerInstantiateFunc instantiate;
 };
 
 class Planner {
-public:
-    virtual ~Planner() = default;
+ public:
+  virtual ~Planner() = default;
 
-    static auto& plannersMap() {
-        static std::unordered_map<Sentence::Kind, std::vector<MatchAndInstantiate>> plannersMap;
-        return plannersMap;
-    }
+  static auto& plannersMap() {
+    static std::unordered_map<Sentence::Kind, std::vector<MatchAndInstantiate>> plannersMap;
+    return plannersMap;
+  }
 
-    static StatusOr<SubPlan> toPlan(AstContext* astCtx);
+  static StatusOr<SubPlan> toPlan(AstContext* astCtx);
 
-    virtual StatusOr<SubPlan> transform(AstContext* astCtx) = 0;
+  virtual StatusOr<SubPlan> transform(AstContext* astCtx) = 0;
 
-protected:
-    Planner() = default;
+ protected:
+  Planner() = default;
 };
 }  // namespace graph
 }  // namespace nebula

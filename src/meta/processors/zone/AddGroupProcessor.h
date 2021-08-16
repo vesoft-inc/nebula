@@ -13,18 +13,17 @@ namespace nebula {
 namespace meta {
 
 class AddGroupProcessor : public BaseProcessor<cpp2::ExecResp> {
-public:
-    static AddGroupProcessor* instance(kvstore::KVStore* kvstore) {
-        return new AddGroupProcessor(kvstore);
-    }
+ public:
+  static AddGroupProcessor* instance(kvstore::KVStore* kvstore) {
+    return new AddGroupProcessor(kvstore);
+  }
 
-    void process(const cpp2::AddGroupReq& req);
+  void process(const cpp2::AddGroupReq& req);
 
-private:
-    explicit AddGroupProcessor(kvstore::KVStore* kvstore)
-        : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+ private:
+  explicit AddGroupProcessor(kvstore::KVStore* kvstore) : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 
-    nebula::cpp2::ErrorCode  checkGroupRedundancy(std::vector<std::string> zones);
+  nebula::cpp2::ErrorCode checkGroupRedundancy(std::vector<std::string> zones);
 };
 
 }  // namespace meta

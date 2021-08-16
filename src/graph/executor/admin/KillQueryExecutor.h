@@ -12,25 +12,24 @@
 namespace nebula {
 namespace graph {
 class KillQueryExecutor final : public Executor {
-public:
-    KillQueryExecutor(const PlanNode *node, QueryContext *qctx)
-        : Executor("KillQueryExecutor", node, qctx) {}
+ public:
+  KillQueryExecutor(const PlanNode* node, QueryContext* qctx)
+      : Executor("KillQueryExecutor", node, qctx) {}
 
-    folly::Future<Status> execute() override;
+  folly::Future<Status> execute() override;
 
-private:
-    using QueriesMap = std::unordered_map<SessionID, std::unordered_set<ExecutionPlanID>>;
-    Status verifyTheQueriesByLocalCache(QueriesMap& toBeVerifiedQueries,
-                                        QueriesMap& killQueries);
+ private:
+  using QueriesMap = std::unordered_map<SessionID, std::unordered_set<ExecutionPlanID>>;
+  Status verifyTheQueriesByLocalCache(QueriesMap& toBeVerifiedQueries, QueriesMap& killQueries);
 
-    Status verifyTheQueriesByMetaInfo(const QueriesMap& toBeVerifiedQueries,
-                                      const std::vector<meta::cpp2::Session>& sessionsInMeta);
+  Status verifyTheQueriesByMetaInfo(const QueriesMap& toBeVerifiedQueries,
+                                    const std::vector<meta::cpp2::Session>& sessionsInMeta);
 
-    void killCurrentHostQueries(const QueriesMap& killQueries, QueriesMap& queriesKilledInLocal);
+  void killCurrentHostQueries(const QueriesMap& killQueries, QueriesMap& queriesKilledInLocal);
 
-    void findKillQueriesViaMeta(const QueriesMap& queriesKilledInLocal,
-                                const std::vector<meta::cpp2::Session>& sessionsInMeta,
-                                QueriesMap& killQueries);
+  void findKillQueriesViaMeta(const QueriesMap& queriesKilledInLocal,
+                              const std::vector<meta::cpp2::Session>& sessionsInMeta,
+                              QueriesMap& killQueries);
 };
 }  // namespace graph
 }  // namespace nebula

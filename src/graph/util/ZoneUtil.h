@@ -14,8 +14,8 @@ namespace nebula {
 namespace graph {
 
 class ZoneUtil final {
-public:
-    ZoneUtil() = delete;
+ public:
+  ZoneUtil() = delete;
 };
 
 }  // namespace graph

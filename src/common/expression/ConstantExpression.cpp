@@ -11,38 +11,33 @@
 namespace nebula {
 
 bool ConstantExpression::operator==(const Expression& rhs) const {
-    if (kind_ != rhs.kind()) {
-        return false;
-    }
+  if (kind_ != rhs.kind()) {
+    return false;
+  }
 
-    const auto& r = static_cast<const ConstantExpression&>(rhs);
-    return val_ == r.val_;
+  const auto& r = static_cast<const ConstantExpression&>(rhs);
+  return val_ == r.val_;
 }
-
-
 
 void ConstantExpression::writeTo(Encoder& encoder) const {
-    // kind_
-    encoder << kind_;
+  // kind_
+  encoder << kind_;
 
-    // val_
-    encoder << val_;
+  // val_
+  encoder << val_;
 }
-
 
 void ConstantExpression::resetFrom(Decoder& decoder) {
-    // Deserialize val_
-    val_ = decoder.readValue();
+  // Deserialize val_
+  val_ = decoder.readValue();
 }
 
-void ConstantExpression::accept(ExprVisitor* visitor) {
-    visitor->visit(this);
-}
+void ConstantExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
 
 std::string ConstantExpression::toString() const {
-    std::stringstream out;
-    out << val_;
-    return out.str();
+  std::stringstream out;
+  out << val_;
+  return out.str();
 }
 
 }  // namespace nebula

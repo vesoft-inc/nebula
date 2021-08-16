@@ -18,28 +18,25 @@ namespace storage {
 extern ProcessorCounters kDelTagsCounters;
 
 class DeleteTagsProcessor : public BaseProcessor<cpp2::ExecResponse> {
-public:
-    static DeleteTagsProcessor* instance(StorageEnv* env,
-                                         const ProcessorCounters* counters = &kDelTagsCounters) {
-        return new DeleteTagsProcessor(env, counters);
-    }
+ public:
+  static DeleteTagsProcessor* instance(StorageEnv* env,
+                                       const ProcessorCounters* counters = &kDelTagsCounters) {
+    return new DeleteTagsProcessor(env, counters);
+  }
 
-    void process(const cpp2::DeleteTagsRequest& req);
+  void process(const cpp2::DeleteTagsRequest& req);
 
-private:
-    DeleteTagsProcessor(StorageEnv* env, const ProcessorCounters* counters)
-        : BaseProcessor<cpp2::ExecResponse>(env, counters) {}
+ private:
+  DeleteTagsProcessor(StorageEnv* env, const ProcessorCounters* counters)
+      : BaseProcessor<cpp2::ExecResponse>(env, counters) {}
 
-    ErrorOr<nebula::cpp2::ErrorCode, std::string> deleteTags(
-        PartitionID partId,
-        const std::vector<cpp2::DelTags>& delTags,
-        std::vector<VMLI>& lockKeys);
+  ErrorOr<nebula::cpp2::ErrorCode, std::string> deleteTags(
+      PartitionID partId, const std::vector<cpp2::DelTags>& delTags, std::vector<VMLI>& lockKeys);
 
-private:
-    GraphSpaceID                                                spaceId_;
-    std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>> indexes_;
+ private:
+  GraphSpaceID spaceId_;
+  std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>> indexes_;
 };
-
 
 }  // namespace storage
 }  // namespace nebula

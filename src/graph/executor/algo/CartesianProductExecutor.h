@@ -12,18 +12,18 @@
 namespace nebula {
 namespace graph {
 class CartesianProductExecutor : public Executor {
-public:
-    CartesianProductExecutor(const PlanNode* node, QueryContext* qctx)
-        : Executor("CartesianProductExecutor", node, qctx) {}
+ public:
+  CartesianProductExecutor(const PlanNode* node, QueryContext* qctx)
+      : Executor("CartesianProductExecutor", node, qctx) {}
 
-    folly::Future<Status> execute() override;
+  folly::Future<Status> execute() override;
 
-private:
-    void doCartesianProduct(const DataSet& lds, const DataSet& rds, DataSet& result);
+ private:
+  void doCartesianProduct(const DataSet& lds, const DataSet& rds, DataSet& result);
 
-    std::vector<std::vector<std::string>> colNames_;
+  std::vector<std::vector<std::string>> colNames_;
 };
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula
 #endif  // GRAPH_EXECUTOR_ALGO_CARTESIANPRODUCTEXECUTOR_H_

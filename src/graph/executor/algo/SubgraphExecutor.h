@@ -12,19 +12,19 @@
 namespace nebula {
 namespace graph {
 class SubgraphExecutor : public Executor {
-public:
-    SubgraphExecutor(const PlanNode* node, QueryContext* qctx)
-        : Executor("SubgraphExecutor", node, qctx) {}
+ public:
+  SubgraphExecutor(const PlanNode* node, QueryContext* qctx)
+      : Executor("SubgraphExecutor", node, qctx) {}
 
-    folly::Future<Status> execute() override;
+  folly::Future<Status> execute() override;
 
-private:
-    void oneMoreStep();
+ private:
+  void oneMoreStep();
 
-private:
-    std::unordered_set<Value>   historyVids_;
+ private:
+  std::unordered_set<Value> historyVids_;
 };
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula
 #endif  // GRAPH_EXECUTOR_ALGO_SUBGRAPHEXECUTOR_H_

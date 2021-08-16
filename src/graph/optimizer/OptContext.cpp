@@ -18,17 +18,17 @@ OptContext::OptContext(graph::QueryContext *qctx)
     : qctx_(DCHECK_NOTNULL(qctx)), objPool_(std::make_unique<ObjectPool>()) {}
 
 void OptContext::addPlanNodeAndOptGroupNode(int64_t planNodeId, const OptGroupNode *optGroupNode) {
-    auto pair = planNodeToOptGroupNodeMap_.emplace(planNodeId, optGroupNode);
-    if (UNLIKELY(!pair.second)) {
-        const auto &pn = pair.first->second->node()->toString();
-        LOG(ERROR) << "PlanNode(" << planNodeId << ") has existed in OptContext: " << pn;
-    }
+  auto pair = planNodeToOptGroupNodeMap_.emplace(planNodeId, optGroupNode);
+  if (UNLIKELY(!pair.second)) {
+    const auto &pn = pair.first->second->node()->toString();
+    LOG(ERROR) << "PlanNode(" << planNodeId << ") has existed in OptContext: " << pn;
+  }
 }
 
 const OptGroupNode *OptContext::findOptGroupNodeByPlanNodeId(int64_t planNodeId) const {
-    auto found = planNodeToOptGroupNodeMap_.find(planNodeId);
-    return found == planNodeToOptGroupNodeMap_.end() ? nullptr : found->second;
+  auto found = planNodeToOptGroupNodeMap_.find(planNodeId);
+  return found == planNodeToOptGroupNodeMap_.end() ? nullptr : found->second;
 }
 
-}   // namespace opt
-}   // namespace nebula
+}  // namespace opt
+}  // namespace nebula

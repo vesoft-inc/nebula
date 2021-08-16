@@ -10,20 +10,18 @@ namespace nebula {
 namespace storage {
 
 void DropCheckpointProcessor::process(const cpp2::DropCPRequest& req) {
-    CHECK_NOTNULL(env_);
-    auto spaceId = req.get_space_id();
-    auto& name = req.get_name();
-    auto retCode = env_->kvstore_->dropCheckpoint(spaceId, std::move(name));
-    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-        cpp2::PartitionResult thriftRet;
-        thriftRet.set_code(retCode);
-        codes_.emplace_back(std::move(thriftRet));
-    }
+  CHECK_NOTNULL(env_);
+  auto spaceId = req.get_space_id();
+  auto& name = req.get_name();
+  auto retCode = env_->kvstore_->dropCheckpoint(spaceId, std::move(name));
+  if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    cpp2::PartitionResult thriftRet;
+    thriftRet.set_code(retCode);
+    codes_.emplace_back(std::move(thriftRet));
+  }
 
-    onFinished();
+  onFinished();
 }
 
 }  // namespace storage
 }  // namespace nebula
-
-

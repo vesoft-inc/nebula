@@ -7,9 +7,10 @@
 #ifndef KVSTORE_ROCKSENGINECONFIG_H_
 #define KVSTORE_ROCKSENGINECONFIG_H_
 
+#include <rocksdb/db.h>
+
 #include "common/base/Base.h"
 #include "common/thrift/ThriftTypes.h"
-#include <rocksdb/db.h>
 
 // [Version]
 DECLARE_string(rocksdb_options_version);
@@ -70,11 +71,10 @@ rocksdb::Status initRocksdbOptions(rocksdb::Options &baseOpts,
                                    GraphSpaceID spaceId,
                                    int32_t vidLen = 8);
 
-bool loadOptionsMap(std::unordered_map<std::string, std::string> &map, const std::string& gflags);
+bool loadOptionsMap(std::unordered_map<std::string, std::string> &map, const std::string &gflags);
 
 std::shared_ptr<rocksdb::Statistics> getDBStatistics();
 
 }  // namespace kvstore
 }  // namespace nebula
 #endif  // KVSTORE_ROCKSENGINECONFIG_H_
-

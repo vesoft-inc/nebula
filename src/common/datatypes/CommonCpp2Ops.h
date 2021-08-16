@@ -24,7 +24,7 @@ struct Map;
 struct Set;
 struct List;
 struct DataSet;
-}   // namespace nebula
+}  // namespace nebula
 
 namespace apache::thrift {
 
@@ -44,6 +44,6 @@ SPECIALIZE_CPP2OPS(nebula::Set);
 SPECIALIZE_CPP2OPS(nebula::List);
 SPECIALIZE_CPP2OPS(nebula::DataSet);
 
-}   // namespace apache::thrift
+}  // namespace apache::thrift
 
 #endif  // COMMON_DATATYPES_COMMON_CPP2OPS_H_

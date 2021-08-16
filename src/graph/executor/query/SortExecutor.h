@@ -13,14 +13,13 @@ namespace nebula {
 namespace graph {
 
 class SortExecutor final : public Executor {
-public:
-    SortExecutor(const PlanNode *node, QueryContext *qctx)
-        : Executor("SortExecutor", node, qctx) {}
+ public:
+  SortExecutor(const PlanNode *node, QueryContext *qctx) : Executor("SortExecutor", node, qctx) {}
 
-    folly::Future<Status> execute() override;
+  folly::Future<Status> execute() override;
 };
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula
 
-#endif   // GRAPH_EXECUTOR_QUERY_SORTEXECUTOR_H_
+#endif  // GRAPH_EXECUTOR_QUERY_SORTEXECUTOR_H_

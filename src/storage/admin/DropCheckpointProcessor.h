@@ -15,18 +15,16 @@
 namespace nebula {
 namespace storage {
 class DropCheckpointProcessor : public BaseProcessor<cpp2::AdminExecResp> {
-public:
-    static DropCheckpointProcessor* instance(StorageEnv* env) {
-        return new DropCheckpointProcessor(env);
-    }
+ public:
+  static DropCheckpointProcessor* instance(StorageEnv* env) {
+    return new DropCheckpointProcessor(env);
+  }
 
-    void process(const cpp2::DropCPRequest& req);
+  void process(const cpp2::DropCPRequest& req);
 
-private:
-    explicit DropCheckpointProcessor(StorageEnv* env)
-            : BaseProcessor<cpp2::AdminExecResp>(env) {}
+ private:
+  explicit DropCheckpointProcessor(StorageEnv* env) : BaseProcessor<cpp2::AdminExecResp>(env) {}
 };
 }  // namespace storage
 }  // namespace nebula
 #endif  // STORAGE_ADMIN_DROPCHECKPOINTPROCESSOR_H_
-

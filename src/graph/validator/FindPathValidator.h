@@ -8,28 +8,26 @@
 #define GRAPH_VALIDATOR_FINDPATHVALIDATOR_H_
 
 #include "common/base/Base.h"
-#include "graph/validator/TraversalValidator.h"
 #include "graph/context/ast/QueryAstContext.h"
+#include "graph/validator/TraversalValidator.h"
 
 namespace nebula {
 namespace graph {
 
 class FindPathValidator final : public TraversalValidator {
-public:
-    FindPathValidator(Sentence* sentence, QueryContext* context)
-        : TraversalValidator(sentence, context) {}
+ public:
+  FindPathValidator(Sentence* sentence, QueryContext* context)
+      : TraversalValidator(sentence, context) {}
 
-private:
-    Status validateImpl() override;
+ private:
+  Status validateImpl() override;
 
-    AstContext* getAstContext() override {
-        return pathCtx_.get();
-    }
+  AstContext* getAstContext() override { return pathCtx_.get(); }
 
-    Status validateWhere(WhereClause* where);
+  Status validateWhere(WhereClause* where);
 
-private:
-    std::unique_ptr<PathContext> pathCtx_;
+ private:
+  std::unique_ptr<PathContext> pathCtx_;
 };
 }  // namespace graph
 }  // namespace nebula

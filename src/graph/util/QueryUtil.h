@@ -15,16 +15,16 @@ struct Starts;
 struct SubPlan;
 class PlanNode;
 class QueryUtil final {
-public:
-    QueryUtil() = delete;
+ public:
+  QueryUtil() = delete;
 
-    static void buildConstantInput(QueryContext* qctx, Starts& starts, std::string& vidsVar);
+  static void buildConstantInput(QueryContext* qctx, Starts& starts, std::string& vidsVar);
 
-    static SubPlan buildRuntimeInput(QueryContext* qctx, Starts& starts);
+  static SubPlan buildRuntimeInput(QueryContext* qctx, Starts& starts);
 
-    static SubPlan buildStart(QueryContext* qctx, Starts& starts, std::string& vidsVar);
+  static SubPlan buildStart(QueryContext* qctx, Starts& starts, std::string& vidsVar);
 
-    static PlanNode* extractDstFromGN(QueryContext* qctx, PlanNode* gn, const std::string& output);
+  static PlanNode* extractDstFromGN(QueryContext* qctx, PlanNode* gn, const std::string& output);
 };
 
 }  // namespace graph

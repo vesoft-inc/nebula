@@ -7,22 +7,21 @@
 #ifndef CODEC_ROWWRITERV2_H_
 #define CODEC_ROWWRITERV2_H_
 
+#include "codec/RowReader.h"
 #include "common/base/Base.h"
 #include "common/meta/SchemaProviderIf.h"
-#include "codec/RowReader.h"
 
 namespace nebula {
 
 enum class WriteResult {
-    SUCCEEDED = 0,
-    UNKNOWN_FIELD = -1,
-    TYPE_MISMATCH = -2,
-    OUT_OF_RANGE = -3,
-    NOT_NULLABLE = -4,
-    FIELD_UNSET = -5,
-    INCORRECT_VALUE = -6,
+  SUCCEEDED = 0,
+  UNKNOWN_FIELD = -1,
+  TYPE_MISMATCH = -2,
+  OUT_OF_RANGE = -3,
+  NOT_NULLABLE = -4,
+  FIELD_UNSET = -5,
+  INCORRECT_VALUE = -6,
 };
-
 
 /********************************************************************************
 
@@ -85,116 +84,111 @@ enum class WriteResult {
 
 ********************************************************************************/
 class RowWriterV2 {
-public:
-    explicit RowWriterV2(const meta::SchemaProviderIf* schema);
-    // This constructor only takes a V2 encoded string
-    RowWriterV2(const meta::SchemaProviderIf* schema, std::string&& encoded);
-    // This constructor only takes a V2 encoded string
-    RowWriterV2(const meta::SchemaProviderIf* schema, const std::string& encoded);
-    // This constructor can handle both V1 and V2 readers
-    explicit RowWriterV2(RowReader& reader);
+ public:
+  explicit RowWriterV2(const meta::SchemaProviderIf* schema);
+  // This constructor only takes a V2 encoded string
+  RowWriterV2(const meta::SchemaProviderIf* schema, std::string&& encoded);
+  // This constructor only takes a V2 encoded string
+  RowWriterV2(const meta::SchemaProviderIf* schema, const std::string& encoded);
+  // This constructor can handle both V1 and V2 readers
+  explicit RowWriterV2(RowReader& reader);
 
-    ~RowWriterV2() = default;
+  ~RowWriterV2() = default;
 
-    // Return the exact length of the encoded binary array
-    int64_t size() const noexcept {
-        return buf_.size();
+  // Return the exact length of the encoded binary array
+  int64_t size() const noexcept { return buf_.size(); }
+
+  const meta::SchemaProviderIf* schema() const { return schema_; }
+
+  const std::string& getEncodedStr() const noexcept {
+    CHECK(finished_) << "You need to call finish() first";
+    return buf_;
+  }
+
+  std::string moveEncodedStr() noexcept {
+    CHECK(finished_) << "You need to call finish() first";
+    return std::move(buf_);
+  }
+
+  WriteResult finish() noexcept;
+
+  // Data write
+  template <typename T>
+  WriteResult set(size_t index, T&& v) noexcept {
+    CHECK(!finished_) << "You have called finish()";
+    if (index >= schema_->getNumFields()) {
+      return WriteResult::UNKNOWN_FIELD;
     }
+    return write(index, std::forward<T>(v));
+  }
 
-    const meta::SchemaProviderIf* schema() const {
-        return schema_;
+  // Data write
+  template <typename T>
+  WriteResult set(const std::string& name, T&& v) noexcept {
+    CHECK(!finished_) << "You have called finish()";
+    int64_t index = schema_->getFieldIndex(name);
+    if (index >= 0) {
+      return write(static_cast<size_t>(index), std::forward<T>(v));
+    } else {
+      return WriteResult::UNKNOWN_FIELD;
     }
+  }
 
-    const std::string& getEncodedStr() const noexcept {
-        CHECK(finished_) << "You need to call finish() first";
-        return buf_;
-    }
+  WriteResult setValue(ssize_t index, const Value& val) noexcept;
+  WriteResult setValue(const std::string& name, const Value& val) noexcept;
 
-    std::string moveEncodedStr() noexcept {
-        CHECK(finished_) << "You need to call finish() first";
-        return std::move(buf_);
-    }
+  WriteResult setNull(ssize_t index) noexcept;
+  WriteResult setNull(const std::string& name) noexcept;
 
-    WriteResult finish() noexcept;
+ private:
+  const meta::SchemaProviderIf* schema_;
+  std::string buf_;
+  std::vector<bool> isSet_;
+  // Ther number of bytes ocupied by header and the schema version
+  size_t headerLen_;
+  size_t numNullBytes_;
+  size_t approxStrLen_;
+  bool finished_;
 
-    // Data write
-    template<typename T>
-    WriteResult set(size_t index, T&& v) noexcept {
-        CHECK(!finished_) << "You have called finish()";
-        if (index >= schema_->getNumFields()) {
-            return WriteResult::UNKNOWN_FIELD;
-        }
-        return write(index, std::forward<T>(v));
-    }
+  // When outOfSpaceStr_ is true, variant length string fields
+  // could hold an index, referring to the strings in the strList_
+  // By default, outOfSpaceStr_ is false. It turns true only when
+  // the existing variant length string is modified
+  bool outOfSpaceStr_;
+  std::vector<std::string> strList_;
 
-    // Data write
-    template<typename T>
-    WriteResult set(const std::string &name, T&& v) noexcept {
-        CHECK(!finished_) << "You have called finish()";
-        int64_t index = schema_->getFieldIndex(name);
-        if (index >= 0) {
-            return write(static_cast<size_t>(index), std::forward<T>(v));
-        } else {
-            return WriteResult::UNKNOWN_FIELD;
-        }
-    }
+  WriteResult checkUnsetFields() noexcept;
+  std::string processOutOfSpace() noexcept;
 
-    WriteResult setValue(ssize_t index, const Value& val) noexcept;
-    WriteResult setValue(const std::string &name, const Value& val) noexcept;
+  void processV2EncodedStr() noexcept;
 
-    WriteResult setNull(ssize_t index) noexcept;
-    WriteResult setNull(const std::string &name) noexcept;
+  void setNullBit(ssize_t pos) noexcept;
+  void clearNullBit(ssize_t pos) noexcept;
+  // Return true if the flag at the given position is NULL;
+  // otherwise, return false
+  bool checkNullBit(ssize_t pos) const noexcept;
 
-private:
-    const meta::SchemaProviderIf* schema_;
-    std::string buf_;
-    std::vector<bool> isSet_;
-    // Ther number of bytes ocupied by header and the schema version
-    size_t headerLen_;
-    size_t numNullBytes_;
-    size_t approxStrLen_;
-    bool finished_;
+  WriteResult write(ssize_t index, bool v) noexcept;
+  WriteResult write(ssize_t index, float v) noexcept;
+  WriteResult write(ssize_t index, double v) noexcept;
 
-    // When outOfSpaceStr_ is true, variant length string fields
-    // could hold an index, referring to the strings in the strList_
-    // By default, outOfSpaceStr_ is false. It turns true only when
-    // the existing variant length string is modified
-    bool outOfSpaceStr_;
-    std::vector<std::string> strList_;
+  WriteResult write(ssize_t index, int8_t v) noexcept;
+  WriteResult write(ssize_t index, int16_t v) noexcept;
+  WriteResult write(ssize_t index, int32_t v) noexcept;
+  WriteResult write(ssize_t index, int64_t v) noexcept;
+  WriteResult write(ssize_t index, uint8_t v) noexcept;
+  WriteResult write(ssize_t index, uint16_t v) noexcept;
+  WriteResult write(ssize_t index, uint32_t v) noexcept;
+  WriteResult write(ssize_t index, uint64_t v) noexcept;
 
-    WriteResult checkUnsetFields() noexcept;
-    std::string processOutOfSpace() noexcept;
+  WriteResult write(ssize_t index, const std::string& v) noexcept;
+  WriteResult write(ssize_t index, folly::StringPiece v) noexcept;
+  WriteResult write(ssize_t index, const char* v) noexcept;
 
-    void processV2EncodedStr() noexcept;
-
-    void setNullBit(ssize_t pos) noexcept;
-    void clearNullBit(ssize_t pos) noexcept;
-    // Return true if the flag at the given position is NULL;
-    // otherwise, return false
-    bool checkNullBit(ssize_t pos) const noexcept;
-
-    WriteResult write(ssize_t index, bool v) noexcept;
-    WriteResult write(ssize_t index, float v) noexcept;
-    WriteResult write(ssize_t index, double v) noexcept;
-
-    WriteResult write(ssize_t index, int8_t v) noexcept;
-    WriteResult write(ssize_t index, int16_t v) noexcept;
-    WriteResult write(ssize_t index, int32_t v) noexcept;
-    WriteResult write(ssize_t index, int64_t v) noexcept;
-    WriteResult write(ssize_t index, uint8_t v) noexcept;
-    WriteResult write(ssize_t index, uint16_t v) noexcept;
-    WriteResult write(ssize_t index, uint32_t v) noexcept;
-    WriteResult write(ssize_t index, uint64_t v) noexcept;
-
-    WriteResult write(ssize_t index, const std::string& v) noexcept;
-    WriteResult write(ssize_t index, folly::StringPiece v) noexcept;
-    WriteResult write(ssize_t index, const char* v) noexcept;
-
-    WriteResult write(ssize_t index, const Date& v) noexcept;
-    WriteResult write(ssize_t index, const Time& v) noexcept;
-    WriteResult write(ssize_t index, const DateTime& v) noexcept;
+  WriteResult write(ssize_t index, const Date& v) noexcept;
+  WriteResult write(ssize_t index, const Time& v) noexcept;
+  WriteResult write(ssize_t index, const DateTime& v) noexcept;
 };
 
 }  // namespace nebula
 #endif  // CODEC_ROWWRITERV2_H_
-

@@ -8,8 +8,8 @@
 #define GRAPH_UTIL_ANONVARGENERATOR_H_
 
 #include "common/base/Base.h"
-#include "graph/util/IdGenerator.h"
 #include "graph/context/Symbols.h"
+#include "graph/util/IdGenerator.h"
 
 namespace nebula {
 namespace graph {
@@ -17,23 +17,23 @@ namespace graph {
  * An utility to generate an anonymous variable name.
  */
 class AnonVarGenerator final {
-public:
-    explicit AnonVarGenerator(SymbolTable* symTable) {
-        DCHECK(symTable != nullptr);
-        idGen_ = std::make_unique<IdGenerator>();
-        symTable_ = symTable;
-    }
+ public:
+  explicit AnonVarGenerator(SymbolTable* symTable) {
+    DCHECK(symTable != nullptr);
+    idGen_ = std::make_unique<IdGenerator>();
+    symTable_ = symTable;
+  }
 
-    std::string getVar() const {
-        auto var = folly::stringPrintf("__VAR_%ld", idGen_->id());
-        symTable_->newVariable(var);
-        VLOG(1) << "Build anon var: " << var;
-        return var;
-    }
+  std::string getVar() const {
+    auto var = folly::stringPrintf("__VAR_%ld", idGen_->id());
+    symTable_->newVariable(var);
+    VLOG(1) << "Build anon var: " << var;
+    return var;
+  }
 
-private:
-    SymbolTable*                    symTable_{nullptr};
-    std::unique_ptr<IdGenerator>    idGen_;
+ private:
+  SymbolTable* symTable_{nullptr};
+  std::unique_ptr<IdGenerator> idGen_;
 };
 }  // namespace graph
 }  // namespace nebula

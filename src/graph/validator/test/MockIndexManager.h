@@ -8,84 +8,85 @@
 #define GRAPH_VALIDATOR_MOCKINDEXMANAGER_H_
 
 #include <vector>
+
 #include "common/meta/IndexManager.h"
 
 namespace nebula {
 namespace graph {
 
 class MockIndexManager final : public nebula::meta::IndexManager {
-public:
-    MockIndexManager() = default;
-    ~MockIndexManager() = default;
+ public:
+  MockIndexManager() = default;
+  ~MockIndexManager() = default;
 
-    static std::unique_ptr<MockIndexManager> makeUnique() {
-        auto instance = std::make_unique<MockIndexManager>();
-        instance->init();
-        return instance;
+  static std::unique_ptr<MockIndexManager> makeUnique() {
+    auto instance = std::make_unique<MockIndexManager>();
+    instance->init();
+    return instance;
+  }
+
+  void init();
+
+  using IndexItem = meta::cpp2::IndexItem;
+
+  StatusOr<std::shared_ptr<IndexItem>> getTagIndex(GraphSpaceID space, IndexID index) override {
+    UNUSED(space);
+    UNUSED(index);
+    LOG(FATAL) << "Unimplemented";
+  }
+
+  StatusOr<std::shared_ptr<IndexItem>> getEdgeIndex(GraphSpaceID space, IndexID index) override {
+    UNUSED(space);
+    UNUSED(index);
+    LOG(FATAL) << "Unimplemented";
+  }
+
+  StatusOr<std::vector<std::shared_ptr<IndexItem>>> getTagIndexes(GraphSpaceID space) override {
+    auto fd = tagIndexes_.find(space);
+    if (fd == tagIndexes_.end()) {
+      return Status::Error("No space for index");
     }
+    return fd->second;
+  }
 
-    void init();
-
-    using IndexItem = meta::cpp2::IndexItem;
-
-    StatusOr<std::shared_ptr<IndexItem>> getTagIndex(GraphSpaceID space, IndexID index) override {
-        UNUSED(space);
-        UNUSED(index);
-        LOG(FATAL) << "Unimplemented";
+  StatusOr<std::vector<std::shared_ptr<IndexItem>>> getEdgeIndexes(GraphSpaceID space) override {
+    auto fd = edgeIndexes_.find(space);
+    if (fd == edgeIndexes_.end()) {
+      return Status::Error("No space for index");
     }
+    return fd->second;
+  }
 
-    StatusOr<std::shared_ptr<IndexItem>> getEdgeIndex(GraphSpaceID space, IndexID index) override {
-        UNUSED(space);
-        UNUSED(index);
-        LOG(FATAL) << "Unimplemented";
-    }
+  StatusOr<IndexID> toTagIndexID(GraphSpaceID space, std::string tagName) override {
+    UNUSED(space);
+    UNUSED(tagName);
+    LOG(FATAL) << "Unimplemented";
+  }
 
-    StatusOr<std::vector<std::shared_ptr<IndexItem>>> getTagIndexes(GraphSpaceID space) override {
-        auto fd = tagIndexes_.find(space);
-        if (fd == tagIndexes_.end()) {
-            return Status::Error("No space for index");
-        }
-        return fd->second;
-    }
+  StatusOr<IndexID> toEdgeIndexID(GraphSpaceID space, std::string edgeName) override {
+    UNUSED(space);
+    UNUSED(edgeName);
+    LOG(FATAL) << "Unimplemented";
+  }
 
-    StatusOr<std::vector<std::shared_ptr<IndexItem>>> getEdgeIndexes(GraphSpaceID space) override {
-        auto fd = edgeIndexes_.find(space);
-        if (fd == edgeIndexes_.end()) {
-            return Status::Error("No space for index");
-        }
-        return fd->second;
-    }
+  Status checkTagIndexed(GraphSpaceID space, IndexID index) override {
+    UNUSED(space);
+    UNUSED(index);
+    LOG(FATAL) << "Unimplemented";
+  }
 
-    StatusOr<IndexID> toTagIndexID(GraphSpaceID space, std::string tagName) override {
-        UNUSED(space);
-        UNUSED(tagName);
-        LOG(FATAL) << "Unimplemented";
-    }
+  Status checkEdgeIndexed(GraphSpaceID space, IndexID index) override {
+    UNUSED(space);
+    UNUSED(index);
+    LOG(FATAL) << "Unimplemented";
+  }
 
-    StatusOr<IndexID> toEdgeIndexID(GraphSpaceID space, std::string edgeName) override {
-        UNUSED(space);
-        UNUSED(edgeName);
-        LOG(FATAL) << "Unimplemented";
-    }
-
-    Status checkTagIndexed(GraphSpaceID space, IndexID index) override {
-        UNUSED(space);
-        UNUSED(index);
-        LOG(FATAL) << "Unimplemented";
-    }
-
-    Status checkEdgeIndexed(GraphSpaceID space, IndexID index) override {
-        UNUSED(space);
-        UNUSED(index);
-        LOG(FATAL) << "Unimplemented";
-    }
-
-private:
-    // index related
-    std::unordered_map<GraphSpaceID, std::vector<std::shared_ptr<IndexItem>>> tagIndexes_;
-    std::unordered_map<GraphSpaceID, std::vector<std::shared_ptr<IndexItem>>> edgeIndexes_;
+ private:
+  // index related
+  std::unordered_map<GraphSpaceID, std::vector<std::shared_ptr<IndexItem>>> tagIndexes_;
+  std::unordered_map<GraphSpaceID, std::vector<std::shared_ptr<IndexItem>>> edgeIndexes_;
 };
 
-}   // namespace graph
-}   // namespace nebula
-#endif   // GRAPH_VALIDATOR_MOCKINDEXMANAGER_H_
+}  // namespace graph
+}  // namespace nebula
+#endif  // GRAPH_VALIDATOR_MOCKINDEXMANAGER_H_

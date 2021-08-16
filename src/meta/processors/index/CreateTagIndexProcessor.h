@@ -13,20 +13,19 @@ namespace nebula {
 namespace meta {
 
 class CreateTagIndexProcessor : public BaseProcessor<cpp2::ExecResp> {
-public:
-    static CreateTagIndexProcessor* instance(kvstore::KVStore* kvstore) {
-        return new CreateTagIndexProcessor(kvstore);
-    }
+ public:
+  static CreateTagIndexProcessor* instance(kvstore::KVStore* kvstore) {
+    return new CreateTagIndexProcessor(kvstore);
+  }
 
-    void process(const cpp2::CreateTagIndexReq& req);
+  void process(const cpp2::CreateTagIndexReq& req);
 
-private:
-    explicit CreateTagIndexProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+ private:
+  explicit CreateTagIndexProcessor(kvstore::KVStore* kvstore)
+      : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 };
 
 }  // namespace meta
 }  // namespace nebula
 
 #endif  // META_CREATETAGINDEXPROCESSOR_H
-

@@ -15,23 +15,22 @@ namespace nebula {
 namespace opt {
 
 class RemoveNoopProjectRule final : public OptRule {
-public:
-    const Pattern &pattern() const override;
+ public:
+  const Pattern &pattern() const override;
 
-    StatusOr<TransformResult> transform(OptContext *ctx,
-                                        const MatchedResult &matched) const override;
+  StatusOr<TransformResult> transform(OptContext *ctx, const MatchedResult &matched) const override;
 
-    bool match(OptContext *ctx, const MatchedResult &matched) const override;
+  bool match(OptContext *ctx, const MatchedResult &matched) const override;
 
-    std::string toString() const override;
+  std::string toString() const override;
 
-private:
-    RemoveNoopProjectRule();
+ private:
+  RemoveNoopProjectRule();
 
-    static std::unique_ptr<OptRule> kInstance;
+  static std::unique_ptr<OptRule> kInstance;
 };
 
-}   // namespace opt
-}   // namespace nebula
+}  // namespace opt
+}  // namespace nebula
 
-#endif   // GRAPH_OPTIMIZER_RULE_REMOVENOOPPROJECTRULE_H_
+#endif  // GRAPH_OPTIMIZER_RULE_REMOVENOOPPROJECTRULE_H_

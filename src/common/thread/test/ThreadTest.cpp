@@ -4,27 +4,24 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "common/base/Base.h"
 #include <gtest/gtest.h>
+
+#include "common/base/Base.h"
 #include "common/thread/NamedThread.h"
 
 namespace nebula {
 namespace thread {
 
 TEST(NamedThread, ThreadName) {
-    std::string setname("thread");
-    std::string getname;
-    auto getter = [&] () {
-        NamedThread::Nominator::get(getname);
-    };
-    NamedThread thread(setname, getter);
-    thread.join();
-    ASSERT_EQ(setname, getname);
+  std::string setname("thread");
+  std::string getname;
+  auto getter = [&]() { NamedThread::Nominator::get(getname); };
+  NamedThread thread(setname, getter);
+  thread.join();
+  ASSERT_EQ(setname, getname);
 }
 
-TEST(NamedThread, ThreadID) {
-    ASSERT_EQ(::getpid(), nebula::thread::gettid());
-}
+TEST(NamedThread, ThreadID) { ASSERT_EQ(::getpid(), nebula::thread::gettid()); }
 
-}   // namespace thread
-}   // namespace nebula
+}  // namespace thread
+}  // namespace nebula

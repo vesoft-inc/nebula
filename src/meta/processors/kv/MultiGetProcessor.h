@@ -13,16 +13,16 @@ namespace nebula {
 namespace meta {
 
 class MultiGetProcessor : public BaseProcessor<cpp2::MultiGetResp> {
-public:
-    static MultiGetProcessor* instance(kvstore::KVStore* kvstore) {
-        return new MultiGetProcessor(kvstore);
-    }
+ public:
+  static MultiGetProcessor* instance(kvstore::KVStore* kvstore) {
+    return new MultiGetProcessor(kvstore);
+  }
 
-    void process(const cpp2::MultiGetReq& req);
+  void process(const cpp2::MultiGetReq& req);
 
-private:
-    explicit MultiGetProcessor(kvstore::KVStore* kvstore)
-            : BaseProcessor<cpp2::MultiGetResp>(kvstore) {}
+ private:
+  explicit MultiGetProcessor(kvstore::KVStore* kvstore)
+      : BaseProcessor<cpp2::MultiGetResp>(kvstore) {}
 };
 
 }  // namespace meta

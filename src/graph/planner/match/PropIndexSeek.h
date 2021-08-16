@@ -12,24 +12,25 @@
 namespace nebula {
 namespace graph {
 /*
- * The PropIndexSeek was designed to find if could get starting vids by tag props or edge props index.
+ * The PropIndexSeek was designed to find if could get starting vids by tag
+ * props or edge props index.
  */
 class PropIndexSeek final : public StartVidFinder {
-public:
-    static std::unique_ptr<PropIndexSeek> make() {
-        return std::unique_ptr<PropIndexSeek>(new PropIndexSeek());
-    }
+ public:
+  static std::unique_ptr<PropIndexSeek> make() {
+    return std::unique_ptr<PropIndexSeek>(new PropIndexSeek());
+  }
 
-    bool matchNode(NodeContext* nodeCtx) override;
+  bool matchNode(NodeContext* nodeCtx) override;
 
-    bool matchEdge(EdgeContext* edgeCtx) override;
+  bool matchEdge(EdgeContext* edgeCtx) override;
 
-    StatusOr<SubPlan> transformNode(NodeContext* nodeCtx) override;
+  StatusOr<SubPlan> transformNode(NodeContext* nodeCtx) override;
 
-    StatusOr<SubPlan> transformEdge(EdgeContext* edgeCtx) override;
+  StatusOr<SubPlan> transformEdge(EdgeContext* edgeCtx) override;
 
-private:
-    PropIndexSeek() = default;
+ private:
+  PropIndexSeek() = default;
 };
 }  // namespace graph
 }  // namespace nebula

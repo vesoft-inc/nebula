@@ -7,24 +7,24 @@
 #ifndef GRAPH_EXECUTOR_ADMIN_BALANCEEXECUTOR_H_
 #define GRAPH_EXECUTOR_ADMIN_BALANCEEXECUTOR_H_
 
-#include "graph/executor/Executor.h"
 #include "graph/context/QueryContext.h"
+#include "graph/executor/Executor.h"
 
 namespace nebula {
 namespace graph {
 
 class BalanceExecutor final : public Executor {
-public:
-    BalanceExecutor(const PlanNode *node, QueryContext *qctx)
-        : Executor("BalanceExecutor", node, qctx) {}
+ public:
+  BalanceExecutor(const PlanNode *node, QueryContext *qctx)
+      : Executor("BalanceExecutor", node, qctx) {}
 
-    folly::Future<Status> execute() override;
+  folly::Future<Status> execute() override;
 
-private:
-    folly::Future<Status> balance();
+ private:
+  folly::Future<Status> balance();
 };
 
-}   // namespace graph
-}   // namespace nebula
+}  // namespace graph
+}  // namespace nebula
 
 #endif  // GRAPH_EXECUTOR_ADMIN_BALANCEEXECUTOR_H_

@@ -4,31 +4,32 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "common/base/ICord.h"
 #include <gtest/gtest.h>
+
+#include "common/base/ICord.h"
 
 #define Cord ICord<>
 
 namespace nebula {
 
 TEST(CordTest, multipleBlocks) {
-    // Disabled
-    // auto c = new Cord<>;
+  // Disabled
+  // auto c = new Cord<>;
 
-    ICord<128> cord;
+  ICord<128> cord;
 
-    std::string buf;
-    for (int i = 0; i < 100; i++) {
-        buf.append("Hello World!");
-    }
+  std::string buf;
+  for (int i = 0; i < 100; i++) {
+    buf.append("Hello World!");
+  }
 
-    cord.write(buf.data(), buf.size());
+  cord.write(buf.data(), buf.size());
 
-    EXPECT_EQ(buf.size(), cord.size());
-    EXPECT_EQ(buf.size(), cord.str().size());
-    EXPECT_EQ(buf, cord.str());
+  EXPECT_EQ(buf.size(), cord.size());
+  EXPECT_EQ(buf.size(), cord.str().size());
+  EXPECT_EQ(buf, cord.str());
 }
 
-}   // namespace nebula
+}  // namespace nebula
 
 #include "common/base/test/CordTestT.cpp"
