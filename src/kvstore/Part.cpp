@@ -6,8 +6,8 @@
 
 #include "kvstore/Part.h"
 
-#include "common/utils/NebulaKeyUtils.h"
 #include "common/utils/IndexKeyUtils.h"
+#include "common/utils/NebulaKeyUtils.h"
 #include "kvstore/LogEncoder.h"
 #include "kvstore/RocksEngineConfig.h"
 
@@ -438,8 +438,7 @@ void Part::cleanup() {
   auto endeKey = NebulaKeyUtils::edgeLastKey(vIdLen_, partId_);
   ret = engine_->removeRange(std::move(starteKey), std::move(endeKey));
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << idStr_ << "Remove the part edge data failed, error "
-               << static_cast<int32_t>(ret);
+    LOG(ERROR) << idStr_ << "Remove the part edge data failed, error " << static_cast<int32_t>(ret);
     return;
   }
 

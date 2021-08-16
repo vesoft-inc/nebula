@@ -8,22 +8,18 @@
 #include <rocksdb/db.h>
 
 #include "common/base/Base.h"
-#include "common/utils/NebulaKeyUtils.h"
-#include "common/utils/IndexKeyUtils.h"
 #include "common/fs/TempDir.h"
+#include "common/utils/IndexKeyUtils.h"
+#include "common/utils/NebulaKeyUtils.h"
 #include "kvstore/Part.h"
 #include "kvstore/RocksEngine.h"
-
 
 namespace nebula {
 namespace kvstore {
 
 const int32_t kDefaultVIdLen = 8;
 
-void checkVetexData(RocksEngine* engine,
-                    PartitionID partId,
-                    int expectNum,
-                    bool checkVal = false) {
+void checkVetexData(RocksEngine* engine, PartitionID partId, int expectNum, bool checkVal = false) {
   std::string vertexPrefix = NebulaKeyUtils::vertexPrefix(partId);
   std::unique_ptr<KVIterator> iter;
   auto code = engine->prefix(vertexPrefix, &iter);
@@ -65,7 +61,6 @@ void checkIndexData(RocksEngine* engine, PartitionID partId, int expectNum) {
   ASSERT_EQ(num, expectNum);
 }
 
-
 TEST(PartTest, RocksTest) {
   fs::TempDir dataPath("/tmp/rocksdb_test.XXXXXX");
   rocksdb::Options options;
@@ -97,7 +92,6 @@ TEST(PartTest, RocksTest) {
   LOG(INFO) << "Test finished...";
   delete db;
 }
-
 
 TEST(PartTest, KeyOrderTest) {
   fs::TempDir dataPath("/tmp/KeyOrderTest.XXXXXX");
@@ -133,7 +127,6 @@ TEST(PartTest, KeyOrderTest) {
   }
 }
 
-
 TEST(PartTest, PartCleanTest) {
   fs::TempDir dataPath("/tmp/PartCleanTest.XXXXXX");
   auto engine = std::make_unique<RocksEngine>(0, kDefaultVIdLen, dataPath.path());
@@ -156,14 +149,14 @@ TEST(PartTest, PartCleanTest) {
 
     EdgeType edgetype = 3;
     for (int i = 0; i < 10; i++) {
-      auto key = NebulaKeyUtils::edgeKey(kDefaultVIdLen, partId, std::to_string(i),
-                                         edgetype, 0, std::to_string(i));
+      auto key = NebulaKeyUtils::edgeKey(
+          kDefaultVIdLen, partId, std::to_string(i), edgetype, 0, std::to_string(i));
       data.emplace_back(key, folly::stringPrintf("val%d", i));
     }
     IndexID indexId = 5;
     for (int i = 0; i < 10; i++) {
-      auto key = IndexKeyUtils::vertexIndexKey(kDefaultVIdLen, partId, indexId,
-                                               std::to_string(i), "123");
+      auto key =
+          IndexKeyUtils::vertexIndexKey(kDefaultVIdLen, partId, indexId, std::to_string(i), "123");
       data.emplace_back(key, folly::stringPrintf("val%d", i));
     }
 

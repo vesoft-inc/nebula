@@ -44,8 +44,8 @@ class NebulaKeyUtils final {
   /**
    * Generate vertex key for kv store
    * */
-  static std::string vertexKey(size_t vIdLen, PartitionID partId,
-                               const VertexID& vId, TagID tagId, char pad = '\0');
+  static std::string vertexKey(
+      size_t vIdLen, PartitionID partId, const VertexID& vId, TagID tagId, char pad = '\0');
   /**
    * Generate first vertex key for kv store in this partId
    * The ASCII value of each character of the smallest vid is \0 and not exist
@@ -66,12 +66,9 @@ class NebulaKeyUtils final {
                              const VertexID& dstId,
                              EdgeVerPlaceHolder ev = 1);
 
-  static std::string edgeFirstKey(size_t vIdLen,
-                                  PartitionID partId);
+  static std::string edgeFirstKey(size_t vIdLen, PartitionID partId);
 
-  static std::string edgeLastKey(size_t vIdLen,
-                                 PartitionID partId);
-
+  static std::string edgeLastKey(size_t vIdLen, PartitionID partId);
 
   static std::string systemCommitKey(PartitionID partId);
 
