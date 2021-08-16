@@ -7,6 +7,7 @@
 #include "kvstore/Part.h"
 
 #include "common/utils/NebulaKeyUtils.h"
+#include "common/utils/IndexKeyUtils.h"
 #include "kvstore/LogEncoder.h"
 #include "kvstore/RocksEngineConfig.h"
 
@@ -420,11 +421,55 @@ bool Part::preProcessLog(LogID logId, TermID termId, ClusterID clusterId, const 
 }
 
 void Part::cleanup() {
-  LOG(INFO) << idStr_ << "Clean rocksdb commit key";
-  auto res = engine_->remove(NebulaKeyUtils::systemCommitKey(partId_));
-  if (res != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(WARNING) << idStr_ << "Remove the committedLogId failed, error "
-                 << static_cast<int32_t>(res);
+  LOG(INFO) << idStr_ << "Clean rocksdb part data";
+  // Remove the vertex, edge, index, systemCommitKey data under the part
+  // TODO(pandasheep) Maybe there is a better way.
+  std::vector<std::string> toDelete;
+  std::unique_ptr<KVIterator> vertexIter;
+  std::unique_ptr<KVIterator> edgeIter;
+  std::unique_ptr<KVIterator> indexIter;
+  auto vertexPre = NebulaKeyUtils::vertexPrefix(partId_);
+  auto ret = engine_->prefix(vertexPre, &vertexIter);
+  if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(ERROR) << idStr_ << "Remove the part vertex data failed, error "
+               << static_cast<int32_t>(ret);
+    return;
+  }
+  while (vertexIter && vertexIter->valid()) {
+    toDelete.emplace_back(vertexIter->key().str());
+    vertexIter->next();
+  }
+
+  auto edgePre = NebulaKeyUtils::edgePrefix(partId_);
+  ret = engine_->prefix(edgePre, &edgeIter);
+  if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(ERROR) << idStr_ << "Remove the part edge data failed, error "
+               << static_cast<int32_t>(ret);
+    return;
+  }
+  while (edgeIter && edgeIter->valid()) {
+    toDelete.emplace_back(edgeIter->key().str());
+    edgeIter->next();
+  }
+
+  auto indexPre = IndexKeyUtils::indexPrefix(partId_);
+  ret = engine_->prefix(indexPre, &indexIter);
+  if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(ERROR) << idStr_ << "Remove the part index data failed, error "
+               << static_cast<int32_t>(ret);
+    return;
+  }
+
+  while (indexIter && indexIter->valid()) {
+    toDelete.emplace_back(indexIter->key().str());
+    indexIter->next();
+  }
+
+  toDelete.emplace_back(NebulaKeyUtils::systemCommitKey(partId_));
+  ret = engine_->multiRemove(std::move(toDelete));
+  if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(ERROR) << idStr_ << "Remove range the part data failed, error "
+               << static_cast<int32_t>(ret);
   }
   return;
 }
