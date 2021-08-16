@@ -18,9 +18,16 @@ nebula::cpp2::ErrorCode LookupBaseProcessor<REQ, RESP>::requestCheck(
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
     return retCode;
   }
+  auto session_id =
+      req.common_ref().has_value() && req.common_ref().value().session_id_ref().has_value()
+          ? *req.get_common()->get_session_id()
+          : 0;
 
-  this->planContext_ =
-      std::make_unique<PlanContext>(this->env_, spaceId_, this->spaceVidLen_, this->isIntId_);
+  auto plan_id = req.common_ref().has_value() && req.common_ref().value().plan_id_ref().has_value()
+                     ? *req.get_common()->get_plan_id()
+                     : 0;
+  this->planContext_ = std::make_unique<PlanContext>(
+      this->env_, spaceId_, session_id, plan_id, this->spaceVidLen_, this->isIntId_);
   const auto& indices = req.get_indices();
   this->planContext_->isEdge_ = indices.get_is_edge();
   this->context_ = std::make_unique<RuntimeContext>(this->planContext_.get());
@@ -364,8 +371,8 @@ std::unique_ptr<IndexOutputNode<IndexID>> LookupBaseProcessor<REQ, RESP>::buildP
   auto indexScan =
       std::make_unique<IndexScanNode<IndexID>>(context_.get(), indexId, std::move(colHints));
 
-  auto filter =
-      std::make_unique<IndexFilterNode<IndexID>>(indexScan.get(), exprCtx, exp, context_->isEdge());
+  auto filter = std::make_unique<IndexFilterNode<IndexID>>(
+      context_.get(), indexScan.get(), exprCtx, exp, context_->isEdge());
   filter->addDependency(indexScan.get());
   auto output =
       std::make_unique<IndexOutputNode<IndexID>>(result, context_.get(), filter.get(), true);
@@ -418,7 +425,8 @@ LookupBaseProcessor<REQ, RESP>::buildPlanWithDataAndFilter(nebula::DataSet* resu
     auto edge = std::make_unique<IndexEdgeNode<IndexID>>(
         context_.get(), indexScan.get(), schemas_, context_->edgeName_);
     edge->addDependency(indexScan.get());
-    auto filter = std::make_unique<IndexFilterNode<IndexID>>(edge.get(), exprCtx, exp);
+    auto filter =
+        std::make_unique<IndexFilterNode<IndexID>>(context_.get(), edge.get(), exprCtx, exp);
     filter->addDependency(edge.get());
 
     auto output = std::make_unique<IndexOutputNode<IndexID>>(result, context_.get(), filter.get());
@@ -431,7 +439,8 @@ LookupBaseProcessor<REQ, RESP>::buildPlanWithDataAndFilter(nebula::DataSet* resu
     auto vertex = std::make_unique<IndexVertexNode<IndexID>>(
         context_.get(), indexScan.get(), schemas_, context_->tagName_);
     vertex->addDependency(indexScan.get());
-    auto filter = std::make_unique<IndexFilterNode<IndexID>>(vertex.get(), exprCtx, exp);
+    auto filter =
+        std::make_unique<IndexFilterNode<IndexID>>(context_.get(), vertex.get(), exprCtx, exp);
     filter->addDependency(vertex.get());
 
     auto output = std::make_unique<IndexOutputNode<IndexID>>(result, context_.get(), filter.get());

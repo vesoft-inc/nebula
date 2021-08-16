@@ -37,7 +37,16 @@ void GetNeighborsProcessor::doProcess(const cpp2::GetNeighborsRequest& req) {
     onFinished();
     return;
   }
-  planContext_ = std::make_unique<PlanContext>(env_, spaceId_, spaceVidLen_, isIntId_);
+  auto session_id =
+      req.common_ref().has_value() && req.common_ref().value().session_id_ref().has_value()
+          ? *req.get_common()->get_session_id()
+          : 0;
+
+  auto plan_id = req.common_ref().has_value() && req.common_ref().value().plan_id_ref().has_value()
+                     ? *req.get_common()->get_plan_id()
+                     : 0;
+  planContext_ =
+      std::make_unique<PlanContext>(env_, spaceId_, session_id, plan_id, spaceVidLen_, isIntId_);
 
   // build TagContext and EdgeContext
   retCode = checkAndBuildContexts(req);

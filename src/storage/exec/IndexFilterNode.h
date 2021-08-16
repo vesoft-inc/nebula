@@ -24,30 +24,37 @@ class IndexFilterNode final : public RelNode<T> {
 
   // evalExprByIndex_ is true, all fileds in filter is in index. No need to read
   // data anymore.
-  IndexFilterNode(IndexScanNode<T>* indexScanNode,
+  IndexFilterNode(RunTimeContext* context,
+                  IndexScanNode<T>* indexScanNode,
                   StorageExpressionContext* exprCtx = nullptr,
                   Expression* exp = nullptr,
                   bool isEdge = false)
-      : indexScanNode_(indexScanNode), exprCtx_(exprCtx), filterExp_(exp), isEdge_(isEdge) {
+      : context_(context),
+        indexScanNode_(indexScanNode),
+        exprCtx_(exprCtx),
+        filterExp_(exp),
+        isEdge_(isEdge) {
     evalExprByIndex_ = true;
   }
 
   // evalExprByIndex_ is false, some fileds in filter is out of index, which
   // need to read data.
-  IndexFilterNode(IndexEdgeNode<T>* indexEdgeNode,
+  IndexFilterNode(RunTimeContext* context,
+                  IndexEdgeNode<T>* indexEdgeNode,
                   StorageExpressionContext* exprCtx = nullptr,
                   Expression* exp = nullptr)
-      : indexEdgeNode_(indexEdgeNode), exprCtx_(exprCtx), filterExp_(exp) {
+      : context_(context), indexEdgeNode_(indexEdgeNode), exprCtx_(exprCtx), filterExp_(exp) {
     evalExprByIndex_ = false;
     isEdge_ = true;
   }
 
   // evalExprByIndex_ is false, some fileds in filter is out of index, which
   // need to read data.
-  IndexFilterNode(IndexVertexNode<T>* indexVertexNode,
+  IndexFilterNode(RunTimeContext* context,
+                  IndexVertexNode<T>* indexVertexNode,
                   StorageExpressionContext* exprCtx = nullptr,
                   Expression* exp = nullptr)
-      : indexVertexNode_(indexVertexNode), exprCtx_(exprCtx), filterExp_(exp) {
+      : context_(context), indexVertexNode_(indexVertexNode), exprCtx_(exprCtx), filterExp_(exp) {
     evalExprByIndex_ = false;
     isEdge_ = false;
   }
@@ -67,6 +74,11 @@ class IndexFilterNode final : public RelNode<T> {
       data = indexVertexNode_->moveData();
     }
     for (const auto& k : data) {
+      if (context_->env()->metaClient_ &&
+          context_->env()->metaClient_->checkIsPlanKilled(context_->planContext_->sessionId_,
+                                                          context_->planContext_->planId_)) {
+        return nebula::cpp2::ErrorCode::E_PLAN_IS_KILLED;
+      }
       if (evalExprByIndex_) {
         if (check(k.first)) {
           data_.emplace_back(k.first, k.second);
@@ -124,6 +136,7 @@ class IndexFilterNode final : public RelNode<T> {
   }
 
  private:
+  RunTimeContext* context_;
   IndexScanNode<T>* indexScanNode_{nullptr};
   IndexEdgeNode<T>* indexEdgeNode_{nullptr};
   IndexVertexNode<T>* indexVertexNode_{nullptr};

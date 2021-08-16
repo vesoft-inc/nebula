@@ -42,7 +42,11 @@ class GetNeighborsNode : public QueryNode<VertexID> {
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
       return ret;
     }
-
+    if (context_->env()->metaClient_ &&
+        context_->env()->metaClient_->checkIsPlanKilled(context_->planContext_->sessionId_,
+                                                        context_->planContext_->planId_)) {
+      return nebula::cpp2::ErrorCode::E_PLAN_IS_KILLED;
+    }
     if (context_->resultStat_ == ResultStatus::ILLEGAL_DATA) {
       return nebula::cpp2::ErrorCode::E_INVALID_DATA;
     }
@@ -90,6 +94,11 @@ class GetNeighborsNode : public QueryNode<VertexID> {
     int64_t edgeRowCount = 0;
     nebula::List list;
     for (; upstream_->valid(); upstream_->next(), ++edgeRowCount) {
+      if (context_->env()->metaClient_ &&
+          context_->env()->metaClient_->checkIsPlanKilled(context_->planContext_->sessionId_,
+                                                          context_->planContext_->planId_)) {
+        return nebula::cpp2::ErrorCode::E_PLAN_IS_KILLED;
+      }
       if (edgeRowCount >= limit_) {
         return nebula::cpp2::ErrorCode::SUCCEEDED;
       }

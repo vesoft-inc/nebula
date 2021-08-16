@@ -39,6 +39,11 @@ class IndexEdgeNode final : public RelNode<T> {
     std::vector<storage::cpp2::EdgeKey> edges;
     auto* iter = static_cast<EdgeIndexIterator*>(indexScanNode_->iterator());
     while (iter && iter->valid()) {
+      if (context_->env()->metaClient_ &&
+          context_->env()->metaClient_->checkIsPlanKilled(context_->planContext_->sessionId_,
+                                                          context_->planContext_->planId_)) {
+        return nebula::cpp2::ErrorCode::E_PLAN_IS_KILLED;
+      }
       if (!iter->val().empty() && ttlProp.first) {
         auto v = IndexKeyUtils::parseIndexTTL(iter->val());
         if (CommonUtils::checkDataExpiredForTTL(

@@ -132,8 +132,18 @@ struct PropContext;
 // All processor won't change them after request is parsed.
 class PlanContext {
  public:
-  PlanContext(StorageEnv* env, GraphSpaceID spaceId, size_t vIdLen, bool isIntId)
-      : env_(env), spaceId_(spaceId), vIdLen_(vIdLen), isIntId_(isIntId) {}
+  PlanContext(StorageEnv* env,
+              GraphSpaceID spaceId,
+              SessionID sessionId,
+              ExecutionPlanID planId,
+              size_t vIdLen,
+              bool isIntId)
+      : env_(env),
+        spaceId_(spaceId),
+        sessionId_(sessionId),
+        planId_(planId),
+        vIdLen_(vIdLen),
+        isIntId_(isIntId) {}
 
   StorageEnv* env_;
   GraphSpaceID spaceId_;
