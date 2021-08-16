@@ -82,6 +82,28 @@ std::string IndexKeyUtils::edgeIndexKey(size_t vIdLen,
 }
 
 // static
+std::string IndexKeyUtils::indexFirstKey(PartitionID partId) {
+  int32_t item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kIndex);
+
+  std::string key;
+  IndexID indexId = 0;
+  key.append(reinterpret_cast<const char*>(&item), sizeof(int32_t))
+      .append(reinterpret_cast<const char*>(&indexId), sizeof(IndexID));
+  return key;
+}
+
+// static
+std::string IndexKeyUtils::indexLastKey(PartitionID partId) {
+  int32_t item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kIndex);
+
+  std::string key;
+  IndexID indexId = INT32_MAX;
+  key.append(reinterpret_cast<const char*>(&item), sizeof(int32_t))
+      .append(reinterpret_cast<const char*>(&indexId), sizeof(IndexID));
+  return key;
+}
+
+// static
 std::string IndexKeyUtils::indexPrefix(PartitionID partId, IndexID indexId) {
   PartitionID item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kIndex);
   std::string key;

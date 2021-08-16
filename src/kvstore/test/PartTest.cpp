@@ -20,7 +20,10 @@ namespace kvstore {
 
 const int32_t kDefaultVIdLen = 8;
 
-void checkVetexData(RocksEngine* engine, PartitionID partId, int expectNum) {
+void checkVetexData(RocksEngine* engine,
+                    PartitionID partId,
+                    int expectNum,
+                    bool checkVal = false) {
   std::string vertexPrefix = NebulaKeyUtils::vertexPrefix(partId);
   std::unique_ptr<KVIterator> iter;
   auto code = engine->prefix(vertexPrefix, &iter);
@@ -28,6 +31,9 @@ void checkVetexData(RocksEngine* engine, PartitionID partId, int expectNum) {
   int32_t num = 0;
   while (iter->valid()) {
     num++;
+    if (checkVal) {
+      ASSERT_EQ(iter->val().str(), folly::stringPrintf("val%d", num));
+    }
     iter->next();
   }
   ASSERT_EQ(num, expectNum);
@@ -59,6 +65,7 @@ void checkIndexData(RocksEngine* engine, PartitionID partId, int expectNum) {
   ASSERT_EQ(num, expectNum);
 }
 
+
 TEST(PartTest, RocksTest) {
   fs::TempDir dataPath("/tmp/rocksdb_test.XXXXXX");
   rocksdb::Options options;
@@ -89,6 +96,41 @@ TEST(PartTest, RocksTest) {
 
   LOG(INFO) << "Test finished...";
   delete db;
+}
+
+
+TEST(PartTest, KeyOrderTest) {
+  fs::TempDir dataPath("/tmp/KeyOrderTest.XXXXXX");
+  auto engine = std::make_unique<RocksEngine>(0, kDefaultVIdLen, dataPath.path());
+
+  std::vector<KV> data;
+  PartitionID partId = 1;
+
+  // build vertex data in part 1, 2
+  while (partId < 3) {
+    auto key1 = NebulaKeyUtils::vertexKey(kDefaultVIdLen, partId, "", 0);
+    data.emplace_back(key1, folly::stringPrintf("val%d", 1));
+
+    auto key2 = NebulaKeyUtils::vertexKey(kDefaultVIdLen, partId, "", INT_MAX);
+    data.emplace_back(key2, folly::stringPrintf("val%d", 2));
+
+    auto key3 = NebulaKeyUtils::vertexKey(kDefaultVIdLen, partId, "ffffff", INT_MAX, '\377');
+    data.emplace_back(key3, folly::stringPrintf("val%d", 3));
+
+    auto key4 = NebulaKeyUtils::vertexKey(kDefaultVIdLen, partId, "", INT_MAX, '\377');
+    data.emplace_back(key4, folly::stringPrintf("val%d", 4));
+
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, engine->multiPut(data));
+    data.clear();
+    partId++;
+  }
+  {
+    partId = 1;
+    while (partId < 3) {
+      checkVetexData(engine.get(), partId, 4, true);
+      partId++;
+    }
+  }
 }
 
 
@@ -134,7 +176,7 @@ TEST(PartTest, PartCleanTest) {
 
   {
     partId = 1;
-    while (partId < 3) {
+    while (partId < 2) {
       checkVetexData(engine.get(), partId, 20);
       checkEdgeData(engine.get(), partId, 10);
       checkIndexData(engine.get(), partId, 10);
@@ -151,44 +193,30 @@ TEST(PartTest, PartCleanTest) {
 
       partId++;
     }
+
     {
       // remove range part::clean data
       partId = 1;
-      std::vector<std::string> toDelete;
-      auto vertexPre = NebulaKeyUtils::vertexPrefix(partId);
-      std::unique_ptr<KVIterator> vertexIter;
-      auto retVer = engine->prefix(vertexPre, &vertexIter);
-      ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, retVer);
 
-      while (vertexIter && vertexIter->valid()) {
-        toDelete.emplace_back(vertexIter->key().str());
-        vertexIter->next();
-      }
+      auto startvKey = NebulaKeyUtils::vertexFirstKey(kDefaultVIdLen, partId);
+      auto endvKey = NebulaKeyUtils::vertexLastKey(kDefaultVIdLen, partId);
+      auto res = engine->removeRange(startvKey, endvKey);
+      ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, res);
 
-      auto edgePre = NebulaKeyUtils::edgePrefix(partId);
-      std::unique_ptr<KVIterator> edgeIter;
-      auto retEdge = engine->prefix(edgePre, &edgeIter);
-      ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, retEdge);
+      auto starteKey = NebulaKeyUtils::edgeFirstKey(kDefaultVIdLen, partId);
+      auto endeKey = NebulaKeyUtils::edgeLastKey(kDefaultVIdLen, partId);
+      res = engine->removeRange(starteKey, endeKey);
+      ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, res);
 
-      while (edgeIter && edgeIter->valid()) {
-        toDelete.emplace_back(edgeIter->key().str());
-        edgeIter->next();
-      }
+      auto startiKey = IndexKeyUtils::indexFirstKey(partId);
+      auto endiKey = IndexKeyUtils::indexLastKey(partId);
+      res = engine->removeRange(startiKey, endiKey);
+      ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, res);
 
-      auto indexPre = IndexKeyUtils::indexPrefix(partId);
-      std::unique_ptr<KVIterator> indexIter;
-      auto retIndex = engine->prefix(indexPre, &indexIter);
-      ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, retIndex);
-
-      while (indexIter && indexIter->valid()) {
-        toDelete.emplace_back(indexIter->key().str());
-        indexIter->next();
-      }
-
-      toDelete.emplace_back(NebulaKeyUtils::systemCommitKey(partId));
-      auto res = engine->multiRemove(toDelete);
+      res = engine->remove(NebulaKeyUtils::systemCommitKey(partId));
       ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, res);
     }
+
     {
       // check data again
       partId = 1;

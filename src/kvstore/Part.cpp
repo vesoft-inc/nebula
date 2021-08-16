@@ -28,7 +28,8 @@ Part::Part(GraphSpaceID spaceId,
            std::shared_ptr<folly::Executor> handlers,
            std::shared_ptr<raftex::SnapshotManager> snapshotMan,
            std::shared_ptr<RaftClient> clientMan,
-           std::shared_ptr<DiskManager> diskMan)
+           std::shared_ptr<DiskManager> diskMan,
+           int32_t vIdLen)
     : RaftPart(FLAGS_cluster_id,
                spaceId,
                partId,
@@ -43,7 +44,8 @@ Part::Part(GraphSpaceID spaceId,
       spaceId_(spaceId),
       partId_(partId),
       walPath_(walPath),
-      engine_(engine) {}
+      engine_(engine),
+      vIdLen_(vIdLen) {}
 
 std::pair<LogID, TermID> Part::lastCommittedLogId() {
   std::string val;
@@ -423,52 +425,36 @@ bool Part::preProcessLog(LogID logId, TermID termId, ClusterID clusterId, const 
 void Part::cleanup() {
   LOG(INFO) << idStr_ << "Clean rocksdb part data";
   // Remove the vertex, edge, index, systemCommitKey data under the part
-  // TODO(pandasheep) Maybe there is a better way.
-  std::vector<std::string> toDelete;
-  std::unique_ptr<KVIterator> vertexIter;
-  std::unique_ptr<KVIterator> edgeIter;
-  std::unique_ptr<KVIterator> indexIter;
-  auto vertexPre = NebulaKeyUtils::vertexPrefix(partId_);
-  auto ret = engine_->prefix(vertexPre, &vertexIter);
+  auto startvKey = NebulaKeyUtils::vertexFirstKey(vIdLen_, partId_);
+  auto endvKey = NebulaKeyUtils::vertexFirstKey(vIdLen_, partId_);
+  auto ret = engine_->removeRange(std::move(startvKey), std::move(endvKey));
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << idStr_ << "Remove the part vertex data failed, error "
                << static_cast<int32_t>(ret);
     return;
   }
-  while (vertexIter && vertexIter->valid()) {
-    toDelete.emplace_back(vertexIter->key().str());
-    vertexIter->next();
-  }
 
-  auto edgePre = NebulaKeyUtils::edgePrefix(partId_);
-  ret = engine_->prefix(edgePre, &edgeIter);
+  auto starteKey = NebulaKeyUtils::edgeFirstKey(vIdLen_, partId_);
+  auto endeKey = NebulaKeyUtils::edgeLastKey(vIdLen_, partId_);
+  ret = engine_->removeRange(std::move(starteKey), std::move(endeKey));
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << idStr_ << "Remove the part edge data failed, error "
                << static_cast<int32_t>(ret);
     return;
   }
-  while (edgeIter && edgeIter->valid()) {
-    toDelete.emplace_back(edgeIter->key().str());
-    edgeIter->next();
-  }
 
-  auto indexPre = IndexKeyUtils::indexPrefix(partId_);
-  ret = engine_->prefix(indexPre, &indexIter);
+  auto startiKey = IndexKeyUtils::indexFirstKey(partId_);
+  auto endiKey = IndexKeyUtils::indexLastKey(partId_);
+  ret = engine_->removeRange(std::move(startiKey), std::move(endiKey));
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << idStr_ << "Remove the part index data failed, error "
                << static_cast<int32_t>(ret);
     return;
   }
 
-  while (indexIter && indexIter->valid()) {
-    toDelete.emplace_back(indexIter->key().str());
-    indexIter->next();
-  }
-
-  toDelete.emplace_back(NebulaKeyUtils::systemCommitKey(partId_));
-  ret = engine_->multiRemove(std::move(toDelete));
+  ret = engine_->remove(NebulaKeyUtils::systemCommitKey(partId_));
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << idStr_ << "Remove range the part data failed, error "
+    LOG(ERROR) << idStr_ << "Remove the part system commit data failed, error "
                << static_cast<int32_t>(ret);
   }
   return;

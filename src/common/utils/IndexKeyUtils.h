@@ -474,6 +474,15 @@ class IndexKeyUtils final {
                                   const VertexID& dstId,
                                   std::string&& values);
 
+  /**
+   * The minimum value of indexId is 0
+   **/
+  static std::string indexFirstKey(PartitionID partId);
+  /**
+   * The maximum value of indexId is the maximum value of int32_t
+   **/
+  static std::string indexLastKey(PartitionID partId);
+
   static std::string indexPrefix(PartitionID partId, IndexID indexId);
 
   static std::string indexPrefix(PartitionID partId);
