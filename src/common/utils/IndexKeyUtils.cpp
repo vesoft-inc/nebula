@@ -86,9 +86,7 @@ std::string IndexKeyUtils::indexFirstKey(PartitionID partId) {
   int32_t item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kIndex);
 
   std::string key;
-  IndexID indexId = 0;
-  key.append(reinterpret_cast<const char*>(&item), sizeof(int32_t))
-      .append(reinterpret_cast<const char*>(&indexId), sizeof(IndexID));
+  key.append(reinterpret_cast<const char*>(&item), sizeof(int32_t)).append(sizeof(IndexID), '\0');
   return key;
 }
 
@@ -97,9 +95,7 @@ std::string IndexKeyUtils::indexLastKey(PartitionID partId) {
   int32_t item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kIndex);
 
   std::string key;
-  IndexID indexId = INT32_MAX;
-  key.append(reinterpret_cast<const char*>(&item), sizeof(int32_t))
-      .append(reinterpret_cast<const char*>(&indexId), sizeof(IndexID));
+  key.append(reinterpret_cast<const char*>(&item), sizeof(int32_t)).append(sizeof(IndexID), '\377');
   return key;
 }
 

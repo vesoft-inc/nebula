@@ -19,7 +19,10 @@ namespace kvstore {
 
 const int32_t kDefaultVIdLen = 8;
 
-void checkVetexData(RocksEngine* engine, PartitionID partId, int expectNum, bool checkVal = false) {
+void checkVertexData(RocksEngine* engine,
+                     PartitionID partId,
+                     int expectNum,
+                     bool checkVal = false) {
   std::string vertexPrefix = NebulaKeyUtils::vertexPrefix(partId);
   std::unique_ptr<KVIterator> iter;
   auto code = engine->prefix(vertexPrefix, &iter);
@@ -121,7 +124,7 @@ TEST(PartTest, KeyOrderTest) {
   {
     partId = 1;
     while (partId < 3) {
-      checkVetexData(engine.get(), partId, 4, true);
+      checkVertexData(engine.get(), partId, 4, true);
       partId++;
     }
   }
@@ -170,7 +173,7 @@ TEST(PartTest, PartCleanTest) {
   {
     partId = 1;
     while (partId < 2) {
-      checkVetexData(engine.get(), partId, 20);
+      checkVertexData(engine.get(), partId, 20);
       checkEdgeData(engine.get(), partId, 10);
       checkIndexData(engine.get(), partId, 10);
       {
@@ -213,7 +216,7 @@ TEST(PartTest, PartCleanTest) {
     {
       // check data again
       partId = 1;
-      checkVetexData(engine.get(), partId, 0);
+      checkVertexData(engine.get(), partId, 0);
       checkEdgeData(engine.get(), partId, 0);
       checkIndexData(engine.get(), partId, 0);
       std::string val1;
@@ -226,7 +229,7 @@ TEST(PartTest, PartCleanTest) {
     }
     {
       partId = 2;
-      checkVetexData(engine.get(), partId, 20);
+      checkVertexData(engine.get(), partId, 20);
       checkEdgeData(engine.get(), partId, 10);
       checkIndexData(engine.get(), partId, 10);
       std::string val1;
