@@ -19,6 +19,22 @@ bool NebulaKeyUtils::isValidVidLen(size_t vIdLen, const VertexID& srcVId, const 
 }
 
 // static
+std::string NebulaKeyUtils::firstKey(const std::string& prefix, size_t count) {
+  std::string key;
+  key.reserve(prefix.size() + count);
+  key.append(prefix).append(count, '\0');
+  return key;
+}
+
+// static
+std::string NebulaKeyUtils::lastKey(const std::string& prefix, size_t count) {
+  std::string key;
+  key.reserve(prefix.size() + count);
+  key.append(prefix).append(count, '\377');
+  return key;
+}
+
+// static
 std::string NebulaKeyUtils::vertexKey(
     size_t vIdLen, PartitionID partId, const VertexID& vId, TagID tagId, char pad) {
   CHECK_GE(vIdLen, vId.size());
@@ -30,26 +46,6 @@ std::string NebulaKeyUtils::vertexKey(
       .append(vId.data(), vId.size())
       .append(vIdLen - vId.size(), pad)
       .append(reinterpret_cast<const char*>(&tagId), sizeof(TagID));
-  return key;
-}
-
-// static
-std::string NebulaKeyUtils::vertexFirstKey(size_t vIdLen, PartitionID partId) {
-  int32_t item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kVertex);
-
-  std::string key;
-  key.reserve(sizeof(PartitionID) + vIdLen);
-  key.append(reinterpret_cast<const char*>(&item), sizeof(int32_t)).append(vIdLen, '\0');
-  return key;
-}
-
-// static
-std::string NebulaKeyUtils::vertexLastKey(size_t vIdLen, PartitionID partId) {
-  int32_t item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kVertex);
-
-  std::string key;
-  key.reserve(sizeof(PartitionID) + vIdLen);
-  key.append(reinterpret_cast<const char*>(&item), sizeof(int32_t)).append(vIdLen, '\377');
   return key;
 }
 
@@ -75,25 +71,6 @@ std::string NebulaKeyUtils::edgeKey(size_t vIdLen,
       .append(dstId.data(), dstId.size())
       .append(vIdLen - dstId.size(), '\0')
       .append(1, ev);
-  return key;
-}
-
-// static
-std::string NebulaKeyUtils::edgeFirstKey(size_t vIdLen, PartitionID partId) {
-  int32_t item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kEdge);
-  std::string key;
-  key.reserve(sizeof(PartitionID) + vIdLen);
-  key.append(reinterpret_cast<const char*>(&item), sizeof(PartitionID)).append(vIdLen, '\0');
-  return key;
-}
-
-// static
-std::string NebulaKeyUtils::edgeLastKey(size_t vIdLen, PartitionID partId) {
-  int32_t item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kEdge);
-
-  std::string key;
-  key.reserve(sizeof(PartitionID) + vIdLen);
-  key.append(reinterpret_cast<const char*>(&item), sizeof(PartitionID)).append(vIdLen, '\377');
   return key;
 }
 

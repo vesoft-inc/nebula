@@ -42,21 +42,22 @@ class NebulaKeyUtils final {
   static bool isValidVidLen(size_t vIdLen, const VertexID& srcvId, const VertexID& dstvId = "");
 
   /**
+   * Generate the first key with prefix.
+   * count means the number of count '\0' is filled after the prefix.
+   * */
+  static std::string firstKey(const std::string& prefix, size_t count);
+
+  /**
+   * Generate the last key with prefix.
+   * count means the number of count '\377' is filled after the prefix.
+   * */
+  static std::string lastKey(const std::string& prefix, size_t count);
+
+  /**
    * Generate vertex key for kv store
    * */
   static std::string vertexKey(
       size_t vIdLen, PartitionID partId, const VertexID& vId, TagID tagId, char pad = '\0');
-  /**
-   * Generate first vertex key for kv store in this partId
-   * The ASCII value of each character of the smallest vid is \0 and not exist
-   * */
-  static std::string vertexFirstKey(size_t vIdLen, PartitionID partId);
-
-  /**
-   * Generate last vertex key for kv store in this partId
-   * The ASCII value of each character of the largest vid is \377 and not exist
-   * */
-  static std::string vertexLastKey(size_t vIdLen, PartitionID partId);
 
   static std::string edgeKey(size_t vIdLen,
                              PartitionID partId,
@@ -65,10 +66,6 @@ class NebulaKeyUtils final {
                              EdgeRanking rank,
                              const VertexID& dstId,
                              EdgeVerPlaceHolder ev = 1);
-
-  static std::string edgeFirstKey(size_t vIdLen, PartitionID partId);
-
-  static std::string edgeLastKey(size_t vIdLen, PartitionID partId);
 
   static std::string systemCommitKey(PartitionID partId);
 

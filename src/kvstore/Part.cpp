@@ -8,6 +8,7 @@
 
 #include "common/utils/IndexKeyUtils.h"
 #include "common/utils/NebulaKeyUtils.h"
+#include "common/utils/OperationKeyUtils.h"
 #include "kvstore/LogEncoder.h"
 #include "kvstore/RocksEngineConfig.h"
 
@@ -424,29 +425,38 @@ bool Part::preProcessLog(LogID logId, TermID termId, ClusterID clusterId, const 
 
 void Part::cleanup() {
   LOG(INFO) << idStr_ << "Clean rocksdb part data";
-  // Remove the vertex, edge, index, systemCommitKey data under the part
-  auto startvKey = NebulaKeyUtils::vertexFirstKey(vIdLen_, partId_);
-  auto endvKey = NebulaKeyUtils::vertexFirstKey(vIdLen_, partId_);
-  auto ret = engine_->removeRange(std::move(startvKey), std::move(endvKey));
+  // Remove the vertex, edge, index, systemCommitKey, operation data under the part
+  const auto& vertexPre = NebulaKeyUtils::vertexPrefix(partId_);
+  auto ret = engine_->removeRange(NebulaKeyUtils::firstKey(vertexPre, vIdLen_),
+                                  NebulaKeyUtils::lastKey(vertexPre, vIdLen_));
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << idStr_ << "Remove the part vertex data failed, error "
                << static_cast<int32_t>(ret);
     return;
   }
 
-  auto starteKey = NebulaKeyUtils::edgeFirstKey(vIdLen_, partId_);
-  auto endeKey = NebulaKeyUtils::edgeLastKey(vIdLen_, partId_);
-  ret = engine_->removeRange(std::move(starteKey), std::move(endeKey));
+  const auto& edgePre = NebulaKeyUtils::edgePrefix(partId_);
+  ret = engine_->removeRange(NebulaKeyUtils::firstKey(edgePre, vIdLen_),
+                             NebulaKeyUtils::lastKey(edgePre, vIdLen_));
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << idStr_ << "Remove the part edge data failed, error " << static_cast<int32_t>(ret);
+    LOG(ERROR) << idStr_ << "Remove the part edge data failed, error" << static_cast<int32_t>(ret);
     return;
   }
 
-  auto startiKey = IndexKeyUtils::indexFirstKey(partId_);
-  auto endiKey = IndexKeyUtils::indexLastKey(partId_);
-  ret = engine_->removeRange(std::move(startiKey), std::move(endiKey));
+  const auto& indexPre = IndexKeyUtils::indexPrefix(partId_);
+  ret = engine_->removeRange(NebulaKeyUtils::firstKey(indexPre, sizeof(IndexID)),
+                             NebulaKeyUtils::lastKey(indexPre, sizeof(IndexID)));
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << idStr_ << "Remove the part index data failed, error "
+               << static_cast<int32_t>(ret);
+    return;
+  }
+
+  const auto& operationPre = OperationKeyUtils::operationPrefix(partId_);
+  ret = engine_->removeRange(NebulaKeyUtils::firstKey(operationPre, sizeof(int64_t)),
+                             NebulaKeyUtils::lastKey(operationPre, sizeof(int64_t)));
+  if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(ERROR) << idStr_ << "Remove the part operation data failed, error "
                << static_cast<int32_t>(ret);
     return;
   }

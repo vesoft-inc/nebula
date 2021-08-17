@@ -11,6 +11,7 @@
 #include "common/fs/TempDir.h"
 #include "common/utils/IndexKeyUtils.h"
 #include "common/utils/NebulaKeyUtils.h"
+#include "common/utils/OperationKeyUtils.h"
 #include "kvstore/Part.h"
 #include "kvstore/RocksEngine.h"
 
@@ -194,23 +195,28 @@ TEST(PartTest, PartCleanTest) {
       // remove range part::clean data
       partId = 1;
 
-      auto startvKey = NebulaKeyUtils::vertexFirstKey(kDefaultVIdLen, partId);
-      auto endvKey = NebulaKeyUtils::vertexLastKey(kDefaultVIdLen, partId);
-      auto res = engine->removeRange(startvKey, endvKey);
-      ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, res);
+      const auto& vertexPre = NebulaKeyUtils::vertexPrefix(partId);
+      auto ret = engine->removeRange(NebulaKeyUtils::firstKey(vertexPre, kDefaultVIdLen),
+                                     NebulaKeyUtils::lastKey(vertexPre, kDefaultVIdLen));
+      ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
 
-      auto starteKey = NebulaKeyUtils::edgeFirstKey(kDefaultVIdLen, partId);
-      auto endeKey = NebulaKeyUtils::edgeLastKey(kDefaultVIdLen, partId);
-      res = engine->removeRange(starteKey, endeKey);
-      ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, res);
+      const auto& edgePre = NebulaKeyUtils::edgePrefix(partId);
+      ret = engine->removeRange(NebulaKeyUtils::firstKey(edgePre, kDefaultVIdLen),
+                                NebulaKeyUtils::lastKey(edgePre, kDefaultVIdLen));
+      ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
 
-      auto startiKey = IndexKeyUtils::indexFirstKey(partId);
-      auto endiKey = IndexKeyUtils::indexLastKey(partId);
-      res = engine->removeRange(startiKey, endiKey);
-      ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, res);
+      const auto& indexPre = IndexKeyUtils::indexPrefix(partId);
+      ret = engine->removeRange(NebulaKeyUtils::firstKey(indexPre, sizeof(IndexID)),
+                                NebulaKeyUtils::lastKey(indexPre, sizeof(IndexID)));
+      ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
 
-      res = engine->remove(NebulaKeyUtils::systemCommitKey(partId));
-      ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, res);
+      const auto& operationPre = OperationKeyUtils::operationPrefix(partId);
+      ret = engine->removeRange(NebulaKeyUtils::firstKey(operationPre, sizeof(int64_t)),
+                                NebulaKeyUtils::lastKey(operationPre, sizeof(int64_t)));
+      ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
+
+      ret = engine->remove(NebulaKeyUtils::systemCommitKey(partId));
+      ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
     }
 
     {
