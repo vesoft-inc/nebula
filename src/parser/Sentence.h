@@ -81,6 +81,7 @@ class Sentence {
     kShowTSClients,
     kShowFTIndexes,
     kDeleteVertices,
+    kDeleteTags,
     kDeleteEdges,
     kLookup,
     kCreateSpace,
