@@ -94,7 +94,8 @@ nebula_add_subdirectory(resources)
 nebula_add_subdirectory(scripts)
 
 include(CPackage)
-package(${ENABLE_PACK_ONE}
+package(
+  ${ENABLE_PACK_ONE}
   "nebula"
   "https://github.com/vesoft-inc/nebula/releases"
   ${CMAKE_SOURCE_DIR}/package
