@@ -201,6 +201,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "InnerJoin";
     case Kind::kDeleteVertices:
       return "DeleteVertices";
+    case Kind::kDeleteTags:
+      return "DeleteTags";
     case Kind::kDeleteEdges:
       return "DeleteEdges";
     case Kind::kUpdateVertex:
