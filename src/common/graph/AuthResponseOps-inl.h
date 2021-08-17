@@ -212,7 +212,7 @@ _loop:
       }
     }
     default: {
-    _skip:
+_skip:
       proto->skip(_readState.fieldType);
       _readState.readFieldEnd(proto);
       _readState.readFieldBeginNoInline(proto);
