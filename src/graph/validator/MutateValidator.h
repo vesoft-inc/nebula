@@ -85,6 +85,26 @@ class DeleteVerticesValidator final : public Validator {
   std::vector<EdgeKeyRef*> edgeKeyRefs_;
 };
 
+class DeleteTagsValidator final : public Validator {
+ public:
+  DeleteTagsValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {}
+
+ private:
+  Status validateImpl() override;
+
+  std::string buildVIds();
+
+  Status toPlan() override;
+
+ private:
+  GraphSpaceID spaceId_{-1};
+  // From ConstantExpression
+  std::vector<Value> vertices_;
+  // From InputPropertyExpression or InputPropertyExpression
+  Expression* vidRef_{nullptr};
+  std::vector<TagID> tagIds_;
+};
+
 class DeleteEdgesValidator final : public Validator {
  public:
   DeleteEdgesValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {}

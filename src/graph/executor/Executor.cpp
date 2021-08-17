@@ -342,6 +342,9 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     case PlanNode::Kind::kDeleteVertices: {
       return pool->add(new DeleteVerticesExecutor(node, qctx));
     }
+    case PlanNode::Kind::kDeleteTags: {
+      return pool->add(new DeleteTagsExecutor(node, qctx));
+    }
     case PlanNode::Kind::kDeleteEdges: {
       return pool->add(new DeleteEdgesExecutor(node, qctx));
     }
