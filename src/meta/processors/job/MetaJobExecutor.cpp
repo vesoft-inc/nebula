@@ -79,18 +79,19 @@ ErrOrHosts MetaJobExecutor::getTargetHost(GraphSpaceID spaceId) {
   }
 
   // use vector instead of set because this can convient for next step
+  std::unordered_map<HostAddr, std::vector<PartitionID>> hostAndPart;
   std::vector<std::pair<HostAddr, std::vector<PartitionID>>> hosts;
   while (iter->valid()) {
+    auto part = MetaServiceUtils::parsePartKeyPartId(iter->key());
     auto targets = MetaServiceUtils::parsePartVal(iter->val());
     for (auto& target : targets) {
-      std::vector<PartitionID> parts;
-      hosts.emplace_back(std::make_pair(std::move(target), std::move(parts)));
+      hostAndPart[target].emplace_back(part);
     }
     iter->next();
   }
-  std::sort(hosts.begin(), hosts.end());
-  auto last = std::unique(hosts.begin(), hosts.end());
-  hosts.erase(last, hosts.end());
+  for (auto it = hostAndPart.begin(); it != hostAndPart.end(); it++) {
+    hosts.emplace_back(std::pair(it->first, it->second));
+  }
   return hosts;
 }
 
