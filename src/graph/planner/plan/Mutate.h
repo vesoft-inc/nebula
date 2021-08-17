@@ -322,6 +322,41 @@ class DeleteVertices final : public SingleInputNode {
   Expression* vidRef_{nullptr};
 };
 
+class DeleteTags final : public SingleInputNode {
+ public:
+  static DeleteTags* make(QueryContext* qctx,
+                          PlanNode* input,
+                          GraphSpaceID spaceId,
+                          Expression* vidRef,
+                          std::vector<TagID> tagIds) {
+    return qctx->objPool()->add(new DeleteTags(qctx, input, spaceId, vidRef, tagIds));
+  }
+
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
+  GraphSpaceID getSpace() const { return space_; }
+
+  Expression* getVidRef() const { return vidRef_; }
+
+  const std::vector<TagID>& tagIds() const { return tagIds_; }
+
+ private:
+  DeleteTags(QueryContext* qctx,
+             PlanNode* input,
+             GraphSpaceID spaceId,
+             Expression* vidRef,
+             std::vector<TagID> tagIds)
+      : SingleInputNode(qctx, Kind::kDeleteTags, input),
+        space_(spaceId),
+        vidRef_(vidRef),
+        tagIds_(std::move(tagIds)) {}
+
+ private:
+  GraphSpaceID space_;
+  Expression* vidRef_{nullptr};
+  std::vector<TagID> tagIds_;
+};
+
 class DeleteEdges final : public SingleInputNode {
  public:
   static DeleteEdges* make(QueryContext* qctx,
