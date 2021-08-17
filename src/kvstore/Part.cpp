@@ -171,7 +171,7 @@ void Part::setBlocking(bool sign) { blocking_ = sign; }
 void Part::onLostLeadership(TermID term) { VLOG(1) << "Lost the leadership for the term " << term; }
 
 void Part::onElected(TermID term) {
-    VLOG(1) << "Being elected as the leader for the term " << term;
+    VLOG(1) << "Being elected as the leader for the term: " << term;
     if (onElectedCallBacks_.empty()) {
         return;
     }
