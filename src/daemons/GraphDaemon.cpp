@@ -13,7 +13,6 @@
 
 #include "common/base/Base.h"
 #include "common/base/SignalHandler.h"
-#include "common/base/Status.h"
 #include "common/fs/FileUtils.h"
 #include "common/network/NetworkUtils.h"
 #include "common/process/ProcessUtils.h"
@@ -27,6 +26,7 @@
 
 using nebula::ProcessUtils;
 using nebula::Status;
+using nebula::StatusOr;
 using nebula::fs::FileUtils;
 using nebula::graph::GraphService;
 using nebula::network::NetworkUtils;
@@ -39,7 +39,7 @@ static Status setupSignalHandler();
 extern Status setupLogging();
 static void printHelp(const char *prog);
 static void setupThreadManager();
-static void setupBreakpad();
+extern StatusOr<std::unique_ptr<google_breakpad::ExceptionHandler>> setupBreakpad();
 
 DECLARE_string(flagfile);
 
@@ -74,6 +74,13 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
+  auto expHandler = setupBreakpad();
+  if (!expHandler.ok()) {
+    LOG(ERROR) << expHandler.status();
+    return EXIT_FAILURE;
+  }
+  gExceptionHandler = std::move(expHandler).value();
+
   // Detect if the server has already been started
   auto pidPath = FLAGS_pid_file;
   status = ProcessUtils::isPidAvailable(pidPath);
@@ -91,9 +98,6 @@ int main(int argc, char *argv[]) {
   } else {
     // Write the current pid into the pid file
     status = ProcessUtils::makePidFile(pidPath);
-
-    setupBreakpad();
-
     if (!status.ok()) {
       LOG(ERROR) << status;
       return EXIT_FAILURE;
@@ -183,12 +187,6 @@ int main(int argc, char *argv[]) {
   FLOG_INFO("nebula-graphd on %s:%d has been stopped", localhost.host.c_str(), localhost.port);
 
   return EXIT_SUCCESS;
-}
-
-void setupBreakpad() {
-  google_breakpad::MinidumpDescriptor descriptor(FLAGS_log_dir);
-  gExceptionHandler = std::make_unique<google_breakpad::ExceptionHandler>(
-      descriptor, nullptr, nullptr, nullptr, true, -1);
 }
 
 Status setupSignalHandler() {

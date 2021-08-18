@@ -4,6 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include <breakpad/client/linux/handler/exception_handler.h>
 #include <folly/ssl/Init.h>
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 
@@ -35,6 +36,7 @@
 using nebula::operator<<;
 using nebula::ProcessUtils;
 using nebula::Status;
+using nebula::StatusOr;
 using nebula::web::PathParams;
 
 DEFINE_string(local_ip, "", "Local ip specified for NetworkUtils::getLocalIP");
@@ -56,9 +58,12 @@ DEFINE_bool(daemonize, true, "Whether run as a daemon process");
 
 static std::unique_ptr<apache::thrift::ThriftServer> gServer;
 static std::unique_ptr<nebula::kvstore::KVStore> gKVStore;
+static std::unique_ptr<google_breakpad::ExceptionHandler> gExceptionHandler;
+
 static void signalHandler(int sig);
 static Status setupSignalHandler();
 extern Status setupLogging();
+extern StatusOr<std::unique_ptr<google_breakpad::ExceptionHandler>> setupBreakpad();
 
 namespace nebula {
 namespace meta {
@@ -197,6 +202,13 @@ int main(int argc, char* argv[]) {
     LOG(ERROR) << status;
     return EXIT_FAILURE;
   }
+
+  auto expHandler = setupBreakpad();
+  if (!expHandler.ok()) {
+    LOG(ERROR) << expHandler.status();
+    return EXIT_FAILURE;
+  }
+  gExceptionHandler = std::move(expHandler).value();
 
   auto pidPath = FLAGS_pid_file;
   status = ProcessUtils::isPidAvailable(pidPath);
