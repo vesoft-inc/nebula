@@ -58,9 +58,11 @@ fi
 echo "Performing C++ code format check..."
 
 CLANG_HOME=/opt/vesoft/toolset/clang/10.0.0/
-res=$(git diff -U0 --no-color --staged | $CLANG_HOME/share/clang/clang-format-diff.py -p1 -binary $CLANG_HOME/bin/clang-format)
-if [[ ! -z $res ]]; then
-    echo "The code format is not well..."
-    echo $res
-    exit 1
+
+if [ ! -d "$CLANG_HOME" ]; then
+    echo "The $CLANG_HOME directory is not found, and the source changes cannot be automatically formatted."
+    exit 0
 fi
+
+git diff -U0 --no-color --staged | $CLANG_HOME/share/clang/clang-format-diff.py -i -p1 -binary $CLANG_HOME/bin/clang-format
+git add $CHECK_FILES

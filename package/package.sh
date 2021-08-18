@@ -9,6 +9,7 @@
 #   -b: Branch, default master
 #   -d: Whether to enable sanitizer, default OFF
 #   -t: Build type, default Release
+#   -j: Number of threads, default $(nproc)
 #
 # usage: ./package.sh -v <version> -n <ON/OFF> -s <TRUE/FALSE> -b <BRANCH>
 #
@@ -18,7 +19,7 @@ set -e
 version=""
 package_one=ON
 strip_enable="FALSE"
-usage="Usage: ${0} -v <version> -n <ON/OFF> -s <TRUE/FALSE> -b <BRANCH> -g <ON/OFF>"
+usage="Usage: ${0} -v <version> -n <ON/OFF> -s <TRUE/FALSE> -b <BRANCH> -g <ON/OFF> -j <jobs>"
 project_dir="$(cd "$(dirname "$0")" && pwd)/.."
 build_dir=${project_dir}/pkg-build
 enablesanitizer="OFF"
@@ -27,7 +28,7 @@ build_type="Release"
 branch="master"
 jobs=$(nproc)
 
-while getopts v:n:s:b:d:t:g: opt;
+while getopts v:n:s:b:d:t:j:g: opt;
 do
     case $opt in
         v)
@@ -51,6 +52,9 @@ do
             ;;
         t)
             build_type=$OPTARG
+            ;;
+        j)
+            jobs=$OPTARG
             ;;
         ?)
             echo "Invalid option, use default arguments"
@@ -114,20 +118,7 @@ function build {
 
 # args: <strip_enable>
 function package {
-    # The package CMakeLists.txt in ${project_dir}/package/build
-    package_dir=${build_dir}/package/
-    if [[ -d $package_dir ]]; then
-        rm -rf ${package_dir:?}/*
-    else
-        mkdir ${package_dir}
-    fi
-    pushd ${package_dir}
-    cmake \
-        -DNEBULA_BUILD_VERSION=${version} \
-        -DENABLE_PACK_ONE=${package_one} \
-        -DCMAKE_INSTALL_PREFIX=/usr/local/nebula \
-        ${project_dir}/package/
-
+    pushd ${build_dir}
     strip_enable=$1
 
     args=""
