@@ -175,6 +175,7 @@ class MetaClient {
   FRIEND_TEST(MetaClientTest, RetryOnceTest);
   FRIEND_TEST(MetaClientTest, RetryUntilLimitTest);
   FRIEND_TEST(MetaClientTest, RocksdbOptionsTest);
+  friend class KillQueryMetaWrapper;
 
  public:
   MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
