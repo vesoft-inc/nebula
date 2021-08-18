@@ -2511,8 +2511,9 @@ rebuild_fulltext_index_sentence
         $$ = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
                                   meta::cpp2::AdminCmd::REBUILD_FULLTEXT_INDEX);
     }
+
 add_group_sentence
-    : KW_ADD KW_GROUP name_label zone_name_list{
+    : KW_ADD KW_GROUP name_label zone_name_list {
         $$ = new AddGroupSentence($3, $4);
     }
     ;

@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef META_ADMIN_BALANCERR_H_
-#define META_ADMIN_BALANCERR_H_
+#ifndef META_ADMIN_BALANCER_H_
+#define META_ADMIN_BALANCER_H_
 
 #include <folly/executors/CPUThreadPoolExecutor.h>
 #include <gtest/gtest_prod.h>
@@ -190,11 +190,13 @@ class Balancer {
   ErrorOr<nebula::cpp2::ErrorCode, HostAddr> hostWithMinimalPartsForZone(const HostAddr& source,
                                                                          const HostParts& hostParts,
                                                                          PartitionID partId);
+
   bool balanceParts(BalanceID balanceId,
                     GraphSpaceID spaceId,
                     HostParts& newHostParts,
                     int32_t totalParts,
-                    std::vector<BalanceTask>& tasks);
+                    std::vector<BalanceTask>& tasks,
+                    bool dependentOnGroup);
 
   nebula::cpp2::ErrorCode transferLostHost(std::vector<BalanceTask>& tasks,
                                            HostParts& newHostParts,
@@ -236,6 +238,12 @@ class Balancer {
 
   bool checkZoneLegal(const HostAddr& source, const HostAddr& target, PartitionID part);
 
+  void update(std::pair<HostAddr, int32_t>& maxPartsHost,
+              std::pair<HostAddr, int32_t>& minPartsHost,
+              int32_t& minLoad, int32_t& maxLoad, float& avgLoad,
+              std::vector<std::pair<HostAddr, int32_t>>& sortedHosts,
+              const HostParts& confirmedHostParts);
+
  private:
   std::atomic_bool running_{false};
   kvstore::KVStore* kv_{nullptr};
@@ -250,10 +258,19 @@ class Balancer {
   mutable std::mutex lock_;
 
   std::unordered_map<HostAddr, std::pair<int32_t, int32_t>> hostBounds_;
+
+  // TODO: (darion) nesting map maybe better
   std::unordered_map<HostAddr, ZoneNameAndParts> zoneParts_;
+  std::unordered_map<std::string, std::vector<HostAddr>> zoneHosts_;
+
+  // if the space dependent on group, it use to record the partition
+  // contained in the zone related to the node.
+  std::unordered_map<HostAddr, std::vector<PartitionID>> relatedParts_;
+
+  bool innerBalance_ = false;
 };
 
 }  // namespace meta
 }  // namespace nebula
 
-#endif  // META_ADMIN_BALANCERR_H_
+#endif  // META_ADMIN_BALANCER_H_
