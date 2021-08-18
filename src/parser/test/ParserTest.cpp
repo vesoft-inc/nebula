@@ -1106,6 +1106,31 @@ TEST_F(ParserTest, DeleteVertex) {
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
+    std::string query = "DELETE TAG t1 FROM \"Tom\"";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "DELETE TAG t1, t2 FROM \"Tom\"";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "DELETE TAG * FROM \"Tom\"";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "DELETE TAG t1, t2 FROM \"Tom\", \"Jerry\"";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "DELETE TAG * FROM \"Tom\", \"Jerry\"";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
     std::string query =
         "GO FROM \"Ann\" OVER schoolmate YIELD $$.person.name as name"
         "| DELETE VERTEX $-.id";
