@@ -263,7 +263,7 @@ folly::Future<Status> ProduceSemiShortestPathExecutor::execute() {
     }
   }
   VLOG(2) << "SemiShortPath : " << ds;
-  return finish(ResultBuilder().value(Value(std::move(ds))).finish());
+  return finish(ResultBuilder().value(Value(std::move(ds))).build());
 }
 
 }  // namespace graph

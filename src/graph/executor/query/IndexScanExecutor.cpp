@@ -26,7 +26,7 @@ folly::Future<Status> IndexScanExecutor::indexScan() {
   auto *lookup = asNode<IndexScan>(node());
   if (lookup->isEmptyResultSet()) {
     DataSet dataSet({"dummy"});
-    return finish(ResultBuilder().value(Value(std::move(dataSet))).finish());
+    return finish(ResultBuilder().value(Value(std::move(dataSet))).build());
   }
 
   const auto &ictxs = lookup->queryContext();
