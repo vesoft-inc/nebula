@@ -73,6 +73,11 @@ slow-query: currdir
 tck: slow-query
 	python3 -m pytest -n$(J) -m "not skip" tck/steps/test_tck.py
 
+tck-count:
+	pip3 install --user -r $(CURR_DIR)/requirements_dev.txt -i $(PYPI_MIRROR)
+	python3 -m pytest --collect-only -s "tck/steps/count_tck.py" > /dev/null
+	@echo "Finish"
+
 fail: currdir
 	python3 -m pytest --last-failed --gherkin-terminal-reporter --gherkin-terminal-reporter-expanded tck/steps/test_tck.py
 
