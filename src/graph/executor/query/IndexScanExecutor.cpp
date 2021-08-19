@@ -72,7 +72,7 @@ Status IndexScanExecutor::handleResp(storage::StorageRpcResponse<Resp> &&rpcResp
   }
   VLOG(2) << "Dataset produced by IndexScan: \n" << v << "\n";
   return finish(
-      ResultBuilder().value(std::move(v)).iter(Iterator::Kind::kProp).state(state).finish());
+      ResultBuilder().value(std::move(v)).iter(Iterator::Kind::kProp).state(state).build());
 }
 
 }  // namespace graph
