@@ -11,7 +11,7 @@ Feature: Function Call Expression
     When executing query:
       """
       YIELD sign(38) AS a, sign(-2) AS b, sign(0.421) AS c,
-      sign(-1.0) AS d, sign(0) AS e, sign(abs(-3)) AS f
+            sign(-1.0) AS d, sign(0) AS e, sign(abs(-3)) AS f
       """
     Then the result should be, in any order:
       | a | b  | c | d  | e | f |
@@ -20,8 +20,7 @@ Feature: Function Call Expression
   Scenario: date related
     When executing query:
       """
-      YIELD timestamp("2000-10-10T10:00:00") AS a, date() AS b, time() AS c,
-      datetime() AS d
+      YIELD timestamp("2000-10-10T10:00:00") AS a, date() AS b, time() AS c, datetime() AS d
       """
     Then the result should be, in any order:
       | a       | b                      | c                            | d                                               |
@@ -60,14 +59,18 @@ Feature: Function Call Expression
       | NULL |
     When executing query:
       """
-      match (a:player)-[b:serve]-(c:team{name: "Lakers"}) where a.age > 45   return  concat(a.name,c.name)
+      MATCH (a:player)-[b:serve]-(c:team{name: "Lakers"})
+      WHERE a.age > 45
+      RETURN  concat(a.name,c.name)
       """
     Then the result should be, in any order:
       | concat(a.name,c.name)   |
       | "Shaquile O'NealLakers" |
     When executing query:
       """
-      match (a:player)-[b:serve]-(c:team{name: "Lakers"}) where a.age > 45   return  concat(a.name, "hello")
+      MATCH (a:player)-[b:serve]-(c:team{name: "Lakers"})
+      WHERE a.age > 45
+      RETURN  concat(a.name, "hello")
       """
     Then the result should be, in any order:
       | concat(a.name,"hello") |
@@ -84,29 +87,37 @@ Feature: Function Call Expression
       | "Tim Duncan-42-Tony Parker-95"   |
     When executing query:
       """
-      match (a:player)-[b:serve]-(c:team{name: "Lakers"}) where a.age > 45   return  concat_ws("@",a.name, "hello", b.likeness, c.name)
+      MATCH (a:player)-[b:serve]-(c:team{name: "Lakers"})
+      WHERE a.age > 45
+      RETURN concat_ws("@",a.name, "hello", b.likeness, c.name) as result
       """
     Then the result should be, in any order:
-      | concat_ws("@",a.name,"hello",b.likeness,c.name) |
-      | "Shaquile O'Neal@hello@Lakers"                  |
+      | result                         |
+      | "Shaquile O'Neal@hello@Lakers" |
     When executing query:
       """
-      match (a:player)-[b:serve]-(c:team{name: "Lakers"}) where a.age > 45   return  concat_ws("@",a.name, NULL, "hello", b.likeness, c.name)
+      MATCH (a:player)-[b:serve]-(c:team{name: "Lakers"})
+      WHERE a.age > 45
+      RETURN concat_ws("@",a.name, NULL, "hello", b.likeness, c.name) as result
       """
     Then the result should be, in any order:
-      | concat_ws("@",a.name,NULL,"hello",b.likeness,c.name) |
-      | "Shaquile O'Neal@hello@Lakers"                       |
+      | result                         |
+      | "Shaquile O'Neal@hello@Lakers" |
     When executing query:
       """
-      match (a:player)-[b:serve]-(c:team{name: "Lakers"}) where a.age > 45   return  concat_ws(1,a.name, NULL, "hello", b.likeness, c.name)
+      MATCH (a:player)-[b:serve]-(c:team{name: "Lakers"})
+      WHERE a.age > 45
+      RETURN concat_ws(1,a.name, NULL, "hello", b.likeness, c.name) as result
       """
     Then the result should be, in any order:
-      | concat_ws(1,a.name,NULL,"hello",b.likeness,c.name) |
-      | NULL                                               |
+      | result |
+      | NULL   |
     When executing query:
       """
-      match (a:player)-[b:serve]-(c:team{name: "Lakers"}) where a.age > 45   return  concat_ws(NULL ,a.name, NULL, "hello", b.likeness, c.name)
+      MATCH (a:player)-[b:serve]-(c:team{name: "Lakers"})
+      WHERE a.age > 45
+      RETURN concat_ws(NULL ,a.name, NULL, "hello", b.likeness, c.name) as result
       """
     Then the result should be, in any order:
-      | concat_ws(NULL,a.name,NULL,"hello",b.likeness,c.name) |
-      | NULL                                                  |
+      | result |
+      | NULL   |
