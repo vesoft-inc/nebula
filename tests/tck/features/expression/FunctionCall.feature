@@ -108,5 +108,5 @@ Feature: Function Call Expression
       match (a:player)-[b:serve]-(c:team{name: "Lakers"}) where a.age > 45   return  concat_ws(NULL ,a.name, NULL, "hello", b.likeness, c.name)
       """
     Then the result should be, in any order:
-      | concat_ws(NULL ,a.name,NULL,"hello",b.likeness,c.name) |
-      | NULL                                                   |
+      | concat_ws(NULL,a.name,NULL,"hello",b.likeness,c.name) |
+      | NULL                                                  |
