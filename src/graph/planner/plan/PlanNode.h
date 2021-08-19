@@ -143,6 +143,7 @@ class PlanNode {
     kShowConfigs,
     kSetConfig,
     kGetConfig,
+    kShowMetaLeader,
 
     // zone related
     kShowGroups,

@@ -133,6 +133,7 @@ class Sentence {
     kShowSessions,
     kShowQueries,
     kKillQuery,
+    kShowMetaLeader,
   };
 
   Kind kind() const { return kind_; }
