@@ -8,6 +8,7 @@
 
 #include "graph/planner/match/MatchSolver.h"
 #include "graph/util/ExpressionUtils.h"
+#include "graph/visitor/DeduceCypherPropsVisitor.h"
 #include "graph/visitor/RewriteVisitor.h"
 
 namespace nebula {
@@ -52,6 +53,8 @@ Status MatchValidator::validateImpl() {
           whereClauseCtx->aliasesUsed = &matchClauseCtx->aliasesGenerated;
           NG_RETURN_IF_ERROR(validateFilter(matchClause->where()->filter(), *whereClauseCtx));
           matchClauseCtx->where = std::move(whereClauseCtx);
+          NG_RETURN_IF_ERROR(deduceCypherProps(
+              matchClause->where()->filter(), props_, *matchClauseCtx->where->aliasesUsed));
         }
 
         if (aliasesUsed) {
@@ -70,6 +73,8 @@ Status MatchValidator::validateImpl() {
         NG_RETURN_IF_ERROR(validateUnwind(unwindClause, *unwindClauseCtx));
 
         aliasesUsed = unwindClauseCtx->aliasesUsed;
+        NG_RETURN_IF_ERROR(
+            deduceCypherProps(unwindClauseCtx->unwindExpr, props_, *unwindClauseCtx->aliasesUsed));
 
         matchCtx_->clauses.emplace_back(std::move(unwindClauseCtx));
 
@@ -92,10 +97,18 @@ Status MatchValidator::validateImpl() {
           whereClauseCtx->aliasesUsed = &withClauseCtx->aliasesGenerated;
           NG_RETURN_IF_ERROR(validateFilter(withClause->where()->filter(), *whereClauseCtx));
           withClauseCtx->where = std::move(whereClauseCtx);
+
+          NG_RETURN_IF_ERROR(deduceCypherProps(
+              withClauseCtx->where->filter, props_, *withClauseCtx->where->aliasesUsed));
         }
 
         aliasesUsed = &withClauseCtx->aliasesGenerated;
         prevYieldColumns = const_cast<YieldColumns *>(withClauseCtx->yield->yieldColumns);
+
+        for (const auto &col : withClauseCtx->yield->yieldColumns->columns()) {
+          NG_RETURN_IF_ERROR(
+              deduceCypherProps(col->expr(), props_, *withClauseCtx->yield->aliasesUsed));
+        }
 
         matchCtx_->clauses.emplace_back(std::move(withClauseCtx));
 
@@ -107,6 +120,9 @@ Status MatchValidator::validateImpl() {
   retClauseCtx->yield->aliasesUsed = aliasesUsed;
   NG_RETURN_IF_ERROR(
       validateReturn(sentence->ret(), matchCtx_->clauses.back().get(), *retClauseCtx));
+  for (const auto &col : retClauseCtx->yield->yieldColumns->columns()) {
+    NG_RETURN_IF_ERROR(deduceCypherProps(col->expr(), props_, *retClauseCtx->yield->aliasesUsed));
+  }
 
   NG_RETURN_IF_ERROR(buildOutputs(retClauseCtx->yield->yieldColumns));
   matchCtx_->clauses.emplace_back(std::move(retClauseCtx));
@@ -875,5 +891,15 @@ Status MatchValidator::buildOutputs(const YieldColumns *yields) {
   }
   return Status::OK();
 }
+
+Status MatchValidator::deduceCypherProps(
+    const Expression *expr,
+    CypherProps &exprProps,
+    const std::unordered_map<std::string, AliasType> &aliases) {
+  DeduceCypherPropsVisitor visitor(exprProps, aliases);
+  const_cast<Expression *>(expr)->accept(&visitor);
+  return std::move(visitor).status();
+}
+
 }  // namespace graph
 }  // namespace nebula

@@ -14,6 +14,10 @@ namespace nebula {
 namespace graph {
 
 Status PipeValidator::validateImpl() {
+  if (rValidator_->sentence()->kind() == Sentence::Kind::kMatch) {
+    return Status::SemanticError("Can't output to match sentence.");
+  }
+
   lValidator_->setInputCols(std::move(inputs_));
   lValidator_->setInputVarName(inputVarName_);
   NG_RETURN_IF_ERROR(lValidator_->validate());

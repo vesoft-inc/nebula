@@ -12,6 +12,7 @@
 #include "graph/planner/plan/Query.h"
 #include "graph/util/AnonVarGenerator.h"
 #include "graph/validator/TraversalValidator.h"
+#include "graph/visitor/CypherProps.h"
 
 namespace nebula {
 
@@ -95,8 +96,13 @@ class MatchValidator final : public TraversalValidator {
 
   Status buildOutputs(const YieldColumns *yields);
 
+  Status deduceCypherProps(const Expression *expr,
+                           CypherProps &exprProps,
+                           const std::unordered_map<std::string, AliasType> &aliases);
+
  private:
   std::unique_ptr<MatchAstContext> matchCtx_;
+  CypherProps props_;
 };
 
 }  // namespace graph

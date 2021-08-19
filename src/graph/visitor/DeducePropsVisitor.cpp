@@ -137,7 +137,9 @@ void DeducePropsVisitor::visit(InputPropertyExpression *expr) {
 
 void DeducePropsVisitor::visit(VariablePropertyExpression *expr) {
   exprProps_->insertVarProp(expr->sym(), expr->prop());
-  userDefinedVarNameList_->emplace(expr->sym());
+  if (expr->sym()[0] != '_') {
+    userDefinedVarNameList_->emplace(expr->sym());
+  }
 }
 
 void DeducePropsVisitor::visit(DestPropertyExpression *expr) {
@@ -168,9 +170,17 @@ void DeducePropsVisitor::visit(EdgeDstIdExpression *expr) { visitEdgePropExpr(ex
 
 void DeducePropsVisitor::visit(UUIDExpression *expr) { reportError(expr); }
 
-void DeducePropsVisitor::visit(VariableExpression *expr) { UNUSED(expr); }
+void DeducePropsVisitor::visit(VariableExpression *expr) {
+  if (expr->var()[0] != '_') {
+    userDefinedVarNameList_->emplace(expr->var());
+  }
+}
 
-void DeducePropsVisitor::visit(VersionedVariableExpression *expr) { reportError(expr); }
+void DeducePropsVisitor::visit(VersionedVariableExpression *expr) {
+  if (expr->var()[0] != '_') {
+    userDefinedVarNameList_->emplace(expr->var());
+  }
+}
 
 void DeducePropsVisitor::visit(LabelExpression *expr) { reportError(expr); }
 
