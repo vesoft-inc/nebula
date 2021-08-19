@@ -74,5 +74,3 @@ for item in frame_keys:
         df = df.append(new, ignore_index=True)
 
 df.to_excel("scenarios.xlsx", index=False)
-
-print("finish")
