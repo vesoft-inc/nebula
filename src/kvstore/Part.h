@@ -34,7 +34,8 @@ class Part : public raftex::RaftPart {
        std::shared_ptr<folly::Executor> handlers,
        std::shared_ptr<raftex::SnapshotManager> snapshotMan,
        std::shared_ptr<RaftClient> clientMan,
-       std::shared_ptr<DiskManager> diskMan);
+       std::shared_ptr<DiskManager> diskMan,
+       int32_t vIdLen);
 
   virtual ~Part() { LOG(INFO) << idStr_ << "~Part()"; }
 
@@ -125,6 +126,7 @@ class Part : public raftex::RaftPart {
 
  private:
   KVEngine* engine_ = nullptr;
+  int32_t vIdLen_;
 };
 
 }  // namespace kvstore

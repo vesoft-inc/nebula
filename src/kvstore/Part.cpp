@@ -6,7 +6,9 @@
 
 #include "kvstore/Part.h"
 
+#include "common/utils/IndexKeyUtils.h"
 #include "common/utils/NebulaKeyUtils.h"
+#include "common/utils/OperationKeyUtils.h"
 #include "kvstore/LogEncoder.h"
 #include "kvstore/RocksEngineConfig.h"
 
@@ -27,7 +29,8 @@ Part::Part(GraphSpaceID spaceId,
            std::shared_ptr<folly::Executor> handlers,
            std::shared_ptr<raftex::SnapshotManager> snapshotMan,
            std::shared_ptr<RaftClient> clientMan,
-           std::shared_ptr<DiskManager> diskMan)
+           std::shared_ptr<DiskManager> diskMan,
+           int32_t vIdLen)
     : RaftPart(FLAGS_cluster_id,
                spaceId,
                partId,
@@ -42,7 +45,8 @@ Part::Part(GraphSpaceID spaceId,
       spaceId_(spaceId),
       partId_(partId),
       walPath_(walPath),
-      engine_(engine) {}
+      engine_(engine),
+      vIdLen_(vIdLen) {}
 
 std::pair<LogID, TermID> Part::lastCommittedLogId() {
   std::string val;
@@ -436,11 +440,47 @@ bool Part::preProcessLog(LogID logId, TermID termId, ClusterID clusterId, const 
 }
 
 void Part::cleanup() {
-  LOG(INFO) << idStr_ << "Clean rocksdb commit key";
-  auto res = engine_->remove(NebulaKeyUtils::systemCommitKey(partId_));
-  if (res != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(WARNING) << idStr_ << "Remove the committedLogId failed, error "
-                 << static_cast<int32_t>(res);
+  LOG(INFO) << idStr_ << "Clean rocksdb part data";
+  // Remove the vertex, edge, index, systemCommitKey, operation data under the part
+  const auto& vertexPre = NebulaKeyUtils::vertexPrefix(partId_);
+  auto ret = engine_->removeRange(NebulaKeyUtils::firstKey(vertexPre, vIdLen_),
+                                  NebulaKeyUtils::lastKey(vertexPre, vIdLen_));
+  if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(ERROR) << idStr_ << "Remove the part vertex data failed, error "
+               << static_cast<int32_t>(ret);
+    return;
+  }
+
+  const auto& edgePre = NebulaKeyUtils::edgePrefix(partId_);
+  ret = engine_->removeRange(NebulaKeyUtils::firstKey(edgePre, vIdLen_),
+                             NebulaKeyUtils::lastKey(edgePre, vIdLen_));
+  if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(ERROR) << idStr_ << "Remove the part edge data failed, error" << static_cast<int32_t>(ret);
+    return;
+  }
+
+  const auto& indexPre = IndexKeyUtils::indexPrefix(partId_);
+  ret = engine_->removeRange(NebulaKeyUtils::firstKey(indexPre, sizeof(IndexID)),
+                             NebulaKeyUtils::lastKey(indexPre, sizeof(IndexID)));
+  if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(ERROR) << idStr_ << "Remove the part index data failed, error "
+               << static_cast<int32_t>(ret);
+    return;
+  }
+
+  const auto& operationPre = OperationKeyUtils::operationPrefix(partId_);
+  ret = engine_->removeRange(NebulaKeyUtils::firstKey(operationPre, sizeof(int64_t)),
+                             NebulaKeyUtils::lastKey(operationPre, sizeof(int64_t)));
+  if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(ERROR) << idStr_ << "Remove the part operation data failed, error "
+               << static_cast<int32_t>(ret);
+    return;
+  }
+
+  ret = engine_->remove(NebulaKeyUtils::systemCommitKey(partId_));
+  if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(ERROR) << idStr_ << "Remove the part system commit data failed, error "
+               << static_cast<int32_t>(ret);
   }
   return;
 }
