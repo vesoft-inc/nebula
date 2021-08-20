@@ -4,19 +4,21 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef KVSTORE_SNAPSHOTMANAGERIMPL_H_
-#define KVSTORE_SNAPSHOTMANAGERIMPL_H_
+#pragma once
+
+#include <folly/TokenBucket.h>
 
 #include "common/base/Base.h"
-#include "kvstore/KVStore.h"
+#include "kvstore/NebulaStore.h"
+#include "kvstore/RateLimiter.h"
 #include "kvstore/raftex/SnapshotManager.h"
 
 namespace nebula {
 namespace kvstore {
 
-class SnapshotManagerImpl : public raftex::SnapshotManager {
+class NebulaSnapshotManager : public raftex::SnapshotManager {
  public:
-  explicit SnapshotManagerImpl(KVStore* kv) : store_(kv) {}
+  explicit NebulaSnapshotManager(NebulaStore* kv);
 
   void accessAllRowsInSnapshot(GraphSpaceID spaceId,
                                PartitionID partId,
@@ -31,10 +33,9 @@ class SnapshotManagerImpl : public raftex::SnapshotManager {
                    int64_t& totalCount,
                    int64_t& totalSize);
 
-  KVStore* store_;
+  std::unique_ptr<RateLimiter> rateLimiter_;
+  NebulaStore* store_;
 };
 
 }  // namespace kvstore
 }  // namespace nebula
-
-#endif  // KVSTORE_SNAPSHOTMANAGERIMPL_H_
