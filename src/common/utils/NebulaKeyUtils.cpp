@@ -19,10 +19,24 @@ bool NebulaKeyUtils::isValidVidLen(size_t vIdLen, const VertexID& srcVId, const 
 }
 
 // static
-std::string NebulaKeyUtils::vertexKey(size_t vIdLen,
-                                      PartitionID partId,
-                                      const VertexID& vId,
-                                      TagID tagId) {
+std::string NebulaKeyUtils::firstKey(const std::string& prefix, size_t count) {
+  std::string key;
+  key.reserve(prefix.size() + count);
+  key.append(prefix).append(count, '\0');
+  return key;
+}
+
+// static
+std::string NebulaKeyUtils::lastKey(const std::string& prefix, size_t count) {
+  std::string key;
+  key.reserve(prefix.size() + count);
+  key.append(prefix).append(count, '\377');
+  return key;
+}
+
+// static
+std::string NebulaKeyUtils::vertexKey(
+    size_t vIdLen, PartitionID partId, const VertexID& vId, TagID tagId, char pad) {
   CHECK_GE(vIdLen, vId.size());
   int32_t item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kVertex);
 
@@ -30,7 +44,7 @@ std::string NebulaKeyUtils::vertexKey(size_t vIdLen,
   key.reserve(kVertexLen + vIdLen);
   key.append(reinterpret_cast<const char*>(&item), sizeof(int32_t))
       .append(vId.data(), vId.size())
-      .append(vIdLen - vId.size(), '\0')
+      .append(vIdLen - vId.size(), pad)
       .append(reinterpret_cast<const char*>(&tagId), sizeof(TagID));
   return key;
 }

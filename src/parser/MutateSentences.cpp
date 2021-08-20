@@ -254,6 +254,20 @@ std::string DeleteVerticesSentence::toString() const {
   return buf;
 }
 
+std::string DeleteTagsSentence::toString() const {
+  std::string buf;
+  buf.reserve(256);
+  buf += "DELETE TAG ";
+  if (tags_->empty()) {
+    buf += "*";
+  } else {
+    buf += tags_->toString();
+  }
+  buf += " FROM ";
+  buf += vertices_->toString();
+  return buf;
+}
+
 std::string DeleteEdgesSentence::toString() const {
   std::string buf;
   buf.reserve(256);

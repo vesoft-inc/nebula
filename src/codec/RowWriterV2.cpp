@@ -691,14 +691,6 @@ WriteResult RowWriterV2::write(ssize_t index, const Date& v) noexcept {
       buf_[offset + sizeof(int16_t)] = v.month;
       buf_[offset + sizeof(int16_t) + sizeof(int8_t)] = v.day;
       break;
-    case meta::cpp2::PropertyType::DATETIME:
-      memcpy(&buf_[offset], reinterpret_cast<const void*>(&v.year), sizeof(int16_t));
-      buf_[offset + sizeof(int16_t)] = v.month;
-      buf_[offset + sizeof(int16_t) + sizeof(int8_t)] = v.day;
-      memset(&buf_[offset + sizeof(int16_t) + 2 * sizeof(int8_t)],
-             0,
-             3 * sizeof(int8_t) + 2 * sizeof(int32_t));
-      break;
     default:
       return WriteResult::TYPE_MISMATCH;
   }
@@ -742,11 +734,6 @@ WriteResult RowWriterV2::write(ssize_t index, const DateTime& v) noexcept {
   int8_t sec = v.sec;
   int32_t microsec = v.microsec;
   switch (field->type()) {
-    case meta::cpp2::PropertyType::DATE:
-      memcpy(&buf_[offset], reinterpret_cast<const void*>(&year), sizeof(int16_t));
-      buf_[offset + sizeof(int16_t)] = month;
-      buf_[offset + sizeof(int16_t) + sizeof(int8_t)] = day;
-      break;
     case meta::cpp2::PropertyType::DATETIME:
       memcpy(&buf_[offset], reinterpret_cast<const void*>(&year), sizeof(int16_t));
       buf_[offset + sizeof(int16_t)] = month;

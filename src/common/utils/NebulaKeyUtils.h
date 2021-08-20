@@ -42,9 +42,22 @@ class NebulaKeyUtils final {
   static bool isValidVidLen(size_t vIdLen, const VertexID& srcvId, const VertexID& dstvId = "");
 
   /**
+   * Generate the first key with prefix.
+   * count means the number of count '\0' is filled after the prefix.
+   * */
+  static std::string firstKey(const std::string& prefix, size_t count);
+
+  /**
+   * Generate the last key with prefix.
+   * count means the number of count '\377' is filled after the prefix.
+   * */
+  static std::string lastKey(const std::string& prefix, size_t count);
+
+  /**
    * Generate vertex key for kv store
    * */
-  static std::string vertexKey(size_t vIdLen, PartitionID partId, const VertexID& vId, TagID tagId);
+  static std::string vertexKey(
+      size_t vIdLen, PartitionID partId, const VertexID& vId, TagID tagId, char pad = '\0');
 
   static std::string edgeKey(size_t vIdLen,
                              PartitionID partId,
