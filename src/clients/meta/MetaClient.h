@@ -601,6 +601,8 @@ class MetaClient {
 
   HostAddr getMetaLeader() { return leader_; }
 
+  DateTime getLastHeartBeatTime() { return lastHeartBeatTime_; }
+
  protected:
   // Return true if load succeeded.
   bool loadData();
@@ -740,6 +742,7 @@ class MetaClient {
   bool skipConfig_ = false;
   MetaClientOptions options_;
   std::vector<HostAddr> storageHosts_;
+  DateTime lastHeartBeatTime_;
 };
 
 }  // namespace meta

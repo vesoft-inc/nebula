@@ -20,6 +20,7 @@
 #include "common/meta/NebulaSchemaProvider.h"
 #include "common/network/NetworkUtils.h"
 #include "common/stats/StatsManager.h"
+#include "common/time/TimeUtils.h"
 #include "version/Version.h"
 #include "webservice/Common.h"
 
@@ -608,6 +609,8 @@ void MetaClient::getResponse(Request req,
                      auto&& resp = t.value();
                      if (resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED) {
                        // succeeded
+                       lastHeartBeatTime_ = time::TimeUtils::utcDateTime();
+                       LOG(INFO) << "utcDateTime() : " << lastHeartBeatTime_.toString();
                        pro.setValue(respGen(std::move(resp)));
                        return;
                      } else if (resp.get_code() == nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {

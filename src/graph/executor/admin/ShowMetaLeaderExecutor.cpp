@@ -8,6 +8,7 @@
 
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
+#include "common/time/TimeUtils.h"
 #include "graph/context/QueryContext.h"
 #include "graph/planner/plan/Admin.h"
 #include "graph/util/ScopedTimer.h"
@@ -18,9 +19,10 @@ namespace graph {
 folly::Future<Status> ShowMetaLeaderExecutor::execute() {
   SCOPED_TIMER(&execTime_);
   auto metaLeader = qctx()->getMetaClient()->getMetaLeader();
-  LOG(INFO) << "messi Meta Leader: " << metaLeader.toString();
-  DataSet ds({"Meta Leader"});
-  nebula::Row r({metaLeader.toString()});
+  auto lastHeartBeatTime = qctx()->getMetaClient()->getLastHeartBeatTime();
+  auto localTime = time::TimeUtils::utcToDateTime(lastHeartBeatTime);
+  DataSet ds({"Meta Leader", "Last success heartbeat"});
+  nebula::Row r({metaLeader.toString(), localTime});
   ds.emplace_back(std::move(r));
   finish(ds);
   return Status::OK();
