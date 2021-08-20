@@ -83,6 +83,11 @@ struct EdgeProp {
 }
 
 
+struct PropItem {
+    1: common.SchemaID  schema_id,
+    2: binary           prop_name,
+}
+
 // Define a vertex property
 struct VertexProp {
     // A valid tag id
@@ -101,10 +106,30 @@ enum OrderDirection {
 
 struct OrderBy {
     // An expression which result will be used to sort
-    1: binary           prop,
+    1: PropItem         prop,
     2: OrderDirection   direction,
 }
 
+enum AggOperator {
+    COUNT = 1,
+    SUN = 2,
+    MAX = 3,
+    MIN = 4,
+    AVG = 5,
+}
+
+struct Aggregation {
+    1: AggOperator op,
+    2: PropItem    prop,
+}
+
+struct GroupBy {
+    1: list<PropItem>  props,
+}
+
+struct DeDup {
+    1: list<PropItem>  props,
+}
 
 enum EdgeDirection {
     BOTH = 1,
@@ -129,29 +154,33 @@ struct TraverseSpec {
     //   will be traversed. If the edge_direction is IN_EDGE, then only the in-edges
     //   will be traversed. OUT_EDGE indicates only the out-edges will be traversed
     2: EdgeDirection                            edge_direction = EdgeDirection.BOTH,
-    // Whether to do the dedup based on the entire row. The dedup will be done on the
-    //   neighbors of each vertex
-    3: bool                                     dedup = false,
 
-    4: optional list<StatProp>                  stat_props,
+    3: optional list<StatProp>                  stat_props,
     // A list of source vertex properties to be returned. If the list is not given,
     //   no prop will be returned. If an empty prop list is given, all properties
     //   will be returned.
-    5: optional list<VertexProp>                vertex_props,
+    4: optional list<VertexProp>                vertex_props,
     // A list of edge properties to be returned. If the list is not given,
     //   no prop will be returned. If an empty prop list is given, all edge properties
     //   will be returned.
-    6: optional list<EdgeProp>                  edge_props,
+    5: optional list<EdgeProp>                  edge_props,
     // A list of expressions which are evaluated on each edge
-    7: optional list<Expr>                      expressions,
-    // A list of expressions used to sort the result
-    8: optional list<OrderBy>                   order_by,
-    // Combined with "limit", the random flag makes the result of each query different
-    9: optional bool                            random,
-    // Return the top/bottom N rows for each given vertex
-    10: optional i64                            limit,
+    6: optional list<Expr>                      expressions,
     // If provided, only the rows satified the given expression will be returned
-    11: optional binary                         filter,
+    7: optional binary                         filter,
+    // Return the top/bottom N rows for each given vertex
+    8: i64                                     limit = 0,
+    // Combined with "limit", the random flag makes the result of each query different
+    9: bool                                    random = false,
+    // A list of props used to sort the result
+    10: optional list<OrderBy>                 order_by,
+    // Whether to do the de-dup based on the given props. The de-dup will be done on the
+    // neighbors of given props
+    11: optional list<PropItem>                de_dup,
+    // A list of expressions for aggregation operation
+    12: optional list<Aggregation>             aggr_op,
+    // A list of props for group by some props.
+    13: optional list<PropItem>                group_by,
 }
 
 
@@ -251,14 +280,19 @@ struct GetPropRequest {
     4: optional list<EdgeProp>                  edge_props,
     // A list of expressions with alias
     5: optional list<Expr>                      expressions,
-    // Whether to do the dedup based on the entire result row
-    6: bool                                     dedup = false,
-    // List of expressions used by the order-by clause
-    7: optional list<OrderBy>                   order_by,
-    8: optional i64                             limit,
     // If a filter is provided, only vertices that are satisfied the filter
     // will be returned
-    9: optional binary                          filter,
+    6: optional binary                          filter,
+    // Return the top/bottom N rows for each given vertex
+    7: i64                                      limit = 0,
+    // A list of props used to sort the result
+    8: optional list<OrderBy>                   order_by,
+    // Whether to do the de-dup based on the given props.
+    9: optional list<PropItem>                  de_dup,
+    // A list of expressions for aggregation operation
+    10: optional list<Aggregation>              aggr_op,
+    // A list of props for group by some props.
+    11: optional list<PropItem>                 group_by,
 }
 
 
@@ -466,6 +500,11 @@ struct GetUUIDResp {
 /*
  * Start of Index section
  */
+struct LookupIndexIter {
+    1: common.PartitionID part_id,
+    2: binary             next_str,
+}
+
 struct LookupIndexResp {
     1: required ResponseCommon          result,
     // The result will be returned in a dataset, which is in the following form
@@ -477,6 +516,7 @@ struct LookupIndexResp {
     // Each column represents one peoperty. the column name is in the form of "tag_name.prop_alias"
     // or "edge_type_name.prop_alias" in the same order which specified in return_columns of request
     2: optional common.DataSet          data,
+    3: optional list<LookupIndexIter>   iter,
 }
 
 enum ScanType {
@@ -521,6 +561,15 @@ struct LookupIndexRequest {
     // The list of property names. Should not be empty.
     // Support kVid and kTag for vertex, kSrc, kType, kRank and kDst for edge.
     4: optional list<binary>                return_columns,
+    5: i64                                  limit = 0,
+    // A list of props used to sort the result
+    6: optional list<OrderBy>               order_by,
+    // Whether to do the de-dup based on the props.
+    7: optional list<PropItem>              de_dup,
+    // A list of expressions for aggregation operation
+    8: optional list<Aggregation>           aggr_op,
+    // A list of props for group by some props.
+    9: optional list<PropItem>              group_by,
 }
 
 
