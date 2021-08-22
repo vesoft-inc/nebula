@@ -201,6 +201,10 @@ TEST_F(FunctionManagerTest, testNull) {
   TEST_FUNCTION(substr, std::vector<Value>({"hello", 2, Value::kNullValue}), Value::kNullBadType);
   TEST_FUNCTION(substr, std::vector<Value>({"hello", -1, 10}), Value::kNullBadData);
   TEST_FUNCTION(substr, std::vector<Value>({"hello", 1, -2}), Value::kNullBadData);
+  TEST_FUNCTION(concat, std::vector<Value>({"hello", Value::kNullValue, -2}), Value::kNullValue);
+  TEST_FUNCTION(concat, args_["nullvalue"], Value::kNullValue);
+  TEST_FUNCTION(concat_ws, std::vector<Value>({Value::kNullValue, 1, 2}), Value::kNullValue);
+  TEST_FUNCTION(concat_ws, std::vector<Value>({1, 1, 2}), Value::kNullValue);
 }
 
 TEST_F(FunctionManagerTest, functionCall) {
@@ -307,6 +311,24 @@ TEST_F(FunctionManagerTest, functionCall) {
     TEST_FUNCTION(toString, args_["date"], "1984-10-11");
     TEST_FUNCTION(toString, args_["datetime"], "1984-10-11T12:31:14.341");
     TEST_FUNCTION(toString, args_["nullvalue"], Value::kNullValue);
+  }
+  {
+    Time time(9, 39, 21, 12);
+    Date date(2021, 10, 31);
+    DateTime dateTime(2021, 10, 31, 8, 5, 34, 29);
+    TEST_FUNCTION(concat, std::vector<Value>({"hello", 1, "world"}), "hello1world");
+    TEST_FUNCTION(concat, std::vector<Value>({true, 2, date}), "true22021-10-31");
+    TEST_FUNCTION(concat, std::vector<Value>({true, dateTime}), "true2021-10-31T08:05:34.29");
+    TEST_FUNCTION(concat, std::vector<Value>({2.3, time}), "2.309:39:21.000012");
+    TEST_FUNCTION(concat, args_["two"], "24");
+    TEST_FUNCTION(concat_ws, std::vector<Value>({",", 1}), "1");
+    TEST_FUNCTION(concat_ws, std::vector<Value>({"@", 1, "world"}), "1@world");
+    TEST_FUNCTION(concat_ws,
+                  std::vector<Value>({"AB", 1, true, Value::kNullValue, "world"}),
+                  "1ABtrueABworld");
+    TEST_FUNCTION(concat_ws,
+                  std::vector<Value>({".", 1, true, Value::kNullValue, "world", time}),
+                  "1.true.world.09:39:21.000012");
   }
   {
     TEST_FUNCTION(toBoolean, args_["int"], Value::kNullBadType);

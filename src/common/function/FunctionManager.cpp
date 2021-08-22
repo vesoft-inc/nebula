@@ -29,6 +29,12 @@ FunctionManager &FunctionManager::instance() {
   return instance;
 }
 
+std::unordered_map<std::string, Value::Type> FunctionManager::variadicFunReturnType_ = {
+    {"concat", Value::Type::STRING},
+    {"concat_ws", Value::Type::STRING},
+    {"cos_similarity", Value::Type::FLOAT},
+};
+
 std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typeSignature_ = {
     {"abs",
      {TypeSignature({Value::Type::INT}, Value::Type::INT),
@@ -303,6 +309,9 @@ StatusOr<Value::Type> FunctionManager::getReturnType(const std::string &funcName
                                                      const std::vector<Value::Type> &argsType) {
   auto func = funcName;
   std::transform(func.begin(), func.end(), func.begin(), ::tolower);
+  if (variadicFunReturnType_.find(func) != variadicFunReturnType_.end()) {
+    return variadicFunReturnType_[func];
+  }
   auto iter = typeSignature_.find(func);
   if (iter == typeSignature_.end()) {
     return Status::Error("Function `%s' not defined", funcName.c_str());
@@ -2143,6 +2152,91 @@ FunctionManager::FunctionManager() {
         return Value::kNullBadData;
       }
       return ds.rows[rowIndex][colIndex];
+    };
+  }
+  {
+    auto &attr = functions_["concat"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = INT64_MAX;
+    attr.isPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      std::stringstream os;
+      for (size_t i = 0; i < args.size(); ++i) {
+        switch (args[i].get().type()) {
+          case Value::Type::NULLVALUE: {
+            return Value::kNullValue;
+          }
+          case Value::Type::BOOL: {
+            os << (args[i].get().getBool() ? "true" : "false");
+            break;
+          }
+          case Value::Type::INT: {
+            os << args[i].get().getInt();
+            break;
+          }
+          case Value::Type::FLOAT: {
+            os << args[i].get().getFloat();
+            break;
+          }
+          case Value::Type::STRING: {
+            os << args[i].get().getStr();
+            break;
+          }
+          case Value::Type::DATETIME: {
+            os << args[i].get().getDateTime();
+            break;
+          }
+          case Value::Type::DATE: {
+            os << args[i].get().getDate();
+            break;
+          }
+          case Value::Type::TIME: {
+            os << args[i].get().getTime();
+            break;
+          }
+          default: {
+            return Value::kNullBadData;
+          }
+        }
+      }
+      return os.str();
+    };
+  }
+  {
+    auto &attr = functions_["concat_ws"];
+    attr.minArity_ = 2;
+    attr.maxArity_ = INT64_MAX;
+    attr.isPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      if (args[0].get().isNull() || !args[0].get().isStr()) {
+        return Value::kNullValue;
+      }
+      std::vector<std::string> result;
+      result.reserve(args.size() - 1);
+      for (size_t i = 1; i < args.size(); ++i) {
+        switch (args[i].get().type()) {
+          case Value::Type::NULLVALUE: {
+            continue;
+          }
+          case Value::Type::BOOL:
+          case Value::Type::INT:
+          case Value::Type::FLOAT:
+          case Value::Type::DATE:
+          case Value::Type::DATETIME:
+          case Value::Type::TIME: {
+            result.emplace_back(args[i].get().toString());
+            break;
+          }
+          case Value::Type::STRING: {
+            result.emplace_back(args[i].get().getStr());
+            break;
+          }
+          default: {
+            return Value::kNullBadData;
+          }
+        }
+      }
+      return folly::join(args[0].get().getStr(), result);
     };
   }
 }  // NOLINT
