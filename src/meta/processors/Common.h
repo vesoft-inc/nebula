@@ -62,6 +62,7 @@ class LockUtils {
   GENERATE_LOCK(lastUpdateTime);
   GENERATE_LOCK(space);
   GENERATE_LOCK(id);
+  GENERATE_LOCK(localId);
   GENERATE_LOCK(tag);
   GENERATE_LOCK(edge);
   GENERATE_LOCK(tagIndex);

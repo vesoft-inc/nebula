@@ -119,6 +119,10 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
     ftIter->next();
   }
 
+  // 7. Delete local_id meta data
+  auto localIdkey = MetaServiceUtils::localIdKey(spaceId);
+  deleteKeys.emplace_back(localIdkey);
+
   doSyncMultiRemoveAndUpdate(std::move(deleteKeys));
   LOG(INFO) << "Drop space " << spaceName << ", id " << spaceId;
 }

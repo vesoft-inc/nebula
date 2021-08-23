@@ -73,7 +73,7 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
     }
   }
 
-  auto edgeTypeRet = autoIncrementId();
+  auto edgeTypeRet = autoIncrementIdInSpace(spaceId);
   if (!nebula::ok(edgeTypeRet)) {
     LOG(ERROR) << "Create edge failed : Get edge type id failed";
     handleErrorCode(nebula::error(edgeTypeRet));
