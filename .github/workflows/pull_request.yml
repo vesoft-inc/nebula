@@ -121,16 +121,19 @@ jobs:
         run: ctest -j $(($(nproc)/2+1)) --timeout 400 --output-on-failure
         working-directory: build/
         timeout-minutes: 20
-      - name: Pytest
+      - name: Setup cluster
         run: |
           make up
+        working-directory: tests/
+        timeout-minutes: 2
+      - name: Pytest
+        run: |
           make RM_DIR=false DEBUG=false J=${{ steps.cmake.outputs.j }} test
           make down
         working-directory: tests/
         timeout-minutes: 15
       - name: TCK
         run: |
-          make up
           make RM_DIR=false DEBUG=false J=${{ steps.cmake.outputs.j }} tck
           make down
         working-directory: tests/
