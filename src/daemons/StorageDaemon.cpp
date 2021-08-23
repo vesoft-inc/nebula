@@ -4,6 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include <folly/ssl/Init.h>
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 
 #include "common/base/Base.h"
@@ -69,6 +70,9 @@ int main(int argc, char *argv[]) {
   }
 
   folly::init(&argc, &argv, true);
+  if (FLAGS_enable_ssl) {
+    folly::ssl::init();
+  }
   if (FLAGS_daemonize) {
     google::SetStderrLogging(google::FATAL);
   } else {

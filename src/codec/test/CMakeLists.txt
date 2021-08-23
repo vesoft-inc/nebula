@@ -31,6 +31,7 @@ set(CODEC_TEST_LIBS
     $<TARGET_OBJECTS:agg_function_manager_obj>
     $<TARGET_OBJECTS:time_utils_obj>
     $<TARGET_OBJECTS:version_obj>
+    $<TARGET_OBJECTS:ssl_obj>
 )
 
 

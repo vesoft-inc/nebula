@@ -6,11 +6,13 @@
 
 #pragma once
 
+#include <folly/io/async/AsyncSSLSocket.h>
 #include <folly/io/async/AsyncSocket.h>
 #include <folly/system/ThreadName.h>
 #include <thrift/lib/cpp2/async/HeaderClientChannel.h>
 
 #include "common/network/NetworkUtils.h"
+#include "common/ssl/SSLConfig.h"
 
 DECLARE_int32(conn_timeout_ms);
 
@@ -71,9 +73,16 @@ std::shared_ptr<ClientType> ThriftClientManager<ClientType>::client(const HostAd
 
   VLOG(2) << "Connecting to " << host << " for " << ++connectionCount << " times";
   std::shared_ptr<folly::AsyncSocket> socket;
+  if (FLAGS_enable_ssl) {
+    socket = folly::AsyncSSLSocket::newSocket(nebula::createSSLContext(), evb);
+  }
   evb->runImmediatelyOrRunInEventBaseThreadAndWait([&socket, evb, resolved]() {
-    socket =
-        folly::AsyncSocket::newSocket(evb, resolved.host, resolved.port, FLAGS_conn_timeout_ms);
+    if (FLAGS_enable_ssl) {
+      socket->connect(nullptr, resolved.host, resolved.port, FLAGS_conn_timeout_ms);
+    } else {
+      socket =
+          folly::AsyncSocket::newSocket(evb, resolved.host, resolved.port, FLAGS_conn_timeout_ms);
+    }
   });
   auto headerClientChannel = apache::thrift::HeaderClientChannel::newChannel(socket);
   if (timeout > 0) {

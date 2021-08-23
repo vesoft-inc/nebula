@@ -42,6 +42,7 @@ set(PARSER_TEST_LIBS
     $<TARGET_OBJECTS:validator_obj>
     $<TARGET_OBJECTS:idgenerator_obj>
     $<TARGET_OBJECTS:graph_obj>
+    $<TARGET_OBJECTS:ssl_obj>
 )
 
 nebula_add_test(

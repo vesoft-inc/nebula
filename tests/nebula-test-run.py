@@ -52,6 +52,14 @@ def init_parser():
                           dest='debug',
                           default=True,
                           help='Print verbose debug logs')
+    opt_parser.add_option('--enable_ssl',
+                          dest='enable_ssl',
+                          default=False,
+                          help='Wether enable SSL for cluster.')
+    opt_parser.add_option('--enable_graph_ssl',
+                          dest='enable_graph_ssl',
+                          default=False,
+                          help='Wether enable SSL for graph server.')
     return opt_parser
 
 
@@ -70,7 +78,7 @@ def start_nebula(nb, configs):
         nb.install()
         address = "localhost"
         debug = opt_is(configs.debug, "true")
-        ports = nb.start(debug_log=debug, multi_graphd=configs.multi_graphd)
+        ports = nb.start(debug_log=debug, multi_graphd=configs.multi_graphd, enable_ssl=configs.enable_ssl, enable_graph_ssl=configs.enable_graph_ssl)
 
     # Load csv data
     pool = get_conn_pool(address, ports[0])

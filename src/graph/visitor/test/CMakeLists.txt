@@ -56,6 +56,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:ft_es_graph_adapter_obj>
         $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:version_obj>
+        $<TARGET_OBJECTS:ssl_obj>
     LIBRARIES
         gtest
         ${THRIFT_LIBRARIES}

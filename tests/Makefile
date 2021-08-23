@@ -16,6 +16,8 @@ TEST_DIR ?= $(CURR_DIR)
 BUILD_DIR ?= $(CURR_DIR)/../build
 DEBUG ?= true
 J ?= 10
+ENABLE_SSL ?= false
+ENABLE_GRAPH_SSL ?= false
 
 install-deps:
 	pip3 install --user -U setuptools wheel -i $(PYPI_MIRROR)
@@ -49,7 +51,7 @@ check:
 
 up: clean
 	@mkdir -p $(CURR_DIR)/.pytest
-	PYTHONPATH=$$PYTHONPATH:$(CURR_DIR)/.. $(CURR_DIR)/nebula-test-run.py --cmd=start --rm_dir=$(RM_DIR) --build_dir=$(BUILD_DIR) --debug=$(DEBUG) --multi_graphd=true
+	PYTHONPATH=$$PYTHONPATH:$(CURR_DIR)/.. $(CURR_DIR)/nebula-test-run.py --cmd=start --rm_dir=$(RM_DIR) --build_dir=$(BUILD_DIR) --debug=$(DEBUG) --multi_graphd=true --enable_ssl=$(ENABLE_SSL) --enable_graph_ssl=$(ENABLE_GRAPH_SSL)
 
 down:
 	PYTHONPATH=$$PYTHONPATH:$(CURR_DIR)/.. $(CURR_DIR)/nebula-test-run.py --cmd=stop --rm_dir=$(RM_DIR)

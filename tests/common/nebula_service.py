@@ -60,6 +60,14 @@ class NebulaService(object):
         os.makedirs(resources_dir)
         shutil.copy(self.build_dir + '/../resources/gflags.json', resources_dir)
 
+        # cert files
+        shutil.copy(self.src_dir + '/tests/cert/test.ca.key',
+                    resources_dir)
+        shutil.copy(self.src_dir + '/tests/cert/test.ca.pem',
+                    resources_dir)
+        shutil.copy(self.src_dir + '/tests/cert/test.password',
+                    resources_dir)
+
     def _format_nebula_command(self, name, meta_port, ports, debug_log=True):
         params = [
             "--meta_server_addrs={}",
@@ -67,7 +75,10 @@ class NebulaService(object):
             "--ws_http_port={}",
             "--ws_h2_port={}",
             "--heartbeat_interval_secs=1",
-            "--expired_time_factor=60"
+            "--expired_time_factor=60",
+            '--cert_path=share/resources/test.ca.pem',
+            '--key_path=share/resources/test.ca.key',
+            '--password_path=share/resources/test.password',
         ]
         if name == 'graphd':
             params.append('--local_config=false')
@@ -150,7 +161,7 @@ class NebulaService(object):
             time.sleep(1)
         return False
 
-    def start(self, debug_log=True, multi_graphd=False):
+    def start(self, debug_log=True, multi_graphd=False, enable_ssl=False, enable_graph_ssl=False):
         os.chdir(self.work_dir)
 
         metad_ports = self._find_free_port()
@@ -187,6 +198,8 @@ class NebulaService(object):
             if server_name == 'graphd1':
                 command += ' --log_dir=logs1'
                 command += ' --pid_file=pids1/nebula-graphd.pid'
+            command += ' --enable_ssl={}'.format(enable_ssl)
+            command += ' --enable_graph_ssl={}'.format(enable_graph_ssl)
             print("exec: " + command)
             p = subprocess.Popen([command], shell=True, stdout=subprocess.PIPE)
             p.wait()

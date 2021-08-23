@@ -7,6 +7,7 @@
 #ifndef COMMON_THRIFT_THRIFTCLIENTMANAGER_H_
 #define COMMON_THRIFT_THRIFTCLIENTMANAGER_H_
 
+#include <folly/io/async/AsyncSocket.h>
 #include <folly/io/async/EventBaseManager.h>
 
 #include "common/base/Base.h"
