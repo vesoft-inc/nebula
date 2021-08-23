@@ -2,6 +2,7 @@
 #
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
+@jmq
 Feature: subgraph
 
   Background:
@@ -30,7 +31,7 @@ Feature: subgraph
     Then a SemanticError should be raised at runtime: Get Subgraph only support YIELD vertex OR edge
     When executing query:
       """
-      GET SUBGRAPH 0 STEPS WITH PROP FROM "Tim Duncan" YIELD edge
+      GET SUBGRAPH WITH PROP 0 STEPS FROM "Tim Duncan" YIELD edge
       """
     Then a SemanticError should be raised at runtime: Get Subgraph 0 STEPS only support YIELD vertex
     When executing query:
@@ -1032,6 +1033,6 @@ Feature: subgraph
       GET SUBGRAPH 1 STEPS FROM "Tom"
       """
     Then the result should be, in any order, with relax comparison:
-      | _vertices | _edges |
-      | [("Tom")] | []     |
-      | []        | []     |
+      | VERTEX    | EDGE |
+      | [("Tom")] | []   |
+      | []        | []   |

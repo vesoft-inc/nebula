@@ -30,13 +30,6 @@ Status GetSubgraphValidator::validateImpl() {
   NG_RETURN_IF_ERROR(validateOutBound(gsSentence->out()));
   NG_RETURN_IF_ERROR(validateBothInOutBound(gsSentence->both()));
   NG_RETURN_IF_ERROR(validateYield(gsSentence->yield()));
-  // set output col & type
-  if (subgraphCtx_->steps.steps() == 0) {
-    outputs_.emplace_back(kVertices, Value::Type::VERTEX);
-  } else {
-    outputs_.emplace_back(kVertices, Value::Type::VERTEX);
-    outputs_.emplace_back(kEdges, Value::Type::EDGE);
-  }
   return Status::OK();
 }
 
@@ -108,6 +101,17 @@ Status GetSubgraphValidator::validateBothInOutBound(BothInOutClause* out) {
 
 Status GetSubgraphValidator::validateYield(YieldClause* yield) {
   auto pool = qctx_->objPool();
+  if (yield == nullptr) {
+    // version 3.0: return Status::SemanticError("No Yield Clause");
+    auto* yieldColumns = new YieldColumns();
+    auto* vertex = new YieldColumn(VertexExpression::make(pool));
+    yieldColumns->addColumn(vertex);
+    if (subgraphCtx_->steps.steps() != 0) {
+      auto* edge = new YieldColumn(EdgeExpression::make(pool));
+      yieldColumns->addColumn(edge);
+    }
+    yield = pool->add(new YieldClause(yieldColumns));
+  }
   auto size = yield->columns().size();
   outputs_.reserve(size);
   YieldColumns* newCols = qctx_->objPool()->add(new YieldColumns());
@@ -115,21 +119,19 @@ Status GetSubgraphValidator::validateYield(YieldClause* yield) {
   for (const auto& col : yield->columns()) {
     if (col->expr()->kind() == Expression::Kind::kVertex) {
       subgraphCtx_->getVertexProp = true;
-      auto* newCol = new YieldColumn(InputPropertyExpression::make(pool, col->name()), col->name());
+      auto* newCol = new YieldColumn(InputPropertyExpression::make(pool, "VERTEX"), col->name());
       newCols->addColumn(newCol);
     } else if (col->expr()->kind() == Expression::Kind::kEdge) {
       if (subgraphCtx_->steps.steps() == 0) {
         return Status::SemanticError("Get Subgraph 0 STEPS only support YIELD vertex");
       }
       subgraphCtx_->getEdgeProp = true;
-      auto* newCol = new YieldColumn(InputPropertyExpression::make(pool, col->name()), col->name());
+      auto* newCol = new YieldColumn(InputPropertyExpression::make(pool, "EDGE"), col->name());
       newCols->addColumn(newCol);
     } else {
       return Status::SemanticError("Get Subgraph only support YIELD vertex OR edge");
     }
-    auto type = deduceExprType(col->expr());
-    NG_RETURN_IF_ERROR(type);
-    outputs_.emplace_back(col->name(), type.value());
+    outputs_.emplace_back(col->name(), Value::Type::LIST);
   }
   subgraphCtx_->yieldExpr = newCols;
   subgraphCtx_->colNames = getOutColNames();

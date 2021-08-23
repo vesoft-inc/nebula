@@ -658,12 +658,6 @@ expression
     | reduce_expression {
         $$ = $1;
     }
-    | KW_VERTEX {
-        $$ = VertexExpression::make(qctx->objPool());
-    }
-    | KW_EDGE {
-        $$ = EdgeExpression::make(qctx->objPool());
-    }
     ;
 
 constant_expression
@@ -1355,7 +1349,21 @@ yield_columns
     ;
 
 yield_column
-    : expression {
+    : KW_VERTEX {
+       $$ = new YieldColumn(VertexExpression::make(qctx->objPool()));
+    }
+    | KW_VERTEX KW_AS name_label {
+       $$ = new YieldColumn(VertexExpression::make(qctx->objPool()), *$3);
+       delete $3;
+    }
+    | KW_EDGE {
+       $$ = new YieldColumn(EdgeExpression::make(qctx->objPool()));
+    }
+    | KW_EDGE KW_AS name_label{
+       $$ = new YieldColumn(EdgeExpression::make(qctx->objPool()), *$3);
+       delete $3;
+    }
+    | expression {
         $$ = new YieldColumn($1);
     }
     | expression KW_AS name_label {
@@ -2053,16 +2061,6 @@ both_in_out_clause
 
 get_subgraph_sentence
     : KW_GET KW_SUBGRAPH opt_with_properites step_clause from_clause in_bound_clause out_bound_clause both_in_out_clause yield_clause {
-        if ($9 == nullptr) {
-            auto* yieldColumns = new YieldColumns();
-            auto* vertex = new YieldColumn(VertexExpression::make(qctx->objPool()));
-            yieldColumns->addColumn(vertex);
-            if ($4->steps() != 0) {
-              auto* edge = new YieldColumn(EdgeExpression::make(qctx->objPool()));
-              yieldColumns->addColumn(edge);
-            }
-            $9 = new YieldClause(yieldColumns);
-        }
         $$ = new GetSubgraphSentence($3, $4, $5, $6, $7, $8, $9);
     }
 

@@ -30,7 +30,7 @@ Feature: Integer Vid subgraph
     Then a SemanticError should be raised at runtime: Get Subgraph only support YIELD vertex OR edge
     When executing query:
       """
-      GET SUBGRAPH 0 STEPS WITH PROP FROM hash("Tim Duncan") YIELD edge
+      GET SUBGRAPH WITH PROP 0 STEPS FROM hash("Tim Duncan") YIELD edge
       """
     Then a SemanticError should be raised at runtime: Get Subgraph 0 STEPS only support YIELD vertex
     When executing query:
