@@ -319,7 +319,6 @@ Feature: Fetch Int Vid Vertices
       """
     Then a SyntaxError should be raised at runtime:
 
-
   Scenario: Different from v1.x
     When executing query:
       """
