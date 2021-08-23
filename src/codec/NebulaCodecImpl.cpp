@@ -22,7 +22,6 @@
   }
 
 namespace nebula {
-namespace dataman {
 
 std::string NebulaCodecImpl::encode(std::vector<Value> values,
                                     std::shared_ptr<const meta::SchemaProviderIf> schema) {
@@ -122,5 +121,4 @@ StatusOr<std::unordered_map<std::string, Value>> NebulaCodecImpl::decode(
   return result;
 }
 
-}  // namespace dataman
 }  // namespace nebula

@@ -35,7 +35,7 @@ folly::Future<Status> ProjectExecutor::execute() {
     ds.rows.emplace_back(std::move(row));
   }
   VLOG(1) << node()->outputVar() << ":" << ds;
-  return finish(ResultBuilder().value(Value(std::move(ds))).finish());
+  return finish(ResultBuilder().value(Value(std::move(ds))).build());
 }
 
 }  // namespace graph

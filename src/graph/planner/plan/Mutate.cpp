@@ -73,6 +73,14 @@ std::unique_ptr<PlanNodeDescription> DeleteVertices::explain() const {
   return desc;
 }
 
+std::unique_ptr<PlanNodeDescription> DeleteTags::explain() const {
+  auto desc = SingleInputNode::explain();
+  addDescription("space", folly::to<std::string>(space_), desc.get());
+  addDescription("vidRef", vidRef_ ? vidRef_->toString() : "", desc.get());
+  addDescription("delTags", folly::toJson(util::toJson(tagIds_)), desc.get());
+  return desc;
+}
+
 std::unique_ptr<PlanNodeDescription> DeleteEdges::explain() const {
   auto desc = SingleInputNode::explain();
   addDescription("space", folly::to<std::string>(space_), desc.get());

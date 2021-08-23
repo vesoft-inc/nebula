@@ -60,7 +60,7 @@ class UpdateVertexProcessor
   }
 
  private:
-  std::unique_ptr<RunTimeContext> context_;
+  std::unique_ptr<RuntimeContext> context_;
   bool insertable_{false};
 
   // update tagId

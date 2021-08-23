@@ -213,7 +213,7 @@ class ProduceAllPathsTest : public testing::Test {
                                  ResultBuilder()
                                      .value(Value(std::move(ds)))
                                      .iter(Iterator::Kind::kGetNeighbors)
-                                     .finish());
+                                     .build());
       }
     }
   }
@@ -240,7 +240,7 @@ TEST_F(ProduceAllPathsTest, AllPath) {
     List datasets;
     datasets.values.emplace_back(std::move(firstStepResult_));
     builder.value(std::move(datasets)).iter(Iterator::Kind::kGetNeighbors);
-    qctx_->ectx()->setResult("input", builder.finish());
+    qctx_->ectx()->setResult("input", builder.build());
 
     auto future = allPathsExe->execute();
     auto status = std::move(future).get();
@@ -321,7 +321,7 @@ TEST_F(ProduceAllPathsTest, AllPath) {
     List datasets;
     datasets.values.emplace_back(std::move(secondStepResult_));
     builder.value(std::move(datasets)).iter(Iterator::Kind::kGetNeighbors);
-    qctx_->ectx()->setResult("input", builder.finish());
+    qctx_->ectx()->setResult("input", builder.build());
 
     auto future = allPathsExe->execute();
     auto status = std::move(future).get();
@@ -411,7 +411,7 @@ TEST_F(ProduceAllPathsTest, AllPath) {
     List datasets;
     datasets.values.emplace_back(std::move(thridStepResult_));
     builder.value(std::move(datasets)).iter(Iterator::Kind::kGetNeighbors);
-    qctx_->ectx()->setResult("input", builder.finish());
+    qctx_->ectx()->setResult("input", builder.build());
 
     auto future = allPathsExe->execute();
     auto status = std::move(future).get();

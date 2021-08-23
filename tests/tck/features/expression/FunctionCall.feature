@@ -20,8 +20,7 @@ Feature: Function Call Expression
   Scenario: date related
     When executing query:
       """
-      YIELD timestamp("2000-10-10T10:00:00") AS a, date() AS b, time() AS c,
-            datetime() AS d
+      YIELD timestamp("2000-10-10T10:00:00") AS a, date() AS b, time() AS c, datetime() AS d
       """
     Then the result should be, in any order:
       | a       | b                      | c                            | d                                               |
@@ -40,3 +39,85 @@ Feature: Function Call Expression
     Then the result should be, in any order:
       | dt                           |
       | '2019-03-02T22:00:30.000000' |
+
+  Scenario: concat
+    When executing query:
+      """
+      GO FROM "Tim Duncan" over like YIELD concat(like._src, $^.player.age, $$.player.name, like.likeness) AS A
+      """
+    Then the result should be, in any order:
+      | A                             |
+      | "Tim Duncan42Manu Ginobili95" |
+      | "Tim Duncan42Tony Parker95"   |
+    When executing query:
+      """
+      GO FROM "Tim Duncan" over like YIELD concat(like._src, $^.player.age, null, like.likeness) AS A
+      """
+    Then the result should be, in any order:
+      | A    |
+      | NULL |
+      | NULL |
+    When executing query:
+      """
+      MATCH (a:player)-[b:serve]-(c:team{name: "Lakers"})
+      WHERE a.age > 45
+      RETURN  concat(a.name,c.name)
+      """
+    Then the result should be, in any order:
+      | concat(a.name,c.name)   |
+      | "Shaquile O'NealLakers" |
+    When executing query:
+      """
+      MATCH (a:player)-[b:serve]-(c:team{name: "Lakers"})
+      WHERE a.age > 45
+      RETURN  concat(a.name, "hello")
+      """
+    Then the result should be, in any order:
+      | concat(a.name,"hello") |
+      | "Shaquile O'Nealhello" |
+
+  Scenario: concat_ws
+    When executing query:
+      """
+      GO FROM "Tim Duncan" over like YIELD concat_ws("-",like._src, $^.player.age, $$.player.name, like.likeness) AS A
+      """
+    Then the result should be, in any order:
+      | A                                |
+      | "Tim Duncan-42-Manu Ginobili-95" |
+      | "Tim Duncan-42-Tony Parker-95"   |
+    When executing query:
+      """
+      MATCH (a:player)-[b:serve]-(c:team{name: "Lakers"})
+      WHERE a.age > 45
+      RETURN concat_ws("@",a.name, "hello", b.likeness, c.name) as result
+      """
+    Then the result should be, in any order:
+      | result                         |
+      | "Shaquile O'Neal@hello@Lakers" |
+    When executing query:
+      """
+      MATCH (a:player)-[b:serve]-(c:team{name: "Lakers"})
+      WHERE a.age > 45
+      RETURN concat_ws("@",a.name, NULL, "hello", b.likeness, c.name) as result
+      """
+    Then the result should be, in any order:
+      | result                         |
+      | "Shaquile O'Neal@hello@Lakers" |
+    When executing query:
+      """
+      MATCH (a:player)-[b:serve]-(c:team{name: "Lakers"})
+      WHERE a.age > 45
+      RETURN concat_ws(1,a.name, NULL, "hello", b.likeness, c.name) as result
+      """
+    Then the result should be, in any order:
+      | result |
+      | NULL   |
+    When executing query:
+      """
+      MATCH (a:player)-[b:serve]-(c:team{name: "Lakers"})
+      WHERE a.age > 45
+      RETURN concat_ws(NULL ,a.name, NULL, "hello", b.likeness, c.name) as result
+      """
+    Then the result should be, in any order:
+      | result |
+      | NULL   |

@@ -342,6 +342,9 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     case PlanNode::Kind::kDeleteVertices: {
       return pool->add(new DeleteVerticesExecutor(node, qctx));
     }
+    case PlanNode::Kind::kDeleteTags: {
+      return pool->add(new DeleteTagsExecutor(node, qctx));
+    }
     case PlanNode::Kind::kDeleteEdges: {
       return pool->add(new DeleteEdgesExecutor(node, qctx));
     }
@@ -610,7 +613,7 @@ Status Executor::finish(Result &&result) {
 }
 
 Status Executor::finish(Value &&value) {
-  return finish(ResultBuilder().value(std::move(value)).iter(Iterator::Kind::kDefault).finish());
+  return finish(ResultBuilder().value(std::move(value)).iter(Iterator::Kind::kDefault).build());
 }
 
 folly::Executor *Executor::runner() const {

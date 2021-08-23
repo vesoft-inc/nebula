@@ -11,7 +11,7 @@ namespace graph {
 
 const Result& Result::EmptyResult() {
   static Result kEmptyResult =
-      ResultBuilder().value(Value()).iter(Iterator::Kind::kDefault).finish();
+      ResultBuilder().value(Value()).iter(Iterator::Kind::kDefault).build();
   return kEmptyResult;
 }
 

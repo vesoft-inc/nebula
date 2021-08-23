@@ -114,6 +114,7 @@ Status PermissionCheck::permissionCheck(ClientSession *session,
     case Sentence::Kind::kInsertEdges:
     case Sentence::Kind::kUpdateEdge:
     case Sentence::Kind::kDeleteVertices:
+    case Sentence::Kind::kDeleteTags:
     case Sentence::Kind::kDeleteEdges: {
       return PermissionManager::canWriteData(session, vctx);
     }

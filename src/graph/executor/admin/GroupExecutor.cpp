@@ -66,7 +66,7 @@ folly::Future<Status> DescribeGroupExecutor::execute() {
         return finish(ResultBuilder()
                           .value(Value(std::move(dataSet)))
                           .iter(Iterator::Kind::kDefault)
-                          .finish());
+                          .build());
       });
 }
 
@@ -122,7 +122,7 @@ folly::Future<Status> ListGroupsExecutor::execute() {
         return finish(ResultBuilder()
                           .value(Value(std::move(dataSet)))
                           .iter(Iterator::Kind::kDefault)
-                          .finish());
+                          .build());
       });
 }
 
