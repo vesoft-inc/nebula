@@ -791,7 +791,7 @@ TEST(Value, TypeCast) {
 
     // fail to parse
     vi = Value("1.5.2E3").toInt();
-    EXPECT_EQ(1500, vi.getInt());
+    EXPECT_EQ(Value::kNullValue, vi);
 
     vi = Value("eeeEE").toInt();
     EXPECT_EQ(Value::kNullValue, vi);
