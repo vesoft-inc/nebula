@@ -51,7 +51,7 @@ void GetPropProcessor::doProcess(const cpp2::GetPropRequest& req) {
 }
 
 void GetPropProcessor::runInSingleThread(const cpp2::GetPropRequest& req) {
-  contexts_.emplace_back(RunTimeContext(planContext_.get()));
+  contexts_.emplace_back(RuntimeContext(planContext_.get()));
   std::unordered_set<PartitionID> failedParts;
   if (!isEdge_) {
     auto plan = buildTagPlan(&contexts_.front(), &resultDataSet_);
@@ -114,7 +114,7 @@ void GetPropProcessor::runInMultipleThread(const cpp2::GetPropRequest& req) {
   for (size_t i = 0; i < req.get_parts().size(); i++) {
     nebula::DataSet result = resultDataSet_;
     results_.emplace_back(std::move(result));
-    contexts_.emplace_back(RunTimeContext(planContext_.get()));
+    contexts_.emplace_back(RuntimeContext(planContext_.get()));
   }
   size_t i = 0;
   std::vector<folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>>> futures;
@@ -141,7 +141,7 @@ void GetPropProcessor::runInMultipleThread(const cpp2::GetPropRequest& req) {
 }
 
 folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetPropProcessor::runInExecutor(
-    RunTimeContext* context,
+    RuntimeContext* context,
     nebula::DataSet* result,
     PartitionID partId,
     const std::vector<nebula::Row>& rows) {
@@ -190,7 +190,7 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetPropProcessor:
   });
 }
 
-StoragePlan<VertexID> GetPropProcessor::buildTagPlan(RunTimeContext* context,
+StoragePlan<VertexID> GetPropProcessor::buildTagPlan(RuntimeContext* context,
                                                      nebula::DataSet* result) {
   StoragePlan<VertexID> plan;
   std::vector<TagNode*> tags;
@@ -207,7 +207,7 @@ StoragePlan<VertexID> GetPropProcessor::buildTagPlan(RunTimeContext* context,
   return plan;
 }
 
-StoragePlan<cpp2::EdgeKey> GetPropProcessor::buildEdgePlan(RunTimeContext* context,
+StoragePlan<cpp2::EdgeKey> GetPropProcessor::buildEdgePlan(RuntimeContext* context,
                                                            nebula::DataSet* result) {
   StoragePlan<cpp2::EdgeKey> plan;
   std::vector<EdgeNode<cpp2::EdgeKey>*> edges;

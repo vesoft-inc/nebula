@@ -32,7 +32,7 @@ folly::Future<Status> LimitExecutor::execute() {
     iter->eraseRange(0, offset);
   }
   builder.iter(std::move(result).iter());
-  return finish(builder.finish());
+  return finish(builder.build());
 }
 
 }  // namespace graph

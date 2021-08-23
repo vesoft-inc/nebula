@@ -22,7 +22,7 @@ namespace storage {
 template <typename T>
 class UpdateNode : public RelNode<T> {
  public:
-  UpdateNode(RunTimeContext* context,
+  UpdateNode(RuntimeContext* context,
              std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>> indexes,
              std::vector<storage::cpp2::UpdatedProp>& updatedProps,
              FilterNode<T>* filterNode,
@@ -120,7 +120,7 @@ class UpdateNode : public RelNode<T> {
  protected:
   // ============================ input
   // =====================================================
-  RunTimeContext* context_;
+  RuntimeContext* context_;
   std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>> indexes_;
   // update <prop name, new value expression>
   std::vector<storage::cpp2::UpdatedProp> updatedProps_;
@@ -153,7 +153,7 @@ class UpdateTagNode : public UpdateNode<VertexID> {
  public:
   using RelNode<VertexID>::execute;
 
-  UpdateTagNode(RunTimeContext* context,
+  UpdateTagNode(RuntimeContext* context,
                 std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>> indexes,
                 std::vector<storage::cpp2::UpdatedProp>& updatedProps,
                 FilterNode<VertexID>* filterNode,
@@ -430,7 +430,7 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
  public:
   using RelNode<cpp2::EdgeKey>::execute;
 
-  UpdateEdgeNode(RunTimeContext* context,
+  UpdateEdgeNode(RuntimeContext* context,
                  std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>> indexes,
                  std::vector<storage::cpp2::UpdatedProp>& updatedProps,
                  FilterNode<cpp2::EdgeKey>* filterNode,

@@ -100,7 +100,7 @@ class BFSShortestTest : public testing::Test {
       qctx_->symTable()->newVariable("empty_get_neighbors");
       qctx_->ectx()->setResult(
           "empty_get_neighbors",
-          ResultBuilder().value(Value(std::move(ds))).iter(Iterator::Kind::kGetNeighbors).finish());
+          ResultBuilder().value(Value(std::move(ds))).iter(Iterator::Kind::kGetNeighbors).build());
     }
   }
 
@@ -124,7 +124,7 @@ TEST_F(BFSShortestTest, BFSShortest) {
     List datasets;
     datasets.values.emplace_back(std::move(firstStepResult_));
     builder.value(std::move(datasets)).iter(Iterator::Kind::kGetNeighbors);
-    qctx_->ectx()->setResult("input", builder.finish());
+    qctx_->ectx()->setResult("input", builder.build());
 
     auto future = bfsExe->execute();
     auto status = std::move(future).get();
@@ -157,7 +157,7 @@ TEST_F(BFSShortestTest, BFSShortest) {
     List datasets;
     datasets.values.emplace_back(std::move(secondStepResult_));
     builder.value(std::move(datasets)).iter(Iterator::Kind::kGetNeighbors);
-    qctx_->ectx()->setResult("input", builder.finish());
+    qctx_->ectx()->setResult("input", builder.build());
 
     auto future = bfsExe->execute();
     auto status = std::move(future).get();

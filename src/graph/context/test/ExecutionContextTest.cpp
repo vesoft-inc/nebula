@@ -52,7 +52,7 @@ TEST(ExecutionContext, HistoryTest) {
 TEST(ExecutionContextTest, TestResult) {
   DataSet ds;
   auto expected =
-      ResultBuilder().value(Value(std::move(ds))).iter(Iterator::Kind::kDefault).finish();
+      ResultBuilder().value(Value(std::move(ds))).iter(Iterator::Kind::kDefault).build();
   ExecutionContext ctx;
   ctx.setResult("ds", std::move(expected));
   auto& result = ctx.getResult("ds");

@@ -18,7 +18,7 @@ class IndexScanNode : public RelNode<T> {
  public:
   using RelNode<T>::execute;
 
-  IndexScanNode(RunTimeContext* context,
+  IndexScanNode(RuntimeContext* context,
                 IndexID indexId,
                 std::vector<cpp2::IndexColumnHint> columnHints)
       : context_(context), indexId_(indexId), columnHints_(std::move(columnHints)) {
@@ -162,7 +162,7 @@ class IndexScanNode : public RelNode<T> {
   }
 
  private:
-  RunTimeContext* context_;
+  RuntimeContext* context_;
   IndexID indexId_;
   bool isRangeScan_{false};
   std::unique_ptr<IndexIterator> iter_;
