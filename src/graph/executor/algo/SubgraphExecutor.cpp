@@ -25,7 +25,7 @@ folly::Future<Status> SubgraphExecutor::execute() {
 
   if (currentStep == steps) {
     oneMoreStep();
-    return finish(ResultBuilder().value(Value(std::move(ds))).finish());
+    return finish(ResultBuilder().value(Value(std::move(ds))).build());
   }
 
   VLOG(1) << "input: " << subgraph->inputVar() << " output: " << node()->outputVar();
@@ -49,7 +49,7 @@ folly::Future<Status> SubgraphExecutor::execute() {
   }
 
   VLOG(1) << "Next step vid is : " << ds;
-  return finish(ResultBuilder().value(Value(std::move(ds))).finish());
+  return finish(ResultBuilder().value(Value(std::move(ds))).build());
 }
 
 void SubgraphExecutor::oneMoreStep() {
@@ -71,7 +71,7 @@ void SubgraphExecutor::oneMoreStep() {
   }
   iter->reset();
   builder.iter(std::move(iter));
-  ectx_->setResult(output, builder.finish());
+  ectx_->setResult(output, builder.build());
 }
 
 }  // namespace graph

@@ -35,7 +35,7 @@ folly::Future<Status> InnerJoinExecutor::join() {
 
   if (lhsIter_->empty() || rhsIter_->empty()) {
     result.colNames = join->colNames();
-    return finish(ResultBuilder().value(Value(std::move(result))).finish());
+    return finish(ResultBuilder().value(Value(std::move(result))).build());
   }
 
   if (hashKeys.size() == 1 && probeKeys.size() == 1) {
@@ -62,7 +62,7 @@ folly::Future<Status> InnerJoinExecutor::join() {
     }
   }
   result.colNames = join->colNames();
-  return finish(ResultBuilder().value(Value(std::move(result))).finish());
+  return finish(ResultBuilder().value(Value(std::move(result))).build());
 }
 
 DataSet InnerJoinExecutor::probe(

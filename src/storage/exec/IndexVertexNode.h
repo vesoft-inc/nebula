@@ -18,7 +18,7 @@ class IndexVertexNode final : public RelNode<T> {
  public:
   using RelNode<T>::execute;
 
-  IndexVertexNode(RunTimeContext* context,
+  IndexVertexNode(RuntimeContext* context,
                   IndexScanNode<T>* indexScanNode,
                   const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas,
                   const std::string& schemaName)
@@ -75,7 +75,7 @@ class IndexVertexNode final : public RelNode<T> {
   const std::string& getSchemaName() { return schemaName_; }
 
  private:
-  RunTimeContext* context_;
+  RuntimeContext* context_;
   IndexScanNode<T>* indexScanNode_;
   const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas_;
   const std::string& schemaName_;

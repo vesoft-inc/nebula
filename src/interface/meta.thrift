@@ -305,7 +305,7 @@ struct Correlativity {
     2: double             proportion,
 }
 
-struct StatisItem {
+struct StatsItem {
     // The number of vertices of tagName
     1: map<binary, i64>
         (cpp.template = "std::unordered_map") tag_vertices,
@@ -959,15 +959,15 @@ struct ListListenerResp {
     3: list<ListenerInfo>      listeners,
 }
 
-struct GetStatisReq {
+struct GetStatsReq {
     1: common.GraphSpaceID     space_id,
 }
 
-struct GetStatisResp {
+struct GetStatsResp {
     1: common.ErrorCode code,
     // Valid if ret equals E_LEADER_CHANGED.
     2: common.HostAddr  leader,
-    3: StatisItem       statis,
+    3: StatsItem        stats,
 }
 
 struct BackupInfo {
@@ -1148,7 +1148,7 @@ struct ReportTaskReq {
     1: common.ErrorCode     code,
     2: i32                  job_id,
     3: i32                  task_id,
-    4: optional StatisItem  statis
+    4: optional StatsItem   stats
 }
 
 struct ListClusterInfoResp {
@@ -1257,7 +1257,7 @@ service MetaService {
     ExecResp       removeListener(1: RemoveListenerReq req);
     ListListenerResp listListener(1: ListListenerReq req);
 
-    GetStatisResp  getStatis(1: GetStatisReq req);
+    GetStatsResp  getStats(1: GetStatsReq req);
     ExecResp signInFTService(1: SignInFTServiceReq req);
     ExecResp signOutFTService(1: SignOutFTServiceReq req);
     ListFTClientsResp listFTClients(1: ListFTClientsReq req);

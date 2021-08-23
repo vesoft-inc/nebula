@@ -57,14 +57,14 @@ std::string encode(const nebula::storage::cpp2::GetNeighborsResponse& resp) {
 }
 
 void initContext(std::unique_ptr<nebula::storage::PlanContext>& planCtx,
-                 std::unique_ptr<nebula::storage::RunTimeContext>& context,
+                 std::unique_ptr<nebula::storage::RuntimeContext>& context,
                  nebula::storage::EdgeContext& edgeContext,
                  const std::vector<std::string>& serveProps) {
   nebula::GraphSpaceID spaceId = 1;
   auto* env = gCluster->storageEnv_.get();
   auto vIdLen = env->schemaMan_->getSpaceVidLen(spaceId).value();
   planCtx = std::make_unique<nebula::storage::PlanContext>(env, spaceId, vIdLen, false);
-  context = std::make_unique<nebula::storage::RunTimeContext>(planCtx.get());
+  context = std::make_unique<nebula::storage::RuntimeContext>(planCtx.get());
 
   nebula::EdgeType serve = 101;
   edgeContext.schemas_ = std::move(env->schemaMan_->getAllVerEdgeSchema(spaceId)).value();
@@ -158,7 +158,7 @@ void goEdgeNode(int32_t iters,
                 const std::vector<std::string>& serveProps) {
   UNUSED(playerProps);
   std::unique_ptr<nebula::storage::PlanContext> planCtx;
-  std::unique_ptr<nebula::storage::RunTimeContext> context;
+  std::unique_ptr<nebula::storage::RuntimeContext> context;
   std::unique_ptr<nebula::storage::SingleEdgeNode> edgeNode;
   nebula::storage::EdgeContext edgeContext;
   BENCHMARK_SUSPEND {
@@ -213,7 +213,7 @@ void prefix(int32_t iters,
             const std::vector<std::string>& playerProps,
             const std::vector<std::string>& serveProps) {
   std::unique_ptr<nebula::storage::PlanContext> planCtx;
-  std::unique_ptr<nebula::storage::RunTimeContext> context;
+  std::unique_ptr<nebula::storage::RuntimeContext> context;
   nebula::storage::EdgeContext edgeContext;
   BENCHMARK_SUSPEND { initContext(planCtx, context, edgeContext, serveProps); }
   for (decltype(iters) i = 0; i < iters; i++) {

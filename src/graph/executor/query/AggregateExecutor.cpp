@@ -91,7 +91,7 @@ folly::Future<Status> AggregateExecutor::execute() {
     }
     ds.rows.emplace_back(std::move(row));
   }
-  return finish(ResultBuilder().value(Value(std::move(ds))).finish());
+  return finish(ResultBuilder().value(Value(std::move(ds))).build());
 }
 
 }  // namespace graph

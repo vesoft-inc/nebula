@@ -39,7 +39,7 @@ folly::Future<Status> UnwindExecutor::execute() {
     }
   }
   VLOG(1) << "Unwind result is: " << ds;
-  return finish(ResultBuilder().value(Value(std::move(ds))).finish());
+  return finish(ResultBuilder().value(Value(std::move(ds))).build());
 }
 
 std::vector<Value> UnwindExecutor::extractList(const Value &val) {

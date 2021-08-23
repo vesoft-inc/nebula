@@ -77,7 +77,7 @@ folly::Future<Status> DescEdgeIndexExecutor::execute() {
           return ret.status();
         }
         return finish(
-            ResultBuilder().value(std::move(ret).value()).iter(Iterator::Kind::kDefault).finish());
+            ResultBuilder().value(std::move(ret).value()).iter(Iterator::Kind::kDefault).build());
       });
 }
 
@@ -102,7 +102,7 @@ folly::Future<Status> ShowCreateEdgeIndexExecutor::execute() {
           return ret.status();
         }
         return finish(
-            ResultBuilder().value(std::move(ret).value()).iter(Iterator::Kind::kDefault).finish());
+            ResultBuilder().value(std::move(ret).value()).iter(Iterator::Kind::kDefault).build());
       });
 }
 
@@ -155,7 +155,7 @@ folly::Future<Status> ShowEdgeIndexesExecutor::execute() {
         return finish(ResultBuilder()
                           .value(Value(std::move(dataSet)))
                           .iter(Iterator::Kind::kDefault)
-                          .finish());
+                          .build());
       });
 }
 
@@ -184,7 +184,7 @@ folly::Future<Status> ShowEdgeIndexStatusExecutor::execute() {
         return finish(ResultBuilder()
                           .value(Value(std::move(dataSet)))
                           .iter(Iterator::Kind::kDefault)
-                          .finish());
+                          .build());
       });
 }
 

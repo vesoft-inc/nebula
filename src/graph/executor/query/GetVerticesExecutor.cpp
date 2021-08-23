@@ -30,7 +30,7 @@ folly::Future<Status> GetVerticesExecutor::getVertices() {
   if (vertices.rows.empty()) {
     // TODO: add test for empty input.
     return finish(
-        ResultBuilder().value(Value(DataSet(gv->colNames()))).iter(Iterator::Kind::kProp).finish());
+        ResultBuilder().value(Value(DataSet(gv->colNames()))).iter(Iterator::Kind::kProp).build());
   }
 
   time::Duration getPropsTime;
