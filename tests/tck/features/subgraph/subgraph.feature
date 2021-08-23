@@ -929,7 +929,6 @@ Feature: subgraph
       | <[vertex1]>   |
       | <[vertex2]>   |
       | [("Hornets")] |
-
     When executing query:
       """
       GET SUBGRAPH WITH PROP 2 STEPS FROM 'Tim Duncan' IN like, serve YIELD edge
