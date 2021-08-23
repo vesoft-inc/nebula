@@ -169,21 +169,5 @@ void ParserUtil::rewriteReduce(QueryContext *qctx,
   reduce->setMapping(newMapping);
 }
 
-// static
-void ParserUtil::rewriteYieldColumn(QueryContext *qctx, Expression *&expr) {
-  if (expr->kind() == Expression::Kind::kLabel) {
-    auto exprStr = expr->toString();
-    std::string lowerStr = exprStr;
-    folly::toLowerAscii(lowerStr);
-    if (lowerStr == "vertex") {
-      expr = VertexExpression::make(qctx->objPool());
-    } else if (lowerStr == "edge") {
-      expr = EdgeExpression::make(qctx->objPool());
-    } else if (lowerStr == "path") {
-      expr = PathBuildExpression::make(qctx->objPool());
-    }
-  }
-}
-
 }  // namespace graph
 }  // namespace nebula

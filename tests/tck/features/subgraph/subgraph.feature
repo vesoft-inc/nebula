@@ -20,6 +20,21 @@ Feature: subgraph
     Then a SemanticError should be raised at runtime: `$a.id', not exist variable `a'
     When executing query:
       """
+      GET SUBGRAPH WITH PROP FROM "Tim Duncan" YIELD vertexs
+      """
+    Then a SemanticError should be raised at runtime: Get Subgraph only support YIELD vertex OR edge
+    When executing query:
+      """
+      GET SUBGRAPH WITH PROP FROM "Tim Duncan" YIELD vertex, edgesa
+      """
+    Then a SemanticError should be raised at runtime: Get Subgraph only support YIELD vertex OR edge
+    When executing query:
+      """
+      GET SUBGRAPH 0 STEPS WITH PROP FROM "Tim Duncan" YIELD edge
+      """
+    Then a SemanticError should be raised at runtime: Get Subgraph 0 STEPS only support YIELD vertex
+    When executing query:
+      """
       GO FROM "Tim Duncan" OVER like YIELD $$.player.age AS id | GET SUBGRAPH WITH PROP FROM $-.id
       """
     Then a SemanticError should be raised at runtime: `$-.id', the srcs should be type of FIXED_STRING, but was`INT'
@@ -50,49 +65,49 @@ Feature: subgraph
       GET SUBGRAPH WITH PROP 0 STEPS FROM "Tim Duncan"
       """
     Then the result should be, in any order, with relax comparison:
-      | _vertices        |
+      | VERTEX           |
       | [("Tim Duncan")] |
     When executing query:
       """
       GET SUBGRAPH WITH PROP 0 STEPS FROM "Tim Duncan", "Spurs"
       """
     Then the result should be, in any order, with relax comparison:
-      | _vertices                   |
+      | VERTEX                      |
       | [("Tim Duncan"), ("Spurs")] |
     When executing query:
       """
       GET SUBGRAPH WITH PROP 0 STEPS FROM "Tim Duncan", "Tony Parker", "Spurs"
       """
     Then the result should be, in any order, with relax comparison:
-      | _vertices                                    |
+      | VERTEX                                       |
       | [("Tim Duncan"), ("Spurs"), ("Tony Parker")] |
     When executing query:
       """
       GO FROM 'Tim Duncan' over serve YIELD serve._dst AS id | GET SUBGRAPH WITH PROP 0 STEPS FROM $-.id
       """
     Then the result should be, in any order, with relax comparison:
-      | _vertices   |
+      | VERTEX      |
       | [("Spurs")] |
     When executing query:
       """
       GO FROM 'Tim Duncan' over like YIELD like._dst AS id | GET SUBGRAPH WITH PROP 0 STEPS FROM $-.id
       """
     Then the result should be, in any order, with relax comparison:
-      | _vertices                            |
+      | VERTEX                               |
       | [("Manu Ginobili"), ("Tony Parker")] |
     When executing query:
       """
       $a = GO FROM 'Tim Duncan' over serve YIELD serve._dst AS id; GET SUBGRAPH WITH PROP 0 STEPS FROM $a.id
       """
     Then the result should be, in any order, with relax comparison:
-      | _vertices   |
+      | VERTEX      |
       | [("Spurs")] |
     When executing query:
       """
       $a = GO FROM 'Tim Duncan' over like YIELD like._dst AS id; GET SUBGRAPH WITH PROP 0 STEPS FROM $a.id
       """
     Then the result should be, in any order, with relax comparison:
-      | _vertices                            |
+      | VERTEX                               |
       | [("Manu Ginobili"), ("Tony Parker")] |
 
   Scenario: subgraph
@@ -128,7 +143,7 @@ Feature: subgraph
       |                                                 |                       | [:like "Danny Green"->"Marco Belinelli"@0]       |
       |                                                 |                       | [:serve "Danny Green"->"Spurs"@0]                |
     Then the result should be, in any order, with relax comparison:
-      | _vertices        | _edges    |
+      | VERTEX           | EDGE      |
       | [("Tim Duncan")] | <[edge1]> |
       | <[vertex2]>      | <[edge2]> |
 
@@ -210,7 +225,7 @@ Feature: subgraph
       |                                                 |                       | [:serve "Tiago Splitter"->"76ers"@0]             |                       |                                               |
       |                                                 |                       | [:serve "Tiago Splitter"->"Hawks"@0]             |                       |                                               |
     Then the result should be, in any order, with relax comparison:
-      | _vertices        | _edges    |
+      | VERTEX           | EDGE      |
       | [("Tim Duncan")] | <[edge1]> |
       | <[vertex2]>      | <[edge2]> |
       | <[vertex3]>      | <[edge3]> |
@@ -240,7 +255,7 @@ Feature: subgraph
       |                                             |                       | [:like "Marco Belinelli"->"Tony Parker"@0]      |                    |
       |                                             |                       | [:like "Tim Duncan"->"Tony Parker"@0]           |                    |
     Then the result should be, in any order, with relax comparison:
-      | _vertices        | _edges    |
+      | VERTEX           | EDGE      |
       | [("Tim Duncan")] | <[edge1]> |
       | <[vertex2]>      | <[edge2]> |
       | <[vertex3]>      | []        |
@@ -306,7 +321,7 @@ Feature: subgraph
       |                                             |                       | [:like "Marco Belinelli"->"Tony Parker"@0]      |                    |                                              |
       |                                             |                       | [:like "Tim Duncan"->"Tony Parker"@0]           |                    |                                              |
     Then the result should be, in any order, with relax comparison:
-      | _vertices        | _edges    |
+      | VERTEX           | EDGE      |
       | [("Tim Duncan")] | <[edge1]> |
       | <[vertex2]>      | <[edge2]> |
       | <[vertex3]>      | <[edge3]> |
@@ -326,7 +341,7 @@ Feature: subgraph
       |                  |                                             |                   | [:teammate "Manu Ginobili"->"Tony Parker"@0] |             |
       |                  |                                             |                   | [:teammate "Tim Duncan"->"Tony Parker"@0]    |             |
     Then the result should be, in any order, with relax comparison:
-      | _vertices   | _edges    |
+      | VERTEX      | EDGE      |
       | <[vertex1]> | <[edge1]> |
       | <[vertex2]> | <[edge2]> |
       | <[vertex3]> | []        |
@@ -360,7 +375,7 @@ Feature: subgraph
       |                                              |                                                  |                                                |                     | [:serve "Chris Paul"->"Rockets"@0]         |
       |                                              |                                                  |                                                |                     | [:like "Chris Paul"->"LeBron James"@0]     |
     Then the result should be, in any order, with relax comparison:
-      | _vertices                                         | _edges    |
+      | VERTEX                                            | EDGE      |
       | [("Paul George")]                                 | <[edge1]> |
       | [("Russell Westbrook"), ("Pacers"), ("Thunders")] | <[edge2]> |
       | [("Dejounte Murray"), ("James Harden")]           | <[edge3]> |
@@ -382,7 +397,7 @@ Feature: subgraph
       | [:like "Tony Parker"->"Manu Ginobili"@0]     |                       | [:like "Dejounte Murray"->"Tim Duncan"@0]      |
       | [:like "Tony Parker"->"Tim Duncan"@0]        |                       | [:like "LaMarcus Aldridge"->"Tim Duncan"@0]    |
     Then the result should be, in any order, with relax comparison:
-      | _vertices         | _edges    |
+      | VERTEX            | EDGE      |
       | [("Tony Parker")] | <[edge1]> |
       | <[vertex2]>       | <[edge2]> |
 
@@ -419,7 +434,7 @@ Feature: subgraph
       |                                                 |                       | [:serve "Marco Belinelli"->"Spurs"@1]            |
       |                                                 |                       | [:like "Dejounte Murray"->"Marco Belinelli"@0]   |
     Then the result should be, in any order, with relax comparison:
-      | _vertices        | _edges    |
+      | VERTEX           | EDGE      |
       | [("Tim Duncan")] | <[edge1]> |
       | <[vertex2]>      | <[edge2]> |
 
@@ -457,7 +472,7 @@ Feature: subgraph
       |                                                 |                       | [:serve "Marco Belinelli"->"Spurs"@1]            |
       |                                                 |                       | [:like "Dejounte Murray"->"Marco Belinelli"@0]   |
     Then the result should be, in any order, with relax comparison:
-      | _vertices        | _edges    |
+      | VERTEX           | EDGE      |
       | [("Tim Duncan")] | <[edge1]> |
       | <[vertex2]>      | <[edge2]> |
 
@@ -467,7 +482,7 @@ Feature: subgraph
       GET SUBGRAPH WITH PROP 4 STEPS FROM 'Yao Ming' IN teammate OUT serve
       """
     Then the result should be, in any order, with relax comparison:
-      | _vertices      | _edges                             |
+      | VERTEX         | EDGE                               |
       | [("Yao Ming")] | [[:serve "Yao Ming"->"Rockets"@0]] |
       | [("Rockets")]  | []                                 |
     When executing query:
@@ -475,8 +490,8 @@ Feature: subgraph
       GET SUBGRAPH WITH PROP 4 STEPS FROM 'NOBODY' IN teammate OUT serve
       """
     Then the result should be, in any order, with relax comparison:
-      | _vertices    | _edges |
-      | [("NOBODY")] | []     |
+      | VERTEX       | EDGE |
+      | [("NOBODY")] | []   |
     When executing query:
       """
       GET SUBGRAPH WITH PROP 4 steps from 'Yao Ming' IN teammate OUT serve BOTH like
@@ -557,7 +572,7 @@ Feature: subgraph
       |                                         |                     |                                             |                  |                                             |                       | [:serve "Tiago Splitter"->"Hawks"@0]             |                       |                                               |
       |                                         |                     |                                             |                  |                                             |                       | [:serve "Tiago Splitter"->"Spurs"@0]             |                       |                                               |
     Then the result should be, in any order, with relax comparison:
-      | _vertices      | _edges    |
+      | VERTEX         | EDGE      |
       | [("Yao Ming")] | <[edge1]> |
       | <[vertex2]>    | <[edge2]> |
       | <[vertex3]>    | <[edge3]> |
@@ -625,7 +640,7 @@ Feature: subgraph
       |                                              |                       |                                                  |                       | [:like "Chris Paul"->"Carmelo Anthony"@0]     |                     |                                               |                        |                                              |                |                                      |
       |                                              |                       |                                                  |                       | [:like "Chris Paul"->"Dwyane Wade"@0]         |                     |                                               |                        |                                              |                |                                      |
     Then the result should be, in any order, with relax comparison:
-      | _vertices         | _edges    |
+      | VERTEX            | EDGE      |
       | [("Tony Parker")] | <[edge1]> |
       | <[vertex2]>       | <[edge2]> |
       | <[vertex3]>       | <[edge3]> |
@@ -662,7 +677,7 @@ Feature: subgraph
       |                                             |                       | [:like "Yao Ming"->"Shaquile O'Neal"@0]          |                       |                                               |                     |                                               |                        |
       |                                             |                       | [:like "Shaquile O'Neal"->"JaVale McGee"@0]      |                       |                                               |                     |                                               |                        |
     Then the result should be, in any order, with relax comparison:
-      | _vertices        | _edges    |
+      | VERTEX           | EDGE      |
       | [("Tim Duncan")] | <[edge1]> |
       | <[vertex2]>      | <[edge2]> |
       | <[vertex3]>      | <[edge3]> |
@@ -675,7 +690,7 @@ Feature: subgraph
       GET SUBGRAPH WITH PROP 10000000000000 STEPS FROM 'Yao Ming' IN teammate OUT serve
       """
     Then the result should be, in any order, with relax comparison:
-      | _vertices      | _edges                             |
+      | VERTEX         | EDGE                               |
       | [("Yao Ming")] | [[:serve "Yao Ming"->"Rockets"@0]] |
       | [("Rockets")]  | []                                 |
     When executing query:
@@ -683,7 +698,7 @@ Feature: subgraph
       GET SUBGRAPH 10000000000000 STEPS FROM 'Yao Ming' IN teammate OUT serve
       """
     Then the result should be, in any order, with relax comparison:
-      | _vertices      | _edges                             |
+      | VERTEX         | EDGE                               |
       | [("Yao Ming")] | [[:serve "Yao Ming"->"Rockets"@0]] |
       | [("Rockets")]  | []                                 |
 
@@ -693,7 +708,7 @@ Feature: subgraph
       GET SUBGRAPH 4 STEPS FROM 'Yao Ming' IN teammate OUT serve
       """
     Then the result should be, in any order, with relax comparison:
-      | _vertices      | _edges                             |
+      | VERTEX         | EDGE                               |
       | [("Yao Ming")] | [[:serve "Yao Ming"->"Rockets"@0]] |
       | [("Rockets")]  | []                                 |
     When executing query:
@@ -701,8 +716,8 @@ Feature: subgraph
       GET SUBGRAPH 4 STEPS FROM 'NOBODY' IN teammate OUT serve
       """
     Then the result should be, in any order, with relax comparison:
-      | _vertices    | _edges |
-      | [("NOBODY")] | []     |
+      | VERTEX       | EDGE |
+      | [("NOBODY")] | []   |
     When executing query:
       """
       GET SUBGRAPH 4 steps from 'Yao Ming' IN teammate OUT serve BOTH like
@@ -783,7 +798,7 @@ Feature: subgraph
       |                                         |                     |                                             |                  |                                             |                       | [:serve "Tiago Splitter"->"Hawks"@0]             |                       |                                               |
       |                                         |                     |                                             |                  |                                             |                       | [:serve "Tiago Splitter"->"Spurs"@0]             |                       |                                               |
     Then the result should be, in any order, with relax comparison:
-      | _vertices      | _edges    |
+      | VERTEX         | EDGE      |
       | [("Yao Ming")] | <[edge1]> |
       | <[vertex2]>    | <[edge2]> |
       | <[vertex3]>    | <[edge3]> |
@@ -851,7 +866,7 @@ Feature: subgraph
       |                                              |                       |                                                  |                       | [:like "Chris Paul"->"Carmelo Anthony"@0]     |                     |                                               |                        |                                              |                |                                      |
       |                                              |                       |                                                  |                       | [:like "Chris Paul"->"Dwyane Wade"@0]         |                     |                                               |                        |                                              |                |                                      |
     Then the result should be, in any order, with relax comparison:
-      | _vertices         | _edges    |
+      | VERTEX            | EDGE      |
       | [("Tony Parker")] | <[edge1]> |
       | <[vertex2]>       | <[edge2]> |
       | <[vertex3]>       | <[edge3]> |
@@ -888,7 +903,110 @@ Feature: subgraph
       |                                             |                       | [:like "Yao Ming"->"Shaquile O'Neal"@0]          |                       |                                               |                     |                                               |                        |
       |                                             |                       | [:like "Shaquile O'Neal"->"JaVale McGee"@0]      |                       |                                               |                     |                                               |                        |
     Then the result should be, in any order, with relax comparison:
-      | _vertices        | _edges    |
+      | VERTEX           | EDGE      |
+      | [("Tim Duncan")] | <[edge1]> |
+      | <[vertex2]>      | <[edge2]> |
+      | <[vertex3]>      | <[edge3]> |
+      | <[vertex4]>      | <[edge4]> |
+      | <[vertex5]>      | []        |
+
+  Scenario: subgraph yield vertex edge
+    When executing query:
+      """
+      GET SUBGRAPH WITH PROP 2 STEPS FROM 'Tim Duncan', 'James Harden' IN teammate OUT serve YIELD VERTEX
+      """
+    Then define some list variables:
+      | vertex1          | vertex2           |
+      | ("Tim Duncan")   | ("Manu Ginobili") |
+      | ("James Harden") | ("Tony Parker")   |
+      |                  | ("Spurs")         |
+      |                  | ("Rockets")       |
+      |                  | ("Thunders")      |
+      |                  |                   |
+      |                  |                   |
+    Then the result should be, in any order, with relax comparison:
+      | VERTEX        |
+      | <[vertex1]>   |
+      | <[vertex2]>   |
+      | [("Hornets")] |
+
+    When executing query:
+      """
+      GET SUBGRAPH WITH PROP 2 STEPS FROM 'Tim Duncan' IN like, serve YIELD edge
+      """
+    Then define some list variables:
+      | edge1                                       | edge2                                           |
+      | [:like "Aron Baynes"->"Tim Duncan"@0]       | [:like "Damian Lillard"->"LaMarcus Aldridge"@0] |
+      | [:like "Boris Diaw"->"Tim Duncan"@0]        | [:like "Rudy Gay"->"LaMarcus Aldridge"@0]       |
+      | [:like "Danny Green"->"Tim Duncan"@0]       | [:like "Tony Parker"->"LaMarcus Aldridge"@0]    |
+      | [:like "Dejounte Murray"->"Tim Duncan"@0]   | [:like "Dejounte Murray"->"Danny Green"@0]      |
+      | [:like "LaMarcus Aldridge"->"Tim Duncan"@0] | [:like "Marco Belinelli"->"Danny Green"@0]      |
+      | [:like "Manu Ginobili"->"Tim Duncan"@0]     | [:like "Danny Green"->"Marco Belinelli"@0]      |
+      | [:like "Marco Belinelli"->"Tim Duncan"@0]   | [:like "Dejounte Murray"->"Marco Belinelli"@0]  |
+      | [:like "Shaquile O'Neal"->"Tim Duncan"@0]   | [:like "Dejounte Murray"->"Manu Ginobili"@0]    |
+      | [:like "Tiago Splitter"->"Tim Duncan"@0]    | [:like "Tiago Splitter"->"Manu Ginobili"@0]     |
+      | [:like "Tony Parker"->"Tim Duncan"@0]       | [:like "Tim Duncan"->"Manu Ginobili"@0]         |
+      |                                             | [:like "Tony Parker"->"Manu Ginobili"@0]        |
+      |                                             | [:like "Yao Ming"->"Shaquile O'Neal"@0]         |
+      |                                             | [:like "Boris Diaw"->"Tony Parker"@0]           |
+      |                                             | [:like "Dejounte Murray"->"Tony Parker"@0]      |
+      |                                             | [:like "LaMarcus Aldridge"->"Tony Parker"@0]    |
+      |                                             | [:like "Marco Belinelli"->"Tony Parker"@0]      |
+      |                                             | [:like "Tim Duncan"->"Tony Parker"@0]           |
+    Then the result should be, in any order, with relax comparison:
+      | EDGE      |
+      | <[edge1]> |
+      | <[edge2]> |
+      | []        |
+    When executing query:
+      """
+      GET SUBGRAPH WITH PROP FROM 'Tony Parker' BOTH like YIELD edge, vertex
+      """
+    Then define some list variables:
+      | edge1                                        | vertex2               | edge2                                          |
+      | [:like "Boris Diaw"->"Tony Parker"@0]        | ("Manu Ginobili")     | [:like "Manu Ginobili"->"Tim Duncan"@0]        |
+      | [:like "Dejounte Murray"->"Tony Parker"@0]   | ("Marco Belinelli")   | [:like "Dejounte Murray"->"Marco Belinelli"@0] |
+      | [:like "LaMarcus Aldridge"->"Tony Parker"@0] | ("Tim Duncan")        | [:like "Marco Belinelli"->"Tim Duncan"@0]      |
+      | [:like "Marco Belinelli"->"Tony Parker"@0]   | ("Dejounte Murray")   | [:like "Tim Duncan"->"Manu Ginobili"@0]        |
+      | [:like "Tim Duncan"->"Tony Parker"@0]        | ("LaMarcus Aldridge") | [:like "Boris Diaw"->"Tim Duncan"@0]           |
+      | [:like "Tony Parker"->"LaMarcus Aldridge"@0] | ("Boris Diaw")        | [:like "Dejounte Murray"->"Manu Ginobili"@0]   |
+      | [:like "Tony Parker"->"Manu Ginobili"@0]     |                       | [:like "Dejounte Murray"->"Tim Duncan"@0]      |
+      | [:like "Tony Parker"->"Tim Duncan"@0]        |                       | [:like "LaMarcus Aldridge"->"Tim Duncan"@0]    |
+    Then the result should be, in any order, with relax comparison:
+      | EDGE      | VERTEX            |
+      | <[edge1]> | [("Tony Parker")] |
+      | <[edge2]> | <[vertex2]>       |
+    When executing query:
+      """
+      GET SUBGRAPH 4 steps from 'Tim Duncan' BOTH like YIELD VERTEX, EDGE
+      """
+    Then define some list variables:
+      | edge1                                       | vertex2               | edge2                                            | vertex3               | edge3                                         | vertex4             | edge4                                         | vertex5                |
+      | [:like "Aron Baynes"->"Tim Duncan"@0]       | ("LaMarcus Aldridge") | [:like "Damian Lillard"->"LaMarcus Aldridge"@0]  | ("Kevin Durant")      | [:like "Luka Doncic"->"James Harden"@0]       | ("Tracy McGrady")   | [:like "Grant Hill"->"Tracy McGrady"@0]       | ("Kobe Bryant")        |
+      | [:like "Boris Diaw"->"Tim Duncan"@0]        | ("Boris Diaw")        | [:like "Rudy Gay"->"LaMarcus Aldridge"@0]        | ("James Harden")      | [:like "Russell Westbrook"->"James Harden"@0] | ("Carmelo Anthony") | [:like "Vince Carter"->"Tracy McGrady"@0]     | ("Dirk Nowitzki")      |
+      | [:like "Danny Green"->"Tim Duncan"@0]       | ("Dejounte Murray")   | [:like "Tony Parker"->"LaMarcus Aldridge"@0]     | ("Chris Paul")        | [:like "James Harden"->"Russell Westbrook"@0] | ("Luka Doncic")     | [:like "Tracy McGrady"->"Grant Hill"@0]       | ("Grant Hill")         |
+      | [:like "Dejounte Murray"->"Tim Duncan"@0]   | ("Danny Green")       | [:like "LaMarcus Aldridge"->"Tony Parker"@0]     | ("Damian Lillard")    | [:like "Blake Griffin"->"Chris Paul"@0]       | ("Blake Griffin")   | [:like "Tracy McGrady"->"Kobe Bryant"@0]      | ("Vince Carter")       |
+      | [:like "LaMarcus Aldridge"->"Tim Duncan"@0] | ("Marco Belinelli")   | [:like "Boris Diaw"->"Tony Parker"@0]            | ("Rudy Gay")          | [:like "Carmelo Anthony"->"Chris Paul"@0]     | ("Dwyane Wade")     | [:like "Dwyane Wade"->"Carmelo Anthony"@0]    | ("Rajon Rondo")        |
+      | [:like "Manu Ginobili"->"Tim Duncan"@0]     | ("Aron Baynes")       | [:like "Dejounte Murray"->"Chris Paul"@0]        | ("Kyle Anderson")     | [:like "Dwyane Wade"->"Chris Paul"@0]         | ("Kyrie Irving")    | [:like "Carmelo Anthony"->"Dwyane Wade"@0]    | ("Kristaps Porzingis") |
+      | [:like "Marco Belinelli"->"Tim Duncan"@0]   | ("Manu Ginobili")     | [:like "Dejounte Murray"->"Danny Green"@0]       | ("LeBron James")      | [:like "Chris Paul"->"Carmelo Anthony"@0]     | ("Ray Allen")       | [:like "Kristaps Porzingis"->"Luka Doncic"@0] |                        |
+      | [:like "Shaquile O'Neal"->"Tim Duncan"@0]   | ("Tiago Splitter")    | [:like "Dejounte Murray"->"James Harden"@0]      | ("Russell Westbrook") | [:like "Chris Paul"->"Dwyane Wade"@0]         | ("Paul George")     | [:like "Luka Doncic"->"Dirk Nowitzki"@0]      |                        |
+      | [:like "Tiago Splitter"->"Tim Duncan"@0]    | ("Shaquile O'Neal")   | [:like "Dejounte Murray"->"Kevin Durant"@0]      | ("Yao Ming")          | [:like "Chris Paul"->"LeBron James"@0]        |                     | [:like "Luka Doncic"->"Kristaps Porzingis"@0] |                        |
+      | [:like "Tony Parker"->"Tim Duncan"@0]       | ("Tony Parker")       | [:like "Dejounte Murray"->"Kyle Anderson"@0]     | ("JaVale McGee")      | [:like "Tracy McGrady"->"Rudy Gay"@0]         |                     | [:like "Dirk Nowitzki"->"Dwyane Wade"@0]      |                        |
+      | [:like "Tim Duncan"->"Manu Ginobili"@0]     |                       | [:like "Dejounte Murray"->"LeBron James"@0]      |                       | [:like "Carmelo Anthony"->"LeBron James"@0]   |                     | [:like "Rajon Rondo"->"Ray Allen"@0]          |                        |
+      | [:like "Tim Duncan"->"Tony Parker"@0]       |                       | [:like "Dejounte Murray"->"Manu Ginobili"@0]     |                       | [:like "Dwyane Wade"->"LeBron James"@0]       |                     | [:like "Ray Allen"->"Rajon Rondo"@0]          |                        |
+      |                                             |                       | [:like "Dejounte Murray"->"Marco Belinelli"@0]   |                       | [:like "Kyrie Irving"->"LeBron James"@0]      |                     |                                               |                        |
+      |                                             |                       | [:like "Dejounte Murray"->"Russell Westbrook"@0] |                       | [:like "LeBron James"->"Ray Allen"@0]         |                     |                                               |                        |
+      |                                             |                       | [:like "Dejounte Murray"->"Tony Parker"@0]       |                       | [:like "Paul George"->"Russell Westbrook"@0]  |                     |                                               |                        |
+      |                                             |                       | [:like "Marco Belinelli"->"Danny Green"@0]       |                       | [:like "Russell Westbrook"->"Paul George"@0]  |                     |                                               |                        |
+      |                                             |                       | [:like "Danny Green"->"LeBron James"@0]          |                       | [:like "Yao Ming"->"Tracy McGrady"@0]         |                     |                                               |                        |
+      |                                             |                       | [:like "Danny Green"->"Marco Belinelli"@0]       |                       |                                               |                     |                                               |                        |
+      |                                             |                       | [:like "Marco Belinelli"->"Tony Parker"@0]       |                       |                                               |                     |                                               |                        |
+      |                                             |                       | [:like "Tiago Splitter"->"Manu Ginobili"@0]      |                       |                                               |                     |                                               |                        |
+      |                                             |                       | [:like "Tony Parker"->"Manu Ginobili"@0]         |                       |                                               |                     |                                               |                        |
+      |                                             |                       | [:like "Yao Ming"->"Shaquile O'Neal"@0]          |                       |                                               |                     |                                               |                        |
+      |                                             |                       | [:like "Shaquile O'Neal"->"JaVale McGee"@0]      |                       |                                               |                     |                                               |                        |
+    Then the result should be, in any order, with relax comparison:
+      | VERTEX           | EDGE      |
       | [("Tim Duncan")] | <[edge1]> |
       | <[vertex2]>      | <[edge2]> |
       | <[vertex3]>      | <[edge3]> |

@@ -1355,7 +1355,7 @@ yield_columns
     ;
 
 yield_column
-    | expression {
+    : expression {
         $$ = new YieldColumn($1);
     }
     | expression KW_AS name_label {
