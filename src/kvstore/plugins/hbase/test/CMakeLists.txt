@@ -7,7 +7,7 @@ nebula_add_test(
     OBJECTS
         $<TARGET_OBJECTS:hbasestore_obj>
         $<TARGET_OBJECTS:hbase_thrift_obj>
-        $<TARGET_OBJECTS:dataman_obj>
+        $<TARGET_OBJECTS:codec_obj>
         $<TARGET_OBJECTS:schema_obj>
         $<TARGET_OBJECTS:common_thrift_obj>
         $<TARGET_OBJECTS:thrift_obj>
@@ -36,7 +36,7 @@ nebula_add_test(
     OBJECTS
         $<TARGET_OBJECTS:hbasestore_obj>
         $<TARGET_OBJECTS:hbase_thrift_obj>
-        $<TARGET_OBJECTS:dataman_obj>
+        $<TARGET_OBJECTS:codec_obj>
         $<TARGET_OBJECTS:schema_obj>
         $<TARGET_OBJECTS:common_thrift_obj>
         $<TARGET_OBJECTS:thrift_obj>

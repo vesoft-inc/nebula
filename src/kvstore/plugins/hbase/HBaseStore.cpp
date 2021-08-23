@@ -67,7 +67,7 @@ std::shared_ptr<const meta::SchemaProviderIf> HBaseStore::getSchema(GraphSpaceID
 std::string HBaseStore::encode(GraphSpaceID spaceId, const std::string& key, KVMap& data) {
   std::string version = data[kSchemaVersionColumnName];
   auto schema = this->getSchema(spaceId, key, folly::to<SchemaVer>(version));
-  std::vector<dataman::Value> values;
+  std::vector<NebulaCodec::Value> values;
   for (size_t index = 0; index < schema->getNumFields(); index++) {
     auto fieldName = schema->getFieldName(index);
     if (UNLIKELY(nullptr == fieldName)) {
@@ -103,7 +103,7 @@ std::string HBaseStore::encode(GraphSpaceID spaceId, const std::string& key, KVM
       return "";
     }
   }
-  dataman::NebulaCodecImpl codec;
+  NebulaCodecImpl codec;
   return codec.encode(values, schema);
 }
 
@@ -111,7 +111,7 @@ std::vector<KV> HBaseStore::decode(GraphSpaceID spaceId,
                                    const std::string& key,
                                    std::string& encoded) {
   auto schema = this->getSchema(spaceId, key);
-  dataman::NebulaCodecImpl codec;
+  NebulaCodecImpl codec;
   auto result = codec.decode(encoded, schema).value();
   std::vector<KV> data;
   auto version = schema->getVersion();
@@ -121,7 +121,7 @@ std::vector<KV> HBaseStore::decode(GraphSpaceID spaceId,
     if (UNLIKELY(nullptr == fieldName)) {
       return std::vector<KV>();
     }
-    dataman::Value anyValue = result[fieldName];
+    NebulaCodec::Value anyValue = result[fieldName];
     std::string value;
     if (anyValue.type() == typeid(int32_t)) {
       value = folly::to<std::string>(boost::any_cast<int32_t>(anyValue));
