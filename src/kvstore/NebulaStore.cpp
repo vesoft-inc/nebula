@@ -346,7 +346,8 @@ std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
                                      workers_,
                                      snapshot_,
                                      clientMan_,
-                                     diskMan_);
+                                     diskMan_,
+                                     getSpaceVidLen(spaceId));
   std::vector<HostAddr> peers;
   if (defaultPeers.empty()) {
     // pull the information from meta
