@@ -37,6 +37,7 @@ reserved_key_words = [
     'KW_WHEN',
     'KW_DELETE',
     'KW_FIND',
+    'KW_PATH',
     'KW_LOOKUP',
     'KW_ALTER',
     'KW_STEPS',

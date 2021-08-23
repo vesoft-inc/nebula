@@ -496,7 +496,6 @@ unreserved_keyword
     | KW_BOTH               { $$ = new std::string("both"); }
     | KW_OUT                { $$ = new std::string("out"); }
     | KW_SUBGRAPH           { $$ = new std::string("subgraph"); }
-    | KW_PATH               { $$ = new std::string("path"); }
     | KW_THEN               { $$ = new std::string("then"); }
     | KW_ELSE               { $$ = new std::string("else"); }
     | KW_END                { $$ = new std::string("end"); }
@@ -1078,6 +1077,11 @@ argument_list
         Expression *arg = EdgeExpression::make(qctx->objPool());
         $$->addArgument(arg);
     }
+    | KW_PATH {
+        $$ = ArgumentList::make(qctx->objPool());
+        Expression *arg = PathBuildExpression::make(qctx->objPool());
+        $$->addArgument(arg);
+    }
     | expression {
         $$ = ArgumentList::make(qctx->objPool());
         Expression* arg = nullptr;
@@ -1436,6 +1440,14 @@ yield_column
     }
     | KW_EDGES KW_AS name_label {
         $$ = new YieldColumn(LabelExpression::make(qctx->objPool(), "EDGES"), *$3);
+        delete $3;
+    }
+    | KW_PATH {
+        $$ = nullptr;
+        throw nebula::GraphParser::syntax_error(@1, "please add alias when using path");
+    }
+    | KW_PATH KW_AS name_label {
+        $$ = new YieldColumn(PathBuildExpression::make(qctx->objPool()), *$3);
         delete $3;
     }
     | expression {
@@ -2077,31 +2089,34 @@ fetch_sentence
     ;
 
 find_path_sentence
-    : KW_FIND KW_ALL KW_PATH opt_with_properties from_clause to_clause over_clause where_clause find_path_upto_clause {
+    : KW_FIND KW_ALL KW_PATH opt_with_properites from_clause to_clause over_clause where_clause find_path_upto_clause yield_clause {
         auto *s = new FindPathSentence(false, $4, false);
         s->setFrom($5);
         s->setTo($6);
         s->setOver($7);
         s->setWhere($8);
         s->setStep($9);
+        s->setYield($10);
         $$ = s;
     }
-    | KW_FIND KW_SHORTEST KW_PATH opt_with_properties from_clause to_clause over_clause where_clause find_path_upto_clause {
+    | KW_FIND KW_SHORTEST KW_PATH opt_with_properites from_clause to_clause over_clause where_clause find_path_upto_clause yield_clause {
         auto *s = new FindPathSentence(true, $4, false);
         s->setFrom($5);
         s->setTo($6);
         s->setOver($7);
         s->setWhere($8);
         s->setStep($9);
+        s->setYield($10);
         $$ = s;
     }
-    | KW_FIND KW_NOLOOP KW_PATH opt_with_properties from_clause to_clause over_clause where_clause find_path_upto_clause {
+    | KW_FIND KW_NOLOOP KW_PATH opt_with_properites from_clause to_clause over_clause where_clause find_path_upto_clause yield_clause {
         auto *s = new FindPathSentence(false, $4, true);
         s->setFrom($5);
         s->setTo($6);
         s->setOver($7);
         s->setWhere($8);
         s->setStep($9);
+        s->setYield($10);
         $$ = s;
     }
     ;

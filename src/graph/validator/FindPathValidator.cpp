@@ -25,8 +25,8 @@ Status FindPathValidator::validateImpl() {
   NG_RETURN_IF_ERROR(ValidateUtil::validateOver(qctx_, fpSentence->over(), pathCtx_->over));
   NG_RETURN_IF_ERROR(validateWhere(fpSentence->where()));
   NG_RETURN_IF_ERROR(ValidateUtil::validateStep(fpSentence->step(), pathCtx_->steps));
+  NG_RETURN_IF_ERROR(validateYield(fpSentence->yield()));
 
-  outputs_.emplace_back("path", Value::Type::PATH);
   return Status::OK();
 }
 
@@ -60,6 +60,36 @@ Status FindPathValidator::validateWhere(WhereClause* where) {
 
   NG_RETURN_IF_ERROR(deduceProps(filter, pathCtx_->exprProps));
   pathCtx_->filter = filter;
+  return Status::OK();
+}
+
+Status FindPathValidator::validateYield(YieldClause* yield) {
+  auto pool = qctx_->objPool();
+  if (yield == nullptr) {
+    // TODO: compatible with previous version, this will be deprecated in version 3.0
+    auto* yieldColumns = new YieldColumns();
+    auto* pathExpr = new YieldColumn(PathBuildExpression::make(pool), "path");
+    yieldColumns->addColumn(pathExpr);
+    yield = pool->add(new YieldClause(yieldColumns));
+  }
+
+  YieldColumns* newCols = pool->add(new YieldColumns());
+  for (auto& col : yield->columns()) {
+    if (!ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kPathBuild})) {
+      return Status::SemanticError("illegal yield clauses `%s'", col->toString().c_str());
+    }
+    auto colExpr = col->expr();
+    auto typeStatus = deduceExprType(colExpr);
+    NG_RETURN_IF_ERROR(typeStatus);
+    outputs_.emplace_back(col->name(), typeStatus.value());
+    if (col->expr()->kind() == Expression::Kind::kPathBuild) {
+      auto* newCol = new YieldColumn(InputPropertyExpression::make(pool, "PATH"), col->name());
+      newCols->addColumn(newCol);
+    } else {
+      newCols->addColumn(col->clone().release());
+    }
+  }
+  pathCtx_->yieldExpr = newCols;
   return Status::OK();
 }
 

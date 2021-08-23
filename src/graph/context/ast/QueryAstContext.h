@@ -43,6 +43,7 @@ struct PathContext final : AstContext {
   StepClause steps;
   Over over;
   Expression* filter{nullptr};
+  YieldColumns* yieldExpr{nullptr};
 
   /*
    * find path from A to B OR find path from $-.src to $-.dst
