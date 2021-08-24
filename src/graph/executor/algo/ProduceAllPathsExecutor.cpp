@@ -52,7 +52,7 @@ folly::Future<Status> ProduceAllPathsExecutor::execute() {
     }
   }
   count_++;
-  return finish(ResultBuilder().value(Value(std::move(ds))).finish());
+  return finish(ResultBuilder().value(Value(std::move(ds))).build());
 }
 
 void ProduceAllPathsExecutor::createPaths(const Edge& edge, Interims& interims) {

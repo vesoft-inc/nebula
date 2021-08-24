@@ -54,7 +54,7 @@ folly::Future<Status> DescTagExecutor::execute() {
           return ret.status();
         }
         return finish(
-            ResultBuilder().value(std::move(ret).value()).iter(Iterator::Kind::kDefault).finish());
+            ResultBuilder().value(std::move(ret).value()).iter(Iterator::Kind::kDefault).build());
       });
 }
 
@@ -103,7 +103,7 @@ folly::Future<Status> ShowTagsExecutor::execute() {
         return finish(ResultBuilder()
                           .value(Value(std::move(dataSet)))
                           .iter(Iterator::Kind::kDefault)
-                          .finish());
+                          .build());
       });
 }
 
@@ -128,7 +128,7 @@ folly::Future<Status> ShowCreateTagExecutor::execute() {
           return ret.status();
         }
         return finish(
-            ResultBuilder().value(std::move(ret).value()).iter(Iterator::Kind::kDefault).finish());
+            ResultBuilder().value(std::move(ret).value()).iter(Iterator::Kind::kDefault).build());
       });
 }
 

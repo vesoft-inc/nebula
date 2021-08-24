@@ -35,9 +35,9 @@ class GetPropProcessor : public QueryBaseProcessor<cpp2::GetPropRequest, cpp2::G
       : QueryBaseProcessor<cpp2::GetPropRequest, cpp2::GetPropResponse>(env, counters, executor) {}
 
  private:
-  StoragePlan<VertexID> buildTagPlan(RunTimeContext* context, nebula::DataSet* result);
+  StoragePlan<VertexID> buildTagPlan(RuntimeContext* context, nebula::DataSet* result);
 
-  StoragePlan<cpp2::EdgeKey> buildEdgePlan(RunTimeContext* context, nebula::DataSet* result);
+  StoragePlan<cpp2::EdgeKey> buildEdgePlan(RuntimeContext* context, nebula::DataSet* result);
 
   void onProcessFinished() override;
 
@@ -57,13 +57,13 @@ class GetPropProcessor : public QueryBaseProcessor<cpp2::GetPropRequest, cpp2::G
   void runInMultipleThread(const cpp2::GetPropRequest& req);
 
   folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> runInExecutor(
-      RunTimeContext* context,
+      RuntimeContext* context,
       nebula::DataSet* result,
       PartitionID partId,
       const std::vector<nebula::Row>& rows);
 
  private:
-  std::vector<RunTimeContext> contexts_;
+  std::vector<RuntimeContext> contexts_;
   std::vector<nebula::DataSet> results_;
   bool isEdge_ = false;  // true for edge, false for tag
 };

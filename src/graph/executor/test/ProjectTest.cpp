@@ -33,7 +33,7 @@ class ProjectTest : public QueryTestBase {
       ResultBuilder builder;
       builder.value(Value(std::move(ds)));
       qctx_->symTable()->newVariable("input_project");
-      qctx_->ectx()->setResult("input_project", builder.finish());
+      qctx_->ectx()->setResult("input_project", builder.build());
     }
     {
       DataSet ds;
@@ -41,7 +41,7 @@ class ProjectTest : public QueryTestBase {
       ResultBuilder builder;
       builder.value(Value(std::move(ds)));
       qctx_->symTable()->newVariable("empty");
-      qctx_->ectx()->setResult("empty", builder.finish());
+      qctx_->ectx()->setResult("empty", builder.build());
     }
   }
 

@@ -85,12 +85,10 @@ class DataCollectTest : public testing::Test {
       ResultBuilder builder;
       builder.value(Value(std::move(datasets))).iter(Iterator::Kind::kGetNeighbors);
       qctx_->symTable()->newVariable("input_datasets");
-      qctx_->ectx()->setResult("input_datasets", builder.finish());
-      qctx_->ectx()->setResult("input_datasets",
-                               ResultBuilder()
-                                   .value(Value(std::move(ds2)))
-                                   .iter(Iterator::Kind::kGetNeighbors)
-                                   .finish());
+      qctx_->ectx()->setResult("input_datasets", builder.build());
+      qctx_->ectx()->setResult(
+          "input_datasets",
+          ResultBuilder().value(Value(std::move(ds2))).iter(Iterator::Kind::kGetNeighbors).build());
     }
     {
       DataSet ds;
@@ -103,7 +101,7 @@ class DataCollectTest : public testing::Test {
       }
       qctx_->symTable()->newVariable("input_sequential");
       qctx_->ectx()->setResult("input_sequential",
-                               ResultBuilder().value(Value(std::move(ds))).finish());
+                               ResultBuilder().value(Value(std::move(ds))).build());
     }
     {
       DataSet ds;
@@ -112,10 +110,10 @@ class DataCollectTest : public testing::Test {
       qctx_->symTable()->newVariable("empty_get_neighbors");
       qctx_->ectx()->setResult(
           "empty_get_neighbors",
-          ResultBuilder().value(Value(ds)).iter(Iterator::Kind::kGetNeighbors).finish());
+          ResultBuilder().value(Value(ds)).iter(Iterator::Kind::kGetNeighbors).build());
       qctx_->ectx()->setResult(
           "empty_get_neighbors",
-          ResultBuilder().value(Value(std::move(ds))).iter(Iterator::Kind::kGetNeighbors).finish());
+          ResultBuilder().value(Value(std::move(ds))).iter(Iterator::Kind::kGetNeighbors).build());
     }
     {
       // for path with prop
@@ -132,7 +130,7 @@ class DataCollectTest : public testing::Test {
       qctx_->symTable()->newVariable("vertices");
       qctx_->ectx()->setResult(
           "vertices",
-          ResultBuilder().value(Value(std::move(vertices))).iter(Iterator::Kind::kProp).finish());
+          ResultBuilder().value(Value(std::move(vertices))).iter(Iterator::Kind::kProp).build());
       DataSet edges;
       edges.colNames = {"like._src", "like._dst", "like._rank", "like._type", "like.likeness"};
       Row edge;
@@ -145,7 +143,7 @@ class DataCollectTest : public testing::Test {
       qctx_->symTable()->newVariable("edges");
       qctx_->ectx()->setResult(
           "edges",
-          ResultBuilder().value(Value(std::move(edges))).iter(Iterator::Kind::kProp).finish());
+          ResultBuilder().value(Value(std::move(edges))).iter(Iterator::Kind::kProp).build());
 
       DataSet paths;
       paths.colNames = {"paths"};
@@ -157,7 +155,7 @@ class DataCollectTest : public testing::Test {
       row.values.emplace_back(std::move(path));
       paths.rows.emplace_back(std::move(row));
       qctx_->symTable()->newVariable("paths");
-      qctx_->ectx()->setResult("paths", ResultBuilder().value(Value(std::move(paths))).finish());
+      qctx_->ectx()->setResult("paths", ResultBuilder().value(Value(std::move(paths))).build());
     }
   }
 

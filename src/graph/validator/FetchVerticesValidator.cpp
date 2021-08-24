@@ -238,7 +238,7 @@ Status FetchVerticesValidator::preparePropertiesWithoutYield() {
 // TODO(shylock) optimize dedup input when distinct given
 std::string FetchVerticesValidator::buildConstantInput() {
   auto input = vctx_->anonVarGen()->getVar();
-  qctx_->ectx()->setResult(input, ResultBuilder().value(Value(std::move(srcVids_))).finish());
+  qctx_->ectx()->setResult(input, ResultBuilder().value(Value(std::move(srcVids_))).build());
 
   auto *pool = qctx_->objPool();
   src_ = VariablePropertyExpression::make(pool, input, kVid);

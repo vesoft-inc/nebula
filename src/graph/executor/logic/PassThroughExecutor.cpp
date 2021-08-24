@@ -24,7 +24,7 @@ folly::Future<Status> PassThroughExecutor::execute() {
 
   DataSet ds;
   ds.colNames = node()->colNames();
-  return finish(ResultBuilder().value(Value(std::move(ds))).finish());
+  return finish(ResultBuilder().value(Value(std::move(ds))).build());
 }
 
 }  // namespace graph

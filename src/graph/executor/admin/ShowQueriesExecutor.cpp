@@ -42,7 +42,7 @@ folly::Future<Status> ShowQueriesExecutor::showCurrentSessionQueries() {
 
   addQueries(sessionInMeta, dataSet);
   return finish(
-      ResultBuilder().value(Value(std::move(dataSet))).iter(Iterator::Kind::kSequential).finish());
+      ResultBuilder().value(Value(std::move(dataSet))).iter(Iterator::Kind::kSequential).build());
 }
 
 // The queries might not sync to meta completely.
@@ -68,7 +68,7 @@ folly::Future<Status> ShowQueriesExecutor::showAllSessionQueries() {
         return finish(ResultBuilder()
                           .value(Value(std::move(dataSet)))
                           .iter(Iterator::Kind::kSequential)
-                          .finish());
+                          .build());
       });
 }
 
