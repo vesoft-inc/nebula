@@ -312,6 +312,12 @@ Feature: Fetch Int Vid Vertices
       GO FROM hash('Boris Diaw') over like YIELD like._dst as id, like._dst as id | FETCH PROP ON player $-.id YIELD player.name, player.age
       """
     Then a SemanticError should be raised at runtime:
+    # only constant list or single colume of data is allowed in piped FETCH clause
+    When executing query:
+      """
+      GO FROM 'Boris Diaw' over like YIELD like._src as src, like._dst as dst | FETCH PROP ON player $-.src, $-.dst;
+      """
+    Then a SyntaxError should be raised at runtime:
 
   Scenario: Different from v1.x
     When executing query:

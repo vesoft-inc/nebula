@@ -217,7 +217,7 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
 
   folly::Future<cpp2::ExecResp> future_restoreMeta(const cpp2::RestoreMetaReq& req) override;
 
-  folly::Future<cpp2::GetStatisResp> future_getStatis(const cpp2::GetStatisReq& req) override;
+  folly::Future<cpp2::GetStatsResp> future_getStats(const cpp2::GetStatsReq& req) override;
 
   folly::Future<cpp2::ExecResp> future_reportTaskFinish(const cpp2::ReportTaskReq& req) override;
 

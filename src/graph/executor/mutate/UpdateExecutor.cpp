@@ -76,7 +76,7 @@ folly::Future<Status> UpdateVertexExecutor::execute() {
           return finish(ResultBuilder()
                             .value(std::move(status).value())
                             .iter(Iterator::Kind::kDefault)
-                            .finish());
+                            .build());
         }
         return Status::OK();
       });
@@ -123,7 +123,7 @@ folly::Future<Status> UpdateEdgeExecutor::execute() {
           return finish(ResultBuilder()
                             .value(std::move(status).value())
                             .iter(Iterator::Kind::kDefault)
-                            .finish());
+                            .build());
         }
         return Status::OK();
       });

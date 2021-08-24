@@ -52,7 +52,7 @@ folly::Future<Status> ShowSessionsExecutor::listSessions() {
           row.emplace_back(session.get_client_ip());
           result.emplace_back(std::move(row));
         }
-        return finish(ResultBuilder().value(Value(std::move(result))).finish());
+        return finish(ResultBuilder().value(Value(std::move(result))).build());
       });
 }
 
@@ -75,7 +75,7 @@ folly::Future<Status> ShowSessionsExecutor::getSession(SessionID sessionId) {
             Row({"GraphAddr", network::NetworkUtils::toHostsStr({session.get_graph_addr()})}));
         result.emplace_back(Row({"Timezone", session.get_timezone()}));
         result.emplace_back(Row({"ClientIp", session.get_client_ip()}));
-        return finish(ResultBuilder().value(Value(std::move(result))).finish());
+        return finish(ResultBuilder().value(Value(std::move(result))).build());
       });
 }
 

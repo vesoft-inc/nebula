@@ -71,7 +71,7 @@ void GetNeighborsProcessor::doProcess(const cpp2::GetNeighborsRequest& req) {
 void GetNeighborsProcessor::runInSingleThread(const cpp2::GetNeighborsRequest& req,
                                               int64_t limit,
                                               bool random) {
-  contexts_.emplace_back(RunTimeContext(planContext_.get()));
+  contexts_.emplace_back(RuntimeContext(planContext_.get()));
   expCtxs_.emplace_back(StorageExpressionContext(spaceVidLen_, isIntId_));
   auto plan = buildPlan(&contexts_.front(), &expCtxs_.front(), &resultDataSet_, limit, random);
   std::unordered_set<PartitionID> failedParts;
@@ -109,7 +109,7 @@ void GetNeighborsProcessor::runInMultipleThread(const cpp2::GetNeighborsRequest&
   for (size_t i = 0; i < req.get_parts().size(); i++) {
     nebula::DataSet result = resultDataSet_;
     results_.emplace_back(std::move(result));
-    contexts_.emplace_back(RunTimeContext(planContext_.get()));
+    contexts_.emplace_back(RuntimeContext(planContext_.get()));
     expCtxs_.emplace_back(StorageExpressionContext(spaceVidLen_, isIntId_));
   }
   size_t i = 0;
@@ -138,7 +138,7 @@ void GetNeighborsProcessor::runInMultipleThread(const cpp2::GetNeighborsRequest&
 }
 
 folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetNeighborsProcessor::runInExecutor(
-    RunTimeContext* context,
+    RuntimeContext* context,
     StorageExpressionContext* expCtx,
     nebula::DataSet* result,
     PartitionID partId,
@@ -168,7 +168,7 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetNeighborsProce
       });
 }
 
-StoragePlan<VertexID> GetNeighborsProcessor::buildPlan(RunTimeContext* context,
+StoragePlan<VertexID> GetNeighborsProcessor::buildPlan(RuntimeContext* context,
                                                        StorageExpressionContext* expCtx,
                                                        nebula::DataSet* result,
                                                        int64_t limit,

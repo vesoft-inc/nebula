@@ -655,7 +655,7 @@ service GraphStorageService {
 // Common response for admin methods
 struct AdminExecResp {
     1: required ResponseCommon   result,
-    2: optional meta.StatisItem  statis,
+    2: optional meta.StatsItem  stats,
 }
 
 

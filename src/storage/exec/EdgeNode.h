@@ -32,7 +32,7 @@ class EdgeNode : public IterateNode<T> {
   const std::string& getEdgeName() { return edgeName_; }
 
  protected:
-  EdgeNode(RunTimeContext* context,
+  EdgeNode(RuntimeContext* context,
            EdgeContext* edgeContext,
            EdgeType edgeType,
            const std::vector<PropContext>* props,
@@ -54,9 +54,9 @@ class EdgeNode : public IterateNode<T> {
     edgeName_ = edgeContext_->edgeNames_[edgeType_];
   }
 
-  EdgeNode(RunTimeContext* context, EdgeContext* ctx) : context_(context), edgeContext_(ctx) {}
+  EdgeNode(RuntimeContext* context, EdgeContext* ctx) : context_(context), edgeContext_(ctx) {}
 
-  RunTimeContext* context_;
+  RuntimeContext* context_;
   EdgeContext* edgeContext_;
   EdgeType edgeType_;
   const std::vector<PropContext>* props_;
@@ -73,7 +73,7 @@ class FetchEdgeNode final : public EdgeNode<cpp2::EdgeKey> {
  public:
   using RelNode::execute;
 
-  FetchEdgeNode(RunTimeContext* context,
+  FetchEdgeNode(RuntimeContext* context,
                 EdgeContext* edgeContext,
                 EdgeType edgeType,
                 const std::vector<PropContext>* props,
@@ -144,7 +144,7 @@ class FetchEdgeNode final : public EdgeNode<cpp2::EdgeKey> {
 class SingleEdgeNode final : public EdgeNode<VertexID> {
  public:
   using RelNode::execute;
-  SingleEdgeNode(RunTimeContext* context,
+  SingleEdgeNode(RuntimeContext* context,
                  EdgeContext* edgeContext,
                  EdgeType edgeType,
                  const std::vector<PropContext>* props,
