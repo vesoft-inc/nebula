@@ -43,6 +43,16 @@ Status SequentialValidator::validateImpl() {
       break;
   }
 
+  for (const auto& sentence : sentences) {
+    switch (sentence->kind()) {
+      case Sentence::Kind::kLimit:
+        return Status::SemanticError("Don't allowed dangle Limit sentence.");
+      default:
+        // nothing
+        break;
+    }
+  }
+
   seqAstCtx_->startNode = StartNode::make(seqAstCtx_->qctx);
   for (auto* sentence : sentences) {
     auto validator = makeValidator(sentence, qctx_);
