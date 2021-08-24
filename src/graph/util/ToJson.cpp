@@ -162,6 +162,14 @@ folly::dynamic toJson(const storage::cpp2::UpdatedProp &prop) {
   return folly::dynamic::object("name", prop.get_name())("value", prop.get_value());
 }
 
+folly::dynamic toJson(const storage::cpp2::PropItem &propItem) {
+  auto schemaId = propItem.get_schema_id().getType() == nebula::cpp2::SchemaID::Type::tag_id
+                      ? propItem.get_schema_id().get_tag_id()
+                      : propItem.get_schema_id().get_edge_type();
+  return folly::dynamic::object("schema", folly::to<std::string>(schemaId))(
+      "prop", *propItem.prop_name_ref());
+}
+
 folly::dynamic toJson(const storage::cpp2::OrderBy &orderBy) {
   folly::dynamic obj = folly::dynamic::object();
   if (orderBy.direction_ref().is_set()) {
@@ -169,10 +177,12 @@ folly::dynamic toJson(const storage::cpp2::OrderBy &orderBy) {
     obj.insert("direction", apache::thrift::util::enumNameSafe(dir));
   }
   if (orderBy.prop_ref().is_set()) {
-    obj.insert("prop", *orderBy.prop_ref());
+    obj.insert("propItem", toJson(*orderBy.prop_ref()));
   }
   return obj;
 }
+
+// TODO (sky) : Group By
 
 folly::dynamic toJson(const storage::cpp2::VertexProp &prop) {
   folly::dynamic obj = folly::dynamic::object();

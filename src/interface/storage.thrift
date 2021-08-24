@@ -38,6 +38,12 @@ struct ResponseCommon {
 }
 
 
+struct PropItem {
+    1: common.SchemaID  schema_id,
+    2: binary           prop_name,
+}
+
+
 /*
  *
  * Common types used by all services
@@ -101,7 +107,7 @@ enum OrderDirection {
 
 struct OrderBy {
     // An expression which result will be used to sort
-    1: binary           prop,
+    1: PropItem         prop,
     2: OrderDirection   direction,
 }
 
@@ -110,6 +116,25 @@ enum EdgeDirection {
     BOTH = 1,
     IN_EDGE = 2,
     OUT_EDGE = 3,
+}
+
+
+enum AggOperator {
+    COUNT = 1,
+    SUN = 2,
+    MAX = 3,
+    MIN = 4,
+}
+
+
+struct Aggregation {
+    1: AggOperator op,
+    2: PropItem    prop,
+}
+
+
+struct GroupBy {
+    1: list<PropItem>  props,
 }
 
 
@@ -152,6 +177,10 @@ struct TraverseSpec {
     10: optional i64                            limit,
     // If provided, only the rows satified the given expression will be returned
     11: optional binary                         filter,
+    // Aggregation operation by props : max|min|count|sum
+    12: optional list<Aggregation>              aggr_op,
+    // A list of props for group by some props.
+    13: optional list<PropItem>                 group_by,
 }
 
 
@@ -259,6 +288,10 @@ struct GetPropRequest {
     // If a filter is provided, only vertices that are satisfied the filter
     // will be returned
     9: optional binary                          filter,
+    // A list of props for aggregation operation
+    10: optional list<Aggregation>              aggr_op,
+    // A list of props for group by some props.
+    11: optional list<PropItem>                 group_by,
 }
 
 
@@ -521,6 +554,15 @@ struct LookupIndexRequest {
     // The list of property names. Should not be empty.
     // Support kVid and kTag for vertex, kSrc, kType, kRank and kDst for edge.
     4: optional list<binary>                return_columns,
+    // Whether to do the dedup based on the entire result row
+    5: bool                                 dedup = false,
+    // List of props used by the order-by clause
+    6: optional list<OrderBy>               order_by,
+    7: optional i64                         limit,
+    // List of props for aggregation operation
+    10: optional list<Aggregation>          aggr_op,
+    // List of props for group by some props.
+    11: optional list<PropItem>             group_by,
 }
 
 
