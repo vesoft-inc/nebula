@@ -63,7 +63,9 @@ jobs:
     steps:
       - name: Cleanup
         if: ${{ always() }}
-        run: rm -rf *
+        run: 
+          make -C tests/ down
+          rm -rf *
       - uses: actions/checkout@v2
       - name: Prepare environment
         id: prepare
@@ -129,13 +131,11 @@ jobs:
       - name: Pytest
         run: |
           make RM_DIR=false DEBUG=false J=${{ steps.cmake.outputs.j }} test
-          make down
         working-directory: tests/
         timeout-minutes: 15
       - name: TCK
         run: |
           make RM_DIR=false DEBUG=false J=${{ steps.cmake.outputs.j }} tck
-          make down
         working-directory: tests/
         timeout-minutes: 30
       - name: Sanitizer
