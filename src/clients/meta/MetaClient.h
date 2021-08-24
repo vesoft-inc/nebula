@@ -8,8 +8,13 @@
 #define CLIENTS_META_METACLIENT_H_
 
 #include <folly/RWSpinLock.h>
+#include <folly/container/F14Map.h>
+#include <folly/container/F14Set.h>
 #include <folly/executors/IOThreadPoolExecutor.h>
+#include <folly/synchronization/Rcu.h>
 #include <gtest/gtest_prod.h>
+
+#include <atomic>
 
 #include "common/base/Base.h"
 #include "common/base/Status.h"
@@ -751,9 +756,8 @@ class MetaClient {
   MetaClientOptions options_;
   std::vector<HostAddr> storageHosts_;
   int64_t heartbeatTime_;
-  SessionMap sessionMap_;
-  folly::RWSpinLock sessionLock_;
-  std::set<std::pair<SessionID, ExecutionPlanID>> killedPlans_;
+  std::atomic<SessionMap*> sessionMap_;
+  std::atomic<folly::F14FastSet<std::pair<SessionID, ExecutionPlanID>>*> killedPlans_;
 };
 
 }  // namespace meta

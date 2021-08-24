@@ -391,7 +391,7 @@ enum ErrorCode {
     E_USER_CANCEL                     = -3052,
     E_TASK_EXECUTION_FAILED           = -3053,
 
-    E_PLAN_IS_KILLED                  = -3054,
+    E_PLAN_IS_KILLED                  = -3060,
 
     E_UNKNOWN                         = -8000,
 } (cpp.enum_strict)

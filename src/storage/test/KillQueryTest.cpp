@@ -13,13 +13,14 @@
 #include "storage/query/GetNeighborsProcessor.h"
 #include "storage/test/QueryTestUtils.h"
 
+DECLARE_int32(check_plan_killed_frequency);
 namespace nebula {
 namespace meta {
 class KillQueryMetaWrapper {
  public:
   explicit KillQueryMetaWrapper(MetaClient* client) : client_(client) {}
   void killQuery(SessionID session_id, ExecutionPlanID plan_id) {
-    client_->killedPlans_.emplace(session_id, plan_id);
+    client_->killedPlans_.load()->emplace(session_id, plan_id);
   }
 
  private:
@@ -31,6 +32,7 @@ namespace storage {
 class KillQueryTest : public ::testing::Test {
  protected:
   void SetUp() override {
+    FLAGS_check_plan_killed_frequency = 1;
     storagePath_ = new fs::TempDir("/tmp/KillQueryTest.storage.XXXXXX");
     cluster_ = new mock::MockCluster{};
     cluster_->initStorageKV(storagePath_->path());
