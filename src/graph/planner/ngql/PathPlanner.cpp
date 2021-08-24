@@ -254,7 +254,7 @@ PlanNode* PathPlanner::singlePairPath(PlanNode* dep, bool reverse) {
   row.values.emplace_back(starts.vids.front());
   row.values.emplace_back(Value::kEmpty);
   ds.rows.emplace_back(std::move(row));
-  qctx->ectx()->setResult(vidsVar, ResultBuilder().value(Value(std::move(ds))).finish());
+  qctx->ectx()->setResult(vidsVar, ResultBuilder().value(Value(std::move(ds))).build());
   return path;
 }
 

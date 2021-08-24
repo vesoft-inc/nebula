@@ -206,9 +206,9 @@ nebula_add_test(
 
 nebula_add_test(
     NAME
-        get_statis_test
+        get_stats_test
     SOURCES
-        GetStatisTest.cpp
+        GetStatsTest.cpp
     OBJECTS
         ${meta_test_deps}
     LIBRARIES

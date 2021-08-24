@@ -3151,15 +3151,15 @@ folly::Future<StatusOr<std::vector<cpp2::Group>>> MetaClient::listGroups() {
   return future;
 }
 
-folly::Future<StatusOr<cpp2::StatisItem>> MetaClient::getStatis(GraphSpaceID spaceId) {
-  cpp2::GetStatisReq req;
+folly::Future<StatusOr<cpp2::StatsItem>> MetaClient::getStats(GraphSpaceID spaceId) {
+  cpp2::GetStatsReq req;
   req.set_space_id(spaceId);
-  folly::Promise<StatusOr<cpp2::StatisItem>> promise;
+  folly::Promise<StatusOr<cpp2::StatsItem>> promise;
   auto future = promise.getFuture();
   getResponse(
       std::move(req),
-      [](auto client, auto request) { return client->future_getStatis(request); },
-      [](cpp2::GetStatisResp&& resp) -> cpp2::StatisItem { return std::move(resp).get_statis(); },
+      [](auto client, auto request) { return client->future_getStats(request); },
+      [](cpp2::GetStatsResp&& resp) -> cpp2::StatsItem { return std::move(resp).get_stats(); },
       std::move(promise),
       true);
   return future;
@@ -3169,13 +3169,13 @@ folly::Future<StatusOr<nebula::cpp2::ErrorCode>> MetaClient::reportTaskFinish(
     int32_t jobId,
     int32_t taskId,
     nebula::cpp2::ErrorCode taskErrCode,
-    cpp2::StatisItem* statisticItem) {
+    cpp2::StatsItem* statisticItem) {
   cpp2::ReportTaskReq req;
   req.set_code(taskErrCode);
   req.set_job_id(jobId);
   req.set_task_id(taskId);
   if (statisticItem) {
-    req.set_statis(*statisticItem);
+    req.set_stats(*statisticItem);
   }
   folly::Promise<StatusOr<nebula::cpp2::ErrorCode>> pro;
   auto fut = pro.getFuture();

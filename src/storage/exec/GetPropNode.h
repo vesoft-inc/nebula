@@ -18,7 +18,7 @@ class GetTagPropNode : public QueryNode<VertexID> {
  public:
   using RelNode<VertexID>::execute;
 
-  explicit GetTagPropNode(RunTimeContext* context,
+  explicit GetTagPropNode(RuntimeContext* context,
                           std::vector<TagNode*> tagNodes,
                           nebula::DataSet* resultDataSet)
       : context_(context), tagNodes_(std::move(tagNodes)), resultDataSet_(resultDataSet) {}
@@ -73,7 +73,7 @@ class GetTagPropNode : public QueryNode<VertexID> {
   }
 
  private:
-  RunTimeContext* context_;
+  RuntimeContext* context_;
   std::vector<TagNode*> tagNodes_;
   nebula::DataSet* resultDataSet_;
 };
@@ -82,7 +82,7 @@ class GetEdgePropNode : public QueryNode<cpp2::EdgeKey> {
  public:
   using RelNode::execute;
 
-  GetEdgePropNode(RunTimeContext* context,
+  GetEdgePropNode(RuntimeContext* context,
                   std::vector<EdgeNode<cpp2::EdgeKey>*> edgeNodes,
                   nebula::DataSet* resultDataSet)
       : context_(context), edgeNodes_(std::move(edgeNodes)), resultDataSet_(resultDataSet) {}
@@ -124,7 +124,7 @@ class GetEdgePropNode : public QueryNode<cpp2::EdgeKey> {
   }
 
  private:
-  RunTimeContext* context_;
+  RuntimeContext* context_;
   std::vector<EdgeNode<cpp2::EdgeKey>*> edgeNodes_;
   nebula::DataSet* resultDataSet_;
 };

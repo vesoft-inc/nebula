@@ -15,7 +15,7 @@ constexpr int64_t ExecutionContext::kPreviousOneVersion;
 void ExecutionContext::setValue(const std::string& name, Value&& val) {
   ResultBuilder builder;
   builder.value(std::move(val)).iter(Iterator::Kind::kDefault);
-  setResult(name, builder.finish());
+  setResult(name, builder.build());
 }
 
 void ExecutionContext::setResult(const std::string& name, Result&& result) {
