@@ -59,11 +59,12 @@ Feature: TypeConversion Expression
     When executing query:
       """
       YIELD [toInteger(true), toInteger(false), toInteger(1), toInteger(3.14),
-      toInteger("trUe"), toInteger("3.14"), toInteger(null)] AS yield_toInteger
+      toInteger("trUe"), toInteger("3.14"), toInteger(null), toInteger("1e3"),
+      toInteger("1E3"), toInteger("1.5E4")] AS yield_toInteger
       """
     Then the result should be, in any order:
-      | yield_toInteger                           |
-      | [BAD_TYPE, BAD_TYPE, 1, 3, NULL, 3, NULL] |
+      | yield_toInteger                                              |
+      | [BAD_TYPE, BAD_TYPE, 1, 3, NULL, 3, NULL, 1000, 1000, 15000] |
     When executing query:
       """
       UNWIND [true, false, 1, 3.14, "trUe", "3.14", null] AS b

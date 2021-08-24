@@ -36,7 +36,7 @@ class StorageIterator {
 class SingleEdgeIterator : public StorageIterator {
  public:
   SingleEdgeIterator() = default;
-  SingleEdgeIterator(RunTimeContext* context,
+  SingleEdgeIterator(RuntimeContext* context,
                      std::unique_ptr<kvstore::KVIterator> iter,
                      EdgeType edgeType,
                      const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>* schemas,
@@ -91,7 +91,7 @@ class SingleEdgeIterator : public StorageIterator {
     return true;
   }
 
-  RunTimeContext* context_;
+  RuntimeContext* context_;
   std::unique_ptr<kvstore::KVIterator> iter_;
   EdgeType edgeType_;
   const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>* schemas_ = nullptr;

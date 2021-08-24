@@ -25,7 +25,7 @@ class HashJoinNode : public IterateNode<VertexID> {
  public:
   using RelNode::execute;
 
-  HashJoinNode(RunTimeContext* context,
+  HashJoinNode(RuntimeContext* context,
                const std::vector<TagNode*>& tagNodes,
                const std::vector<SingleEdgeNode*>& edgeNodes,
                TagContext* tagContext,
@@ -147,7 +147,7 @@ class HashJoinNode : public IterateNode<VertexID> {
   }
 
  private:
-  RunTimeContext* context_;
+  RuntimeContext* context_;
   std::vector<TagNode*> tagNodes_;
   std::vector<SingleEdgeNode*> edgeNodes_;
   TagContext* tagContext_;

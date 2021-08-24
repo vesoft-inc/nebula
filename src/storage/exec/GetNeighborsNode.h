@@ -24,7 +24,7 @@ class GetNeighborsNode : public QueryNode<VertexID> {
  public:
   using RelNode::execute;
 
-  GetNeighborsNode(RunTimeContext* context,
+  GetNeighborsNode(RuntimeContext* context,
                    IterateNode<VertexID>* hashJoinNode,
                    IterateNode<VertexID>* upstream,
                    EdgeContext* edgeContext,
@@ -116,7 +116,7 @@ class GetNeighborsNode : public QueryNode<VertexID> {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
-  RunTimeContext* context_;
+  RuntimeContext* context_;
   IterateNode<VertexID>* hashJoinNode_;
   IterateNode<VertexID>* upstream_;
   EdgeContext* edgeContext_;
@@ -126,7 +126,7 @@ class GetNeighborsNode : public QueryNode<VertexID> {
 
 class GetNeighborsSampleNode : public GetNeighborsNode {
  public:
-  GetNeighborsSampleNode(RunTimeContext* context,
+  GetNeighborsSampleNode(RuntimeContext* context,
                          IterateNode<VertexID>* hashJoinNode,
                          IterateNode<VertexID>* upstream,
                          EdgeContext* edgeContext,

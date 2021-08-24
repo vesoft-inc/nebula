@@ -19,7 +19,7 @@
 #include "meta/processors/job/RebuildEdgeJobExecutor.h"
 #include "meta/processors/job/RebuildFTJobExecutor.h"
 #include "meta/processors/job/RebuildTagJobExecutor.h"
-#include "meta/processors/job/StatisJobExecutor.h"
+#include "meta/processors/job/StatsJobExecutor.h"
 #include "meta/processors/job/TaskDescription.h"
 
 DECLARE_int32(heartbeat_interval_secs);
@@ -48,7 +48,7 @@ std::unique_ptr<MetaJobExecutor> MetaJobExecutorFactory::createMetaJobExecutor(
       ret.reset(new RebuildFTJobExecutor(jd.getJobId(), store, client, jd.getParas()));
       break;
     case cpp2::AdminCmd::STATS:
-      ret.reset(new StatisJobExecutor(jd.getJobId(), store, client, jd.getParas()));
+      ret.reset(new StatsJobExecutor(jd.getJobId(), store, client, jd.getParas()));
       break;
     default:
       break;

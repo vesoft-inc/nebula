@@ -23,7 +23,7 @@ nebula::cpp2::ErrorCode LookupBaseProcessor<REQ, RESP>::requestCheck(
       std::make_unique<PlanContext>(this->env_, spaceId_, this->spaceVidLen_, this->isIntId_);
   const auto& indices = req.get_indices();
   this->planContext_->isEdge_ = indices.get_is_edge();
-  this->context_ = std::make_unique<RunTimeContext>(this->planContext_.get());
+  this->context_ = std::make_unique<RuntimeContext>(this->planContext_.get());
   if (context_->isEdge()) {
     context_->edgeType_ = indices.get_tag_or_edge_id();
     auto edgeName = this->env_->schemaMan_->toEdgeName(spaceId_, context_->edgeType_);
