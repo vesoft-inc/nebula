@@ -20,7 +20,7 @@ Status GoValidator::validateImpl() {
   goCtx_ = getContext<GoContext>();
   goCtx_->inputVarName = inputVarName_;
 
-  NG_RETURN_IF_ERROR(validateStep(goSentence->stepClause(), goCtx_->steps));
+  NG_RETURN_IF_ERROR(ValidateUtil::validateStep(goSentence->stepClause(), goCtx_->steps));
   NG_RETURN_IF_ERROR(validateStarts(goSentence->fromClause(), goCtx_->from));
   NG_RETURN_IF_ERROR(validateOver(goSentence->overClause(), goCtx_->over));
   NG_RETURN_IF_ERROR(validateWhere(goSentence->whereClause()));
@@ -116,9 +116,6 @@ Status GoValidator::validateTruncate(TruncateClause* truncate) {
 }
 
 Status GoValidator::validateYield(YieldClause* yield) {
-  if (yield == nullptr) {
-    return Status::SemanticError("Yield clause nullptr.");
-  }
   goCtx_->distinct = yield->isDistinct();
   const auto& over = goCtx_->over;
   auto* pool = qctx_->objPool();
@@ -140,7 +137,7 @@ Status GoValidator::validateYield(YieldClause* yield) {
 
   for (auto col : cols) {
     col->setExpr(ExpressionUtils::rewriteLabelAttr2EdgeProp(col->expr()));
-    NG_RETURN_IF_ERROR(invalidLabelIdentifiers(col->expr()));
+    NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(col->expr()));
 
     auto* colExpr = col->expr();
     if (graph::ExpressionUtils::findAny(colExpr, {Expression::Kind::kAggregate})) {

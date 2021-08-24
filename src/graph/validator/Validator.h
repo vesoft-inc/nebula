@@ -136,6 +136,8 @@ class Validator {
 
   Status invalidLabelIdentifiers(const Expression* expr) const;
 
+  Status validateStarts(const VerticesClause* clause, Starts& starts);
+
   template <typename T>
   std::unique_ptr<T> getContext() const {
     auto ctx = std::make_unique<T>();

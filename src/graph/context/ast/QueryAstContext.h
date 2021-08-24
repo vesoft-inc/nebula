@@ -128,6 +128,14 @@ struct SubgraphContext final : public AstContext {
   bool getEdgeProp{false};
 };
 
+struct FetchVerticesContext final : public AstContext {
+  Starts from;
+  bool distince{false};
+  YieldColumns* yieldExpr{nullptr};
+  ExpressionProps exprProps;
+  std::vector<std::string> colNames;
+};
+
 }  // namespace graph
 }  // namespace nebula
 #endif  // GRAPH_CONTEXT_AST_QUERYASTCONTEXT_H_

@@ -24,7 +24,7 @@ Status FindPathValidator::validateImpl() {
   NG_RETURN_IF_ERROR(validateStarts(fpSentence->to(), pathCtx_->to));
   NG_RETURN_IF_ERROR(validateOver(fpSentence->over(), pathCtx_->over));
   NG_RETURN_IF_ERROR(validateWhere(fpSentence->where()));
-  NG_RETURN_IF_ERROR(validateStep(fpSentence->step(), pathCtx_->steps));
+  NG_RETURN_IF_ERROR(ValidateUtil::validateStep(fpSentence->step(), pathCtx_->steps));
 
   outputs_.emplace_back("path", Value::Type::PATH);
   return Status::OK();

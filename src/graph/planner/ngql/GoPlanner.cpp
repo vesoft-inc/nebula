@@ -9,7 +9,7 @@
 #include "graph/planner/plan/Algo.h"
 #include "graph/planner/plan/Logic.h"
 #include "graph/util/ExpressionUtils.h"
-#include "graph/util/QueryUtil.h"
+#include "graph/util/PlannerUtil.h"
 #include "graph/util/SchemaUtil.h"
 #include "graph/validator/Validator.h"
 
@@ -395,7 +395,7 @@ SubPlan GoPlanner::nStepsPlan(SubPlan& startVidPlan) {
   gn->setEdgeProps(buildEdgeProps(true));
   gn->setInputVar(goCtx_->vidsVar);
 
-  auto* getDst = QueryUtil::extractDstFromGN(qctx, gn, goCtx_->vidsVar);
+  auto* getDst = PlannerUtil::extractDstFromGN(qctx, gn, goCtx_->vidsVar);
 
   PlanNode* loopBody = getDst;
   PlanNode* loopDep = nullptr;
@@ -429,7 +429,7 @@ SubPlan GoPlanner::mToNStepsPlan(SubPlan& startVidPlan) {
   gn->setEdgeProps(buildEdgeProps(false));
   gn->setInputVar(goCtx_->vidsVar);
 
-  auto* getDst = QueryUtil::extractDstFromGN(qctx, gn, goCtx_->vidsVar);
+  auto* getDst = PlannerUtil::extractDstFromGN(qctx, gn, goCtx_->vidsVar);
 
   auto* loopBody = getDst;
   auto* loopDep = startVidPlan.root;
@@ -487,7 +487,7 @@ StatusOr<SubPlan> GoPlanner::transform(AstContext* astCtx) {
   goCtx_->joinInput = goCtx_->from.fromType != FromType::kInstantExpr;
   goCtx_->joinDst = !goCtx_->exprProps.dstTagProps().empty();
 
-  SubPlan startPlan = QueryUtil::buildStart(qctx, goCtx_->from, goCtx_->vidsVar);
+  SubPlan startPlan = Planner::buildStart(qctx, goCtx_->from, goCtx_->vidsVar);
 
   auto& steps = goCtx_->steps;
   if (steps.isMToN()) {

@@ -24,7 +24,7 @@ Status GetSubgraphValidator::validateImpl() {
   subgraphCtx_ = getContext<SubgraphContext>();
   subgraphCtx_->withProp = gsSentence->withProp();
 
-  NG_RETURN_IF_ERROR(validateStep(gsSentence->step(), subgraphCtx_->steps));
+  NG_RETURN_IF_ERROR(ValidateUtil::validateStep(gsSentence->step(), subgraphCtx_->steps));
   NG_RETURN_IF_ERROR(validateStarts(gsSentence->from(), subgraphCtx_->from));
   NG_RETURN_IF_ERROR(validateInBound(gsSentence->in()));
   NG_RETURN_IF_ERROR(validateOutBound(gsSentence->out()));
