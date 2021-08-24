@@ -30,7 +30,7 @@ DEFINE_int32(meta_client_retry_times, 3, "meta client retry times, 0 means no re
 DEFINE_int32(meta_client_retry_interval_secs, 1, "meta client sleep interval between retry");
 DEFINE_int32(meta_client_timeout_ms, 60 * 1000, "meta client timeout");
 DEFINE_string(cluster_id_path, "cluster.id", "file path saved clusterId");
-DEFINE_int32(check_plan_killed_frequency, 10, "");
+DEFINE_int32(check_plan_killed_frequency, 8, "check plan killed every 1<<n times");
 namespace nebula {
 namespace meta {
 
@@ -3484,6 +3484,7 @@ folly::Future<StatusOr<bool>> MetaClient::ingest(GraphSpaceID spaceId) {
   };
   return folly::async(func);
 }
+
 bool MetaClient::loadSessions() {
   auto session_list = listSessions().get();
   if (!session_list.ok()) {
@@ -3509,6 +3510,7 @@ bool MetaClient::loadSessions() {
   folly::rcu_retire(old_session_map);
   return true;
 }
+
 StatusOr<cpp2::Session> MetaClient::getSessionFromCache(const nebula::SessionID& session_id) {
   if (!ready_) {
     return Status::Error("Not ready!");
@@ -3521,15 +3523,17 @@ StatusOr<cpp2::Session> MetaClient::getSessionFromCache(const nebula::SessionID&
   }
   return Status::SessionNotFound();
 }
+
 bool MetaClient::checkIsPlanKilled(SessionID sessionId, ExecutionPlanID planId) {
   static thread_local int check_counter = 0;
   // Inaccurate in a multi-threaded environment, but it is not important
-  check_counter = (check_counter + 1) % FLAGS_check_plan_killed_frequency;
+  check_counter = (check_counter + 1) & ((1 << FLAGS_check_plan_killed_frequency) - 1);
   if (check_counter != 0) {
     return false;
   }
   folly::rcu_reader guard;
   return killedPlans_.load()->count({sessionId, planId});
 }
+
 }  // namespace meta
 }  // namespace nebula

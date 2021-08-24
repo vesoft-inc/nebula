@@ -32,7 +32,7 @@ namespace storage {
 class KillQueryTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    FLAGS_check_plan_killed_frequency = 1;
+    FLAGS_check_plan_killed_frequency = 0;
     storagePath_ = new fs::TempDir("/tmp/KillQueryTest.storage.XXXXXX");
     cluster_ = new mock::MockCluster{};
     cluster_->initStorageKV(storagePath_->path());
