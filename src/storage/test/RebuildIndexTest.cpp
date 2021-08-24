@@ -84,7 +84,7 @@ TEST_F(RebuildIndexTest, RebuildTagIndexCheckALLData) {
   request.set_task_id(13);
   request.set_para(std::move(parameter));
 
-  auto callback = [](nebula::cpp2::ErrorCode, nebula::meta::cpp2::StatisItem&) {};
+  auto callback = [](nebula::cpp2::ErrorCode, nebula::meta::cpp2::StatsItem&) {};
   TaskContext context(request, callback);
 
   auto task = std::make_shared<RebuildTagIndexTask>(RebuildIndexTest::env_, std::move(context));
@@ -171,7 +171,7 @@ TEST_F(RebuildIndexTest, RebuildEdgeIndexCheckALLData) {
   request.set_task_id(16);
   request.set_para(std::move(parameter));
 
-  auto callback = [](nebula::cpp2::ErrorCode, nebula::meta::cpp2::StatisItem&) {};
+  auto callback = [](nebula::cpp2::ErrorCode, nebula::meta::cpp2::StatsItem&) {};
   TaskContext context(request, callback);
   auto task = std::make_shared<RebuildEdgeIndexTask>(RebuildIndexTest::env_, std::move(context));
   manager_->addAsyncTask(task);
@@ -268,7 +268,7 @@ TEST_F(RebuildIndexTest, RebuildTagIndexWithDelete) {
   request.set_task_id(11);
   request.set_para(std::move(parameter));
 
-  auto callback = [](nebula::cpp2::ErrorCode, nebula::meta::cpp2::StatisItem&) {};
+  auto callback = [](nebula::cpp2::ErrorCode, nebula::meta::cpp2::StatsItem&) {};
   TaskContext context(request, callback);
 
   writer->addTask(deleteVertices).get();
@@ -329,7 +329,7 @@ TEST_F(RebuildIndexTest, RebuildTagIndexWithAppend) {
   request.set_task_id(12);
   request.set_para(std::move(parameter));
 
-  auto callback = [](nebula::cpp2::ErrorCode, nebula::meta::cpp2::StatisItem&) {};
+  auto callback = [](nebula::cpp2::ErrorCode, nebula::meta::cpp2::StatsItem&) {};
   TaskContext context(request, callback);
 
   auto task = std::make_shared<RebuildTagIndexTask>(RebuildIndexTest::env_, std::move(context));
@@ -374,7 +374,7 @@ TEST_F(RebuildIndexTest, RebuildTagIndex) {
   parameter.set_task_specfic_paras({"4", "5"});
   request.set_para(std::move(parameter));
 
-  auto callback = [](nebula::cpp2::ErrorCode, nebula::meta::cpp2::StatisItem&) {};
+  auto callback = [](nebula::cpp2::ErrorCode, nebula::meta::cpp2::StatsItem&) {};
   TaskContext context(request, callback);
 
   auto task = std::make_shared<RebuildTagIndexTask>(RebuildIndexTest::env_, std::move(context));
@@ -429,7 +429,7 @@ TEST_F(RebuildIndexTest, RebuildEdgeIndexWithDelete) {
   request.set_task_id(14);
   request.set_para(std::move(parameter));
 
-  auto callback = [](nebula::cpp2::ErrorCode, nebula::meta::cpp2::StatisItem&) {};
+  auto callback = [](nebula::cpp2::ErrorCode, nebula::meta::cpp2::StatsItem&) {};
   TaskContext context(request, callback);
 
   writer->addTask(deleteEdges).get();
@@ -491,7 +491,7 @@ TEST_F(RebuildIndexTest, RebuildEdgeIndexWithAppend) {
   request.set_task_id(15);
   request.set_para(std::move(parameter));
 
-  auto callback = [](nebula::cpp2::ErrorCode, nebula::meta::cpp2::StatisItem&) {};
+  auto callback = [](nebula::cpp2::ErrorCode, nebula::meta::cpp2::StatsItem&) {};
   TaskContext context(request, callback);
   auto task = std::make_shared<RebuildEdgeIndexTask>(RebuildIndexTest::env_, std::move(context));
   manager_->addAsyncTask(task);
@@ -535,7 +535,7 @@ TEST_F(RebuildIndexTest, RebuildEdgeIndex) {
   request.set_task_id(16);
   request.set_para(std::move(parameter));
 
-  auto callback = [](nebula::cpp2::ErrorCode, nebula::meta::cpp2::StatisItem&) {};
+  auto callback = [](nebula::cpp2::ErrorCode, nebula::meta::cpp2::StatsItem&) {};
   TaskContext context(request, callback);
   auto task = std::make_shared<RebuildEdgeIndexTask>(RebuildIndexTest::env_, std::move(context));
   manager_->addAsyncTask(task);

@@ -299,15 +299,15 @@ class MetaServiceUtils final {
 
   static PartitionID parseListenerPart(folly::StringPiece rawData);
 
-  static std::string statisKey(GraphSpaceID spaceId);
+  static std::string statsKey(GraphSpaceID spaceId);
 
-  static std::string statisVal(const cpp2::StatisItem& statisItem);
+  static std::string statsVal(const cpp2::StatsItem& statsItem);
 
-  static cpp2::StatisItem parseStatisVal(folly::StringPiece rawData);
+  static cpp2::StatsItem parseStatsVal(folly::StringPiece rawData);
 
-  static const std::string& statisKeyPrefix();
+  static const std::string& statsKeyPrefix();
 
-  static GraphSpaceID parseStatisSpace(folly::StringPiece rawData);
+  static GraphSpaceID parseStatsSpace(folly::StringPiece rawData);
 
   static std::string fulltextServiceKey();
 

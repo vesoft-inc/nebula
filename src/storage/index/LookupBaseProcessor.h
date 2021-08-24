@@ -71,7 +71,7 @@ class LookupBaseProcessor : public BaseProcessor<RESP> {
  protected:
   GraphSpaceID spaceId_;
   std::unique_ptr<PlanContext> planContext_;
-  std::unique_ptr<RunTimeContext> context_;
+  std::unique_ptr<RuntimeContext> context_;
   folly::Executor* executor_{nullptr};
   nebula::DataSet resultDataSet_;
   std::vector<nebula::DataSet> partResults_;

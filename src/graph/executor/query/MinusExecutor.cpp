@@ -42,7 +42,7 @@ folly::Future<Status> MinusExecutor::execute() {
 
   ResultBuilder builder;
   builder.value(left.valuePtr()).iter(std::move(left).iter());
-  return finish(builder.finish());
+  return finish(builder.build());
 }
 
 }  // namespace graph
