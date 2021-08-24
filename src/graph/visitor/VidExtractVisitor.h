@@ -101,6 +101,7 @@ class VidExtractVisitor final : public ExprVisitor {
   void visit(ReduceExpression *expr) override;
   // subscript range expression
   void visit(SubscriptRangeExpression *expr) override;
+  void visit(ParameterExpression *) override {}
 
  private:
   void visitBinaryExpr(BinaryExpression *expr);

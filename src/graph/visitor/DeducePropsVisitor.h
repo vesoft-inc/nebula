@@ -100,6 +100,7 @@ class DeducePropsVisitor : public ExprVisitorImpl {
   void visit(VertexExpression* expr) override;
   void visit(EdgeExpression* expr) override;
   void visit(ColumnExpression* expr) override;
+  void visit(ParameterExpression*) override {}
 
   void visitEdgePropExpr(PropertyExpression* expr);
   void reportError(const Expression* expr);

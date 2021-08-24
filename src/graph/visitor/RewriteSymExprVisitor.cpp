@@ -19,6 +19,11 @@ void RewriteSymExprVisitor::visit(ConstantExpression *expr) {
   expr_ = nullptr;
 }
 
+void RewriteSymExprVisitor::visit(ParameterExpression *expr) {
+  UNUSED(expr);
+  expr_ = nullptr;
+}
+
 void RewriteSymExprVisitor::visit(UnaryExpression *expr) {
   expr->operand()->accept(this);
   if (expr_) {

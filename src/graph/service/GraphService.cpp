@@ -114,6 +114,13 @@ void GraphService::signout(int64_t sessionId) {
 
 folly::Future<ExecutionResponse> GraphService::future_execute(int64_t sessionId,
                                                               const std::string& query) {
+  return future_executeWithParameter(sessionId, query, std::unordered_map<std::string, Value>{});
+}
+
+folly::Future<ExecutionResponse> GraphService::future_executeWithParameter(
+    int64_t sessionId,
+    const std::string& query,
+    const std::unordered_map<std::string, Value>& parameterMap) {
   auto ctx = std::make_unique<RequestContext<ExecutionResponse>>();
   ctx->setQuery(query);
   ctx->setRunner(getThreadManager());
@@ -127,7 +134,7 @@ folly::Future<ExecutionResponse> GraphService::future_execute(int64_t sessionId,
     ctx->finish();
     return future;
   }
-  auto cb = [this, sessionId, ctx = std::move(ctx)](
+  auto cb = [this, sessionId, ctx = std::move(ctx), parameterMap = std::move(parameterMap)](
                 StatusOr<std::shared_ptr<ClientSession>> ret) mutable {
     if (!ret.ok()) {
       LOG(ERROR) << "Get session for sessionId: " << sessionId << " failed: " << ret.status();
@@ -145,6 +152,7 @@ folly::Future<ExecutionResponse> GraphService::future_execute(int64_t sessionId,
       return ctx->finish();
     }
     ctx->setSession(std::move(sessionPtr));
+    ctx->setParameterMap(parameterMap);
     queryEngine_->execute(std::move(ctx));
   };
   sessionManager_->findSession(sessionId, getThreadManager()).thenValue(std::move(cb));
@@ -153,7 +161,15 @@ folly::Future<ExecutionResponse> GraphService::future_execute(int64_t sessionId,
 
 folly::Future<std::string> GraphService::future_executeJson(int64_t sessionId,
                                                             const std::string& query) {
-  return future_execute(sessionId, query).thenValue([](ExecutionResponse&& resp) {
+  return future_executeJsonWithParameter(
+      sessionId, query, std::unordered_map<std::string, Value>{});
+}
+
+folly::Future<std::string> GraphService::future_executeJsonWithParameter(
+    int64_t sessionId,
+    const std::string& query,
+    const std::unordered_map<std::string, Value>& parameterMap) {
+  return future_executeWithParameter(sessionId, query, parameterMap).thenValue([](auto&& resp) {
     return folly::toJson(resp.toJson());
   });
 }

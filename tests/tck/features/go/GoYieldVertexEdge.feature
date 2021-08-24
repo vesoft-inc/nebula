@@ -224,7 +224,7 @@ Feature: Go Yield Vertex And Edge Sentence
       """
       GO FROM $var OVER like YIELD edge as e
       """
-    Then a SyntaxError should be raised at runtime: syntax error near `OVER'
+    Then a SyntaxError should be raised at runtime: Parameter nonexist near `$var'
 
   @skip
   # reason we not support hash<Map> hash<set> hash<DataSet> from now on. line 67 in Value.cpp

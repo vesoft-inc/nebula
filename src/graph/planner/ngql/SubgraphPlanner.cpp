@@ -64,13 +64,17 @@ StatusOr<SubPlan> SubgraphPlanner::nSteps(SubPlan& startVidPlan, const std::stri
   gn->setSrc(subgraphCtx_->from.src);
   gn->setVertexProps(std::move(vertexProps).value());
   gn->setEdgeProps(std::move(edgeProps).value());
-  gn->setInputVar(input);
+  if (!input.empty()) {
+    gn->setInputVar(input);
+  }
 
   auto oneMoreStepOutput = qctx->vctx()->anonVarGen()->getVar();
   auto loopSteps = qctx->vctx()->anonVarGen()->getVar();
   subgraphCtx_->loopSteps = loopSteps;
   auto* subgraph = Subgraph::make(qctx, gn, oneMoreStepOutput, loopSteps, steps.steps() + 1);
-  subgraph->setOutputVar(input);
+  if (!input.empty()) {
+    subgraph->setOutputVar(input);
+  }
   subgraph->setColNames({nebula::kVid});
 
   auto* condition = loopCondition(steps.steps() + 1, gn->outputVar());

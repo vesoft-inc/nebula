@@ -548,7 +548,7 @@ StatusOr<Expression *> MatchValidator::makeSubFilter(const std::string &alias,
   DCHECK(!items.empty());
 
   // TODO(dutor) Check if evaluable and evaluate
-  if (items[0].second->kind() != Expression::Kind::kConstant) {
+  if (!ExpressionUtils::isEvaluableExpr(items[0].second)) {
     return Status::SemanticError("Props must be constant: `%s'",
                                  items[0].second->toString().c_str());
   }
@@ -558,7 +558,7 @@ StatusOr<Expression *> MatchValidator::makeSubFilter(const std::string &alias,
           pool, LabelExpression::make(pool, alias), ConstantExpression::make(pool, items[0].first)),
       items[0].second->clone());
   for (auto i = 1u; i < items.size(); i++) {
-    if (items[i].second->kind() != Expression::Kind::kConstant) {
+    if (!ExpressionUtils::isEvaluableExpr(items[i].second)) {
       return Status::SemanticError("Props must be constant: `%s'",
                                    items[i].second->toString().c_str());
     }
@@ -636,8 +636,7 @@ Status MatchValidator::validatePagination(const Expression *skipExpr,
     if (!evaluableExpr(limitExpr)) {
       return Status::SemanticError("SKIP should be instantly evaluable");
     }
-    QueryExpressionContext ctx;
-    auto value = const_cast<Expression *>(limitExpr)->eval(ctx);
+    auto value = const_cast<Expression *>(limitExpr)->eval(QueryExpressionContext(qctx_->ectx())());
     if (!value.isInt()) {
       return Status::SemanticError("LIMIT should be of type integer");
     }
@@ -669,7 +668,9 @@ Status MatchValidator::validateOrderBy(const OrderFactors *factors,
     }
 
     for (auto &factor : factors->factors()) {
-      if (factor->expr()->kind() != Expression::Kind::kLabel) {
+      auto *factorExpr = factor->expr();
+      if (ExpressionUtils::isEvaluableExpr(factorExpr)) continue;
+      if (factorExpr->kind() != Expression::Kind::kLabel) {
         return Status::SemanticError("Only column name can be used as sort item");
       }
       auto &name = static_cast<const LabelExpression *>(factor->expr())->name();

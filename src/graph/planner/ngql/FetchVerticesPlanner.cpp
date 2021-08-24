@@ -36,7 +36,9 @@ StatusOr<SubPlan> FetchVerticesPlanner::transform(AstContext* astCtx) {
   auto& starts = fetchCtx_->from;
 
   std::string vidsVar;
-  if (!starts.vids.empty() && starts.originalSrc == nullptr) {
+  if (starts.runtimeVid != nullptr) {
+    starts.src = starts.runtimeVid;
+  } else if (!starts.vids.empty() && starts.originalSrc == nullptr) {
     PlannerUtil::buildConstantInput(qctx, starts, vidsVar);
   } else {
     starts.src = starts.originalSrc;
@@ -55,7 +57,9 @@ StatusOr<SubPlan> FetchVerticesPlanner::transform(AstContext* astCtx) {
                                         buildVertexProps(fetchCtx_->exprProps.tagProps()),
                                         {},
                                         fetchCtx_->distinct);
-  getVertices->setInputVar(vidsVar);
+  if (!vidsVar.empty()) {
+    getVertices->setInputVar(vidsVar);
+  }
 
   subPlan.root = Project::make(qctx, getVertices, fetchCtx_->yieldExpr);
   if (fetchCtx_->distinct) {

@@ -56,7 +56,9 @@ SubPlan PlannerUtil::buildRuntimeInput(QueryContext* qctx, Starts& starts) {
 // static
 SubPlan PlannerUtil::buildStart(QueryContext* qctx, Starts& starts, std::string& vidsVar) {
   SubPlan subPlan;
-  if (!starts.vids.empty() && starts.originalSrc == nullptr) {
+  if (starts.runtimeVid) {
+    starts.src = starts.runtimeVid;
+  } else if (!starts.vids.empty() && starts.originalSrc == nullptr) {
     buildConstantInput(qctx, starts, vidsVar);
   } else {
     subPlan = buildRuntimeInput(qctx, starts);

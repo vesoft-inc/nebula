@@ -43,6 +43,8 @@ std::unordered_map<std::string, Value> ExpressionContextMock::vals_ = {
     {"path_edge2", Value(Edge("2", "3", 1, "edge", 0, {}))},
     {"path_v2", Value(Vertex("3", {}))},
     {"path_edge3", Value(Edge("3", "4", 1, "edge", 0, {}))},
+    {"param1", Value(1)},
+    {"param2", Value(List(std::vector<Value>{1, 2, 3, 4, 5, 6, 7, 8}))},
 };
 
 Value ExpressionContextMock::getColumn(int32_t index) const {

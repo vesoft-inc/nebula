@@ -68,6 +68,12 @@ class RequestContext final : public cpp::NonCopyable, public cpp::NonMovable {
 
   GraphSessionManager* sessionMgr() const { return sessionMgr_; }
 
+  void setParameterMap(std::unordered_map<std::string, Value> parameterMap) {
+    parameterMap_ = std::move(parameterMap);
+  }
+
+  const std::unordered_map<std::string, Value>& parameterMap() const { return parameterMap_; }
+
  private:
   time::Duration duration_;
   std::string query_;
@@ -76,6 +82,7 @@ class RequestContext final : public cpp::NonCopyable, public cpp::NonMovable {
   std::shared_ptr<ClientSession> session_;
   folly::Executor* runner_{nullptr};
   GraphSessionManager* sessionMgr_{nullptr};
+  std::unordered_map<std::string, Value> parameterMap_;
 };
 
 }  // namespace graph

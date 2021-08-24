@@ -108,6 +108,7 @@ class Expression {
     kIsNotEmpty,
 
     kSubscriptRange,
+    kParam,
   };
 
   Expression(ObjectPool* pool, Kind kind);

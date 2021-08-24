@@ -34,6 +34,7 @@
 #include "common/expression/LabelExpression.h"
 #include "common/expression/ListComprehensionExpression.h"
 #include "common/expression/LogicalExpression.h"
+#include "common/expression/ParameterExpression.h"
 #include "common/expression/PathBuildExpression.h"
 #include "common/expression/PredicateExpression.h"
 #include "common/expression/PropertyExpression.h"

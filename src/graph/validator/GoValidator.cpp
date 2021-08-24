@@ -242,7 +242,7 @@ Status GoValidator::buildColumns() {
   const auto& from = goCtx_->from;
 
   if (dstTagProps.empty() && inputProps.empty() && varProps.empty() &&
-      from.fromType == FromType::kInstantExpr) {
+      (from.fromType == FromType::kInstantExpr || from.fromType == FromType::kParam)) {
     return Status::OK();
   }
 

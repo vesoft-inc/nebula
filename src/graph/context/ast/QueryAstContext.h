@@ -19,6 +19,7 @@ enum FromType {
   kInstantExpr,
   kVariable,
   kPipe,
+  kParam,
 };
 
 struct Starts {
@@ -27,6 +28,7 @@ struct Starts {
   Expression* originalSrc{nullptr};
   std::string userDefinedVarName;
   std::string runtimeVidName;
+  Expression* runtimeVid{nullptr};
   std::vector<Value> vids;
 };
 

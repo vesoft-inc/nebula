@@ -11,8 +11,9 @@ import io
 import csv
 import re
 import threading
+import json
 
-from nebula2.common.ttypes import Value, ErrorCode
+from nebula2.common.ttypes import NList, NMap, Value, ErrorCode
 from nebula2.data.DataObject import ValueWrapper
 from pytest_bdd import given, parsers, then, when
 
@@ -28,6 +29,7 @@ from tests.common.utils import (
     check_resp,
     response,
     resp_ok,
+    params,
 )
 from tests.tck.utils.table import dataset, table
 from tests.tck.utils.nbv import murmurhash2
@@ -115,6 +117,51 @@ def wait_indexes_ready(sess):
 def graph_spaces():
     return dict(result_set=None)
 
+
+@given(parse('parameters: {parameters}'))
+def preload_parameters(
+    parameters
+):
+    try:
+        paramMap = json.loads(parameters)
+        for (k,v) in paramMap.items():
+            params[k]=value(v)
+    except:
+        raise ValueError("preload parameters failed!")
+    
+
+# construct python-type to nebula.Value
+def value(any):
+    v = Value()
+    if (isinstance(any, bool)):
+        v.set_bVal(any)
+    elif (isinstance(any, int)):
+        v.set_iVal(any)
+    elif (isinstance(any, str)):
+        v.set_sVal(any)
+    elif (isinstance(any, float)):
+        v.set_fVal(any)
+    elif (isinstance(any, list)):
+        v.set_lVal(list2Nlist(any))
+    elif (isinstance(any, dict)):
+        v.set_mVal(map2NMap(any))
+    else:
+        raise TypeError("Do not support convert "+str(type(any))+" to nebula.Value")
+    return v
+
+def list2Nlist(list):
+    nlist = NList()
+    nlist.values = []
+    for item in list:
+        nlist.values.append(value(item))
+    return nlist
+
+def map2NMap(map):
+    nmap = NMap()
+    nmap.kvs={}
+    for k,v in map.items():
+        nmap.kvs[k]=value(v)
+    return nmap
 
 @given(parse('a graph with space named "{space}"'))
 def preload_space(

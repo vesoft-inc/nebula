@@ -116,6 +116,10 @@ void DeduceTypeVisitor::visit(ConstantExpression *expr) {
   type_ = expr->eval(ctx(nullptr)).type();
 }
 
+void DeduceTypeVisitor::visit(ParameterExpression *expr) {
+  type_ = expr->eval(QueryExpressionContext(qctx_->ectx())()).type();
+}
+
 void DeduceTypeVisitor::visit(UnaryExpression *expr) {
   expr->operand()->accept(this);
   if (!ok()) return;
@@ -321,10 +325,25 @@ void DeduceTypeVisitor::visit(SubscriptExpression *expr) {
 }
 
 void DeduceTypeVisitor::visit(AttributeExpression *expr) {
-  expr->left()->accept(this);
+  auto *left = expr->left();
+  auto *right = expr->right();
+  left->accept(this);
   if (!ok()) return;
   switch (type_) {
-    case Value::Type::MAP:
+    case Value::Type::MAP: {
+      if (qctx_) {
+        QueryExpressionContext ctx(qctx_->ectx());
+        auto lVal = left->eval(ctx());
+        if (lVal.isMap()) {
+          auto rVal = right->eval(ctx());
+          DCHECK(rVal.isStr());
+          type_ = lVal.getMap().at(rVal.getStr()).type();
+          return;
+        }
+      }
+
+      break;
+    }
     case Value::Type::VERTEX:
     case Value::Type::EDGE:
     case Value::Type::DATE:
@@ -345,7 +364,7 @@ void DeduceTypeVisitor::visit(AttributeExpression *expr) {
     }
   }
 
-  expr->right()->accept(this);
+  right->accept(this);
   if (!ok()) return;
   if (type_ != Value::Type::STRING && !isSuperiorType(type_)) {
     std::stringstream ss;
@@ -489,7 +508,7 @@ void DeduceTypeVisitor::visit(InputPropertyExpression *expr) {
 
 void DeduceTypeVisitor::visit(VariablePropertyExpression *expr) {
   const auto &var = expr->sym();
-  if (!vctx_->existVar(var)) {
+  if (!vctx_->existVar(var) && !qctx_->existParameter(var)) {
     status_ = Status::SemanticError(
         "`%s', not exist variable `%s'", expr->toString().c_str(), var.c_str());
     return;
@@ -569,7 +588,7 @@ void DeduceTypeVisitor::visit(PredicateExpression *expr) {
   if (type_ == Value::Type::NULLVALUE || type_ == Value::Type::__EMPTY__) {
     return;
   }
-  if (type_ != Value::Type::LIST) {
+  if (expr->name() != "exists" && type_ != Value::Type::LIST) {
     std::stringstream ss;
     ss << "`" << expr->collection()->toString() << "', expected LIST, but was " << type_;
     status_ = Status::SemanticError(ss.str());

@@ -22,6 +22,7 @@
 #include "common/expression/LabelExpression.h"
 #include "common/expression/ListComprehensionExpression.h"
 #include "common/expression/LogicalExpression.h"
+#include "common/expression/ParameterExpression.h"
 #include "common/expression/PathBuildExpression.h"
 #include "common/expression/PredicateExpression.h"
 #include "common/expression/PropertyExpression.h"
@@ -497,6 +498,11 @@ Expression* Expression::decode(ObjectPool* pool, Expression::Decoder& decoder) {
       exp->resetFrom(decoder);
       return exp;
     }
+    case Expression::Kind::kParam: {
+      exp = ParameterExpression::make(pool);
+      exp->resetFrom(decoder);
+      return exp;
+    }
     case Expression::Kind::kTSPrefix:
     case Expression::Kind::kTSWildcard:
     case Expression::Kind::kTSRegexp:
@@ -718,6 +724,9 @@ std::ostream& operator<<(std::ostream& os, Expression::Kind kind) {
       break;
     case Expression::Kind::kReduce:
       os << "Reduce";
+      break;
+    case Expression::Kind::kParam:
+      os << "Parameter";
       break;
   }
   return os;

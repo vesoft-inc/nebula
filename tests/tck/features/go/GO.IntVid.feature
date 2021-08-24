@@ -190,7 +190,7 @@ Feature: IntegerVid Go  Sentence
       """
       GO FROM $var OVER like
       """
-    Then a SyntaxError should be raised at runtime: syntax error near `OVER'
+    Then a SyntaxError should be raised at runtime: Parameter nonexist near `$var'
 
   Scenario: Integer Vid distinct
     When executing query:

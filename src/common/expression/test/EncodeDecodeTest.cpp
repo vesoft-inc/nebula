@@ -303,6 +303,12 @@ TEST(ExpressionEncodeDecode, LabelExpression) {
   ASSERT_EQ(*origin, *decoded);
 }
 
+TEST(ExpressionEncodeDecode, ParameterExpression) {
+  auto origin = ParameterExpression::make(&pool, "p1");
+  auto decoded = Expression::decode(&pool, Expression::encode(*origin));
+  ASSERT_EQ(*origin, *decoded);
+}
+
 TEST(ExpressionEncodeDecode, CaseExpression) {
   {
     // CASE 23 WHEN 24 THEN 1 END

@@ -61,6 +61,11 @@ void PathPlanner::doBuildEdgeProps(std::unique_ptr<std::vector<EdgeProp>>& edgeP
 
 void PathPlanner::buildStart(Starts& starts, std::string& vidsVar, bool reverse) {
   auto qctx = pathCtx_->qctx;
+  auto runtimeVid = starts.runtimeVid;
+  if (runtimeVid) {
+    auto vid = runtimeVid->eval(QueryExpressionContext(qctx->ectx())());
+    starts.vids.emplace_back(std::move(vid));
+  }
   if (!starts.vids.empty() && starts.originalSrc == nullptr) {
     PlannerUtil::buildConstantInput(qctx, starts, vidsVar);
   } else {

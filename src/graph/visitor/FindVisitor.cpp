@@ -192,6 +192,8 @@ void FindVisitor::visit(SubscriptRangeExpression* expr) {
   }
 }
 
+void FindVisitor::visit(ParameterExpression* expr) { findInCurrentExpr(expr); }
+
 void FindVisitor::visitBinaryExpr(BinaryExpression* expr) {
   findInCurrentExpr(expr);
   if (!needFindAll_ && !foundExprs_.empty()) return;

@@ -544,7 +544,11 @@ expression
         delete $1;
     }
     | VARIABLE {
-        $$ = VariableExpression::make(qctx->objPool(), *$1);
+        if (qctx->existParameter(*$1)) {
+            $$ = ParameterExpression::make(qctx->objPool(), *$1);
+        } else {
+            $$ = VariableExpression::make(qctx->objPool(), *$1);
+        }
         delete $1;
     }
     | compound_expression {
@@ -940,7 +944,12 @@ vertex_prop_expression
 
 var_prop_expression
     : VARIABLE DOT name_label {
-        $$ = VariablePropertyExpression::make(qctx->objPool(), *$1, *$3);
+        if (!qctx->existParameter(*$1)) {
+            $$ = VariablePropertyExpression::make(qctx->objPool(), *$1, *$3);
+        } else {
+            $$ = AttributeExpression::make(qctx->objPool(),
+             ParameterExpression::make(qctx->objPool(),*$1), ConstantExpression::make(qctx->objPool(),*$3));
+        }
         delete $1;
         delete $3;
     }
@@ -1279,6 +1288,15 @@ from_clause
     }
     | KW_FROM vid_ref_expression {
         $$ = new FromClause($2);
+    }
+    | KW_FROM VARIABLE {
+        if (qctx->existParameter(*$2)) {
+            $$ = new FromClause(ParameterExpression::make(qctx->objPool(), *$2));
+        } else {
+            delete($2);
+            throw nebula::GraphParser::syntax_error(@2, "Parameter nonexist");
+        }
+        delete($2);
     }
     ;
 
@@ -2003,6 +2021,27 @@ fetch_vertices_sentence
     | KW_FETCH KW_PROP KW_ON STAR vid_ref_expression yield_clause {
         $$ = new FetchVerticesSentence($5, $6);
     }
+    | KW_FETCH KW_PROP KW_ON name_label_list VARIABLE yield_clause {
+        auto* param = ParameterExpression::make(qctx->objPool(), *$5);
+        if (!qctx->existParameter(*$5)) {
+            delete($4);
+            delete($5);
+            delete($6);
+            throw nebula::GraphParser::syntax_error(@5, "Invalid parameter ");
+        }
+        $$ = new FetchVerticesSentence($4, param, $6);
+        delete($5);
+    }
+    | KW_FETCH KW_PROP KW_ON STAR VARIABLE yield_clause {
+        auto* param = ParameterExpression::make(qctx->objPool(), *$5);
+        if (!qctx->existParameter(*$5)) {
+            delete($5);
+            delete($6);
+            throw nebula::GraphParser::syntax_error(@5, "Invalid parameter ");
+        }
+        $$ = new FetchVerticesSentence(param, $6);
+        delete($5);
+    }
     ;
 
 edge_key
@@ -2111,6 +2150,16 @@ to_clause
     }
     | KW_TO vid_ref_expression {
         $$ = new ToClause($2);
+    }
+    | KW_TO VARIABLE {
+        if (qctx->existParameter(*$2)) {
+            $$ = new ToClause(ParameterExpression::make(qctx->objPool(), *$2));
+        } else {
+            auto msg = *$2;
+            delete($2);
+            throw nebula::GraphParser::syntax_error(@2, "Parameter nonexist");
+        }
+        delete($2);
     }
     ;
 
@@ -2684,7 +2733,11 @@ set_sentence
 
 assignment_sentence
     : VARIABLE ASSIGN set_sentence {
-        $$ = new AssignmentSentence($1, $3);
+        if (qctx->existParameter(*$1)) {
+            throw nebula::GraphParser::syntax_error(@1, "Variable definition conflicts with a parameter");
+        } else {
+            $$ = new AssignmentSentence($1, $3);
+        }
     }
     ;
 

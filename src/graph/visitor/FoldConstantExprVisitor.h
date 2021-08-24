@@ -75,6 +75,8 @@ class FoldConstantExprVisitor final : public ExprVisitor {
   void visit(ReduceExpression *expr) override;
   // subscript range expression
   void visit(SubscriptRangeExpression *expr) override;
+  // parameter expression
+  void visit(ParameterExpression *expr) override;
 
   void visitBinaryExpr(BinaryExpression *expr);
   Expression *fold(Expression *expr);

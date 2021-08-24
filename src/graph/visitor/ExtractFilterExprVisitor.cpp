@@ -13,6 +13,11 @@ void ExtractFilterExprVisitor::visit(ConstantExpression *) { canBePushed_ = true
 
 void ExtractFilterExprVisitor::visit(LabelExpression *) { canBePushed_ = false; }
 
+void ExtractFilterExprVisitor::visit(ParameterExpression *) {
+  // TODO: support parameter push down
+  canBePushed_ = false;
+}
+
 void ExtractFilterExprVisitor::visit(UUIDExpression *) { canBePushed_ = false; }
 
 void ExtractFilterExprVisitor::visit(VariableExpression *expr) {

@@ -66,7 +66,20 @@ StatusOr<OptRule::TransformResult> IndexScanRule::transform(OptContext* ctx,
   } else {
     FilterItems items;
     ScanKind kind;
-    NG_RETURN_IF_ERROR(analyzeExpression(filter, &items, &kind, isEdge(groupNode)));
+
+    // rewrite ParameterExpression to ConstantExpression
+    // TODO: refactor index selector logic to avoid this rewriting
+    auto matcher = [](const Expression* e) -> bool {
+      return e->kind() == Expression::Kind::kParam;
+    };
+    auto rewriter = [&qctx](const Expression* e) -> Expression* {
+      DCHECK(e->kind() == Expression::Kind::kParam);
+      auto& v = const_cast<Expression*>(e)->eval(graph::QueryExpressionContext(qctx->ectx())());
+      return ConstantExpression::make(qctx->objPool(), v);
+    };
+    auto* newFilter = graph::RewriteVisitor::transform(filter, matcher, rewriter);
+
+    NG_RETURN_IF_ERROR(analyzeExpression(newFilter, &items, &kind, isEdge(groupNode)));
     NG_RETURN_IF_ERROR(createIndexQueryCtx(iqctx, kind, items, qctx, groupNode));
   }
 

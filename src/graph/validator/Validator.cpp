@@ -428,14 +428,23 @@ Status Validator::validateStarts(const VerticesClause* clause, Starts& starts) {
   }
   if (clause->isRef()) {
     auto* src = clause->ref();
-    if (src->kind() != Expression::Kind::kInputProperty &&
-        src->kind() != Expression::Kind::kVarProperty) {
+    auto kind = src->kind();
+    if (kind != Expression::Kind::kInputProperty && kind != Expression::Kind::kVarProperty &&
+        kind != Expression::Kind::kParam && kind != Expression::Kind::kAttribute) {
       return Status::SemanticError(
-          "`%s', Only input and variable expression is acceptable"
+          "`%s', Only input/variable/parameter expression is acceptable"
           " when starts are evaluated at runtime.",
           src->toString().c_str());
     }
-    starts.fromType = src->kind() == Expression::Kind::kInputProperty ? kPipe : kVariable;
+    // starts.fromType = src->kind() == Expression::Kind::kInputProperty ? kPipe : kVariable;
+    auto srcKind = src->kind();
+    if (srcKind == Expression::Kind::kParam || srcKind == Expression::Kind::kAttribute) {
+      starts.fromType = kParam;
+    } else if (srcKind == Expression::Kind::kInputProperty) {
+      starts.fromType = kPipe;
+    } else {
+      starts.fromType = kVariable;
+    }
     auto type = deduceExprType(src);
     if (!type.ok()) {
       return type.status();
@@ -446,6 +455,10 @@ Status Validator::validateStarts(const VerticesClause* clause, Starts& starts) {
       ss << "`" << src->toString() << "', the srcs should be type of "
          << apache::thrift::util::enumNameSafe(vidType) << ", but was`" << type.value() << "'";
       return Status::SemanticError(ss.str());
+    }
+    if (starts.fromType == kParam) {
+      starts.runtimeVid = src;
+      return Status::OK();
     }
     starts.originalSrc = src;
     auto* propExpr = static_cast<PropertyExpression*>(src);

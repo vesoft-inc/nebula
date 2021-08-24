@@ -405,7 +405,9 @@ SubPlan GoPlanner::oneStepPlan(SubPlan& startVidPlan) {
   gn->setVertexProps(buildVertexProps(goCtx_->exprProps.srcTagProps()));
   gn->setEdgeProps(buildEdgeProps(false));
   gn->setSrc(goCtx_->from.src);
-  gn->setInputVar(goCtx_->vidsVar);
+  if (!goCtx_->vidsVar.empty()) {
+    gn->setInputVar(goCtx_->vidsVar);
+  }
 
   auto* sampleLimit = buildSampleLimit(gn, 1 /* one step */);
 
@@ -533,7 +535,8 @@ SubPlan GoPlanner::mToNStepsPlan(SubPlan& startVidPlan) {
 StatusOr<SubPlan> GoPlanner::transform(AstContext* astCtx) {
   goCtx_ = static_cast<GoContext*>(astCtx);
   auto qctx = goCtx_->qctx;
-  goCtx_->joinInput = goCtx_->from.fromType != FromType::kInstantExpr;
+  auto fromType = goCtx_->from.fromType;
+  goCtx_->joinInput = fromType != FromType::kInstantExpr && fromType != FromType::kParam;
   goCtx_->joinDst = !goCtx_->exprProps.dstTagProps().empty();
 
   SubPlan startPlan = PlannerUtil::buildStart(qctx, goCtx_->from, goCtx_->vidsVar);
