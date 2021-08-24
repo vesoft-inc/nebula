@@ -41,7 +41,7 @@ folly::Future<Status> UnionAllVersionVarExecutor::execute() {
 
   auto value = results[0].iter()->valuePtr();
   auto iter = std::make_unique<SequentialIter>(std::move(inputList));
-  return finish(ResultBuilder().value(value).iter(std::move(iter)).finish());
+  return finish(ResultBuilder().value(value).iter(std::move(iter)).build());
 }
 
 }  // namespace graph
