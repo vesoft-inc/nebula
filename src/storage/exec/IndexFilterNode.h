@@ -24,7 +24,7 @@ class IndexFilterNode final : public RelNode<T> {
 
   // evalExprByIndex_ is true, all fileds in filter is in index. No need to read
   // data anymore.
-  IndexFilterNode(RunTimeContext* context,
+  IndexFilterNode(RuntimeContext* context,
                   IndexScanNode<T>* indexScanNode,
                   StorageExpressionContext* exprCtx = nullptr,
                   Expression* exp = nullptr,
@@ -39,7 +39,7 @@ class IndexFilterNode final : public RelNode<T> {
 
   // evalExprByIndex_ is false, some fileds in filter is out of index, which
   // need to read data.
-  IndexFilterNode(RunTimeContext* context,
+  IndexFilterNode(RuntimeContext* context,
                   IndexEdgeNode<T>* indexEdgeNode,
                   StorageExpressionContext* exprCtx = nullptr,
                   Expression* exp = nullptr)
@@ -50,7 +50,7 @@ class IndexFilterNode final : public RelNode<T> {
 
   // evalExprByIndex_ is false, some fileds in filter is out of index, which
   // need to read data.
-  IndexFilterNode(RunTimeContext* context,
+  IndexFilterNode(RuntimeContext* context,
                   IndexVertexNode<T>* indexVertexNode,
                   StorageExpressionContext* exprCtx = nullptr,
                   Expression* exp = nullptr)
@@ -136,7 +136,7 @@ class IndexFilterNode final : public RelNode<T> {
   }
 
  private:
-  RunTimeContext* context_;
+  RuntimeContext* context_;
   IndexScanNode<T>* indexScanNode_{nullptr};
   IndexEdgeNode<T>* indexEdgeNode_{nullptr};
   IndexVertexNode<T>* indexVertexNode_{nullptr};
