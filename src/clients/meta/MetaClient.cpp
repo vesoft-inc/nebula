@@ -609,8 +609,6 @@ void MetaClient::getResponse(Request req,
                      auto&& resp = t.value();
                      if (resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED) {
                        // succeeded
-                       lastHeartBeatTime_ = time::TimeUtils::utcDateTime();
-                       LOG(INFO) << "utcDateTime() : " << lastHeartBeatTime_.toString();
                        pro.setValue(respGen(std::move(resp)));
                        return;
                      } else if (resp.get_code() == nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
@@ -2325,6 +2323,7 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
             LOG(FATAL) << "Can't persist the clusterId in file " << FLAGS_cluster_id_path;
           }
         }
+        heartBeatTime_ = time::WallClock::fastNowInMilliSec();
         metadLastUpdateTime_ = resp.get_last_update_time_in_ms();
         VLOG(1) << "Metad last update time: " << metadLastUpdateTime_;
         return true;  // resp.code == nebula::cpp2::ErrorCode::SUCCEEDED
