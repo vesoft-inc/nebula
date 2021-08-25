@@ -12,7 +12,7 @@ Feature: TopN rule
       """
       GO 1 STEPS FROM "Marco Belinelli" OVER like
       YIELD like.likeness AS likeness |
-      ORDER BY likeness |
+      ORDER BY $-.likeness |
       LIMIT 2
       """
     Then the result should be, in order:
@@ -32,7 +32,7 @@ Feature: TopN rule
       """
       GO 1 STEPS FROM "Marco Belinelli" OVER like REVERSELY
       YIELD like.likeness AS likeness |
-      ORDER BY likeness |
+      ORDER BY $-.likeness |
       LIMIT 1
       """
     Then the result should be, in order:
@@ -51,7 +51,7 @@ Feature: TopN rule
       """
       GO 1 STEPS FROM "Marco Belinelli" OVER like
       YIELD like.likeness as likeness |
-      ORDER BY likeness |
+      ORDER BY $-.likeness |
       LIMIT 2, 3
       """
     Then the result should be, in order:
@@ -71,7 +71,7 @@ Feature: TopN rule
       """
       GO 1 STEPS FROM "Marco Belinelli" OVER like
       YIELD like.likeness AS likeness |
-      ORDER BY likeness
+      ORDER BY $-.likeness
       """
     Then the result should be, in any order:
       | likeness |
