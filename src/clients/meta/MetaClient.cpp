@@ -987,8 +987,7 @@ void MetaClient::loadRemoteListeners() {
   }
 }
 
-/// ================================== public methods
-/// =================================
+/// ================================== public methods =================================
 
 PartitionID MetaClient::partId(int32_t numParts, const VertexID id) const {
   // If the length of the id is 8, we will treat it as int64_t to be compatible
