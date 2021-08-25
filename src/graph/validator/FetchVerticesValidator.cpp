@@ -8,7 +8,7 @@
 #include "graph/planner/plan/Query.h"
 #include "graph/util/ExpressionUtils.h"
 #include "graph/util/SchemaUtil.h"
-#include "graph/util/ValidateUtils.h"
+#include "graph/util/ValidateUtil.h"
 #include "graph/visitor/DeducePropsVisitor.h"
 
 namespace nebula {
@@ -18,13 +18,16 @@ static constexpr char VertexID[] = "VertexID";
 
 Status FetchVerticesValidator::validateImpl() {
   auto *fSentence = static_cast<FetchVerticesSentence *>(sentence_);
+  fetchCtx_ = getContext<FetchVerticesContext>();
+  fetchCtx_->inputVarName = inputVarName_;
+
   NG_RETURN_IF_ERROR(validateTag(fSentence->tags()));
-  NG_RETURN_IF_ERROR(validateStart(fSentence->vertices(), fetchCtx_->from));
+  NG_RETURN_IF_ERROR(validateStarts(fSentence->vertices(), fetchCtx_->from));
   NG_RETURN_IF_ERROR(validateYield(fSentence->yieldClause()));
   return Status::OK();
 }
 
-Status FetchVerticesValidator::validateTag(NameLabelList *nameLabels) {
+Status FetchVerticesValidator::validateTag(const NameLabelList *nameLabels) {
   if (nameLabels == nullptr) {
     // all tag
     const auto &tagStatus = qctx_->schemaMng()->getAllLatestVerTagSchema(space_.id);
@@ -34,14 +37,14 @@ Status FetchVerticesValidator::validateTag(NameLabelList *nameLabels) {
     }
   } else {
     auto labels = nameLabels->labels();
-    auto &schemaMng = qctx_->schemaMng();
+    auto *schemaMng = qctx_->schemaMng();
     for (const auto &label : labels) {
       auto tagStatus = schemaMng->toTagID(space_.id, *label);
       NG_RETURN_IF_ERROR(tagStatus);
       auto tagID = tagStatus.value();
       auto tagSchema = schemaMng->getTagSchema(space_.id, tagID);
       if (tagSchema == nullptr) {
-        return Status::SemanticError("No schema found for `%s'", nameLabel->c_str());
+        return Status::SemanticError("No schema found for `%s'", label->c_str());
       }
       tagsSchema_.emplace(tagID, tagSchema);
     }
@@ -51,22 +54,29 @@ Status FetchVerticesValidator::validateTag(NameLabelList *nameLabels) {
 
 Status FetchVerticesValidator::validateYield(YieldClause *yield) {
   auto pool = qctx_->objPool();
+  if (yield == nullptr) {
+    // version 3.0: return Status::SemanticError("No YIELD Clause");
+    auto *yieldColumns = new YieldColumns();
+    auto *vertex = new YieldColumn(VertexExpression::make(pool));
+    yieldColumns->addColumn(vertex);
+    yield = pool->add(new YieldClause(yieldColumns));
+  }
   fetchCtx_->distinct = yield->isDistinct();
 
-  auto size = yield->columns()->size();
-  outputs_.reverse(size + 1);  // VertexID
+  auto size = yield->columns().size();
+  outputs_.reserve(size + 1);  // VertexID
   outputs_.emplace_back(VertexID, vidType_);
 
-  auto &exprProps = fetctCtx_->exprProps;
+  auto &exprProps = fetchCtx_->exprProps;
   for (auto col : yield->columns()) {
     // yield vertex or id(vertex)
-    auto colExpr = col->expr();
-    col->setExpr(ExpressionUtils::rewriteLabelAttr2TagProp(colExpr));
-    NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(colExpr));
+    col->setExpr(ExpressionUtils::rewriteLabelAttr2TagProp(col->expr()));
+    NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(col->expr()));
 
+    auto colExpr = col->expr();
     auto typeStatus = deduceExprType(colExpr);
     NG_RETURN_IF_ERROR(typeStatus);
-    ouputs_.emplace_back(col->name(), typeStatus.value());
+    outputs_.emplace_back(col->name(), typeStatus.value());
 
     NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps));
   }
@@ -78,17 +88,17 @@ Status FetchVerticesValidator::validateYield(YieldClause *yield) {
     return Status::SemanticError("Unsupported src/dst property expression in yield.");
   }
 
-  for (const auto &tag : exprProps.tagNameIds()) {
-    if (tagsSchema_.find(tag.first) == tagsSchema_.end()) {
-      return Status::SemanticError("Mismatched tag `%s'", tag);
-    }
-  }
+  // for (const auto &tag : exprProps.tagNameIds()) {
+  //   if (tagsSchema_.find(tag.first) == tagsSchema_.end()) {
+  //     return Status::SemanticError("Mismatched tag `%s'", tag);
+  //   }
+  // }
   auto *newCols = pool->add(new YieldColumns());
   // TODO (will be deleted in version 3.0)
-  auto *col = new YieldColumn(InputPropertyExpression::make(pool, nebula::kVid), VertexID);
-  newCols->addColumn(col);
+  auto *vidCol = new YieldColumn(InputPropertyExpression::make(pool, nebula::kVid), VertexID);
+  newCols->addColumn(vidCol);
   for (const auto &col : yield->columns()) {
-    newCols->addColumn(col->clone()->release());
+    newCols->addColumn(col->clone().release());
   }
   fetchCtx_->yieldExpr = newCols;
   auto colNames = getOutColNames();

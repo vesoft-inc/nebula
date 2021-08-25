@@ -36,14 +36,19 @@ std::unique_ptr<FetchVerticesPlanner::VertexProps> FetchVerticesPlanner::buildVe
 StatusOr<SubPlan> FetchVerticesPlanner::transform(AstContext* astCtx) {
   fetchCtx_ = static_cast<FetchVerticesContext*>(astCtx);
   auto qctx = fetchCtx_->qctx;
+  auto space = fetchCtx_->space;
   auto& starts = fetchCtx_->from;
 
   std::string vidsVar;
-  if (starts.vids.empty() && starts.originalSrc == nullptr) {
+  if (!starts.vids.empty() && starts.originalSrc == nullptr) {
     PlannerUtil::buildConstantInput(qctx, starts, vidsVar);
   } else {
     starts.src = starts.originalSrc;
-    vidsVar = starts.userDefinedVarName;
+    if (starts.fromType == kVariable) {
+      vidsVar = starts.userDefinedVarName;
+    } else {
+      vidsVar = fetchCtx_->inputVarName;
+    }
   }
 
   SubPlan subPlan;
@@ -59,7 +64,7 @@ StatusOr<SubPlan> FetchVerticesPlanner::transform(AstContext* astCtx) {
 
   subPlan.root = Project::make(qctx, getVertices, fetchCtx_->yieldExpr);
   if (fetchCtx_->distinct) {
-    subPlan.root = Dedup::make(qctx, subPlan.root)
+    subPlan.root = Dedup::make(qctx, subPlan.root);
   }
   subPlan.tail = getVertices;
   return subPlan;

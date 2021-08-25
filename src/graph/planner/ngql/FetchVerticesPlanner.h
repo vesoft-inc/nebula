@@ -41,3 +41,5 @@ class FetchVerticesPlanner final : public Planner {
 };
 }  // namespace graph
 }  // namespace nebula
+
+#endif  // GRAPH_PLANNER_NGQL_FETCH_VERTICES_PLANNER_H

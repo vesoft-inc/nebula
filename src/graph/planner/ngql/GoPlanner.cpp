@@ -487,7 +487,7 @@ StatusOr<SubPlan> GoPlanner::transform(AstContext* astCtx) {
   goCtx_->joinInput = goCtx_->from.fromType != FromType::kInstantExpr;
   goCtx_->joinDst = !goCtx_->exprProps.dstTagProps().empty();
 
-  SubPlan startPlan = Planner::buildStart(qctx, goCtx_->from, goCtx_->vidsVar);
+  SubPlan startPlan = PlannerUtil::buildStart(qctx, goCtx_->from, goCtx_->vidsVar);
 
   auto& steps = goCtx_->steps;
   if (steps.isMToN()) {

@@ -19,7 +19,7 @@
 
 namespace nebula {
 namespace graph {
-
+struct Starts;
 class Validator {
  public:
   virtual ~Validator() = default;
@@ -127,14 +127,12 @@ class Validator {
     return Status::OK();
   }
 
-  // Check the variable or input property reference
-  // return the input variable
-  StatusOr<std::string> checkRef(const Expression* ref, const Value::Type type);
-
   // Check the output for duplicate column names
   Status checkDuplicateColName();
 
-  Status invalidLabelIdentifiers(const Expression* expr) const;
+  // Check the variable or input property reference
+  // return the input variable
+  StatusOr<std::string> checkRef(const Expression* ref, const Value::Type type);
 
   Status validateStarts(const VerticesClause* clause, Starts& starts);
 

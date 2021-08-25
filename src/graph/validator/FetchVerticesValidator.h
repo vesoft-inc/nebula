@@ -7,8 +7,9 @@
 #ifndef _VALIDATOR_FETCH_VERTICES_VALIDATOR_H_
 #define _VALIDATOR_FETCH_VERTICES_VALIDATOR_H_
 
+#include "graph/context/ast/QueryAstContext.h"
 #include "graph/validator/Validator.h"
-#include "parser/TraverseSentence.h"
+#include "parser/TraverseSentences.h"
 
 namespace nebula {
 namespace graph {
@@ -21,7 +22,7 @@ class FetchVerticesValidator final : public Validator {
  private:
   Status validateImpl() override;
 
-  Status validateTag(NameLabelList* nameLables);
+  Status validateTag(const NameLabelList* nameLables);
 
   Status validateYield(YieldClause* yield);
 

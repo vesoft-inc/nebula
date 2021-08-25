@@ -40,9 +40,9 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     gv->setColNames({nebula::kVid, "person.name", "person.age"});
     // project
     auto yieldColumns = std::make_unique<YieldColumns>();
-    yieldColumns->addColumn(new YieldColumn(VertexExpression::make(pool), "vertices_"));
+    yieldColumns->addColumn(new YieldColumn(VertexExpression::make(pool), "VERTEX"));
     auto *project = Project::make(qctx, gv, yieldColumns.get());
-    project->setColNames({"vertices_"});
+    project->setColNames({"VERTEX"});
     auto result = Eq(qctx->plan()->root(), project);
     ASSERT_TRUE(result.ok()) << result;
   }

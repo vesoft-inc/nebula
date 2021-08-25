@@ -6,6 +6,8 @@
 
 #include "graph/validator/Validator.h"
 
+#include <thrift/lib/cpp/util/EnumUtils.h>
+
 #include "common/function/FunctionManager.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/util/ExpressionUtils.h"

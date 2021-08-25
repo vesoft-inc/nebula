@@ -10,6 +10,7 @@
 #include "common/expression/VariableExpression.h"
 #include "graph/planner/plan/Logic.h"
 #include "graph/util/ExpressionUtils.h"
+#include "graph/util/ValidateUtil.h"
 #include "graph/visitor/ExtractPropExprVisitor.h"
 #include "parser/TraverseSentences.h"
 
@@ -22,7 +23,7 @@ Status GoValidator::validateImpl() {
 
   NG_RETURN_IF_ERROR(ValidateUtil::validateStep(goSentence->stepClause(), goCtx_->steps));
   NG_RETURN_IF_ERROR(validateStarts(goSentence->fromClause(), goCtx_->from));
-  NG_RETURN_IF_ERROR(validateOver(goSentence->overClause(), goCtx_->over));
+  NG_RETURN_IF_ERROR(ValidateUtil::validateOver(qctx_, goSentence->overClause(), goCtx_->over));
   NG_RETURN_IF_ERROR(validateWhere(goSentence->whereClause()));
   NG_RETURN_IF_ERROR(validateYield(goSentence->yieldClause()));
   NG_RETURN_IF_ERROR(validateTruncate(goSentence->truncateClause()));

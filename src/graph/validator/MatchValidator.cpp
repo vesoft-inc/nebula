@@ -13,7 +13,7 @@
 namespace nebula {
 namespace graph {
 MatchValidator::MatchValidator(Sentence *sentence, QueryContext *context)
-    : TraversalValidator(sentence, context) {
+    : Validator(sentence, context) {
   matchCtx_ = getContext<MatchAstContext>();
 }
 

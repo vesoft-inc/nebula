@@ -10,6 +10,7 @@
 #include "graph/context/QueryContext.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/util/ExpressionUtils.h"
+#include "graph/util/ValidateUtil.h"
 #include "parser/Clauses.h"
 #include "parser/TraverseSentences.h"
 

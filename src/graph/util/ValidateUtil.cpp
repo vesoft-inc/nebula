@@ -12,7 +12,7 @@
 #include "graph/context/ast/QueryAstContext.h"
 #include "graph/planner/Planner.h"
 #include "graph/planner/plan/Query.h"
-#include "graph/util/ExpressionUtil.h"
+#include "graph/util/ExpressionUtils.h"
 
 namespace nebula {
 namespace graph {
@@ -74,7 +74,7 @@ Status ValidateUtil::validateOver(QueryContext* qctx, const OverClause* clause, 
   return Status::OK();
 }
 
-Status ValidateUtil::invalidLabelIdentifiers(const Expression* expr) const {
+Status ValidateUtil::invalidLabelIdentifiers(const Expression* expr) {
   auto labelExprs = ExpressionUtils::collectAll(expr, {Expression::Kind::kLabel});
   if (!labelExprs.empty()) {
     std::stringstream ss;

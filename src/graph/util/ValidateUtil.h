@@ -7,11 +7,15 @@
 #ifndef GRAPH_UTIL_VALIDATE_UTIL_H_
 #define GRAPH_UTIL_VALIDATE_UTIL_H_
 #include "common/base/Base.h"
+#include "common/base/StatusOr.h"
+#include "common/expression/Expression.h"
+#include "parser/Clauses.h"
 
 namespace nebula {
 namespace graph {
 class QueryContext;
 class PlanNode;
+struct Over;
 
 class ValidateUtil final {
  public:
@@ -21,7 +25,7 @@ class ValidateUtil final {
 
   static Status validateOver(QueryContext* qctx, const OverClause* clause, Over& over);
 
-  static Status invalidLabelIdentifiers(const Expression* expr) const;
+  static Status invalidLabelIdentifiers(const Expression* expr);
 };
 
 }  // namespace graph

@@ -130,10 +130,13 @@ struct SubgraphContext final : public AstContext {
 
 struct FetchVerticesContext final : public AstContext {
   Starts from;
-  bool distince{false};
+  bool distinct{false};
   YieldColumns* yieldExpr{nullptr};
   ExpressionProps exprProps;
   std::vector<std::string> colNames;
+
+  // store the result of the previous sentence
+  std::string inputVarName;
 };
 
 }  // namespace graph
