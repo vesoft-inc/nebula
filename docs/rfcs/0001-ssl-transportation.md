@@ -14,17 +14,21 @@ Define some global flags:
 DEFINE_string(cert_path, "", "Path to cert pem.");
 DEFINE_string(key_path, "", "Path to cert key.");
 DEFINE_string(ca_path, "", "Path to trusted CA file.");
-DEFINE_string(password_path, "", "Path to password file.");
 DEFINE_bool(enable_ssl, false, "Wether enable ssl.");
-
 DEFINE_bool(enable_graph_ssl, false, "Wether enable ssl in graph server only.");
+DEFINE_bool(enable_meta_ssl, false, "Wether enable ssl in meta server only.");
 ```
 
-And provide two mode:
+Two certificate mode:
 
-1. Crypto the whole data transportation in the cluster when the flag `enable_ssl` is set to `true`. In this mode, we enable SSL transportation for follow components of daemon:
+1. Self Signed: only provide `cert_path` and `key_path`.
+2. CA Signed: provide `cert_path`, `key_path` and `ca_path`.
 
-```
+And provide three policy to control crypto components;
+
+1. Crypto the whole data transportation in the cluster when the flag `enable_ssl` is set to `true`. In this mode, we enable SSL/TLS transportation for follow components of daemon:
+
+```plain
 graphd: meta client + storage client + graph server
 
 metad: admin storage client + metad server + raft client + raft server
@@ -32,19 +36,31 @@ metad: admin storage client + metad server + raft client + raft server
 storaged: meta client + internal storage client + internal storage server + graph storage server + admin storage server + raft client + raft server
 ```
 
-2. Crypto the graph server only when the flag `enable_ssl` is set to `false` and `enable_graph_ssl` is set to `true`. In this mode, we enable SSL transportation for follow components of daemon:
+2. Crypto the graph server when the flag `enable_graph_ssl` is set to `true`. In this mode, we enable SSL/TLS transportation for follow components of daemon:
 
-```
+```plain
 graphd: graph server
 ```
 
-This mode is optimized for the case that the cluster setup in one room and communicate over the internal network, and only graph server expose the interface to outside.
+This policy is optimized for the case that the cluster setup in one room and communicate over the internal network, and only graph server expose the interface to outside.
+
+3. Crypto the meta server `enable_meta_ssl` is set to `true`. In this mode, we enable SSL/TLS transportation for follow components of daemon:
+
+```plain
+graphd: meta client
+
+metad: metad server
+
+storaged: meta client
+```
+
+We provide this control policy for meta will transport some secret information.
 
 # Design explanation
 
 Enable the thrift provided SSL/TLS function.
 
-In server side, setup certificate and private key. In client side, provide the SSL/TLS transport socket.
+In server side, setup certificate and private key. In client side, provide the SSL/TLS transport socket and add the trusted CAs.
 
 For clients, these will be done by corresponding maintainer self.
 
