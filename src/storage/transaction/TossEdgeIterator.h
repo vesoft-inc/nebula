@@ -22,7 +22,7 @@ namespace storage {
 
 class TossEdgeIterator : public SingleEdgeIterator {
  public:
-  TossEdgeIterator(RunTimeContext* context,
+  TossEdgeIterator(RuntimeContext* context,
                    std::unique_ptr<kvstore::KVIterator> iter,
                    EdgeType edgeType,
                    const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>* schemas,
