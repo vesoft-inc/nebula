@@ -20,7 +20,7 @@ folly::Future<Status> ShowMetaLeaderExecutor::execute() {
   SCOPED_TIMER(&execTime_);
   auto metaLeader = qctx()->getMetaClient()->getMetaLeader();
   auto now = time::WallClock::fastNowInMilliSec();
-  auto lastHeartBeatTime = qctx()->getMetaClient()->HeartBeatTime();
+  auto lastHeartBeatTime = qctx()->getMetaClient()->HeartbeatTime();
   auto intervalMs = now - lastHeartBeatTime;
   DataSet ds({"Meta Leader", "secs from last heart beat"});
   auto strLeader = folly::sformat("{}:{}", metaLeader.host, metaLeader.port);

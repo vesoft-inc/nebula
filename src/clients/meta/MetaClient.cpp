@@ -2323,7 +2323,7 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
             LOG(FATAL) << "Can't persist the clusterId in file " << FLAGS_cluster_id_path;
           }
         }
-        heartBeatTime_ = time::WallClock::fastNowInMilliSec();
+        heartbeatTime_ = time::WallClock::fastNowInMilliSec();
         metadLastUpdateTime_ = resp.get_last_update_time_in_ms();
         VLOG(1) << "Metad last update time: " << metadLastUpdateTime_;
         return true;  // resp.code == nebula::cpp2::ErrorCode::SUCCEEDED
