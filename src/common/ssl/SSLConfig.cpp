@@ -18,13 +18,19 @@ namespace nebula {
 std::shared_ptr<wangle::SSLContextConfig> sslContextConfig() {
   auto sslCfg = std::make_shared<wangle::SSLContextConfig>();
   sslCfg->addCertificate(FLAGS_cert_path, FLAGS_key_path, FLAGS_password_path);
-  sslCfg->clientCAFile = FLAGS_ca_path;
   sslCfg->isDefault = true;
   return sslCfg;
 }
 
 std::shared_ptr<folly::SSLContext> createSSLContext() {
   auto context = std::make_shared<folly::SSLContext>();
+  if (!FLAGS_ca_path.empty()) {
+    context->loadTrustedCertificates(FLAGS_ca_path.c_str());
+    // don't do peer name validation
+    context->authenticate(true, false);
+    // verify the server cert
+    context->setVerificationOption(folly::SSLContext::SSLVerifyPeerEnum::VERIFY);
+  }
   folly::ssl::setSignatureAlgorithms<folly::ssl::SSLCommonOptions>(*context);
   return context;
 }

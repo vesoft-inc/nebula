@@ -65,10 +65,16 @@ class NebulaService(object):
                     resources_dir)
         shutil.copy(self.src_dir + '/tests/cert/test.ca.pem',
                     resources_dir)
-        shutil.copy(self.src_dir + '/tests/cert/test.password',
+        shutil.copy(self.src_dir + '/tests/cert/test.ca.password',
+                    resources_dir)
+        shutil.copy(self.src_dir + '/tests/cert/test.derive.key',
+                    resources_dir)
+        shutil.copy(self.src_dir + '/tests/cert/test.derive.crt',
+                    resources_dir)
+        shutil.copy(self.src_dir + '/tests/cert/test.derive.password',
                     resources_dir)
 
-    def _format_nebula_command(self, name, meta_port, ports, debug_log=True):
+    def _format_nebula_command(self, name, meta_port, ports, debug_log=True, ca_signed=False):
         params = [
             "--meta_server_addrs={}",
             "--port={}",
@@ -76,10 +82,17 @@ class NebulaService(object):
             "--ws_h2_port={}",
             "--heartbeat_interval_secs=1",
             "--expired_time_factor=60",
-            '--cert_path=share/resources/test.ca.pem',
-            '--key_path=share/resources/test.ca.key',
-            '--password_path=share/resources/test.password',
         ]
+        if ca_signed:
+            params.append('--ca_path=share/resources/test.ca.pem')
+            params.append('--cert_path=share/resources/test.derive.crt')
+            params.append('--key_path=share/resources/test.derive.key')
+            params.append('--password_path=share/resources/test.derive.password')
+        else:
+            params.append('--cert_path=share/resources/test.ca.pem')
+            params.append('--key_path=share/resources/test.ca.key')
+            params.append('--password_path=share/resources/test.ca.password')
+            
         if name == 'graphd':
             params.append('--local_config=false')
             params.append('--enable_authorize=true')
@@ -161,7 +174,7 @@ class NebulaService(object):
             time.sleep(1)
         return False
 
-    def start(self, debug_log=True, multi_graphd=False, enable_ssl=False, enable_graph_ssl=False):
+    def start(self, debug_log=True, multi_graphd=False, enable_ssl=False, enable_graph_ssl=False, ca_signed=False):
         os.chdir(self.work_dir)
 
         metad_ports = self._find_free_port()
@@ -194,7 +207,8 @@ class NebulaService(object):
             command = self._format_nebula_command(new_name,
                                                   metad_ports[0],
                                                   ports,
-                                                  debug_log)
+                                                  debug_log,
+                                                  ca_signed=ca_signed)
             if server_name == 'graphd1':
                 command += ' --log_dir=logs1'
                 command += ' --pid_file=pids1/nebula-graphd.pid'
