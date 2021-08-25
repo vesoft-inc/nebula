@@ -56,7 +56,7 @@ folly::Future<Status> ShowConfigsExecutor::execute() {
         }
 
         auto result = generateResult(resp.value());
-        return finish(ResultBuilder().value(Value(std::move(result))).finish());
+        return finish(ResultBuilder().value(Value(std::move(result))).build());
       });
 }
 
@@ -95,7 +95,7 @@ folly::Future<Status> GetConfigExecutor::execute() {
                                resp.status().toString().c_str());
         }
         auto result = generateResult(resp.value());
-        return finish(ResultBuilder().value(Value(std::move(result))).finish());
+        return finish(ResultBuilder().value(Value(std::move(result))).build());
       });
 }
 

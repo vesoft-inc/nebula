@@ -26,7 +26,7 @@ class AdminTaskProcessor : public BaseProcessor<cpp2::AdminExecResp> {
  private:
   explicit AdminTaskProcessor(StorageEnv* env) : BaseProcessor<cpp2::AdminExecResp>(env) {}
 
-  void onProcessFinished(nebula::meta::cpp2::StatisItem& result);
+  void onProcessFinished(nebula::meta::cpp2::StatsItem& result);
 };
 
 }  // namespace storage

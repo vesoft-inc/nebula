@@ -613,7 +613,7 @@ Status Executor::finish(Result &&result) {
 }
 
 Status Executor::finish(Value &&value) {
-  return finish(ResultBuilder().value(std::move(value)).iter(Iterator::Kind::kDefault).finish());
+  return finish(ResultBuilder().value(std::move(value)).iter(Iterator::Kind::kDefault).build());
 }
 
 folly::Executor *Executor::runner() const {

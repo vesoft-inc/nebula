@@ -18,11 +18,11 @@ void AdminTaskProcessor::process(const cpp2::AddAdminTaskRequest& req) {
   auto taskManager = AdminTaskManager::instance();
 
   auto cb = [env = env_, jobId = req.get_job_id(), taskId = req.get_task_id()](
-                nebula::cpp2::ErrorCode errCode, nebula::meta::cpp2::StatisItem& result) {
-    meta::cpp2::StatisItem* pStatis = nullptr;
+                nebula::cpp2::ErrorCode errCode, nebula::meta::cpp2::StatsItem& result) {
+    meta::cpp2::StatsItem* pStats = nullptr;
     if (errCode == nebula::cpp2::ErrorCode::SUCCEEDED &&
         *result.status_ref() == nebula::meta::cpp2::JobStatus::FINISHED) {
-      pStatis = &result;
+      pStats = &result;
     }
 
     LOG(INFO) << folly::sformat("reportTaskFinish(), job={}, task={}, rc={}",
@@ -33,7 +33,7 @@ void AdminTaskProcessor::process(const cpp2::AddAdminTaskRequest& req) {
     auto retry = 0;
     while (retry++ < maxRetry) {
       auto rc = nebula::cpp2::ErrorCode::SUCCEEDED;
-      auto fut = env->metaClient_->reportTaskFinish(jobId, taskId, errCode, pStatis);
+      auto fut = env->metaClient_->reportTaskFinish(jobId, taskId, errCode, pStats);
       fut.wait();
       if (!fut.hasValue()) {
         LOG(INFO) << folly::sformat(
@@ -73,8 +73,8 @@ void AdminTaskProcessor::process(const cpp2::AddAdminTaskRequest& req) {
   onFinished();
 }
 
-void AdminTaskProcessor::onProcessFinished(nebula::meta::cpp2::StatisItem& result) {
-  resp_.set_statis(std::move(result));
+void AdminTaskProcessor::onProcessFinished(nebula::meta::cpp2::StatsItem& result) {
+  resp_.set_stats(std::move(result));
 }
 
 }  // namespace storage

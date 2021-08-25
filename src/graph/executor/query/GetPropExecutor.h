@@ -43,7 +43,7 @@ class GetPropExecutor : public StorageAccessExecutor {
     }
     VLOG(2) << "Dataset in get props: \n" << v << "\n";
     return finish(
-        ResultBuilder().value(std::move(v)).iter(Iterator::Kind::kProp).state(state).finish());
+        ResultBuilder().value(std::move(v)).iter(Iterator::Kind::kProp).state(state).build());
   }
 };
 

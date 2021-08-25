@@ -154,8 +154,8 @@ class PlanContext {
 // not all processor use all following fields, just list all of them here.
 // todo(doodle): after filter is pushed down, I believe all field will not be
 // changed anymore during process
-struct RunTimeContext {
-  explicit RunTimeContext(PlanContext* planContext) : planContext_(planContext) {}
+struct RuntimeContext {
+  explicit RuntimeContext(PlanContext* planContext) : planContext_(planContext) {}
 
   StorageEnv* env() const { return planContext_->env_; }
 

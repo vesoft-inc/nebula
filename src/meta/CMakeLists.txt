@@ -78,8 +78,8 @@ nebula_add_library(
     processors/job/RebuildTagJobExecutor.cpp
     processors/job/RebuildEdgeJobExecutor.cpp
     processors/job/RebuildFTJobExecutor.cpp
-    processors/job/StatisJobExecutor.cpp
-    processors/job/GetStatisProcessor.cpp
+    processors/job/StatsJobExecutor.cpp
+    processors/job/GetStatsProcessor.cpp
     processors/job/ListTagIndexStatusProcessor.cpp
     processors/job/ListEdgeIndexStatusProcessor.cpp
     processors/zone/AddZoneProcessor.cpp

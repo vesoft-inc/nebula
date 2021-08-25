@@ -81,7 +81,7 @@ nebula_add_test(
     NAME
         statis_task_test
     SOURCES
-        StatisTaskTest.cpp
+        StatsTaskTest.cpp
     OBJECTS
         ${storage_test_deps}
     LIBRARIES

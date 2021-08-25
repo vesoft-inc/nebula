@@ -32,7 +32,7 @@ class FilterNode : public IterateNode<T> {
  public:
   using RelNode<T>::execute;
 
-  FilterNode(RunTimeContext* context,
+  FilterNode(RuntimeContext* context,
              IterateNode<T>* upstream,
              StorageExpressionContext* expCtx = nullptr,
              Expression* exp = nullptr)
@@ -76,7 +76,7 @@ class FilterNode : public IterateNode<T> {
   }
 
  private:
-  RunTimeContext* context_;
+  RuntimeContext* context_;
   StorageExpressionContext* expCtx_;
   Expression* filterExp_;
 };
