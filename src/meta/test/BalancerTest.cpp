@@ -369,15 +369,6 @@ TEST(BalanceTest, ShrinkZoneTest) {
   Balancer balancer(kv, &client);
   auto ret = balancer.balance();
   ASSERT_EQ(nebula::cpp2::ErrorCode::E_BALANCED, error(ret));
-  {
-    ZoneInfo zoneInfo = {
-        {"zone_0", {{"0", 0}}},
-        {"zone_1", {{"1", 1}}},
-        {"zone_2", {{"2", 2}}},
-    };
-    GroupInfo groupInfo = {{"default_group", {"zone_0", "zone_1", "zone_2"}}};
-    TestUtils::assembleGroupAndZone(kv, zoneInfo, groupInfo);
-  }
   ret = balancer.balance({{"3", 3}});
   ASSERT_TRUE(ok(ret));
 }

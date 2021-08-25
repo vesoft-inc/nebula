@@ -236,13 +236,7 @@ class Balancer {
 
   nebula::cpp2::ErrorCode collectZoneParts(const std::string& groupName, HostParts& hostParts);
 
-  bool checkZoneLegal(const HostAddr& source, const HostAddr& target, PartitionID part);
-
-  void update(std::pair<HostAddr, int32_t>& maxPartsHost,
-              std::pair<HostAddr, int32_t>& minPartsHost,
-              int32_t& minLoad, int32_t& maxLoad, float& avgLoad,
-              std::vector<std::pair<HostAddr, int32_t>>& sortedHosts,
-              const HostParts& confirmedHostParts);
+  bool checkZoneLegal(const HostAddr& source, const HostAddr& target);
 
  private:
   std::atomic_bool running_{false};
