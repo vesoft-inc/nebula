@@ -160,6 +160,16 @@ class BaseProcessor {
   ErrorOr<nebula::cpp2::ErrorCode, int32_t> autoIncrementId();
 
   /**
+   * Get the current available global id
+   **/
+  ErrorOr<nebula::cpp2::ErrorCode, int32_t> getAvailableGolbalId();
+
+  /**
+   * Get one auto-increment Id in spaceId.
+   * */
+  ErrorOr<nebula::cpp2::ErrorCode, int32_t> autoIncrementIdInSpace(GraphSpaceID spaceId);
+
+  /**
    * Check spaceId exist or not.
    * */
   nebula::cpp2::ErrorCode spaceExist(GraphSpaceID spaceId);
