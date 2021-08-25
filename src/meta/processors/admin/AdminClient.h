@@ -11,6 +11,7 @@
 
 #include "common/base/Base.h"
 #include "common/base/Status.h"
+#include "common/ssl/SSLConfig.h"
 #include "common/thrift/ThriftClientManager.h"
 #include "interface/gen-cpp2/StorageAdminServiceAsyncClient.h"
 #include "kvstore/KVStore.h"
@@ -33,7 +34,8 @@ class AdminClient {
   explicit AdminClient(kvstore::KVStore* kv) : kv_(kv) {
     ioThreadPool_ = std::make_unique<folly::IOThreadPoolExecutor>(10);
     clientsMan_ = std::make_unique<
-        thrift::ThriftClientManager<storage::cpp2::StorageAdminServiceAsyncClient>>();
+        thrift::ThriftClientManager<storage::cpp2::StorageAdminServiceAsyncClient>>(
+        FLAGS_enable_ssl);
   }
 
   virtual ~AdminClient() = default;

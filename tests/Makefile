@@ -18,6 +18,7 @@ DEBUG ?= true
 J ?= 10
 ENABLE_SSL ?= false
 ENABLE_GRAPH_SSL ?= false
+ENABLE_META_SSL ?= false
 CA_SIGNED ?= false
 
 install-deps:
@@ -52,7 +53,7 @@ check:
 
 up: clean
 	@mkdir -p $(CURR_DIR)/.pytest
-	PYTHONPATH=$$PYTHONPATH:$(CURR_DIR)/.. $(CURR_DIR)/nebula-test-run.py --cmd=start --rm_dir=$(RM_DIR) --build_dir=$(BUILD_DIR) --debug=$(DEBUG) --multi_graphd=true --enable_ssl=$(ENABLE_SSL) --enable_graph_ssl=$(ENABLE_GRAPH_SSL) --ca_signed=$(CA_SIGNED)
+	PYTHONPATH=$$PYTHONPATH:$(CURR_DIR)/.. $(CURR_DIR)/nebula-test-run.py --cmd=start --rm_dir=$(RM_DIR) --build_dir=$(BUILD_DIR) --debug=$(DEBUG) --multi_graphd=true --enable_ssl=$(ENABLE_SSL) --enable_graph_ssl=$(ENABLE_GRAPH_SSL) --enable_meta_ssl=$(ENABLE_META_SSL) --ca_signed=$(CA_SIGNED)
 
 down:
 	PYTHONPATH=$$PYTHONPATH:$(CURR_DIR)/.. $(CURR_DIR)/nebula-test-run.py --cmd=stop --rm_dir=$(RM_DIR)

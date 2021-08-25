@@ -19,6 +19,7 @@
 #include "common/http/HttpClient.h"
 #include "common/meta/NebulaSchemaProvider.h"
 #include "common/network/NetworkUtils.h"
+#include "common/ssl/SSLConfig.h"
 #include "common/stats/StatsManager.h"
 #include "version/Version.h"
 #include "webservice/Common.h"
@@ -40,7 +41,8 @@ MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool
   CHECK(ioThreadPool_ != nullptr) << "IOThreadPool is required";
   CHECK(!addrs_.empty()) << "No meta server address is specified or can be "
                             "solved. Meta server is required";
-  clientsMan_ = std::make_shared<thrift::ThriftClientManager<cpp2::MetaServiceAsyncClient>>();
+  clientsMan_ = std::make_shared<thrift::ThriftClientManager<cpp2::MetaServiceAsyncClient>>(
+      FLAGS_enable_ssl || FLAGS_enable_meta_ssl);
   updateActive();
   updateLeader();
   bgThread_ = std::make_unique<thread::GenericWorker>();

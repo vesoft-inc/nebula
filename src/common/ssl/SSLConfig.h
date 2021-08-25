@@ -15,6 +15,7 @@
 
 DECLARE_bool(enable_ssl);
 DECLARE_bool(enable_graph_ssl);
+DECLARE_bool(enable_meta_ssl);
 
 namespace nebula {
 

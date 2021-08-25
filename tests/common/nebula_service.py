@@ -168,7 +168,7 @@ class NebulaService(object):
             time.sleep(1)
         return False
 
-    def start(self, debug_log=True, multi_graphd=False, enable_ssl=False, enable_graph_ssl=False, ca_signed=False):
+    def start(self, debug_log=True, multi_graphd=False, enable_ssl=False, enable_graph_ssl=False, enable_meta_ssl=False, ca_signed=False):
         os.chdir(self.work_dir)
 
         metad_ports = self._find_free_port()
@@ -208,6 +208,7 @@ class NebulaService(object):
                 command += ' --pid_file=pids1/nebula-graphd.pid'
             command += ' --enable_ssl={}'.format(enable_ssl)
             command += ' --enable_graph_ssl={}'.format(enable_graph_ssl)
+            command += ' --enable_meta_ssl={}'.format(enable_meta_ssl)
             print("exec: " + command)
             p = subprocess.Popen([command], shell=True, stdout=subprocess.PIPE)
             p.wait()

@@ -26,7 +26,9 @@ class ThriftClientManager final {
 
   ~ThriftClientManager() { VLOG(3) << "~ThriftClientManager"; }
 
-  ThriftClientManager() { VLOG(3) << "ThriftClientManager"; }
+  explicit ThriftClientManager(bool enableSSL = false) : enableSSL_(enableSSL) {
+    VLOG(3) << "ThriftClientManager";
+  }
 
  private:
   using ClientMap = std::unordered_map<std::pair<HostAddr, folly::EventBase*>,  // <ip, port>
@@ -35,6 +37,8 @@ class ThriftClientManager final {
                                        >;
 
   folly::ThreadLocal<ClientMap> clientMap_;
+  // wether enable ssl
+  bool enableSSL_{false};
 };
 
 }  // namespace thrift

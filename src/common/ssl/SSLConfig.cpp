@@ -10,7 +10,8 @@ DEFINE_string(cert_path, "", "Path to cert pem.");
 DEFINE_string(key_path, "", "Path to cert key.");
 DEFINE_string(ca_path, "", "Path to trusted CA file.");
 DEFINE_bool(enable_ssl, false, "Wether enable ssl.");
-DEFINE_bool(enable_graph_ssl, false, "Wether enable ssl.");
+DEFINE_bool(enable_graph_ssl, false, "Wether enable ssl of graph server.");
+DEFINE_bool(enable_meta_ssl, false, "Wether enable ssl of meta server.");
 
 namespace nebula {
 

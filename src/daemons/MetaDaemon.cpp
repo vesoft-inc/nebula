@@ -312,7 +312,7 @@ int main(int argc, char* argv[]) {
     gServer->setPort(FLAGS_port);
     gServer->setIdleTimeout(std::chrono::seconds(0));  // No idle timeout on client connection
     gServer->setInterface(std::move(handler));
-    if (FLAGS_enable_ssl) {
+    if (FLAGS_enable_ssl || FLAGS_enable_meta_ssl) {
       gServer->setSSLConfig(nebula::sslContextConfig());
     }
     gServer->serve();  // Will wait until the server shuts down
