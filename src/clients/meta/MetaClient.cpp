@@ -54,6 +54,8 @@ MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool
 
 MetaClient::~MetaClient() {
   stop();
+  delete sessionMap_.load();
+  delete killedPlans_.load();
   VLOG(3) << "~MetaClient";
 }
 
