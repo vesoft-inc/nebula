@@ -10,6 +10,8 @@
 #   -d: Whether to enable sanitizer, default OFF
 #   -t: Build type, default Release
 #   -j: Number of threads, default $(nproc)
+#   -r: Whether enable compressed debug info, defaulr ON
+#   -p: Whether dump the symbols from binary by dump_syms
 #
 # usage: ./package.sh -v <version> -n <ON/OFF> -s <TRUE/FALSE> -b <BRANCH>
 #
@@ -19,7 +21,7 @@ set -e
 version=""
 package_one=ON
 strip_enable="FALSE"
-usage="Usage: ${0} -v <version> -n <ON/OFF> -s <TRUE/FALSE> -b <BRANCH> -g <ON/OFF> -j <jobs>"
+usage="Usage: ${0} -v <version> -n <ON/OFF> -s <TRUE/FALSE> -b <BRANCH> -g <ON/OFF> -j <jobs> -t <BUILD TYPE>"
 project_dir="$(cd "$(dirname "$0")" && pwd)/.."
 build_dir=${project_dir}/pkg-build
 enablesanitizer="OFF"
@@ -27,8 +29,11 @@ static_sanitizer="OFF"
 build_type="Release"
 branch="master"
 jobs=$(nproc)
+enable_compressed_debug_info=ON
+dump_symbols=OFF
+dump_syms_tool_dir=
 
-while getopts v:n:s:b:d:t:j:g: opt;
+while getopts v:n:s:b:d:t:r:p:j: opt;
 do
     case $opt in
         v)
@@ -56,6 +61,12 @@ do
         j)
             jobs=$OPTARG
             ;;
+        r)
+            enable_compressed_debug_info=$OPTARG
+            ;;
+        p)
+            dump_symbols=$OPTARG
+            ;;
         ?)
             echo "Invalid option, use default arguments"
             ;;
@@ -80,7 +91,18 @@ if [[ $strip_enable != TRUE ]] && [[ $strip_enable != FALSE ]]; then
     exit 1
 fi
 
-echo "current version is [ $version ], strip enable is [$strip_enable], enablesanitizer is [$enablesanitizer], static_sanitizer is [$static_sanitizer]"
+cat << EOF
+Configuration for this shell:
+version: $version
+strip_enable: $strip_enable
+enablesanitizer: $enablesanitizer
+static_sanitizer: $static_sanitizer
+build_type: $build_type
+branch: $branch
+enable_compressed_debug_info: $enable_compressed_debug_info
+dump_symbols: $dump_symbols
+
+EOF
 
 function _build_graph {
     pushd ${build_dir}
@@ -93,6 +115,7 @@ function _build_graph {
           -DCMAKE_INSTALL_PREFIX=/usr/local/nebula \
           -DENABLE_TESTING=OFF \
           -DENABLE_PACK_ONE=${package_one} \
+          -DENABLE_COMPRESSED_DEBUG_INFO=${enable_compressed_debug_info} \
           ${project_dir}
 
     if ! ( make -j ${jobs} ); then
@@ -133,14 +156,43 @@ function package {
         mkdir -p ${outputDir}
         for pkg_name in $(ls ./*nebula*-${version}*); do
             mv ${pkg_name} ${outputDir}/
-            echo "####### taget package file is ${outputDir}/${pkg_name}"
+            echo "####### target package file is ${outputDir}/${pkg_name}"
         done
     fi
 
     popd
 }
 
+function _find_dump_syms_tool {
+    if [[ -x ${build_dir}/third-party/install/bin/dump_syms ]]; then
+        dump_syms_tool_dir=${build_dir}/third-party/install/bin
+    elif [[ -x /opt/vesoft/third-party/2.0/bin/dump_syms ]]; then
+        dump_syms_tool_dir=/opt/vesoft/third-party/2.0/bin
+    else
+        echo ">>> Failed to find the dump_syms tool <<<"
+        exit 1
+    fi
+}
+
+function dump_syms {
+    _find_dump_syms_tool
+
+    syms_dir=${build_dir}/syms/
+    rm -rf ${syms_dir} && mkdir -p ${syms_dir}
+
+    nebula_graphd=${build_dir}/bin/nebula-graphd
+    nebula_storaged=${build_dir}/bin/nebula-storaged
+    nebula_metad=${build_dir}/bin/nebula-metad
+
+    ${dump_syms_tool_dir}/dump_syms ${nebula_graphd} > ${syms_dir}/nebula-graphd.sym
+    ${dump_syms_tool_dir}/dump_syms ${nebula_storaged} > ${syms_dir}/nebula-storaged.sym
+    ${dump_syms_tool_dir}/dump_syms ${nebula_metad} > ${syms_dir}/nebula-metad.sym
+}
 
 # The main
 build $version $enablesanitizer $static_sanitizer $build_type $branch
+if [[ $dump_symbols == ON ]]; then
+    echo ">>> start dump symbols <<<"
+    dump_syms
+fi
 package $strip_enable
