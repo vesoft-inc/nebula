@@ -18,7 +18,14 @@ void GetStatsProcessor::process(const cpp2::GetStatsReq& req) {
   auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, statsKey, &val);
 
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "SpaceId " << spaceId << " no statis data, please submit job statis under space.";
+    if (ret == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
+      ret = nebula::cpp2::ErrorCode::E_STATS_NOT_FOUND;
+      LOG(ERROR) << "SpaceId " << spaceId
+                 << " no stats info, please execute `submit job stats' under space firstly.";
+    } else {
+      LOG(ERROR) << "Show stats failed, error " << apache::thrift::util::enumNameSafe(ret);
+    }
+
     handleErrorCode(ret);
     onFinished();
     return;
@@ -26,7 +33,8 @@ void GetStatsProcessor::process(const cpp2::GetStatsReq& req) {
   auto statsItem = MetaServiceUtils::parseStatsVal(val);
   auto statisJobStatus = statsItem.get_status();
   if (statisJobStatus != cpp2::JobStatus::FINISHED) {
-    LOG(ERROR) << "SpaceId " << spaceId << " statis job is running or failed, please show jobs.";
+    LOG(ERROR) << "SpaceId " << spaceId
+               << " stats job is running or failed, please execute `show jobs' firstly.";
     handleErrorCode(nebula::cpp2::ErrorCode::E_JOB_NOT_FINISHED);
     onFinished();
     return;
