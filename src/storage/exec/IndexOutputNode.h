@@ -120,10 +120,10 @@ class IndexOutputNode final : public RelNode<T> {
  private:
   nebula::cpp2::ErrorCode collectResult(const std::vector<kvstore::KV>& data) {
     if (context_->env()->metaClient_ &&
-          context_->env()->metaClient_->checkIsPlanKilled(context_->planContext_->sessionId_,
-                                                          context_->planContext_->planId_)) {
-        return nebula::cpp2::ErrorCode::E_PLAN_IS_KILLED;
-      }
+        context_->env()->metaClient_->checkIsPlanKilled(context_->planContext_->sessionId_,
+                                                        context_->planContext_->planId_)) {
+      return nebula::cpp2::ErrorCode::E_PLAN_IS_KILLED;
+    }
     auto ret = nebula::cpp2::ErrorCode::SUCCEEDED;
     switch (type_) {
       case IndexResultType::kEdgeFromIndexScan:
