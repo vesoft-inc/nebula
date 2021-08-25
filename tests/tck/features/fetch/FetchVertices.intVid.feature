@@ -39,7 +39,7 @@ Feature: Fetch Int Vid Vertices
       """
       $var = GO FROM hash('Boris Diaw') over like YIELD like._dst as id;
       FETCH PROP ON player $var.id YIELD player.name as name, player.age |
-      ORDER BY name
+      ORDER BY $-.name
       """
     Then the result should be, in order, and the columns 0 should be hashed:
       | VertexID      | name          | player.age |
