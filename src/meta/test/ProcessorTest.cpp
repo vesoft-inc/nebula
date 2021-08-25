@@ -798,7 +798,7 @@ TEST(ProcessorTest, CreateTagTest) {
     processor->process(req);
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-    ASSERT_EQ(4, resp.get_id().get_tag_id());
+    ASSERT_EQ(3, resp.get_id().get_tag_id());
   }
   {
     // Create same name edge in same spaces
@@ -829,7 +829,7 @@ TEST(ProcessorTest, CreateTagTest) {
     processor->process(req);
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-    ASSERT_EQ(5, resp.get_id().get_tag_id());
+    ASSERT_EQ(4, resp.get_id().get_tag_id());
   }
   // Wrong default value type
   {
@@ -994,7 +994,7 @@ TEST(ProcessorTest, CreateEdgeTest) {
     processor->process(req);
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-    ASSERT_EQ(4, resp.get_id().get_edge_type());
+    ASSERT_EQ(3, resp.get_id().get_edge_type());
   }
   {
     // Create same name tag in same spaces
@@ -1025,7 +1025,7 @@ TEST(ProcessorTest, CreateEdgeTest) {
     processor->process(req);
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-    ASSERT_EQ(5, resp.get_id().get_edge_type());
+    ASSERT_EQ(4, resp.get_id().get_edge_type());
   }
   {
     cpp2::Schema schemaWithDefault;
@@ -1045,7 +1045,7 @@ TEST(ProcessorTest, CreateEdgeTest) {
     processor->process(req);
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-    ASSERT_EQ(6, resp.get_id().get_edge_type());
+    ASSERT_EQ(5, resp.get_id().get_edge_type());
   }
   {
     cpp2::Schema schemaWithDefault;
@@ -2546,7 +2546,7 @@ TEST(ProcessorTest, SameNameTagsTest) {
     processor->process(req);
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-    ASSERT_EQ(4, resp.get_id().get_tag_id());
+    ASSERT_EQ(3, resp.get_id().get_tag_id());
   }
 
   // Remove Test
@@ -2586,7 +2586,7 @@ TEST(ProcessorTest, SameNameTagsTest) {
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     ASSERT_EQ(1, tags.size());
 
-    ASSERT_EQ(4, tags[0].get_tag_id());
+    ASSERT_EQ(3, tags[0].get_tag_id());
     ASSERT_EQ("default_tag", tags[0].get_tag_name());
   }
 }
@@ -2722,6 +2722,158 @@ TEST(ProcessorTest, SessionManagerTest) {
     ASSERT_EQ(nebula::cpp2::ErrorCode::E_SESSION_NOT_FOUND, gResp.get_code());
   }
 }
+
+TEST(ProcessorTest, TagIdAndEdgeTypeInSpaceRangeTest) {
+  fs::TempDir rootPath("/tmp/TagIdAndEdgeTypeInSpaceRangeTest.XXXXXX");
+  auto kv = MockCluster::initMetaKV(rootPath.path());
+  TestUtils::createSomeHosts(kv.get());
+
+  // mock one space and ten tag, ten edge
+  {
+    // space Id is 1
+    TestUtils::assembleSpace(kv.get(), 1, 1);
+    // tagId is from 2 to 11 in space 1
+    TestUtils::mockTag(kv.get(), 10, 0, false, 2, 1);
+    // edgeType is form 12 to 21 in space 1
+    TestUtils::mockEdge(kv.get(), 10, 0, false, 12, 1);
+
+    // check tag and edge count
+    int count = 0;
+
+    auto tagprefix = MetaServiceUtils::schemaTagsPrefix(1);
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto retCode = kv->prefix(kDefaultSpaceId, kDefaultPartId, tagprefix, &iter);
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, retCode);
+    while (iter->valid()) {
+      count++;
+      iter->next();
+    }
+    ASSERT_EQ(10, count);
+
+    auto edgeprefix = MetaServiceUtils::schemaEdgesPrefix(1);
+    retCode = kv->prefix(kDefaultSpaceId, kDefaultPartId, edgeprefix, &iter);
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, retCode);
+    while (iter->valid()) {
+      count++;
+      iter->next();
+    }
+    ASSERT_EQ(20, count);
+
+    // modify id to 21 for mock some schema
+    folly::SharedMutex::WriteHolder holder(LockUtils::idLock());
+    std::string kId = "__id__";
+    int32_t id = 21;
+    std::vector<kvstore::KV> data;
+    data.emplace_back(kId, std::string(reinterpret_cast<const char*>(&id), sizeof(id)));
+    folly::Baton<true, std::atomic> baton;
+    auto ret = nebula::cpp2::ErrorCode::SUCCEEDED;
+    kv->asyncMultiPut(
+        kDefaultSpaceId, kDefaultPartId, std::move(data), [&](nebula::cpp2::ErrorCode code) {
+          ret = code;
+          baton.post();
+        });
+    baton.wait();
+    ASSERT_EQ(ret, nebula::cpp2::ErrorCode::SUCCEEDED);
+  }
+
+  cpp2::Schema schema;
+  std::vector<cpp2::ColumnDef> cols;
+  cols.emplace_back(TestUtils::columnDef(0, PropertyType::INT64));
+  cols.emplace_back(TestUtils::columnDef(1, PropertyType::FLOAT));
+  cols.emplace_back(TestUtils::columnDef(2, PropertyType::STRING));
+  schema.set_columns(std::move(cols));
+
+  // create space, use global id
+  {
+    cpp2::SpaceDesc properties;
+    properties.set_space_name("my_space");
+    properties.set_partition_num(9);
+    properties.set_replica_factor(1);
+    cpp2::CreateSpaceReq req;
+    req.set_properties(std::move(properties));
+
+    auto* processor = CreateSpaceProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    ASSERT_EQ(22, resp.get_id().get_space_id());
+  }
+  // create tag in my_space, because there is no local_id key, use global id + 1
+  {
+    // Succeeded
+    cpp2::CreateTagReq req;
+    req.set_space_id(22);
+    req.set_tag_name("default_tag");
+    req.set_schema(schema);
+    auto* processor = CreateTagProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    ASSERT_EQ(23, resp.get_id().get_tag_id());
+  }
+  // create edge in my_space, because there is local_id key, use local_id + 1
+  {
+    // Succeeded
+    cpp2::CreateEdgeReq req;
+    req.set_space_id(22);
+    req.set_edge_name("default_edge");
+    req.set_schema(schema);
+    auto* processor = CreateEdgeProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    ASSERT_EQ(24, resp.get_id().get_edge_type());
+  }
+
+  // create space, space Id is global id + 1
+  {
+    cpp2::SpaceDesc properties;
+    properties.set_space_name("last_space");
+    properties.set_partition_num(9);
+    properties.set_replica_factor(1);
+    cpp2::CreateSpaceReq req;
+    req.set_properties(std::move(properties));
+
+    auto* processor = CreateSpaceProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    ASSERT_EQ(23, resp.get_id().get_space_id());
+  }
+  // create tag in my_space, because there is local_id key, use local id + 1
+  {
+    // Succeeded
+    cpp2::CreateTagReq req;
+    req.set_space_id(22);
+    req.set_tag_name("my_tag");
+    req.set_schema(schema);
+    auto* processor = CreateTagProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    ASSERT_EQ(25, resp.get_id().get_tag_id());
+  }
+  // create edge in my_space, because there is local_id key use local_id + 1
+  {
+    // Succeeded
+    cpp2::CreateEdgeReq req;
+    req.set_space_id(22);
+    req.set_edge_name("my_edge");
+    req.set_schema(schema);
+    auto* processor = CreateEdgeProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    ASSERT_EQ(26, resp.get_id().get_edge_type());
+  }
+}
+
 }  // namespace meta
 }  // namespace nebula
 
