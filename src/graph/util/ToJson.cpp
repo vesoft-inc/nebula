@@ -182,8 +182,6 @@ folly::dynamic toJson(const storage::cpp2::OrderBy &orderBy) {
   return obj;
 }
 
-// TODO (sky) : Group By
-
 folly::dynamic toJson(const storage::cpp2::VertexProp &prop) {
   folly::dynamic obj = folly::dynamic::object();
   if (prop.tag_ref().is_set()) {
@@ -213,7 +211,7 @@ folly::dynamic toJson(const storage::cpp2::StatProp &prop) {
     obj.insert("alias", *prop.alias_ref());
   }
   if (prop.prop_ref().is_set()) {
-    obj.insert("prop", *prop.prop_ref());
+    obj.insert("propItem", toJson(*prop.prop_ref()));
   }
   if (prop.stat_ref().is_set()) {
     obj.insert("stat", apache::thrift::util::enumNameSafe(*prop.stat_ref()));

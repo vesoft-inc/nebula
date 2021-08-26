@@ -63,8 +63,8 @@ enum StatType {
 struct StatProp {
     // Alias of the stats property
     1: binary           alias,
-    // An eperssion. In most of cases, it is a reference to a specific property
-    2: binary           prop,
+    // SchemaID and prop name.
+    2: PropItem         prop,
     // Stats method
     3: StatType         stat,
 }
@@ -119,25 +119,6 @@ enum EdgeDirection {
 }
 
 
-enum AggOperator {
-    COUNT = 1,
-    SUN = 2,
-    MAX = 3,
-    MIN = 4,
-}
-
-
-struct Aggregation {
-    1: AggOperator op,
-    2: PropItem    prop,
-}
-
-
-struct GroupBy {
-    1: list<PropItem>  props,
-}
-
-
 ///////////////////////////////////////////////////////////
 //
 //  Requests, responses for the GraphStorageService
@@ -157,7 +138,7 @@ struct TraverseSpec {
     // Whether to do the dedup based on the entire row. The dedup will be done on the
     //   neighbors of each vertex
     3: bool                                     dedup = false,
-
+    // Aggregation operation by props : max|min|count|sum
     4: optional list<StatProp>                  stat_props,
     // A list of source vertex properties to be returned. If the list is not given,
     //   no prop will be returned. If an empty prop list is given, all properties
@@ -177,10 +158,8 @@ struct TraverseSpec {
     10: optional i64                            limit,
     // If provided, only the rows satified the given expression will be returned
     11: optional binary                         filter,
-    // Aggregation operation by props : max|min|count|sum
-    12: optional list<Aggregation>              aggr_op,
     // A list of props for group by some props.
-    13: optional list<PropItem>                 group_by,
+    12: optional list<PropItem>                 group_by,
 }
 
 
@@ -288,8 +267,8 @@ struct GetPropRequest {
     // If a filter is provided, only vertices that are satisfied the filter
     // will be returned
     9: optional binary                          filter,
-    // A list of props for aggregation operation
-    10: optional list<Aggregation>              aggr_op,
+    // Aggregation operation by props : max|min|count|sum
+    10: optional list<StatProp>                 stat_props,
     // A list of props for group by some props.
     11: optional list<PropItem>                 group_by,
 }
@@ -559,10 +538,10 @@ struct LookupIndexRequest {
     // List of props used by the order-by clause
     6: optional list<OrderBy>               order_by,
     7: optional i64                         limit,
-    // List of props for aggregation operation
-    10: optional list<Aggregation>          aggr_op,
+    // Aggregation operation by props : max|min|count|sum
+    8: optional list<StatProp>              stat_props,
     // List of props for group by some props.
-    11: optional list<PropItem>             group_by,
+    9: optional list<PropItem>             group_by,
 }
 
 
