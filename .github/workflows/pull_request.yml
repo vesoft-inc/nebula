@@ -6,6 +6,11 @@ on:
     branches:
       - master
       - 'v[0-9]+.*'
+    paths-ignore:
+      - 'docs/**'
+      - 'LICENSES/**'
+      - 'LICENSE'
+      - '**.md'
 
 defaults:
   run:

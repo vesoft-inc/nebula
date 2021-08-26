@@ -675,6 +675,10 @@ Status MetaClient::handleResponse(const RESP& resp) {
       return Status::Error("Edge not existed!");
     case nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND:
       return Status::Error("Index not existed!");
+    case nebula::cpp2::ErrorCode::E_STATS_NOT_FOUND:
+      return Status::Error(
+          "There is no any stats info to show, please execute "
+          "`submit job stats' firstly!");
     case nebula::cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND:
       return Status::Error("Edge prop not existed!");
     case nebula::cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND:

@@ -95,7 +95,7 @@ std::shared_ptr<ClientType> ThriftClientManager<ClientType>::client(const HostAd
   std::shared_ptr<ClientType> client(
       new ClientType(std::move(headerClientChannel)),
       [evb](auto* p) { evb->runImmediatelyOrRunInEventBaseThreadAndWait([p] { delete p; }); });
-  clientMap_->emplace(std::make_pair(resolved, evb), client);
+  clientMap_->emplace(std::make_pair(host, evb), client);
   return client;
 }
 
