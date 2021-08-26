@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
   }
 
   folly::init(&argc, &argv, true);
-  if (FLAGS_enable_ssl || FLAGS_enable_graph_ssl) {
+  if (FLAGS_enable_ssl || FLAGS_enable_graph_ssl || FLAGS_enable_meta_ssl) {
     folly::ssl::init();
   }
   nebula::initCounters();

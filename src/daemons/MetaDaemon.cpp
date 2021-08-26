@@ -206,7 +206,7 @@ int main(int argc, char* argv[]) {
   }
 
   folly::init(&argc, &argv, true);
-  if (FLAGS_enable_ssl) {
+  if (FLAGS_enable_ssl || FLAGS_enable_meta_ssl) {
     folly::ssl::init();
   }
   if (FLAGS_data_path.empty()) {
