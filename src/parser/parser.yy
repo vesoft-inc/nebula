@@ -2544,7 +2544,6 @@ traverse_sentence
     | order_by_sentence { $$ = $1; }
     | fetch_sentence { $$ = $1; }
     | find_path_sentence { $$ = $1; }
-    | limit_sentence { $$ = $1; }
     | yield_sentence { $$ = $1; }
     | get_subgraph_sentence { $$ = $1; }
     | delete_vertex_sentence { $$ = $1; }
@@ -2557,6 +2556,7 @@ traverse_sentence
 piped_sentence
     : traverse_sentence { $$ = $1; }
     | piped_sentence PIPE traverse_sentence { $$ = new PipedSentence($1, $3); }
+    | piped_sentence PIPE limit_sentence { $$ = new PipedSentence($1, $3); }
     ;
 
 set_sentence
