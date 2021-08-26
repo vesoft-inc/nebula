@@ -23,7 +23,8 @@ class FetchVerticesValidatorTest : public ValidatorTestBase {
 };
 
 TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
-  auto src = VariablePropertyExpression::make(pool_.get(), "_VARNAME_", "VertexID");
+  // auto src = VariablePropertyExpression::make(pool_.get(), "_VARNAME_", "VertexID");
+  auto src = ColumnExpression::make(pool_.get(), 0);
   {
     auto qctx = getQCtx("FETCH PROP ON person \"1\"");
     auto *pool = qctx->objPool();
@@ -40,9 +41,8 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     gv->setColNames({nebula::kVid, "person.name", "person.age"});
     // project
     auto yieldColumns = std::make_unique<YieldColumns>();
-    yieldColumns->addColumn(new YieldColumn(VertexExpression::make(pool), "VERTEX"));
+    yieldColumns->addColumn(new YieldColumn(VertexExpression::make(pool)));
     auto *project = Project::make(qctx, gv, yieldColumns.get());
-    project->setColNames({"VERTEX"});
     auto result = Eq(qctx->plan()->root(), project);
     ASSERT_TRUE(result.ok()) << result;
   }
@@ -71,9 +71,8 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     gv->setColNames({nebula::kVid, "person.name", "person.age", "book.name"});
     // project
     auto yieldColumns = std::make_unique<YieldColumns>();
-    yieldColumns->addColumn(new YieldColumn(VertexExpression::make(pool), "vertices_"));
+    yieldColumns->addColumn(new YieldColumn(VertexExpression::make(pool)));
     auto *project = Project::make(qctx, gv, yieldColumns.get());
-    project->setColNames({"vertices_"});
     auto result = Eq(qctx->plan()->root(), project);
     ASSERT_TRUE(result.ok()) << result;
   }
@@ -405,9 +404,8 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     gv->setColNames({nebula::kVid, "person.name", "person.age"});
     // project
     auto yieldColumns = std::make_unique<YieldColumns>();
-    yieldColumns->addColumn(new YieldColumn(VertexExpression::make(pool), "vertices_"));
+    yieldColumns->addColumn(new YieldColumn(VertexExpression::make(pool)));
     auto *project = Project::make(qctx, gv, yieldColumns.get());
-    project->setColNames({"vertices_"});
     auto result = Eq(qctx->plan()->root(), project);
     ASSERT_TRUE(result.ok()) << result;
   }
@@ -420,9 +418,8 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     gv->setColNames({nebula::kVid, "person.name", "person.age"});
     // project
     auto yieldColumns = std::make_unique<YieldColumns>();
-    yieldColumns->addColumn(new YieldColumn(VertexExpression::make(pool), "vertices_"));
+    yieldColumns->addColumn(new YieldColumn(VertexExpression::make(pool)));
     auto *project = Project::make(qctx, gv, yieldColumns.get());
-    project->setColNames({"vertices_"});
     auto result = Eq(qctx->plan()->root(), project);
     ASSERT_TRUE(result.ok()) << result;
   }
@@ -443,7 +440,6 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
         new YieldColumn(InputPropertyExpression::make(pool, nebula::kVid), "VertexID"));
     yieldColumns->addColumn(new YieldColumn(TagPropertyExpression::make(pool, "person", "name")));
     auto *project = Project::make(qctx, gv, yieldColumns.get());
-    project->setColNames(colNames);
 
     auto result = Eq(qctx->plan()->root(), project);
     ASSERT_TRUE(result.ok()) << result;
@@ -465,7 +461,6 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     yieldColumns->addColumn(new YieldColumn(TagPropertyExpression::make(pool, "person", "name")));
     yieldColumns->addColumn(new YieldColumn(TagPropertyExpression::make(pool, "person", "age")));
     auto *project = Project::make(qctx, gv, yieldColumns.get());
-    project->setColNames(colNames);
 
     auto result = Eq(qctx->plan()->root(), project);
     ASSERT_TRUE(result.ok()) << result;
@@ -488,7 +483,6 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     yieldColumns->addColumn(new YieldColumn(TagPropertyExpression::make(pool, "person", "name")));
     yieldColumns->addColumn(new YieldColumn(TagPropertyExpression::make(pool, "person", "age")));
     auto *project = Project::make(qctx, gv, yieldColumns.get());
-    project->setColNames({"VertexID", "(1+1)", "person.name", "person.age"});
 
     auto result = Eq(qctx->plan()->root(), project);
     ASSERT_TRUE(result.ok()) << result;

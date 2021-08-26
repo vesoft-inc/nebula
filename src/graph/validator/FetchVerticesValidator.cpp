@@ -7,7 +7,6 @@
 
 #include "graph/planner/plan/Query.h"
 #include "graph/util/ExpressionUtils.h"
-#include "graph/util/SchemaUtil.h"
 #include "graph/util/ValidateUtil.h"
 #include "graph/visitor/DeducePropsVisitor.h"
 
@@ -25,6 +24,21 @@ Status FetchVerticesValidator::validateImpl() {
   NG_RETURN_IF_ERROR(validateStarts(fSentence->vertices(), fetchCtx_->from));
   NG_RETURN_IF_ERROR(validateYield(fSentence->yieldClause()));
   return Status::OK();
+}
+
+Expression *FetchVerticesValidator::rewriteIDVertex2Vid(const Expression *expr) {
+  auto *pool = qctx_->objPool();
+  auto matcher = [](const Expression *e) -> bool {
+    std::string lowerStr = e->toString();
+    folly::toLowerAscii(lowerStr);
+    return e->kind() == Expression::Kind::kFunctionCall && lowerStr == "id(vertex)";
+  };
+  auto rewriter = [pool](const Expression *e) -> Expression * {
+    UNUSED(e);
+    return InputPropertyExpression::make(pool, nebula::kVid);
+  };
+
+  return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
 }
 
 Status FetchVerticesValidator::validateTag(const NameLabelList *nameLabels) {
@@ -54,32 +68,55 @@ Status FetchVerticesValidator::validateTag(const NameLabelList *nameLabels) {
 
 Status FetchVerticesValidator::validateYield(YieldClause *yield) {
   auto pool = qctx_->objPool();
+  bool existVertex = false;
   if (yield == nullptr) {
     // version 3.0: return Status::SemanticError("No YIELD Clause");
     auto *yieldColumns = new YieldColumns();
     auto *vertex = new YieldColumn(VertexExpression::make(pool));
     yieldColumns->addColumn(vertex);
     yield = pool->add(new YieldClause(yieldColumns));
+    existVertex = true;
   }
-  fetchCtx_->distinct = yield->isDistinct();
+  for (const auto &col : yield->columns()) {
+    if (col->expr()->kind() == Expression::Kind::kVertex) {
+      existVertex = true;
+      break;
+    }
+  }
 
+  fetchCtx_->distinct = yield->isDistinct();
   auto size = yield->columns().size();
-  outputs_.reserve(size + 1);  // VertexID
-  outputs_.emplace_back(VertexID, vidType_);
+  outputs_.reserve(size + 1);
 
   auto &exprProps = fetchCtx_->exprProps;
+  auto *newCols = pool->add(new YieldColumns());
+  if (!existVertex) {
+    outputs_.emplace_back(VertexID, vidType_);
+    auto *vidCol = new YieldColumn(InputPropertyExpression::make(pool, nebula::kVid), VertexID);
+    newCols->addColumn(vidCol);
+  } else {
+    extractVertexProp(exprProps);
+  }
   for (auto col : yield->columns()) {
     // yield vertex or id(vertex)
     col->setExpr(ExpressionUtils::rewriteLabelAttr2TagProp(col->expr()));
     NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(col->expr()));
-
     auto colExpr = col->expr();
     auto typeStatus = deduceExprType(colExpr);
     NG_RETURN_IF_ERROR(typeStatus);
     outputs_.emplace_back(col->name(), typeStatus.value());
+    col->setAlias(col->name());
+    col->setExpr(rewriteIDVertex2Vid(colExpr));
+    newCols->addColumn(col->clone().release());
 
     NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps));
   }
+  if (exprProps.tagProps().empty()) {
+    for (const auto &tagSchema : tagsSchema_) {
+      exprProps.insertTagProp(tagSchema.first, nebula::kTag);
+    }
+  }
+  fetchCtx_->yieldExpr = newCols;
 
   if (exprProps.hasInputVarProperty()) {
     return Status::SemanticError("Unsupported input/variable property expression in yield.");
@@ -88,23 +125,23 @@ Status FetchVerticesValidator::validateYield(YieldClause *yield) {
     return Status::SemanticError("Unsupported src/dst property expression in yield.");
   }
 
-  // for (const auto &tag : exprProps.tagNameIds()) {
-  //   if (tagsSchema_.find(tag.first) == tagsSchema_.end()) {
-  //     return Status::SemanticError("Mismatched tag `%s'", tag);
-  //   }
-  // }
-  auto *newCols = pool->add(new YieldColumns());
-  // TODO (will be deleted in version 3.0)
-  auto *vidCol = new YieldColumn(InputPropertyExpression::make(pool, nebula::kVid), VertexID);
-  newCols->addColumn(vidCol);
-  for (const auto &col : yield->columns()) {
-    newCols->addColumn(col->clone().release());
+  for (const auto &tag : exprProps.tagNameIds()) {
+    if (tagsSchema_.find(tag.second) == tagsSchema_.end()) {
+      return Status::SemanticError("Mismatched tag `%s'", tag.first.c_str());
+    }
   }
-  fetchCtx_->yieldExpr = newCols;
-  auto colNames = getOutColNames();
-  colNames.insert(colNames.begin(), nebula::kVid);
-  fetchCtx_->colNames = std::move(colNames);
   return Status::OK();
+}
+
+void FetchVerticesValidator::extractVertexProp(ExpressionProps &exprProps) {
+  for (const auto &tagSchema : tagsSchema_) {
+    auto tagID = tagSchema.first;
+    exprProps.insertTagProp(tagID, nebula::kTag);
+    for (std::size_t i = 0; i < tagSchema.second->getNumFields(); ++i) {
+      const auto propName = tagSchema.second->getFieldName(i);
+      exprProps.insertTagProp(tagID, propName);
+    }
+  }
 }
 
 }  // namespace graph

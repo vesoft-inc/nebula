@@ -28,9 +28,11 @@ class FetchVerticesValidator final : public Validator {
 
   AstContext* getAstContext() override { return fetchCtx_.get(); }
 
- private:
-  std::unordered_map<std::string, TagID> tags_;
+  void extractVertexProp(ExpressionProps& exprProps);
 
+  Expression* rewriteIDVertex2Vid(const Expression* expr);
+
+ private:
   std::map<TagID, std::shared_ptr<const meta::SchemaProviderIf>> tagsSchema_;
 
   std::unique_ptr<FetchVerticesContext> fetchCtx_;

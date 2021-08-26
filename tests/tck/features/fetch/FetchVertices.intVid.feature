@@ -25,7 +25,7 @@ Feature: Fetch Int Vid Vertices
       FETCH PROP ON player hash('Boris Diaw')
       """
     Then the result should be, in any order:
-      | vertices_                                             |
+      | VERTEX                                                |
       | (hash('Boris Diaw'):player{age:36,name:"Boris Diaw"}) |
     # Fetch prop on not existing vertex
     When executing query:
@@ -104,7 +104,8 @@ Feature: Fetch Int Vid Vertices
   Scenario: Fetch from pipe
     When executing query:
       """
-      GO FROM hash('Boris Diaw') over like YIELD like._dst as id | FETCH PROP ON player $-.id YIELD player.name, player.age
+      GO FROM hash('Boris Diaw') over like YIELD like._dst as id |
+      FETCH PROP ON player $-.id YIELD player.name, player.age
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
       | VertexID      | player.name   | player.age |
@@ -113,22 +114,24 @@ Feature: Fetch Int Vid Vertices
     # empty input
     When executing query:
       """
-      GO FROM hash('NON EXIST VERTEX ID') over like YIELD like._dst as id | FETCH PROP ON player $-.id yield player.name
+      GO FROM hash('NON EXIST VERTEX ID') over like YIELD like._dst as id |
+      FETCH PROP ON player $-.id yield player.name
       """
     Then the result should be, in any order:
       | VertexID | player.name |
     When executing query:
       """
-      GO FROM hash('NON EXIST VERTEX ID') over serve YIELD serve._dst as id, serve.start_year as start
-      | YIELD $-.id as id WHERE $-.start > 20000 | FETCH PROP ON player $-.id yield player.name
+      GO FROM hash('NON EXIST VERTEX ID') over serve YIELD serve._dst as id, serve.start_year as start |
+      YIELD $-.id as id WHERE $-.start > 20000 |
+      FETCH PROP ON player $-.id yield player.name
       """
     Then the result should be, in any order:
       | VertexID | player.name |
     # Fetch prop on multi tags of vertices from pipe
     When executing query:
       """
-      GO FROM hash("Boris Diaw") over like YIELD like._dst as id
-      | FETCH PROP ON player, team, bachelor $-.id YIELD player.name, player.age, team.name, bachelor.name, bachelor.speciality
+      GO FROM hash("Boris Diaw") over like YIELD like._dst as id |
+      FETCH PROP ON player, team, bachelor $-.id YIELD player.name, player.age, team.name, bachelor.name, bachelor.speciality
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
       | VertexID      | player.name   | player.age | team.name | bachelor.name | bachelor.speciality |
@@ -136,8 +139,8 @@ Feature: Fetch Int Vid Vertices
       | "Tony Parker" | "Tony Parker" | 36         | EMPTY     | EMPTY         | EMPTY               |
     When executing query:
       """
-      GO FROM hash('Boris Diaw') over like YIELD like._dst as id
-      | FETCH PROP ON player, bachelor $-.id YIELD player.name, player.age, bachelor.name, bachelor.speciality
+      GO FROM hash('Boris Diaw') over like YIELD like._dst as id |
+      FETCH PROP ON player, bachelor $-.id YIELD player.name, player.age, bachelor.name, bachelor.speciality
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
       | VertexID      | player.name   | player.age | bachelor.name | bachelor.speciality |
@@ -204,7 +207,7 @@ Feature: Fetch Int Vid Vertices
       FETCH PROP ON * hash('NON EXIST VERTEX ID')
       """
     Then the result should be, in any order:
-      | vertices_ |
+      | VERTEX |
     # on existing vertex
     When executing query:
       """
@@ -250,13 +253,13 @@ Feature: Fetch Int Vid Vertices
       FETCH PROP ON * hash('Tim Duncan')
       """
     Then the result should be, in any order, with relax comparison:
-      | vertices_                      |
+      | VERTEX                         |
       | ("Tim Duncan":player:bachelor) |
 
   Scenario: Fetch and Yield id(v)
     When executing query:
       """
-      FETCH PROP ON player hash('Boris Diaw'), hash('Tony Parker') | YIELD id($-.vertices_) as id
+      FETCH PROP ON player hash('Boris Diaw'), hash('Tony Parker') | YIELD id($-.VERTEX) as id
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
       | id            |
@@ -266,8 +269,8 @@ Feature: Fetch Int Vid Vertices
   Scenario: Fetch vertices and then GO
     When executing query:
       """
-      FETCH PROP ON player hash('Tony Parker') YIELD player.name as Name
-      | GO FROM $-.VertexID OVER like
+      FETCH PROP ON player hash('Tony Parker') YIELD player.name as Name |
+      GO FROM $-.VertexID OVER like
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
       | like._dst           |

@@ -658,6 +658,9 @@ expression
     | reduce_expression {
         $$ = $1;
     }
+    | KW_VERTEX {
+        $$ = VertexExpression::make(qctx->objPool());
+    }
     ;
 
 constant_expression
