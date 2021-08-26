@@ -3,8 +3,8 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
-nebula_add_library(
-    meta_obj OBJECT
+nebula_add_module_library(
+    meta_obj OBJECT module_common
     GflagsManager.cpp
     SchemaProviderIf.cpp
     NebulaSchemaProvider.cpp
@@ -13,6 +13,3 @@ nebula_add_library(
     IndexManager.cpp
     ServerBasedIndexManager.cpp
 )
-
-add_dependencies(module_common
-    meta_obj)

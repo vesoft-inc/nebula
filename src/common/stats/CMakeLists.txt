@@ -3,13 +3,11 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
-nebula_add_library(
+nebula_add_module_library(
     stats_obj
     OBJECT
+    module_common
     StatsManager.cpp
 )
-
-add_dependencies(module_common
-    stats_obj)
 
 nebula_add_subdirectory(test)

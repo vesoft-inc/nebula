@@ -3,22 +3,18 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
-nebula_add_library(
-    time_obj OBJECT
+nebula_add_module_library(
+    time_obj OBJECT module_common
     detail/TscHelper.cpp
     Duration.cpp
     WallClock.cpp
 )
 
-nebula_add_library(
-    time_utils_obj OBJECT
+nebula_add_module_library(
+    time_utils_obj OBJECT module_common
     TimeUtils.cpp
     TimezoneInfo.cpp
     TimeConversion.cpp
 )
-
-add_dependencies(module_common
-    time_obj
-    time_utils_obj)
 
 nebula_add_subdirectory(test)

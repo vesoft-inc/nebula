@@ -3,8 +3,8 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
-nebula_add_library(
-    expression_obj OBJECT
+nebula_add_module_library(
+    expression_obj OBJECT module_common
     Expression.cpp
     BinaryExpression.cpp
     ConstantExpression.cpp
@@ -33,8 +33,5 @@ nebula_add_library(
     ListComprehensionExpression.cpp
     ReduceExpression.cpp
 )
-
-add_dependencies(module_common
-    expression_obj)
 
 nebula_add_subdirectory(test)

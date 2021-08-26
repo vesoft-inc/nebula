@@ -3,12 +3,9 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
-nebula_add_library(
-    hdfs_helper_obj OBJECT
+nebula_add_module_library(
+    hdfs_helper_obj OBJECT module_common
     HdfsCommandHelper.cpp
 )
-
-add_dependencies(module_common
-    hdfs_helper_obj)
 
 nebula_add_subdirectory(test)

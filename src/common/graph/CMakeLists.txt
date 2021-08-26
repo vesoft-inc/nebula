@@ -3,12 +3,9 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
-nebula_add_library(
-    graph_obj OBJECT
+nebula_add_module_library(
+    graph_obj OBJECT module_common
     Response.cpp
 )
-
-add_dependencies(module_common
-    graph_obj)
 
 nebula_add_subdirectory(tests)

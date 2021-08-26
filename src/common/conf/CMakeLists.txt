@@ -3,12 +3,9 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
-nebula_add_library(
-    conf_obj OBJECT
+nebula_add_module_library(
+    conf_obj OBJECT module_common
     Configuration.cpp
 )
-
-add_dependencies(module_common
-    conf_obj)
 
 nebula_add_subdirectory(test)

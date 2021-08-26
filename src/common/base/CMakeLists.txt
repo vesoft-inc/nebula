@@ -7,8 +7,8 @@ if (ENABLE_GDB_SCRIPT_SECTION)
     set(gdb_debug_script GdbDebugScript.cpp)
 endif()
 
-nebula_add_library(
-    base_obj OBJECT
+nebula_add_module_library(
+    base_obj OBJECT module_common
     Base.cpp
     Cord.cpp
     Status.cpp
@@ -19,8 +19,5 @@ nebula_add_library(
     Memory.cpp
     ${gdb_debug_script}
 )
-
-add_dependencies(module_common
-    base_obj)
 
 nebula_add_subdirectory(test)

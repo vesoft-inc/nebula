@@ -77,12 +77,6 @@ macro(nebula_add_library name type)
             base_obj_gch
         )
     endif()
-    export(
-        TARGETS ${name}
-        NAMESPACE "nebula_"
-        APPEND
-        FILE ${CMAKE_BINARY_DIR}/${PACKAGE_NAME}-config.cmake
-    )
     add_dependencies(
         ${name}
         common_thrift_generator
@@ -93,6 +87,17 @@ macro(nebula_add_library name type)
         # hbase_thrift_generator
         parser_target
     )
+endmacro()
+
+macro(nebula_add_module_library name type module)
+    nebula_add_library(${name} ${type} ${ARGN})
+    export(
+        TARGETS ${name}
+        NAMESPACE "nebula_"
+        APPEND
+        FILE ${CMAKE_BINARY_DIR}/${PACKAGE_NAME}-config.cmake
+    )
+    add_dependencies(${module} ${name})
 endmacro()
 
 nebula_add_subdirectory(src)
