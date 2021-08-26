@@ -257,6 +257,7 @@ enum ErrorCode {
     E_PART_NOT_FOUND                  = -16,
     E_KEY_NOT_FOUND                   = -17,
     E_USER_NOT_FOUND                  = -18,
+    E_STATS_NOT_FOUND                 = -19,
 
     // backup failed
     E_BACKUP_FAILED                   = -24,
