@@ -414,6 +414,28 @@ Feature: Basic match
       | p                                                                      |
       | <("LeBron James")-[:like@0]->("Ray Allen")-[:like@0]->("Rajon Rondo")> |
 
+  Scenario: Match a path in a space which doesn't have edge schema
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 9                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(20) |
+    And having executed:
+      """
+      CREATE TAG IF NOT EXISTS person(name string);
+      """
+    When try to execute query:
+      """
+      INSERT VERTEX person VALUES "Tom":("Tom")
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      MATCH p=(v)-[e*1]->(v2) WHERE id(v) IN ["Tom"] RETURN p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p |
+
   Scenario: Unsupported combination of some cypher clauses
     When executing query:
       """

@@ -21,6 +21,7 @@
 #include "common/network/NetworkUtils.h"
 #include "common/ssl/SSLConfig.h"
 #include "common/stats/StatsManager.h"
+#include "common/time/TimeUtils.h"
 #include "version/Version.h"
 #include "webservice/Common.h"
 
@@ -2328,6 +2329,7 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
             LOG(FATAL) << "Can't persist the clusterId in file " << FLAGS_cluster_id_path;
           }
         }
+        heartbeatTime_ = time::WallClock::fastNowInMilliSec();
         metadLastUpdateTime_ = resp.get_last_update_time_in_ms();
         VLOG(1) << "Metad last update time: " << metadLastUpdateTime_;
         return true;  // resp.code == nebula::cpp2::ErrorCode::SUCCEEDED

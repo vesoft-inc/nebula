@@ -65,6 +65,17 @@ class ShowHosts final : public SingleDependencyNode {
   meta::cpp2::ListHostType type_;
 };
 
+class ShowMetaLeaderNode final : public SingleDependencyNode {
+ public:
+  static ShowMetaLeaderNode* make(QueryContext* qctx, PlanNode* dep) {
+    return qctx->objPool()->add(new ShowMetaLeaderNode(qctx, dep));
+  }
+
+ private:
+  ShowMetaLeaderNode(QueryContext* qctx, PlanNode* dep)
+      : SingleDependencyNode(qctx, Kind::kShowMetaLeader, dep) {}
+};
+
 class CreateSpace final : public SingleDependencyNode {
  public:
   static CreateSpace* make(QueryContext* qctx,
