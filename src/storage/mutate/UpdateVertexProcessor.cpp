@@ -52,6 +52,7 @@ void UpdateVertexProcessor::doProcess(const cpp2::UpdateVertexRequest& req) {
   }
   this->planContext_ = std::make_unique<PlanContext>(
       this->env_, spaceId_, this->spaceVidLen_, this->isIntId_, req.common_ref());
+  context_ = std::make_unique<RuntimeContext>(planContext_.get());
 
   retCode = checkAndBuildContexts(req);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
