@@ -3016,6 +3016,9 @@ show_sentence
     | KW_SHOW KW_SESSION legal_integer {
         $$ = new ShowSessionsSentence($3);
     }
+    | KW_SHOW KW_META KW_LEADER {
+        $$ = new ShowMetaLeaderSentence();
+    }
     ;
 
 list_host_type
