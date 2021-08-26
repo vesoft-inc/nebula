@@ -17,4 +17,8 @@ nebula_add_library(
     TimeConversion.cpp
 )
 
+add_dependencies(module_common
+    time_obj
+    time_utils_obj)
+
 nebula_add_subdirectory(test)

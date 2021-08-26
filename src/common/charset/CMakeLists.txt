@@ -8,4 +8,7 @@ nebula_add_library(
     Charset.cpp
 )
 
+add_dependencies(module_common
+    charset_obj)
+
 nebula_add_subdirectory(test)

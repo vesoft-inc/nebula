@@ -16,4 +16,7 @@ nebula_add_library(
     Set.cpp
 )
 
+add_dependencies(module_common
+    datatypes_obj)
+
 nebula_add_subdirectory(test)

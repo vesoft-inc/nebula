@@ -8,4 +8,7 @@ nebula_add_library(
     Configuration.cpp
 )
 
+add_dependencies(module_common
+    conf_obj)
+
 nebula_add_subdirectory(test)

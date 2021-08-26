@@ -20,4 +20,7 @@ nebula_add_library(
     ${gdb_debug_script}
 )
 
+add_dependencies(module_common
+    base_obj)
+
 nebula_add_subdirectory(test)

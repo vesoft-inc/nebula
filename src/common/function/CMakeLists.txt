@@ -13,4 +13,7 @@ nebula_add_library(
     AggFunctionManager.cpp
 )
 
+add_dependencies(module_common
+    function_manager_obj)
+
 nebula_add_subdirectory(test)

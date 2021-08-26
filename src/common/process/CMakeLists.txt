@@ -8,4 +8,7 @@ nebula_add_library(
     ProcessUtils.cpp
 )
 
+add_dependencies(module_common
+    process_obj)
+
 nebula_add_subdirectory(test)

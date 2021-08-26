@@ -10,4 +10,7 @@ nebula_add_library(
     TempFile.cpp
 )
 
+add_dependencies(module_common
+    fs_obj)
+
 nebula_add_subdirectory(test)

@@ -34,4 +34,7 @@ nebula_add_library(
     ReduceExpression.cpp
 )
 
+add_dependencies(module_common
+    expression_obj)
+
 nebula_add_subdirectory(test)

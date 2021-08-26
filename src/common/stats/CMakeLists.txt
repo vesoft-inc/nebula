@@ -9,4 +9,7 @@ nebula_add_library(
     StatsManager.cpp
 )
 
+add_dependencies(module_common
+    stats_obj)
+
 nebula_add_subdirectory(test)

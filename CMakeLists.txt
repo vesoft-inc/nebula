@@ -23,6 +23,7 @@ cmake_minimum_required(VERSION 3.9.0)
 
 # Set the project name
 project("Nebula Graph" C CXX)
+set(PACKAGE_NAME "nebula")
 
 option(ENABLE_PACK_ONE "Whether to package into one" ON)
 option(ENABLE_VERBOSE_BISON "Enable Bison to report state" OFF)
@@ -76,6 +77,12 @@ macro(nebula_add_library name type)
             base_obj_gch
         )
     endif()
+    export(
+        TARGETS ${name}
+        NAMESPACE "nebula_"
+        APPEND
+        FILE ${CMAKE_BINARY_DIR}/${PACKAGE_NAME}-config.cmake
+    )
     add_dependencies(
         ${name}
         common_thrift_generator

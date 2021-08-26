@@ -8,4 +8,7 @@ nebula_add_library(
     NetworkUtils.cpp
 )
 
+add_dependencies(module_common
+    network_obj)
+
 nebula_add_subdirectory(test)

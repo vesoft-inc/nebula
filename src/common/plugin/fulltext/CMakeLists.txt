@@ -13,4 +13,8 @@ nebula_add_library(
     elasticsearch/ESStorageAdapter.cpp
 )
 
+add_dependencies(module_common
+    ft_es_graph_adapter_obj
+    ft_es_storage_adapter_obj)
+
 nebula_add_subdirectory(test)

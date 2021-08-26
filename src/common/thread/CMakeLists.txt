@@ -10,4 +10,7 @@ nebula_add_library(
     GenericThreadPool.cpp
 )
 
+add_dependencies(module_common
+    thread_obj)
+
 nebula_add_subdirectory(test)

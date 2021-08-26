@@ -7,4 +7,7 @@ nebula_add_library(
     OperationKeyUtils.cpp
 )
 
+add_dependencies(module_common
+    keyutils_obj)
+
 nebula_add_subdirectory(test)

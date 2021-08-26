@@ -7,3 +7,6 @@ nebula_add_library(
     thrift_obj OBJECT
     ThriftClientManager.cpp
 )
+
+add_dependencies(module_common
+    thrift_obj)

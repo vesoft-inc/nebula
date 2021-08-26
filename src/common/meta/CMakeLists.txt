@@ -13,3 +13,6 @@ nebula_add_library(
     IndexManager.cpp
     ServerBasedIndexManager.cpp
 )
+
+add_dependencies(module_common
+    meta_obj)

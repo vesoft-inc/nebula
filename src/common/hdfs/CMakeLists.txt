@@ -8,4 +8,7 @@ nebula_add_library(
     HdfsCommandHelper.cpp
 )
 
+add_dependencies(module_common
+    hdfs_helper_obj)
+
 nebula_add_subdirectory(test)

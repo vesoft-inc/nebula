@@ -9,4 +9,7 @@ nebula_add_library(
     Latch.cpp
 )
 
+add_dependencies(module_common
+    concurrent_obj)
+
 nebula_add_subdirectory(test)

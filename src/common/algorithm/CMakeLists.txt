@@ -8,4 +8,7 @@ nebula_add_library(
     ReservoirSampling.cpp
 )
 
+add_dependencies(module_common
+    nebula_algo_obj)
+
 nebula_add_subdirectory(test)

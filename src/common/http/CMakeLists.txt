@@ -5,4 +5,7 @@
 
 nebula_add_library(http_client_obj OBJECT HttpClient.cpp)
 
+add_dependencies(module_common
+    http_client_obj)
+
 nebula_add_subdirectory(test)

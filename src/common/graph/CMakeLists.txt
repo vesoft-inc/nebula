@@ -8,4 +8,7 @@ nebula_add_library(
     Response.cpp
 )
 
+add_dependencies(module_common
+    graph_obj)
+
 nebula_add_subdirectory(tests)

@@ -8,3 +8,6 @@ nebula_add_library(
     MD5Utils.cpp
     Base64.cpp
 )
+
+add_dependencies(module_common
+    encryption_obj)
