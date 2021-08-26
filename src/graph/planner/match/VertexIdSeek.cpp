@@ -63,7 +63,7 @@ std::pair<std::string, Expression *> VertexIdSeek::listToAnnoVarVid(QueryContext
     vids.emplace_back(Row({std::move(v)}));
   }
 
-  qctx->ectx()->setResult(input, ResultBuilder().value(Value(std::move(vids))).finish());
+  qctx->ectx()->setResult(input, ResultBuilder().value(Value(std::move(vids))).build());
 
   auto *pool = qctx->objPool();
   auto *src = VariablePropertyExpression::make(pool, input, kVid);
@@ -77,7 +77,7 @@ std::pair<std::string, Expression *> VertexIdSeek::constToAnnoVarVid(QueryContex
   QueryExpressionContext dummy;
   vids.emplace_back(Row({v}));
 
-  qctx->ectx()->setResult(input, ResultBuilder().value(Value(std::move(vids))).finish());
+  qctx->ectx()->setResult(input, ResultBuilder().value(Value(std::move(vids))).build());
 
   auto *pool = qctx->objPool();
   auto *src = VariablePropertyExpression::make(pool, input, kVid);

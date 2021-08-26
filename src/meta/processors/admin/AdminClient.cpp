@@ -704,7 +704,7 @@ folly::Future<Status> AdminClient::addTask(cpp2::AdminCmd cmd,
                                            const std::vector<std::string>& taskSpecficParas,
                                            std::vector<PartitionID> parts,
                                            int concurrency,
-                                           cpp2::StatisItem* statisResult) {
+                                           cpp2::StatsItem* statsResult) {
   folly::Promise<Status> pro;
   auto f = pro.getFuture();
   std::vector<HostAddr> hosts;
@@ -733,9 +733,9 @@ folly::Future<Status> AdminClient::addTask(cpp2::AdminCmd cmd,
   req.set_para(std::move(para));
 
   std::function<void(storage::cpp2::AdminExecResp && resp)> respGen =
-      [statisResult](storage::cpp2::AdminExecResp&& resp) -> void {
-    if (statisResult && resp.statis_ref().has_value()) {
-      *statisResult = *resp.statis_ref();
+      [statsResult](storage::cpp2::AdminExecResp&& resp) -> void {
+    if (statsResult && resp.stats_ref().has_value()) {
+      *statsResult = *resp.stats_ref();
     }
   };
 

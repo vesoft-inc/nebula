@@ -51,7 +51,7 @@ folly::Future<Status> FilterExecutor::execute() {
 
   iter->reset();
   builder.iter(std::move(result).iter());
-  return finish(builder.finish());
+  return finish(builder.build());
 }
 
 }  // namespace graph

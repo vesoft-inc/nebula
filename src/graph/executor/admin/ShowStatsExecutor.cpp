@@ -19,22 +19,22 @@ folly::Future<Status> ShowStatsExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
   auto spaceId = qctx()->rctx()->session()->space().id;
-  return qctx()->getMetaClient()->getStatis(spaceId).via(runner()).thenValue(
-      [this, spaceId](StatusOr<meta::cpp2::StatisItem> resp) {
+  return qctx()->getMetaClient()->getStats(spaceId).via(runner()).thenValue(
+      [this, spaceId](StatusOr<meta::cpp2::StatsItem> resp) {
         if (!resp.ok()) {
           LOG(ERROR) << "SpaceId: " << spaceId << ", Show staus failed: " << resp.status();
           return resp.status();
         }
-        auto statisItem = std::move(resp).value();
+        auto statsItem = std::move(resp).value();
 
         DataSet dataSet({"Type", "Name", "Count"});
         std::vector<std::pair<std::string, int64_t>> tagCount;
         std::vector<std::pair<std::string, int64_t>> edgeCount;
 
-        for (auto& tag : statisItem.get_tag_vertices()) {
+        for (auto& tag : statsItem.get_tag_vertices()) {
           tagCount.emplace_back(std::make_pair(tag.first, tag.second));
         }
-        for (auto& edge : statisItem.get_edges()) {
+        for (auto& edge : statsItem.get_edges()) {
           edgeCount.emplace_back(std::make_pair(edge.first, edge.second));
         }
 
@@ -64,19 +64,19 @@ folly::Future<Status> ShowStatsExecutor::execute() {
         Row verticeRow;
         verticeRow.values.emplace_back("Space");
         verticeRow.values.emplace_back("vertices");
-        verticeRow.values.emplace_back(*statisItem.space_vertices_ref());
+        verticeRow.values.emplace_back(*statsItem.space_vertices_ref());
         dataSet.rows.emplace_back(std::move(verticeRow));
 
         Row edgeRow;
         edgeRow.values.emplace_back("Space");
         edgeRow.values.emplace_back("edges");
-        edgeRow.values.emplace_back(*statisItem.space_edges_ref());
+        edgeRow.values.emplace_back(*statsItem.space_edges_ref());
         dataSet.rows.emplace_back(std::move(edgeRow));
 
         return finish(ResultBuilder()
                           .value(Value(std::move(dataSet)))
                           .iter(Iterator::Kind::kDefault)
-                          .finish());
+                          .build());
       });
 }
 

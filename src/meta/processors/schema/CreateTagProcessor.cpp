@@ -73,7 +73,7 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
     }
   }
 
-  auto tagRet = autoIncrementId();
+  auto tagRet = autoIncrementIdInSpace(spaceId);
   if (!nebula::ok(tagRet)) {
     LOG(ERROR) << "Create tag failed : Get tag id failed.";
     handleErrorCode(nebula::error(tagRet));
