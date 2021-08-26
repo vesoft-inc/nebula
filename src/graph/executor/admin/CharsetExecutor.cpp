@@ -28,7 +28,7 @@ folly::Future<Status> ShowCharsetExecutor::execute() {
     dataSet.emplace_back(std::move(row));
   }
 
-  return finish(ResultBuilder().value(Value(std::move(dataSet))).finish());
+  return finish(ResultBuilder().value(Value(std::move(dataSet))).build());
 }
 
 folly::Future<Status> ShowCollationExecutor::execute() {
@@ -48,7 +48,7 @@ folly::Future<Status> ShowCollationExecutor::execute() {
     }
   }
 
-  return finish(ResultBuilder().value(Value(std::move(dataSet))).finish());
+  return finish(ResultBuilder().value(Value(std::move(dataSet))).build());
 }
 }  // namespace graph
 }  // namespace nebula

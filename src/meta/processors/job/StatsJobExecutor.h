@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef META_STATISJOBEXECUTOR_H_
-#define META_STATISJOBEXECUTOR_H_
+#ifndef META_STATSJOBEXECUTOR_H_
+#define META_STATSJOBEXECUTOR_H_
 
 #include "interface/gen-cpp2/meta_types.h"
 #include "meta/processors/admin/AdminClient.h"
@@ -14,12 +14,12 @@
 namespace nebula {
 namespace meta {
 
-class StatisJobExecutor : public MetaJobExecutor {
+class StatsJobExecutor : public MetaJobExecutor {
  public:
-  StatisJobExecutor(JobID jobId,
-                    kvstore::KVStore* kvstore,
-                    AdminClient* adminClient,
-                    const std::vector<std::string>& paras)
+  StatsJobExecutor(JobID jobId,
+                   kvstore::KVStore* kvstore,
+                   AdminClient* adminClient,
+                   const std::vector<std::string>& paras)
       : MetaJobExecutor(jobId, kvstore, adminClient, paras) {
     toHost_ = TargetHosts::LEADER;
   }
@@ -33,29 +33,29 @@ class StatisJobExecutor : public MetaJobExecutor {
   folly::Future<Status> executeInternal(HostAddr&& address,
                                         std::vector<PartitionID>&& parts) override;
 
-  // Summarize the results of statisItem_
+  // Summarize the results of statsItem_
   nebula::cpp2::ErrorCode finish(bool exeSuccessed) override;
 
   nebula::cpp2::ErrorCode saveSpecialTaskStatus(const cpp2::ReportTaskReq& req) override;
 
  private:
-  // Statis job writes an additional data.
+  // Stats job writes an additional data.
   // The additional data is written when the statis job passes the check
   // function. Update this additional data when job finishes.
   nebula::cpp2::ErrorCode save(const std::string& key, const std::string& val);
 
-  void addStatis(cpp2::StatisItem& lhs, const cpp2::StatisItem& rhs);
+  void addStats(cpp2::StatsItem& lhs, const cpp2::StatsItem& rhs);
 
   std::string toTempKey(int32_t jobId);
 
   nebula::cpp2::ErrorCode doRemove(const std::string& key);
 
  private:
-  // Statis results
-  std::unordered_map<HostAddr, cpp2::StatisItem> statisItem_;
+  // Stats results
+  std::unordered_map<HostAddr, cpp2::StatsItem> statsItem_;
 };
 
 }  // namespace meta
 }  // namespace nebula
 
-#endif  // META_STATISJOBEXECUTOR_H_
+#endif  // META_STATSJOBEXECUTOR_H_

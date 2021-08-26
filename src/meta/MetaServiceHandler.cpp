@@ -32,7 +32,7 @@
 #include "meta/processors/index/ListEdgeIndexesProcessor.h"
 #include "meta/processors/index/ListTagIndexesProcessor.h"
 #include "meta/processors/job/AdminJobProcessor.h"
-#include "meta/processors/job/GetStatisProcessor.h"
+#include "meta/processors/job/GetStatsProcessor.h"
 #include "meta/processors/job/ListEdgeIndexStatusProcessor.h"
 #include "meta/processors/job/ListTagIndexStatusProcessor.h"
 #include "meta/processors/job/ReportTaskProcessor.h"
@@ -519,9 +519,9 @@ folly::Future<cpp2::ExecResp> MetaServiceHandler::future_restoreMeta(
   RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::GetStatisResp> MetaServiceHandler::future_getStatis(
-    const cpp2::GetStatisReq& req) {
-  auto* processor = GetStatisProcessor::instance(kvstore_);
+folly::Future<cpp2::GetStatsResp> MetaServiceHandler::future_getStats(
+    const cpp2::GetStatsReq& req) {
+  auto* processor = GetStatsProcessor::instance(kvstore_);
   RETURN_FUTURE(processor);
 }
 

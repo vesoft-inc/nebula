@@ -23,7 +23,7 @@ folly::Future<Status> AssignExecutor::execute() {
     auto value = valueExpr->eval(ctx);
     VLOG(1) << "VarName is: " << varName << " value is : " << value;
     if (value.isDataSet()) {
-      ectx_->setResult(varName, ResultBuilder().value(std::move(value)).finish());
+      ectx_->setResult(varName, ResultBuilder().value(std::move(value)).build());
     } else {
       ectx_->setValue(varName, std::move(value));
     }

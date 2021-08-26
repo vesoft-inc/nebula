@@ -28,7 +28,7 @@ class GetNeighborsTest : public testing::Test {
       ResultBuilder builder;
       builder.value(Value(std::move(ds)));
       qctx_->symTable()->newVariable("input_gn");
-      qctx_->ectx()->setResult("input_gn", builder.finish());
+      qctx_->ectx()->setResult("input_gn", builder.build());
     }
 
     meta::cpp2::Session session;

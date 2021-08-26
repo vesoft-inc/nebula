@@ -171,6 +171,69 @@ ErrorOr<nebula::cpp2::ErrorCode, int32_t> BaseProcessor<RESP>::autoIncrementId()
 }
 
 template <typename RESP>
+ErrorOr<nebula::cpp2::ErrorCode, int32_t> BaseProcessor<RESP>::getAvailableGolbalId() {
+  // A read lock has been added before call
+  static const std::string kIdKey = "__id__";
+  int32_t id;
+  std::string val;
+  auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, kIdKey, &val);
+  if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    if (ret != nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
+      return ret;
+    }
+    id = 1;
+  } else {
+    id = *reinterpret_cast<const int32_t*>(val.c_str()) + 1;
+  }
+
+  return id;
+}
+
+template <typename RESP>
+ErrorOr<nebula::cpp2::ErrorCode, int32_t> BaseProcessor<RESP>::autoIncrementIdInSpace(
+    GraphSpaceID spaceId) {
+  folly::SharedMutex::WriteHolder wHolder(LockUtils::localIdLock());
+  folly::SharedMutex::ReadHolder rHolder(LockUtils::idLock());
+  auto globalIdRet = getAvailableGolbalId();
+  if (!nebula::ok(globalIdRet)) {
+    return nebula::error(globalIdRet);
+  }
+  auto globalId = nebula::value(globalIdRet);
+
+  auto localIdkey = MetaServiceUtils::localIdKey(spaceId);
+  int32_t id;
+  std::string val;
+  auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, localIdkey, &val);
+  if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    if (ret != nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
+      return ret;
+    }
+
+    // In order to be compatible with the existing old schema, and simple to implement,
+    // when the local_id record does not exist in space, directly use the smallest
+    // id available globally.
+    id = globalId;
+  } else {
+    id = *reinterpret_cast<const int32_t*>(val.c_str()) + 1;
+  }
+
+  std::vector<kvstore::KV> data;
+  data.emplace_back(localIdkey, std::string(reinterpret_cast<const char*>(&id), sizeof(id)));
+  folly::Baton<true, std::atomic> baton;
+  kvstore_->asyncMultiPut(
+      kDefaultSpaceId, kDefaultPartId, std::move(data), [&](nebula::cpp2::ErrorCode code) {
+        ret = code;
+        baton.post();
+      });
+  baton.wait();
+  if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    return ret;
+  } else {
+    return id;
+  }
+}
+
+template <typename RESP>
 nebula::cpp2::ErrorCode BaseProcessor<RESP>::spaceExist(GraphSpaceID spaceId) {
   folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
   auto spaceKey = MetaServiceUtils::spaceKey(spaceId);

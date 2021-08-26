@@ -19,7 +19,7 @@ class TagNode final : public IterateNode<VertexID> {
  public:
   using RelNode::execute;
 
-  TagNode(RunTimeContext* context,
+  TagNode(RuntimeContext* context,
           TagContext* ctx,
           TagID tagId,
           const std::vector<PropContext>* props,
@@ -98,7 +98,7 @@ class TagNode final : public IterateNode<VertexID> {
     valid_ = true;
   }
 
-  RunTimeContext* context_;
+  RuntimeContext* context_;
   TagContext* tagContext_;
   TagID tagId_;
   const std::vector<PropContext>* props_;

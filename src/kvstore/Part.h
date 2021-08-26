@@ -34,7 +34,8 @@ class Part : public raftex::RaftPart {
        std::shared_ptr<folly::Executor> handlers,
        std::shared_ptr<raftex::SnapshotManager> snapshotMan,
        std::shared_ptr<RaftClient> clientMan,
-       std::shared_ptr<DiskManager> diskMan);
+       std::shared_ptr<DiskManager> diskMan,
+       int32_t vIdLen);
 
   virtual ~Part() { LOG(INFO) << idStr_ << "~Part()"; }
 
@@ -106,14 +107,26 @@ class Part : public raftex::RaftPart {
 
   nebula::cpp2::ErrorCode toResultCode(raftex::AppendLogResult res);
 
+ public:
+  struct CallbackOptions {
+    GraphSpaceID spaceId;
+    PartitionID partId;
+    TermID term;
+  };
+
+  using OnElectedCallBack = std::function<void(const CallbackOptions& opt)>;
+  void registerOnElected(OnElectedCallBack cb);
+
  protected:
   GraphSpaceID spaceId_;
   PartitionID partId_;
   std::string walPath_;
   NewLeaderCallback newLeaderCb_ = nullptr;
+  std::vector<OnElectedCallBack> onElectedCallBacks_;
 
  private:
   KVEngine* engine_ = nullptr;
+  int32_t vIdLen_;
 };
 
 }  // namespace kvstore

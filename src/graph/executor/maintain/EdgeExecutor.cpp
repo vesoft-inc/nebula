@@ -56,7 +56,7 @@ folly::Future<Status> DescEdgeExecutor::execute() {
         return finish(ResultBuilder()
                           .value(Value(std::move(ret).value()))
                           .iter(Iterator::Kind::kDefault)
-                          .finish());
+                          .build());
       });
 }
 
@@ -105,7 +105,7 @@ folly::Future<Status> ShowEdgesExecutor::execute() {
         return finish(ResultBuilder()
                           .value(Value(std::move(dataSet)))
                           .iter(Iterator::Kind::kDefault)
-                          .finish());
+                          .build());
       });
 }
 
@@ -130,7 +130,7 @@ folly::Future<Status> ShowCreateEdgeExecutor::execute() {
           return ret.status();
         }
         return finish(
-            ResultBuilder().value(std::move(ret).value()).iter(Iterator::Kind::kDefault).finish());
+            ResultBuilder().value(std::move(ret).value()).iter(Iterator::Kind::kDefault).build());
       });
 }
 
@@ -149,7 +149,7 @@ folly::Future<Status> AlterEdgeExecutor::execute() {
                      << "' failed: " << resp.status();
           return resp.status();
         }
-        return finish(ResultBuilder().value(Value()).iter(Iterator::Kind::kDefault).finish());
+        return finish(ResultBuilder().value(Value()).iter(Iterator::Kind::kDefault).build());
       });
 }
 }  // namespace graph

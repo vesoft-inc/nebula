@@ -35,7 +35,7 @@ folly::Future<Status> UnionExecutor::execute() {
                  std::make_move_iterator(rightIter->begin()),
                  std::make_move_iterator(rightIter->end()));
 
-  return finish(ResultBuilder().value(Value(std::move(ds))).finish());
+  return finish(ResultBuilder().value(Value(std::move(ds))).build());
 }
 
 }  // namespace graph
