@@ -165,6 +165,18 @@ class ShowHostsValidator final : public Validator {
   Status toPlan() override;
 };
 
+class ShowMetaLeaderValidator final : public Validator {
+ public:
+  ShowMetaLeaderValidator(Sentence* sentence, QueryContext* ctx) : Validator(sentence, ctx) {
+    setNoSpaceRequired();
+  }
+
+ private:
+  Status validateImpl() override;
+
+  Status toPlan() override;
+};
+
 class ShowPartsValidator final : public Validator {
  public:
   ShowPartsValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {}

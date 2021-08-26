@@ -363,6 +363,10 @@ class MetaServiceUtils final {
       const std::unordered_set<GraphSpaceID>& spaces,
       const std::string& backupName,
       const std::vector<std::string>* spaceName);
+
+  static std::string localIdKey(GraphSpaceID spaceId);
+
+  static GraphSpaceID parseLocalIdSpace(folly::StringPiece rawData);
 };
 
 }  // namespace meta

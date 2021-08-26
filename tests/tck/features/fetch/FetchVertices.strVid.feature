@@ -47,7 +47,7 @@ Feature: Fetch String Vertices
       """
       $var = GO FROM 'Boris Diaw' over like YIELD like._dst as id;
       FETCH PROP ON player $var.id YIELD player.name as name, player.age |
-      ORDER BY name
+      ORDER BY $-.name
       """
     Then the result should be, in order:
       | VertexID      | name          | player.age |
