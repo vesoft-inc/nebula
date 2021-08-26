@@ -16,8 +16,7 @@ namespace nebula {
 namespace kvstore {
 
 // A simple wrapper for foly::TokenBucket, it would limit the speed to rate_ * buckets_.size().
-// User need to make sure that only one {spaceId, partId} is add to RateLimter. For now, there
-// are two major cases: snapshot (both for balance or catch up) and rebuild index.
+// For now, there are two major cases: snapshot (both for balance or catch up) and rebuild index.
 class RateLimiter {
  public:
   RateLimiter(int32_t rate, int32_t burstSize)
@@ -38,6 +37,8 @@ class RateLimiter {
     buckets_.erase({spaceId, partId});
   }
 
+  // Caller must make sure the **the parition has been add, and won't be removed during consume.**
+  // Snaphot and rebuild index follow this principle by design.
   void consume(GraphSpaceID spaceId, PartitionID partId, size_t toConsume) {
     DCHECK(buckets_.find({spaceId, partId}) != buckets_.end());
     auto iter = buckets_.find({spaceId, partId});
@@ -54,7 +55,7 @@ class RateLimiter {
       }
     } else {
       LOG_EVERY_N(WARNING, 100) << folly::format(
-          "Rate limiter is not working for [{},{}]", spaceId, partId);
+          "Rate limiter is not available for [{},{}]", spaceId, partId);
     }
   }
 
