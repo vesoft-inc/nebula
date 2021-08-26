@@ -34,6 +34,27 @@ class CreateSpaceValidator final : public Validator {
   bool ifNotExist_;
 };
 
+class CreateSpaceAsValidator final : public Validator {
+ public:
+  CreateSpaceAsValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
+    setNoSpaceRequired();
+  }
+
+ private:
+  Status validateImpl() override;
+
+  Status toPlan() override;
+
+  //   bool checkTSIndex(const std::vector<meta::cpp2::FTClient>& clients, const std::string&
+  //   index);
+
+ private:
+  //   meta::cpp2::SpaceDesc spaceDesc_;
+  std::string oldSpaceName_;
+  std::string newSpaceName_;
+  bool ifNotExist_;
+};
+
 class DescSpaceValidator final : public Validator {
  public:
   DescSpaceValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
