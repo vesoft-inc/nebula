@@ -185,3 +185,18 @@ nebula_add_executable(
         gtest
         boost_regex
 )
+
+nebula_add_test(
+    NAME
+        rate_limiter_test
+    SOURCES
+        RateLimiterTest.cpp
+    OBJECTS
+        ${KVSTORE_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        wangle
+        gtest
+)
