@@ -48,7 +48,7 @@ folly::Future<Status> SortExecutor::execute() {
 
   auto seqIter = static_cast<SequentialIter *>(iter);
   std::sort(seqIter->begin(), seqIter->end(), comparator);
-  return finish(ResultBuilder().value(result.valuePtr()).iter(std::move(result).iter()).finish());
+  return finish(ResultBuilder().value(result.valuePtr()).iter(std::move(result).iter()).build());
 }
 
 }  // namespace graph

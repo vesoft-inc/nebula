@@ -1495,12 +1495,23 @@ Value Value::toInt() const {
       errno = 0;
       char* pEnd;
       auto it = std::find(str.begin(), str.end(), '.');
-      int64_t val = (it == str.end())
-                        ? int64_t(strtoll(str.c_str(), &pEnd, 10))  // string representing int
-                        : int64_t(strtod(str.c_str(), &pEnd));      // string representing double
+
+      auto checkSciNotation = [](std::string s) {
+        auto it1 = std::find(s.begin(), s.end(), 'e');
+        auto it2 = std::find(s.begin(), s.end(), 'E');
+
+        return (it1 != s.end() || it2 != s.end());
+      };
+
+      auto isSciNotation = checkSciNotation(str);
+      int64_t val = (it != str.end() ||
+                     isSciNotation)  // if the string contains '.' or 'e' or 'E', parse as a double
+                        ? int64_t(strtod(str.c_str(), &pEnd))        // string representing double
+                        : int64_t(strtoll(str.c_str(), &pEnd, 10));  // string representing int
       if (*pEnd != '\0') {
         return Value::kNullValue;
       }
+
       // Check overflow
       if ((val == std::numeric_limits<int64_t>::max() ||
            val == std::numeric_limits<int64_t>::min()) &&

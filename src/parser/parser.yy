@@ -363,7 +363,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 
 %type <sentence> mutate_sentence
 %type <sentence> insert_vertex_sentence insert_edge_sentence
-%type <sentence> delete_vertex_sentence delete_edge_sentence
+%type <sentence> delete_vertex_sentence delete_edge_sentence delete_tag_sentence
 %type <sentence> update_vertex_sentence update_edge_sentence
 %type <sentence> download_sentence ingest_sentence
 
@@ -2544,10 +2544,10 @@ traverse_sentence
     | order_by_sentence { $$ = $1; }
     | fetch_sentence { $$ = $1; }
     | find_path_sentence { $$ = $1; }
-    | limit_sentence { $$ = $1; }
     | yield_sentence { $$ = $1; }
     | get_subgraph_sentence { $$ = $1; }
     | delete_vertex_sentence { $$ = $1; }
+    | delete_tag_sentence { $$ = $1; }
     | delete_edge_sentence { $$ = $1; }
     | show_queries_sentence { $$ = $1; }
     | kill_query_sentence { $$ = $1; }
@@ -2556,6 +2556,7 @@ traverse_sentence
 piped_sentence
     : traverse_sentence { $$ = $1; }
     | piped_sentence PIPE traverse_sentence { $$ = new PipedSentence($1, $3); }
+    | piped_sentence PIPE limit_sentence { $$ = new PipedSentence($1, $3); }
     ;
 
 set_sentence
@@ -2802,6 +2803,25 @@ delete_vertex_sentence
     }
     | KW_DELETE KW_VERTEX vid_ref_expression {
         auto sentence = new DeleteVerticesSentence($3);
+        $$ = sentence;
+    }
+    ;
+
+delete_tag_sentence
+    : KW_DELETE KW_TAG name_label_list KW_FROM vid_list {
+        auto sentence = new DeleteTagsSentence($5, $3);
+        $$ = sentence;
+    }
+    | KW_DELETE KW_TAG STAR KW_FROM vid_list {
+        auto sentence = new DeleteTagsSentence($5);
+        $$ = sentence;
+    }
+    | KW_DELETE KW_TAG name_label_list KW_FROM vid_ref_expression {
+        auto sentence = new DeleteTagsSentence($5, $3);
+        $$ = sentence;
+    }
+    | KW_DELETE KW_TAG STAR KW_FROM vid_ref_expression {
+        auto sentence = new DeleteTagsSentence($5);
         $$ = sentence;
     }
     ;

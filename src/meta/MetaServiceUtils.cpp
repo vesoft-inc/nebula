@@ -31,8 +31,7 @@ static const std::unordered_map<std::string, std::pair<std::string, bool>> syste
     {"sessions", {"__sessions__", true}},
     {"id", {"__id__", true}}};
 
-// name => {prefix, parseSpaceid}, nullptr means that the backup should be
-// skipped.
+// name => {prefix, parseSpaceid}, nullptr means that the backup should be skipped.
 static const std::unordered_map<
     std::string,
     std::pair<std::string, std::function<decltype(MetaServiceUtils::spaceId)>>>
@@ -50,10 +49,11 @@ static const std::unordered_map<
         {"leaders", {"__leaders__", nullptr}},
         {"leader_terms", {"__leader_terms__", nullptr}},
         {"listener", {"__listener__", nullptr}},
-        {"statis", {"__statis__", MetaServiceUtils::parseStatisSpace}},
+        {"stats", {"__stats__", MetaServiceUtils::parseStatsSpace}},
         {"balance_task", {"__balance_task__", nullptr}},
         {"balance_plan", {"__balance_plan__", nullptr}},
-        {"ft_index", {"__ft_index__", nullptr}}};
+        {"ft_index", {"__ft_index__", nullptr}},
+        {"local_id", {"__local_id__", MetaServiceUtils::parseLocalIdSpace}}};
 
 // clang-format off
 static const std::string kSpacesTable         = tableMaps.at("spaces").first;         // NOLINT
@@ -78,9 +78,10 @@ static const std::string kListenerTable       = tableMaps.at("listener").first; 
 // Used to record the number of vertices and edges in the space
 // The number of vertices of each tag in the space
 // The number of edges of each edgetype in the space
-static const std::string kStatisTable         = tableMaps.at("statis").first;           // NOLINT
+static const std::string kStatsTable          = tableMaps.at("stats").first;            // NOLINT
 static const std::string kBalanceTaskTable    = tableMaps.at("balance_task").first;     // NOLINT
 static const std::string kBalancePlanTable    = tableMaps.at("balance_plan").first;     // NOLINT
+static const std::string kLocalIdTable        = tableMaps.at("local_id").first;         // NOLINT
 
 const std::string kFTIndexTable        = tableMaps.at("ft_index").first;         // NOLINT
 const std::string kFTServiceTable = systemTableMaps.at("ft_service").first;      // NOLINT
@@ -1302,32 +1303,32 @@ PartitionID MetaServiceUtils::parseListenerPart(folly::StringPiece rawData) {
   return *reinterpret_cast<const PartitionID*>(rawData.data() + offset);
 }
 
-std::string MetaServiceUtils::statisKey(GraphSpaceID spaceId) {
+std::string MetaServiceUtils::statsKey(GraphSpaceID spaceId) {
   std::string key;
-  key.reserve(kStatisTable.size() + sizeof(GraphSpaceID));
-  key.append(kStatisTable.data(), kStatisTable.size())
+  key.reserve(kStatsTable.size() + sizeof(GraphSpaceID));
+  key.append(kStatsTable.data(), kStatsTable.size())
       .append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
   return key;
 }
 
-std::string MetaServiceUtils::statisVal(const cpp2::StatisItem& statisItem) {
+std::string MetaServiceUtils::statsVal(const cpp2::StatsItem& statsItem) {
   std::string val;
-  apache::thrift::CompactSerializer::serialize(statisItem, &val);
+  apache::thrift::CompactSerializer::serialize(statsItem, &val);
   return val;
 }
 
-cpp2::StatisItem MetaServiceUtils::parseStatisVal(folly::StringPiece rawData) {
-  cpp2::StatisItem statisItem;
-  apache::thrift::CompactSerializer::deserialize(rawData, statisItem);
-  return statisItem;
+cpp2::StatsItem MetaServiceUtils::parseStatsVal(folly::StringPiece rawData) {
+  cpp2::StatsItem statsItem;
+  apache::thrift::CompactSerializer::deserialize(rawData, statsItem);
+  return statsItem;
 }
 
-GraphSpaceID MetaServiceUtils::parseStatisSpace(folly::StringPiece rawData) {
-  auto offset = kStatisTable.size();
+GraphSpaceID MetaServiceUtils::parseStatsSpace(folly::StringPiece rawData) {
+  auto offset = kStatsTable.size();
   return *reinterpret_cast<const GraphSpaceID*>(rawData.data() + offset);
 }
 
-const std::string& MetaServiceUtils::statisKeyPrefix() { return kStatisTable; }
+const std::string& MetaServiceUtils::statsKeyPrefix() { return kStatsTable; }
 
 std::string MetaServiceUtils::fulltextServiceKey() {
   std::string key;
@@ -1403,6 +1404,19 @@ cpp2::FTIndex MetaServiceUtils::parsefulltextIndex(folly::StringPiece val) {
 }
 
 std::string MetaServiceUtils::fulltextIndexPrefix() { return kFTIndexTable; }
+
+std::string MetaServiceUtils::localIdKey(GraphSpaceID spaceId) {
+  std::string key;
+  key.reserve(kLocalIdTable.size() + sizeof(GraphSpaceID));
+  key.append(kLocalIdTable.data(), kLocalIdTable.size())
+      .append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
+  return key;
+}
+
+GraphSpaceID MetaServiceUtils::parseLocalIdSpace(folly::StringPiece rawData) {
+  auto offset = kLocalIdTable.size();
+  return *reinterpret_cast<const GraphSpaceID*>(rawData.data() + offset);
+}
 
 }  // namespace meta
 }  // namespace nebula

@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "storage/admin/StatisTask.h"
+#include "storage/admin/StatsTask.h"
 
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
@@ -15,7 +15,7 @@
 namespace nebula {
 namespace storage {
 
-nebula::cpp2::ErrorCode StatisTask::getSchemas(GraphSpaceID spaceId) {
+nebula::cpp2::ErrorCode StatsTask::getSchemas(GraphSpaceID spaceId) {
   CHECK_NOTNULL(env_->schemaMan_);
   auto tags = env_->schemaMan_->getAllVerTagSchema(spaceId);
   if (!tags.ok()) {
@@ -49,7 +49,7 @@ nebula::cpp2::ErrorCode StatisTask::getSchemas(GraphSpaceID spaceId) {
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
-ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>> StatisTask::genSubTasks() {
+ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>> StatsTask::genSubTasks() {
   spaceId_ = *ctx_.parameters_.space_id_ref();
   auto parts = *ctx_.parameters_.parts_ref();
   subTaskSize_ = parts.size();
@@ -63,17 +63,17 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>> StatisTask::genSubTa
   std::vector<AdminSubTask> tasks;
   for (const auto& part : parts) {
     std::function<nebula::cpp2::ErrorCode()> task =
-        std::bind(&StatisTask::genSubTask, this, spaceId_, part, tags_, edges_);
+        std::bind(&StatsTask::genSubTask, this, spaceId_, part, tags_, edges_);
     tasks.emplace_back(std::move(task));
   }
   return tasks;
 }
 
-// Statis the specified tags and edges
-nebula::cpp2::ErrorCode StatisTask::genSubTask(GraphSpaceID spaceId,
-                                               PartitionID part,
-                                               std::unordered_map<TagID, std::string> tags,
-                                               std::unordered_map<EdgeType, std::string> edges) {
+// Stats the specified tags and edges
+nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
+                                              PartitionID part,
+                                              std::unordered_map<TagID, std::string> tags,
+                                              std::unordered_map<EdgeType, std::string> edges) {
   auto vIdLenRet = env_->schemaMan_->getSpaceVidLen(spaceId);
   if (!vIdLenRet.ok()) {
     LOG(ERROR) << "Get space vid length failed";
@@ -106,12 +106,12 @@ nebula::cpp2::ErrorCode StatisTask::genSubTask(GraphSpaceID spaceId,
   // follower instead of reporting an error.
   auto ret = env_->kvstore_->prefix(spaceId, part, vertexPrefix, &vertexIter, true);
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Statis task failed";
+    LOG(ERROR) << "Stats task failed";
     return ret;
   }
   ret = env_->kvstore_->prefix(spaceId, part, edgePrefix, &edgeIter, true);
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Statis task failed";
+    LOG(ERROR) << "Stats task failed";
     return ret;
   }
 
@@ -206,24 +206,24 @@ nebula::cpp2::ErrorCode StatisTask::genSubTask(GraphSpaceID spaceId,
     edgeIter->next();
   }
 
-  nebula::meta::cpp2::StatisItem statisItem;
+  nebula::meta::cpp2::StatsItem statsItem;
 
   // convert tagId/edgeType to tagName/edgeName
   for (auto& tagElem : tagsVertices) {
     auto iter = tags_.find(tagElem.first);
     if (iter != tags_.end()) {
-      (*statisItem.tag_vertices_ref()).emplace(iter->second, tagElem.second);
+      (*statsItem.tag_vertices_ref()).emplace(iter->second, tagElem.second);
     }
   }
   for (auto& edgeElem : edgetypeEdges) {
     auto iter = edges_.find(edgeElem.first);
     if (iter != edges_.end()) {
-      (*statisItem.edges_ref()).emplace(iter->second, edgeElem.second);
+      (*statsItem.edges_ref()).emplace(iter->second, edgeElem.second);
     }
   }
 
-  statisItem.set_space_vertices(spaceVertices);
-  statisItem.set_space_edges(spaceEdges);
+  statsItem.set_space_vertices(spaceVertices);
+  statsItem.set_space_edges(spaceEdges);
   using Correlativiyties = std::vector<nebula::meta::cpp2::Correlativity>;
   Correlativiyties positiveCorrelativity;
   for (const auto& entry : positiveRelevancy) {
@@ -255,23 +255,23 @@ nebula::cpp2::ErrorCode StatisTask::genSubTask(GraphSpaceID spaceId,
 
   std::unordered_map<PartitionID, Correlativiyties> positivePartCorrelativiyties;
   positivePartCorrelativiyties[part] = positiveCorrelativity;
-  statisItem.set_positive_part_correlativity(std::move(positivePartCorrelativiyties));
+  statsItem.set_positive_part_correlativity(std::move(positivePartCorrelativiyties));
 
   std::unordered_map<PartitionID, Correlativiyties> negativePartCorrelativiyties;
   negativePartCorrelativiyties[part] = negativeCorrelativity;
-  statisItem.set_negative_part_correlativity(std::move(negativePartCorrelativiyties));
+  statsItem.set_negative_part_correlativity(std::move(negativePartCorrelativiyties));
 
-  statistics_.emplace(part, std::move(statisItem));
-  LOG(INFO) << "Statis task finished";
+  statistics_.emplace(part, std::move(statsItem));
+  LOG(INFO) << "Stats task finished";
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
-void StatisTask::finish(nebula::cpp2::ErrorCode rc) {
+void StatsTask::finish(nebula::cpp2::ErrorCode rc) {
   FLOG_INFO("task(%d, %d) finished, rc=[%s]",
             ctx_.jobId_,
             ctx_.taskId_,
             apache::thrift::util::enumNameSafe(rc).c_str());
-  nebula::meta::cpp2::StatisItem result;
+  nebula::meta::cpp2::StatsItem result;
   result.set_status(nebula::meta::cpp2::JobStatus::FAILED);
 
   if (rc == nebula::cpp2::ErrorCode::SUCCEEDED && statistics_.size() == subTaskSize_) {

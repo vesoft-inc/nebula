@@ -60,8 +60,8 @@ TEST_F(SetExecutorTest, TestUnionAll) {
     lb.value(Value(lds)).iter(Iterator::Kind::kSequential);
     rb.value(Value(rds)).iter(Iterator::Kind::kSequential);
     // Must save the values after constructing executors
-    qctx_->ectx()->setResult(left->outputVar(), lb.finish());
-    qctx_->ectx()->setResult(right->outputVar(), rb.finish());
+    qctx_->ectx()->setResult(left->outputVar(), lb.build());
+    qctx_->ectx()->setResult(right->outputVar(), rb.build());
     auto future = unionExecutor->execute();
     EXPECT_TRUE(std::move(future).get().ok());
 
@@ -176,8 +176,8 @@ TEST_F(SetExecutorTest, TestGetNeighobrsIterator) {
   ResultBuilder lrb, rrb;
   auto& lRes = lrb.value(Value(std::move(lds))).iter(Iterator::Kind::kGetNeighbors);
   auto& rRes = rrb.value(Value(std::move(rds)));
-  qctx_->ectx()->setResult(left->outputVar(), lRes.finish());
-  qctx_->ectx()->setResult(right->outputVar(), rRes.finish());
+  qctx_->ectx()->setResult(left->outputVar(), lRes.build());
+  qctx_->ectx()->setResult(right->outputVar(), rRes.build());
   auto future = unionExecutor->execute();
   auto status = std::move(future).get();
 
@@ -251,8 +251,8 @@ TEST_F(SetExecutorTest, TestIntersect) {
     lb.value(Value(lds)).iter(Iterator::Kind::kSequential);
     rb.value(Value(rds)).iter(Iterator::Kind::kSequential);
     auto executor = Executor::create(intersect, qctx_.get());
-    qctx_->ectx()->setResult(left->outputVar(), lb.finish());
-    qctx_->ectx()->setResult(right->outputVar(), rb.finish());
+    qctx_->ectx()->setResult(left->outputVar(), lb.build());
+    qctx_->ectx()->setResult(right->outputVar(), rb.build());
 
     auto fut = executor->execute();
     auto status = std::move(fut).get();
@@ -358,8 +358,8 @@ TEST_F(SetExecutorTest, TestMinus) {
     lb.value(Value(lds)).iter(Iterator::Kind::kSequential);
     rb.value(Value(rds)).iter(Iterator::Kind::kSequential);
     auto executor = Executor::create(minus, qctx_.get());
-    qctx_->ectx()->setResult(left->outputVar(), lb.finish());
-    qctx_->ectx()->setResult(right->outputVar(), rb.finish());
+    qctx_->ectx()->setResult(left->outputVar(), lb.build());
+    qctx_->ectx()->setResult(right->outputVar(), rb.build());
 
     auto fut = executor->execute();
     auto status = std::move(fut).get();

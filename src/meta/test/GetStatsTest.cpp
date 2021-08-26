@@ -12,7 +12,7 @@
 #include "common/fs/TempDir.h"
 #include "interface/gen-cpp2/meta_types.h"
 #include "kvstore/Common.h"
-#include "meta/processors/job/GetStatisProcessor.h"
+#include "meta/processors/job/GetStatsProcessor.h"
 #include "meta/processors/job/JobManager.h"
 #include "meta/processors/job/JobUtils.h"
 #include "meta/test/MockAdminClient.h"
@@ -29,7 +29,7 @@ using ::testing::Return;
 using ::testing::SetArgPointee;
 
 std::string toTempKey(int32_t space, int32_t jobId) {
-  std::string key = MetaServiceUtils::statisKey(space);
+  std::string key = MetaServiceUtils::statsKey(space);
   return key.append(reinterpret_cast<const char*>(&jobId), sizeof(int32_t));
 }
 
@@ -48,9 +48,9 @@ void copyData(kvstore::KVStore* kv,
 }
 
 void genTempData(int32_t spaceId, int jobId, kvstore::KVStore* kv) {
-  auto statisKey = MetaServiceUtils::statisKey(spaceId);
+  auto statsKey = MetaServiceUtils::statsKey(spaceId);
   auto tempKey = toTempKey(spaceId, jobId);
-  copyData(kv, 0, 0, statisKey, tempKey);
+  copyData(kv, 0, 0, statsKey, tempKey);
 }
 
 struct JobCallBack {
@@ -63,12 +63,12 @@ struct JobCallBack {
     req.set_job_id(jobId_);
     req.set_task_id(taskId_);
 
-    cpp2::StatisItem item;
+    cpp2::StatsItem item;
     item.set_tag_vertices({{"t1", n_}, {"t2", n_}});
     item.set_edges({{"e1", n_}, {"e2", n_}});
     item.set_space_vertices(2 * n_);
     item.set_space_edges(2 * n_);
-    req.set_statis(item);
+    req.set_stats(item);
     jobMgr_->reportTaskFinish(req);
     return folly::Future<Status>(Status::OK());
   }
@@ -79,10 +79,10 @@ struct JobCallBack {
   int32_t n_{-1};
 };
 
-class GetStatisTest : public ::testing::Test {
+class GetStatsTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    rootPath_ = std::make_unique<fs::TempDir>("/tmp/GetStatisTest.XXXXXX");
+    rootPath_ = std::make_unique<fs::TempDir>("/tmp/GetStatsTest.XXXXXX");
     mock::MockCluster cluster;
     kv_ = cluster.initMetaKV(rootPath_->path());
 
@@ -119,7 +119,7 @@ class GetStatisTest : public ::testing::Test {
   JobManager* jobMgr{nullptr};
 };
 
-TEST_F(GetStatisTest, StatisJob) {
+TEST_F(GetStatsTest, StatsJob) {
   ASSERT_TRUE(TestUtils::createSomeHosts(kv_.get()));
   TestUtils::assembleSpace(kv_.get(), 1, 1);
   GraphSpaceID spaceId = 1;
@@ -132,23 +132,23 @@ TEST_F(GetStatisTest, StatisJob) {
 
   {
     // Job is not executed, job status is QUEUE.
-    // Statis data does not exist.
+    // Stats data does not exist.
     auto job1Ret = JobDescription::loadJobDescription(statisJob.id_, kv_.get());
     ASSERT_TRUE(nebula::ok(job1Ret));
     auto job1 = nebula::value(job1Ret);
     ASSERT_EQ(statisJob.id_, job1.id_);
     ASSERT_EQ(cpp2::JobStatus::QUEUE, job1.status_);
 
-    cpp2::GetStatisReq req;
+    cpp2::GetStatsReq req;
     req.set_space_id(spaceId);
-    auto* processor = GetStatisProcessor::instance(kv_.get());
+    auto* processor = GetStatsProcessor::instance(kv_.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
     ASSERT_NE(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
 
     // Directly find statis data in kvstore, statis data does not exist.
-    auto key = MetaServiceUtils::statisKey(spaceId);
+    auto key = MetaServiceUtils::statsKey(spaceId);
     std::string val;
     auto ret = kv_->get(kDefaultSpaceId, kDefaultPartId, key, &val);
     ASSERT_NE(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
@@ -170,10 +170,10 @@ TEST_F(GetStatisTest, StatisJob) {
   statisJob.setStatus(cpp2::JobStatus::FINISHED);
   jobMgr->save(statisJob.jobKey(), statisJob.jobVal());
   auto jobId = statisJob.getJobId();
-  auto statisKey = MetaServiceUtils::statisKey(spaceId);
+  auto statsKey = MetaServiceUtils::statsKey(spaceId);
   auto tempKey = toTempKey(spaceId, jobId);
 
-  copyData(kv_.get(), 0, 0, statisKey, tempKey);
+  copyData(kv_.get(), 0, 0, statsKey, tempKey);
   jobMgr->jobFinished(jobId, cpp2::JobStatus::FINISHED);
   {
     auto job2Ret = JobDescription::loadJobDescription(statisJob.id_, kv_.get());
@@ -182,9 +182,9 @@ TEST_F(GetStatisTest, StatisJob) {
     ASSERT_EQ(statisJob.id_, job2.id_);
     ASSERT_EQ(cpp2::JobStatus::FINISHED, job2.status_);
 
-    cpp2::GetStatisReq req;
+    cpp2::GetStatsReq req;
     req.set_space_id(spaceId);
-    auto* processor = GetStatisProcessor::instance(kv_.get());
+    auto* processor = GetStatsProcessor::instance(kv_.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -193,25 +193,25 @@ TEST_F(GetStatisTest, StatisJob) {
     }
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
 
-    auto statisItem = resp.get_statis();
-    ASSERT_EQ(cpp2::JobStatus::FINISHED, statisItem.get_status());
-    ASSERT_EQ(0, statisItem.get_tag_vertices().size());
-    ASSERT_EQ(0, statisItem.get_edges().size());
-    ASSERT_EQ(0, statisItem.get_space_vertices());
-    ASSERT_EQ(0, statisItem.get_space_edges());
+    auto statsItem = resp.get_stats();
+    ASSERT_EQ(cpp2::JobStatus::FINISHED, statsItem.get_status());
+    ASSERT_EQ(0, statsItem.get_tag_vertices().size());
+    ASSERT_EQ(0, statsItem.get_edges().size());
+    ASSERT_EQ(0, statsItem.get_space_vertices());
+    ASSERT_EQ(0, statsItem.get_space_edges());
 
     // Directly find statis data in kvstore, statis data exists.
-    auto key = MetaServiceUtils::statisKey(spaceId);
+    auto key = MetaServiceUtils::statsKey(spaceId);
     std::string val;
     auto ret = kv_->get(kDefaultSpaceId, kDefaultPartId, key, &val);
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
 
-    auto statisItem1 = MetaServiceUtils::parseStatisVal(val);
-    ASSERT_EQ(cpp2::JobStatus::FINISHED, statisItem1.get_status());
-    ASSERT_EQ(0, statisItem1.get_tag_vertices().size());
-    ASSERT_EQ(0, statisItem1.get_edges().size());
-    ASSERT_EQ(0, statisItem1.get_space_vertices());
-    ASSERT_EQ(0, statisItem1.get_space_edges());
+    auto statsItem1 = MetaServiceUtils::parseStatsVal(val);
+    ASSERT_EQ(cpp2::JobStatus::FINISHED, statsItem1.get_status());
+    ASSERT_EQ(0, statsItem1.get_tag_vertices().size());
+    ASSERT_EQ(0, statsItem1.get_edges().size());
+    ASSERT_EQ(0, statsItem1.get_space_vertices());
+    ASSERT_EQ(0, statsItem1.get_space_edges());
   }
 
   // Execute new statis job in same space.
@@ -221,7 +221,7 @@ TEST_F(GetStatisTest, StatisJob) {
   ASSERT_EQ(rc2, nebula::cpp2::ErrorCode::SUCCEEDED);
   {
     // Job is not executed, job status is QUEUE.
-    // Statis data exists, but it is the result of the last statis job
+    // Stats data exists, but it is the result of the last stats job
     // execution.
     auto job1Ret = JobDescription::loadJobDescription(statisJob2.id_, kv_.get());
     ASSERT_TRUE(nebula::ok(job1Ret));
@@ -230,33 +230,33 @@ TEST_F(GetStatisTest, StatisJob) {
     ASSERT_EQ(cpp2::JobStatus::QUEUE, job1.status_);
 
     // Success,  but statis data is the result of the last statis job.
-    cpp2::GetStatisReq req;
+    cpp2::GetStatsReq req;
     req.set_space_id(spaceId);
-    auto* processor = GetStatisProcessor::instance(kv_.get());
+    auto* processor = GetStatsProcessor::instance(kv_.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
 
-    auto statisItem = resp.get_statis();
-    ASSERT_EQ(cpp2::JobStatus::FINISHED, statisItem.get_status());
-    ASSERT_EQ(0, statisItem.get_tag_vertices().size());
-    ASSERT_EQ(0, statisItem.get_edges().size());
-    ASSERT_EQ(0, statisItem.get_space_vertices());
-    ASSERT_EQ(0, statisItem.get_space_edges());
+    auto statsItem = resp.get_stats();
+    ASSERT_EQ(cpp2::JobStatus::FINISHED, statsItem.get_status());
+    ASSERT_EQ(0, statsItem.get_tag_vertices().size());
+    ASSERT_EQ(0, statsItem.get_edges().size());
+    ASSERT_EQ(0, statsItem.get_space_vertices());
+    ASSERT_EQ(0, statsItem.get_space_edges());
 
     // Directly find statis data in kvstore, statis data exists.
-    auto key = MetaServiceUtils::statisKey(spaceId);
+    auto key = MetaServiceUtils::statsKey(spaceId);
     std::string val;
     auto ret = kv_->get(kDefaultSpaceId, kDefaultPartId, key, &val);
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
 
-    auto statisItem1 = MetaServiceUtils::parseStatisVal(val);
-    ASSERT_EQ(cpp2::JobStatus::FINISHED, statisItem1.get_status());
-    ASSERT_EQ(0, statisItem1.get_tag_vertices().size());
-    ASSERT_EQ(0, statisItem1.get_edges().size());
-    ASSERT_EQ(0, statisItem1.get_space_vertices());
-    ASSERT_EQ(0, statisItem1.get_space_edges());
+    auto statsItem1 = MetaServiceUtils::parseStatsVal(val);
+    ASSERT_EQ(cpp2::JobStatus::FINISHED, statsItem1.get_status());
+    ASSERT_EQ(0, statsItem1.get_tag_vertices().size());
+    ASSERT_EQ(0, statsItem1.get_edges().size());
+    ASSERT_EQ(0, statsItem1.get_space_vertices());
+    ASSERT_EQ(0, statsItem1.get_space_edges());
 
     auto res = job1.setStatus(cpp2::JobStatus::RUNNING);
     ASSERT_TRUE(res);
@@ -266,7 +266,7 @@ TEST_F(GetStatisTest, StatisJob) {
 
   // Remove statis data.
   {
-    auto key = MetaServiceUtils::statisKey(spaceId);
+    auto key = MetaServiceUtils::statsKey(spaceId);
     folly::Baton<true, std::atomic> baton;
     auto retCode = nebula::cpp2::ErrorCode::SUCCEEDED;
     kv_->asyncRemove(kDefaultSpaceId, kDefaultPartId, key, [&](nebula::cpp2::ErrorCode code) {
@@ -284,9 +284,9 @@ TEST_F(GetStatisTest, StatisJob) {
     auto ret = kv_->get(kDefaultSpaceId, kDefaultPartId, key, &val);
     ASSERT_NE(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
 
-    cpp2::GetStatisReq req;
+    cpp2::GetStatsReq req;
     req.set_space_id(spaceId);
-    auto* processor = GetStatisProcessor::instance(kv_.get());
+    auto* processor = GetStatsProcessor::instance(kv_.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
@@ -300,10 +300,10 @@ TEST_F(GetStatisTest, StatisJob) {
   auto result2 = jobMgr->runJobInternal(statisJob2);
 
   auto jobId2 = statisJob2.getJobId();
-  auto statisKey2 = MetaServiceUtils::statisKey(spaceId);
+  auto statsKey2 = MetaServiceUtils::statsKey(spaceId);
   auto tempKey2 = toTempKey(spaceId, jobId2);
 
-  copyData(kv_.get(), 0, 0, statisKey2, tempKey2);
+  copyData(kv_.get(), 0, 0, statsKey2, tempKey2);
   jobMgr->jobFinished(jobId2, cpp2::JobStatus::FINISHED);
 
   ASSERT_TRUE(result2);
@@ -319,37 +319,37 @@ TEST_F(GetStatisTest, StatisJob) {
     ASSERT_EQ(statisJob2.id_, job2.id_);
     ASSERT_EQ(cpp2::JobStatus::FINISHED, job2.status_);
 
-    cpp2::GetStatisReq req;
+    cpp2::GetStatsReq req;
     req.set_space_id(spaceId);
-    auto* processor = GetStatisProcessor::instance(kv_.get());
+    auto* processor = GetStatsProcessor::instance(kv_.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
 
-    auto statisItem = resp.get_statis();
-    ASSERT_EQ(cpp2::JobStatus::FINISHED, statisItem.get_status());
-    ASSERT_EQ(0, statisItem.get_tag_vertices().size());
-    ASSERT_EQ(0, statisItem.get_edges().size());
-    ASSERT_EQ(0, statisItem.get_space_vertices());
-    ASSERT_EQ(0, statisItem.get_space_edges());
+    auto statsItem = resp.get_stats();
+    ASSERT_EQ(cpp2::JobStatus::FINISHED, statsItem.get_status());
+    ASSERT_EQ(0, statsItem.get_tag_vertices().size());
+    ASSERT_EQ(0, statsItem.get_edges().size());
+    ASSERT_EQ(0, statsItem.get_space_vertices());
+    ASSERT_EQ(0, statsItem.get_space_edges());
 
     // Directly find statis data in kvstore, statis data exists.
-    auto key = MetaServiceUtils::statisKey(spaceId);
+    auto key = MetaServiceUtils::statsKey(spaceId);
     std::string val;
     auto ret = kv_->get(kDefaultSpaceId, kDefaultPartId, key, &val);
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
 
-    auto statisItem1 = MetaServiceUtils::parseStatisVal(val);
-    ASSERT_EQ(cpp2::JobStatus::FINISHED, statisItem1.get_status());
-    ASSERT_EQ(0, statisItem1.get_tag_vertices().size());
-    ASSERT_EQ(0, statisItem1.get_edges().size());
-    ASSERT_EQ(0, statisItem1.get_space_vertices());
-    ASSERT_EQ(0, statisItem1.get_space_edges());
+    auto statsItem1 = MetaServiceUtils::parseStatsVal(val);
+    ASSERT_EQ(cpp2::JobStatus::FINISHED, statsItem1.get_status());
+    ASSERT_EQ(0, statsItem1.get_tag_vertices().size());
+    ASSERT_EQ(0, statsItem1.get_edges().size());
+    ASSERT_EQ(0, statsItem1.get_space_vertices());
+    ASSERT_EQ(0, statsItem1.get_space_edges());
   }
 }
 
-TEST_F(GetStatisTest, MockSingleMachineTest) {
+TEST_F(GetStatsTest, MockSingleMachineTest) {
   GraphSpaceID spaceId = 1;
   // // Because only send to leader, need to mock leader distribution
   std::map<HostAddr, ActiveHostsMan::AllLeaders> allStorage;
@@ -393,30 +393,30 @@ TEST_F(GetStatisTest, MockSingleMachineTest) {
     ASSERT_EQ(job1.id_, desc.id_);
     ASSERT_EQ(cpp2::JobStatus::FINISHED, desc.status_);
 
-    cpp2::GetStatisReq req;
+    cpp2::GetStatsReq req;
     req.set_space_id(spaceId);
-    auto* processor = GetStatisProcessor::instance(kv_.get());
+    auto* processor = GetStatsProcessor::instance(kv_.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
 
-    auto statisItem = resp.get_statis();
-    ASSERT_EQ(cpp2::JobStatus::FINISHED, statisItem.get_status());
-    ASSERT_EQ(2, statisItem.get_tag_vertices().size());
+    auto statsItem = resp.get_stats();
+    ASSERT_EQ(cpp2::JobStatus::FINISHED, statsItem.get_status());
+    ASSERT_EQ(2, statsItem.get_tag_vertices().size());
     int64_t tagCount = 0;
-    for (const auto& entry : statisItem.get_tag_vertices()) {
+    for (const auto& entry : statsItem.get_tag_vertices()) {
       tagCount += entry.second;
     }
     ASSERT_EQ(200, tagCount);
-    ASSERT_EQ(2, statisItem.get_edges().size());
+    ASSERT_EQ(2, statsItem.get_edges().size());
     int64_t edgeCount = 0;
-    for (const auto& entry : statisItem.get_edges()) {
+    for (const auto& entry : statsItem.get_edges()) {
       edgeCount += entry.second;
     }
     ASSERT_EQ(200, edgeCount);
-    ASSERT_EQ(200, statisItem.get_space_vertices());
-    ASSERT_EQ(200, statisItem.get_space_edges());
+    ASSERT_EQ(200, statsItem.get_space_vertices());
+    ASSERT_EQ(200, statsItem.get_space_edges());
   }
 
   // add statis job2 of same space
@@ -433,34 +433,34 @@ TEST_F(GetStatisTest, MockSingleMachineTest) {
     ASSERT_EQ(job2.id_, desc.id_);
     ASSERT_EQ(cpp2::JobStatus::FINISHED, desc.status_);
 
-    cpp2::GetStatisReq req;
+    cpp2::GetStatsReq req;
     req.set_space_id(spaceId);
-    auto* processor = GetStatisProcessor::instance(kv_.get());
+    auto* processor = GetStatsProcessor::instance(kv_.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
 
-    auto statisItem = resp.get_statis();
-    ASSERT_EQ(cpp2::JobStatus::FINISHED, statisItem.get_status());
-    ASSERT_EQ(2, statisItem.get_tag_vertices().size());
+    auto statsItem = resp.get_stats();
+    ASSERT_EQ(cpp2::JobStatus::FINISHED, statsItem.get_status());
+    ASSERT_EQ(2, statsItem.get_tag_vertices().size());
     int64_t tagCount = 0;
-    for (const auto& entry : statisItem.get_tag_vertices()) {
+    for (const auto& entry : statsItem.get_tag_vertices()) {
       tagCount += entry.second;
     }
     ASSERT_EQ(400, tagCount);
-    ASSERT_EQ(2, statisItem.get_edges().size());
+    ASSERT_EQ(2, statsItem.get_edges().size());
     int64_t edgeCount = 0;
-    for (const auto& entry : statisItem.get_edges()) {
+    for (const auto& entry : statsItem.get_edges()) {
       edgeCount += entry.second;
     }
     ASSERT_EQ(400, edgeCount);
-    ASSERT_EQ(400, statisItem.get_space_vertices());
-    ASSERT_EQ(400, statisItem.get_space_edges());
+    ASSERT_EQ(400, statsItem.get_space_vertices());
+    ASSERT_EQ(400, statsItem.get_space_edges());
   }
 }
 
-TEST_F(GetStatisTest, MockMultiMachineTest) {
+TEST_F(GetStatsTest, MockMultiMachineTest) {
   GraphSpaceID spaceId = 1;
   // Because only send to leader, need to mock leader distribution
   std::map<HostAddr, ActiveHostsMan::AllLeaders> allStorage;
@@ -510,30 +510,30 @@ TEST_F(GetStatisTest, MockMultiMachineTest) {
     ASSERT_EQ(job.id_, desc.id_);
     ASSERT_EQ(cpp2::JobStatus::FINISHED, desc.status_);
 
-    cpp2::GetStatisReq req;
+    cpp2::GetStatsReq req;
     req.set_space_id(spaceId);
-    auto* processor = GetStatisProcessor::instance(kv_.get());
+    auto* processor = GetStatsProcessor::instance(kv_.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
 
-    auto statisItem = resp.get_statis();
-    ASSERT_EQ(cpp2::JobStatus::FINISHED, statisItem.get_status());
-    ASSERT_EQ(2, statisItem.get_tag_vertices().size());
+    auto statsItem = resp.get_stats();
+    ASSERT_EQ(cpp2::JobStatus::FINISHED, statsItem.get_status());
+    ASSERT_EQ(2, statsItem.get_tag_vertices().size());
     int64_t tagCount = 0;
-    for (const auto& entry : statisItem.get_tag_vertices()) {
+    for (const auto& entry : statsItem.get_tag_vertices()) {
       tagCount += entry.second;
     }
     ASSERT_EQ((100 + 200 + 300) * 2, tagCount);
-    ASSERT_EQ(2, statisItem.get_edges().size());
+    ASSERT_EQ(2, statsItem.get_edges().size());
     int64_t edgeCount = 0;
-    for (const auto& entry : statisItem.get_edges()) {
+    for (const auto& entry : statsItem.get_edges()) {
       edgeCount += entry.second;
     }
     ASSERT_EQ((100 + 200 + 300) * 2, edgeCount);
-    ASSERT_EQ((100 + 200 + 300) * 2, statisItem.get_space_vertices());
-    ASSERT_EQ((100 + 200 + 300) * 2, statisItem.get_space_edges());
+    ASSERT_EQ((100 + 200 + 300) * 2, statsItem.get_space_vertices());
+    ASSERT_EQ((100 + 200 + 300) * 2, statsItem.get_space_edges());
   }
 }
 

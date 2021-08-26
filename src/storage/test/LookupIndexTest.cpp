@@ -1089,8 +1089,8 @@ TEST_P(LookupIndexTest, EdgeIndexWithDataTest) {
 }
 
 // Tag has prop, statistics vertices
-TEST_P(LookupIndexTest, TagWithPropStatisVerticesIndexTest) {
-  fs::TempDir rootPath("/tmp/TagWithPropStatisVerticesIndexTest.XXXXXX");
+TEST_P(LookupIndexTest, TagWithPropStatsVerticesIndexTest) {
+  fs::TempDir rootPath("/tmp/TagWithPropStatsVerticesIndexTest.XXXXXX");
   mock::MockCluster cluster;
   cluster.initStorageKV(rootPath.path());
   auto* env = cluster.storageEnv_.get();
@@ -1161,8 +1161,8 @@ TEST_P(LookupIndexTest, TagWithPropStatisVerticesIndexTest) {
 }
 
 // Tag no prop, statistics vertices
-TEST_P(LookupIndexTest, TagWithoutPropStatisVerticesIndexTest) {
-  fs::TempDir rootPath("/tmp/TagWithoutPropStatisVerticesIndexTest.XXXXXX");
+TEST_P(LookupIndexTest, TagWithoutPropStatsVerticesIndexTest) {
+  fs::TempDir rootPath("/tmp/TagWithoutPropStatsVerticesIndexTest.XXXXXX");
   mock::MockCluster cluster;
   cluster.initStorageKV(rootPath.path(), HostAddr("", 0), 1, false);
   auto* env = cluster.storageEnv_.get();
@@ -1233,8 +1233,8 @@ TEST_P(LookupIndexTest, TagWithoutPropStatisVerticesIndexTest) {
 }
 
 // Edge has prop, statistics edges
-TEST_P(LookupIndexTest, EdgeWithPropStatisVerticesIndexTest) {
-  fs::TempDir rootPath("/tmp/EdgeWithPropStatisVerticesIndexTest.XXXXXX");
+TEST_P(LookupIndexTest, EdgeWithPropStatsVerticesIndexTest) {
+  fs::TempDir rootPath("/tmp/EdgeWithPropStatsVerticesIndexTest.XXXXXX");
   mock::MockCluster cluster;
   cluster.initStorageKV(rootPath.path());
   auto* env = cluster.storageEnv_.get();
@@ -1315,8 +1315,8 @@ TEST_P(LookupIndexTest, EdgeWithPropStatisVerticesIndexTest) {
 }
 
 // Edge no prop, statistics edges
-TEST_P(LookupIndexTest, EdgeWithoutPropStatisVerticesIndexTest) {
-  fs::TempDir rootPath("/tmp/EdgeWithoutPropStatisVerticesIndexTest.XXXXXX");
+TEST_P(LookupIndexTest, EdgeWithoutPropStatsVerticesIndexTest) {
+  fs::TempDir rootPath("/tmp/EdgeWithoutPropStatsVerticesIndexTest.XXXXXX");
   mock::MockCluster cluster;
   cluster.initStorageKV(rootPath.path(), HostAddr("", 0), 1, false);
   auto* env = cluster.storageEnv_.get();

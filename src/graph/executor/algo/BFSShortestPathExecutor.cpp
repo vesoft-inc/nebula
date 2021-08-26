@@ -47,7 +47,7 @@ folly::Future<Status> BFSShortestPathExecutor::execute() {
     ds.rows.emplace_back(std::move(row));
     visited_.emplace(dst);
   }
-  return finish(ResultBuilder().value(Value(std::move(ds))).finish());
+  return finish(ResultBuilder().value(Value(std::move(ds))).build());
 }
 }  // namespace graph
 }  // namespace nebula

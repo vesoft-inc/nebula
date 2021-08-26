@@ -28,7 +28,7 @@ class CartesianProductTest : public testing::Test {
       var1->colNames = ds1.colNames;
       qctx_->ectx()->setResult(
           "ds1",
-          ResultBuilder().value(Value(std::move(ds1))).iter(Iterator::Kind::kSequential).finish());
+          ResultBuilder().value(Value(std::move(ds1))).iter(Iterator::Kind::kSequential).build());
 
       DataSet ds2;
       ds2.colNames = {kDst};
@@ -41,7 +41,7 @@ class CartesianProductTest : public testing::Test {
       var2->colNames = ds2.colNames;
       qctx_->ectx()->setResult(
           "ds2",
-          ResultBuilder().value(Value(std::move(ds2))).iter(Iterator::Kind::kSequential).finish());
+          ResultBuilder().value(Value(std::move(ds2))).iter(Iterator::Kind::kSequential).build());
 
       DataSet ds3;
       ds3.colNames = {"col1", "col2"};
@@ -55,7 +55,7 @@ class CartesianProductTest : public testing::Test {
       var3->colNames = ds3.colNames;
       qctx_->ectx()->setResult(
           "ds3",
-          ResultBuilder().value(Value(std::move(ds3))).iter(Iterator::Kind::kSequential).finish());
+          ResultBuilder().value(Value(std::move(ds3))).iter(Iterator::Kind::kSequential).build());
     }
   }
 

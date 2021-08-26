@@ -35,7 +35,7 @@ class AdminSubTask {
 enum class TaskPriority : int8_t { LO, MID, HI };
 
 struct TaskContext {
-  using CallBack = std::function<void(nebula::cpp2::ErrorCode, nebula::meta::cpp2::StatisItem&)>;
+  using CallBack = std::function<void(nebula::cpp2::ErrorCode, nebula::meta::cpp2::StatsItem&)>;
 
   TaskContext() = default;
   TaskContext(const cpp2::AddAdminTaskRequest& req, CallBack cb)
@@ -55,7 +55,7 @@ struct TaskContext {
 };
 
 class AdminTask {
-  using TCallBack = std::function<void(nebula::cpp2::ErrorCode, nebula::meta::cpp2::StatisItem&)>;
+  using TCallBack = std::function<void(nebula::cpp2::ErrorCode, nebula::meta::cpp2::StatsItem&)>;
   using SubTaskQueue = folly::UnboundedBlockingQueue<AdminSubTask>;
 
  public:
@@ -78,8 +78,8 @@ class AdminTask {
               ctx_.jobId_,
               ctx_.taskId_,
               apache::thrift::util::enumNameSafe(rc).c_str());
-    nebula::meta::cpp2::StatisItem statisItem;
-    ctx_.onFinish_(rc, statisItem);
+    nebula::meta::cpp2::StatsItem statsItem;
+    ctx_.onFinish_(rc, statsItem);
   }
 
   virtual int getJobId() { return ctx_.jobId_; }

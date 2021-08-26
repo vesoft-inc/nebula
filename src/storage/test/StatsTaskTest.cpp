@@ -12,7 +12,7 @@
 #include "mock/MockCluster.h"
 #include "mock/MockData.h"
 #include "storage/admin/AdminTaskManager.h"
-#include "storage/admin/StatisTask.h"
+#include "storage/admin/StatsTask.h"
 #include "storage/mutate/AddEdgesProcessor.h"
 #include "storage/mutate/AddVerticesProcessor.h"
 #include "storage/test/TestUtils.h"
@@ -20,11 +20,11 @@
 namespace nebula {
 namespace storage {
 
-class StatisTaskTest : public ::testing::Test {
+class StatsTaskTest : public ::testing::Test {
  protected:
   static void SetUpTestCase() {
-    LOG(INFO) << "SetUp StatisTaskTest TestCase";
-    rootPath_ = std::make_unique<fs::TempDir>("/tmp/StatisTaskTest.XXXXXX");
+    LOG(INFO) << "SetUp StatsTaskTest TestCase";
+    rootPath_ = std::make_unique<fs::TempDir>("/tmp/StatsTaskTest.XXXXXX");
     cluster_ = std::make_unique<nebula::mock::MockCluster>();
     cluster_->initStorageKV(rootPath_->path());
     env_ = cluster_->storageEnv_.get();
@@ -33,7 +33,7 @@ class StatisTaskTest : public ::testing::Test {
   }
 
   static void TearDownTestCase() {
-    LOG(INFO) << "TearDown StatisTaskTest TestCase";
+    LOG(INFO) << "TearDown StatsTaskTest TestCase";
     manager_->shutdown();
     cluster_.reset();
     rootPath_.reset();
@@ -51,13 +51,13 @@ class StatisTaskTest : public ::testing::Test {
   static std::unique_ptr<nebula::mock::MockCluster> cluster_;
 };
 
-StorageEnv* StatisTaskTest::env_{nullptr};
-AdminTaskManager* StatisTaskTest::manager_{nullptr};
-std::unique_ptr<fs::TempDir> StatisTaskTest::rootPath_{nullptr};
-std::unique_ptr<nebula::mock::MockCluster> StatisTaskTest::cluster_{nullptr};
+StorageEnv* StatsTaskTest::env_{nullptr};
+AdminTaskManager* StatsTaskTest::manager_{nullptr};
+std::unique_ptr<fs::TempDir> StatsTaskTest::rootPath_{nullptr};
+std::unique_ptr<nebula::mock::MockCluster> StatsTaskTest::cluster_{nullptr};
 
-// Statis data
-TEST_F(StatisTaskTest, StatisTagAndEdgeData) {
+// Stats data
+TEST_F(StatsTaskTest, StatsTagAndEdgeData) {
   // Empty data
   GraphSpaceID spaceId = 1;
   std::vector<PartitionID> parts = {1, 2, 3, 4, 5, 6};
@@ -73,20 +73,20 @@ TEST_F(StatisTaskTest, StatisTagAndEdgeData) {
     request.set_task_id(13);
     request.set_para(std::move(parameter));
 
-    nebula::meta::cpp2::StatisItem statisItem;
-    auto callback = [&](nebula::cpp2::ErrorCode ret, nebula::meta::cpp2::StatisItem& result) {
+    nebula::meta::cpp2::StatsItem statsItem;
+    auto callback = [&](nebula::cpp2::ErrorCode ret, nebula::meta::cpp2::StatsItem& result) {
       if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
         // Do nothing
       } else {
         if (result.get_status() == nebula::meta::cpp2::JobStatus::FINISHED) {
-          statisItem = std::move(result);
+          statsItem = std::move(result);
         }
       }
     };
 
     TaskContext context(request, callback);
 
-    auto task = std::make_shared<StatisTask>(StatisTaskTest::env_, std::move(context));
+    auto task = std::make_shared<StatsTask>(StatsTaskTest::env_, std::move(context));
     manager_->addAsyncTask(task);
 
     // Wait for the task finished
@@ -94,34 +94,34 @@ TEST_F(StatisTaskTest, StatisTagAndEdgeData) {
       usleep(50);
     } while (!manager_->isFinished(context.jobId_, context.taskId_));
 
-    // Ensure that StatisTask::finish is called.
+    // Ensure that StatsTask::finish is called.
     for (int i = 0; i < 50; i++) {
       sleep(1);
-      if (statisItem.get_status() == nebula::meta::cpp2::JobStatus::FINISHED) {
+      if (statsItem.get_status() == nebula::meta::cpp2::JobStatus::FINISHED) {
         break;
       }
     }
 
     // Check statis result
-    ASSERT_EQ(nebula::meta::cpp2::JobStatus::FINISHED, statisItem.get_status());
+    ASSERT_EQ(nebula::meta::cpp2::JobStatus::FINISHED, statsItem.get_status());
     // Three tags
-    ASSERT_EQ(3, (*statisItem.tag_vertices_ref()).size());
-    for (auto& e : *statisItem.tag_vertices_ref()) {
+    ASSERT_EQ(3, (*statsItem.tag_vertices_ref()).size());
+    for (auto& e : *statsItem.tag_vertices_ref()) {
       ASSERT_EQ(0, e.second);
     }
 
     // Two edgetypes
-    ASSERT_EQ(2, (*statisItem.edges_ref()).size());
-    for (auto& edge : *statisItem.edges_ref()) {
+    ASSERT_EQ(2, (*statsItem.edges_ref()).size());
+    for (auto& edge : *statsItem.edges_ref()) {
       ASSERT_EQ(0, edge.second);
     }
-    ASSERT_EQ(0, *statisItem.space_vertices_ref());
-    ASSERT_EQ(0, *statisItem.space_edges_ref());
+    ASSERT_EQ(0, *statsItem.space_vertices_ref());
+    ASSERT_EQ(0, *statsItem.space_edges_ref());
   }
 
   // Add Vertices
   {
-    auto* processor = AddVerticesProcessor::instance(StatisTaskTest::env_, nullptr);
+    auto* processor = AddVerticesProcessor::instance(StatsTaskTest::env_, nullptr);
     cpp2::AddVerticesRequest req = mock::MockData::mockAddVerticesReq();
     auto fut = processor->getFuture();
     processor->process(req);
@@ -138,20 +138,20 @@ TEST_F(StatisTaskTest, StatisTagAndEdgeData) {
     request.set_task_id(14);
     request.set_para(std::move(parameter));
 
-    nebula::meta::cpp2::StatisItem statisItem;
-    auto callback = [&](nebula::cpp2::ErrorCode ret, nebula::meta::cpp2::StatisItem& result) {
+    nebula::meta::cpp2::StatsItem statsItem;
+    auto callback = [&](nebula::cpp2::ErrorCode ret, nebula::meta::cpp2::StatsItem& result) {
       if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
         // Do nothing
       } else {
         if (result.get_status() == nebula::meta::cpp2::JobStatus::FINISHED) {
-          statisItem = std::move(result);
+          statsItem = std::move(result);
         }
       }
     };
 
     TaskContext context(request, callback);
 
-    auto task = std::make_shared<StatisTask>(StatisTaskTest::env_, std::move(context));
+    auto task = std::make_shared<StatsTask>(StatsTaskTest::env_, std::move(context));
     manager_->addAsyncTask(task);
 
     // Wait for the task finished
@@ -159,19 +159,19 @@ TEST_F(StatisTaskTest, StatisTagAndEdgeData) {
       usleep(50);
     } while (!manager_->isFinished(context.jobId_, context.taskId_));
 
-    // Ensure that StatisTask::finish is called.
+    // Ensure that StatsTask::finish is called.
     for (int i = 0; i < 50; i++) {
       sleep(1);
-      if (statisItem.get_status() == nebula::meta::cpp2::JobStatus::FINISHED) {
+      if (statsItem.get_status() == nebula::meta::cpp2::JobStatus::FINISHED) {
         break;
       }
     }
 
     // Check statis result
-    ASSERT_EQ(nebula::meta::cpp2::JobStatus::FINISHED, statisItem.get_status());
+    ASSERT_EQ(nebula::meta::cpp2::JobStatus::FINISHED, statsItem.get_status());
     // Three tags
-    ASSERT_EQ(3, (*statisItem.tag_vertices_ref()).size());
-    for (auto& e : *statisItem.tag_vertices_ref()) {
+    ASSERT_EQ(3, (*statsItem.tag_vertices_ref()).size());
+    for (auto& e : *statsItem.tag_vertices_ref()) {
       if (e.first == "1") {
         ASSERT_EQ(51, e.second);
       } else if (e.first == "2") {
@@ -181,18 +181,18 @@ TEST_F(StatisTaskTest, StatisTagAndEdgeData) {
       }
     }
     // Two edgetypes
-    ASSERT_EQ(2, (*statisItem.edges_ref()).size());
-    for (auto& edge : *statisItem.edges_ref()) {
+    ASSERT_EQ(2, (*statsItem.edges_ref()).size());
+    for (auto& edge : *statsItem.edges_ref()) {
       ASSERT_EQ(0, edge.second);
     }
 
-    ASSERT_EQ(81, *statisItem.space_vertices_ref());
-    ASSERT_EQ(0, *statisItem.space_edges_ref());
+    ASSERT_EQ(81, *statsItem.space_vertices_ref());
+    ASSERT_EQ(0, *statsItem.space_edges_ref());
   }
 
   // Add Edges
   {
-    auto* processor = AddEdgesProcessor::instance(StatisTaskTest::env_, nullptr);
+    auto* processor = AddEdgesProcessor::instance(StatsTaskTest::env_, nullptr);
     cpp2::AddEdgesRequest req = mock::MockData::mockAddEdgesReq();
     auto fut = processor->getFuture();
     processor->process(req);
@@ -209,20 +209,20 @@ TEST_F(StatisTaskTest, StatisTagAndEdgeData) {
     request.set_task_id(15);
     request.set_para(std::move(parameter));
 
-    nebula::meta::cpp2::StatisItem statisItem;
-    auto callback = [&](nebula::cpp2::ErrorCode ret, nebula::meta::cpp2::StatisItem& result) {
+    nebula::meta::cpp2::StatsItem statsItem;
+    auto callback = [&](nebula::cpp2::ErrorCode ret, nebula::meta::cpp2::StatsItem& result) {
       if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
         // Do nothing
       } else {
         if (result.get_status() == nebula::meta::cpp2::JobStatus::FINISHED) {
-          statisItem = std::move(result);
+          statsItem = std::move(result);
         }
       }
     };
 
     TaskContext context(request, callback);
 
-    auto task = std::make_shared<StatisTask>(StatisTaskTest::env_, std::move(context));
+    auto task = std::make_shared<StatsTask>(StatsTaskTest::env_, std::move(context));
     manager_->addAsyncTask(task);
 
     // Wait for the task finished
@@ -230,20 +230,20 @@ TEST_F(StatisTaskTest, StatisTagAndEdgeData) {
       usleep(50);
     } while (!manager_->isFinished(context.jobId_, context.taskId_));
 
-    // Ensure that StatisTask::finish is called.
+    // Ensure that StatsTask::finish is called.
     for (int i = 0; i < 50; i++) {
       sleep(1);
-      if (statisItem.get_status() == nebula::meta::cpp2::JobStatus::FINISHED) {
+      if (statsItem.get_status() == nebula::meta::cpp2::JobStatus::FINISHED) {
         break;
       }
     }
 
     // Check statis result
-    ASSERT_EQ(nebula::meta::cpp2::JobStatus::FINISHED, statisItem.get_status());
+    ASSERT_EQ(nebula::meta::cpp2::JobStatus::FINISHED, statsItem.get_status());
     // Three tags
-    ASSERT_EQ(3, (*statisItem.tag_vertices_ref()).size());
+    ASSERT_EQ(3, (*statsItem.tag_vertices_ref()).size());
 
-    for (auto& e : *statisItem.tag_vertices_ref()) {
+    for (auto& e : *statsItem.tag_vertices_ref()) {
       if (e.first == "1") {
         ASSERT_EQ(51, e.second);
       } else if (e.first == "2") {
@@ -254,8 +254,8 @@ TEST_F(StatisTaskTest, StatisTagAndEdgeData) {
     }
 
     // Two edgetypes
-    ASSERT_EQ(2, (*statisItem.edges_ref()).size());
-    for (auto& edge : *statisItem.edges_ref()) {
+    ASSERT_EQ(2, (*statsItem.edges_ref()).size());
+    for (auto& edge : *statsItem.edges_ref()) {
       if (edge.first == "101") {
         // Do not contain reverse edge datas.
         ASSERT_EQ(167, edge.second);
@@ -263,13 +263,13 @@ TEST_F(StatisTaskTest, StatisTagAndEdgeData) {
         ASSERT_EQ(0, edge.second);
       }
     }
-    ASSERT_EQ(81, *statisItem.space_vertices_ref());
-    ASSERT_EQ(167, *statisItem.space_edges_ref());
+    ASSERT_EQ(81, *statsItem.space_vertices_ref());
+    ASSERT_EQ(167, *statsItem.space_edges_ref());
   }
 
   // Check the data count
   LOG(INFO) << "Check data in kv store...";
-  auto spaceVidLenRet = StatisTaskTest::env_->schemaMan_->getSpaceVidLen(spaceId);
+  auto spaceVidLenRet = StatsTaskTest::env_->schemaMan_->getSpaceVidLen(spaceId);
   EXPECT_TRUE(spaceVidLenRet.ok());
   auto spaceVidLen = spaceVidLenRet.value();
 

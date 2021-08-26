@@ -19,7 +19,7 @@ class UpdateResNode : public RelNode<T> {
  public:
   using RelNode<T>::execute;
 
-  UpdateResNode(RunTimeContext* context,
+  UpdateResNode(RuntimeContext* context,
                 RelNode<T>* updateNode,
                 std::vector<Expression*> returnPropsExp,
                 StorageExpressionContext* expCtx,
@@ -60,7 +60,7 @@ class UpdateResNode : public RelNode<T> {
   }
 
  private:
-  RunTimeContext* context_;
+  RuntimeContext* context_;
   RelNode<T>* updateNode_;
   std::vector<Expression*> returnPropsExp_;
   StorageExpressionContext* expCtx_;

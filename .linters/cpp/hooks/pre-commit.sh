@@ -50,10 +50,19 @@ python3 $CPPLINT --quiet --extensions=$CPPLINT_EXTENS \
                 --filter=$CPPLINT_FILTER --linelength=100 $CHECK_FILES 2>&1
 
 result=$?
-if [ $result -eq 0 ]
-then
-    exit 0
-else
+if [ ! $result -eq 0 ]; then
     echo "cpplint code style check failed, please fix and recommit."
     exit 1
 fi
+
+echo "Performing C++ code format check..."
+
+CLANG_HOME=/opt/vesoft/toolset/clang/10.0.0/
+
+if [ ! -d "$CLANG_HOME" ]; then
+    echo "The $CLANG_HOME directory is not found, and the source changes cannot be automatically formatted."
+    exit 0
+fi
+
+git diff -U0 --no-color --staged | $CLANG_HOME/share/clang/clang-format-diff.py -i -p1 -binary $CLANG_HOME/bin/clang-format
+git add $CHECK_FILES

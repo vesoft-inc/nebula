@@ -38,7 +38,7 @@ class GetNeighborsProcessor
       : QueryBaseProcessor<cpp2::GetNeighborsRequest, cpp2::GetNeighborsResponse>(
             env, counters, executor) {}
 
-  StoragePlan<VertexID> buildPlan(RunTimeContext* context,
+  StoragePlan<VertexID> buildPlan(RuntimeContext* context,
                                   StorageExpressionContext* expCtx,
                                   nebula::DataSet* result,
                                   int64_t limit = 0,
@@ -68,7 +68,7 @@ class GetNeighborsProcessor
   void runInMultipleThread(const cpp2::GetNeighborsRequest& req, int64_t limit, bool random);
 
   folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> runInExecutor(
-      RunTimeContext* context,
+      RuntimeContext* context,
       StorageExpressionContext* expCtx,
       nebula::DataSet* result,
       PartitionID partId,
@@ -77,7 +77,7 @@ class GetNeighborsProcessor
       bool random);
 
  private:
-  std::vector<RunTimeContext> contexts_;
+  std::vector<RuntimeContext> contexts_;
   std::vector<StorageExpressionContext> expCtxs_;
   std::vector<nebula::DataSet> results_;
 };

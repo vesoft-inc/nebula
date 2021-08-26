@@ -33,7 +33,7 @@ class IndexOutputNode final : public RelNode<T> {
   };
 
   IndexOutputNode(nebula::DataSet* result,
-                  RunTimeContext* context,
+                  RuntimeContext* context,
                   IndexScanNode<T>* indexScanNode,
                   bool hasNullableCol,
                   const std::vector<meta::cpp2::ColumnDef>& fields)
@@ -46,20 +46,20 @@ class IndexOutputNode final : public RelNode<T> {
                                : IndexResultType::kVertexFromIndexScan;
   }
 
-  IndexOutputNode(nebula::DataSet* result, RunTimeContext* context, IndexEdgeNode<T>* indexEdgeNode)
+  IndexOutputNode(nebula::DataSet* result, RuntimeContext* context, IndexEdgeNode<T>* indexEdgeNode)
       : result_(result), context_(context), indexEdgeNode_(indexEdgeNode) {
     type_ = IndexResultType::kEdgeFromDataScan;
   }
 
   IndexOutputNode(nebula::DataSet* result,
-                  RunTimeContext* context,
+                  RuntimeContext* context,
                   IndexVertexNode<T>* indexVertexNode)
       : result_(result), context_(context), indexVertexNode_(indexVertexNode) {
     type_ = IndexResultType::kVertexFromDataScan;
   }
 
   IndexOutputNode(nebula::DataSet* result,
-                  RunTimeContext* context,
+                  RuntimeContext* context,
                   IndexFilterNode<T>* indexFilterNode,
                   bool indexFilter = false)
       : result_(result), context_(context), indexFilterNode_(indexFilterNode) {
@@ -334,7 +334,7 @@ class IndexOutputNode final : public RelNode<T> {
 
  private:
   nebula::DataSet* result_;
-  RunTimeContext* context_;
+  RuntimeContext* context_;
   IndexResultType type_;
   IndexScanNode<T>* indexScanNode_{nullptr};
   IndexEdgeNode<T>* indexEdgeNode_{nullptr};

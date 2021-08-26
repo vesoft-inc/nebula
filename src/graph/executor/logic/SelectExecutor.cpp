@@ -25,7 +25,7 @@ folly::Future<Status> SelectExecutor::execute() {
   QueryExpressionContext ctx(ectx_);
   auto value = expr->eval(ctx);
   DCHECK(value.isBool());
-  return finish(ResultBuilder().value(std::move(value)).iter(Iterator::Kind::kDefault).finish());
+  return finish(ResultBuilder().value(std::move(value)).iter(Iterator::Kind::kDefault).build());
 }
 
 }  // namespace graph
