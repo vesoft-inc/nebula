@@ -31,16 +31,8 @@ void GetPropProcessor::doProcess(const cpp2::GetPropRequest& req) {
     onFinished();
     return;
   }
-  auto session_id =
-      req.common_ref().has_value() && req.common_ref().value().session_id_ref().has_value()
-          ? *req.get_common()->get_session_id()
-          : 0;
-
-  auto plan_id = req.common_ref().has_value() && req.common_ref().value().plan_id_ref().has_value()
-                     ? *req.get_common()->get_plan_id()
-                     : 0;
-  planContext_ =
-      std::make_unique<PlanContext>(env_, spaceId_, session_id, plan_id, spaceVidLen_, isIntId_);
+  this->planContext_ = std::make_unique<PlanContext>(
+      this->env_, spaceId_, this->spaceVidLen_, this->isIntId_, req.common_ref());
 
   retCode = checkAndBuildContexts(req);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {

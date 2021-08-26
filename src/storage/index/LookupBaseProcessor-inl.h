@@ -18,16 +18,8 @@ nebula::cpp2::ErrorCode LookupBaseProcessor<REQ, RESP>::requestCheck(
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
     return retCode;
   }
-  auto session_id =
-      req.common_ref().has_value() && req.common_ref().value().session_id_ref().has_value()
-          ? *req.get_common()->get_session_id()
-          : 0;
-
-  auto plan_id = req.common_ref().has_value() && req.common_ref().value().plan_id_ref().has_value()
-                     ? *req.get_common()->get_plan_id()
-                     : 0;
   this->planContext_ = std::make_unique<PlanContext>(
-      this->env_, spaceId_, session_id, plan_id, this->spaceVidLen_, this->isIntId_);
+      this->env_, spaceId_, this->spaceVidLen_, this->isIntId_, req.common_ref());
   const auto& indices = req.get_indices();
   this->planContext_->isEdge_ = indices.get_is_edge();
   this->context_ = std::make_unique<RuntimeContext>(this->planContext_.get());

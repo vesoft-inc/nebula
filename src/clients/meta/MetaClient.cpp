@@ -184,7 +184,7 @@ bool MetaClient::loadData() {
   }
 
   if (!loadSessions()) {
-    LOG(ERROR) << "Load roles Failed";
+    LOG(ERROR) << "Load sessions Failed";
     return false;
   }
 
@@ -3493,23 +3493,22 @@ bool MetaClient::loadSessions() {
     LOG(ERROR) << "List sessions failed, status:" << session_list.status();
     return false;
   }
-  SessionMap* old_session_map = sessionMap_.load();
-  SessionMap* new_session_map = new SessionMap(*old_session_map);
-  folly::F14FastSet<std::pair<SessionID, ExecutionPlanID>>* old_killed_plan = killedPlans_.load();
-  folly::F14FastSet<std::pair<SessionID, ExecutionPlanID>>* new_killed_plan =
-      new folly::F14FastSet<std::pair<SessionID, ExecutionPlanID>>(*old_killed_plan);
+  SessionMap* oldSessionMap = sessionMap_.load();
+  SessionMap* newSessionMap = new SessionMap(*oldSessionMap);
+  auto oldKilledPlan = killedPlans_.load();
+  auto newKilledPlan = new folly::F14FastSet<std::pair<SessionID, ExecutionPlanID>>(*oldKilledPlan);
   for (auto& session : session_list.value().get_sessions()) {
-    (*new_session_map)[session.get_session_id()] = session;
+    (*newSessionMap)[session.get_session_id()] = session;
     for (auto& query : session.get_queries()) {
       if (query.second.get_status() == cpp2::QueryStatus::KILLING) {
-        new_killed_plan->insert({session.get_session_id(), query.first});
+        newKilledPlan->insert({session.get_session_id(), query.first});
       }
     }
   }
-  sessionMap_.store(new_session_map);
-  killedPlans_.store(new_killed_plan);
-  folly::rcu_retire(old_killed_plan);
-  folly::rcu_retire(old_session_map);
+  sessionMap_.store(newSessionMap);
+  killedPlans_.store(newKilledPlan);
+  folly::rcu_retire(oldKilledPlan);
+  folly::rcu_retire(oldSessionMap);
   return true;
 }
 

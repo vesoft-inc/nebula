@@ -74,9 +74,7 @@ class IndexFilterNode final : public RelNode<T> {
       data = indexVertexNode_->moveData();
     }
     for (const auto& k : data) {
-      if (context_->env()->metaClient_ &&
-          context_->env()->metaClient_->checkIsPlanKilled(context_->planContext_->sessionId_,
-                                                          context_->planContext_->planId_)) {
+      if (context_->isPlanKilled()) {
         return nebula::cpp2::ErrorCode::E_PLAN_IS_KILLED;
       }
       if (evalExprByIndex_) {

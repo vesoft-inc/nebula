@@ -71,10 +71,7 @@ class IndexScanNode : public RelNode<T> {
     auto ttlProp = CommonUtils::ttlProps(sh);
     data_.clear();
     while (!!iter_ && iter_->valid()) {
-      if (context_->env()->metaClient_ &&
-          context_->env()->metaClient_->checkIsPlanKilled(context_->planContext_->sessionId_,
-                                                          context_->planContext_->planId_)) {
-        context_->planContext_->isKilled_ = true;
+      if (context_->isPlanKilled()) {
         return {};
       }
       if (!iter_->val().empty() && ttlProp.first) {
