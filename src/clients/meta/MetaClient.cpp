@@ -20,6 +20,7 @@
 #include "common/meta/NebulaSchemaProvider.h"
 #include "common/network/NetworkUtils.h"
 #include "common/stats/StatsManager.h"
+#include "common/time/TimeUtils.h"
 #include "version/Version.h"
 #include "webservice/Common.h"
 
@@ -2326,6 +2327,7 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
             LOG(FATAL) << "Can't persist the clusterId in file " << FLAGS_cluster_id_path;
           }
         }
+        heartbeatTime_ = time::WallClock::fastNowInMilliSec();
         metadLastUpdateTime_ = resp.get_last_update_time_in_ms();
         VLOG(1) << "Metad last update time: " << metadLastUpdateTime_;
         return true;  // resp.code == nebula::cpp2::ErrorCode::SUCCEEDED
@@ -3327,7 +3329,7 @@ StatusOr<std::pair<std::string, cpp2::FTIndex>> MetaClient::getFTIndexBySpaceSch
   }
   folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   for (auto it = fulltextIndexMap_.begin(); it != fulltextIndexMap_.end(); ++it) {
-    auto id = it->second.get_depend_schema().getType() == cpp2::SchemaID::Type::edge_type
+    auto id = it->second.get_depend_schema().getType() == nebula::cpp2::SchemaID::Type::edge_type
                   ? it->second.get_depend_schema().get_edge_type()
                   : it->second.get_depend_schema().get_tag_id();
     if (it->second.get_space_id() == spaceId && id == schemaId) {

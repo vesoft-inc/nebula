@@ -16,7 +16,7 @@ void CreateFTIndexProcessor::process(const cpp2::CreateFTIndexReq& req) {
   const auto& index = req.get_index();
   const std::string& name = req.get_fulltext_index_name();
   CHECK_SPACE_ID_AND_RETURN(index.get_space_id());
-  auto isEdge = index.get_depend_schema().getType() == cpp2::SchemaID::Type::edge_type;
+  auto isEdge = index.get_depend_schema().getType() == nebula::cpp2::SchemaID::Type::edge_type;
   folly::SharedMutex::ReadHolder rHolder(isEdge ? LockUtils::edgeLock() : LockUtils::tagLock());
   auto schemaPrefix = isEdge ? MetaServiceUtils::schemaEdgePrefix(
                                    index.get_space_id(), index.get_depend_schema().get_edge_type())

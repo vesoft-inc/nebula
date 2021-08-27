@@ -343,7 +343,7 @@ std::vector<std::shared_ptr<SnapshotManager>> snapshots(
     const std::vector<std::shared_ptr<RaftexService>>& services) {
   std::vector<std::shared_ptr<SnapshotManager>> snapshots;
   for (auto& service : services) {
-    std::shared_ptr<SnapshotManager> snapshot(new test::SnapshotManagerImpl(service.get()));
+    std::shared_ptr<SnapshotManager> snapshot(new test::NebulaSnapshotManager(service.get()));
     snapshots.emplace_back(std::move(snapshot));
   }
   return snapshots;

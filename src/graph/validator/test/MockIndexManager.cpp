@@ -23,7 +23,7 @@ void MockIndexManager::init() {
   meta::cpp2::IndexItem person_no_props_index;
   person_no_props_index.set_index_id(233);
   person_no_props_index.set_index_name("person_no_props_index");
-  meta::cpp2::SchemaID personSchemaId;
+  nebula::cpp2::SchemaID personSchemaId;
   personSchemaId.set_tag_id(2);
   person_no_props_index.set_schema_id(std::move(personSchemaId));
   person_no_props_index.set_schema_name("person");
@@ -31,7 +31,7 @@ void MockIndexManager::init() {
   meta::cpp2::IndexItem book_name_index;
   book_name_index.set_index_id(234);
   book_name_index.set_index_name("book_name_index");
-  meta::cpp2::SchemaID bookSchemaId;
+  nebula::cpp2::SchemaID bookSchemaId;
   bookSchemaId.set_tag_id(5);
   book_name_index.set_schema_id(std::move(bookSchemaId));
   book_name_index.set_schema_name("book");
@@ -47,7 +47,7 @@ void MockIndexManager::init() {
   meta::cpp2::IndexItem like_index;
   like_index.set_index_id(235);
   like_index.set_index_name("like_index");
-  meta::cpp2::SchemaID likeSchemaId;
+  nebula::cpp2::SchemaID likeSchemaId;
   likeSchemaId.set_edge_type(3);
   like_index.set_schema_id(std::move(likeSchemaId));
   like_index.set_schema_name("like");

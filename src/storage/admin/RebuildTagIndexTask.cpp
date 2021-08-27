@@ -13,6 +13,8 @@
 namespace nebula {
 namespace storage {
 
+const int32_t kReserveNum = 1024 * 4;
+
 StatusOr<IndexItems> RebuildTagIndexTask::getIndexes(GraphSpaceID space) {
   return env_->indexMan_->getTagIndexes(space);
 }
@@ -52,22 +54,23 @@ nebula::cpp2::ErrorCode RebuildTagIndexTask::buildIndexGlobal(GraphSpaceID space
 
   VertexID currentVertex = "";
   std::vector<kvstore::KV> data;
-  data.reserve(FLAGS_rebuild_index_batch_num);
+  data.reserve(kReserveNum);
   RowReaderWrapper reader;
+  size_t batchSize = 0;
   while (iter && iter->valid()) {
     if (canceled_) {
       LOG(ERROR) << "Rebuild Tag Index is Canceled";
       return nebula::cpp2::ErrorCode::SUCCEEDED;
     }
 
-    if (static_cast<int32_t>(data.size()) == FLAGS_rebuild_index_batch_num) {
-      auto result = writeData(space, part, data);
+    if (batchSize >= FLAGS_rebuild_index_batch_size) {
+      auto result = writeData(space, part, data, batchSize);
       if (result != nebula::cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Write Part " << part << " Index Failed";
         return result;
       }
-
       data.clear();
+      batchSize = 0;
     }
 
     auto key = iter->key();
@@ -131,14 +134,14 @@ nebula::cpp2::ErrorCode RebuildTagIndexTask::buildIndexGlobal(GraphSpaceID space
         }
         auto indexKey = IndexKeyUtils::vertexIndexKey(
             vidSize, part, item->get_index_id(), vertex.toString(), std::move(valuesRet).value());
-        data.emplace_back(std::move(indexKey), indexVal);
+        batchSize += indexKey.size() + indexVal.size();
+        data.emplace_back(std::move(indexKey), std::move(indexVal));
       }
     }
     iter->next();
-    usleep(FLAGS_rebuild_index_process_interval);
   }
 
-  auto result = writeData(space, part, std::move(data));
+  auto result = writeData(space, part, std::move(data), batchSize);
   if (result != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << "Write Part " << part << " Index Failed";
     return nebula::cpp2::ErrorCode::E_STORE_FAILURE;
