@@ -19,13 +19,9 @@ DECLARE_int32(waiting_new_leader_retry_times);
 
 DECLARE_int32(waiting_new_leader_interval_in_secs);
 
-DECLARE_int32(rebuild_index_batch_num);
+DECLARE_uint32(rebuild_index_part_rate_limit);
 
-DECLARE_int32(rebuild_index_locked_threshold);
-
-DECLARE_int32(rebuild_index_process_interval);
-
-DECLARE_bool(enable_vertex_cache);
+DECLARE_uint32(rebuild_index_batch_size);
 
 DECLARE_int32(reader_handlers);
 

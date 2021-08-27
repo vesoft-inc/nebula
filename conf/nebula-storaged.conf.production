@@ -100,10 +100,7 @@
 --enable_rocksdb_prefix_filtering=false
 
 ############### misc ####################
---max_handlers_per_req=1
-
-############## Runtime global Options ##############
-# Index rebuild batch number
---rebuild_index_batch_num=256
-# Index rebuild processing interval, microsecond.
---rebuild_index_process_interval=3000
+--snapshot_part_rate_limit=8388608
+--snapshot_batch_size=1048576
+--rebuild_index_part_rate_limit=4194304
+--rebuild_index_batch_size=1048576
