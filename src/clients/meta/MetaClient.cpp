@@ -3329,7 +3329,7 @@ StatusOr<std::pair<std::string, cpp2::FTIndex>> MetaClient::getFTIndexBySpaceSch
   }
   folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   for (auto it = fulltextIndexMap_.begin(); it != fulltextIndexMap_.end(); ++it) {
-    auto id = it->second.get_depend_schema().getType() == cpp2::SchemaID::Type::edge_type
+    auto id = it->second.get_depend_schema().getType() == nebula::cpp2::SchemaID::Type::edge_type
                   ? it->second.get_depend_schema().get_edge_type()
                   : it->second.get_depend_schema().get_tag_id();
     if (it->second.get_space_id() == spaceId && id == schemaId) {
