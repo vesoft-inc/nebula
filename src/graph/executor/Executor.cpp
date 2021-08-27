@@ -38,6 +38,7 @@
 #include "graph/executor/admin/SessionExecutor.h"
 #include "graph/executor/admin/ShowBalanceExecutor.h"
 #include "graph/executor/admin/ShowHostsExecutor.h"
+#include "graph/executor/admin/ShowMetaLeaderExecutor.h"
 #include "graph/executor/admin/ShowQueriesExecutor.h"
 #include "graph/executor/admin/ShowStatsExecutor.h"
 #include "graph/executor/admin/ShowTSClientsExecutor.h"
@@ -411,6 +412,9 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     case PlanNode::Kind::kShowHosts: {
       return pool->add(new ShowHostsExecutor(node, qctx));
     }
+    case PlanNode::Kind::kShowMetaLeader: {
+      return pool->add(new ShowMetaLeaderExecutor(node, qctx));
+    }
     case PlanNode::Kind::kShowParts: {
       return pool->add(new ShowPartsExecutor(node, qctx));
     }
@@ -613,7 +617,7 @@ Status Executor::finish(Result &&result) {
 }
 
 Status Executor::finish(Value &&value) {
-  return finish(ResultBuilder().value(std::move(value)).iter(Iterator::Kind::kDefault).finish());
+  return finish(ResultBuilder().value(std::move(value)).iter(Iterator::Kind::kDefault).build());
 }
 
 folly::Executor *Executor::runner() const {

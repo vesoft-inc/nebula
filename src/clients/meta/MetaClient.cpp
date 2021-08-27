@@ -20,6 +20,7 @@
 #include "common/meta/NebulaSchemaProvider.h"
 #include "common/network/NetworkUtils.h"
 #include "common/stats/StatsManager.h"
+#include "common/time/TimeUtils.h"
 #include "version/Version.h"
 #include "webservice/Common.h"
 
@@ -673,6 +674,10 @@ Status MetaClient::handleResponse(const RESP& resp) {
       return Status::Error("Edge not existed!");
     case nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND:
       return Status::Error("Index not existed!");
+    case nebula::cpp2::ErrorCode::E_STATS_NOT_FOUND:
+      return Status::Error(
+          "There is no any stats info to show, please execute "
+          "`submit job stats' firstly!");
     case nebula::cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND:
       return Status::Error("Edge prop not existed!");
     case nebula::cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND:
@@ -2322,6 +2327,7 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
             LOG(FATAL) << "Can't persist the clusterId in file " << FLAGS_cluster_id_path;
           }
         }
+        heartbeatTime_ = time::WallClock::fastNowInMilliSec();
         metadLastUpdateTime_ = resp.get_last_update_time_in_ms();
         VLOG(1) << "Metad last update time: " << metadLastUpdateTime_;
         return true;  // resp.code == nebula::cpp2::ErrorCode::SUCCEEDED
@@ -3151,15 +3157,15 @@ folly::Future<StatusOr<std::vector<cpp2::Group>>> MetaClient::listGroups() {
   return future;
 }
 
-folly::Future<StatusOr<cpp2::StatisItem>> MetaClient::getStatis(GraphSpaceID spaceId) {
-  cpp2::GetStatisReq req;
+folly::Future<StatusOr<cpp2::StatsItem>> MetaClient::getStats(GraphSpaceID spaceId) {
+  cpp2::GetStatsReq req;
   req.set_space_id(spaceId);
-  folly::Promise<StatusOr<cpp2::StatisItem>> promise;
+  folly::Promise<StatusOr<cpp2::StatsItem>> promise;
   auto future = promise.getFuture();
   getResponse(
       std::move(req),
-      [](auto client, auto request) { return client->future_getStatis(request); },
-      [](cpp2::GetStatisResp&& resp) -> cpp2::StatisItem { return std::move(resp).get_statis(); },
+      [](auto client, auto request) { return client->future_getStats(request); },
+      [](cpp2::GetStatsResp&& resp) -> cpp2::StatsItem { return std::move(resp).get_stats(); },
       std::move(promise),
       true);
   return future;
@@ -3169,13 +3175,13 @@ folly::Future<StatusOr<nebula::cpp2::ErrorCode>> MetaClient::reportTaskFinish(
     int32_t jobId,
     int32_t taskId,
     nebula::cpp2::ErrorCode taskErrCode,
-    cpp2::StatisItem* statisticItem) {
+    cpp2::StatsItem* statisticItem) {
   cpp2::ReportTaskReq req;
   req.set_code(taskErrCode);
   req.set_job_id(jobId);
   req.set_task_id(taskId);
   if (statisticItem) {
-    req.set_statis(*statisticItem);
+    req.set_stats(*statisticItem);
   }
   folly::Promise<StatusOr<nebula::cpp2::ErrorCode>> pro;
   auto fut = pro.getFuture();

@@ -100,7 +100,7 @@ class AdminClient {
                                         const std::vector<std::string>& taskSpecficParas,
                                         std::vector<PartitionID> parts,
                                         int concurrency,
-                                        cpp2::StatisItem* statisResult = nullptr);
+                                        cpp2::StatsItem* statsResult = nullptr);
 
   virtual folly::Future<Status> stopTask(const std::vector<HostAddr>& target,
                                          int32_t jobId,

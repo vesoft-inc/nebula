@@ -584,13 +584,13 @@ class MetaClient {
 
   Status refreshCache();
 
-  folly::Future<StatusOr<cpp2::StatisItem>> getStatis(GraphSpaceID spaceId);
+  folly::Future<StatusOr<cpp2::StatsItem>> getStats(GraphSpaceID spaceId);
 
   folly::Future<StatusOr<nebula::cpp2::ErrorCode>> reportTaskFinish(
       int32_t jobId,
       int32_t taskId,
       nebula::cpp2::ErrorCode taskErrCode,
-      cpp2::StatisItem* statisticItem);
+      cpp2::StatsItem* statisticItem);
 
   folly::Future<StatusOr<bool>> download(const std::string& hdfsHost,
                                          int32_t hdfsPort,
@@ -598,6 +598,10 @@ class MetaClient {
                                          GraphSpaceID spaceId);
 
   folly::Future<StatusOr<bool>> ingest(GraphSpaceID spaceId);
+
+  HostAddr getMetaLeader() { return leader_; }
+
+  int64_t HeartbeatTime() { return heartbeatTime_; }
 
  protected:
   // Return true if load succeeded.
@@ -738,6 +742,7 @@ class MetaClient {
   bool skipConfig_ = false;
   MetaClientOptions options_;
   std::vector<HostAddr> storageHosts_;
+  int64_t heartbeatTime_;
 };
 
 }  // namespace meta

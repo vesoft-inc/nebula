@@ -7,6 +7,7 @@
 #ifndef KVSTORE_LOGENCODER_H_
 #define KVSTORE_LOGENCODER_H_
 
+#include "common/cpp/helpers.h"
 #include "kvstore/Common.h"
 
 namespace nebula {
@@ -54,37 +55,44 @@ HostAddr decodeHost(LogType type, const folly::StringPiece& encoded);
 
 int64_t getTimestamp(const folly::StringPiece& command);
 
-class BatchHolder {
+class BatchHolder : public nebula::cpp::NonCopyable, public nebula::cpp::NonMovable {
  public:
   BatchHolder() = default;
   ~BatchHolder() = default;
 
   void put(std::string&& key, std::string&& val) {
+    size_ += key.size() + val.size();
     auto op = std::make_tuple(
         BatchLogType::OP_BATCH_PUT, std::forward<std::string>(key), std::forward<std::string>(val));
     batch_.emplace_back(std::move(op));
   }
 
   void remove(std::string&& key) {
+    size_ += key.size();
     auto op = std::make_tuple(BatchLogType::OP_BATCH_REMOVE, std::forward<std::string>(key), "");
     batch_.emplace_back(std::move(op));
   }
 
   void rangeRemove(std::string&& begin, std::string&& end) {
+    size_ += begin.size() + end.size();
     auto op = std::make_tuple(BatchLogType::OP_BATCH_REMOVE_RANGE,
                               std::forward<std::string>(begin),
                               std::forward<std::string>(end));
     batch_.emplace_back(std::move(op));
   }
 
-  void clear() { batch_.clear(); }
+  void reserve(int32_t size) { batch_.reserve(size); }
 
   const std::vector<std::tuple<BatchLogType, std::string, std::string>>& getBatch() {
     return batch_;
   }
 
+  // size of the batch, in bytes
+  size_t size() { return size_; }
+
  private:
   std::vector<std::tuple<BatchLogType, std::string, std::string>> batch_;
+  size_t size_{0};
 };
 
 }  // namespace kvstore

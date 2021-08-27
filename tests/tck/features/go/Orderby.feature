@@ -7,7 +7,7 @@ Feature: Orderby Sentence
   Background: Prepare space
     Given a graph with space named "nba"
 
-  Scenario: Syntax Error
+  Scenario: Syntax Error or Semantic Error
     When executing query:
       """
       ORDER BY
@@ -22,7 +22,12 @@ Feature: Orderby Sentence
       """
       ORDER BY $-.xx
       """
-    Then a SyntaxError should be raised at runtime:
+    Then a SemanticError should be raised at runtime: `$-.xx', not exist prop `xx'
+    When executing query:
+      """
+      ORDER BY 1
+      """
+    Then a SemanticError should be raised at runtime: Order by with invalid expression `1'
 
   Scenario: Empty Input
     When executing query:
@@ -164,6 +169,41 @@ Feature: Orderby Sentence
       | "Spurs"    |
       | "Spurs"    |
       | "Hornets"  |
+
+  Scenario: Order by with Variable
+    When executing query:
+      """
+      $var = GO FROM "Tony Parker" OVER like YIELD like._dst AS dst; ORDER BY $var.dst DESC
+      """
+    Then the result should be, in order, with relax comparison:
+      | dst                 |
+      | "Tim Duncan"        |
+      | "Manu Ginobili"     |
+      | "LaMarcus Aldridge" |
+    When executing query:
+      """
+      $var = GO FROM "Tony Parker" OVER like YIELD like._dst AS dst, like.likeness AS likeness; ORDER BY $var.dst DESC, $var.likeness
+      """
+    Then the result should be, in order, with relax comparison:
+      | dst                 | likeness |
+      | "Tim Duncan"        | 95       |
+      | "Manu Ginobili"     | 95       |
+      | "LaMarcus Aldridge" | 90       |
+    When executing query:
+      """
+      $var = GO FROM "Tony Parker" OVER like YIELD like._dst AS dst; ORDER BY $var.dst DESC | FETCH PROP ON * $-.dst
+      """
+    Then the result should be, in order, with relax comparison:
+      | vertices_                                                                                                   |
+      | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   |
+      | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+      | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})                                           |
+    When executing query:
+      """
+      $var = GO FROM "Tony Parker" OVER like YIELD like._dst AS dst;
+      GO FROM $var.dst OVER like YIELD like._dst AS id | ORDER BY $var.dst, $-.id;
+      """
+    Then a SemanticError should be raised at runtime: Not support both input and variable.
 
   Scenario: Duplicate columns
     When executing query:

@@ -58,7 +58,7 @@ folly::Future<Status> DataCollectExecutor::doCollect() {
   }
   ResultBuilder builder;
   builder.value(Value(std::move(result_))).iter(Iterator::Kind::kSequential);
-  return finish(builder.finish());
+  return finish(builder.build());
 }
 
 Status DataCollectExecutor::collectSubgraph(const std::vector<std::string>& vars) {

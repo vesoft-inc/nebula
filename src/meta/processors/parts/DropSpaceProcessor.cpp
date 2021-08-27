@@ -96,7 +96,7 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
   }
 
   // 5. Delete related statis data
-  auto statiskey = MetaServiceUtils::statisKey(spaceId);
+  auto statiskey = MetaServiceUtils::statsKey(spaceId);
   deleteKeys.emplace_back(statiskey);
 
   // 6. Delte related fulltext index meta data
@@ -118,6 +118,10 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
     }
     ftIter->next();
   }
+
+  // 7. Delete local_id meta data
+  auto localIdkey = MetaServiceUtils::localIdKey(spaceId);
+  deleteKeys.emplace_back(localIdkey);
 
   doSyncMultiRemoveAndUpdate(std::move(deleteKeys));
   LOG(INFO) << "Drop space " << spaceName << ", id " << spaceId;

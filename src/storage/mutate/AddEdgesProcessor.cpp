@@ -287,7 +287,7 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
       handleAsync(spaceId_, partId, code);
       continue;
     }
-    auto batch = encodeBatchValue(std::move(batchHolder)->getBatch());
+    auto batch = encodeBatchValue(batchHolder->getBatch());
     DCHECK(!batch.empty());
     nebula::MemoryLockGuard<EMLI> lg(env_->edgesML_.get(), std::move(dummyLock), false, false);
     env_->kvstore_->asyncAppendBatch(spaceId_,

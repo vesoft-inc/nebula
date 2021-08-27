@@ -60,7 +60,7 @@ class AggregateTest : public testing::Test {
     ds.rows.emplace_back(std::move(row));
 
     qctx_->symTable()->newVariable(*input_);
-    qctx_->ectx()->setResult(*input_, ResultBuilder().value(Value(ds)).finish());
+    qctx_->ectx()->setResult(*input_, ResultBuilder().value(Value(ds)).build());
   }
 
  protected:

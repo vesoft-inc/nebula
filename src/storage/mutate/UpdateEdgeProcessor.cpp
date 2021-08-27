@@ -53,7 +53,7 @@ void UpdateEdgeProcessor::doProcess(const cpp2::UpdateEdgeRequest& req) {
   }
 
   planContext_ = std::make_unique<PlanContext>(env_, spaceId_, spaceVidLen_, isIntId_);
-  context_ = std::make_unique<RunTimeContext>(planContext_.get());
+  context_ = std::make_unique<RuntimeContext>(planContext_.get());
   if (env_->txnMan_ && env_->txnMan_->enableToss(spaceId_)) {
     planContext_->defaultEdgeVer_ = 1L;
   }
