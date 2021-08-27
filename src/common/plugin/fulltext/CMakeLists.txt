@@ -3,13 +3,13 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
-nebula_add_module_library(
-    ft_es_graph_adapter_obj OBJECT module_common
+nebula_add_export_library(
+    ft_es_graph_adapter_obj OBJECT
     elasticsearch/ESGraphAdapter.cpp
 )
 
-nebula_add_module_library(
-    ft_es_storage_adapter_obj OBJECT module_common
+nebula_add_export_library(
+    ft_es_storage_adapter_obj OBJECT
     elasticsearch/ESStorageAdapter.cpp
 )
 

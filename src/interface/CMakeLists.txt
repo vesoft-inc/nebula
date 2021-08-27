@@ -3,11 +3,6 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
-add_custom_target(
-    module_interface
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-)
-
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     add_compile_options(-Wno-maybe-uninitialized)
 endif()
@@ -41,9 +36,3 @@ add_custom_target(
     clean-interface
     COMMAND "rm" "-fr" "gen-cpp2" "gen-java" "gen-go" "gen-py" "gen-rust"
 )
-
-add_dependencies(module_interface
-    common_thrift_obj
-    graph_thrift_obj
-    storage_thrift_obj
-    raftex_thrift_obj)

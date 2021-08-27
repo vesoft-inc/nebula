@@ -89,7 +89,7 @@ macro(nebula_add_library name type)
     )
 endmacro()
 
-macro(nebula_add_module_library name type module)
+macro(nebula_add_export_library name type)
     nebula_add_library(${name} ${type} ${ARGN})
     export(
         TARGETS ${name}
@@ -97,7 +97,6 @@ macro(nebula_add_module_library name type module)
         APPEND
         FILE ${CMAKE_BINARY_DIR}/${PACKAGE_NAME}-config.cmake
     )
-    add_dependencies(${module} ${name})
 endmacro()
 
 nebula_add_subdirectory(src)

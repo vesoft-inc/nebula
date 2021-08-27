@@ -107,7 +107,7 @@ add_custom_target(
     DEPENDS ${${file_name}-cpp2-HEADERS} ${${file_name}-cpp2-SOURCES}
 )
 
-add_library(
+nebula_add_export_library(
   "${file_name}_thrift_obj"
   OBJECT
   ${${file_name}-cpp2-SOURCES}
@@ -121,13 +121,6 @@ set_target_properties(
 
 target_compile_options(${file_name}_thrift_obj PRIVATE "-Wno-pedantic")
 target_compile_options(${file_name}_thrift_obj PRIVATE "-Wno-extra")
-
-export(
-  TARGETS "${file_name}_thrift_obj"
-  NAMESPACE "nebula_"
-  APPEND
-  FILE ${CMAKE_BINARY_DIR}/${PACKAGE_NAME}-config.cmake
-)
 
 if(NOT "${file_name}" STREQUAL "common")
     add_dependencies(

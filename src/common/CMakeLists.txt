@@ -3,11 +3,6 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
-add_custom_target(
-    module_common
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-)
-
 nebula_add_subdirectory(base)
 nebula_add_subdirectory(time)
 nebula_add_subdirectory(network)

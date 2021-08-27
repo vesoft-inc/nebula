@@ -7,8 +7,8 @@ if (ENABLE_GDB_SCRIPT_SECTION)
     set(gdb_debug_script GdbDebugScript.cpp)
 endif()
 
-nebula_add_module_library(
-    base_obj OBJECT module_common
+nebula_add_export_library(
+    base_obj OBJECT
     Base.cpp
     Cord.cpp
     Status.cpp
