@@ -87,7 +87,7 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
   while (checkIter->valid()) {
     auto val = checkIter->val();
     auto item = MetaServiceUtils::parseIndex(val);
-    if (item.get_schema_id().getType() != cpp2::SchemaID::Type::edge_type ||
+    if (item.get_schema_id().getType() != nebula::cpp2::SchemaID::Type::edge_type ||
         fields.size() > item.get_fields().size() ||
         edgeType != item.get_schema_id().get_edge_type()) {
       checkIter->next();
@@ -173,7 +173,7 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
   cpp2::IndexItem item;
   item.set_index_id(edgeIndex);
   item.set_index_name(indexName);
-  cpp2::SchemaID schemaID;
+  nebula::cpp2::SchemaID schemaID;
   schemaID.set_edge_type(edgeType);
   item.set_schema_id(schemaID);
   item.set_schema_name(edgeName);
