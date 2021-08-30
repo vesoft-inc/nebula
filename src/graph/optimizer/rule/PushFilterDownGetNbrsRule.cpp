@@ -74,11 +74,10 @@ StatusOr<OptRule::TransformResult> PushFilterDownGetNbrsRule::transform(
     newFilterGroupNode = OptGroupNode::create(ctx, newFilter, filterGroupNode->group());
   }
 
-  auto newGNFilter = condition->encode();
-  if (!gn->filter().empty()) {
-    auto filterExpr = Expression::decode(pool, gn->filter());
-    auto logicExpr = LogicalExpression::makeAnd(pool, condition, filterExpr);
-    newGNFilter = logicExpr->encode();
+  auto newGNFilter = condition;
+  if (gn->filter() != nullptr) {
+    auto logicExpr = LogicalExpression::makeAnd(pool, condition, gn->filter()->clone());
+    newGNFilter = logicExpr;
   }
 
   auto newGN = static_cast<GetNeighbors *>(gn->clone());

@@ -47,7 +47,7 @@ class GraphStorageClient : public StorageClientBase<cpp2::GraphStorageServiceAsy
       bool random = false,
       const std::vector<cpp2::OrderBy>& orderBy = std::vector<cpp2::OrderBy>(),
       int64_t limit = std::numeric_limits<int64_t>::max(),
-      std::string filter = std::string(),
+      const Expression* filter = nullptr,
       folly::EventBase* evb = nullptr);
 
   folly::SemiFuture<StorageRpcResponse<cpp2::GetPropResponse>> getProps(
@@ -59,7 +59,7 @@ class GraphStorageClient : public StorageClientBase<cpp2::GraphStorageServiceAsy
       bool dedup = false,
       const std::vector<cpp2::OrderBy>& orderBy = std::vector<cpp2::OrderBy>(),
       int64_t limit = std::numeric_limits<int64_t>::max(),
-      std::string filter = std::string(),
+      const Expression* filter = nullptr,
       folly::EventBase* evb = nullptr);
 
   folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> addVertices(
