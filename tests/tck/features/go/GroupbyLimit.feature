@@ -212,6 +212,11 @@ Feature: Groupby & limit Sentence
       | "Grizzlies" | 34     |
       | "Raptors"   | 34     |
       | "Lakers"    | 40     |
+    When executing query:
+      """
+      GROUP BY 1 YIELD 1
+      """
+    Then a SemanticError should be raised at runtime:
 
   Scenario: Groupby with all agg functions
     When executing query:
@@ -365,3 +370,10 @@ Feature: Groupby & limit Sentence
       | GROUP BY $-.name YIELD $-.name AS name
       """
     Then a SemanticError should be raised at runtime:
+
+  Scenario: Dangle limit
+    When executing query:
+      """
+      YIELD 1; LIMIT 1;
+      """
+    Then a SyntaxError should be raised at runtime:

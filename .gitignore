@@ -51,6 +51,7 @@ cmake-build*/
 .cache/
 core.*
 workspace.*
+.metals/
 
 #py
 *.egg-info

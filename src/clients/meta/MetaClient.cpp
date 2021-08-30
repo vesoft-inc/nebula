@@ -20,6 +20,7 @@
 #include "common/meta/NebulaSchemaProvider.h"
 #include "common/network/NetworkUtils.h"
 #include "common/stats/StatsManager.h"
+#include "common/time/TimeUtils.h"
 #include "version/Version.h"
 #include "webservice/Common.h"
 
@@ -673,6 +674,10 @@ Status MetaClient::handleResponse(const RESP& resp) {
       return Status::Error("Edge not existed!");
     case nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND:
       return Status::Error("Index not existed!");
+    case nebula::cpp2::ErrorCode::E_STATS_NOT_FOUND:
+      return Status::Error(
+          "There is no any stats info to show, please execute "
+          "`submit job stats' firstly!");
     case nebula::cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND:
       return Status::Error("Edge prop not existed!");
     case nebula::cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND:
@@ -2321,6 +2326,7 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
             LOG(FATAL) << "Can't persist the clusterId in file " << FLAGS_cluster_id_path;
           }
         }
+        heartbeatTime_ = time::WallClock::fastNowInMilliSec();
         metadLastUpdateTime_ = resp.get_last_update_time_in_ms();
         VLOG(1) << "Metad last update time: " << metadLastUpdateTime_;
         return true;  // resp.code == nebula::cpp2::ErrorCode::SUCCEEDED
@@ -3322,7 +3328,7 @@ StatusOr<std::pair<std::string, cpp2::FTIndex>> MetaClient::getFTIndexBySpaceSch
   }
   folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   for (auto it = fulltextIndexMap_.begin(); it != fulltextIndexMap_.end(); ++it) {
-    auto id = it->second.get_depend_schema().getType() == cpp2::SchemaID::Type::edge_type
+    auto id = it->second.get_depend_schema().getType() == nebula::cpp2::SchemaID::Type::edge_type
                   ? it->second.get_depend_schema().get_edge_type()
                   : it->second.get_depend_schema().get_tag_id();
     if (it->second.get_space_id() == spaceId && id == schemaId) {

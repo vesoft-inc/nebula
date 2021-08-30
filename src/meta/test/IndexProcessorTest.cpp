@@ -1605,7 +1605,7 @@ TEST(IndexProcessorTest, CreateFTIndexTest) {
     {
       cpp2::CreateFTIndexReq req;
       cpp2::FTIndex index;
-      cpp2::SchemaID schemaId;
+      nebula::cpp2::SchemaID schemaId;
       if (id == 5) {
         schemaId.set_tag_id(5);
       } else {
@@ -1627,7 +1627,7 @@ TEST(IndexProcessorTest, CreateFTIndexTest) {
     {
       cpp2::CreateFTIndexReq req;
       cpp2::FTIndex index;
-      cpp2::SchemaID schemaId;
+      nebula::cpp2::SchemaID schemaId;
       if (id == 5) {
         schemaId.set_tag_id(5);
       } else {
@@ -1649,7 +1649,7 @@ TEST(IndexProcessorTest, CreateFTIndexTest) {
     {
       cpp2::CreateFTIndexReq req;
       cpp2::FTIndex index;
-      cpp2::SchemaID schemaId;
+      nebula::cpp2::SchemaID schemaId;
       if (id == 5) {
         schemaId.set_tag_id(5);
       } else {
@@ -1671,7 +1671,7 @@ TEST(IndexProcessorTest, CreateFTIndexTest) {
     {
       cpp2::CreateFTIndexReq req;
       cpp2::FTIndex index;
-      cpp2::SchemaID schemaId;
+      nebula::cpp2::SchemaID schemaId;
       if (id == 5) {
         schemaId.set_tag_id(55);
       } else {
@@ -1695,7 +1695,7 @@ TEST(IndexProcessorTest, CreateFTIndexTest) {
     {
       cpp2::CreateFTIndexReq req;
       cpp2::FTIndex index;
-      cpp2::SchemaID schemaId;
+      nebula::cpp2::SchemaID schemaId;
       if (id == 5) {
         schemaId.set_tag_id(5);
       } else {
@@ -1720,7 +1720,7 @@ TEST(IndexProcessorTest, CreateFTIndexTest) {
   {
     cpp2::CreateFTIndexReq req;
     cpp2::FTIndex index;
-    cpp2::SchemaID schemaId;
+    nebula::cpp2::SchemaID schemaId;
     schemaId.set_tag_id(5);
     index.set_space_id(1);
     index.set_depend_schema(std::move(schemaId));
@@ -1738,7 +1738,7 @@ TEST(IndexProcessorTest, CreateFTIndexTest) {
   {
     cpp2::CreateFTIndexReq req;
     cpp2::FTIndex index;
-    cpp2::SchemaID schemaId;
+    nebula::cpp2::SchemaID schemaId;
     schemaId.set_tag_id(5);
     index.set_space_id(1);
     index.set_depend_schema(std::move(schemaId));
@@ -1756,7 +1756,7 @@ TEST(IndexProcessorTest, CreateFTIndexTest) {
   {
     cpp2::CreateFTIndexReq req;
     cpp2::FTIndex index;
-    cpp2::SchemaID schemaId;
+    nebula::cpp2::SchemaID schemaId;
     schemaId.set_tag_id(5);
     index.set_space_id(1);
     index.set_depend_schema(std::move(schemaId));
@@ -1774,7 +1774,7 @@ TEST(IndexProcessorTest, CreateFTIndexTest) {
   {
     cpp2::CreateFTIndexReq req;
     cpp2::FTIndex index;
-    cpp2::SchemaID schemaId;
+    nebula::cpp2::SchemaID schemaId;
     schemaId.set_tag_id(5);
     index.set_space_id(1);
     index.set_depend_schema(std::move(schemaId));
@@ -1792,7 +1792,7 @@ TEST(IndexProcessorTest, CreateFTIndexTest) {
   {
     cpp2::CreateFTIndexReq req;
     cpp2::FTIndex index;
-    cpp2::SchemaID schemaId;
+    nebula::cpp2::SchemaID schemaId;
     schemaId.set_edge_type(6);
     index.set_space_id(1);
     index.set_depend_schema(std::move(schemaId));
@@ -1819,7 +1819,7 @@ TEST(IndexProcessorTest, CreateFTIndexTest) {
     std::vector<std::string> fields = {"col_string", "col_fixed_string_1"};
     ASSERT_EQ(fields, index->second.get_fields());
     ASSERT_EQ(1, index->second.get_space_id());
-    cpp2::SchemaID schemaId;
+    nebula::cpp2::SchemaID schemaId;
     schemaId.set_tag_id(5);
     ASSERT_EQ(schemaId, index->second.get_depend_schema());
   }
@@ -1865,7 +1865,7 @@ TEST(IndexProcessorTest, DropWithFTIndexTest) {
     {
       cpp2::CreateFTIndexReq req;
       cpp2::FTIndex index;
-      cpp2::SchemaID schemaId;
+      nebula::cpp2::SchemaID schemaId;
       if (id == 5) {
         schemaId.set_tag_id(5);
       } else {
@@ -1916,7 +1916,7 @@ TEST(IndexProcessorTest, AlterWithFTIndexTest) {
     {
       cpp2::CreateFTIndexReq req;
       cpp2::FTIndex index;
-      cpp2::SchemaID schemaId;
+      nebula::cpp2::SchemaID schemaId;
       if (id == 5) {
         schemaId.set_tag_id(5);
       } else {

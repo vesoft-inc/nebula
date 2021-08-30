@@ -14,8 +14,8 @@
 
 #include "common/fs/FileUtils.h"
 #include "common/network/NetworkUtils.h"
+#include "kvstore/NebulaSnapshotManager.h"
 #include "kvstore/RocksEngine.h"
-#include "kvstore/SnapshotManagerImpl.h"
 
 DEFINE_string(engine_type, "rocksdb", "rocksdb, memory...");
 DEFINE_int32(custom_filter_interval_secs,
@@ -55,7 +55,7 @@ bool NebulaStore::init() {
   bgWorkers_->start(FLAGS_num_workers, "nebula-bgworkers");
   storeWorker_ = std::make_shared<thread::GenericWorker>();
   CHECK(storeWorker_->start());
-  snapshot_.reset(new SnapshotManagerImpl(this));
+  snapshot_.reset(new NebulaSnapshotManager(this));
   raftService_ = raftex::RaftexService::createService(ioPool_, workers_, raftAddr_.port);
   if (!raftService_->start()) {
     LOG(ERROR) << "Start the raft service failed";

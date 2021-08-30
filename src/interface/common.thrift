@@ -51,6 +51,11 @@ typedef i64 (cpp.type = "nebula::SessionID") SessionID
 
 typedef i64 (cpp.type = "nebula::ExecutionPlanID") ExecutionPlanID
 
+union SchemaID {
+    1: TagID     tag_id,
+    2: EdgeType  edge_type,
+}
+
 // !! Struct Date has a shadow data type defined in the Date.h
 // So any change here needs to be reflected to the shadow type there
 struct Date {
@@ -252,6 +257,7 @@ enum ErrorCode {
     E_PART_NOT_FOUND                  = -16,
     E_KEY_NOT_FOUND                   = -17,
     E_USER_NOT_FOUND                  = -18,
+    E_STATS_NOT_FOUND                 = -19,
 
     // backup failed
     E_BACKUP_FAILED                   = -24,

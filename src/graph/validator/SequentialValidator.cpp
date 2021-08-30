@@ -32,16 +32,6 @@ Status SequentialValidator::validateImpl() {
   }
 
   DCHECK(!sentences.empty());
-  auto firstSentence = getFirstSentence(sentences.front());
-  switch (firstSentence->kind()) {
-    case Sentence::Kind::kLimit:
-    case Sentence::Kind::kOrderBy:
-    case Sentence::Kind::kGroupBy:
-      return Status::SyntaxError("Could not start with the statement: %s",
-                                 firstSentence->toString().c_str());
-    default:
-      break;
-  }
 
   seqAstCtx_->startNode = StartNode::make(seqAstCtx_->qctx);
   for (auto* sentence : sentences) {

@@ -518,7 +518,7 @@ Feature: Lookup by index itself
     When executing query:
       """
       LOOKUP ON player WHERE player.age < 40
-      YIELD player.age AS Age, player.name AS Name | order by Age DESC, Name| limit 10
+      YIELD player.age AS Age, player.name AS Name | order by $-.Age DESC, $-.Name| limit 10
       """
     Then the result should be, in order, with relax comparison:
       | VertexID            | Age | Name                |
@@ -535,7 +535,7 @@ Feature: Lookup by index itself
     When executing query:
       """
       LOOKUP ON player WHERE player.age <= 40
-      YIELD player.age AS Age, player.name AS Name | order by Age DESC, Name| limit 10
+      YIELD player.age AS Age, player.name AS Name | order by $-.Age DESC, $-.Name| limit 10
       """
     Then the result should be, in order, with relax comparison:
       | VertexID            | Age | Name                |
