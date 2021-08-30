@@ -133,8 +133,17 @@ class StorageAccessExecutor : public Executor {
     auto &hostLatency = resp.hostLatency();
     for (size_t i = 0; i < hostLatency.size(); ++i) {
       auto &info = hostLatency[i];
+      auto &response = resp.responses()[i];
       stats.emplace(folly::stringPrintf("%s exec/total", std::get<0>(info).toString().c_str()),
                     folly::stringPrintf("%d(us)/%d(us)", std::get<1>(info), std::get<2>(info)));
+      if (response.result_ref()->latency_detail_us_ref().has_value()) {
+        std::string storage_detail = "{";
+        for (auto iter : (*response.result_ref()->latency_detail_us_ref())) {
+          storage_detail += folly::stringPrintf("%s:%d(us),", iter.first.data(), iter.second);
+        }
+        storage_detail += "}";
+        stats.emplace("storage_detail", storage_detail);
+      }
     }
   }
 

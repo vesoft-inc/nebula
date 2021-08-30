@@ -442,6 +442,14 @@ LookupBaseProcessor<REQ, RESP>::buildPlanWithDataAndFilter(nebula::DataSet* resu
     return output;
   }
 }
+template <typename REQ, typename RESP>
+void LookupBaseProcessor<REQ, RESP>::profile_plan(StoragePlan<IndexID>& plan) {
+  auto& nodes = plan.getNodes();
+  std::lock_guard<std::mutex> lck(BaseProcessor<RESP>::profile_mut_);
+  for (auto& node : nodes) {
+    BaseProcessor<RESP>::profile_detail(node->name_, node->duration_.elapsedInUSec());
+  }
+}
 
 }  // namespace storage
 }  // namespace nebula

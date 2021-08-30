@@ -43,6 +43,9 @@ class BaseProcessor {
     }
 
     this->result_.set_latency_in_us(this->duration_.elapsedInUSec());
+    if (!profile_detail_.empty()) {
+      this->result_.set_latency_detail_us(std::move(profile_detail_));
+    }
     this->result_.set_failed_parts(this->codes_);
     this->resp_.set_result(std::move(this->result_));
     this->promise_.setValue(std::move(this->resp_));
@@ -102,6 +105,14 @@ class BaseProcessor {
                                      const std::vector<Value>& props,
                                      WriteResult& wRet);
 
+  virtual void profile_detail(const std::string& name, int32_t latency) {
+    if (!profile_detail_.count(name)) {
+      profile_detail_[name] = latency;
+    } else {
+      profile_detail_[name] += latency;
+    }
+  }
+
  protected:
   StorageEnv* env_{nullptr};
   const ProcessorCounters* counters_;
@@ -116,6 +127,8 @@ class BaseProcessor {
   int32_t callingNum_{0};
   int32_t spaceVidLen_;
   bool isIntId_;
+  std::map<std::string, int32_t> profile_detail_;
+  std::mutex profile_mut_;
 };
 
 }  // namespace storage

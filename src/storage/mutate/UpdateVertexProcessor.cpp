@@ -81,6 +81,7 @@ void UpdateVertexProcessor::doProcess(const cpp2::UpdateVertexRequest& req) {
       onProcessFinished();
     }
   } else {
+    profile_plan(plan);
     onProcessFinished();
   }
   onFinished();
