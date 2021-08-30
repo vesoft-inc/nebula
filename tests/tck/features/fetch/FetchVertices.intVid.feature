@@ -334,3 +334,56 @@ Feature: Fetch Int Vid Vertices
       GO FROM hash('NON EXIST VERTEX ID') OVER serve | FETCH PROP ON team $-
       """
     Then a SyntaxError should be raised at runtime:
+
+  Scenario: format yield
+    When executing query:
+      """
+      FETCH PROP ON * hash('Boris Diaw') YIELD id(vertex)
+      """
+    Then the result should be, in any order, and the columns 0 should be hashed:
+      | VertexID     | id(VERTEX)   |
+      | "Boris Diaw" | "Boris Diaw" |
+    When executing query:
+      """
+      FETCH PROP ON * hash('Boris Diaw') YIELD id(vertex), player.age
+      """
+    Then the result should be, in any order, and the columns 0 should be hashed:
+      | VertexID     | id(VERTEX)   | player.age |
+      | "Boris Diaw" | "Boris Diaw" | 36         |
+    When executing query:
+      """
+      FETCH PROP ON * hash('Boris Diaw') YIELD id(vertex), player.age, vertex
+      """
+    Then the result should be, in any order, and the columns 0 should be hashed:
+      | id(VERTEX)   | player.age | VERTEX                                           |
+      | "Boris Diaw" | 36         | ("Boris Diaw":player{name:"Boris Diaw", age:36}) |
+    When executing query:
+      """
+      FETCH PROP ON * hash('Boris Diaw') YIELD vertex
+      """
+    Then the result should be, in any order:
+      | VERTEX                                           |
+      | ("Boris Diaw":player{name:"Boris Diaw", age:36}) |
+    When executing query:
+      """
+      FETCH PROP ON * hash("Tim Duncan") YIELD player.name, player.age, team.name, bachelor.name, bachelor.speciality, vertex
+      """
+    Then the result should be, in any order:
+      | player.name  | player.age | team.name | bachelor.name | bachelor.speciality | VERTEX                                                                                                      |
+      | "Tim Duncan" | 42         | EMPTY     | "Tim Duncan"  | "psychology"        | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+    When executing query:
+      """
+      GO FROM hash("Tim Duncan") OVER like YIELD like._dst as id |
+      FETCH PROP ON * $-.id YIELD VERTEX
+      """
+    Then the result should be, in any order:
+      | VERTEX                                                    |
+      | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"}) |
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"})     |
+    When executing query:
+      """
+      FETCH PROP ON * hash('NON EXIST VERTEX ID'), hash('Boris Diaw') yield player.name, id(vertex)
+      """
+    Then the result should be, in any order, and the columns 0 should be hashed:
+      | VertexID     | player.name  | id(VERTEX)   |
+      | "Boris Diaw" | "Boris Diaw" | "Boris Diaw" |
