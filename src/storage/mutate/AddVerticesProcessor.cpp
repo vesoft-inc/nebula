@@ -15,8 +15,6 @@
 #include "common/utils/OperationKeyUtils.h"
 #include "storage/StorageFlags.h"
 
-DECLARE_bool(enable_vertex_cache);
-
 namespace nebula {
 namespace storage {
 
@@ -284,7 +282,7 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
       handleAsync(spaceId_, partId, code);
       continue;
     }
-    auto batch = encodeBatchValue(std::move(batchHolder)->getBatch());
+    auto batch = encodeBatchValue(batchHolder->getBatch());
     DCHECK(!batch.empty());
     nebula::MemoryLockGuard<VMLI> lg(env_->verticesML_.get(), std::move(dummyLock), false, false);
     env_->kvstore_->asyncAppendBatch(spaceId_,

@@ -128,7 +128,7 @@ TEST(ProcessorTest, CreateBackupTest) {
   cpp2::IndexItem item;
   item.set_index_id(tagIndex);
   item.set_index_name(indexName);
-  cpp2::SchemaID schemaID;
+  nebula::cpp2::SchemaID schemaID;
   TagID tagID = 3;
   std::string tagName = "test_space_tag1";
   schemaID.set_tag_id(tagID);

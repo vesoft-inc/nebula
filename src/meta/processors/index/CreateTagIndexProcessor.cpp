@@ -87,7 +87,7 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
   while (checkIter->valid()) {
     auto val = checkIter->val();
     auto item = MetaServiceUtils::parseIndex(val);
-    if (item.get_schema_id().getType() != cpp2::SchemaID::Type::tag_id ||
+    if (item.get_schema_id().getType() != nebula::cpp2::SchemaID::Type::tag_id ||
         fields.size() > item.get_fields().size() || tagID != item.get_schema_id().get_tag_id()) {
       checkIter->next();
       continue;
@@ -159,7 +159,7 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
   }
 
   std::vector<kvstore::KV> data;
-  auto tagIndexRet = autoIncrementId();
+  auto tagIndexRet = autoIncrementIdInSpace(space);
   if (!nebula::ok(tagIndexRet)) {
     LOG(ERROR) << "Create tag index failed : Get tag index ID failed";
     handleErrorCode(nebula::error(tagIndexRet));
@@ -171,7 +171,7 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
   cpp2::IndexItem item;
   item.set_index_id(tagIndex);
   item.set_index_name(indexName);
-  cpp2::SchemaID schemaID;
+  nebula::cpp2::SchemaID schemaID;
   schemaID.set_tag_id(tagID);
   item.set_schema_id(schemaID);
   item.set_schema_name(tagName);

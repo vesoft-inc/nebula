@@ -17,6 +17,7 @@
 #include "meta/processors/index/GetTagIndexProcessor.h"
 #include "meta/processors/index/ListEdgeIndexesProcessor.h"
 #include "meta/processors/index/ListTagIndexesProcessor.h"
+#include "meta/processors/parts/CreateSpaceProcessor.h"
 #include "meta/processors/schema/AlterEdgeProcessor.h"
 #include "meta/processors/schema/AlterTagProcessor.h"
 #include "meta/processors/schema/CreateEdgeProcessor.h"
@@ -1604,7 +1605,7 @@ TEST(IndexProcessorTest, CreateFTIndexTest) {
     {
       cpp2::CreateFTIndexReq req;
       cpp2::FTIndex index;
-      cpp2::SchemaID schemaId;
+      nebula::cpp2::SchemaID schemaId;
       if (id == 5) {
         schemaId.set_tag_id(5);
       } else {
@@ -1626,7 +1627,7 @@ TEST(IndexProcessorTest, CreateFTIndexTest) {
     {
       cpp2::CreateFTIndexReq req;
       cpp2::FTIndex index;
-      cpp2::SchemaID schemaId;
+      nebula::cpp2::SchemaID schemaId;
       if (id == 5) {
         schemaId.set_tag_id(5);
       } else {
@@ -1648,7 +1649,7 @@ TEST(IndexProcessorTest, CreateFTIndexTest) {
     {
       cpp2::CreateFTIndexReq req;
       cpp2::FTIndex index;
-      cpp2::SchemaID schemaId;
+      nebula::cpp2::SchemaID schemaId;
       if (id == 5) {
         schemaId.set_tag_id(5);
       } else {
@@ -1670,7 +1671,7 @@ TEST(IndexProcessorTest, CreateFTIndexTest) {
     {
       cpp2::CreateFTIndexReq req;
       cpp2::FTIndex index;
-      cpp2::SchemaID schemaId;
+      nebula::cpp2::SchemaID schemaId;
       if (id == 5) {
         schemaId.set_tag_id(55);
       } else {
@@ -1694,7 +1695,7 @@ TEST(IndexProcessorTest, CreateFTIndexTest) {
     {
       cpp2::CreateFTIndexReq req;
       cpp2::FTIndex index;
-      cpp2::SchemaID schemaId;
+      nebula::cpp2::SchemaID schemaId;
       if (id == 5) {
         schemaId.set_tag_id(5);
       } else {
@@ -1719,7 +1720,7 @@ TEST(IndexProcessorTest, CreateFTIndexTest) {
   {
     cpp2::CreateFTIndexReq req;
     cpp2::FTIndex index;
-    cpp2::SchemaID schemaId;
+    nebula::cpp2::SchemaID schemaId;
     schemaId.set_tag_id(5);
     index.set_space_id(1);
     index.set_depend_schema(std::move(schemaId));
@@ -1737,7 +1738,7 @@ TEST(IndexProcessorTest, CreateFTIndexTest) {
   {
     cpp2::CreateFTIndexReq req;
     cpp2::FTIndex index;
-    cpp2::SchemaID schemaId;
+    nebula::cpp2::SchemaID schemaId;
     schemaId.set_tag_id(5);
     index.set_space_id(1);
     index.set_depend_schema(std::move(schemaId));
@@ -1755,7 +1756,7 @@ TEST(IndexProcessorTest, CreateFTIndexTest) {
   {
     cpp2::CreateFTIndexReq req;
     cpp2::FTIndex index;
-    cpp2::SchemaID schemaId;
+    nebula::cpp2::SchemaID schemaId;
     schemaId.set_tag_id(5);
     index.set_space_id(1);
     index.set_depend_schema(std::move(schemaId));
@@ -1773,7 +1774,7 @@ TEST(IndexProcessorTest, CreateFTIndexTest) {
   {
     cpp2::CreateFTIndexReq req;
     cpp2::FTIndex index;
-    cpp2::SchemaID schemaId;
+    nebula::cpp2::SchemaID schemaId;
     schemaId.set_tag_id(5);
     index.set_space_id(1);
     index.set_depend_schema(std::move(schemaId));
@@ -1791,7 +1792,7 @@ TEST(IndexProcessorTest, CreateFTIndexTest) {
   {
     cpp2::CreateFTIndexReq req;
     cpp2::FTIndex index;
-    cpp2::SchemaID schemaId;
+    nebula::cpp2::SchemaID schemaId;
     schemaId.set_edge_type(6);
     index.set_space_id(1);
     index.set_depend_schema(std::move(schemaId));
@@ -1818,7 +1819,7 @@ TEST(IndexProcessorTest, CreateFTIndexTest) {
     std::vector<std::string> fields = {"col_string", "col_fixed_string_1"};
     ASSERT_EQ(fields, index->second.get_fields());
     ASSERT_EQ(1, index->second.get_space_id());
-    cpp2::SchemaID schemaId;
+    nebula::cpp2::SchemaID schemaId;
     schemaId.set_tag_id(5);
     ASSERT_EQ(schemaId, index->second.get_depend_schema());
   }
@@ -1864,7 +1865,7 @@ TEST(IndexProcessorTest, DropWithFTIndexTest) {
     {
       cpp2::CreateFTIndexReq req;
       cpp2::FTIndex index;
-      cpp2::SchemaID schemaId;
+      nebula::cpp2::SchemaID schemaId;
       if (id == 5) {
         schemaId.set_tag_id(5);
       } else {
@@ -1915,7 +1916,7 @@ TEST(IndexProcessorTest, AlterWithFTIndexTest) {
     {
       cpp2::CreateFTIndexReq req;
       cpp2::FTIndex index;
-      cpp2::SchemaID schemaId;
+      nebula::cpp2::SchemaID schemaId;
       if (id == 5) {
         schemaId.set_tag_id(5);
       } else {
@@ -2058,6 +2059,243 @@ TEST(IndexProcessorTest, AlterWithFTIndexTest) {
     processor->process(req);
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
+}
+
+TEST(ProcessorTest, IndexIdInSpaceRangeTest) {
+  fs::TempDir rootPath("/tmp/IndexIdInSpaceRangeTest.XXXXXX");
+  auto kv = MockCluster::initMetaKV(rootPath.path());
+  TestUtils::createSomeHosts(kv.get());
+
+  // mock one space and ten tag, ten edge
+  {
+    // space Id is 1
+    TestUtils::assembleSpace(kv.get(), 1, 1);
+    // tagId is 2 in space 1
+    TestUtils::mockTag(kv.get(), 1, 0, false, 2, 1);
+    // edgeType is 3 in space 1
+    TestUtils::mockEdge(kv.get(), 1, 0, false, 3, 1);
+
+    std::vector<cpp2::ColumnDef> columns;
+    TestUtils::mockTagIndex(kv.get(), 2, "tag_2", 4, "tag_index_name", columns);
+    TestUtils::mockEdgeIndex(kv.get(), 3, "edge_3", 5, "edge_index_name", columns);
+
+    // check tag and edge count
+    int count = 0;
+
+    auto tagprefix = MetaServiceUtils::schemaTagsPrefix(1);
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto retCode = kv->prefix(kDefaultSpaceId, kDefaultPartId, tagprefix, &iter);
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, retCode);
+    while (iter->valid()) {
+      count++;
+      iter->next();
+    }
+    ASSERT_EQ(1, count);
+
+    auto edgeprefix = MetaServiceUtils::schemaEdgesPrefix(1);
+    retCode = kv->prefix(kDefaultSpaceId, kDefaultPartId, edgeprefix, &iter);
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, retCode);
+    while (iter->valid()) {
+      count++;
+      iter->next();
+    }
+    ASSERT_EQ(2, count);
+
+    auto indexPrefix = MetaServiceUtils::indexPrefix(1);
+    retCode = kv->prefix(kDefaultSpaceId, kDefaultPartId, indexPrefix, &iter);
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, retCode);
+    while (iter->valid()) {
+      count++;
+      iter->next();
+    }
+    ASSERT_EQ(4, count);
+
+    // modify id to 5 for mock some schema
+    folly::SharedMutex::WriteHolder holder(LockUtils::idLock());
+    std::string kId = "__id__";
+    int32_t id = 5;
+    std::vector<kvstore::KV> data;
+    data.emplace_back(kId, std::string(reinterpret_cast<const char*>(&id), sizeof(id)));
+    folly::Baton<true, std::atomic> baton;
+    auto ret = nebula::cpp2::ErrorCode::SUCCEEDED;
+    kv->asyncMultiPut(
+        kDefaultSpaceId, kDefaultPartId, std::move(data), [&](nebula::cpp2::ErrorCode code) {
+          ret = code;
+          baton.post();
+        });
+    baton.wait();
+    ASSERT_EQ(ret, nebula::cpp2::ErrorCode::SUCCEEDED);
+  }
+
+  cpp2::Schema schema;
+  std::vector<cpp2::ColumnDef> cols;
+  cols.emplace_back(TestUtils::columnDef(0, PropertyType::INT64));
+  cols.emplace_back(TestUtils::columnDef(1, PropertyType::FLOAT));
+  cols.emplace_back(TestUtils::columnDef(2, PropertyType::STRING));
+  schema.set_columns(std::move(cols));
+
+  // create space, use global id
+  {
+    cpp2::SpaceDesc properties;
+    properties.set_space_name("my_space");
+    properties.set_partition_num(9);
+    properties.set_replica_factor(1);
+    cpp2::CreateSpaceReq req;
+    req.set_properties(std::move(properties));
+
+    auto* processor = CreateSpaceProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    ASSERT_EQ(6, resp.get_id().get_space_id());
+  }
+  // create tag in my_space, because there is no local_id key, use global id + 1
+  {
+    // Succeeded
+    cpp2::CreateTagReq req;
+    req.set_space_id(6);
+    req.set_tag_name("default_tag");
+    req.set_schema(schema);
+    auto* processor = CreateTagProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    ASSERT_EQ(7, resp.get_id().get_tag_id());
+  }
+  // create tag index in my_space, because there is local_id key, use local_id + 1
+  {
+    cpp2::CreateTagIndexReq req;
+    req.set_space_id(6);
+    req.set_tag_name("default_tag");
+    std::vector<cpp2::IndexFieldDef> fields;
+    cpp2::IndexFieldDef field1;
+    field1.set_name("col_0");
+    fields.emplace_back(std::move(field1));
+    req.set_fields(std::move(fields));
+    req.set_index_name("default_tag_index");
+    auto* processor = CreateTagIndexProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    ASSERT_EQ(8, resp.get_id().get_index_id());
+  }
+  // create edge in my_space, because there is local_id key, use local_id + 1
+  {
+    // Succeeded
+    cpp2::CreateEdgeReq req;
+    req.set_space_id(6);
+    req.set_edge_name("default_edge");
+    req.set_schema(schema);
+    auto* processor = CreateEdgeProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    ASSERT_EQ(9, resp.get_id().get_edge_type());
+  }
+  // create edge index in my_space, because there is local_id key, use local_id + 1
+  {
+    cpp2::CreateEdgeIndexReq req;
+    req.set_space_id(6);
+    req.set_edge_name("default_edge");
+    std::vector<cpp2::IndexFieldDef> fields;
+    cpp2::IndexFieldDef field1;
+    field1.set_name("col_0");
+    fields.emplace_back(std::move(field1));
+    req.set_fields(std::move(fields));
+    req.set_index_name("default_edge_index");
+    auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    ASSERT_EQ(10, resp.get_id().get_index_id());
+  }
+
+  // create space, space Id is global id + 1
+  {
+    cpp2::SpaceDesc properties;
+    properties.set_space_name("last_space");
+    properties.set_partition_num(9);
+    properties.set_replica_factor(1);
+    cpp2::CreateSpaceReq req;
+    req.set_properties(std::move(properties));
+
+    auto* processor = CreateSpaceProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    ASSERT_EQ(7, resp.get_id().get_space_id());
+  }
+  // create tag in my_space, because there is local_id key, use local id + 1
+  {
+    // Succeeded
+    cpp2::CreateTagReq req;
+    req.set_space_id(6);
+    req.set_tag_name("my_tag");
+    req.set_schema(schema);
+    auto* processor = CreateTagProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    ASSERT_EQ(11, resp.get_id().get_tag_id());
+  }
+  // create tag index in my_space, because there is local_id key, use local_id + 1
+  {
+    cpp2::CreateTagIndexReq req;
+    req.set_space_id(6);
+    req.set_tag_name("my_tag");
+    std::vector<cpp2::IndexFieldDef> fields;
+    cpp2::IndexFieldDef field1;
+    field1.set_name("col_0");
+    fields.emplace_back(std::move(field1));
+    req.set_fields(std::move(fields));
+    req.set_index_name("my_tag_index");
+    auto* processor = CreateTagIndexProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    ASSERT_EQ(12, resp.get_id().get_index_id());
+  }
+  // create edge in my_space, because there is local_id key use local_id + 1
+  {
+    // Succeeded
+    cpp2::CreateEdgeReq req;
+    req.set_space_id(6);
+    req.set_edge_name("my_edge");
+    req.set_schema(schema);
+    auto* processor = CreateEdgeProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    ASSERT_EQ(13, resp.get_id().get_edge_type());
+  }
+  // create edge index in my_space, because there is local_id key, use local_id + 1
+  {
+    // Allow to create edge index on no fields
+    cpp2::CreateEdgeIndexReq req;
+    req.set_space_id(6);
+    req.set_edge_name("my_edge");
+    std::vector<cpp2::IndexFieldDef> fields;
+    cpp2::IndexFieldDef field1;
+    field1.set_name("col_0");
+    fields.emplace_back(std::move(field1));
+    req.set_fields(std::move(fields));
+    req.set_index_name("my_edge_index");
+    auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    ASSERT_EQ(14, resp.get_id().get_index_id());
   }
 }
 

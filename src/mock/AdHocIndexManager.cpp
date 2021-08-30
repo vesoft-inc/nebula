@@ -17,7 +17,7 @@ void AdHocIndexManager::addTagIndex(GraphSpaceID space,
   IndexItem item;
   item.set_index_id(indexID);
   item.set_index_name(folly::stringPrintf("index_%d", indexID));
-  nebula::meta::cpp2::SchemaID schemaID;
+  nebula::cpp2::SchemaID schemaID;
   schemaID.set_tag_id(tagID);
   item.set_schema_id(schemaID);
   item.set_schema_name(folly::stringPrintf("tag_%d", tagID));
@@ -55,7 +55,7 @@ void AdHocIndexManager::addEdgeIndex(GraphSpaceID space,
   IndexItem item;
   item.set_index_id(indexID);
   item.set_index_name(folly::stringPrintf("index_%d", indexID));
-  nebula::meta::cpp2::SchemaID schemaID;
+  nebula::cpp2::SchemaID schemaID;
   schemaID.set_edge_type(edgeType);
   item.set_schema_id(schemaID);
   item.set_schema_name(folly::stringPrintf("edge_%d", edgeType));

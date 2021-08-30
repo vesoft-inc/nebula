@@ -211,6 +211,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "UpdateEdge";
     case Kind::kShowHosts:
       return "ShowHosts";
+    case Kind::kShowMetaLeader:
+      return "ShowMetaLeader";
     case Kind::kShowParts:
       return "ShowParts";
     case Kind::kShowCharset:

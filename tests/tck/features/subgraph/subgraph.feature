@@ -894,3 +894,27 @@ Feature: subgraph
       | <[vertex3]>      | <[edge3]> |
       | <[vertex4]>      | <[edge4]> |
       | <[vertex5]>      | []        |
+
+  Scenario: Get subgraph in a space which doesn't have edge schema
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 9                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(20) |
+    And having executed:
+      """
+      CREATE TAG IF NOT EXISTS person(name string);
+      """
+    When try to execute query:
+      """
+      INSERT VERTEX person VALUES "Tom":("Tom")
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      GET SUBGRAPH 1 STEPS FROM "Tom"
+      """
+    Then the result should be, in any order, with relax comparison:
+      | _vertices | _edges |
+      | [("Tom")] | []     |
+      | []        | []     |

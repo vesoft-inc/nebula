@@ -104,7 +104,7 @@ Status MetaDataUpgrade::rewriteIndexes(const folly::StringPiece &key,
   cpp2::IndexItem newItem;
   newItem.set_index_id(oldItem.get_index_id());
   newItem.set_index_name(oldItem.get_index_name());
-  cpp2::SchemaID schemaId;
+  nebula::cpp2::SchemaID schemaId;
   if (oldItem.get_schema_id().getType() == meta::v1::cpp2::SchemaID::Type::tag_id) {
     schemaId.set_tag_id(oldItem.get_schema_id().get_tag_id());
   } else {
