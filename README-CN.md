@@ -34,7 +34,11 @@
 
 ## 发布通告
 
-Nebula Graph 2.0.0 GA 版本已发布，目前已经有若干项重要更新，更多新特性正在开发中。欢迎加入我们，一同开发Nebula Graph 2.0。
+Nebula Graph 2.0.0 GA 版本已发布，目前已经有若干项重要更新，更多新特性正在开发中。欢迎加入我们，一同开发Nebula Graph。
+
+Nebula Graph 1.x 后续不再进行功能的更新，请升级到2.0版本中。Nebula Graph 内核 1.x 与 2.x数据格式、通信协议、客户端等均双向不兼容。
+
+从v2.5.0版本之后，Nebula Graph迁移到这个repo。如需获取v2.0.0到v2.5.0之间的发布版本，请访问[Nebula Graph repo](https://github.com/vesoft-inc/nebula-graph)。
 
 <!--
 如需使用稳定版本，请参见[Nebula Graph 1.0](https://github.com/vesoft-inc/nebula)。
