@@ -71,8 +71,8 @@ Feature: Fetch Int Vid Edges
   Scenario: Fetch prop works with pipeline
     When executing query:
       """
-      GO FROM hash('Boris Diaw') OVER serve YIELD serve._src AS src, serve._dst AS dst
-      | FETCH PROP ON serve $-.src->$-.dst YIELD serve.start_year, serve.end_year
+      GO FROM hash('Boris Diaw') OVER serve YIELD serve._src AS src, serve._dst AS dst |
+      FETCH PROP ON serve $-.src->$-.dst YIELD serve.start_year, serve.end_year
       """
     Then the result should be, in any order, and the columns 0,1 should be hashed:
       | serve._src   | serve._dst | serve._rank | serve.start_year | serve.end_year |
@@ -132,8 +132,8 @@ Feature: Fetch Int Vid Edges
     # Fetch prop works with DISTINCT and pipeline
     When executing query:
       """
-      GO FROM hash('Boris Diaw'),hash('Boris Diaw') OVER serve YIELD serve._src AS src, serve._dst AS dst
-      | FETCH PROP ON serve $-.src->$-.dst YIELD DISTINCT serve.start_year, serve.end_year
+      GO FROM hash('Boris Diaw'),hash('Boris Diaw') OVER serve YIELD serve._src AS src, serve._dst AS dst |
+      FETCH PROP ON serve $-.src->$-.dst YIELD DISTINCT serve.start_year, serve.end_year
       """
     Then the result should be, in any order, and the columns 0,1 should be hashed:
       | serve._src   | serve._dst | serve._rank | serve.start_year | serve.end_year |
@@ -144,8 +144,8 @@ Feature: Fetch Int Vid Edges
       | "Boris Diaw" | "Jazz"     | 0           | 2016             | 2017           |
     When executing query:
       """
-      GO FROM hash('Tim Duncan'),hash('Tony Parker') OVER serve YIELD serve._src AS src, serve._dst AS dst
-      | FETCH PROP ON serve $-.src->$-.dst YIELD DISTINCT serve._dst as dst
+      GO FROM hash('Tim Duncan'),hash('Tony Parker') OVER serve YIELD serve._src AS src, serve._dst AS dst |
+      FETCH PROP ON serve $-.src->$-.dst YIELD DISTINCT serve._dst as dst
       """
     Then the result should be, in any order, and the columns 0,1,3 should be hashed:
       | serve._src    | serve._dst | serve._rank | dst       |
@@ -176,24 +176,24 @@ Feature: Fetch Int Vid Edges
       | serve._src | serve._dst | serve._rank | serve.start_year |
     When executing query:
       """
-      GO FROM hash("NON EXIST VERTEX ID") OVER serve YIELD serve._src AS src, serve._dst AS dst
-      | FETCH PROP ON serve $-.src->$-.dst YIELD serve.start_year, serve.end_year
+      GO FROM hash("NON EXIST VERTEX ID") OVER serve YIELD serve._src AS src, serve._dst AS dst |
+      FETCH PROP ON serve $-.src->$-.dst YIELD serve.start_year, serve.end_year
       """
     Then the result should be, in any order:
       | serve._src | serve._dst | serve._rank | serve.start_year | serve.end_year |
     When executing query:
       """
-      GO FROM hash("NON EXIST VERTEX ID") OVER serve YIELD serve._src AS src, serve._dst AS dst, serve.start_year as start
-      | YIELD $-.src as src, $-.dst as dst WHERE $-.start > 20000
-      | FETCH PROP ON serve $-.src->$-.dst YIELD serve.start_year, serve.end_year
+      GO FROM hash("NON EXIST VERTEX ID") OVER serve YIELD serve._src AS src, serve._dst AS dst, serve.start_year as start |
+      YIELD $-.src as src, $-.dst as dst WHERE $-.start > 20000 |
+      FETCH PROP ON serve $-.src->$-.dst YIELD serve.start_year, serve.end_year
       """
     Then the result should be, in any order:
       | serve._src | serve._dst | serve._rank | serve.start_year | serve.end_year |
     When executing query:
       """
-      GO FROM hash("Marco Belinelli") OVER serve YIELD serve._src AS src, serve._dst AS dst, serve.start_year as start
-                   | YIELD $-.src as src, $-.dst as dst WHERE $-.start > 20000
-                   | FETCH PROP ON serve $-.src->$-.dst YIELD serve.start_year, serve.end_year
+      GO FROM hash("Marco Belinelli") OVER serve YIELD serve._src AS src, serve._dst AS dst, serve.start_year as start |
+      YIELD $-.src as src, $-.dst as dst WHERE $-.start > 20000 |
+      FETCH PROP ON serve $-.src->$-.dst YIELD serve.start_year, serve.end_year
       """
     Then the result should be, in any order:
       | serve._src | serve._dst | serve._rank | serve.start_year | serve.end_year |
@@ -224,8 +224,8 @@ Feature: Fetch Int Vid Edges
     # Fetch prop on illegal input
     When executing query:
       """
-      GO FROM hash('Boris Diaw') OVER serve YIELD serve._src AS src, serve._dst AS src
-      | FETCH PROP ON serve $-.src->$-.dst YIELD serve.start_year, serve.end_year
+      GO FROM hash('Boris Diaw') OVER serve YIELD serve._src AS src, serve._dst AS src |
+      FETCH PROP ON serve $-.src->$-.dst YIELD serve.start_year, serve.end_year
       """
     Then a SemanticError should be raised at runtime:
 

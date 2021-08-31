@@ -261,16 +261,16 @@ class FetchVerticesSentence final : public Sentence {
 
 class FetchEdgesSentence final : public Sentence {
  public:
-  FetchEdgesSentence(NameLabelList* edge, EdgeKeys* keys, YieldClause* clause) {
+  FetchEdgesSentence(const std::string& edgeName, EdgeKeys* keys, YieldClause* clause) {
     kind_ = Kind::kFetchEdges;
-    edge_.reset(edge);
+    edgeName_ = edgeName;
     edgeKeys_.reset(keys);
     yieldClause_.reset(clause);
   }
 
-  FetchEdgesSentence(NameLabelList* edge, EdgeKeyRef* ref, YieldClause* clause) {
+  FetchEdgesSentence(const std::string& edgeName, EdgeKeyRef* ref, YieldClause* clause) {
     kind_ = Kind::kFetchEdges;
-    edge_.reset(edge);
+    edgeName_ = edgeName;
     keyRef_.reset(ref);
     yieldClause_.reset(clause);
   }
@@ -289,14 +289,12 @@ class FetchEdgesSentence final : public Sentence {
 
   YieldClause* yieldClause() const { return yieldClause_.get(); }
 
-  const std::string* edge() const { return edge_->front(); }
-
-  std::size_t edgeSize() const { return edge_->size(); }
+  std::string edgeName() const { return edgeName_; }
 
   std::string toString() const override;
 
  private:
-  std::unique_ptr<NameLabelList> edge_;
+  std::string edgeName_;
   std::unique_ptr<EdgeKeys> edgeKeys_;
   std::unique_ptr<EdgeKeyRef> keyRef_;
   std::unique_ptr<YieldClause> yieldClause_;

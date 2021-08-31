@@ -14,6 +14,7 @@
 #include "graph/planner/match/StartVidFinder.h"
 #include "graph/planner/match/VertexIdSeek.h"
 #include "graph/planner/ngql/FetchVerticesPlanner.h"
+#include "graph/planner/ngql/FetchEdgesPlanner.h"
 #include "graph/planner/ngql/GoPlanner.h"
 #include "graph/planner/ngql/LookupPlanner.h"
 #include "graph/planner/ngql/PathPlanner.h"
@@ -51,6 +52,10 @@ void PlannersRegister::registSequential() {
   {
     auto& planners = Planner::plannersMap()[Sentence::Kind::kFetchVertices];
     planners.emplace_back(&FetchVerticesPlanner::match, &FetchVerticesPlanner::make);
+  }
+  {
+    auto& planners = Planner::plannersMap()[Sentence::Kind::kFetchEdges];
+    planners.emplace_back(&FetchEdgesPlanner::match, &FetchEdgesPlanner::make);
   }
 }
 
