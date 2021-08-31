@@ -33,6 +33,10 @@ Compared with other graph database solutions, **Nebula Graph** has the following
 
 The Nebula Graph team is glad to announce the Nebula Graph 2.0.0 GA. This is a brand new start with several important updates, and more of them are on the way. Welcome to join us.
 
+Nebula Graph 1.x is not actively maintained. Please move to Nebula Graph 2.x. The data format, rpc protocals, clients and so on are not compatible.
+
+We will use this repo after v2.5.0, and you can get release between v2.0.0 to v2.5.0 in [Nebula Graph repo](https://github.com/vesoft-inc/nebula-graph). 
+
 <!--
 To use the stable release, see [Nebula Graph 1.0](https://github.com/vesoft-inc/nebula).
 
