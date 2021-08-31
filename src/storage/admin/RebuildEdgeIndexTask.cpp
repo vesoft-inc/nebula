@@ -154,7 +154,7 @@ nebula::cpp2::ErrorCode RebuildEdgeIndexTask::buildIndexGlobal(GraphSpaceID spac
                                                     destination.toString(),
                                                     std::move(valuesRet).value());
         batchSize += indexKey.size() + indexVal.size();
-        data.emplace_back(std::move(indexKey), std::move(indexVal));
+        data.emplace_back(std::move(indexKey), indexVal);
       }
     }
     iter->next();
