@@ -139,14 +139,15 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> CreateSpaceAsProcesso
     if (!nebula::ok(tagId)) {
       return nebula::error(tagId);
     }
+    auto vTagID = nebula::value(tagId);
 
     auto tagNameLen = *reinterpret_cast<const int32_t *>(val.data());
     auto tagName = val.subpiece(sizeof(int32_t), tagNameLen).str();
     data.emplace_back(MetaServiceUtils::indexTagKey(newSpaceId, tagName),
-                      std::string(reinterpret_cast<const char *>(&tagId), sizeof(TagID)));
+                      std::string(reinterpret_cast<const char *>(&vTagID), sizeof(vTagID)));
 
     auto tagVer = MetaServiceUtils::parseTagVersion(iter->key());
-    auto key = MetaServiceUtils::schemaTagKey(newSpaceId, nebula::value(tagId), tagVer);
+    auto key = MetaServiceUtils::schemaTagKey(newSpaceId, vTagID, tagVer);
     data.emplace_back(std::move(key), val.str());
   }
   return data;
@@ -174,14 +175,15 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> CreateSpaceAsProcesso
     if (!nebula::ok(edgeType)) {
       return nebula::error(edgeType);
     }
+    auto vEdgeType = nebula::value(edgeType);
 
     auto edgeNameLen = *reinterpret_cast<const int32_t *>(val.data());
     auto edgeName = val.subpiece(sizeof(int32_t), edgeNameLen).str();
     data.emplace_back(MetaServiceUtils::indexTagKey(newSpaceId, edgeName),
-                      std::string(reinterpret_cast<const char *>(&edgeType), sizeof(edgeType)));
+                      std::string(reinterpret_cast<const char *>(&vEdgeType), sizeof(vEdgeType)));
 
     auto ver = MetaServiceUtils::parseEdgeVersion(iter->key());
-    auto key = MetaServiceUtils::schemaEdgeKey(newSpaceId, nebula::value(edgeType), ver);
+    auto key = MetaServiceUtils::schemaEdgeKey(newSpaceId, vEdgeType, ver);
     data.emplace_back(std::move(key), val.str());
   }
   return data;
