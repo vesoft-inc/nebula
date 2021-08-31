@@ -20,6 +20,7 @@
 #include "common/datatypes/Map.h"
 #include "common/fs/FileUtils.h"
 #include "common/time/TimeConversion.h"
+#include "common/time/TimeParser.h"
 #include "common/time/TimezoneInfo.h"
 #include "common/time/WallClock.h"
 
@@ -47,28 +48,12 @@ class TimeUtils {
     return Status::OK();
   }
 
-  // TODO(shylock) support more format
   static StatusOr<DateTime> parseDateTime(const std::string &str) {
-    std::tm tm;
-    std::istringstream ss(str);
-    ss >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%S");
-    if (ss.fail()) {
-      std::istringstream ss2(str);
-      ss2 >> std::get_time(&tm, "%Y-%m-%d %H:%M:%S");
-      if (ss2.fail()) {
-        return Status::Error();
-      }
-    }
-    DateTime dt;
-    dt.year = tm.tm_year + 1900;
-    dt.month = tm.tm_mon + 1;
-    dt.day = tm.tm_mday;
-    dt.hour = tm.tm_hour;
-    dt.minute = tm.tm_min;
-    dt.sec = tm.tm_sec;
-    dt.microsec = 0;
-    NG_RETURN_IF_ERROR(validateDate(dt));
-    return dt;
+    TimeParser p;
+    auto result = p.parseDateTime(str);
+    NG_RETURN_IF_ERROR(result);
+    NG_RETURN_IF_ERROR(validateDate(result.value()));
+    return result.value();
   }
 
   static StatusOr<DateTime> dateTimeFromMap(const Map &m);
@@ -120,20 +105,12 @@ class TimeUtils {
 
   static StatusOr<Date> dateFromMap(const Map &m);
 
-  // TODO(shylock) support more format
   static StatusOr<Date> parseDate(const std::string &str) {
-    std::tm tm;
-    std::istringstream ss(str);
-    ss >> std::get_time(&tm, "%Y-%m-%d");
-    if (ss.fail()) {
-      return Status::Error();
-    }
-    Date d;
-    d.year = tm.tm_year + 1900;
-    d.month = tm.tm_mon + 1;
-    d.day = tm.tm_mday;
-    NG_RETURN_IF_ERROR(validateDate(d));
-    return d;
+    TimeParser p;
+    auto result = p.parseDate(str);
+    NG_RETURN_IF_ERROR(result);
+    NG_RETURN_IF_ERROR(validateDate(result.value()));
+    return result.value();
   }
 
   static StatusOr<Date> localDate() {
@@ -170,20 +147,9 @@ class TimeUtils {
 
   static StatusOr<Time> timeFromMap(const Map &m);
 
-  // TODO(shylock) support more format
   static StatusOr<Time> parseTime(const std::string &str) {
-    std::tm tm;
-    std::istringstream ss(str);
-    ss >> std::get_time(&tm, "%H:%M:%S");
-    if (ss.fail()) {
-      return Status::Error();
-    }
-    Time t;
-    t.hour = tm.tm_hour;
-    t.minute = tm.tm_min;
-    t.sec = tm.tm_sec;
-    t.microsec = 0;
-    return t;
+    TimeParser p;
+    return p.parseTime(str);
   }
 
   // utc + offset = local

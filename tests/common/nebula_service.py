@@ -55,10 +55,12 @@ class NebulaService(object):
         shutil.copy(storage_conf_path + '/nebula-metad.conf.default',
                     self.work_dir + '/conf/nebula-metad.conf')
 
-        # gflags.json
         resources_dir = self.work_dir + '/share/resources/'
         os.makedirs(resources_dir)
+        # gflags.json
         shutil.copy(self.build_dir + '/../resources/gflags.json', resources_dir)
+        # timezone file
+        shutil.copy(self.build_dir + '/../resources/date_time_zonespec.csv', resources_dir)
 
     def _format_nebula_command(self, name, meta_port, ports, debug_log=True):
         params = [

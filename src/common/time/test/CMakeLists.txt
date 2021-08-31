@@ -54,6 +54,20 @@ nebula_add_test(
         gtest
 )
 
+nebula_add_test(
+    NAME
+        time_parser_test
+    SOURCES
+        TimeParserTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:time_obj>
+        $<TARGET_OBJECTS:datatypes_obj>
+        $<TARGET_OBJECTS:time_utils_obj>
+    LIBRARIES
+        gtest
+)
+
 nebula_add_executable(
     NAME
         duration_bm
