@@ -135,7 +135,7 @@ nebula::cpp2::ErrorCode RebuildTagIndexTask::buildIndexGlobal(GraphSpaceID space
         auto indexKey = IndexKeyUtils::vertexIndexKey(
             vidSize, part, item->get_index_id(), vertex.toString(), std::move(valuesRet).value());
         batchSize += indexKey.size() + indexVal.size();
-        data.emplace_back(std::move(indexKey), std::move(indexVal));
+        data.emplace_back(std::move(indexKey), indexVal);
       }
     }
     iter->next();

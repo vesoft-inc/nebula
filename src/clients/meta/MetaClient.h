@@ -29,6 +29,7 @@
 #include "interface/gen-cpp2/meta_types.h"
 
 DECLARE_int32(meta_client_retry_times);
+DECLARE_int32(heartbeat_interval_secs);
 
 namespace nebula {
 namespace meta {
@@ -191,7 +192,7 @@ class MetaClient {
 
   bool isMetadReady();
 
-  bool waitForMetadReady(int count = -1, int retryIntervalSecs = 2);
+  bool waitForMetadReady(int count = -1, int retryIntervalSecs = FLAGS_heartbeat_interval_secs);
 
   void stop();
 
@@ -707,6 +708,8 @@ class MetaClient {
   folly::RWSpinLock leaderIdsLock_;
   int64_t localLastUpdateTime_{0};
   int64_t metadLastUpdateTime_{0};
+  int64_t metaServerVersion_{-1};
+  static constexpr int64_t EXPECT_META_VERSION = 2;
 
   // leadersLock_ is used to protect leadersInfo
   folly::RWSpinLock leadersLock_;

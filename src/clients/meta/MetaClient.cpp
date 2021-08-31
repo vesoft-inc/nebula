@@ -61,12 +61,17 @@ MetaClient::~MetaClient() {
 
 bool MetaClient::isMetadReady() {
   auto ret = heartbeat().get();
-  if (!ret.ok() && ret.status() != Status::LeaderChanged()) {
+  if (!ret.ok()) {
     LOG(ERROR) << "Heartbeat failed, status:" << ret.status();
-    ready_ = false;
+    return ready_;
+  } else if (options_.role_ == cpp2::HostRole::STORAGE &&
+             metaServerVersion_ != EXPECT_META_VERSION) {
+    LOG(ERROR) << "Expect meta version is " << EXPECT_META_VERSION << ", but actual is "
+               << metaServerVersion_;
     return ready_;
   }
 
+  // ready_ will be set in loadData
   bool ldRet = loadData();
   bool lcRet = true;
   if (!options_.skipConfig_) {
@@ -2340,7 +2345,8 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
         heartbeatTime_ = time::WallClock::fastNowInMilliSec();
         metadLastUpdateTime_ = resp.get_last_update_time_in_ms();
         VLOG(1) << "Metad last update time: " << metadLastUpdateTime_;
-        return true;  // resp.code == nebula::cpp2::ErrorCode::SUCCEEDED
+        metaServerVersion_ = resp.get_meta_version();
+        return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
       },
       std::move(promise));
   return future;
