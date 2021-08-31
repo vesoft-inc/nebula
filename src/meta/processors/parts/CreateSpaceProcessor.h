@@ -33,6 +33,8 @@ class CreateSpaceProcessor : public BaseProcessor<cpp2::ExecResp> {
   // Get the zones with the least load
   StatusOr<std::vector<std::string>> pickLightLoadZones(int32_t replicaFactor);
 
+  std::string pickDisk(const HostAddr& hosts);
+
  private:
   std::unordered_map<std::string, int32_t> zoneLoading_;
   std::unordered_map<HostAddr, int32_t> hostLoading_;

@@ -59,6 +59,7 @@ class BalanceTask {
         client_(client) {
     taskIdStr_ = buildTaskId();
     commandStr_ = buildCommand();
+    balanceDisk_ = src == dst;
   }
 
   const std::string& taskIdStr() const {
@@ -139,6 +140,7 @@ class BalanceTask {
   std::string srcPath_;
   HostAddr dst_;
   std::string dstPath_;
+  bool balanceDisk_ = false;
   std::string taskIdStr_;
   std::string commandStr_;
   kvstore::KVStore* kv_ = nullptr;

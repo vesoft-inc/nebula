@@ -338,5 +338,15 @@ StatusOr<std::vector<std::string>> CreateSpaceProcessor::pickLightLoadZones(int3
   return pickedZones;
 }
 
+// std::string CreateSpaceProcessor::pickDisk(const HostAddr& host) {
+//   auto diskKey = MetaServiceUtils::diskKey(host);
+//   auto ret = doGet(diskKey);
+//   if (!nebula::ok(ret)) {
+//   }
+
+//   auto disks = MetaServiceUtils::parseDisks(nebula::value(ret));
+//   return "";
+// }
+
 }  // namespace meta
 }  // namespace nebula

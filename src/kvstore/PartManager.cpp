@@ -25,6 +25,15 @@ StatusOr<std::vector<meta::RemoteListenerInfo>> MemPartManager::listenerPeerExis
   return listeners;
 }
 
+StatusOr<std::string> MemPartManager::partLocation(GraphSpaceID spaceId,
+                                                   PartitionID partId,
+                                                   const HostAddr& host) {
+  UNUSED(spaceId);
+  UNUSED(partId);
+  UNUSED(host);
+  return "";
+}
+
 StatusOr<meta::PartHosts> MemPartManager::partMeta(GraphSpaceID spaceId, PartitionID partId) {
   auto it = partsMap_.find(spaceId);
   if (it == partsMap_.end()) {
@@ -51,8 +60,7 @@ Status MemPartManager::partExist(const HostAddr&, GraphSpaceID spaceId, Partitio
   return Status::SpaceNotFound();
 }
 
-MetaServerBasedPartManager::MetaServerBasedPartManager(HostAddr host, meta::MetaClient* client) {
-  UNUSED(host);
+MetaServerBasedPartManager::MetaServerBasedPartManager(HostAddr, meta::MetaClient* client) {
   client_ = client;
   CHECK_NOTNULL(client_);
   client_->registerListener(this);
@@ -68,6 +76,26 @@ MetaServerBasedPartManager::~MetaServerBasedPartManager() {
 
 meta::PartsMap MetaServerBasedPartManager::parts(const HostAddr& hostAddr) {
   return client_->getPartsMapFromCache(hostAddr);
+}
+
+StatusOr<std::string> MetaServerBasedPartManager::partLocation(GraphSpaceID spaceId,
+                                                               PartitionID partId,
+                                                               const HostAddr& host) {
+  UNUSED(spaceId);
+  UNUSED(partId);
+  UNUSED(host);
+  // auto partInfoResult = partMeta(spaceId, partId);
+  // if (!partInfoResult.ok()) {
+  //   return Status::Error("Space %d part %d not found",
+  //                        spaceId, partId);
+  // }
+
+  // for (auto& pair : partInfoResult.value().hosts_) {
+  //   if (pair.first == host) {
+  //     return pair.second;
+  //   }
+  // }
+  return Status::Error("Host not found: %s", host.toString().c_str());
 }
 
 StatusOr<meta::PartHosts> MetaServerBasedPartManager::partMeta(GraphSpaceID spaceId,

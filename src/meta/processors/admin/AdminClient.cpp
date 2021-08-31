@@ -79,12 +79,13 @@ folly::Future<Status> AdminClient::transLeader(GraphSpaceID spaceId,
 folly::Future<Status> AdminClient::addPart(GraphSpaceID spaceId,
                                            PartitionID partId,
                                            const HostAddr& host,
-                                           const std::string& /*path*/,
-                                           bool asLearner) {
+                                           bool asLearner,
+                                           const std::string& path) {
   storage::cpp2::AddPartReq req;
   req.space_id_ref() = spaceId;
   req.part_id_ref() = partId;
   req.as_learner_ref() = asLearner;
+  req.path_ref() = path;
   auto partHosts = getPeers(spaceId, partId);
   if (!nebula::ok(partHosts)) {
     LOG(INFO) << "Get peers failed: "
@@ -358,6 +359,8 @@ folly::Future<Status> AdminClient::checkPeers(GraphSpaceID spaceId, PartitionID 
       });
   return fut;
 }
+
+folly::Future<Status> AdminClient::changeConfig() { return Status::OK(); }
 
 template <typename Request, typename RemoteFunc, typename RespGenerator>
 folly::Future<Status> AdminClient::getResponseFromPart(const HostAddr& host,
@@ -668,8 +671,70 @@ folly::Future<Status> AdminClient::getLeaderDist(HostLeaderMap* result) {
   return future;
 }
 
-folly::Future<StatusOr<cpp2::HostBackupInfo>> AdminClient::createSnapshot(
-    const std::set<GraphSpaceID>& spaceIds, const std::string& name, const HostAddr& host) {
+void AdminClient::getPartsDist(const HostAddr& host,
+                               GraphSpaceID spaceId,
+                               folly::Promise<StatusOr<storage::cpp2::GetPartsDistResp>>&& pro,
+                               int32_t retry,
+                               int32_t retryLimit) {
+  auto* evb = ioThreadPool_->getEventBase();
+  folly::via(evb, [evb, host, pro = std::move(pro), spaceId, retry, retryLimit, this]() mutable {
+    storage::cpp2::GetPartsDistReq req;
+    req.space_id_ref() = spaceId;
+    auto client = clientsMan_->client(host, evb);
+    client->future_getPartsDist(std::move(req))
+        .via(evb)
+        .then([spaceId, pro = std::move(pro), host, retry, retryLimit, this](
+                  folly::Try<storage::cpp2::GetPartsDistResp>&& t) mutable {
+          if (t.hasException()) {
+            LOG(ERROR) << folly::stringPrintf("RPC failure in AdminClient: %s",
+                                              t.exception().what().c_str());
+            if (retry < retryLimit) {
+              usleep(1000 * 50);
+              getPartsDist(Utils::getAdminAddrFromStoreAddr(host),
+                           spaceId,
+                           std::move(pro),
+                           retry + 1,
+                           retryLimit);
+            } else {
+              pro.setValue(Status::Error("RPC failure in AdminClient"));
+            }
+          }
+          auto&& resp = std::move(t).value();
+          LOG(INFO) << "Get parts dist for host " << host;
+          pro.setValue(std::move(resp));
+        });
+  });
+}
+folly::Future<Status> AdminClient::getPartsDist(const HostAddr& host,
+                                                GraphSpaceID spaceId,
+                                                PartDiskMap* result) {
+  folly::Promise<Status> promise;
+  auto future = promise.getFuture();
+
+  folly::Promise<StatusOr<storage::cpp2::GetPartsDistResp>> pro;
+  auto fut = pro.getFuture();
+  getPartsDist(Utils::getAdminAddrFromStoreAddr(host), spaceId, std::move(pro), 0, 3);
+
+  folly::collect(std::move(fut))
+      .via(ioThreadPool_.get())
+      .thenValue([p = std::move(promise), result](auto&& status) mutable {
+        auto resp = std::get<0>(status).value();
+        auto ref = resp.parts_dist_ref();
+        for (auto iter = ref->begin(); iter != ref->end(); iter++) {
+          LOG(INFO) << iter->first << " : " << iter->second;
+          result->emplace(iter->first, iter->second);
+        }
+        p.setValue(Status::OK());
+      })
+      .thenError([p = std::move(promise)](auto&& e) mutable {
+        p.setValue(Status::Error("Get parts dist failed, %s", e.what().c_str()));
+      });
+  return Status::OK();
+}
+
+folly::Future<StatusOr<cpp2::HostBackupInfo>> AdminClient::createSnapshot(const std::set<GraphSpaceID>& spaceIds,
+                                                                          const std::string& name,
+                                                                          const HostAddr& host) {
   folly::Promise<StatusOr<cpp2::HostBackupInfo>> pro;
   auto f = pro.getFuture();
 
@@ -795,7 +860,7 @@ folly::Future<StatusOr<bool>> AdminClient::stopTask(const HostAddr& host,
   // std::transform(hosts.begin(), hosts.end(), hostPaths.begin(), [](auto& host) -> HostAndPath {
   //   return HostAndPath(host, "");
   // });
-  
+
   getResponseFromHost(
       adminAddr,
       std::move(req),

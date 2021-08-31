@@ -1554,6 +1554,420 @@ TEST(BalanceTest, LeaderBalanceWithComplexZoneTest) {
   }
 }
 
+TEST(BalanceTest, DetachDiskTest) {
+  fs::TempDir rootPath("/tmp/DetachDiskTest.XXXXXX");
+  auto store = MockCluster::initMetaKV(rootPath.path());
+  auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
+  FLAGS_heartbeat_interval_secs = 1;
+
+  std::vector<HostAddr> hosts;
+  for (int i = 0; i < 1; i++) {
+    hosts.emplace_back(std::to_string(i), i);
+  }
+  TestUtils::createSomeHosts(kv, hosts);
+
+  cpp2::SpaceDesc properties;
+  properties.set_space_name("default_space");
+  properties.set_partition_num(12);
+  properties.set_replica_factor(1);
+  cpp2::CreateSpaceReq req;
+  req.set_properties(std::move(properties));
+  auto* processor = CreateSpaceProcessor::instance(kv);
+  auto f = processor->getFuture();
+  processor->process(req);
+  auto resp = std::move(f).get();
+  ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  ASSERT_EQ(1, resp.get_id().get_space_id());
+
+  // folly::Baton<true, std::atomic> baton;
+  // std::vector<nebula::kvstore::KV> data;
+  // data.emplace_back(
+  //     MetaServiceUtils::diskKey(HostAddr("0", 0)),
+  //     MetaServiceUtils::diskVal({"/data/storage.0", "/data/storage.1", "/data/storage.2"}));
+  // for (int i = 1; i <= 12; i++) {
+  //   data.emplace_back(MetaServiceUtils::locationKey(HostAddr("0", 0), 1, i),
+  //                     folly::stringPrintf("/data/storage.%d", i % 3));
+  // }
+
+  // kv->asyncMultiPut(
+  //     kDefaultSpaceId, kDefaultPartId, std::move(data), [&baton](nebula::cpp2::ErrorCode code) {
+  //       EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
+  //       baton.post();
+  //     });
+  // baton.wait();
+
+  DefaultValue<folly::Future<Status>>::SetFactory(
+      [] { return folly::Future<Status>(Status::OK()); });
+  NiceMock<MockAdminClient> client;
+  Balancer balancer(kv, &client);
+
+  DiskParts partsLocation;
+  std::vector<PartitionID> parts0 = {1, 2, 3, 4};
+  partsLocation.insert(std::make_pair("/data/storage.0", std::move(parts0)));
+
+  // Remove the unique node
+  {
+    std::vector<BalanceTask> tasks;
+    auto code = balancer.detachDiskBalance(
+        0, HostAddr("0", 0), 1, partsLocation, {"/data/storage.0"}, tasks);
+    EXPECT_EQ(code, nebula::cpp2::ErrorCode::E_INVALID_PARM);
+  }
+
+  std::vector<PartitionID> parts1 = {5, 6, 7, 8};
+  partsLocation.insert(std::make_pair("/data/storage.1", std::move(parts1)));
+
+  std::vector<PartitionID> parts2 = {9, 10, 11, 12};
+  partsLocation.insert(std::make_pair("/data/storage.2", std::move(parts2)));
+
+  // Remove the path which is not exist
+  {
+    std::vector<BalanceTask> tasks;
+    auto code = balancer.detachDiskBalance(
+        0, HostAddr("0", 0), 1, partsLocation, {"/data/storage.3"}, tasks);
+    EXPECT_EQ(code, nebula::cpp2::ErrorCode::E_INVALID_PARM);
+  }
+  {
+    std::vector<BalanceTask> tasks;
+    auto code = balancer.detachDiskBalance(0, HostAddr("0", 0), 1, partsLocation, {}, tasks);
+    EXPECT_EQ(code, nebula::cpp2::ErrorCode::E_INVALID_PARM);
+  }
+  {
+    std::vector<BalanceTask> tasks;
+    auto code = balancer.detachDiskBalance(
+        0, HostAddr("0", 0), 1, partsLocation, {"/data/storage.2"}, tasks);
+    EXPECT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
+    ASSERT_EQ(4, tasks.size());
+  }
+}
+
+TEST(BalanceTest, DetachMultiDiskTest) {
+  fs::TempDir rootPath("/tmp/DetachMultiDiskTest.XXXXXX");
+  auto store = MockCluster::initMetaKV(rootPath.path());
+  auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
+  FLAGS_heartbeat_interval_secs = 1;
+
+  std::vector<HostAddr> hosts;
+  for (int i = 0; i < 1; i++) {
+    hosts.emplace_back(std::to_string(i), i);
+  }
+  TestUtils::createSomeHosts(kv, hosts);
+
+  cpp2::SpaceDesc properties;
+  properties.set_space_name("default_space");
+  properties.set_partition_num(12);
+  properties.set_replica_factor(1);
+  cpp2::CreateSpaceReq req;
+  req.set_properties(std::move(properties));
+  auto* processor = CreateSpaceProcessor::instance(kv);
+  auto f = processor->getFuture();
+  processor->process(req);
+  auto resp = std::move(f).get();
+  ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  ASSERT_EQ(1, resp.get_id().get_space_id());
+
+  // folly::Baton<true, std::atomic> baton;
+  // std::vector<nebula::kvstore::KV> data;
+  // data.emplace_back(MetaServiceUtils::diskKey(HostAddr("0", 0)),
+  //                   MetaServiceUtils::diskVal({"/data/storage.0",
+  //                                              "/data/storage.1",
+  //                                              "/data/storage.2",
+  //                                              "/data/storage.3",
+  //                                              "/data/storage.4",
+  //                                              "/data/storage.5"}));
+  // for (int i = 1; i <= 12; i++) {
+  //   data.emplace_back(MetaServiceUtils::locationKey(HostAddr("0", 0), 1, i),
+  //                     folly::stringPrintf("/data/storage.%d", i % 6));
+  // }
+
+  // kv->asyncMultiPut(
+  //     kDefaultSpaceId, kDefaultPartId, std::move(data), [&baton](nebula::cpp2::ErrorCode code) {
+  //       EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
+  //       baton.post();
+  //     });
+  // baton.wait();
+
+  DefaultValue<folly::Future<Status>>::SetFactory(
+      [] { return folly::Future<Status>(Status::OK()); });
+  NiceMock<MockAdminClient> client;
+  Balancer balancer(kv, &client);
+
+  DiskParts partsLocation;
+  std::vector<PartitionID> parts0 = {1, 2};
+  partsLocation.insert(std::make_pair("/data/storage.0", std::move(parts0)));
+
+  std::vector<PartitionID> parts1 = {3, 4};
+  partsLocation.insert(std::make_pair("/data/storage.1", std::move(parts1)));
+
+  std::vector<PartitionID> parts2 = {5, 6};
+  partsLocation.insert(std::make_pair("/data/storage.2", std::move(parts2)));
+
+  std::vector<PartitionID> parts3 = {7, 8};
+  partsLocation.insert(std::make_pair("/data/storage.3", std::move(parts3)));
+
+  std::vector<PartitionID> parts4 = {9, 10};
+  partsLocation.insert(std::make_pair("/data/storage.4", std::move(parts4)));
+
+  std::vector<PartitionID> parts5 = {11, 12};
+  partsLocation.insert(std::make_pair("/data/storage.5", std::move(parts5)));
+
+  {
+    std::vector<BalanceTask> tasks;
+    auto code =
+        balancer.detachDiskBalance(0,
+                                   HostAddr("0", 0),
+                                   1,
+                                   partsLocation,
+                                   {"/data/storage.0", "/data/storage.1", "/data/storage.2"},
+                                   tasks);
+    EXPECT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
+    ASSERT_EQ(6, tasks.size());
+  }
+  {
+    std::vector<BalanceTask> tasks;
+    auto code =
+        balancer.detachDiskBalance(0,
+                                   HostAddr("0", 0),
+                                   1,
+                                   partsLocation,
+                                   {"/data/storage.0", "/data/storage.1", "/data/storage.1"},
+                                   tasks);
+    EXPECT_EQ(code, nebula::cpp2::ErrorCode::E_INVALID_PARM);
+  }
+  {
+    std::vector<BalanceTask> tasks;
+    auto code = balancer.detachDiskBalance(0,
+                                           HostAddr("0", 0),
+                                           1,
+                                           partsLocation,
+                                           {"/data/storage.0",
+                                            "/data/storage.1",
+                                            "/data/storage.2",
+                                            "/data/storage.3",
+                                            "/data/storage.4",
+                                            "/data/storage.5"},
+                                           tasks);
+    EXPECT_EQ(code, nebula::cpp2::ErrorCode::E_INVALID_PARM);
+  }
+  {
+    std::vector<BalanceTask> tasks;
+    auto code = balancer.detachDiskBalance(0,
+                                           HostAddr("0", 0),
+                                           1,
+                                           partsLocation,
+                                           {"/data/storage.0",
+                                            "/data/storage.1",
+                                            "/data/storage.2",
+                                            "/data/storage.3",
+                                            "/data/storage.4",
+                                            "/data/storage.5",
+                                            "/data/storage.6"},
+                                           tasks);
+    EXPECT_EQ(code, nebula::cpp2::ErrorCode::E_INVALID_PARM);
+  }
+  {
+    std::vector<BalanceTask> tasks;
+    auto code = balancer.detachDiskBalance(0,
+                                           HostAddr("0", 0),
+                                           1,
+                                           partsLocation,
+                                           {"/data/storage.0",
+                                            "/data/storage.1",
+                                            "/data/storage.2",
+                                            "/data/storage.3",
+                                            "/data/storage.4",
+                                            "/data/storage.6"},
+                                           tasks);
+    EXPECT_EQ(code, nebula::cpp2::ErrorCode::E_INVALID_PARM);
+  }
+}
+
+TEST(BalanceTest, AdditionDiskTest) {
+  fs::TempDir rootPath("/tmp/AdditionDiskTest.XXXXXX");
+  auto store = MockCluster::initMetaKV(rootPath.path());
+  auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
+  FLAGS_heartbeat_interval_secs = 1;
+
+  std::vector<HostAddr> hosts;
+  for (int i = 0; i < 1; i++) {
+    hosts.emplace_back(std::to_string(i), i);
+  }
+  TestUtils::createSomeHosts(kv, hosts);
+
+  cpp2::SpaceDesc properties;
+  properties.set_space_name("default_space");
+  properties.set_partition_num(12);
+  properties.set_replica_factor(1);
+  cpp2::CreateSpaceReq req;
+  req.set_properties(std::move(properties));
+  auto* processor = CreateSpaceProcessor::instance(kv);
+  auto f = processor->getFuture();
+  processor->process(req);
+  auto resp = std::move(f).get();
+  ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  ASSERT_EQ(1, resp.get_id().get_space_id());
+
+  // folly::Baton<true, std::atomic> baton;
+  // std::vector<nebula::kvstore::KV> data;
+  // data.emplace_back(
+  //     MetaServiceUtils::diskKey(HostAddr("0", 0)),
+  //     MetaServiceUtils::diskVal(
+  //         {"/data/storage.0", "/data/storage.1", "/data/storage.2", "/data/storage.3"}));
+  // for (int i = 1; i <= 12; i++) {
+  //   data.emplace_back(MetaServiceUtils::locationKey(HostAddr("0", 0), 1, i),
+  //                     folly::stringPrintf("/data/storage.%d", i % 3));
+  // }
+
+  // kv->asyncMultiPut(
+  //     kDefaultSpaceId, kDefaultPartId, std::move(data), [&baton](nebula::cpp2::ErrorCode code) {
+  //       EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
+  //       baton.post();
+  //     });
+  // baton.wait();
+
+  DefaultValue<folly::Future<Status>>::SetFactory(
+      [] { return folly::Future<Status>(Status::OK()); });
+  NiceMock<MockAdminClient> client;
+  Balancer balancer(kv, &client);
+
+  int32_t totalParts = 12;
+  DiskParts partsLocation;
+  std::vector<PartitionID> parts0 = {1, 2, 3, 4};
+  partsLocation.insert(std::make_pair("/data/storage.0", std::move(parts0)));
+
+  std::vector<PartitionID> parts1 = {5, 6, 7, 8};
+  partsLocation.insert(std::make_pair("/data/storage.1", std::move(parts1)));
+
+  std::vector<PartitionID> parts2 = {9, 10, 11, 12};
+  partsLocation.insert(std::make_pair("/data/storage.2", std::move(parts2)));
+
+  {
+    std::vector<BalanceTask> tasks;
+    auto code = balancer.additionDiskBalance(
+        0, HostAddr("0", 0), 1, partsLocation, {"/data/storage.3"}, totalParts, tasks);
+    EXPECT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
+    ASSERT_EQ(3, tasks.size());
+  }
+  {
+    std::vector<BalanceTask> tasks;
+    auto code =
+        balancer.additionDiskBalance(0, HostAddr("0", 0), 1, partsLocation, {}, totalParts, tasks);
+    EXPECT_EQ(code, nebula::cpp2::ErrorCode::E_INVALID_PARM);
+  }
+  {
+    std::vector<BalanceTask> tasks;
+    auto code = balancer.additionDiskBalance(
+        0, HostAddr("0", 0), 1, partsLocation, {"/data/storage.1"}, totalParts, tasks);
+    EXPECT_EQ(code, nebula::cpp2::ErrorCode::E_INVALID_PARM);
+  }
+}
+
+TEST(BalanceTest, AdditionMultiDiskTest) {
+  fs::TempDir rootPath("/tmp/AdditionMultiDiskTest.XXXXXX");
+  auto store = MockCluster::initMetaKV(rootPath.path());
+  auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
+  FLAGS_heartbeat_interval_secs = 1;
+
+  std::vector<HostAddr> hosts;
+  for (int i = 0; i < 1; i++) {
+    hosts.emplace_back(std::to_string(i), i);
+  }
+  TestUtils::createSomeHosts(kv, hosts);
+
+  cpp2::SpaceDesc properties;
+  properties.set_space_name("default_space");
+  properties.set_partition_num(12);
+  properties.set_replica_factor(1);
+  cpp2::CreateSpaceReq req;
+  req.set_properties(std::move(properties));
+  auto* processor = CreateSpaceProcessor::instance(kv);
+  auto f = processor->getFuture();
+  processor->process(req);
+  auto resp = std::move(f).get();
+  ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  ASSERT_EQ(1, resp.get_id().get_space_id());
+
+  // folly::Baton<true, std::atomic> baton;
+  // std::vector<nebula::kvstore::KV> data;
+  // data.emplace_back(MetaServiceUtils::diskKey(HostAddr("0", 0)),
+  //                   MetaServiceUtils::diskVal({"/data/storage.0",
+  //                                              "/data/storage.1",
+  //                                              "/data/storage.2",
+  //                                              "/data/storage.3",
+  //                                              "/data/storage.4",
+  //                                              "/data/storage.5"}));
+  // for (int i = 1; i <= 12; i++) {
+  //   data.emplace_back(MetaServiceUtils::locationKey(HostAddr("0", 0), 1, i),
+  //                     folly::stringPrintf("/data/storage.%d", i % 6));
+  // }
+
+  // kv->asyncMultiPut(
+  //     kDefaultSpaceId, kDefaultPartId, std::move(data), [&baton](nebula::cpp2::ErrorCode code) {
+  //       EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
+  //       baton.post();
+  //     });
+  // baton.wait();
+
+  DefaultValue<folly::Future<Status>>::SetFactory(
+      [] { return folly::Future<Status>(Status::OK()); });
+  NiceMock<MockAdminClient> client;
+  Balancer balancer(kv, &client);
+
+  int32_t totalParts = 12;
+  DiskParts partsLocation;
+  std::vector<PartitionID> parts0 = {1, 2, 3, 4};
+  partsLocation.insert(std::make_pair("/data/storage.0", std::move(parts0)));
+
+  std::vector<PartitionID> parts1 = {5, 6, 7, 8};
+  partsLocation.insert(std::make_pair("/data/storage.1", std::move(parts1)));
+
+  std::vector<PartitionID> parts2 = {9, 10, 11, 12};
+  partsLocation.insert(std::make_pair("/data/storage.2", std::move(parts2)));
+
+  {
+    std::vector<BalanceTask> tasks;
+    auto code =
+        balancer.additionDiskBalance(0,
+                                     HostAddr("0", 0),
+                                     1,
+                                     partsLocation,
+                                     {"/data/storage.3", "/data/storage.4", "/data/storage.5"},
+                                     totalParts,
+                                     tasks);
+    EXPECT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
+    ASSERT_EQ(6, tasks.size());
+  }
+  {
+    std::vector<BalanceTask> tasks;
+    auto code =
+        balancer.additionDiskBalance(0,
+                                     HostAddr("0", 0),
+                                     1,
+                                     partsLocation,
+                                     {"/data/storage.3", "/data/storage.3", "/data/storage.5"},
+                                     totalParts,
+                                     tasks);
+    EXPECT_EQ(code, nebula::cpp2::ErrorCode::E_INVALID_PARM);
+  }
+  {
+    std::vector<BalanceTask> tasks;
+    auto code =
+        balancer.additionDiskBalance(0,
+                                     HostAddr("0", 0),
+                                     1,
+                                     partsLocation,
+                                     {"/data/storage.1", "/data/storage.4", "/data/storage.5"},
+                                     totalParts,
+                                     tasks);
+    EXPECT_EQ(code, nebula::cpp2::ErrorCode::E_INVALID_PARM);
+  }
+  {
+    std::vector<BalanceTask> tasks;
+    auto code =
+        balancer.additionDiskBalance(0, HostAddr("0", 0), 1, partsLocation, {}, totalParts, tasks);
+    EXPECT_EQ(code, nebula::cpp2::ErrorCode::E_INVALID_PARM);
+  }
+}
+
 }  // namespace meta
 }  // namespace nebula
 

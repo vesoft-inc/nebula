@@ -45,6 +45,7 @@ class MockAdminClient : public AdminClient {
       folly::Future<Status>(GraphSpaceID, PartitionID, const HostAddr&, const std::string&));
   MOCK_METHOD2(checkPeers, folly::Future<Status>(GraphSpaceID, PartitionID));
   MOCK_METHOD1(getLeaderDist, folly::Future<Status>(HostLeaderMap*));
+  MOCK_METHOD3(getPartsDist, folly::Future<Status>(const HostAddr&, GraphSpaceID, PartDiskMap*));
   MOCK_METHOD3(createSnapshot,
                folly::Future<StatusOr<cpp2::HostBackupInfo>>(const std::set<GraphSpaceID>&,
                                                              const std::string&,

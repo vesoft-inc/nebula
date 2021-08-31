@@ -125,6 +125,7 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 "CREATE"                    { return TokenType::KW_CREATE;}
 "DROP"                      { return TokenType::KW_DROP; }
 "REMOVE"                    { return TokenType::KW_REMOVE; }
+"ATTACH"                    { return TokenType::KW_ATTACH; }
 "IF"                        { return TokenType::KW_IF; }
 "NOT"                       { return TokenType::KW_NOT; }
 "EXISTS"                    { return TokenType::KW_EXISTS; }
@@ -287,6 +288,7 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 "MERGE"                     { return TokenType::KW_MERGE; }
 "RENAME"                    { return TokenType::KW_RENAME; }
 "DIVIDE"                    { return TokenType::KW_DIVIDE; }
+"DISK"                      { return TokenType::KW_DISK; }
 
 "TRUE"                      { yylval->boolval = true; return TokenType::BOOL; }
 "FALSE"                     { yylval->boolval = false; return TokenType::BOOL; }

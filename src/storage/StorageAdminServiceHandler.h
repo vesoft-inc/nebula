@@ -36,6 +36,9 @@ class StorageAdminServiceHandler final : public cpp2::StorageAdminServiceSvIf {
   folly::Future<cpp2::GetLeaderPartsResp> future_getLeaderParts(
       const cpp2::GetLeaderReq& req) override;
 
+  folly::Future<cpp2::GetPartsDistResp> future_getPartsDist(
+      const cpp2::GetPartsDistReq& req) override;
+
   folly::Future<cpp2::CreateCPResp> future_createCheckpoint(
       const cpp2::CreateCPRequest& req) override;
 

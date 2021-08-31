@@ -1193,7 +1193,7 @@ service MetaService {
     ExecResp changePassword(1: ChangePasswordReq req);
 
     HBResp           heartBeat(1: HBReq req);
-    AgentHBResp  agentHeartbeat(1: AgentHBReq req);
+    AgentHBResp      agentHeartbeat(1: AgentHBReq req);
 
     ExecResp regConfig(1: RegConfigReq req);
     GetConfigResp getConfig(1: GetConfigReq req);

@@ -193,7 +193,27 @@ class HostList final {
   std::vector<std::unique_ptr<HostAddr>> hosts_;
 };
 
-inline std::ostream &operator<<(std::ostream &os, Sentence::Kind kind) {
+class PathList final {
+ public:
+  void addPath(std::string *path) { paths_.emplace_back(path); }
+
+  std::string toString() const;
+
+  std::vector<std::string> paths() const {
+    std::vector<std::string> result;
+    result.reserve(paths_.size());
+    for (auto &path : paths_) {
+      result.emplace_back(*path);
+    }
+    return result;
+  }
+
+ private:
+  std::vector<std::unique_ptr<std::string>> paths_;
+};
+
+inline std::ostream &
+operator<<(std::ostream &os, Sentence::Kind kind) {
   return os << static_cast<uint32_t>(kind);
 }
 

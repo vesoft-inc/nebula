@@ -418,6 +418,12 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     case PlanNode::Kind::kDescribeUser: {
       return pool->add(new DescribeUserExecutor(node, qctx));
     }
+    // case PlanNode::Kind::kBalanceDiskAttach: {
+    //   return pool->add(new BalanceDiskAttachExecutor(node, qctx));
+    // }
+    // case PlanNode::Kind::kBalanceDiskRemove: {
+    //   return pool->add(new BalanceDiskRemoveExecutor(node, qctx));
+    // }
     case PlanNode::Kind::kShowConfigs: {
       return pool->add(new ShowConfigsExecutor(node, qctx));
     }

@@ -127,6 +127,7 @@ class AddPartProcessor : public BaseProcessor<cpp2::AdminExecResp> {
   void process(const cpp2::AddPartReq& req) {
     auto spaceId = req.get_space_id();
     auto partId = req.get_part_id();
+    auto path = req.get_path();
     if (FLAGS_store_type != "nebula") {
       this->pushResultCode(nebula::cpp2::ErrorCode::E_INVALID_STORE, partId);
       onFinished();
@@ -142,9 +143,10 @@ class AddPartProcessor : public BaseProcessor<cpp2::AdminExecResp> {
     }
     std::vector<HostAndPath> peers;
     for (auto& p : req.get_peers()) {
-      peers.emplace_back(kvstore::NebulaStore::getRaftAddr(p.host), p.path);
+      // TODO
+      peers.emplace_back(kvstore::NebulaStore::getRaftAddr(p), "");
     }
-    store->addPart(spaceId, partId, req.get_as_learner(), peers);
+    store->addPart(spaceId, partId, req.get_as_learner(), path, peers);
     onFinished();
   }
 
@@ -337,6 +339,56 @@ class CheckPeersProcessor : public BaseProcessor<cpp2::AdminExecResp> {
 
  private:
   explicit CheckPeersProcessor(StorageEnv* env) : BaseProcessor<cpp2::AdminExecResp>(env) {}
+};
+
+class GetLeaderProcessor : public BaseProcessor<cpp2::GetLeaderPartsResp> {
+ public:
+  static GetLeaderProcessor* instance(StorageEnv* env) {
+    return new GetLeaderProcessor(env);
+  }
+
+  void process(const cpp2::GetLeaderReq&) {
+    CHECK_NOTNULL(env_->kvstore_);
+    std::unordered_map<GraphSpaceID, std::vector<meta::cpp2::LeaderInfo>> allLeaders;
+    env_->kvstore_->allLeader(allLeaders);
+    std::unordered_map<GraphSpaceID, std::vector<PartitionID>> leaderIds;
+    for (auto& spaceLeaders : allLeaders) {
+      auto& spaceId = spaceLeaders.first;
+      for (auto& partLeader : spaceLeaders.second) {
+        leaderIds[spaceId].emplace_back(partLeader.get_part_id());
+      }
+    }
+    resp_.leader_parts_ref() = std::move(leaderIds);
+    this->onFinished();
+  }
+
+ private:
+  explicit GetLeaderProcessor(StorageEnv* env) : BaseProcessor<cpp2::GetLeaderPartsResp>(env) {}
+};
+
+class GetPartsDistProcessor : public BaseProcessor<cpp2::GetPartsDistResp> {
+ public:
+  static GetPartsDistProcessor* instance(StorageEnv* env) { return new GetPartsDistProcessor(env); }
+
+  void process(const cpp2::GetPartsDistReq& req) {
+    CHECK_NOTNULL(env_->kvstore_);
+    auto spaceId = req.get_space_id();
+    auto diskPartsRet = env_->kvstore_->partsDist(spaceId);
+    auto diskPartsMap = value(std::move(diskPartsRet));
+    std::unordered_map<PartitionID, std::string> partsDiskMap;
+    for (const auto& diskParts : diskPartsMap) {
+      auto& disk = diskParts.first;
+      for (auto& part : diskParts.second) {
+        LOG(INFO) << "Part " << part << " at " << disk;
+        partsDiskMap[part] = disk;
+      }
+    }
+    resp_.parts_dist_ref() = std::move(partsDiskMap);
+    this->onFinished();
+  }
+
+ private:
+  explicit GetPartsDistProcessor(StorageEnv* env) : BaseProcessor<cpp2::GetPartsDistResp>(env) {}
 };
 
 }  // namespace storage

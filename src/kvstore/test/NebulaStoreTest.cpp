@@ -72,7 +72,8 @@ TEST(NebulaStoreTest, SimpleTest) {
   HostAddr local = {"", 0};
   auto store =
       std::make_unique<NebulaStore>(std::move(options), ioThreadPool, local, getHandlers());
-  store->init();
+  auto result = store->init();
+  ASSERT_TRUE(result);
   sleep(1);
   EXPECT_EQ(2, store->spaces_.size());
 
@@ -170,7 +171,8 @@ TEST(NebulaStoreTest, PartsTest) {
   HostAddr local = {"", 0};
   auto store =
       std::make_unique<NebulaStore>(std::move(options), ioThreadPool, local, getHandlers());
-  store->init();
+  auto result = store->init();
+  ASSERT_TRUE(result);
   auto check = [&](GraphSpaceID spaceId) {
     for (auto i = 0; i < 2; i++) {
       ASSERT_EQ(folly::stringPrintf("%s/disk%d/nebula/%d", rootPath.path(), i + 1, spaceId),
@@ -374,6 +376,49 @@ TEST(NebulaStoreTest, ThreeCopiesTest) {
   }
 }
 
+TEST(NebulaStoreTest, PartsDuplicateTest) {
+  fs::TempDir rootPath("/tmp/parts_duplicate_test.XXXXXX");
+  auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
+  auto partMan = std::make_unique<MemPartManager>();
+
+  // GraphSpaceID =>  {PartitionIDs}
+  // 0 => {0, 1, 2, 3...9}
+  // The parts on PartMan is 0...9
+  for (auto partId = 0; partId < 10; partId++) {
+    partMan->addPart(0, partId);
+  }
+
+  std::vector<std::string> paths;
+  paths.emplace_back(folly::stringPrintf("%s/disk1", rootPath.path()));
+  paths.emplace_back(folly::stringPrintf("%s/disk2", rootPath.path()));
+
+  for (size_t i = 0; i < paths.size(); i++) {
+    auto db = std::make_unique<RocksEngine>(0, /* spaceId */
+                                            kDefaultVidLen,
+                                            paths[i]);
+    for (auto partId = 0; partId < 10; partId++) {
+      if (partId % 2 == static_cast<int32_t>(i)) {
+        db->addPart(partId);
+      }
+
+      if (partId == 0) {
+        db->addPart(9);
+      }
+    }
+    auto parts = db->allParts();
+    dump(parts);
+  }
+
+  KVOptions options;
+  options.dataPaths_ = std::move(paths);
+  options.partMan_ = std::move(partMan);
+  HostAddr local = {"", 0};
+  auto store =
+      std::make_unique<NebulaStore>(std::move(options), ioThreadPool, local, getHandlers());
+  auto result = store->init();
+  ASSERT_FALSE(result);
+}
+
 TEST(NebulaStoreTest, TransLeaderTest) {
   fs::TempDir rootPath("/tmp/trans_leader_test.XXXXXX");
   auto initNebulaStore = [](const std::vector<HostAndPath>& peers,
@@ -507,7 +552,8 @@ TEST(NebulaStoreTest, CheckpointTest) {
   HostAddr local = {"", 0};
   auto store =
       std::make_unique<NebulaStore>(std::move(options), ioThreadPool, local, getHandlers());
-  store->init();
+  auto result = store->init();
+  ASSERT_TRUE(result);
   sleep(1);
   EXPECT_EQ(2, store->spaces_.size());
 
@@ -851,7 +897,7 @@ TEST(NebulaStoreTest, AtomicOpBatchTest) {
   HostAddr local = {"", 0};
   auto store =
       std::make_unique<NebulaStore>(std::move(options), ioThreadPool, local, getHandlers());
-  store->init();
+  ASSERT_TRUE(store->init());
   sleep(FLAGS_raft_heartbeat_interval_secs);
   // put kv
   {
@@ -946,7 +992,8 @@ TEST(NebulaStoreTest, RemoveInvalidSpaceTest) {
   HostAddr local = {"", 0};
   auto store =
       std::make_unique<NebulaStore>(std::move(options), ioThreadPool, local, getHandlers());
-  store->init();
+  auto result = store->init();
+  ASSERT_TRUE(result);
   sleep(1);
   EXPECT_EQ(2, store->spaces_.size());
 
@@ -1016,7 +1063,8 @@ TEST(NebulaStoreTest, BackupRestoreTest) {
     HostAddr local = {"", 0};
     auto store =
         std::make_unique<NebulaStore>(std::move(options), ioThreadPool, local, getHandlers());
-    store->init();
+    auto result = store->init();
+    ASSERT_TRUE(result);
     waitLeader(store);
 
     if (insertData) {

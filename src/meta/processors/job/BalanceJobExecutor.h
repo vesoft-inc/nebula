@@ -15,6 +15,11 @@ namespace nebula {
 namespace meta {
 using HostParts = std::unordered_map<HostAddr, std::vector<PartitionID>>;
 using LeaderBalancePlan = std::vector<std::tuple<GraphSpaceID, PartitionID, HostAddr, HostAddr>>;
+<<<<<<< HEAD
+=======
+using ZoneNameAndParts = std::pair<std::string, std::vector<PartitionID>>;
+using DiskParts = std::unordered_map<std::string, std::vector<PartitionID>>;
+>>>>>>> Support Disk Balance
 
 struct Host {
   explicit Host(const HostAddr& ha) : host_(ha) {}

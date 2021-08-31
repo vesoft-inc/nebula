@@ -703,8 +703,8 @@ service GraphStorageService {
 //////////////////////////////////////////////////////////
 // Common response for admin methods
 struct AdminExecResp {
-    1: required ResponseCommon  result,
-    2: optional meta.StatsItem  stats,
+    1: required ResponseCommon   result,
+    2: optional meta.StatsItem   stats,
 }
 
 
@@ -717,10 +717,11 @@ struct TransLeaderReq {
 
 
 struct AddPartReq {
-    1: common.GraphSpaceID      space_id,
-    2: common.PartitionID       part_id,
-    3: bool                     as_learner,
-    4: list<common.HostAndPath> peers,
+    1: common.GraphSpaceID   space_id,
+    2: common.PartitionID    part_id,
+    3: bool                  as_learner,
+    4: list<common.HostAddr> peers,
+    5: binary                path,
 }
 
 
@@ -759,6 +760,10 @@ struct CatchUpDataReq {
 struct GetLeaderReq {
 }
 
+struct GetPartsDistReq {
+    1: common.GraphSpaceID  space_id,
+}
+
 struct CreateCPRequest {
     1: list<common.GraphSpaceID>  space_ids,
     2: binary                     name,
@@ -788,16 +793,24 @@ struct BlockingSignRequest {
     2: required EngineSignType      sign,
 }
 
+<<<<<<< HEAD
 struct BlockingSignResp {
     1: common.ErrorCode             code,
 }
 
+=======
+>>>>>>> Support Disk Balance
 struct GetLeaderPartsResp {
     1: common.ErrorCode             code,
     2: map<common.GraphSpaceID, list<common.PartitionID>> (
         cpp.template = "std::unordered_map") leader_parts;
 }
 
+struct GetPartsDistResp {
+    1: required ResponseCommon result,
+    2: map<common.PartitionID, binary> (
+        cpp.template = "std::unordered_map") parts_dist;
+}
 
 struct CheckPeersReq {
     1: common.GraphSpaceID      space_id,
@@ -858,6 +871,8 @@ service StorageAdminService {
 
     // Return all leader partitions on this host
     GetLeaderPartsResp getLeaderParts(1: GetLeaderReq req);
+    GetPartsDistResp   getPartsDist(1: GetPartsDistReq req);
+
     // Return all peers
     AdminExecResp checkPeers(1: CheckPeersReq req);
 

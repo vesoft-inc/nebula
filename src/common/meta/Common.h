@@ -14,6 +14,8 @@
 namespace nebula {
 namespace meta {
 
+// using PartLocation = std::pair<HostAddr, std::string>;
+
 struct PartHosts {
   GraphSpaceID spaceId_;
   PartitionID partId_;

@@ -69,6 +69,12 @@ folly::Future<cpp2::GetLeaderPartsResp> StorageAdminServiceHandler::future_getLe
   RETURN_FUTURE(processor);
 }
 
+folly::Future<cpp2::GetPartsDistResp> StorageAdminServiceHandler::future_getPartsDist(
+    const cpp2::GetPartsDistReq& req) {
+  auto* processor = GetPartsDistProcessor::instance(env_);
+  RETURN_FUTURE(processor);
+}
+
 folly::Future<cpp2::CreateCPResp> StorageAdminServiceHandler::future_createCheckpoint(
     const cpp2::CreateCPRequest& req) {
   auto* processor = CreateCheckpointProcessor::instance(env_);

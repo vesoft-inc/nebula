@@ -74,6 +74,10 @@ class PartManager {
    * */
   virtual StatusOr<meta::PartHosts> partMeta(GraphSpaceID spaceId, PartitionID partId) = 0;
 
+  virtual StatusOr<std::string> partLocation(GraphSpaceID spaceId,
+                                             PartitionID partId,
+                                             const HostAddr& host) = 0;
+
   /**
    * Check current part exist or not on host.
    * */
@@ -101,7 +105,7 @@ class PartManager {
 };
 
 /**
-: * Memory based PartManager, it is used in UTs now.
+ * Memory based PartManager, it is used in UTs now.
  * */
 class MemPartManager final : public PartManager {
   FRIEND_TEST(NebulaStoreTest, SimpleTest);
@@ -156,6 +160,10 @@ class MemPartManager final : public PartManager {
     }
   }
 
+  StatusOr<std::string> partLocation(GraphSpaceID spaceId,
+                                     PartitionID partId,
+                                     const HostAddr& host) override;
+
   Status partExist(const HostAddr& host, GraphSpaceID spaceId, PartitionID partId) override;
 
   Status spaceExist(const HostAddr&, GraphSpaceID spaceId) override {
@@ -190,6 +198,10 @@ class MetaServerBasedPartManager : public PartManager, public meta::MetaChangedL
   meta::PartsMap parts(const HostAddr& host) override;
 
   StatusOr<meta::PartHosts> partMeta(GraphSpaceID spaceId, PartitionID partId) override;
+
+  StatusOr<std::string> partLocation(GraphSpaceID spaceId,
+                                     PartitionID partId,
+                                     const HostAddr& host) override;
 
   Status partExist(const HostAddr& host, GraphSpaceID spaceId, PartitionID partId) override;
 

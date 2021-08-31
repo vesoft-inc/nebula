@@ -20,6 +20,8 @@ namespace meta {
 
 using HostLeaderMap =
     std::unordered_map<HostAddr, std::unordered_map<GraphSpaceID, std::vector<PartitionID>>>;
+using PartDiskMap = std::unordered_map<PartitionID, std::string>;
+using HandleResultOpt = folly::Optional<std::function<void(storage::cpp2::AdminExecResp&&)>>;
 
 static const HostAndPath kRandomPeer(HostAddr("", 0), "");
 
@@ -73,8 +75,8 @@ class AdminClient {
   virtual folly::Future<Status> addPart(GraphSpaceID spaceId,
                                         PartitionID partId,
                                         const HostAddr& host,
-                                        const std::string& path,
-                                        bool asLearner);
+                                        bool asLearner,
+                                        const std::string& path);
 
   /**
    * @brief Add a learner for given partition. The rpc will be sent to
@@ -147,7 +149,7 @@ class AdminClient {
   virtual folly::Future<Status> removePart(GraphSpaceID spaceId,
                                            PartitionID partId,
                                            const HostAddr& host,
-                                           const std::string& path);
+                                           const std::string& path);  
 
   /**
    * @brief Check and adjust(add/remove) each peer's peers info according to meta kv store
@@ -189,6 +191,12 @@ class AdminClient {
   virtual folly::Future<StatusOr<bool>> dropSnapshot(const std::set<GraphSpaceID>& spaceIds,
                                                      const std::string& name,
                                                      const HostAddr& host);
+
+  virtual folly::Future<Status> getPartsDist(const HostAddr& host,
+                                             GraphSpaceID spaceId,
+                                             PartDiskMap* result);
+
+  
 
   /**
    * @brief Blocking/Allowing writings to given spaces in specified storage host
@@ -309,6 +317,12 @@ class AdminClient {
 
   folly::Future<StatusOr<std::unordered_map<GraphSpaceID, std::vector<PartitionID>>>> getLeaderDist(
       const HostAddr& host);
+
+  void getPartsDist(const HostAddr& host,
+                    GraphSpaceID spaceId,
+                    folly::Promise<StatusOr<storage::cpp2::GetPartsDistResp>>&& pro,
+                    int32_t retry,
+                    int32_t retryLimit);
 
   Status handleResponse(const storage::cpp2::AdminExecResp& resp);
 

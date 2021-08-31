@@ -122,6 +122,7 @@ static constexpr size_t kCommentLengthLimit = 256;
     nebula::GroupClause                    *group_clause;
     nebula::HostList                       *host_list;
     nebula::HostAddr                       *host_item;
+    nebula::PathList                       *path_list;
     nebula::ZoneNameList                   *zone_name_list;
     nebula::ZoneItem                       *zone_item;
     nebula::ZoneItemList                   *zone_item_list;
@@ -174,7 +175,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_CHARSET KW_COLLATE KW_COLLATION KW_VID_TYPE
 %token KW_ATOMIC_EDGE
 %token KW_COMMENT KW_S2_MAX_LEVEL KW_S2_MAX_CELLS
-%token KW_DROP KW_REMOVE KW_SPACES KW_INGEST KW_INDEX KW_INDEXES
+%token KW_DROP KW_REMOVE KW_ATTACH KW_SPACES KW_INGEST KW_INDEX KW_INDEXES
 %token KW_IF KW_NOT KW_EXISTS KW_WITH
 %token KW_BY KW_DOWNLOAD KW_HDFS KW_UUID KW_CONFIGS KW_FORCE
 %token KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE KW_AGENT
@@ -182,7 +183,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %token KW_FETCH KW_PROP KW_UPDATE KW_UPSERT KW_WHEN
 %token KW_ORDER KW_ASC KW_LIMIT KW_SAMPLE KW_OFFSET KW_ASCENDING KW_DESCENDING
 %token KW_DISTINCT KW_ALL KW_OF
-%token KW_BALANCE KW_LEADER KW_RESET KW_PLAN
+%token KW_BALANCE KW_LEADER KW_RESET KW_PLAN KW_DISK
 %token KW_SHORTEST KW_PATH KW_NOLOOP
 %token KW_IS KW_NULL KW_DEFAULT
 %token KW_SNAPSHOT KW_SNAPSHOTS KW_LOOKUP
@@ -301,6 +302,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <host_item> host_item
 %type <zone_item> zone_item
 %type <zone_item_list> zone_item_list
+%type <path_list> path_list
 %type <integer_list> integer_list
 %type <in_bound_clause> in_bound_clause
 %type <out_bound_clause> out_bound_clause
@@ -390,7 +392,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <sentence> yield_sentence use_sentence
 
 %type <sentence> grant_sentence revoke_sentence
-%type <sentence> set_config_sentence get_config_sentence balance_sentence
+%type <sentence> set_config_sentence get_config_sentence balance_sentence balance_disk_sentence
 %type <sentence> sentence
 %type <seq_sentences> seq_sentences
 %type <explain_sentence> explain_sentence
@@ -553,6 +555,8 @@ unreserved_keyword
     | KW_MERGE              { $$ = new std::string("merge"); }
     | KW_DIVIDE             { $$ = new std::string("divide"); }
     | KW_RENAME             { $$ = new std::string("rename"); }
+    | KW_DISK               { $$ = new std::string("disk"); }
+    | KW_ATTACH             { $$ = new std::string("attach"); }
     ;
 
 expression
@@ -3733,6 +3737,20 @@ host_item
         $$->port = $3;
     }
 
+path_list
+    : STRING {
+        $$ = new PathList();
+        $$->addPath($1);
+    }
+    | path_list COMMA STRING {
+        $$ = $1;
+        $$->addPath($3);
+    }
+    | path_list COMMA {
+        $$ = $1;
+    }
+    ;
+
 port : INTEGER {
         if ($1 > std::numeric_limits<uint16_t>::max()) {
             throw nebula::GraphParser::syntax_error(@1, "Out of range:");
@@ -3752,6 +3770,15 @@ integer_list
     }
     | integer_list COMMA {
         $$ = $1;
+    }
+    ;
+
+balance_disk_sentence
+    : KW_BALANCE KW_DISK KW_ATTACH host_item path_list {
+        $$ = new BalanceDiskSentence(BalanceDiskSentence::SubType::kDiskAttach, $4, $5);
+    }
+    | KW_BALANCE KW_DISK KW_REMOVE host_item path_list {
+        $$ = new BalanceDiskSentence(BalanceDiskSentence::SubType::kDiskRemove, $4, $5);
     }
     ;
 
@@ -3905,6 +3932,7 @@ maintain_sentence
     | get_config_sentence { $$ = $1; }
     | set_config_sentence { $$ = $1; }
     | balance_sentence { $$ = $1; }
+    | balance_disk_sentence { $$ = $1; }
     | add_listener_sentence { $$ = $1; }
     | remove_listener_sentence { $$ = $1; }
     | list_listener_sentence { $$ = $1; }

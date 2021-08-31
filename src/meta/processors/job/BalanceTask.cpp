@@ -95,7 +95,7 @@ void BalanceTask::invoke() {
     case BalanceTaskStatus::ADD_PART_ON_DST: {
       LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Open the part as learner on dst.";
       SAVE_STATE();
-      client_->addPart(spaceId_, partId_, dst_, dstPath_, true).thenValue([this](auto&& resp) {
+      client_->addPart(spaceId_, partId_, dst_, true, dstPath_).thenValue([this](auto&& resp) {
         if (!resp.ok()) {
           LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Open part failed, status " << resp;
           ret_ = BalanceTaskResult::FAILED;
@@ -203,6 +203,7 @@ void BalanceTask::invoke() {
         LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Don't remove part on src " << src_;
         status_ = BalanceTaskStatus::CHECK;
       }
+      break;
     }
     // fallthrough
     case BalanceTaskStatus::CHECK: {

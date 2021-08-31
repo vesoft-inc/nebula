@@ -74,9 +74,9 @@ class KVStore {
   virtual ErrorOr<nebula::cpp2::ErrorCode, HostAddr> partLeader(GraphSpaceID spaceId,
                                                                 PartitionID partID) = 0;
 
-  virtual PartManager* partManager() const {
-    return nullptr;
-  }
+  virtual ErrorOr<nebula::cpp2::ErrorCode, PartDiskMap> partsDist(GraphSpaceID spaceId) = 0;
+
+  virtual PartManager* partManager() const { return nullptr; }
 
   /**
    * @brief Get the Snapshot object

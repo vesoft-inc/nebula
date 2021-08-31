@@ -111,9 +111,9 @@ class NebulaStore : public KVStore, public Handler {
   ErrorOr<nebula::cpp2::ErrorCode, HostAddr> partLeader(GraphSpaceID spaceId,
                                                         PartitionID partId) override;
 
-  PartManager* partManager() const override {
-    return options_.partMan_.get();
-  }
+  ErrorOr<nebula::cpp2::ErrorCode, PartDiskMap> partsDist(GraphSpaceID spaceId) override;
+
+  PartManager* partManager() const override { return options_.partMan_.get(); }
 
   bool isListener() const {
     return !options_.listenerPath_.empty();
@@ -334,7 +334,7 @@ class NebulaStore : public KVStore, public Handler {
   }
 
  private:
-  void loadPartFromDataPath();
+  bool loadPartFromDataPath();
 
   void loadPartFromPartManager();
 
