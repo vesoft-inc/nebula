@@ -45,11 +45,7 @@ class CreateSpaceAsValidator final : public Validator {
 
   Status toPlan() override;
 
-  //   bool checkTSIndex(const std::vector<meta::cpp2::FTClient>& clients, const std::string&
-  //   index);
-
  private:
-  //   meta::cpp2::SpaceDesc spaceDesc_;
   std::string oldSpaceName_;
   std::string newSpaceName_;
   bool ifNotExist_;

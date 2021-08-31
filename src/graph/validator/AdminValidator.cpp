@@ -162,7 +162,6 @@ Status CreateSpaceValidator::toPlan() {
 
 Status CreateSpaceAsValidator::validateImpl() {
   auto sentence = static_cast<CreateSpaceAsSentence *>(sentence_);
-  // auto sentence = static_cast<CreateSpaceSentence *>(sentence_);
   oldSpaceName_ = sentence->getOldSpaceName();
   newSpaceName_ = sentence->getNewSpaceName();
   ifNotExist_ = sentence->isIfNotExist();
