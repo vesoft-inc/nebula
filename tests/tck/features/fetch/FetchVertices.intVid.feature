@@ -340,14 +340,14 @@ Feature: Fetch Int Vid Vertices
       """
       FETCH PROP ON * hash('Boris Diaw') YIELD id(vertex)
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
+    Then the result should be, in any order, and the columns 0, 1 should be hashed:
       | VertexID     | id(VERTEX)   |
       | "Boris Diaw" | "Boris Diaw" |
     When executing query:
       """
       FETCH PROP ON * hash('Boris Diaw') YIELD id(vertex), player.age
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
+    Then the result should be, in any order, and the columns 0, 1 should be hashed:
       | VertexID     | id(VERTEX)   | player.age |
       | "Boris Diaw" | "Boris Diaw" | 36         |
     When executing query:
@@ -384,6 +384,6 @@ Feature: Fetch Int Vid Vertices
       """
       FETCH PROP ON * hash('NON EXIST VERTEX ID'), hash('Boris Diaw') yield player.name, id(vertex)
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
+    Then the result should be, in any order, and the columns 0, 2 should be hashed:
       | VertexID     | player.name  | id(VERTEX)   |
       | "Boris Diaw" | "Boris Diaw" | "Boris Diaw" |

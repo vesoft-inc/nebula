@@ -133,7 +133,6 @@ struct FetchVerticesContext final : public AstContext {
   bool distinct{false};
   YieldColumns* yieldExpr{nullptr};
   ExpressionProps exprProps;
-  std::vector<std::string> gvColNames;
 
   // store the result of the previous sentence
   std::string inputVarName;

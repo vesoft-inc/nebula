@@ -23,7 +23,6 @@ class FetchVerticesValidatorTest : public ValidatorTestBase {
 };
 
 TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
-  // auto src = VariablePropertyExpression::make(pool_.get(), "_VARNAME_", "VertexID");
   auto src = ColumnExpression::make(pool_.get(), 0);
   {
     auto qctx = getQCtx("FETCH PROP ON person \"1\"");

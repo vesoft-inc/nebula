@@ -38,9 +38,9 @@ Feature: Orderby Sentence
       | name | start | team |
     When executing query:
       """
-      GO FROM "Marco Belinelli" OVER serve YIELD $^.player.name as name, serve.start_year as start, $$.team.name as team
-      | YIELD $-.name as name WHERE $-.start > 20000
-      | ORDER BY $-.name
+      GO FROM "Marco Belinelli" OVER serve YIELD $^.player.name as name, serve.start_year as start, $$.team.name as team |
+      YIELD $-.name as name WHERE $-.start > 20000 |
+      ORDER BY $-.name
       """
     Then the result should be, in order, with relax comparison:
       | name |
@@ -194,7 +194,7 @@ Feature: Orderby Sentence
       $var = GO FROM "Tony Parker" OVER like YIELD like._dst AS dst; ORDER BY $var.dst DESC | FETCH PROP ON * $-.dst
       """
     Then the result should be, in order, with relax comparison:
-      | vertices_                                                                                                   |
+      | VERTEX                                                                                                      |
       | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   |
       | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
       | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})                                           |

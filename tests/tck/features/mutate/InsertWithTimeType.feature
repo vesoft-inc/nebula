@@ -142,7 +142,7 @@ Feature: Insert with time-dependent types
       FETCH PROP ON tag_date "test";
       """
     Then the result should be, in any order, with relax comparison:
-      | vertices_ |
+      | VERTEX |
     When executing query:
       """
       FETCH PROP ON edge_date "test_src"->"test_dst";

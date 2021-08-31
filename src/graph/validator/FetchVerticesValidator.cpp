@@ -105,8 +105,10 @@ Status FetchVerticesValidator::validateYield(YieldClause *yield) {
     auto typeStatus = deduceExprType(colExpr);
     NG_RETURN_IF_ERROR(typeStatus);
     outputs_.emplace_back(col->name(), typeStatus.value());
-    col->setAlias(col->name());
-    col->setExpr(rewriteIDVertex2Vid(colExpr));
+    if (colExpr->kind() == Expression::Kind::kFunctionCall) {
+      col->setAlias(col->name());
+      col->setExpr(rewriteIDVertex2Vid(colExpr));
+    }
     newCols->addColumn(col->clone().release());
 
     NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps));

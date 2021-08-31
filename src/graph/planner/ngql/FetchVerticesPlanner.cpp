@@ -60,7 +60,6 @@ StatusOr<SubPlan> FetchVerticesPlanner::transform(AstContext* astCtx) {
                                         {},
                                         fetchCtx_->distinct);
   getVertices->setInputVar(vidsVar);
-  // getVertices->setColNames(fetchCtx_->gvColNames);
 
   subPlan.root = Project::make(qctx, getVertices, fetchCtx_->yieldExpr);
   if (fetchCtx_->distinct) {
