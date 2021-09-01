@@ -22,6 +22,8 @@
 namespace nebula {
 namespace storage {
 
+int gJobId = 0;
+
 class RebuildIndexTest : public ::testing::Test {
  protected:
   static void SetUpTestCase() {
@@ -78,7 +80,7 @@ TEST_F(RebuildIndexTest, RebuildTagIndexCheckALLData) {
 
   cpp2::AddAdminTaskRequest request;
   request.set_cmd(meta::cpp2::AdminCmd::REBUILD_TAG_INDEX);
-  request.set_job_id(3);
+  request.set_job_id(++gJobId);
   request.set_task_id(13);
   request.set_para(std::move(parameter));
 
@@ -165,7 +167,7 @@ TEST_F(RebuildIndexTest, RebuildEdgeIndexCheckALLData) {
 
   cpp2::AddAdminTaskRequest request;
   request.set_cmd(meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX);
-  request.set_job_id(6);
+  request.set_job_id(++gJobId);
   request.set_task_id(16);
   request.set_para(std::move(parameter));
 
@@ -262,7 +264,7 @@ TEST_F(RebuildIndexTest, RebuildTagIndexWithDelete) {
 
   cpp2::AddAdminTaskRequest request;
   request.set_cmd(meta::cpp2::AdminCmd::REBUILD_TAG_INDEX);
-  request.set_job_id(1);
+  request.set_job_id(++gJobId);
   request.set_task_id(11);
   request.set_para(std::move(parameter));
 
@@ -323,7 +325,7 @@ TEST_F(RebuildIndexTest, RebuildTagIndexWithAppend) {
 
   cpp2::AddAdminTaskRequest request;
   request.set_cmd(meta::cpp2::AdminCmd::REBUILD_TAG_INDEX);
-  request.set_job_id(2);
+  request.set_job_id(++gJobId);
   request.set_task_id(12);
   request.set_para(std::move(parameter));
 
@@ -367,7 +369,7 @@ TEST_F(RebuildIndexTest, RebuildTagIndex) {
 
   cpp2::AddAdminTaskRequest request;
   request.set_cmd(meta::cpp2::AdminCmd::REBUILD_TAG_INDEX);
-  request.set_job_id(3);
+  request.set_job_id(++gJobId);
   request.set_task_id(13);
   parameter.set_task_specfic_paras({"4", "5"});
   request.set_para(std::move(parameter));
@@ -423,7 +425,7 @@ TEST_F(RebuildIndexTest, RebuildEdgeIndexWithDelete) {
 
   cpp2::AddAdminTaskRequest request;
   request.set_cmd(meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX);
-  request.set_job_id(4);
+  request.set_job_id(++gJobId);
   request.set_task_id(14);
   request.set_para(std::move(parameter));
 
@@ -485,7 +487,7 @@ TEST_F(RebuildIndexTest, RebuildEdgeIndexWithAppend) {
 
   cpp2::AddAdminTaskRequest request;
   request.set_cmd(meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX);
-  request.set_job_id(5);
+  request.set_job_id(++gJobId);
   request.set_task_id(15);
   request.set_para(std::move(parameter));
 
@@ -529,7 +531,7 @@ TEST_F(RebuildIndexTest, RebuildEdgeIndex) {
 
   cpp2::AddAdminTaskRequest request;
   request.set_cmd(meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX);
-  request.set_job_id(6);
+  request.set_job_id(++gJobId);
   request.set_task_id(16);
   request.set_para(std::move(parameter));
 
