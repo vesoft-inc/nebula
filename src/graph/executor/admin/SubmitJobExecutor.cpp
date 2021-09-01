@@ -67,12 +67,16 @@ folly::Future<Status> SubmitJobExecutor::execute() {
             }
             auto &jobDesc = *resp.value().job_desc_ref();
             // job desc
+            auto stopTime = jobDesc.front().get_stop_time() > 0
+                                ? Value(time::TimeConversion::unixSecondsToDateTime(
+                                      jobDesc.front().get_stop_time()))
+                                : Value::kEmpty;
             v.emplace_back(nebula::Row({
                 jobDesc.front().get_id(),
                 apache::thrift::util::enumNameSafe(jobDesc.front().get_cmd()),
                 apache::thrift::util::enumNameSafe(jobDesc.front().get_status()),
                 time::TimeConversion::unixSecondsToDateTime(jobDesc.front().get_start_time()),
-                time::TimeConversion::unixSecondsToDateTime(jobDesc.front().get_stop_time()),
+                std::move(stopTime),
             }));
             // tasks desc
             auto &tasksDesc = *resp.value().get_task_desc();
