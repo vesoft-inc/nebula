@@ -123,7 +123,7 @@ jobs:
       - name: CTest
         env:
           ASAN_OPTIONS: fast_unwind_on_malloc=1
-        run: ctest -j $(($(nproc)/2+1)) --timeout 400 --output-on-failure
+        run: ctest -j $(($(nproc)/2+1)) --timeout 600 --output-on-failure
         working-directory: build/
         timeout-minutes: 20
       - name: Setup cluster
