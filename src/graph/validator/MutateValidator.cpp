@@ -16,7 +16,7 @@ namespace graph {
 
 Status InsertVerticesValidator::validateImpl() {
   spaceId_ = vctx_->whichSpace().id;
-  NG_RETURN_IF_ERROR(check());
+  NG_RETURN_IF_ERROR(validateTags());
   NG_RETURN_IF_ERROR(prepareVertices());
   return Status::OK();
 }
@@ -29,7 +29,7 @@ Status InsertVerticesValidator::toPlan() {
   return Status::OK();
 }
 
-Status InsertVerticesValidator::check() {
+Status InsertVerticesValidator::validateTags() {
   auto sentence = static_cast<InsertVerticesSentence *>(sentence_);
   ifNotExists_ = sentence->isIfNotExists();
   rows_ = sentence->rows();

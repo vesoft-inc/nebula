@@ -24,7 +24,7 @@ class InsertVerticesValidator final : public Validator {
 
   Status toPlan() override;
 
-  Status check();
+  Status validateTags();
 
   Status prepareVertices();
 
