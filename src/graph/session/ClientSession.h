@@ -82,8 +82,6 @@ class ClientSession final {
     return false;
   }
 
-  bool isRoot() const { return user() == "root"; }
-
   void setRole(GraphSpaceID space, meta::cpp2::RoleType role) {
     folly::RWSpinLock::WriteHolder wHolder(rwSpinLock_);
     roles_.emplace(space, role);
