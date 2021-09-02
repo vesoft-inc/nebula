@@ -1,4 +1,7 @@
-@job
+# Copyright (c) 2021 vesoft inc. All rights reserved.
+#
+# This source code is licensed under Apache 2.0 License,
+# attached with Common Clause Condition 1.0, found in the LICENSES directory.
 Feature: Submit job space requirements
 
   Scenario: submit job require space
@@ -85,16 +88,14 @@ Feature: Submit job space requirements
       SHOW JOB {};
       """
     Then the result should be, in order:
-      | Job Id(TaskId) | Command(Dest) | Status     | Start Time | Stop Time |
-      | /\d+/          | "STATS"       | /\^"FINISHED"/ | /\w+/      | /\w+/     |
-      | /\d+/          | /\w+/         | /\w+/      | /\w+/      | /\w+/     |
+      | Job Id(TaskId) | Command(Dest) | Status         | Start Time | Stop Time |
+      | /\d+/          | "STATS"       | "FINISHED"     | /\w+/      | /\w+/     |
+      | /\d+/          | /\w+/         | "FINISHED"     | /\w+/      | /\w+/     |
     When executing query, fill replace holders with element index of 0 in job_id:
       """
       STOP JOB {};
       """
-    Then the result should be, in order:
-      | Result        |
-      | "Job stopped" |
+    Then an ExecutionError should be raised at runtime: Save job failure!
 
 # This is skipped becuase it is hard to simulate the situation
 # When executing query:
