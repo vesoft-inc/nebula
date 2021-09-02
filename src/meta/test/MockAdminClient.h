@@ -46,7 +46,7 @@ class MockAdminClient : public AdminClient {
                                      const std::vector<std::string>&,
                                      std::vector<PartitionID>,
                                      int,
-                                     cpp2::StatisItem*));
+                                     cpp2::StatsItem*));
   MOCK_METHOD3(stopTask, folly::Future<Status>(const std::vector<HostAddr>&, int32_t, int32_t));
 };
 

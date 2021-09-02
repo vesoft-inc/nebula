@@ -15,6 +15,7 @@
 #include "kvstore/LogEncoder.h"
 #include "kvstore/NebulaStore.h"
 #include "kvstore/PartManager.h"
+#include "kvstore/wal/AtomicLogBuffer.h"
 #include "meta/ActiveHostsMan.h"
 
 DECLARE_uint32(raft_heartbeat_interval_secs);
@@ -23,6 +24,8 @@ DECLARE_int64(wal_file_size);
 DECLARE_int32(wal_buffer_size);
 DECLARE_int32(listener_pursue_leader_threshold);
 DECLARE_int32(clean_wal_interval_secs);
+DECLARE_uint32(snapshot_part_rate_limit);
+DECLARE_uint32(snapshot_batch_size);
 
 using nebula::meta::ListenerHosts;
 using nebula::meta::PartHosts;
@@ -54,8 +57,6 @@ class DummyListener : public Listener {
 
   std::vector<KV> data() { return data_; }
 
-  void clearData() { data_.clear(); }
-
   std::pair<int64_t, int64_t> commitSnapshot(const std::vector<std::string>& data,
                                              LogID committedLogId,
                                              TermID committedLogTerm,
@@ -67,12 +68,15 @@ class DummyListener : public Listener {
     }
     committedSnapshot_.first += result.first;
     committedSnapshot_.second += result.second;
+    snapshotBatchCount_++;
     return result;
   }
 
   std::pair<int64_t, int64_t> committedSnapshot() { return committedSnapshot_; }
 
   std::pair<LogID, TermID> committedId() { return lastCommittedLogId(); }
+
+  int32_t snapshotBatchCount() { return snapshotBatchCount_; }
 
  protected:
   void init() override {}
@@ -92,9 +96,17 @@ class DummyListener : public Listener {
 
   LogID lastApplyLogId() override { return lastApplyLogId_; }
 
+  void cleanup() override {
+    data_.clear();
+    leaderCommitId_ = 0;
+    lastApplyLogId_ = 0;
+    snapshotBatchCount_ = 0;
+  }
+
  private:
   std::vector<KV> data_;
   std::pair<int64_t, int64_t> committedSnapshot_{0, 0};
+  int32_t snapshotBatchCount_{0};
 };
 
 class ListenerBasicTest : public ::testing::TestWithParam<std::tuple<int32_t, int32_t, int32_t>> {
@@ -286,11 +298,20 @@ class ListenerAdvanceTest : public ListenerBasicTest {
   void SetUp() override {
     FLAGS_wal_ttl = 3;
     FLAGS_wal_file_size = 128;
-    FLAGS_wal_buffer_size = 1;
+    FLAGS_wal_buffer_size = 1024;
     FLAGS_listener_pursue_leader_threshold = 0;
     FLAGS_clean_wal_interval_secs = 3;
     FLAGS_raft_heartbeat_interval_secs = 5;
     ListenerBasicTest::SetUp();
+  }
+};
+
+class ListenerSnapshotTest : public ListenerAdvanceTest {
+ public:
+  void SetUp() override {
+    FLAGS_snapshot_part_rate_limit = 40 * 1024;
+    FLAGS_snapshot_batch_size = 10 * 1024;
+    ListenerAdvanceTest::SetUp();
   }
 };
 
@@ -463,7 +484,6 @@ TEST_P(ListenerBasicTest, ListenerResetByWalTest) {
   }
 
   for (int32_t partId = 1; partId <= partCount_; partId++) {
-    dummys_[partId]->clearData();
     dummys_[partId]->resetListener();
     CHECK_EQ(0, dummys_[partId]->data().size());
     CHECK_EQ(0, dummys_[partId]->getApplyId());
@@ -488,32 +508,35 @@ TEST_P(ListenerBasicTest, ListenerResetByWalTest) {
 
 TEST_P(ListenerAdvanceTest, ListenerResetBySnapshotTest) {
   for (int32_t partId = 1; partId <= partCount_; partId++) {
-    std::vector<KV> data;
-    for (int32_t i = 0; i < 1000000; i++) {
-      auto vKey = NebulaKeyUtils::vertexKey(8, partId, folly::to<std::string>(i), 5);
-      data.emplace_back(std::move(vKey), folly::stringPrintf("val_%d_%d", partId, i));
+    for (int32_t i = 0; i < 10; i++) {
+      std::vector<KV> data;
+      for (int32_t j = 0; j < 1000; j++) {
+        auto vKey = NebulaKeyUtils::vertexKey(8, partId, folly::to<std::string>(i * 1000 + j), 5);
+        data.emplace_back(std::move(vKey), folly::stringPrintf("val_%d_%d", partId, i * 1000 + j));
+      }
+      auto leader = findLeader(partId);
+      auto index = findStoreIndex(leader);
+      folly::Baton<true, std::atomic> baton;
+      stores_[index]->asyncMultiPut(
+          spaceId_, partId, std::move(data), [&baton](cpp2::ErrorCode code) {
+            EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+            baton.post();
+          });
+      baton.wait();
     }
-    auto leader = findLeader(partId);
-    auto index = findStoreIndex(leader);
-    folly::Baton<true, std::atomic> baton;
-    stores_[index]->asyncMultiPut(
-        spaceId_, partId, std::move(data), [&baton](cpp2::ErrorCode code) {
-          EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
-          baton.post();
-        });
-    baton.wait();
   }
 
   // wait listener commit
-  sleep(FLAGS_raft_heartbeat_interval_secs + 1);
+  sleep(2 * FLAGS_raft_heartbeat_interval_secs);
 
   for (int32_t partId = 1; partId <= partCount_; partId++) {
     auto dummy = dummys_[partId];
     const auto& data = dummy->data();
-    CHECK_EQ(1000000, data.size());
+    CHECK_EQ(10000, data.size());
   }
 
-  sleep(FLAGS_clean_wal_interval_secs + 1);
+  // sleep enough time, wait ttl is expired
+  sleep(FLAGS_clean_wal_interval_secs + FLAGS_wal_ttl + 1);
 
   for (int32_t partId = 1; partId <= partCount_; partId++) {
     auto leader = findLeader(partId);
@@ -521,10 +544,11 @@ TEST_P(ListenerAdvanceTest, ListenerResetBySnapshotTest) {
     auto res = stores_[index]->part(spaceId_, partId);
     CHECK(ok(res));
     auto part = value(std::move(res));
-    part->wal()->reset();
+    // leader has trigger cleanWAL at this point, so firstLogId in wal will > 1
+    CHECK_GT(part->wal()->firstLogId(), 1);
+    // clean the wal buffer to make sure snapshot will be pulled
+    part->wal()->buffer()->reset();
   }
-
-  sleep(FLAGS_clean_wal_interval_secs);
 
   for (int32_t partId = 1; partId <= partCount_; partId++) {
     dummys_[partId]->resetListener();
@@ -534,21 +558,104 @@ TEST_P(ListenerAdvanceTest, ListenerResetBySnapshotTest) {
     CHECK_EQ(0, termAndId.second);
   }
 
-  sleep(FLAGS_clean_wal_interval_secs + 1);
+  sleep(FLAGS_raft_heartbeat_interval_secs + 1);
 
   std::vector<bool> partResult;
   for (int32_t partId = 1; partId <= partCount_; partId++) {
     auto retry = 0;
     while (retry++ < 6) {
       auto result = dummys_[partId]->committedSnapshot();
-      if (result.first >= 1000000) {
+      if (result.first >= 10000) {
         partResult.emplace_back(true);
+        ASSERT_EQ(10000, dummys_[partId]->data().size());
         break;
       }
+      usleep(1000);
     }
     CHECK_LT(retry, 6);
   }
   CHECK_EQ(partResult.size(), partCount_);
+}
+
+TEST_P(ListenerSnapshotTest, SnapshotRateLimitTest) {
+  for (int32_t partId = 1; partId <= partCount_; partId++) {
+    // Write 10000 kvs in a part, key size is sizeof(partId) + vId + tagId = 4 + 8 + 4 = 16,
+    // value size is 24, so total size of a kv is 40. The snapshot size of a parition will be around
+    // 400Kb, and the rate limit is set to 40Kb, so snapshot will be sent at least 10 seconds.
+    for (int32_t i = 0; i < 10; i++) {
+      std::vector<KV> data;
+      for (int32_t j = 0; j < 1000; j++) {
+        auto vKey = NebulaKeyUtils::vertexKey(8, partId, folly::to<std::string>(i * 1000 + j), 5);
+        data.emplace_back(std::move(vKey), std::string(24, 'X'));
+      }
+      auto leader = findLeader(partId);
+      auto index = findStoreIndex(leader);
+      folly::Baton<true, std::atomic> baton;
+      stores_[index]->asyncMultiPut(
+          spaceId_, partId, std::move(data), [&baton](cpp2::ErrorCode code) {
+            EXPECT_EQ(cpp2::ErrorCode::SUCCEEDED, code);
+            baton.post();
+          });
+      baton.wait();
+    }
+  }
+
+  // wait listener commit
+  sleep(2 * FLAGS_raft_heartbeat_interval_secs);
+
+  for (int32_t partId = 1; partId <= partCount_; partId++) {
+    auto dummy = dummys_[partId];
+    const auto& data = dummy->data();
+    CHECK_EQ(10000, data.size());
+  }
+
+  // sleep enough time, wait ttl is expired
+  sleep(FLAGS_clean_wal_interval_secs + FLAGS_wal_ttl + 1);
+
+  for (int32_t partId = 1; partId <= partCount_; partId++) {
+    auto leader = findLeader(partId);
+    auto index = findStoreIndex(leader);
+    auto res = stores_[index]->part(spaceId_, partId);
+    CHECK(ok(res));
+    auto part = value(std::move(res));
+    // leader has trigger cleanWAL at this point, so firstLogId in wal will > 1
+    CHECK_GT(part->wal()->firstLogId(), 1);
+    // clean the wal buffer to make sure snapshot will be pulled
+    part->wal()->buffer()->reset();
+  }
+
+  for (int32_t partId = 1; partId <= partCount_; partId++) {
+    dummys_[partId]->resetListener();
+    CHECK_EQ(0, dummys_[partId]->getApplyId());
+    auto termAndId = dummys_[partId]->committedId();
+    CHECK_EQ(0, termAndId.first);
+    CHECK_EQ(0, termAndId.second);
+  }
+
+  // listener will try to pull snapshot for now. Since we have limit the snapshot send rate to 40Kb
+  // in 1 second and batch size will be 10Kb, it would take at least 10 second to finish. Besides,
+  // there be at least 40 batchs
+  auto startTime = time::WallClock::fastNowInSec();
+
+  while (true) {
+    std::vector<bool> partResult;
+    for (int32_t partId = 1; partId <= partCount_; partId++) {
+      auto result = dummys_[partId]->committedSnapshot();
+      if (result.first >= 10000) {
+        partResult.emplace_back(true);
+        ASSERT_EQ(10000, dummys_[partId]->data().size());
+        ASSERT_GE(time::WallClock::fastNowInSec() - startTime, 10);
+        ASSERT_GE(dummys_[partId]->snapshotBatchCount(), 40);
+      }
+    }
+    if (static_cast<int32_t>(partResult.size()) == partCount_) {
+      break;
+    }
+    if (time::WallClock::fastNowInSec() - startTime > 30) {
+      ASSERT("It takes to long to pull snapshot");
+    }
+    sleep(1);
+  }
 }
 
 INSTANTIATE_TEST_CASE_P(PartCount_Replicas_ListenerCount,
@@ -557,6 +664,10 @@ INSTANTIATE_TEST_CASE_P(PartCount_Replicas_ListenerCount,
 
 INSTANTIATE_TEST_CASE_P(PartCount_Replicas_ListenerCount,
                         ListenerAdvanceTest,
+                        ::testing::Values(std::make_tuple(1, 1, 1)));
+
+INSTANTIATE_TEST_CASE_P(PartCount_Replicas_ListenerCount,
+                        ListenerSnapshotTest,
                         ::testing::Values(std::make_tuple(1, 1, 1)));
 
 }  // namespace kvstore

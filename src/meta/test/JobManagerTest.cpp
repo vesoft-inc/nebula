@@ -106,7 +106,7 @@ TEST_F(JobManagerTest, AddRebuildEdgeIndexJob) {
   ASSERT_TRUE(result);
 }
 
-TEST_F(JobManagerTest, StatisJob) {
+TEST_F(JobManagerTest, StatsJob) {
   // For preventting job schedule in JobManager
   jobMgr->status_ = JobManager::JbmgrStatus::STOPPED;
 

@@ -35,7 +35,7 @@ TEST(NebulaCodec, encode) {
   schemaWriter.appendCol("s_field", cpp2::SupportedType::STRING);
 
   auto schema = std::make_shared<ResultSchemaProvider>(schemaWriter.moveSchema());
-  dataman::NebulaCodecImpl codec;
+  NebulaCodecImpl codec;
   std::string encoded = codec.encode(v, schema);
 
   auto reader = RowReaderWrapper::getRowReader(encoded, schema);
@@ -131,7 +131,7 @@ TEST(NebulaCodec, decode) {
   schemaWriter.appendCol("s_field", cpp2::SupportedType::STRING);
   auto schema = std::make_shared<ResultSchemaProvider>(schemaWriter.moveSchema());
 
-  dataman::NebulaCodecImpl codec;
+  NebulaCodecImpl codec;
   auto result = codec.decode(encoded, schema);
 
   EXPECT_TRUE(boost::any_cast<bool>(result.value()["b_field"]));

@@ -23,6 +23,7 @@
 #include "interface/gen-cpp2/meta_types.h"
 
 DECLARE_int32(meta_client_retry_times);
+DECLARE_int32(heartbeat_interval_secs);
 
 namespace nebula {
 namespace meta {
@@ -184,7 +185,7 @@ class MetaClient {
 
   bool isMetadReady();
 
-  bool waitForMetadReady(int count = -1, int retryIntervalSecs = 2);
+  bool waitForMetadReady(int count = -1, int retryIntervalSecs = FLAGS_heartbeat_interval_secs);
 
   void stop();
 
@@ -584,13 +585,13 @@ class MetaClient {
 
   Status refreshCache();
 
-  folly::Future<StatusOr<cpp2::StatisItem>> getStatis(GraphSpaceID spaceId);
+  folly::Future<StatusOr<cpp2::StatsItem>> getStats(GraphSpaceID spaceId);
 
   folly::Future<StatusOr<nebula::cpp2::ErrorCode>> reportTaskFinish(
       int32_t jobId,
       int32_t taskId,
       nebula::cpp2::ErrorCode taskErrCode,
-      cpp2::StatisItem* statisticItem);
+      cpp2::StatsItem* statisticItem);
 
   folly::Future<StatusOr<bool>> download(const std::string& hdfsHost,
                                          int32_t hdfsPort,
@@ -598,6 +599,10 @@ class MetaClient {
                                          GraphSpaceID spaceId);
 
   folly::Future<StatusOr<bool>> ingest(GraphSpaceID spaceId);
+
+  HostAddr getMetaLeader() { return leader_; }
+
+  int64_t HeartbeatTime() { return heartbeatTime_; }
 
  protected:
   // Return true if load succeeded.
@@ -690,6 +695,8 @@ class MetaClient {
   folly::RWSpinLock leaderIdsLock_;
   int64_t localLastUpdateTime_{0};
   int64_t metadLastUpdateTime_{0};
+  int64_t metaServerVersion_{-1};
+  static constexpr int64_t EXPECT_META_VERSION = 2;
 
   // leadersLock_ is used to protect leadersInfo
   folly::RWSpinLock leadersLock_;
@@ -738,6 +745,7 @@ class MetaClient {
   bool skipConfig_ = false;
   MetaClientOptions options_;
   std::vector<HostAddr> storageHosts_;
+  int64_t heartbeatTime_;
 };
 
 }  // namespace meta

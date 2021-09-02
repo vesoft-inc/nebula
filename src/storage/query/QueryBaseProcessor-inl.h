@@ -4,10 +4,6 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-DECLARE_int32(max_handlers_per_req);
-DECLARE_int32(min_vertices_per_bucket);
-DECLARE_bool(enable_vertex_cache);
-
 namespace nebula {
 namespace storage {
 

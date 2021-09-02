@@ -299,7 +299,7 @@ std::string DeleteVerticesValidator::buildVIds() {
     row.values.emplace_back(vid);
     ds.rows.emplace_back(std::move(row));
   }
-  qctx_->ectx()->setResult(input, ResultBuilder().value(Value(std::move(ds))).finish());
+  qctx_->ectx()->setResult(input, ResultBuilder().value(Value(std::move(ds))).build());
   auto *pool = qctx_->objPool();
   auto *vIds = VariablePropertyExpression::make(pool, input, kVid);
   vidRef_ = vIds;
@@ -436,7 +436,7 @@ std::string DeleteTagsValidator::buildVIds() {
     row.values.emplace_back(vid);
     ds.rows.emplace_back(std::move(row));
   }
-  qctx_->ectx()->setResult(input, ResultBuilder().value(Value(std::move(ds))).finish());
+  qctx_->ectx()->setResult(input, ResultBuilder().value(Value(std::move(ds))).build());
   auto *pool = qctx_->objPool();
   auto *vIds = VariablePropertyExpression::make(pool, input, kVid);
   vidRef_ = vIds;
@@ -499,7 +499,7 @@ Status DeleteEdgesValidator::buildEdgeKeyRef(const std::vector<EdgeKey *> &edgeK
     row.emplace_back(std::move(dstId));
     ds.emplace_back(std::move(row));
   }
-  qctx_->ectx()->setResult(edgeKeyVar_, ResultBuilder().value(Value(std::move(ds))).finish());
+  qctx_->ectx()->setResult(edgeKeyVar_, ResultBuilder().value(Value(std::move(ds))).build());
   auto *pool = qctx_->objPool();
   auto *srcIdExpr = InputPropertyExpression::make(pool, kSrc);
   auto *typeExpr = InputPropertyExpression::make(pool, kType);

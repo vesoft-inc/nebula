@@ -156,6 +156,8 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
       return std::make_unique<UpdateEdgeValidator>(sentence, context);
     case Sentence::Kind::kShowHosts:
       return std::make_unique<ShowHostsValidator>(sentence, context);
+    case Sentence::Kind::kShowMetaLeader:
+      return std::make_unique<ShowMetaLeaderValidator>(sentence, context);
     case Sentence::Kind::kShowParts:
       return std::make_unique<ShowPartsValidator>(sentence, context);
     case Sentence::Kind::kShowCharset:

@@ -164,6 +164,7 @@ Status PermissionCheck::permissionCheck(ClientSession *session,
     case Sentence::Kind::kShowCollation:
     case Sentence::Kind::kShowGroups:
     case Sentence::Kind::kShowZones:
+    case Sentence::Kind::kShowMetaLeader:
     case Sentence::Kind::kShowHosts: {
       /**
        * all roles can be show for above operations.

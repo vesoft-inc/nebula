@@ -26,7 +26,7 @@ folly::Future<Status> IndexScanExecutor::indexScan() {
   auto *lookup = asNode<IndexScan>(node());
   if (lookup->isEmptyResultSet()) {
     DataSet dataSet({"dummy"});
-    return finish(ResultBuilder().value(Value(std::move(dataSet))).finish());
+    return finish(ResultBuilder().value(Value(std::move(dataSet))).build());
   }
 
   const auto &ictxs = lookup->queryContext();
@@ -72,7 +72,7 @@ Status IndexScanExecutor::handleResp(storage::StorageRpcResponse<Resp> &&rpcResp
   }
   VLOG(2) << "Dataset produced by IndexScan: \n" << v << "\n";
   return finish(
-      ResultBuilder().value(std::move(v)).iter(Iterator::Kind::kProp).state(state).finish());
+      ResultBuilder().value(std::move(v)).iter(Iterator::Kind::kProp).state(state).build());
 }
 
 }  // namespace graph

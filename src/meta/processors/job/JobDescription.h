@@ -23,15 +23,15 @@ class JobDescription {
   FRIEND_TEST(JobDescriptionTest, parseVal);
   FRIEND_TEST(JobManagerTest, buildJobDescription);
   FRIEND_TEST(JobManagerTest, addJob);
-  FRIEND_TEST(JobManagerTest, StatisJob);
+  FRIEND_TEST(JobManagerTest, StatsJob);
   FRIEND_TEST(JobManagerTest, loadJobDescription);
   FRIEND_TEST(JobManagerTest, showJobs);
   FRIEND_TEST(JobManagerTest, showJob);
   FRIEND_TEST(JobManagerTest, backupJob);
   FRIEND_TEST(JobManagerTest, recoverJob);
-  FRIEND_TEST(GetStatisTest, StatisJob);
-  FRIEND_TEST(GetStatisTest, MockSingleMachineTest);
-  FRIEND_TEST(GetStatisTest, MockMultiMachineTest);
+  FRIEND_TEST(GetStatsTest, StatsJob);
+  FRIEND_TEST(GetStatsTest, MockSingleMachineTest);
+  FRIEND_TEST(GetStatsTest, MockMultiMachineTest);
 
   using Status = cpp2::JobStatus;
 

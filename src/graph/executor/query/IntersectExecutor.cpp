@@ -36,7 +36,7 @@ folly::Future<Status> IntersectExecutor::execute() {
     DataSet ds;
     ds.colNames = value->getDataSet().colNames;
     builder.value(Value(std::move(ds))).iter(Iterator::Kind::kSequential);
-    return finish(builder.finish());
+    return finish(builder.build());
   }
 
   while (lIter->valid()) {
@@ -49,7 +49,7 @@ folly::Future<Status> IntersectExecutor::execute() {
   }
 
   builder.value(left.valuePtr()).iter(std::move(left).iter());
-  return finish(builder.finish());
+  return finish(builder.build());
 }
 
 }  // namespace graph

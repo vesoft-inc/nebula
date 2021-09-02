@@ -61,7 +61,7 @@ folly::Future<Status> ConjunctPathExecutor::bfsShortestPath() {
     if (!rows.empty()) {
       VLOG(1) << "Meet odd length path.";
       ds.rows = std::move(rows);
-      return finish(ResultBuilder().value(Value(std::move(ds))).finish());
+      return finish(ResultBuilder().value(Value(std::move(ds))).build());
     }
   }
 
@@ -76,7 +76,7 @@ folly::Future<Status> ConjunctPathExecutor::bfsShortestPath() {
       ds.rows = std::move(rows);
     }
   }
-  return finish(ResultBuilder().value(Value(std::move(ds))).finish());
+  return finish(ResultBuilder().value(Value(std::move(ds))).build());
 }
 
 std::vector<Row> ConjunctPathExecutor::findBfsShortestPath(
@@ -213,7 +213,7 @@ folly::Future<Status> ConjunctPathExecutor::floydShortestPath() {
     findPath(latest.get(), forwardCostPathMap, ds);
   }
 
-  return finish(ResultBuilder().value(Value(std::move(ds))).finish());
+  return finish(ResultBuilder().value(Value(std::move(ds))).build());
 }
 
 Status ConjunctPathExecutor::conjunctPath(const List& forwardPaths,
@@ -339,7 +339,7 @@ folly::Future<Status> ConjunctPathExecutor::allPaths() {
     findAllPaths(latest.get(), table, ds);
   }
 
-  return finish(ResultBuilder().value(Value(std::move(ds))).finish());
+  return finish(ResultBuilder().value(Value(std::move(ds))).build());
 }
 
 bool ConjunctPathExecutor::findAllPaths(Iterator* backwardPathsIter,
@@ -369,9 +369,6 @@ bool ConjunctPathExecutor::findAllPaths(Iterator* backwardPathsIter,
         Row row;
         auto forward = i.getPath();
         Path backward = path.getPath();
-        if (forward.src == backward.src) {
-          continue;
-        }
         VLOG(1) << "Forward path:" << forward;
         VLOG(1) << "Backward path:" << backward;
         backward.reverse();
