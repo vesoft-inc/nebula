@@ -9,13 +9,14 @@
 #include "common/time/WallClock.h"
 #include "meta/ActiveHostsMan.h"
 #include "meta/KVBasedClusterIdMan.h"
-
-DEFINE_bool(hosts_whitelist_enabled, false, "Check host whether in whitelist when received hb");
+#include "meta/MetaVersionMan.h"
 
 namespace nebula {
 namespace meta {
 
 HBCounters kHBCounters;
+
+std::atomic<int64_t> HBProcessor::metaVersion_ = -1;
 
 void HBProcessor::onFinished() {
   if (counters_) {
@@ -29,18 +30,6 @@ void HBProcessor::onFinished() {
 void HBProcessor::process(const cpp2::HBReq& req) {
   HostAddr host((*req.host_ref()).host, (*req.host_ref()).port);
   nebula::cpp2::ErrorCode ret;
-  if (FLAGS_hosts_whitelist_enabled) {
-    ret = hostExist(MetaServiceUtils::hostKey(host.host, host.port));
-    if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(INFO) << "Reject unregistered host " << host << "!";
-      if (ret != nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
-        ret = nebula::cpp2::ErrorCode::E_INVALID_HOST;
-      }
-      handleErrorCode(ret);
-      onFinished();
-      return;
-    }
-  }
 
   LOG(INFO) << "Receive heartbeat from " << host
             << ", role = " << apache::thrift::util::enumNameSafe(req.get_role());
@@ -79,6 +68,14 @@ void HBProcessor::process(const cpp2::HBReq& req) {
   } else if (nebula::error(lastUpdateTimeRet) == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
     resp_.set_last_update_time_in_ms(0);
   }
+
+  auto version = metaVersion_.load();
+  if (version == -1) {
+    metaVersion_.store(static_cast<int64_t>(MetaVersionMan::getMetaVersionFromKV(kvstore_)));
+  }
+
+  resp_.set_meta_version(metaVersion_.load());
+
   handleErrorCode(ret);
   onFinished();
 }

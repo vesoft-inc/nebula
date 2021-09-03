@@ -10,6 +10,22 @@ Feature: All Path
   Scenario: [1] ALL Path
     When executing query:
       """
+      FIND ALL PATH FROM "Tim Duncan" TO "Tim Duncan" OVER * UPTO 2 STEPS
+      """
+    Then the result should be, in any order, with relax comparison:
+      | path                                                                        |
+      | <("Tim Duncan")-[:like]->("Tony Parker")-[:like]->("Tim Duncan")>           |
+      | <("Tim Duncan")-[:teammate]->("Tony Parker")-[:like]->("Tim Duncan")>       |
+      | <("Tim Duncan")-[:like]->("Tony Parker")-[:teammate]->("Tim Duncan")>       |
+      | <("Tim Duncan")-[:teammate]->("Tony Parker")-[:teammate]->("Tim Duncan")>   |
+      | <("Tim Duncan")-[:like]->("Manu Ginobili")-[:like]->("Tim Duncan")>         |
+      | <("Tim Duncan")-[:teammate]->("Manu Ginobili")-[:like]->("Tim Duncan")>     |
+      | <("Tim Duncan")-[:like]->("Manu Ginobili")-[:teammate]->("Tim Duncan")>     |
+      | <("Tim Duncan")-[:teammate]->("Manu Ginobili")-[:teammate]->("Tim Duncan")> |
+      | <("Tim Duncan")-[:teammate]->("Danny Green")-[:like]->("Tim Duncan")>       |
+      | <("Tim Duncan")-[:teammate]->("LaMarcus Aldridge")-[:like]->("Tim Duncan")> |
+    When executing query:
+      """
       FIND ALL PATH FROM "Tim Duncan" TO "Tony Parker" OVER like UPTO 3 STEPS
       """
     Then the result should be, in any order, with relax comparison:

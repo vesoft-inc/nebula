@@ -369,9 +369,6 @@ bool ConjunctPathExecutor::findAllPaths(Iterator* backwardPathsIter,
         Row row;
         auto forward = i.getPath();
         Path backward = path.getPath();
-        if (forward.src == backward.src) {
-          continue;
-        }
         VLOG(1) << "Forward path:" << forward;
         VLOG(1) << "Backward path:" << backward;
         backward.reverse();
