@@ -48,6 +48,10 @@ StatusOr<OptRule::TransformResult> CollapseProjectRule::transform(
   // 1. collect all property reference
   std::vector<std::string> allPropRefNames;
   for (auto col : colsAbove) {
+    if (graph::ExpressionUtils::findAny(
+            col->expr(), {Expression::Kind::kVar, Expression::Kind::kVersionedVar}) != nullptr) {
+      return TransformResult::noTransform();
+    }
     std::vector<const Expression*> propRefs = graph::ExpressionUtils::collectAll(
         col->expr(), {Expression::Kind::kVarProperty, Expression::Kind::kInputProperty});
     for (auto* expr : propRefs) {

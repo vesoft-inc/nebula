@@ -38,22 +38,20 @@ Status YieldValidator::validateImpl() {
 
   if (!exprProps_.srcTagProps().empty() || !exprProps_.dstTagProps().empty() ||
       !exprProps_.edgeProps().empty()) {
-    return Status::SemanticError("Only support input and variable in yield sentence.");
+    return Status::SemanticError("Not support vertex/edge property expression in yield sentence.");
   }
 
-  if (!exprProps_.inputProps().empty() && !exprProps_.varProps().empty()) {
+  if (!exprProps_.inputProps().empty() && !userDefinedVarNameList_.empty()) {
     return Status::SemanticError("Not support both input and variable.");
   }
 
-  if (!exprProps_.varProps().empty() && exprProps_.varProps().size() > 1) {
-    return Status::SemanticError("Only one variable allowed to use.");
+  if (userDefinedVarNameList_.size() > 1) {
+    // Now disable yield multiple user defined input for that means implicit dataset join
+    // As the inner variable take care don't make it a dataset
+    return Status::SemanticError("Multiple variables not supported yet.");
   }
 
-  if (!exprProps_.varProps().empty() && !userDefinedVarNameList_.empty()) {
-    // TODO: Support Multiple userDefinedVars
-    if (userDefinedVarNameList_.size() != 1) {
-      return Status::SemanticError("Multiple user defined vars not supported yet.");
-    }
+  if (!userDefinedVarNameList_.empty()) {
     userDefinedVarName_ = *userDefinedVarNameList_.begin();
   }
 
