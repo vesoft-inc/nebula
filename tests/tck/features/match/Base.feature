@@ -525,6 +525,18 @@ Feature: Basic match
     Then a SemanticError should be raised at runtime: Can't output to match sentence.
     When executing query:
       """
+      YIELD ['Tim Duncan'] as id |
+      WITH $-.id as id RETURN *
+      """
+    Then a SemanticError should be raised at runtime: Can't output to match sentence.
+    When executing query:
+      """
+      YIELD ['Tim Duncan'] as id |
+      UNWIND $-.id as id RETURN *
+      """
+    Then a SemanticError should be raised at runtime: Can't output to match sentence.
+    When executing query:
+      """
       $a = YIELD 'Tim Duncan' as id;
       MATCH (v:player{name:"Tim Duncan"})-[e:like]->(v1) RETURN $a.id, v.name
       """
@@ -551,6 +563,18 @@ Feature: Basic match
       """
       $a = YIELD ['Tim Duncan'] as id;
       MATCH (v:player{name:"Tim Duncan"})-[e:like]->(v1) WITH v, $a.id as id RETURN id, v.name
+      """
+    Then a SemanticError should be raised at runtime: Not supported expression `$a.id' in cypher.
+    When executing query:
+      """
+      $a = YIELD ['Tim Duncan'] as id;
+      UNWIND $a.id as id RETURN *;
+      """
+    Then a SemanticError should be raised at runtime: Not supported expression `$a.id' in cypher.
+    When executing query:
+      """
+      $a = YIELD ['Tim Duncan'] as id;
+      WITH $a.id as id RETURN *;
       """
     Then a SemanticError should be raised at runtime: Not supported expression `$a.id' in cypher.
 
