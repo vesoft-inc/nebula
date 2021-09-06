@@ -52,7 +52,7 @@ class MockCluster {
    * Init a meta client connect to current meta server.
    * The meta server should be started before calling this method.
    * */
-  void initMetaClient(meta::MetaClientOptions options = meta::MetaClientOptions());
+  meta::MetaClient* initMetaClient(meta::MetaClientOptions options = meta::MetaClientOptions());
 
   /*
    * Init a storage client connect to graphStorageServer
