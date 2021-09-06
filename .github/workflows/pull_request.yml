@@ -118,7 +118,7 @@ jobs:
       - name: Make
         run: |
           ccache -z
-          cmake --build build/ -j $(nproc)
+          cmake --build build/ -j $(($(nproc)/2+1))
           ccache -s
       - name: CTest
         env:
