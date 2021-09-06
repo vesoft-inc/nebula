@@ -59,7 +59,7 @@ class UpdateEdgeProcessor
   }
 
  private:
-  std::unique_ptr<RunTimeContext> context_;
+  std::unique_ptr<RuntimeContext> context_;
   bool insertable_{false};
 
   cpp2::EdgeKey edgeKey_;

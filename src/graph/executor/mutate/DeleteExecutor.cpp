@@ -75,6 +75,59 @@ folly::Future<Status> DeleteVerticesExecutor::deleteVertices() {
       });
 }
 
+folly::Future<Status> DeleteTagsExecutor::execute() {
+  SCOPED_TIMER(&execTime_);
+  return deleteTags();
+}
+
+folly::Future<Status> DeleteTagsExecutor::deleteTags() {
+  auto* dtNode = asNode<DeleteTags>(node());
+  const auto& spaceInfo = qctx()->rctx()->session()->space();
+  auto vidRef = dtNode->getVidRef();
+  DCHECK(vidRef != nullptr);
+  auto inputVar = dtNode->inputVar();
+  DCHECK(!inputVar.empty());
+  auto& inputResult = ectx_->getResult(inputVar);
+  auto iter = inputResult.iter();
+
+  std::vector<storage::cpp2::DelTags> delTags;
+  delTags.reserve(iter->size());
+
+  QueryExpressionContext ctx(ectx_);
+  for (; iter->valid(); iter->next()) {
+    storage::cpp2::DelTags delTag;
+    DCHECK(!iter->row()->empty());
+    auto val = Expression::eval(vidRef, ctx(iter.get()));
+    if (val.isNull() || val.empty()) {
+      VLOG(3) << "NULL or EMPTY vid";
+      continue;
+    }
+    if (!SchemaUtil::isValidVid(val, *spaceInfo.spaceDesc.vid_type_ref())) {
+      std::stringstream ss;
+      ss << "Wrong vid type `" << val.type() << "', value `" << val.toString() << "'";
+      return Status::Error(ss.str());
+    }
+    delTag.set_id(val);
+    delTag.set_tags(dtNode->tagIds());
+    delTags.emplace_back(std::move(delTag));
+  }
+
+  auto spaceId = spaceInfo.id;
+  time::Duration deleteTagTime;
+  return qctx()
+      ->getStorageClient()
+      ->deleteTags(spaceId, std::move(delTags))
+      .via(runner())
+      .ensure([deleteTagTime]() {
+        VLOG(1) << "Delete vertices time: " << deleteTagTime.elapsedInUSec() << "us";
+      })
+      .thenValue([this](storage::StorageRpcResponse<storage::cpp2::ExecResponse> resp) {
+        SCOPED_TIMER(&execTime_);
+        NG_RETURN_IF_ERROR(handleCompleteness(resp, false));
+        return Status::OK();
+      });
+}
+
 folly::Future<Status> DeleteEdgesExecutor::execute() { return deleteEdges(); }
 
 folly::Future<Status> DeleteEdgesExecutor::deleteEdges() {

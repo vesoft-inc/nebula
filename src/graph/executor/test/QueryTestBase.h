@@ -77,7 +77,7 @@ class QueryTestBase : public testing::Test {
       List datasetList;
       datasetList.values.emplace_back(std::move(dataset));
       auto result =
-          ResultBuilder().value(Value(datasetList)).iter(Iterator::Kind::kGetNeighbors).finish();
+          ResultBuilder().value(Value(datasetList)).iter(Iterator::Kind::kGetNeighbors).build();
       qctx_->symTable()->newVariable("input_neighbor");
       qctx_->ectx()->setResult("input_neighbor", std::move(result));
     }
@@ -91,7 +91,7 @@ class QueryTestBase : public testing::Test {
       dataset.emplace_back(Row({"Ann", "Ann", 18, "School1", 2010, 2014}));
       dataset.emplace_back(Row({"Lily", "Lily", 20, "School2", 2009, 2012}));
       qctx_->symTable()->newVariable("input_sequential");
-      qctx_->ectx()->setResult("input_sequential", ResultBuilder().value(Value(dataset)).finish());
+      qctx_->ectx()->setResult("input_sequential", ResultBuilder().value(Value(dataset)).build());
     }
     // sequential init by two sequentialIters
     {
@@ -101,12 +101,12 @@ class QueryTestBase : public testing::Test {
       lds.emplace_back(Row({"Tom", "Tom", 20, "School2", 2008, 2012}));
       lds.emplace_back(Row({"Kate", "Kate", 19, "School2", 2009, 2013}));
       qctx_->symTable()->newVariable("left_neighbor");
-      qctx_->ectx()->setResult("left_sequential", ResultBuilder().value(Value(lds)).finish());
+      qctx_->ectx()->setResult("left_sequential", ResultBuilder().value(Value(lds)).build());
 
       DataSet rds({"vid", "v_name", "v_age", "v_dst", "e_start_year", "e_end_year"});
       rds.emplace_back(Row({"Ann", "Ann", 18, "School1", 2010, 2014}));
       rds.emplace_back(Row({"Lily", "Lily", 20, "School2", 2009, 2012}));
-      qctx_->ectx()->setResult("right_sequential", ResultBuilder().value(Value(rds)).finish());
+      qctx_->ectx()->setResult("right_sequential", ResultBuilder().value(Value(rds)).build());
 
       auto lIter = qctx_->ectx()->getResult("left_sequential").iter();
       auto rIter = qctx_->ectx()->getResult("right_sequential").iter();
@@ -114,7 +114,7 @@ class QueryTestBase : public testing::Test {
       builder.value(lIter->valuePtr())
           .iter(std::make_unique<SequentialIter>(std::move(lIter), std::move(rIter)));
       qctx_->symTable()->newVariable("union_sequential");
-      qctx_->ectx()->setResult("union_sequential", builder.finish());
+      qctx_->ectx()->setResult("union_sequential", builder.build());
     }
     // empty
     {
@@ -124,7 +124,7 @@ class QueryTestBase : public testing::Test {
                        "_edge:+study:_dst:start_year:end_year",
                        "_expr"});
       qctx_->symTable()->newVariable("empty");
-      qctx_->ectx()->setResult("empty", ResultBuilder().value(Value(dataset)).finish());
+      qctx_->ectx()->setResult("empty", ResultBuilder().value(Value(dataset)).build());
     }
   }
 

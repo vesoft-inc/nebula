@@ -80,7 +80,7 @@ class ResultBuilder final {
  public:
   ResultBuilder() { core_.state = Result::State::kSuccess; }
 
-  Result finish() {
+  Result build() {
     if (!core_.iter) iter(Iterator::Kind::kSequential);
     if (!core_.value && core_.iter) value(core_.iter->valuePtr());
     return Result(std::move(core_));

@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "meta/processors/job/StatisJobExecutor.h"
+#include "meta/processors/job/StatsJobExecutor.h"
 
 #include "common/utils/Utils.h"
 #include "meta/MetaServiceUtils.h"
@@ -14,12 +14,12 @@
 namespace nebula {
 namespace meta {
 
-bool StatisJobExecutor::check() {
+bool StatsJobExecutor::check() {
   // Only one parameter, the current space name
   return paras_.size() == 1;
 }
 
-nebula::cpp2::ErrorCode StatisJobExecutor::save(const std::string& key, const std::string& val) {
+nebula::cpp2::ErrorCode StatsJobExecutor::save(const std::string& key, const std::string& val) {
   std::vector<kvstore::KV> data{std::make_pair(key, val)};
   folly::Baton<true, std::atomic> baton;
   auto rc = nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -32,7 +32,7 @@ nebula::cpp2::ErrorCode StatisJobExecutor::save(const std::string& key, const st
   return rc;
 }
 
-nebula::cpp2::ErrorCode StatisJobExecutor::doRemove(const std::string& key) {
+nebula::cpp2::ErrorCode StatsJobExecutor::doRemove(const std::string& key) {
   folly::Baton<true, std::atomic> baton;
   auto rc = nebula::cpp2::ErrorCode::SUCCEEDED;
   kvstore_->asyncRemove(kDefaultSpaceId, kDefaultPartId, key, [&](nebula::cpp2::ErrorCode code) {
@@ -43,7 +43,7 @@ nebula::cpp2::ErrorCode StatisJobExecutor::doRemove(const std::string& key) {
   return rc;
 }
 
-nebula::cpp2::ErrorCode StatisJobExecutor::prepare() {
+nebula::cpp2::ErrorCode StatsJobExecutor::prepare() {
   auto spaceRet = getSpaceIdFromName(paras_[0]);
   if (!nebula::ok(spaceRet)) {
     LOG(ERROR) << "Can't find the space: " << paras_[0];
@@ -52,17 +52,17 @@ nebula::cpp2::ErrorCode StatisJobExecutor::prepare() {
   space_ = nebula::value(spaceRet);
 
   // Set the status of the statis job to running
-  cpp2::StatisItem statisItem;
-  statisItem.set_status(cpp2::JobStatus::RUNNING);
-  auto statisKey = MetaServiceUtils::statisKey(space_);
-  auto statisVal = MetaServiceUtils::statisVal(statisItem);
-  return save(statisKey, statisVal);
+  cpp2::StatsItem statsItem;
+  statsItem.set_status(cpp2::JobStatus::RUNNING);
+  auto statsKey = MetaServiceUtils::statsKey(space_);
+  auto statsVal = MetaServiceUtils::statsVal(statsItem);
+  return save(statsKey, statsVal);
 }
 
-folly::Future<Status> StatisJobExecutor::executeInternal(HostAddr&& address,
-                                                         std::vector<PartitionID>&& parts) {
-  cpp2::StatisItem item;
-  statisItem_.emplace(address, item);
+folly::Future<Status> StatsJobExecutor::executeInternal(HostAddr&& address,
+                                                        std::vector<PartitionID>&& parts) {
+  cpp2::StatsItem item;
+  statsItem_.emplace(address, item);
   return adminClient_->addTask(cpp2::AdminCmd::STATS,
                                jobId_,
                                taskId_++,
@@ -71,10 +71,10 @@ folly::Future<Status> StatisJobExecutor::executeInternal(HostAddr&& address,
                                {},
                                std::move(parts),
                                concurrency_,
-                               &(statisItem_[address]));
+                               &(statsItem_[address]));
 }
 
-void showStatisItem(const cpp2::StatisItem& item, const std::string& msg) {
+void showStatsItem(const cpp2::StatsItem& item, const std::string& msg) {
   std::stringstream oss;
   oss << msg << ": ";
   oss << "tag_vertices: ";
@@ -90,7 +90,7 @@ void showStatisItem(const cpp2::StatisItem& item, const std::string& msg) {
   LOG(INFO) << oss.str();
 }
 
-void StatisJobExecutor::addStatis(cpp2::StatisItem& lhs, const cpp2::StatisItem& rhs) {
+void StatsJobExecutor::addStats(cpp2::StatsItem& lhs, const cpp2::StatsItem& rhs) {
   for (auto& it : *rhs.tag_vertices_ref()) {
     (*lhs.tag_vertices_ref())[it.first] += it.second;
   }
@@ -113,12 +113,12 @@ void StatisJobExecutor::addStatis(cpp2::StatisItem& lhs, const cpp2::StatisItem&
 /**
  * @brief caller will guarantee there won't be any conflict read / write.
  */
-nebula::cpp2::ErrorCode StatisJobExecutor::saveSpecialTaskStatus(const cpp2::ReportTaskReq& req) {
-  if (!req.statis_ref().has_value()) {
+nebula::cpp2::ErrorCode StatsJobExecutor::saveSpecialTaskStatus(const cpp2::ReportTaskReq& req) {
+  if (!req.stats_ref().has_value()) {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
-  cpp2::StatisItem statisItem;
-  auto statisKey = MetaServiceUtils::statisKey(space_);
+  cpp2::StatsItem statsItem;
+  auto statsKey = MetaServiceUtils::statsKey(space_);
   auto tempKey = toTempKey(req.get_job_id());
   std::string val;
   auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, tempKey, &val);
@@ -127,17 +127,17 @@ nebula::cpp2::ErrorCode StatisJobExecutor::saveSpecialTaskStatus(const cpp2::Rep
     if (ret != nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
       return ret;
     }
-    ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, statisKey, &val);
+    ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, statsKey, &val);
   }
 
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     return ret;
   }
 
-  statisItem = MetaServiceUtils::parseStatisVal(val);
-  addStatis(statisItem, *req.statis_ref());
-  auto statisVal = MetaServiceUtils::statisVal(statisItem);
-  return save(tempKey, statisVal);
+  statsItem = MetaServiceUtils::parseStatsVal(val);
+  addStats(statsItem, *req.stats_ref());
+  auto statsVal = MetaServiceUtils::statsVal(statsItem);
+  return save(tempKey, statsVal);
 }
 
 /**
@@ -148,13 +148,13 @@ nebula::cpp2::ErrorCode StatisJobExecutor::saveSpecialTaskStatus(const cpp2::Rep
  *      so separate the partial result by job
  * @return std::string
  */
-std::string StatisJobExecutor::toTempKey(int32_t jobId) {
-  std::string key = MetaServiceUtils::statisKey(space_);
+std::string StatsJobExecutor::toTempKey(int32_t jobId) {
+  std::string key = MetaServiceUtils::statsKey(space_);
   return key.append(reinterpret_cast<const char*>(&jobId), sizeof(int32_t));
 }
 
-nebula::cpp2::ErrorCode StatisJobExecutor::finish(bool exeSuccessed) {
-  auto statisKey = MetaServiceUtils::statisKey(space_);
+nebula::cpp2::ErrorCode StatsJobExecutor::finish(bool exeSuccessed) {
+  auto statsKey = MetaServiceUtils::statsKey(space_);
   auto tempKey = toTempKey(jobId_);
   std::string val;
   auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, tempKey, &val);
@@ -162,14 +162,14 @@ nebula::cpp2::ErrorCode StatisJobExecutor::finish(bool exeSuccessed) {
     LOG(ERROR) << "Can't find the statis data, spaceId : " << space_;
     return ret;
   }
-  auto statisItem = MetaServiceUtils::parseStatisVal(val);
+  auto statsItem = MetaServiceUtils::parseStatsVal(val);
   if (exeSuccessed) {
-    statisItem.set_status(cpp2::JobStatus::FINISHED);
+    statsItem.set_status(cpp2::JobStatus::FINISHED);
   } else {
-    statisItem.set_status(cpp2::JobStatus::FAILED);
+    statsItem.set_status(cpp2::JobStatus::FAILED);
   }
-  auto statisVal = MetaServiceUtils::statisVal(statisItem);
-  auto retCode = save(statisKey, statisVal);
+  auto statsVal = MetaServiceUtils::statsVal(statsItem);
+  auto retCode = save(statsKey, statsVal);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << "Sace statis data failed, error " << apache::thrift::util::enumNameSafe(retCode);
     return retCode;
@@ -177,7 +177,7 @@ nebula::cpp2::ErrorCode StatisJobExecutor::finish(bool exeSuccessed) {
   return doRemove(tempKey);
 }
 
-nebula::cpp2::ErrorCode StatisJobExecutor::stop() {
+nebula::cpp2::ErrorCode StatsJobExecutor::stop() {
   auto errOrTargetHost = getTargetHost(space_);
   if (!nebula::ok(errOrTargetHost)) {
     LOG(ERROR) << "Get target host failed";

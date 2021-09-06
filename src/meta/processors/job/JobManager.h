@@ -27,11 +27,11 @@ namespace meta {
 
 class JobManager : public nebula::cpp::NonCopyable, public nebula::cpp::NonMovable {
   friend class JobManagerTest;
-  friend class GetStatisTest;
+  friend class GetStatsTest;
   FRIEND_TEST(JobManagerTest, reserveJobId);
   FRIEND_TEST(JobManagerTest, buildJobDescription);
   FRIEND_TEST(JobManagerTest, addJob);
-  FRIEND_TEST(JobManagerTest, StatisJob);
+  FRIEND_TEST(JobManagerTest, StatsJob);
   FRIEND_TEST(JobManagerTest, JobPriority);
   FRIEND_TEST(JobManagerTest, JobDeduplication);
   FRIEND_TEST(JobManagerTest, loadJobDescription);
@@ -40,9 +40,9 @@ class JobManager : public nebula::cpp::NonCopyable, public nebula::cpp::NonMovab
   FRIEND_TEST(JobManagerTest, recoverJob);
   FRIEND_TEST(JobManagerTest, AddRebuildTagIndexJob);
   FRIEND_TEST(JobManagerTest, AddRebuildEdgeIndexJob);
-  FRIEND_TEST(GetStatisTest, StatisJob);
-  FRIEND_TEST(GetStatisTest, MockSingleMachineTest);
-  FRIEND_TEST(GetStatisTest, MockMultiMachineTest);
+  FRIEND_TEST(GetStatsTest, StatsJob);
+  FRIEND_TEST(GetStatsTest, MockSingleMachineTest);
+  FRIEND_TEST(GetStatsTest, MockMultiMachineTest);
 
  public:
   ~JobManager();

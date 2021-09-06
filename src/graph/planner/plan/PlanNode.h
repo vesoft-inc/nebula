@@ -132,6 +132,7 @@ class PlanNode {
     kDeleteVertices,
     kDeleteEdges,
     kUpdateVertex,
+    kDeleteTags,
     kUpdateEdge,
 
     // Show
@@ -142,6 +143,7 @@ class PlanNode {
     kShowConfigs,
     kSetConfig,
     kGetConfig,
+    kShowMetaLeader,
 
     // zone related
     kShowGroups,

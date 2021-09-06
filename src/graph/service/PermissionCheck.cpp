@@ -114,6 +114,7 @@ Status PermissionCheck::permissionCheck(ClientSession *session,
     case Sentence::Kind::kInsertEdges:
     case Sentence::Kind::kUpdateEdge:
     case Sentence::Kind::kDeleteVertices:
+    case Sentence::Kind::kDeleteTags:
     case Sentence::Kind::kDeleteEdges: {
       return PermissionManager::canWriteData(session, vctx);
     }
@@ -163,6 +164,7 @@ Status PermissionCheck::permissionCheck(ClientSession *session,
     case Sentence::Kind::kShowCollation:
     case Sentence::Kind::kShowGroups:
     case Sentence::Kind::kShowZones:
+    case Sentence::Kind::kShowMetaLeader:
     case Sentence::Kind::kShowHosts: {
       /**
        * all roles can be show for above operations.

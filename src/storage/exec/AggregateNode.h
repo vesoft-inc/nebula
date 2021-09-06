@@ -37,7 +37,7 @@ class AggregateNode : public IterateNode<T> {
  public:
   using RelNode<T>::execute;
 
-  AggregateNode(RunTimeContext* context, IterateNode<T>* upstream, EdgeContext* edgeContext)
+  AggregateNode(RuntimeContext* context, IterateNode<T>* upstream, EdgeContext* edgeContext)
       : IterateNode<T>(upstream), context_(context), edgeContext_(edgeContext) {}
 
   nebula::cpp2::ErrorCode execute(PartitionID partId, const T& input) override {
@@ -144,7 +144,7 @@ class AggregateNode : public IterateNode<T> {
   }
 
  private:
-  RunTimeContext* context_;
+  RuntimeContext* context_;
   EdgeContext* edgeContext_;
   std::vector<PropStat> stats_;
   nebula::DataSet* resultSet_;

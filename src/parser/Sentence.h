@@ -81,6 +81,7 @@ class Sentence {
     kShowTSClients,
     kShowFTIndexes,
     kDeleteVertices,
+    kDeleteTags,
     kDeleteEdges,
     kLookup,
     kCreateSpace,
@@ -132,6 +133,7 @@ class Sentence {
     kShowSessions,
     kShowQueries,
     kKillQuery,
+    kShowMetaLeader,
   };
 
   Kind kind() const { return kind_; }

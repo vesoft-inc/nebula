@@ -31,6 +31,13 @@ class ShowHostsSentence : public Sentence {
   meta::cpp2::ListHostType type_;
 };
 
+class ShowMetaLeaderSentence : public Sentence {
+ public:
+  ShowMetaLeaderSentence() { kind_ = Kind::kShowMetaLeader; }
+
+  std::string toString() const override;
+};
+
 class ShowSpacesSentence : public Sentence {
  public:
   ShowSpacesSentence() { kind_ = Kind::kShowSpaces; }

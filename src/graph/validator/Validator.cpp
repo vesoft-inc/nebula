@@ -146,6 +146,8 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
       return std::make_unique<ShowSnapshotsValidator>(sentence, context);
     case Sentence::Kind::kDeleteVertices:
       return std::make_unique<DeleteVerticesValidator>(sentence, context);
+    case Sentence::Kind::kDeleteTags:
+      return std::make_unique<DeleteTagsValidator>(sentence, context);
     case Sentence::Kind::kDeleteEdges:
       return std::make_unique<DeleteEdgesValidator>(sentence, context);
     case Sentence::Kind::kUpdateVertex:
@@ -154,6 +156,8 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
       return std::make_unique<UpdateEdgeValidator>(sentence, context);
     case Sentence::Kind::kShowHosts:
       return std::make_unique<ShowHostsValidator>(sentence, context);
+    case Sentence::Kind::kShowMetaLeader:
+      return std::make_unique<ShowMetaLeaderValidator>(sentence, context);
     case Sentence::Kind::kShowParts:
       return std::make_unique<ShowPartsValidator>(sentence, context);
     case Sentence::Kind::kShowCharset:

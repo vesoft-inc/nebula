@@ -54,9 +54,9 @@ add_custom_target(
 
 add_custom_target(
   clang-format
-  COMMAND "find" "src/" "-type" "f" "\\(" "-iname" "\\*.h" "-o" "-iname" "\\*.cpp" "\\)" "-exec" "clang-format" "-i" "{}" "\\;"
+  COMMAND "find" "src/" "-type" "f" "\\(" "-iname" "\\*.h" "-o" "-iname" "\\*.cpp" "\\)" "|" "xargs" "clang-format" "-i"
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-  )
+)
 
 if (ENABLE_NATIVE)
     message(STATUS "ENABLE_NATIVE is ${ENABLE_NATIVE}")
@@ -92,3 +92,11 @@ nebula_add_subdirectory(src)
 nebula_add_subdirectory(conf)
 nebula_add_subdirectory(resources)
 nebula_add_subdirectory(scripts)
+
+include(CPackage)
+package(
+  ${ENABLE_PACK_ONE}
+  "nebula"
+  "https://github.com/vesoft-inc/nebula/releases"
+  ${CMAKE_SOURCE_DIR}/package
+)

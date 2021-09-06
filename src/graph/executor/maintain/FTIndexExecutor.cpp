@@ -75,7 +75,7 @@ folly::Future<Status> ShowFTIndexesExecutor::execute() {
             continue;
           }
           auto shmId = index.second.get_depend_schema();
-          auto isEdge = shmId.getType() == meta::cpp2::SchemaID::Type::edge_type;
+          auto isEdge = shmId.getType() == nebula::cpp2::SchemaID::Type::edge_type;
           auto shmNameRet =
               isEdge ? this->qctx_->schemaMng()->toEdgeName(spaceId, shmId.get_edge_type())
                      : this->qctx_->schemaMng()->toTagName(spaceId, shmId.get_tag_id());
@@ -95,7 +95,7 @@ folly::Future<Status> ShowFTIndexesExecutor::execute() {
         return finish(ResultBuilder()
                           .value(Value(std::move(dataSet)))
                           .iter(Iterator::Kind::kDefault)
-                          .finish());
+                          .build());
       });
 }
 

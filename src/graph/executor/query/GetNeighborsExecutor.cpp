@@ -37,7 +37,7 @@ folly::Future<Status> GetNeighborsExecutor::execute() {
     return finish(ResultBuilder()
                       .value(Value(std::move(emptyResult)))
                       .iter(Iterator::Kind::kGetNeighbors)
-                      .finish());
+                      .build());
   }
 
   time::Duration getNbrTime;
@@ -102,7 +102,7 @@ Status GetNeighborsExecutor::handleResponse(RpcResponse& resps) {
     list.values.emplace_back(std::move(*dataset));
   }
   builder.value(Value(std::move(list)));
-  return finish(builder.iter(Iterator::Kind::kGetNeighbors).finish());
+  return finish(builder.iter(Iterator::Kind::kGetNeighbors).build());
 }
 
 }  // namespace graph

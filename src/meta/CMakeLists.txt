@@ -78,8 +78,8 @@ nebula_add_library(
     processors/job/RebuildTagJobExecutor.cpp
     processors/job/RebuildEdgeJobExecutor.cpp
     processors/job/RebuildFTJobExecutor.cpp
-    processors/job/StatisJobExecutor.cpp
-    processors/job/GetStatisProcessor.cpp
+    processors/job/StatsJobExecutor.cpp
+    processors/job/GetStatsProcessor.cpp
     processors/job/ListTagIndexStatusProcessor.cpp
     processors/job/ListEdgeIndexStatusProcessor.cpp
     processors/zone/AddZoneProcessor.cpp
@@ -96,6 +96,11 @@ nebula_add_library(
     processors/session/SessionManagerProcessor.cpp
 )
 
+add_dependencies(
+    meta_service_handler
+    meta_version_man_obj
+)
+
 nebula_add_library(
     meta_version_man_obj OBJECT
     MetaVersionMan.cpp
@@ -109,6 +114,9 @@ add_dependencies(
 set(meta_test_deps
     $<TARGET_OBJECTS:mock_obj>
     $<TARGET_OBJECTS:meta_service_handler>
+    $<TARGET_OBJECTS:meta_version_man_obj>
+    $<TARGET_OBJECTS:meta_v1_thrift_obj>
+    $<TARGET_OBJECTS:meta_data_upgrade_obj>
     $<TARGET_OBJECTS:general_storage_service_handler>
     $<TARGET_OBJECTS:storage_admin_service_handler>
     $<TARGET_OBJECTS:graph_storage_service_handler>

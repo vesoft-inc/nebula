@@ -156,15 +156,10 @@ struct EdgeItem {
     4: Schema           schema,
 }
 
-union SchemaID {
-    1: common.TagID     tag_id,
-    2: common.EdgeType  edge_type,
-}
-
 struct IndexItem {
     1: common.IndexID      index_id,
     2: binary              index_name,
-    3: SchemaID            schema_id
+    3: common.SchemaID     schema_id
     4: binary              schema_name,
     5: list<ColumnDef>     fields,
     6: optional binary     comment,
@@ -305,7 +300,7 @@ struct Correlativity {
     2: double             proportion,
 }
 
-struct StatisItem {
+struct StatsItem {
     // The number of vertices of tagName
     1: map<binary, i64>
         (cpp.template = "std::unordered_map") tag_vertices,
@@ -552,6 +547,7 @@ struct HBResp {
     2: common.HostAddr  leader,
     3: ClusterID        cluster_id,
     4: i64              last_update_time_in_ms,
+    5: i32              meta_version,
 }
 
 enum HostRole {
@@ -959,15 +955,15 @@ struct ListListenerResp {
     3: list<ListenerInfo>      listeners,
 }
 
-struct GetStatisReq {
+struct GetStatsReq {
     1: common.GraphSpaceID     space_id,
 }
 
-struct GetStatisResp {
+struct GetStatsResp {
     1: common.ErrorCode code,
     // Valid if ret equals E_LEADER_CHANGED.
     2: common.HostAddr  leader,
-    3: StatisItem       statis,
+    3: StatsItem        stats,
 }
 
 struct BackupInfo {
@@ -1042,7 +1038,7 @@ struct ListFTClientsResp {
 
 struct FTIndex {
     1: common.GraphSpaceID  space_id,
-    2: SchemaID             depend_schema,
+    2: common.SchemaID      depend_schema,
     3: list<binary>         fields,
 }
 
@@ -1148,7 +1144,7 @@ struct ReportTaskReq {
     1: common.ErrorCode     code,
     2: i32                  job_id,
     3: i32                  task_id,
-    4: optional StatisItem  statis
+    4: optional StatsItem   stats
 }
 
 struct ListClusterInfoResp {
@@ -1257,7 +1253,7 @@ service MetaService {
     ExecResp       removeListener(1: RemoveListenerReq req);
     ListListenerResp listListener(1: ListListenerReq req);
 
-    GetStatisResp  getStatis(1: GetStatisReq req);
+    GetStatsResp  getStats(1: GetStatsReq req);
     ExecResp signInFTService(1: SignInFTServiceReq req);
     ExecResp signOutFTService(1: SignOutFTServiceReq req);
     ListFTClientsResp listFTClients(1: ListFTClientsReq req);

@@ -5,6 +5,9 @@ nebula_add_executable(
         MetaDumpTool.cpp
     OBJECTS
         $<TARGET_OBJECTS:meta_service_handler>
+        $<TARGET_OBJECTS:meta_version_man_obj>
+        $<TARGET_OBJECTS:meta_v1_thrift_obj>
+        $<TARGET_OBJECTS:meta_data_upgrade_obj>
         $<TARGET_OBJECTS:storage_admin_service_handler>
         $<TARGET_OBJECTS:graph_storage_service_handler>
         $<TARGET_OBJECTS:storage_transaction_executor>
@@ -56,6 +59,10 @@ nebula_add_executable(
 install(
     TARGETS
         meta_dump
+    PERMISSIONS
+        OWNER_EXECUTE OWNER_WRITE OWNER_READ
+        GROUP_EXECUTE GROUP_READ
+        WORLD_EXECUTE WORLD_READ
     DESTINATION
         bin
     COMPONENT
