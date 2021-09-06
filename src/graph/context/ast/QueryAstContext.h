@@ -125,6 +125,16 @@ struct SubgraphContext final : public AstContext {
   bool withProp{false};
 };
 
+struct InsertVerticesContext final : public AstContext {
+  bool ifNotExist{false};
+  std::vector<storage::cpp2::NewVertex> vertices;
+  std::unordered_map<TagID, std::vector<std::string>> tagPropNames;
+};
+
+struct InsertEdgesContext final : public AstContext {
+  bool ifNotExist{false};
+};
+
 }  // namespace graph
 }  // namespace nebula
 #endif  // GRAPH_CONTEXT_AST_QUERYASTCONTEXT_H_

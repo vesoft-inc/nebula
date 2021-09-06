@@ -15,6 +15,7 @@
 #include "graph/planner/match/VertexIdSeek.h"
 #include "graph/planner/ngql/GoPlanner.h"
 #include "graph/planner/ngql/LookupPlanner.h"
+#include "graph/planner/ngql/MutatePlanner.h"
 #include "graph/planner/ngql/PathPlanner.h"
 #include "graph/planner/ngql/SubgraphPlanner.h"
 
@@ -46,6 +47,10 @@ void PlannersRegister::registSequential() {
   {
     auto& planners = Planner::plannersMap()[Sentence::Kind::kGetSubgraph];
     planners.emplace_back(&SubgraphPlanner::match, &SubgraphPlanner::make);
+  }
+  {
+    auto& planners = Planner::plannersMap()[Sentence::Kind::kInsertVertices];
+    planners.emplace_back(&InsertVerticesPlanner::match, &InsertVerticesPlanner::make);
   }
 }
 

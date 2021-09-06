@@ -7,8 +7,6 @@
 #include "common/base/Base.h"
 #include "graph/validator/test/ValidatorTestBase.h"
 
-DECLARE_uint32(max_allowed_statements);
-
 namespace nebula {
 namespace graph {
 

@@ -15,108 +15,103 @@ namespace nebula {
 namespace graph {
 
 Status InsertVerticesValidator::validateImpl() {
-  spaceId_ = vctx_->whichSpace().id;
-  NG_RETURN_IF_ERROR(validateTags());
-  NG_RETURN_IF_ERROR(prepareVertices());
-  return Status::OK();
-}
-
-Status InsertVerticesValidator::toPlan() {
-  auto doNode = InsertVertices::make(
-      qctx_, nullptr, spaceId_, std::move(vertices_), std::move(tagPropNames_), ifNotExists_);
-  root_ = doNode;
-  tail_ = root_;
-  return Status::OK();
-}
-
-Status InsertVerticesValidator::validateTags() {
   auto sentence = static_cast<InsertVerticesSentence *>(sentence_);
-  ifNotExists_ = sentence->isIfNotExists();
-  rows_ = sentence->rows();
-  if (rows_.empty()) {
-    return Status::SemanticError("VALUES cannot be empty");
-  }
+  insertCtx_ = getContext<InsertVerticesContext>();
+  insertCtx_->ifNotExist = sentence->isIfNotExists();
+  NG_RETURN_IF_ERROR(validateTags(sentence->tagItems()));
+  NG_RETURN_IF_ERROR(validateVertices(sentence->rows()));
+  return Status::OK();
+}
 
-  auto tagItems = sentence->tagItems();
-
+Status InsertVerticesValidator::validateTags(const std::vector<VertexTagItem *> &tagItems) {
+  const auto &spaceID = space_.id;
   schemas_.reserve(tagItems.size());
+  std::unordered_map<TagID, std::vector<std::string>> tagPropNames;
 
-  for (auto &item : tagItems) {
+  for (const auto &item : tagItems) {
     auto *tagName = item->tagName();
-    auto tagStatus = qctx_->schemaMng()->toTagID(spaceId_, *tagName);
+    auto tagStatus = qctx_->schemaMng()->toTagID(spaceID, *tagName);
     if (!tagStatus.ok()) {
       LOG(ERROR) << "No schema found for " << *tagName;
       return Status::SemanticError("No schema found for `%s'", tagName->c_str());
     }
 
-    auto tagId = tagStatus.value();
-    auto schema = qctx_->schemaMng()->getTagSchema(spaceId_, tagId);
+    auto tagID = tagStatus.value();
+    auto schema = qctx_->schemaMng()->getTagSchema(spaceID, tagID);
     if (schema == nullptr) {
       LOG(ERROR) << "No schema found for " << *tagName;
       return Status::SemanticError("No schema found for `%s'", tagName->c_str());
     }
 
-    std::vector<std::string> names;
+    std::vector<std::string> propNames;
     if (item->isDefaultPropNames()) {
       size_t numFields = schema->getNumFields();
       for (size_t i = 0; i < numFields; ++i) {
         const char *propName = schema->getFieldName(i);
-        names.emplace_back(propName);
+        propNames.emplace_back(propName);
       }
       propSize_ += numFields;
     } else {
-      auto props = item->properties();
+      const auto &props = item->properties();
+      propSize_ += props.size();
       // Check prop name is in schema
       for (auto *it : props) {
         if (schema->getFieldIndex(*it) < 0) {
           LOG(ERROR) << "Unknown column `" << *it << "' in schema";
           return Status::SemanticError("Unknown column `%s' in schema", it->c_str());
         }
-        propSize_++;
-        names.emplace_back(*it);
+        propNames.emplace_back(*it);
       }
     }
-    tagPropNames_[tagId] = names;
-    schemas_.emplace_back(tagId, schema);
+    tagPropNames[tagID] = std::move(propNames);
+    schemas_.emplace_back(tagID, schema);
   }
+  insertCtx_->tagPropNames = std::move(tagPropNames);
   return Status::OK();
 }
 
-Status InsertVerticesValidator::prepareVertices() {
-  vertices_.reserve(rows_.size());
-  for (auto i = 0u; i < rows_.size(); i++) {
-    auto *row = rows_[i];
-    if (propSize_ != row->values().size()) {
-      return Status::SemanticError("Column count doesn't match value count.");
-    }
+Status InsertVerticesValidator::validateVertices(const std::vector<VertexRowItem *> &rows) {
+  if (rows.empty()) {
+    return Status::SemanticError("VALUES cannot be empty");
+  }
+  auto &tagPropNames = insertCtx_->tagPropNames;
+  std::vector<storage::cpp2::NewVertex> vertices;
+  vertices.reserve(rows.size());
+
+  for (size_t i = 0; i < rows.size(); ++i) {
+    auto *row = rows[i];
     if (!evaluableExpr(row->id())) {
       LOG(ERROR) << "Wrong vid expression `" << row->id()->toString() << "\"";
       return Status::SemanticError("Wrong vid expression `%s'", row->id()->toString().c_str());
     }
     auto idStatus = SchemaUtil::toVertexID(row->id(), vidType_);
     NG_RETURN_IF_ERROR(idStatus);
-    auto vertexId = std::move(idStatus).value();
+    auto vertexID = std::move(idStatus).value();
 
+    const auto &rowValues = row->values();
+    if (propSize_ != rowValues.size()) {
+      return Status::SemanticError("Column count doesn't match value count.");
+    }
     // check value expr
-    for (auto &value : row->values()) {
+    for (auto &value : rowValues) {
       if (!evaluableExpr(value)) {
         LOG(ERROR) << "Insert wrong value: `" << value->toString() << "'.";
         return Status::SemanticError("Insert wrong value: `%s'.", value->toString().c_str());
       }
     }
-    auto valsRet = SchemaUtil::toValueVec(row->values());
+    auto valsRet = SchemaUtil::toValueVec(rowValues);
     NG_RETURN_IF_ERROR(valsRet);
     auto values = std::move(valsRet).value();
 
     std::vector<storage::cpp2::NewTag> tags(schemas_.size());
     int32_t handleValueNum = 0;
-    for (auto count = 0u; count < schemas_.size(); count++) {
+    for (size_t count = 0; count < schemas_.size(); ++count) {
       auto tagId = schemas_[count].first;
       auto schema = schemas_[count].second;
-      auto &propNames = tagPropNames_[tagId];
+      auto &propNames = tagPropNames[tagId];
       std::vector<Value> props;
       props.reserve(propNames.size());
-      for (auto index = 0u; index < propNames.size(); index++) {
+      for (size_t index = 0; index < propNames.size(); ++index) {
         props.emplace_back(std::move(values[handleValueNum]));
         handleValueNum++;
       }
@@ -126,10 +121,11 @@ Status InsertVerticesValidator::prepareVertices() {
     }
 
     storage::cpp2::NewVertex vertex;
-    vertex.set_id(vertexId);
+    vertex.set_id(vertexID);
     vertex.set_tags(std::move(tags));
-    vertices_.emplace_back(std::move(vertex));
+    vertices.emplace_back(std::move(vertex));
   }
+  insertCtx_->vertices = std::move(vertices);
   return Status::OK();
 }
 
