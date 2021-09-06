@@ -39,6 +39,9 @@ class IndexVertexNode final : public RelNode<T> {
     std::vector<VertexID> vids;
     auto* iter = static_cast<VertexIndexIterator*>(indexScanNode_->iterator());
     while (iter && iter->valid()) {
+      if (context_->isPlanKilled()) {
+        return nebula::cpp2::ErrorCode::E_PLAN_IS_KILLED;
+      }
       if (!iter->val().empty() && ttlProp.first) {
         auto v = IndexKeyUtils::parseIndexTTL(iter->val());
         if (CommonUtils::checkDataExpiredForTTL(
