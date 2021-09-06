@@ -30,6 +30,7 @@ namespace storage {
 
 ObjectPool objPool;
 auto pool = &objPool;
+int gJobId = 0;
 
 std::string convertVertexId(size_t vIdLen, int32_t vId) {
   std::string id;
@@ -429,7 +430,7 @@ TEST(IndexWithTTLTest, RebuildTagIndexWithTTL) {
 
   cpp2::AddAdminTaskRequest request;
   request.set_cmd(meta::cpp2::AdminCmd::REBUILD_TAG_INDEX);
-  request.set_job_id(3);
+  request.set_job_id(++gJobId);
   request.set_task_id(13);
   request.set_para(std::move(parameter));
 
@@ -498,7 +499,7 @@ TEST(IndexWithTTLTest, RebuildEdgeIndexWithTTL) {
 
   cpp2::AddAdminTaskRequest request;
   request.set_cmd(meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX);
-  request.set_job_id(3);
+  request.set_job_id(++gJobId);
   request.set_task_id(13);
   request.set_para(std::move(parameter));
 
@@ -569,7 +570,7 @@ TEST(IndexWithTTLTest, RebuildTagIndexWithTTLExpired) {
 
   cpp2::AddAdminTaskRequest request;
   request.set_cmd(meta::cpp2::AdminCmd::REBUILD_TAG_INDEX);
-  request.set_job_id(3);
+  request.set_job_id(++gJobId);
   request.set_task_id(13);
   request.set_para(std::move(parameter));
 
@@ -640,7 +641,7 @@ TEST(IndexWithTTLTest, RebuildEdgeIndexWithTTLExpired) {
 
   cpp2::AddAdminTaskRequest request;
   request.set_cmd(meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX);
-  request.set_job_id(5);
+  request.set_job_id(++gJobId);
   request.set_task_id(15);
   request.set_para(std::move(parameter));
 
