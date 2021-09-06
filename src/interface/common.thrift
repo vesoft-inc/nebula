@@ -51,11 +51,6 @@ typedef i64 (cpp.type = "nebula::SessionID") SessionID
 
 typedef i64 (cpp.type = "nebula::ExecutionPlanID") ExecutionPlanID
 
-union SchemaID {
-    1: TagID     tag_id,
-    2: EdgeType  edge_type,
-}
-
 // !! Struct Date has a shadow data type defined in the Date.h
 // So any change here needs to be reflected to the shadow type there
 struct Date {

@@ -156,10 +156,15 @@ struct EdgeItem {
     4: Schema           schema,
 }
 
+union SchemaID {
+    1: common.TagID     tag_id,
+    2: common.EdgeType  edge_type,
+}
+
 struct IndexItem {
     1: common.IndexID      index_id,
     2: binary              index_name,
-    3: common.SchemaID     schema_id
+    3: SchemaID            schema_id
     4: binary              schema_name,
     5: list<ColumnDef>     fields,
     6: optional binary     comment,
@@ -1038,7 +1043,7 @@ struct ListFTClientsResp {
 
 struct FTIndex {
     1: common.GraphSpaceID  space_id,
-    2: common.SchemaID      depend_schema,
+    2: SchemaID             depend_schema,
     3: list<binary>         fields,
 }
 

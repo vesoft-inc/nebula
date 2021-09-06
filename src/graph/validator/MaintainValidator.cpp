@@ -611,7 +611,7 @@ Status CreateFTIndexValidator::validateImpl() {
                     ? qctx_->schemaMng()->toEdgeType(space.id, *sentence->schemaName())
                     : qctx_->schemaMng()->toTagID(space.id, *sentence->schemaName());
   NG_RETURN_IF_ERROR(status);
-  nebula::cpp2::SchemaID id;
+  meta::cpp2::SchemaID id;
   if (sentence->isEdge()) {
     id.set_edge_type(status.value());
   } else {
