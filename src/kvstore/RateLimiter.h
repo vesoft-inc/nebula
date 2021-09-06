@@ -12,6 +12,8 @@
 #include "common/thrift/ThriftTypes.h"
 #include "common/time/WallClock.h"
 
+DECLARE_bool(skip_wait_in_rate_limiter);
+
 namespace nebula {
 namespace kvstore {
 
@@ -27,7 +29,8 @@ class RateLimiter {
     DCHECK(buckets_.find({spaceId, partId}) == buckets_.end());
     // token will be available after 1 second, to prevent speed spike at the beginning
     auto now = time::WallClock::fastNowInSec();
-    folly::TokenBucket bucket(rate_, burstSize_, static_cast<double>(now + 1));
+    int64_t waitInSec = FLAGS_skip_wait_in_rate_limiter ? 0 : 1;
+    folly::TokenBucket bucket(rate_, burstSize_, static_cast<double>(now + waitInSec));
     buckets_.emplace(std::make_pair(spaceId, partId), std::move(bucket));
   }
 
@@ -40,7 +43,8 @@ class RateLimiter {
   // Caller must make sure the **the parition has been add, and won't be removed during consume.**
   // Snaphot and rebuild index follow this principle by design.
   void consume(GraphSpaceID spaceId, PartitionID partId, size_t toConsume) {
-    DCHECK(buckets_.find({spaceId, partId}) != buckets_.end());
+    // todo(doodle): enable this DCHECK later
+    // DCHECK(buckets_.find({spaceId, partId}) != buckets_.end());
     auto iter = buckets_.find({spaceId, partId});
     if (iter != buckets_.end()) {
       if (toConsume > burstSize_) {
