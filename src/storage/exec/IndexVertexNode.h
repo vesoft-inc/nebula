@@ -21,11 +21,13 @@ class IndexVertexNode final : public RelNode<T> {
   IndexVertexNode(RuntimeContext* context,
                   IndexScanNode<T>* indexScanNode,
                   const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas,
-                  const std::string& schemaName)
+                  const std::string& schemaName,
+                  int64_t limit = 0)
       : context_(context),
         indexScanNode_(indexScanNode),
         schemas_(schemas),
-        schemaName_(schemaName) {
+        schemaName_(schemaName),
+        limit_(limit) {
     RelNode<T>::name_ = "IndexVertexNode";
   }
 
@@ -40,6 +42,7 @@ class IndexVertexNode final : public RelNode<T> {
     data_.clear();
     std::vector<VertexID> vids;
     auto* iter = static_cast<VertexIndexIterator*>(indexScanNode_->iterator());
+    int64_t count = 0;
     while (iter && iter->valid()) {
       if (context_->isPlanKilled()) {
         return nebula::cpp2::ErrorCode::E_PLAN_IS_KILLED;
@@ -54,6 +57,9 @@ class IndexVertexNode final : public RelNode<T> {
       }
       vids.emplace_back(iter->vId());
       iter->next();
+      if (limit_ > 0 && ++count == limit_) {
+        break;
+      }
     }
     for (const auto& vId : vids) {
       VLOG(1) << "partId " << partId << ", vId " << vId << ", tagId " << context_->tagId_;
@@ -84,6 +90,7 @@ class IndexVertexNode final : public RelNode<T> {
   IndexScanNode<T>* indexScanNode_;
   const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas_;
   const std::string& schemaName_;
+  int64_t limit_;
   std::vector<kvstore::KV> data_;
 };
 
