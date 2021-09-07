@@ -25,6 +25,9 @@ jobs:
           - centos8
     container:
       image: vesoft/nebula-dev:${{ matrix.os }}
+      credentials:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
       env:
         BUILD_DIR: ./pkg-build
         CPACK_DIR: ./pkg-build/cpack_output
