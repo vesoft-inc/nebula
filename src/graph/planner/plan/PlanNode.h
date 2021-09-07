@@ -15,168 +15,205 @@
 namespace nebula {
 namespace graph {
 
+static inline constexpr uint64_t kindGen(const uint64_t main, const uint64_t variant) {
+  return (main << 48) | (variant & 0x0000FFFFFFFFFFFF);
+}
+
 /**
  * PlanNode is an abstraction of nodes in an execution plan which
  * is a kind of directed cyclic graph.
  */
 class PlanNode {
  public:
-  enum class Kind : uint8_t {
-    kUnknown = 0,
+  // Single Level Polymorphism
+  // Encode the kind with format: |16Bits for main type|48Bits for variant type|
+  // The variants must inherit the main type, this will be checked by PlanNode::asNode method,
+  // so don't cast node by other ways
+  // And the main type and variant type also means logical node and physical node in future
+  enum class Kind : uint64_t {
+    kUnknown = kindGen(0, 0),
 
     // Query
-    kGetNeighbors,
-    kGetVertices,
-    kGetEdges,
+    kGetNeighbors = kindGen(1, 0),
+    kGetVertices = kindGen(2, 0),
+    kGetEdges = kindGen(3, 0),
     // ------------------
     // TODO(yee): refactor in logical plan
-    kIndexScan,
-    kTagIndexFullScan,
-    kTagIndexPrefixScan,
-    kTagIndexRangeScan,
-    kEdgeIndexFullScan,
-    kEdgeIndexPrefixScan,
-    kEdgeIndexRangeScan,
+    kIndexScan = kindGen(4, 0),
+    kTagIndexFullScan = kindGen(4, 1),
+    kTagIndexPrefixScan = kindGen(4, 2),
+    kTagIndexRangeScan = kindGen(4, 3),
+    kEdgeIndexFullScan = kindGen(4, 4),
+    kEdgeIndexPrefixScan = kindGen(4, 5),
+    kEdgeIndexRangeScan = kindGen(4, 6),
     // ------------------
-    kFilter,
-    kUnion,
-    kUnionAllVersionVar,
-    kIntersect,
-    kMinus,
-    kProject,
-    kUnwind,
-    kSort,
-    kTopN,
-    kLimit,
-    kAggregate,
-    kDedup,
-    kAssign,
-    kBFSShortest,
-    kProduceSemiShortestPath,
-    kConjunctPath,
-    kProduceAllPaths,
-    kCartesianProduct,
-    kSubgraph,
-    kDataCollect,
-    kLeftJoin,
-    kInnerJoin,
+    kFilter = kindGen(5, 0),
+    kUnion = kindGen(6, 0),
+    kUnionAllVersionVar = kindGen(7, 0),
+    kIntersect = kindGen(8, 0),
+    kMinus = kindGen(9, 0),
+    kProject = kindGen(10, 0),
+    kUnwind = kindGen(11, 0),
+    kSort = kindGen(12, 0),
+    kTopN = kindGen(13, 0),
+    kLimit = kindGen(14, 0),
+    kAggregate = kindGen(15, 0),
+    kDedup = kindGen(16, 0),
+    kAssign = kindGen(17, 0),
+    kBFSShortest = kindGen(18, 0),
+    kProduceSemiShortestPath = kindGen(19, 0),
+    kConjunctPath = kindGen(20, 0),
+    kProduceAllPaths = kindGen(21, 0),
+    kCartesianProduct = kindGen(22, 0),
+    kSubgraph = kindGen(23, 0),
+    kDataCollect = kindGen(24, 0),
+    kLeftJoin = kindGen(25, 0),
+    kInnerJoin = kindGen(26, 0),
 
     // Logic
-    kStart,
-    kSelect,
-    kLoop,
-    kPassThrough,
+    kStart = kindGen(27, 0),
+    kSelect = kindGen(28, 0),
+    kLoop = kindGen(29, 0),
+    kPassThrough = kindGen(30, 0),
 
     // schema related
-    kCreateSpace,
-    kCreateTag,
-    kCreateEdge,
-    kDescSpace,
-    kShowCreateSpace,
-    kDescTag,
-    kDescEdge,
-    kAlterTag,
-    kAlterEdge,
-    kShowSpaces,
-    kSwitchSpace,
-    kShowTags,
-    kShowEdges,
-    kShowCreateTag,
-    kShowCreateEdge,
-    kDropSpace,
-    kDropTag,
-    kDropEdge,
+    kCreateSpace = kindGen(31, 0),
+    kCreateTag = kindGen(32, 0),
+    kCreateEdge = kindGen(33, 0),
+    kDescSpace = kindGen(34, 0),
+    kShowCreateSpace = kindGen(35, 0),
+    kDescTag = kindGen(36, 0),
+    kDescEdge = kindGen(37, 0),
+    kAlterTag = kindGen(38, 0),
+    kAlterEdge = kindGen(39, 0),
+    kShowSpaces = kindGen(40, 0),
+    kSwitchSpace = kindGen(41, 0),
+    kShowTags = kindGen(42, 0),
+    kShowEdges = kindGen(43, 0),
+    kShowCreateTag = kindGen(44, 0),
+    kShowCreateEdge = kindGen(45, 0),
+    kDropSpace = kindGen(46, 0),
+    kDropTag = kindGen(47, 0),
+    kDropEdge = kindGen(48, 0),
 
     // index related
-    kCreateTagIndex,
-    kCreateEdgeIndex,
-    kCreateFTIndex,
-    kDropFTIndex,
-    kDropTagIndex,
-    kDropEdgeIndex,
-    kDescTagIndex,
-    kDescEdgeIndex,
-    kShowCreateTagIndex,
-    kShowCreateEdgeIndex,
-    kShowTagIndexes,
-    kShowEdgeIndexes,
-    kShowTagIndexStatus,
-    kShowEdgeIndexStatus,
-    kInsertVertices,
-    kInsertEdges,
-    kBalanceLeaders,
-    kBalance,
-    kStopBalance,
-    kResetBalance,
-    kShowBalance,
-    kSubmitJob,
-    kShowHosts,
+    kCreateTagIndex = kindGen(49, 0),
+    kCreateEdgeIndex = kindGen(50, 0),
+    kCreateFTIndex = kindGen(51, 0),
+    kDropFTIndex = kindGen(52, 0),
+    kDropTagIndex = kindGen(53, 0),
+    kDropEdgeIndex = kindGen(54, 0),
+    kDescTagIndex = kindGen(55, 0),
+    kDescEdgeIndex = kindGen(56, 0),
+    kShowCreateTagIndex = kindGen(57, 0),
+    kShowCreateEdgeIndex = kindGen(58, 0),
+    kShowTagIndexes = kindGen(59, 0),
+    kShowEdgeIndexes = kindGen(60, 0),
+    kShowTagIndexStatus = kindGen(61, 0),
+    kShowEdgeIndexStatus = kindGen(62, 0),
+    kInsertVertices = kindGen(63, 0),
+    kInsertEdges = kindGen(64, 0),
+    kBalanceLeaders = kindGen(65, 0),
+    kBalance = kindGen(66, 0),
+    kStopBalance = kindGen(67, 0),
+    kResetBalance = kindGen(68, 0),
+    kShowBalance = kindGen(69, 0),
+    kSubmitJob = kindGen(70, 0),
+    kShowHosts = kindGen(71, 0),
 
     // user related
-    kCreateUser,
-    kDropUser,
-    kUpdateUser,
-    kGrantRole,
-    kRevokeRole,
-    kChangePassword,
-    kListUserRoles,
-    kListUsers,
-    kListRoles,
+    kCreateUser = kindGen(72, 0),
+    kDropUser = kindGen(73, 0),
+    kUpdateUser = kindGen(74, 0),
+    kGrantRole = kindGen(75, 0),
+    kRevokeRole = kindGen(76, 0),
+    kChangePassword = kindGen(77, 0),
+    kListUserRoles = kindGen(78, 0),
+    kListUsers = kindGen(79, 0),
+    kListRoles = kindGen(80, 0),
 
     // Snapshot
-    kCreateSnapshot,
-    kDropSnapshot,
-    kShowSnapshots,
+    kCreateSnapshot = kindGen(81, 0),
+    kDropSnapshot = kindGen(82, 0),
+    kShowSnapshots = kindGen(83, 0),
 
     // Update/Delete
-    kDeleteVertices,
-    kDeleteEdges,
-    kUpdateVertex,
-    kDeleteTags,
-    kUpdateEdge,
+    kDeleteVertices = kindGen(84, 0),
+    kDeleteEdges = kindGen(85, 0),
+    kUpdateVertex = kindGen(86, 0),
+    kDeleteTags = kindGen(87, 0),
+    kUpdateEdge = kindGen(88, 0),
 
     // Show
-    kShowParts,
-    kShowCharset,
-    kShowCollation,
-    kShowStats,
-    kShowConfigs,
-    kSetConfig,
-    kGetConfig,
-    kShowMetaLeader,
+    kShowParts = kindGen(89, 0),
+    kShowCharset = kindGen(90, 0),
+    kShowCollation = kindGen(91, 0),
+    kShowStats = kindGen(92, 0),
+    kShowConfigs = kindGen(93, 0),
+    kSetConfig = kindGen(94, 0),
+    kGetConfig = kindGen(95, 0),
+    kShowMetaLeader = kindGen(96, 0),
 
     // zone related
-    kShowGroups,
-    kShowZones,
-    kAddGroup,
-    kDropGroup,
-    kDescribeGroup,
-    kAddZoneIntoGroup,
-    kDropZoneFromGroup,
-    kAddZone,
-    kDropZone,
-    kDescribeZone,
-    kAddHostIntoZone,
-    kDropHostFromZone,
+    kShowGroups = kindGen(97, 0),
+    kShowZones = kindGen(98, 0),
+    kAddGroup = kindGen(99, 0),
+    kDropGroup = kindGen(100, 0),
+    kDescribeGroup = kindGen(101, 0),
+    kAddZoneIntoGroup = kindGen(102, 0),
+    kDropZoneFromGroup = kindGen(103, 0),
+    kAddZone = kindGen(104, 0),
+    kDropZone = kindGen(105, 0),
+    kDescribeZone = kindGen(106, 0),
+    kAddHostIntoZone = kindGen(107, 0),
+    kDropHostFromZone = kindGen(108, 0),
 
     // listener related
-    kAddListener,
-    kRemoveListener,
-    kShowListener,
+    kAddListener = kindGen(109, 0),
+    kRemoveListener = kindGen(110, 0),
+    kShowListener = kindGen(111, 0),
 
     // text service related
-    kShowTSClients,
-    kShowFTIndexes,
-    kSignInTSService,
-    kSignOutTSService,
-    kDownload,
-    kIngest,
-    kShowSessions,
-    kUpdateSession,
+    kShowTSClients = kindGen(112, 0),
+    kShowFTIndexes = kindGen(113, 0),
+    kSignInTSService = kindGen(114, 0),
+    kSignOutTSService = kindGen(115, 0),
+    kDownload = kindGen(116, 0),
+    kIngest = kindGen(117, 0),
+    kShowSessions = kindGen(118, 0),
+    kUpdateSession = kindGen(119, 0),
 
-    kShowQueries,
-    kKillQuery,
+    kShowQueries = kindGen(120, 0),
+    kKillQuery = kindGen(121, 0),
   };
+
+  template <typename T>
+  std::enable_if_t<std::is_base_of<PlanNode, T>::value, const T*> asNode() const {
+    DCHECK(dynamic_cast<const T*>(this) != nullptr);
+    return static_cast<const T*>(this);
+  }
+
+  static uint64_t mainType(Kind kind) { return static_cast<uint64_t>(kind) & 0xFFFF000000000000; }
+
+  static uint64_t variantType(Kind kind) {
+    return static_cast<uint64_t>(kind) & 0x0000FFFFFFFFFFFF;
+  }
+
+  // Variant X is Variant X
+  // Variant X is main type of Variant X
+  // Variant X is not Variant Y
+  bool isA(Kind kind) const {
+    if (kind == kind_) {
+      return true;
+    }
+    if (variantType(kind) != 0) {
+      return false;
+    }
+    if (mainType(kind) == mainType(kind_)) {
+      return true;
+    }
+    return false;
+  }
 
   bool isQueryNode() const { return kind_ < Kind::kStart; }
 
