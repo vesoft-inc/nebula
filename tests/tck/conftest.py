@@ -10,7 +10,6 @@ import pytest
 import io
 import csv
 import re
-import copy
 
 from nebula2.common.ttypes import Value, ErrorCode
 from pytest_bdd import given, parsers, then, when
