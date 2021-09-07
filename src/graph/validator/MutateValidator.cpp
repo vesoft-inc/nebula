@@ -19,7 +19,7 @@ Status InsertVerticesValidator::validateImpl() {
   insertCtx_ = getContext<InsertVerticesContext>();
   insertCtx_->ifNotExist = sentence->isIfNotExists();
   NG_RETURN_IF_ERROR(validateTags(sentence->tagItems()));
-  NG_RETURN_IF_ERROR(validateVertices(sentence->rows()));
+  NG_RETURN_IF_ERROR(validateValues(sentence->rows()));
   return Status::OK();
 }
 
@@ -70,7 +70,7 @@ Status InsertVerticesValidator::validateTags(const std::vector<VertexTagItem *> 
   return Status::OK();
 }
 
-Status InsertVerticesValidator::validateVertices(const std::vector<VertexRowItem *> &rows) {
+Status InsertVerticesValidator::validateValues(const std::vector<VertexRowItem *> &rows) {
   if (rows.empty()) {
     return Status::SemanticError("VALUES cannot be empty");
   }
@@ -130,71 +130,62 @@ Status InsertVerticesValidator::validateVertices(const std::vector<VertexRowItem
 }
 
 Status InsertEdgesValidator::validateImpl() {
-  spaceId_ = vctx_->whichSpace().id;
-  NG_RETURN_IF_ERROR(check());
-  NG_RETURN_IF_ERROR(prepareEdges());
+  insertCtx_ = getContext<InsertEdgesContext>();
+  NG_RETURN_IF_ERROR(validateEdgeName());
+  NG_RETURN_IF_ERROR(validateValues());
   return Status::OK();
 }
 
-Status InsertEdgesValidator::toPlan() {
-  using IsoLevel = meta::cpp2::IsolationLevel;
-  auto isoLevel = space_.spaceDesc.isolation_level_ref().value_or(IsoLevel::DEFAULT);
-  auto useChainInsert = isoLevel == IsoLevel::TOSS;
-  auto doNode = InsertEdges::make(qctx_,
-                                  nullptr,
-                                  spaceId_,
-                                  std::move(edges_),
-                                  std::move(propNames_),
-                                  ifNotExists_,
-                                  useChainInsert);
-  root_ = doNode;
-  tail_ = root_;
-  return Status::OK();
-}
-
-Status InsertEdgesValidator::check() {
+Status InsertEdgesValidator::validateEdgeName() {
   auto sentence = static_cast<InsertEdgesSentence *>(sentence_);
-  ifNotExists_ = sentence->isIfNotExists();
-  auto edgeStatus = qctx_->schemaMng()->toEdgeType(spaceId_, *sentence->edge());
+  insertCtx_->ifNotExist = sentence->isIfNotExists();
+  auto &spaceID = space_.id;
+
+  auto edgeStatus = qctx_->schemaMng()->toEdgeType(spaceID, *sentence->edge());
   NG_RETURN_IF_ERROR(edgeStatus);
   edgeType_ = edgeStatus.value();
-  auto props = sentence->properties();
-  rows_ = sentence->rows();
 
-  schema_ = qctx_->schemaMng()->getEdgeSchema(spaceId_, edgeType_);
-  if (schema_ == nullptr) {
-    LOG(ERROR) << "No schema found for " << sentence->edge();
+  auto schema = qctx_->schemaMng()->getEdgeSchema(spaceID, edgeType_);
+  if (schema == nullptr) {
+    LOG(ERROR) << "No schema found for " << *sentence->edge();
     return Status::SemanticError("No schema found for `%s'", sentence->edge()->c_str());
   }
 
+  std::vector<std::string> propNames;
   if (sentence->isDefaultPropNames()) {
-    size_t propNums = schema_->getNumFields();
+    size_t propNums = schema->getNumFields();
     for (size_t i = 0; i < propNums; ++i) {
-      const char *propName = schema_->getFieldName(i);
-      propNames_.emplace_back(propName);
+      const char *propName = schema->getFieldName(i);
+      propNames.emplace_back(propName);
     }
   } else {
     // Check prop name is in schema
+    const auto &props = sentence->properties();
     for (auto *it : props) {
-      if (schema_->getFieldIndex(*it) < 0) {
+      if (schema->getFieldIndex(*it) < 0) {
         LOG(ERROR) << "Unknown column `" << *it << "' in schema";
         return Status::SemanticError("Unknown column `%s' in schema", it->c_str());
       }
-      propNames_.emplace_back(*it);
+      propNames.emplace_back(*it);
     }
   }
+  insertCtx_->propNames = std::move(propNames);
   return Status::OK();
 }
 
-Status InsertEdgesValidator::prepareEdges() {
+Status InsertEdgesValidator::validateValues() {
+  auto sentence = static_cast<InsertEdgesSentence *>(sentence_);
   using IsoLevel = meta::cpp2::IsolationLevel;
   auto isoLevel = space_.spaceDesc.isolation_level_ref().value_or(IsoLevel::DEFAULT);
   auto useToss = isoLevel == IsoLevel::TOSS;
-  auto size = useToss ? rows_.size() : rows_.size() * 2;
-  edges_.reserve(size);
-  for (auto i = 0u; i < rows_.size(); i++) {
-    auto *row = rows_[i];
-    if (propNames_.size() != row->values().size()) {
+  const auto &rows = sentence->rows();
+  auto size = useToss ? rows.size() : rows.size() * 2;
+  std::vector<storage::cpp2::NewEdge> edges;
+  edges.reserve(size);
+
+  for (size_t i = 0; i < rows.size(); ++i) {
+    auto *row = rows[i];
+    if (insertCtx_->propNames.size() != row->values().size()) {
       return Status::SemanticError("Column count doesn't match value count.");
     }
     if (!evaluableExpr(row->srcid())) {
@@ -238,17 +229,17 @@ Status InsertEdgesValidator::prepareEdges() {
     key.set_ranking(rank);
     edge.set_key(key);
     edge.set_props(std::move(props));
-    edges_.emplace_back(edge);
+    edges.emplace_back(edge);
     if (!useToss) {
       // inbound
       key.set_src(dstId);
       key.set_dst(srcId);
       key.set_edge_type(-edgeType_);
       edge.set_key(key);
-      edges_.emplace_back(std::move(edge));
+      edges.emplace_back(std::move(edge));
     }
   }
-
+  insertCtx_->edges = std::move(edges);
   return Status::OK();
 }
 

@@ -133,6 +133,8 @@ struct InsertVerticesContext final : public AstContext {
 
 struct InsertEdgesContext final : public AstContext {
   bool ifNotExist{false};
+  std::vector<storage::cpp2::NewEdge> edges;
+  std::vector<std::string> propNames;
 };
 
 }  // namespace graph

@@ -33,6 +33,24 @@ class InsertVerticesPlanner final : public Planner {
   InsertVerticesContext* insertCtx_{nullptr};
 };
 
+class InsertEdgesPlanner final : public Planner {
+ public:
+  static std::unique_ptr<InsertEdgesPlanner> make() {
+    return std::unique_ptr<InsertEdgesPlanner>(new InsertEdgesPlanner());
+  }
+
+  static bool match(AstContext* astCtx) {
+    return astCtx->sentence->kind() == Sentence::Kind::kInsertEdges;
+  }
+
+  StatusOr<SubPlan> transform(AstContext* astCtx) override;
+
+ private:
+  InsertEdgesPlanner() = default;
+
+  InsertEdgesContext* insertCtx_{nullptr};
+};
+
 }  // namespace graph
 }  // namespace nebula
 #endif  //  NGQL_PLANNERS_SUBGRAPHPLANNER_H

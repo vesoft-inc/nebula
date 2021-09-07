@@ -52,6 +52,10 @@ void PlannersRegister::registSequential() {
     auto& planners = Planner::plannersMap()[Sentence::Kind::kInsertVertices];
     planners.emplace_back(&InsertVerticesPlanner::match, &InsertVerticesPlanner::make);
   }
+  {
+    auto& planners = Planner::plannersMap()[Sentence::Kind::kInsertEdges];
+    planners.emplace_back(&InsertEdgesPlanner::match, &InsertEdgesPlanner::make);
+  }
 }
 
 void PlannersRegister::registMatch() {

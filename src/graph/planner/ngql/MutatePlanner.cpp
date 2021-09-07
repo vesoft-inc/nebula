@@ -12,15 +12,34 @@ namespace nebula {
 namespace graph {
 StatusOr<SubPlan> InsertVerticesPlanner::transform(AstContext* astCtx) {
   insertCtx_ = static_cast<InsertVerticesContext*>(astCtx);
-  auto qctx = insertCtx_->qctx;
   auto& spaceID = insertCtx_->space.id;
 
-  auto* insertNode = InsertVertices::make(qctx,
+  auto* insertNode = InsertVertices::make(insertCtx_->qctx,
                                           nullptr,
                                           spaceID,
                                           std::move(insertCtx_->vertices),
                                           std::move(insertCtx_->tagPropNames),
                                           insertCtx_->ifNotExist);
+  SubPlan subPlan;
+  subPlan.root = subPlan.tail = insertNode;
+  return subPlan;
+}
+
+StatusOr<SubPlan> InsertEdgesPlanner::transform(AstContext* astCtx) {
+  insertCtx_ = static_cast<InsertEdgesContext*>(astCtx);
+  auto& space = insertCtx_->space;
+
+  using IsoLevel = meta::cpp2::IsolationLevel;
+  auto isoLevel = space.spaceDesc.isolation_level_ref().value_or(IsoLevel::DEFAULT);
+  auto useChainInsert = isoLevel == IsoLevel::TOSS;
+
+  auto* insertNode = InsertEdges::make(insertCtx_->qctx,
+                                       nullptr,
+                                       space.id,
+                                       std::move(insertCtx_->edges),
+                                       std::move(insertCtx_->propNames),
+                                       insertCtx_->ifNotExist,
+                                       useChainInsert);
   SubPlan subPlan;
   subPlan.root = subPlan.tail = insertNode;
   return subPlan;

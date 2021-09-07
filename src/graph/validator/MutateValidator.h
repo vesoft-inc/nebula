@@ -25,7 +25,7 @@ class InsertVerticesValidator final : public Validator {
 
   Status validateTags(const std::vector<VertexTagItem*>& tagItems);
 
-  Status validateVertices(const std::vector<VertexRowItem*>& rows);
+  Status validateValues(const std::vector<VertexRowItem*>& rows);
 
   AstContext* getAstContext() override { return insertCtx_.get(); }
 
@@ -44,20 +44,16 @@ class InsertEdgesValidator final : public Validator {
  private:
   Status validateImpl() override;
 
-  Status toPlan() override;
+  Status validateEdgeName();
 
-  Status check();
+  Status validateValues();
 
-  Status prepareEdges();
+  AstContext* getAstContext() override { return insertCtx_.get(); }
 
  private:
-  GraphSpaceID spaceId_{-1};
-  bool ifNotExists_{false};
   EdgeType edgeType_{-1};
-  std::shared_ptr<const meta::SchemaProviderIf> schema_;
-  std::vector<std::string> propNames_;
-  std::vector<EdgeRowItem*> rows_;
-  std::vector<storage::cpp2::NewEdge> edges_;
+
+  std::unique_ptr<InsertEdgesContext> insertCtx_;
 };
 
 class DeleteVerticesValidator final : public Validator {
