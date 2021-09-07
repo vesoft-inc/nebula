@@ -71,7 +71,7 @@ slow-query: currdir
 	python3 -m pytest -n$(J) -m "not skip" tck/steps/test_kill_slow_query_via_different_service.py
 
 tck: slow-query
-	python3 -m pytest -n$(J) -m "not skip" tck/steps/test_tck.py
+	python3 -m pytest -n$(J) -m "not skip" tck/steps/test_tck.py --durations=30
 
 fail: currdir
 	python3 -m pytest --last-failed --gherkin-terminal-reporter --gherkin-terminal-reporter-expanded tck/steps/test_tck.py

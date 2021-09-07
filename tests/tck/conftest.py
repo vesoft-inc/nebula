@@ -10,6 +10,7 @@ import pytest
 import io
 import csv
 import re
+import copy
 
 from nebula2.common.ttypes import Value, ErrorCode
 from pytest_bdd import given, parsers, then, when
@@ -112,7 +113,6 @@ def preload_space(
     else:
         raise ValueError(f"Invalid space name given: {space}")
     resp_ok(session, f'USE {space};', True)
-    wait_indexes_ready(session)
 
 
 @given("an empty graph")
@@ -171,7 +171,6 @@ def import_csv_data(request, data, graph_spaces, session, pytestconfig):
         data_dir,
         "I" + space_generator(),
     )
-    wait_indexes_ready(session)
     assert space_desc is not None
     graph_spaces["space_desc"] = space_desc
     graph_spaces["drop_space"] = True
