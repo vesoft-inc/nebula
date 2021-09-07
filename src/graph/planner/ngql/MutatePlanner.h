@@ -5,7 +5,7 @@
  */
 
 #ifndef NGQL_PLANNERS_MUTATE_PLANNER_H
-#define NGQL_PLANNERS_NUTATE_PLANNER_H
+#define NGQL_PLANNERS_MUTATE_PLANNER_H
 
 #include "graph/context/QueryContext.h"
 #include "graph/context/ast/QueryAstContext.h"
@@ -53,4 +53,4 @@ class InsertEdgesPlanner final : public Planner {
 
 }  // namespace graph
 }  // namespace nebula
-#endif  //  NGQL_PLANNERS_SUBGRAPHPLANNER_H
+#endif  //  NGQL_PLANNERS_MUTATE_PLANNER_H
