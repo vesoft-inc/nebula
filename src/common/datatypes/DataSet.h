@@ -7,6 +7,8 @@
 #ifndef COMMON_DATATYPES_DATASET_H_
 #define COMMON_DATATYPES_DATASET_H_
 
+#include <folly/dynamic.h>
+
 #include <iostream>
 #include <iterator>
 #include <sstream>
@@ -151,6 +153,44 @@ struct DataSet {
     }
     os << std::endl;
     return os.str();
+  }
+
+  folly::dynamic toJsonObj() const {
+    folly::dynamic datasetObj = folly::dynamic::object();
+
+    // parse rows
+    // "data": [
+    // {
+    //     "row": [ row-data ],
+    //     "meta": [ metadata ]
+    // },
+
+    auto dataBody = folly::dynamic::array();
+    for (auto& row : rows) {
+      dataBody.push_back(rowToJsonObj(row));
+    }
+    datasetObj.insert("data", dataBody);
+    return datasetObj;
+  }
+
+  // parse a row to json
+  // {
+  //     "row": [ row-data ],
+  //     "meta": [ metadata ]
+  // }
+  folly::dynamic rowToJsonObj(Row row) const {
+    auto rowJsonObj = folly::dynamic();
+    auto rowDataList = folly::dynamic();
+    auto metaDataList = folly::dynamic();
+
+    for (auto& ele : row.values) {
+      rowDataList.push_back(ele.toJsonObj());
+      metaDataList.push_back(ele.getMetaData());
+    }
+
+    rowJsonObj.insert("row", rowDataList);
+    rowJsonObj.insert("meta", metaDataList);
+    return rowJsonObj;
   }
 
   bool operator==(const DataSet& rhs) const { return colNames == rhs.colNames && rows == rhs.rows; }

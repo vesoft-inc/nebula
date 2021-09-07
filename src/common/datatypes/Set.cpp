@@ -22,4 +22,14 @@ std::string Set::toString() const {
   return os.str();
 }
 
+folly::dynamic Set::getMetaData() const {
+  auto listMetadataObj = folly::dynamic();
+
+  for (const auto& val : values) {
+    listMetadataObj.push_back(val.getMetaData());
+  }
+
+  return listMetadataObj;
+}
+
 }  // namespace nebula

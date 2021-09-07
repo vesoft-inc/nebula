@@ -26,6 +26,8 @@ struct Set {
   void __clear() { clear(); }
 
   std::string toString() const;
+  // Extract the metadata of each element
+  folly::dynamic getMetaData() const;
 
   Set& operator=(const Set& rhs) {
     if (this == &rhs) {

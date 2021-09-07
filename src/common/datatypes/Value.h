@@ -7,6 +7,8 @@
 #ifndef COMMON_DATATYPES_VALUE_H_
 #define COMMON_DATATYPES_VALUE_H_
 
+#include <folly/dynamic.h>
+
 #include <memory>
 
 #include "common/datatypes/Date.h"
@@ -268,6 +270,9 @@ struct Value {
   static const Value& null() noexcept { return kNullValue; }
 
   std::string toString() const;
+  folly::dynamic toJsonObj() const;
+  // Used in Json form query result
+  folly::dynamic getMetaData() const;
 
   Value toBool() const;
   Value toFloat() const;

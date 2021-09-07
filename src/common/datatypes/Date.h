@@ -62,6 +62,7 @@ struct Date {
   Date operator-(int64_t days) const;
 
   std::string toString() const;
+  std::string toJsonString() const;
 
   // Return the number of days since -32768/1/1
   int64_t toInt() const;
@@ -113,6 +114,7 @@ struct Time {
   }
 
   std::string toString() const;
+  std::string toJsonString() const;
 };
 
 inline std::ostream& operator<<(std::ostream& os, const Time& d) {
@@ -203,6 +205,7 @@ struct DateTime {
   }
 
   std::string toString() const;
+  std::string toJsonString() const;
 };
 
 inline std::ostream& operator<<(std::ostream& os, const DateTime& d) {

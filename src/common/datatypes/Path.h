@@ -130,6 +130,27 @@ struct Path {
     return os.str();
   }
 
+  // Used in Json form query result
+  // format:
+  // [vertex1_metadata, edge1_metadata, vertex2_metadata, edge2_metadata,....]
+  folly::dynamic getMetaData() const {
+    auto dynamicObj = folly::dynamic();
+    auto srcVid = src;
+    dynamicObj.push_back(srcVid.getMetaData());
+    for (const auto& s : steps) {
+      auto edgeIdObj = folly::dynamic();
+      edgeIdObj.insert("src", srcVid.toString());
+      edgeIdObj.insert("dst", s.dst.toString());
+      edgeIdObj.insert("type", s.type);
+      edgeIdObj.insert("ranking", s.ranking);
+      dynamicObj.push_back(edgeIdObj);
+      // reset src vertex
+      srcVid = s.dst;
+    }
+
+    return dynamicObj;
+  }
+
   Path& operator=(Path&& rhs) noexcept {
     if (&rhs != this) {
       src = std::move(rhs.src);
