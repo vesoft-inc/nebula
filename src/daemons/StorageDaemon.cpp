@@ -4,7 +4,9 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#if defined(__x86_64__)
 #include <breakpad/client/linux/handler/exception_handler.h>
+#endif
 #include <folly/ssl/Init.h>
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 
@@ -47,10 +49,14 @@ using nebula::network::NetworkUtils;
 static void signalHandler(int sig);
 static Status setupSignalHandler();
 extern Status setupLogging();
+#if defined(__x86_64__)
 extern StatusOr<std::unique_ptr<google_breakpad::ExceptionHandler>> setupBreakpad();
+#endif
 
 std::unique_ptr<nebula::storage::StorageServer> gStorageServer;
+#if defined(__x86_64__)
 static std::unique_ptr<google_breakpad::ExceptionHandler> gExceptionHandler;
+#endif
 
 int main(int argc, char *argv[]) {
   google::SetVersionString(nebula::versionString());
@@ -66,12 +72,14 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
+#if defined(__x86_64__)
   auto expHandler = setupBreakpad();
   if (!expHandler.ok()) {
     LOG(ERROR) << expHandler.status();
     return EXIT_FAILURE;
   }
   gExceptionHandler = std::move(expHandler).value();
+#endif
 
   auto pidPath = FLAGS_pid_file;
   status = ProcessUtils::isPidAvailable(pidPath);

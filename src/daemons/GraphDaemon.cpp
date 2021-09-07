@@ -4,7 +4,9 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#if defined(__x86_64__)
 #include <breakpad/client/linux/handler/exception_handler.h>
+#endif
 #include <errno.h>
 #include <folly/ssl/Init.h>
 #include <signal.h>
@@ -32,14 +34,18 @@ using nebula::graph::GraphService;
 using nebula::network::NetworkUtils;
 
 static std::unique_ptr<apache::thrift::ThriftServer> gServer;
+#if defined(__x86_64__)
 static std::unique_ptr<google_breakpad::ExceptionHandler> gExceptionHandler;
+#endif
 
 static void signalHandler(int sig);
 static Status setupSignalHandler();
 extern Status setupLogging();
 static void printHelp(const char *prog);
 static void setupThreadManager();
+#if defined(__x86_64__)
 extern StatusOr<std::unique_ptr<google_breakpad::ExceptionHandler>> setupBreakpad();
+#endif
 
 DECLARE_string(flagfile);
 
@@ -74,12 +80,14 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
+#if defined(__x86_64__)
   auto expHandler = setupBreakpad();
   if (!expHandler.ok()) {
     LOG(ERROR) << expHandler.status();
     return EXIT_FAILURE;
   }
   gExceptionHandler = std::move(expHandler).value();
+#endif
 
   // Detect if the server has already been started
   auto pidPath = FLAGS_pid_file;

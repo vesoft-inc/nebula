@@ -4,6 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#if defined(__x86_64__)
 #include <breakpad/client/linux/handler/exception_handler.h>
 
 #include "common/base/Status.h"
@@ -24,3 +25,4 @@ StatusOr<std::unique_ptr<google_breakpad::ExceptionHandler>> setupBreakpad() {
   return std::make_unique<google_breakpad::ExceptionHandler>(
       descriptor, nullptr, nullptr, nullptr, true, -1);
 }
+#endif
