@@ -184,9 +184,18 @@ function dump_syms {
     nebula_storaged=${build_dir}/bin/nebula-storaged
     nebula_metad=${build_dir}/bin/nebula-metad
 
-    ${dump_syms_tool_dir}/dump_syms ${nebula_graphd} > ${syms_dir}/nebula-graphd.sym
-    ${dump_syms_tool_dir}/dump_syms ${nebula_storaged} > ${syms_dir}/nebula-storaged.sym
-    ${dump_syms_tool_dir}/dump_syms ${nebula_metad} > ${syms_dir}/nebula-metad.sym
+    if ! (${dump_syms_tool_dir}/dump_syms ${nebula_graphd} > ${syms_dir}/nebula-graphd-${version}.sym); then
+        echo ">>> dump nebula-graphd symbols faild. <<<"
+        exit 1
+    fi
+    if ! (${dump_syms_tool_dir}/dump_syms ${nebula_storaged} > ${syms_dir}/nebula-storaged-${version}.sym); then
+        echo ">>> dump nebula-storaged symbols faild. <<<"
+        exit 1
+    fi
+    if ! (${dump_syms_tool_dir}/dump_syms ${nebula_metad} > ${syms_dir}/nebula-metad-${version}.sym); then
+        echo ">>> dump nebula-storaged symbols faild. <<<"
+        exit 1
+    fi
 }
 
 # The main
