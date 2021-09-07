@@ -45,8 +45,8 @@ class RateLimiter {
 
  private:
   std::unique_ptr<folly::TokenBucket> bucket_;
-  double rate_;
-  double burstSize_;
+  double rate_{1 << 20};
+  double burstSize_{1 << 20};
 };
 
 }  // namespace kvstore
