@@ -69,6 +69,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
       - uses: docker/build-push-action@v2
         with:
+          context: .
           file: ./docker/Dockerfile.${{ matrix.service }}
           tags: vesoft/nebula-${{ matrix.service }}:${{ steps.tagname.outputs.tag }},vesoft/nebula-${{ matrix.service }}:latest
           push: true

@@ -69,6 +69,7 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           repository: vesoft/nebula-${{ matrix.service }}
+          path: .
           dockerfile: docker/Dockerfile.${{ matrix.service }}
           tags: nightly,v2-nightly
           cache_froms: vesoft/nebula-dev:centos7
