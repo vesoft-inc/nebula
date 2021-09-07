@@ -42,7 +42,7 @@ Pattern Pattern::create(graph::PlanNode::Kind kind, std::initializer_list<Patter
 }
 
 StatusOr<MatchedResult> Pattern::match(const OptGroupNode *groupNode) const {
-  if (!(polymorphsim_ ? groupNode->node()->isA(kind_) : groupNode->node()->kind() == kind_)) {
+  if (!(polymorphism_ ? groupNode->node()->isA(kind_) : groupNode->node()->kind() == kind_)) {
     return Status::Error();
   }
 
