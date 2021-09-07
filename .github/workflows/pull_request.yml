@@ -59,9 +59,6 @@ jobs:
             compiler: clang-10
     container:
       image: vesoft/nebula-dev:${{ matrix.os }}
-      credentials:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
       env:
         CCACHE_DIR: /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
         CCACHE_MAXSIZE: 8G
