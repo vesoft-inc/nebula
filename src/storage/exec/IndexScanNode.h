@@ -71,6 +71,9 @@ class IndexScanNode : public RelNode<T> {
     auto ttlProp = CommonUtils::ttlProps(sh);
     data_.clear();
     while (!!iter_ && iter_->valid()) {
+      if (context_->isPlanKilled()) {
+        return {};
+      }
       if (!iter_->val().empty() && ttlProp.first) {
         auto v = IndexKeyUtils::parseIndexTTL(iter_->val());
         if (CommonUtils::checkDataExpiredForTTL(
