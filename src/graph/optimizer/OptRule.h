@@ -49,12 +49,16 @@ class Pattern final {
 
   StatusOr<MatchedResult> match(const OptGroupNode *groupNode) const;
 
+  void setPolymorphism(bool polymorphism) { polymorphism_ = polymorphism; }
+
  private:
   Pattern() = default;
   StatusOr<MatchedResult> match(const OptGroup *group) const;
 
   graph::PlanNode::Kind kind_;
   std::vector<Pattern> dependencies_;
+  // Whether enable plymorphsim plan node match
+  bool polymorphism_{false};
 };
 
 class OptRule {
