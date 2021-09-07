@@ -24,9 +24,6 @@ jobs:
           - centos8
     container:
       image: vesoft/nebula-dev:${{ matrix.os }}
-      credentials:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
     steps:
       - uses: actions/checkout@v2
       - name: package
