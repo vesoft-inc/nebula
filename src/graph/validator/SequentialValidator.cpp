@@ -13,6 +13,7 @@
 #include "graph/service/PermissionCheck.h"
 
 DECLARE_uint32(max_allowed_statements);
+DECLARE_uint32(max_allowed_query_size);
 
 namespace nebula {
 namespace graph {
@@ -23,6 +24,11 @@ Status SequentialValidator::validateImpl() {
         "Sequential validator validates a SequentialSentences, but %ld is "
         "given.",
         static_cast<int64_t>(sentence_->kind()));
+  }
+  size_t querySize = sentence_->toString().size();
+  size_t maxAllowedQuerySize = static_cast<size_t>(FLAGS_max_allowed_query_size);
+  if (querySize > maxAllowedQuerySize) {
+    return Status::SemanticError("Query is too large (%ld > %ld).", querySize, maxAllowedQuerySize);
   }
   auto seqSentence = static_cast<SequentialSentences*>(sentence_);
   auto sentences = seqSentence->sentences();

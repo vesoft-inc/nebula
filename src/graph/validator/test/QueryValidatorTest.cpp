@@ -8,6 +8,7 @@
 #include "graph/validator/test/ValidatorTestBase.h"
 
 DECLARE_uint32(max_allowed_statements);
+DECLARE_uint32(max_allowed_query_size);
 
 namespace nebula {
 namespace graph {
@@ -1116,6 +1117,26 @@ TEST_F(QueryValidatorTest, TestMaxAllowedStatements) {
   EXPECT_EQ(std::string(result.message()),
             "SemanticError: The maximum number of statements allowed has been "
             "exceeded");
+}
+
+TEST_F(QueryValidatorTest, TestMaxAllowedQuerySize) {
+  FLAGS_max_allowed_query_size = 256;
+  std::string query = "INSERT VERTEX person(name, age) VALUES ";
+  std::string value = "\"person_1\":(\"person_1\", 1),";
+  int count = (FLAGS_max_allowed_query_size - query.size()) / value.size();
+  std::string values;
+  values.reserve(FLAGS_max_allowed_query_size);
+  for (int i = 0; i < count; ++i) {
+    values.append(value);
+  }
+  values.erase(values.size() - 1);
+  query += values;
+  EXPECT_TRUE(checkResult(query));
+  query.append(",\"person_2\":(\"person_2\", 2);");
+  auto result = checkResult(query);
+  EXPECT_FALSE(result);
+  EXPECT_EQ(std::string(result.message()), "SemanticError: Query is too large (271 > 256).");
+  FLAGS_max_allowed_query_size = 4194304;
 }
 
 TEST_F(QueryValidatorTest, TestMatch) {
