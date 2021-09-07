@@ -26,7 +26,8 @@ StatusOr<std::shared_ptr<meta::cpp2::IndexItem>> RebuildEdgeIndexTask::getIndex(
 
 nebula::cpp2::ErrorCode RebuildEdgeIndexTask::buildIndexGlobal(GraphSpaceID space,
                                                                PartitionID part,
-                                                               const IndexItems& items) {
+                                                               const IndexItems& items,
+                                                               kvstore::RateLimiter* rateLimiter) {
   if (canceled_) {
     LOG(ERROR) << "Rebuild Edge Index is Canceled";
     return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -66,7 +67,7 @@ nebula::cpp2::ErrorCode RebuildEdgeIndexTask::buildIndexGlobal(GraphSpaceID spac
     }
 
     if (batchSize >= FLAGS_rebuild_index_batch_size) {
-      auto result = writeData(space, part, data, batchSize);
+      auto result = writeData(space, part, data, batchSize, rateLimiter);
       if (result != nebula::cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Write Part " << part << " Index Failed";
         return result;
@@ -160,7 +161,7 @@ nebula::cpp2::ErrorCode RebuildEdgeIndexTask::buildIndexGlobal(GraphSpaceID spac
     iter->next();
   }
 
-  auto result = writeData(space, part, std::move(data), batchSize);
+  auto result = writeData(space, part, std::move(data), batchSize, rateLimiter);
   if (result != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << "Write Part " << part << " Index Failed";
     return nebula::cpp2::ErrorCode::E_STORE_FAILURE;
