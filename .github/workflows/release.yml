@@ -70,7 +70,7 @@ jobs:
       - uses: docker/build-push-action@v2
         with:
           file: ./docker/Dockerfile.${{ matrix.service }}
-          tags: vesoft/nebula-${{ matrix.service }}:${{ steps.tagname.outputs.tag }}
+          tags: vesoft/nebula-${{ matrix.service }}:${{ steps.tagname.outputs.tag }},vesoft/nebula-${{ matrix.service }}:latest
           push: true
           build-args: |
             BRANCH=${{ steps.tagname.outputs.tag }}

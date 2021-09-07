@@ -70,6 +70,6 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
           repository: vesoft/nebula-${{ matrix.service }}
           dockerfile: docker/Dockerfile.${{ matrix.service }}
-          tags: v2-nightly
+          tags: nightly,v2-nightly
           cache_froms: vesoft/nebula-dev:centos7
           add_git_labels: true
