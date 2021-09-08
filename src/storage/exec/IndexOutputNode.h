@@ -36,33 +36,40 @@ class IndexOutputNode final : public RelNode<T> {
                   RuntimeContext* context,
                   IndexScanNode<T>* indexScanNode,
                   bool hasNullableCol,
-                  const std::vector<meta::cpp2::ColumnDef>& fields)
+                  const std::vector<meta::cpp2::ColumnDef>& fields,
+                  const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas)
       : result_(result),
         context_(context),
         indexScanNode_(indexScanNode),
         hasNullableCol_(hasNullableCol),
-        fields_(fields) {
+        fields_(fields),
+        schemas_(schemas) {
     type_ = context_->isEdge() ? IndexResultType::kEdgeFromIndexScan
                                : IndexResultType::kVertexFromIndexScan;
   }
 
-  IndexOutputNode(nebula::DataSet* result, RuntimeContext* context, IndexEdgeNode<T>* indexEdgeNode)
-      : result_(result), context_(context), indexEdgeNode_(indexEdgeNode) {
+  IndexOutputNode(nebula::DataSet* result,
+                  RuntimeContext* context,
+                  IndexEdgeNode<T>* indexEdgeNode,
+                  const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas)
+      : result_(result), context_(context), indexEdgeNode_(indexEdgeNode), schemas_(schemas) {
     type_ = IndexResultType::kEdgeFromDataScan;
   }
 
   IndexOutputNode(nebula::DataSet* result,
                   RuntimeContext* context,
-                  IndexVertexNode<T>* indexVertexNode)
-      : result_(result), context_(context), indexVertexNode_(indexVertexNode) {
+                  IndexVertexNode<T>* indexVertexNode,
+                  const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas)
+      : result_(result), context_(context), indexVertexNode_(indexVertexNode), schemas_(schemas) {
     type_ = IndexResultType::kVertexFromDataScan;
   }
 
   IndexOutputNode(nebula::DataSet* result,
                   RuntimeContext* context,
                   IndexFilterNode<T>* indexFilterNode,
+                  const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas,
                   bool indexFilter = false)
-      : result_(result), context_(context), indexFilterNode_(indexFilterNode) {
+      : result_(result), context_(context), indexFilterNode_(indexFilterNode), schemas_(schemas) {
     hasNullableCol_ = indexFilterNode->hasNullableCol();
     fields_ = indexFilterNode_->indexCols();
     if (indexFilter) {
@@ -79,6 +86,7 @@ class IndexOutputNode final : public RelNode<T> {
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
       return ret;
     }
+    partId_ = partId;
 
     switch (type_) {
       case IndexResultType::kEdgeFromIndexScan: {
@@ -124,8 +132,7 @@ class IndexOutputNode final : public RelNode<T> {
     }
     auto ret = nebula::cpp2::ErrorCode::SUCCEEDED;
     switch (type_) {
-      case IndexResultType::kEdgeFromIndexScan:
-      case IndexResultType::kEdgeFromIndexFilter: {
+      case IndexResultType::kEdgeFromIndexScan: {
         ret = edgeRowsFromIndex(data);
         break;
       }
@@ -134,8 +141,7 @@ class IndexOutputNode final : public RelNode<T> {
         ret = edgeRowsFromData(data);
         break;
       }
-      case IndexResultType::kVertexFromIndexScan:
-      case IndexResultType::kVertexFromIndexFilter: {
+      case IndexResultType::kVertexFromIndexScan: {
         ret = vertexRowsFromIndex(data);
         break;
       }
@@ -144,26 +150,22 @@ class IndexOutputNode final : public RelNode<T> {
         ret = vertexRowsFromData(data);
         break;
       }
+      default:
+        LOG(FATAL) << "Unexpect IndexResultType:" << int(type_);
     }
     return ret;
   }
 
   nebula::cpp2::ErrorCode vertexRowsFromData(const std::vector<kvstore::KV>& data) {
-    const auto& schemas = type_ == IndexResultType::kVertexFromDataScan
-                              ? indexVertexNode_->getSchemas()
-                              : indexFilterNode_->getSchemas();
-    if (schemas.empty()) {
-      return nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND;
-    }
     for (const auto& val : data) {
       Row row;
-      auto reader = RowReaderWrapper::getRowReader(schemas, val.second);
+      auto reader = RowReaderWrapper::getRowReader(schemas_, val.second);
       if (!reader) {
         VLOG(1) << "Can't get tag reader";
         return nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND;
       }
       for (const auto& col : result_->colNames) {
-        auto ret = addIndexValue(row, reader.get(), val, col, schemas.back().get());
+        auto ret = addIndexValue(row, reader.get(), val, col, schemas_.back().get());
         if (!ret.ok()) {
           return nebula::cpp2::ErrorCode::E_INVALID_DATA;
         }
@@ -177,7 +179,7 @@ class IndexOutputNode final : public RelNode<T> {
     for (const auto& val : data) {
       Row row;
       for (const auto& col : result_->colNames) {
-        auto ret = addIndexValue(row, val, col);
+        auto ret = addIndexValue(row, val, col, schemas_.back().get());
         if (!ret.ok()) {
           return nebula::cpp2::ErrorCode::E_INVALID_DATA;
         }
@@ -216,7 +218,7 @@ class IndexOutputNode final : public RelNode<T> {
     for (const auto& val : data) {
       Row row;
       for (const auto& col : result_->colNames) {
-        auto ret = addIndexValue(row, val, col);
+        auto ret = addIndexValue(row, val, col, schemas_.back().get());
         if (!ret.ok()) {
           return nebula::cpp2::ErrorCode::E_INVALID_DATA;
         }
@@ -285,7 +287,10 @@ class IndexOutputNode final : public RelNode<T> {
   }
 
   // Add the value by index key
-  Status addIndexValue(Row& row, const kvstore::KV& data, const std::string& col) {
+  Status addIndexValue(Row& row,
+                       const kvstore::KV& data,
+                       const std::string& col,
+                       const meta::NebulaSchemaProvider* schema) {
     switch (QueryUtils::toReturnColType(col)) {
       case QueryUtils::ReturnColType::kVid: {
         auto vId = IndexKeyUtils::getIndexVertexID(context_->vIdLen(), data.first);
@@ -329,6 +334,45 @@ class IndexOutputNode final : public RelNode<T> {
       default: {
         auto v = IndexKeyUtils::getValueFromIndexKey(
             context_->vIdLen(), data.first, col, fields_, context_->isEdge(), hasNullableCol_);
+        if (v.isStr()) {
+          auto iter = std::find_if(fields_.begin(), fields_.end(), [&col](const auto& field) {
+            return col == field.get_name();
+          });
+          if (iter == fields_.end()) {
+            return Status::Error("Bad data");
+          }
+          if (static_cast<int>(v.toString().size()) >=
+              iter->get_type().type_length_ref().value_or(std::numeric_limits<int16_t>::max())) {
+            RowReaderWrapper reader;
+            std::string val;
+            if (context_->isEdge()) {
+              auto srcId = NebulaKeyUtils::getSrcId(context_->vIdLen(), data.first);
+              auto dstId = NebulaKeyUtils::getDstId(context_->vIdLen(), data.first);
+              auto rank = NebulaKeyUtils::getRank(context_->vIdLen(), data.first);
+              auto key = NebulaKeyUtils::edgeKey(context_->vIdLen(),
+                                                 partId_,
+                                                 srcId.toString(),
+                                                 context_->edgeType_,
+                                                 rank,
+                                                 dstId.toString());
+              auto ret = context_->env()->kvstore_->get(context_->spaceId(), partId_, key, &val);
+              if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+                return Status::Error("Bad data");
+              }
+              reader.reset(schema, val);
+            } else {
+              auto vId = IndexKeyUtils::getIndexVertexID(context_->vIdLen(), data.first);
+              auto key = NebulaKeyUtils::vertexKey(
+                  context_->vIdLen(), partId_, vId.toString(), context_->tagId_);
+              auto ret = context_->env()->kvstore_->get(context_->spaceId(), partId_, key, &val);
+              if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+                return Status::Error("Bad data");
+              }
+              reader.reset(schema, val);
+            }
+            v = QueryUtils::readValue(&reader, col, schema).value();
+          }
+        }
         row.emplace_back(std::move(v));
       }
     }
@@ -345,6 +389,8 @@ class IndexOutputNode final : public RelNode<T> {
   IndexFilterNode<T>* indexFilterNode_{nullptr};
   bool hasNullableCol_{};
   std::vector<meta::cpp2::ColumnDef> fields_;
+  PartitionID partId_;
+  const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas_;
 };
 
 }  // namespace storage

@@ -219,6 +219,8 @@ StatusOr<StoragePlan<IndexID>> LookupBaseProcessor<REQ, RESP>::buildPlan(
         out = buildPlanBasic(result, ctx, plan, hasNullableCol, fields);
       }
     } else {
+      DLOG(INFO) << "buildPlanWithDataAndFilter";
+
       auto expr = Expression::decode(pool, ctx.get_filter());
       // Need to get columns in data, expr ctx need to be aware of schema
       const auto& schemaName = context_->isEdge() ? context_->edgeName_ : context_->tagName_;
@@ -272,7 +274,7 @@ std::unique_ptr<IndexOutputNode<IndexID>> LookupBaseProcessor<REQ, RESP>::buildP
       std::make_unique<IndexScanNode<IndexID>>(context_.get(), indexId, std::move(colHints));
 
   auto output = std::make_unique<IndexOutputNode<IndexID>>(
-      result, context_.get(), indexScan.get(), hasNullableCol, fields);
+      result, context_.get(), indexScan.get(), hasNullableCol, fields, schemas_);
   output->addDependency(indexScan.get());
   plan.addNode(std::move(indexScan));
   return output;
@@ -308,7 +310,8 @@ std::unique_ptr<IndexOutputNode<IndexID>> LookupBaseProcessor<REQ, RESP>::buildP
     auto edge = std::make_unique<IndexEdgeNode<IndexID>>(
         context_.get(), indexScan.get(), schemas_, context_->edgeName_);
     edge->addDependency(indexScan.get());
-    auto output = std::make_unique<IndexOutputNode<IndexID>>(result, context_.get(), edge.get());
+    auto output =
+        std::make_unique<IndexOutputNode<IndexID>>(result, context_.get(), edge.get(), schemas_);
     output->addDependency(edge.get());
     plan.addNode(std::move(indexScan));
     plan.addNode(std::move(edge));
@@ -317,7 +320,8 @@ std::unique_ptr<IndexOutputNode<IndexID>> LookupBaseProcessor<REQ, RESP>::buildP
     auto vertex = std::make_unique<IndexVertexNode<IndexID>>(
         context_.get(), indexScan.get(), schemas_, context_->tagName_);
     vertex->addDependency(indexScan.get());
-    auto output = std::make_unique<IndexOutputNode<IndexID>>(result, context_.get(), vertex.get());
+    auto output =
+        std::make_unique<IndexOutputNode<IndexID>>(result, context_.get(), vertex.get(), schemas_);
     output->addDependency(vertex.get());
     plan.addNode(std::move(indexScan));
     plan.addNode(std::move(vertex));
@@ -359,8 +363,8 @@ std::unique_ptr<IndexOutputNode<IndexID>> LookupBaseProcessor<REQ, RESP>::buildP
   auto filter = std::make_unique<IndexFilterNode<IndexID>>(
       context_.get(), indexScan.get(), exprCtx, exp, context_->isEdge());
   filter->addDependency(indexScan.get());
-  auto output =
-      std::make_unique<IndexOutputNode<IndexID>>(result, context_.get(), filter.get(), true);
+  auto output = std::make_unique<IndexOutputNode<IndexID>>(
+      result, context_.get(), filter.get(), schemas_, true);
   output->addDependency(filter.get());
   plan.addNode(std::move(indexScan));
   plan.addNode(std::move(filter));
@@ -414,7 +418,8 @@ LookupBaseProcessor<REQ, RESP>::buildPlanWithDataAndFilter(nebula::DataSet* resu
         std::make_unique<IndexFilterNode<IndexID>>(context_.get(), edge.get(), exprCtx, exp);
     filter->addDependency(edge.get());
 
-    auto output = std::make_unique<IndexOutputNode<IndexID>>(result, context_.get(), filter.get());
+    auto output =
+        std::make_unique<IndexOutputNode<IndexID>>(result, context_.get(), filter.get(), schemas_);
     output->addDependency(filter.get());
     plan.addNode(std::move(indexScan));
     plan.addNode(std::move(edge));
@@ -428,7 +433,8 @@ LookupBaseProcessor<REQ, RESP>::buildPlanWithDataAndFilter(nebula::DataSet* resu
         std::make_unique<IndexFilterNode<IndexID>>(context_.get(), vertex.get(), exprCtx, exp);
     filter->addDependency(vertex.get());
 
-    auto output = std::make_unique<IndexOutputNode<IndexID>>(result, context_.get(), filter.get());
+    auto output =
+        std::make_unique<IndexOutputNode<IndexID>>(result, context_.get(), filter.get(), schemas_);
     output->addDependency(filter.get());
     plan.addNode(std::move(indexScan));
     plan.addNode(std::move(vertex));

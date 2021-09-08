@@ -785,7 +785,8 @@ TEST(IndexWithTTLTest, LookupTagIndexWithTTLExpired) {
   req.set_parts(std::move(parts));
   std::vector<std::string> returnCols;
   returnCols.emplace_back(kSrc);
-  returnCols.emplace_back(kTag);
+  returnCols.emplace_back(kRank);
+  returnCols.emplace_back(kDst);
   req.set_return_columns(std::move(returnCols));
   auto expr = RelationalExpression::makeNE(pool,
                                            TagPropertyExpression::make(pool, "2021001", "c1"),
