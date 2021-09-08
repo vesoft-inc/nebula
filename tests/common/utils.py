@@ -426,6 +426,8 @@ def load_csv_data(
         for line in schemas.splitlines():
             resp_ok(sess, line.strip(), True)
 
+        time.sleep(1)
+
         for fd in config["files"]:
             _load_data_from_file(sess, data_dir, fd)
 
