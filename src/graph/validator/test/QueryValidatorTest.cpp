@@ -1135,7 +1135,7 @@ TEST_F(QueryValidatorTest, TestMaxAllowedQuerySize) {
   query.append(",\"person_2\":(\"person_2\", 2);");
   auto result = checkResult(query);
   EXPECT_FALSE(result);
-  EXPECT_EQ(std::string(result.message()), "SemanticError: Query is too large (271 > 256).");
+  EXPECT_EQ(std::string(result.message()), "SyntaxError: Query is too large (282 > 256).");
   FLAGS_max_allowed_query_size = 4194304;
 }
 
