@@ -18,45 +18,33 @@ namespace kvstore {
 
 TEST(RateLimter, ConsumeLessEqualThanBurst) {
   RateLimiter limiter(FLAGS_snapshot_part_rate_limit, FLAGS_snapshot_part_rate_limit);
-  GraphSpaceID spaceId = 1;
-  PartitionID partId = 1;
-  limiter.add(spaceId, partId);
   auto now = time::WallClock::fastNowInSec();
   int64_t count = 0;
   while (count++ < 50) {
-    limiter.consume(spaceId, partId, FLAGS_snapshot_part_rate_limit / 10);
+    limiter.consume(FLAGS_snapshot_part_rate_limit / 10);
   }
   EXPECT_GE(time::WallClock::fastNowInSec() - now, 5);
-  limiter.remove(spaceId, partId);
 }
 
 TEST(RateLimter, ConsumeGreaterThanBurst) {
   RateLimiter limiter(FLAGS_snapshot_part_rate_limit, FLAGS_snapshot_part_rate_limit / 10);
-  GraphSpaceID spaceId = 1;
-  PartitionID partId = 1;
-  limiter.add(spaceId, partId);
   auto now = time::WallClock::fastNowInSec();
   int64_t count = 0;
   while (count++ < 5) {
     // greater than burst size, will sleep 1 second instead
-    limiter.consume(spaceId, partId, FLAGS_snapshot_part_rate_limit);
+    limiter.consume(FLAGS_snapshot_part_rate_limit);
   }
   EXPECT_GE(time::WallClock::fastNowInSec() - now, 5);
-  limiter.remove(spaceId, partId);
 }
 
 TEST(RateLimter, RateLessThanBurst) {
   RateLimiter limiter(FLAGS_snapshot_part_rate_limit, 2 * FLAGS_snapshot_part_rate_limit);
-  GraphSpaceID spaceId = 1;
-  PartitionID partId = 1;
-  limiter.add(spaceId, partId);
   auto now = time::WallClock::fastNowInSec();
   int64_t count = 0;
   while (count++ < 5) {
-    limiter.consume(spaceId, partId, FLAGS_snapshot_part_rate_limit);
+    limiter.consume(FLAGS_snapshot_part_rate_limit);
   }
   EXPECT_GE(time::WallClock::fastNowInSec() - now, 5);
-  limiter.remove(spaceId, partId);
 }
 
 }  // namespace kvstore
