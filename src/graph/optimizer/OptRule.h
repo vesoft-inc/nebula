@@ -45,11 +45,11 @@ struct MatchedResult {
 
 class Pattern final {
  public:
-  static Pattern create(graph::PlanNode::Kind kind, std::initializer_list<Pattern> patterns = {});
+  static Pattern create(graph::PlanNode::Kind kind,
+                        std::initializer_list<Pattern> patterns = {},
+                        bool polymorphism = false);
 
   StatusOr<MatchedResult> match(const OptGroupNode *groupNode) const;
-
-  void setPolymorphism(bool polymorphism) { polymorphism_ = polymorphism; }
 
  private:
   Pattern() = default;

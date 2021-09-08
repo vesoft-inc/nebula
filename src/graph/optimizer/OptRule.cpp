@@ -32,12 +32,15 @@ const PlanNode *MatchedResult::planNode(const std::vector<int32_t> &pos) const {
   return DCHECK_NOTNULL(result->node)->node();
 }
 
-Pattern Pattern::create(graph::PlanNode::Kind kind, std::initializer_list<Pattern> patterns) {
+Pattern Pattern::create(graph::PlanNode::Kind kind,
+                        std::initializer_list<Pattern> patterns,
+                        bool polymorphism) {
   Pattern pattern;
   pattern.kind_ = kind;
   for (auto &p : patterns) {
     pattern.dependencies_.emplace_back(p);
   }
+  pattern.polymorphism_ = polymorphism;
   return pattern;
 }
 
