@@ -125,7 +125,7 @@ class Status final {
   STATUS_GENERATOR(Balanced);
   STATUS_GENERATOR(PartNotFound);
   STATUS_GENERATOR(ListenerNotFound);
-
+  STATUS_GENERATOR(SessionNotFound);
   // User or permission errors
   STATUS_GENERATOR(PermissionError);
 
@@ -167,6 +167,7 @@ class Status final {
     kGroupNotFound = 413,
     kZoneNotFound = 414,
     kListenerNotFound = 415,
+    kSessionNotFound = 416,
     // 5xx for user or permission error
     kPermissionError = 501,
   };

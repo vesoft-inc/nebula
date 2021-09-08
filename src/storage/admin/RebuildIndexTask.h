@@ -34,11 +34,14 @@ class RebuildIndexTask : public AdminTask {
 
   virtual nebula::cpp2::ErrorCode buildIndexGlobal(GraphSpaceID space,
                                                    PartitionID part,
-                                                   const IndexItems& items) = 0;
+                                                   const IndexItems& items,
+                                                   kvstore::RateLimiter* rateLimiter) = 0;
 
   void cancel() override { canceled_ = true; }
 
-  nebula::cpp2::ErrorCode buildIndexOnOperations(GraphSpaceID space, PartitionID part);
+  nebula::cpp2::ErrorCode buildIndexOnOperations(GraphSpaceID space,
+                                                 PartitionID part,
+                                                 kvstore::RateLimiter* rateLimiter);
 
   // Remove the legacy operation log to make sure the index is correct.
   nebula::cpp2::ErrorCode removeLegacyLogs(GraphSpaceID space, PartitionID part);
@@ -46,18 +49,19 @@ class RebuildIndexTask : public AdminTask {
   nebula::cpp2::ErrorCode writeData(GraphSpaceID space,
                                     PartitionID part,
                                     std::vector<kvstore::KV> data,
-                                    size_t batchSize);
+                                    size_t batchSize,
+                                    kvstore::RateLimiter* rateLimiter);
 
   nebula::cpp2::ErrorCode writeOperation(GraphSpaceID space,
                                          PartitionID part,
-                                         kvstore::BatchHolder* batchHolder);
+                                         kvstore::BatchHolder* batchHolder,
+                                         kvstore::RateLimiter* rateLimiter);
 
   nebula::cpp2::ErrorCode invoke(GraphSpaceID space, PartitionID part, const IndexItems& items);
 
  protected:
   std::atomic<bool> canceled_{false};
   GraphSpaceID space_;
-  std::unique_ptr<kvstore::RateLimiter> rateLimiter_;
 };
 
 }  // namespace storage
