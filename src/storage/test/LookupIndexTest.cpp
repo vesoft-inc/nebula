@@ -626,10 +626,9 @@ TEST_P(LookupIndexTest, TagIndexFilterTest) {
     columnHints.emplace_back(std::move(columnHint));
     cpp2::IndexQueryContext context1;
     context1.set_column_hints(std::move(columnHints));
-    const auto& expr =
-        *RelationalExpression::makeEQ(pool,
-                                      TagPropertyExpression::make(pool, "player", "age"),
-                                      ConstantExpression::make(pool, Value(34L)));
+    const auto& expr = *RelationalExpression::makeEQ(pool,
+                                                     TagPropertyExpression::make(pool, "1", "age"),
+                                                     ConstantExpression::make(pool, Value(34L)));
     context1.set_filter(expr.encode());
     context1.set_index_id(1);
     decltype(indices.contexts) contexts;
@@ -701,10 +700,9 @@ TEST_P(LookupIndexTest, TagIndexFilterTest) {
     columnHints.emplace_back(std::move(columnHint));
     cpp2::IndexQueryContext context1;
     context1.set_column_hints(std::move(columnHints));
-    const auto& expr =
-        *RelationalExpression::makeGT(pool,
-                                      TagPropertyExpression::make(pool, "player", "age"),
-                                      ConstantExpression::make(pool, Value(34L)));
+    const auto& expr = *RelationalExpression::makeGT(pool,
+                                                     TagPropertyExpression::make(pool, "1", "age"),
+                                                     ConstantExpression::make(pool, Value(34L)));
     context1.set_filter(expr.encode());
     context1.set_index_id(1);
     decltype(indices.contexts) contexts;
@@ -881,7 +879,7 @@ TEST_P(LookupIndexTest, EdgeIndexFilterTest) {
     context1.set_column_hints(std::move(columnHints));
     const auto& expr =
         *RelationalExpression::makeNE(pool,
-                                      EdgePropertyExpression::make(pool, "Teammate", "teamName"),
+                                      EdgePropertyExpression::make(pool, "102", "teamName"),
                                       ConstantExpression::make(pool, Value("Spurs")));
     context1.set_filter(expr.encode());
     context1.set_index_id(102);

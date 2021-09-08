@@ -212,19 +212,12 @@ StatusOr<StoragePlan<IndexID>> LookupBaseProcessor<REQ, RESP>::buildPlan(
         needData = needFilter = true;
       }
     }
-
-    if (!needData && !needFilter) {
-      out = buildPlanBasic(result, ctx, plan, hasNullableCol, fields);
-    } else if (needData && !needFilter) {
-      out = buildPlanWithData(result, ctx, plan);
-    } else if (!needData && needFilter) {
-      auto expr = Expression::decode(pool, ctx.get_filter());
-      auto exprCtx = std::make_unique<StorageExpressionContext>(
-          context_->vIdLen(), context_->isIntId(), hasNullableCol, fields);
-      filterItem->emplace(filterId, std::make_pair(std::move(exprCtx), expr));
-      out = buildPlanWithFilter(
-          result, ctx, plan, (*filterItem)[filterId].first.get(), (*filterItem)[filterId].second);
-      filterId++;
+    if (!needFilter) {
+      if (needData) {
+        out = buildPlanWithData(result, ctx, plan);
+      } else {
+        out = buildPlanBasic(result, ctx, plan, hasNullableCol, fields);
+      }
     } else {
       auto expr = Expression::decode(pool, ctx.get_filter());
       // Need to get columns in data, expr ctx need to be aware of schema
