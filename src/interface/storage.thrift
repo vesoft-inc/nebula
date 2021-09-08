@@ -537,6 +537,7 @@ struct LookupIndexRequest {
     // Support kVid and kTag for vertex, kSrc, kType, kRank and kDst for edge.
     4: optional list<binary>                return_columns,
     5: optional RequestCommon               common,
+    6: optional i64                         limit,
 }
 
 

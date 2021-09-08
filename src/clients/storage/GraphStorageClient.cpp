@@ -491,6 +491,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::LookupIndexResp>> GraphStorageClient:
     bool isEdge,
     int32_t tagOrEdge,
     const std::vector<std::string>& returnCols,
+    int64_t limit,
     folly::EventBase* evb) {
   auto status = getHostParts(space);
   if (!status.ok()) {
@@ -514,6 +515,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::LookupIndexResp>> GraphStorageClient:
     spec.set_tag_or_edge_id(tagOrEdge);
     req.set_indices(spec);
     req.set_common(common);
+    req.set_limit(limit);
   }
 
   return collectResponse(

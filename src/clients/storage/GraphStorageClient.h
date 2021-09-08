@@ -141,6 +141,7 @@ class GraphStorageClient : public StorageClientBase<cpp2::GraphStorageServiceAsy
       bool isEdge,
       int32_t tagOrEdge,
       const std::vector<std::string>& returnCols,
+      int64_t limit,
       folly::EventBase* evb = nullptr);
 
   folly::SemiFuture<StorageRpcResponse<cpp2::GetNeighborsResponse>> lookupAndTraverse(
