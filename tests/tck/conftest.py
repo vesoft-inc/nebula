@@ -61,7 +61,7 @@ def get_running_jobs(sess):
     assert rsp.row_size() > 0
 
     def is_running_or_queue(val) -> bool:
-        return val.is_string() and val.as_string() in ("RUNNING", "QUEUE")
+        return val.is_string() and val.as_string() in ["RUNNING", "QUEUE"]
 
     def running_or_queue_row(row):
         return 1 if any(is_running_or_queue(val) for val in row) else 0
