@@ -20,7 +20,7 @@ nebula_add_library(
     rule/MergeGetNbrsAndDedupRule.cpp
     rule/MergeGetNbrsAndProjectRule.cpp
     rule/IndexScanRule.cpp
-    rule/LimitPushDownRule.cpp
+    rule/PushLimitDownGetNeighborsRule.cpp
     rule/TopNRule.cpp
     rule/PushFilterDownAggregateRule.cpp
     rule/PushFilterDownProjectRule.cpp
@@ -33,6 +33,7 @@ nebula_add_library(
     rule/IndexFullScanBaseRule.cpp
     rule/TagIndexFullScanRule.cpp
     rule/EdgeIndexFullScanRule.cpp
+    rule/PushLimitDownIndexScanRule.cpp
 )
 
 nebula_add_subdirectory(test)
