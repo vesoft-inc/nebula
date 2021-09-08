@@ -72,6 +72,21 @@ def job_id(resp):
             return job.as_int()
 
 
+def wait_tag_or_edge_indexes_ready(sess, schema: str = "TAG"):
+    resp = resp_ok(sess, f"SHOW {schema} INDEXES")
+    jobs = []
+    for val in resp.column_values("Index Name"):
+        job = val.as_string()
+        resp = resp_ok(sess, f"REBUILD {schema} INDEX {job}", True)
+        jobs.append(job_id(resp))
+    wait_all_jobs_finished(sess, jobs)
+
+
+def wait_indexes_ready(sess):
+    wait_tag_or_edge_indexes_ready(sess, "TAG")
+    wait_tag_or_edge_indexes_ready(sess, "EDGE")
+
+
 @pytest.fixture
 def graph_spaces():
     return dict(result_set=None)
@@ -185,6 +200,17 @@ def try_to_execute_query(query, graph_spaces, session, request):
     ngql = normalize_outline_scenario(request, combine_query(query))
     for stmt in ngql.split(';'):
         exec_query(request, stmt, session, graph_spaces, True)
+
+
+@given("wait all indexes ready")
+@when("wait all indexes ready")
+@then("wait all indexes ready")
+def wait_index_ready(graph_spaces, session):
+    space_desc = graph_spaces.get("space_desc", None)
+    assert space_desc is not None
+    space = space_desc.name
+    resp_ok(session, f"USE {space}", True)
+    wait_indexes_ready(session)
 
 
 @when(parse("submit a job:\n{query}"))
