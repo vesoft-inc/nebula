@@ -29,7 +29,7 @@ jobs:
         BUILD_DIR: ./pkg-build
         CPACK_DIR: ./pkg-build/cpack_output
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: ./.github/actions/tagname-action
         id: tag
       - name: package
@@ -69,8 +69,9 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
       - uses: docker/build-push-action@v2
         with:
+          context: .
           file: ./docker/Dockerfile.${{ matrix.service }}
-          tags: vesoft/nebula-${{ matrix.service }}:${{ steps.tagname.outputs.tag }}
+          tags: vesoft/nebula-${{ matrix.service }}:${{ steps.tagname.outputs.tag }},vesoft/nebula-${{ matrix.service }}:latest
           push: true
           build-args: |
             BRANCH=${{ steps.tagname.outputs.tag }}
