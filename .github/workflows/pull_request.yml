@@ -66,6 +66,9 @@ jobs:
         - /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}:/tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
       options: --cap-add=SYS_PTRACE
     steps:
+      - uses: webiny/action-post-run@2.0.1
+        with:
+          run: rm -rf ${{ github.workspace }}
       - uses: actions/checkout@v2
       - name: Prepare environment
         id: prepare
@@ -156,6 +159,3 @@ jobs:
         with:
           name: ${{ matrix.os }}-${{ matrix.compiler }}-nebula-test-logs
           path:  build/server_*/logs/
-      - name: Cleanup
-        if: ${{ always() }}
-        run: rm -rf "$(pwd)"
