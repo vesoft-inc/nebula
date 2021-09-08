@@ -261,6 +261,15 @@ nebula::cpp2::ErrorCode RocksEngine::rangeWithPrefix(const std::string& start,
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
+nebula::cpp2::ErrorCode RocksEngine::scan(std::unique_ptr<KVIterator>* storageIter) {
+  rocksdb::ReadOptions options;
+  options.total_order_seek = true;
+  rocksdb::Iterator* iter = db_->NewIterator(options);
+  iter->SeekToFirst();
+  storageIter->reset(new RocksCommonIter(iter));
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
+}
+
 nebula::cpp2::ErrorCode RocksEngine::put(std::string key, std::string value) {
   rocksdb::WriteOptions options;
   options.disableWAL = FLAGS_rocksdb_disable_wal;
