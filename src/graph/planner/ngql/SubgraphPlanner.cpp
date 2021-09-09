@@ -79,7 +79,7 @@ StatusOr<SubPlan> SubgraphPlanner::nSteps(SubPlan& startVidPlan, const std::stri
   auto* dc = DataCollect::make(qctx, DataCollect::DCKind::kSubgraph);
   dc->addDep(loop);
   dc->setInputVars({gn->outputVar(), oneMoreStepOutput});
-  dc->setColNames({"VERTEX", "EDGE"});
+  dc->setColNames({"VERTICES", "EDGES"});
 
   auto* project = Project::make(qctx, dc, subgraphCtx_->yieldExpr);
 
@@ -109,7 +109,7 @@ StatusOr<SubPlan> SubgraphPlanner::zeroStep(SubPlan& startVidPlan, const std::st
   auto* func = AggregateExpression::make(pool, "COLLECT", vertexExpr, false);
 
   auto* collect = Aggregate::make(qctx, getVertex, {}, {func});
-  collect->setColNames({"VERTEX"});
+  collect->setColNames({"VERTICES"});
 
   SubPlan subPlan;
   subPlan.root = collect;

@@ -2,7 +2,6 @@
 #
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
-@jmq
 Feature: subgraph
 
   Background:
@@ -23,17 +22,17 @@ Feature: subgraph
       """
       GET SUBGRAPH WITH PROP FROM "Tim Duncan" YIELD vertexs
       """
-    Then a SemanticError should be raised at runtime: Get Subgraph only support YIELD vertex OR edge
+    Then a SemanticError should be raised at runtime: Get Subgraph only support YIELD VERTICES OR EDGES
     When executing query:
       """
-      GET SUBGRAPH WITH PROP FROM "Tim Duncan" YIELD vertex, edgesa
+      GET SUBGRAPH WITH PROP FROM "Tim Duncan" YIELD vertices, edgesa
       """
-    Then a SemanticError should be raised at runtime: Get Subgraph only support YIELD vertex OR edge
+    Then a SemanticError should be raised at runtime: Get Subgraph only support YIELD VERTICES OR EDGES
     When executing query:
       """
-      GET SUBGRAPH WITH PROP 0 STEPS FROM "Tim Duncan" YIELD edge
+      GET SUBGRAPH WITH PROP 0 STEPS FROM "Tim Duncan" YIELD edges
       """
-    Then a SemanticError should be raised at runtime: Get Subgraph 0 STEPS only support YIELD vertex
+    Then a SemanticError should be raised at runtime: Get Subgraph 0 STEPS only support YIELD VERTICES
     When executing query:
       """
       GO FROM "Tim Duncan" OVER like YIELD $$.player.age AS id | GET SUBGRAPH WITH PROP FROM $-.id
@@ -66,49 +65,49 @@ Feature: subgraph
       GET SUBGRAPH WITH PROP 0 STEPS FROM "Tim Duncan"
       """
     Then the result should be, in any order, with relax comparison:
-      | VERTEX           |
+      | VERTICES         |
       | [("Tim Duncan")] |
     When executing query:
       """
       GET SUBGRAPH WITH PROP 0 STEPS FROM "Tim Duncan", "Spurs"
       """
     Then the result should be, in any order, with relax comparison:
-      | VERTEX                      |
+      | VERTICES                    |
       | [("Tim Duncan"), ("Spurs")] |
     When executing query:
       """
       GET SUBGRAPH WITH PROP 0 STEPS FROM "Tim Duncan", "Tony Parker", "Spurs"
       """
     Then the result should be, in any order, with relax comparison:
-      | VERTEX                                       |
+      | VERTICES                                     |
       | [("Tim Duncan"), ("Spurs"), ("Tony Parker")] |
     When executing query:
       """
       GO FROM 'Tim Duncan' over serve YIELD serve._dst AS id | GET SUBGRAPH WITH PROP 0 STEPS FROM $-.id
       """
     Then the result should be, in any order, with relax comparison:
-      | VERTEX      |
+      | VERTICES    |
       | [("Spurs")] |
     When executing query:
       """
       GO FROM 'Tim Duncan' over like YIELD like._dst AS id | GET SUBGRAPH WITH PROP 0 STEPS FROM $-.id
       """
     Then the result should be, in any order, with relax comparison:
-      | VERTEX                               |
+      | VERTICES                             |
       | [("Manu Ginobili"), ("Tony Parker")] |
     When executing query:
       """
       $a = GO FROM 'Tim Duncan' over serve YIELD serve._dst AS id; GET SUBGRAPH WITH PROP 0 STEPS FROM $a.id
       """
     Then the result should be, in any order, with relax comparison:
-      | VERTEX      |
+      | VERTICES    |
       | [("Spurs")] |
     When executing query:
       """
       $a = GO FROM 'Tim Duncan' over like YIELD like._dst AS id; GET SUBGRAPH WITH PROP 0 STEPS FROM $a.id
       """
     Then the result should be, in any order, with relax comparison:
-      | VERTEX                               |
+      | VERTICES                             |
       | [("Manu Ginobili"), ("Tony Parker")] |
 
   Scenario: subgraph
@@ -144,7 +143,7 @@ Feature: subgraph
       |                                                 |                       | [:like "Danny Green"->"Marco Belinelli"@0]       |
       |                                                 |                       | [:serve "Danny Green"->"Spurs"@0]                |
     Then the result should be, in any order, with relax comparison:
-      | VERTEX           | EDGE      |
+      | VERTICES         | EDGES     |
       | [("Tim Duncan")] | <[edge1]> |
       | <[vertex2]>      | <[edge2]> |
 
@@ -226,7 +225,7 @@ Feature: subgraph
       |                                                 |                       | [:serve "Tiago Splitter"->"76ers"@0]             |                       |                                               |
       |                                                 |                       | [:serve "Tiago Splitter"->"Hawks"@0]             |                       |                                               |
     Then the result should be, in any order, with relax comparison:
-      | VERTEX           | EDGE      |
+      | VERTICES         | EDGES     |
       | [("Tim Duncan")] | <[edge1]> |
       | <[vertex2]>      | <[edge2]> |
       | <[vertex3]>      | <[edge3]> |
@@ -256,7 +255,7 @@ Feature: subgraph
       |                                             |                       | [:like "Marco Belinelli"->"Tony Parker"@0]      |                    |
       |                                             |                       | [:like "Tim Duncan"->"Tony Parker"@0]           |                    |
     Then the result should be, in any order, with relax comparison:
-      | VERTEX           | EDGE      |
+      | VERTICES         | EDGES     |
       | [("Tim Duncan")] | <[edge1]> |
       | <[vertex2]>      | <[edge2]> |
       | <[vertex3]>      | []        |
@@ -322,7 +321,7 @@ Feature: subgraph
       |                                             |                       | [:like "Marco Belinelli"->"Tony Parker"@0]      |                    |                                              |
       |                                             |                       | [:like "Tim Duncan"->"Tony Parker"@0]           |                    |                                              |
     Then the result should be, in any order, with relax comparison:
-      | VERTEX           | EDGE      |
+      | VERTICES         | EDGES     |
       | [("Tim Duncan")] | <[edge1]> |
       | <[vertex2]>      | <[edge2]> |
       | <[vertex3]>      | <[edge3]> |
@@ -342,7 +341,7 @@ Feature: subgraph
       |                  |                                             |                   | [:teammate "Manu Ginobili"->"Tony Parker"@0] |             |
       |                  |                                             |                   | [:teammate "Tim Duncan"->"Tony Parker"@0]    |             |
     Then the result should be, in any order, with relax comparison:
-      | VERTEX      | EDGE      |
+      | VERTICES    | EDGES     |
       | <[vertex1]> | <[edge1]> |
       | <[vertex2]> | <[edge2]> |
       | <[vertex3]> | []        |
@@ -376,7 +375,7 @@ Feature: subgraph
       |                                              |                                                  |                                                |                     | [:serve "Chris Paul"->"Rockets"@0]         |
       |                                              |                                                  |                                                |                     | [:like "Chris Paul"->"LeBron James"@0]     |
     Then the result should be, in any order, with relax comparison:
-      | VERTEX                                            | EDGE      |
+      | VERTICES                                          | EDGES     |
       | [("Paul George")]                                 | <[edge1]> |
       | [("Russell Westbrook"), ("Pacers"), ("Thunders")] | <[edge2]> |
       | [("Dejounte Murray"), ("James Harden")]           | <[edge3]> |
@@ -398,7 +397,7 @@ Feature: subgraph
       | [:like "Tony Parker"->"Manu Ginobili"@0]     |                       | [:like "Dejounte Murray"->"Tim Duncan"@0]      |
       | [:like "Tony Parker"->"Tim Duncan"@0]        |                       | [:like "LaMarcus Aldridge"->"Tim Duncan"@0]    |
     Then the result should be, in any order, with relax comparison:
-      | VERTEX            | EDGE      |
+      | VERTICES          | EDGES     |
       | [("Tony Parker")] | <[edge1]> |
       | <[vertex2]>       | <[edge2]> |
 
@@ -435,7 +434,7 @@ Feature: subgraph
       |                                                 |                       | [:serve "Marco Belinelli"->"Spurs"@1]            |
       |                                                 |                       | [:like "Dejounte Murray"->"Marco Belinelli"@0]   |
     Then the result should be, in any order, with relax comparison:
-      | VERTEX           | EDGE      |
+      | VERTICES         | EDGES     |
       | [("Tim Duncan")] | <[edge1]> |
       | <[vertex2]>      | <[edge2]> |
 
@@ -473,7 +472,7 @@ Feature: subgraph
       |                                                 |                       | [:serve "Marco Belinelli"->"Spurs"@1]            |
       |                                                 |                       | [:like "Dejounte Murray"->"Marco Belinelli"@0]   |
     Then the result should be, in any order, with relax comparison:
-      | VERTEX           | EDGE      |
+      | VERTICES         | EDGES     |
       | [("Tim Duncan")] | <[edge1]> |
       | <[vertex2]>      | <[edge2]> |
 
@@ -483,7 +482,7 @@ Feature: subgraph
       GET SUBGRAPH WITH PROP 4 STEPS FROM 'Yao Ming' IN teammate OUT serve
       """
     Then the result should be, in any order, with relax comparison:
-      | VERTEX         | EDGE                               |
+      | VERTICES       | EDGES                              |
       | [("Yao Ming")] | [[:serve "Yao Ming"->"Rockets"@0]] |
       | [("Rockets")]  | []                                 |
     When executing query:
@@ -491,8 +490,8 @@ Feature: subgraph
       GET SUBGRAPH WITH PROP 4 STEPS FROM 'NOBODY' IN teammate OUT serve
       """
     Then the result should be, in any order, with relax comparison:
-      | VERTEX       | EDGE |
-      | [("NOBODY")] | []   |
+      | VERTICES     | EDGES |
+      | [("NOBODY")] | []    |
     When executing query:
       """
       GET SUBGRAPH WITH PROP 4 steps from 'Yao Ming' IN teammate OUT serve BOTH like
@@ -573,7 +572,7 @@ Feature: subgraph
       |                                         |                     |                                             |                  |                                             |                       | [:serve "Tiago Splitter"->"Hawks"@0]             |                       |                                               |
       |                                         |                     |                                             |                  |                                             |                       | [:serve "Tiago Splitter"->"Spurs"@0]             |                       |                                               |
     Then the result should be, in any order, with relax comparison:
-      | VERTEX         | EDGE      |
+      | VERTICES       | EDGES     |
       | [("Yao Ming")] | <[edge1]> |
       | <[vertex2]>    | <[edge2]> |
       | <[vertex3]>    | <[edge3]> |
@@ -641,7 +640,7 @@ Feature: subgraph
       |                                              |                       |                                                  |                       | [:like "Chris Paul"->"Carmelo Anthony"@0]     |                     |                                               |                        |                                              |                |                                      |
       |                                              |                       |                                                  |                       | [:like "Chris Paul"->"Dwyane Wade"@0]         |                     |                                               |                        |                                              |                |                                      |
     Then the result should be, in any order, with relax comparison:
-      | VERTEX            | EDGE      |
+      | VERTICES          | EDGES     |
       | [("Tony Parker")] | <[edge1]> |
       | <[vertex2]>       | <[edge2]> |
       | <[vertex3]>       | <[edge3]> |
@@ -678,7 +677,7 @@ Feature: subgraph
       |                                             |                       | [:like "Yao Ming"->"Shaquile O'Neal"@0]          |                       |                                               |                     |                                               |                        |
       |                                             |                       | [:like "Shaquile O'Neal"->"JaVale McGee"@0]      |                       |                                               |                     |                                               |                        |
     Then the result should be, in any order, with relax comparison:
-      | VERTEX           | EDGE      |
+      | VERTICES         | EDGES     |
       | [("Tim Duncan")] | <[edge1]> |
       | <[vertex2]>      | <[edge2]> |
       | <[vertex3]>      | <[edge3]> |
@@ -691,7 +690,7 @@ Feature: subgraph
       GET SUBGRAPH WITH PROP 10000000000000 STEPS FROM 'Yao Ming' IN teammate OUT serve
       """
     Then the result should be, in any order, with relax comparison:
-      | VERTEX         | EDGE                               |
+      | VERTICES       | EDGES                              |
       | [("Yao Ming")] | [[:serve "Yao Ming"->"Rockets"@0]] |
       | [("Rockets")]  | []                                 |
     When executing query:
@@ -699,7 +698,7 @@ Feature: subgraph
       GET SUBGRAPH 10000000000000 STEPS FROM 'Yao Ming' IN teammate OUT serve
       """
     Then the result should be, in any order, with relax comparison:
-      | VERTEX         | EDGE                               |
+      | VERTICES       | EDGES                              |
       | [("Yao Ming")] | [[:serve "Yao Ming"->"Rockets"@0]] |
       | [("Rockets")]  | []                                 |
 
@@ -709,7 +708,7 @@ Feature: subgraph
       GET SUBGRAPH 4 STEPS FROM 'Yao Ming' IN teammate OUT serve
       """
     Then the result should be, in any order, with relax comparison:
-      | VERTEX         | EDGE                               |
+      | VERTICES       | EDGES                              |
       | [("Yao Ming")] | [[:serve "Yao Ming"->"Rockets"@0]] |
       | [("Rockets")]  | []                                 |
     When executing query:
@@ -717,8 +716,8 @@ Feature: subgraph
       GET SUBGRAPH 4 STEPS FROM 'NOBODY' IN teammate OUT serve
       """
     Then the result should be, in any order, with relax comparison:
-      | VERTEX       | EDGE |
-      | [("NOBODY")] | []   |
+      | VERTICES     | EDGES |
+      | [("NOBODY")] | []    |
     When executing query:
       """
       GET SUBGRAPH 4 steps from 'Yao Ming' IN teammate OUT serve BOTH like
@@ -799,7 +798,7 @@ Feature: subgraph
       |                                         |                     |                                             |                  |                                             |                       | [:serve "Tiago Splitter"->"Hawks"@0]             |                       |                                               |
       |                                         |                     |                                             |                  |                                             |                       | [:serve "Tiago Splitter"->"Spurs"@0]             |                       |                                               |
     Then the result should be, in any order, with relax comparison:
-      | VERTEX         | EDGE      |
+      | VERTICES       | EDGES     |
       | [("Yao Ming")] | <[edge1]> |
       | <[vertex2]>    | <[edge2]> |
       | <[vertex3]>    | <[edge3]> |
@@ -867,7 +866,7 @@ Feature: subgraph
       |                                              |                       |                                                  |                       | [:like "Chris Paul"->"Carmelo Anthony"@0]     |                     |                                               |                        |                                              |                |                                      |
       |                                              |                       |                                                  |                       | [:like "Chris Paul"->"Dwyane Wade"@0]         |                     |                                               |                        |                                              |                |                                      |
     Then the result should be, in any order, with relax comparison:
-      | VERTEX            | EDGE      |
+      | VERTICES          | EDGES     |
       | [("Tony Parker")] | <[edge1]> |
       | <[vertex2]>       | <[edge2]> |
       | <[vertex3]>       | <[edge3]> |
@@ -904,7 +903,7 @@ Feature: subgraph
       |                                             |                       | [:like "Yao Ming"->"Shaquile O'Neal"@0]          |                       |                                               |                     |                                               |                        |
       |                                             |                       | [:like "Shaquile O'Neal"->"JaVale McGee"@0]      |                       |                                               |                     |                                               |                        |
     Then the result should be, in any order, with relax comparison:
-      | VERTEX           | EDGE      |
+      | VERTICES         | EDGES     |
       | [("Tim Duncan")] | <[edge1]> |
       | <[vertex2]>      | <[edge2]> |
       | <[vertex3]>      | <[edge3]> |
@@ -914,7 +913,7 @@ Feature: subgraph
   Scenario: subgraph yield vertex edge
     When executing query:
       """
-      GET SUBGRAPH WITH PROP 2 STEPS FROM 'Tim Duncan', 'James Harden' IN teammate OUT serve YIELD VERTEX
+      GET SUBGRAPH WITH PROP 2 STEPS FROM 'Tim Duncan', 'James Harden' IN teammate OUT serve YIELD VERTICES
       """
     Then define some list variables:
       | vertex1          | vertex2           |
@@ -926,13 +925,13 @@ Feature: subgraph
       |                  |                   |
       |                  |                   |
     Then the result should be, in any order, with relax comparison:
-      | VERTEX        |
+      | VERTICES      |
       | <[vertex1]>   |
       | <[vertex2]>   |
       | [("Hornets")] |
     When executing query:
       """
-      GET SUBGRAPH WITH PROP 2 STEPS FROM 'Tim Duncan' IN like, serve YIELD edge
+      GET SUBGRAPH WITH PROP 2 STEPS FROM 'Tim Duncan' IN like, serve YIELD edges
       """
     Then define some list variables:
       | edge1                                       | edge2                                           |
@@ -954,13 +953,13 @@ Feature: subgraph
       |                                             | [:like "Marco Belinelli"->"Tony Parker"@0]      |
       |                                             | [:like "Tim Duncan"->"Tony Parker"@0]           |
     Then the result should be, in any order, with relax comparison:
-      | EDGE      |
+      | EDGES     |
       | <[edge1]> |
       | <[edge2]> |
       | []        |
     When executing query:
       """
-      GET SUBGRAPH WITH PROP FROM 'Tony Parker' BOTH like YIELD edge, vertex
+      GET SUBGRAPH WITH PROP FROM 'Tony Parker' BOTH like YIELD edges, VERTICES
       """
     Then define some list variables:
       | edge1                                        | vertex2               | edge2                                          |
@@ -973,12 +972,12 @@ Feature: subgraph
       | [:like "Tony Parker"->"Manu Ginobili"@0]     |                       | [:like "Dejounte Murray"->"Tim Duncan"@0]      |
       | [:like "Tony Parker"->"Tim Duncan"@0]        |                       | [:like "LaMarcus Aldridge"->"Tim Duncan"@0]    |
     Then the result should be, in any order, with relax comparison:
-      | EDGE      | VERTEX            |
+      | EDGES     | VERTICES          |
       | <[edge1]> | [("Tony Parker")] |
       | <[edge2]> | <[vertex2]>       |
     When executing query:
       """
-      GET SUBGRAPH 4 steps from 'Tim Duncan' BOTH like YIELD VERTEX, EDGE
+      GET SUBGRAPH 4 steps from 'Tim Duncan' BOTH like YIELD VERTICES, EDGES
       """
     Then define some list variables:
       | edge1                                       | vertex2               | edge2                                            | vertex3               | edge3                                         | vertex4             | edge4                                         | vertex5                |
@@ -1006,7 +1005,7 @@ Feature: subgraph
       |                                             |                       | [:like "Yao Ming"->"Shaquile O'Neal"@0]          |                       |                                               |                     |                                               |                        |
       |                                             |                       | [:like "Shaquile O'Neal"->"JaVale McGee"@0]      |                       |                                               |                     |                                               |                        |
     Then the result should be, in any order, with relax comparison:
-      | VERTEX           | EDGE      |
+      | VERTICES         | EDGES     |
       | [("Tim Duncan")] | <[edge1]> |
       | <[vertex2]>      | <[edge2]> |
       | <[vertex3]>      | <[edge3]> |
@@ -1033,6 +1032,6 @@ Feature: subgraph
       GET SUBGRAPH 1 STEPS FROM "Tom"
       """
     Then the result should be, in any order, with relax comparison:
-      | VERTEX    | EDGE |
-      | [("Tom")] | []   |
-      | []        | []   |
+      | VERTICES  | EDGES |
+      | [("Tom")] | []    |
+      | []        | []    |

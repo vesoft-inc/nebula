@@ -1359,9 +1359,16 @@ yield_column
     | KW_EDGE {
        $$ = new YieldColumn(EdgeExpression::make(qctx->objPool()));
     }
-    | KW_EDGE KW_AS name_label{
+    | KW_EDGE KW_AS name_label {
        $$ = new YieldColumn(EdgeExpression::make(qctx->objPool()), *$3);
        delete $3;
+    }
+    | KW_EDGES {
+        $$ = new YieldColumn(LabelExpression::make(qctx->objPool(), "EDGES"));
+    }
+    | KW_EDGES KW_AS name_label {
+        $$ = new YieldColumn(LabelExpression::make(qctx->objPool(), "EDGES"), *$3);
+        delete $3;
     }
     | expression {
         $$ = new YieldColumn($1);

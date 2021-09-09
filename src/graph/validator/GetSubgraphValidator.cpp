@@ -104,10 +104,10 @@ Status GetSubgraphValidator::validateYield(YieldClause* yield) {
   if (yield == nullptr) {
     // version 3.0: return Status::SemanticError("No Yield Clause");
     auto* yieldColumns = new YieldColumns();
-    auto* vertex = new YieldColumn(VertexExpression::make(pool));
+    auto* vertex = new YieldColumn(LabelExpression::make(pool, "VERTICES"));
     yieldColumns->addColumn(vertex);
     if (subgraphCtx_->steps.steps() != 0) {
-      auto* edge = new YieldColumn(EdgeExpression::make(pool));
+      auto* edge = new YieldColumn(LabelExpression::make(pool, "EDGES"));
       yieldColumns->addColumn(edge);
     }
     yield = pool->add(new YieldClause(yieldColumns));
@@ -117,19 +117,21 @@ Status GetSubgraphValidator::validateYield(YieldClause* yield) {
   YieldColumns* newCols = qctx_->objPool()->add(new YieldColumns());
 
   for (const auto& col : yield->columns()) {
-    if (col->expr()->kind() == Expression::Kind::kVertex) {
+    std::string lowerStr = col->expr()->toString();
+    folly::toLowerAscii(lowerStr);
+    if (lowerStr == "vertices") {
       subgraphCtx_->getVertexProp = true;
-      auto* newCol = new YieldColumn(InputPropertyExpression::make(pool, "VERTEX"), col->name());
+      auto* newCol = new YieldColumn(InputPropertyExpression::make(pool, "VERTICES"), col->name());
       newCols->addColumn(newCol);
-    } else if (col->expr()->kind() == Expression::Kind::kEdge) {
+    } else if (lowerStr == "edges") {
       if (subgraphCtx_->steps.steps() == 0) {
-        return Status::SemanticError("Get Subgraph 0 STEPS only support YIELD vertex");
+        return Status::SemanticError("Get Subgraph 0 STEPS only support YIELD VERTICES");
       }
       subgraphCtx_->getEdgeProp = true;
-      auto* newCol = new YieldColumn(InputPropertyExpression::make(pool, "EDGE"), col->name());
+      auto* newCol = new YieldColumn(InputPropertyExpression::make(pool, "EDGES"), col->name());
       newCols->addColumn(newCol);
     } else {
-      return Status::SemanticError("Get Subgraph only support YIELD vertex OR edge");
+      return Status::SemanticError("Get Subgraph only support YIELD VERTICES OR EDGES");
     }
     outputs_.emplace_back(col->name(), Value::Type::LIST);
   }

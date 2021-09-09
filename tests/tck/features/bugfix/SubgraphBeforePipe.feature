@@ -35,7 +35,7 @@ Feature: Test get subgraph before pipe
       | [:teammate "Tim Duncan"->"Manu Ginobili"@0]     |
       | [:teammate "Tim Duncan"->"Tony Parker"@0]       |
     Then the result should be, in any order, with relax comparison:
-      | VERTEX           | EDGE      |
+      | VERTICES         | EDGES     |
       | [("Tim Duncan")] | <[edge1]> |
 
   Scenario: subgraph as variable with limit
@@ -65,7 +65,7 @@ Feature: Test get subgraph before pipe
       | [:teammate "Tim Duncan"->"Manu Ginobili"@0]     |
       | [:teammate "Tim Duncan"->"Tony Parker"@0]       |
     Then the result should be, in any order, with relax comparison:
-      | VERTEX           | EDGE      |
+      | VERTICES         | EDGES     |
       | [("Tim Duncan")] | <[edge1]> |
 
   # TODO: access to the output of get subgraph.
@@ -157,7 +157,7 @@ Feature: Test get subgraph before pipe
       |                                                 |                       | [:serve "Tiago Splitter"->"76ers"@0]             |
       |                                                 |                       | [:serve "Tiago Splitter"->"Hawks"@0]             |
     Then the result should be, in any order, with relax comparison:
-      | VERTEX           | EDGE      |
+      | VERTICES         | EDGES     |
       | [("Tim Duncan")] | <[edge1]> |
       | <[vertex2]>      | <[edge2]> |
 
@@ -173,7 +173,7 @@ Feature: Test get subgraph before pipe
       | [:serve "Paul George"->"Thunders"@0]         | [:serve "Russell Westbrook"->"Thunders"@0]       |
       | [:like "Paul George"->"Russell Westbrook"@0] | [:like "Russell Westbrook"->"James Harden"@0]    |
     Then the result should be, in any order, with relax comparison:
-      | VERTEX                                            | EDGE      |
+      | VERTICES                                          | EDGES     |
       | [("Paul George")]                                 | <[edge1]> |
       | [("Russell Westbrook"), ("Pacers"), ("Thunders")] | <[edge2]> |
     When executing query:
