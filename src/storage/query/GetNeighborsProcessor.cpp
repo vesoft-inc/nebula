@@ -101,7 +101,7 @@ void GetNeighborsProcessor::runInSingleThread(const cpp2::GetNeighborsRequest& r
     }
   }
   if (FLAGS_profile_storage_detail) {
-    profile_plan(plan);
+    profilePlan(plan);
   }
   onProcessFinished();
   onFinished();
@@ -169,7 +169,7 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetNeighborsProce
           }
         }
         if (FLAGS_profile_storage_detail) {
-          profile_plan(plan);
+          profilePlan(plan);
         }
         return std::make_pair(nebula::cpp2::ErrorCode::SUCCEEDED, partId);
       });
@@ -453,11 +453,11 @@ nebula::cpp2::ErrorCode GetNeighborsProcessor::checkStatType(
 
 void GetNeighborsProcessor::onProcessFinished() { resp_.set_vertices(std::move(resultDataSet_)); }
 
-void GetNeighborsProcessor::profile_plan(StoragePlan<VertexID>& plan) {
+void GetNeighborsProcessor::profilePlan(StoragePlan<VertexID>& plan) {
   auto& nodes = plan.getNodes();
-  std::lock_guard<std::mutex> lck(BaseProcessor<cpp2::GetNeighborsResponse>::profile_mut_);
+  std::lock_guard<std::mutex> lck(BaseProcessor<cpp2::GetNeighborsResponse>::profileMut_);
   for (auto& node : nodes) {
-    profile_detail(node->name_, node->duration_.elapsedInUSec());
+    profileDetail(node->name_, node->duration_.elapsedInUSec());
   }
 }
 }  // namespace storage

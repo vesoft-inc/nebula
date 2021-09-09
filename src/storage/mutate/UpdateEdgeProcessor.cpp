@@ -89,11 +89,10 @@ void UpdateEdgeProcessor::doProcess(const cpp2::UpdateEdgeRequest& req) {
     }
   } else {
     if (FLAGS_profile_storage_detail) {
-      profile_plan(plan);
+      profilePlan(plan);
     }
     onProcessFinished();
   }
-
   onFinished();
   return;
 }

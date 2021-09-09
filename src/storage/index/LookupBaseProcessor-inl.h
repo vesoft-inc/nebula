@@ -444,11 +444,11 @@ LookupBaseProcessor<REQ, RESP>::buildPlanWithDataAndFilter(nebula::DataSet* resu
   }
 }
 template <typename REQ, typename RESP>
-void LookupBaseProcessor<REQ, RESP>::profile_plan(StoragePlan<IndexID>& plan) {
+void LookupBaseProcessor<REQ, RESP>::profilePlan(StoragePlan<IndexID>& plan) {
   auto& nodes = plan.getNodes();
-  std::lock_guard<std::mutex> lck(BaseProcessor<RESP>::profile_mut_);
+  std::lock_guard<std::mutex> lck(BaseProcessor<RESP>::profileMut_);
   for (auto& node : nodes) {
-    BaseProcessor<RESP>::profile_detail(node->name_, node->duration_.elapsedInUSec());
+    BaseProcessor<RESP>::profileDetail(node->name_, node->duration_.elapsedInUSec());
   }
 }
 

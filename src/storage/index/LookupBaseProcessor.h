@@ -68,7 +68,7 @@ class LookupBaseProcessor : public BaseProcessor<RESP> {
       StorageExpressionContext* exprCtx,
       Expression* exp);
 
-  void profile_plan(StoragePlan<IndexID>& plan);
+  void profilePlan(StoragePlan<IndexID>& plan);
 
  protected:
   GraphSpaceID spaceId_;

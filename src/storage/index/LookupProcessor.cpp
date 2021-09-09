@@ -61,7 +61,7 @@ void LookupProcessor::runInSingleThread(const cpp2::LookupIndexRequest& req) {
     }
   }
   if (FLAGS_profile_storage_detail) {
-    profile_plan(plan.value());
+    profilePlan(plan.value());
   }
   onProcessFinished();
   onFinished();
@@ -113,7 +113,7 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> LookupProcessor::
     }
     auto ret = plan.value().go(partId);
     if (FLAGS_profile_storage_detail) {
-      profile_plan(plan.value());
+      profilePlan(plan.value());
     }
     return std::make_pair(ret, partId);
   });
