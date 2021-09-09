@@ -48,6 +48,7 @@ class PlanNode {
     kSort,
     kTopN,
     kLimit,
+    kSample,
     kAggregate,
     kDedup,
     kAssign,

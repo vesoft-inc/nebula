@@ -11,6 +11,7 @@
 
 #include <boost/dynamic_bitset.hpp>
 
+#include "common/algorithm/ReservoirSampling.h"
 #include "common/datatypes/DataSet.h"
 #include "common/datatypes/List.h"
 #include "common/datatypes/Value.h"
@@ -59,6 +60,9 @@ class Iterator {
 
   // Warning this will break the origin order of elements!
   virtual void unstableErase() = 0;
+
+  // Sample the elements
+  virtual void sample(int64_t count) = 0;
 
   virtual const Row* row() const = 0;
 
@@ -142,6 +146,8 @@ class DefaultIter final : public Iterator {
 
   void eraseRange(size_t, size_t) override { return; }
 
+  void sample(int64_t) override { DLOG(FATAL) << "Unimplemented default iterator."; }
+
   void clear() override { reset(); }
 
   size_t size() const override { return 1; }
@@ -198,6 +204,8 @@ class GetNeighborsIter final : public Iterator {
     UNUSED(last);
     DCHECK(false);
   }
+
+  void sample(int64_t) override { DLOG(FATAL) << "Unimplemented for GetNeighbors iterator."; }
 
   size_t size() const override { return 0; }
 
@@ -319,6 +327,16 @@ class SequentialIter : public Iterator {
   void unstableErase() override;
 
   void eraseRange(size_t first, size_t last) override;
+
+  void sample(int64_t count) override {
+    DCHECK_GE(count, 0);
+    algorithm::ReservoirSampling<Row> sampler(count);
+    for (auto& row : *rows_) {
+      sampler.sampling(std::move(row));
+    }
+    *rows_ = std::move(sampler).samples();
+    iter_ = rows_->begin();
+  }
 
   void clear() override {
     rows_->clear();

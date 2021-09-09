@@ -84,6 +84,7 @@
 #include "graph/executor/query/LimitExecutor.h"
 #include "graph/executor/query/MinusExecutor.h"
 #include "graph/executor/query/ProjectExecutor.h"
+#include "graph/executor/query/SampleExecutor.h"
 #include "graph/executor/query/SortExecutor.h"
 #include "graph/executor/query/TopNExecutor.h"
 #include "graph/executor/query/UnionAllVersionVarExecutor.h"
@@ -177,6 +178,9 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     }
     case PlanNode::Kind::kLimit: {
       return pool->add(new LimitExecutor(node, qctx));
+    }
+    case PlanNode::Kind::kSample: {
+      return pool->add(new SampleExecutor(node, qctx));
     }
     case PlanNode::Kind::kProject: {
       return pool->add(new ProjectExecutor(node, qctx));

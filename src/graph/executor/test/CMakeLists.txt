@@ -70,6 +70,7 @@ nebula_add_test(
         FilterTest.cpp
         DedupTest.cpp
         LimitTest.cpp
+        SampleTest.cpp
         SortTest.cpp
         TopNTest.cpp
         AggregateTest.cpp

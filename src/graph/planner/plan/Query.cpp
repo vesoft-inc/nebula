@@ -365,6 +365,24 @@ void TopN::cloneMembers(const TopN& l) {
   count_ = l.count_;
 }
 
+std::unique_ptr<PlanNodeDescription> Sample::explain() const {
+  auto desc = SingleInputNode::explain();
+  addDescription("count", folly::to<std::string>(count_), desc.get());
+  return desc;
+}
+
+PlanNode* Sample::clone() const {
+  auto* newSample = Sample::make(qctx_, nullptr, -1);
+  newSample->cloneMembers(*this);
+  return newSample;
+}
+
+void Sample::cloneMembers(const Sample& l) {
+  SingleInputNode::cloneMembers(l);
+
+  count_ = l.count_;
+}
+
 std::unique_ptr<PlanNodeDescription> Aggregate::explain() const {
   auto desc = SingleInputNode::explain();
   addDescription("groupKeys", folly::toJson(util::toJson(groupKeys_)), desc.get());

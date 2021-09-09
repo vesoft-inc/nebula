@@ -732,6 +732,33 @@ class TopN final : public SingleInputNode {
 };
 
 /**
+ * Sample the given input data.
+ */
+class Sample final : public SingleInputNode {
+ public:
+  static Sample* make(QueryContext* qctx, PlanNode* input, int64_t count) {
+    return qctx->objPool()->add(new Sample(qctx, input, count));
+  }
+
+  int64_t count() const {
+    DCHECK_GE(count_, 0);
+    return count_;
+  }
+
+  PlanNode* clone() const override;
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
+ private:
+  Sample(QueryContext* qctx, PlanNode* input, int64_t count)
+      : SingleInputNode(qctx, Kind::kSample, input), count_(count) {}
+
+  void cloneMembers(const Sample&);
+
+ private:
+  int64_t count_{-1};
+};
+
+/**
  * Do Aggregation with the given set of records,
  * such as AVG(), COUNT()...
  */
