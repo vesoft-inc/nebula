@@ -70,7 +70,7 @@ Feature: Insert string vid of vertex and edge
       FETCH PROP ON * "Tom"
       """
     Then the result should be, in any order, with relax comparison:
-      | VERTEX                                                         |
+      | vertices_                                                      |
       | ("Tom":person{name:"Tom", age:18}:interest{name:"basketball"}) |
     # insert vertex wrong type value
     When executing query:
@@ -147,7 +147,7 @@ Feature: Insert string vid of vertex and edge
       FETCH PROP ON person "Conan"
       """
     Then the result should be, in any order, with relax comparison:
-      | VERTEX    |
+      | vertices_ |
       | ('Conan') |
     # insert vertex with string timestamp succeeded
     When try to execute query:
@@ -508,7 +508,7 @@ Feature: Insert string vid of vertex and edge
       FETCH PROP ON course "English"
       """
     Then the result should be, in any order, with relax comparison:
-      | VERTEX      |
+      | vertices_   |
       | ('English') |
     # check result
     When executing query:

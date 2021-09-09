@@ -25,7 +25,7 @@ Feature: Fetch Int Vid Vertices
       FETCH PROP ON player hash('Boris Diaw')
       """
     Then the result should be, in any order:
-      | VERTEX                                                |
+      | vertices_                                             |
       | (hash('Boris Diaw'):player{age:36,name:"Boris Diaw"}) |
     # Fetch prop on not existing vertex
     When executing query:
@@ -207,7 +207,7 @@ Feature: Fetch Int Vid Vertices
       FETCH PROP ON * hash('NON EXIST VERTEX ID')
       """
     Then the result should be, in any order:
-      | VERTEX |
+      | vertices_ |
     # on existing vertex
     When executing query:
       """
@@ -253,13 +253,13 @@ Feature: Fetch Int Vid Vertices
       FETCH PROP ON * hash('Tim Duncan')
       """
     Then the result should be, in any order, with relax comparison:
-      | VERTEX                         |
+      | vertices_                      |
       | ("Tim Duncan":player:bachelor) |
 
   Scenario: Fetch and Yield id(v)
     When executing query:
       """
-      FETCH PROP ON player hash('Boris Diaw'), hash('Tony Parker') | YIELD id($-.VERTEX) as id
+      FETCH PROP ON player hash('Boris Diaw'), hash('Tony Parker') | YIELD id($-.vertices_) as id
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
       | id            |
@@ -279,6 +279,21 @@ Feature: Fetch Int Vid Vertices
       | "Tim Duncan"        |
 
   Scenario: Typical errors
+    When executing query:
+      """
+      FETCH PROP ON player hash('Boris Diaw') YIELD vertex
+      """
+    Then a SyntaxError should be raised at runtime: please add alias when using vertex. near `vertex'
+    When executing query:
+      """
+      FETCH PROP ON player hash('Boris Diaw') YIELD edge as a
+      """
+    Then a SemanticError should be raised at runtime: illegal yield clauses `EDGE AS a'
+    When executing query:
+      """
+      FETCH PROP ON player hash('Boris Diaw') YIELD src(edge)
+      """
+    Then a SemanticError should be raised at runtime: illegal yield clauses `src(EDGE)'
     # not support get src property
     When executing query:
       """
@@ -352,34 +367,34 @@ Feature: Fetch Int Vid Vertices
       | "Boris Diaw" | "Boris Diaw" | 36         |
     When executing query:
       """
-      FETCH PROP ON * hash('Boris Diaw') YIELD id(vertex), player.age, vertex
+      FETCH PROP ON * hash('Boris Diaw') YIELD id(vertex), player.age, vertex as node
+      """
+    Then the result should be, in any order, and the columns 0, 1 should be hashed:
+      | VertexID     | id(VERTEX)   | player.age | node                                             |
+      | "Boris Diaw" | "Boris Diaw" | 36         | ("Boris Diaw":player{name:"Boris Diaw", age:36}) |
+    When executing query:
+      """
+      FETCH PROP ON * hash('Boris Diaw') YIELD vertex as node
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
-      | id(VERTEX)   | player.age | VERTEX                                           |
-      | "Boris Diaw" | 36         | ("Boris Diaw":player{name:"Boris Diaw", age:36}) |
+      | VertexID     | node                                             |
+      | "Boris Diaw" | ("Boris Diaw":player{name:"Boris Diaw", age:36}) |
     When executing query:
       """
-      FETCH PROP ON * hash('Boris Diaw') YIELD vertex
+      FETCH PROP ON * hash("Tim Duncan") YIELD player.name, player.age, team.name, bachelor.name, bachelor.speciality, vertex as node
       """
-    Then the result should be, in any order:
-      | VERTEX                                           |
-      | ("Boris Diaw":player{name:"Boris Diaw", age:36}) |
-    When executing query:
-      """
-      FETCH PROP ON * hash("Tim Duncan") YIELD player.name, player.age, team.name, bachelor.name, bachelor.speciality, vertex
-      """
-    Then the result should be, in any order:
-      | player.name  | player.age | team.name | bachelor.name | bachelor.speciality | VERTEX                                                                                                      |
-      | "Tim Duncan" | 42         | EMPTY     | "Tim Duncan"  | "psychology"        | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+    Then the result should be, in any order, and the columns 0 should be hashed:
+      | VertexID     | player.name  | player.age | team.name | bachelor.name | bachelor.speciality | node                                                                                                        |
+      | "Tim Duncan" | "Tim Duncan" | 42         | EMPTY     | "Tim Duncan"  | "psychology"        | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
     When executing query:
       """
       GO FROM hash("Tim Duncan") OVER like YIELD like._dst as id |
-      FETCH PROP ON * $-.id YIELD VERTEX
+      FETCH PROP ON * $-.id YIELD VERTEX as node
       """
-    Then the result should be, in any order:
-      | VERTEX                                                    |
-      | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"}) |
-      | ("Tony Parker" :player{age: 36, name: "Tony Parker"})     |
+    Then the result should be, in any order, and the columns 0 should be hashed:
+      | VertexID        | node                                                      |
+      | "Manu Ginobili" | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"}) |
+      | "Tony Parker"   | ("Tony Parker" :player{age: 36, name: "Tony Parker"})     |
     When executing query:
       """
       FETCH PROP ON * hash('NON EXIST VERTEX ID'), hash('Boris Diaw') yield player.name, id(vertex)

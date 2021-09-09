@@ -68,37 +68,40 @@ Status FetchVerticesValidator::validateTag(const NameLabelList *nameLabels) {
 
 Status FetchVerticesValidator::validateYield(YieldClause *yield) {
   auto pool = qctx_->objPool();
-  bool existVertex = false;
+  bool noYield = false;
   if (yield == nullptr) {
     // version 3.0: return Status::SemanticError("No YIELD Clause");
+    // compatible with previous versions
     auto *yieldColumns = new YieldColumns();
-    auto *vertex = new YieldColumn(VertexExpression::make(pool));
+    auto *vertex = new YieldColumn(VertexExpression::make(pool), "vertices_");
     yieldColumns->addColumn(vertex);
     yield = pool->add(new YieldClause(yieldColumns));
-    existVertex = true;
+    noYield = true;
   }
-  for (const auto &col : yield->columns()) {
-    if (col->expr()->kind() == Expression::Kind::kVertex) {
-      existVertex = true;
-      break;
-    }
-  }
-
   fetchCtx_->distinct = yield->isDistinct();
   auto size = yield->columns().size();
   outputs_.reserve(size + 1);
 
-  auto &exprProps = fetchCtx_->exprProps;
   auto *newCols = pool->add(new YieldColumns());
-  if (!existVertex) {
+  if (!noYield) {
     outputs_.emplace_back(VertexID, vidType_);
     auto *vidCol = new YieldColumn(InputPropertyExpression::make(pool, nebula::kVid), VertexID);
     newCols->addColumn(vidCol);
-  } else {
-    extractVertexProp(exprProps);
   }
+
+  auto &exprProps = fetchCtx_->exprProps;
+  for (const auto &col : yield->columns()) {
+    if (col->expr()->kind() == Expression::Kind::kVertex) {
+      extractVertexProp(exprProps);
+      break;
+    }
+  }
+
   for (auto col : yield->columns()) {
-    // yield vertex or id(vertex)
+    if (ExpressionUtils::hasAny(col->expr(),
+                                {Expression::Kind::kEdge, Expression::Kind::kPathBuild})) {
+      return Status::SemanticError("illegal yield clauses `%s'", col->toString().c_str());
+    }
     col->setExpr(ExpressionUtils::rewriteLabelAttr2TagProp(col->expr()));
     NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(col->expr()));
     auto colExpr = col->expr();

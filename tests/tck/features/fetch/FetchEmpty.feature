@@ -30,7 +30,7 @@ Feature: Fetch prop on empty tag/edge
       FETCH PROP ON * '1'
       """
     Then the result should be, in any order, with relax comparison:
-      | VERTEX                                       |
+      | vertices_                                    |
       | ("1":zero_prop_tag_0:zero_prop_tag_1:person) |
     And drop the used space
 
@@ -40,7 +40,7 @@ Feature: Fetch prop on empty tag/edge
       FETCH PROP ON zero_prop_tag_0 '1'
       """
     Then the result should be, in any order, with relax comparison:
-      | VERTEX                |
+      | vertices_             |
       | ("1":zero_prop_tag_0) |
     When executing query:
       """
@@ -48,7 +48,7 @@ Feature: Fetch prop on empty tag/edge
       FETCH PROP ON zero_prop_tag_0 $-.id
       """
     Then the result should be, in any order, with relax comparison:
-      | VERTEX                |
+      | vertices_             |
       | ("2":zero_prop_tag_0) |
     And drop the used space
 

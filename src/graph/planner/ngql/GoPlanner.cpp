@@ -6,12 +6,9 @@
 
 #include "graph/planner/ngql/GoPlanner.h"
 
-#include "graph/planner/plan/Algo.h"
 #include "graph/planner/plan/Logic.h"
 #include "graph/util/ExpressionUtils.h"
 #include "graph/util/PlannerUtil.h"
-#include "graph/util/SchemaUtil.h"
-#include "graph/validator/Validator.h"
 
 namespace nebula {
 namespace graph {

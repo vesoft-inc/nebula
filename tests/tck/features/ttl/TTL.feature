@@ -349,7 +349,7 @@ Feature: TTLTest
       FETCH PROP ON person "1";
       """
     Then the result should be, in any order, with relax comparison:
-      | VERTEX |
+      | vertices_ |
     When executing query:
       """
       FETCH PROP ON person "1" YIELD person.id as id

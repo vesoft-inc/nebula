@@ -6,12 +6,8 @@
 
 #include "graph/planner/ngql/FetchVerticesPlanner.h"
 
-#include "graph/planner/plan/Algo.h"
-#include "graph/planner/plan/Logic.h"
-#include "graph/util/ExpressionUtils.h"
+#include "graph/planner/plan/Query.h"
 #include "graph/util/PlannerUtil.h"
-#include "graph/util/SchemaUtil.h"
-#include "graph/validator/Validator.h"
 
 namespace nebula {
 namespace graph {
