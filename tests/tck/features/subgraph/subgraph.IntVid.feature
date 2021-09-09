@@ -62,49 +62,49 @@ Feature: Integer Vid subgraph
   Scenario: Integer Vid zero step
     When executing query:
       """
-      GET SUBGRAPH WITH PROP 0 STEPS FROM hash("Tim Duncan")
+      GET SUBGRAPH WITH PROP 0 STEPS FROM hash("Tim Duncan") YIELD VERTICES
       """
     Then the result should be, in any order, with relax comparison:
       | VERTICES         |
       | [("Tim Duncan")] |
     When executing query:
       """
-      GET SUBGRAPH WITH PROP 0 STEPS FROM hash("Tim Duncan"), hash("Spurs")
+      GET SUBGRAPH WITH PROP 0 STEPS FROM hash("Tim Duncan"), hash("Spurs") YIELD VERTICES
       """
     Then the result should be, in any order, with relax comparison:
       | VERTICES                    |
       | [("Tim Duncan"), ("Spurs")] |
     When executing query:
       """
-      GET SUBGRAPH WITH PROP 0 STEPS FROM hash("Tim Duncan"), hash("Tony Parker"), hash("Spurs")
+      GET SUBGRAPH WITH PROP 0 STEPS FROM hash("Tim Duncan"), hash("Tony Parker"), hash("Spurs") YIELD VERTICES
       """
     Then the result should be, in any order, with relax comparison:
       | VERTICES                                     |
       | [("Tim Duncan"), ("Spurs"), ("Tony Parker")] |
     When executing query:
       """
-      GO FROM hash('Tim Duncan') over serve YIELD serve._dst AS id | GET SUBGRAPH WITH PROP 0 STEPS FROM $-.id
+      GO FROM hash('Tim Duncan') over serve YIELD serve._dst AS id | GET SUBGRAPH WITH PROP 0 STEPS FROM $-.id YIELD VERTICES
       """
     Then the result should be, in any order, with relax comparison:
       | VERTICES    |
       | [("Spurs")] |
     When executing query:
       """
-      GO FROM hash('Tim Duncan') over like YIELD like._dst AS id | GET SUBGRAPH WITH PROP 0 STEPS FROM $-.id
+      GO FROM hash('Tim Duncan') over like YIELD like._dst AS id | GET SUBGRAPH WITH PROP 0 STEPS FROM $-.id YIELD VERTICES
       """
     Then the result should be, in any order, with relax comparison:
       | VERTICES                             |
       | [("Manu Ginobili"), ("Tony Parker")] |
     When executing query:
       """
-      $a = GO FROM hash('Tim Duncan') over serve YIELD serve._dst AS id; GET SUBGRAPH WITH PROP 0 STEPS FROM $a.id
+      $a = GO FROM hash('Tim Duncan') over serve YIELD serve._dst AS id; GET SUBGRAPH WITH PROP 0 STEPS FROM $a.id YIELD VERTICES
       """
     Then the result should be, in any order, with relax comparison:
       | VERTICES    |
       | [("Spurs")] |
     When executing query:
       """
-      $a = GO FROM hash('Tim Duncan') over like YIELD like._dst AS id; GET SUBGRAPH WITH PROP 0 STEPS FROM $a.id
+      $a = GO FROM hash('Tim Duncan') over like YIELD like._dst AS id; GET SUBGRAPH WITH PROP 0 STEPS FROM $a.id YIELD VERTICES
       """
     Then the result should be, in any order, with relax comparison:
       | VERTICES                             |
@@ -143,7 +143,7 @@ Feature: Integer Vid subgraph
       |                                                 |                       | [:like "Danny Green"->"Marco Belinelli"@0]       |
       |                                                 |                       | [:serve "Danny Green"->"Spurs"@0]                |
     Then the result should be, in any order, with relax comparison:
-      | VERTICES         | EDGES     |
+      | _vertices        | _edges    |
       | [("Tim Duncan")] | <[edge1]> |
       | <[vertex2]>      | <[edge2]> |
 
@@ -225,7 +225,7 @@ Feature: Integer Vid subgraph
       |                                                 |                       | [:serve "Tiago Splitter"->"76ers"@0]             |                       |                                               |
       |                                                 |                       | [:serve "Tiago Splitter"->"Hawks"@0]             |                       |                                               |
     Then the result should be, in any order, with relax comparison:
-      | VERTICES         | EDGES     |
+      | _vertices        | _edges    |
       | [("Tim Duncan")] | <[edge1]> |
       | <[vertex2]>      | <[edge2]> |
       | <[vertex3]>      | <[edge3]> |
@@ -255,7 +255,7 @@ Feature: Integer Vid subgraph
       |                                             |                       | [:like "Marco Belinelli"->"Tony Parker"@0]      |                    |
       |                                             |                       | [:like "Tim Duncan"->"Tony Parker"@0]           |                    |
     Then the result should be, in any order, with relax comparison:
-      | VERTICES         | EDGES     |
+      | _vertices        | _edges    |
       | [("Tim Duncan")] | <[edge1]> |
       | <[vertex2]>      | <[edge2]> |
       | <[vertex3]>      | []        |
@@ -321,7 +321,7 @@ Feature: Integer Vid subgraph
       |                                             |                       | [:like "Marco Belinelli"->"Tony Parker"@0]      |                    |                                              |
       |                                             |                       | [:like "Tim Duncan"->"Tony Parker"@0]           |                    |                                              |
     Then the result should be, in any order, with relax comparison:
-      | VERTICES         | EDGES     |
+      | _vertices        | _edges    |
       | [("Tim Duncan")] | <[edge1]> |
       | <[vertex2]>      | <[edge2]> |
       | <[vertex3]>      | <[edge3]> |
@@ -329,7 +329,7 @@ Feature: Integer Vid subgraph
   Scenario: Integer Vid two steps in and out edge
     When executing query:
       """
-      GET SUBGRAPH WITH PROP 2 STEPS FROM hash('Tim Duncan'), hash('James Harden') IN teammate OUT serve
+      GET SUBGRAPH WITH PROP 2 STEPS FROM hash('Tim Duncan'), hash('James Harden') IN teammate OUT serve YIELD VERTICES, EDGES
       """
     Then define some list variables:
       | vertex1          | edge1                                       | vertex2           | edge2                                        | vertex3     |
@@ -349,7 +349,7 @@ Feature: Integer Vid subgraph
   Scenario: Integer Vid three steps
     When executing query:
       """
-      GET SUBGRAPH WITH PROP 3 STEPS FROM hash('Paul George') OUT serve BOTH like
+      GET SUBGRAPH WITH PROP 3 STEPS FROM hash('Paul George') OUT serve BOTH like YIELD VERTICES, EDGES
       """
     Then define some list variables:
       | edge1                                        | edge2                                            | edge3                                          | vertex4             | edge4                                      |
@@ -384,7 +384,7 @@ Feature: Integer Vid subgraph
   Scenario: Integer Vid bidirect edge
     When executing query:
       """
-      GET SUBGRAPH WITH PROP FROM hash('Tony Parker') BOTH like
+      GET SUBGRAPH WITH PROP FROM hash('Tony Parker') BOTH like YIELD VERTICES, EDGES
       """
     Then define some list variables:
       | edge1                                        | vertex2               | edge2                                          |
@@ -404,7 +404,7 @@ Feature: Integer Vid subgraph
   Scenario: Integer Vid pipe
     When executing query:
       """
-      GO FROM hash('Tim Duncan') over serve YIELD serve._src AS id | GET SUBGRAPH WITH PROP FROM $-.id
+      GO FROM hash('Tim Duncan') over serve YIELD serve._src AS id | GET SUBGRAPH WITH PROP FROM $-.id YIELD VERTICES, EDGES
       """
     Then define some list variables:
       | edge1                                           | vertex2               | edge2                                            |
@@ -442,7 +442,7 @@ Feature: Integer Vid subgraph
     When executing query:
       """
       $a = GO FROM hash('Tim Duncan') over serve YIELD serve._src AS id;
-      GET SUBGRAPH WITH PROP FROM $a.id
+      GET SUBGRAPH WITH PROP FROM $a.id YIELD VERTICES, EDGES
       """
     Then define some list variables:
       | edge1                                           | vertex2               | edge2                                            |
@@ -479,7 +479,7 @@ Feature: Integer Vid subgraph
   Scenario: Integer Vid many steps
     When executing query:
       """
-      GET SUBGRAPH WITH PROP 4 STEPS FROM hash('Yao Ming') IN teammate OUT serve
+      GET SUBGRAPH WITH PROP 4 STEPS FROM hash('Yao Ming') IN teammate OUT serve YIELD VERTICES, EDGES
       """
     Then the result should be, in any order, with relax comparison:
       | VERTICES       | EDGES                              |
@@ -487,14 +487,14 @@ Feature: Integer Vid subgraph
       | [("Rockets")]  | []                                 |
     When executing query:
       """
-      GET SUBGRAPH WITH PROP 4 STEPS FROM hash('NOBODY') IN teammate OUT serve
+      GET SUBGRAPH WITH PROP 4 STEPS FROM hash('NOBODY') IN teammate OUT serve YIELD VERTICES, EDGES
       """
     Then the result should be, in any order, with relax comparison:
       | VERTICES     | EDGES |
       | [("NOBODY")] | []    |
     When executing query:
       """
-      GET SUBGRAPH WITH PROP 4 steps from hash('Yao Ming') IN teammate OUT serve BOTH like
+      GET SUBGRAPH WITH PROP 4 steps from hash('Yao Ming') IN teammate OUT serve BOTH like YIELD VERTICES, EDGES
       """
     Then define some list variables:
       | edge1                                   | vertex2             | edge2                                       | vertex3          | edge3                                       | vertex4               | edge4                                            | vertex5               | edge5                                         |
@@ -580,7 +580,7 @@ Feature: Integer Vid subgraph
       | <[vertex5]>    | <[edge5]> |
     When executing query:
       """
-      GET SUBGRAPH WITH PROP 5 steps from hash('Tony Parker') IN teammate OUT serve BOTH like
+      GET SUBGRAPH WITH PROP 5 steps from hash('Tony Parker') IN teammate OUT serve BOTH like YIELD VERTICES, EDGES
       """
     Then define some list variables:
       | edge1                                        | vertex2               | edge2                                            | vertex3               | edge3                                         | vertex4             | edge4                                         | vertex5                | edge5                                        | vertex6        | edge6                                |
@@ -649,7 +649,7 @@ Feature: Integer Vid subgraph
       | <[vertex6]>       | <[edge6]> |
     When executing query:
       """
-      GET SUBGRAPH WITH PROP 4 steps from hash('Tim Duncan') BOTH like
+      GET SUBGRAPH WITH PROP 4 steps from hash('Tim Duncan') BOTH like YIELD VERTICES, EDGES
       """
     Then define some list variables:
       | edge1                                       | vertex2               | edge2                                            | vertex3               | edge3                                         | vertex4             | edge4                                         | vertex5                |
@@ -687,7 +687,7 @@ Feature: Integer Vid subgraph
   Scenario: Integer Vid over end
     When executing query:
       """
-      GET SUBGRAPH WITH PROP 10000000000000 STEPS FROM hash('Yao Ming') IN teammate OUT serve
+      GET SUBGRAPH WITH PROP 10000000000000 STEPS FROM hash('Yao Ming') IN teammate OUT serve YIELD VERTICES, EDGES
       """
     Then the result should be, in any order, with relax comparison:
       | VERTICES       | EDGES                              |
@@ -695,7 +695,7 @@ Feature: Integer Vid subgraph
       | [("Rockets")]  | []                                 |
     When executing query:
       """
-      GET SUBGRAPH 10000000000000 STEPS FROM hash('Yao Ming') IN teammate OUT serve
+      GET SUBGRAPH 10000000000000 STEPS FROM hash('Yao Ming') IN teammate OUT serve YIELD VERTICES, EDGES
       """
     Then the result should be, in any order, with relax comparison:
       | VERTICES       | EDGES                              |
@@ -705,7 +705,7 @@ Feature: Integer Vid subgraph
   Scenario: Integer Vid many steps without prop
     When executing query:
       """
-      GET SUBGRAPH 4 STEPS FROM hash('Yao Ming') IN teammate OUT serve
+      GET SUBGRAPH 4 STEPS FROM hash('Yao Ming') IN teammate OUT serve YIELD VERTICES, EDGES
       """
     Then the result should be, in any order, with relax comparison:
       | VERTICES       | EDGES                              |
@@ -713,14 +713,14 @@ Feature: Integer Vid subgraph
       | [("Rockets")]  | []                                 |
     When executing query:
       """
-      GET SUBGRAPH 4 STEPS FROM hash('NOBODY') IN teammate OUT serve
+      GET SUBGRAPH 4 STEPS FROM hash('NOBODY') IN teammate OUT serve YIELD VERTICES, EDGES
       """
     Then the result should be, in any order, with relax comparison:
       | VERTICES     | EDGES |
       | [("NOBODY")] | []    |
     When executing query:
       """
-      GET SUBGRAPH 4 steps from hash('Yao Ming') IN teammate OUT serve BOTH like
+      GET SUBGRAPH 4 steps from hash('Yao Ming') IN teammate OUT serve BOTH like YIELD VERTICES, EDGES
       """
     Then define some list variables:
       | edge1                                   | vertex2             | edge2                                       | vertex3          | edge3                                       | vertex4               | edge4                                            | vertex5               | edge5                                         |
@@ -806,7 +806,7 @@ Feature: Integer Vid subgraph
       | <[vertex5]>    | <[edge5]> |
     When executing query:
       """
-      GET SUBGRAPH 5 steps from hash('Tony Parker') IN teammate OUT serve BOTH like
+      GET SUBGRAPH 5 steps from hash('Tony Parker') IN teammate OUT serve BOTH like YIELD VERTICES, EDGES
       """
     Then define some list variables:
       | edge1                                        | vertex2               | edge2                                            | vertex3               | edge3                                         | vertex4             | edge4                                         | vertex5                | edge5                                        | vertex6        | edge6                                |
@@ -875,7 +875,7 @@ Feature: Integer Vid subgraph
       | <[vertex6]>       | <[edge6]> |
     When executing query:
       """
-      GET SUBGRAPH 4 steps from hash('Tim Duncan') BOTH like
+      GET SUBGRAPH 4 steps from hash('Tim Duncan') BOTH like YIELD VERTICES, EDGES
       """
     Then define some list variables:
       | edge1                                       | vertex2               | edge2                                            | vertex3               | edge3                                         | vertex4             | edge4                                         | vertex5                |

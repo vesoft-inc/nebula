@@ -109,7 +109,7 @@ StatusOr<SubPlan> SubgraphPlanner::zeroStep(SubPlan& startVidPlan, const std::st
   auto* func = AggregateExpression::make(pool, "COLLECT", vertexExpr, false);
 
   auto* collect = Aggregate::make(qctx, getVertex, {}, {func});
-  collect->setColNames({"VERTICES"});
+  collect->setColNames(std::move(subgraphCtx_->colNames));
 
   SubPlan subPlan;
   subPlan.root = collect;

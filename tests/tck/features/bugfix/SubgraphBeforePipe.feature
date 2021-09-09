@@ -11,7 +11,7 @@ Feature: Test get subgraph before pipe
   Scenario: subgraph with limit
     When executing query:
       """
-      GET SUBGRAPH WITH PROP FROM 'Tim Duncan' | LIMIT 1
+      GET SUBGRAPH WITH PROP FROM 'Tim Duncan' YIELD VERTICES, EDGES | LIMIT 1
       """
     Then define some list variables:
       | edge1                                           |
@@ -41,7 +41,7 @@ Feature: Test get subgraph before pipe
   Scenario: subgraph as variable with limit
     When executing query:
       """
-      $a = GET SUBGRAPH WITH PROP FROM 'Tim Duncan' | LIMIT 1
+      $a = GET SUBGRAPH WITH PROP FROM 'Tim Duncan' YIELD VERTICES, EDGES| LIMIT 1
       """
     Then define some list variables:
       | edge1                                           |
@@ -82,7 +82,7 @@ Feature: Test get subgraph before pipe
   Scenario: two steps subgraph with limit
     When executing query:
       """
-      GET SUBGRAPH WITH PROP 2 STEPS FROM 'Tim Duncan' | LIMIT 2
+      GET SUBGRAPH WITH PROP 2 STEPS FROM 'Tim Duncan' YIELD VERTICES, EDGES | LIMIT 2
       """
     Then define some list variables:
       | edge1                                           | vertex2               | edge2                                            |
@@ -164,7 +164,7 @@ Feature: Test get subgraph before pipe
   Scenario: three steps subgraph with property + direction + limit
     When executing query:
       """
-      GET SUBGRAPH WITH PROP 3 STEPS FROM 'Paul George' OUT serve BOTH like | LIMIT 2
+      GET SUBGRAPH WITH PROP 3 STEPS FROM 'Paul George' OUT serve BOTH like YIELD VERTICES, EDGES| LIMIT 2
       """
     Then define some list variables:
       | edge1                                        | edge2                                            |
