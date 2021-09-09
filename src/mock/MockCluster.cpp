@@ -280,13 +280,14 @@ std::unique_ptr<meta::IndexManager> MockCluster::memIndexMan(GraphSpaceID spaceI
   return indexMan;
 }
 
-void MockCluster::initMetaClient(meta::MetaClientOptions options) {
+meta::MetaClient* MockCluster::initMetaClient(meta::MetaClientOptions options) {
   CHECK(metaServer_ != nullptr);
   auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
   auto localhosts = std::vector<HostAddr>{HostAddr(localIP(), metaServer_->port_)};
   metaClient_ = std::make_unique<meta::MetaClient>(threadPool, localhosts, options);
   metaClient_->waitForMetadReady();
   LOG(INFO) << "Meta client has been ready!";
+  return metaClient_.get();
 }
 
 storage::GraphStorageClient* MockCluster::initGraphStorageClient() {

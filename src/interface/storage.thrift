@@ -22,6 +22,11 @@ include "meta.thrift"
  *
  */
 
+struct RequestCommon {
+    1: optional common.SessionID session_id,
+    2: optional common.ExecutionPlanID plan_id,
+}
+
 struct PartitionResult {
     1: required common.ErrorCode    code,
     2: required common.PartitionID  part_id,
@@ -166,7 +171,8 @@ struct GetNeighborsRequest {
     // partId => rows
     3: map<common.PartitionID, list<common.Row>>
         (cpp.template = "std::unordered_map")   parts,
-    4: TraverseSpec                             traverse_spec;
+    4: TraverseSpec                             traverse_spec,
+    5: optional RequestCommon                   common,
 }
 
 
@@ -260,6 +266,8 @@ struct GetPropRequest {
     // If a filter is provided, only vertices that are satisfied the filter
     // will be returned
     9: optional binary                          filter,
+    10: optional RequestCommon                  common,
+
 }
 
 
@@ -335,6 +343,7 @@ struct AddVerticesRequest {
         (cpp.template = "std::unordered_map")   prop_names,
     // if ture, when (vertexID,tagID) already exists, do nothing
     4: bool                                     if_not_exists,
+    5: optional RequestCommon                   common,
 }
 
 struct AddEdgesRequest {
@@ -347,6 +356,7 @@ struct AddEdgesRequest {
     3: list<binary>                             prop_names,
     // if ture, when edge already exists, do nothing
     4: bool                                     if_not_exists,
+    5: optional RequestCommon                   common,
 }
 
 /*
@@ -362,14 +372,20 @@ struct DeleteVerticesRequest {
     // partId => vertexId
     2: map<common.PartitionID, list<common.Value>>
         (cpp.template = "std::unordered_map")           parts,
+    3: optional RequestCommon                           common,
 }
+
 
 struct DeleteEdgesRequest {
     1: common.GraphSpaceID                      space_id,
     // partId => edgeKeys
     2: map<common.PartitionID, list<EdgeKey>>
         (cpp.template = "std::unordered_map")   parts,
+    3: optional RequestCommon                   common,
 }
+/*
+ * End of DeleteVertex section
+ */
 
 struct DelTags {
     1: common.Value id,
@@ -381,13 +397,8 @@ struct DeleteTagsRequest {
     // partId => vertexId
     2: map<common.PartitionID, list<DelTags>>
         (cpp.template = "std::unordered_map")           parts,
+    3: optional RequestCommon                           common,
 }
-
-/*
- * End of DeleteVertex section
- */
-
-
 // Response for update requests
 struct UpdateResponse {
     1: required ResponseCommon      result,
@@ -420,6 +431,7 @@ struct UpdateVertexRequest {
     7: optional list<binary>        return_props,
     // If provided, the update happens only when the condition evaluates true
     8: optional binary              condition,
+    9: optional RequestCommon       common,
 }
 /*
  * End of UpdateVertex section
@@ -439,6 +451,7 @@ struct UpdateEdgeRequest {
     6: optional list<binary>    return_props,
     // If provided, the update happens only when the condition evaluates true
     7: optional binary          condition,
+    8: optional RequestCommon   common,
 }
 /*
  * End of UpdateEdge section
@@ -449,9 +462,10 @@ struct UpdateEdgeRequest {
  * Start of GetUUID section
  */
 struct GetUUIDReq {
-    1: common.GraphSpaceID  space_id,
-    2: common.PartitionID   part_id,
-    3: binary               name,
+    1: common.GraphSpaceID      space_id,
+    2: common.PartitionID       part_id,
+    3: binary                   name,
+    4: optional RequestCommon   common,
 }
 
 
@@ -522,6 +536,7 @@ struct LookupIndexRequest {
     // The list of property names. Should not be empty.
     // Support kVid and kTag for vertex, kSrc, kType, kRank and kDst for edge.
     4: optional list<binary>                return_columns,
+    5: optional RequestCommon               common,
 }
 
 
@@ -533,6 +548,7 @@ struct LookupAndTraverseRequest {
     2: required list<common.PartitionID>    parts,
     3: IndexSpec                            indices,
     4: TraverseSpec                         traverse_spec,
+    5: optional RequestCommon               common,
 }
 
 /*
@@ -556,6 +572,7 @@ struct ScanVertexRequest {
     9: bool                                 only_latest_version = false,
     // if set to false, forbid follower read
     10: bool                                enable_read_from_follower = true,
+    11: optional RequestCommon              common,
 }
 
 struct ScanVertexResponse {
@@ -586,6 +603,7 @@ struct ScanEdgeRequest {
     9: bool                                only_latest_version = false,
     // if set to false, forbid follower read
     10: bool                                enable_read_from_follower = true,
+    11: optional RequestCommon              common,
 }
 
 struct ScanEdgeResponse {

@@ -30,17 +30,21 @@ DEFINE_int32(meta_client_retry_times, 3, "meta client retry times, 0 means no re
 DEFINE_int32(meta_client_retry_interval_secs, 1, "meta client sleep interval between retry");
 DEFINE_int32(meta_client_timeout_ms, 60 * 1000, "meta client timeout");
 DEFINE_string(cluster_id_path, "cluster.id", "file path saved clusterId");
-
+DEFINE_int32(check_plan_killed_frequency, 8, "check plan killed every 1<<n times");
 namespace nebula {
 namespace meta {
 
 MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
                        std::vector<HostAddr> addrs,
                        const MetaClientOptions& options)
-    : ioThreadPool_(ioThreadPool), addrs_(std::move(addrs)), options_(options) {
+    : ioThreadPool_(ioThreadPool),
+      addrs_(std::move(addrs)),
+      options_(options),
+      sessionMap_(new SessionMap{}),
+      killedPlans_(new folly::F14FastSet<std::pair<SessionID, ExecutionPlanID>>{}) {
   CHECK(ioThreadPool_ != nullptr) << "IOThreadPool is required";
-  CHECK(!addrs_.empty()) << "No meta server address is specified or can be "
-                            "solved. Meta server is required";
+  CHECK(!addrs_.empty())
+      << "No meta server address is specified or can be solved. Meta server is required";
   clientsMan_ = std::make_shared<thrift::ThriftClientManager<cpp2::MetaServiceAsyncClient>>();
   updateActive();
   updateLeader();
@@ -50,17 +54,24 @@ MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool
 
 MetaClient::~MetaClient() {
   stop();
+  delete sessionMap_.load();
+  delete killedPlans_.load();
   VLOG(3) << "~MetaClient";
 }
 
 bool MetaClient::isMetadReady() {
   auto ret = heartbeat().get();
-  if (!ret.ok() && ret.status() != Status::LeaderChanged()) {
+  if (!ret.ok()) {
     LOG(ERROR) << "Heartbeat failed, status:" << ret.status();
-    ready_ = false;
+    return ready_;
+  } else if (options_.role_ == cpp2::HostRole::STORAGE &&
+             metaServerVersion_ != EXPECT_META_VERSION) {
+    LOG(ERROR) << "Expect meta version is " << EXPECT_META_VERSION << ", but actual is "
+               << metaServerVersion_;
     return ready_;
   }
 
+  // ready_ will be set in loadData
   bool ldRet = loadData();
   bool lcRet = true;
   if (!options_.skipConfig_) {
@@ -174,6 +185,11 @@ bool MetaClient::loadData() {
 
   if (!loadFulltextIndexes()) {
     LOG(ERROR) << "Load fulltext indexes Failed";
+    return false;
+  }
+
+  if (!loadSessions()) {
+    LOG(ERROR) << "Load sessions Failed";
     return false;
   }
 
@@ -992,8 +1008,7 @@ void MetaClient::loadRemoteListeners() {
   }
 }
 
-/// ================================== public methods
-/// =================================
+/// ================================== public methods =================================
 
 PartitionID MetaClient::partId(int32_t numParts, const VertexID id) const {
   // If the length of the id is 8, we will treat it as int64_t to be compatible
@@ -2330,7 +2345,8 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
         heartbeatTime_ = time::WallClock::fastNowInMilliSec();
         metadLastUpdateTime_ = resp.get_last_update_time_in_ms();
         VLOG(1) << "Metad last update time: " << metadLastUpdateTime_;
-        return true;  // resp.code == nebula::cpp2::ErrorCode::SUCCEEDED
+        metaServerVersion_ = resp.get_meta_version();
+        return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
       },
       std::move(promise));
   return future;
@@ -2853,8 +2869,7 @@ bool MetaClient::loadCfg() {
   // only load current module's config is enough
   auto ret = listConfigs(gflagsModule_).get();
   if (ret.ok()) {
-    // if we load config from meta server successfully, update gflags and set
-    // configReady_
+    // if we load config from meta server successfully, update gflags and set configReady_
     auto items = ret.value();
     MetaConfigMap metaConfigMap;
     for (auto& item : items) {
@@ -2862,8 +2877,7 @@ bool MetaClient::loadCfg() {
       metaConfigMap.emplace(std::move(key), std::move(item));
     }
     {
-      // For any configurations that is in meta, update in cache to replace
-      // previous value
+      // For any configurations that is in meta, update in cache to replace previous value
       folly::RWSpinLock::WriteHolder holder(configCacheLock_);
       for (const auto& entry : metaConfigMap) {
         auto& key = entry.first;
@@ -2958,9 +2972,8 @@ void MetaClient::loadLeader(const std::vector<cpp2::HostItem>& hostItems,
               << item.get_leader_parts().size() << " space";
   }
   {
-    // todo(doodle): in worst case, storage and meta isolated, so graph may get
-    // a outdate leader info. The problem could be solved if leader term are
-    // cached as well.
+    // todo(doodle): in worst case, storage and meta isolated, so graph may get a outdate
+    // leader info. The problem could be solved if leader term are cached as well.
     LOG(INFO) << "Load leader ok";
     folly::RWSpinLock::WriteHolder wh(leadersLock_);
     leadersInfo_ = std::move(leaderInfo);
@@ -3478,6 +3491,55 @@ folly::Future<StatusOr<bool>> MetaClient::ingest(GraphSpaceID spaceId) {
     }
   };
   return folly::async(func);
+}
+
+bool MetaClient::loadSessions() {
+  auto session_list = listSessions().get();
+  if (!session_list.ok()) {
+    LOG(ERROR) << "List sessions failed, status:" << session_list.status();
+    return false;
+  }
+  SessionMap* oldSessionMap = sessionMap_.load();
+  SessionMap* newSessionMap = new SessionMap(*oldSessionMap);
+  auto oldKilledPlan = killedPlans_.load();
+  auto newKilledPlan = new folly::F14FastSet<std::pair<SessionID, ExecutionPlanID>>(*oldKilledPlan);
+  for (auto& session : session_list.value().get_sessions()) {
+    (*newSessionMap)[session.get_session_id()] = session;
+    for (auto& query : session.get_queries()) {
+      if (query.second.get_status() == cpp2::QueryStatus::KILLING) {
+        newKilledPlan->insert({session.get_session_id(), query.first});
+      }
+    }
+  }
+  sessionMap_.store(newSessionMap);
+  killedPlans_.store(newKilledPlan);
+  folly::rcu_retire(oldKilledPlan);
+  folly::rcu_retire(oldSessionMap);
+  return true;
+}
+
+StatusOr<cpp2::Session> MetaClient::getSessionFromCache(const nebula::SessionID& session_id) {
+  if (!ready_) {
+    return Status::Error("Not ready!");
+  }
+  folly::rcu_reader guard;
+  auto session_map = sessionMap_.load();
+  auto it = session_map->find(session_id);
+  if (it != session_map->end()) {
+    return it->second;
+  }
+  return Status::SessionNotFound();
+}
+
+bool MetaClient::checkIsPlanKilled(SessionID sessionId, ExecutionPlanID planId) {
+  static thread_local int check_counter = 0;
+  // Inaccurate in a multi-threaded environment, but it is not important
+  check_counter = (check_counter + 1) & ((1 << FLAGS_check_plan_killed_frequency) - 1);
+  if (check_counter != 0) {
+    return false;
+  }
+  folly::rcu_reader guard;
+  return killedPlans_.load()->count({sessionId, planId});
 }
 
 }  // namespace meta

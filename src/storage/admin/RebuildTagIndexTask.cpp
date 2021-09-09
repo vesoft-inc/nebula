@@ -26,7 +26,8 @@ StatusOr<std::shared_ptr<meta::cpp2::IndexItem>> RebuildTagIndexTask::getIndex(G
 
 nebula::cpp2::ErrorCode RebuildTagIndexTask::buildIndexGlobal(GraphSpaceID space,
                                                               PartitionID part,
-                                                              const IndexItems& items) {
+                                                              const IndexItems& items,
+                                                              kvstore::RateLimiter* rateLimiter) {
   if (canceled_) {
     LOG(ERROR) << "Rebuild Tag Index is Canceled";
     return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -64,7 +65,7 @@ nebula::cpp2::ErrorCode RebuildTagIndexTask::buildIndexGlobal(GraphSpaceID space
     }
 
     if (batchSize >= FLAGS_rebuild_index_batch_size) {
-      auto result = writeData(space, part, data, batchSize);
+      auto result = writeData(space, part, data, batchSize, rateLimiter);
       if (result != nebula::cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Write Part " << part << " Index Failed";
         return result;
@@ -135,13 +136,13 @@ nebula::cpp2::ErrorCode RebuildTagIndexTask::buildIndexGlobal(GraphSpaceID space
         auto indexKey = IndexKeyUtils::vertexIndexKey(
             vidSize, part, item->get_index_id(), vertex.toString(), std::move(valuesRet).value());
         batchSize += indexKey.size() + indexVal.size();
-        data.emplace_back(std::move(indexKey), std::move(indexVal));
+        data.emplace_back(std::move(indexKey), indexVal);
       }
     }
     iter->next();
   }
 
-  auto result = writeData(space, part, std::move(data), batchSize);
+  auto result = writeData(space, part, std::move(data), batchSize, rateLimiter);
   if (result != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << "Write Part " << part << " Index Failed";
     return nebula::cpp2::ErrorCode::E_STORE_FAILURE;

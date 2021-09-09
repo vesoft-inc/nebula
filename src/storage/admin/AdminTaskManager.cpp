@@ -30,7 +30,8 @@ bool AdminTaskManager::init() {
 
 void AdminTaskManager::addAsyncTask(std::shared_ptr<AdminTask> task) {
   TaskHandle handle = std::make_pair(task->getJobId(), task->getTaskId());
-  tasks_.insert(handle, task);
+  auto ret = tasks_.insert(handle, task).second;
+  DCHECK(ret);
   taskQueue_.add(handle);
   LOG(INFO) << folly::stringPrintf("enqueue task(%d, %d), con req=%zu",
                                    task->getJobId(),
