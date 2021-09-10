@@ -81,10 +81,10 @@ TEST(ValueToJson, edge) {
     dynamic expectedEdgeJson = dynamic::object("prop1", 233)("prop2", 2.3);
     ASSERT_EQ(expectedEdgeJson, edge1.toJsonObj());
 
-    dynamic expectedEdgeMetaJson = dynamic::object(
-        "id",
-        dynamic::object("name", "Edge")("src", "Src")("dst", "Dst")("type", 1)("ranking", 233))(
-        "type", "edge");
+    dynamic expectedEdgeMetaJson =
+        dynamic::object("id",
+                        dynamic::object("name", "Edge")("src", "Src")("dst", "Dst")("type", 1)(
+                            "name", "Edge")("ranking", 233))("type", "edge");
     ASSERT_EQ(expectedEdgeMetaJson, edge1.getMetaData());
   }
 
@@ -92,11 +92,98 @@ TEST(ValueToJson, edge) {
     dynamic expectedEdgeJson = dynamic::object("prop1", 233)("prop2", 2.3);
     ASSERT_EQ(expectedEdgeJson, edge2.toJsonObj());
 
-    dynamic expectedEdgeMetaJson = dynamic::object(
-        "id", dynamic::object("name", "Edge")("src", 101)("dst", 102)("type", 1)("ranking", 233))(
-        "type", "edge");
+    dynamic expectedEdgeMetaJson =
+        dynamic::object("id",
+                        dynamic::object("name", "Edge")("src", 101)("dst", 102)("type", 1)(
+                            "name", "Edge")("ranking", 233))("type", "edge");
     ASSERT_EQ(expectedEdgeMetaJson, edge2.getMetaData());
   }
+}
+
+TEST(ValueToJson, path) {
+  auto path = Value(Path(Vertex({"v1", {Tag("tagName", {{"prop1", Value(1)}})}}),
+                         {Step(Vertex({"v2",
+                                       {Tag("tagName2",
+                                            {{"prop1", Value(2)},
+                                             {"prop2", Value(NullType::__NULL__)},
+                                             {"prop3", Value("123")}})}}),
+                               1,
+                               "edgeName",
+                               100,
+                               {{"edgeProp", "edgePropVal"}})}));
+  auto emptyPath = Value(Path());
+
+  dynamic expectedPathJsonObj = dynamic::array(
+      dynamic::object("tagName.prop1", 1),
+      dynamic::object("edgeProp", "edgePropVal"),
+      dynamic::object("tagName2.prop1", 2)("tagName2.prop2", nullptr)("tagName2.prop3", "123"));
+  ASSERT_EQ(expectedPathJsonObj, path.toJsonObj());
+
+  dynamic expectedPathMetaJson = dynamic::array(
+      dynamic::object("id", "v1")("type", "vertex"),
+      dynamic::object("id",
+                      dynamic::object("name", "Edge")("src", "v1")("dst", "v2")("type", 1)(
+                          "name", "edgeName")("ranking", 100))("type", "edge"),
+      dynamic::object("id", "v2")("type", "vertex"));
+  ASSERT_EQ(expectedPathMetaJson, path.getMetaData());
+}
+
+TEST(ValueToJson, List) {
+  auto list1 = Value(List({Value(2),                                  // int
+                           Value(2.33),                               // float
+                           Value(true),                               // bool
+                           Value("str"),                              // string
+                           Date(2021, 12, 21),                        // date
+                           Time(13, 30, 15, 0),                       // time
+                           DateTime(2021, 12, 21, 13, 30, 15, 0)}));  // datetime
+  dynamic expectedListJsonObj = dynamic::array(
+      2, 2.33, true, "str", "2021-12-21", "13:30:15.000000", "2021-12-21T13:30:15.0");
+  ASSERT_EQ(expectedListJsonObj, list1.toJsonObj());
+
+  dynamic expectedListMetaObj = dynamic::array(nullptr,
+                                               nullptr,
+                                               nullptr,
+                                               nullptr,
+                                               dynamic::object("type", "date"),
+                                               dynamic::object("type", "time"),
+                                               dynamic::object("type", "datetime"));
+  ASSERT_EQ(expectedListMetaObj, list1.getMetaData());
+}
+
+TEST(ValueToJson, Set) {
+  auto set = Value(Set({Value(2),                                  // int
+                        Value(2.33),                               // float
+                        Value(true),                               // bool
+                        Value("str"),                              // string
+                        Date(2021, 12, 21),                        // date
+                        Time(13, 30, 15, 0),                       // time
+                        DateTime(2021, 12, 21, 13, 30, 15, 0)}));  // datetime
+  dynamic expectedSetJsonObj = dynamic::array(
+      2, 2.33, true, "str", "2021-12-21", "13:30:15.000000", "2021-12-21T13:30:15.0");
+  // The underlying data strcuture is unordered_set, so sort before the comparison
+  auto actualJson = set.toJsonObj();
+  std::sort(actualJson.begin(), actualJson.end());
+  std::sort(expectedSetJsonObj.begin(), expectedSetJsonObj.end());
+  ASSERT_EQ(expectedSetJsonObj, actualJson);
+
+  // Skip meta json comparison since nested dynamic objects cannot be sorted. i.g. dynamic::object
+  // inside dynamic::array
+}
+
+TEST(ValueToJson, Map) {
+  auto map = Value(Map({{"key1", Value(2)},                                  // int
+                        {"key2", Value(2.33)},                               // float
+                        {"key3", Value(true)},                               // bool
+                        {"key4", Value("str")},                              // string
+                        {"key5", Date(2021, 12, 21)},                        // date
+                        {"key6", Time(13, 30, 15, 0)},                       // time
+                        {"key7", DateTime(2021, 12, 21, 13, 30, 15, 0)}}));  // datetime
+  dynamic expectedMapJsonObj =
+      dynamic::object("key1", 2)("key2", 2.33)("key3", true)("key4", "str")("key5", "2021-12-21")(
+          "key6", "13:30:15.000000")("key7", "2021-12-21T13:30:15.0");
+  ASSERT_EQ(expectedMapJsonObj, map.toJsonObj());
+  // Skip meta json comparison since nested dynamic objects cannot be sorted. i.g. dynamic::object
+  // inside dynamic::array
 }
 
 TEST(ValueToJson, DecodeEncode) {
@@ -197,31 +284,6 @@ TEST(ValueToJson, DecodeEncode) {
     }
     EXPECT_EQ(val, valCopy);
   }
-}
-
-TEST(ValueToJson, Ctor) {
-  Value vZero(0);
-  EXPECT_TRUE(vZero.isInt());
-  Value vFloat(3.14);
-  EXPECT_TRUE(vFloat.isFloat());
-  Value vStr("Hello ");
-  EXPECT_TRUE(vStr.isStr());
-  Value vBool(false);
-  EXPECT_TRUE(vBool.isBool());
-  Value vDate(Date(2020, 1, 1));
-  EXPECT_TRUE(vDate.isDate());
-  Value vList(List({1, 3, 2}));
-  EXPECT_TRUE(vList.isList());
-  Value vSet(Set({8, 7}));
-  EXPECT_TRUE(vSet.isSet());
-  Value vMap(Map({{"a", 9}, {"b", 10}}));
-  EXPECT_TRUE(vMap.isMap());
-
-  // Disabled
-  // Lead to compile error
-  // Value v(nullptr);
-  // std::map<std::string, std::string> tmp;
-  // Value v2(&tmp);
 }
 
 }  // namespace nebula

@@ -471,6 +471,7 @@ struct ExecutionResponse {
   std::unique_ptr<PlanDescription> planDesc{nullptr};
   std::unique_ptr<std::string> comment{nullptr};
 
+  // response json format
   // {
   //   "results" : [ {
   //     "columns" : [ "v" ],
@@ -517,12 +518,9 @@ struct ExecutionResponse {
   //   "errors" : "" // errorMsg
   //   } ]
   // }
-
   folly::dynamic toJsonObj() const {
     folly::dynamic RespJsonObj = folly::dynamic::object();
     folly::dynamic resultBody = folly::dynamic::object();
-
-    // std::vector<srd::string> colNames = data->colNames();
 
     resultBody.insert("columns", folly::toDynamic(data->keys()));
     resultBody.insert("data", data->toJsonObj());
@@ -531,7 +529,7 @@ struct ExecutionResponse {
     resultBody.insert("planDesc", planDesc->toJsonObj());
     resultBody.insert("comment", *comment);
 
-    auto errorsBody = folly::dynamic();
+    folly::dynamic errorsBody = folly::dynamic::object();
     errorsBody.insert("errorCode", getErrorCode(errorCode));
     errorsBody.insert("errorMsg", *errorMsg);
     resultBody.insert("errors", errorsBody);

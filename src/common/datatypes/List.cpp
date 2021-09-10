@@ -22,8 +22,18 @@ std::string List::toString() const {
   return os.str();
 }
 
+folly::dynamic List::toJsonObj() const {
+  auto listJsonObj = folly::dynamic::array();
+
+  for (const auto& val : values) {
+    listJsonObj.push_back(val.toJsonObj());
+  }
+
+  return listJsonObj;
+}
+
 folly::dynamic List::getMetaData() const {
-  auto listMetadataObj = folly::dynamic();
+  auto listMetadataObj = folly::dynamic::array();
 
   for (const auto& val : values) {
     listMetadataObj.push_back(val.getMetaData());

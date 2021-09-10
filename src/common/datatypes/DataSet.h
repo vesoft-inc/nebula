@@ -155,16 +155,16 @@ struct DataSet {
     return os.str();
   }
 
+  // format:
+  // "data": [
+  // {
+  //   "row": [ row-data ],
+  //   "meta": [ metadata ]
+  // },
   folly::dynamic toJsonObj() const {
     folly::dynamic datasetObj = folly::dynamic::object();
 
-    // parse rows
-    // "data": [
-    // {
-    //     "row": [ row-data ],
-    //     "meta": [ metadata ]
-    // },
-
+    // parse rows to json
     auto dataBody = folly::dynamic::array();
     for (auto& row : rows) {
       dataBody.push_back(rowToJsonObj(row));
@@ -173,17 +173,18 @@ struct DataSet {
     return datasetObj;
   }
 
-  // parse a row to json
+  // parse Nebula::Row to json
+  // format:
   // {
-  //     "row": [ row-data ],
-  //     "meta": [ metadata ]
+  //   "row": [ row-data ],
+  //   "meta": [ metadata ]
   // }
   folly::dynamic rowToJsonObj(Row row) const {
-    auto rowJsonObj = folly::dynamic();
-    auto rowDataList = folly::dynamic();
-    auto metaDataList = folly::dynamic();
+    folly::dynamic rowJsonObj = folly::dynamic::object();
+    auto rowDataList = folly::dynamic::array();
+    auto metaDataList = folly::dynamic::array();
 
-    for (auto& ele : row.values) {
+    for (const auto& ele : row.values) {
       rowDataList.push_back(ele.toJsonObj());
       metaDataList.push_back(ele.getMetaData());
     }

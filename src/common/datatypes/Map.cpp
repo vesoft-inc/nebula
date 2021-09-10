@@ -25,14 +25,24 @@ std::string Map::toString() const {
   return os.str();
 }
 
-folly::dynamic Map::getMetaData() const {
-  auto listMetadataObj = folly::dynamic();
+folly::dynamic Map::toJsonObj() const {
+  folly::dynamic mapJsonObj = folly::dynamic::object();
 
-  for (const auto& kv : kvs) {
-    listMetadataObj.push_back(kv.second.getMetaData());
+  for (const auto& iter : kvs) {
+    mapJsonObj.insert(iter.first, iter.second.toJsonObj());
   }
 
-  return listMetadataObj;
+  return mapJsonObj;
+}
+
+folly::dynamic Map::getMetaData() const {
+  auto mapMetadataObj = folly::dynamic::array();
+
+  for (const auto& kv : kvs) {
+    mapMetadataObj.push_back(kv.second.getMetaData());
+  }
+
+  return mapMetadataObj;
 }
 
 }  // namespace nebula

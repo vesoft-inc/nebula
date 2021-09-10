@@ -7,6 +7,8 @@
 #ifndef COMMON_DATATYPES_DATE_H_
 #define COMMON_DATATYPES_DATE_H_
 
+#include <folly/dynamic.h>
+
 #include <string>
 
 namespace nebula {
@@ -62,7 +64,7 @@ struct Date {
   Date operator-(int64_t days) const;
 
   std::string toString() const;
-  std::string toJsonString() const;
+  folly::dynamic toJsonObj() const { return toString(); }
 
   // Return the number of days since -32768/1/1
   int64_t toInt() const;
@@ -114,7 +116,7 @@ struct Time {
   }
 
   std::string toString() const;
-  std::string toJsonString() const;
+  folly::dynamic toJsonObj() const { return toString(); }
 };
 
 inline std::ostream& operator<<(std::ostream& os, const Time& d) {
@@ -205,7 +207,7 @@ struct DateTime {
   }
 
   std::string toString() const;
-  std::string toJsonString() const;
+  folly::dynamic toJsonObj() const { return toString(); }
 };
 
 inline std::ostream& operator<<(std::ostream& os, const DateTime& d) {

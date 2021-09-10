@@ -26,6 +26,7 @@ struct Set {
   void __clear() { clear(); }
 
   std::string toString() const;
+  folly::dynamic toJsonObj() const;
   // Extract the metadata of each element
   folly::dynamic getMetaData() const;
 

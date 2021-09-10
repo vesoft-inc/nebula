@@ -1374,23 +1374,23 @@ folly::dynamic Value::toJsonObj() const {
     }
     // Json array
     case Value::Type::LIST: {
-      return getList().toString();
+      return getList().toJsonObj();
     }
     case Value::Type::SET: {
-      return getSet().toString();
+      return getSet().toJsonObj();
     }
     // Json object
     case Value::Type::MAP: {
-      return getMap().toString();
+      return getMap().toJsonObj();
     }
     case Value::Type::DATE: {
-      return getDate().toString();
+      return getDate().toJsonObj();
     }
     case Value::Type::TIME: {
-      return getTime().toString();
+      return getTime().toJsonObj();
     }
     case Value::Type::DATETIME: {
-      return getDateTime().toString();
+      return getDateTime().toJsonObj();
     }
     case Value::Type::EDGE: {
       return getEdge().toJsonObj();
@@ -1399,10 +1399,10 @@ folly::dynamic Value::toJsonObj() const {
       return getVertex().toJsonObj();
     }
     case Value::Type::PATH: {
-      return getPath().toString();
+      return getPath().toJsonObj();
     }
     case Value::Type::DATASET: {
-      return getDataSet().toString();
+      return getDataSet().toJsonObj();
     }
       // no default so the compiler will warning when lack
   }
@@ -1421,8 +1421,7 @@ folly::dynamic Value::getMetaData() const {
     case Value::Type::STRING:
     case Value::Type::DATASET:
     case Value::Type::NULLVALUE: {
-      dynamicObj.push_back(NULL);
-      return dynamicObj;
+      return folly::dynamic(nullptr);
     }
     // Extract the meta info of each element as the metadata of the container
     case Value::Type::LIST: {
@@ -1437,8 +1436,7 @@ folly::dynamic Value::getMetaData() const {
     case Value::Type::DATE:
     case Value::Type::TIME:
     case Value::Type::DATETIME: {
-      dynamicObj.insert("type", typeName());
-      return dynamicObj;
+      return folly::dynamic::object("type", typeName());
     }
     case Value::Type::VERTEX: {
       return getVertex().getMetaData();
