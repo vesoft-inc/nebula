@@ -3,7 +3,7 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
-.PHONY: fmt check init init-all clean test tck fail up down
+.PHONY: fmt check init init-all clean test tck fail up down test-all
 
 PYPI_MIRROR = https://mirrors.aliyun.com/pypi/simple/
 # PYPI_MIRROR = http://pypi.mirrors.ustc.edu.cn/simple --trusted-host pypi.mirrors.ustc.edu.cn
@@ -72,6 +72,8 @@ slow-query: currdir
 
 tck: slow-query
 	python3 -m pytest -n$(J) -m "not skip" tck/steps/test_tck.py
+
+test-all: test tck
 
 fail: currdir
 	python3 -m pytest --last-failed --gherkin-terminal-reporter --gherkin-terminal-reporter-expanded tck/steps/test_tck.py
