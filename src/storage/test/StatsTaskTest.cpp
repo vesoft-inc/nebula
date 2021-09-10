@@ -20,6 +20,8 @@
 namespace nebula {
 namespace storage {
 
+int gJobId = 0;
+
 class StatsTaskTest : public ::testing::Test {
  protected:
   static void SetUpTestCase() {
@@ -69,7 +71,7 @@ TEST_F(StatsTaskTest, StatsTagAndEdgeData) {
 
     cpp2::AddAdminTaskRequest request;
     request.set_cmd(meta::cpp2::AdminCmd::STATS);
-    request.set_job_id(1);
+    request.set_job_id(++gJobId);
     request.set_task_id(13);
     request.set_para(std::move(parameter));
 
@@ -134,7 +136,7 @@ TEST_F(StatsTaskTest, StatsTagAndEdgeData) {
 
     cpp2::AddAdminTaskRequest request;
     request.set_cmd(meta::cpp2::AdminCmd::STATS);
-    request.set_job_id(1);
+    request.set_job_id(++gJobId);
     request.set_task_id(14);
     request.set_para(std::move(parameter));
 
@@ -205,7 +207,7 @@ TEST_F(StatsTaskTest, StatsTagAndEdgeData) {
 
     cpp2::AddAdminTaskRequest request;
     request.set_cmd(meta::cpp2::AdminCmd::STATS);
-    request.set_job_id(1);
+    request.set_job_id(++gJobId);
     request.set_task_id(15);
     request.set_para(std::move(parameter));
 

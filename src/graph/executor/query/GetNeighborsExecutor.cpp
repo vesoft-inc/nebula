@@ -44,6 +44,8 @@ folly::Future<Status> GetNeighborsExecutor::execute() {
   GraphStorageClient* storageClient = qctx_->getStorageClient();
   return storageClient
       ->getNeighbors(gn_->space(),
+                     qctx()->rctx()->session()->id(),
+                     qctx()->plan()->id(),
                      std::move(reqDs.colNames),
                      std::move(reqDs.rows),
                      gn_->edgeTypes(),

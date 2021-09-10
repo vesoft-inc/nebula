@@ -25,34 +25,27 @@ jobs:
           - centos8
     container:
       image: vesoft/nebula-dev:${{ matrix.os }}
+    env:
+      BUILD_DIR: ./pkg-build
+      CPACK_DIR: ./pkg-build/cpack_output
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - uses: ./.github/actions/tagname-action
         id: tag
       - name: package
         run: ./package/package.sh -b ${{ steps.tag.outputs.tag }}
       - name: output some vars
-        id: vars
-        env:
-          SHA_EXT: sha256sum.txt
         run: |
-          tag=$(echo ${{ github.ref }} | rev | cut -d/ -f1 | rev)
-          filename=$(find pkg-build/cpack_output -type f \( -iname \*.deb -o -iname \*.rpm \))
-          sha256sum $filename > $filename.$SHA_EXT
-          subdir=$(echo $tag |sed 's/^v//')
-          echo "::set-output name=subdir::$subdir"
-      - uses: ./.github/actions/upload-assets-action
-        with:
-          asset-path: pkg-build/cpack_output
-          tag: ${{ steps.tag.outputs.tag }}
+          tar zcf ${{ env.CPACK_DIR }}/nebula-${{ steps.tag.outputs.tagnum }}.tar.gz --exclude=${{ env.BUILD_DIR }} ./*
+          find ${{ env.CPACK_DIR }} -type f \( -iname \*.deb -o -iname \*.rpm \) -exec bash -c "sha256sum {} > {}.sha256sum.txt" \;
       - uses: ./.github/actions/upload-to-oss-action
         with:
           key-id: ${{ secrets.OSS_ID }}
           key-secret: ${{ secrets.OSS_SECRET }}
           endpoint: ${{ secrets.OSS_ENDPOINT }}
           bucket: nebula-graph
-          asset-path: pkg-build/cpack_output
-          target-path: package/${{ steps.vars.outputs.subdir }}
+          asset-path: ${{ env.CPACK_DIR }}
+          target-path: package/${{ steps.tag.outputs.tagnum }}
 
   docker_build:
     name: docker-build
@@ -76,8 +69,9 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
       - uses: docker/build-push-action@v2
         with:
+          context: .
           file: ./docker/Dockerfile.${{ matrix.service }}
-          tags: vesoft/nebula-${{ matrix.service }}:${{ steps.tagname.outputs.tag }}
+          tags: vesoft/nebula-${{ matrix.service }}:${{ steps.tagname.outputs.tag }},vesoft/nebula-${{ matrix.service }}:latest
           push: true
           build-args: |
             BRANCH=${{ steps.tagname.outputs.tag }}
