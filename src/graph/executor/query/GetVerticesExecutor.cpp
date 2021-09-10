@@ -36,6 +36,8 @@ folly::Future<Status> GetVerticesExecutor::getVertices() {
   time::Duration getPropsTime;
   return DCHECK_NOTNULL(storageClient)
       ->getProps(gv->space(),
+                 qctx()->rctx()->session()->id(),
+                 qctx()->plan()->id(),
                  std::move(vertices),
                  gv->props(),
                  nullptr,

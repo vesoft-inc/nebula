@@ -77,6 +77,7 @@ class NebulaService(object):
         if name == 'storaged':
             params.append('--local_config=false')
             params.append('--raft_heartbeat_interval_secs=30')
+            params.append('--skip_wait_in_rate_limiter=true')
         if debug_log:
             params.append('--v=4')
         param_format = " ".join(params)
