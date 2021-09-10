@@ -34,6 +34,7 @@ static const std::unordered_map<Value::Type, Value> kConstantValues = {
     {Value::Type::STRING, Value("123")},
     {Value::Type::DATE, Value(Date())},
     {Value::Type::DATETIME, Value(DateTime())},
+    {Value::Type::TIME, Value(Time())},
     {Value::Type::VERTEX, Value(Vertex())},
     {Value::Type::EDGE, Value(Edge())},
     {Value::Type::PATH, Value(Path())},

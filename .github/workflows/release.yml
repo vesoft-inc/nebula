@@ -25,9 +25,9 @@ jobs:
           - centos8
     container:
       image: vesoft/nebula-dev:${{ matrix.os }}
-      env:
-        BUILD_DIR: ./pkg-build
-        CPACK_DIR: ./pkg-build/cpack_output
+    env:
+      BUILD_DIR: ./pkg-build
+      CPACK_DIR: ./pkg-build/cpack_output
     steps:
       - uses: actions/checkout@v2
       - uses: ./.github/actions/tagname-action

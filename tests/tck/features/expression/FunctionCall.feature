@@ -121,3 +121,20 @@ Feature: Function Call Expression
     Then the result should be, in any order:
       | result |
       | NULL   |
+
+  Scenario: error check
+    When executing query:
+      """
+      RETURN timestamp("2000-10-10T10:00:00") + true
+      """
+    Then a SemanticError should be raised at runtime: `(timestamp("2000-10-10T10:00:00")+true)' is not a valid expression, can not apply `+' to `INT' and `BOOL'.
+    When executing query:
+      """
+      RETURN time("10:00:00") + 3
+      """
+    Then a SemanticError should be raised at runtime: `(time("10:00:00")+3)' is not a valid expression, can not apply `+' to `TIME' and `INT'.
+    When executing query:
+      """
+      RETURN datetime("2000-10-10T10:00:00") + 3
+      """
+    Then a SemanticError should be raised at runtime: `(datetime("2000-10-10T10:00:00")+3)' is not a valid expression, can not apply `+' to `DATETIME' and `INT'.
