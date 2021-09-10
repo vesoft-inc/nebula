@@ -269,20 +269,13 @@ TEST(ValueToJson, DecodeEncode) {
   for (const auto& val : values) {
     std::string buf;
     buf.reserve(128);
-    serializer::serialize(val, &buf);
-    Value valCopy;
+    folly::dynamic jsonObj = val.toJsonObj();
+    auto jsonString = folly::toJson(jsonObj);
+    serializer::serialize(jsonString, &buf);
+    std::string valCopy;
     std::size_t s = serializer::deserialize(buf, valCopy);
     ASSERT_EQ(s, buf.size());
-    if (val.isNull()) {
-      EXPECT_EQ(valCopy.isNull(), true);
-      EXPECT_EQ(val.getNull(), valCopy.getNull());
-      continue;
-    }
-    if (val.empty()) {
-      EXPECT_EQ(valCopy.empty(), true);
-      continue;
-    }
-    EXPECT_EQ(val, valCopy);
+    EXPECT_EQ(jsonString, valCopy);
   }
 }
 

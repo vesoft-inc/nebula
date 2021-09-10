@@ -271,7 +271,7 @@ struct ProfilingStats {
   std::unique_ptr<std::unordered_map<std::string, std::string>> otherStats;
 
   folly::dynamic toJsonObj() const {
-    auto ProfilingStatsObj = folly::dynamic();
+    folly::dynamic ProfilingStatsObj = folly::dynamic::object();
     ProfilingStatsObj.insert("rows", rows);
     ProfilingStatsObj.insert("execDurationInUs", execDurationInUs);
     ProfilingStatsObj.insert("totalDurationInUs", totalDurationInUs);
@@ -300,7 +300,7 @@ struct PlanNodeBranchInfo {
   int64_t conditionNodeId{-1};
 
   folly::dynamic toJsonObj() const {
-    auto PlanNodeBranchInfoObj = folly::dynamic();
+    folly::dynamic PlanNodeBranchInfoObj = folly::dynamic::object();
     PlanNodeBranchInfoObj.insert("isDoBranch", isDoBranch);
     PlanNodeBranchInfoObj.insert("conditionNodeId", conditionNodeId);
 
@@ -322,10 +322,7 @@ struct Pair {
   std::string value;
 
   folly::dynamic toJsonObj() const {
-    auto pairObj = folly::dynamic();
-    pairObj.insert("key", key);
-    pairObj.insert("value", value);
-
+    folly::dynamic pairObj = folly::dynamic::object(key, value);
     return pairObj;
   }
 };
@@ -357,25 +354,24 @@ struct PlanNodeDescription {
   std::unique_ptr<std::vector<int64_t>> dependencies{nullptr};
 
   folly::dynamic toJsonObj() const {
-    auto planNodeDescObj = folly::dynamic();
+    folly::dynamic planNodeDescObj = folly::dynamic::object();
     planNodeDescObj.insert("name", name);
     planNodeDescObj.insert("id", id);
     planNodeDescObj.insert("outputVar", outputVar);
 
     auto descriptionObj = folly::dynamic::array();
-    descriptionObj.resize((*description).size());
+    descriptionObj.resize(description->size());
     std::transform(
-        (*description).begin(), (*description).end(), descriptionObj.begin(), [](const auto &ele) {
+        description->begin(), description->end(), descriptionObj.begin(), [](const auto &ele) {
           return ele.toJsonObj();
         });
     planNodeDescObj.insert("description", descriptionObj);
 
     auto profilesObj = folly::dynamic::array();
-    profilesObj.resize((*profiles).size());
-    std::transform(
-        (*profiles).begin(), (*profiles).end(), profilesObj.begin(), [](const ProfilingStats &ele) {
-          return ele.toJsonObj();
-        });
+    profilesObj.resize(profiles->size());
+    std::transform(profiles->begin(), profiles->end(), profilesObj.begin(), [](const auto &ele) {
+      return ele.toJsonObj();
+    });
     planNodeDescObj.insert("profiles", profilesObj);
     planNodeDescObj.insert("branchInfo", branchInfo->toJsonObj());
     planNodeDescObj.insert("dependencies", folly::toDynamic(*dependencies));
@@ -408,7 +404,7 @@ struct PlanDescription {
   int32_t optimize_time_in_us{0};
 
   folly::dynamic toJsonObj() const {
-    auto PlanDescObj = folly::dynamic();
+    folly::dynamic PlanDescObj = folly::dynamic::object();
 
     auto planNodeDescsObj = folly::dynamic::array();
     planNodeDescsObj.resize(planNodeDescs.size());
@@ -417,7 +413,13 @@ struct PlanDescription {
                    planNodeDescsObj.begin(),
                    [](const PlanNodeDescription &ele) { return ele.toJsonObj(); });
     PlanDescObj.insert("planNodeDescs", planNodeDescsObj);
-    PlanDescObj.insert("nodeIndexMap", folly::toDynamic(nodeIndexMap));
+    // nodeIndexMap uses int as the key of the map, but strict json format only accepts string as
+    // the key, so convert the int to string here.
+    folly::dynamic nodeIndexMapObj = folly::dynamic::object();
+    for (const auto &kv : nodeIndexMap) {
+      nodeIndexMapObj.insert(folly::to<std::string>(kv.first), kv.second);
+    }
+    PlanDescObj.insert("nodeIndexMap", nodeIndexMapObj);
     PlanDescObj.insert("format", format);
     PlanDescObj.insert("optimize_time_in_us", optimize_time_in_us);
 
@@ -471,74 +473,81 @@ struct ExecutionResponse {
   std::unique_ptr<PlanDescription> planDesc{nullptr};
   std::unique_ptr<std::string> comment{nullptr};
 
-  // response json format
-  // {
-  //   "results" : [ {
-  //     "columns" : [ "v" ],
-  //     "data" : [ // nebula::Dataset
+  // Return the response as a json string
+  // format
+  //   "results": [
   //     {
-  //       "row" : [ {
-  //         "player.name" : "Tim Duncan",
-  //         "player.age" : 42,
-  //         "bachelor.name" : "Tim Duncan",
-  //         "bachelor.speciality" : "psychology"
-  //       } ],
-  //       "meta" : [ {
-  //         "id" : 0,
-  //         "type" : "vertex",
-  //         "deleted" : false
-  //       } ]
-  //     } ],
-  //   "latencyInUs" : 23,
-  //   "spaceName": "BasketBall",
-  //   "planDesc ": {
-  //     "planNodeDescs": [ {
-  //       "name" : "name",
-  //       "id" : 123,
-  //       "outputVar" : "var",
-  //       "description" : {"key" : "val"},
-  //       "profiles" : [{
-  //         "rows" : 1,
-  //         "execDurationInUs" : 0,
-  //         "totalDurationInUs" : 0,
-  //         "otherStats" : {}, // map
-  //       }],
-  //       "branchInfo" : {
-  //         "isDoBranch" : false,
-  //         "conditionNodeId" : -1,
+  //       "columns": [],
+  //       "data": [
+  //           {
+  //               "row": [ row-data ],
+  //               "meta": [ metadata ]
+  //           },
+  //       ],
+  //       "latencyInUs" : 0,
+  //       "spaceName": "",
+  //       "planDesc ": {
+  //         "planNodeDescs": [ {
+  //           "name" : "",
+  //           "id" : 0,
+  //           "outputVar" : "",
+  //           "description" : {"key" : ""},
+  //           "profiles" : [{
+  //             "rows" : 1,
+  //             "execDurationInUs" : 0,
+  //             "totalDurationInUs" : 0,
+  //             "otherStats" : {}, // map
+  //           }],
+  //           "branchInfo" : {
+  //             "isDoBranch" : false,
+  //             "conditionNodeId" : -1,
+  //           },
+  //           "dependencies" : [] // vector of ints
+  //           }
+  //         ],
+  //         "nodeIndexMap" : {},
+  //         "format" : "",
+  //         "optimize_time_in_us" : 0,
   //       },
-  //       "dependencies" : [] // vector of ints
-  //       }
-  //     ],
-  //     "nodeIndexMap" : {},
-  //     "format" : "",
-  //     "optimize_time_in_us" : 0,
-  //   },
-  //   "comment ": "",
-  //   "errors" : "" // errorMsg
-  //   } ]
+  //       "comment ": "",
+  //       "errors" : "" // errorMsg
+  //     }
+  //   ]
   // }
   folly::dynamic toJsonObj() const {
-    folly::dynamic RespJsonObj = folly::dynamic::object();
+    folly::dynamic respJsonObj = folly::dynamic::object();
     folly::dynamic resultBody = folly::dynamic::object();
 
-    resultBody.insert("columns", folly::toDynamic(data->keys()));
-    resultBody.insert("data", data->toJsonObj());
-    resultBody.insert("latencyInUs", latencyInUs);
-    resultBody.insert("spaceName", *spaceName);
-    resultBody.insert("planDesc", planDesc->toJsonObj());
-    resultBody.insert("comment", *comment);
-
+    // required fields
     folly::dynamic errorsBody = folly::dynamic::object();
     errorsBody.insert("errorCode", getErrorCode(errorCode));
-    errorsBody.insert("errorMsg", *errorMsg);
+    resultBody.insert("latencyInUs", latencyInUs);
+
+    // optional fields
+    if (errorMsg) {
+      errorsBody.insert("errorMsg", *errorMsg);
+    }
     resultBody.insert("errors", errorsBody);
+
+    if (data) {
+      resultBody.insert("columns", folly::toDynamic(data->keys()));
+      resultBody.insert("data", data->toJsonObj());
+    }
+    if (spaceName) {
+      resultBody.insert("spaceName", *spaceName);
+    }
+    if (planDesc) {
+      resultBody.insert("planDesc", planDesc->toJsonObj());
+    }
+    if (comment) {
+      resultBody.insert("comment", *comment);
+    }
 
     auto resultArray = folly::dynamic::array();
     resultArray.push_back(resultBody);
-    RespJsonObj.insert("Result", resultArray);
+    respJsonObj.insert("Result", resultArray);
 
-    return RespJsonObj;
+    return respJsonObj;
   }
 };
 
