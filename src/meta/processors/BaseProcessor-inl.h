@@ -194,11 +194,6 @@ ErrorOr<nebula::cpp2::ErrorCode, int32_t> BaseProcessor<RESP>::autoIncrementIdIn
     GraphSpaceID spaceId) {
   folly::SharedMutex::WriteHolder wHolder(LockUtils::localIdLock());
   folly::SharedMutex::ReadHolder rHolder(LockUtils::idLock());
-  auto globalIdRet = getAvailableGolbalId();
-  if (!nebula::ok(globalIdRet)) {
-    return nebula::error(globalIdRet);
-  }
-  auto globalId = nebula::value(globalIdRet);
 
   auto localIdkey = MetaServiceUtils::localIdKey(spaceId);
   int32_t id;
@@ -212,7 +207,11 @@ ErrorOr<nebula::cpp2::ErrorCode, int32_t> BaseProcessor<RESP>::autoIncrementIdIn
     // In order to be compatible with the existing old schema, and simple to implement,
     // when the local_id record does not exist in space, directly use the smallest
     // id available globally.
-    id = globalId;
+    auto globalIdRet = getAvailableGolbalId();
+    if (!nebula::ok(globalIdRet)) {
+      return nebula::error(globalIdRet);
+    }
+    id = nebula::value(globalIdRet);
   } else {
     id = *reinterpret_cast<const int32_t*>(val.c_str()) + 1;
   }

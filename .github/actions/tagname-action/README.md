@@ -1,12 +1,16 @@
 # Extract tag name
 
-Extract tag name from release branch
+Extract tag information from release branch
 
 ## Outputs
 
 ### `tag`
 
 tag name
+
+### `tagnum`
+
+tag number
 
 ## Example usage
 
@@ -15,5 +19,7 @@ tag name
   id: tag
 
 - name: Other step
-  run: echo ${{ steps.tag.outputs.tag }}
+  run: |
+    echo ${{ steps.tag.outputs.tag }}
+    echo ${{ steps.tag.outputs.tagnum }}
 ```

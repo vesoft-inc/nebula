@@ -42,7 +42,7 @@ class StorageServer final {
   void waitUntilStop();
 
  private:
-  enum ServiceStatus { STATUS_UNINITIALIZED = 0, STATUS_RUNNING = 1, STATUS_STTOPED = 2 };
+  enum ServiceStatus { STATUS_UNINITIALIZED = 0, STATUS_RUNNING = 1, STATUS_STOPPED = 2 };
 
  private:
   std::unique_ptr<kvstore::KVStore> getStoreInstance();
