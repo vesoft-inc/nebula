@@ -70,7 +70,7 @@ slow-query: currdir
 	python3 -m pytest -n$(J) -m "not skip" tck/steps/test_kill_slow_query_via_same_service.py && \
 	python3 -m pytest -n$(J) -m "not skip" tck/steps/test_kill_slow_query_via_different_service.py
 
-tck:
+tck: slow-query
 	python3 -m pytest -n$(J) -m "not skip" tck/steps/test_tck.py
 
 fail: currdir
