@@ -46,7 +46,7 @@ TEST_F(GetSubgraphValidatorTest, Base) {
     EXPECT_TRUE(checkResult(query, expected));
   }
   {
-    std::string query = "GET SUBGRAPH  WITH PROP FROM \"1\" BOTH like";
+    std::string query = "GET SUBGRAPH  WITH PROP FROM \"1\" BOTH like YIELD vertices AS a";
     std::vector<PlanNode::Kind> expected = {
         PK::kProject,
         PK::kDataCollect,
@@ -159,6 +159,45 @@ TEST_F(GetSubgraphValidatorTest, Input) {
         PK::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected));
+  }
+}
+
+TEST_F(GetSubgraphValidatorTest, invalidYield) {
+  {
+    std::string query = "GET SUBGRAPH WITH PROP FROM \"Tim Duncan\" YIELD vertice";
+    auto result = checkResult(query);
+    EXPECT_EQ(std::string(result.message()),
+              "SemanticError: Get Subgraph only support YIELD vertices OR edges");
+  }
+  {
+    std::string query = "GET SUBGRAPH WITH PROP FROM \"Tim Duncan\" YIELD vertices";
+    auto result = checkResult(query);
+    EXPECT_EQ(std::string(result.message()),
+              "SyntaxError: please add alias when using vertices. near `vertices'");
+  }
+  {
+    std::string query = "GET SUBGRAPH WITH PROP FROM \"Tim Duncan\" YIELD vertices as a, edge";
+    auto result = checkResult(query);
+    EXPECT_EQ(std::string(result.message()),
+              "SyntaxError: please add alias when using edge. near `edge'");
+  }
+  {
+    std::string query = "GET SUBGRAPH WITH PROP FROM \"Tim Duncan\" YIELD vertices as a, edges";
+    auto result = checkResult(query);
+    EXPECT_EQ(std::string(result.message()),
+              "SyntaxError: please add alias when using edges. near `edges'");
+  }
+  {
+    std::string query = "GET SUBGRAPH WITH PROP FROM \"Tim Duncan\" YIELD path";
+    auto result = checkResult(query);
+    EXPECT_EQ(std::string(result.message()),
+              "SemanticError: Get Subgraph only support YIELD vertices OR edges");
+  }
+  {
+    std::string query = "GET SUBGRAPH WITH PROP FROM \"Tim Duncan\" YIELD 123";
+    auto result = checkResult(query);
+    EXPECT_EQ(std::string(result.message()),
+              "SemanticError: Get Subgraph only support YIELD vertices OR edges");
   }
 }
 

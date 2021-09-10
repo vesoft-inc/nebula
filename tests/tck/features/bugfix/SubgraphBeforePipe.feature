@@ -11,7 +11,7 @@ Feature: Test get subgraph before pipe
   Scenario: subgraph with limit
     When executing query:
       """
-      GET SUBGRAPH WITH PROP FROM 'Tim Duncan' YIELD VERTICES, EDGES | LIMIT 1
+      GET SUBGRAPH WITH PROP FROM 'Tim Duncan' YIELD VERTICES as nodes, EDGES as relationships | LIMIT 1
       """
     Then define some list variables:
       | edge1                                           |
@@ -35,13 +35,13 @@ Feature: Test get subgraph before pipe
       | [:teammate "Tim Duncan"->"Manu Ginobili"@0]     |
       | [:teammate "Tim Duncan"->"Tony Parker"@0]       |
     Then the result should be, in any order, with relax comparison:
-      | VERTICES         | EDGES     |
-      | [("Tim Duncan")] | <[edge1]> |
+      | nodes            | relationships |
+      | [("Tim Duncan")] | <[edge1]>     |
 
   Scenario: subgraph as variable with limit
     When executing query:
       """
-      $a = GET SUBGRAPH WITH PROP FROM 'Tim Duncan' YIELD VERTICES, EDGES| LIMIT 1
+      $a = GET SUBGRAPH WITH PROP FROM 'Tim Duncan' YIELD VERTICES as nodes, edges as relationships | LIMIT 1
       """
     Then define some list variables:
       | edge1                                           |
@@ -65,8 +65,8 @@ Feature: Test get subgraph before pipe
       | [:teammate "Tim Duncan"->"Manu Ginobili"@0]     |
       | [:teammate "Tim Duncan"->"Tony Parker"@0]       |
     Then the result should be, in any order, with relax comparison:
-      | VERTICES         | EDGES     |
-      | [("Tim Duncan")] | <[edge1]> |
+      | nodes            | relationships |
+      | [("Tim Duncan")] | <[edge1]>     |
 
   # TODO: access to the output of get subgraph.
   # Currently VERTEX is a reserved keyword.
@@ -82,7 +82,7 @@ Feature: Test get subgraph before pipe
   Scenario: two steps subgraph with limit
     When executing query:
       """
-      GET SUBGRAPH WITH PROP 2 STEPS FROM 'Tim Duncan' YIELD VERTICES, EDGES | LIMIT 2
+      GET SUBGRAPH WITH PROP 2 STEPS FROM 'Tim Duncan' YIELD VERTICES as nodes, EDGES as relationships | LIMIT 2
       """
     Then define some list variables:
       | edge1                                           | vertex2               | edge2                                            |
@@ -157,14 +157,14 @@ Feature: Test get subgraph before pipe
       |                                                 |                       | [:serve "Tiago Splitter"->"76ers"@0]             |
       |                                                 |                       | [:serve "Tiago Splitter"->"Hawks"@0]             |
     Then the result should be, in any order, with relax comparison:
-      | VERTICES         | EDGES     |
-      | [("Tim Duncan")] | <[edge1]> |
-      | <[vertex2]>      | <[edge2]> |
+      | nodes            | relationships |
+      | [("Tim Duncan")] | <[edge1]>     |
+      | <[vertex2]>      | <[edge2]>     |
 
   Scenario: three steps subgraph with property + direction + limit
     When executing query:
       """
-      GET SUBGRAPH WITH PROP 3 STEPS FROM 'Paul George' OUT serve BOTH like YIELD VERTICES, EDGES| LIMIT 2
+      GET SUBGRAPH WITH PROP 3 STEPS FROM 'Paul George' OUT serve BOTH like YIELD vertices as nodes, edges as relationships | LIMIT 2
       """
     Then define some list variables:
       | edge1                                        | edge2                                            |
@@ -173,12 +173,12 @@ Feature: Test get subgraph before pipe
       | [:serve "Paul George"->"Thunders"@0]         | [:serve "Russell Westbrook"->"Thunders"@0]       |
       | [:like "Paul George"->"Russell Westbrook"@0] | [:like "Russell Westbrook"->"James Harden"@0]    |
     Then the result should be, in any order, with relax comparison:
-      | VERTICES                                          | EDGES     |
-      | [("Paul George")]                                 | <[edge1]> |
-      | [("Russell Westbrook"), ("Pacers"), ("Thunders")] | <[edge2]> |
+      | nodes                                             | relationships |
+      | [("Paul George")]                                 | <[edge1]>     |
+      | [("Russell Westbrook"), ("Pacers"), ("Thunders")] | <[edge2]>     |
     When executing query:
       """
-      GET SUBGRAPH WITH PROP 3 STEPS FROM 'Paul George' OUT serve BOTH like | YIELD COUNT(*)
+      GET SUBGRAPH WITH PROP 3 STEPS FROM 'Paul George' OUT serve BOTH like YIELD vertices as a, edges as b | YIELD COUNT(*)
       """
     Then the result should be, in any order, with relax comparison:
       | COUNT(*) |

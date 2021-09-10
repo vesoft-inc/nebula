@@ -125,13 +125,13 @@ Status GetSubgraphValidator::validateYield(YieldClause* yield) {
       newCols->addColumn(newCol);
     } else if (lowerStr == "edges" || lowerStr == "_edges") {
       if (subgraphCtx_->steps.steps() == 0) {
-        return Status::SemanticError("Get Subgraph 0 STEPS only support YIELD VERTICES");
+        return Status::SemanticError("Get Subgraph 0 STEPS only support YIELD vertices");
       }
       subgraphCtx_->getEdgeProp = true;
       auto* newCol = new YieldColumn(InputPropertyExpression::make(pool, "EDGES"), col->name());
       newCols->addColumn(newCol);
     } else {
-      return Status::SemanticError("Get Subgraph only support YIELD VERTICES OR EDGES");
+      return Status::SemanticError("Get Subgraph only support YIELD vertices OR edges");
     }
     outputs_.emplace_back(col->name(), Value::Type::LIST);
   }
