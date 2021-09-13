@@ -28,8 +28,11 @@ static const std::unordered_map<std::string, std::pair<std::string, bool>> syste
     {"groups", {"__groups__", true}},
     {"zones", {"__zones__", true}},
     {"ft_service", {"__ft_service__", false}},
-    {"sessions", {"__sessions__", true}},
-    {"id", {"__id__", true}}};
+    {"sessions", {"__sessions__", true}}};
+
+// SystemInfo will always be backuped
+static const std::unordered_map<std::string, std::pair<std::string, bool>> systemInfoMaps{
+    {"autoIncrementId", {"__id__", true}}, {"lastUpdateTime", {"__last_update_time__", true}}};
 
 // name => {prefix, parseSpaceid}, nullptr means that the backup should be skipped.
 static const std::unordered_map<
@@ -45,7 +48,6 @@ static const std::unordered_map<
         {"index", {"__index__", nullptr}},
         {"index_status", {"__index_status__", MetaServiceUtils::parseIndexStatusKeySpaceID}},
         {"roles", {"__roles__", MetaServiceUtils::parseRoleSpace}},
-        {"last_update_time", {"__last_update_time__", nullptr}},
         {"leaders", {"__leaders__", nullptr}},
         {"leader_terms", {"__leader_terms__", nullptr}},
         {"listener", {"__listener__", nullptr}},
@@ -68,7 +70,6 @@ static const std::string kUsersTable          = systemTableMaps.at("users").firs
 static const std::string kRolesTable          = tableMaps.at("roles").first;          // NOLINT
 static const std::string kConfigsTable        = systemTableMaps.at("configs").first;        // NOLINT
 static const std::string kSnapshotsTable      = systemTableMaps.at("snapshots").first;      // NOLINT
-static const std::string kLastUpdateTimeTable = tableMaps.at("last_update_time").first; // NOLINT
 static const std::string kLeadersTable        = tableMaps.at("leaders").first;          // NOLINT
 static const std::string kLeaderTermsTable    = tableMaps.at("leader_terms").first;     // NOLINT
 static const std::string kGroupsTable         = systemTableMaps.at("groups").first;           // NOLINT
@@ -87,7 +88,9 @@ const std::string kFTIndexTable        = tableMaps.at("ft_index").first;        
 const std::string kFTServiceTable = systemTableMaps.at("ft_service").first;      // NOLINT
 const std::string kSessionsTable = systemTableMaps.at("sessions").first;         // NOLINT
 
-const std::string kIdKey = systemTableMaps.at("id").first;                       // NOLINT
+const std::string kIdKey = systemInfoMaps.at("autoIncrementId").first;                // NOLINT
+const std::string kLastUpdateTimeTable = systemInfoMaps.at("lastUpdateTime").first;   // NOLINT
+
 // clang-format on
 
 const int kMaxIpAddrLen = 15;  // '255.255.255.255'
@@ -1093,6 +1096,18 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>> MetaServiceUtils::bac
       }
       LOG(INFO) << table.first << " table backup successed";
     }
+  }
+
+  for (const auto& table : systemInfoMaps) {
+    if (!table.second.second) {
+      LOG(INFO) << table.first << " table skipped";
+      continue;
+    }
+    auto result = backupTable(kvstore, backupName, table.second.first, files, nullptr);
+    if (result != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      return result;
+    }
+    LOG(INFO) << table.first << " table backup successed";
   }
 
   // The mapping of space name and space id needs to be handled separately.

@@ -12,7 +12,7 @@
 #include "interface/gen-cpp2/meta_types.h"
 
 DEFINE_bool(mock_ttl_col, false, "Will use a column as ttl_col if set to true");
-DEFINE_int32(mock_ttl_duration, 5, "Ttl duration for ttl col");
+DEFINE_int32(mock_ttl_duration, 10, "Ttl duration for ttl col");
 
 namespace nebula {
 namespace mock {

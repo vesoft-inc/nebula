@@ -197,7 +197,7 @@ bool StorageServer::start() {
     } catch (const std::exception& e) {
       LOG(ERROR) << "Start storage service failed, error:" << e.what();
     }
-    storageSvcStatus_.store(STATUS_STTOPED);
+    storageSvcStatus_.store(STATUS_STOPPED);
     LOG(INFO) << "The storage service stopped";
   }));
 
@@ -226,7 +226,7 @@ bool StorageServer::start() {
     } catch (const std::exception& e) {
       LOG(ERROR) << "Start admin service failed, error:" << e.what();
     }
-    adminSvcStatus_.store(STATUS_STTOPED);
+    adminSvcStatus_.store(STATUS_STOPPED);
     LOG(INFO) << "The admin service stopped";
   }));
 
@@ -251,7 +251,7 @@ bool StorageServer::start() {
     } catch (const std::exception& e) {
       LOG(ERROR) << "Start internal storage service failed, error:" << e.what();
     }
-    internalStorageSvcStatus_.store(STATUS_STTOPED);
+    internalStorageSvcStatus_.store(STATUS_STOPPED);
     LOG(INFO) << "The internal storage  service stopped";
   }));
 
@@ -275,21 +275,21 @@ void StorageServer::waitUntilStop() {
 }
 
 void StorageServer::stop() {
-  if (adminSvcStatus_.load() == ServiceStatus::STATUS_STTOPED &&
-      storageSvcStatus_.load() == ServiceStatus::STATUS_STTOPED &&
-      internalStorageSvcStatus_.load() == ServiceStatus::STATUS_STTOPED) {
+  if (adminSvcStatus_.load() == ServiceStatus::STATUS_STOPPED &&
+      storageSvcStatus_.load() == ServiceStatus::STATUS_STOPPED &&
+      internalStorageSvcStatus_.load() == ServiceStatus::STATUS_STOPPED) {
     LOG(INFO) << "All services has been stopped";
     return;
   }
 
   ServiceStatus adminExpected = ServiceStatus::STATUS_RUNNING;
-  adminSvcStatus_.compare_exchange_strong(adminExpected, STATUS_STTOPED);
+  adminSvcStatus_.compare_exchange_strong(adminExpected, STATUS_STOPPED);
 
   ServiceStatus storageExpected = ServiceStatus::STATUS_RUNNING;
-  storageSvcStatus_.compare_exchange_strong(storageExpected, STATUS_STTOPED);
+  storageSvcStatus_.compare_exchange_strong(storageExpected, STATUS_STOPPED);
 
   ServiceStatus interStorageExpected = ServiceStatus::STATUS_RUNNING;
-  internalStorageSvcStatus_.compare_exchange_strong(interStorageExpected, STATUS_STTOPED);
+  internalStorageSvcStatus_.compare_exchange_strong(interStorageExpected, STATUS_STOPPED);
 
   // kvstore need to stop back ground job before http server dctor
   if (kvstore_) {

@@ -89,6 +89,14 @@ TEST(RestoreProcessorTest, RestoreTest) {
                     std::string(reinterpret_cast<const char*>(&zoneId), sizeof(ZoneID)));
   data.emplace_back(MetaServiceUtils::zoneKey(zoneName), MetaServiceUtils::zoneVal(hosts));
 
+  int32_t autoId = 666;
+  data.emplace_back(MetaServiceUtils::idKey(),
+                    std::string(reinterpret_cast<const char*>(&autoId), sizeof(autoId)));
+
+  auto lastUpdateTime = time::WallClock::fastNowInMilliSec();
+  data.emplace_back(MetaServiceUtils::lastUpdateTimeKey(),
+                    MetaServiceUtils::lastUpdateTimeVal(lastUpdateTime));
+
   folly::Baton<true, std::atomic> baton;
   kv->asyncMultiPut(0, 0, std::move(data), [&](nebula::cpp2::ErrorCode code) {
     ret = (code == nebula::cpp2::ErrorCode::SUCCEEDED);
@@ -218,6 +226,17 @@ TEST(RestoreProcessorTest, RestoreTest) {
     result = kvRestore->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, result);
     ASSERT_FALSE(iter->valid());
+
+    std::string key = "__id__";
+    std::string value;
+    result = kvRestore->get(kDefaultSpaceId, kDefaultPartId, key, &value);
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, result);
+    ASSERT_EQ(autoId, *reinterpret_cast<const int32_t*>(value.data()));
+
+    key = "__last_update_time__";
+    result = kvRestore->get(kDefaultSpaceId, kDefaultPartId, key, &value);
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, result);
+    ASSERT_EQ(lastUpdateTime, *reinterpret_cast<const int64_t*>(value.data()));
   }
 }
 

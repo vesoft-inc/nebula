@@ -142,6 +142,7 @@ void QueryInstance::onError(Status status) {
     case Status::Code::kTagNotFound:
     case Status::Code::kUserNotFound:
     case Status::Code::kListenerNotFound:
+    case Status::Code::kSessionNotFound:
       rctx->resp().errorCode = ErrorCode::E_EXECUTION_ERROR;
       break;
   }

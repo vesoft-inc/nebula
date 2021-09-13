@@ -8,8 +8,13 @@
 #define CLIENTS_META_METACLIENT_H_
 
 #include <folly/RWSpinLock.h>
+#include <folly/container/F14Map.h>
+#include <folly/container/F14Set.h>
 #include <folly/executors/IOThreadPoolExecutor.h>
+#include <folly/synchronization/Rcu.h>
 #include <gtest/gtest_prod.h>
+
+#include <atomic>
 
 #include "common/base/Base.h"
 #include "common/base/Status.h"
@@ -20,9 +25,11 @@
 #include "common/thread/GenericWorker.h"
 #include "common/thrift/ThriftClientManager.h"
 #include "interface/gen-cpp2/MetaServiceAsyncClient.h"
+#include "interface/gen-cpp2/common_types.h"
 #include "interface/gen-cpp2/meta_types.h"
 
 DECLARE_int32(meta_client_retry_times);
+DECLARE_int32(heartbeat_interval_secs);
 
 namespace nebula {
 namespace meta {
@@ -54,8 +61,7 @@ using NameIndexMap = std::unordered_map<std::pair<GraphSpaceID, std::string>, In
 // Get Index Structure by indexID
 using Indexes = std::unordered_map<IndexID, std::shared_ptr<cpp2::IndexItem>>;
 
-// Listeners is a map of ListenerHost => <PartId + type>, used to add/remove
-// listener on local host
+// Listeners is a map of ListenerHost => <PartId + type>, used to add/remove listener on local host
 using Listeners =
     std::unordered_map<HostAddr, std::vector<std::pair<PartitionID, cpp2::ListenerType>>>;
 
@@ -114,6 +120,7 @@ using FulltextClientsList = std::vector<cpp2::FTClient>;
 
 using FTIndexMap = std::unordered_map<std::string, cpp2::FTIndex>;
 
+using SessionMap = std::unordered_map<SessionID, cpp2::Session>;
 class MetaChangedListener {
  public:
   virtual ~MetaChangedListener() = default;
@@ -174,6 +181,7 @@ class MetaClient {
   FRIEND_TEST(MetaClientTest, RetryOnceTest);
   FRIEND_TEST(MetaClientTest, RetryUntilLimitTest);
   FRIEND_TEST(MetaClientTest, RocksdbOptionsTest);
+  friend class KillQueryMetaWrapper;
 
  public:
   MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
@@ -184,7 +192,7 @@ class MetaClient {
 
   bool isMetadReady();
 
-  bool waitForMetadReady(int count = -1, int retryIntervalSecs = 2);
+  bool waitForMetadReady(int count = -1, int retryIntervalSecs = FLAGS_heartbeat_interval_secs);
 
   void stop();
 
@@ -550,6 +558,10 @@ class MetaClient {
 
   StatusOr<std::vector<HostAddr>> getStorageHosts() const;
 
+  StatusOr<cpp2::Session> getSessionFromCache(const nebula::SessionID& session_id);
+
+  bool checkIsPlanKilled(SessionID session_id, ExecutionPlanID plan_id);
+
   StatusOr<HostAddr> getStorageLeaderFromCache(GraphSpaceID spaceId, PartitionID partId);
 
   void updateStorageLeader(GraphSpaceID spaceId, PartitionID partId, const HostAddr& leader);
@@ -633,6 +645,8 @@ class MetaClient {
 
   bool loadFulltextIndexes();
 
+  bool loadSessions();
+
   void loadLeader(const std::vector<cpp2::HostItem>& hostItems,
                   const SpaceNameIdMap& spaceIndexByName);
 
@@ -694,6 +708,8 @@ class MetaClient {
   folly::RWSpinLock leaderIdsLock_;
   int64_t localLastUpdateTime_{0};
   int64_t metadLastUpdateTime_{0};
+  int64_t metaServerVersion_{-1};
+  static constexpr int64_t EXPECT_META_VERSION = 2;
 
   // leadersLock_ is used to protect leadersInfo
   folly::RWSpinLock leadersLock_;
@@ -743,6 +759,8 @@ class MetaClient {
   MetaClientOptions options_;
   std::vector<HostAddr> storageHosts_;
   int64_t heartbeatTime_;
+  std::atomic<SessionMap*> sessionMap_;
+  std::atomic<folly::F14FastSet<std::pair<SessionID, ExecutionPlanID>>*> killedPlans_;
 };
 
 }  // namespace meta

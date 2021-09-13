@@ -1,6 +1,9 @@
 set(storage_test_deps
     $<TARGET_OBJECTS:mock_obj>
     $<TARGET_OBJECTS:meta_service_handler>
+    $<TARGET_OBJECTS:meta_version_man_obj>
+    $<TARGET_OBJECTS:meta_v1_thrift_obj>
+    $<TARGET_OBJECTS:meta_data_upgrade_obj>
     $<TARGET_OBJECTS:storage_admin_service_handler>
     $<TARGET_OBJECTS:graph_storage_service_handler>
     $<TARGET_OBJECTS:storage_common_obj>
@@ -576,13 +579,6 @@ nebula_add_test(
     SOURCES
         KVTest.cpp
     OBJECTS
-        $<TARGET_OBJECTS:storage_admin_service_handler>
-        $<TARGET_OBJECTS:storage_common_obj>
-        $<TARGET_OBJECTS:meta_service_handler>
-        $<TARGET_OBJECTS:mock_obj>
-        $<TARGET_OBJECTS:ws_common_obj>
-        $<TARGET_OBJECTS:ws_obj>
-        $<TARGET_OBJECTS:http_client_obj>
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -598,15 +594,7 @@ nebula_add_test(
     SOURCES
         KVClientTest.cpp
     OBJECTS
-        $<TARGET_OBJECTS:storage_admin_service_handler>
-        $<TARGET_OBJECTS:storage_common_obj>
-        $<TARGET_OBJECTS:meta_service_handler>
-        $<TARGET_OBJECTS:mock_obj>
         $<TARGET_OBJECTS:general_storage_client_obj>
-        $<TARGET_OBJECTS:storage_client_base_obj>
-        $<TARGET_OBJECTS:ws_common_obj>
-        $<TARGET_OBJECTS:ws_obj>
-        $<TARGET_OBJECTS:http_client_obj>
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -631,21 +619,33 @@ nebula_add_test(
         gtest
 )
 
+nebula_add_test(
+    NAME
+        storage_kill_query_test
+    SOURCES
+        KillQueryTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:storage_common_obj>
+        $<TARGET_OBJECTS:meta_service_handler>
+        $<TARGET_OBJECTS:mock_obj>
+        $<TARGET_OBJECTS:ws_common_obj>
+        $<TARGET_OBJECTS:ws_obj>
+        ${storage_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        wangle
+        gtest
+
+)
+
 nebula_add_executable(
     NAME
         es_bulk_example
     SOURCES
         ElasticSearchBulkInsertTest.cpp
     OBJECTS
-        $<TARGET_OBJECTS:storage_admin_service_handler>
-        $<TARGET_OBJECTS:storage_common_obj>
-        $<TARGET_OBJECTS:meta_service_handler>
-        $<TARGET_OBJECTS:mock_obj>
-        $<TARGET_OBJECTS:general_storage_client_obj>
-        $<TARGET_OBJECTS:storage_client_base_obj>
-        $<TARGET_OBJECTS:ws_common_obj>
-        $<TARGET_OBJECTS:ws_obj>
-        $<TARGET_OBJECTS:http_client_obj>
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}

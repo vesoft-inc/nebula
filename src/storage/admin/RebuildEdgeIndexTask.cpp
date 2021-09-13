@@ -26,7 +26,8 @@ StatusOr<std::shared_ptr<meta::cpp2::IndexItem>> RebuildEdgeIndexTask::getIndex(
 
 nebula::cpp2::ErrorCode RebuildEdgeIndexTask::buildIndexGlobal(GraphSpaceID space,
                                                                PartitionID part,
-                                                               const IndexItems& items) {
+                                                               const IndexItems& items,
+                                                               kvstore::RateLimiter* rateLimiter) {
   if (canceled_) {
     LOG(ERROR) << "Rebuild Edge Index is Canceled";
     return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -43,6 +44,13 @@ nebula::cpp2::ErrorCode RebuildEdgeIndexTask::buildIndexGlobal(GraphSpaceID spac
     edgeTypes.emplace(item->get_schema_id().get_edge_type());
   }
 
+  auto schemasRet = env_->schemaMan_->getAllLatestVerEdgeSchema(space);
+  if (!schemasRet.ok()) {
+    LOG(ERROR) << "Get space edge schema failed";
+    return nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND;
+  }
+  auto schemas = schemasRet.value();
+
   auto vidSize = vidSizeRet.value();
   std::unique_ptr<kvstore::KVIterator> iter;
   const auto& prefix = NebulaKeyUtils::edgePrefix(part);
@@ -52,9 +60,6 @@ nebula::cpp2::ErrorCode RebuildEdgeIndexTask::buildIndexGlobal(GraphSpaceID spac
     return ret;
   }
 
-  VertexID currentSrcVertex = "";
-  VertexID currentDstVertex = "";
-  EdgeRanking currentRanking = 0;
   std::vector<kvstore::KV> data;
   data.reserve(kReserveNum);
   RowReaderWrapper reader;
@@ -66,7 +71,7 @@ nebula::cpp2::ErrorCode RebuildEdgeIndexTask::buildIndexGlobal(GraphSpaceID spac
     }
 
     if (batchSize >= FLAGS_rebuild_index_batch_size) {
-      auto result = writeData(space, part, data, batchSize);
+      auto result = writeData(space, part, std::move(data), batchSize, rateLimiter);
       if (result != nebula::cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Write Part " << part << " Index Failed";
         return result;
@@ -96,15 +101,6 @@ nebula::cpp2::ErrorCode RebuildEdgeIndexTask::buildIndexGlobal(GraphSpaceID spac
     auto ranking = NebulaKeyUtils::getRank(vidSize, key);
     VLOG(3) << "Source " << source << " Destination " << destination << " Ranking " << ranking
             << " Edge Type " << edgeType;
-    if (currentSrcVertex == source && currentDstVertex == destination &&
-        currentRanking == ranking) {
-      iter->next();
-      continue;
-    } else {
-      currentSrcVertex = source.toString();
-      currentDstVertex = destination.toString();
-      currentRanking = ranking;
-    }
 
     reader = RowReaderWrapper::getEdgePropReader(env_->schemaMan_, space, edgeType, val);
     if (reader == nullptr) {
@@ -113,17 +109,17 @@ nebula::cpp2::ErrorCode RebuildEdgeIndexTask::buildIndexGlobal(GraphSpaceID spac
       continue;
     }
 
-    auto schema = env_->schemaMan_->getEdgeSchema(space, edgeType);
-    if (!schema) {
+    auto schemaIter = schemas.find(edgeType);
+    if (schemaIter == schemas.end()) {
       LOG(WARNING) << "Space " << space << ", edge " << edgeType << " invalid";
       iter->next();
       continue;
     }
+    auto* schema = schemaIter->second.get();
 
-    auto ttlProp = CommonUtils::ttlProps(schema.get());
-    if (ttlProp.first &&
-        CommonUtils::checkDataExpiredForTTL(
-            schema.get(), reader.get(), ttlProp.second.second, ttlProp.second.first)) {
+    auto ttlProp = CommonUtils::ttlProps(schema);
+    if (ttlProp.first && CommonUtils::checkDataExpiredForTTL(
+                             schema, reader.get(), ttlProp.second.second, ttlProp.second.first)) {
       VLOG(3) << "ttl expired : "
               << "Source " << source << " Destination " << destination << " Ranking " << ranking
               << " Edge Type " << edgeType;
@@ -133,7 +129,7 @@ nebula::cpp2::ErrorCode RebuildEdgeIndexTask::buildIndexGlobal(GraphSpaceID spac
 
     std::string indexVal = "";
     if (ttlProp.first) {
-      auto ttlValRet = CommonUtils::ttlValue(schema.get(), reader.get());
+      auto ttlValRet = CommonUtils::ttlValue(schema, reader.get());
       if (ttlValRet.ok()) {
         indexVal = IndexKeyUtils::indexVal(std::move(ttlValRet).value());
       }
@@ -154,13 +150,13 @@ nebula::cpp2::ErrorCode RebuildEdgeIndexTask::buildIndexGlobal(GraphSpaceID spac
                                                     destination.toString(),
                                                     std::move(valuesRet).value());
         batchSize += indexKey.size() + indexVal.size();
-        data.emplace_back(std::move(indexKey), std::move(indexVal));
+        data.emplace_back(std::move(indexKey), indexVal);
       }
     }
     iter->next();
   }
 
-  auto result = writeData(space, part, std::move(data), batchSize);
+  auto result = writeData(space, part, std::move(data), batchSize, rateLimiter);
   if (result != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << "Write Part " << part << " Index Failed";
     return nebula::cpp2::ErrorCode::E_STORE_FAILURE;
