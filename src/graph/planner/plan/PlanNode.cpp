@@ -77,7 +77,7 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
     case Kind::kLimit:
       return "Limit";
     case Kind::kSample:
-      return "kSample";
+      return "Sample";
     case Kind::kAggregate:
       return "Aggregate";
     case Kind::kSelect:
