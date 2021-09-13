@@ -128,7 +128,7 @@ TEST(ValueToJson, path) {
   ASSERT_EQ(expectedPathMetaJson, path.getMetaData());
 }
 
-TEST(ValueToJson, List) {
+TEST(ValueToJson, list) {
   auto list1 = Value(List({Value(2),                                  // int
                            Value(2.33),                               // float
                            Value(true),                               // bool
@@ -170,7 +170,7 @@ TEST(ValueToJson, Set) {
   // inside dynamic::array
 }
 
-TEST(ValueToJson, Map) {
+TEST(ValueToJson, map) {
   auto map = Value(Map({{"key1", Value(2)},                                  // int
                         {"key2", Value(2.33)},                               // float
                         {"key3", Value(true)},                               // bool
@@ -184,6 +184,32 @@ TEST(ValueToJson, Map) {
   ASSERT_EQ(expectedMapJsonObj, map.toJsonObj());
   // Skip meta json comparison since nested dynamic objects cannot be sorted. i.g. dynamic::object
   // inside dynamic::array
+}
+
+TEST(ValueToJson, dataset) {
+  DataSet dataset = DataSet({"col1", "col2", "col3", "col4", "col5", "col6", "col7"});
+  dataset.emplace_back(List({Value(2),             // int
+                             Value(2.33),          // float
+                             Value(true),          // bool
+                             Value("str"),         // string
+                             Date(2021, 12, 21),   // date
+                             Time(13, 30, 15, 0),  // time
+                             DateTime(2021, 12, 21, 13, 30, 15, 0)}));
+  dynamic expectedDatasetJsonObj = dynamic::object(
+      "data",
+      dynamic::array(dynamic::object(
+          "row",
+          dynamic::array(
+              2, 2.33, true, "str", "2021-12-21", "13:30:15.000000", "2021-12-21T13:30:15.0"))(
+          "meta",
+          dynamic::array(nullptr,
+                         nullptr,
+                         nullptr,
+                         nullptr,
+                         dynamic::object("type", "date"),
+                         dynamic::object("type", "time"),
+                         dynamic::object("type", "datetime")))));
+  ASSERT_EQ(expectedDatasetJsonObj, dataset.toJsonObj());
 }
 
 TEST(ValueToJson, DecodeEncode) {
