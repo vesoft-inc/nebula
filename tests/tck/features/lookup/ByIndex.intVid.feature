@@ -555,7 +555,7 @@ Feature: Lookup by index itself in integer vid
       CREATE TAG weight (WEIGHT double);
       CREATE TAG INDEX weight_index ON weight(WEIGHT);
       """
-    And wait 2 seconds
+    And wait 3 seconds
     When executing query:
       """
       INSERT VERTEX weight(WEIGHT) VALUES hash("Tim Duncan") : (70.5);

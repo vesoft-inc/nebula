@@ -16,7 +16,7 @@ Feature: Test lookup on edge index 2
       CREATE EDGE INDEX e_index_1 ON lookup_edge_1(col1, col2, col3);
       CREATE EDGE INDEX e_index_3 ON lookup_edge_1(col2, col3);
       """
-    And wait 2 seconds
+    And wait 3 seconds
     And having executed:
       """
       INSERT EDGE

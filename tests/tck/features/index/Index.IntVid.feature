@@ -57,7 +57,7 @@ Feature: IndexTest_Vid_Int
       CREATE TAG INDEX disorder_tag_index ON tag_1(col3, col2);
       """
     Then the execution should be successful
-    And wait 2 seconds
+    And wait 3 seconds
     When try to execute query:
       """
       INSERT VERTEX
@@ -195,7 +195,7 @@ Feature: IndexTest_Vid_Int
       CREATE EDGE INDEX disorder_edge_1_index ON edge_1(col3, col2)
       """
     Then the execution should be successful
-    And wait 2 seconds
+    And wait 3 seconds
     When try to execute query:
       """
       INSERT EDGE
@@ -527,7 +527,7 @@ Feature: IndexTest_Vid_Int
       CREATE TAG INDEX single_person_index ON tag_1(col1)
       """
     Then the execution should be successful
-    And wait 2 seconds
+    And wait 3 seconds
     When try to execute query:
       """
       INSERT VERTEX tag_1(col1, col2, col3, col4) VALUES 100:(true,  18, 1.1, `timestamp`("2000-10-10T10:00:00"))
@@ -543,7 +543,7 @@ Feature: IndexTest_Vid_Int
       CREATE TAG INDEX single_person_index2 ON tag_1(col5)
       """
     Then the execution should be successful
-    And wait 2 seconds
+    And wait 3 seconds
     When try to execute query:
       """
       INSERT VERTEX tag_1(col1, col2, col3, col4, col5) VALUES 100:(true,  18, 1.1, `timestamp`("2000-10-10T10:00:00"), 5)
@@ -678,7 +678,7 @@ Feature: IndexTest_Vid_Int
       CREATE TAG INDEX alter_index ON alter_tag(id);
       """
     Then the execution should be successful
-    And wait 2 seconds
+    And wait 3 seconds
     When try to execute query:
       """
       INSERT VERTEX alter_tag(id) VALUES 100:(1), 200:(2)
@@ -688,7 +688,7 @@ Feature: IndexTest_Vid_Int
       """
       ALTER TAG alter_tag ADD (type int)
       """
-    And wait 2 seconds
+    And wait 3 seconds
     Then the execution should be successful
     When try to execute query:
       """

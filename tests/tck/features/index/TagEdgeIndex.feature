@@ -83,17 +83,7 @@ Feature: tag and edge index tests from pytest
     And wait 3 seconds
     When submit a job:
       """
-      REBUILD TAG INDEX single_tag_index
-      """
-    Then wait the job to finish
-    When submit a job:
-      """
-      REBUILD TAG INDEX multi_tag_index
-      """
-    Then wait the job to finish
-    When submit a job:
-      """
-      REBUILD TAG INDEX disorder_tag_index
+      REBUILD TAG INDEX single_tag_index, multi_tag_index, disorder_tag_index
       """
     Then wait the job to finish
     When executing query:
@@ -330,17 +320,7 @@ Feature: tag and edge index tests from pytest
     # Rebuild Edge Index
     When submit a job:
       """
-      REBUILD EDGE INDEX single_edge_index
-      """
-    Then wait the job to finish
-    When submit a job:
-      """
-      REBUILD EDGE INDEX multi_edge_index
-      """
-    Then wait the job to finish
-    When submit a job:
-      """
-      REBUILD EDGE INDEX disorder_edge_index
+      REBUILD EDGE INDEX single_edge_index, multi_edge_index, disorder_edge_index
       """
     Then wait the job to finish
     When executing query:

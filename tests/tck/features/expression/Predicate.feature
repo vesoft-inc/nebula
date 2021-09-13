@@ -56,7 +56,7 @@ Feature: Predicate
       """
       CREATE TAG INDEX bachelor_name_index ON bachelor(name(20));
       """
-    And wait 2 seconds
+    And wait 3 seconds
     When submit a job:
       """
       REBUILD TAG INDEX bachelor_name_index
