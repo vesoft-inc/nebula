@@ -640,7 +640,7 @@ nebula_add_test(
 
 nebula_add_test(
     NAME
-        sample_limit_query_test
+        index_scan_limit_test
     SOURCES
         IndexScanLimitTest.cpp
     OBJECTS

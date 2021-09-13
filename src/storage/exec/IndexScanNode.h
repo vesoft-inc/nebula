@@ -74,6 +74,9 @@ class IndexScanNode : public RelNode<T> {
     data_.clear();
     int64_t count = 0;
     while (!!iter_ && iter_->valid()) {
+      if (limit_ > -1 && count++ == limit_) {
+        break;
+      }
       if (context_->isPlanKilled()) {
         return {};
       }
@@ -87,9 +90,6 @@ class IndexScanNode : public RelNode<T> {
       }
       data_.emplace_back(iter_->key(), "");
       iter_->next();
-      if (limit_ > -1 && ++count == limit_) {
-        break;
-      }
     }
     return std::move(data_);
   }

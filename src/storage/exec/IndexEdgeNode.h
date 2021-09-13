@@ -44,6 +44,9 @@ class IndexEdgeNode final : public RelNode<T> {
     auto* iter = static_cast<EdgeIndexIterator*>(indexScanNode_->iterator());
     int64_t count = 0;
     while (iter && iter->valid()) {
+      if (limit_ > -1 && count++ == limit_) {
+        break;
+      }
       if (context_->isPlanKilled()) {
         return nebula::cpp2::ErrorCode::E_PLAN_IS_KILLED;
       }
@@ -62,9 +65,6 @@ class IndexEdgeNode final : public RelNode<T> {
       edge.set_dst(iter->dstId());
       edges.emplace_back(std::move(edge));
       iter->next();
-      if (limit_ > -1 && ++count == limit_) {
-        break;
-      }
     }
     for (const auto& edge : edges) {
       auto key = NebulaKeyUtils::edgeKey(context_->vIdLen(),

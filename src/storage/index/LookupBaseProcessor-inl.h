@@ -78,6 +78,10 @@ nebula::cpp2::ErrorCode LookupBaseProcessor<REQ, RESP>::requestCheck(
 
   // limit
   if (req.limit_ref().has_value()) {
+    if (*req.limit_ref() < 0) {
+      LOG(ERROR) << "Incorrect parameter : LIMIT = " << *req.limit_ref();
+      return nebula::cpp2::ErrorCode::E_INVALID_PARM;
+    }
     limit_ = *req.limit_ref();
   }
 

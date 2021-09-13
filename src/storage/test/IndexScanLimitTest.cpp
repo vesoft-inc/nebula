@@ -217,6 +217,17 @@ TEST_F(IndexScanLimitTest, LookupTagIndexLimit) {
     EXPECT_EQ(6000, resp.get_data()->rows.size());
   }
 
+  // limit == 0
+  {
+    req.set_limit(0);
+    auto* processor = LookupProcessor::instance(storageEnv_.get(), nullptr, nullptr);
+    auto fut = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(fut).get();
+    EXPECT_EQ(0, resp.result.failed_parts.size());
+    EXPECT_EQ(0, resp.get_data()->rows.size());
+  }
+
   // limit 5 by each part
   {
     req.set_limit(5);
@@ -275,6 +286,17 @@ TEST_F(IndexScanLimitTest, LookupEdgeIndexLimit) {
     auto resp = std::move(fut).get();
     EXPECT_EQ(0, resp.result.failed_parts.size());
     EXPECT_EQ(6000, resp.get_data()->rows.size());
+  }
+
+  // limit == 0
+  {
+    req.set_limit(0);
+    auto* processor = LookupProcessor::instance(storageEnv_.get(), nullptr, nullptr);
+    auto fut = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(fut).get();
+    EXPECT_EQ(0, resp.result.failed_parts.size());
+    EXPECT_EQ(0, resp.get_data()->rows.size());
   }
 
   // limit 5 by each part
