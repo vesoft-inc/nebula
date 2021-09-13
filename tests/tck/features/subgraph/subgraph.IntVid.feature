@@ -255,7 +255,7 @@ Feature: Integer Vid subgraph
       |                                             |                       | [:like "Marco Belinelli"->"Tony Parker"@0]      |                    |
       |                                             |                       | [:like "Tim Duncan"->"Tony Parker"@0]           |                    |
     Then the result should be, in any order, with relax comparison:
-      | a                | b         |
+      | _vertices        | _edges    |
       | [("Tim Duncan")] | <[edge1]> |
       | <[vertex2]>      | <[edge2]> |
       | <[vertex3]>      | []        |
@@ -321,7 +321,7 @@ Feature: Integer Vid subgraph
       |                                             |                       | [:like "Marco Belinelli"->"Tony Parker"@0]      |                    |                                              |
       |                                             |                       | [:like "Tim Duncan"->"Tony Parker"@0]           |                    |                                              |
     Then the result should be, in any order, with relax comparison:
-      | a                | b         |
+      | _vertices        | _edges    |
       | [("Tim Duncan")] | <[edge1]> |
       | <[vertex2]>      | <[edge2]> |
       | <[vertex3]>      | <[edge3]> |
@@ -341,7 +341,7 @@ Feature: Integer Vid subgraph
       |                  |                                             |                   | [:teammate "Manu Ginobili"->"Tony Parker"@0] |             |
       |                  |                                             |                   | [:teammate "Tim Duncan"->"Tony Parker"@0]    |             |
     Then the result should be, in any order, with relax comparison:
-      | a           | b         |
+      | _vertices   | _edges    |
       | <[vertex1]> | <[edge1]> |
       | <[vertex2]> | <[edge2]> |
       | <[vertex3]> | []        |
@@ -375,7 +375,7 @@ Feature: Integer Vid subgraph
       |                                              |                                                  |                                                |                     | [:serve "Chris Paul"->"Rockets"@0]         |
       |                                              |                                                  |                                                |                     | [:like "Chris Paul"->"LeBron James"@0]     |
     Then the result should be, in any order, with relax comparison:
-      | A                                                 | B         |
+      | _vertices                                         | _edges    |
       | [("Paul George")]                                 | <[edge1]> |
       | [("Russell Westbrook"), ("Pacers"), ("Thunders")] | <[edge2]> |
       | [("Dejounte Murray"), ("James Harden")]           | <[edge3]> |
@@ -482,7 +482,7 @@ Feature: Integer Vid subgraph
       GET SUBGRAPH WITH PROP 4 STEPS FROM hash('Yao Ming') IN teammate OUT serve
       """
     Then the result should be, in any order, with relax comparison:
-      | a              | b                                  |
+      | _vertices      | _edges                             |
       | [("Yao Ming")] | [[:serve "Yao Ming"->"Rockets"@0]] |
       | [("Rockets")]  | []                                 |
     When executing query:
@@ -490,8 +490,8 @@ Feature: Integer Vid subgraph
       GET SUBGRAPH WITH PROP 4 STEPS FROM hash('NOBODY') IN teammate OUT serve
       """
     Then the result should be, in any order, with relax comparison:
-      | a            | b  |
-      | [("NOBODY")] | [] |
+      | _vertices    | _edges |
+      | [("NOBODY")] | []     |
     When executing query:
       """
       GET SUBGRAPH WITH PROP 4 steps from hash('Yao Ming') IN teammate OUT serve BOTH like
@@ -640,7 +640,7 @@ Feature: Integer Vid subgraph
       |                                              |                       |                                                  |                       | [:like "Chris Paul"->"Carmelo Anthony"@0]     |                     |                                               |                        |                                              |                |                                      |
       |                                              |                       |                                                  |                       | [:like "Chris Paul"->"Dwyane Wade"@0]         |                     |                                               |                        |                                              |                |                                      |
     Then the result should be, in any order, with relax comparison:
-      | a                 | b         |
+      | _vertices         | _edges    |
       | [("Tony Parker")] | <[edge1]> |
       | <[vertex2]>       | <[edge2]> |
       | <[vertex3]>       | <[edge3]> |
@@ -910,7 +910,7 @@ Feature: Integer Vid subgraph
       | <[vertex4]>      | <[edge4]> |
       | <[vertex5]>      | []        |
 
-  Scenario: Integer Vid zero step
+  Scenario: yield Integer Vid zero step
     When executing query:
       """
       GET SUBGRAPH WITH PROP 0 STEPS FROM hash("Tim Duncan") YIELD vertices as nodes
@@ -961,7 +961,7 @@ Feature: Integer Vid subgraph
       | nodes                                |
       | [("Manu Ginobili"), ("Tony Parker")] |
 
-  Scenario: Integer Vid subgraph
+  Scenario: yield Integer Vid subgraph
     When executing query:
       """
       GET SUBGRAPH WITH PROP FROM hash('Tim Duncan') YIELD vertices as nodes, edges as relationships
@@ -998,7 +998,7 @@ Feature: Integer Vid subgraph
       | [("Tim Duncan")] | <[edge1]>     |
       | <[vertex2]>      | <[edge2]>     |
 
-  Scenario: Integer Vid two steps
+  Scenario: yield Integer Vid two steps
     When executing query:
       """
       GET SUBGRAPH WITH PROP 2 STEPS FROM hash('Tim Duncan') YIELD vertices as nodes, edges as relationships
@@ -1081,7 +1081,7 @@ Feature: Integer Vid subgraph
       | <[vertex2]>      | <[edge2]>     |
       | <[vertex3]>      | <[edge3]>     |
 
-  Scenario: Integer Vid in edge
+  Scenario: yield Integer Vid in edge
     When executing query:
       """
       GET SUBGRAPH WITH PROP 2 STEPS FROM hash('Tim Duncan') IN like, serve YIELD vertices as a, edges as b
@@ -1111,7 +1111,7 @@ Feature: Integer Vid subgraph
       | <[vertex2]>      | <[edge2]> |
       | <[vertex3]>      | []        |
 
-  Scenario: Integer Vid in and out edge
+  Scenario: yield Integer Vid in and out edge
     When executing query:
       """
       GET SUBGRAPH WITH PROP 2 STEPS FROM hash('Tim Duncan') IN like OUT serve YIELD vertices as a, edges as b
@@ -1177,7 +1177,7 @@ Feature: Integer Vid subgraph
       | <[vertex2]>      | <[edge2]> |
       | <[vertex3]>      | <[edge3]> |
 
-  Scenario: Integer Vid two steps in and out edge
+  Scenario: yield Integer Vid two steps in and out edge
     When executing query:
       """
       GET SUBGRAPH WITH PROP 2 STEPS FROM hash('Tim Duncan'), hash('James Harden') IN teammate OUT serve YIELD VERTICES as a, EDGES as b
@@ -1197,7 +1197,7 @@ Feature: Integer Vid subgraph
       | <[vertex2]> | <[edge2]> |
       | <[vertex3]> | []        |
 
-  Scenario: Integer Vid three steps
+  Scenario: yield Integer Vid three steps
     When executing query:
       """
       GET SUBGRAPH WITH PROP 3 STEPS FROM hash('Paul George') OUT serve BOTH like YIELD vertices as A, EDGES as B
@@ -1232,7 +1232,7 @@ Feature: Integer Vid subgraph
       | [("Dejounte Murray"), ("James Harden")]           | <[edge3]> |
       | <[vertex4]>                                       | <[edge4]> |
 
-  Scenario: Integer Vid bidirect edge
+  Scenario: yield Integer Vid bidirect edge
     When executing query:
       """
       GET SUBGRAPH WITH PROP FROM hash('Tony Parker') BOTH like YIELD VERTICES as nodes , EDGES as relationships
@@ -1252,7 +1252,7 @@ Feature: Integer Vid subgraph
       | [("Tony Parker")] | <[edge1]>     |
       | <[vertex2]>       | <[edge2]>     |
 
-  Scenario: Integer Vid pipe
+  Scenario: yield Integer Vid pipe
     When executing query:
       """
       GO FROM hash('Tim Duncan') over serve YIELD serve._src AS id | GET SUBGRAPH WITH PROP FROM $-.id YIELD vertices as nodes, edges as relationships
@@ -1289,7 +1289,7 @@ Feature: Integer Vid subgraph
       | [("Tim Duncan")] | <[edge1]>     |
       | <[vertex2]>      | <[edge2]>     |
 
-  Scenario: Integer Vid var
+  Scenario: yield Integer Vid var
     When executing query:
       """
       $a = GO FROM hash('Tim Duncan') over serve YIELD serve._src AS id;
@@ -1327,7 +1327,7 @@ Feature: Integer Vid subgraph
       | [("Tim Duncan")] | <[edge1]>     |
       | <[vertex2]>      | <[edge2]>     |
 
-  Scenario: Integer Vid many steps
+  Scenario: yield Integer Vid many steps
     When executing query:
       """
       GET SUBGRAPH WITH PROP 4 STEPS FROM hash('Yao Ming') IN teammate OUT serve YIELD vertices as a, edges as b
@@ -1535,7 +1535,7 @@ Feature: Integer Vid subgraph
       | <[vertex4]>      | <[edge4]>     |
       | <[vertex5]>      | []            |
 
-  Scenario: Integer Vid over end
+  Scenario: yield Integer Vid over end
     When executing query:
       """
       GET SUBGRAPH WITH PROP 10000000000000 STEPS FROM hash('Yao Ming') IN teammate OUT serve YIELD VERTICES as nodes, EDGES as relationships
@@ -1553,7 +1553,7 @@ Feature: Integer Vid subgraph
       | [("Yao Ming")] | [[:serve "Yao Ming"->"Rockets"@0]] |
       | [("Rockets")]  | []                                 |
 
-  Scenario: Integer Vid many steps without prop
+  Scenario: yield Integer Vid many steps without prop
     When executing query:
       """
       GET SUBGRAPH 4 STEPS FROM hash('Yao Ming') IN teammate OUT serve YIELD VERTICES as nodes, EDGES as relationships

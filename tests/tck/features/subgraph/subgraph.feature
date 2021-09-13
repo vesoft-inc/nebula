@@ -381,7 +381,7 @@ Feature: subgraph
       | [("Dejounte Murray"), ("James Harden")]           | <[edge3]> |
       | <[vertex4]>                                       | <[edge4]> |
 
-  Scenario: bidirect edge
+  Scenario: yield bidirect edge
     When executing query:
       """
       GET SUBGRAPH WITH PROP FROM 'Tony Parker' BOTH like YIELD vertices as a, edges as b
@@ -401,7 +401,7 @@ Feature: subgraph
       | [("Tony Parker")] | <[edge1]> |
       | <[vertex2]>       | <[edge2]> |
 
-  Scenario: pipe
+  Scenario: yield pipe
     When executing query:
       """
       GO FROM 'Tim Duncan' over serve YIELD serve._src AS id | GET SUBGRAPH WITH PROP FROM $-.id YIELD VERTICES as a, EDGES as b
@@ -438,7 +438,7 @@ Feature: subgraph
       | [("Tim Duncan")] | <[edge1]> |
       | <[vertex2]>      | <[edge2]> |
 
-  Scenario: var
+  Scenario: yield var
     When executing query:
       """
       $a = GO FROM 'Tim Duncan' over serve YIELD serve._src AS id;
@@ -476,7 +476,7 @@ Feature: subgraph
       | [("Tim Duncan")] | <[edge1]> |
       | <[vertex2]>      | <[edge2]> |
 
-  Scenario: many steps
+  Scenario: yield many steps
     When executing query:
       """
       GET SUBGRAPH WITH PROP 4 STEPS FROM 'Yao Ming' IN teammate OUT serve YIELD VERTICES as a, EDGES as b
@@ -684,7 +684,7 @@ Feature: subgraph
       | <[vertex4]>      | <[edge4]>     |
       | <[vertex5]>      | []            |
 
-  Scenario: over end
+  Scenario: yield over end
     When executing query:
       """
       GET SUBGRAPH WITH PROP 10000000000000 STEPS FROM 'Yao Ming' IN teammate OUT serve YIELD VERTICES as nodes, EDGES as relationships
@@ -702,7 +702,7 @@ Feature: subgraph
       | [("Yao Ming")] | [[:serve "Yao Ming"->"Rockets"@0]] |
       | [("Rockets")]  | []                                 |
 
-  Scenario: many steps without prop
+  Scenario: yield many steps without prop
     When executing query:
       """
       GET SUBGRAPH 4 STEPS FROM 'Yao Ming' IN teammate OUT serve YIELD VERTICES as nodes, EDGES as relationships
