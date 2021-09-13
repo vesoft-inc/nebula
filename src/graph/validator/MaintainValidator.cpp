@@ -39,19 +39,17 @@ Status SchemaValidator::validateColumns(const std::vector<ColumnSpecification *>
       column.type.set_type_length(spec->typeLen());
     }
     for (const auto &property : spec->properties()->properties()) {
+      auto *defaultExpr = const_cast<Expression *>(property->defaultValue());
       if (property->isNullable()) {
         column.set_nullable(property->nullable());
-      } else if (property->isDefaultValue()) {
-        if (!evaluableExpr(property->defaultValue())) {
+      } else if (defaultExpr) {
+        if (!evaluableExpr(defaultExpr)) {
           return Status::SemanticError("Wrong default value experssion `%s'",
                                        property->defaultValue()->toString().c_str());
         }
-        auto *defaultValueExpr = property->defaultValue();
-        // some expression is evaluable but not pure so only fold instead of
-        // eval here
-        auto foldRes = ExpressionUtils::foldConstantExpr(defaultValueExpr);
-        NG_RETURN_IF_ERROR(foldRes);
-        column.set_default_value(foldRes.value()->encode());
+        auto val = defaultExpr->eval(QueryExpressionContext()(nullptr));
+        auto *constExpr = ConstantExpression::make(qctx_->objPool(), val);
+        column.set_default_value(constExpr->encode());
       } else if (property->isComment()) {
         column.set_comment(*DCHECK_NOTNULL(property->comment()));
       }
