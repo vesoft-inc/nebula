@@ -36,6 +36,13 @@ Feature: Case Expression
     Then the result should be, in any order:
       | r |
       | 1 |
+    When executing query:
+      """
+      YIELD CASE WHEN null THEN 0 ELSE 1 END AS r
+      """
+    Then the result should be, in any order:
+      | r |
+      | 1 |
 
   Scenario: yield conditional case
     When executing query:
