@@ -65,6 +65,12 @@ class GoPlanner final : public Planner {
 
   PlanNode* buildOneStepJoinPlan(PlanNode* gn);
 
+  // build step sample limit plan
+  PlanNode* buildSampleLimit(PlanNode* input, std::size_t currentStep);
+
+  // Construct one step expand subplan
+  PlanNode* expand(PlanNode* previous);
+
  private:
   GoPlanner() = default;
 

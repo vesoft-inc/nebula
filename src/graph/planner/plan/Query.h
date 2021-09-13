@@ -652,9 +652,15 @@ class Limit final : public SingleInputNode {
     return qctx->objPool()->add(new Limit(qctx, input, offset, count));
   }
 
-  int64_t offset() const { return offset_; }
+  int64_t offset() const {
+    DCHECK_GE(offset_, 0);
+    return offset_;
+  }
 
-  int64_t count() const { return count_; }
+  int64_t count() const {
+    DCHECK_GE(count_, 0);
+    return count_;
+  }
 
   PlanNode* clone() const override;
   std::unique_ptr<PlanNodeDescription> explain() const override;

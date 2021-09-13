@@ -346,6 +346,10 @@ PlanNode* GoPlanner::lastStep(PlanNode* dep, PlanNode* join) {
   if (goCtx_->distinct) {
     root = Dedup::make(qctx, root);
   }
+
+  const auto& steps = goCtx_->steps;
+  root = buildSampleLimit(root, steps.isMToN() ? steps.nSteps() : steps.steps());
+
   return root;
 }
 
@@ -359,6 +363,28 @@ PlanNode* GoPlanner::buildOneStepJoinPlan(PlanNode* gn) {
   dep = goCtx_->joinInput ? buildJoinInputPlan(dep) : dep;
 
   return dep;
+}
+
+// build step sample limit plan
+PlanNode* GoPlanner::buildSampleLimit(PlanNode* input, const std::size_t currentStep) {
+  PlanNode* node = nullptr;
+  if (goCtx_->limits.empty()) {
+    // No sample/limit
+    return input;
+  }
+  if (goCtx_->random) {
+    node = Sample::make(goCtx_->qctx, input, goCtx_->limits[currentStep - 1]);
+  } else {
+    node = Limit::make(goCtx_->qctx, input, 0, goCtx_->limits[currentStep - 1]);
+  }
+  node->setInputVar(input->outputVar());
+  node->setColNames(input->outputVarPtr()->colNames);
+  return node;
+}
+
+PlanNode* GoPlanner::expand(PlanNode* previous) {
+  UNUSED(previous);
+  return nullptr;
 }
 
 SubPlan GoPlanner::oneStepPlan(SubPlan& startVidPlan) {
@@ -383,6 +409,8 @@ SubPlan GoPlanner::oneStepPlan(SubPlan& startVidPlan) {
   if (goCtx_->distinct) {
     subPlan.root = Dedup::make(qctx, subPlan.root);
   }
+
+  subPlan.root = buildSampleLimit(subPlan.root, 1 /* one step */);
   return subPlan;
 }
 
@@ -491,6 +519,10 @@ StatusOr<SubPlan> GoPlanner::transform(AstContext* astCtx) {
 
   auto& steps = goCtx_->steps;
   if (steps.isMToN()) {
+    // TODO(shylock) need read the limit number in runtime for the Loop
+    if (!goCtx_->limits.empty()) {
+      return Status::SemanticError("Not supported sample/limit in multiple steps GO query.");
+    }
     return mToNStepsPlan(startPlan);
   }
 
@@ -504,6 +536,10 @@ StatusOr<SubPlan> GoPlanner::transform(AstContext* astCtx) {
 
   if (steps.steps() == 1) {
     return oneStepPlan(startPlan);
+  }
+  // TODO(shylock) need read the limit number in runtime for the Loop
+  if (!goCtx_->limits.empty()) {
+    return Status::SemanticError("Not supported sample/limit in multiple steps GO query.");
   }
   return nStepsPlan(startPlan);
 }
