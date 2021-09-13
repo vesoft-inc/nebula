@@ -289,7 +289,7 @@ Feature: Match seek by id
       CREATE TAG INDEX player_name_index ON player(name(10));
       """
     Then the execution should be successful
-    And wait 6 seconds
+    And wait 2 seconds
     When submit a job:
       """
       REBUILD TAG INDEX player_name_index;

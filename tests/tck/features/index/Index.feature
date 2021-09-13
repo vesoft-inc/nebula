@@ -57,7 +57,7 @@ Feature: IndexTest_Vid_String
       CREATE TAG INDEX disorder_tag_index ON tag_1(col3, col2);
       """
     Then the execution should be successful
-    And wait 6 seconds
+    And wait 2 seconds
     When try to execute query:
       """
       INSERT VERTEX
@@ -67,21 +67,6 @@ Feature: IndexTest_Vid_String
         "Tony": ("Tony", 18, 11.11, `timestamp`("2000-10-10T10:00:00")),
         "May":  ("May",  18, 11.11, `timestamp`("2000-10-10T10:00:00")),
         "Tom":  ("Tom",  18, 11.11, `timestamp`("2000-10-10T10:00:00"))
-      """
-    Then the execution should be successful
-    When executing query:
-      """
-      REBUILD TAG INDEX single_tag_index;
-      """
-    Then the execution should be successful
-    When executing query:
-      """
-      REBUILD TAG INDEX single_tag_index OFFLINE;
-      """
-    Then a SyntaxError should be raised at runtime:
-    When executing query:
-      """
-      REBUILD TAG INDEX multi_tag_index;
       """
     Then the execution should be successful
     When executing query:
@@ -210,7 +195,7 @@ Feature: IndexTest_Vid_String
       CREATE EDGE INDEX disorder_edge_1_index ON edge_1(col3, col2)
       """
     Then the execution should be successful
-    And wait 6 seconds
+    And wait 2 seconds
     When executing query:
       """
       INSERT EDGE
@@ -220,21 +205,6 @@ Feature: IndexTest_Vid_String
         "Tim"  -> "Tony": ("Good", 18, 11.11, `timestamp`("2000-10-10T10:00:00")),
         "Tony" -> "May":  ("Like", 18, 11.11, `timestamp`("2000-10-10T10:00:00")),
         "May"  -> "Tim":  ("Like", 18, 11.11, `timestamp`("2000-10-10T10:00:00"))
-      """
-    Then the execution should be successful
-    When executing query:
-      """
-      REBUILD EDGE INDEX single_edge_index
-      """
-    Then the execution should be successful
-    When executing query:
-      """
-      REBUILD EDGE INDEX single_edge_index OFFLINE;
-      """
-    Then a SyntaxError should be raised at runtime:
-    When executing query:
-      """
-      REBUILD EDGE INDEX multi_edge_1_index
       """
     Then the execution should be successful
     When executing query:
@@ -714,7 +684,7 @@ Feature: IndexTest_Vid_String
       CREATE TAG INDEX alter_index ON alter_tag(id);
       """
     Then the execution should be successful
-    And wait 6 seconds
+    And wait 2 seconds
     When try to execute query:
       """
       INSERT VERTEX alter_tag(id) VALUES "100":(1), "200":(2)
@@ -725,7 +695,7 @@ Feature: IndexTest_Vid_String
       ALTER TAG alter_tag ADD (type int)
       """
     Then the execution should be successful
-    And wait 6 seconds
+    And wait 2 seconds
     When executing query:
       """
       LOOKUP ON alter_tag WHERE alter_tag.id == 1 YIELD alter_tag.type
@@ -755,7 +725,7 @@ Feature: IndexTest_Vid_String
       CREATE TAG INDEX name_tag_index ON name_tag(name(10));
       """
     Then the execution should be successful
-    And wait 6 seconds
+    And wait 2 seconds
     When submit a job:
       """
       REBUILD TAG INDEX;
@@ -810,7 +780,7 @@ Feature: IndexTest_Vid_String
       CREATE TAG INDEX age_tag_index ON age_tag(age);
       """
     Then the execution should be successful
-    And wait 6 seconds
+    And wait 2 seconds
     When submit a job:
       """
       REBUILD TAG INDEX id_tag_index, name_tag_index;
@@ -869,7 +839,7 @@ Feature: IndexTest_Vid_String
       CREATE EDGE INDEX name_edge_index ON name_edge(name(10));
       """
     Then the execution should be successful
-    And wait 6 seconds
+    And wait 2 seconds
     When submit a job:
       """
       REBUILD EDGE INDEX;
@@ -922,7 +892,7 @@ Feature: IndexTest_Vid_String
       CREATE EDGE INDEX age_edge_index ON age_edge(age);
       """
     Then the execution should be successful
-    And wait 6 seconds
+    And wait 2 seconds
     When submit a job:
       """
       REBUILD EDGE INDEX id_edge_index,name_edge_index;
