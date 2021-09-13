@@ -64,10 +64,10 @@ const Value& CaseExpression::eval(ExpressionContext& ctx) {
         return result_;
       }
     } else {
-      if (!when.isBool()) {
+      if (!when.isBool() && !when.isNull()) {
         return Value::kNullBadType;
       }
-      if (when.getBool()) {
+      if (when.isBool() && when.getBool()) {
         result_ = whenThen.then->eval(ctx);
         return result_;
       }

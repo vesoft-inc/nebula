@@ -6,11 +6,6 @@ on:
     branches:
       - master
       - 'v[0-9]+.*'
-    paths-ignore:
-      - 'docs/**'
-      - 'LICENSES/**'
-      - 'LICENSE'
-      - '**.md'
 
 defaults:
   run:
@@ -68,7 +63,7 @@ jobs:
     steps:
       - uses: webiny/action-post-run@2.0.1
         with:
-          run: rm -rf ${{ github.workspace }}
+          run: sh -c "find . -mindepth 1 -delete"
       - uses: actions/checkout@v2
       - name: Prepare environment
         id: prepare
@@ -151,8 +146,8 @@ jobs:
         run: |
           exit $(grep -P "SUMMARY: AddressSanitizer: \d+ byte\(s\) leaked in \d+ allocation\(s\)\." build/server_*/logs/*stderr.log | wc -l)
       - name: Upload logs
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v2
         if: ${{ failure() }}
         with:
           name: ${{ matrix.os }}-${{ matrix.compiler }}-nebula-test-logs
-          path:  build/server_*/logs/
+          path:  ./build/server_*/logs/
