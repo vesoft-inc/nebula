@@ -21,7 +21,7 @@ class IndexScanNode : public RelNode<T> {
   IndexScanNode(RuntimeContext* context,
                 IndexID indexId,
                 std::vector<cpp2::IndexColumnHint> columnHints,
-                int64_t limit = 0)
+                int64_t limit)
       : context_(context), indexId_(indexId), columnHints_(std::move(columnHints)), limit_(limit) {
     /**
      * columnHints's elements are {scanType = PREFIX|RANGE; beginStr; endStr},
@@ -87,7 +87,7 @@ class IndexScanNode : public RelNode<T> {
       }
       data_.emplace_back(iter_->key(), "");
       iter_->next();
-      if (limit_ > 0 && ++count == limit_) {
+      if (limit_ > -1 && ++count == limit_) {
         break;
       }
     }

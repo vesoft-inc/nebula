@@ -537,7 +537,7 @@ struct LookupIndexRequest {
     4: optional list<binary>                return_columns,
     5: optional RequestCommon               common,
     // max row count of each partition in this response, 0 means no limit.
-    6: i64                                  limit = 0,
+    6: optional i64                         limit,
 }
 
 

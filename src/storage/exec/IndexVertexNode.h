@@ -22,7 +22,7 @@ class IndexVertexNode final : public RelNode<T> {
                   IndexScanNode<T>* indexScanNode,
                   const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas,
                   const std::string& schemaName,
-                  int64_t limit = 0)
+                  int64_t limit)
       : context_(context),
         indexScanNode_(indexScanNode),
         schemas_(schemas),
@@ -57,7 +57,7 @@ class IndexVertexNode final : public RelNode<T> {
       }
       vids.emplace_back(iter->vId());
       iter->next();
-      if (limit_ > 0 && ++count == limit_) {
+      if (limit_ > -1 && ++count == limit_) {
         break;
       }
     }

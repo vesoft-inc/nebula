@@ -20,7 +20,7 @@
 
 namespace nebula {
 namespace storage {
-class SampleLimitForQueryTest : public ::testing::Test {
+class IndexScanLimitTest : public ::testing::Test {
  protected:
   GraphSpaceID spaceId = 1;
   TagID tagId = 100;
@@ -154,7 +154,7 @@ class SampleLimitForQueryTest : public ::testing::Test {
   }
 
   void SetUp() override {
-    rootPath_ = new fs::TempDir("/tmp/SampleLimitForQueryTest.XXXXXX");
+    rootPath_ = new fs::TempDir("/tmp/IndexScanLimitTest.XXXXXX");
     kvstore::KVOptions options;
     schemaMan_ = memSchemaMan();
     indexMan_ = memIndexMan();
@@ -189,7 +189,7 @@ class SampleLimitForQueryTest : public ::testing::Test {
   std::unique_ptr<storage::StorageEnv> storageEnv_{nullptr};
 };
 
-TEST_F(SampleLimitForQueryTest, LookupTagIndexLimit) {
+TEST_F(IndexScanLimitTest, LookupTagIndexLimit) {
   cpp2::LookupIndexRequest req;
   nebula::storage::cpp2::IndexSpec indices;
   req.set_space_id(spaceId);
@@ -249,7 +249,7 @@ TEST_F(SampleLimitForQueryTest, LookupTagIndexLimit) {
   }
 }
 
-TEST_F(SampleLimitForQueryTest, LookupEdgeIndexLimit) {
+TEST_F(IndexScanLimitTest, LookupEdgeIndexLimit) {
   cpp2::LookupIndexRequest req;
   nebula::storage::cpp2::IndexSpec indices;
   req.set_space_id(spaceId);

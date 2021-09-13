@@ -77,7 +77,9 @@ nebula::cpp2::ErrorCode LookupBaseProcessor<REQ, RESP>::requestCheck(
   }
 
   // limit
-  limit_ = req.get_limit();
+  if (req.limit_ref().has_value()) {
+    limit_ = *req.limit_ref();
+  }
 
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }

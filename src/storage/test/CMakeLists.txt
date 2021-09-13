@@ -642,7 +642,7 @@ nebula_add_test(
     NAME
         sample_limit_query_test
     SOURCES
-        SampleLimitForQueryTest.cpp
+        IndexScanLimitTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:storage_common_obj>
         $<TARGET_OBJECTS:meta_service_handler>
