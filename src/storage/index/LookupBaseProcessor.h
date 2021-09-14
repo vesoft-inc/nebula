@@ -68,6 +68,8 @@ class LookupBaseProcessor : public BaseProcessor<RESP> {
       StorageExpressionContext* exprCtx,
       Expression* exp);
 
+  void profilePlan(StoragePlan<IndexID>& plan);
+
  protected:
   GraphSpaceID spaceId_;
   std::unique_ptr<PlanContext> planContext_;
