@@ -536,7 +536,7 @@ struct LookupIndexRequest {
     // Support kVid and kTag for vertex, kSrc, kType, kRank and kDst for edge.
     4: optional list<binary>                return_columns,
     5: optional RequestCommon               common,
-    // max row count of each partition in this response, 0 means no limit.
+    // max row count of each partition in this response
     6: optional i64                         limit,
 }
 
