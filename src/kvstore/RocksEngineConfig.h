@@ -37,7 +37,7 @@ DECLARE_int64(rocksdb_block_cache);
 
 DECLARE_int32(rocksdb_batch_size);
 
-DECLARE_int32(row_cache_num);
+DECLARE_int32(rocksdb_row_cache_num);
 
 DECLARE_int32(cache_bucket_exp);
 
@@ -53,8 +53,7 @@ DECLARE_bool(enable_rocksdb_statistics);
 DECLARE_string(rocksdb_stats_level);
 
 DECLARE_bool(enable_rocksdb_prefix_filtering);
-DECLARE_bool(rocksdb_prefix_bloom_filter_length_flag);
-DECLARE_int32(rocksdb_plain_table_prefix_length);
+DECLARE_bool(enable_rocksdb_whole_key_filtering);
 
 // rocksdb compact RangeOptions
 DECLARE_bool(rocksdb_compact_change_level);
