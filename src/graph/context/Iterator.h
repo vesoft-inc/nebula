@@ -205,7 +205,7 @@ class GetNeighborsIter final : public Iterator {
     DCHECK(false);
   }
 
-  void sample(int64_t) override { DLOG(FATAL) << "Unimplemented for GetNeighbors iterator."; }
+  void sample(int64_t count) override;
 
   size_t size() const override { return 0; }
 
@@ -243,6 +243,13 @@ class GetNeighborsIter final : public Iterator {
     DCHECK(currentDs_->tagEdgeNameIndices.find(colIdx_) != currentDs_->tagEdgeNameIndices.end());
     return currentDs_->tagEdgeNameIndices.find(colIdx_)->second;
   }
+
+  bool colValid() { return !noEdge_ && valid(); }
+
+  // move to next List of Edge data
+  void nextCol();
+
+  void clearEdges();
 
   struct PropIndex {
     size_t colIdx;
