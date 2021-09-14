@@ -3,7 +3,7 @@
 #  Package nebula as deb/rpm package
 #
 # introduce the args
-#   -v: The version of package, the version should be match tag name, default value is the `commitId`
+#   -v: The version of package, the version should be match tag name, default value is null
 #   -n: Package to one or multi-packages, `ON` means one package, `OFF` means multi packages, default value is `ON`
 #   -s: Whether to strip the package, default value is `FALSE`
 #   -b: Branch, default master
