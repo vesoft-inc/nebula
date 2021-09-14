@@ -114,7 +114,7 @@ Status GetSubgraphValidator::validateYield(YieldClause* yield) {
   }
   auto size = yield->columns().size();
   outputs_.reserve(size);
-  YieldColumns* newCols = qctx_->objPool()->add(new YieldColumns());
+  YieldColumns* newCols = pool->add(new YieldColumns());
 
   for (const auto& col : yield->columns()) {
     std::string lowerStr = col->expr()->toString();
