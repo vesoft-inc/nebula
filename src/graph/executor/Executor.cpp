@@ -103,6 +103,7 @@
 using folly::stringPrintf;
 
 DEFINE_bool(enable_lifetime_optimize, true, "Does enable the lifetime optimize.");
+DECLARE_double(system_memory_high_watermark_ratio);
 
 namespace nebula {
 namespace graph {

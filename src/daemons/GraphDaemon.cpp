@@ -13,6 +13,7 @@
 #include "common/base/Base.h"
 #include "common/base/SignalHandler.h"
 #include "common/fs/FileUtils.h"
+#include "common/memory/MemoryUtils.h"
 #include "common/network/NetworkUtils.h"
 #include "common/process/ProcessUtils.h"
 #include "common/ssl/SSLConfig.h"
@@ -23,6 +24,7 @@
 #include "version/Version.h"
 #include "webservice/WebService.h"
 
+using nebula::MemoryUtils;
 using nebula::ProcessUtils;
 using nebula::Status;
 using nebula::StatusOr;
@@ -42,6 +44,7 @@ extern Status setupBreakpad();
 #endif
 
 DECLARE_string(flagfile);
+DECLARE_bool(containerized);
 
 int main(int argc, char *argv[]) {
   google::SetVersionString(nebula::versionString());
@@ -101,6 +104,19 @@ int main(int argc, char *argv[]) {
     status = ProcessUtils::makePidFile(pidPath);
     if (!status.ok()) {
       LOG(ERROR) << status;
+      return EXIT_FAILURE;
+    }
+  }
+
+  auto mStatus = MemoryUtils::hitsHighWatermark();
+  if (!mStatus.ok()) {
+    LOG(ERROR) << "Fail to check the memory consumption, containerized: " << FLAGS_containerized;
+    return EXIT_FAILURE;
+  } else {
+    auto hits = std::move(mStatus).value();
+    if (hits) {
+      LOG(ERROR) << "When starting graphd daemon process, "
+                 << "hits the high watermark of system memory.";
       return EXIT_FAILURE;
     }
   }
