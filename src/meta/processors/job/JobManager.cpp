@@ -247,15 +247,15 @@ nebula::cpp2::ErrorCode JobManager::saveTaskStatus(TaskDescription& td,
   }
 
   if (!optJobDesc.getParas().empty()) {
+    GraphSpaceID spaceId = -1;
     auto spaceName = optJobDesc.getParas().back();
     auto spaceIdRet = getSpaceId(spaceName);
     if (!nebula::ok(spaceIdRet)) {
       auto retCode = nebula::error(spaceIdRet);
       LOG(WARNING) << "Get spaceName " << spaceName
                    << " failed, error: " << apache::thrift::util::enumNameSafe(retCode);
-      return retCode;
     } else {
-      auto spaceId = nebula::value(spaceIdRet);
+      spaceId = nebula::value(spaceIdRet);
       jobExec->setSpaceId(spaceId);
     }
   }
