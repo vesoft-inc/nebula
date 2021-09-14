@@ -239,28 +239,27 @@ nebula::cpp2::ErrorCode JobManager::saveTaskStatus(TaskDescription& td,
   if (!jobExec) {
     LOG(WARNING) << folly::sformat("createMetaJobExecutor failed(), jobId={}", jobId);
     return nebula::cpp2::ErrorCode::E_TASK_REPORT_OUT_DATE;
-  } else {
-    if (!optJobDesc.getParas().empty()) {
-      auto spaceName = optJobDesc.getParas().back();
-      auto spaceIdRet = getSpaceId(spaceName);
-      if (!nebula::ok(spaceIdRet)) {
-        auto retCode = nebula::error(spaceIdRet);
-        LOG(INFO) << "Get spaceName " << spaceName
-                  << " failed, error: " << apache::thrift::util::enumNameSafe(retCode);
-        return retCode;
-      }
-
-      auto spaceId = nebula::value(spaceIdRet);
-      if (spaceId != -1) {
-        jobExec->setSpaceId(spaceId);
-      }
-    }
   }
 
   auto rcSave = save(td.taskKey(), td.taskVal());
   if (rcSave != nebula::cpp2::ErrorCode::SUCCEEDED) {
     return rcSave;
   }
+
+  if (!optJobDesc.getParas().empty()) {
+    auto spaceName = optJobDesc.getParas().back();
+    auto spaceIdRet = getSpaceId(spaceName);
+    if (!nebula::ok(spaceIdRet)) {
+      auto retCode = nebula::error(spaceIdRet);
+      LOG(WARNING) << "Get spaceName " << spaceName
+                   << " failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+      return retCode;
+    } else {
+      auto spaceId = nebula::value(spaceIdRet);
+      jobExec->setSpaceId(spaceId);
+    }
+  }
+
   return jobExec->saveSpecialTaskStatus(req);
 }
 
