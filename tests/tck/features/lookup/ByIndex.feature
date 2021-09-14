@@ -555,7 +555,7 @@ Feature: Lookup by index itself
       CREATE TAG weight (WEIGHT double);
       CREATE TAG INDEX weight_index ON weight(WEIGHT);
       """
-    And wait 3 seconds
+    And wait 6 seconds
     When executing query:
       """
       INSERT VERTEX weight(WEIGHT) VALUES "Tim Duncan" : (70.5);

@@ -57,7 +57,7 @@ Feature: IndexTest_Vid_String
       CREATE TAG INDEX disorder_tag_index ON tag_1(col3, col2);
       """
     Then the execution should be successful
-    And wait 3 seconds
+    And wait 6 seconds
     When try to execute query:
       """
       INSERT VERTEX
@@ -195,7 +195,7 @@ Feature: IndexTest_Vid_String
       CREATE EDGE INDEX disorder_edge_1_index ON edge_1(col3, col2)
       """
     Then the execution should be successful
-    And wait 3 seconds
+    And wait 6 seconds
     When executing query:
       """
       INSERT EDGE
@@ -527,7 +527,7 @@ Feature: IndexTest_Vid_String
       CREATE TAG INDEX single_person_index ON tag_1(col1)
       """
     Then the execution should be successful
-    And wait 3 seconds
+    And wait 6 seconds
     When try to execute query:
       """
       INSERT VERTEX
@@ -546,7 +546,7 @@ Feature: IndexTest_Vid_String
       CREATE TAG INDEX single_person_index2 ON tag_1(col5)
       """
     Then the execution should be successful
-    And wait 3 seconds
+    And wait 6 seconds
     When try to execute query:
       """
       INSERT VERTEX
@@ -594,7 +594,7 @@ Feature: IndexTest_Vid_String
       """
     Then the result should be, in any order:
       | Name | Index Status |
-    And wait 3 seconds
+    And wait 6 seconds
     When submit a job:
       """
       REBUILD TAG INDEX tag_index_status
@@ -642,7 +642,7 @@ Feature: IndexTest_Vid_String
       """
     Then the result should be, in any order:
       | Name | Index Status |
-    And wait 3 seconds
+    And wait 6 seconds
     When submit a job:
       """
       REBUILD EDGE INDEX edge_index_status
@@ -684,7 +684,7 @@ Feature: IndexTest_Vid_String
       CREATE TAG INDEX alter_index ON alter_tag(id);
       """
     Then the execution should be successful
-    And wait 3 seconds
+    And wait 6 seconds
     When try to execute query:
       """
       INSERT VERTEX alter_tag(id) VALUES "100":(1), "200":(2)
@@ -695,7 +695,7 @@ Feature: IndexTest_Vid_String
       ALTER TAG alter_tag ADD (type int)
       """
     Then the execution should be successful
-    And wait 3 seconds
+    And wait 6 seconds
     When executing query:
       """
       LOOKUP ON alter_tag WHERE alter_tag.id == 1 YIELD alter_tag.type
@@ -725,7 +725,7 @@ Feature: IndexTest_Vid_String
       CREATE TAG INDEX name_tag_index ON name_tag(name(10));
       """
     Then the execution should be successful
-    And wait 3 seconds
+    And wait 6 seconds
     When submit a job:
       """
       REBUILD TAG INDEX;
@@ -780,7 +780,7 @@ Feature: IndexTest_Vid_String
       CREATE TAG INDEX age_tag_index ON age_tag(age);
       """
     Then the execution should be successful
-    And wait 3 seconds
+    And wait 6 seconds
     When submit a job:
       """
       REBUILD TAG INDEX id_tag_index, name_tag_index;
@@ -839,7 +839,7 @@ Feature: IndexTest_Vid_String
       CREATE EDGE INDEX name_edge_index ON name_edge(name(10));
       """
     Then the execution should be successful
-    And wait 3 seconds
+    And wait 6 seconds
     When submit a job:
       """
       REBUILD EDGE INDEX;
@@ -892,7 +892,7 @@ Feature: IndexTest_Vid_String
       CREATE EDGE INDEX age_edge_index ON age_edge(age);
       """
     Then the execution should be successful
-    And wait 3 seconds
+    And wait 6 seconds
     When submit a job:
       """
       REBUILD EDGE INDEX id_edge_index,name_edge_index;

@@ -284,7 +284,7 @@ Feature: Match seek by id
       CREATE TAG INDEX player_name_index ON player(name(10));
       """
     Then the execution should be successful
-    And wait 3 seconds
+    And wait 6 seconds
     When try to execute query:
       """
       INSERT VERTEX player(name, age) VALUES -100:("Tim", 32);

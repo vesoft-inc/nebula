@@ -18,7 +18,7 @@ Feature: LookUpTest_Vid_String
       CREATE TAG INDEX t_index_4 ON lookup_tag_2(col3, col4);
       CREATE TAG INDEX t_index_5 ON lookup_tag_2(col4);
       """
-    And wait 3 seconds
+    And wait 6 seconds
     When executing query:
       """
       INSERT VERTEX
@@ -54,7 +54,7 @@ Feature: LookUpTest_Vid_String
       CREATE EDGE INDEX e_index_3 ON lookup_edge_1(col2, col3);
       CREATE EDGE INDEX e_index_4 ON lookup_edge_2(col3, col4);
       """
-    And wait 3 seconds
+    And wait 6 seconds
     When executing query:
       """
       INSERT EDGE
@@ -86,7 +86,7 @@ Feature: LookUpTest_Vid_String
       CREATE TAG INDEX t_index_4 ON lookup_tag_2(col3, col4);
       CREATE TAG INDEX t_index_5 ON lookup_tag_2(col4);
       """
-    And wait 3 seconds
+    And wait 6 seconds
     When executing query:
       """
       INSERT VERTEX
@@ -236,7 +236,7 @@ Feature: LookUpTest_Vid_String
       CREATE EDGE INDEX e_index_2 ON lookup_edge_2(col2, col3, col4);
       CREATE EDGE INDEX e_index_4 ON lookup_edge_2(col3, col4);
       """
-    And wait 3 seconds
+    And wait 6 seconds
     When executing query:
       """
       INSERT EDGE
@@ -381,7 +381,7 @@ Feature: LookUpTest_Vid_String
       CREATE TAG INDEX t_index_4 ON lookup_tag_2(col3, col4);
       CREATE TAG INDEX t_index_5 ON lookup_tag_2(col4);
       """
-    And wait 3 seconds
+    And wait 6 seconds
     When executing query:
       """
       INSERT VERTEX
@@ -510,7 +510,7 @@ Feature: LookUpTest_Vid_String
       """
       CREATE TAG teacher(number int, age int)
       """
-    And wait 3 seconds
+    And wait 6 seconds
     When executing query:
       """
       INSERT VERTEX student(number, age), teacher(number, age)  VALUES "220":(1, 20, 1, 30), "221":(2, 22, 2, 32)
@@ -565,7 +565,7 @@ Feature: LookUpTest_Vid_String
       """
       CREATE TAG INDEX i5 ON t1(c1, c2, c3, c5)
       """
-    And wait 3 seconds
+    And wait 6 seconds
     When executing query:
       """
       LOOKUP ON t1 WHERE t1.c1 == 1
@@ -643,7 +643,7 @@ Feature: LookUpTest_Vid_String
       """
       CREATE TAG INDEX i5_str ON t1_str(c1, c2, c3(30), c4(30))
       """
-    And wait 3 seconds
+    And wait 6 seconds
     When executing query:
       """
       LOOKUP ON t1_str WHERE t1_str.c1 == 1
@@ -703,7 +703,7 @@ Feature: LookUpTest_Vid_String
       """
       CREATE TAG INDEX i3_with_str ON tag_with_str(c1, c2(30), c3(30))
       """
-    And wait 3 seconds
+    And wait 6 seconds
     When executing query:
       """
       INSERT VERTEX
@@ -773,7 +773,7 @@ Feature: LookUpTest_Vid_String
       ON
         identity(BIRTHDAY, NATION(30), BIRTHPLACE_CITY(30))
       """
-    And wait 3 seconds
+    And wait 6 seconds
     When executing query:
       """
       INSERT VERTEX identity(BIRTHDAY, NATION, BIRTHPLACE_CITY) VALUES "1" : (19860413, "汉族", "aaa")
@@ -963,7 +963,7 @@ Feature: LookUpTest_Vid_String
       """
       CREATE TAG player(name string, age int);
       """
-    And wait 3 seconds
+    And wait 6 seconds
     When executing query:
       """
       INSERT VERTEX player(name, age) VALUES 'Tim':('Tim', 20);

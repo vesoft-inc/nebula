@@ -38,7 +38,7 @@ Feature: Test lookup on tag index
       CREATE TAG INDEX t_index_1 ON lookup_tag_1(col1, col2, col3);
       CREATE TAG INDEX t_index_3 ON lookup_tag_1(col2, col3);
       """
-    And wait 3 seconds
+    And wait 6 seconds
     And having executed:
       """
       INSERT VERTEX
@@ -86,7 +86,7 @@ Feature: Test lookup on tag index
       CREATE TAG INDEX t_index_1 ON lookup_tag_1(col1, col2, col3);
       CREATE TAG INDEX t_index_3 ON lookup_tag_1(col2, col3);
       """
-    And wait 3 seconds
+    And wait 6 seconds
     And having executed:
       """
       INSERT VERTEX

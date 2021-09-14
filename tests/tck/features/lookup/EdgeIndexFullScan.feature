@@ -12,7 +12,6 @@ Feature: Lookup edge index full scan
       """
       CREATE EDGE edge_1(col1_str string, col2_int int);
       """
-    And wait 3 seconds
     # index on col1_str
     And having executed:
       """
@@ -23,7 +22,7 @@ Feature: Lookup edge index full scan
       """
       CREATE EDGE INDEX col2_int_index ON edge_1(col2_int)
       """
-    And wait 3 seconds
+    And wait 6 seconds
     And having executed:
       """
       INSERT EDGE
@@ -33,7 +32,6 @@ Feature: Lookup edge index full scan
         '102'->'103':('Yellow', 22),
         '103'->'101':('Blue', 33);
       """
-    And wait 3 seconds
 
   Scenario: Edge with relational RegExp filter[1]
     When executing query:
