@@ -156,21 +156,20 @@ struct DataSet {
   }
 
   // format:
-  // "data": [
-  // {
-  //   "row": [ row-data ],
-  //   "meta": [ metadata ]
-  // },
+  // [
+  //   {
+  //     "row": [ row-data ],
+  //     "meta": [ metadata ]
+  //   },
+  // ]
   folly::dynamic toJsonObj() const {
-    folly::dynamic datasetObj = folly::dynamic::object();
-
     // parse rows to json
     auto dataBody = folly::dynamic::array();
     for (auto& row : rows) {
       dataBody.push_back(rowToJsonObj(row));
     }
-    datasetObj.insert("data", dataBody);
-    return datasetObj;
+
+    return dataBody;
   }
 
   // parse Nebula::Row to json

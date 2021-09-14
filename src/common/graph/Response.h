@@ -545,7 +545,7 @@ struct ExecutionResponse {
 
     auto resultArray = folly::dynamic::array();
     resultArray.push_back(resultBody);
-    respJsonObj.insert("Result", resultArray);
+    respJsonObj.insert("results", resultArray);
 
     return respJsonObj;
   }
