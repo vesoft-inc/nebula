@@ -273,6 +273,9 @@ class NebulaStore : public KVStore, public Handler {
   nebula::cpp2::ErrorCode multiPutWithoutReplicator(GraphSpaceID spaceId,
                                                     std::vector<KV> keyValues) override;
 
+  ErrorOr<nebula::cpp2::ErrorCode, std::string> getProperty(GraphSpaceID spaceId,
+                                                            const std::string& property) override;
+
  private:
   void loadPartFromDataPath();
 

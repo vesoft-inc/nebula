@@ -111,6 +111,10 @@ class KVEngine {
   virtual nebula::cpp2::ErrorCode setDBOption(const std::string& configKey,
                                               const std::string& configValue) = 0;
 
+  // Get DB Property
+  virtual ErrorOr<nebula::cpp2::ErrorCode, std::string> getProperty(
+      const std::string& property) = 0;
+
   virtual nebula::cpp2::ErrorCode compact() = 0;
 
   virtual nebula::cpp2::ErrorCode flush() = 0;

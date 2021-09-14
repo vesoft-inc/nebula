@@ -424,6 +424,16 @@ nebula::cpp2::ErrorCode RocksEngine::setDBOption(const std::string& configKey,
   }
 }
 
+ErrorOr<nebula::cpp2::ErrorCode, std::string> RocksEngine::getProperty(
+    const std::string& property) {
+  std::string value;
+  if (!db_->GetProperty(property, &value)) {
+    return nebula::cpp2::ErrorCode::E_INVALID_PARM;
+  } else {
+    return value;
+  }
+}
+
 nebula::cpp2::ErrorCode RocksEngine::compact() {
   rocksdb::CompactRangeOptions options;
   options.change_level = FLAGS_rocksdb_compact_change_level;

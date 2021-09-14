@@ -168,6 +168,8 @@ class RocksEngine : public KVEngine {
   nebula::cpp2::ErrorCode setDBOption(const std::string& configKey,
                                       const std::string& configValue) override;
 
+  ErrorOr<nebula::cpp2::ErrorCode, std::string> getProperty(const std::string& property) override;
+
   nebula::cpp2::ErrorCode compact() override;
 
   nebula::cpp2::ErrorCode flush() override;
