@@ -13,6 +13,13 @@ Feature: Basic Aggregate and GroupBy
       | 1        | 2     |
     When executing query:
       """
+      YIELD COUNT(CASE WHEN null THEN null ELSE 1 END) AS nulls
+      """
+    Then the result should be, in any order, with relax comparison:
+      | nulls |
+      | 1     |
+    When executing query:
+      """
       YIELD COUNT(*)+1 ,1+2 ,(INT)abs(count(2))
       """
     Then the result should be, in any order, with relax comparison:

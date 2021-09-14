@@ -547,6 +547,7 @@ struct HBResp {
     2: common.HostAddr  leader,
     3: ClusterID        cluster_id,
     4: i64              last_update_time_in_ms,
+    5: i32              meta_version,
 }
 
 enum HostRole {
