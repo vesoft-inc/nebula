@@ -38,13 +38,13 @@ AstContext* LookupValidator::getAstContext() { return lookupCtx_.get(); }
 Status LookupValidator::validateImpl() {
   lookupCtx_ = getContext<LookupContext>();
 
-  NG_RETURN_IF_ERROR(prepareFrom());
-  NG_RETURN_IF_ERROR(prepareYield());
-  NG_RETURN_IF_ERROR(prepareFilter());
+  NG_RETURN_IF_ERROR(validateFrom());
+  NG_RETURN_IF_ERROR(validateFilter());
+  NG_RETURN_IF_ERROR(validateYield());
   return Status::OK();
 }
 
-Status LookupValidator::prepareFrom() {
+Status LookupValidator::validateFrom() {
   auto spaceId = lookupCtx_->space.id;
   auto from = sentence()->from();
   auto ret = qctx_->schemaMng()->getSchemaIDByName(spaceId, from);
@@ -54,51 +54,149 @@ Status LookupValidator::prepareFrom() {
   return Status::OK();
 }
 
-Status LookupValidator::prepareYield() {
-  if (lookupCtx_->isEdge) {
-    outputs_.emplace_back(kSrcVID, vidType_);
-    outputs_.emplace_back(kDstVID, vidType_);
-    outputs_.emplace_back(kRanking, Value::Type::INT);
-  } else {
-    outputs_.emplace_back(kVertexID, vidType_);
-  }
-
-  auto yieldClause = sentence()->yieldClause();
-  if (yieldClause == nullptr) {
-    return Status::OK();
-  }
-  lookupCtx_->dedup = yieldClause->isDistinct();
-
-  shared_ptr<const NebulaSchemaProvider> schemaProvider;
-  NG_RETURN_IF_ERROR(getSchemaProvider(&schemaProvider));
-
-  auto from = sentence()->from();
-  for (auto col : yieldClause->columns()) {
-    if (col->expr()->kind() != Expression::Kind::kLabelAttribute) {
-      // TODO(yee): support more exprs, such as (player.age + 1) AS age
-      return Status::SemanticError("Yield clauses are not supported: `%s'",
-                                   col->toString().c_str());
+Status LookupValidator::extractSchemaProp() {
+  shared_ptr<const NebulaSchemaProvider> schema;
+  NG_RETURN_IF_ERROR(getSchemaProvider(&schema));
+  for (std::size_t i = 0; i < schema->getNumFields(); ++i) {
+    const auto& propName = schema->getFieldName(i);
+    auto iter = std::find(idxReturnCols_.begin(), idxReturnCols_.end(), propName);
+    if (iter == idxReturnCols_.end()) {
+      idxReturnCols_.emplace_back(propName);
     }
-    auto la = static_cast<LabelAttributeExpression*>(col->expr());
-    const std::string& schemaName = la->left()->name();
-    if (schemaName != from) {
-      return Status::SemanticError("Schema name error: %s", schemaName.c_str());
-    }
-
-    const auto& value = la->right()->value();
-    DCHECK(value.isStr());
-    const std::string& colName = value.getStr();
-    auto ret = schemaProvider->getFieldType(colName);
-    if (ret == meta::cpp2::PropertyType::UNKNOWN) {
-      return Status::SemanticError(
-          "Column `%s' not found in schema `%s'", colName.c_str(), from.c_str());
-    }
-    outputs_.emplace_back(col->name(), SchemaUtil::propTypeToValueType(ret));
   }
   return Status::OK();
 }
 
-Status LookupValidator::prepareFilter() {
+void LookupValidator::extractExprProps() {
+  auto addProps = [this](const std::set<folly::StringPiece>& propNames) {
+    for (const auto& propName : propNames) {
+      auto iter = std::find(idxReturnCols_.begin(), idxReturnCols_.end(), propName);
+      if (iter == idxReturnCols_.end()) {
+        idxReturnCols_.emplace_back(propName);
+      }
+    }
+  };
+  if (lookupCtx_->isEdge) {
+    for (const auto& edgeProp : exprProps_.edgeProps()) {
+      addProps(edgeProp.second);
+    }
+    lookupCtx_->idxColNames = idxReturnCols_;
+  } else {
+    for (const auto& tagProp : exprProps_.tagProps()) {
+      addProps(tagProp.second);
+    }
+    std::vector<std::string> idxColNames = idxReturnCols_;
+    idxColNames.erase(idxColNames.begin());
+    idxColNames.insert(idxColNames.begin(), nebula::kVid);
+    lookupCtx_->idxColNames = std::move(idxColNames);
+  }
+  lookupCtx_->idxReturnCols = std::move(idxReturnCols_);
+}
+
+Status LookupValidator::validateYieldEdge() {
+  auto yield = sentence()->yieldClause();
+  auto yieldExpr = lookupCtx_->yieldExpr;
+  for (auto col : yield->columns()) {
+    if (ExpressionUtils::hasAny(col->expr(),
+                                {Expression::Kind::kPathBuild, Expression::Kind::kVertex})) {
+      return Status::SemanticError("illegal yield clauses `%s'", col->toString().c_str());
+    }
+    if (ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kEdge})) {
+      NG_RETURN_IF_ERROR(extractSchemaProp());
+    }
+    if (col->expr()->kind() == Expression::Kind::kLabelAttribute) {
+      const auto& schemaName = static_cast<LabelAttributeExpression*>(col->expr())->left()->name();
+      if (schemaName != sentence()->from()) {
+        return Status::SemanticError("Schema name error: %s", schemaName.c_str());
+      }
+    }
+    col->setExpr(ExpressionUtils::rewriteLabelAttr2EdgeProp(col->expr()));
+    NG_RETURN_IF_ERROR(invalidLabelIdentifiers(col->expr()));
+
+    auto colExpr = col->expr();
+    auto typeStatus = deduceExprType(colExpr);
+    NG_RETURN_IF_ERROR(typeStatus);
+    outputs_.emplace_back(col->name(), typeStatus.value());
+    yieldExpr->addColumn(col->clone().release());
+    NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps_));
+  }
+  return Status::OK();
+}
+
+Status LookupValidator::validateYieldTag() {
+  auto yield = sentence()->yieldClause();
+  auto yieldExpr = lookupCtx_->yieldExpr;
+  for (auto col : yield->columns()) {
+    if (ExpressionUtils::hasAny(col->expr(),
+                                {Expression::Kind::kPathBuild, Expression::Kind::kEdge})) {
+      return Status::SemanticError("illegal yield clauses `%s'", col->toString().c_str());
+    }
+    if (ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kVertex})) {
+      NG_RETURN_IF_ERROR(extractSchemaProp());
+    }
+    if (col->expr()->kind() == Expression::Kind::kLabelAttribute) {
+      const auto& schemaName = static_cast<LabelAttributeExpression*>(col->expr())->left()->name();
+      if (schemaName != sentence()->from()) {
+        return Status::SemanticError("Schema name error: %s", schemaName.c_str());
+      }
+    }
+    col->setExpr(ExpressionUtils::rewriteLabelAttr2TagProp(col->expr()));
+    NG_RETURN_IF_ERROR(invalidLabelIdentifiers(col->expr()));
+
+    auto colExpr = col->expr();
+    auto typeStatus = deduceExprType(colExpr);
+    NG_RETURN_IF_ERROR(typeStatus);
+    outputs_.emplace_back(col->name(), typeStatus.value());
+    yieldExpr->addColumn(col->clone().release());
+    NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps_));
+  }
+  return Status::OK();
+}
+
+Status LookupValidator::validateYield() {
+  auto pool = qctx_->objPool();
+  auto* newCols = pool->add(new YieldColumns());
+  lookupCtx_->yieldExpr = newCols;
+  if (lookupCtx_->isEdge) {
+    idxReturnCols_.emplace_back(kSrc);
+    idxReturnCols_.emplace_back(kDst);
+    idxReturnCols_.emplace_back(kType);
+    idxReturnCols_.emplace_back(kRank);
+    outputs_.emplace_back(kSrcVID, vidType_);
+    outputs_.emplace_back(kDstVID, vidType_);
+    outputs_.emplace_back(kRanking, Value::Type::INT);
+    newCols->addColumn(new YieldColumn(ColumnExpression::make(pool, 0), kSrcVID));
+    newCols->addColumn(new YieldColumn(ColumnExpression::make(pool, 1), kDstVID));
+    newCols->addColumn(new YieldColumn(ColumnExpression::make(pool, 2), kRanking));
+  } else {
+    idxReturnCols_.emplace_back(kVid);
+    outputs_.emplace_back(kVertexID, vidType_);
+    newCols->addColumn(new YieldColumn(ColumnExpression::make(pool, 0), kVertexID));
+  }
+
+  auto yieldClause = sentence()->yieldClause();
+  if (yieldClause == nullptr) {
+    extractExprProps();
+    lookupCtx_->idxReturnCols = std::move(idxReturnCols_);
+    return Status::OK();
+  }
+  lookupCtx_->dedup = yieldClause->isDistinct();
+  if (lookupCtx_->isEdge) {
+    NG_RETURN_IF_ERROR(validateYieldEdge());
+  } else {
+    NG_RETURN_IF_ERROR(validateYieldTag());
+  }
+  if (exprProps_.hasInputVarProperty()) {
+    return Status::SemanticError("unsupport input/variable property expression in yield.");
+  }
+  if (exprProps_.hasSrcDstTagProperty()) {
+    return Status::SemanticError("unsupport src/dst property expression in yield.");
+  }
+  extractExprProps();
+  return Status::OK();
+}
+
+Status LookupValidator::validateFilter() {
   auto whereClause = sentence()->whereClause();
   if (whereClause == nullptr) {
     return Status::OK();
@@ -120,6 +218,7 @@ Status LookupValidator::prepareFilter() {
     NG_RETURN_IF_ERROR(ret);
     lookupCtx_->filter = std::move(ret).value();
   }
+  NG_RETURN_IF_ERROR(deduceProps(lookupCtx_->filter, exprProps_));
   return Status::OK();
 }
 

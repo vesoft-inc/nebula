@@ -34,9 +34,11 @@ class LookupValidator final : public Validator {
  private:
   Status validateImpl() override;
 
-  Status prepareFrom();
-  Status prepareYield();
-  Status prepareFilter();
+  Status validateFrom();
+  Status validateYield();
+  Status validateFilter();
+  Status validateYieldTag();
+  Status validateYieldEdge();
 
   StatusOr<Expression*> checkFilter(Expression* expr);
   StatusOr<Expression*> checkRelExpr(RelationalExpression* expr);
@@ -56,9 +58,13 @@ class LookupValidator final : public Validator {
   Status getSchemaProvider(std::shared_ptr<const meta::NebulaSchemaProvider>* provider) const;
   StatusOr<Expression*> genTsFilter(Expression* filter);
   StatusOr<Expression*> handleLogicalExprOperands(LogicalExpression* lExpr);
+  Status extractSchemaProp();
+  void extractExprProps();
 
   std::unique_ptr<LookupContext> lookupCtx_;
   std::vector<nebula::plugin::HttpClient> tsClients_;
+  ExpressionProps exprProps_;
+  std::vector<std::string> idxReturnCols_;
 };
 
 }  // namespace graph
