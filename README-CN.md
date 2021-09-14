@@ -86,7 +86,7 @@ Nebula Graph 1.x 后续不再进行功能的更新，请升级到2.0版本中。
 
 ## 联系方式
 
-* 访问[官网](http://nebula-graph.com/)
+* 访问[官网](http://nebula-graph.com.cn/)
 * [![WeiXin](https://img.shields.io/badge/WeChat-%E5%BE%AE%E4%BF%A1-brightgreen)](https://user-images.githubusercontent.com/38887077/67449282-4362b300-f64c-11e9-878f-7efc373e5e55.jpg)
 * [![Sina Weibo](https://img.shields.io/badge/Weibo-%E5%BE%AE%E5%8D%9A-red)](https://weibo.com/p/1006067122684542/home?from=page_100606&mod=TAB#place)
 * [知乎](https://www.zhihu.com/org/nebulagraph/activities)
