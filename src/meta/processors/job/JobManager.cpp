@@ -375,7 +375,8 @@ void JobManager::enqueue(const JobID& jobId, const cpp2::AdminCmd& cmd) {
   }
 }
 
-ErrorOr<nebula::cpp2::ErrorCode, std::vector<cpp2::JobDesc>> JobManager::showJobs() {
+ErrorOr<nebula::cpp2::ErrorCode, std::vector<cpp2::JobDesc>> JobManager::showJobs(
+  const std::string &spaceName) {
   std::unique_ptr<kvstore::KVIterator> iter;
   auto retCode = kvStore_->prefix(kDefaultSpaceId, kDefaultPartId, JobUtil::jobPrefix(), &iter);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -402,6 +403,9 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<cpp2::JobDesc>> JobManager::showJob
         lastExpiredJobId = jobDesc.get_id();
         LOG(INFO) << "remove expired job " << lastExpiredJobId;
         expiredJobKeys.emplace_back(jobKey);
+        continue;
+      }
+      if (jobDesc.get_paras().back() != spaceName) {
         continue;
       }
       ret.emplace_back(jobDesc);
@@ -477,7 +481,7 @@ bool JobManager::checkJobExist(const cpp2::AdminCmd& cmd,
 }
 
 ErrorOr<nebula::cpp2::ErrorCode, std::pair<cpp2::JobDesc, std::vector<cpp2::TaskDesc>>>
-JobManager::showJob(JobID iJob) {
+JobManager::showJob(JobID iJob, const std::string& spaceName) {
   auto jobKey = JobDescription::makeJobKey(iJob);
   std::unique_ptr<kvstore::KVIterator> iter;
   auto rc = kvStore_->prefix(kDefaultSpaceId, kDefaultPartId, jobKey, &iter);
@@ -498,6 +502,9 @@ JobManager::showJob(JobID iJob) {
         return nebula::error(optJobRet);
       }
       auto optJob = nebula::value(optJobRet);
+      if (optJob.getParas().back() != spaceName) {
+        return nebula::cpp2::ErrorCode::E_JOB_NOT_IN_SPACE;
+      }
       ret.first = optJob.toJobDesc();
     } else {
       TaskDescription td(jKey, iter->val());

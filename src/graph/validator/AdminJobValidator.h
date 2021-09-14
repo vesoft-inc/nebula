@@ -47,6 +47,7 @@ class AdminJobValidator final : public Validator {
         break;
       case meta::cpp2::AdminJobOp::SHOW_All:
       case meta::cpp2::AdminJobOp::SHOW:
+        return true;
       case meta::cpp2::AdminJobOp::STOP:
       case meta::cpp2::AdminJobOp::RECOVER:
         return false;

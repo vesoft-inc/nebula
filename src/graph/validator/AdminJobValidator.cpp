@@ -12,7 +12,8 @@ namespace nebula {
 namespace graph {
 
 Status AdminJobValidator::validateImpl() {
-  if (sentence_->getOp() == meta::cpp2::AdminJobOp::ADD) {
+  auto reqOp = sentence_->getOp();
+  if (reqOp == meta::cpp2::AdminJobOp::ADD) {
     auto cmd = sentence_->getCmd();
     if (requireSpace()) {
       const auto &spaceInfo = qctx()->rctx()->session()->space();
@@ -49,6 +50,14 @@ Status AdminJobValidator::validateImpl() {
         }
       }
     }
+  } else if (reqOp == meta::cpp2::AdminJobOp::SHOW_All ||
+    reqOp == meta::cpp2::AdminJobOp::SHOW) {
+      auto cmd = sentence_->getCmd();
+      if (requireSpace()) {
+        const auto &spaceInfo = qctx()->rctx()->session()->space();
+        const auto &spaceName = spaceInfo.name;
+        sentence_->addPara(spaceName);
+      }
   }
 
   return Status::OK();

@@ -64,7 +64,8 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
       break;
     }
     case nebula::meta::cpp2::AdminJobOp::SHOW_All: {
-      auto ret = jobMgr->showJobs();
+      auto spaceName = req.get_paras().back();
+      auto ret = jobMgr->showJobs(spaceName);
       if (nebula::ok(ret)) {
         result.set_job_desc(nebula::value(ret));
       } else {
@@ -85,8 +86,8 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
         errorCode = nebula::cpp2::ErrorCode::E_INVALID_PARM;
         break;
       }
-
-      auto ret = jobMgr->showJob(iJob);
+      auto spaceName = req.get_paras().back();
+      auto ret = jobMgr->showJob(iJob, spaceName);
       if (nebula::ok(ret)) {
         result.set_job_desc(std::vector<cpp2::JobDesc>{nebula::value(ret).first});
         result.set_task_desc(nebula::value(ret).second);
