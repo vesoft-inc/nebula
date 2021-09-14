@@ -10,6 +10,7 @@
 #include <gflags/gflags.h>
 
 #include <cstdio>
+#include <fstream>
 #include <regex>
 
 #include "common/fs/FileUtils.h"
@@ -65,21 +66,13 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
 }
 
 StatusOr<uint64_t> MemoryUtils::readSysContents(const std::string& path) {
-  auto cmd = folly::sformat("cat {}", path);
-  FILE* pipe = popen(cmd.c_str(), "r");
-  if (!pipe) {
-    return Status::Error("Failed to open %s: %s", path.c_str(), strerror(errno));
-  }
-
   uint64_t value = 0;
-  if (fscanf(pipe, "%lu", &value) != 2) {
-    return Status::Error("Failed to read from %s", path.c_str());
+  std::ifstream ifs(path);
+  if (!ifs) {
+    return Status::Error("Could not open the file: %s", path.c_str());
   }
-
-  if (pclose(pipe) < 0) {
-    return Status::Error("Failed to close the pipe: %s", strerror(errno));
-  }
-
+  SCOPE_EXIT { ifs.close(); };
+  ifs >> value;
   return value;
 }
 
