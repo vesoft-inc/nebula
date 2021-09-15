@@ -46,6 +46,7 @@ folly::Future<Status> IndexScanExecutor::indexScan() {
                     lookup->returnColumns())
       .via(runner())
       .thenValue([this](StorageRpcResponse<LookupIndexResp> &&rpcResp) {
+        addStats(rpcResp, otherStats_);
         return handleResp(std::move(rpcResp));
       });
 }

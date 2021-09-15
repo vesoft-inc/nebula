@@ -47,3 +47,4 @@ DEFINE_bool(query_concurrently,
             false,
             "whether to run query of each part concurrently, only lookup and "
             "go are supported");
+DEFINE_bool(profile_storage_detail, false, "Whether to profile storage plan detail");

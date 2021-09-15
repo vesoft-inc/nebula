@@ -18,13 +18,15 @@ namespace storage {
 template <typename T>
 class DeDupNode : public IterateNode<T> {
  public:
-  using RelNode<T>::execute;
+  using RelNode<T>::doExecute;
 
   explicit DeDupNode(nebula::DataSet* resultSet, const std::vector<size_t>& pos)
-      : resultSet_(resultSet), pos_(pos) {}
+      : resultSet_(resultSet), pos_(pos) {
+    IterateNode<T>::name_ = "DedupNode";
+  }
 
-  nebula::cpp2::ErrorCode execute(PartitionID partId) override {
-    auto ret = RelNode<T>::execute(partId);
+  nebula::cpp2::ErrorCode doExecute(PartitionID partId) override {
+    auto ret = RelNode<T>::doExecute(partId);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
       return ret;
     }
