@@ -39,40 +39,54 @@ void CreateSpaceAsProcessor::process(const cpp2::CreateSpaceAsReq &req) {
     return;
   }
 
+  std::vector<kvstore::KV> data;
+
   auto newSpaceData =
       makeNewSpaceData(nebula::value(oldSpaceId), nebula::value(newSpaceId), newSpaceName);
-  if (!nebula::ok(newSpaceData)) {
+  if (nebula::ok(newSpaceData)) {
+    data.insert(data.end(), nebula::value(newSpaceData).begin(), nebula::value(newSpaceData).end());
+  } else {
     rc_ = nebula::error(newSpaceData);
     LOG(ERROR) << "make new space data failed, " << apache::thrift::util::enumNameSafe(rc_);
     return;
   }
 
   auto newTags = makeNewTags(nebula::value(oldSpaceId), nebula::value(newSpaceId));
-  if (!nebula::ok(newTags)) {
+  if (nebula::ok(newTags)) {
+    data.insert(data.end(), nebula::value(newTags).begin(), nebula::value(newTags).end());
+  } else {
     rc_ = nebula::error(newTags);
     LOG(ERROR) << "make new tags failed, " << apache::thrift::util::enumNameSafe(rc_);
     return;
   }
 
   auto newEdges = makeNewEdges(nebula::value(oldSpaceId), nebula::value(newSpaceId));
-  if (!nebula::ok(newEdges)) {
+  if (nebula::ok(newEdges)) {
+    data.insert(data.end(), nebula::value(newEdges).begin(), nebula::value(newEdges).end());
+  } else {
     rc_ = nebula::error(newEdges);
     LOG(ERROR) << "make new edges failed, " << apache::thrift::util::enumNameSafe(rc_);
     return;
   }
 
   auto newIndexes = makeNewIndexes(nebula::value(oldSpaceId), nebula::value(newSpaceId));
-  if (!nebula::ok(newIndexes)) {
+  if (nebula::ok(newIndexes)) {
+    data.insert(data.end(), nebula::value(newIndexes).begin(), nebula::value(newIndexes).end());
+  } else {
     rc_ = nebula::error(newIndexes);
     LOG(ERROR) << "make new indexes failed, " << apache::thrift::util::enumNameSafe(rc_);
     return;
   }
 
-  std::vector<kvstore::KV> data;
-  data.insert(data.end(), nebula::value(newSpaceData).begin(), nebula::value(newSpaceData).end());
-  data.insert(data.end(), nebula::value(newTags).begin(), nebula::value(newTags).end());
-  data.insert(data.end(), nebula::value(newEdges).begin(), nebula::value(newEdges).end());
-  data.insert(data.end(), nebula::value(newIndexes).begin(), nebula::value(newIndexes).end());
+  const std::string kIdKey = MetaServiceUtils::idKey();
+  std::string val;
+  rc_ = kvstore_->get(kDefaultSpaceId, kDefaultPartId, kIdKey, &val);
+  if (rc_ == nebula::cpp2::ErrorCode::SUCCEEDED) {
+    int32_t id = *reinterpret_cast<const int32_t *>(val.c_str());
+    data.emplace_back(kIdKey, std::string(reinterpret_cast<const char *>(&id), sizeof(id)));
+  } else {
+    return;
+  }
 
   resp_.set_id(to(nebula::value(newSpaceId), EntryType::SPACE));
   rc_ = doSyncPut(std::move(data));
