@@ -642,7 +642,8 @@ StatusOr<ScoredColumnHint> selectRelExprIndex(const ColumnDef& field,
   }
 
   auto right = expr->right();
-  DCHECK(right->kind() == Expression::Kind::kConstant);
+  expr->kind() == Expression::Kind::kRelIn ? DCHECK(right->isContainerExpr())
+                                           : DCHECK(right->kind() == Expression::Kind::kConstant);
   const auto& value = static_cast<const ConstantExpression*>(right)->value();
 
   ScoredColumnHint hint;
@@ -662,6 +663,10 @@ StatusOr<ScoredColumnHint> selectRelExprIndex(const ColumnDef& field,
     }
     case Expression::Kind::kRelNE: {
       hint.score = IndexScore::kNotEqual;
+      break;
+    }
+    case Expression::Kind::kRelIn: {
+      // check the property has an index
       break;
     }
     default: {
@@ -910,6 +915,32 @@ bool OptimizerUtils::findOptimalIndex(const Expression* condition,
   ictx->set_index_id(index.index->get_index_id());
   ictx->set_column_hints(std::move(hints));
   return true;
+}
+
+// Check if the relational expression has a valid index
+// The left operand should either be a kEdgeProperty or kTagProperty expr
+bool OptimizerUtils::relExprHasIndex(
+    const Expression* expr,
+    const std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>>& indexItems) {
+  DCHECK(expr->isRelExpr());
+
+  for (auto& index : indexItems) {
+    const auto& fields = index->get_fields();
+    if (fields.empty()) {
+      return false;
+    }
+
+    auto left = static_cast<const RelationalExpression*>(expr)->left();
+    DCHECK(left->kind() == Expression::Kind::kEdgeProperty ||
+           left->kind() == Expression::Kind::kTagProperty);
+
+    auto propExpr = static_cast<const PropertyExpression*>(left);
+    if (propExpr->prop() == fields[0].get_name()) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 void OptimizerUtils::copyIndexScanData(const nebula::graph::IndexScan* from,

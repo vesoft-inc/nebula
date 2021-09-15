@@ -170,6 +170,60 @@ Expression *ExpressionUtils::rewriteAgg2VarProp(const Expression *expr) {
   return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
 }
 
+// Rewrite the IN expr to a relEQ expr if the right operand has only 1 element.
+// Rewrite the IN expr to a OR expr if the right operand has more than 1 element.
+Expression *ExpressionUtils::rewriteInExpr(const Expression *expr) {
+  DCHECK(expr->kind() == Expression::Kind::kRelIn);
+  auto pool = expr->getObjPool();
+  auto inExpr = static_cast<RelationalExpression *>(expr->clone());
+  auto containerOperands = getContainerExprOperands(inExpr->right());
+
+  auto operandSize = containerOperands.size();
+  // container has only 1 element, no need to transform to logical expression
+  if (operandSize == 1) {
+    return RelationalExpression::makeEQ(pool, inExpr->left(), containerOperands[0]);
+  }
+
+  std::vector<Expression *> orExprOperands;
+  orExprOperands.reserve(operandSize);
+  // A in [B, C, D]  =>  (A == B) or (A == C) or (A == D)
+  for (auto *operand : containerOperands) {
+    orExprOperands.emplace_back(RelationalExpression::makeEQ(pool, inExpr->left(), operand));
+  }
+  auto orExpr = LogicalExpression::makeOr(pool);
+  orExpr->setOperands(orExprOperands);
+
+  return orExpr;
+}
+
+std::vector<Expression *> ExpressionUtils::getContainerExprOperands(const Expression *expr) {
+  DCHECK(expr->isContainerExpr());
+  auto pool = expr->getObjPool();
+  auto containerExpr = expr->clone();
+
+  std::vector<Expression *> containerOperands;
+  switch (containerExpr->kind()) {
+    case Expression::Kind::kList:
+      containerOperands = static_cast<ListExpression *>(containerExpr)->get();
+      break;
+    case Expression::Kind::kSet: {
+      containerOperands = static_cast<SetExpression *>(containerExpr)->get();
+      break;
+    }
+    case Expression::Kind::kMap: {
+      auto mapItems = static_cast<MapExpression *>(containerExpr)->get();
+      // iterate map and add key into containerOperands
+      for (auto &item : mapItems) {
+        containerOperands.emplace_back(ConstantExpression::make(pool, std::move(item.first)));
+      }
+      break;
+    }
+    default:
+      LOG(FATAL) << "Invalid expression type " << containerExpr->kind();
+  }
+  return containerOperands;
+}
+
 StatusOr<Expression *> ExpressionUtils::foldConstantExpr(const Expression *expr) {
   ObjectPool *objPool = expr->getObjPool();
   auto newExpr = expr->clone();

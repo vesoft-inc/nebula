@@ -46,6 +46,9 @@ const Pattern& OptimizeTagIndexScanByFilterRule::pattern() const {
   return pattern;
 }
 
+// Match 2 kinds of expressions:
+// 1. Relational expr
+// 2. Logical AND expr
 bool OptimizeTagIndexScanByFilterRule::match(OptContext* ctx, const MatchedResult& matched) const {
   if (!OptRule::match(ctx, matched)) {
     return false;
@@ -60,11 +63,18 @@ bool OptimizeTagIndexScanByFilterRule::match(OptContext* ctx, const MatchedResul
   auto condition = filter->condition();
   if (condition->isRelExpr()) {
     auto relExpr = static_cast<const RelationalExpression*>(condition);
+    // If the container in the IN expr has only 1 element, it will be converted to an relEQ
+    // expr. If more than 1 element found in the container, UnionAllIndexScanBaseRule will be
+    // applied.
+    if (relExpr->kind() == ExprKind::kRelIn && relExpr->right()->isContainerExpr()) {
+      auto ContainerOperands = graph::ExpressionUtils::getContainerExprOperands(relExpr->right());
+      return ContainerOperands.size() == 1;
+    }
     return relExpr->left()->kind() == ExprKind::kTagProperty &&
            relExpr->right()->kind() == ExprKind::kConstant;
   }
   if (condition->isLogicalExpr()) {
-    return condition->kind() == Expression::Kind::kLogicalAnd;
+    return condition->kind() == ExprKind::kLogicalAnd;
   }
 
   return false;
@@ -94,9 +104,23 @@ StatusOr<TransformResult> OptimizeTagIndexScanByFilterRule::transform(
 
   OptimizerUtils::eraseInvalidIndexItems(scan->schemaId(), &indexItems);
 
+  auto condition = filter->condition();
+  auto conditionType = condition->kind();
+  Expression* transformedExpr = condition->clone();
+
+  // Stand alone IN expr
+  if (conditionType == ExprKind::kRelIn) {
+    if (!OptimizerUtils::relExprHasIndex(condition, indexItems)) {
+      return TransformResult::noTransform();
+    }
+    transformedExpr = graph::ExpressionUtils::rewriteInExpr(condition);
+  }
+
+  DCHECK(transformedExpr->kind() == ExprKind::kLogicalOr ||
+         transformedExpr->kind() == ExprKind::kRelEQ);
   IndexQueryContext ictx;
   bool isPrefixScan = false;
-  if (!OptimizerUtils::findOptimalIndex(filter->condition(), indexItems, &isPrefixScan, &ictx)) {
+  if (!OptimizerUtils::findOptimalIndex(transformedExpr, indexItems, &isPrefixScan, &ictx)) {
     return TransformResult::noTransform();
   }
 

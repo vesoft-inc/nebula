@@ -118,11 +118,10 @@ Feature: Lookup edge index full scan
       | SrcVID | DstVID | Ranking | edge_1.col1_str |
       | "102"  | "103"  | 0       | "Yellow"        |
     And the execution plan should be:
-      | id | name              | dependencies | operator info                                              |
-      | 3  | Project           | 2            |                                                            |
-      | 2  | Filter            | 4            | {"condition": "(edge_1.col1_str IN [\"Red\",\"Yellow\"])"} |
-      | 4  | EdgeIndexFullScan | 0            |                                                            |
-      | 0  | Start             |              |                                                            |
+      | id | name      | dependencies | operator info |
+      | 3  | Project   | 4            |               |
+      | 4  | IndexScan | 0            |               |
+      | 0  | Start     |              |               |
     When executing query:
       """
       LOOKUP ON edge_1 WHERE edge_1.col1_str IN ["non-existed-name"] YIELD edge_1.col1_str
@@ -138,11 +137,91 @@ Feature: Lookup edge index full scan
       | "103"  | "101"  | 0       | 33              |
       | "102"  | "103"  | 0       | 22              |
     And the execution plan should be:
-      | id | name              | dependencies | operator info                                 |
-      | 3  | Project           | 2            |                                               |
-      | 2  | Filter            | 4            | {"condition": "(edge_1.col2_int IN [22,33])"} |
-      | 4  | EdgeIndexFullScan | 0            |                                               |
-      | 0  | Start             |              |                                               |
+      | id | name      | dependencies | operator info |
+      | 3  | Project   | 4            |               |
+      | 4  | IndexScan | 0            |               |
+      | 0  | Start     |              |               |
+    # a IN b OR c
+    When profiling query:
+      """
+      LOOKUP ON edge_1
+      WHERE edge_1.col2_int IN [23 - 1 , 66/2] OR edge_1.col2_int==11
+      YIELD edge_1.col2_int
+      """
+    Then the result should be, in any order:
+      | SrcVID | DstVID | Ranking | edge_1.col2_int |
+      | "101"  | "102"  | 0       | 11              |
+      | "102"  | "103"  | 0       | 22              |
+      | "103"  | "101"  | 0       | 33              |
+    And the execution plan should be:
+      | id | name      | dependencies | operator info |
+      | 3  | Project   | 4            |               |
+      | 4  | IndexScan | 0            |               |
+      | 0  | Start     |              |               |
+    # a IN b OR c IN d
+    When profiling query:
+      """
+      LOOKUP ON edge_1
+      WHERE edge_1.col2_int IN [23 - 1 , 66/2] OR edge_1.col1_str IN [toUpper("r")+"ed1"]
+      YIELD edge_1.col1_str, edge_1.col2_int
+      """
+    Then the result should be, in any order:
+      | SrcVID | DstVID | Ranking | edge_1.col1_str | edge_1.col2_int |
+      | "101"  | "102"  | 0       | "Red1"          | 11              |
+      | "102"  | "103"  | 0       | "Yellow"        | 22              |
+      | "103"  | "101"  | 0       | "Blue"          | 33              |
+    And the execution plan should be:
+      | id | name      | dependencies | operator info |
+      | 3  | Project   | 4            |               |
+      | 4  | IndexScan | 0            |               |
+      | 0  | Start     |              |               |
+    # a IN b AND c (EdgeIndexPrefixScan)
+    When profiling query:
+      """
+      LOOKUP ON edge_1
+      WHERE edge_1.col2_int IN [11 , 66/2] AND edge_1.col2_int==11
+      YIELD edge_1.col2_int
+      """
+    Then the result should be, in any order:
+      | SrcVID | DstVID | Ranking | edge_1.col2_int |
+      | "101"  | "102"  | 0       | 11              |
+    And the execution plan should be:
+      | id | name                | dependencies | operator info |
+      | 3  | Project             | 4            |               |
+      | 4  | EdgeIndexPrefixScan | 0            |               |
+      | 0  | Start               |              |               |
+    # a IN b AND c IN d
+    # List has only 1 element, so prefixScan is applied
+    When profiling query:
+      """
+      LOOKUP ON edge_1
+      WHERE edge_1.col2_int IN [11 , 66/2] AND edge_1.col1_str IN [toUpper("r")+"ed1"]
+      YIELD edge_1.col1_str, edge_1.col2_int
+      """
+    Then the result should be, in any order:
+      | SrcVID | DstVID | Ranking | edge_1.col1_str | edge_1.col2_int |
+      | "101"  | "102"  | 0       | "Red1"          | 11              |
+    And the execution plan should be:
+      | id | name                | dependencies | operator info |
+      | 3  | Project             | 4            |               |
+      | 4  | EdgeIndexPrefixScan | 0            |               |
+      | 0  | Start               |              |               |
+    # a IN b AND c IN d (EdgeIndexFullScan)
+    When profiling query:
+      """
+      LOOKUP ON edge_1
+      WHERE edge_1.col2_int IN [11 , 66/2] AND edge_1.col1_str IN [toUpper("r")+"ed1", "ABC"]
+      YIELD edge_1.col1_str, edge_1.col2_int
+      """
+    Then the result should be, in any order:
+      | SrcVID | DstVID | Ranking | edge_1.col1_str | edge_1.col2_int |
+      | "101"  | "102"  | 0       | "Red1"          | 11              |
+    And the execution plan should be:
+      | id | name              | dependencies | operator info                                                                                                                       |
+      | 3  | Project           | 2            |                                                                                                                                     |
+      | 2  | Filter            | 4            | {"condition": "(((edge_1.col2_int==11) OR (edge_1.col2_int==33)) AND ((edge_1.col1_str==\"Red1\") OR (edge_1.col1_str==\"ABC\")))"} |
+      | 4  | EdgeIndexFullScan | 0            |                                                                                                                                     |
+      | 0  | Start             |              |                                                                                                                                     |
     When profiling query:
       """
       LOOKUP ON edge_1 WHERE edge_1.col1_str NOT IN ["Blue"] YIELD edge_1.col1_str

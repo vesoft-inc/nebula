@@ -37,12 +37,11 @@ class LookupValidator final : public Validator {
   Status validateYieldEdge();
 
   StatusOr<Expression*> checkFilter(Expression* expr);
-  StatusOr<Expression*> checkRelExpr(RelationalExpression* expr);
+  Status checkRelExpr(RelationalExpression* expr);
   StatusOr<std::string> checkTSExpr(Expression* expr);
-  StatusOr<Value> checkConstExpr(Expression* expr,
-                                 const std::string& prop,
-                                 const Expression::Kind kind);
-
+  StatusOr<Expression*> checkConstExpr(Expression* expr,
+                                       const std::string& prop,
+                                       const Expression::Kind kind);
   StatusOr<Expression*> rewriteRelExpr(RelationalExpression* expr);
   Expression* reverseRelKind(RelationalExpression* expr);
 

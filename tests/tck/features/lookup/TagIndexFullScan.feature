@@ -1,3 +1,4 @@
+@aiee
 Feature: Lookup tag index full scan
 
   Background:
@@ -92,6 +93,7 @@ Feature: Lookup tag index full scan
       | 4  | TagIndexFullScan | 0            |                                           |
       | 0  | Start            |              |                                           |
 
+  # TODO: Support compare operator info that has multiple column hints
   Scenario: Tag with relational IN/NOT IN filter
     When profiling query:
       """
@@ -102,11 +104,10 @@ Feature: Lookup tag index full scan
       | "Jazz"    |
       | "Hornets" |
     And the execution plan should be:
-      | id | name             | dependencies | operator info                                          |
-      | 3  | Project          | 2            |                                                        |
-      | 2  | Filter           | 4            | {"condition": "(team.name IN [\"Hornets\",\"Jazz\"])"} |
-      | 4  | TagIndexFullScan | 0            |                                                        |
-      | 0  | Start            |              |                                                        |
+      | id | name      | dependencies | operator info |
+      | 3  | Project   | 4            |               |
+      | 4  | IndexScan | 0            |               |
+      | 0  | Start     |              |               |
     When executing query:
       """
       LOOKUP ON team WHERE team.name IN ["non-existed-name"]
@@ -124,11 +125,69 @@ Feature: Lookup tag index full scan
       | "Tony Parker"       | 36         |
       | "Boris Diaw"        | 36         |
     And the execution plan should be:
-      | id | name             | dependencies | operator info                            |
-      | 3  | Project          | 2            |                                          |
-      | 2  | Filter           | 4            | {"condition": "(player.age IN [39,36])"} |
-      | 4  | TagIndexFullScan | 0            |                                          |
-      | 0  | Start            |              |                                          |
+      | id | name      | dependencies | operator info |
+      | 3  | Project   | 4            |               |
+      | 4  | IndexScan | 0            |               |
+      | 0  | Start     |              |               |
+    # a IN b OR c
+    When profiling query:
+      """
+      LOOKUP ON player WHERE player.age IN [40, 25] OR player.name == "ABC" YIELD player.age
+      """
+    Then the result should be, in any order:
+      | VertexID        | player.age |
+      | "Dirk Nowitzki" | 40         |
+      | "Joel Embiid"   | 25         |
+      | "Kobe Bryant"   | 40         |
+      | "Kyle Anderson" | 25         |
+    And the execution plan should be:
+      | id | name      | dependencies | operator info |
+      | 3  | Project   | 4            |               |
+      | 4  | IndexScan | 0            |               |
+      | 0  | Start     |              |               |
+    # a IN b OR c IN d
+    When profiling query:
+      """
+      LOOKUP ON player WHERE player.age IN [40, 25] OR player.name IN ["Kobe Bryant"] YIELD player.age
+      """
+    Then the result should be, in any order:
+      | VertexID        | player.age |
+      | "Dirk Nowitzki" | 40         |
+      | "Joel Embiid"   | 25         |
+      | "Kobe Bryant"   | 40         |
+      | "Kyle Anderson" | 25         |
+    And the execution plan should be:
+      | id | name      | dependencies | operator info |
+      | 3  | Project   | 4            |               |
+      | 4  | IndexScan | 0            |               |
+      | 0  | Start     |              |               |
+    # a IN b AND c
+    When profiling query:
+      """
+      LOOKUP ON player WHERE player.age IN [40, 25] AND player.name == "Kobe Bryant" YIELD player.age
+      """
+    Then the result should be, in any order:
+      | VertexID      | player.age |
+      | "Kobe Bryant" | 40         |
+    And the execution plan should be:
+      | id | name               | dependencies | operator info                                                                                                           |
+      | 3  | Project            | 4            |                                                                                                                         |
+      | 4  | TagIndexPrefixScan | 0            | {"indexCtx": {"columnHints":{"endValue":"__EMPTY__","beginValue":"\"Kobe Bryant","scanType":"PREFIX","column":"name"}}} |
+      | 0  | Start              |              |                                                                                                                         |
+    # a IN b AND c IN d (TagIndexFullScan)
+    When profiling query:
+      """
+      LOOKUP ON player WHERE player.age IN [40, 25] AND player.name IN ["ABC", "Kobe Bryant"] YIELD player.age
+      """
+    Then the result should be, in any order:
+      | VertexID      | player.age |
+      | "Kobe Bryant" | 40         |
+    And the execution plan should be:
+      | id | name             | dependencies | operator info                                                                                                            |
+      | 3  | Project          | 2            |                                                                                                                          |
+      | 2  | Filter           | 4            | {"condition": "(((player.age==40) OR (player.age==25)) AND ((player.name==\"ABC\") OR (player.name==\"Kobe Bryant\")))"} |
+      | 4  | TagIndexFullScan | 0            |                                                                                                                          |
+      | 0  | Start            |              |                                                                                                                          |
     When profiling query:
       """
       LOOKUP ON team WHERE team.name NOT IN ["Hornets", "Jazz"]
