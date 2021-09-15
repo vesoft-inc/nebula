@@ -35,6 +35,6 @@ Feature: Insert vertex and edge with if not exists
       (GO FROM "v1" over E yield E.rank union GO FROM "v2" over E REVERSELY yield E.rank) | yield count(*) AS count
       """
     Then the result should be, in any order:
-      | count | 
+      | count |
       | 1     |
     And drop the used space
