@@ -72,6 +72,9 @@ class FileBasedWal final : public Wal, public std::enable_shared_from_this<FileB
   // Return the term when the the last log is received
   TermID lastLogTerm() const override { return lastLogTerm_; }
 
+  // Return the term of specified logId, if not exist，return -1
+  TermID getLogTerm(LogID id) override;
+
   // Append one log messages to the WAL
   // This method **IS NOT** thread-safe
   // we **DO NOT** expect multiple threads will append logs simultaneously

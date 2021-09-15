@@ -568,6 +568,40 @@ TEST(FileBasedWal, CleanWalBeforeIdTest) {
   CHECK_EQ(1000, wal->lastLogId());
 }
 
+TEST(FileBasedWal, getLogTermTest) {
+  TempDir walDir("/tmp/testWal.XXXXXX");
+  FileBasedWalInfo info;
+  FileBasedWalPolicy policy;
+  policy.fileSize = 1024L * 1024L;
+  policy.bufferSize = 1024L * 1024L;
+
+  auto wal = FileBasedWal::getWal(
+      walDir.path(), info, policy, [](LogID, TermID, ClusterID, const std::string&) {
+        return true;
+      });
+
+  // Append > 10MB logs in total
+  for (int i = 1; i <= 10000; i++) {
+    ASSERT_TRUE(
+        wal->appendLog(i /*id*/, i /*term*/, 0 /*cluster*/, folly::stringPrintf(kLongMsg, i)));
+  }
+
+  // in the memory buffer
+  ASSERT_EQ(10000, wal->getLogTerm(10000));
+  // in the file
+  ASSERT_EQ(4, wal->getLogTerm(4));
+
+  // Close the wal
+  wal.reset();
+
+  // Now let's open it to read
+  wal = FileBasedWal::getWal(
+      walDir.path(), info, policy, [](LogID, TermID, ClusterID, const std::string&) {
+        return true;
+      });
+  EXPECT_EQ(10, wal->getLogTerm(10));
+}
+
 }  // namespace wal
 }  // namespace nebula
 
