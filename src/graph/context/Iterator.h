@@ -199,7 +199,7 @@ class GetNeighborsIter final : public Iterator {
     DCHECK(false);
   }
 
-  size_t size() const override { return 0; }
+  size_t size() const override { LOG(FATAL) << "Unimplemented method for Get Neighbros iterator."; }
 
   const Value& getColumn(const std::string& col) const override;
 
