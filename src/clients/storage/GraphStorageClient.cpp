@@ -493,10 +493,17 @@ folly::SemiFuture<StorageRpcResponse<cpp2::LookupIndexResp>> GraphStorageClient:
     const std::vector<std::string>& returnCols,
     int64_t limit,
     folly::EventBase* evb) {
+  // TODO(sky) : instead of isEdge and tagOrEdge to nebula::cpp2::SchemaID for graph layer.
   auto status = getHostParts(space);
   if (!status.ok()) {
     return folly::makeFuture<StorageRpcResponse<cpp2::LookupIndexResp>>(
         std::runtime_error(status.status().toString()));
+  }
+  nebula::cpp2::SchemaID schemaId;
+  if (isEdge) {
+    schemaId.set_edge_type(tagOrEdge);
+  } else {
+    schemaId.set_tag_id(tagOrEdge);
   }
 
   auto& clusters = status.value();
@@ -511,8 +518,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::LookupIndexResp>> GraphStorageClient:
 
     cpp2::IndexSpec spec;
     spec.set_contexts(contexts);
-    spec.set_is_edge(isEdge);
-    spec.set_tag_or_edge_id(tagOrEdge);
+    spec.set_schema_id(schemaId);
     req.set_indices(spec);
     req.set_common(common);
     req.set_limit(limit);
