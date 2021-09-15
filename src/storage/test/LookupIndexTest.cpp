@@ -130,7 +130,9 @@ TEST_P(LookupIndexTest, LookupIndexTestV1) {
     cpp2::LookupIndexRequest req;
     nebula::storage::cpp2::IndexSpec indices;
     req.set_space_id(1);
-    indices.set_tag_or_edge_id(3);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_tag_id(3);
+    indices.set_schema_id(schemaId);
     std::vector<PartitionID> parts;
     for (int32_t p = 1; p <= totalParts; p++) {
       parts.emplace_back(p);
@@ -220,8 +222,9 @@ TEST_P(LookupIndexTest, SimpleTagIndexTest) {
     cpp2::LookupIndexRequest req;
     nebula::storage::cpp2::IndexSpec indices;
     req.set_space_id(spaceId);
-    indices.set_tag_or_edge_id(1);
-    indices.set_is_edge(false);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_tag_id(1);
+    indices.set_schema_id(schemaId);
     std::vector<PartitionID> parts;
     for (int32_t p = 1; p <= totalParts; p++) {
       parts.emplace_back(p);
@@ -287,8 +290,9 @@ TEST_P(LookupIndexTest, SimpleTagIndexTest) {
     cpp2::LookupIndexRequest req;
     nebula::storage::cpp2::IndexSpec indices;
     req.set_space_id(spaceId);
-    indices.set_tag_or_edge_id(1);
-    indices.set_is_edge(false);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_tag_id(1);
+    indices.set_schema_id(schemaId);
     std::vector<PartitionID> parts;
     for (int32_t p = 1; p <= totalParts; p++) {
       parts.emplace_back(p);
@@ -389,8 +393,9 @@ TEST_P(LookupIndexTest, SimpleEdgeIndexTest) {
     cpp2::LookupIndexRequest req;
     nebula::storage::cpp2::IndexSpec indices;
     req.set_space_id(spaceId);
-    indices.set_tag_or_edge_id(102);
-    indices.set_is_edge(true);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_edge_type(102);
+    indices.set_schema_id(schemaId);
     std::vector<PartitionID> parts;
     for (int32_t p = 1; p <= totalParts; p++) {
       parts.emplace_back(p);
@@ -473,8 +478,9 @@ TEST_P(LookupIndexTest, SimpleEdgeIndexTest) {
     cpp2::LookupIndexRequest req;
     nebula::storage::cpp2::IndexSpec indices;
     req.set_space_id(spaceId);
-    indices.set_tag_or_edge_id(102);
-    indices.set_is_edge(true);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_edge_type(102);
+    indices.set_schema_id(schemaId);
     std::vector<PartitionID> parts;
     for (int32_t p = 1; p <= totalParts; p++) {
       parts.emplace_back(p);
@@ -605,8 +611,9 @@ TEST_P(LookupIndexTest, TagIndexFilterTest) {
     cpp2::LookupIndexRequest req;
     nebula::storage::cpp2::IndexSpec indices;
     req.set_space_id(spaceId);
-    indices.set_tag_or_edge_id(1);
-    indices.set_is_edge(false);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_tag_id(1);
+    indices.set_schema_id(schemaId);
     std::vector<PartitionID> parts;
     for (int32_t p = 1; p <= totalParts; p++) {
       parts.emplace_back(p);
@@ -680,8 +687,9 @@ TEST_P(LookupIndexTest, TagIndexFilterTest) {
     cpp2::LookupIndexRequest req;
     nebula::storage::cpp2::IndexSpec indices;
     req.set_space_id(spaceId);
-    indices.set_tag_or_edge_id(1);
-    indices.set_is_edge(false);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_tag_id(1);
+    indices.set_schema_id(schemaId);
     std::vector<PartitionID> parts;
     for (int32_t p = 1; p <= totalParts; p++) {
       parts.emplace_back(p);
@@ -762,8 +770,9 @@ TEST_P(LookupIndexTest, EdgeIndexFilterTest) {
     cpp2::LookupIndexRequest req;
     nebula::storage::cpp2::IndexSpec indices;
     req.set_space_id(spaceId);
-    indices.set_tag_or_edge_id(102);
-    indices.set_is_edge(true);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_edge_type(102);
+    indices.set_schema_id(schemaId);
     std::vector<PartitionID> parts;
     for (int32_t p = 1; p <= totalParts; p++) {
       parts.emplace_back(p);
@@ -855,8 +864,9 @@ TEST_P(LookupIndexTest, EdgeIndexFilterTest) {
     cpp2::LookupIndexRequest req;
     nebula::storage::cpp2::IndexSpec indices;
     req.set_space_id(spaceId);
-    indices.set_tag_or_edge_id(102);
-    indices.set_is_edge(true);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_edge_type(102);
+    indices.set_schema_id(schemaId);
     std::vector<PartitionID> parts;
     for (int32_t p = 1; p <= totalParts; p++) {
       parts.emplace_back(p);
@@ -941,8 +951,9 @@ TEST_P(LookupIndexTest, TagIndexWithDataTest) {
     cpp2::LookupIndexRequest req;
     nebula::storage::cpp2::IndexSpec indices;
     req.set_space_id(spaceId);
-    indices.set_tag_or_edge_id(1);
-    indices.set_is_edge(false);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_tag_id(1);
+    indices.set_schema_id(schemaId);
     std::vector<PartitionID> parts;
     for (int32_t p = 1; p <= totalParts; p++) {
       parts.emplace_back(p);
@@ -1027,8 +1038,9 @@ TEST_P(LookupIndexTest, EdgeIndexWithDataTest) {
     cpp2::LookupIndexRequest req;
     nebula::storage::cpp2::IndexSpec indices;
     req.set_space_id(spaceId);
-    indices.set_tag_or_edge_id(102);
-    indices.set_is_edge(true);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_edge_type(102);
+    indices.set_schema_id(schemaId);
     std::vector<PartitionID> parts;
     for (int32_t p = 1; p <= totalParts; p++) {
       parts.emplace_back(p);
@@ -1125,8 +1137,9 @@ TEST_P(LookupIndexTest, TagWithPropStatsVerticesIndexTest) {
     cpp2::LookupIndexRequest req;
     nebula::storage::cpp2::IndexSpec indices;
     req.set_space_id(spaceId);
-    indices.set_tag_or_edge_id(1);
-    indices.set_is_edge(false);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_tag_id(1);
+    indices.set_schema_id(schemaId);
     std::vector<PartitionID> parts;
     for (int32_t p = 1; p <= totalParts; p++) {
       parts.emplace_back(p);
@@ -1197,8 +1210,9 @@ TEST_P(LookupIndexTest, TagWithoutPropStatsVerticesIndexTest) {
     cpp2::LookupIndexRequest req;
     nebula::storage::cpp2::IndexSpec indices;
     req.set_space_id(spaceId);
-    indices.set_tag_or_edge_id(1);
-    indices.set_is_edge(false);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_tag_id(1);
+    indices.set_schema_id(schemaId);
     std::vector<PartitionID> parts;
     for (int32_t p = 1; p <= totalParts; p++) {
       parts.emplace_back(p);
@@ -1270,8 +1284,9 @@ TEST_P(LookupIndexTest, EdgeWithPropStatsVerticesIndexTest) {
     cpp2::LookupIndexRequest req;
     nebula::storage::cpp2::IndexSpec indices;
     req.set_space_id(spaceId);
-    indices.set_tag_or_edge_id(101);
-    indices.set_is_edge(true);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_edge_type(101);
+    indices.set_schema_id(schemaId);
     std::vector<PartitionID> parts;
     for (int32_t p = 1; p <= totalParts; p++) {
       parts.emplace_back(p);
@@ -1352,8 +1367,9 @@ TEST_P(LookupIndexTest, EdgeWithoutPropStatsVerticesIndexTest) {
     cpp2::LookupIndexRequest req;
     nebula::storage::cpp2::IndexSpec indices;
     req.set_space_id(spaceId);
-    indices.set_tag_or_edge_id(101);
-    indices.set_is_edge(true);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_edge_type(101);
+    indices.set_schema_id(schemaId);
     std::vector<PartitionID> parts;
     for (int32_t p = 1; p <= totalParts; p++) {
       parts.emplace_back(p);
@@ -1580,8 +1596,9 @@ TEST_P(LookupIndexTest, NullableInIndexAndFilterTest) {
     context.set_column_hints({columnHint});
 
     cpp2::IndexSpec indices;
-    indices.set_tag_or_edge_id(111);
-    indices.set_is_edge(false);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_tag_id(111);
+    indices.set_schema_id(schemaId);
     indices.set_contexts({context});
     req.set_indices(std::move(indices));
 
@@ -1606,8 +1623,9 @@ TEST_P(LookupIndexTest, NullableInIndexAndFilterTest) {
     context.set_column_hints({columnHint});
 
     cpp2::IndexSpec indices;
-    indices.set_tag_or_edge_id(111);
-    indices.set_is_edge(false);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_tag_id(111);
+    indices.set_schema_id(schemaId);
     indices.set_contexts({context});
     req.set_indices(std::move(indices));
 
@@ -1644,8 +1662,9 @@ TEST_P(LookupIndexTest, NullableInIndexAndFilterTest) {
     context.set_column_hints(std::move(columnHints));
 
     cpp2::IndexSpec indices;
-    indices.set_tag_or_edge_id(111);
-    indices.set_is_edge(false);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_tag_id(111);
+    indices.set_schema_id(schemaId);
     indices.set_contexts({context});
     req.set_indices(std::move(indices));
 
@@ -1672,8 +1691,9 @@ TEST_P(LookupIndexTest, NullableInIndexAndFilterTest) {
     context.set_column_hints({columnHint});
 
     cpp2::IndexSpec indices;
-    indices.set_tag_or_edge_id(111);
-    indices.set_is_edge(false);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_tag_id(111);
+    indices.set_schema_id(schemaId);
     indices.set_contexts({context});
     req.set_indices(std::move(indices));
 
@@ -1700,8 +1720,9 @@ TEST_P(LookupIndexTest, NullableInIndexAndFilterTest) {
     context.set_column_hints({columnHint});
 
     cpp2::IndexSpec indices;
-    indices.set_tag_or_edge_id(111);
-    indices.set_is_edge(false);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_tag_id(111);
+    indices.set_schema_id(schemaId);
     indices.set_contexts({context});
     req.set_indices(std::move(indices));
 
@@ -1730,8 +1751,9 @@ TEST_P(LookupIndexTest, NullableInIndexAndFilterTest) {
     context.set_column_hints({columnHint});
 
     cpp2::IndexSpec indices;
-    indices.set_tag_or_edge_id(111);
-    indices.set_is_edge(false);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_tag_id(111);
+    indices.set_schema_id(schemaId);
     indices.set_contexts({context});
     req.set_indices(std::move(indices));
 
@@ -1776,8 +1798,9 @@ TEST_P(LookupIndexTest, NullableInIndexAndFilterTest) {
     context.set_column_hints(columnHints);
 
     cpp2::IndexSpec indices;
-    indices.set_tag_or_edge_id(111);
-    indices.set_is_edge(false);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_tag_id(111);
+    indices.set_schema_id(schemaId);
     indices.set_contexts({context});
     req.set_indices(std::move(indices));
 
@@ -1821,8 +1844,9 @@ TEST_P(LookupIndexTest, NullableInIndexAndFilterTest) {
     context.set_column_hints(columnHints);
 
     cpp2::IndexSpec indices;
-    indices.set_tag_or_edge_id(111);
-    indices.set_is_edge(false);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_tag_id(111);
+    indices.set_schema_id(schemaId);
     indices.set_contexts({context});
     req.set_indices(std::move(indices));
 
@@ -1869,9 +1893,10 @@ TEST_P(LookupIndexTest, NullableInIndexAndFilterTest) {
     context.set_index_id(222);
     context.set_column_hints(columnHints);
 
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_tag_id(111);
     cpp2::IndexSpec indices;
-    indices.set_tag_or_edge_id(111);
-    indices.set_is_edge(false);
+    indices.set_schema_id(schemaId);
     indices.set_contexts({context});
     req.set_indices(std::move(indices));
 
@@ -2084,8 +2109,9 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
     context.set_column_hints(std::move(columnHints));
 
     cpp2::IndexSpec indices;
-    indices.set_tag_or_edge_id(111);
-    indices.set_is_edge(false);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_tag_id(111);
+    indices.set_schema_id(schemaId);
     indices.set_contexts({context});
     req.set_indices(std::move(indices));
 
@@ -2111,8 +2137,9 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
     context.set_column_hints(std::move(columnHints));
 
     cpp2::IndexSpec indices;
-    indices.set_tag_or_edge_id(111);
-    indices.set_is_edge(false);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_tag_id(111);
+    indices.set_schema_id(schemaId);
     indices.set_contexts({context});
     req.set_indices(std::move(indices));
 
@@ -2138,8 +2165,9 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
     context.set_column_hints(std::move(columnHints));
 
     cpp2::IndexSpec indices;
-    indices.set_tag_or_edge_id(111);
-    indices.set_is_edge(false);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_tag_id(111);
+    indices.set_schema_id(schemaId);
     indices.set_contexts({context});
     req.set_indices(std::move(indices));
 
@@ -2165,8 +2193,9 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
     context.set_column_hints(std::move(columnHints));
 
     cpp2::IndexSpec indices;
-    indices.set_tag_or_edge_id(111);
-    indices.set_is_edge(false);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_tag_id(111);
+    indices.set_schema_id(schemaId);
     indices.set_contexts({context});
     req.set_indices(std::move(indices));
 
@@ -2192,8 +2221,9 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
     context.set_column_hints(std::move(columnHints));
 
     cpp2::IndexSpec indices;
-    indices.set_tag_or_edge_id(111);
-    indices.set_is_edge(false);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_tag_id(111);
+    indices.set_schema_id(schemaId);
     indices.set_contexts({context});
     req.set_indices(std::move(indices));
 
@@ -2219,8 +2249,9 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
     context.set_column_hints(std::move(columnHints));
 
     cpp2::IndexSpec indices;
-    indices.set_tag_or_edge_id(111);
-    indices.set_is_edge(false);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_tag_id(111);
+    indices.set_schema_id(schemaId);
     indices.set_contexts({context});
     req.set_indices(std::move(indices));
 
@@ -2250,8 +2281,9 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
     context.set_column_hints(std::move(columnHints));
 
     cpp2::IndexSpec indices;
-    indices.set_tag_or_edge_id(111);
-    indices.set_is_edge(false);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_tag_id(111);
+    indices.set_schema_id(schemaId);
     indices.set_contexts({context});
     req.set_indices(std::move(indices));
 
@@ -2281,8 +2313,9 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
     context.set_column_hints(std::move(columnHints));
 
     cpp2::IndexSpec indices;
-    indices.set_tag_or_edge_id(111);
-    indices.set_is_edge(false);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_tag_id(111);
+    indices.set_schema_id(schemaId);
     indices.set_contexts({context});
     req.set_indices(std::move(indices));
 
@@ -2310,8 +2343,9 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
     context.set_column_hints(std::move(columnHints));
 
     cpp2::IndexSpec indices;
-    indices.set_tag_or_edge_id(111);
-    indices.set_is_edge(false);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_tag_id(111);
+    indices.set_schema_id(schemaId);
     indices.set_contexts({context});
     req.set_indices(std::move(indices));
 
@@ -2339,8 +2373,9 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
     context.set_column_hints(std::move(columnHints));
 
     cpp2::IndexSpec indices;
-    indices.set_tag_or_edge_id(111);
-    indices.set_is_edge(false);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_tag_id(111);
+    indices.set_schema_id(schemaId);
     indices.set_contexts({context});
     req.set_indices(std::move(indices));
 
@@ -2372,8 +2407,9 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
     context.set_column_hints(std::move(columnHints));
 
     cpp2::IndexSpec indices;
-    indices.set_tag_or_edge_id(111);
-    indices.set_is_edge(false);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_tag_id(111);
+    indices.set_schema_id(schemaId);
     indices.set_contexts({context});
     req.set_indices(std::move(indices));
 
@@ -2402,8 +2438,9 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
     context.set_column_hints(std::move(columnHints));
 
     cpp2::IndexSpec indices;
-    indices.set_tag_or_edge_id(111);
-    indices.set_is_edge(false);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_tag_id(111);
+    indices.set_schema_id(schemaId);
     indices.set_contexts({context});
     req.set_indices(std::move(indices));
 
@@ -2428,8 +2465,9 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
     context.set_column_hints(std::move(columnHints));
 
     cpp2::IndexSpec indices;
-    indices.set_tag_or_edge_id(111);
-    indices.set_is_edge(false);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_tag_id(111);
+    indices.set_schema_id(schemaId);
     indices.set_contexts({context});
     req.set_indices(std::move(indices));
 
@@ -2457,8 +2495,9 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
     context.set_column_hints(std::move(columnHints));
 
     cpp2::IndexSpec indices;
-    indices.set_tag_or_edge_id(111);
-    indices.set_is_edge(false);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_tag_id(111);
+    indices.set_schema_id(schemaId);
     indices.set_contexts({context});
     req.set_indices(std::move(indices));
 
@@ -2489,8 +2528,9 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
     context.set_column_hints(std::move(columnHints));
 
     cpp2::IndexSpec indices;
-    indices.set_tag_or_edge_id(111);
-    indices.set_is_edge(false);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_tag_id(111);
+    indices.set_schema_id(schemaId);
     indices.set_contexts({context});
     req.set_indices(std::move(indices));
 
@@ -2523,8 +2563,9 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
     context.set_column_hints(std::move(columnHints));
 
     cpp2::IndexSpec indices;
-    indices.set_tag_or_edge_id(111);
-    indices.set_is_edge(false);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_tag_id(111);
+    indices.set_schema_id(schemaId);
     indices.set_contexts({context});
     req.set_indices(std::move(indices));
 
@@ -2553,8 +2594,9 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
     context.set_column_hints(std::move(columnHints));
 
     cpp2::IndexSpec indices;
-    indices.set_tag_or_edge_id(111);
-    indices.set_is_edge(false);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_tag_id(111);
+    indices.set_schema_id(schemaId);
     indices.set_contexts({context});
     req.set_indices(std::move(indices));
 
@@ -2585,8 +2627,9 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
     context.set_column_hints(std::move(columnHints));
 
     cpp2::IndexSpec indices;
-    indices.set_tag_or_edge_id(111);
-    indices.set_is_edge(false);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_tag_id(111);
+    indices.set_schema_id(schemaId);
     indices.set_contexts({context});
     req.set_indices(std::move(indices));
 
@@ -2619,8 +2662,9 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
     context.set_column_hints(std::move(columnHints));
 
     cpp2::IndexSpec indices;
-    indices.set_tag_or_edge_id(111);
-    indices.set_is_edge(false);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_tag_id(111);
+    indices.set_schema_id(schemaId);
     indices.set_contexts({context});
     req.set_indices(std::move(indices));
 
@@ -2646,8 +2690,9 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
     context.set_column_hints(std::move(columnHints));
 
     cpp2::IndexSpec indices;
-    indices.set_tag_or_edge_id(111);
-    indices.set_is_edge(false);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_tag_id(111);
+    indices.set_schema_id(schemaId);
     indices.set_contexts({context});
     req.set_indices(std::move(indices));
 
@@ -2698,8 +2743,9 @@ TEST_P(LookupIndexTest, DeDupTagIndexTest) {
     cpp2::LookupIndexRequest req;
     nebula::storage::cpp2::IndexSpec indices;
     req.set_space_id(spaceId);
-    indices.set_tag_or_edge_id(1);
-    indices.set_is_edge(false);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_tag_id(1);
+    indices.set_schema_id(schemaId);
     std::vector<PartitionID> parts;
     for (int32_t p = 1; p <= totalParts; p++) {
       parts.emplace_back(p);
@@ -2795,8 +2841,9 @@ TEST_P(LookupIndexTest, DedupEdgeIndexTest) {
     cpp2::LookupIndexRequest req;
     nebula::storage::cpp2::IndexSpec indices;
     req.set_space_id(spaceId);
-    indices.set_tag_or_edge_id(102);
-    indices.set_is_edge(true);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_edge_type(102);
+    indices.set_schema_id(schemaId);
     std::vector<PartitionID> parts;
     for (int32_t p = 1; p <= totalParts; p++) {
       parts.emplace_back(p);
