@@ -19,12 +19,11 @@ folly::Future<Status> SampleExecutor::execute() {
   Result result = ectx_->getResult(sample->inputVar());
   auto* iter = result.iterRef();
   DCHECK_NE(iter->kind(), Iterator::Kind::kDefault);
-  DCHECK_NE(iter->kind(), Iterator::Kind::kGetNeighbors);
   ResultBuilder builder;
   builder.value(result.valuePtr());
   auto count = sample->count();
-  auto size = iter->size();
-  if (size > static_cast<std::size_t>(count)) {
+  if (iter->kind() == Iterator::Kind::kGetNeighbors ||
+      iter->size() > static_cast<std::size_t>(count)) {
     // Sampling
     iter->sample(count);
   }
