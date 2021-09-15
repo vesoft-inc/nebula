@@ -715,5 +715,14 @@ size_t FileBasedWal::accessAllWalInfo(std::function<bool(WalFileInfoPtr info)> f
   return count;
 }
 
+TermID FileBasedWal::getLogTerm(LogID id) {
+  TermID term = -1;
+  auto iter = iterator(id, id);
+  if (iter->valid()) {
+    term = iter->logTerm();
+  }
+  return term;
+}
+
 }  // namespace wal
 }  // namespace nebula
