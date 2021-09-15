@@ -1065,10 +1065,8 @@ folly::Future<StatusOr<GraphSpaceID>> MetaClient::createSpace(meta::cpp2::SpaceD
 }
 
 folly::Future<StatusOr<GraphSpaceID>> MetaClient::createSpaceAs(const std::string& oldSpaceName,
-                                                                const std::string& newSpaceName,
-                                                                bool ifNotExists) {
+                                                                const std::string& newSpaceName) {
   cpp2::CreateSpaceAsReq req;
-  req.set_if_not_exists(ifNotExists);
   req.set_old_space_name(oldSpaceName);
   req.set_new_space_name(newSpaceName);
   folly::Promise<StatusOr<GraphSpaceID>> promise;

@@ -40,7 +40,7 @@ folly::Future<Status> CreateSpaceAsExecutor::execute() {
   auto newSpace = csaNode->getNewSpaceName();
   return qctx()
       ->getMetaClient()
-      ->createSpaceAs(oldSpace, newSpace, csaNode->getIfNotExists())
+      ->createSpaceAs(oldSpace, newSpace)
       .via(runner())
       .thenValue([](StatusOr<bool> resp) {
         if (!resp.ok()) {

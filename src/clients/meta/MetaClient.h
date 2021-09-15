@@ -216,8 +216,7 @@ class MetaClient {
                                                     bool ifNotExists = false);
 
   folly::Future<StatusOr<GraphSpaceID>> createSpaceAs(const std::string& oldSpaceName,
-                                                      const std::string& newSpaceName,
-                                                      bool ifNotExists = false);
+                                                      const std::string& newSpaceName);
 
   folly::Future<StatusOr<std::vector<SpaceIdName>>> listSpaces();
 

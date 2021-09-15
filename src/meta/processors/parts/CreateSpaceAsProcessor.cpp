@@ -32,15 +32,6 @@ void CreateSpaceAsProcessor::process(const cpp2::CreateSpaceAsReq &req) {
     return;
   }
 
-  if (nebula::ok(newSpaceId)) {
-    if (!req.get_if_not_exists()) {
-      LOG(ERROR) << "Create Space " << newSpaceName << " as " << oldSpaceName << "failed. "
-                 << newSpaceName << " already exist";
-      rc_ = nebula::cpp2::ErrorCode::E_EXISTED;
-      return;
-    }
-  }
-
   newSpaceId = autoIncrementId();
   if (!nebula::ok(newSpaceId)) {
     rc_ = nebula::error(newSpaceId);
