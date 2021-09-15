@@ -116,7 +116,8 @@ struct Time {
   }
 
   std::string toString() const;
-  folly::dynamic toJsonObj() const { return toString(); }
+  // 'Z' representing UTC timezone
+  folly::dynamic toJsonObj() const { return toString() + "Z"; }
 };
 
 inline std::ostream& operator<<(std::ostream& os, const Time& d) {
@@ -207,7 +208,8 @@ struct DateTime {
   }
 
   std::string toString() const;
-  folly::dynamic toJsonObj() const { return toString(); }
+  // 'Z' representing UTC timezone
+  folly::dynamic toJsonObj() const { return toString() + "Z"; }
 };
 
 inline std::ostream& operator<<(std::ostream& os, const DateTime& d) {

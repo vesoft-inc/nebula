@@ -137,7 +137,7 @@ TEST(ValueToJson, list) {
                            Time(13, 30, 15, 0),                       // time
                            DateTime(2021, 12, 21, 13, 30, 15, 0)}));  // datetime
   dynamic expectedListJsonObj = dynamic::array(
-      2, 2.33, true, "str", "2021-12-21", "13:30:15.000000", "2021-12-21T13:30:15.0");
+      2, 2.33, true, "str", "2021-12-21", "13:30:15.000000Z", "2021-12-21T13:30:15.0Z");
   ASSERT_EQ(expectedListJsonObj, list1.toJsonObj());
 
   dynamic expectedListMetaObj = dynamic::array(nullptr,
@@ -159,7 +159,7 @@ TEST(ValueToJson, Set) {
                         Time(13, 30, 15, 0),                       // time
                         DateTime(2021, 12, 21, 13, 30, 15, 0)}));  // datetime
   dynamic expectedSetJsonObj = dynamic::array(
-      2, 2.33, true, "str", "2021-12-21", "13:30:15.000000", "2021-12-21T13:30:15.0");
+      2, 2.33, true, "str", "2021-12-21", "13:30:15.000000Z", "2021-12-21T13:30:15.0Z");
   // The underlying data strcuture is unordered_set, so sort before the comparison
   auto actualJson = set.toJsonObj();
   std::sort(actualJson.begin(), actualJson.end());
@@ -180,7 +180,7 @@ TEST(ValueToJson, map) {
                         {"key7", DateTime(2021, 12, 21, 13, 30, 15, 0)}}));  // datetime
   dynamic expectedMapJsonObj =
       dynamic::object("key1", 2)("key2", 2.33)("key3", true)("key4", "str")("key5", "2021-12-21")(
-          "key6", "13:30:15.000000")("key7", "2021-12-21T13:30:15.0");
+          "key6", "13:30:15.000000Z")("key7", "2021-12-21T13:30:15.0Z");
   ASSERT_EQ(expectedMapJsonObj, map.toJsonObj());
   // Skip meta json comparison since nested dynamic objects cannot be sorted. i.g. dynamic::object
   // inside dynamic::array
@@ -198,7 +198,7 @@ TEST(ValueToJson, dataset) {
   dynamic expectedDatasetJsonObj = dynamic::array(dynamic::object(
       "row",
       dynamic::array(
-          2, 2.33, true, "str", "2021-12-21", "13:30:15.000000", "2021-12-21T13:30:15.0"))(
+          2, 2.33, true, "str", "2021-12-21", "13:30:15.000000Z", "2021-12-21T13:30:15.0Z"))(
       "meta",
       dynamic::array(nullptr,
                      nullptr,

@@ -1345,7 +1345,7 @@ void Value::setG(DataSet&& v) {
 }
 
 // Convert Nebula::Value to a value compatible with Json standard
-// DATE, TIME, DATETIME will be converted to strings
+// DATE, TIME, DATETIME will be converted to strings in UTC
 // VERTEX, EDGES, PATH will be converted to objects
 folly::dynamic Value::toJsonObj() const {
   switch (type_) {
