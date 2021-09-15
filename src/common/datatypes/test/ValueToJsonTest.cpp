@@ -195,20 +195,18 @@ TEST(ValueToJson, dataset) {
                              Date(2021, 12, 21),   // date
                              Time(13, 30, 15, 0),  // time
                              DateTime(2021, 12, 21, 13, 30, 15, 0)}));
-  dynamic expectedDatasetJsonObj = dynamic::object(
-      "data",
-      dynamic::array(dynamic::object(
-          "row",
-          dynamic::array(
-              2, 2.33, true, "str", "2021-12-21", "13:30:15.000000", "2021-12-21T13:30:15.0"))(
-          "meta",
-          dynamic::array(nullptr,
-                         nullptr,
-                         nullptr,
-                         nullptr,
-                         dynamic::object("type", "date"),
-                         dynamic::object("type", "time"),
-                         dynamic::object("type", "datetime")))));
+  dynamic expectedDatasetJsonObj = dynamic::array(dynamic::object(
+      "row",
+      dynamic::array(
+          2, 2.33, true, "str", "2021-12-21", "13:30:15.000000", "2021-12-21T13:30:15.0"))(
+      "meta",
+      dynamic::array(nullptr,
+                     nullptr,
+                     nullptr,
+                     nullptr,
+                     dynamic::object("type", "date"),
+                     dynamic::object("type", "time"),
+                     dynamic::object("type", "datetime"))));
   ASSERT_EQ(expectedDatasetJsonObj, dataset.toJsonObj());
 }
 
