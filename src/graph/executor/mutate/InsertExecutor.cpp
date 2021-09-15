@@ -23,6 +23,8 @@ folly::Future<Status> InsertVerticesExecutor::insertVertices() {
   return qctx()
       ->getStorageClient()
       ->addVertices(ivNode->getSpace(),
+                    qctx()->rctx()->session()->id(),
+                    qctx()->plan()->id(),
                     ivNode->getVertices(),
                     ivNode->getPropNames(),
                     ivNode->getIfNotExists())
@@ -47,6 +49,8 @@ folly::Future<Status> InsertEdgesExecutor::insertEdges() {
   return qctx()
       ->getStorageClient()
       ->addEdges(ieNode->getSpace(),
+                 qctx()->rctx()->session()->id(),
+                 qctx()->plan()->id(),
                  ieNode->getEdges(),
                  ieNode->getPropNames(),
                  ieNode->getIfNotExists(),

@@ -8,6 +8,7 @@ nebula_add_library(
     RocksEngineConfig.cpp
     LogEncoder.cpp
     NebulaSnapshotManager.cpp
+    RateLimiter.cpp
     plugins/elasticsearch/ESListener.cpp
 )
 

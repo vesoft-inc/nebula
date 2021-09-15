@@ -1,8 +1,7 @@
 Feature: Lookup tag index full scan
 
   Background:
-    Given an empty graph
-    And load "nba" csv data to a new space
+    Given a graph with space named "nba"
 
   Scenario: Tag with relational RegExp filter[1]
     When executing query:

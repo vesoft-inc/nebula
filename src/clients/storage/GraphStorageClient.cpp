@@ -13,6 +13,8 @@ namespace storage {
 
 folly::SemiFuture<StorageRpcResponse<cpp2::GetNeighborsResponse>> GraphStorageClient::getNeighbors(
     GraphSpaceID space,
+    SessionID session,
+    ExecutionPlanID plan,
     std::vector<std::string> colNames,
     const std::vector<Row>& vertices,
     const std::vector<EdgeType>& edgeTypes,
@@ -40,6 +42,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::GetNeighborsResponse>> GraphStorageCl
   }
 
   auto& clusters = status.value();
+  auto common = makeRequestCommon(session, plan);
   std::unordered_map<HostAddr, cpp2::GetNeighborsRequest> requests;
   for (auto& c : clusters) {
     auto& host = c.first;
@@ -47,7 +50,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::GetNeighborsResponse>> GraphStorageCl
     req.set_space_id(space);
     req.set_column_names(colNames);
     req.set_parts(std::move(c.second));
-
+    req.set_common(common);
     cpp2::TraverseSpec spec;
     spec.set_edge_types(edgeTypes);
     spec.set_edge_direction(edgeDirection);
@@ -85,6 +88,8 @@ folly::SemiFuture<StorageRpcResponse<cpp2::GetNeighborsResponse>> GraphStorageCl
 
 folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> GraphStorageClient::addVertices(
     GraphSpaceID space,
+    SessionID session,
+    ExecutionPlanID plan,
     std::vector<cpp2::NewVertex> vertices,
     std::unordered_map<TagID, std::vector<std::string>> propNames,
     bool ifNotExists,
@@ -103,6 +108,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> GraphStorageClient::ad
 
   auto& clusters = status.value();
   std::unordered_map<HostAddr, cpp2::AddVerticesRequest> requests;
+  auto common = makeRequestCommon(session, plan);
   for (auto& c : clusters) {
     auto& host = c.first;
     auto& req = requests[host];
@@ -110,6 +116,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> GraphStorageClient::ad
     req.set_if_not_exists(ifNotExists);
     req.set_parts(std::move(c.second));
     req.set_prop_names(propNames);
+    req.set_common(common);
   }
 
   VLOG(3) << "requests size " << requests.size();
@@ -123,6 +130,8 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> GraphStorageClient::ad
 
 folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> GraphStorageClient::addEdges(
     GraphSpaceID space,
+    SessionID session,
+    ExecutionPlanID plan,
     std::vector<cpp2::NewEdge> edges,
     std::vector<std::string> propNames,
     bool ifNotExists,
@@ -142,6 +151,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> GraphStorageClient::ad
 
   auto& clusters = status.value();
   std::unordered_map<HostAddr, cpp2::AddEdgesRequest> requests;
+  auto common = makeRequestCommon(session, plan);
   for (auto& c : clusters) {
     auto& host = c.first;
     auto& req = requests[host];
@@ -149,6 +159,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> GraphStorageClient::ad
     req.set_if_not_exists(ifNotExists);
     req.set_parts(std::move(c.second));
     req.set_prop_names(propNames);
+    req.set_common(common);
   }
   return collectResponse(
       evb,
@@ -160,6 +171,8 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> GraphStorageClient::ad
 
 folly::SemiFuture<StorageRpcResponse<cpp2::GetPropResponse>> GraphStorageClient::getProps(
     GraphSpaceID space,
+    SessionID session,
+    ExecutionPlanID plan,
     const DataSet& input,
     const std::vector<cpp2::VertexProp>* vertexProps,
     const std::vector<cpp2::EdgeProp>* edgeProps,
@@ -183,6 +196,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::GetPropResponse>> GraphStorageClient:
 
   auto& clusters = status.value();
   std::unordered_map<HostAddr, cpp2::GetPropRequest> requests;
+  auto common = makeRequestCommon(session, plan);
   for (auto& c : clusters) {
     auto& host = c.first;
     auto& req = requests[host];
@@ -205,6 +219,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::GetPropResponse>> GraphStorageClient:
     if (filter.size() > 0) {
       req.set_filter(filter);
     }
+    req.set_common(common);
   }
 
   return collectResponse(evb,
@@ -214,7 +229,11 @@ folly::SemiFuture<StorageRpcResponse<cpp2::GetPropResponse>> GraphStorageClient:
 }
 
 folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> GraphStorageClient::deleteEdges(
-    GraphSpaceID space, std::vector<cpp2::EdgeKey> edges, folly::EventBase* evb) {
+    GraphSpaceID space,
+    SessionID session,
+    ExecutionPlanID plan,
+    std::vector<cpp2::EdgeKey> edges,
+    folly::EventBase* evb) {
   auto cbStatus = getIdFromEdgeKey(space);
   if (!cbStatus.ok()) {
     return folly::makeFuture<StorageRpcResponse<cpp2::ExecResponse>>(
@@ -229,11 +248,13 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> GraphStorageClient::de
 
   auto& clusters = status.value();
   std::unordered_map<HostAddr, cpp2::DeleteEdgesRequest> requests;
+  auto common = makeRequestCommon(session, plan);
   for (auto& c : clusters) {
     auto& host = c.first;
     auto& req = requests[host];
     req.set_space_id(space);
     req.set_parts(std::move(c.second));
+    req.set_common(common);
   }
 
   return collectResponse(
@@ -245,7 +266,11 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> GraphStorageClient::de
 }
 
 folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> GraphStorageClient::deleteVertices(
-    GraphSpaceID space, std::vector<Value> ids, folly::EventBase* evb) {
+    GraphSpaceID space,
+    SessionID session,
+    ExecutionPlanID plan,
+    std::vector<Value> ids,
+    folly::EventBase* evb) {
   auto cbStatus = getIdFromValue(space);
   if (!cbStatus.ok()) {
     return folly::makeFuture<StorageRpcResponse<cpp2::ExecResponse>>(
@@ -260,11 +285,13 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> GraphStorageClient::de
 
   auto& clusters = status.value();
   std::unordered_map<HostAddr, cpp2::DeleteVerticesRequest> requests;
+  auto common = makeRequestCommon(session, plan);
   for (auto& c : clusters) {
     auto& host = c.first;
     auto& req = requests[host];
     req.set_space_id(space);
     req.set_parts(std::move(c.second));
+    req.set_common(common);
   }
 
   return collectResponse(
@@ -276,7 +303,11 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> GraphStorageClient::de
 }
 
 folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> GraphStorageClient::deleteTags(
-    GraphSpaceID space, std::vector<cpp2::DelTags> delTags, folly::EventBase* evb) {
+    GraphSpaceID space,
+    SessionID session,
+    ExecutionPlanID plan,
+    std::vector<cpp2::DelTags> delTags,
+    folly::EventBase* evb) {
   auto cbStatus = getIdFromDelTags(space);
   if (!cbStatus.ok()) {
     return folly::makeFuture<StorageRpcResponse<cpp2::ExecResponse>>(
@@ -291,11 +322,13 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> GraphStorageClient::de
 
   auto& clusters = status.value();
   std::unordered_map<HostAddr, cpp2::DeleteTagsRequest> requests;
+  auto common = makeRequestCommon(session, plan);
   for (auto& c : clusters) {
     auto& host = c.first;
     auto& req = requests[host];
     req.set_space_id(space);
     req.set_parts(std::move(c.second));
+    req.set_common(common);
   }
 
   return collectResponse(
@@ -308,6 +341,8 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> GraphStorageClient::de
 
 folly::Future<StatusOr<storage::cpp2::UpdateResponse>> GraphStorageClient::updateVertex(
     GraphSpaceID space,
+    SessionID session,
+    ExecutionPlanID plan,
     Value vertexId,
     TagID tagId,
     std::vector<cpp2::UpdatedProp> updatedProps,
@@ -347,6 +382,7 @@ folly::Future<StatusOr<storage::cpp2::UpdateResponse>> GraphStorageClient::updat
   req.set_updated_props(std::move(updatedProps));
   req.set_return_props(std::move(returnProps));
   req.set_insertable(insertable);
+  req.set_common(makeRequestCommon(session, plan));
   if (condition.size() > 0) {
     req.set_condition(std::move(condition));
   }
@@ -362,6 +398,8 @@ folly::Future<StatusOr<storage::cpp2::UpdateResponse>> GraphStorageClient::updat
 
 folly::Future<StatusOr<storage::cpp2::UpdateResponse>> GraphStorageClient::updateEdge(
     GraphSpaceID space,
+    SessionID session,
+    ExecutionPlanID plan,
     storage::cpp2::EdgeKey edgeKey,
     std::vector<cpp2::UpdatedProp> updatedProps,
     bool insertable,
@@ -399,6 +437,7 @@ folly::Future<StatusOr<storage::cpp2::UpdateResponse>> GraphStorageClient::updat
   req.set_updated_props(std::move(updatedProps));
   req.set_return_props(std::move(returnProps));
   req.set_insertable(insertable);
+  req.set_common(makeRequestCommon(session, plan));
   if (condition.size() > 0) {
     req.set_condition(std::move(condition));
   }
@@ -446,19 +485,29 @@ folly::Future<StatusOr<cpp2::GetUUIDResp>> GraphStorageClient::getUUID(GraphSpac
 
 folly::SemiFuture<StorageRpcResponse<cpp2::LookupIndexResp>> GraphStorageClient::lookupIndex(
     GraphSpaceID space,
+    SessionID session,
+    ExecutionPlanID plan,
     const std::vector<storage::cpp2::IndexQueryContext>& contexts,
     bool isEdge,
     int32_t tagOrEdge,
     const std::vector<std::string>& returnCols,
     folly::EventBase* evb) {
+  // TODO(sky) : instead of isEdge and tagOrEdge to nebula::cpp2::SchemaID for graph layer.
   auto status = getHostParts(space);
   if (!status.ok()) {
     return folly::makeFuture<StorageRpcResponse<cpp2::LookupIndexResp>>(
         std::runtime_error(status.status().toString()));
   }
+  nebula::cpp2::SchemaID schemaId;
+  if (isEdge) {
+    schemaId.set_edge_type(tagOrEdge);
+  } else {
+    schemaId.set_tag_id(tagOrEdge);
+  }
 
   auto& clusters = status.value();
   std::unordered_map<HostAddr, cpp2::LookupIndexRequest> requests;
+  auto common = makeRequestCommon(session, plan);
   for (auto& c : clusters) {
     auto& host = c.first;
     auto& req = requests[host];
@@ -468,10 +517,9 @@ folly::SemiFuture<StorageRpcResponse<cpp2::LookupIndexResp>> GraphStorageClient:
 
     cpp2::IndexSpec spec;
     spec.set_contexts(contexts);
-    spec.set_is_edge(isEdge);
-    spec.set_tag_or_edge_id(tagOrEdge);
-
+    spec.set_schema_id(schemaId);
     req.set_indices(spec);
+    req.set_common(common);
   }
 
   return collectResponse(
@@ -484,6 +532,8 @@ folly::SemiFuture<StorageRpcResponse<cpp2::LookupIndexResp>> GraphStorageClient:
 
 folly::SemiFuture<StorageRpcResponse<cpp2::GetNeighborsResponse>>
 GraphStorageClient::lookupAndTraverse(GraphSpaceID space,
+                                      SessionID session,
+                                      ExecutionPlanID plan,
                                       cpp2::IndexSpec indexSpec,
                                       cpp2::TraverseSpec traverseSpec,
                                       folly::EventBase* evb) {
@@ -495,6 +545,7 @@ GraphStorageClient::lookupAndTraverse(GraphSpaceID space,
 
   auto& clusters = status.value();
   std::unordered_map<HostAddr, cpp2::LookupAndTraverseRequest> requests;
+  auto common = makeRequestCommon(session, plan);
   for (auto& c : clusters) {
     auto& host = c.first;
     auto& req = requests[host];
@@ -502,6 +553,7 @@ GraphStorageClient::lookupAndTraverse(GraphSpaceID space,
     req.set_parts(std::move(c.second));
     req.set_indices(indexSpec);
     req.set_traverse_spec(traverseSpec);
+    req.set_common(common);
   }
 
   return collectResponse(
@@ -739,6 +791,13 @@ StatusOr<std::function<const VertexID&(const cpp2::DelTags&)>> GraphStorageClien
     return Status::Error("Only support integer/string type vid.");
   }
   return cb;
+}
+cpp2::RequestCommon GraphStorageClient::makeRequestCommon(SessionID sessionId,
+                                                          ExecutionPlanID planId) {
+  cpp2::RequestCommon common;
+  common.set_session_id(sessionId);
+  common.set_plan_id(planId);
+  return common;
 }
 
 }  // namespace storage
