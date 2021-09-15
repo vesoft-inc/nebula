@@ -58,6 +58,12 @@ class UpdateVertexProcessor
     // result.begin(), get); return result;
     return returnPropsExp_;
   }
+  void profilePlan(StoragePlan<VertexID>& plan) {
+    auto& nodes = plan.getNodes();
+    for (auto& node : nodes) {
+      profileDetail(node->name_, node->duration_.elapsedInUSec());
+    }
+  }
 
  private:
   std::unique_ptr<RuntimeContext> context_;

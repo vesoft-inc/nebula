@@ -79,6 +79,14 @@ folly::Future<Status> GetNeighborsExecutor::execute() {
               folly::stringPrintf("%s exec/total/vertices", std::get<0>(info).toString().c_str()),
               folly::stringPrintf(
                   "%d(us)/%d(us)/%lu,", std::get<1>(info), std::get<2>(info), size));
+          if (result.result.latency_detail_us_ref().has_value()) {
+            std::string storageDetail = "{";
+            for (auto iter : (*result.result.latency_detail_us_ref())) {
+              storageDetail += folly::stringPrintf("%s:%d(us),", iter.first.data(), iter.second);
+            }
+            storageDetail += "}";
+            otherStats_.emplace("storage_detail", storageDetail);
+          }
         }
         return handleResponse(resp);
       });
