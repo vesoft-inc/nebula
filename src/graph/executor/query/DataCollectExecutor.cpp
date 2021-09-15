@@ -64,8 +64,6 @@ folly::Future<Status> DataCollectExecutor::doCollect() {
 Status DataCollectExecutor::collectSubgraph(const std::vector<std::string>& vars) {
   DataSet ds;
   ds.colNames = std::move(colNames_);
-  // the subgraph not need duplicate vertices or edges, so dedup here directly
-  std::unordered_set<Value> uniqueVids;
   std::unordered_set<std::tuple<Value, EdgeType, EdgeRanking, Value>> uniqueEdges;
   for (auto i = vars.begin(); i != vars.end(); ++i) {
     const auto& hist = ectx_->getHistory(*i);
@@ -84,16 +82,14 @@ Status DataCollectExecutor::collectSubgraph(const std::vector<std::string>& vars
       auto* gnIter = static_cast<GetNeighborsIter*>(iter.get());
       auto originVertices = gnIter->getVertices();
       for (auto& v : originVertices.values) {
-        if (!v.isVertex()) {
+        if (UNLIKELY(!v.isVertex())) {
           continue;
         }
-        if (uniqueVids.emplace(v.getVertex().vid).second) {
-          vertices.emplace_back(std::move(v));
-        }
+        vertices.emplace_back(std::move(v));
       }
       auto originEdges = gnIter->getEdges();
       for (auto& edge : originEdges.values) {
-        if (!edge.isEdge()) {
+        if (UNLIKELY(!edge.isEdge())) {
           continue;
         }
         const auto& e = edge.getEdge();
