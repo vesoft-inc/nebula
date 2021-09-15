@@ -21,11 +21,13 @@ class IndexEdgeNode final : public RelNode<T> {
   IndexEdgeNode(RuntimeContext* context,
                 IndexScanNode<T>* indexScanNode,
                 const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas,
-                const std::string& schemaName)
+                const std::string& schemaName,
+                int64_t limit)
       : context_(context),
         indexScanNode_(indexScanNode),
         schemas_(schemas),
-        schemaName_(schemaName) {
+        schemaName_(schemaName),
+        limit_(limit) {
     RelNode<T>::name_ = "IndexEdgeNode";
   }
 
@@ -40,7 +42,11 @@ class IndexEdgeNode final : public RelNode<T> {
     data_.clear();
     std::vector<storage::cpp2::EdgeKey> edges;
     auto* iter = static_cast<EdgeIndexIterator*>(indexScanNode_->iterator());
+    int64_t count = 0;
     while (iter && iter->valid()) {
+      if (limit_ > -1 && count++ == limit_) {
+        break;
+      }
       if (context_->isPlanKilled()) {
         return nebula::cpp2::ErrorCode::E_PLAN_IS_KILLED;
       }
@@ -93,6 +99,7 @@ class IndexEdgeNode final : public RelNode<T> {
   IndexScanNode<T>* indexScanNode_;
   const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas_;
   const std::string& schemaName_;
+  int64_t limit_;
   std::vector<kvstore::KV> data_;
 };
 
