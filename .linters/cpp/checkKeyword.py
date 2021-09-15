@@ -30,6 +30,7 @@ reserved_key_words = [
     'KW_DESCRIBE',
     'KW_DESC',
     'KW_VERTEX',
+    'KW_VERTICES',
     'KW_EDGE',
     'KW_EDGES',
     'KW_UPDATE',
