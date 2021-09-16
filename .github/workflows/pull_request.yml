@@ -84,7 +84,7 @@ jobs:
                   -DCMAKE_BUILD_TYPE=Release \
                   -DENABLE_TESTING=on \
                   -B build
-              echo "::set-output name=j::10 name=t::$(nproc)"
+              echo "::set-output name=j::10,name=t::$(nproc)"
               ;;
             ubuntu2004)
               # build with Debug type
@@ -94,7 +94,7 @@ jobs:
                   -DCMAKE_BUILD_TYPE=Debug \
                   -DENABLE_TESTING=on \
                   -B build
-              echo "::set-output name=j::10 name=t::10"
+              echo "::set-output name=j::10,name=t::10"
               ;;
             esac
             ;;
@@ -107,7 +107,7 @@ jobs:
                 -DENABLE_ASAN=on \
                 -DENABLE_TESTING=on \
                 -B build
-            echo "::set-output name=j::6 name=t::10"
+            echo "::set-output name=j::6,name=t::10"
             ;;
           esac
       - name: Make
