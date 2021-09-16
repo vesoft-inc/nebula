@@ -58,7 +58,7 @@ folly::Future<Status> GetNeighborsExecutor::execute() {
                      gn_->dedup(),
                      gn_->random(),
                      gn_->orderBy(),
-                     gn_->limitExpr()->eval(qec).getInt(),
+                     gn_->limit(qec),
                      gn_->filter())
       .via(runner())
       .ensure([this, getNbrTime]() {
