@@ -10,8 +10,10 @@ import pytest
 import io
 import csv
 import re
+import threading
 
 from nebula2.common.ttypes import Value, ErrorCode
+from nebula2.data.DataObject import ValueWrapper
 from pytest_bdd import given, parsers, then, when
 
 from tests.common.dataset_printer import DataSetPrinter
@@ -34,6 +36,8 @@ parse = functools.partial(parsers.parse)
 rparse = functools.partial(parsers.re)
 example_pattern = re.compile(r"<(\w+)>")
 
+register_dict = {}
+register_lock = threading.Lock()
 
 def normalize_outline_scenario(request, name):
     for group in example_pattern.findall(name):
@@ -283,8 +287,9 @@ def cmp_dataset(
         order: bool,
         strict: bool,
         contains=CmpType.EQUAL,
+        first_n_records=-1,
         hashed_columns=[],
-) -> None:
+):
     rs = graph_spaces['result_set']
     ngql = graph_spaces['ngql']
     check_resp(rs, ngql)
@@ -298,6 +303,7 @@ def cmp_dataset(
     dscmp = DataSetComparator(strict=strict,
                               order=order,
                               contains=contains,
+                              first_n_records=first_n_records,
                               decode_type=rs._decode_type,
                               vid_fn=vid_fn)
 
@@ -333,6 +339,7 @@ def cmp_dataset(
             f"vid_fn: {vid_fn}",
         ]
         assert res, "\n".join(msg)
+    return rds
 
 
 @then(parse("define some list variables:\n{text}"))
@@ -478,3 +485,31 @@ def executing_query(query, index, graph_spaces, session_from_first_conn_pool, se
         exec_query(request, ngql, session_from_first_conn_pool, graph_spaces)
     else:
         exec_query(request, ngql, session_from_second_conn_pool, graph_spaces)
+
+@then(parse("the result should be, the first {n:d} records in order, and register {column_name} as a list named {key}:\n{result}"))
+def result_should_be_in_order_and_register_key(n, column_name, key, request, result, graph_spaces):
+    assert n > 0, f"The records number should be an positive integer: {n}"
+    result_ds = cmp_dataset(request, graph_spaces, result, order=True, strict=True, contains=CmpType.CONTAINS, first_n_records=n)
+    register_result_key(request.node.name, result_ds, column_name, key)
+
+def register_result_key(test_name, result_ds, column_name, key):
+    if column_name.encode() not in result_ds.column_names:
+        assert False, f"{column_name} not in result columns {result_ds.column_names}."
+    col_index = result_ds.column_names.index(column_name.encode())
+    val = [row.values[col_index] for row in result_ds.rows]
+    register_lock.acquire()
+    register_dict[test_name + key] = val;
+    register_lock.release()
+
+@when(parse("executing query, fill replace holders with element index of {indices} in {keys}:\n{query}"))
+def executing_query_with_params(query, indices, keys, graph_spaces, session, request):
+    indices_list=[int(v) for v in indices.split(",")]
+    key_list=[request.node.name+key for key in keys.split(",")]
+    assert len(indices_list) == len(key_list), f"Length not match for keys and indices: {keys} <=> {indices}"
+    vals = []
+    register_lock.acquire()
+    for (key, index) in zip (key_list, indices_list):
+        vals.append(ValueWrapper(register_dict[key][index]))
+    register_lock.release()
+    ngql = combine_query(query).format(*vals)
+    exec_query(request, ngql, session, graph_spaces)
