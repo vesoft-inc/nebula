@@ -37,6 +37,7 @@ class AdminTaskManager {
     return &sAdminTaskManager;
   }
 
+  // Caller must make sure JobId + TaskId is unique
   void addAsyncTask(std::shared_ptr<AdminTask> task);
 
   void invoke();

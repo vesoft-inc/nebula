@@ -30,6 +30,7 @@ namespace storage {
 
 ObjectPool objPool;
 auto pool = &objPool;
+int gJobId = 0;
 
 std::string convertVertexId(size_t vIdLen, int32_t vId) {
   std::string id;
@@ -429,7 +430,7 @@ TEST(IndexWithTTLTest, RebuildTagIndexWithTTL) {
 
   cpp2::AddAdminTaskRequest request;
   request.set_cmd(meta::cpp2::AdminCmd::REBUILD_TAG_INDEX);
-  request.set_job_id(3);
+  request.set_job_id(++gJobId);
   request.set_task_id(13);
   request.set_para(std::move(parameter));
 
@@ -441,7 +442,7 @@ TEST(IndexWithTTLTest, RebuildTagIndexWithTTL) {
 
   // Wait for the task finished
   do {
-    usleep(500);
+    sleep(1);
   } while (!manager_->isFinished(context.jobId_, context.taskId_));
 
   manager_->shutdown();
@@ -498,7 +499,7 @@ TEST(IndexWithTTLTest, RebuildEdgeIndexWithTTL) {
 
   cpp2::AddAdminTaskRequest request;
   request.set_cmd(meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX);
-  request.set_job_id(3);
+  request.set_job_id(++gJobId);
   request.set_task_id(13);
   request.set_para(std::move(parameter));
 
@@ -510,7 +511,7 @@ TEST(IndexWithTTLTest, RebuildEdgeIndexWithTTL) {
 
   // Wait for the task finished
   do {
-    usleep(500);
+    sleep(1);
   } while (!manager_->isFinished(context.jobId_, context.taskId_));
 
   manager_->shutdown();
@@ -569,7 +570,7 @@ TEST(IndexWithTTLTest, RebuildTagIndexWithTTLExpired) {
 
   cpp2::AddAdminTaskRequest request;
   request.set_cmd(meta::cpp2::AdminCmd::REBUILD_TAG_INDEX);
-  request.set_job_id(3);
+  request.set_job_id(++gJobId);
   request.set_task_id(13);
   request.set_para(std::move(parameter));
 
@@ -581,7 +582,7 @@ TEST(IndexWithTTLTest, RebuildTagIndexWithTTLExpired) {
 
   // Wait for the task finished
   do {
-    usleep(500);
+    sleep(1);
   } while (!manager_->isFinished(context.jobId_, context.taskId_));
 
   manager_->shutdown();
@@ -640,7 +641,7 @@ TEST(IndexWithTTLTest, RebuildEdgeIndexWithTTLExpired) {
 
   cpp2::AddAdminTaskRequest request;
   request.set_cmd(meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX);
-  request.set_job_id(5);
+  request.set_job_id(++gJobId);
   request.set_task_id(15);
   request.set_para(std::move(parameter));
 
@@ -652,7 +653,7 @@ TEST(IndexWithTTLTest, RebuildEdgeIndexWithTTLExpired) {
 
   // Wait for the task finished
   do {
-    usleep(500);
+    sleep(1);
   } while (!manager_->isFinished(context.jobId_, context.taskId_));
   manager_->shutdown();
 
@@ -686,8 +687,9 @@ TEST(IndexWithTTLTest, LookupTagIndexWithTTL) {
   cpp2::LookupIndexRequest req;
   nebula::storage::cpp2::IndexSpec indices;
   req.set_space_id(1);
-  indices.set_tag_or_edge_id(2021001);
-  indices.set_is_edge(false);
+  nebula::cpp2::SchemaID schemaId;
+  schemaId.set_tag_id(2021001);
+  indices.set_schema_id(schemaId);
   std::vector<PartitionID> parts;
   for (int32_t p = 1; p <= 6; p++) {
     parts.emplace_back(p);
@@ -729,8 +731,10 @@ TEST(IndexWithTTLTest, LookupEdgeIndexWithTTL) {
   cpp2::LookupIndexRequest req;
   nebula::storage::cpp2::IndexSpec indices;
   req.set_space_id(1);
-  indices.set_tag_or_edge_id(2021001);
-  indices.set_is_edge(true);
+  nebula::cpp2::SchemaID schemaId;
+  schemaId.set_edge_type(2021001);
+  indices.set_schema_id(schemaId);
+
   std::vector<PartitionID> parts;
   for (int32_t p = 1; p <= 6; p++) {
     parts.emplace_back(p);
@@ -774,8 +778,9 @@ TEST(IndexWithTTLTest, LookupTagIndexWithTTLExpired) {
   cpp2::LookupIndexRequest req;
   nebula::storage::cpp2::IndexSpec indices;
   req.set_space_id(1);
-  indices.set_tag_or_edge_id(2021001);
-  indices.set_is_edge(false);
+  nebula::cpp2::SchemaID schemaId;
+  schemaId.set_tag_id(2021001);
+  indices.set_schema_id(schemaId);
   std::vector<PartitionID> parts;
   for (int32_t p = 1; p <= 6; p++) {
     parts.emplace_back(p);
@@ -819,8 +824,9 @@ TEST(IndexWithTTLTest, LookupEdgeIndexWithTTLExpired) {
   cpp2::LookupIndexRequest req;
   nebula::storage::cpp2::IndexSpec indices;
   req.set_space_id(1);
-  indices.set_tag_or_edge_id(2021001);
-  indices.set_is_edge(true);
+  nebula::cpp2::SchemaID schemaId;
+  schemaId.set_edge_type(2021001);
+  indices.set_schema_id(schemaId);
   std::vector<PartitionID> parts;
   for (int32_t p = 1; p <= 6; p++) {
     parts.emplace_back(p);

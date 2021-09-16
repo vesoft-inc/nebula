@@ -71,21 +71,6 @@ Feature: IndexTest_Vid_String
     Then the execution should be successful
     When executing query:
       """
-      REBUILD TAG INDEX single_tag_index;
-      """
-    Then the execution should be successful
-    When executing query:
-      """
-      REBUILD TAG INDEX single_tag_index OFFLINE;
-      """
-    Then a SyntaxError should be raised at runtime:
-    When executing query:
-      """
-      REBUILD TAG INDEX multi_tag_index;
-      """
-    Then the execution should be successful
-    When executing query:
-      """
       REBUILD TAG INDEX multi_tag_index OFFLINE;
       """
     Then a SyntaxError should be raised at runtime:
@@ -220,21 +205,6 @@ Feature: IndexTest_Vid_String
         "Tim"  -> "Tony": ("Good", 18, 11.11, `timestamp`("2000-10-10T10:00:00")),
         "Tony" -> "May":  ("Like", 18, 11.11, `timestamp`("2000-10-10T10:00:00")),
         "May"  -> "Tim":  ("Like", 18, 11.11, `timestamp`("2000-10-10T10:00:00"))
-      """
-    Then the execution should be successful
-    When executing query:
-      """
-      REBUILD EDGE INDEX single_edge_index
-      """
-    Then the execution should be successful
-    When executing query:
-      """
-      REBUILD EDGE INDEX single_edge_index OFFLINE;
-      """
-    Then a SyntaxError should be raised at runtime:
-    When executing query:
-      """
-      REBUILD EDGE INDEX multi_edge_1_index
       """
     Then the execution should be successful
     When executing query:
@@ -557,7 +527,7 @@ Feature: IndexTest_Vid_String
       CREATE TAG INDEX single_person_index ON tag_1(col1)
       """
     Then the execution should be successful
-    And wait 3 seconds
+    And wait 6 seconds
     When try to execute query:
       """
       INSERT VERTEX
@@ -576,7 +546,7 @@ Feature: IndexTest_Vid_String
       CREATE TAG INDEX single_person_index2 ON tag_1(col5)
       """
     Then the execution should be successful
-    And wait 3 seconds
+    And wait 6 seconds
     When try to execute query:
       """
       INSERT VERTEX
@@ -624,7 +594,7 @@ Feature: IndexTest_Vid_String
       """
     Then the result should be, in any order:
       | Name | Index Status |
-    And wait 3 seconds
+    And wait 6 seconds
     When submit a job:
       """
       REBUILD TAG INDEX tag_index_status
@@ -672,7 +642,7 @@ Feature: IndexTest_Vid_String
       """
     Then the result should be, in any order:
       | Name | Index Status |
-    And wait 3 seconds
+    And wait 6 seconds
     When submit a job:
       """
       REBUILD EDGE INDEX edge_index_status

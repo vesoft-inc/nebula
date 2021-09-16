@@ -48,6 +48,8 @@ folly::Future<Status> UpdateVertexExecutor::execute() {
   return qctx()
       ->getStorageClient()
       ->updateVertex(uvNode->getSpaceId(),
+                     qctx()->rctx()->session()->id(),
+                     qctx()->plan()->id(),
                      uvNode->getVId(),
                      uvNode->getTagId(),
                      uvNode->getUpdatedProps(),
@@ -96,6 +98,8 @@ folly::Future<Status> UpdateEdgeExecutor::execute() {
   return qctx()
       ->getStorageClient()
       ->updateEdge(ueNode->getSpaceId(),
+                   qctx()->rctx()->session()->id(),
+                   qctx()->plan()->id(),
                    edgeKey,
                    ueNode->getUpdatedProps(),
                    ueNode->getInsertable(),

@@ -257,6 +257,10 @@ std::string GetSubgraphSentence::toString() const {
     buf += " ";
     buf += both_->toString();
   }
+  if (yield_ != nullptr) {
+    buf += " ";
+    buf += yield_->toString();
+  }
   return buf;
 }
 }  // namespace nebula

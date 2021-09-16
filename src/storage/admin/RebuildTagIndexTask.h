@@ -26,7 +26,8 @@ class RebuildTagIndexTask : public RebuildIndexTask {
 
   nebula::cpp2::ErrorCode buildIndexGlobal(GraphSpaceID space,
                                            PartitionID part,
-                                           const IndexItems& items) override;
+                                           const IndexItems& items,
+                                           kvstore::RateLimiter* rateLimiter) override;
 };
 
 }  // namespace storage

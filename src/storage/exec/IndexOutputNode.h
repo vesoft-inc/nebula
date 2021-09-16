@@ -19,7 +19,7 @@ namespace storage {
 template <typename T>
 class IndexOutputNode final : public RelNode<T> {
  public:
-  using RelNode<T>::execute;
+  using RelNode<T>::doExecute;
 
   enum class IndexResultType : int8_t {
     kEdgeFromIndexScan,
@@ -44,11 +44,13 @@ class IndexOutputNode final : public RelNode<T> {
         fields_(fields) {
     type_ = context_->isEdge() ? IndexResultType::kEdgeFromIndexScan
                                : IndexResultType::kVertexFromIndexScan;
+    RelNode<T>::name_ = "IndexOpuputNode";
   }
 
   IndexOutputNode(nebula::DataSet* result, RuntimeContext* context, IndexEdgeNode<T>* indexEdgeNode)
       : result_(result), context_(context), indexEdgeNode_(indexEdgeNode) {
     type_ = IndexResultType::kEdgeFromDataScan;
+    RelNode<T>::name_ = "IndexOpuputNode";
   }
 
   IndexOutputNode(nebula::DataSet* result,
@@ -56,6 +58,7 @@ class IndexOutputNode final : public RelNode<T> {
                   IndexVertexNode<T>* indexVertexNode)
       : result_(result), context_(context), indexVertexNode_(indexVertexNode) {
     type_ = IndexResultType::kVertexFromDataScan;
+    RelNode<T>::name_ = "IndexOpuputNode";
   }
 
   IndexOutputNode(nebula::DataSet* result,
@@ -72,10 +75,11 @@ class IndexOutputNode final : public RelNode<T> {
       type_ = context_->isEdge() ? IndexResultType::kEdgeFromDataFilter
                                  : IndexResultType::kVertexFromDataFilter;
     }
+    RelNode<T>::name_ = "IndexOpuputNode";
   }
 
-  nebula::cpp2::ErrorCode execute(PartitionID partId) override {
-    auto ret = RelNode<T>::execute(partId);
+  nebula::cpp2::ErrorCode doExecute(PartitionID partId) override {
+    auto ret = RelNode<T>::doExecute(partId);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
       return ret;
     }
@@ -119,6 +123,9 @@ class IndexOutputNode final : public RelNode<T> {
 
  private:
   nebula::cpp2::ErrorCode collectResult(const std::vector<kvstore::KV>& data) {
+    if (context_->isPlanKilled()) {
+      return nebula::cpp2::ErrorCode::E_PLAN_IS_KILLED;
+    }
     auto ret = nebula::cpp2::ErrorCode::SUCCEEDED;
     switch (type_) {
       case IndexResultType::kEdgeFromIndexScan:

@@ -69,6 +69,8 @@ folly::Future<Status> GetEdgesExecutor::getEdges() {
   time::Duration getPropsTime;
   return DCHECK_NOTNULL(client)
       ->getProps(ge->space(),
+                 qctx()->rctx()->session()->id(),
+                 qctx()->plan()->id(),
                  std::move(edges),
                  nullptr,
                  ge->props(),

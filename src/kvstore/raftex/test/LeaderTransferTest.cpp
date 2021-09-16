@@ -55,7 +55,7 @@ TEST(LeaderTransferTest, SimpleTest) {
   finishRaft(services, copies, workers, leader);
 }
 
-TEST(LeaderTransferTest, ChangeLeaderServalTimesTest) {
+TEST(LeaderTransferTest, DISABLED_ChangeLeaderServalTimesTest) {
   fs::TempDir walRoot("/tmp/leader_transfer_test.simple_test.XXXXXX");
   std::shared_ptr<thread::GenericThreadPool> workers;
   std::vector<std::string> wals;
