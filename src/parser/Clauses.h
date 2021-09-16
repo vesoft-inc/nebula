@@ -6,6 +6,8 @@
 #ifndef PARSER_CLAUSES_H_
 #define PARSER_CLAUSES_H_
 
+#include <bits/stdint-intn.h>
+
 #include "common/base/Base.h"
 #include "common/expression/Expression.h"
 #include "graph/util/ExpressionUtils.h"
@@ -380,6 +382,22 @@ class NameLabelList {
 
  private:
   std::vector<std::unique_ptr<std::string>> labels_;
+};
+
+class LimitClause {
+ public:
+  explicit LimitClause(std::size_t limit) : limit_(limit) {}
+
+  int64_t limit() const { return limit_; }
+
+  std::string toString() const {
+    std::stringstream ss;
+    ss << "LIMIT " << limit_;
+    return ss.str();
+  }
+
+ private:
+  int64_t limit_{0};
 };
 
 }  // namespace nebula

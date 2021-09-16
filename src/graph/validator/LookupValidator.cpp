@@ -41,6 +41,7 @@ Status LookupValidator::validateImpl() {
   NG_RETURN_IF_ERROR(prepareFrom());
   NG_RETURN_IF_ERROR(prepareYield());
   NG_RETURN_IF_ERROR(prepareFilter());
+  NG_RETURN_IF_ERROR(prepareLimit());
   return Status::OK();
 }
 
@@ -120,6 +121,18 @@ Status LookupValidator::prepareFilter() {
     NG_RETURN_IF_ERROR(ret);
     lookupCtx_->filter = std::move(ret).value();
   }
+  return Status::OK();
+}
+
+Status LookupValidator::prepareLimit() {
+  auto* limitClause = sentence()->limitClause();
+  if (limitClause == nullptr) {
+    return Status::OK();
+  }
+  if (limitClause->limit() < 0) {
+    return Status::SemanticError("Invalid negative limit number %ld.", limitClause->limit());
+  }
+  lookupCtx_->limit = limitClause->limit();
   return Status::OK();
 }
 
