@@ -60,12 +60,10 @@ cpp2::LookupIndexRequest buildLookupRequest(int32_t totalParts, std::string play
   req.set_space_id(1);
   nebula::cpp2::SchemaID schemaId;
   schemaId.set_tag_id(1);
-  indices.set_schema_id(schemaId);
   std::vector<PartitionID> parts;
   for (PartitionID partId = 1; partId <= totalParts; partId++) {
     parts.emplace_back(partId);
   }
-  req.set_parts(std::move(parts));
   std::vector<std::string> returnCols;
   returnCols.emplace_back(kVid);
   returnCols.emplace_back(kTag);
@@ -81,9 +79,13 @@ cpp2::LookupIndexRequest buildLookupRequest(int32_t totalParts, std::string play
   context1.set_column_hints(std::move(columnHints));
   context1.set_filter("");
   context1.set_index_id(1);
-  decltype(indices.contexts) contexts;
+  std::vector<cpp2::IndexQueryContext> contexts;
   contexts.emplace_back(std::move(context1));
-  indices.set_contexts(std::move(contexts));
+  nebula::storage::cpp2::GeneralScan gs;
+  gs.set_parts(std::move(parts));
+  gs.set_schema_id(schemaId);
+  gs.set_contexts(std::move(contexts));
+  indices.set_general_scan(std::move(gs));
   req.set_indices(std::move(indices));
   return req;
 }

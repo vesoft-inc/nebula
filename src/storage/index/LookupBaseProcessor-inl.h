@@ -20,49 +20,10 @@ nebula::cpp2::ErrorCode LookupBaseProcessor<REQ, RESP>::requestCheck(
   }
   this->planContext_ = std::make_unique<PlanContext>(
       this->env_, spaceId_, this->spaceVidLen_, this->isIntId_, req.common_ref());
-  const auto& indices = req.get_indices();
-  const auto& schemaId = indices.get_schema_id();
-  this->planContext_->isEdge_ = schemaId.getType() == nebula::cpp2::SchemaID::Type::edge_type;
-  this->context_ = std::make_unique<RuntimeContext>(this->planContext_.get());
-  if (context_->isEdge()) {
-    context_->edgeType_ = schemaId.get_edge_type();
-    auto edgeName = this->env_->schemaMan_->toEdgeName(spaceId_, context_->edgeType_);
-    if (!edgeName.ok()) {
-      return nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND;
-    }
-    context_->edgeName_ = std::move(edgeName.value());
-    auto allEdges = this->env_->schemaMan_->getAllVerEdgeSchema(spaceId_);
-    if (!allEdges.ok()) {
-      return nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND;
-    }
-    if (!allEdges.value().count(context_->edgeType_)) {
-      return nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND;
-    }
-    schemas_ = std::move(allEdges).value()[context_->edgeType_];
-    context_->edgeSchema_ = schemas_.back().get();
-  } else {
-    context_->tagId_ = schemaId.get_tag_id();
-    auto tagName = this->env_->schemaMan_->toTagName(spaceId_, context_->tagId_);
-    if (!tagName.ok()) {
-      return nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND;
-    }
-    context_->tagName_ = std::move(tagName.value());
-    auto allTags = this->env_->schemaMan_->getAllVerTagSchema(spaceId_);
-    if (!allTags.ok()) {
-      return nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND;
-    }
-    if (!allTags.value().count(context_->tagId_)) {
-      return nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND;
-    }
-    schemas_ = std::move(allTags).value()[context_->tagId_];
-    context_->tagSchema_ = schemas_.back().get();
-  }
 
-  if (indices.get_contexts().empty() || !req.return_columns_ref().has_value() ||
-      (*req.return_columns_ref()).empty()) {
+  if (!req.return_columns_ref().has_value() || (*req.return_columns_ref()).empty()) {
     return nebula::cpp2::ErrorCode::E_INVALID_OPERATION;
   }
-  indexContexts_ = indices.get_contexts();
 
   // setup yield columns.
   if (req.return_columns_ref().has_value()) {
@@ -85,6 +46,82 @@ nebula::cpp2::ErrorCode LookupBaseProcessor<REQ, RESP>::requestCheck(
     limit_ = *req.limit_ref();
   }
 
+  const auto& indices = req.get_indices();
+  isPagingScan_ = indices.getType() == cpp2::IndexSpec::Type::paging_scan;
+
+  if (isPagingScan_ && limit_ < 0) {
+    LOG(ERROR) << "For paging index scan, limit must be set";
+    return nebula::cpp2::ErrorCode::E_INVALID_PARM;
+  }
+
+  return isPagingScan_ ? pagingScanReqCheck(indices) : generalScanReqCheck(indices);
+}
+
+template <typename REQ, typename RESP>
+nebula::cpp2::ErrorCode LookupBaseProcessor<REQ, RESP>::pagingScanReqCheck(
+    const cpp2::IndexSpec& indexSpec) {
+  const auto& indices = indexSpec.get_paging_scan();
+  pagingScanContexts_ = indices.get_contexts();
+  const auto& schemaId = indices.get_schema_id();
+  this->planContext_->isEdge_ = schemaId.getType() == nebula::cpp2::SchemaID::Type::edge_type;
+  this->context_ = std::make_unique<RuntimeContext>(this->planContext_.get());
+  return context_->isEdge() ? edgeSchemaCheck(schemaId) : tagSchemaCheck(schemaId);
+}
+
+template <typename REQ, typename RESP>
+nebula::cpp2::ErrorCode LookupBaseProcessor<REQ, RESP>::generalScanReqCheck(
+    const cpp2::IndexSpec& indexSpec) {
+  const auto& indices = indexSpec.get_general_scan();
+  parts_ = indices.get_parts();
+  if (indices.get_contexts().empty()) {
+    return nebula::cpp2::ErrorCode::E_INVALID_OPERATION;
+  }
+  indexContexts_ = indices.get_contexts();
+  const auto& schemaId = indices.get_schema_id();
+  this->planContext_->isEdge_ = schemaId.getType() == nebula::cpp2::SchemaID::Type::edge_type;
+  this->context_ = std::make_unique<RuntimeContext>(this->planContext_.get());
+  return context_->isEdge() ? edgeSchemaCheck(schemaId) : tagSchemaCheck(schemaId);
+}
+
+template <typename REQ, typename RESP>
+nebula::cpp2::ErrorCode LookupBaseProcessor<REQ, RESP>::edgeSchemaCheck(
+    const nebula::cpp2::SchemaID& schemaId) {
+  context_->edgeType_ = schemaId.get_edge_type();
+  auto edgeName = this->env_->schemaMan_->toEdgeName(spaceId_, context_->edgeType_);
+  if (!edgeName.ok()) {
+    return nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND;
+  }
+  context_->edgeName_ = std::move(edgeName.value());
+  auto allEdges = this->env_->schemaMan_->getAllVerEdgeSchema(spaceId_);
+  if (!allEdges.ok()) {
+    return nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND;
+  }
+  if (!allEdges.value().count(context_->edgeType_)) {
+    return nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND;
+  }
+  schemas_ = std::move(allEdges).value()[context_->edgeType_];
+  context_->edgeSchema_ = schemas_.back().get();
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
+}
+
+template <typename REQ, typename RESP>
+nebula::cpp2::ErrorCode LookupBaseProcessor<REQ, RESP>::tagSchemaCheck(
+    const nebula::cpp2::SchemaID& schemaId) {
+  context_->tagId_ = schemaId.get_tag_id();
+  auto tagName = this->env_->schemaMan_->toTagName(spaceId_, context_->tagId_);
+  if (!tagName.ok()) {
+    return nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND;
+  }
+  context_->tagName_ = std::move(tagName.value());
+  auto allTags = this->env_->schemaMan_->getAllVerTagSchema(spaceId_);
+  if (!allTags.ok()) {
+    return nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND;
+  }
+  if (!allTags.value().count(context_->tagId_)) {
+    return nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND;
+  }
+  schemas_ = std::move(allTags).value()[context_->tagId_];
+  context_->tagSchema_ = schemas_.back().get();
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
@@ -212,7 +249,6 @@ StatusOr<StoragePlan<IndexID>> LookupBaseProcessor<REQ, RESP>::buildPlan(
         break;
       }
     }
-    auto colHints = ctx.get_column_hints();
 
     // Check WHERE clause contains columns that ware not indexed
     if (ctx.filter_ref().is_set() && !(*ctx.filter_ref()).empty()) {
@@ -285,8 +321,26 @@ std::unique_ptr<IndexOutputNode<IndexID>> LookupBaseProcessor<REQ, RESP>::buildP
     const std::vector<meta::cpp2::ColumnDef>& fields) {
   auto indexId = ctx.get_index_id();
   auto colHints = ctx.get_column_hints();
-  auto indexScan = std::make_unique<IndexScanNode<IndexID>>(
-      context_.get(), indexId, std::move(colHints), limit_);
+  auto indexScan = std::make_unique<IndexGeneralScanNode<IndexID>>(
+      context_.get(), indexId, std::move(colHints), limit_, &nextScanContexts_);
+
+  auto output = std::make_unique<IndexOutputNode<IndexID>>(
+      result, context_.get(), indexScan.get(), hasNullableCol, fields);
+  output->addDependency(indexScan.get());
+  plan.addNode(std::move(indexScan));
+  return output;
+}
+
+template <typename REQ, typename RESP>
+std::unique_ptr<IndexOutputNode<IndexID>> LookupBaseProcessor<REQ, RESP>::buildPlanBasic(
+    nebula::DataSet* result,
+    const cpp2::PagingScanContext& ctx,
+    StoragePlan<IndexID>& plan,
+    bool hasNullableCol,
+    const std::vector<meta::cpp2::ColumnDef>& fields) {
+  auto indexId = ctx.get_index_id();
+  auto indexScan = std::make_unique<IndexPagingScanNode<IndexID>>(
+      context_.get(), indexId, ctx, limit_, &nextScanContexts_);
 
   auto output = std::make_unique<IndexOutputNode<IndexID>>(
       result, context_.get(), indexScan.get(), hasNullableCol, fields);
@@ -319,8 +373,35 @@ std::unique_ptr<IndexOutputNode<IndexID>> LookupBaseProcessor<REQ, RESP>::buildP
   auto indexId = ctx.get_index_id();
   auto colHints = ctx.get_column_hints();
 
-  auto indexScan = std::make_unique<IndexScanNode<IndexID>>(
-      context_.get(), indexId, std::move(colHints), limit_);
+  auto indexScan = std::make_unique<IndexGeneralScanNode<IndexID>>(
+      context_.get(), indexId, std::move(colHints), limit_, &nextScanContexts_);
+  if (context_->isEdge()) {
+    auto edge = std::make_unique<IndexEdgeNode<IndexID>>(
+        context_.get(), indexScan.get(), schemas_, context_->edgeName_, limit_);
+    edge->addDependency(indexScan.get());
+    auto output = std::make_unique<IndexOutputNode<IndexID>>(result, context_.get(), edge.get());
+    output->addDependency(edge.get());
+    plan.addNode(std::move(indexScan));
+    plan.addNode(std::move(edge));
+    return output;
+  } else {
+    auto vertex = std::make_unique<IndexVertexNode<IndexID>>(
+        context_.get(), indexScan.get(), schemas_, context_->tagName_, limit_);
+    vertex->addDependency(indexScan.get());
+    auto output = std::make_unique<IndexOutputNode<IndexID>>(result, context_.get(), vertex.get());
+    output->addDependency(vertex.get());
+    plan.addNode(std::move(indexScan));
+    plan.addNode(std::move(vertex));
+    return output;
+  }
+}
+
+template <typename REQ, typename RESP>
+std::unique_ptr<IndexOutputNode<IndexID>> LookupBaseProcessor<REQ, RESP>::buildPlanWithData(
+    nebula::DataSet* result, const cpp2::PagingScanContext& ctx, StoragePlan<IndexID>& plan) {
+  auto indexId = ctx.get_index_id();
+  auto indexScan = std::make_unique<IndexPagingScanNode<IndexID>>(
+      context_.get(), indexId, ctx, limit_, &nextScanContexts_);
   if (context_->isEdge()) {
     auto edge = std::make_unique<IndexEdgeNode<IndexID>>(
         context_.get(), indexScan.get(), schemas_, context_->edgeName_, limit_);
@@ -370,9 +451,34 @@ std::unique_ptr<IndexOutputNode<IndexID>> LookupBaseProcessor<REQ, RESP>::buildP
   auto indexId = ctx.get_index_id();
   auto colHints = ctx.get_column_hints();
 
-  auto indexScan = std::make_unique<IndexScanNode<IndexID>>(
-      context_.get(), indexId, std::move(colHints), limit_);
+  auto indexScan = std::make_unique<IndexGeneralScanNode<IndexID>>(context_.get(),
+                                                                   indexId,
+                                                                   std::move(colHints),
+                                                                   limit_,
+                                                                   &nextScanContexts_,
+                                                                   Expression::encode(*exp));
 
+  auto filter = std::make_unique<IndexFilterNode<IndexID>>(
+      context_.get(), indexScan.get(), exprCtx, exp, context_->isEdge());
+  filter->addDependency(indexScan.get());
+  auto output =
+      std::make_unique<IndexOutputNode<IndexID>>(result, context_.get(), filter.get(), true);
+  output->addDependency(filter.get());
+  plan.addNode(std::move(indexScan));
+  plan.addNode(std::move(filter));
+  return output;
+}
+
+template <typename REQ, typename RESP>
+std::unique_ptr<IndexOutputNode<IndexID>> LookupBaseProcessor<REQ, RESP>::buildPlanWithFilter(
+    nebula::DataSet* result,
+    const cpp2::PagingScanContext& ctx,
+    StoragePlan<IndexID>& plan,
+    StorageExpressionContext* exprCtx,
+    Expression* exp) {
+  auto indexId = ctx.get_index_id();
+  auto indexScan = std::make_unique<IndexPagingScanNode<IndexID>>(
+      context_.get(), indexId, ctx, limit_, &nextScanContexts_);
   auto filter = std::make_unique<IndexFilterNode<IndexID>>(
       context_.get(), indexScan.get(), exprCtx, exp, context_->isEdge());
   filter->addDependency(indexScan.get());
@@ -421,8 +527,12 @@ LookupBaseProcessor<REQ, RESP>::buildPlanWithDataAndFilter(nebula::DataSet* resu
   auto indexId = ctx.get_index_id();
   auto colHints = ctx.get_column_hints();
 
-  auto indexScan = std::make_unique<IndexScanNode<IndexID>>(
-      context_.get(), indexId, std::move(colHints), limit_);
+  auto indexScan = std::make_unique<IndexGeneralScanNode<IndexID>>(context_.get(),
+                                                                   indexId,
+                                                                   std::move(colHints),
+                                                                   limit_,
+                                                                   &nextScanContexts_,
+                                                                   Expression::encode(*exp));
   if (context_->isEdge()) {
     auto edge = std::make_unique<IndexEdgeNode<IndexID>>(
         context_.get(), indexScan.get(), schemas_, context_->edgeName_, limit_);
@@ -453,6 +563,48 @@ LookupBaseProcessor<REQ, RESP>::buildPlanWithDataAndFilter(nebula::DataSet* resu
     return output;
   }
 }
+
+template <typename REQ, typename RESP>
+std::unique_ptr<IndexOutputNode<IndexID>>
+LookupBaseProcessor<REQ, RESP>::buildPlanWithDataAndFilter(nebula::DataSet* result,
+                                                           const cpp2::PagingScanContext& ctx,
+                                                           StoragePlan<IndexID>& plan,
+                                                           StorageExpressionContext* exprCtx,
+                                                           Expression* exp) {
+  auto indexId = ctx.get_index_id();
+  auto indexScan = std::make_unique<IndexPagingScanNode<IndexID>>(
+      context_.get(), indexId, ctx, limit_, &nextScanContexts_);
+  if (context_->isEdge()) {
+    auto edge = std::make_unique<IndexEdgeNode<IndexID>>(
+        context_.get(), indexScan.get(), schemas_, context_->edgeName_, limit_);
+    edge->addDependency(indexScan.get());
+    auto filter =
+        std::make_unique<IndexFilterNode<IndexID>>(context_.get(), edge.get(), exprCtx, exp);
+    filter->addDependency(edge.get());
+
+    auto output = std::make_unique<IndexOutputNode<IndexID>>(result, context_.get(), filter.get());
+    output->addDependency(filter.get());
+    plan.addNode(std::move(indexScan));
+    plan.addNode(std::move(edge));
+    plan.addNode(std::move(filter));
+    return output;
+  } else {
+    auto vertex = std::make_unique<IndexVertexNode<IndexID>>(
+        context_.get(), indexScan.get(), schemas_, context_->tagName_, limit_);
+    vertex->addDependency(indexScan.get());
+    auto filter =
+        std::make_unique<IndexFilterNode<IndexID>>(context_.get(), vertex.get(), exprCtx, exp);
+    filter->addDependency(vertex.get());
+
+    auto output = std::make_unique<IndexOutputNode<IndexID>>(result, context_.get(), filter.get());
+    output->addDependency(filter.get());
+    plan.addNode(std::move(indexScan));
+    plan.addNode(std::move(vertex));
+    plan.addNode(std::move(filter));
+    return output;
+  }
+}
+
 template <typename REQ, typename RESP>
 void LookupBaseProcessor<REQ, RESP>::profilePlan(StoragePlan<IndexID>& plan) {
   auto& nodes = plan.getNodes();
@@ -460,6 +612,96 @@ void LookupBaseProcessor<REQ, RESP>::profilePlan(StoragePlan<IndexID>& plan) {
   for (auto& node : nodes) {
     BaseProcessor<RESP>::profileDetail(node->name_, node->duration_.elapsedInUSec());
   }
+}
+
+template <typename REQ, typename RESP>
+StatusOr<StoragePlan<IndexID>> LookupBaseProcessor<REQ, RESP>::buildPagingScanPlan(
+    IndexFilterItem* filterItem, nebula::DataSet* result, const cpp2::PagingScanContext& ctx) {
+  StoragePlan<IndexID> plan;
+  std::unique_ptr<IndexOutputNode<IndexID>> out;
+  auto pool = &planContext_->objPool_;
+
+  const auto& indexId = ctx.get_index_id();
+  auto needFilter = ctx.filter_ref().is_set() && !(*ctx.filter_ref()).empty();
+
+  // Check whether a data node is required.
+  // If a non-indexed column appears in the WHERE clause or YIELD clause,
+  // That means need to query the corresponding data.
+  bool needData = false;
+  auto index = context_->isEdge() ? this->env_->indexMan_->getEdgeIndex(spaceId_, indexId)
+                                  : this->env_->indexMan_->getTagIndex(spaceId_, indexId);
+  if (!index.ok()) {
+    return Status::IndexNotFound();
+  }
+
+  // check nullable column
+  bool hasNullableCol = false;
+
+  auto* indexItem = index.value().get();
+  auto fields = indexItem->get_fields();
+
+  for (const auto& col : fields) {
+    if (!hasNullableCol && col.get_nullable()) {
+      hasNullableCol = true;
+      break;
+    }
+  }
+
+  for (const auto& yieldCol : yieldCols_) {
+    static const std::set<std::string> propsInKey{kVid, kTag, kSrc, kType, kRank, kDst};
+    if (propsInKey.count(yieldCol)) {
+      continue;
+    }
+    auto it = std::find_if(fields.begin(), fields.end(), [&yieldCol](const auto& columnDef) {
+      return yieldCol == columnDef.get_name();
+    });
+    if (it == fields.end()) {
+      needData = true;
+      break;
+    }
+  }
+
+  // Check WHERE clause contains columns that ware not indexed
+  if (ctx.filter_ref().is_set() && !(*ctx.filter_ref()).empty()) {
+    auto filter = Expression::decode(pool, *ctx.filter_ref());
+    auto isFieldsOutsideIndex = isOutsideIndex(filter, indexItem);
+    if (isFieldsOutsideIndex) {
+      needData = needFilter = true;
+    }
+  }
+
+  if (!needData && !needFilter) {
+    out = buildPlanBasic(result, ctx, plan, hasNullableCol, fields);
+  } else if (needData && !needFilter) {
+    out = buildPlanWithData(result, ctx, plan);
+  } else if (!needData && needFilter) {
+    auto expr = Expression::decode(pool, ctx.get_filter());
+    auto exprCtx = std::make_unique<StorageExpressionContext>(
+        context_->vIdLen(), context_->isIntId(), hasNullableCol, fields);
+    filterItem->emplace(0, std::make_pair(std::move(exprCtx), expr));
+    out = buildPlanWithFilter(
+        result, ctx, plan, (*filterItem)[0].first.get(), (*filterItem)[0].second);
+  } else {
+    auto expr = Expression::decode(pool, ctx.get_filter());
+    // Need to get columns in data, expr ctx need to be aware of schema
+    const auto& schemaName = context_->isEdge() ? context_->edgeName_ : context_->tagName_;
+    if (schemas_.empty()) {
+      return Status::Error("Schema not found");
+    }
+    auto exprCtx = std::make_unique<StorageExpressionContext>(context_->vIdLen(),
+                                                              context_->isIntId(),
+                                                              schemaName,
+                                                              schemas_.back().get(),
+                                                              context_->isEdge());
+    filterItem->emplace(0, std::make_pair(std::move(exprCtx), expr));
+    out = buildPlanWithDataAndFilter(
+        result, ctx, plan, (*filterItem)[0].first.get(), (*filterItem)[0].second);
+  }
+  if (out == nullptr) {
+    return Status::Error("Index scan plan error");
+  }
+  plan.addNode(std::move(out));
+  return plan;
 }
 
 }  // namespace storage

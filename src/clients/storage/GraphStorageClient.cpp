@@ -512,12 +512,14 @@ folly::SemiFuture<StorageRpcResponse<cpp2::LookupIndexResp>> GraphStorageClient:
     auto& host = c.first;
     auto& req = requests[host];
     req.set_space_id(space);
-    req.set_parts(std::move(c.second));
     req.set_return_columns(returnCols);
 
     cpp2::IndexSpec spec;
-    spec.set_contexts(contexts);
-    spec.set_schema_id(schemaId);
+    cpp2::GeneralScan gs;
+    gs.set_contexts(contexts);
+    gs.set_parts(std::move(c.second));
+    gs.set_schema_id(schemaId);
+    spec.set_general_scan(std::move(gs));
     req.set_indices(spec);
     req.set_common(common);
   }
@@ -550,7 +552,7 @@ GraphStorageClient::lookupAndTraverse(GraphSpaceID space,
     auto& host = c.first;
     auto& req = requests[host];
     req.set_space_id(space);
-    req.set_parts(std::move(c.second));
+    // TODO : need to be synchronized with GraphStorageClient::lookupIndex for paging scan.
     req.set_indices(indexSpec);
     req.set_traverse_spec(traverseSpec);
     req.set_common(common);

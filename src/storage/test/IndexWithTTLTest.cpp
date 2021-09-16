@@ -689,12 +689,10 @@ TEST(IndexWithTTLTest, LookupTagIndexWithTTL) {
   req.set_space_id(1);
   nebula::cpp2::SchemaID schemaId;
   schemaId.set_tag_id(2021001);
-  indices.set_schema_id(schemaId);
   std::vector<PartitionID> parts;
   for (int32_t p = 1; p <= 6; p++) {
     parts.emplace_back(p);
   }
-  req.set_parts(std::move(parts));
   std::vector<std::string> returnCols;
   returnCols.emplace_back(kVid);
   returnCols.emplace_back(kTag);
@@ -705,9 +703,13 @@ TEST(IndexWithTTLTest, LookupTagIndexWithTTL) {
   cpp2::IndexQueryContext context1;
   context1.set_filter(expr->encode());
   context1.set_index_id(2021002);
-  decltype(indices.contexts) contexts;
+  std::vector<cpp2::IndexQueryContext> contexts;
   contexts.emplace_back(std::move(context1));
-  indices.set_contexts(std::move(contexts));
+  nebula::storage::cpp2::GeneralScan gs;
+  gs.set_parts(std::move(parts));
+  gs.set_schema_id(schemaId);
+  gs.set_contexts(std::move(contexts));
+  indices.set_general_scan(std::move(gs));
   req.set_indices(std::move(indices));
   auto fut = processor->getFuture();
   processor->process(req);
@@ -733,13 +735,11 @@ TEST(IndexWithTTLTest, LookupEdgeIndexWithTTL) {
   req.set_space_id(1);
   nebula::cpp2::SchemaID schemaId;
   schemaId.set_edge_type(2021001);
-  indices.set_schema_id(schemaId);
 
   std::vector<PartitionID> parts;
   for (int32_t p = 1; p <= 6; p++) {
     parts.emplace_back(p);
   }
-  req.set_parts(std::move(parts));
   std::vector<std::string> returnCols;
   returnCols.emplace_back(kVid);
   returnCols.emplace_back(kTag);
@@ -750,9 +750,13 @@ TEST(IndexWithTTLTest, LookupEdgeIndexWithTTL) {
   cpp2::IndexQueryContext context1;
   context1.set_filter(expr->encode());
   context1.set_index_id(2021002);
-  decltype(indices.contexts) contexts;
+  std::vector<cpp2::IndexQueryContext> contexts;
   contexts.emplace_back(std::move(context1));
-  indices.set_contexts(std::move(contexts));
+  nebula::storage::cpp2::GeneralScan gs;
+  gs.set_parts(std::move(parts));
+  gs.set_schema_id(schemaId);
+  gs.set_contexts(std::move(contexts));
+  indices.set_general_scan(std::move(gs));
   req.set_indices(std::move(indices));
   auto fut = processor->getFuture();
   processor->process(req);
@@ -780,12 +784,10 @@ TEST(IndexWithTTLTest, LookupTagIndexWithTTLExpired) {
   req.set_space_id(1);
   nebula::cpp2::SchemaID schemaId;
   schemaId.set_tag_id(2021001);
-  indices.set_schema_id(schemaId);
   std::vector<PartitionID> parts;
   for (int32_t p = 1; p <= 6; p++) {
     parts.emplace_back(p);
   }
-  req.set_parts(std::move(parts));
   std::vector<std::string> returnCols;
   returnCols.emplace_back(kVid);
   returnCols.emplace_back(kTag);
@@ -796,9 +798,13 @@ TEST(IndexWithTTLTest, LookupTagIndexWithTTLExpired) {
   cpp2::IndexQueryContext context1;
   context1.set_filter(expr->encode());
   context1.set_index_id(2021002);
-  decltype(indices.contexts) contexts;
+  std::vector<cpp2::IndexQueryContext> contexts;
   contexts.emplace_back(std::move(context1));
-  indices.set_contexts(std::move(contexts));
+  nebula::storage::cpp2::GeneralScan gs;
+  gs.set_parts(std::move(parts));
+  gs.set_schema_id(schemaId);
+  gs.set_contexts(std::move(contexts));
+  indices.set_general_scan(std::move(gs));
   req.set_indices(std::move(indices));
   auto fut = processor->getFuture();
   processor->process(req);
@@ -826,12 +832,10 @@ TEST(IndexWithTTLTest, LookupEdgeIndexWithTTLExpired) {
   req.set_space_id(1);
   nebula::cpp2::SchemaID schemaId;
   schemaId.set_edge_type(2021001);
-  indices.set_schema_id(schemaId);
   std::vector<PartitionID> parts;
   for (int32_t p = 1; p <= 6; p++) {
     parts.emplace_back(p);
   }
-  req.set_parts(std::move(parts));
   std::vector<std::string> returnCols;
   returnCols.emplace_back(kVid);
   returnCols.emplace_back(kTag);
@@ -842,9 +846,13 @@ TEST(IndexWithTTLTest, LookupEdgeIndexWithTTLExpired) {
   cpp2::IndexQueryContext context1;
   context1.set_filter(expr->encode());
   context1.set_index_id(2021002);
-  decltype(indices.contexts) contexts;
+  std::vector<cpp2::IndexQueryContext> contexts;
   contexts.emplace_back(std::move(context1));
-  indices.set_contexts(std::move(contexts));
+  nebula::storage::cpp2::GeneralScan gs;
+  gs.set_parts(std::move(parts));
+  gs.set_schema_id(schemaId);
+  gs.set_contexts(std::move(contexts));
+  indices.set_general_scan(std::move(gs));
   req.set_indices(std::move(indices));
   auto fut = processor->getFuture();
   processor->process(req);

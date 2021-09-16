@@ -197,6 +197,32 @@ class StorageClientBase {
     return getReqPartsIdFromContainer(req.get_parts());
   }
 
+  std::vector<PartitionID> getReqPartsId(const cpp2::LookupIndexRequest& req) const {
+    std::vector<PartitionID> parts;
+    const auto& indices = req.get_indices();
+    if (indices.getType() == cpp2::IndexSpec::Type::paging_scan) {
+      for (const auto& context : indices.get_paging_scan().get_contexts()) {
+        parts.emplace_back(context.get_part());
+      }
+    } else {
+      parts = indices.get_general_scan().get_parts();
+    }
+    return parts;
+  }
+
+  std::vector<PartitionID> getReqPartsId(const cpp2::LookupAndTraverseRequest& req) const {
+    std::vector<PartitionID> parts;
+    const auto& indices = req.get_indices();
+    if (indices.getType() == cpp2::IndexSpec::Type::paging_scan) {
+      for (const auto& context : indices.get_paging_scan().get_contexts()) {
+        parts.emplace_back(context.get_part());
+      }
+    } else {
+      parts = indices.get_general_scan().get_parts();
+    }
+    return parts;
+  }
+
   std::vector<PartitionID> getReqPartsId(const cpp2::UpdateVertexRequest& req) const {
     return {req.get_part_id()};
   }

@@ -24,26 +24,31 @@ void LookupProcessor::process(const cpp2::LookupIndexRequest& req) {
 void LookupProcessor::doProcess(const cpp2::LookupIndexRequest& req) {
   auto retCode = requestCheck(req);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    for (auto& p : req.get_parts()) {
+    for (auto& p : parts_) {
       pushResultCode(retCode, p);
     }
     onFinished();
     return;
   }
 
+  if (isPagingScan_) {
+    runPagingScan();
+    return;
+  }
+
   // todo(doodle): specify by each query
   if (!FLAGS_query_concurrently) {
-    runInSingleThread(req);
+    runInSingleThread();
   } else {
-    runInMultipleThread(req);
+    runInMultipleThread();
   }
 }
 
-void LookupProcessor::runInSingleThread(const cpp2::LookupIndexRequest& req) {
+void LookupProcessor::runInSingleThread() {
   filterItems_.emplace_back(IndexFilterItem());
   auto plan = buildPlan(&filterItems_.front(), &resultDataSet_);
   if (!plan.ok()) {
-    for (auto& p : req.get_parts()) {
+    for (auto& p : parts_) {
       pushResultCode(nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND, p);
     }
     onFinished();
@@ -51,7 +56,7 @@ void LookupProcessor::runInSingleThread(const cpp2::LookupIndexRequest& req) {
   }
 
   std::unordered_set<PartitionID> failedParts;
-  for (const auto& partId : req.get_parts()) {
+  for (const auto& partId : parts_) {
     auto ret = plan.value().go(partId);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
       if (failedParts.find(partId) == failedParts.end()) {
@@ -67,18 +72,18 @@ void LookupProcessor::runInSingleThread(const cpp2::LookupIndexRequest& req) {
   onFinished();
 }
 
-void LookupProcessor::runInMultipleThread(const cpp2::LookupIndexRequest& req) {
+void LookupProcessor::runInMultipleThread() {
   // As for lookup, once requestCheck is done, the info in RunTimeContext won't
   // be changed anymore. So we only use one RunTimeContext, could make it per
   // partition later if necessary.
-  for (size_t i = 0; i < req.get_parts().size(); i++) {
+  for (size_t i = 0; i < parts_.size(); i++) {
     nebula::DataSet result = resultDataSet_;
     partResults_.emplace_back(std::move(result));
     filterItems_.emplace_back(IndexFilterItem());
   }
   size_t i = 0;
   std::vector<folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>>> futures;
-  for (const auto& partId : req.get_parts()) {
+  for (const auto& partId : parts_) {
     futures.emplace_back(runInExecutor(&filterItems_[i], &partResults_[i], partId));
     i++;
   }
@@ -119,6 +124,34 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> LookupProcessor::
   });
 }
 
+void LookupProcessor::runPagingScan() {
+  std::unordered_set<PartitionID> failedParts;
+  for (const auto& ctx : pagingScanContexts_) {
+    filterItems_.emplace_back(IndexFilterItem());
+    auto plan = buildPagingScanPlan(&filterItems_.front(), &resultDataSet_, ctx);
+    if (!plan.ok()) {
+      pushResultCode(nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND, ctx.get_part());
+      onFinished();
+      return;
+    }
+    auto ret = plan.value().go(ctx.get_part());
+    if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      if (failedParts.find(ctx.get_part()) == failedParts.end()) {
+        failedParts.emplace(ctx.get_part());
+        handleErrorCode(ret, spaceId_, ctx.get_part());
+      }
+    }
+    if (FLAGS_profile_storage_detail) {
+      profilePlan(plan.value());
+    }
+  }
+  if (!deDupColPos_.empty()) {
+    DeDupNode<IndexID>::dedup(resultDataSet_.rows, deDupColPos_);
+  }
+  onProcessFinished();
+  onFinished();
+}
+
 void LookupProcessor::onProcessFinished() {
   if (context_->isEdge()) {
     std::transform(resultDataSet_.colNames.begin(),
@@ -132,6 +165,11 @@ void LookupProcessor::onProcessFinished() {
                    [this](const auto& col) { return context_->tagName_ + "." + col; });
   }
   resp_.set_data(std::move(resultDataSet_));
+
+  // set the offset scan contexts for next index scan.
+  if (!nextScanContexts_.empty()) {
+    resp_.set_next_scan_contexts(std::move(nextScanContexts_));
+  }
 }
 
 }  // namespace storage

@@ -195,16 +195,18 @@ TEST_F(IndexScanLimitTest, LookupTagIndexLimit) {
   req.set_space_id(spaceId);
   nebula::cpp2::SchemaID schemaId;
   schemaId.set_tag_id(tagId);
-  indices.set_schema_id(schemaId);
-  req.set_parts(parts);
   std::vector<std::string> returnCols;
   returnCols.emplace_back(kVid);
   req.set_return_columns(std::move(returnCols));
   cpp2::IndexQueryContext context1;
   context1.set_index_id(tagIndex);
-  decltype(indices.contexts) contexts;
+  std::vector<cpp2::IndexQueryContext> contexts;
   contexts.emplace_back(std::move(context1));
-  indices.set_contexts(std::move(contexts));
+  nebula::storage::cpp2::GeneralScan gs;
+  gs.set_parts(std::move(parts));
+  gs.set_schema_id(schemaId);
+  gs.set_contexts(std::move(contexts));
+  indices.set_general_scan(std::move(gs));
   req.set_indices(std::move(indices));
 
   // verify all data
@@ -248,8 +250,9 @@ TEST_F(IndexScanLimitTest, LookupTagIndexLimit) {
     columnHint.set_scan_type(cpp2::ScanType::PREFIX);
     std::vector<cpp2::IndexColumnHint> columnHints;
     columnHints.emplace_back(std::move(columnHint));
-    req.indices_ref().value().contexts_ref().value().begin()->set_column_hints(
-        std::move(columnHints));
+    auto idx = req.indices_ref().value().get_general_scan();
+    idx.contexts_ref().value().begin()->set_column_hints(std::move(columnHints));
+    req.indices_ref().value().set_general_scan(std::move(idx));
 
     auto* processor = LookupProcessor::instance(storageEnv_.get(), nullptr, nullptr);
     auto fut = processor->getFuture();
@@ -266,16 +269,18 @@ TEST_F(IndexScanLimitTest, LookupEdgeIndexLimit) {
   req.set_space_id(spaceId);
   nebula::cpp2::SchemaID schemaId;
   schemaId.set_edge_type(edgeType);
-  indices.set_schema_id(schemaId);
-  req.set_parts(parts);
   std::vector<std::string> returnCols;
   returnCols.emplace_back(kSrc);
   req.set_return_columns(std::move(returnCols));
   cpp2::IndexQueryContext context1;
   context1.set_index_id(edgeIndex);
-  decltype(indices.contexts) contexts;
+  std::vector<cpp2::IndexQueryContext> contexts;
   contexts.emplace_back(std::move(context1));
-  indices.set_contexts(std::move(contexts));
+  nebula::storage::cpp2::GeneralScan gs;
+  gs.set_parts(std::move(parts));
+  gs.set_schema_id(schemaId);
+  gs.set_contexts(std::move(contexts));
+  indices.set_general_scan(std::move(gs));
   req.set_indices(std::move(indices));
 
   // verify all data
@@ -319,8 +324,9 @@ TEST_F(IndexScanLimitTest, LookupEdgeIndexLimit) {
     columnHint.set_scan_type(cpp2::ScanType::PREFIX);
     std::vector<cpp2::IndexColumnHint> columnHints;
     columnHints.emplace_back(std::move(columnHint));
-    req.indices_ref().value().contexts_ref().value().begin()->set_column_hints(
-        std::move(columnHints));
+    auto idx = req.indices_ref().value().get_general_scan();
+    idx.contexts_ref().value().begin()->set_column_hints(std::move(columnHints));
+    req.indices_ref().value().set_general_scan(std::move(idx));
 
     auto* processor = LookupProcessor::instance(storageEnv_.get(), nullptr, nullptr);
     auto fut = processor->getFuture();

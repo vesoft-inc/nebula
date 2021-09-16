@@ -104,12 +104,10 @@ TEST_F(KillQueryTest, TagIndex) {
     req.set_space_id(spaceId);
     nebula::cpp2::SchemaID schemaId;
     schemaId.set_tag_id(1);
-    indices.set_schema_id(schemaId);
     std::vector<PartitionID> parts;
     for (int32_t p = 1; p <= totalParts; p++) {
       parts.emplace_back(p);
     }
-    req.set_parts(std::move(parts));
     std::vector<std::string> returnCols;
     returnCols.emplace_back(kVid);
     returnCols.emplace_back(kTag);
@@ -126,9 +124,13 @@ TEST_F(KillQueryTest, TagIndex) {
     context1.set_column_hints(std::move(columnHints));
     context1.set_filter("");
     context1.set_index_id(1);
-    decltype(indices.contexts) contexts;
+    std::vector<cpp2::IndexQueryContext> contexts;
     contexts.emplace_back(std::move(context1));
-    indices.set_contexts(std::move(contexts));
+    nebula::storage::cpp2::GeneralScan gs;
+    gs.set_parts(std::move(parts));
+    gs.set_schema_id(schemaId);
+    gs.set_contexts(std::move(contexts));
+    indices.set_general_scan(std::move(gs));
     req.set_indices(std::move(indices));
     cpp2::RequestCommon common;
     common.set_session_id(1);
@@ -138,10 +140,8 @@ TEST_F(KillQueryTest, TagIndex) {
     processor->process(req);
     auto resp = std::move(fut).get();
     ASSERT_EQ(resp.get_data()->size(), 0);
-    auto part_count = req.get_parts().size();
     auto failed_part_count = resp.get_result().get_failed_parts().size();
-    ASSERT_EQ(part_count, failed_part_count);
-    ASSERT_NE(part_count, 0);
+    ASSERT_EQ(totalParts, failed_part_count);
     for (auto& part : resp.get_result().get_failed_parts()) {
       ASSERT_EQ(part.get_code(), ::nebula::cpp2::ErrorCode::E_PLAN_IS_KILLED);
     }
@@ -164,12 +164,10 @@ TEST_F(KillQueryTest, EdgeIndex) {
     req.set_space_id(spaceId);
     nebula::cpp2::SchemaID schemaId;
     schemaId.set_edge_type(102);
-    indices.set_schema_id(schemaId);
     std::vector<PartitionID> parts;
     for (int32_t p = 1; p <= totalParts; p++) {
       parts.emplace_back(p);
     }
-    req.set_parts(std::move(parts));
     std::string tony = "Tony Parker";
     std::string manu = "Manu Ginobili";
     std::vector<std::string> returnCols;
@@ -189,9 +187,13 @@ TEST_F(KillQueryTest, EdgeIndex) {
     context1.set_column_hints(std::move(columnHints));
     context1.set_filter("");
     context1.set_index_id(102);
-    decltype(indices.contexts) contexts;
+    std::vector<cpp2::IndexQueryContext> contexts;
     contexts.emplace_back(std::move(context1));
-    indices.set_contexts(std::move(contexts));
+    nebula::storage::cpp2::GeneralScan gs;
+    gs.set_parts(std::move(parts));
+    gs.set_schema_id(schemaId);
+    gs.set_contexts(std::move(contexts));
+    indices.set_general_scan(std::move(gs));
     req.set_indices(std::move(indices));
     cpp2::RequestCommon common;
     common.set_session_id(1);
@@ -201,10 +203,8 @@ TEST_F(KillQueryTest, EdgeIndex) {
     processor->process(req);
     auto resp = std::move(fut).get();
     ASSERT_EQ(resp.get_data()->size(), 0);
-    auto part_count = req.get_parts().size();
     auto failed_part_count = resp.get_result().get_failed_parts().size();
-    ASSERT_EQ(part_count, failed_part_count);
-    ASSERT_NE(part_count, 0);
+    ASSERT_EQ(totalParts, failed_part_count);
     for (auto& part : resp.get_result().get_failed_parts()) {
       ASSERT_EQ(part.get_code(), ::nebula::cpp2::ErrorCode::E_PLAN_IS_KILLED);
     }

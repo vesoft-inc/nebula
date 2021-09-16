@@ -34,8 +34,9 @@ class LookupProcessor
   void onProcessFinished() override;
 
  private:
-  void runInSingleThread(const cpp2::LookupIndexRequest& req);
-  void runInMultipleThread(const cpp2::LookupIndexRequest& req);
+  void runInSingleThread();
+  void runInMultipleThread();
+  void runPagingScan();
 
   folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> runInExecutor(
       IndexFilterItem* filterItem, nebula::DataSet* result, PartitionID partId);

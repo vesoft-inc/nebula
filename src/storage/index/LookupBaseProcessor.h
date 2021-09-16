@@ -40,9 +40,21 @@ class LookupBaseProcessor : public BaseProcessor<RESP> {
 
   nebula::cpp2::ErrorCode requestCheck(const cpp2::LookupIndexRequest& req);
 
+  nebula::cpp2::ErrorCode pagingScanReqCheck(const cpp2::IndexSpec& indexSpec);
+
+  nebula::cpp2::ErrorCode generalScanReqCheck(const cpp2::IndexSpec& indexSpec);
+
+  nebula::cpp2::ErrorCode edgeSchemaCheck(const nebula::cpp2::SchemaID& schemaId);
+
+  nebula::cpp2::ErrorCode tagSchemaCheck(const nebula::cpp2::SchemaID& schemaId);
+
   bool isOutsideIndex(Expression* filter, const meta::cpp2::IndexItem* index);
 
   StatusOr<StoragePlan<IndexID>> buildPlan(IndexFilterItem* filterItem, nebula::DataSet* result);
+
+  StatusOr<StoragePlan<IndexID>> buildPagingScanPlan(IndexFilterItem* filterItem,
+                                                     nebula::DataSet* result,
+                                                     const cpp2::PagingScanContext& ctx);
 
   std::unique_ptr<IndexOutputNode<IndexID>> buildPlanBasic(
       nebula::DataSet* result,
@@ -51,8 +63,19 @@ class LookupBaseProcessor : public BaseProcessor<RESP> {
       bool hasNullableCol,
       const std::vector<meta::cpp2::ColumnDef>& fields);
 
+  std::unique_ptr<IndexOutputNode<IndexID>> buildPlanBasic(
+      nebula::DataSet* result,
+      const cpp2::PagingScanContext& ctx,
+      StoragePlan<IndexID>& plan,
+      bool hasNullableCol,
+      const std::vector<meta::cpp2::ColumnDef>& fields);
+
   std::unique_ptr<IndexOutputNode<IndexID>> buildPlanWithData(nebula::DataSet* result,
                                                               const cpp2::IndexQueryContext& ctx,
+                                                              StoragePlan<IndexID>& plan);
+
+  std::unique_ptr<IndexOutputNode<IndexID>> buildPlanWithData(nebula::DataSet* result,
+                                                              const cpp2::PagingScanContext& ctx,
                                                               StoragePlan<IndexID>& plan);
 
   std::unique_ptr<IndexOutputNode<IndexID>> buildPlanWithFilter(nebula::DataSet* result,
@@ -61,9 +84,22 @@ class LookupBaseProcessor : public BaseProcessor<RESP> {
                                                                 StorageExpressionContext* exprCtx,
                                                                 Expression* exp);
 
+  std::unique_ptr<IndexOutputNode<IndexID>> buildPlanWithFilter(nebula::DataSet* result,
+                                                                const cpp2::PagingScanContext& ctx,
+                                                                StoragePlan<IndexID>& plan,
+                                                                StorageExpressionContext* exprCtx,
+                                                                Expression* exp);
+
   std::unique_ptr<IndexOutputNode<IndexID>> buildPlanWithDataAndFilter(
       nebula::DataSet* result,
       const cpp2::IndexQueryContext& ctx,
+      StoragePlan<IndexID>& plan,
+      StorageExpressionContext* exprCtx,
+      Expression* exp);
+
+  std::unique_ptr<IndexOutputNode<IndexID>> buildPlanWithDataAndFilter(
+      nebula::DataSet* result,
+      const cpp2::PagingScanContext& ctx,
       StoragePlan<IndexID>& plan,
       StorageExpressionContext* exprCtx,
       Expression* exp);
@@ -78,12 +114,16 @@ class LookupBaseProcessor : public BaseProcessor<RESP> {
   nebula::DataSet resultDataSet_;
   std::vector<nebula::DataSet> partResults_;
   std::vector<cpp2::IndexQueryContext> indexContexts_{};
+  std::vector<cpp2::PagingScanContext> pagingScanContexts_{};
+  std::vector<cpp2::PagingScanContext> nextScanContexts_{};
   std::vector<std::string> yieldCols_{};
   std::vector<IndexFilterItem> filterItems_;
   // Save schemas when column is out of index, need to read from data
   std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>> schemas_;
   std::vector<size_t> deDupColPos_;
   int64_t limit_ = -1;
+  bool isPagingScan_ = false;
+  std::vector<PartitionID> parts_;
 };
 
 }  // namespace storage

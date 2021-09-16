@@ -481,6 +481,11 @@ struct GetUUIDResp {
 /*
  * Start of Index section
  */
+struct PagingScanPair {
+    1: binary   start,
+    2: binary   end,
+}
+
 struct LookupIndexResp {
     1: required ResponseCommon          result,
     // The result will be returned in a dataset, which is in the following form
@@ -492,6 +497,8 @@ struct LookupIndexResp {
     // Each column represents one peoperty. the column name is in the form of "tag_name.prop_alias"
     // or "edge_type_name.prop_alias" in the same order which specified in return_columns of request
     2: optional common.DataSet          data,
+    // for paging scan, next_scan_contexts used for next index scan contexts.
+    3: optional PagingScan              next_scan_contexts,
 }
 
 enum ScanType {
@@ -521,23 +528,39 @@ struct IndexQueryContext {
 }
 
 
-struct IndexSpec {
+struct GeneralScan {
+    1: required list<common.PartitionID>    parts,
     // In order to union multiple indices, multiple index hints are allowed
-    1: required list<IndexQueryContext>   contexts,
+    2: required list<IndexQueryContext>   contexts,
+    3: common.SchemaID                    schema_id,
+}
+
+struct PagingScanContext {
+    1: common.PartitionID                 part,
+    2: common.IndexID                     index_id,
+    4: binary                             filter,
+    5: PagingScanPair                     scan_pair,
+}
+
+struct PagingScan {
+    1: required list<PagingScanContext>   contexts,
     2: common.SchemaID                    schema_id,
 }
 
+union IndexSpec {
+    1: GeneralScan                         general_scan,
+    2: PagingScan                          paging_scan,
+}
 
 struct LookupIndexRequest {
     1: required common.GraphSpaceID         space_id,
-    2: required list<common.PartitionID>    parts,
-    3: IndexSpec                            indices,
+    2: IndexSpec                            indices,
     // The list of property names. Should not be empty.
     // Support kVid and kTag for vertex, kSrc, kType, kRank and kDst for edge.
-    4: optional list<binary>                return_columns,
-    5: optional RequestCommon               common,
+    3: optional list<binary>                return_columns,
+    4: optional RequestCommon               common,
     // max row count of each partition in this response
-    6: optional i64                         limit,
+    5: optional i64                         limit,
 }
 
 
@@ -546,10 +569,9 @@ struct LookupIndexRequest {
 //   of lookupIndex() and getNeighbors()
 struct LookupAndTraverseRequest {
     1: required common.GraphSpaceID         space_id,
-    2: required list<common.PartitionID>    parts,
-    3: IndexSpec                            indices,
-    4: TraverseSpec                         traverse_spec,
-    5: optional RequestCommon               common,
+    2: IndexSpec                            indices,
+    3: TraverseSpec                         traverse_spec,
+    4: optional RequestCommon               common,
 }
 
 /*
