@@ -30,7 +30,7 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
   if (FLAGS_containerized) {
     FileUtils::FileLineIterator iter("/sys/fs/cgroup/memory/memory.stat", &reTotalCache);
     uint64_t cacheSize = 0;
-    while (iter.valid()) {
+    for (; iter.valid(); ++iter) {
       auto& sm = iter.matched();
       cacheSize += std::stoul(sm[2].str(), NULL);
     }
@@ -46,9 +46,9 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
   } else {
     FileUtils::FileLineIterator iter("/proc/meminfo", &reMemAvailable);
     std::vector<uint64_t> memorySize;
-    while (iter.valid()) {
+    for (; iter.valid(); ++iter) {
       auto& sm = iter.matched();
-      memorySize.emplace_back(std::stoul(sm[1].str(), NULL) << 10);
+      memorySize.emplace_back(std::stoul(sm[2].str(), NULL) << 10);
     }
     CHECK_EQ(memorySize.size(), 2U);
     size_t i = 0, j = 1;
