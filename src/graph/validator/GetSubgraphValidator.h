@@ -27,6 +27,8 @@ class GetSubgraphValidator final : public TraversalValidator {
 
   Status validateBothInOutBound(BothInOutClause* out);
 
+  Status validateYield(YieldClause* yield);
+
   AstContext* getAstContext() override { return subgraphCtx_.get(); }
 
  private:

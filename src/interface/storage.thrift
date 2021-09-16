@@ -524,8 +524,7 @@ struct IndexQueryContext {
 struct IndexSpec {
     // In order to union multiple indices, multiple index hints are allowed
     1: required list<IndexQueryContext>   contexts,
-    2: required bool                      is_edge,
-    3: required i32                       tag_or_edge_id,
+    2: common.SchemaID                    schema_id,
 }
 
 
@@ -537,6 +536,8 @@ struct LookupIndexRequest {
     // Support kVid and kTag for vertex, kSrc, kType, kRank and kDst for edge.
     4: optional list<binary>                return_columns,
     5: optional RequestCommon               common,
+    // max row count of each partition in this response
+    6: optional i64                         limit,
 }
 
 

@@ -442,7 +442,7 @@ TEST(IndexWithTTLTest, RebuildTagIndexWithTTL) {
 
   // Wait for the task finished
   do {
-    usleep(500);
+    sleep(1);
   } while (!manager_->isFinished(context.jobId_, context.taskId_));
 
   manager_->shutdown();
@@ -511,7 +511,7 @@ TEST(IndexWithTTLTest, RebuildEdgeIndexWithTTL) {
 
   // Wait for the task finished
   do {
-    usleep(500);
+    sleep(1);
   } while (!manager_->isFinished(context.jobId_, context.taskId_));
 
   manager_->shutdown();
@@ -582,7 +582,7 @@ TEST(IndexWithTTLTest, RebuildTagIndexWithTTLExpired) {
 
   // Wait for the task finished
   do {
-    usleep(500);
+    sleep(1);
   } while (!manager_->isFinished(context.jobId_, context.taskId_));
 
   manager_->shutdown();
@@ -653,7 +653,7 @@ TEST(IndexWithTTLTest, RebuildEdgeIndexWithTTLExpired) {
 
   // Wait for the task finished
   do {
-    usleep(500);
+    sleep(1);
   } while (!manager_->isFinished(context.jobId_, context.taskId_));
   manager_->shutdown();
 
@@ -687,8 +687,9 @@ TEST(IndexWithTTLTest, LookupTagIndexWithTTL) {
   cpp2::LookupIndexRequest req;
   nebula::storage::cpp2::IndexSpec indices;
   req.set_space_id(1);
-  indices.set_tag_or_edge_id(2021001);
-  indices.set_is_edge(false);
+  nebula::cpp2::SchemaID schemaId;
+  schemaId.set_tag_id(2021001);
+  indices.set_schema_id(schemaId);
   std::vector<PartitionID> parts;
   for (int32_t p = 1; p <= 6; p++) {
     parts.emplace_back(p);
@@ -730,8 +731,10 @@ TEST(IndexWithTTLTest, LookupEdgeIndexWithTTL) {
   cpp2::LookupIndexRequest req;
   nebula::storage::cpp2::IndexSpec indices;
   req.set_space_id(1);
-  indices.set_tag_or_edge_id(2021001);
-  indices.set_is_edge(true);
+  nebula::cpp2::SchemaID schemaId;
+  schemaId.set_edge_type(2021001);
+  indices.set_schema_id(schemaId);
+
   std::vector<PartitionID> parts;
   for (int32_t p = 1; p <= 6; p++) {
     parts.emplace_back(p);
@@ -775,8 +778,9 @@ TEST(IndexWithTTLTest, LookupTagIndexWithTTLExpired) {
   cpp2::LookupIndexRequest req;
   nebula::storage::cpp2::IndexSpec indices;
   req.set_space_id(1);
-  indices.set_tag_or_edge_id(2021001);
-  indices.set_is_edge(false);
+  nebula::cpp2::SchemaID schemaId;
+  schemaId.set_tag_id(2021001);
+  indices.set_schema_id(schemaId);
   std::vector<PartitionID> parts;
   for (int32_t p = 1; p <= 6; p++) {
     parts.emplace_back(p);
@@ -820,8 +824,9 @@ TEST(IndexWithTTLTest, LookupEdgeIndexWithTTLExpired) {
   cpp2::LookupIndexRequest req;
   nebula::storage::cpp2::IndexSpec indices;
   req.set_space_id(1);
-  indices.set_tag_or_edge_id(2021001);
-  indices.set_is_edge(true);
+  nebula::cpp2::SchemaID schemaId;
+  schemaId.set_edge_type(2021001);
+  indices.set_schema_id(schemaId);
   std::vector<PartitionID> parts;
   for (int32_t p = 1; p <= 6; p++) {
     parts.emplace_back(p);
