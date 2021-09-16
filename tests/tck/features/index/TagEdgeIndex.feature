@@ -80,20 +80,10 @@ Feature: tag and edge index tests from pytest
       CREATE TAG INDEX disorder_tag_index ON tag_1(col3, col2)
       """
     Then the execution should be successful
-    And wait 3 seconds
+    And wait 6 seconds
     When submit a job:
       """
-      REBUILD TAG INDEX single_tag_index
-      """
-    Then wait the job to finish
-    When submit a job:
-      """
-      REBUILD TAG INDEX multi_tag_index
-      """
-    Then wait the job to finish
-    When submit a job:
-      """
-      REBUILD TAG INDEX disorder_tag_index
+      REBUILD TAG INDEX single_tag_index, multi_tag_index, disorder_tag_index
       """
     Then wait the job to finish
     When executing query:
@@ -326,21 +316,11 @@ Feature: tag and edge index tests from pytest
       CREATE EDGE INDEX disorder_edge_index ON edge_1(col3, col2)
       """
     Then the execution should be successful
-    And wait 3 seconds
+    And wait 6 seconds
     # Rebuild Edge Index
     When submit a job:
       """
-      REBUILD EDGE INDEX single_edge_index
-      """
-    Then wait the job to finish
-    When submit a job:
-      """
-      REBUILD EDGE INDEX multi_edge_index
-      """
-    Then wait the job to finish
-    When submit a job:
-      """
-      REBUILD EDGE INDEX disorder_edge_index
+      REBUILD EDGE INDEX single_edge_index, multi_edge_index, disorder_edge_index
       """
     Then wait the job to finish
     When executing query:
