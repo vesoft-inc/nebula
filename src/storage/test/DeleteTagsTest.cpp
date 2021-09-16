@@ -58,8 +58,9 @@ cpp2::LookupIndexRequest buildLookupRequest(int32_t totalParts, std::string play
   cpp2::LookupIndexRequest req;
   nebula::storage::cpp2::IndexSpec indices;
   req.set_space_id(1);
-  indices.set_tag_or_edge_id(1);
-  indices.set_is_edge(false);
+  nebula::cpp2::SchemaID schemaId;
+  schemaId.set_tag_id(1);
+  indices.set_schema_id(schemaId);
   std::vector<PartitionID> parts;
   for (PartitionID partId = 1; partId <= totalParts; partId++) {
     parts.emplace_back(partId);

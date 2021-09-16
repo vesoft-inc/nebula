@@ -71,6 +71,10 @@ class QueryUtils final {
       }
       return Status::Error(folly::stringPrintf("Fail to read prop %s ", propName.c_str()));
     }
+    if (field->type() == meta::cpp2::PropertyType::FIXED_STRING) {
+      const auto& fixedStr = value.getStr();
+      return fixedStr.substr(0, fixedStr.find_first_of('\0'));
+    }
     return value;
   }
 
