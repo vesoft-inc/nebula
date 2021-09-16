@@ -81,6 +81,7 @@ nebula_add_test(
         CartesianProductTest.cpp
         AssignTest.cpp
         ShowQueriesTest.cpp
+        JobTest.cpp
     OBJECTS
         ${EXEC_QUERY_TEST_OBJS}
     LIBRARIES
