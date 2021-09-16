@@ -35,7 +35,19 @@ class Explore : public SingleInputNode {
 
   bool dedup() const { return dedup_; }
 
-  int64_t limit() const { return limit_; }
+  // Get the constant limit value
+  int64_t limit() const {
+    QueryExpressionContext ctx;
+    DCHECK(ExpressionUtils::isEvaluableExpr(limit_));
+    return DCHECK_NOTNULL(limit_)->eval(ctx).getInt();
+  }
+
+  // Get the limit value in runtime
+  int64_t limit(QueryExpressionContext& ctx) const {
+    return DCHECK_NOTNULL(limit_)->eval(ctx).getInt();
+  }
+
+  Expression* limitExpr() const { return limit_; }
 
   const std::string& filter() const { return filter_; }
 
@@ -43,7 +55,9 @@ class Explore : public SingleInputNode {
 
   void setDedup(bool dedup = true) { dedup_ = dedup; }
 
-  void setLimit(int64_t limit) { limit_ = limit; }
+  void setLimit(int64_t limit) { limit_ = ConstantExpression::make(qctx_->objPool(), limit); }
+
+  void setLimit(Expression* limit) { limit_ = limit; }
 
   void setFilter(std::string filter) { filter_ = std::move(filter); }
 
@@ -63,6 +77,21 @@ class Explore : public SingleInputNode {
       : SingleInputNode(qctx, kind, input),
         space_(space),
         dedup_(dedup),
+        limit_(ConstantExpression::make(qctx_->objPool(), limit)),
+        filter_(std::move(filter)),
+        orderBy_(std::move(orderBy)) {}
+
+  Explore(QueryContext* qctx,
+          Kind kind,
+          PlanNode* input,
+          GraphSpaceID space,
+          bool dedup,
+          Expression* limit,
+          std::string filter,
+          std::vector<storage::cpp2::OrderBy> orderBy)
+      : SingleInputNode(qctx, kind, input),
+        space_(space),
+        dedup_(dedup),
         limit_(limit),
         filter_(std::move(filter)),
         orderBy_(std::move(orderBy)) {}
@@ -75,7 +104,9 @@ class Explore : public SingleInputNode {
  protected:
   GraphSpaceID space_;
   bool dedup_{false};
-  int64_t limit_{std::numeric_limits<int64_t>::max()};
+  // Use expression to get the limit value in runtime
+  // Now for the GetNeighbors/Limit in Loop
+  Expression* limit_{nullptr};
   std::string filter_;
   std::vector<storage::cpp2::OrderBy> orderBy_;
 };
@@ -652,15 +683,46 @@ class Limit final : public SingleInputNode {
     return qctx->objPool()->add(new Limit(qctx, input, offset, count));
   }
 
+  static Limit* make(QueryContext* qctx,
+                     PlanNode* input,
+                     int64_t offset = -1,
+                     Expression* count = nullptr) {
+    return qctx->objPool()->add(new Limit(qctx, input, offset, count));
+  }
+
   int64_t offset() const { return offset_; }
 
-  int64_t count() const { return count_; }
+  // Get constant count value
+  int64_t count() const {
+    if (count_ == nullptr) {
+      return -1;
+    }
+    DCHECK(ExpressionUtils::isEvaluableExpr(count_));
+    QueryExpressionContext ctx;
+    return count_->eval(ctx).getInt();
+  }
+
+  // Get count in runtime
+  int64_t count(QueryExpressionContext& ctx) const {
+    if (count_ == nullptr) {
+      return -1;
+    }
+    return count_->eval(ctx).getInt();
+  }
+
+  const Expression* countExpr() const { return count_; }
 
   PlanNode* clone() const override;
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
  private:
   Limit(QueryContext* qctx, PlanNode* input, int64_t offset, int64_t count)
+      : SingleInputNode(qctx, Kind::kLimit, input) {
+    offset_ = offset;
+    count_ = ConstantExpression::make(qctx_->objPool(), count);
+  }
+
+  Limit(QueryContext* qctx, PlanNode* input, int64_t offset, Expression* count)
       : SingleInputNode(qctx, Kind::kLimit, input) {
     offset_ = offset;
     count_ = count;
@@ -670,7 +732,7 @@ class Limit final : public SingleInputNode {
 
  private:
   int64_t offset_{-1};
-  int64_t count_{-1};
+  Expression* count_{nullptr};
 };
 
 /**
