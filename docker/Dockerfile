@@ -5,7 +5,7 @@ ARG BRANCH=master
 COPY . /home/nebula/BUILD
 
 RUN cd /home/nebula/BUILD/package \
-  && ./package.sh -v $(git rev-parse --short HEAD) -n OFF -b ${BRANCH}
+  && ./package.sh -n OFF -b ${BRANCH}
 
 FROM centos:7 as graphd
 
@@ -15,8 +15,8 @@ COPY --from=builder /home/nebula/BUILD/pkg-build/cpack_output/nebula-*-graph.rpm
 WORKDIR /usr/local/nebula
 
 RUN rpm -ivh *.rpm \
-    && mkdir -p ./{logs,data,pids} \
-    && rm -rf *.rpm
+  && mkdir -p ./{logs,data,pids} \
+  && rm -rf *.rpm
 
 EXPOSE 9669 19669 19670
 

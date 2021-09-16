@@ -68,6 +68,8 @@ class LookupBaseProcessor : public BaseProcessor<RESP> {
       StorageExpressionContext* exprCtx,
       Expression* exp);
 
+  void profilePlan(StoragePlan<IndexID>& plan);
+
  protected:
   GraphSpaceID spaceId_;
   std::unique_ptr<PlanContext> planContext_;
@@ -81,6 +83,7 @@ class LookupBaseProcessor : public BaseProcessor<RESP> {
   // Save schemas when column is out of index, need to read from data
   std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>> schemas_;
   std::vector<size_t> deDupColPos_;
+  int64_t limit_ = -1;
 };
 
 }  // namespace storage

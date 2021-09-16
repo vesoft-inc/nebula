@@ -426,8 +426,8 @@ def load_csv_data(
         for line in schemas.splitlines():
             resp_ok(sess, line.strip(), True)
 
-        # wait heartbeat_interval_secs seconds for schema synchronization
-        time.sleep(1)
+        # wait heartbeat_interval_secs + 1 seconds for schema synchronization
+        time.sleep(2)
 
         for fd in config["files"]:
             _load_data_from_file(sess, data_dir, fd)
