@@ -6,8 +6,6 @@
 #ifndef PARSER_CLAUSES_H_
 #define PARSER_CLAUSES_H_
 
-#include <bits/stdint-intn.h>
-
 #include "common/base/Base.h"
 #include "common/expression/Expression.h"
 #include "graph/util/ExpressionUtils.h"
