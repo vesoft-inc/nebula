@@ -107,7 +107,7 @@ jobs:
                 -DENABLE_ASAN=on \
                 -DENABLE_TESTING=on \
                 -B build
-            echo "::set-output name=j::6 name=t::$(nproc)"
+            echo "::set-output name=j::6 name=t::10"
             ;;
           esac
       - name: Make
