@@ -52,9 +52,12 @@ class EdgeNode : public IterateNode<T> {
     schemas_ = &(schemaIter->second);
     ttl_ = QueryUtils::getEdgeTTLInfo(edgeContext_, std::abs(edgeType_));
     edgeName_ = edgeContext_->edgeNames_[edgeType_];
+    IterateNode<T>::name_ = "EdgeNode";
   }
 
-  EdgeNode(RuntimeContext* context, EdgeContext* ctx) : context_(context), edgeContext_(ctx) {}
+  EdgeNode(RuntimeContext* context, EdgeContext* ctx) : context_(context), edgeContext_(ctx) {
+    IterateNode<T>::name_ = "EdgeNode";
+  }
 
   RuntimeContext* context_;
   EdgeContext* edgeContext_;
@@ -71,7 +74,7 @@ class EdgeNode : public IterateNode<T> {
 // FetchEdgeNode is used to fetch a single edge
 class FetchEdgeNode final : public EdgeNode<cpp2::EdgeKey> {
  public:
-  using RelNode::execute;
+  using RelNode::doExecute;
 
   FetchEdgeNode(RuntimeContext* context,
                 EdgeContext* edgeContext,
@@ -79,7 +82,9 @@ class FetchEdgeNode final : public EdgeNode<cpp2::EdgeKey> {
                 const std::vector<PropContext>* props,
                 StorageExpressionContext* expCtx = nullptr,
                 Expression* exp = nullptr)
-      : EdgeNode(context, edgeContext, edgeType, props, expCtx, exp) {}
+      : EdgeNode(context, edgeContext, edgeType, props, expCtx, exp) {
+    name_ = "FetchEdgeNode";
+  }
 
   bool valid() const override { return valid_; }
 
@@ -91,9 +96,9 @@ class FetchEdgeNode final : public EdgeNode<cpp2::EdgeKey> {
 
   RowReader* reader() const override { return reader_.get(); }
 
-  nebula::cpp2::ErrorCode execute(PartitionID partId, const cpp2::EdgeKey& edgeKey) override {
+  nebula::cpp2::ErrorCode doExecute(PartitionID partId, const cpp2::EdgeKey& edgeKey) override {
     valid_ = false;
-    auto ret = RelNode::execute(partId, edgeKey);
+    auto ret = RelNode::doExecute(partId, edgeKey);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
       return ret;
     }
@@ -143,14 +148,16 @@ class FetchEdgeNode final : public EdgeNode<cpp2::EdgeKey> {
 // srcId
 class SingleEdgeNode final : public EdgeNode<VertexID> {
  public:
-  using RelNode::execute;
+  using RelNode::doExecute;
   SingleEdgeNode(RuntimeContext* context,
                  EdgeContext* edgeContext,
                  EdgeType edgeType,
                  const std::vector<PropContext>* props,
                  StorageExpressionContext* expCtx = nullptr,
                  Expression* exp = nullptr)
-      : EdgeNode(context, edgeContext, edgeType, props, expCtx, exp) {}
+      : EdgeNode(context, edgeContext, edgeType, props, expCtx, exp) {
+    name_ = "SingleEdgeNode";
+  }
 
   SingleEdgeIterator* iter() { return iter_.get(); }
 
@@ -164,8 +171,8 @@ class SingleEdgeNode final : public EdgeNode<VertexID> {
 
   RowReader* reader() const override { return iter_->reader(); }
 
-  nebula::cpp2::ErrorCode execute(PartitionID partId, const VertexID& vId) override {
-    auto ret = RelNode::execute(partId, vId);
+  nebula::cpp2::ErrorCode doExecute(PartitionID partId, const VertexID& vId) override {
+    auto ret = RelNode::doExecute(partId, vId);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
       return ret;
     }

@@ -60,6 +60,9 @@ void LookupProcessor::runInSingleThread(const cpp2::LookupIndexRequest& req) {
       }
     }
   }
+  if (FLAGS_profile_storage_detail) {
+    profilePlan(plan.value());
+  }
   onProcessFinished();
   onFinished();
 }
@@ -109,6 +112,9 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> LookupProcessor::
       return std::make_pair(nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND, partId);
     }
     auto ret = plan.value().go(partId);
+    if (FLAGS_profile_storage_detail) {
+      profilePlan(plan.value());
+    }
     return std::make_pair(ret, partId);
   });
 }
