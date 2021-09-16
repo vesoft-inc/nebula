@@ -13,7 +13,7 @@
 namespace nebula {
 namespace opt {
 
-class PushSampleDownGetNeighborsRule final : public OptRule {
+class PushStepSampleDownGetNeighborsRule final : public OptRule {
  public:
   const Pattern &pattern() const override;
 
@@ -23,7 +23,7 @@ class PushSampleDownGetNeighborsRule final : public OptRule {
   std::string toString() const override;
 
  private:
-  PushSampleDownGetNeighborsRule();
+  PushStepSampleDownGetNeighborsRule();
 
   static std::unique_ptr<OptRule> kInstance;
 };

@@ -61,6 +61,9 @@ class Iterator {
   // Warning this will break the origin order of elements!
   virtual void unstableErase() = 0;
 
+  // remain the select data in range
+  virtual void select(std::size_t offset, std::size_t count) = 0;
+
   // Sample the elements
   virtual void sample(int64_t count) = 0;
 
@@ -146,6 +149,10 @@ class DefaultIter final : public Iterator {
 
   void eraseRange(size_t, size_t) override { return; }
 
+  void select(std::size_t, std::size_t) override {
+    DLOG(FATAL) << "Unimplemented method for default iterator.";
+  }
+
   void sample(int64_t) override { DLOG(FATAL) << "Unimplemented default iterator."; }
 
   void clear() override { reset(); }
@@ -199,10 +206,23 @@ class GetNeighborsIter final : public Iterator {
 
   void unstableErase() override { erase(); }
 
+  // erase [first, last)
   void eraseRange(size_t first, size_t last) override {
-    UNUSED(first);
-    UNUSED(last);
-    DCHECK(false);
+    for (std::size_t i = 0; valid() && i < last; next(), ++i) {
+      if (i >= first || i < last) {
+        erase();
+      }
+    }
+    doReset(0);
+  }
+
+  void select(std::size_t offset, std::size_t count) override {
+    for (std::size_t i = 0; valid(); next(), ++i) {
+      if (i < offset || i > (offset + count - 1)) {
+        erase();
+      }
+    }
+    doReset(0);
   }
 
   void sample(int64_t count) override;
@@ -334,6 +354,18 @@ class SequentialIter : public Iterator {
   void unstableErase() override;
 
   void eraseRange(size_t first, size_t last) override;
+
+  void select(std::size_t offset, std::size_t count) override {
+    auto size = this->size();
+    if (size <= static_cast<size_t>(offset)) {
+      clear();
+    } else if (size > static_cast<size_t>(offset + count)) {
+      eraseRange(0, offset);
+      eraseRange(count, size - offset);
+    } else if (size > static_cast<size_t>(offset) && size <= static_cast<size_t>(offset + count)) {
+      eraseRange(0, offset);
+    }
+  }
 
   void sample(int64_t count) override {
     DCHECK_GE(count, 0);

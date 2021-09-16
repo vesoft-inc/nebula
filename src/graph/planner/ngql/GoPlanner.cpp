@@ -334,7 +334,10 @@ PlanNode* GoPlanner::lastStep(PlanNode* dep, PlanNode* join) {
   gn->setEdgeProps(buildEdgeProps(false));
   gn->setInputVar(goCtx_->vidsVar);
 
-  auto* root = buildLastStepJoinPlan(gn, join);
+  const auto& steps = goCtx_->steps;
+  auto* sampleLimit = buildSampleLimit(gn, steps.isMToN() ? steps.nSteps() : steps.steps());
+
+  auto* root = buildLastStepJoinPlan(sampleLimit, join);
 
   if (goCtx_->filter != nullptr) {
     root = Filter::make(qctx, root, goCtx_->filter);
@@ -346,9 +349,6 @@ PlanNode* GoPlanner::lastStep(PlanNode* dep, PlanNode* join) {
   if (goCtx_->distinct) {
     root = Dedup::make(qctx, root);
   }
-
-  const auto& steps = goCtx_->steps;
-  root = buildSampleLimit(root, steps.isMToN() ? steps.nSteps() : steps.steps());
 
   return root;
 }
@@ -396,9 +396,11 @@ SubPlan GoPlanner::oneStepPlan(SubPlan& startVidPlan) {
   gn->setSrc(goCtx_->from.src);
   gn->setInputVar(goCtx_->vidsVar);
 
+  auto* sampleLimit = buildSampleLimit(gn, 1 /* one step */);
+
   SubPlan subPlan;
   subPlan.tail = startVidPlan.tail != nullptr ? startVidPlan.tail : gn;
-  subPlan.root = buildOneStepJoinPlan(gn);
+  subPlan.root = buildOneStepJoinPlan(sampleLimit);
 
   if (goCtx_->filter != nullptr) {
     subPlan.root = Filter::make(qctx, subPlan.root, goCtx_->filter);
@@ -410,7 +412,6 @@ SubPlan GoPlanner::oneStepPlan(SubPlan& startVidPlan) {
     subPlan.root = Dedup::make(qctx, subPlan.root);
   }
 
-  subPlan.root = buildSampleLimit(subPlan.root, 1 /* one step */);
   return subPlan;
 }
 
