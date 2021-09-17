@@ -46,7 +46,7 @@ Status FetchEdgesValidator::toPlan() {
                                       dedup_,
                                       limit_,
                                       std::move(orderBy_),
-                                      std::move(filter_));
+                                      filter_);
   getEdgesNode->setInputVar(edgeKeysVar);
   getEdgesNode->setColNames(geColNames_);
   // the pipe will set the input variable
