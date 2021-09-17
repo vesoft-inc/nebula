@@ -5,6 +5,7 @@
  */
 
 #include <folly/Benchmark.h>
+#include <sys/sysinfo.h>
 
 #include <cstdio>
 #include <fstream>
@@ -20,6 +21,7 @@ BENCHMARK(Popen) {
   if (pclose(pipe) < 0) {
     std::cerr << ::strerror(errno);
   }
+  folly::doNotOptimizeAway(value);
 }
 
 BENCHMARK(Fstream) {
@@ -30,6 +32,16 @@ BENCHMARK(Fstream) {
   uint64_t value;
   ifs >> value;
   ifs.close();
+  folly::doNotOptimizeAway(value);
+}
+
+BENCHMARK(SysInfo) {
+  struct sysinfo info;
+  if (sysinfo(&info) == -1) {
+    std::cerr << "fail to sysinfo: " << strerror(errno);
+  }
+  uint64_t total = info.totalram * info.mem_unit;
+  folly::doNotOptimizeAway(total);
 }
 
 int main(int argc, char **argv) {
@@ -41,6 +53,7 @@ int main(int argc, char **argv) {
 // ============================================================================
 // src/common/memory/test/SysInfoReadBenchmark.cpp relative  time/iter  iters/s
 // ============================================================================
-// Popen                                                        1.46ms   683.72
-// Fstream                                                      6.83us  146.42K
+// Popen                                                        1.34ms   744.82
+// Fstream                                                      4.44us  225.29K
+// SysInfo                                                    524.54ns    1.91M
 // ============================================================================
