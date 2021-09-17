@@ -57,6 +57,12 @@ class UpdateEdgeProcessor
     // result.begin(), get); return result;
     return returnPropsExp_;
   }
+  void profilePlan(StoragePlan<cpp2::EdgeKey>& plan) {
+    auto& nodes = plan.getNodes();
+    for (auto& node : nodes) {
+      profileDetail(node->name_, node->duration_.elapsedInUSec());
+    }
+  }
 
  private:
   std::unique_ptr<RuntimeContext> context_;
