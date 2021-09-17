@@ -50,6 +50,10 @@ StatusOr<OptRule::TransformResult> LimitPushDownRule::transform(
   const auto proj = static_cast<const Project *>(projGroupNode->node());
   const auto gn = static_cast<const GetNeighbors *>(gnGroupNode->node());
 
+  DCHECK(graph::ExpressionUtils::isEvaluableExpr(limit->countExpr()));
+  if (!graph::ExpressionUtils::isEvaluableExpr(limit->countExpr())) {
+    return TransformResult::noTransform();
+  }
   int64_t limitRows = limit->offset() + limit->count();
   if (gn->limit() >= 0 && limitRows >= gn->limit()) {
     return TransformResult::noTransform();
