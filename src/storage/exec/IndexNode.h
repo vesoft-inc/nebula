@@ -4,19 +4,20 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 #pragma once
-#include "common/base/StatusOr.h"
+#include "common/base/ErrorOr.h"
 #include "common/datatypes/DataSet.h"
 #include "interface/gen-cpp2/common_types.h"
 #include "storage/CommonUtils.h"
 namespace nebula {
 namespace storage {
+using ErrorCode = ::nebula::cpp2::ErrorCode;
 class IndexNode {
  public:
+  template <typename ResultType>
+  using ErrorOr = ::nebula::ErrorOr<ErrorCode, ResultType>;
   explicit IndexNode(RuntimeContext* context);
-  virtual void init() = 0;
   virtual nebula::cpp2::ErrorCode execute(PartitionID partId) = 0;
-  virtual StatusOr<Row> next() = 0;
-  virtual bool vailed() = 0;
+  virtual ErrorOr<Row> next(bool& hasNext) = 0;
 
  protected:
   RuntimeContext* context_;

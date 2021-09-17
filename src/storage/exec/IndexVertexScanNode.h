@@ -13,19 +13,19 @@ namespace nebula {
 namespace storage {
 class IndexVertexScanNode final : public IndexScanNode {
  public:
-  static StatusOr<IndexVertexScanNode> make(RuntimeContext* context,
-                                            IndexID indexId,
-                                            const std::vector<cpp2::IndexColumnHint>& columnHint) {
+  static ErrorOr<IndexVertexScanNode> make(RuntimeContext* context,
+                                           IndexID indexId,
+                                           const std::vector<cpp2::IndexColumnHint>& columnHint) {
     IndexVertexScanNode node(context, indexId, columnHint);
     auto env = context->env();
     auto spaceId = context->spaceId();
     auto indexMgr = env->indexMan_;
     auto schemaMgr = env->schemaMan_;
     auto index = indexMgr->getTagIndex(spaceId, indexId).value();
-    auto tagSchema = schemaMgr->getTagSchema(spaceId, index->get_schema_id()).value();
+    auto tagSchema = schemaMgr->getTagSchema(spaceId, index->get_schema_id().get_tag_id());
     node.index_ = index;
     node.tag_ = tagSchema;
-    return StatusOr<IndexVertexScanNode>(std::move(node));
+    return ErrorOr<IndexVertexScanNode>(std::move(node));
   }
 
  private:
@@ -33,11 +33,6 @@ class IndexVertexScanNode final : public IndexScanNode {
                       IndexID indexId,
                       const std::vector<cpp2::IndexColumnHint>& clolumnHint)
       : IndexScanNode(context, indexId, clolumnHint) {}
-  nebula::cpp2::ErrorCode init() override {}
-  nebula::cpp2::ErrorCode execute(PartitionID partId) override {
-    auto ret = resetIter(partId);
-    return ret;
-  }
 
   nebula::cpp2::ErrorCode getBaseData(folly::StringPiece key,
                                       std::pair<std::string, std::string>& kv) override {
@@ -64,45 +59,44 @@ class IndexVertexScanNode final : public IndexScanNode {
     if (colPosMap.count(kTag)) {
       values[colPosMap[kTag]] = Value(context_->tagId_);
     }
-    size_t offset = 0;
-    for (auto& field : index_->get_fields()) {
-    }
-    index_->get_fields();
-    for (auto& col : requiredColumns_) {
-      switch (QueryUtils::toReturnColType(col)) {
-        case QueryUtils::ReturnColType::kVid: {
-          auto vId = IndexKeyUtils::getIndexVertexID(context_->vIdLen(), key);
-          if (context_->isIntId()) {
-            values.emplace_back(*reinterpret_cast<const int64_t*>(vId.data()));
-          } else {
-            values.emplace_back(vId.subpiece(0, vId.find_first_of('\0')).toString());
-          }
-          break;
-        }
-        case QueryUtils::ReturnColType::kTag: {
-          values.emplace_back(context_->tagId_);
-          break;
-        }
-        case QueryUtils::ReturnColType::kOther: {
-          auto v = IndexKeyUtils::getValueFromIndexKey(
-              context_->vIdLen(), key, col, fields_, false, hasNullableCol_);
-          values.emplace_back(std::move(v));
-          break;
-        }
-        default:
-          LOG(FATAL) << "Unexpect column " << col << " in IndexVertexScanNode";
-      }
-    }
+    key.subtract(context_->vIdLen());
+    decodePropFromIndex(key, colPosMap, values);
     return Row(std::move(values));
   }
   Map<std::string, Value> decodeFromBase(const std::string& key,
-                                         const std::string& value) override {}
+                                         const std::string& value) override {
+    Map<std::string, Value> values;
+    auto reader = RowReaderWrapper::getRowReader(tag_.get(), value);
+    for (auto& col : requiredColumns_) {
+      switch (QueryUtils::toReturnColType(col)) {
+        case QueryUtils::ReturnColType::kVid: {
+          auto vId = NebulaKeyUtils::getVertexId(context_->vIdLen(), key);
+          if (context_->isIntId()) {
+            values[col] = Value(*reinterpret_cast<const int64_t*>(vId.data()));
+          } else {
+            values[col] = Value(vId.subpiece(0, vId.find_first_of('\0')).toString());
+          }
+        } break;
+        case QueryUtils::ReturnColType::kTag: {
+          values[col] = Value(context_->tagId_);
+        } break;
+        case QueryUtils::ReturnColType::kOther: {
+          auto retVal = QueryUtils::readValue(reader.get(), col, tag_->field(col));
+          if (!retVal.ok()) {
+            LOG(FATAL) << "Bad value for field" << col;
+          }
+          values[col] = std::move(retVal.value());
+        } break;
+        default:
+          LOG(FATAL) << "Unexpect column name:" << col;
+      }
+    }
+    return values;
+  }
   const meta::SchemaProviderIf* getSchema() override { return tag_.get(); }
 
  private:
-  std::shared_ptr<nebula::meta::cpp2::IndexItem> index_;
   std::shared_ptr<const nebula::meta::NebulaSchemaProvider> tag_;
-  std::unique_ptr<kvstore::KVIterator> iter_;
 };
 }  // namespace storage
 }  // namespace nebula
