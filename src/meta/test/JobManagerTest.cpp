@@ -390,13 +390,14 @@ TEST_F(JobManagerTest, showJobInOtherSpace) {
 TEST_F(JobManagerTest, recoverJob) {
   // set status to prevent running the job since AdminClient is a injector
   jobMgr->status_ = JobManager::JbmgrStatus::NOT_START;
+  auto spaceName = "test_space";
   int32_t nJob = 3;
   for (auto i = 0; i != nJob; ++i) {
-    JobDescription jd(i, cpp2::AdminCmd::FLUSH, {"test_space"});
+    JobDescription jd(i, cpp2::AdminCmd::FLUSH, {spaceName});
     jobMgr->save(jd.jobKey(), jd.jobVal());
   }
 
-  auto nJobRecovered = jobMgr->recoverJob();
+  auto nJobRecovered = jobMgr->recoverJob(spaceName);
   ASSERT_EQ(nebula::value(nJobRecovered), 1);
 }
 

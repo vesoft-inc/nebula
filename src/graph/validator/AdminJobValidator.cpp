@@ -50,14 +50,10 @@ Status AdminJobValidator::validateImpl() {
         }
       }
     }
-  } else if (reqOp == meta::cpp2::AdminJobOp::SHOW_All ||
-    reqOp == meta::cpp2::AdminJobOp::SHOW) {
-      auto cmd = sentence_->getCmd();
-      if (requireSpace()) {
-        const auto &spaceInfo = qctx()->rctx()->session()->space();
-        const auto &spaceName = spaceInfo.name;
-        sentence_->addPara(spaceName);
-      }
+  } else if (needAppendChosenSpace()) {
+      const auto &spaceInfo = qctx()->rctx()->session()->space();
+      const auto &spaceName = spaceInfo.name;
+      sentence_->addPara(spaceName);
   }
 
   return Status::OK();

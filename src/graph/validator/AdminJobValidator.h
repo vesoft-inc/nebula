@@ -7,6 +7,7 @@
 #ifndef GRAPH_VALIDATOR_ADMIN_JOB_VALIDATOR_H_
 #define GRAPH_VALIDATOR_ADMIN_JOB_VALIDATOR_H_
 
+#include <folly/Likely.h>
 #include "graph/validator/Validator.h"
 #include "parser/AdminSentences.h"
 
@@ -38,6 +39,7 @@ class AdminJobValidator final : public Validator {
           case meta::cpp2::AdminCmd::COMPACT:
           case meta::cpp2::AdminCmd::FLUSH:
             return true;
+          // TODO: Also space related, but not available in CreateJobExcutor now.
           case meta::cpp2::AdminCmd::DATA_BALANCE:
           case meta::cpp2::AdminCmd::DOWNLOAD:
           case meta::cpp2::AdminCmd::INGEST:
@@ -47,9 +49,24 @@ class AdminJobValidator final : public Validator {
         break;
       case meta::cpp2::AdminJobOp::SHOW_All:
       case meta::cpp2::AdminJobOp::SHOW:
-        return true;
       case meta::cpp2::AdminJobOp::STOP:
       case meta::cpp2::AdminJobOp::RECOVER:
+        return true;
+    }
+    return false;
+  }
+
+  auto needAppendChosenSpace() -> bool {
+    if (UNLIKELY(!requireSpace())) {
+      return false;
+    }
+    switch (sentence_->getOp()) {
+      case meta::cpp2::AdminJobOp::SHOW_All:
+      case meta::cpp2::AdminJobOp::SHOW:
+      case meta::cpp2::AdminJobOp::STOP:
+      case meta::cpp2::AdminJobOp::RECOVER:
+        return true;
+      default:
         return false;
     }
     return false;

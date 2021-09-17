@@ -108,11 +108,13 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
         errorCode = nebula::cpp2::ErrorCode::E_INVALID_PARM;
         break;
       }
-      errorCode = jobMgr->stopJob(iJob);
+      auto spaceName = req.get_paras().back();
+      errorCode = jobMgr->stopJob(iJob, spaceName);
       break;
     }
     case nebula::meta::cpp2::AdminJobOp::RECOVER: {
-      auto ret = jobMgr->recoverJob();
+      auto spaceName = req.get_paras().back();
+      auto ret = jobMgr->recoverJob(spaceName);
       if (nebula::ok(ret)) {
         result.set_recovered_job_num(nebula::value(ret));
       } else {
