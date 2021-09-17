@@ -50,6 +50,7 @@ Feature: Submit job space requirements
       | partition_num  | 9                |
       | replica_factor | 1                |
       | vid_type       | FIXED_STRING(20) |
+    And wait 6 seconds
     When executing query:
       """
       SUBMIT JOB COMPACT;
