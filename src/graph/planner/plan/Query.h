@@ -826,6 +826,15 @@ class Sample final : public SingleInputNode {
     return count;
   }
 
+  Expression* countExpr() const { return count_; }
+
+  void setCount(int64_t count) {
+    DCHECK_GE(count, 0);
+    count_ = ConstantExpression::make(qctx_->objPool(), count);
+  }
+
+  void setCount(Expression* count) { count_ = DCHECK_NOTNULL(count); }
+
   PlanNode* clone() const override;
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
