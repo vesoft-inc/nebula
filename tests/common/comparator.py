@@ -29,11 +29,13 @@ class DataSetComparator:
                  strict=True,
                  order=False,
                  contains=CmpType.EQUAL,
+                 first_n_records=-1,
                  decode_type='utf-8',
                  vid_fn=None):
         self._strict = strict
         self._order = order
         self._contains = contains
+        self._first_n_records=first_n_records
         self._decode_type = decode_type
         self._vid_fn = vid_fn
 
@@ -65,13 +67,16 @@ class DataSetComparator:
             if ln != self.bstr(rn):
                 return False, -2
         if self._order:
-            for i in range(0, len(expect.rows)):
-                cmp = self.compare_row(resp.rows[i], expect.rows[i])
-                if self._whether_return(cmp):
-                    return False, i
-            if self._contains == CmpType.CONTAINS:
+            if self._contains == CmpType.CONTAINS and self._first_n_records < 0:
+                for i in range(0, len(expect.rows)):
+                    cmp = self.compare_row(resp.rows[i], expect.rows[i])
+                    if self._whether_return(cmp):
+                        return False, i
                 return True, None
-            return len(resp.rows) == len(expect.rows), -1
+            elif self._contains == CmpType.CONTAINS and self._first_n_records > 0:
+                return self._compare_list(resp.rows[0:self._first_n_records], expect.rows, self.compare_row)
+            else:
+                return len(resp.rows) == len(expect.rows), -1
         return self._compare_list(resp.rows, expect.rows, self.compare_row,
                                   self._contains)
 

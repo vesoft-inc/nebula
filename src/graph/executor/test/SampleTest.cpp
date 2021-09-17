@@ -42,8 +42,6 @@ class SampleTest : public QueryTestBase {};
     EXPECT_EQ(proResult.state(), Result::State::kSuccess);                                  \
   } while (false)
 
-TEST_F(SampleTest, SequentialInRange1) { SAMPLE_RESUTL_CHECK("sample_in_sequential1", 0, 0); }
-
 TEST_F(SampleTest, SequentialInRange2) { SAMPLE_RESUTL_CHECK("sample_in_sequential2", 4, 4); }
 
 TEST_F(SampleTest, SequentialOutRange1) { SAMPLE_RESUTL_CHECK("sample_out_sequential3", 7, 6); }
@@ -72,8 +70,6 @@ TEST_F(SampleTest, SequentialOutRange2) { SAMPLE_RESUTL_CHECK("sample_out_sequen
     EXPECT_EQ(proResult.value().getDataSet().size(), expect);                              \
     EXPECT_EQ(proResult.state(), Result::State::kSuccess);                                 \
   } while (false)
-
-TEST_F(SampleTest, GN1) { SAMPLE_GN_RESUTL_CHECK("sample_in_gn1", 0, 0); }
 
 TEST_F(SampleTest, GN2) { SAMPLE_GN_RESUTL_CHECK("sample_in_gn2", 4, 4); }
 

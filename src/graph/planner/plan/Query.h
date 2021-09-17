@@ -742,13 +742,28 @@ class TopN final : public SingleInputNode {
  */
 class Sample final : public SingleInputNode {
  public:
-  static Sample* make(QueryContext* qctx, PlanNode* input, int64_t count) {
+  static Sample* make(QueryContext* qctx, PlanNode* input, const int64_t count) {
     return qctx->objPool()->add(new Sample(qctx, input, count));
   }
 
+  static Sample* make(QueryContext* qctx, PlanNode* input, Expression* count) {
+    return qctx->objPool()->add(new Sample(qctx, input, count));
+  }
+
+  // Get constant count
   int64_t count() const {
-    DCHECK_GE(count_, 0);
-    return count_;
+    DCHECK(ExpressionUtils::isEvaluableExpr(count_));
+    QueryExpressionContext qec;
+    auto count = count_->eval(qec).getInt();
+    DCHECK_GE(count, 0);
+    return count;
+  }
+
+  // Get Runtime count
+  int64_t count(QueryExpressionContext& qec) const {
+    auto count = count_->eval(qec).getInt();
+    DCHECK_GE(count, 0);
+    return count;
   }
 
   PlanNode* clone() const override;
@@ -756,12 +771,16 @@ class Sample final : public SingleInputNode {
 
  private:
   Sample(QueryContext* qctx, PlanNode* input, int64_t count)
+      : SingleInputNode(qctx, Kind::kSample, input),
+        count_(ConstantExpression::make(qctx->objPool(), count)) {}
+
+  Sample(QueryContext* qctx, PlanNode* input, Expression* count)
       : SingleInputNode(qctx, Kind::kSample, input), count_(count) {}
 
   void cloneMembers(const Sample&);
 
  private:
-  int64_t count_{-1};
+  Expression* count_{nullptr};
 };
 
 /**
