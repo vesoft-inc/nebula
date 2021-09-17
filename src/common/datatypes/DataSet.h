@@ -162,11 +162,11 @@ struct DataSet {
   //     "meta": [ metadata ]
   //   },
   // ]
-  folly::dynamic toJsonObj() const {
+  folly::dynamic toJson() const {
     // parse rows to json
     auto dataBody = folly::dynamic::array();
     for (auto& row : rows) {
-      dataBody.push_back(rowToJsonObj(row));
+      dataBody.push_back(rowToJson(row));
     }
 
     return dataBody;
@@ -178,13 +178,13 @@ struct DataSet {
   //   "row": [ row-data ],
   //   "meta": [ metadata ]
   // }
-  folly::dynamic rowToJsonObj(Row row) const {
+  folly::dynamic rowToJson(const Row& row) const {
     folly::dynamic rowJsonObj = folly::dynamic::object();
     auto rowDataList = folly::dynamic::array();
     auto metaDataList = folly::dynamic::array();
 
     for (const auto& ele : row.values) {
-      rowDataList.push_back(ele.toJsonObj());
+      rowDataList.push_back(ele.toJson());
       metaDataList.push_back(ele.getMetaData());
     }
 

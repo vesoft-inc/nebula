@@ -156,7 +156,7 @@ folly::Future<ExecutionResponse> GraphService::future_execute(int64_t sessionId,
 folly::Future<std::string> GraphService::future_executeJson(int64_t sessionId,
                                                             const std::string& query) {
   auto rawResp = future_execute(sessionId, query).get();
-  auto respJsonObj = rawResp.toJsonObj();
+  auto respJsonObj = rawResp.toJson();
   return folly::toJson(respJsonObj);
 }
 

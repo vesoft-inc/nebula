@@ -34,7 +34,7 @@ struct Tag {
   void __clear() { clear(); }
 
   std::string toString() const;
-  folly::dynamic toJsonObj() const;
+  folly::dynamic toJson() const;
 
   Tag& operator=(Tag&& rhs) noexcept {
     if (&rhs != this) {
@@ -72,7 +72,7 @@ struct Vertex {
   void __clear() { clear(); }
 
   std::string toString() const;
-  folly::dynamic toJsonObj() const;
+  folly::dynamic toJson() const;
   // Used in Json form query result
   folly::dynamic getMetaData() const;
 

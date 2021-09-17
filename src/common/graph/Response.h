@@ -270,7 +270,7 @@ struct ProfilingStats {
   // Other profiling stats data map
   std::unique_ptr<std::unordered_map<std::string, std::string>> otherStats;
 
-  folly::dynamic toJsonObj() const {
+  folly::dynamic toJson() const {
     folly::dynamic ProfilingStatsObj = folly::dynamic::object();
     ProfilingStatsObj.insert("rows", rows);
     ProfilingStatsObj.insert("execDurationInUs", execDurationInUs);
@@ -299,7 +299,7 @@ struct PlanNodeBranchInfo {
   // select/loop node id
   int64_t conditionNodeId{-1};
 
-  folly::dynamic toJsonObj() const {
+  folly::dynamic toJson() const {
     folly::dynamic PlanNodeBranchInfoObj = folly::dynamic::object();
     PlanNodeBranchInfoObj.insert("isDoBranch", isDoBranch);
     PlanNodeBranchInfoObj.insert("conditionNodeId", conditionNodeId);
@@ -321,7 +321,7 @@ struct Pair {
   std::string key;
   std::string value;
 
-  folly::dynamic toJsonObj() const {
+  folly::dynamic toJson() const {
     folly::dynamic pairObj = folly::dynamic::object(key, value);
     return pairObj;
   }
@@ -353,7 +353,7 @@ struct PlanNodeDescription {
   std::unique_ptr<PlanNodeBranchInfo> branchInfo{nullptr};
   std::unique_ptr<std::vector<int64_t>> dependencies{nullptr};
 
-  folly::dynamic toJsonObj() const {
+  folly::dynamic toJson() const {
     folly::dynamic planNodeDescObj = folly::dynamic::object();
     planNodeDescObj.insert("name", name);
     planNodeDescObj.insert("id", id);
@@ -363,17 +363,17 @@ struct PlanNodeDescription {
     descriptionObj.resize(description->size());
     std::transform(
         description->begin(), description->end(), descriptionObj.begin(), [](const auto &ele) {
-          return ele.toJsonObj();
+          return ele.toJson();
         });
     planNodeDescObj.insert("description", descriptionObj);
 
     auto profilesObj = folly::dynamic::array();
     profilesObj.resize(profiles->size());
     std::transform(profiles->begin(), profiles->end(), profilesObj.begin(), [](const auto &ele) {
-      return ele.toJsonObj();
+      return ele.toJson();
     });
     planNodeDescObj.insert("profiles", profilesObj);
-    planNodeDescObj.insert("branchInfo", branchInfo->toJsonObj());
+    planNodeDescObj.insert("branchInfo", branchInfo->toJson());
     planNodeDescObj.insert("dependencies", folly::toDynamic(*dependencies));
 
     return planNodeDescObj;
@@ -403,7 +403,7 @@ struct PlanDescription {
   // the optimization spent time
   int32_t optimize_time_in_us{0};
 
-  folly::dynamic toJsonObj() const {
+  folly::dynamic toJson() const {
     folly::dynamic PlanDescObj = folly::dynamic::object();
 
     auto planNodeDescsObj = folly::dynamic::array();
@@ -411,7 +411,7 @@ struct PlanDescription {
     std::transform(planNodeDescs.begin(),
                    planNodeDescs.end(),
                    planNodeDescsObj.begin(),
-                   [](const PlanNodeDescription &ele) { return ele.toJsonObj(); });
+                   [](const PlanNodeDescription &ele) { return ele.toJson(); });
     PlanDescObj.insert("planNodeDescs", planNodeDescsObj);
     // nodeIndexMap uses int as the key of the map, but strict json format only accepts string as
     // the key, so convert the int to string here.
@@ -514,7 +514,7 @@ struct ExecutionResponse {
   //     }
   //   ]
   // }
-  folly::dynamic toJsonObj() const {
+  folly::dynamic toJson() const {
     folly::dynamic respJsonObj = folly::dynamic::object();
     folly::dynamic resultBody = folly::dynamic::object();
 
@@ -531,13 +531,13 @@ struct ExecutionResponse {
 
     if (data) {
       resultBody.insert("columns", folly::toDynamic(data->keys()));
-      resultBody.insert("data", data->toJsonObj());
+      resultBody.insert("data", data->toJson());
     }
     if (spaceName) {
       resultBody.insert("spaceName", *spaceName);
     }
     if (planDesc) {
-      resultBody.insert("planDesc", planDesc->toJsonObj());
+      resultBody.insert("planDesc", planDesc->toJson());
     }
     if (comment) {
       resultBody.insert("comment", *comment);

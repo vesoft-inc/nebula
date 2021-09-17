@@ -37,11 +37,11 @@ std::string Edge::toString() const {
 //    "prop1": val1,
 //    "prop2": val2,
 // }
-folly::dynamic Edge::toJsonObj() const {
+folly::dynamic Edge::toJson() const {
   folly::dynamic propObj = folly::dynamic::object();
 
   for (const auto& iter : props) {
-    propObj.insert(iter.first, iter.second.toJsonObj());
+    propObj.insert(iter.first, iter.second.toJson());
   }
 
   return propObj;
@@ -62,8 +62,8 @@ folly::dynamic Edge::toJsonObj() const {
 folly::dynamic Edge::getMetaData() const {
   folly::dynamic edgeMetadataObj = folly::dynamic::object();
 
-  folly::dynamic edgeIdObj = folly::dynamic::object("name", name)("src", src.toJsonObj())(
-      "dst", dst.toJsonObj())("type", type)("ranking", ranking);
+  folly::dynamic edgeIdObj = folly::dynamic::object("name", name)("src", src.toJson())(
+      "dst", dst.toJson())("type", type)("ranking", ranking);
 
   edgeMetadataObj.insert("id", edgeIdObj);
   edgeMetadataObj.insert("type", "edge");

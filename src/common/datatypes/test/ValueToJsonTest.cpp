@@ -31,12 +31,12 @@ TEST(ValueToJson, vertex) {
           {{"prop1", Value(2)}, {"prop2", Value(NullType::__NULL__)}, {"prop3", Value("123")}});
   {
     dynamic expectedTagJson = dynamic::object("tagName.prop", 2);
-    ASSERT_EQ(expectedTagJson, tag1.toJsonObj());
+    ASSERT_EQ(expectedTagJson, tag1.toJson());
   }
   {
     dynamic expectedTagJson =
         dynamic::object("tagName1.prop1", 2)("tagName1.prop2", nullptr)("tagName1.prop3", "123");
-    ASSERT_EQ(expectedTagJson, tag2.toJsonObj());
+    ASSERT_EQ(expectedTagJson, tag2.toJson());
   }
 
   // vertex wtih string vid
@@ -55,7 +55,7 @@ TEST(ValueToJson, vertex) {
   {
     dynamic expectedVeretxJson = dynamic::object("tagName.prop", 2)("tagName1.prop1", 2)(
         "tagName1.prop2", nullptr)("tagName1.prop3", "123");
-    ASSERT_EQ(expectedVeretxJson, vertexStrVid.toJsonObj());
+    ASSERT_EQ(expectedVeretxJson, vertexStrVid.toJson());
 
     dynamic expectedVeretxMetaJson = dynamic::object("id", "Vid")("type", "vertex");
     ASSERT_EQ(expectedVeretxMetaJson, vertexStrVid.getMetaData());
@@ -63,7 +63,7 @@ TEST(ValueToJson, vertex) {
   {
     dynamic expectedVeretxJson = dynamic::object("tagName.prop", 2)("tagName1.prop1", 2)(
         "tagName1.prop2", nullptr)("tagName1.prop3", "123");
-    ASSERT_EQ(expectedVeretxJson, vertexIntVid.toJsonObj());
+    ASSERT_EQ(expectedVeretxJson, vertexIntVid.toJson());
 
     dynamic expectedVeretxMetaJson = dynamic::object("id", 001)("type", "vertex");
     ASSERT_EQ(expectedVeretxMetaJson, vertexIntVid.getMetaData());
@@ -79,7 +79,7 @@ TEST(ValueToJson, edge) {
       Value(Edge(101, 102, 1, "Edge", 233, {{"prop1", Value(233)}, {"prop2", Value(2.3)}}));
   {
     dynamic expectedEdgeJson = dynamic::object("prop1", 233)("prop2", 2.3);
-    ASSERT_EQ(expectedEdgeJson, edge1.toJsonObj());
+    ASSERT_EQ(expectedEdgeJson, edge1.toJson());
 
     dynamic expectedEdgeMetaJson =
         dynamic::object("id",
@@ -90,7 +90,7 @@ TEST(ValueToJson, edge) {
 
   {
     dynamic expectedEdgeJson = dynamic::object("prop1", 233)("prop2", 2.3);
-    ASSERT_EQ(expectedEdgeJson, edge2.toJsonObj());
+    ASSERT_EQ(expectedEdgeJson, edge2.toJson());
 
     dynamic expectedEdgeMetaJson =
         dynamic::object("id",
@@ -117,7 +117,7 @@ TEST(ValueToJson, path) {
       dynamic::object("tagName.prop1", 1),
       dynamic::object("edgeProp", "edgePropVal"),
       dynamic::object("tagName2.prop1", 2)("tagName2.prop2", nullptr)("tagName2.prop3", "123"));
-  ASSERT_EQ(expectedPathJsonObj, path.toJsonObj());
+  ASSERT_EQ(expectedPathJsonObj, path.toJson());
 
   dynamic expectedPathMetaJson = dynamic::array(
       dynamic::object("id", "v1")("type", "vertex"),
@@ -138,7 +138,7 @@ TEST(ValueToJson, list) {
                            DateTime(2021, 12, 21, 13, 30, 15, 0)}));  // datetime
   dynamic expectedListJsonObj = dynamic::array(
       2, 2.33, true, "str", "2021-12-21", "13:30:15.000000Z", "2021-12-21T13:30:15.0Z");
-  ASSERT_EQ(expectedListJsonObj, list1.toJsonObj());
+  ASSERT_EQ(expectedListJsonObj, list1.toJson());
 
   dynamic expectedListMetaObj = dynamic::array(nullptr,
                                                nullptr,
@@ -161,7 +161,7 @@ TEST(ValueToJson, Set) {
   dynamic expectedSetJsonObj = dynamic::array(
       2, 2.33, true, "str", "2021-12-21", "13:30:15.000000Z", "2021-12-21T13:30:15.0Z");
   // The underlying data strcuture is unordered_set, so sort before the comparison
-  auto actualJson = set.toJsonObj();
+  auto actualJson = set.toJson();
   std::sort(actualJson.begin(), actualJson.end());
   std::sort(expectedSetJsonObj.begin(), expectedSetJsonObj.end());
   ASSERT_EQ(expectedSetJsonObj, actualJson);
@@ -181,7 +181,7 @@ TEST(ValueToJson, map) {
   dynamic expectedMapJsonObj =
       dynamic::object("key1", 2)("key2", 2.33)("key3", true)("key4", "str")("key5", "2021-12-21")(
           "key6", "13:30:15.000000Z")("key7", "2021-12-21T13:30:15.0Z");
-  ASSERT_EQ(expectedMapJsonObj, map.toJsonObj());
+  ASSERT_EQ(expectedMapJsonObj, map.toJson());
   // Skip meta json comparison since nested dynamic objects cannot be sorted. i.g. dynamic::object
   // inside dynamic::array
 }
@@ -207,7 +207,7 @@ TEST(ValueToJson, dataset) {
                      dynamic::object("type", "date"),
                      dynamic::object("type", "time"),
                      dynamic::object("type", "datetime"))));
-  ASSERT_EQ(expectedDatasetJsonObj, dataset.toJsonObj());
+  ASSERT_EQ(expectedDatasetJsonObj, dataset.toJson());
 }
 
 TEST(ValueToJson, DecodeEncode) {
@@ -293,7 +293,7 @@ TEST(ValueToJson, DecodeEncode) {
   for (const auto& val : values) {
     std::string buf;
     buf.reserve(128);
-    folly::dynamic jsonObj = val.toJsonObj();
+    folly::dynamic jsonObj = val.toJson();
     auto jsonString = folly::toJson(jsonObj);
     serializer::serialize(jsonString, &buf);
     std::string valCopy;

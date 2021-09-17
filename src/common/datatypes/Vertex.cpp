@@ -29,11 +29,11 @@ std::string Tag::toString() const {
 //    "player.name" : "Tim Duncan",
 //    "player.age" : 42,
 //  }
-folly::dynamic Tag::toJsonObj() const {
+folly::dynamic Tag::toJson() const {
   folly::dynamic tagJsonObj = folly::dynamic::object();
 
   for (const auto& iter : props) {
-    tagJsonObj.insert(name + "." + iter.first, iter.second.toJsonObj());
+    tagJsonObj.insert(name + "." + iter.first, iter.second.toJson());
   }
 
   return tagJsonObj;
@@ -80,11 +80,11 @@ std::string Vertex::toString() const {
 //   "bachelor.name" : "Tim Duncan",
 //   "bachelor.speciality" : "psychology"
 // }
-folly::dynamic Vertex::toJsonObj() const {
+folly::dynamic Vertex::toJson() const {
   folly::dynamic propJsonObj = folly::dynamic::object();
 
   for (const auto& tag : tags) {
-    propJsonObj.update(tag.toJsonObj());
+    propJsonObj.update(tag.toJson());
   }
   return propJsonObj;
 }
@@ -95,8 +95,7 @@ folly::dynamic Vertex::toJsonObj() const {
 //   "type": "vertex"
 // }
 folly::dynamic Vertex::getMetaData() const {
-  folly::dynamic vertexMetadataObj =
-      folly::dynamic::object("id", vid.toJsonObj())("type", "vertex");
+  folly::dynamic vertexMetadataObj = folly::dynamic::object("id", vid.toJson())("type", "vertex");
   return vertexMetadataObj;
 }
 

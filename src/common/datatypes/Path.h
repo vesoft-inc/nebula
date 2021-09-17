@@ -130,23 +130,23 @@ struct Path {
     return os.str();
   }
 
-  folly::dynamic toJsonObj() const {
+  folly::dynamic toJson() const {
     folly::dynamic pathJsonObj = folly::dynamic::array();
     auto srcVertex = src;
-    pathJsonObj.push_back(srcVertex.toJsonObj());
+    pathJsonObj.push_back(srcVertex.toJson());
 
     for (const auto& s : steps) {
       folly::dynamic edgeJsonObj = folly::dynamic::object();
       // parse edge props map as json
       for (const auto& iter : s.props) {
-        edgeJsonObj.insert(iter.first, iter.second.toJsonObj());
+        edgeJsonObj.insert(iter.first, iter.second.toJson());
       }
       // add edge json obj to path
       pathJsonObj.push_back(edgeJsonObj);
 
       // reset src vertex and add vertex json obj to path
       srcVertex = s.dst;
-      pathJsonObj.push_back(srcVertex.toJsonObj());
+      pathJsonObj.push_back(srcVertex.toJson());
     }
 
     return pathJsonObj;
@@ -163,8 +163,8 @@ struct Path {
     // Construct edge metadata
     for (const auto& s : steps) {
       folly::dynamic edgeIdObj = folly::dynamic::object();
-      edgeIdObj.insert("src", srcVertex.vid.toJsonObj());
-      edgeIdObj.insert("dst", s.dst.vid.toJsonObj());
+      edgeIdObj.insert("src", srcVertex.vid.toJson());
+      edgeIdObj.insert("dst", s.dst.vid.toJson());
       edgeIdObj.insert("type", s.type);
       edgeIdObj.insert("name", s.name);
       edgeIdObj.insert("ranking", s.ranking);

@@ -22,11 +22,11 @@ std::string List::toString() const {
   return os.str();
 }
 
-folly::dynamic List::toJsonObj() const {
+folly::dynamic List::toJson() const {
   auto listJsonObj = folly::dynamic::array();
 
   for (const auto& val : values) {
-    listJsonObj.push_back(val.toJsonObj());
+    listJsonObj.push_back(val.toJson());
   }
 
   return listJsonObj;

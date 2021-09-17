@@ -1347,7 +1347,7 @@ void Value::setG(DataSet&& v) {
 // Convert Nebula::Value to a value compatible with Json standard
 // DATE, TIME, DATETIME will be converted to strings in UTC
 // VERTEX, EDGES, PATH will be converted to objects
-folly::dynamic Value::toJsonObj() const {
+folly::dynamic Value::toJson() const {
   switch (type_) {
     case Value::Type::__EMPTY__: {
       return "__EMPTY__";
@@ -1374,35 +1374,35 @@ folly::dynamic Value::toJsonObj() const {
     }
     // Json array
     case Value::Type::LIST: {
-      return getList().toJsonObj();
+      return getList().toJson();
     }
     case Value::Type::SET: {
-      return getSet().toJsonObj();
+      return getSet().toJson();
     }
     // Json object
     case Value::Type::MAP: {
-      return getMap().toJsonObj();
+      return getMap().toJson();
     }
     case Value::Type::DATE: {
-      return getDate().toJsonObj();
+      return getDate().toJson();
     }
     case Value::Type::TIME: {
-      return getTime().toJsonObj();
+      return getTime().toJson();
     }
     case Value::Type::DATETIME: {
-      return getDateTime().toJsonObj();
+      return getDateTime().toJson();
     }
     case Value::Type::EDGE: {
-      return getEdge().toJsonObj();
+      return getEdge().toJson();
     }
     case Value::Type::VERTEX: {
-      return getVertex().toJsonObj();
+      return getVertex().toJson();
     }
     case Value::Type::PATH: {
-      return getPath().toJsonObj();
+      return getPath().toJson();
     }
     case Value::Type::DATASET: {
-      return getDataSet().toJsonObj();
+      return getDataSet().toJson();
     }
       // no default so the compiler will warning when lack
   }

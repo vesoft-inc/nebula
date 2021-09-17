@@ -25,11 +25,11 @@ std::string Map::toString() const {
   return os.str();
 }
 
-folly::dynamic Map::toJsonObj() const {
+folly::dynamic Map::toJson() const {
   folly::dynamic mapJsonObj = folly::dynamic::object();
 
   for (const auto& iter : kvs) {
-    mapJsonObj.insert(iter.first, iter.second.toJsonObj());
+    mapJsonObj.insert(iter.first, iter.second.toJson());
   }
 
   return mapJsonObj;

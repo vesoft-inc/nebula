@@ -100,7 +100,7 @@ TEST(ResponseEncodDecodeTest, ToJson) {
     for (const auto &pd : pds) {
       std::string buf;
       buf.reserve(128);
-      folly::dynamic jsonObj = pd.toJsonObj();
+      folly::dynamic jsonObj = pd.toJson();
       auto jsonString = folly::toJson(jsonObj);
       serializer::serialize(jsonString, &buf);
       std::string copy;
@@ -132,7 +132,7 @@ TEST(ResponseEncodDecodeTest, ToJson) {
     for (const auto &resp : resps) {
       std::string buf;
       buf.reserve(128);
-      folly::dynamic jsonObj = resp.toJsonObj();
+      folly::dynamic jsonObj = resp.toJson();
       auto jsonString = folly::toJson(jsonObj);
       serializer::serialize(jsonString, &buf);
       std::string copy;
