@@ -367,7 +367,7 @@ void TopN::cloneMembers(const TopN& l) {
 
 std::unique_ptr<PlanNodeDescription> Sample::explain() const {
   auto desc = SingleInputNode::explain();
-  addDescription("count", folly::to<std::string>(count_), desc.get());
+  addDescription("count", count_->toString(), desc.get());
   return desc;
 }
 
@@ -380,7 +380,7 @@ PlanNode* Sample::clone() const {
 void Sample::cloneMembers(const Sample& l) {
   SingleInputNode::cloneMembers(l);
 
-  count_ = l.count_;
+  count_ = l.count_->clone();
 }
 
 std::unique_ptr<PlanNodeDescription> Aggregate::explain() const {
