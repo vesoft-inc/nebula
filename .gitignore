@@ -62,3 +62,6 @@ venv/
 
 #lock
 *.lock
+
+#ctags
+.tags

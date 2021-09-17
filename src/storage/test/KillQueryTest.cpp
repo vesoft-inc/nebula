@@ -102,8 +102,9 @@ TEST_F(KillQueryTest, TagIndex) {
     cpp2::LookupIndexRequest req;
     nebula::storage::cpp2::IndexSpec indices;
     req.set_space_id(spaceId);
-    indices.set_tag_or_edge_id(1);
-    indices.set_is_edge(false);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_tag_id(1);
+    indices.set_schema_id(schemaId);
     std::vector<PartitionID> parts;
     for (int32_t p = 1; p <= totalParts; p++) {
       parts.emplace_back(p);
@@ -161,8 +162,9 @@ TEST_F(KillQueryTest, EdgeIndex) {
     cpp2::LookupIndexRequest req;
     nebula::storage::cpp2::IndexSpec indices;
     req.set_space_id(spaceId);
-    indices.set_tag_or_edge_id(102);
-    indices.set_is_edge(true);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_edge_type(102);
+    indices.set_schema_id(schemaId);
     std::vector<PartitionID> parts;
     for (int32_t p = 1; p <= totalParts; p++) {
       parts.emplace_back(p);
