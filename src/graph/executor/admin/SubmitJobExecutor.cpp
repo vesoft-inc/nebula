@@ -35,87 +35,97 @@ folly::Future<Status> SubmitJobExecutor::execute() {
           LOG(ERROR) << resp.status().toString();
           return std::move(resp).status();
         }
-        switch (jobOp) {
-          case meta::cpp2::AdminJobOp::ADD: {
-            nebula::DataSet v({"New Job Id"});
-            DCHECK(resp.value().job_id_ref().has_value());
-            if (!resp.value().job_id_ref().has_value()) {
-              return Status::Error("Response unexpected.");
-            }
-            v.emplace_back(nebula::Row({*resp.value().job_id_ref()}));
-            return finish(std::move(v));
-          }
-          case meta::cpp2::AdminJobOp::RECOVER: {
-            nebula::DataSet v({"Recovered job num"});
-            DCHECK(resp.value().recovered_job_num_ref().has_value());
-            if (!resp.value().recovered_job_num_ref().has_value()) {
-              return Status::Error("Response unexpected.");
-            }
-            v.emplace_back(nebula::Row({*resp.value().recovered_job_num_ref()}));
-            return finish(std::move(v));
-          }
-          case meta::cpp2::AdminJobOp::SHOW: {
-            nebula::DataSet v(
-                {"Job Id(TaskId)", "Command(Dest)", "Status", "Start Time", "Stop Time"});
-            DCHECK(resp.value().job_desc_ref().has_value());
-            if (!resp.value().job_desc_ref().has_value()) {
-              return Status::Error("Response unexpected.");
-            }
-            DCHECK(resp.value().task_desc_ref().has_value());
-            if (!resp.value().task_desc_ref().has_value()) {
-              return Status::Error("Response unexpected");
-            }
-            auto &jobDesc = *resp.value().job_desc_ref();
-            // job desc
-            v.emplace_back(nebula::Row({
-                jobDesc.front().get_id(),
-                apache::thrift::util::enumNameSafe(jobDesc.front().get_cmd()),
-                apache::thrift::util::enumNameSafe(jobDesc.front().get_status()),
-                time::TimeConversion::unixSecondsToDateTime(jobDesc.front().get_start_time()),
-                time::TimeConversion::unixSecondsToDateTime(jobDesc.front().get_stop_time()),
-            }));
-            // tasks desc
-            auto &tasksDesc = *resp.value().get_task_desc();
-            for (const auto &taskDesc : tasksDesc) {
-              v.emplace_back(nebula::Row({
-                  taskDesc.get_task_id(),
-                  taskDesc.get_host().host,
-                  apache::thrift::util::enumNameSafe(taskDesc.get_status()),
-                  time::TimeConversion::unixSecondsToDateTime(taskDesc.get_start_time()),
-                  time::TimeConversion::unixSecondsToDateTime(taskDesc.get_stop_time()),
-              }));
-            }
-            return finish(std::move(v));
-          }
-          case meta::cpp2::AdminJobOp::SHOW_All: {
-            nebula::DataSet v({"Job Id", "Command", "Status", "Start Time", "Stop Time"});
-            DCHECK(resp.value().job_desc_ref().has_value());
-            if (!resp.value().job_desc_ref().has_value()) {
-              return Status::Error("Response unexpected");
-            }
-            const auto &jobsDesc = *resp.value().job_desc_ref();
-            for (const auto &jobDesc : jobsDesc) {
-              v.emplace_back(nebula::Row({
-                  jobDesc.get_id(),
-                  apache::thrift::util::enumNameSafe(jobDesc.get_cmd()),
-                  apache::thrift::util::enumNameSafe(jobDesc.get_status()),
-                  time::TimeConversion::unixSecondsToDateTime(jobDesc.get_start_time()),
-                  time::TimeConversion::unixSecondsToDateTime(jobDesc.get_stop_time()),
-              }));
-            }
-            return finish(std::move(v));
-          }
-          case meta::cpp2::AdminJobOp::STOP: {
-            nebula::DataSet v({"Result"});
-            v.emplace_back(nebula::Row({"Job stopped"}));
-            return finish(std::move(v));
-          }
-            // no default so the compiler will warning when lack
-        }
-        DLOG(FATAL) << "Unknown job operation " << static_cast<int>(jobOp);
-        return Status::Error("Unknown job job operation %d.", static_cast<int>(jobOp));
+        auto status = buildResult(jobOp, std::move(resp).value());
+        NG_RETURN_IF_ERROR(status);
+        return finish(std::move(status).value());
       });
 }
 
+StatusOr<DataSet> SubmitJobExecutor::buildResult(meta::cpp2::AdminJobOp jobOp,
+                                                 meta::cpp2::AdminJobResult &&resp) {
+  switch (jobOp) {
+    case meta::cpp2::AdminJobOp::ADD: {
+      nebula::DataSet v({"New Job Id"});
+      DCHECK(resp.job_id_ref().has_value());
+      if (!resp.job_id_ref().has_value()) {
+        return Status::Error("Response unexpected.");
+      }
+      v.emplace_back(nebula::Row({*resp.job_id_ref()}));
+      return v;
+    }
+    case meta::cpp2::AdminJobOp::RECOVER: {
+      nebula::DataSet v({"Recovered job num"});
+      DCHECK(resp.recovered_job_num_ref().has_value());
+      if (!resp.recovered_job_num_ref().has_value()) {
+        return Status::Error("Response unexpected.");
+      }
+      v.emplace_back(nebula::Row({*resp.recovered_job_num_ref()}));
+      return v;
+    }
+    case meta::cpp2::AdminJobOp::SHOW: {
+      nebula::DataSet v({"Job Id(TaskId)", "Command(Dest)", "Status", "Start Time", "Stop Time"});
+      DCHECK(resp.job_desc_ref().has_value());
+      if (!resp.job_desc_ref().has_value()) {
+        return Status::Error("Response unexpected.");
+      }
+      DCHECK(resp.task_desc_ref().has_value());
+      if (!resp.task_desc_ref().has_value()) {
+        return Status::Error("Response unexpected");
+      }
+      auto &jobDesc = *resp.job_desc_ref();
+      // job desc
+      v.emplace_back(nebula::Row({
+          jobDesc.front().get_id(),
+          apache::thrift::util::enumNameSafe(jobDesc.front().get_cmd()),
+          apache::thrift::util::enumNameSafe(jobDesc.front().get_status()),
+          convertJobTimestampToDateTime(jobDesc.front().get_start_time()),
+          convertJobTimestampToDateTime(jobDesc.front().get_stop_time()),
+      }));
+      // tasks desc
+      auto &tasksDesc = *resp.get_task_desc();
+      for (const auto &taskDesc : tasksDesc) {
+        v.emplace_back(nebula::Row({
+            taskDesc.get_task_id(),
+            taskDesc.get_host().host,
+            apache::thrift::util::enumNameSafe(taskDesc.get_status()),
+            convertJobTimestampToDateTime(taskDesc.get_start_time()),
+            convertJobTimestampToDateTime(taskDesc.get_stop_time()),
+        }));
+      }
+      return v;
+    }
+    case meta::cpp2::AdminJobOp::SHOW_All: {
+      nebula::DataSet v({"Job Id", "Command", "Status", "Start Time", "Stop Time"});
+      DCHECK(resp.job_desc_ref().has_value());
+      if (!resp.job_desc_ref().has_value()) {
+        return Status::Error("Response unexpected");
+      }
+      const auto &jobsDesc = *resp.job_desc_ref();
+      for (const auto &jobDesc : jobsDesc) {
+        v.emplace_back(nebula::Row({
+            jobDesc.get_id(),
+            apache::thrift::util::enumNameSafe(jobDesc.get_cmd()),
+            apache::thrift::util::enumNameSafe(jobDesc.get_status()),
+            convertJobTimestampToDateTime(jobDesc.get_start_time()),
+            convertJobTimestampToDateTime(jobDesc.get_stop_time()),
+        }));
+      }
+      return v;
+    }
+    case meta::cpp2::AdminJobOp::STOP: {
+      nebula::DataSet v({"Result"});
+      v.emplace_back(nebula::Row({"Job stopped"}));
+      return v;
+    }
+      // no default so the compiler will warning when lack
+  }
+  DLOG(FATAL) << "Unknown job operation " << static_cast<int>(jobOp);
+  return Status::Error("Unknown job job operation %d.", static_cast<int>(jobOp));
+}
+
+Value SubmitJobExecutor::convertJobTimestampToDateTime(int64_t timestamp) {
+  return timestamp > 0 ? Value(time::TimeConversion::unixSecondsToDateTime(timestamp))
+                       : Value::kEmpty;
+}
 }  // namespace graph
 }  // namespace nebula

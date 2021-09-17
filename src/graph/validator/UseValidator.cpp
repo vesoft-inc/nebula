@@ -43,12 +43,9 @@ Status UseValidator::validateImpl() {
 
 Status UseValidator::toPlan() {
   // The input will be set by father validator later.
-  auto switchSpace = SwitchSpace::make(qctx_, nullptr, *spaceName_);
-  qctx_->rctx()->session()->updateSpaceName(*spaceName_);
-  auto session = qctx_->rctx()->session()->getSession();
-  auto update = UpdateSession::make(qctx_, switchSpace, std::move(session));
-  root_ = update;
-  tail_ = switchSpace;
+  auto reg = SwitchSpace::make(qctx_, nullptr, *spaceName_);
+  root_ = reg;
+  tail_ = root_;
   return Status::OK();
 }
 }  // namespace graph
