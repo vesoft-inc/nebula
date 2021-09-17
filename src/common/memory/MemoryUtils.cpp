@@ -41,8 +41,8 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
     auto usageStatus = MemoryUtils::readSysContents("/sys/fs/cgroup/memory/memory.usage_in_bytes");
     NG_RETURN_IF_ERROR(usageStatus);
     uint64_t usageInBytes = std::move(usageStatus).value();
+    total = static_cast<double>(limitInBytes);
     available = static_cast<double>(limitInBytes - usageInBytes + cacheSize);
-    total = limitInBytes;
   } else {
     FileUtils::FileLineIterator iter("/proc/meminfo", &reMemAvailable);
     std::vector<uint64_t> memorySize;
@@ -66,12 +66,11 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
 }
 
 StatusOr<uint64_t> MemoryUtils::readSysContents(const std::string& path) {
-  uint64_t value = 0;
   std::ifstream ifs(path);
   if (!ifs) {
     return Status::Error("Could not open the file: %s", path.c_str());
   }
-  SCOPE_EXIT { ifs.close(); };
+  uint64_t value = 0;
   ifs >> value;
   return value;
 }
