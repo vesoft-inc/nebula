@@ -21,6 +21,7 @@ folly::Future<Status> SampleExecutor::execute() {
   DCHECK_NE(iter->kind(), Iterator::Kind::kDefault);
   ResultBuilder builder;
   builder.value(result.valuePtr());
+  QueryExpressionContext qec(ectx_);
   auto count = sample->count();
   if (iter->kind() == Iterator::Kind::kGetNeighbors ||
       iter->size() > static_cast<std::size_t>(count)) {
