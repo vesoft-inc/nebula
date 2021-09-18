@@ -21,7 +21,7 @@ class IndexScanNode : public RelNode<T> {
   IndexScanNode(RuntimeContext* context,
                 IndexID indexId,
                 std::vector<cpp2::IndexColumnHint> columnHints,
-                int64_t limit)
+                int64_t limit = -1)
       : context_(context), indexId_(indexId), columnHints_(std::move(columnHints)), limit_(limit) {
     /**
      * columnHints's elements are {scanType = PREFIX|RANGE; beginStr; endStr},
@@ -72,11 +72,8 @@ class IndexScanNode : public RelNode<T> {
     auto* sh = context_->isEdge() ? context_->edgeSchema_ : context_->tagSchema_;
     auto ttlProp = CommonUtils::ttlProps(sh);
     data_.clear();
-    int64_t count = 0;
+    int64_t count = 1;
     while (!!iter_ && iter_->valid()) {
-      if (limit_ > -1 && count++ == limit_) {
-        break;
-      }
       if (context_->isPlanKilled()) {
         return {};
       }
@@ -89,6 +86,9 @@ class IndexScanNode : public RelNode<T> {
         }
       }
       data_.emplace_back(iter_->key(), "");
+      if (limit_ > 0 && ++count > limit_) {
+        break;
+      }
       iter_->next();
     }
     return std::move(data_);
