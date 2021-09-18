@@ -1326,7 +1326,7 @@ void RaftPart::processAskForVoteRequest(const cpp2::AskForVoteRequest& req,
 
   // Before change role from leader to follower, check the logs locally.
   if (role_ == Role::LEADER && wal_->lastLogId() > lastLogId_) {
-    LOG(INFO) << idStr_ << "There is one log " << wal_->lastLogId()
+    LOG(INFO) << idStr_ << "There are some logs up to " << wal_->lastLogId()
               << " i did not commit when i was leader, rollback to " << lastLogId_;
     wal_->rollbackToLog(lastLogId_);
   }
@@ -1649,12 +1649,6 @@ cpp2::ErrorCode RaftPart::verifyLeader(const REQ& req) {
   votedAddr_ = HostAddr("", 0);
   weight_ = 1;
   isBlindFollower_ = false;
-  // Before accept the logs from the new leader, check the logs locally.
-  if (wal_->lastLogId() > lastLogId_) {
-    LOG(INFO) << idStr_ << "There is one log " << wal_->lastLogId()
-              << " i did not commit when i was leader, rollback to " << lastLogId_;
-    wal_->rollbackToLog(lastLogId_);
-  }
   if (oldRole == Role::LEADER) {
     // Need to invoke onLostLeadership callback
     bgWorkers_->addTask([self = shared_from_this(), oldTerm] { self->onLostLeadership(oldTerm); });
