@@ -358,8 +358,9 @@ void Host::appendLogsInternal(folly::EventBase* eb, std::shared_ptr<cpp2::Append
                                << req->get_last_log_id() << ", committed_id "
                                << req->get_committed_log_id() << ", last_log_term_sent"
                                << req->get_last_log_term_sent() << ", last_log_id_sent "
-                               << req->get_last_log_id_sent() << ", logs size "
-                               << req->get_log_str_list().size();
+                               << req->get_last_log_id_sent()
+                               << ", set lastLogIdSent_ to logIdToSend_ " << self->logIdToSend_
+                               << ", logs size " << req->get_log_str_list().size();
                      }
                      self->setResponse(r);
                      self->lastLogIdSent_ = self->logIdToSend_ - 1;
