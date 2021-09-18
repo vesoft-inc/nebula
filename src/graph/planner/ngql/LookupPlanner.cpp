@@ -6,18 +6,11 @@
 
 #include "graph/planner/ngql/LookupPlanner.h"
 
-#include <algorithm>
-#include <tuple>
 
 #include "common/base/Base.h"
-#include "common/base/Status.h"
-#include "common/expression/Expression.h"
-#include "common/expression/LabelAttributeExpression.h"
-#include "common/expression/PropertyExpression.h"
 #include "graph/context/ast/QueryAstContext.h"
 #include "graph/planner/Planner.h"
 #include "graph/planner/plan/Scan.h"
-#include "graph/visitor/FindVisitor.h"
 #include "parser/Clauses.h"
 #include "parser/TraverseSentences.h"
 
@@ -34,7 +27,6 @@ bool LookupPlanner::match(AstContext* astCtx) {
 
 StatusOr<SubPlan> LookupPlanner::transform(AstContext* astCtx) {
   auto lookupCtx = static_cast<LookupContext*>(astCtx);
-  // auto yieldCols = prepareReturnCols(lookupCtx);
   auto qctx = lookupCtx->qctx;
   auto from = static_cast<const LookupSentence*>(lookupCtx->sentence)->from();
   SubPlan plan;

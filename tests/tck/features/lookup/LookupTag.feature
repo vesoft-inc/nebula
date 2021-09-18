@@ -1,4 +1,3 @@
-@jmq
 Feature: Test lookup on tag index
   Examples:
     | where_condition                                                                    |

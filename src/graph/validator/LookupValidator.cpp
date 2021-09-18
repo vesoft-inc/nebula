@@ -164,8 +164,8 @@ Status LookupValidator::validateYield() {
   if (lookupCtx_->isEdge) {
     idxReturnCols_.emplace_back(kSrc);
     idxReturnCols_.emplace_back(kDst);
-    idxReturnCols_.emplace_back(kType);
     idxReturnCols_.emplace_back(kRank);
+    idxReturnCols_.emplace_back(kType);
     outputs_.emplace_back(kSrcVID, vidType_);
     outputs_.emplace_back(kDstVID, vidType_);
     outputs_.emplace_back(kRanking, Value::Type::INT);
