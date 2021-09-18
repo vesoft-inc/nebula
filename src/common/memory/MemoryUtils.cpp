@@ -34,6 +34,7 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
       auto& sm = iter.matched();
       cacheSize += std::stoul(sm[2].str(), NULL);
     }
+
     auto limitStatus = MemoryUtils::readSysContents("/sys/fs/cgroup/memory/memory.limit_in_bytes");
     NG_RETURN_IF_ERROR(limitStatus);
     uint64_t limitInBytes = std::move(limitStatus).value();
@@ -41,6 +42,7 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
     auto usageStatus = MemoryUtils::readSysContents("/sys/fs/cgroup/memory/memory.usage_in_bytes");
     NG_RETURN_IF_ERROR(usageStatus);
     uint64_t usageInBytes = std::move(usageStatus).value();
+
     total = static_cast<double>(limitInBytes);
     available = static_cast<double>(limitInBytes - usageInBytes + cacheSize);
   } else {

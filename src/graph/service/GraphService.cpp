@@ -32,7 +32,6 @@ Status GraphService::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecuto
   options.serviceName_ = "graph";
   options.skipConfig_ = FLAGS_local_config;
   options.role_ = meta::cpp2::HostRole::GRAPH;
-  std::string localIP = network::NetworkUtils::getIPv4FromDevice(FLAGS_listen_netdev).value();
   options.localHost_ = hostAddr;
   options.gitInfoSHA_ = gitInfoSha();
 
@@ -42,17 +41,16 @@ Status GraphService::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecuto
   bool loadDataOk = metaClient_->waitForMetadReady(3);
   if (!loadDataOk) {
     // Resort to retrying in the background
-    LOG(WARNING) << "Failed to synchronously wait for meta service ready";
+    LOG(WARNING) << "Failed to wait for meta service ready synchronously.";
   }
 
   sessionManager_ = std::make_unique<GraphSessionManager>(metaClient_.get(), hostAddr);
   auto initSessionMgrStatus = sessionManager_->init();
   if (!initSessionMgrStatus.ok()) {
-    LOG(WARNING) << "Init sessin manager failed: " << initSessionMgrStatus.toString();
+    LOG(WARNING) << "Failed to initialize session manager: " << initSessionMgrStatus.toString();
   }
-  queryEngine_ = std::make_unique<QueryEngine>();
 
-  myAddr_ = hostAddr;
+  queryEngine_ = std::make_unique<QueryEngine>();
   return queryEngine_->init(std::move(ioExecutor), metaClient_.get());
 }
 

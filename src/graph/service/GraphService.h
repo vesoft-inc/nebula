@@ -48,7 +48,6 @@ class GraphService final : public cpp2::GraphServiceSvIf {
   std::unique_ptr<GraphSessionManager> sessionManager_;
   std::unique_ptr<QueryEngine> queryEngine_;
   std::unique_ptr<meta::MetaClient> metaClient_;
-  HostAddr myAddr_;
 };
 
 }  // namespace graph
