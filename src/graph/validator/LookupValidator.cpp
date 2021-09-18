@@ -76,18 +76,22 @@ void LookupValidator::extractExprProps() {
       }
     }
   };
+  auto from = sentence()->from();
+  auto buildColNames = [&from](const std::string& colName) { return from + '.' + colName; };
   if (lookupCtx_->isEdge) {
     for (const auto& edgeProp : exprProps_.edgeProps()) {
       addProps(edgeProp.second);
     }
-    lookupCtx_->idxColNames = idxReturnCols_;
+    std::vector<std::string> idxColNames = idxReturnCols_;
+    std::transform(idxColNames.begin(), idxColNames.end(), idxColNames.begin(), buildColNames);
+    lookupCtx_->idxColNames = std::move(idxColNames);
   } else {
     for (const auto& tagProp : exprProps_.tagProps()) {
       addProps(tagProp.second);
     }
     std::vector<std::string> idxColNames = idxReturnCols_;
-    idxColNames.erase(idxColNames.begin());
-    idxColNames.insert(idxColNames.begin(), nebula::kVid);
+    std::transform(idxColNames.begin(), idxColNames.end(), idxColNames.begin(), buildColNames);
+    idxColNames[0] = nebula::kVid;
     lookupCtx_->idxColNames = std::move(idxColNames);
   }
   lookupCtx_->idxReturnCols = std::move(idxReturnCols_);
@@ -177,7 +181,6 @@ Status LookupValidator::validateYield() {
   auto yieldClause = sentence()->yieldClause();
   if (yieldClause == nullptr) {
     extractExprProps();
-    lookupCtx_->idxReturnCols = std::move(idxReturnCols_);
     return Status::OK();
   }
   lookupCtx_->dedup = yieldClause->isDistinct();
