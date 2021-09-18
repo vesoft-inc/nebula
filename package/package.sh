@@ -32,6 +32,7 @@ jobs=$(nproc)
 enable_compressed_debug_info=ON
 dump_symbols=OFF
 dump_syms_tool_dir=
+system_name=
 
 while getopts v:n:s:b:d:t:r:p:j: opt;
 do
@@ -176,32 +177,27 @@ function _find_dump_syms_tool {
 
 function dump_syms {
     _find_dump_syms_tool
+    dump_syms=${dump_syms_tool_dir}/dump_syms
 
-    syms_dir=${build_dir}/syms/
+    syms_dir=${build_dir}/symbols/
     rm -rf ${syms_dir} && mkdir -p ${syms_dir}
 
-    nebula_graphd=${build_dir}/bin/nebula-graphd
-    nebula_storaged=${build_dir}/bin/nebula-storaged
-    nebula_metad=${build_dir}/bin/nebula-metad
+    pack=`ls ${build_dir}/cpack_output/`
+    tmp=${pack#nebula-graph}
+    ver=${tmp%.*}
 
-    if ! (${dump_syms_tool_dir}/dump_syms ${nebula_graphd} > ${syms_dir}/nebula-graphd-${version}.sym); then
-        echo ">>> dump nebula-graphd symbols faild. <<<"
-        exit 1
-    fi
-    if ! (${dump_syms_tool_dir}/dump_syms ${nebula_storaged} > ${syms_dir}/nebula-storaged-${version}.sym); then
-        echo ">>> dump nebula-storaged symbols faild. <<<"
-        exit 1
-    fi
-    if ! (${dump_syms_tool_dir}/dump_syms ${nebula_metad} > ${syms_dir}/nebula-metad-${version}.sym); then
-        echo ">>> dump nebula-storaged symbols faild. <<<"
-        exit 1
-    fi
+    for bin in nebula-graphd nebula-storaged nebula-metad; do
+        if ! (${dump_syms} ${build_dir}/bin/${bin} > ${syms_dir}/${bin}${ver}.sym); then
+            echo ">>> dump ${bin} symbols faild. <<<"
+            exit 1
+        fi
+    done
 }
 
 # The main
 build $version $enablesanitizer $static_sanitizer $build_type $branch
+package $strip_enable
 if [[ $dump_symbols == ON ]]; then
     echo ">>> start dump symbols <<<"
     dump_syms
 fi
-package $strip_enable
