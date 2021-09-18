@@ -37,11 +37,20 @@ class GoValidator final : public Validator {
 
   Expression* rewrite2VarProp(const Expression* expr);
 
+  Status extractVertexProp(ExpressionProps& exprProps, bool isSrc);
+
+  Status extractEdgeProp(ExpressionProps& exprProps);
+
+  Expression* rewriteLabel2Vertex(Expression* expr);
+
  private:
   std::unique_ptr<GoContext> goCtx_;
 
   YieldColumns* inputPropCols_{nullptr};
   std::unordered_map<std::string, YieldColumn*> propExprColMap_;
+
+  // key : colName, value: bool (true: srcv, false: dstv)
+  std::unordered_map<std::string, bool> colTypeMap_;
 };
 }  // namespace graph
 }  // namespace nebula
