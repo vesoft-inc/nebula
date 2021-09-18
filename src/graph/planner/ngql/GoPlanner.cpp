@@ -81,14 +81,13 @@ std::unique_ptr<GoPlanner::VertexProps> GoPlanner::buildVertexProps(
   return vertexProps;
 }
 
-// ++loopSteps{0} < steps  && (var is Empty OR size(var) != 0)
+// ++loopSteps{0} <= steps  && (var is Empty OR size(var) != 0)
 Expression* GoPlanner::loopCondition(uint32_t steps, const std::string& var) {
   auto* qctx = goCtx_->qctx;
   auto* pool = qctx->objPool();
 
-  auto loopSteps = qctx->vctx()->anonVarGen()->getVar();
-  qctx->ectx()->setValue(loopSteps, 0);
-  auto step = ExpressionUtils::stepCondition(pool, loopSteps, steps);
+  qctx->ectx()->setValue(loopStepVar_, 0);
+  auto step = ExpressionUtils::stepCondition(pool, loopStepVar_, steps);
   auto empty = ExpressionUtils::equalCondition(pool, var, Value::kEmpty);
   auto neZero = ExpressionUtils::neZeroCondition(pool, var);
   auto* earlyEnd = LogicalExpression::makeOr(pool, empty, neZero);
@@ -365,26 +364,41 @@ PlanNode* GoPlanner::buildOneStepJoinPlan(PlanNode* gn) {
   return dep;
 }
 
-// build step sample limit plan
-PlanNode* GoPlanner::buildSampleLimit(PlanNode* input, const std::size_t currentStep) {
+template <typename T>
+PlanNode* GoPlanner::buildSampleLimitImpl(PlanNode* input, T sampleLimit) {
+  DCHECK(!goCtx_->limits.empty());
   PlanNode* node = nullptr;
-  if (goCtx_->limits.empty()) {
-    // No sample/limit
-    return input;
-  }
   if (goCtx_->random) {
-    node = Sample::make(goCtx_->qctx, input, goCtx_->limits[currentStep - 1]);
+    node = Sample::make(goCtx_->qctx, input, sampleLimit);
   } else {
-    node = Limit::make(goCtx_->qctx, input, 0, goCtx_->limits[currentStep - 1]);
+    node = Limit::make(goCtx_->qctx, input, 0, sampleLimit);
   }
   node->setInputVar(input->outputVar());
   node->setColNames(input->outputVarPtr()->colNames);
   return node;
 }
 
-PlanNode* GoPlanner::expand(PlanNode* previous) {
-  UNUSED(previous);
-  return nullptr;
+// generate
+// $limits[$step-1]
+Expression* GoPlanner::stepSampleLimit() {
+  auto qctx = goCtx_->qctx;
+  // $limits
+  const auto& limitsVarName = qctx->vctx()->anonVarGen()->getVar();
+  List limitValues;
+  limitValues.reserve(goCtx_->limits.size());
+  for (const auto& limit : goCtx_->limits) {
+    limitValues.values.emplace_back(limit);
+  }
+  qctx->ectx()->setValue(limitsVarName, Value(std::move(limitValues)));
+  auto* limitsVar = VariableExpression::make(qctx->objPool(), limitsVarName);
+  // $step
+  auto* stepVar = VariableExpression::make(qctx->objPool(), loopStepVar_);
+  // step inc
+  auto* stepInc = ArithmeticExpression::makeMinus(
+      qctx->objPool(), stepVar, ConstantExpression::make(qctx->objPool(), 1));
+  // subscript
+  auto* subscript = SubscriptExpression::make(qctx->objPool(), limitsVar, stepInc);
+  return subscript;
 }
 
 SubPlan GoPlanner::oneStepPlan(SubPlan& startVidPlan) {
@@ -417,6 +431,7 @@ SubPlan GoPlanner::oneStepPlan(SubPlan& startVidPlan) {
 
 SubPlan GoPlanner::nStepsPlan(SubPlan& startVidPlan) {
   auto qctx = goCtx_->qctx;
+  loopStepVar_ = qctx->vctx()->anonVarGen()->getVar();
 
   auto* start = StartNode::make(qctx);
   auto* gn = GetNeighbors::make(qctx, start, goCtx_->space.id);
@@ -424,18 +439,20 @@ SubPlan GoPlanner::nStepsPlan(SubPlan& startVidPlan) {
   gn->setEdgeProps(buildEdgeProps(true));
   gn->setInputVar(goCtx_->vidsVar);
 
-  auto* getDst = QueryUtil::extractDstFromGN(qctx, gn, goCtx_->vidsVar);
+  auto* sampleLimit = buildSampleLimit(gn);
+
+  auto* getDst = QueryUtil::extractDstFromGN(qctx, sampleLimit, goCtx_->vidsVar);
 
   PlanNode* loopBody = getDst;
   PlanNode* loopDep = nullptr;
   if (goCtx_->joinInput) {
     auto* joinLeft = extractVidFromRuntimeInput(startVidPlan.root);
-    auto* joinRight = extractSrcDstFromGN(getDst, gn->outputVar());
+    auto* joinRight = extractSrcDstFromGN(getDst, sampleLimit->outputVar());
     loopBody = trackStartVid(joinLeft, joinRight);
     loopDep = joinLeft;
   }
 
-  auto* condition = loopCondition(goCtx_->steps.steps() - 1, gn->outputVar());
+  auto* condition = loopCondition(goCtx_->steps.steps() - 1, sampleLimit->outputVar());
   auto* loop = Loop::make(qctx, loopDep, loopBody, condition);
 
   auto* root = lastStep(loop, loopBody == getDst ? nullptr : loopBody);
@@ -451,6 +468,8 @@ SubPlan GoPlanner::mToNStepsPlan(SubPlan& startVidPlan) {
   auto joinInput = goCtx_->joinInput;
   auto joinDst = goCtx_->joinDst;
 
+  loopStepVar_ = qctx->vctx()->anonVarGen()->getVar();
+
   auto* start = StartNode::make(qctx);
   auto* gn = GetNeighbors::make(qctx, start, goCtx_->space.id);
   gn->setSrc(goCtx_->from.src);
@@ -458,33 +477,37 @@ SubPlan GoPlanner::mToNStepsPlan(SubPlan& startVidPlan) {
   gn->setEdgeProps(buildEdgeProps(false));
   gn->setInputVar(goCtx_->vidsVar);
 
-  auto* getDst = QueryUtil::extractDstFromGN(qctx, gn, goCtx_->vidsVar);
+  auto* sampleLimit = buildSampleLimit(gn);
+
+  auto* getDst = QueryUtil::extractDstFromGN(qctx, sampleLimit, goCtx_->vidsVar);
 
   auto* loopBody = getDst;
   auto* loopDep = startVidPlan.root;
   PlanNode* trackVid = nullptr;
   if (joinInput) {
     auto* joinLeft = extractVidFromRuntimeInput(startVidPlan.root);
-    auto* joinRight = extractSrcDstFromGN(getDst, gn->outputVar());
+    auto* joinRight = extractSrcDstFromGN(getDst, sampleLimit->outputVar());
     trackVid = trackStartVid(joinLeft, joinRight);
     loopBody = trackVid;
     loopDep = joinLeft;
   }
 
   if (joinInput || joinDst) {
-    loopBody = extractSrcEdgePropsFromGN(loopBody, gn->outputVar());
+    loopBody = extractSrcEdgePropsFromGN(loopBody, sampleLimit->outputVar());
     loopBody = joinDst ? buildJoinDstPlan(loopBody) : loopBody;
     loopBody = joinInput ? lastStepJoinInput(trackVid, loopBody) : loopBody;
     loopBody = joinInput ? buildJoinInputPlan(loopBody) : loopBody;
   }
 
   if (goCtx_->filter) {
-    const auto& filterInput = (joinInput || joinDst) ? loopBody->outputVar() : gn->outputVar();
+    const auto& filterInput =
+        (joinInput || joinDst) ? loopBody->outputVar() : sampleLimit->outputVar();
     loopBody = Filter::make(qctx, loopBody, goCtx_->filter);
     loopBody->setInputVar(filterInput);
   }
 
-  const auto& projectInput = (joinInput || joinDst) ? loopBody->outputVar() : gn->outputVar();
+  const auto& projectInput =
+      (joinInput || joinDst) ? loopBody->outputVar() : sampleLimit->outputVar();
   loopBody = Project::make(qctx, loopBody, goCtx_->yieldExpr);
   loopBody->setInputVar(projectInput);
   loopBody->setColNames(std::move(goCtx_->colNames));
@@ -493,7 +516,7 @@ SubPlan GoPlanner::mToNStepsPlan(SubPlan& startVidPlan) {
     loopBody = Dedup::make(qctx, loopBody);
   }
 
-  auto* condition = loopCondition(goCtx_->steps.nSteps(), gn->outputVar());
+  auto* condition = loopCondition(goCtx_->steps.nSteps(), sampleLimit->outputVar());
   auto* loop = Loop::make(qctx, loopDep, loopBody, condition);
 
   auto* dc = DataCollect::make(qctx, DataCollect::DCKind::kMToN);
@@ -521,9 +544,9 @@ StatusOr<SubPlan> GoPlanner::transform(AstContext* astCtx) {
   auto& steps = goCtx_->steps;
   if (steps.isMToN()) {
     // TODO(shylock) need read the limit number in runtime for the Loop
-    if (!goCtx_->limits.empty()) {
-      return Status::SemanticError("Not supported sample/limit in multiple steps GO query.");
-    }
+    // if (!goCtx_->limits.empty()) {
+    // return Status::SemanticError("Not supported sample/limit in multiple steps GO query.");
+    // }
     return mToNStepsPlan(startPlan);
   }
 
@@ -539,9 +562,9 @@ StatusOr<SubPlan> GoPlanner::transform(AstContext* astCtx) {
     return oneStepPlan(startPlan);
   }
   // TODO(shylock) need read the limit number in runtime for the Loop
-  if (!goCtx_->limits.empty()) {
-    return Status::SemanticError("Not supported sample/limit in multiple steps GO query.");
-  }
+  // if (!goCtx_->limits.empty()) {
+  // return Status::SemanticError("Not supported sample/limit in multiple steps GO query.");
+  // }
   return nStepsPlan(startPlan);
 }
 

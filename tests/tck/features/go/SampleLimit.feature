@@ -59,4 +59,7 @@ Feature: Sample and limit
       """
       GO 3 STEPS FROM 'Tim Duncan' OVER like LIMIT [1, 2, 3]
       """
-    Then a SemanticError should be raised at runtime: Not supported sample/limit in multiple steps GO query.
+    Then the result should be, in any order:
+      | like._dst       |
+      | 'Manu Ginobili' |
+      | 'Tony Parker'   |

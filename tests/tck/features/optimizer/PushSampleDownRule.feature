@@ -22,6 +22,25 @@ Feature: Push Limit down rule
       | 6  | Limit        | 7            |                |
       | 7  | GetNeighbors | 0            | {"limit": "2"} |
       | 0  | Start        |              |                |
+    When profiling query:
+      """
+      GO 2 STEPS FROM "James Harden" OVER like REVERSELY LIMIT [2, 2]
+      """
+    Then the result should be, in any order:
+      | like._dst            |
+      | "Kristaps Porzingis" |
+    And the execution plan should be:
+      | id | name         | dependencies | operator info                                          |
+      | 9  | Project      | 12           |                                                        |
+      | 12 | Limit        | 13           |                                                        |
+      | 13 | GetNeighbors | 6            | {"limit": "2", "random": "false"}                      |
+      | 6  | Loop         | 0            | {"loopBody": "5"}                                      |
+      | 5  | Dedup        | 4            |                                                        |
+      | 4  | Project      | 20           |                                                        |
+      | 20 | Limit        | 21           |                                                        |
+      | 21 | GetNeighbors | 1            | {"limit": "$__VAR_2[($__VAR_1-1)]", "random": "false"} |
+      | 1  | Start        |              |                                                        |
+      | 0  | Start        |              |                                                        |
 
   Scenario: push sample down to GetNeighbors
     When profiling query:
@@ -38,3 +57,23 @@ Feature: Push Limit down rule
       | 2  | Sample       | 3            |                                  |
       | 3  | GetNeighbors | 4            | {"limit": "2", "random": "true"} |
       | 4  | Start        |              |                                  |
+    When profiling query:
+      """
+      GO 2 STEPS FROM "James Harden" OVER like REVERSELY SAMPLE [2, 2]
+      """
+    Then the result should be, in any order:
+      | like._dst |
+      | /[\w\s]+/ |
+      | /[\w\s]+/ |
+    And the execution plan should be:
+      | id | name         | dependencies | operator info                                         |
+      | 9  | Project      | 12           |                                                       |
+      | 12 | Sample       | 13           |                                                       |
+      | 13 | GetNeighbors | 6            | {"limit": "2", "random": "true"}                      |
+      | 6  | Loop         | 0            | {"loopBody": "5"}                                     |
+      | 5  | Dedup        | 4            |                                                       |
+      | 4  | Project      | 20           |                                                       |
+      | 20 | Sample       | 21           |                                                       |
+      | 21 | GetNeighbors | 1            | {"limit": "$__VAR_2[($__VAR_1-1)]", "random": "true"} |
+      | 1  | Start        |              |                                                       |
+      | 0  | Start        |              |                                                       |

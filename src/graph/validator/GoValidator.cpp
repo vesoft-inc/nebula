@@ -104,7 +104,7 @@ Status GoValidator::validateTruncate(TruncateClause* truncate) {
     if (ele.getInt() < 0) {
       return Status::SemanticError("Limit/Sample element must be nonnegative.");
     }
-    goCtx_->limits.emplace_back(static_cast<std::size_t>(ele.getInt()));
+    goCtx_->limits.emplace_back(ele.getInt());
   }
   return Status::OK();
 }

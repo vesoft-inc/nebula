@@ -47,17 +47,20 @@ StatusOr<OptRule::TransformResult> PushStepLimitDownGetNeighborsRule::transform(
   const auto limit = static_cast<const Limit *>(limitGroupNode->node());
   const auto gn = static_cast<const GetNeighbors *>(gnGroupNode->node());
 
-  DCHECK_EQ(limit->offset(), 0);
-  int64_t limitRows = limit->count();
-  if (gn->limit() >= 0 && limitRows >= gn->limit()) {
-    return TransformResult::noTransform();
+  if (gn->limitExpr() != nullptr && graph::ExpressionUtils::isEvaluableExpr(gn->limitExpr()) &&
+      graph::ExpressionUtils::isEvaluableExpr(limit->countExpr())) {
+    int64_t limitRows = limit->offset() + limit->count();
+    int64_t gnLimit = gn->limit();
+    if (gnLimit >= 0 && limitRows >= gnLimit) {
+      return TransformResult::noTransform();
+    }
   }
 
   auto newLimit = static_cast<Limit *>(limit->clone());
   auto newLimitGroupNode = OptGroupNode::create(octx, newLimit, limitGroupNode->group());
 
   auto newGn = static_cast<GetNeighbors *>(gn->clone());
-  newGn->setLimit(limitRows);
+  newGn->setLimit(limit->countExpr()->clone());
   auto newGnGroup = OptGroup::create(octx);
   auto newGnGroupNode = newGnGroup->makeGroupNode(newGn);
 

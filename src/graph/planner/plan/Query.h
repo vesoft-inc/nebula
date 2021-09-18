@@ -709,7 +709,8 @@ class Limit final : public SingleInputNode {
     if (count_ == nullptr) {
       return -1;
     }
-    auto s = count_->eval(ctx).getInt();
+    auto v = count_->eval(ctx);
+    auto s = v.getInt();
     DCHECK_GE(s, 0);
     return s;
   }

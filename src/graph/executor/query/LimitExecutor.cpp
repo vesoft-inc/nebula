@@ -21,7 +21,8 @@ folly::Future<Status> LimitExecutor::execute() {
   ResultBuilder builder;
   builder.value(result.valuePtr());
   auto offset = limit->offset();
-  auto count = limit->count();
+  QueryExpressionContext qec(ectx_);
+  auto count = limit->count(qec);
   iter->select(offset, count);
   builder.iter(std::move(result).iter());
   return finish(builder.build());

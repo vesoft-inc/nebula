@@ -47,16 +47,20 @@ StatusOr<OptRule::TransformResult> PushStepSampleDownGetNeighborsRule::transform
   const auto sample = static_cast<const Sample *>(sampleGroupNode->node());
   const auto gn = static_cast<const GetNeighbors *>(gnGroupNode->node());
 
-  int64_t sampleRows = sample->count();
-  if (gn->limit() >= 0 && sampleRows >= gn->limit()) {
-    return TransformResult::noTransform();
+  if (gn->limitExpr() != nullptr && graph::ExpressionUtils::isEvaluableExpr(gn->limitExpr()) &&
+      graph::ExpressionUtils::isEvaluableExpr(sample->countExpr())) {
+    int64_t limitRows = sample->count();
+    int64_t gnLimit = gn->limit();
+    if (gnLimit >= 0 && limitRows >= gnLimit) {
+      return TransformResult::noTransform();
+    }
   }
 
   auto newSample = static_cast<Sample *>(sample->clone());
   auto newSampleGroupNode = OptGroupNode::create(octx, newSample, sampleGroupNode->group());
 
   auto newGn = static_cast<GetNeighbors *>(gn->clone());
-  newGn->setLimit(sampleRows);
+  newGn->setLimit(sample->countExpr()->clone());
   newGn->setRandom(true);
   auto newGnGroup = OptGroup::create(octx);
   auto newGnGroupNode = newGnGroup->makeGroupNode(newGn);

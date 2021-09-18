@@ -85,7 +85,7 @@ struct GoContext final : AstContext {
   // true: sample, false: limit
   bool random{false};
   // step limit value
-  std::vector<std::size_t> limits;
+  std::vector<int64_t> limits;
   std::vector<std::string> colNames;
 
   std::string vidsVar;

@@ -22,7 +22,7 @@ folly::Future<Status> SampleExecutor::execute() {
   ResultBuilder builder;
   builder.value(result.valuePtr());
   QueryExpressionContext qec(ectx_);
-  auto count = sample->count();
+  auto count = sample->count(qec);
   if (iter->kind() == Iterator::Kind::kGetNeighbors ||
       iter->size() > static_cast<std::size_t>(count)) {
     // Sampling
