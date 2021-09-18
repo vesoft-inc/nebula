@@ -1197,7 +1197,6 @@ void RaftPart::statusPolling(int64_t startTime) {
     sendHeartbeat();
   }
   if (needToCleanupSnapshot()) {
-    LOG(INFO) << idStr_ << "Clean up the snapshot";
     cleanupSnapshot();
   }
   {
@@ -1406,6 +1405,7 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
               << " " << req.get_committed_log_id();
     reset();
     status_ = Status::WAITING_SNAPSHOT;
+    lastSnapshotRecvDur_.reset();
     resp.set_error_code(cpp2::ErrorCode::E_WAITING_SNAPSHOT);
     return;
   }
@@ -1529,8 +1529,8 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
       lastLogId_ = wal_->lastLogId();
       lastLogTerm_ = wal_->lastLogTerm();
       LOG(INFO) << idStr_ << "Rollback succeeded! lastLogId is " << lastLogId_ << ", logLogTerm is "
-                << lastLogTerm_ << ", committedLogId is " << committedLogId_ << ", term is "
-                << term_;
+                << lastLogTerm_ << ", committedLogId is " << committedLogId_ << ", logs in request "
+                << numLogs << ", remaining logs after rollback " << numLogs - diffIndex;
     } else {
       LOG(ERROR) << idStr_ << "Rollback fail! lastLogId is" << lastLogId_ << ", logLogTerm is "
                  << lastLogTerm_ << ", committedLogId is " << committedLogId_ << ", rollback id is "

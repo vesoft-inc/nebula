@@ -353,7 +353,6 @@ void FileBasedWal::rollbackInFile(WalFileInfoPtr info, LogID logId) {
   }
   lastLogId_ = logId;
   lastLogTerm_ = term;
-  LOG(INFO) << idStr_ << "Rollback to log " << logId;
 
   CHECK_GT(pos, 0) << "This wal should have been deleted";
   if (pos < FileUtils::fileSize(path)) {
@@ -631,7 +630,7 @@ bool FileBasedWal::reset() {
   std::vector<std::string> files = FileUtils::listAllFilesInDir(dir_.c_str(), false, "*.wal");
   for (auto& fn : files) {
     auto absFn = FileUtils::joinPath(dir_, fn);
-    LOG(INFO) << "Removing " << absFn;
+    VLOG(1) << "Removing " << absFn;
     unlink(absFn.c_str());
   }
   lastLogId_ = firstLogId_ = 0;

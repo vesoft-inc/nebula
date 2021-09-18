@@ -466,9 +466,10 @@ folly::Future<cpp2::AppendLogResponse> Host::sendAppendLogRequest(
                                  << ", part " << req->get_part() << ", current term "
                                  << req->get_current_term() << ", last_log_id "
                                  << req->get_last_log_id() << ", committed_id "
-                                 << req->get_committed_log_id() << ", last_log_term_sent"
+                                 << req->get_committed_log_id() << ", last_log_term_sent "
                                  << req->get_last_log_term_sent() << ", last_log_id_sent "
-                                 << req->get_last_log_id_sent();
+                                 << req->get_last_log_id_sent() << ", logs in request "
+                                 << req->get_log_str_list().size();
   // Get client connection
   auto client = part_->clientMan_->client(addr_, eb, false, FLAGS_raft_rpc_timeout_ms);
   return client->future_appendLog(*req);
