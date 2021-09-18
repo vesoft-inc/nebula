@@ -32,18 +32,6 @@ class Host final : public std::enable_shared_from_this<Host> {
 
   const char* idStr() const { return idStr_.c_str(); }
 
-  // This will be called when the shard lost its leadership
-  void pause() {
-    std::lock_guard<std::mutex> g(lock_);
-    paused_ = true;
-  }
-
-  // This will be called when the shard becomes the leader
-  void resume() {
-    std::lock_guard<std::mutex> g(lock_);
-    paused_ = false;
-  }
-
   void stop() {
     std::lock_guard<std::mutex> g(lock_);
     stopped_ = true;
@@ -116,10 +104,13 @@ class Host final : public std::enable_shared_from_this<Host> {
 
   mutable std::mutex lock_;
 
-  bool paused_{false};
   bool stopped_{false};
 
+  // whether there is a batch of logs for target host in on going
   bool requestOnGoing_{false};
+  // whether there is a snapshot for target host in on going
+  bool sendingSnapshot_{false};
+
   std::condition_variable noMoreRequestCV_;
   folly::SharedPromise<cpp2::AppendLogResponse> promise_;
   folly::SharedPromise<cpp2::AppendLogResponse> cachingPromise_;
@@ -135,7 +126,6 @@ class Host final : public std::enable_shared_from_this<Host> {
   TermID lastLogTermSent_{0};
 
   LogID committedLogId_{0};
-  std::atomic_bool sendingSnapshot_{false};
 
   // CommittedLogId of follower
   LogID followerCommittedLogId_{0};

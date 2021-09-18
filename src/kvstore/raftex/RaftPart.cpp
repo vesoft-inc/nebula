@@ -305,7 +305,7 @@ void RaftPart::stop() {
 
   decltype(hosts_) hosts;
   {
-    std::unique_lock<std::mutex> lck(raftLock_);
+    std::lock_guard<std::mutex> lck(raftLock_);
     status_ = Status::STOPPED;
     leader_ = {"", 0};
     role_ = Role::FOLLOWER;
@@ -378,7 +378,7 @@ void RaftPart::preProcessTransLeader(const HostAddr& target) {
         LOG(INFO) << idStr_ << "I will be the new leader, trigger leader election now!";
         bgWorkers_->addTask([self = shared_from_this()] {
           {
-            std::unique_lock<std::mutex> lck(self->raftLock_);
+            std::lock_guard<std::mutex> lck(self->raftLock_);
             self->role_ = Role::CANDIDATE;
             self->leader_ = HostAddr("", 0);
           }
@@ -973,21 +973,6 @@ bool RaftPart::prepareElectionRequest(cpp2::AskForVoteRequest& req,
     return false;
   }
 
-  if (UNLIKELY(status_ == Status::STOPPED)) {
-    VLOG(2) << idStr_ << "The part has been stopped, skip the request";
-    return false;
-  }
-
-  if (UNLIKELY(status_ == Status::STARTING)) {
-    VLOG(2) << idStr_ << "The partition is still starting";
-    return false;
-  }
-
-  if (UNLIKELY(status_ == Status::WAITING_SNAPSHOT)) {
-    VLOG(2) << idStr_ << "The partition is still waiting snapshot";
-    return false;
-  }
-
   // Make sure the role is still CANDIDATE
   if (role_ != Role::CANDIDATE) {
     VLOG(2) << idStr_ << "A leader has been elected";
@@ -1027,7 +1012,7 @@ typename RaftPart::Role RaftPart::processElectionResponses(
   }
 
   if (UNLIKELY(status_ == Status::WAITING_SNAPSHOT)) {
-    LOG(INFO) << idStr_ << "The partition is still waitiong snapshot";
+    LOG(INFO) << idStr_ << "The partition is still waiting snapshot";
     return role_;
   }
 
@@ -1260,7 +1245,7 @@ void RaftPart::processAskForVoteRequest(const cpp2::AskForVoteRequest& req,
 
   if (UNLIKELY(status_ == Status::WAITING_SNAPSHOT)) {
     LOG(INFO) << idStr_ << "The partition is still waiting snapshot";
-    resp.set_error_code(cpp2::ErrorCode::E_NOT_READY);
+    resp.set_error_code(cpp2::ErrorCode::E_WAITING_SNAPSHOT);
     return;
   }
 
@@ -1330,7 +1315,7 @@ void RaftPart::processAskForVoteRequest(const cpp2::AskForVoteRequest& req,
 
   // Before change role from leader to follower, check the logs locally.
   if (role_ == Role::LEADER && wal_->lastLogId() > lastLogId_) {
-    LOG(INFO) << idStr_ << "There is one log " << wal_->lastLogId()
+    LOG(INFO) << idStr_ << "There are some logs up to " << wal_->lastLogId()
               << " i did not commit when i was leader, rollback to " << lastLogId_;
     wal_->rollbackToLog(lastLogId_);
   }
@@ -1363,11 +1348,11 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
                                  << ", lastLogTermSent = " << req.get_last_log_term_sent()
                                  << ", num_logs = " << req.get_log_str_list().size()
                                  << ", logTerm = " << req.get_log_term()
-                                 << ", sendingSnapshot = " << req.get_sending_snapshot()
                                  << ", local lastLogId = " << lastLogId_
                                  << ", local lastLogTerm = " << lastLogTerm_
                                  << ", local committedLogId = " << committedLogId_
-                                 << ", local current term = " << term_;
+                                 << ", local current term = " << term_
+                                 << ", wal lastLogId = " << wal_->lastLogId();
   std::lock_guard<std::mutex> g(raftLock_);
 
   resp.set_current_term(term_);
@@ -1388,6 +1373,11 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
     resp.set_error_code(cpp2::ErrorCode::E_NOT_READY);
     return;
   }
+  if (UNLIKELY(status_ == Status::WAITING_SNAPSHOT)) {
+    VLOG(2) << idStr_ << "The partition is waiting for snapshot";
+    resp.set_error_code(cpp2::ErrorCode::E_WAITING_SNAPSHOT);
+    return;
+  }
   // Check leadership
   cpp2::ErrorCode err = verifyLeader<cpp2::AppendLogRequest>(req);
   if (err != cpp2::ErrorCode::SUCCEEDED) {
@@ -1400,55 +1390,6 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
   // Reset the timeout timer
   lastMsgRecvDur_.reset();
 
-  if (req.get_sending_snapshot() && status_ != Status::WAITING_SNAPSHOT) {
-    LOG(INFO) << idStr_ << "Begin to wait for the snapshot"
-              << " " << req.get_committed_log_id();
-    reset();
-    status_ = Status::WAITING_SNAPSHOT;
-    lastSnapshotRecvDur_.reset();
-    resp.set_error_code(cpp2::ErrorCode::E_WAITING_SNAPSHOT);
-    return;
-  }
-
-  if (UNLIKELY(status_ == Status::WAITING_SNAPSHOT)) {
-    VLOG(2) << idStr_ << "The part is receiving snapshot,"
-            << "so just accept the new wals, but don't commit them."
-            << "last_log_id_sent " << req.get_last_log_id_sent() << ", total log number "
-            << req.get_log_str_list().size();
-    if (lastLogId_ > 0 && req.get_last_log_id_sent() > lastLogId_) {
-      // There is a gap
-      LOG(INFO) << idStr_ << "Local is missing logs from id " << lastLogId_ << ". Need to catch up";
-      resp.set_error_code(cpp2::ErrorCode::E_LOG_GAP);
-      return;
-    }
-    // TODO(heng): if we have 3 node, one is leader, one is wait snapshot and
-    // return success, the other is follower, but leader replica log to follow
-    // failed, How to deal with leader crash? At this time, no leader will be
-    // elected.
-    size_t numLogs = req.get_log_str_list().size();
-    LogID firstId = req.get_last_log_id_sent() + 1;
-
-    VLOG(2) << idStr_ << "Writing log [" << firstId << ", " << firstId + numLogs - 1 << "] to WAL";
-    LogStrListIterator iter(firstId, req.get_log_term(), req.get_log_str_list());
-    if (wal_->appendLogs(iter)) {
-      // When leader has been sending a snapshot already, sometimes it would
-      // send a request with empty log list, and lastLogId in wal may be 0
-      // because of reset.
-      if (numLogs != 0) {
-        CHECK_EQ(firstId + numLogs - 1, wal_->lastLogId()) << "First Id is " << firstId;
-      }
-      lastLogId_ = wal_->lastLogId();
-      lastLogTerm_ = wal_->lastLogTerm();
-      resp.set_last_log_id(lastLogId_);
-      resp.set_last_log_term(lastLogTerm_);
-      resp.set_error_code(cpp2::ErrorCode::SUCCEEDED);
-    } else {
-      LOG_EVERY_N(WARNING, 100) << idStr_ << "Failed to append logs to WAL";
-      resp.set_error_code(cpp2::ErrorCode::E_WAL_FAIL);
-    }
-    return;
-  }
-
   if (req.get_last_log_id_sent() < committedLogId_ && req.get_last_log_term_sent() <= term_) {
     LOG(INFO) << idStr_ << "Stale log! The log " << req.get_last_log_id_sent() << ", term "
               << req.get_last_log_term_sent() << " i had committed yet. My committedLogId is "
@@ -1460,7 +1401,7 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
               << ", the log term is " << req.get_last_log_term_sent()
               << ", but my committedLogId is " << committedLogId_ << ", my term is " << term_
               << ", to make the cluster stable i will follow the high term"
-              << " candidate and clenaup my data";
+              << " candidate and cleanup my data";
     reset();
     resp.set_committed_log_id(committedLogId_);
     resp.set_last_log_id(lastLogId_);
@@ -1478,7 +1419,7 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
     resp.set_error_code(cpp2::ErrorCode::E_LOG_GAP);
     return;
   } else {
-    // check the term
+    // check the last log term is matched or not
     int reqLastLogTerm = wal_->getLogTerm(req.get_last_log_id_sent());
     if (req.get_last_log_term_sent() != reqLastLogTerm) {
       LOG(INFO) << idStr_ << "The local log term is " << reqLastLogTerm
@@ -1501,66 +1442,69 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
   LogID firstId = req.get_last_log_id_sent() + 1;
 
   size_t diffIndex = 0;
-  // find the first id/term not match, rollback until it, and append the remaining wal
-  if (!(req.get_last_log_id_sent() == lastLogId_ && req.get_last_log_term_sent() == lastLogTerm_)) {
-    // check the diff index in log, find the first log which term is not same as term in request
-    {
-      std::unique_ptr<LogIterator> it = wal_->iterator(firstId, firstId + numLogs);
-      for (size_t i = 0; i < numLogs && it->valid(); i++, ++(*it), diffIndex++) {
-        int logTerm = it->logTerm();
-        if (req.get_log_term() != logTerm) {
-          break;
+  do {
+    // find the first id/term not match, rollback until it, and append the remaining wal
+    if (!(req.get_last_log_id_sent() == lastLogId_ &&
+          req.get_last_log_term_sent() == lastLogTerm_)) {
+      // check the diff index in log, find the first log which term is not same as term in request
+      {
+        std::unique_ptr<LogIterator> it = wal_->iterator(firstId, firstId + numLogs - 1);
+        for (size_t i = 0; i < numLogs && it->valid(); i++, ++(*it), diffIndex++) {
+          int logTerm = it->logTerm();
+          if (req.get_log_term() != logTerm) {
+            break;
+          }
         }
       }
+
+      // stale log
+      if (diffIndex == numLogs) {
+        // All logs have been received before
+        resp.set_last_log_id(firstId + numLogs - 1);
+        resp.set_last_log_term(req.get_log_term());
+        // nothing to append, goto commit
+        break;
+      }
+
+      // rollback the wal
+      if (wal_->rollbackToLog(firstId + diffIndex - 1)) {
+        lastLogId_ = wal_->lastLogId();
+        lastLogTerm_ = wal_->lastLogTerm();
+        LOG(INFO) << idStr_ << "Rollback succeeded! lastLogId is " << lastLogId_
+                  << ", logLogTerm is " << lastLogTerm_ << ", committedLogId is " << committedLogId_
+                  << ", logs in request " << numLogs << ", remaining logs after rollback "
+                  << numLogs - diffIndex;
+      } else {
+        LOG(ERROR) << idStr_ << "Rollback fail! lastLogId is" << lastLogId_ << ", logLogTerm is "
+                   << lastLogTerm_ << ", committedLogId is " << committedLogId_
+                   << ", rollback id is " << firstId + diffIndex - 1;
+        resp.set_error_code(cpp2::ErrorCode::E_WAL_FAIL);
+        return;
+      }
+
+      // update msg
+      firstId = firstId + diffIndex;
+      numLogs = numLogs - diffIndex;
     }
 
-    // stale log
-    if (diffIndex == numLogs) {
-      // All logs have been received before
-      resp.set_last_log_id(firstId + numLogs - 1);
-      resp.set_last_log_term(req.get_log_term());
-      resp.set_error_code(cpp2::ErrorCode::E_LOG_STALE);
-      // nothing to append
-      return;
-    }
-
-    // rollback the wal_
-    if (wal_->rollbackToLog(firstId + diffIndex - 1)) {
+    // Append new logs
+    std::vector<cpp2::LogEntry> logEntries = std::vector<cpp2::LogEntry>(
+        std::make_move_iterator(req.get_log_str_list().begin() + diffIndex),
+        std::make_move_iterator(req.get_log_str_list().end()));
+    LogStrListIterator iter(firstId, req.get_log_term(), std::move(logEntries));
+    if (wal_->appendLogs(iter)) {
+      if (numLogs != 0) {
+        CHECK_EQ(firstId + numLogs - 1, wal_->lastLogId()) << "First Id is " << firstId;
+      }
       lastLogId_ = wal_->lastLogId();
       lastLogTerm_ = wal_->lastLogTerm();
-      LOG(INFO) << idStr_ << "Rollback succeeded! lastLogId is " << lastLogId_ << ", logLogTerm is "
-                << lastLogTerm_ << ", committedLogId is " << committedLogId_ << ", logs in request "
-                << numLogs << ", remaining logs after rollback " << numLogs - diffIndex;
+      resp.set_last_log_id(lastLogId_);
+      resp.set_last_log_term(lastLogTerm_);
     } else {
-      LOG(ERROR) << idStr_ << "Rollback fail! lastLogId is" << lastLogId_ << ", logLogTerm is "
-                 << lastLogTerm_ << ", committedLogId is " << committedLogId_ << ", rollback id is "
-                 << firstId + diffIndex - 1;
       resp.set_error_code(cpp2::ErrorCode::E_WAL_FAIL);
       return;
     }
-
-    // update msg
-    firstId = firstId + diffIndex;
-    numLogs = numLogs - diffIndex;
-  }
-
-  // Append new logs
-  std::vector<cpp2::LogEntry> logEntries = std::vector<cpp2::LogEntry>(
-      std::make_move_iterator(req.get_log_str_list().begin() + diffIndex),
-      std::make_move_iterator(req.get_log_str_list().end()));
-  LogStrListIterator iter(firstId, req.get_log_term(), std::move(logEntries));
-  if (wal_->appendLogs(iter)) {
-    if (numLogs != 0) {
-      CHECK_EQ(firstId + numLogs - 1, wal_->lastLogId()) << "First Id is " << firstId;
-    }
-    lastLogId_ = wal_->lastLogId();
-    lastLogTerm_ = wal_->lastLogTerm();
-    resp.set_last_log_id(lastLogId_);
-    resp.set_last_log_term(lastLogTerm_);
-  } else {
-    resp.set_error_code(cpp2::ErrorCode::E_LOG_GAP);
-    return;
-  }
+  } while (false);
 
   LogID lastLogIdCanCommit = std::min(lastLogId_, req.get_committed_log_id());
   if (lastLogIdCanCommit > committedLogId_) {
@@ -1772,14 +1716,12 @@ void RaftPart::processSendSnapshotRequest(const cpp2::SendSnapshotRequest& req,
   }
   if (req.get_done()) {
     committedLogId_ = req.get_committed_log_id();
-    if (lastLogId_ < committedLogId_) {
-      lastLogId_ = committedLogId_;
-      lastLogTerm_ = req.get_committed_log_term();
-    }
-    if (wal_->lastLogId() <= committedLogId_) {
-      LOG(INFO) << idStr_ << "Reset invalid wal after snapshot received";
-      wal_->reset();
-    }
+    lastLogId_ = committedLogId_;
+    lastLogTerm_ = req.get_committed_log_term();
+    term_ = proposedTerm_ = lastLogTerm_;
+    // there should be no wal after state converts to WAITING_SNAPSHOT, the RaftPart has been reset
+    DCHECK_EQ(wal_->firstLogId(), 0);
+    DCHECK_EQ(wal_->lastLogId(), 0);
     status_ = Status::RUNNING;
     LOG(INFO) << idStr_ << "Receive all snapshot, committedLogId_ " << committedLogId_
               << ", lastLodId " << lastLogId_ << ", lastLogTermId " << lastLogTerm_;

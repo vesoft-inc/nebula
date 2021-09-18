@@ -38,7 +38,8 @@ class SnapshotManager {
   virtual ~SnapshotManager() = default;
 
   // Send snapshot for spaceId, partId to host dst.
-  folly::Future<Status> sendSnapshot(std::shared_ptr<RaftPart> part, const HostAddr& dst);
+  folly::Future<StatusOr<std::pair<LogID, TermID>>> sendSnapshot(std::shared_ptr<RaftPart> part,
+                                                                 const HostAddr& dst);
 
  private:
   folly::Future<raftex::cpp2::SendSnapshotResponse> send(GraphSpaceID spaceId,
