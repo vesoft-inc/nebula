@@ -45,9 +45,6 @@ class ExpressionUtils {
   static std::vector<const Expression*> collectAll(
       const Expression* self, const std::unordered_set<Expression::Kind>& expected);
 
-  static std::vector<const Expression*> collectAllExcept(
-      const Expression* self, const std::unordered_set<Expression::Kind>& excludedKind);
-
   static std::vector<const Expression*> findAllStorage(const Expression* expr);
 
   static std::vector<const Expression*> findAllInputVariableProp(const Expression* expr);

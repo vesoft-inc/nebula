@@ -64,22 +64,6 @@ std::vector<const Expression *> ExpressionUtils::collectAll(
   return std::move(visitor).results();
 }
 
-// Find all expression except fot the specified kind
-// Empty for not found any one
-std::vector<const Expression *> ExpressionUtils::collectAllExcept(
-    const Expression *self, const std::unordered_set<Expression::Kind> &excludedKind) {
-  auto finder = [&excludedKind](const Expression *expr) -> bool {
-    // return true if the current expr kind is in the excludedKind list
-    if (excludedKind.find(expr->kind()) == excludedKind.end()) {
-      return true;
-    }
-    return false;
-  };
-  FindVisitor visitor(finder, true);
-  const_cast<Expression *>(self)->accept(&visitor);
-  return std::move(visitor).results();
-}
-
 std::vector<const Expression *> ExpressionUtils::findAllStorage(const Expression *expr) {
   return collectAll(expr,
                     {Expression::Kind::kTagProperty,
@@ -216,15 +200,29 @@ Expression *ExpressionUtils::rewriteLogicalAndToLogicalOr(const Expression *expr
   DCHECK(expr->kind() == Expression::Kind::kLogicalAnd);
   auto pool = expr->getObjPool();
   auto logicalAndExpr = static_cast<LogicalExpression *>(expr->clone());
+  auto logicalAndExprSize = (logicalAndExpr->operands()).size();
 
   // Extract all OR expr
   auto orExprList = collectAll(logicalAndExpr, {Expression::Kind::kLogicalOr});
-  auto nonOrExprList = collectAllExcept(logicalAndExpr, {Expression::Kind::kLogicalOr});
+  auto orExprListSize = orExprList.size();
 
-  DCHECK_GT(orExprList.size(), 1);
-  std::vector<std::vector<Expression *>> orExprOperands;
-  orExprOperands.reserve(orExprList.size());
-  // orExprOperands.emplace_back(std::move(orExprList[0]));
+  // Extract all non-OR expr
+  std::vector<Expression *> nonOrExprList;
+  bool isAllRelOr = logicalAndExprSize == orExprListSize;
+
+  // If logical expression has operand that is not an OR expr, add into nonOrExprList
+  if (!isAllRelOr) {
+    nonOrExprList.reserve(logicalAndExprSize - orExprListSize);
+    for (const auto &operand : logicalAndExpr->operands()) {
+      if (operand->kind() != Expression::Kind::kLogicalOr) {
+        nonOrExprList.emplace_back(std::move(operand));
+      }
+    }
+  }
+
+  DCHECK_GT(orExprListSize, 0);
+  std::vector<std::vector<Expression *>> orExprOperands{{}};
+  orExprOperands.reserve(orExprListSize);
 
   // Merge the elements of vec2 into each subVec of vec1
   // [[A], [B]] and [C, D]  =>  [[A, C], [A, D], [B, C], [B,D]]
@@ -241,21 +239,24 @@ Expression *ExpressionUtils::rewriteLogicalAndToLogicalOr(const Expression *expr
     return res;
   };
 
-  // Iterate all OR exprs
+  // Iterate all OR exprs and construct the operand list
   for (auto curExpr : orExprList) {
     auto curLogicalOrExpr = static_cast<LogicalExpression *>(const_cast<Expression *>(curExpr));
-    // auto tempExpr = LogicalExpression::makeAnd(pool);
-
     auto curOrOperands = curLogicalOrExpr->operands();
+
     orExprOperands = mergeVecs(orExprOperands, curOrOperands);
   }
 
-  // orExprOperands is a 2D vecter where each sub-vecter is the operands of AND expression.
+  // orExprOperands is a 2D vector where each sub-vector is the operands of AND expression.
   // [[A, C], [A, D], [B, C], [B,D]]  =>  (A and C) or (A and D) or (B and C) or (B or D)
   std::vector<Expression *> andExprList;
   andExprList.reserve(orExprOperands.size());
-  for (const auto &operand : orExprOperands) {
+  for (auto &operand : orExprOperands) {
     auto andExpr = LogicalExpression::makeAnd(pool);
+    // if nonOrExprList is not empty, append it to operand
+    if (!isAllRelOr) {
+      operand.insert(operand.end(), nonOrExprList.begin(), nonOrExprList.end());
+    }
     andExpr->setOperands(operand);
     andExprList.emplace_back(std::move(andExpr));
   }

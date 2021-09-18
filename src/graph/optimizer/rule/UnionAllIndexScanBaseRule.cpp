@@ -144,19 +144,17 @@ StatusOr<TransformResult> UnionAllIndexScanBaseRule::transform(OptContext* ctx,
 
     // OR expr
     case ExprKind::kLogicalOr: {
-      auto relInExprs = graph::ExpressionUtils::collectAll(transformedExpr, {ExprKind::kRelIn});
-      if (!relInExprs.empty()) {
-        // Iterate all operands and expand IN exprs if possible
-        for (auto& expr : static_cast<LogicalExpression*>(transformedExpr)->operands()) {
-          if (expr->kind() == ExprKind::kRelIn) {
-            if (OptimizerUtils::relExprHasIndex(expr, indexItems)) {
-              expr = graph::ExpressionUtils::rewriteInExpr(expr);
-            }
+      // Iterate all operands and expand IN exprs if possible
+      for (auto& expr : static_cast<LogicalExpression*>(transformedExpr)->operands()) {
+        if (expr->kind() == ExprKind::kRelIn) {
+          if (OptimizerUtils::relExprHasIndex(expr, indexItems)) {
+            expr = graph::ExpressionUtils::rewriteInExpr(expr);
           }
         }
-        // Flatten OR exprs
-        graph::ExpressionUtils::pullOrs(transformedExpr);
       }
+      // Flatten OR exprs
+      graph::ExpressionUtils::pullOrs(transformedExpr);
+
       break;
     }
     default:

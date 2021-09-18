@@ -93,7 +93,6 @@ Feature: Lookup tag index full scan
       | 0  | Start            |              |                                           |
 
   # TODO: Support compare operator info that has multiple column hints
-  @aiee
   Scenario: Tag with relational IN/NOT IN filter
     When profiling query:
       """
@@ -170,11 +169,11 @@ Feature: Lookup tag index full scan
       | VertexID      | player.age |
       | "Kobe Bryant" | 40         |
     And the execution plan should be:
-      | id | name               | dependencies | operator info                                                                                                           |
-      | 3  | Project            | 4            |                                                                                                                         |
-      | 4  | TagIndexPrefixScan | 0            | {"indexCtx": {"columnHints":{"endValue":"__EMPTY__","beginValue":"\"Kobe Bryant","scanType":"PREFIX","column":"name"}}} |
-      | 0  | Start              |              |                                                                                                                         |
-    # a IN b AND c IN d (TagIndexFullScan)
+      | id | name      | dependencies | operator info |
+      | 3  | Project   | 4            |               |
+      | 4  | IndexScan | 0            |               |
+      | 0  | Start     |              |               |
+    # a IN b AND c IN d
     When profiling query:
       """
       LOOKUP ON player WHERE player.age IN [40, 25] AND player.name IN ["ABC", "Kobe Bryant"] YIELD player.age
@@ -183,115 +182,114 @@ Feature: Lookup tag index full scan
       | VertexID      | player.age |
       | "Kobe Bryant" | 40         |
     And the execution plan should be:
-      | id | name             | dependencies | operator info                                                                                                            |
-      | 3  | Project          | 2            |                                                                                                                          |
-      | 2  | Filter           | 4            | {"condition": "(((player.age==40) OR (player.age==25)) AND ((player.name==\"ABC\") OR (player.name==\"Kobe Bryant\")))"} |
-      | 4  | TagIndexFullScan | 0            |                                                                                                                          |
-      | 0  | Start            |              |                                                                                                                          |
-    # When profiling query:
-    #   """
-    #   LOOKUP ON team WHERE team.name NOT IN ["Hornets", "Jazz"]
-    #   """
-    # Then the result should be, in any order:
-    #   | VertexID        |
-    #   | "76ers"         |
-    #   | "Bucks"         |
-    #   | "Bulls"         |
-    #   | "Cavaliers"     |
-    #   | "Celtics"       |
-    #   | "Clippers"      |
-    #   | "Grizzlies"     |
-    #   | "Hawks"         |
-    #   | "Heat"          |
-    #   | "Wizards"       |
-    #   | "Warriors"      |
-    #   | "Kings"         |
-    #   | "Knicks"        |
-    #   | "Lakers"        |
-    #   | "Magic"         |
-    #   | "Mavericks"     |
-    #   | "Nets"          |
-    #   | "Nuggets"       |
-    #   | "Pacers"        |
-    #   | "Pelicans"      |
-    #   | "Pistons"       |
-    #   | "Raptors"       |
-    #   | "Rockets"       |
-    #   | "Spurs"         |
-    #   | "Suns"          |
-    #   | "Thunders"      |
-    #   | "Timberwolves"  |
-    #   | "Trail Blazers" |
-    # And the execution plan should be:
-    #   | id | name             | dependencies | operator info                                              |
-    #   | 3  | Project          | 2            |                                                            |
-    #   | 2  | Filter           | 4            | {"condition": "(team.name NOT IN [\"Hornets\",\"Jazz\"])"} |
-    #   | 4  | TagIndexFullScan | 0            |                                                            |
-    #   | 0  | Start            |              |                                                            |
-    # When profiling query:
-    #   """
-    #   LOOKUP ON player WHERE player.age NOT IN [40 - 1 , 72/2] YIELD player.age
-    #   """
-    # Then the result should be, in any order:
-    #   | VertexID                | player.age |
-    #   | "Yao Ming"              | 38         |
-    #   | "Aron Baynes"           | 32         |
-    #   | "Ben Simmons"           | 22         |
-    #   | "Blake Griffin"         | 30         |
-    #   | "Vince Carter"          | 42         |
-    #   | "Carmelo Anthony"       | 34         |
-    #   | "Chris Paul"            | 33         |
-    #   | "Cory Joseph"           | 27         |
-    #   | "Damian Lillard"        | 28         |
-    #   | "Danny Green"           | 31         |
-    #   | "David West"            | 38         |
-    #   | "DeAndre Jordan"        | 30         |
-    #   | "Dejounte Murray"       | 29         |
-    #   | "Dirk Nowitzki"         | 40         |
-    #   | "Dwight Howard"         | 33         |
-    #   | "Dwyane Wade"           | 37         |
-    #   | "Giannis Antetokounmpo" | 24         |
-    #   | "Grant Hill"            | 46         |
-    #   | "JaVale McGee"          | 31         |
-    #   | "James Harden"          | 29         |
-    #   | "Jason Kidd"            | 45         |
-    #   | "Joel Embiid"           | 25         |
-    #   | "Jonathon Simmons"      | 29         |
-    #   | "Kevin Durant"          | 30         |
-    #   | "Klay Thompson"         | 29         |
-    #   | "Kobe Bryant"           | 40         |
-    #   | "Kristaps Porzingis"    | 23         |
-    #   | "Kyle Anderson"         | 25         |
-    #   | "Kyrie Irving"          | 26         |
-    #   | "LaMarcus Aldridge"     | 33         |
-    #   | "LeBron James"          | 34         |
-    #   | "Luka Doncic"           | 20         |
-    #   | "Manu Ginobili"         | 41         |
-    #   | "Marc Gasol"            | 34         |
-    #   | "Marco Belinelli"       | 32         |
-    #   | "Nobody"                | 0          |
-    #   | "Null1"                 | -1         |
-    #   | "Null2"                 | -2         |
-    #   | "Null3"                 | -3         |
-    #   | "Null4"                 | -4         |
-    #   | "Paul Gasol"            | 38         |
-    #   | "Paul George"           | 28         |
-    #   | "Rajon Rondo"           | 33         |
-    #   | "Ray Allen"             | 43         |
-    #   | "Ricky Rubio"           | 28         |
-    #   | "Rudy Gay"              | 32         |
-    #   | "Russell Westbrook"     | 30         |
-    #   | "Shaquile O'Neal"       | 47         |
-    #   | "Stephen Curry"         | 31         |
-    #   | "Steve Nash"            | 45         |
-    #   | "Tiago Splitter"        | 34         |
-    #   | "Tim Duncan"            | 42         |
-    # And the execution plan should be:
-    #   | id | name             | dependencies | operator info                                |
-    #   | 3  | Project          | 2            |                                              |
-    #   | 2  | Filter           | 4            | {"condition": "(player.age NOT IN [39,36])"} |
-    #   | 4  | TagIndexFullScan | 0            |                                              |
-    #   | 0  | Start            |              |                                              |
+      | id | name      | dependencies | operator info |
+      | 3  | Project   | 4            |               |
+      | 4  | IndexScan | 0            |               |
+      | 0  | Start     |              |               |
+    When profiling query:
+      """
+      LOOKUP ON team WHERE team.name NOT IN ["Hornets", "Jazz"]
+      """
+    Then the result should be, in any order:
+      | VertexID        |
+      | "76ers"         |
+      | "Bucks"         |
+      | "Bulls"         |
+      | "Cavaliers"     |
+      | "Celtics"       |
+      | "Clippers"      |
+      | "Grizzlies"     |
+      | "Hawks"         |
+      | "Heat"          |
+      | "Wizards"       |
+      | "Warriors"      |
+      | "Kings"         |
+      | "Knicks"        |
+      | "Lakers"        |
+      | "Magic"         |
+      | "Mavericks"     |
+      | "Nets"          |
+      | "Nuggets"       |
+      | "Pacers"        |
+      | "Pelicans"      |
+      | "Pistons"       |
+      | "Raptors"       |
+      | "Rockets"       |
+      | "Spurs"         |
+      | "Suns"          |
+      | "Thunders"      |
+      | "Timberwolves"  |
+      | "Trail Blazers" |
+    And the execution plan should be:
+      | id | name             | dependencies | operator info                                              |
+      | 3  | Project          | 2            |                                                            |
+      | 2  | Filter           | 4            | {"condition": "(team.name NOT IN [\"Hornets\",\"Jazz\"])"} |
+      | 4  | TagIndexFullScan | 0            |                                                            |
+      | 0  | Start            |              |                                                            |
+    When profiling query:
+      """
+      LOOKUP ON player WHERE player.age NOT IN [40 - 1 , 72/2] YIELD player.age
+      """
+    Then the result should be, in any order:
+      | VertexID                | player.age |
+      | "Yao Ming"              | 38         |
+      | "Aron Baynes"           | 32         |
+      | "Ben Simmons"           | 22         |
+      | "Blake Griffin"         | 30         |
+      | "Vince Carter"          | 42         |
+      | "Carmelo Anthony"       | 34         |
+      | "Chris Paul"            | 33         |
+      | "Cory Joseph"           | 27         |
+      | "Damian Lillard"        | 28         |
+      | "Danny Green"           | 31         |
+      | "David West"            | 38         |
+      | "DeAndre Jordan"        | 30         |
+      | "Dejounte Murray"       | 29         |
+      | "Dirk Nowitzki"         | 40         |
+      | "Dwight Howard"         | 33         |
+      | "Dwyane Wade"           | 37         |
+      | "Giannis Antetokounmpo" | 24         |
+      | "Grant Hill"            | 46         |
+      | "JaVale McGee"          | 31         |
+      | "James Harden"          | 29         |
+      | "Jason Kidd"            | 45         |
+      | "Joel Embiid"           | 25         |
+      | "Jonathon Simmons"      | 29         |
+      | "Kevin Durant"          | 30         |
+      | "Klay Thompson"         | 29         |
+      | "Kobe Bryant"           | 40         |
+      | "Kristaps Porzingis"    | 23         |
+      | "Kyle Anderson"         | 25         |
+      | "Kyrie Irving"          | 26         |
+      | "LaMarcus Aldridge"     | 33         |
+      | "LeBron James"          | 34         |
+      | "Luka Doncic"           | 20         |
+      | "Manu Ginobili"         | 41         |
+      | "Marc Gasol"            | 34         |
+      | "Marco Belinelli"       | 32         |
+      | "Nobody"                | 0          |
+      | "Null1"                 | -1         |
+      | "Null2"                 | -2         |
+      | "Null3"                 | -3         |
+      | "Null4"                 | -4         |
+      | "Paul Gasol"            | 38         |
+      | "Paul George"           | 28         |
+      | "Rajon Rondo"           | 33         |
+      | "Ray Allen"             | 43         |
+      | "Ricky Rubio"           | 28         |
+      | "Rudy Gay"              | 32         |
+      | "Russell Westbrook"     | 30         |
+      | "Shaquile O'Neal"       | 47         |
+      | "Stephen Curry"         | 31         |
+      | "Steve Nash"            | 45         |
+      | "Tiago Splitter"        | 34         |
+      | "Tim Duncan"            | 42         |
+    And the execution plan should be:
+      | id | name             | dependencies | operator info                                |
+      | 3  | Project          | 2            |                                              |
+      | 2  | Filter           | 4            | {"condition": "(player.age NOT IN [39,36])"} |
+      | 4  | TagIndexFullScan | 0            |                                              |
+      | 0  | Start            |              |                                              |
 
   Scenario: Tag with relational CONTAINS/NOT CONTAINS filter
     When profiling query:
