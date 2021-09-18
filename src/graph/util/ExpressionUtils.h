@@ -45,6 +45,9 @@ class ExpressionUtils {
   static std::vector<const Expression*> collectAll(
       const Expression* self, const std::unordered_set<Expression::Kind>& expected);
 
+  static std::vector<const Expression*> collectAllExcept(
+      const Expression* self, const std::unordered_set<Expression::Kind>& excludedKind);
+
   static std::vector<const Expression*> findAllStorage(const Expression* expr);
 
   static std::vector<const Expression*> findAllInputVariableProp(const Expression* expr);
@@ -68,6 +71,12 @@ class ExpressionUtils {
 
   // Rewrite IN expression into OR expression or relEQ expression
   static Expression* rewriteInExpr(const Expression* expr);
+
+  // Rewrite Logical AND expr to Logical OR expr using distributive law
+  // Examples:
+  // A and (B or C)  => (A and B) or (A and C)
+  // (A or B) and (C or D)  =>  (A and C) or (A and D) or (B and C) or (B or D)
+  static Expression* rewriteLogicalAndToLogicalOr(const Expression* expr);
 
   // Return the operands of container expressions
   // For list and set, return the operands

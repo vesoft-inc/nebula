@@ -665,10 +665,6 @@ StatusOr<ScoredColumnHint> selectRelExprIndex(const ColumnDef& field,
       hint.score = IndexScore::kNotEqual;
       break;
     }
-    case Expression::Kind::kRelIn: {
-      // check the property has an index
-      break;
-    }
     default: {
       return Status::Error("Invalid expression kind");
     }

@@ -33,10 +33,15 @@ namespace opt {
 
 // The matched expression should be either a OR expression or an expression that could be
 // rewrote to a OR expression. There are 3 senarios.
-// 1. OR expr. If OR expr has IN expr operand that has a valid index, expand it to OR expr.
-// 2. AND expr such as A in [a, b] AND B, because it can be transformed to (A==a AND B) OR (A==b
-// AND B)
-// 3. IN expr such as A in [a, b] since it can be transformed to (A==a) OR (A==b)
+//
+// 1. OR expr. If OR expr has an IN expr operand that has a valid index, expand it to OR expr.
+//
+// 2. AND expr such as A in [a, b] AND B when A has a valid index, because it can be transformed to
+// (A==a AND B) OR (A==b AND B)
+//
+// 3. IN expr with its list size > 1, such as A in [a, b] since it can be transformed to (A==a) OR
+// (A==b).
+// If the list has a size of 1, the expr will be matched with OptimizeTagIndexScanByFilterRule.
 bool UnionAllIndexScanBaseRule::match(OptContext* ctx, const MatchedResult& matched) const {
   if (!OptRule::match(ctx, matched)) {
     return false;
@@ -47,9 +52,11 @@ bool UnionAllIndexScanBaseRule::match(OptContext* ctx, const MatchedResult& matc
   auto conditionType = condition->kind();
 
   if (condition->isLogicalExpr()) {
+    // Case1: OR Expr
     if (conditionType == ExprKind::kLogicalOr) {
       return true;
     }
+    // Case2: AND Expr
     if (conditionType == ExprKind::kLogicalAnd &&
         graph::ExpressionUtils::findAny(static_cast<LogicalExpression*>(condition),
                                         {ExprKind::kRelIn})) {
@@ -82,7 +89,6 @@ bool UnionAllIndexScanBaseRule::match(OptContext* ctx, const MatchedResult& matc
   return false;
 }
 
-// If the IN expr has only 1 element in its container, it will be converted to an relEQ expr
 StatusOr<TransformResult> UnionAllIndexScanBaseRule::transform(OptContext* ctx,
                                                                const MatchedResult& matched) const {
   auto filter = static_cast<const Filter*>(matched.planNode());
@@ -109,38 +115,19 @@ StatusOr<TransformResult> UnionAllIndexScanBaseRule::transform(OptContext* ctx,
   auto conditionType = condition->kind();
   Expression* transformedExpr = condition->clone();
 
-  // Stand alone IN expr
-  if (conditionType == ExprKind::kRelIn) {
-    if (!OptimizerUtils::relExprHasIndex(condition, indexItems)) {
-      return TransformResult::noTransform();
-    }
-    transformedExpr = graph::ExpressionUtils::rewriteInExpr(condition);
-  }
-
-  // AND expr containing IN expr operand
-  if (conditionType == ExprKind::kLogicalAnd) {
-    auto relInExprs = graph::ExpressionUtils::collectAll(transformedExpr, {ExprKind::kRelIn});
-    DCHECK(!relInExprs.empty());
-    bool indexFound = false;
-    // Iterate all operands and expand IN exprs if possible
-    for (auto& expr : static_cast<LogicalExpression*>(transformedExpr)->operands()) {
-      if (expr->kind() == ExprKind::kRelIn) {
-        if (OptimizerUtils::relExprHasIndex(transformedExpr, indexItems)) {
-          expr = graph::ExpressionUtils::rewriteInExpr(expr);
-        }
+  switch (conditionType) {
+    // Stand alone IN expr
+    // If it has multiple elements in the list, check valid index before expanding to OR expr
+    case ExprKind::kRelIn: {
+      if (!OptimizerUtils::relExprHasIndex(condition, indexItems)) {
+        return TransformResult::noTransform();
       }
-    }
-    if (!indexFound) {
-      return TransformResult::noTransform();
+      transformedExpr = graph::ExpressionUtils::rewriteInExpr(condition);
+      break;
     }
 
-    // Reconstruct AND expr using distributive law
-  }
-
-  // OR expr
-  if (conditionType == ExprKind::kLogicalOr) {
-    auto relInExprs = graph::ExpressionUtils::collectAll(transformedExpr, {ExprKind::kRelIn});
-    if (!relInExprs.empty()) {
+    // AND expr containing IN expr operand
+    case ExprKind::kLogicalAnd: {
       // Iterate all operands and expand IN exprs if possible
       for (auto& expr : static_cast<LogicalExpression*>(transformedExpr)->operands()) {
         if (expr->kind() == ExprKind::kRelIn) {
@@ -149,9 +136,32 @@ StatusOr<TransformResult> UnionAllIndexScanBaseRule::transform(OptContext* ctx,
           }
         }
       }
-      // Flatten OR exprs
-      graph::ExpressionUtils::pullOrs(transformedExpr);
+
+      // Reconstruct AND expr using distributive law
+      transformedExpr = graph::ExpressionUtils::rewriteLogicalAndToLogicalOr(transformedExpr);
+      break;
     }
+
+    // OR expr
+    case ExprKind::kLogicalOr: {
+      auto relInExprs = graph::ExpressionUtils::collectAll(transformedExpr, {ExprKind::kRelIn});
+      if (!relInExprs.empty()) {
+        // Iterate all operands and expand IN exprs if possible
+        for (auto& expr : static_cast<LogicalExpression*>(transformedExpr)->operands()) {
+          if (expr->kind() == ExprKind::kRelIn) {
+            if (OptimizerUtils::relExprHasIndex(expr, indexItems)) {
+              expr = graph::ExpressionUtils::rewriteInExpr(expr);
+            }
+          }
+        }
+        // Flatten OR exprs
+        graph::ExpressionUtils::pullOrs(transformedExpr);
+      }
+      break;
+    }
+    default:
+      LOG(FATAL) << "Invalid expression kind: " << static_cast<uint8_t>(conditionType);
+      break;
   }
 
   DCHECK(transformedExpr->kind() == ExprKind::kLogicalOr ||
