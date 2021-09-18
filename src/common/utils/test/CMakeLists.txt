@@ -5,6 +5,7 @@ nebula_add_test(
         NebulaKeyUtilsTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:keyutils_obj>
+        $<TARGET_OBJECTS:geo_index_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:datatypes_obj>
@@ -22,6 +23,7 @@ nebula_add_test(
         IndexKeyUtilsTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:keyutils_obj>
+        $<TARGET_OBJECTS:geo_index_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:datatypes_obj>
@@ -39,6 +41,7 @@ nebula_add_test(
         OperationKeyUtilsTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:keyutils_obj>
+        $<TARGET_OBJECTS:geo_index_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:datatypes_obj>

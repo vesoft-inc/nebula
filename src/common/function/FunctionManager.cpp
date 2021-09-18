@@ -17,6 +17,10 @@
 #include "common/datatypes/Set.h"
 #include "common/datatypes/Vertex.h"
 #include "common/expression/Expression.h"
+#include "common/geo/function/Covers.h"
+#include "common/geo/function/DWithin.h"
+#include "common/geo/function/Distance.h"
+#include "common/geo/function/Intersects.h"
 #include "common/thrift/ThriftTypes.h"
 #include "common/time/TimeUtils.h"
 #include "common/time/WallClock.h"
@@ -301,6 +305,46 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
                        Value::Type::__EMPTY__),
          TypeSignature({Value::Type::DATASET, Value::Type::INT, Value::Type::STRING},
                        Value::Type::__EMPTY__),
+     }},
+    // geo builder
+    {"st_geogfromtext",
+     {
+         TypeSignature({Value::Type::STRING}, Value::Type::GEOGRAPHY),
+     }},
+    {"st_geogfromwkb",
+     {
+         TypeSignature({Value::Type::STRING}, Value::Type::GEOGRAPHY),
+     }},
+    // geo predicate
+    {"st_intersects",
+     {
+         TypeSignature({Value::Type::GEOGRAPHY, Value::Type::GEOGRAPHY}, Value::Type::BOOL),
+     }},
+    {"st_covers",
+     {
+         TypeSignature({Value::Type::GEOGRAPHY, Value::Type::GEOGRAPHY}, Value::Type::BOOL),
+     }},
+    {"st_coveredby",
+     {
+         TypeSignature({Value::Type::GEOGRAPHY, Value::Type::GEOGRAPHY}, Value::Type::BOOL),
+     }},
+    {"st_dwithin",
+     {
+         TypeSignature({Value::Type::GEOGRAPHY, Value::Type::GEOGRAPHY, Value::Type::FLOAT},
+                       Value::Type::BOOL),
+     }},
+    // geo analysis
+    {"st_distance",
+     {
+         TypeSignature({Value::Type::GEOGRAPHY, Value::Type::GEOGRAPHY}, Value::Type::FLOAT),
+     }},
+    {"st_astext",
+     {
+         TypeSignature({Value::Type::GEOGRAPHY}, Value::Type::STRING),
+     }},
+    {"st_aswkb",
+     {
+         TypeSignature({Value::Type::GEOGRAPHY}, Value::Type::STRING),
      }},
 };
 
@@ -2237,6 +2281,117 @@ FunctionManager::FunctionManager() {
         }
       }
       return folly::join(args[0].get().getStr(), result);
+    };
+  }
+  {
+    auto &attr = functions_["st_geogfromtext"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      // const std::string &wkt = args[0].get().getStr();
+      // auto geom = WKTReader().read(wkt);
+      // if (!validateGeom(geom)) {
+      //   return Value::kNullBadData;
+      // }
+      // std::ostringstream oss;
+      // WKBWriter().writeHEX(geom, oss);
+      // std::string wkb = stream.str();
+      // return Geography(wkb);
+      UNUSED(args);
+      return Geography();
+    };
+  }
+  {
+    auto &attr = functions_["st_geogfromwkb"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      // const std::string &wkb = args[0].get().getStr();
+      // auto geom = WKBReader().read(wkb);
+      // if (!validateGeom(wkb)) {
+      //   return Value::kNullBadData;
+      // }
+      // return Geography(wkb);
+      UNUSED(args);
+      return Geography();
+    };
+  }
+  {
+    auto &attr = functions_["st_intersects"];
+    attr.minArity_ = 2;
+    attr.maxArity_ = 2;
+    attr.isPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      return intersects(args[0].get().getGeography(), args[1].get().getGeography());
+    };
+  }
+  {
+    auto &attr = functions_["st_covers"];
+    attr.minArity_ = 2;
+    attr.maxArity_ = 2;
+    attr.isPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      return covers(args[0].get().getGeography(), args[1].get().getGeography());
+    };
+  }
+  {
+    auto &attr = functions_["st_coveredby"];
+    attr.minArity_ = 2;
+    attr.maxArity_ = 2;
+    attr.isPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      return coveredBy(args[0].get().getGeography(), args[1].get().getGeography());
+    };
+  }
+  {
+    auto &attr = functions_["st_dwithin"];
+    attr.minArity_ = 3;
+    attr.maxArity_ = 3;
+    attr.isPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      return dWithin(args[0].get().getGeography(),
+                     args[1].get().getGeography(),
+                     args[2].get().getFloat(),
+                     true);
+    };
+  }
+  {
+    auto &attr = functions_["st_distance"];
+    attr.minArity_ = 2;
+    attr.maxArity_ = 2;
+    attr.isPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      return distance(args[0].get().getGeography(), args[1].get().getGeography());
+    };
+  }
+  {
+    auto &attr = functions_["st_astext"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      // const Geography &g = args[0].get().getGeography();
+      // const std::string &wkb = g.wkb;
+      // auto geom = WKBReader().read(wkb);
+      // std::string wkt = WKTWriter().write(geom);
+      // return wkt;
+      UNUSED(args);
+      return "";
+    };
+  }
+  {
+    auto &attr = functions_["st_aswkb"];
+    attr.minArity_ = 2;
+    attr.maxArity_ = 2;
+    attr.isPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      // const Geography &g = args[0].get().getGeography();
+      // const std::string &wkb = g.wkb;
+      // return wkb;
+      UNUSED(args);
+      return "";
     };
   }
 }  // NOLINT

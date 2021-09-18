@@ -17,6 +17,7 @@
 #include "common/datatypes/DataSetOps-inl.h"
 #include "common/datatypes/DateOps-inl.h"
 #include "common/datatypes/EdgeOps-inl.h"
+#include "common/datatypes/GeographyOps-inl.h"
 #include "common/datatypes/ListOps-inl.h"
 #include "common/datatypes/MapOps-inl.h"
 #include "common/datatypes/PathOps-inl.h"
@@ -78,6 +79,9 @@ struct TccStructTraits<nebula::Value> {
       _ftype = apache::thrift::protocol::T_STRUCT;
     } else if (_fname == "gVal") {
       fid = 15;
+      _ftype = apache::thrift::protocol::T_STRUCT;
+    } else if (_fname == "ggVal") {
+      fid = 16;
       _ftype = apache::thrift::protocol::T_STRUCT;
     }
   }
@@ -223,6 +227,18 @@ uint32_t Cpp2Ops<nebula::Value>::write(Protocol* proto, nebula::Value const* obj
         xfer += Cpp2Ops<nebula::DataSet>::write(proto, obj->getDataSetPtr());
       } else {
         xfer += proto->writeStructBegin("DataSet");
+        xfer += proto->writeStructEnd();
+        xfer += proto->writeFieldStop();
+      }
+      xfer += proto->writeFieldEnd();
+      break;
+    }
+    case nebula::Value::Type::GEOGRAPHY: {
+      xfer += proto->writeFieldBegin("ggVal", protocol::T_STRUCT, 16);
+      if (obj->getGeographyPtr()) {
+        xfer += Cpp2Ops<nebula::Geography>::write(proto, obj->getGeographyPtr());
+      } else {
+        xfer += proto->writeStructBegin("Geography");
         xfer += proto->writeStructEnd();
         xfer += proto->writeFieldStop();
       }
@@ -409,6 +425,17 @@ void Cpp2Ops<nebula::Value>::read(Protocol* proto, nebula::Value* obj) {
         }
         break;
       }
+      case 16: {
+        if (readState.fieldType == apache::thrift::protocol::T_STRUCT) {
+          obj->setGeography(nebula::Geography());
+          auto ptr = std::make_unique<nebula::Geography>();
+          Cpp2Ops<nebula::Geography>::read(proto, ptr.get());
+          obj->setGeography(std::move(ptr));
+        } else {
+          proto->skip(readState.fieldType);
+        }
+        break;
+      }
       default: {
         proto->skip(readState.fieldType);
         break;
@@ -543,6 +570,16 @@ uint32_t Cpp2Ops<nebula::Value>::serializedSize(Protocol const* proto, nebula::V
       }
       break;
     }
+    case nebula::Value::Type::GEOGRAPHY: {
+      xfer += proto->serializedFieldSize("ggVal", protocol::T_STRUCT, 16);
+      if (obj->getGeographyPtr()) {
+        xfer += Cpp2Ops<nebula::Geography>::serializedSize(proto, obj->getGeographyPtr());
+      } else {
+        xfer += proto->serializedStructSize("Geography");
+        xfer += proto->serializedSizeStop();
+      }
+      break;
+    }
     case nebula::Value::Type::__EMPTY__: {
       break;
     }
@@ -667,6 +704,16 @@ uint32_t Cpp2Ops<nebula::Value>::serializedSizeZC(Protocol const* proto, nebula:
         xfer += Cpp2Ops<nebula::DataSet>::serializedSizeZC(proto, obj->getDataSetPtr());
       } else {
         xfer += proto->serializedStructSize("DataSet");
+        xfer += proto->serializedSizeStop();
+      }
+      break;
+    }
+    case nebula::Value::Type::GEOGRAPHY: {
+      xfer += proto->serializedFieldSize("ggVal", protocol::T_STRUCT, 16);
+      if (obj->getGeographyPtr()) {
+        xfer += Cpp2Ops<nebula::Geography>::serializedSizeZC(proto, obj->getGeographyPtr());
+      } else {
+        xfer += proto->serializedStructSize("Geography");
         xfer += proto->serializedSizeStop();
       }
       break;

@@ -38,6 +38,7 @@ set(storage_meta_deps
     $<TARGET_OBJECTS:wal_obj>
     $<TARGET_OBJECTS:disk_man_obj>
     $<TARGET_OBJECTS:keyutils_obj>
+    $<TARGET_OBJECTS:geo_index_obj>
     $<TARGET_OBJECTS:codec_obj>
     $<TARGET_OBJECTS:raftex_thrift_obj>
     $<TARGET_OBJECTS:hdfs_helper_obj>

@@ -20,6 +20,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:disk_man_obj>
         $<TARGET_OBJECTS:codec_obj>
         $<TARGET_OBJECTS:keyutils_obj>
+        $<TARGET_OBJECTS:geo_index_obj>
         $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:storage_thrift_obj>

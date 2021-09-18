@@ -10,6 +10,7 @@
 #include "codec/RowReader.h"
 #include "common/base/Base.h"
 #include "common/base/StatusOr.h"
+#include "common/geo/GeoIndex.h"
 #include "common/utils/Types.h"
 #include "interface/gen-cpp2/meta_types.h"
 
@@ -48,6 +49,8 @@ class IndexKeyUtils final {
         return Value::Type::TIME;
       case PropertyType::DATETIME:
         return Value::Type::DATETIME;
+      case PropertyType::GEOGRAPHY:
+        return Value::Type::GEOGRAPHY;
       case PropertyType::UNKNOWN:
         return Value::Type::__EMPTY__;
     }
@@ -83,6 +86,10 @@ class IndexKeyUtils final {
       }
       case Value::Type::DATETIME: {
         len = sizeof(int32_t) + sizeof(int16_t) + sizeof(int8_t) * 5;
+        break;
+      }
+      case Value::Type::GEOGRAPHY: {
+        len = sizeof(uint64_t);  // S2CellId
         break;
       }
       default:
@@ -131,6 +138,9 @@ class IndexKeyUtils final {
       case Value::Type::DATETIME: {
         return encodeDateTime(v.getDateTime());
       }
+      case Value::Type::GEOGRAPHY: {
+        return encodeGeography(v.getGeography());
+      }
       default:
         LOG(ERROR) << "Unsupported default value type";
     }
@@ -162,6 +172,10 @@ class IndexKeyUtils final {
     val = folly::Endian::big(val);
     val ^= folly::to<int64_t>(1) << 63;
     return val;
+  }
+
+  static std::string encodeUint64(uint64_t v) {
+    return {reinterpret_cast<const char*>(&v), sizeof(uint64_t)};
   }
 
   static std::string encodeRank(EdgeRanking rank) { return IndexKeyUtils::encodeInt64(rank); }
@@ -277,6 +291,19 @@ class IndexKeyUtils final {
     return buf;
   }
 
+  static std::string encodeGeography(const nebula::Geography& gg) {
+    // get params from index meta
+    RegionCoverParams rc;
+    GeographyIndex geogIndex(rc, false);  // get schema meta to know if it's point only
+    auto cellIds = geogIndex.indexCells(gg);
+    std::vector<std::string> bufs;
+    for (auto cellId : cellIds) {
+      bufs.emplace_back(encodeUint64(cellId));
+    }
+
+    return bufs[0];  // just support index point here.
+  }
+
   static nebula::DateTime decodeDateTime(const folly::StringPiece& raw) {
     int16_t year = *reinterpret_cast<const int16_t*>(raw.data());
     int8_t month = *reinterpret_cast<const int8_t*>(raw.data() + sizeof(int16_t));
@@ -331,6 +358,10 @@ class IndexKeyUtils final {
       case Value::Type::DATETIME: {
         v.setDateTime(decodeDateTime(raw));
         break;
+      }
+      case Value::Type::GEOGRAPHY: {
+        // unable to get geography value from index key
+        return Value::kNullBadData;
       }
       default:
         return Value(NullType::BAD_DATA);
@@ -394,6 +425,11 @@ class IndexKeyUtils final {
         }
         case Value::Type::DATETIME: {
           len = sizeof(int32_t) + sizeof(int16_t) + sizeof(int8_t) * 5;
+          break;
+        }
+        case Value::Type::GEOGRAPHY: {
+          // LOG(FATAL) << "unable to get geography value from index key"
+          len = sizeof(uint64_t);
           break;
         }
         default:

@@ -175,6 +175,17 @@ Value RowReaderV2::getValueByIndex(const int64_t index) const noexcept {
       dt.microsec = microsec;
       return dt;
     }
+    case meta::cpp2::PropertyType::GEOGRAPHY: {
+      int32_t strOffset;
+      int32_t strLen;
+      memcpy(reinterpret_cast<void*>(&strOffset), &data_[offset], sizeof(int32_t));
+      memcpy(reinterpret_cast<void*>(&strLen), &data_[offset + sizeof(int32_t)], sizeof(int32_t));
+      if (static_cast<size_t>(strOffset) == data_.size() && strLen == 0) {
+        return Geography();
+      }
+      CHECK_LT(strOffset, data_.size());
+      return Geography(std::string(&data_[strOffset], strLen));
+    }
     case meta::cpp2::PropertyType::UNKNOWN:
       break;
   }

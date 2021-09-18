@@ -160,6 +160,8 @@ std::size_t NebulaSchemaProvider::fieldSize(cpp2::PropertyType type, std::size_t
              sizeof(int8_t) +   // minute
              sizeof(int8_t) +   // sec
              sizeof(int32_t);   // microsec
+    case cpp2::PropertyType::GEOGRAPHY:
+      return 8;  // as same as STRING
     case cpp2::PropertyType::UNKNOWN:
       break;
   }

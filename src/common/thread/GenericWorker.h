@@ -52,7 +52,7 @@ class GenericWorker final : public nebula::cpp::NonCopyable, public nebula::cpp:
    * A GenericWorker MUST be `start'ed successfully before invoking
    * any other interfaces.
    */
-  bool MUST_USE_RESULT start(std::string name = "");
+  bool NG_MUST_USE_RESULT start(std::string name = "");
 
   /**
    * Asynchronouly to notify the worker to stop handling further new tasks.

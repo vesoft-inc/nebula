@@ -22,6 +22,7 @@ add_compile_options(-Woverloaded-virtual)
 add_compile_options(-Wignored-qualifiers)
 
 add_definitions(-DS2_USE_GLOG)
+add_definitions(-DS2_USE_GFLAGS)
 
 include_directories(AFTER ${CMAKE_SOURCE_DIR}/src)
 include_directories(AFTER ${CMAKE_CURRENT_BINARY_DIR}/src)

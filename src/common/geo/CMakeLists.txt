@@ -4,17 +4,8 @@
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
 nebula_add_library(
-    datatypes_obj OBJECT
-    Date.cpp
-    Path.cpp
-    Value.cpp
-    HostAddr.cpp
-    Edge.cpp
-    Vertex.cpp
-    Map.cpp
-    List.cpp
-    Set.cpp
-    Geography.cpp
+    geo_index_obj OBJECT
+    GeoIndex.cpp
 )
 
-nebula_add_subdirectory(test)
+# nebula_add_subdirectory(test)
