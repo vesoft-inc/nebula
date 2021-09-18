@@ -140,6 +140,8 @@ class Host final : public std::enable_shared_from_this<Host> {
 
   // CommittedLogId of follower
   LogID followerCommittedLogId_{0};
+
+  uint32_t rpcTimeout_;
 };
 
 }  // namespace raftex

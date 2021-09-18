@@ -34,7 +34,8 @@ Host::Host(const HostAddr& addr, std::shared_ptr<RaftPart> part, bool isLearner)
       isLearner_(isLearner),
       idStr_(folly::stringPrintf(
           "%s[Host: %s:%d] ", part_->idStr_.c_str(), addr_.host.c_str(), addr_.port)),
-      cachingPromise_(folly::SharedPromise<cpp2::AppendLogResponse>()) {}
+      cachingPromise_(folly::SharedPromise<cpp2::AppendLogResponse>()),
+      rpcTimeout_(FLAGS_raft_rpc_timeout_ms) {}
 
 void Host::waitForStop() {
   std::unique_lock<std::mutex> g(lock_);
@@ -156,19 +157,34 @@ void Host::setResponse(const cpp2::AppendLogResponse& r) {
 }
 
 void Host::appendLogsInternal(folly::EventBase* eb, std::shared_ptr<cpp2::AppendLogRequest> req) {
-  sendAppendLogRequest(eb, std::move(req))
-      .via(eb)
-      .then([eb, self = shared_from_this()](folly::Try<cpp2::AppendLogResponse>&& t) {
+  using TrasnportException = apache::thrift::transport::TTransportException;
+  sendAppendLogRequest(eb, req).via(eb).then(
+      [eb, self = shared_from_this(), req](folly::Try<cpp2::AppendLogResponse>&& t) {
         VLOG(3) << self->idStr_ << "appendLogs() call got response";
         if (t.hasException()) {
+          auto tranxEx = dynamic_cast<TrasnportException*>(t.exception().get_exception());
           VLOG(2) << self->idStr_ << t.exception().what();
           cpp2::AppendLogResponse r;
           r.set_error_code(cpp2::ErrorCode::E_EXCEPTION);
           {
             std::lock_guard<std::mutex> g(self->lock_);
+            if (tranxEx != nullptr && tranxEx->getType() == TrasnportException::TIMED_OUT) {
+              VLOG(2) << self->idStr_ << "append log time out"
+                      << ", space " << req->get_space() << ", part " << req->get_part()
+                      << ", current term " << req->get_current_term() << ", last_log_id "
+                      << req->get_last_log_id() << ", committed_id " << req->get_committed_log_id()
+                      << ", last_log_term_sent" << req->get_last_log_term_sent()
+                      << ", last_log_id_sent " << req->get_last_log_id_sent()
+                      << ", set lastLogIdSent_ to logIdToSend_ " << self->logIdToSend_
+                      << ", logs size " << req->get_log_str_list().size();
+              if ((self->rpcTimeout_ << 1) < FLAGS_raft_heartbeat_interval_secs * 1000) {
+                self->rpcTimeout_ <<= 1;
+              }
+            }
             self->setResponse(r);
             self->lastLogIdSent_ = self->logIdToSend_ - 1;
           }
+          // a new raft log or heartbeat will trigger another appendLogs in Host
           self->noMoreRequestCV_.notify_all();
           return;
         }
@@ -181,6 +197,7 @@ void Host::appendLogsInternal(folly::EventBase* eb, std::shared_ptr<cpp2::Append
             << ", lastLogTerm " << resp.get_last_log_term() << ", commitLogId "
             << resp.get_committed_log_id() << ", lastLogIdSent_ " << self->lastLogIdSent_
             << ", lastLogTermSent_ " << self->lastLogTermSent_;
+        self->rpcTimeout_ = FLAGS_raft_rpc_timeout_ms;
         switch (resp.get_error_code()) {
           case cpp2::ErrorCode::SUCCEEDED: {
             VLOG(2) << self->idStr_ << "AppendLog request sent successfully";
@@ -444,11 +461,12 @@ folly::Future<cpp2::AppendLogResponse> Host::sendAppendLogRequest(
                                  << ", part " << req->get_part() << ", current term "
                                  << req->get_current_term() << ", last_log_id "
                                  << req->get_last_log_id() << ", committed_id "
-                                 << req->get_committed_log_id() << ", last_log_term_sent"
+                                 << req->get_committed_log_id() << ", last_log_term_sent "
                                  << req->get_last_log_term_sent() << ", last_log_id_sent "
-                                 << req->get_last_log_id_sent();
+                                 << req->get_last_log_id_sent() << ", logs in request "
+                                 << req->get_log_str_list().size();
   // Get client connection
-  auto client = part_->clientMan_->client(addr_, eb, false, FLAGS_raft_rpc_timeout_ms);
+  auto client = part_->clientMan_->client(addr_, eb, false, rpcTimeout_);
   return client->future_appendLog(*req);
 }
 
