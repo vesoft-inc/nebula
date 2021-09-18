@@ -6,11 +6,14 @@
 #pragma once
 #include "common/base/ErrorOr.h"
 #include "common/datatypes/DataSet.h"
+#include "folly/container/F14Map.h"
 #include "interface/gen-cpp2/common_types.h"
 #include "storage/CommonUtils.h"
 namespace nebula {
 namespace storage {
 using ErrorCode = ::nebula::cpp2::ErrorCode;
+template <typename K, typename V>
+using Map = folly::F14FastMap<K, V>;
 class IndexNode {
  public:
   template <typename ResultType>
@@ -22,6 +25,7 @@ class IndexNode {
  protected:
   RuntimeContext* context_;
   GraphSpaceID spaceId_;
+  std::vector<IndexNode*> children_;
 };
 }  // namespace storage
 }  // namespace nebula

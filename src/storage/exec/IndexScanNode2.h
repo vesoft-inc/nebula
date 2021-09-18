@@ -16,8 +16,6 @@
 #include "storage/exec/IndexNode.h"
 namespace nebula {
 namespace storage {
-template <typename K, typename V>
-using Map = folly::F14FastMap<K, V>;
 
 class Path;
 class RangePath;
