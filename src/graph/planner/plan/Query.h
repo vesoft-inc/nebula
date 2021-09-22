@@ -89,7 +89,7 @@ class Explore : public SingleInputNode {
           GraphSpaceID space,
           bool dedup,
           Expression* limit,
-          std::string filter,
+          Expression* filter,
           std::vector<storage::cpp2::OrderBy> orderBy)
       : SingleInputNode(qctx, kind, input),
         space_(space),
