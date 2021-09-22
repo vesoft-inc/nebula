@@ -32,6 +32,45 @@ std::string Edge::toString() const {
   return os.str();
 }
 
+// format:
+// {
+//    "prop1": val1,
+//    "prop2": val2,
+// }
+folly::dynamic Edge::toJson() const {
+  folly::dynamic propObj = folly::dynamic::object();
+
+  for (const auto& iter : props) {
+    propObj.insert(iter.first, iter.second.toJson());
+  }
+
+  return propObj;
+}
+
+// Used in Json form query result
+// format:
+// {
+//   "id": {
+//      "name": _name,
+//      "src": srcVID,
+//      "dst": dstVID,
+//      "type": _type,
+//      "ranking": _rankding
+//    }
+//   "type": "edge"
+// }
+folly::dynamic Edge::getMetaData() const {
+  folly::dynamic edgeMetadataObj = folly::dynamic::object();
+
+  folly::dynamic edgeIdObj = folly::dynamic::object("name", name)("src", src.toJson())(
+      "dst", dst.toJson())("type", type)("ranking", ranking);
+
+  edgeMetadataObj.insert("id", edgeIdObj);
+  edgeMetadataObj.insert("type", "edge");
+
+  return edgeMetadataObj;
+}
+
 bool Edge::contains(const Value& key) const {
   if (!key.isStr()) {
     return false;
