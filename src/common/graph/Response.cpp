@@ -31,7 +31,7 @@ bool PlanNodeDescription::operator==(const PlanNodeDescription& rhs) const {
   case ErrorCode::EnumName:     \
     return #EnumName;
 
-const char* errorCode(ErrorCode code) {
+const char* getErrorCode(ErrorCode code) {
   switch (code) { ErrorCodeEnums }
   return "Unknown error";
 }

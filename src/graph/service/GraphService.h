@@ -36,6 +36,9 @@ class GraphService final : public cpp2::GraphServiceSvIf {
   folly::Future<ExecutionResponse> future_execute(int64_t sessionId,
                                                   const std::string& stmt) override;
 
+  folly::Future<std::string> future_executeJson(int64_t sessionId,
+                                                const std::string& stmt) override;
+
  private:
   bool auth(const std::string& username, const std::string& password);
 

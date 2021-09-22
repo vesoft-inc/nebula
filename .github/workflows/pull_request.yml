@@ -85,6 +85,7 @@ jobs:
                   -DENABLE_TESTING=on \
                   -B build
               echo "::set-output name=j::10"
+              echo "::set-output name=t::$(nproc)"
               ;;
             ubuntu2004)
               # build with Debug type
@@ -95,6 +96,7 @@ jobs:
                   -DENABLE_TESTING=on \
                   -B build
               echo "::set-output name=j::10"
+              echo "::set-output name=t::10"
               ;;
             esac
             ;;
@@ -108,12 +110,13 @@ jobs:
                 -DENABLE_TESTING=on \
                 -B build
             echo "::set-output name=j::6"
+            echo "::set-output name=t::10"
             ;;
           esac
       - name: Make
         run: |
           ccache -z
-          cmake --build build/ -j $(($(nproc)/2+1))
+          cmake --build build/ -j ${{ steps.cmake.outputs.t }}
           ccache -s
       - name: CTest
         env:

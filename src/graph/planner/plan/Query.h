@@ -49,7 +49,9 @@ class Explore : public SingleInputNode {
 
   Expression* limitExpr() const { return limit_; }
 
-  const std::string& filter() const { return filter_; }
+  const Expression* filter() const { return filter_; }
+
+  Expression* filter() { return filter_; }
 
   const std::vector<storage::cpp2::OrderBy>& orderBy() const { return orderBy_; }
 
@@ -59,7 +61,7 @@ class Explore : public SingleInputNode {
 
   void setLimit(Expression* limit) { limit_ = limit; }
 
-  void setFilter(std::string filter) { filter_ = std::move(filter); }
+  void setFilter(Expression* filter) { filter_ = filter; }
 
   void setOrderBy(std::vector<storage::cpp2::OrderBy> orderBy) { orderBy_ = std::move(orderBy); }
 
@@ -72,7 +74,7 @@ class Explore : public SingleInputNode {
           GraphSpaceID space,
           bool dedup,
           int64_t limit,
-          std::string filter,
+          Expression* filter,
           std::vector<storage::cpp2::OrderBy> orderBy)
       : SingleInputNode(qctx, kind, input),
         space_(space),
@@ -87,13 +89,13 @@ class Explore : public SingleInputNode {
           GraphSpaceID space,
           bool dedup,
           Expression* limit,
-          std::string filter,
+          Expression* filter,
           std::vector<storage::cpp2::OrderBy> orderBy)
       : SingleInputNode(qctx, kind, input),
         space_(space),
         dedup_(dedup),
         limit_(limit),
-        filter_(std::move(filter)),
+        filter_(filter),
         orderBy_(std::move(orderBy)) {}
 
   Explore(QueryContext* qctx, Kind kind, PlanNode* input, GraphSpaceID space)
@@ -107,7 +109,7 @@ class Explore : public SingleInputNode {
   // Use expression to get the limit value in runtime
   // Now for the GetNeighbors/Limit in Loop
   Expression* limit_{nullptr};
-  std::string filter_;
+  Expression* filter_{nullptr};
   std::vector<storage::cpp2::OrderBy> orderBy_;
 };
 
@@ -139,7 +141,7 @@ class GetNeighbors final : public Explore {
                             bool random = false,
                             std::vector<storage::cpp2::OrderBy> orderBy = {},
                             int64_t limit = -1,
-                            std::string filter = "") {
+                            Expression* filter = nullptr) {
     auto gn = make(qctx, input, space);
     gn->setSrc(src);
     gn->setEdgeTypes(std::move(edgeTypes));
@@ -152,7 +154,7 @@ class GetNeighbors final : public Explore {
     gn->setDedup(dedup);
     gn->setOrderBy(std::move(orderBy));
     gn->setLimit(limit);
-    gn->setFilter(std::move(filter));
+    gn->setFilter(filter);
     return gn;
   }
 
@@ -230,7 +232,7 @@ class GetVertices final : public Explore {
                            bool dedup = false,
                            std::vector<storage::cpp2::OrderBy> orderBy = {},
                            int64_t limit = std::numeric_limits<int64_t>::max(),
-                           std::string filter = "") {
+                           Expression* filter = nullptr) {
     return qctx->objPool()->add(new GetVertices(qctx,
                                                 input,
                                                 space,
@@ -240,7 +242,7 @@ class GetVertices final : public Explore {
                                                 dedup,
                                                 std::move(orderBy),
                                                 limit,
-                                                std::move(filter)));
+                                                filter));
   }
 
   Expression* src() const { return src_; }
@@ -268,15 +270,8 @@ class GetVertices final : public Explore {
               bool dedup,
               std::vector<storage::cpp2::OrderBy> orderBy,
               int64_t limit,
-              std::string filter)
-      : Explore(qctx,
-                Kind::kGetVertices,
-                input,
-                space,
-                dedup,
-                limit,
-                std::move(filter),
-                std::move(orderBy)),
+              Expression* filter)
+      : Explore(qctx, Kind::kGetVertices, input, space, dedup, limit, filter, std::move(orderBy)),
         src_(src),
         props_(std::move(props)),
         exprs_(std::move(exprs)) {}
@@ -309,7 +304,7 @@ class GetEdges final : public Explore {
                         bool dedup = false,
                         int64_t limit = std::numeric_limits<int64_t>::max(),
                         std::vector<storage::cpp2::OrderBy> orderBy = {},
-                        std::string filter = "") {
+                        Expression* filter = nullptr) {
     return qctx->objPool()->add(new GetEdges(qctx,
                                              input,
                                              space,
@@ -322,7 +317,7 @@ class GetEdges final : public Explore {
                                              dedup,
                                              limit,
                                              std::move(orderBy),
-                                             std::move(filter)));
+                                             filter));
   }
 
   Expression* src() const { return src_; }
@@ -357,15 +352,8 @@ class GetEdges final : public Explore {
            bool dedup,
            int64_t limit,
            std::vector<storage::cpp2::OrderBy> orderBy,
-           std::string filter)
-      : Explore(qctx,
-                Kind::kGetEdges,
-                input,
-                space,
-                dedup,
-                limit,
-                std::move(filter),
-                std::move(orderBy)),
+           Expression* filter)
+      : Explore(qctx, Kind::kGetEdges, input, space, dedup, limit, filter, std::move(orderBy)),
         src_(src),
         type_(type),
         ranking_(ranking),
@@ -405,7 +393,7 @@ class IndexScan : public Explore {
                          bool dedup = false,
                          std::vector<storage::cpp2::OrderBy> orderBy = {},
                          int64_t limit = std::numeric_limits<int64_t>::max(),
-                         std::string filter = "") {
+                         Expression* filter = nullptr) {
     return qctx->objPool()->add(new IndexScan(qctx,
                                               input,
                                               space,
@@ -417,7 +405,7 @@ class IndexScan : public Explore {
                                               dedup,
                                               std::move(orderBy),
                                               limit,
-                                              std::move(filter)));
+                                              filter));
   }
 
   const std::vector<IndexQueryContext>& queryContext() const { return contexts_; }
@@ -457,9 +445,9 @@ class IndexScan : public Explore {
             bool dedup,
             std::vector<storage::cpp2::OrderBy> orderBy,
             int64_t limit,
-            std::string filter,
+            Expression* filter,
             Kind kind = Kind::kIndexScan)
-      : Explore(qctx, kind, input, space, dedup, limit, std::move(filter), std::move(orderBy)) {
+      : Explore(qctx, kind, input, space, dedup, limit, filter, std::move(orderBy)) {
     contexts_ = std::move(contexts);
     returnCols_ = std::move(returnCols);
     isEdge_ = isEdge;
