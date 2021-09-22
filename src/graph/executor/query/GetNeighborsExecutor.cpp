@@ -64,8 +64,7 @@ folly::Future<Status> GetNeighborsExecutor::execute() {
       .via(runner())
       .ensure([this, getNbrTime]() {
         SCOPED_TIMER(&execTime_);
-        otherStats_.emplace("total_rpc_time",
-                            folly::stringPrintf("%lu(us)", getNbrTime.elapsedInUSec()));
+        otherStats_.emplace("total_rpc_time", folly::sformat("{}(us)", getNbrTime.elapsedInUSec()));
       })
       .thenValue([this](StorageRpcResponse<GetNeighborsResponse>&& resp) {
         SCOPED_TIMER(&execTime_);
@@ -78,13 +77,12 @@ folly::Future<Status> GetNeighborsExecutor::execute() {
           }
           auto& info = hostLatency[i];
           otherStats_.emplace(
-              folly::stringPrintf("%s exec/total/vertices", std::get<0>(info).toString().c_str()),
-              folly::stringPrintf(
-                  "%d(us)/%d(us)/%lu,", std::get<1>(info), std::get<2>(info), size));
+              folly::sformat("{} exec/total/vertices", std::get<0>(info).toString().c_str()),
+              folly::sformat("{}(us)/{}(us)/{},", std::get<1>(info), std::get<2>(info), size));
           if (result.result.latency_detail_us_ref().has_value()) {
             std::string storageDetail = "{";
             for (auto iter : (*result.result.latency_detail_us_ref())) {
-              storageDetail += folly::stringPrintf("%s:%d(us),", iter.first.data(), iter.second);
+              storageDetail += folly::sformat("{}:{}(us),", iter.first.data(), iter.second);
             }
             storageDetail += "}";
             otherStats_.emplace("storage_detail", storageDetail);
