@@ -563,11 +563,11 @@ def register_function(name, func):
 register_function('hash', murmurhash2)
 
 
-parser = yacc.yacc()
+parser = yacc.yacc(write_tables=False)
 
 
 def parse(s):
-    return parser.parse(s)
+    return parser.parse(s, lexer=lexer)
 
 
 def parse_row(row):

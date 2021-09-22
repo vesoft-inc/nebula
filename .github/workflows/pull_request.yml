@@ -6,11 +6,6 @@ on:
     branches:
       - master
       - 'v[0-9]+.*'
-    paths-ignore:
-      - 'docs/**'
-      - 'LICENSES/**'
-      - 'LICENSE'
-      - '**.md'
 
 defaults:
   run:
@@ -53,10 +48,10 @@ jobs:
           - ubuntu2004
         compiler:
           - gcc-9.2
-          - clang-9
+          - clang-10
         exclude:
           - os: centos7
-            compiler: clang-9
+            compiler: clang-10
     container:
       image: vesoft/nebula-dev:${{ matrix.os }}
       env:
@@ -66,9 +61,9 @@ jobs:
         - /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}:/tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
       options: --cap-add=SYS_PTRACE
     steps:
-      - name: Cleanup
-        if: ${{ always() }}
-        run: rm -rf *
+      - uses: webiny/action-post-run@2.0.1
+        with:
+          run: sh -c "find . -mindepth 1 -delete"
       - uses: actions/checkout@v2
       - name: Prepare environment
         id: prepare
@@ -90,6 +85,7 @@ jobs:
                   -DENABLE_TESTING=on \
                   -B build
               echo "::set-output name=j::10"
+              echo "::set-output name=t::$(nproc)"
               ;;
             ubuntu2004)
               # build with Debug type
@@ -100,6 +96,7 @@ jobs:
                   -DENABLE_TESTING=on \
                   -B build
               echo "::set-output name=j::10"
+              echo "::set-output name=t::10"
               ;;
             esac
             ;;
@@ -113,12 +110,13 @@ jobs:
                 -DENABLE_TESTING=on \
                 -B build
             echo "::set-output name=j::6"
+            echo "::set-output name=t::10"
             ;;
           esac
       - name: Make
         run: |
           ccache -z
-          cmake --build build/ -j $(nproc)
+          cmake --build build/ -j ${{ steps.cmake.outputs.t }}
           ccache -s
       - name: CTest
         env:
@@ -143,7 +141,7 @@ jobs:
         timeout-minutes: 60
       - name: Down cluster
         run: |
-          make down
+          make RM_DIR=false down
         working-directory: tests/
         timeout-minutes: 2
       - name: Sanitizer
@@ -151,8 +149,8 @@ jobs:
         run: |
           exit $(grep -P "SUMMARY: AddressSanitizer: \d+ byte\(s\) leaked in \d+ allocation\(s\)\." build/server_*/logs/*stderr.log | wc -l)
       - name: Upload logs
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v2
         if: ${{ failure() }}
         with:
           name: ${{ matrix.os }}-${{ matrix.compiler }}-nebula-test-logs
-          path:  build/server_*/logs/
+          path:  ./build/server_*/logs/
