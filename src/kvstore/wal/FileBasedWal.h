@@ -112,6 +112,8 @@ class FileBasedWal final : public Wal, public std::enable_shared_from_this<FileB
   // The method returns the number of wal file info being accessed
   size_t accessAllWalInfo(std::function<bool(WalFileInfoPtr info)> fn) const;
 
+  std::shared_ptr<AtomicLogBuffer> buffer() { return logBuffer_; }
+
  private:
   /***************************************
    *

@@ -23,15 +23,11 @@ DEFINE_int32(waiting_new_leader_interval_in_secs,
              5,
              "interval between two requests for catching up state");
 
-DEFINE_int32(rebuild_index_batch_num, 256, "The batch size when rebuild index");
+DEFINE_uint32(rebuild_index_part_rate_limit,
+              1024 * 512,
+              "max bytes of rebuilding index for each partition in one second");
 
-DEFINE_int32(rebuild_index_locked_threshold, 256, "The locked threshold will refuse writing.");
-
-DEFINE_int32(rebuild_index_process_interval,
-             3000,
-             "Index rebuild processing interval, microsecond.");
-
-DEFINE_bool(enable_vertex_cache, true, "Enable vertex cache");
+DEFINE_uint32(rebuild_index_batch_size, 1024 * 128, "batch size for rebuild index, in bytes");
 
 DEFINE_int32(reader_handlers, 32, "Total reader handlers");
 
@@ -51,3 +47,4 @@ DEFINE_bool(query_concurrently,
             false,
             "whether to run query of each part concurrently, only lookup and "
             "go are supported");
+DEFINE_bool(profile_storage_detail, false, "Whether to profile storage plan detail");

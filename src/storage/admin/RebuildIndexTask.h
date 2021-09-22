@@ -10,6 +10,7 @@
 #include "common/meta/IndexManager.h"
 #include "interface/gen-cpp2/storage_types.h"
 #include "kvstore/LogEncoder.h"
+#include "kvstore/RateLimiter.h"
 #include "storage/admin/AdminTask.h"
 
 namespace nebula {
@@ -19,7 +20,7 @@ using IndexItems = std::vector<std::shared_ptr<meta::cpp2::IndexItem>>;
 
 class RebuildIndexTask : public AdminTask {
  public:
-  explicit RebuildIndexTask(StorageEnv* env, TaskContext&& ctx) : AdminTask(env, std::move(ctx)) {}
+  RebuildIndexTask(StorageEnv* env, TaskContext&& ctx);
 
   ~RebuildIndexTask() { LOG(INFO) << "Release Rebuild Task"; }
 
@@ -33,24 +34,28 @@ class RebuildIndexTask : public AdminTask {
 
   virtual nebula::cpp2::ErrorCode buildIndexGlobal(GraphSpaceID space,
                                                    PartitionID part,
-                                                   const IndexItems& items) = 0;
+                                                   const IndexItems& items,
+                                                   kvstore::RateLimiter* rateLimiter) = 0;
 
   void cancel() override { canceled_ = true; }
 
-  nebula::cpp2::ErrorCode buildIndexOnOperations(GraphSpaceID space, PartitionID part);
+  nebula::cpp2::ErrorCode buildIndexOnOperations(GraphSpaceID space,
+                                                 PartitionID part,
+                                                 kvstore::RateLimiter* rateLimiter);
 
   // Remove the legacy operation log to make sure the index is correct.
   nebula::cpp2::ErrorCode removeLegacyLogs(GraphSpaceID space, PartitionID part);
 
   nebula::cpp2::ErrorCode writeData(GraphSpaceID space,
                                     PartitionID part,
-                                    std::vector<kvstore::KV> data);
+                                    std::vector<kvstore::KV> data,
+                                    size_t batchSize,
+                                    kvstore::RateLimiter* rateLimiter);
 
-  nebula::cpp2::ErrorCode removeData(GraphSpaceID space, PartitionID part, std::string&& key);
-
-  nebula::cpp2::ErrorCode cleanupOperationLogs(GraphSpaceID space,
-                                               PartitionID part,
-                                               std::vector<std::string> keys);
+  nebula::cpp2::ErrorCode writeOperation(GraphSpaceID space,
+                                         PartitionID part,
+                                         kvstore::BatchHolder* batchHolder,
+                                         kvstore::RateLimiter* rateLimiter);
 
   nebula::cpp2::ErrorCode invoke(GraphSpaceID space, PartitionID part, const IndexItems& items);
 

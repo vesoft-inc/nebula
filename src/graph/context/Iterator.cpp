@@ -338,7 +338,7 @@ Value GetNeighborsIter::getVertex() const {
   }
 
   auto vidVal = getColumn(nebula::kVid);
-  if (!SchemaUtil::isValidVid(vidVal)) {
+  if (UNLIKELY(!SchemaUtil::isValidVid(vidVal))) {
     return Value::kNullBadType;
   }
   Vertex vertex;
@@ -348,7 +348,7 @@ Value GetNeighborsIter::getVertex() const {
     auto& row = *currentRow_;
     auto& tagPropNameList = tagProp.second.propList;
     auto tagColId = tagProp.second.colIdx;
-    if (!row[tagColId].isList()) {
+    if (UNLIKELY(!row[tagColId].isList())) {
       // Ignore the bad value.
       continue;
     }
@@ -358,6 +358,9 @@ Value GetNeighborsIter::getVertex() const {
     Tag tag;
     tag.name = tagProp.first;
     for (size_t i = 0; i < propList.size(); ++i) {
+      if (tagPropNameList[i] == nebula::kTag) {
+        continue;
+      }
       tag.props.emplace(tagPropNameList[i], propList[i]);
     }
     vertex.tags.emplace_back(std::move(tag));

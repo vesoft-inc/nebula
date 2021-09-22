@@ -6,6 +6,7 @@
 
 #include "common/datatypes/Vertex.h"
 
+#include <folly/DynamicConverter.h>
 #include <folly/String.h>
 #include <folly/hash/Hash.h>
 
@@ -22,6 +23,20 @@ std::string Tag::toString() const {
   std::stringstream os;
   os << "Tag: " << name << ", " << folly::join(",", value);
   return os.str();
+}
+
+//  {
+//    "player.name" : "Tim Duncan",
+//    "player.age" : 42,
+//  }
+folly::dynamic Tag::toJson() const {
+  folly::dynamic tagJsonObj = folly::dynamic::object();
+
+  for (const auto& iter : props) {
+    tagJsonObj.insert(name + "." + iter.first, iter.second.toJson());
+  }
+
+  return tagJsonObj;
 }
 
 bool Vertex::contains(const Value& key) const {
@@ -57,6 +72,31 @@ std::string Vertex::toString() const {
     }
   }
   return os.str();
+}
+
+// {
+//   "player.name" : "Tim Duncan",
+//   "player.age" : 42,
+//   "bachelor.name" : "Tim Duncan",
+//   "bachelor.speciality" : "psychology"
+// }
+folly::dynamic Vertex::toJson() const {
+  folly::dynamic propJsonObj = folly::dynamic::object();
+
+  for (const auto& tag : tags) {
+    propJsonObj.update(tag.toJson());
+  }
+  return propJsonObj;
+}
+
+// format:
+// {
+//   "id": _vid
+//   "type": "vertex"
+// }
+folly::dynamic Vertex::getMetaData() const {
+  folly::dynamic vertexMetadataObj = folly::dynamic::object("id", vid.toJson())("type", "vertex");
+  return vertexMetadataObj;
 }
 
 Vertex& Vertex::operator=(Vertex&& rhs) noexcept {

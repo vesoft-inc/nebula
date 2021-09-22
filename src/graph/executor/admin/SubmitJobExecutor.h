@@ -18,6 +18,11 @@ class SubmitJobExecutor final : public Executor {
       : Executor("SubmitJobExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;
+
+ private:
+  FRIEND_TEST(JobTest, JobFinishTime);
+  StatusOr<DataSet> buildResult(meta::cpp2::AdminJobOp jobOp, meta::cpp2::AdminJobResult &&resp);
+  Value convertJobTimestampToDateTime(int64_t timestamp);
 };
 
 }  // namespace graph
