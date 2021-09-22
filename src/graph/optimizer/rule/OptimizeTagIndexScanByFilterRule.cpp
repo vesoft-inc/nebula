@@ -53,7 +53,7 @@ const Pattern& OptimizeTagIndexScanByFilterRule::pattern() const {
 // It the list has more than 1 element, the expr will be matched with UnionAllIndexScanBaseRule.
 //
 // 2. Logical AND expr. If the AND expr contains an operand that is an IN expr, the label attribute
-// in the IN expr SHUOLD NOT have a valid index, otherwise the expression should be matched with
+// in the IN expr SHOULD NOT have a valid index, otherwise the expression should be matched with
 // UnionAllIndexScanBaseRule.
 bool OptimizeTagIndexScanByFilterRule::match(OptContext* ctx, const MatchedResult& matched) const {
   if (!OptRule::match(ctx, matched)) {

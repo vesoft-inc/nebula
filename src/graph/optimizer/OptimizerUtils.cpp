@@ -642,8 +642,12 @@ StatusOr<ScoredColumnHint> selectRelExprIndex(const ColumnDef& field,
   }
 
   auto right = expr->right();
-  expr->kind() == Expression::Kind::kRelIn ? DCHECK(right->isContainerExpr())
-                                           : DCHECK(right->kind() == Expression::Kind::kConstant);
+  if (expr->kind() == Expression::Kind::kRelIn) {  // container expressions
+    DCHECK(right->isContainerExpr());
+  } else {  // other expressions
+    DCHECK(right->kind() == Expression::Kind::kConstant);
+  }
+
   const auto& value = static_cast<const ConstantExpression*>(right)->value();
 
   ScoredColumnHint hint;

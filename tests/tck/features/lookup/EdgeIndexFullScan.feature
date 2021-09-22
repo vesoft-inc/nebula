@@ -202,11 +202,11 @@ Feature: Lookup edge index full scan
       | SrcVID | DstVID | Ranking | edge_1.col1_str | edge_1.col2_int |
       | "101"  | "102"  | 0       | "Red1"          | 11              |
     And the execution plan should be:
-      | id | name                | dependencies | operator info |
-      | 3  | Project             | 4            |               |
-      | 4  | EdgeIndexPrefixScan | 0            |               |
-      | 0  | Start               |              |               |
-    # a IN b AND c IN d (EdgeIndexFullScan)
+      | id | name      | dependencies | operator info |
+      | 3  | Project   | 4            |               |
+      | 4  | IndexScan | 0            |               |
+      | 0  | Start     |              |               |
+    # a IN b AND c IN d (4 prefixScan will be executed)
     When profiling query:
       """
       LOOKUP ON edge_1
@@ -217,11 +217,10 @@ Feature: Lookup edge index full scan
       | SrcVID | DstVID | Ranking | edge_1.col1_str | edge_1.col2_int |
       | "101"  | "102"  | 0       | "Red1"          | 11              |
     And the execution plan should be:
-      | id | name              | dependencies | operator info                                                                                                                       |
-      | 3  | Project           | 2            |                                                                                                                                     |
-      | 2  | Filter            | 4            | {"condition": "(((edge_1.col2_int==11) OR (edge_1.col2_int==33)) AND ((edge_1.col1_str==\"Red1\") OR (edge_1.col1_str==\"ABC\")))"} |
-      | 4  | EdgeIndexFullScan | 0            |                                                                                                                                     |
-      | 0  | Start             |              |                                                                                                                                     |
+      | id | name      | dependencies | operator info |
+      | 3  | Project   | 4            |               |
+      | 4  | IndexScan | 0            |               |
+      | 0  | Start     |              |               |
     When profiling query:
       """
       LOOKUP ON edge_1 WHERE edge_1.col1_str NOT IN ["Blue"] YIELD edge_1.col1_str
