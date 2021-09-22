@@ -77,15 +77,11 @@ folly::Future<Status> GetNeighborsExecutor::execute() {
           }
           auto& info = hostLatency[i];
           otherStats_.emplace(
-              folly::sformat("{} exec/total/vertices", std::get<0>(info).toString().c_str()),
+              folly::sformat("{} exec/total/vertices", std::get<0>(info).toString()),
               folly::sformat("{}(us)/{}(us)/{},", std::get<1>(info), std::get<2>(info), size));
-          if (result.result.latency_detail_us_ref().has_value()) {
-            std::string storageDetail = "{";
-            for (auto iter : (*result.result.latency_detail_us_ref())) {
-              storageDetail += folly::sformat("{}:{}(us),", iter.first.data(), iter.second);
-            }
-            storageDetail += "}";
-            otherStats_.emplace("storage_detail", storageDetail);
+          auto detail = getStorageDetail(result.result.latency_detail_us_ref());
+          if (!detail.empty()) {
+            otherStats_.emplace("storage_detail", detail);
           }
         }
         return handleResponse(resp);
