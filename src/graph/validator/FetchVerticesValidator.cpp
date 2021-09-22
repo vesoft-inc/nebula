@@ -58,7 +58,7 @@ Status FetchVerticesValidator::validateTag(const NameLabelList *nameLabels) {
       auto tagID = tagStatus.value();
       auto tagSchema = schemaMng->getTagSchema(space_.id, tagID);
       if (tagSchema == nullptr) {
-        return Status::SemanticError("No schema found for `%s'", label->c_str());
+        return Status::SemanticError("no schema found for `%s'", label->c_str());
       }
       tagsSchema_.emplace(tagID, tagSchema);
     }
@@ -70,8 +70,7 @@ Status FetchVerticesValidator::validateYield(YieldClause *yield) {
   auto pool = qctx_->objPool();
   bool noYield = false;
   if (yield == nullptr) {
-    // version 3.0: return Status::SemanticError("No YIELD Clause");
-    // compatible with previous versions
+    // TODO: compatible with previous version, this will be deprecated in version 3.0.
     auto *yieldColumns = new YieldColumns();
     auto *vertex = new YieldColumn(VertexExpression::make(pool), "vertices_");
     yieldColumns->addColumn(vertex);
@@ -124,15 +123,15 @@ Status FetchVerticesValidator::validateYield(YieldClause *yield) {
   fetchCtx_->yieldExpr = newCols;
 
   if (exprProps.hasInputVarProperty()) {
-    return Status::SemanticError("Unsupported input/variable property expression in yield.");
+    return Status::SemanticError("unsupported input/variable property expression in yield.");
   }
   if (exprProps.hasSrcDstTagProperty()) {
-    return Status::SemanticError("Unsupported src/dst property expression in yield.");
+    return Status::SemanticError("unsupported src/dst property expression in yield.");
   }
 
   for (const auto &tag : exprProps.tagNameIds()) {
     if (tagsSchema_.find(tag.second) == tagsSchema_.end()) {
-      return Status::SemanticError("Mismatched tag `%s'", tag.first.c_str());
+      return Status::SemanticError("mismatched tag `%s'", tag.first.c_str());
     }
   }
   return Status::OK();

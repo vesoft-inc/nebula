@@ -299,13 +299,13 @@ Feature: Fetch Int Vid Vertices
       """
       FETCH PROP ON player hash('Boris Diaw') YIELD $^.player.name, player.age
       """
-    Then a SemanticError should be raised at runtime: Unsupported src/dst property expression in yield.
+    Then a SemanticError should be raised at runtime: unsupported src/dst property expression in yield.
     # not support get dst property
     When executing query:
       """
       FETCH PROP ON player hash('Boris Diaw') YIELD $$.player.name, player.age
       """
-    Then a SemanticError should be raised at runtime: Unsupported src/dst property expression in yield.
+    Then a SemanticError should be raised at runtime: unsupported src/dst property expression in yield.
     # yields not existing tag
     When executing query:
       """
