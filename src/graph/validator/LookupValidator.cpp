@@ -21,6 +21,8 @@ using nebula::meta::NebulaSchemaProvider;
 using std::shared_ptr;
 using std::unique_ptr;
 
+using ExprKind = nebula::Expression::Kind;
+
 namespace nebula {
 namespace graph {
 
@@ -186,6 +188,7 @@ Status LookupValidator::validateYield() {
     return Status::OK();
   }
   lookupCtx_->dedup = yieldClause->isDistinct();
+  
   if (lookupCtx_->isEdge) {
     NG_RETURN_IF_ERROR(validateYieldEdge());
   } else {
@@ -249,16 +252,25 @@ StatusOr<Expression*> LookupValidator::handleLogicalExprOperands(LogicalExpressi
 StatusOr<Expression*> LookupValidator::checkFilter(Expression* expr) {
   // TODO: Support IN expression push down
   if (expr->isRelExpr()) {
+    // Only starts with can be pushed down as a range scan, so forbid other string-related relExpr
+    if (expr->kind() == ExprKind::kRelREG || expr->kind() == ExprKind::kContains ||
+        expr->kind() == ExprKind::kNotContains || expr->kind() == ExprKind::kEndsWith ||
+        expr->kind() == ExprKind::kNotEndsWith) {
+      return Status::SemanticError(
+          "Expression %s is not supported, please use full-text index as an optimal solution",
+          expr->toString().c_str());
+    }
+
     auto relExpr = static_cast<RelationalExpression*>(expr);
     NG_RETURN_IF_ERROR(checkRelExpr(relExpr));
     return rewriteRelExpr(relExpr);
   }
   switch (expr->kind()) {
-    case Expression::Kind::kLogicalOr: {
+    case ExprKind::kLogicalOr: {
       ExpressionUtils::pullOrs(expr);
       return handleLogicalExprOperands(static_cast<LogicalExpression*>(expr));
     }
-    case Expression::Kind::kLogicalAnd: {
+    case ExprKind::kLogicalAnd: {
       ExpressionUtils::pullAnds(expr);
       return handleLogicalExprOperands(static_cast<LogicalExpression*>(expr));
     }
@@ -272,12 +284,10 @@ Status LookupValidator::checkRelExpr(RelationalExpression* expr) {
   auto* left = expr->left();
   auto* right = expr->right();
   // Does not support filter : schema.col1 > schema.col2
-  if (left->kind() == Expression::Kind::kLabelAttribute &&
-      right->kind() == Expression::Kind::kLabelAttribute) {
+  if (left->kind() == ExprKind::kLabelAttribute && right->kind() == ExprKind::kLabelAttribute) {
     return Status::SemanticError("Expression %s not supported yet", expr->toString().c_str());
   }
-  if (left->kind() == Expression::Kind::kLabelAttribute ||
-      right->kind() == Expression::Kind::kLabelAttribute) {
+  if (left->kind() == ExprKind::kLabelAttribute || right->kind() == ExprKind::kLabelAttribute) {
     return Status::OK();
   }
   return Status::SemanticError("Expression %s not supported yet", expr->toString().c_str());
@@ -287,7 +297,7 @@ StatusOr<Expression*> LookupValidator::rewriteRelExpr(RelationalExpression* expr
   // swap LHS and RHS of relExpr if LabelAttributeExpr in on the right,
   // so that LabelAttributeExpr is always on the left
   auto rightOperand = expr->right();
-  if (rightOperand->kind() == Expression::Kind::kLabelAttribute) {
+  if (rightOperand->kind() == ExprKind::kLabelAttribute) {
     expr = static_cast<RelationalExpression*>(reverseRelKind(expr));
   }
 
@@ -301,7 +311,7 @@ StatusOr<Expression*> LookupValidator::rewriteRelExpr(RelationalExpression* expr
   auto foldRes = ExpressionUtils::foldConstantExpr(expr);
   NG_RETURN_IF_ERROR(foldRes);
   expr = static_cast<RelationalExpression*>(foldRes.value());
-  DCHECK_EQ(expr->left()->kind(), Expression::Kind::kLabelAttribute);
+  DCHECK_EQ(expr->left()->kind(), ExprKind::kLabelAttribute);
 
   // Check schema and value type
   std::string prop = la->right()->value().getStr();
@@ -319,7 +329,7 @@ StatusOr<Expression*> LookupValidator::rewriteRelExpr(RelationalExpression* expr
 
 StatusOr<Expression*> LookupValidator::checkConstExpr(Expression* expr,
                                                       const std::string& prop,
-                                                      const Expression::Kind kind) {
+                                                      const ExprKind kind) {
   auto* pool = expr->getObjPool();
   if (!evaluableExpr(expr)) {
     return Status::SemanticError("'%s' is not an evaluable expression.", expr->toString().c_str());
@@ -344,7 +354,7 @@ StatusOr<Expression*> LookupValidator::checkConstExpr(Expression* expr,
     double f = v.getFloat();
     int iCeil = ceil(f);
     int iFloor = floor(f);
-    if (kind == Expression::Kind::kRelGE || kind == Expression::Kind::kRelLT) {
+    if (kind == ExprKind::kRelGE || kind == ExprKind::kRelLT) {
       // edge case col1 >= 40.0, no need to round up
       if (std::abs(f - iCeil) < kEpsilon) {
         return ConstantExpression::make(pool, iFloor);
@@ -391,21 +401,21 @@ Expression* LookupValidator::reverseRelKind(RelationalExpression* expr) {
   auto reversedKind = kind;
 
   switch (kind) {
-    case Expression::Kind::kRelEQ:
+    case ExprKind::kRelEQ:
       break;
-    case Expression::Kind::kRelNE:
+    case ExprKind::kRelNE:
       break;
-    case Expression::Kind::kRelLT:
-      reversedKind = Expression::Kind::kRelGT;
+    case ExprKind::kRelLT:
+      reversedKind = ExprKind::kRelGT;
       break;
-    case Expression::Kind::kRelLE:
-      reversedKind = Expression::Kind::kRelGE;
+    case ExprKind::kRelLE:
+      reversedKind = ExprKind::kRelGE;
       break;
-    case Expression::Kind::kRelGT:
-      reversedKind = Expression::Kind::kRelLT;
+    case ExprKind::kRelGT:
+      reversedKind = ExprKind::kRelLT;
       break;
-    case Expression::Kind::kRelGE:
-      reversedKind = Expression::Kind::kRelLE;
+    case ExprKind::kRelGE:
+      reversedKind = ExprKind::kRelLE;
       break;
     default:
       LOG(FATAL) << "Invalid relational expression kind: " << static_cast<uint8_t>(kind);
