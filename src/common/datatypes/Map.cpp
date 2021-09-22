@@ -14,7 +14,7 @@ namespace nebula {
 
 std::string Map::toString() const {
   std::vector<std::string> value(kvs.size());
-  std::transform(kvs.begin(), kvs.end(), value.begin(), [](const auto &iter) -> std::string {
+  std::transform(kvs.begin(), kvs.end(), value.begin(), [](const auto& iter) -> std::string {
     std::stringstream out;
     out << iter.first << ":" << iter.second;
     return out.str();
@@ -23,6 +23,26 @@ std::string Map::toString() const {
   std::stringstream os;
   os << "{" << folly::join(",", value) << "}";
   return os.str();
+}
+
+folly::dynamic Map::toJson() const {
+  folly::dynamic mapJsonObj = folly::dynamic::object();
+
+  for (const auto& iter : kvs) {
+    mapJsonObj.insert(iter.first, iter.second.toJson());
+  }
+
+  return mapJsonObj;
+}
+
+folly::dynamic Map::getMetaData() const {
+  auto mapMetadataObj = folly::dynamic::array();
+
+  for (const auto& kv : kvs) {
+    mapMetadataObj.push_back(kv.second.getMetaData());
+  }
+
+  return mapMetadataObj;
 }
 
 }  // namespace nebula

@@ -298,6 +298,15 @@ Status ShowHostsValidator::toPlan() {
   return Status::OK();
 }
 
+Status ShowMetaLeaderValidator::validateImpl() { return Status::OK(); }
+
+Status ShowMetaLeaderValidator::toPlan() {
+  auto *node = ShowMetaLeaderNode::make(qctx_, nullptr);
+  root_ = node;
+  tail_ = root_;
+  return Status::OK();
+}
+
 Status ShowPartsValidator::validateImpl() { return Status::OK(); }
 
 Status ShowPartsValidator::toPlan() {

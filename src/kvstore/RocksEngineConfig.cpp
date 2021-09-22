@@ -74,7 +74,9 @@ DEFINE_string(rocksdb_stats_level, "kExceptHistogramOrTimers", "rocksdb statisti
 
 DEFINE_int32(num_compaction_threads, 0, "Number of total compaction threads. 0 means unlimited.");
 
-DEFINE_int32(rate_limit, 0, "write limit in bytes per sec. The unit is MB. 0 means unlimited.");
+DEFINE_int32(rocksdb_rate_limit,
+             0,
+             "write limit in bytes per sec. The unit is MB. 0 means unlimited.");
 
 DEFINE_bool(enable_rocksdb_prefix_filtering,
             false,
@@ -248,9 +250,9 @@ rocksdb::Status initRocksdbOptions(rocksdb::Options& baseOpts,
         rocksdb::NewConcurrentTaskLimiter("compaction", FLAGS_num_compaction_threads)};
     baseOpts.compaction_thread_limiter = compaction_thread_limiter;
   }
-  if (FLAGS_rate_limit > 0) {
+  if (FLAGS_rocksdb_rate_limit > 0) {
     static std::shared_ptr<rocksdb::RateLimiter> rate_limiter{
-        rocksdb::NewGenericRateLimiter(FLAGS_rate_limit * 1024 * 1024)};
+        rocksdb::NewGenericRateLimiter(FLAGS_rocksdb_rate_limit * 1024 * 1024)};
     baseOpts.rate_limiter = rate_limiter;
   }
 

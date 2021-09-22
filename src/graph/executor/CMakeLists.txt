@@ -57,6 +57,7 @@ nebula_add_library(
     admin/BalanceLeadersExecutor.cpp
     admin/ShowBalanceExecutor.cpp
     admin/ShowHostsExecutor.cpp
+    admin/ShowMetaLeaderExecutor.cpp
     admin/SpaceExecutor.cpp
     admin/SnapshotExecutor.cpp
     admin/ListenerExecutor.cpp

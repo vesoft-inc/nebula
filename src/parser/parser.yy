@@ -161,7 +161,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %token KW_BOOL KW_INT8 KW_INT16 KW_INT32 KW_INT64 KW_INT KW_FLOAT KW_DOUBLE
 %token KW_STRING KW_FIXED_STRING KW_TIMESTAMP KW_DATE KW_TIME KW_DATETIME
 %token KW_GO KW_AS KW_TO KW_USE KW_SET KW_FROM KW_WHERE KW_ALTER
-%token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX
+%token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX KW_VERTICES
 %token KW_EDGE KW_EDGES KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND
 %token KW_TAG KW_TAGS KW_UNION KW_INTERSECT KW_MINUS
 %token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOST KW_HOSTS KW_PART KW_PARTS KW_ADD
@@ -444,7 +444,6 @@ unreserved_keyword
     | KW_DBA                { $$ = new std::string("dba"); }
     | KW_GUEST              { $$ = new std::string("guest"); }
     | KW_GROUP              { $$ = new std::string("group"); }
-    | KW_PATH               { $$ = new std::string("path"); }
     | KW_DATA               { $$ = new std::string("data"); }
     | KW_LEADER             { $$ = new std::string("leader"); }
     | KW_UUID               { $$ = new std::string("uuid"); }
@@ -491,6 +490,7 @@ unreserved_keyword
     | KW_BOTH               { $$ = new std::string("both"); }
     | KW_OUT                { $$ = new std::string("out"); }
     | KW_SUBGRAPH           { $$ = new std::string("subgraph"); }
+    | KW_PATH               { $$ = new std::string("path"); }
     | KW_THEN               { $$ = new std::string("then"); }
     | KW_ELSE               { $$ = new std::string("else"); }
     | KW_END                { $$ = new std::string("end"); }
@@ -1349,7 +1349,39 @@ yield_columns
     ;
 
 yield_column
-    : expression {
+    : KW_VERTEX {
+        $$ = nullptr;
+        throw nebula::GraphParser::syntax_error(@1, "please add alias when using vertex.");
+    }
+    | KW_VERTEX KW_AS name_label {
+        $$ = new YieldColumn(VertexExpression::make(qctx->objPool()), *$3);
+        delete $3;
+    }
+    | KW_VERTICES {
+        $$ = nullptr;
+        throw nebula::GraphParser::syntax_error(@1, "please add alias when using vertices.");
+    }
+    | KW_VERTICES KW_AS name_label {
+        $$ = new YieldColumn(LabelExpression::make(qctx->objPool(), "VERTICES"), *$3);
+        delete $3;
+    }
+    | KW_EDGE {
+        $$ = nullptr;
+        throw nebula::GraphParser::syntax_error(@1, "please add alias when using edge.");
+    }
+    | KW_EDGE KW_AS name_label {
+        $$ = new YieldColumn(EdgeExpression::make(qctx->objPool()), *$3);
+        delete $3;
+    }
+    | KW_EDGES {
+        $$ = nullptr;
+        throw nebula::GraphParser::syntax_error(@1, "please add alias when using edges.");
+    }
+    | KW_EDGES KW_AS name_label {
+        $$ = new YieldColumn(LabelExpression::make(qctx->objPool(), "EDGES"), *$3);
+        delete $3;
+    }
+    | expression {
         $$ = new YieldColumn($1);
     }
     | expression KW_AS name_label {
@@ -2046,8 +2078,8 @@ both_in_out_clause
     | KW_BOTH over_edges { $$ = new BothInOutClause($2, BoundClause::BOTH); }
 
 get_subgraph_sentence
-    : KW_GET KW_SUBGRAPH opt_with_properites step_clause from_clause in_bound_clause out_bound_clause both_in_out_clause {
-        $$ = new GetSubgraphSentence($3, $4, $5, $6, $7, $8);
+    : KW_GET KW_SUBGRAPH opt_with_properites step_clause from_clause in_bound_clause out_bound_clause both_in_out_clause yield_clause {
+        $$ = new GetSubgraphSentence($3, $4, $5, $6, $7, $8, $9);
     }
 
 use_sentence
@@ -3015,6 +3047,9 @@ show_sentence
     }
     | KW_SHOW KW_SESSION legal_integer {
         $$ = new ShowSessionsSentence($3);
+    }
+    | KW_SHOW KW_META KW_LEADER {
+        $$ = new ShowMetaLeaderSentence();
     }
     ;
 

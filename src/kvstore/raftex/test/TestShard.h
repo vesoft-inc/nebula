@@ -47,7 +47,7 @@ std::string encodeRemovePeer(const HostAddr& addr);
 HostAddr decodeRemovePeer(const folly::StringPiece& log);
 
 class TestShard : public RaftPart {
-  friend class SnapshotManagerImpl;
+  friend class NebulaSnapshotManager;
 
  public:
   TestShard(size_t idx,
@@ -137,13 +137,13 @@ class TestShard : public RaftPart {
   std::function<void(size_t idx, const char*, TermID)> becomeLeaderCB_;
 };
 
-class SnapshotManagerImpl : public SnapshotManager {
+class NebulaSnapshotManager : public SnapshotManager {
  public:
-  explicit SnapshotManagerImpl(RaftexService* service) : service_(service) {
+  explicit NebulaSnapshotManager(RaftexService* service) : service_(service) {
     CHECK_NOTNULL(service);
   }
 
-  ~SnapshotManagerImpl() { LOG(INFO) << "~SnapshotManagerImpl()"; }
+  ~NebulaSnapshotManager() { LOG(INFO) << "~NebulaSnapshotManager()"; }
 
   void accessAllRowsInSnapshot(GraphSpaceID spaceId,
                                PartitionID partId,

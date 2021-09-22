@@ -51,6 +51,7 @@ cmake-build*/
 .cache/
 core.*
 workspace.*
+.metals/
 
 #py
 *.egg-info
@@ -61,3 +62,6 @@ venv/
 
 #lock
 *.lock
+
+#ctags
+.tags
