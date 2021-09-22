@@ -25,6 +25,8 @@ namespace nebula {
 static const std::regex reMemAvailable("^Mem(Available|Total):\\s+(\\d+)\\skB$");
 static const std::regex reTotalCache("^total_(cache|inactive_file)\\s+(\\d+)$");
 
+std::atomic_bool MemoryUtils::kHitMemoryHighWatermark{false};
+
 StatusOr<bool> MemoryUtils::hitsHighWatermark() {
   double available = 0.0, total = 0.0;
   if (FLAGS_containerized) {

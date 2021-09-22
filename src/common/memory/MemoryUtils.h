@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <cstdint>
 #include <string>
 
@@ -22,6 +23,8 @@ namespace nebula {
 class MemoryUtils final {
  public:
   static StatusOr<bool> hitsHighWatermark();
+
+  static std::atomic_bool kHitMemoryHighWatermark;
 
  private:
   MemoryUtils(const MemoryUtils &) = delete;

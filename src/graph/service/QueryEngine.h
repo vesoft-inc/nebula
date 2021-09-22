@@ -43,11 +43,14 @@ class QueryEngine final : public cpp::NonCopyable, public cpp::NonMovable {
   const meta::MetaClient* metaClient() const { return metaClient_; }
 
  private:
+  Status setupBackgroundThread();
+
   std::unique_ptr<meta::SchemaManager> schemaManager_;
   std::unique_ptr<meta::IndexManager> indexManager_;
   std::unique_ptr<storage::GraphStorageClient> storage_;
   std::unique_ptr<opt::Optimizer> optimizer_;
-  meta::MetaClient* metaClient_;
+  std::unique_ptr<thread::GenericWorker> bgThread_;
+  meta::MetaClient* metaClient_{nullptr};
   CharsetInfo* charsetInfo_{nullptr};
 };
 

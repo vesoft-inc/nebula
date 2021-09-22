@@ -558,14 +558,6 @@ Status Executor::open() {
             << "ep: " << qctx()->plan()->id() << "query: " << qctx()->rctx()->query();
     return Status::Error("Execution had been killed");
   }
-  if (node_->isQueryNode()) {
-    auto status = MemoryUtils::hitsHighWatermark();
-    NG_RETURN_IF_ERROR(status);
-    if (std::move(status).value()) {
-      return Status::Error("Used memory hits the high watermark(%lf) of total system memory.",
-                           FLAGS_system_memory_high_watermark_ratio);
-    }
-  }
   numRows_ = 0;
   execTime_ = 0;
   totalDuration_.reset();
@@ -582,6 +574,14 @@ Status Executor::close() {
         std::make_unique<std::unordered_map<std::string, std::string>>(std::move(otherStats_));
   }
   qctx()->plan()->addProfileStats(node_->id(), std::move(stats));
+  return Status::OK();
+}
+
+Status Executor::checkMemoryWatermark() {
+  if (node_->isQueryNode() && MemoryUtils::kHitMemoryHighWatermark.load()) {
+    return Status::Error("Used memory hits the high watermark(%lf) of total system memory.",
+                         FLAGS_system_memory_high_watermark_ratio);
+  }
   return Status::OK();
 }
 
