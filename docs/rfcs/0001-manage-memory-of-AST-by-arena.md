@@ -40,7 +40,7 @@ The Arena is the technology to pre-allocate large block memory and construct obj
 
 In Nebula Graph, with the placement new operator of c++, we could construct the object in specific address. So we could construct the object in memory allocated from Arena.
 
-But the stl container members of AST is still managed by c++ default Allocator. For example, a classical Expression definition as below:
+But the stl container members of AST are still managed by c++ default Allocator. For example, a classical Expression definition as below:
 
 ```c++
 class AttributeExpr {
