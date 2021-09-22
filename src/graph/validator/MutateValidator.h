@@ -58,6 +58,7 @@ class InsertEdgesValidator final : public Validator {
   EdgeType edgeType_{-1};
   std::shared_ptr<const meta::SchemaProviderIf> schema_;
   std::vector<std::string> propNames_;
+  std::vector<std::string> entirePropNames_;
   std::vector<EdgeRowItem*> rows_;
   std::vector<storage::cpp2::NewEdge> edges_;
 };
