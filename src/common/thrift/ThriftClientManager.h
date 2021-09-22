@@ -37,7 +37,7 @@ class ThriftClientManager final {
                                        >;
 
   folly::ThreadLocal<ClientMap> clientMap_;
-  // wether enable ssl
+  // whether enable ssl
   bool enableSSL_{false};
 };
 

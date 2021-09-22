@@ -55,19 +55,19 @@ def init_parser():
     opt_parser.add_option('--enable_ssl',
                           dest='enable_ssl',
                           default=False,
-                          help='Wether enable SSL for cluster.')
+                          help='Whether enable SSL for cluster.')
     opt_parser.add_option('--enable_graph_ssl',
                           dest='enable_graph_ssl',
                           default=False,
-                          help='Wether enable SSL for graph server.')
+                          help='Whether enable SSL for graph server.')
     opt_parser.add_option('--enable_meta_ssl',
                           dest='enable_meta_ssl',
                           default=False,
-                          help='Wether enable SSL for meta server.')
+                          help='Whether enable SSL for meta server.')
     opt_parser.add_option('--ca_signed',
                           dest='ca_signed',
                           default=False,
-                          help='Wether enable CA signed SSL/TLS mode.')
+                          help='Whether enable CA signed SSL/TLS mode.')
     return opt_parser
 
 
