@@ -556,8 +556,7 @@ void NebulaStore::removeSpaceDir(const std::string& dir) {
     LOG(INFO) << "Try to remove space directory: " << dir;
     boost::filesystem::remove_all(dir);
   } catch (const boost::filesystem::filesystem_error& e) {
-    LOG(ERROR) << "Exception caught while remove directory, please delelte it "
-                  "by manual: "
+    LOG(ERROR) << "Exception caught while remove directory, please delelte it by manual: "
                << e.what();
   }
 }

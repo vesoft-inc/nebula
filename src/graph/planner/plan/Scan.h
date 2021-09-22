@@ -29,7 +29,7 @@ class EdgeIndexScan : public IndexScan {
                 bool dedup,
                 std::vector<storage::cpp2::OrderBy> orderBy,
                 int64_t limit,
-                std::string filter,
+                Expression* filter,
                 Kind kind)
       : IndexScan(qctx,
                   input,
@@ -42,7 +42,7 @@ class EdgeIndexScan : public IndexScan {
                   dedup,
                   std::move(orderBy),
                   limit,
-                  std::move(filter),
+                  filter,
                   kind),
         edgeType_(edgeType) {}
 
@@ -62,7 +62,7 @@ class EdgeIndexPrefixScan : public EdgeIndexScan {
                                    bool dedup = false,
                                    std::vector<storage::cpp2::OrderBy> orderBy = {},
                                    int64_t limit = std::numeric_limits<int64_t>::max(),
-                                   std::string filter = "") {
+                                   Expression* filter = nullptr) {
     return qctx->objPool()->add(new EdgeIndexPrefixScan(qctx,
                                                         input,
                                                         edgeType,
@@ -74,7 +74,7 @@ class EdgeIndexPrefixScan : public EdgeIndexScan {
                                                         dedup,
                                                         std::move(orderBy),
                                                         limit,
-                                                        std::move(filter)));
+                                                        filter));
   }
 
  private:
@@ -89,7 +89,7 @@ class EdgeIndexPrefixScan : public EdgeIndexScan {
                       bool dedup,
                       std::vector<storage::cpp2::OrderBy> orderBy,
                       int64_t limit,
-                      std::string filter)
+                      Expression* filter)
       : EdgeIndexScan(qctx,
                       input,
                       edgeType,
@@ -101,7 +101,7 @@ class EdgeIndexPrefixScan : public EdgeIndexScan {
                       dedup,
                       std::move(orderBy),
                       limit,
-                      std::move(filter),
+                      filter,
                       Kind::kEdgeIndexPrefixScan) {}
 };
 
@@ -118,7 +118,7 @@ class EdgeIndexRangeScan : public EdgeIndexScan {
                                   bool dedup = false,
                                   std::vector<storage::cpp2::OrderBy> orderBy = {},
                                   int64_t limit = std::numeric_limits<int64_t>::max(),
-                                  std::string filter = "") {
+                                  Expression* filter = nullptr) {
     return qctx->objPool()->add(new EdgeIndexRangeScan(qctx,
                                                        input,
                                                        edgeType,
@@ -130,7 +130,7 @@ class EdgeIndexRangeScan : public EdgeIndexScan {
                                                        dedup,
                                                        std::move(orderBy),
                                                        limit,
-                                                       std::move(filter)));
+                                                       filter));
   }
 
  private:
@@ -145,7 +145,7 @@ class EdgeIndexRangeScan : public EdgeIndexScan {
                      bool dedup,
                      std::vector<storage::cpp2::OrderBy> orderBy,
                      int64_t limit,
-                     std::string filter)
+                     Expression* filter)
       : EdgeIndexScan(qctx,
                       input,
                       edgeType,
@@ -157,7 +157,7 @@ class EdgeIndexRangeScan : public EdgeIndexScan {
                       dedup,
                       std::move(orderBy),
                       limit,
-                      std::move(filter),
+                      filter,
                       Kind::kEdgeIndexRangeScan) {}
 };
 
@@ -174,7 +174,7 @@ class EdgeIndexFullScan final : public EdgeIndexScan {
                                  bool dedup = false,
                                  std::vector<storage::cpp2::OrderBy> orderBy = {},
                                  int64_t limit = std::numeric_limits<int64_t>::max(),
-                                 std::string filter = "") {
+                                 Expression* filter = nullptr) {
     return qctx->objPool()->add(new EdgeIndexFullScan(qctx,
                                                       input,
                                                       edgeType,
@@ -186,7 +186,7 @@ class EdgeIndexFullScan final : public EdgeIndexScan {
                                                       dedup,
                                                       std::move(orderBy),
                                                       limit,
-                                                      std::move(filter)));
+                                                      filter));
   }
 
  private:
@@ -201,7 +201,7 @@ class EdgeIndexFullScan final : public EdgeIndexScan {
                     bool dedup,
                     std::vector<storage::cpp2::OrderBy> orderBy,
                     int64_t limit,
-                    std::string filter)
+                    Expression* filter)
       : EdgeIndexScan(qctx,
                       input,
                       edgeType,
@@ -213,7 +213,7 @@ class EdgeIndexFullScan final : public EdgeIndexScan {
                       dedup,
                       std::move(orderBy),
                       limit,
-                      std::move(filter),
+                      filter,
                       Kind::kEdgeIndexFullScan) {}
 };
 
@@ -235,7 +235,7 @@ class TagIndexScan : public IndexScan {
                bool dedup,
                std::vector<storage::cpp2::OrderBy> orderBy,
                int64_t limit,
-               std::string filter,
+               Expression* filter,
                Kind kind)
       : IndexScan(qctx,
                   input,
@@ -248,7 +248,7 @@ class TagIndexScan : public IndexScan {
                   dedup,
                   std::move(orderBy),
                   limit,
-                  std::move(filter),
+                  filter,
                   kind),
         tagName_(tagName) {}
 
@@ -268,7 +268,7 @@ class TagIndexPrefixScan : public TagIndexScan {
                                   bool dedup = false,
                                   std::vector<storage::cpp2::OrderBy> orderBy = {},
                                   int64_t limit = std::numeric_limits<int64_t>::max(),
-                                  std::string filter = "") {
+                                  Expression* filter = nullptr) {
     return qctx->objPool()->add(new TagIndexPrefixScan(qctx,
                                                        input,
                                                        tagName,
@@ -280,7 +280,7 @@ class TagIndexPrefixScan : public TagIndexScan {
                                                        dedup,
                                                        std::move(orderBy),
                                                        limit,
-                                                       std::move(filter)));
+                                                       filter));
   }
 
  private:
@@ -295,7 +295,7 @@ class TagIndexPrefixScan : public TagIndexScan {
                      bool dedup,
                      std::vector<storage::cpp2::OrderBy> orderBy,
                      int64_t limit,
-                     std::string filter)
+                     Expression* filter)
       : TagIndexScan(qctx,
                      input,
                      tagName,
@@ -307,7 +307,7 @@ class TagIndexPrefixScan : public TagIndexScan {
                      dedup,
                      std::move(orderBy),
                      limit,
-                     std::move(filter),
+                     filter,
                      Kind::kTagIndexPrefixScan) {}
 };
 
@@ -324,7 +324,7 @@ class TagIndexRangeScan : public TagIndexScan {
                                  bool dedup = false,
                                  std::vector<storage::cpp2::OrderBy> orderBy = {},
                                  int64_t limit = std::numeric_limits<int64_t>::max(),
-                                 std::string filter = "") {
+                                 Expression* filter = nullptr) {
     return qctx->objPool()->add(new TagIndexRangeScan(qctx,
                                                       input,
                                                       tagName,
@@ -336,7 +336,7 @@ class TagIndexRangeScan : public TagIndexScan {
                                                       dedup,
                                                       std::move(orderBy),
                                                       limit,
-                                                      std::move(filter)));
+                                                      filter));
   }
 
  private:
@@ -351,7 +351,7 @@ class TagIndexRangeScan : public TagIndexScan {
                     bool dedup,
                     std::vector<storage::cpp2::OrderBy> orderBy,
                     int64_t limit,
-                    std::string filter)
+                    Expression* filter)
       : TagIndexScan(qctx,
                      input,
                      tagName,
@@ -363,7 +363,7 @@ class TagIndexRangeScan : public TagIndexScan {
                      dedup,
                      std::move(orderBy),
                      limit,
-                     std::move(filter),
+                     filter,
                      Kind::kTagIndexRangeScan) {}
 };
 
@@ -380,7 +380,7 @@ class TagIndexFullScan final : public TagIndexScan {
                                 bool dedup = false,
                                 std::vector<storage::cpp2::OrderBy> orderBy = {},
                                 int64_t limit = std::numeric_limits<int64_t>::max(),
-                                std::string filter = "") {
+                                Expression* filter = nullptr) {
     return qctx->objPool()->add(new TagIndexFullScan(qctx,
                                                      input,
                                                      tagName,
@@ -392,7 +392,7 @@ class TagIndexFullScan final : public TagIndexScan {
                                                      dedup,
                                                      std::move(orderBy),
                                                      limit,
-                                                     std::move(filter)));
+                                                     filter));
   }
 
  private:
@@ -407,7 +407,7 @@ class TagIndexFullScan final : public TagIndexScan {
                    bool dedup,
                    std::vector<storage::cpp2::OrderBy> orderBy,
                    int64_t limit,
-                   std::string filter)
+                   Expression* filter)
       : TagIndexScan(qctx,
                      input,
                      tagName,
@@ -419,7 +419,7 @@ class TagIndexFullScan final : public TagIndexScan {
                      dedup,
                      std::move(orderBy),
                      limit,
-                     std::move(filter),
+                     filter,
                      Kind::kTagIndexFullScan) {}
 };
 

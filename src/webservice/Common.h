@@ -7,12 +7,9 @@
 #ifndef WEBSERVICE_COMMON_H_
 #define WEBSERVICE_COMMON_H_
 
-#include "common/base/Base.h"
-
-DECLARE_int32(ws_meta_http_port);
-DECLARE_int32(ws_meta_h2_port);
-DECLARE_int32(ws_storage_http_port);
-DECLARE_int32(ws_storage_h2_port);
+#include <cstdint>
+#include <string>
+#include <unordered_map>
 
 namespace nebula {
 
@@ -23,7 +20,7 @@ enum class HttpCode {
   E_ILLEGAL_ARGUMENT = -3,
 };
 
-enum class HttpStatusCode {
+enum class HttpStatusCode : int32_t {
   OK = 200,
   BAD_REQUEST = 400,
   FORBIDDEN = 403,
@@ -31,19 +28,15 @@ enum class HttpStatusCode {
   METHOD_NOT_ALLOWED = 405,
 };
 
-static std::map<HttpStatusCode, std::string> statusStringMap{
-    {HttpStatusCode::OK, "OK"},
-    {HttpStatusCode::BAD_REQUEST, "Bad Request"},
-    {HttpStatusCode::FORBIDDEN, "Forbidden"},
-    {HttpStatusCode::NOT_FOUND, "Not Found"},
-    {HttpStatusCode::METHOD_NOT_ALLOWED, "Method Not Allowed"}};
-
 class WebServiceUtils final {
  public:
   static int32_t to(HttpStatusCode code) { return static_cast<int32_t>(code); }
+  static std::string toString(HttpStatusCode code) { return kStatusStringMap_[code]; }
 
-  static std::string toString(HttpStatusCode code) { return statusStringMap[code]; }
+ private:
+  static std::unordered_map<HttpStatusCode, std::string> kStatusStringMap_;
 };
 
 }  // namespace nebula
+
 #endif  // WEBSERVICE_COMMON_H_
