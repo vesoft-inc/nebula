@@ -55,7 +55,7 @@ void ClientSession::deleteQuery(QueryContext* qctx) {
   session_.queries_ref()->erase(epId);
 }
 
-bool ClientSession::findQuery(nebula::ExecutionPlanID epId) {
+bool ClientSession::findQuery(nebula::ExecutionPlanID epId) const {
   folly::RWSpinLock::ReadHolder rHolder(rwSpinLock_);
   auto context = contexts_.find(epId);
   if (context != contexts_.end()) {
