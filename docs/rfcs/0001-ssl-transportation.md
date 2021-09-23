@@ -54,7 +54,7 @@ metad: metad server
 storaged: meta client
 ```
 
-We provide this control policy for meta will transport some secret information.
+We provide this control policy for meta to transport some secret information.
 
 # Design explanation
 
