@@ -36,7 +36,7 @@ metad: admin storage client + metad server + raft client + raft server
 storaged: meta client + internal storage client + internal storage server + graph storage server + admin storage server + raft client + raft server
 ```
 
-2. Encrypt the graph server when the flag `enable_graph_ssl` is set to `true`. In this mode, we enable SSL/TLS transportation for follow components of daemon:
+2. Encrypt the graph server when the flag `enable_graph_ssl` is set to `true`. In this mode, we enable SSL/TLS transportation for following components of daemon:
 
 ```plain
 graphd: graph server
@@ -44,7 +44,7 @@ graphd: graph server
 
 This policy is optimized for the case that the cluster setup in one room and communicate over the internal network, and only graph server exposes the interface to outside.
 
-3. Encrypt the meta server `enable_meta_ssl` is set to `true`. In this mode, we enable SSL/TLS transportation for follow components of daemon:
+3. Encrypt the meta server `enable_meta_ssl` is set to `true`. In this mode, we enable SSL/TLS transportation for following components of daemon:
 
 ```plain
 graphd: meta client
