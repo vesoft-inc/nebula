@@ -4,7 +4,7 @@ Introduce the SSL/TLS protocol for secure data transport.
 
 # Motivation
 
-Crypto the data transportation.
+Encrypt the data transportation.
 
 # Usage explanation
 
