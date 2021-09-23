@@ -8,6 +8,7 @@
 
 #include "clients/meta/MetaClient.h"
 #include "common/time/Duration.h"
+#include "graph/session/PagingContext.h"
 #include "interface/gen-cpp2/meta_types.h"
 
 namespace nebula {
@@ -140,6 +141,10 @@ class ClientSession final {
 
   void markAllQueryKilled();
 
+  PagingContext& pagingCtx() { return pagingCtx_; }
+
+  const PagingContext& pagingCtx() const { return pagingCtx_; }
+
  private:
   ClientSession() = default;
 
@@ -158,6 +163,9 @@ class ClientSession final {
    */
   std::unordered_map<GraphSpaceID, meta::cpp2::RoleType> roles_;
   std::unordered_map<ExecutionPlanID, QueryContext*> contexts_;
+
+  // The context for paging
+  PagingContext pagingCtx_;
 };
 
 }  // namespace graph

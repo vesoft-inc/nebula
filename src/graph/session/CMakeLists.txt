@@ -7,5 +7,6 @@ nebula_add_library(
     graph_session_obj OBJECT
     GraphSessionManager.cpp
     ClientSession.cpp
+    PagingContext.cpp
 )
 
