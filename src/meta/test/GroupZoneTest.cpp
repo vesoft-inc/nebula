@@ -8,6 +8,8 @@
 
 #include "common/base/Base.h"
 #include "common/fs/TempDir.h"
+#include "meta/processors/parts/CreateSpaceProcessor.h"
+#include "meta/processors/parts/DropSpaceProcessor.h"
 #include "meta/processors/zone/AddGroupProcessor.h"
 #include "meta/processors/zone/AddZoneProcessor.h"
 #include "meta/processors/zone/DropGroupProcessor.h"
@@ -255,18 +257,6 @@ TEST(GroupAndZoneTest, GroupAndZoneTest) {
   auto resp = std::move(f).get();
   ASSERT_EQ(nebula::cpp2::ErrorCode::E_INVALID_PARM, resp.get_code());
 }
-// Drop host from zone
-{
-  cpp2::DropHostFromZoneReq req;
-  req.set_zone_name("zone_0");
-  HostAddr node{"12", 12};
-  req.set_node(std::move(node));
-  auto* processor = DropHostFromZoneProcessor::instance(kv.get());
-  auto f = processor->getFuture();
-  processor->process(req);
-  auto resp = std::move(f).get();
-  ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-}
 // Drop host from zone which zone is not exist
 {
   cpp2::DropHostFromZoneReq req;
@@ -298,6 +288,53 @@ TEST(GroupAndZoneTest, GroupAndZoneTest) {
   std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2"};
   req.set_zone_names(std::move(zones));
   auto* processor = AddGroupProcessor::instance(kv.get());
+  auto f = processor->getFuture();
+  processor->process(req);
+  auto resp = std::move(f).get();
+  ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+}
+{
+  cpp2::SpaceDesc properties;
+  properties.set_space_name("space");
+  properties.set_partition_num(12);
+  properties.set_replica_factor(3);
+  properties.set_group_name("group_0");
+  cpp2::CreateSpaceReq req;
+  req.set_properties(std::move(properties));
+  auto* processor = CreateSpaceProcessor::instance(kv.get());
+  auto f = processor->getFuture();
+  processor->process(req);
+  auto resp = std::move(f).get();
+  ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+}
+// Drop host from zone
+{
+  cpp2::DropHostFromZoneReq req;
+  req.set_zone_name("zone_0");
+  HostAddr node{"12", 12};
+  req.set_node(std::move(node));
+  auto* processor = DropHostFromZoneProcessor::instance(kv.get());
+  auto f = processor->getFuture();
+  processor->process(req);
+  auto resp = std::move(f).get();
+  ASSERT_EQ(nebula::cpp2::ErrorCode::E_CONFLICT, resp.get_code());
+}
+{
+  cpp2::DropSpaceReq req;
+  req.set_space_name("space");
+  req.set_if_exists(false);
+  auto* processor = DropSpaceProcessor::instance(kv.get());
+  auto f = processor->getFuture();
+  processor->process(req);
+  auto resp = std::move(f).get();
+  ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+}
+{
+  cpp2::DropHostFromZoneReq req;
+  req.set_zone_name("zone_0");
+  HostAddr node{"12", 12};
+  req.set_node(std::move(node));
+  auto* processor = DropHostFromZoneProcessor::instance(kv.get());
   auto f = processor->getFuture();
   processor->process(req);
   auto resp = std::move(f).get();
