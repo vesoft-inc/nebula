@@ -36,9 +36,9 @@ class ObjPool {
 
 # Design explanation
 
-The Arena is the technology to pre-allocate large block memory and construct objects on it. It's different from the normal way which allocate then construct one by one. In this way, Arena reduce the count of allocate and deallocate calling.
+The Arena is the technology to pre-allocate large block memory and construct objects on it. It's different from the normal way which allocate then construct one by one. In this way, Arena reduce the count of allocating and deallocating calls.
 
-In Nebula Graph, with the placement new operator of c++, we could construct the object in specific address. So we could construct the object in memory allocated from Arena.
+In Nebula Graph, with the placement new operator of c++, we could construct the object in specific address. So we could construct the object in memory allocated by Arena.
 
 But the stl container members of AST are still managed by c++ default Allocator. For example, a classical Expression definition as below:
 
@@ -56,7 +56,7 @@ This trade-off will discussed in next section.
 
 # Rationale and alternatives
 
-The c++ stl container also provide the template argument for custom allocator. But it make container type different. So the same container with different allocator is different type, and need extra conversion.
+The c++ stl container also provide the template argument for custom allocator. But it make container type different. So the same container with different allocator is a different type, and need extra conversion.
 
 The polymorphic container override the this only if change all container type to polymorphic. It's too large change to do.
 
