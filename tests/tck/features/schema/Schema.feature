@@ -577,7 +577,7 @@ Feature: Insert string vid of vertex and edge
       """
       INSERT EDGE e() VALUES "1"->"2":()
       """
-    Then a ExecutionError should be raised at runtime: Storage Error: The not null field doesn't have a default value.
+    Then a SemanticError should be raised at runtime: The property `description' is not nullable and has no default value.
     # test alter edge with timestamp default
     When executing query:
       """
