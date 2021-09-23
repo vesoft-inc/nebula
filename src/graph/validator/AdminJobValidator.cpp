@@ -12,8 +12,7 @@ namespace nebula {
 namespace graph {
 
 Status AdminJobValidator::validateImpl() {
-  auto reqOp = sentence_->getOp();
-  if (reqOp == meta::cpp2::AdminJobOp::ADD) {
+  if (sentence_->getOp() == meta::cpp2::AdminJobOp::ADD) {
     auto cmd = sentence_->getCmd();
     if (requireSpace()) {
       const auto &spaceInfo = qctx()->rctx()->session()->space();
@@ -50,12 +49,9 @@ Status AdminJobValidator::validateImpl() {
         }
       }
     }
-  } else if (needAppendChosenSpace()) {
-      const auto &spaceInfo = qctx()->rctx()->session()->space();
-      const auto &spaceName = spaceInfo.name;
-      sentence_->addPara(spaceName);
+  } else {
+    sentence_->addPara(qctx()->rctx()->session()->space().name);
   }
-
   return Status::OK();
 }
 

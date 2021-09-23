@@ -377,7 +377,7 @@ void JobManager::enqueue(const JobID& jobId, const cpp2::AdminCmd& cmd) {
 }
 
 ErrorOr<nebula::cpp2::ErrorCode, std::vector<cpp2::JobDesc>> JobManager::showJobs(
-  const std::string &spaceName) {
+    const std::string& spaceName) {
   std::unique_ptr<kvstore::KVIterator> iter;
   auto retCode = kvStore_->prefix(kDefaultSpaceId, kDefaultPartId, JobUtil::jobPrefix(), &iter);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -504,6 +504,7 @@ JobManager::showJob(JobID iJob, const std::string& spaceName) {
       }
       auto optJob = nebula::value(optJobRet);
       if (optJob.getParas().back() != spaceName) {
+        LOG(WARNING) << "Show job " << iJob << " not in current space " << spaceName;
         return nebula::cpp2::ErrorCode::E_JOB_NOT_IN_SPACE;
       }
       ret.first = optJob.toJobDesc();
@@ -526,7 +527,7 @@ nebula::cpp2::ErrorCode JobManager::stopJob(JobID iJob, const std::string& space
   }
   auto optJobDesc = nebula::value(optJobDescRet);
   if (optJobDesc.getParas().back() != spaceName) {
-    LOG(WARNING) << "Stop job not in space " << spaceName;
+    LOG(WARNING) << "Stop job " << iJob << " not in space " << spaceName;
     return nebula::cpp2::ErrorCode::E_JOB_NOT_IN_SPACE;
   }
   return jobFinished(iJob, cpp2::JobStatus::STOPPED);
@@ -535,8 +536,7 @@ nebula::cpp2::ErrorCode JobManager::stopJob(JobID iJob, const std::string& space
 /*
  * Return: recovered job num.
  * */
-ErrorOr<nebula::cpp2::ErrorCode, uint32_t> JobManager::recoverJob(
-  const std::string& spaceName) {
+ErrorOr<nebula::cpp2::ErrorCode, uint32_t> JobManager::recoverJob(const std::string& spaceName) {
   int32_t recoveredJobNum = 0;
   std::unique_ptr<kvstore::KVIterator> iter;
   auto retCode = kvStore_->prefix(kDefaultSpaceId, kDefaultPartId, JobUtil::jobPrefix(), &iter);

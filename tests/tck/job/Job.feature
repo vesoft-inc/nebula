@@ -168,7 +168,7 @@ Feature: Submit job space requirements
       SHOW JOBS;
       """
     Then the result should be, in order:
-      |Job Id|Command|Status|Start Time|Stop Time|
+      | Job Id | Command | Status | Start Time | Stop Time |
     When executing query, fill replace holders with element index of 0 in job_id:
       """
       SHOW JOB {};

@@ -64,8 +64,7 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
       break;
     }
     case nebula::meta::cpp2::AdminJobOp::SHOW_All: {
-      auto spaceName = req.get_paras().back();
-      auto ret = jobMgr->showJobs(spaceName);
+      auto ret = jobMgr->showJobs(req.get_paras().back());
       if (nebula::ok(ret)) {
         result.set_job_desc(nebula::value(ret));
       } else {
@@ -74,8 +73,9 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
       break;
     }
     case nebula::meta::cpp2::AdminJobOp::SHOW: {
-      if (req.get_paras().empty()) {
-        LOG(ERROR) << "Parameter should be not empty";
+      static const size_t kShowArgsNum = 2;
+      if (req.get_paras().size() != kShowArgsNum) {
+        LOG(ERROR) << "Parameter number not matched";
         errorCode = nebula::cpp2::ErrorCode::E_INVALID_PARM;
         break;
       }
@@ -86,8 +86,7 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
         errorCode = nebula::cpp2::ErrorCode::E_INVALID_PARM;
         break;
       }
-      auto spaceName = req.get_paras().back();
-      auto ret = jobMgr->showJob(iJob, spaceName);
+      auto ret = jobMgr->showJob(iJob, req.get_paras().back());
       if (nebula::ok(ret)) {
         result.set_job_desc(std::vector<cpp2::JobDesc>{nebula::value(ret).first});
         result.set_task_desc(nebula::value(ret).second);
@@ -97,8 +96,9 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
       break;
     }
     case nebula::meta::cpp2::AdminJobOp::STOP: {
-      if (req.get_paras().empty()) {
-        LOG(ERROR) << "Parameter should be not empty";
+      static const size_t kStopJobArgsNum = 2;
+      if (req.get_paras().size() != kStopJobArgsNum) {
+        LOG(ERROR) << "Parameter number not matched";
         errorCode = nebula::cpp2::ErrorCode::E_INVALID_PARM;
         break;
       }
@@ -108,13 +108,11 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
         errorCode = nebula::cpp2::ErrorCode::E_INVALID_PARM;
         break;
       }
-      auto spaceName = req.get_paras().back();
-      errorCode = jobMgr->stopJob(iJob, spaceName);
+      errorCode = jobMgr->stopJob(iJob, req.get_paras().back());
       break;
     }
     case nebula::meta::cpp2::AdminJobOp::RECOVER: {
-      auto spaceName = req.get_paras().back();
-      auto ret = jobMgr->recoverJob(spaceName);
+      auto ret = jobMgr->recoverJob(req.get_paras().back());
       if (nebula::ok(ret)) {
         result.set_recovered_job_num(nebula::value(ret));
       } else {

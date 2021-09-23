@@ -72,10 +72,10 @@ class JobManager : public nebula::cpp::NonCopyable, public nebula::cpp::NonMovab
   bool checkJobExist(const cpp2::AdminCmd& cmd, const std::vector<std::string>& paras, JobID& iJob);
 
   ErrorOr<nebula::cpp2::ErrorCode, std::vector<cpp2::JobDesc>> showJobs(
-    const std::string &spaceName);
+      const std::string& spaceName);
 
   ErrorOr<nebula::cpp2::ErrorCode, std::pair<cpp2::JobDesc, std::vector<cpp2::TaskDesc>>> showJob(
-      JobID iJob, const std::string &spaceName);
+      JobID iJob, const std::string& spaceName);
 
   nebula::cpp2::ErrorCode stopJob(JobID iJob, const std::string& spaceName);
 
