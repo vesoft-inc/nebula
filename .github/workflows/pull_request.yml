@@ -52,13 +52,13 @@ jobs:
         exclude:
           - os: centos7
             compiler: clang-10
+    env:
+      CCACHE_DIR: /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
+      CCACHE_MAXSIZE: 8G
     container:
       image: vesoft/nebula-dev:${{ matrix.os }}
-      env:
-        CCACHE_DIR: /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
-        CCACHE_MAXSIZE: 8G
       volumes:
-        - /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}:/tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
+        - ${{ env.CCACHE_DIR }}:${{ env.CCACHE_DIR }}
       options: --cap-add=SYS_PTRACE
     steps:
       - uses: webiny/action-post-run@2.0.1

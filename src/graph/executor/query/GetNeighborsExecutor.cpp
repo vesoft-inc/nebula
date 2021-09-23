@@ -95,7 +95,6 @@ Status GetNeighborsExecutor::handleResponse(RpcResponse& resps) {
   builder.state(result.value());
 
   auto& responses = resps.responses();
-  VLOG(2) << node_->toString() << ", Resp size: " << responses.size();
   List list;
   for (auto& resp : responses) {
     auto dataset = resp.get_vertices();
@@ -104,11 +103,10 @@ Status GetNeighborsExecutor::handleResponse(RpcResponse& resps) {
       continue;
     }
 
-    VLOG(2) << "Resp row size: " << dataset->rows.size() << ", Resp: " << *dataset;
     list.values.emplace_back(std::move(*dataset));
   }
-  builder.value(Value(std::move(list)));
-  return finish(builder.iter(Iterator::Kind::kGetNeighbors).build());
+  builder.value(Value(std::move(list))).iter(Iterator::Kind::kGetNeighbors);
+  return finish(builder.build());
 }
 
 }  // namespace graph

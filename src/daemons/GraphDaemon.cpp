@@ -108,19 +108,6 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  auto mStatus = MemoryUtils::hitsHighWatermark();
-  if (!mStatus.ok()) {
-    LOG(ERROR) << "Fail to check the memory consumption, containerized: " << FLAGS_containerized;
-    return EXIT_FAILURE;
-  } else {
-    auto hits = std::move(mStatus).value();
-    if (hits) {
-      LOG(ERROR) << "When starting graphd daemon process, "
-                 << "hits the high watermark of system memory.";
-      return EXIT_FAILURE;
-    }
-  }
-
   // Get the IPv4 address the server will listen on
   if (FLAGS_local_ip.empty()) {
     LOG(ERROR) << "local_ip is empty, need to config it through config file";
