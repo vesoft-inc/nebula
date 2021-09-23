@@ -24,13 +24,17 @@
 #include "version/Version.h"
 #include "webservice/Common.h"
 
+DECLARE_int32(ws_meta_http_port);
+DECLARE_int32(ws_meta_h2_port);
+
 DEFINE_uint32(expired_time_factor, 5, "The factor of expired time based on heart beat interval");
-DEFINE_int32(heartbeat_interval_secs, 10, "Heartbeat interval");
+DEFINE_int32(heartbeat_interval_secs, 10, "Heartbeat interval in seconds");
 DEFINE_int32(meta_client_retry_times, 3, "meta client retry times, 0 means no retry");
 DEFINE_int32(meta_client_retry_interval_secs, 1, "meta client sleep interval between retry");
 DEFINE_int32(meta_client_timeout_ms, 60 * 1000, "meta client timeout");
 DEFINE_string(cluster_id_path, "cluster.id", "file path saved clusterId");
 DEFINE_int32(check_plan_killed_frequency, 8, "check plan killed every 1<<n times");
+
 namespace nebula {
 namespace meta {
 

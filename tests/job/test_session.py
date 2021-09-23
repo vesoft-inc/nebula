@@ -88,9 +88,9 @@ class TestSession(NebulaTestSuite):
         for row in resp.rows():
             if bytes.decode(row.values[1].get_sVal()) == 'session_user':
                 session_id = row.values[0].get_iVal()
-                assert row.values[2].get_sVal() == b''
-                assert row.values[3].getType() == ttypes.Value.DTVAL
-                assert row.values[4].getType() == ttypes.Value.DTVAL
+                assert row.values[2].get_sVal() == b'', f"resp: {resp}"
+                assert row.values[3].getType() == ttypes.Value.DTVAL, f"resp: {resp}"
+                assert row.values[4].getType() == ttypes.Value.DTVAL, f"resp: {resp}"
                 break
 
         assert session_id != 0
@@ -99,6 +99,8 @@ class TestSession(NebulaTestSuite):
         resp = client_ok.execute('USE nba')
         self.check_resp_succeeded(resp)
 
+        # wait for session sync.
+        time.sleep(3)
         resp = self.execute('SHOW SESSION {}'.format(session_id))
         self.check_resp_succeeded(resp)
         expect_col_names = ['VariableName', 'Value']

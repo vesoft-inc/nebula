@@ -9,5 +9,6 @@ pytest-drop-dup-tests==0.3.0
 pytest-bdd==4.0.2
 pytest-yapf3==0.5.1
 filelock==3.0.12
-ply==3.11
+ply==3.10
 pyyaml==5.4
+fastcov==1.13
