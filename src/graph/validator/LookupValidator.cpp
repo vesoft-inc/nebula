@@ -255,7 +255,7 @@ StatusOr<Expression*> LookupValidator::checkFilter(Expression* expr) {
     // Only starts with can be pushed down as a range scan, so forbid other string-related relExpr
     if (expr->kind() == ExprKind::kRelREG || expr->kind() == ExprKind::kContains ||
         expr->kind() == ExprKind::kNotContains || expr->kind() == ExprKind::kEndsWith ||
-        expr->kind() == ExprKind::kNotEndsWith) {
+        expr->kind() == ExprKind::kNotStartsWith || expr->kind() == ExprKind::kNotEndsWith) {
       return Status::SemanticError(
           "Expression %s is not supported, please use full-text index as an optimal solution",
           expr->toString().c_str());

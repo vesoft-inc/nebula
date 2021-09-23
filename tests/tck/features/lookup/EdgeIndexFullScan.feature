@@ -70,7 +70,7 @@ Feature: Lookup edge index full scan
       | 4  | EdgeIndexFullScan | 0            |                                        |
       | 0  | Start             |              |                                        |
 
-  Scenario: Edge with relational IN/NOT IN filter
+  Scenario: Edge with simple relational IN filter
     When profiling query:
       """
       LOOKUP ON edge_1 WHERE edge_1.col1_str IN ["Red", "Yellow"] YIELD edge_1.col1_str
@@ -151,12 +151,14 @@ Feature: Lookup edge index full scan
       | 3  | Project             | 4            |               |
       | 4  | EdgeIndexPrefixScan | 0            |               |
       | 0  | Start               |              |               |
-    # a IN b AND c IN d
+
+  Scenario: Edge with complex relational IN filter
+    # (a IN b) AND (c IN d)
     # List has only 1 element, so prefixScan is applied
     When profiling query:
       """
       LOOKUP ON edge_1
-      WHERE edge_1.col2_int IN [11 , 66/2] AND edge_1.col1_str IN [toUpper("r")+"ed1"]
+      WHERE edge_1.col2_int IN [11 , 33] AND edge_1.col1_str IN ["Red1"]
       YIELD edge_1.col1_str, edge_1.col2_int
       """
     Then the result should be, in any order:
@@ -167,11 +169,12 @@ Feature: Lookup edge index full scan
       | 3  | Project   | 4            |               |
       | 4  | IndexScan | 0            |               |
       | 0  | Start     |              |               |
-    # a IN b AND c IN d (4 prefixScan will be executed)
+    # (a IN b) AND (c IN d)
+    # a, c both have indexes (4 prefixScan will be executed)
     When profiling query:
       """
       LOOKUP ON edge_1
-      WHERE edge_1.col2_int IN [11 , 66/2] AND edge_1.col1_str IN [toUpper("r")+"ed1", "ABC"]
+      WHERE edge_1.col2_int IN [11 , 33] AND edge_1.col1_str IN ["Red1", "ABC"]
       YIELD edge_1.col1_str, edge_1.col2_int
       """
     Then the result should be, in any order:
@@ -182,6 +185,78 @@ Feature: Lookup edge index full scan
       | 3  | Project   | 4            |               |
       | 4  | IndexScan | 0            |               |
       | 0  | Start     |              |               |
+    # (a IN b) AND (c IN d)
+    # a, c have a composite index
+    When executing query:
+      """
+      CREATE EDGE INDEX composite_edge_index ON edge_1(col1_str(20), col2_int);
+      """
+    Then the execution should be successful
+    And wait 6 seconds
+    When submit a job:
+      """
+      REBUILD EDGE INDEX composite_edge_index
+      """
+    Then wait the job to finish
+    When profiling query:
+      """
+      LOOKUP ON edge_1
+      WHERE edge_1.col2_int IN [11 , 33] AND edge_1.col1_str IN ["Red1", "ABC"]
+      YIELD edge_1.col1_str, edge_1.col2_int
+      """
+    Then the result should be, in any order:
+      | SrcVID | DstVID | Ranking | edge_1.col1_str | edge_1.col2_int |
+      | "101"  | "102"  | 0       | "Red1"          | 11              |
+    And the execution plan should be:
+      | id | name      | dependencies | operator info |
+      | 3  | Project   | 4            |               |
+      | 4  | IndexScan | 0            |               |
+      | 0  | Start     |              |               |
+    # (a IN b) AND (c IN d) while only a has index
+    # first drop tag index
+    When executing query:
+      """
+      DROP EDGE INDEX composite_edge_index
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      DROP EDGE INDEX col1_str_index
+      """
+    Then the execution should be successful
+    And wait 6 seconds
+    # since the edge index has been dropped, here an EdgeIndexFullScan should be performed
+    When profiling query:
+      """
+      LOOKUP ON edge_1
+      WHERE edge_1.col1_str IN ["Red1", "ABC"]
+      YIELD edge_1.col1_str, edge_1.col2_int
+      """
+    Then the result should be, in any order:
+      | SrcVID | DstVID | Ranking | edge_1.col1_str | edge_1.col2_int |
+      | "101"  | "102"  | 0       | "Red1"          | 11              |
+    And the execution plan should be:
+      | id | name              | dependencies | operator info |
+      | 3  | Project           | 2            |               |
+      | 2  | Filter            | 4            |               |
+      | 4  | EdgeIndexFullScan | 0            |               |
+      | 0  | Start             |              |               |
+    When profiling query:
+      """
+      LOOKUP ON edge_1
+      WHERE edge_1.col2_int IN [11 , 33] AND edge_1.col1_str IN ["Red1", "ABC"]
+      YIELD edge_1.col1_str, edge_1.col2_int
+      """
+    Then the result should be, in any order:
+      | SrcVID | DstVID | Ranking | edge_1.col1_str | edge_1.col2_int |
+      | "101"  | "102"  | 0       | "Red1"          | 11              |
+    And the execution plan should be:
+      | id | name      | dependencies | operator info |
+      | 3  | Project   | 4            |               |
+      | 4  | IndexScan | 0            |               |
+      | 0  | Start     |              |               |
+
+  Scenario: Edge with relational NOT IN filter
     When profiling query:
       """
       LOOKUP ON edge_1 WHERE edge_1.col1_str NOT IN ["Blue"] YIELD edge_1.col1_str
@@ -249,18 +324,9 @@ Feature: Lookup edge index full scan
     Then a SemanticError should be raised at runtime: Column type error : col1_str
     When profiling query:
       """
-      LOOKUP ON edge_1 WHERE edge_1.col1_str NOT STARTS WITH toUpper("r") YIELD edge_1.col1_str
+      LOOKUP ON edge_1 WHERE edge_1.col1_str NOT STARTS WITH "R" YIELD edge_1.col1_str
       """
-    Then the result should be, in any order:
-      | SrcVID | DstVID | Ranking | edge_1.col1_str |
-      | "103"  | "101"  | 0       | "Blue"          |
-      | "102"  | "103"  | 0       | "Yellow"        |
-    And the execution plan should be:
-      | id | name              | dependencies | operator info                                            |
-      | 3  | Project           | 2            |                                                          |
-      | 2  | Filter            | 4            | {"condition": "(edge_1.col1_str NOT STARTS WITH \"R\")"} |
-      | 4  | EdgeIndexFullScan | 0            |                                                          |
-      | 0  | Start             |              |                                                          |
+    Then a SemanticError should be raised at runtime: Expression (edge_1.col1_str NOT STARTS WITH "R") is not supported, please use full-text index as an optimal solution
 
   Scenario: Edge with relational ENDS/NOT ENDS WITH filter
     When executing query:

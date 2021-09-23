@@ -54,7 +54,7 @@ Feature: Lookup tag index full scan
       | 0  | Start            |              |                                           |
 
   # TODO: Support compare operator info that has multiple column hints
-  Scenario: Tag with relational IN/NOT IN filter
+  Scenario: Tag with simple relational IN filter
     When profiling query:
       """
       LOOKUP ON team WHERE team.name IN ["Hornets", "Jazz"]
@@ -89,7 +89,7 @@ Feature: Lookup tag index full scan
       | 3  | Project   | 4            |               |
       | 4  | IndexScan | 0            |               |
       | 0  | Start     |              |               |
-    # a IN b OR c
+    # (a IN b) OR c
     When profiling query:
       """
       LOOKUP ON player WHERE player.age IN [40, 25] OR player.name == "ABC" YIELD player.age
@@ -105,7 +105,7 @@ Feature: Lookup tag index full scan
       | 3  | Project   | 4            |               |
       | 4  | IndexScan | 0            |               |
       | 0  | Start     |              |               |
-    # a IN b OR c IN d
+    # (a IN b) OR (c IN d)
     When profiling query:
       """
       LOOKUP ON player WHERE player.age IN [40, 25] OR player.name IN ["Kobe Bryant"] YIELD player.age
@@ -121,7 +121,7 @@ Feature: Lookup tag index full scan
       | 3  | Project   | 4            |               |
       | 4  | IndexScan | 0            |               |
       | 0  | Start     |              |               |
-    # a IN b AND c
+    # (a IN b) AND c
     When profiling query:
       """
       LOOKUP ON player WHERE player.age IN [40, 25] AND player.name == "Kobe Bryant" YIELD player.age
@@ -134,7 +134,37 @@ Feature: Lookup tag index full scan
       | 3  | Project   | 4            |               |
       | 4  | IndexScan | 0            |               |
       | 0  | Start     |              |               |
-    # a IN b AND c IN d
+    When profiling query:
+      """
+      LOOKUP ON player WHERE player.name IN ["Kobe Bryant", "Tim Duncan"] AND player.age > 30
+      """
+    Then the result should be, in any order:
+      | VertexID      |
+      | "Kobe Bryant" |
+      | "Tim Duncan"  |
+    And the execution plan should be:
+      | id | name      | dependencies | operator info |
+      | 3  | Project   | 4            |               |
+      | 4  | IndexScan | 0            |               |
+      | 0  | Start     |              |               |
+    # c AND (a IN b)
+    When profiling query:
+      """
+      LOOKUP ON player WHERE player.age IN [40, 25] AND player.name == "Kobe Bryant" YIELD player.age
+      """
+    Then the result should be, in any order:
+      | VertexID      | player.age |
+      | "Kobe Bryant" | 40         |
+    And the execution plan should be:
+      | id | name      | dependencies | operator info |
+      | 3  | Project   | 4            |               |
+      | 4  | IndexScan | 0            |               |
+      | 0  | Start     |              |               |
+
+  Scenario: Tag with complex relational IN filter
+    Given an empty graph
+    And load "nba" csv data to a new space
+    # (a IN b) AND (c IN d) while a, c both have indexes
     When profiling query:
       """
       LOOKUP ON player WHERE player.age IN [40, 25] AND player.name IN ["ABC", "Kobe Bryant"] YIELD player.age
@@ -147,6 +177,72 @@ Feature: Lookup tag index full scan
       | 3  | Project   | 4            |               |
       | 4  | IndexScan | 0            |               |
       | 0  | Start     |              |               |
+    # (a IN b) AND (c IN d) while a, c have a composite index
+    When executing query:
+      """
+      CREATE TAG INDEX composite_player_name_age_index ON player(name(64), age);
+      """
+    Then the execution should be successful
+    And wait 6 seconds
+    When submit a job:
+      """
+      REBUILD TAG INDEX composite_player_name_age_index
+      """
+    Then wait the job to finish
+    When profiling query:
+      """
+      LOOKUP ON player WHERE player.age IN [40, 25] AND player.name IN ["ABC", "Kobe Bryant"] YIELD player.age
+      """
+    Then the result should be, in any order:
+      | VertexID      | player.age |
+      | "Kobe Bryant" | 40         |
+    And the execution plan should be:
+      | id | name      | dependencies | operator info |
+      | 3  | Project   | 4            |               |
+      | 4  | IndexScan | 0            |               |
+      | 0  | Start     |              |               |
+    # (a IN b) AND (c IN d) while only a has index
+    # first drop tag index
+    When executing query:
+      """
+      DROP TAG INDEX composite_player_name_age_index
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      DROP TAG INDEX player_name_index
+      """
+    Then the execution should be successful
+    And wait 6 seconds
+    # since the tag index has been dropped, here a TagIndexFullScan should be performed
+    When profiling query:
+      """
+      LOOKUP ON player WHERE player.name IN ["ABC", "Kobe Bryant"] YIELD player.age
+      """
+    Then the result should be, in any order:
+      | VertexID      | player.age |
+      | "Kobe Bryant" | 40         |
+    And the execution plan should be:
+      | id | name             | dependencies | operator info |
+      | 3  | Project          | 2            |               |
+      | 2  | Filter           | 4            |               |
+      | 4  | TagIndexFullScan | 0            |               |
+      | 0  | Start            |              |               |
+    When profiling query:
+      """
+      LOOKUP ON player WHERE player.age IN [40, 25] AND player.name IN ["ABC", "Kobe Bryant"] YIELD player.age
+      """
+    Then the result should be, in any order:
+      | VertexID      | player.age |
+      | "Kobe Bryant" | 40         |
+    And the execution plan should be:
+      | id | name      | dependencies | operator info |
+      | 3  | Project   | 4            |               |
+      | 4  | IndexScan | 0            |               |
+      | 0  | Start     |              |               |
+    Then drop the used space
+
+  Scenario: Tag with relational NOT IN filter
     When profiling query:
       """
       LOOKUP ON team WHERE team.name NOT IN ["Hornets", "Jazz"]
@@ -264,7 +360,7 @@ Feature: Lookup tag index full scan
       """
     Then a SemanticError should be raised at runtime: Expression (team.name NOT CONTAINS "ABC") is not supported, please use full-text index as an optimal solution
 
-  Scenario: Tag with relational STARTS/NOT STARTS WITH filter
+  Scenario: Tag with relational STARTS WITH filter
     When profiling query:
       """
       LOOKUP ON team WHERE team.name STARTS WITH toUpper("t")
@@ -295,41 +391,7 @@ Feature: Lookup tag index full scan
       """
       LOOKUP ON team WHERE team.name NOT STARTS WITH toUpper("t")
       """
-    Then the result should be, in any order:
-      | VertexID    |
-      | "76ers"     |
-      | "Bucks"     |
-      | "Bulls"     |
-      | "Cavaliers" |
-      | "Celtics"   |
-      | "Clippers"  |
-      | "Grizzlies" |
-      | "Hawks"     |
-      | "Heat"      |
-      | "Hornets"   |
-      | "Jazz"      |
-      | "Kings"     |
-      | "Knicks"    |
-      | "Lakers"    |
-      | "Magic"     |
-      | "Mavericks" |
-      | "Nets"      |
-      | "Nuggets"   |
-      | "Pacers"    |
-      | "Pelicans"  |
-      | "Pistons"   |
-      | "Raptors"   |
-      | "Rockets"   |
-      | "Spurs"     |
-      | "Suns"      |
-      | "Wizards"   |
-      | "Warriors"  |
-    And the execution plan should be:
-      | id | name             | dependencies | operator info                                      |
-      | 3  | Project          | 2            |                                                    |
-      | 2  | Filter           | 4            | {"condition": "(team.name NOT STARTS WITH \"T\")"} |
-      | 4  | TagIndexFullScan | 0            |                                                    |
-      | 0  | Start            |              |                                                    |
+    Then a SemanticError should be raised at runtime: Expression (team.name NOT STARTS WITH toUpper("t")) is not supported, please use full-text index as an optimal solution
 
   Scenario: Tag with relational ENDS/NOT ENDS WITH filter
     When executing query:
