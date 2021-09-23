@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "common/datatypes/Value.h"
+#include "common/geo/GeoShape.h"
 
 class S2Polygon;
 
@@ -30,12 +31,6 @@ static const std::unordered_map<ShapeType, S2Region> kShapeTypeToS2Region = {
 };
 */
 // clang-format on
-
-enum class ShapeType : uint8_t {
-  Point = 1,
-  LineString = 2,
-  Polygon = 3,
-};
 
 // Do not construct a S2 data when constructing Geography. It's expensive.
 // We just construct S2 when doing computation.
