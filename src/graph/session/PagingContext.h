@@ -6,8 +6,6 @@
 
 #pragma once
 
-#include <bits/stdint-intn.h>
-
 #include <tuple>
 #include <unordered_map>
 #include <vector>
