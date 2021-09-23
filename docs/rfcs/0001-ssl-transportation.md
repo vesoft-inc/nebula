@@ -42,7 +42,7 @@ storaged: meta client + internal storage client + internal storage server + grap
 graphd: graph server
 ```
 
-This policy is optimized for the case that the cluster setup in one room and communicate over the internal network, and only graph server expose the interface to outside.
+This policy is optimized for the case that the cluster setup in one room and communicate over the internal network, and only graph server exposes the interface to outside.
 
 3. Encrypt the meta server `enable_meta_ssl` is set to `true`. In this mode, we enable SSL/TLS transportation for follow components of daemon:
 
