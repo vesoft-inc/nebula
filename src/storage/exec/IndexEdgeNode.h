@@ -62,7 +62,7 @@ class IndexEdgeNode final : public RelNode<T> {
       edges.emplace_back(std::move(edge));
       iter->next();
     }
-    int64_t count = 1;
+    int64_t count = 0;
     for (const auto& edge : edges) {
       auto key = NebulaKeyUtils::edgeKey(context_->vIdLen(),
                                          partId,
@@ -79,7 +79,7 @@ class IndexEdgeNode final : public RelNode<T> {
       } else {
         return ret;
       }
-      if (limit_ > 0 && ++count > limit_) {
+      if (limit_ > 0 && ++count >= limit_) {
         break;
       }
     }

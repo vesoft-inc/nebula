@@ -86,7 +86,7 @@ class IndexFilterNode final : public RelNode<T> {
     } else {
       data = indexVertexNode_->moveData();
     }
-    int64_t count = 1;
+    int64_t count = 0;
     for (const auto& k : data) {
       if (context_->isPlanKilled()) {
         return nebula::cpp2::ErrorCode::E_PLAN_IS_KILLED;
@@ -108,7 +108,7 @@ class IndexFilterNode final : public RelNode<T> {
           count++;
         }
       }
-      if (limit_ > 0 && count > limit_) {
+      if (limit_ > 0 && count >= limit_) {
         break;
       }
     }

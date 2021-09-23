@@ -58,7 +58,7 @@ class IndexVertexNode final : public RelNode<T> {
       vids.emplace_back(iter->vId());
       iter->next();
     }
-    int64_t count = 1;
+    int64_t count = 0;
     for (const auto& vId : vids) {
       VLOG(1) << "partId " << partId << ", vId " << vId << ", tagId " << context_->tagId_;
       auto key = NebulaKeyUtils::vertexKey(context_->vIdLen(), partId, vId, context_->tagId_);
@@ -71,7 +71,7 @@ class IndexVertexNode final : public RelNode<T> {
       } else {
         return ret;
       }
-      if (limit_ > 0 && ++count > limit_) {
+      if (limit_ > 0 && ++count >= limit_) {
         break;
       }
     }
