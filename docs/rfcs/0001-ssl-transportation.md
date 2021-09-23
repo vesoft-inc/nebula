@@ -58,7 +58,7 @@ We provide this control policy for meta to transport some secret information.
 
 # Design explanation
 
-Enable the thrift provided SSL/TLS function.
+Enable the SSL/TLS in thrift.
 
 In server side, setup certificate and private key. In client side, provide the SSL/TLS transport socket and add the trusted CAs.
 
@@ -74,6 +74,6 @@ Extra performance cost.
 
 # Unresolved questions
 
-The thrift support dual plaintext/SSL mode by default. This enables plaintext client to communicate with SSL/TLS server in plaintext protocol. And it's unable to configure.
+Thrift supports dual plaintext/SSL mode by default. This enables plaintext client to communicate with SSL/TLS server in plaintext protocol. And it's unable to configure.
 
 # Future possibilities
