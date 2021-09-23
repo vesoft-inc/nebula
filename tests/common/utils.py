@@ -14,8 +14,9 @@ from typing import Pattern
 
 from nebula2.Config import Config
 from nebula2.common import ttypes as CommonTtypes
-from nebula2.gclient.net import Session
+from nebula2.gclient.net import Session, ResultSet
 from nebula2.gclient.net import ConnectionPool
+from nebula2.data.DataObject import ValueWrapper
 
 from tests.common.csv_import import CSVImporter
 from tests.common.path_value import PathVal
@@ -111,9 +112,12 @@ def compare_value(real, expect):
         if eedge.type < 0:
             esrc, edst = edst, esrc
         # ignore props comparation
-        return rsrc == esrc and rdst == edst \
-            and redge.ranking == eedge.ranking \
+        return (
+            rsrc == esrc
+            and rdst == edst
+            and redge.ranking == eedge.ranking
             and redge.name == eedge.name
+        )
 
     return real == expect
 
@@ -172,6 +176,8 @@ def value_to_string(value):
         return map_to_string(value)
     elif type(value) is set:
         return set_to_string(value)
+    elif isinstance(value, ValueWrapper):
+        return _value_to_string(value._value)
     else:
         return str(value)
 
@@ -250,13 +256,11 @@ def step_to_string(step):
 
 
 def path_to_string(path):
-    return vertex_to_string(path.src) \
-        + ''.join(map(step_to_string, path.steps))
+    return vertex_to_string(path.src) + ''.join(map(step_to_string, path.steps))
 
 
 def dataset_to_string(dataset):
-    column_names = ','.join(
-        map(lambda x: x.decode('utf-8'), dataset.column_names))
+    column_names = ','.join(map(lambda x: x.decode('utf-8'), dataset.column_names))
     rows = '\n'.join(map(row_to_string, dataset.rows))
     return '\n'.join([column_names, rows])
 
@@ -444,3 +448,17 @@ def get_conn_pool(host: str, port: int):
     if not pool.init([(host, port)], config):
         raise Exception("Fail to init connection pool.")
     return pool
+
+
+def resultset_to_dict_str(result: ResultSet) -> dict:
+    """convert result set to a dict, key: colume, value: [recond1, recond2]"""
+    assert result.is_succeeded(), "execute statement failed, error message is {}".format(
+        result.error_msg()
+    )
+    keys = result.keys()
+    d = {k: [] for k in keys}
+    for index,record in enumerate(result):
+        key = keys[index]
+        for value in record:
+            d[key].append(value_to_string(value))
+    return d

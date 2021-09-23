@@ -10,5 +10,6 @@ pytest-bdd==4.0.2
 pytest-yapf3==0.5.1
 filelock==3.0.12
 ply==3.10
-pyyaml==5.4
+pyyaml==5.4.1
 fastcov==1.13
+kubernetes==18.20.0

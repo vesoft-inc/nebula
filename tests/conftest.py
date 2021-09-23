@@ -8,6 +8,7 @@
 import json
 import os
 import pytest
+import logging
 
 from tests.common.configs import all_configs
 from tests.common.types import SpaceDesc
@@ -44,15 +45,26 @@ def pytest_runtest_logreport(report):
 
 def pytest_addoption(parser):
     for config in all_configs:
-        parser.addoption(config,
-                         dest=all_configs[config][0],
-                         default=all_configs[config][1],
-                         help=all_configs[config][2])
+        parser.addoption(
+            config,
+            dest=all_configs[config][0],
+            default=all_configs[config][1],
+            help=all_configs[config][2],
+        )
 
-    parser.addoption("--build_dir",
-                     dest="build_dir",
-                     default=f"{CURR_PATH}/../build",
-                     help="Nebula Graph CMake build directory")
+    parser.addoption(
+        "--build_dir",
+        dest="build_dir",
+        default=f"{CURR_PATH}/../build",
+        help="Nebula Graph CMake build directory",
+    )
+
+    parser.addoption(
+        "--kubeconfig",
+        dest="kubeconfig",
+        default="~/.kube/config",
+        help="k8s configfile, would create nebulacluster via this config",
+    )
 
 
 def pytest_configure(config):
@@ -68,6 +80,7 @@ def pytest_configure(config):
     pytest.cmdline.stop_nebula = config.getoption("stop_nebula")
     pytest.cmdline.rm_dir = config.getoption("rm_dir")
     pytest.cmdline.debug_log = config.getoption("debug_log")
+    pytest.cmdline.kubeconfig = config.getoption("kubeconfig")
 
 
 def get_port():
@@ -78,6 +91,7 @@ def get_port():
             raise Exception(f"Invalid port: {port}")
         return port[0]
 
+
 def get_ports():
     with open(NB_TMP_PATH, "r") as f:
         data = json.loads(f.readline())
@@ -85,6 +99,26 @@ def get_ports():
         if port is None:
             raise Exception(f"Invalid port: {port}")
         return port
+
+
+@pytest.fixture(scope="class")
+def class_fixture_variables():
+    """save class scope fixture, used for session update.
+
+    Returns:
+        [type]: [description]
+    """
+    res = dict(
+        pool=None,
+        session=None,
+        cluster_name=None,
+    )
+    yield res
+    if res["session"] is not None:
+        res["session"].release()
+    if res["pool"] is not None:
+        res["pool"].close()
+
 
 @pytest.fixture(scope="session")
 def conn_pool_to_first_graph_service(pytestconfig):
@@ -95,6 +129,7 @@ def conn_pool_to_first_graph_service(pytestconfig):
     yield pool
     pool.close()
 
+
 @pytest.fixture(scope="session")
 def conn_pool_to_second_graph_service(pytestconfig):
     addr = pytestconfig.getoption("address")
@@ -104,9 +139,11 @@ def conn_pool_to_second_graph_service(pytestconfig):
     yield pool
     pool.close()
 
+
 @pytest.fixture(scope="session")
 def conn_pool(conn_pool_to_first_graph_service):
     return conn_pool_to_first_graph_service
+
 
 @pytest.fixture(scope="class")
 def session_from_first_conn_pool(conn_pool_to_first_graph_service, pytestconfig):
@@ -116,6 +153,7 @@ def session_from_first_conn_pool(conn_pool_to_first_graph_service, pytestconfig)
     yield sess
     sess.release()
 
+
 @pytest.fixture(scope="class")
 def session_from_second_conn_pool(conn_pool_to_second_graph_service, pytestconfig):
     user = pytestconfig.getoption("user")
@@ -124,9 +162,14 @@ def session_from_second_conn_pool(conn_pool_to_second_graph_service, pytestconfi
     yield sess
     sess.release()
 
+
 @pytest.fixture(scope="class")
-def session(session_from_first_conn_pool):
+def session(session_from_first_conn_pool, class_fixture_variables):
+    if class_fixture_variables.get('session', None) is not None:
+        return class_fixture_variables.get('session')
+
     return session_from_first_conn_pool
+
 
 def load_csv_data_once(space: str):
     with open(SPACE_TMP_PATH, "r") as f:
@@ -153,8 +196,9 @@ def load_student_data():
 
 # TODO(yee): Delete this when we migrate all test cases
 @pytest.fixture(scope="class")
-def workarround_for_class(request, pytestconfig, conn_pool,
-                          session, load_nba_data, load_student_data):
+def workarround_for_class(
+    request, pytestconfig, conn_pool, session, load_nba_data, load_student_data
+):
     if request.cls is None:
         return
 

@@ -4,6 +4,7 @@
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
 import functools
+import logging
 import os
 import time
 import pytest
@@ -14,6 +15,7 @@ import threading
 
 from nebula2.common.ttypes import Value, ErrorCode
 from nebula2.data.DataObject import ValueWrapper
+from nebula2.gclient.net import Session
 from pytest_bdd import given, parsers, then, when
 
 from tests.common.dataset_printer import DataSetPrinter
@@ -28,7 +30,10 @@ from tests.common.utils import (
     check_resp,
     response,
     resp_ok,
+    get_conn_pool,
+    resultset_to_dict_str,
 )
+from tests.common.k8s import K8SUtil
 from tests.tck.utils.table import dataset, table
 from tests.tck.utils.nbv import murmurhash2
 
@@ -167,6 +172,7 @@ def new_space(request, options, session, graph_spaces):
     graph_spaces["space_desc"] = space_desc
     graph_spaces["drop_space"] = True
 
+
 @given(parse("Any graph"))
 def new_space(request, session, graph_spaces):
     name = "EmptyGraph_" + space_generator()
@@ -182,6 +188,7 @@ def new_space(request, session, graph_spaces):
     graph_spaces["space_desc"] = space_desc
     graph_spaces["drop_space"] = True
 
+
 @given(parse('load "{data}" csv data to a new space'))
 def import_csv_data(request, data, graph_spaces, session, pytestconfig):
     data_dir = os.path.join(DATA_DIR, normalize_outline_scenario(request, data))
@@ -195,6 +202,37 @@ def import_csv_data(request, data, graph_spaces, session, pytestconfig):
     graph_spaces["drop_space"] = True
 
 
+@given(
+    parse(
+        'a nebulacluster with {graphd_num} graphd and {metad_num} metad and {storaged_num} storaged'
+    )
+)
+def given_nebulacluster(
+    request, graphd_num, metad_num, storaged_num, class_fixture_variables, pytestconfig
+):
+    # TODO support more configuration, e.g. --heartbeat_interval_secs
+    # currently, nebula-operator saves the configuration in k8s configmap.
+
+    # 1. create nebula-operator
+    # 2. create svc, using nodeport
+    # 3. initial the nebula session
+    user = pytestconfig.getoption("user")
+    password = pytestconfig.getoption("password")
+    kubeconfig = pytestconfig.getoption("kubeconfig")
+    k8s_util = K8SUtil(kubeconfig)
+    _, name = k8s_util.create_nebulacluster(graphd_num, metad_num, storaged_num)
+    logging.info("the cluster name is {}".format(name))
+
+    graph_ip = k8s_util.get_one_node_ip()
+    graph_port = k8s_util.get_graph_svc_nodeport(name)
+    assert graph_ip is not None and graph_port is not None
+    pool = get_conn_pool(graph_ip, graph_port)
+    sess = pool.get_session(user, password)
+    class_fixture_variables["session"] = sess
+    class_fixture_variables["cluster_name"] = name
+    class_fixture_variables["pool"] = pool
+
+
 def exec_query(request, ngql, session, graph_spaces, need_try: bool = False):
     if not ngql:
         return
@@ -205,6 +243,14 @@ def exec_query(request, ngql, session, graph_spaces, need_try: bool = False):
 
 @when(parse("executing query:\n{query}"))
 def executing_query(query, graph_spaces, session, request):
+    ngql = combine_query(query)
+    exec_query(request, ngql, session, graph_spaces)
+
+
+@when(parse("executing query, fill replace holders with {variable}:\n{query}"))
+def executing_query(variable, query, class_fixture_variables, graph_spaces, session, request):
+    value = class_fixture_variables.get(variable)
+    query = query.replace("{}", value)
     ngql = combine_query(query)
     exec_query(request, ngql, session, graph_spaces)
 
@@ -265,7 +311,6 @@ def line_number(steps, result):
 # IN literal `1, 2, 3...'
 def parse_list(s: str):
     return [int(num) for num in s.split(',')]
-
 
 
 def hash_columns(ds, hashed_columns):
@@ -462,6 +507,95 @@ def drop_used_space(session, graph_spaces):
         response(session, stmt)
 
 
+@then(parse("verify the space partition, space is {space_name}"))
+def then_verify_space_parts(session, class_fixture_variables, graph_spaces, space_name):
+    """verify the space parts.
+    1. partition leaders should be in zone hosts.
+    2. peer in a zone should be only one replica.
+    """
+    if class_fixture_variables.get("session", None) is not None:
+        session = class_fixture_variables.get("session")
+
+    assert isinstance(session, Session)
+    res = session.execute("DESC SPACE {}".format(space_name))
+    assert res.is_succeeded(), res.error_msg()
+    res_dict = resultset_to_dict_str(res)
+    part_num, replica_fator, group = (
+        res_dict["Partition Number"][0],
+        res_dict["Replica Factor"][0],
+        res_dict["Group"][0],
+    )
+    logging.info("part_num is {}, replica_fator is {}, group is {}".format(part_num, replica_fator, group))
+    hosts = get_hosts_in_group(session, group)
+    logging.info("host is {}".format(hosts))
+    res = session.execute("USE {};SHOW PARTS".format(space_name))
+    assert res.is_succeeded(), res.error_msg()
+    res_dict = resultset_to_dict_str(res)
+
+    part_id_list, leader_list, peers_list = (
+        res_dict["Partition ID"],
+        res_dict["Leader"],
+        res_dict["Peers"],
+    )
+    assert int(part_num) == len(part_id_list), "expected partition number is {}, actual is {}".format(
+        part_num, len(part_id_list)
+    )
+    for index, part_id in enumerate(part_id_list):
+        leader = leader_list[index].replace('"', "")
+        peers = peers_list[index].replace('"', "")
+        peers = [x.strip() for x in peers.split(",")]
+        zone_set = set()
+        if leader not in hosts:
+            raise Exception(
+                "leader is not in hosts, part id is {}, leader is {}, hosts is {}".format(
+                    part_id, leader, ",".join(hosts.keys())
+                )
+            )
+        # peers in hosts, and the zones are not same.
+        for peer in peers:
+            if peer not in hosts:
+                raise Exception(
+                    "peer is not in hosts, part id is {}, peer is {}, hosts is {}".format(
+                        part_id, peer, ",".join(hosts.keys)
+                    )
+                )
+            zone_set.add(hosts[peer])
+        if replica_fator != str(len(zone_set)):
+            raise Exception(
+                "expected zone number is {}, actual is {}".format(replica_fator, len(zone_set))
+            )
+
+
+def get_hosts_in_group(session, group_name):
+    """get all storage hosts in one group, key: "ip:port", values: "zone" """
+    result = {}
+    res = session.execute("SHOW GROUPS")
+    res_dict = resultset_to_dict_str(res)
+    zones = []
+    for index, name in enumerate(res_dict["Name"]):
+        if name == group_name:
+            zones.append(res_dict["Zone"][index])
+
+    res = session.execute("SHOW ZONES")
+    res_dict = resultset_to_dict_str(res)
+    for index, zone_name in enumerate(res_dict["Name"]):
+        if zone_name in zones:
+            host = res_dict["Host"][index].replace('"', "")
+            key = "{}:{}".format(host, res_dict["Port"][index])
+            result[key] = zone_name
+    return result
+
+
+@then("drop the used nebulacluster")
+def then_drop_used_cluster(session, class_fixture_variables, graph_spaces, pytestconfig):
+    kubeconfig = pytestconfig.getoption("kubeconfig")
+    k8s_util = K8SUtil(kubeconfig)
+    name = class_fixture_variables["cluster_name"]
+    # release class_fixture_variables
+    class_fixture_variables["session"] = None
+    k8s_util.delete_nebulacluster(name)
+
+
 @then(parse("the execution plan should be:\n{plan}"))
 def check_plan(plan, graph_spaces):
     resp = graph_spaces["result_set"]
@@ -476,6 +610,7 @@ def check_plan(plan, graph_spaces):
         rows[i] = row
     differ = PlanDiffer(resp.plan_desc(), expect)
     assert differ.diff(), differ.err_msg()
+
 
 @when(parse("executing query via graph {index:d}:\n{query}"))
 def executing_query(query, index, graph_spaces, session_from_first_conn_pool, session_from_second_conn_pool, request):
