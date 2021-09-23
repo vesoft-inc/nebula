@@ -65,6 +65,9 @@ struct List {
   size_t size() const { return values.size(); }
 
   std::string toString() const;
+  folly::dynamic toJson() const;
+  // Extract the metadata of each element
+  folly::dynamic getMetaData() const;
 };
 
 inline std::ostream& operator<<(std::ostream& os, const List& l) { return os << l.toString(); }

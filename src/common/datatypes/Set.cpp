@@ -22,4 +22,24 @@ std::string Set::toString() const {
   return os.str();
 }
 
+folly::dynamic Set::toJson() const {
+  auto setJsonObj = folly::dynamic::array();
+
+  for (const auto& val : values) {
+    setJsonObj.push_back(val.toJson());
+  }
+
+  return setJsonObj;
+}
+
+folly::dynamic Set::getMetaData() const {
+  auto setMetadataObj = folly::dynamic::array();
+
+  for (const auto& val : values) {
+    setMetadataObj.push_back(val.getMetaData());
+  }
+
+  return setMetadataObj;
+}
+
 }  // namespace nebula

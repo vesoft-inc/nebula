@@ -61,16 +61,16 @@ sess: currdir
 	python3 -m pytest -m "not skip" -k "not tck" job/test_session.py
 
 jobs: currdir
-	python3 -m pytest -m "not skip" -k "not tck" job/test_jobs.py
+	python3 -m pytest -m "not skip" tck/steps/test_jobs.py
 
-test: sess jobs
+test: sess
 	python3 -m pytest -n$(J) --dist=loadfile -m "not skip" -k "not tck" $(TEST_DIR)
 
 slow-query: currdir
 	python3 -m pytest -n$(J) -m "not skip" tck/steps/test_kill_slow_query_via_same_service.py && \
 	python3 -m pytest -n$(J) -m "not skip" tck/steps/test_kill_slow_query_via_different_service.py
 
-tck: slow-query
+tck: jobs slow-query
 	python3 -m pytest -n$(J) -m "not skip" tck/steps/test_tck.py
 
 fail: currdir
