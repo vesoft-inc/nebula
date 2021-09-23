@@ -37,7 +37,8 @@ void GetNeighborsProcessor::doProcess(const cpp2::GetNeighborsRequest& req) {
     onFinished();
     return;
   }
-  planContext_ = std::make_unique<PlanContext>(env_, spaceId_, spaceVidLen_, isIntId_);
+  this->planContext_ = std::make_unique<PlanContext>(
+      this->env_, spaceId_, this->spaceVidLen_, this->isIntId_, req.common_ref());
 
   // build TagContext and EdgeContext
   retCode = checkAndBuildContexts(req);
@@ -98,6 +99,9 @@ void GetNeighborsProcessor::runInSingleThread(const cpp2::GetNeighborsRequest& r
         }
       }
     }
+  }
+  if (FLAGS_profile_storage_detail) {
+    profilePlan(plan);
   }
   onProcessFinished();
   onFinished();
@@ -163,6 +167,9 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetNeighborsProce
           if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
             return std::make_pair(ret, partId);
           }
+        }
+        if (FLAGS_profile_storage_detail) {
+          profilePlan(plan);
         }
         return std::make_pair(nebula::cpp2::ErrorCode::SUCCEEDED, partId);
       });
@@ -446,5 +453,12 @@ nebula::cpp2::ErrorCode GetNeighborsProcessor::checkStatType(
 
 void GetNeighborsProcessor::onProcessFinished() { resp_.set_vertices(std::move(resultDataSet_)); }
 
+void GetNeighborsProcessor::profilePlan(StoragePlan<VertexID>& plan) {
+  auto& nodes = plan.getNodes();
+  std::lock_guard<std::mutex> lck(BaseProcessor<cpp2::GetNeighborsResponse>::profileMut_);
+  for (auto& node : nodes) {
+    profileDetail(node->name_, node->duration_.elapsedInUSec());
+  }
+}
 }  // namespace storage
 }  // namespace nebula

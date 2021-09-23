@@ -72,7 +72,7 @@ class FetchEdgesValidator final : public Validator {
   bool dedup_{false};
   int64_t limit_{std::numeric_limits<int64_t>::max()};
   std::vector<storage::cpp2::OrderBy> orderBy_{};
-  std::string filter_{""};
+  Expression* filter_{nullptr};
   // valid when yield expression not require storage
   // So expression like these will be evaluate in Project Executor
   bool withYield_{false};

@@ -63,7 +63,8 @@ folly::Future<Status> DeleteVerticesExecutor::deleteVertices() {
   time::Duration deleteVertTime;
   return qctx()
       ->getStorageClient()
-      ->deleteVertices(spaceId, std::move(vertices))
+      ->deleteVertices(
+          spaceId, qctx()->rctx()->session()->id(), qctx()->plan()->id(), std::move(vertices))
       .via(runner())
       .ensure([deleteVertTime]() {
         VLOG(1) << "Delete vertices time: " << deleteVertTime.elapsedInUSec() << "us";
@@ -116,7 +117,8 @@ folly::Future<Status> DeleteTagsExecutor::deleteTags() {
   time::Duration deleteTagTime;
   return qctx()
       ->getStorageClient()
-      ->deleteTags(spaceId, std::move(delTags))
+      ->deleteTags(
+          spaceId, qctx()->rctx()->session()->id(), qctx()->plan()->id(), std::move(delTags))
       .via(runner())
       .ensure([deleteTagTime]() {
         VLOG(1) << "Delete vertices time: " << deleteTagTime.elapsedInUSec() << "us";
@@ -198,7 +200,8 @@ folly::Future<Status> DeleteEdgesExecutor::deleteEdges() {
   time::Duration deleteEdgeTime;
   return qctx()
       ->getStorageClient()
-      ->deleteEdges(spaceId, std::move(edgeKeys))
+      ->deleteEdges(
+          spaceId, qctx()->rctx()->session()->id(), qctx()->plan()->id(), std::move(edgeKeys))
       .via(runner())
       .ensure([deleteEdgeTime]() {
         VLOG(1) << "Delete edge time: " << deleteEdgeTime.elapsedInUSec() << "us";

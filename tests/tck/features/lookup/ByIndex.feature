@@ -4,11 +4,8 @@
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 Feature: Lookup by index itself
 
-  Background:
-    Given an empty graph
-    And load "nba" csv data to a new space
-
   Scenario: [1] tag index
+    Given a graph with space named "nba"
     When executing query:
       """
       LOOKUP ON team
@@ -81,9 +78,9 @@ Feature: Lookup by index itself
       | '76ers'         | '76ers'         |
       | 'Trail Blazers' | 'Trail Blazers' |
       | 'Bulls'         | 'Bulls'         |
-    And drop the used space
 
   Scenario: [1] Tag TODO
+    Given a graph with space named "nba"
     When executing query:
       """
       LOOKUP ON team WHERE 1 + 1 == 2
@@ -104,9 +101,9 @@ Feature: Lookup by index itself
       LOOKUP ON player WHERE player.age > -9223372036854775808-1
       """
     Then a ExecutionError should be raised at runtime: result of (-9223372036854775808-1) cannot be represented as an integer
-    And drop the used space
 
   Scenario: [2] edge index
+    Given a graph with space named "nba"
     When executing query:
       """
       LOOKUP ON serve
@@ -423,9 +420,9 @@ Feature: Lookup by index itself
       | 'Dwight Howard'         | 'Hawks'         | 0       | 2016      |
       | 'Dwight Howard'         | 'Hornets'       | 0       | 2017      |
       | 'Dwight Howard'         | 'Wizards'       | 0       | 2018      |
-    And drop the used space
 
   Scenario: [2] Edge TODO
+    Given a graph with space named "nba"
     When executing query:
       """
       LOOKUP ON serve WHERE 1 + 1 == 2
@@ -446,9 +443,9 @@ Feature: Lookup by index itself
       LOOKUP ON serve WHERE serve.start_year == serve.end_year YIELD serve.start_year AS startYear
       """
     Then a SemanticError should be raised at runtime:
-    And drop the used space
 
   Scenario: [1] Compare INT and FLOAT during IndexScan
+    Given a graph with space named "nba"
     When executing query:
       """
       LOOKUP ON player WHERE player.age == 40 YIELD player.age AS Age
@@ -549,10 +546,11 @@ Feature: Lookup by index itself
       | "Amar'e Stoudemire" | 36  | "Amar'e Stoudemire" |
       | "Boris Diaw"        | 36  | "Boris Diaw"        |
       | "Tony Parker"       | 36  | "Tony Parker"       |
-    And drop the used space
 
   Scenario: [2] Compare INT and FLOAT during IndexScan
-    Given having executed:
+    Given an empty graph
+    And load "nba" csv data to a new space
+    And having executed:
       """
       CREATE TAG weight (WEIGHT double);
       CREATE TAG INDEX weight_index ON weight(WEIGHT);

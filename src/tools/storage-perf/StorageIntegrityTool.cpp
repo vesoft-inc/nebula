@@ -170,7 +170,8 @@ class IntegrityTest {
   void addVertex(std::vector<VertexID>& prev, std::vector<VertexID>& cur, VertexID startId) {
     std::unordered_map<TagID, std::vector<std::string>> propNames;
     propNames[tagId_].emplace_back(propName_);
-    auto future = client_->addVertices(spaceId_, genVertices(prev, cur, startId), propNames, true);
+    auto future =
+        client_->addVertices(spaceId_, 0, 0, genVertices(prev, cur, startId), propNames, true);
     auto resp = std::move(future).get();
     if (!resp.succeeded()) {
       for (auto& err : resp.failedParts()) {
@@ -225,7 +226,7 @@ class IntegrityTest {
       tagProp.set_tag(tagId_);
       (*tagProp.props_ref()).emplace_back(propName_);
       DataSet dataset({kVid});
-      auto future = client_->getProps(spaceId_, dataset, &props, nullptr, nullptr);
+      auto future = client_->getProps(spaceId_, 0, 0, dataset, &props, nullptr, nullptr);
       auto resp = std::move(future).get();
       if (!resp.succeeded()) {
         LOG(ERROR) << "Failed to fetch props of vertex " << nextId;

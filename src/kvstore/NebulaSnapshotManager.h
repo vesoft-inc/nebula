@@ -31,9 +31,9 @@ class NebulaSnapshotManager : public raftex::SnapshotManager {
                    raftex::SnapshotCallback& cb,
                    std::vector<std::string>& data,
                    int64_t& totalCount,
-                   int64_t& totalSize);
+                   int64_t& totalSize,
+                   kvstore::RateLimiter* rateLimiter);
 
-  std::unique_ptr<RateLimiter> rateLimiter_;
   NebulaStore* store_;
 };
 

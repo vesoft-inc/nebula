@@ -24,8 +24,6 @@ RebuildIndexTask::RebuildIndexTask(StorageEnv* env, TaskContext&& ctx)
   // 10Mb, which is non-trival.
   LOG(INFO) << "Rebuild index task is rate limited to " << FLAGS_rebuild_index_part_rate_limit
             << " for each subtask";
-  rateLimiter_.reset(new kvstore::RateLimiter(FLAGS_rebuild_index_part_rate_limit,
-                                              FLAGS_rebuild_index_part_rate_limit));
 }
 
 ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>> RebuildIndexTask::genSubTasks() {
@@ -80,9 +78,9 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>> RebuildIndexTask::ge
 nebula::cpp2::ErrorCode RebuildIndexTask::invoke(GraphSpaceID space,
                                                  PartitionID part,
                                                  const IndexItems& items) {
+  auto rateLimiter = std::make_unique<kvstore::RateLimiter>(FLAGS_rebuild_index_part_rate_limit,
+                                                            FLAGS_rebuild_index_part_rate_limit);
   // TaskMananger will make sure that there won't be cocurrent invoke of a given part
-  rateLimiter_->add(space, part);
-  SCOPE_EXIT { rateLimiter_->remove(space, part); };
   auto result = removeLegacyLogs(space, part);
   if (result != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << "Remove legacy logs at part: " << part << " failed";
@@ -97,7 +95,7 @@ nebula::cpp2::ErrorCode RebuildIndexTask::invoke(GraphSpaceID space,
   env_->rebuildIndexGuard_->assign(std::make_tuple(space, part), IndexState::BUILDING);
 
   LOG(INFO) << "Start building index";
-  result = buildIndexGlobal(space, part, items);
+  result = buildIndexGlobal(space, part, items, rateLimiter.get());
   if (result != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << "Building index failed";
     return nebula::cpp2::ErrorCode::E_REBUILD_INDEX_FAILED;
@@ -106,7 +104,7 @@ nebula::cpp2::ErrorCode RebuildIndexTask::invoke(GraphSpaceID space,
   }
 
   LOG(INFO) << folly::sformat("Processing operation logs, space={}, part={}", space, part);
-  result = buildIndexOnOperations(space, part);
+  result = buildIndexOnOperations(space, part, rateLimiter.get());
   if (result != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << folly::sformat(
         "Building index with operation logs failed, space={}, part={}", space, part);
@@ -118,8 +116,8 @@ nebula::cpp2::ErrorCode RebuildIndexTask::invoke(GraphSpaceID space,
   return result;
 }
 
-nebula::cpp2::ErrorCode RebuildIndexTask::buildIndexOnOperations(GraphSpaceID space,
-                                                                 PartitionID part) {
+nebula::cpp2::ErrorCode RebuildIndexTask::buildIndexOnOperations(
+    GraphSpaceID space, PartitionID part, kvstore::RateLimiter* rateLimiter) {
   if (canceled_) {
     LOG(INFO) << folly::sformat("Rebuild index canceled, space={}, part={}", space, part);
     return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -154,7 +152,7 @@ nebula::cpp2::ErrorCode RebuildIndexTask::buildIndexOnOperations(GraphSpaceID sp
 
       batchHolder->remove(opKey.str());
       if (batchHolder->size() > FLAGS_rebuild_index_batch_size) {
-        auto ret = writeOperation(space, part, batchHolder.get());
+        auto ret = writeOperation(space, part, batchHolder.get(), rateLimiter);
         if (nebula::cpp2::ErrorCode::SUCCEEDED != ret) {
           LOG(ERROR) << "Write Operation Failed";
           return ret;
@@ -163,7 +161,7 @@ nebula::cpp2::ErrorCode RebuildIndexTask::buildIndexOnOperations(GraphSpaceID sp
       operationIter->next();
     }
 
-    auto ret = writeOperation(space, part, batchHolder.get());
+    auto ret = writeOperation(space, part, batchHolder.get(), rateLimiter);
     if (nebula::cpp2::ErrorCode::SUCCEEDED != ret) {
       LOG(ERROR) << "Write Operation Failed";
       return ret;
@@ -219,10 +217,11 @@ nebula::cpp2::ErrorCode RebuildIndexTask::removeLegacyLogs(GraphSpaceID space, P
 nebula::cpp2::ErrorCode RebuildIndexTask::writeData(GraphSpaceID space,
                                                     PartitionID part,
                                                     std::vector<kvstore::KV> data,
-                                                    size_t batchSize) {
+                                                    size_t batchSize,
+                                                    kvstore::RateLimiter* rateLimiter) {
   folly::Baton<true, std::atomic> baton;
   auto result = nebula::cpp2::ErrorCode::SUCCEEDED;
-  rateLimiter_->consume(space, part, batchSize);
+  rateLimiter->consume(batchSize);
   env_->kvstore_->asyncMultiPut(
       space, part, std::move(data), [&result, &baton](nebula::cpp2::ErrorCode code) {
         if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -236,11 +235,12 @@ nebula::cpp2::ErrorCode RebuildIndexTask::writeData(GraphSpaceID space,
 
 nebula::cpp2::ErrorCode RebuildIndexTask::writeOperation(GraphSpaceID space,
                                                          PartitionID part,
-                                                         kvstore::BatchHolder* batchHolder) {
+                                                         kvstore::BatchHolder* batchHolder,
+                                                         kvstore::RateLimiter* rateLimiter) {
   folly::Baton<true, std::atomic> baton;
   auto result = nebula::cpp2::ErrorCode::SUCCEEDED;
   auto encoded = encodeBatchValue(batchHolder->getBatch());
-  rateLimiter_->consume(space, part, batchHolder->size());
+  rateLimiter->consume(batchHolder->size());
   env_->kvstore_->asyncAppendBatch(
       space, part, std::move(encoded), [&result, &baton](nebula::cpp2::ErrorCode code) {
         if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {

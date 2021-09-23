@@ -37,7 +37,7 @@ Status FetchVerticesValidator::toPlan() {
                                             dedup_,
                                             std::move(orderBy_),
                                             limit_,
-                                            std::move(filter_));
+                                            filter_);
   getVerticesNode->setInputVar(vidsVar);
   getVerticesNode->setColNames(gvColNames_);
   // pipe will set the input variable

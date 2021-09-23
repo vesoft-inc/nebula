@@ -22,7 +22,7 @@ namespace storage {
 // target cell of a row.
 class GetNeighborsNode : public QueryNode<VertexID> {
  public:
-  using RelNode::execute;
+  using RelNode::doExecute;
 
   GetNeighborsNode(RuntimeContext* context,
                    IterateNode<VertexID>* hashJoinNode,
@@ -35,14 +35,18 @@ class GetNeighborsNode : public QueryNode<VertexID> {
         upstream_(upstream),
         edgeContext_(edgeContext),
         resultDataSet_(resultDataSet),
-        limit_(limit) {}
+        limit_(limit) {
+    name_ = "GetNeighborsNode";
+  }
 
-  nebula::cpp2::ErrorCode execute(PartitionID partId, const VertexID& vId) override {
-    auto ret = RelNode::execute(partId, vId);
+  nebula::cpp2::ErrorCode doExecute(PartitionID partId, const VertexID& vId) override {
+    auto ret = RelNode::doExecute(partId, vId);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
       return ret;
     }
-
+    if (context_->isPlanKilled()) {
+      return nebula::cpp2::ErrorCode::E_PLAN_IS_KILLED;
+    }
     if (context_->resultStat_ == ResultStatus::ILLEGAL_DATA) {
       return nebula::cpp2::ErrorCode::E_INVALID_DATA;
     }
@@ -90,6 +94,9 @@ class GetNeighborsNode : public QueryNode<VertexID> {
     int64_t edgeRowCount = 0;
     nebula::List list;
     for (; upstream_->valid(); upstream_->next(), ++edgeRowCount) {
+      if (context_->isPlanKilled()) {
+        return nebula::cpp2::ErrorCode::E_PLAN_IS_KILLED;
+      }
       if (edgeRowCount >= limit_) {
         return nebula::cpp2::ErrorCode::SUCCEEDED;
       }
@@ -153,7 +160,7 @@ class GetNeighborsSampleNode : public GetNeighborsNode {
     }
 
     RowReaderWrapper reader;
-    auto samples = std::move(*sampler_).samples();
+    auto samples = sampler_->samples();
     for (auto& sample : samples) {
       auto columnIdx = std::get<4>(sample);
       // add edge prop value to the target column
