@@ -74,6 +74,6 @@ Extra performance cost.
 
 # Unresolved questions
 
-The thrift support the dual plaintext/SSL mode by default. This enables plaintext client communicate with SSL/TLS server in plaintext protocol. And it's unable to configure.
+The thrift support dual plaintext/SSL mode by default. This enables plaintext client to communicate with SSL/TLS server in plaintext protocol. And it's unable to configure.
 
 # Future possibilities
