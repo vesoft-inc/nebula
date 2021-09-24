@@ -8,7 +8,7 @@
 #include "graph/planner/plan/Algo.h"
 #include "graph/planner/plan/Logic.h"
 #include "graph/util/ExpressionUtils.h"
-#include "graph/util/QueryUtil.h"
+#include "graph/util/PlannerUtil.h"
 #include "graph/util/SchemaUtil.h"
 #include "graph/validator/Validator.h"
 
@@ -62,15 +62,15 @@ void PathPlanner::doBuildEdgeProps(std::unique_ptr<std::vector<EdgeProp>>& edgeP
 void PathPlanner::buildStart(Starts& starts, std::string& vidsVar, bool reverse) {
   auto qctx = pathCtx_->qctx;
   if (!starts.vids.empty() && starts.originalSrc == nullptr) {
-    QueryUtil::buildConstantInput(qctx, starts, vidsVar);
+    PlannerUtil::buildConstantInput(qctx, starts, vidsVar);
   } else {
     if (reverse) {
-      auto subPlan = QueryUtil::buildRuntimeInput(qctx, starts);
+      auto subPlan = PlannerUtil::buildRuntimeInput(qctx, starts);
       pathCtx_->runtimeToProject = subPlan.tail;
       pathCtx_->runtimeToDedup = subPlan.root;
       vidsVar = pathCtx_->runtimeToDedup->outputVar();
     } else {
-      auto subPlan = QueryUtil::buildRuntimeInput(qctx, starts);
+      auto subPlan = PlannerUtil::buildRuntimeInput(qctx, starts);
       pathCtx_->runtimeFromProject = subPlan.tail;
       pathCtx_->runtimeFromDedup = subPlan.root;
       vidsVar = pathCtx_->runtimeFromDedup->outputVar();

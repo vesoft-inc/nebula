@@ -950,6 +950,12 @@ TEST_F(QueryValidatorTest, GoInvalid) {
     auto result = checkResult(query);
     EXPECT_EQ(std::string(result.message()), "SemanticError: Duplicate Column Name : `id'");
   }
+  {
+    std::string query = "GO FROM id(vertex) OVER * ";
+    auto result = checkResult(query);
+    EXPECT_EQ(std::string(result.message()),
+              "SemanticError: `id(VERTEX)' is not an evaluable expression.");
+  }
 }
 
 TEST_F(QueryValidatorTest, Limit) {
