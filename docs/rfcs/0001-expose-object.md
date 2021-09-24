@@ -4,19 +4,19 @@ Provide the build facility to expose objects of nebula for outside project.
 
 # Motivation
 
-Some outside project will use some components of nebula directly, such as cpp client will reference the `common` and `interface` code. And also useful to `UDF` and `extension` system etc. developing in future.
+Some outside projects will use some components of nebula directly, such as CPP client will reference the `common` and `interface` code. And also useful to `UDF` and `extension` systems etc. developing in future.
 
 # Usage explanation
 
 For the module user, just try these steps:
 
-1. Include the nebula project, build the objects you need, such as `cmake --build --target base_obj` will build the object contains all code in `base` source folder.
+1. Include the nebula project, build the objects you need, such as `cmake --build --target base_obj` which will build the object containing all code in `base` source folder.
 2. Find the nebula as package.
-3. Include the reference headers, link with used objects. And the object will add prefix `nebula_` to name when exposed to outside, so user need link to `nebula_base_obj` instead of `base_obj`.
+3. Include the reference headers, link with used objects. A prefix `nebula_` will be added to the object's name when exposed to outside, so user should link to `nebula_base_obj` instead of `base_obj`.
 
 # Design explanation
 
-There is a cmake macro to simplify expose object:
+There is a cmake macro to simplify exposing object:
 
 ```cmake
 macro(nebula_add_export_library name type)
