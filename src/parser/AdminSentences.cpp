@@ -16,6 +16,8 @@ namespace nebula {
 
 std::string ShowHostsSentence::toString() const { return std::string("SHOW HOSTS"); }
 
+std::string ShowMetaLeaderSentence::toString() const { return std::string("SHOW META LEADER"); }
+
 std::string ShowSpacesSentence::toString() const { return std::string("SHOW SPACES"); }
 
 std::string ShowCreateSpaceSentence::toString() const {

@@ -37,7 +37,13 @@ class ReservoirSampling final {
     return false;
   }
 
-  std::vector<T>&& samples() && { return std::move(samples_); }
+  std::vector<T> samples() {
+    auto result = std::move(samples_);
+    samples_.clear();
+    samples_.reserve(num_);
+    cnt_ = 0;
+    return result;
+  }
 
  private:
   std::vector<T> samples_;

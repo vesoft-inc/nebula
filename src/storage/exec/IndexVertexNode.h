@@ -16,19 +16,23 @@ namespace storage {
 template <typename T>
 class IndexVertexNode final : public RelNode<T> {
  public:
-  using RelNode<T>::execute;
+  using RelNode<T>::doExecute;
 
   IndexVertexNode(RuntimeContext* context,
                   IndexScanNode<T>* indexScanNode,
                   const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas,
-                  const std::string& schemaName)
+                  const std::string& schemaName,
+                  int64_t limit = -1)
       : context_(context),
         indexScanNode_(indexScanNode),
         schemas_(schemas),
-        schemaName_(schemaName) {}
+        schemaName_(schemaName),
+        limit_(limit) {
+    RelNode<T>::name_ = "IndexVertexNode";
+  }
 
-  nebula::cpp2::ErrorCode execute(PartitionID partId) override {
-    auto ret = RelNode<T>::execute(partId);
+  nebula::cpp2::ErrorCode doExecute(PartitionID partId) override {
+    auto ret = RelNode<T>::doExecute(partId);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
       return ret;
     }
@@ -38,7 +42,11 @@ class IndexVertexNode final : public RelNode<T> {
     data_.clear();
     std::vector<VertexID> vids;
     auto* iter = static_cast<VertexIndexIterator*>(indexScanNode_->iterator());
+
     while (iter && iter->valid()) {
+      if (context_->isPlanKilled()) {
+        return nebula::cpp2::ErrorCode::E_PLAN_IS_KILLED;
+      }
       if (!iter->val().empty() && ttlProp.first) {
         auto v = IndexKeyUtils::parseIndexTTL(iter->val());
         if (CommonUtils::checkDataExpiredForTTL(
@@ -50,6 +58,7 @@ class IndexVertexNode final : public RelNode<T> {
       vids.emplace_back(iter->vId());
       iter->next();
     }
+    int64_t count = 0;
     for (const auto& vId : vids) {
       VLOG(1) << "partId " << partId << ", vId " << vId << ", tagId " << context_->tagId_;
       auto key = NebulaKeyUtils::vertexKey(context_->vIdLen(), partId, vId, context_->tagId_);
@@ -61,6 +70,9 @@ class IndexVertexNode final : public RelNode<T> {
         continue;
       } else {
         return ret;
+      }
+      if (limit_ > 0 && ++count >= limit_) {
+        break;
       }
     }
     return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -79,6 +91,7 @@ class IndexVertexNode final : public RelNode<T> {
   IndexScanNode<T>* indexScanNode_;
   const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas_;
   const std::string& schemaName_;
+  int64_t limit_;
   std::vector<kvstore::KV> data_;
 };
 

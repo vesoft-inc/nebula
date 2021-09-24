@@ -20,41 +20,61 @@ namespace storage {
 template <typename T>
 class IndexFilterNode final : public RelNode<T> {
  public:
-  using RelNode<T>::execute;
+  using RelNode<T>::doExecute;
 
   // evalExprByIndex_ is true, all fileds in filter is in index. No need to read
   // data anymore.
-  IndexFilterNode(IndexScanNode<T>* indexScanNode,
-                  StorageExpressionContext* exprCtx = nullptr,
-                  Expression* exp = nullptr,
-                  bool isEdge = false)
-      : indexScanNode_(indexScanNode), exprCtx_(exprCtx), filterExp_(exp), isEdge_(isEdge) {
+  IndexFilterNode(RuntimeContext* context,
+                  IndexScanNode<T>* indexScanNode,
+                  StorageExpressionContext* exprCtx,
+                  Expression* exp,
+                  bool isEdge,
+                  int64_t limit = -1)
+      : context_(context),
+        indexScanNode_(indexScanNode),
+        exprCtx_(exprCtx),
+        filterExp_(exp),
+        isEdge_(isEdge),
+        limit_(limit) {
     evalExprByIndex_ = true;
+    RelNode<T>::name_ = "IndexFilterNode";
   }
 
   // evalExprByIndex_ is false, some fileds in filter is out of index, which
   // need to read data.
-  IndexFilterNode(IndexEdgeNode<T>* indexEdgeNode,
-                  StorageExpressionContext* exprCtx = nullptr,
-                  Expression* exp = nullptr)
-      : indexEdgeNode_(indexEdgeNode), exprCtx_(exprCtx), filterExp_(exp) {
+  IndexFilterNode(RuntimeContext* context,
+                  IndexEdgeNode<T>* indexEdgeNode,
+                  StorageExpressionContext* exprCtx,
+                  Expression* exp,
+                  int64_t limit = -1)
+      : context_(context),
+        indexEdgeNode_(indexEdgeNode),
+        exprCtx_(exprCtx),
+        filterExp_(exp),
+        limit_(limit) {
     evalExprByIndex_ = false;
     isEdge_ = true;
   }
 
   // evalExprByIndex_ is false, some fileds in filter is out of index, which
   // need to read data.
-  IndexFilterNode(IndexVertexNode<T>* indexVertexNode,
-                  StorageExpressionContext* exprCtx = nullptr,
-                  Expression* exp = nullptr)
-      : indexVertexNode_(indexVertexNode), exprCtx_(exprCtx), filterExp_(exp) {
+  IndexFilterNode(RuntimeContext* context,
+                  IndexVertexNode<T>* indexVertexNode,
+                  StorageExpressionContext* exprCtx,
+                  Expression* exp,
+                  int64_t limit = -1)
+      : context_(context),
+        indexVertexNode_(indexVertexNode),
+        exprCtx_(exprCtx),
+        filterExp_(exp),
+        limit_(limit) {
     evalExprByIndex_ = false;
     isEdge_ = false;
   }
 
-  nebula::cpp2::ErrorCode execute(PartitionID partId) override {
+  nebula::cpp2::ErrorCode doExecute(PartitionID partId) override {
     data_.clear();
-    auto ret = RelNode<T>::execute(partId);
+    auto ret = RelNode<T>::doExecute(partId);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
       return ret;
     }
@@ -66,10 +86,15 @@ class IndexFilterNode final : public RelNode<T> {
     } else {
       data = indexVertexNode_->moveData();
     }
+    int64_t count = 0;
     for (const auto& k : data) {
+      if (context_->isPlanKilled()) {
+        return nebula::cpp2::ErrorCode::E_PLAN_IS_KILLED;
+      }
       if (evalExprByIndex_) {
         if (check(k.first)) {
           data_.emplace_back(k.first, k.second);
+          count++;
         }
       } else {
         const auto& schemas =
@@ -80,7 +105,11 @@ class IndexFilterNode final : public RelNode<T> {
         }
         if (check(reader.get(), k.first)) {
           data_.emplace_back(k.first, k.second);
+          count++;
         }
+      }
+      if (limit_ > 0 && count >= limit_) {
+        break;
       }
     }
     return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -124,6 +153,7 @@ class IndexFilterNode final : public RelNode<T> {
   }
 
  private:
+  RuntimeContext* context_;
   IndexScanNode<T>* indexScanNode_{nullptr};
   IndexEdgeNode<T>* indexEdgeNode_{nullptr};
   IndexVertexNode<T>* indexVertexNode_{nullptr};
@@ -131,6 +161,7 @@ class IndexFilterNode final : public RelNode<T> {
   Expression* filterExp_;
   bool isEdge_;
   bool evalExprByIndex_;
+  int64_t limit_;
   std::vector<kvstore::KV> data_{};
 };
 

@@ -18,14 +18,14 @@ nebula::cpp2::ErrorCode LookupBaseProcessor<REQ, RESP>::requestCheck(
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
     return retCode;
   }
-
-  this->planContext_ =
-      std::make_unique<PlanContext>(this->env_, spaceId_, this->spaceVidLen_, this->isIntId_);
+  this->planContext_ = std::make_unique<PlanContext>(
+      this->env_, spaceId_, this->spaceVidLen_, this->isIntId_, req.common_ref());
   const auto& indices = req.get_indices();
-  this->planContext_->isEdge_ = indices.get_is_edge();
+  const auto& schemaId = indices.get_schema_id();
+  this->planContext_->isEdge_ = schemaId.getType() == nebula::cpp2::SchemaID::Type::edge_type;
   this->context_ = std::make_unique<RuntimeContext>(this->planContext_.get());
   if (context_->isEdge()) {
-    context_->edgeType_ = indices.get_tag_or_edge_id();
+    context_->edgeType_ = schemaId.get_edge_type();
     auto edgeName = this->env_->schemaMan_->toEdgeName(spaceId_, context_->edgeType_);
     if (!edgeName.ok()) {
       return nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND;
@@ -41,7 +41,7 @@ nebula::cpp2::ErrorCode LookupBaseProcessor<REQ, RESP>::requestCheck(
     schemas_ = std::move(allEdges).value()[context_->edgeType_];
     context_->edgeSchema_ = schemas_.back().get();
   } else {
-    context_->tagId_ = indices.get_tag_or_edge_id();
+    context_->tagId_ = schemaId.get_tag_id();
     auto tagName = this->env_->schemaMan_->toTagName(spaceId_, context_->tagId_);
     if (!tagName.ok()) {
       return nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND;
@@ -74,6 +74,15 @@ nebula::cpp2::ErrorCode LookupBaseProcessor<REQ, RESP>::requestCheck(
     if (QueryUtils::toReturnColType(*it) != QueryUtils::ReturnColType::kOther) {
       deDupColPos_.emplace_back(it.index);
     }
+  }
+
+  // limit
+  if (req.limit_ref().has_value()) {
+    if (*req.limit_ref() < 0) {
+      LOG(ERROR) << "Incorrect parameter : LIMIT = " << *req.limit_ref();
+      return nebula::cpp2::ErrorCode::E_INVALID_PARM;
+    }
+    limit_ = *req.limit_ref();
   }
 
   return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -158,6 +167,8 @@ template <typename REQ, typename RESP>
 StatusOr<StoragePlan<IndexID>> LookupBaseProcessor<REQ, RESP>::buildPlan(
     IndexFilterItem* filterItem, nebula::DataSet* result) {
   StoragePlan<IndexID> plan;
+  // TODO(sky) : Limit is not supported yet for de-dup node.
+  //             Related to paging scan, the de-dup execution plan needs to be refactored
   auto deDup = std::make_unique<DeDupNode<IndexID>>(result, deDupColPos_);
   int32_t filterId = 0;
   std::unique_ptr<IndexOutputNode<IndexID>> out;
@@ -276,8 +287,8 @@ std::unique_ptr<IndexOutputNode<IndexID>> LookupBaseProcessor<REQ, RESP>::buildP
     const std::vector<meta::cpp2::ColumnDef>& fields) {
   auto indexId = ctx.get_index_id();
   auto colHints = ctx.get_column_hints();
-  auto indexScan =
-      std::make_unique<IndexScanNode<IndexID>>(context_.get(), indexId, std::move(colHints));
+  auto indexScan = std::make_unique<IndexScanNode<IndexID>>(
+      context_.get(), indexId, std::move(colHints), limit_);
 
   auto output = std::make_unique<IndexOutputNode<IndexID>>(
       result, context_.get(), indexScan.get(), hasNullableCol, fields);
@@ -314,7 +325,7 @@ std::unique_ptr<IndexOutputNode<IndexID>> LookupBaseProcessor<REQ, RESP>::buildP
       std::make_unique<IndexScanNode<IndexID>>(context_.get(), indexId, std::move(colHints));
   if (context_->isEdge()) {
     auto edge = std::make_unique<IndexEdgeNode<IndexID>>(
-        context_.get(), indexScan.get(), schemas_, context_->edgeName_);
+        context_.get(), indexScan.get(), schemas_, context_->edgeName_, limit_);
     edge->addDependency(indexScan.get());
     auto output = std::make_unique<IndexOutputNode<IndexID>>(result, context_.get(), edge.get());
     output->addDependency(edge.get());
@@ -323,7 +334,7 @@ std::unique_ptr<IndexOutputNode<IndexID>> LookupBaseProcessor<REQ, RESP>::buildP
     return output;
   } else {
     auto vertex = std::make_unique<IndexVertexNode<IndexID>>(
-        context_.get(), indexScan.get(), schemas_, context_->tagName_);
+        context_.get(), indexScan.get(), schemas_, context_->tagName_, limit_);
     vertex->addDependency(indexScan.get());
     auto output = std::make_unique<IndexOutputNode<IndexID>>(result, context_.get(), vertex.get());
     output->addDependency(vertex.get());
@@ -364,8 +375,8 @@ std::unique_ptr<IndexOutputNode<IndexID>> LookupBaseProcessor<REQ, RESP>::buildP
   auto indexScan =
       std::make_unique<IndexScanNode<IndexID>>(context_.get(), indexId, std::move(colHints));
 
-  auto filter =
-      std::make_unique<IndexFilterNode<IndexID>>(indexScan.get(), exprCtx, exp, context_->isEdge());
+  auto filter = std::make_unique<IndexFilterNode<IndexID>>(
+      context_.get(), indexScan.get(), exprCtx, exp, context_->isEdge(), limit_);
   filter->addDependency(indexScan.get());
   auto output =
       std::make_unique<IndexOutputNode<IndexID>>(result, context_.get(), filter.get(), true);
@@ -418,7 +429,8 @@ LookupBaseProcessor<REQ, RESP>::buildPlanWithDataAndFilter(nebula::DataSet* resu
     auto edge = std::make_unique<IndexEdgeNode<IndexID>>(
         context_.get(), indexScan.get(), schemas_, context_->edgeName_);
     edge->addDependency(indexScan.get());
-    auto filter = std::make_unique<IndexFilterNode<IndexID>>(edge.get(), exprCtx, exp);
+    auto filter = std::make_unique<IndexFilterNode<IndexID>>(
+        context_.get(), edge.get(), exprCtx, exp, limit_);
     filter->addDependency(edge.get());
 
     auto output = std::make_unique<IndexOutputNode<IndexID>>(result, context_.get(), filter.get());
@@ -431,7 +443,8 @@ LookupBaseProcessor<REQ, RESP>::buildPlanWithDataAndFilter(nebula::DataSet* resu
     auto vertex = std::make_unique<IndexVertexNode<IndexID>>(
         context_.get(), indexScan.get(), schemas_, context_->tagName_);
     vertex->addDependency(indexScan.get());
-    auto filter = std::make_unique<IndexFilterNode<IndexID>>(vertex.get(), exprCtx, exp);
+    auto filter = std::make_unique<IndexFilterNode<IndexID>>(
+        context_.get(), vertex.get(), exprCtx, exp, limit_);
     filter->addDependency(vertex.get());
 
     auto output = std::make_unique<IndexOutputNode<IndexID>>(result, context_.get(), filter.get());
@@ -440,6 +453,14 @@ LookupBaseProcessor<REQ, RESP>::buildPlanWithDataAndFilter(nebula::DataSet* resu
     plan.addNode(std::move(vertex));
     plan.addNode(std::move(filter));
     return output;
+  }
+}
+template <typename REQ, typename RESP>
+void LookupBaseProcessor<REQ, RESP>::profilePlan(StoragePlan<IndexID>& plan) {
+  auto& nodes = plan.getNodes();
+  std::lock_guard<std::mutex> lck(BaseProcessor<RESP>::profileMut_);
+  for (auto& node : nodes) {
+    BaseProcessor<RESP>::profileDetail(node->name_, node->duration_.elapsedInUSec());
   }
 }
 

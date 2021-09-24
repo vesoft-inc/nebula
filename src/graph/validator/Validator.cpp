@@ -6,6 +6,8 @@
 
 #include "graph/validator/Validator.h"
 
+#include <thrift/lib/cpp/util/EnumUtils.h>
+
 #include "common/function/FunctionManager.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/util/ExpressionUtils.h"
@@ -156,6 +158,8 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
       return std::make_unique<UpdateEdgeValidator>(sentence, context);
     case Sentence::Kind::kShowHosts:
       return std::make_unique<ShowHostsValidator>(sentence, context);
+    case Sentence::Kind::kShowMetaLeader:
+      return std::make_unique<ShowMetaLeaderValidator>(sentence, context);
     case Sentence::Kind::kShowParts:
       return std::make_unique<ShowPartsValidator>(sentence, context);
     case Sentence::Kind::kShowCharset:
@@ -447,20 +451,58 @@ Status Validator::checkDuplicateColName() {
   return Status::OK();
 }
 
-Status Validator::invalidLabelIdentifiers(const Expression* expr) const {
-  auto labelExprs = ExpressionUtils::collectAll(expr, {Expression::Kind::kLabel});
-  if (!labelExprs.empty()) {
-    std::stringstream ss;
-    ss << "Invalid label identifiers: ";
-    for (auto* label : labelExprs) {
-      ss << label->toString() << ",";
-    }
-    auto errMsg = ss.str();
-    errMsg.pop_back();
-    return Status::SemanticError(std::move(errMsg));
+Status Validator::validateStarts(const VerticesClause* clause, Starts& starts) {
+  if (clause == nullptr) {
+    return Status::SemanticError("From clause nullptr.");
   }
-
+  if (clause->isRef()) {
+    auto* src = clause->ref();
+    if (src->kind() != Expression::Kind::kInputProperty &&
+        src->kind() != Expression::Kind::kVarProperty) {
+      return Status::SemanticError(
+          "`%s', Only input and variable expression is acceptable"
+          " when starts are evaluated at runtime.",
+          src->toString().c_str());
+    }
+    starts.fromType = src->kind() == Expression::Kind::kInputProperty ? kPipe : kVariable;
+    auto type = deduceExprType(src);
+    if (!type.ok()) {
+      return type.status();
+    }
+    auto vidType = space_.spaceDesc.vid_type_ref().value().get_type();
+    if (type.value() != SchemaUtil::propTypeToValueType(vidType)) {
+      std::stringstream ss;
+      ss << "`" << src->toString() << "', the srcs should be type of "
+         << apache::thrift::util::enumNameSafe(vidType) << ", but was`" << type.value() << "'";
+      return Status::SemanticError(ss.str());
+    }
+    starts.originalSrc = src;
+    auto* propExpr = static_cast<PropertyExpression*>(src);
+    if (starts.fromType == kVariable) {
+      starts.userDefinedVarName = propExpr->sym();
+      userDefinedVarNameList_.emplace(starts.userDefinedVarName);
+    }
+    starts.runtimeVidName = propExpr->prop();
+  } else {
+    auto vidList = clause->vidList();
+    QueryExpressionContext ctx;
+    for (auto* expr : vidList) {
+      if (!evaluableExpr(expr)) {
+        return Status::SemanticError("`%s' is not an evaluable expression.",
+                                     expr->toString().c_str());
+      }
+      auto vid = expr->eval(ctx(nullptr));
+      auto vidType = space_.spaceDesc.vid_type_ref().value().get_type();
+      if (!SchemaUtil::isValidVid(vid, vidType)) {
+        std::stringstream ss;
+        ss << "Vid should be a " << apache::thrift::util::enumNameSafe(vidType);
+        return Status::SemanticError(ss.str());
+      }
+      starts.vids.emplace_back(std::move(vid));
+    }
+  }
   return Status::OK();
 }
+
 }  // namespace graph
 }  // namespace nebula

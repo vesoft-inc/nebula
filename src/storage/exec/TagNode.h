@@ -17,7 +17,7 @@ namespace storage {
 // TagNode will return a DataSet of specified props of tagId
 class TagNode final : public IterateNode<VertexID> {
  public:
-  using RelNode::execute;
+  using RelNode::doExecute;
 
   TagNode(RuntimeContext* context,
           TagContext* ctx,
@@ -39,11 +39,12 @@ class TagNode final : public IterateNode<VertexID> {
     schemas_ = &(schemaIter->second);
     ttl_ = QueryUtils::getTagTTLInfo(tagContext_, tagId_);
     tagName_ = tagContext_->tagNames_[tagId_];
+    name_ = "TagNode";
   }
 
-  nebula::cpp2::ErrorCode execute(PartitionID partId, const VertexID& vId) override {
+  nebula::cpp2::ErrorCode doExecute(PartitionID partId, const VertexID& vId) override {
     valid_ = false;
-    auto ret = RelNode::execute(partId, vId);
+    auto ret = RelNode::doExecute(partId, vId);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
       return ret;
     }

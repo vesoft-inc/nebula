@@ -9,6 +9,7 @@
 
 #include "common/base/Base.h"
 #include "common/context/ExpressionContext.h"
+#include "common/time/Duration.h"
 #include "common/utils/NebulaKeyUtils.h"
 #include "storage/CommonUtils.h"
 #include "storage/context/StorageExpressionContext.h"
@@ -35,6 +36,12 @@ class RelNode {
 
  public:
   virtual nebula::cpp2::ErrorCode execute(PartitionID partId, const T& input) {
+    duration_.resume();
+    auto ret = doExecute(partId, input);
+    duration_.pause();
+    return ret;
+  }
+  virtual nebula::cpp2::ErrorCode doExecute(PartitionID partId, const T& input) {
     for (auto* dependency : dependencies_) {
       auto ret = dependency->execute(partId, input);
       if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -45,6 +52,12 @@ class RelNode {
   }
 
   virtual nebula::cpp2::ErrorCode execute(PartitionID partId) {
+    duration_.resume();
+    auto ret = doExecute(partId);
+    duration_.pause();
+    return ret;
+  }
+  virtual nebula::cpp2::ErrorCode doExecute(PartitionID partId) {
     for (auto* dependency : dependencies_) {
       auto ret = dependency->execute(partId);
       if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -65,9 +78,10 @@ class RelNode {
 
   explicit RelNode(const std::string& name) : name_(name) {}
 
-  std::string name_;
+  std::string name_ = "RelNode";
   std::vector<RelNode<T>*> dependencies_;
   bool hasDependents_ = false;
+  time::Duration duration_{true};
 };
 
 // QueryNode is the node which would read data from kvstore, it usually generate
