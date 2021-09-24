@@ -24,7 +24,6 @@ nebula_add_library(
     LimitValidator.cpp
     OrderByValidator.cpp
     YieldValidator.cpp
-    TraversalValidator.cpp
     ExplainValidator.cpp
     GroupByValidator.cpp
     FindPathValidator.cpp

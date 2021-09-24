@@ -38,9 +38,9 @@ Feature: Orderby Sentence
       | name | start | team |
     When executing query:
       """
-      GO FROM "Marco Belinelli" OVER serve YIELD $^.player.name as name, serve.start_year as start, $$.team.name as team
-      | YIELD $-.name as name WHERE $-.start > 20000
-      | ORDER BY $-.name
+      GO FROM "Marco Belinelli" OVER serve YIELD $^.player.name as name, serve.start_year as start, $$.team.name as team |
+      YIELD $-.name as name WHERE $-.start > 20000 |
+      ORDER BY $-.name
       """
     Then the result should be, in order, with relax comparison:
       | name |
