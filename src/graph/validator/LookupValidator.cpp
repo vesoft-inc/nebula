@@ -13,7 +13,9 @@
 #include "graph/util/ExpressionUtils.h"
 #include "graph/util/FTIndexUtils.h"
 #include "graph/util/SchemaUtil.h"
+#include "graph/util/ValidateUtil.h"
 #include "interface/gen-cpp2/meta_types.h"
+#include "parser/TraverseSentences.h"
 
 using nebula::meta::NebulaSchemaProvider;
 using std::shared_ptr;
@@ -115,7 +117,7 @@ Status LookupValidator::validateYieldEdge() {
       }
     }
     col->setExpr(ExpressionUtils::rewriteLabelAttr2EdgeProp(col->expr()));
-    NG_RETURN_IF_ERROR(invalidLabelIdentifiers(col->expr()));
+    NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(col->expr()));
 
     auto colExpr = col->expr();
     auto typeStatus = deduceExprType(colExpr);
@@ -145,7 +147,7 @@ Status LookupValidator::validateYieldTag() {
       }
     }
     col->setExpr(ExpressionUtils::rewriteLabelAttr2TagProp(col->expr()));
-    NG_RETURN_IF_ERROR(invalidLabelIdentifiers(col->expr()));
+    NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(col->expr()));
 
     auto colExpr = col->expr();
     auto typeStatus = deduceExprType(colExpr);

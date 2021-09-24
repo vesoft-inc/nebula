@@ -1,19 +1,15 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
+/* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
-#ifndef _VALIDATOR_INDEXSCAN_VALIDATOR_H_
-#define _VALIDATOR_INDEXSCAN_VALIDATOR_H_
-
-#include <memory>
+#ifndef _VALIDATOR_LOOKUP_VALIDATOR_H_
+#define _VALIDATOR_LOOKUP_VALIDATOR_H_
 
 #include "common/base/Base.h"
 #include "common/plugin/fulltext/elasticsearch/ESGraphAdapter.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/validator/Validator.h"
-#include "interface/gen-cpp2/storage_types.h"
-#include "parser/TraverseSentences.h"
 
 namespace nebula {
 
@@ -70,4 +66,4 @@ class LookupValidator final : public Validator {
 }  // namespace graph
 }  // namespace nebula
 
-#endif  // _VALIDATOR_INDEXSCAN_VALIDATOR_H_
+#endif  // _VALIDATOR_LOOKUP_VALIDATOR_H_
