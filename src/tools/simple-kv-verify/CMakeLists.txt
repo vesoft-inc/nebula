@@ -42,6 +42,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:general_storage_client_obj>
         $<TARGET_OBJECTS:expression_obj>
         $<TARGET_OBJECTS:function_manager_obj>
+        $<TARGET_OBJECTS:wkt_parser_obj>
         $<TARGET_OBJECTS:agg_function_manager_obj>
         $<TARGET_OBJECTS:version_obj>
     LIBRARIES

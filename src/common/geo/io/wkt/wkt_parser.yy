@@ -32,16 +32,20 @@ class WKTScanner;
 }
 
 %union {
-    double                                  doubleval;
-    Geometry*                               geomval;
-    Point*                                  pointval;
-    LineString*                             lineval;
-    Polygon*                                polygonval;
+    double                                  doubleVal;
+    Geometry*                               geomVal;
+    Point*                                  pointVal;
+    LineString*                             lineVal;
+    Polygon*                                polygonVal;
+    Coordinate*                             coordVal;
+    std::vector<Coordinate>*                coordListVal;
+    std::vector<std::vector<Coordinate>>*   coordListListVal;
 }
 
 /* destructors */
-%destructor {} <geomval>
-%destructor {} <doubleval>
+%destructor {} <geomVal> <pointVal> <lineVal> <polygonVal>
+%destructor {} <coordVal> <coordListVal> <coordListListVal>
+%destructor {} <doubleVal>
 
 /* wkt shape type prefix */
 %token KW_POINT KW_LINESTRING KW_POLYGON
@@ -50,12 +54,20 @@ class WKTScanner;
 %token L_PAREN R_PAREN COMMA
 
 /* token type specification */
-%token <doubleval> DOUBLE
+%token <doubleVal> DOUBLE
 
-%type <geomval> geometry
-%type <pointval> point coordinate
-%type <lineval> linestring coordinate_list
-%type <polygonval> polygon coordinate_list_list
+%type <geomVal> geometry
+%type <pointVal> point
+%type <lineVal> linestring
+%type <polygonVal> polygon
+%type <coordVal> coordinate
+%type <coordListVal> coordinate_list
+%type <coordListListVal> coordinate_list_list
+
+%define api.prefix {wkt}
+%defines
+
+%expect 0
 
 %start geometry
 
@@ -75,25 +87,28 @@ geometry
 
 point
   : KW_POINT L_PAREN coordinate R_PAREN {
-      $$ = $3;
+      $$ = new Point();
+      $$->coord = *$3;
   }
   ;
 
 linestring
   : KW_LINESTRING L_PAREN coordinate_list R_PAREN {
-      $$ = $3;
+      $$ = new LineString();
+      $$->coordList = *$3;
   }
   ;
 
 polygon
   : KW_POLYGON L_PAREN coordinate_list_list R_PAREN {
-      $$ = $3;
+      $$ = new Polygon();
+      $$->coordListList = *$3;
   }
   ;
 
 coordinate
   : DOUBLE DOUBLE {
-      $$ = new Point();
+      $$ = new Coordinate();
       $$->x = $1;
       $$->y = $2;
   }
@@ -101,24 +116,24 @@ coordinate
 
 coordinate_list
   : coordinate {
-      $$ = new LineString();
-      $$->points.emplace_back(*$1);
+      $$ = new std::vector<Coordinate>();
+      $$->emplace_back(*$1);
   }
   | coordinate_list COMMA coordinate {
       $$ = $1;
-      $$->points.emplace_back(*$3);
+      $$->emplace_back(*$3);
   }
   ;
 
 coordinate_list_list
   : L_PAREN coordinate_list R_PAREN {
-      $$ = new Polygon();
-      $$->rings.emplace_back(*$2);
+      $$ = new std::vector<std::vector<Coordinate>>();
+      $$->emplace_back(*$2);
 
   }
   | coordinate_list_list COMMA L_PAREN coordinate_list R_PAREN {
       $$ = $1;
-      $$->rings.emplace_back(*$4);
+      $$->emplace_back(*$4);
   }
   ;
 

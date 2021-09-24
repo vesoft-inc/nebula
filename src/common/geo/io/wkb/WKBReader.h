@@ -9,6 +9,7 @@
 #include "common/base/Base.h"
 #include "common/base/StatusOr.h"
 #include "common/geo/io/Geometry.h"
+#include "common/geo/io/wkb/ByteOrder.h"
 
 namespace nebula {
 
@@ -18,7 +19,10 @@ class WKBReader {
 
   ~WKBReader() {}
 
-  StatusOr<std::unique_ptr<Geometry>> read(std::string wkb) { UNUSED(wkb); }
+  StatusOr<std::unique_ptr<Geometry>> read(std::string wkb) {
+    UNUSED(wkb);
+    return Status::OK();
+  }
 };
 
 }  // namespace nebula

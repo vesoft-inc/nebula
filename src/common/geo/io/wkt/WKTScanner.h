@@ -8,6 +8,9 @@
 
 #include "common/base/Base.h"
 
+// This macro must be defined before #include <FlexLexer.h> !!!
+#define yyFlexLexer wktFlexLexer
+
 // Only include FlexLexer.h if it hasn't been already included
 #if !defined(yyFlexLexerOnce)
 #include <FlexLexer.h>
@@ -51,7 +54,7 @@ class WKTScanner : public yyFlexLexer {
   using TokenType = nebula::WKTParser::token;
 
  private:
-  // friend class Scanner_Basic_Test;
+  // friend class Scanner_Basic_Test; TODO(jie) add it
   int yylex() override;
 
   nebula::WKTParser::semantic_type *yylval{nullptr};

@@ -21,6 +21,10 @@
 #include "common/geo/function/DWithin.h"
 #include "common/geo/function/Distance.h"
 #include "common/geo/function/Intersects.h"
+#include "common/geo/io/wkb/WKBReader.h"
+#include "common/geo/io/wkb/WKBWriter.h"
+#include "common/geo/io/wkt/WKTReader.h"
+#include "common/geo/io/wkt/WKTWriter.h"
 #include "common/thrift/ThriftTypes.h"
 #include "common/time/TimeUtils.h"
 #include "common/time/WallClock.h"
@@ -2289,17 +2293,20 @@ FunctionManager::FunctionManager() {
     attr.maxArity_ = 1;
     attr.isPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
-      // const std::string &wkt = args[0].get().getStr();
-      // auto geom = WKTReader().read(wkt);
-      // if (!validateGeom(geom)) {
+      const std::string &wkt = args[0].get().getStr();
+      LOG(INFO) << "jie, wkt: " << wkt;
+      auto geomRet = WKTReader().read(wkt);
+      if (!geomRet.ok()) {
+        LOG(INFO) << "ST_GeogFromText: " << geomRet.status();
+        return Value::kNullBadData;
+      }
+      std::unique_ptr<Geometry> geom = std::move(geomRet).value();
+      // if (!isValidGeom(geom.get())) { // Check if the geometry is valid due to OGC and WGS84(SRID
+      // 4326)
       //   return Value::kNullBadData;
       // }
-      // std::ostringstream oss;
-      // WKBWriter().writeHEX(geom, oss);
-      // std::string wkb = stream.str();
-      // return Geography(wkb);
-      UNUSED(args);
-      return Geography();
+      auto wkb = WKBWriter().write(geom.get());
+      return Geography(wkb);
     };
   }
   {

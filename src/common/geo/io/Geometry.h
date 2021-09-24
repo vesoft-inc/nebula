@@ -15,6 +15,9 @@
 namespace nebula {
 
 // These Geometry structs are just for parsing wkt/wkb
+struct Coordinate {
+  double x, y;
+};
 
 struct Geometry {
   virtual ShapeType shape() const = 0;
@@ -22,20 +25,20 @@ struct Geometry {
 };
 
 struct Point : public Geometry {
-  double x, y;
-  virtual ShapeType shape() const { return ShapeType::Point; }
+  Coordinate coord;
+  ShapeType shape() const override { return ShapeType::Point; }
   ~Point() override = default;
 };
 
 struct LineString : public Geometry {
-  std::vector<Point> points;
-  virtual ShapeType shape() const { return ShapeType::LineString; }
+  std::vector<Coordinate> coordList;
+  ShapeType shape() const override { return ShapeType::LineString; }
   ~LineString() override = default;
 };
 
 struct Polygon : public Geometry {
-  std::vector<LineString> rings;
-  virtual ShapeType shape() const { return ShapeType::Polygon; }
+  std::vector<std::vector<Coordinate>> coordListList;
+  ShapeType shape() const override { return ShapeType::Polygon; }
   ~Polygon() override = default;
 };
 

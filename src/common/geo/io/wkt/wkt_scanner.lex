@@ -4,9 +4,9 @@
 %option never-interactive
 %option yylineno
 %option case-insensitive
+%option prefix="wkt"
 
 %{
-#include "common/geo/io/wkt/WKTReader.h"
 #include "common/geo/io/wkt/WKTScanner.h"
 #include "WKTParser.hpp"
 #include <stdlib.h>
@@ -27,7 +27,7 @@ blanks                      ([ \t\n\r]+)
 ")"                         { return TokenType::R_PAREN; }
 
 -?(([0-9]+\.?)|([0-9]*\.?[0-9]+)([eE][-+]?[0-9]+)?) {
-    yylval->doubleval = atof(yytext);
+    yylval->doubleVal = atof(yytext);
     return TokenType::DOUBLE;
 }
 
