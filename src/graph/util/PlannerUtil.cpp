@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "graph/util/QueryUtil.h"
+#include "graph/util/PlannerUtil.h"
 
 #include "common/base/Base.h"
 #include "common/expression/ColumnExpression.h"
@@ -17,7 +17,7 @@ namespace nebula {
 namespace graph {
 
 // static
-void QueryUtil::buildConstantInput(QueryContext* qctx, Starts& starts, std::string& vidsVar) {
+void PlannerUtil::buildConstantInput(QueryContext* qctx, Starts& starts, std::string& vidsVar) {
   vidsVar = qctx->vctx()->anonVarGen()->getVar();
   DataSet ds;
   ds.colNames.emplace_back(kVid);
@@ -33,7 +33,7 @@ void QueryUtil::buildConstantInput(QueryContext* qctx, Starts& starts, std::stri
 }
 
 // static
-SubPlan QueryUtil::buildRuntimeInput(QueryContext* qctx, Starts& starts) {
+SubPlan PlannerUtil::buildRuntimeInput(QueryContext* qctx, Starts& starts) {
   auto pool = qctx->objPool();
   auto* columns = pool->add(new YieldColumns());
   auto* column = new YieldColumn(starts.originalSrc->clone(), kVid);
@@ -54,7 +54,7 @@ SubPlan QueryUtil::buildRuntimeInput(QueryContext* qctx, Starts& starts) {
 }
 
 // static
-SubPlan QueryUtil::buildStart(QueryContext* qctx, Starts& starts, std::string& vidsVar) {
+SubPlan PlannerUtil::buildStart(QueryContext* qctx, Starts& starts, std::string& vidsVar) {
   SubPlan subPlan;
   if (!starts.vids.empty() && starts.originalSrc == nullptr) {
     buildConstantInput(qctx, starts, vidsVar);
@@ -65,7 +65,9 @@ SubPlan QueryUtil::buildStart(QueryContext* qctx, Starts& starts, std::string& v
   return subPlan;
 }
 
-PlanNode* QueryUtil::extractDstFromGN(QueryContext* qctx, PlanNode* gn, const std::string& output) {
+PlanNode* PlannerUtil::extractDstFromGN(QueryContext* qctx,
+                                        PlanNode* gn,
+                                        const std::string& output) {
   auto pool = qctx->objPool();
   auto* columns = pool->add(new YieldColumns());
   auto* column = new YieldColumn(EdgePropertyExpression::make(pool, "*", kDst), kVid);
@@ -77,5 +79,6 @@ PlanNode* QueryUtil::extractDstFromGN(QueryContext* qctx, PlanNode* gn, const st
   dedup->setOutputVar(output);
   return dedup;
 }
+
 }  // namespace graph
 }  // namespace nebula

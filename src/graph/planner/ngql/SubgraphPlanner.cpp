@@ -8,7 +8,7 @@
 #include "graph/planner/plan/Algo.h"
 #include "graph/planner/plan/Logic.h"
 #include "graph/util/ExpressionUtils.h"
-#include "graph/util/QueryUtil.h"
+#include "graph/util/PlannerUtil.h"
 #include "graph/util/SchemaUtil.h"
 #include "graph/validator/Validator.h"
 
@@ -122,7 +122,7 @@ StatusOr<SubPlan> SubgraphPlanner::transform(AstContext* astCtx) {
   auto qctx = subgraphCtx_->qctx;
   std::string vidsVar;
 
-  SubPlan startPlan = QueryUtil::buildStart(qctx, subgraphCtx_->from, vidsVar);
+  SubPlan startPlan = PlannerUtil::buildStart(qctx, subgraphCtx_->from, vidsVar);
   if (subgraphCtx_->steps.steps() == 0) {
     return zeroStep(startPlan, vidsVar);
   }
