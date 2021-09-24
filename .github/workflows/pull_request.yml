@@ -136,7 +136,7 @@ jobs:
               ;;
             ubuntu2004)
               # ssl cluster
-              make ENABLE_SSL=true up
+              make ENABLE_SSL=true CA_SIGNED=true up
               ;;
             esac
             ;;
