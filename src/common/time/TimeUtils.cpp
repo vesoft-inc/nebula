@@ -55,11 +55,16 @@ constexpr int64_t kMaxTimestamp = std::numeric_limits<int64_t>::max() / 10000000
         return Status::Error("Invalid second number `%ld'.", kv.second.getInt());
       }
       dt.sec = kv.second.getInt();
+    } else if (kv.first == "millisecond") {
+      if (kv.second.getInt() < 0 || kv.second.getInt() > 999) {
+        return Status::Error("Invalid millisecond number `%ld'.", kv.second.getInt());
+      }
+      dt.microsec += kv.second.getInt() * 1000;
     } else if (kv.first == "microsecond") {
-      if (kv.second.getInt() < 0 || kv.second.getInt() > 999999) {
+      if (kv.second.getInt() < 0 || kv.second.getInt() > 999) {
         return Status::Error("Invalid microsecond number `%ld'.", kv.second.getInt());
       }
-      dt.microsec = kv.second.getInt();
+      dt.microsec += kv.second.getInt();
     } else {
       return Status::Error("Invlaid parameter `%s'.", kv.first.c_str());
     }
@@ -125,11 +130,16 @@ constexpr int64_t kMaxTimestamp = std::numeric_limits<int64_t>::max() / 10000000
         return Status::Error("Invalid second number `%ld'.", kv.second.getInt());
       }
       t.sec = kv.second.getInt();
+    } else if (kv.first == "millisecond") {
+      if (kv.second.getInt() < 0 || kv.second.getInt() > 999) {
+        return Status::Error("Invalid millisecond number `%ld'.", kv.second.getInt());
+      }
+      t.microsec += kv.second.getInt() * 1000;
     } else if (kv.first == "microsecond") {
-      if (kv.second.getInt() < 0 || kv.second.getInt() > 999999) {
+      if (kv.second.getInt() < 0 || kv.second.getInt() > 999) {
         return Status::Error("Invalid microsecond number `%ld'.", kv.second.getInt());
       }
-      t.microsec = kv.second.getInt();
+      t.microsec += kv.second.getInt();
     } else {
       return Status::Error("Invlaid parameter `%s'.", kv.first.c_str());
     }
