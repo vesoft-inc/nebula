@@ -611,6 +611,34 @@ TEST_F(MatchValidatorTest, validateAlias) {
     EXPECT_EQ(std::string(result.message()),
               "SemanticError: Path `p' does not have the type attribute");
   }
+  {
+    std::string query = "MATCH  (v:person) return id(vertex)";
+    auto result = checkResult(query);
+    EXPECT_EQ(
+        std::string(result.message()),
+        "SemanticError: keywords: vertex and edge are not supported in return clause `id(VERTEX)'");
+  }
+  {
+    std::string query = "MATCH  (v:person) return vertex as a";
+    auto result = checkResult(query);
+    EXPECT_EQ(std::string(result.message()),
+              "SemanticError: keywords: vertex and edge are not supported in return clause `VERTEX "
+              "AS a'");
+  }
+  {
+    std::string query = "MATCH  (v:person)-[e]-(v2) return src(edge)";
+    auto result = checkResult(query);
+    EXPECT_EQ(
+        std::string(result.message()),
+        "SemanticError: keywords: vertex and edge are not supported in return clause `src(EDGE)'");
+  }
+  {
+    std::string query = "MATCH  (v:person)-[e]-(v2) return edge as b";
+    auto result = checkResult(query);
+    EXPECT_EQ(
+        std::string(result.message()),
+        "SemanticError: keywords: vertex and edge are not supported in return clause `EDGE AS b'");
+  }
 }
 
 }  // namespace graph
