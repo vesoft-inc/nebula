@@ -23,13 +23,23 @@ class PrefixPath;
 class IndexScanNode : public IndexNode {
  public:
   IndexScanNode(RuntimeContext* context,
+                const std::string& name,
                 IndexID indexId,
                 const std::vector<cpp2::IndexColumnHint>& columnHists)
-      : IndexNode(context), indexId_(indexId), columnHists_(columnHists) {}
-  nebula::cpp2::ErrorCode execute(PartitionID partId) final;
-  ErrorOr<Row> next(bool& hasNext) final;
+      : IndexNode(context, name), indexId_(indexId), columnHists_(columnHists) {}
+  ::nebula::cpp2::ErrorCode init(InitContext& ctx) override {
+    for (auto& col : ctx.requiredColumns) {
+      requiredColumns_.push_back(col);
+    }
+    ctx.returnColumns = requiredColumns_;
+    for (size_t i = 0; i < ctx.returnColumns.size(); i++) {
+      ctx.retColMap[ctx.returnColumns[i]] = i;
+    }
+  }
 
  protected:
+  nebula::cpp2::ErrorCode doExecute(PartitionID partId) final;
+  ErrorOr<Row> doNext(bool& hasNext) final;
   void decodePropFromIndex(folly::StringPiece key,
                            const Map<std::string, size_t>& colPosMap,
                            std::vector<Value>& values);

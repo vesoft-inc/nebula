@@ -5,13 +5,13 @@
  */
 #pragma once
 #include "common/base/Base.h"
+#include "common/base/ErrorOr.h"
 #include "interface/gen-cpp2/storage_types.h"
 #include "storage/BaseProcessor.h"
+#include "storage/exec/IndexNode.h"
 namespace nebula {
 namespace storage {
 extern ProcessorCounters kLookupCounters;
-using IndexFilterItem =
-    std::unordered_map<int32_t, std::pair<std::unique_ptr<StorageExpressionContext>, Expression*>>;
 
 class LookupProcessor : public BaseProcessor<cpp2::LookupIndexResp> {
  public:
@@ -22,16 +22,21 @@ class LookupProcessor : public BaseProcessor<cpp2::LookupIndexResp> {
 
  private:
   LookupProcessor(StorageEnv* env, const ProcessorCounters* counters, folly::Executor* executor);
+  void doProcess(const cpp2::LookupIndexRequest& req);
   void onProcessFinished();
 
-  void runInSingleThread(const cpp2::LookupIndexRequest& req);
-  void runInMultipleThread(const cpp2::LookupIndexRequest& req);
-  folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> runInExecutor(
-      IndexFilterItem* filterItem, nebula::DataSet* result, PartitionID partId);
-
-  void doProcess(const cpp2::LookupIndexRequest& req);
+  void runInSingleThread(const std::vector<PartitionID>& parts, std::unique_ptr<IndexNode> plan);
+  void runInMultipleThread(const std::vector<PartitionID>& parts, std::unique_ptr<IndexNode> plan);
+  ::nebula::cpp2::ErrorCode prepare(const cpp2::LookupIndexRequest& req);
+  std::unique_ptr<IndexNode> buildPlan(const cpp2::LookupIndexRequest& req);
+  std::unique_ptr<IndexNode> buildOneContext(const cpp2::IndexQueryContext& ctx);
+  std::vector<std::unique_ptr<IndexNode>> reproducePlan(IndexNode* root, size_t count);
   folly::Executor* executor_{nullptr};
+  folly::Executor* executor_{nullptr};
+  std::unique_ptr<PlanContext> planContext_;
+  std::unique_ptr<RuntimeContext> context_;
+  nebula::DataSet resultDataSet_;
+  std::vector<nebula::DataSet> partResults_;
 };
 }  // namespace storage
-
 }  // namespace nebula

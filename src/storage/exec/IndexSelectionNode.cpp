@@ -9,12 +9,28 @@ namespace storage {
 IndexSelectionNode::IndexSelectionNode(RuntimeContext* context,
                                        std::unique_ptr<Expression> expr,
                                        const std::vector<std::string>& inputCols)
-    : IndexNode(context), expr_(std::move(expr)) {
+    : IndexNode(context, "IndexSelectionNode"), expr_(std::move(expr)) {
   for (size_t i = 0; i < inputCols.size(); i++) {
     colPos_[inputCols[i]] = i;
   }
 }
-IndexNode::ErrorOr<Row> IndexSelectionNode::next(bool& hasNext) {
+nebula::cpp2::ErrorCode IndexSelectionNode::init(InitContext& ctx) {
+  DCHECK_EQ(children_.size(), 1);
+  SelectionExprVisitor vis;
+  expr_->accept(&vis);
+  for (auto& col : vis.getRequiredColumns()) {
+    ctx.requiredColumns.insert(col);
+  }
+  auto ret = children_[0]->init(ctx);
+  if (UNLIKELY(ret != ::nebula::cpp2::ErrorCode::SUCCEEDED)) {
+    return ret;
+  }
+  for (auto& col : vis.getRequiredColumns()) {
+    colPos_[col] = ctx.retColMap.at(col);
+  }
+  return ::nebula::cpp2::ErrorCode::SUCCEEDED;
+}
+IndexNode::ErrorOr<Row> IndexSelectionNode::doNext(bool& hasNext) {
   DCHECK_EQ(children_.size(), 1);
   auto& child = *children_[0];
   do {

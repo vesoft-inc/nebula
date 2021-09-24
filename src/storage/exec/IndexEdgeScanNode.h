@@ -16,19 +16,18 @@ class IndexEdgeScanNode : public IndexScanNode {
   static ErrorOr<IndexEdgeScanNode> make(RuntimeContext* context,
                                          IndexID indexId,
                                          const std::vector<cpp2::IndexColumnHint>& columnHint);
-
- private:
   IndexEdgeScanNode(RuntimeContext* context,
                     IndexID indexId,
                     const std::vector<cpp2::IndexColumnHint>& columnHint)
-      : IndexScanNode(context, indexId, columnHint) {}
+      : IndexScanNode(context, "IndexEdgeScanNode", indexId, columnHint) {}
+
+ private:
   Row decodeFromIndex(folly::StringPiece key) override;
   nebula::cpp2::ErrorCode getBaseData(folly::StringPiece key,
                                       std::pair<std::string, std::string>& kv) override;
   Map<std::string, Value> decodeFromBase(const std::string& key, const std::string& value) override;
   const meta::SchemaProviderIf* getSchema() override;
 
- private:
   std::shared_ptr<const nebula::meta::NebulaSchemaProvider> edge_;
 };
 }  // namespace storage

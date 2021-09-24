@@ -185,11 +185,11 @@ void PrefixPath::buildKey() {
 }
 // End of PrefixPath
 // Define of IndexScan
-nebula::cpp2::ErrorCode IndexScanNode::execute(PartitionID partId) {
+nebula::cpp2::ErrorCode IndexScanNode::doExecute(PartitionID partId) {
   auto ret = resetIter(partId);
   return ret;
 }
-IndexNode::ErrorOr<Row> IndexScanNode::next(bool& hasNext) {
+IndexNode::ErrorOr<Row> IndexScanNode::doNext(bool& hasNext) {
   hasNext = true;
   while (iter_ && iter_->valid()) {
     if (!checkTTL()) {

@@ -10,29 +10,12 @@ namespace nebula {
 namespace storage {
 class IndexLimitNode : public IndexNode {
  public:
-  IndexLimitNode(RuntimeContext* context, uint64_t offset, uint64_t limit)
-      : IndexNode(context), offset_(offset), limit_(limit) {}
-  IndexLimitNode(RuntimeContext* context, uint64_t limit) : IndexLimitNode(context, 0, limit) {}
-  nebula::cpp2::ErrorCode execute(PartitionID partId) override;
-  ErrorOr<Row> next(bool& hasNext) override {
-    DCHECK_EQ(children_.size(), 1);
-    auto& child = *children_[0];
-    while (UNLIKELY(currentOffset_ < offset_)) {
-      auto result = child.next(hasNext);
-      if (!::nebula::ok(result) || !hasNext) {
-        return result;
-      }
-      currentOffset_++;
-    }
-    if (currentOffset_ < offset_ + limit_) {
-      return child.next(hasNext);
-    } else {
-      hasNext = false;
-      return ErrorOr<Row>(Row());
-    }
-  }
+  IndexLimitNode(RuntimeContext* context, uint64_t offset, uint64_t limit);
+  IndexLimitNode(RuntimeContext* context, uint64_t limit);
 
  private:
+  nebula::cpp2::ErrorCode doExecute(PartitionID partId) override;
+  ErrorOr<Row> doNext(bool& hasNext) override;
   const uint64_t offset_, limit_;
   uint64_t currentOffset_ = 0;
 };

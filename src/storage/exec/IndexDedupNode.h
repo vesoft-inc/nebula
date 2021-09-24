@@ -11,11 +11,25 @@ namespace nebula {
 namespace storage {
 class IndexDedupNode : public IndexNode {
  public:
-  IndexDedupNode(RuntimeContext* context,
-                 const std::vector<std::string>& dedupColumn,
-                 const std::vector<std::string>& inputColumn);
-  nebula::cpp2::ErrorCode execute(PartitionID partId) = 0;
-  ErrorOr<Row> next(bool& hasNext) override {
+  IndexDedupNode(RuntimeContext* context, const std::vector<std::string>& dedupColumn);
+  ::nebula::cpp2::ErrorCode init(InitContext& ctx) override {
+    for (auto& col : dedupColumns_) {
+      ctx.requiredColumns.insert(col);
+    }
+    // The return Row format of each child node must be the same
+    InitContext childCtx = ctx;
+    for (auto& child : children_) {
+      child->init(childCtx);
+      childCtx = ctx;
+    }
+    ctx = childCtx;
+    for (auto& col : dedupColumns_) {
+      dedupPos_.push_back(ctx.retColMap[col]);
+    }
+    return ::nebula::cpp2::ErrorCode::SUCCEEDED;
+  }
+
+  ErrorOr<Row> doNext(bool& hasNext) override {
     DCHECK_EQ(children_.size(), 1);
     auto& child = *children_[0];
     do {
@@ -31,7 +45,7 @@ class IndexDedupNode : public IndexNode {
 
  private:
   bool dedup(const Row& row) {
-    auto result = dedupSet_.emplace(row);
+    auto result = dedupSet_.emplace(row, dedupPos_);
     return result.second;
   }
   class RowWrapper {
@@ -56,6 +70,7 @@ class IndexDedupNode : public IndexNode {
       return a.values() == b.values();
     }
   };
+  std::vector<std::string> dedupColumns_;
   std::vector<size_t> dedupPos_;
   folly::F14FastSet<RowWrapper, Hasher, Equal> dedupSet_;
 };
