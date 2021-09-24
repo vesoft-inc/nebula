@@ -71,7 +71,10 @@ jobs:
         with:
           context: .
           file: ./docker/Dockerfile.${{ matrix.service }}
-          tags: vesoft/nebula-${{ matrix.service }}:${{ steps.tagname.outputs.tag }},vesoft/nebula-${{ matrix.service }}:latest
+          tags: |
+            vesoft/nebula-${{ matrix.service }}:${{ steps.tagname.outputs.tag }}
+            vesoft/nebula-${{ matrix.service }}:${{ steps.tagname.outputs.majorver }}
+            vesoft/nebula-${{ matrix.service }}:latest
           push: true
           build-args: |
             BRANCH=${{ steps.tagname.outputs.tag }}
