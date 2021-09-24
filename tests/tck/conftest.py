@@ -39,6 +39,7 @@ example_pattern = re.compile(r"<(\w+)>")
 register_dict = {}
 register_lock = threading.Lock()
 
+
 def normalize_outline_scenario(request, name):
     for group in example_pattern.findall(name):
         fixval = request.getfixturevalue(group)
@@ -477,6 +478,7 @@ def check_plan(plan, graph_spaces):
     differ = PlanDiffer(resp.plan_desc(), expect)
     assert differ.diff(), differ.err_msg()
 
+
 @when(parse("executing query via graph {index:d}:\n{query}"))
 def executing_query(query, index, graph_spaces, session_from_first_conn_pool, session_from_second_conn_pool, request):
     assert index < 2, "There exists only 0,1 graph: {}".format(index)
@@ -486,11 +488,13 @@ def executing_query(query, index, graph_spaces, session_from_first_conn_pool, se
     else:
         exec_query(request, ngql, session_from_second_conn_pool, graph_spaces)
 
+
 @then(parse("the result should be, the first {n:d} records in order, and register {column_name} as a list named {key}:\n{result}"))
 def result_should_be_in_order_and_register_key(n, column_name, key, request, result, graph_spaces):
     assert n > 0, f"The records number should be an positive integer: {n}"
     result_ds = cmp_dataset(request, graph_spaces, result, order=True, strict=True, contains=CmpType.CONTAINS, first_n_records=n)
     register_result_key(request.node.name, result_ds, column_name, key)
+
 
 def register_result_key(test_name, result_ds, column_name, key):
     if column_name.encode() not in result_ds.column_names:
@@ -500,6 +504,7 @@ def register_result_key(test_name, result_ds, column_name, key):
     register_lock.acquire()
     register_dict[test_name + key] = val;
     register_lock.release()
+
 
 @when(parse("executing query, fill replace holders with element index of {indices} in {keys}:\n{query}"))
 def executing_query_with_params(query, indices, keys, graph_spaces, session, request):
