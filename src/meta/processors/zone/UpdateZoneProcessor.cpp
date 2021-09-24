@@ -117,6 +117,46 @@ void DropHostFromZoneProcessor::process(const cpp2::DropHostFromZoneReq& req) {
     return;
   }
 
+  const auto& spacePrefix = MetaServiceUtils::spacePrefix();
+  auto spaceIterRet = doPrefix(spacePrefix);
+  auto spaceIter = nebula::value(spaceIterRet).get();
+  while (spaceIter->valid()) {
+    auto spaceId = MetaServiceUtils::spaceId(spaceIter->key());
+    auto spaceKey = MetaServiceUtils::spaceKey(spaceId);
+    auto ret = doGet(spaceKey);
+    if (!nebula::ok(ret)) {
+      auto retCode = nebula::error(ret);
+      LOG(ERROR) << "Get Space " << spaceId
+                 << " error: " << apache::thrift::util::enumNameSafe(retCode);
+      handleErrorCode(retCode);
+      onFinished();
+      return;
+    }
+
+    auto properties = MetaServiceUtils::parseSpace(nebula::value(ret));
+    if (!properties.group_name_ref().has_value()) {
+      spaceIter->next();
+      continue;
+    }
+
+    const auto& partPrefix = MetaServiceUtils::partPrefix(spaceId);
+    auto partIterRet = doPrefix(partPrefix);
+    auto partIter = nebula::value(partIterRet).get();
+    while (partIter->valid()) {
+      auto partHosts = MetaServiceUtils::parsePartVal(partIter->val());
+      for (auto& h : partHosts) {
+        if (h == req.get_node()) {
+          LOG(ERROR) << h << " is related with partition";
+          handleErrorCode(nebula::cpp2::ErrorCode::E_CONFLICT);
+          onFinished();
+          return;
+        }
+      }
+      partIter->next();
+    }
+    spaceIter->next();
+  }
+
   auto hosts = MetaServiceUtils::parseZoneHosts(std::move(nebula::value(zoneValueRet)));
   auto host = req.get_node();
   auto iter = std::find(hosts.begin(), hosts.end(), host);
