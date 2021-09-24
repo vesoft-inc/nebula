@@ -473,44 +473,55 @@ struct ExecutionResponse {
   std::unique_ptr<PlanDescription> planDesc{nullptr};
   std::unique_ptr<std::string> comment{nullptr};
 
-  // Return the response as a json string
-  // format
-  //   "results": [
+  // Return the response as a JSON string
+  // only errorCode and latencyInUs are requied fields, the rest are optional
+  // if the dataset contains a value of TIME or DATETIME, it will be returned in UTC.
+  //
+  // JSON struct:
+  //   "results":[
   //     {
-  //       "columns": [],
-  //       "data": [
-  //           {
-  //               "row": [ row-data ],
-  //               "meta": [ metadata ]
-  //           },
+  //       "columns":[],
+  //       "data":[
+  //         {
+  //           "row":[row-data],
+  //           "meta":[metadata]
+  //         }
   //       ],
-  //       "latencyInUs" : 0,
-  //       "spaceName": "",
-  //       "planDesc ": {
-  //         "planNodeDescs": [ {
-  //           "name" : "",
-  //           "id" : 0,
-  //           "outputVar" : "",
-  //           "description" : {"key" : ""},
-  //           "profiles" : [{
-  //             "rows" : 1,
-  //             "execDurationInUs" : 0,
-  //             "totalDurationInUs" : 0,
-  //             "otherStats" : {}, // map
-  //           }],
-  //           "branchInfo" : {
-  //             "isDoBranch" : false,
-  //             "conditionNodeId" : -1,
-  //           },
-  //           "dependencies" : [] // vector of ints
+  //       "latencyInUs":0,
+  //       "spaceName":"",
+  //       "planDesc ":{
+  //         "planNodeDescs":[
+  //           {
+  //             "name":"",
+  //             "id":0,
+  //             "outputVar":"",
+  //             "description":{
+  //               "key":""
+  //             },
+  //             "profiles":[
+  //               {
+  //                 "rows":1,
+  //                 "execDurationInUs":0,
+  //                 "totalDurationInUs":0,
+  //                 "otherStats":{}
+  //               }
+  //             ],
+  //             "branchInfo":{
+  //               "isDoBranch":false,
+  //               "conditionNodeId":-1
+  //             },
+  //             "dependencies":[]
   //           }
   //         ],
-  //         "nodeIndexMap" : {},
-  //         "format" : "",
-  //         "optimize_time_in_us" : 0,
+  //         "nodeIndexMap":{},
+  //         "format":"",
+  //         "optimize_time_in_us":0
   //       },
-  //       "comment ": "",
-  //       "errors" : "" // errorMsg
+  //       "comment ":"",
+  //       "errors":{
+  //         "errorCode":0,
+  //         "errorMsg":""
+  //       }
   //     }
   //   ]
   // }
