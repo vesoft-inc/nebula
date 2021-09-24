@@ -12,54 +12,23 @@ namespace storage {
 class IndexDedupNode : public IndexNode {
  public:
   IndexDedupNode(RuntimeContext* context, const std::vector<std::string>& dedupColumn);
-  ::nebula::cpp2::ErrorCode init(InitContext& ctx) override {
-    for (auto& col : dedupColumns_) {
-      ctx.requiredColumns.insert(col);
-    }
-    // The return Row format of each child node must be the same
-    InitContext childCtx = ctx;
-    for (auto& child : children_) {
-      child->init(childCtx);
-      childCtx = ctx;
-    }
-    ctx = childCtx;
-    for (auto& col : dedupColumns_) {
-      dedupPos_.push_back(ctx.retColMap[col]);
-    }
-    return ::nebula::cpp2::ErrorCode::SUCCEEDED;
-  }
-
-  ErrorOr<Row> doNext(bool& hasNext) override {
-    DCHECK_EQ(children_.size(), 1);
-    auto& child = *children_[0];
-    do {
-      auto result = child.next(hasNext);
-      if (!hasNext || !nebula::ok(result)) {
-        return result;
-      }
-      if (dedup(::nebula::value(result))) {
-        return result;
-      }
-    } while (true);
-  }
+  ::nebula::cpp2::ErrorCode init(InitContext& ctx) override;
 
  private:
-  bool dedup(const Row& row) {
-    auto result = dedupSet_.emplace(row, dedupPos_);
-    return result.second;
-  }
+  inline bool dedup(const Row& row);
+  ::nebula::cpp2::ErrorCode doExecute(PartitionID partId) override;
+  ErrorOr<Row> doNext(bool& hasNext) override;
+
+  // Define RowWrapper for dedup
   class RowWrapper {
    public:
-    RowWrapper(const Row& row, const std::vector<size_t>& posList) {
-      for (auto p : posList) {
-        values_.emplace_back(row[p]);
-      }
-    }
-    const List& values() const { return values_; }
+    RowWrapper(const Row& row, const std::vector<size_t>& posList);
+    inline const List& values() const { return values_; }
 
    private:
     List values_;
   };
+  // End of RowWrapper
   struct Hasher {
     size_t operator()(const RowWrapper& wrapper) const {
       return std::hash<List>()(wrapper.values());
@@ -74,6 +43,11 @@ class IndexDedupNode : public IndexNode {
   std::vector<size_t> dedupPos_;
   folly::F14FastSet<RowWrapper, Hasher, Equal> dedupSet_;
 };
-}  // namespace storage
 
+/* Definition of inline function */
+inline bool IndexDedupNode::dedup(const Row& row) {
+  auto result = dedupSet_.emplace(row, dedupPos_);
+  return result.second;
+}
+}  // namespace storage
 }  // namespace nebula

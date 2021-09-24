@@ -7,14 +7,43 @@
 namespace nebula {
 namespace storage {
 IndexDedupNode::IndexDedupNode(RuntimeContext* context, const std::vector<std::string>& dedupColumn)
-    : IndexNode(context, "IndexDedupNode"), dedupColumns_(dedupColumn) {
-  Map<std::string, size_t> m;
-  for (size_t i = 0; i < inputColumn.size(); i++) {
-    m[inputColumn[i]] = i;
+    : IndexNode(context, "IndexDedupNode"), dedupColumns_(dedupColumn) {}
+::nebula::cpp2::ErrorCode IndexDedupNode::init(InitContext& ctx) {
+  for (auto& col : dedupColumns_) {
+    ctx.requiredColumns.insert(col);
   }
-  for (auto& col : dedupColumn) {
-    DCHECK(m.count(col));
-    dedupPos_.push_back(m.at(col));
+  // The return Row format of each child node must be the same
+  InitContext childCtx = ctx;
+  for (auto& child : children_) {
+    child->init(childCtx);
+    childCtx = ctx;
+  }
+  ctx = childCtx;
+  for (auto& col : dedupColumns_) {
+    dedupPos_.push_back(ctx.retColMap[col]);
+  }
+  return ::nebula::cpp2::ErrorCode::SUCCEEDED;
+}
+::nebula::cpp2::ErrorCode IndexDedupNode::doExecute(PartitionID partId) {
+  dedupSet_.clear();
+  return IndexNode::doExecute(partId);
+}
+IndexNode::ErrorOr<Row> IndexDedupNode::doNext(bool& hasNext) override {
+  DCHECK_EQ(children_.size(), 1);
+  auto& child = *children_[0];
+  do {
+    auto result = child.next(hasNext);
+    if (!hasNext || !nebula::ok(result)) {
+      return result;
+    }
+    if (dedup(::nebula::value(result))) {
+      return result;
+    }
+  } while (true);
+}
+IndexDedupNode::RowWrapper::RowWrapper(const Row& row, const std::vector<size_t>& posList) {
+  for (auto p : posList) {
+    values_.emplace_back(row[p]);
   }
 }
 }  // namespace storage

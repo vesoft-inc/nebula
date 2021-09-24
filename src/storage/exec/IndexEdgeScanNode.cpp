@@ -7,20 +7,16 @@
 #include "storage/exec/IndexEdgeScanNode.h"
 namespace nebula {
 namespace storage {
-IndexNode::ErrorOr<IndexEdgeScanNode> IndexEdgeScanNode::make(
-    RuntimeContext* context,
-    IndexID indexId,
-    const std::vector<cpp2::IndexColumnHint>& columnHint) {
-  IndexEdgeScanNode node(context, indexId, columnHint);
-  auto env = context->env();
-  auto spaceId = context->spaceId();
+::nebula::cpp2::ErrorCode IndexEdgeScanNode::init(InitContext& ctx) {
+  auto env = context_->env();
+  auto spaceId = context_->spaceId();
   auto indexMgr = env->indexMan_;
   auto schemaMgr = env->schemaMan_;
-  auto index = indexMgr->getTagIndex(spaceId, indexId).value();
+  auto index = indexMgr->getTagIndex(spaceId, indexId_).value();
   auto edgeSchema = schemaMgr->getEdgeSchema(spaceId, index->get_schema_id().get_tag_id());
-  node.index_ = index;
-  node.edge_ = edgeSchema;
-  return ErrorOr<IndexEdgeScanNode>(std::move(node));
+  this->index_ = index;
+  this->edge_ = edgeSchema;
+  return ::nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 Row IndexEdgeScanNode::decodeFromIndex(folly::StringPiece key) {
   std::vector<Value> values(requiredColumns_.size());

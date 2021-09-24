@@ -10,11 +10,11 @@ IndexLimitNode::IndexLimitNode(RuntimeContext* context, uint64_t offset, uint64_
     : IndexNode(context, "IndexLimitNode"), offset_(offset), limit_(limit) {}
 IndexLimitNode::IndexLimitNode(RuntimeContext* context, uint64_t limit)
     : IndexLimitNode(context, 0, limit) {}
-nebula::cpp2::ErrorCode IndexLimitNode::doExecute(PartitionID partId) override {
+nebula::cpp2::ErrorCode IndexLimitNode::doExecute(PartitionID partId) {
   currentOffset_ = 0;
   return children_[0]->execute(partId);
 }
-IndexNode::ErrorOr<Row> IndexLimitNode::doNext(bool& hasNext) override {
+IndexNode::ErrorOr<Row> IndexLimitNode::doNext(bool& hasNext) {
   DCHECK_EQ(children_.size(), 1);
   auto& child = *children_[0];
   while (UNLIKELY(currentOffset_ < offset_)) {

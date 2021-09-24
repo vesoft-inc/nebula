@@ -20,6 +20,7 @@ class IndexEdgeScanNode : public IndexScanNode {
                     IndexID indexId,
                     const std::vector<cpp2::IndexColumnHint>& columnHint)
       : IndexScanNode(context, "IndexEdgeScanNode", indexId, columnHint) {}
+  ::nebula::cpp2::ErrorCode init(InitContext& ctx) override;
 
  private:
   Row decodeFromIndex(folly::StringPiece key) override;
