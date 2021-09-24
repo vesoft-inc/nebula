@@ -221,6 +221,18 @@ def try_to_execute_query(query, graph_spaces, session, request):
     for stmt in ngql.split(';'):
         exec_query(request, stmt, session, graph_spaces, True)
 
+@when(parse("clone a new space according to current space"))
+def clone_space(graph_spaces, session, request):
+    space_desc = graph_spaces["space_desc"]
+    current_space = space_desc.name
+    new_space = "EmptyGraph_" + space_generator()
+    space_desc.name = new_space
+    resp_ok(session, space_desc.drop_stmt(), True)
+    ngql = "create space " + new_space + " as " + current_space;
+    exec_query(request, ngql, session, graph_spaces)
+    resp_ok(session, space_desc.use_stmt(), True)
+    graph_spaces["space_desc"] = space_desc
+    graph_spaces["drop_space"] = True
 
 @given("wait all indexes ready")
 @when("wait all indexes ready")

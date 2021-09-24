@@ -131,7 +131,7 @@ def session(session_from_first_conn_pool):
 def load_csv_data_once(space: str):
     with open(SPACE_TMP_PATH, "r") as f:
         for sp in json.loads(f.readline()):
-            if sp.get("name", None) == space:
+            if sp.get("_name", None) == space:
                 return SpaceDesc.from_json(sp)
         raise ValueError(f"Invalid space name: {space}")
 

@@ -12,12 +12,12 @@ class SpaceDesc:
                  replica_factor: int = 1,
                  charset: str = "utf8",
                  collate: str = "utf8_bin"):
-        self.name = name
-        self.vid_type = vid_type
-        self.partition_num = partition_num
-        self.replica_factor = replica_factor
-        self.charset = charset
-        self.collate = collate
+        self._name = name
+        self._vid_type = vid_type
+        self._partition_num = partition_num
+        self._replica_factor = replica_factor
+        self._charset = charset
+        self._collate = collate
 
     def __str__(self):
         return str(self.__dict__)
@@ -34,22 +34,30 @@ class SpaceDesc:
         )
 
     def create_stmt(self) -> str:
-        return f"""CREATE SPACE IF NOT EXISTS `{self.name}`( \
-            partition_num={self.partition_num}, \
-            replica_factor={self.replica_factor}, \
-            vid_type={self.vid_type}, \
-            charset={self.charset}, \
-            collate={self.collate} \
+        return f"""CREATE SPACE IF NOT EXISTS `{self._name}`( \
+            partition_num={self._partition_num}, \
+            replica_factor={self._replica_factor}, \
+            vid_type={self._vid_type}, \
+            charset={self._charset}, \
+            collate={self._collate} \
         );"""
 
     def use_stmt(self) -> str:
-        return f"USE `{self.name}`;"
+        return f"USE `{self._name}`;"
 
     def drop_stmt(self) -> str:
-        return f"DROP SPACE IF EXISTS `{self.name}`;"
+        return f"DROP SPACE IF EXISTS `{self._name}`;"
 
     def is_int_vid(self) -> bool:
-        return self.vid_type == 'int'
+        return self._vid_type == 'int'
+
+    @property
+    def name(self):
+        return self._name
+
+    @name.setter
+    def name(self, name: str):
+        self._name = name
 
 
 class Column:
