@@ -168,6 +168,7 @@ def new_space(request, options, session, graph_spaces):
     graph_spaces["space_desc"] = space_desc
     graph_spaces["drop_space"] = True
 
+
 @given(parse("Any graph"))
 def new_space(request, session, graph_spaces):
     name = "EmptyGraph_" + space_generator()
@@ -182,6 +183,7 @@ def new_space(request, session, graph_spaces):
     create_space(space_desc, session)
     graph_spaces["space_desc"] = space_desc
     graph_spaces["drop_space"] = True
+
 
 @given(parse('load "{data}" csv data to a new space'))
 def import_csv_data(request, data, graph_spaces, session, pytestconfig):

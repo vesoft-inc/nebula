@@ -62,6 +62,14 @@ jobs:
       - uses: actions/checkout@v2
       - uses: ./.github/actions/tagname-action
         id: tagname
+      - id: docker
+        run: |
+          majorver=$(git tag -l --sort=v:refname | tail -n1 | cut -f1 -d'.')
+          tag=""
+          if [[ $majorver == ${{ steps.tagname.outputs.majorver }} ]]; then
+            tag="vesoft/nebula-${{ matrix.service }}:latest"
+          fi
+          echo "::set-output name=tag::$tag"
       - uses: docker/setup-buildx-action@v1
       - uses: docker/login-action@v1
         with:
@@ -74,7 +82,7 @@ jobs:
           tags: |
             vesoft/nebula-${{ matrix.service }}:${{ steps.tagname.outputs.tag }}
             vesoft/nebula-${{ matrix.service }}:${{ steps.tagname.outputs.majorver }}
-            vesoft/nebula-${{ matrix.service }}:latest
+            ${{ steps.docker.outputs.tag }}
           push: true
           build-args: |
             BRANCH=${{ steps.tagname.outputs.tag }}
