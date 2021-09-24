@@ -40,6 +40,7 @@ struct Geography {
   Geography() = default;
   explicit Geography(const std::string& validWKB) {
     // DCHECK(WKB::isValid(wkb));
+    LOG(INFO) << "Geography.wkb: " << wkb << ", wkb.size(): " << wkb.size();
     wkb = validWKB;
   }
 

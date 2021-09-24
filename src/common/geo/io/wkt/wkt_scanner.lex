@@ -11,9 +11,11 @@
 #include "WKTParser.hpp"
 #include <stdlib.h>
 
-%}
+#define YY_USER_ACTION                  \
+    yylloc->step();                     \
+    yylloc->columns(yyleng);
 
-blanks                      ([ \t\n\r]+)
+%}
 
 %%
 
@@ -31,7 +33,7 @@ blanks                      ([ \t\n\r]+)
     return TokenType::DOUBLE;
 }
 
-blanks                      {}
+[ \t\n\r]                      {}
 
 .                           {
                                 /**

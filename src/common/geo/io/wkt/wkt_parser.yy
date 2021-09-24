@@ -65,9 +65,6 @@ class WKTScanner;
 %type <coordListListVal> coordinate_list_list
 
 %define api.prefix {wkt}
-%defines
-
-%expect 0
 
 %start geometry
 
@@ -76,12 +73,16 @@ class WKTScanner;
 geometry
   : point {
     $$ = $1;
+    LOG(INFO) << "jie test" << static_cast<Point*>($$)->coord.x << static_cast<Point*>($$)->coord.y;
+    *geom = $$;
   }
   | linestring {
     $$ = $1;
+    *geom = $$;
   }
   | polygon {
     $$ = $1;
+    *geom = $$;
   }
 ;
 

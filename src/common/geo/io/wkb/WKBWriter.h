@@ -19,13 +19,13 @@ class WKBWriter {
 
   std::string write(const Geometry* geom) const {
     std::string wkb = "";
-    auto shape = geom->shape();
 
     uint8_t byteOrder = static_cast<std::underlying_type_t<ByteOrder>>(getMachineByteOrder());
     writeUint8(wkb, byteOrder);
 
+    auto shape = geom->shape();
     uint32_t shapeType = static_cast<std::underlying_type_t<ShapeType>>(shape);
-    writeUint8(wkb, shapeType);
+    writeUint32(wkb, shapeType);
     switch (shape) {
       case ShapeType::Point: {
         const Point* point = static_cast<const Point*>(geom);
@@ -84,7 +84,7 @@ class WKBWriter {
     wkb.append(reinterpret_cast<char*>(&v), sizeof(v));
   }
 
-  void writeDouble(std::string& wkb, uint32_t v) const {
+  void writeDouble(std::string& wkb, double v) const {
     wkb.append(reinterpret_cast<char*>(&v), sizeof(v));
   }
 };
