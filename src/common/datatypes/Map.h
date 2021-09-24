@@ -43,6 +43,9 @@ struct Map {
   // the configs of rocksdb will use the interface, so the value need modify to
   // string
   std::string toString() const;
+  folly::dynamic toJson() const;
+  // Extract the metadata of the value of each kv pair
+  folly::dynamic getMetaData() const;
 
   bool operator==(const Map& rhs) const { return kvs == rhs.kvs; }
 

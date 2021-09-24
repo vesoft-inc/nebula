@@ -23,6 +23,11 @@ void LookupProcessor::process(const cpp2::LookupIndexRequest& req) {
 
 void LookupProcessor::doProcess(const cpp2::LookupIndexRequest& req) {
   auto retCode = requestCheck(req);
+  if (limit_ == 0) {
+    onProcessFinished();
+    onFinished();
+    return;
+  }
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
     for (auto& p : req.get_parts()) {
       pushResultCode(retCode, p);
