@@ -1048,7 +1048,17 @@ opt_argument_list
     ;
 
 argument_list
-    : expression {
+    : KW_VERTEX {
+        $$ = ArgumentList::make(qctx->objPool());
+        Expression* arg = VertexExpression::make(qctx->objPool());
+        $$->addArgument(arg);
+    }
+    | KW_EDGE {
+        $$ = ArgumentList::make(qctx->objPool());
+        Expression *arg = EdgeExpression::make(qctx->objPool());
+        $$->addArgument(arg);
+    }
+    | expression {
         $$ = ArgumentList::make(qctx->objPool());
         Expression* arg = nullptr;
         arg = $1;

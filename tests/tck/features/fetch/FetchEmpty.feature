@@ -44,9 +44,8 @@ Feature: Fetch prop on empty tag/edge
       | ("1":zero_prop_tag_0) |
     When executing query:
       """
-      GO FROM "1" OVER zero_prop_edge
-      YIELD zero_prop_edge._dst as id
-      | FETCH PROP ON zero_prop_tag_0 $-.id
+      GO FROM "1" OVER zero_prop_edge YIELD zero_prop_edge._dst as id |
+      FETCH PROP ON zero_prop_tag_0 $-.id
       """
     Then the result should be, in any order, with relax comparison:
       | vertices_             |
@@ -75,9 +74,8 @@ Feature: Fetch prop on empty tag/edge
       | edges_ |
     When executing query:
       """
-      GO FROM "1" OVER zero_prop_edge
-      YIELD zero_prop_edge._src as src, zero_prop_edge._dst as dst
-      | FETCH PROP ON zero_prop_edge $-.src->$-.dst
+      GO FROM "1" OVER zero_prop_edge YIELD zero_prop_edge._src as src, zero_prop_edge._dst as dst |
+      FETCH PROP ON zero_prop_edge $-.src->$-.dst
       """
     Then the result should be, in any order:
       | edges_                          |
