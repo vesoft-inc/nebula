@@ -149,7 +149,7 @@ struct FetchEdgesContext final : public AstContext {
 
   ExpressionProps exprProps;
   YieldColumns* yieldExpr{nullptr};
-
+  std::string edgeName;
   bool distinct{false};
   // store the result of the previous sentence
   std::string inputVarName;

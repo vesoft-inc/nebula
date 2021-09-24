@@ -5,18 +5,12 @@
  */
 
 #include "graph/planner/ngql/FetchEdgesPlanner.h"
-
-#include "graph/util/ExpressionUtils.h"
-#include "graph/util/QueryUtil.h"
-#include "graph/util/SchemaUtil.h"
-#include "graph/validator/Validator.h"
-
 namespace nebula {
 namespace graph {
 
 std::unique_ptr<FetchEdgesPlanner::EdgeProps> FetchEdgesPlanner::buildEdgeProps() {
   auto eProps = std::make_unique<EdgeProps>();
-  auto edgePropsMap = fetchCtx_->exprProps.edgeProps();
+  const auto &edgePropsMap = fetchCtx_->exprProps.edgeProps();
   for (const auto &edgeProp : edgePropsMap) {
     EdgeProp ep;
     ep.set_type(edgeProp.first);
@@ -24,6 +18,22 @@ std::unique_ptr<FetchEdgesPlanner::EdgeProps> FetchEdgesPlanner::buildEdgeProps(
     eProps->emplace_back(std::move(ep));
   }
   return eProps;
+}
+
+Expression *FetchEdgesPlanner::emptyEdgeFilter() {
+  auto *pool = fetchCtx_->qctx->objPool();
+  const auto &edgeName = fetchCtx_->edgeName;
+  auto notEmpty = [&pool](Expression *expr) {
+    return RelationalExpression::makeNE(pool, ConstantExpression::make(pool, Value::kEmpty), expr);
+  };
+  auto exprAnd = [&pool](Expression *left, Expression *right) {
+    return LogicalExpression::makeAnd(pool, left, right);
+  };
+
+  auto *srcNotEmpty = notEmpty(EdgeSrcIdExpression::make(pool, edgeName));
+  auto *dstNotEmpty = notEmpty(EdgeDstIdExpression::make(pool, edgeName));
+  auto *rankNotEmpty = notEmpty(EdgeRankExpression::make(pool, edgeName));
+  return exprAnd(srcNotEmpty, exprAnd(dstNotEmpty, rankNotEmpty));
 }
 
 StatusOr<SubPlan> FetchEdgesPlanner::transform(AstContext *astCtx) {
@@ -44,7 +54,9 @@ StatusOr<SubPlan> FetchEdgesPlanner::transform(AstContext *astCtx) {
                                   fetchCtx_->distinct);
   getEdges->setInputVar(fetchCtx_->inputVarName);
 
-  subPlan.root = Project::make(qctx, getEdges, fetchCtx_->yieldExpr);
+  subPlan.root = Filter::make(qctx, getEdges, emptyEdgeFilter());
+
+  subPlan.root = Project::make(qctx, subPlan.root, fetchCtx_->yieldExpr);
   if (fetchCtx_->distinct) {
     subPlan.root = Dedup::make(qctx, subPlan.root);
   }

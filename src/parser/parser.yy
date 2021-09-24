@@ -1985,14 +1985,12 @@ edge_key_ref
     ;
 
 fetch_edges_sentence
-    : KW_FETCH KW_PROP KW_ON name_label edge_keys yield_clause {
-        auto fetch = new FetchEdgesSentence(*$4, $5, $6);
-        delete $4;
+    : KW_FETCH KW_PROP KW_ON name_label_list edge_keys yield_clause {
+        auto fetch = new FetchEdgesSentence($4, $5, $6);
         $$ = fetch;
     }
-    | KW_FETCH KW_PROP KW_ON name_label edge_key_ref yield_clause {
-        auto fetch = new FetchEdgesSentence(*$4, $5, $6);
-        delete $4;
+    | KW_FETCH KW_PROP KW_ON name_label_list edge_key_ref yield_clause {
+        auto fetch = new FetchEdgesSentence($4, $5, $6);
         $$ = fetch;
     }
     ;

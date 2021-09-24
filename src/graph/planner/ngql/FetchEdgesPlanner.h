@@ -32,6 +32,8 @@ class FetchEdgesPlanner final : public Planner {
 
   std::unique_ptr<EdgeProps> buildEdgeProps();
 
+  Expression* emptyEdgeFilter();
+
  private:
   FetchEdgesPlanner() = default;
 
