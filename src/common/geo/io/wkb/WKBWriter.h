@@ -20,7 +20,8 @@ class WKBWriter {
   std::string write(const Geometry* geom) const {
     std::string wkb = "";
 
-    uint8_t byteOrder = static_cast<std::underlying_type_t<ByteOrder>>(getMachineByteOrder());
+    uint8_t byteOrder =
+        static_cast<std::underlying_type_t<ByteOrder>>(ByteOrderData::getMachineByteOrder());
     writeUint8(wkb, byteOrder);
 
     auto shape = geom->shape();

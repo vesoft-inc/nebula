@@ -11,7 +11,32 @@
 
 #include <cstdint>
 
+#include "common/geo/io/wkb/WKBReader.h"
+#include "common/geo/io/wkt/WKTWriter.h"
+
 namespace nebula {
+
+ShapeType Geography::shape() const {
+  std::string wkbCopy = wkb;
+  uint8_t *beg = reinterpret_cast<uint8_t *>(wkbCopy.data());
+  uint8_t *end = beg + wkbCopy.size();
+  WKBReader reader;
+  auto byteOrderRet = reader.readByteOrder(beg, end);
+  DCHECK(byteOrderRet.ok());
+  ByteOrder byteOrder = byteOrderRet.value();
+  auto shapeTypeRet = reader.readShapeType(beg, end, byteOrder);
+  DCHECK(shapeTypeRet.ok());
+  return shapeTypeRet.value();
+}
+
+std::string Geography::asWKT() const {
+  auto geomRet = WKBReader().read(wkb);
+  DCHECK(geomRet.ok());
+  std::unique_ptr<Geometry> geom = std::move(geomRet).value();
+  std::string wkt = WKTWriter().write(geom.get());
+  LOG(INFO) << "Geography::asWKT(): " << wkt;
+  return wkt;
+}
 
 S2Region* Geography::asS2() const {
   // auto geom = WKBReader().read(wkb);

@@ -88,30 +88,25 @@ geometry
 
 point
   : KW_POINT L_PAREN coordinate R_PAREN {
-      $$ = new Point();
-      $$->coord = *$3;
+      $$ = new Point(*$3);
   }
   ;
 
 linestring
   : KW_LINESTRING L_PAREN coordinate_list R_PAREN {
-      $$ = new LineString();
-      $$->coordList = *$3;
+      $$ = new LineString(*$3);
   }
   ;
 
 polygon
   : KW_POLYGON L_PAREN coordinate_list_list R_PAREN {
-      $$ = new Polygon();
-      $$->coordListList = *$3;
+      $$ = new Polygon(*$3);
   }
   ;
 
 coordinate
   : DOUBLE DOUBLE {
-      $$ = new Coordinate();
-      $$->x = $1;
-      $$->y = $2;
+      $$ = new Coordinate($1, $2);
   }
   ;
 

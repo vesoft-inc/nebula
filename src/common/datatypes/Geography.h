@@ -35,31 +35,30 @@ static const std::unordered_map<ShapeType, S2Region> kShapeTypeToS2Region = {
 // Do not construct a S2 data when constructing Geography. It's expensive.
 // We just construct S2 when doing computation.
 struct Geography {
-  std::string wkb;
+  std::string wkb;  // TODO(jie) Maybe store Geometry* here is better
 
   Geography() = default;
   explicit Geography(const std::string& validWKB) {
     // DCHECK(WKB::isValid(wkb));
-    LOG(INFO) << "Geography.wkb: " << wkb << ", wkb.size(): " << wkb.size();
     wkb = validWKB;
+    LOG(INFO) << "Geography.wkb: " << wkb << ", wkb.size(): " << wkb.size();
   }
+
+  ShapeType shape() const;
+
+  std::string asWKT() const;
+
+  std::string asWKB() const { return wkb; }
 
   S2Region* asS2() const;
 
-  ShapeType shape() const {
-    // auto type = WKBReader.readUint32(wkb.substr(1));
-    // DCHECK(type >= 1 && type <= 3);
-    // return static_cast<ShapeType>(type);
-    return static_cast<ShapeType>(1);
-  }
+  std::string toString() const { return asWKT(); }
+
+  folly::dynamic toJson() const { return toString(); }
 
   void clear() { wkb.clear(); }
 
   void __clear() { clear(); }
-
-  std::string toString() const { return wkb; }
-
-  folly::dynamic toJson() const { return toString(); }
 
   bool operator==(const Geography& rhs) const { return wkb == rhs.wkb; }
 

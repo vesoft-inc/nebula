@@ -2294,18 +2294,20 @@ FunctionManager::FunctionManager() {
     attr.isPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       const std::string &wkt = args[0].get().getStr();
-      LOG(INFO) << "jie, wkt: " << wkt;
+      LOG(INFO) << "st_geogfromtext, wkt: " << wkt;
       auto geomRet = WKTReader().read(wkt);
       if (!geomRet.ok()) {
         LOG(INFO) << "ST_GeogFromText: " << geomRet.status();
         return Value::kNullBadData;
       }
       std::unique_ptr<Geometry> geom = std::move(geomRet).value();
+      DCHECK(!!geom);
       // if (!isValidGeom(geom.get())) { // Check if the geometry is valid due to OGC and WGS84(SRID
       // 4326)
       //   return Value::kNullBadData;
       // }
       auto wkb = WKBWriter().write(geom.get());
+      LOG(INFO) << "st_geogfromtext, wkb:" << wkb << ", wkb.size():" << wkb.size();
       return Geography(wkb);
     };
   }
@@ -2379,13 +2381,8 @@ FunctionManager::FunctionManager() {
     attr.maxArity_ = 1;
     attr.isPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
-      // const Geography &g = args[0].get().getGeography();
-      // const std::string &wkb = g.wkb;
-      // auto geom = WKBReader().read(wkb);
-      // std::string wkt = WKTWriter().write(geom);
-      // return wkt;
-      UNUSED(args);
-      return "";
+      const Geography &g = args[0].get().getGeography();
+      return g.asWKT();
     };
   }
   {
@@ -2394,11 +2391,8 @@ FunctionManager::FunctionManager() {
     attr.maxArity_ = 2;
     attr.isPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
-      // const Geography &g = args[0].get().getGeography();
-      // const std::string &wkb = g.wkb;
-      // return wkb;
-      UNUSED(args);
-      return "";
+      const Geography &g = args[0].get().getGeography();
+      return g.asWKB();
     };
   }
 }  // NOLINT
