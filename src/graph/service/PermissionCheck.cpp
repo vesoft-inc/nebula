@@ -68,7 +68,6 @@ Status PermissionCheck::permissionCheck(ClientSession *session,
     case Sentence::Kind::kAddHostIntoZone:
     case Sentence::Kind::kDropHostFromZone:
     case Sentence::Kind::kBalance:
-    case Sentence::Kind::kAdminJob:
     case Sentence::Kind::kShowConfigs:
     case Sentence::Kind::kSetConfig:
     case Sentence::Kind::kGetConfig:
@@ -77,6 +76,9 @@ Status PermissionCheck::permissionCheck(ClientSession *session,
     case Sentence::Kind::kSignOutTSService:
     case Sentence::Kind::kSignInTSService: {
       return PermissionManager::canWriteSpace(session);
+    }
+    case Sentence::Kind::kAdminJob: {
+      return PermissionManager::canOperateJob(session, vctx);
     }
     case Sentence::Kind::kCreateTag:
     case Sentence::Kind::kAlterTag:
