@@ -96,8 +96,10 @@
 #   * kAll, Collect all stats
 --rocksdb_stats_level=kExceptHistogramOrTimers
 
-# Whether or not to enable rocksdb's prefix bloom filter, disabled by default.
---enable_rocksdb_prefix_filtering=false
+# Whether or not to enable rocksdb's prefix bloom filter, enabled by default.
+--enable_rocksdb_prefix_filtering=true
+# Whether or not to enable rocksdb's whole key bloom filter, disabled by default.
+--enable_rocksdb_whole_key_filtering=false
 
 ############### misc ####################
 --snapshot_part_rate_limit=8388608
