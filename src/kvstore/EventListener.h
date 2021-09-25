@@ -210,8 +210,9 @@ class EventListener : public rocksdb::EventListener {
         return "PeriodicCompaction";
       case rocksdb::CompactionReason::kNumOfReasons:
         return "NumOfReasons";
+      default:
+        return "Unknown";
     }
-    return "Unknown";
   }
 
   std::string flushReasonString(const rocksdb::FlushReason& reason) {
