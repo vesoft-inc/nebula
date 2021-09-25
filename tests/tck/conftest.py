@@ -224,9 +224,9 @@ def try_to_execute_query(query, graph_spaces, session, request):
 @when(parse("clone a new space according to current space"))
 def clone_space(graph_spaces, session, request):
     space_desc = graph_spaces["space_desc"]
-    current_space = space_desc.name
+    current_space = space_desc._name
     new_space = "EmptyGraph_" + space_generator()
-    space_desc.name = new_space
+    space_desc._name = new_space
     resp_ok(session, space_desc.drop_stmt(), True)
     ngql = "create space " + new_space + " as " + current_space;
     exec_query(request, ngql, session, graph_spaces)
