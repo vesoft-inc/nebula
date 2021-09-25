@@ -91,10 +91,10 @@ class WKBReader {
   StatusOr<Coordinate> readCoordinate(uint8_t *&beg, uint8_t *end, ByteOrder byteOrder) const {
     auto xRet = readDouble(beg, end, byteOrder);
     NG_RETURN_IF_ERROR(xRet);
-    uint32_t x = xRet.value();
+    double x = xRet.value();
     auto yRet = readDouble(beg, end, byteOrder);
     NG_RETURN_IF_ERROR(yRet);
-    uint32_t y = yRet.value();
+    double y = yRet.value();
     return Coordinate(x, y);
   }
 
@@ -136,8 +136,9 @@ class WKBReader {
     if (end - beg < requiredSize) {
       return Status::Error("Unable to parse uint8_t");
     }
+    uint8_t v = *beg;
     beg += requiredSize;
-    return *beg;
+    return v;
   }
 
   StatusOr<uint32_t> readUint32(uint8_t *&beg, uint8_t *end, ByteOrder byteOrder) const {
@@ -155,7 +156,7 @@ class WKBReader {
     if (end - beg < requiredSize) {
       return Status::Error("Unable to parse double");
     }
-    uint32_t v = ByteOrderData::getDouble(beg, byteOrder);
+    double v = ByteOrderData::getDouble(beg, byteOrder);
     beg += requiredSize;
     return v;
   }

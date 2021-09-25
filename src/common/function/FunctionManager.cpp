@@ -346,7 +346,7 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
      {
          TypeSignature({Value::Type::GEOGRAPHY}, Value::Type::STRING),
      }},
-    {"st_aswkb",
+    {"st_asbinary",
      {
          TypeSignature({Value::Type::GEOGRAPHY}, Value::Type::STRING),
      }},
@@ -2293,6 +2293,9 @@ FunctionManager::FunctionManager() {
     attr.maxArity_ = 1;
     attr.isPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
+      if (!args[0].get().isStr()) {
+        return Value::kNullBadType;
+      }
       const std::string &wkt = args[0].get().getStr();
       LOG(INFO) << "st_geogfromtext, wkt: " << wkt;
       auto geomRet = WKTReader().read(wkt);
@@ -2317,14 +2320,24 @@ FunctionManager::FunctionManager() {
     attr.maxArity_ = 1;
     attr.isPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
-      // const std::string &wkb = args[0].get().getStr();
-      // auto geom = WKBReader().read(wkb);
+      if (!args[0].get().isStr()) {  // wkb is byte sequence
+        return Value::kNullBadType;
+      }
+      const std::string &wkb = args[0].get().getStr();
+      auto geomRet = WKBReader().read(wkb);
+      if (!geomRet.ok()) {
+        LOG(INFO) << "ST_GeogFromWKB: " << geomRet.status();
+        return Value::kNullBadData;
+      }
+      std::unique_ptr<Geometry> geom = std::move(geomRet).value();
+      DCHECK(!!geom);
       // if (!validateGeom(wkb)) {
       //   return Value::kNullBadData;
       // }
-      // return Geography(wkb);
-      UNUSED(args);
-      return Geography();
+      auto newWKB =
+          WKBWriter().write(geom.get());  // TODO(jie) maybe just use the argument wkb is also ok
+      LOG(INFO) << "st_geogfromwkb, wkb:" << newWKB << ", wkb.size():" << newWKB.size();
+      return Geography(newWKB);
     };
   }
   {
@@ -2333,6 +2346,9 @@ FunctionManager::FunctionManager() {
     attr.maxArity_ = 2;
     attr.isPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
+      if (!args[0].get().isGeography() || !args[1].get().isGeography()) {
+        return Value::kNullBadType;
+      }
       return intersects(args[0].get().getGeography(), args[1].get().getGeography());
     };
   }
@@ -2342,6 +2358,9 @@ FunctionManager::FunctionManager() {
     attr.maxArity_ = 2;
     attr.isPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
+      if (!args[0].get().isGeography() || !args[1].get().isGeography()) {
+        return Value::kNullBadType;
+      }
       return covers(args[0].get().getGeography(), args[1].get().getGeography());
     };
   }
@@ -2351,6 +2370,9 @@ FunctionManager::FunctionManager() {
     attr.maxArity_ = 2;
     attr.isPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
+      if (!args[0].get().isGeography() || !args[1].get().isGeography()) {
+        return Value::kNullBadType;
+      }
       return coveredBy(args[0].get().getGeography(), args[1].get().getGeography());
     };
   }
@@ -2360,6 +2382,10 @@ FunctionManager::FunctionManager() {
     attr.maxArity_ = 3;
     attr.isPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
+      if (!args[0].get().isGeography() || !args[1].get().isGeography() ||
+          !args[2].get().isFloat()) {
+        return Value::kNullBadType;
+      }
       return dWithin(args[0].get().getGeography(),
                      args[1].get().getGeography(),
                      args[2].get().getFloat(),
@@ -2372,6 +2398,9 @@ FunctionManager::FunctionManager() {
     attr.maxArity_ = 2;
     attr.isPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
+      if (!args[0].get().isGeography() || !args[1].get().isGeography()) {
+        return Value::kNullBadType;
+      }
       return distance(args[0].get().getGeography(), args[1].get().getGeography());
     };
   }
@@ -2381,16 +2410,22 @@ FunctionManager::FunctionManager() {
     attr.maxArity_ = 1;
     attr.isPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
+      if (!args[0].get().isGeography()) {
+        return Value::kNullBadType;
+      }
       const Geography &g = args[0].get().getGeography();
       return g.asWKT();
     };
   }
   {
-    auto &attr = functions_["st_aswkb"];
-    attr.minArity_ = 2;
-    attr.maxArity_ = 2;
+    auto &attr = functions_["st_asbinary"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
     attr.isPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
+      if (!args[0].get().isGeography()) {
+        return Value::kNullBadType;
+      }
       const Geography &g = args[0].get().getGeography();
       return g.asWKB();
     };

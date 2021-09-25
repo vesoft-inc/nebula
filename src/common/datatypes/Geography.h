@@ -25,7 +25,8 @@ namespace nebula {
 // clang-format off
 /*
 static const std::unordered_map<ShapeType, S2Region> kShapeTypeToS2Region = {
-    {ShapeType::Point, S2PointRegion}, // S2PointRegion is a wrapper of S2Point, and it inherits from the S2Region class
+    // S2PointRegion is a wrapper of S2Point, and it inherits from the S2Region class while S2Point doesn't.
+    {ShapeType::Point, S2PointRegion},
     {ShapeType::LineString, S2Polyline},
     {ShapeType::Polygon, S2Polygon},
 };

@@ -86,7 +86,11 @@ class WKTWriter {
     wkt.pop_back();
   }
 
-  void writeDouble(std::string& wkt, double v) const { wkt.append(std::to_string(v)); }
+  void writeDouble(std::string& wkt, double v) const {
+    wkt.append(folly::to<std::string>(v));
+    LOG(INFO) << "writeDouble(wkt, v): " << wkt << ", " << v
+              << ", folly::to: " << folly::to<std::string>(v);
+  }
 };
 
 }  // namespace nebula
