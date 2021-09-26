@@ -184,5 +184,12 @@ bool GraphService::auth(const std::string& username, const std::string& password
   return false;
 }
 
+folly::Future<cpp2::VerifyClientVersionResponse> GraphService::future_verifyClientVersion(
+    const cpp2::VerifyClientVersionRequest& req) {
+  UNUSED(req);
+  cpp2::VerifyClientVersionResponse resp;
+  resp.set_error_code(nebula::cpp2::ErrorCode::E_UNKNOWN);
+  return folly::makeFuture<cpp2::VerifyClientVersionResponse>(std::move(resp));
+}
 }  // namespace graph
 }  // namespace nebula
