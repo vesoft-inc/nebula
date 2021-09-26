@@ -248,7 +248,7 @@ Expression *ExpressionUtils::rewriteLogicalAndToLogicalOr(const Expression *expr
   }
 
   // orExprOperands is a 2D vector where each sub-vector is the operands of AND expression.
-  // [[A, C], [A, D], [B, C], [B,D]]  =>  (A and C) or (A and D) or (B and C) or (B or D)
+  // [[A, C], [A, D], [B, C], [B,D]]  =>  (A and C) or (A and D) or (B and C) or (B and D)
   std::vector<Expression *> andExprList;
   andExprList.reserve(orExprOperands.size());
   for (auto &operand : orExprOperands) {

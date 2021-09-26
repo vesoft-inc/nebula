@@ -234,10 +234,6 @@ StatusOr<Expression*> LookupValidator::handleLogicalExprOperands(LogicalExpressi
   auto& operands = lExpr->operands();
   for (auto i = 0u; i < operands.size(); i++) {
     auto operand = lExpr->operand(i);
-    // if (operand->isLogicalExpr()) {
-    //   // Not allow different logical expression to use: A AND B OR C
-    //   return Status::SemanticError("Not supported filter: %s", lExpr->toString().c_str());
-    // }
     auto ret = checkFilter(operand);
     NG_RETURN_IF_ERROR(ret);
 

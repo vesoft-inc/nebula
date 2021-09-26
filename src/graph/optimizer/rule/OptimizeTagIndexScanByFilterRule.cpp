@@ -83,15 +83,7 @@ bool OptimizeTagIndexScanByFilterRule::match(OptContext* ctx, const MatchedResul
   }
 
   // Case2: logical AND expr
-  if (condition->kind() == ExprKind::kLogicalAnd) {
-    // for (auto operand : static_cast<const LogicalExpression*>(condition)->operands()) {
-    //   if (operand->kind() == ExprKind::kRelIn) {
-    //     return false;
-    //   }
-    // }
-    return true;
-  }
-  return false;
+  return condition->kind() == ExprKind::kLogicalAnd;
 }
 
 TagIndexScan* makeTagIndexScan(QueryContext* qctx, const TagIndexScan* scan, bool isPrefixScan) {

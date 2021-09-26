@@ -494,6 +494,81 @@ TEST_F(ExpressionUtilsTest, flattenInnerLogicalExpr) {
   }
 }
 
+TEST_F(ExpressionUtilsTest, rewriteInExpr) {
+  auto elist1 = ExpressionList::make(pool);
+  (*elist1).add(ConstantExpression::make(pool, 10)).add(ConstantExpression::make(pool, 20));
+  auto listExpr1 = ListExpression::make(pool, elist1);
+
+  auto elist2 = ExpressionList::make(pool);
+  (*elist2).add(ConstantExpression::make(pool, "a")).add(ConstantExpression::make(pool, "b"));
+  auto listExpr2 = ListExpression::make(pool, elist2);
+
+  auto elist3 = ExpressionList::make(pool);
+  (*elist3).add(ConstantExpression::make(pool, 100));
+  auto listExpr3 = ListExpression::make(pool, elist3);
+
+  // a IN [b,c]  ->  a==b OR a==c
+  {
+    auto inExpr1 =
+        RelationalExpression::makeIn(pool, ConstantExpression::make(pool, 10), listExpr1);
+    auto orExpr1 = ExpressionUtils::rewriteInExpr(inExpr1);
+    auto expected1 = LogicalExpression::makeOr(
+        pool,
+        RelationalExpression::makeEQ(
+            pool, ConstantExpression::make(pool, 10), ConstantExpression::make(pool, 10)),
+        RelationalExpression::makeEQ(
+            pool, ConstantExpression::make(pool, 10), ConstantExpression::make(pool, 20)));
+    ASSERT_EQ(*expected1, *orExpr1);
+
+    auto inExpr2 =
+        RelationalExpression::makeIn(pool, ConstantExpression::make(pool, "abc"), listExpr2);
+    auto orExpr2 = ExpressionUtils::rewriteInExpr(inExpr2);
+    auto expected2 = LogicalExpression::makeOr(
+        pool,
+        RelationalExpression::makeEQ(
+            pool, ConstantExpression::make(pool, "abc"), ConstantExpression::make(pool, "a")),
+        RelationalExpression::makeEQ(
+            pool, ConstantExpression::make(pool, "abc"), ConstantExpression::make(pool, "b")));
+    ASSERT_EQ(*expected2, *orExpr2);
+  }
+
+  // a IN [b]  ->  a == b
+  {
+    auto inExpr = RelationalExpression::makeIn(pool, ConstantExpression::make(pool, 10), listExpr3);
+    auto expected = RelationalExpression::makeEQ(
+        pool, ConstantExpression::make(pool, 10), ConstantExpression::make(pool, 100));
+    ASSERT_EQ(*expected, *ExpressionUtils::rewriteInExpr(inExpr));
+  }
+}
+
+TEST_F(ExpressionUtilsTest, rewriteLogicalAndToLogicalOr) {
+  auto orExpr1 = LogicalExpression::makeOr(
+      pool, ConstantExpression::make(pool, 10), ConstantExpression::make(pool, 20));
+  auto orExpr2 = LogicalExpression::makeOr(
+      pool, ConstantExpression::make(pool, "a"), ConstantExpression::make(pool, "b"));
+
+  // (a OR b) AND (c OR d)  ->  (a AND c) OR (a AND d) OR (b AND c) OR (b AND d)
+  {
+    auto andExpr = LogicalExpression::makeAnd(pool, orExpr1, orExpr2);
+    auto transformedExpr = ExpressionUtils::rewriteLogicalAndToLogicalOr(andExpr);
+
+    std::vector<Expression *> orOperands = {
+        LogicalExpression::makeAnd(
+            pool, ConstantExpression::make(pool, 10), ConstantExpression::make(pool, "a")),
+        LogicalExpression::makeAnd(
+            pool, ConstantExpression::make(pool, 10), ConstantExpression::make(pool, "b")),
+        LogicalExpression::makeAnd(
+            pool, ConstantExpression::make(pool, 20), ConstantExpression::make(pool, "a")),
+        LogicalExpression::makeAnd(
+            pool, ConstantExpression::make(pool, 20), ConstantExpression::make(pool, "b"))};
+
+    auto expected = LogicalExpression::makeOr(pool);
+    expected->setOperands(orOperands);
+
+    ASSERT_EQ(*expected, *transformedExpr);
+  }
+}
+
 TEST_F(ExpressionUtilsTest, splitFilter) {
   using Kind = Expression::Kind;
   {
