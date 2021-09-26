@@ -112,10 +112,8 @@ class CreateSpaceAsNode final : public SingleDependencyNode {
   static CreateSpaceAsNode* make(QueryContext* qctx,
                                  PlanNode* input,
                                  const std::string& oldSpaceName,
-                                 const std::string& newSpaceName,
-                                 bool ifNotExists) {
-    return qctx->objPool()->add(
-        new CreateSpaceAsNode(qctx, input, oldSpaceName, newSpaceName, ifNotExists));
+                                 const std::string& newSpaceName) {
+    return qctx->objPool()->add(new CreateSpaceAsNode(qctx, input, oldSpaceName, newSpaceName));
   }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
@@ -125,24 +123,15 @@ class CreateSpaceAsNode final : public SingleDependencyNode {
 
   std::string getNewSpaceName() const { return newSpaceName_; }
 
-  bool getIfNotExists() const { return ifNotExists_; }
-
  private:
-  CreateSpaceAsNode(QueryContext* qctx,
-                    PlanNode* input,
-                    std::string oldName,
-                    std::string newName,
-                    bool ifNotExists)
+  CreateSpaceAsNode(QueryContext* qctx, PlanNode* input, std::string oldName, std::string newName)
       : SingleDependencyNode(qctx, Kind::kCreateSpaceAs, input),
         oldSpaceName_(std::move(oldName)),
-        newSpaceName_(std::move(newName)) {
-    ifNotExists_ = ifNotExists;
-  }
+        newSpaceName_(std::move(newName)) {}
 
  private:
   std::string oldSpaceName_;
   std::string newSpaceName_;
-  bool ifNotExists_{false};
 };
 
 class DropSpace final : public SingleDependencyNode {

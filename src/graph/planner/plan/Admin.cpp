@@ -23,7 +23,8 @@ std::unique_ptr<PlanNodeDescription> CreateSpace::explain() const {
 
 std::unique_ptr<PlanNodeDescription> CreateSpaceAsNode::explain() const {
   auto desc = SingleDependencyNode::explain();
-  addDescription("ifNotExists", util::toJson(ifNotExists_), desc.get());
+  addDescription("oldSpaceName", oldSpaceName_, desc.get());
+  addDescription("newSpaceName", newSpaceName_, desc.get());
   return desc;
 }
 
