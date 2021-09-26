@@ -110,6 +110,7 @@ class Sentence {
     kCreateSnapshot,
     kDropSnapshot,
     kAdminJob,
+    kAdminShowJobs,
     kGetSubgraph,
     kAddGroup,
     kDropGroup,

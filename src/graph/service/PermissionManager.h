@@ -30,7 +30,6 @@ class PermissionManager final {
                              GraphSpaceID spaceId,
                              const std::string &targetUser);
   static Status canWriteData(ClientSession *session, ValidateContext *vctx);
-  static Status canOperateJob(ClientSession *session, ValidateContext *vctx);
 
  private:
   static StatusOr<meta::cpp2::RoleType> checkRoleWithSpace(ClientSession *session,

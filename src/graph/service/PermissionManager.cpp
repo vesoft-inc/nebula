@@ -62,32 +62,6 @@ Status PermissionManager::canReadSchemaOrData(ClientSession *session, ValidateCo
 }
 
 // static
-Status PermissionManager::canOperateJob(ClientSession *session, ValidateContext *vctx) {
-  if (!FLAGS_enable_authorize) {
-    return Status::OK();
-  }
-  if (session->isGod()) {
-    return Status::OK();
-  }
-  auto roleResult = checkRoleWithSpace(session, vctx);
-  if (!roleResult.ok()) {
-    return Status::PermissionError("No permission to operate job.");
-  }
-  auto role = roleResult.value();
-  switch (role) {
-    case meta::cpp2::RoleType::GOD:
-    case meta::cpp2::RoleType::ADMIN:
-    case meta::cpp2::RoleType::DBA:
-    case meta::cpp2::RoleType::USER: {
-      return Status::OK();
-    }
-    case meta::cpp2::RoleType::GUEST:
-      return Status::PermissionError("No permission to operate job.");
-  }
-  return Status::PermissionError("No permission to operate job.");
-}
-
-// static
 Status PermissionManager::canWriteSpace(ClientSession *session) {
   if (!FLAGS_enable_authorize) {
     return Status::OK();

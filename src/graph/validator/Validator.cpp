@@ -135,6 +135,7 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
     case Sentence::Kind::kBalance:
       return std::make_unique<BalanceValidator>(sentence, context);
     case Sentence::Kind::kAdminJob:
+    case Sentence::Kind::kAdminShowJobs:
       return std::make_unique<AdminJobValidator>(sentence, context);
     case Sentence::Kind::kFetchVertices:
       return std::make_unique<FetchVerticesValidator>(sentence, context);
