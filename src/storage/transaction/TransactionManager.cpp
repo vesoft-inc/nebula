@@ -39,7 +39,6 @@ TransactionManager::LockCore* TransactionManager::getLockCore(GraphSpaceID space
     scanPrimes(spaceId, partId);
     auto key = std::make_pair(spaceId, partId);
     whiteListParts_.insert(std::make_pair(key, 0));
-    return nullptr;
   }
   auto it = memLocks_.find(spaceId);
   if (it != memLocks_.end()) {
