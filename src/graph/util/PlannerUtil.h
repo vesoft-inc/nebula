@@ -4,8 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef GRAPH_UTIL_QUERYUTIL_H_
-#define GRAPH_UTIL_QUERYUTIL_H_
+#ifndef GRAPH_UTIL_PLANNER_UTIL_H_
+#define GRAPH_UTIL_PLANNER_UTIL_H_
 #include "common/base/Base.h"
 
 namespace nebula {
@@ -14,9 +14,9 @@ class QueryContext;
 struct Starts;
 struct SubPlan;
 class PlanNode;
-class QueryUtil final {
+class PlannerUtil final {
  public:
-  QueryUtil() = delete;
+  PlannerUtil() = delete;
 
   static void buildConstantInput(QueryContext* qctx, Starts& starts, std::string& vidsVar);
 
@@ -29,4 +29,4 @@ class QueryUtil final {
 
 }  // namespace graph
 }  // namespace nebula
-#endif  // GRAPH_UTIL_ZONEUTIL_H_
+#endif  // GRAPH_UTIL_PLANNER_UTIL_H_
