@@ -198,7 +198,9 @@ StatusOr<GraphSpaceID> AdHocSchemaManager::toGraphSpaceID(folly::StringPiece spa
   }
 }
 
-StatusOr<std::string> AdHocSchemaManager::toGraphSpaceName(GraphSpaceID) { return "default_space"; }
+StatusOr<std::string> AdHocSchemaManager::toGraphSpaceName(GraphSpaceID space) {
+  return std::to_string(space);
+}
 
 StatusOr<TagID> AdHocSchemaManager::toTagID(GraphSpaceID space, folly::StringPiece tagName) {
   UNUSED(space);
