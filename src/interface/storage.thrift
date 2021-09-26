@@ -874,13 +874,6 @@ struct InternalTxnRequest {
         cpp.template = "std::unordered_map")    edge_ver,
 }
 
-//
-// Response for data modification requests
-//
-struct ChainResponse {
-    1: required ResponseCommon result,
-}
-
 
 struct ChainAddEdgesRequest {
     1: common.GraphSpaceID                      space_id,

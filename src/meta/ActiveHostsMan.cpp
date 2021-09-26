@@ -60,8 +60,6 @@ nebula::cpp2::ErrorCode ActiveHostsMan::updateHostInfo(kvstore::KVStore* kv,
       auto val = MetaServiceUtils::leaderValV3(hostAddr, terms[i]);
       data.emplace_back(std::make_pair(leaderKeys[i], std::move(val)));
     }
-  } else {
-    // do nothing
   }
   // indicate whether any leader info is updated
   bool hasUpdate = false;

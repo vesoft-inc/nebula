@@ -65,7 +65,8 @@ std::unordered_map<PartitionID, TermID> GetPartsAllocProcessor::getTerm(GraphSpa
   }
 
   std::vector<std::string> vals;
-  auto [code, statusVec] = kvstore_->multiGet(0, 0, std::move(leaderKeys), &vals);
+  auto [code, statusVec] =
+      kvstore_->multiGet(kDefaultSpaceId, kDefaultPartId, std::move(leaderKeys), &vals);
   if (code != nebula::cpp2::ErrorCode::SUCCEEDED &&
       code != nebula::cpp2::ErrorCode::E_PARTIAL_RESULT) {
     LOG(INFO) << "error rc = " << apache::thrift::util::enumNameSafe(code);
