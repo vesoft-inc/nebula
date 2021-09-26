@@ -51,6 +51,7 @@ set(VALIDATOR_TEST_LIBS
     $<TARGET_OBJECTS:ft_es_graph_adapter_obj>
     $<TARGET_OBJECTS:ws_common_obj>
     $<TARGET_OBJECTS:version_obj>
+    $<TARGET_OBJECTS:ssl_obj>
 )
 
 nebula_add_test(

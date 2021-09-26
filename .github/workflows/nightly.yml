@@ -39,7 +39,7 @@ jobs:
           echo "::set-output name=subdir::$subdir"
       - uses: actions/upload-artifact@v1
         with:
-          name: ${{ matrix.os }}-v2-nightly
+          name: ${{ matrix.os }}-nightly
           path: pkg-build/cpack_output
       - uses: ./.github/actions/upload-to-oss-action
         with:

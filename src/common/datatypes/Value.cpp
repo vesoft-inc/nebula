@@ -1344,6 +1344,116 @@ void Value::setG(DataSet&& v) {
   new (std::addressof(value_.gVal)) std::unique_ptr<DataSet>(new DataSet(std::move(v)));
 }
 
+// Convert Nebula::Value to a value compatible with Json standard
+// DATE, TIME, DATETIME will be converted to strings in UTC
+// VERTEX, EDGES, PATH will be converted to objects
+folly::dynamic Value::toJson() const {
+  switch (type_) {
+    case Value::Type::__EMPTY__: {
+      return "__EMPTY__";
+    }
+    // Json null
+    case Value::Type::NULLVALUE: {
+      return folly::dynamic(nullptr);
+    }
+    // Json bool
+    case Value::Type::BOOL: {
+      return folly::dynamic(getBool());
+    }
+    // Json int
+    case Value::Type::INT: {
+      return folly::dynamic(getInt());
+    }
+    // json double
+    case Value::Type::FLOAT: {
+      return folly::dynamic(getFloat());
+    }
+    // json string
+    case Value::Type::STRING: {
+      return folly::dynamic(getStr());
+    }
+    // Json array
+    case Value::Type::LIST: {
+      return getList().toJson();
+    }
+    case Value::Type::SET: {
+      return getSet().toJson();
+    }
+    // Json object
+    case Value::Type::MAP: {
+      return getMap().toJson();
+    }
+    case Value::Type::DATE: {
+      return getDate().toJson();
+    }
+    case Value::Type::TIME: {
+      return getTime().toJson();
+    }
+    case Value::Type::DATETIME: {
+      return getDateTime().toJson();
+    }
+    case Value::Type::EDGE: {
+      return getEdge().toJson();
+    }
+    case Value::Type::VERTEX: {
+      return getVertex().toJson();
+    }
+    case Value::Type::PATH: {
+      return getPath().toJson();
+    }
+    case Value::Type::DATASET: {
+      return getDataSet().toJson();
+    }
+      // no default so the compiler will warning when lack
+  }
+
+  LOG(FATAL) << "Unknown value type " << static_cast<int>(type_);
+}
+
+folly::dynamic Value::getMetaData() const {
+  auto dynamicObj = folly::dynamic();
+  switch (type_) {
+    // Privative datatypes has no meta data
+    case Value::Type::__EMPTY__:
+    case Value::Type::BOOL:
+    case Value::Type::INT:
+    case Value::Type::FLOAT:
+    case Value::Type::STRING:
+    case Value::Type::DATASET:
+    case Value::Type::NULLVALUE: {
+      return folly::dynamic(nullptr);
+    }
+    // Extract the meta info of each element as the metadata of the container
+    case Value::Type::LIST: {
+      return getList().getMetaData();
+    }
+    case Value::Type::SET: {
+      return getSet().getMetaData();
+    }
+    case Value::Type::MAP: {
+      return getMap().getMetaData();
+    }
+    case Value::Type::DATE:
+    case Value::Type::TIME:
+    case Value::Type::DATETIME: {
+      return folly::dynamic::object("type", typeName());
+    }
+    case Value::Type::VERTEX: {
+      return getVertex().getMetaData();
+    }
+    case Value::Type::EDGE: {
+      return getEdge().getMetaData();
+    }
+    case Value::Type::PATH: {
+      return getPath().getMetaData();
+    }
+    default:
+      break;
+  }
+
+  LOG(FATAL) << "Unknown value type " << static_cast<int>(type_);
+}
+
 std::string Value::toString() const {
   switch (type_) {
     case Value::Type::__EMPTY__: {

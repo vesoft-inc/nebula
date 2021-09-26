@@ -8,6 +8,7 @@
 
 #include <folly/Try.h>
 
+#include "common/ssl/SSLConfig.h"
 #include "common/time/WallClock.h"
 
 namespace nebula {
@@ -72,7 +73,7 @@ template <typename ClientType>
 StorageClientBase<ClientType>::StorageClientBase(
     std::shared_ptr<folly::IOThreadPoolExecutor> threadPool, meta::MetaClient* metaClient)
     : metaClient_(metaClient), ioThreadPool_(threadPool) {
-  clientsMan_ = std::make_unique<thrift::ThriftClientManager<ClientType>>();
+  clientsMan_ = std::make_unique<thrift::ThriftClientManager<ClientType>>(FLAGS_enable_ssl);
 }
 
 template <typename ClientType>

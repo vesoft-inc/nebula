@@ -243,9 +243,7 @@ class FetchVerticesSentence final : public Sentence {
     yieldClause_.reset(clause);
   }
 
-  bool isAllTagProps() { return tags_->empty(); }
-
-  const NameLabelList* tags() const { return tags_.get(); }
+  const NameLabelList* tags() const { return tags_->empty() ? nullptr : tags_.get(); }
 
   const VerticesClause* vertices() const { return vertices_.get(); }
 

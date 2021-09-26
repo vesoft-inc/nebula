@@ -94,6 +94,7 @@ jobs:
                   -DCMAKE_C_COMPILER=$TOOLSET_CLANG_DIR/bin/gcc \
                   -DCMAKE_BUILD_TYPE=Debug \
                   -DENABLE_TESTING=on \
+                  -DENABLE_COVERAGE=on \
                   -B build
               echo "::set-output name=j::10"
               echo "::set-output name=t::10"
@@ -109,8 +110,8 @@ jobs:
                 -DENABLE_ASAN=on \
                 -DENABLE_TESTING=on \
                 -B build
-              echo "::set-output name=j::6"
-              echo "::set-output name=t::10"
+            echo "::set-output name=j::6"
+            echo "::set-output name=t::10"
             ;;
           esac
       - name: Make
@@ -126,7 +127,24 @@ jobs:
         timeout-minutes: 20
       - name: Setup cluster
         run: |
-          make up
+          case ${{ matrix.compiler }} in
+          gcc-*)
+            case ${{ matrix.os }} in
+            centos7)
+              # normal cluster
+              make up
+              ;;
+            ubuntu2004)
+              # ssl cluster
+              make ENABLE_SSL=true CA_SIGNED=true up
+              ;;
+            esac
+            ;;
+          clang-*)
+            # graph ssl only cluster
+            make ENABLE_SSL=false ENABLE_GRAPH_SSL=true up
+            ;;
+          esac
         working-directory: tests/
         timeout-minutes: 2
       - name: Pytest
@@ -144,6 +162,11 @@ jobs:
           make RM_DIR=false down
         working-directory: tests/
         timeout-minutes: 2
+      - name: coverage
+        if: ${{ matrix.compiler == 'gcc-9.2' && matrix.os == 'ubuntu2004' }}
+        run: |
+            ~/.local/bin/fastcov -d build -l -o fastcov.info -p --exclude /usr/include --exclude=/opt/vesoft --exclude scanner.lex
+            bash <(curl -s https://codecov.io/bash) -Z -f fastcov.info
       - name: Sanitizer
         if: ${{ always() }}
         run: |

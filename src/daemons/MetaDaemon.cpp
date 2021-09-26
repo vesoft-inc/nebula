@@ -4,6 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include <folly/ssl/Init.h>
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 
 #include "common/base/Base.h"
@@ -12,6 +13,7 @@
 #include "common/hdfs/HdfsHelper.h"
 #include "common/network/NetworkUtils.h"
 #include "common/process/ProcessUtils.h"
+#include "common/ssl/SSLConfig.h"
 #include "common/thread/GenericThreadPool.h"
 #include "common/time/TimezoneInfo.h"
 #include "kvstore/NebulaStore.h"
@@ -204,6 +206,9 @@ int main(int argc, char* argv[]) {
   }
 
   folly::init(&argc, &argv, true);
+  if (FLAGS_enable_ssl || FLAGS_enable_meta_ssl) {
+    folly::ssl::init();
+  }
   if (FLAGS_data_path.empty()) {
     LOG(ERROR) << "Meta Data Path should not empty";
     return EXIT_FAILURE;
@@ -314,6 +319,9 @@ int main(int argc, char* argv[]) {
     gServer->setPort(FLAGS_port);
     gServer->setIdleTimeout(std::chrono::seconds(0));  // No idle timeout on client connection
     gServer->setInterface(std::move(handler));
+    if (FLAGS_enable_ssl || FLAGS_enable_meta_ssl) {
+      gServer->setSSLConfig(nebula::sslContextConfig());
+    }
     gServer->serve();  // Will wait until the server shuts down
   } catch (const std::exception& e) {
     LOG(ERROR) << "Exception thrown: " << e.what();

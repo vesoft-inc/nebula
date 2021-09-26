@@ -17,32 +17,38 @@ namespace nebula {
 namespace kvstore {
 
 TEST(RateLimter, ConsumeLessEqualThanBurst) {
-  RateLimiter limiter(FLAGS_snapshot_part_rate_limit, FLAGS_snapshot_part_rate_limit);
+  RateLimiter limiter;
   auto now = time::WallClock::fastNowInSec();
   int64_t count = 0;
   while (count++ < 50) {
-    limiter.consume(FLAGS_snapshot_part_rate_limit / 10);
+    limiter.consume(FLAGS_snapshot_part_rate_limit / 10,  // toConsume
+                    FLAGS_snapshot_part_rate_limit,       // rate
+                    FLAGS_snapshot_part_rate_limit);      // burstSize
   }
   EXPECT_GE(time::WallClock::fastNowInSec() - now, 5);
 }
 
 TEST(RateLimter, ConsumeGreaterThanBurst) {
-  RateLimiter limiter(FLAGS_snapshot_part_rate_limit, FLAGS_snapshot_part_rate_limit / 10);
+  RateLimiter limiter;
   auto now = time::WallClock::fastNowInSec();
   int64_t count = 0;
   while (count++ < 5) {
     // greater than burst size, will sleep 1 second instead
-    limiter.consume(FLAGS_snapshot_part_rate_limit);
+    limiter.consume(FLAGS_snapshot_part_rate_limit,        // toConsume
+                    FLAGS_snapshot_part_rate_limit,        // rate
+                    FLAGS_snapshot_part_rate_limit / 10);  // burstSize
   }
   EXPECT_GE(time::WallClock::fastNowInSec() - now, 5);
 }
 
 TEST(RateLimter, RateLessThanBurst) {
-  RateLimiter limiter(FLAGS_snapshot_part_rate_limit, 2 * FLAGS_snapshot_part_rate_limit);
+  RateLimiter limiter;
   auto now = time::WallClock::fastNowInSec();
   int64_t count = 0;
   while (count++ < 5) {
-    limiter.consume(FLAGS_snapshot_part_rate_limit);
+    limiter.consume(FLAGS_snapshot_part_rate_limit,       // toConsume
+                    FLAGS_snapshot_part_rate_limit,       // rate
+                    2 * FLAGS_snapshot_part_rate_limit);  // burstSize
   }
   EXPECT_GE(time::WallClock::fastNowInSec() - now, 5);
 }
