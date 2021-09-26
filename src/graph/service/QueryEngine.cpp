@@ -61,15 +61,20 @@ Status QueryEngine::setupBackgroundThread() {
     return Status::Error("Fail to start query engine background thread.");
   }
 
-  // Just to test whether to get the right memory info
-  NG_RETURN_IF_ERROR(MemoryUtils::hitsHighWatermark());
-
-  bgThread_->addRepeatTask(FLAGS_check_memory_interval_in_secs, []() {
+  auto updateMemoryWatermark = []() -> Status {
     auto status = MemoryUtils::hitsHighWatermark();
+    NG_RETURN_IF_ERROR(status);
+    MemoryUtils::kHitMemoryHighWatermark.store(std::move(status).value());
+    return Status::OK();
+  };
+
+  // Just to test whether to get the right memory info
+  NG_RETURN_IF_ERROR(updateMemoryWatermark());
+
+  bgThread_->addRepeatTask(FLAGS_check_memory_interval_in_secs, [updateMemoryWatermark]() {
+    auto status = updateMemoryWatermark();
     if (!status.ok()) {
-      LOG(ERROR) << std::move(status).status();
-    } else {
-      MemoryUtils::kHitMemoryHighWatermark.store(std::move(status).value());
+      LOG(ERROR) << status;
     }
   });
 
