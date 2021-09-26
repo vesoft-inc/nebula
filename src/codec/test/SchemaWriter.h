@@ -21,7 +21,8 @@ class SchemaWriter : public ResultSchemaProvider {
                           meta::cpp2::PropertyType type,
                           int32_t fixedStrLen = 0,
                           bool nullable = false,
-                          Expression* defaultValue = nullptr) noexcept;
+                          Expression* defaultValue = nullptr,
+                          meta::cpp2::GeoShape geoShape = meta::cpp2::GeoShape::ANY) noexcept;
 
  private:
 };

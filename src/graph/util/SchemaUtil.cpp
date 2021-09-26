@@ -67,7 +67,8 @@ std::shared_ptr<const meta::NebulaSchemaProvider> SchemaUtil::generateSchemaProv
                         col.get_type().get_type(),
                         col.type.type_length_ref().value_or(0),
                         col.nullable_ref().value_or(false),
-                        hasDef ? defaultValueExpr : nullptr);
+                        hasDef ? defaultValueExpr : nullptr,
+                        col.type.geo_shape_ref().value_or(meta::cpp2::GeoShape::ANY));
   }
   return schemaPtr;
 }
@@ -259,6 +260,13 @@ std::string SchemaUtil::typeToString(const meta::cpp2::ColumnTypeDef &col) {
   auto type = apache::thrift::util::enumNameSafe(col.get_type());
   if (col.get_type() == meta::cpp2::PropertyType::FIXED_STRING) {
     return folly::stringPrintf("%s(%d)", type.c_str(), *col.get_type_length());
+  } else if (col.get_type() == meta::cpp2::PropertyType::GEOGRAPHY) {
+    auto geoShape = *col.get_geo_shape();
+    if (geoShape == meta::cpp2::GeoShape::ANY) {
+      return folly::stringPrintf("%s", type.c_str());
+    }
+    return folly::stringPrintf(
+        "%s(%s)", type.c_str(), apache::thrift::util::enumNameSafe(geoShape).c_str());
   }
   return type;
 }

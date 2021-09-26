@@ -25,15 +25,15 @@ class WKBWriter {
     writeUint8(wkb, byteOrder);
 
     auto shape = geom->shape();
-    uint32_t shapeType = static_cast<std::underlying_type_t<ShapeType>>(shape);
+    uint32_t shapeType = folly::to<uint32_t>(shape);
     writeUint32(wkb, shapeType);
     switch (shape) {
-      case ShapeType::Point: {
+      case GeoShape::POINT: {
         const Point* point = static_cast<const Point*>(geom);
         writeCoordinate(wkb, point->coord);
         return wkb;
       }
-      case ShapeType::LineString: {
+      case GeoShape::LINESTRING: {
         const LineString* line = static_cast<const LineString*>(geom);
         auto coordList = line->coordList;
         uint32_t numPoints = coordList.size();
@@ -41,7 +41,7 @@ class WKBWriter {
         writeCoordinateList(wkb, coordList);
         return wkb;
       }
-      case ShapeType::Polygon: {
+      case GeoShape::POLYGON: {
         const Polygon* polygon = static_cast<const Polygon*>(geom);
         auto coordListList = polygon->coordListList;
         uint32_t numRings = coordListList.size();

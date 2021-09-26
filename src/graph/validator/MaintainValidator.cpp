@@ -37,6 +37,8 @@ Status SchemaValidator::validateColumns(const std::vector<ColumnSpecification *>
     column.type.set_type(type);
     if (meta::cpp2::PropertyType::FIXED_STRING == type) {
       column.type.set_type_length(spec->typeLen());
+    } else if (meta::cpp2::PropertyType::GEOGRAPHY == type) {
+      column.type.set_geo_shape(spec->geoShape());
     }
     for (const auto &property : spec->properties()->properties()) {
       if (property->isNullable()) {

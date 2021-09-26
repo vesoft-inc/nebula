@@ -8,10 +8,10 @@
 
 namespace nebula {
 
-enum class ShapeType : uint32_t {
-  Point = 1,
-  LineString = 2,
-  Polygon = 3,
+enum class GeoShape : uint32_t {
+  POINT = 1,
+  LINESTRING = 2,
+  POLYGON = 3,
 };
 
 }  // namespace nebula

@@ -94,18 +94,36 @@ point
 
 linestring
   : KW_LINESTRING L_PAREN coordinate_list R_PAREN {
+      if ($3->size() < 2) {
+        throw nebula::WKTParser::syntax_error(@3, "LineString must have at least 2 coordinates");
+      }
       $$ = new LineString(*$3);
   }
   ;
 
 polygon
   : KW_POLYGON L_PAREN coordinate_list_list R_PAREN {
+      for (size_t i = 0; i < $3->size(); ++i) {
+        auto coordList = (*$3)[i];
+        if (coordList.size() < 4) {
+          throw nebula::WKTParser::syntax_error(@3, "Polygon's LinearRing must have at least 4 coordinates");
+        }
+        if (coordList.front() != coordList.back()) {
+          throw nebula::WKTParser::syntax_error(@3, "Polygon's LinearRing must be closed");
+        }
+      }
       $$ = new Polygon(*$3);
   }
   ;
 
 coordinate
   : DOUBLE DOUBLE {
+      if (!Coordinate::isValidLng($1)) {
+        throw nebula::WKTParser::syntax_error(@1, "Longitude must be between -180 and 180 degrees");
+      }
+      if (!Coordinate::isValidLat($2)) {
+        throw nebula::WKTParser::syntax_error(@2, "Latitude must be between -90 and 90 degrees");
+      }
       $$ = new Coordinate($1, $2);
   }
   ;

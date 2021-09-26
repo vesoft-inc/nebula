@@ -762,6 +762,12 @@ WriteResult RowWriterV2::write(ssize_t index, const DateTime& v) noexcept {
 }
 
 WriteResult RowWriterV2::write(ssize_t index, const Geography& v) noexcept {
+  auto field = schema_->field(index);
+  auto geoShape = field->geoShape();
+  if (geoShape != meta::cpp2::GeoShape::ANY &&
+      folly::to<uint32_t>(geoShape) != folly::to<uint32_t>(v.shape())) {
+    return WriteResult::TYPE_MISMATCH;
+  }
   return write(index, folly::StringPiece(v.wkb));
 }
 

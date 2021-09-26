@@ -53,16 +53,22 @@ std::vector<uint64_t> GeographyIndex::indexCells(const Geography& g) const noexc
 }
 
 std::vector<ScanRange> GeographyIndex::dWithin(const Geography& g, double distance) const noexcept {
-  auto* r = g.asS2();
+  auto* r = g.asS2().get();
+  // TODO(jie): Better to ensure the Geography value is valid to build s2 when constructing.
+  if (!r) {
+    LOG(INFO) << "GeographyIndex::dWithin(), asS2() failed.";
+    return {};
+  }
+
   S1Angle radius = S2Earth::ToAngle(util::units::Meters(distance));
   switch (g.shape()) {
-    case ShapeType::Point: {
+    case GeoShape::POINT: {
       const S2Point& gPoint = static_cast<S2PointRegion*>(r)->point();
       S2Cap gCap(gPoint, radius);
       auto cells = coveringCells(gCap);
       return scanRange(cells);
     }
-    case ShapeType::LineString: {
+    case GeoShape::LINESTRING: {
       S2Polyline* gLine = static_cast<S2Polyline*>(r);
       MutableS2ShapeIndex index;
       index.Add(std::make_unique<S2Polyline::Shape>(gLine));
@@ -70,7 +76,7 @@ std::vector<ScanRange> GeographyIndex::dWithin(const Geography& g, double distan
       auto cells = coveringCells(gBuffer);
       return scanRange(cells);
     }
-    case ShapeType::Polygon: {
+    case GeoShape::POLYGON: {
       S2Polygon* gPolygon = static_cast<S2Polygon*>(r);
       S2ShapeIndexBufferedRegion gBuffer(&gPolygon->index(), radius);
       auto cells = coveringCells(gBuffer);
@@ -84,9 +90,15 @@ std::vector<ScanRange> GeographyIndex::dWithin(const Geography& g, double distan
 }
 
 std::vector<S2CellId> GeographyIndex::coveringCells(const Geography& g) const noexcept {
-  auto* r = g.asS2();
+  auto* r = g.asS2().get();
+  // TODO(jie): Better to ensure the Geography value is valid to build s2 when constructing.
+  if (!r) {
+    LOG(INFO) << "GeographyIndex::coveringCells(), asS2() failed.";
+    return {};
+  }
+
   // Currently region coverer options doesn't work for point. Point always use level 30.
-  if (g.shape() == ShapeType::Point) {
+  if (g.shape() == GeoShape::POINT) {
     const S2Point& gPoint = static_cast<S2PointRegion*>(r)->point();
     return {S2CellId(gPoint)};
   }

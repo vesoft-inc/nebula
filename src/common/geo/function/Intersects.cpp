@@ -15,19 +15,24 @@ namespace nebula {
 // If any point in the set that comprises A is also a member of the set of points that make up B,
 // they intersects;
 bool intersects(const Geography& a, const Geography& b) {
-  auto aRegion = a.asS2();
-  auto bRegion = b.asS2();
+  auto aRegion = a.asS2().get();
+  auto bRegion = b.asS2().get();
+  // TODO(jie): Better to ensure the Geography value is valid to build s2 when constructing.
+  if (!aRegion || !bRegion) {
+    LOG(INFO) << "intersects(), asS2() failed.";
+    return false;
+  }
 
   switch (a.shape()) {
-    case ShapeType::Point: {
+    case GeoShape::POINT: {
       switch (b.shape()) {
-        case ShapeType::Point:
+        case GeoShape::POINT:
           return static_cast<S2PointRegion*>(aRegion)->MayIntersect(
               S2Cell(static_cast<S2PointRegion*>(bRegion)->point()));
-        case ShapeType::LineString:
+        case GeoShape::LINESTRING:
           return static_cast<S2Polyline*>(bRegion)->MayIntersect(
               S2Cell(static_cast<S2PointRegion*>(aRegion)->point()));
-        case ShapeType::Polygon:
+        case GeoShape::POLYGON:
           return static_cast<S2Polygon*>(bRegion)->MayIntersect(
               S2Cell(static_cast<S2PointRegion*>(aRegion)->point()));
         default:
@@ -36,14 +41,14 @@ bool intersects(const Geography& a, const Geography& b) {
           return -1.0;
       }
     }
-    case ShapeType::LineString: {
+    case GeoShape::LINESTRING: {
       switch (b.shape()) {
-        case ShapeType::Point:
+        case GeoShape::POINT:
           return static_cast<S2Polyline*>(aRegion)->MayIntersect(
               S2Cell(static_cast<S2PointRegion*>(bRegion)->point()));
-        case ShapeType::LineString:
+        case GeoShape::LINESTRING:
           return static_cast<S2Polyline*>(aRegion)->Intersects(static_cast<S2Polyline*>(bRegion));
-        case ShapeType::Polygon:
+        case GeoShape::POLYGON:
           return static_cast<S2Polygon*>(bRegion)->Intersects(*static_cast<S2Polyline*>(aRegion));
         default:
           LOG(FATAL)
@@ -51,14 +56,14 @@ bool intersects(const Geography& a, const Geography& b) {
           return -1.0;
       }
     }
-    case ShapeType::Polygon: {
+    case GeoShape::POLYGON: {
       switch (b.shape()) {
-        case ShapeType::Point:
+        case GeoShape::POINT:
           return static_cast<S2Polygon*>(aRegion)->MayIntersect(
               S2Cell(static_cast<S2PointRegion*>(bRegion)->point()));
-        case ShapeType::LineString:
+        case GeoShape::LINESTRING:
           return static_cast<S2Polygon*>(aRegion)->Intersects(*static_cast<S2Polyline*>(bRegion));
-        case ShapeType::Polygon:
+        case GeoShape::POLYGON:
           return static_cast<S2Polygon*>(aRegion)->Intersects(static_cast<S2Polygon*>(bRegion));
         default:
           LOG(FATAL)

@@ -24,6 +24,7 @@
 
 namespace nebula {
 
+// TODO(jie) Try to reuse the class GraphScanner
 class WKTScanner : public yyFlexLexer {
  public:
   int yylex(nebula::WKTParser::semantic_type *lval, nebula::WKTParser::location_type *loc) {

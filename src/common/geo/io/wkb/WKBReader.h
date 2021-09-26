@@ -31,16 +31,16 @@ class WKBReader {
 
     auto shapeTypeRet = readShapeType(beg, end, byteOrder);
     NG_RETURN_IF_ERROR(shapeTypeRet);
-    ShapeType shapeType = shapeTypeRet.value();
+    GeoShape shapeType = shapeTypeRet.value();
 
     switch (shapeType) {
-      case ShapeType::Point: {
+      case GeoShape::POINT: {
         auto coordRet = readCoordinate(beg, end, byteOrder);
         NG_RETURN_IF_ERROR(coordRet);
         Coordinate coord = coordRet.value();
         return std::make_unique<Point>(coord);
       }
-      case ShapeType::LineString: {
+      case GeoShape::LINESTRING: {
         auto numPointsRet = readUint32(beg, end, byteOrder);
         NG_RETURN_IF_ERROR(numPointsRet);
         uint32_t numPoints = numPointsRet.value();
@@ -49,7 +49,7 @@ class WKBReader {
         std::vector<Coordinate> coordList = coordListRet.value();
         return std::make_unique<LineString>(coordList);
       }
-      case ShapeType::Polygon: {
+      case GeoShape::POLYGON: {
         auto numRingsRet = readUint32(beg, end, byteOrder);
         NG_RETURN_IF_ERROR(numRingsRet);
         uint32_t numRings = numRingsRet.value();
@@ -77,14 +77,14 @@ class WKBReader {
     return byteOrder;
   }
 
-  StatusOr<ShapeType> readShapeType(uint8_t *&beg, uint8_t *end, ByteOrder byteOrder) const {
+  StatusOr<GeoShape> readShapeType(uint8_t *&beg, uint8_t *end, ByteOrder byteOrder) const {
     auto vRet = readUint32(beg, end, byteOrder);
     NG_RETURN_IF_ERROR(vRet);
     uint32_t v = vRet.value();
     if (v != 1 && v != 2 && v != 3) {
       return Status::Error("Unknown shape type");
     }
-    ShapeType shapeType = static_cast<ShapeType>(v);
+    GeoShape shapeType = static_cast<GeoShape>(v);
     return shapeType;
   }
 

@@ -91,7 +91,8 @@ void NebulaSchemaProvider::addField(folly::StringPiece name,
                                     cpp2::PropertyType type,
                                     size_t fixedStrLen,
                                     bool nullable,
-                                    Expression* defaultValue) {
+                                    Expression* defaultValue,
+                                    cpp2::GeoShape geoShape) {
   size_t size = fieldSize(type, fixedStrLen);
 
   size_t offset = 0;
@@ -112,7 +113,8 @@ void NebulaSchemaProvider::addField(folly::StringPiece name,
                        defaultValue,
                        size,
                        offset,
-                       nullFlagPos);
+                       nullFlagPos,
+                       geoShape);
   fieldNameIndex_.emplace(name.toString(), static_cast<int64_t>(fields_.size() - 1));
 }
 

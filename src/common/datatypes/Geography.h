@@ -16,7 +16,11 @@
 #include <vector>
 
 #include "common/datatypes/Value.h"
-#include "common/geo/GeoShape.h"
+#include "common/geo/io/Geometry.h"
+
+// Do not include <s2/s2polygon.h> here, it will indirectly includes a header file which defines a
+// enum `BEGIN`(not enum class). While Geography.h is indirectly included by parser.yy, which has a
+// macro named `BEGIN`. So they will be conflicted.
 
 class S2Polygon;
 
@@ -24,11 +28,11 @@ namespace nebula {
 
 // clang-format off
 /*
-static const std::unordered_map<ShapeType, S2Region> kShapeTypeToS2Region = {
+static const std::unordered_map<GeoShape, S2Region> kShapeTypeToS2Region = {
     // S2PointRegion is a wrapper of S2Point, and it inherits from the S2Region class while S2Point doesn't.
-    {ShapeType::Point, S2PointRegion},
-    {ShapeType::LineString, S2Polyline},
-    {ShapeType::Polygon, S2Polygon},
+    {GeoShape::POINT, S2PointRegion},
+    {GeoShape::LINESTRING, S2Polyline},
+    {GeoShape::POLYGON, S2Polygon},
 };
 */
 // clang-format on
@@ -39,19 +43,19 @@ struct Geography {
   std::string wkb;  // TODO(jie) Maybe store Geometry* here is better
 
   Geography() = default;
-  explicit Geography(const std::string& validWKB) {
-    // DCHECK(WKB::isValid(wkb));
-    wkb = validWKB;
+  explicit Geography(const std::string& bytes) {
+    // TODO(jie): Ensure the bytes is valid
+    wkb = bytes;
     LOG(INFO) << "Geography.wkb: " << wkb << ", wkb.size(): " << wkb.size();
   }
 
-  ShapeType shape() const;
+  GeoShape shape() const;
 
   std::string asWKT() const;
 
-  std::string asWKB() const { return wkb; }
+  std::string asWKB() const;
 
-  S2Region* asS2() const;
+  std::unique_ptr<S2Region> asS2() const;
 
   std::string toString() const { return asWKT(); }
 
@@ -67,8 +71,16 @@ struct Geography {
 
   bool operator<(const Geography& rhs) const { return wkb < rhs.wkb; }
 
-  // private:
-  //   S2Region* s2RegionFromGeom(const geos::geom::Geometry* geom);
+ private:
+  std::unique_ptr<S2Region> s2RegionFromGeomtry(const Geometry* geom) const;
+
+  S2Point s2PointFromCoordinate(const Coordinate& coord) const;
+
+  std::vector<S2Point> s2PointsFromCoordinateList(const std::vector<Coordinate>& coordList) const;
+
+  bool isLoopClosed(const std::vector<Coordinate>& coordList) const;
+
+  void removeAdjacentDuplicateCoordinates(std::vector<Coordinate>& coordList) const;
 };
 
 inline std::ostream& operator<<(std::ostream& os, const Geography& g) { return os << g.wkb; }

@@ -21,7 +21,7 @@ class WKTWriter {
 
     auto shape = geom->shape();
     switch (shape) {
-      case ShapeType::Point: {
+      case GeoShape::POINT: {
         wkt.append("POINT");
         const Point* point = static_cast<const Point*>(geom);
         wkt.append("(");
@@ -29,7 +29,7 @@ class WKTWriter {
         wkt.append(")");
         return wkt;
       }
-      case ShapeType::LineString: {
+      case GeoShape::LINESTRING: {
         wkt.append("LINESTRING");
         const LineString* line = static_cast<const LineString*>(geom);
         auto coordList = line->coordList;
@@ -40,7 +40,7 @@ class WKTWriter {
         wkt.append(")");
         return wkt;
       }
-      case ShapeType::Polygon: {
+      case GeoShape::POLYGON: {
         wkt.append("POLYGON");
         const Polygon* polygon = static_cast<const Polygon*>(geom);
         auto coordListList = polygon->coordListList;
