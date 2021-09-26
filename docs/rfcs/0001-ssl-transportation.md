@@ -10,14 +10,14 @@ Encrypt the data transportation.
 
 Define some global flags:
 
-```c++
-DEFINE_string(cert_path, "", "Path to cert pem.");
-DEFINE_string(key_path, "", "Path to cert key.");
-DEFINE_string(ca_path, "", "Path to trusted CA file.");
-DEFINE_bool(enable_ssl, false, "Whether enable ssl.");
-DEFINE_bool(enable_graph_ssl, false, "Whether enable ssl in graph server only.");
-DEFINE_bool(enable_meta_ssl, false, "Whether enable ssl in meta server only.");
-```
+| name             | default | description                              |
+| ---------------- | ------- | ---------------------------------------- |
+| cert_path        | ""      | Path to cert pem.                        |
+| key_path         | ""      | Path to cert key.                        |
+| ca_path          | ""      | Path to trusted CA file.                 |
+| enable_ssl       | false   | Whether enable ssl.                      |
+| enable_graph_ssl | false   | Whether enable ssl in graph server only. |
+| enable_meta_ssl  | false   | Whether enable ssl in meta server only.  |
 
 Two certificate mode:
 
