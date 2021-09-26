@@ -445,6 +445,9 @@ TEST_F(FunctionManagerTest, functionCall) {
     auto res = std::move(result).value()(genArgsRef({true}));
     EXPECT_EQ(res, Value::kNullBadType);
   }
+}
+
+TEST_F(FunctionManagerTest, time) {
   // current time
   static constexpr std::size_t kCurrentTimeParaNumber = 0;
   // time from literal
