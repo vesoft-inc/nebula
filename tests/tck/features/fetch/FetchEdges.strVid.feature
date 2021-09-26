@@ -1,4 +1,3 @@
-@jmq
 Feature: Fetch String Vid Edges
 
   Background:
@@ -228,22 +227,22 @@ Feature: Fetch String Vid Edges
       | ("Tim Duncan")    |
       | ("Tracy McGrady") |
 
-  Scenario: Fetch prop Semantic Error
+  Scenario: Fetch prop Error
     When executing query:
       """
       FETCH PROP ON serve "Boris Diaw"->"Spurs" YIELD $^.serve.start_year
       """
-    Then a SemanticError should be raised at runtime:
+    Then a ExecutionError should be raised at runtime:
     When executing query:
       """
       FETCH PROP ON serve "Boris Diaw"->"Spurs" YIELD $$.serve.start_year
       """
-    Then a SemanticError should be raised at runtime:
+    Then a ExecutionError should be raised at runtime:
     When executing query:
       """
       FETCH PROP ON serve "Boris Diaw"->"Spurs" YIELD abc.start_year
       """
-    Then a SemanticError should be raised at runtime:
+    Then a ExecutionError should be raised at runtime:
     # Fetch prop on illegal input
     When executing query:
       """
@@ -257,3 +256,64 @@ Feature: Fetch String Vid Edges
       FETCH PROP ON serve 'Boris Diaw'->'Hawks' YIELD serve.not_exist_prop
       """
     Then a SemanticError should be raised at runtime:
+
+  Scenario: yield edge
+    When executing query:
+      """
+      FETCH PROP ON serve 'Boris Diaw' -> 'Hawks' YIELD serve.start_year, serve.end_year, edge as relationship
+      """
+    Then the result should be, in any order:
+      | serve._src   | serve._dst | serve._rank | serve.start_year | serve.end_year | relationship                                                         |
+      | "Boris Diaw" | "Hawks"    | 0           | 2003             | 2005           | [:serve "Boris Diaw"->"Hawks" @0 {end_year: 2005, start_year: 2003}] |
+    When executing query:
+      """
+      FETCH PROP ON serve "Boris Diaw"->"Spurs" YIELD edge as relationship, src(edge) as src_edge, dst(edge) as dst_edge, type(edge) as type, rank(edge) as rank
+      """
+    Then the result should be, in any order:
+      | serve._src   | serve._dst | serve._rank | relationship                                                         | src_edge     | dst_edge | type    | rank |
+      | "Boris Diaw" | "Spurs"    | 0           | [:serve "Boris Diaw"->"Spurs" @0 {end_year: 2016, start_year: 2012}] | "Boris Diaw" | "Spurs"  | "serve" | 0    |
+    When executing query:
+      """
+      FETCH PROP ON serve "Boris Diaw"->"Not Exist" YIELD src(edge) as a
+      """
+    Then the result should be, in any order:
+      | serve._src | serve._dst | serve._rank | a |
+    When executing query:
+      """
+      FETCH PROP ON like "Tony Parker"->"Tim Duncan", "Grant Hill" -> "Tracy McGrady" YIELD edge as relationship |
+      YIELD properties($-.relationship)
+      """
+    Then the result should be, in any order:
+      | properties($-.relationship) |
+      | {likeness: 95}              |
+      | {likeness: 90}              |
+    When executing query:
+      """
+      FETCH PROP ON like "Tony Parker"->"Tim Duncan", "Grant Hill" -> "Tracy McGrady" YIELD edge as relationship |
+      YIELD startNode($-.relationship) AS node
+      """
+    Then the result should be, in any order, with relax comparison:
+      | node            |
+      | ("Tony Parker") |
+      | ("Grant Hill")  |
+    When executing query:
+      """
+      FETCH PROP ON like "Tony Parker"->"Tim Duncan", "Grant Hill" -> "Tracy McGrady" YIELD edge as relationship |
+      YIELD endNode($-.relationship) AS node
+      """
+    Then the result should be, in any order, with relax comparison:
+      | node              |
+      | ("Tim Duncan")    |
+      | ("Tracy McGrady") |
+    When executing query:
+      """
+      $var = GO FROM 'Boris Diaw','Boris Diaw' OVER serve YIELD serve._src AS src, serve._dst AS dst;
+      FETCH PROP ON serve $var.src->$var.dst YIELD DISTINCT serve.start_year, serve.end_year, edge as relationship
+      """
+    Then the result should be, in any order:
+      | serve._src   | serve._dst | serve._rank | serve.start_year | serve.end_year | relationship                                                           |
+      | "Boris Diaw" | "Suns"     | 0           | 2005             | 2008           | [:serve "Boris Diaw"->"Suns" @0 {end_year: 2008, start_year: 2005}]    |
+      | "Boris Diaw" | "Hawks"    | 0           | 2003             | 2005           | [:serve "Boris Diaw"->"Hawks" @0 {end_year: 2005, start_year: 2003}]   |
+      | "Boris Diaw" | "Spurs"    | 0           | 2012             | 2016           | [:serve "Boris Diaw"->"Spurs" @0 {end_year: 2016, start_year: 2012}]   |
+      | "Boris Diaw" | "Hornets"  | 0           | 2008             | 2012           | [:serve "Boris Diaw"->"Hornets" @0 {end_year: 2012, start_year: 2008}] |
+      | "Boris Diaw" | "Jazz"     | 0           | 2016             | 2017           | [:serve "Boris Diaw"->"Jazz" @0 {end_year: 2017, start_year: 2016}]    |
