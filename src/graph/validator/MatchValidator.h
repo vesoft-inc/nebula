@@ -11,8 +11,8 @@
 #include "graph/context/ast/CypherAstContext.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/util/AnonVarGenerator.h"
-#include "graph/visitor/CypherProps.h"
 #include "graph/validator/Validator.h"
+#include "graph/visitor/CypherProps.h"
 
 namespace nebula {
 
