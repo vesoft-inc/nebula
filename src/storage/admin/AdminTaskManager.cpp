@@ -6,7 +6,13 @@
 
 #include "storage/admin/AdminTaskManager.h"
 
+#include <thrift/lib/cpp/protocol/TBinaryProtocol.h>
+#include <thrift/lib/cpp/transport/TBufferTransports.h>
+
+#include <tuple>
+
 #include "storage/admin/AdminTask.h"
+#include "storage/admin/AdminTaskProcessor.h"
 
 DEFINE_uint32(max_concurrent_subtasks, 10, "The sub tasks could be invoked simultaneously");
 
@@ -25,8 +31,95 @@ bool AdminTaskManager::init() {
 
   bgThread_->addTask(&AdminTaskManager::schedule, this);
   shutdown_ = false;
+  handleUnreportedTasks();
   LOG(INFO) << "exit AdminTaskManager::init()";
   return true;
+}
+
+void AdminTaskManager::handleUnreportedTasks() {
+  using futTuple =
+      std::tuple<JobID, TaskID, std::string, folly::Future<StatusOr<nebula::cpp2::ErrorCode>>>;
+  if (env_ == nullptr) return;
+  unreportedAdminThread_.reset(new std::thread([this] {
+    bool ifAny = true;
+    while (true) {
+      std::unique_lock<std::mutex> lk(unreportedMutex_);
+      if (!ifAny) unreportedCV_.wait(lk);
+      ifAny = false;
+      std::unique_ptr<kvstore::KVIterator> iter;
+      auto kvRet = env_->adminStore_->scan(&iter);
+      if (kvRet != nebula::cpp2::ErrorCode::SUCCEEDED || iter == nullptr) continue;
+      std::vector<std::string> keys;
+      std::vector<futTuple> futVec;
+      for (; iter->valid(); iter->next()) {
+        folly::StringPiece key = iter->key();
+        int32_t seqId = *reinterpret_cast<const int32_t*>(key.data());
+        if (seqId < 0) continue;
+        JobID jobId = *reinterpret_cast<const JobID*>(key.data() + sizeof(int32_t));
+        TaskID taskId =
+            *reinterpret_cast<const TaskID*>(key.data() + sizeof(int32_t) + sizeof(JobID));
+        folly::StringPiece val = iter->val();
+        folly::StringPiece statsVal(val.data() + sizeof(nebula::cpp2::ErrorCode),
+                                    val.size() - sizeof(nebula::cpp2::ErrorCode));
+        nebula::meta::cpp2::StatsItem statsItem;
+        apache::thrift::CompactSerializer::deserialize(statsVal, statsItem);
+        nebula::meta::cpp2::JobStatus jobStatus = statsItem.get_status();
+        nebula::cpp2::ErrorCode errCode =
+            *reinterpret_cast<const nebula::cpp2::ErrorCode*>(val.data());
+        meta::cpp2::StatsItem* pStats = nullptr;
+        if (errCode == nebula::cpp2::ErrorCode::SUCCEEDED) pStats = &statsItem;
+        LOG(INFO) << folly::sformat("reportTaskFinish(), job={}, task={}, rc={}",
+                                    jobId,
+                                    taskId,
+                                    apache::thrift::util::enumNameSafe(errCode));
+        if (seqId < env_->adminSeqId_) {
+          if (jobStatus == nebula::meta::cpp2::JobStatus::RUNNING && pStats != nullptr)
+            pStats->set_status(nebula::meta::cpp2::JobStatus::FAILED);
+          auto fut = env_->metaClient_->reportTaskFinish(jobId, taskId, errCode, pStats);
+          futVec.emplace_back(std::move(jobId), std::move(taskId), std::move(key), std::move(fut));
+        } else if (jobStatus != nebula::meta::cpp2::JobStatus::RUNNING) {
+          auto fut = env_->metaClient_->reportTaskFinish(jobId, taskId, errCode, pStats);
+          futVec.emplace_back(std::move(jobId), std::move(taskId), std::move(key), std::move(fut));
+        }
+      }
+      for (auto& p : futVec) {
+        JobID jobId = std::get<0>(p);
+        TaskID taskId = std::get<1>(p);
+        std::string& key = std::get<2>(p);
+        auto& fut = std::get<3>(p);
+        auto rc = nebula::cpp2::ErrorCode::SUCCEEDED;
+        fut.wait();
+        if (!fut.hasValue()) {
+          LOG(INFO) << folly::sformat(
+              "reportTaskFinish() got rpc error:, job={}, task={}", jobId, taskId);
+          ifAny = true;
+          continue;
+        }
+        if (!fut.value().ok()) {
+          LOG(INFO) << folly::sformat("reportTaskFinish() has bad status:, job={}, task={}, rc={}",
+                                      jobId,
+                                      taskId,
+                                      fut.value().status().toString());
+          ifAny = true;
+          continue;
+        }
+        rc = fut.value().value();
+        LOG(INFO) << folly::sformat("reportTaskFinish(), job={}, task={}, rc={}",
+                                    jobId,
+                                    taskId,
+                                    apache::thrift::util::enumNameSafe(rc));
+        if (rc == nebula::cpp2::ErrorCode::E_LEADER_CHANGED ||
+            rc == nebula::cpp2::ErrorCode::E_STORE_FAILURE) {
+          ifAny = true;
+          continue;
+        } else {
+          keys.emplace_back(key.data(), key.size());
+          break;
+        }
+      }
+      env_->adminStore_->multiRemove(keys);
+    }
+  }));
 }
 
 void AdminTaskManager::addAsyncTask(std::shared_ptr<AdminTask> task) {
@@ -49,6 +142,7 @@ nebula::cpp2::ErrorCode AdminTaskManager::cancelJob(JobID jobId) {
     auto handle = it->first;
     if (handle.first == jobId) {
       it->second->cancel();
+      removeTaskStatus(it->second->getJobId(), it->second->getTaskId());
       FLOG_INFO("task(%d, %d) cancelled", jobId, handle.second);
     }
     ++it;
@@ -67,6 +161,7 @@ nebula::cpp2::ErrorCode AdminTaskManager::cancelTask(JobID jobId, TaskID taskId)
     ret = nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND;
   } else {
     it->second->cancel();
+    removeTaskStatus(it->second->getJobId(), it->second->getTaskId());
   }
   return ret;
 }
@@ -83,6 +178,30 @@ void AdminTaskManager::shutdown() {
 
   pool_->join();
   LOG(INFO) << "exit AdminTaskManager::shutdown()";
+}
+
+void AdminTaskManager::saveTaskStatus(JobID jobId,
+                                      TaskID taskId,
+                                      nebula::cpp2::ErrorCode rc,
+                                      const nebula::meta::cpp2::StatsItem& result) {
+  if (env_ == nullptr) return;
+  std::string key = NebulaKeyUtils::adminTaskKey(env_->adminSeqId_, jobId, taskId);
+  std::string val;
+  val.append(reinterpret_cast<char*>(&rc), sizeof(nebula::cpp2::ErrorCode));
+  std::string resVal;
+  apache::thrift::CompactSerializer::serialize(result, &resVal);
+  val.append(resVal);
+  auto ret = env_->adminStore_->put(key, val);
+  if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(FATAL) << "Write put in admin-storage job id " << jobId << "task id " << taskId
+               << " failed.";
+  }
+}
+
+void AdminTaskManager::removeTaskStatus(JobID jobId, TaskID taskId) {
+  if (env_ == nullptr) return;
+  std::string key = NebulaKeyUtils::adminTaskKey(env_->adminSeqId_, jobId, taskId);
+  env_->adminStore_->remove(key);
 }
 
 // schedule
@@ -188,6 +307,8 @@ void AdminTaskManager::runSubTask(TaskHandle handle) {
     FLOG_INFO("task(%d, %d) runSubTask() exit", handle.first, handle.second);
   }
 }
+
+void AdminTaskManager::notifyReporting() { unreportedCV_.notify_one(); }
 
 bool AdminTaskManager::isFinished(JobID jobID, TaskID taskID) {
   auto iter = tasks_.find(std::make_pair(jobID, taskID));
