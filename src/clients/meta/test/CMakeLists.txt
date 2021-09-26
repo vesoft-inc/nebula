@@ -10,5 +10,6 @@ nebula_add_test(
         $<TARGET_OBJECTS:file_based_cluster_id_man_obj>
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:fs_obj>
+        $<TARGET_OBJECTS:ssl_obj>
     LIBRARIES gtest
 )

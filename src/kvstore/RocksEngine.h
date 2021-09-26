@@ -15,6 +15,7 @@
 #include "common/base/Base.h"
 #include "kvstore/KVEngine.h"
 #include "kvstore/KVIterator.h"
+#include "kvstore/RocksEngineConfig.h"
 
 namespace nebula {
 namespace kvstore {
@@ -128,6 +129,12 @@ class RocksEngine : public KVEngine {
                                           const std::string& prefix,
                                           std::unique_ptr<KVIterator>* iter) override;
 
+  nebula::cpp2::ErrorCode prefixWithExtractor(const std::string& prefix,
+                                              std::unique_ptr<KVIterator>* storageIter);
+
+  nebula::cpp2::ErrorCode prefixWithoutExtractor(const std::string& prefix,
+                                                 std::unique_ptr<KVIterator>* storageIter);
+
   /*********************
    * Data modification
    ********************/
@@ -161,6 +168,8 @@ class RocksEngine : public KVEngine {
   nebula::cpp2::ErrorCode setDBOption(const std::string& configKey,
                                       const std::string& configValue) override;
 
+  ErrorOr<nebula::cpp2::ErrorCode, std::string> getProperty(const std::string& property) override;
+
   nebula::cpp2::ErrorCode compact() override;
 
   nebula::cpp2::ErrorCode flush() override;
@@ -190,6 +199,7 @@ class RocksEngine : public KVEngine {
   std::string backupPath_;
   std::unique_ptr<rocksdb::BackupEngine> backupDb_{nullptr};
   int32_t partsNum_ = -1;
+  size_t extractorLen_;
 };
 
 }  // namespace kvstore

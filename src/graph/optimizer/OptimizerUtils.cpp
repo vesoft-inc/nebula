@@ -922,7 +922,7 @@ void OptimizerUtils::copyIndexScanData(const nebula::graph::IndexScan* from,
   to->setDedup(from->dedup());
   to->setOrderBy(from->orderBy());
   to->setLimit(from->limit());
-  to->setFilter(from->filter());
+  to->setFilter(from->filter() == nullptr ? nullptr : from->filter()->clone());
 }
 
 }  // namespace graph

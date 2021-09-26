@@ -16,6 +16,10 @@ TEST_DIR ?= $(CURR_DIR)
 BUILD_DIR ?= $(CURR_DIR)/../build
 DEBUG ?= true
 J ?= 10
+ENABLE_SSL ?= false
+ENABLE_GRAPH_SSL ?= false
+ENABLE_META_SSL ?= false
+CA_SIGNED ?= false
 
 install-deps:
 	pip3 install --user -U setuptools wheel -i $(PYPI_MIRROR)
@@ -49,7 +53,7 @@ check:
 
 up: clean
 	@mkdir -p $(CURR_DIR)/.pytest
-	PYTHONPATH=$$PYTHONPATH:$(CURR_DIR)/.. $(CURR_DIR)/nebula-test-run.py --cmd=start --rm_dir=$(RM_DIR) --build_dir=$(BUILD_DIR) --debug=$(DEBUG) --multi_graphd=true
+	PYTHONPATH=$$PYTHONPATH:$(CURR_DIR)/.. $(CURR_DIR)/nebula-test-run.py --cmd=start --rm_dir=$(RM_DIR) --build_dir=$(BUILD_DIR) --debug=$(DEBUG) --multi_graphd=true --enable_ssl=$(ENABLE_SSL) --enable_graph_ssl=$(ENABLE_GRAPH_SSL) --enable_meta_ssl=$(ENABLE_META_SSL) --ca_signed=$(CA_SIGNED)
 
 down:
 	PYTHONPATH=$$PYTHONPATH:$(CURR_DIR)/.. $(CURR_DIR)/nebula-test-run.py --cmd=stop --rm_dir=$(RM_DIR)
@@ -61,16 +65,16 @@ sess: currdir
 	python3 -m pytest -m "not skip" -k "not tck" job/test_session.py
 
 jobs: currdir
-	python3 -m pytest -m "not skip" -k "not tck" job/test_jobs.py
+	python3 -m pytest -m "not skip" tck/steps/test_jobs.py
 
-test: sess jobs
+test: sess
 	python3 -m pytest -n$(J) --dist=loadfile -m "not skip" -k "not tck" $(TEST_DIR)
 
 slow-query: currdir
 	python3 -m pytest -n$(J) -m "not skip" tck/steps/test_kill_slow_query_via_same_service.py && \
 	python3 -m pytest -n$(J) -m "not skip" tck/steps/test_kill_slow_query_via_different_service.py
 
-tck: slow-query
+tck: jobs slow-query
 	python3 -m pytest -n$(J) -m "not skip" tck/steps/test_tck.py
 
 fail: currdir

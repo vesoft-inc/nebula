@@ -253,7 +253,7 @@ TEST_F(JobManagerTest, showJobs) {
   jd2.setStatus(cpp2::JobStatus::FAILED);
   jobMgr->addJob(jd2, adminClient_.get());
 
-  auto statusOrShowResult = jobMgr->showJobs();
+  auto statusOrShowResult = jobMgr->showJobs(paras1.back());
   LOG(INFO) << "after show jobs";
   ASSERT_TRUE(nebula::ok(statusOrShowResult));
 
@@ -268,6 +268,34 @@ TEST_F(JobManagerTest, showJobs) {
   ASSERT_EQ(jobs[0].get_id(), jd2.id_);
   ASSERT_EQ(jobs[0].get_cmd(), cpp2::AdminCmd::FLUSH);
   ASSERT_EQ(jobs[0].get_paras()[0], "test_space");
+  ASSERT_EQ(jobs[0].get_status(), cpp2::JobStatus::FAILED);
+  ASSERT_EQ(jobs[0].get_start_time(), jd2.startTime_);
+  ASSERT_EQ(jobs[0].get_stop_time(), jd2.stopTime_);
+}
+
+TEST_F(JobManagerTest, showJobsFromMultiSpace) {
+  std::vector<std::string> paras1{"test_space"};
+  JobDescription jd1(1, cpp2::AdminCmd::COMPACT, paras1);
+  jd1.setStatus(cpp2::JobStatus::RUNNING);
+  jd1.setStatus(cpp2::JobStatus::FINISHED);
+  jobMgr->addJob(jd1, adminClient_.get());
+
+  std::vector<std::string> paras2{"test_space2"};
+  JobDescription jd2(2, cpp2::AdminCmd::FLUSH, paras2);
+  jd2.setStatus(cpp2::JobStatus::RUNNING);
+  jd2.setStatus(cpp2::JobStatus::FAILED);
+  jobMgr->addJob(jd2, adminClient_.get());
+
+  auto statusOrShowResult = jobMgr->showJobs(paras2.back());
+  LOG(INFO) << "after show jobs";
+  ASSERT_TRUE(nebula::ok(statusOrShowResult));
+
+  auto& jobs = nebula::value(statusOrShowResult);
+  ASSERT_EQ(jobs.size(), 1);
+
+  ASSERT_EQ(jobs[0].get_id(), jd2.id_);
+  ASSERT_EQ(jobs[0].get_cmd(), cpp2::AdminCmd::FLUSH);
+  ASSERT_EQ(jobs[0].get_paras()[0], "test_space2");
   ASSERT_EQ(jobs[0].get_status(), cpp2::JobStatus::FAILED);
   ASSERT_EQ(jobs[0].get_start_time(), jd2.startTime_);
   ASSERT_EQ(jobs[0].get_stop_time(), jd2.stopTime_);
@@ -300,7 +328,7 @@ TEST_F(JobManagerTest, showJob) {
   jobMgr->save(td2.taskKey(), td2.taskVal());
 
   LOG(INFO) << "before jobMgr->showJob";
-  auto showResult = jobMgr->showJob(iJob);
+  auto showResult = jobMgr->showJob(iJob, paras.back());
   LOG(INFO) << "after jobMgr->showJob";
   ASSERT_TRUE(nebula::ok(showResult));
   auto& jobs = nebula::value(showResult).first;
@@ -328,16 +356,48 @@ TEST_F(JobManagerTest, showJob) {
   ASSERT_EQ(tasks[1].get_stop_time(), td2.stopTime_);
 }
 
+TEST_F(JobManagerTest, showJobInOtherSpace) {
+  std::vector<std::string> paras{"test_space"};
+
+  JobDescription jd(1, cpp2::AdminCmd::COMPACT, paras);
+  jd.setStatus(cpp2::JobStatus::RUNNING);
+  jd.setStatus(cpp2::JobStatus::FINISHED);
+  jobMgr->addJob(jd, adminClient_.get());
+
+  int32_t iJob = jd.id_;
+  int32_t task1 = 0;
+  auto host1 = toHost("127.0.0.1");
+
+  TaskDescription td1(iJob, task1, host1);
+  td1.setStatus(cpp2::JobStatus::RUNNING);
+  td1.setStatus(cpp2::JobStatus::FINISHED);
+  jobMgr->save(td1.taskKey(), td1.taskVal());
+
+  int32_t task2 = 1;
+  auto host2 = toHost("127.0.0.1");
+  TaskDescription td2(iJob, task2, host2);
+  td2.setStatus(cpp2::JobStatus::RUNNING);
+  td2.setStatus(cpp2::JobStatus::FAILED);
+  jobMgr->save(td2.taskKey(), td2.taskVal());
+
+  LOG(INFO) << "before jobMgr->showJob";
+  std::string chosenSpace = "spaceWithNoJob";
+  auto showResult = jobMgr->showJob(iJob, chosenSpace);
+  LOG(INFO) << "after jobMgr->showJob";
+  ASSERT_TRUE(!nebula::ok(showResult));
+}
+
 TEST_F(JobManagerTest, recoverJob) {
   // set status to prevent running the job since AdminClient is a injector
   jobMgr->status_ = JobManager::JbmgrStatus::NOT_START;
+  auto spaceName = "test_space";
   int32_t nJob = 3;
   for (auto i = 0; i != nJob; ++i) {
-    JobDescription jd(i, cpp2::AdminCmd::FLUSH, {"test_space"});
+    JobDescription jd(i, cpp2::AdminCmd::FLUSH, {spaceName});
     jobMgr->save(jd.jobKey(), jd.jobVal());
   }
 
-  auto nJobRecovered = jobMgr->recoverJob();
+  auto nJobRecovered = jobMgr->recoverJob(spaceName);
   ASSERT_EQ(nebula::value(nJobRecovered), 1);
 }
 

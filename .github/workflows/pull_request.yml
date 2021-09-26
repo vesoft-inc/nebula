@@ -6,11 +6,6 @@ on:
     branches:
       - master
       - 'v[0-9]+.*'
-    paths-ignore:
-      - 'docs/**'
-      - 'LICENSES/**'
-      - 'LICENSE'
-      - '**.md'
 
 defaults:
   run:
@@ -68,7 +63,7 @@ jobs:
     steps:
       - uses: webiny/action-post-run@2.0.1
         with:
-          run: rm -rf ${{ github.workspace }}
+          run: sh -c "find . -mindepth 1 -delete"
       - uses: actions/checkout@v2
       - name: Prepare environment
         id: prepare
@@ -90,6 +85,7 @@ jobs:
                   -DENABLE_TESTING=on \
                   -B build
               echo "::set-output name=j::10"
+              echo "::set-output name=t::$(nproc)"
               ;;
             ubuntu2004)
               # build with Debug type
@@ -98,8 +94,10 @@ jobs:
                   -DCMAKE_C_COMPILER=$TOOLSET_CLANG_DIR/bin/gcc \
                   -DCMAKE_BUILD_TYPE=Debug \
                   -DENABLE_TESTING=on \
+                  -DENABLE_COVERAGE=on \
                   -B build
               echo "::set-output name=j::10"
+              echo "::set-output name=t::10"
               ;;
             esac
             ;;
@@ -113,12 +111,13 @@ jobs:
                 -DENABLE_TESTING=on \
                 -B build
             echo "::set-output name=j::6"
+            echo "::set-output name=t::10"
             ;;
           esac
       - name: Make
         run: |
           ccache -z
-          cmake --build build/ -j $(($(nproc)/2+1))
+          cmake --build build/ -j ${{ steps.cmake.outputs.t }}
           ccache -s
       - name: CTest
         env:
@@ -128,7 +127,24 @@ jobs:
         timeout-minutes: 20
       - name: Setup cluster
         run: |
-          make up
+          case ${{ matrix.compiler }} in
+          gcc-*)
+            case ${{ matrix.os }} in
+            centos7)
+              # normal cluster
+              make up
+              ;;
+            ubuntu2004)
+              # ssl cluster
+              make ENABLE_SSL=true CA_SIGNED=true up
+              ;;
+            esac
+            ;;
+          clang-*)
+            # graph ssl only cluster
+            make ENABLE_SSL=false ENABLE_GRAPH_SSL=true up
+            ;;
+          esac
         working-directory: tests/
         timeout-minutes: 2
       - name: Pytest
@@ -146,13 +162,18 @@ jobs:
           make RM_DIR=false down
         working-directory: tests/
         timeout-minutes: 2
+      - name: coverage
+        if: ${{ matrix.compiler == 'gcc-9.2' && matrix.os == 'ubuntu2004' }}
+        run: |
+            ~/.local/bin/fastcov -d build -l -o fastcov.info -p --exclude /usr/include --exclude=/opt/vesoft --exclude scanner.lex
+            bash <(curl -s https://codecov.io/bash) -Z -f fastcov.info
       - name: Sanitizer
         if: ${{ always() }}
         run: |
           exit $(grep -P "SUMMARY: AddressSanitizer: \d+ byte\(s\) leaked in \d+ allocation\(s\)\." build/server_*/logs/*stderr.log | wc -l)
       - name: Upload logs
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v2
         if: ${{ failure() }}
         with:
           name: ${{ matrix.os }}-${{ matrix.compiler }}-nebula-test-logs
-          path:  build/server_*/logs/
+          path:  ./build/server_*/logs/

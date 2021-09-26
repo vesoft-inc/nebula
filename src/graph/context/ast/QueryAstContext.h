@@ -120,9 +120,22 @@ struct SubgraphContext final : public AstContext {
   Starts from;
   StepClause steps;
   std::string loopSteps;
-
+  YieldColumns* yieldExpr;
+  std::vector<std::string> colNames;
   std::unordered_set<EdgeType> edgeTypes;
   bool withProp{false};
+  bool getVertexProp{false};
+  bool getEdgeProp{false};
+};
+
+struct FetchVerticesContext final : public AstContext {
+  Starts from;
+  bool distinct{false};
+  YieldColumns* yieldExpr{nullptr};
+  ExpressionProps exprProps;
+
+  // store the result of the previous sentence
+  std::string inputVarName;
 };
 
 }  // namespace graph

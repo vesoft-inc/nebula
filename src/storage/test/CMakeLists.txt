@@ -47,6 +47,7 @@ set(storage_test_deps
     $<TARGET_OBJECTS:encryption_obj>
     $<TARGET_OBJECTS:ft_es_storage_adapter_obj>
     $<TARGET_OBJECTS:version_obj>
+    $<TARGET_OBJECTS:ssl_obj>
 )
 
 nebula_add_test(
@@ -513,6 +514,23 @@ nebula_add_test(
 
 nebula_add_test(
     NAME
+        storage_http_property_test
+    SOURCES
+        StorageHttpPropertyHandlerTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:storage_http_handler>
+        $<TARGET_OBJECTS:ws_obj>
+        ${storage_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
         scan_edge_test
     SOURCES
         ScanEdgeTest.cpp
@@ -636,7 +654,26 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         wangle
         gtest
+)
 
+nebula_add_test(
+    NAME
+        index_scan_limit_test
+    SOURCES
+        IndexScanLimitTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:storage_common_obj>
+        $<TARGET_OBJECTS:meta_service_handler>
+        $<TARGET_OBJECTS:mock_obj>
+        $<TARGET_OBJECTS:ws_common_obj>
+        $<TARGET_OBJECTS:ws_obj>
+        ${storage_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        wangle
+        gtest
 )
 
 nebula_add_executable(

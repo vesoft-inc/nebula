@@ -19,18 +19,23 @@
 #include "common/http/HttpClient.h"
 #include "common/meta/NebulaSchemaProvider.h"
 #include "common/network/NetworkUtils.h"
+#include "common/ssl/SSLConfig.h"
 #include "common/stats/StatsManager.h"
 #include "common/time/TimeUtils.h"
 #include "version/Version.h"
 #include "webservice/Common.h"
 
+DECLARE_int32(ws_meta_http_port);
+DECLARE_int32(ws_meta_h2_port);
+
 DEFINE_uint32(expired_time_factor, 5, "The factor of expired time based on heart beat interval");
-DEFINE_int32(heartbeat_interval_secs, 10, "Heartbeat interval");
+DEFINE_int32(heartbeat_interval_secs, 10, "Heartbeat interval in seconds");
 DEFINE_int32(meta_client_retry_times, 3, "meta client retry times, 0 means no retry");
 DEFINE_int32(meta_client_retry_interval_secs, 1, "meta client sleep interval between retry");
 DEFINE_int32(meta_client_timeout_ms, 60 * 1000, "meta client timeout");
 DEFINE_string(cluster_id_path, "cluster.id", "file path saved clusterId");
 DEFINE_int32(check_plan_killed_frequency, 8, "check plan killed every 1<<n times");
+
 namespace nebula {
 namespace meta {
 
@@ -45,7 +50,8 @@ MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool
   CHECK(ioThreadPool_ != nullptr) << "IOThreadPool is required";
   CHECK(!addrs_.empty())
       << "No meta server address is specified or can be solved. Meta server is required";
-  clientsMan_ = std::make_shared<thrift::ThriftClientManager<cpp2::MetaServiceAsyncClient>>();
+  clientsMan_ = std::make_shared<thrift::ThriftClientManager<cpp2::MetaServiceAsyncClient>>(
+      FLAGS_enable_ssl || FLAGS_enable_meta_ssl);
   updateActive();
   updateLeader();
   bgThread_ = std::make_unique<thread::GenericWorker>();
@@ -794,6 +800,8 @@ Status MetaClient::handleResponse(const RESP& resp) {
       return Status::Error("Failed to get meta dir!");
     case nebula::cpp2::ErrorCode::E_INVALID_JOB:
       return Status::Error("No valid job!");
+    case nebula::cpp2::ErrorCode::E_JOB_NOT_IN_SPACE:
+      return Status::Error("Job not in chosen space!");
     case nebula::cpp2::ErrorCode::E_BACKUP_EMPTY_TABLE:
       return Status::Error("Backup empty table!");
     case nebula::cpp2::ErrorCode::E_BACKUP_TABLE_FAILED:

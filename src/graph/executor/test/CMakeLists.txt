@@ -47,6 +47,7 @@ SET(EXEC_QUERY_TEST_OBJS
     $<TARGET_OBJECTS:graph_auth_obj>
     $<TARGET_OBJECTS:expr_visitor_obj>
     $<TARGET_OBJECTS:graph_obj>
+    $<TARGET_OBJECTS:ssl_obj>
 )
 
 SET(EXEC_QUERY_TEST_LIBS
@@ -81,6 +82,7 @@ nebula_add_test(
         CartesianProductTest.cpp
         AssignTest.cpp
         ShowQueriesTest.cpp
+        JobTest.cpp
     OBJECTS
         ${EXEC_QUERY_TEST_OBJS}
     LIBRARIES

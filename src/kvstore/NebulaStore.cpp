@@ -556,8 +556,7 @@ void NebulaStore::removeSpaceDir(const std::string& dir) {
     LOG(INFO) << "Try to remove space directory: " << dir;
     boost::filesystem::remove_all(dir);
   } catch (const boost::filesystem::filesystem_error& e) {
-    LOG(ERROR) << "Exception caught while remove directory, please delelte it "
-                  "by manual: "
+    LOG(ERROR) << "Exception caught while remove directory, please delelte it by manual: "
                << e.what();
   }
 }
@@ -1167,6 +1166,27 @@ nebula::cpp2::ErrorCode NebulaStore::multiPutWithoutReplicator(GraphSpaceID spac
   }
 
   return nebula::cpp2::ErrorCode::SUCCEEDED;
+}
+
+ErrorOr<nebula::cpp2::ErrorCode, std::string> NebulaStore::getProperty(
+    GraphSpaceID spaceId, const std::string& property) {
+  auto spaceRet = space(spaceId);
+  if (!ok(spaceRet)) {
+    LOG(ERROR) << "Get Space " << spaceId << " Failed";
+    return error(spaceRet);
+  }
+  auto space = nebula::value(spaceRet);
+
+  folly::dynamic obj = folly::dynamic::object;
+  for (size_t i = 0; i < space->engines_.size(); i++) {
+    auto val = space->engines_[i]->getProperty(property);
+    if (!ok(val)) {
+      return error(val);
+    }
+    auto eng = folly::stringPrintf("Engine %zu", i);
+    obj[eng] = std::move(value(val));
+  }
+  return folly::toJson(obj);
 }
 
 }  // namespace kvstore

@@ -10,8 +10,10 @@ import pytest
 import io
 import csv
 import re
+import threading
 
 from nebula2.common.ttypes import Value, ErrorCode
+from nebula2.data.DataObject import ValueWrapper
 from pytest_bdd import given, parsers, then, when
 
 from tests.common.dataset_printer import DataSetPrinter
@@ -33,6 +35,9 @@ from tests.tck.utils.nbv import murmurhash2
 parse = functools.partial(parsers.parse)
 rparse = functools.partial(parsers.re)
 example_pattern = re.compile(r"<(\w+)>")
+
+register_dict = {}
+register_lock = threading.Lock()
 
 
 def normalize_outline_scenario(request, name):
@@ -56,11 +61,27 @@ def is_job_finished(sess, job):
     return any(is_finished(val) for val in rsp.row_values(0))
 
 
+def get_running_jobs(sess):
+    rsp = resp_ok(sess, "SHOW JOBS")
+    assert rsp.row_size() > 0
+
+    def is_running_or_queue(val) -> bool:
+        return val.is_string() and val.as_string() in ["RUNNING", "QUEUE"]
+
+    def running_or_queue_row(row):
+        return 1 if any(is_running_or_queue(val) for val in row) else 0
+
+    num_running_and_queue_jobs = 0
+    for i in range(rsp.row_size()):
+        num_running_and_queue_jobs += running_or_queue_row(rsp.row_values(i))
+    return num_running_and_queue_jobs
+
+
 def wait_all_jobs_finished(sess, jobs=[]):
-    times = 60
+    times = 4 * get_running_jobs(sess)
     while jobs and times > 0:
         jobs = [job for job in jobs if not is_job_finished(sess, job)]
-        time.sleep(0.5)
+        time.sleep(1)
         times -= 1
     return len(jobs) == 0
 
@@ -147,6 +168,7 @@ def new_space(request, options, session, graph_spaces):
     graph_spaces["space_desc"] = space_desc
     graph_spaces["drop_space"] = True
 
+
 @given(parse("Any graph"))
 def new_space(request, session, graph_spaces):
     name = "EmptyGraph_" + space_generator()
@@ -161,6 +183,7 @@ def new_space(request, session, graph_spaces):
     create_space(space_desc, session)
     graph_spaces["space_desc"] = space_desc
     graph_spaces["drop_space"] = True
+
 
 @given(parse('load "{data}" csv data to a new space'))
 def import_csv_data(request, data, graph_spaces, session, pytestconfig):
@@ -267,8 +290,9 @@ def cmp_dataset(
         order: bool,
         strict: bool,
         contains=CmpType.EQUAL,
+        first_n_records=-1,
         hashed_columns=[],
-) -> None:
+):
     rs = graph_spaces['result_set']
     ngql = graph_spaces['ngql']
     check_resp(rs, ngql)
@@ -282,6 +306,7 @@ def cmp_dataset(
     dscmp = DataSetComparator(strict=strict,
                               order=order,
                               contains=contains,
+                              first_n_records=first_n_records,
                               decode_type=rs._decode_type,
                               vid_fn=vid_fn)
 
@@ -317,6 +342,7 @@ def cmp_dataset(
             f"vid_fn: {vid_fn}",
         ]
         assert res, "\n".join(msg)
+    return rds
 
 
 @then(parse("define some list variables:\n{text}"))
@@ -454,6 +480,7 @@ def check_plan(plan, graph_spaces):
     differ = PlanDiffer(resp.plan_desc(), expect)
     assert differ.diff(), differ.err_msg()
 
+
 @when(parse("executing query via graph {index:d}:\n{query}"))
 def executing_query(query, index, graph_spaces, session_from_first_conn_pool, session_from_second_conn_pool, request):
     assert index < 2, "There exists only 0,1 graph: {}".format(index)
@@ -462,3 +489,34 @@ def executing_query(query, index, graph_spaces, session_from_first_conn_pool, se
         exec_query(request, ngql, session_from_first_conn_pool, graph_spaces)
     else:
         exec_query(request, ngql, session_from_second_conn_pool, graph_spaces)
+
+
+@then(parse("the result should be, the first {n:d} records in order, and register {column_name} as a list named {key}:\n{result}"))
+def result_should_be_in_order_and_register_key(n, column_name, key, request, result, graph_spaces):
+    assert n > 0, f"The records number should be an positive integer: {n}"
+    result_ds = cmp_dataset(request, graph_spaces, result, order=True, strict=True, contains=CmpType.CONTAINS, first_n_records=n)
+    register_result_key(request.node.name, result_ds, column_name, key)
+
+
+def register_result_key(test_name, result_ds, column_name, key):
+    if column_name.encode() not in result_ds.column_names:
+        assert False, f"{column_name} not in result columns {result_ds.column_names}."
+    col_index = result_ds.column_names.index(column_name.encode())
+    val = [row.values[col_index] for row in result_ds.rows]
+    register_lock.acquire()
+    register_dict[test_name + key] = val;
+    register_lock.release()
+
+
+@when(parse("executing query, fill replace holders with element index of {indices} in {keys}:\n{query}"))
+def executing_query_with_params(query, indices, keys, graph_spaces, session, request):
+    indices_list=[int(v) for v in indices.split(",")]
+    key_list=[request.node.name+key for key in keys.split(",")]
+    assert len(indices_list) == len(key_list), f"Length not match for keys and indices: {keys} <=> {indices}"
+    vals = []
+    register_lock.acquire()
+    for (key, index) in zip (key_list, indices_list):
+        vals.append(ValueWrapper(register_dict[key][index]))
+    register_lock.release()
+    ngql = combine_query(query).format(*vals)
+    exec_query(request, ngql, session, graph_spaces)

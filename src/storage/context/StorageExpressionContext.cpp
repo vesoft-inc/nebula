@@ -9,6 +9,7 @@
 #include "common/utils/DefaultValueContext.h"
 #include "common/utils/IndexKeyUtils.h"
 #include "common/utils/NebulaKeyUtils.h"
+#include "storage/exec/QueryUtils.h"
 
 namespace nebula {
 namespace storage {
@@ -17,22 +18,13 @@ Value StorageExpressionContext::readValue(const std::string& propName) const {
   if (!schema_) {
     return Value::kNullValue;
   }
-  auto field = schema_->field(propName);
-  if (!field) {
+
+  auto ret = QueryUtils::readValue(reader_, propName, schema_);
+  if (!ret.ok()) {
     return Value::kNullValue;
   }
-  auto value = reader_->getValueByName(propName);
-  if (value.type() == Value::Type::NULLVALUE) {
-    // read null value
-    auto nullType = value.getNull();
-    if (nullType == NullType::UNKNOWN_PROP && field->hasDefault()) {
-      DefaultValueContext expCtx;
-      auto expr = field->defaultValue()->clone();
-      return Value(Expression::eval(expr, expCtx));
-    }
-    return Value::kNullValue;
-  }
-  return value;
+
+  return std::move(ret).value();
 }
 
 // Get the specified property from the tag, such as tag_name.prop_name
@@ -120,12 +112,12 @@ Value StorageExpressionContext::getSrcProp(const std::string& tagName,
 }
 
 Value StorageExpressionContext::getIndexValue(const std::string& prop, bool isEdge) const {
-  // TODO (sky) : Handle string type values.
-  //              when field type is FIXED_STRING type,
-  //              actual length of the value is called "len"
-  //              FIXED_STRING.type.len is called "fixed_len"
-  //              if (len > fixed_len) : v = value.substr(0, fixed_len)
-  //              if (len < fixed_len) : v.append(fixed_len - len, '\0')
+  // Handle string type values.
+  // when field type is FIXED_STRING type,
+  // actual length of the value is called "len"
+  // FIXED_STRING.type.len is called "fixed_len"
+  // if (len > fixed_len) : v = value.substr(0, fixed_len)
+  // if (len < fixed_len) : v.append(fixed_len - len, '\0')
   return IndexKeyUtils::getValueFromIndexKey(vIdLen_, key_, prop, fields_, isEdge, hasNullableCol_);
 }
 

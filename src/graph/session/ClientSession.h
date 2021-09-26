@@ -29,12 +29,12 @@ class ClientSession final {
   static std::shared_ptr<ClientSession> create(meta::cpp2::Session&& session,
                                                meta::MetaClient* metaClient);
 
-  int64_t id() {
+  int64_t id() const {
     folly::RWSpinLock::ReadHolder rHolder(rwSpinLock_);
     return session_.get_session_id();
   }
 
-  const SpaceInfo space() {
+  const SpaceInfo& space() const {
     folly::RWSpinLock::ReadHolder rHolder(rwSpinLock_);
     return space_;
   }
@@ -47,22 +47,22 @@ class ClientSession final {
     }
   }
 
-  const std::string spaceName() {
+  const std::string& spaceName() const {
     folly::RWSpinLock::ReadHolder rHolder(rwSpinLock_);
     return session_.get_space_name();
   }
 
-  const std::string user() {
+  const std::string& user() const {
     folly::RWSpinLock::ReadHolder rHolder(rwSpinLock_);
     return session_.get_user_name();
   }
 
-  std::unordered_map<GraphSpaceID, meta::cpp2::RoleType> roles() {
+  const std::unordered_map<GraphSpaceID, meta::cpp2::RoleType>& roles() const {
     folly::RWSpinLock::ReadHolder rHolder(rwSpinLock_);
     return roles_;
   }
 
-  StatusOr<meta::cpp2::RoleType> roleWithSpace(GraphSpaceID space) {
+  StatusOr<meta::cpp2::RoleType> roleWithSpace(GraphSpaceID space) const {
     folly::RWSpinLock::ReadHolder rHolder(rwSpinLock_);
     auto ret = roles_.find(space);
     if (ret == roles_.end()) {
@@ -71,7 +71,7 @@ class ClientSession final {
     return ret->second;
   }
 
-  bool isGod() {
+  bool isGod() const {
     folly::RWSpinLock::ReadHolder rHolder(rwSpinLock_);
     // Cloud may have multiple God accounts
     for (auto& role : roles_) {
@@ -91,12 +91,12 @@ class ClientSession final {
 
   void charge();
 
-  int32_t getTimezone() {
+  int32_t getTimezone() const {
     folly::RWSpinLock::ReadHolder rHolder(rwSpinLock_);
     return session_.get_timezone();
   }
 
-  HostAddr getGraphAddr() {
+  const HostAddr& getGraphAddr() const {
     folly::RWSpinLock::ReadHolder rHolder(rwSpinLock_);
     return session_.get_graph_addr();
   }
@@ -120,7 +120,7 @@ class ClientSession final {
     }
   }
 
-  const meta::cpp2::Session getSession() {
+  const meta::cpp2::Session& getSession() const {
     folly::RWSpinLock::ReadHolder rHolder(rwSpinLock_);
     return session_;
   }
@@ -134,7 +134,7 @@ class ClientSession final {
 
   void deleteQuery(QueryContext* qctx);
 
-  bool findQuery(nebula::ExecutionPlanID epId);
+  bool findQuery(nebula::ExecutionPlanID epId) const;
 
   void markQueryKilled(nebula::ExecutionPlanID epId);
 
@@ -150,7 +150,7 @@ class ClientSession final {
   time::Duration idleDuration_;
   meta::cpp2::Session session_;
   meta::MetaClient* metaClient_{nullptr};
-  folly::RWSpinLock rwSpinLock_;
+  mutable folly::RWSpinLock rwSpinLock_;
   /*
    * map<spaceId, role>
    * One user can have roles in multiple spaces
