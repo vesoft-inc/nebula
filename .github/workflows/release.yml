@@ -20,7 +20,6 @@ jobs:
           - ubuntu1604
           - ubuntu1804
           - ubuntu2004
-          # - centos6
           - centos7
           - centos8
     container:
@@ -28,7 +27,7 @@ jobs:
     env:
       BUILD_DIR: ./pkg-build
       CPACK_DIR: ./pkg-build/cpack_output
-      SYMS_DIR: ./pkg-build/syms
+      SYMS_DIR: ./pkg-build/symbols
     steps:
       - uses: actions/checkout@v2
       - uses: ./.github/actions/tagname-action

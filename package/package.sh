@@ -175,7 +175,18 @@ function _find_dump_syms_tool {
     fi
 }
 
+# This is only for releasing the disk resources.
+function _strip_unnecessary_binaries {
+    for bin in $(ls -1 -F ${build_dir}/bin/ | grep -v [/$]); do
+        if ! (strip ${build_dir}/bin/${bin}); then
+            echo ">>> strip ${bin} faild: $?. <<<"
+            exit 1
+        fi
+    done
+}
+
 function dump_syms {
+    _strip_unnecessary_binaries
     _find_dump_syms_tool
     dump_syms=${dump_syms_tool_dir}/dump_syms
 
@@ -188,7 +199,7 @@ function dump_syms {
 
     for bin in nebula-graphd nebula-storaged nebula-metad; do
         if ! (${dump_syms} ${build_dir}/bin/${bin} > ${syms_dir}/${bin}${ver}.sym); then
-            echo ">>> dump ${bin} symbols faild. <<<"
+            echo ">>> dump ${bin} symbols faild: $?. <<<"
             exit 1
         fi
     done
@@ -196,6 +207,7 @@ function dump_syms {
 
 # The main
 build $version $enablesanitizer $static_sanitizer $build_type $branch
+rm -rf ${build_dir}/src
 package $strip_enable
 if [[ $dump_symbols == ON ]]; then
     echo ">>> start dump symbols <<<"
