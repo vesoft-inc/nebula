@@ -226,6 +226,9 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     case PlanNode::Kind::kCreateSpace: {
       return pool->add(new CreateSpaceExecutor(node, qctx));
     }
+    case PlanNode::Kind::kCreateSpaceAs: {
+      return pool->add(new CreateSpaceAsExecutor(node, qctx));
+    }
     case PlanNode::Kind::kDescSpace: {
       return pool->add(new DescSpaceExecutor(node, qctx));
     }
