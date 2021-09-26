@@ -17,6 +17,7 @@
 #include "common/thread/GenericThreadPool.h"
 #include "common/utils/Utils.h"
 #include "kvstore/PartManager.h"
+#include "kvstore/RocksEngine.h"
 #include "storage/BaseProcessor.h"
 #include "storage/CompactionFilter.h"
 #include "storage/GraphStorageServiceHandler.h"
@@ -114,6 +115,31 @@ bool StorageServer::initWebService() {
   return status.ok();
 }
 
+std::unique_ptr<kvstore::KVEngine> StorageServer::getAdminStoreInstance() {
+  int32_t vIdLen = NebulaKeyUtils::adminTaskKey(-1, 0, 0).size();
+  std::unique_ptr<kvstore::KVEngine> re(
+      new kvstore::RocksEngine(0, vIdLen, dataPaths_[0], walPath_));
+  return re;
+}
+
+int32_t StorageServer::getAdminStoreSeqId() {
+  std::string key = NebulaKeyUtils::adminTaskKey(-1, 0, 0);
+  std::string val;
+  nebula::cpp2::ErrorCode rc = env_->adminStore_->get(key, &val);
+  int32_t curSeqId = 1;
+  if (rc == nebula::cpp2::ErrorCode::SUCCEEDED) {
+    int32_t lastSeqId = *reinterpret_cast<const int32_t*>(val.data());
+    curSeqId = lastSeqId + 1;
+  }
+  std::string newVal;
+  newVal.append(reinterpret_cast<char*>(&curSeqId), sizeof(int32_t));
+  auto ret = env_->adminStore_->put(key, newVal);
+  if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(FATAL) << "Write put in admin-storage seq id " << curSeqId << " failed.";
+  }
+  return curSeqId;
+}
+
 bool StorageServer::start() {
   ioThreadPool_ = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_num_io_threads);
   workers_ = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
@@ -158,12 +184,6 @@ bool StorageServer::start() {
     return false;
   }
 
-  taskMgr_ = AdminTaskManager::instance();
-  if (!taskMgr_->init()) {
-    LOG(ERROR) << "Init task manager failed!";
-    return false;
-  }
-
   env_ = std::make_unique<storage::StorageEnv>();
   env_->kvstore_ = kvstore_.get();
   env_->indexMan_ = indexMan_.get();
@@ -176,6 +196,13 @@ bool StorageServer::start() {
 
   env_->verticesML_ = std::make_unique<VerticesMemLock>();
   env_->edgesML_ = std::make_unique<EdgesMemLock>();
+  env_->adminStore_ = getAdminStoreInstance();
+  env_->adminSeqId_ = getAdminStoreSeqId();
+  taskMgr_ = AdminTaskManager::instance(env_.get());
+  if (!taskMgr_->init()) {
+    LOG(ERROR) << "Init task manager failed!";
+    return false;
+  }
 
   storageThread_.reset(new std::thread([this] {
     try {
