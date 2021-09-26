@@ -89,4 +89,57 @@ TEST(ResponseEncodDecodeTest, Basic) {
   }
 }
 
+TEST(ResponseEncodDecodeTest, ToJson) {
+  // plan description
+  {
+    std::vector<PlanDescription> pds;
+    pds.emplace_back(PlanDescription{});
+    pds.emplace_back(PlanDescription{std::vector<PlanNodeDescription>{},
+                                     std::unordered_map<int64_t, int64_t>{{1, 2}, {4, 7}},
+                                     "format"});
+    for (const auto &pd : pds) {
+      std::string buf;
+      buf.reserve(128);
+      folly::dynamic jsonObj = pd.toJson();
+      auto jsonString = folly::toJson(jsonObj);
+      serializer::serialize(jsonString, &buf);
+      std::string copy;
+      std::size_t s = serializer::deserialize(buf, copy);
+      ASSERT_EQ(s, buf.size());
+      EXPECT_EQ(jsonString, copy);
+    }
+  }
+  // response
+  {
+    std::vector<ExecutionResponse> resps;
+    resps.emplace_back(ExecutionResponse{});
+    resps.emplace_back(ExecutionResponse{ErrorCode::SUCCEEDED, 233});
+    resps.emplace_back(ExecutionResponse{ErrorCode::SUCCEEDED,
+                                         233,
+                                         std::make_unique<DataSet>(),
+                                         std::make_unique<std::string>("test_space")});
+    resps.emplace_back(ExecutionResponse{ErrorCode::SUCCEEDED,
+                                         233,
+                                         nullptr,
+                                         std::make_unique<std::string>("test_space"),
+                                         nullptr,
+                                         std::make_unique<PlanDescription>()});
+    resps.emplace_back(ExecutionResponse{ErrorCode::E_SYNTAX_ERROR,
+                                         233,
+                                         nullptr,
+                                         std::make_unique<std::string>("test_space"),
+                                         std::make_unique<std::string>("Error Msg.")});
+    for (const auto &resp : resps) {
+      std::string buf;
+      buf.reserve(128);
+      folly::dynamic jsonObj = resp.toJson();
+      auto jsonString = folly::toJson(jsonObj);
+      serializer::serialize(jsonString, &buf);
+      std::string copy;
+      std::size_t s = serializer::deserialize(buf, copy);
+      ASSERT_EQ(s, buf.size());
+      EXPECT_EQ(jsonString, copy);
+    }
+  }
+}
 }  // namespace nebula

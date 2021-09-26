@@ -27,7 +27,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::GetNeighborsResponse>> GraphStorageCl
     bool random,
     const std::vector<cpp2::OrderBy>& orderBy,
     int64_t limit,
-    std::string filter,
+    const Expression* filter,
     folly::EventBase* evb) {
   auto cbStatus = getIdFromRow(space, false);
   if (!cbStatus.ok()) {
@@ -72,8 +72,8 @@ folly::SemiFuture<StorageRpcResponse<cpp2::GetNeighborsResponse>> GraphStorageCl
       spec.set_order_by(orderBy);
     }
     spec.set_limit(limit);
-    if (filter.size() > 0) {
-      spec.set_filter(filter);
+    if (filter != nullptr) {
+      spec.set_filter(filter->encode());
     }
     req.set_traverse_spec(std::move(spec));
   }
@@ -180,7 +180,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::GetPropResponse>> GraphStorageClient:
     bool dedup,
     const std::vector<cpp2::OrderBy>& orderBy,
     int64_t limit,
-    std::string filter,
+    const Expression* filter,
     folly::EventBase* evb) {
   auto cbStatus = getIdFromRow(space, edgeProps != nullptr);
   if (!cbStatus.ok()) {
@@ -216,8 +216,8 @@ folly::SemiFuture<StorageRpcResponse<cpp2::GetPropResponse>> GraphStorageClient:
       req.set_order_by(orderBy);
     }
     req.set_limit(limit);
-    if (filter.size() > 0) {
-      req.set_filter(filter);
+    if (filter != nullptr) {
+      req.set_filter(filter->encode());
     }
     req.set_common(common);
   }

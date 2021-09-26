@@ -22,7 +22,7 @@ class IndexEdgeNode final : public RelNode<T> {
                 IndexScanNode<T>* indexScanNode,
                 const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas,
                 const std::string& schemaName,
-                int64_t limit)
+                int64_t limit = -1)
       : context_(context),
         indexScanNode_(indexScanNode),
         schemas_(schemas),
@@ -42,11 +42,7 @@ class IndexEdgeNode final : public RelNode<T> {
     data_.clear();
     std::vector<storage::cpp2::EdgeKey> edges;
     auto* iter = static_cast<EdgeIndexIterator*>(indexScanNode_->iterator());
-    int64_t count = 0;
     while (iter && iter->valid()) {
-      if (limit_ > -1 && count++ == limit_) {
-        break;
-      }
       if (context_->isPlanKilled()) {
         return nebula::cpp2::ErrorCode::E_PLAN_IS_KILLED;
       }
@@ -66,6 +62,7 @@ class IndexEdgeNode final : public RelNode<T> {
       edges.emplace_back(std::move(edge));
       iter->next();
     }
+    int64_t count = 0;
     for (const auto& edge : edges) {
       auto key = NebulaKeyUtils::edgeKey(context_->vIdLen(),
                                          partId,
@@ -81,6 +78,9 @@ class IndexEdgeNode final : public RelNode<T> {
         continue;
       } else {
         return ret;
+      }
+      if (limit_ > 0 && ++count >= limit_) {
+        break;
       }
     }
     return nebula::cpp2::ErrorCode::SUCCEEDED;

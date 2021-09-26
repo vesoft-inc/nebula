@@ -51,7 +51,7 @@ DEFINE_int64(rocksdb_block_cache,
              1024,
              "The default block cache size used in BlockBasedTable. The unit is MB");
 
-DEFINE_int32(row_cache_num, 16 * 1000 * 1000, "Total keys inside the cache");
+DEFINE_int32(rocksdb_row_cache_num, 16 * 1000 * 1000, "Total keys inside the cache");
 
 DEFINE_int32(cache_bucket_exp, 8, "Total buckets number is 1 << cache_bucket_exp");
 
@@ -78,15 +78,13 @@ DEFINE_int32(rocksdb_rate_limit,
              0,
              "write limit in bytes per sec. The unit is MB. 0 means unlimited.");
 
+DEFINE_bool(enable_rocksdb_whole_key_filtering,
+            false,
+            "Whether or not to enable rocksdb's whole key bloom filter");
+
 DEFINE_bool(enable_rocksdb_prefix_filtering,
-            false,
+            true,
             "Whether or not to enable rocksdb's prefix bloom filter.");
-DEFINE_bool(rocksdb_prefix_bloom_filter_length_flag,
-            false,
-            "If true, prefix bloom filter will be sizeof(PartitionID) + vidLen + "
-            "sizeof(EdgeType). "
-            "If false, prefix bloom filter will be sizeof(PartitionID) + vidLen. ");
-DEFINE_int32(rocksdb_plain_table_prefix_length, 4, "PlainTable prefix size");
 
 DEFINE_bool(rocksdb_compact_change_level,
             true,
@@ -117,34 +115,6 @@ DEFINE_int32(rocksdb_backup_interval_secs,
 
 namespace nebula {
 namespace kvstore {
-
-class GraphPrefixTransform : public rocksdb::SliceTransform {
- private:
-  size_t prefixLen_;
-  std::string name_;
-
- public:
-  explicit GraphPrefixTransform(size_t prefixLen)
-      : prefixLen_(prefixLen), name_("nebula.GraphPrefix." + std::to_string(prefixLen_)) {}
-
-  const char* Name() const override { return name_.c_str(); }
-
-  rocksdb::Slice Transform(const rocksdb::Slice& src) const override {
-    return rocksdb::Slice(src.data(), prefixLen_);
-  }
-
-  bool InDomain(const rocksdb::Slice& key) const override {
-    if (key.size() < prefixLen_) {
-      return false;
-    }
-    // And we should not use NebulaKeyUtils::isVertex or isEdge here, because it
-    // will regard the prefix itself not in domain since its length does not
-    // satisfy
-    constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
-    auto type = static_cast<NebulaKeyType>(readInt<uint32_t>(key.data(), len) & kTypeMask);
-    return type == NebulaKeyType::kEdge || type == NebulaKeyType::kVertex;
-  }
-};
 
 static rocksdb::Status initRocksdbCompression(rocksdb::Options& baseOpts) {
   static std::unordered_map<std::string, rocksdb::CompressionType> m = {
@@ -256,10 +226,8 @@ rocksdb::Status initRocksdbOptions(rocksdb::Options& baseOpts,
     baseOpts.rate_limiter = rate_limiter;
   }
 
+  size_t prefixLength = sizeof(PartitionID) + vidLen;
   if (FLAGS_rocksdb_table_format == "BlockBasedTable") {
-    size_t prefixLength = FLAGS_rocksdb_prefix_bloom_filter_length_flag
-                              ? sizeof(PartitionID) + vidLen + sizeof(EdgeType)
-                              : sizeof(PartitionID) + vidLen;
     // BlockBasedTableOptions
     std::unordered_map<std::string, std::string> bbtOptsMap;
     if (!loadOptionsMap(bbtOptsMap, FLAGS_rocksdb_block_based_table_options)) {
@@ -279,9 +247,9 @@ rocksdb::Status initRocksdbOptions(rocksdb::Options& baseOpts,
       bbtOpts.block_cache = blockCache;
     }
 
-    if (FLAGS_row_cache_num) {
+    if (FLAGS_rocksdb_row_cache_num) {
       static std::shared_ptr<rocksdb::Cache> rowCache =
-          rocksdb::NewLRUCache(FLAGS_row_cache_num, FLAGS_cache_bucket_exp);
+          rocksdb::NewLRUCache(FLAGS_rocksdb_row_cache_num, FLAGS_cache_bucket_exp);
       baseOpts.row_cache = rowCache;
     }
 
@@ -296,8 +264,9 @@ rocksdb::Status initRocksdbOptions(rocksdb::Options& baseOpts,
           baseOpts.compaction_style == rocksdb::CompactionStyle::kCompactionStyleLevel;
     }
     if (FLAGS_enable_rocksdb_prefix_filtering) {
-      baseOpts.prefix_extractor.reset(new GraphPrefixTransform(prefixLength));
+      baseOpts.prefix_extractor.reset(rocksdb::NewCappedPrefixTransform(prefixLength));
     }
+    bbtOpts.whole_key_filtering = FLAGS_enable_rocksdb_whole_key_filtering;
     baseOpts.table_factory.reset(NewBlockBasedTableFactory(bbtOpts));
     baseOpts.create_if_missing = true;
   } else if (FLAGS_rocksdb_table_format == "PlainTable") {
@@ -308,8 +277,10 @@ rocksdb::Status initRocksdbOptions(rocksdb::Options& baseOpts,
     // by default. WAL_ttl_seconds and rocksdb_backup_interval_secs need to be
     // modify together if necessary
     FLAGS_rocksdb_disable_wal = false;
-    baseOpts.prefix_extractor.reset(
-        rocksdb::NewCappedPrefixTransform(FLAGS_rocksdb_plain_table_prefix_length));
+    if (!FLAGS_enable_rocksdb_prefix_filtering) {
+      return rocksdb::Status::InvalidArgument("PlainTable should use prefix bloom filter");
+    }
+    baseOpts.prefix_extractor.reset(rocksdb::NewCappedPrefixTransform(prefixLength));
     baseOpts.table_factory.reset(rocksdb::NewPlainTableFactory());
     baseOpts.create_if_missing = true;
   } else {

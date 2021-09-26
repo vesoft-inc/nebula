@@ -14,6 +14,7 @@
 #include "graph/context/QueryExpressionContext.h"
 #include "graph/planner/plan/Logic.h"
 #include "graph/planner/plan/Query.h"
+#include "graph/util/ValidateUtil.h"
 #include "parser/TraverseSentences.h"
 
 namespace nebula {
@@ -24,7 +25,7 @@ Status GetSubgraphValidator::validateImpl() {
   subgraphCtx_ = getContext<SubgraphContext>();
   subgraphCtx_->withProp = gsSentence->withProp();
 
-  NG_RETURN_IF_ERROR(validateStep(gsSentence->step(), subgraphCtx_->steps));
+  NG_RETURN_IF_ERROR(ValidateUtil::validateStep(gsSentence->step(), subgraphCtx_->steps));
   NG_RETURN_IF_ERROR(validateStarts(gsSentence->from(), subgraphCtx_->from));
   NG_RETURN_IF_ERROR(validateInBound(gsSentence->in()));
   NG_RETURN_IF_ERROR(validateOutBound(gsSentence->out()));

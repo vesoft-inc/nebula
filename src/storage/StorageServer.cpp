@@ -13,6 +13,7 @@
 #include "common/meta/ServerBasedIndexManager.h"
 #include "common/meta/ServerBasedSchemaManager.h"
 #include "common/network/NetworkUtils.h"
+#include "common/ssl/SSLConfig.h"
 #include "common/thread/GenericThreadPool.h"
 #include "common/utils/Utils.h"
 #include "kvstore/PartManager.h"
@@ -25,6 +26,7 @@
 #include "storage/http/StorageHttpAdminHandler.h"
 #include "storage/http/StorageHttpDownloadHandler.h"
 #include "storage/http/StorageHttpIngestHandler.h"
+#include "storage/http/StorageHttpPropertyHandler.h"
 #include "storage/http/StorageHttpStatsHandler.h"
 #include "storage/transaction/TransactionManager.h"
 #include "version/Version.h"
@@ -104,6 +106,9 @@ bool StorageServer::initWebService() {
   router.get("/rocksdb_stats").handler([](web::PathParams&&) {
     return new storage::StorageHttpStatsHandler();
   });
+  router.get("/rocksdb_property").handler([this](web::PathParams&&) {
+    return new storage::StorageHttpPropertyHandler(schemaMan_.get(), kvstore_.get());
+  });
 
   auto status = webSvc_->start();
   return status.ok();
@@ -182,6 +187,9 @@ bool StorageServer::start() {
       storageServer_->setThreadManager(workers_);
       storageServer_->setStopWorkersOnStopListening(false);
       storageServer_->setInterface(std::move(handler));
+      if (FLAGS_enable_ssl) {
+        storageServer_->setSSLConfig(nebula::sslContextConfig());
+      }
 
       ServiceStatus expected = STATUS_UNINITIALIZED;
       if (!storageSvcStatus_.compare_exchange_strong(expected, STATUS_RUNNING)) {
@@ -208,6 +216,9 @@ bool StorageServer::start() {
       adminServer_->setThreadManager(workers_);
       adminServer_->setStopWorkersOnStopListening(false);
       adminServer_->setInterface(std::move(handler));
+      if (FLAGS_enable_ssl) {
+        adminServer_->setSSLConfig(nebula::sslContextConfig());
+      }
 
       ServiceStatus expected = STATUS_UNINITIALIZED;
       if (!adminSvcStatus_.compare_exchange_strong(expected, STATUS_RUNNING)) {
@@ -234,6 +245,9 @@ bool StorageServer::start() {
       internalStorageServer_->setThreadManager(workers_);
       internalStorageServer_->setStopWorkersOnStopListening(false);
       internalStorageServer_->setInterface(std::move(handler));
+      if (FLAGS_enable_ssl) {
+        internalStorageServer_->setSSLConfig(nebula::sslContextConfig());
+      }
 
       internalStorageSvcStatus_.store(STATUS_RUNNING);
       LOG(INFO) << "The internal storage service start(same with admin) on " << internalAddr;

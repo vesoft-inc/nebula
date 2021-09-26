@@ -14,7 +14,7 @@
 namespace nebula {
 namespace graph {
 MatchValidator::MatchValidator(Sentence *sentence, QueryContext *context)
-    : TraversalValidator(sentence, context) {
+    : Validator(sentence, context) {
   matchCtx_ = getContext<MatchAstContext>();
 }
 
@@ -369,6 +369,12 @@ Status MatchValidator::validateReturn(MatchReturn *ret,
   }
   if (ret->returnItems()->columns()) {
     for (auto *column : ret->returnItems()->columns()->columns()) {
+      if (ExpressionUtils::hasAny(column->expr(),
+                                  {Expression::Kind::kVertex, Expression::Kind::kEdge})) {
+        return Status::SemanticError(
+            "keywords: vertex and edge are not supported in return clause `%s'",
+            column->toString().c_str());
+      }
       columns->addColumn(column->clone().release());
     }
   }
