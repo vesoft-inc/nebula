@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 vesoft inc. All rights reserved.
+/* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
@@ -28,7 +28,15 @@ void CreateSpaceAsProcessor::process(const cpp2::CreateSpaceAsReq &req) {
   if (!nebula::ok(oldSpaceId)) {
     rc_ = nebula::error(oldSpaceId);
     LOG(ERROR) << "Create Space [" << newSpaceName << "] as [" << oldSpaceName
-               << "] failed. rc = " << apache::thrift::util::enumNameSafe(rc_);
+               << "] failed. Old space does not exists. rc = "
+               << apache::thrift::util::enumNameSafe(rc_);
+    return;
+  }
+
+  if (nebula::ok(newSpaceId)) {
+    rc_ = nebula::cpp2::ErrorCode::E_EXISTED;
+    LOG(ERROR) << "Create Space [" << newSpaceName << "] as [" << oldSpaceName
+               << "] failed. New space already exists.";
     return;
   }
 
