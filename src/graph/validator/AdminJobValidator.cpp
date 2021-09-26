@@ -49,8 +49,9 @@ Status AdminJobValidator::validateImpl() {
         }
       }
     }
+  } else {
+    sentence_->addPara(qctx()->rctx()->session()->space().name);
   }
-
   return Status::OK();
 }
 

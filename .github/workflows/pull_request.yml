@@ -127,7 +127,24 @@ jobs:
         timeout-minutes: 20
       - name: Setup cluster
         run: |
-          make up
+          case ${{ matrix.compiler }} in
+          gcc-*)
+            case ${{ matrix.os }} in
+            centos7)
+              # normal cluster
+              make up
+              ;;
+            ubuntu2004)
+              # ssl cluster
+              make ENABLE_SSL=true CA_SIGNED=true up
+              ;;
+            esac
+            ;;
+          clang-*)
+            # graph ssl only cluster
+            make ENABLE_SSL=false ENABLE_GRAPH_SSL=true up
+            ;;
+          esac
         working-directory: tests/
         timeout-minutes: 2
       - name: Pytest
