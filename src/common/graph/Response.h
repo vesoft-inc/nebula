@@ -474,7 +474,7 @@ struct ExecutionResponse {
   std::unique_ptr<std::string> comment{nullptr};
 
   // Return the response as a JSON string
-  // only errorCode and latencyInUs are requied fields, the rest are optional
+  // only errorCode and latencyInUs are required fields, the rest are optional
   // if the dataset contains a value of TIME or DATETIME, it will be returned in UTC.
   //
   // JSON struct:
