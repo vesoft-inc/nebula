@@ -13,7 +13,8 @@ nebula_add_library(
     ZoneUtil.cpp
     ToJson.cpp
     ParserUtil.cpp
-    QueryUtil.cpp
+    PlannerUtil.cpp
+    ValidateUtil.cpp
 )
 
 nebula_add_library(

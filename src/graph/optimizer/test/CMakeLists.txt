@@ -43,6 +43,7 @@ set(OPTIMIZER_TEST_LIB
     $<TARGET_OBJECTS:graph_context_obj>
     $<TARGET_OBJECTS:validator_obj>
     $<TARGET_OBJECTS:optimizer_obj>
+    $<TARGET_OBJECTS:ssl_obj>
 )
 
 nebula_add_test(

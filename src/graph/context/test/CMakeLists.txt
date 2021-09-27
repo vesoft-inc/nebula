@@ -40,6 +40,7 @@ SET(CONTEXT_TEST_LIBS
     $<TARGET_OBJECTS:graph_session_obj>
     $<TARGET_OBJECTS:planner_obj>
     $<TARGET_OBJECTS:idgenerator_obj>
+    $<TARGET_OBJECTS:ssl_obj>
 )
 
 nebula_add_test(

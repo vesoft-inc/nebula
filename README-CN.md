@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/vesoft-inc/nebula/v1-head/docs/logo.png"/>
+  <img src="https://nebula-graph.io/img/nav-nebula-logo.png"/>
   <br>中文 | <a href="README.md">English</a>
   <br>世界上唯一能够容纳千亿个顶点和万亿条边，并提供毫秒级查询延时的图数据库解决方案<br>
 </p>
@@ -34,7 +34,7 @@
 
 ## 发布通告
 
-v1.x和v2.5.0之后的版本，Nebula Graph在这个repo管理。如需获取v2.0.0到v2.5.0之间的版本，请访问[Nebula Graph repo](https://github.com/vesoft-inc/nebula-graph)。
+v1.x和v2.5.1之后的版本，Nebula Graph在这个repo管理。如需获取v2.0.0到v2.5.1之间的版本，请访问[Nebula Graph repo](https://github.com/vesoft-inc/nebula-graph)。
 
 Nebula Graph 1.x 后续不再进行功能的更新，请升级到2.0版本中。Nebula Graph内核 1.x 与 2.x数据格式、通信协议、客户端等均双向不兼容，可参照[升级指导](https://docs.nebula-graph.com.cn/2.5.0/4.deployment-and-installation/3.upgrade-nebula-graph/upgrade-nebula-graph-to-250/)进行升级。
 

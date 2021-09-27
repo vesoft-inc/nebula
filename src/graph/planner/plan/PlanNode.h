@@ -78,6 +78,7 @@ class PlanNode {
 
     // schema related
     kCreateSpace = kindGen(31, 0),
+    kCreateSpaceAs = kindGen(122, 0),
     kCreateTag = kindGen(32, 0),
     kCreateEdge = kindGen(33, 0),
     kDescSpace = kindGen(34, 0),

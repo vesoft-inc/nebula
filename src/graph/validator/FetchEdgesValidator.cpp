@@ -9,6 +9,7 @@
 #include "graph/planner/plan/Query.h"
 #include "graph/util/ExpressionUtils.h"
 #include "graph/util/SchemaUtil.h"
+#include "graph/util/ValidateUtil.h"
 
 namespace nebula {
 namespace graph {
@@ -46,7 +47,7 @@ Status FetchEdgesValidator::toPlan() {
                                       dedup_,
                                       limit_,
                                       std::move(orderBy_),
-                                      std::move(filter_));
+                                      filter_);
   getEdgesNode->setInputVar(edgeKeysVar);
   getEdgesNode->setColNames(geColNames_);
   // the pipe will set the input variable
@@ -184,7 +185,7 @@ Status FetchEdgesValidator::preparePropertiesWithYield(const YieldClause *yield)
   dedup_ = newYield_->isDistinct();
   for (auto col : newYield_->columns()) {
     col->setExpr(ExpressionUtils::rewriteLabelAttr2EdgeProp(col->expr()));
-    NG_RETURN_IF_ERROR(invalidLabelIdentifiers(col->expr()));
+    NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(col->expr()));
     const auto *invalidExpr = findInvalidYieldExpression(col->expr());
     if (invalidExpr != nullptr) {
       return Status::SemanticError("Invalid newYield_ expression `%s'.",
