@@ -3164,6 +3164,10 @@ create_space_sentence
         sentence->setComment($10);
         $$ = sentence;
     }
+    | KW_CREATE KW_SPACE opt_if_not_exists name_label KW_AS name_label {
+        auto sentence = new CreateSpaceAsSentence($6, $4, $3);
+        $$ = sentence;
+    }
     ;
 
 describe_space_sentence
