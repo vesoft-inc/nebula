@@ -558,6 +558,9 @@ Status Executor::open() {
             << "ep: " << qctx()->plan()->id() << "query: " << qctx()->rctx()->query();
     return Status::Error("Execution had been killed");
   }
+
+  NG_RETURN_IF_ERROR(checkMemoryWatermark());
+
   numRows_ = 0;
   execTime_ = 0;
   totalDuration_.reset();
