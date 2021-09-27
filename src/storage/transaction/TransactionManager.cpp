@@ -33,12 +33,15 @@ TransactionManager::TransactionManager(StorageEnv* env) : env_(env) {
 }
 
 TransactionManager::LockCore* TransactionManager::getLockCore(GraphSpaceID spaceId,
-                                                              GraphSpaceID partId) {
-  if (whiteListParts_.find(std::make_pair(spaceId, partId)) == whiteListParts_.end()) {
-    LOG(WARNING) << folly::sformat("space {}, part{} not in white list");
-    scanPrimes(spaceId, partId);
-    auto key = std::make_pair(spaceId, partId);
-    whiteListParts_.insert(std::make_pair(key, 0));
+                                                              GraphSpaceID partId,
+                                                              bool checkWhiteList) {
+  if (checkWhiteList) {
+    if (whiteListParts_.find(std::make_pair(spaceId, partId)) == whiteListParts_.end()) {
+      LOG(WARNING) << folly::sformat("space {}, part {} not in white list", spaceId, partId);
+      scanPrimes(spaceId, partId);
+      auto key = std::make_pair(spaceId, partId);
+      whiteListParts_.insert(std::make_pair(key, 0));
+    }
   }
   auto it = memLocks_.find(spaceId);
   if (it != memLocks_.end()) {
@@ -125,7 +128,7 @@ void TransactionManager::delPrime(GraphSpaceID spaceId, const std::string& edge)
   reserveTable_.erase(key);
 
   auto partId = NebulaKeyUtils::getPart(edge);
-  auto* lk = getLockCore(spaceId, partId);
+  auto* lk = getLockCore(spaceId, partId, false);
   auto lockKey = makeLockKey(spaceId, edge);
   lk->unlock(lockKey);
 }
@@ -168,7 +171,7 @@ void TransactionManager::scanPrimes(GraphSpaceID spaceId, PartitionID partId) {
       auto edgeKey = ConsistUtil::edgeKeyFromPrime(iter->key());
       auto lockKey = makeLockKey(spaceId, edgeKey.str());
       reserveTable_.insert(std::make_pair(lockKey, ResumeType::RESUME_CHAIN));
-      auto* lk = getLockCore(spaceId, partId);
+      auto* lk = getLockCore(spaceId, partId, false);
       auto succeed = lk->try_lock(edgeKey.str());
       if (!succeed) {
         LOG(ERROR) << "not supposed to lock fail: " << folly::hexlify(edgeKey);
@@ -190,8 +193,8 @@ void TransactionManager::scanPrimes(GraphSpaceID spaceId, PartitionID partId) {
     }
   }
   auto partOfSpace = std::make_pair(spaceId, partId);
-  auto [pos, suc] = whiteListParts_.insert(std::make_pair(partOfSpace, 0));
-  LOG(ERROR) << "insert space=" << spaceId << ", part=" << partId << ", suc=" << suc;
+  auto insRet = whiteListParts_.insert(std::make_pair(partOfSpace, 0));
+  LOG(ERROR) << "insert space=" << spaceId << ", part=" << partId << ", suc=" << insRet.second;
 }
 
 folly::ConcurrentHashMap<std::string, ResumeType>* TransactionManager::getReserveTable() {

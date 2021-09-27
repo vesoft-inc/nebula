@@ -48,7 +48,7 @@ class TransactionManager {
 
   folly::Executor* getExecutor() { return exec_.get(); }
 
-  LockCore* getLockCore(GraphSpaceID spaceId, PartitionID partId);
+  LockCore* getLockCore(GraphSpaceID spaceId, PartitionID partId, bool checkWhiteList = true);
 
   InternalStorageClient* getInternalClient() { return iClient_; }
 

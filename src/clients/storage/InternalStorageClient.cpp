@@ -53,6 +53,7 @@ void InternalStorageClient::chainUpdateEdge(cpp2::UpdateEdgeRequest& reversedReq
   }
   HostAddr& leader = optLeader.value();
   leader.port += kInternalPortOffset;
+  VLOG(1) << "leader host: " << leader;
 
   cpp2::ChainUpdateEdgeRequest chainReq;
   chainReq.set_update_edge_request(reversedRequest);
@@ -94,7 +95,7 @@ void InternalStorageClient::chainAddEdges(cpp2::AddEdgesRequest& directReq,
   }
   HostAddr& leader = optLeader.value();
   leader.port += kInternalPortOffset;
-  LOG(INFO) << "leader host: " << leader;
+  VLOG(1) << "leader host: " << leader;
 
   cpp2::ChainAddEdgesRequest chainReq = makeChainAddReq(directReq, termId, optVersion);
   auto resp = getResponse(
