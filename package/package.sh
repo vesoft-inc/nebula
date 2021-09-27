@@ -177,7 +177,7 @@ function _find_dump_syms_tool {
 
 # This is only for releasing the disk resources.
 function _strip_unnecessary_binaries {
-    for bin in $(ls -1 -F ${build_dir}/bin/ | grep -v [/$]); do
+    for bin in $(ls -1 -F ${build_dir}/bin/ | grep -v [/$] | sed -e '/nebula-metad/d;/nebula-graphd/d;/nebula-storaged/d'); do
         if ! (strip ${build_dir}/bin/${bin}); then
             echo ">>> strip ${bin} faild: $?. <<<"
             exit 1
