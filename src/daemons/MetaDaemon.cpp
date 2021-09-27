@@ -4,9 +4,6 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#if defined(__x86_64__)
-#include <breakpad/client/linux/handler/exception_handler.h>
-#endif
 #include <folly/ssl/Init.h>
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 
@@ -60,15 +57,12 @@ DEFINE_bool(daemonize, true, "Whether run as a daemon process");
 
 static std::unique_ptr<apache::thrift::ThriftServer> gServer;
 static std::unique_ptr<nebula::kvstore::KVStore> gKVStore;
-#if defined(__x86_64__)
-static std::unique_ptr<google_breakpad::ExceptionHandler> gExceptionHandler;
-#endif
 
 static void signalHandler(int sig);
 static Status setupSignalHandler();
 extern Status setupLogging();
 #if defined(__x86_64__)
-extern StatusOr<std::unique_ptr<google_breakpad::ExceptionHandler>> setupBreakpad();
+extern Status setupBreakpad();
 #endif
 
 namespace nebula {
@@ -210,12 +204,11 @@ int main(int argc, char* argv[]) {
   }
 
 #if defined(__x86_64__)
-  auto expHandler = setupBreakpad();
-  if (!expHandler.ok()) {
-    LOG(ERROR) << expHandler.status();
+  status = setupBreakpad();
+  if (!status.ok()) {
+    LOG(ERROR) << status;
     return EXIT_FAILURE;
   }
-  gExceptionHandler = std::move(expHandler).value();
 #endif
 
   auto pidPath = FLAGS_pid_file;

@@ -107,7 +107,7 @@ find_package(LibLZMA REQUIRED)
 find_package(Fizz REQUIRED)
 find_package(Sodium REQUIRED)
 if (${CMAKE_HOST_SYSTEM_PROCESSOR} MATCHES "x86_64")
-find_package(Breakpad REQUIRED)
+    find_package(Breakpad REQUIRED)
 endif()
 
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L ${NEBULA_THIRDPARTY_ROOT}/lib")
