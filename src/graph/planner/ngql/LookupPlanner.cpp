@@ -6,7 +6,6 @@
 
 #include "graph/planner/ngql/LookupPlanner.h"
 
-
 #include "common/base/Base.h"
 #include "graph/context/ast/QueryAstContext.h"
 #include "graph/planner/Planner.h"

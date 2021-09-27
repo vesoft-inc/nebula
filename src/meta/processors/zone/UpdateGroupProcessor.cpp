@@ -118,6 +118,33 @@ void DropZoneFromGroupProcessor::process(const cpp2::DropZoneFromGroupReq& req) 
     return;
   }
 
+  const auto& spacePrefix = MetaServiceUtils::spacePrefix();
+  auto spaceRet = doPrefix(spacePrefix);
+  if (!nebula::ok(spaceRet)) {
+    auto retCode = nebula::error(spaceRet);
+    LOG(ERROR) << "List spaces failed, error " << apache::thrift::util::enumNameSafe(retCode);
+    handleErrorCode(retCode);
+    onFinished();
+    return;
+  }
+
+  nebula::cpp2::ErrorCode spaceCode = nebula::cpp2::ErrorCode::SUCCEEDED;
+  auto spaceIter = nebula::value(spaceRet).get();
+  while (spaceIter->valid()) {
+    auto properties = MetaServiceUtils::parseSpace(spaceIter->val());
+    if (properties.group_name_ref().has_value() && *properties.group_name_ref() == groupName) {
+      LOG(ERROR) << "Space is bind to the group " << *properties.group_name_ref();
+      spaceCode = nebula::cpp2::ErrorCode::E_CONFLICT;
+    }
+    spaceIter->next();
+  }
+
+  if (spaceCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    handleErrorCode(spaceCode);
+    onFinished();
+    return;
+  }
+
   zoneNames.erase(iter);
   std::vector<kvstore::KV> data;
   data.emplace_back(std::move(groupKey), MetaServiceUtils::groupVal(zoneNames));
