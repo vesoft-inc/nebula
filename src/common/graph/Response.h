@@ -478,65 +478,73 @@ struct ExecutionResponse {
   // if the dataset contains a value of TIME or DATETIME, it will be returned in UTC.
   //
   // JSON struct:
-  //   "results":[
+  // {
+  //   "results": [
   //     {
-  //       "columns":[],
-  //       "data":[
+  //       "columns": [],
+  //       "data": [
   //         {
-  //           "row":[row-data],
-  //           "meta":[metadata]
+  //           "row": [
+  //             "row-data"
+  //           ],
+  //           "meta": [
+  //             "metadata"
+  //           ]
   //         }
   //       ],
-  //       "latencyInUs":0,
-  //       "spaceName":"",
-  //       "planDesc ":{
-  //         "planNodeDescs":[
+  //       "latencyInUs": 0,
+  //       "spaceName": "",
+  //       "planDesc ": {
+  //         "planNodeDescs": [
   //           {
-  //             "name":"",
-  //             "id":0,
-  //             "outputVar":"",
-  //             "description":{
-  //               "key":""
+  //             "name": "",
+  //             "id": 0,
+  //             "outputVar": "",
+  //             "description": {
+  //               "key": ""
   //             },
-  //             "profiles":[
+  //             "profiles": [
   //               {
-  //                 "rows":1,
-  //                 "execDurationInUs":0,
-  //                 "totalDurationInUs":0,
-  //                 "otherStats":{}
+  //                 "rows": 1,
+  //                 "execDurationInUs": 0,
+  //                 "totalDurationInUs": 0,
+  //                 "otherStats": {}
   //               }
   //             ],
-  //             "branchInfo":{
-  //               "isDoBranch":false,
-  //               "conditionNodeId":-1
+  //             "branchInfo": {
+  //               "isDoBranch": false,
+  //               "conditionNodeId": -1
   //             },
-  //             "dependencies":[]
+  //             "dependencies": []
   //           }
   //         ],
-  //         "nodeIndexMap":{},
-  //         "format":"",
-  //         "optimize_time_in_us":0
+  //         "nodeIndexMap": {},
+  //         "format": "",
+  //         "optimize_time_in_us": 0
   //       },
-  //       "comment ":"",
-  //       "errors":{
-  //         "errorCode":0,
-  //         "errorMsg":""
-  //       }
+  //       "comment ": ""
+  //     }
+  //   ],
+  //   "errors": [
+  //     {
+  //       "code": 0,
+  //       "message": ""
   //     }
   //   ]
   // }
+
   folly::dynamic toJson() const {
     folly::dynamic respJsonObj = folly::dynamic::object();
     folly::dynamic resultBody = folly::dynamic::object();
 
     // required fields
     folly::dynamic errorsBody = folly::dynamic::object();
-    errorsBody.insert("errorCode", static_cast<int>(errorCode));
+    errorsBody.insert("code", static_cast<int>(errorCode));
     resultBody.insert("latencyInUs", latencyInUs);
 
     // optional fields
     if (errorMsg) {
-      errorsBody.insert("errorMsg", *errorMsg);
+      errorsBody.insert("message", *errorMsg);
     }
     resultBody.insert("errors", errorsBody);
 
@@ -557,6 +565,7 @@ struct ExecutionResponse {
     auto resultArray = folly::dynamic::array();
     resultArray.push_back(resultBody);
     respJsonObj.insert("results", resultArray);
+    respJsonObj.insert("errors", folly::dynamic::array(errorsBody));
 
     return respJsonObj;
   }
