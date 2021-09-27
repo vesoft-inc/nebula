@@ -20,6 +20,14 @@ class CreateSpaceExecutor final : public Executor {
   folly::Future<Status> execute() override;
 };
 
+class CreateSpaceAsExecutor final : public Executor {
+ public:
+  CreateSpaceAsExecutor(const PlanNode *node, QueryContext *qctx)
+      : Executor("CreateSpaceAsExecutor", node, qctx) {}
+
+  folly::Future<Status> execute() override;
+};
+
 class DescSpaceExecutor final : public Executor {
  public:
   DescSpaceExecutor(const PlanNode *node, QueryContext *qctx)

@@ -315,6 +315,26 @@ class CreateSpaceSentence final : public CreateSentence {
   std::unique_ptr<std::string> comment_;
 };
 
+class CreateSpaceAsSentence final : public CreateSentence {
+ public:
+  CreateSpaceAsSentence(std::string* oldSpace, std::string* newSpace, bool ifNotExist)
+      : CreateSentence(ifNotExist) {
+    oldSpaceName_.reset(oldSpace);
+    newSpaceName_.reset(newSpace);
+    kind_ = Kind::kCreateSpaceAs;
+  }
+
+  std::string getOldSpaceName() const { return *oldSpaceName_; }
+
+  std::string getNewSpaceName() const { return *newSpaceName_; }
+
+  std::string toString() const override;
+
+ private:
+  std::unique_ptr<std::string> newSpaceName_;
+  std::unique_ptr<std::string> oldSpaceName_;
+};
+
 class DropSpaceSentence final : public DropSentence {
  public:
   DropSpaceSentence(std::string* spaceName, bool ifExist) : DropSentence(ifExist) {

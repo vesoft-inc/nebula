@@ -80,6 +80,8 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
       return std::make_unique<GroupByValidator>(sentence, context);
     case Sentence::Kind::kCreateSpace:
       return std::make_unique<CreateSpaceValidator>(sentence, context);
+    case Sentence::Kind::kCreateSpaceAs:
+      return std::make_unique<CreateSpaceAsValidator>(sentence, context);
     case Sentence::Kind::kCreateTag:
       return std::make_unique<CreateTagValidator>(sentence, context);
     case Sentence::Kind::kCreateEdge:

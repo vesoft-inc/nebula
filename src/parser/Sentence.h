@@ -85,6 +85,7 @@ class Sentence {
     kDeleteEdges,
     kLookup,
     kCreateSpace,
+    kCreateSpaceAs,
     kDropSpace,
     kDescribeSpace,
     kYield,
