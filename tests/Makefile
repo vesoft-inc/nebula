@@ -53,7 +53,16 @@ check:
 
 up: clean
 	@mkdir -p $(CURR_DIR)/.pytest
-	PYTHONPATH=$$PYTHONPATH:$(CURR_DIR)/.. $(CURR_DIR)/nebula-test-run.py --cmd=start --rm_dir=$(RM_DIR) --build_dir=$(BUILD_DIR) --debug=$(DEBUG) --multi_graphd=true --enable_ssl=$(ENABLE_SSL) --enable_graph_ssl=$(ENABLE_GRAPH_SSL) --enable_meta_ssl=$(ENABLE_META_SSL) --ca_signed=$(CA_SIGNED)
+	PYTHONPATH=$$PYTHONPATH:$(CURR_DIR)/.. $(CURR_DIR)/nebula-test-run.py \
+		--cmd=start \
+		--rm_dir=$(RM_DIR) \
+		--build_dir=$(BUILD_DIR) \
+		--debug=$(DEBUG) \
+		--multi_graphd=true \
+		--enable_ssl=$(ENABLE_SSL) \
+		--enable_graph_ssl=$(ENABLE_GRAPH_SSL) \
+		--enable_meta_ssl=$(ENABLE_META_SSL) \
+		--ca_signed=$(CA_SIGNED)
 
 down:
 	PYTHONPATH=$$PYTHONPATH:$(CURR_DIR)/.. $(CURR_DIR)/nebula-test-run.py --cmd=stop --rm_dir=$(RM_DIR)
@@ -86,7 +95,12 @@ report:
 	@rm -rf $(CURR_DIR)/tck-report-bak.json
 
 clean:
-	@rm -rf $(CURR_DIR)/nebula-python $(CURR_DIR)/reformat-gherkin $(CURR_DIR)/.pytest/* $(CURR_DIR)/.pytest_cache $(CURR_DIR)/tck-report.json $(CURR_DIR)/*.lock
+	@rm -rf $(CURR_DIR)/nebula-python \
+		$(CURR_DIR)/reformat-gherkin \
+		$(CURR_DIR)/.pytest/* \
+		$(CURR_DIR)/.pytest_cache \
+		$(CURR_DIR)/tck-report.json \
+		$(CURR_DIR)/*.lock
 
 kill:
 	ps -ef | grep -P '\sbin/nebula-' | grep "$$(whoami)" | sed 's/\s\s*/ /g' | cut -f2 -d' ' | xargs kill -9
