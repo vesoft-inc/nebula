@@ -1294,4 +1294,6 @@ service MetaService {
 
     ListClusterInfoResp listCluster(1: ListClusterInfoReq req);
     GetMetaDirInfoResp getMetaDirInfo(1: GetMetaDirInfoReq req);
+
+    common.VerifyClientVersionResp verifyClientVersion(1: common.VerifyClientVersionReq req)
 }

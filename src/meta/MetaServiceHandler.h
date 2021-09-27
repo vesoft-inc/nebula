@@ -243,6 +243,9 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
 
   folly::Future<cpp2::ExecResp> future_killQuery(const cpp2::KillQueryReq& req) override;
 
+  folly::Future<nebula::cpp2::VerifyClientVersionResp> future_verifyClientVersion(
+      const nebula::cpp2::VerifyClientVersionReq& req) override;
+
  private:
   kvstore::KVStore* kvstore_ = nullptr;
   ClusterID clusterId_{0};

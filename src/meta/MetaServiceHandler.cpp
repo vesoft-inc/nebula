@@ -17,6 +17,7 @@
 #include "meta/processors/admin/ListClusterInfoProcessor.h"
 #include "meta/processors/admin/ListSnapshotsProcessor.h"
 #include "meta/processors/admin/RestoreProcessor.h"
+#include "meta/processors/admin/VerifyClientVersionProcessor.h"
 #include "meta/processors/config/GetConfigProcessor.h"
 #include "meta/processors/config/ListConfigsProcessor.h"
 #include "meta/processors/config/RegConfigProcessor.h"
@@ -577,6 +578,12 @@ folly::Future<cpp2::ExecResp> MetaServiceHandler::future_removeSession(
 
 folly::Future<cpp2::ExecResp> MetaServiceHandler::future_killQuery(const cpp2::KillQueryReq& req) {
   auto* processor = KillQueryProcessor::instance(kvstore_);
+  RETURN_FUTURE(processor);
+}
+
+folly::Future<nebula::cpp2::VerifyClientVersionResp> MetaServiceHandler::future_verifyClientVersion(
+    const nebula::cpp2::VerifyClientVersionReq& req) {
+  auto* processor = VerifyClientVersionProcessor::instance(kvstore_);
   RETURN_FUTURE(processor);
 }
 }  // namespace meta
