@@ -508,14 +508,11 @@ def drop_used_space(session, graph_spaces):
 
 
 @then(parse("verify the space partition, space is {space_name}"))
-def then_verify_space_parts(session, class_fixture_variables, graph_spaces, space_name):
+def then_verify_space_parts(session, graph_spaces, space_name):
     """verify the space parts.
     1. partition leaders should be in zone hosts.
     2. peer in a zone should be only one replica.
     """
-    if class_fixture_variables.get("session", None) is not None:
-        session = class_fixture_variables.get("session")
-
     assert isinstance(session, Session)
     res = session.execute("DESC SPACE {}".format(space_name))
     assert res.is_succeeded(), res.error_msg()
