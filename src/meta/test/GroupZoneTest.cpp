@@ -611,6 +611,69 @@ TEST(GroupAndZoneTest, GroupAndZoneTest) {
 }
 }  // namespace nebula
 
+TEST(GroupAndZoneTest, DropHostAndZoneTest) {
+  fs::TempDir rootPath("/tmp/DropHostAndZoneTest.XXXXXX");
+
+  // Prepare
+  std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
+  std::vector<HostAddr> addresses;
+  for (int32_t i = 0; i < 1; i++) {
+    addresses.emplace_back(std::to_string(i), i);
+  }
+  TestUtils::registerHB(kv.get(), addresses);
+  {
+    cpp2::ListHostsReq req;
+    req.set_type(cpp2::ListHostType::STORAGE);
+    auto* processor = ListHostsProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(1, (*resp.hosts_ref()).size());
+    for (auto i = 0; i < 1; i++) {
+      ASSERT_EQ(std::to_string(i), (*resp.hosts_ref())[i].get_hostAddr().host);
+      ASSERT_EQ(i, (*resp.hosts_ref())[i].get_hostAddr().port);
+      ASSERT_EQ(cpp2::HostStatus::ONLINE, (*resp.hosts_ref())[i].get_status());
+    }
+  }
+
+  // Add Zone
+  {
+    std::vector<HostAddr> nodes;
+    nodes.emplace_back("0", 0);
+    cpp2::AddZoneReq req;
+    req.set_zone_name("zone_0");
+    req.set_nodes(std::move(nodes));
+    auto* processor = AddZoneProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
+  // Drop host from zone
+  {
+    cpp2::DropHostFromZoneReq req;
+    req.set_zone_name("zone_0");
+    HostAddr node{"0", 0};
+    req.set_node(std::move(node));
+    auto* processor = DropHostFromZoneProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
+  // List Zones
+  {
+    cpp2::ListZonesReq req;
+    auto* processor = ListZonesProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    ASSERT_EQ(1, (*resp.zones_ref()).size());
+    ASSERT_EQ("zone_0", (*resp.zones_ref())[0].get_zone_name());
+  }
+}
+
 }  // namespace meta
 }  // namespace nebula
 

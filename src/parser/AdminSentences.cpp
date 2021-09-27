@@ -100,6 +100,11 @@ std::string CreateSpaceSentence::toString() const {
   return buf;
 }
 
+std::string CreateSpaceAsSentence::toString() const {
+  auto buf = folly::sformat("CREATE SPACE {} AS {}", *newSpaceName_, *oldSpaceName_);
+  return buf;
+}
+
 std::string DropSpaceSentence::toString() const {
   return folly::stringPrintf("DROP SPACE %s", spaceName_.get()->c_str());
 }
