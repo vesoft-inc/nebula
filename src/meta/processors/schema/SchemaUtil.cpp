@@ -158,6 +158,13 @@ bool SchemaUtil::checkType(std::vector<cpp2::ColumnDef>& columns) {
             return false;
           }
           break;
+        case cpp2::PropertyType::GEOGRAPHY:
+          if (!value.isGeography()) {  // TODO(jie)
+            LOG(ERROR) << "Invalid default value for ` " << name << "', value type is "
+                       << value.type();
+            return false;
+          }
+          break;
         default:
           LOG(ERROR) << "Unsupported type";
           return false;

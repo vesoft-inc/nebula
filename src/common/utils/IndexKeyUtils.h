@@ -48,6 +48,8 @@ class IndexKeyUtils final {
         return Value::Type::TIME;
       case PropertyType::DATETIME:
         return Value::Type::DATETIME;
+      case PropertyType::GEOGRAPHY:
+        return Value::Type::GEOGRAPHY;
       case PropertyType::UNKNOWN:
         return Value::Type::__EMPTY__;
     }
@@ -83,6 +85,10 @@ class IndexKeyUtils final {
       }
       case Value::Type::DATETIME: {
         len = sizeof(int32_t) + sizeof(int16_t) + sizeof(int8_t) * 5;
+        break;
+      }
+      case Value::Type::GEOGRAPHY: {
+        len = sizeof(uint64_t);  // S2CellId
         break;
       }
       default:
@@ -131,6 +137,10 @@ class IndexKeyUtils final {
       case Value::Type::DATETIME: {
         return encodeDateTime(v.getDateTime());
       }
+      case Value::Type::GEOGRAPHY: {
+        // TODO(jie)
+        return "";
+      }
       default:
         LOG(ERROR) << "Unsupported default value type";
     }
@@ -162,6 +172,11 @@ class IndexKeyUtils final {
     val = folly::Endian::big(val);
     val ^= folly::to<int64_t>(1) << 63;
     return val;
+  }
+
+  static std::string encodeUint64(uint64_t v) {
+    auto val = folly::Endian::big(v);
+    return {reinterpret_cast<const char*>(&val), sizeof(uint64_t)};
   }
 
   static std::string encodeRank(EdgeRanking rank) { return IndexKeyUtils::encodeInt64(rank); }
@@ -332,6 +347,10 @@ class IndexKeyUtils final {
         v.setDateTime(decodeDateTime(raw));
         break;
       }
+      case Value::Type::GEOGRAPHY: {
+        // unable to get geography value from index key
+        return Value::kNullBadData;
+      }
       default:
         return Value(NullType::BAD_DATA);
     }
@@ -394,6 +413,11 @@ class IndexKeyUtils final {
         }
         case Value::Type::DATETIME: {
           len = sizeof(int32_t) + sizeof(int16_t) + sizeof(int8_t) * 5;
+          break;
+        }
+        case Value::Type::GEOGRAPHY: {
+          // LOG(FATAL) << "unable to get geography value from index key"
+          len = sizeof(uint64_t);
           break;
         }
         default:

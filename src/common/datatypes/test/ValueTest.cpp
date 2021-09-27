@@ -11,6 +11,7 @@
 #include "common/datatypes/DataSet.h"
 #include "common/datatypes/Date.h"
 #include "common/datatypes/Edge.h"
+#include "common/datatypes/Geography.h"
 #include "common/datatypes/List.h"
 #include "common/datatypes/Map.h"
 #include "common/datatypes/Path.h"

@@ -60,6 +60,15 @@ union ID {
 }
 
 
+// Geo shape type
+enum GeoShape {
+    ANY = 0,
+    POINT = 1,
+    LINESTRING = 2,
+    POLYGON = 3,
+} (cpp.enum_strict)
+
+
 // These are all data types supported in the graph properties
 enum PropertyType {
     UNKNOWN = 0,
@@ -83,12 +92,17 @@ enum PropertyType {
     DATE = 24,
     DATETIME = 25,
     TIME = 26,
+
+    // Geo spatial
+    GEOGRAPHY = 31,
 } (cpp.enum_strict)
 
 struct ColumnTypeDef {
     1: required PropertyType    type,
     // type_length is valid for fixed_string type
     2: optional i16             type_length = 0,
+    // geo_shape is valid for geography type
+    3: optional GeoShape        geo_shape,
 }
 
 struct ColumnDef {

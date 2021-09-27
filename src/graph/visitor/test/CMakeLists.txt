@@ -46,6 +46,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:meta_client_obj>
         $<TARGET_OBJECTS:file_based_cluster_id_man_obj>
         $<TARGET_OBJECTS:function_manager_obj>
+        $<TARGET_OBJECTS:wkt_wkb_io_obj>
         $<TARGET_OBJECTS:agg_function_manager_obj>
         $<TARGET_OBJECTS:conf_obj>
         $<TARGET_OBJECTS:encryption_obj>

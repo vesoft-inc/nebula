@@ -190,6 +190,7 @@ Value OptimizerUtils::boundValueWithGT(const meta::cpp2::ColumnDef& col, const V
     case Value::Type::SET:
     case Value::Type::MAP:
     case Value::Type::DATASET:
+    case Value::Type::GEOGRAPHY:  // TODO(jie)
     case Value::Type::PATH: {
       DLOG(FATAL) << "Not supported value type " << type << "for index.";
       return Value::kNullBadType;
@@ -336,6 +337,7 @@ Value OptimizerUtils::boundValueWithLT(const meta::cpp2::ColumnDef& col, const V
     case Value::Type::SET:
     case Value::Type::MAP:
     case Value::Type::DATASET:
+    case Value::Type::GEOGRAPHY:  // TODO(jie)
     case Value::Type::PATH: {
       DLOG(FATAL) << "Not supported value type " << type << "for index.";
       return Value::kNullBadType;
@@ -395,6 +397,7 @@ Value OptimizerUtils::boundValueWithMax(const meta::cpp2::ColumnDef& col) {
     case Value::Type::SET:
     case Value::Type::MAP:
     case Value::Type::DATASET:
+    case Value::Type::GEOGRAPHY:  // TODO(jie)
     case Value::Type::PATH: {
       DLOG(FATAL) << "Not supported value type " << type << "for index.";
       return Value::kNullBadType;
@@ -437,6 +440,7 @@ Value OptimizerUtils::boundValueWithMin(const meta::cpp2::ColumnDef& col) {
     case Value::Type::SET:
     case Value::Type::MAP:
     case Value::Type::DATASET:
+    case Value::Type::GEOGRAPHY:  // TODO(jie)
     case Value::Type::PATH: {
       DLOG(FATAL) << "Not supported value type " << type << "for index.";
       return Value::kNullBadType;
@@ -482,6 +486,7 @@ Value OptimizerUtils::normalizeValue(const meta::cpp2::ColumnDef& col, const Val
     case Value::Type::SET:
     case Value::Type::MAP:
     case Value::Type::DATASET:
+    case Value::Type::GEOGRAPHY:  // TODO(jie)
     case Value::Type::PATH: {
       DLOG(FATAL) << "Not supported value type " << type << "for index.";
       return Value::kNullBadType;

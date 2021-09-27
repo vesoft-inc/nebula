@@ -23,9 +23,11 @@ set(common_deps
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:conf_obj>
     $<TARGET_OBJECTS:datatypes_obj>
+    $<TARGET_OBJECTS:wkt_wkb_io_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:expression_obj>
     $<TARGET_OBJECTS:function_manager_obj>
+    $<TARGET_OBJECTS:wkt_wkb_io_obj>
     $<TARGET_OBJECTS:agg_function_manager_obj>
     $<TARGET_OBJECTS:time_utils_obj>
     $<TARGET_OBJECTS:version_obj>

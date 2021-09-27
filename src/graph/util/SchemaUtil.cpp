@@ -294,6 +294,8 @@ Value::Type SchemaUtil::propTypeToValueType(meta::cpp2::PropertyType propType) {
       return Value::Type::DATE;
     case meta::cpp2::PropertyType::DATETIME:
       return Value::Type::DATETIME;
+    case meta::cpp2::PropertyType::GEOGRAPHY:
+      return Value::Type::GEOGRAPHY;
     case meta::cpp2::PropertyType::UNKNOWN:
       return Value::Type::__EMPTY__;
   }
