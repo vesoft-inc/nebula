@@ -48,4 +48,6 @@ DECLARE_string(local_ip);
 
 DECLARE_bool(enable_experimental_feature);
 
+DECLARE_bool(enable_client_white_list);
+DECLARE_string(client_white_list);
 #endif  // GRAPH_GRAPHFLAGS_H_

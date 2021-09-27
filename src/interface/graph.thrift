@@ -107,7 +107,7 @@ struct VerifyClientVersionResponse {
 
 
 struct VerifyClientVersionRequest {
-    1: required binary version;
+    1: required binary version = common.version;
 }
 
 

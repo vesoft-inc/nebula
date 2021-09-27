@@ -186,9 +186,15 @@ bool GraphService::auth(const std::string& username, const std::string& password
 
 folly::Future<cpp2::VerifyClientVersionResponse> GraphService::future_verifyClientVersion(
     const cpp2::VerifyClientVersionRequest& req) {
-  UNUSED(req);
+  std::unordered_set<std::string> whiteList;
+  folly::splitTo<std::string>(
+      ":", FLAGS_client_white_list, std::inserter(whiteList, whiteList.begin()));
   cpp2::VerifyClientVersionResponse resp;
-  resp.set_error_code(nebula::cpp2::ErrorCode::E_UNKNOWN);
+  if (FLAGS_enable_client_white_list && whiteList.find(req.get_version()) == whiteList.end()) {
+    resp.set_error_code(nebula::cpp2::ErrorCode::E_CLIENT_REJECTED);
+  } else {
+    resp.set_error_code(nebula::cpp2::ErrorCode::SUCCEEDED);
+  }
   return folly::makeFuture<cpp2::VerifyClientVersionResponse>(std::move(resp));
 }
 }  // namespace graph

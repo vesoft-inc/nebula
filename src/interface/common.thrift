@@ -34,6 +34,8 @@ cpp_include "common/datatypes/GeographyOps-inl.h"
  *
  */
 
+const binary (cpp.type = "char const *") version = "2.5.1"
+
 typedef i32 (cpp.type = "nebula::GraphSpaceID") GraphSpaceID
 typedef i32 (cpp.type = "nebula::PartitionID") PartitionID
 typedef i32 (cpp.type = "nebula::TagID") TagID
@@ -408,6 +410,8 @@ enum ErrorCode {
     E_OUTDATED_TERM                   = -3071,
     E_OUTDATED_EDGE                   = -3072,
     E_WRITE_WRITE_CONFLICT            = -3073,
+
+    E_CLIENT_REJECTED                 = -3061,
 
     E_UNKNOWN                         = -8000,
 } (cpp.enum_strict)

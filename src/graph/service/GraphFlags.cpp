@@ -66,4 +66,7 @@ DEFINE_bool(disable_octal_escape_char,
 
 DEFINE_bool(enable_experimental_feature, false, "Whether to enable experimental feature");
 
-DEFINE_string(client_white_list, "2.5.0,2.5.1", "A white list for diffrent client versions.");
+DEFINE_bool(enable_client_white_list, true, "Turn on/off the client white list.");
+DEFINE_string(client_white_list,
+              "2.5.0:2.5.1",
+              "A white list for diffrent client versions, seperate with colon.");
