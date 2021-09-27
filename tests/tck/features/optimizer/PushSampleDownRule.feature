@@ -165,12 +165,7 @@ Feature: Push Limit down rule
       $var=GO FROM "Tim Duncan" OVER like YIELD like._dst AS dst;
       GO 2 steps FROM $var.dst OVER like YIELD $var.dst AS dst1,like._dst AS dst2 SAMPLE [2,3]
       """
-    Then the result should be, in any order:
-      | dst1      | dst2      |
-      | /[\w\s]+/ | /[\w\s]+/ |
-      | /[\w\s]+/ | /[\w\s]+/ |
-      | /[\w\s]+/ | /[\w\s]+/ |
-    And the execution plan should be:
+    Then the execution plan should be:
       | id | name         | dependencies | profiling data | operator info                                         |
       | 23 | Project      | 22           |                |                                                       |
       | 22 | InnerJoin    | 21           |                |                                                       |
