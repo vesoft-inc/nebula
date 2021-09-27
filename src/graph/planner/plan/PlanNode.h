@@ -199,6 +199,8 @@ class PlanNode {
     return static_cast<uint64_t>(kind) & 0x0000FFFFFFFFFFFF;
   }
 
+  static bool isMainType(Kind kind) { return variantType(kind) == 0; }
+
   // Variant X is Variant X
   // Variant X is main type of Variant X
   // Variant X is not Variant Y
@@ -206,7 +208,7 @@ class PlanNode {
     if (kind == kind_) {
       return true;
     }
-    if (variantType(kind) != 0) {
+    if (!isMainType(kind)) {
       return false;
     }
     if (mainType(kind) == mainType(kind_)) {
