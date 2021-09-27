@@ -193,6 +193,7 @@ TEST(ChainAddEdgesTest, processRemoteTest) {
   cpp2::AddEdgesRequest req = mock::MockData::mockAddEdgesReq(false, 1);
 
   auto reversedRequest = proc->reverseRequestForward(req);
+  delete proc;
 }
 
 }  // namespace storage
