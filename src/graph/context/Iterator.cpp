@@ -6,9 +6,6 @@
 
 #include "graph/context/Iterator.h"
 
-#include <cstdio>
-#include <tuple>
-
 #include "common/datatypes/Edge.h"
 #include "common/datatypes/Vertex.h"
 #include "graph/util/SchemaUtil.h"
