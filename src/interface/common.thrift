@@ -399,7 +399,7 @@ enum ErrorCode {
 
     E_PLAN_IS_KILLED                  = -3060,
     // toss
-    E_NO_TERM                         = -3070
+    E_NO_TERM                         = -3070,
     E_OUTDATED_TERM                   = -3071,
     E_OUTDATED_EDGE                   = -3072,
     E_WRITE_WRITE_CONFLICT            = -3073,

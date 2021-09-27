@@ -8,7 +8,6 @@
 #include <gtest/gtest.h>
 #include <rocksdb/db.h>
 #include <rocksdb/table.h>
-#include <thrift/lib/cpp/util/EnumUtils.h>
 
 #include "common/base/Base.h"
 #include "common/fs/TempDir.h"
