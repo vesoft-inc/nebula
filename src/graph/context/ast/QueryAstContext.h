@@ -115,6 +115,9 @@ struct LookupContext final : public AstContext {
   int32_t schemaId{-1};
   int32_t limit{-1};
   Expression* filter{nullptr};
+  YieldColumns* yieldExpr{nullptr};
+  std::vector<std::string> idxReturnCols;
+  std::vector<std::string> idxColNames;
   // order by
 };
 

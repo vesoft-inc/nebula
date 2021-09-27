@@ -215,6 +215,9 @@ class MetaClient {
   folly::Future<StatusOr<GraphSpaceID>> createSpace(meta::cpp2::SpaceDesc spaceDesc,
                                                     bool ifNotExists = false);
 
+  folly::Future<StatusOr<GraphSpaceID>> createSpaceAs(const std::string& oldSpaceName,
+                                                      const std::string& newSpaceName);
+
   folly::Future<StatusOr<std::vector<SpaceIdName>>> listSpaces();
 
   folly::Future<StatusOr<cpp2::SpaceItem>> getSpace(std::string name);

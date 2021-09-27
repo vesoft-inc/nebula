@@ -72,6 +72,8 @@ class KVEngine {
                                                   const std::string& prefix,
                                                   std::unique_ptr<KVIterator>* iter) = 0;
 
+  virtual nebula::cpp2::ErrorCode scan(std::unique_ptr<KVIterator>* storageIter) = 0;
+
   // Write a single record
   virtual nebula::cpp2::ErrorCode put(std::string key, std::string value) = 0;
 
