@@ -22,10 +22,11 @@ Usage="this tool is a simple wrapper to scp to copy local folder of metad to ano
 echo -e $Usage
 }
 
-while getopts "hf:t:u:" opt; do
+while getopts ":hf:t:u:" opt; do
     case $opt in
         h)
             usage
+            exit 0
             ;;
         f)
             echo "trying to copy metad from: " $OPTARG
@@ -41,7 +42,8 @@ while getopts "hf:t:u:" opt; do
             configs=$OPTARG
             ;;
         \?)
-            echo "Invalid option: -$OPTARG" 
+            echo "Invalid option: -$OPTARG"
+            exit 1
             ;;
     esac
 done
