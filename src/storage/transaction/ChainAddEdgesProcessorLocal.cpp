@@ -130,7 +130,7 @@ bool ChainAddEdgesProcessorLocal::prepareRequest(const cpp2::AddEdgesRequest& re
     spaceVidType_ = vidType.value();
   }
   localPartId_ = req.get_parts().begin()->first;
-  replaceNullWithDefaultValue(req_);
+  // replaceNullWithDefaultValue(req_);
   auto part = env_->kvstore_->part(spaceId_, localPartId_);
   if (!nebula::ok(part)) {
     pushResultCode(nebula::error(part), localPartId_);
