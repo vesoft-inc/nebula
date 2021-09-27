@@ -531,7 +531,7 @@ struct ExecutionResponse {
 
     // required fields
     folly::dynamic errorsBody = folly::dynamic::object();
-    errorsBody.insert("errorCode", getErrorCode(errorCode));
+    errorsBody.insert("errorCode", static_cast<int>(errorCode));
     resultBody.insert("latencyInUs", latencyInUs);
 
     // optional fields
