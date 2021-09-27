@@ -11,6 +11,7 @@
 #include <gtest/gtest_prod.h>
 
 #include "common/base/Base.h"
+#include "common/ssl/SSLConfig.h"
 #include "common/utils/Utils.h"
 #include "interface/gen-cpp2/RaftexServiceAsyncClient.h"
 #include "kvstore/DiskManager.h"
@@ -65,7 +66,8 @@ class NebulaStore : public KVStore, public Handler {
         options_(std::move(options)) {
     CHECK_NOTNULL(options_.partMan_);
     clientMan_ =
-        std::make_shared<thrift::ThriftClientManager<raftex::cpp2::RaftexServiceAsyncClient>>();
+        std::make_shared<thrift::ThriftClientManager<raftex::cpp2::RaftexServiceAsyncClient>>(
+            FLAGS_enable_ssl);
   }
 
   ~NebulaStore();
@@ -272,6 +274,9 @@ class NebulaStore : public KVStore, public Handler {
 
   nebula::cpp2::ErrorCode multiPutWithoutReplicator(GraphSpaceID spaceId,
                                                     std::vector<KV> keyValues) override;
+
+  ErrorOr<nebula::cpp2::ErrorCode, std::string> getProperty(GraphSpaceID spaceId,
+                                                            const std::string& property) override;
 
  private:
   void loadPartFromDataPath();

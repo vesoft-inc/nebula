@@ -328,6 +328,11 @@ struct CreateSpaceReq {
     2: bool             if_not_exists,
 }
 
+struct CreateSpaceAsReq {
+    1: binary        old_space_name,
+    2: binary        new_space_name,
+}
+
 struct DropSpaceReq {
     1: binary space_name
     2: bool   if_exists,
@@ -1170,6 +1175,8 @@ service MetaService {
     ExecResp dropSpace(1: DropSpaceReq req);
     GetSpaceResp getSpace(1: GetSpaceReq req);
     ListSpacesResp listSpaces(1: ListSpacesReq req);
+
+    ExecResp createSpaceAs(1: CreateSpaceAsReq req);
 
     ExecResp createTag(1: CreateTagReq req);
     ExecResp alterTag(1: AlterTagReq req);

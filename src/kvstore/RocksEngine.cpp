@@ -13,7 +13,6 @@
 #include "common/fs/FileUtils.h"
 #include "common/utils/NebulaKeyUtils.h"
 #include "kvstore/KVStore.h"
-#include "kvstore/RocksEngineConfig.h"
 
 DEFINE_bool(move_files, false, "Move the SST files instead of copy when ingest into dataset");
 
@@ -126,6 +125,7 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
   CHECK(status.ok()) << status.ToString();
   db_.reset(db);
   partsNum_ = allParts().size();
+  extractorLen_ = sizeof(PartitionID) + vIdLen;
   LOG(INFO) << "open rocksdb on " << path;
 
   backup();
@@ -202,7 +202,7 @@ nebula::cpp2::ErrorCode RocksEngine::range(const std::string& start,
                                            const std::string& end,
                                            std::unique_ptr<KVIterator>* storageIter) {
   rocksdb::ReadOptions options;
-  options.total_order_seek = true;
+  options.total_order_seek = FLAGS_enable_rocksdb_prefix_filtering;
   rocksdb::Iterator* iter = db_->NewIterator(options);
   if (iter) {
     iter->Seek(rocksdb::Slice(start));
@@ -213,7 +213,32 @@ nebula::cpp2::ErrorCode RocksEngine::range(const std::string& start,
 
 nebula::cpp2::ErrorCode RocksEngine::prefix(const std::string& prefix,
                                             std::unique_ptr<KVIterator>* storageIter) {
+  // In fact, we don't need to check prefix.size() >= extractorLen_, which is caller's duty to make
+  // sure the prefix bloom filter exists. But this is quite error-proning, so we do a check here.
+  if (FLAGS_enable_rocksdb_prefix_filtering && prefix.size() >= extractorLen_) {
+    return prefixWithExtractor(prefix, storageIter);
+  } else {
+    return prefixWithoutExtractor(prefix, storageIter);
+  }
+}
+
+nebula::cpp2::ErrorCode RocksEngine::prefixWithExtractor(const std::string& prefix,
+                                                         std::unique_ptr<KVIterator>* storageIter) {
   rocksdb::ReadOptions options;
+  options.prefix_same_as_start = true;
+  rocksdb::Iterator* iter = db_->NewIterator(options);
+  if (iter) {
+    iter->Seek(rocksdb::Slice(prefix));
+  }
+  storageIter->reset(new RocksPrefixIter(iter, prefix));
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
+}
+
+nebula::cpp2::ErrorCode RocksEngine::prefixWithoutExtractor(
+    const std::string& prefix, std::unique_ptr<KVIterator>* storageIter) {
+  rocksdb::ReadOptions options;
+  // prefix_same_as_start is false by default
+  options.total_order_seek = FLAGS_enable_rocksdb_prefix_filtering;
   rocksdb::Iterator* iter = db_->NewIterator(options);
   if (iter) {
     iter->Seek(rocksdb::Slice(prefix));
@@ -226,11 +251,22 @@ nebula::cpp2::ErrorCode RocksEngine::rangeWithPrefix(const std::string& start,
                                                      const std::string& prefix,
                                                      std::unique_ptr<KVIterator>* storageIter) {
   rocksdb::ReadOptions options;
+  // prefix_same_as_start is false by default
+  options.total_order_seek = FLAGS_enable_rocksdb_prefix_filtering;
   rocksdb::Iterator* iter = db_->NewIterator(options);
   if (iter) {
     iter->Seek(rocksdb::Slice(start));
   }
   storageIter->reset(new RocksPrefixIter(iter, prefix));
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
+}
+
+nebula::cpp2::ErrorCode RocksEngine::scan(std::unique_ptr<KVIterator>* storageIter) {
+  rocksdb::ReadOptions options;
+  options.total_order_seek = true;
+  rocksdb::Iterator* iter = db_->NewIterator(options);
+  iter->SeekToFirst();
+  storageIter->reset(new RocksCommonIter(iter));
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
@@ -394,6 +430,16 @@ nebula::cpp2::ErrorCode RocksEngine::setDBOption(const std::string& configKey,
   } else {
     LOG(ERROR) << "SetDBOption Failed: " << configKey << ":" << configValue;
     return nebula::cpp2::ErrorCode::E_INVALID_PARM;
+  }
+}
+
+ErrorOr<nebula::cpp2::ErrorCode, std::string> RocksEngine::getProperty(
+    const std::string& property) {
+  std::string value;
+  if (!db_->GetProperty(property, &value)) {
+    return nebula::cpp2::ErrorCode::E_INVALID_PARM;
+  } else {
+    return value;
   }
 }
 

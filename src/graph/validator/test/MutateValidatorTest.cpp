@@ -46,9 +46,16 @@ TEST_F(MutateValidatorTest, InsertEdgeTest) {
   // vid use function call
   {
     auto cmd =
+        "INSERT EDGE like(start, end, likeness) VALUES lower(\"Lily\")->\"Tom\":(2010, "
+        "2020, 90);";
+    ASSERT_TRUE(checkResult(cmd, {PK::kInsertEdges, PK::kStart}));
+  }
+  // vid use function call
+  {
+    auto cmd =
         "INSERT EDGE like(start, end) VALUES lower(\"Lily\")->\"Tom\":(2010, "
         "2020);";
-    ASSERT_TRUE(checkResult(cmd, {PK::kInsertEdges, PK::kStart}));
+    ASSERT_FALSE(checkResult(cmd, {PK::kInsertEdges, PK::kStart}));
   }
 }
 

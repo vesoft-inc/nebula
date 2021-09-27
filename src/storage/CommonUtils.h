@@ -17,6 +17,7 @@
 #include "common/stats/StatsManager.h"
 #include "common/utils/MemoryLockWrapper.h"
 #include "interface/gen-cpp2/storage_types.h"
+#include "kvstore/KVEngine.h"
 #include "kvstore/KVStore.h"
 
 namespace nebula {
@@ -77,6 +78,8 @@ class StorageEnv {
   TransactionManager* txnMan_{nullptr};
   std::unique_ptr<VerticesMemLock> verticesML_{nullptr};
   std::unique_ptr<EdgesMemLock> edgesML_{nullptr};
+  std::unique_ptr<kvstore::KVEngine> adminStore_{nullptr};
+  int32_t adminSeqId_{0};
 
   IndexState getIndexState(GraphSpaceID space, PartitionID part) {
     auto key = std::make_tuple(space, part);

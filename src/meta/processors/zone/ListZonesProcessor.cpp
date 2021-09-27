@@ -33,6 +33,33 @@ void ListZonesProcessor::process(const cpp2::ListZonesReq&) {
     iter->next();
   }
 
+  const auto& groupPrefix = MetaServiceUtils::groupPrefix();
+  auto groupIterRet = doPrefix(groupPrefix);
+  if (!nebula::ok(groupIterRet)) {
+    auto retCode = nebula::error(groupIterRet);
+    LOG(ERROR) << "Get groups failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+    handleErrorCode(retCode);
+    onFinished();
+    return;
+  }
+
+  auto groupIter = nebula::value(groupIterRet).get();
+  while (groupIter->valid()) {
+    auto zoneNames = MetaServiceUtils::parseZoneNames(groupIter->val());
+    for (auto& name : zoneNames) {
+      auto it = std::find_if(zones.begin(), zones.end(), [&name](const auto& zone) {
+        return name == zone.get_zone_name();
+      });
+      if (it == zones.end()) {
+        cpp2::Zone zone;
+        zone.set_zone_name(name);
+        zone.set_nodes({});
+        zones.emplace_back(std::move(zone));
+      }
+    }
+    iter->next();
+  }
+
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
   resp_.set_zones(std::move(zones));
   onFinished();
