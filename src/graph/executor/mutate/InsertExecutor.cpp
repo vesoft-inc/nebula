@@ -8,6 +8,7 @@
 
 #include "graph/context/QueryContext.h"
 #include "graph/planner/plan/Mutate.h"
+#include "graph/service/GraphFlags.h"
 #include "graph/util/ScopedTimer.h"
 
 namespace nebula {
@@ -55,7 +56,7 @@ folly::Future<Status> InsertEdgesExecutor::insertEdges() {
                  ieNode->getPropNames(),
                  ieNode->getIfNotExists(),
                  nullptr,
-                 ieNode->useChainInsert())
+                 FLAGS_enable_experimental_feature)
       .via(runner())
       .ensure(
           [addEdgeTime]() { VLOG(1) << "Add edge time: " << addEdgeTime.elapsedInUSec() << "us"; })

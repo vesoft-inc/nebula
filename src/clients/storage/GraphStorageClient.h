@@ -127,7 +127,8 @@ class GraphStorageClient : public StorageClientBase<cpp2::GraphStorageServiceAsy
       bool insertable,
       std::vector<std::string> returnProps,
       std::string condition,
-      folly::EventBase* evb = nullptr);
+      folly::EventBase* evb = nullptr,
+      bool useExperimentalFeature = false);
 
   folly::Future<StatusOr<cpp2::GetUUIDResp>> getUUID(GraphSpaceID space,
                                                      const std::string& name,

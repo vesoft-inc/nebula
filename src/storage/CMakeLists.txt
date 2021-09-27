@@ -32,7 +32,6 @@ nebula_add_library(
     mutate/DeleteVerticesProcessor.cpp
     mutate/DeleteTagsProcessor.cpp
     mutate/AddEdgesProcessor.cpp
-    mutate/AddEdgesAtomicProcessor.cpp
     mutate/DeleteEdgesProcessor.cpp
     mutate/UpdateVertexProcessor.cpp
     mutate/UpdateEdgeProcessor.cpp
@@ -68,9 +67,18 @@ nebula_add_library(
 nebula_add_library(
     storage_transaction_executor OBJECT
     transaction/TransactionManager.cpp
-    transaction/TransactionProcessor.cpp
-    transaction/GetValueProcessor.cpp
-    transaction/TransactionUtils.cpp
+    transaction/ConsistUtil.cpp
+    transaction/ChainUpdateEdgeProcessorLocal.cpp
+    transaction/ChainUpdateEdgeProcessorRemote.cpp
+    transaction/ChainResumeProcessor.cpp
+    transaction/ChainAddEdgesGroupProcessor.cpp
+    transaction/ChainAddEdgesProcessorLocal.cpp
+    transaction/ChainAddEdgesProcessorRemote.cpp
+    transaction/ResumeAddEdgeProcessor.cpp
+    transaction/ResumeAddEdgeRemoteProcessor.cpp
+    transaction/ResumeUpdateProcessor.cpp
+    transaction/ResumeUpdateRemoteProcessor.cpp
+    transaction/ChainProcessorFactory.cpp
 )
 
 nebula_add_library(

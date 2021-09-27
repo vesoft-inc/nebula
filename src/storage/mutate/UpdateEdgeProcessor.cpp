@@ -54,9 +54,6 @@ void UpdateEdgeProcessor::doProcess(const cpp2::UpdateEdgeRequest& req) {
   this->planContext_ = std::make_unique<PlanContext>(
       this->env_, spaceId_, this->spaceVidLen_, this->isIntId_, req.common_ref());
   context_ = std::make_unique<RuntimeContext>(planContext_.get());
-  if (env_->txnMan_ && env_->txnMan_->enableToss(spaceId_)) {
-    planContext_->defaultEdgeVer_ = 1L;
-  }
   retCode = checkAndBuildContexts(req);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << "Failure build contexts: " << apache::thrift::util::enumNameSafe(retCode);
@@ -97,6 +94,10 @@ void UpdateEdgeProcessor::doProcess(const cpp2::UpdateEdgeRequest& req) {
   return;
 }
 
+void UpdateEdgeProcessor::adjustContext(UpdateEdgeProcessor::ContextAdjuster fn) {
+  ctxAdjuster_.emplace_back(std::move(fn));
+}
+
 nebula::cpp2::ErrorCode UpdateEdgeProcessor::checkAndBuildContexts(
     const cpp2::UpdateEdgeRequest& req) {
   // Build edgeContext_.schemas_
@@ -113,12 +114,15 @@ nebula::cpp2::ErrorCode UpdateEdgeProcessor::checkAndBuildContexts(
 
   // Build edgeContext_.ttlInfo_
   buildEdgeTTLInfo();
+
+  for (auto& adjuster : ctxAdjuster_) {
+    adjuster(edgeContext_);
+  }
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 /*
 The storage plan of update(upsert) edge looks like this:
-             +--------+----------+
              | UpdateEdgeResNode |
              +--------+----------+
                       |
