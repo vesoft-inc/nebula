@@ -135,7 +135,6 @@ void ChainUpdateEdgeProcessorLocal::doRpc(folly::Promise<Code>&& promise, int re
         .get();
   } catch (std::exception& ex) {
     LOG(WARNING) << "doRpc() ex: " << ex.what();
-    throw;
   }
 }
 
