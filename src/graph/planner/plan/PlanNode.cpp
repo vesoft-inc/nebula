@@ -94,6 +94,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "RegisterSpaceToSession";
     case Kind::kCreateSpace:
       return "CreateSpace";
+    case Kind::kCreateSpaceAs:
+      return "CreateSpaceAs";
     case Kind::kCreateTag:
       return "CreateTag";
     case Kind::kCreateEdge:
