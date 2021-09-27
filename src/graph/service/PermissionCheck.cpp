@@ -69,7 +69,6 @@ Status PermissionCheck::permissionCheck(ClientSession *session,
     case Sentence::Kind::kAddHostIntoZone:
     case Sentence::Kind::kDropHostFromZone:
     case Sentence::Kind::kBalance:
-    case Sentence::Kind::kAdminJob:
     case Sentence::Kind::kShowConfigs:
     case Sentence::Kind::kSetConfig:
     case Sentence::Kind::kGetConfig:
@@ -116,7 +115,8 @@ Status PermissionCheck::permissionCheck(ClientSession *session,
     case Sentence::Kind::kUpdateEdge:
     case Sentence::Kind::kDeleteVertices:
     case Sentence::Kind::kDeleteTags:
-    case Sentence::Kind::kDeleteEdges: {
+    case Sentence::Kind::kDeleteEdges:
+    case Sentence::Kind::kAdminJob: {
       return PermissionManager::canWriteData(session, vctx);
     }
     case Sentence::Kind::kDescribeTag:
@@ -153,7 +153,8 @@ Status PermissionCheck::permissionCheck(ClientSession *session,
     case Sentence::Kind::kShowCreateTagIndex:
     case Sentence::Kind::kShowCreateEdgeIndex:
     case Sentence::Kind::kShowListener:
-    case Sentence::Kind::kShowFTIndexes: {
+    case Sentence::Kind::kShowFTIndexes:
+    case Sentence::Kind::kAdminShowJobs: {
       /**
        * Above operations can get the space id via session,
        * so the permission same with canReadSchemaOrData.
