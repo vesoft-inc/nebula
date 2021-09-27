@@ -103,7 +103,6 @@ folly::SemiFuture<Code> ChainUpdateEdgeProcessorLocal::processLocal(Code code) {
     abort();
   }
 
-  // LOG(INFO) << "~processNormalLocal(), code_: " << apache::thrift::util::enumNameSafe(code);
   return code_;
 }
 
@@ -122,7 +121,7 @@ void ChainUpdateEdgeProcessorLocal::doRpc(folly::Promise<Code>&& promise, int re
     std::move(f)
         .thenTry([=, p = std::move(promise)](auto&& t) mutable {
           auto code = t.hasValue() ? t.value() : Code::E_RPC_FAILURE;
-          LOG(INFO) << "code = " << apache::thrift::util::enumNameSafe(code);
+          VLOG(1) << "code = " << apache::thrift::util::enumNameSafe(code);
           switch (code) {
             case Code::E_LEADER_CHANGED:
               doRpc(std::move(p), ++retry);
@@ -135,20 +134,9 @@ void ChainUpdateEdgeProcessorLocal::doRpc(folly::Promise<Code>&& promise, int re
         })
         .get();
   } catch (std::exception& ex) {
-    LOG(INFO) << "doRpc() ex: " << ex.what();
+    LOG(WARNING) << "doRpc() ex: " << ex.what();
     throw;
   }
-}
-
-folly::SemiFuture<Code> ChainUpdateEdgeProcessorLocal::processResumeRemoteLocal(Code code) {
-  LOG(INFO) << __func__ << "(), code = " << apache::thrift::util::enumNameSafe(code);
-  if (code == Code::SUCCEEDED) {
-    auto partId = req_.get_part_id();
-    auto key = ConsistUtil::doublePrime(spaceVidLen_, partId, req_.get_edge_key());
-    kvErased_.emplace_back(key);
-    abort();
-  }
-  return code;
 }
 
 void ChainUpdateEdgeProcessorLocal::erasePrime() {

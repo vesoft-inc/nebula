@@ -40,12 +40,12 @@ folly::SemiFuture<nebula::cpp2::ErrorCode> ResumeAddEdgeProcessor::prepareLocal(
 }
 
 folly::SemiFuture<Code> ResumeAddEdgeProcessor::processRemote(Code code) {
-  LOG(INFO) << uuid_ << " prepareLocal() " << apache::thrift::util::enumNameSafe(code);
+  VLOG(1) << uuid_ << " prepareLocal() " << apache::thrift::util::enumNameSafe(code);
   return ChainAddEdgesProcessorLocal::processRemote(code);
 }
 
 folly::SemiFuture<Code> ResumeAddEdgeProcessor::processLocal(Code code) {
-  LOG(INFO) << uuid_ << " processRemote() " << apache::thrift::util::enumNameSafe(code);
+  VLOG(1) << uuid_ << " processRemote() " << apache::thrift::util::enumNameSafe(code);
   setErrorCode(code);
 
   if (!checkTerm(req_)) {

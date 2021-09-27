@@ -54,8 +54,6 @@ class ChainUpdateEdgeProcessorLocal
 
   bool checkVersion();
 
-  folly::SemiFuture<Code> processResumeRemoteLocal(Code code);
-
   folly::SemiFuture<Code> processNormalLocal(Code code);
 
   void abort();

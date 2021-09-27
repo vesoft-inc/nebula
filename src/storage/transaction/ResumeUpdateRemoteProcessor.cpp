@@ -55,7 +55,7 @@ folly::SemiFuture<Code> ResumeUpdateRemoteProcessor::processLocal(Code code) {
 
 void ResumeUpdateRemoteProcessor::finish() {
   if (FLAGS_trace_toss) {
-    LOG(INFO) << "commitLocal()=" << apache::thrift::util::enumNameSafe(code_);
+    VLOG(1) << "commitLocal()=" << apache::thrift::util::enumNameSafe(code_);
   }
   finished_.setValue(code_);
   onFinished();

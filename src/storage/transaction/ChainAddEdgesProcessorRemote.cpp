@@ -14,7 +14,7 @@ namespace nebula {
 namespace storage {
 
 void ChainAddEdgesProcessorRemote::process(const cpp2::ChainAddEdgesRequest& req) {
-  LOG(INFO) << this << ConsistUtil::dumpParts(req.get_parts());
+  VLOG(1) << this << ConsistUtil::dumpParts(req.get_parts());
   auto partId = req.get_parts().begin()->first;
   auto code = nebula::cpp2::ErrorCode::SUCCEEDED;
   do {
@@ -55,7 +55,7 @@ void ChainAddEdgesProcessorRemote::forwardRequest(const cpp2::ChainAddEdgesReque
     for (auto& part : resp.get_result().get_failed_parts()) {
       handleErrorCode(part.code, spaceId, part.get_part_id());
     }
-    LOG(INFO) << this << " " << apache::thrift::util::enumNameSafe(rc);
+    VLOG(1) << this << " " << apache::thrift::util::enumNameSafe(rc);
     this->result_ = resp.get_result();
     this->onFinished();
   });
