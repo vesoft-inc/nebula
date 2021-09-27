@@ -107,6 +107,8 @@ class AdminTask {
     rc_.compare_exchange_strong(suc, nebula::cpp2::ErrorCode::E_USER_CANCEL);
   }
 
+  meta::cpp2::AdminCmd cmdType() { return ctx_.cmd_; }
+
  public:
   std::atomic<size_t> unFinishedSubTask_;
   SubTaskQueue subtasks_;

@@ -19,6 +19,7 @@
 #include "common/http/HttpClient.h"
 #include "common/meta/NebulaSchemaProvider.h"
 #include "common/network/NetworkUtils.h"
+#include "common/ssl/SSLConfig.h"
 #include "common/stats/StatsManager.h"
 #include "common/time/TimeUtils.h"
 #include "version/Version.h"
@@ -49,7 +50,8 @@ MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool
   CHECK(ioThreadPool_ != nullptr) << "IOThreadPool is required";
   CHECK(!addrs_.empty())
       << "No meta server address is specified or can be solved. Meta server is required";
-  clientsMan_ = std::make_shared<thrift::ThriftClientManager<cpp2::MetaServiceAsyncClient>>();
+  clientsMan_ = std::make_shared<thrift::ThriftClientManager<cpp2::MetaServiceAsyncClient>>(
+      FLAGS_enable_ssl || FLAGS_enable_meta_ssl);
   updateActive();
   updateLeader();
   bgThread_ = std::make_unique<thread::GenericWorker>();
@@ -798,6 +800,8 @@ Status MetaClient::handleResponse(const RESP& resp) {
       return Status::Error("Failed to get meta dir!");
     case nebula::cpp2::ErrorCode::E_INVALID_JOB:
       return Status::Error("No valid job!");
+    case nebula::cpp2::ErrorCode::E_JOB_NOT_IN_SPACE:
+      return Status::Error("Job not in chosen space!");
     case nebula::cpp2::ErrorCode::E_BACKUP_EMPTY_TABLE:
       return Status::Error("Backup empty table!");
     case nebula::cpp2::ErrorCode::E_BACKUP_TABLE_FAILED:
@@ -1055,6 +1059,21 @@ folly::Future<StatusOr<GraphSpaceID>> MetaClient::createSpace(meta::cpp2::SpaceD
   getResponse(
       std::move(req),
       [](auto client, auto request) { return client->future_createSpace(request); },
+      [](cpp2::ExecResp&& resp) -> GraphSpaceID { return resp.get_id().get_space_id(); },
+      std::move(promise));
+  return future;
+}
+
+folly::Future<StatusOr<GraphSpaceID>> MetaClient::createSpaceAs(const std::string& oldSpaceName,
+                                                                const std::string& newSpaceName) {
+  cpp2::CreateSpaceAsReq req;
+  req.set_old_space_name(oldSpaceName);
+  req.set_new_space_name(newSpaceName);
+  folly::Promise<StatusOr<GraphSpaceID>> promise;
+  auto future = promise.getFuture();
+  getResponse(
+      std::move(req),
+      [](auto client, auto request) { return client->future_createSpaceAs(request); },
       [](cpp2::ExecResp&& resp) -> GraphSpaceID { return resp.get_id().get_space_id(); },
       std::move(promise));
   return future;

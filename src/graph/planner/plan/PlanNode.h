@@ -69,6 +69,7 @@ class PlanNode {
 
     // schema related
     kCreateSpace,
+    kCreateSpaceAs,
     kCreateTag,
     kCreateEdge,
     kDescSpace,

@@ -47,6 +47,10 @@ class StorageServer final {
  private:
   std::unique_ptr<kvstore::KVStore> getStoreInstance();
 
+  std::unique_ptr<kvstore::KVEngine> getAdminStoreInstance();
+
+  int32_t getAdminStoreSeqId();
+
   bool initWebService();
 
   std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;

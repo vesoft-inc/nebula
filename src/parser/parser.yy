@@ -1048,7 +1048,17 @@ opt_argument_list
     ;
 
 argument_list
-    : expression {
+    : KW_VERTEX {
+        $$ = ArgumentList::make(qctx->objPool());
+        Expression* arg = VertexExpression::make(qctx->objPool());
+        $$->addArgument(arg);
+    }
+    | KW_EDGE {
+        $$ = ArgumentList::make(qctx->objPool());
+        Expression *arg = EdgeExpression::make(qctx->objPool());
+        $$->addArgument(arg);
+    }
+    | expression {
         $$ = ArgumentList::make(qctx->objPool());
         Expression* arg = nullptr;
         arg = $1;
@@ -3152,6 +3162,10 @@ create_space_sentence
         sentence->setGroupName($9);
         sentence->setOpts($6);
         sentence->setComment($10);
+        $$ = sentence;
+    }
+    | KW_CREATE KW_SPACE opt_if_not_exists name_label KW_AS name_label {
+        auto sentence = new CreateSpaceAsSentence($6, $4, $3);
         $$ = sentence;
     }
     ;

@@ -113,6 +113,9 @@ struct LookupContext final : public AstContext {
   int32_t schemaId{-1};
   int32_t limit{-1};
   Expression* filter{nullptr};
+  YieldColumns* yieldExpr{nullptr};
+  std::vector<std::string> idxReturnCols;
+  std::vector<std::string> idxColNames;
   // order by
 };
 
@@ -126,6 +129,16 @@ struct SubgraphContext final : public AstContext {
   bool withProp{false};
   bool getVertexProp{false};
   bool getEdgeProp{false};
+};
+
+struct FetchVerticesContext final : public AstContext {
+  Starts from;
+  bool distinct{false};
+  YieldColumns* yieldExpr{nullptr};
+  ExpressionProps exprProps;
+
+  // store the result of the previous sentence
+  std::string inputVarName;
 };
 
 }  // namespace graph

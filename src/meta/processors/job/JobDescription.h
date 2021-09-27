@@ -27,6 +27,8 @@ class JobDescription {
   FRIEND_TEST(JobManagerTest, loadJobDescription);
   FRIEND_TEST(JobManagerTest, showJobs);
   FRIEND_TEST(JobManagerTest, showJob);
+  FRIEND_TEST(JobManagerTest, showJobsFromMultiSpace);
+  FRIEND_TEST(JobManagerTest, showJobInOtherSpace);
   FRIEND_TEST(JobManagerTest, backupJob);
   FRIEND_TEST(JobManagerTest, recoverJob);
   FRIEND_TEST(GetStatsTest, StatsJob);
