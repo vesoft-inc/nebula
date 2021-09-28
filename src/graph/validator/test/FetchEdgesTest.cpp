@@ -323,6 +323,8 @@ TEST_F(FetchEdgesValidatorTest, FetchEdgesPropFailed) {
   ASSERT_FALSE(validate("FETCH PROP ON edge1 \"1\"->\"2\" YIELD vertex as a, edge1.prop1"));
   ASSERT_FALSE(validate("FETCH PROP ON edge1 \"1\"->\"2\" YIELD vertex as b"));
   ASSERT_FALSE(validate("FETCH PROP ON edge1 \"1\"->\"2\" YIELD path as a"));
+  ASSERT_FALSE(validate("FETCH PROP ON edge1 \"1\"->\"2\" YIELD $$.player.name"));
+  ASSERT_FALSE(validate("FETCH PROP ON edge1 \"1\"->\"2\" YIELD $^.player.name"));
 
   // notexist edge
   ASSERT_FALSE(validate("FETCH PROP ON not_exist_edge \"1\"->\"2\" YIELD not_exist_edge.prop1"));

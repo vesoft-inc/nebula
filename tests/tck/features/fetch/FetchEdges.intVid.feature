@@ -279,6 +279,14 @@ Feature: Fetch Int Vid Edges
       | {likeness: 90}              |
     When executing query:
       """
+      FETCH PROP ON like hash("Tony Parker")->hash("Tim Duncan"), hash("Grant Hill") -> hash("Tracy McGrady") YIELD properties(edge) as properties
+      """
+    Then the result should be, in any order, and the columns 0, 1 should be hashed:
+      | like._src     | like._dst       | like._rank | properties     |
+      | "Tony Parker" | "Tim Duncan"    | 0          | {likeness: 95} |
+      | "Grant Hill"  | "Tracy McGrady" | 0          | {likeness: 90} |
+    When executing query:
+      """
       FETCH PROP ON like hash("Tony Parker")->hash("Tim Duncan"), hash("Grant Hill") -> hash("Tracy McGrady") YIELD edge as relationship |
       YIELD startNode($-.relationship) AS node
       """
