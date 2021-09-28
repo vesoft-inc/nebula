@@ -196,6 +196,12 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
       }
 
       auto partHosts = std::move(partHostsRet).value();
+      if (partHosts.empty()) {
+        LOG(ERROR) << "Pick hosts is empty.";
+        handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
+        onFinished();
+        return;
+      }
 
       std::stringstream ss;
       for (const auto& host : partHosts) {
@@ -281,6 +287,7 @@ StatusOr<Hosts> CreateSpaceProcessor::pickHostsWithZone(
     const std::vector<std::string>& zones,
     const std::unordered_map<std::string, Hosts>& zoneHosts) {
   Hosts pickedHosts;
+  nebula::cpp2::ErrorCode code = nebula::cpp2::ErrorCode::SUCCEEDED;
   for (auto iter = zoneHosts.begin(); iter != zoneHosts.end(); iter++) {
     auto zoneIter = std::find(std::begin(zones), std::end(zones), iter->first);
     if (zoneIter == std::end(zones)) {
@@ -293,9 +300,8 @@ StatusOr<Hosts> CreateSpaceProcessor::pickHostsWithZone(
       auto hostIter = hostLoading_.find(host);
       if (hostIter == hostLoading_.end()) {
         LOG(ERROR) << "Host " << host << " not found";
-        handleErrorCode(nebula::cpp2::ErrorCode::E_NO_HOSTS);
-        onFinished();
-        return Status::Error("Host not found");
+        code = nebula::cpp2::ErrorCode::E_NO_HOSTS;
+        break;
       }
 
       if (size > hostIter->second) {
@@ -306,6 +312,12 @@ StatusOr<Hosts> CreateSpaceProcessor::pickHostsWithZone(
 
     hostLoading_[picked] += 1;
     pickedHosts.emplace_back(toThriftHost(std::move(picked)));
+  }
+
+  if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    handleErrorCode(code);
+    onFinished();
+    return Status::Error("Host not found");
   }
   return pickedHosts;
 }
