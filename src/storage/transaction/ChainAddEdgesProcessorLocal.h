@@ -134,6 +134,9 @@ class ChainAddEdgesProcessorLocal : public BaseProcessor<cpp2::ExecResponse>,
   std::unique_ptr<TransactionManager::LockGuard> lk_{nullptr};
   int retryLimit_{10};
   TermID localTerm_{-1};
+  // set to true when prime insert succeed
+  // in processLocal(), we check this to determine if need to do abort()
+  bool primeInserted_{false};
 
   std::vector<std::string> kvErased_;
   std::vector<kvstore::KV> kvAppend_;
