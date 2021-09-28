@@ -19,19 +19,11 @@ NEBULA_START_COMMAND_FORMAT = "bin/nebula-{} --flagfile conf/nebula-{}.conf {}"
 
 
 class NebulaService(object):
-    def __init__(self, build_dir, src_dir, cleanup=True):
+    def __init__(self, build_dir, src_dir):
         self.build_dir = str(build_dir)
         self.src_dir = str(src_dir)
         self.work_dir = os.path.join(self.build_dir, 'server_' + time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime()))
         self.pids = {}
-        self._cleanup = cleanup
-
-    def __enter__(self):
-        self.install()
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.stop(cleanup=self._cleanup)
 
     def set_work_dir(self, work_dir):
         self.work_dir = work_dir
@@ -89,7 +81,7 @@ class NebulaService(object):
             params.append('--cert_path=share/resources/test.ca.pem')
             params.append('--key_path=share/resources/test.ca.key')
             params.append('--password_path=share/resources/test.ca.password')
-            
+
         if name == 'graphd':
             params.append('--local_config=false')
             params.append('--enable_authorize=true')
@@ -241,7 +233,7 @@ class NebulaService(object):
             with open(pf) as f:
                 self.pids[f.name] = int(f.readline())
 
-    def stop(self):
+    def stop(self, cleanup):
         print("try to stop nebula services...")
         self._collect_pids()
         self.kill_all(signal.SIGTERM)
@@ -253,7 +245,7 @@ class NebulaService(object):
 
         self.kill_all(signal.SIGKILL)
 
-        if self._cleanup:
+        if cleanup:
             shutil.rmtree(self.work_dir, ignore_errors=True)
 
     def kill_all(self, sig):

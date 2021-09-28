@@ -13,7 +13,6 @@
 #include "common/base/Base.h"
 #include "common/base/SignalHandler.h"
 #include "common/fs/FileUtils.h"
-#include "common/memory/MemoryUtils.h"
 #include "common/network/NetworkUtils.h"
 #include "common/process/ProcessUtils.h"
 #include "common/ssl/SSLConfig.h"
@@ -24,7 +23,6 @@
 #include "version/Version.h"
 #include "webservice/WebService.h"
 
-using nebula::MemoryUtils;
 using nebula::ProcessUtils;
 using nebula::Status;
 using nebula::StatusOr;

@@ -85,12 +85,14 @@ def start_nebula(nb, configs):
     else:
         nb.install()
         address = "localhost"
-        debug = opt_is(configs.debug, "true")
-        enable_ssl = opt_is(configs.enable_ssl, "true")
-        enable_meta_ssl = opt_is(configs.enable_meta_ssl, "true")
-        enable_graph_ssl = opt_is(configs.enable_graph_ssl, "true")
-        ca_signed = opt_is(configs.ca_signed, "true")
-        ports = nb.start(debug_log=debug, multi_graphd=configs.multi_graphd, enable_ssl=enable_ssl, enable_graph_ssl=enable_graph_ssl, enable_meta_ssl=enable_meta_ssl, ca_signed=ca_signed)
+        ports = nb.start(
+            debug_log=opt_is(configs.debug, "true"),
+            multi_graphd=configs.multi_graphd,
+            enable_ssl=opt_is(configs.enable_ssl, "true"),
+            enable_graph_ssl=opt_is(configs.enable_graph_ssl, "true"),
+            enable_meta_ssl=opt_is(configs.enable_meta_ssl, "true"),
+            ca_signed=opt_is(configs.ca_signed, "true")
+        )
 
     # Load csv data
     pool = get_conn_pool(address, ports[0])
@@ -125,7 +127,10 @@ def stop_nebula(nb, configs=None):
     with open(NB_TMP_PATH, "r") as f:
         data = json.loads(f.readline())
         nb.set_work_dir(data["work_dir"])
-    nb.stop()
+
+    cleanup = opt_is(configs.rm_dir, "true")
+    nb.stop(cleanup)
+
     shutil.rmtree(TMP_DIR, ignore_errors=True)
     print('nebula services have been stopped.')
 
@@ -136,8 +141,7 @@ if __name__ == "__main__":
         (configs, opts) = parser.parse_args()
 
         # Setup nebula graph service
-        cleanup = opt_is(configs.rm_dir, "true")
-        nebula_svc = NebulaService(configs.build_dir, NEBULA_HOME, cleanup)
+        nebula_svc = NebulaService(configs.build_dir, NEBULA_HOME)
 
         if opt_is(configs.cmd, "start"):
             start_nebula(nebula_svc, configs)

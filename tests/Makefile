@@ -55,7 +55,6 @@ up: clean
 	@mkdir -p $(CURR_DIR)/.pytest
 	PYTHONPATH=$$PYTHONPATH:$(CURR_DIR)/.. $(CURR_DIR)/nebula-test-run.py \
 		--cmd=start \
-		--rm_dir=$(RM_DIR) \
 		--build_dir=$(BUILD_DIR) \
 		--debug=$(DEBUG) \
 		--multi_graphd=true \
@@ -89,17 +88,12 @@ tck: jobs slow-query
 fail: currdir
 	python3 -m pytest --last-failed --gherkin-terminal-reporter --gherkin-terminal-reporter-expanded tck/steps/test_tck.py
 
-report:
-	@mv $(CURR_DIR)/tck-report.json $(CURR_DIR)/tck-report-bak.json
-	@jq . $(CURR_DIR)/tck-report-bak.json > tck-report.json
-	@rm -rf $(CURR_DIR)/tck-report-bak.json
-
 clean:
 	@rm -rf $(CURR_DIR)/nebula-python \
 		$(CURR_DIR)/reformat-gherkin \
 		$(CURR_DIR)/.pytest/* \
 		$(CURR_DIR)/.pytest_cache \
-		$(CURR_DIR)/tck-report.json \
+		$(BUILD_DIR)/server_* \
 		$(CURR_DIR)/*.lock
 
 kill:
