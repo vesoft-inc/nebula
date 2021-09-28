@@ -184,12 +184,12 @@ bool GraphService::auth(const std::string& username, const std::string& password
   return false;
 }
 
-folly::Future<nebula::cpp2::VerifyClientVersionResp> GraphService::future_verifyClientVersion(
-    const nebula::cpp2::VerifyClientVersionReq& req) {
+folly::Future<cpp2::VerifyClientVersionResp> GraphService::future_verifyClientVersion(
+    const cpp2::VerifyClientVersionReq& req) {
   std::unordered_set<std::string> whiteList;
   folly::splitTo<std::string>(
       ":", FLAGS_client_white_list, std::inserter(whiteList, whiteList.begin()));
-  nebula::cpp2::VerifyClientVersionResp resp;
+  cpp2::VerifyClientVersionResp resp;
   if (FLAGS_enable_client_white_list && whiteList.find(req.get_version()) == whiteList.end()) {
     resp.set_error_code(nebula::cpp2::ErrorCode::E_CLIENT_REJECTED);
     resp.set_error_msg(folly::stringPrintf(
@@ -199,7 +199,7 @@ folly::Future<nebula::cpp2::VerifyClientVersionResp> GraphService::future_verify
   } else {
     resp.set_error_code(nebula::cpp2::ErrorCode::SUCCEEDED);
   }
-  return folly::makeFuture<nebula::cpp2::VerifyClientVersionResp>(std::move(resp));
+  return folly::makeFuture<cpp2::VerifyClientVersionResp>(std::move(resp));
 }
 }  // namespace graph
 }  // namespace nebula

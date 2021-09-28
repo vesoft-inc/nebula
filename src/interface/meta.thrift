@@ -1184,6 +1184,17 @@ struct GetMetaDirInfoResp {
 struct GetMetaDirInfoReq {
 }
 
+struct VerifyClientVersionResp {
+    1: common.ErrorCode         code,
+    2: common.HostAddr          leader,
+    3: optional binary           error_msg;
+}
+
+
+struct VerifyClientVersionReq {
+    1: required binary version = common.version;
+}
+
 service MetaService {
     ExecResp createSpace(1: CreateSpaceReq req);
     ExecResp dropSpace(1: DropSpaceReq req);
@@ -1295,5 +1306,5 @@ service MetaService {
     ListClusterInfoResp listCluster(1: ListClusterInfoReq req);
     GetMetaDirInfoResp getMetaDirInfo(1: GetMetaDirInfoReq req);
 
-    common.VerifyClientVersionResp verifyClientVersion(1: common.VerifyClientVersionReq req)
+    VerifyClientVersionResp verifyClientVersion(1: VerifyClientVersionReq req)
 }

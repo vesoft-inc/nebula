@@ -90,6 +90,12 @@ bool MetaClient::isMetadReady() {
 }
 
 bool MetaClient::waitForMetadReady(int count, int retryIntervalSecs) {
+  auto status = verifyVersion();
+  if (!status.ok()) {
+    LOG(ERROR) << status;
+    return false;
+  }
+
   if (!options_.skipConfig_) {
     std::string gflagsJsonPath;
     GflagsManager::getGflagsModule(gflagsModule_);
@@ -656,6 +662,9 @@ void MetaClient::getResponse(Request req,
                              FLAGS_meta_client_retry_interval_secs * 1000);
                          return;
                        }
+                     } else if (resp.get_code() == nebula::cpp2::ErrorCode::E_CLIENT_REJECTED) {
+                       pro.setValue(respGen(std::move(resp)));
+                       return;
                      }
                      pro.setValue(this->handleResponse(resp));
                    });  // then
@@ -3564,5 +3573,25 @@ bool MetaClient::checkIsPlanKilled(SessionID sessionId, ExecutionPlanID planId) 
   return killedPlans_.load()->count({sessionId, planId});
 }
 
+Status MetaClient::verifyVersion() {
+  auto req = cpp2::VerifyClientVersionReq();
+  folly::Promise<StatusOr<cpp2::VerifyClientVersionResp>> promise;
+  auto future = promise.getFuture();
+  getResponse(
+      std::move(req),
+      [](auto client, auto request) { return client->future_verifyClientVersion(request); },
+      [](cpp2::VerifyClientVersionResp&& resp) -> decltype(auto) { return resp; },
+      std::move(promise));
+
+  auto respStatus = std::move(future).get();
+  if (!respStatus.ok()) {
+    return respStatus.status();
+  }
+  auto resp = std::move(respStatus).value();
+  if (resp.get_code() != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    return Status::Error("Client verified failed: %s", resp.get_error_msg()->c_str());
+  }
+  return Status::OK();
+}
 }  // namespace meta
 }  // namespace nebula

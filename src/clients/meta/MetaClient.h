@@ -710,6 +710,8 @@ class MetaClient {
 
   ListenersMap doGetListenersMap(const HostAddr& host, const LocalCache& localCache);
 
+  Status verifyVersion();
+
  private:
   std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
   std::shared_ptr<thrift::ThriftClientManager<cpp2::MetaServiceAsyncClient>> clientsMan_;

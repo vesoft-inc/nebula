@@ -415,15 +415,3 @@ enum ErrorCode {
 
     E_UNKNOWN                         = -8000,
 } (cpp.enum_strict)
-
-
-struct VerifyClientVersionResp {
-    1: required common.ErrorCode error_code;
-    2: optional binary           error_msg;
-}
-
-
-struct VerifyClientVersionReq {
-    1: required binary version = version;
-}
-

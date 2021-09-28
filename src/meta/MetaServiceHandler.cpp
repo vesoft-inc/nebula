@@ -581,8 +581,8 @@ folly::Future<cpp2::ExecResp> MetaServiceHandler::future_killQuery(const cpp2::K
   RETURN_FUTURE(processor);
 }
 
-folly::Future<nebula::cpp2::VerifyClientVersionResp> MetaServiceHandler::future_verifyClientVersion(
-    const nebula::cpp2::VerifyClientVersionReq& req) {
+folly::Future<cpp2::VerifyClientVersionResp> MetaServiceHandler::future_verifyClientVersion(
+    const cpp2::VerifyClientVersionReq& req) {
   auto* processor = VerifyClientVersionProcessor::instance(kvstore_);
   RETURN_FUTURE(processor);
 }
