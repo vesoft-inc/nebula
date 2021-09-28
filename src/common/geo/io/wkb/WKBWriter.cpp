@@ -6,6 +6,79 @@
 
 #include "common/geo/io/wkb/WKBWriter.h"
 
-#include "common/base/Base.h"
+namespace nebula {
 
-namespace nebula {}  // namespace nebula
+std::string WKBWriter::write(const Geometry* geom) const {
+  std::string wkb = "";
+
+  uint8_t byteOrder =
+      static_cast<std::underlying_type_t<ByteOrder>>(ByteOrderData::getMachineByteOrder());
+  writeUint8(wkb, byteOrder);
+
+  auto shape = geom->shape();
+  uint32_t shapeType = folly::to<uint32_t>(shape);
+  writeUint32(wkb, shapeType);
+  switch (shape) {
+    case GeoShape::POINT: {
+      const Point* point = static_cast<const Point*>(geom);
+      writeCoordinate(wkb, point->coord);
+      return wkb;
+    }
+    case GeoShape::LINESTRING: {
+      const LineString* line = static_cast<const LineString*>(geom);
+      auto coordList = line->coordList;
+      uint32_t numPoints = coordList.size();
+      writeUint32(wkb, numPoints);
+      writeCoordinateList(wkb, coordList);
+      return wkb;
+    }
+    case GeoShape::POLYGON: {
+      const Polygon* polygon = static_cast<const Polygon*>(geom);
+      auto coordListList = polygon->coordListList;
+      uint32_t numRings = coordListList.size();
+      writeUint32(wkb, numRings);
+      writeCoordinateListList(wkb, coordListList);
+      return wkb;
+    }
+    default:
+      LOG(FATAL)
+          << "Geomtry shapes other than Point/LineString/Polygon are not currently supported";
+      return "";
+  }
+}
+
+void WKBWriter::writeCoordinate(std::string& wkb, const Coordinate& coord) const {
+  writeDouble(wkb, coord.x);
+  writeDouble(wkb, coord.y);
+}
+
+void WKBWriter::writeCoordinateList(std::string& wkb,
+                                    const std::vector<Coordinate>& coordList) const {
+  for (size_t i = 0; i < coordList.size(); ++i) {
+    writeCoordinate(wkb, coordList[i]);
+  }
+}
+
+void WKBWriter::writeCoordinateListList(
+    std::string& wkb, const std::vector<std::vector<Coordinate>>& coordListList) const {
+  for (size_t i = 0; i < coordListList.size(); ++i) {
+    const auto& coordList = coordListList[i];
+    uint32_t numPoints = coordList.size();
+    writeUint32(wkb, numPoints);
+    writeCoordinateList(wkb, coordList);
+  }
+}
+
+void WKBWriter::writeUint8(std::string& wkb, uint8_t v) const {
+  wkb.append(reinterpret_cast<char*>(&v), sizeof(v));
+}
+
+void WKBWriter::writeUint32(std::string& wkb, uint32_t v) const {
+  wkb.append(reinterpret_cast<char*>(&v), sizeof(v));
+}
+
+void WKBWriter::writeDouble(std::string& wkb, double v) const {
+  wkb.append(reinterpret_cast<char*>(&v), sizeof(v));
+}
+
+}  // namespace nebula

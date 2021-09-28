@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "common/base/Base.h"
+
 namespace nebula {
 
 enum class ByteOrder : uint8_t {
