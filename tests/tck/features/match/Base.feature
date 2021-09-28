@@ -514,7 +514,7 @@ Feature: Basic match
       """
       MATCH (v:player) where v.name return v
       """
-    Then a ExecutionError should be raised at runtime: Internal Error: Wrong type result, the type should be NULL,EMPTY or BOOL
+    Then a ExecutionError should be raised at runtime: Internal Error: Wrong type result, the type should be NULL, EMPTY or BOOL
 
   Scenario: Unimplemented features
     When executing query:

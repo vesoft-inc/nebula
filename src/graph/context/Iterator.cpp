@@ -19,6 +19,7 @@ namespace graph {
 
 bool Iterator::hitsSysMemoryHighWatermark() const {
   if (checkMemory_) {
+    // TODO(yee): speed up this check
     if (0 == numReadRows_ % FLAGS_num_rows_to_check_memory) {
       return MemoryUtils::kHitMemoryHighWatermark.load();
     }
