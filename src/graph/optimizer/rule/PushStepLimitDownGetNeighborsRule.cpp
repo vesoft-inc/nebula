@@ -1,10 +1,10 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
+/* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "graph/optimizer/rule/LimitPushDownRule.h"
+#include "graph/optimizer/rule/PushStepLimitDownGetNeighborsRule.h"
 
 #include "common/expression/BinaryExpression.h"
 #include "common/expression/ConstantExpression.h"
@@ -21,58 +21,50 @@
 using nebula::graph::GetNeighbors;
 using nebula::graph::Limit;
 using nebula::graph::PlanNode;
-using nebula::graph::Project;
 using nebula::graph::QueryContext;
 
 namespace nebula {
 namespace opt {
 
-std::unique_ptr<OptRule> LimitPushDownRule::kInstance =
-    std::unique_ptr<LimitPushDownRule>(new LimitPushDownRule());
+std::unique_ptr<OptRule> PushStepLimitDownGetNeighborsRule::kInstance =
+    std::unique_ptr<PushStepLimitDownGetNeighborsRule>(new PushStepLimitDownGetNeighborsRule());
 
-LimitPushDownRule::LimitPushDownRule() { RuleSet::QueryRules().addRule(this); }
+PushStepLimitDownGetNeighborsRule::PushStepLimitDownGetNeighborsRule() {
+  RuleSet::QueryRules().addRule(this);
+}
 
-const Pattern &LimitPushDownRule::pattern() const {
-  static Pattern pattern =
-      Pattern::create(graph::PlanNode::Kind::kLimit,
-                      {Pattern::create(graph::PlanNode::Kind::kProject,
-                                       {Pattern::create(graph::PlanNode::Kind::kGetNeighbors)})});
+const Pattern &PushStepLimitDownGetNeighborsRule::pattern() const {
+  static Pattern pattern = Pattern::create(graph::PlanNode::Kind::kLimit,
+                                           {Pattern::create(graph::PlanNode::Kind::kGetNeighbors)});
   return pattern;
 }
 
-StatusOr<OptRule::TransformResult> LimitPushDownRule::transform(
+StatusOr<OptRule::TransformResult> PushStepLimitDownGetNeighborsRule::transform(
     OptContext *octx, const MatchedResult &matched) const {
   auto limitGroupNode = matched.node;
-  auto projGroupNode = matched.dependencies.front().node;
-  auto gnGroupNode = matched.dependencies.front().dependencies.front().node;
+  auto gnGroupNode = matched.dependencies.front().node;
 
   const auto limit = static_cast<const Limit *>(limitGroupNode->node());
-  const auto proj = static_cast<const Project *>(projGroupNode->node());
   const auto gn = static_cast<const GetNeighbors *>(gnGroupNode->node());
 
-  DCHECK(graph::ExpressionUtils::isEvaluableExpr(limit->countExpr()));
-  if (!graph::ExpressionUtils::isEvaluableExpr(limit->countExpr())) {
-    return TransformResult::noTransform();
-  }
-  int64_t limitRows = limit->offset() + limit->count();
-  if (gn->limit() >= 0 && limitRows >= gn->limit()) {
-    return TransformResult::noTransform();
+  if (gn->limitExpr() != nullptr && graph::ExpressionUtils::isEvaluableExpr(gn->limitExpr()) &&
+      graph::ExpressionUtils::isEvaluableExpr(limit->countExpr())) {
+    int64_t limitRows = limit->offset() + limit->count();
+    int64_t gnLimit = gn->limit();
+    if (gnLimit >= 0 && limitRows >= gnLimit) {
+      return TransformResult::noTransform();
+    }
   }
 
   auto newLimit = static_cast<Limit *>(limit->clone());
   auto newLimitGroupNode = OptGroupNode::create(octx, newLimit, limitGroupNode->group());
 
-  auto newProj = static_cast<Project *>(proj->clone());
-  auto newProjGroup = OptGroup::create(octx);
-  auto newProjGroupNode = newProjGroup->makeGroupNode(newProj);
-
   auto newGn = static_cast<GetNeighbors *>(gn->clone());
-  newGn->setLimit(limitRows);
+  newGn->setLimit(limit->countExpr()->clone());
   auto newGnGroup = OptGroup::create(octx);
   auto newGnGroupNode = newGnGroup->makeGroupNode(newGn);
 
-  newLimitGroupNode->dependsOn(newProjGroup);
-  newProjGroupNode->dependsOn(newGnGroup);
+  newLimitGroupNode->dependsOn(newGnGroup);
   for (auto dep : gnGroupNode->dependencies()) {
     newGnGroupNode->dependsOn(dep);
   }
@@ -83,7 +75,9 @@ StatusOr<OptRule::TransformResult> LimitPushDownRule::transform(
   return result;
 }
 
-std::string LimitPushDownRule::toString() const { return "LimitPushDownRule"; }
+std::string PushStepLimitDownGetNeighborsRule::toString() const {
+  return "PushStepLimitDownGetNeighborsRule";
+}
 
 }  // namespace opt
 }  // namespace nebula
