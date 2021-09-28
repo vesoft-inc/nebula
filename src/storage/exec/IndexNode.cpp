@@ -9,6 +9,9 @@
 #include "folly/Likely.h"
 namespace nebula {
 namespace storage {
+IndexNode::IndexNode(const IndexNode& node)
+    : context_(node.context_), spaceId_(node.spaceId_), name_(node.name_) {}
+
 nebula::cpp2::ErrorCode IndexNode::doExecute(PartitionID partId) {
   for (auto& child : children_) {
     auto ret = child->execute(partId);

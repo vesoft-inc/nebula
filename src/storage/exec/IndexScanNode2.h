@@ -22,11 +22,12 @@ class RangePath;
 class PrefixPath;
 class IndexScanNode : public IndexNode {
  public:
+  IndexScanNode(const IndexScanNode& node);
   IndexScanNode(RuntimeContext* context,
                 const std::string& name,
                 IndexID indexId,
-                const std::vector<cpp2::IndexColumnHint>& columnHists)
-      : IndexNode(context, name), indexId_(indexId), columnHists_(columnHists) {}
+                const std::vector<cpp2::IndexColumnHint>& columnHints)
+      : IndexNode(context, name), indexId_(indexId), columnHints_(columnHints) {}
   ::nebula::cpp2::ErrorCode init(InitContext& ctx) override {
     for (auto& col : ctx.requiredColumns) {
       requiredColumns_.push_back(col);
@@ -35,6 +36,7 @@ class IndexScanNode : public IndexNode {
     for (size_t i = 0; i < ctx.returnColumns.size(); i++) {
       ctx.retColMap[ctx.returnColumns[i]] = i;
     }
+    return ::nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
  protected:
@@ -49,14 +51,13 @@ class IndexScanNode : public IndexNode {
   virtual Map<std::string, Value> decodeFromBase(const std::string& key,
                                                  const std::string& value) = 0;
   virtual const meta::SchemaProviderIf* getSchema() = 0;
-  std::unique_ptr<std::pair<bool, std::pair<int64_t, std::string>>> ttlProps_;
   bool checkTTL();
   nebula::cpp2::ErrorCode resetIter(PartitionID partId);
   PartitionID partId_;
   const IndexID indexId_;
   std::shared_ptr<nebula::meta::cpp2::IndexItem> index_;
   bool indexNullable_ = false;
-  const std::vector<cpp2::IndexColumnHint>& columnHists_;
+  const std::vector<cpp2::IndexColumnHint>& columnHints_;
   std::unique_ptr<Path> path_;
   std::unique_ptr<kvstore::KVIterator> iter_;
   nebula::kvstore::KVStore* kvstore_;
@@ -83,7 +84,7 @@ class Path {
       std::shared_ptr<nebula::meta::cpp2::IndexItem> index,
       std::shared_ptr<const nebula::meta::NebulaSchemaProvider> schema,
       const std::vector<cpp2::IndexColumnHint>& hints);
-  virtual Qualified qualified(const folly::StringPiece& key);
+  Qualified qualified(const folly::StringPiece& key);
   virtual bool isRange() { return false; }
 
   virtual Qualified qualified(const Map<std::string, Value>& rowData) = 0;

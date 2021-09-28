@@ -185,6 +185,18 @@ void PrefixPath::buildKey() {
 }
 // End of PrefixPath
 // Define of IndexScan
+
+IndexScanNode::IndexScanNode(const IndexScanNode& node)
+    : IndexNode(node),
+      partId_(node.partId_),
+      indexId_(node.indexId_),
+      index_(node.index_),
+      indexNullable_(node.indexNullable_),
+      columnHints_(node.columnHints_),
+      kvstore_(node.kvstore_),
+      requiredColumns_(node.requiredColumns_),
+      ttlProps_(node.ttlProps_) {}
+
 nebula::cpp2::ErrorCode IndexScanNode::doExecute(PartitionID partId) {
   auto ret = resetIter(partId);
   return ret;

@@ -5,18 +5,25 @@
  */
 #pragma once
 
+#include <gtest/gtest_prod.h>
+
+#include <functional>
+#include <memory>
+
 #include "common/base/Base.h"
 #include "storage/exec/IndexScanNode2.h"
-#include "storage/exec/RelNode.h"
 #include "storage/exec/StorageIterator.h"
+
 namespace nebula {
 namespace storage {
 class IndexVertexScanNode final : public IndexScanNode {
  public:
-  ::nebula::cpp2::ErrorCode init(InitContext& ctx) override;
+  IndexVertexScanNode(const IndexVertexScanNode& node);
   IndexVertexScanNode(RuntimeContext* context,
                       IndexID indexId,
                       const std::vector<cpp2::IndexColumnHint>& clolumnHint);
+  ::nebula::cpp2::ErrorCode init(InitContext& ctx) override;
+  std::unique_ptr<IndexNode> copy() override;
 
  private:
   nebula::cpp2::ErrorCode getBaseData(folly::StringPiece key,
@@ -26,6 +33,14 @@ class IndexVertexScanNode final : public IndexScanNode {
   const meta::SchemaProviderIf* getSchema() override { return tag_.get(); }
 
   std::shared_ptr<const nebula::meta::NebulaSchemaProvider> tag_;
+
+  // Convenient for testing
+  std::function<StatusOr<std::shared_ptr<::nebula::meta::cpp2::IndexItem>>()> getIndex;
+  std::function<std::shared_ptr<const nebula::meta::NebulaSchemaProvider>()> getTag;
+
+  FRIEND_TEST(IndexScanTest, VertexBase);
+  FRIEND_TEST(IndexScanTest, Prefix1);
+  FRIEND_TEST(IndexScanTest, Prefix2);
 };
 }  // namespace storage
 }  // namespace nebula

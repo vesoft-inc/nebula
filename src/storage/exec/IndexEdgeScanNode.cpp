@@ -7,16 +7,44 @@
 #include "storage/exec/IndexEdgeScanNode.h"
 namespace nebula {
 namespace storage {
+IndexEdgeScanNode::IndexEdgeScanNode(const IndexEdgeScanNode& node)
+    : IndexScanNode(node), edge_(node.edge_) {
+  getIndex = std::function([this]() {
+    auto env = this->context_->env();
+    auto indexMgr = env->indexMan_;
+    auto index = indexMgr->getTagIndex(this->spaceId_, this->indexId_).value();
+    return index;
+  });
+  getEdge = std::function([this]() {
+    auto env = this->context_->env();
+    auto schemaMgr = env->schemaMan_;
+    auto schema =
+        schemaMgr->getEdgeSchema(this->spaceId_, this->index_->get_schema_id().get_edge_type());
+    return schema;
+  });
+}
+IndexEdgeScanNode::IndexEdgeScanNode(RuntimeContext* context,
+                                     IndexID indexId,
+                                     const std::vector<cpp2::IndexColumnHint>& columnHint)
+    : IndexScanNode(context, "IndexEdgeScanNode", indexId, columnHint) {
+  getIndex = std::function([this]() {
+    auto env = this->context_->env();
+    auto indexMgr = env->indexMan_;
+    auto index = indexMgr->getTagIndex(this->spaceId_, this->indexId_).value();
+    return index;
+  });
+  getEdge = std::function([this]() {
+    auto env = this->context_->env();
+    auto schemaMgr = env->schemaMan_;
+    auto schema =
+        schemaMgr->getEdgeSchema(this->spaceId_, this->index_->get_schema_id().get_edge_type());
+    return schema;
+  });
+}
 ::nebula::cpp2::ErrorCode IndexEdgeScanNode::init(InitContext& ctx) {
-  auto env = context_->env();
-  auto spaceId = context_->spaceId();
-  auto indexMgr = env->indexMan_;
-  auto schemaMgr = env->schemaMan_;
-  auto index = indexMgr->getTagIndex(spaceId, indexId_).value();
-  auto edgeSchema = schemaMgr->getEdgeSchema(spaceId, index->get_schema_id().get_tag_id());
-  this->index_ = index;
-  this->edge_ = edgeSchema;
-  return ::nebula::cpp2::ErrorCode::SUCCEEDED;
+  index_ = getIndex().value();
+  edge_ = getEdge();
+  return IndexScanNode::init(ctx);
 }
 Row IndexEdgeScanNode::decodeFromIndex(folly::StringPiece key) {
   std::vector<Value> values(requiredColumns_.size());
@@ -89,5 +117,10 @@ Map<std::string, Value> IndexEdgeScanNode::decodeFromBase(const std::string& key
   return values;
 }
 const meta::SchemaProviderIf* IndexEdgeScanNode::getSchema() { return edge_.get(); }
+
+std::unique_ptr<IndexNode> IndexEdgeScanNode::copy() {
+  return std::make_unique<IndexEdgeScanNode>(*this);
+}
+
 }  // namespace storage
 }  // namespace nebula

@@ -6,14 +6,13 @@
 #include "storage/exec/IndexSelectionNode.h"
 namespace nebula {
 namespace storage {
-IndexSelectionNode::IndexSelectionNode(RuntimeContext* context,
-                                       std::unique_ptr<Expression> expr,
-                                       const std::vector<std::string>& inputCols)
-    : IndexNode(context, "IndexSelectionNode"), expr_(std::move(expr)) {
-  for (size_t i = 0; i < inputCols.size(); i++) {
-    colPos_[inputCols[i]] = i;
-  }
+IndexSelectionNode::IndexSelectionNode(const IndexSelectionNode& node)
+    : IndexNode(node), expr_(node.expr_), colPos_(node.colPos_) {
+  ctx_ = std::make_unique<ExprContext>(colPos_);
 }
+
+IndexSelectionNode::IndexSelectionNode(RuntimeContext* context, Expression* expr)
+    : IndexNode(context, "IndexSelectionNode"), expr_(expr) {}
 nebula::cpp2::ErrorCode IndexSelectionNode::init(InitContext& ctx) {
   DCHECK_EQ(children_.size(), 1);
   SelectionExprVisitor vis;
@@ -28,6 +27,7 @@ nebula::cpp2::ErrorCode IndexSelectionNode::init(InitContext& ctx) {
   for (auto& col : vis.getRequiredColumns()) {
     colPos_[col] = ctx.retColMap.at(col);
   }
+  ctx_ = std::make_unique<ExprContext>(colPos_);
   return ::nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 IndexNode::ErrorOr<Row> IndexSelectionNode::doNext(bool& hasNext) {
@@ -43,6 +43,9 @@ IndexNode::ErrorOr<Row> IndexSelectionNode::doNext(bool& hasNext) {
     }
   } while (true);
   return ErrorOr<Row>(Row());
+}
+std::unique_ptr<IndexNode> IndexSelectionNode::copy() {
+  return std::make_unique<IndexSelectionNode>(*this);
 }
 Value IndexSelectionNode::ExprContext::getEdgeProp(const std::string& edgeType,
                                                    const std::string& prop) const {
@@ -60,6 +63,7 @@ Value IndexSelectionNode::ExprContext::getTagProp(const std::string& tag,
   DCHECK(iter->second < row_->size());
   return row_[iter->second];
 }
+
 }  // namespace storage
 
 }  // namespace nebula

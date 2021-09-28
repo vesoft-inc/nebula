@@ -6,6 +6,9 @@
 #include "storage/exec/IndexLimitNode.h"
 namespace nebula {
 namespace storage {
+IndexLimitNode::IndexLimitNode(const IndexLimitNode& node)
+    : IndexNode(node), offset_(node.offset_), limit_(node.limit_) {}
+
 IndexLimitNode::IndexLimitNode(RuntimeContext* context, uint64_t offset, uint64_t limit)
     : IndexNode(context, "IndexLimitNode"), offset_(offset), limit_(limit) {}
 IndexLimitNode::IndexLimitNode(RuntimeContext* context, uint64_t limit)
@@ -31,5 +34,9 @@ IndexNode::ErrorOr<Row> IndexLimitNode::doNext(bool& hasNext) {
     return ErrorOr<Row>(Row());
   }
 }
+std::unique_ptr<IndexNode> IndexLimitNode::copy() {
+  return std::make_unique<IndexLimitNode>(*this);
+}
+
 }  // namespace storage
 }  // namespace nebula

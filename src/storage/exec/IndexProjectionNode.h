@@ -11,8 +11,10 @@ namespace nebula {
 namespace storage {
 class IndexProjectionNode : public IndexNode {
  public:
+  IndexProjectionNode(const IndexProjectionNode& node);
   IndexProjectionNode(RuntimeContext* context, const std::vector<std::string>& requiredColumns);
   nebula::cpp2::ErrorCode init(InitContext& ctx) override;
+  std::unique_ptr<IndexNode> copy() override;
 
  private:
   ErrorOr<Row> doNext(bool& hasNext) override;

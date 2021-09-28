@@ -6,6 +6,9 @@
 #include "storage/exec/IndexDedupNode.h"
 namespace nebula {
 namespace storage {
+IndexDedupNode::IndexDedupNode(const IndexDedupNode& node)
+    : IndexNode(node), dedupColumns_(node.dedupColumns_), dedupPos_(node.dedupPos_) {}
+
 IndexDedupNode::IndexDedupNode(RuntimeContext* context, const std::vector<std::string>& dedupColumn)
     : IndexNode(context, "IndexDedupNode"), dedupColumns_(dedupColumn) {}
 ::nebula::cpp2::ErrorCode IndexDedupNode::init(InitContext& ctx) {
@@ -28,7 +31,7 @@ IndexDedupNode::IndexDedupNode(RuntimeContext* context, const std::vector<std::s
   dedupSet_.clear();
   return IndexNode::doExecute(partId);
 }
-IndexNode::ErrorOr<Row> IndexDedupNode::doNext(bool& hasNext) override {
+IndexNode::ErrorOr<Row> IndexDedupNode::doNext(bool& hasNext) {
   DCHECK_EQ(children_.size(), 1);
   auto& child = *children_[0];
   do {
@@ -46,5 +49,9 @@ IndexDedupNode::RowWrapper::RowWrapper(const Row& row, const std::vector<size_t>
     values_.emplace_back(row[p]);
   }
 }
+std::unique_ptr<IndexNode> IndexDedupNode::copy() {
+  return std::make_unique<IndexDedupNode>(*this);
+}
+
 }  // namespace storage
 }  // namespace nebula

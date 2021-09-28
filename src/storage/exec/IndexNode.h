@@ -27,7 +27,9 @@ class IndexNode {
  public:
   template <typename ResultType>
   using ErrorOr = ::nebula::ErrorOr<ErrorCode, ResultType>;
+  IndexNode(const IndexNode& node);
   explicit IndexNode(RuntimeContext* context, const std::string& name);
+  virtual ~IndexNode() = default;
   virtual ::nebula::cpp2::ErrorCode init(InitContext& initCtx) {
     DCHECK_EQ(children_.size(), 1);
     return children_[0]->init(initCtx);
@@ -48,7 +50,6 @@ class IndexNode {
   virtual nebula::cpp2::ErrorCode doExecute(PartitionID partId);
   void beforeExecute();
   void afterExecute();
-  IndexNode(const IndexNode& node);
 
   RuntimeContext* context_;
   GraphSpaceID spaceId_;
@@ -62,7 +63,7 @@ inline IndexNode::ErrorOr<Row> IndexNode::next(bool& hasNext) {
   beforeNext();
   auto ret = doNext(hasNext);
   afterNext();
-  return std::move(ret);
+  return ret;
 }
 inline void IndexNode::beforeNext() { duration_.resume(); }
 inline void IndexNode::afterNext() { duration_.pause(); }

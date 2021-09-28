@@ -11,8 +11,10 @@ namespace nebula {
 namespace storage {
 class IndexDedupNode : public IndexNode {
  public:
+  IndexDedupNode(const IndexDedupNode& node);
   IndexDedupNode(RuntimeContext* context, const std::vector<std::string>& dedupColumn);
   ::nebula::cpp2::ErrorCode init(InitContext& ctx) override;
+  std::unique_ptr<IndexNode> copy() override;
 
  private:
   inline bool dedup(const Row& row);

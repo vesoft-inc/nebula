@@ -32,7 +32,6 @@ class LookupProcessor : public BaseProcessor<cpp2::LookupIndexResp> {
   std::unique_ptr<IndexNode> buildOneContext(const cpp2::IndexQueryContext& ctx);
   std::vector<std::unique_ptr<IndexNode>> reproducePlan(IndexNode* root, size_t count);
   folly::Executor* executor_{nullptr};
-  folly::Executor* executor_{nullptr};
   std::unique_ptr<PlanContext> planContext_;
   std::unique_ptr<RuntimeContext> context_;
   nebula::DataSet resultDataSet_;

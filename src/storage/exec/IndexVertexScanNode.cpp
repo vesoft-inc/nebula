@@ -5,24 +5,52 @@
  */
 #include "storage/exec/IndexVertexScanNode.h"
 
+#include "codec/RowReaderWrapper.h"
+#include "common/utils/NebulaKeyUtils.h"
+#include "storage/exec/QueryUtils.h"
 namespace nebula {
 namespace storage {
+
+IndexVertexScanNode::IndexVertexScanNode(const IndexVertexScanNode& node)
+    : IndexScanNode(node), tag_(node.tag_) {
+  getIndex = std::function([this]() {
+    auto env = this->context_->env();
+    auto indexMgr = env->indexMan_;
+    auto index = indexMgr->getTagIndex(this->spaceId_, this->indexId_).value();
+    return index;
+  });
+  getTag = std::function([this]() {
+    auto env = this->context_->env();
+    auto schemaMgr = env->schemaMan_;
+    auto schema =
+        schemaMgr->getTagSchema(this->spaceId_, this->index_->get_schema_id().get_tag_id());
+    return schema;
+  });
+}
 
 IndexVertexScanNode::IndexVertexScanNode(RuntimeContext* context,
                                          IndexID indexId,
                                          const std::vector<cpp2::IndexColumnHint>& clolumnHint)
-    : IndexScanNode(context, "IndexVertexScanNode", indexId, clolumnHint) {}
+    : IndexScanNode(context, "IndexVertexScanNode", indexId, clolumnHint) {
+  getIndex = std::function([this]() {
+    auto env = this->context_->env();
+    auto indexMgr = env->indexMan_;
+    auto index = indexMgr->getTagIndex(this->spaceId_, this->indexId_).value();
+    return index;
+  });
+  getTag = std::function([this]() {
+    auto env = this->context_->env();
+    auto schemaMgr = env->schemaMan_;
+    auto schema =
+        schemaMgr->getTagSchema(this->spaceId_, this->index_->get_schema_id().get_tag_id());
+    return schema;
+  });
+}
 
 ::nebula::cpp2::ErrorCode IndexVertexScanNode::init(InitContext& ctx) {
-  auto env = context_->env();
-  auto spaceId = context_->spaceId();
-  auto indexMgr = env->indexMan_;
-  auto schemaMgr = env->schemaMan_;
-  auto index = indexMgr->getTagIndex(spaceId, indexId_).value();
-  auto tagSchema = schemaMgr->getTagSchema(spaceId, index->get_schema_id().get_tag_id());
-  this->index_ = index;
-  this->tag_ = tagSchema;
-  return ::nebula::cpp2::ErrorCode::SUCCEEDED;
+  this->index_ = getIndex().value();
+  this->tag_ = getTag();
+  return IndexScanNode::init(ctx);
 }
 nebula::cpp2::ErrorCode IndexVertexScanNode::getBaseData(folly::StringPiece key,
                                                          std::pair<std::string, std::string>& kv) {
@@ -83,5 +111,9 @@ Map<std::string, Value> IndexVertexScanNode::decodeFromBase(const std::string& k
   }
   return values;
 }
+std::unique_ptr<IndexNode> IndexVertexScanNode::copy() {
+  return std::make_unique<IndexVertexScanNode>(*this);
+}
+
 }  // namespace storage
 }  // namespace nebula

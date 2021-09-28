@@ -6,18 +6,18 @@
 #pragma once
 
 #include "common/context/ExpressionContext.h"
-#include "common/expression/ExprVisitor.h"
 #include "common/expression/Expression.h"
 #include "folly/container/F14Map.h"
+#include "storage/ExprVisitorBase.h"
 #include "storage/exec/IndexNode.h"
 namespace nebula {
 namespace storage {
 class IndexSelectionNode : public IndexNode {
  public:
-  IndexSelectionNode(RuntimeContext *context,
-                     std::unique_ptr<Expression> expr,
-                     const std::vector<std::string> &inputCols);
+  IndexSelectionNode(const IndexSelectionNode &node);
+  IndexSelectionNode(RuntimeContext *context, Expression *expr);
   nebula::cpp2::ErrorCode init(InitContext &ctx) override;
+  std::unique_ptr<IndexNode> copy() override;
 
  private:
   ErrorOr<Row> doNext(bool &hasNext) override;
@@ -27,7 +27,7 @@ class IndexSelectionNode : public IndexNode {
     return result.type() == Value::Type::BOOL ? result.getBool() : false;
   }
   Map<std::string, size_t> colPos_;
-  std::unique_ptr<Expression> expr_;
+  Expression *expr_;
   class ExprContext : public ExpressionContext {
    public:
     explicit ExprContext(const Map<std::string, size_t> &colPos) : colPos_(colPos) {}
@@ -36,103 +36,65 @@ class IndexSelectionNode : public IndexNode {
     Value getTagProp(const std::string &tag, const std::string &prop) const override;
     // override
     const Value &getVar(const std::string &var) const override {
-      LOG(FATAL) << "Unexpect";
-      return Value();
+      UNUSED(var);
+      return fatal(__FILE__, __LINE__);
     }
     const Value &getVersionedVar(const std::string &var, int64_t version) const override {
-      LOG(FATAL) << "Unexpect";
-      return Value();
+      UNUSED(var), UNUSED(version);
+      return fatal(__FILE__, __LINE__);
     }
     const Value &getVarProp(const std::string &var, const std::string &prop) const override {
-      LOG(FATAL) << "Unexpect";
-      return Value();
+      UNUSED(var), UNUSED(prop);
+      return fatal(__FILE__, __LINE__);
     }
-
     Value getSrcProp(const std::string &tag, const std::string &prop) const override {
-      LOG(FATAL) << "Unexpect";
-      return Value();
+      UNUSED(tag), UNUSED(prop);
+      return fatal(__FILE__, __LINE__);
     }
     const Value &getDstProp(const std::string &tag, const std::string &prop) const override {
-      LOG(FATAL) << "Unexpect";
-      return Value();
+      UNUSED(tag), UNUSED(prop);
+      return fatal(__FILE__, __LINE__);
     }
     const Value &getInputProp(const std::string &prop) const override {
-      LOG(FATAL) << "Unexpect";
-      return Value();
+      UNUSED(prop);
+      return fatal(__FILE__, __LINE__);
     }
-    Value getVertex() const override {
-      LOG(FATAL) << "Unexpect";
-      return Value();
-    }
-    Value getEdge() const override {
-      LOG(FATAL) << "Unexpect";
-      return Value();
-    }
+    Value getVertex() const override { return fatal(__FILE__, __LINE__); }
+    Value getEdge() const override { return fatal(__FILE__, __LINE__); }
     Value getColumn(int32_t index) const override {
-      LOG(FATAL) << "Unexpect";
-      return Value();
+      UNUSED(index);
+      return fatal(__FILE__, __LINE__);
     }
-    void setVar(const std::string &var, Value val) override { LOG(FATAL) << "Unexpect"; }
+    void setVar(const std::string &var, Value val) override {
+      UNUSED(var), UNUSED(val);
+      fatal(__FILE__, __LINE__);
+    }
 
    private:
     const Map<std::string, size_t> &colPos_;
     const Row *row_;
+    inline const Value &fatal(const std::string &file, int line) const {
+      LOG(FATAL) << "Unexpect at " << file << ":" << line;
+      static Value placeholder;
+      return placeholder;
+    }
   };
   std::unique_ptr<ExprContext> ctx_;
 };
 
-class SelectionExprVisitor : public ::nebula::ExprVisitor {
+class SelectionExprVisitor : public ExprVisitorBase {
  public:
-  void visit(ConstantExpression *expr) override { return; }
-  void visit(UnaryExpression *expr) override { expr->operand()->accept(this); }
-  void visit(TypeCastingExpression *expr) override { expr->operand()->accept(this); }
-  void visit(LabelExpression *expr) override { return; }
-  void visit(LabelAttributeExpression *expr) override { return; }
-  void visit(ArithmeticExpression *expr) override {
-    expr->left()->accept(this);
-    expr->right()->accept(this);
-  }
-  void visit(RelationalExpression *expr) override {
-    expr->left()->accept(this);
-    expr->right()->accept(this);
-  }
-  void visit(SubscriptExpression *expr) override {
-    expr->left()->accept(this);
-    expr->right()->accept(this);
-  }
-  void visit(AttributeExpression *expr) override;
-  void visit(LogicalExpression *expr) override;
-  void visit(FunctionCallExpression *expr) override;
-  void visit(AggregateExpression *expr) override;
-  void visit(UUIDExpression *expr) override;
-  void visit(VariableExpression *expr) override;
-  void visit(VersionedVariableExpression *expr) override;
-  void visit(ListExpression *expr) override;
-  void visit(SetExpression *expr) override;
-  void visit(MapExpression *expr) override;
-  void visit(TagPropertyExpression *expr) override;
-  void visit(EdgePropertyExpression *expr) override;
-  void visit(InputPropertyExpression *expr) override;
-  void visit(VariablePropertyExpression *expr) override;
-  void visit(DestPropertyExpression *expr) override;
-  void visit(SourcePropertyExpression *expr) override;
-  void visit(EdgeSrcIdExpression *expr) override;
-  void visit(EdgeTypeExpression *expr) override;
-  void visit(EdgeRankExpression *expr) override;
-  void visit(EdgeDstIdExpression *expr) override;
-  void visit(VertexExpression *expr) override;
-  void visit(EdgeExpression *expr) override;
-  void visit(CaseExpression *expr) override;
-  void visit(PathBuildExpression *expr) override;
-  void visit(ColumnExpression *expr) override;
-  void visit(PredicateExpression *expr) override;
-  void visit(ListComprehensionExpression *expr) override;
-  void visit(ReduceExpression *expr) override;
-  void visit(SubscriptRangeExpression *expr) override;
+  void visit(EdgeSrcIdExpression *expr) override { requiredColumns_.insert(expr->prop()); }
+  void visit(EdgeTypeExpression *expr) override { requiredColumns_.insert(expr->prop()); }
+  void visit(EdgeRankExpression *expr) override { requiredColumns_.insert(expr->prop()); }
+  void visit(EdgeDstIdExpression *expr) override { requiredColumns_.insert(expr->prop()); }
+  void visit(TagPropertyExpression *expr) { requiredColumns_.insert(expr->prop()); }
+  void visit(EdgePropertyExpression *expr) override { requiredColumns_.insert(expr->prop()); }
   const Set<std::string> &getRequiredColumns();
   ::nebula::cpp2::ErrorCode getCode();
 
  private:
+  using ExprVisitorBase::visit;
   Set<std::string> requiredColumns_;
   ::nebula::cpp2::ErrorCode code_;
 };

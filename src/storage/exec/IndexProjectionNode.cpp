@@ -6,6 +6,8 @@
 #include "storage/exec/IndexProjectionNode.h"
 namespace nebula {
 namespace storage {
+IndexProjectionNode::IndexProjectionNode(const IndexProjectionNode& node)
+    : IndexNode(node), requiredColumns_(node.requiredColumns_), colPos_(node.colPos_) {}
 IndexProjectionNode::IndexProjectionNode(RuntimeContext* context,
                                          const std::vector<std::string>& requiredColumns)
     : IndexNode(context, "IndexProjectionNode"), requiredColumns_(requiredColumns) {}
@@ -46,6 +48,9 @@ Row IndexProjectionNode::project(Row&& row) {
     ret.emplace_back(std::move(row[colPos_[col]]));
   }
   return ret;
+}
+std::unique_ptr<IndexNode> IndexProjectionNode::copy() {
+  return std::make_unique<IndexProjectionNode>(*this);
 }
 
 }  // namespace storage
