@@ -20,6 +20,7 @@ namespace nebula {
 struct Coordinate {
   double x, y;
 
+  Coordinate() = default;
   Coordinate(double lng, double lat) : x(lng), y(lat) {}
 
   // TODO(jie) compare double correctly

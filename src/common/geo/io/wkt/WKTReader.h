@@ -61,10 +61,12 @@ class WKTReader {
     if (geom_ == nullptr) {
       return Status::StatementEmpty();  // WKTEmpty()
     }
-    auto *geom = geom_;
+    auto geom = geom_;
     geom_ = nullptr;
     scanner_.setWKT(nullptr);
-    return std::move(*geom);
+    auto tmp = std::move(*geom);
+    delete geom;
+    return tmp;
   }
 
  private:

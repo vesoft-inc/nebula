@@ -37,15 +37,15 @@ class WKTScanner;
     Point*                                  pointVal;
     LineString*                             lineVal;
     Polygon*                                polygonVal;
-    Coordinate*                             coordVal;
+    Coordinate                              coordVal;
     std::vector<Coordinate>*                coordListVal;
     std::vector<std::vector<Coordinate>>*   coordListListVal;
 }
 
 /* destructors */
-%destructor {} <geomVal> <pointVal> <lineVal> <polygonVal>
-%destructor {} <coordVal> <coordListVal> <coordListListVal>
-%destructor {} <doubleVal>
+%destructor {} <doubleVal> <coordVal>
+%destructor {} <geomVal>
+%destructor { delete $$; } <*>
 
 /* wkt shape type prefix */
 %token KW_POINT KW_LINESTRING KW_POLYGON
@@ -73,45 +73,53 @@ class WKTScanner;
 geometry
   : point {
     $$ = new Geometry(std::move(*$1));
+    delete $1;
     *geom = $$;
   }
   | linestring {
     $$ = new Geometry(std::move(*$1));
+    delete $1;
     *geom = $$;
   }
   | polygon {
     $$ = new Geometry(std::move(*$1));
+    delete $1;
     *geom = $$;
   }
 ;
 
 point
   : KW_POINT L_PAREN coordinate R_PAREN {
-      $$ = new Point(std::move(*$3));
+      $$ = new Point(std::move($3));
   }
   ;
 
 linestring
   : KW_LINESTRING L_PAREN coordinate_list R_PAREN {
       if ($3->size() < 2) {
+        delete $3;
         throw nebula::WKTParser::syntax_error(@3, "LineString must have at least 2 coordinates");
       }
       $$ = new LineString(std::move(*$3));
+      delete $3;
   }
   ;
 
 polygon
   : KW_POLYGON L_PAREN coordinate_list_list R_PAREN {
       for (size_t i = 0; i < $3->size(); ++i) {
-        auto coordList = (*$3)[i];
+        const auto &coordList = (*$3)[i];
         if (coordList.size() < 4) {
+          delete $3;
           throw nebula::WKTParser::syntax_error(@3, "Polygon's LinearRing must have at least 4 coordinates");
         }
         if (coordList.front() != coordList.back()) {
+          delete $3;
           throw nebula::WKTParser::syntax_error(@3, "Polygon's LinearRing must be closed");
         }
       }
       $$ = new Polygon(std::move(*$3));
+      delete $3;
   }
   ;
 
@@ -123,18 +131,19 @@ coordinate
       if (!Coordinate::isValidLat($2)) {
         throw nebula::WKTParser::syntax_error(@2, "Latitude must be between -90 and 90 degrees");
       }
-      $$ = new Coordinate($1, $2);
+      $$.x = $1;
+      $$.y = $2;
   }
   ;
 
 coordinate_list
   : coordinate {
       $$ = new std::vector<Coordinate>();
-      $$->emplace_back(std::move(*$1));
+      $$->emplace_back(std::move($1));
   }
   | coordinate_list COMMA coordinate {
       $$ = $1;
-      $$->emplace_back(std::move(*$3));
+      $$->emplace_back(std::move($3));
   }
   ;
 
@@ -142,11 +151,12 @@ coordinate_list_list
   : L_PAREN coordinate_list R_PAREN {
       $$ = new std::vector<std::vector<Coordinate>>();
       $$->emplace_back(std::move(*$2));
-
+      delete $2;
   }
   | coordinate_list_list COMMA L_PAREN coordinate_list R_PAREN {
       $$ = $1;
       $$->emplace_back(std::move(*$4));
+      delete $4;
   }
   ;
 

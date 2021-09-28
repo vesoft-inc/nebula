@@ -1156,8 +1156,12 @@ TEST(Value, Ctor) {
   Value vMap(Map({{"a", 9}, {"b", 10}}));
   EXPECT_TRUE(vMap.isMap());
   // TODO(jie) Add more geography value test
-  Value vGeo(Geography::fromWKT("LINESTRING(0 1, 2 7)").value());
-  EXPECT_TRUE(vGeo.isGeography());
+  Value vGeoPoint(Geography::fromWKT("POINT(0 1)").value());
+  EXPECT_TRUE(vGeoPoint.isGeography());
+  Value vGeoLine(Geography::fromWKT("LINESTRING(0 1,2 7)").value());
+  EXPECT_TRUE(vGeoLine.isGeography());
+  Value vGeoPolygon(Geography::fromWKT("POLYGON((0 1,2 3,4 5,6 7,0 1),(2 4,5 6,3 8,2 4))").value());
+  EXPECT_TRUE(vGeoPolygon.isGeography());
   // Disabled
   // Lead to compile error
   // Value v(nullptr);
