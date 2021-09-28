@@ -6,7 +6,6 @@
 
 #include "graph/planner/ngql/LookupPlanner.h"
 
-
 #include "common/base/Base.h"
 #include "graph/context/ast/QueryAstContext.h"
 #include "graph/planner/Planner.h"
@@ -31,23 +30,31 @@ StatusOr<SubPlan> LookupPlanner::transform(AstContext* astCtx) {
   auto from = static_cast<const LookupSentence*>(lookupCtx->sentence)->from();
   SubPlan plan;
   if (lookupCtx->isEdge) {
-    plan.tail = EdgeIndexFullScan::make(qctx,
-                                        nullptr,
-                                        from,
-                                        lookupCtx->space.id,
-                                        {},
-                                        lookupCtx->idxReturnCols,
-                                        lookupCtx->schemaId,
-                                        lookupCtx->isEmptyResultSet);
+    auto* edgeIndexFullScan = EdgeIndexFullScan::make(qctx,
+                                                      nullptr,
+                                                      from,
+                                                      lookupCtx->space.id,
+                                                      {},
+                                                      lookupCtx->idxReturnCols,
+                                                      lookupCtx->schemaId,
+                                                      lookupCtx->isEmptyResultSet);
+    if (lookupCtx->limit >= 0) {
+      edgeIndexFullScan->setLimit(lookupCtx->limit);
+    }
+    plan.tail = edgeIndexFullScan;
   } else {
-    plan.tail = TagIndexFullScan::make(qctx,
-                                       nullptr,
-                                       from,
-                                       lookupCtx->space.id,
-                                       {},
-                                       lookupCtx->idxReturnCols,
-                                       lookupCtx->schemaId,
-                                       lookupCtx->isEmptyResultSet);
+    auto* tagIndexFullScan = TagIndexFullScan::make(qctx,
+                                                    nullptr,
+                                                    from,
+                                                    lookupCtx->space.id,
+                                                    {},
+                                                    lookupCtx->idxReturnCols,
+                                                    lookupCtx->schemaId,
+                                                    lookupCtx->isEmptyResultSet);
+    if (lookupCtx->limit >= 0) {
+      tagIndexFullScan->setLimit(lookupCtx->limit);
+    }
+    plan.tail = tagIndexFullScan;
   }
   plan.tail->setColNames(lookupCtx->idxColNames);
 

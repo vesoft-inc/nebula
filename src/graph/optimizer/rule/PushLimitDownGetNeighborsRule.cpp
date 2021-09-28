@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "graph/optimizer/rule/LimitPushDownRule.h"
+#include "graph/optimizer/rule/PushLimitDownGetNeighborsRule.h"
 
 #include "common/expression/BinaryExpression.h"
 #include "common/expression/ConstantExpression.h"
@@ -27,12 +27,14 @@ using nebula::graph::QueryContext;
 namespace nebula {
 namespace opt {
 
-std::unique_ptr<OptRule> LimitPushDownRule::kInstance =
-    std::unique_ptr<LimitPushDownRule>(new LimitPushDownRule());
+std::unique_ptr<OptRule> PushLimitDownGetNeighborsRule::kInstance =
+    std::unique_ptr<PushLimitDownGetNeighborsRule>(new PushLimitDownGetNeighborsRule());
 
-LimitPushDownRule::LimitPushDownRule() { RuleSet::QueryRules().addRule(this); }
+PushLimitDownGetNeighborsRule::PushLimitDownGetNeighborsRule() {
+  RuleSet::QueryRules().addRule(this);
+}
 
-const Pattern &LimitPushDownRule::pattern() const {
+const Pattern &PushLimitDownGetNeighborsRule::pattern() const {
   static Pattern pattern =
       Pattern::create(graph::PlanNode::Kind::kLimit,
                       {Pattern::create(graph::PlanNode::Kind::kProject,
@@ -40,7 +42,7 @@ const Pattern &LimitPushDownRule::pattern() const {
   return pattern;
 }
 
-StatusOr<OptRule::TransformResult> LimitPushDownRule::transform(
+StatusOr<OptRule::TransformResult> PushLimitDownGetNeighborsRule::transform(
     OptContext *octx, const MatchedResult &matched) const {
   auto limitGroupNode = matched.node;
   auto projGroupNode = matched.dependencies.front().node;
@@ -79,7 +81,9 @@ StatusOr<OptRule::TransformResult> LimitPushDownRule::transform(
   return result;
 }
 
-std::string LimitPushDownRule::toString() const { return "LimitPushDownRule"; }
+std::string PushLimitDownGetNeighborsRule::toString() const {
+  return "PushLimitDownGetNeighborsRule";
+}
 
 }  // namespace opt
 }  // namespace nebula

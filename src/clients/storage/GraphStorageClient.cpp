@@ -491,6 +491,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::LookupIndexResp>> GraphStorageClient:
     bool isEdge,
     int32_t tagOrEdge,
     const std::vector<std::string>& returnCols,
+    int64_t limit,
     folly::EventBase* evb) {
   // TODO(sky) : instead of isEdge and tagOrEdge to nebula::cpp2::SchemaID for graph layer.
   auto status = getHostParts(space);
@@ -520,6 +521,7 @@ folly::SemiFuture<StorageRpcResponse<cpp2::LookupIndexResp>> GraphStorageClient:
     spec.set_schema_id(schemaId);
     req.set_indices(spec);
     req.set_common(common);
+    req.set_limit(limit);
   }
 
   return collectResponse(

@@ -61,7 +61,7 @@ class GoSentence final : public Sentence {
 
 class LookupSentence final : public Sentence {
  public:
-  LookupSentence(std::string* from, WhereClause* where, YieldClause* yield);
+  LookupSentence(std::string* from, WhereClause* where, YieldClause* yield, LimitClause* limit);
 
   const std::string& from() const { return *from_; }
 
@@ -69,12 +69,15 @@ class LookupSentence final : public Sentence {
 
   const YieldClause* yieldClause() const { return yieldClause_.get(); }
 
+  const LimitClause* limitClause() const { return limitClause_.get(); }
+
   std::string toString() const override;
 
  private:
   std::unique_ptr<std::string> from_;
   std::unique_ptr<WhereClause> whereClause_;
   std::unique_ptr<YieldClause> yieldClause_;
+  std::unique_ptr<LimitClause> limitClause_;
 };
 
 class UseSentence final : public Sentence {

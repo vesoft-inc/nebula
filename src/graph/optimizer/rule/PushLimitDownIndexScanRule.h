@@ -1,11 +1,10 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
+/* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#ifndef GRAPH_OPTIMIZER_RULE_LIMITPUSHDOWN_H_
-#define GRAPH_OPTIMIZER_RULE_LIMITPUSHDOWN_H_
+#pragma once
 
 #include <memory>
 
@@ -14,7 +13,7 @@
 namespace nebula {
 namespace opt {
 
-class LimitPushDownRule final : public OptRule {
+class PushLimitDownIndexScanRule final : public OptRule {
  public:
   const Pattern &pattern() const override;
 
@@ -24,12 +23,10 @@ class LimitPushDownRule final : public OptRule {
   std::string toString() const override;
 
  private:
-  LimitPushDownRule();
+  PushLimitDownIndexScanRule();
 
   static std::unique_ptr<OptRule> kInstance;
 };
 
 }  // namespace opt
 }  // namespace nebula
-
-#endif  // GRAPH_OPTIMIZER_RULE_LIMITPUSHDOWN_H_
