@@ -5,7 +5,6 @@
 
 #include "graph/validator/FindPathValidator.h"
 
-#include "common/expression/VariableExpression.h"
 #include "graph/planner/plan/Algo.h"
 #include "graph/planner/plan/Logic.h"
 #include "graph/util/ValidateUtil.h"

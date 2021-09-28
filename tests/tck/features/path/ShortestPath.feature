@@ -316,42 +316,42 @@ Feature: Shortest Path
   Scenario: [1] Shortest Path With Limit
     When executing query:
       """
-      FIND SHORTEST PATH FROM "Tim Duncan" TO "Nobody","Spur" OVER like,serve UPTO 3 STEPS | ORDER BY $-.path | LIMIT 3
+      FIND SHORTEST PATH FROM "Tim Duncan" TO "Nobody","Spur" OVER like,serve UPTO 3 STEPS YIELD path as p | ORDER BY $-.p | LIMIT 3
       """
     Then the result should be, in any order, with relax comparison:
-      | path |
+      | p |
 
   Scenario: [2] Shortest Path With Limit
     When executing query:
       """
-      FIND SHORTEST PATH FROM "Shaquille O\'Neal", "Nobody" TO "Manu Ginobili", "Spurs", "Lakers" OVER * UPTO 5 STEPS
-      | ORDER BY $-.path | LIMIT 2
+      FIND SHORTEST PATH FROM "Shaquile O\'Neal", "Nobody" TO "Manu Ginobili", "Spurs", "Lakers" OVER * UPTO 5 STEPS YIELD path as p |
+      ORDER BY $-.p | LIMIT 2
       """
     Then the result should be, in any order, with relax comparison:
-      | path                                                                      |
-      | <("Shaquille O'Neal")-[:serve]->("Lakers")>                               |
-      | <("Shaquille O'Neal")-[:like]->("Tim Duncan")-[:like]->("Manu Ginobili")> |
+      | p                                                                        |
+      | <("Shaquile O'Neal")-[:serve]->("Lakers")>                               |
+      | <("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:like]->("Manu Ginobili")> |
 
   Scenario: [3] Shortest Path With Limit
     When executing query:
       """
-      GO FROM "Tim Duncan" over * YIELD like._dst AS src, serve._src AS dst
-      | FIND SHORTEST PATH FROM $-.src TO $-.dst OVER like UPTO 5 STEPS
-      | ORDER BY $-.path | LIMIT 1
+      GO FROM "Tim Duncan" over * YIELD like._dst AS src, serve._src AS dst |
+      FIND SHORTEST PATH FROM $-.src TO $-.dst OVER like UPTO 5 STEPS YIELD path as p |
+      ORDER BY $-.p | LIMIT 1
       """
     Then the result should be, in any order, with relax comparison:
-      | path                                        |
+      | p                                           |
       | <("Manu Ginobili")-[:like]->("Tim Duncan")> |
 
   Scenario: [4] Shortest Path With Limit
     When executing query:
       """
-      GO FROM "Tim Duncan" over * YIELD like._dst AS src, serve._src AS dst
-      | FIND SHORTEST PATH FROM $-.src TO $-.dst OVER like UPTO 5 STEPS
-      | ORDER BY $-.path | LIMIT 10
+      GO FROM "Tim Duncan" over * YIELD like._dst AS src, serve._src AS dst |
+      FIND SHORTEST PATH FROM $-.src TO $-.dst OVER like UPTO 5 STEPS YIELD path as p |
+      ORDER BY $-.p | LIMIT 10
       """
     Then the result should be, in any order, with relax comparison:
-      | path                                        |
+      | p                                           |
       | <("Manu Ginobili")-[:like]->("Tim Duncan")> |
       | <("Tony Parker")-[:like]->("Tim Duncan")>   |
 
@@ -512,3 +512,52 @@ Feature: Shortest Path
       | <("Tony Parker" :player{age: 36, name: "Tony Parker"})<-[:teammate@0 {end_year: 2016, start_year: 2002}]-("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})> |
       | <("Tony Parker" :player{age: 36, name: "Tony Parker"})-[:like@0 {likeness: 95}]->("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})>                         |
       | <("Tony Parker" :player{age: 36, name: "Tony Parker"})-[:teammate@0 {end_year: 2018, start_year: 2002}]->("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})> |
+
+  Scenario: Shortest Path YIELD path
+    When executing query:
+      """
+      FIND SHORTEST PATH FROM "Shaquile O\'Neal", "Nobody" TO "Manu Ginobili", "Spurs", "Lakers" OVER * UPTO 5 STEPS YIELD path as p
+      """
+    Then the result should be, in any order, with relax comparison:
+      | p                                                                            |
+      | <("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:serve]->("Spurs")>            |
+      | <("Shaquile O'Neal")-[:serve]->("Lakers")>                                   |
+      | <("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:like]->("Manu Ginobili")>     |
+      | <("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:teammate]->("Manu Ginobili")> |
+    When executing query:
+      """
+      FIND SHORTEST PATH FROM "Shaquile O\'Neal", "Nobody" TO "Manu Ginobili", "Spurs", "Lakers" OVER * UPTO 5 STEPS YIELD path as p |
+      YIELD length($-.p) as length
+      """
+    Then the result should be, in any order, with relax comparison:
+      | length |
+      | 2      |
+      | 1      |
+      | 2      |
+      | 2      |
+    When executing query:
+      """
+      FIND SHORTEST PATH WITH PROP FROM "Tony Parker", "Yao Ming" TO "Manu Ginobili", "Spurs", "Lakers" OVER * BIDIRECT WHERE teammate.start_year is not EMPTY OR like.likeness > 90 UPTO 3 STEPS YIELD path as p |
+      YIELD nodes($-.p) as nodes
+      """
+    Then the result should be, in any order, with relax comparison:
+      | nodes                                                                                                              |
+      | [("Tony Parker" :player{age: 36, name: "Tony Parker"}), ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})] |
+      | [("Tony Parker" :player{age: 36, name: "Tony Parker"}), ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})] |
+      | [("Tony Parker" :player{age: 36, name: "Tony Parker"}), ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})] |
+    When executing query:
+      """
+      FIND SHORTEST PATH WITH PROP FROM "Tony Parker", "Yao Ming" TO "Manu Ginobili", "Spurs", "Lakers" OVER * BIDIRECT WHERE teammate.start_year is not EMPTY OR like.likeness > 90 UPTO 3 STEPS YIELD path as p |
+      YIELD distinct nodes($-.p) as nodes
+      """
+    Then the result should be, in any order, with relax comparison:
+      | nodes                                                                                                              |
+      | [("Tony Parker" :player{age: 36, name: "Tony Parker"}), ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})] |
+    When executing query:
+      """
+      FIND SHORTEST PATH FROM "Tiago Splitter" TO "Tim Duncan" OVER * UPTO 1 STEPS YIELD path as p |
+      YIELD relationships($-.p) as relationships
+      """
+    Then the result should be, in any order, with relax comparison:
+      | relationships                                  |
+      | [[:like "Tiago Splitter"->"Tim Duncan" @0 {}]] |

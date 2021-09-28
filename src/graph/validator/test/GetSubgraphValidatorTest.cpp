@@ -190,7 +190,7 @@ TEST_F(GetSubgraphValidatorTest, invalidYield) {
     std::string query = "GET SUBGRAPH WITH PROP FROM \"Tim Duncan\" YIELD path";
     auto result = checkResult(query);
     EXPECT_EQ(std::string(result.message()),
-              "SemanticError: Get Subgraph only support YIELD vertices OR edges");
+              "SyntaxError: please add alias when using path. near `path'");
   }
   {
     std::string query = "GET SUBGRAPH WITH PROP FROM \"Tim Duncan\" YIELD 123";
