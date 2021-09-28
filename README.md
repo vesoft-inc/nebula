@@ -4,13 +4,16 @@
   <br>A distributed, scalable, lightning-fast graph database<br>
 </p>
 <p align="center">
+  <a href="https://app.codecov.io/gh/vesoft-inc/nebula">
+    <img src="https://codecov.io/github/vesoft-inc/nebula/coverage.svg?branch=master" alt="code coverage"/>
+  </a>
   <a href="https://github.com/vesoft-inc/nebula/actions?workflow=nightly">
     <img src="https://github.com/vesoft-inc/nebula/workflows/nightly/badge.svg" alt="nightly build"/>
   </a>
-  <a href="http://githubbadges.com/star.svg?user=vesoft-inc&repo=nebula&style=default">
+  <a href="https://github.com/vesoft-inc/nebula/stargazers">
     <img src="http://githubbadges.com/star.svg?user=vesoft-inc&repo=nebula&style=default" alt="nebula star"/>
   </a>
-  <a href="http://githubbadges.com/fork.svg?user=vesoft-inc&repo=nebula&style=default">
+  <a href="https://github.com/vesoft-inc/nebula/network/members">
     <img src="http://githubbadges.com/fork.svg?user=vesoft-inc&repo=nebula&style=default" alt="nebula fork"/>
   </a>
   <br>
