@@ -502,6 +502,27 @@ ErrorOr<nebula::cpp2::ErrorCode, cpp2::FTIndex> BaseProcessor<RESP>::getFTIndex(
 }
 
 template <typename RESP>
+nebula::cpp2::ErrorCode BaseProcessor<RESP>::propertyCheck(
+    const std::vector<cpp2::AlterSchemaItem>& alterItems) {
+  for (const auto& tagItem : alterItems) {
+    if (*tagItem.op_ref() == nebula::meta::cpp2::AlterSchemaOp::CHANGE ||
+        *tagItem.op_ref() == nebula::meta::cpp2::AlterSchemaOp::DROP) {
+      const auto& tagCols = tagItem.get_schema().get_columns();
+      for (const auto& tCol : tagCols) {
+        if (tCol.default_value_ref().has_value() ||
+            (tCol.nullable_ref().has_value() && tCol.get_nullable())) {
+          continue;
+        }
+        LOG(ERROR) << "column " << tCol.get_name()
+                   << " must have either default or nullable attribute";
+        return nebula::cpp2::ErrorCode::E_UNSUPPORTED;
+      }
+    }
+  }
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
+}
+
+template <typename RESP>
 nebula::cpp2::ErrorCode BaseProcessor<RESP>::indexCheck(
     const std::vector<cpp2::IndexItem>& items,
     const std::vector<cpp2::AlterSchemaItem>& alterItems) {

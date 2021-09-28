@@ -224,6 +224,9 @@ class BaseProcessor {
 
   void doSyncMultiRemoveAndUpdate(std::vector<std::string> keys);
 
+  // The target columns must have either default or nullable attribute.
+  nebula::cpp2::ErrorCode propertyCheck(const std::vector<cpp2::AlterSchemaItem>& alterItems);
+
   /**
    * Check the edge or tag contains indexes when alter it.
    **/

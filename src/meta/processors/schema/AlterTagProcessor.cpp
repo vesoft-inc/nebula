@@ -57,6 +57,13 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
   // Update schema column
   auto& tagItems = req.get_tag_items();
 
+  auto propRet = propertyCheck(tagItems);
+  if (propRet != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    handleErrorCode(propRet);
+    onFinished();
+    return;
+  }
+
   auto iCode = getIndexes(spaceId, tagId);
   if (!nebula::ok(iCode)) {
     handleErrorCode(nebula::error(iCode));

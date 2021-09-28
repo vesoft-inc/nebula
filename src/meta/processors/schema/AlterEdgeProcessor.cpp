@@ -57,6 +57,13 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
   // Update schema column
   auto& edgeItems = req.get_edge_items();
 
+  auto propRet = propertyCheck(edgeItems);
+  if (propRet != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    handleErrorCode(propRet);
+    onFinished();
+    return;
+  }
+
   auto iRet = getIndexes(spaceId, edgeType);
   if (!nebula::ok(iRet)) {
     handleErrorCode(nebula::error(iRet));
