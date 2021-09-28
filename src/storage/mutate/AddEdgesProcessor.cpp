@@ -130,7 +130,18 @@ void AddEdgesProcessor::doProcess(const cpp2::AddEdgesRequest& req) {
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
       handleAsync(spaceId_, partId, code);
     } else {
-      doPut(spaceId_, partId, std::move(data));
+      if (consistOp_) {
+        auto batchHolder = std::make_unique<kvstore::BatchHolder>();
+        (*consistOp_)(*batchHolder, &data);
+        auto batch = encodeBatchValue(std::move(batchHolder)->getBatch());
+
+        env_->kvstore_->asyncAppendBatch(
+            spaceId_, partId, std::move(batch), [partId, this](auto rc) {
+              handleAsync(spaceId_, partId, rc);
+            });
+      } else {
+        doPut(spaceId_, partId, std::move(data));
+      }
     }
   }
 }
@@ -236,8 +247,7 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
             if (oReader != nullptr) {
               auto oi = indexKey(partId, oReader.get(), key, index);
               if (!oi.empty()) {
-                // Check the index is building for the specified partition or
-                // not.
+                // Check the index is building for the specified partition or not.
                 auto indexState = env_->getIndexState(spaceId_, partId);
                 if (env_->checkRebuilding(indexState)) {
                   auto delOpKey = OperationKeyUtils::deleteOperationKey(partId);
@@ -259,8 +269,7 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
               if (!nik.empty()) {
                 auto v = CommonUtils::ttlValue(schema.get(), nReader.get());
                 auto niv = v.ok() ? IndexKeyUtils::indexVal(std::move(v).value()) : "";
-                // Check the index is building for the specified partition or
-                // not.
+                // Check the index is building for the specified partition or not.
                 auto indexState = env_->getIndexState(spaceId_, partId);
                 if (env_->checkRebuilding(indexState)) {
                   auto opKey = OperationKeyUtils::modifyOperationKey(partId, std::move(nik));
@@ -286,6 +295,9 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
       env_->edgesML_->unlockBatch(dummyLock);
       handleAsync(spaceId_, partId, code);
       continue;
+    }
+    if (consistOp_) {
+      (*consistOp_)(*batchHolder, nullptr);
     }
     auto batch = encodeBatchValue(batchHolder->getBatch());
     DCHECK(!batch.empty());
@@ -318,8 +330,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> AddEdgesProcessor::addEdges(
    *     kv(part1_src1_edgeType1_rank1_dst1 , v3)
    *     kv(part1_src1_edgeType1_rank1_dst1 , v4)
    *
-   * Ultimately, kv(part1_src1_edgeType1_rank1_dst1 , v4) . It's just what I
-   * need.
+   * Ultimately, kv(part1_src1_edgeType1_rank1_dst1 , v4) . It's just what I need.
    */
   std::unordered_map<std::string, std::string> newEdges;
   std::for_each(

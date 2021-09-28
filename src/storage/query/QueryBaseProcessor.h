@@ -125,6 +125,10 @@ struct EdgeContext {
   // offset is the start index of first edge type in a response row
   size_t offset_;
   size_t statCount_ = 0;
+
+  // additional operator for eventually-consistent edges
+  std::vector<std::pair<std::string, std::string>> kvAppend;
+  std::vector<std::string> kvErased;
 };
 
 template <typename REQ, typename RESP>

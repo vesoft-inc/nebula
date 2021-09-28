@@ -191,10 +191,7 @@ Status InsertEdgesValidator::check() {
 }
 
 Status InsertEdgesValidator::prepareEdges() {
-  using IsoLevel = meta::cpp2::IsolationLevel;
-  auto isoLevel = space_.spaceDesc.isolation_level_ref().value_or(IsoLevel::DEFAULT);
-  auto useToss = isoLevel == IsoLevel::TOSS;
-  auto size = useToss ? rows_.size() : rows_.size() * 2;
+  auto size = FLAGS_enable_experimental_feature ? rows_.size() : rows_.size() * 2;
   edges_.reserve(size);
 
   size_t fieldNum = schema_->getNumFields();
@@ -276,7 +273,7 @@ Status InsertEdgesValidator::prepareEdges() {
     edge.set_key(key);
     edge.set_props(std::move(entirePropValues));
     edges_.emplace_back(edge);
-    if (!useToss) {
+    if (!FLAGS_enable_experimental_feature) {
       // inbound
       key.set_src(dstId);
       key.set_dst(srcId);
@@ -792,10 +789,7 @@ Status UpdateEdgeValidator::toPlan() {
                                    {},
                                    condition_,
                                    {});
-  using IsoLevel = meta::cpp2::IsolationLevel;
-  auto isoLevel = space_.spaceDesc.isolation_level_ref().value_or(IsoLevel::DEFAULT);
-  auto useToss = isoLevel == IsoLevel::TOSS;
-  if (useToss) {
+  if (FLAGS_enable_experimental_feature) {
     root_ = outNode;
     tail_ = root_;
   } else {

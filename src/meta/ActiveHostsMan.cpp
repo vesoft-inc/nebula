@@ -37,17 +37,16 @@ nebula::cpp2::ErrorCode ActiveHostsMan::updateHostInfo(kvstore::KVStore* kv,
     }
     auto keys = leaderKeys;
     std::vector<std::string> vals;
-    // let see if this c++17 syntax can pass
-    auto [rc, statuses] = kv->multiGet(kDefaultSpaceId, kDefaultPartId, std::move(keys), &vals);
+    auto [rc, statusVec] = kv->multiGet(kDefaultSpaceId, kDefaultPartId, std::move(keys), &vals);
     if (rc != nebula::cpp2::ErrorCode::SUCCEEDED &&
         rc != nebula::cpp2::ErrorCode::E_PARTIAL_RESULT) {
       LOG(INFO) << "error rc = " << apache::thrift::util::enumNameSafe(rc);
       return rc;
     }
-    TermID term;
+    TermID term = -1;
     nebula::cpp2::ErrorCode code;
-    for (auto i = 0U; i != statuses.size(); ++i) {
-      if (statuses[i].ok()) {
+    for (auto i = 0U; i != leaderKeys.size(); ++i) {
+      if (statusVec[i].ok()) {
         std::tie(std::ignore, term, code) = MetaServiceUtils::parseLeaderValV3(vals[i]);
         if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
           LOG(WARNING) << apache::thrift::util::enumNameSafe(code);

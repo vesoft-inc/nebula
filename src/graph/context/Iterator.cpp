@@ -259,6 +259,25 @@ void GetNeighborsIter::erase() {
   next();
 }
 
+void GetNeighborsIter::sample(const int64_t count) {
+  algorithm::ReservoirSampling<std::tuple<List*, List>> sampler_(count);
+  doReset(0);
+  for (; valid(); next()) {
+    // <current List of Edge, value of Edge>
+    std::tuple<List*, List> t =
+        std::make_tuple(const_cast<List*>(currentCol_), std::move(*currentEdge_));
+    sampler_.sampling(std::move(t));
+  }
+  doReset(0);
+  clearEdges();
+  auto samples = std::move(sampler_).samples();
+  for (auto& sample : samples) {
+    auto* col = std::get<0>(sample);
+    col->emplace_back(std::move(std::get<1>(sample)));
+  }
+  doReset(0);
+}
+
 const Value& GetNeighborsIter::getColumn(const std::string& col) const {
   if (!valid()) {
     return Value::kNullValue;
@@ -452,6 +471,51 @@ List GetNeighborsIter::getEdges() {
   }
   reset();
   return edges;
+}
+
+void GetNeighborsIter::nextCol() {
+  if (!valid()) {
+    return;
+  }
+  DCHECK(!noEdge_);
+
+  // go to next column
+  while (++colIdx_) {
+    if (colIdx_ < currentDs_->colUpperBound) {
+      const auto& currentCol = currentRow_->operator[](colIdx_);
+      if (!currentCol.isList() || currentCol.getList().empty()) {
+        continue;
+      }
+
+      currentCol_ = &currentCol.getList();
+      // edgeIdxUpperBound_ = currentCol_->size();
+      // edgeIdx_ = -1;
+      break;
+    }
+    // go to next row
+    if (++currentRow_ < rowsUpperBound_) {
+      colIdx_ = currentDs_->colLowerBound;
+      continue;
+    }
+
+    // go to next dataset
+    if (++currentDs_ < dsIndices_.end()) {
+      colIdx_ = currentDs_->colLowerBound;
+      currentRow_ = currentDs_->ds->begin();
+      rowsUpperBound_ = currentDs_->ds->end();
+      continue;
+    }
+    break;
+  }
+  if (currentDs_ == dsIndices_.end()) {
+    return;
+  }
+}
+
+void GetNeighborsIter::clearEdges() {
+  for (; colValid(); nextCol()) {
+    const_cast<List*>(currentCol_)->clear();
+  }
 }
 
 SequentialIter::SequentialIter(std::shared_ptr<Value> value) : Iterator(value, Kind::kSequential) {

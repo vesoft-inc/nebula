@@ -21,6 +21,8 @@ nebula_add_library(
     rule/MergeGetNbrsAndProjectRule.cpp
     rule/IndexScanRule.cpp
     rule/PushLimitDownGetNeighborsRule.cpp
+    rule/PushStepSampleDownGetNeighborsRule.cpp
+    rule/PushStepLimitDownGetNeighborsRule.cpp
     rule/TopNRule.cpp
     rule/PushFilterDownAggregateRule.cpp
     rule/PushFilterDownProjectRule.cpp

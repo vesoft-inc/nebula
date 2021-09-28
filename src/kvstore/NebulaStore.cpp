@@ -374,6 +374,9 @@ std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
     }
   }
   raftService_->addPartition(part);
+  for (auto& func : onNewPartAdded_) {
+    func.second(part);
+  }
   part->start(std::move(peers), asLearner);
   diskMan_->addPartToPath(spaceId, partId, engine->getDataRoot());
   return part;

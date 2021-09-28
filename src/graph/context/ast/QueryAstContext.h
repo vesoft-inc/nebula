@@ -84,6 +84,8 @@ struct GoContext final : AstContext {
   bool distinct{false};
   // true: sample, false: limit
   bool random{false};
+  // step limit value
+  std::vector<int64_t> limits;
   std::vector<std::string> colNames;
 
   std::string vidsVar;
@@ -137,6 +139,20 @@ struct FetchVerticesContext final : public AstContext {
   YieldColumns* yieldExpr{nullptr};
   ExpressionProps exprProps;
 
+  // store the result of the previous sentence
+  std::string inputVarName;
+};
+
+struct FetchEdgesContext final : public AstContext {
+  Expression* src{nullptr};
+  Expression* dst{nullptr};
+  Expression* rank{nullptr};
+  Expression* type{nullptr};
+
+  ExpressionProps exprProps;
+  YieldColumns* yieldExpr{nullptr};
+  std::string edgeName;
+  bool distinct{false};
   // store the result of the previous sentence
   std::string inputVarName;
 };

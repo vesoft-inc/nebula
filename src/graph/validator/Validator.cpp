@@ -137,6 +137,7 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
     case Sentence::Kind::kBalance:
       return std::make_unique<BalanceValidator>(sentence, context);
     case Sentence::Kind::kAdminJob:
+    case Sentence::Kind::kAdminShowJobs:
       return std::make_unique<AdminJobValidator>(sentence, context);
     case Sentence::Kind::kFetchVertices:
       return std::make_unique<FetchVerticesValidator>(sentence, context);
@@ -376,38 +377,6 @@ bool Validator::evaluableExpr(const Expression* expr) const {
   EvaluableExprVisitor visitor;
   const_cast<Expression*>(expr)->accept(&visitor);
   return visitor.ok();
-}
-
-StatusOr<std::string> Validator::checkRef(const Expression* ref, Value::Type type) {
-  if (ref->kind() == Expression::Kind::kInputProperty) {
-    const auto* propExpr = static_cast<const PropertyExpression*>(ref);
-    ColDef col(propExpr->prop(), type);
-    const auto find = std::find(inputs_.begin(), inputs_.end(), col);
-    if (find == inputs_.end()) {
-      return Status::SemanticError("No input property `%s'", propExpr->prop().c_str());
-    }
-    return inputVarName_;
-  }
-  if (ref->kind() == Expression::Kind::kVarProperty) {
-    const auto* propExpr = static_cast<const PropertyExpression*>(ref);
-    ColDef col(propExpr->prop(), type);
-
-    const auto& outputVar = propExpr->sym();
-    const auto& var = vctx_->getVar(outputVar);
-    if (var.empty()) {
-      return Status::SemanticError("No variable `%s'", outputVar.c_str());
-    }
-    const auto find = std::find(var.begin(), var.end(), col);
-    if (find == var.end()) {
-      return Status::SemanticError(
-          "No property `%s' in variable `%s'", propExpr->prop().c_str(), outputVar.c_str());
-    }
-    userDefinedVarNameList_.emplace(outputVar);
-    return outputVar;
-  }
-  // it's guranteed by parser
-  DLOG(FATAL) << "Unexpected expression " << ref->kind();
-  return Status::SemanticError("Unexpected expression.");
 }
 
 Status Validator::toPlan() {
