@@ -194,8 +194,10 @@ class ExpressionTest : public ::testing::Test {
     boost::split(splitString, expr, boost::is_any_of(" \t"));
     Expression *ep = ExpressionCalu(splitString);
     */
-    Expression *ep = gParser.parse(exprSymbol);
-    auto eval = Expression::eval(ep, gExpCtxt);
+    std::string sentence = "RETURN " + exprSymbol;
+    auto result = gParser.parse(sentence);
+    auto *yieldSentence = static_cast<YieldSentence*>(result.get());
+    auto eval = Expression::eval(yieldSentence->yield()->yields()->back()->expr(), gExpCtxt);
     EXPECT_EQ(eval.type(), expected.type()) << "type check failed: " << ep->toString();
     EXPECT_EQ(eval, expected) << "check failed: " << ep->toString();
   }
@@ -208,7 +210,10 @@ class ExpressionTest : public ::testing::Test {
     boost::split(splitString, expr, boost::is_any_of(" \t"));
     Expression *ep = ExpressionCalu(splitString);
     */
-    Expression *ep = gParser.parse(exprSymbol);
+    std::string sentence = "RETURN " + exprSymbol;
+    auto result = gParser.parse(sentence);
+    auto *yieldSentence = static_cast<YieldSentence*>(result.get());
+    Expression *ep = yieldSentence->yield()->yields()->back()->expr();
     EXPECT_EQ(ep->toString(), expected);
   }
 
@@ -222,12 +227,8 @@ class ExpressionTest : public ::testing::Test {
     */
     std::string sentence = "RETURN " + name + "(" + args + ")";
     auto result = gParser.parse(sentence).value();
-    if (result == nullptr) {
-      std::cout << "parse failed" << std::endl;
-      return;
-    }
-    
-    auto eval = Expression::eval(functionCall, gExpCtxt);
+    auto *yieldSentence = static_cast<YieldSentence*>(result.get());
+    auto eval = Expression::eval(yieldSentence->yield()->yields()->back()->expr(), gExpCtxt);
     // EXPECT_EQ(eval.type(), expected.type());
     EXPECT_EQ(eval, expected);
   }
