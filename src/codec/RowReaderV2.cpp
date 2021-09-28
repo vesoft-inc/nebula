@@ -177,7 +177,7 @@ Value RowReaderV2::getValueByIndex(const int64_t index) const noexcept {
     }
     case meta::cpp2::PropertyType::GEOGRAPHY: {
       // TODO(jie)
-      return Geography("");
+      return Geography();
     }
     case meta::cpp2::PropertyType::UNKNOWN:
       break;

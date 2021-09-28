@@ -8,23 +8,23 @@
 
 namespace nebula {
 
-std::string WKTWriter::write(const Geometry* geom) const {
+std::string WKTWriter::write(const Geometry& geom) const {
   std::string wkt = "";
 
-  auto shape = geom->shape();
+  auto shape = geom.shape();
   switch (shape) {
     case GeoShape::POINT: {
       wkt.append("POINT");
-      const Point* point = static_cast<const Point*>(geom);
+      const Point& point = geom.point();
       wkt.append("(");
-      writeCoordinate(wkt, point->coord);
+      writeCoordinate(wkt, point.coord);
       wkt.append(")");
       return wkt;
     }
     case GeoShape::LINESTRING: {
       wkt.append("LINESTRING");
-      const LineString* line = static_cast<const LineString*>(geom);
-      auto coordList = line->coordList;
+      const LineString& line = geom.lineString();
+      auto coordList = line.coordList;
       uint32_t numPoints = coordList.size();
       UNUSED(numPoints);
       wkt.append("(");
@@ -34,8 +34,8 @@ std::string WKTWriter::write(const Geometry* geom) const {
     }
     case GeoShape::POLYGON: {
       wkt.append("POLYGON");
-      const Polygon* polygon = static_cast<const Polygon*>(geom);
-      auto coordListList = polygon->coordListList;
+      const Polygon& polygon = geom.polygon();
+      auto coordListList = polygon.coordListList;
       uint32_t numRings = coordListList.size();
       UNUSED(numRings);
       wkt.append("(");
@@ -44,7 +44,7 @@ std::string WKTWriter::write(const Geometry* geom) const {
       return wkt;
     }
     default:
-      LOG(FATAL)
+      LOG(ERROR)
           << "Geomtry shapes other than Point/LineString/Polygon are not currently supported";
       return "";
   }
@@ -81,8 +81,6 @@ void WKTWriter::WKTWriter::writeCoordinateListList(
 
 void WKTWriter::writeDouble(std::string& wkt, double v) const {
   wkt.append(folly::to<std::string>(v));
-  LOG(INFO) << "writeDouble(wkt, v): " << wkt << ", " << v
-            << ", folly::to: " << folly::to<std::string>(v);
 }
 
 }  // namespace nebula

@@ -38,29 +38,29 @@ static const std::unordered_map<GeoShape, S2Region> kShapeTypeToS2Region = {
 */
 // clang-format on
 
-// Do not construct a S2 data when constructing Geography. It's expensive.
+// Do not construct a S2 object when constructing Geography. It's expensive.
 // We just construct S2 when doing computation.
 struct Geography {
   std::string wkb;  // TODO(jie) Is it better to store Geometry* or S2Region* here?
 
   Geography() = default;
+
   explicit Geography(const std::string& bytes) {
-    // TODO(jie): Ensure the bytes is valid
+    // TODO(jie): Must ensure the bytes is valid
     wkb = bytes;
-    LOG(INFO) << "Geography.wkb: " << wkb << ", wkb.size(): " << wkb.size();
   }
 
   static StatusOr<std::unique_ptr<Geography>> fromWKT(const std::string& wkt);
 
   GeoShape shape() const;
 
-  std::string asWKT() const;
+  std::unique_ptr<std::string> asWKT() const;
 
-  std::string asWKB() const;
+  std::unique_ptr<std::string> asWKBHex() const;
 
   std::unique_ptr<S2Region> asS2() const;
 
-  std::string toString() const { return asWKT(); }
+  std::string toString() const { return wkb; }
 
   folly::dynamic toJson() const { return toString(); }
 

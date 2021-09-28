@@ -345,10 +345,7 @@ Value::Value(const DataSet& v) {
 
 Value::Value(DataSet&& v) { setG(std::make_unique<DataSet>(std::move(v))); }
 
-Value::Value(const Geography& v) {
-  auto c = std::make_unique<Geography>(v);
-  setGG(std::move(c));
-}
+Value::Value(const Geography& v) { setGG(std::make_unique<Geography>(v)); }
 
 Value::Value(Geography&& v) { setGG(std::make_unique<Geography>(std::move(v))); }
 

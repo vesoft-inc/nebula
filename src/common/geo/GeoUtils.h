@@ -17,20 +17,26 @@ namespace nebula {
 
 class GeoUtils final {
  public:
-  static std::unique_ptr<S2Region> s2RegionFromGeomtry(const Geometry* geom) {
-    switch (geom->shape()) {
+  static std::unique_ptr<S2Region> s2RegionFromGeomtry(const Geometry& geom) {
+    switch (geom.shape()) {
       case GeoShape::POINT: {
-        const auto* point = static_cast<const Point*>(geom);
-        auto s2Point = s2PointFromCoordinate(point->coord);
+        const auto& point = geom.point();
+        auto s2Point = s2PointFromCoordinate(point.coord);
+        if (!S2::IsUnitLength(s2Point)) {  // S2LatLng::IsValid()
+          return nullptr;
+        }
         return std::make_unique<S2PointRegion>(s2Point);
       }
       case GeoShape::LINESTRING: {
-        const auto* lineString = static_cast<const LineString*>(geom);
-        auto coordList = lineString->coordList;
-        DCHECK_GE(coordList.size(), 2);
+        const auto& lineString = geom.lineString();
+        auto coordList = lineString.coordList;
+        if (UNLIKELY(coordList.size() < 2)) {
+          LOG(ERROR) << "LineString must have at least 2 coordinates";
+          return nullptr;
+        }
         removeAdjacentDuplicateCoordinates(coordList);
         if (coordList.size() < 2) {
-          LOG(INFO)
+          LOG(ERROR)
               << "Invalid LineString, adjacent coordinates must not be identical or antipodal.";
           return nullptr;
         }
@@ -38,36 +44,45 @@ class GeoUtils final {
         auto s2Points = s2PointsFromCoordinateList(coordList);
         auto s2Polyline = std::make_unique<S2Polyline>(s2Points, S2Debug::DISABLE);
         if (!s2Polyline->IsValid()) {
+          LOG(ERROR) << "Invalid S2Polyline";
           return nullptr;
         }
         return s2Polyline;
       }
       case GeoShape::POLYGON: {
-        const auto* polygon = static_cast<const Polygon*>(geom);
-        uint32_t numRings = polygon->numRings();
+        const auto& polygon = geom.polygon();
+        uint32_t numRings = polygon.numRings();
         std::vector<std::unique_ptr<S2Loop>> s2Loops;
         s2Loops.reserve(numRings);
         for (size_t i = 0; i < numRings; ++i) {
-          auto coordList = polygon->coordListList[i];
-          DCHECK_GE(coordList.size(), 4);
-          DCHECK(isLoopClosed(coordList));
+          auto coordList = polygon.coordListList[i];
+          if (UNLIKELY(coordList.size() < 4)) {
+            LOG(ERROR) << "Polygon's LinearRing must have at least 4 coordinates";
+            return nullptr;
+          }
+          if (UNLIKELY(isLoopClosed(coordList))) {
+            return nullptr;
+          }
           removeAdjacentDuplicateCoordinates(coordList);
           if (coordList.size() < 4) {
-            LOG(INFO)
+            LOG(ERROR)
                 << "Invalid linearRing in polygon, must have at least 4 distinct coordinates.";
             return nullptr;
           }
           coordList.pop_back();  // Remove redundant last coordinate
           auto s2Points = s2PointsFromCoordinateList(coordList);
-          auto* s2Loop = new S2Loop(std::move(s2Points), S2Debug::DISABLE);
-          if (!s2Loop->IsValid()) {
+          auto s2Loop = std::make_unique<S2Loop>(std::move(s2Points), S2Debug::DISABLE);
+          if (!s2Loop->IsValid()) {  // TODO(jie) May not need to check S2loop here, S2Polygon's
+                                     // IsValid() will check its loops
+            LOG(ERROR) << "Invalid S2Loop";
             return nullptr;
           }
           s2Loop->Normalize();  // All loops must be oriented CCW(counterclockwise) for S2
-          s2Loops.emplace_back(s2Loop);
+          s2Loops.emplace_back(std::move(s2Loop));
         }
         auto s2Polygon = std::make_unique<S2Polygon>(std::move(s2Loops), S2Debug::DISABLE);
         if (!s2Polygon->IsValid()) {  // Exterior loop must contain other interior loops
+          LOG(ERROR) << "Invalid S2Polygon";
           return nullptr;
         }
         return s2Polygon;
@@ -82,7 +97,6 @@ class GeoUtils final {
   static S2Point s2PointFromCoordinate(const Coordinate& coord) {
     auto latlng = S2LatLng::FromDegrees(
         coord.y, coord.x);  // Note: S2Point requires latitude to be first, and longitude to be last
-    DCHECK(latlng.is_valid());
     return latlng.ToPoint();
   }
 
@@ -100,7 +114,9 @@ class GeoUtils final {
   }
 
   static bool isLoopClosed(const std::vector<Coordinate>& coordList) {
-    DCHECK_GE(coordList.size(), 2);
+    if (coordList.size() < 2) {
+      return false;
+    }
     return coordList.front() == coordList.back();
   }
 
@@ -109,15 +125,8 @@ class GeoUtils final {
       return;
     }
 
-    size_t i = 0, j = 1;
-    for (; j < coordList.size(); ++j) {
-      if (coordList[i] != coordList[j]) {
-        ++i;
-        if (i != j) {  // i is always <= j
-          coordList[i] = coordList[j];
-        }
-      }
-    }
+    auto last = std::unique(coordList.begin(), coordList.end());
+    coordList.erase(last, coordList.end());
   }
 };
 

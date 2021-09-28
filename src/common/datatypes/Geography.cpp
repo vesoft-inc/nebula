@@ -23,40 +23,55 @@ StatusOr<std::unique_ptr<Geography>> Geography::fromWKT(const std::string& wkt) 
   auto geomRet = WKTReader().read(wkt);
   NG_RETURN_IF_ERROR(geomRet);
   auto geom = std::move(geomRet).value();
-  auto wkb = WKBWriter().write(geom.get());
+  auto wkb = WKBWriter().write(*geom);
   return std::make_unique<Geography>(wkb);
 }
 
 GeoShape Geography::shape() const {
   // TODO(jie) May store the shapetype as the data member of Geography is ok.
-  std::string wkbCopy = wkb;
-  uint8_t* beg = reinterpret_cast<uint8_t*>(wkbCopy.data());
-  uint8_t* end = beg + wkbCopy.size();
+  const uint8_t* beg = reinterpret_cast<const uint8_t*>(wkb.data());
+  const uint8_t* end = beg + wkb.size();
   WKBReader reader;
   auto byteOrderRet = reader.readByteOrder(beg, end);
-  DCHECK(byteOrderRet.ok());
+  if (!byteOrderRet.ok()) {
+    return GeoShape::UNKNOWN;
+  }
   ByteOrder byteOrder = byteOrderRet.value();
   auto shapeTypeRet = reader.readShapeType(beg, end, byteOrder);
-  DCHECK(shapeTypeRet.ok());
+  if (!shapeTypeRet.ok()) {
+    return GeoShape::UNKNOWN;
+  }
   return shapeTypeRet.value();
 }
 
-std::string Geography::asWKT() const {
+std::unique_ptr<std::string> Geography::asWKT() const {
   auto geomRet = WKBReader().read(wkb);
-  DCHECK(geomRet.ok());
-  std::unique_ptr<Geometry> geom = std::move(geomRet).value();
-  std::string wkt = WKTWriter().write(geom.get());
-  LOG(INFO) << "Geography::asWKT(): " << wkt;
-  return wkt;
+  if (!geomRet.ok()) {
+    LOG(ERROR) << geomRet.status();
+    return nullptr;
+  }
+  auto geom = geomRet.value();
+  return std::make_unique<std::string>(WKTWriter().write(geom));
 }
 
-std::string Geography::asWKB() const { return folly::hexlify(wkb); }
+std::unique_ptr<std::string> Geography::asWKBHex() const {
+  auto geomRet = WKBReader().read(wkb);
+  if (!geomRet.ok()) {
+    LOG(ERROR) << geomRet.status();
+    return nullptr;
+  }
+  auto geom = geomRet.value();
+  return std::make_unique<std::string>(folly::hexlify(WKBWriter().write(geom)));
+}
 
 std::unique_ptr<S2Region> Geography::asS2() const {
   auto geomRet = WKBReader().read(wkb);
-  DCHECK(geomRet.ok());
-  std::unique_ptr<Geometry> geom = std::move(geomRet).value();
-  return GeoUtils::s2RegionFromGeomtry(geom.get());
+  if (!geomRet.ok()) {
+    LOG(ERROR) << geomRet.status();
+    return nullptr;
+  }
+  auto geom = geomRet.value();
+  return GeoUtils::s2RegionFromGeomtry(geom);
 }
 
 }  // namespace nebula

@@ -20,30 +20,34 @@ class WKBReader {
   ~WKBReader() {}
 
   // TODO(jie) Check the validity of geometry when reading the wkb
-  StatusOr<std::unique_ptr<Geometry>> read(std::string wkb) const;
+  StatusOr<Geometry> read(const std::string &wkb) const;
 
-  StatusOr<std::unique_ptr<Geometry>> read(uint8_t *&beg, uint8_t *end) const;
+  StatusOr<Geometry> read(const uint8_t *&beg, const uint8_t *end) const;
 
-  StatusOr<ByteOrder> readByteOrder(uint8_t *&beg, uint8_t *end) const;
+  StatusOr<ByteOrder> readByteOrder(const uint8_t *&beg, const uint8_t *end) const;
 
-  StatusOr<GeoShape> readShapeType(uint8_t *&beg, uint8_t *end, ByteOrder byteOrder) const;
+  StatusOr<GeoShape> readShapeType(const uint8_t *&beg,
+                                   const uint8_t *end,
+                                   ByteOrder byteOrder) const;
 
-  StatusOr<Coordinate> readCoordinate(uint8_t *&beg, uint8_t *end, ByteOrder byteOrder) const;
+  StatusOr<Coordinate> readCoordinate(const uint8_t *&beg,
+                                      const uint8_t *end,
+                                      ByteOrder byteOrder) const;
 
-  StatusOr<std::vector<Coordinate>> readCoordinateList(uint8_t *&beg,
-                                                       uint8_t *end,
+  StatusOr<std::vector<Coordinate>> readCoordinateList(const uint8_t *&beg,
+                                                       const uint8_t *end,
                                                        ByteOrder byteOrder,
                                                        uint32_t num) const;
 
-  StatusOr<std::vector<std::vector<Coordinate>>> readCoordinateListList(uint8_t *&beg,
-                                                                        uint8_t *end,
+  StatusOr<std::vector<std::vector<Coordinate>>> readCoordinateListList(const uint8_t *&beg,
+                                                                        const uint8_t *end,
                                                                         ByteOrder byteOrder,
                                                                         uint32_t num) const;
-  StatusOr<uint8_t> readUint8(uint8_t *&beg, uint8_t *end) const;
+  StatusOr<uint8_t> readUint8(const uint8_t *&beg, const uint8_t *end) const;
 
-  StatusOr<uint32_t> readUint32(uint8_t *&beg, uint8_t *end, ByteOrder byteOrder) const;
+  StatusOr<uint32_t> readUint32(const uint8_t *&beg, const uint8_t *end, ByteOrder byteOrder) const;
 
-  StatusOr<double> readDouble(uint8_t *&beg, uint8_t *end, ByteOrder byteOrder) const;
+  StatusOr<double> readDouble(const uint8_t *&beg, const uint8_t *end, ByteOrder byteOrder) const;
 };
 
 }  // namespace nebula

@@ -25,7 +25,7 @@ class WKTScanner;
 }
 
 %code {
-    #include "WKTScanner.h"
+    #include "common/geo/io/wkt/WKTScanner.h"
     static int yylex(nebula::WKTParser::semantic_type* yylval,
                      nebula::WKTParser::location_type *yylloc,
                      nebula::WKTScanner& scanner);
@@ -72,16 +72,15 @@ class WKTScanner;
 
 geometry
   : point {
-    $$ = $1;
-    LOG(INFO) << "jie test" << static_cast<Point*>($$)->coord.x << static_cast<Point*>($$)->coord.y;
+    $$ = new Geometry(*$1);
     *geom = $$;
   }
   | linestring {
-    $$ = $1;
+    $$ = new Geometry(*$1);
     *geom = $$;
   }
   | polygon {
-    $$ = $1;
+    $$ = new Geometry(*$1);
     *geom = $$;
   }
 ;

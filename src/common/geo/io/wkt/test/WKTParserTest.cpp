@@ -21,15 +21,15 @@ class WKTParserTest : public ::testing::Test {
   StatusOr<std::unique_ptr<Geometry>> parse(const std::string& wkt) {
     auto geomRet = WKTReader().read(wkt);
     NG_RETURN_IF_ERROR(geomRet);
-    NG_RETURN_IF_ERROR(check(geomRet.value().get()));
+    NG_RETURN_IF_ERROR(check(*geomRet.value().get()));
     return geomRet;
   }
 
-  Status check(const Geometry* geom) {
+  Status check(const Geometry& geom) {
     auto wkt = WKTWriter().write(geom);
     auto geomCopyRet = WKTReader().read(wkt);
     auto geomCopy = std::move(geomCopyRet).value();
-    auto wktCopy = WKTWriter().write(geomCopy.get());
+    auto wktCopy = WKTWriter().write(*geomCopy.get());
 
     if (wkt != wktCopy) {
       return Status::Error("The reparsed geometry `%s' is different from origin `%s'.",

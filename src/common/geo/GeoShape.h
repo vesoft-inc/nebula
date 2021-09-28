@@ -9,6 +9,7 @@
 namespace nebula {
 
 enum class GeoShape : uint32_t {
+  UNKNOWN = 0,  // illegal
   POINT = 1,
   LINESTRING = 2,
   POLYGON = 3,

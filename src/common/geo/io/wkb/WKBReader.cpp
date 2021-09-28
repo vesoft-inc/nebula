@@ -8,13 +8,13 @@
 
 namespace nebula {
 
-StatusOr<std::unique_ptr<Geometry>> WKBReader::read(std::string wkb) const {
-  uint8_t *beg = reinterpret_cast<uint8_t *>(wkb.data());
-  uint8_t *end = beg + wkb.size();
+StatusOr<Geometry> WKBReader::read(const std::string &wkb) const {
+  const uint8_t *beg = reinterpret_cast<const uint8_t *>(wkb.data());
+  const uint8_t *end = beg + wkb.size();
   return read(beg, end);
 }
 
-StatusOr<std::unique_ptr<Geometry>> WKBReader::read(uint8_t *&beg, uint8_t *end) const {
+StatusOr<Geometry> WKBReader::read(const uint8_t *&beg, const uint8_t *end) const {
   auto byteOrderRet = readByteOrder(beg, end);
   NG_RETURN_IF_ERROR(byteOrderRet);
   ByteOrder byteOrder = byteOrderRet.value();
@@ -28,7 +28,7 @@ StatusOr<std::unique_ptr<Geometry>> WKBReader::read(uint8_t *&beg, uint8_t *end)
       auto coordRet = readCoordinate(beg, end, byteOrder);
       NG_RETURN_IF_ERROR(coordRet);
       Coordinate coord = coordRet.value();
-      return std::make_unique<Point>(coord);
+      return Point(coord);
     }
     case GeoShape::LINESTRING: {
       auto numPointsRet = readUint32(beg, end, byteOrder);
@@ -37,7 +37,7 @@ StatusOr<std::unique_ptr<Geometry>> WKBReader::read(uint8_t *&beg, uint8_t *end)
       auto coordListRet = readCoordinateList(beg, end, byteOrder, numPoints);
       NG_RETURN_IF_ERROR(coordListRet);
       std::vector<Coordinate> coordList = coordListRet.value();
-      return std::make_unique<LineString>(coordList);
+      return LineString(coordList);
     }
     case GeoShape::POLYGON: {
       auto numRingsRet = readUint32(beg, end, byteOrder);
@@ -46,7 +46,7 @@ StatusOr<std::unique_ptr<Geometry>> WKBReader::read(uint8_t *&beg, uint8_t *end)
       auto coordListListRet = readCoordinateListList(beg, end, byteOrder, numRings);
       NG_RETURN_IF_ERROR(coordListListRet);
       std::vector<std::vector<Coordinate>> coordListList = coordListListRet.value();
-      return std::make_unique<Polygon>(coordListList);
+      return Polygon(coordListList);
     }
     default:
       LOG(FATAL)
@@ -56,7 +56,7 @@ StatusOr<std::unique_ptr<Geometry>> WKBReader::read(uint8_t *&beg, uint8_t *end)
   }
 }
 
-StatusOr<ByteOrder> WKBReader::readByteOrder(uint8_t *&beg, uint8_t *end) const {
+StatusOr<ByteOrder> WKBReader::readByteOrder(const uint8_t *&beg, const uint8_t *end) const {
   auto vRet = readUint8(beg, end);
   NG_RETURN_IF_ERROR(vRet);
   uint8_t v = vRet.value();
@@ -67,8 +67,8 @@ StatusOr<ByteOrder> WKBReader::readByteOrder(uint8_t *&beg, uint8_t *end) const 
   return byteOrder;
 }
 
-StatusOr<GeoShape> WKBReader::readShapeType(uint8_t *&beg,
-                                            uint8_t *end,
+StatusOr<GeoShape> WKBReader::readShapeType(const uint8_t *&beg,
+                                            const uint8_t *end,
                                             ByteOrder byteOrder) const {
   auto vRet = readUint32(beg, end, byteOrder);
   NG_RETURN_IF_ERROR(vRet);
@@ -80,8 +80,8 @@ StatusOr<GeoShape> WKBReader::readShapeType(uint8_t *&beg,
   return shapeType;
 }
 
-StatusOr<Coordinate> WKBReader::readCoordinate(uint8_t *&beg,
-                                               uint8_t *end,
+StatusOr<Coordinate> WKBReader::readCoordinate(const uint8_t *&beg,
+                                               const uint8_t *end,
                                                ByteOrder byteOrder) const {
   auto xRet = readDouble(beg, end, byteOrder);
   NG_RETURN_IF_ERROR(xRet);
@@ -92,8 +92,8 @@ StatusOr<Coordinate> WKBReader::readCoordinate(uint8_t *&beg,
   return Coordinate(x, y);
 }
 
-StatusOr<std::vector<Coordinate>> WKBReader::readCoordinateList(uint8_t *&beg,
-                                                                uint8_t *end,
+StatusOr<std::vector<Coordinate>> WKBReader::readCoordinateList(const uint8_t *&beg,
+                                                                const uint8_t *end,
                                                                 ByteOrder byteOrder,
                                                                 uint32_t num) const {
   std::vector<Coordinate> coordList;
@@ -108,7 +108,7 @@ StatusOr<std::vector<Coordinate>> WKBReader::readCoordinateList(uint8_t *&beg,
 }
 
 StatusOr<std::vector<std::vector<Coordinate>>> WKBReader::readCoordinateListList(
-    uint8_t *&beg, uint8_t *end, ByteOrder byteOrder, uint32_t num) const {
+    const uint8_t *&beg, const uint8_t *end, ByteOrder byteOrder, uint32_t num) const {
   std::vector<std::vector<Coordinate>> coordListList;
   coordListList.reserve(num);
   for (size_t i = 0; i < num; ++i) {
@@ -123,7 +123,7 @@ StatusOr<std::vector<std::vector<Coordinate>>> WKBReader::readCoordinateListList
   return coordListList;
 }
 
-StatusOr<uint8_t> WKBReader::readUint8(uint8_t *&beg, uint8_t *end) const {
+StatusOr<uint8_t> WKBReader::readUint8(const uint8_t *&beg, const uint8_t *end) const {
   auto requiredSize = static_cast<int64_t>(sizeof(uint8_t));
   if (end - beg < requiredSize) {
     return Status::Error("Unable to parse uint8_t");
@@ -133,7 +133,9 @@ StatusOr<uint8_t> WKBReader::readUint8(uint8_t *&beg, uint8_t *end) const {
   return v;
 }
 
-StatusOr<uint32_t> WKBReader::readUint32(uint8_t *&beg, uint8_t *end, ByteOrder byteOrder) const {
+StatusOr<uint32_t> WKBReader::readUint32(const uint8_t *&beg,
+                                         const uint8_t *end,
+                                         ByteOrder byteOrder) const {
   auto requiredSize = static_cast<int64_t>(sizeof(uint32_t));
   if (end - beg < requiredSize) {
     return Status::Error("Unable to parse uint32_t");
@@ -143,7 +145,9 @@ StatusOr<uint32_t> WKBReader::readUint32(uint8_t *&beg, uint8_t *end, ByteOrder 
   return v;
 }
 
-StatusOr<double> WKBReader::readDouble(uint8_t *&beg, uint8_t *end, ByteOrder byteOrder) const {
+StatusOr<double> WKBReader::readDouble(const uint8_t *&beg,
+                                       const uint8_t *end,
+                                       ByteOrder byteOrder) const {
   auto requiredSize = static_cast<int64_t>(sizeof(double));
   if (end - beg < requiredSize) {
     return Status::Error("Unable to parse double");

@@ -3,9 +3,6 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/wkt)
-include_directories(${CMAKE_CURRENT_BINARY_DIR}/wkt)
-
 if(ENABLE_VERBOSE_BISON)
     set(bison_flags "-Werror -v")
 else()

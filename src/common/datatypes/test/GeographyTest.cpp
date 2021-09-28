@@ -42,21 +42,27 @@ TEST(Geography, asWKT) {
     auto gRet = Geography::fromWKT(wkt);
     ASSERT_TRUE(gRet.ok());
     auto g = std::move(gRet.value());
-    EXPECT_EQ(wkt, g->asWKT());
+    auto got = g->asWKT();
+    ASSERT_TRUE(!!got);
+    EXPECT_EQ(wkt, *got);
   }
   {
     std::string wkt = "LINESTRING(28.4 79.2,134.25 -28.34)";
     auto gRet = Geography::fromWKT(wkt);
     ASSERT_TRUE(gRet.ok());
     auto g = std::move(gRet.value());
-    EXPECT_EQ(wkt, g->asWKT());
+    auto got = g->asWKT();
+    ASSERT_TRUE(!!got);
+    EXPECT_EQ(wkt, *got);
   }
   {
     std::string wkt = "POLYGON((1 2,3 4,5 6,1 2))";
     auto gRet = Geography::fromWKT(wkt);
     ASSERT_TRUE(gRet.ok());
     auto g = std::move(gRet.value());
-    EXPECT_EQ(wkt, g->asWKT());
+    auto got = g->asWKT();
+    ASSERT_TRUE(!!got);
+    EXPECT_EQ(wkt, *got);
   }
 }
 

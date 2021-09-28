@@ -17,7 +17,7 @@ class WKTWriter {
 
   ~WKTWriter() {}
 
-  std::string write(const Geometry* geom) const;
+  std::string write(const Geometry& geom) const;
 
   void writeCoordinate(std::string& wkt, const Coordinate& coord) const;
 
