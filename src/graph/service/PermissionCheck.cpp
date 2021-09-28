@@ -199,6 +199,13 @@ Status PermissionCheck::permissionCheck(ClientSession *session,
       }
     }
     case Sentence::Kind::kChangePassword: {
+      if (!FLAGS_enable_authorize) {
+        return Status::OK();
+      }
+      // Cloud auth user cannot change password
+      if (FLAGS_auth_type == "cloud") {
+        return Status::PermissionError("Cloud authenticate user can't change password.");
+      }
       return Status::OK();
     }
     case Sentence::Kind::kExplain:
