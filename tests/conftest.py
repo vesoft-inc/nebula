@@ -121,13 +121,6 @@ def session_from_first_conn_pool(conn_pool_to_first_graph_service, pytestconfig)
     yield sess
     sess.release()
 
-@pytest.fixture(scope="class")
-def session_from_second_conn_pool(conn_pool_to_second_graph_service, pytestconfig):
-    user = pytestconfig.getoption("user")
-    password = pytestconfig.getoption("password")
-    sess = conn_pool_to_second_graph_service.get_session(user, password)
-    yield sess
-    sess.release()
 
 @pytest.fixture(scope="class")
 def session(session_from_first_conn_pool):

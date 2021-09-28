@@ -239,6 +239,26 @@ def clone_space(graph_spaces, session, request):
     graph_spaces["space_desc"] = space_desc
     graph_spaces["drop_space"] = True
 
+
+@when(parse("try to execute query on {space} from user {username} with password {password}:\n{query}"))
+def execute_query_from_user(query, space, username, password, conn_pool_to_second_graph_service, graph_spaces, session, request):
+    ngql = normalize_outline_scenario(request, combine_query(query))
+    sess = None
+    try:
+        sess = conn_pool_to_second_graph_service.get_session(username, password)
+    except Exception as e:
+        if sess:
+            sess.release()
+        print(f"Login {username} with {password} failed")
+    use_sentence = f"USE {space}"
+    exec_query(request, use_sentence, sess, graph_spaces, True)
+    resp = graph_spaces['result_set']
+    if resp.error_code() != ErrorCode.SUCCEEDED:
+        pass
+    else:
+        exec_query(request, ngql, sess, graph_spaces, True)
+    sess.release()
+
 @given("wait all indexes ready")
 @when("wait all indexes ready")
 @then("wait all indexes ready")
@@ -496,13 +516,17 @@ def check_plan(plan, graph_spaces):
 
 
 @when(parse("executing query via graph {index:d}:\n{query}"))
-def executing_query(query, index, graph_spaces, session_from_first_conn_pool, session_from_second_conn_pool, request):
+def executing_query(query, index, graph_spaces, session_from_first_conn_pool, conn_pool_to_second_graph_service, pytestconfig, request):
     assert index < 2, "There exists only 0,1 graph: {}".format(index)
     ngql = combine_query(query)
     if index == 0:
         exec_query(request, ngql, session_from_first_conn_pool, graph_spaces)
     else:
-        exec_query(request, ngql, session_from_second_conn_pool, graph_spaces)
+        user = pytestconfig.getoption("user")
+        password = pytestconfig.getoption("password")
+        sess = conn_pool_to_second_graph_service.get_session(user, password)
+        exec_query(request, ngql, sess, graph_spaces)
+        sess.release()
 
 
 @then(parse("the result should be, the first {n:d} records in order, and register {column_name} as a list named {key}:\n{result}"))
