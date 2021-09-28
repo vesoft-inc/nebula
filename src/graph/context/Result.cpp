@@ -25,13 +25,13 @@ ResultBuilder& ResultBuilder::iter(Iterator::Kind kind) {
       << "Must set value when creating non-default iterator";
   switch (kind) {
     case Iterator::Kind::kDefault:
-      return iter(std::make_unique<DefaultIter>(core_.value));
+      return iter(std::make_unique<DefaultIter>(core_.value, core_.checkMemory));
     case Iterator::Kind::kSequential:
-      return iter(std::make_unique<SequentialIter>(core_.value));
+      return iter(std::make_unique<SequentialIter>(core_.value, core_.checkMemory));
     case Iterator::Kind::kGetNeighbors:
-      return iter(std::make_unique<GetNeighborsIter>(core_.value));
+      return iter(std::make_unique<GetNeighborsIter>(core_.value, core_.checkMemory));
     case Iterator::Kind::kProp:
-      return iter(std::make_unique<PropIter>(core_.value));
+      return iter(std::make_unique<PropIter>(core_.value, core_.checkMemory));
     default:
       LOG(FATAL) << "Invalid Iterator kind" << static_cast<uint8_t>(kind);
   }

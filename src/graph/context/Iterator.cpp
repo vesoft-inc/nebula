@@ -8,12 +8,26 @@
 
 #include "common/datatypes/Edge.h"
 #include "common/datatypes/Vertex.h"
+#include "common/memory/MemoryUtils.h"
 #include "graph/util/SchemaUtil.h"
 #include "interface/gen-cpp2/common_types.h"
+
+DEFINE_int32(num_rows_to_check_memory, 1024, "number rows to check memory");
+
 namespace nebula {
 namespace graph {
-GetNeighborsIter::GetNeighborsIter(std::shared_ptr<Value> value)
-    : Iterator(value, Kind::kGetNeighbors) {
+
+bool Iterator::hitsSysMemoryHighWatermark() const {
+  if (checkMemory_) {
+    if (0 == numReadRows_ % FLAGS_num_rows_to_check_memory) {
+      return MemoryUtils::kHitMemoryHighWatermark.load();
+    }
+  }
+  return false;
+}
+
+GetNeighborsIter::GetNeighborsIter(std::shared_ptr<Value> value, bool checkMemory)
+    : Iterator(value, Kind::kGetNeighbors, checkMemory) {
   if (value == nullptr) {
     return;
   }
@@ -177,14 +191,16 @@ Status GetNeighborsIter::buildPropIndex(const std::string& props,
 }
 
 bool GetNeighborsIter::valid() const {
-  return valid_ && currentDs_ < dsIndices_.end() && currentRow_ < rowsUpperBound_ &&
-         colIdx_ < currentDs_->colUpperBound;
+  return Iterator::valid() && valid_ && currentDs_ < dsIndices_.end() &&
+         currentRow_ < rowsUpperBound_ && colIdx_ < currentDs_->colUpperBound;
 }
 
 void GetNeighborsIter::next() {
   if (!valid()) {
     return;
   }
+
+  numReadRows_++;
 
   if (noEdge_) {
     if (++currentRow_ < rowsUpperBound_) {
@@ -519,7 +535,8 @@ void GetNeighborsIter::clearEdges() {
   }
 }
 
-SequentialIter::SequentialIter(std::shared_ptr<Value> value) : Iterator(value, Kind::kSequential) {
+SequentialIter::SequentialIter(std::shared_ptr<Value> value, bool checkMemory)
+    : Iterator(value, Kind::kSequential, checkMemory) {
   DCHECK(value->isDataSet());
   auto& ds = value->mutableDataSet();
   iter_ = ds.rows.begin();
@@ -537,8 +554,8 @@ SequentialIter::SequentialIter(std::unique_ptr<Iterator> left, std::unique_ptr<I
   init(std::move(iterators));
 }
 
-SequentialIter::SequentialIter(std::vector<std::unique_ptr<Iterator>> inputList)
-    : Iterator(inputList.front()->valuePtr(), Kind::kSequential) {
+SequentialIter::SequentialIter(std::vector<std::unique_ptr<Iterator>> inputList, bool checkMemory)
+    : Iterator(inputList.front()->valuePtr(), Kind::kSequential, checkMemory) {
   init(std::move(inputList));
 }
 
@@ -560,10 +577,11 @@ void SequentialIter::init(std::vector<std::unique_ptr<Iterator>>&& iterators) {
   iter_ = rows_->begin();
 }
 
-bool SequentialIter::valid() const { return iter_ < rows_->end(); }
+bool SequentialIter::valid() const { return Iterator::valid() && iter_ < rows_->end(); }
 
 void SequentialIter::next() {
   if (valid()) {
+    ++numReadRows_;
     ++iter_;
   }
 }
@@ -600,7 +618,8 @@ Value SequentialIter::getVertex(const std::string& name) const { return getColum
 
 Value SequentialIter::getEdge() const { return getColumn("EDGE"); }
 
-PropIter::PropIter(std::shared_ptr<Value> value) : SequentialIter(value) {
+PropIter::PropIter(std::shared_ptr<Value> value, bool checkMemory)
+    : SequentialIter(value, checkMemory) {
   DCHECK(value->isDataSet());
   auto& ds = value->getDataSet();
   auto status = makeDataSetIndex(ds);
@@ -826,5 +845,6 @@ std::ostream& operator<<(std::ostream& os, Iterator::Kind kind) {
   os << " iterator";
   return os;
 }
+
 }  // namespace graph
 }  // namespace nebula

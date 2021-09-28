@@ -43,7 +43,8 @@ class Iterator {
     kProp,
   };
 
-  explicit Iterator(std::shared_ptr<Value> value, Kind kind) : value_(value), kind_(kind) {}
+  explicit Iterator(std::shared_ptr<Value> value, Kind kind, bool checkMemory = false)
+      : checkMemory_(checkMemory), kind_(kind), numReadRows_(0), value_(value) {}
 
   virtual ~Iterator() = default;
 
@@ -51,7 +52,7 @@ class Iterator {
 
   virtual std::unique_ptr<Iterator> copy() const = 0;
 
-  virtual bool valid() const = 0;
+  virtual bool valid() const { return !hitsSysMemoryHighWatermark(); }
 
   virtual void next() = 0;
 
@@ -75,7 +76,10 @@ class Iterator {
 
   // Reset iterator position to `pos' from begin. Must be sure that the `pos'
   // position is lower than `size()' before resetting
-  void reset(size_t pos = 0) { doReset(pos); }
+  void reset(size_t pos = 0) {
+    numReadRows_ = 0;
+    doReset(pos);
+  }
 
   virtual void clear() = 0;
 
@@ -126,22 +130,31 @@ class Iterator {
 
   virtual Value getEdge() const { return Value(); }
 
+  void setCheckMemory(bool checkMemory) { checkMemory_ = checkMemory; }
+
  protected:
   virtual void doReset(size_t pos) = 0;
+  bool hitsSysMemoryHighWatermark() const;
 
-  std::shared_ptr<Value> value_;
+  bool checkMemory_{false};
   Kind kind_;
+  int64_t numReadRows_{0};
+  std::shared_ptr<Value> value_;
 };
 
 class DefaultIter final : public Iterator {
  public:
-  explicit DefaultIter(std::shared_ptr<Value> value) : Iterator(value, Kind::kDefault) {}
+  explicit DefaultIter(std::shared_ptr<Value> value, bool checkMemory = false)
+      : Iterator(value, Kind::kDefault, checkMemory) {}
 
   std::unique_ptr<Iterator> copy() const override { return std::make_unique<DefaultIter>(*this); }
 
-  bool valid() const override { return !(counter_ > 0); }
+  bool valid() const override { return Iterator::valid() && !(counter_ > 0); }
 
-  void next() override { counter_++; }
+  void next() override {
+    numReadRows_++;
+    counter_++;
+  }
 
   void erase() override { counter_--; }
 
@@ -188,7 +201,7 @@ class DefaultIter final : public Iterator {
 
 class GetNeighborsIter final : public Iterator {
  public:
-  explicit GetNeighborsIter(std::shared_ptr<Value> value);
+  explicit GetNeighborsIter(std::shared_ptr<Value> value, bool checkMemory);
 
   std::unique_ptr<Iterator> copy() const override {
     auto copy = std::make_unique<GetNeighborsIter>(*this);
@@ -203,6 +216,7 @@ class GetNeighborsIter final : public Iterator {
   void clear() override {
     valid_ = false;
     dsIndices_.clear();
+    reset();
   }
 
   void erase() override;
@@ -338,7 +352,7 @@ class GetNeighborsIter final : public Iterator {
 
 class SequentialIter : public Iterator {
  public:
-  explicit SequentialIter(std::shared_ptr<Value> value);
+  explicit SequentialIter(std::shared_ptr<Value> value, bool checkMemory = false);
 
   // Union multiple sequential iterators
   explicit SequentialIter(std::vector<std::unique_ptr<Iterator>> inputList);
@@ -437,7 +451,7 @@ class SequentialIter : public Iterator {
 
 class PropIter final : public SequentialIter {
  public:
-  explicit PropIter(std::shared_ptr<Value> value);
+  explicit PropIter(std::shared_ptr<Value> value, bool checkMemory = false);
 
   std::unique_ptr<Iterator> copy() const override {
     auto copy = std::make_unique<PropIter>(*this);
