@@ -33,21 +33,17 @@ std::unique_ptr<OptRule> PushLimitDownIndexScanRule::kInstance =
 PushLimitDownIndexScanRule::PushLimitDownIndexScanRule() { RuleSet::QueryRules().addRule(this); }
 
 const Pattern &PushLimitDownIndexScanRule::pattern() const {
-  static Pattern pattern =
-      Pattern::create(graph::PlanNode::Kind::kLimit,
-                      {Pattern::create(graph::PlanNode::Kind::kProject,
-                                       {Pattern::create(graph::PlanNode::Kind::kIndexScan)})});
+  static Pattern pattern = Pattern::create(graph::PlanNode::Kind::kLimit,
+                                           {Pattern::create(graph::PlanNode::Kind::kIndexScan)});
   return pattern;
 }
 
 StatusOr<OptRule::TransformResult> PushLimitDownIndexScanRule::transform(
     OptContext *octx, const MatchedResult &matched) const {
   auto limitGroupNode = matched.node;
-  auto projGroupNode = matched.dependencies.front().node;
-  auto indexScanGroupNode = matched.dependencies.front().dependencies.front().node;
+  auto indexScanGroupNode = matched.dependencies.front().node;
 
   const auto limit = static_cast<const Limit *>(limitGroupNode->node());
-  const auto proj = static_cast<const Project *>(projGroupNode->node());
   const auto indexScan = static_cast<const IndexScan *>(indexScanGroupNode->node());
 
   int64_t limitRows = limit->offset() + limit->count();
@@ -58,17 +54,12 @@ StatusOr<OptRule::TransformResult> PushLimitDownIndexScanRule::transform(
   auto newLimit = static_cast<Limit *>(limit->clone());
   auto newLimitGroupNode = OptGroupNode::create(octx, newLimit, limitGroupNode->group());
 
-  auto newProj = static_cast<Project *>(proj->clone());
-  auto newProjGroup = OptGroup::create(octx);
-  auto newProjGroupNode = newProjGroup->makeGroupNode(newProj);
-
   auto newIndexScan = static_cast<IndexScan *>(indexScan->clone());
   newIndexScan->setLimit(limitRows);
   auto newIndexScanGroup = OptGroup::create(octx);
   auto newIndexScanGroupNode = newIndexScanGroup->makeGroupNode(newIndexScan);
 
-  newLimitGroupNode->dependsOn(newProjGroup);
-  newProjGroupNode->dependsOn(newIndexScanGroup);
+  newLimitGroupNode->dependsOn(newIndexScanGroup);
   for (auto dep : indexScanGroupNode->dependencies()) {
     newIndexScanGroupNode->dependsOn(dep);
   }
