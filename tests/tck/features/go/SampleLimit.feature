@@ -20,6 +20,16 @@ Feature: Sample and limit
     Then a SemanticError should be raised at runtime: `[1,2]' length must be equal to GO step size 1.
     When executing query:
       """
+      GO FROM 'Tim Duncan' OVER like LIMIT ["1"]
+      """
+    Then a SemanticError should be raised at runtime: Limit/Sample element type must be Integer.
+    When executing query:
+      """
+      GO FROM 'Tim Duncan' OVER like SAMPLE ["1"]
+      """
+    Then a SemanticError should be raised at runtime: Limit/Sample element type must be Integer.
+    When executing query:
+      """
       GO FROM 'Tim Duncan' OVER like LIMIT [1]
       """
     Then the result should be, in any order:
