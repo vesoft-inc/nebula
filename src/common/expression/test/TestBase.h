@@ -46,11 +46,13 @@
 #include "common/expression/VariableExpression.h"
 #include "common/expression/VertexExpression.h"
 #include "common/expression/test/ExpressionContextMock.h"
+#include "parser/GQLParser.h"
 
 nebula::ExpressionContextMock gExpCtxt;
-nebula::ObjectPool pool;
+nebula::graph::QueryContext gQueryCtxt;
+nebula::GQLParser gParser(&gQueryCtxt);
 namespace nebula {
-
+/*
 static void InsertSpace(std::string &str) {
   for (unsigned int i = 0; i < str.size(); i++) {
     if (str[i] == '(') {
@@ -114,6 +116,7 @@ static std::vector<std::string> InfixToSuffix(const std::vector<std::string> &ex
   }
   return values;
 }
+*/
 
 class ExpressionTest : public ::testing::Test {
  public:
@@ -129,6 +132,7 @@ class ExpressionTest : public ::testing::Test {
       op_;
 
  protected:
+  /*
   Expression *ExpressionCalu(const std::vector<std::string> &expr) {
     std::vector<std::string> relationOp = {">", ">=", "<", "<=", "==", "!="};
     std::vector<std::string> logicalOp = {"AND", "OR", "XOR"};
@@ -180,33 +184,49 @@ class ExpressionTest : public ::testing::Test {
     }
     return value.top();
   }
+  */
 
   void testExpr(const std::string &exprSymbol, Value expected) {
+    /*
     std::string expr(exprSymbol);
     InsertSpace(expr);
     std::vector<std::string> splitString;
     boost::split(splitString, expr, boost::is_any_of(" \t"));
     Expression *ep = ExpressionCalu(splitString);
+    */
+    Expression *ep = gParser.parse(exprSymbol);
     auto eval = Expression::eval(ep, gExpCtxt);
     EXPECT_EQ(eval.type(), expected.type()) << "type check failed: " << ep->toString();
     EXPECT_EQ(eval, expected) << "check failed: " << ep->toString();
   }
 
   void testToString(const std::string &exprSymbol, const char *expected) {
+    /*
     std::string expr(exprSymbol);
     InsertSpace(expr);
     std::vector<std::string> splitString;
     boost::split(splitString, expr, boost::is_any_of(" \t"));
     Expression *ep = ExpressionCalu(splitString);
+    */
+    Expression *ep = gParser.parse(exprSymbol);
     EXPECT_EQ(ep->toString(), expected);
   }
 
-  void testFunction(const char *name, const std::vector<Value> &args, const Value &expected) {
+  void testFunction(const char *name, const std::string &args, const Value &expected) {
+    /*
     ArgumentList *argList = ArgumentList::make(&pool);
     for (const auto &i : args) {
       argList->addArgument(ConstantExpression::make(&pool, i));
     }
     auto functionCall = FunctionCallExpression::make(&pool, name, argList);
+    */
+    std::string sentence = "RETURN " + name + "(" + args + ")";
+    auto result = gParser.parse(sentence).value();
+    if (result == nullptr) {
+      std::cout << "parse failed" << std::endl;
+      return;
+    }
+    
     auto eval = Expression::eval(functionCall, gExpCtxt);
     // EXPECT_EQ(eval.type(), expected.type());
     EXPECT_EQ(eval, expected);
@@ -239,6 +259,7 @@ class ExpressionTest : public ::testing::Test {
     path.steps.emplace_back(std::move(step)); \
   } while (0)
 
+/*
 // Functions used to construct corresponding expressions
 using expressionGen =
     std::function<Expression *(ObjectPool *pool, Expression *lhs, Expression *rhs)>;
@@ -296,24 +317,24 @@ std::unordered_map<std::string, Value> ExpressionTest::boolen_ = {
     {"false", Value(false)},
     {"empty", Value()},
     {"null", Value(NullType::__NULL__)}};
-
-static std::unordered_map<std::string, std::vector<Value>> args_ = {
-    {"null", {}},
-    {"int", {4}},
-    {"float", {1.1}},
-    {"neg_int", {-1}},
-    {"neg_float", {-1.1}},
-    {"rand", {1, 10}},
-    {"one", {-1.2}},
-    {"two", {2, 4}},
-    {"pow", {2, 3}},
-    {"string", {"AbcDeFG"}},
-    {"trim", {" abc  "}},
-    {"substr", {"abcdefghi", 2, 4}},
-    {"side", {"abcdefghijklmnopq", 5}},
-    {"neg_side", {"abcdefghijklmnopq", -2}},
-    {"pad", {"abcdefghijkl", 16, "123"}},
-    {"udf_is_in", {4, 1, 2, 8, 4, 3, 1, 0}}};
+*/
+static std::unordered_map<std::string, std::string> args_ = {
+    {"null", ""},
+    {"int", "4"},
+    {"float", "1.1"},
+    {"neg_int", "-1"},
+    {"neg_float", "-1.1"},
+    {"rand", "1, 10"},
+    {"one", "-1.2"},
+    {"two", "2, 4"},
+    {"pow", "2, 3"},
+    {"string", "\"AbcDeFG\""},
+    {"trim", "\" abc  \""},
+    {"substr", "\"abcdefghi\", 2, 4"},
+    {"side", "\"abcdefghijklmnopq\", 5"},
+    {"neg_side", "\"abcdefghijklmnopq\", -2"},
+    {"pad", "\"abcdefghijkl\", 16, \"123\""},
+    {"udf_is_in", "4, 1, 2, 8, 4, 3, 1, 0"}};
 
 }  // namespace nebula
 #endif  // COMMON_EXPRESSION_TEST_TESTBASE_H_
