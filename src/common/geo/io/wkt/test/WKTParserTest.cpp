@@ -18,18 +18,18 @@ class WKTParserTest : public ::testing::Test {
   void TearDown() override {}
 
  protected:
-  StatusOr<std::unique_ptr<Geometry>> parse(const std::string& wkt) {
+  StatusOr<Geometry> parse(const std::string& wkt) {
     auto geomRet = WKTReader().read(wkt);
     NG_RETURN_IF_ERROR(geomRet);
-    NG_RETURN_IF_ERROR(check(*geomRet.value().get()));
+    NG_RETURN_IF_ERROR(check(geomRet.value()));
     return geomRet;
   }
 
   Status check(const Geometry& geom) {
     auto wkt = WKTWriter().write(geom);
     auto geomCopyRet = WKTReader().read(wkt);
-    auto geomCopy = std::move(geomCopyRet).value();
-    auto wktCopy = WKTWriter().write(*geomCopy.get());
+    auto geomCopy = geomCopyRet.value();
+    auto wktCopy = WKTWriter().write(geomCopy);
 
     if (wkt != wktCopy) {
       return Status::Error("The reparsed geometry `%s' is different from origin `%s'.",

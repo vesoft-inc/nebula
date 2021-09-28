@@ -176,7 +176,10 @@ class IndexKeyUtils final {
 
   static std::string encodeUint64(uint64_t v) {
     auto val = folly::Endian::big(v);
-    return {reinterpret_cast<const char*>(&val), sizeof(uint64_t)};
+    std::string raw;
+    raw.reserve(sizeof(uint64_t));
+    raw.append(reinterpret_cast<const char*>(&val), sizeof(uint64_t));
+    return raw;
   }
 
   static std::string encodeRank(EdgeRanking rank) { return IndexKeyUtils::encodeInt64(rank); }

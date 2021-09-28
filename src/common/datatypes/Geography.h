@@ -45,12 +45,7 @@ struct Geography {
 
   Geography() = default;
 
-  explicit Geography(const std::string& bytes) {
-    // TODO(jie): Must ensure the bytes is valid
-    wkb = bytes;
-  }
-
-  static StatusOr<std::unique_ptr<Geography>> fromWKT(const std::string& wkt);
+  static StatusOr<Geography> fromWKT(const std::string& wkt);
 
   GeoShape shape() const;
 
@@ -73,6 +68,12 @@ struct Geography {
   bool operator!=(const Geography& rhs) const { return !(wkb == rhs.wkb); }
 
   bool operator<(const Geography& rhs) const { return wkb < rhs.wkb; }
+
+ private:
+  explicit Geography(const std::string& bytes) {
+    // TODO(jie): Must ensure the bytes is valid
+    wkb = bytes;
+  }
 
  private:
   std::unique_ptr<S2Region> s2RegionFromGeomtry(const Geometry* geom) const;

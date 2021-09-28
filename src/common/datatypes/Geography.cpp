@@ -19,12 +19,12 @@
 
 namespace nebula {
 
-StatusOr<std::unique_ptr<Geography>> Geography::fromWKT(const std::string& wkt) {
+StatusOr<Geography> Geography::fromWKT(const std::string& wkt) {
   auto geomRet = WKTReader().read(wkt);
   NG_RETURN_IF_ERROR(geomRet);
-  auto geom = std::move(geomRet).value();
-  auto wkb = WKBWriter().write(*geom);
-  return std::make_unique<Geography>(wkb);
+  auto geom = geomRet.value();
+  auto wkb = WKBWriter().write(geom);
+  return Geography(wkb);
 }
 
 GeoShape Geography::shape() const {

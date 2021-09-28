@@ -38,7 +38,7 @@ class WKTReader {
     if (geom_ != nullptr) delete geom_;
   }
 
-  StatusOr<std::unique_ptr<Geometry>> read(std::string wkt) {
+  StatusOr<Geometry> read(std::string wkt) {
     // Since WKTScanner needs a writable buffer, we have to copy the query string
     buffer_ = std::move(wkt);
     pos_ = &buffer_[0];
@@ -64,7 +64,7 @@ class WKTReader {
     auto *geom = geom_;
     geom_ = nullptr;
     scanner_.setWKT(nullptr);
-    return std::unique_ptr<Geometry>(geom);
+    return *geom;
   }
 
  private:
