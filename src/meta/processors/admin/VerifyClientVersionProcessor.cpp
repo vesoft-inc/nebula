@@ -6,9 +6,11 @@
 
 #include "meta/processors/admin/VerifyClientVersionProcessor.h"
 
+#include "version/Version.h"
+
 DEFINE_bool(enable_client_white_list, true, "Turn on/off the client white list.");
 DEFINE_string(client_white_list,
-              "2.5.0:2.5.1",
+              nebula::getOriginVersion() + ":2.5.0:2.5.1",
               "A white list for diffrent client versions, seperate with colon.");
 
 namespace nebula {

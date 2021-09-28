@@ -31,4 +31,11 @@ std::string versionString(bool verbose) {
   return version;
 }
 
+std::string getOriginVersion() {
+#if defined(NEBULA_BUILD_VERSION)
+  return NEBULA_BUILD_VERSION;
+#else
+  return "";
+#endif
+}
 }  // namespace nebula
