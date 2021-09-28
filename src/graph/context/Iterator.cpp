@@ -554,8 +554,8 @@ SequentialIter::SequentialIter(std::unique_ptr<Iterator> left, std::unique_ptr<I
   init(std::move(iterators));
 }
 
-SequentialIter::SequentialIter(std::vector<std::unique_ptr<Iterator>> inputList, bool checkMemory)
-    : Iterator(inputList.front()->valuePtr(), Kind::kSequential, checkMemory) {
+SequentialIter::SequentialIter(std::vector<std::unique_ptr<Iterator>> inputList)
+    : Iterator(inputList.front()->valuePtr(), Kind::kSequential, inputList.front()->checkMemory()) {
   init(std::move(inputList));
 }
 

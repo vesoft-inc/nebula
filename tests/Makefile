@@ -93,8 +93,8 @@ clean:
 		$(CURR_DIR)/reformat-gherkin \
 		$(CURR_DIR)/.pytest/* \
 		$(CURR_DIR)/.pytest_cache \
-		$(BUILD_DIR)/server_* \
-		$(CURR_DIR)/*.lock
+		$(CURR_DIR)/*.lock \
+		$(BUILD_DIR)/server_*
 
 kill:
 	ps -ef | grep -P '\sbin/nebula-' | grep "$$(whoami)" | sed 's/\s\s*/ /g' | cut -f2 -d' ' | xargs kill -9

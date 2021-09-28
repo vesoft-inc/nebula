@@ -130,6 +130,7 @@ class Iterator {
 
   virtual Value getEdge() const { return Value(); }
 
+  bool checkMemory() const { return checkMemory_; }
   void setCheckMemory(bool checkMemory) { checkMemory_ = checkMemory; }
 
  protected:
@@ -201,7 +202,7 @@ class DefaultIter final : public Iterator {
 
 class GetNeighborsIter final : public Iterator {
  public:
-  explicit GetNeighborsIter(std::shared_ptr<Value> value, bool checkMemory);
+  explicit GetNeighborsIter(std::shared_ptr<Value> value, bool checkMemory = false);
 
   std::unique_ptr<Iterator> copy() const override {
     auto copy = std::make_unique<GetNeighborsIter>(*this);
