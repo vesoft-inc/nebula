@@ -850,10 +850,31 @@ void OptimizerUtils::eraseInvalidIndexItems(
   }
 }
 
+bool OptimizerUtils::isBestIndex(
+    const nebula::meta::cpp2::IndexItem& indexItem,
+    const std::vector<std::string>& returnCols) {
+  auto indexFields = indexItem.get_fields();
+  for (const auto &returnCol : returnCols) {
+    static const std::set<std::string> propsInKey{kVid, kTag, kSrc, kType, kRank, kDst};
+    if (propsInKey.count(returnCol)) {
+      continue;
+    }
+    auto iter = std::find_if(indexFields.begin(), indexFields.end(),
+                             [returnCol](const meta::cpp2::ColumnDef& field){
+                               return field.get_name() == returnCol;
+                             });
+    if (iter == indexFields.end()) {
+      return false;
+    }
+  }
+  return true;
+}
+
 bool OptimizerUtils::findOptimalIndex(const Expression* condition,
                                       const std::vector<std::shared_ptr<IndexItem>>& indexItems,
                                       bool* isPrefixScan,
-                                      IndexQueryContext* ictx) {
+                                      IndexQueryContext* ictx,
+                                      const std::vector<std::string>& returnCols) {
   // Return directly if there is no valid index to use.
   if (indexItems.empty()) {
     return false;
@@ -872,6 +893,17 @@ bool OptimizerUtils::findOptimalIndex(const Expression* condition,
   }
 
   std::sort(results.begin(), results.end());
+
+  if (!returnCols.empty()) {
+    // find best index which has all of returnCol
+    for (auto resultIter = results.rbegin(); resultIter < results.rend(); resultIter++) {
+      if (isBestIndex(*resultIter->index, returnCols)) {
+        std::vector<IndexResult> bestIndexResult{*resultIter};
+        results.swap(bestIndexResult);
+        break;
+      }
+    }
+  }
 
   auto& index = results.back();
   if (index.hints.empty()) {

@@ -93,7 +93,12 @@ class OptimizerUtils {
       const Expression* condition,
       const std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>>& indexItems,
       bool* isPrefixScan,
-      nebula::storage::cpp2::IndexQueryContext* ictx);
+      nebula::storage::cpp2::IndexQueryContext* ictx,
+      const std::vector<std::string>& returnCols = {});
+
+  static bool isBestIndex(
+      const nebula::meta::cpp2::IndexItem& indexItem,
+      const std::vector<std::string>& returnCols);
 
   static void copyIndexScanData(const nebula::graph::IndexScan* from, nebula::graph::IndexScan* to);
 };
