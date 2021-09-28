@@ -423,13 +423,12 @@ bool Balancer::balanceParts(BalanceID balanceId,
       totalPartsZone += it->second.size();
     }
 
-    LOG(INFO) << "Update min and max loading";
-    LOG(INFO) << "Total parts in zone " << totalPartsZone << ", total hosts " << hostsSize;
     avgLoad = static_cast<float>(totalPartsZone) / hostsSize;
-    LOG(INFO) << "The expect avg load is " << avgLoad;
     minLoad = std::floor(avgLoad);
     maxLoad = std::ceil(avgLoad);
-    LOG(INFO) << "The min load is " << minLoad << " max load is " << maxLoad;
+    LOG(INFO) << "Update min and max loading Total parts in zone " << totalPartsZone
+              << ", total hosts " << hostsSize << " The expect avg load is " << avgLoad
+              << " The min load is " << minLoad << " max load is " << maxLoad;
   }
 
   while (maxPartsHost.second > maxLoad || minPartsHost.second < minLoad) {
@@ -495,8 +494,6 @@ bool Balancer::balanceParts(BalanceID balanceId,
     maxPartsHost = sortedHosts.back();
     minPartsHost = sortedHosts.front();
     if (innerBalance_) {
-      LOG(INFO) << "maxPartsHost.first " << maxPartsHost.first << " minPartsHost.first "
-                << minPartsHost.first;
       while (!checkZoneLegal(maxPartsHost.first, minPartsHost.first)) {
         sortedHosts.pop_back();
         maxPartsHost = sortedHosts.back();
@@ -519,13 +516,12 @@ bool Balancer::balanceParts(BalanceID balanceId,
         totalPartsZone += it->second.size();
       }
 
-      LOG(INFO) << "Update min and max loading";
-      LOG(INFO) << "Total parts in zone " << totalPartsZone << ", total hosts " << hostsSize;
       avgLoad = static_cast<float>(totalPartsZone) / hostsSize;
-      LOG(INFO) << "The expect avg load is " << avgLoad;
       minLoad = std::floor(avgLoad);
       maxLoad = std::ceil(avgLoad);
-      LOG(INFO) << "The min load is " << minLoad << " max load is " << maxLoad;
+      LOG(INFO) << "Update min and max loading Total parts in zone " << totalPartsZone
+                << ", total hosts " << hostsSize << " The expect avg load is " << avgLoad
+                << " The min load is " << minLoad << " max load is " << maxLoad;
     }
   }
   LOG(INFO) << "Balance tasks num: " << tasks.size();
