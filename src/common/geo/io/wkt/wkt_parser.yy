@@ -72,22 +72,22 @@ class WKTScanner;
 
 geometry
   : point {
-    $$ = new Geometry(*$1);
+    $$ = new Geometry(std::move(*$1));
     *geom = $$;
   }
   | linestring {
-    $$ = new Geometry(*$1);
+    $$ = new Geometry(std::move(*$1));
     *geom = $$;
   }
   | polygon {
-    $$ = new Geometry(*$1);
+    $$ = new Geometry(std::move(*$1));
     *geom = $$;
   }
 ;
 
 point
   : KW_POINT L_PAREN coordinate R_PAREN {
-      $$ = new Point(*$3);
+      $$ = new Point(std::move(*$3));
   }
   ;
 
@@ -96,7 +96,7 @@ linestring
       if ($3->size() < 2) {
         throw nebula::WKTParser::syntax_error(@3, "LineString must have at least 2 coordinates");
       }
-      $$ = new LineString(*$3);
+      $$ = new LineString(std::move(*$3));
   }
   ;
 
@@ -111,7 +111,7 @@ polygon
           throw nebula::WKTParser::syntax_error(@3, "Polygon's LinearRing must be closed");
         }
       }
-      $$ = new Polygon(*$3);
+      $$ = new Polygon(std::move(*$3));
   }
   ;
 
@@ -130,23 +130,23 @@ coordinate
 coordinate_list
   : coordinate {
       $$ = new std::vector<Coordinate>();
-      $$->emplace_back(*$1);
+      $$->emplace_back(std::move(*$1));
   }
   | coordinate_list COMMA coordinate {
       $$ = $1;
-      $$->emplace_back(*$3);
+      $$->emplace_back(std::move(*$3));
   }
   ;
 
 coordinate_list_list
   : L_PAREN coordinate_list R_PAREN {
       $$ = new std::vector<std::vector<Coordinate>>();
-      $$->emplace_back(*$2);
+      $$->emplace_back(std::move(*$2));
 
   }
   | coordinate_list_list COMMA L_PAREN coordinate_list R_PAREN {
       $$ = $1;
-      $$->emplace_back(*$4);
+      $$->emplace_back(std::move(*$4));
   }
   ;
 

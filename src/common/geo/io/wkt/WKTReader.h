@@ -64,7 +64,7 @@ class WKTReader {
     auto *geom = geom_;
     geom_ = nullptr;
     scanner_.setWKT(nullptr);
-    return *geom;
+    return std::move(*geom);
   }
 
  private:
