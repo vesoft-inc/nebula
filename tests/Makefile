@@ -22,8 +22,8 @@ CA_SIGNED ?= false
 
 # commands
 gherkin_fmt = ~/.local/bin/reformat-gherkin
-test_without_skip = python3 -m pytest -m "not skip"
 run_test = PYTHONPATH=$$PYTHONPATH:$(CURR_DIR)/.. $(CURR_DIR)/nebula-test-run.py
+test_without_skip = python3 -m pytest -m "not skip"
 test_j = $(test_without_skip) -n$(J)
 
 install-deps:

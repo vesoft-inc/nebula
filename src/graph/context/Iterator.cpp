@@ -12,7 +12,7 @@
 #include "graph/util/SchemaUtil.h"
 #include "interface/gen-cpp2/common_types.h"
 
-DEFINE_int32(num_rows_to_check_memory, 1024, "number rows to check memory");
+DECLARE_int32(num_rows_to_check_memory);
 
 namespace nebula {
 namespace graph {

@@ -86,6 +86,7 @@ class NebulaService(object):
             params.append('--local_config=false')
             params.append('--enable_authorize=true')
             params.append('--system_memory_high_watermark_ratio=0.95')
+            params.append('--num_rows_to_check_memory=4')
             params.append('--session_reclaim_interval_secs=2')
         if name == 'storaged':
             params.append('--local_config=false')
