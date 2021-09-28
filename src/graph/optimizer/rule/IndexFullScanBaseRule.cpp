@@ -56,7 +56,7 @@ StatusOr<TransformResult> IndexFullScanBaseRule::transform(OptContext* ctx,
   std::vector<IndexQueryContext> idxCtxs;
   IndexQueryContext ictx;
 
-  std::sort(indexItems.begin(), indexItems.end(), [] (const auto& lhs, const auto& rhs) {
+  std::sort(indexItems.begin(), indexItems.end(), [](const auto& lhs, const auto& rhs) {
     return lhs->get_fields().size() < rhs->get_fields().size();
   });
   IndexID idxId = indexItems.front()->get_index_id();

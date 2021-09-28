@@ -850,19 +850,18 @@ void OptimizerUtils::eraseInvalidIndexItems(
   }
 }
 
-bool OptimizerUtils::isBestIndex(
-    const nebula::meta::cpp2::IndexItem& indexItem,
-    const std::vector<std::string>& returnCols) {
+bool OptimizerUtils::isBestIndex(const nebula::meta::cpp2::IndexItem& indexItem,
+                                 const std::vector<std::string>& returnCols) {
   auto indexFields = indexItem.get_fields();
-  for (const auto &returnCol : returnCols) {
+  for (const auto& returnCol : returnCols) {
     static const std::set<std::string> propsInKey{kVid, kTag, kSrc, kType, kRank, kDst};
     if (propsInKey.count(returnCol)) {
       continue;
     }
-    auto iter = std::find_if(indexFields.begin(), indexFields.end(),
-                             [returnCol](const meta::cpp2::ColumnDef& field){
-                               return field.get_name() == returnCol;
-                             });
+    auto iter = std::find_if(
+        indexFields.begin(), indexFields.end(), [returnCol](const meta::cpp2::ColumnDef& field) {
+          return field.get_name() == returnCol;
+        });
     if (iter == indexFields.end()) {
       return false;
     }

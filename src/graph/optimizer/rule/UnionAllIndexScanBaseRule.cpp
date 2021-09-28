@@ -78,8 +78,8 @@ StatusOr<TransformResult> UnionAllIndexScanBaseRule::transform(OptContext* ctx,
   for (auto operand : condition->operands()) {
     IndexQueryContext ictx;
     bool isPrefixScan = false;
-    if (!OptimizerUtils::findOptimalIndex(operand, indexItems,
-                                          &isPrefixScan, &ictx, scan->returnColumns())) {
+    if (!OptimizerUtils::findOptimalIndex(
+            operand, indexItems, &isPrefixScan, &ictx, scan->returnColumns())) {
       return TransformResult::noTransform();
     }
     idxCtxs.emplace_back(std::move(ictx));

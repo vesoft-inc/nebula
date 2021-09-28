@@ -105,8 +105,8 @@ StatusOr<TransformResult> OptimizeEdgeIndexScanByFilterRule::transform(
 
   IndexQueryContext ictx;
   bool isPrefixScan = false;
-  if (!OptimizerUtils::findOptimalIndex(filter->condition(), indexItems,
-                                        &isPrefixScan, &ictx, scan->returnColumns())) {
+  if (!OptimizerUtils::findOptimalIndex(
+          filter->condition(), indexItems, &isPrefixScan, &ictx, scan->returnColumns())) {
     return TransformResult::noTransform();
   }
   std::vector<IndexQueryContext> idxCtxs = {ictx};
