@@ -66,6 +66,20 @@ def pytest_addoption(parser):
         help="k8s configfile, would create nebulacluster via this config",
     )
 
+    parser.addoption(
+        "--docker_group",
+        dest="docker_group",
+        default="reg.vesoft-inc.com/ci",
+        help="docker group for nebula-operator"
+    )
+
+    parser.addoption(
+        "--docker_tag",
+        dest="docker_tag",
+        default="nightly",
+        help="docker tag for nebula-operator"
+    )
+
 
 def pytest_configure(config):
     pytest.cmdline.address = config.getoption("address")
@@ -81,6 +95,8 @@ def pytest_configure(config):
     pytest.cmdline.rm_dir = config.getoption("rm_dir")
     pytest.cmdline.debug_log = config.getoption("debug_log")
     pytest.cmdline.kubeconfig = config.getoption("kubeconfig")
+    pytest.cmdline.kubeconfig = config.getoption("docker_group")
+    pytest.cmdline.kubeconfig = config.getoption("docker_tag")
 
 
 def get_port():

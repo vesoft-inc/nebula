@@ -2,7 +2,7 @@
 #
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
-Feature: zone
+Feature: Zone create
 
   Scenario: create zone and space
     Given a nebulacluster with 1 graphd and 1 metad and 6 storaged
@@ -117,6 +117,11 @@ Feature: zone
       ADD ZONE z1 "{}-storaged-2.{}-storaged-headless.default.svc.cluster.local":9779
       """
     Then an ExecutionError should be raised at runtime: Existed!
+    When executing query, fill replace holders with cluster_name:
+      """
+      ADD ZONE z3 "{}-storaged-0.{}-storaged-headless.default.svc.cluster.local":9779,"{}-storaged-2.{}-storaged-headless.default.svc.cluster.local":9779
+      """
+    Then an ExecutionError should be raised at runtime: Invalid parm!
     When executing query:
       """
       ADD GROUP g1 z0;
@@ -162,7 +167,35 @@ Feature: zone
       CREATE SPACE test_2(partition_num=1, replica_factor=1, vid_type=int64) ON g_2
       """
     Then an ExecutionError should be raised at runtime: Group not existed!
+    When executing query:
+      """
+      CREATE SPACE test_3(partition_num=1, replica_factor=3, vid_type=int64) ON g2
+      """
+    Then an ExecutionError should be raised at runtime: Invalid parm!
     Then drop the used nebulacluster
+
+  Scenario: create group nagative
+    Given a nebulacluster with 1 graphd and 1 metad and 6 storaged
+    When executing query, fill replace holders with cluster_name:
+      """
+      ADD ZONE z1 "{}-storaged-0.{}-storaged-headless.default.svc.cluster.local":9779,"{}-storaged-1.{}-storaged-headless.default.svc.cluster.local":9779;
+      ADD ZONE z2 "{}-storaged-2.{}-storaged-headless.default.svc.cluster.local":9779,"{}-storaged-3.{}-storaged-headless.default.svc.cluster.local":9779;
+      ADD ZONE z3 "{}-storaged-4.{}-storaged-headless.default.svc.cluster.local":9779,"{}-storaged-5.{}-storaged-headless.default.svc.cluster.local":9779;
+      """
+    Then the execution should be successful
+    # add group with empty zone
+    # TODO should verify the error message.
+    When executing query, fill replace holders with cluster_name:
+      """
+      DROP HOST "{}-storaged-0.{}-storaged-headless.default.svc.cluster.local":9779 FROM ZONE z1;
+      DROP HOST "{}-storaged-1.{}-storaged-headless.default.svc.cluster.local":9779 FROM ZONE z1;
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      ADD GROUP g1 z1,z2;
+      """
+    Then an ExecutionError should be raised at runtime: Invalid parm!
 
   Scenario: create spaces and check parts
     Given a nebulacluster with 1 graphd and 1 metad and 7 storaged
@@ -191,4 +224,4 @@ Feature: zone
     # should check partitions
     And verify the space partition, space is s1
     And verify the space partition, space is s2
-
+    Then drop the used nebulacluster

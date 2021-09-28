@@ -34,8 +34,8 @@ spec:
         cpu: "1"
         memory: "2Gi"
     replicas: {graphd_num}
-    image: vesoft/nebula-graphd
-    version: v2-nightly
+    image: {docker_group}/nebula-graphd
+    version: "{docker_tag}"
     service:
       type: NodePort
       externalTrafficPolicy: Local
@@ -55,8 +55,8 @@ spec:
         cpu: "1"
         memory: "1Gi"
     replicas: {metad_num}
-    image: vesoft/nebula-metad
-    version: v2-nightly
+    image: {docker_group}/nebula-metad
+    version: "{docker_tag}"
     storageClaim:
       resources:
         requests:
@@ -73,8 +73,8 @@ spec:
         cpu: "1"
         memory: "1Gi"
     replicas: {storaged_num}
-    image: vesoft/nebula-storaged
-    version: v2-nightly
+    image: {docker_group}/nebula-storaged
+    version: "{docker_tag}"
     storageClaim:
       resources:
         requests:
@@ -110,13 +110,15 @@ class K8SUtil(object):
                 if addr.type == "InternalIP":
                     return addr.address
 
-    def create_nebulacluster(self, graphd_num, metad_num, storaged_num):
+    def create_nebulacluster(self, graphd_num, metad_num, storaged_num, docker_group, docker_tag):
         name = name_generator()
         body_str = NEBULA_OPERATOR_TEMPLATE.format(
             nebulacluster_name=name,
             graphd_num=graphd_num,
             storaged_num=storaged_num,
             metad_num=metad_num,
+            docker_group=docker_group,
+            docker_tag=docker_tag,
         )
         body = yaml.load(body_str, Loader=yaml.FullLoader)
         res = self.custom_api.create_namespaced_custom_object(
@@ -127,7 +129,8 @@ class K8SUtil(object):
             body,
         )
 
-        self.wait_nebulacluster_ready(name)
+        if not self.wait_nebulacluster_ready(name):
+            raise Exception("create nebula cluster failed")
 
         # patch nebula svc, using nodeport
         self.patch_nebulacluster_svc(name)
@@ -147,7 +150,7 @@ class K8SUtil(object):
         )
         return res
 
-    def wait_nebulacluster_ready(self, name, timeout=120):
+    def wait_nebulacluster_ready(self, name, timeout=180):
         """wait for nebulacluster is ready
 
         Args:

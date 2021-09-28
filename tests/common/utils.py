@@ -457,8 +457,8 @@ def resultset_to_dict_str(result: ResultSet) -> dict:
     )
     keys = result.keys()
     d = {k: [] for k in keys}
-    for index,record in enumerate(result):
-        key = keys[index]
-        for value in record:
+    for record in result:
+        for index, value in enumerate(record):
+            key = keys[index]
             d[key].append(value_to_string(value))
     return d

@@ -1,0 +1,67 @@
+name: cluster
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [synchronize, labeled]
+    branches:
+      - master
+      - 'v[0-9]+.*'
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    name: build
+    if: ${{ contains(github.event.pull_request.labels.*.name, 'cluster') }}
+    runs-on: [self-hosted, cluster]
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: docker/login-action@v1
+        with:
+          registry: reg.vesoft-inc.com
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: build and push
+        run: |
+          for item in graphd storaged metad;do
+            docker build . -f docker/Dockerfile --target ${item} \
+                -t reg.vesoft-inc.com/ci/nebula-${item}:${{ github.event.pull_request.number }};
+            docker push reg.vesoft-inc.com/ci/nebula-${item}:${{ github.event.pull_request.number }};
+          done
+
+  run:
+    name: run test cases
+    needs: build
+    runs-on: [self-hosted, cluster]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Prepare environment
+        id: prepare
+        run: |
+          [ -d build/ ] && rm -rf build/* || mkdir -p build
+          make init -C tests
+      - name: Setup cluster
+        run: |
+          git clone https://github.com/vesoft-inc/nebula-docker-compose.git
+          # cd nebula-docker-compose && docker-compose up -d
+      - name: TCK
+        run: |
+          mkdir .pytest
+          PYTHONPATH=$PYTHONPATH:.. ./nebula-test-run.py --cmd=start --rm_dir=true \
+            --build_dir=../build --debug=true --multi_graphd=true --enable_ssl=false \
+            --enable_graph_ssl=false --enable_meta_ssl=false --ca_signed=false \
+            --address=192.168.8.61:9669
+          python3 -m pytest -n4 -m "not skip" tck/steps/test_cluster.py -s \
+            --address=192.168.8.61:9669 \
+            --kubeconfig=~/.kube/config \
+            --docker_group=reg.vesoft-inc.com/ci \
+            --docker_tag=${{ github.event.pull_request.number }}
+        working-directory: tests/
+      - name: Down cluster
+        run: |
+          cd nebula-docker-compose && docker-compose down
