@@ -21,10 +21,10 @@ class FetchEdgesValidatorTest : public ValidatorTestBase {
 };
 
 TEST_F(FetchEdgesValidatorTest, FetchEdgesProp) {
-  auto src = VariablePropertyExpression::make(pool_.get(), "_VAR1_", kSrc);
+  auto src = ColumnExpression::make(pool_.get(), 0);
   auto type = VariablePropertyExpression::make(pool_.get(), "_VAR2_", kType);
-  auto rank = VariablePropertyExpression::make(pool_.get(), "_VAR3_", kRank);
-  auto dst = VariablePropertyExpression::make(pool_.get(), "_VAR4_", kDst);
+  auto rank = ColumnExpression::make(pool_.get(), 1);
+  auto dst = ColumnExpression::make(pool_.get(), 2);
   {
     auto qctx = getQCtx("FETCH PROP ON like \"1\"->\"2\"");
     auto *pool = qctx->objPool();
@@ -35,22 +35,12 @@ TEST_F(FetchEdgesValidatorTest, FetchEdgesProp) {
     auto edgeType = edgeTypeResult.value();
     storage::cpp2::EdgeProp prop;
     prop.set_type(edgeType);
-    prop.set_props({kSrc, kDst, kRank, kType, "start", "end", "likeness"});
+    std::set<std::string> propNames{kSrc, kDst, kRank, kType, "start", "end", "likeness"};
+    prop.set_props(std::vector<std::string>(propNames.begin(), propNames.end()));
     auto props = std::make_unique<std::vector<storage::cpp2::EdgeProp>>();
     props->emplace_back(std::move(prop));
     auto *ge = GetEdges::make(qctx, start, 1, src, type, rank, dst, std::move(props));
-    std::vector<std::string> colNames{std::string("like.") + kSrc,
-                                      std::string("like.") + kDst,
-                                      std::string("like.") + kRank,
-                                      std::string("like.") + kType,
-                                      "like.start",
-                                      "like.end",
-                                      "like.likeness"};
-    ge->setColNames(colNames);
-
-    // filter
     auto *filter = Filter::make(qctx, ge, nullptr /*TODO*/);
-    filter->setColNames(colNames);
 
     // project
     auto yieldColumns = std::make_unique<YieldColumns>();
@@ -71,7 +61,8 @@ TEST_F(FetchEdgesValidatorTest, FetchEdgesProp) {
     auto edgeType = edgeTypeResult.value();
     storage::cpp2::EdgeProp prop;
     prop.set_type(edgeType);
-    prop.set_props({kSrc, kDst, kRank, "start", "end"});
+    std::set<std::string> propNames{kSrc, kDst, kRank, "start", "end"};
+    prop.set_props(std::vector<std::string>(propNames.begin(), propNames.end()));
     auto props = std::make_unique<std::vector<storage::cpp2::EdgeProp>>();
     props->emplace_back(std::move(prop));
     auto exprs = std::make_unique<std::vector<storage::cpp2::Expr>>();
@@ -83,16 +74,7 @@ TEST_F(FetchEdgesValidatorTest, FetchEdgesProp) {
     exprs->emplace_back(std::move(expr2));
     auto *ge =
         GetEdges::make(qctx, start, 1, src, type, rank, dst, std::move(props), std::move(exprs));
-    std::vector<std::string> colNames{std::string("like.") + kSrc,
-                                      std::string("like.") + kDst,
-                                      std::string("like.") + kRank,
-                                      "like.start",
-                                      "like.end"};
-    ge->setColNames(colNames);
-
-    // filter
     auto *filter = Filter::make(qctx, ge, nullptr /*TODO*/);
-    filter->setColNames(colNames);
 
     // Project
     auto yieldColumns = std::make_unique<YieldColumns>();
@@ -122,7 +104,8 @@ TEST_F(FetchEdgesValidatorTest, FetchEdgesProp) {
     auto edgeType = edgeTypeResult.value();
     storage::cpp2::EdgeProp prop;
     prop.set_type(edgeType);
-    prop.set_props({kSrc, kDst, kRank, "start", "end"});
+    std::set<std::string> propNames{kSrc, kDst, kRank, "start", "end"};
+    prop.set_props(std::vector<std::string>(propNames.begin(), propNames.end()));
     auto props = std::make_unique<std::vector<storage::cpp2::EdgeProp>>();
     props->emplace_back(std::move(prop));
     auto exprs = std::make_unique<std::vector<storage::cpp2::Expr>>();
@@ -134,16 +117,7 @@ TEST_F(FetchEdgesValidatorTest, FetchEdgesProp) {
     exprs->emplace_back(std::move(expr2));
     auto *ge =
         GetEdges::make(qctx, start, 1, src, type, rank, dst, std::move(props), std::move(exprs));
-    std::vector<std::string> colNames{std::string("like.") + kSrc,
-                                      std::string("like.") + kDst,
-                                      std::string("like.") + kRank,
-                                      "like.start",
-                                      "like.end"};
-    ge->setColNames(colNames);
-
-    // filter
     auto *filter = Filter::make(qctx, ge, nullptr /*TODO*/);
-    filter->setColNames(colNames);
 
     // Project
     auto yieldColumns = std::make_unique<YieldColumns>();
@@ -175,8 +149,8 @@ TEST_F(FetchEdgesValidatorTest, FetchEdgesProp) {
     auto edgeType = edgeTypeResult.value();
     storage::cpp2::EdgeProp prop;
     prop.set_type(edgeType);
-    std::vector<std::string> propsName;
-    prop.set_props({kSrc, kDst, kRank, "start", "end"});
+    std::set<std::string> propNames{kSrc, kDst, kRank, "start", "end"};
+    prop.set_props(std::vector<std::string>(propNames.begin(), propNames.end()));
     auto props = std::make_unique<std::vector<storage::cpp2::EdgeProp>>();
     props->emplace_back(std::move(prop));
     auto exprs = std::make_unique<std::vector<storage::cpp2::Expr>>();
@@ -188,16 +162,7 @@ TEST_F(FetchEdgesValidatorTest, FetchEdgesProp) {
     exprs->emplace_back(std::move(expr1));
     auto *ge =
         GetEdges::make(qctx, start, 1, src, type, rank, dst, std::move(props), std::move(exprs));
-    std::vector<std::string> colNames{std::string("like.") + kSrc,
-                                      std::string("like.") + kDst,
-                                      std::string("like.") + kRank,
-                                      "like.start",
-                                      "like.end"};
-    ge->setColNames(colNames);
-
-    // filter
     auto *filter = Filter::make(qctx, ge, nullptr /*TODO*/);
-    filter->setColNames(colNames);
 
     // project, TODO(shylock) it's could push-down to storage if it supported
     auto yieldColumns = std::make_unique<YieldColumns>();
@@ -228,7 +193,8 @@ TEST_F(FetchEdgesValidatorTest, FetchEdgesProp) {
     auto edgeType = edgeTypeResult.value();
     storage::cpp2::EdgeProp prop;
     prop.set_type(edgeType);
-    prop.set_props({kSrc, kDst, kRank, "start", "end"});
+    std::set<std::string> propNames{kSrc, kDst, kRank, "start", "end"};
+    prop.set_props(std::vector<std::string>(propNames.begin(), propNames.end()));
     auto props = std::make_unique<std::vector<storage::cpp2::EdgeProp>>();
     props->emplace_back(std::move(prop));
     auto exprs = std::make_unique<std::vector<storage::cpp2::Expr>>();
@@ -246,11 +212,9 @@ TEST_F(FetchEdgesValidatorTest, FetchEdgesProp) {
                                       std::string("like.") + kRank,
                                       "like.start",
                                       "like.end"};
-    ge->setColNames(colNames);
 
     // filter
     auto *filter = Filter::make(qctx, ge, nullptr /*TODO*/);
-    filter->setColNames(colNames);
 
     // project
     auto yieldColumns = std::make_unique<YieldColumns>();
@@ -260,14 +224,9 @@ TEST_F(FetchEdgesValidatorTest, FetchEdgesProp) {
     yieldColumns->addColumn(new YieldColumn(EdgePropertyExpression::make(pool, "like", "start")));
     yieldColumns->addColumn(new YieldColumn(EdgePropertyExpression::make(pool, "like", "end")));
     auto *project = Project::make(qctx, filter, yieldColumns.get());
-    project->setColNames({std::string("like.") + kSrc,
-                          std::string("like.") + kDst,
-                          std::string("like.") + kRank,
-                          "like.start",
-                          "like.end"});
+    project->setColNames(colNames);
     // dedup
     auto *dedup = Dedup::make(qctx, project);
-    dedup->setColNames(colNames);
 
     // data collect
     auto *dataCollect = DataCollect::make(qctx, DataCollect::DCKind::kRowBasedMove);
@@ -358,6 +317,14 @@ TEST_F(FetchEdgesValidatorTest, FetchEdgesInputOutput) {
 TEST_F(FetchEdgesValidatorTest, FetchEdgesPropFailed) {
   // mismatched tag
   ASSERT_FALSE(validate("FETCH PROP ON edge1 \"1\"->\"2\" YIELD edge2.prop2"));
+
+  ASSERT_FALSE(validate("FETCH PROP ON edge1 \"1\"->\"2\" YIELD edge"));
+  ASSERT_FALSE(validate("FETCH PROP ON edge1 \"1\"->\"2\" YIELD vertex"));
+  ASSERT_FALSE(validate("FETCH PROP ON edge1 \"1\"->\"2\" YIELD vertex as a, edge1.prop1"));
+  ASSERT_FALSE(validate("FETCH PROP ON edge1 \"1\"->\"2\" YIELD vertex as b"));
+  ASSERT_FALSE(validate("FETCH PROP ON edge1 \"1\"->\"2\" YIELD path as a"));
+  ASSERT_FALSE(validate("FETCH PROP ON edge1 \"1\"->\"2\" YIELD $$.player.name"));
+  ASSERT_FALSE(validate("FETCH PROP ON edge1 \"1\"->\"2\" YIELD $^.player.name"));
 
   // notexist edge
   ASSERT_FALSE(validate("FETCH PROP ON not_exist_edge \"1\"->\"2\" YIELD not_exist_edge.prop1"));

@@ -130,10 +130,6 @@ class Validator {
   // Check the output for duplicate column names
   Status checkDuplicateColName();
 
-  // Check the variable or input property reference
-  // return the input variable
-  StatusOr<std::string> checkRef(const Expression* ref, const Value::Type type);
-
   Status validateStarts(const VerticesClause* clause, Starts& starts);
 
   template <typename T>

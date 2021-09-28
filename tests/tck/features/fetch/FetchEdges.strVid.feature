@@ -84,7 +84,8 @@ Feature: Fetch String Vid Edges
   Scenario: Fetch prop works with user define variable
     When executing query:
       """
-      $var = GO FROM 'Boris Diaw' OVER serve YIELD serve._src AS src, serve._dst AS dst; FETCH PROP ON serve $var.src->$var.dst YIELD serve.start_year, serve.end_year
+      $var = GO FROM 'Boris Diaw' OVER serve YIELD serve._src AS src, serve._dst AS dst;
+      FETCH PROP ON serve $var.src->$var.dst YIELD serve.start_year, serve.end_year
       """
     Then the result should be, in any order:
       | serve._src   | serve._dst | serve._rank | serve.start_year | serve.end_year |
@@ -105,7 +106,8 @@ Feature: Fetch String Vid Edges
     # Fetch prop works with DISTINCT and pipeline
     When executing query:
       """
-      GO FROM 'Boris Diaw','Boris Diaw' OVER serve YIELD serve._src AS src, serve._dst AS dst | FETCH PROP ON serve $-.src->$-.dst YIELD DISTINCT serve.start_year, serve.end_year
+      GO FROM 'Boris Diaw','Boris Diaw' OVER serve YIELD serve._src AS src, serve._dst AS dst |
+      FETCH PROP ON serve $-.src->$-.dst YIELD DISTINCT serve.start_year, serve.end_year
       """
     Then the result should be, in any order:
       | serve._src   | serve._dst | serve._rank | serve.start_year | serve.end_year |
@@ -116,7 +118,8 @@ Feature: Fetch String Vid Edges
       | "Boris Diaw" | "Jazz"     | 0           | 2016             | 2017           |
     When executing query:
       """
-      GO FROM 'Tim Duncan','Tony Parker' OVER serve YIELD serve._src AS src, serve._dst AS dst | FETCH PROP ON serve $-.src->$-.dst YIELD DISTINCT serve._dst as dst
+      GO FROM 'Tim Duncan','Tony Parker' OVER serve YIELD serve._src AS src, serve._dst AS dst |
+      FETCH PROP ON serve $-.src->$-.dst YIELD DISTINCT serve._dst as dst
       """
     Then the result should be, in any order:
       | serve._src    | serve._dst | serve._rank | dst       |
@@ -126,7 +129,8 @@ Feature: Fetch String Vid Edges
     # Fetch prop works with DISTINCT and user define variable
     When executing query:
       """
-      $var = GO FROM 'Boris Diaw','Boris Diaw' OVER serve YIELD serve._src AS src, serve._dst AS dst; FETCH PROP ON serve $var.src->$var.dst YIELD DISTINCT serve.start_year, serve.end_year
+      $var = GO FROM 'Boris Diaw','Boris Diaw' OVER serve YIELD serve._src AS src, serve._dst AS dst;
+      FETCH PROP ON serve $var.src->$var.dst YIELD DISTINCT serve.start_year, serve.end_year
       """
     Then the result should be, in any order:
       | serve._src   | serve._dst | serve._rank | serve.start_year | serve.end_year |
@@ -145,24 +149,24 @@ Feature: Fetch String Vid Edges
       | serve._src | serve._dst | serve._rank | serve.start_year |
     When executing query:
       """
-      GO FROM "NON EXIST VERTEX ID" OVER serve YIELD serve._src AS src, serve._dst AS dst
-      | FETCH PROP ON serve $-.src->$-.dst YIELD serve.start_year, serve.end_year
+      GO FROM "NON EXIST VERTEX ID" OVER serve YIELD serve._src AS src, serve._dst AS dst |
+      FETCH PROP ON serve $-.src->$-.dst YIELD serve.start_year, serve.end_year
       """
     Then the result should be, in any order:
       | serve._src | serve._dst | serve._rank | serve.start_year | serve.end_year |
     When executing query:
       """
-      GO FROM "NON EXIST VERTEX ID" OVER serve YIELD serve._src AS src, serve._dst AS dst, serve.start_year as start
-      | YIELD $-.src as src, $-.dst as dst WHERE $-.start > 20000
-      | FETCH PROP ON serve $-.src->$-.dst YIELD serve.start_year, serve.end_year
+      GO FROM "NON EXIST VERTEX ID" OVER serve YIELD serve._src AS src, serve._dst AS dst, serve.start_year as start |
+      YIELD $-.src as src, $-.dst as dst WHERE $-.start > 20000 |
+      FETCH PROP ON serve $-.src->$-.dst YIELD serve.start_year, serve.end_year
       """
     Then the result should be, in any order:
       | serve._src | serve._dst | serve._rank | serve.start_year | serve.end_year |
     When executing query:
       """
-      GO FROM "Marco Belinelli" OVER serve YIELD serve._src AS src, serve._dst AS dst, serve.start_year as start
-                   | YIELD $-.src as src, $-.dst as dst WHERE $-.start > 20000
-                   | FETCH PROP ON serve $-.src->$-.dst YIELD serve.start_year, serve.end_year
+      GO FROM "Marco Belinelli" OVER serve YIELD serve._src AS src, serve._dst AS dst, serve.start_year as start |
+      YIELD $-.src as src, $-.dst as dst WHERE $-.start > 20000 |
+      FETCH PROP ON serve $-.src->$-.dst YIELD serve.start_year, serve.end_year
       """
     Then the result should be, in any order:
       | serve._src | serve._dst | serve._rank | serve.start_year | serve.end_year |
@@ -197,7 +201,8 @@ Feature: Fetch String Vid Edges
   Scenario: Fetch and Yield
     When executing query:
       """
-      FETCH PROP ON like "Tony Parker"->"Tim Duncan", "Grant Hill" -> "Tracy McGrady" | yield properties($-.edges_)
+      FETCH PROP ON like "Tony Parker"->"Tim Duncan", "Grant Hill" -> "Tracy McGrady" |
+      YIELD properties($-.edges_)
       """
     Then the result should be, in any order:
       | properties($-.edges_) |
@@ -205,7 +210,8 @@ Feature: Fetch String Vid Edges
       | {likeness: 90}        |
     When executing query:
       """
-      FETCH PROP ON like "Tony Parker"->"Tim Duncan", "Grant Hill" -> "Tracy McGrady" | yield startNode($-.edges_) AS nodes
+      FETCH PROP ON like "Tony Parker"->"Tim Duncan", "Grant Hill" -> "Tracy McGrady" |
+      YIELD startNode($-.edges_) AS nodes
       """
     Then the result should be, in any order, with relax comparison:
       | nodes           |
@@ -213,34 +219,35 @@ Feature: Fetch String Vid Edges
       | ("Grant Hill")  |
     When executing query:
       """
-      FETCH PROP ON like "Tony Parker"->"Tim Duncan", "Grant Hill" -> "Tracy McGrady" | yield endNode($-.edges_) AS nodes
+      FETCH PROP ON like "Tony Parker"->"Tim Duncan", "Grant Hill" -> "Tracy McGrady" |
+      YIELD endNode($-.edges_) AS nodes
       """
     Then the result should be, in any order, with relax comparison:
       | nodes             |
       | ("Tim Duncan")    |
       | ("Tracy McGrady") |
 
-  Scenario: Fetch prop Semantic Error
+  Scenario: Fetch prop Error
     When executing query:
       """
       FETCH PROP ON serve "Boris Diaw"->"Spurs" YIELD $^.serve.start_year
       """
-    Then a SemanticError should be raised at runtime:
+    Then a ExecutionError should be raised at runtime:
     When executing query:
       """
       FETCH PROP ON serve "Boris Diaw"->"Spurs" YIELD $$.serve.start_year
       """
-    Then a SemanticError should be raised at runtime:
+    Then a ExecutionError should be raised at runtime:
     When executing query:
       """
       FETCH PROP ON serve "Boris Diaw"->"Spurs" YIELD abc.start_year
       """
-    Then a SemanticError should be raised at runtime:
+    Then a ExecutionError should be raised at runtime:
     # Fetch prop on illegal input
     When executing query:
       """
-      GO FROM 'Boris Diaw' OVER serve YIELD serve._src AS src, serve._dst AS src
-      | FETCH PROP ON serve $-.src->$-.dst YIELD serve.start_year, serve.end_year
+      GO FROM 'Boris Diaw' OVER serve YIELD serve._src AS src, serve._dst AS src |
+      FETCH PROP ON serve $-.src->$-.dst YIELD serve.start_year, serve.end_year
       """
     Then a SemanticError should be raised at runtime:
     # Fetch prop returns not existing property
@@ -249,3 +256,72 @@ Feature: Fetch String Vid Edges
       FETCH PROP ON serve 'Boris Diaw'->'Hawks' YIELD serve.not_exist_prop
       """
     Then a SemanticError should be raised at runtime:
+
+  Scenario: yield edge
+    When executing query:
+      """
+      FETCH PROP ON serve 'Boris Diaw' -> 'Hawks' YIELD serve.start_year, serve.end_year, edge as relationship
+      """
+    Then the result should be, in any order:
+      | serve._src   | serve._dst | serve._rank | serve.start_year | serve.end_year | relationship                                                         |
+      | "Boris Diaw" | "Hawks"    | 0           | 2003             | 2005           | [:serve "Boris Diaw"->"Hawks" @0 {end_year: 2005, start_year: 2003}] |
+    When executing query:
+      """
+      FETCH PROP ON serve "Boris Diaw"->"Spurs" YIELD edge as relationship, src(edge) as src_edge, dst(edge) as dst_edge, type(edge) as type, rank(edge) as rank
+      """
+    Then the result should be, in any order:
+      | serve._src   | serve._dst | serve._rank | relationship                                                         | src_edge     | dst_edge | type    | rank |
+      | "Boris Diaw" | "Spurs"    | 0           | [:serve "Boris Diaw"->"Spurs" @0 {end_year: 2016, start_year: 2012}] | "Boris Diaw" | "Spurs"  | "serve" | 0    |
+    When executing query:
+      """
+      FETCH PROP ON serve "Boris Diaw"->"Not Exist" YIELD src(edge) as a
+      """
+    Then the result should be, in any order:
+      | serve._src | serve._dst | serve._rank | a |
+    When executing query:
+      """
+      FETCH PROP ON like "Tony Parker"->"Tim Duncan", "Grant Hill" -> "Tracy McGrady" YIELD edge as relationship |
+      YIELD properties($-.relationship)
+      """
+    Then the result should be, in any order:
+      | properties($-.relationship) |
+      | {likeness: 95}              |
+      | {likeness: 90}              |
+    When executing query:
+      """
+      FETCH PROP ON like "Tony Parker"->"Tim Duncan", "Grant Hill" -> "Tracy McGrady" YIELD properties(edge) as properties
+      """
+    Then the result should be, in any order:
+      | like._src     | like._dst       | like._rank | properties     |
+      | "Tony Parker" | "Tim Duncan"    | 0          | {likeness: 95} |
+      | "Grant Hill"  | "Tracy McGrady" | 0          | {likeness: 90} |
+    When executing query:
+      """
+      FETCH PROP ON like "Tony Parker"->"Tim Duncan", "Grant Hill" -> "Tracy McGrady" YIELD edge as relationship |
+      YIELD startNode($-.relationship) AS node
+      """
+    Then the result should be, in any order, with relax comparison:
+      | node            |
+      | ("Tony Parker") |
+      | ("Grant Hill")  |
+    When executing query:
+      """
+      FETCH PROP ON like "Tony Parker"->"Tim Duncan", "Grant Hill" -> "Tracy McGrady" YIELD edge as relationship |
+      YIELD endNode($-.relationship) AS node
+      """
+    Then the result should be, in any order, with relax comparison:
+      | node              |
+      | ("Tim Duncan")    |
+      | ("Tracy McGrady") |
+    When executing query:
+      """
+      $var = GO FROM 'Boris Diaw','Boris Diaw' OVER serve YIELD serve._src AS src, serve._dst AS dst;
+      FETCH PROP ON serve $var.src->$var.dst YIELD DISTINCT serve.start_year, serve.end_year, edge as relationship
+      """
+    Then the result should be, in any order:
+      | serve._src   | serve._dst | serve._rank | serve.start_year | serve.end_year | relationship                                                           |
+      | "Boris Diaw" | "Suns"     | 0           | 2005             | 2008           | [:serve "Boris Diaw"->"Suns" @0 {end_year: 2008, start_year: 2005}]    |
+      | "Boris Diaw" | "Hawks"    | 0           | 2003             | 2005           | [:serve "Boris Diaw"->"Hawks" @0 {end_year: 2005, start_year: 2003}]   |
+      | "Boris Diaw" | "Spurs"    | 0           | 2012             | 2016           | [:serve "Boris Diaw"->"Spurs" @0 {end_year: 2016, start_year: 2012}]   |
+      | "Boris Diaw" | "Hornets"  | 0           | 2008             | 2012           | [:serve "Boris Diaw"->"Hornets" @0 {end_year: 2012, start_year: 2008}] |
+      | "Boris Diaw" | "Jazz"     | 0           | 2016             | 2017           | [:serve "Boris Diaw"->"Jazz" @0 {end_year: 2017, start_year: 2016}]    |

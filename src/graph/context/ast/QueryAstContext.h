@@ -143,6 +143,20 @@ struct FetchVerticesContext final : public AstContext {
   std::string inputVarName;
 };
 
+struct FetchEdgesContext final : public AstContext {
+  Expression* src{nullptr};
+  Expression* dst{nullptr};
+  Expression* rank{nullptr};
+  Expression* type{nullptr};
+
+  ExpressionProps exprProps;
+  YieldColumns* yieldExpr{nullptr};
+  std::string edgeName;
+  bool distinct{false};
+  // store the result of the previous sentence
+  std::string inputVarName;
+};
+
 }  // namespace graph
 }  // namespace nebula
 #endif  // GRAPH_CONTEXT_AST_QUERYASTCONTEXT_H_

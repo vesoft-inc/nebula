@@ -289,7 +289,7 @@ class FetchEdgesSentence final : public Sentence {
 
   YieldClause* yieldClause() const { return yieldClause_.get(); }
 
-  const std::string* edge() const { return edge_->front(); }
+  const std::string& edgeName() const { return *edge_->front(); }
 
   std::size_t edgeSize() const { return edge_->size(); }
 
