@@ -540,10 +540,6 @@ StatusOr<SubPlan> GoPlanner::transform(AstContext* astCtx) {
 
   auto& steps = goCtx_->steps;
   if (steps.isMToN()) {
-    // TODO(shylock) need read the limit number in runtime for the Loop
-    // if (!goCtx_->limits.empty()) {
-    // return Status::SemanticError("Not supported sample/limit in multiple steps GO query.");
-    // }
     return mToNStepsPlan(startPlan);
   }
 
@@ -558,10 +554,6 @@ StatusOr<SubPlan> GoPlanner::transform(AstContext* astCtx) {
   if (steps.steps() == 1) {
     return oneStepPlan(startPlan);
   }
-  // TODO(shylock) need read the limit number in runtime for the Loop
-  // if (!goCtx_->limits.empty()) {
-  // return Status::SemanticError("Not supported sample/limit in multiple steps GO query.");
-  // }
   return nStepsPlan(startPlan);
 }
 
