@@ -72,23 +72,14 @@ Status FindPathValidator::validateYield(YieldClause* yield) {
     yield = pool->add(new YieldClause(yieldColumns));
   }
 
-  YieldColumns* newCols = pool->add(new YieldColumns());
   for (auto& col : yield->columns()) {
-    if (!ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kPathBuild})) {
-      return Status::SemanticError("illegal yield clauses `%s'", col->toString().c_str());
+    if (col->expr()->kind() != Expression::Kind::kPathBuild) {
+      return Status::SemanticError("illegal yield clauses `%s'. only support yield path",
+                                   col->toString().c_str());
     }
-    auto colExpr = col->expr();
-    auto typeStatus = deduceExprType(colExpr);
-    NG_RETURN_IF_ERROR(typeStatus);
-    outputs_.emplace_back(col->name(), typeStatus.value());
-    if (col->expr()->kind() == Expression::Kind::kPathBuild) {
-      auto* newCol = new YieldColumn(InputPropertyExpression::make(pool, "PATH"), col->name());
-      newCols->addColumn(newCol);
-    } else {
-      newCols->addColumn(col->clone().release());
-    }
+    outputs_.emplace_back(col->name(), Value::Type::PATH);
   }
-  pathCtx_->yieldExpr = newCols;
+  pathCtx_->colNames = getOutColNames();
   return Status::OK();
 }
 

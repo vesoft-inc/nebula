@@ -29,7 +29,8 @@ TEST_F(FindPathValidatorTest, invalidYield) {
     std::string query =
         "FIND ALL PATH WITH PROP FROM \"Tim Duncan\" TO \"Tony Paker\" OVER like YIELD edge as e";
     auto result = checkResult(query);
-    EXPECT_EQ(std::string(result.message()), "SemanticError: illegal yield clauses `EDGE AS e'");
+    EXPECT_EQ(std::string(result.message()),
+              "SemanticError: illegal yield clauses `EDGE AS e'. only support yield path");
   }
   {
     std::string query =
@@ -38,13 +39,20 @@ TEST_F(FindPathValidatorTest, invalidYield) {
     EXPECT_EQ(std::string(result.message()),
               "SyntaxError: please add alias when using path. near `path'");
   }
+  {
+    std::string query =
+        "FIND NOLOOP PATH WITH PROP FROM \"Tim Duncan\" TO \"Yao Ming\" OVER * YIELD "
+        "$$.player.name";
+    auto result = checkResult(query);
+    EXPECT_EQ(std::string(result.message()),
+              "SemanticError: illegal yield clauses `$$.player.name'. only support yield path");
+  }
 }
 
 TEST_F(FindPathValidatorTest, SinglePairPath) {
   {
     std::string query = "FIND SHORTEST PATH FROM \"1\" TO \"2\" OVER like UPTO 5 STEPS";
     std::vector<PlanNode::Kind> expected = {
-        PK::kProject,
         PK::kDataCollect,
         PK::kLoop,
         PK::kStart,
@@ -61,7 +69,6 @@ TEST_F(FindPathValidatorTest, SinglePairPath) {
   {
     std::string query = "FIND SHORTEST PATH FROM \"1\" TO \"2\" OVER like, serve UPTO 5 STEPS";
     std::vector<PlanNode::Kind> expected = {
-        PK::kProject,
         PK::kDataCollect,
         PK::kLoop,
         PK::kStart,
@@ -81,7 +88,6 @@ TEST_F(FindPathValidatorTest, MultiPairPath) {
   {
     std::string query = "FIND SHORTEST PATH FROM \"1\" TO \"2\",\"3\" OVER like UPTO 5 STEPS";
     std::vector<PlanNode::Kind> expected = {
-        PK::kProject,
         PK::kDataCollect,
         PK::kLoop,
         PK::kCartesianProduct,
@@ -103,7 +109,6 @@ TEST_F(FindPathValidatorTest, MultiPairPath) {
         "FIND SHORTEST PATH FROM \"1\",\"2\" TO \"3\",\"4\" OVER like UPTO 5 "
         "STEPS";
     std::vector<PlanNode::Kind> expected = {
-        PK::kProject,
         PK::kDataCollect,
         PK::kLoop,
         PK::kCartesianProduct,
@@ -126,7 +131,6 @@ TEST_F(FindPathValidatorTest, ALLPath) {
   {
     std::string query = "FIND ALL PATH FROM \"1\" TO \"2\" OVER like UPTO 5 STEPS";
     std::vector<PlanNode::Kind> expected = {
-        PK::kProject,
         PK::kDataCollect,
         PK::kLoop,
         PK::kProject,
@@ -145,7 +149,6 @@ TEST_F(FindPathValidatorTest, ALLPath) {
   {
     std::string query = "FIND ALL PATH FROM \"1\" TO \"2\",\"3\" OVER like UPTO 5 STEPS";
     std::vector<PlanNode::Kind> expected = {
-        PK::kProject,
         PK::kDataCollect,
         PK::kLoop,
         PK::kProject,
@@ -170,7 +173,6 @@ TEST_F(FindPathValidatorTest, RunTimePath) {
         " | FIND SHORTEST PATH FROM $-.src TO $-.dst OVER like, serve UPTO 5 "
         "STEPS";
     std::vector<PlanNode::Kind> expected = {
-        PK::kProject,
         PK::kDataCollect,
         PK::kLoop,
         PK::kCartesianProduct,
@@ -198,12 +200,23 @@ TEST_F(FindPathValidatorTest, RunTimePath) {
         "GO FROM \"1\" OVER like YIELD like._src AS src, like._dst AS dst "
         " | FIND ALL PATH FROM $-.src TO $-.dst OVER like, serve UPTO 5 STEPS";
     std::vector<PlanNode::Kind> expected = {
-        PK::kProject,         PK::kDataCollect,     PK::kLoop,
-        PK::kProject,         PK::kConjunctPath,    PK::kProject,
-        PK::kProduceAllPaths, PK::kProduceAllPaths, PK::kDedup,
-        PK::kGetNeighbors,    PK::kGetNeighbors,    PK::kProject,
-        PK::kPassThrough,     PK::kDedup,           PK::kStart,
-        PK::kProject,         PK::kProject,         PK::kGetNeighbors,
+        PK::kDataCollect,
+        PK::kLoop,
+        PK::kProject,
+        PK::kConjunctPath,
+        PK::kProject,
+        PK::kProduceAllPaths,
+        PK::kProduceAllPaths,
+        PK::kDedup,
+        PK::kGetNeighbors,
+        PK::kGetNeighbors,
+        PK::kProject,
+        PK::kPassThrough,
+        PK::kDedup,
+        PK::kStart,
+        PK::kProject,
+        PK::kProject,
+        PK::kGetNeighbors,
         PK::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected));
@@ -214,7 +227,6 @@ TEST_F(FindPathValidatorTest, RunTimePath) {
         " | FIND SHORTEST PATH FROM \"2\" TO $-.dst OVER like, serve UPTO 5 "
         "STEPS";
     std::vector<PlanNode::Kind> expected = {
-        PK::kProject,
         PK::kDataCollect,
         PK::kLoop,
         PK::kCartesianProduct,
@@ -241,7 +253,6 @@ TEST_F(FindPathValidatorTest, RunTimePath) {
         " | FIND SHORTEST PATH FROM $-.src TO \"2\" OVER like, serve UPTO 5 "
         "STEPS";
     std::vector<PlanNode::Kind> expected = {
-        PK::kProject,
         PK::kDataCollect,
         PK::kLoop,
         PK::kCartesianProduct,
@@ -268,7 +279,6 @@ TEST_F(FindPathValidatorTest, RunTimePath) {
         "GO FROM \"2\" OVER like yield like._src AS src, like._dst AS dst "
         " | FIND SHORTEST PATH FROM $a.src TO $-.dst OVER like UPTO 5 STEPS";
     std::vector<PlanNode::Kind> expected = {
-        PK::kProject,
         PK::kDataCollect,
         PK::kLoop,
         PK::kCartesianProduct,
@@ -299,7 +309,6 @@ TEST_F(FindPathValidatorTest, RunTimePath) {
         " | FIND SHORTEST PATH FROM $-.src TO $-.dst OVER like, serve UPTO 5 "
         "STEPS";
     std::vector<PlanNode::Kind> expected = {
-        PK::kProject,
         PK::kDataCollect,
         PK::kLoop,
         PK::kCartesianProduct,
@@ -326,7 +335,6 @@ TEST_F(FindPathValidatorTest, RunTimePath) {
         "YIELD \"1\" AS src, \"2\" AS dst"
         " | FIND ALL PATH FROM $-.src TO $-.dst OVER like, serve UPTO 5 STEPS";
     std::vector<PlanNode::Kind> expected = {
-        PK::kProject,
         PK::kDataCollect,
         PK::kLoop,
         PK::kProject,
@@ -355,7 +363,6 @@ TEST_F(FindPathValidatorTest, PathWithFilter) {
         "FIND ALL PATH FROM \"1\" TO \"2\" OVER like WHERE like.likeness > 30 "
         "UPTO 5 STEPS";
     std::vector<PlanNode::Kind> expected = {
-        PK::kProject,
         PK::kDataCollect,
         PK::kLoop,
         PK::kProject,
@@ -378,7 +385,6 @@ TEST_F(FindPathValidatorTest, PathWithFilter) {
         "FIND SHORTEST PATH FROM \"1\" TO \"2\" OVER like WHERE like.likeness "
         "> 30 UPTO 5 STEPS";
     std::vector<PlanNode::Kind> expected = {
-        PK::kProject,
         PK::kDataCollect,
         PK::kLoop,
         PK::kStart,
@@ -399,7 +405,6 @@ TEST_F(FindPathValidatorTest, PathWithFilter) {
         "FIND SHORTEST PATH FROM \"1\" TO \"2\", \"3\" OVER like WHERE "
         "like.likeness > 30 UPTO 5 STEPS";
     std::vector<PlanNode::Kind> expected = {
-        PK::kProject,
         PK::kDataCollect,
         PK::kLoop,
         PK::kCartesianProduct,

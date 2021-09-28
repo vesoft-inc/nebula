@@ -271,7 +271,7 @@ SubPlan PathPlanner::singlePairPlan(PlanNode* dep) {
   auto* dc = DataCollect::make(qctx, DataCollect::DCKind::kBFSShortest);
   dc->setInputVars({conjunct->outputVar()});
   dc->addDep(loop);
-  dc->setColNames({"PATH"});
+  dc->setColNames(pathCtx_->colNames);
 
   SubPlan subPlan;
   subPlan.root = dc;
@@ -321,7 +321,7 @@ SubPlan PathPlanner::allPairPlan(PlanNode* dep) {
   auto* dc = DataCollect::make(qctx, DataCollect::DCKind::kAllPaths);
   dc->addDep(loop);
   dc->setInputVars({conjunct->outputVar()});
-  dc->setColNames({"PATH"});
+  dc->setColNames(pathCtx_->colNames);
 
   SubPlan subPlan;
   subPlan.root = dc;
@@ -374,7 +374,7 @@ SubPlan PathPlanner::multiPairPlan(PlanNode* dep) {
   auto* dc = DataCollect::make(qctx, DataCollect::DCKind::kMultiplePairShortest);
   dc->addDep(loop);
   dc->setInputVars({conjunct->outputVar()});
-  dc->setColNames({"PATH"});
+  dc->setColNames(pathCtx_->colNames);
 
   SubPlan subPlan;
   subPlan.root = dc;
@@ -503,7 +503,7 @@ PlanNode* PathPlanner::buildPathProp(PlanNode* dep) {
   dc->addDep(vertexPlan);
   dc->addDep(edgePlan);
   dc->setInputVars({vertexPlan->outputVar(), edgePlan->outputVar(), dep->outputVar()});
-  dc->setColNames({"PATH"});
+  dc->setColNames(std::move(pathCtx_->colNames));
   return dc;
 }
 
@@ -534,8 +534,6 @@ StatusOr<SubPlan> PathPlanner::transform(AstContext* astCtx) {
   if (pathCtx_->withProp) {
     subPlan.root = buildPathProp(subPlan.root);
   }
-
-  subPlan.root = Project::make(qctx, subPlan.root, pathCtx_->yieldExpr);
 
   return subPlan;
 }
