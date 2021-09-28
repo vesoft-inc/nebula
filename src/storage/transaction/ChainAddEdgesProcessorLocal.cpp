@@ -55,9 +55,13 @@ folly::SemiFuture<Code> ChainAddEdgesProcessorLocal::prepareLocal() {
 
   erasePrime();
   env_->kvstore_->asyncMultiPut(
-      spaceId_, localPartId_, std::move(primes), [p = std::move(pro)](auto rc) mutable {
-        LOG_IF(WARNING, rc != nebula::cpp2::ErrorCode::SUCCEEDED)
-            << "kvstore err: " << static_cast<int>(rc);
+      spaceId_, localPartId_, std::move(primes), [p = std::move(pro), this](auto rc) mutable {
+        if (rc == nebula::cpp2::ErrorCode::SUCCEEDED) {
+          primeInserted_ = true;
+        } else {
+          LOG(WARNING) << "kvstore err: " << apache::thrift::util::enumNameSafe(rc);
+        }
+
         p.setValue(rc);
       });
   return std::move(fut);
@@ -102,7 +106,9 @@ folly::SemiFuture<Code> ChainAddEdgesProcessorLocal::processLocal(Code code) {
   if (code_ == Code::SUCCEEDED) {
     return forwardToDelegateProcessor();
   } else {
-    return abort();
+    if (primeInserted_) {
+      return abort();
+    }
   }
 
   return code_;

@@ -30,7 +30,13 @@ void ChainResumeProcessor::process() {
     auto key = prefix + edgeKey;
     std::string val;
     auto rc = env_->kvstore_->get(spaceId, partId, key, &val);
-    if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    if (rc == nebula::cpp2::ErrorCode::SUCCEEDED) {
+      // do nothing
+    } else if (rc == nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
+      // not leader any more, stop trying resume
+      env_->txnMan_->delPrime(spaceId, edgeKey);
+      continue;
+    } else {
       LOG(WARNING) << "kvstore->get() failed, " << apache::thrift::util::enumNameSafe(rc);
       continue;
     }
