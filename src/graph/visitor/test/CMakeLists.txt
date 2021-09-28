@@ -58,6 +58,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:version_obj>
         $<TARGET_OBJECTS:ssl_obj>
+        $<TARGET_OBJECTS:memory_obj>
     LIBRARIES
         gtest
         ${THRIFT_LIBRARIES}

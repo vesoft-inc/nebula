@@ -43,6 +43,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:planner_obj>
         $<TARGET_OBJECTS:parser_obj>
         $<TARGET_OBJECTS:graph_context_obj>
+        $<TARGET_OBJECTS:memory_obj>
         $<TARGET_OBJECTS:validator_obj>
         $<TARGET_OBJECTS:version_obj>
     LIBRARIES
