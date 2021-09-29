@@ -514,33 +514,20 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
       }
     };
 
-    if (context_->env()->txnMan_ && context_->env()->txnMan_->enableToss(context_->spaceId())) {
-      LOG(INFO) << "before update edge atomic" << TransactionUtils::dumpKey(edgeKey);
-      auto f = context_->env()->txnMan_->updateEdgeAtomic(
-          context_->vIdLen(), context_->spaceId(), partId, edgeKey, std::move(op));
-      f.wait();
-
-      if (f.valid()) {
-        ret = f.value();
-      } else {
-        ret = nebula::cpp2::ErrorCode::E_UNKNOWN;
-      }
-    } else {
-      auto batch = op();
-      if (batch == folly::none) {
-        return this->exeResult_;
-      }
-
-      folly::Baton<true, std::atomic> baton;
-      auto callback = [&ret, &baton](nebula::cpp2::ErrorCode code) {
-        ret = code;
-        baton.post();
-      };
-
-      context_->env()->kvstore_->asyncAppendBatch(
-          context_->spaceId(), partId, std::move(batch).value(), callback);
-      baton.wait();
+    auto batch = op();
+    if (batch == folly::none) {
+      return this->exeResult_;
     }
+
+    folly::Baton<true, std::atomic> baton;
+    auto callback = [&ret, &baton](nebula::cpp2::ErrorCode code) {
+      ret = code;
+      baton.post();
+    };
+
+    context_->planContext_->env_->kvstore_->asyncAppendBatch(
+        context_->planContext_->spaceId_, partId, std::move(batch).value(), callback);
+    baton.wait();
     return ret;
   }
 
@@ -734,6 +721,14 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
     }
     // step 3, insert new edge data
     batchHolder->put(std::move(key_), std::move(nVal));
+
+    // extra phase: if there are some extra requirement.
+    for (auto& [k, v] : edgeContext_->kvAppend) {
+      batchHolder->put(std::move(k), std::move(v));
+    }
+    for (auto& k : edgeContext_->kvErased) {
+      batchHolder->remove(std::move(k));
+    }
     return encodeBatchValue(batchHolder->getBatch());
   }
 

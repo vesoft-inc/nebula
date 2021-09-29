@@ -184,14 +184,21 @@ bool StorageServer::start() {
     return false;
   }
 
+  interClient_ = std::make_unique<InternalStorageClient>(ioThreadPool_, metaClient_.get());
+
   env_ = std::make_unique<storage::StorageEnv>();
   env_->kvstore_ = kvstore_.get();
   env_->indexMan_ = indexMan_.get();
   env_->schemaMan_ = schemaMan_.get();
   env_->rebuildIndexGuard_ = std::make_unique<IndexGuard>();
   env_->metaClient_ = metaClient_.get();
+  env_->interClient_ = interClient_.get();
 
   txnMan_ = std::make_unique<TransactionManager>(env_.get());
+  if (!txnMan_->start()) {
+    LOG(ERROR) << "Start transaction manager failed!";
+    return false;
+  }
   env_->txnMan_ = txnMan_.get();
 
   env_->verticesML_ = std::make_unique<VerticesMemLock>();
@@ -340,6 +347,10 @@ void StorageServer::stop() {
   }
   if (adminServer_) {
     adminServer_->stop();
+  }
+  if (txnMan_) {
+    txnMan_->stop();
+    txnMan_.reset();
   }
   if (internalStorageServer_) {
     internalStorageServer_->stop();

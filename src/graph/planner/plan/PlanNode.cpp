@@ -76,6 +76,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "TopN";
     case Kind::kLimit:
       return "Limit";
+    case Kind::kSample:
+      return "Sample";
     case Kind::kAggregate:
       return "Aggregate";
     case Kind::kSelect:

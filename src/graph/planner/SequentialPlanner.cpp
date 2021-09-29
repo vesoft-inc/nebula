@@ -37,6 +37,7 @@ void SequentialPlanner::ifBuildDataCollect(SubPlan& subPlan, QueryContext* qctx)
   switch (subPlan.root->kind()) {
     case PlanNode::Kind::kSort:
     case PlanNode::Kind::kLimit:
+    case PlanNode::Kind::kSample:
     case PlanNode::Kind::kDedup:
     case PlanNode::Kind::kUnion:
     case PlanNode::Kind::kUnionAllVersionVar:

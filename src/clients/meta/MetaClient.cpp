@@ -2270,17 +2270,16 @@ bool MetaClient::checkShadowAccountFromCache(const std::string& account) const {
   return false;
 }
 
-TermID MetaClient::getTermFromCache(GraphSpaceID spaceId, PartitionID partId) const {
-  static TermID notFound = -1;
+StatusOr<TermID> MetaClient::getTermFromCache(GraphSpaceID spaceId, PartitionID partId) const {
   folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   auto spaceInfo = localCache_.find(spaceId);
   if (spaceInfo == localCache_.end()) {
-    return notFound;
+    return Status::Error("Term not found!");
   }
 
   auto termInfo = spaceInfo->second->termOfPartition_.find(partId);
   if (termInfo == spaceInfo->second->termOfPartition_.end()) {
-    return notFound;
+    return Status::Error("Term not found!");
   }
 
   return termInfo->second;

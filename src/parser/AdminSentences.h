@@ -554,7 +554,11 @@ class AdminJobSentence final : public Sentence {
   explicit AdminJobSentence(meta::cpp2::AdminJobOp op,
                             meta::cpp2::AdminCmd cmd = meta::cpp2::AdminCmd::UNKNOWN)
       : op_(op), cmd_(cmd) {
-    kind_ = Kind::kAdminJob;
+    if (op == meta::cpp2::AdminJobOp::SHOW || op == meta::cpp2::AdminJobOp::SHOW_All) {
+      kind_ = Kind::kAdminShowJobs;
+    } else {
+      kind_ = Kind::kAdminJob;
+    }
   }
 
   void addPara(const std::string& para);

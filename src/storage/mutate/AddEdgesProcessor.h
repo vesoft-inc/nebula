@@ -19,7 +19,7 @@ extern ProcessorCounters kAddEdgesCounters;
 
 class AddEdgesProcessor : public BaseProcessor<cpp2::ExecResponse> {
   friend class TransactionManager;
-  friend class AddEdgesAtomicProcessor;
+  friend class ChainAddEdgesProcessorLocal;
 
  public:
   static AddEdgesProcessor* instance(StorageEnv* env,
@@ -52,6 +52,10 @@ class AddEdgesProcessor : public BaseProcessor<cpp2::ExecResponse> {
   GraphSpaceID spaceId_;
   std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>> indexes_;
   bool ifNotExists_{false};
+
+  /// this is a hook function to keep out-edge and in-edge consist
+  using ConsistOper = std::function<void(kvstore::BatchHolder&, std::vector<kvstore::KV>*)>;
+  folly::Optional<ConsistOper> consistOp_;
 };
 
 }  // namespace storage

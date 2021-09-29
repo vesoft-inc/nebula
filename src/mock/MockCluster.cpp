@@ -16,6 +16,7 @@
 #include "storage/GeneralStorageServiceHandler.h"
 #include "storage/GraphStorageServiceHandler.h"
 #include "storage/StorageAdminServiceHandler.h"
+#include "storage/transaction/TransactionManager.h"
 
 DECLARE_int32(heartbeat_interval_secs);
 
@@ -210,6 +211,9 @@ void MockCluster::initStorageKV(const char* dataPath,
   storageEnv_->rebuildIndexGuard_ = std::make_unique<storage::IndexGuard>();
   storageEnv_->verticesML_ = std::make_unique<storage::VerticesMemLock>();
   storageEnv_->edgesML_ = std::make_unique<storage::EdgesMemLock>();
+
+  txnMan_ = std::make_unique<storage::TransactionManager>(storageEnv_.get());
+  storageEnv_->txnMan_ = txnMan_.get();
 }
 
 void MockCluster::startStorage(HostAddr addr,

@@ -47,7 +47,8 @@ StatusOr<OptRule::TransformResult> PushLimitDownProjectRule::transform(
   const auto proj = static_cast<const Project *>(projGroupNode->node());
 
   auto newLimit = static_cast<Limit *>(limit->clone());
-  auto newLimitGroupNode = OptGroupNode::create(octx, newLimit, projGroupNode->group());
+  auto newLimitGroup = OptGroup::create(octx);
+  auto newLimitGroupNode = newLimitGroup->makeGroupNode(newLimit);
   newLimit->setOutputVar(proj->outputVar());
   newLimit->setInputVar(proj->inputVar());
   //  newLimit->setColNames(proj->colNames());

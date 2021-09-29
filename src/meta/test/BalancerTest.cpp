@@ -179,7 +179,7 @@ TEST(BalanceTest, SimpleTestWithZone) {
     std::vector<BalanceTask> tasks;
     NiceMock<MockAdminClient> client;
     Balancer balancer(kv, &client);
-    balancer.balanceParts(0, 0, hostParts, totalParts, tasks);
+    balancer.balanceParts(0, 0, hostParts, totalParts, tasks, true);
     for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
       EXPECT_EQ(3, it->second.size());
     }
@@ -243,13 +243,11 @@ TEST(BalanceTest, ExpansionZoneTest) {
   }
   {
     HostParts hostParts;
-    hostParts.emplace(HostAddr("0", 0), std::vector<PartitionID>{1, 2, 3, 4});
-    hostParts.emplace(HostAddr("1", 0), std::vector<PartitionID>{1, 2, 3, 4});
-    hostParts.emplace(HostAddr("2", 0), std::vector<PartitionID>{1, 2, 3, 4});
-    hostParts.emplace(HostAddr("3", 0), std::vector<PartitionID>{});
-    int32_t totalParts = 12;
+    int32_t totalParts = 0;
+    balancer.getHostParts(1, true, hostParts, totalParts);
     std::vector<BalanceTask> tasks;
-    balancer.balanceParts(0, 0, hostParts, totalParts, tasks);
+    hostParts.emplace(HostAddr("3", 3), std::vector<PartitionID>{});
+    balancer.balanceParts(0, 0, hostParts, totalParts, tasks, true);
     for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
       EXPECT_EQ(3, it->second.size());
     }
@@ -312,16 +310,15 @@ TEST(BalanceTest, ExpansionHostIntoZoneTest) {
   }
   {
     HostParts hostParts;
-    hostParts.emplace(HostAddr("0", 0), std::vector<PartitionID>{1, 2, 3, 4});
-    hostParts.emplace(HostAddr("1", 1), std::vector<PartitionID>{1, 2, 3, 4});
-    hostParts.emplace(HostAddr("2", 2), std::vector<PartitionID>{1, 2, 3, 4});
+    int32_t totalParts = 0;
+    balancer.getHostParts(1, true, hostParts, totalParts);
+
+    std::vector<BalanceTask> tasks;
     hostParts.emplace(HostAddr("3", 3), std::vector<PartitionID>{});
     hostParts.emplace(HostAddr("4", 4), std::vector<PartitionID>{});
     hostParts.emplace(HostAddr("5", 5), std::vector<PartitionID>{});
 
-    int32_t totalParts = 12;
-    std::vector<BalanceTask> tasks;
-    balancer.balanceParts(0, 0, hostParts, totalParts, tasks);
+    balancer.balanceParts(0, 0, hostParts, totalParts, tasks, true);
     for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
       EXPECT_EQ(2, it->second.size());
     }
@@ -372,15 +369,6 @@ TEST(BalanceTest, ShrinkZoneTest) {
   Balancer balancer(kv, &client);
   auto ret = balancer.balance();
   ASSERT_EQ(nebula::cpp2::ErrorCode::E_BALANCED, error(ret));
-  {
-    ZoneInfo zoneInfo = {
-        {"zone_0", {{"0", 0}}},
-        {"zone_1", {{"1", 1}}},
-        {"zone_2", {{"2", 2}}},
-    };
-    GroupInfo groupInfo = {{"default_group", {"zone_0", "zone_1", "zone_2"}}};
-    TestUtils::assembleGroupAndZone(kv, zoneInfo, groupInfo);
-  }
   ret = balancer.balance({{"3", 3}});
   ASSERT_TRUE(ok(ret));
 }
@@ -544,13 +532,13 @@ TEST(BalanceTest, BalanceWithComplexZoneTest) {
     int32_t totalParts = 18 * 3;
     std::vector<BalanceTask> tasks;
     auto hostParts = assignHostParts(kv, 1);
-    balancer.balanceParts(0, 1, hostParts, totalParts, tasks);
+    balancer.balanceParts(0, 1, hostParts, totalParts, tasks, true);
   }
   {
     int32_t totalParts = 64 * 3;
     std::vector<BalanceTask> tasks;
     auto hostParts = assignHostParts(kv, 2);
-    balancer.balanceParts(0, 2, hostParts, totalParts, tasks);
+    balancer.balanceParts(0, 2, hostParts, totalParts, tasks, true);
   }
   {
     auto dump = [](const HostParts& hostParts, const std::vector<BalanceTask>& tasks) {
@@ -585,7 +573,7 @@ TEST(BalanceTest, BalanceWithComplexZoneTest) {
     int32_t totalParts = 243;
     std::vector<BalanceTask> tasks;
     dump(hostParts, tasks);
-    balancer.balanceParts(0, 3, hostParts, totalParts, tasks);
+    balancer.balanceParts(0, 3, hostParts, totalParts, tasks, true);
 
     LOG(INFO) << "=== new map ====";
     dump(hostParts, tasks);
@@ -632,7 +620,7 @@ TEST(BalanceTest, BalancePartsTest) {
     VLOG(1) << "=== original map ====";
     dump(hostParts, tasks);
     Balancer balancer(kv, &client);
-    balancer.balanceParts(0, 0, hostParts, totalParts, tasks);
+    balancer.balanceParts(0, 0, hostParts, totalParts, tasks, false);
     VLOG(1) << "=== new map ====";
     dump(hostParts, tasks);
     for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
@@ -651,7 +639,7 @@ TEST(BalanceTest, BalancePartsTest) {
     VLOG(1) << "=== original map ====";
     dump(hostParts, tasks);
     Balancer balancer(kv, &client);
-    balancer.balanceParts(0, 0, hostParts, totalParts, tasks);
+    balancer.balanceParts(0, 0, hostParts, totalParts, tasks, false);
     VLOG(1) << "=== new map ====";
     dump(hostParts, tasks);
     EXPECT_EQ(4, hostParts[HostAddr("0", 0)].size());
@@ -671,7 +659,7 @@ TEST(BalanceTest, BalancePartsTest) {
     VLOG(1) << "=== original map ====";
     dump(hostParts, tasks);
     Balancer balancer(kv, &client);
-    balancer.balanceParts(0, 0, hostParts, totalParts, tasks);
+    balancer.balanceParts(0, 0, hostParts, totalParts, tasks, false);
     VLOG(1) << "=== new map ====";
     dump(hostParts, tasks);
     EXPECT_EQ(4, hostParts[HostAddr("0", 0)].size());
@@ -696,7 +684,7 @@ TEST(BalanceTest, BalancePartsTest) {
     VLOG(1) << "=== original map ====";
     dump(hostParts, tasks);
     Balancer balancer(kv, &client);
-    balancer.balanceParts(0, 0, hostParts, totalParts, tasks);
+    balancer.balanceParts(0, 0, hostParts, totalParts, tasks, false);
     VLOG(1) << "=== new map ====";
     dump(hostParts, tasks);
     for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
@@ -719,7 +707,7 @@ TEST(BalanceTest, BalancePartsTest) {
     VLOG(1) << "=== original map ====";
     dump(hostParts, tasks);
     Balancer balancer(kv, &client);
-    balancer.balanceParts(0, 0, hostParts, totalParts, tasks);
+    balancer.balanceParts(0, 0, hostParts, totalParts, tasks, false);
     VLOG(1) << "=== new map ====";
     dump(hostParts, tasks);
     for (auto it = hostParts.begin(); it != hostParts.end(); it++) {

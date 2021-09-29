@@ -231,39 +231,7 @@ nebula_add_executable(
         boost_regex
 )
 
-nebula_add_executable(
-    NAME
-        toss_test
-    SOURCES
-        TossTest.cpp
-    OBJECTS
-        ${storage_test_deps}
-    LIBRARIES
-        ${ROCKSDB_LIBRARIES}
-        ${THRIFT_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
-        wangle
-        gtest
-        boost_regex
-)
 
-nebula_add_executable(
-    NAME
-        toss_bm
-    SOURCES
-        TossBenchmark.cpp
-    OBJECTS
-        ${storage_test_deps}
-        $<TARGET_OBJECTS:graph_storage_client_obj>
-        $<TARGET_OBJECTS:storage_client_base_obj>
-    LIBRARIES
-        ${ROCKSDB_LIBRARIES}
-        ${THRIFT_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
-        wangle
-        follybenchmark
-        boost_regex
-)
 
 nebula_add_test(
     NAME
@@ -712,6 +680,51 @@ nebula_add_test(
         list_cluster_info_test
     SOURCES
         ListClusterInfoTest.cpp
+    OBJECTS
+        ${storage_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        chain_add_edge_test
+    SOURCES
+        ChainAddEdgesTest.cpp
+    OBJECTS
+        ${storage_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_executable(
+    NAME
+        chain_update_edge_test
+    SOURCES
+        ChainUpdateEdgeTest.cpp
+    OBJECTS
+        ${storage_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_executable(
+    NAME
+        chain_resume_edge_test
+    SOURCES
+        ChainResumeEdgeTest.cpp
     OBJECTS
         ${storage_test_deps}
     LIBRARIES

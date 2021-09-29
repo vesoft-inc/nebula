@@ -8,6 +8,7 @@
 #define KVSTORE_NEBULASTORE_H_
 
 #include <folly/RWSpinLock.h>
+#include <folly/concurrency/ConcurrentHashMap.h>
 #include <gtest/gtest_prod.h>
 
 #include "common/base/Base.h"
@@ -277,6 +278,12 @@ class NebulaStore : public KVStore, public Handler {
 
   ErrorOr<nebula::cpp2::ErrorCode, std::string> getProperty(GraphSpaceID spaceId,
                                                             const std::string& property) override;
+  void registerOnNewPartAdded(const std::string& funcName,
+                              std::function<void(std::shared_ptr<Part>&)> func) {
+    onNewPartAdded_.insert(std::make_pair(funcName, func));
+  }
+
+  void unregisterOnNewPartAdded(const std::string& funcName) { onNewPartAdded_.erase(funcName); }
 
  private:
   void loadPartFromDataPath();
@@ -334,6 +341,8 @@ class NebulaStore : public KVStore, public Handler {
   std::shared_ptr<raftex::SnapshotManager> snapshot_;
   std::shared_ptr<thrift::ThriftClientManager<raftex::cpp2::RaftexServiceAsyncClient>> clientMan_;
   std::shared_ptr<DiskManager> diskMan_;
+  folly::ConcurrentHashMap<std::string, std::function<void(std::shared_ptr<Part>&)>>
+      onNewPartAdded_;
 };
 
 }  // namespace kvstore
