@@ -17,6 +17,9 @@
 namespace nebula {
 namespace graph {
 
+static const char* COLNAME_SRC_VERTEX = "SRCV";
+static const char* COLNAME_DST_VERTEX = "DSTV";
+static const char* COLNAME_EDGE = "EDGE";
 static const char* SRC_VERTEX = "SRCV";
 static const char* DST_VERTEX = "DSTV";
 
@@ -136,6 +139,13 @@ Status GoValidator::validateYield(YieldClause* yield) {
   }
 
   for (auto col : cols) {
+    if (ExpressionUtils::hasAny(col->expr(),
+                                {Expression::Kind::kAggregate,
+                                 Expression::Kind::kVertex,
+                                 Expression::Kind::kPathBuild})) {
+      return Status::SemanticError("`%s' is not support in go sentence.", col->toString().c_str());
+    }
+
     std::string exprStr = col->expr()->toString();
     if (exprStr == SRC_VERTEX) {
       colTypeMap_[col->name()] = true;
@@ -152,12 +162,6 @@ Status GoValidator::validateYield(YieldClause* yield) {
     NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(col->expr()));
 
     auto* colExpr = col->expr();
-    if (ExpressionUtils::hasAny(colExpr,
-                                {Expression::Kind::kAggregate,
-                                 Expression::Kind::kVertex,
-                                 Expression::Kind::kPathBuild})) {
-      return Status::SemanticError("`%s' is not support in go sentence.", col->toString().c_str());
-    }
     if (ExpressionUtils::hasAny(colExpr, {Expression::Kind::kEdge})) {
       extractEdgeProp(exprProps);
     }
@@ -297,24 +301,51 @@ Status GoValidator::buildColumns() {
     goCtx_->filter = rewrite2VarProp(newFilter);
   }
 
+  bool existEdge = false;
   auto* newYieldExpr = pool->add(new YieldColumns());
   for (auto* col : goCtx_->yieldExpr->columns()) {
     if (ExpressionUtils::hasAny(col->expr(),
                                 {Expression::Kind::kVertex, Expression::Kind::kEdge})) {
       std::string colName = col->name();
       if (colTypeMap_.find(colName) != colTypeMap_.end() && colTypeMap_[colName]) {
-        goCtx_->srcEdgePropsExpr->addColumn(new YieldColumn(VertexExpression::make(pool), colName));
-        col->setExpr(rewriteVertex2VarProp(col->expr()));
+        goCtx_->srcEdgePropsExpr->addColumn(
+            new YieldColumn(VertexExpression::make(pool), COLNAME_SRC_VERTEX));
+        if (col->expr()->kind() == Expression::Kind::kVertex) {
+          col->setExpr(rewriteVertex2VarProp(col->expr()));
+          newYieldExpr->addColumn(
+              new YieldColumn(InputPropertyExpression::make(pool, COLNAME_SRC_VERTEX), colName));
+        } else {
+          col->setExpr(rewriteVertex2VarProp(col->expr()));
+          newYieldExpr->addColumn(col->clone().release());
+        }
       }
       if (colTypeMap_.find(colName) != colTypeMap_.end() && !colTypeMap_[colName]) {
-        goCtx_->dstPropsExpr->addColumn(new YieldColumn(VertexExpression::make(pool), colName));
-        col->setExpr(rewriteVertex2VarProp(col->expr()));
+        goCtx_->dstPropsExpr->addColumn(
+            new YieldColumn(VertexExpression::make(pool), COLNAME_DST_VERTEX));
+        if (col->expr()->kind() == Expression::Kind::kVertex) {
+          col->setExpr(rewriteVertex2VarProp(col->expr()));
+          newYieldExpr->addColumn(
+              new YieldColumn(InputPropertyExpression::make(pool, COLNAME_DST_VERTEX), colName));
+        } else {
+          col->setExpr(rewriteVertex2VarProp(col->expr()));
+          newYieldExpr->addColumn(col->clone().release());
+        }
       }
       if (ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kEdge})) {
-        goCtx_->srcEdgePropsExpr->addColumn(new YieldColumn(EdgeExpression::make(pool), colName));
-        col->setExpr(rewriteEdge2VarProp(col->expr()));
+        if (!existEdge) {
+          goCtx_->srcEdgePropsExpr->addColumn(
+              new YieldColumn(EdgeExpression::make(pool), COLNAME_EDGE));
+          existEdge = true;
+        }
+        if (col->expr()->kind() == Expression::Kind::kEdge) {
+          col->setExpr(rewriteEdge2VarProp(col->expr()));
+          newYieldExpr->addColumn(
+              new YieldColumn(InputPropertyExpression::make(pool, COLNAME_EDGE), colName));
+        } else {
+          col->setExpr(rewriteEdge2VarProp(col->expr()));
+          newYieldExpr->addColumn(col->clone().release());
+        }
       }
-      newYieldExpr->addColumn(new YieldColumn(InputPropertyExpression::make(pool, colName)));
     } else {
       extractPropExprs(col->expr());
       newYieldExpr->addColumn(new YieldColumn(rewrite2VarProp(col->expr()), col->alias()));
