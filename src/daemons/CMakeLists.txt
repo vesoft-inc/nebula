@@ -50,6 +50,7 @@ nebula_add_executable(
     SOURCES
         StorageDaemon.cpp
         SetupLogging.cpp
+        SetupBreakpad.cpp
     OBJECTS
         $<TARGET_OBJECTS:storage_server>
         $<TARGET_OBJECTS:internal_storage_service_handler>
@@ -76,6 +77,7 @@ nebula_add_executable(
     SOURCES
         MetaDaemon.cpp
         SetupLogging.cpp
+        SetupBreakpad.cpp
     OBJECTS
         $<TARGET_OBJECTS:meta_service_handler>
         $<TARGET_OBJECTS:meta_http_handler>
@@ -97,6 +99,7 @@ nebula_add_executable(
     SOURCES
         GraphDaemon.cpp
         SetupLogging.cpp
+        SetupBreakpad.cpp
     OBJECTS
         $<TARGET_OBJECTS:stats_def_obj>
         $<TARGET_OBJECTS:util_obj>

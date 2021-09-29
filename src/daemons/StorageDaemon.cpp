@@ -40,11 +40,15 @@ using nebula::operator<<;
 using nebula::HostAddr;
 using nebula::ProcessUtils;
 using nebula::Status;
+using nebula::StatusOr;
 using nebula::network::NetworkUtils;
 
 static void signalHandler(int sig);
 static Status setupSignalHandler();
 extern Status setupLogging();
+#if defined(__x86_64__)
+extern Status setupBreakpad();
+#endif
 
 std::unique_ptr<nebula::storage::StorageServer> gStorageServer;
 
@@ -61,6 +65,14 @@ int main(int argc, char *argv[]) {
     LOG(ERROR) << status;
     return EXIT_FAILURE;
   }
+
+#if defined(__x86_64__)
+  status = setupBreakpad();
+  if (!status.ok()) {
+    LOG(ERROR) << status;
+    return EXIT_FAILURE;
+  }
+#endif
 
   auto pidPath = FLAGS_pid_file;
   status = ProcessUtils::isPidAvailable(pidPath);

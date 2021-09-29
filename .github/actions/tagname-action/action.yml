@@ -7,6 +7,9 @@ outputs:
   tagnum:
     description: 'tag number'
     value: ${{ steps.tag.outputs.tagnum }}
+  majorver:
+    description: 'major version'
+    value: ${{ steps.tag.outputs.majorver }}
 runs:
   using: "composite"
   steps:

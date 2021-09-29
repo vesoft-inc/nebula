@@ -35,6 +35,7 @@
 using nebula::operator<<;
 using nebula::ProcessUtils;
 using nebula::Status;
+using nebula::StatusOr;
 using nebula::web::PathParams;
 
 DEFINE_string(local_ip, "", "Local ip specified for NetworkUtils::getLocalIP");
@@ -56,9 +57,13 @@ DEFINE_bool(daemonize, true, "Whether run as a daemon process");
 
 static std::unique_ptr<apache::thrift::ThriftServer> gServer;
 static std::unique_ptr<nebula::kvstore::KVStore> gKVStore;
+
 static void signalHandler(int sig);
 static Status setupSignalHandler();
 extern Status setupLogging();
+#if defined(__x86_64__)
+extern Status setupBreakpad();
+#endif
 
 namespace nebula {
 namespace meta {
@@ -197,6 +202,14 @@ int main(int argc, char* argv[]) {
     LOG(ERROR) << status;
     return EXIT_FAILURE;
   }
+
+#if defined(__x86_64__)
+  status = setupBreakpad();
+  if (!status.ok()) {
+    LOG(ERROR) << status;
+    return EXIT_FAILURE;
+  }
+#endif
 
   auto pidPath = FLAGS_pid_file;
   status = ProcessUtils::isPidAvailable(pidPath);

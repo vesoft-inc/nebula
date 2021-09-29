@@ -12,7 +12,7 @@ defaults:
 jobs:
   package:
     name: build package
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     strategy:
       fail-fast: false
       matrix:
@@ -20,7 +20,6 @@ jobs:
           - ubuntu1604
           - ubuntu1804
           - ubuntu2004
-          # - centos6
           - centos7
           - centos8
     container:
@@ -28,12 +27,13 @@ jobs:
     env:
       BUILD_DIR: ./pkg-build
       CPACK_DIR: ./pkg-build/cpack_output
+      SYMS_DIR: ./pkg-build/symbols
     steps:
       - uses: actions/checkout@v2
       - uses: ./.github/actions/tagname-action
         id: tag
       - name: package
-        run: ./package/package.sh -b ${{ steps.tag.outputs.tag }}
+        run: ./package/package.sh -b ${{ steps.tag.outputs.tag }} -t RelWithDebInfo -r OFF -p ON -s TRUE
       - name: output some vars
         run: |
           tar zcf ${{ env.CPACK_DIR }}/nebula-${{ steps.tag.outputs.tagnum }}.tar.gz --exclude=${{ env.BUILD_DIR }} ./*
@@ -46,6 +46,14 @@ jobs:
           bucket: nebula-graph
           asset-path: ${{ env.CPACK_DIR }}
           target-path: package/${{ steps.tag.outputs.tagnum }}
+      - uses: ./.github/actions/upload-to-oss-action
+        with:
+          key-id: ${{ secrets.OSS_ID }}
+          key-secret: ${{ secrets.OSS_SECRET }}
+          endpoint: ${{ secrets.OSS_ENDPOINT }}
+          bucket: nebula-graph
+          asset-path: ${{ env.SYMS_DIR }}
+          target-path: package/${{ steps.tag.outputs.tagnum }}/symbols
 
   docker_build:
     name: docker-build
