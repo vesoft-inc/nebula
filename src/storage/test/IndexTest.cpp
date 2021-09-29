@@ -27,37 +27,38 @@ namespace storage {
  *
  */
 
-// class MockKVStore : public ::nebula::kvstore::KVEngine {};
-// class IndexMockNode : public IndexNode {
-//  public:
-//  private:
-// };
+class MockKVStore : public ::nebula::kvstore::KVEngine {};
+class IndexMockNode : public IndexNode {
+ public:
+ private:
+};
 
-// /**
-//  *
-//  */
-// class IndexScanTest : public ::testing::Test {
-//  protected:
-//  private:
-//   static std::unique_ptr<MockKVStore> kvstore_;
-// };
-// TEST_F(IndexScanTest, VertexIndexOnlyScan) {
-//   std::vector<Row> rows = R"(
-//     int | int | int
-//     1   | 2   | 3
-//     4   | 5   | 6
-//   )"_row;
-//   auto a = R"(
-//     Tag:a,
-//     int
-//   )"_row;
-//   auto b = R"()"_edge;
-//   auto c = R"()"_index() auto node = std::make_unique<IndexVertexScanNode>(nullptr, 0, {});
-//   node->kvstore_ = kvstore_;
-//   node->init();
-//   node->execute(0);
-//   node->next();
-// };
+/**
+ *
+ */
+class IndexScanTest : public ::testing::Test {
+ protected:
+ private:
+  static std::unique_ptr<MockKVStore> kvstore_;
+};
+TEST_F(IndexScanTest, VertexIndexOnlyScan) {
+  std::vector<Row> rows = R"(
+    int | int | int
+    1   | 2   | 3
+    4   | 5   | 6
+  )"_row;
+  auto schema = R"(
+    a   | int ||
+    b   | int ||
+    c   | int ||
+  )"_schema;
+  auto index = R"(
+    TAG(a,1)
+    (i1,2):a
+    (i2,3):b
+  )"_index(schema);
+  std::vector<std::string> keyValues = encode(rows, schema, index);
+}
 // TEST_F(IndexScanTest, VertexIndexScan)
 // TEST_F(IndexScanTest, EdgeBase){
 
@@ -84,12 +85,8 @@ namespace storage {
 //  protected:
 //  private:
 // };
-// TEST_F(IndexTest, VertexScan1){
-
-// }
-// TEST_F(IndexTest, VertexScan2){
-
-// }
+// TEST_F(IndexTest, VertexScan1) {}
+// TEST_F(IndexTest, VertexScan2) {}
 // TEST_F(IndexTest, VertexScan3){
 
 // };

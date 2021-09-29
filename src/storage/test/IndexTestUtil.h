@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include <map>
+#include <regex>
 
 #include "common/datatypes/DataSet.h"
 #include "common/meta/NebulaSchemaProvider.h"
@@ -404,72 +405,97 @@ class SchemaParser {
 /**
  * define index of a schema
  *
- * format: ${IndexID}:
+ * format:
+ * (Tag|Edge)(name,id)
  * example
  * std::string str=R"(
  * Tag(name,id)
  * (i1,1): a,b(10),c
  * (i2,2): b(5),c
- * )"_tagIndex(schema)
+ * )"_index(schema)
  */
 class IndexParser {
  public:
   using IndexItem = ::nebula::meta::cpp2::IndexItem;
-  using TagItem = ::nebula::meta::cpp2::TagItem;
-  using EdgeItem = ::nebula::meta::cpp2::EdgeItem;
+  using SchemaProvider = ::nebula::meta::NebulaSchemaProvider;
   explicit IndexParser(const std::string& str) {
     ss = std::stringstream(folly::stripLeftMargin(str));
+    parseSchema();
   }
-  std::vector<std::shared_ptr<IndexItem>> operator()(const TagItem& tag) {
-    std::vector<std::shared_ptr<IndexItem>> ret;
+  void parseSchema() {
+    static std::regex pattern(R"((TAG|EDGE)\((.+),(\d+)\))");
+    std::smatch match;
+    std::string line;
+    std::getline(ss, line);
+    assert(std::regex_match(line, match, pattern));
+    std::string name = match.str(2);
+    int32_t id = std::stoi(match.str(3));
+    schemaName_ = name;
+    if (match.str(1) == "TAG") {
+      schemaId_.set_tag_id(id);
+    } else {
+      schemaId_.set_edge_type(id);
+    }
+  }
+  std::map<IndexID, std::shared_ptr<IndexItem>> operator()(std::shared_ptr<SchemaProvider> schema) {
+    schema_ = schema;
+    std::map<IndexID, std::shared_ptr<IndexItem>> ret;
     std::string line;
     while (std::getline(ss, line)) {
-      auto index = std::make_shared<IndexItem>();
-      ::nebula::cpp2::SchemaID schemaId;
-      schemaId.set_tag_id(tag.get_tag_id());
-      index->set_schema_id(schemaId);
-      index->set_schema_name(tag.get_tag_name());
-      parseIndex(index, tag.get_schema());
-      ret.push_back(index);
+      auto index = parse(line);
+      ret[index->get_index_id()] = index;
     }
     return ret;
   }
-  std::vector<std::shared_ptr<IndexItem>> operator()(const EdgeItem& edge) {
-    std::vector<std::shared_ptr<IndexItem>> ret;
-    std::string line;
-    while (std::getline(ss, line)) {
-      auto index = std::make_shared<IndexItem>();
-      ::nebula::cpp2::SchemaID schemaId;
-      schemaId.set_edge_type(edge.get_edge_type());
-      index->set_schema_id(schemaId);
-      index->set_schema_name(edge.get_edge_name());
-      parseIndex(index, edge.get_schema());
-      ret.push_back(index);
+  std::shared_ptr<IndexItem> parse(const std::string& line) {
+    auto ret = std::make_shared<IndexItem>();
+    ret->set_schema_id(schemaId_);
+    ret->set_schema_name(schemaName_);
+    static std::regex pattern(R"(\((.+),(\d+)\):(.+))");
+    std::smatch match;
+    assert(std::regex_match(line, match, pattern));
+    ret->set_index_name(folly::stripLeftMargin(match.str(1)));
+    ret->set_index_id(std::stoi(match.str(2)));
+    std::string columnStr = match.str(3);
+    std::vector<std::string> columns;
+    folly::split(",", columnStr, columns);
+    for (size_t i = 0; i < columns.size(); i++) {
+      columns[i] = folly::stripLeftMargin(columns[i]);
     }
+    std::vector<::nebula::meta::cpp2::ColumnDef> fields;
+    for (auto& column : columns) {
+      std::string name;
+      int length;
+      std::smatch match;
+      std::regex pattern(R"((.+)\((\d+)\))");
+      if (std::regex_match(column, match, pattern)) {
+        name = match.str(1);
+        length = std::stoi(match.str(2));
+      } else {
+        name = column;
+        length = 0;
+      }
+      ::nebula::meta::cpp2::ColumnDef col;
+      auto field = schema_->field(name);
+      col.set_name(name);
+      ::nebula::meta::cpp2::ColumnTypeDef type;
+      if (length > 0) {
+        type.set_type_length(length);
+      }
+      type.set_type(field->type());
+      col.set_type(type);
+      col.set_nullable(field->nullable());
+      fields.emplace_back(std::move(col));
+    }
+    ret->set_fields(fields);
     return ret;
   }
-  // void  parseIndex(std::shared_ptr<IndexItem> index,){
-
-  // }
-
-  // std::vector<std::shared_ptr<::nebula::meta::cpp2::IndexItem>> operator()() {
-  //   if (isEdge_) {
-  //     schemaID_.set_edge_type(schemaId);
-  //   } else {
-  //     schemaID_.set_tag_id(schemaId);
-  //   }
-  //   std::string line;
-  //   while (std::getline(ss, line)) {
-  //     auto index = std::make_shared<::nebula::meta::cpp2::IndexItem>();
-  //     index->set_schema_id(schemaID_);
-  //     std::vector<std::string> values;
-  //     folly::split(":", line, values);
-  //   }
-  // }
 
  private:
   std::stringstream ss;
-
+  std::string schemaName_;
+  ::nebula::cpp2::SchemaID schemaId_;
+  std::shared_ptr<SchemaProvider> schema_;
   std::shared_ptr<::nebula::meta::cpp2::IndexItem> index_;
 };
 
@@ -478,8 +504,14 @@ std::vector<Row> operator""_row(const char* str, std::size_t) {
   auto ret = RowParser(std::string(str)).getResult();
   return ret;
 }
+std::shared_ptr<::nebula::meta::NebulaSchemaProvider> operator"" _schema(const char* str,
+                                                                         std::size_t) {
+  return SchemaParser(std::string(str)).getResult();
+}
 
-class SchemaParser {}
+IndexParser operator"" _index(const char* str, std::size_t) {
+  return IndexParser(std::string(str));
+}
 
 }  // namespace storage
 }  // namespace nebula
