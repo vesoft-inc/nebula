@@ -374,6 +374,7 @@ std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
     }
   }
   raftService_->addPartition(part);
+  LOG(INFO) << "TransactionManager onNewPartAdded_.size()=" << onNewPartAdded_.size();
   for (auto& func : onNewPartAdded_) {
     func.second(part);
   }

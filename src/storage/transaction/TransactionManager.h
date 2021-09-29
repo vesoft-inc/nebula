@@ -115,6 +115,8 @@ class TransactionManager {
    * @brief only part in this white list allowed to get lock
    */
   folly::ConcurrentHashMap<std::pair<GraphSpaceID, PartitionID>, int> whiteListParts_;
+  // std::mutex partWhiteListMu_;
+  // std::map<std::pair<GraphSpaceID, PartitionID>, int64_t> partWhiteList_;
 };
 
 }  // namespace storage

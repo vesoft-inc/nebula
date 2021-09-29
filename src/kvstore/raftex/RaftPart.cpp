@@ -586,6 +586,7 @@ folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
                                                         LogType logType,
                                                         std::string log,
                                                         AtomicOp op) {
+  std::string debugLog = log;
   if (blocking_) {
     // No need to block heartbeats and empty log.
     if ((logType == LogType::NORMAL && !log.empty()) || logType == LogType::ATOMIC_OP) {
@@ -602,6 +603,17 @@ folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
                                  " Please slow down the log appending rate."
                               << "replicatingLogs_ :" << replicatingLogs_;
     return AppendLogResult::E_BUFFER_OVERFLOW;
+  }
+  LogID firstId = 0;
+  TermID termId = 0;
+  AppendLogResult res;
+  {
+    std::lock_guard<std::mutex> g(raftLock_);
+    res = canAppendLogs();
+    if (res == AppendLogResult::SUCCEEDED) {
+      firstId = lastLogId_ + 1;
+      termId = term_;
+    }
   }
   {
     std::lock_guard<std::mutex> lck(logsLock_);
@@ -635,6 +647,30 @@ folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
         break;
     }
 
+    if (!debugLog.empty()) {
+      switch (debugLog[sizeof(int64_t)]) {
+        case kvstore::OP_MULTI_PUT: {
+          auto kvs = kvstore::decodeMultiValues(debugLog);
+          for (size_t i = 0; i < kvs.size(); i += 2) {
+            VLOG(1) << "OP_MULTI_PUT " << folly::hexlify(kvs[i])
+                    << ", val = " << folly::hexlify(kvs[i + 1])
+                    << " res = " << static_cast<int>(res);
+          }
+          break;
+        }
+        case kvstore::OP_BATCH_WRITE: {
+          auto data = kvstore::decodeBatchValue(debugLog);
+          for (auto& opp : data) {
+            VLOG(1) << "OP_BATCH_WRITE: " << folly::hexlify(opp.second.first)
+                    << ", val=" << folly::hexlify(opp.second.second);
+          }
+          break;
+        }
+        default:
+          break;
+      }
+    }
+
     bool expected = false;
     if (replicatingLogs_.compare_exchange_strong(expected, true)) {
       // We need to send logs to all followers
@@ -649,17 +685,39 @@ folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
     }
   }
 
-  LogID firstId = 0;
-  TermID termId = 0;
-  AppendLogResult res;
-  {
-    std::lock_guard<std::mutex> g(raftLock_);
-    res = canAppendLogs();
-    if (res == AppendLogResult::SUCCEEDED) {
-      firstId = lastLogId_ + 1;
-      termId = term_;
-    }
-  }
+  // LogID firstId = 0;
+  // TermID termId = 0;
+  // AppendLogResult res;
+  // {
+  //   std::lock_guard<std::mutex> g(raftLock_);
+  //   res = canAppendLogs();
+  //   if (res == AppendLogResult::SUCCEEDED) {
+  //     firstId = lastLogId_ + 1;
+  //     termId = term_;
+  //   }
+  // }
+
+  // if (!debugLog.empty()) {
+  //   switch (debugLog[sizeof(int64_t)]) {
+  //     case kvstore::OP_MULTI_PUT: {
+  //       auto kvs = kvstore::decodeMultiValues(debugLog);
+  //       for (size_t i = 0; i < kvs.size(); i += 2) {
+  //         VLOG(1) << "OP_MULTI_PUT " << folly::hexlify(kvs[i])
+  //                 << " res = " << static_cast<int>(res);
+  //       }
+  //       break;
+  //     }
+  //     case kvstore::OP_BATCH_WRITE: {
+  //       auto data = kvstore::decodeBatchValue(debugLog);
+  //       for (auto& opp : data) {
+  //         VLOG(1) << "OP_BATCH_WRITE: " << folly::hexlify(opp.second.first);
+  //       }
+  //       break;
+  //     }
+  //     default:
+  //       break;
+  //   }
+  // }
 
   if (!checkAppendLogResult(res)) {
     // Mosy likely failed because the parttion is not leader
