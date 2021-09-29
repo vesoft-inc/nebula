@@ -165,19 +165,11 @@ class NebulaService(object):
             time.sleep(1)
         return False
 
-    def start(self,
-              debug_log="true",
-              multi_graphd=False,
-              enable_ssl="false",
-              enable_graph_ssl="false",
-              enable_meta_ssl="false",
-              ca_signed="false",
-              containerized="false"):
+    def start(self, debug_log="true", multi_graphd=False, ca_signed="false", **kwargs):
         os.chdir(self.work_dir)
 
         metad_ports = self._find_free_port()
         all_ports = [metad_ports[0]]
-        command = ''
         graph_ports = []
         server_ports = []
         servers = []
@@ -192,30 +184,30 @@ class NebulaService(object):
             if server_name != 'metad':
                 while True:
                     ports = self._find_free_port()
-                    if all((ports[0] + i) not in all_ports
-                           for i in range(-2, 3)):
+                    if all((ports[0] + i) not in all_ports for i in range(-2, 3)):
                         all_ports += [ports[0]]
                         break
             else:
                 ports = metad_ports
             server_ports.append(ports[0])
-            new_name = server_name
+            new_name = server_name if server_name != 'graphd1' else 'graphd'
+            command = [
+                self._format_nebula_command(new_name,
+                                            metad_ports[0],
+                                            ports,
+                                            debug_log,
+                                            ca_signed=ca_signed)
+            ]
             if server_name == 'graphd1':
-                new_name = 'graphd'
-            command = self._format_nebula_command(new_name,
-                                                  metad_ports[0],
-                                                  ports,
-                                                  debug_log,
-                                                  ca_signed=ca_signed)
-            if server_name == 'graphd1':
-                command += ' --log_dir=logs1'
-                command += ' --pid_file=pids1/nebula-graphd.pid'
-            command += ' --enable_ssl={}'.format(enable_ssl)
-            command += ' --enable_graph_ssl={}'.format(enable_graph_ssl)
-            command += ' --enable_meta_ssl={}'.format(enable_meta_ssl)
-            command += ' --containerized={}'.format(containerized)
-            print("exec: " + command)
-            p = subprocess.Popen([command], shell=True, stdout=subprocess.PIPE)
+                command.append('--log_dir=logs1')
+                command.append('--pid_file=pids1/nebula-graphd.pid')
+
+            for k,v in kwargs.items():
+                command.append("--{}={}".format(k, v))
+
+            cmd = " ".join(command)
+            print("exec: " + cmd)
+            p = subprocess.Popen([cmd], shell=True, stdout=subprocess.PIPE)
             p.wait()
             if p.returncode != 0:
                 print("error: " + bytes.decode(p.communicate()[0]))
