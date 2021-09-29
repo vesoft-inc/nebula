@@ -15,8 +15,8 @@ namespace nebula {
 // If any point in the set that comprises A is also a member of the set of points that make up B,
 // they intersects;
 bool intersects(const Geography& a, const Geography& b) {
-  auto aRegion = a.asS2().get();
-  auto bRegion = b.asS2().get();
+  auto aRegion = a.asS2();
+  auto bRegion = b.asS2();
   // TODO(jie): Better to ensure the Geography value is valid to build s2 when constructing.
   if (!aRegion || !bRegion) {
     LOG(INFO) << "intersects(), asS2() failed.";
@@ -27,48 +27,52 @@ bool intersects(const Geography& a, const Geography& b) {
     case GeoShape::POINT: {
       switch (b.shape()) {
         case GeoShape::POINT:
-          return static_cast<S2PointRegion*>(aRegion)->MayIntersect(
-              S2Cell(static_cast<S2PointRegion*>(bRegion)->point()));
+          return static_cast<S2PointRegion*>(aRegion.get())
+              ->MayIntersect(S2Cell(static_cast<S2PointRegion*>(bRegion.get())->point()));
         case GeoShape::LINESTRING:
-          return static_cast<S2Polyline*>(bRegion)->MayIntersect(
-              S2Cell(static_cast<S2PointRegion*>(aRegion)->point()));
+          return static_cast<S2Polyline*>(bRegion.get())
+              ->MayIntersect(S2Cell(static_cast<S2PointRegion*>(aRegion.get())->point()));
         case GeoShape::POLYGON:
-          return static_cast<S2Polygon*>(bRegion)->MayIntersect(
-              S2Cell(static_cast<S2PointRegion*>(aRegion)->point()));
+          return static_cast<S2Polygon*>(bRegion.get())
+              ->MayIntersect(S2Cell(static_cast<S2PointRegion*>(aRegion.get())->point()));
         default:
           LOG(FATAL)
               << "Geography shapes other than Point/LineString/Polygon are not currently supported";
-          return -1.0;
+          return false;
       }
     }
     case GeoShape::LINESTRING: {
       switch (b.shape()) {
         case GeoShape::POINT:
-          return static_cast<S2Polyline*>(aRegion)->MayIntersect(
-              S2Cell(static_cast<S2PointRegion*>(bRegion)->point()));
+          return static_cast<S2Polyline*>(aRegion.get())
+              ->MayIntersect(S2Cell(static_cast<S2PointRegion*>(bRegion.get())->point()));
         case GeoShape::LINESTRING:
-          return static_cast<S2Polyline*>(aRegion)->Intersects(static_cast<S2Polyline*>(bRegion));
+          return static_cast<S2Polyline*>(aRegion.get())
+              ->Intersects(static_cast<S2Polyline*>(bRegion.get()));
         case GeoShape::POLYGON:
-          return static_cast<S2Polygon*>(bRegion)->Intersects(*static_cast<S2Polyline*>(aRegion));
+          return static_cast<S2Polygon*>(bRegion.get())
+              ->Intersects(*static_cast<S2Polyline*>(aRegion.get()));
         default:
           LOG(FATAL)
               << "Geography shapes other than Point/LineString/Polygon are not currently supported";
-          return -1.0;
+          return false;
       }
     }
     case GeoShape::POLYGON: {
       switch (b.shape()) {
         case GeoShape::POINT:
-          return static_cast<S2Polygon*>(aRegion)->MayIntersect(
-              S2Cell(static_cast<S2PointRegion*>(bRegion)->point()));
+          return static_cast<S2Polygon*>(aRegion.get())
+              ->MayIntersect(S2Cell(static_cast<S2PointRegion*>(bRegion.get())->point()));
         case GeoShape::LINESTRING:
-          return static_cast<S2Polygon*>(aRegion)->Intersects(*static_cast<S2Polyline*>(bRegion));
+          return static_cast<S2Polygon*>(aRegion.get())
+              ->Intersects(*static_cast<S2Polyline*>(bRegion.get()));
         case GeoShape::POLYGON:
-          return static_cast<S2Polygon*>(aRegion)->Intersects(static_cast<S2Polygon*>(bRegion));
+          return static_cast<S2Polygon*>(aRegion.get())
+              ->Intersects(static_cast<S2Polygon*>(bRegion.get()));
         default:
           LOG(FATAL)
               << "Geography shapes other than Point/LineString/Polygon are not currently supported";
-          return -1.0;
+          return false;
       }
     }
   }

@@ -53,7 +53,7 @@ std::vector<uint64_t> GeographyIndex::indexCells(const Geography& g) const noexc
 }
 
 std::vector<ScanRange> GeographyIndex::dWithin(const Geography& g, double distance) const noexcept {
-  auto* r = g.asS2().get();
+  auto r = g.asS2();
   // TODO(jie): Better to ensure the Geography value is valid to build s2 when constructing.
   if (!r) {
     LOG(INFO) << "GeographyIndex::dWithin(), asS2() failed.";
@@ -63,13 +63,13 @@ std::vector<ScanRange> GeographyIndex::dWithin(const Geography& g, double distan
   S1Angle radius = S2Earth::ToAngle(util::units::Meters(distance));
   switch (g.shape()) {
     case GeoShape::POINT: {
-      const S2Point& gPoint = static_cast<S2PointRegion*>(r)->point();
+      const S2Point& gPoint = static_cast<S2PointRegion*>(r.get())->point();
       S2Cap gCap(gPoint, radius);
       auto cells = coveringCells(gCap);
       return scanRange(cells);
     }
     case GeoShape::LINESTRING: {
-      S2Polyline* gLine = static_cast<S2Polyline*>(r);
+      S2Polyline* gLine = static_cast<S2Polyline*>(r.get());
       MutableS2ShapeIndex index;
       index.Add(std::make_unique<S2Polyline::Shape>(gLine));
       S2ShapeIndexBufferedRegion gBuffer(&index, radius);
@@ -77,7 +77,7 @@ std::vector<ScanRange> GeographyIndex::dWithin(const Geography& g, double distan
       return scanRange(cells);
     }
     case GeoShape::POLYGON: {
-      S2Polygon* gPolygon = static_cast<S2Polygon*>(r);
+      S2Polygon* gPolygon = static_cast<S2Polygon*>(r.get());
       S2ShapeIndexBufferedRegion gBuffer(&gPolygon->index(), radius);
       auto cells = coveringCells(gBuffer);
       return scanRange(cells);
@@ -90,7 +90,7 @@ std::vector<ScanRange> GeographyIndex::dWithin(const Geography& g, double distan
 }
 
 std::vector<S2CellId> GeographyIndex::coveringCells(const Geography& g) const noexcept {
-  auto* r = g.asS2().get();
+  auto r = g.asS2();
   // TODO(jie): Better to ensure the Geography value is valid to build s2 when constructing.
   if (!r) {
     LOG(INFO) << "GeographyIndex::coveringCells(), asS2() failed.";
@@ -99,7 +99,7 @@ std::vector<S2CellId> GeographyIndex::coveringCells(const Geography& g) const no
 
   // Currently region coverer options doesn't work for point. Point always use level 30.
   if (g.shape() == GeoShape::POINT) {
-    const S2Point& gPoint = static_cast<S2PointRegion*>(r)->point();
+    const S2Point& gPoint = static_cast<S2PointRegion*>(r.get())->point();
     return {S2CellId(gPoint)};
   }
 

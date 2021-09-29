@@ -15,8 +15,8 @@ namespace nebula {
 // We don't need to find the closest points. We just need to find the first point pair whose
 // distance is less than or less equal than the given distance. (Early quit)
 bool dWithin(const Geography& a, const Geography& b, double distance, bool inclusive) {
-  auto aRegion = a.asS2().get();
-  auto bRegion = b.asS2().get();
+  auto aRegion = a.asS2();
+  auto bRegion = b.asS2();
   // TODO(jie): Better to ensure the Geography value is valid to build s2 when constructing.
   if (!aRegion || !bRegion) {
     LOG(INFO) << "dWithin(), asS2() failed.";
@@ -25,36 +25,36 @@ bool dWithin(const Geography& a, const Geography& b, double distance, bool inclu
 
   switch (a.shape()) {
     case GeoShape::POINT: {
-      const S2Point& aPoint = static_cast<S2PointRegion*>(aRegion)->point();
+      const S2Point& aPoint = static_cast<S2PointRegion*>(aRegion.get())->point();
       switch (b.shape()) {
         case GeoShape::POINT: {
-          const S2Point& bPoint = static_cast<S2PointRegion*>(bRegion)->point();
+          const S2Point& bPoint = static_cast<S2PointRegion*>(bRegion.get())->point();
           double closestDistance = S2Earth::GetDistanceMeters(aPoint, bPoint);
           return inclusive ? closestDistance <= distance : closestDistance < distance;
         }
         case GeoShape::LINESTRING: {
-          S2Polyline* bLine = static_cast<S2Polyline*>(bRegion);
+          S2Polyline* bLine = static_cast<S2Polyline*>(bRegion.get());
           return s2PointAndS2PolylineAreWithinDistance(aPoint, bLine, distance, inclusive);
         }
         case GeoShape::POLYGON: {
-          S2Polygon* bPolygon = static_cast<S2Polygon*>(bRegion);
+          S2Polygon* bPolygon = static_cast<S2Polygon*>(bRegion.get());
           return s2PointAndS2PolygonAreWithinDistance(aPoint, bPolygon, distance, inclusive);
         }
         default:
           LOG(FATAL)
               << "Geography shapes other than Point/LineString/Polygon are not currently supported";
-          return -1.0;
+          return false;
       }
     }
     case GeoShape::LINESTRING: {
-      S2Polyline* aLine = static_cast<S2Polyline*>(aRegion);
+      S2Polyline* aLine = static_cast<S2Polyline*>(aRegion.get());
       switch (b.shape()) {
         case GeoShape::POINT: {
-          const S2Point& bPoint = static_cast<S2PointRegion*>(bRegion)->point();
+          const S2Point& bPoint = static_cast<S2PointRegion*>(bRegion.get())->point();
           return s2PointAndS2PolylineAreWithinDistance(bPoint, aLine, distance, inclusive);
         }
         case GeoShape::LINESTRING: {
-          S2Polyline* bLine = static_cast<S2Polyline*>(bRegion);
+          S2Polyline* bLine = static_cast<S2Polyline*>(bRegion.get());
           MutableS2ShapeIndex aIndex, bIndex;
           aIndex.Add(std::make_unique<S2Polyline::Shape>(aLine));
           bIndex.Add(std::make_unique<S2Polyline::Shape>(bLine));
@@ -68,28 +68,28 @@ bool dWithin(const Geography& a, const Geography& b, double distance, bool inclu
                                       S2Earth::ToChordAngle(util::units::Meters(distance)));
         }
         case GeoShape::POLYGON: {
-          S2Polygon* bPolygon = static_cast<S2Polygon*>(bRegion);
+          S2Polygon* bPolygon = static_cast<S2Polygon*>(bRegion.get());
           return s2PolylineAndS2PolygonAreWithinDistance(aLine, bPolygon, distance, inclusive);
         }
         default:
           LOG(FATAL)
               << "Geography shapes other than Point/LineString/Polygon are not currently supported";
-          return -1.0;
+          return false;
       }
     }
     case GeoShape::POLYGON: {
-      S2Polygon* aPolygon = static_cast<S2Polygon*>(aRegion);
+      S2Polygon* aPolygon = static_cast<S2Polygon*>(aRegion.get());
       switch (b.shape()) {
         case GeoShape::POINT: {
-          const S2Point& bPoint = static_cast<S2PointRegion*>(bRegion)->point();
+          const S2Point& bPoint = static_cast<S2PointRegion*>(bRegion.get())->point();
           return s2PointAndS2PolygonAreWithinDistance(bPoint, aPolygon, distance, inclusive);
         }
         case GeoShape::LINESTRING: {
-          S2Polyline* bLine = static_cast<S2Polyline*>(bRegion);
+          S2Polyline* bLine = static_cast<S2Polyline*>(bRegion.get());
           return s2PolylineAndS2PolygonAreWithinDistance(bLine, aPolygon, distance, inclusive);
         }
         case GeoShape::POLYGON: {
-          S2Polygon* bPolygon = static_cast<S2Polygon*>(bRegion);
+          S2Polygon* bPolygon = static_cast<S2Polygon*>(bRegion.get());
           S2ClosestEdgeQuery query(&aPolygon->index());
           S2ClosestEdgeQuery::ShapeIndexTarget target(&bPolygon->index());
           if (inclusive) {
@@ -102,7 +102,7 @@ bool dWithin(const Geography& a, const Geography& b, double distance, bool inclu
         default:
           LOG(FATAL)
               << "Geography shapes other than Point/LineString/Polygon are not currently supported";
-          return -1.0;
+          return false;
       }
     }
   }

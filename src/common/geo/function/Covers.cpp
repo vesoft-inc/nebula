@@ -15,8 +15,8 @@ namespace nebula {
 // If no point in b lies exterior of b, a covers b.
 // http://lin-ear-th-inking.blogspot.com/2007/06/subtleties-of-ogc-covers-spatial.html
 bool covers(const Geography& a, const Geography& b) {
-  auto* aRegion = a.asS2().get();
-  auto* bRegion = b.asS2().get();
+  auto aRegion = a.asS2();
+  auto bRegion = b.asS2();
   // TODO(jie): Better to ensure the Geography value is valid to build s2 when constructing.
   if (!aRegion || !bRegion) {
     LOG(INFO) << "covers(), asS2() failed.";
@@ -27,8 +27,8 @@ bool covers(const Geography& a, const Geography& b) {
     case GeoShape::POINT: {
       switch (b.shape()) {
         case GeoShape::POINT:
-          return static_cast<S2PointRegion*>(aRegion)->Contains(
-              static_cast<S2PointRegion*>(bRegion)->point());
+          return static_cast<S2PointRegion*>(aRegion.get())
+              ->Contains(static_cast<S2PointRegion*>(bRegion.get())->point());
         case GeoShape::LINESTRING:
           return false;
         case GeoShape::POLYGON:
@@ -40,12 +40,13 @@ bool covers(const Geography& a, const Geography& b) {
       }
     }
     case GeoShape::LINESTRING: {
-      S2Polyline* aLine = static_cast<S2Polyline*>(aRegion);
+      S2Polyline* aLine = static_cast<S2Polyline*>(aRegion.get());
       switch (b.shape()) {
         case GeoShape::POINT:
-          return aLine->MayIntersect(S2Cell(static_cast<S2PointRegion*>(bRegion)->point()));
+          return aLine->MayIntersect(S2Cell(static_cast<S2PointRegion*>(bRegion.get())->point()));
         case GeoShape::LINESTRING:
-          return aLine->NearlyCovers(*static_cast<S2Polyline*>(bRegion), S1Angle::Radians(1e-15));
+          return aLine->NearlyCovers(*static_cast<S2Polyline*>(bRegion.get()),
+                                     S1Angle::Radians(1e-15));
         case GeoShape::POLYGON:
           return false;
         default:
@@ -55,14 +56,14 @@ bool covers(const Geography& a, const Geography& b) {
       }
     }
     case GeoShape::POLYGON: {
-      S2Polygon* aPolygon = static_cast<S2Polygon*>(aRegion);
+      S2Polygon* aPolygon = static_cast<S2Polygon*>(aRegion.get());
       switch (b.shape()) {
         case GeoShape::POINT:
-          return aPolygon->Contains(static_cast<S2PointRegion*>(bRegion)->point());
+          return aPolygon->Contains(static_cast<S2PointRegion*>(bRegion.get())->point());
         case GeoShape::LINESTRING:
-          return aPolygon->Contains(*static_cast<S2Polyline*>(bRegion));
+          return aPolygon->Contains(*static_cast<S2Polyline*>(bRegion.get()));
         case GeoShape::POLYGON:
-          return aPolygon->Contains(static_cast<S2Polygon*>(bRegion));
+          return aPolygon->Contains(static_cast<S2Polygon*>(bRegion.get()));
         default:
           LOG(FATAL)
               << "Geography shapes other than Point/LineString/Polygon are not currently supported";
