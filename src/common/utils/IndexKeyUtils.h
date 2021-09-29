@@ -202,9 +202,11 @@ class IndexKeyUtils final {
        *   TODO : now, the -(std::numeric_limits<double>::min())
        *   have a problem of precision overflow. current return value is -nan.
        */
-      auto i = *reinterpret_cast<const int64_t*>(static_cast<void*>(&v));
+      auto* c1 = reinterpret_cast<const char*>(&v);
+      auto i = *reinterpret_cast<const int64_t*>(c1);
       i = -(std::numeric_limits<int64_t>::max() + i);
-      v = *reinterpret_cast<const double*>(static_cast<void*>(&i));
+      auto* c2 = reinterpret_cast<const char*>(&i);
+      v = *reinterpret_cast<const double*>(c2);
     }
     auto val = folly::Endian::big(v);
     auto* c = reinterpret_cast<char*>(&val);
@@ -221,9 +223,11 @@ class IndexKeyUtils final {
     auto val = *reinterpret_cast<const double*>(v);
     val = folly::Endian::big(val);
     if (val < 0) {
-      auto i = *reinterpret_cast<const int64_t*>(static_cast<void*>(&val));
+      auto* c1 = reinterpret_cast<const char*>(&val);
+      auto i = *reinterpret_cast<const int64_t*>(c1);
       i = -(std::numeric_limits<int64_t>::max() + i);
-      val = *reinterpret_cast<const double*>(static_cast<void*>(&i));
+      auto* c2 = reinterpret_cast<const char*>(&i);
+      val = *reinterpret_cast<const double*>(c2);
     }
     return val;
   }

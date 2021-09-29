@@ -74,17 +74,6 @@ struct Geography {
     // TODO(jie): Must ensure the bytes is valid
     wkb = bytes;
   }
-
- private:
-  std::unique_ptr<S2Region> s2RegionFromGeomtry(const Geometry* geom) const;
-
-  S2Point s2PointFromCoordinate(const Coordinate& coord) const;
-
-  std::vector<S2Point> s2PointsFromCoordinateList(const std::vector<Coordinate>& coordList) const;
-
-  bool isLoopClosed(const std::vector<Coordinate>& coordList) const;
-
-  void removeAdjacentDuplicateCoordinates(std::vector<Coordinate>& coordList) const;
 };
 
 inline std::ostream& operator<<(std::ostream& os, const Geography& g) { return os << g.wkb; }
