@@ -47,19 +47,26 @@ folly::SemiFuture<Code> ChainAddEdgesProcessorLocal::prepareLocal() {
 
   auto [pro, fut] = folly::makePromiseContract<Code>();
   auto primes = makePrime();
+  std::vector<kvstore::KV> debugPrimes;
   if (FLAGS_trace_toss) {
-    for (auto& kv : primes) {
-      VLOG(1) << uuid_ << " put prime " << folly::hexlify(kv.first);
-    }
+    debugPrimes = primes;
   }
 
   erasePrime();
   env_->kvstore_->asyncMultiPut(
-      spaceId_, localPartId_, std::move(primes), [p = std::move(pro), this](auto rc) mutable {
+      spaceId_,
+      localPartId_,
+      std::move(primes),
+      [p = std::move(pro), debugPrimes, this](auto rc) mutable {
         if (rc == nebula::cpp2::ErrorCode::SUCCEEDED) {
           primeInserted_ = true;
+          if (FLAGS_trace_toss) {
+            for (auto& kv : debugPrimes) {
+              VLOG(1) << uuid_ << " put prime " << folly::hexlify(kv.first);
+            }
+          }
         } else {
-          LOG(WARNING) << "kvstore err: " << apache::thrift::util::enumNameSafe(rc);
+          LOG(WARNING) << uuid_ << "kvstore err: " << apache::thrift::util::enumNameSafe(rc);
         }
 
         p.setValue(rc);
@@ -85,10 +92,14 @@ folly::SemiFuture<Code> ChainAddEdgesProcessorLocal::processLocal(Code code) {
     VLOG(1) << uuid_ << " processRemote(), code = " << apache::thrift::util::enumNameSafe(code);
   }
 
+  bool remoteFailed{true};
+
   if (code == Code::SUCCEEDED) {
     // do nothing
+    remoteFailed = false;
   } else if (code == Code::E_RPC_FAILURE) {
     code_ = Code::SUCCEEDED;
+    remoteFailed = false;
   } else {
     code_ = code;
   }
@@ -106,7 +117,7 @@ folly::SemiFuture<Code> ChainAddEdgesProcessorLocal::processLocal(Code code) {
   if (code_ == Code::SUCCEEDED) {
     return forwardToDelegateProcessor();
   } else {
-    if (primeInserted_) {
+    if (primeInserted_ && remoteFailed) {
       return abort();
     }
   }
@@ -142,7 +153,7 @@ bool ChainAddEdgesProcessorLocal::prepareRequest(const cpp2::AddEdgesRequest& re
     pushResultCode(nebula::error(part), localPartId_);
     return false;
   }
-  localTerm_ = (nebula::value(part))->termId();
+  restrictTerm_ = (nebula::value(part))->termId();
 
   auto vidLen = env_->schemaMan_->getSpaceVidLen(spaceId_);
   if (!vidLen.ok()) {
@@ -164,7 +175,13 @@ folly::SemiFuture<Code> ChainAddEdgesProcessorLocal::forwardToDelegateProcessor(
   auto [pro, fut] = folly::makePromiseContract<Code>();
   std::move(futProc).thenValue([&, p = std::move(pro)](auto&& resp) mutable {
     auto rc = extractRpcError(resp);
-    if (rc != Code::SUCCEEDED) {
+    if (rc == Code::SUCCEEDED) {
+      if (FLAGS_trace_toss) {
+        for (auto& k : kvErased_) {
+          VLOG(1) << uuid_ << " erase prime " << folly::hexlify(k);
+        }
+      }
+    } else {
       VLOG(1) << uuid_
               << " forwardToDelegateProcessor(), code = " << apache::thrift::util::enumNameSafe(rc);
       addUnfinishedEdge(ResumeType::RESUME_CHAIN);
@@ -194,7 +211,7 @@ void ChainAddEdgesProcessorLocal::doRpc(folly::Promise<Code>&& promise,
   auto* iClient = env_->txnMan_->getInternalClient();
   folly::Promise<Code> p;
   auto f = p.getFuture();
-  iClient->chainAddEdges(req, localTerm_, edgeVer_, std::move(p));
+  iClient->chainAddEdges(req, restrictTerm_, edgeVer_, std::move(p));
 
   std::move(f).thenTry([=, p = std::move(promise)](auto&& t) mutable {
     auto code = t.hasValue() ? t.value() : Code::E_RPC_FAILURE;
@@ -229,14 +246,26 @@ folly::SemiFuture<Code> ChainAddEdgesProcessorLocal::abort() {
   if (kvErased_.empty()) {
     return Code::SUCCEEDED;
   }
+
+  std::vector<std::string> debugErased;
+  if (FLAGS_trace_toss) {
+    debugErased = kvErased_;
+  }
+
   auto [pro, fut] = folly::makePromiseContract<Code>();
   env_->kvstore_->asyncMultiRemove(
       req_.get_space_id(),
       localPartId_,
       std::move(kvErased_),
-      [p = std::move(pro), this](auto rc) mutable {
+      [p = std::move(pro), debugErased, this](auto rc) mutable {
         VLOG(1) << uuid_ << " abort()=" << apache::thrift::util::enumNameSafe(rc);
-        if (rc != Code::SUCCEEDED) {
+        if (rc == Code::SUCCEEDED) {
+          if (FLAGS_trace_toss) {
+            for (auto& k : debugErased) {
+              VLOG(1) << uuid_ << "erase prime " << folly::hexlify(k);
+            }
+          }
+        } else {
           addUnfinishedEdge(ResumeType::RESUME_CHAIN);
         }
         p.setValue(rc);
@@ -277,6 +306,7 @@ std::vector<kvstore::KV> ChainAddEdgesProcessorLocal::makeDoublePrime() {
 void ChainAddEdgesProcessorLocal::erasePrime() {
   auto fn = [&](const cpp2::NewEdge& edge) {
     auto key = ConsistUtil::primeKey(spaceVidLen_, localPartId_, edge.get_key());
+    // VLOG(1) << uuid_ << "prepare to erase prime " << folly::hexlify(key);
     return key;
   };
   for (auto& edge : req_.get_parts().begin()->second) {
@@ -287,6 +317,7 @@ void ChainAddEdgesProcessorLocal::erasePrime() {
 void ChainAddEdgesProcessorLocal::eraseDoublePrime() {
   auto fn = [&](const cpp2::NewEdge& edge) {
     auto key = ConsistUtil::doublePrime(spaceVidLen_, localPartId_, edge.get_key());
+    // VLOG(1) << uuid_ << "prepare to erase double prime " << folly::hexlify(key);
     return key;
   };
   for (auto& edge : req_.get_parts().begin()->second) {
@@ -313,9 +344,19 @@ bool ChainAddEdgesProcessorLocal::lockEdges(const cpp2::AddEdgesRequest& req) {
 bool ChainAddEdgesProcessorLocal::checkTerm(const cpp2::AddEdgesRequest& req) {
   auto space = req.get_space_id();
   auto partId = req.get_parts().begin()->first;
-  auto ret = env_->txnMan_->checkTerm(space, partId, localTerm_);
-  LOG_IF(WARNING, !ret) << "check term failed, localTerm_ = " << localTerm_;
-  return ret;
+
+  auto part = env_->kvstore_->part(space, partId);
+  if (!nebula::ok(part)) {
+    pushResultCode(nebula::error(part), localPartId_);
+    return false;
+  }
+  auto curTerm = (nebula::value(part))->termId();
+  if (restrictTerm_ != curTerm) {
+    VLOG(1) << folly::sformat(
+        "check term failed, restrictTerm_={}, currTerm={}", restrictTerm_, curTerm);
+    return false;
+  }
+  return true;
 }
 
 // check if current edge is not newer than the one trying to resume.
