@@ -10,7 +10,7 @@
 #   -d: Whether to enable sanitizer, default OFF
 #   -t: Build type, default Release
 #   -j: Number of threads, default $(nproc)
-#   -r: Whether enable compressed debug info, defaulr ON
+#   -r: Whether enable compressed debug info, default ON
 #   -p: Whether dump the symbols from binary by dump_syms
 #
 # usage: ./package.sh -v <version> -n <ON/OFF> -s <TRUE/FALSE> -b <BRANCH>
