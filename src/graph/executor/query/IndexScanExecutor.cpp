@@ -40,6 +40,7 @@ folly::Future<Status> IndexScanExecutor::indexScan() {
       ->lookupIndex(lookup->space(),
                     qctx()->rctx()->session()->id(),
                     qctx()->plan()->id(),
+                    qctx()->plan()->isProfileEnabled(),
                     ictxs,
                     lookup->isEdge(),
                     lookup->schemaId(),

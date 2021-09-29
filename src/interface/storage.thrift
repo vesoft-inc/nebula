@@ -25,6 +25,7 @@ include "meta.thrift"
 struct RequestCommon {
     1: optional common.SessionID session_id,
     2: optional common.ExecutionPlanID plan_id,
+    3: optional bool profile_detail,
 }
 
 struct PartitionResult {

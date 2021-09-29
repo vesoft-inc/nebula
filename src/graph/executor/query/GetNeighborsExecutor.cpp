@@ -47,6 +47,7 @@ folly::Future<Status> GetNeighborsExecutor::execute() {
       ->getNeighbors(gn_->space(),
                      qctx()->rctx()->session()->id(),
                      qctx()->plan()->id(),
+                     qctx()->plan()->isProfileEnabled(),
                      std::move(reqDs.colNames),
                      std::move(reqDs.rows),
                      gn_->edgeTypes(),

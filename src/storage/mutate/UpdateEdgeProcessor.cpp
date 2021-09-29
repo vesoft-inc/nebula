@@ -34,7 +34,9 @@ void UpdateEdgeProcessor::doProcess(const cpp2::UpdateEdgeRequest& req) {
   if (req.insertable_ref().has_value()) {
     insertable_ = *req.insertable_ref();
   }
-
+  if (req.common_ref().has_value() && req.get_common()->profile_detail_ref().value_or(false)) {
+    profileDetailFlag_ = true;
+  }
   auto retCode = getSpaceVidLen(spaceId_);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
     pushResultCode(retCode, partId);
@@ -85,7 +87,7 @@ void UpdateEdgeProcessor::doProcess(const cpp2::UpdateEdgeRequest& req) {
       onProcessFinished();
     }
   } else {
-    if (FLAGS_profile_storage_detail) {
+    if (UNLIKELY(profileDetailFlag_)) {
       profilePlan(plan);
     }
     onProcessFinished();

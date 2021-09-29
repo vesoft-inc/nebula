@@ -36,6 +36,7 @@ class GraphStorageClient : public StorageClientBase<cpp2::GraphStorageServiceAsy
       GraphSpaceID space,
       SessionID session,
       ExecutionPlanID plan,
+      bool profile,
       std::vector<std::string> colNames,
       // The first column has to be the VertexID
       const std::vector<Row>& vertices,
@@ -138,6 +139,7 @@ class GraphStorageClient : public StorageClientBase<cpp2::GraphStorageServiceAsy
       GraphSpaceID space,
       SessionID session,
       ExecutionPlanID plan,
+      bool profile,
       const std::vector<storage::cpp2::IndexQueryContext>& contexts,
       bool isEdge,
       int32_t tagOrEdge,
@@ -176,7 +178,9 @@ class GraphStorageClient : public StorageClientBase<cpp2::GraphStorageServiceAsy
   StatusOr<std::function<const VertexID&(const cpp2::DelTags&)>> getIdFromDelTags(
       GraphSpaceID space) const;
 
-  cpp2::RequestCommon makeRequestCommon(SessionID sessionId, ExecutionPlanID planId);
+  cpp2::RequestCommon makeRequestCommon(SessionID sessionId,
+                                        ExecutionPlanID planId,
+                                        bool profile = false);
 };
 
 }  // namespace storage
