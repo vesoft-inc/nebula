@@ -852,7 +852,7 @@ void OptimizerUtils::eraseInvalidIndexItems(
 
 bool OptimizerUtils::isBestIndex(const nebula::meta::cpp2::IndexItem& indexItem,
                                  const std::vector<std::string>& returnCols) {
-  auto indexFields = indexItem.get_fields();
+  const auto& indexFields = indexItem.get_fields();
   for (const auto& returnCol : returnCols) {
     static const std::set<std::string> propsInKey{kVid, kTag, kSrc, kType, kRank, kDst};
     if (propsInKey.count(returnCol)) {
