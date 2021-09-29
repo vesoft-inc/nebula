@@ -75,6 +75,7 @@ Feature: Create space as another space
       | "1"    | "2"    | 0       |
     # clone space
     When clone a new space according to current space
+    And wait 3 seconds
     Then the execution should be successful
     # check schema is really cloned
     When executing query:
