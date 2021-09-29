@@ -11,10 +11,6 @@
 #include <s2/s2polyline.h>
 #include <s2/s2region.h>
 
-#include <algorithm>
-#include <typeinfo>
-#include <vector>
-
 #include "common/base/StatusOr.h"
 #include "common/datatypes/Value.h"
 #include "common/geo/io/Geometry.h"
