@@ -18,6 +18,7 @@
 #include "common/datatypes/Set.h"
 #include "common/datatypes/Value.h"
 #include "common/datatypes/Vertex.h"
+#include "common/geo/io/Geometry.h"
 
 namespace nebula {
 
@@ -1156,12 +1157,19 @@ TEST(Value, Ctor) {
   Value vMap(Map({{"a", 9}, {"b", 10}}));
   EXPECT_TRUE(vMap.isMap());
   // TODO(jie) Add more geography value test
-  Value vGeoPoint(Geography::fromWKT("POINT(0 1)").value());
-  EXPECT_TRUE(vGeoPoint.isGeography());
-  Value vGeoLine(Geography::fromWKT("LINESTRING(0 1,2 7)").value());
-  EXPECT_TRUE(vGeoLine.isGeography());
-  Value vGeoPolygon(Geography::fromWKT("POLYGON((0 1,2 3,4 5,6 7,0 1),(2 4,5 6,3 8,2 4))").value());
-  EXPECT_TRUE(vGeoPolygon.isGeography());
+  Geometry geomPoint(Point(Coordinate(3, 7)));
+  Value vGeogPoint{Geography(geomPoint)};
+  EXPECT_TRUE(vGeogPoint.isGeography());
+  Geometry geomLine(LineString(std::vector<Coordinate>{Coordinate(0, 1), Coordinate(2, 7)}));
+  Value vGeogLine{Geography(geomLine)};
+  EXPECT_TRUE(vGeogLine.isGeography());
+  Geometry geomPolygon(Polygon(std::vector<std::vector<Coordinate>>{
+      std::vector<Coordinate>{
+          Coordinate(0, 1), Coordinate(2, 3), Coordinate(4, 5), Coordinate(6, 7), Coordinate(0, 1)},
+      std::vector<Coordinate>{
+          Coordinate(2, 4), Coordinate(5, 6), Coordinate(3, 8), Coordinate(2, 4)}}));
+  Value vGeogPolygon{Geography(geomPolygon)};
+  EXPECT_TRUE(vGeogPolygon.isGeography());
   // Disabled
   // Lead to compile error
   // Value v(nullptr);

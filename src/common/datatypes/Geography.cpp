@@ -19,12 +19,14 @@
 
 namespace nebula {
 
+Geography::Geography(const Geometry& geom) { wkb = WKBWriter().write(geom); }
+
 StatusOr<Geography> Geography::fromWKT(const std::string& wkt) {
   auto geomRet = WKTReader().read(wkt);
   NG_RETURN_IF_ERROR(geomRet);
   auto geom = geomRet.value();
-  auto wkb = WKBWriter().write(geom);
-  return Geography(wkb);
+  auto bytes = WKBWriter().write(geom);
+  return Geography(bytes);
 }
 
 GeoShape Geography::shape() const {
@@ -42,6 +44,40 @@ GeoShape Geography::shape() const {
     return GeoShape::UNKNOWN;
   }
   return shapeTypeRet.value();
+}
+
+bool Geography::isValid() const {
+  auto geom = this->asGeometry();
+  if (!geom) {
+    return false;
+  }
+
+  if (!geom->isValid()) {
+    return false;
+  }
+
+  switch (a.shape()) {
+    case GeoShape::POINT: {
+      const auto& point = geom->point();
+      return std::abs(point.coord.x) <= 180.0 && std::abs(point.coord.y) <= 90.0;
+    }
+    case GeoShape::LINESTRING: {
+      auto s2Region = GeoUtils::s2RegionFromGeomtry(*geom);
+      return static_cast<S2Polyline*>(s2Region.get())->IsValid();
+    }
+    case GeoShape::POLYGON: {
+      auto s2Region = GeoUtils::s2RegionFromGeomtry(*geom);
+      return static_cast<S2Polygon*>(s2Region.get())->IsValid();
+    }
+    case GeoShape::UNKNOWN:
+    default: {
+      LOG(ERROR)
+          << "Geography shapes other than Point/LineString/Polygon are not currently supported";
+      return false;
+    }
+  }
+
+  return false;
 }
 
 std::unique_ptr<std::string> Geography::asWKT() const {
@@ -64,6 +100,16 @@ std::unique_ptr<std::string> Geography::asWKBHex() const {
   return std::make_unique<std::string>(folly::hexlify(WKBWriter().write(geom)));
 }
 
+std::unique_ptr<Geometry> Geography::asGeometry() const {
+  auto geomRet = WKBReader().read(wkb);
+  if (!geomRet.ok()) {
+    LOG(ERROR) << geomRet.status();
+    return nullptr;
+  }
+  auto geom = geomRet.value();
+  return std::make_unique<Geometry>(std::move(geom));
+}
+
 std::unique_ptr<S2Region> Geography::asS2() const {
   auto geomRet = WKBReader().read(wkb);
   if (!geomRet.ok()) {
@@ -71,6 +117,7 @@ std::unique_ptr<S2Region> Geography::asS2() const {
     return nullptr;
   }
   auto geom = geomRet.value();
+  geom.normalize();
   return GeoUtils::s2RegionFromGeomtry(geom);
 }
 

@@ -96,10 +96,6 @@ point
 
 linestring
   : KW_LINESTRING L_PAREN coordinate_list R_PAREN {
-      if ($3->size() < 2) {
-        delete $3;
-        throw nebula::WKTParser::syntax_error(@3, "LineString must have at least 2 coordinates");
-      }
       $$ = new LineString(std::move(*$3));
       delete $3;
   }
@@ -107,17 +103,6 @@ linestring
 
 polygon
   : KW_POLYGON L_PAREN coordinate_list_list R_PAREN {
-      for (size_t i = 0; i < $3->size(); ++i) {
-        const auto &coordList = (*$3)[i];
-        if (coordList.size() < 4) {
-          delete $3;
-          throw nebula::WKTParser::syntax_error(@3, "Polygon's LinearRing must have at least 4 coordinates");
-        }
-        if (coordList.front() != coordList.back()) {
-          delete $3;
-          throw nebula::WKTParser::syntax_error(@3, "Polygon's LinearRing must be closed");
-        }
-      }
       $$ = new Polygon(std::move(*$3));
       delete $3;
   }
@@ -125,12 +110,6 @@ polygon
 
 coordinate
   : DOUBLE DOUBLE {
-      if (!Coordinate::isValidLng($1)) {
-        throw nebula::WKTParser::syntax_error(@1, "Longitude must be between -180 and 180 degrees");
-      }
-      if (!Coordinate::isValidLat($2)) {
-        throw nebula::WKTParser::syntax_error(@2, "Latitude must be between -90 and 90 degrees");
-      }
       $$.x = $1;
       $$.y = $2;
   }

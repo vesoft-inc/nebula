@@ -31,19 +31,19 @@ StatusOr<Geometry> WKBReader::read(const uint8_t *&beg, const uint8_t *end) cons
       return Point(coord);
     }
     case GeoShape::LINESTRING: {
-      auto numPointsRet = readUint32(beg, end, byteOrder);
-      NG_RETURN_IF_ERROR(numPointsRet);
-      uint32_t numPoints = numPointsRet.value();
-      auto coordListRet = readCoordinateList(beg, end, byteOrder, numPoints);
+      auto numCoordRet = readUint32(beg, end, byteOrder);
+      NG_RETURN_IF_ERROR(numCoordRet);
+      uint32_t numCoord = numCoordRet.value();
+      auto coordListRet = readCoordinateList(beg, end, byteOrder, numCoord);
       NG_RETURN_IF_ERROR(coordListRet);
       std::vector<Coordinate> coordList = coordListRet.value();
       return LineString(coordList);
     }
     case GeoShape::POLYGON: {
-      auto numRingsRet = readUint32(beg, end, byteOrder);
-      NG_RETURN_IF_ERROR(numRingsRet);
-      uint32_t numRings = numRingsRet.value();
-      auto coordListListRet = readCoordinateListList(beg, end, byteOrder, numRings);
+      auto numCoordListRet = readUint32(beg, end, byteOrder);
+      NG_RETURN_IF_ERROR(numCoordListRet);
+      uint32_t numCoordList = numCoordListRet.value();
+      auto coordListListRet = readCoordinateListList(beg, end, byteOrder, numCoordList);
       NG_RETURN_IF_ERROR(coordListListRet);
       std::vector<std::vector<Coordinate>> coordListList = coordListListRet.value();
       return Polygon(coordListList);
@@ -112,10 +112,10 @@ StatusOr<std::vector<std::vector<Coordinate>>> WKBReader::readCoordinateListList
   std::vector<std::vector<Coordinate>> coordListList;
   coordListList.reserve(num);
   for (size_t i = 0; i < num; ++i) {
-    auto numPointsRet = readUint32(beg, end, byteOrder);
-    NG_RETURN_IF_ERROR(numPointsRet);
-    uint32_t numPoints = numPointsRet.value();
-    auto coordListRet = readCoordinateList(beg, end, byteOrder, numPoints);
+    auto numCoordRet = readUint32(beg, end, byteOrder);
+    NG_RETURN_IF_ERROR(numCoordRet);
+    uint32_t numCoord = numCoordRet.value();
+    auto coordListRet = readCoordinateList(beg, end, byteOrder, numCoord);
     NG_RETURN_IF_ERROR(coordListRet);
     std::vector<Coordinate> coordList = coordListRet.value();
     coordListList.emplace_back(coordList);

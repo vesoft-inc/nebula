@@ -25,8 +25,8 @@ std::string WKTWriter::write(const Geometry& geom) const {
       wkt.append("LINESTRING");
       const LineString& line = geom.lineString();
       auto coordList = line.coordList;
-      uint32_t numPoints = coordList.size();
-      UNUSED(numPoints);
+      uint32_t numCoord = coordList.size();
+      UNUSED(numCoord);
       wkt.append("(");
       writeCoordinateList(wkt, coordList);
       wkt.append(")");
@@ -36,8 +36,8 @@ std::string WKTWriter::write(const Geometry& geom) const {
       wkt.append("POLYGON");
       const Polygon& polygon = geom.polygon();
       auto coordListList = polygon.coordListList;
-      uint32_t numRings = coordListList.size();
-      UNUSED(numRings);
+      uint32_t numCoordList = coordListList.size();
+      UNUSED(numCoordList);
       wkt.append("(");
       writeCoordinateListList(wkt, coordListList);
       wkt.append(")");
@@ -69,8 +69,8 @@ void WKTWriter::WKTWriter::writeCoordinateListList(
     std::string& wkt, const std::vector<std::vector<Coordinate>>& coordListList) const {
   for (size_t i = 0; i < coordListList.size(); ++i) {
     const auto& coordList = coordListList[i];
-    uint32_t numPoints = coordList.size();
-    UNUSED(numPoints);
+    uint32_t numCoord = coordList.size();
+    UNUSED(numCoord);
     wkt.append("(");
     writeCoordinateList(wkt, coordList);
     wkt.append(")");

@@ -28,16 +28,16 @@ std::string WKBWriter::write(const Geometry& geom) const {
     case GeoShape::LINESTRING: {
       const LineString& line = geom.lineString();
       auto coordList = line.coordList;
-      uint32_t numPoints = coordList.size();
-      writeUint32(wkb, numPoints);
+      uint32_t numCoord = coordList.size();
+      writeUint32(wkb, numCoord);
       writeCoordinateList(wkb, coordList);
       return wkb;
     }
     case GeoShape::POLYGON: {
       const Polygon& polygon = geom.polygon();
       auto coordListList = polygon.coordListList;
-      uint32_t numRings = coordListList.size();
-      writeUint32(wkb, numRings);
+      uint32_t numCoordList = coordListList.size();
+      writeUint32(wkb, numCoordList);
       writeCoordinateListList(wkb, coordListList);
       return wkb;
     }
@@ -64,8 +64,8 @@ void WKBWriter::writeCoordinateListList(
     std::string& wkb, const std::vector<std::vector<Coordinate>>& coordListList) const {
   for (size_t i = 0; i < coordListList.size(); ++i) {
     const auto& coordList = coordListList[i];
-    uint32_t numPoints = coordList.size();
-    writeUint32(wkb, numPoints);
+    uint32_t numCoord = coordList.size();
+    writeUint32(wkb, numCoord);
     writeCoordinateList(wkb, coordList);
   }
 }

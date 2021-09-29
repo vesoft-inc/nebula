@@ -11,80 +11,48 @@
 
 #include "common/base/StatusOr.h"
 #include "common/datatypes/Geography.h"
+#include "common/geo/GeoShape.h"
 #include "common/geo/io/Geometry.h"
 
 namespace nebula {
 
 class GeoUtils final {
  public:
+  // We don't check the validity of s2 when converting a Geometry to an S2Region.
+  // Therefore, the s2Region we got maybe invalid, and any computation based on it may have
+  // undefined behavour. Of course it doesn't cause the program to crash. If the user does not want
+  // to tolerate the UB, they could call `ST_IsValid` on the geography data to filter out the
+  // illegal ones.
   static std::unique_ptr<S2Region> s2RegionFromGeomtry(const Geometry& geom) {
     switch (geom.shape()) {
       case GeoShape::POINT: {
         const auto& point = geom.point();
         auto s2Point = s2PointFromCoordinate(point.coord);
-        if (!S2::IsUnitLength(s2Point)) {  // S2LatLng::IsValid()
-          return nullptr;
-        }
         return std::make_unique<S2PointRegion>(s2Point);
       }
       case GeoShape::LINESTRING: {
         const auto& lineString = geom.lineString();
         auto coordList = lineString.coordList;
-        if (UNLIKELY(coordList.size() < 2)) {
-          LOG(ERROR) << "LineString must have at least 2 coordinates";
-          return nullptr;
-        }
-        removeAdjacentDuplicateCoordinates(coordList);
-        if (coordList.size() < 2) {
-          LOG(ERROR)
-              << "Invalid LineString, adjacent coordinates must not be identical or antipodal.";
-          return nullptr;
-        }
-
         auto s2Points = s2PointsFromCoordinateList(coordList);
         auto s2Polyline = std::make_unique<S2Polyline>(s2Points, S2Debug::DISABLE);
-        if (!s2Polyline->IsValid()) {
-          LOG(ERROR) << "Invalid S2Polyline";
-          return nullptr;
-        }
         return s2Polyline;
       }
       case GeoShape::POLYGON: {
         const auto& polygon = geom.polygon();
-        uint32_t numRings = polygon.numRings();
+        uint32_t numCoordList = polygon.numCoordList();
         std::vector<std::unique_ptr<S2Loop>> s2Loops;
-        s2Loops.reserve(numRings);
-        for (size_t i = 0; i < numRings; ++i) {
+        s2Loops.reserve(numCoordList);
+        for (size_t i = 0; i < numCoordList; ++i) {
           auto coordList = polygon.coordListList[i];
-          if (UNLIKELY(coordList.size() < 4)) {
-            LOG(ERROR) << "Polygon's LinearRing must have at least 4 coordinates";
-            return nullptr;
+          if (!coordList.empty()) {
+            coordList.pop_back();  // Remove redundant last coordinate
           }
-          if (UNLIKELY(isLoopClosed(coordList))) {
-            return nullptr;
-          }
-          removeAdjacentDuplicateCoordinates(coordList);
-          if (coordList.size() < 4) {
-            LOG(ERROR)
-                << "Invalid linearRing in polygon, must have at least 4 distinct coordinates.";
-            return nullptr;
-          }
-          coordList.pop_back();  // Remove redundant last coordinate
           auto s2Points = s2PointsFromCoordinateList(coordList);
           auto s2Loop = std::make_unique<S2Loop>(std::move(s2Points), S2Debug::DISABLE);
-          if (!s2Loop->IsValid()) {  // TODO(jie) May not need to check S2loop here, S2Polygon's
-                                     // IsValid() will check its loops
-            LOG(ERROR) << "Invalid S2Loop";
-            return nullptr;
-          }
           s2Loop->Normalize();  // All loops must be oriented CCW(counterclockwise) for S2
           s2Loops.emplace_back(std::move(s2Loop));
         }
         auto s2Polygon = std::make_unique<S2Polygon>(std::move(s2Loops), S2Debug::DISABLE);
-        if (!s2Polygon->IsValid()) {  // Exterior loop must contain other interior loops
-          LOG(ERROR) << "Invalid S2Polygon";
-          return nullptr;
-        }
         return s2Polygon;
       }
       default:
@@ -111,13 +79,6 @@ class GeoUtils final {
     }
 
     return s2Points;
-  }
-
-  static bool isLoopClosed(const std::vector<Coordinate>& coordList) {
-    if (coordList.size() < 2) {
-      return false;
-    }
-    return coordList.front() == coordList.back();
   }
 
   static void removeAdjacentDuplicateCoordinates(std::vector<Coordinate>& coordList) {

@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include <boost/endian/conversion.hpp>
+
 #include "common/base/Base.h"
 
 namespace nebula {
@@ -24,27 +26,19 @@ struct ByteOrderData {
 
   static uint32_t getUint32(const uint8_t *buf, ByteOrder byteOrder) {
     if (byteOrder == ByteOrder::BigEndian) {
-      return ((uint32_t)(buf[0] & 0xff) << 24) | ((uint32_t)(buf[1] & 0xff) << 16) |
-             ((uint32_t)(buf[2] & 0xff) << 8) | ((uint32_t)(buf[3] & 0xff));
+      return boost::endian::load_big_u32(buf);
     } else {
       DCHECK(byteOrder == ByteOrder::LittleEndian);
-      return ((uint32_t)(buf[3] & 0xff) << 24) | ((uint32_t)(buf[2] & 0xff) << 16) |
-             ((uint32_t)(buf[1] & 0xff) << 8) | ((uint32_t)(buf[0] & 0xff));
+      return boost::endian::load_little_u32(buf);
     }
   }
 
   static uint64_t getUint64(const uint8_t *buf, ByteOrder byteOrder) {
     if (byteOrder == ByteOrder::BigEndian) {
-      return (uint64_t)(buf[0]) << 56 | (uint64_t)(buf[1] & 0xff) << 48 |
-             (uint64_t)(buf[2] & 0xff) << 40 | (uint64_t)(buf[3] & 0xff) << 32 |
-             (uint64_t)(buf[4] & 0xff) << 24 | (uint64_t)(buf[5] & 0xff) << 16 |
-             (uint64_t)(buf[6] & 0xff) << 8 | (uint64_t)(buf[7] & 0xff);
+      return boost::endian::load_big_u64(buf);
     } else {
       DCHECK(byteOrder == ByteOrder::LittleEndian);
-      return (uint64_t)(buf[7]) << 56 | (uint64_t)(buf[6] & 0xff) << 48 |
-             (uint64_t)(buf[5] & 0xff) << 40 | (uint64_t)(buf[4] & 0xff) << 32 |
-             (uint64_t)(buf[3] & 0xff) << 24 | (uint64_t)(buf[2] & 0xff) << 16 |
-             (uint64_t)(buf[1] & 0xff) << 8 | (uint64_t)(buf[0] & 0xff);
+      return boost::endian::load_little_u64(buf);
     }
   }
 
