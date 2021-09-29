@@ -6,6 +6,7 @@
 import re
 import json
 
+
 class PlanDiffer:
     ID = "id"
     NAME = "name"
@@ -125,12 +126,10 @@ class PlanDiffer:
         # The inner map cannot be empty
         if len(extracted_expected_dict) == 0:
             return None
-        # Unnested dict, push the first key into list
-        if extracted_expected_dict == expect:
-            key_list.append(list(expect.keys())[0])
 
         extracted_resp_dict = {}
-        if len(key_list) == 1:
+        if extracted_expected_dict == expect:
+            # Unnested dict
             extracted_resp_dict = resp
         else:
             extracted_resp_dict = self._convert_jsonStr_to_dict(resp, key_list)
@@ -139,7 +138,7 @@ class PlanDiffer:
             return dict(big, **small) == big
 
         return _is_subdict(extracted_expected_dict, extracted_resp_dict)
-    
+
     # resp: pair(key, jsonStr)
     def _convert_jsonStr_to_dict(self, resp, key_list):
         resp_json_str = ''
@@ -194,7 +193,7 @@ class PlanDiffer:
         if self.OP_INFO not in column_names:
             self._err_msg = "Plan node operator info column is missing in expectde plan"
             return False
-        
+
         id_idx_dict = {}
         # Check node id existence
         for i in range(len(rows)):

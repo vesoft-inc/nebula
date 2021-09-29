@@ -174,18 +174,17 @@ Feature: Lookup edge index full scan
   Scenario: Edge with relational CONTAINS/NOT CONTAINS filter
     When profiling query:
       """
-      LOOKUP ON edge_1 WHERE edge_1.col1_str CONTAINS toLower("L") YIELD edge_1.col1_str
+      LOOKUP ON edge_1 WHERE edge_1.col1_str CONTAINS toLower("L") and edge_1.col1_str < "Z" YIELD edge_1.col1_str
       """
     Then the result should be, in any order:
       | SrcVID | DstVID | Ranking | edge_1.col1_str |
       | "103"  | "101"  | 0       | "Blue"          |
       | "102"  | "103"  | 0       | "Yellow"        |
     And the execution plan should be:
-      | id | name              | dependencies | operator info                                     |
-      | 3  | Project           | 2            |                                                   |
-      | 2  | Filter            | 4            | {"condition": "(edge_1.col1_str CONTAINS \"l\")"} |
-      | 4  | EdgeIndexFullScan | 0            |                                                   |
-      | 0  | Start             |              |                                                   |
+      | id | name               | dependencies | operator info                                                                            |
+      | 3  | Project            | 4            |                                                                                          |
+      | 4  | EdgeIndexRangeScan | 0            | {"indexCtx":{"filter":"((edge_1.col1_str CONTAINS \"l\") AND (edge_1.col1_str<\"Z\"))"}} |
+      | 0  | Start              |              |                                                                                          |
     When executing query:
       """
       LOOKUP ON edge_1 WHERE edge_1.col1_str CONTAINS "ABC" YIELD edge_1.col1_str
