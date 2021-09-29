@@ -411,7 +411,7 @@ enum ErrorCode {
     E_OUTDATED_EDGE                   = -3072,
     E_WRITE_WRITE_CONFLICT            = -3073,
 
-    E_CLIENT_REJECTED                 = -3061,
+    E_CLIENT_SERVER_INCOMPATIBLE      = -3061,
 
     E_UNKNOWN                         = -8000,
 } (cpp.enum_strict)
