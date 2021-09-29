@@ -188,7 +188,7 @@ Status LookupValidator::validateYield() {
     return Status::OK();
   }
   lookupCtx_->dedup = yieldClause->isDistinct();
-  
+
   if (lookupCtx_->isEdge) {
     NG_RETURN_IF_ERROR(validateYieldEdge());
   } else {
