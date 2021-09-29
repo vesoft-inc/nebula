@@ -1,10 +1,10 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
+/* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "graph/optimizer/rule/LimitPushDownRule.h"
+#include "graph/optimizer/rule/PushLimitDownTagIndexPrefixScanRule.h"
 
 #include "common/expression/BinaryExpression.h"
 #include "common/expression/ConstantExpression.h"
@@ -15,47 +15,45 @@
 #include "graph/optimizer/OptContext.h"
 #include "graph/optimizer/OptGroup.h"
 #include "graph/planner/plan/PlanNode.h"
-#include "graph/planner/plan/Query.h"
+#include "graph/planner/plan/Scan.h"
 #include "graph/visitor/ExtractFilterExprVisitor.h"
 
-using nebula::graph::GetNeighbors;
 using nebula::graph::Limit;
 using nebula::graph::PlanNode;
 using nebula::graph::Project;
 using nebula::graph::QueryContext;
+using nebula::graph::TagIndexPrefixScan;
 
 namespace nebula {
 namespace opt {
 
-std::unique_ptr<OptRule> LimitPushDownRule::kInstance =
-    std::unique_ptr<LimitPushDownRule>(new LimitPushDownRule());
+std::unique_ptr<OptRule> PushLimitDownTagIndexPrefixScanRule::kInstance =
+    std::unique_ptr<PushLimitDownTagIndexPrefixScanRule>(new PushLimitDownTagIndexPrefixScanRule());
 
-LimitPushDownRule::LimitPushDownRule() { RuleSet::QueryRules().addRule(this); }
+PushLimitDownTagIndexPrefixScanRule::PushLimitDownTagIndexPrefixScanRule() {
+  RuleSet::QueryRules().addRule(this);
+}
 
-const Pattern &LimitPushDownRule::pattern() const {
-  static Pattern pattern =
-      Pattern::create(graph::PlanNode::Kind::kLimit,
-                      {Pattern::create(graph::PlanNode::Kind::kProject,
-                                       {Pattern::create(graph::PlanNode::Kind::kGetNeighbors)})});
+const Pattern &PushLimitDownTagIndexPrefixScanRule::pattern() const {
+  static Pattern pattern = Pattern::create(
+      graph::PlanNode::Kind::kLimit,
+      {Pattern::create(graph::PlanNode::Kind::kProject,
+                       {Pattern::create(graph::PlanNode::Kind::kTagIndexPrefixScan)})});
   return pattern;
 }
 
-StatusOr<OptRule::TransformResult> LimitPushDownRule::transform(
+StatusOr<OptRule::TransformResult> PushLimitDownTagIndexPrefixScanRule::transform(
     OptContext *octx, const MatchedResult &matched) const {
   auto limitGroupNode = matched.node;
   auto projGroupNode = matched.dependencies.front().node;
-  auto gnGroupNode = matched.dependencies.front().dependencies.front().node;
+  auto indexScanGroupNode = matched.dependencies.front().dependencies.front().node;
 
   const auto limit = static_cast<const Limit *>(limitGroupNode->node());
   const auto proj = static_cast<const Project *>(projGroupNode->node());
-  const auto gn = static_cast<const GetNeighbors *>(gnGroupNode->node());
+  const auto indexScan = static_cast<const TagIndexPrefixScan *>(indexScanGroupNode->node());
 
-  DCHECK(graph::ExpressionUtils::isEvaluableExpr(limit->countExpr()));
-  if (!graph::ExpressionUtils::isEvaluableExpr(limit->countExpr())) {
-    return TransformResult::noTransform();
-  }
   int64_t limitRows = limit->offset() + limit->count();
-  if (gn->limit() >= 0 && limitRows >= gn->limit()) {
+  if (indexScan->limit() >= 0 && limitRows >= indexScan->limit()) {
     return TransformResult::noTransform();
   }
 
@@ -66,15 +64,16 @@ StatusOr<OptRule::TransformResult> LimitPushDownRule::transform(
   auto newProjGroup = OptGroup::create(octx);
   auto newProjGroupNode = newProjGroup->makeGroupNode(newProj);
 
-  auto newGn = static_cast<GetNeighbors *>(gn->clone());
-  newGn->setLimit(limitRows);
-  auto newGnGroup = OptGroup::create(octx);
-  auto newGnGroupNode = newGnGroup->makeGroupNode(newGn);
+  auto newTagIndexPrefixScan = static_cast<TagIndexPrefixScan *>(indexScan->clone());
+  newTagIndexPrefixScan->setLimit(limitRows);
+  auto newTagIndexPrefixScanGroup = OptGroup::create(octx);
+  auto newTagIndexPrefixScanGroupNode =
+      newTagIndexPrefixScanGroup->makeGroupNode(newTagIndexPrefixScan);
 
   newLimitGroupNode->dependsOn(newProjGroup);
-  newProjGroupNode->dependsOn(newGnGroup);
-  for (auto dep : gnGroupNode->dependencies()) {
-    newGnGroupNode->dependsOn(dep);
+  newProjGroupNode->dependsOn(newTagIndexPrefixScanGroup);
+  for (auto dep : indexScanGroupNode->dependencies()) {
+    newTagIndexPrefixScanGroupNode->dependsOn(dep);
   }
 
   TransformResult result;
@@ -83,7 +82,9 @@ StatusOr<OptRule::TransformResult> LimitPushDownRule::transform(
   return result;
 }
 
-std::string LimitPushDownRule::toString() const { return "LimitPushDownRule"; }
+std::string PushLimitDownTagIndexPrefixScanRule::toString() const {
+  return "PushLimitDownTagIndexPrefixScanRule";
+}
 
 }  // namespace opt
 }  // namespace nebula

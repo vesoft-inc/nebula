@@ -382,5 +382,21 @@ class NameLabelList {
   std::vector<std::unique_ptr<std::string>> labels_;
 };
 
+class LimitClause {
+ public:
+  explicit LimitClause(std::size_t limit) : limit_(limit) {}
+
+  int64_t limit() const { return limit_; }
+
+  std::string toString() const {
+    std::stringstream ss;
+    ss << "LIMIT " << limit_;
+    return ss.str();
+  }
+
+ private:
+  int64_t limit_{0};
+};
+
 }  // namespace nebula
 #endif  // PARSER_CLAUSES_H_

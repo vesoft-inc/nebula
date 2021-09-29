@@ -35,6 +35,7 @@ class LookupValidator final : public Validator {
   Status validateFilter();
   Status validateYieldTag();
   Status validateYieldEdge();
+  Status validateLimit();
 
   StatusOr<Expression*> checkFilter(Expression* expr);
   StatusOr<Expression*> checkRelExpr(RelationalExpression* expr);
