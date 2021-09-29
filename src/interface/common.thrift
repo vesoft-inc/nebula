@@ -34,7 +34,7 @@ cpp_include "common/datatypes/GeographyOps-inl.h"
  *
  */
 
-const binary (cpp.type = "char const *") version = "2.5.1"
+const binary (cpp.type = "char const *") version = "2.6.0"
 
 typedef i32 (cpp.type = "nebula::GraphSpaceID") GraphSpaceID
 typedef i32 (cpp.type = "nebula::PartitionID") PartitionID
