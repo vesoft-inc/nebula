@@ -37,6 +37,9 @@ void GetNeighborsProcessor::doProcess(const cpp2::GetNeighborsRequest& req) {
     onFinished();
     return;
   }
+  if (req.common_ref().has_value() && req.get_common()->profile_detail_ref().value_or(false)) {
+    profileDetailFlag_ = true;
+  }
   this->planContext_ = std::make_unique<PlanContext>(
       this->env_, spaceId_, this->spaceVidLen_, this->isIntId_, req.common_ref());
 
@@ -100,7 +103,7 @@ void GetNeighborsProcessor::runInSingleThread(const cpp2::GetNeighborsRequest& r
       }
     }
   }
-  if (FLAGS_profile_storage_detail) {
+  if (UNLIKELY(profileDetailFlag_)) {
     profilePlan(plan);
   }
   onProcessFinished();
@@ -168,7 +171,7 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetNeighborsProce
             return std::make_pair(ret, partId);
           }
         }
-        if (FLAGS_profile_storage_detail) {
+        if (UNLIKELY(this->profileDetailFlag_)) {
           profilePlan(plan);
         }
         return std::make_pair(nebula::cpp2::ErrorCode::SUCCEEDED, partId);

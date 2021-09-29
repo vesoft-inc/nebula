@@ -129,6 +129,7 @@ class BaseProcessor {
   bool isIntId_;
   std::map<std::string, int32_t> profileDetail_;
   std::mutex profileMut_;
+  bool profileDetailFlag_{false};
 };
 
 }  // namespace storage
