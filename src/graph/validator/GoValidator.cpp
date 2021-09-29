@@ -147,23 +147,25 @@ Status GoValidator::validateYield(YieldClause* yield) {
       col->setExpr(rewriteLabel2Vertex(col->expr()));
       NG_RETURN_IF_ERROR(extractVertexProp(exprProps, false));
     }
-    if (ExpressionUtils::findAny(col->expr(), {Expression::Kind::kEdge})) {
-      extractEdgeProp(exprProps);
-    }
 
     col->setExpr(ExpressionUtils::rewriteLabelAttr2EdgeProp(col->expr()));
     NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(col->expr()));
 
     auto* colExpr = col->expr();
-    if (ExpressionUtils::findAny(colExpr, {Expression::Kind::kAggregate})) {
-      return Status::SemanticError("`%s', not support aggregate function in go sentence.",
-                                   col->toString().c_str());
+    if (ExpressionUtils::hasAny(colExpr,
+                                {Expression::Kind::kAggregate,
+                                 Expression::Kind::kVertex,
+                                 Expression::Kind::kPathBuild})) {
+      return Status::SemanticError("`%s' is not support in go sentence.", col->toString().c_str());
     }
+    if (ExpressionUtils::hasAny(colExpr, {Expression::Kind::kEdge})) {
+      extractEdgeProp(exprProps);
+    }
+
     auto typeStatus = deduceExprType(colExpr);
     NG_RETURN_IF_ERROR(typeStatus);
     auto type = typeStatus.value();
     outputs_.emplace_back(col->name(), type);
-
     NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps));
   }
 
@@ -176,18 +178,6 @@ Status GoValidator::validateYield(YieldClause* yield) {
   goCtx_->yieldExpr = yield->yields();
   goCtx_->colNames = getOutColNames();
   return Status::OK();
-}
-
-Expression* GoValidator::rewriteLabel2Vertex(Expression* expr) {
-  auto matcher = [this](const Expression* e) -> bool {
-    return e->toString() == SRC_VERTEX || e->toString() == DST_VERTEX;
-  };
-  auto rewriter = [this](const Expression* e) -> Expression* {
-    UNUSED(e);
-    return VertexExpression::make(qctx_->objPool());
-  };
-
-  return RewriteVisitor::transform(expr, matcher, rewriter);
 }
 
 Status GoValidator::extractVertexProp(ExpressionProps& exprProps, bool isSrc) {
@@ -243,6 +233,38 @@ Expression* GoValidator::rewrite2VarProp(const Expression* expr) {
   return RewriteVisitor::transform(expr, matcher, rewriter);
 }
 
+Expression* GoValidator::rewriteLabel2Vertex(const Expression* expr) {
+  auto matcher = [this](const Expression* e) -> bool {
+    return e->toString() == SRC_VERTEX || e->toString() == DST_VERTEX;
+  };
+  auto rewriter = [this](const Expression* e) -> Expression* {
+    UNUSED(e);
+    return VertexExpression::make(qctx_->objPool());
+  };
+
+  return RewriteVisitor::transform(expr, matcher, rewriter);
+}
+
+Expression* GoValidator::rewriteVertex2VarProp(const Expression* expr) {
+  auto matcher = [this](const Expression* e) -> bool {
+    return e->kind() == Expression::Kind::kVertex;
+  };
+  auto rewriter = [this](const Expression* e) -> Expression* {
+    return VariablePropertyExpression::make(qctx_->objPool(), "", e->toString());
+  };
+  return RewriteVisitor::transform(expr, matcher, rewriter);
+}
+
+Expression* GoValidator::rewriteEdge2VarProp(const Expression* expr) {
+  auto matcher = [this](const Expression* e) -> bool {
+    return e->kind() == Expression::Kind::kEdge;
+  };
+  auto rewriter = [this](const Expression* e) -> Expression* {
+    return VariablePropertyExpression::make(qctx_->objPool(), "", e->toString());
+  };
+  return RewriteVisitor::transform(expr, matcher, rewriter);
+}
+
 Status GoValidator::buildColumns() {
   const auto& exprProps = goCtx_->exprProps;
   const auto& dstTagProps = exprProps.dstTagProps();
@@ -282,12 +304,15 @@ Status GoValidator::buildColumns() {
       std::string colName = col->name();
       if (colTypeMap_.find(colName) != colTypeMap_.end() && colTypeMap_[colName]) {
         goCtx_->srcEdgePropsExpr->addColumn(new YieldColumn(VertexExpression::make(pool), colName));
+        col->setExpr(rewriteVertex2VarProp(col->expr()));
       }
       if (colTypeMap_.find(colName) != colTypeMap_.end() && !colTypeMap_[colName]) {
         goCtx_->dstPropsExpr->addColumn(new YieldColumn(VertexExpression::make(pool), colName));
+        col->setExpr(rewriteVertex2VarProp(col->expr()));
       }
       if (ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kEdge})) {
         goCtx_->srcEdgePropsExpr->addColumn(new YieldColumn(EdgeExpression::make(pool), colName));
+        col->setExpr(rewriteEdge2VarProp(col->expr()));
       }
       newYieldExpr->addColumn(new YieldColumn(InputPropertyExpression::make(pool, colName)));
     } else {
