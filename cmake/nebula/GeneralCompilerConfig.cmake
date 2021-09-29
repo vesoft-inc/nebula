@@ -23,6 +23,7 @@ add_compile_options(-Wignored-qualifiers)
 
 # For s2
 add_definitions(-DS2_USE_GLOG)
+add_definitions(-DS2_USE_GFLAGS)
 # For breakpad
 add_definitions(-D__STDC_FORMAT_MACROS)
 

@@ -25,8 +25,8 @@ class GraphService final : public cpp2::GraphServiceSvIf {
   GraphService() = default;
   ~GraphService() = default;
 
-  Status MUST_USE_RESULT init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor,
-                              const HostAddr& hostAddr);
+  Status NG_MUST_USE_RESULT init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor,
+                                 const HostAddr& hostAddr);
 
   folly::Future<AuthResponse> future_authenticate(const std::string& username,
                                                   const std::string& password) override;

@@ -32,7 +32,7 @@ class Validator {
 
   Status validate();
 
-  MUST_USE_RESULT Status appendPlan(PlanNode* tail);
+  NG_MUST_USE_RESULT Status appendPlan(PlanNode* tail);
 
   void setInputVarName(std::string name) { inputVarName_ = std::move(name); }
 

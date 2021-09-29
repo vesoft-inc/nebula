@@ -255,6 +255,10 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "QUERY"                     { return TokenType::KW_QUERY; }
 "KILL"                      { return TokenType::KW_KILL; }
 "TOP"                       { return TokenType::KW_TOP; }
+"GEOGRAPHY"                 { return TokenType::KW_GEOGRAPHY; }
+"POINT"                     { return TokenType::KW_POINT; }
+"LINESTRING"                { return TokenType::KW_LINESTRING; }
+"POLYGON"                   { return TokenType::KW_POLYGON; }
 
 "TRUE"                      { yylval->boolval = true; return TokenType::BOOL; }
 "FALSE"                     { yylval->boolval = false; return TokenType::BOOL; }

@@ -25,6 +25,7 @@ cpp_include "common/datatypes/SetOps-inl.h"
 cpp_include "common/datatypes/DataSetOps-inl.h"
 cpp_include "common/datatypes/KeyValueOps-inl.h"
 cpp_include "common/datatypes/HostAddrOps-inl.h"
+cpp_include "common/datatypes/GeographyOps-inl.h"
 
 /*
  *
@@ -85,7 +86,6 @@ struct DateTime {
     7: i32 microsec;    // Micro-second: 0 - 999,999
 } (cpp.type = "nebula::DateTime")
 
-
 enum NullType {
     __NULL__ = 0,
     NaN      = 1,
@@ -115,6 +115,7 @@ union Value {
     13: NMap (cpp.type = "nebula::Map")         mVal (cpp.ref_type = "unique");
     14: NSet (cpp.type = "nebula::Set")         uVal (cpp.ref_type = "unique");
     15: DataSet (cpp.type = "nebula::DataSet")  gVal (cpp.ref_type = "unique");
+    16: Geography (cpp.type = "nebula::Geography")   ggVal (cpp.ref_type = "unique");
 } (cpp.type = "nebula::Value")
 
 
@@ -145,6 +146,10 @@ struct DataSet {
     1: list<binary>    column_names;   // Column names
     2: list<Row>       rows;
 } (cpp.type = "nebula::DataSet")
+
+struct Geography {
+    1: string          wkb;
+} (cpp.type = "nebula::Geography")
 
 
 struct Tag {

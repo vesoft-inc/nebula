@@ -23,10 +23,12 @@ SET(EXEC_QUERY_TEST_OBJS
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:concurrent_obj>
     $<TARGET_OBJECTS:datatypes_obj>
+    $<TARGET_OBJECTS:wkt_wkb_io_obj>
     $<TARGET_OBJECTS:conf_obj>
     $<TARGET_OBJECTS:file_based_cluster_id_man_obj>
     $<TARGET_OBJECTS:charset_obj>
     $<TARGET_OBJECTS:function_manager_obj>
+    $<TARGET_OBJECTS:wkt_wkb_io_obj>
     $<TARGET_OBJECTS:agg_function_manager_obj>
     $<TARGET_OBJECTS:encryption_obj>
     $<TARGET_OBJECTS:http_client_obj>

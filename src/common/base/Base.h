@@ -67,7 +67,7 @@
 
 #include "common/base/Logging.h"
 
-#define MUST_USE_RESULT __attribute__((warn_unused_result))
+#define NG_MUST_USE_RESULT __attribute__((warn_unused_result))
 #define DONT_OPTIMIZE __attribute__((optimize("O0")))
 
 #define ALWAYS_INLINE __attribute__((always_inline))
