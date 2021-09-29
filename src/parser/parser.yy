@@ -163,7 +163,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %token KW_BOOL KW_INT8 KW_INT16 KW_INT32 KW_INT64 KW_INT KW_FLOAT KW_DOUBLE
 %token KW_STRING KW_FIXED_STRING KW_TIMESTAMP KW_DATE KW_TIME KW_DATETIME
 %token KW_GO KW_AS KW_TO KW_USE KW_SET KW_FROM KW_WHERE KW_ALTER
-%token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX KW_VERTICES KW_SRCV KW_DSTV
+%token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX KW_VERTICES
 %token KW_EDGE KW_EDGES KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND
 %token KW_TAG KW_TAGS KW_UNION KW_INTERSECT KW_MINUS
 %token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOST KW_HOSTS KW_PART KW_PARTS KW_ADD
@@ -1063,12 +1063,12 @@ argument_list
         Expression* arg = VertexExpression::make(qctx->objPool());
         $$->addArgument(arg);
     }
-    | KW_SRCV {
+    | SRC_REF {
         $$ = ArgumentList::make(qctx->objPool());
         Expression* arg = VertexExpression::make(qctx->objPool());
         $$->addArgument(arg);
     }
-    | KW_DSTV {
+    | DST_REF {
         $$ = ArgumentList::make(qctx->objPool());
         Expression* arg = VertexExpression::make(qctx->objPool());
         $$->addArgument(arg);
@@ -1409,20 +1409,20 @@ yield_column
         $$ = new YieldColumn(VertexExpression::make(qctx->objPool()), *$3);
         delete $3;
     }
-    | KW_SRCV {
+    | SRC_REF {
         $$ = nullptr;
-        throw nebula::GraphParser::syntax_error(@1, "please add alias when using src vertex.");
+        throw nebula::GraphParser::syntax_error(@1, "please add alias when using $^.");
     }
-    | KW_SRCV KW_AS name_label {
-        $$ = new YieldColumn(LabelExpression::make(qctx->objPool(), "SRCV"), *$3);
+    | SRC_REF KW_AS name_label {
+        $$ = new YieldColumn(LabelExpression::make(qctx->objPool(), "$^"), *$3);
         delete $3;
     }
-    | KW_DSTV {
+    | DST_REF {
         $$ = nullptr;
-        throw nebula::GraphParser::syntax_error(@1, "please add alias when using dst vertex.");
+        throw nebula::GraphParser::syntax_error(@1, "please add alias when using $$.");
     }
-    | KW_DSTV KW_AS name_label {
-        $$ = new YieldColumn(LabelExpression::make(qctx->objPool(), "DSTV"), *$3);
+    | DST_REF KW_AS name_label {
+        $$ = new YieldColumn(LabelExpression::make(qctx->objPool(), "$$"), *$3);
         delete $3;
     }
     | KW_VERTICES {

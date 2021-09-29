@@ -66,8 +66,6 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "DESC"                      { return TokenType::KW_DESC; }
 "VERTEX"                    { return TokenType::KW_VERTEX; }
 "VERTICES"                  { return TokenType::KW_VERTICES; }
-"SRCV"                      { return TokenType::KW_SRCV; }
-"DSTV"                      { return TokenType::KW_DSTV; }
 "EDGE"                      { return TokenType::KW_EDGE; }
 "EDGES"                     { return TokenType::KW_EDGES; }
 "UPDATE"                    { return TokenType::KW_UPDATE; }

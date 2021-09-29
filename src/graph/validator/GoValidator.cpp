@@ -17,11 +17,11 @@
 namespace nebula {
 namespace graph {
 
-static const char* COLNAME_SRC_VERTEX = "SRCV";
-static const char* COLNAME_DST_VERTEX = "DSTV";
+static const char* COLNAME_SRC_VERTEX = "$^";
+static const char* COLNAME_DST_VERTEX = "$$";
 static const char* COLNAME_EDGE = "EDGE";
-static const char* SRC_VERTEX = "SRCV";
-static const char* DST_VERTEX = "DSTV";
+static const char* SRC_VERTEX = "$^";
+static const char* DST_VERTEX = "$$";
 
 Status GoValidator::validateImpl() {
   auto* goSentence = static_cast<GoSentence*>(sentence_);

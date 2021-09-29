@@ -31,8 +31,6 @@ reserved_key_words = [
     'KW_DESC',
     'KW_VERTEX',
     'KW_VERTICES',
-    'KW_SRCV',
-    'KW_DSTV',
     'KW_EDGE',
     'KW_EDGES',
     'KW_UPDATE',
