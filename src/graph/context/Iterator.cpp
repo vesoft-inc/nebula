@@ -13,6 +13,7 @@
 #include "interface/gen-cpp2/common_types.h"
 
 DECLARE_int32(num_rows_to_check_memory);
+DECLARE_double(system_memory_high_watermark_ratio);
 
 namespace nebula {
 namespace graph {
@@ -20,8 +21,12 @@ namespace graph {
 bool Iterator::hitsSysMemoryHighWatermark() const {
   if (checkMemory_) {
     // TODO(yee): speed up this check
-    if (0 == numReadRows_ % FLAGS_num_rows_to_check_memory) {
-      return MemoryUtils::kHitMemoryHighWatermark.load();
+    if (UNLIKELY(0 == numReadRows_ % FLAGS_num_rows_to_check_memory)) {
+      if (MemoryUtils::kHitMemoryHighWatermark.load()) {
+        throw std::runtime_error(
+            folly::sformat("Used memory hits the high watermark({}) of total system memory.",
+                           FLAGS_system_memory_high_watermark_ratio));
+      }
     }
   }
   return false;
