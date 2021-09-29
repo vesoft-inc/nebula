@@ -20,7 +20,7 @@ folly::Future<Status> LimitExecutor::execute() {
   auto* iter = result.iterRef();
   ResultBuilder builder;
   builder.value(result.valuePtr());
-  auto offset = limit->offset() < 0 ? 0 : limit->offset();
+  auto offset = limit->offset();
   QueryExpressionContext qec(ectx_);
   auto count = limit->count(qec);
   iter->select(offset, count);

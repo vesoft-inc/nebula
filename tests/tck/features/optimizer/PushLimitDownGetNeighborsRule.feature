@@ -34,8 +34,8 @@ Feature: Push Limit down rule
       """
     Then the result should be, in any order:
       | start_year |
-      | 2018       |
       | 2009       |
+      | 2011       |
       | 2004       |
       | 1998       |
     And the execution plan should be:

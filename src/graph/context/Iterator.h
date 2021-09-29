@@ -208,18 +208,22 @@ class GetNeighborsIter final : public Iterator {
 
   // erase [first, last)
   void eraseRange(size_t first, size_t last) override {
-    for (std::size_t i = 0; valid() && i < last; next(), ++i) {
+    for (std::size_t i = 0; valid() && i < last; ++i) {
       if (i >= first || i < last) {
         erase();
+      } else {
+        next();
       }
     }
     doReset(0);
   }
 
   void select(std::size_t offset, std::size_t count) override {
-    for (std::size_t i = 0; valid(); next(), ++i) {
+    for (std::size_t i = 0; valid(); ++i) {
       if (i < offset || i > (offset + count - 1)) {
         erase();
+      } else {
+        next();
       }
     }
     doReset(0);

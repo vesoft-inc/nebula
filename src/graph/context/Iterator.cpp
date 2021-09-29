@@ -210,7 +210,6 @@ void GetNeighborsIter::next() {
       if (static_cast<size_t>(bitIdx_) >= bitset_.size()) {
         bitset_.push_back(true);
       } else if (!bitset_[bitIdx_]) {
-        VLOG(1) << "Filtered: " << currentEdge << " bitidx: " << bitIdx_;
         // current edge had been filtered.
         continue;
       }

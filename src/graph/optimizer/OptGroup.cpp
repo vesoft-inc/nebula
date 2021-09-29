@@ -50,7 +50,6 @@ OptGroupNode *OptGroup::makeGroupNode(PlanNode *node) {
 }
 
 Status OptGroup::explore(const OptRule *rule) {
-  DLOG(ERROR) << "DEBUG POINT: explore rule " << rule->toString();
   if (isExplored(rule)) {
     return Status::OK();
   }
@@ -83,7 +82,6 @@ Status OptGroup::explore(const OptRule *rule) {
       }
       groupNodes_.clear();
       for (auto ngn : result.newGroupNodes) {
-        DLOG(ERROR) << "DEBUG POINT: " << ngn->node()->kind();
         addGroupNode(ngn);
       }
       break;
