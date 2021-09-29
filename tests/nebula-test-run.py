@@ -68,6 +68,10 @@ def init_parser():
                           dest='ca_signed',
                           default='false',
                           help='Whether enable CA signed SSL/TLS mode.')
+    opt_parser.add_option('--containerized',
+                          dest='containerized',
+                          default='false',
+                          help='run this process inside container')
     return opt_parser
 
 
@@ -91,7 +95,8 @@ def start_nebula(nb, configs):
             enable_ssl=opt_is(configs.enable_ssl, "true"),
             enable_graph_ssl=opt_is(configs.enable_graph_ssl, "true"),
             enable_meta_ssl=opt_is(configs.enable_meta_ssl, "true"),
-            ca_signed=opt_is(configs.ca_signed, "true")
+            ca_signed=opt_is(configs.ca_signed, "true"),
+            containerized=configs.containerized
         )
 
     # Load csv data
