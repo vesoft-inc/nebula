@@ -237,7 +237,7 @@ Feature: Lookup tag index full scan
   Scenario: Tag with relational CONTAINS/NOT CONTAINS filter
     When profiling query:
       """
-      LOOKUP ON team WHERE team.name CONTAINS toLower("ER")
+      LOOKUP ON team WHERE team.name CONTAINS toLower("ER") and team.name < "Z"
       """
     Then the result should be, in any order:
       | VertexID        |
@@ -251,11 +251,10 @@ Feature: Lookup tag index full scan
       | "Mavericks"     |
       | "Lakers"        |
     And the execution plan should be:
-      | id | name             | dependencies | operator info                                |
-      | 3  | Project          | 2            |                                              |
-      | 2  | Filter           | 4            | {"condition": "(team.name CONTAINS \"er\")"} |
-      | 4  | TagIndexFullScan | 0            |                                              |
-      | 0  | Start            |              |                                              |
+      | id | name              | dependencies | operator info                                                                 |
+      | 3  | Project           | 4            |                                                                               |
+      | 4  | TagIndexRangeScan | 0            | {"indexCtx":{"filter":"((team.name CONTAINS \"er\") AND (team.name<\"Z\"))"}} |
+      | 0  | Start             |              |                                                                               |
     When executing query:
       """
       LOOKUP ON team WHERE team.name CONTAINS "ABC"
