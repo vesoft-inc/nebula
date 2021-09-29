@@ -164,12 +164,21 @@ bool GraphService::auth(const std::string& username, const std::string& password
   if (!FLAGS_enable_authorize) {
     return true;
   }
+
   if (FLAGS_auth_type == "password") {
     auto authenticator = std::make_unique<PasswordAuthenticator>(queryEngine_->metaClient());
     return authenticator->auth(username, encryption::MD5Utils::md5Encode(password));
   } else if (FLAGS_auth_type == "cloud") {
-    auto authenticator = std::make_unique<CloudAuthenticator>(queryEngine_->metaClient());
-    return authenticator->auth(username, password);
+    // Cloud user and native user will be mixed.
+    // Since cloud user and native user has the same transport protocol,
+    // There is no way to identify which one is in the graph layer，
+    // let's check the native user's password first, then cloud user.
+    auto pwdAuth = std::make_unique<PasswordAuthenticator>(queryEngine_->metaClient());
+    if (pwdAuth->auth(username, encryption::MD5Utils::md5Encode(password))) {
+      return true;
+    }
+    auto cloudAuth = std::make_unique<CloudAuthenticator>(queryEngine_->metaClient());
+    return cloudAuth->auth(username, password);
   }
   LOG(WARNING) << "Unknown auth type: " << FLAGS_auth_type;
   return false;
