@@ -58,8 +58,9 @@ struct Coordinate {
   }
   void __clear() { clear(); }
 
-  // TODO(jie) compare double correctly
-  bool operator==(const Coordinate& rhs) const { return x == rhs.x && y == rhs.y; }
+  bool operator==(const Coordinate& rhs) const {
+    return std::abs(x - rhs.x) < kEpsilon && std::abs(y - rhs.y) < kEpsilon;
+  }
   bool operator!=(const Coordinate& rhs) const { return !(*this == rhs); }
   bool operator<(const Coordinate& rhs) const {
     if (x != rhs.x) {
@@ -135,6 +136,10 @@ struct Geography {
                                      bool needNormalize = false,
                                      bool verifyValidity = false);
 
+  static StatusOr<Geography> fromWKB(const std::string& wkb,
+                                     bool needNormalize = false,
+                                     bool verifyValidity = false);
+
   Geography() {}
   Geography(const Point& v) : geo_(v) {}             // NOLINT
   Geography(Point&& v) : geo_(std::move(v)) {}       // NOLINT
@@ -155,6 +160,8 @@ struct Geography {
 
   void normalize();
   bool isValid() const;
+
+  Point centroid() const;
 
   std::string asWKT() const;
 

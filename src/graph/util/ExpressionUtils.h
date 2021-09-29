@@ -156,6 +156,9 @@ class ExpressionUtils {
 
   // var == value
   static Expression* equalCondition(ObjectPool* pool, const std::string& var, const Value& value);
+
+  // TODO(jie) Move it to a better place
+  static bool isGeoIndexAcceleratedPredicate(const Expression* expr);
 };
 
 }  // namespace graph

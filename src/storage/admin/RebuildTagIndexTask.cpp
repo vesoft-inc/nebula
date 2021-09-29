@@ -128,15 +128,31 @@ nebula::cpp2::ErrorCode RebuildTagIndexTask::buildIndexGlobal(GraphSpaceID space
 
     for (const auto& item : items) {
       if (item->get_schema_id().get_tag_id() == tagID) {
-        auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(), item->get_fields());
-        if (!valuesRet.ok()) {
-          LOG(WARNING) << "Collect index value failed";
-          continue;
+        if (item->get_fields().size() == 1 && item->get_fields().back().get_type().get_type() ==
+                                                  meta::cpp2::PropertyType::GEOGRAPHY) {
+          auto valuesRet =
+              IndexKeyUtils::collectIndexValueForGeography(reader.get(), item->get_fields().back());
+          if (!valuesRet.ok()) {
+            LOG(WARNING) << "Collect index value for geography failed";
+            continue;
+          }
+          auto indexKeys = IndexKeyUtils::vertexIndexKeysForGeography(
+              vidSize, part, item->get_index_id(), vertex.toString(), std::move(valuesRet).value());
+          for (auto& indexKey : indexKeys) {
+            batchSize += indexKey.size() + indexVal.size();
+            data.emplace_back(std::move(indexKey), indexVal);
+          }
+        } else {
+          auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(), item->get_fields());
+          if (!valuesRet.ok()) {
+            LOG(WARNING) << "Collect index value failed";
+            continue;
+          }
+          auto indexKey = IndexKeyUtils::vertexIndexKey(
+              vidSize, part, item->get_index_id(), vertex.toString(), std::move(valuesRet).value());
+          batchSize += indexKey.size() + indexVal.size();
+          data.emplace_back(std::move(indexKey), indexVal);
         }
-        auto indexKey = IndexKeyUtils::vertexIndexKey(
-            vidSize, part, item->get_index_id(), vertex.toString(), std::move(valuesRet).value());
-        batchSize += indexKey.size() + indexVal.size();
-        data.emplace_back(std::move(indexKey), indexVal);
       }
     }
     iter->next();

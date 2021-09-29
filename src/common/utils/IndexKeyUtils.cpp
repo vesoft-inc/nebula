@@ -45,6 +45,33 @@ std::string IndexKeyUtils::encodeValues(std::vector<Value>&& values,
   return index;
 }
 
+std::vector<std::string> IndexKeyUtils::encodeValueForGeography(
+    Value&& value, const nebula::meta::cpp2::ColumnDef& col) {
+  DCHECK(col.get_type().get_type() == meta::cpp2::PropertyType::GEOGRAPHY);
+  u_short nullableBitSet = 0;
+  std::vector<std::string> indexes;
+
+  auto hasNullCol = col.nullable_ref().value_or(false);
+
+  if (!value.isNull()) {
+    DCHECK(value.type() == Value::Type::GEOGRAPHY);
+    indexes = encodeGeography(value.getGeography());
+  } else {
+    nullableBitSet |= 0x8000;
+    auto type = IndexKeyUtils::toValueType(col.type.get_type());
+    indexes.emplace_back(encodeNullValue(type, nullptr));
+  }
+
+  if (hasNullCol) {
+    // if has nullable field, append nullableBitSet to the end
+    for (auto& index : indexes) {
+      index.append(reinterpret_cast<const char*>(&nullableBitSet), sizeof(u_short));
+    }
+  }
+
+  return indexes;
+}
+
 // static
 std::string IndexKeyUtils::vertexIndexKey(
     size_t vIdLen, PartitionID partId, IndexID indexId, const VertexID& vId, std::string&& values) {
@@ -57,6 +84,28 @@ std::string IndexKeyUtils::vertexIndexKey(
       .append(vId.data(), vId.size())
       .append(vIdLen - vId.size(), '\0');
   return key;
+}
+
+// static
+std::vector<std::string> IndexKeyUtils::vertexIndexKeysForGeography(
+    size_t vIdLen,
+    PartitionID partId,
+    IndexID indexId,
+    const VertexID& vId,
+    std::vector<std::string>&& values) {
+  int32_t item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kIndex);
+  std::vector<std::string> keys;
+  for (const auto& value : values) {
+    std::string key;
+    key.reserve(256);
+    key.append(reinterpret_cast<const char*>(&item), sizeof(int32_t))
+        .append(reinterpret_cast<const char*>(&indexId), sizeof(IndexID))
+        .append(value)
+        .append(vId.data(), vId.size())
+        .append(vIdLen - vId.size(), '\0');
+    keys.emplace_back(key);
+  }
+  return keys;
 }
 
 // static
@@ -79,6 +128,33 @@ std::string IndexKeyUtils::edgeIndexKey(size_t vIdLen,
       .append(dstId.data(), dstId.size())
       .append(vIdLen - dstId.size(), '\0');
   return key;
+}
+
+// static
+std::vector<std::string> IndexKeyUtils::edgeIndexKeysForGeography(
+    size_t vIdLen,
+    PartitionID partId,
+    IndexID indexId,
+    const VertexID& srcId,
+    EdgeRanking rank,
+    const VertexID& dstId,
+    std::vector<std::string>&& values) {
+  int32_t item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kIndex);
+  std::vector<std::string> keys;
+  for (const auto& value : values) {
+    std::string key;
+    key.reserve(256);
+    key.append(reinterpret_cast<const char*>(&item), sizeof(int32_t))
+        .append(reinterpret_cast<const char*>(&indexId), sizeof(IndexID))
+        .append(value)
+        .append(srcId.data(), srcId.size())
+        .append(vIdLen - srcId.size(), '\0')
+        .append(IndexKeyUtils::encodeRank(rank))
+        .append(dstId.data(), dstId.size())
+        .append(vIdLen - dstId.size(), '\0');
+    keys.emplace_back(key);
+  }
+  return keys;
 }
 
 // static
@@ -137,6 +213,25 @@ StatusOr<std::string> IndexKeyUtils::collectIndexValues(
     values.emplace_back(std::move(v));
   }
   return encodeValues(std::move(values), cols);
+}
+
+// TODO(jie) Should be refactored
+// static
+StatusOr<std::vector<std::string>> IndexKeyUtils::collectIndexValueForGeography(
+    RowReader* reader, const nebula::meta::cpp2::ColumnDef& col) {
+  if (reader == nullptr) {
+    return Status::Error("Invalid row reader");
+  }
+  DCHECK(col.get_type().get_type() == meta::cpp2::PropertyType::GEOGRAPHY);
+
+  Value value = reader->getValueByName(col.get_name());
+  auto isNullable = col.nullable_ref().value_or(false);
+  auto ret = checkValue(value, isNullable);
+  if (!ret.ok()) {
+    LOG(ERROR) << "prop error by : " << col.get_name() << ". status : " << ret;
+    return ret;
+  }
+  return encodeValueForGeography(std::move(value), col);
 }
 
 // static
