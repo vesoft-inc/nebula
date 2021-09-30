@@ -65,6 +65,8 @@ class NebulaService(object):
                     resources_dir)
         shutil.copy(self.src_dir + '/tests/cert/test.ca.pem',
                     resources_dir)
+        shutil.copy(self.src_dir + '/tests/cert/test.ca.password',
+                    resources_dir)
         shutil.copy(self.src_dir + '/tests/cert/test.derive.key',
                     resources_dir)
         shutil.copy(self.src_dir + '/tests/cert/test.derive.crt',
