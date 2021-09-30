@@ -30,14 +30,12 @@ class GetNeighborsNode : public QueryNode<VertexID> {
                    EdgeContext* edgeContext,
                    nebula::DataSet* resultDataSet,
                    int64_t limit = 0)
-      : context_(context),
+      : QueryNode<VertexID>(context, "GetNeighborsNode"),
         hashJoinNode_(hashJoinNode),
         upstream_(upstream),
         edgeContext_(edgeContext),
         resultDataSet_(resultDataSet),
-        limit_(limit) {
-    name_ = "GetNeighborsNode";
-  }
+        limit_(limit) {}
 
   nebula::cpp2::ErrorCode doExecute(PartitionID partId, const VertexID& vId) override {
     auto ret = RelNode::doExecute(partId, vId);
@@ -88,8 +86,6 @@ class GetNeighborsNode : public QueryNode<VertexID> {
   }
 
  protected:
-  GetNeighborsNode() = default;
-
   virtual nebula::cpp2::ErrorCode iterateEdges(std::vector<Value>& row) {
     int64_t edgeRowCount = 0;
     nebula::List list;
@@ -123,7 +119,6 @@ class GetNeighborsNode : public QueryNode<VertexID> {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
-  RuntimeContext* context_;
   IterateNode<VertexID>* hashJoinNode_;
   IterateNode<VertexID>* upstream_;
   EdgeContext* edgeContext_;

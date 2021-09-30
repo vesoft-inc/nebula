@@ -31,14 +31,13 @@ class HashJoinNode : public IterateNode<VertexID> {
                TagContext* tagContext,
                EdgeContext* edgeContext,
                StorageExpressionContext* expCtx)
-      : context_(context),
+      : IterateNode<VertexID>(context, "HashJoinNode"),
         tagNodes_(tagNodes),
         edgeNodes_(edgeNodes),
         tagContext_(tagContext),
         edgeContext_(edgeContext),
         expCtx_(expCtx) {
     UNUSED(tagContext_);
-    IterateNode::name_ = "HashJoinNode";
   }
 
   nebula::cpp2::ErrorCode doExecute(PartitionID partId, const VertexID& vId) override {
@@ -154,7 +153,6 @@ class HashJoinNode : public IterateNode<VertexID> {
   }
 
  private:
-  RuntimeContext* context_;
   std::vector<TagNode*> tagNodes_;
   std::vector<SingleEdgeNode*> edgeNodes_;
   TagContext* tagContext_;

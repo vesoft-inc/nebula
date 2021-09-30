@@ -56,7 +56,7 @@ class UpdateEdgeProcessor
   void profilePlan(StoragePlan<cpp2::EdgeKey>& plan) {
     auto& nodes = plan.getNodes();
     for (auto& node : nodes) {
-      profileDetail(node->name_, node->duration_.elapsedInUSec());
+      profileDetail(node->name(), node->latencyInUs());
     }
   }
 

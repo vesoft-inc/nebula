@@ -38,9 +38,7 @@ class AggregateNode : public IterateNode<T> {
   using RelNode<T>::doExecute;
 
   AggregateNode(RuntimeContext* context, IterateNode<T>* upstream, EdgeContext* edgeContext)
-      : IterateNode<T>(upstream), context_(context), edgeContext_(edgeContext) {
-    IterateNode<T>::name_ = "AggregateNode";
-  }
+      : IterateNode<T>(context, upstream, "AggregateNode"), edgeContext_(edgeContext) {}
 
   nebula::cpp2::ErrorCode doExecute(PartitionID partId, const T& input) override {
     auto ret = RelNode<T>::doExecute(partId, input);
@@ -63,7 +61,7 @@ class AggregateNode : public IterateNode<T> {
 
   void next() override {
     // we need to collect the stat during `next`
-    collectEdgeStats(this->key(), this->reader(), context_->props_);
+    collectEdgeStats(this->key(), this->reader(), this->context_->props_);
     IterateNode<T>::next();
   }
 
@@ -87,13 +85,21 @@ class AggregateNode : public IterateNode<T> {
   }
 
  private:
-  VertexIDSlice srcId() const { return NebulaKeyUtils::getSrcId(context_->vIdLen(), this->key()); }
+  VertexIDSlice srcId() const {
+    return NebulaKeyUtils::getSrcId(this->context_->vIdLen(), this->key());
+  }
 
-  EdgeType edgeType() const { return NebulaKeyUtils::getEdgeType(context_->vIdLen(), this->key()); }
+  EdgeType edgeType() const {
+    return NebulaKeyUtils::getEdgeType(this->context_->vIdLen(), this->key());
+  }
 
-  EdgeRanking edgeRank() const { return NebulaKeyUtils::getRank(context_->vIdLen(), this->key()); }
+  EdgeRanking edgeRank() const {
+    return NebulaKeyUtils::getRank(this->context_->vIdLen(), this->key());
+  }
 
-  VertexIDSlice dstId() const { return NebulaKeyUtils::getDstId(context_->vIdLen(), this->key()); }
+  VertexIDSlice dstId() const {
+    return NebulaKeyUtils::getDstId(this->context_->vIdLen(), this->key());
+  }
 
   void initStatValue(EdgeContext* edgeContext) {
     stats_.clear();
@@ -120,8 +126,8 @@ class AggregateNode : public IterateNode<T> {
       if (prop.hasStat_) {
         for (const auto statIndex : prop.statIndex_) {
           VLOG(2) << "Collect stat prop " << prop.name_;
-          auto value =
-              QueryUtils::readEdgeProp(key, context_->vIdLen(), context_->isIntId(), reader, prop);
+          auto ctx = this->context_;
+          auto value = QueryUtils::readEdgeProp(key, ctx->vIdLen(), ctx->isIntId(), reader, prop);
           if (!value.ok()) {
             return nebula::cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
           }
@@ -146,7 +152,6 @@ class AggregateNode : public IterateNode<T> {
   }
 
  private:
-  RuntimeContext* context_;
   EdgeContext* edgeContext_;
   std::vector<PropStat> stats_;
   nebula::DataSet* resultSet_;

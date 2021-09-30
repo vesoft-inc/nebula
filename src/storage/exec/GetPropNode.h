@@ -21,9 +21,9 @@ class GetTagPropNode : public QueryNode<VertexID> {
   explicit GetTagPropNode(RuntimeContext* context,
                           std::vector<TagNode*> tagNodes,
                           nebula::DataSet* resultDataSet)
-      : context_(context), tagNodes_(std::move(tagNodes)), resultDataSet_(resultDataSet) {
-    name_ = "GetTagPropNode";
-  }
+      : QueryNode<VertexID>(context, "GetTagPropNode"),
+        tagNodes_(std::move(tagNodes)),
+        resultDataSet_(resultDataSet) {}
 
   nebula::cpp2::ErrorCode doExecute(PartitionID partId, const VertexID& vId) override {
     auto ret = RelNode::doExecute(partId, vId);
@@ -75,7 +75,6 @@ class GetTagPropNode : public QueryNode<VertexID> {
   }
 
  private:
-  RuntimeContext* context_;
   std::vector<TagNode*> tagNodes_;
   nebula::DataSet* resultDataSet_;
 };
@@ -87,9 +86,9 @@ class GetEdgePropNode : public QueryNode<cpp2::EdgeKey> {
   GetEdgePropNode(RuntimeContext* context,
                   std::vector<EdgeNode<cpp2::EdgeKey>*> edgeNodes,
                   nebula::DataSet* resultDataSet)
-      : context_(context), edgeNodes_(std::move(edgeNodes)), resultDataSet_(resultDataSet) {
-    QueryNode::name_ = "GetEdgePropNode";
-  }
+      : QueryNode<cpp2::EdgeKey>(context, "GetEdgePropNode"),
+        edgeNodes_(std::move(edgeNodes)),
+        resultDataSet_(resultDataSet) {}
 
   nebula::cpp2::ErrorCode doExecute(PartitionID partId, const cpp2::EdgeKey& edgeKey) override {
     auto ret = RelNode::doExecute(partId, edgeKey);
@@ -128,7 +127,6 @@ class GetEdgePropNode : public QueryNode<cpp2::EdgeKey> {
   }
 
  private:
-  RuntimeContext* context_;
   std::vector<EdgeNode<cpp2::EdgeKey>*> edgeNodes_;
   nebula::DataSet* resultDataSet_;
 };

@@ -457,10 +457,9 @@ nebula::cpp2::ErrorCode GetNeighborsProcessor::checkStatType(
 void GetNeighborsProcessor::onProcessFinished() { resp_.set_vertices(std::move(resultDataSet_)); }
 
 void GetNeighborsProcessor::profilePlan(StoragePlan<VertexID>& plan) {
-  auto& nodes = plan.getNodes();
   std::lock_guard<std::mutex> lck(BaseProcessor<cpp2::GetNeighborsResponse>::profileMut_);
-  for (auto& node : nodes) {
-    profileDetail(node->name_, node->duration_.elapsedInUSec());
+  for (auto& node : plan.getNodes()) {
+    profileDetail(node->name(), node->latencyInUs());
   }
 }
 }  // namespace storage

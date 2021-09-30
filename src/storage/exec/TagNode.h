@@ -22,24 +22,14 @@ class TagNode final : public IterateNode<VertexID> {
   TagNode(RuntimeContext* context,
           TagContext* ctx,
           TagID tagId,
-          const std::vector<PropContext>* props,
-          StorageExpressionContext* expCtx = nullptr,
-          Expression* exp = nullptr)
-      : context_(context),
-        tagContext_(ctx),
-        tagId_(tagId),
-        props_(props),
-        expCtx_(expCtx),
-        exp_(exp) {
-    UNUSED(expCtx_);
-    UNUSED(exp_);
+          const std::vector<PropContext>* props)
+      : IterateNode<VertexID>(context, "TagNode"), tagContext_(ctx), tagId_(tagId), props_(props) {
     auto schemaIter = tagContext_->schemas_.find(tagId_);
     CHECK(schemaIter != tagContext_->schemas_.end());
     CHECK(!schemaIter->second.empty());
     schemas_ = &(schemaIter->second);
     ttl_ = QueryUtils::getTagTTLInfo(tagContext_, tagId_);
     tagName_ = tagContext_->tagNames_[tagId_];
-    name_ = "TagNode";
   }
 
   nebula::cpp2::ErrorCode doExecute(PartitionID partId, const VertexID& vId) override {
@@ -99,17 +89,14 @@ class TagNode final : public IterateNode<VertexID> {
     valid_ = true;
   }
 
-  RuntimeContext* context_;
-  TagContext* tagContext_;
+  TagContext* tagContext_{nullptr};
   TagID tagId_;
   const std::vector<PropContext>* props_;
-  StorageExpressionContext* expCtx_;
-  Expression* exp_;
-  const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>* schemas_ = nullptr;
+  const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>* schemas_{nullptr};
   folly::Optional<std::pair<std::string, int64_t>> ttl_;
   std::string tagName_;
 
-  bool valid_ = false;
+  bool valid_{false};
   std::string key_;
   std::string value_;
   RowReaderWrapper reader_;

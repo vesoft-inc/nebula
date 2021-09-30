@@ -59,9 +59,8 @@ class UpdateVertexProcessor
     return returnPropsExp_;
   }
   void profilePlan(StoragePlan<VertexID>& plan) {
-    auto& nodes = plan.getNodes();
-    for (auto& node : nodes) {
-      profileDetail(node->name_, node->duration_.elapsedInUSec());
+    for (auto& node : plan.getNodes()) {
+      profileDetail(node->name(), node->latencyInUs());
     }
   }
 

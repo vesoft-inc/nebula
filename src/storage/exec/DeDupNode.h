@@ -20,10 +20,8 @@ class DeDupNode : public IterateNode<T> {
  public:
   using RelNode<T>::doExecute;
 
-  explicit DeDupNode(nebula::DataSet* resultSet, const std::vector<size_t>& pos)
-      : resultSet_(resultSet), pos_(pos) {
-    IterateNode<T>::name_ = "DedupNode";
-  }
+  DeDupNode(nebula::DataSet* resultSet, const std::vector<size_t>& pos)
+      : IterateNode<T>(nullptr, "DedupNode"), resultSet_(resultSet), pos_(pos) {}
 
   nebula::cpp2::ErrorCode doExecute(PartitionID partId) override {
     auto ret = RelNode<T>::doExecute(partId);
@@ -43,17 +41,15 @@ class DeDupNode : public IterateNode<T> {
       }
       return false;
     });
-    rows.erase(std::unique(rows.begin(),
-                           rows.end(),
-                           [&pos](auto& l, auto& r) {
-                             for (const auto& p : pos) {
-                               if (l.values[p] != r.values[p]) {
-                                 return false;
-                               }
-                             }
-                             return true;
-                           }),
-               rows.end());
+    auto cmp = [&pos](auto& l, auto& r) {
+      for (const auto& p : pos) {
+        if (l.values[p] != r.values[p]) {
+          return false;
+        }
+      }
+      return true;
+    };
+    rows.erase(std::unique(rows.begin(), rows.end(), cmp), rows.end());
   }
 
  private:

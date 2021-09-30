@@ -36,9 +36,7 @@ class FilterNode : public IterateNode<T> {
              IterateNode<T>* upstream,
              StorageExpressionContext* expCtx = nullptr,
              Expression* exp = nullptr)
-      : IterateNode<T>(upstream), context_(context), expCtx_(expCtx), filterExp_(exp) {
-    IterateNode<T>::name_ = "FilterNode";
-  }
+      : IterateNode<T>(context, upstream, "FilterNode"), expCtx_(expCtx), filterExp_(exp) {}
 
   nebula::cpp2::ErrorCode doExecute(PartitionID partId, const T& vId) override {
     auto ret = RelNode<T>::doExecute(partId, vId);
@@ -47,11 +45,11 @@ class FilterNode : public IterateNode<T> {
     }
 
     do {
-      if (context_->resultStat_ == ResultStatus::ILLEGAL_DATA) {
+      if (this->context_->resultStat_ == ResultStatus::ILLEGAL_DATA) {
         break;
       }
       if (this->valid() && !check()) {
-        context_->resultStat_ = ResultStatus::FILTER_OUT;
+        this->context_->resultStat_ = ResultStatus::FILTER_OUT;
         this->next();
         continue;
       }
@@ -78,7 +76,6 @@ class FilterNode : public IterateNode<T> {
   }
 
  private:
-  RuntimeContext* context_;
   StorageExpressionContext* expCtx_;
   Expression* filterExp_;
 };

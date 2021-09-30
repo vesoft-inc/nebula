@@ -461,7 +461,7 @@ void LookupBaseProcessor<REQ, RESP>::profilePlan(StoragePlan<IndexID>& plan) {
   auto& nodes = plan.getNodes();
   std::lock_guard<std::mutex> lck(BaseProcessor<RESP>::profileMut_);
   for (auto& node : nodes) {
-    BaseProcessor<RESP>::profileDetail(node->name_, node->duration_.elapsedInUSec());
+    BaseProcessor<RESP>::profileDetail(node->name(), node->latencyInUs());
   }
 }
 

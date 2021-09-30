@@ -35,29 +35,25 @@ class EdgeNode : public IterateNode<T> {
            EdgeType edgeType,
            const std::vector<PropContext>* props,
            StorageExpressionContext* expCtx,
-           Expression* exp)
-      : context_(context),
+           Expression* exp,
+           const std::string& name = "EdgeNode")
+      : IterateNode<T>(context, name),
         edgeContext_(edgeContext),
         edgeType_(edgeType),
         props_(props),
         expCtx_(expCtx),
         exp_(exp) {
-    UNUSED(expCtx_);
-    UNUSED(exp_);
     auto schemaIter = edgeContext_->schemas_.find(std::abs(edgeType_));
     CHECK(schemaIter != edgeContext_->schemas_.end());
     CHECK(!schemaIter->second.empty());
     schemas_ = &(schemaIter->second);
     ttl_ = QueryUtils::getEdgeTTLInfo(edgeContext_, std::abs(edgeType_));
     edgeName_ = edgeContext_->edgeNames_[edgeType_];
-    IterateNode<T>::name_ = "EdgeNode";
   }
 
-  EdgeNode(RuntimeContext* context, EdgeContext* ctx) : context_(context), edgeContext_(ctx) {
-    IterateNode<T>::name_ = "EdgeNode";
-  }
+  EdgeNode(RuntimeContext* context, EdgeContext* ctx)
+      : IterateNode<T>(context, "EdgeNode"), edgeContext_(ctx) {}
 
-  RuntimeContext* context_;
   EdgeContext* edgeContext_;
   EdgeType edgeType_;
   const std::vector<PropContext>* props_;

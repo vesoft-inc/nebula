@@ -72,13 +72,15 @@ class RelNode {
     dep->hasDependents_ = true;
   }
 
-  RelNode() = default;
+  const std::string& name() const { return name_; }
+  int32_t latencyInUs() const { return duration_.elapsedInUSec(); }
 
   virtual ~RelNode() = default;
 
-  explicit RelNode(const std::string& name) : name_(name) {}
+  explicit RelNode(const std::string& name = "RelNode") : name_(name) {}
 
-  std::string name_ = "RelNode";
+ protected:
+  std::string name_;
   std::vector<RelNode<T>*> dependencies_;
   bool hasDependents_ = false;
   time::Duration duration_{true};
@@ -94,24 +96,32 @@ class QueryNode : public RelNode<T> {
   Value& mutableResult() { return result_; }
 
  protected:
+  QueryNode(RuntimeContext* context, const std::string& name)
+      : RelNode<T>(name), context_(context) {}
+
+  RuntimeContext* context_;
   Value result_;
 };
 
-/*
-IterateNode is a typical volcano node, it will have a upstream node. It keeps
-moving forward the iterator by calling `next`. If you need to filter some data,
-implement the `check` just like FilterNode.
-
-The difference between QueryNode and IterateNode is that, the latter one derives
-from StorageIterator, which makes IterateNode has a output of RowReader. If the
-reader is not null, user can get property from the reader.
-*/
+/**
+ * IterateNode is a typical volcano node, it will have a upstream node. It keeps
+ * moving forward the iterator by calling `next`. If you need to filter some data,
+ * implement the `check` just like FilterNode.
+ *
+ * The difference between QueryNode and IterateNode is that, the latter one derives
+ * from StorageIterator, which makes IterateNode has a output of RowReader. If the
+ * reader is not null, user can get property from the reader.
+ */
 template <typename T>
 class IterateNode : public QueryNode<T>, public StorageIterator {
  public:
-  IterateNode() = default;
+  explicit IterateNode(RuntimeContext* context,
+                       IterateNode* node,
+                       const std::string& name = "IterateNode")
+      : QueryNode<T>(context, name), StorageIterator(), upstream_(node) {}
 
-  explicit IterateNode(IterateNode* node) : upstream_(node) {}
+  explicit IterateNode(RuntimeContext* context, const std::string& name = "IterateNode")
+      : QueryNode<T>(context, name), StorageIterator(), upstream_(nullptr) {}
 
   bool valid() const override { return upstream_->valid(); }
 
@@ -132,7 +142,7 @@ class IterateNode : public QueryNode<T>, public StorageIterator {
   // return true when the iterator points to a valid value
   virtual bool check() { return true; }
 
-  IterateNode* upstream_;
+  IterateNode* upstream_{nullptr};
 };
 
 }  // namespace storage
