@@ -29,17 +29,17 @@ class UpdateNode : public RelNode<T> {
              bool insertable,
              std::vector<std::pair<std::string, std::unordered_set<std::string>>> depPropMap,
              StorageExpressionContext* expCtx,
-             bool isEdge)
-      : context_(context),
+             bool isEdge,
+             const std::string& name = "UpdateNode")
+      : RelNode<T>(name),
+        context_(DCHECK_NOTNULL(context)),
         indexes_(indexes),
         updatedProps_(updatedProps),
         filterNode_(filterNode),
         insertable_(insertable),
         depPropMap_(depPropMap),
         expCtx_(expCtx),
-        isEdge_(isEdge) {
-    RelNode<T>::name_ = "UpdateNode";
-  }
+        isEdge_(isEdge) {}
 
   nebula::cpp2::ErrorCode checkField(const meta::SchemaProviderIf::Field* field) {
     if (!field) {
@@ -163,12 +163,17 @@ class UpdateTagNode : public UpdateNode<VertexID> {
                 std::vector<std::pair<std::string, std::unordered_set<std::string>>> depPropMap,
                 StorageExpressionContext* expCtx,
                 TagContext* tagContext)
-      : UpdateNode<VertexID>(
-            context, indexes, updatedProps, filterNode, insertable, depPropMap, expCtx, false),
-        tagContext_(tagContext) {
-    tagId_ = context_->tagId_;
-    name_ = "UpdateTagNode";
-  }
+      : UpdateNode<VertexID>(context,
+                             indexes,
+                             updatedProps,
+                             filterNode,
+                             insertable,
+                             depPropMap,
+                             expCtx,
+                             false,
+                             "UpdateTagNode"),
+        tagContext_(tagContext),
+        tagId_(context->tagId_) {}
 
   nebula::cpp2::ErrorCode doExecute(PartitionID partId, const VertexID& vId) override {
     CHECK_NOTNULL(context_->env()->kvstore_);
@@ -441,12 +446,17 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
                  std::vector<std::pair<std::string, std::unordered_set<std::string>>> depPropMap,
                  StorageExpressionContext* expCtx,
                  EdgeContext* edgeContext)
-      : UpdateNode<cpp2::EdgeKey>(
-            context, indexes, updatedProps, filterNode, insertable, depPropMap, expCtx, true),
-        edgeContext_(edgeContext) {
-    edgeType_ = context_->edgeType_;
-    name_ = "UpdateEdgeNode";
-  }
+      : UpdateNode<cpp2::EdgeKey>(context,
+                                  indexes,
+                                  updatedProps,
+                                  filterNode,
+                                  insertable,
+                                  depPropMap,
+                                  expCtx,
+                                  true,
+                                  "UpdateEdgeNode"),
+        edgeContext_(edgeContext),
+        edgeType_(context->edgeType_) {}
 
   nebula::cpp2::ErrorCode doExecute(PartitionID partId, const cpp2::EdgeKey& edgeKey) override {
     CHECK_NOTNULL(context_->env()->kvstore_);

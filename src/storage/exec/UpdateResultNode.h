@@ -24,13 +24,12 @@ class UpdateResNode : public RelNode<T> {
                 std::vector<Expression*> returnPropsExp,
                 StorageExpressionContext* expCtx,
                 nebula::DataSet* result)
-      : context_(context),
+      : RelNode<T>("UpdateResNode"),
+        context_(context),
         updateNode_(updateNode),
         returnPropsExp_(returnPropsExp),
         expCtx_(expCtx),
-        result_(result) {
-    RelNode<T>::name_ = "UpdateResNode";
-  }
+        result_(result) {}
 
   nebula::cpp2::ErrorCode doExecute(PartitionID partId, const T& vId) override {
     auto ret = RelNode<T>::doExecute(partId, vId);

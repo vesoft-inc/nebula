@@ -30,15 +30,14 @@ class IndexFilterNode final : public RelNode<T> {
                   Expression* exp,
                   bool isEdge,
                   int64_t limit = -1)
-      : context_(context),
+      : RelNode<T>("IndexFilterNode"),
+        context_(context),
         indexScanNode_(indexScanNode),
         exprCtx_(exprCtx),
         filterExp_(exp),
         isEdge_(isEdge),
-        limit_(limit) {
-    evalExprByIndex_ = true;
-    RelNode<T>::name_ = "IndexFilterNode";
-  }
+        evalExprByIndex_(true),
+        limit_(limit) {}
 
   // evalExprByIndex_ is false, some fileds in filter is out of index, which
   // need to read data.
@@ -47,14 +46,14 @@ class IndexFilterNode final : public RelNode<T> {
                   StorageExpressionContext* exprCtx,
                   Expression* exp,
                   int64_t limit = -1)
-      : context_(context),
+      : RelNode<T>("IndexFilterNode"),
+        context_(context),
         indexEdgeNode_(indexEdgeNode),
         exprCtx_(exprCtx),
         filterExp_(exp),
-        limit_(limit) {
-    evalExprByIndex_ = false;
-    isEdge_ = true;
-  }
+        isEdge_(true),
+        evalExprByIndex_(false),
+        limit_(limit) {}
 
   // evalExprByIndex_ is false, some fileds in filter is out of index, which
   // need to read data.
@@ -63,14 +62,14 @@ class IndexFilterNode final : public RelNode<T> {
                   StorageExpressionContext* exprCtx,
                   Expression* exp,
                   int64_t limit = -1)
-      : context_(context),
+      : RelNode<T>("IndexFilterNode"),
+        context_(context),
         indexVertexNode_(indexVertexNode),
         exprCtx_(exprCtx),
         filterExp_(exp),
-        limit_(limit) {
-    evalExprByIndex_ = false;
-    isEdge_ = false;
-  }
+        isEdge_(false),
+        evalExprByIndex_(false),
+        limit_(limit) {}
 
   nebula::cpp2::ErrorCode doExecute(PartitionID partId) override {
     data_.clear();

@@ -37,15 +37,14 @@ class IndexOutputNode final : public RelNode<T> {
                   IndexScanNode<T>* indexScanNode,
                   bool hasNullableCol,
                   const std::vector<meta::cpp2::ColumnDef>& fields)
-      : result_(result),
-        context_(context),
+      : RelNode<T>("IndexOpuputNode"),
+        result_(result),
+        context_(DCHECK_NOTNULL(context)),
+        type_(context->isEdge() ? IndexResultType::kEdgeFromIndexScan
+                                : IndexResultType::kVertexFromIndexScan),
         indexScanNode_(indexScanNode),
         hasNullableCol_(hasNullableCol),
-        fields_(fields) {
-    type_ = context_->isEdge() ? IndexResultType::kEdgeFromIndexScan
-                               : IndexResultType::kVertexFromIndexScan;
-    RelNode<T>::name_ = "IndexOpuputNode";
-  }
+        fields_(fields) {}
 
   IndexOutputNode(nebula::DataSet* result, RuntimeContext* context, IndexEdgeNode<T>* indexEdgeNode)
       : result_(result), context_(context), indexEdgeNode_(indexEdgeNode) {
@@ -56,18 +55,22 @@ class IndexOutputNode final : public RelNode<T> {
   IndexOutputNode(nebula::DataSet* result,
                   RuntimeContext* context,
                   IndexVertexNode<T>* indexVertexNode)
-      : result_(result), context_(context), indexVertexNode_(indexVertexNode) {
-    type_ = IndexResultType::kVertexFromDataScan;
-    RelNode<T>::name_ = "IndexOpuputNode";
-  }
+      : RelNode<T>("IndexOpuputNode"),
+        result_(result),
+        context_(DCHECK_NOTNULL(context)),
+        type_(IndexResultType::kVertexFromDataScan),
+        indexVertexNode_(indexVertexNode) {}
 
   IndexOutputNode(nebula::DataSet* result,
                   RuntimeContext* context,
                   IndexFilterNode<T>* indexFilterNode,
                   bool indexFilter = false)
-      : result_(result), context_(context), indexFilterNode_(indexFilterNode) {
-    hasNullableCol_ = indexFilterNode->hasNullableCol();
-    fields_ = indexFilterNode_->indexCols();
+      : RelNode<T>("IndexOpuputNode"),
+        result_(result),
+        context_(DCHECK_NOTNULL(context)),
+        indexFilterNode_(indexFilterNode),
+        hasNullableCol_(indexFilterNode->hasNullableCol()),
+        fields_(indexFilterNode_->indexCols()) {
     if (indexFilter) {
       type_ = context_->isEdge() ? IndexResultType::kEdgeFromIndexFilter
                                  : IndexResultType::kVertexFromIndexFilter;
@@ -75,7 +78,6 @@ class IndexOutputNode final : public RelNode<T> {
       type_ = context_->isEdge() ? IndexResultType::kEdgeFromDataFilter
                                  : IndexResultType::kVertexFromDataFilter;
     }
-    RelNode<T>::name_ = "IndexOpuputNode";
   }
 
   nebula::cpp2::ErrorCode doExecute(PartitionID partId) override {
@@ -340,14 +342,14 @@ class IndexOutputNode final : public RelNode<T> {
   }
 
  private:
-  nebula::DataSet* result_;
-  RuntimeContext* context_;
+  nebula::DataSet* result_{nullptr};
+  RuntimeContext* context_{nullptr};
   IndexResultType type_;
   IndexScanNode<T>* indexScanNode_{nullptr};
   IndexEdgeNode<T>* indexEdgeNode_{nullptr};
   IndexVertexNode<T>* indexVertexNode_{nullptr};
   IndexFilterNode<T>* indexFilterNode_{nullptr};
-  bool hasNullableCol_{};
+  bool hasNullableCol_{false};
   std::vector<meta::cpp2::ColumnDef> fields_;
 };
 

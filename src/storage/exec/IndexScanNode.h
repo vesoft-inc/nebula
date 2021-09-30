@@ -22,7 +22,11 @@ class IndexScanNode : public RelNode<T> {
                 IndexID indexId,
                 std::vector<cpp2::IndexColumnHint> columnHints,
                 int64_t limit = -1)
-      : context_(context), indexId_(indexId), columnHints_(std::move(columnHints)), limit_(limit) {
+      : RelNode<T>("IndexScanNode"),
+        context_(context),
+        indexId_(indexId),
+        columnHints_(std::move(columnHints)),
+        limit_(limit) {
     /**
      * columnHints's elements are {scanType = PREFIX|RANGE; beginStr; endStr},
      *                            {scanType = PREFIX|RANGE; beginStr;
@@ -37,7 +41,6 @@ class IndexScanNode : public RelNode<T> {
         break;
       }
     }
-    RelNode<T>::name_ = "IndexScanNode";
   }
 
   nebula::cpp2::ErrorCode doExecute(PartitionID partId) override {

@@ -23,13 +23,12 @@ class IndexVertexNode final : public RelNode<T> {
                   const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas,
                   const std::string& schemaName,
                   int64_t limit = -1)
-      : context_(context),
+      : RelNode<T>("IndexVertexNode"),
+        context_(context),
         indexScanNode_(indexScanNode),
         schemas_(schemas),
         schemaName_(schemaName),
-        limit_(limit) {
-    RelNode<T>::name_ = "IndexVertexNode";
-  }
+        limit_(limit) {}
 
   nebula::cpp2::ErrorCode doExecute(PartitionID partId) override {
     auto ret = RelNode<T>::doExecute(partId);
