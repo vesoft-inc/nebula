@@ -37,7 +37,7 @@ jobs:
       - name: output some vars
         run: |
           tar zcf ${{ env.CPACK_DIR }}/nebula-${{ steps.tag.outputs.tagnum }}.tar.gz --exclude=${{ env.BUILD_DIR }} ./*
-          find ${{ env.CPACK_DIR }} -type f \( -iname \*.deb -o -iname \*.rpm \) -exec bash -c "sha256sum {} > {}.sha256sum.txt" \;
+          find ${{ env.CPACK_DIR }} -type f \( -iname \*.deb -o -iname \*.rpm -o -iname \*.tar.gz \) -exec bash -c "sha256sum {} > {}.sha256sum.txt" \;
       - uses: ./.github/actions/upload-to-oss-action
         with:
           key-id: ${{ secrets.OSS_ID }}
