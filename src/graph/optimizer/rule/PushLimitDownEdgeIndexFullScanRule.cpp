@@ -21,7 +21,6 @@
 using nebula::graph::EdgeIndexFullScan;
 using nebula::graph::Limit;
 using nebula::graph::PlanNode;
-using nebula::graph::Project;
 using nebula::graph::QueryContext;
 
 namespace nebula {
@@ -36,20 +35,16 @@ PushLimitDownEdgeIndexFullScanRule::PushLimitDownEdgeIndexFullScanRule() {
 
 const Pattern &PushLimitDownEdgeIndexFullScanRule::pattern() const {
   static Pattern pattern = Pattern::create(
-      graph::PlanNode::Kind::kLimit,
-      {Pattern::create(graph::PlanNode::Kind::kProject,
-                       {Pattern::create(graph::PlanNode::Kind::kEdgeIndexFullScan)})});
+      graph::PlanNode::Kind::kLimit, {Pattern::create(graph::PlanNode::Kind::kEdgeIndexFullScan)});
   return pattern;
 }
 
 StatusOr<OptRule::TransformResult> PushLimitDownEdgeIndexFullScanRule::transform(
     OptContext *octx, const MatchedResult &matched) const {
   auto limitGroupNode = matched.node;
-  auto projGroupNode = matched.dependencies.front().node;
-  auto indexScanGroupNode = matched.dependencies.front().dependencies.front().node;
+  auto indexScanGroupNode = matched.dependencies.front().node;
 
   const auto limit = static_cast<const Limit *>(limitGroupNode->node());
-  const auto proj = static_cast<const Project *>(projGroupNode->node());
   const auto indexScan = static_cast<const EdgeIndexFullScan *>(indexScanGroupNode->node());
 
   int64_t limitRows = limit->offset() + limit->count();
@@ -60,18 +55,13 @@ StatusOr<OptRule::TransformResult> PushLimitDownEdgeIndexFullScanRule::transform
   auto newLimit = static_cast<Limit *>(limit->clone());
   auto newLimitGroupNode = OptGroupNode::create(octx, newLimit, limitGroupNode->group());
 
-  auto newProj = static_cast<Project *>(proj->clone());
-  auto newProjGroup = OptGroup::create(octx);
-  auto newProjGroupNode = newProjGroup->makeGroupNode(newProj);
-
   auto newEdgeIndexFullScan = static_cast<EdgeIndexFullScan *>(indexScan->clone());
   newEdgeIndexFullScan->setLimit(limitRows);
   auto newEdgeIndexFullScanGroup = OptGroup::create(octx);
   auto newEdgeIndexFullScanGroupNode =
       newEdgeIndexFullScanGroup->makeGroupNode(newEdgeIndexFullScan);
 
-  newLimitGroupNode->dependsOn(newProjGroup);
-  newProjGroupNode->dependsOn(newEdgeIndexFullScanGroup);
+  newLimitGroupNode->dependsOn(newEdgeIndexFullScanGroup);
   for (auto dep : indexScanGroupNode->dependencies()) {
     newEdgeIndexFullScanGroupNode->dependsOn(dep);
   }

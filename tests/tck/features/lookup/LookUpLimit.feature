@@ -118,8 +118,8 @@ Feature: Push Limit down IndexScan Rule
       | id | name             | dependencies | operator info  |
       | 3  | DataCollect      | 4            |                |
       | 4  | Sort             | 5            |                |
-      | 5  | Limit            | 6            |                |
-      | 6  | Project          | 7            |                |
+      | 5  | Project          | 6            |                |
+      | 6  | Limit            | 7            |                |
       | 7  | TagIndexFullScan | 8            | {"limit": "3"} |
       | 8  | Start            |              |                |
     When profiling query:
@@ -135,8 +135,8 @@ Feature: Push Limit down IndexScan Rule
       | id | name              | dependencies | operator info  |
       | 3  | DataCollect       | 4            |                |
       | 4  | Sort              | 5            |                |
-      | 5  | Limit             | 6            |                |
-      | 6  | Project           | 7            |                |
+      | 5  | Project           | 6            |                |
+      | 6  | Limit             | 7            |                |
       | 7  | EdgeIndexFullScan | 8            | {"limit": "3"} |
       | 8  | Start             |              |                |
     When profiling query:
@@ -152,8 +152,8 @@ Feature: Push Limit down IndexScan Rule
       | id | name               | dependencies | operator info  |
       | 3  | DataCollect        | 4            |                |
       | 4  | Sort               | 5            |                |
-      | 5  | Limit              | 6            |                |
-      | 6  | Project            | 7            |                |
+      | 5  | Project            | 6            |                |
+      | 6  | Limit              | 7            |                |
       | 7  | TagIndexPrefixScan | 8            | {"limit": "3"} |
       | 8  | Start              |              |                |
     When profiling query:
@@ -169,7 +169,7 @@ Feature: Push Limit down IndexScan Rule
       | id | name                | dependencies | operator info  |
       | 3  | DataCollect         | 4            |                |
       | 4  | Sort                | 5            |                |
-      | 5  | Limit               | 6            |                |
-      | 6  | Project             | 7            |                |
+      | 5  | Project             | 6            |                |
+      | 6  | Limit               | 7            |                |
       | 7  | EdgeIndexPrefixScan | 8            | {"limit": "3"} |
       | 8  | Start               |              |                |
