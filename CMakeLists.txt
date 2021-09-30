@@ -85,6 +85,7 @@ macro(nebula_add_library name type)
         raftex_thrift_generator
         # hbase_thrift_generator
         parser_target
+        wkt_wkb_io_target
     )
 endmacro()
 
