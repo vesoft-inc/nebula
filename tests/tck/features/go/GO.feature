@@ -1136,7 +1136,7 @@ Feature: Go Sentence
       """
       GO FROM 'Tim Duncan' OVER like where like.likeness
       """
-    Then a SemanticError should be raised at runtime: `like.likeness', expected Boolean, but was `INT'
+    Then a SemanticError should be raised at runtime: `like.likeness', expected boolean, but was `INT'
 
   Scenario: contain
     When executing query:
