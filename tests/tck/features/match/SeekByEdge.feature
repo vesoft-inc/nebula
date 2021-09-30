@@ -1470,3 +1470,8 @@ Feature: Match seek by edge
       RETURN p1.name, id(p2)
       """
     Then a SemanticError should be raised at runtime: Can't solve the start vids from the sentence: MATCH (p1)-[:teammate]->(p2) RETURN p1.name,id(p2)
+      """
+      MATCH (p1)-[]->(p2)
+      RETURN p1.name, id(p2)
+      """
+    Then a SemanticError should be raised at runtime: Can't solve the start vids from the sentence: MATCH (p1)-[]->(p2) RETURN p1.name,id(p2)

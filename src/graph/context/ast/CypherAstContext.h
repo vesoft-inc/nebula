@@ -36,7 +36,7 @@ using Direction = MatchEdge::Direction;
 struct NodeInfo {
   bool anonymous{false};
   std::vector<TagID> tids;
-  std::vector<const std::string*> labels;
+  std::vector<std::string> labels;
   std::vector<MapExpression*> labelProps;
   std::string alias;
   const MapExpression* props{nullptr};
@@ -48,7 +48,7 @@ struct EdgeInfo {
   MatchStepRange* range{nullptr};
   std::vector<EdgeType> edgeTypes;
   MatchEdge::Direction direction{MatchEdge::Direction::OUT_EDGE};
-  std::vector<const std::string*> types;
+  std::vector<std::string> types;
   std::string alias;
   const MapExpression* props{nullptr};
   Expression* filter{nullptr};
@@ -59,7 +59,7 @@ enum class AliasType : int8_t { kNode, kEdge, kPath, kDefault };
 struct ScanInfo {
   Expression* filter{nullptr};
   std::vector<int32_t> schemaIds;
-  std::vector<const std::string*> schemaNames;
+  std::vector<std::string> schemaNames;
   // use for seek by index itself
   std::vector<IndexID> indexIds;
   // use for seek by edge only
