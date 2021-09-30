@@ -17,4 +17,6 @@ nebula_add_library(
     Geography.cpp
 )
 
+add_dependencies(datatypes_obj wkt_wkb_io_obj)
+
 nebula_add_subdirectory(test)
