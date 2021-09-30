@@ -36,7 +36,7 @@ class FilterNode : public IterateNode<T> {
              IterateNode<T>* upstream,
              StorageExpressionContext* expCtx = nullptr,
              Expression* exp = nullptr)
-      : IterateNode<T>(context, upstream, "FilterNode"), expCtx_(expCtx), filterExp_(exp) {}
+      : IterateNode<T>(context, "FilterNode", upstream), expCtx_(expCtx), filterExp_(exp) {}
 
   nebula::cpp2::ErrorCode doExecute(PartitionID partId, const T& vId) override {
     auto ret = RelNode<T>::doExecute(partId, vId);

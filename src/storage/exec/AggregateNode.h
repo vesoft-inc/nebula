@@ -38,7 +38,7 @@ class AggregateNode : public IterateNode<T> {
   using RelNode<T>::doExecute;
 
   AggregateNode(RuntimeContext* context, IterateNode<T>* upstream, EdgeContext* edgeContext)
-      : IterateNode<T>(context, upstream, "AggregateNode"), edgeContext_(edgeContext) {}
+      : IterateNode<T>(context, "AggregateNode", upstream), edgeContext_(edgeContext) {}
 
   nebula::cpp2::ErrorCode doExecute(PartitionID partId, const T& input) override {
     auto ret = RelNode<T>::doExecute(partId, input);

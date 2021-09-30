@@ -116,12 +116,9 @@ template <typename T>
 class IterateNode : public QueryNode<T>, public StorageIterator {
  public:
   explicit IterateNode(RuntimeContext* context,
-                       IterateNode* node,
-                       const std::string& name = "IterateNode")
+                       const std::string& name = "IterateNode",
+                       IterateNode* node = nullptr)
       : QueryNode<T>(context, name), StorageIterator(), upstream_(node) {}
-
-  explicit IterateNode(RuntimeContext* context, const std::string& name = "IterateNode")
-      : QueryNode<T>(context, name), StorageIterator(), upstream_(nullptr) {}
 
   bool valid() const override { return upstream_->valid(); }
 

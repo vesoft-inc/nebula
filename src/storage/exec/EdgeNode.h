@@ -51,9 +51,6 @@ class EdgeNode : public IterateNode<T> {
     edgeName_ = edgeContext_->edgeNames_[edgeType_];
   }
 
-  EdgeNode(RuntimeContext* context, EdgeContext* ctx)
-      : IterateNode<T>(context, "EdgeNode"), edgeContext_(ctx) {}
-
   EdgeContext* edgeContext_;
   EdgeType edgeType_;
   const std::vector<PropContext>* props_;
@@ -76,9 +73,7 @@ class FetchEdgeNode final : public EdgeNode<cpp2::EdgeKey> {
                 const std::vector<PropContext>* props,
                 StorageExpressionContext* expCtx = nullptr,
                 Expression* exp = nullptr)
-      : EdgeNode(context, edgeContext, edgeType, props, expCtx, exp) {
-    name_ = "FetchEdgeNode";
-  }
+      : EdgeNode(context, edgeContext, edgeType, props, expCtx, exp, "FetchEdgeNode") {}
 
   bool valid() const override { return valid_; }
 
@@ -149,9 +144,7 @@ class SingleEdgeNode final : public EdgeNode<VertexID> {
                  const std::vector<PropContext>* props,
                  StorageExpressionContext* expCtx = nullptr,
                  Expression* exp = nullptr)
-      : EdgeNode(context, edgeContext, edgeType, props, expCtx, exp) {
-    name_ = "SingleEdgeNode";
-  }
+      : EdgeNode(context, edgeContext, edgeType, props, expCtx, exp, "SingleEdgeNode") {}
 
   SingleEdgeIterator* iter() { return iter_.get(); }
 
