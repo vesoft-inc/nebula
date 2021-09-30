@@ -33,6 +33,7 @@ enable_compressed_debug_info=ON
 dump_symbols=OFF
 dump_syms_tool_dir=
 system_name=
+install_prefix=/usr/local/nebula
 
 while getopts v:n:s:b:d:t:r:p:j: opt;
 do
@@ -113,10 +114,11 @@ function _build_graph {
           -DENABLE_UBSAN=${san} \
           -DENABLE_STATIC_ASAN=${ssan} \
           -DENABLE_STATIC_UBSAN=${ssan} \
-          -DCMAKE_INSTALL_PREFIX=/usr/local/nebula \
+          -DCMAKE_INSTALL_PREFIX=${install_prefix} \
           -DENABLE_TESTING=OFF \
           -DENABLE_PACK_ONE=${package_one} \
           -DENABLE_COMPRESSED_DEBUG_INFO=${enable_compressed_debug_info} \
+          -DENABLE_PACKAGE_TAR=${package_tar} \
           ${project_dir}
 
     if ! ( make -j ${jobs} ); then
@@ -134,8 +136,10 @@ function build {
     ssan=$3
     build_type=$4
     branch=$5
+    package_tar=$6
+    install_prefix=$7
 
-    rm -rf ${build_dir} && mkdir -p ${build_dir}
+    mkdir -p ${build_dir}
 
     _build_graph
 }
@@ -206,10 +210,13 @@ function dump_syms {
 }
 
 # The main
-build $version $enablesanitizer $static_sanitizer $build_type $branch
-rm -rf ${build_dir}/src
+build $version $enablesanitizer $static_sanitizer $build_type $branch "OFF" "/usr/local/nebula"
 package $strip_enable
 if [[ $dump_symbols == ON ]]; then
     echo ">>> start dump symbols <<<"
     dump_syms
 fi
+
+# tar package
+build $version $enablesanitizer $static_sanitizer $build_type $branch "ON" "/"
+package $strip_enable
