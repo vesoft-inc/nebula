@@ -92,8 +92,9 @@ template <typename T>
 class QueryNode : public RelNode<T> {
  public:
   const Value& result() { return result_; }
-
   Value& mutableResult() { return result_; }
+
+  size_t vidLen() const { return context_->vIdLen(); }
 
  protected:
   QueryNode(RuntimeContext* context, const std::string& name)
