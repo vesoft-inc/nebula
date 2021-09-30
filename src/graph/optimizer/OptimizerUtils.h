@@ -95,6 +95,10 @@ class OptimizerUtils {
       bool* isPrefixScan,
       nebula::storage::cpp2::IndexQueryContext* ictx);
 
+  static bool relExprHasIndex(
+      const Expression* expr,
+      const std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>>& indexItems);
+
   static void copyIndexScanData(const nebula::graph::IndexScan* from, nebula::graph::IndexScan* to);
 };
 
