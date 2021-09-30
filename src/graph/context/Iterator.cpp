@@ -20,8 +20,10 @@ namespace graph {
 
 bool Iterator::hitsSysMemoryHighWatermark() const {
   if (checkMemory_) {
-    // TODO(yee): speed up this check
-    if (UNLIKELY(0 == numReadRows_ % FLAGS_num_rows_to_check_memory)) {
+    if (numRowsModN_ >= FLAGS_num_rows_to_check_memory) {
+      numRowsModN_ -= FLAGS_num_rows_to_check_memory;
+    }
+    if (UNLIKELY(numRowsModN_ == 0)) {
       if (MemoryUtils::kHitMemoryHighWatermark.load()) {
         throw std::runtime_error(
             folly::sformat("Used memory hits the high watermark({}) of total system memory.",
@@ -206,7 +208,7 @@ void GetNeighborsIter::next() {
     return;
   }
 
-  numReadRows_++;
+  numRowsModN_++;
 
   if (noEdge_) {
     if (++currentRow_ < rowsUpperBound_) {
@@ -587,7 +589,7 @@ bool SequentialIter::valid() const { return Iterator::valid() && iter_ < rows_->
 
 void SequentialIter::next() {
   if (valid()) {
-    ++numReadRows_;
+    ++numRowsModN_;
     ++iter_;
   }
 }

@@ -44,7 +44,7 @@ class Iterator {
   };
 
   explicit Iterator(std::shared_ptr<Value> value, Kind kind, bool checkMemory = false)
-      : checkMemory_(checkMemory), kind_(kind), numReadRows_(0), value_(value) {}
+      : checkMemory_(checkMemory), kind_(kind), numRowsModN_(0), value_(value) {}
 
   virtual ~Iterator() = default;
 
@@ -77,7 +77,7 @@ class Iterator {
   // Reset iterator position to `pos' from begin. Must be sure that the `pos'
   // position is lower than `size()' before resetting
   void reset(size_t pos = 0) {
-    numReadRows_ = 0;
+    numRowsModN_ = 0;
     doReset(pos);
   }
 
@@ -139,7 +139,7 @@ class Iterator {
 
   bool checkMemory_{false};
   Kind kind_;
-  int64_t numReadRows_{0};
+  mutable int64_t numRowsModN_{0};
   std::shared_ptr<Value> value_;
 };
 
@@ -153,7 +153,7 @@ class DefaultIter final : public Iterator {
   bool valid() const override { return Iterator::valid() && !(counter_ > 0); }
 
   void next() override {
-    numReadRows_++;
+    numRowsModN_++;
     counter_++;
   }
 

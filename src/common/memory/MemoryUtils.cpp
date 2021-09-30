@@ -64,8 +64,9 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
   }
 
   auto hits = (1 - available / total) > FLAGS_system_memory_high_watermark_ratio;
-  LOG_IF(WARNING, hits) << "Memory usage has hit the high watermark of system, available: "
-                        << available << " vs. total: " << total << " in bytes.";
+  LOG_IF_EVERY_N(WARNING, hits, 100)
+      << "Memory usage has hit the high watermark of system, available: " << available
+      << " vs. total: " << total << " in bytes.";
   return hits;
 }
 
