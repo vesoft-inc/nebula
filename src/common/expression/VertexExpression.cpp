@@ -11,7 +11,7 @@
 namespace nebula {
 
 const Value& VertexExpression::eval(ExpressionContext& ctx) {
-  result_ = ctx.getVertex();
+  result_ = ctx.getVertex(name_);
   return result_;
 }
 

@@ -75,11 +75,11 @@ Value QueryExpressionContext::getColumn(int32_t index) const {
   return iter_->getColumn(index);
 }
 
-Value QueryExpressionContext::getVertex() const {
+Value QueryExpressionContext::getVertex(const std::string& name) const {
   if (iter_ == nullptr) {
     return Value::kEmpty;
   }
-  return iter_->getVertex();
+  return iter_->getVertex(name);
 }
 
 Value QueryExpressionContext::getEdge() const {

@@ -351,7 +351,8 @@ const Value& GetNeighborsIter::getEdgeProp(const std::string& edge, const std::s
   return currentEdge_->values[propIndex->second];
 }
 
-Value GetNeighborsIter::getVertex() const {
+Value GetNeighborsIter::getVertex(const std::string& name) const {
+  UNUSED(name);
   if (!valid()) {
     return Value::kNullValue;
   }
@@ -595,6 +596,10 @@ const Value& SequentialIter::getColumn(int32_t index) const {
   return getColumnByIndex(index, iter_);
 }
 
+Value SequentialIter::getVertex(const std::string& name) const { return getColumn(name); }
+
+Value SequentialIter::getEdge() const { return getColumn("EDGE"); }
+
 PropIter::PropIter(std::shared_ptr<Value> value) : SequentialIter(value) {
   DCHECK(value->isDataSet());
   auto& ds = value->getDataSet();
@@ -673,7 +678,8 @@ const Value& PropIter::getProp(const std::string& name, const std::string& prop)
   return row[colId];
 }
 
-Value PropIter::getVertex() const {
+Value PropIter::getVertex(const std::string& name) const {
+  UNUSED(name);
   if (!valid()) {
     return Value::kNullValue;
   }

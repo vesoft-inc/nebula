@@ -119,7 +119,10 @@ class Iterator {
     return Value::kEmpty;
   }
 
-  virtual Value getVertex() const { return Value(); }
+  virtual Value getVertex(const std::string& name = "") const {
+    UNUSED(name);
+    return Value();
+  }
 
   virtual Value getEdge() const { return Value(); }
 
@@ -237,7 +240,7 @@ class GetNeighborsIter final : public Iterator {
 
   const Value& getEdgeProp(const std::string& edge, const std::string& prop) const override;
 
-  Value getVertex() const override;
+  Value getVertex(const std::string& name = "") const override;
 
   Value getEdge() const override;
 
@@ -406,6 +409,10 @@ class SequentialIter : public Iterator {
 
   const Value& getColumn(int32_t index) const override;
 
+  Value getVertex(const std::string& name = "") const override;
+
+  Value getEdge() const override;
+
  protected:
   const Row* row() const override { return &*iter_; }
 
@@ -442,7 +449,7 @@ class PropIter final : public SequentialIter {
 
   const Value& getColumn(int32_t index) const override;
 
-  Value getVertex() const override;
+  Value getVertex(const std::string& name = "") const override;
 
   Value getEdge() const override;
 

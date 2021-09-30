@@ -518,6 +518,28 @@ Feature: Go Yield Vertex And Edge Sentence
       | "Chris Paul" | "Carmelo Anthony" | ("Dwyane Wade" :player{age: 37, name: "Dwyane Wade"})             |
       | "Chris Paul" | "Carmelo Anthony" | ("LeBron James" :player{age: 34, name: "LeBron James"})           |
       | "Chris Paul" | "LeBron James"    | ("Ray Allen" :player{age: 43, name: "Ray Allen"})                 |
+    When executing query:
+      """
+      GO FROM 'Yao Ming' OVER * YIELD $^ as src, id($$) AS id |
+      GO FROM $-.id OVER * YIELD $-.src, id($$) as id
+      """
+    Then the result should be, in any order, with relax comparison:
+      | $-.src                                          | id             |
+      | ("Yao Ming" :player{age: 38, name: "Yao Ming"}) | "JaVale McGee" |
+      | ("Yao Ming" :player{age: 38, name: "Yao Ming"}) | "Tim Duncan"   |
+      | ("Yao Ming" :player{age: 38, name: "Yao Ming"}) | "Cavaliers"    |
+      | ("Yao Ming" :player{age: 38, name: "Yao Ming"}) | "Celtics"      |
+      | ("Yao Ming" :player{age: 38, name: "Yao Ming"}) | "Heat"         |
+      | ("Yao Ming" :player{age: 38, name: "Yao Ming"}) | "Lakers"       |
+      | ("Yao Ming" :player{age: 38, name: "Yao Ming"}) | "Magic"        |
+      | ("Yao Ming" :player{age: 38, name: "Yao Ming"}) | "Suns"         |
+      | ("Yao Ming" :player{age: 38, name: "Yao Ming"}) | "Grant Hill"   |
+      | ("Yao Ming" :player{age: 38, name: "Yao Ming"}) | "Kobe Bryant"  |
+      | ("Yao Ming" :player{age: 38, name: "Yao Ming"}) | "Rudy Gay"     |
+      | ("Yao Ming" :player{age: 38, name: "Yao Ming"}) | "Magic"        |
+      | ("Yao Ming" :player{age: 38, name: "Yao Ming"}) | "Raptors"      |
+      | ("Yao Ming" :player{age: 38, name: "Yao Ming"}) | "Rockets"      |
+      | ("Yao Ming" :player{age: 38, name: "Yao Ming"}) | "Spurs"        |
 
   @skip
   Scenario: all prop(reson = $-.* over * $var.* not implement)
