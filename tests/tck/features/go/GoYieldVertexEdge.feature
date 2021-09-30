@@ -10,7 +10,7 @@ Feature: Go Yield Vertex And Edge Sentence
   Scenario: one step
     When executing query:
       """
-      GO FROM "Tim Duncan" OVER serve Yield src(edge) as src, dst(edge) as dst, edge as e
+      GO FROM "Tim Duncan" OVER serve Yield src(edge) as src, dst(edge) as dst, type(edge) as type, edge as e
       """
     Then the result should be, in any order, with relax comparison:
       | src          | dst     | type    | e                                                                    |
@@ -66,12 +66,12 @@ Feature: Go Yield Vertex And Edge Sentence
       GO FROM "Boris Diaw" OVER serve YIELD $^.player.name, serve.start_year, serve.end_year, $$.team.name, edge as e, properties(edge) as props
       """
     Then the result should be, in any order, with relax comparison:
-      | $^.player.name | serve.start_year | serve.end_year | $$.team.name | props                              |
-      | "Boris Diaw"   | 2003             | 2005           | "Hawks"      | {end_year: 2005, start_year: 2003} |
-      | "Boris Diaw"   | 2005             | 2008           | "Suns"       | {end_year: 2008, start_year: 2005} |
-      | "Boris Diaw"   | 2008             | 2012           | "Hornets"    | {end_year: 2012, start_year: 2008} |
-      | "Boris Diaw"   | 2012             | 2016           | "Spurs"      | {end_year: 2016, start_year: 2012} |
-      | "Boris Diaw"   | 2016             | 2017           | "Jazz"       | {end_year: 2017, start_year: 2016} |
+      | $^.player.name | serve.start_year | serve.end_year | $$.team.name | e                                                                      | props                              |
+      | "Boris Diaw"   | 2003             | 2005           | "Hawks"      | [:serve "Boris Diaw"->"Hawks" @0 {end_year: 2005, start_year: 2003}]   | {end_year: 2005, start_year: 2003} |
+      | "Boris Diaw"   | 2008             | 2012           | "Hornets"    | [:serve "Boris Diaw"->"Hornets" @0 {end_year: 2012, start_year: 2008}] | {end_year: 2012, start_year: 2008} |
+      | "Boris Diaw"   | 2016             | 2017           | "Jazz"       | [:serve "Boris Diaw"->"Jazz" @0 {end_year: 2017, start_year: 2016}]    | {end_year: 2017, start_year: 2016} |
+      | "Boris Diaw"   | 2012             | 2016           | "Spurs"      | [:serve "Boris Diaw"->"Spurs" @0 {end_year: 2016, start_year: 2012}]   | {end_year: 2016, start_year: 2012} |
+      | "Boris Diaw"   | 2005             | 2008           | "Suns"       | [:serve "Boris Diaw"->"Suns" @0 {end_year: 2008, start_year: 2005}]    | {end_year: 2008, start_year: 2005} |
     When executing query:
       """
       GO FROM "Rajon Rondo" OVER serve WHERE serve.start_year >= 2013 AND serve.end_year <= 2018
@@ -91,6 +91,7 @@ Feature: Go Yield Vertex And Edge Sentence
       """
     Then the result should be, in any order, with relax comparison:
       | dstnode                                        |
+      | ("Hornets" :team{name: "Hornets"})             |
       | ("Spurs" :team{name: "Spurs"})                 |
       | ("Spurs" :team{name: "Spurs"})                 |
       | ("Trail Blazers" :team{name: "Trail Blazers"}) |
@@ -99,16 +100,16 @@ Feature: Go Yield Vertex And Edge Sentence
       | ("Spurs" :team{name: "Spurs"})                 |
     When executing query:
       """
-      GO FROM 'Thunders' OVER serve REVERSELY YIELD $^ as src, $$ as dst
+      GO FROM 'Thunders' OVER serve REVERSELY YIELD $^ as src,tags($^), id($^), id($$), $$ as dst
       """
     Then the result should be, in any order, with relax comparison:
-      | src                                  | dst                                                               |
-      | ("Thunders" :team{name: "Thunders"}) | ("Carmelo Anthony" :player{age: 34, name: "Carmelo Anthony"})     |
-      | ("Thunders" :team{name: "Thunders"}) | ("James Harden" :player{age: 29, name: "James Harden"})           |
-      | ("Thunders" :team{name: "Thunders"}) | ("Kevin Durant" :player{age: 30, name: "Kevin Durant"})           |
-      | ("Thunders" :team{name: "Thunders"}) | ("Paul George" :player{age: 28, name: "Paul George"})             |
-      | ("Thunders" :team{name: "Thunders"}) | ("Ray Allen" :player{age: 43, name: "Ray Allen"})                 |
-      | ("Thunders" :team{name: "Thunders"}) | ("Russell Westbrook" :player{age: 30, name: "Russell Westbrook"}) |
+      | src                                  | tags($^) | id($^)     | id($$)              | dst                                                               |
+      | ("Thunders" :team{name: "Thunders"}) | ["team"] | "Thunders" | "Carmelo Anthony"   | ("Carmelo Anthony" :player{age: 34, name: "Carmelo Anthony"})     |
+      | ("Thunders" :team{name: "Thunders"}) | ["team"] | "Thunders" | "James Harden"      | ("James Harden" :player{age: 29, name: "James Harden"})           |
+      | ("Thunders" :team{name: "Thunders"}) | ["team"] | "Thunders" | "Kevin Durant"      | ("Kevin Durant" :player{age: 30, name: "Kevin Durant"})           |
+      | ("Thunders" :team{name: "Thunders"}) | ["team"] | "Thunders" | "Paul George"       | ("Paul George" :player{age: 28, name: "Paul George"})             |
+      | ("Thunders" :team{name: "Thunders"}) | ["team"] | "Thunders" | "Ray Allen"         | ("Ray Allen" :player{age: 43, name: "Ray Allen"})                 |
+      | ("Thunders" :team{name: "Thunders"}) | ["team"] | "Thunders" | "Russell Westbrook" | ("Russell Westbrook" :player{age: 30, name: "Russell Westbrook"}) |
     When executing query:
       """
       GO FROM "Boris Diaw" OVER like YIELD dst(edge) as id |
@@ -125,9 +126,23 @@ Feature: Go Yield Vertex And Edge Sentence
       | [:serve "Manu Ginobili"->"Spurs" @0 {end_year: 2018, start_year: 2002}]             |
     When executing query:
       """
+      GO FROM "Boris Diaw" OVER like YIELD id($$) as id |
+      GO FROM $-.id OVER like YIELD id($$) as id |
+      GO FROM $-.id OVER serve YIELD distinct edge as e
+      """
+    Then the result should be, in any order, with relax comparison:
+      | e                                                                                   |
+      | [:serve "Tony Parker"->"Hornets" @0 {end_year: 2019, start_year: 2018}]             |
+      | [:serve "Tony Parker"->"Spurs" @0 {end_year: 2018, start_year: 1999}]               |
+      | [:serve "LaMarcus Aldridge"->"Spurs" @0 {end_year: 2019, start_year: 2015}]         |
+      | [:serve "LaMarcus Aldridge"->"Trail Blazers" @0 {end_year: 2015, start_year: 2006}] |
+      | [:serve "Tim Duncan"->"Spurs" @0 {end_year: 2016, start_year: 1997}]                |
+      | [:serve "Manu Ginobili"->"Spurs" @0 {end_year: 2018, start_year: 2002}]             |
+    When executing query:
+      """
       GO FROM "No Exist Vertex Id" OVER like YIELD dst(edge) as id |
       GO FROM $-.id OVER like YIELD dst(edge) as id |
-      GO FROM $-.id OVER serve $$ as dst
+      GO FROM $-.id OVER serve YIELD $$ as dst
       """
     Then the result should be, in any order, with relax comparison:
       | dst |
@@ -135,11 +150,11 @@ Feature: Go Yield Vertex And Edge Sentence
   Scenario: In expression
     When executing query:
       """
-      GO FROM 'Tony Parker' OVER like WHERE like._dst IN ['Tim Duncan', 'Danny Green'] YIELD $$ as dst
+      GO FROM 'Tony Parker' OVER like WHERE like._dst IN ['Tim Duncan', 'Danny Green'] YIELD $$ as dst, tags($$), tags($^)
       """
     Then the result should be, in any order, with relax comparison:
-      | dst                                                                                                         |
-      | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+      | dst                                                                                                         | tags($$)               | tags($^)   |
+      | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) | ["bachelor", "player"] | ["player"] |
     When executing query:
       """
       GO FROM 'Tony Parker' OVER like WHERE like._dst IN ['Tim Duncan', 'Danny Green'] YIELD $^ as src
@@ -243,7 +258,7 @@ Feature: Go Yield Vertex And Edge Sentence
       | e |
     When executing query:
       """
-      GO FROM "NON EXIST VERTEX ID" OVER serve YIELD $^ as src, $$ as dst, properites(edge) as props
+      GO FROM "NON EXIST VERTEX ID" OVER serve YIELD $^ as src, $$ as dst, properties(edge) as props
       """
     Then the result should be, in any order, with relax comparison:
       | src | dst | props |
@@ -576,6 +591,20 @@ Feature: Go Yield Vertex And Edge Sentence
       | "Chris Paul" | {likeness: 90}  |
       | "Chris Paul" | {likeness: 90}  |
       | "Chris Paul" | {likeness: 100} |
+    When executing query:
+      """
+      $var = GO FROM 'Tim Duncan', 'Chris Paul' OVER like YIELD $^.player.name AS name, id($$) AS id;
+      GO FROM $var.id OVER like  WHERE $var.name != $$.player.name YIELD $var.name, properties(edge) as props
+      """
+    Then the result should be, in any order, with relax comparison:
+      | $var.name    | props           |
+      | "Tim Duncan" | {likeness: 90}  |
+      | "Tim Duncan" | {likeness: 95}  |
+      | "Chris Paul" | {likeness: 90}  |
+      | "Chris Paul" | {likeness: 90}  |
+      | "Chris Paul" | {likeness: 90}  |
+      | "Chris Paul" | {likeness: 90}  |
+      | "Chris Paul" | {likeness: 100} |
 
   Scenario: no exist prop
     When executing query:
@@ -641,6 +670,22 @@ Feature: Go Yield Vertex And Edge Sentence
       | ("Tony Parker" :player{age: 36, name: "Tony Parker"})             | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]       |
     When executing query:
       """
+      GO FROM 'Tim Duncan' OVER like REVERSELY YIELD $$ as dst, edge as e, id($$), id($^)
+      """
+    Then the result should be, in any order, with relax comparison:
+      | dst                                                               | e                                                           | id($$)              | id($^)       |
+      | ("Aron Baynes" :player{age: 32, name: "Aron Baynes"})             | [:like "Aron Baynes"->"Tim Duncan" @0 {likeness: 80}]       | "Aron Baynes"       | "Tim Duncan" |
+      | ("Boris Diaw" :player{age: 36, name: "Boris Diaw"})               | [:like "Boris Diaw"->"Tim Duncan" @0 {likeness: 80}]        | "Boris Diaw"        | "Tim Duncan" |
+      | ("Danny Green" :player{age: 31, name: "Danny Green"})             | [:like "Danny Green"->"Tim Duncan" @0 {likeness: 70}]       | "Danny Green"       | "Tim Duncan" |
+      | ("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})     | [:like "Dejounte Murray"->"Tim Duncan" @0 {likeness: 99}]   | "Dejounte Murray"   | "Tim Duncan" |
+      | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"}) | [:like "LaMarcus Aldridge"->"Tim Duncan" @0 {likeness: 75}] | "LaMarcus Aldridge" | "Tim Duncan" |
+      | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})         | [:like "Manu Ginobili"->"Tim Duncan" @0 {likeness: 90}]     | "Manu Ginobili"     | "Tim Duncan" |
+      | ("Marco Belinelli" :player{age: 32, name: "Marco Belinelli"})     | [:like "Marco Belinelli"->"Tim Duncan" @0 {likeness: 55}]   | "Marco Belinelli"   | "Tim Duncan" |
+      | ("Shaquile O'Neal" :player{age: 47, name: "Shaquile O'Neal"})     | [:like "Shaquile O'Neal"->"Tim Duncan" @0 {likeness: 80}]   | "Shaquile O'Neal"   | "Tim Duncan" |
+      | ("Tiago Splitter" :player{age: 34, name: "Tiago Splitter"})       | [:like "Tiago Splitter"->"Tim Duncan" @0 {likeness: 80}]    | "Tiago Splitter"    | "Tim Duncan" |
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"})             | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]       | "Tony Parker"       | "Tim Duncan" |
+    When executing query:
+      """
       GO FROM 'Tim Duncan' OVER like REVERSELY WHERE $$.player.age < 35 YIELD distinct $$ as dst
       """
     Then the result should be, in any order, with relax comparison:
@@ -695,44 +740,60 @@ Feature: Go Yield Vertex And Edge Sentence
     When executing query:
       """
       GO 2 STEPS FROM 'Tony Parker' OVER * YIELD dst(edge) AS id |
-      GO 2 STEPS FROM $-.id OVER * YIELD src(edge) as src, dst(edge) as dst, edge as e
+      GO 2 STEPS FROM $-.id OVER * YIELD distinct src(edge) as src, dst(edge) as dst, edge as e
       """
     Then the result should be, in any order, with relax comparison:
-      | src                 | dst                 | e                                                                                   |
-      | "LeBron James"      | "Ray Allen"         | [:like "LeBron James"->"Ray Allen" @0 {likeness: 100}]                              |
-      | "LeBron James"      | "Cavaliers"         | [:serve "LeBron James"->"Cavaliers" @0 {end_year: 2010, start_year: 2003}]          |
-      | "LeBron James"      | "Heat"              | [:serve "LeBron James"->"Heat" @0 {end_year: 2014, start_year: 2010}]               |
-      | "LeBron James"      | "Lakers"            | [:serve "LeBron James"->"Lakers" @0 {end_year: 2019, start_year: 2018}]             |
-      | "LeBron James"      | "Cavaliers"         | [:serve "LeBron James"->"Cavaliers" @1 {end_year: 2018, start_year: 2014}]          |
-      | "Tony Parker"       | "LaMarcus Aldridge" | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}]                        |
-      | "Kyle Anderson"     | "Spurs"             | [:serve "Kyle Anderson"->"Spurs" @0 {end_year: 2018, start_year: 2014}]             |
-      | "Kyle Anderson"     | "Grizzlies"         | [:serve "Kyle Anderson"->"Grizzlies" @0 {end_year: 2019, start_year: 2018}]         |
-      | "LaMarcus Aldridge" | "Trail Blazers"     | [:serve "LaMarcus Aldridge"->"Trail Blazers" @0 {end_year: 2015, start_year: 2006}] |
-      | "LaMarcus Aldridge" | "Spurs"             | [:serve "LaMarcus Aldridge"->"Spurs" @0 {end_year: 2019, start_year: 2015}]         |
-      | "LaMarcus Aldridge" | "Tony Parker"       | [:like "LaMarcus Aldridge"->"Tony Parker" @0 {likeness: 75}]                        |
-      | "Tony Parker"       | "Manu Ginobili"     | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]                            |
-      | "LaMarcus Aldridge" | "Tim Duncan"        | [:like "LaMarcus Aldridge"->"Tim Duncan" @0 {likeness: 75}]                         |
-      | "Danny Green"       | "Spurs"             | [:serve "Danny Green"->"Spurs" @0 {end_year: 2018, start_year: 2010}]               |
-      | "Danny Green"       | "Raptors"           | [:serve "Danny Green"->"Raptors" @0 {end_year: 2019, start_year: 2018}]             |
-      | "Danny Green"       | "Cavaliers"         | [:serve "Danny Green"->"Cavaliers" @0 {end_year: 2010, start_year: 2009}]           |
-      | "Danny Green"       | "Tim Duncan"        | [:like "Danny Green"->"Tim Duncan" @0 {likeness: 70}]                               |
-      | "Tony Parker"       | "Tim Duncan"        | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]                               |
-      | "Danny Green"       | "Marco Belinelli"   | [:like "Danny Green"->"Marco Belinelli" @0 {likeness: 83}]                          |
-      | "Danny Green"       | "LeBron James"      | [:like "Danny Green"->"LeBron James" @0 {likeness: 80}]                             |
-      | "Marco Belinelli"   | "Spurs"             | [:serve "Marco Belinelli"->"Spurs" @1 {end_year: 2019, start_year: 2018}]           |
-      | "Marco Belinelli"   | "Hornets"           | [:serve "Marco Belinelli"->"Hornets" @1 {end_year: 2017, start_year: 2016}]         |
-      | "Marco Belinelli"   | "Warriors"          | [:serve "Marco Belinelli"->"Warriors" @0 {end_year: 2009, start_year: 2007}]        |
-      | "Tony Parker"       | "Hornets"           | [:serve "Tony Parker"->"Hornets" @0 {end_year: 2019, start_year: 2018}]             |
-      | "Marco Belinelli"   | "Spurs"             | [:serve "Marco Belinelli"->"Spurs" @0 {end_year: 2015, start_year: 2013}]           |
-      | "Marco Belinelli"   | "Raptors"           | [:serve "Marco Belinelli"->"Raptors" @0 {end_year: 2010, start_year: 2009}]         |
-      | "Marco Belinelli"   | "Kings"             | [:serve "Marco Belinelli"->"Kings" @0 {end_year: 2016, start_year: 2015}]           |
-      | "Marco Belinelli"   | "Hornets"           | [:serve "Marco Belinelli"->"Hornets" @0 {end_year: 2012, start_year: 2010}]         |
-      | "Marco Belinelli"   | "Hawks"             | [:serve "Marco Belinelli"->"Hawks" @0 {end_year: 2018, start_year: 2017}]           |
-      | "Tony Parker"       | "Spurs"             | [:serve "Tony Parker"->"Spurs" @0 {end_year: 2018, start_year: 1999}]               |
-      | "Marco Belinelli"   | "Bulls"             | [:serve "Marco Belinelli"->"Bulls" @0 {end_year: 2013, start_year: 2012}]           |
-      | "Marco Belinelli"   | "76ers"             | [:serve "Marco Belinelli"->"76ers" @0 {end_year: 2018, start_year: 2018}]           |
-      | "Marco Belinelli"   | "Tony Parker"       | [:like "Marco Belinelli"->"Tony Parker" @0 {likeness: 50}]                          |
-      | "Marco Belinelli"   | "Tim Duncan"        | [:like "Marco Belinelli"->"Tim Duncan" @0 {likeness: 55}]                           |
+      | src                 | dst                 | e                                                                                    |
+      | "LeBron James"      | "Ray Allen"         | [:like "LeBron James"->"Ray Allen" @0 {likeness: 100}]                               |
+      | "LeBron James"      | "Cavaliers"         | [:serve "LeBron James"->"Cavaliers" @0 {end_year: 2010, start_year: 2003}]           |
+      | "LeBron James"      | "Heat"              | [:serve "LeBron James"->"Heat" @0 {end_year: 2014, start_year: 2010}]                |
+      | "LeBron James"      | "Lakers"            | [:serve "LeBron James"->"Lakers" @0 {end_year: 2019, start_year: 2018}]              |
+      | "LeBron James"      | "Cavaliers"         | [:serve "LeBron James"->"Cavaliers" @1 {end_year: 2018, start_year: 2014}]           |
+      | "Tony Parker"       | "LaMarcus Aldridge" | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}]                         |
+      | "Kyle Anderson"     | "Spurs"             | [:serve "Kyle Anderson"->"Spurs" @0 {end_year: 2018, start_year: 2014}]              |
+      | "Kyle Anderson"     | "Grizzlies"         | [:serve "Kyle Anderson"->"Grizzlies" @0 {end_year: 2019, start_year: 2018}]          |
+      | "LaMarcus Aldridge" | "Trail Blazers"     | [:serve "LaMarcus Aldridge"->"Trail Blazers" @0 {end_year: 2015, start_year: 2006}]  |
+      | "LaMarcus Aldridge" | "Spurs"             | [:serve "LaMarcus Aldridge"->"Spurs" @0 {end_year: 2019, start_year: 2015}]          |
+      | "LaMarcus Aldridge" | "Tony Parker"       | [:like "LaMarcus Aldridge"->"Tony Parker" @0 {likeness: 75}]                         |
+      | "Tony Parker"       | "Manu Ginobili"     | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]                             |
+      | "LaMarcus Aldridge" | "Tim Duncan"        | [:like "LaMarcus Aldridge"->"Tim Duncan" @0 {likeness: 75}]                          |
+      | "Danny Green"       | "Spurs"             | [:serve "Danny Green"->"Spurs" @0 {end_year: 2018, start_year: 2010}]                |
+      | "Danny Green"       | "Raptors"           | [:serve "Danny Green"->"Raptors" @0 {end_year: 2019, start_year: 2018}]              |
+      | "Danny Green"       | "Cavaliers"         | [:serve "Danny Green"->"Cavaliers" @0 {end_year: 2010, start_year: 2009}]            |
+      | "Danny Green"       | "Tim Duncan"        | [:like "Danny Green"->"Tim Duncan" @0 {likeness: 70}]                                |
+      | "Tony Parker"       | "Tim Duncan"        | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]                                |
+      | "Danny Green"       | "Marco Belinelli"   | [:like "Danny Green"->"Marco Belinelli" @0 {likeness: 83}]                           |
+      | "Danny Green"       | "LeBron James"      | [:like "Danny Green"->"LeBron James" @0 {likeness: 80}]                              |
+      | "Marco Belinelli"   | "Spurs"             | [:serve "Marco Belinelli"->"Spurs" @1 {end_year: 2019, start_year: 2018}]            |
+      | "Marco Belinelli"   | "Hornets"           | [:serve "Marco Belinelli"->"Hornets" @1 {end_year: 2017, start_year: 2016}]          |
+      | "Marco Belinelli"   | "Warriors"          | [:serve "Marco Belinelli"->"Warriors" @0 {end_year: 2009, start_year: 2007}]         |
+      | "Tony Parker"       | "Hornets"           | [:serve "Tony Parker"->"Hornets" @0 {end_year: 2019, start_year: 2018}]              |
+      | "Marco Belinelli"   | "Spurs"             | [:serve "Marco Belinelli"->"Spurs" @0 {end_year: 2015, start_year: 2013}]            |
+      | "Marco Belinelli"   | "Raptors"           | [:serve "Marco Belinelli"->"Raptors" @0 {end_year: 2010, start_year: 2009}]          |
+      | "Marco Belinelli"   | "Kings"             | [:serve "Marco Belinelli"->"Kings" @0 {end_year: 2016, start_year: 2015}]            |
+      | "Marco Belinelli"   | "Hornets"           | [:serve "Marco Belinelli"->"Hornets" @0 {end_year: 2012, start_year: 2010}]          |
+      | "Marco Belinelli"   | "Hawks"             | [:serve "Marco Belinelli"->"Hawks" @0 {end_year: 2018, start_year: 2017}]            |
+      | "Tony Parker"       | "Spurs"             | [:serve "Tony Parker"->"Spurs" @0 {end_year: 2018, start_year: 1999}]                |
+      | "Marco Belinelli"   | "Bulls"             | [:serve "Marco Belinelli"->"Bulls" @0 {end_year: 2013, start_year: 2012}]            |
+      | "Marco Belinelli"   | "76ers"             | [:serve "Marco Belinelli"->"76ers" @0 {end_year: 2018, start_year: 2018}]            |
+      | "Marco Belinelli"   | "Tony Parker"       | [:like "Marco Belinelli"->"Tony Parker" @0 {likeness: 50}]                           |
+      | "Marco Belinelli"   | "Tim Duncan"        | [:like "Marco Belinelli"->"Tim Duncan" @0 {likeness: 55}]                            |
+      | "Marco Belinelli"   | "Danny Green"       | [:like "Marco Belinelli"->"Danny Green" @0 {likeness: 60}]                           |
+      | "Tony Parker"       | "Kyle Anderson"     | [:teammate "Tony Parker"->"Kyle Anderson" @0 {end_year: 2016, start_year: 2014}]     |
+      | "Manu Ginobili"     | "Tony Parker"       | [:teammate "Manu Ginobili"->"Tony Parker" @0 {end_year: 2016, start_year: 2002}]     |
+      | "Manu Ginobili"     | "Tim Duncan"        | [:teammate "Manu Ginobili"->"Tim Duncan" @0 {end_year: 2016, start_year: 2002}]      |
+      | "Manu Ginobili"     | "Spurs"             | [:serve "Manu Ginobili"->"Spurs" @0 {end_year: 2018, start_year: 2002}]              |
+      | "Manu Ginobili"     | "Tim Duncan"        | [:like "Manu Ginobili"->"Tim Duncan" @0 {likeness: 90}]                              |
+      | "Tim Duncan"        | "Tony Parker"       | [:teammate "Tim Duncan"->"Tony Parker" @0 {end_year: 2016, start_year: 2001}]        |
+      | "Tony Parker"       | "LaMarcus Aldridge" | [:teammate "Tony Parker"->"LaMarcus Aldridge" @0 {end_year: 2018, start_year: 2015}] |
+      | "Tim Duncan"        | "Manu Ginobili"     | [:teammate "Tim Duncan"->"Manu Ginobili" @0 {end_year: 2016, start_year: 2002}]      |
+      | "Tim Duncan"        | "LaMarcus Aldridge" | [:teammate "Tim Duncan"->"LaMarcus Aldridge" @0 {end_year: 2016, start_year: 2015}]  |
+      | "Tim Duncan"        | "Danny Green"       | [:teammate "Tim Duncan"->"Danny Green" @0 {end_year: 2016, start_year: 2010}]        |
+      | "Tim Duncan"        | "Spurs"             | [:serve "Tim Duncan"->"Spurs" @0 {end_year: 2016, start_year: 1997}]                 |
+      | "Tim Duncan"        | "Tony Parker"       | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]                                |
+      | "Tony Parker"       | "Manu Ginobili"     | [:teammate "Tony Parker"->"Manu Ginobili" @0 {end_year: 2018, start_year: 2002}]     |
+      | "Tim Duncan"        | "Manu Ginobili"     | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]                              |
+      | "Tony Parker"       | "Tim Duncan"        | [:teammate "Tony Parker"->"Tim Duncan" @0 {end_year: 2016, start_year: 2001}]        |
 
   Scenario: reverse two steps
     When executing query:
@@ -745,6 +806,16 @@ Feature: Go Yield Vertex And Edge Sentence
       | ("Grant Hill" :player{age: 46, name: "Grant Hill"})     | [:like "Grant Hill"->"Tracy McGrady" @0 {likeness: 90}]   |
       | ("Vince Carter" :player{age: 42, name: "Vince Carter"}) | [:like "Vince Carter"->"Tracy McGrady" @0 {likeness: 90}] |
       | ("Yao Ming" :player{age: 38, name: "Yao Ming"})         | [:like "Yao Ming"->"Tracy McGrady" @0 {likeness: 90}]     |
+    When executing query:
+      """
+      GO 2 STEPS FROM 'Kobe Bryant' OVER like REVERSELY YIELD id($$) as dst, edge as e
+      """
+    Then the result should be, in any order, with relax comparison:
+      | dst            | e                                                         |
+      | "Marc Gasol"   | [:like "Marc Gasol"->"Paul Gasol" @0 {likeness: 99}]      |
+      | "Grant Hill"   | [:like "Grant Hill"->"Tracy McGrady" @0 {likeness: 90}]   |
+      | "Vince Carter" | [:like "Vince Carter"->"Tracy McGrady" @0 {likeness: 90}] |
+      | "Yao Ming"     | [:like "Yao Ming"->"Tracy McGrady" @0 {likeness: 90}]     |
     When executing query:
       """
       GO FROM 'Manu Ginobili' OVER * REVERSELY YIELD src(edge) AS id |
@@ -957,7 +1028,7 @@ Feature: Go Yield Vertex And Edge Sentence
       """
       GO FROM 'Tim Duncan' OVER like where like.likeness YIELD edge as e
       """
-    Then a SemanticError should be raised at runtime: `like.likeness', expected Boolean, but was `INT'
+    Then a SemanticError should be raised at runtime: `like.likeness', expected boolean, but was `INT'
 
   Scenario: contain
     When executing query:
@@ -996,7 +1067,7 @@ Feature: Go Yield Vertex And Edge Sentence
       GO FROM 'Boris Diaw' OVER serve WHERE "Leo" CONTAINS "Boris" YIELD edge as e
       """
     Then the result should be, in any order, with relax comparison:
-      | $^.player.name | serve.start_year | serve.end_year | $$.team.name |
+      | e |
 
   Scenario: [0] intermediate data
     When executing query:
@@ -1043,6 +1114,20 @@ Feature: Go Yield Vertex And Edge Sentence
       | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})                                           |
       | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
       | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+    When executing query:
+      """
+      GO 1 TO 2 STEPS FROM 'Tony Parker' OVER like YIELD DISTINCT id($$) as dst, $^ as src
+      """
+    Then the result should be, in any order, with relax comparison:
+      | dst                 | src                                                                                                         |
+      | "LaMarcus Aldridge" | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       |
+      | "Manu Ginobili"     | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       |
+      | "Tim Duncan"        | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       |
+      | "Tim Duncan"        | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   |
+      | "Tim Duncan"        | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})                                           |
+      | "Tony Parker"       | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})                                           |
+      | "Manu Ginobili"     | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+      | "Tony Parker"       | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
     When executing query:
       """
       GO 0 TO 2 STEPS FROM 'Tony Parker' OVER like YIELD DISTINCT like._dst, like.likeness, $$.player.name, dst(edge) as dst, src(edge) as src
@@ -1225,15 +1310,15 @@ Feature: Go Yield Vertex And Edge Sentence
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst | like._dst           | e                                                                              |
-      |            | "James Harden"      | [:like "Russell Westbrook"->"James Harden" @0 {likeness: 90}]                  |
-      |            | "Paul George"       | [:like "Russell Westbrook"->"Paul George" @0 {likeness: 90}]                   |
-      | "Thunders" |                     | [:serve "Russell Westbrook"->"Thunders" @0 {end_year: 2019, start_year: 2008}] |
-      |            | "Russell Westbrook" | [:like "James Harden"->"Russell Westbrook" @0 {likeness: 80}]                  |
-      | "Rockets"  |                     | [:serve "James Harden"->"Rockets" @0 {end_year: 2019, start_year: 2012}]       |
-      | "Thunders" |                     | [:serve "James Harden"->"Thunders" @0 {end_year: 2012, start_year: 2009}]      |
-      |            | "Russell Westbrook" | [:like "Paul George"->"Russell Westbrook" @0 {likeness: 95}]                   |
-      | "Pacers"   |                     | [:serve "Paul George"->"Pacers" @0 {end_year: 2017, start_year: 2010}]         |
-      | "Thunders" |                     | [:serve "Paul George"->"Thunders" @0 {end_year: 2019, start_year: 2017}]       |
+      | EMPTY      | "James Harden"      | [:like "Russell Westbrook"->"James Harden" @0 {likeness: 90}]                  |
+      | EMPTY      | "Paul George"       | [:like "Russell Westbrook"->"Paul George" @0 {likeness: 90}]                   |
+      | "Thunders" | EMPTY               | [:serve "Russell Westbrook"->"Thunders" @0 {end_year: 2019, start_year: 2008}] |
+      | EMPTY      | "Russell Westbrook" | [:like "James Harden"->"Russell Westbrook" @0 {likeness: 80}]                  |
+      | "Rockets"  | EMPTY               | [:serve "James Harden"->"Rockets" @0 {end_year: 2019, start_year: 2012}]       |
+      | "Thunders" | EMPTY               | [:serve "James Harden"->"Thunders" @0 {end_year: 2012, start_year: 2009}]      |
+      | EMPTY      | "Russell Westbrook" | [:like "Paul George"->"Russell Westbrook" @0 {likeness: 95}]                   |
+      | "Pacers"   | EMPTY               | [:serve "Paul George"->"Pacers" @0 {end_year: 2017, start_year: 2010}]         |
+      | "Thunders" | EMPTY               | [:serve "Paul George"->"Thunders" @0 {end_year: 2019, start_year: 2017}]       |
     When executing query:
       """
       GO 0 TO 2 STEPS FROM 'Russell Westbrook' OVER * YIELD edge as e, $$ as dst, $^ as src
@@ -1255,15 +1340,15 @@ Feature: Go Yield Vertex And Edge Sentence
       """
     Then the result should be, in any order, with relax comparison:
       | dst                 | serve.start_year | like.likeness | $$.player.name      |
-      | "James Harden"      |                  | 90            | "James Harden"      |
-      | "Paul George"       |                  | 90            | "Paul George"       |
-      | "Thunders"          | 2008             |               |                     |
-      | "Russell Westbrook" |                  | 80            | "Russell Westbrook" |
-      | "Rockets"           | 2012             |               |                     |
-      | "Thunders"          | 2009             |               |                     |
-      | "Russell Westbrook" |                  | 95            | "Russell Westbrook" |
-      | "Pacers"            | 2010             |               |                     |
-      | "Thunders"          | 2017             |               |                     |
+      | "James Harden"      | EMPTY            | 90            | "James Harden"      |
+      | "Paul George"       | EMPTY            | 90            | "Paul George"       |
+      | "Thunders"          | 2008             | EMPTY         | EMPTY               |
+      | "Russell Westbrook" | EMPTY            | 80            | "Russell Westbrook" |
+      | "Rockets"           | 2012             | EMPTY         | EMPTY               |
+      | "Thunders"          | 2009             | EMPTY         | EMPTY               |
+      | "Russell Westbrook" | EMPTY            | 95            | "Russell Westbrook" |
+      | "Pacers"            | 2010             | EMPTY         | EMPTY               |
+      | "Thunders"          | 2017             | EMPTY         | EMPTY               |
     When executing query:
       """
       GO 1 TO 2 STEPS FROM 'Russell Westbrook' OVER * REVERSELY YIELD edge as e

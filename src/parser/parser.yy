@@ -1065,12 +1065,12 @@ argument_list
     }
     | SRC_REF {
         $$ = ArgumentList::make(qctx->objPool());
-        Expression* arg = VertexExpression::make(qctx->objPool());
+        Expression* arg = VertexExpression::make(qctx->objPool(), "$^");
         $$->addArgument(arg);
     }
     | DST_REF {
         $$ = ArgumentList::make(qctx->objPool());
-        Expression* arg = VertexExpression::make(qctx->objPool());
+        Expression* arg = VertexExpression::make(qctx->objPool(), "$$");
         $$->addArgument(arg);
     }
     | KW_EDGE {
@@ -1403,7 +1403,7 @@ yield_columns
 yield_column
     : KW_VERTEX {
         $$ = nullptr;
-        throw nebula::GraphParser::syntax_error(@1, "please add alias when using vertex.");
+        throw nebula::GraphParser::syntax_error(@1, "please add alias when using `vertex'.");
     }
     | KW_VERTEX KW_AS name_label {
         $$ = new YieldColumn(VertexExpression::make(qctx->objPool()), *$3);
@@ -1411,23 +1411,23 @@ yield_column
     }
     | SRC_REF {
         $$ = nullptr;
-        throw nebula::GraphParser::syntax_error(@1, "please add alias when using $^.");
+        throw nebula::GraphParser::syntax_error(@1, "please add alias when using `$^'.");
     }
     | SRC_REF KW_AS name_label {
-        $$ = new YieldColumn(LabelExpression::make(qctx->objPool(), "$^"), *$3);
+        $$ = new YieldColumn(VertexExpression::make(qctx->objPool(), "$^"), *$3);
         delete $3;
     }
     | DST_REF {
         $$ = nullptr;
-        throw nebula::GraphParser::syntax_error(@1, "please add alias when using $$.");
+        throw nebula::GraphParser::syntax_error(@1, "please add alias when using `$$'.");
     }
     | DST_REF KW_AS name_label {
-        $$ = new YieldColumn(LabelExpression::make(qctx->objPool(), "$$"), *$3);
+        $$ = new YieldColumn(VertexExpression::make(qctx->objPool(), "$$"), *$3);
         delete $3;
     }
     | KW_VERTICES {
         $$ = nullptr;
-        throw nebula::GraphParser::syntax_error(@1, "please add alias when using vertices.");
+        throw nebula::GraphParser::syntax_error(@1, "please add alias when using `vertices'.");
     }
     | KW_VERTICES KW_AS name_label {
         $$ = new YieldColumn(LabelExpression::make(qctx->objPool(), "VERTICES"), *$3);
@@ -1435,7 +1435,7 @@ yield_column
     }
     | KW_EDGE {
         $$ = nullptr;
-        throw nebula::GraphParser::syntax_error(@1, "please add alias when using edge.");
+        throw nebula::GraphParser::syntax_error(@1, "please add alias when using `edge'.");
     }
     | KW_EDGE KW_AS name_label {
         $$ = new YieldColumn(EdgeExpression::make(qctx->objPool()), *$3);
@@ -1443,7 +1443,7 @@ yield_column
     }
     | KW_EDGES {
         $$ = nullptr;
-        throw nebula::GraphParser::syntax_error(@1, "please add alias when using edges.");
+        throw nebula::GraphParser::syntax_error(@1, "please add alias when using `edges'.");
     }
     | KW_EDGES KW_AS name_label {
         $$ = new YieldColumn(LabelExpression::make(qctx->objPool(), "EDGES"), *$3);

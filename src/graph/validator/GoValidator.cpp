@@ -17,6 +17,7 @@
 namespace nebula {
 namespace graph {
 
+static const char* VERTEX = "VERTEX";
 static const char* COLNAME_SRC_VERTEX = "$^";
 static const char* COLNAME_DST_VERTEX = "$$";
 static const char* COLNAME_EDGE = "EDGE";
@@ -140,22 +141,11 @@ Status GoValidator::validateYield(YieldClause* yield) {
 
   for (auto col : cols) {
     if (ExpressionUtils::hasAny(col->expr(),
-                                {Expression::Kind::kAggregate,
-                                 Expression::Kind::kVertex,
-                                 Expression::Kind::kPathBuild})) {
+                                {Expression::Kind::kAggregate, Expression::Kind::kPathBuild})) {
       return Status::SemanticError("`%s' is not support in go sentence.", col->toString().c_str());
     }
-
-    std::string exprStr = col->expr()->toString();
-    if (exprStr == SRC_VERTEX) {
-      colTypeMap_[col->name()] = true;
-      col->setExpr(rewriteLabel2Vertex(col->expr()));
-      NG_RETURN_IF_ERROR(extractVertexProp(exprProps, true));
-    }
-    if (exprStr == DST_VERTEX) {
-      colTypeMap_[col->name()] = false;
-      col->setExpr(rewriteLabel2Vertex(col->expr()));
-      NG_RETURN_IF_ERROR(extractVertexProp(exprProps, false));
+    if (hasAnyStr(col->expr(), VERTEX)) {
+      return Status::SemanticError("`%s' is not support in go sentence.", col->toString().c_str());
     }
 
     col->setExpr(ExpressionUtils::rewriteLabelAttr2EdgeProp(col->expr()));
@@ -164,6 +154,14 @@ Status GoValidator::validateYield(YieldClause* yield) {
     auto* colExpr = col->expr();
     if (ExpressionUtils::hasAny(colExpr, {Expression::Kind::kEdge})) {
       extractEdgeProp(exprProps);
+    }
+    if (hasAnyStr(colExpr, SRC_VERTEX)) {
+      colTypeMap_[col->name()] = true;
+      NG_RETURN_IF_ERROR(extractVertexProp(exprProps, true));
+    }
+    if (hasAnyStr(colExpr, DST_VERTEX)) {
+      colTypeMap_[col->name()] = false;
+      NG_RETURN_IF_ERROR(extractVertexProp(exprProps, false));
     }
 
     auto typeStatus = deduceExprType(colExpr);
@@ -237,16 +235,18 @@ Expression* GoValidator::rewrite2VarProp(const Expression* expr) {
   return RewriteVisitor::transform(expr, matcher, rewriter);
 }
 
-Expression* GoValidator::rewriteLabel2Vertex(const Expression* expr) {
-  auto matcher = [this](const Expression* e) -> bool {
-    return e->toString() == SRC_VERTEX || e->toString() == DST_VERTEX;
-  };
-  auto rewriter = [this](const Expression* e) -> Expression* {
-    UNUSED(e);
-    return VertexExpression::make(qctx_->objPool());
+bool GoValidator::hasAnyStr(const Expression* self, const std::string& name) {
+  auto finder = [&name](const Expression* expr) -> bool {
+    if (expr->toString() == name) {
+      return true;
+    }
+    return false;
   };
 
-  return RewriteVisitor::transform(expr, matcher, rewriter);
+  FindVisitor visitor(finder);
+  const_cast<Expression*>(self)->accept(&visitor);
+  auto res = visitor.results();
+  return res.size() != 0;
 }
 
 Expression* GoValidator::rewriteVertex2VarProp(const Expression* expr) {

@@ -967,10 +967,16 @@ TEST_F(QueryValidatorTest, GoInvalid) {
     EXPECT_EQ(std::string(result.message()), "SemanticError: Invalid label identifiers: path");
   }
   {
-    std::string query = "GO FROM \"Tim\" OVER * YIELD id($$) as id, id($^) as src";
+    std::string query = "GO FROM \"Tim\" OVER * YIELD $$";
     auto result = checkResult(query);
     EXPECT_EQ(std::string(result.message()),
-              "SemanticError: `id(VERTEX) AS id' is not support in go sentence.");
+              "SyntaxError: please add alias when using `$$'. near `$$'");
+  }
+  {
+    std::string query = "GO FROM \"Tim\" OVER * YIELD $^";
+    auto result = checkResult(query);
+    EXPECT_EQ(std::string(result.message()),
+              "SyntaxError: please add alias when using `$^'. near `$^'");
   }
   {
     std::string query = "GO 1 TO 4 STEPS FROM \"Tim\" OVER * YIELD id(vertex) as id";

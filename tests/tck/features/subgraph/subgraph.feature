@@ -27,12 +27,12 @@ Feature: subgraph
       """
       GET SUBGRAPH WITH PROP FROM "Tim Duncan" YIELD vertices, edgesa
       """
-    Then a SyntaxError should be raised at runtime: please add alias when using vertices. near `vertices'
+    Then a SyntaxError should be raised at runtime: please add alias when using `vertices'. near `vertices'
     When executing query:
       """
       GET SUBGRAPH WITH PROP 0 STEPS FROM "Tim Duncan" YIELD edges
       """
-    Then a SyntaxError should be raised at runtime: please add alias when using edges. near `edges'
+    Then a SyntaxError should be raised at runtime: please add alias when using `edges'. near `edges'
     When executing query:
       """
       GO FROM "Tim Duncan" OVER like YIELD $$.player.age AS id | GET SUBGRAPH WITH PROP FROM $-.id

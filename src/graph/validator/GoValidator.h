@@ -41,11 +41,11 @@ class GoValidator final : public Validator {
 
   Status extractEdgeProp(ExpressionProps& exprProps);
 
-  Expression* rewriteLabel2Vertex(const Expression* expr);
-
   Expression* rewriteVertex2VarProp(const Expression* expr);
 
   Expression* rewriteEdge2VarProp(const Expression* expr);
+
+  bool hasAnyStr(const Expression* expr, const std::string& name);
 
  private:
   std::unique_ptr<GoContext> goCtx_;
@@ -53,7 +53,7 @@ class GoValidator final : public Validator {
   YieldColumns* inputPropCols_{nullptr};
   std::unordered_map<std::string, YieldColumn*> propExprColMap_;
 
-  // key : colName, value: bool (true: srcv, false: dstv)
+  // key : colName, value: bool (true: $^, false: $$)
   std::unordered_map<std::string, bool> colTypeMap_;
 };
 }  // namespace graph
