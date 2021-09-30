@@ -23,7 +23,7 @@ TEST_F(FindPathValidatorTest, invalidYield) {
         "FIND SHORTEST PATH  FROM \"Tim Duncan\" TO \"Tony Paker\" OVER * YIELD vertex";
     auto result = checkResult(query);
     EXPECT_EQ(std::string(result.message()),
-              "SyntaxError: please add alias when using vertex. near `vertex'");
+              "SyntaxError: please add alias when using `vertex'. near `vertex'");
   }
   {
     std::string query =
