@@ -83,22 +83,15 @@ class ColumnSpecification final {
  public:
   ColumnSpecification(std::string *name,
                       meta::cpp2::PropertyType type,
-                      ColumnProperties *properties = nullptr,
-                      int16_t typeLen = 0,
-                      meta::cpp2::GeoShape geoShape = meta::cpp2::GeoShape::ANY)
-      : name_(name),
-        type_(type),
-        properties_(DCHECK_NOTNULL(properties)),
-        typeLen_(typeLen),
-        geoShape_(geoShape) {}
+                      ColumnProperties *properties,
+                      int16_t typeLen = 0)
+      : name_(name), type_(type), properties_(DCHECK_NOTNULL(properties)), typeLen_(typeLen) {}
 
   meta::cpp2::PropertyType type() const { return type_; }
 
   const std::string *name() const { return name_.get(); }
 
   int16_t typeLen() const { return typeLen_; }
-
-  meta::cpp2::GeoShape geoShape() const { return geoShape_; }
 
   auto &properties() const { return properties_; }
 
@@ -107,9 +100,8 @@ class ColumnSpecification final {
  private:
   std::unique_ptr<std::string> name_;
   meta::cpp2::PropertyType type_;
-  std::unique_ptr<ColumnProperties> properties_;
-  int16_t typeLen_;
-  meta::cpp2::GeoShape geoShape_;
+  std::unique_ptr<ColumnProperties> properties_{nullptr};
+  int16_t typeLen_{0};
 };
 
 class ColumnSpecificationList final {

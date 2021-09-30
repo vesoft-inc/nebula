@@ -11,7 +11,6 @@ nebula_add_test(
     OBJECTS
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
     LIBRARIES
         gtest
 )
@@ -25,7 +24,6 @@ nebula_add_test(
     OBJECTS
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
     LIBRARIES
         gtest
 )
@@ -41,7 +39,6 @@ nebula_add_test(
         $<TARGET_OBJECTS:expression_obj>
         $<TARGET_OBJECTS:datatypes_obj>
         $<TARGET_OBJECTS:function_manager_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
         $<TARGET_OBJECTS:agg_function_manager_obj>
         $<TARGET_OBJECTS:time_utils_obj>
         $<TARGET_OBJECTS:time_obj>
@@ -62,7 +59,6 @@ nebula_add_test(
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:datatypes_obj>
         $<TARGET_OBJECTS:function_manager_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:time_utils_obj>
         $<TARGET_OBJECTS:fs_obj>
@@ -79,20 +75,6 @@ nebula_add_test(
     OBJECTS
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
-    LIBRARIES
-        gtest
-)
-
-nebula_add_test(
-    NAME
-        geography_test
-    SOURCES
-        GeographyTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
     LIBRARIES
         gtest
 )
@@ -106,7 +88,6 @@ nebula_add_test(
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:expression_obj>
         $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
         $<TARGET_OBJECTS:function_manager_obj>
         $<TARGET_OBJECTS:agg_function_manager_obj>
         $<TARGET_OBJECTS:time_utils_obj>
@@ -125,7 +106,6 @@ nebula_add_executable(
     OBJECTS
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
     LIBRARIES
         follybenchmark
         boost_regex
@@ -140,7 +120,6 @@ nebula_add_executable(
     OBJECTS
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
     LIBRARIES
         follybenchmark
         boost_regex

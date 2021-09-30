@@ -5,7 +5,6 @@ set(RAFTEX_TEST_LIBS
     $<TARGET_OBJECTS:raftex_thrift_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:datatypes_obj>
-    $<TARGET_OBJECTS:wkt_wkb_io_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:network_obj>

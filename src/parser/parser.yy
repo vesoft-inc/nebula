@@ -60,7 +60,6 @@ static constexpr size_t kCommentLengthLimit = 256;
     int64_t                                 intval;
     double                                  doubleval;
     std::string                            *strval;
-    nebula::meta::cpp2::GeoShape            geo_shape;
     nebula::meta::cpp2::ColumnTypeDef      *type;
     nebula::Expression                     *expr;
     nebula::Sentence                       *sentence;
@@ -156,7 +155,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 // Expression related memory will be managed by object pool
 %destructor {} <expr> <argument_list> <case_list> <expression_list> <map_item_list>
 %destructor {} <text_search_argument> <base_text_search_argument> <fuzzy_text_search_argument>
-%destructor {} <boolval> <intval> <doubleval> <type> <config_module> <integer_list> <list_host_type> <geo_shape>
+%destructor {} <boolval> <intval> <doubleval> <type> <config_module> <integer_list> <list_host_type>
 %destructor { delete $$; } <*>
 
 /* keywords */
@@ -201,7 +200,6 @@ static constexpr size_t kCommentLengthLimit = 256;
 %token KW_REDUCE
 %token KW_SESSIONS KW_SESSION
 %token KW_KILL KW_QUERY KW_QUERIES KW_TOP
-%token KW_GEOGRAPHY KW_POINT KW_LINESTRING KW_POLYGON
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -244,7 +242,6 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <expr> constant_expression
 %type <expr> query_unique_identifier_value
 %type <argument_list> argument_list opt_argument_list
-%type <geo_shape> geo_shape_type
 %type <type> type_spec
 %type <step_clause> step_clause
 %type <from_clause> from_clause
@@ -530,9 +527,6 @@ unreserved_keyword
     | KW_QUERY              { $$ = new std::string("query"); }
     | KW_KILL               { $$ = new std::string("kill"); }
     | KW_TOP                { $$ = new std::string("top"); }
-    | KW_POINT              { $$ = new std::string("point"); }
-    | KW_LINESTRING         { $$ = new std::string("linestring"); }
-    | KW_POLYGON            { $$ = new std::string("polygon"); }
     ;
 
 expression
@@ -857,11 +851,10 @@ predicate_name
 predicate_expression
     : predicate_name L_PAREN expression KW_IN expression KW_WHERE expression R_PAREN {
         if ($3->kind() != Expression::Kind::kLabel) {
-            delete $1;
             throw nebula::GraphParser::syntax_error(@3, "The loop variable must be a label in predicate functions");
         }
-        std::string innerVar = static_cast<const LabelExpression *>($3)->name();
-        auto *expr = PredicateExpression::make(qctx->objPool(), *$1, innerVar, $5, $7);  // TODO(jie) Use std::unique_ptr<std::string>
+        auto &innerVar = static_cast<const LabelExpression *>($3)->name();
+        auto *expr = PredicateExpression::make(qctx->objPool(), *$1, innerVar, $5, $7);
         nebula::graph::ParserUtil::rewritePred(qctx, expr, innerVar);
         $$ = expr;
         delete $1;
@@ -1092,18 +1085,6 @@ argument_list
     }
     ;
 
-geo_shape_type
-    : KW_POINT {
-        $$ = meta::cpp2::GeoShape::POINT;
-    }
-    | KW_LINESTRING {
-        $$ = meta::cpp2::GeoShape::LINESTRING;
-    }
-    | KW_POLYGON {
-        $$ = meta::cpp2::GeoShape::POLYGON;
-    }
-    ;
-
 type_spec
     : KW_BOOL {
         $$ = new meta::cpp2::ColumnTypeDef();
@@ -1164,16 +1145,6 @@ type_spec
     | KW_DATETIME {
         $$ = new meta::cpp2::ColumnTypeDef();
         $$->set_type(meta::cpp2::PropertyType::DATETIME);
-    }
-    | KW_GEOGRAPHY {
-        $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::GEOGRAPHY);
-        $$->set_geo_shape(meta::cpp2::GeoShape::ANY);
-    }
-    | KW_GEOGRAPHY L_PAREN geo_shape_type R_PAREN {
-        $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::GEOGRAPHY);
-        $$->set_geo_shape($3);
     }
     ;
 
@@ -2341,11 +2312,11 @@ column_spec_list
 
 column_spec
     : name_label type_spec {
-        $$ = new ColumnSpecification($1, $2->type, new ColumnProperties(), $2->type_length_ref().value_or(0), $2->geo_shape_ref().value_or(meta::cpp2::GeoShape::ANY));
+        $$ = new ColumnSpecification($1, $2->type, new ColumnProperties(), $2->type_length_ref().value_or(0));
         delete $2;
     }
     | name_label type_spec column_properties {
-        $$ = new ColumnSpecification($1, $2->type, $3, $2->type_length_ref().value_or(0), $2->geo_shape_ref().value_or(meta::cpp2::GeoShape::ANY));
+        $$ = new ColumnSpecification($1, $2->type, $3, $2->type_length_ref().value_or(0));
         delete $2;
     }
     ;

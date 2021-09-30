@@ -126,9 +126,6 @@ RowWriterV2::RowWriterV2(RowReader& reader) : RowWriterV2(reader.getSchema()) {
       case Value::Type::DATETIME:
         set(i, v.moveDateTime());
         break;
-      case Value::Type::GEOGRAPHY:
-        // TODO(jie)
-        break;
       default:
         LOG(FATAL) << "Invalid data: " << v << ", type: " << v.typeName();
     }
@@ -206,9 +203,6 @@ WriteResult RowWriterV2::setValue(ssize_t index, const Value& val) noexcept {
       return write(index, val.getTime());
     case Value::Type::DATETIME:
       return write(index, val.getDateTime());
-    case Value::Type::GEOGRAPHY:
-      // TODO(jie)
-      return WriteResult::TYPE_MISMATCH;
     default:
       return WriteResult::TYPE_MISMATCH;
   }
@@ -643,7 +637,6 @@ WriteResult RowWriterV2::write(ssize_t index, folly::StringPiece v) noexcept {
   auto field = schema_->field(index);
   auto offset = headerLen_ + numNullBytes_ + field->offset();
   switch (field->type()) {
-    case meta::cpp2::PropertyType::GEOGRAPHY:  // write wkb
     case meta::cpp2::PropertyType::STRING: {
       if (isSet_[index]) {
         // The string value has already been set, we need to turn it
@@ -800,9 +793,6 @@ WriteResult RowWriterV2::checkUnsetFields() noexcept {
             break;
           case Value::Type::DATETIME:
             r = write(i, defVal.getDateTime());
-            break;
-          case Value::Type::GEOGRAPHY:
-            // TODO(jie)
             break;
           default:
             LOG(FATAL) << "Unsupported default value type: " << defVal.typeName()

@@ -10,7 +10,6 @@ nebula_add_test(
         FunctionManagerTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:function_manager_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:datatypes_obj>
         $<TARGET_OBJECTS:time_utils_obj>
@@ -30,7 +29,6 @@ nebula_add_test(
         $<TARGET_OBJECTS:agg_function_manager_obj>
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
     LIBRARIES
         gtest
         gtest_main
