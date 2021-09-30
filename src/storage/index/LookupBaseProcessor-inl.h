@@ -170,7 +170,7 @@ StatusOr<StoragePlan<IndexID>> LookupBaseProcessor<REQ, RESP>::buildPlan(
   StoragePlan<IndexID> plan;
   // TODO(sky) : Limit is not supported yet for de-dup node.
   //             Related to paging scan, the de-dup execution plan needs to be refactored
-  auto deDup = std::make_unique<DeDupNode<IndexID>>(result, deDupColPos_);
+  auto deDup = std::make_unique<DeDupNode<IndexID>>(context_.get(), result, deDupColPos_);
   int32_t filterId = 0;
   std::unique_ptr<IndexOutputNode<IndexID>> out;
   auto pool = &planContext_->objPool_;

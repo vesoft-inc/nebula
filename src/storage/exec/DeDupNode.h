@@ -20,8 +20,8 @@ class DeDupNode : public IterateNode<T> {
  public:
   using RelNode<T>::doExecute;
 
-  DeDupNode(nebula::DataSet* resultSet, const std::vector<size_t>& pos)
-      : IterateNode<T>(nullptr, "DedupNode"), resultSet_(resultSet), pos_(pos) {}
+  DeDupNode(RuntimeContext* context, nebula::DataSet* resultSet, const std::vector<size_t>& pos)
+      : IterateNode<T>(context, "DedupNode"), resultSet_(resultSet), pos_(pos) {}
 
   nebula::cpp2::ErrorCode doExecute(PartitionID partId) override {
     auto ret = RelNode<T>::doExecute(partId);
