@@ -4,12 +4,12 @@
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 Feature: Verify client version
 
-    Scenario: compatible version
-      Given nothing
-      When connecting the servers with a compatible client version
-      Then the connection should be established
+  Scenario: compatible version
+    Given nothing
+    When connecting the servers with a compatible client version
+    Then the connection should be established
 
-    Scenario: incompactible version
-      Given nothing
-      When connecting the servers with a client version of 100.0.0
-      Then the connection should be rejected
+  Scenario: incompactible version
+    Given nothing
+    When connecting the servers with a client version of 100.0.0
+    Then the connection should be rejected
