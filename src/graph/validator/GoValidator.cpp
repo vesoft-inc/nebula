@@ -6,6 +6,8 @@
 
 #include "graph/validator/GoValidator.h"
 
+#include <unordered_set>
+
 #include "common/base/Base.h"
 #include "common/expression/VariableExpression.h"
 #include "graph/planner/plan/Logic.h"
@@ -266,27 +268,28 @@ Status GoValidator::buildColumns() {
     goCtx_->filter = rewrite2VarProp(newFilter);
   }
 
-  std::unordered_map<std::string, bool> existExpr;
+  std::unordered_set<std::string> existExprs;
   auto* newYieldExpr = pool->add(new YieldColumns());
   for (auto* col : goCtx_->yieldExpr->columns()) {
     auto* vertexExpr = ExpressionUtils::findAny(col->expr(), {Expression::Kind::kVertex});
     if (vertexExpr != nullptr) {
       const auto& colName = static_cast<const VertexExpression*>(vertexExpr)->name();
-      if (colName == SRC_VERTEX && existExpr.count(SRC_VERTEX) == 0) {
-        goCtx_->srcEdgePropsExpr->addColumn(
-            new YieldColumn(VertexExpression::make(pool), SRC_VERTEX));
-        existExpr[SRC_VERTEX] = true;
-      }
-      if (colName == DST_VERTEX && existExpr.count(DST_VERTEX) == 0) {
-        goCtx_->dstPropsExpr->addColumn(new YieldColumn(VertexExpression::make(pool), DST_VERTEX));
-        existExpr[DST_VERTEX] = true;
+      if (existExprs.count(colName) == 0) {
+        if (colName == SRC_VERTEX) {
+          goCtx_->srcEdgePropsExpr->addColumn(
+              new YieldColumn(VertexExpression::make(pool), colName));
+          existExprs.emplace(colName);
+        } else if (colName == DST_VERTEX) {
+          goCtx_->dstPropsExpr->addColumn(new YieldColumn(VertexExpression::make(pool), colName));
+          existExprs.emplace(colName);
+        }
       }
       newYieldExpr->addColumn(col->clone().release());
     } else if (ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kEdge})) {
-      if (existExpr.count(COLNAME_EDGE) == 0) {
+      if (existExprs.count(COLNAME_EDGE) == 0) {
         goCtx_->srcEdgePropsExpr->addColumn(
             new YieldColumn(EdgeExpression::make(pool), COLNAME_EDGE));
-        existExpr[COLNAME_EDGE] = true;
+        existExprs.emplace(COLNAME_EDGE);
       }
       newYieldExpr->addColumn(col->clone().release());
     } else {

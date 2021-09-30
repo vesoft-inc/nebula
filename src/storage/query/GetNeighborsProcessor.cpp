@@ -178,32 +178,32 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetNeighborsProce
       });
 }
 
+/**
+ * The StoragePlan looks like this:
+ *              +--------+---------+
+ *              | GetNeighborsNode |
+ *              +--------+---------+
+ *                       |
+ *              +--------+---------+
+ *              |   AggregateNode  |
+ *              +--------+---------+
+ *                       |
+ *              +--------+---------+
+ *              |    FilterNode    |
+ *              +--------+---------+
+ *                       |
+ *              +--------+---------+
+ *          +-->+   HashJoinNode   +<----+
+ *          |   +------------------+     |
+ * +--------+---------+        +---------+--------+
+ * |     TagNodes     |        |     EdgeNodes    |
+ * +------------------+        +------------------+
+ */
 StoragePlan<VertexID> GetNeighborsProcessor::buildPlan(RuntimeContext* context,
                                                        StorageExpressionContext* expCtx,
                                                        nebula::DataSet* result,
                                                        int64_t limit,
                                                        bool random) {
-  /*
-  The StoragePlan looks like this:
-               +--------+---------+
-               | GetNeighborsNode |
-               +--------+---------+
-                        |
-               +--------+---------+
-               |   AggregateNode  |
-               +--------+---------+
-                        |
-               +--------+---------+
-               |    FilterNode    |
-               +--------+---------+
-                        |
-               +--------+---------+
-           +-->+   HashJoinNode   +<----+
-           |   +------------------+     |
-  +--------+---------+        +---------+--------+
-  |     TagNodes     |        |     EdgeNodes    |
-  +------------------+        +------------------+
-  */
   StoragePlan<VertexID> plan;
   std::vector<TagNode*> tags;
   for (const auto& tc : tagContext_.propContexts_) {
@@ -218,8 +218,7 @@ StoragePlan<VertexID> GetNeighborsProcessor::buildPlan(RuntimeContext* context,
     plan.addNode(std::move(edge));
   }
 
-  auto hashJoin =
-      std::make_unique<HashJoinNode>(context, tags, edges, &tagContext_, &edgeContext_, expCtx);
+  auto hashJoin = std::make_unique<HashJoinNode>(context, tags, edges, &edgeContext_, expCtx);
   for (auto* tag : tags) {
     hashJoin->addDependency(tag);
   }
