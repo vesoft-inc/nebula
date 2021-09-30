@@ -8,6 +8,7 @@
 
 DEFINE_string(cert_path, "", "Path to cert pem.");
 DEFINE_string(key_path, "", "Path to cert key.");
+DEFINE_string(password_path, "", "Path to password.");
 DEFINE_string(ca_path, "", "Path to trusted CA file.");
 DEFINE_bool(enable_ssl, false, "Whether to enable ssl.");
 DEFINE_bool(enable_graph_ssl, false, "Whether to enable ssl of graph server.");
@@ -17,7 +18,7 @@ namespace nebula {
 
 std::shared_ptr<wangle::SSLContextConfig> sslContextConfig() {
   auto sslCfg = std::make_shared<wangle::SSLContextConfig>();
-  sslCfg->addCertificate(FLAGS_cert_path, FLAGS_key_path, "");
+  sslCfg->addCertificate(FLAGS_cert_path, FLAGS_key_path, FLAGS_password_path);
   sslCfg->isDefault = true;
   return sslCfg;
 }

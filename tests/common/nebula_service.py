@@ -65,6 +65,8 @@ class NebulaService(object):
                     resources_dir)
         shutil.copy(self.src_dir + '/tests/cert/test.ca.pem',
                     resources_dir)
+        shutil.copy(self.src_dir + '/tests/cert/test.ca.password',
+                    resources_dir)
         shutil.copy(self.src_dir + '/tests/cert/test.derive.key',
                     resources_dir)
         shutil.copy(self.src_dir + '/tests/cert/test.derive.crt',
@@ -86,6 +88,7 @@ class NebulaService(object):
         else:
             params.append('--cert_path=share/resources/test.ca.pem')
             params.append('--key_path=share/resources/test.ca.key')
+            params.append('--password_path=share/resources/test.ca.password')
             
         if name == 'graphd':
             params.append('--local_config=false')
