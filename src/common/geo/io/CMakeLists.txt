@@ -11,7 +11,7 @@ endif()
 bison_target(Parser wkt/wkt_parser.yy ${CMAKE_CURRENT_BINARY_DIR}/wkt/WKTParser.cpp COMPILE_FLAGS ${bison_flags})
 flex_target(Scanner wkt/wkt_scanner.lex ${CMAKE_CURRENT_BINARY_DIR}/wkt/WKTScanner.cpp)
 
-add_custom_target(wkt_wkb_io_target DEPENDS ${FLEX_Scanner_OUTPUTS} ${BISON_Parser_OUTPUTS})
+add_custom_target(wkt_parser_target DEPENDS ${FLEX_Scanner_OUTPUTS} ${BISON_Parser_OUTPUTS})
 
 add_flex_bison_dependency(Scanner Parser)
 
