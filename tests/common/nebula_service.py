@@ -86,6 +86,7 @@ class NebulaService(object):
         else:
             params.append('--cert_path=share/resources/test.ca.pem')
             params.append('--key_path=share/resources/test.ca.key')
+            params.append('--password_path=share/resources/test.ca.password')
             
         if name == 'graphd':
             params.append('--local_config=false')
