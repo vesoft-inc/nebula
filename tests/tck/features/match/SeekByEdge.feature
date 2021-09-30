@@ -1470,3 +1470,36 @@ Feature: Match seek by edge
       RETURN p1.name, id(p2)
       """
     Then a SemanticError should be raised at runtime: Can't solve the start vids from the sentence: MATCH (p1)-[:teammate]->(p2) RETURN p1.name,id(p2)
+
+  Scenario Outline: seek by edge in a single edge type space
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 9                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(30) |
+      | charset        | utf8             |
+      | collate        | utf8_bin         |
+    And having executed:
+      """
+      CREATE TAG tag_1(col1 string, col2 int, col3 double, col4 timestamp);
+      CREATE EDGE edge_1(col1 string, col2 int, col3 double, col4 timestamp);
+      """
+    And wait 5 seconds
+    When executing query:
+      """
+      MATCH (p1)-[]->(p2)
+      RETURN p1.name, id(p2)
+      """
+    Then a SemanticError should be raised at runtime: Can't solve the start vids from the sentence: MATCH (p1)-->(p2) RETURN p1.name,id(p2)
+    When executing query:
+      """
+      MATCH (p1)-[b]->(p2)
+      RETURN p1.name, id(p2)
+      """
+    Then a SemanticError should be raised at runtime: Can't solve the start vids from the sentence: MATCH (p1)-[b]->(p2) RETURN p1.name,id(p2)
+    When executing query:
+      """
+      MATCH (p1)-[:edge_1]->(p2)
+      RETURN p1.name, id(p2)
+      """
+    Then a SemanticError should be raised at runtime: Can't solve the start vids from the sentence: MATCH (p1)-[:edge_1]->(p2) RETURN p1.name,id(p2)
