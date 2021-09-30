@@ -14,7 +14,7 @@
 namespace nebula {
 namespace storage {
 
-// DedupNode will used dedup the result set based on the given fields
+// DedupNode will be used to dedup the resultset based on the given fields
 template <typename T>
 class DeDupNode : public IterateNode<T> {
  public:
