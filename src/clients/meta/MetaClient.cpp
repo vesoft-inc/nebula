@@ -3581,7 +3581,7 @@ Status MetaClient::verifyVersion() {
   getResponse(
       std::move(req),
       [](auto client, auto request) { return client->future_verifyClientVersion(request); },
-      [](cpp2::VerifyClientVersionResp&& resp) -> decltype(auto) { return resp; },
+      [](cpp2::VerifyClientVersionResp&& resp) { return std::move(resp); },
       std::move(promise));
 
   auto respStatus = std::move(future).get();
