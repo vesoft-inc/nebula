@@ -17,7 +17,9 @@ BENCHMARK(Popen) {
     std::cerr << ::strerror(errno);
   }
   uint64_t value = 0;
-  fscanf(pipe, "%lu", &value);
+  if (fscanf(pipe, "%lu", &value) != 2) {
+    std::cerr << ::strerror(errno);
+  }
   if (pclose(pipe) < 0) {
     std::cerr << ::strerror(errno);
   }
