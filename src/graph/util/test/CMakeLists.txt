@@ -44,6 +44,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:parser_obj>
         $<TARGET_OBJECTS:graph_context_obj>
         $<TARGET_OBJECTS:validator_obj>
+        $<TARGET_OBJECTS:version_obj>
     LIBRARIES
         gtest
         gtest_main

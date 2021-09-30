@@ -16,12 +16,15 @@
 #include "common/meta/GflagsManager.h"
 #include "common/meta/ServerBasedSchemaManager.h"
 #include "common/network/NetworkUtils.h"
+#include "interface/gen-cpp2/common_constants.h"
 #include "meta/MetaServiceUtils.h"
 #include "meta/test/TestUtils.h"
 #include "mock/MockCluster.h"
 
 DECLARE_int32(heartbeat_interval_secs);
 DECLARE_string(rocksdb_db_options);
+DECLARE_bool(enable_client_white_list);
+DECLARE_string(client_white_list);
 
 namespace nebula {
 namespace meta {
@@ -2078,6 +2081,40 @@ TEST(MetaClientTest, ListenerTest) {
     auto listeners = listRet.value();
     ASSERT_EQ(0, listeners.size());
   }
+}
+
+TEST(MetaClientTest, VerifyClientTest) {
+  FLAGS_heartbeat_interval_secs = 1;
+  fs::TempDir rootPath("/tmp/VerifyClientTest.XXXXXX");
+
+  mock::MockCluster cluster;
+  cluster.startMeta(rootPath.path());
+  cluster.initMetaClient();
+  auto* client = cluster.metaClient_.get();
+
+  FLAGS_enable_client_white_list = true;
+  {
+    FLAGS_client_white_list = nebula::cpp2::common_constants::version();
+    auto status = client->verifyVersion();
+    EXPECT_TRUE(status.ok());
+  }
+  {
+    FLAGS_client_white_list = "";
+    auto status = client->verifyVersion();
+    EXPECT_FALSE(status.ok());
+  }
+  {
+    FLAGS_client_white_list = "1.0.0:1.2.0:";
+    auto status = client->verifyVersion();
+    EXPECT_FALSE(status.ok());
+  }
+  {
+    FLAGS_enable_client_white_list = false;
+    FLAGS_client_white_list = "1.0.0:1.2.0:";
+    auto status = client->verifyVersion();
+    EXPECT_TRUE(status.ok());
+  }
+  FLAGS_enable_client_white_list = false;
 }
 
 TEST(MetaClientTest, RocksdbOptionsTest) {

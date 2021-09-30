@@ -6,6 +6,8 @@
 
 #include "graph/service/GraphFlags.h"
 
+#include "version/Version.h"
+
 DEFINE_int32(port, 3699, "Nebula Graph daemon's listen port");
 DEFINE_int32(client_idle_timeout_secs,
              0,
@@ -65,3 +67,8 @@ DEFINE_bool(disable_octal_escape_char,
             " in next version to ensure compatibility with cypher.");
 
 DEFINE_bool(enable_experimental_feature, false, "Whether to enable experimental feature");
+
+DEFINE_bool(enable_client_white_list, true, "Turn on/off the client white list.");
+DEFINE_string(client_white_list,
+              nebula::getOriginVersion() + ":2.5.0:2.5.1:2.6.0",
+              "A white list for different client versions, seperate with colon.");
