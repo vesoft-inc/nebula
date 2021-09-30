@@ -58,7 +58,7 @@ jobs:
     container:
       image: vesoft/nebula-dev:${{ matrix.os }}
       volumes:
-        - ${{ env.CCACHE_DIR }}:${{ env.CCACHE_DIR }}
+        - $CCACHE_DIR:$CCACHE_DIR
       options: --cap-add=SYS_PTRACE
     steps:
       - uses: webiny/action-post-run@2.0.1
