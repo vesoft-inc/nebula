@@ -68,7 +68,7 @@ class TransLeaderProcessor : public BaseProcessor<cpp2::AdminExecResp> {
       } else if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
         // To avoid dead lock, we use another ioThreadPool to check the
         // leader information.
-        folly::via(folly::getIOExecutor().get(), [this, part, spaceId, partId] {
+        folly::via(folly::getGlobalIOExecutor().get(), [this, part, spaceId, partId] {
           int retry = FLAGS_waiting_new_leader_retry_times;
           while (retry-- > 0) {
             auto leaderRet = env_->kvstore_->partLeader(spaceId, partId);
@@ -336,7 +336,7 @@ class GetLeaderProcessor : public BaseProcessor<cpp2::GetLeaderPartsResp> {
         leaderIds[spaceId].emplace_back(partLeader.get_part_id());
       }
     }
-    resp_.set_leader_parts(std::move(leaderIds));
+    resp_.leader_parts_ref() = std::move(leaderIds);
     this->onFinished();
   }
 

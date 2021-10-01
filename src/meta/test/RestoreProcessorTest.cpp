@@ -38,18 +38,18 @@ TEST(RestoreProcessorTest, RestoreTest) {
   cpp2::SpaceDesc properties;
   GraphSpaceID id = 1;
   std::string groupName = "test_group";
-  properties.set_space_name("test_space");
+  properties.space_name_ref() = "test_space";
   int partNum = 10;
-  properties.set_partition_num(partNum);
-  properties.set_replica_factor(3);
-  properties.set_group_name(groupName);
+  properties.partition_num_ref() = partNum;
+  properties.replica_factor_ref() = 3;
+  properties.group_name_ref() = groupName;
 
   cpp2::SpaceDesc properties2;
   GraphSpaceID id2 = 2;
-  properties2.set_space_name("test_space2");
-  properties2.set_partition_num(partNum);
-  properties2.set_replica_factor(3);
-  properties2.set_group_name(groupName);
+  properties2.space_name_ref() = "test_space2";
+  properties2.partition_num_ref() = partNum;
+  properties2.replica_factor_ref() = 3;
+  properties2.group_name_ref() = groupName;
 
   auto spaceVal = MetaKeyUtils::spaceVal(properties);
   std::vector<nebula::kvstore::KV> data;
@@ -121,7 +121,7 @@ TEST(RestoreProcessorTest, RestoreTest) {
       return false;
     });
     ASSERT_EQ(it, files.cend());
-    req.set_files(std::move(files));
+    req.files_ref() = std::move(files);
     std::vector<cpp2::HostPair> hostPairs;
     HostAddr host4("127.0.0.4", 3360);
     HostAddr host5("127.0.0.5", 3360);
@@ -133,7 +133,7 @@ TEST(RestoreProcessorTest, RestoreTest) {
       hostPairs.emplace_back(apache::thrift::FragileConstructor(), hm.first, hm.second);
     }
 
-    req.set_hosts(std::move(hostPairs));
+    req.hosts_ref() = std::move(hostPairs);
     fs::TempDir restoreTootPath("/tmp/RestoreTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kvRestore(MockCluster::initMetaKV(restoreTootPath.path()));
     std::vector<nebula::kvstore::KV> restoreData;
@@ -263,18 +263,18 @@ TEST(RestoreProcessorTest, RestoreFullTest) {
   cpp2::SpaceDesc properties;
   GraphSpaceID id = 1;
   std::string groupName = "test_group";
-  properties.set_space_name("test_space");
+  properties.space_name_ref() = "test_space";
   int partNum = 10;
-  properties.set_partition_num(partNum);
-  properties.set_replica_factor(3);
-  properties.set_group_name(groupName);
+  properties.partition_num_ref() = partNum;
+  properties.replica_factor_ref() = 3;
+  properties.group_name_ref() = groupName;
 
   cpp2::SpaceDesc properties2;
   GraphSpaceID id2 = 2;
-  properties2.set_space_name("test_space2");
-  properties2.set_partition_num(partNum);
-  properties2.set_replica_factor(3);
-  properties2.set_group_name(groupName);
+  properties2.space_name_ref() = "test_space2";
+  properties2.partition_num_ref() = partNum;
+  properties2.replica_factor_ref() = 3;
+  properties2.group_name_ref() = groupName;
 
   auto spaceVal = MetaKeyUtils::spaceVal(properties);
   std::vector<nebula::kvstore::KV> data;
@@ -336,7 +336,7 @@ TEST(RestoreProcessorTest, RestoreFullTest) {
       return false;
     });
     ASSERT_EQ(it, files.cend());
-    req.set_files(std::move(files));
+    req.files_ref() = std::move(files);
     std::vector<cpp2::HostPair> hostPairs;
     HostAddr host4("127.0.0.4", 3360);
     HostAddr host5("127.0.0.5", 3360);
@@ -348,7 +348,7 @@ TEST(RestoreProcessorTest, RestoreFullTest) {
       hostPairs.emplace_back(apache::thrift::FragileConstructor(), hm.first, hm.second);
     }
 
-    req.set_hosts(std::move(hostPairs));
+    req.hosts_ref() = std::move(hostPairs);
     fs::TempDir restoreTootPath("/tmp/RestoreFullTest.XXXXXX");
     std::unique_ptr<kvstore::KVStore> kvRestore(MockCluster::initMetaKV(restoreTootPath.path()));
     std::vector<nebula::kvstore::KV> restoreData;

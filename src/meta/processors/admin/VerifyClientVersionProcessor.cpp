@@ -19,13 +19,13 @@ void VerifyClientVersionProcessor::process(const cpp2::VerifyClientVersionReq& r
   folly::splitTo<std::string>(
       ":", FLAGS_client_white_list, std::inserter(whiteList, whiteList.begin()));
   if (FLAGS_enable_client_white_list && whiteList.find(req.get_version()) == whiteList.end()) {
-    resp_.set_code(nebula::cpp2::ErrorCode::E_CLIENT_SERVER_INCOMPATIBLE);
-    resp_.set_error_msg(folly::stringPrintf(
+    resp_.code_ref() = nebula::cpp2::ErrorCode::E_CLIENT_SERVER_INCOMPATIBLE;
+    resp_.error_msg_ref() = folly::stringPrintf(
         "Meta client version(%s) is not accepted, current meta client white list: %s.",
         req.get_version().c_str(),
-        FLAGS_client_white_list.c_str()));
+        FLAGS_client_white_list.c_str());
   } else {
-    resp_.set_code(nebula::cpp2::ErrorCode::SUCCEEDED);
+    resp_.code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
   }
   onFinished();
 }

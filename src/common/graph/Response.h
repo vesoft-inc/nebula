@@ -241,6 +241,9 @@ struct AuthResponse {
 };
 
 struct ProfilingStats {
+  ProfilingStats() = default;
+  ProfilingStats(ProfilingStats&&) = default;
+
   void __clear() {
     rows = 0;
     execDurationInUs = 0;
@@ -249,6 +252,14 @@ struct ProfilingStats {
   }
 
   void clear() { __clear(); }
+
+  auto& operator=(ProfilingStats&& rhs) {
+    this->rows = rhs.rows;
+    this->execDurationInUs = rhs.execDurationInUs;
+    this->totalDurationInUs = rhs.totalDurationInUs;
+    this->otherStats = std::move(rhs.otherStats);
+    return *this;
+  }
 
   bool operator==(const ProfilingStats &rhs) const {
     if (rows != rhs.rows) {
@@ -292,6 +303,12 @@ struct PlanNodeBranchInfo {
 
   void clear() { __clear(); }
 
+  auto& operator=(const PlanNodeBranchInfo& rhs) {
+    this->isDoBranch = rhs.isDoBranch;
+    this->conditionNodeId = rhs.conditionNodeId;
+    return *this;
+  }
+
   bool operator==(const PlanNodeBranchInfo &rhs) const {
     return isDoBranch == rhs.isDoBranch && conditionNodeId == rhs.conditionNodeId;
   }
@@ -330,6 +347,9 @@ struct Pair {
 };
 
 struct PlanNodeDescription {
+  PlanNodeDescription() = default;
+  PlanNodeDescription(PlanNodeDescription&&) = default;
+
   void __clear() {
     name.clear();
     id = -1;
@@ -341,6 +361,17 @@ struct PlanNodeDescription {
   }
 
   void clear() { __clear(); }
+
+  auto& operator=(PlanNodeDescription&& rhs) {
+    this->name = std::move(rhs.name);
+    this->id = rhs.id;
+    this->outputVar = std::move(rhs.outputVar);
+    this->description = std::move(rhs.description);
+    this->profiles = std::move(rhs.profiles);
+    this->branchInfo = std::move(rhs.branchInfo);
+    this->dependencies = std::move(rhs.dependencies);
+    return *this;
+  }
 
   bool operator==(const PlanNodeDescription &rhs) const;
 
@@ -383,6 +414,9 @@ struct PlanNodeDescription {
 };
 
 struct PlanDescription {
+  PlanDescription() = default;
+  PlanDescription(PlanDescription&& rhs) = default;
+
   void __clear() {
     planNodeDescs.clear();
     nodeIndexMap.clear();
@@ -391,6 +425,14 @@ struct PlanDescription {
   }
 
   void clear() { __clear(); }
+
+  auto& operator=(PlanDescription&& rhs) {
+    this->planNodeDescs = std::move(rhs.planNodeDescs);
+    this->nodeIndexMap = std::move(rhs.nodeIndexMap);
+    this->format = std::move(rhs.format);
+    this->optimize_time_in_us = rhs.optimize_time_in_us;
+    return *this;
+  }
 
   bool operator==(const PlanDescription &rhs) const {
     return planNodeDescs == rhs.planNodeDescs && nodeIndexMap == rhs.nodeIndexMap &&

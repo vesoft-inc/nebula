@@ -116,7 +116,6 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L ${NEBULA_THIRDPARTY_ROO
 # All thrift libraries
 set(THRIFT_LIBRARIES
     thriftcpp2
-    rocketupgrade
     async
     thriftprotocol
     transport

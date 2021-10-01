@@ -47,9 +47,9 @@ void ChainAddEdgesGroupProcessor::shuffleRequest(const cpp2::AddEdgesRequest& re
 
   auto genNewReq = [&](auto& reqIn) {
     cpp2::AddEdgesRequest ret;
-    ret.set_space_id(reqIn.get_space_id());
-    ret.set_prop_names(reqIn.get_prop_names());
-    ret.set_if_not_exists(reqIn.get_if_not_exists());
+    ret.space_id_ref() = reqIn.get_space_id();
+    ret.prop_names_ref() = reqIn.get_prop_names();
+    ret.if_not_exists_ref() = reqIn.get_if_not_exists();
     return ret;
   };
 

@@ -30,13 +30,13 @@ class ValidatorTestBase : public ::testing::Test {
  protected:
   void SetUp() override {
     meta::cpp2::Session session;
-    session.set_session_id(0);
-    session.set_user_name("root");
+    session.session_id_ref() = 0;
+    session.user_name_ref() = "root";
     session_ = ClientSession::create(std::move(session), nullptr);
     SpaceInfo spaceInfo;
     spaceInfo.name = "test_space";
     spaceInfo.id = 1;
-    spaceInfo.spaceDesc.set_space_name("test_space");
+    spaceInfo.spaceDesc.space_name_ref() = "test_space";
     session_->setSpace(std::move(spaceInfo));
     schemaMng_ = CHECK_NOTNULL(MockSchemaManager::makeUnique());
     indexMng_ = CHECK_NOTNULL(MockIndexManager::makeUnique());

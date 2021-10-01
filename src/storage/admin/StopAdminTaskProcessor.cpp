@@ -17,7 +17,7 @@ void StopAdminTaskProcessor::process(const cpp2::StopAdminTaskRequest& req) {
 
   if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
     cpp2::PartitionResult thriftRet;
-    thriftRet.set_code(rc);
+    thriftRet.code_ref() = rc;
     codes_.emplace_back(std::move(thriftRet));
   }
 

@@ -39,7 +39,7 @@ void DropTagIndexProcessor::process(const cpp2::DropTagIndexReq& req) {
   keys.emplace_back(MetaKeyUtils::indexKey(spaceID, tagIndexID));
 
   LOG(INFO) << "Drop Tag Index " << indexName;
-  resp_.set_id(to(tagIndexID, EntryType::INDEX));
+  resp_.id_ref() = to(tagIndexID, EntryType::INDEX);
   doSyncMultiRemoveAndUpdate(std::move(keys));
 }
 

@@ -233,7 +233,7 @@ class ListenerBasicTest : public ::testing::TestWithParam<std::tuple<int32_t, in
 
   std::shared_ptr<apache::thrift::concurrency::PriorityThreadManager> getWorkers() {
     auto worker =
-        apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(1, true);
+        apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(1);
     worker->setNamePrefix("executor");
     worker->start();
     return worker;

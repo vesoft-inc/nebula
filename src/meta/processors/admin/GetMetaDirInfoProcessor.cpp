@@ -36,16 +36,16 @@ void GetMetaDirInfoProcessor::process(const cpp2::GetMetaDirInfoReq& req) {
                    }
                  });
   if (failed) {
-    resp_.set_code(nebula::cpp2::ErrorCode::E_GET_META_DIR_FAILURE);
+    resp_.code_ref() = nebula::cpp2::ErrorCode::E_GET_META_DIR_FAILURE;
     onFinished();
     return;
   }
   nebula::cpp2::DirInfo dir;
-  dir.set_data(realpaths);
-  dir.set_root(boost::filesystem::current_path().string());
-  resp_.set_dir(std::move(dir));
+  dir.data_ref() = realpaths;
+  dir.root_ref() = boost::filesystem::current_path().string();
+  resp_.dir_ref() = std::move(dir);
 
-  resp_.set_code(nebula::cpp2::ErrorCode::SUCCEEDED);
+  resp_.code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
   onFinished();
 }
 }  // namespace meta

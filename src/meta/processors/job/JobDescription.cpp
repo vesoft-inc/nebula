@@ -131,12 +131,12 @@ JobDescription::decodeValV1(const folly::StringPiece& rawVal) {
 
 cpp2::JobDesc JobDescription::toJobDesc() {
   cpp2::JobDesc ret;
-  ret.set_id(id_);
-  ret.set_cmd(cmd_);
-  ret.set_paras(paras_);
-  ret.set_status(status_);
-  ret.set_start_time(startTime_);
-  ret.set_stop_time(stopTime_);
+  ret.id_ref() = id_;
+  ret.cmd_ref() = cmd_;
+  ret.paras_ref() = paras_;
+  ret.status_ref() = status_;
+  ret.start_time_ref() = startTime_;
+  ret.stop_time_ref() = stopTime_;
   return ret;
 }
 

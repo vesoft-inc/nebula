@@ -210,10 +210,10 @@ TEST(IndexKeyUtilsTest, nullableValue) {
   auto nullCol = [](const std::string& name, const PropertyType type) {
     meta::cpp2::ColumnDef col;
     col.name = name;
-    col.type.set_type(type);
-    col.set_nullable(true);
+    col.type.type_ref() = type;
+    col.nullable_ref() = true;
     if (type == PropertyType::FIXED_STRING) {
-      col.type.set_type_length(10);
+      col.type.type_length_ref() = 10;
     }
     return col;
   };
@@ -368,44 +368,44 @@ TEST(IndexKeyUtilsTest, getValueFromIndexKeyTest) {
   size_t indexValueSize = 0;
   {
     meta::cpp2::ColumnDef col;
-    col.set_name("col_bool");
-    col.type.set_type(PropertyType::BOOL);
+    col.name_ref() = "col_bool";
+    col.type.type_ref() = PropertyType::BOOL;
     cols.emplace_back(col);
     indexValueSize += sizeof(bool);
   }
   {
     meta::cpp2::ColumnDef col;
-    col.set_name("col_int");
-    col.type.set_type(PropertyType::INT64);
+    col.name_ref() = "col_int";
+    col.type.type_ref() = PropertyType::INT64;
     cols.emplace_back(col);
     indexValueSize += sizeof(int64_t);
   }
   {
     meta::cpp2::ColumnDef col;
-    col.set_name("col_float");
-    col.type.set_type(PropertyType::FLOAT);
+    col.name_ref() = "col_float";
+    col.type.type_ref() = PropertyType::FLOAT;
     cols.emplace_back(col);
     indexValueSize += sizeof(double);
   }
   {
     meta::cpp2::ColumnDef col;
-    col.set_name("col_string");
-    col.type.set_type(PropertyType::FIXED_STRING);
-    col.type.set_type_length(4);
+    col.name_ref() = "col_string";
+    col.type.type_ref() = PropertyType::FIXED_STRING;
+    col.type.type_length_ref() = 4;
     cols.emplace_back(col);
     indexValueSize += 4;
   }
   {
     meta::cpp2::ColumnDef col;
-    col.set_name("col_date");
-    col.type.set_type(PropertyType::DATE);
+    col.name_ref() = "col_date";
+    col.type.type_ref() = PropertyType::DATE;
     cols.emplace_back(col);
     indexValueSize += sizeof(int8_t) * 2 + sizeof(int16_t);
   }
   {
     meta::cpp2::ColumnDef col;
-    col.set_name("col_datetime");
-    col.type.set_type(PropertyType::DATETIME);
+    col.name_ref() = "col_datetime";
+    col.type.type_ref() = PropertyType::DATETIME;
     cols.emplace_back(col);
     indexValueSize += sizeof(int32_t) + sizeof(int16_t) + sizeof(int8_t) * 5;
   }
@@ -456,7 +456,7 @@ TEST(IndexKeyUtilsTest, getValueFromIndexKeyTest) {
   }
 
   for (auto& col : cols) {
-    col.set_nullable(true);
+    col.nullable_ref() = (true);
   }
   // since there are nullable columns, there will be two extra bytes to save
   // nullBitSet

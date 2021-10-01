@@ -164,12 +164,12 @@ TEST(BalanceTest, SimpleTestWithZone) {
   }
   {
     cpp2::SpaceDesc properties;
-    properties.set_space_name("default_space");
-    properties.set_partition_num(4);
-    properties.set_replica_factor(3);
-    properties.set_group_name("group_0");
+    properties.space_name_ref() = "default_space";
+    properties.partition_num_ref() = 4;
+    properties.replica_factor_ref() = 3;
+    properties.group_name_ref() = "group_0";
     cpp2::CreateSpaceReq req;
-    req.set_properties(std::move(properties));
+    req.properties_ref() = std::move(properties);
     auto* processor = CreateSpaceProcessor::instance(kv);
     auto f = processor->getFuture();
     processor->process(req);
@@ -221,12 +221,12 @@ TEST(BalanceTest, ExpansionZoneTest) {
   }
   {
     cpp2::SpaceDesc properties;
-    properties.set_space_name("default_space");
-    properties.set_partition_num(4);
-    properties.set_replica_factor(3);
-    properties.set_group_name("default_group");
+    properties.space_name_ref() = "default_space";
+    properties.partition_num_ref() = 4;
+    properties.replica_factor_ref() = 3;
+    properties.group_name_ref() = "default_group";
     cpp2::CreateSpaceReq req;
-    req.set_properties(std::move(properties));
+    req.properties_ref() = std::move(properties);
     auto* processor = CreateSpaceProcessor::instance(kv);
     auto f = processor->getFuture();
     processor->process(req);
@@ -293,12 +293,12 @@ TEST(BalanceTest, ExpansionHostIntoZoneTest) {
   }
   {
     cpp2::SpaceDesc properties;
-    properties.set_space_name("default_space");
-    properties.set_partition_num(4);
-    properties.set_replica_factor(3);
-    properties.set_group_name("default_group");
+    properties.space_name_ref() = "default_space";
+    properties.partition_num_ref() = 4;
+    properties.replica_factor_ref() = 3;
+    properties.group_name_ref() = "default_group";
     cpp2::CreateSpaceReq req;
-    req.set_properties(std::move(properties));
+    req.properties_ref() = std::move(properties);
     auto* processor = CreateSpaceProcessor::instance(kv);
     auto f = processor->getFuture();
     processor->process(req);
@@ -371,12 +371,12 @@ TEST(BalanceTest, ShrinkZoneTest) {
   }
   {
     cpp2::SpaceDesc properties;
-    properties.set_space_name("default_space");
-    properties.set_partition_num(4);
-    properties.set_replica_factor(3);
-    properties.set_group_name("default_group");
+    properties.space_name_ref() = "default_space";
+    properties.partition_num_ref() = 4;
+    properties.replica_factor_ref() = 3;
+    properties.group_name_ref() = "default_group";
     cpp2::CreateSpaceReq req;
-    req.set_properties(std::move(properties));
+    req.properties_ref() = std::move(properties);
     auto* processor = CreateSpaceProcessor::instance(kv);
     auto f = processor->getFuture();
     processor->process(req);
@@ -421,12 +421,12 @@ TEST(BalanceTest, ShrinkHostFromZoneTest) {
   }
   {
     cpp2::SpaceDesc properties;
-    properties.set_space_name("default_space");
-    properties.set_partition_num(4);
-    properties.set_replica_factor(3);
-    properties.set_group_name("default_group");
+    properties.space_name_ref() = "default_space";
+    properties.partition_num_ref() = 4;
+    properties.replica_factor_ref() = 3;
+    properties.group_name_ref() = "default_group";
     cpp2::CreateSpaceReq req;
-    req.set_properties(std::move(properties));
+    req.properties_ref() = std::move(properties);
     auto* processor = CreateSpaceProcessor::instance(kv);
     auto f = processor->getFuture();
     processor->process(req);
@@ -501,11 +501,11 @@ TEST(BalanceTest, BalanceWithComplexZoneTest) {
   {
     {
       cpp2::SpaceDesc properties;
-      properties.set_space_name("default_space");
-      properties.set_partition_num(18);
-      properties.set_replica_factor(3);
+      properties.space_name_ref() = "default_space";
+      properties.partition_num_ref() = 18;
+      properties.replica_factor_ref() = 3;
       cpp2::CreateSpaceReq req;
-      req.set_properties(std::move(properties));
+      req.properties_ref() = std::move(properties);
       auto* processor = CreateSpaceProcessor::instance(kv);
       auto f = processor->getFuture();
       processor->process(req);
@@ -517,12 +517,12 @@ TEST(BalanceTest, BalanceWithComplexZoneTest) {
     }
     {
       cpp2::SpaceDesc properties;
-      properties.set_space_name("space_on_group_0");
-      properties.set_partition_num(64);
-      properties.set_replica_factor(3);
-      properties.set_group_name("group_0");
+      properties.space_name_ref() = "space_on_group_0";
+      properties.partition_num_ref() = 64;
+      properties.replica_factor_ref() = 3;
+      properties.group_name_ref() = "group_0";
       cpp2::CreateSpaceReq req;
-      req.set_properties(std::move(properties));
+      req.properties_ref() = std::move(properties);
       auto* processor = CreateSpaceProcessor::instance(kv);
       auto f = processor->getFuture();
       processor->process(req);
@@ -534,12 +534,12 @@ TEST(BalanceTest, BalanceWithComplexZoneTest) {
     }
     {
       cpp2::SpaceDesc properties;
-      properties.set_space_name("space_on_group_1");
-      properties.set_partition_num(81);
-      properties.set_replica_factor(3);
-      properties.set_group_name("group_1");
+      properties.space_name_ref() = "space_on_group_1";
+      properties.partition_num_ref() = 81;
+      properties.replica_factor_ref() = 3;
+      properties.group_name_ref() = "group_1";
       cpp2::CreateSpaceReq req;
-      req.set_properties(std::move(properties));
+      req.properties_ref() = std::move(properties);
       auto* processor = CreateSpaceProcessor::instance(kv);
       auto f = processor->getFuture();
       processor->process(req);
@@ -1621,7 +1621,9 @@ TEST(BalanceTest, LeaderBalanceTest) {
   dist[HostAddr("1", 1)][1] = {6, 7, 8};
   dist[HostAddr("2", 2)][1] = {9};
   EXPECT_CALL(client, getLeaderDist(_))
-      .WillOnce(DoAll(SetArgPointee<0>(dist), Return(ByMove(folly::Future<Status>(Status::OK())))));
+      .WillOnce(
+          testing::DoAll(SetArgPointee<0>(dist),
+                Return(ByMove(folly::Future<Status>(Status::OK())))));
 
   LeaderBalanceJobExecutor balancer(
       testJobId.fetch_add(1, std::memory_order_relaxed), kv, &client, {});
@@ -1651,12 +1653,12 @@ TEST(BalanceTest, LeaderBalanceWithZoneTest) {
   }
   {
     cpp2::SpaceDesc properties;
-    properties.set_space_name("default_space");
-    properties.set_partition_num(8);
-    properties.set_replica_factor(3);
-    properties.set_group_name("default_group");
+    properties.space_name_ref() = "default_space";
+    properties.partition_num_ref() = 8;
+    properties.replica_factor_ref() = 3;
+    properties.group_name_ref() = "default_group";
     cpp2::CreateSpaceReq req;
-    req.set_properties(std::move(properties));
+    req.properties_ref() = std::move(properties);
     auto* processor = CreateSpaceProcessor::instance(kv);
     auto f = processor->getFuture();
     processor->process(req);
@@ -1729,12 +1731,12 @@ TEST(BalanceTest, LeaderBalanceWithLargerZoneTest) {
   }
   {
     cpp2::SpaceDesc properties;
-    properties.set_space_name("default_space");
-    properties.set_partition_num(8);
-    properties.set_replica_factor(3);
-    properties.set_group_name("default_group");
+    properties.space_name_ref() = "default_space";
+    properties.partition_num_ref() = 8;
+    properties.replica_factor_ref() = 3;
+    properties.group_name_ref() = "default_group";
     cpp2::CreateSpaceReq req;
-    req.set_properties(std::move(properties));
+    req.properties_ref() = std::move(properties);
     auto* processor = CreateSpaceProcessor::instance(kv);
     auto f = processor->getFuture();
     processor->process(req);
@@ -1814,11 +1816,11 @@ TEST(BalanceTest, LeaderBalanceWithComplexZoneTest) {
   {
     {
       cpp2::SpaceDesc properties;
-      properties.set_space_name("default_space");
-      properties.set_partition_num(9);
-      properties.set_replica_factor(3);
+      properties.space_name_ref() = "default_space";
+      properties.partition_num_ref() = 9;
+      properties.replica_factor_ref() = 3;
       cpp2::CreateSpaceReq req;
-      req.set_properties(std::move(properties));
+      req.properties_ref() = std::move(properties);
       auto* processor = CreateSpaceProcessor::instance(kv);
       auto f = processor->getFuture();
       processor->process(req);
@@ -1829,12 +1831,12 @@ TEST(BalanceTest, LeaderBalanceWithComplexZoneTest) {
     }
     {
       cpp2::SpaceDesc properties;
-      properties.set_space_name("space_on_group_0");
-      properties.set_partition_num(64);
-      properties.set_replica_factor(3);
-      properties.set_group_name("group_0");
+      properties.space_name_ref() = "space_on_group_0";
+      properties.partition_num_ref() = 64;
+      properties.replica_factor_ref() = 3;
+      properties.group_name_ref() = "group_0";
       cpp2::CreateSpaceReq req;
-      req.set_properties(std::move(properties));
+      req.properties_ref() = std::move(properties);
       auto* processor = CreateSpaceProcessor::instance(kv);
       auto f = processor->getFuture();
       processor->process(req);
@@ -1845,12 +1847,12 @@ TEST(BalanceTest, LeaderBalanceWithComplexZoneTest) {
     }
     {
       cpp2::SpaceDesc properties;
-      properties.set_space_name("space_on_group_1");
-      properties.set_partition_num(81);
-      properties.set_replica_factor(3);
-      properties.set_group_name("group_1");
+      properties.space_name_ref() = "space_on_group_1";
+      properties.partition_num_ref() = 81;
+      properties.replica_factor_ref() = 3;
+      properties.group_name_ref() = "group_1";
       cpp2::CreateSpaceReq req;
-      req.set_properties(std::move(properties));
+      req.properties_ref() = std::move(properties);
       auto* processor = CreateSpaceProcessor::instance(kv);
       auto f = processor->getFuture();
       processor->process(req);

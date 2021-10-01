@@ -25,16 +25,16 @@ static Status validateColumns(const std::vector<ColumnSpecification *> &columnSp
   for (auto &spec : columnSpecs) {
     meta::cpp2::ColumnDef column;
     auto type = spec->type();
-    column.set_name(*spec->name());
-    column.type.set_type(type);
+    column.name_ref() = *spec->name();
+    column.type.type_ref() = type;
     if (nebula::cpp2::PropertyType::FIXED_STRING == type) {
-      column.type.set_type_length(spec->typeLen());
+      column.type.type_length_ref() = spec->typeLen();
     } else if (nebula::cpp2::PropertyType::GEOGRAPHY == type) {
-      column.type.set_geo_shape(spec->geoShape());
+      column.type.geo_shape_ref() = spec->geoShape();
     }
     for (const auto &property : spec->properties()->properties()) {
       if (property->isNullable()) {
-        column.set_nullable(property->nullable());
+        column.nullable_ref() = property->nullable();
       } else if (property->isDefaultValue()) {
         if (!ExpressionUtils::isEvaluableExpr(property->defaultValue())) {
           return Status::SemanticError("Wrong default value expression `%s'",
@@ -44,13 +44,13 @@ static Status validateColumns(const std::vector<ColumnSpecification *> &columnSp
         // some expression is evaluable but not pure so only fold instead of eval here
         auto foldRes = ExpressionUtils::foldConstantExpr(defaultValueExpr);
         NG_RETURN_IF_ERROR(foldRes);
-        column.set_default_value(foldRes.value()->encode());
+        column.default_value_ref() = foldRes.value()->encode();
       } else if (property->isComment()) {
-        column.set_comment(*DCHECK_NOTNULL(property->comment()));
+        column.comment_ref() = *DCHECK_NOTNULL(property->comment());
       }
     }
     if (!column.nullable_ref().has_value()) {
-      column.set_nullable(true);
+      column.nullable_ref() = true;
     }
     schema.columns_ref().value().emplace_back(std::move(column));
   }
@@ -64,7 +64,7 @@ static StatusOr<std::vector<meta::cpp2::AlterSchemaItem>> validateSchemaOpts(
   for (const auto &schemaOpt : schemaOpts) {
     meta::cpp2::AlterSchemaItem schemaItem;
     auto opType = schemaOpt->toType();
-    schemaItem.set_op(opType);
+    schemaItem.op_ref() = opType;
     meta::cpp2::Schema schema;
 
     if (opType == meta::cpp2::AlterSchemaOp::DROP) {
@@ -87,7 +87,7 @@ static StatusOr<std::vector<meta::cpp2::AlterSchemaItem>> validateSchemaOpts(
       NG_LOG_AND_RETURN_IF_ERROR(validateColumns(specs, schema));
     }
 
-    schemaItem.set_schema(std::move(schema));
+    schemaItem.schema_ref() = std::move(schema);
     schemaItems.emplace_back(std::move(schemaItem));
   }
   return schemaItems;
@@ -102,21 +102,21 @@ static StatusOr<meta::cpp2::SchemaProp> validateSchemaProps(
       case SchemaPropItem::TTL_DURATION: {
         auto ttlDur = prop->getTtlDuration();
         NG_RETURN_IF_ERROR(ttlDur);
-        schemaProp.set_ttl_duration(ttlDur.value());
+        schemaProp.ttl_duration_ref() = ttlDur.value();
         break;
       }
       case SchemaPropItem::TTL_COL: {
         // Check the legality of the column in meta
         auto ttlCol = prop->getTtlCol();
         NG_RETURN_IF_ERROR(ttlCol);
-        schemaProp.set_ttl_col(ttlCol.value());
+        schemaProp.ttl_col_ref() = ttlCol.value();
         break;
       }
       case SchemaPropItem::COMMENT: {
         // Check the legality of the column in meta
         auto comment = prop->getComment();
         NG_RETURN_IF_ERROR(comment);
-        schemaProp.set_comment(comment.value());
+        schemaProp.comment_ref() = comment.value();
         break;
       }
       default: {
@@ -540,13 +540,13 @@ Status CreateFTIndexValidator::validateImpl() {
   NG_RETURN_IF_ERROR(status);
   nebula::cpp2::SchemaID id;
   if (sentence->isEdge()) {
-    id.set_edge_type(status.value());
+    id.edge_type_ref() = status.value();
   } else {
-    id.set_tag_id(status.value());
+    id.tag_id_ref() = status.value();
   }
-  index_.set_space_id(space.id);
-  index_.set_depend_schema(std::move(id));
-  index_.set_fields(sentence->fields());
+  index_.space_id_ref() = space.id;
+  index_.depend_schema_ref() = std::move(id);
+  index_.fields_ref() = sentence->fields();
   return Status::OK();
 }
 

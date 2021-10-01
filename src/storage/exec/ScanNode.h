@@ -92,10 +92,10 @@ class ScanVertexPropNode : public QueryNode<Cursor> {
 
     cpp2::ScanCursor c;
     if (iter->valid()) {
-      c.set_has_next(true);
-      c.set_next_cursor(iter->key().str());
+      c.has_next_ref() = true;
+      c.next_cursor_ref() = iter->key().str();
     } else {
-      c.set_has_next(false);
+      c.has_next_ref() = false;
     }
     cursors_->emplace(partId, std::move(c));
     return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -246,10 +246,10 @@ class ScanEdgePropNode : public QueryNode<Cursor> {
 
     cpp2::ScanCursor c;
     if (iter->valid()) {
-      c.set_has_next(true);
-      c.set_next_cursor(iter->key().str());
+      c.has_next_ref() = true;
+      c.next_cursor_ref() = iter->key().str();
     } else {
-      c.set_has_next(false);
+      c.has_next_ref() = false;
     }
     cursors_->emplace(partId, std::move(c));
     return nebula::cpp2::ErrorCode::SUCCEEDED;

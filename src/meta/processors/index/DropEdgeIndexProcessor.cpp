@@ -40,7 +40,7 @@ void DropEdgeIndexProcessor::process(const cpp2::DropEdgeIndexReq& req) {
   keys.emplace_back(MetaKeyUtils::indexKey(spaceID, edgeIndexID));
 
   LOG(INFO) << "Drop Edge Index " << indexName;
-  resp_.set_id(to(edgeIndexID, EntryType::INDEX));
+  resp_.id_ref() = to(edgeIndexID, EntryType::INDEX);
   doSyncMultiRemoveAndUpdate(std::move(keys));
 }
 

@@ -22,27 +22,27 @@ cpp2::ScanEdgeRequest buildRequest(std::vector<PartitionID> partIds,
                                    int64_t endTime = std::numeric_limits<int64_t>::max(),
                                    bool onlyLatestVer = false) {
   cpp2::ScanEdgeRequest req;
-  req.set_space_id(1);
+  req.space_id_ref() = 1;
   cpp2::ScanCursor c;
   CHECK_EQ(partIds.size(), cursors.size());
   std::unordered_map<PartitionID, cpp2::ScanCursor> parts;
   for (std::size_t i = 0; i < partIds.size(); ++i) {
-    c.set_has_next(!cursors[i].empty());
-    c.set_next_cursor(cursors[i]);
+    c.has_next_ref() = !cursors[i].empty();
+    c.next_cursor_ref() = cursors[i];
     parts.emplace(partIds[i], c);
   }
-  req.set_parts(std::move(parts));
+  req.parts_ref() = std::move(parts);
   EdgeType edgeType = edge.first;
   cpp2::EdgeProp edgeProp;
-  edgeProp.set_type(edgeType);
+  edgeProp.type_ref() = edgeType;
   for (const auto& prop : edge.second) {
     (*edgeProp.props_ref()).emplace_back(std::move(prop));
   }
-  req.set_return_columns(std::move(edgeProp));
-  req.set_limit(rowLimit);
-  req.set_start_time(startTime);
-  req.set_end_time(endTime);
-  req.set_only_latest_version(onlyLatestVer);
+  req.return_columns_ref() = std::move(edgeProp);
+  req.limit_ref() = rowLimit;
+  req.start_time_ref() = startTime;
+  req.end_time_ref() = endTime;
+  req.only_latest_version_ref() = onlyLatestVer;
   return req;
 }
 
@@ -311,7 +311,7 @@ TEST(ScanEdgeTest, FilterTest) {
     Expression* filter = EdgePropertyExpression::make(&pool, "101", kSrc);
     filter = RelationalExpression::makeEQ(
         &pool, filter, ConstantExpression::make(&pool, "Damian Lillard"));
-    req.set_filter(filter->encode());
+    req.filter_ref() = filter->encode();
     auto* processor = ScanEdgeProcessor::instance(env, nullptr);
     auto f = processor->getFuture();
     processor->process(req);

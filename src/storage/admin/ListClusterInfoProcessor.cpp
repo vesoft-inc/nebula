@@ -37,16 +37,16 @@ void ListClusterInfoProcessor::process(const cpp2::ListClusterInfoReq& req) {
                  });
   if (failed) {
     cpp2::PartitionResult thriftRet;
-    thriftRet.set_code(nebula::cpp2::ErrorCode::E_FAILED_GET_ABS_PATH);
+    thriftRet.code_ref() = nebula::cpp2::ErrorCode::E_FAILED_GET_ABS_PATH;
     codes_.emplace_back(std::move(thriftRet));
     onFinished();
     return;
   }
   nebula::cpp2::DirInfo dir;
-  dir.set_data(std::move(realpaths));
-  dir.set_root(boost::filesystem::current_path().string());
+  dir.data_ref() = std::move(realpaths);
+  dir.root_ref() = boost::filesystem::current_path().string();
 
-  resp_.set_dir(std::move(dir));
+  resp_.dir_ref() = std::move(dir);
 
   onFinished();
 }

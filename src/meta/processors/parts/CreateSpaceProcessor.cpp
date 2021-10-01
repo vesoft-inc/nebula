@@ -27,7 +27,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
       LOG(ERROR) << "Create Space Failed : Space " << spaceName << " have existed!";
       ret = nebula::cpp2::ErrorCode::E_EXISTED;
     }
-    resp_.set_id(to(nebula::value(spaceRet), EntryType::SPACE));
+    resp_.id_ref() = to(nebula::value(spaceRet), EntryType::SPACE);
     handleErrorCode(ret);
     onFinished();
     return;
@@ -61,7 +61,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     }
     // Set the default value back to the struct, which will be written to
     // storage
-    properties.set_partition_num(partitionNum);
+    properties.partition_num_ref() = partitionNum;
   }
   if (replicaFactor == 0) {
     replicaFactor = FLAGS_default_replica_factor;
@@ -73,7 +73,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     }
     // Set the default value back to the struct, which will be written to
     // storage
-    properties.set_replica_factor(replicaFactor);
+    properties.replica_factor_ref() = replicaFactor;
   }
   if (vidSize == 0) {
     LOG(ERROR) << "Create Space Failed : vid_size is illegal: " << vidSize;
@@ -96,7 +96,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     return;
   }
 
-  properties.vid_type_ref().value().set_type_length(vidSize);
+  properties.vid_type_ref().value().type_length_ref() = vidSize;
   auto idRet = autoIncrementId();
   if (!nebula::ok(idRet)) {
     LOG(ERROR) << "Create Space Failed : Get space id failed";
@@ -253,7 +253,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     return;
   }
 
-  resp_.set_id(to(spaceId, EntryType::SPACE));
+  resp_.id_ref() = to(spaceId, EntryType::SPACE);
   doSyncPutAndUpdate(std::move(data));
   LOG(INFO) << "Create space " << spaceName;
 }

@@ -86,9 +86,9 @@ class IntegrityTest {
     if (!spaceResult.ok()) {
       LOG(ERROR) << "Get spaceId failed, try to create one";
       meta::cpp2::SpaceDesc spaceDesc;
-      spaceDesc.set_space_name(FLAGS_space_name);
-      spaceDesc.set_partition_num(FLAGS_partition_num);
-      spaceDesc.set_replica_factor(1);
+      spaceDesc.space_name_ref() = FLAGS_space_name;
+      spaceDesc.partition_num_ref() = FLAGS_partition_num;
+      spaceDesc.replica_factor_ref() = 1;
       auto ret = mClient_->createSpace(spaceDesc).get();
       if (!ret.ok()) {
         LOG(ERROR) << "Create space failed: " << ret.status();
@@ -106,7 +106,7 @@ class IntegrityTest {
       nebula::meta::cpp2::Schema schema;
       nebula::meta::cpp2::ColumnDef column;
       column.name = FLAGS_prop_name;
-      column.type.set_type(nebula::cpp2::PropertyType::INT64);
+      column.type.type_ref() = nebula::cpp2::PropertyType::INT64;
       (*schema.columns_ref()).emplace_back(std::move(column));
       auto ret = mClient_->createTagSchema(spaceId_, FLAGS_tag_name, schema).get();
       if (!ret.ok()) {
@@ -191,19 +191,19 @@ class IntegrityTest {
       cur.emplace_back(vId);
 
       storage::cpp2::NewVertex v;
-      v.set_id(vId);
+      v.id_ref() = vId;
       std::vector<nebula::storage::cpp2::NewTag> tags;
 
       storage::cpp2::NewTag tag;
-      tag.set_tag_id(tagId_);
+      tag.tag_id_ref() = tagId_;
 
       std::vector<nebula::Value> props;
       Value val(prev[i]);
       props.emplace_back(val);
-      tag.set_props(props);
+      tag.props_ref() = props;
       tags.emplace_back(std::move(tag));
 
-      v.set_tags(std::move(tags));
+      v.tags_ref() = std::move(tags);
       newVertices.emplace_back(std::move(v));
       VLOG(2) << "Build " << cur[i] << " -> " << prev[i];
       PLOG_EVERY_N(INFO, 10000) << "We have inserted "
@@ -222,7 +222,7 @@ class IntegrityTest {
       // TODO support getProps
       std::vector<cpp2::VertexProp> props;
       cpp2::VertexProp tagProp;
-      tagProp.set_tag(tagId_);
+      tagProp.tag_ref() = tagId_;
       (*tagProp.props_ref()).emplace_back(propName_);
       DataSet dataset({kVid});
       GraphStorageClient::CommonRequestParam param(spaceId_, 0, 0);

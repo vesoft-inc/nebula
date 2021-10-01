@@ -25,9 +25,9 @@ folly::SemiFuture<StorageRpcResponse<cpp2::KVGetResponse>> GeneralStorageClient:
   for (auto& c : clusters) {
     auto& host = c.first;
     auto& req = requests[host];
-    req.set_space_id(space);
-    req.set_parts(std::move(c.second));
-    req.set_return_partly(returnPartly);
+    req.space_id_ref() = space;
+    req.parts_ref() = std::move(c.second);
+    req.return_partly_ref() = returnPartly;
   }
 
   return collectResponse(evb,
@@ -51,8 +51,8 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> GeneralStorageClient::
   for (auto& c : clusters) {
     auto& host = c.first;
     auto& req = requests[host];
-    req.set_space_id(space);
-    req.set_parts(std::move(c.second));
+    req.space_id_ref() = space;
+    req.parts_ref() = std::move(c.second);
   }
 
   return collectResponse(evb,
@@ -76,8 +76,8 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> GeneralStorageClient::
   for (auto& c : clusters) {
     auto& host = c.first;
     auto& req = requests[host];
-    req.set_space_id(space);
-    req.set_parts(std::move(c.second));
+    req.space_id_ref() = space;
+    req.parts_ref() = std::move(c.second);
   }
 
   return collectResponse(evb,

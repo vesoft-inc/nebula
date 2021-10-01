@@ -29,12 +29,12 @@ class TestStorageService : public storage::cpp2::StorageAdminServiceSvIf {
     storage::cpp2::ListClusterInfoResp resp;
     storage::cpp2::ResponseCommon result;
     std::vector<storage::cpp2::PartitionResult> partRetCode;
-    result.set_failed_parts(partRetCode);
-    resp.set_result(result);
+    result.failed_parts_ref() = partRetCode;
+    resp.result_ref() = result;
     nebula::cpp2::DirInfo dir;
-    dir.set_root(root_dir);
-    dir.set_data({data_dir});
-    resp.set_dir(std::move(dir));
+    dir.root_ref() = root_dir;
+    dir.data_ref() = {data_dir};
+    resp.dir_ref() = std::move(dir);
     pro.setValue(std::move(resp));
     return f;
   }

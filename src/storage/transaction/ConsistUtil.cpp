@@ -133,10 +133,10 @@ int64_t ConsistUtil::getTimestamp(const std::string& val) noexcept {
 
 cpp2::AddEdgesRequest ConsistUtil::toAddEdgesRequest(const cpp2::ChainAddEdgesRequest& req) {
   cpp2::AddEdgesRequest ret;
-  ret.set_space_id(req.get_space_id());
-  ret.set_parts(req.get_parts());
-  ret.set_prop_names(req.get_prop_names());
-  ret.set_if_not_exists(req.get_if_not_exists());
+  ret.space_id_ref() = req.get_space_id();
+  ret.parts_ref() = req.get_parts();
+  ret.prop_names_ref() = req.get_prop_names();
+  ret.if_not_exists_ref() = req.get_if_not_exists();
   return ret;
 }
 
