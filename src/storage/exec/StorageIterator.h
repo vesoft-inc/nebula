@@ -150,7 +150,7 @@ class MultiEdgeIterator : public StorageIterator {
 
 class IndexIterator : public StorageIterator {
  public:
-  explicit IndexIterator(std::unique_ptr<kvstore::KVIterator> iter, size_t vIdLen)
+  IndexIterator(std::unique_ptr<kvstore::KVIterator> iter, size_t vIdLen)
       : iter_(std::move(iter)), vIdLen_(vIdLen) {}
 
   bool valid() const override { return !!iter_ && iter_->valid(); }
