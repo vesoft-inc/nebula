@@ -90,8 +90,8 @@ void ScanVertexProcessor::buildTagColName(const std::vector<cpp2::VertexProp>& t
 }
 
 void ScanVertexProcessor::onProcessFinished() {
-  resp_.set_props(std::move(resultDataSet_));
-  resp_.set_cursors(std::move(cursors_));
+  resp_.props_ref() = std::move(resultDataSet_);
+  resp_.cursors_ref() = std::move(cursors_);
 }
 
 StoragePlan<Cursor> ScanVertexProcessor::buildPlan(

@@ -50,7 +50,7 @@ void RenameZoneProcessor::process(const cpp2::RenameZoneReq& req) {
     auto it = std::find(zones.begin(), zones.end(), originalZoneName);
     if (it != zones.end()) {
       std::replace(zones.begin(), zones.end(), originalZoneName, zoneName);
-      properties.set_zone_names(zones);
+      properties.zone_names_ref() = zones;
       auto spaceVal = MetaKeyUtils::spaceVal(properties);
       data.emplace_back(spaceKey, std::move(spaceVal));
     }

@@ -126,7 +126,7 @@ TEST(StatsReaderTest, GetStatsTest) {
   {
     // get all stats(sum,count,avg,rate)
     std::string resp;
-    ASSERT_TRUE(getUrl("/stats?stats= ", resp));
+    ASSERT_TRUE(getUrl("/stats?stats=", resp));
     EXPECT_FALSE(resp.empty());
   }
 

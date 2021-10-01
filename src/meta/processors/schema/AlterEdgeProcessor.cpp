@@ -140,14 +140,14 @@ void AlterEdgeProcessor::process(const cpp2::AlterEdgeReq& req) {
     return;
   }
 
-  schema.set_schema_prop(std::move(prop));
-  schema.set_columns(std::move(columns));
+  schema.schema_prop_ref() = std::move(prop);
+  schema.columns_ref() = std::move(columns);
 
   std::vector<kvstore::KV> data;
   LOG(INFO) << "Alter edge " << edgeName << ", edgeType " << edgeType;
   data.emplace_back(MetaKeyUtils::schemaEdgeKey(spaceId, edgeType, version),
                     MetaKeyUtils::schemaVal(edgeName, schema));
-  resp_.set_id(to(edgeType, EntryType::EDGE));
+  resp_.id_ref() = to(edgeType, EntryType::EDGE);
   doSyncPutAndUpdate(std::move(data));
 }
 

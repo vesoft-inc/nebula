@@ -3,7 +3,7 @@
 %no-lines
 %locations
 %define api.namespace { nebula::time }
-%define parser_class_name { DatetimeParser }
+%define api.parser.class { DatetimeParser }
 %lex-param { nebula::time::DatetimeScanner& scanner }
 %parse-param { nebula::time::DatetimeScanner& scanner }
 %parse-param { std::string &errmsg }

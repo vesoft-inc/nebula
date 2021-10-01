@@ -40,7 +40,7 @@ void GetStatsProcessor::process(const cpp2::GetStatsReq& req) {
   }
 
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
-  resp_.set_stats(std::move(statsItem));
+  resp_.stats_ref() = std::move(statsItem);
   onFinished();
 }
 

@@ -20,8 +20,8 @@ TEST(VerifyClientVersionTest, VersionTest) {
   std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
   {
     auto req = cpp2::VerifyClientVersionReq();
-    req.set_client_version("1.0.1");
-    req.set_build_version("1.0.1-nightly");
+    req.client_version_ref() = "1.0.1";
+    req.build_version_ref() = "1.0.1-nightly";
     auto* processor = VerifyClientVersionProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -31,7 +31,7 @@ TEST(VerifyClientVersionTest, VersionTest) {
   {
     for (auto i = 0; i < 5; i++) {
       auto req = cpp2::VerifyClientVersionReq();
-      req.set_host(HostAddr(std::to_string(i), i));
+      req.host_ref() = HostAddr(std::to_string(i), i);
       auto* processor = VerifyClientVersionProcessor::instance(kv.get());
       auto f = processor->getFuture();
       processor->process(req);
@@ -43,9 +43,9 @@ TEST(VerifyClientVersionTest, VersionTest) {
     const ClusterID kClusterId = 10;
     for (auto i = 0; i < 5; i++) {
       auto req = cpp2::HBReq();
-      req.set_role(cpp2::HostRole::GRAPH);
-      req.set_host(HostAddr(std::to_string(i), i));
-      req.set_cluster_id(kClusterId);
+      req.role_ref() = cpp2::HostRole::GRAPH;
+      req.host_ref() = HostAddr(std::to_string(i), i);
+      req.cluster_id_ref() = kClusterId;
       auto* processor = HBProcessor::instance(kv.get(), nullptr, kClusterId);
       auto f = processor->getFuture();
       processor->process(req);
@@ -55,7 +55,7 @@ TEST(VerifyClientVersionTest, VersionTest) {
   }
   {
     auto req = cpp2::ListHostsReq();
-    req.set_type(cpp2::ListHostType::GRAPH);
+    req.type_ref() = cpp2::ListHostType::GRAPH;
     auto* processor = ListHostsProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);

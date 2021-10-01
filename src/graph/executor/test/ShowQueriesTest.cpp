@@ -16,30 +16,30 @@ class ShowQueriesTest : public QueryTestBase {};
 
 TEST_F(ShowQueriesTest, TestAddQueryAndTopN) {
   meta::cpp2::Session session;
-  session.set_session_id(1);
-  session.set_create_time(123);
-  session.set_update_time(456);
-  session.set_user_name("root");
-  session.set_space_name("test");
-  session.set_graph_addr(HostAddr("127.0.0.1", 9669));
+  session.session_id_ref() = 1;
+  session.create_time_ref() = 123;
+  session.update_time_ref() = 456;
+  session.user_name_ref() = "root";
+  session.space_name_ref() = "test";
+  session.graph_addr_ref() = HostAddr("127.0.0.1", 9669);
 
   {
     meta::cpp2::QueryDesc desc;
-    desc.set_start_time(123);
-    desc.set_status(meta::cpp2::QueryStatus::RUNNING);
-    desc.set_duration(100);
-    desc.set_query("");
-    desc.set_graph_addr(HostAddr("127.0.0.1", 9669));
+    desc.start_time_ref() = 123;
+    desc.status_ref() = meta::cpp2::QueryStatus::RUNNING;
+    desc.duration_ref() = 100;
+    desc.query_ref() = "";
+    desc.graph_addr_ref() = HostAddr("127.0.0.1", 9669);
 
     session.queries_ref()->emplace(1, std::move(desc));
   }
   {
     meta::cpp2::QueryDesc desc;
-    desc.set_start_time(123);
-    desc.set_status(meta::cpp2::QueryStatus::RUNNING);
-    desc.set_duration(200);
-    desc.set_query("");
-    desc.set_graph_addr(HostAddr("127.0.0.1", 9669));
+    desc.start_time_ref() = 123;
+    desc.status_ref() = meta::cpp2::QueryStatus::RUNNING;
+    desc.duration_ref() = 200;
+    desc.query_ref() = "";
+    desc.graph_addr_ref() = HostAddr("127.0.0.1", 9669);
 
     session.queries_ref()->emplace(2, std::move(desc));
   }

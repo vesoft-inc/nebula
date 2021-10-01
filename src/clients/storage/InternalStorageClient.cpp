@@ -55,10 +55,10 @@ void InternalStorageClient::chainUpdateEdge(cpp2::UpdateEdgeRequest& reversedReq
   VLOG(1) << "leader host: " << leader;
 
   cpp2::ChainUpdateEdgeRequest chainReq;
-  chainReq.set_update_edge_request(reversedRequest);
-  chainReq.set_term(termOfSrc);
+  chainReq.update_edge_request_ref() = reversedRequest;
+  chainReq.term_ref() = termOfSrc;
   if (optVersion) {
-    chainReq.set_edge_version(optVersion.value());
+    chainReq.edge_version_ref() = optVersion.value();
   }
   auto resp = getResponse(
       evb,
@@ -120,13 +120,13 @@ cpp2::ChainAddEdgesRequest InternalStorageClient::makeChainAddReq(const cpp2::Ad
                                                                   TermID termId,
                                                                   folly::Optional<int64_t> ver) {
   cpp2::ChainAddEdgesRequest ret;
-  ret.set_space_id(req.get_space_id());
-  ret.set_parts(req.get_parts());
-  ret.set_prop_names(req.get_prop_names());
-  ret.set_if_not_exists(req.get_if_not_exists());
-  ret.set_term(termId);
+  ret.space_id_ref() = req.get_space_id();
+  ret.parts_ref() = req.get_parts();
+  ret.prop_names_ref() = req.get_prop_names();
+  ret.if_not_exists_ref() = req.get_if_not_exists();
+  ret.term_ref() = termId;
   if (ver) {
-    ret.set_edge_version(ver.value());
+    ret.edge_version_ref() = ver.value();
   }
   return ret;
 }

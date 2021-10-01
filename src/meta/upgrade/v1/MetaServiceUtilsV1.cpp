@@ -35,8 +35,8 @@ std::vector<cpp2::HostAddr> MetaServiceUtilsV1::parsePartVal(folly::StringPiece 
   VLOG(3) << "Total size:" << val.size() << ", host size:" << unitSize << ", host num:" << hostsNum;
   for (decltype(hostsNum) i = 0; i < hostsNum; i++) {
     cpp2::HostAddr h;
-    h.set_ip(*reinterpret_cast<const int32_t*>(val.data() + i * unitSize));
-    h.set_port(*reinterpret_cast<const int32_t*>(val.data() + i * unitSize + sizeof(int32_t)));
+    h.ip_ref() = *reinterpret_cast<const int32_t*>(val.data() + i * unitSize);
+    h.port_ref() = *reinterpret_cast<const int32_t*>(val.data() + i * unitSize + sizeof(int32_t));
     hosts.emplace_back(std::move(h));
   }
   return hosts;
@@ -44,13 +44,13 @@ std::vector<cpp2::HostAddr> MetaServiceUtilsV1::parsePartVal(folly::StringPiece 
 
 cpp2::HostAddr MetaServiceUtilsV1::parseHostKey(folly::StringPiece key) {
   cpp2::HostAddr host;
-  memcpy(&host, key.data() + kHostsTable.size(), sizeof(host));
+  memcpy(reinterpret_cast<void*>(&host), key.data() + kHostsTable.size(), sizeof(host));
   return host;
 }
 
 cpp2::HostAddr MetaServiceUtilsV1::parseLeaderKey(folly::StringPiece key) {
   cpp2::HostAddr host;
-  memcpy(&host, key.data() + kLeadersTable.size(), sizeof(host));
+  memcpy(reinterpret_cast<void*>(&host), key.data() + kLeadersTable.size(), sizeof(host));
   return host;
 }
 
@@ -88,9 +88,9 @@ cpp2::ConfigItem MetaServiceUtilsV1::parseConfigValue(folly::StringPiece rawData
   auto value = rawData.subpiece(offset, rawData.size() - offset);
 
   cpp2::ConfigItem item;
-  item.set_type(type);
-  item.set_mode(mode);
-  item.set_value(value.str());
+  item.type_ref() = type;
+  item.mode_ref() = mode;
+  item.value_ref() = value.str();
   return item;
 }
 

@@ -121,7 +121,7 @@ void goFilter(int32_t iters,
           pool,
           nebula::EdgePropertyExpression::make(pool, folly::to<std::string>(serve), "startYear"),
           nebula::ConstantExpression::make(pool, nebula::Value(value)));
-      (*req.traverse_spec_ref()).set_filter(nebula::Expression::encode(exp));
+      (*req.traverse_spec_ref()).filter_ref() = nebula::Expression::encode(exp);
     } else {
       // where serve.startYear < value && serve.endYear < value
       // since startYear always equal to endYear, the data of which can pass
@@ -137,7 +137,7 @@ void goFilter(int32_t iters,
               pool,
               nebula::EdgePropertyExpression::make(pool, folly::to<std::string>(serve), "endYear"),
               nebula::ConstantExpression::make(pool, nebula::Value(value))));
-      (*req.traverse_spec_ref()).set_filter(nebula::Expression::encode(exp));
+      (*req.traverse_spec_ref()).filter_ref() = nebula::Expression::encode(exp);
     }
   }
   auto* env = gCluster->storageEnv_.get();
@@ -200,8 +200,8 @@ void goEdgeNode(int32_t iters,
     }
     CHECK_EQ(vertex.size(), resultDataSet.rowSize());
     nebula::storage::cpp2::ResponseCommon result;
-    resp.set_result(std::move(result));
-    resp.set_vertices(std::move(resultDataSet));
+    resp.result_ref() = std::move(result);
+    resp.vertices_ref() = std::move(resultDataSet);
     auto encoded = encode(resp);
     folly::doNotOptimizeAway(encoded);
   }
@@ -292,8 +292,8 @@ void prefix(int32_t iters,
     }
     CHECK_EQ(vertex.size(), resultDataSet.rowSize());
     nebula::storage::cpp2::ResponseCommon result;
-    resp.set_result(std::move(result));
-    resp.set_vertices(std::move(resultDataSet));
+    resp.result_ref() = std::move(result);
+    resp.vertices_ref() = std::move(resultDataSet);
     auto encoded = encode(resp);
     folly::doNotOptimizeAway(encoded);
   }

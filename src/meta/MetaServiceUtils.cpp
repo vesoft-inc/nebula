@@ -72,8 +72,8 @@ nebula::cpp2::ErrorCode MetaServiceUtils::alterColumnDefs(std::vector<cpp2::Colu
         auto colName = col.get_name();
         if (colName == it->get_name()) {
           if (prop.get_ttl_col() && (*prop.get_ttl_col() == colName)) {
-            prop.set_ttl_duration(0);
-            prop.set_ttl_col("");
+            prop.ttl_duration_ref() = 0;
+            prop.ttl_col_ref() = "";
           }
           cols.erase(it);
           return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -102,14 +102,14 @@ nebula::cpp2::ErrorCode MetaServiceUtils::alterSchemaProp(std::vector<cpp2::Colu
   }
   if (alterSchemaProp.ttl_duration_ref().has_value()) {
     // Graph check  <=0 to = 0
-    schemaProp.set_ttl_duration(*alterSchemaProp.ttl_duration_ref());
+    schemaProp.ttl_duration_ref() = *alterSchemaProp.ttl_duration_ref();
   }
   if (alterSchemaProp.ttl_col_ref().has_value()) {
     auto ttlCol = *alterSchemaProp.ttl_col_ref();
     // Disable ttl, ttl_col is empty, ttl_duration is 0
     if (ttlCol.empty()) {
-      schemaProp.set_ttl_duration(0);
-      schemaProp.set_ttl_col(ttlCol);
+      schemaProp.ttl_duration_ref() = 0;
+      schemaProp.ttl_col_ref() = ttlCol;
       return nebula::cpp2::ErrorCode::SUCCEEDED;
     }
 
@@ -124,7 +124,7 @@ nebula::cpp2::ErrorCode MetaServiceUtils::alterSchemaProp(std::vector<cpp2::Colu
           return nebula::cpp2::ErrorCode::E_UNSUPPORTED;
         }
         existed = true;
-        schemaProp.set_ttl_col(ttlCol);
+        schemaProp.ttl_col_ref() = ttlCol;
         break;
       }
     }
@@ -147,7 +147,7 @@ nebula::cpp2::ErrorCode MetaServiceUtils::alterSchemaProp(std::vector<cpp2::Colu
   }
 
   if (alterSchemaProp.comment_ref().has_value()) {
-    schemaProp.set_comment(*alterSchemaProp.comment_ref());
+    schemaProp.comment_ref() = *alterSchemaProp.comment_ref();
   }
 
   return nebula::cpp2::ErrorCode::SUCCEEDED;

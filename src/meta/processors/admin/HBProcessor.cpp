@@ -45,7 +45,7 @@ void HBProcessor::process(const cpp2::HBReq& req) {
     ClusterID peerClusterId = req.get_cluster_id();
     if (peerClusterId == 0) {
       LOG(INFO) << "Set clusterId for new host " << host << "!";
-      resp_.set_cluster_id(clusterId_);
+      resp_.cluster_id_ref() = clusterId_;
     } else if (peerClusterId != clusterId_) {
       LOG(ERROR) << "Reject wrong cluster host " << host << "!";
       handleErrorCode(nebula::cpp2::ErrorCode::E_WRONGCLUSTER);
@@ -106,9 +106,9 @@ void HBProcessor::process(const cpp2::HBReq& req) {
   // set update time and meta version
   auto lastUpdateTimeRet = LastUpdateTimeMan::get(kvstore_);
   if (nebula::ok(lastUpdateTimeRet)) {
-    resp_.set_last_update_time_in_ms(nebula::value(lastUpdateTimeRet));
+    resp_.last_update_time_in_ms_ref() = nebula::value(lastUpdateTimeRet);
   } else if (nebula::error(lastUpdateTimeRet) == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
-    resp_.set_last_update_time_in_ms(0);
+    resp_.last_update_time_in_ms_ref() = 0;
   }
 
   auto version = metaVersion_.load();
@@ -116,7 +116,7 @@ void HBProcessor::process(const cpp2::HBReq& req) {
     metaVersion_.store(static_cast<int64_t>(MetaVersionMan::getMetaVersionFromKV(kvstore_)));
   }
 
-  resp_.set_meta_version(metaVersion_.load());
+  resp_.meta_version_ref() = metaVersion_.load();
 
   handleErrorCode(ret);
   onFinished();

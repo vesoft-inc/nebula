@@ -44,15 +44,15 @@ nebula::storage::cpp2::IndexColumnHint ScanRange::toIndexColumnHint() const {
   nebula::storage::cpp2::IndexColumnHint hint;
   // column_name should be set by the caller
   if (isRangeScan) {
-    hint.set_scan_type(nebula::storage::cpp2::ScanType::RANGE);
+    hint.scan_type_ref() = nebula::storage::cpp2::ScanType::RANGE;
     // Encode uint64_t as string in advance
-    hint.set_begin_value(IndexKeyUtils::encodeUint64(rangeMin));
-    hint.set_end_value(IndexKeyUtils::encodeUint64(rangeMax));
-    hint.set_include_begin(true);
-    hint.set_include_end(true);
+    hint.begin_value_ref() = IndexKeyUtils::encodeUint64(rangeMin);
+    hint.end_value_ref() = IndexKeyUtils::encodeUint64(rangeMax);
+    hint.include_begin_ref() = true;
+    hint.include_end_ref() = true;
   } else {
-    hint.set_scan_type(nebula::storage::cpp2::ScanType::PREFIX);
-    hint.set_begin_value(IndexKeyUtils::encodeUint64(rangeMin));
+    hint.scan_type_ref() = nebula::storage::cpp2::ScanType::PREFIX;
+    hint.begin_value_ref() = IndexKeyUtils::encodeUint64(rangeMin);
   }
   return hint;
 }

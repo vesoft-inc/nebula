@@ -139,14 +139,14 @@ void AlterTagProcessor::process(const cpp2::AlterTagReq& req) {
     return;
   }
 
-  schema.set_schema_prop(std::move(prop));
-  schema.set_columns(std::move(columns));
+  schema.schema_prop_ref() = std::move(prop);
+  schema.columns_ref() = std::move(columns);
 
   std::vector<kvstore::KV> data;
   LOG(INFO) << "Alter Tag " << tagName << ", tagId " << tagId;
   data.emplace_back(MetaKeyUtils::schemaTagKey(spaceId, tagId, version),
                     MetaKeyUtils::schemaVal(tagName, schema));
-  resp_.set_id(to(tagId, EntryType::TAG));
+  resp_.id_ref() = to(tagId, EntryType::TAG);
   doSyncPutAndUpdate(std::move(data));
 }
 

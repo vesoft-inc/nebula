@@ -21,7 +21,7 @@ void DropTagProcessor::process(const cpp2::DropTagReq& req) {
   auto iRet = doGet(indexKey);
   if (nebula::ok(iRet)) {
     tagId = *reinterpret_cast<const TagID*>(nebula::value(iRet).c_str());
-    resp_.set_id(to(tagId, EntryType::TAG));
+    resp_.id_ref() = to(tagId, EntryType::TAG);
   } else {
     auto retCode = nebula::error(iRet);
     if (retCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {

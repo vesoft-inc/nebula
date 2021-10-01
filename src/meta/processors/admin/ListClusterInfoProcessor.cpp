@@ -80,8 +80,8 @@ void ListClusterInfoProcessor::process(const cpp2::ListClusterInfoReq& req) {
   for (auto& raftAddr : raftPeers) {
     auto metaAddr = Utils::getStoreAddrFromRaftAddr(raftAddr);
     cpp2::ServiceInfo service;
-    service.set_role(cpp2::HostRole::META);
-    service.set_addr(metaAddr);
+    service.role_ref() = cpp2::HostRole::META;
+    service.addr_ref() = metaAddr;
 
     if (hostServices.find(metaAddr.host) == hostServices.end()) {
       hostServices[metaAddr.host] = std::vector<cpp2::ServiceInfo>();
@@ -110,8 +110,8 @@ void ListClusterInfoProcessor::process(const cpp2::ListClusterInfoReq& req) {
     }
   }
 
-  resp_.set_host_services(hostServices);
-  resp_.set_code(nebula::cpp2::ErrorCode::SUCCEEDED);
+  resp_.host_services_ref() = hostServices;
+  resp_.code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
   onFinished();
 }
 }  // namespace meta

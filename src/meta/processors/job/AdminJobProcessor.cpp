@@ -45,7 +45,7 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
       auto jobExist = jobMgr->checkJobExist(cmd, paras, jId);
       if (jobExist) {
         LOG(INFO) << "Job has already exists: " << jId;
-        result.set_job_id(jId);
+        result.job_id_ref() = jId;
         break;
       }
 
@@ -59,14 +59,14 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
       JobDescription jobDesc(nebula::value(jobId), cmd, paras);
       errorCode = jobMgr->addJob(jobDesc, adminClient_);
       if (errorCode == nebula::cpp2::ErrorCode::SUCCEEDED) {
-        result.set_job_id(nebula::value(jobId));
+        result.job_id_ref() = nebula::value(jobId);
       }
       break;
     }
     case nebula::meta::cpp2::AdminJobOp::SHOW_All: {
       auto ret = jobMgr->showJobs(req.get_paras().back());
       if (nebula::ok(ret)) {
-        result.set_job_desc(nebula::value(ret));
+        result.job_desc_ref() = nebula::value(ret);
       } else {
         errorCode = nebula::error(ret);
       }
@@ -88,8 +88,8 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
       }
       auto ret = jobMgr->showJob(iJob, req.get_paras().back());
       if (nebula::ok(ret)) {
-        result.set_job_desc(std::vector<cpp2::JobDesc>{nebula::value(ret).first});
-        result.set_task_desc(nebula::value(ret).second);
+        result.job_desc_ref() = std::vector<cpp2::JobDesc>{nebula::value(ret).first};
+        result.task_desc_ref() = nebula::value(ret).second;
       } else {
         errorCode = nebula::error(ret);
       }
@@ -121,7 +121,7 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
       }
       auto ret = jobMgr->recoverJob(spaceName, adminClient_, jobIds);
       if (nebula::ok(ret)) {
-        result.set_recovered_job_num(nebula::value(ret));
+        result.recovered_job_num_ref() = nebula::value(ret);
       } else {
         errorCode = nebula::error(ret);
       }
@@ -137,7 +137,7 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
     onFinished();
     return;
   }
-  resp_.set_result(std::move(result));
+  resp_.result_ref() = std::move(result);
   onFinished();
 }
 

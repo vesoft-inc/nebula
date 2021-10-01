@@ -85,7 +85,7 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
   auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_num_io_threads);
   std::shared_ptr<apache::thrift::concurrency::ThreadManager> threadManager(
       apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
-          FLAGS_num_worker_threads, true /*stats*/));
+          FLAGS_num_worker_threads));
   threadManager->setNamePrefix("executor");
   threadManager->start();
   nebula::kvstore::KVOptions options;

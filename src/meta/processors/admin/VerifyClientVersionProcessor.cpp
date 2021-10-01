@@ -20,11 +20,11 @@ void VerifyClientVersionProcessor::process(const cpp2::VerifyClientVersionReq& r
       ":", FLAGS_client_white_list, std::inserter(whiteList, whiteList.begin()));
   if (FLAGS_enable_client_white_list &&
       whiteList.find(req.get_client_version()) == whiteList.end()) {
-    resp_.set_code(nebula::cpp2::ErrorCode::E_CLIENT_SERVER_INCOMPATIBLE);
-    resp_.set_error_msg(folly::stringPrintf(
+    resp_.code_ref() = nebula::cpp2::ErrorCode::E_CLIENT_SERVER_INCOMPATIBLE;
+    resp_.error_msg_ref() = folly::stringPrintf(
         "Meta client version(%s) is not accepted, current meta client white list: %s.",
         req.get_client_version().c_str(),
-        FLAGS_client_white_list.c_str()));
+        FLAGS_client_white_list.c_str());
   } else {
     const auto& host = req.get_host();
     auto versionKey = MetaKeyUtils::versionKey(host);
@@ -32,7 +32,7 @@ void VerifyClientVersionProcessor::process(const cpp2::VerifyClientVersionReq& r
     std::vector<kvstore::KV> versionData;
     versionData.emplace_back(std::move(versionKey), std::move(versionVal));
     doSyncPut(versionData);
-    resp_.set_code(nebula::cpp2::ErrorCode::SUCCEEDED);
+    resp_.code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
   }
   onFinished();
 }

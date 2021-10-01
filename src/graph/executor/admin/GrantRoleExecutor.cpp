@@ -31,9 +31,9 @@ folly::Future<Status> GrantRoleExecutor::grantRole() {
       PermissionManager::canWriteRole(session, grNode->role(), spaceId, *grNode->username()));
 
   meta::cpp2::RoleItem item;
-  item.set_space_id(spaceId);  // TODO(shylock) pass space name directly
-  item.set_user_id(*grNode->username());
-  item.set_role_type(grNode->role());
+  item.space_id_ref() = spaceId;  // TODO(shylock) pass space name directly
+  item.user_id_ref() = *grNode->username();
+  item.role_type_ref() = grNode->role();
   return qctx()
       ->getMetaClient()
       ->grantToUser(std::move(item))

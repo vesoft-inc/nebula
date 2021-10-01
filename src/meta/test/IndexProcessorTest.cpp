@@ -42,15 +42,15 @@ TEST(IndexProcessorTest, AlterEdgeWithTTLTest) {
     cpp2::SchemaProp schemaProp;
     std::vector<cpp2::ColumnDef> cols;
     cols.emplace_back(TestUtils::columnDef(0, PropertyType::INT64));
-    schemaProp.set_ttl_duration(100);
-    schemaProp.set_ttl_col("col_0");
-    schema.set_schema_prop(std::move(schemaProp));
-    schema.set_columns(std::move(cols));
+    schemaProp.ttl_duration_ref() = 100;
+    schemaProp.ttl_col_ref() = "col_0";
+    schema.schema_prop_ref() = std::move(schemaProp);
+    schema.columns_ref() = std::move(cols);
 
     cpp2::CreateEdgeReq req;
-    req.set_space_id(1);
-    req.set_edge_name("ttl");
-    req.set_schema(schema);
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "ttl";
+    req.schema_ref() = schema;
     auto* processor = CreateEdgeProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -59,12 +59,12 @@ TEST(IndexProcessorTest, AlterEdgeWithTTLTest) {
   }
   {
     cpp2::CreateEdgeIndexReq req;
-    req.set_space_id(1);
-    req.set_edge_name("ttl");
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "ttl";
     cpp2::IndexFieldDef field;
-    field.set_name("col_0");
-    req.set_fields({field});
-    req.set_index_name("ttl_index");
+    field.name_ref() = "col_0";
+    req.fields_ref() = {field};
+    req.index_name_ref() = "ttl_index";
     auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -74,11 +74,11 @@ TEST(IndexProcessorTest, AlterEdgeWithTTLTest) {
   {
     cpp2::AlterEdgeReq req;
     cpp2::SchemaProp schemaProp;
-    schemaProp.set_ttl_duration(1000);
-    schemaProp.set_ttl_col("col_0");
-    req.set_space_id(1);
-    req.set_edge_name("ttl");
-    req.set_schema_prop(std::move(schemaProp));
+    schemaProp.ttl_duration_ref() = 1000;
+    schemaProp.ttl_col_ref() = "col_0";
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "ttl";
+    req.schema_prop_ref() = std::move(schemaProp);
     auto* processor = AlterEdgeProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -98,15 +98,15 @@ TEST(IndexProcessorTest, AlterTagWithTTLTest) {
     cpp2::SchemaProp schemaProp;
     std::vector<cpp2::ColumnDef> cols;
     cols.emplace_back(TestUtils::columnDef(0, PropertyType::INT64));
-    schemaProp.set_ttl_duration(100);
-    schemaProp.set_ttl_col("col_0");
-    schema.set_schema_prop(std::move(schemaProp));
-    schema.set_columns(std::move(cols));
+    schemaProp.ttl_duration_ref() = 100;
+    schemaProp.ttl_col_ref() = "col_0";
+    schema.schema_prop_ref() = std::move(schemaProp);
+    schema.columns_ref() = std::move(cols);
 
     cpp2::CreateTagReq req;
-    req.set_space_id(1);
-    req.set_tag_name("ttl");
-    req.set_schema(schema);
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "ttl";
+    req.schema_ref() = schema;
     auto* processor = CreateTagProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -115,12 +115,12 @@ TEST(IndexProcessorTest, AlterTagWithTTLTest) {
   }
   {
     cpp2::CreateTagIndexReq req;
-    req.set_space_id(1);
-    req.set_tag_name("ttl");
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "ttl";
     cpp2::IndexFieldDef field;
-    field.set_name("col_0");
-    req.set_fields({field});
-    req.set_index_name("ttl_index");
+    field.name_ref() = "col_0";
+    req.fields_ref() = {field};
+    req.index_name_ref() = "ttl_index";
     auto* processor = CreateTagIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -130,11 +130,11 @@ TEST(IndexProcessorTest, AlterTagWithTTLTest) {
   {
     cpp2::AlterTagReq req;
     cpp2::SchemaProp schemaProp;
-    schemaProp.set_ttl_duration(1000);
-    schemaProp.set_ttl_col("col_0");
-    req.set_space_id(1);
-    req.set_tag_name("ttl");
-    req.set_schema_prop(std::move(schemaProp));
+    schemaProp.ttl_duration_ref() = 1000;
+    schemaProp.ttl_col_ref() = "col_0";
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "ttl";
+    req.schema_prop_ref() = std::move(schemaProp);
     auto* processor = AlterTagProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -152,11 +152,11 @@ TEST(IndexProcessorTest, TagIndexTest) {
   {
     // Allow to create tag index on no fields
     cpp2::CreateTagIndexReq req;
-    req.set_space_id(1);
-    req.set_tag_name("tag_0");
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "tag_0";
     std::vector<cpp2::IndexFieldDef> fields{};
-    req.set_fields(std::move(fields));
-    req.set_index_name("no_field_index");
+    req.fields_ref() = std::move(fields);
+    req.index_name_ref() = "no_field_index";
     auto* processor = CreateTagIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -166,11 +166,11 @@ TEST(IndexProcessorTest, TagIndexTest) {
   {
     // Duplicate tag index on no fields
     cpp2::CreateTagIndexReq req;
-    req.set_space_id(1);
-    req.set_tag_name("tag_0");
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "tag_0";
     std::vector<cpp2::IndexFieldDef> fields{};
-    req.set_fields(std::move(fields));
-    req.set_index_name("no_field_index_1");
+    req.fields_ref() = std::move(fields);
+    req.index_name_ref() = "no_field_index_1";
     auto* processor = CreateTagIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -179,12 +179,12 @@ TEST(IndexProcessorTest, TagIndexTest) {
   }
   {
     cpp2::CreateTagIndexReq req;
-    req.set_space_id(1);
-    req.set_tag_name("tag_0");
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "tag_0";
     cpp2::IndexFieldDef field;
-    field.set_name("tag_0_col_0");
-    req.set_fields({field});
-    req.set_index_name("single_field_index");
+    field.name_ref() = "tag_0_col_0";
+    req.fields_ref() = {field};
+    req.index_name_ref() = "single_field_index";
     auto* processor = CreateTagIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -193,12 +193,12 @@ TEST(IndexProcessorTest, TagIndexTest) {
   }
   {
     cpp2::CreateTagIndexReq req;
-    req.set_space_id(1);
-    req.set_tag_name("tag_0");
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "tag_0";
     cpp2::IndexFieldDef field;
-    field.set_name("tag_0_col_0");
-    req.set_fields({field});
-    req.set_index_name("duplicate_field_index");
+    field.name_ref() = "tag_0_col_0";
+    req.fields_ref() = {field};
+    req.index_name_ref() = "duplicate_field_index";
     auto* processor = CreateTagIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -207,8 +207,8 @@ TEST(IndexProcessorTest, TagIndexTest) {
   }
   {
     cpp2::DropTagIndexReq req;
-    req.set_space_id(1);
-    req.set_index_name("no_field_index");
+    req.space_id_ref() = 1;
+    req.index_name_ref() = "no_field_index";
     auto* processor = DropTagIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -217,16 +217,16 @@ TEST(IndexProcessorTest, TagIndexTest) {
   }
   {
     cpp2::CreateTagIndexReq req;
-    req.set_space_id(1);
-    req.set_tag_name("tag_0");
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "tag_0";
     std::vector<cpp2::IndexFieldDef> fields;
     cpp2::IndexFieldDef field1, field2;
-    field1.set_name("tag_0_col_0");
-    field2.set_name("tag_0_col_1");
+    field1.name_ref() = "tag_0_col_0";
+    field2.name_ref() = "tag_0_col_1";
     fields.emplace_back(std::move(field1));
     fields.emplace_back(std::move(field2));
-    req.set_fields(std::move(fields));
-    req.set_index_name("multi_field_index");
+    req.fields_ref() = std::move(fields);
+    req.index_name_ref() = "multi_field_index";
     auto* processor = CreateTagIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -235,16 +235,16 @@ TEST(IndexProcessorTest, TagIndexTest) {
   }
   {
     cpp2::CreateTagIndexReq req;
-    req.set_space_id(1);
-    req.set_tag_name("tag_0");
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "tag_0";
     std::vector<cpp2::IndexFieldDef> fields;
     cpp2::IndexFieldDef field1, field2;
-    field1.set_name("tag_0_col_0");
-    field2.set_name("tag_0_col_1");
+    field1.name_ref() = "tag_0_col_0";
+    field2.name_ref() = "tag_0_col_1";
     fields.emplace_back(std::move(field1));
     fields.emplace_back(std::move(field2));
-    req.set_fields(std::move(fields));
-    req.set_index_name("duplicate_field_index");
+    req.fields_ref() = std::move(fields);
+    req.index_name_ref() = "duplicate_field_index";
     auto* processor = CreateTagIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -253,12 +253,12 @@ TEST(IndexProcessorTest, TagIndexTest) {
   }
   {
     cpp2::CreateTagIndexReq req;
-    req.set_space_id(1);
-    req.set_tag_name("tag_0");
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "tag_0";
     cpp2::IndexFieldDef field;
-    field.set_name("tag_0_col_0");
-    req.set_fields({field});
-    req.set_index_name("duplicate_field_index");
+    field.name_ref() = "tag_0_col_0";
+    req.fields_ref() = {field};
+    req.index_name_ref() = "duplicate_field_index";
     auto* processor = CreateTagIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -267,16 +267,16 @@ TEST(IndexProcessorTest, TagIndexTest) {
   }
   {
     cpp2::CreateTagIndexReq req;
-    req.set_space_id(1);
-    req.set_tag_name("tag_0");
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "tag_0";
     std::vector<cpp2::IndexFieldDef> fields;
     cpp2::IndexFieldDef field1, field2;
-    field1.set_name("tag_0_col_1");
-    field2.set_name("tag_0_col_0");
+    field1.name_ref() = "tag_0_col_1";
+    field2.name_ref() = "tag_0_col_0";
     fields.emplace_back(std::move(field1));
     fields.emplace_back(std::move(field2));
-    req.set_fields(std::move(fields));
-    req.set_index_name("disorder_field_index");
+    req.fields_ref() = std::move(fields);
+    req.index_name_ref() = "disorder_field_index";
     auto* processor = CreateTagIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -285,16 +285,16 @@ TEST(IndexProcessorTest, TagIndexTest) {
   }
   {
     cpp2::CreateTagIndexReq req;
-    req.set_space_id(1);
-    req.set_tag_name("tag_0");
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "tag_0";
     std::vector<cpp2::IndexFieldDef> fields;
     cpp2::IndexFieldDef field1, field2;
-    field1.set_name("tag_0_col_0");
-    field2.set_name("tag_0_col_0");
+    field1.name_ref() = "tag_0_col_0";
+    field2.name_ref() = "tag_0_col_0";
     fields.emplace_back(std::move(field1));
     fields.emplace_back(std::move(field2));
-    req.set_fields(std::move(fields));
-    req.set_index_name("conflict_index");
+    req.fields_ref() = std::move(fields);
+    req.index_name_ref() = "conflict_index";
     auto* processor = CreateTagIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -303,12 +303,12 @@ TEST(IndexProcessorTest, TagIndexTest) {
   }
   {
     cpp2::CreateTagIndexReq req;
-    req.set_space_id(1);
-    req.set_tag_name("tag_not_exist");
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "tag_not_exist";
     cpp2::IndexFieldDef field;
-    field.set_name("tag_0_col_0");
-    req.set_fields({field});
-    req.set_index_name("tag_not_exist_index");
+    field.name_ref() = "tag_0_col_0";
+    req.fields_ref() = {field};
+    req.index_name_ref() = "tag_not_exist_index";
     auto* processor = CreateTagIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -317,12 +317,12 @@ TEST(IndexProcessorTest, TagIndexTest) {
   }
   {
     cpp2::CreateTagIndexReq req;
-    req.set_space_id(1);
-    req.set_tag_name("tag_0");
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "tag_0";
     cpp2::IndexFieldDef field;
-    field.set_name("field_not_exist");
-    req.set_fields({field});
-    req.set_index_name("field_not_exist_index");
+    field.name_ref() = "field_not_exist";
+    req.fields_ref() = {field};
+    req.index_name_ref() = "field_not_exist_index";
     auto* processor = CreateTagIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -332,12 +332,12 @@ TEST(IndexProcessorTest, TagIndexTest) {
   {
     // Test index have exist
     cpp2::CreateTagIndexReq req;
-    req.set_space_id(1);
-    req.set_tag_name("tag_0");
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "tag_0";
     cpp2::IndexFieldDef field;
-    field.set_name("tag_0_col_0");
-    req.set_fields({field});
-    req.set_index_name("single_field_index");
+    field.name_ref() = "tag_0_col_0";
+    req.fields_ref() = {field};
+    req.index_name_ref() = "single_field_index";
     auto* processor = CreateTagIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -346,7 +346,7 @@ TEST(IndexProcessorTest, TagIndexTest) {
   }
   {
     cpp2::ListTagIndexesReq req;
-    req.set_space_id(1);
+    req.space_id_ref() = 1;
     auto* processor = ListTagIndexesProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -357,8 +357,8 @@ TEST(IndexProcessorTest, TagIndexTest) {
     ASSERT_EQ(3, items.size());
     {
       cpp2::ColumnDef column;
-      column.set_name("tag_0_col_0");
-      column.type.set_type(PropertyType::INT64);
+      column.name_ref() = "tag_0_col_0";
+      column.type.type_ref() = PropertyType::INT64;
       std::vector<cpp2::ColumnDef> columns;
       columns.emplace_back(std::move(column));
 
@@ -371,14 +371,14 @@ TEST(IndexProcessorTest, TagIndexTest) {
     {
       std::vector<cpp2::ColumnDef> columns;
       cpp2::ColumnDef intColumn;
-      intColumn.set_name("tag_0_col_0");
-      intColumn.type.set_type(PropertyType::INT64);
+      intColumn.name_ref() = "tag_0_col_0";
+      intColumn.type.type_ref() = PropertyType::INT64;
       columns.emplace_back(std::move(intColumn));
 
       cpp2::ColumnDef stringColumn;
-      stringColumn.set_name("tag_0_col_1");
-      stringColumn.type.set_type(PropertyType::FIXED_STRING);
-      stringColumn.type.set_type_length(MAX_INDEX_TYPE_LENGTH);
+      stringColumn.name_ref() = "tag_0_col_1";
+      stringColumn.type.type_ref() = PropertyType::FIXED_STRING;
+      stringColumn.type.type_length_ref() = MAX_INDEX_TYPE_LENGTH;
       columns.emplace_back(std::move(stringColumn));
 
       auto multiItem = items[1];
@@ -389,13 +389,13 @@ TEST(IndexProcessorTest, TagIndexTest) {
     {
       std::vector<cpp2::ColumnDef> columns;
       cpp2::ColumnDef stringColumn;
-      stringColumn.set_name("tag_0_col_1");
-      stringColumn.type.set_type(PropertyType::FIXED_STRING);
-      stringColumn.type.set_type_length(MAX_INDEX_TYPE_LENGTH);
+      stringColumn.name_ref() = "tag_0_col_1";
+      stringColumn.type.type_ref() = PropertyType::FIXED_STRING;
+      stringColumn.type.type_length_ref() = MAX_INDEX_TYPE_LENGTH;
       columns.emplace_back(std::move(stringColumn));
       cpp2::ColumnDef intColumn;
-      intColumn.set_name("tag_0_col_0");
-      intColumn.type.set_type(PropertyType::INT64);
+      intColumn.name_ref() = "tag_0_col_0";
+      intColumn.type.type_ref() = PropertyType::INT64;
       columns.emplace_back(std::move(intColumn));
 
       auto disorderItem = items[2];
@@ -406,8 +406,8 @@ TEST(IndexProcessorTest, TagIndexTest) {
   }
   {
     cpp2::GetTagIndexReq req;
-    req.set_space_id(1);
-    req.set_index_name("single_field_index");
+    req.space_id_ref() = 1;
+    req.index_name_ref() = "single_field_index";
 
     auto* processor = GetTagIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -419,8 +419,8 @@ TEST(IndexProcessorTest, TagIndexTest) {
     ASSERT_EQ(2, item.get_index_id());
 
     cpp2::ColumnDef column;
-    column.set_name("tag_0_col_0");
-    column.type.set_type(PropertyType::INT64);
+    column.name_ref() = "tag_0_col_0";
+    column.type.type_ref() = PropertyType::INT64;
     std::vector<cpp2::ColumnDef> columns;
     columns.emplace_back(std::move(column));
 
@@ -428,8 +428,8 @@ TEST(IndexProcessorTest, TagIndexTest) {
   }
   {
     cpp2::DropTagIndexReq req;
-    req.set_space_id(1);
-    req.set_index_name("single_field_index");
+    req.space_id_ref() = 1;
+    req.index_name_ref() = "single_field_index";
 
     auto* processor = DropTagIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -439,8 +439,8 @@ TEST(IndexProcessorTest, TagIndexTest) {
   }
   {
     cpp2::GetTagIndexReq req;
-    req.set_space_id(1);
-    req.set_index_name("single_field_index");
+    req.space_id_ref() = 1;
+    req.index_name_ref() = "single_field_index";
 
     auto* processor = GetTagIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -450,8 +450,8 @@ TEST(IndexProcessorTest, TagIndexTest) {
   }
   {
     cpp2::DropTagIndexReq req;
-    req.set_space_id(1);
-    req.set_index_name("single_field_index");
+    req.space_id_ref() = 1;
+    req.index_name_ref() = "single_field_index";
 
     auto* processor = DropTagIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -469,12 +469,12 @@ TEST(IndexProcessorTest, TagIndexTestV2) {
   TestUtils::mockTag(kv.get(), 2, 0, true);
   {
     cpp2::CreateTagIndexReq req;
-    req.set_space_id(1);
-    req.set_tag_name("tag_0");
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "tag_0";
     cpp2::IndexFieldDef field;
-    field.set_name("tag_0_col_0");
-    req.set_fields({field});
-    req.set_index_name("single_field_index");
+    field.name_ref() = "tag_0_col_0";
+    req.fields_ref() = {field};
+    req.index_name_ref() = "single_field_index";
     auto* processor = CreateTagIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -483,8 +483,8 @@ TEST(IndexProcessorTest, TagIndexTestV2) {
   }
   {
     cpp2::GetTagIndexReq req;
-    req.set_space_id(1);
-    req.set_index_name("single_field_index");
+    req.space_id_ref() = 1;
+    req.index_name_ref() = "single_field_index";
 
     auto* processor = GetTagIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -496,9 +496,9 @@ TEST(IndexProcessorTest, TagIndexTestV2) {
     ASSERT_EQ(1, item.get_index_id());
 
     cpp2::ColumnDef column;
-    column.set_name("tag_0_col_0");
-    column.type.set_type(PropertyType::INT64);
-    column.set_nullable(true);
+    column.name_ref() = "tag_0_col_0";
+    column.type.type_ref() = PropertyType::INT64;
+    column.nullable_ref() = true;
     std::vector<cpp2::ColumnDef> columns;
     columns.emplace_back(std::move(column));
 
@@ -515,11 +515,11 @@ TEST(IndexProcessorTest, EdgeIndexTest) {
   {
     // Allow to create edge index on no fields
     cpp2::CreateEdgeIndexReq req;
-    req.set_space_id(1);
-    req.set_edge_name("edge_0");
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "edge_0";
     std::vector<cpp2::IndexFieldDef> fields{};
-    req.set_fields(std::move(fields));
-    req.set_index_name("no_field_index");
+    req.fields_ref() = std::move(fields);
+    req.index_name_ref() = "no_field_index";
     auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -529,11 +529,11 @@ TEST(IndexProcessorTest, EdgeIndexTest) {
   {
     // Duplicate edge index on no fields
     cpp2::CreateEdgeIndexReq req;
-    req.set_space_id(1);
-    req.set_edge_name("edge_0");
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "edge_0";
     std::vector<cpp2::IndexFieldDef> fields{};
-    req.set_fields(std::move(fields));
-    req.set_index_name("no_field_index_1");
+    req.fields_ref() = std::move(fields);
+    req.index_name_ref() = "no_field_index_1";
     auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -542,12 +542,12 @@ TEST(IndexProcessorTest, EdgeIndexTest) {
   }
   {
     cpp2::CreateEdgeIndexReq req;
-    req.set_space_id(1);
-    req.set_edge_name("edge_0");
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "edge_0";
     cpp2::IndexFieldDef field;
-    field.set_name("edge_0_col_0");
-    req.set_fields({field});
-    req.set_index_name("single_field_index");
+    field.name_ref() = "edge_0_col_0";
+    req.fields_ref() = {field};
+    req.index_name_ref() = "single_field_index";
     auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -556,12 +556,12 @@ TEST(IndexProcessorTest, EdgeIndexTest) {
   }
   {
     cpp2::CreateEdgeIndexReq req;
-    req.set_space_id(1);
-    req.set_edge_name("edge_0");
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "edge_0";
     cpp2::IndexFieldDef field;
-    field.set_name("edge_0_col_0");
-    req.set_fields({field});
-    req.set_index_name("duplicate_field_index");
+    field.name_ref() = "edge_0_col_0";
+    req.fields_ref() = {field};
+    req.index_name_ref() = "duplicate_field_index";
     auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -570,8 +570,8 @@ TEST(IndexProcessorTest, EdgeIndexTest) {
   }
   {
     cpp2::DropEdgeIndexReq req;
-    req.set_space_id(1);
-    req.set_index_name("no_field_index");
+    req.space_id_ref() = 1;
+    req.index_name_ref() = "no_field_index";
     auto* processor = DropEdgeIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -580,16 +580,16 @@ TEST(IndexProcessorTest, EdgeIndexTest) {
   }
   {
     cpp2::CreateEdgeIndexReq req;
-    req.set_space_id(1);
-    req.set_edge_name("edge_0");
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "edge_0";
     std::vector<cpp2::IndexFieldDef> fields;
     cpp2::IndexFieldDef field1, field2;
-    field1.set_name("edge_0_col_0");
-    field2.set_name("edge_0_col_1");
+    field1.name_ref() = "edge_0_col_0";
+    field2.name_ref() = "edge_0_col_1";
     fields.emplace_back(std::move(field1));
     fields.emplace_back(std::move(field2));
-    req.set_fields(std::move(fields));
-    req.set_index_name("multi_field_index");
+    req.fields_ref() = std::move(fields);
+    req.index_name_ref() = "multi_field_index";
     auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -598,16 +598,16 @@ TEST(IndexProcessorTest, EdgeIndexTest) {
   }
   {
     cpp2::CreateEdgeIndexReq req;
-    req.set_space_id(1);
-    req.set_edge_name("edge_0");
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "edge_0";
     std::vector<cpp2::IndexFieldDef> fields;
     cpp2::IndexFieldDef field1, field2;
-    field1.set_name("edge_0_col_0");
-    field2.set_name("edge_0_col_1");
+    field1.name_ref() = "edge_0_col_0";
+    field2.name_ref() = "edge_0_col_1";
     fields.emplace_back(std::move(field1));
     fields.emplace_back(std::move(field2));
-    req.set_fields(std::move(fields));
-    req.set_index_name("duplicate_field_index");
+    req.fields_ref() = std::move(fields);
+    req.index_name_ref() = "duplicate_field_index";
     auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -616,12 +616,12 @@ TEST(IndexProcessorTest, EdgeIndexTest) {
   }
   {
     cpp2::CreateEdgeIndexReq req;
-    req.set_space_id(1);
-    req.set_edge_name("edge_0");
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "edge_0";
     cpp2::IndexFieldDef field;
-    field.set_name("edge_0_col_0");
-    req.set_fields({field});
-    req.set_index_name("duplicate_field_index");
+    field.name_ref() = "edge_0_col_0";
+    req.fields_ref() = {field};
+    req.index_name_ref() = "duplicate_field_index";
     auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -630,16 +630,16 @@ TEST(IndexProcessorTest, EdgeIndexTest) {
   }
   {
     cpp2::CreateEdgeIndexReq req;
-    req.set_space_id(1);
-    req.set_edge_name("edge_0");
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "edge_0";
     std::vector<cpp2::IndexFieldDef> fields;
     cpp2::IndexFieldDef field1, field2;
-    field1.set_name("edge_0_col_1");
-    field2.set_name("edge_0_col_0");
+    field1.name_ref() = "edge_0_col_1";
+    field2.name_ref() = "edge_0_col_0";
     fields.emplace_back(std::move(field1));
     fields.emplace_back(std::move(field2));
-    req.set_fields(std::move(fields));
-    req.set_index_name("disorder_field_index");
+    req.fields_ref() = std::move(fields);
+    req.index_name_ref() = "disorder_field_index";
     auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -648,16 +648,16 @@ TEST(IndexProcessorTest, EdgeIndexTest) {
   }
   {
     cpp2::CreateEdgeIndexReq req;
-    req.set_space_id(1);
-    req.set_edge_name("edge_0");
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "edge_0";
     std::vector<cpp2::IndexFieldDef> fields;
     cpp2::IndexFieldDef field1, field2;
-    field1.set_name("edge_0_col_0");
-    field2.set_name("edge_0_col_0");
+    field1.name_ref() = "edge_0_col_0";
+    field2.name_ref() = "edge_0_col_0";
     fields.emplace_back(std::move(field1));
     fields.emplace_back(std::move(field2));
-    req.set_fields(std::move(fields));
-    req.set_index_name("conflict_index");
+    req.fields_ref() = std::move(fields);
+    req.index_name_ref() = "conflict_index";
     auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -666,12 +666,12 @@ TEST(IndexProcessorTest, EdgeIndexTest) {
   }
   {
     cpp2::CreateEdgeIndexReq req;
-    req.set_space_id(1);
-    req.set_edge_name("edge_not_exist");
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "edge_not_exist";
     cpp2::IndexFieldDef field;
-    field.set_name("edge_0_col_0");
-    req.set_fields({field});
-    req.set_index_name("edge_not_exist_index");
+    field.name_ref() = "edge_0_col_0";
+    req.fields_ref() = {field};
+    req.index_name_ref() = "edge_not_exist_index";
     auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -680,12 +680,12 @@ TEST(IndexProcessorTest, EdgeIndexTest) {
   }
   {
     cpp2::CreateEdgeIndexReq req;
-    req.set_space_id(1);
-    req.set_edge_name("edge_0");
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "edge_0";
     cpp2::IndexFieldDef field;
-    field.set_name("edge_field_not_exist");
-    req.set_fields({field});
-    req.set_index_name("field_not_exist_index");
+    field.name_ref() = "edge_field_not_exist";
+    req.fields_ref() = {field};
+    req.index_name_ref() = "field_not_exist_index";
     auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -694,12 +694,12 @@ TEST(IndexProcessorTest, EdgeIndexTest) {
   }
   {
     cpp2::CreateEdgeIndexReq req;
-    req.set_space_id(1);
-    req.set_edge_name("edge_0");
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "edge_0";
     cpp2::IndexFieldDef field;
-    field.set_name("edge_0_col_0");
-    req.set_fields({field});
-    req.set_index_name("single_field_index");
+    field.name_ref() = "edge_0_col_0";
+    req.fields_ref() = {field};
+    req.index_name_ref() = "single_field_index";
     auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -708,7 +708,7 @@ TEST(IndexProcessorTest, EdgeIndexTest) {
   }
   {
     cpp2::ListEdgeIndexesReq req;
-    req.set_space_id(1);
+    req.space_id_ref() = 1;
     auto* processor = ListEdgeIndexesProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -718,8 +718,8 @@ TEST(IndexProcessorTest, EdgeIndexTest) {
     ASSERT_EQ(3, items.size());
     {
       cpp2::ColumnDef column;
-      column.set_name("edge_0_col_0");
-      column.type.set_type(PropertyType::INT64);
+      column.name_ref() = "edge_0_col_0";
+      column.type.type_ref() = PropertyType::INT64;
       std::vector<cpp2::ColumnDef> columns;
       columns.emplace_back(std::move(column));
 
@@ -731,14 +731,14 @@ TEST(IndexProcessorTest, EdgeIndexTest) {
     {
       std::vector<cpp2::ColumnDef> columns;
       cpp2::ColumnDef intColumn;
-      intColumn.set_name("edge_0_col_0");
-      intColumn.type.set_type(PropertyType::INT64);
+      intColumn.name_ref() = "edge_0_col_0";
+      intColumn.type.type_ref() = PropertyType::INT64;
       columns.emplace_back(std::move(intColumn));
 
       cpp2::ColumnDef stringColumn;
-      stringColumn.set_name("edge_0_col_1");
-      stringColumn.type.set_type(PropertyType::FIXED_STRING);
-      stringColumn.type.set_type_length(MAX_INDEX_TYPE_LENGTH);
+      stringColumn.name_ref() = "edge_0_col_1";
+      stringColumn.type.type_ref() = PropertyType::FIXED_STRING;
+      stringColumn.type.type_length_ref() = MAX_INDEX_TYPE_LENGTH;
       columns.emplace_back(std::move(stringColumn));
 
       auto multiItem = items[1];
@@ -749,13 +749,13 @@ TEST(IndexProcessorTest, EdgeIndexTest) {
     {
       std::vector<cpp2::ColumnDef> columns;
       cpp2::ColumnDef stringColumn;
-      stringColumn.set_name("edge_0_col_1");
-      stringColumn.type.set_type(PropertyType::FIXED_STRING);
-      stringColumn.type.set_type_length(MAX_INDEX_TYPE_LENGTH);
+      stringColumn.name_ref() = "edge_0_col_1";
+      stringColumn.type.type_ref() = PropertyType::FIXED_STRING;
+      stringColumn.type.type_length_ref() = MAX_INDEX_TYPE_LENGTH;
       columns.emplace_back(std::move(stringColumn));
       cpp2::ColumnDef intColumn;
-      intColumn.set_name("edge_0_col_0");
-      intColumn.type.set_type(PropertyType::INT64);
+      intColumn.name_ref() = "edge_0_col_0";
+      intColumn.type.type_ref() = PropertyType::INT64;
       columns.emplace_back(std::move(intColumn));
 
       auto disorderItem = items[2];
@@ -766,8 +766,8 @@ TEST(IndexProcessorTest, EdgeIndexTest) {
   }
   {
     cpp2::GetEdgeIndexReq req;
-    req.set_space_id(1);
-    req.set_index_name("single_field_index");
+    req.space_id_ref() = 1;
+    req.index_name_ref() = "single_field_index";
 
     auto* processor = GetEdgeIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -780,8 +780,8 @@ TEST(IndexProcessorTest, EdgeIndexTest) {
   }
   {
     cpp2::DropEdgeIndexReq req;
-    req.set_space_id(1);
-    req.set_index_name("single_field_index");
+    req.space_id_ref() = 1;
+    req.index_name_ref() = "single_field_index";
 
     auto* processor = DropEdgeIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -791,8 +791,8 @@ TEST(IndexProcessorTest, EdgeIndexTest) {
   }
   {
     cpp2::GetEdgeIndexReq req;
-    req.set_space_id(1);
-    req.set_index_name("single_field_index");
+    req.space_id_ref() = 1;
+    req.index_name_ref() = "single_field_index";
 
     auto* processor = GetEdgeIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -802,8 +802,8 @@ TEST(IndexProcessorTest, EdgeIndexTest) {
   }
   {
     cpp2::DropEdgeIndexReq req;
-    req.set_space_id(1);
-    req.set_index_name("single_field_index");
+    req.space_id_ref() = 1;
+    req.index_name_ref() = "single_field_index";
 
     auto* processor = DropEdgeIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -816,16 +816,16 @@ TEST(IndexProcessorTest, EdgeIndexTest) {
   {
     for (auto i = 1; i < 18; i++) {
       cpp2::IndexFieldDef field;
-      field.set_name(folly::stringPrintf("col-%d", i));
+      field.name_ref() = folly::stringPrintf("col-%d", i);
       bigFields.emplace_back(std::move(field));
     }
   }
   {
     cpp2::CreateTagIndexReq req;
-    req.set_space_id(1);
-    req.set_tag_name("tag_0");
-    req.set_fields(bigFields);
-    req.set_index_name("index_0");
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "tag_0";
+    req.fields_ref() = bigFields;
+    req.index_name_ref() = "index_0";
     auto* processor = CreateTagIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -834,10 +834,10 @@ TEST(IndexProcessorTest, EdgeIndexTest) {
   }
   {
     cpp2::CreateEdgeIndexReq req;
-    req.set_space_id(1);
-    req.set_edge_name("edge_0");
-    req.set_fields(std::move(bigFields));
-    req.set_index_name("index_0");
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "edge_0";
+    req.fields_ref() = std::move(bigFields);
+    req.index_name_ref() = "index_0";
     auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -854,12 +854,12 @@ TEST(IndexProcessorTest, EdgeIndexTestV2) {
   TestUtils::mockEdge(kv.get(), 2, 0, true);
   {
     cpp2::CreateEdgeIndexReq req;
-    req.set_space_id(1);
-    req.set_edge_name("edge_0");
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "edge_0";
     cpp2::IndexFieldDef field;
-    field.set_name("edge_0_col_0");
-    req.set_fields({field});
-    req.set_index_name("single_field_index");
+    field.name_ref() = "edge_0_col_0";
+    req.fields_ref() = {field};
+    req.index_name_ref() = "single_field_index";
     auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -868,8 +868,8 @@ TEST(IndexProcessorTest, EdgeIndexTestV2) {
   }
   {
     cpp2::GetEdgeIndexReq req;
-    req.set_space_id(1);
-    req.set_index_name("single_field_index");
+    req.space_id_ref() = 1;
+    req.index_name_ref() = "single_field_index";
     auto* processor = GetEdgeIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -880,9 +880,9 @@ TEST(IndexProcessorTest, EdgeIndexTestV2) {
     ASSERT_EQ(1, item.get_index_id());
 
     cpp2::ColumnDef column;
-    column.set_name("edge_0_col_0");
-    column.type.set_type(PropertyType::INT64);
-    column.set_nullable(true);
+    column.name_ref() = "edge_0_col_0";
+    column.type.type_ref() = PropertyType::INT64;
+    column.nullable_ref() = true;
     std::vector<cpp2::ColumnDef> columns;
     columns.emplace_back(std::move(column));
     ASSERT_TRUE(TestUtils::verifyResult(columns, fields));
@@ -897,12 +897,12 @@ TEST(IndexProcessorTest, IndexCheckAlterEdgeTest) {
   TestUtils::mockEdge(kv.get(), 2);
   {
     cpp2::CreateEdgeIndexReq req;
-    req.set_space_id(1);
-    req.set_edge_name("edge_0");
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "edge_0";
     cpp2::IndexFieldDef field;
-    field.set_name("edge_0_col_0");
-    req.set_fields({field});
-    req.set_index_name("single_field_index");
+    field.name_ref() = "edge_0_col_0";
+    req.fields_ref() = {field};
+    req.index_name_ref() = "single_field_index";
     auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -920,11 +920,11 @@ TEST(IndexProcessorTest, IndexCheckAlterEdgeTest) {
     }
 
     items.emplace_back();
-    items.back().set_op(cpp2::AlterSchemaOp::ADD);
-    items.back().set_schema(std::move(addSch));
-    req.set_space_id(1);
-    req.set_edge_name("edge_0");
-    req.set_edge_items(items);
+    items.back().op_ref() = cpp2::AlterSchemaOp::ADD;
+    items.back().schema_ref() = std::move(addSch);
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "edge_0";
+    req.edge_items_ref() = items;
     auto* processor = AlterEdgeProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -937,16 +937,16 @@ TEST(IndexProcessorTest, IndexCheckAlterEdgeTest) {
     cpp2::Schema changeSch;
     cpp2::ColumnDef column;
     column.name = "edge_0_col_2";
-    column.type.set_type(PropertyType::INT64);
+    column.type.type_ref() = PropertyType::INT64;
     (*changeSch.columns_ref()).emplace_back(std::move(column));
 
     items.emplace_back();
-    items.back().set_op(cpp2::AlterSchemaOp::CHANGE);
-    items.back().set_schema(std::move(changeSch));
+    items.back().op_ref() = cpp2::AlterSchemaOp::CHANGE;
+    items.back().schema_ref() = std::move(changeSch);
 
-    req.set_space_id(1);
-    req.set_edge_name("edge_0");
-    req.set_edge_items(items);
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "edge_0";
+    req.edge_items_ref() = items;
     auto* processor = AlterEdgeProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -960,16 +960,16 @@ TEST(IndexProcessorTest, IndexCheckAlterEdgeTest) {
     cpp2::Schema dropSch;
     cpp2::ColumnDef column;
     column.name = "edge_0_col_3";
-    column.type.set_type(PropertyType::INT64);
+    column.type.type_ref() = PropertyType::INT64;
     (*dropSch.columns_ref()).emplace_back(std::move(column));
 
     items.emplace_back();
-    items.back().set_op(cpp2::AlterSchemaOp::DROP);
-    items.back().set_schema(std::move(dropSch));
+    items.back().op_ref() = cpp2::AlterSchemaOp::DROP;
+    items.back().schema_ref() = std::move(dropSch);
 
-    req.set_space_id(1);
-    req.set_edge_name("edge_0");
-    req.set_edge_items(items);
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "edge_0";
+    req.edge_items_ref() = items;
     auto* processor = AlterEdgeProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -983,16 +983,16 @@ TEST(IndexProcessorTest, IndexCheckAlterEdgeTest) {
     cpp2::Schema changeSch;
     cpp2::ColumnDef column;
     column.name = "edge_0_col_0";
-    column.type.set_type(PropertyType::INT64);
+    column.type.type_ref() = PropertyType::INT64;
     (*changeSch.columns_ref()).emplace_back(std::move(column));
 
     items.emplace_back();
-    items.back().set_op(cpp2::AlterSchemaOp::CHANGE);
-    items.back().set_schema(std::move(changeSch));
+    items.back().op_ref() = cpp2::AlterSchemaOp::CHANGE;
+    items.back().schema_ref() = std::move(changeSch);
 
-    req.set_space_id(1);
-    req.set_edge_name("edge_0");
-    req.set_edge_items(items);
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "edge_0";
+    req.edge_items_ref() = items;
     auto* processor = AlterEdgeProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -1006,16 +1006,16 @@ TEST(IndexProcessorTest, IndexCheckAlterEdgeTest) {
     cpp2::Schema dropSch;
     cpp2::ColumnDef column;
     column.name = "edge_0_col_0";
-    column.type.set_type(PropertyType::INT64);
+    column.type.type_ref() = PropertyType::INT64;
     (*dropSch.columns_ref()).emplace_back(std::move(column));
 
     items.emplace_back();
-    items.back().set_op(cpp2::AlterSchemaOp::DROP);
-    items.back().set_schema(std::move(dropSch));
+    items.back().op_ref() = cpp2::AlterSchemaOp::DROP;
+    items.back().schema_ref() = std::move(dropSch);
 
-    req.set_space_id(1);
-    req.set_edge_name("edge_0");
-    req.set_edge_items(items);
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "edge_0";
+    req.edge_items_ref() = items;
     auto* processor = AlterEdgeProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -1032,12 +1032,12 @@ TEST(IndexProcessorTest, IndexCheckAlterTagTest) {
   TestUtils::mockTag(kv.get(), 2);
   {
     cpp2::CreateTagIndexReq req;
-    req.set_space_id(1);
-    req.set_tag_name("tag_0");
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "tag_0";
     cpp2::IndexFieldDef field;
-    field.set_name("tag_0_col_0");
-    req.set_fields({field});
-    req.set_index_name("single_field_index");
+    field.name_ref() = "tag_0_col_0";
+    req.fields_ref() = {field};
+    req.index_name_ref() = "single_field_index";
     auto* processor = CreateTagIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -1050,15 +1050,15 @@ TEST(IndexProcessorTest, IndexCheckAlterTagTest) {
     cpp2::Schema addSch;
     cpp2::ColumnDef column;
     column.name = "tag_0_col_2";
-    column.type.set_type(PropertyType::INT64);
+    column.type.type_ref() = PropertyType::INT64;
     (*addSch.columns_ref()).emplace_back(std::move(column));
 
     items.emplace_back();
-    items.back().set_op(cpp2::AlterSchemaOp::ADD);
-    items.back().set_schema(std::move(addSch));
-    req.set_space_id(1);
-    req.set_tag_name("tag_0");
-    req.set_tag_items(items);
+    items.back().op_ref() = cpp2::AlterSchemaOp::ADD;
+    items.back().schema_ref() = std::move(addSch);
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "tag_0";
+    req.tag_items_ref() = items;
     auto* processor = AlterTagProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -1071,14 +1071,14 @@ TEST(IndexProcessorTest, IndexCheckAlterTagTest) {
     cpp2::Schema changeSch;
     cpp2::ColumnDef column;
     column.name = "tag_0_col_2";
-    column.type.set_type(PropertyType::INT64);
+    column.type.type_ref() = PropertyType::INT64;
     (*changeSch.columns_ref()).emplace_back(std::move(column));
     items.emplace_back();
-    items.back().set_op(cpp2::AlterSchemaOp::CHANGE);
-    items.back().set_schema(std::move(changeSch));
-    req.set_space_id(1);
-    req.set_tag_name("tag_0");
-    req.set_tag_items(items);
+    items.back().op_ref() = cpp2::AlterSchemaOp::CHANGE;
+    items.back().schema_ref() = std::move(changeSch);
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "tag_0";
+    req.tag_items_ref() = items;
     auto* processor = AlterTagProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -1091,15 +1091,15 @@ TEST(IndexProcessorTest, IndexCheckAlterTagTest) {
     cpp2::Schema dropSch;
     cpp2::ColumnDef column;
     column.name = "tag_0_col_2";
-    column.type.set_type(PropertyType::INT64);
+    column.type.type_ref() = PropertyType::INT64;
     (*dropSch.columns_ref()).emplace_back(std::move(column));
 
     items.emplace_back();
-    items.back().set_op(cpp2::AlterSchemaOp::DROP);
-    items.back().set_schema(std::move(dropSch));
-    req.set_space_id(1);
-    req.set_tag_name("tag_0");
-    req.set_tag_items(items);
+    items.back().op_ref() = cpp2::AlterSchemaOp::DROP;
+    items.back().schema_ref() = std::move(dropSch);
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "tag_0";
+    req.tag_items_ref() = items;
     auto* processor = AlterTagProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -1112,14 +1112,14 @@ TEST(IndexProcessorTest, IndexCheckAlterTagTest) {
     cpp2::Schema changeSch;
     cpp2::ColumnDef column;
     column.name = "tag_0_col_0";
-    column.type.set_type(PropertyType::INT64);
+    column.type.type_ref() = PropertyType::INT64;
     (*changeSch.columns_ref()).emplace_back(std::move(column));
     items.emplace_back();
-    items.back().set_op(cpp2::AlterSchemaOp::CHANGE);
-    items.back().set_schema(std::move(changeSch));
-    req.set_space_id(1);
-    req.set_tag_name("tag_0");
-    req.set_tag_items(items);
+    items.back().op_ref() = cpp2::AlterSchemaOp::CHANGE;
+    items.back().schema_ref() = std::move(changeSch);
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "tag_0";
+    req.tag_items_ref() = items;
     auto* processor = AlterTagProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -1132,15 +1132,15 @@ TEST(IndexProcessorTest, IndexCheckAlterTagTest) {
     cpp2::Schema dropSch;
     cpp2::ColumnDef column;
     column.name = "tag_0_col_0";
-    column.type.set_type(PropertyType::INT64);
+    column.type.type_ref() = PropertyType::INT64;
     (*dropSch.columns_ref()).emplace_back(std::move(column));
 
     items.emplace_back();
-    items.back().set_op(cpp2::AlterSchemaOp::DROP);
-    items.back().set_schema(std::move(dropSch));
-    req.set_space_id(1);
-    req.set_tag_name("tag_0");
-    req.set_tag_items(items);
+    items.back().op_ref() = cpp2::AlterSchemaOp::DROP;
+    items.back().schema_ref() = std::move(dropSch);
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "tag_0";
+    req.tag_items_ref() = items;
     auto* processor = AlterTagProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -1157,12 +1157,12 @@ TEST(IndexProcessorTest, IndexCheckDropEdgeTest) {
   TestUtils::mockEdge(kv.get(), 2);
   {
     cpp2::CreateEdgeIndexReq req;
-    req.set_space_id(1);
-    req.set_edge_name("edge_0");
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "edge_0";
     cpp2::IndexFieldDef field;
-    field.set_name("edge_0_col_0");
-    req.set_fields({field});
-    req.set_index_name("single_field_index");
+    field.name_ref() = "edge_0_col_0";
+    req.fields_ref() = {field};
+    req.index_name_ref() = "single_field_index";
     auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -1171,8 +1171,8 @@ TEST(IndexProcessorTest, IndexCheckDropEdgeTest) {
   }
   {
     cpp2::DropEdgeReq req;
-    req.set_space_id(1);
-    req.set_edge_name("edge_0");
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "edge_0";
     auto* processor = DropEdgeProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -1189,12 +1189,12 @@ TEST(IndexProcessorTest, IndexCheckDropTagTest) {
   TestUtils::mockTag(kv.get(), 2);
   {
     cpp2::CreateTagIndexReq req;
-    req.set_space_id(1);
-    req.set_tag_name("tag_0");
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "tag_0";
     cpp2::IndexFieldDef field;
-    field.set_name("tag_0_col_0");
-    req.set_fields({field});
-    req.set_index_name("single_field_index");
+    field.name_ref() = "tag_0_col_0";
+    req.fields_ref() = {field};
+    req.index_name_ref() = "single_field_index";
     auto* processor = CreateTagIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -1203,8 +1203,8 @@ TEST(IndexProcessorTest, IndexCheckDropTagTest) {
   }
   {
     cpp2::DropTagReq req;
-    req.set_space_id(1);
-    req.set_tag_name("tag_0");
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "tag_0";
     auto* processor = DropTagProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -1221,12 +1221,12 @@ TEST(IndexProcessorTest, IndexTTLTagTest) {
   TestUtils::mockTag(kv.get(), 1);
   {
     cpp2::CreateTagIndexReq req;
-    req.set_space_id(1);
-    req.set_tag_name("tag_0");
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "tag_0";
     cpp2::IndexFieldDef field;
-    field.set_name("tag_0_col_0");
-    req.set_fields({field});
-    req.set_index_name("single_field_index");
+    field.name_ref() = "tag_0_col_0";
+    req.fields_ref() = {field};
+    req.index_name_ref() = "single_field_index";
 
     auto* processor = CreateTagIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -1241,15 +1241,15 @@ TEST(IndexProcessorTest, IndexTTLTagTest) {
     for (auto i = 0; i < 2; i++) {
       cpp2::ColumnDef column;
       column.name = folly::stringPrintf("tag_0_col_%d", i + 10);
-      column.type.set_type(i < 1 ? PropertyType::INT64 : PropertyType::STRING);
+      column.type.type_ref() = (i < 1 ? PropertyType::INT64 : PropertyType::STRING);
       (*addSch.columns_ref()).emplace_back(std::move(column));
     }
     items.emplace_back();
-    items.back().set_op(cpp2::AlterSchemaOp::ADD);
-    items.back().set_schema(std::move(addSch));
-    req.set_space_id(1);
-    req.set_tag_name("tag_0");
-    req.set_tag_items(items);
+    items.back().op_ref() = cpp2::AlterSchemaOp::ADD;
+    items.back().schema_ref() = std::move(addSch);
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "tag_0";
+    req.tag_items_ref() = items;
 
     auto* processor = AlterTagProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -1261,11 +1261,11 @@ TEST(IndexProcessorTest, IndexTTLTagTest) {
   {
     cpp2::AlterTagReq req;
     cpp2::SchemaProp schemaProp;
-    schemaProp.set_ttl_col("tag_0_col_0");
-    schemaProp.set_ttl_duration(100);
-    req.set_space_id(1);
-    req.set_tag_name("tag_0");
-    req.set_schema_prop(std::move(schemaProp));
+    schemaProp.ttl_col_ref() = "tag_0_col_0";
+    schemaProp.ttl_duration_ref() = 100;
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "tag_0";
+    req.schema_prop_ref() = std::move(schemaProp);
 
     auto* processor = AlterTagProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -1277,11 +1277,11 @@ TEST(IndexProcessorTest, IndexTTLTagTest) {
   {
     cpp2::AlterTagReq req;
     cpp2::SchemaProp schemaProp;
-    schemaProp.set_ttl_col("tag_0_col_10");
-    schemaProp.set_ttl_duration(100);
-    req.set_space_id(1);
-    req.set_tag_name("tag_0");
-    req.set_schema_prop(std::move(schemaProp));
+    schemaProp.ttl_col_ref() = "tag_0_col_10";
+    schemaProp.ttl_duration_ref() = 100;
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "tag_0";
+    req.schema_prop_ref() = std::move(schemaProp);
 
     auto* processor = AlterTagProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -1292,8 +1292,8 @@ TEST(IndexProcessorTest, IndexTTLTagTest) {
   // Drop index
   {
     cpp2::DropTagIndexReq req;
-    req.set_space_id(1);
-    req.set_index_name("single_field_index");
+    req.space_id_ref() = 1;
+    req.index_name_ref() = "single_field_index";
 
     auto* processor = DropTagIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -1305,11 +1305,11 @@ TEST(IndexProcessorTest, IndexTTLTagTest) {
   {
     cpp2::AlterTagReq req;
     cpp2::SchemaProp schemaProp;
-    schemaProp.set_ttl_col("tag_0_col_0");
-    schemaProp.set_ttl_duration(100);
-    req.set_space_id(1);
-    req.set_tag_name("tag_0");
-    req.set_schema_prop(std::move(schemaProp));
+    schemaProp.ttl_col_ref() = "tag_0_col_0";
+    schemaProp.ttl_duration_ref() = 100;
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "tag_0";
+    req.schema_prop_ref() = std::move(schemaProp);
 
     auto* processor = AlterTagProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -1320,12 +1320,12 @@ TEST(IndexProcessorTest, IndexTTLTagTest) {
   // Tag with ttl to creat index on ttl col
   {
     cpp2::CreateTagIndexReq req;
-    req.set_space_id(1);
-    req.set_tag_name("tag_0");
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "tag_0";
     cpp2::IndexFieldDef field;
-    field.set_name("tag_0_col_0");
-    req.set_fields({field});
-    req.set_index_name("ttl_with_index");
+    field.name_ref() = "tag_0_col_0";
+    req.fields_ref() = {field};
+    req.index_name_ref() = "ttl_with_index";
 
     auto* processor = CreateTagIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -1337,11 +1337,11 @@ TEST(IndexProcessorTest, IndexTTLTagTest) {
   {
     cpp2::AlterTagReq req;
     cpp2::SchemaProp schemaProp;
-    schemaProp.set_ttl_duration(0);
-    schemaProp.set_ttl_col("");
-    req.set_space_id(1);
-    req.set_tag_name("tag_0");
-    req.set_schema_prop(std::move(schemaProp));
+    schemaProp.ttl_duration_ref() = 0;
+    schemaProp.ttl_col_ref() = "";
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "tag_0";
+    req.schema_prop_ref() = std::move(schemaProp);
 
     auto* processor = AlterTagProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -1351,8 +1351,8 @@ TEST(IndexProcessorTest, IndexTTLTagTest) {
   }
   {
     cpp2::DropTagIndexReq req;
-    req.set_space_id(1);
-    req.set_index_name("ttl_with_index");
+    req.space_id_ref() = 1;
+    req.index_name_ref() = "ttl_with_index";
 
     auto* processor = DropTagIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -1370,12 +1370,12 @@ TEST(IndexProcessorTest, IndexTTLEdgeTest) {
   TestUtils::mockEdge(kv.get(), 1);
   {
     cpp2::CreateEdgeIndexReq req;
-    req.set_space_id(1);
-    req.set_edge_name("edge_0");
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "edge_0";
     cpp2::IndexFieldDef field;
-    field.set_name("edge_0_col_0");
-    req.set_fields({field});
-    req.set_index_name("single_field_index");
+    field.name_ref() = "edge_0_col_0";
+    req.fields_ref() = {field};
+    req.index_name_ref() = "single_field_index";
 
     auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -1390,16 +1390,16 @@ TEST(IndexProcessorTest, IndexTTLEdgeTest) {
     for (auto i = 0; i < 2; i++) {
       cpp2::ColumnDef column;
       column.name = folly::stringPrintf("edge_0_col_%d", i + 10);
-      column.type.set_type(i < 1 ? PropertyType::INT64 : PropertyType::STRING);
+      column.type.type_ref() = (i < 1 ? PropertyType::INT64 : PropertyType::STRING);
       (*addSch.columns_ref()).emplace_back(std::move(column));
     }
     items.emplace_back();
-    items.back().set_op(cpp2::AlterSchemaOp::ADD);
-    items.back().set_schema(std::move(addSch));
+    items.back().op_ref() = cpp2::AlterSchemaOp::ADD;
+    items.back().schema_ref() = std::move(addSch);
 
-    req.set_space_id(1);
-    req.set_edge_name("edge_0");
-    req.set_edge_items(items);
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "edge_0";
+    req.edge_items_ref() = items;
     auto* processor = AlterEdgeProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -1410,11 +1410,11 @@ TEST(IndexProcessorTest, IndexTTLEdgeTest) {
   {
     cpp2::AlterEdgeReq req;
     cpp2::SchemaProp schemaProp;
-    schemaProp.set_ttl_col("edge_0_col_0");
-    schemaProp.set_ttl_duration(100);
-    req.set_space_id(1);
-    req.set_edge_name("edge_0");
-    req.set_schema_prop(std::move(schemaProp));
+    schemaProp.ttl_col_ref() = "edge_0_col_0";
+    schemaProp.ttl_duration_ref() = 100;
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "edge_0";
+    req.schema_prop_ref() = std::move(schemaProp);
 
     auto* processor = AlterEdgeProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -1426,11 +1426,11 @@ TEST(IndexProcessorTest, IndexTTLEdgeTest) {
   {
     cpp2::AlterEdgeReq req;
     cpp2::SchemaProp schemaProp;
-    schemaProp.set_ttl_col("edge_0_col_10");
-    schemaProp.set_ttl_duration(100);
-    req.set_space_id(1);
-    req.set_edge_name("edge_0");
-    req.set_schema_prop(std::move(schemaProp));
+    schemaProp.ttl_col_ref() = "edge_0_col_10";
+    schemaProp.ttl_duration_ref() = 100;
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "edge_0";
+    req.schema_prop_ref() = std::move(schemaProp);
 
     auto* processor = AlterEdgeProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -1441,8 +1441,8 @@ TEST(IndexProcessorTest, IndexTTLEdgeTest) {
   // Drop index
   {
     cpp2::DropEdgeIndexReq req;
-    req.set_space_id(1);
-    req.set_index_name("single_field_index");
+    req.space_id_ref() = 1;
+    req.index_name_ref() = "single_field_index";
 
     auto* processor = DropEdgeIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -1454,11 +1454,11 @@ TEST(IndexProcessorTest, IndexTTLEdgeTest) {
   {
     cpp2::AlterEdgeReq req;
     cpp2::SchemaProp schemaProp;
-    schemaProp.set_ttl_col("edge_0_col_0");
-    schemaProp.set_ttl_duration(100);
-    req.set_space_id(1);
-    req.set_edge_name("edge_0");
-    req.set_schema_prop(std::move(schemaProp));
+    schemaProp.ttl_col_ref() = "edge_0_col_0";
+    schemaProp.ttl_duration_ref() = 100;
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "edge_0";
+    req.schema_prop_ref() = std::move(schemaProp);
 
     auto* processor = AlterEdgeProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -1469,12 +1469,12 @@ TEST(IndexProcessorTest, IndexTTLEdgeTest) {
   // Edge with ttl to create index on ttl col
   {
     cpp2::CreateEdgeIndexReq req;
-    req.set_space_id(1);
-    req.set_edge_name("edge_0");
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "edge_0";
     cpp2::IndexFieldDef field;
-    field.set_name("edge_0_col_0");
-    req.set_fields({field});
-    req.set_index_name("ttl_with_index");
+    field.name_ref() = "edge_0_col_0";
+    req.fields_ref() = {field};
+    req.index_name_ref() = "ttl_with_index";
 
     auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -1486,11 +1486,11 @@ TEST(IndexProcessorTest, IndexTTLEdgeTest) {
   {
     cpp2::AlterEdgeReq req;
     cpp2::SchemaProp schemaProp;
-    schemaProp.set_ttl_duration(0);
-    schemaProp.set_ttl_col("");
-    req.set_space_id(1);
-    req.set_edge_name("edge_0");
-    req.set_schema_prop(std::move(schemaProp));
+    schemaProp.ttl_duration_ref() = 0;
+    schemaProp.ttl_col_ref() = "";
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "edge_0";
+    req.schema_prop_ref() = std::move(schemaProp);
 
     auto* processor = AlterEdgeProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -1500,8 +1500,8 @@ TEST(IndexProcessorTest, IndexTTLEdgeTest) {
   }
   {
     cpp2::DropEdgeIndexReq req;
-    req.set_space_id(1);
-    req.set_index_name("ttl_with_index");
+    req.space_id_ref() = 1;
+    req.index_name_ref() = "ttl_with_index";
 
     auto* processor = DropEdgeIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -1521,31 +1521,31 @@ void mockSchemas(kvstore::KVStore* kv) {
   // data type is string
   {
     cpp2::ColumnDef col;
-    col.set_name("col_string");
-    col.type.set_type(PropertyType::STRING);
+    col.name_ref() = "col_string";
+    col.type.type_ref() = PropertyType::STRING;
     (*srcsch.columns_ref()).emplace_back(std::move(col));
   }
   // non-string type
   {
     cpp2::ColumnDef col;
-    col.set_name("col_int");
-    col.type.set_type(PropertyType::INT64);
+    col.name_ref() = "col_int";
+    col.type.type_ref() = PropertyType::INT64;
     (*srcsch.columns_ref()).emplace_back(std::move(col));
   }
   // data type is fixed_string, length <= MAX_INDEX_TYPE_LENGTH
   {
     cpp2::ColumnDef col;
-    col.set_name("col_fixed_string_1");
-    col.type.set_type(PropertyType::FIXED_STRING);
-    col.type.set_type_length(MAX_INDEX_TYPE_LENGTH);
+    col.name_ref() = "col_fixed_string_1";
+    col.type.type_ref() = PropertyType::FIXED_STRING;
+    col.type.type_length_ref() = MAX_INDEX_TYPE_LENGTH;
     (*srcsch.columns_ref()).emplace_back(std::move(col));
   }
   // data type is fixed_string, length > MAX_INDEX_TYPE_LENGTH
   {
     cpp2::ColumnDef col;
-    col.set_name("col_fixed_string_2");
-    col.type.set_type(PropertyType::FIXED_STRING);
-    col.type.set_type_length(257);
+    col.name_ref() = "col_fixed_string_2";
+    col.type.type_ref() = PropertyType::FIXED_STRING;
+    col.type.type_length_ref() = 257;
     (*srcsch.columns_ref()).emplace_back(std::move(col));
   }
   auto tagIdVal = std::string(reinterpret_cast<const char*>(&tagId), sizeof(tagId));
@@ -1579,15 +1579,15 @@ TEST(IndexProcessorTest, CreateFTIndexTest) {
       cpp2::FTIndex index;
       nebula::cpp2::SchemaID schemaId;
       if (id == 5) {
-        schemaId.set_tag_id(5);
+        schemaId.tag_id_ref() = 5;
       } else {
-        schemaId.set_edge_type(6);
+        schemaId.edge_type_ref() = 6;
       }
-      index.set_space_id(1);
-      index.set_depend_schema(std::move(schemaId));
-      index.set_fields({"col_string", "col_fixed_string_2"});
-      req.set_fulltext_index_name("test_ft_index");
-      req.set_index(std::move(index));
+      index.space_id_ref() = 1;
+      index.depend_schema_ref() = std::move(schemaId);
+      index.fields_ref() = {"col_string", "col_fixed_string_2"};
+      req.fulltext_index_name_ref() = "test_ft_index";
+      req.index_ref() = std::move(index);
 
       auto* processor = CreateFTIndexProcessor::instance(kv.get());
       auto f = processor->getFuture();
@@ -1601,15 +1601,15 @@ TEST(IndexProcessorTest, CreateFTIndexTest) {
       cpp2::FTIndex index;
       nebula::cpp2::SchemaID schemaId;
       if (id == 5) {
-        schemaId.set_tag_id(5);
+        schemaId.tag_id_ref() = 5;
       } else {
-        schemaId.set_edge_type(6);
+        schemaId.edge_type_ref() = 6;
       }
-      index.set_space_id(1);
-      index.set_depend_schema(std::move(schemaId));
-      index.set_fields({"col_string", "col_int"});
-      req.set_fulltext_index_name("test_ft_index");
-      req.set_index(std::move(index));
+      index.space_id_ref() = 1;
+      index.depend_schema_ref() = std::move(schemaId);
+      index.fields_ref() = {"col_string", "col_int"};
+      req.fulltext_index_name_ref() = "test_ft_index";
+      req.index_ref() = std::move(index);
 
       auto* processor = CreateFTIndexProcessor::instance(kv.get());
       auto f = processor->getFuture();
@@ -1623,15 +1623,15 @@ TEST(IndexProcessorTest, CreateFTIndexTest) {
       cpp2::FTIndex index;
       nebula::cpp2::SchemaID schemaId;
       if (id == 5) {
-        schemaId.set_tag_id(5);
+        schemaId.tag_id_ref() = 5;
       } else {
-        schemaId.set_edge_type(6);
+        schemaId.edge_type_ref() = 6;
       }
-      index.set_space_id(2);
-      index.set_depend_schema(std::move(schemaId));
-      index.set_fields({"col_string"});
-      req.set_fulltext_index_name("test_ft_index");
-      req.set_index(std::move(index));
+      index.space_id_ref() = 2;
+      index.depend_schema_ref() = std::move(schemaId);
+      index.fields_ref() = {"col_string"};
+      req.fulltext_index_name_ref() = "test_ft_index";
+      req.index_ref() = std::move(index);
 
       auto* processor = CreateFTIndexProcessor::instance(kv.get());
       auto f = processor->getFuture();
@@ -1645,15 +1645,15 @@ TEST(IndexProcessorTest, CreateFTIndexTest) {
       cpp2::FTIndex index;
       nebula::cpp2::SchemaID schemaId;
       if (id == 5) {
-        schemaId.set_tag_id(55);
+        schemaId.tag_id_ref() = 55;
       } else {
-        schemaId.set_edge_type(66);
+        schemaId.edge_type_ref() = 66;
       }
-      index.set_space_id(1);
-      index.set_depend_schema(std::move(schemaId));
-      index.set_fields({"col_string"});
-      req.set_fulltext_index_name("test_ft_index");
-      req.set_index(std::move(index));
+      index.space_id_ref() = 1;
+      index.depend_schema_ref() = std::move(schemaId);
+      index.fields_ref() = {"col_string"};
+      req.fulltext_index_name_ref() = "test_ft_index";
+      req.index_ref() = std::move(index);
 
       auto* processor = CreateFTIndexProcessor::instance(kv.get());
       auto f = processor->getFuture();
@@ -1669,15 +1669,15 @@ TEST(IndexProcessorTest, CreateFTIndexTest) {
       cpp2::FTIndex index;
       nebula::cpp2::SchemaID schemaId;
       if (id == 5) {
-        schemaId.set_tag_id(5);
+        schemaId.tag_id_ref() = 5;
       } else {
-        schemaId.set_edge_type(6);
+        schemaId.edge_type_ref() = 6;
       }
-      index.set_space_id(1);
-      index.set_depend_schema(std::move(schemaId));
-      index.set_fields({"col_bool"});
-      req.set_fulltext_index_name("test_ft_index");
-      req.set_index(std::move(index));
+      index.space_id_ref() = 1;
+      index.depend_schema_ref() = std::move(schemaId);
+      index.fields_ref() = {"col_bool"};
+      req.fulltext_index_name_ref() = "test_ft_index";
+      req.index_ref() = std::move(index);
 
       auto* processor = CreateFTIndexProcessor::instance(kv.get());
       auto f = processor->getFuture();
@@ -1693,12 +1693,12 @@ TEST(IndexProcessorTest, CreateFTIndexTest) {
     cpp2::CreateFTIndexReq req;
     cpp2::FTIndex index;
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(5);
-    index.set_space_id(1);
-    index.set_depend_schema(std::move(schemaId));
-    index.set_fields({"col_string", "col_fixed_string_1"});
-    req.set_fulltext_index_name("ft_tag_index");
-    req.set_index(std::move(index));
+    schemaId.tag_id_ref() = 5;
+    index.space_id_ref() = 1;
+    index.depend_schema_ref() = std::move(schemaId);
+    index.fields_ref() = {"col_string", "col_fixed_string_1"};
+    req.fulltext_index_name_ref() = "ft_tag_index";
+    req.index_ref() = std::move(index);
 
     auto* processor = CreateFTIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -1711,12 +1711,12 @@ TEST(IndexProcessorTest, CreateFTIndexTest) {
     cpp2::CreateFTIndexReq req;
     cpp2::FTIndex index;
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(5);
-    index.set_space_id(1);
-    index.set_depend_schema(std::move(schemaId));
-    index.set_fields({"col_string", "col_fixed_string_1"});
-    req.set_fulltext_index_name("ft_tag_index");
-    req.set_index(std::move(index));
+    schemaId.tag_id_ref() = 5;
+    index.space_id_ref() = 1;
+    index.depend_schema_ref() = std::move(schemaId);
+    index.fields_ref() = {"col_string", "col_fixed_string_1"};
+    req.fulltext_index_name_ref() = "ft_tag_index";
+    req.index_ref() = (std::move(index));
 
     auto* processor = CreateFTIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -1729,12 +1729,12 @@ TEST(IndexProcessorTest, CreateFTIndexTest) {
     cpp2::CreateFTIndexReq req;
     cpp2::FTIndex index;
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(5);
-    index.set_space_id(1);
-    index.set_depend_schema(std::move(schemaId));
-    index.set_fields({"col_string", "col_fixed_string_1"});
-    req.set_fulltext_index_name("ft_tag_index_re");
-    req.set_index(std::move(index));
+    schemaId.tag_id_ref() = 5;
+    index.space_id_ref() = 1;
+    index.depend_schema_ref() = std::move(schemaId);
+    index.fields_ref() = {"col_string", "col_fixed_string_1"};
+    req.fulltext_index_name_ref() = "ft_tag_index_re";
+    req.index_ref() = std::move(index);
 
     auto* processor = CreateFTIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -1747,12 +1747,12 @@ TEST(IndexProcessorTest, CreateFTIndexTest) {
     cpp2::CreateFTIndexReq req;
     cpp2::FTIndex index;
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(5);
-    index.set_space_id(1);
-    index.set_depend_schema(std::move(schemaId));
-    index.set_fields({"col_string"});
-    req.set_fulltext_index_name("ft_tag_index_re");
-    req.set_index(std::move(index));
+    schemaId.tag_id_ref() = 5;
+    index.space_id_ref() = 1;
+    index.depend_schema_ref() = std::move(schemaId);
+    index.fields_ref() = {"col_string"};
+    req.fulltext_index_name_ref() = "ft_tag_index_re";
+    req.index_ref() = std::move(index);
 
     auto* processor = CreateFTIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -1765,12 +1765,12 @@ TEST(IndexProcessorTest, CreateFTIndexTest) {
     cpp2::CreateFTIndexReq req;
     cpp2::FTIndex index;
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_edge_type(6);
-    index.set_space_id(1);
-    index.set_depend_schema(std::move(schemaId));
-    index.set_fields({"col_string"});
-    req.set_fulltext_index_name("ft_tag_index");
-    req.set_index(std::move(index));
+    schemaId.edge_type_ref() = 6;
+    index.space_id_ref() = 1;
+    index.depend_schema_ref() = std::move(schemaId);
+    index.fields_ref() = {"col_string"};
+    req.fulltext_index_name_ref() = "ft_tag_index";
+    req.index_ref() = std::move(index);
 
     auto* processor = CreateFTIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -1792,13 +1792,13 @@ TEST(IndexProcessorTest, CreateFTIndexTest) {
     ASSERT_EQ(fields, index->second.get_fields());
     ASSERT_EQ(1, index->second.get_space_id());
     nebula::cpp2::SchemaID schemaId;
-    schemaId.set_tag_id(5);
+    schemaId.tag_id_ref() = 5;
     ASSERT_EQ(schemaId, index->second.get_depend_schema());
   }
   {
     cpp2::DropFTIndexReq req;
-    req.set_space_id(1);
-    req.set_fulltext_index_name("ft_tag_index");
+    req.space_id_ref() = 1;
+    req.fulltext_index_name_ref() = "ft_tag_index";
     auto* processor = DropFTIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -1817,8 +1817,8 @@ TEST(IndexProcessorTest, CreateFTIndexTest) {
   // expected error. fulltext index not found.
   {
     cpp2::DropFTIndexReq req;
-    req.set_space_id(1);
-    req.set_fulltext_index_name("ft_tag_index");
+    req.space_id_ref() = 1;
+    req.fulltext_index_name_ref() = "ft_tag_index";
     auto* processor = DropFTIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -1839,15 +1839,15 @@ TEST(IndexProcessorTest, DropWithFTIndexTest) {
       cpp2::FTIndex index;
       nebula::cpp2::SchemaID schemaId;
       if (id == 5) {
-        schemaId.set_tag_id(5);
+        schemaId.tag_id_ref() = 5;
       } else {
-        schemaId.set_edge_type(6);
+        schemaId.edge_type_ref() = 6;
       }
-      index.set_space_id(1);
-      index.set_depend_schema(std::move(schemaId));
-      index.set_fields({"col_string", "col_fixed_string_1"});
-      req.set_fulltext_index_name(folly::stringPrintf("test_ft_index_%d", id));
-      req.set_index(std::move(index));
+      index.space_id_ref() = 1;
+      index.depend_schema_ref() = std::move(schemaId);
+      index.fields_ref() = {"col_string", "col_fixed_string_1"};
+      req.fulltext_index_name_ref() = folly::stringPrintf("test_ft_index_%d", id);
+      req.index_ref() = (std::move(index));
 
       auto* processor = CreateFTIndexProcessor::instance(kv.get());
       auto f = processor->getFuture();
@@ -1858,8 +1858,8 @@ TEST(IndexProcessorTest, DropWithFTIndexTest) {
   }
   {
     cpp2::DropTagReq req;
-    req.set_space_id(1);
-    req.set_tag_name("test_tag");
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "test_tag";
     auto* processor = DropTagProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -1868,8 +1868,8 @@ TEST(IndexProcessorTest, DropWithFTIndexTest) {
   }
   {
     cpp2::DropEdgeReq req;
-    req.set_space_id(1);
-    req.set_edge_name("test_edge");
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "test_edge";
     auto* processor = DropEdgeProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -1890,15 +1890,15 @@ TEST(IndexProcessorTest, AlterWithFTIndexTest) {
       cpp2::FTIndex index;
       nebula::cpp2::SchemaID schemaId;
       if (id == 5) {
-        schemaId.set_tag_id(5);
+        schemaId.tag_id_ref() = 5;
       } else {
-        schemaId.set_edge_type(6);
+        schemaId.edge_type_ref() = 6;
       }
-      index.set_space_id(1);
-      index.set_depend_schema(std::move(schemaId));
-      index.set_fields({"col_string", "col_fixed_string_1"});
-      req.set_fulltext_index_name(folly::stringPrintf("test_ft_index_%d", id));
-      req.set_index(std::move(index));
+      index.space_id_ref() = 1;
+      index.depend_schema_ref() = std::move(schemaId);
+      index.fields_ref() = {"col_string", "col_fixed_string_1"};
+      req.fulltext_index_name_ref() = folly::stringPrintf("test_ft_index_%d", id);
+      req.index_ref() = std::move(index);
 
       auto* processor = CreateFTIndexProcessor::instance(kv.get());
       auto f = processor->getFuture();
@@ -1913,14 +1913,14 @@ TEST(IndexProcessorTest, AlterWithFTIndexTest) {
     cpp2::Schema changeSch;
     cpp2::ColumnDef column;
     column.name = "col_string";
-    column.type.set_type(PropertyType::INT64);
+    column.type.type_ref() = PropertyType::INT64;
     (*changeSch.columns_ref()).emplace_back(std::move(column));
     items.emplace_back();
-    items.back().set_op(cpp2::AlterSchemaOp::CHANGE);
-    items.back().set_schema(std::move(changeSch));
-    req.set_space_id(1);
-    req.set_tag_name("test_tag");
-    req.set_tag_items(items);
+    items.back().op_ref() = cpp2::AlterSchemaOp::CHANGE;
+    items.back().schema_ref() = std::move(changeSch);
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "test_tag";
+    req.tag_items_ref() = items;
     auto* processor = AlterTagProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -1933,15 +1933,15 @@ TEST(IndexProcessorTest, AlterWithFTIndexTest) {
     cpp2::Schema dropSch;
     cpp2::ColumnDef column;
     column.name = "col_string";
-    column.type.set_type(PropertyType::INT64);
+    column.type.type_ref() = PropertyType::INT64;
     (*dropSch.columns_ref()).emplace_back(std::move(column));
 
     items.emplace_back();
-    items.back().set_op(cpp2::AlterSchemaOp::DROP);
-    items.back().set_schema(std::move(dropSch));
-    req.set_space_id(1);
-    req.set_tag_name("test_tag");
-    req.set_tag_items(items);
+    items.back().op_ref() = cpp2::AlterSchemaOp::DROP;
+    items.back().schema_ref() = std::move(dropSch);
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "test_tag";
+    req.tag_items_ref() = items;
     auto* processor = AlterTagProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -1954,15 +1954,15 @@ TEST(IndexProcessorTest, AlterWithFTIndexTest) {
     cpp2::Schema addSch;
     cpp2::ColumnDef column;
     column.name = "col_bool";
-    column.type.set_type(PropertyType::BOOL);
+    column.type.type_ref() = PropertyType::BOOL;
     (*addSch.columns_ref()).emplace_back(std::move(column));
 
     items.emplace_back();
-    items.back().set_op(cpp2::AlterSchemaOp::ADD);
-    items.back().set_schema(std::move(addSch));
-    req.set_space_id(1);
-    req.set_tag_name("test_tag");
-    req.set_tag_items(items);
+    items.back().op_ref() = cpp2::AlterSchemaOp::ADD;
+    items.back().schema_ref() = std::move(addSch);
+    req.space_id_ref() = 1;
+    req.tag_name_ref() = "test_tag";
+    req.tag_items_ref() = items;
     auto* processor = AlterTagProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -1976,14 +1976,14 @@ TEST(IndexProcessorTest, AlterWithFTIndexTest) {
     cpp2::Schema changeSch;
     cpp2::ColumnDef column;
     column.name = "col_string";
-    column.type.set_type(PropertyType::INT64);
+    column.type.type_ref() = PropertyType::INT64;
     (*changeSch.columns_ref()).emplace_back(std::move(column));
     items.emplace_back();
-    items.back().set_op(cpp2::AlterSchemaOp::CHANGE);
-    items.back().set_schema(std::move(changeSch));
-    req.set_space_id(1);
-    req.set_edge_name("test_edge");
-    req.set_edge_items(items);
+    items.back().op_ref() = cpp2::AlterSchemaOp::CHANGE;
+    items.back().schema_ref() = std::move(changeSch);
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "test_edge";
+    req.edge_items_ref() = items;
     auto* processor = AlterEdgeProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -1996,15 +1996,15 @@ TEST(IndexProcessorTest, AlterWithFTIndexTest) {
     cpp2::Schema dropSch;
     cpp2::ColumnDef column;
     column.name = "col_string";
-    column.type.set_type(PropertyType::INT64);
+    column.type.type_ref() = PropertyType::INT64;
     (*dropSch.columns_ref()).emplace_back(std::move(column));
 
     items.emplace_back();
-    items.back().set_op(cpp2::AlterSchemaOp::DROP);
-    items.back().set_schema(std::move(dropSch));
-    req.set_space_id(1);
-    req.set_edge_name("test_edge");
-    req.set_edge_items(items);
+    items.back().op_ref() = cpp2::AlterSchemaOp::DROP;
+    items.back().schema_ref() = std::move(dropSch);
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "test_edge";
+    req.edge_items_ref() = items;
     auto* processor = AlterEdgeProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -2017,15 +2017,15 @@ TEST(IndexProcessorTest, AlterWithFTIndexTest) {
     cpp2::Schema addSch;
     cpp2::ColumnDef column;
     column.name = "col_bool";
-    column.type.set_type(PropertyType::BOOL);
+    column.type.type_ref() = PropertyType::BOOL;
     (*addSch.columns_ref()).emplace_back(std::move(column));
 
     items.emplace_back();
-    items.back().set_op(cpp2::AlterSchemaOp::ADD);
-    items.back().set_schema(std::move(addSch));
-    req.set_space_id(1);
-    req.set_edge_name("test_edge");
-    req.set_edge_items(items);
+    items.back().op_ref() = cpp2::AlterSchemaOp::ADD;
+    items.back().schema_ref() = std::move(addSch);
+    req.space_id_ref() = 1;
+    req.edge_name_ref() = "test_edge";
+    req.edge_items_ref() = items;
     auto* processor = AlterEdgeProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -2040,7 +2040,7 @@ TEST(ProcessorTest, IndexIdInSpaceRangeTest) {
   {
     cpp2::AddHostsReq req;
     std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
-    req.set_hosts(std::move(hosts));
+    req.hosts_ref() = std::move(hosts);
     auto* processor = AddHostsProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -2113,16 +2113,16 @@ TEST(ProcessorTest, IndexIdInSpaceRangeTest) {
   cols.emplace_back(TestUtils::columnDef(0, PropertyType::INT64));
   cols.emplace_back(TestUtils::columnDef(1, PropertyType::FLOAT));
   cols.emplace_back(TestUtils::columnDef(2, PropertyType::STRING));
-  schema.set_columns(std::move(cols));
+  schema.columns_ref() = std::move(cols);
 
   // create space, use global id
   {
     cpp2::SpaceDesc properties;
-    properties.set_space_name("my_space");
-    properties.set_partition_num(9);
-    properties.set_replica_factor(1);
+    properties.space_name_ref() = "my_space";
+    properties.partition_num_ref() = 9;
+    properties.replica_factor_ref() = 1;
     cpp2::CreateSpaceReq req;
-    req.set_properties(std::move(properties));
+    req.properties_ref() = std::move(properties);
 
     auto* processor = CreateSpaceProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -2135,9 +2135,9 @@ TEST(ProcessorTest, IndexIdInSpaceRangeTest) {
   {
     // Succeeded
     cpp2::CreateTagReq req;
-    req.set_space_id(6);
-    req.set_tag_name("default_tag");
-    req.set_schema(schema);
+    req.space_id_ref() = 6;
+    req.tag_name_ref() = "default_tag";
+    req.schema_ref() = schema;
     auto* processor = CreateTagProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -2148,14 +2148,14 @@ TEST(ProcessorTest, IndexIdInSpaceRangeTest) {
   // create tag index in my_space, because there is local_id key, use local_id + 1
   {
     cpp2::CreateTagIndexReq req;
-    req.set_space_id(6);
-    req.set_tag_name("default_tag");
+    req.space_id_ref() = 6;
+    req.tag_name_ref() = "default_tag";
     std::vector<cpp2::IndexFieldDef> fields;
     cpp2::IndexFieldDef field1;
-    field1.set_name("col_0");
+    field1.name_ref() = "col_0";
     fields.emplace_back(std::move(field1));
-    req.set_fields(std::move(fields));
-    req.set_index_name("default_tag_index");
+    req.fields_ref() = std::move(fields);
+    req.index_name_ref() = "default_tag_index";
     auto* processor = CreateTagIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -2167,9 +2167,9 @@ TEST(ProcessorTest, IndexIdInSpaceRangeTest) {
   {
     // Succeeded
     cpp2::CreateEdgeReq req;
-    req.set_space_id(6);
-    req.set_edge_name("default_edge");
-    req.set_schema(schema);
+    req.space_id_ref() = 6;
+    req.edge_name_ref() = "default_edge";
+    req.schema_ref() = schema;
     auto* processor = CreateEdgeProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -2180,14 +2180,14 @@ TEST(ProcessorTest, IndexIdInSpaceRangeTest) {
   // create edge index in my_space, because there is local_id key, use local_id + 1
   {
     cpp2::CreateEdgeIndexReq req;
-    req.set_space_id(6);
-    req.set_edge_name("default_edge");
+    req.space_id_ref() = 6;
+    req.edge_name_ref() = "default_edge";
     std::vector<cpp2::IndexFieldDef> fields;
     cpp2::IndexFieldDef field1;
-    field1.set_name("col_0");
+    field1.name_ref() = "col_0";
     fields.emplace_back(std::move(field1));
-    req.set_fields(std::move(fields));
-    req.set_index_name("default_edge_index");
+    req.fields_ref() = (std::move(fields));
+    req.index_name_ref() = ("default_edge_index");
     auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -2199,11 +2199,11 @@ TEST(ProcessorTest, IndexIdInSpaceRangeTest) {
   // create space, space Id is global id + 1
   {
     cpp2::SpaceDesc properties;
-    properties.set_space_name("last_space");
-    properties.set_partition_num(9);
-    properties.set_replica_factor(1);
+    properties.space_name_ref() = "last_space";
+    properties.partition_num_ref() = 9;
+    properties.replica_factor_ref() = 1;
     cpp2::CreateSpaceReq req;
-    req.set_properties(std::move(properties));
+    req.properties_ref() = std::move(properties);
 
     auto* processor = CreateSpaceProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -2216,9 +2216,9 @@ TEST(ProcessorTest, IndexIdInSpaceRangeTest) {
   {
     // Succeeded
     cpp2::CreateTagReq req;
-    req.set_space_id(6);
-    req.set_tag_name("my_tag");
-    req.set_schema(schema);
+    req.space_id_ref() = (6);
+    req.tag_name_ref() = ("my_tag");
+    req.schema_ref() = (schema);
     auto* processor = CreateTagProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -2229,14 +2229,14 @@ TEST(ProcessorTest, IndexIdInSpaceRangeTest) {
   // create tag index in my_space, because there is local_id key, use local_id + 1
   {
     cpp2::CreateTagIndexReq req;
-    req.set_space_id(6);
-    req.set_tag_name("my_tag");
+    req.space_id_ref() = 6;
+    req.tag_name_ref() = "my_tag";
     std::vector<cpp2::IndexFieldDef> fields;
     cpp2::IndexFieldDef field1;
-    field1.set_name("col_0");
+    field1.name_ref() = "col_0";
     fields.emplace_back(std::move(field1));
-    req.set_fields(std::move(fields));
-    req.set_index_name("my_tag_index");
+    req.fields_ref() = std::move(fields);
+    req.index_name_ref() = "my_tag_index";
     auto* processor = CreateTagIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -2248,9 +2248,9 @@ TEST(ProcessorTest, IndexIdInSpaceRangeTest) {
   {
     // Succeeded
     cpp2::CreateEdgeReq req;
-    req.set_space_id(6);
-    req.set_edge_name("my_edge");
-    req.set_schema(schema);
+    req.space_id_ref() = 6;
+    req.edge_name_ref() = "my_edge";
+    req.schema_ref() = schema;
     auto* processor = CreateEdgeProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -2262,14 +2262,14 @@ TEST(ProcessorTest, IndexIdInSpaceRangeTest) {
   {
     // Allow to create edge index on no fields
     cpp2::CreateEdgeIndexReq req;
-    req.set_space_id(6);
-    req.set_edge_name("my_edge");
+    req.space_id_ref() = 6;
+    req.edge_name_ref() = "my_edge";
     std::vector<cpp2::IndexFieldDef> fields;
     cpp2::IndexFieldDef field1;
-    field1.set_name("col_0");
+    field1.name_ref() = "col_0";
     fields.emplace_back(std::move(field1));
-    req.set_fields(std::move(fields));
-    req.set_index_name("my_edge_index");
+    req.fields_ref() = std::move(fields);
+    req.index_name_ref() = "my_edge_index";
     auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);

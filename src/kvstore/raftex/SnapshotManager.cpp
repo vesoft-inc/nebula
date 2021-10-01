@@ -116,17 +116,17 @@ folly::Future<raftex::cpp2::SendSnapshotResponse> SnapshotManager::send(
     bool finished) {
   VLOG(2) << "Send snapshot request to " << addr;
   raftex::cpp2::SendSnapshotRequest req;
-  req.set_space(spaceId);
-  req.set_part(partId);
-  req.set_term(termId);
-  req.set_committed_log_id(committedLogId);
-  req.set_committed_log_term(committedLogTerm);
-  req.set_leader_addr(localhost.host);
-  req.set_leader_port(localhost.port);
-  req.set_rows(data);
-  req.set_total_size(totalSize);
-  req.set_total_count(totalCount);
-  req.set_done(finished);
+  req.space_ref() = spaceId;
+  req.part_ref() = partId;
+  req.term_ref() = termId;
+  req.committed_log_id_ref() = committedLogId;
+  req.committed_log_term_ref() = committedLogTerm;
+  req.leader_addr_ref() = localhost.host;
+  req.leader_port_ref() = localhost.port;
+  req.rows_ref() = data;
+  req.total_size_ref() = totalSize;
+  req.total_count_ref() = totalCount;
+  req.done_ref() = finished;
   auto* evb = ioThreadPool_->getEventBase();
   return folly::via(evb, [this, addr, evb, req = std::move(req)]() mutable {
     auto client = connManager_.client(addr, evb, false, FLAGS_snapshot_send_timeout_ms);

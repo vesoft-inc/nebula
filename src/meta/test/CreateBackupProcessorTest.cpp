@@ -23,8 +23,8 @@ namespace meta {
     storage::cpp2::AdminExecResp resp;                       \
     storage::cpp2::ResponseCommon result;                    \
     std::vector<storage::cpp2::PartitionResult> partRetCode; \
-    result.set_failed_parts(partRetCode);                    \
-    resp.set_result(result);                                 \
+    result.failed_parts_ref() = partRetCode;                 \
+    resp.result_ref() = result;                              \
     pro.setValue(std::move(resp));                           \
     return f;                                                \
   } while (false)
@@ -49,16 +49,16 @@ class TestStorageService : public storage::cpp2::StorageAdminServiceSvIf {
     std::vector<storage::cpp2::PartitionResult> partRetCode;
     std::unordered_map<nebula::cpp2::PartitionID, nebula::cpp2::LogInfo> info;
     nebula::cpp2::LogInfo logInfo;
-    logInfo.set_log_id(logId);
-    logInfo.set_term_id(termId);
+    logInfo.log_id_ref() = logId;
+    logInfo.term_id_ref() = termId;
     info.emplace(1, std::move(logInfo));
-    result.set_failed_parts(partRetCode);
-    resp.set_result(result);
+    result.failed_parts_ref() = partRetCode;
+    resp.result_ref() = result;
     nebula::cpp2::CheckpointInfo cpInfo;
-    cpInfo.set_path("snapshot_path");
-    cpInfo.set_parts(std::move(info));
-    cpInfo.set_space_id(req.get_space_ids()[0]);
-    resp.set_info({cpInfo});
+    cpInfo.path_ref() = "snapshot_path";
+    cpInfo.parts_ref() = std::move(info);
+    cpInfo.space_id_ref() = req.get_space_ids()[0];
+    resp.info_ref() = {cpInfo};
     pro.setValue(std::move(resp));
     return f;
   }
@@ -101,9 +101,9 @@ TEST(ProcessorTest, CreateBackupTest) {
   bool ret = false;
   cpp2::SpaceDesc properties;
   GraphSpaceID id = 1;
-  properties.set_space_name("test_space");
-  properties.set_partition_num(1);
-  properties.set_replica_factor(1);
+  properties.space_name_ref() = "test_space";
+  properties.partition_num_ref() = 1;
+  properties.replica_factor_ref() = 1;
   auto spaceVal = MetaKeyUtils::spaceVal(properties);
   std::vector<nebula::kvstore::KV> data;
   data.emplace_back(MetaKeyUtils::indexSpaceKey("test_space"),
@@ -113,9 +113,9 @@ TEST(ProcessorTest, CreateBackupTest) {
   // mock space 2: test_space2
   cpp2::SpaceDesc properties2;
   GraphSpaceID id2 = 2;
-  properties2.set_space_name("test_space2");
-  properties2.set_partition_num(1);
-  properties2.set_replica_factor(1);
+  properties2.space_name_ref() = "test_space2";
+  properties2.partition_num_ref() = 1;
+  properties2.replica_factor_ref() = 1;
   spaceVal = MetaKeyUtils::spaceVal(properties2);
   data.emplace_back(MetaKeyUtils::indexSpaceKey("test_space2"),
                     std::string(reinterpret_cast<const char*>(&id2), sizeof(GraphSpaceID)));
@@ -125,14 +125,14 @@ TEST(ProcessorTest, CreateBackupTest) {
   std::string indexName = "test_space_index";
   int32_t tagIndex = 2;
   cpp2::IndexItem item;
-  item.set_index_id(tagIndex);
-  item.set_index_name(indexName);
+  item.index_id_ref() = tagIndex;
+  item.index_name_ref() = indexName;
   nebula::cpp2::SchemaID schemaID;
   TagID tagID = 3;
   std::string tagName = "test_space_tag1";
-  schemaID.set_tag_id(tagID);
-  item.set_schema_id(schemaID);
-  item.set_schema_name(tagName);
+  schemaID.tag_id_ref() = tagID;
+  item.schema_id_ref() = schemaID;
+  item.schema_name_ref() = tagName;
   data.emplace_back(MetaKeyUtils::indexIndexKey(id, indexName),
                     std::string(reinterpret_cast<const char*>(&tagIndex), sizeof(IndexID)));
   data.emplace_back(MetaKeyUtils::indexKey(id, tagIndex), MetaKeyUtils::indexVal(item));
@@ -161,7 +161,7 @@ TEST(ProcessorTest, CreateBackupTest) {
   {
     cpp2::CreateBackupReq req;
     std::vector<std::string> spaces = {"test_space"};
-    req.set_spaces(std::move(spaces));
+    req.spaces_ref() = std::move(spaces);
     JobManager* jobMgr = JobManager::getInstance();
     ASSERT_TRUE(jobMgr->init(kv.get()));
     auto* processor = CreateBackupProcessor::instance(kv.get(), client.get());

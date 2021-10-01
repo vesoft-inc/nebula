@@ -14,13 +14,13 @@ void AdHocIndexManager::addTagIndex(GraphSpaceID space,
                                     std::vector<nebula::meta::cpp2::ColumnDef> &&fields) {
   folly::RWSpinLock::WriteHolder wh(tagIndexLock_);
   IndexItem item;
-  item.set_index_id(indexID);
-  item.set_index_name(folly::stringPrintf("index_%d", indexID));
+  item.index_id_ref() = indexID;
+  item.index_name_ref() = folly::stringPrintf("index_%d", indexID);
   nebula::cpp2::SchemaID schemaID;
-  schemaID.set_tag_id(tagID);
-  item.set_schema_id(schemaID);
-  item.set_schema_name(folly::stringPrintf("tag_%d", tagID));
-  item.set_fields(std::move(fields));
+  schemaID.tag_id_ref() = tagID;
+  item.schema_id_ref() = schemaID;
+  item.schema_name_ref() = folly::stringPrintf("tag_%d", tagID);
+  item.fields_ref() = std::move(fields);
   std::shared_ptr<IndexItem> itemPtr = std::make_shared<IndexItem>(item);
 
   auto iter = tagIndexes_.find(space);
@@ -52,13 +52,13 @@ void AdHocIndexManager::addEdgeIndex(GraphSpaceID space,
                                      std::vector<nebula::meta::cpp2::ColumnDef> &&fields) {
   folly::RWSpinLock::WriteHolder wh(edgeIndexLock_);
   IndexItem item;
-  item.set_index_id(indexID);
-  item.set_index_name(folly::stringPrintf("index_%d", indexID));
+  item.index_id_ref() = indexID;
+  item.index_name_ref() = folly::stringPrintf("index_%d", indexID);
   nebula::cpp2::SchemaID schemaID;
-  schemaID.set_edge_type(edgeType);
-  item.set_schema_id(schemaID);
-  item.set_schema_name(folly::stringPrintf("edge_%d", edgeType));
-  item.set_fields(std::move(fields));
+  schemaID.edge_type_ref() = edgeType;
+  item.schema_id_ref() = schemaID;
+  item.schema_name_ref() = folly::stringPrintf("edge_%d", edgeType);
+  item.fields_ref() = std::move(fields);
   std::shared_ptr<IndexItem> itemPtr = std::make_shared<IndexItem>(item);
 
   auto iter = edgeIndexes_.find(space);

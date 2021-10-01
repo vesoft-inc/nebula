@@ -57,16 +57,16 @@ struct JobCallBack {
 
   folly::Future<nebula::Status> operator()() {
     cpp2::ReportTaskReq req;
-    req.set_code(nebula::cpp2::ErrorCode::SUCCEEDED);
-    req.set_job_id(jobId_);
-    req.set_task_id(taskId_);
+    req.code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
+    req.job_id_ref() = jobId_;
+    req.task_id_ref() = taskId_;
 
     cpp2::StatsItem item;
-    item.set_tag_vertices({{"t1", n_}, {"t2", n_}});
-    item.set_edges({{"e1", n_}, {"e2", n_}});
-    item.set_space_vertices(2 * n_);
-    item.set_space_edges(2 * n_);
-    req.set_stats(item);
+    item.tag_vertices_ref() = {{"t1", n_}, {"t2", n_}};
+    item.edges_ref() = {{"e1", n_}, {"e2", n_}};
+    item.space_vertices_ref() = 2 * n_;
+    item.space_edges_ref() = 2 * n_;
+    req.stats_ref() = item;
     jobMgr_->reportTaskFinish(req);
     return folly::Future<Status>(Status::OK());
   }
@@ -106,8 +106,8 @@ class GetStatsTest : public ::testing::Test {
     ActiveHostsMan::AllLeaders leaders;
     for (auto i = 0U; i != parts.size(); ++i) {
       leaders[space].emplace_back();
-      leaders[space].back().set_part_id(parts[i]);
-      leaders[space].back().set_term(9999);
+      leaders[space].back().part_id_ref() = parts[i];
+      leaders[space].back().term_ref() = 9999;
     }
     return std::make_pair(host, leaders);
   }
@@ -138,7 +138,7 @@ TEST_F(GetStatsTest, StatsJob) {
     ASSERT_EQ(cpp2::JobStatus::QUEUE, job1.status_);
 
     cpp2::GetStatsReq req;
-    req.set_space_id(spaceId);
+    req.space_id_ref() = spaceId;
     auto* processor = GetStatsProcessor::instance(kv_.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -181,7 +181,7 @@ TEST_F(GetStatsTest, StatsJob) {
     ASSERT_EQ(cpp2::JobStatus::FINISHED, job2.status_);
 
     cpp2::GetStatsReq req;
-    req.set_space_id(spaceId);
+    req.space_id_ref() = spaceId;
     auto* processor = GetStatsProcessor::instance(kv_.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -229,7 +229,7 @@ TEST_F(GetStatsTest, StatsJob) {
 
     // Success,  but stats data is the result of the last stats job.
     cpp2::GetStatsReq req;
-    req.set_space_id(spaceId);
+    req.space_id_ref() = spaceId;
     auto* processor = GetStatsProcessor::instance(kv_.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -283,7 +283,7 @@ TEST_F(GetStatsTest, StatsJob) {
     ASSERT_NE(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
 
     cpp2::GetStatsReq req;
-    req.set_space_id(spaceId);
+    req.space_id_ref() = spaceId;
     auto* processor = GetStatsProcessor::instance(kv_.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -318,7 +318,7 @@ TEST_F(GetStatsTest, StatsJob) {
     ASSERT_EQ(cpp2::JobStatus::FINISHED, job2.status_);
 
     cpp2::GetStatsReq req;
-    req.set_space_id(spaceId);
+    req.space_id_ref() = spaceId;
     auto* processor = GetStatsProcessor::instance(kv_.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -392,7 +392,7 @@ TEST_F(GetStatsTest, MockSingleMachineTest) {
     ASSERT_EQ(cpp2::JobStatus::FINISHED, desc.status_);
 
     cpp2::GetStatsReq req;
-    req.set_space_id(spaceId);
+    req.space_id_ref() = spaceId;
     auto* processor = GetStatsProcessor::instance(kv_.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -432,7 +432,7 @@ TEST_F(GetStatsTest, MockSingleMachineTest) {
     ASSERT_EQ(cpp2::JobStatus::FINISHED, desc.status_);
 
     cpp2::GetStatsReq req;
-    req.set_space_id(spaceId);
+    req.space_id_ref() = spaceId;
     auto* processor = GetStatsProcessor::instance(kv_.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -509,7 +509,7 @@ TEST_F(GetStatsTest, MockMultiMachineTest) {
     ASSERT_EQ(cpp2::JobStatus::FINISHED, desc.status_);
 
     cpp2::GetStatsReq req;
-    req.set_space_id(spaceId);
+    req.space_id_ref() = spaceId;
     auto* processor = GetStatsProcessor::instance(kv_.get());
     auto f = processor->getFuture();
     processor->process(req);

@@ -893,8 +893,8 @@ meta::cpp2::ConfigItem MetaKeyUtils::parseConfigValue(folly::StringPiece rawData
                                                  value);
 
   meta::cpp2::ConfigItem item;
-  item.set_mode(mode);
-  item.set_value(value);
+  item.mode_ref() = mode;
+  item.value_ref() = value;
   return item;
 }
 

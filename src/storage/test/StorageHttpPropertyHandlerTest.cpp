@@ -78,8 +78,8 @@ TEST(StorageHttpPropertyHandlerTest, ValidRequest) {
     std::string expect =
         R"([
   {
-    "Engine 0": "0",
-    "Engine 1": "0"
+    "Engine 0": "96",
+    "Engine 1": "96"
   }
 ])";
     EXPECT_EQ(expect, request("/rocksdb_property?space=1&property=rocksdb.block-cache-usage"));
@@ -88,8 +88,8 @@ TEST(StorageHttpPropertyHandlerTest, ValidRequest) {
     std::string expect =
         R"([
   {
-    "Engine 0": "0",
-    "Engine 1": "0"
+    "Engine 0": "96",
+    "Engine 1": "96"
   },
   {
     "Engine 0": "0",

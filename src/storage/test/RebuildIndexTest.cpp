@@ -72,16 +72,16 @@ TEST_F(RebuildIndexTest, RebuildTagIndexCheckALLData) {
   }
 
   cpp2::TaskPara parameter;
-  parameter.set_space_id(1);
+  parameter.space_id_ref() = 1;
   std::vector<PartitionID> parts = {1, 2, 3, 4, 5, 6};
-  parameter.set_parts(parts);
-  parameter.set_task_specific_paras({"4", "5"});
+  parameter.parts_ref() = parts;
+  parameter.task_specific_paras_ref() = {"4", "5"};
 
   cpp2::AddAdminTaskRequest request;
-  request.set_cmd(meta::cpp2::AdminCmd::REBUILD_TAG_INDEX);
-  request.set_job_id(++gJobId);
-  request.set_task_id(13);
-  request.set_para(std::move(parameter));
+  request.cmd_ref() = meta::cpp2::AdminCmd::REBUILD_TAG_INDEX;
+  request.job_id_ref() = ++gJobId;
+  request.task_id_ref() = 13;
+  request.para_ref() = std::move(parameter);
 
   auto callback = [](nebula::cpp2::ErrorCode, nebula::meta::cpp2::StatsItem&) {};
   TaskContext context(request, callback);
@@ -159,16 +159,16 @@ TEST_F(RebuildIndexTest, RebuildEdgeIndexCheckALLData) {
   }
 
   cpp2::TaskPara parameter;
-  parameter.set_space_id(1);
+  parameter.space_id_ref() = 1;
   std::vector<PartitionID> parts = {1, 2, 3, 4, 5, 6};
-  parameter.set_parts(parts);
-  parameter.set_task_specific_paras({"103", "104"});
+  parameter.parts_ref() = parts;
+  parameter.task_specific_paras_ref() = {"103", "104"};
 
   cpp2::AddAdminTaskRequest request;
-  request.set_cmd(meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX);
-  request.set_job_id(++gJobId);
-  request.set_task_id(16);
-  request.set_para(std::move(parameter));
+  request.cmd_ref() = meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX;
+  request.job_id_ref() = ++gJobId;
+  request.task_id_ref() = 16;
+  request.para_ref() = std::move(parameter);
 
   auto callback = [](nebula::cpp2::ErrorCode, nebula::meta::cpp2::StatsItem&) {};
   TaskContext context(request, callback);
@@ -256,16 +256,16 @@ TEST_F(RebuildIndexTest, RebuildTagIndexWithDelete) {
   EXPECT_EQ(0, resp.result.failed_parts.size());
 
   cpp2::TaskPara parameter;
-  parameter.set_space_id(1);
+  parameter.space_id_ref() = 1;
   std::vector<PartitionID> parts = {1, 2, 3, 4, 5, 6};
-  parameter.set_parts(std::move(parts));
-  parameter.set_task_specific_paras({"4", "5"});
+  parameter.parts_ref() = std::move(parts);
+  parameter.task_specific_paras_ref() = {"4", "5"};
 
   cpp2::AddAdminTaskRequest request;
-  request.set_cmd(meta::cpp2::AdminCmd::REBUILD_TAG_INDEX);
-  request.set_job_id(++gJobId);
-  request.set_task_id(11);
-  request.set_para(std::move(parameter));
+  request.cmd_ref() = meta::cpp2::AdminCmd::REBUILD_TAG_INDEX;
+  request.job_id_ref() = ++gJobId;
+  request.task_id_ref() = 11;
+  request.para_ref() = std::move(parameter);
 
   auto callback = [](nebula::cpp2::ErrorCode, nebula::meta::cpp2::StatsItem&) {};
   TaskContext context(request, callback);
@@ -317,16 +317,16 @@ TEST_F(RebuildIndexTest, RebuildTagIndexWithAppend) {
   EXPECT_EQ(0, resp.result.failed_parts.size());
 
   cpp2::TaskPara parameter;
-  parameter.set_space_id(1);
+  parameter.space_id_ref() = 1;
   std::vector<PartitionID> parts = {1, 2, 3, 4, 5, 6};
-  parameter.set_parts(std::move(parts));
-  parameter.set_task_specific_paras({"4", "5"});
+  parameter.parts_ref() = std::move(parts);
+  parameter.task_specific_paras_ref() = {"4", "5"};
 
   cpp2::AddAdminTaskRequest request;
-  request.set_cmd(meta::cpp2::AdminCmd::REBUILD_TAG_INDEX);
-  request.set_job_id(++gJobId);
-  request.set_task_id(12);
-  request.set_para(std::move(parameter));
+  request.cmd_ref() = meta::cpp2::AdminCmd::REBUILD_TAG_INDEX;
+  request.job_id_ref() = ++gJobId;
+  request.task_id_ref() = 12;
+  request.para_ref() = std::move(parameter);
 
   auto callback = [](nebula::cpp2::ErrorCode, nebula::meta::cpp2::StatsItem&) {};
   TaskContext context(request, callback);
@@ -362,16 +362,16 @@ TEST_F(RebuildIndexTest, RebuildTagIndex) {
   EXPECT_EQ(0, resp.result.failed_parts.size());
 
   cpp2::TaskPara parameter;
-  parameter.set_space_id(1);
+  parameter.space_id_ref() = 1;
   std::vector<PartitionID> parts = {1, 2, 3, 4, 5, 6};
-  parameter.set_parts(std::move(parts));
+  parameter.parts_ref() = std::move(parts);
 
   cpp2::AddAdminTaskRequest request;
-  request.set_cmd(meta::cpp2::AdminCmd::REBUILD_TAG_INDEX);
-  request.set_job_id(++gJobId);
-  request.set_task_id(13);
-  parameter.set_task_specific_paras({"4", "5"});
-  request.set_para(std::move(parameter));
+  request.cmd_ref() = meta::cpp2::AdminCmd::REBUILD_TAG_INDEX;
+  request.job_id_ref() = ++gJobId;
+  request.task_id_ref() = 13;
+  parameter.task_specific_paras_ref() = {"4", "5"};
+  request.para_ref() = std::move(parameter);
 
   auto callback = [](nebula::cpp2::ErrorCode, nebula::meta::cpp2::StatsItem&) {};
   TaskContext context(request, callback);
@@ -417,16 +417,16 @@ TEST_F(RebuildIndexTest, RebuildEdgeIndexWithDelete) {
   EXPECT_EQ(0, resp.result.failed_parts.size());
 
   cpp2::TaskPara parameter;
-  parameter.set_space_id(1);
+  parameter.space_id_ref() = 1;
   std::vector<PartitionID> parts = {1, 2, 3, 4, 5, 6};
-  parameter.set_parts(std::move(parts));
-  parameter.set_task_specific_paras({"103", "104"});
+  parameter.parts_ref() = std::move(parts);
+  parameter.task_specific_paras_ref() = {"103", "104"};
 
   cpp2::AddAdminTaskRequest request;
-  request.set_cmd(meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX);
-  request.set_job_id(++gJobId);
-  request.set_task_id(14);
-  request.set_para(std::move(parameter));
+  request.cmd_ref() = meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX;
+  request.job_id_ref() = ++gJobId;
+  request.task_id_ref() = 14;
+  request.para_ref() = std::move(parameter);
 
   auto callback = [](nebula::cpp2::ErrorCode, nebula::meta::cpp2::StatsItem&) {};
   TaskContext context(request, callback);
@@ -479,16 +479,16 @@ TEST_F(RebuildIndexTest, RebuildEdgeIndexWithAppend) {
   EXPECT_EQ(0, resp.result.failed_parts.size());
 
   cpp2::TaskPara parameter;
-  parameter.set_space_id(1);
+  parameter.space_id_ref() = 1;
   std::vector<PartitionID> parts = {1, 2, 3, 4, 5, 6};
-  parameter.set_parts(std::move(parts));
-  parameter.set_task_specific_paras({"103", "104"});
+  parameter.parts_ref() = std::move(parts);
+  parameter.task_specific_paras_ref() = {"103", "104"};
 
   cpp2::AddAdminTaskRequest request;
-  request.set_cmd(meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX);
-  request.set_job_id(++gJobId);
-  request.set_task_id(15);
-  request.set_para(std::move(parameter));
+  request.cmd_ref() = meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX;
+  request.job_id_ref() = ++gJobId;
+  request.task_id_ref() = 15;
+  request.para_ref() = std::move(parameter);
 
   auto callback = [](nebula::cpp2::ErrorCode, nebula::meta::cpp2::StatsItem&) {};
   TaskContext context(request, callback);
@@ -523,16 +523,16 @@ TEST_F(RebuildIndexTest, RebuildEdgeIndex) {
   EXPECT_EQ(0, resp.result.failed_parts.size());
 
   cpp2::TaskPara parameter;
-  parameter.set_space_id(1);
+  parameter.space_id_ref() = 1;
   std::vector<PartitionID> parts = {1, 2, 3, 4, 5, 6};
-  parameter.set_parts(std::move(parts));
-  parameter.set_task_specific_paras({"103", "104"});
+  parameter.parts_ref() = std::move(parts);
+  parameter.task_specific_paras_ref() = {"103", "104"};
 
   cpp2::AddAdminTaskRequest request;
-  request.set_cmd(meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX);
-  request.set_job_id(++gJobId);
-  request.set_task_id(16);
-  request.set_para(std::move(parameter));
+  request.cmd_ref() = meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX;
+  request.job_id_ref() = ++gJobId;
+  request.task_id_ref() = 16;
+  request.para_ref() = std::move(parameter);
 
   auto callback = [](nebula::cpp2::ErrorCode, nebula::meta::cpp2::StatsItem&) {};
   TaskContext context(request, callback);

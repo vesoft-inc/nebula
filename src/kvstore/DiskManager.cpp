@@ -106,7 +106,7 @@ void DiskManager::getDiskParts(SpaceDiskPartsMap& diskParts) {
         tmpPartitions.emplace_back(partition);
       }
       meta::cpp2::PartitionList ps;
-      ps.set_part_list(tmpPartitions);
+      ps.part_list_ref() = tmpPartitions;
       tmpPartPaths[path] = ps;
     }
     diskParts.emplace(space, std::move(tmpPartPaths));

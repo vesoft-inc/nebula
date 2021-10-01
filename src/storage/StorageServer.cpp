@@ -147,7 +147,7 @@ int32_t StorageServer::getAdminStoreSeqId() {
 bool StorageServer::start() {
   ioThreadPool_ = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_num_io_threads);
   workers_ = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
-      FLAGS_num_worker_threads, true /*stats*/);
+      FLAGS_num_worker_threads);
   workers_->setNamePrefix("executor");
   workers_->start();
 

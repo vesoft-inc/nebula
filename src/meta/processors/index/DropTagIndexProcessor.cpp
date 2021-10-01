@@ -54,13 +54,13 @@ void DropTagIndexProcessor::process(const cpp2::DropTagIndexReq& req) {
   auto item = MetaKeyUtils::parseIndex(nebula::value(indexItemRet));
   if (item.get_schema_id().getType() != nebula::cpp2::SchemaID::Type::tag_id) {
     LOG(ERROR) << "Drop Tag Index Failed: Index Name " << indexName << " is not TagIndex";
-    resp_.set_code(nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND);
+    resp_.code_ref() = nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND;
     onFinished();
     return;
   }
 
   LOG(INFO) << "Drop Tag Index " << indexName;
-  resp_.set_id(to(tagIndexID, EntryType::INDEX));
+  resp_.id_ref() = to(tagIndexID, EntryType::INDEX);
   doSyncMultiRemoveAndUpdate(std::move(keys));
 }
 

@@ -270,10 +270,10 @@ TEST(IndexKeyUtilsTest, nullableValue) {
   auto nullCol = [](const std::string& name, const PropertyType type) {
     meta::cpp2::ColumnDef col;
     col.name = name;
-    col.type.set_type(type);
-    col.set_nullable(true);
+    col.type.type_ref() = type;
+    col.nullable_ref() = true;
     if (type == PropertyType::FIXED_STRING) {
-      col.type.set_type_length(10);
+      col.type.type_length_ref() = 10;
     }
     return col;
   };
@@ -286,7 +286,7 @@ TEST(IndexKeyUtilsTest, nullableValue) {
     }
     // TODO(jie) Add index key tests for geography
     auto indexItem = std::make_unique<meta::cpp2::IndexItem>();
-    indexItem->set_fields(cols);
+    indexItem->fields_ref() = cols;
     auto raws = IndexKeyUtils::encodeValues(std::move(values), indexItem.get());
     u_short s = 0xfc00; /* the binary is '11111100 00000000'*/
     std::string expected;
@@ -303,7 +303,7 @@ TEST(IndexKeyUtilsTest, nullableValue) {
       cols.emplace_back(nullCol(folly::stringPrintf("col%ld", j), PropertyType::BOOL));
     }
     auto indexItem = std::make_unique<meta::cpp2::IndexItem>();
-    indexItem->set_fields(cols);
+    indexItem->fields_ref() = cols;
     auto raws = IndexKeyUtils::encodeValues(std::move(values), indexItem.get());
     u_short s = 0x4000; /* the binary is '01000000 00000000'*/
     std::string expected;
@@ -320,7 +320,7 @@ TEST(IndexKeyUtilsTest, nullableValue) {
       cols.emplace_back(nullCol(folly::stringPrintf("col%ld", j), PropertyType::BOOL));
     }
     auto indexItem = std::make_unique<meta::cpp2::IndexItem>();
-    indexItem->set_fields(cols);
+    indexItem->fields_ref() = cols;
     auto raws = IndexKeyUtils::encodeValues(std::move(values), indexItem.get());
     u_short s = 0x0000; /* the binary is '01000000 00000000'*/
     std::string expected;
@@ -336,7 +336,7 @@ TEST(IndexKeyUtilsTest, nullableValue) {
       cols.emplace_back(nullCol(folly::stringPrintf("col%ld", i), PropertyType::INT64));
     }
     auto indexItem = std::make_unique<meta::cpp2::IndexItem>();
-    indexItem->set_fields(cols);
+    indexItem->fields_ref() = cols;
     auto raws = IndexKeyUtils::encodeValues(std::move(values), indexItem.get());
     u_short s = 0xfff0; /* the binary is '11111111 11110000'*/
     std::string expected;
@@ -376,7 +376,7 @@ TEST(IndexKeyUtilsTest, nullableValue) {
       }
     }
     auto indexItem = std::make_unique<meta::cpp2::IndexItem>();
-    indexItem->set_fields(cols);
+    indexItem->fields_ref() = cols;
     auto raws = IndexKeyUtils::encodeValues(std::move(values), indexItem.get());
     u_short s = 0xaaa0; /* the binary is '10101010 10100000'*/
     std::string expected;
@@ -392,7 +392,7 @@ TEST(IndexKeyUtilsTest, nullableValue) {
       cols.emplace_back(nullCol(folly::stringPrintf("col%ld", i), PropertyType::BOOL));
     }
     auto indexItem = std::make_unique<meta::cpp2::IndexItem>();
-    indexItem->set_fields(cols);
+    indexItem->fields_ref() = cols;
     auto raws = IndexKeyUtils::encodeValues(std::move(values), indexItem.get());
     u_short s = 0xff80; /* the binary is '11111111 10000000'*/
     std::string expected;
@@ -439,44 +439,44 @@ TEST(IndexKeyUtilsTest, getValueFromIndexKeyTest) {
   size_t indexValueSize = 0;
   {
     meta::cpp2::ColumnDef col;
-    col.set_name("col_bool");
-    col.type.set_type(PropertyType::BOOL);
+    col.name_ref() = "col_bool";
+    col.type.type_ref() = PropertyType::BOOL;
     cols.emplace_back(col);
     indexValueSize += sizeof(bool);
   }
   {
     meta::cpp2::ColumnDef col;
-    col.set_name("col_int");
-    col.type.set_type(PropertyType::INT64);
+    col.name_ref() = "col_int";
+    col.type.type_ref() = PropertyType::INT64;
     cols.emplace_back(col);
     indexValueSize += sizeof(int64_t);
   }
   {
     meta::cpp2::ColumnDef col;
-    col.set_name("col_float");
-    col.type.set_type(PropertyType::FLOAT);
+    col.name_ref() = "col_float";
+    col.type.type_ref() = PropertyType::FLOAT;
     cols.emplace_back(col);
     indexValueSize += sizeof(double);
   }
   {
     meta::cpp2::ColumnDef col;
-    col.set_name("col_string");
-    col.type.set_type(PropertyType::FIXED_STRING);
-    col.type.set_type_length(4);
+    col.name_ref() = "col_string";
+    col.type.type_ref() = PropertyType::FIXED_STRING;
+    col.type.type_length_ref() = 4;
     cols.emplace_back(col);
     indexValueSize += 4;
   }
   {
     meta::cpp2::ColumnDef col;
-    col.set_name("col_date");
-    col.type.set_type(PropertyType::DATE);
+    col.name_ref() = "col_date";
+    col.type.type_ref() = PropertyType::DATE;
     cols.emplace_back(col);
     indexValueSize += sizeof(int8_t) * 2 + sizeof(int16_t);
   }
   {
     meta::cpp2::ColumnDef col;
-    col.set_name("col_datetime");
-    col.type.set_type(PropertyType::DATETIME);
+    col.name_ref() = "col_datetime";
+    col.type.type_ref() = PropertyType::DATETIME;
     cols.emplace_back(col);
     indexValueSize += sizeof(int32_t) + sizeof(int16_t) + sizeof(int8_t) * 5;
   }
@@ -490,7 +490,7 @@ TEST(IndexKeyUtilsTest, getValueFromIndexKeyTest) {
     auto expected = vertices;
 
     auto indexItem = std::make_unique<meta::cpp2::IndexItem>();
-    indexItem->set_fields(cols);
+    indexItem->fields_ref() = cols;
     std::vector<std::string> indexKeys;
     for (auto& row : vertices) {
       auto values = IndexKeyUtils::encodeValues(std::move(row.second), indexItem.get());
@@ -514,7 +514,7 @@ TEST(IndexKeyUtilsTest, getValueFromIndexKeyTest) {
     auto expected = edges;
 
     auto indexItem = std::make_unique<meta::cpp2::IndexItem>();
-    indexItem->set_fields(cols);
+    indexItem->fields_ref() = cols;
     std::vector<std::string> indexKeys;
     for (auto& row : edges) {
       auto values = IndexKeyUtils::encodeValues(std::move(row.second), indexItem.get());
@@ -531,7 +531,7 @@ TEST(IndexKeyUtilsTest, getValueFromIndexKeyTest) {
   }
 
   for (auto& col : cols) {
-    col.set_nullable(true);
+    col.nullable_ref() = (true);
   }
   // since there are nullable columns, there will be two extra bytes to save
   // nullBitSet
@@ -552,7 +552,7 @@ TEST(IndexKeyUtilsTest, getValueFromIndexKeyTest) {
     auto expected = vertices;
 
     auto indexItem = std::make_unique<meta::cpp2::IndexItem>();
-    indexItem->set_fields(cols);
+    indexItem->fields_ref() = cols;
     std::vector<std::string> indexKeys;
     for (auto& row : vertices) {
       auto values = IndexKeyUtils::encodeValues(std::move(row.second), indexItem.get());
@@ -581,7 +581,7 @@ TEST(IndexKeyUtilsTest, getValueFromIndexKeyTest) {
     auto expected = edges;
 
     auto indexItem = std::make_unique<meta::cpp2::IndexItem>();
-    indexItem->set_fields(cols);
+    indexItem->fields_ref() = cols;
     std::vector<std::string> indexKeys;
     for (auto& row : edges) {
       auto values = IndexKeyUtils::encodeValues(std::move(row.second), indexItem.get());
