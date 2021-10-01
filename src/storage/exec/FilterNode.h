@@ -45,11 +45,11 @@ class FilterNode : public IterateNode<T> {
     }
 
     do {
-      if (this->context()->resultStat_ == ResultStatus::ILLEGAL_DATA) {
+      if (this->context_->resultStat_ == ResultStatus::ILLEGAL_DATA) {
         break;
       }
       if (this->valid() && !check()) {
-        this->context()->resultStat_ = ResultStatus::FILTER_OUT;
+        this->context_->resultStat_ = ResultStatus::FILTER_OUT;
         this->next();
         continue;
       }

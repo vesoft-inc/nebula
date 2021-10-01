@@ -36,7 +36,7 @@ class UpdateResNode : public RelNode<T> {
       return ret;
     }
 
-    insert_ = this->context()->insert_;
+    insert_ = this->context_->insert_;
 
     // Note: If filtered out, the result of tag prop is old
     result_->colNames.emplace_back("_inserted");

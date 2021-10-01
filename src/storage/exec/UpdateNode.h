@@ -191,9 +191,9 @@ class UpdateTagNode : public UpdateNode<VertexID> {
       return ret;
     }
 
-    if (this->context()->resultStat_ == ResultStatus::ILLEGAL_DATA) {
+    if (this->context_->resultStat_ == ResultStatus::ILLEGAL_DATA) {
       return nebula::cpp2::ErrorCode::E_INVALID_DATA;
-    } else if (this->context()->resultStat_ == ResultStatus::FILTER_OUT) {
+    } else if (this->context_->resultStat_ == ResultStatus::FILTER_OUT) {
       return nebula::cpp2::ErrorCode::E_FILTER_OUT;
     }
 
@@ -481,10 +481,10 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
           this->exeResult_ = nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND;
           return folly::none;
         }
-        if (this->context()->resultStat_ == ResultStatus::ILLEGAL_DATA) {
+        if (this->context_->resultStat_ == ResultStatus::ILLEGAL_DATA) {
           this->exeResult_ = nebula::cpp2::ErrorCode::E_INVALID_DATA;
           return folly::none;
-        } else if (this->context()->resultStat_ == ResultStatus::FILTER_OUT) {
+        } else if (this->context_->resultStat_ == ResultStatus::FILTER_OUT) {
           this->exeResult_ = nebula::cpp2::ErrorCode::E_FILTER_OUT;
           return folly::none;
         }
@@ -530,8 +530,8 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
       baton.post();
     };
 
-    this->context()->planContext_->env_->kvstore_->asyncAppendBatch(
-        this->context()->planContext_->spaceId_, partId, std::move(batch).value(), callback);
+    this->context_->planContext_->env_->kvstore_->asyncAppendBatch(
+        this->context_->planContext_->spaceId_, partId, std::move(batch).value(), callback);
     baton.wait();
     return ret;
   }
@@ -559,7 +559,7 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
   // Insert props row,
   // Operator props must have default value or nullable, or set in UpdatedProp_
   nebula::cpp2::ErrorCode insertEdgeProps(const PartitionID partId, const cpp2::EdgeKey& edgeKey) {
-    this->context()->insert_ = true;
+    this->context_->insert_ = true;
     auto ret = getLatestEdgeSchemaAndName();
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
       return ret;

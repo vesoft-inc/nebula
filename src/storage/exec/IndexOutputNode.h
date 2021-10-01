@@ -302,7 +302,7 @@ class IndexOutputNode final : public IndexNode<T> {
         break;
       }
       case QueryUtils::ReturnColType::kTag: {
-        row.emplace_back(this->context()->tagId_);
+        row.emplace_back(this->context_->tagId_);
         break;
       }
       case QueryUtils::ReturnColType::kSrc: {
@@ -315,7 +315,7 @@ class IndexOutputNode final : public IndexNode<T> {
         break;
       }
       case QueryUtils::ReturnColType::kType: {
-        row.emplace_back(this->context()->edgeType_);
+        row.emplace_back(this->context_->edgeType_);
         break;
       }
       case QueryUtils::ReturnColType::kRank: {

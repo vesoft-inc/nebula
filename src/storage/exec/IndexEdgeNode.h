@@ -48,7 +48,7 @@ class IndexEdgeNode final : public IndexNode<T> {
         auto eiter = static_cast<const EdgeIndexIterator*>(iter);
         storage::cpp2::EdgeKey edge;
         edge.set_src(eiter->srcId());
-        edge.set_edge_type(this->context()->edgeType_);
+        edge.set_edge_type(this->context_->edgeType_);
         edge.set_ranking(eiter->ranking());
         edge.set_dst(eiter->dstId());
         edges.emplace_back(std::move(edge));

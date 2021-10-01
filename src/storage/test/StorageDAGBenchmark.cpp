@@ -144,9 +144,9 @@ FutureDAG<std::string> fanoutFutureDAG() {
 
 StoragePlan<std::string> fanoutStorageDAG() {
   StoragePlan<std::string> dag;
-  auto out = std::make_unique<RelNode<std::string>>("leaf");
+  auto out = std::make_unique<RelNode<std::string>>(nullptr, "leaf");
   for (size_t i = 0; i < 10; i++) {
-    auto node = std::make_unique<RelNode<std::string>>(folly::to<std::string>(i));
+    auto node = std::make_unique<RelNode<std::string>>(nullptr, folly::to<std::string>(i));
     auto idx = dag.addNode(std::move(node));
     out->addDependency(dag.getNode(idx));
   }

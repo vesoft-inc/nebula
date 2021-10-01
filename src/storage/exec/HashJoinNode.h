@@ -126,24 +126,24 @@ class HashJoinNode : public IterateNode<VertexID> {
     EdgeType type = iter_->edgeType();
     // update info when edgeType changes while iterating over different
     // edgeTypes
-    if (type != this->context()->edgeType_) {
+    if (type != this->context_->edgeType_) {
       auto idxIter = edgeContext_->indexMap_.find(type);
       CHECK(idxIter != edgeContext_->indexMap_.end());
       auto schemaIter = edgeContext_->schemas_.find(std::abs(type));
       CHECK(schemaIter != edgeContext_->schemas_.end());
       CHECK(!schemaIter->second.empty());
 
-      this->context()->edgeSchema_ = schemaIter->second.back().get();
+      this->context_->edgeSchema_ = schemaIter->second.back().get();
       // idx is the index in all edges need to return
       auto idx = idxIter->second;
-      this->context()->edgeType_ = type;
-      this->context()->edgeName_ = edgeNodes_[iter_->getIdx()]->getEdgeName();
+      this->context_->edgeType_ = type;
+      this->context_->edgeName_ = edgeNodes_[iter_->getIdx()]->getEdgeName();
       // the columnIdx_ would be the column index in a response row, so need to
       // add the offset of tags and other fields
-      this->context()->columnIdx_ = edgeContext_->offset_ + idx;
-      this->context()->props_ = &(edgeContext_->propContexts_[idx].second);
+      this->context_->columnIdx_ = edgeContext_->offset_ + idx;
+      this->context_->props_ = &(edgeContext_->propContexts_[idx].second);
 
-      expCtx_->resetSchema(this->context()->edgeName_, this->context()->edgeSchema_, true);
+      expCtx_->resetSchema(this->context_->edgeName_, this->context_->edgeSchema_, true);
     }
   }
 

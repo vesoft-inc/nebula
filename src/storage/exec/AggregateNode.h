@@ -61,7 +61,7 @@ class AggregateNode : public IterateNode<T> {
 
   void next() override {
     // we need to collect the stat during `next`
-    collectEdgeStats(this->key(), this->reader(), this->context()->props_);
+    collectEdgeStats(this->key(), this->reader(), this->context_->props_);
     IterateNode<T>::next();
   }
 
