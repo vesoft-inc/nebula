@@ -31,7 +31,7 @@ class UpdateNode : public RelNode<T> {
              StorageExpressionContext* expCtx,
              bool isEdge,
              const std::string& name = "UpdateNode")
-      : RelNode<T>(context, name),
+      : RelNode<T>(name, context),
         indexes_(indexes),
         updatedProps_(updatedProps),
         filterNode_(filterNode),

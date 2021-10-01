@@ -131,7 +131,7 @@ class RelNode {
 
   virtual ~RelNode() = default;
 
-  explicit RelNode(RuntimeContext* context = nullptr, const std::string& name = "RelNode")
+  explicit RelNode(const std::string& name = "RelNode", RuntimeContext* context = nullptr)
       : context_(context), name_(name) {}
 
  protected:
@@ -151,7 +151,7 @@ class QueryNode : public RelNode<T> {
   Value& mutableResult() { return result_; }
 
  protected:
-  QueryNode(RuntimeContext* context, const std::string& name) : RelNode<T>(context, name) {}
+  QueryNode(RuntimeContext* context, const std::string& name) : RelNode<T>(name, context) {}
 
   Value result_;
 };

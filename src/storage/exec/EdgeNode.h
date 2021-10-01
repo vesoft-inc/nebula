@@ -169,8 +169,8 @@ class SingleEdgeNode final : public EdgeNode<VertexID> {
     prefix_ = NebulaKeyUtils::edgePrefix(this->vIdLen(), partId, vId, edgeType_);
     ret = this->prefix(partId, prefix_, &iter);
     if (ret == nebula::cpp2::ErrorCode::SUCCEEDED && iter && iter->valid()) {
-      iter_.reset(new SingleEdgeIterator(
-          RelNode<VertexID>::context(), std::move(iter), edgeType_, schemas_, &ttl_));
+      iter_.reset(
+          new SingleEdgeIterator(this->context_, std::move(iter), edgeType_, schemas_, &ttl_));
     } else {
       iter_.reset();
     }

@@ -51,7 +51,7 @@ class IndexNode : public RelNode<T> {
   }
 
  protected:
-  IndexNode(RuntimeContext* context, const std::string& name) : RelNode<T>(context, name) {}
+  IndexNode(RuntimeContext* context, const std::string& name) : RelNode<T>(name, context) {}
 };
 
 }  // namespace storage

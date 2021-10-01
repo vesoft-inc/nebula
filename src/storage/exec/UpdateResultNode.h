@@ -24,7 +24,7 @@ class UpdateResNode : public RelNode<T> {
                 std::vector<Expression*> returnPropsExp,
                 StorageExpressionContext* expCtx,
                 nebula::DataSet* result)
-      : RelNode<T>(context, "UpdateResNode"),
+      : RelNode<T>("UpdateResNode", context),
         updateNode_(updateNode),
         returnPropsExp_(returnPropsExp),
         expCtx_(expCtx),
