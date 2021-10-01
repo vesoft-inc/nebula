@@ -69,11 +69,11 @@ class IndexOutputNode final : public IndexNode<T> {
         hasNullableCol_(indexFilterNode->hasNullableCol()),
         fields_(indexFilterNode_->indexCols()) {
     if (indexFilter) {
-      type_ = this->context_->isEdge() ? IndexResultType::kEdgeFromIndexFilter
-                                       : IndexResultType::kVertexFromIndexFilter;
+      type_ = this->isEdge() ? IndexResultType::kEdgeFromIndexFilter
+                             : IndexResultType::kVertexFromIndexFilter;
     } else {
-      type_ = this->context_->isEdge() ? IndexResultType::kEdgeFromDataFilter
-                                       : IndexResultType::kVertexFromDataFilter;
+      type_ = this->isEdge() ? IndexResultType::kEdgeFromDataFilter
+                             : IndexResultType::kVertexFromDataFilter;
     }
   }
 
@@ -235,11 +235,11 @@ class IndexOutputNode final : public IndexNode<T> {
                        const kvstore::KV& data,
                        const std::string& col,
                        const meta::NebulaSchemaProvider* schema) {
-    auto vIdLen = this->context_->vIdLen();
+    auto vIdLen = this->vIdLen();
     switch (QueryUtils::toReturnColType(col)) {
       case QueryUtils::ReturnColType::kVid: {
         auto vId = NebulaKeyUtils::getVertexId(vIdLen, data.first);
-        if (this->context_->isIntId()) {
+        if (this->isIntId()) {
           row.emplace_back(*reinterpret_cast<const int64_t*>(vId.data()));
         } else {
           row.emplace_back(vId.subpiece(0, vId.find_first_of('\0')).toString());
@@ -252,7 +252,7 @@ class IndexOutputNode final : public IndexNode<T> {
       }
       case QueryUtils::ReturnColType::kSrc: {
         auto src = NebulaKeyUtils::getSrcId(vIdLen, data.first);
-        if (this->context_->isIntId()) {
+        if (this->isIntId()) {
           row.emplace_back(*reinterpret_cast<const int64_t*>(src.data()));
         } else {
           row.emplace_back(src.subpiece(0, src.find_first_of('\0')).toString());
@@ -269,7 +269,7 @@ class IndexOutputNode final : public IndexNode<T> {
       }
       case QueryUtils::ReturnColType::kDst: {
         auto dst = NebulaKeyUtils::getDstId(vIdLen, data.first);
-        if (this->context_->isIntId()) {
+        if (this->isIntId()) {
           row.emplace_back(*reinterpret_cast<const int64_t*>(dst.data()));
         } else {
           row.emplace_back(dst.subpiece(0, dst.find_first_of('\0')).toString());
@@ -290,11 +290,11 @@ class IndexOutputNode final : public IndexNode<T> {
 
   // Add the value by index key
   Status addIndexValue(Row& row, const kvstore::KV& data, const std::string& col) {
-    auto vIdLen = this->context_->vIdLen();
+    auto vIdLen = this->vIdLen();
     switch (QueryUtils::toReturnColType(col)) {
       case QueryUtils::ReturnColType::kVid: {
         auto vId = IndexKeyUtils::getIndexVertexID(vIdLen, data.first);
-        if (this->context_->isIntId()) {
+        if (this->isIntId()) {
           row.emplace_back(*reinterpret_cast<const int64_t*>(vId.data()));
         } else {
           row.emplace_back(vId.subpiece(0, vId.find_first_of('\0')).toString());
@@ -302,12 +302,12 @@ class IndexOutputNode final : public IndexNode<T> {
         break;
       }
       case QueryUtils::ReturnColType::kTag: {
-        row.emplace_back(this->context_->tagId_);
+        row.emplace_back(this->context()->tagId_);
         break;
       }
       case QueryUtils::ReturnColType::kSrc: {
         auto src = IndexKeyUtils::getIndexSrcId(vIdLen, data.first);
-        if (this->context_->isIntId()) {
+        if (this->isIntId()) {
           row.emplace_back(*reinterpret_cast<const int64_t*>(src.data()));
         } else {
           row.emplace_back(src.subpiece(0, src.find_first_of('\0')).toString());
@@ -315,7 +315,7 @@ class IndexOutputNode final : public IndexNode<T> {
         break;
       }
       case QueryUtils::ReturnColType::kType: {
-        row.emplace_back(this->context_->edgeType_);
+        row.emplace_back(this->context()->edgeType_);
         break;
       }
       case QueryUtils::ReturnColType::kRank: {
@@ -324,7 +324,7 @@ class IndexOutputNode final : public IndexNode<T> {
       }
       case QueryUtils::ReturnColType::kDst: {
         auto dst = IndexKeyUtils::getIndexDstId(vIdLen, data.first);
-        if (this->context_->isIntId()) {
+        if (this->isIntId()) {
           row.emplace_back(*reinterpret_cast<const int64_t*>(dst.data()));
         } else {
           row.emplace_back(dst.subpiece(0, dst.find_first_of('\0')).toString());
@@ -333,7 +333,7 @@ class IndexOutputNode final : public IndexNode<T> {
       }
       default: {
         auto v = IndexKeyUtils::getValueFromIndexKey(
-            vIdLen, data.first, col, fields_, this->context_->isEdge(), hasNullableCol_);
+            vIdLen, data.first, col, fields_, this->isEdge(), hasNullableCol_);
         row.emplace_back(std::move(v));
       }
     }

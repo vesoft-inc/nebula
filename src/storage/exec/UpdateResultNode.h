@@ -24,8 +24,7 @@ class UpdateResNode : public RelNode<T> {
                 std::vector<Expression*> returnPropsExp,
                 StorageExpressionContext* expCtx,
                 nebula::DataSet* result)
-      : RelNode<T>("UpdateResNode"),
-        context_(context),
+      : RelNode<T>(context, "UpdateResNode"),
         updateNode_(updateNode),
         returnPropsExp_(returnPropsExp),
         expCtx_(expCtx),
@@ -37,7 +36,7 @@ class UpdateResNode : public RelNode<T> {
       return ret;
     }
 
-    insert_ = context_->insert_;
+    insert_ = this->context()->insert_;
 
     // Note: If filtered out, the result of tag prop is old
     result_->colNames.emplace_back("_inserted");
@@ -61,7 +60,6 @@ class UpdateResNode : public RelNode<T> {
   }
 
  private:
-  RuntimeContext* context_;
   RelNode<T>* updateNode_;
   std::vector<Expression*> returnPropsExp_;
   StorageExpressionContext* expCtx_;

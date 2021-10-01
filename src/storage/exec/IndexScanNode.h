@@ -53,9 +53,8 @@ class IndexScanNode : public IndexNode<T> {
     }
     scanPair_ = scanRet.value();
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto part = this->part(partId);
-    ret = isRangeScan_ ? part.range(scanPair_.first, scanPair_.second, &iter)
-                       : part.prefix(scanPair_.first, &iter);
+    ret = isRangeScan_ ? this->range(partId, scanPair_.first, scanPair_.second, &iter)
+                       : this->prefix(partId, scanPair_.first, &iter);
     if (ret == nebula::cpp2::ErrorCode::SUCCEEDED && iter && iter->valid()) {
       iter_ = IndexNode<T>::iterator(std::move(iter));
     } else {

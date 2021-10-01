@@ -61,7 +61,7 @@ class AggregateNode : public IterateNode<T> {
 
   void next() override {
     // we need to collect the stat during `next`
-    collectEdgeStats(this->key(), this->reader(), this->context_->props_);
+    collectEdgeStats(this->key(), this->reader(), this->context()->props_);
     IterateNode<T>::next();
   }
 
@@ -118,8 +118,7 @@ class AggregateNode : public IterateNode<T> {
       if (prop.hasStat_) {
         for (const auto statIndex : prop.statIndex_) {
           VLOG(2) << "Collect stat prop " << prop.name_;
-          auto value = QueryUtils::readEdgeProp(
-              key, this->vidLen(), this->context_->isIntId(), reader, prop);
+          auto value = QueryUtils::readEdgeProp(key, this->vIdLen(), this->isIntId(), reader, prop);
           if (!value.ok()) {
             return nebula::cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
           }

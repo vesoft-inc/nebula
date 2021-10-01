@@ -22,30 +22,19 @@ namespace storage {
 template <typename T>
 class IndexNode : public RelNode<T> {
  public:
-  kvstore::KVStore* kvstore() const { return context_->env()->kvstore_; }
-  meta::IndexManager* idxMgr() const { return context_->env()->indexMan_; }
-
-  bool isPlanKilled() const { return context_->isPlanKilled(); }
-
-  const meta::NebulaSchemaProvider* schema() const {
-    return context_->isEdge() ? context_->edgeSchema_ : context_->tagSchema_;
-  }
-
-  bool isEdge() const { return context_->isEdge(); }
-
   StatusOr<std::shared_ptr<meta::cpp2::IndexItem>> index(IndexID id) const {
-    if (isEdge()) {
-      return idxMgr()->getEdgeIndex(context_->spaceId(), id);
+    if (this->isEdge()) {
+      return this->idxMgr()->getEdgeIndex(this->space(), id);
     } else {
-      return idxMgr()->getTagIndex(context_->spaceId(), id);
+      return this->idxMgr()->getTagIndex(this->space(), id);
     }
   }
 
   std::unique_ptr<IndexIterator> iterator(std::unique_ptr<kvstore::KVIterator> iter) const {
-    if (isEdge()) {
-      return std::make_unique<EdgeIndexIterator>(std::move(iter), context_->vIdLen());
+    if (this->isEdge()) {
+      return std::make_unique<EdgeIndexIterator>(std::move(iter), this->vIdLen());
     } else {
-      return std::make_unique<VertexIndexIterator>(std::move(iter), context_->vIdLen());
+      return std::make_unique<VertexIndexIterator>(std::move(iter), this->vIdLen());
     }
   }
 
@@ -62,45 +51,7 @@ class IndexNode : public RelNode<T> {
   }
 
  protected:
-  IndexNode(RuntimeContext* context, const std::string& name)
-      : RelNode<T>(name), context_(DCHECK_NOTNULL(context)) {}
-
-  class Part {
-   public:
-    Part(RuntimeContext* ctx, PartitionID partId) : ctx_(ctx), partId_(partId) {}
-
-    std::string vertexKey(VertexID vId) const {
-      return NebulaKeyUtils::vertexKey(ctx_->vIdLen(), partId_, vId, ctx_->tagId_);
-    }
-
-    std::string edgeKey(const std::string& src, const std::string& dst, EdgeRanking rank) const {
-      return NebulaKeyUtils::edgeKey(ctx_->vIdLen(), partId_, src, ctx_->edgeType_, rank, dst);
-    }
-
-    auto get(const std::string& key, std::string* val) const {
-      return kvstore()->get(ctx_->spaceId(), partId_, key, val);
-    }
-
-    auto range(const std::string& begin,
-               const std::string& end,
-               std::unique_ptr<kvstore::KVIterator>* iter) const {
-      return kvstore()->range(ctx_->spaceId(), partId_, begin, end, iter);
-    }
-
-    auto prefix(const std::string& prefix, std::unique_ptr<kvstore::KVIterator>* iter) const {
-      return kvstore()->prefix(ctx_->spaceId(), partId_, prefix, iter);
-    }
-
-    kvstore::KVStore* kvstore() const { return ctx_->env()->kvstore_; }
-
-   private:
-    RuntimeContext* ctx_;
-    PartitionID partId_;
-  };
-
-  Part part(PartitionID partId) const { return Part(context_, partId); }
-
-  RuntimeContext* context_;
+  IndexNode(RuntimeContext* context, const std::string& name) : RelNode<T>(context, name) {}
 };
 
 }  // namespace storage

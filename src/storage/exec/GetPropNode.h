@@ -40,13 +40,13 @@ class GetTagPropNode : public QueryNode<VertexID> {
 
     List row;
     // vertexId is the first column
-    if (context_->isIntId()) {
+    if (isIntId()) {
       row.emplace_back(*reinterpret_cast<const int64_t*>(vId.data()));
     } else {
       row.emplace_back(vId);
     }
-    auto vIdLen = context_->vIdLen();
-    auto isIntId = context_->isIntId();
+    auto vIdLen = this->vIdLen();
+    auto isIntId = this->isIntId();
     for (auto* tagNode : tagNodes_) {
       ret = tagNode->collectTagPropsIfValid(
           [&row](const std::vector<PropContext>* props) -> nebula::cpp2::ErrorCode {
@@ -97,8 +97,8 @@ class GetEdgePropNode : public QueryNode<cpp2::EdgeKey> {
     }
 
     List row;
-    auto vIdLen = context_->vIdLen();
-    auto isIntId = context_->isIntId();
+    auto vIdLen = this->context()->vIdLen();
+    auto isIntId = this->context()->isIntId();
     for (auto* edgeNode : edgeNodes_) {
       ret = edgeNode->collectEdgePropsIfValid(
           [&row](const std::vector<PropContext>* props) -> nebula::cpp2::ErrorCode {

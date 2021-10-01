@@ -40,22 +40,21 @@ class IndexVertexNode final : public IndexNode<T> {
 
     data_.clear();
     std::vector<VertexID> vids;
-    auto* iter = static_cast<VertexIndexIterator*>(indexScanNode_->iterator());
-    auto part = this->part(partId);
 
-    for (; iter && iter->valid(); iter->next()) {
+    for (auto iter = indexScanNode_->iterator(); iter && iter->valid(); iter->next()) {
       if (this->isPlanKilled()) {
         return nebula::cpp2::ErrorCode::E_PLAN_IS_KILLED;
       }
       if (!this->isTTLExpired(iter->val(), ttlProp, schema)) {
-        vids.emplace_back(iter->vId());
+        auto* viter = static_cast<VertexIndexIterator*>(iter);
+        vids.emplace_back(viter->vId());
       }
     }
     int64_t count = 0;
     for (const auto& vId : vids) {
       std::string val;
-      auto key = part.vertexKey(vId);
-      ret = part.get(key, &val);
+      auto key = this->vertexKey(partId, vId);
+      ret = this->get(partId, key, &val);
       if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
         data_.emplace_back(std::move(key), std::move(val));
       } else if (ret == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {

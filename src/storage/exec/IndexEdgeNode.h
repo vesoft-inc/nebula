@@ -40,7 +40,6 @@ class IndexEdgeNode final : public IndexNode<T> {
 
     data_.clear();
     std::vector<storage::cpp2::EdgeKey> edges;
-    auto part = this->part(partId);
     for (auto* iter = indexScanNode_->iterator(); iter && iter->valid(); iter->next()) {
       if (this->isPlanKilled()) {
         return nebula::cpp2::ErrorCode::E_PLAN_IS_KILLED;
@@ -49,7 +48,7 @@ class IndexEdgeNode final : public IndexNode<T> {
         auto eiter = static_cast<const EdgeIndexIterator*>(iter);
         storage::cpp2::EdgeKey edge;
         edge.set_src(eiter->srcId());
-        edge.set_edge_type(this->context_->edgeType_);
+        edge.set_edge_type(this->context()->edgeType_);
         edge.set_ranking(eiter->ranking());
         edge.set_dst(eiter->dstId());
         edges.emplace_back(std::move(edge));
@@ -57,10 +56,10 @@ class IndexEdgeNode final : public IndexNode<T> {
     }
     int64_t count = 0;
     for (const auto& edge : edges) {
-      auto key =
-          part.edgeKey(edge.src_ref()->getStr(), edge.dst_ref()->getStr(), edge.get_ranking());
+      auto key = this->edgeKey(
+          partId, edge.src_ref()->getStr(), edge.dst_ref()->getStr(), edge.get_ranking());
       std::string val;
-      ret = part.get(key, &val);
+      ret = this->get(partId, key, &val);
       if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
         data_.emplace_back(std::move(key), std::move(val));
       } else if (ret == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {

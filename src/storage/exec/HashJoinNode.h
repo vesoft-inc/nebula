@@ -47,13 +47,13 @@ class HashJoinNode : public IterateNode<VertexID> {
     }
     result_.setList(nebula::List());
     auto& result = result_.mutableList();
-    if (context_->resultStat_ == ResultStatus::ILLEGAL_DATA) {
+    if (context()->resultStat_ == ResultStatus::ILLEGAL_DATA) {
       return nebula::cpp2::ErrorCode::E_INVALID_DATA;
     }
 
     // add result of each tag node to tagResult
     for (auto* tagNode : tagNodes_) {
-      if (context_->isPlanKilled()) {
+      if (this->isPlanKilled()) {
         return nebula::cpp2::ErrorCode::E_PLAN_IS_KILLED;
       }
       ret = tagNode->collectTagPropsIfValid(
@@ -70,8 +70,7 @@ class HashJoinNode : public IterateNode<VertexID> {
             const auto& tagName = tagNode->getTagName();
             for (const auto& prop : *props) {
               VLOG(2) << "Collect prop " << prop.name_;
-              auto value = QueryUtils::readVertexProp(
-                  key, context_->vIdLen(), context_->isIntId(), reader, prop);
+              auto value = QueryUtils::readVertexProp(key, vIdLen(), isIntId(), reader, prop);
               if (!value.ok()) {
                 return nebula::cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND;
               }
@@ -92,7 +91,7 @@ class HashJoinNode : public IterateNode<VertexID> {
 
     std::vector<SingleEdgeIterator*> iters;
     for (auto* edgeNode : edgeNodes_) {
-      if (context_->isPlanKilled()) {
+      if (this->isPlanKilled()) {
         return nebula::cpp2::ErrorCode::E_PLAN_IS_KILLED;
       }
       iters.emplace_back(edgeNode->iter());
@@ -127,24 +126,24 @@ class HashJoinNode : public IterateNode<VertexID> {
     EdgeType type = iter_->edgeType();
     // update info when edgeType changes while iterating over different
     // edgeTypes
-    if (type != context_->edgeType_) {
+    if (type != this->context()->edgeType_) {
       auto idxIter = edgeContext_->indexMap_.find(type);
       CHECK(idxIter != edgeContext_->indexMap_.end());
       auto schemaIter = edgeContext_->schemas_.find(std::abs(type));
       CHECK(schemaIter != edgeContext_->schemas_.end());
       CHECK(!schemaIter->second.empty());
 
-      context_->edgeSchema_ = schemaIter->second.back().get();
+      this->context()->edgeSchema_ = schemaIter->second.back().get();
       // idx is the index in all edges need to return
       auto idx = idxIter->second;
-      context_->edgeType_ = type;
-      context_->edgeName_ = edgeNodes_[iter_->getIdx()]->getEdgeName();
+      this->context()->edgeType_ = type;
+      this->context()->edgeName_ = edgeNodes_[iter_->getIdx()]->getEdgeName();
       // the columnIdx_ would be the column index in a response row, so need to
       // add the offset of tags and other fields
-      context_->columnIdx_ = edgeContext_->offset_ + idx;
-      context_->props_ = &(edgeContext_->propContexts_[idx].second);
+      this->context()->columnIdx_ = edgeContext_->offset_ + idx;
+      this->context()->props_ = &(edgeContext_->propContexts_[idx].second);
 
-      expCtx_->resetSchema(context_->edgeName_, context_->edgeSchema_, true);
+      expCtx_->resetSchema(this->context()->edgeName_, this->context()->edgeSchema_, true);
     }
   }
 

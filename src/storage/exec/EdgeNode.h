@@ -97,13 +97,12 @@ class FetchEdgeNode final : public EdgeNode<cpp2::EdgeKey> {
     if (edgeType_ != *edgeKey.edge_type_ref()) {
       return nebula::cpp2::ErrorCode::SUCCEEDED;
     }
-    key_ = NebulaKeyUtils::edgeKey(context_->vIdLen(),
-                                   partId,
-                                   (*edgeKey.src_ref()).getStr(),
-                                   *edgeKey.edge_type_ref(),
-                                   *edgeKey.ranking_ref(),
-                                   (*edgeKey.dst_ref()).getStr());
-    ret = context_->env()->kvstore_->get(context_->spaceId(), partId, key_, &val_);
+    key_ = this->edgeKey(partId,
+                         edgeKey.src_ref()->getStr(),
+                         edgeKey.dst_ref()->getStr(),
+                         *edgeKey.ranking_ref(),
+                         *edgeKey.edge_type_ref());
+    ret = this->get(partId, key_, &val_);
     if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
       resetReader();
       return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -167,10 +166,11 @@ class SingleEdgeNode final : public EdgeNode<VertexID> {
     VLOG(1) << "partId " << partId << ", vId " << vId << ", edgeType " << edgeType_
             << ", prop size " << props_->size();
     std::unique_ptr<kvstore::KVIterator> iter;
-    prefix_ = NebulaKeyUtils::edgePrefix(context_->vIdLen(), partId, vId, edgeType_);
-    ret = context_->env()->kvstore_->prefix(context_->spaceId(), partId, prefix_, &iter);
+    prefix_ = NebulaKeyUtils::edgePrefix(this->vIdLen(), partId, vId, edgeType_);
+    ret = this->prefix(partId, prefix_, &iter);
     if (ret == nebula::cpp2::ErrorCode::SUCCEEDED && iter && iter->valid()) {
-      iter_.reset(new SingleEdgeIterator(context_, std::move(iter), edgeType_, schemas_, &ttl_));
+      iter_.reset(new SingleEdgeIterator(
+          RelNode<VertexID>::context(), std::move(iter), edgeType_, schemas_, &ttl_));
     } else {
       iter_.reset();
     }

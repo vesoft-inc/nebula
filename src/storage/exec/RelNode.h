@@ -57,6 +57,7 @@ class RelNode {
     duration_.pause();
     return ret;
   }
+
   virtual nebula::cpp2::ErrorCode doExecute(PartitionID partId) {
     for (auto* dependency : dependencies_) {
       auto ret = dependency->execute(partId);
@@ -75,11 +76,66 @@ class RelNode {
   const std::string& name() const { return name_; }
   int32_t latencyInUs() const { return duration_.elapsedInUSec(); }
 
+  GraphSpaceID space() const { return context_->spaceId(); }
+  size_t vIdLen() const { return context_->vIdLen(); }
+  bool isIntId() const { return context_->isIntId(); }
+  bool isPlanKilled() const { return context_->isPlanKilled(); }
+  bool isEdge() const { return context_->isEdge(); }
+
+  RuntimeContext* context() const { return context_; }
+  StorageEnv* env() const { return context_->env(); }
+
+  kvstore::KVStore* kvstore() const { return env()->kvstore_; }
+  meta::IndexManager* idxMgr() const { return env()->indexMan_; }
+  meta::SchemaManager* schemaMgr() const { return env()->schemaMan_; }
+
+  const meta::NebulaSchemaProvider* schema() const {
+    return isEdge() ? context_->edgeSchema_ : context_->tagSchema_;
+  }
+
+  std::string vertexKey(PartitionID partId, VertexID vId) const {
+    return NebulaKeyUtils::vertexKey(this->vIdLen(), partId, vId, context_->tagId_);
+  }
+
+  std::string edgeKey(PartitionID partId,
+                      const std::string& src,
+                      const std::string& dst,
+                      EdgeRanking rank) const {
+    return edgeKey(partId, src, dst, rank, context_->edgeType_);
+  }
+
+  std::string edgeKey(PartitionID partId,
+                      const std::string& src,
+                      const std::string& dst,
+                      EdgeRanking rank,
+                      EdgeType type) const {
+    return NebulaKeyUtils::edgeKey(vIdLen(), partId, src, type, rank, dst);
+  }
+
+  auto get(PartitionID partId, const std::string& key, std::string* val) const {
+    return kvstore()->get(space(), partId, key, val);
+  }
+
+  auto range(PartitionID partId,
+             const std::string& begin,
+             const std::string& end,
+             std::unique_ptr<kvstore::KVIterator>* iter) const {
+    return kvstore()->range(space(), partId, begin, end, iter);
+  }
+
+  auto prefix(PartitionID partId,
+              const std::string& prefix,
+              std::unique_ptr<kvstore::KVIterator>* iter) const {
+    return kvstore()->prefix(space(), partId, prefix, iter);
+  }
+
   virtual ~RelNode() = default;
 
-  explicit RelNode(const std::string& name = "RelNode") : name_(name) {}
+  explicit RelNode(RuntimeContext* context = nullptr, const std::string& name = "RelNode")
+      : context_(context), name_(name) {}
 
  protected:
+  RuntimeContext* context_;
   std::string name_;
   std::vector<RelNode<T>*> dependencies_;
   bool hasDependents_ = false;
@@ -94,13 +150,9 @@ class QueryNode : public RelNode<T> {
   const Value& result() { return result_; }
   Value& mutableResult() { return result_; }
 
-  size_t vidLen() const { return context_->vIdLen(); }
-
  protected:
-  QueryNode(RuntimeContext* context, const std::string& name)
-      : RelNode<T>(name), context_(context) {}
+  QueryNode(RuntimeContext* context, const std::string& name) : RelNode<T>(context, name) {}
 
-  RuntimeContext* context_;
   Value result_;
 };
 
