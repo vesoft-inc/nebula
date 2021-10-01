@@ -47,7 +47,7 @@ class HashJoinNode : public IterateNode<VertexID> {
     }
     result_.setList(nebula::List());
     auto& result = result_.mutableList();
-    if (context()->resultStat_ == ResultStatus::ILLEGAL_DATA) {
+    if (context_->resultStat_ == ResultStatus::ILLEGAL_DATA) {
       return nebula::cpp2::ErrorCode::E_INVALID_DATA;
     }
 

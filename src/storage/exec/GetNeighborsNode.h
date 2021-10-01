@@ -166,7 +166,7 @@ class GetNeighborsSampleNode : public GetNeighborsNode {
       auto edgeType = std::get<0>(sample);
       const auto& val = std::get<1>(sample);
       reader = RowReaderWrapper::getEdgePropReader(
-          this->schemaMgr(), this->space(), std::abs(edgeType), val);
+          this->schemaMgr(), this->spaceId(), std::abs(edgeType), val);
       if (!reader) {
         continue;
       }

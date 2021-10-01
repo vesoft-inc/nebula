@@ -177,7 +177,7 @@ class UpdateTagNode : public UpdateNode<VertexID> {
     IndexCountWrapper wrapper(this->env());
 
     // Update is read-modify-write, which is an atomic operation.
-    std::vector<VMLI> dummyLock = {std::make_tuple(this->space(), partId, tagId_, vId)};
+    std::vector<VMLI> dummyLock = {std::make_tuple(this->spaceId(), partId, tagId_, vId)};
     nebula::MemoryLockGuard<VMLI> lg(this->env()->verticesML_.get(), std::move(dummyLock));
     if (!lg) {
       auto conflict = lg.conflictKey();
@@ -226,7 +226,7 @@ class UpdateTagNode : public UpdateNode<VertexID> {
       ret = code;
       baton.post();
     };
-    kvstore()->asyncAppendBatch(this->space(), partId, std::move(batch).value(), callback);
+    kvstore()->asyncAppendBatch(this->spaceId(), partId, std::move(batch).value(), callback);
     baton.wait();
     return ret;
   }
@@ -244,7 +244,7 @@ class UpdateTagNode : public UpdateNode<VertexID> {
 
     auto iter = tagContext_->tagNames_.find(tagId_);
     if (iter == tagContext_->tagNames_.end()) {
-      VLOG(1) << "Can't find spaceId " << space() << " tagId " << tagId_;
+      VLOG(1) << "Can't find spaceId " << this->spaceId() << " tagId " << tagId_;
       return nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND;
     }
     tagName_ = iter->second;
@@ -365,7 +365,7 @@ class UpdateTagNode : public UpdateNode<VertexID> {
             }
             auto oi = indexKey(partId, vId, reader_, index);
             if (!oi.empty()) {
-              auto iState = this->env()->getIndexState(this->space(), partId);
+              auto iState = this->env()->getIndexState(this->spaceId(), partId);
               if (this->env()->checkRebuilding(iState)) {
                 auto deleteOpKey = OperationKeyUtils::deleteOperationKey(partId);
                 batchHolder->put(std::move(deleteOpKey), std::move(oi));
@@ -380,8 +380,8 @@ class UpdateTagNode : public UpdateNode<VertexID> {
 
           // step 2, insert new vertex index
           if (!nReader) {
-            nReader =
-                RowReaderWrapper::getTagPropReader(this->schemaMgr(), this->space(), tagId_, nVal);
+            nReader = RowReaderWrapper::getTagPropReader(
+                this->schemaMgr(), this->spaceId(), tagId_, nVal);
           }
           if (!nReader) {
             LOG(ERROR) << "Bad format row";
@@ -391,7 +391,7 @@ class UpdateTagNode : public UpdateNode<VertexID> {
           if (!ni.empty()) {
             auto v = CommonUtils::ttlValue(schema_, nReader.get());
             auto niv = v.ok() ? IndexKeyUtils::indexVal(std::move(v).value()) : "";
-            auto indexState = this->env()->getIndexState(this->space(), partId);
+            auto indexState = this->env()->getIndexState(this->spaceId(), partId);
             if (this->env()->checkRebuilding(indexState)) {
               auto modifyKey = OperationKeyUtils::modifyOperationKey(partId, std::move(ni));
               batchHolder->put(std::move(modifyKey), std::move(niv));
@@ -460,7 +460,7 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
     IndexCountWrapper wrapper(env());
 
     // Update is read-modify-write, which is an atomic operation.
-    std::vector<EMLI> dummyLock = {std::make_tuple(this->space(),
+    std::vector<EMLI> dummyLock = {std::make_tuple(this->spaceId(),
                                                    partId,
                                                    edgeKey.get_src().getStr(),
                                                    edgeKey.get_edge_type(),
@@ -550,7 +550,7 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
 
     auto iter = edgeContext_->edgeNames_.find(edgeType_);
     if (iter == edgeContext_->edgeNames_.end()) {
-      VLOG(1) << "Can't find spaceId " << this->space() << " edgeType " << edgeType_;
+      VLOG(1) << "Can't find spaceId " << this->spaceId() << " edgeType " << edgeType_;
       return nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND;
     }
     edgeName_ = iter->second;
@@ -685,7 +685,7 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
             }
             auto oi = indexKey(partId, reader_, edgeKey, index);
             if (!oi.empty()) {
-              auto iState = this->env()->getIndexState(this->space(), partId);
+              auto iState = this->env()->getIndexState(this->spaceId(), partId);
               if (this->env()->checkRebuilding(iState)) {
                 auto deleteOpKey = OperationKeyUtils::deleteOperationKey(partId);
                 batchHolder->put(std::move(deleteOpKey), std::move(oi));
@@ -701,7 +701,7 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
           // step 2, insert new edge index
           if (!nReader) {
             nReader = RowReaderWrapper::getEdgePropReader(
-                this->schemaMgr(), this->space(), std::abs(edgeType_), nVal);
+                this->schemaMgr(), this->spaceId(), std::abs(edgeType_), nVal);
           }
           if (!nReader) {
             LOG(ERROR) << "Bad format row";
@@ -711,7 +711,7 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
           if (!nik.empty()) {
             auto v = CommonUtils::ttlValue(schema_, nReader.get());
             auto niv = v.ok() ? IndexKeyUtils::indexVal(std::move(v).value()) : "";
-            auto indexState = this->env()->getIndexState(this->space(), partId);
+            auto indexState = this->env()->getIndexState(this->spaceId(), partId);
             if (this->env()->checkRebuilding(indexState)) {
               auto modifyKey = OperationKeyUtils::modifyOperationKey(partId, std::move(nik));
               batchHolder->put(std::move(modifyKey), std::move(niv));

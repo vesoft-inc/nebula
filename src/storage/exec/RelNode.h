@@ -76,7 +76,7 @@ class RelNode {
   const std::string& name() const { return name_; }
   int32_t latencyInUs() const { return duration_.elapsedInUSec(); }
 
-  GraphSpaceID space() const { return context_->spaceId(); }
+  GraphSpaceID spaceId() const { return context_->spaceId(); }
   size_t vIdLen() const { return context_->vIdLen(); }
   bool isIntId() const { return context_->isIntId(); }
   bool isPlanKilled() const { return context_->isPlanKilled(); }
@@ -94,7 +94,7 @@ class RelNode {
   }
 
   std::string vertexKey(PartitionID partId, VertexID vId) const {
-    return NebulaKeyUtils::vertexKey(this->vIdLen(), partId, vId, context_->tagId_);
+    return NebulaKeyUtils::vertexKey(vIdLen(), partId, vId, context_->tagId_);
   }
 
   std::string edgeKey(PartitionID partId,
@@ -113,20 +113,20 @@ class RelNode {
   }
 
   auto get(PartitionID partId, const std::string& key, std::string* val) const {
-    return kvstore()->get(space(), partId, key, val);
+    return kvstore()->get(spaceId(), partId, key, val);
   }
 
   auto range(PartitionID partId,
              const std::string& begin,
              const std::string& end,
              std::unique_ptr<kvstore::KVIterator>* iter) const {
-    return kvstore()->range(space(), partId, begin, end, iter);
+    return kvstore()->range(spaceId(), partId, begin, end, iter);
   }
 
   auto prefix(PartitionID partId,
               const std::string& prefix,
               std::unique_ptr<kvstore::KVIterator>* iter) const {
-    return kvstore()->prefix(space(), partId, prefix, iter);
+    return kvstore()->prefix(spaceId(), partId, prefix, iter);
   }
 
   virtual ~RelNode() = default;

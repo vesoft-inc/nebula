@@ -24,9 +24,9 @@ class IndexNode : public RelNode<T> {
  public:
   StatusOr<std::shared_ptr<meta::cpp2::IndexItem>> index(IndexID id) const {
     if (this->isEdge()) {
-      return this->idxMgr()->getEdgeIndex(this->space(), id);
+      return this->idxMgr()->getEdgeIndex(this->spaceId(), id);
     } else {
-      return this->idxMgr()->getTagIndex(this->space(), id);
+      return this->idxMgr()->getTagIndex(this->spaceId(), id);
     }
   }
 
