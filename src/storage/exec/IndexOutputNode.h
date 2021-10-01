@@ -9,15 +9,15 @@
 #include "common/base/Base.h"
 #include "storage/exec/IndexEdgeNode.h"
 #include "storage/exec/IndexFilterNode.h"
+#include "storage/exec/IndexNode.h"
 #include "storage/exec/IndexScanNode.h"
 #include "storage/exec/IndexVertexNode.h"
-#include "storage/exec/RelNode.h"
 
 namespace nebula {
 namespace storage {
 
 template <typename T>
-class IndexOutputNode final : public RelNode<T> {
+class IndexOutputNode final : public IndexNode<T> {
  public:
   using RelNode<T>::doExecute;
 
@@ -37,9 +37,8 @@ class IndexOutputNode final : public RelNode<T> {
                   IndexScanNode<T>* indexScanNode,
                   bool hasNullableCol,
                   const std::vector<meta::cpp2::ColumnDef>& fields)
-      : RelNode<T>("IndexOpuputNode"),
+      : IndexNode<T>(context, "IndexOpuputNode"),
         result_(result),
-        context_(DCHECK_NOTNULL(context)),
         type_(context->isEdge() ? IndexResultType::kEdgeFromIndexScan
                                 : IndexResultType::kVertexFromIndexScan),
         indexScanNode_(indexScanNode),
@@ -47,17 +46,16 @@ class IndexOutputNode final : public RelNode<T> {
         fields_(fields) {}
 
   IndexOutputNode(nebula::DataSet* result, RuntimeContext* context, IndexEdgeNode<T>* indexEdgeNode)
-      : result_(result), context_(context), indexEdgeNode_(indexEdgeNode) {
-    type_ = IndexResultType::kEdgeFromDataScan;
-    RelNode<T>::name_ = "IndexOpuputNode";
-  }
+      : IndexNode<T>(context, "IndexOpuputNode"),
+        result_(result),
+        type_(IndexResultType::kEdgeFromDataScan),
+        indexEdgeNode_(indexEdgeNode) {}
 
   IndexOutputNode(nebula::DataSet* result,
                   RuntimeContext* context,
                   IndexVertexNode<T>* indexVertexNode)
-      : RelNode<T>("IndexOpuputNode"),
+      : IndexNode<T>(context, "IndexOpuputNode"),
         result_(result),
-        context_(DCHECK_NOTNULL(context)),
         type_(IndexResultType::kVertexFromDataScan),
         indexVertexNode_(indexVertexNode) {}
 
@@ -65,18 +63,17 @@ class IndexOutputNode final : public RelNode<T> {
                   RuntimeContext* context,
                   IndexFilterNode<T>* indexFilterNode,
                   bool indexFilter = false)
-      : RelNode<T>("IndexOpuputNode"),
+      : IndexNode<T>(context, "IndexOpuputNode"),
         result_(result),
-        context_(DCHECK_NOTNULL(context)),
         indexFilterNode_(indexFilterNode),
         hasNullableCol_(indexFilterNode->hasNullableCol()),
         fields_(indexFilterNode_->indexCols()) {
     if (indexFilter) {
-      type_ = context_->isEdge() ? IndexResultType::kEdgeFromIndexFilter
-                                 : IndexResultType::kVertexFromIndexFilter;
+      type_ = this->context_->isEdge() ? IndexResultType::kEdgeFromIndexFilter
+                                       : IndexResultType::kVertexFromIndexFilter;
     } else {
-      type_ = context_->isEdge() ? IndexResultType::kEdgeFromDataFilter
-                                 : IndexResultType::kVertexFromDataFilter;
+      type_ = this->context_->isEdge() ? IndexResultType::kEdgeFromDataFilter
+                                       : IndexResultType::kVertexFromDataFilter;
     }
   }
 
@@ -125,7 +122,7 @@ class IndexOutputNode final : public RelNode<T> {
 
  private:
   nebula::cpp2::ErrorCode collectResult(const std::vector<kvstore::KV>& data) {
-    if (context_->isPlanKilled()) {
+    if (this->isPlanKilled()) {
       return nebula::cpp2::ErrorCode::E_PLAN_IS_KILLED;
     }
     auto ret = nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -238,10 +235,11 @@ class IndexOutputNode final : public RelNode<T> {
                        const kvstore::KV& data,
                        const std::string& col,
                        const meta::NebulaSchemaProvider* schema) {
+    auto vIdLen = this->context_->vIdLen();
     switch (QueryUtils::toReturnColType(col)) {
       case QueryUtils::ReturnColType::kVid: {
-        auto vId = NebulaKeyUtils::getVertexId(context_->vIdLen(), data.first);
-        if (context_->isIntId()) {
+        auto vId = NebulaKeyUtils::getVertexId(vIdLen, data.first);
+        if (this->context_->isIntId()) {
           row.emplace_back(*reinterpret_cast<const int64_t*>(vId.data()));
         } else {
           row.emplace_back(vId.subpiece(0, vId.find_first_of('\0')).toString());
@@ -249,12 +247,12 @@ class IndexOutputNode final : public RelNode<T> {
         break;
       }
       case QueryUtils::ReturnColType::kTag: {
-        row.emplace_back(NebulaKeyUtils::getTagId(context_->vIdLen(), data.first));
+        row.emplace_back(NebulaKeyUtils::getTagId(vIdLen, data.first));
         break;
       }
       case QueryUtils::ReturnColType::kSrc: {
-        auto src = NebulaKeyUtils::getSrcId(context_->vIdLen(), data.first);
-        if (context_->isIntId()) {
+        auto src = NebulaKeyUtils::getSrcId(vIdLen, data.first);
+        if (this->context_->isIntId()) {
           row.emplace_back(*reinterpret_cast<const int64_t*>(src.data()));
         } else {
           row.emplace_back(src.subpiece(0, src.find_first_of('\0')).toString());
@@ -262,16 +260,16 @@ class IndexOutputNode final : public RelNode<T> {
         break;
       }
       case QueryUtils::ReturnColType::kType: {
-        row.emplace_back(NebulaKeyUtils::getEdgeType(context_->vIdLen(), data.first));
+        row.emplace_back(NebulaKeyUtils::getEdgeType(vIdLen, data.first));
         break;
       }
       case QueryUtils::ReturnColType::kRank: {
-        row.emplace_back(NebulaKeyUtils::getRank(context_->vIdLen(), data.first));
+        row.emplace_back(NebulaKeyUtils::getRank(vIdLen, data.first));
         break;
       }
       case QueryUtils::ReturnColType::kDst: {
-        auto dst = NebulaKeyUtils::getDstId(context_->vIdLen(), data.first);
-        if (context_->isIntId()) {
+        auto dst = NebulaKeyUtils::getDstId(vIdLen, data.first);
+        if (this->context_->isIntId()) {
           row.emplace_back(*reinterpret_cast<const int64_t*>(dst.data()));
         } else {
           row.emplace_back(dst.subpiece(0, dst.find_first_of('\0')).toString());
@@ -292,10 +290,11 @@ class IndexOutputNode final : public RelNode<T> {
 
   // Add the value by index key
   Status addIndexValue(Row& row, const kvstore::KV& data, const std::string& col) {
+    auto vIdLen = this->context_->vIdLen();
     switch (QueryUtils::toReturnColType(col)) {
       case QueryUtils::ReturnColType::kVid: {
-        auto vId = IndexKeyUtils::getIndexVertexID(context_->vIdLen(), data.first);
-        if (context_->isIntId()) {
+        auto vId = IndexKeyUtils::getIndexVertexID(vIdLen, data.first);
+        if (this->context_->isIntId()) {
           row.emplace_back(*reinterpret_cast<const int64_t*>(vId.data()));
         } else {
           row.emplace_back(vId.subpiece(0, vId.find_first_of('\0')).toString());
@@ -303,12 +302,12 @@ class IndexOutputNode final : public RelNode<T> {
         break;
       }
       case QueryUtils::ReturnColType::kTag: {
-        row.emplace_back(context_->tagId_);
+        row.emplace_back(this->context_->tagId_);
         break;
       }
       case QueryUtils::ReturnColType::kSrc: {
-        auto src = IndexKeyUtils::getIndexSrcId(context_->vIdLen(), data.first);
-        if (context_->isIntId()) {
+        auto src = IndexKeyUtils::getIndexSrcId(vIdLen, data.first);
+        if (this->context_->isIntId()) {
           row.emplace_back(*reinterpret_cast<const int64_t*>(src.data()));
         } else {
           row.emplace_back(src.subpiece(0, src.find_first_of('\0')).toString());
@@ -316,16 +315,16 @@ class IndexOutputNode final : public RelNode<T> {
         break;
       }
       case QueryUtils::ReturnColType::kType: {
-        row.emplace_back(context_->edgeType_);
+        row.emplace_back(this->context_->edgeType_);
         break;
       }
       case QueryUtils::ReturnColType::kRank: {
-        row.emplace_back(IndexKeyUtils::getIndexRank(context_->vIdLen(), data.first));
+        row.emplace_back(IndexKeyUtils::getIndexRank(vIdLen, data.first));
         break;
       }
       case QueryUtils::ReturnColType::kDst: {
-        auto dst = IndexKeyUtils::getIndexDstId(context_->vIdLen(), data.first);
-        if (context_->isIntId()) {
+        auto dst = IndexKeyUtils::getIndexDstId(vIdLen, data.first);
+        if (this->context_->isIntId()) {
           row.emplace_back(*reinterpret_cast<const int64_t*>(dst.data()));
         } else {
           row.emplace_back(dst.subpiece(0, dst.find_first_of('\0')).toString());
@@ -334,7 +333,7 @@ class IndexOutputNode final : public RelNode<T> {
       }
       default: {
         auto v = IndexKeyUtils::getValueFromIndexKey(
-            context_->vIdLen(), data.first, col, fields_, context_->isEdge(), hasNullableCol_);
+            vIdLen, data.first, col, fields_, this->context_->isEdge(), hasNullableCol_);
         row.emplace_back(std::move(v));
       }
     }
@@ -343,7 +342,6 @@ class IndexOutputNode final : public RelNode<T> {
 
  private:
   nebula::DataSet* result_{nullptr};
-  RuntimeContext* context_{nullptr};
   IndexResultType type_;
   IndexScanNode<T>* indexScanNode_{nullptr};
   IndexEdgeNode<T>* indexEdgeNode_{nullptr};

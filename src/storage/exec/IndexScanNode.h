@@ -8,13 +8,13 @@
 #define STORAGE_EXEC_INDEXSCANNODE_H_
 
 #include "common/base/Base.h"
-#include "storage/exec/RelNode.h"
+#include "storage/exec/IndexNode.h"
 #include "storage/exec/StorageIterator.h"
 
 namespace nebula {
 namespace storage {
 template <typename T>
-class IndexScanNode : public RelNode<T> {
+class IndexScanNode : public IndexNode<T> {
  public:
   using RelNode<T>::doExecute;
 
@@ -22,8 +22,7 @@ class IndexScanNode : public RelNode<T> {
                 IndexID indexId,
                 std::vector<cpp2::IndexColumnHint> columnHints,
                 int64_t limit = -1)
-      : RelNode<T>("IndexScanNode"),
-        context_(context),
+      : IndexNode<T>(context, "IndexScanNode"),
         indexId_(indexId),
         columnHints_(std::move(columnHints)),
         limit_(limit) {
@@ -54,14 +53,11 @@ class IndexScanNode : public RelNode<T> {
     }
     scanPair_ = scanRet.value();
     std::unique_ptr<kvstore::KVIterator> iter;
-    ret = isRangeScan_ ? context_->env()->kvstore_->range(
-                             context_->spaceId(), partId, scanPair_.first, scanPair_.second, &iter)
-                       : context_->env()->kvstore_->prefix(
-                             context_->spaceId(), partId, scanPair_.first, &iter);
+    auto part = this->part(partId);
+    ret = isRangeScan_ ? part.range(scanPair_.first, scanPair_.second, &iter)
+                       : part.prefix(scanPair_.first, &iter);
     if (ret == nebula::cpp2::ErrorCode::SUCCEEDED && iter && iter->valid()) {
-      context_->isEdge()
-          ? iter_.reset(new EdgeIndexIterator(std::move(iter), context_->vIdLen()))
-          : iter_.reset(new VertexIndexIterator(std::move(iter), context_->vIdLen()));
+      iter_ = IndexNode<T>::iterator(std::move(iter));
     } else {
       iter_.reset();
       return ret;
@@ -72,36 +68,28 @@ class IndexScanNode : public RelNode<T> {
   IndexIterator* iterator() { return iter_.get(); }
 
   std::vector<kvstore::KV> moveData() {
-    auto* sh = context_->isEdge() ? context_->edgeSchema_ : context_->tagSchema_;
+    auto* sh = this->schema();
     auto ttlProp = CommonUtils::ttlProps(sh);
     data_.clear();
     int64_t count = 0;
-    while (!!iter_ && iter_->valid()) {
-      if (context_->isPlanKilled()) {
+    for (; !!iter_ && iter_->valid(); iter_->next()) {
+      if (this->isPlanKilled()) {
         return {};
       }
-      if (!iter_->val().empty() && ttlProp.first) {
-        auto v = IndexKeyUtils::parseIndexTTL(iter_->val());
-        if (CommonUtils::checkDataExpiredForTTL(
-                sh, std::move(v), ttlProp.second.second, ttlProp.second.first)) {
-          iter_->next();
-          continue;
+
+      if (!this->isTTLExpired(iter_->val(), ttlProp, sh)) {
+        data_.emplace_back(iter_->key(), "");
+        if (limit_ > 0 && ++count >= limit_) {
+          break;
         }
       }
-      data_.emplace_back(iter_->key(), "");
-      if (limit_ > 0 && ++count >= limit_) {
-        break;
-      }
-      iter_->next();
     }
     return std::move(data_);
   }
 
  private:
   StatusOr<std::pair<std::string, std::string>> scanStr(PartitionID partId) {
-    auto iRet = context_->isEdge()
-                    ? context_->env()->indexMan_->getEdgeIndex(context_->spaceId(), indexId_)
-                    : context_->env()->indexMan_->getTagIndex(context_->spaceId(), indexId_);
+    auto iRet = this->index(indexId_);
     if (!iRet.ok()) {
       return Status::IndexNotFound();
     }
@@ -174,7 +162,6 @@ class IndexScanNode : public RelNode<T> {
   }
 
  private:
-  RuntimeContext* context_;
   IndexID indexId_;
   bool isRangeScan_{false};
   std::unique_ptr<IndexIterator> iter_;

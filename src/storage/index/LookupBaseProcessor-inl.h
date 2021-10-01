@@ -162,14 +162,13 @@ bool LookupBaseProcessor<REQ, RESP>::isOutsideIndex(Expression* filter,
  *            +----------+-----------+
  *            +  IndexOutputNode...  +
  *            +----------+-----------+
- **/
-
+ */
 template <typename REQ, typename RESP>
 StatusOr<StoragePlan<IndexID>> LookupBaseProcessor<REQ, RESP>::buildPlan(
     IndexFilterItem* filterItem, nebula::DataSet* result) {
   StoragePlan<IndexID> plan;
-  // TODO(sky) : Limit is not supported yet for de-dup node.
-  //             Related to paging scan, the de-dup execution plan needs to be refactored
+  // TODO(sky): Limit is not supported yet for de-dup node.
+  // Related to paging scan, the de-dup execution plan needs to be refactored
   auto deDup = std::make_unique<DeDupNode<IndexID>>(context_.get(), result, deDupColPos_);
   int32_t filterId = 0;
   std::unique_ptr<IndexOutputNode<IndexID>> out;

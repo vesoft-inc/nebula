@@ -7,14 +7,14 @@
 #define STORAGE_EXEC_INDEXVERTEXNODE_H_
 
 #include "common/base/Base.h"
+#include "storage/exec/IndexNode.h"
 #include "storage/exec/IndexScanNode.h"
-#include "storage/exec/RelNode.h"
 
 namespace nebula {
 namespace storage {
 
 template <typename T>
-class IndexVertexNode final : public RelNode<T> {
+class IndexVertexNode final : public IndexNode<T> {
  public:
   using RelNode<T>::doExecute;
 
@@ -23,8 +23,7 @@ class IndexVertexNode final : public RelNode<T> {
                   const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas,
                   const std::string& schemaName,
                   int64_t limit = -1)
-      : RelNode<T>("IndexVertexNode"),
-        context_(context),
+      : IndexNode<T>(context, "IndexVertexNode"),
         indexScanNode_(indexScanNode),
         schemas_(schemas),
         schemaName_(schemaName),
@@ -36,33 +35,27 @@ class IndexVertexNode final : public RelNode<T> {
       return ret;
     }
 
-    auto ttlProp = CommonUtils::ttlProps(context_->tagSchema_);
+    auto schema = this->schema();
+    auto ttlProp = CommonUtils::ttlProps(schema);
 
     data_.clear();
     std::vector<VertexID> vids;
     auto* iter = static_cast<VertexIndexIterator*>(indexScanNode_->iterator());
+    auto part = this->part(partId);
 
-    while (iter && iter->valid()) {
-      if (context_->isPlanKilled()) {
+    for (; iter && iter->valid(); iter->next()) {
+      if (this->isPlanKilled()) {
         return nebula::cpp2::ErrorCode::E_PLAN_IS_KILLED;
       }
-      if (!iter->val().empty() && ttlProp.first) {
-        auto v = IndexKeyUtils::parseIndexTTL(iter->val());
-        if (CommonUtils::checkDataExpiredForTTL(
-                context_->tagSchema_, std::move(v), ttlProp.second.second, ttlProp.second.first)) {
-          iter->next();
-          continue;
-        }
+      if (!this->isTTLExpired(iter->val(), ttlProp, schema)) {
+        vids.emplace_back(iter->vId());
       }
-      vids.emplace_back(iter->vId());
-      iter->next();
     }
     int64_t count = 0;
     for (const auto& vId : vids) {
-      VLOG(1) << "partId " << partId << ", vId " << vId << ", tagId " << context_->tagId_;
-      auto key = NebulaKeyUtils::vertexKey(context_->vIdLen(), partId, vId, context_->tagId_);
       std::string val;
-      ret = context_->env()->kvstore_->get(context_->spaceId(), partId, key, &val);
+      auto key = part.vertexKey(vId);
+      ret = part.get(key, &val);
       if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
         data_.emplace_back(std::move(key), std::move(val));
       } else if (ret == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
@@ -86,7 +79,6 @@ class IndexVertexNode final : public RelNode<T> {
   const std::string& getSchemaName() { return schemaName_; }
 
  private:
-  RuntimeContext* context_;
   IndexScanNode<T>* indexScanNode_;
   const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas_;
   const std::string& schemaName_;

@@ -7,14 +7,14 @@
 #define STORAGE_EXEC_INDEXEDGENODE_H_
 
 #include "common/base/Base.h"
+#include "storage/exec/IndexNode.h"
 #include "storage/exec/IndexScanNode.h"
-#include "storage/exec/RelNode.h"
 
 namespace nebula {
 namespace storage {
 
 template <typename T>
-class IndexEdgeNode final : public RelNode<T> {
+class IndexEdgeNode final : public IndexNode<T> {
  public:
   using RelNode<T>::doExecute;
 
@@ -23,13 +23,11 @@ class IndexEdgeNode final : public RelNode<T> {
                 const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas,
                 const std::string& schemaName,
                 int64_t limit = -1)
-      : context_(context),
+      : IndexNode<T>(context, "IndexEdgeNode"),
         indexScanNode_(indexScanNode),
         schemas_(schemas),
         schemaName_(schemaName),
-        limit_(limit) {
-    RelNode<T>::name_ = "IndexEdgeNode";
-  }
+        limit_(limit) {}
 
   nebula::cpp2::ErrorCode doExecute(PartitionID partId) override {
     auto ret = RelNode<T>::doExecute(partId);
@@ -37,41 +35,32 @@ class IndexEdgeNode final : public RelNode<T> {
       return ret;
     }
 
-    auto ttlProp = CommonUtils::ttlProps(context_->edgeSchema_);
+    auto schema = this->schema();
+    auto ttlProp = CommonUtils::ttlProps(schema);
 
     data_.clear();
     std::vector<storage::cpp2::EdgeKey> edges;
-    auto* iter = static_cast<EdgeIndexIterator*>(indexScanNode_->iterator());
-    while (iter && iter->valid()) {
-      if (context_->isPlanKilled()) {
+    auto part = this->part(partId);
+    for (auto* iter = indexScanNode_->iterator(); iter && iter->valid(); iter->next()) {
+      if (this->isPlanKilled()) {
         return nebula::cpp2::ErrorCode::E_PLAN_IS_KILLED;
       }
-      if (!iter->val().empty() && ttlProp.first) {
-        auto v = IndexKeyUtils::parseIndexTTL(iter->val());
-        if (CommonUtils::checkDataExpiredForTTL(
-                context_->edgeSchema_, std::move(v), ttlProp.second.second, ttlProp.second.first)) {
-          iter->next();
-          continue;
-        }
+      if (!this->isTTLExpired(iter->val(), ttlProp, schema)) {
+        auto eiter = static_cast<const EdgeIndexIterator*>(iter);
+        storage::cpp2::EdgeKey edge;
+        edge.set_src(eiter->srcId());
+        edge.set_edge_type(this->context_->edgeType_);
+        edge.set_ranking(eiter->ranking());
+        edge.set_dst(eiter->dstId());
+        edges.emplace_back(std::move(edge));
       }
-      storage::cpp2::EdgeKey edge;
-      edge.set_src(iter->srcId());
-      edge.set_edge_type(context_->edgeType_);
-      edge.set_ranking(iter->ranking());
-      edge.set_dst(iter->dstId());
-      edges.emplace_back(std::move(edge));
-      iter->next();
     }
     int64_t count = 0;
     for (const auto& edge : edges) {
-      auto key = NebulaKeyUtils::edgeKey(context_->vIdLen(),
-                                         partId,
-                                         (*edge.src_ref()).getStr(),
-                                         context_->edgeType_,
-                                         edge.get_ranking(),
-                                         (*edge.dst_ref()).getStr());
+      auto key =
+          part.edgeKey(edge.src_ref()->getStr(), edge.dst_ref()->getStr(), edge.get_ranking());
       std::string val;
-      ret = context_->env()->kvstore_->get(context_->spaceId(), partId, key, &val);
+      ret = part.get(key, &val);
       if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
         data_.emplace_back(std::move(key), std::move(val));
       } else if (ret == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
@@ -95,7 +84,6 @@ class IndexEdgeNode final : public RelNode<T> {
   const std::string& getSchemaName() { return schemaName_; }
 
  private:
-  RuntimeContext* context_;
   IndexScanNode<T>* indexScanNode_;
   const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas_;
   const std::string& schemaName_;

@@ -10,15 +10,15 @@
 #include "common/context/ExpressionContext.h"
 #include "common/expression/Expression.h"
 #include "storage/exec/IndexEdgeNode.h"
+#include "storage/exec/IndexNode.h"
 #include "storage/exec/IndexScanNode.h"
 #include "storage/exec/IndexVertexNode.h"
-#include "storage/exec/RelNode.h"
 
 namespace nebula {
 namespace storage {
 
 template <typename T>
-class IndexFilterNode final : public RelNode<T> {
+class IndexFilterNode final : public IndexNode<T> {
  public:
   using RelNode<T>::doExecute;
 
@@ -30,8 +30,7 @@ class IndexFilterNode final : public RelNode<T> {
                   Expression* exp,
                   bool isEdge,
                   int64_t limit = -1)
-      : RelNode<T>("IndexFilterNode"),
-        context_(context),
+      : IndexNode<T>(context, "IndexFilterNode"),
         indexScanNode_(indexScanNode),
         exprCtx_(exprCtx),
         filterExp_(exp),
@@ -46,8 +45,7 @@ class IndexFilterNode final : public RelNode<T> {
                   StorageExpressionContext* exprCtx,
                   Expression* exp,
                   int64_t limit = -1)
-      : RelNode<T>("IndexFilterNode"),
-        context_(context),
+      : IndexNode<T>(context, "IndexFilterNode"),
         indexEdgeNode_(indexEdgeNode),
         exprCtx_(exprCtx),
         filterExp_(exp),
@@ -62,8 +60,7 @@ class IndexFilterNode final : public RelNode<T> {
                   StorageExpressionContext* exprCtx,
                   Expression* exp,
                   int64_t limit = -1)
-      : RelNode<T>("IndexFilterNode"),
-        context_(context),
+      : IndexNode<T>(context, "IndexFilterNode"),
         indexVertexNode_(indexVertexNode),
         exprCtx_(exprCtx),
         filterExp_(exp),
@@ -87,7 +84,7 @@ class IndexFilterNode final : public RelNode<T> {
     }
     int64_t count = 0;
     for (const auto& k : data) {
-      if (context_->isPlanKilled()) {
+      if (this->isPlanKilled()) {
         return nebula::cpp2::ErrorCode::E_PLAN_IS_KILLED;
       }
       if (evalExprByIndex_) {
@@ -152,7 +149,6 @@ class IndexFilterNode final : public RelNode<T> {
   }
 
  private:
-  RuntimeContext* context_;
   IndexScanNode<T>* indexScanNode_{nullptr};
   IndexEdgeNode<T>* indexEdgeNode_{nullptr};
   IndexVertexNode<T>* indexVertexNode_{nullptr};
