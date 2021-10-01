@@ -461,7 +461,9 @@ nebula::cpp2::ErrorCode GetNeighborsProcessor::checkStatType(
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
-void GetNeighborsProcessor::onProcessFinished() { resp_.set_vertices(std::move(resultDataSet_)); }
+void GetNeighborsProcessor::onProcessFinished() {
+  resp_.vertices_ref() = std::move(resultDataSet_);
+}
 
 void GetNeighborsProcessor::profilePlan(StoragePlan<VertexID>& plan) {
   auto& nodes = plan.getNodes();

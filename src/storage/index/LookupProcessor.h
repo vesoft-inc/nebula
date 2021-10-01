@@ -26,7 +26,7 @@ class LookupProcessor : public BaseProcessor<cpp2::LookupIndexResp> {
       : BaseProcessor<cpp2::LookupIndexResp>(env, counters), executor_(executor) {}
   void doProcess(const cpp2::LookupIndexRequest& req);
   void onProcessFinished() {
-    BaseProcessor<cpp2::LookupIndexResp>::resp_.set_data(std::move(resultDataSet_));
+    BaseProcessor<cpp2::LookupIndexResp>::resp_.data_ref() = std::move(resultDataSet_);
   }
   void profilePlan(IndexNode* plan);
   void runInSingleThread(const std::vector<PartitionID>& parts, std::unique_ptr<IndexNode> plan);

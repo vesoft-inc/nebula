@@ -24,20 +24,20 @@ void AdminTaskProcessor::process(const cpp2::AddAdminTaskRequest& req) {
   auto task = AdminTaskFactory::createAdminTask(env_, std::move(ctx));
   if (task) {
     nebula::meta::cpp2::StatsItem statsItem;
-    statsItem.set_status(nebula::meta::cpp2::JobStatus::RUNNING);
+    statsItem.status_ref() = nebula::meta::cpp2::JobStatus::RUNNING;
     taskManager->saveTaskStatus(
         ctx.jobId_, ctx.taskId_, nebula::cpp2::ErrorCode::E_TASK_EXECUTION_FAILED, statsItem);
     taskManager->addAsyncTask(task);
   } else {
     cpp2::PartitionResult thriftRet;
-    thriftRet.set_code(nebula::cpp2::ErrorCode::E_INVALID_TASK_PARA);
+    thriftRet.code_ref() = nebula::cpp2::ErrorCode::E_INVALID_TASK_PARA;
     codes_.emplace_back(std::move(thriftRet));
   }
   onFinished();
 }
 
 void AdminTaskProcessor::onProcessFinished(nebula::meta::cpp2::StatsItem& result) {
-  resp_.set_stats(std::move(result));
+  resp_.stats_ref() = std::move(result);
 }
 
 }  // namespace storage

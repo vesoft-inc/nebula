@@ -111,8 +111,8 @@ folly::Future<Status> DeleteTagsExecutor::deleteTags() {
       ss << "Wrong vid type `" << val.type() << "', value `" << val.toString() << "'";
       return Status::Error(ss.str());
     }
-    delTag.set_id(val);
-    delTag.set_tags(dtNode->tagIds());
+    delTag.id_ref() = val;
+    delTag.tags_ref() = dtNode->tagIds();
     delTags.emplace_back(std::move(delTag));
   }
 
@@ -183,16 +183,16 @@ folly::Future<Status> DeleteEdgesExecutor::deleteEdges() {
     }
 
     // out edge
-    edgeKey.set_src(srcId);
-    edgeKey.set_dst(dstId);
-    edgeKey.set_ranking(rank.getInt());
-    edgeKey.set_edge_type(type.getInt());
+    edgeKey.src_ref() = srcId;
+    edgeKey.dst_ref() = dstId;
+    edgeKey.ranking_ref() = rank.getInt();
+    edgeKey.edge_type_ref() = type.getInt();
     edgeKeys.emplace_back(edgeKey);
 
     // in edge
-    edgeKey.set_src(std::move(dstId));
-    edgeKey.set_dst(std::move(srcId));
-    edgeKey.set_edge_type(-type.getInt());
+    edgeKey.src_ref() = std::move(dstId);
+    edgeKey.dst_ref() = std::move(srcId);
+    edgeKey.edge_type_ref() = -type.getInt();
     edgeKeys.emplace_back(std::move(edgeKey));
   }
 

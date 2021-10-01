@@ -76,23 +76,23 @@ static std::unique_ptr<std::vector<storage::cpp2::EdgeProp>> genEdgeProps(const 
       }
       case Direction::BOTH: {
         EdgeProp edgeProp;
-        edgeProp.set_type(-edgeType);
+        edgeProp.type_ref() = -edgeType;
         std::vector<std::string> props{kSrc, kType, kRank, kDst};
         for (std::size_t i = 0; i < edgeSchema->getNumFields(); ++i) {
           props.emplace_back(edgeSchema->getFieldName(i));
         }
-        edgeProp.set_props(std::move(props));
+        edgeProp.props_ref() = std::move(props);
         edgeProps->emplace_back(std::move(edgeProp));
         break;
       }
     }
     EdgeProp edgeProp;
-    edgeProp.set_type(edgeType);
+    edgeProp.type_ref() = edgeType;
     std::vector<std::string> props{kSrc, kType, kRank, kDst};
     for (std::size_t i = 0; i < edgeSchema->getNumFields(); ++i) {
       props.emplace_back(edgeSchema->getFieldName(i));
     }
-    edgeProp.set_props(std::move(props));
+    edgeProp.props_ref() = std::move(props);
     edgeProps->emplace_back(std::move(edgeProp));
   }
   return edgeProps;

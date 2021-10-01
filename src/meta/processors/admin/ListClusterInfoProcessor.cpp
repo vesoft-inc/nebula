@@ -57,17 +57,17 @@ void ListClusterInfoProcessor::process(const cpp2::ListClusterInfoReq& req) {
   auto* pm = store->partManager();
   auto* mpm = dynamic_cast<nebula::kvstore::MemPartManager*>(pm);
   if (mpm == nullptr) {
-    resp_.set_code(nebula::cpp2::ErrorCode::E_LIST_CLUSTER_FAILURE);
+    resp_.code_ref() = nebula::cpp2::ErrorCode::E_LIST_CLUSTER_FAILURE;
     onFinished();
     return;
   }
   auto& map = mpm->partsMap();
   auto hosts = map[kDefaultSpaceId][kDefaultPartId].hosts_;
   LOG(INFO) << "meta servers count: " << hosts.size();
-  resp_.set_meta_servers(std::move(hosts));
+  resp_.meta_servers_ref() = std::move(hosts);
 
-  resp_.set_code(nebula::cpp2::ErrorCode::SUCCEEDED);
-  resp_.set_storage_servers(std::move(storages));
+  resp_.code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
+  resp_.storage_servers_ref() = std::move(storages);
   onFinished();
 }
 }  // namespace meta

@@ -37,7 +37,7 @@ TEST(MemoryHighWatermarkTest, DISABLED_TestHitsHighWatermarkInContainer) {
   ASSERT_TRUE(std::move(status).value());
 }
 
-TEST(MemoryHighWatermarkTest, TestNotHitsHighWatermarkInContainer) {
+TEST(MemoryHighWatermarkTest, DISABLED_TestNotHitsHighWatermarkInContainer) {
   FLAGS_containerized = true;
   FLAGS_system_memory_high_watermark_ratio = 0.99;
   auto status = MemoryUtils::hitsHighWatermark();

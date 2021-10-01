@@ -62,7 +62,7 @@ StatusOr<TransformResult> IndexFullScanBaseRule::transform(OptContext* ctx,
       idxId = index->get_index_id();
     }
   }
-  ictx.set_index_id(idxId);
+  ictx.index_id_ref() = idxId;
   idxCtxs.emplace_back(std::move(ictx));
 
   auto scanNode = this->scan(ctx, scan);

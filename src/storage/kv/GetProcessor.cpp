@@ -47,7 +47,7 @@ void GetProcessor::process(const cpp2::KVGetRequest& req) {
     }
   }
 
-  resp_.set_key_values(std::move(pairs));
+  resp_.key_values_ref() = std::move(pairs);
   this->onFinished();
 }
 

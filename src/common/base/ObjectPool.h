@@ -19,6 +19,8 @@ namespace nebula {
 
 class Expression;
 
+typedef std::lock_guard<folly::SpinLock> SLGuard;
+
 class ObjectPool final : private cpp::NonCopyable, private cpp::NonMovable {
  public:
   ObjectPool() {}
@@ -26,16 +28,16 @@ class ObjectPool final : private cpp::NonCopyable, private cpp::NonMovable {
   ~ObjectPool() = default;
 
   void clear() {
-    folly::SpinLockGuard g(lock_);
+    SLGuard g(lock_);
     objects_.clear();
   }
 
   template <typename T>
   T *add(T *obj) {
-    if constexpr (std::is_same_v<T, Expression>) {
+    if constexpr (std::is_base_of<Expression, T>::value) {
       VLOG(3) << "New expression added into pool: " << obj->toString();
     }
-    folly::SpinLockGuard g(lock_);
+    SLGuard g(lock_);
     objects_.emplace_back(obj);
     return obj;
   }

@@ -71,7 +71,7 @@ void ListFTClientsProcessor::process(const cpp2::ListFTClientsReq&) {
   if (iter->valid()) {
     clients = MetaKeyUtils::parseFTClients(iter->val());
   }
-  resp_.set_clients(std::move(clients));
+  resp_.clients_ref() = std::move(clients);
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
   onFinished();
 }

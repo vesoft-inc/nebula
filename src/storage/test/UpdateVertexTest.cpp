@@ -115,30 +115,30 @@ TEST(UpdateVertexTest, No_Filter_Test) {
   LOG(INFO) << "Build UpdateVertexRequest...";
   cpp2::UpdateVertexRequest req;
 
-  req.set_space_id(spaceId);
+  req.space_id_ref() = spaceId;
   auto partId = std::hash<std::string>()("Tim Duncan") % parts + 1;
   VertexID vertexId("Tim Duncan");
-  req.set_part_id(partId);
-  req.set_vertex_id(vertexId);
-  req.set_tag_id(tagId);
+  req.part_id_ref() = partId;
+  req.vertex_id_ref() = vertexId;
+  req.tag_id_ref() = tagId;
 
   LOG(INFO) << "Build updated props...";
   std::vector<cpp2::UpdatedProp> updatedProps;
   // int: player.age = 45
   cpp2::UpdatedProp uProp1;
-  uProp1.set_name("age");
+  uProp1.name_ref() = "age";
   const auto& val1 = *ConstantExpression::make(pool, 45L);
-  uProp1.set_value(Expression::encode(val1));
+  uProp1.value_ref() = Expression::encode(val1);
   updatedProps.emplace_back(uProp1);
 
   // string: player.country= China
   cpp2::UpdatedProp uProp2;
-  uProp2.set_name("country");
+  uProp2.name_ref() = "country";
   std::string col4new("China");
   const auto& val2 = *ConstantExpression::make(pool, col4new);
-  uProp2.set_value(Expression::encode(val2));
+  uProp2.value_ref() = Expression::encode(val2);
   updatedProps.emplace_back(uProp2);
-  req.set_updated_props(std::move(updatedProps));
+  req.updated_props_ref() = std::move(updatedProps);
 
   LOG(INFO) << "Build yield...";
   // Return player props: name, age, country
@@ -154,8 +154,8 @@ TEST(UpdateVertexTest, No_Filter_Test) {
 
   addTagPropInKey(tmpProps);
 
-  req.set_return_props(std::move(tmpProps));
-  req.set_insertable(false);
+  req.return_props_ref() = std::move(tmpProps);
+  req.insertable_ref() = false;
 
   LOG(INFO) << "Test UpdateVertexRequest...";
   auto* processor = UpdateVertexProcessor::instance(env, nullptr);
@@ -217,12 +217,12 @@ TEST(UpdateVertexTest, Filter_Yield_Test2) {
   LOG(INFO) << "Build UpdateVertexRequest...";
   cpp2::UpdateVertexRequest req;
 
-  req.set_space_id(spaceId);
+  req.space_id_ref() = spaceId;
   auto partId = std::hash<std::string>()("Tim Duncan") % parts + 1;
   VertexID vertexId("Tim Duncan");
-  req.set_part_id(partId);
-  req.set_vertex_id(vertexId);
-  req.set_tag_id(tagId);
+  req.part_id_ref() = partId;
+  req.vertex_id_ref() = vertexId;
+  req.tag_id_ref() = tagId;
 
   LOG(INFO) << "Build filter...";
   // left int:  1.startYear = 1997
@@ -236,24 +236,24 @@ TEST(UpdateVertexTest, Filter_Yield_Test2) {
   auto* right = RelationalExpression::makeEQ(pool, srcExp2, priExp2);
   // left AND right is true
   auto logExp = LogicalExpression::makeAnd(pool, left, right);
-  req.set_condition(Expression::encode(*logExp));
+  req.condition_ref() = Expression::encode(*logExp);
 
   LOG(INFO) << "Build updated props...";
   std::vector<cpp2::UpdatedProp> updatedProps;
   // int: player.age = 46
   cpp2::UpdatedProp uProp1;
-  uProp1.set_name("age");
+  uProp1.name_ref() = "age";
   const auto& val1 = *ConstantExpression::make(pool, 46L);
-  uProp1.set_value(Expression::encode(val1));
+  uProp1.value_ref() = Expression::encode(val1);
   updatedProps.emplace_back(uProp1);
   // string: player.country= China
   cpp2::UpdatedProp uProp2;
-  uProp2.set_name("country");
+  uProp2.name_ref() = "country";
   std::string col4new("China");
   const auto& val2 = *ConstantExpression::make(pool, col4new);
-  uProp2.set_value(Expression::encode(val2));
+  uProp2.value_ref() = Expression::encode(val2);
   updatedProps.emplace_back(uProp2);
-  req.set_updated_props(std::move(updatedProps));
+  req.updated_props_ref() = std::move(updatedProps);
 
   LOG(INFO) << "Build yield...";
   {
@@ -270,8 +270,8 @@ TEST(UpdateVertexTest, Filter_Yield_Test2) {
 
     addTagPropInKey(tmpProps);
 
-    req.set_return_props(std::move(tmpProps));
-    req.set_insertable(false);
+    req.return_props_ref() = std::move(tmpProps);
+    req.insertable_ref() = false;
   }
 
   LOG(INFO) << "Test UpdateVertexRequest...";
@@ -336,30 +336,30 @@ TEST(UpdateVertexTest, Insertable_Test) {
   LOG(INFO) << "Build UpdateVertexRequest...";
   cpp2::UpdateVertexRequest req;
 
-  req.set_space_id(spaceId);
+  req.space_id_ref() = spaceId;
   auto partId = std::hash<std::string>()("Brandon Ingram") % parts + 1;
   VertexID vertexId("Brandon Ingram");
-  req.set_part_id(partId);
-  req.set_vertex_id(vertexId);
-  req.set_tag_id(tagId);
+  req.part_id_ref() = partId;
+  req.vertex_id_ref() = vertexId;
+  req.tag_id_ref() = tagId;
 
   LOG(INFO) << "Build updated props...";
   std::vector<cpp2::UpdatedProp> updatedProps;
   // string: player.name= "Brandon Ingram"
   cpp2::UpdatedProp uProp1;
-  uProp1.set_name("name");
+  uProp1.name_ref() = "name";
   std::string colnew("Brandon Ingram");
   const auto& val1 = *ConstantExpression::make(pool, colnew);
-  uProp1.set_value(Expression::encode(val1));
+  uProp1.value_ref() = Expression::encode(val1);
   updatedProps.emplace_back(uProp1);
 
   // int: player.age = 20
   cpp2::UpdatedProp uProp2;
-  uProp2.set_name("age");
+  uProp2.name_ref() = "age";
   const auto& val2 = *ConstantExpression::make(pool, 20L);
-  uProp2.set_value(Expression::encode(val2));
+  uProp2.value_ref() = Expression::encode(val2);
   updatedProps.emplace_back(uProp2);
-  req.set_updated_props(std::move(updatedProps));
+  req.updated_props_ref() = std::move(updatedProps);
 
   LOG(INFO) << "Build yield...";
   // Return player props: name, age, country
@@ -376,8 +376,8 @@ TEST(UpdateVertexTest, Insertable_Test) {
 
     addTagPropInKey(tmpProps);
 
-    req.set_return_props(std::move(tmpProps));
-    req.set_insertable(true);
+    req.return_props_ref() = std::move(tmpProps);
+    req.insertable_ref() = true;
   }
 
   LOG(INFO) << "Test UpdateVertexRequest...";
@@ -439,28 +439,28 @@ TEST(UpdateVertexTest, Invalid_Update_Prop_Test) {
   LOG(INFO) << "Build UpdateVertexRequest...";
   cpp2::UpdateVertexRequest req;
 
-  req.set_space_id(spaceId);
+  req.space_id_ref() = spaceId;
   auto partId = std::hash<std::string>()("Tim Duncan") % parts + 1;
   VertexID vertexId("Tim Duncan");
-  req.set_part_id(partId);
-  req.set_vertex_id(vertexId);
-  req.set_tag_id(tagId);
+  req.part_id_ref() = partId;
+  req.vertex_id_ref() = vertexId;
+  req.tag_id_ref() = tagId;
 
   LOG(INFO) << "Build updated props...";
   std::vector<cpp2::UpdatedProp> updatedProps;
   // int: player.age = 46
   cpp2::UpdatedProp uProp1;
-  uProp1.set_name("age");
+  uProp1.name_ref() = "age";
   const auto& uVal1 = *ConstantExpression::make(pool, 46L);
-  uProp1.set_value(Expression::encode(uVal1));
+  uProp1.value_ref() = Expression::encode(uVal1);
   updatedProps.emplace_back(uProp1);
   // int: player.birth = 1997 invalid
   cpp2::UpdatedProp uProp2;
-  uProp2.set_name("birth");
+  uProp2.name_ref() = "birth";
   const auto& uVal2 = *ConstantExpression::make(pool, 1997L);
-  uProp2.set_value(Expression::encode(uVal2));
+  uProp2.value_ref() = Expression::encode(uVal2);
   updatedProps.emplace_back(uProp2);
-  req.set_updated_props(std::move(updatedProps));
+  req.updated_props_ref() = std::move(updatedProps);
 
   LOG(INFO) << "Build yield...";
   // Return player props: name, age
@@ -472,9 +472,9 @@ TEST(UpdateVertexTest, Invalid_Update_Prop_Test) {
     const auto& sourcePropExp2 = *SourcePropertyExpression::make(pool, "1", "age");
     tmpProps.emplace_back(Expression::encode(sourcePropExp2));
 
-    req.set_return_props(std::move(tmpProps));
+    req.return_props_ref() = std::move(tmpProps);
   }
-  req.set_insertable(false);
+  req.insertable_ref() = false;
 
   LOG(INFO) << "Test UpdateVertexRequest...";
   auto* processor = UpdateVertexProcessor::instance(env, nullptr);
@@ -519,12 +519,12 @@ TEST(UpdateVertexTest, Invalid_Filter_Test) {
   LOG(INFO) << "Build UpdateVertexRequest...";
   cpp2::UpdateVertexRequest req;
 
-  req.set_space_id(spaceId);
+  req.space_id_ref() = spaceId;
   auto partId = std::hash<std::string>()("Tim Duncan") % parts + 1;
   VertexID vertexId("Tim Duncan");
-  req.set_part_id(partId);
-  req.set_vertex_id(vertexId);
-  req.set_tag_id(tagId);
+  req.part_id_ref() = partId;
+  req.vertex_id_ref() = vertexId;
+  req.tag_id_ref() = tagId;
 
   LOG(INFO) << "Build filter...";
   // left int:  1.startYear = 1997
@@ -539,25 +539,25 @@ TEST(UpdateVertexTest, Invalid_Filter_Test) {
   auto* right = RelationalExpression::makeEQ(pool, srcExp2, priExp2);
   // left AND right is true
   auto logExp = LogicalExpression::makeAnd(pool, left, right);
-  req.set_condition(Expression::encode(*logExp));
+  req.condition_ref() = Expression::encode(*logExp);
 
   LOG(INFO) << "Build updated props...";
   std::vector<cpp2::UpdatedProp> updatedProps;
   // int: player.age = 46
   cpp2::UpdatedProp uProp1;
-  uProp1.set_name("age");
+  uProp1.name_ref() = "age";
   const auto& uVal1 = *ConstantExpression::make(pool, 46L);
-  uProp1.set_value(Expression::encode(uVal1));
+  uProp1.value_ref() = Expression::encode(uVal1);
   updatedProps.emplace_back(uProp1);
 
   // string: player.country= America
   cpp2::UpdatedProp uProp2;
-  uProp2.set_name("country");
+  uProp2.name_ref() = "country";
   std::string colnew("China");
   const auto& uVal2 = *ConstantExpression::make(pool, colnew);
-  uProp2.set_value(Expression::encode(uVal2));
+  uProp2.value_ref() = Expression::encode(uVal2);
   updatedProps.emplace_back(uProp2);
-  req.set_updated_props(std::move(updatedProps));
+  req.updated_props_ref() = std::move(updatedProps);
 
   LOG(INFO) << "Build yield...";
   // Return player props: name, age, country
@@ -572,9 +572,9 @@ TEST(UpdateVertexTest, Invalid_Filter_Test) {
     const auto& sourcePropExp3 = *SourcePropertyExpression::make(pool, "1", "country");
     tmpProps.emplace_back(Expression::encode(sourcePropExp3));
 
-    req.set_return_props(std::move(tmpProps));
+    req.return_props_ref() = std::move(tmpProps);
   }
-  req.set_insertable(false);
+  req.insertable_ref() = false;
 
   LOG(INFO) << "Test UpdateVertexRequest...";
   auto* processor = UpdateVertexProcessor::instance(env, nullptr);
@@ -620,30 +620,30 @@ TEST(UpdateVertexTest, Insertable_Filter_Value_Test) {
   LOG(INFO) << "Build UpdateVertexRequest...";
   cpp2::UpdateVertexRequest req;
 
-  req.set_space_id(spaceId);
+  req.space_id_ref() = spaceId;
   auto partId = std::hash<std::string>()("Brandon Ingram") % parts + 1;
   VertexID vertexId("Brandon Ingram");
-  req.set_part_id(partId);
-  req.set_vertex_id(vertexId);
-  req.set_tag_id(tagId);
+  req.part_id_ref() = partId;
+  req.vertex_id_ref() = vertexId;
+  req.tag_id_ref() = tagId;
 
   LOG(INFO) << "Build updated props...";
   std::vector<cpp2::UpdatedProp> updatedProps;
   // string: player.name= "Brandon Ingram"
   cpp2::UpdatedProp uProp1;
-  uProp1.set_name("name");
+  uProp1.name_ref() = "name";
   std::string colnew("Brandon Ingram");
   const auto& val1 = *ConstantExpression::make(pool, colnew);
-  uProp1.set_value(Expression::encode(val1));
+  uProp1.value_ref() = Expression::encode(val1);
   updatedProps.emplace_back(uProp1);
 
   // int: player.age = 20
   cpp2::UpdatedProp uProp2;
-  uProp2.set_name("age");
+  uProp2.name_ref() = "age";
   const auto& val2 = *ConstantExpression::make(pool, 20L);
-  uProp2.set_value(Expression::encode(val2));
+  uProp2.value_ref() = Expression::encode(val2);
   updatedProps.emplace_back(uProp2);
-  req.set_updated_props(std::move(updatedProps));
+  req.updated_props_ref() = std::move(updatedProps);
 
   LOG(INFO) << "Build filter...";
   // filter is valid, but filter value is false
@@ -658,7 +658,7 @@ TEST(UpdateVertexTest, Insertable_Filter_Value_Test) {
   auto* right = RelationalExpression::makeEQ(pool, srcExp2, priExp2);
   // left AND right is false
   auto logExp = LogicalExpression::makeAnd(pool, left, right);
-  req.set_condition(Expression::encode(*logExp));
+  req.condition_ref() = Expression::encode(*logExp);
 
   LOG(INFO) << "Build yield...";
   // Return player props: name, age, country
@@ -675,8 +675,8 @@ TEST(UpdateVertexTest, Insertable_Filter_Value_Test) {
 
     addTagPropInKey(tmpProps);
 
-    req.set_return_props(std::move(tmpProps));
-    req.set_insertable(true);
+    req.return_props_ref() = std::move(tmpProps);
+    req.insertable_ref() = true;
   }
 
   LOG(INFO) << "Test UpdateVertexRequest...";
@@ -749,20 +749,20 @@ TEST(UpdateVertexTest, CorruptDataTest) {
 
   LOG(INFO) << "Build UpdateVertexRequest...";
   cpp2::UpdateVertexRequest req;
-  req.set_space_id(spaceId);
-  req.set_part_id(partId);
-  req.set_vertex_id(vertexId);
-  req.set_tag_id(tagId);
+  req.space_id_ref() = spaceId;
+  req.part_id_ref() = partId;
+  req.vertex_id_ref() = vertexId;
+  req.tag_id_ref() = tagId;
 
   LOG(INFO) << "Build updated props...";
   std::vector<cpp2::UpdatedProp> updatedProps;
   // int: player.age = 23
   cpp2::UpdatedProp uProp1;
-  uProp1.set_name("age");
+  uProp1.name_ref() = "age";
   const auto& uVal1 = *ConstantExpression::make(pool, 23L);
-  uProp1.set_value(Expression::encode(uVal1));
+  uProp1.value_ref() = Expression::encode(uVal1);
   updatedProps.emplace_back(uProp1);
-  req.set_updated_props(std::move(updatedProps));
+  req.updated_props_ref() = std::move(updatedProps);
 
   LOG(INFO) << "Build yield...";
   // Return player props: name, age, country
@@ -770,8 +770,8 @@ TEST(UpdateVertexTest, CorruptDataTest) {
   const auto& sourcePropExp1 = *SourcePropertyExpression::make(pool, "1", "country");
   tmpProps.emplace_back(Expression::encode(sourcePropExp1));
 
-  req.set_return_props(std::move(tmpProps));
-  req.set_insertable(false);
+  req.return_props_ref() = std::move(tmpProps);
+  req.insertable_ref() = false;
 
   LOG(INFO) << "Test UpdateVertexRequest...";
   auto* processor = UpdateVertexProcessor::instance(env, nullptr);
@@ -805,29 +805,29 @@ TEST(UpdateVertexTest, TTL_NoInsert_Test) {
   LOG(INFO) << "Build UpdateVertexRequest...";
   cpp2::UpdateVertexRequest req;
 
-  req.set_space_id(spaceId);
+  req.space_id_ref() = spaceId;
   auto partId = std::hash<std::string>()("Tim Duncan") % parts + 1;
   VertexID vertexId("Tim Duncan");
-  req.set_part_id(partId);
-  req.set_vertex_id(vertexId);
-  req.set_tag_id(tagId);
+  req.part_id_ref() = partId;
+  req.vertex_id_ref() = vertexId;
+  req.tag_id_ref() = tagId;
 
   LOG(INFO) << "Build updated props...";
   std::vector<cpp2::UpdatedProp> updatedProps;
   // int: player.age = 45
   cpp2::UpdatedProp uProp1;
-  uProp1.set_name("age");
+  uProp1.name_ref() = "age";
   const auto& uVal1 = *ConstantExpression::make(pool, 45L);
-  uProp1.set_value(Expression::encode(uVal1));
+  uProp1.value_ref() = Expression::encode(uVal1);
   updatedProps.emplace_back(uProp1);
   // string: player.country= China
   cpp2::UpdatedProp uProp2;
-  uProp2.set_name("country");
+  uProp2.name_ref() = "country";
   std::string colnew("China");
   const auto& uVal2 = *ConstantExpression::make(pool, colnew);
-  uProp2.set_value(Expression::encode(uVal2));
+  uProp2.value_ref() = Expression::encode(uVal2);
   updatedProps.emplace_back(uProp2);
-  req.set_updated_props(std::move(updatedProps));
+  req.updated_props_ref() = std::move(updatedProps);
 
   LOG(INFO) << "Build yield...";
   // Return player props: name, age, country
@@ -842,9 +842,9 @@ TEST(UpdateVertexTest, TTL_NoInsert_Test) {
     const auto& sourcePropExp3 = *SourcePropertyExpression::make(pool, "1", "country");
     tmpProps.emplace_back(Expression::encode(sourcePropExp3));
 
-    req.set_return_props(std::move(tmpProps));
+    req.return_props_ref() = std::move(tmpProps);
   }
-  req.set_insertable(false);
+  req.insertable_ref() = false;
 
   sleep(FLAGS_mock_ttl_duration + 1);
 
@@ -880,31 +880,31 @@ TEST(UpdateVertexTest, TTL_Insert_No_Exist_Test) {
   LOG(INFO) << "Build UpdateVertexRequest...";
   cpp2::UpdateVertexRequest req;
 
-  req.set_space_id(spaceId);
+  req.space_id_ref() = spaceId;
   auto partId = std::hash<std::string>()("Tim") % parts + 1;
   VertexID vertexId("Tim");
-  req.set_part_id(partId);
-  req.set_vertex_id(vertexId);
-  req.set_tag_id(tagId);
+  req.part_id_ref() = partId;
+  req.vertex_id_ref() = vertexId;
+  req.tag_id_ref() = tagId;
 
   LOG(INFO) << "Build updated props...";
   std::vector<cpp2::UpdatedProp> updatedProps;
 
   // string: 1.name = Tim
   cpp2::UpdatedProp uProp1;
-  uProp1.set_name("name");
+  uProp1.name_ref() = "name";
   std::string col1new("Tim");
   const auto& uVal1 = *ConstantExpression::make(pool, col1new);
-  uProp1.set_value(Expression::encode(uVal1));
+  uProp1.value_ref() = Expression::encode(uVal1);
   updatedProps.emplace_back(uProp1);
 
   // int: player.age = 20
   cpp2::UpdatedProp uProp2;
-  uProp2.set_name("age");
+  uProp2.name_ref() = "age";
   const auto& uVal2 = *ConstantExpression::make(pool, 20L);
-  uProp2.set_value(Expression::encode(uVal2));
+  uProp2.value_ref() = Expression::encode(uVal2);
   updatedProps.emplace_back(uProp2);
-  req.set_updated_props(std::move(updatedProps));
+  req.updated_props_ref() = std::move(updatedProps);
 
   LOG(INFO) << "Build yield...";
   // Return player props: name, age, country
@@ -921,9 +921,9 @@ TEST(UpdateVertexTest, TTL_Insert_No_Exist_Test) {
 
     addTagPropInKey(tmpProps);
 
-    req.set_return_props(std::move(tmpProps));
+    req.return_props_ref() = std::move(tmpProps);
   }
-  req.set_insertable(true);
+  req.insertable_ref() = true;
 
   sleep(FLAGS_mock_ttl_duration + 1);
 
@@ -990,40 +990,40 @@ TEST(UpdateVertexTest, TTL_Insert_Test) {
   LOG(INFO) << "Build UpdateVertexRequest...";
   cpp2::UpdateVertexRequest req;
 
-  req.set_space_id(spaceId);
+  req.space_id_ref() = spaceId;
   auto partId = std::hash<std::string>()("Tim Duncan") % parts + 1;
   VertexID vertexId("Tim Duncan");
-  req.set_part_id(partId);
-  req.set_vertex_id(vertexId);
-  req.set_tag_id(tagId);
+  req.part_id_ref() = partId;
+  req.vertex_id_ref() = vertexId;
+  req.tag_id_ref() = tagId;
 
   LOG(INFO) << "Build updated props...";
   std::vector<cpp2::UpdatedProp> updatedProps;
 
   // string: 1.name = Tim Duncan
   cpp2::UpdatedProp uProp1;
-  uProp1.set_name("name");
+  uProp1.name_ref() = "name";
   std::string col1new("Tim Duncan");
   const auto& uVal1 = *ConstantExpression::make(pool, col1new);
-  uProp1.set_value(Expression::encode(uVal1));
+  uProp1.value_ref() = Expression::encode(uVal1);
   updatedProps.emplace_back(uProp1);
 
   // int: 1.age = 50L
   cpp2::UpdatedProp uProp2;
-  uProp2.set_name("age");
+  uProp2.name_ref() = "age";
   const auto& uVal2 = *ConstantExpression::make(pool, 50L);
-  uProp2.set_value(Expression::encode(uVal2));
+  uProp2.value_ref() = Expression::encode(uVal2);
   updatedProps.emplace_back(uProp2);
 
   // string: player.country= China
   cpp2::UpdatedProp uProp3;
-  uProp3.set_name("country");
+  uProp3.name_ref() = "country";
   std::string col3new("China");
   const auto& uVal3 = *ConstantExpression::make(pool, col3new);
-  uProp3.set_value(Expression::encode(uVal3));
+  uProp3.value_ref() = Expression::encode(uVal3);
   updatedProps.emplace_back(uProp3);
 
-  req.set_updated_props(std::move(updatedProps));
+  req.updated_props_ref() = std::move(updatedProps);
 
   LOG(INFO) << "Build yield...";
   // Return player props: name, age, country
@@ -1040,9 +1040,9 @@ TEST(UpdateVertexTest, TTL_Insert_Test) {
 
     addTagPropInKey(tmpProps);
 
-    req.set_return_props(std::move(tmpProps));
+    req.return_props_ref() = std::move(tmpProps);
   }
-  req.set_insertable(true);
+  req.insertable_ref() = true;
 
   sleep(FLAGS_mock_ttl_duration + 1);
 
@@ -1131,21 +1131,21 @@ TEST(UpdateVertexTest, Insertable_No_Default_Test) {
   LOG(INFO) << "Build UpdateVertexRequest...";
   cpp2::UpdateVertexRequest req;
 
-  req.set_space_id(spaceId);
+  req.space_id_ref() = spaceId;
   auto partId = std::hash<std::string>()("Brandon Ingram") % parts + 1;
   VertexID vertexId("Brandon Ingram");
-  req.set_part_id(partId);
-  req.set_vertex_id(vertexId);
-  req.set_tag_id(tagId);
+  req.part_id_ref() = partId;
+  req.vertex_id_ref() = vertexId;
+  req.tag_id_ref() = tagId;
 
   LOG(INFO) << "Build updated props...";
   std::vector<cpp2::UpdatedProp> updatedProps;
   // string: player.name= "Brandon Ingram"
   cpp2::UpdatedProp uProp1;
-  uProp1.set_name("name");
+  uProp1.name_ref() = "name";
   std::string colnew("Brandon Ingram");
   const auto& val1 = *ConstantExpression::make(pool, colnew);
-  uProp1.set_value(Expression::encode(val1));
+  uProp1.value_ref() = Expression::encode(val1);
   updatedProps.emplace_back(uProp1);
 
   LOG(INFO) << "Build yield...";
@@ -1158,8 +1158,8 @@ TEST(UpdateVertexTest, Insertable_No_Default_Test) {
     const auto& sourcePropExp2 = *SourcePropertyExpression::make(pool, "1", "age");
     tmpProps.emplace_back(Expression::encode(sourcePropExp2));
 
-    req.set_return_props(std::move(tmpProps));
-    req.set_insertable(true);
+    req.return_props_ref() = std::move(tmpProps);
+    req.insertable_ref() = true;
   }
 
   LOG(INFO) << "Test UpdateVertexRequest...";
@@ -1191,30 +1191,30 @@ TEST(UpdateVertexTest, Insertable_In_Set_Test) {
   LOG(INFO) << "Build UpdateVertexRequest...";
   cpp2::UpdateVertexRequest req;
 
-  req.set_space_id(spaceId);
+  req.space_id_ref() = spaceId;
   auto partId = std::hash<std::string>()("Brandon Ingram") % parts + 1;
   VertexID vertexId("Brandon Ingram");
-  req.set_part_id(partId);
-  req.set_vertex_id(vertexId);
-  req.set_tag_id(tagId);
+  req.part_id_ref() = partId;
+  req.vertex_id_ref() = vertexId;
+  req.tag_id_ref() = tagId;
 
   LOG(INFO) << "Build updated props...";
   std::vector<cpp2::UpdatedProp> updatedProps;
   // string: player.name= "Brandon Ingram"
   cpp2::UpdatedProp uProp1;
-  uProp1.set_name("name");
+  uProp1.name_ref() = "name";
   std::string colnew("Brandon Ingram");
   const auto& val1 = *ConstantExpression::make(pool, colnew);
-  uProp1.set_value(Expression::encode(val1));
+  uProp1.value_ref() = Expression::encode(val1);
   updatedProps.emplace_back(uProp1);
 
   // int: player.age = $^.player.career
   cpp2::UpdatedProp uProp2;
-  uProp2.set_name("age");
+  uProp2.name_ref() = "age";
   const auto& val2 = *SourcePropertyExpression::make(pool, "1", "career");
-  uProp2.set_value(Expression::encode(val2));
+  uProp2.value_ref() = Expression::encode(val2);
   updatedProps.emplace_back(uProp2);
-  req.set_updated_props(std::move(updatedProps));
+  req.updated_props_ref() = std::move(updatedProps);
 
   LOG(INFO) << "Build yield...";
   // Return player props: name, age
@@ -1228,8 +1228,8 @@ TEST(UpdateVertexTest, Insertable_In_Set_Test) {
 
     addTagPropInKey(tmpProps);
 
-    req.set_return_props(std::move(tmpProps));
-    req.set_insertable(true);
+    req.return_props_ref() = std::move(tmpProps);
+    req.insertable_ref() = true;
   }
 
   LOG(INFO) << "Test UpdateVertexRequest...";
@@ -1288,24 +1288,24 @@ TEST(UpdateVertexTest, Update_Multi_tag_Test) {
   LOG(INFO) << "Build UpdateVertexRequest...";
   cpp2::UpdateVertexRequest req;
 
-  req.set_space_id(spaceId);
+  req.space_id_ref() = spaceId;
   auto partId = std::hash<std::string>()("Tim Duncan") % parts + 1;
   VertexID vertexId("Tim Duncan");
-  req.set_part_id(partId);
-  req.set_vertex_id(vertexId);
-  req.set_tag_id(tagId);
+  req.part_id_ref() = partId;
+  req.vertex_id_ref() = vertexId;
+  req.tag_id_ref() = tagId;
 
   LOG(INFO) << "Build updated props...";
   std::vector<cpp2::UpdatedProp> updatedProps;
 
   // int: player.age = $^.team.career
   cpp2::UpdatedProp uProp1;
-  uProp1.set_name("name");
+  uProp1.name_ref() = "name";
   // value is another tag expression
   const auto& val2 = *SourcePropertyExpression::make(pool, "2", "name");
-  uProp1.set_value(Expression::encode(val2));
+  uProp1.value_ref() = Expression::encode(val2);
   updatedProps.emplace_back(uProp1);
-  req.set_updated_props(std::move(updatedProps));
+  req.updated_props_ref() = std::move(updatedProps);
 
   LOG(INFO) << "Build yield...";
   // Return player props: name, age, country
@@ -1315,8 +1315,8 @@ TEST(UpdateVertexTest, Update_Multi_tag_Test) {
 
   addTagPropInKey(tmpProps);
 
-  req.set_return_props(std::move(tmpProps));
-  req.set_insertable(false);
+  req.return_props_ref() = std::move(tmpProps);
+  req.insertable_ref() = false;
 
   LOG(INFO) << "Test UpdateVertexRequest...";
   auto* processor = UpdateVertexProcessor::instance(env, nullptr);
@@ -1358,24 +1358,24 @@ TEST(UpdateVertexTest, Upsert_Multi_tag_Test) {
   LOG(INFO) << "Build UpdateVertexRequest...";
   cpp2::UpdateVertexRequest req;
 
-  req.set_space_id(spaceId);
+  req.space_id_ref() = spaceId;
   auto partId = std::hash<std::string>()("Tim Duncan") % parts + 1;
   VertexID vertexId("Tim Duncan");
-  req.set_part_id(partId);
-  req.set_vertex_id(vertexId);
-  req.set_tag_id(tagId);
+  req.part_id_ref() = partId;
+  req.vertex_id_ref() = vertexId;
+  req.tag_id_ref() = tagId;
 
   LOG(INFO) << "Build updated props...";
   std::vector<cpp2::UpdatedProp> updatedProps;
 
   // int: player.age = $^.team.career
   cpp2::UpdatedProp uProp1;
-  uProp1.set_name("name");
+  uProp1.name_ref() = "name";
   // value is another tag expression
   const auto& val2 = *SourcePropertyExpression::make(pool, "2", "name");
-  uProp1.set_value(Expression::encode(val2));
+  uProp1.value_ref() = Expression::encode(val2);
   updatedProps.emplace_back(uProp1);
-  req.set_updated_props(std::move(updatedProps));
+  req.updated_props_ref() = std::move(updatedProps);
 
   LOG(INFO) << "Build yield...";
   // Return player props: name, age, country
@@ -1385,8 +1385,8 @@ TEST(UpdateVertexTest, Upsert_Multi_tag_Test) {
 
   addTagPropInKey(tmpProps);
 
-  req.set_return_props(std::move(tmpProps));
-  req.set_insertable(true);
+  req.return_props_ref() = std::move(tmpProps);
+  req.insertable_ref() = true;
 
   LOG(INFO) << "Test UpdateVertexRequest...";
   auto* processor = UpdateVertexProcessor::instance(env, nullptr);
@@ -1428,23 +1428,23 @@ TEST(UpdateVertexTest, Upsert_Field_Type_And_Value_Match_Test) {
   LOG(INFO) << "Build UpdateVertexRequest...";
   cpp2::UpdateVertexRequest req;
 
-  req.set_space_id(spaceId);
+  req.space_id_ref() = spaceId;
   auto partId = std::hash<std::string>()("Tim Duncan") % parts + 1;
   VertexID vertexId("Tim Duncan");
-  req.set_part_id(partId);
-  req.set_vertex_id(vertexId);
-  req.set_tag_id(tagId);
+  req.part_id_ref() = partId;
+  req.vertex_id_ref() = vertexId;
+  req.tag_id_ref() = tagId;
 
   LOG(INFO) << "Build updated props...";
   std::vector<cpp2::UpdatedProp> updatedProps;
 
   // string: player.country_ = 2011(value int)
   cpp2::UpdatedProp uProp1;
-  uProp1.set_name("country");
+  uProp1.name_ref() = "country";
   const auto& uVal1 = *ConstantExpression::make(pool, 2011L);
-  uProp1.set_value(Expression::encode(uVal1));
+  uProp1.value_ref() = Expression::encode(uVal1);
   updatedProps.emplace_back(uProp1);
-  req.set_updated_props(std::move(updatedProps));
+  req.updated_props_ref() = std::move(updatedProps);
 
   LOG(INFO) << "Build yield...";
   // Return player props: name, age, country
@@ -1454,8 +1454,8 @@ TEST(UpdateVertexTest, Upsert_Field_Type_And_Value_Match_Test) {
 
   addTagPropInKey(tmpProps);
 
-  req.set_return_props(std::move(tmpProps));
-  req.set_insertable(true);
+  req.return_props_ref() = std::move(tmpProps);
+  req.insertable_ref() = true;
 
   LOG(INFO) << "Test UpdateVertexRequest...";
   auto* processor = UpdateVertexProcessor::instance(env, nullptr);

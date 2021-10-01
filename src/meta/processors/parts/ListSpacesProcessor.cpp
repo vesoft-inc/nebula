@@ -27,14 +27,14 @@ void ListSpacesProcessor::process(const cpp2::ListSpacesReq&) {
     auto spaceName = MetaKeyUtils::spaceName(iter->val());
     VLOG(3) << "List spaces " << spaceId << ", name " << spaceName;
     cpp2::IdName space;
-    space.set_id(to(spaceId, EntryType::SPACE));
-    space.set_name(std::move(spaceName));
+    space.id_ref() = to(spaceId, EntryType::SPACE);
+    space.name_ref() = std::move(spaceName);
     spaces.emplace_back(std::move(space));
     iter->next();
   }
 
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
-  resp_.set_spaces(std::move(spaces));
+  resp_.spaces_ref() = std::move(spaces);
   onFinished();
 }
 

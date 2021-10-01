@@ -7,6 +7,7 @@
 #define RAFTEX_HOST_H_
 
 #include <folly/futures/Future.h>
+#include <folly/futures/SharedPromise.h>
 
 #include "common/base/Base.h"
 #include "common/base/ErrorOr.h"

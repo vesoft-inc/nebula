@@ -212,7 +212,7 @@ class SpaceOptItem final {
     } else {
       LOG(ERROR) << "vid type illegal.";
       static meta::cpp2::ColumnTypeDef unknownTypeDef;
-      unknownTypeDef.set_type(nebula::cpp2::PropertyType::UNKNOWN);
+      unknownTypeDef.type_ref() = nebula::cpp2::PropertyType::UNKNOWN;
       return unknownTypeDef;
     }
   }

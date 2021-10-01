@@ -212,25 +212,25 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
     // todo we should save partition info.
     auto it = snapshotInfo.find(id);
     DCHECK(it != snapshotInfo.end());
-    spaceInfo.set_info(std::move(it->second));
-    spaceInfo.set_space(std::move(properties));
+    spaceInfo.info_ref() = std::move(it->second);
+    spaceInfo.space_ref() = std::move(properties);
     backupInfo.emplace(id, std::move(spaceInfo));
   }
   cpp2::BackupMeta backup;
   LOG(INFO) << "sst files count was:" << nebula::value(backupFiles).size();
-  backup.set_meta_files(std::move(nebula::value(backupFiles)));
-  backup.set_backup_info(std::move(backupInfo));
-  backup.set_backup_name(std::move(backupName));
-  backup.set_full(true);
+  backup.meta_files_ref() = std::move(nebula::value(backupFiles));
+  backup.backup_info_ref() = std::move(backupInfo);
+  backup.backup_name_ref() = std::move(backupName);
+  backup.full_ref() = true;
   if (backupSpaces == nullptr) {
-    backup.set_include_system_space(true);
+    backup.include_system_space_ref() = true;
   } else {
-    backup.set_include_system_space(false);
+    backup.include_system_space_ref() = false;
   }
-  backup.set_create_time(time::WallClock::fastNowInMilliSec());
+  backup.create_time_ref() = time::WallClock::fastNowInMilliSec();
 
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
-  resp_.set_meta(std::move(backup));
+  resp_.meta_ref() = std::move(backup);
   LOG(INFO) << "backup done";
 
   onFinished();

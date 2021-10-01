@@ -84,7 +84,7 @@ void CreateSpaceAsProcessor::process(const cpp2::CreateSpaceAsReq &req) {
     return;
   }
 
-  resp_.set_id(to(nebula::value(newSpaceId), EntryType::SPACE));
+  resp_.id_ref() = to(nebula::value(newSpaceId), EntryType::SPACE);
   rc_ = doSyncPut(std::move(data));
   if (rc_ != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << "put data error, " << apache::thrift::util::enumNameSafe(rc_);
@@ -113,7 +113,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> CreateSpaceAsProcesso
   data.emplace_back(MetaKeyUtils::indexSpaceKey(spaceName),
                     std::string(reinterpret_cast<const char *>(&newSpaceId), sizeof(newSpaceId)));
   cpp2::SpaceDesc spaceDesc = MetaKeyUtils::parseSpace(nebula::value(oldSpaceVal));
-  spaceDesc.set_space_name(spaceName);
+  spaceDesc.space_name_ref() = spaceName;
   data.emplace_back(MetaKeyUtils::spaceKey(newSpaceId), MetaKeyUtils::spaceVal(spaceDesc));
 
   auto prefix = MetaKeyUtils::partPrefix(oldSpaceId);

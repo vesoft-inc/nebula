@@ -40,19 +40,19 @@ void PathPlanner::doBuildEdgeProps(std::unique_ptr<std::vector<EdgeProp>>& edgeP
   for (const auto& e : pathCtx_->over.edgeTypes) {
     storage::cpp2::EdgeProp ep;
     if (reverse == isInEdge) {
-      ep.set_type(e);
+      ep.type_ref() = e;
     } else {
-      ep.set_type(-e);
+      ep.type_ref() = -e;
     }
     const auto& found = exprProps.edgeProps().find(e);
     if (found == exprProps.edgeProps().end()) {
-      ep.set_props({kDst, kType, kRank});
+      ep.props_ref() = {kDst, kType, kRank};
     } else {
       std::set<folly::StringPiece> props(found->second.begin(), found->second.end());
       props.emplace(kDst);
       props.emplace(kType);
       props.emplace(kRank);
-      ep.set_props(std::vector<std::string>(props.begin(), props.end()));
+      ep.props_ref() = std::vector<std::string>(props.begin(), props.end());
     }
     edgeProps->emplace_back(std::move(ep));
   }

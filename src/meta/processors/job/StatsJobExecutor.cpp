@@ -52,7 +52,7 @@ nebula::cpp2::ErrorCode StatsJobExecutor::prepare() {
 
   // Set the status of the stats job to running
   cpp2::StatsItem statsItem;
-  statsItem.set_status(cpp2::JobStatus::RUNNING);
+  statsItem.status_ref() = cpp2::JobStatus::RUNNING;
   auto statsKey = MetaKeyUtils::statsKey(space_);
   auto statsVal = MetaKeyUtils::statsVal(statsItem);
   return save(statsKey, statsVal);
@@ -163,9 +163,9 @@ nebula::cpp2::ErrorCode StatsJobExecutor::finish(bool exeSuccessed) {
   }
   auto statsItem = MetaKeyUtils::parseStatsVal(val);
   if (exeSuccessed) {
-    statsItem.set_status(cpp2::JobStatus::FINISHED);
+    statsItem.status_ref() = cpp2::JobStatus::FINISHED;
   } else {
-    statsItem.set_status(cpp2::JobStatus::FAILED);
+    statsItem.status_ref() = cpp2::JobStatus::FAILED;
   }
   auto statsVal = MetaKeyUtils::statsVal(statsItem);
   auto retCode = save(statsKey, statsVal);

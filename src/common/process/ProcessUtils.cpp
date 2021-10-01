@@ -153,7 +153,7 @@ StatusOr<std::string> ProcessUtils::runCommand(const char *command) {
 
   if (ferror(f)) {
     // Something is wrong
-    fclose(f);
+    pclose(f);
     return Status::Error("Failed to read the output of the command");
   }
 

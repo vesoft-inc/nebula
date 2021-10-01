@@ -121,10 +121,10 @@ StatusOr<TransformResult> GeoPredicateIndexScanBaseRule::transform(
   for (auto& scanRange : scanRanges) {
     IndexQueryContext ictx;
     auto indexColumnHint = scanRange.toIndexColumnHint();
-    indexColumnHint.set_column_name(fieldName);
-    ictx.set_filter(condition->encode());
-    ictx.set_index_id(indexItem->get_index_id());
-    ictx.set_column_hints({indexColumnHint});
+    indexColumnHint.column_name_ref() = fieldName;
+    ictx.filter_ref() = condition->encode();
+    ictx.index_id_ref() = indexItem->get_index_id();
+    ictx.column_hints_ref() = {indexColumnHint};
     idxCtxs.emplace_back(std::move(ictx));
   }
 

@@ -15,7 +15,7 @@ void DropCheckpointProcessor::process(const cpp2::DropCPRequest& req) {
   auto retCode = env_->kvstore_->dropCheckpoint(spaceId, std::move(name));
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
     cpp2::PartitionResult thriftRet;
-    thriftRet.set_code(retCode);
+    thriftRet.code_ref() = retCode;
     codes_.emplace_back(std::move(thriftRet));
   }
 

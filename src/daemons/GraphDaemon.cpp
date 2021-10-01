@@ -221,7 +221,7 @@ void setupThreadManager() {
   int numThreads =
       FLAGS_num_worker_threads > 0 ? FLAGS_num_worker_threads : gServer->getNumIOWorkerThreads();
   std::shared_ptr<apache::thrift::concurrency::ThreadManager> threadManager(
-      PriorityThreadManager::newPriorityThreadManager(numThreads, false /*stats*/));
+      PriorityThreadManager::newPriorityThreadManager(numThreads));
   threadManager->setNamePrefix("executor");
   threadManager->start();
   gServer->setThreadManager(threadManager);
