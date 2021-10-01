@@ -103,7 +103,8 @@ class GetNeighborsNode : public QueryNode<VertexID> {
 
       list.reserve(props->size());
       // collect props need to return
-      auto status = QueryUtils::collectEdgeProps(key, vIdLen(), isIntId(), reader, props, list);
+      auto status =
+          QueryUtils::collectEdgeProps(key, this->vIdLen(), this->isIntId(), reader, props, list);
       if (!status.ok()) {
         return nebula::cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
       }
@@ -164,14 +165,17 @@ class GetNeighborsSampleNode : public GetNeighborsNode {
 
       auto edgeType = std::get<0>(sample);
       const auto& val = std::get<1>(sample);
-      reader = RowReaderWrapper::getEdgePropReader(schemaMgr(), space(), std::abs(edgeType), val);
+      reader = RowReaderWrapper::getEdgePropReader(
+          this->schemaMgr(), this->space(), std::abs(edgeType), val);
       if (!reader) {
         continue;
       }
 
       const auto& key = std::get<2>(sample);
       const auto& props = std::get<3>(sample);
-      if (!QueryUtils::collectEdgeProps(key, vIdLen(), isIntId(), reader.get(), props, list).ok()) {
+      auto status = QueryUtils::collectEdgeProps(
+          key, this->vIdLen(), this->isIntId(), reader.get(), props, list);
+      if (!status.ok()) {
         return nebula::cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
       }
       auto& cell = row[columnIdx].mutableList();
