@@ -191,9 +191,9 @@ class UpdateTagNode : public UpdateNode<VertexID> {
       return ret;
     }
 
-    if (context_->resultStat_ == ResultStatus::ILLEGAL_DATA) {
+    if (this->context_->resultStat_ == ResultStatus::ILLEGAL_DATA) {
       return nebula::cpp2::ErrorCode::E_INVALID_DATA;
-    } else if (context_->resultStat_ == ResultStatus::FILTER_OUT) {
+    } else if (this->context_->resultStat_ == ResultStatus::FILTER_OUT) {
       return nebula::cpp2::ErrorCode::E_FILTER_OUT;
     }
 
@@ -226,7 +226,7 @@ class UpdateTagNode : public UpdateNode<VertexID> {
       ret = code;
       baton.post();
     };
-    kvstore()->asyncAppendBatch(this->spaceId(), partId, std::move(batch).value(), callback);
+    this->kvstore()->asyncAppendBatch(this->spaceId(), partId, std::move(batch).value(), callback);
     baton.wait();
     return ret;
   }
@@ -457,7 +457,7 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
   nebula::cpp2::ErrorCode doExecute(PartitionID partId, const cpp2::EdgeKey& edgeKey) override {
     CHECK_NOTNULL(this->env()->kvstore_);
     auto ret = nebula::cpp2::ErrorCode::SUCCEEDED;
-    IndexCountWrapper wrapper(env());
+    IndexCountWrapper wrapper(this->env());
 
     // Update is read-modify-write, which is an atomic operation.
     std::vector<EMLI> dummyLock = {std::make_tuple(this->spaceId(),
@@ -482,10 +482,10 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
           this->exeResult_ = nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND;
           return folly::none;
         }
-        if (context_->resultStat_ == ResultStatus::ILLEGAL_DATA) {
+        if (this->context_->resultStat_ == ResultStatus::ILLEGAL_DATA) {
           this->exeResult_ = nebula::cpp2::ErrorCode::E_INVALID_DATA;
           return folly::none;
-        } else if (context_->resultStat_ == ResultStatus::FILTER_OUT) {
+        } else if (this->context_->resultStat_ == ResultStatus::FILTER_OUT) {
           this->exeResult_ = nebula::cpp2::ErrorCode::E_FILTER_OUT;
           return folly::none;
         }
