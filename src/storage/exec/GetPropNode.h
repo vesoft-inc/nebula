@@ -40,7 +40,7 @@ class GetTagPropNode : public QueryNode<VertexID> {
 
     List row;
     // vertexId is the first column
-    if (isIntId()) {
+    if (this->isIntId()) {
       row.emplace_back(*reinterpret_cast<const int64_t*>(vId.data()));
     } else {
       row.emplace_back(vId);
