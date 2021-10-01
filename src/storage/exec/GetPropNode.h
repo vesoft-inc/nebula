@@ -97,8 +97,8 @@ class GetEdgePropNode : public QueryNode<cpp2::EdgeKey> {
     }
 
     List row;
-    auto vIdLen = this->context_->vIdLen();
-    auto isIntId = this->context_->isIntId();
+    auto vIdLen = context_->vIdLen();
+    auto isIntId = context_->isIntId();
     for (auto* edgeNode : edgeNodes_) {
       ret = edgeNode->collectEdgePropsIfValid(
           [&row](const std::vector<PropContext>* props) -> nebula::cpp2::ErrorCode {

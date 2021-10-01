@@ -45,7 +45,7 @@ class GetNeighborsNode : public QueryNode<VertexID> {
     if (this->isPlanKilled()) {
       return nebula::cpp2::ErrorCode::E_PLAN_IS_KILLED;
     }
-    if (this->context_->resultStat_ == ResultStatus::ILLEGAL_DATA) {
+    if (context_->resultStat_ == ResultStatus::ILLEGAL_DATA) {
       return nebula::cpp2::ErrorCode::E_INVALID_DATA;
     }
 
@@ -98,8 +98,8 @@ class GetNeighborsNode : public QueryNode<VertexID> {
       }
       auto key = upstream_->key();
       auto reader = upstream_->reader();
-      auto props = this->context_->props_;
-      auto columnIdx = this->context_->columnIdx_;
+      auto props = context_->props_;
+      auto columnIdx = context_->columnIdx_;
 
       list.reserve(props->size());
       // collect props need to return
@@ -148,9 +148,9 @@ class GetNeighborsSampleNode : public GetNeighborsNode {
     for (; upstream_->valid(); upstream_->next(), ++edgeRowCount) {
       auto val = upstream_->val();
       auto key = upstream_->key();
-      auto edgeType = this->context_->edgeType_;
-      auto props = this->context_->props_;
-      auto columnIdx = this->context_->columnIdx_;
+      auto edgeType = context_->edgeType_;
+      auto props = context_->props_;
+      auto columnIdx = context_->columnIdx_;
       sampler_->sampling(std::make_tuple(edgeType, val.str(), key.str(), props, columnIdx));
     }
 
