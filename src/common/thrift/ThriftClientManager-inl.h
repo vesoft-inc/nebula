@@ -9,7 +9,7 @@
 #include <folly/io/async/AsyncSocket.h>
 #include <folly/system/ThreadName.h>
 #include <thrift/lib/cpp2/Flags.h>
-#include <thrift/lib/cpp2/async/HeaderClientChannel.h>
+#include <thrift/lib/cpp2/async/RocketClientChannel.h>
 
 #include "common/network/NetworkUtils.h"
 #include "common/ssl/SSLConfig.h"
@@ -95,11 +95,13 @@ std::shared_ptr<ClientType> ThriftClientManager<ClientType>::client(const HostAd
           new folly::AsyncSocket(evb, resolved.host, resolved.port, FLAGS_conn_timeout_ms));
     }
   });
-
-  apache::thrift::HeaderClientChannel::Options channelOptions;
+  auto clientChannel = apache::thrift::RocketClientChannel::newChannel(std::move(socket));
+  if (timeout > 0) {
+    clientChannel->setTimeout(timeout);
+  }
   if (compatibility) {
-    channelOptions.setProtocolId(apache::thrift::protocol::T_BINARY_PROTOCOL);
-    channelOptions.setClientType(THRIFT_UNFRAMED_DEPRECATED);
+    clientChannel->setProtocolId(apache::thrift::protocol::T_BINARY_PROTOCOL);
+//    clientChannel->setClientType(THRIFT_UNFRAMED_DEPRECATED);
   }
 
   auto clientChannel = apache::thrift::HeaderClientChannel::newChannel(
