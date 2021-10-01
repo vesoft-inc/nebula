@@ -34,7 +34,7 @@ TEST_F(LogCASTest, StartWithValidCAS) {
   appendLogs(1, 9, leader_, msgs);
   LOG(INFO) << "<===== Finish appending logs";
 
-  checkConsensus(copies_, 0, 9, msgs);
+  ASSERT_TRUE(checkConsensus(copies_, 0, 9, msgs));
 }
 
 TEST_F(LogCASTest, StartWithInvalidCAS) {
@@ -45,7 +45,7 @@ TEST_F(LogCASTest, StartWithInvalidCAS) {
   appendLogs(0, 9, leader_, msgs);
   LOG(INFO) << "<===== Finish appending logs";
 
-  checkConsensus(copies_, 0, 9, msgs);
+  ASSERT_TRUE(checkConsensus(copies_, 0, 9, msgs));
 }
 
 TEST_F(LogCASTest, ValidCASInMiddle) {
@@ -60,7 +60,7 @@ TEST_F(LogCASTest, ValidCASInMiddle) {
   appendLogs(6, 9, leader_, msgs);
   LOG(INFO) << "<===== Finish appending logs";
 
-  checkConsensus(copies_, 0, 9, msgs);
+  ASSERT_TRUE(checkConsensus(copies_, 0, 9, msgs));
 }
 
 TEST_F(LogCASTest, InvalidCASInMiddle) {
@@ -74,7 +74,7 @@ TEST_F(LogCASTest, InvalidCASInMiddle) {
   appendLogs(5, 9, leader_, msgs);
   LOG(INFO) << "<===== Finish appending logs";
 
-  checkConsensus(copies_, 0, 9, msgs);
+  ASSERT_TRUE(checkConsensus(copies_, 0, 9, msgs));
 }
 
 TEST_F(LogCASTest, EndWithValidCAS) {
@@ -91,7 +91,7 @@ TEST_F(LogCASTest, EndWithValidCAS) {
   fut.wait();
   LOG(INFO) << "<===== Finish appending logs";
 
-  checkConsensus(copies_, 0, 9, msgs);
+  ASSERT_TRUE(checkConsensus(copies_, 0, 9, msgs));
 }
 
 TEST_F(LogCASTest, EndWithInvalidCAS) {
@@ -105,7 +105,7 @@ TEST_F(LogCASTest, EndWithInvalidCAS) {
   fut.wait();
   LOG(INFO) << "<===== Finish appending logs";
 
-  checkConsensus(copies_, 0, 7, msgs);
+  ASSERT_TRUE(checkConsensus(copies_, 0, 7, msgs));
 }
 
 TEST_F(LogCASTest, AllValidCAS) {
@@ -121,7 +121,7 @@ TEST_F(LogCASTest, AllValidCAS) {
   }
   LOG(INFO) << "<===== Finish appending logs";
 
-  checkConsensus(copies_, 0, 9, msgs);
+  ASSERT_TRUE(checkConsensus(copies_, 0, 9, msgs));
 }
 
 TEST_F(LogCASTest, AllInvalidCAS) {
@@ -172,7 +172,7 @@ TEST_F(LogCASTest, OnlyOneCasSucceed) {
   for (auto& c : copies_) {
     ASSERT_EQ(1, c->getNumLogs());
   }
-  checkConsensus(copies_, 0, 0, msgs);
+  ASSERT_TRUE(checkConsensus(copies_, 0, 0, msgs));
 }
 
 TEST_F(LogCASTest, ZipCasTest) {
@@ -202,7 +202,7 @@ TEST_F(LogCASTest, ZipCasTest) {
   for (auto& c : copies_) {
     ASSERT_EQ(5, c->getNumLogs());
   }
-  checkConsensus(copies_, 0, 4, msgs);
+  ASSERT_TRUE(checkConsensus(copies_, 0, 4, msgs));
 }
 
 TEST_F(LogCASTest, EmptyTest) {
@@ -210,6 +210,7 @@ TEST_F(LogCASTest, EmptyTest) {
     LOG(INFO) << "return empty string for atomic operation!";
     folly::Baton<> baton;
     leader_->atomicOpAsync([log = std::move(log)]() mutable { return std::string(""); })
+        .via(clientPool_.get())
         .thenValue([&baton](AppendLogResult res) {
           ASSERT_EQ(AppendLogResult::SUCCEEDED, res);
           baton.post();
@@ -220,6 +221,7 @@ TEST_F(LogCASTest, EmptyTest) {
     LOG(INFO) << "return none string for atomic operation!";
     folly::Baton<> baton;
     leader_->atomicOpAsync([log = std::move(log)]() mutable { return folly::none; })
+        .via(clientPool_.get())
         .thenValue([&baton](AppendLogResult res) {
           ASSERT_EQ(AppendLogResult::E_ATOMIC_OP_FAILURE, res);
           baton.post();

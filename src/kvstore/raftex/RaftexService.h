@@ -6,10 +6,9 @@
 #ifndef RAFTEX_RAFTEXSERVICE_H_
 #define RAFTEX_RAFTEXSERVICE_H_
 
+#include "common/base/Base.h"
 #include <folly/RWSpinLock.h>
 #include <thrift/lib/cpp2/server/ThriftServer.h>
-
-#include "common/base/Base.h"
 #include "interface/gen-cpp2/RaftexService.h"
 
 namespace nebula {
@@ -24,7 +23,7 @@ class RaftexService : public cpp2::RaftexServiceSvIf {
       std::shared_ptr<folly::IOThreadPoolExecutor> pool,
       std::shared_ptr<folly::Executor> workers,
       uint16_t port = 0);
-  virtual ~RaftexService();
+  virtual ~RaftexService() = default;
 
   uint32_t getServerPort() const {
     return serverPort_;
@@ -57,24 +56,16 @@ class RaftexService : public cpp2::RaftexServiceSvIf {
   std::shared_ptr<RaftPart> findPart(GraphSpaceID spaceId, PartitionID partId);
 
  private:
+  RaftexService() = default;
+
   void initThriftServer(std::shared_ptr<folly::IOThreadPoolExecutor> pool,
                         std::shared_ptr<folly::Executor> workers,
                         uint16_t port = 0);
-  bool setup();
-  void serve();
-
-  // Block until the service is ready to serve
-  void waitUntilReady();
-
-  RaftexService() = default;
 
  private:
   std::unique_ptr<apache::thrift::ThriftServer> server_;
   std::unique_ptr<std::thread> serverThread_;
   uint32_t serverPort_;
-
-  enum RaftServiceStatus { STATUS_NOT_RUNNING = 0, STATUS_SETUP_FAILED = 1, STATUS_RUNNING = 2 };
-  std::atomic_int status_{STATUS_NOT_RUNNING};
 
   folly::RWSpinLock partsLock_;
   std::unordered_map<std::pair<GraphSpaceID, PartitionID>, std::shared_ptr<RaftPart>> parts_;

@@ -77,19 +77,23 @@ void waitUntilLeaderElected(const std::vector<std::shared_ptr<test::TestShard>>&
   }
   auto checkLeader = [&]() -> bool {
     int32_t index = 0;
+    int32_t total = 0;
+    int32_t numHasLeader = 0;
     for (auto& c : copies) {
       // if a copy in abnormal state, its leader is (0, 0)
       VLOG(3) << c->address() << " , leader address " << c->leader() << ", elected one "
               << leader->address();
-      if (!isLearner[index] && c != nullptr && leader != c && c->isRunning()) {
-        if (leader->address() != c->leader()) {
-          return false;
+      if (!isLearner[index] && c != nullptr) {
+        ++total;
+        if (leader != c && c->isRunning() && leader->address() == c->leader()) {
+          ++numHasLeader;
         }
       }
       index++;
     }
-    return true;
+    return numHasLeader + 1 > total / 2;
   };
+
   while (true) {
     bool sameLeader = false;
     {
@@ -108,40 +112,38 @@ void waitUntilLeaderElected(const std::vector<std::shared_ptr<test::TestShard>>&
       sameLeader = checkLeader();
     }
     if (sameLeader) {
-      // Sleep a while in case concurrent leader election occurs
+      // Sleep a while, then check again, in case concurrent leader election occurs
       sleep(1);
       if (checkLeader()) {
         break;
       }
     }
-
     // Wait for one second
     sleep(1);
   }
 }
 
 void waitUntilAllHasLeader(const std::vector<std::shared_ptr<test::TestShard>>& copies) {
-  while (true) {
-    bool allHaveLeader = true;
+  bool allHaveLeaders = false;
+  while (!allHaveLeaders) {
+    // Wait for one second
+    sleep(FLAGS_raft_heartbeat_interval_secs);
+    allHaveLeaders = true;
     for (auto& c : copies) {
       if (c != nullptr && c->isRunning()) {
         if (c->leader().host == "" && c->leader().port == 0) {
-          allHaveLeader = false;
+          allHaveLeaders = false;
           break;
         }
       }
     }
-    if (allHaveLeader) {
-      return;
-    }
-    // Wait for one second
-    sleep(1);
   }
 }
 
 void setupRaft(int32_t numCopies,
                fs::TempDir& walRoot,
                std::shared_ptr<thread::GenericThreadPool>& workers,
+               std::shared_ptr<folly::IOThreadPoolExecutor>& clientPool,
                std::vector<std::string>& wals,
                std::vector<HostAddr>& allHosts,
                std::vector<std::shared_ptr<RaftexService>>& services,
@@ -152,6 +154,8 @@ void setupRaft(int32_t numCopies,
 
   workers = std::make_shared<thread::GenericThreadPool>();
   workers->start(4);
+
+  clientPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
 
   // Set up WAL folders (Create one extra for leader crash test)
   for (int i = 0; i < numCopies + 1; ++i) {
@@ -165,6 +169,8 @@ void setupRaft(int32_t numCopies,
     if (!services.back()->start()) return;
     uint16_t port = services.back()->getServerPort();
     allHosts.emplace_back(ipStr, port);
+    LOG(INFO) << "[Raft Test: Setting up] started service on "
+              << ipStr << ":" << port;
   }
 
   if (isLearner.empty()) {
@@ -178,7 +184,7 @@ void setupRaft(int32_t numCopies,
                                                           1,  // Shard ID
                                                           allHosts[i],
                                                           wals[i],
-                                                          services[i]->getIOThreadPool(),
+                                                          clientPool,
                                                           workers,
                                                           services[i]->getThreadManager(),
                                                           sps[i],
@@ -200,11 +206,14 @@ void setupRaft(int32_t numCopies,
 
   // Wait until all copies agree on the same leader
   waitUntilLeaderElected(copies, leader, isLearner);
+  LOG(INFO) << "[Raft Test: Setting up] " << leader->address()
+            << " has been elected as the leader for Term " << leader->termId();
 }
 
 void finishRaft(std::vector<std::shared_ptr<RaftexService>>& services,
                 std::vector<std::shared_ptr<test::TestShard>>& copies,
                 std::shared_ptr<thread::GenericThreadPool>& workers,
+                std::shared_ptr<folly::IOThreadPoolExecutor>& clientPool,
                 std::shared_ptr<test::TestShard>& leader) {
   leader.reset();
   copies.clear();
@@ -216,47 +225,55 @@ void finishRaft(std::vector<std::shared_ptr<RaftexService>>& services,
   LOG(INFO) << "Stopping workers...";
   workers->stop();
   workers->wait();
+  clientPool->stop();
+  clientPool->join();
   LOG(INFO) << "Waiting for all service stopped";
   for (auto& svc : services) {
     svc->waitUntilStop();
   }
 }
 
-int32_t checkLeadership(std::vector<std::shared_ptr<test::TestShard>>& copies,
-                        std::shared_ptr<test::TestShard>& leader) {
+bool checkLeadership(std::vector<std::shared_ptr<test::TestShard>>& copies,
+                     std::shared_ptr<test::TestShard>& leader) {
   std::lock_guard<std::mutex> lock(leaderMutex);
   CHECK(!!leader);
-  int32_t leaderIndex = -1;
-  int i = 0;
+
+  size_t total = 0;
+  size_t numHasLeader = 0;
   for (auto& c : copies) {
-    if (c != nullptr && leader != c && !c->isLearner() && c->isRunning()) {
-      EXPECT_EQ(leader->address(), c->leader());
-    } else if (leader == c) {
-      leaderIndex = i;
+    if (c != nullptr && !c->isLearner()) {
+      ++total;
+      if (leader != c && c->isRunning() && leader->address() == c->leader()) {
+        ++numHasLeader;
+      }
     }
-    i++;
   }
-  CHECK_GE(leaderIndex, 0);
-  return leaderIndex;
+  return numHasLeader + 1 > total / 2;
 }
 
 /**
  * Check copies[index] is the leader.
  * */
-void checkLeadership(std::vector<std::shared_ptr<test::TestShard>>& copies,
+bool checkLeadership(std::vector<std::shared_ptr<test::TestShard>>& copies,
                      size_t index,
                      std::shared_ptr<test::TestShard>& leader) {
   std::lock_guard<std::mutex> lock(leaderMutex);
-  ASSERT_FALSE(!leader);
-  ASSERT_EQ(leader->address(), copies[index]->address());
+  if (!leader) {
+    return false;
+  }
+  return leader->address() == copies[index]->address();
 }
 
-void checkNoLeader(std::vector<std::shared_ptr<test::TestShard>>& copies) {
+
+bool checkNoLeader(std::vector<std::shared_ptr<test::TestShard>>& copies) {
   for (auto& c : copies) {
     if (c != nullptr && c->isRunning()) {
-      ASSERT_FALSE(c->isLeader());
+      if (c->isLeader()) {
+        return false;
+      }
     }
   }
+  return true;
 }
 
 void appendLogs(int start,
@@ -281,7 +298,8 @@ bool checkConsensus(std::vector<std::shared_ptr<test::TestShard>>& copies,
                     size_t end,
                     std::vector<std::string>& msgs) {
   int32_t count = 0;
-  for (; count < 3; count++) {
+  // Retry 5 times
+  for (; count < 5; count++) {
     bool consensus = true;
     // Sleep a while to make sure the last log has been committed on followers
     sleep(FLAGS_raft_heartbeat_interval_secs);
@@ -299,8 +317,7 @@ bool checkConsensus(std::vector<std::shared_ptr<test::TestShard>>& copies,
       return true;
     }
   }
-  // Failed after retry 3 times
-  EXPECT_LT(count, 3);
+  // Failed after retry 5 times
   return false;
 }
 
@@ -335,7 +352,7 @@ void rebootOneCopy(std::vector<std::shared_ptr<RaftexService>>& services,
                    size_t index) {
   services[index]->addPartition(copies[index]);
   copies[index]->start(getPeers(allHosts, allHosts[index]));
-  LOG(INFO) << "copies " << index << " reboot";
+  LOG(INFO) << "Copy " << index << " rebooted";
 }
 
 std::vector<std::shared_ptr<SnapshotManager>> snapshots(

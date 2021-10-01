@@ -32,7 +32,7 @@ Host::Host(const HostAddr& addr, std::shared_ptr<RaftPart> part, bool isLearner)
       addr_(addr),
       isLearner_(isLearner),
       idStr_(folly::stringPrintf(
-          "%s[Host: %s:%d] ", part_->idStr_.c_str(), addr_.host.c_str(), addr_.port)),
+          "%s -> [Host: %s:%d] ", part_->idStr_.c_str(), addr_.host.c_str(), addr_.port)),
       cachingPromise_(folly::SharedPromise<cpp2::AppendLogResponse>()) {}
 
 void Host::waitForStop() {
@@ -57,8 +57,8 @@ cpp2::ErrorCode Host::canAppendLog() const {
   return cpp2::ErrorCode::SUCCEEDED;
 }
 
-folly::Future<cpp2::AskForVoteResponse> Host::askForVote(const cpp2::AskForVoteRequest& req,
-                                                         folly::EventBase* eb) {
+folly::SemiFuture<cpp2::AskForVoteResponse> Host::askForVote(const cpp2::AskForVoteRequest& req,
+                                                             folly::EventBase* eb) {
   {
     std::lock_guard<std::mutex> g(lock_);
     if (stopped_) {
@@ -68,19 +68,19 @@ folly::Future<cpp2::AskForVoteResponse> Host::askForVote(const cpp2::AskForVoteR
       return resp;
     }
   }
-  auto client = part_->clientMan_->client(addr_, eb, false, FLAGS_raft_rpc_timeout_ms);
-  return client->future_askForVote(req);
+  auto client = part_->clientMan_->client(addr_, eb, FLAGS_raft_rpc_timeout_ms);
+  return client->semifuture_askForVote(req);
 }
 
-folly::Future<cpp2::AppendLogResponse> Host::appendLogs(folly::EventBase* eb,
-                                                        TermID term,
-                                                        LogID logId,
-                                                        LogID committedLogId,
-                                                        TermID prevLogTerm,
-                                                        LogID prevLogId) {
+folly::SemiFuture<cpp2::AppendLogResponse> Host::appendLogs(folly::EventBase* eb,
+                                                            TermID term,
+                                                            LogID logId,
+                                                            LogID committedLogId,
+                                                            TermID prevLogTerm,
+                                                            LogID prevLogId) {
   VLOG(3) << idStr_ << "Entering Host::appendLogs()";
 
-  auto ret = folly::Future<cpp2::AppendLogResponse>::makeEmpty();
+  auto ret = folly::SemiFuture<cpp2::AppendLogResponse>::makeEmpty();
   std::shared_ptr<cpp2::AppendLogRequest> req;
   {
     std::lock_guard<std::mutex> g(lock_);
@@ -94,7 +94,7 @@ folly::Future<cpp2::AppendLogResponse> Host::appendLogs(folly::EventBase* eb,
       // buffer incoming request to pendingReq_
       if (cachingPromise_.size() <= FLAGS_max_outstanding_requests) {
         pendingReq_ = std::make_tuple(term, logId, committedLogId);
-        return cachingPromise_.getFuture();
+        return cachingPromise_.getSemiFuture();
       } else {
         LOG_EVERY_N(INFO, 200) << idStr_ << "Too many requests are waiting, return error";
         res = cpp2::ErrorCode::E_TOO_MANY_REQUESTS;
@@ -130,7 +130,7 @@ folly::Future<cpp2::AppendLogResponse> Host::appendLogs(folly::EventBase* eb,
       pendingReq_ = std::make_tuple(0, 0, 0);
       promise_ = std::move(cachingPromise_);
       cachingPromise_ = folly::SharedPromise<cpp2::AppendLogResponse>();
-      ret = promise_.getFuture();
+      ret = promise_.getSemiFuture();
       requestOnGoing_ = true;
     } else {
       // target host is waiting for a snapshot or wal not found
@@ -348,7 +348,7 @@ cpp2::ErrorCode Host::startSendSnapshot() {
   return cpp2::ErrorCode::E_WAITING_SNAPSHOT;
 }
 
-folly::Future<cpp2::AppendLogResponse> Host::sendAppendLogRequest(
+folly::SemiFuture<cpp2::AppendLogResponse> Host::sendAppendLogRequest(
     folly::EventBase* eb, std::shared_ptr<cpp2::AppendLogRequest> req) {
   VLOG(2) << idStr_ << "Entering Host::sendAppendLogRequest()";
 
@@ -371,15 +371,15 @@ folly::Future<cpp2::AppendLogResponse> Host::sendAppendLogRequest(
                                  << req->get_last_log_id_sent() << ", logs in request "
                                  << req->get_log_str_list().size();
   // Get client connection
-  auto client = part_->clientMan_->client(addr_, eb, false, FLAGS_raft_rpc_timeout_ms);
-  return client->future_appendLog(*req);
+  auto client = part_->clientMan_->client(addr_, eb, FLAGS_raft_rpc_timeout_ms);
+  return client->semifuture_appendLog(*req);
 }
 
-folly::Future<cpp2::HeartbeatResponse> Host::sendHeartbeat(folly::EventBase* eb,
-                                                           TermID term,
-                                                           LogID commitLogId,
-                                                           TermID lastLogTerm,
-                                                           LogID lastLogId) {
+folly::SemiFuture<cpp2::HeartbeatResponse> Host::sendHeartbeat(folly::EventBase* eb,
+                                                               TermID term,
+                                                               LogID commitLogId,
+                                                               TermID lastLogTerm,
+                                                               LogID lastLogId) {
   auto req = std::make_shared<cpp2::HeartbeatRequest>();
   req->space_ref() = part_->spaceId();
   req->part_ref() = part_->partitionId();
@@ -390,7 +390,7 @@ folly::Future<cpp2::HeartbeatResponse> Host::sendHeartbeat(folly::EventBase* eb,
   req->last_log_term_sent_ref() = lastLogTerm;
   req->last_log_id_sent_ref() = lastLogId;
   folly::Promise<cpp2::HeartbeatResponse> promise;
-  auto future = promise.getFuture();
+  auto future = promise.getSemiFuture();
   sendHeartbeatRequest(eb, std::move(req))
       .via(eb)
       .then([self = shared_from_this(),
@@ -408,7 +408,7 @@ folly::Future<cpp2::HeartbeatResponse> Host::sendHeartbeat(folly::EventBase* eb,
   return future;
 }
 
-folly::Future<cpp2::HeartbeatResponse> Host::sendHeartbeatRequest(
+folly::SemiFuture<cpp2::HeartbeatResponse> Host::sendHeartbeatRequest(
     folly::EventBase* eb, std::shared_ptr<cpp2::HeartbeatRequest> req) {
   VLOG(2) << idStr_ << "Entering Host::sendHeartbeatRequest()";
 
@@ -430,8 +430,8 @@ folly::Future<cpp2::HeartbeatResponse> Host::sendHeartbeatRequest(
                                  << req->get_last_log_term_sent() << ", last_log_id_sent "
                                  << req->get_last_log_id_sent();
   // Get client connection
-  auto client = part_->clientMan_->client(addr_, eb, false, FLAGS_raft_rpc_timeout_ms);
-  return client->future_heartbeat(*req);
+  auto client = part_->clientMan_->client(addr_, eb, FLAGS_raft_rpc_timeout_ms);
+  return client->semifuture_heartbeat(*req);
 }
 
 bool Host::noRequest() const {

@@ -77,11 +77,11 @@ class Host final : public std::enable_shared_from_this<Host> {
     isLearner_ = isLearner;
   }
 
-  folly::Future<cpp2::AskForVoteResponse> askForVote(const cpp2::AskForVoteRequest& req,
-                                                     folly::EventBase* eb);
+  folly::SemiFuture<cpp2::AskForVoteResponse> askForVote(const cpp2::AskForVoteRequest& req,
+                                                         folly::EventBase* eb);
 
   // When logId == lastLogIdSent, it is a heartbeat
-  folly::Future<cpp2::AppendLogResponse> appendLogs(
+  folly::SemiFuture<cpp2::AppendLogResponse> appendLogs(
       folly::EventBase* eb,
       TermID term,             // Current term
       LogID logId,             // The last log to be sent
@@ -89,11 +89,11 @@ class Host final : public std::enable_shared_from_this<Host> {
       TermID lastLogTermSent,  // The last log term being sent
       LogID lastLogIdSent);    // The last log id being sent
 
-  folly::Future<cpp2::HeartbeatResponse> sendHeartbeat(folly::EventBase* eb,
-                                                       TermID term,
-                                                       LogID commitLogId,
-                                                       TermID lastLogTerm,
-                                                       LogID lastLogId);
+  folly::SemiFuture<cpp2::HeartbeatResponse> sendHeartbeat(folly::EventBase* eb,
+                                                           TermID term,
+                                                           LogID commitLogId,
+                                                           TermID lastLogTerm,
+                                                           LogID lastLogId);
 
   const HostAddr& address() const {
     return addr_;
@@ -102,12 +102,12 @@ class Host final : public std::enable_shared_from_this<Host> {
  private:
   cpp2::ErrorCode canAppendLog() const;
 
-  folly::Future<cpp2::AppendLogResponse> sendAppendLogRequest(
+  folly::SemiFuture<cpp2::AppendLogResponse> sendAppendLogRequest(
       folly::EventBase* eb, std::shared_ptr<cpp2::AppendLogRequest> req);
 
   void appendLogsInternal(folly::EventBase* eb, std::shared_ptr<cpp2::AppendLogRequest> req);
 
-  folly::Future<cpp2::HeartbeatResponse> sendHeartbeatRequest(
+  folly::SemiFuture<cpp2::HeartbeatResponse> sendHeartbeatRequest(
       folly::EventBase* eb, std::shared_ptr<cpp2::HeartbeatRequest> req);
 
   ErrorOr<cpp2::ErrorCode, std::shared_ptr<cpp2::AppendLogRequest>> prepareAppendLogRequest();

@@ -24,58 +24,69 @@ namespace raftex {
 TEST(LogAppend, SimpleAppendWithOneCopy) {
   fs::TempDir walRoot("/tmp/simple_append_with_one_copy.XXXXXX");
   std::shared_ptr<thread::GenericThreadPool> workers;
+  std::shared_ptr<folly::IOThreadPoolExecutor> clientPool;
   std::vector<std::string> wals;
   std::vector<HostAddr> allHosts;
   std::vector<std::shared_ptr<RaftexService>> services;
   std::vector<std::shared_ptr<test::TestShard>> copies;
-
   std::shared_ptr<test::TestShard> leader;
-  setupRaft(1, walRoot, workers, wals, allHosts, services, copies, leader);
+
+  SCOPE_EXIT {
+    finishRaft(services, copies, workers, clientPool, leader);
+  };
+
+  setupRaft(1, walRoot, workers, clientPool, wals, allHosts, services, copies, leader);
 
   // Check all hosts agree on the same leader
-  checkLeadership(copies, leader);
+  ASSERT_TRUE(checkLeadership(copies, leader));
 
   std::vector<std::string> msgs;
   appendLogs(0, 99, leader, msgs);
-  checkConsensus(copies, 0, 99, msgs);
-
-  finishRaft(services, copies, workers, leader);
+  ASSERT_TRUE(checkConsensus(copies, 0, 99, msgs));
 }
 
 TEST(LogAppend, SimpleAppendWithThreeCopies) {
   fs::TempDir walRoot("/tmp/simple_append_with_three_copies.XXXXXX");
   std::shared_ptr<thread::GenericThreadPool> workers;
+  std::shared_ptr<folly::IOThreadPoolExecutor> clientPool;
   std::vector<std::string> wals;
   std::vector<HostAddr> allHosts;
   std::vector<std::shared_ptr<RaftexService>> services;
   std::vector<std::shared_ptr<test::TestShard>> copies;
-
   std::shared_ptr<test::TestShard> leader;
-  setupRaft(3, walRoot, workers, wals, allHosts, services, copies, leader);
+
+  SCOPE_EXIT {
+    finishRaft(services, copies, workers, clientPool, leader);
+  };
+
+  setupRaft(3, walRoot, workers, clientPool, wals, allHosts, services, copies, leader);
 
   // Check all hosts agree on the same leader
-  checkLeadership(copies, leader);
+  ASSERT_TRUE(checkLeadership(copies, leader));
 
   std::vector<std::string> msgs;
   appendLogs(0, 99, leader, msgs);
-  checkConsensus(copies, 0, 99, msgs);
-
-  finishRaft(services, copies, workers, leader);
+  ASSERT_TRUE(checkConsensus(copies, 0, 99, msgs));
 }
 
 TEST(LogAppend, MultiThreadAppend) {
   fs::TempDir walRoot("/tmp/multi_thread_append.XXXXXX");
   std::shared_ptr<thread::GenericThreadPool> workers;
+  std::shared_ptr<folly::IOThreadPoolExecutor> clientPool;
   std::vector<std::string> wals;
   std::vector<HostAddr> allHosts;
   std::vector<std::shared_ptr<RaftexService>> services;
   std::vector<std::shared_ptr<test::TestShard>> copies;
-
   std::shared_ptr<test::TestShard> leader;
-  setupRaft(3, walRoot, workers, wals, allHosts, services, copies, leader);
+
+  SCOPE_EXIT {
+    finishRaft(services, copies, workers, clientPool, leader);
+  };
+
+  setupRaft(3, walRoot, workers, clientPool, wals, allHosts, services, copies, leader);
 
   // Check all hosts agree on the same leader
-  checkLeadership(copies, leader);
+  ASSERT_TRUE(checkLeadership(copies, leader));
 
   // Create 4 threads, each appends 100 logs
   LOG(INFO) << "=====> Start multi-thread appending logs";
@@ -127,8 +138,6 @@ TEST(LogAppend, MultiThreadAppend) {
       }
     }
   }
-
-  finishRaft(services, copies, workers, leader);
 }
 
 }  // namespace raftex

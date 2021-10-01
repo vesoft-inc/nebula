@@ -103,9 +103,9 @@ nebula_add_test(
 
 nebula_add_test(
     NAME
-        raft_case_test
+        raft_chaos_test
     SOURCES
-        RaftCase.cpp
+        RaftChaosTest.cpp
         RaftexTestBase.cpp
         TestShard.cpp
     OBJECTS

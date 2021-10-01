@@ -18,18 +18,13 @@ namespace thrift {
 template <class ClientType>
 class ThriftClientManager final {
  public:
+  explicit ThriftClientManager(bool enableSSL = false) : enableSSL_(enableSSL) {}
+
+  ~ThriftClientManager() = default;
+
   std::shared_ptr<ClientType> client(const HostAddr& host,
                                      folly::EventBase* evb = nullptr,
-                                     bool compatibility = false,
                                      uint32_t timeout = 0);
-
-  ~ThriftClientManager() {
-    VLOG(3) << "~ThriftClientManager";
-  }
-
-  explicit ThriftClientManager(bool enableSSL = false) : enableSSL_(enableSSL) {
-    VLOG(3) << "ThriftClientManager";
-  }
 
  private:
   using ClientMap =

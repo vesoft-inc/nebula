@@ -35,7 +35,7 @@ TEST_F(LogCommandTest, StartWithCommandLog) {
   LOG(INFO) << "<===== Finish appending logs";
 
   ASSERT_EQ(2, leader_->commitTimes_);
-  checkConsensus(copies_, 0, 9, msgs);
+  ASSERT_TRUE(checkConsensus(copies_, 0, 9, msgs));
 }
 
 TEST_F(LogCommandTest, CommandInMiddle) {
@@ -54,21 +54,22 @@ TEST_F(LogCommandTest, CommandInMiddle) {
   ASSERT_EQ(3, leader_->commitTimes_);
   // need to sleep a bit more
   sleep(FLAGS_raft_heartbeat_interval_secs + 1);
-  checkConsensus(copies_, 0, 9, msgs);
+  ASSERT_TRUE(checkConsensus(copies_, 0, 9, msgs));
 }
 
 TEST_F(LogCommandTest, EndWithCommand) {
   // Append logs
   LOG(INFO) << "=====> Start appending logs";
   std::vector<std::string> msgs;
-  appendLogs(0, 8, leader_, msgs);
+
+  appendLogs(0, 8, leader_, msgs, true);
   auto fut = leader_->sendCommandAsync("Command Log Message");
   msgs.emplace_back("Command Log Message");
   fut.wait();
   LOG(INFO) << "<===== Finish appending logs";
 
-  ASSERT_EQ(2, leader_->commitTimes_);
-  checkConsensus(copies_, 0, 9, msgs);
+  ASSERT_LE(2, leader_->commitTimes_);
+  ASSERT_TRUE(checkConsensus(copies_, 0, 9, msgs));
 }
 
 TEST_F(LogCommandTest, AllCommandLogs) {
@@ -85,7 +86,7 @@ TEST_F(LogCommandTest, AllCommandLogs) {
   LOG(INFO) << "<===== Finish appending logs";
 
   ASSERT_EQ(10, leader_->commitTimes_);
-  checkConsensus(copies_, 0, 9, msgs);
+  ASSERT_TRUE(checkConsensus(copies_, 0, 9, msgs));
 }
 
 TEST_F(LogCommandTest, MixedLogs) {
@@ -132,7 +133,7 @@ TEST_F(LogCommandTest, MixedLogs) {
   LOG(INFO) << "<===== Finish appending logs";
 
   ASSERT_EQ(8, leader_->commitTimes_);
-  checkConsensus(copies_, 0, 9, msgs);
+  ASSERT_TRUE(checkConsensus(copies_, 0, 9, msgs));
 }
 
 }  // namespace raftex

@@ -593,25 +593,25 @@ void RaftPart::commitRemovePeer(const HostAddr& peer) {
   removePeer(peer);
 }
 
-folly::Future<AppendLogResult> RaftPart::appendAsync(ClusterID source, std::string log) {
+folly::SemiFuture<AppendLogResult> RaftPart::appendAsync(ClusterID source, std::string log) {
   if (source < 0) {
     source = clusterId_;
   }
   return appendLogAsync(source, LogType::NORMAL, std::move(log));
 }
 
-folly::Future<AppendLogResult> RaftPart::atomicOpAsync(AtomicOp op) {
+folly::SemiFuture<AppendLogResult> RaftPart::atomicOpAsync(AtomicOp op) {
   return appendLogAsync(clusterId_, LogType::ATOMIC_OP, "", std::move(op));
 }
 
-folly::Future<AppendLogResult> RaftPart::sendCommandAsync(std::string log) {
+folly::SemiFuture<AppendLogResult> RaftPart::sendCommandAsync(std::string log) {
   return appendLogAsync(clusterId_, LogType::COMMAND, std::move(log));
 }
 
-folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
-                                                        LogType logType,
-                                                        std::string log,
-                                                        AtomicOp op) {
+folly::SemiFuture<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
+                                                            LogType logType,
+                                                            std::string log,
+                                                            AtomicOp op) {
   if (blocking_) {
     // No need to block heartbeats and empty log.
     if ((logType == LogType::NORMAL && !log.empty()) || logType == LogType::ATOMIC_OP) {
@@ -620,7 +620,7 @@ folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
   }
 
   LogCache swappedOutLogs;
-  auto retFuture = folly::Future<AppendLogResult>::makeEmpty();
+  auto retFuture = folly::SemiFuture<AppendLogResult>::makeEmpty();
 
   if (bufferOverFlow_) {
     LOG_EVERY_N(WARNING, 100) << idStr_
@@ -750,7 +750,7 @@ void RaftPart::appendLogsInternal(AppendLogsIterator iter, TermID termId) {
     }
     lastId = wal_->lastLogId();
     if (tracker.slow()) {
-      tracker.output(idStr_, folly::stringPrintf("Write WAL, total %ld", lastId - prevLogId + 1));
+      tracker.output(idStr_, folly::stringPrintf("Write WAL, total %ld", lastId - prevLogId));
     }
     VLOG(2) << idStr_ << "Succeeded writing logs [" << iter.firstLogId() << ", " << lastId
             << "] to WAL";
@@ -807,7 +807,7 @@ void RaftPart::replicateLogs(folly::EventBase* eb,
                                   prevLogTerm,
                                   committedId](std::shared_ptr<Host> hostPtr) {
                           VLOG(2) << self->idStr_ << "Appending logs to " << hostPtr->idStr();
-                          return via(eb, [=]() -> Future<cpp2::AppendLogResponse> {
+                          return via(eb, [=]() -> SemiFuture<cpp2::AppendLogResponse> {
                             return hostPtr->appendLogs(
                                 eb, currTerm, lastLogId, committedId, prevLogTerm, prevLogId);
                           });
@@ -832,10 +832,9 @@ void RaftPart::replicateLogs(folly::EventBase* eb,
              pHosts = std::move(hosts),
              tracker](folly::Try<AppendLogResponses>&& result) mutable {
         VLOG(2) << self->idStr_ << "Received enough response";
-        CHECK(!result.hasException());
         if (tracker.slow()) {
           tracker.output(self->idStr_,
-                         folly::stringPrintf("Total send logs: %ld", lastLogId - prevLogId + 1));
+                         folly::stringPrintf("Total send logs: %ld", lastLogId - prevLogId));
         }
         self->processAppendLogResponses(*result,
                                         eb,
@@ -937,8 +936,8 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
         tracker.output(idStr_,
                        folly::stringPrintf("Total commit: %ld", committedLogId_ - committedId));
       }
-      VLOG(2) << idStr_ << "Leader succeeded in committing the logs " << committedId + 1 << " to "
-              << lastLogId;
+      VLOG(2) << idStr_ << "Leader succeeded in committing the logs from " << committedId + 1
+              << " to " << lastLogId;
     }
 
     // Step 4: Fulfill the promise
@@ -993,8 +992,7 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
     this->appendLogsInternal(std::move(iter), currTerm);
   } else {
     // Not enough hosts accepted the log, re-try
-    LOG_EVERY_N(WARNING, 100) << idStr_ << "Only " << numSucceeded
-                              << " hosts succeeded, Need to try again";
+    VLOG(3) << idStr_ << "Only " << numSucceeded << " hosts succeeded, Need to try again";
     usleep(1000);
     replicateLogs(eb, std::move(iter), currTerm, lastLogId, committedId, prevLogTerm, prevLogId);
   }
@@ -1121,6 +1119,8 @@ bool RaftPart::processElectionResponses(const RaftPart::ElectionResponses& resul
     }
     highestTerm = std::max(highestTerm, r.second.get_current_term());
   }
+  VLOG(2) << idStr_ << "Received " << results.size()
+          << " responses and " << numSucceeded << " peers voted for me";
 
   if (highestTerm > term_) {
     term_ = highestTerm;
@@ -1147,7 +1147,7 @@ bool RaftPart::processElectionResponses(const RaftPart::ElectionResponses& resul
   return false;
 }
 
-folly::Future<bool> RaftPart::leaderElection(bool isPreVote) {
+folly::SemiFuture<bool> RaftPart::leaderElection(bool isPreVote) {
   VLOG(2) << idStr_ << "Start leader election...";
   using namespace folly;  // NOLINT since the fancy overload of | operator
 
@@ -1192,13 +1192,13 @@ folly::Future<bool> RaftPart::leaderElection(bool isPreVote) {
     return ret;
   } else {
     folly::Promise<bool> promise;
-    auto future = promise.getFuture();
+    auto future = promise.getSemiFuture();
     auto eb = ioThreadPool_->getEventBase();
     collectNSucceeded(
         gen::from(hosts) |
             gen::map([eb, self = shared_from_this(), voteReq](std::shared_ptr<Host> host) {
               VLOG(2) << self->idStr_ << "Sending AskForVoteRequest to " << host->idStr();
-              return via(eb, [voteReq, host, eb]() -> Future<cpp2::AskForVoteResponse> {
+              return via(eb, [voteReq, host, eb]() -> SemiFuture<cpp2::AskForVoteResponse> {
                 return host->askForVote(voteReq, eb);
               });
             }) |
@@ -1463,6 +1463,8 @@ void RaftPart::processAskForVoteRequest(const cpp2::AskForVoteRequest& req,
   lastMsgRecvDur_.reset();
   isBlindFollower_ = false;
   stats::StatsManager::addValue(kNumRaftVotes);
+
+  resp.error_code_ref() = cpp2::ErrorCode::SUCCEEDED;
   return;
 }
 
@@ -1714,10 +1716,10 @@ void RaftPart::processHeartbeatRequest(const cpp2::HeartbeatRequest& req,
                                  << ", committedLogId = " << req.get_committed_log_id()
                                  << ", lastLogIdSent = " << req.get_last_log_id_sent()
                                  << ", lastLogTermSent = " << req.get_last_log_term_sent()
-                                 << ", local lastLogId = " << lastLogId_
-                                 << ", local lastLogTerm = " << lastLogTerm_
-                                 << ", local committedLogId = " << committedLogId_
-                                 << ", local current term = " << term_;
+                                 << ", [local] lastLogId = " << lastLogId_
+                                 << ", [local] lastLogTerm = " << lastLogTerm_
+                                 << ", [local] committedLogId = " << committedLogId_
+                                 << ", [local] current term = " << term_;
   std::lock_guard<std::mutex> g(raftLock_);
 
   // As for heartbeat, last_log_id and last_log_term is not checked by leader, follower only verify
@@ -1836,6 +1838,7 @@ void RaftPart::sendHeartbeat() {
       std::string log = "";
       appendLogAsync(clusterId_, LogType::NORMAL, std::move(log));
     });
+    return;
   }
 
   using namespace folly;  // NOLINT since the fancy overload of | operator
@@ -1862,7 +1865,7 @@ void RaftPart::sendHeartbeat() {
           gen::map([self = shared_from_this(), eb, currTerm, commitLogId, prevLogId, prevLogTerm](
                        std::shared_ptr<Host> hostPtr) {
             VLOG(2) << self->idStr_ << "Send heartbeat to " << hostPtr->idStr();
-            return via(eb, [=]() -> Future<cpp2::HeartbeatResponse> {
+            return via(eb, [=]() -> SemiFuture<cpp2::HeartbeatResponse> {
               return hostPtr->sendHeartbeat(eb, currTerm, commitLogId, prevLogTerm, prevLogId);
             });
           }) |
@@ -1873,8 +1876,9 @@ void RaftPart::sendHeartbeat() {
       [hosts](size_t index, cpp2::HeartbeatResponse& resp) {
         return resp.get_error_code() == cpp2::ErrorCode::SUCCEEDED && !hosts[index]->isLearner();
       })
+      .via(executor_.get())
       .then([replica, hosts = std::move(hosts), startMs, currTerm, this](
-                folly::Try<HeartbeatResponses>&& resps) {
+          folly::Try<HeartbeatResponses>&& resps) {
         CHECK(!resps.hasException());
         size_t numSucceeded = 0;
         TermID highestTerm = currTerm;

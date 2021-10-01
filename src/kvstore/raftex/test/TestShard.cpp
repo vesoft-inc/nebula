@@ -249,7 +249,7 @@ size_t TestShard::getNumLogs() const {
 
 bool TestShard::getLogMsg(size_t index, folly::StringPiece& msg) {
   folly::RWSpinLock::ReadHolder rh(&lock_);
-  if (index > data_.size()) {
+  if (index >= data_.size()) {
     return false;
   }
   msg = data_[index].second;

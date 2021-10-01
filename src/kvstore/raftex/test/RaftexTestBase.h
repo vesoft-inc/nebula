@@ -54,6 +54,7 @@ void waitUntilAllHasLeader(const std::vector<std::shared_ptr<test::TestShard>>& 
 void setupRaft(int32_t numCopies,
                fs::TempDir& walRoot,
                std::shared_ptr<thread::GenericThreadPool>& workers,
+               std::shared_ptr<folly::IOThreadPoolExecutor>& clientPool,
                std::vector<std::string>& wals,
                std::vector<HostAddr>& allHosts,
                std::vector<std::shared_ptr<RaftexService>>& services,
@@ -64,15 +65,16 @@ void setupRaft(int32_t numCopies,
 void finishRaft(std::vector<std::shared_ptr<RaftexService>>& services,
                 std::vector<std::shared_ptr<test::TestShard>>& copies,
                 std::shared_ptr<thread::GenericThreadPool>& workers,
+                std::shared_ptr<folly::IOThreadPoolExecutor>& clientPool,
                 std::shared_ptr<test::TestShard>& leader);
 
-int32_t checkLeadership(std::vector<std::shared_ptr<test::TestShard>>& copies,
-                        std::shared_ptr<test::TestShard>& leader);
+bool checkLeadership(std::vector<std::shared_ptr<test::TestShard>>& copies,
+                     std::shared_ptr<test::TestShard>& leader);
 
-void checkLeadership(std::vector<std::shared_ptr<test::TestShard>>& copies,
+bool checkLeadership(std::vector<std::shared_ptr<test::TestShard>>& copies,
                      size_t index,
                      std::shared_ptr<test::TestShard>& leader);
-void checkNoLeader(std::vector<std::shared_ptr<test::TestShard>>& copies);
+bool checkNoLeader(std::vector<std::shared_ptr<test::TestShard>>& copies);
 
 void appendLogs(int start,
                 int end,
@@ -112,14 +114,22 @@ class RaftexTestFixture : public ::testing::Test {
   void SetUp() override {
     walRoot_ = std::make_unique<fs::TempDir>(
         folly::stringPrintf("/tmp/%s.XXXXXX", testName_.c_str()).c_str());
-    setupRaft(size_, *walRoot_, workers_, wals_, allHosts_, services_, copies_, leader_);
+    setupRaft(size_,
+              *walRoot_,
+              workers_,
+              clientPool_,
+              wals_,
+              allHosts_,
+              services_,
+              copies_,
+              leader_);
 
     // Check all hosts agree on the same leader
     checkLeadership(copies_, leader_);
   }
 
   void TearDown() override {
-    finishRaft(services_, copies_, workers_, leader_);
+    finishRaft(services_, copies_, workers_, clientPool_, leader_);
     walRoot_.reset();
   }
 
@@ -128,6 +138,7 @@ class RaftexTestFixture : public ::testing::Test {
   int32_t size_;
   std::unique_ptr<fs::TempDir> walRoot_;
   std::shared_ptr<thread::GenericThreadPool> workers_;
+  std::shared_ptr<folly::IOThreadPoolExecutor> clientPool_;
   std::vector<std::string> wals_;
   std::vector<HostAddr> allHosts_;
   std::vector<std::shared_ptr<RaftexService>> services_;

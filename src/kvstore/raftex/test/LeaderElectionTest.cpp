@@ -22,18 +22,21 @@ TEST(LeaderElection, ElectionWithThreeCopies) {
   LOG(INFO) << "=====> Start ElectionWithThreeCopies test";
   fs::TempDir walRoot("/tmp/election_with_three_copies.XXXXXX");
   std::shared_ptr<thread::GenericThreadPool> workers;
+  std::shared_ptr<folly::IOThreadPoolExecutor> clientPool;
   std::vector<std::string> wals;
   std::vector<HostAddr> allHosts;
   std::vector<std::shared_ptr<RaftexService>> services;
   std::vector<std::shared_ptr<test::TestShard>> copies;
-
   std::shared_ptr<test::TestShard> leader;
-  setupRaft(3, walRoot, workers, wals, allHosts, services, copies, leader);
+
+  SCOPE_EXIT {
+    finishRaft(services, copies, workers, clientPool, leader);
+  };
+
+  setupRaft(3, walRoot, workers, clientPool, wals, allHosts, services, copies, leader);
 
   // Check all hosts agree on the same leader
-  checkLeadership(copies, leader);
-
-  finishRaft(services, copies, workers, leader);
+  ASSERT_TRUE(checkLeadership(copies, leader));
 
   LOG(INFO) << "<===== Done ElectionWithThreeCopies test";
 }
@@ -42,18 +45,21 @@ TEST(LeaderElection, ElectionWithOneCopy) {
   LOG(INFO) << "=====> Start ElectionWithOneCopy test";
   fs::TempDir walRoot("/tmp/election_with_one_copy.XXXXXX");
   std::shared_ptr<thread::GenericThreadPool> workers;
+  std::shared_ptr<folly::IOThreadPoolExecutor> clientPool;
   std::vector<std::string> wals;
   std::vector<HostAddr> allHosts;
   std::vector<std::shared_ptr<RaftexService>> services;
   std::vector<std::shared_ptr<test::TestShard>> copies;
-
   std::shared_ptr<test::TestShard> leader;
-  setupRaft(1, walRoot, workers, wals, allHosts, services, copies, leader);
+
+  SCOPE_EXIT {
+    finishRaft(services, copies, workers, clientPool, leader);
+  };
+
+  setupRaft(1, walRoot, workers, clientPool, wals, allHosts, services, copies, leader);
 
   // Check all hosts agree on the same leader
-  checkLeadership(copies, leader);
-
-  finishRaft(services, copies, workers, leader);
+  ASSERT_TRUE(checkLeadership(copies, leader));
 
   LOG(INFO) << "<===== Done ElectionWithOneCopy test";
 }
@@ -63,16 +69,21 @@ TEST(LeaderElection, LeaderCrash) {
 
   fs::TempDir walRoot("/tmp/leader_crash.XXXXXX");
   std::shared_ptr<thread::GenericThreadPool> workers;
+  std::shared_ptr<folly::IOThreadPoolExecutor> clientPool;
   std::vector<std::string> wals;
   std::vector<HostAddr> allHosts;
   std::vector<std::shared_ptr<RaftexService>> services;
   std::vector<std::shared_ptr<test::TestShard>> copies;
-
   std::shared_ptr<test::TestShard> leader;
-  setupRaft(3, walRoot, workers, wals, allHosts, services, copies, leader);
+
+  SCOPE_EXIT {
+    finishRaft(services, copies, workers, clientPool, leader);
+  };
+
+  setupRaft(3, walRoot, workers, clientPool, wals, allHosts, services, copies, leader);
 
   // Check all hosts agree on the same leader
-  checkLeadership(copies, leader);
+  ASSERT_TRUE(checkLeadership(copies, leader));
 
   // Let's kill the old leader
   LOG(INFO) << "=====> Now let's kill the old leader";
@@ -91,7 +102,7 @@ TEST(LeaderElection, LeaderCrash) {
                                                         1,  // Shard ID
                                                         allHosts[idx],
                                                         wals[3],
-                                                        services[idx]->getIOThreadPool(),
+                                                        clientPool,
                                                         workers,
                                                         services[idx]->getThreadManager(),
                                                         nullptr,
@@ -114,9 +125,7 @@ TEST(LeaderElection, LeaderCrash) {
   waitUntilLeaderElected(copies, leader);
 
   // Check all hosts agree on the same leader
-  checkLeadership(copies, leader);
-
-  finishRaft(services, copies, workers, leader);
+  ASSERT_TRUE(checkLeadership(copies, leader));
 
   LOG(INFO) << "<===== Done LeaderCrash test";
 }

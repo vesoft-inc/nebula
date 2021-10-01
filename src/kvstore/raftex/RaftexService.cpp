@@ -35,27 +35,40 @@ std::shared_ptr<RaftexService> RaftexService::createService(
   return svc;
 }
 
-RaftexService::~RaftexService() {}
 
 bool RaftexService::start() {
-  serverThread_.reset(new std::thread([&] { serve(); }));
+  LOG(INFO) << "Starting the Raftex Service";
 
-  waitUntilReady();
+  // Use a separate thread to start the thrift server
+  // so that this function call will not be blocked
+  bool hasError = false;
+  serverThread_.reset(new std::thread([&] {
+    try {
+      // Will block here until the service being shutdown
+      server_->serve();
+      LOG(INFO) << "The Raftex Service stopped";
+    } catch (const std::exception& e) {
+      hasError = true;
+      LOG(ERROR) << "Failed to start the Raftex Service: " << e.what();
+    }
+  }));
 
-  // start failed, reclaim resource
-  if (status_.load() != STATUS_RUNNING) {
-    waitUntilStop();
-    return false;
-  }
-
-  return true;
-}
-
-void RaftexService::waitUntilReady() {
-  while (status_.load() == STATUS_NOT_RUNNING) {
+  // Wait until the server is ready or there is any error
+  while (true) {
+    // Need to sleep first to give the serverThread_ enough time to start
     std::this_thread::sleep_for(std::chrono::microseconds(100));
+    auto status = server_->getServerStatus();
+    if (status == apache::thrift::ThriftServer::ServerStatus::RUNNING) {
+      serverPort_ = server_->getAddress().getPort();
+      LOG(INFO) << "Raft service succeeded running on port " << serverPort_;
+      return true;
+    } else if (hasError) {
+      waitUntilStop();
+      return false;
+    }
   }
 }
+
 
 void RaftexService::initThriftServer(std::shared_ptr<folly::IOThreadPoolExecutor> pool,
                                      std::shared_ptr<folly::Executor> workers,
@@ -76,54 +89,18 @@ void RaftexService::initThriftServer(std::shared_ptr<folly::IOThreadPoolExecutor
   server_->setStopWorkersOnStopListening(false);
 }
 
-bool RaftexService::setup() {
-  try {
-    server_->setup();
-    serverPort_ = server_->getAddress().getPort();
-
-    LOG(INFO) << "Starting the Raftex Service on " << serverPort_;
-  } catch (const std::exception& e) {
-    LOG(ERROR) << "Setup the Raftex Service failed, error: " << e.what();
-    return false;
-  }
-
-  return true;
-}
-
-void RaftexService::serve() {
-  LOG(INFO) << "Starting the Raftex Service";
-
-  if (!setup()) {
-    status_.store(STATUS_SETUP_FAILED);
-    return;
-  }
-
-  SCOPE_EXIT {
-    server_->cleanUp();
-  };
-
-  status_.store(STATUS_RUNNING);
-  LOG(INFO) << "Start the Raftex Service successfully";
-  server_->getEventBaseManager()->getEventBase()->loopForever();
-
-  status_.store(STATUS_NOT_RUNNING);
-  LOG(INFO) << "The Raftex Service stopped";
-}
 
 std::shared_ptr<folly::IOThreadPoolExecutor> RaftexService::getIOThreadPool() const {
   return server_->getIOThreadPool();
 }
 
+
 std::shared_ptr<folly::Executor> RaftexService::getThreadManager() {
   return server_->getThreadManager();
 }
 
-void RaftexService::stop() {
-  int expected = STATUS_RUNNING;
-  if (!status_.compare_exchange_strong(expected, STATUS_NOT_RUNNING)) {
-    return;
-  }
 
+void RaftexService::stop() {
   // stop service
   LOG(INFO) << "Stopping the raftex service on port " << serverPort_;
   {
@@ -137,6 +114,7 @@ void RaftexService::stop() {
   server_->stop();
 }
 
+
 void RaftexService::waitUntilStop() {
   if (serverThread_) {
     serverThread_->join();
@@ -147,6 +125,7 @@ void RaftexService::waitUntilStop() {
   }
 }
 
+
 void RaftexService::addPartition(std::shared_ptr<RaftPart> part) {
   // todo(doodle): If we need to start both listener and normal replica on same
   // hosts, this class need to be aware of type.
@@ -154,12 +133,14 @@ void RaftexService::addPartition(std::shared_ptr<RaftPart> part) {
   parts_.emplace(std::make_pair(part->spaceId(), part->partitionId()), part);
 }
 
+
 void RaftexService::removePartition(std::shared_ptr<RaftPart> part) {
   folly::RWSpinLock::WriteHolder wh(partsLock_);
   parts_.erase(std::make_pair(part->spaceId(), part->partitionId()));
   // Stop the partition
   part->stop();
 }
+
 
 std::shared_ptr<RaftPart> RaftexService::findPart(GraphSpaceID spaceId, PartitionID partId) {
   folly::RWSpinLock::ReadHolder rh(partsLock_);
@@ -196,6 +177,7 @@ void RaftexService::askForVote(cpp2::AskForVoteResponse& resp, const cpp2::AskFo
   part->processAskForVoteRequest(req, resp);
 }
 
+
 void RaftexService::appendLog(cpp2::AppendLogResponse& resp, const cpp2::AppendLogRequest& req) {
   auto part = findPart(req.get_space(), req.get_part());
   if (!part) {
@@ -206,6 +188,7 @@ void RaftexService::appendLog(cpp2::AppendLogResponse& resp, const cpp2::AppendL
 
   part->processAppendLogRequest(req, resp);
 }
+
 
 void RaftexService::sendSnapshot(cpp2::SendSnapshotResponse& resp,
                                  const cpp2::SendSnapshotRequest& req) {
@@ -218,6 +201,7 @@ void RaftexService::sendSnapshot(cpp2::SendSnapshotResponse& resp,
 
   part->processSendSnapshotRequest(req, resp);
 }
+
 
 void RaftexService::async_eb_heartbeat(
     std::unique_ptr<apache::thrift::HandlerCallback<cpp2::HeartbeatResponse>> callback,

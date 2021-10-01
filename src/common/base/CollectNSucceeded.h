@@ -34,12 +34,12 @@ namespace nebula {
  *
  * The aggregator is **NOT** thread-safe
  *
- * The aggregator returns a future with an array of pairs
+ * The aggregator returns a semi-future with an array of pairs
  * <size_t, T>. The first element of the pair is the index to the
  * given futures, and the second is the value of the succeeded
  * future.
  *
- * The returned future fulfils when the given number of futures
+ * The returned semi-future fulfils when the given number of futures
  * succeed, or when all given futures fulfil. In either case, an
  * array of succeeded values will be returned
  *
@@ -54,7 +54,7 @@ template <typename FutureIter>
 using SucceededResultList = std::vector<std::pair<size_t, FutureReturnType<FutureIter>>>;
 
 template <class FutureIter, typename ResultEval>
-folly::Future<SucceededResultList<FutureIter>> collectNSucceeded(
+folly::SemiFuture<SucceededResultList<FutureIter>> collectNSucceeded(
     FutureIter first,
     FutureIter last,
     size_t n,  // NUmber of succeeded futures required

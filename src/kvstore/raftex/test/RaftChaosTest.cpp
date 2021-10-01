@@ -30,6 +30,7 @@ class FiveRaftTest : public RaftexTestFixture {
   FiveRaftTest() : RaftexTestFixture("five_raft_test", 5) {}
 };
 
+
 TEST_F(ThreeRaftTest, LeaderCrashReboot) {
   FLAGS_raft_heartbeat_interval_secs = 1;
   LOG(INFO) << "=====> Start leaderCrash test";
@@ -41,21 +42,21 @@ TEST_F(ThreeRaftTest, LeaderCrashReboot) {
   // Wait until all copies agree on the same leader_
   waitUntilLeaderElected(copies_, leader_);
   // Check all hosts agree on the same leader_
-  checkLeadership(copies_, leader_);
+  ASSERT_TRUE(checkLeadership(copies_, leader_));
 
   LOG(INFO) << "=====> Now old leader comes back";
   // Crashed leader reboot
   rebootOneCopy(services_, copies_, allHosts_, idx);
 
   waitUntilAllHasLeader(copies_);
-  checkLeadership(copies_, leader_);
+  ASSERT_TRUE(checkLeadership(copies_, leader_));
 
   LOG(INFO) << "=====> Now let's kill leader and a follower, no quorum";
   idx = leader_->index();
   killOneCopy(services_, copies_, leader_, idx);
   killOneCopy(services_, copies_, leader_, (idx + 1) % copies_.size());
   sleep(FLAGS_raft_heartbeat_interval_secs);
-  checkNoLeader(copies_);
+  ASSERT_TRUE(checkNoLeader(copies_));
 
   LOG(INFO) << "=====> Now one of dead copy rejoin, quorum arises";
   rebootOneCopy(services_, copies_, allHosts_, idx);
@@ -65,17 +66,18 @@ TEST_F(ThreeRaftTest, LeaderCrashReboot) {
   rebootOneCopy(services_, copies_, allHosts_, (idx + 1) % copies_.size());
   sleep(FLAGS_raft_heartbeat_interval_secs);
   waitUntilAllHasLeader(copies_);
-  checkLeadership(copies_, leader_);
+  ASSERT_TRUE(checkLeadership(copies_, leader_));
 
   LOG(INFO) << "<===== Done leaderCrash test";
 }
+
 
 TEST_F(ThreeRaftTest, ConsensusWhenFollowDisconnect) {
   LOG(INFO) << "=====> Start ConsensusWhenFollowDisconnect test";
 
   std::vector<std::string> msgs;
-  appendLogs(0, 0, leader_, msgs);
-  checkConsensus(copies_, 0, 0, msgs);
+  appendLogs(0, 0, leader_, msgs, true);
+  ASSERT_TRUE(checkConsensus(copies_, 0, 0, msgs));
 
   // Let's kill one follower
   LOG(INFO) << "=====> Now let's kill one follower";
@@ -83,29 +85,30 @@ TEST_F(ThreeRaftTest, ConsensusWhenFollowDisconnect) {
   killOneCopy(services_, copies_, leader_, idx);
 
   // Check all hosts agree on the same leader
-  checkLeadership(copies_, leader_);
-  appendLogs(1, 4, leader_, msgs);
-  checkConsensus(copies_, 1, 4, msgs);
+  ASSERT_TRUE(checkLeadership(copies_, leader_));
+  appendLogs(1, 4, leader_, msgs, true);
+  ASSERT_TRUE(checkConsensus(copies_, 1, 4, msgs));
 
   LOG(INFO) << "=====> Now follower comes back";
   // Crashed follower reboot
   rebootOneCopy(services_, copies_, allHosts_, idx);
 
   waitUntilAllHasLeader(copies_);
-  checkLeadership(copies_, leader_);
+  ASSERT_TRUE(checkLeadership(copies_, leader_));
 
-  appendLogs(5, 6, leader_, msgs);
-  checkConsensus(copies_, 5, 6, msgs);
+  appendLogs(5, 6, leader_, msgs, true);
+  ASSERT_TRUE(checkConsensus(copies_, 5, 6, msgs));
 
   LOG(INFO) << "<===== Done ConsensusWhenFollowDisconnect test";
 }
+
 
 TEST_F(ThreeRaftTest, LeaderCrashRebootWithLogs) {
   LOG(INFO) << "=====> Start LeaderNetworkFailure test";
 
   std::vector<std::string> msgs;
-  appendLogs(0, 0, leader_, msgs);
-  checkConsensus(copies_, 0, 0, msgs);
+  appendLogs(0, 0, leader_, msgs, true);
+  ASSERT_TRUE(checkConsensus(copies_, 0, 0, msgs));
 
   LOG(INFO) << "=====> Now leader of term 1 disconnect";
   auto leader1 = leader_;
@@ -117,8 +120,8 @@ TEST_F(ThreeRaftTest, LeaderCrashRebootWithLogs) {
   auto leader2 = leader_;
   ASSERT_NE(leader1, leader2);
 
-  appendLogs(1, 3, leader_, msgs);
-  checkConsensus(copies_, 1, 3, msgs);
+  appendLogs(1, 3, leader_, msgs, true);
+  ASSERT_TRUE(checkConsensus(copies_, 1, 3, msgs));
 
   LOG(INFO) << "=====> Now leader of term 2 disconnect, no quorum";
   killOneCopy(services_, copies_, leader_, leader_->index());
@@ -131,17 +134,19 @@ TEST_F(ThreeRaftTest, LeaderCrashRebootWithLogs) {
   ASSERT_NE(leader1, leader3);
   ASSERT_NE(leader2, leader3);
 
-  appendLogs(4, 6, leader_, msgs);
-  checkConsensus(copies_, 4, 6, msgs);
+  appendLogs(4, 6, leader_, msgs, true);
+  ASSERT_TRUE(checkConsensus(copies_, 4, 6, msgs));
 
   LOG(INFO) << "=====> Now leader of term 2 reconnect, should not disrupt leader";
   rebootOneCopy(services_, copies_, allHosts_, leader2->index());
-  appendLogs(7, 9, leader_, msgs);
-  checkConsensus(copies_, 7, 9, msgs);
-  checkLeadership(copies_, leader3);
+  appendLogs(7, 9, leader_, msgs, true);
+  sleep(FLAGS_raft_heartbeat_interval_secs * 2);
+  ASSERT_TRUE(checkConsensus(copies_, 7, 9, msgs));
+  ASSERT_TRUE(checkLeadership(copies_, leader3));
 
   LOG(INFO) << "<===== Done LeaderNetworkFailure test";
 }
+
 
 TEST_F(ThreeRaftTest, Persistance) {
   LOG(INFO) << "=====> Start persistance test";
@@ -163,7 +168,7 @@ TEST_F(ThreeRaftTest, Persistance) {
     }
   }
   sleep(FLAGS_raft_heartbeat_interval_secs);
-  checkConsensus(copies_, 0, 9, msgs);
+  ASSERT_TRUE(checkConsensus(copies_, 0, 9, msgs));
   LOG(INFO) << "<===== Done persistance test";
 }
 

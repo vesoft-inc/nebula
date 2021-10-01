@@ -23,17 +23,22 @@ namespace raftex {
 TEST(MemberChangeTest, AddRemovePeerTest) {
   fs::TempDir walRoot("/tmp/member_change.XXXXXX");
   std::shared_ptr<thread::GenericThreadPool> workers;
+  std::shared_ptr<folly::IOThreadPoolExecutor> clientPool;
   std::vector<std::string> wals;
   std::vector<HostAddr> allHosts;
   std::vector<std::shared_ptr<RaftexService>> services;
   std::vector<std::shared_ptr<test::TestShard>> copies;
-
-  std::shared_ptr<test::TestShard> leader;
   std::vector<bool> isLearner = {false, false, false, true};
-  setupRaft(4, walRoot, workers, wals, allHosts, services, copies, leader, isLearner);
+  std::shared_ptr<test::TestShard> leader;
+
+  SCOPE_EXIT {
+    finishRaft(services, copies, workers, clientPool, leader);
+  };
+
+  setupRaft(4, walRoot, workers, clientPool, wals, allHosts, services, copies, leader, isLearner);
 
   // Check all hosts agree on the same leader
-  checkLeadership(copies, leader);
+  ASSERT_TRUE(checkLeadership(copies, leader));
 
   CHECK_EQ(2, leader->hosts_.size());
 
@@ -53,7 +58,7 @@ TEST(MemberChangeTest, AddRemovePeerTest) {
   // followers
   sleep(FLAGS_raft_heartbeat_interval_secs);
 
-  checkConsensus(copies, 0, 99, msgs);
+  ASSERT_TRUE(checkConsensus(copies, 0, 99, msgs));
 
   {
     LOG(INFO) << "Add the same peer again!";
@@ -76,23 +81,28 @@ TEST(MemberChangeTest, AddRemovePeerTest) {
     }
     //        CHECK(copies[3]->isStopped());
   }
-  finishRaft(services, copies, workers, leader);
 }
 
 TEST(MemberChangeTest, RemoveLeaderTest) {
   fs::TempDir walRoot("/tmp/member_change.XXXXXX");
   std::shared_ptr<thread::GenericThreadPool> workers;
+  std::shared_ptr<folly::IOThreadPoolExecutor> clientPool;
   std::vector<std::string> wals;
   std::vector<HostAddr> allHosts;
   std::vector<std::shared_ptr<RaftexService>> services;
   std::vector<std::shared_ptr<test::TestShard>> copies;
-
   std::shared_ptr<test::TestShard> leader;
   std::vector<bool> isLearner = {false, false, false, false};
-  setupRaft(4, walRoot, workers, wals, allHosts, services, copies, leader, isLearner);
+
+  SCOPE_EXIT {
+    finishRaft(services, copies, workers, clientPool, leader);
+  };
+
+  setupRaft(4, walRoot, workers, clientPool, wals, allHosts, services, copies, leader, isLearner);
 
   // Check all hosts agree on the same leader
-  auto leaderIndex = checkLeadership(copies, leader);
+  ASSERT_TRUE(checkLeadership(copies, leader));
+  auto leaderIndex = leader->index();
 
   CHECK_EQ(3, leader->hosts_.size());
 
@@ -104,7 +114,7 @@ TEST(MemberChangeTest, RemoveLeaderTest) {
     copies[leaderIndex]->stop();
     //        CHECK(copies[leaderIndex]->isStopped());
     for (size_t i = 0; i < copies.size(); i++) {
-      if (static_cast<int>(i) != leaderIndex) {
+      if (static_cast<size_t>(i) != leaderIndex) {
         CHECK_EQ(2, copies[i]->hosts_.size());
       }
     }
@@ -112,7 +122,8 @@ TEST(MemberChangeTest, RemoveLeaderTest) {
 
   waitUntilLeaderElected(copies, leader);
 
-  auto nLeaderIndex = checkLeadership(copies, leader);
+  ASSERT_TRUE(checkLeadership(copies, leader));
+  auto nLeaderIndex = leader->index();
   CHECK(leaderIndex != nLeaderIndex);
 
   std::vector<std::string> msgs;
@@ -122,9 +133,7 @@ TEST(MemberChangeTest, RemoveLeaderTest) {
   // followers
   sleep(FLAGS_raft_heartbeat_interval_secs);
 
-  checkConsensus(copies, 0, 99, msgs);
-
-  finishRaft(services, copies, workers, leader);
+  ASSERT_TRUE(checkConsensus(copies, 0, 99, msgs));
 }
 
 }  // namespace raftex

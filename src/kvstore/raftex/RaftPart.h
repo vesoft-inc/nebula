@@ -173,17 +173,17 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
    *
    * If the source == -1, the current clusterId will be used
    ****************************************************************/
-  folly::Future<AppendLogResult> appendAsync(ClusterID source, std::string log);
+  folly::SemiFuture<AppendLogResult> appendAsync(ClusterID source, std::string log);
 
   /****************************************************************
    * Run the op atomically.
    ***************************************************************/
-  folly::Future<AppendLogResult> atomicOpAsync(AtomicOp op);
+  folly::SemiFuture<AppendLogResult> atomicOpAsync(AtomicOp op);
 
   /**
    * Asynchronously send one command.
    * */
-  folly::Future<AppendLogResult> sendCommandAsync(std::string log);
+  folly::SemiFuture<AppendLogResult> sendCommandAsync(std::string log);
 
   /**
    * Check if the peer has catched up data from leader. If leader is sending the
@@ -356,7 +356,7 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
 
   // The method sends out AskForVote request
   // Return true if I have been granted majority votes on proposedTerm, no matter isPreVote or not
-  folly::Future<bool> leaderElection(bool isPreVote);
+  folly::SemiFuture<bool> leaderElection(bool isPreVote);
 
   // The method will fill up the request object and return TRUE
   // if the election should continue. Otherwise the method will
@@ -385,10 +385,10 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   // Pre-condition: The caller needs to hold the raftLock_
   AppendLogResult canAppendLogs(TermID currTerm);
 
-  folly::Future<AppendLogResult> appendLogAsync(ClusterID source,
-                                                LogType logType,
-                                                std::string log,
-                                                AtomicOp cb = nullptr);
+  folly::SemiFuture<AppendLogResult> appendLogAsync(ClusterID source,
+                                                    LogType logType,
+                                                    std::string log,
+                                                    AtomicOp cb = nullptr);
 
   void appendLogsInternal(AppendLogsIterator iter, TermID termId);
 
@@ -437,28 +437,28 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
       rollSharedPromise_ = true;
     }
 
-    folly::Future<ValueType> getSharedFuture() {
+    folly::SemiFuture<ValueType> getSharedFuture() {
       if (rollSharedPromise_) {
         sharedPromises_.emplace_back();
         rollSharedPromise_ = false;
       }
 
-      return sharedPromises_.back().getFuture();
+      return sharedPromises_.back().getSemiFuture();
     }
 
-    folly::Future<ValueType> getSingleFuture() {
+    folly::SemiFuture<ValueType> getSingleFuture() {
       singlePromises_.emplace_back();
       rollSharedPromise_ = true;
 
-      return singlePromises_.back().getFuture();
+      return singlePromises_.back().getSemiFuture();
     }
 
-    folly::Future<ValueType> getAndRollSharedFuture() {
+    folly::SemiFuture<ValueType> getAndRollSharedFuture() {
       if (rollSharedPromise_) {
         sharedPromises_.emplace_back();
       }
       rollSharedPromise_ = true;
-      return sharedPromises_.back().getFuture();
+      return sharedPromises_.back().getSemiFuture();
     }
 
     template <class VT>

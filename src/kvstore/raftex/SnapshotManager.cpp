@@ -129,7 +129,7 @@ folly::Future<raftex::cpp2::SendSnapshotResponse> SnapshotManager::send(
   req.done_ref() = finished;
   auto* evb = ioThreadPool_->getEventBase();
   return folly::via(evb, [this, addr, evb, req = std::move(req)]() mutable {
-    auto client = connManager_.client(addr, evb, false, FLAGS_snapshot_send_timeout_ms);
+    auto client = connManager_.client(addr, evb, FLAGS_snapshot_send_timeout_ms);
     return client->future_sendSnapshot(req);
   });
 }

@@ -23,44 +23,53 @@ namespace raftex {
 TEST(LearnerTest, OneLeaderOneFollowerOneLearnerTest) {
   fs::TempDir walRoot("/tmp/learner_test.XXXXXX");
   std::shared_ptr<thread::GenericThreadPool> workers;
+  std::shared_ptr<folly::IOThreadPoolExecutor> clientPool;
   std::vector<std::string> wals;
   std::vector<HostAddr> allHosts;
   std::vector<std::shared_ptr<RaftexService>> services;
   std::vector<std::shared_ptr<test::TestShard>> copies;
-
   std::shared_ptr<test::TestShard> leader;
+
+  SCOPE_EXIT {
+    finishRaft(services, copies, workers, clientPool, leader);
+  };
+
   std::vector<bool> isLearner = {false, false, true};
   // The last one is learner
-  setupRaft(3, walRoot, workers, wals, allHosts, services, copies, leader, isLearner);
+  setupRaft(3, walRoot, workers, clientPool, wals, allHosts, services, copies, leader, isLearner);
 
-  checkLeadership(copies, leader);
+  ASSERT_TRUE(checkLeadership(copies, leader));
 
   auto f = leader->sendCommandAsync(test::encodeLearner(allHosts[2]));
   f.wait();
 
   std::vector<std::string> msgs;
   appendLogs(0, 99, leader, msgs);
-  checkConsensus(copies, 0, 99, msgs);
-
-  finishRaft(services, copies, workers, leader);
+  ASSERT_TRUE(checkConsensus(copies, 0, 99, msgs));
 }
+
 
 TEST(LearnerTest, OneLeaderTwoLearnerTest) {
   fs::TempDir walRoot("/tmp/learner_test.XXXXXX");
   std::shared_ptr<thread::GenericThreadPool> workers;
+  std::shared_ptr<folly::IOThreadPoolExecutor> clientPool;
   std::vector<std::string> wals;
   std::vector<HostAddr> allHosts;
   std::vector<std::shared_ptr<RaftexService>> services;
   std::vector<std::shared_ptr<test::TestShard>> copies;
-
   std::shared_ptr<test::TestShard> leader;
+
+  SCOPE_EXIT {
+    finishRaft(services, copies, workers, clientPool, leader);
+  };
+
   std::vector<bool> isLearner = {false, true, true};
   // Start three services, the first one will be the leader, the left two will
   // be learners.
-  setupRaft(3, walRoot, workers, wals, allHosts, services, copies, leader, isLearner);
+  setupRaft(3, walRoot, workers, clientPool, wals, allHosts, services, copies, leader, isLearner);
 
   // The copies[0] is the leader.
-  checkLeadership(copies, 0, leader);
+  ASSERT_TRUE(checkLeadership(copies, 0, leader));
 
   leader->sendCommandAsync(test::encodeLearner(allHosts[1]));
   auto f = leader->sendCommandAsync(test::encodeLearner(allHosts[2]));
@@ -68,34 +77,38 @@ TEST(LearnerTest, OneLeaderTwoLearnerTest) {
 
   std::vector<std::string> msgs;
   appendLogs(0, 99, leader, msgs);
-  checkConsensus(copies, 0, 99, msgs);
+  ASSERT_TRUE(checkConsensus(copies, 0, 99, msgs));
 
   LOG(INFO) << "Let's kill the two learners, the leader should still work";
   killOneCopy(services, copies, leader, 1);
   killOneCopy(services, copies, leader, 2);
 
-  checkLeadership(copies, 0, leader);
+  ASSERT_TRUE(checkLeadership(copies, 0, leader));
 
   appendLogs(100, 199, leader, msgs);
-  checkConsensus(copies, 100, 199, msgs);
-
-  finishRaft(services, copies, workers, leader);
+  ASSERT_TRUE(checkConsensus(copies, 100, 199, msgs));
 }
+
 
 TEST(LearnerTest, CatchUpDataTest) {
   fs::TempDir walRoot("/tmp/catch_up_data.XXXXXX");
   std::shared_ptr<thread::GenericThreadPool> workers;
+  std::shared_ptr<folly::IOThreadPoolExecutor> clientPool;
   std::vector<std::string> wals;
   std::vector<HostAddr> allHosts;
   std::vector<std::shared_ptr<RaftexService>> services;
   std::vector<std::shared_ptr<test::TestShard>> copies;
-
   std::shared_ptr<test::TestShard> leader;
+
+  SCOPE_EXIT {
+    finishRaft(services, copies, workers, clientPool, leader);
+  };
+
   std::vector<bool> isLearner = {false, false, false, true};
-  setupRaft(4, walRoot, workers, wals, allHosts, services, copies, leader, isLearner);
+  setupRaft(4, walRoot, workers, clientPool, wals, allHosts, services, copies, leader, isLearner);
 
   // Check all hosts agree on the same leader
-  checkLeadership(copies, leader);
+  ASSERT_TRUE(checkLeadership(copies, leader));
 
   std::vector<std::string> msgs;
   appendLogs(0, 99, leader, msgs);
@@ -127,8 +140,6 @@ TEST(LearnerTest, CatchUpDataTest) {
     ASSERT_TRUE(learner->getLogMsg(i, msg));
     ASSERT_EQ(msgs[i], msg.toString());
   }
-
-  finishRaft(services, copies, workers, leader);
 }
 
 }  // namespace raftex

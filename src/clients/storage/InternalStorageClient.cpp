@@ -79,6 +79,7 @@ void InternalStorageClient::chainUpdateEdge(cpp2::UpdateEdgeRequest& reversedReq
   });
 }
 
+
 void InternalStorageClient::chainAddEdges(cpp2::AddEdgesRequest& directReq,
                                           TermID termId,
                                           folly::Optional<int64_t> optVersion,

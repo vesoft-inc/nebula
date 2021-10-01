@@ -650,7 +650,7 @@ void MetaClient::getResponse(Request req,
        retry,
        retryLimit,
        this]() mutable {
-        auto client = clientsMan_->client(host, evb, false, FLAGS_meta_client_timeout_ms);
+        auto client = clientsMan_->client(host, evb, FLAGS_meta_client_timeout_ms);
         VLOG(1) << "Send request to meta " << host;
         remoteFunc(client, req)
             .via(evb)
