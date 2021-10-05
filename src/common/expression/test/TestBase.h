@@ -197,11 +197,6 @@ class ExpressionTest : public ::testing::Test {
       nebula::GQLParser gParser(&gQueryCtxt);
       auto result = gParser.parse(query);
       auto *sequentialSentences = static_cast<SequentialSentences*>(result.value().get());
-
-      // just for test
-      char *s = nullptr;
-      ASSERT_NE(s, nullptr);
-
       ASSERT_NE(sequentialSentences, nullptr);
       auto sentences = sequentialSentences->sentences();
       ASSERT_GT(sentences.size(), 0);
