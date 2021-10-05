@@ -162,6 +162,8 @@ void TestShard::onElected(TermID term) {
   }
 }
 
+void TestShard::onLeaderReady(TermID term) { UNUSED(term); }
+
 nebula::cpp2::ErrorCode TestShard::commitLogs(std::unique_ptr<LogIterator> iter, bool) {
   LogID firstId = -1;
   LogID lastId = -1;
