@@ -112,23 +112,44 @@ DEFINE_int32(rocksdb_backup_interval_secs,
              300,
              "Rocksdb backup directory, only used in PlainTable format");
 
+DEFINE_bool(rocksdb_enable_kv_separation,
+             false,
+             "Whether or not to enable BlobDB (RocksDB key-value separation support)");
+
+DEFINE_uint64(rocksdb_kv_separation_threshold,
+             0,
+             "RocksDB key value separation threshold. Values at or above this threshold will be "
+             "written to blob files during flush or compaction."
+             "This value is only effective when enable_kv_separation is true.");
+
+DEFINE_string(rocksdb_blob_compression,
+              "snappy",
+              "Compression algorithm for blobs, "
+              "options: no,snappy,lz4,lz4hc,zstd,zlib,bzip2");
+
+DEFINE_bool(rocksdb_enable_blob_garbage_collection,
+           true,
+           "Set this to true to make BlobDB actively relocate valid blobs "
+           "from the oldest blob files as they are encountered during compaction");
+
 namespace nebula {
 namespace kvstore {
 
-static rocksdb::Status initRocksdbCompression(rocksdb::Options& baseOpts) {
-  static std::unordered_map<std::string, rocksdb::CompressionType> m = {
-      {"no", rocksdb::kNoCompression},
-      {"snappy", rocksdb::kSnappyCompression},
-      {"lz4", rocksdb::kLZ4Compression},
-      {"lz4hc", rocksdb::kLZ4HCCompression},
-      {"zstd", rocksdb::kZSTD},
-      {"zlib", rocksdb::kZlibCompression},
-      {"bzip2", rocksdb::kBZip2Compression}};
+static const std::unordered_map<std::string, rocksdb::CompressionType> kCompressionTypeMap = {
+  {"no", rocksdb::kNoCompression},
+  {"snappy", rocksdb::kSnappyCompression},
+  {"lz4", rocksdb::kLZ4Compression},
+  {"lz4hc", rocksdb::kLZ4HCCompression},
+  {"zstd", rocksdb::kZSTD},
+  {"zlib", rocksdb::kZlibCompression},
+  {"bzip2", rocksdb::kBZip2Compression}};
 
+
+static rocksdb::Status initRocksdbCompression(rocksdb::Options& baseOpts) {
   // Set the general compression algorithm
   {
-    auto it = m.find(FLAGS_rocksdb_compression);
-    if (it == m.end()) {
+    auto it = kCompressionTypeMap.find(FLAGS_rocksdb_compression);
+    if (it == kCompressionTypeMap.end()) {
       LOG(ERROR) << "Unsupported compression type: " << FLAGS_rocksdb_compression;
       return rocksdb::Status::InvalidArgument();
     }
@@ -149,8 +170,8 @@ static rocksdb::Status initRocksdbCompression(rocksdb::Options& baseOpts) {
     if (compressions[i].empty()) {
       compressions[i] = FLAGS_rocksdb_compression;
     }
-    auto it = m.find(compressions[i]);
-    if (it == m.end()) {
+    auto it = kCompressionTypeMap.find(compressions[i]);
+    if (it == kCompressionTypeMap.end()) {
       LOG(ERROR) << "Unsupported compression type: " << compressions[i];
       return rocksdb::Status::InvalidArgument();
     }
@@ -158,6 +179,25 @@ static rocksdb::Status initRocksdbCompression(rocksdb::Options& baseOpts) {
   }
   LOG(INFO) << "compression per level: " << folly::join(":", compressions);
 
+  return rocksdb::Status::OK();
+}
+
+static rocksdb::Status initRocksdbKVSeparation(rocksdb::Options &baseOpts) {
+  if (FLAGS_rocksdb_enable_kv_separation) {
+    baseOpts.enable_blob_files = true;
+    baseOpts.min_blob_size = FLAGS_rocksdb_kv_separation_threshold;
+
+    // set blob compresstion algorithm
+    auto it = kCompressionTypeMap.find(FLAGS_rocksdb_blob_compression);
+    if (it == kCompressionTypeMap.end()) {
+      LOG(ERROR) << "Unsupported compression type: " << FLAGS_rocksdb_blob_compression;
+      return rocksdb::Status::InvalidArgument();
+    }
+    baseOpts.blob_compression_type = it->second;
+
+    // set blob gc
+    baseOpts.enable_blob_garbage_collection = FLAGS_rocksdb_enable_blob_garbage_collection;
+  }
   return rocksdb::Status::OK();
 }
 
@@ -208,8 +248,12 @@ rocksdb::Status initRocksdbOptions(rocksdb::Options& baseOpts,
   }
 
   baseOpts = rocksdb::Options(dbOpts, cfOpts);
-
   s = initRocksdbCompression(baseOpts);
+  if (!s.ok()) {
+    return s;
+  }
+
+  s = initRocksdbKVSeparation(baseOpts);
   if (!s.ok()) {
     return s;
   }
