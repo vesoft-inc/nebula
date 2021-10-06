@@ -8,6 +8,7 @@
 #include <folly/io/async/AsyncSSLSocket.h>
 #include <folly/io/async/AsyncSocket.h>
 #include <folly/system/ThreadName.h>
+#include <gflags/gflags.h>
 #include <thrift/lib/cpp2/async/HeaderClientChannel.h>
 
 #include "common/network/NetworkUtils.h"
