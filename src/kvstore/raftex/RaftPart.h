@@ -269,6 +269,11 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   // a new leader
   virtual void onElected(TermID term) = 0;
 
+  // called after leader committed first log
+  // (a little bit later onElected)
+  // leader need to set some internal status after elected.
+  virtual void onLeaderReady(TermID term) = 0;
+
   virtual void onDiscoverNewLeader(HostAddr nLeader) = 0;
 
   // Check if we can accept candidate's message
