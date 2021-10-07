@@ -25,6 +25,7 @@ class DummyQueryContext {
   ThreadLocalMemoryTracker memTrackers_;
 };
 
+// Try to check whether the stack of thread will be overflow in the case of large concurrency.
 TEST(MemoryTrackerTest, TestThreadLocal) {
   auto dummy = new DummyQueryContext[FLAGS_num_mem_trackers_per_thread];
   UNUSED(dummy);

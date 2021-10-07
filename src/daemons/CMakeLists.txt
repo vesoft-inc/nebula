@@ -32,6 +32,7 @@ set(common_deps
     $<TARGET_OBJECTS:time_utils_obj>
     $<TARGET_OBJECTS:version_obj>
     $<TARGET_OBJECTS:ssl_obj>
+    $<TARGET_OBJECTS:runtime_obj>
 )
 
 set(storage_meta_deps
