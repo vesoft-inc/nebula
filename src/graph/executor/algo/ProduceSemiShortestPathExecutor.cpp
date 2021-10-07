@@ -154,7 +154,7 @@ void ProduceSemiShortestPathExecutor::updateHistory(const Value& dst,
                                                     Value& paths) {
   const List& pathList = paths.getList();
   std::vector<const Path*> tempPathsPtr;
-  tempPathsPtr.reserve(pathList.size());
+  tempPathsPtr.reserve(pathList.length());
   for (auto& p : pathList.values) {
     tempPathsPtr.emplace_back(&p.getPath());
   }

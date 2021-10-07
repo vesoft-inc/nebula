@@ -80,7 +80,7 @@ const Value& PredicateExpression::eval(ExpressionContext& ctx) {
   switch (type) {
     case Type::ALL: {
       result_ = true;
-      for (size_t i = 0; i < list.size(); ++i) {
+      for (size_t i = 0; i < list.length(); ++i) {
         auto& v = list[i];
         ctx.setVar(innerVar_, v);
         auto& filterVal = filter_->eval(ctx);
@@ -96,7 +96,7 @@ const Value& PredicateExpression::eval(ExpressionContext& ctx) {
     }
     case Type::ANY: {
       result_ = false;
-      for (size_t i = 0; i < list.size(); ++i) {
+      for (size_t i = 0; i < list.length(); ++i) {
         auto& v = list[i];
         ctx.setVar(innerVar_, v);
         auto& filterVal = filter_->eval(ctx);
@@ -112,7 +112,7 @@ const Value& PredicateExpression::eval(ExpressionContext& ctx) {
     }
     case Type::SINGLE: {
       result_ = false;
-      for (size_t i = 0; i < list.size(); ++i) {
+      for (size_t i = 0; i < list.length(); ++i) {
         auto& v = list[i];
         ctx.setVar(innerVar_, v);
         auto& filterVal = filter_->eval(ctx);
@@ -132,7 +132,7 @@ const Value& PredicateExpression::eval(ExpressionContext& ctx) {
     }
     case Type::NONE: {
       result_ = true;
-      for (size_t i = 0; i < list.size(); ++i) {
+      for (size_t i = 0; i < list.length(); ++i) {
         auto& v = list[i];
         ctx.setVar(innerVar_, v);
         auto& filterVal = filter_->eval(ctx);

@@ -198,7 +198,7 @@ void goEdgeNode(int32_t iters,
       }
       resultDataSet.rows.emplace_back(std::move(row));
     }
-    CHECK_EQ(vertex.size(), resultDataSet.rowSize());
+    CHECK_EQ(vertex.size(), resultDataSet.numRows());
     nebula::storage::cpp2::ResponseCommon result;
     resp.set_result(std::move(result));
     resp.set_vertices(std::move(resultDataSet));
@@ -290,7 +290,7 @@ void prefix(int32_t iters,
       }
       resultDataSet.rows.emplace_back(std::move(row));
     }
-    CHECK_EQ(vertex.size(), resultDataSet.rowSize());
+    CHECK_EQ(vertex.size(), resultDataSet.numRows());
     nebula::storage::cpp2::ResponseCommon result;
     resp.set_result(std::move(result));
     resp.set_vertices(std::move(resultDataSet));

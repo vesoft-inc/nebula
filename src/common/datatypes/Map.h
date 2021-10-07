@@ -63,7 +63,8 @@ struct Map {
     return iter->second;
   }
 
-  size_t size() const { return kvs.size(); }
+  size_t size() const;
+  size_t length() const { return kvs.size(); }
 };
 
 inline std::ostream& operator<<(std::ostream& os, const Map& m) { return os << m.toString(); }

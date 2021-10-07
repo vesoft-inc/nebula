@@ -37,7 +37,7 @@ class GetPropExecutor : public StorageAccessExecutor {
       }
     }
     if (!colNames.empty()) {
-      DCHECK_EQ(colNames.size(), v.colSize());
+      DCHECK_EQ(colNames.size(), v.numColumns());
       v.colNames = colNames;
     }
     return finish(

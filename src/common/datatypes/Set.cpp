@@ -41,6 +41,14 @@ folly::dynamic Set::getMetaData() const {
   return setMetadataObj;
 }
 
+size_t Set::size() const {
+  size_t sz = 0;
+  for (const auto& e : values) {
+    sz += e.size();
+  }
+  return sz;
+}
+
 }  // namespace nebula
 
 namespace std {

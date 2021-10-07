@@ -23,7 +23,7 @@ const Value& SubscriptExpression::eval(ExpressionContext& ctx) {
         result_ = Value::kNullBadType;
         break;
       }
-      auto size = static_cast<int64_t>(lvalue.getList().size());
+      auto size = static_cast<int64_t>(lvalue.getList().length());
       auto index = rvalue.getInt();
       if (index >= size || index < -size) {
         result_ = Value::kNullOutOfRange;
@@ -48,7 +48,7 @@ const Value& SubscriptExpression::eval(ExpressionContext& ctx) {
         result_ = Value::kNullBadType;
         break;
       }
-      auto size = static_cast<int64_t>(lvalue.getDataSet().rowSize());
+      auto size = static_cast<int64_t>(lvalue.getDataSet().numRows());
       auto rowIndex = rvalue.getInt();
       if (rowIndex >= size || rowIndex < 0) {
         result_ = Value::kNullOutOfRange;
@@ -123,7 +123,7 @@ const Value& SubscriptRangeExpression::eval(ExpressionContext& ctx) {
     return result_;
   }
   const auto& list = listValue.getList();
-  size_t size = list.size();
+  size_t size = list.length();
   int64_t lo, hi;
   if (lo_ == nullptr) {
     lo = 0;

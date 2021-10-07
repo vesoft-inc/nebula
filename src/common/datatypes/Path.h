@@ -45,6 +45,8 @@ struct Step {
 
   void __clear() { clear(); }
 
+  size_t size() const;
+
   std::string toString() const {
     std::stringstream os;
     os << "-[" << name << "(" << type << ")]->"
@@ -216,6 +218,8 @@ struct Path {
 
   bool hasDuplicateEdges() const;
   bool hasDuplicateVertices() const;
+
+  size_t size() const;
 };
 
 inline void swap(Step& a, Step& b) {

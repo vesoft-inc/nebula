@@ -108,7 +108,7 @@ void InnerJoinExecutor::buildNewRow(const std::unordered_map<T, std::vector<cons
   for (auto* row : range->second) {
     auto& lRow = *row;
     Row newRow;
-    newRow.reserve(lRow.size() + rRow.size());
+    newRow.reserve(lRow.length() + rRow.length());
     auto& values = newRow.values;
     if (exchange_) {
       values.insert(values.end(),

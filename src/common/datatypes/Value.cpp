@@ -395,6 +395,51 @@ const std::string& Value::typeName() const {
   return find->second;
 }
 
+size_t Value::size() const {
+  switch (type_) {
+    case Type::__EMPTY__:
+    case Type::NULLVALUE:
+    case Type::BOOL:
+    case Type::INT:
+    case Type::FLOAT:
+    case Type::DATE:
+    case Type::TIME:
+    case Type::DATETIME: {
+      return sizeof(Value);
+    }
+    case Type::STRING: {
+      return value_.sVal->size();
+    }
+    case Type::VERTEX: {
+      return value_.vVal->size();
+    }
+    case Type::EDGE: {
+      return value_.eVal->size();
+    }
+    case Type::PATH: {
+      return value_.pVal->size();
+    }
+    case Type::LIST: {
+      return value_.lVal->size();
+    }
+    case Type::GEOGRAPHY: {
+      return value_.ggVal->size();
+    }
+    case Type::MAP: {
+      return value_.mVal->size();
+    }
+    case Type::SET: {
+      return value_.uVal->size();
+    }
+    case Type::DATASET: {
+      return value_.gVal->size();
+    }
+    default: {
+      LOG(FATAL) << "Unknown type";
+    }
+  }
+}
+
 void Value::setNull(const NullType& v) {
   clear();
   setN(v);

@@ -34,6 +34,7 @@ struct Tag {
 
   std::string toString() const;
   folly::dynamic toJson() const;
+  size_t size() const;
 
   Tag& operator=(Tag&& rhs) noexcept {
     if (&rhs != this) {
@@ -74,6 +75,7 @@ struct Vertex {
   folly::dynamic toJson() const;
   // Used in Json form query result
   folly::dynamic getMetaData() const;
+  size_t size() const;
 
   Vertex& operator=(Vertex&& rhs) noexcept;
 

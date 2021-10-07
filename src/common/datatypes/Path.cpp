@@ -13,6 +13,15 @@
 #include <unordered_set>
 
 namespace nebula {
+
+size_t Step::size() const {
+  size_t sz = dst.size() + sizeof(type) + name.size() + sizeof(ranking);
+  for (const auto& p : props) {
+    sz += p.first.size() + p.second.size();
+  }
+  return sz;
+}
+
 void Path::reverse() {
   if (steps.empty()) {
     return;
@@ -75,6 +84,14 @@ bool Path::hasDuplicateEdges() const {
     srcVid = dstVid;
   }
   return false;
+}
+
+size_t Path::size() const {
+  size_t sz = src.size();
+  for (const auto& s : steps) {
+    sz += s.size();
+  }
+  return sz;
 }
 
 }  // namespace nebula

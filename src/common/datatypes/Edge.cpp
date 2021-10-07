@@ -11,6 +11,14 @@
 
 namespace nebula {
 
+size_t Edge::size() const {
+  size_t sz = src.size() + dst.size() + sizeof(type) + sizeof(ranking) + name.size();
+  for (const auto& p : props) {
+    sz += p.first.size() + p.second.size();
+  }
+  return sz;
+}
+
 std::string Edge::toString() const {
   std::stringstream os;
   os << "(" << src << ")"

@@ -38,6 +38,14 @@ folly::dynamic Tag::toJson() const {
   return tagJsonObj;
 }
 
+size_t Tag::size() const {
+  size_t sz = name.size();
+  for (const auto& p : props) {
+    sz += p.first.size() + p.second.size();
+  }
+  return sz;
+}
+
 bool Vertex::contains(const Value& key) const {
   if (!key.isStr()) {
     return false;
@@ -96,6 +104,14 @@ folly::dynamic Vertex::toJson() const {
 folly::dynamic Vertex::getMetaData() const {
   folly::dynamic vertexMetadataObj = folly::dynamic::object("id", vid.toJson())("type", "vertex");
   return vertexMetadataObj;
+}
+
+size_t Vertex::size() const {
+  size_t sz = vid.size();
+  for (const auto& t : tags) {
+    sz += t.size();
+  }
+  return sz;
 }
 
 Vertex& Vertex::operator=(Vertex&& rhs) noexcept {

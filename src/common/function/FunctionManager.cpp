@@ -2251,7 +2251,7 @@ FunctionManager::FunctionManager() {
         return Value::kNullBadType;
       }
       const auto &ds = args[0].get().getDataSet();
-      if (ds.rowSize() < 1 || ds.colSize() < 1) {
+      if (ds.numRows() < 1 || ds.numColumns() < 1) {
         return Value::kNullBadData;
       }
       const auto &colNames = ds.colNames;
@@ -2264,8 +2264,8 @@ FunctionManager::FunctionManager() {
       if (rowIndex < 0 || colIndex < 0) {
         return Value::kNullBadData;
       }
-      if (static_cast<size_t>(rowIndex) >= ds.rowSize() ||
-          static_cast<size_t>(colIndex) >= ds.colSize()) {
+      if (static_cast<size_t>(rowIndex) >= ds.numRows() ||
+          static_cast<size_t>(colIndex) >= ds.numColumns()) {
         return Value::kNullBadData;
       }
       return ds.rows[rowIndex][colIndex];

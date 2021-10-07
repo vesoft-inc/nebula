@@ -27,10 +27,10 @@ class ProduceSemiShortestPathTest : public testing::Test {
     }
     auto& pathList1 = row1.values[3].getList();
     auto& pathList2 = row2.values[3].getList();
-    if (pathList1.size() != pathList2.size()) {
-      return pathList1.size() < pathList2.size();
+    if (pathList1.length() != pathList2.length()) {
+      return pathList1.length() < pathList2.length();
     }
-    for (size_t i = 0; i < pathList1.size(); i++) {
+    for (size_t i = 0; i < pathList1.length(); i++) {
       if (pathList1.values[i] != pathList2.values[i]) {
         return pathList1.values[i] < pathList2.values[i];
       }

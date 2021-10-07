@@ -95,11 +95,11 @@ Status GoValidator::validateTruncate(TruncateClause* truncate) {
   // length of list must be equal to N step
   const auto& steps = goCtx_->steps;
   uint32_t totalSteps = steps.isMToN() ? steps.nSteps() : steps.steps();
-  if (limits.getList().size() != totalSteps) {
+  if (limits.getList().length() != totalSteps) {
     return Status::SemanticError(
         "`%s' length must be equal to GO step size %d.", tExpr->toString().c_str(), totalSteps);
   }
-  goCtx_->limits.reserve(limits.getList().size());
+  goCtx_->limits.reserve(limits.getList().length());
   for (auto& ele : limits.getList().values) {
     // check if element of list is nonnegative integer
     if (!ele.isInt()) {

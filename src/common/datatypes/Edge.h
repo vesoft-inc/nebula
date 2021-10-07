@@ -61,6 +61,7 @@ struct Edge {
     }
   }
 
+  size_t size() const;
   void reverse();
 
   bool operator<(const Edge& rhs) const;

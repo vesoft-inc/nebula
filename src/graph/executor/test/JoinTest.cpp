@@ -100,7 +100,7 @@ void JoinTest::testInnerJoin(std::string left, std::string right, DataSet& expec
   for (; iter->valid(); iter->next()) {
     const auto& cols = *iter->row();
     Row row;
-    for (size_t i = 0; i < cols.size(); ++i) {
+    for (size_t i = 0; i < cols.length(); ++i) {
       Value col = cols[i];
       row.values.emplace_back(std::move(col));
     }
@@ -133,7 +133,7 @@ void JoinTest::testLeftJoin(std::string left, std::string right, DataSet& expect
   for (; iter->valid(); iter->next()) {
     const auto& cols = *iter->row();
     Row row;
-    for (size_t i = 0; i < cols.size(); ++i) {
+    for (size_t i = 0; i < cols.length(); ++i) {
       Value col = cols[i];
       row.values.emplace_back(std::move(col));
     }
@@ -215,7 +215,7 @@ TEST_F(JoinTest, InnerJoinTwice) {
   for (; iter->valid(); iter->next()) {
     const auto& cols = *iter->row();
     Row row;
-    for (size_t i = 0; i < cols.size(); ++i) {
+    for (size_t i = 0; i < cols.length(); ++i) {
       Value col = cols[i];
       row.values.emplace_back(std::move(col));
     }
@@ -327,7 +327,7 @@ TEST_F(JoinTest, LeftJoinTwice) {
   for (; iter->valid(); iter->next()) {
     const auto& cols = *iter->row();
     Row row;
-    for (size_t i = 0; i < cols.size(); ++i) {
+    for (size_t i = 0; i < cols.length(); ++i) {
       Value col = cols[i];
       row.values.emplace_back(std::move(col));
     }
@@ -429,7 +429,7 @@ TEST_F(JoinTest, LeftJoinAndInnerjoin) {
   for (; iter->valid(); iter->next()) {
     const auto& cols = *iter->row();
     Row row;
-    for (size_t i = 0; i < cols.size(); ++i) {
+    for (size_t i = 0; i < cols.length(); ++i) {
       Value col = cols[i];
       row.values.emplace_back(std::move(col));
     }
@@ -497,7 +497,7 @@ TEST_F(JoinTest, InnerJoinAndLeftjoin) {
   for (; iter->valid(); iter->next()) {
     const auto& cols = *iter->row();
     Row row;
-    for (size_t i = 0; i < cols.size(); ++i) {
+    for (size_t i = 0; i < cols.length(); ++i) {
       Value col = cols[i];
       row.values.emplace_back(std::move(col));
     }

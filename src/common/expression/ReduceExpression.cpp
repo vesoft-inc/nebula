@@ -24,7 +24,7 @@ const Value& ReduceExpression::eval(ExpressionContext& ctx) {
   auto& list = listVal.getList();
 
   ctx.setVar(accumulator_, initVal);
-  for (size_t i = 0; i < list.size(); ++i) {
+  for (size_t i = 0; i < list.length(); ++i) {
     auto& v = list[i];
     ctx.setVar(innerVar_, v);
     auto& mappingVal = mapping_->eval(ctx);

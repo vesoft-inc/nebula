@@ -150,6 +150,7 @@ struct Geography {
   Geography(Polygon&& v) : geo_(std::move(v)) {}     // NOLINT
 
   GeoShape shape() const;
+  size_t size() const { return wkb.size(); }
 
   const Point& point() const;
   const LineString& lineString() const;

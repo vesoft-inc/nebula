@@ -61,7 +61,8 @@ struct List {
     return std::find(values.begin(), values.end(), value) != values.end();
   }
 
-  size_t size() const { return values.size(); }
+  size_t size() const;
+  size_t length() const { return values.size(); }
 
   std::string toString() const;
   folly::dynamic toJson() const;

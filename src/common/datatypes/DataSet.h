@@ -97,7 +97,7 @@ struct DataSet {
         return false;
       }
     }
-    rows.reserve(rowSize() + o.rowSize());
+    rows.reserve(numRows() + o.numRows());
     rows.insert(
         rows.end(), std::make_move_iterator(o.rows.begin()), std::make_move_iterator(o.rows.end()));
     return true;
@@ -105,15 +105,15 @@ struct DataSet {
 
   // merge two DataSet Horizontally with same row count
   bool merge(DataSet&& o) {
-    if (rowSize() != o.rowSize()) {
+    if (numRows() != o.numRows()) {
       return false;
     }
-    auto newColSize = colSize() + o.colSize();
+    auto newColSize = numColumns() + o.numColumns();
     colNames.reserve(newColSize);
     colNames.insert(colNames.end(),
                     std::make_move_iterator(o.colNames.begin()),
                     std::make_move_iterator(o.colNames.end()));
-    for (std::size_t i = 0; i < rowSize(); ++i) {
+    for (std::size_t i = 0; i < numRows(); ++i) {
       rows[i].values.reserve(newColSize);
       rows[i].values.insert(rows[i].values.begin(),
                             std::make_move_iterator(o.rows[i].values.begin()),
@@ -129,11 +129,19 @@ struct DataSet {
 
   void __clear() { clear(); }
 
-  std::size_t size() const { return rowSize(); }
+  std::size_t size() const {
+    size_t sz = 0;
+    for (const auto& n : colNames) {
+      sz += n.size();
+    }
+    for (const auto& r : rows) {
+      sz += r.size();
+    }
+    return sz;
+  }
 
-  std::size_t rowSize() const { return rows.size(); }
-
-  std::size_t colSize() const { return colNames.size(); }
+  std::size_t numRows() const { return rows.size(); }
+  size_t numColumns() const { return colNames.size(); }
 
   std::string toString() const {
     std::stringstream os;

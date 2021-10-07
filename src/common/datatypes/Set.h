@@ -49,7 +49,8 @@ struct Set {
 
   bool contains(const Value& value) const { return values.count(value) != 0; }
 
-  size_t size() const { return values.size(); }
+  size_t length() const { return values.size(); }
+  size_t size() const;
 };
 
 inline std::ostream& operator<<(std::ostream& os, const Set& s) { return os << s.toString(); }

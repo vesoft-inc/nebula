@@ -44,6 +44,15 @@ folly::dynamic Map::getMetaData() const {
   return mapMetadataObj;
 }
 
+// Ignore the storage of the unordered_map data structure itself temporarily.
+size_t Map::size() const {
+  size_t sz = 0;
+  for (const auto& p : kvs) {
+    sz += p.first.size() + p.second.size();
+  }
+  return sz;
+}
+
 }  // namespace nebula
 
 namespace std {

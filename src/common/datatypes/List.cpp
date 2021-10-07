@@ -11,6 +11,14 @@
 
 namespace nebula {
 
+size_t List::size() const {
+  size_t sz = 0;
+  for (const auto& e : values) {
+    sz += e.size();
+  }
+  return sz;
+}
+
 std::string List::toString() const {
   std::vector<std::string> value(values.size());
   std::transform(values.begin(), values.end(), value.begin(), [](const auto& v) -> std::string {

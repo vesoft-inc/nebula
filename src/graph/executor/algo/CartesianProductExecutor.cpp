@@ -44,7 +44,7 @@ void CartesianProductExecutor::doCartesianProduct(const DataSet& lds,
   for (auto i = lds.begin(); i < lds.end(); ++i) {
     for (auto j = rds.begin(); j < rds.end(); ++j) {
       Row row;
-      row.reserve(i->size() + j->size());
+      row.reserve(i->length() + j->length());
       row.values.insert(row.values.end(), i->values.begin(), i->values.end());
       row.values.insert(row.values.end(), j->values.begin(), j->values.end());
       result.rows.emplace_back(std::move(row));

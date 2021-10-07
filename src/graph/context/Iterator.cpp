@@ -67,7 +67,7 @@ void GetNeighborsIter::goToFirstEdge() {
         }
 
         currentCol_ = &currentCol.getList();
-        edgeIdxUpperBound_ = currentCol_->size();
+        edgeIdxUpperBound_ = currentCol_->length();
         edgeIdx_ = 0;
         while (edgeIdx_ < edgeIdxUpperBound_ && !valid_) {
           const auto& currentEdge = currentCol_->operator[](edgeIdx_);
@@ -250,7 +250,7 @@ void GetNeighborsIter::next() {
         }
 
         currentCol_ = &currentCol.getList();
-        edgeIdxUpperBound_ = currentCol_->size();
+        edgeIdxUpperBound_ = currentCol_->length();
         edgeIdx_ = -1;
         break;
       }
@@ -335,7 +335,7 @@ const Value& GetNeighborsIter::getTagProp(const std::string& tag, const std::str
   }
   auto colId = index->second.colIdx;
   auto& row = *currentRow_;
-  DCHECK_GT(row.size(), colId);
+  DCHECK_GT(row.length(), colId);
   if (row[colId].empty()) {
     return Value::kEmpty;
   }
@@ -395,12 +395,12 @@ Value GetNeighborsIter::getVertex(const std::string& name) const {
       // Ignore the bad value.
       continue;
     }
-    DCHECK_GE(row.size(), tagColId);
+    DCHECK_GE(row.length(), tagColId);
     auto& propList = row[tagColId].getList();
     DCHECK_EQ(tagPropNameList.size(), propList.values.size());
     Tag tag;
     tag.name = tagProp.first;
-    for (size_t i = 0; i < propList.size(); ++i) {
+    for (size_t i = 0; i < propList.length(); ++i) {
       if (tagPropNameList[i] == nebula::kTag) {
         continue;
       }
@@ -421,7 +421,7 @@ List GetNeighborsIter::getVertices() {
     for (currentRow_ = currentDs_->ds->rows.begin(); currentRow_ < currentDs_->ds->rows.end();
          ++currentRow_) {
       vertices.values.emplace_back(getVertex());
-      VLOG(1) << "vertex: " << getVertex() << " size: " << vertices.size();
+      VLOG(1) << "vertex: " << getVertex() << " size: " << vertices.length();
     }
   }
   reset();
@@ -700,7 +700,7 @@ const Value& PropIter::getProp(const std::string& name, const std::string& prop)
   }
   auto colId = propIndex->second;
   auto& row = *iter_;
-  DCHECK_GT(row.size(), colId);
+  DCHECK_GT(row.length(), colId);
   return row[colId];
 }
 

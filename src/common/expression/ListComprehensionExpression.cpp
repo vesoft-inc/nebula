@@ -29,7 +29,7 @@ const Value& ListComprehensionExpression::eval(ExpressionContext& ctx) {
     return result_;
   }
 
-  for (size_t i = 0; i < list.size(); ++i) {
+  for (size_t i = 0; i < list.length(); ++i) {
     auto& v = list[i];
     ctx.setVar(innerVar_, v);
     if (filter_ != nullptr) {

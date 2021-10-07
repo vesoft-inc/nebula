@@ -92,7 +92,7 @@ void LeftJoinExecutor::buildNewRow(const std::unordered_map<T, std::vector<const
                                    DataSet& ds) const {
   auto range = hashTable.find(val);
   if (range == hashTable.end()) {
-    auto lRowSize = lRow.size();
+    auto lRowSize = lRow.length();
     Row newRow;
     newRow.reserve(colSize_);
     auto& values = newRow.values;
@@ -106,7 +106,7 @@ void LeftJoinExecutor::buildNewRow(const std::unordered_map<T, std::vector<const
       auto& rRow = *row;
       Row newRow;
       auto& values = newRow.values;
-      values.reserve(lRow.size() + rRow.size());
+      values.reserve(lRow.length() + rRow.length());
       values.insert(values.end(),
                     std::make_move_iterator(lRow.values.begin()),
                     std::make_move_iterator(lRow.values.end()));

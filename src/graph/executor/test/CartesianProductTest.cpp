@@ -66,7 +66,7 @@ class CartesianProductTest : public testing::Test {
     for (; iter->valid(); iter->next()) {
       const auto& cols = *iter->row();
       Row row;
-      for (size_t i = 0; i < cols.size(); ++i) {
+      for (size_t i = 0; i < cols.length(); ++i) {
         Value col = cols[i];
         row.values.emplace_back(std::move(col));
       }

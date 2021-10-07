@@ -31,7 +31,7 @@ class ExpressionContextMock final : public ExpressionContext {
       if (found->second.type() != Value::Type::LIST) {
         return Value::kNullValue;
       }
-      auto size = found->second.getList().size();
+      auto size = found->second.getList().length();
       if (size <= static_cast<size_t>(std::abs(version))) {
         return Value::kNullValue;
       }

@@ -396,10 +396,10 @@ class QueryTestUtils {
     auto actualRows = (*resp.data_ref()).rows;
     struct Descending {
       bool operator()(const Row& r1, const Row& r2) {
-        if (r1.size() != r2.size()) {
-          return r1.size() < r2.size();
+        if (r1.length() != r2.length()) {
+          return r1.length() < r2.length();
         }
-        for (size_t i = 0; i < r1.size(); i++) {
+        for (size_t i = 0; i < r1.length(); i++) {
           if (r1[i] != r2[i]) {
             return r1[i] < r2[i];
           }
