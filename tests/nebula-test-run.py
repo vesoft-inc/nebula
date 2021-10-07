@@ -96,7 +96,7 @@ def start_nebula(nb, configs):
             enable_ssl=opt_is(configs.enable_ssl, "true"),
             enable_graph_ssl=opt_is(configs.enable_graph_ssl, "true"),
             enable_meta_ssl=opt_is(configs.enable_meta_ssl, "true"),
-            containerized=configs.containerized
+            containerized=opt_is(configs.containerized, "true")
         )
 
     # Load csv data
