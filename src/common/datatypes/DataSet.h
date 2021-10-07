@@ -134,6 +134,20 @@ struct DataSet {
     for (const auto& n : colNames) {
       sz += n.size();
     }
+
+    if (rows.empty()) {
+      return sz;
+    }
+
+    // Following optimization depends on that every column in DataSet has the same value type
+    const auto& firstRow = rows.front().values;
+    auto iter = std::find_if(firstRow.begin(), firstRow.end(), [](const auto& col) -> bool {
+      return !col.isPrimaryType();
+    });
+    if (iter == firstRow.end()) {
+      return sz + numColumns() * numRows() * sizeof(Value);
+    }
+
     for (const auto& r : rows) {
       sz += r.size();
     }

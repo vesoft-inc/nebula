@@ -395,6 +395,30 @@ const std::string& Value::typeName() const {
   return find->second;
 }
 
+bool Value::isPrimaryType() const {
+  switch (type_) {
+    case Type::BOOL:
+    case Type::INT:
+    case Type::FLOAT:
+    case Type::DATE:
+    case Type::TIME:
+    case Type::DATETIME:
+      return true;
+    case Type::__EMPTY__:
+    case Type::NULLVALUE:
+    case Type::STRING:
+    case Type::VERTEX:
+    case Type::EDGE:
+    case Type::PATH:
+    case Type::LIST:
+    case Type::GEOGRAPHY:
+    case Type::MAP:
+    case Type::SET:
+    case Type::DATASET:
+      return false;
+  }
+}
+
 size_t Value::size() const {
   switch (type_) {
     case Type::__EMPTY__:
@@ -404,39 +428,28 @@ size_t Value::size() const {
     case Type::FLOAT:
     case Type::DATE:
     case Type::TIME:
-    case Type::DATETIME: {
+    case Type::DATETIME:
       return sizeof(Value);
-    }
-    case Type::STRING: {
+    case Type::STRING:
       return value_.sVal->size();
-    }
-    case Type::VERTEX: {
+    case Type::VERTEX:
       return value_.vVal->size();
-    }
-    case Type::EDGE: {
+    case Type::EDGE:
       return value_.eVal->size();
-    }
-    case Type::PATH: {
+    case Type::PATH:
       return value_.pVal->size();
-    }
-    case Type::LIST: {
+    case Type::LIST:
       return value_.lVal->size();
-    }
-    case Type::GEOGRAPHY: {
+    case Type::GEOGRAPHY:
       return value_.ggVal->size();
-    }
-    case Type::MAP: {
+    case Type::MAP:
       return value_.mVal->size();
-    }
-    case Type::SET: {
+    case Type::SET:
       return value_.uVal->size();
-    }
-    case Type::DATASET: {
+    case Type::DATASET:
       return value_.gVal->size();
-    }
-    default: {
+    default:
       LOG(FATAL) << "Unknown type";
-    }
   }
 }
 

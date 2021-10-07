@@ -135,6 +135,7 @@ struct Value {
   Type type() const noexcept { return type_; }
 
   const std::string& typeName() const;
+  bool isPrimaryType() const;
   size_t size() const;
 
   bool empty() const { return type_ == Type::__EMPTY__; }
