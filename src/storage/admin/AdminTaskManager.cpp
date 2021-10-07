@@ -42,13 +42,17 @@ void AdminTaskManager::handleUnreportedTasks() {
   if (env_ == nullptr) return;
   unreportedAdminThread_.reset(new std::thread([this] {
     bool ifAny = true;
+    std::unique_lock<std::mutex> lk(unreportedMutex_);
+
     while (true) {
-      std::unique_lock<std::mutex> lk(unreportedMutex_);
       if (stopUnreportedAdminThread_) {
         break;
       }
 
-      if (!ifAny) unreportedCV_.wait(lk);
+      if (!ifAny) {
+        unreportedCV_.wait(lk);
+      }
+
       ifAny = false;
       std::unique_ptr<kvstore::KVIterator> iter;
       auto kvRet = env_->adminStore_->scan(&iter);
@@ -318,7 +322,10 @@ void AdminTaskManager::runSubTask(TaskHandle handle) {
   }
 }
 
-void AdminTaskManager::notifyReporting() { unreportedCV_.notify_one(); }
+void AdminTaskManager::notifyReporting() {
+  std::unique_lock<std::mutex> lk(unreportedMutex_);
+  unreportedCV_.notify_one();
+}
 
 bool AdminTaskManager::isFinished(JobID jobID, TaskID taskID) {
   auto iter = tasks_.find(std::make_pair(jobID, taskID));
