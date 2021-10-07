@@ -69,6 +69,7 @@ class AdminTaskManager {
 
  private:
   bool shutdown_{false};
+  bool stopUnreportedAdminThread_{false};
   std::unique_ptr<ThreadPool> pool_{nullptr};
   TaskContainer tasks_;
   TaskQueue taskQueue_;

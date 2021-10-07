@@ -44,6 +44,10 @@ void AdminTaskManager::handleUnreportedTasks() {
     bool ifAny = true;
     while (true) {
       std::unique_lock<std::mutex> lk(unreportedMutex_);
+      if (stopUnreportedAdminThread_) {
+        break;
+      }
+
       if (!ifAny) unreportedCV_.wait(lk);
       ifAny = false;
       std::unique_ptr<kvstore::KVIterator> iter;
@@ -168,6 +172,12 @@ nebula::cpp2::ErrorCode AdminTaskManager::cancelTask(JobID jobId, TaskID taskId)
 
 void AdminTaskManager::shutdown() {
   LOG(INFO) << "enter AdminTaskManager::shutdown()";
+  {
+    std::unique_lock<std::mutex> lk(unreportedMutex_);
+    stopUnreportedAdminThread_  = true;
+  }
+  unreportedCV_.notify_all();
+
   shutdown_ = true;
   bgThread_->stop();
   bgThread_->wait();
