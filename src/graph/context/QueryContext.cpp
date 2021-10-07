@@ -5,8 +5,6 @@
 
 #include "graph/context/QueryContext.h"
 
-#include "common/runtime/MemoryTracker.h"
-
 namespace nebula {
 namespace graph {
 
@@ -34,8 +32,9 @@ void QueryContext::init() {
   idGen_ = std::make_unique<IdGenerator>(0);
   symTable_ = std::make_unique<SymbolTable>(objPool_.get());
   vctx_ = std::make_unique<ValidateContext>(std::make_unique<AnonVarGenerator>(symTable_.get()));
-  memTracker_ = std::make_unique<MemoryTracker>();
 }
+
+QueryContext::~QueryContext() {}
 
 }  // namespace graph
 }  // namespace nebula

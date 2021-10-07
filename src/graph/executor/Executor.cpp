@@ -614,18 +614,10 @@ Status Executor::finish(Result &&result) {
       node()->outputVarPtr()->userCount.load(std::memory_order_relaxed) != 0) {
     numRows_ = result.size();
     result.checkMemory(node()->isQueryNode());
-    ectx_->setResult(node()->outputVar(), std::move(result));
-  } else {
-    VLOG(1) << "Drop variable " << node()->outputVar();
+    NG_RETURN_IF_ERROR(ectx_->setResult(node()->outputVar(), std::move(result)));
   }
   if (FLAGS_enable_lifetime_optimize) {
     drop();
-  }
-
-  // TODO(yee): Refine this tracker action
-  if (!qctx()->memTracker()->consume(result.valuePtr()->size())) {
-    return Status::Error("This query has exceeded memory limit per query(%ld bytes)",
-                         FLAGS_memory_limit_bytes_per_query);
   }
 
   return Status::OK();

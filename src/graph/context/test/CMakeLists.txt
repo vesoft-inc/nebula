@@ -32,6 +32,7 @@ SET(CONTEXT_TEST_LIBS
     $<TARGET_OBJECTS:version_obj>
     $<TARGET_OBJECTS:util_obj>
     $<TARGET_OBJECTS:graph_context_obj>
+    $<TARGET_OBJECTS:runtime_obj>
     $<TARGET_OBJECTS:expr_visitor_obj>
     $<TARGET_OBJECTS:parser_obj>
     $<TARGET_OBJECTS:validator_obj>

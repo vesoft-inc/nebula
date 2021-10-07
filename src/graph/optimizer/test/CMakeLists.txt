@@ -41,6 +41,7 @@ set(OPTIMIZER_TEST_LIB
     $<TARGET_OBJECTS:planner_obj>
     $<TARGET_OBJECTS:parser_obj>
     $<TARGET_OBJECTS:graph_context_obj>
+    $<TARGET_OBJECTS:runtime_obj>
     $<TARGET_OBJECTS:validator_obj>
     $<TARGET_OBJECTS:optimizer_obj>
     $<TARGET_OBJECTS:ssl_obj>

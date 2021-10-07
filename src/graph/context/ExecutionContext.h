@@ -10,6 +10,9 @@
 #include "graph/context/Result.h"
 
 namespace nebula {
+
+class MemoryTracker;
+
 namespace graph {
 
 class QueryInstance;
@@ -36,9 +39,9 @@ class ExecutionContext {
   static constexpr int64_t kOldestVersion = 1;
   static constexpr int64_t kPreviousOneVersion = -1;
 
-  ExecutionContext() = default;
+  ExecutionContext();
 
-  virtual ~ExecutionContext() = default;
+  virtual ~ExecutionContext();
 
   void initVar(const std::string& name) { valueMap_[name]; }
 
@@ -57,7 +60,7 @@ class ExecutionContext {
 
   void setValue(const std::string& name, Value&& val);
 
-  void setResult(const std::string& name, Result&& result);
+  Status setResult(const std::string& name, Result&& result);
 
   void dropResult(const std::string& name);
 
@@ -66,10 +69,13 @@ class ExecutionContext {
 
   bool exist(const std::string& name) const { return valueMap_.find(name) != valueMap_.end(); }
 
+  MemoryTracker* memTracker() const { return memTracker_.get(); }
+
  private:
   friend class QueryInstance;
   Value moveValue(const std::string& name);
 
+  std::unique_ptr<MemoryTracker> memTracker_;
   // name -> Value with multiple versions
   std::unordered_map<std::string, std::vector<Result>> valueMap_;
 };

@@ -5,11 +5,18 @@
 
 #include "graph/context/ExecutionContext.h"
 
+#include "common/runtime/MemoryTracker.h"
+
 namespace nebula {
 namespace graph {
+
 constexpr int64_t ExecutionContext::kLatestVersion;
 constexpr int64_t ExecutionContext::kOldestVersion;
 constexpr int64_t ExecutionContext::kPreviousOneVersion;
+
+ExecutionContext::ExecutionContext() : memTracker_(std::make_unique<MemoryTracker>()) {}
+
+ExecutionContext::~ExecutionContext() {}
 
 void ExecutionContext::setValue(const std::string& name, Value&& val) {
   ResultBuilder builder;
@@ -17,12 +24,24 @@ void ExecutionContext::setValue(const std::string& name, Value&& val) {
   setResult(name, builder.build());
 }
 
-void ExecutionContext::setResult(const std::string& name, Result&& result) {
+Status ExecutionContext::setResult(const std::string& name, Result&& result) {
   auto& hist = valueMap_[name];
   hist.emplace_back(std::move(result));
+
+  // TODO(yee): Refine this tracker action
+  if (!memTracker()->consume(result.valuePtr()->size())) {
+    return Status::Error("This query has exceeded memory limit per query(%ld bytes)",
+                         FLAGS_memory_limit_bytes_per_query);
+  }
+  return Status::OK();
 }
 
-void ExecutionContext::dropResult(const std::string& name) { valueMap_[name].clear(); }
+void ExecutionContext::dropResult(const std::string& name) {
+  for (const auto& v : valueMap_[name]) {
+    memTracker()->release(-v.valuePtr()->size());
+  }
+  valueMap_[name].clear();
+}
 
 size_t ExecutionContext::numVersions(const std::string& name) const {
   auto it = valueMap_.find(name);
