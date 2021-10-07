@@ -621,6 +621,13 @@ Status Executor::finish(Result &&result) {
   if (FLAGS_enable_lifetime_optimize) {
     drop();
   }
+
+  // TODO(yee): Refine this tracker action
+  if (!qctx()->memTracker()->consume(result.valuePtr()->size())) {
+    return Status::Error("This query has exceeded memory limit per query(%ld bytes)",
+                         FLAGS_memory_limit_bytes_per_query);
+  }
+
   return Status::OK();
 }
 
