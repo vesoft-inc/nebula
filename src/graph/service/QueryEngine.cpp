@@ -41,7 +41,7 @@ Status QueryEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor
   }
   optimizer_ = std::make_unique<opt::Optimizer>(rulesets);
 
-  return setupBackgroundThread();
+  return setupMemoryMonitorThread();
 }
 
 void QueryEngine::execute(RequestContextPtr rctx) {
@@ -55,9 +55,9 @@ void QueryEngine::execute(RequestContextPtr rctx) {
   instance->execute();
 }
 
-Status QueryEngine::setupBackgroundThread() {
-  bgThread_ = std::make_unique<thread::GenericWorker>();
-  if (!bgThread_ || !bgThread_->start("query-engine-bg")) {
+Status QueryEngine::setupMemoryMonitorThread() {
+  memoryMonitorThread_ = std::make_unique<thread::GenericWorker>();
+  if (!memoryMonitorThread_ || !memoryMonitorThread_->start("query-engine-bg")) {
     return Status::Error("Fail to start query engine background thread.");
   }
 
@@ -71,12 +71,7 @@ Status QueryEngine::setupBackgroundThread() {
   // Just to test whether to get the right memory info
   NG_RETURN_IF_ERROR(updateMemoryWatermark());
 
-  bgThread_->addRepeatTask(FLAGS_check_memory_interval_in_secs, [updateMemoryWatermark]() {
-    auto status = updateMemoryWatermark();
-    if (!status.ok()) {
-      LOG(ERROR) << status;
-    }
-  });
+  memoryMonitorThread_->addRepeatTask(FLAGS_check_memory_interval_in_secs, updateMemoryWatermark
 
   return Status::OK();
 }
