@@ -67,13 +67,13 @@ Status FindPathValidator::validateYield(YieldClause* yield) {
   if (yield == nullptr) {
     // TODO: compatible with previous version, this will be deprecated in version 3.0
     auto* yieldColumns = new YieldColumns();
-    auto* pathExpr = new YieldColumn(PathBuildExpression::make(pool), "path");
+    auto* pathExpr = new YieldColumn(LabelExpression::make(pool, "PATH"), "path");
     yieldColumns->addColumn(pathExpr);
     yield = pool->add(new YieldClause(yieldColumns));
   }
 
   for (auto& col : yield->columns()) {
-    if (col->expr()->kind() != Expression::Kind::kPathBuild) {
+    if (col->expr()->kind() != Expression::Kind::kLabel || col->expr()->toString() != "PATH") {
       return Status::SemanticError("illegal yield clauses `%s'. only support yield path",
                                    col->toString().c_str());
     }

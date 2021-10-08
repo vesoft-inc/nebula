@@ -37,7 +37,7 @@ TEST_F(FindPathValidatorTest, invalidYield) {
         "FIND NOLOOP PATH WITH PROP FROM \"Tim Duncan\" TO \"Yao Ming\" OVER teammate YIELD path";
     auto result = checkResult(query);
     EXPECT_EQ(std::string(result.message()),
-              "SyntaxError: please add alias when using path. near `path'");
+              "SyntaxError: please add alias when using `path'. near `path'");
   }
   {
     std::string query =

@@ -1442,7 +1442,7 @@ yield_column
         throw nebula::GraphParser::syntax_error(@1, "please add alias when using `path'.");
     }
     | KW_PATH KW_AS name_label {
-        $$ = new YieldColumn(PathBuildExpression::make(qctx->objPool()), *$3);
+        $$ = new YieldColumn(LabelExpression::make(qctx->objPool(), "PATH"), *$3);
         delete $3;
     }
     | expression {
