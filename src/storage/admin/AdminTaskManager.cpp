@@ -182,7 +182,7 @@ void AdminTaskManager::shutdown() {
   }
   unreportedCV_.notify_all();
   if (unreportedAdminThread_ != nullptr) {
-    unreportedAdminThread_.->join();
+    unreportedAdminThread_->join();
   }
 
   shutdown_ = true;
