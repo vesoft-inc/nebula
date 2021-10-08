@@ -529,6 +529,6 @@ Feature: Insert string vid of vertex and edge
       LOOKUP ON student YIELD student.name, student.age
       """
     Then the result should be, in any order:
-      | VertexID      | student.name | student.age |
-      | ''            | 'Tom'        | 12          |
+      | VertexID | student.name | student.age |
+      | ''       | 'Tom'        | 12          |
     Then drop the used space
