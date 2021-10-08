@@ -4,10 +4,8 @@
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 Feature: All Path
 
-  Background:
-    Given a graph with space named "nba"
-
   Scenario: [1] ALL Path
+    Given a graph with space named "nba"
     When executing query:
       """
       FIND ALL PATH FROM "Tim Duncan" TO "Tim Duncan" OVER * UPTO 2 STEPS
@@ -33,8 +31,6 @@ Feature: All Path
       | <("Tim Duncan")-[:like]->("Tony Parker")>                                                         |
       | <("Tim Duncan")-[:like]->("Manu Ginobili")-[:like]->("Tim Duncan")-[:like]->("Tony Parker")>      |
       | <("Tim Duncan")-[:like]->("Tony Parker")-[:like]->("LaMarcus Aldridge")-[:like]->("Tony Parker")> |
-
-  Scenario: [2] ALL Path
     When executing query:
       """
       FIND ALL PATH FROM "Tim Duncan" TO "Tony Parker", "Manu Ginobili" OVER like UPTO 3 STEPS
@@ -47,8 +43,6 @@ Feature: All Path
       | <("Tim Duncan")-[:like]->("Manu Ginobili")-[:like]->("Tim Duncan")-[:like]->("Tony Parker")>      |
       | <("Tim Duncan")-[:like]->("Tony Parker")-[:like]->("LaMarcus Aldridge")-[:like]->("Tony Parker")> |
       | <("Tim Duncan")-[:like]->("Tony Parker")-[:like]->("Tim Duncan")-[:like]->("Manu Ginobili")>      |
-
-  Scenario: [3] ALL Path
     When executing query:
       """
       FIND ALL PATH FROM "Tim Duncan" TO "Tony Parker","LaMarcus Aldridge" OVER like UPTO 3 STEPS
@@ -59,8 +53,6 @@ Feature: All Path
       | <("Tim Duncan")-[:like]->("Tony Parker")-[:like]->("LaMarcus Aldridge")>                          |
       | <("Tim Duncan")-[:like]->("Manu Ginobili")-[:like]->("Tim Duncan")-[:like]->("Tony Parker")>      |
       | <("Tim Duncan")-[:like]->("Tony Parker")-[:like]->("LaMarcus Aldridge")-[:like]->("Tony Parker")> |
-
-  Scenario: [4] ALL Path
     When executing query:
       """
       FIND ALL PATH FROM "Tim Duncan" TO "Tony Parker","Spurs" OVER like,serve UPTO 3 STEPS
@@ -79,6 +71,7 @@ Feature: All Path
       | <("Tim Duncan")-[:like]->("Tony Parker")-[:like]->("Manu Ginobili")-[:serve]->("Spurs")>          |
 
   Scenario: [1] ALL Path Run Time Input
+    Given a graph with space named "nba"
     When executing query:
       """
       GO FROM "Tim Duncan" over * YIELD like._dst AS src, serve._src AS dst
@@ -93,8 +86,6 @@ Feature: All Path
       | <("Manu Ginobili")-[:like]->("Tim Duncan")-[:like]->("Tony Parker")-[:like]->("Tim Duncan")>      |
       | <("Tony Parker")-[:like]->("LaMarcus Aldridge")-[:like]->("Tony Parker")-[:like]->("Tim Duncan")> |
       | <("Tony Parker")-[:like]->("Tim Duncan")-[:like]->("Manu Ginobili")-[:like]->("Tim Duncan")>      |
-
-  Scenario: [2] ALL Path Run Time Input
     When executing query:
       """
       $a = GO FROM "Tim Duncan" over * YIELD like._dst AS src, serve._src AS dst;
@@ -111,6 +102,7 @@ Feature: All Path
       | <("Tony Parker")-[:like]->("Tim Duncan")-[:like]->("Manu Ginobili")-[:like]->("Tim Duncan")>      |
 
   Scenario: [1] ALL Path With Limit
+    Given a graph with space named "nba"
     When executing query:
       """
       FIND ALL PATH FROM "Tim Duncan" TO "Tony Parker","Spurs" OVER like,serve UPTO 3 STEPS
@@ -121,8 +113,6 @@ Feature: All Path
       | <("Tim Duncan")-[:like]->("Manu Ginobili")-[:serve]->("Spurs")>                              |
       | <("Tim Duncan")-[:like]->("Manu Ginobili")-[:like]->("Tim Duncan")-[:serve]->("Spurs")>      |
       | <("Tim Duncan")-[:like]->("Manu Ginobili")-[:like]->("Tim Duncan")-[:like]->("Tony Parker")> |
-
-  Scenario: [2] ALL Path With Limit
     When executing query:
       """
       $a = GO FROM "Tim Duncan" over * YIELD like._dst AS src, serve._src AS dst;
@@ -138,14 +128,13 @@ Feature: All Path
       | <("Tony Parker")-[:like]->("Manu Ginobili")-[:like]->("Tim Duncan")>                              |
 
   Scenario: [1] ALL PATH REVERSELY
+    Given a graph with space named "nba"
     When executing query:
       """
       FIND ALL PATH FROM "Tim Duncan" TO "Nobody","Spur" OVER like REVERSELY UPTO 3 STEPS
       """
     Then the result should be, in any order, with relax comparison:
       | path |
-
-  Scenario: [2] ALL PATH REVERSELY
     When executing query:
       """
       FIND ALL PATH FROM "Tim Duncan" TO "Tony Parker" OVER like REVERSELY UPTO 3 STEPS
@@ -157,8 +146,6 @@ Feature: All Path
       | <("Tim Duncan")<-[:like]-("Manu Ginobili")<-[:like]-("Tony Parker")>                              |
       | <("Tim Duncan")<-[:like]-("Manu Ginobili")<-[:like]-("Tim Duncan")<-[:like]-("Tony Parker")>      |
       | <("Tim Duncan")<-[:like]-("Tony Parker")<-[:like]-("LaMarcus Aldridge")<-[:like]-("Tony Parker")> |
-
-  Scenario: [3] ALL PATH REVERSELY
     When executing query:
       """
       FIND ALL PATH FROM "Tim Duncan" TO "Tony Parker","LaMarcus Aldridge" OVER like REVERSELY UPTO 3 STEPS
@@ -178,6 +165,7 @@ Feature: All Path
       | <("Tim Duncan")<-[:like]-("Tony Parker")<-[:like]-("LaMarcus Aldridge")<-[:like]-("Tony Parker")>       |
 
   Scenario: [2] ALL PATH BIDIRECT
+    Given a graph with space named "nba"
     When executing query:
       """
       FIND ALL PATH FROM "Tim Duncan" TO "Tony Parker" OVER like BIDIRECT UPTO 3 STEPS
@@ -212,6 +200,7 @@ Feature: All Path
       | <("Tim Duncan")<-[:like]-("Tiago Splitter")-[:like]->("Manu Ginobili")<-[:like]-("Tony Parker")>    |
 
   Scenario: ALL Path WITH PROP
+    Given a graph with space named "nba"
     When executing query:
       """
       FIND ALL PATH WITH PROP FROM "Tim Duncan" TO "Tony Parker" OVER like UPTO 3 STEPS
@@ -223,6 +212,7 @@ Feature: All Path
       | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:like@0 {likeness: 95}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})-[:like@0 {likeness: 90}]->("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})-[:like@0 {likeness: 75}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})>                                               |
 
   Scenario: ALL Path WITH FILTER
+    Given a graph with space named "nba"
     When executing query:
       """
       FIND ALL PATH WITH PROP FROM "Tim Duncan" TO "Yao Ming" OVER * BIDIRECT
@@ -255,9 +245,12 @@ Feature: All Path
       | <("Yao Ming" :player{age: 38, name: "Yao Ming"})-[:like@0 {likeness: 90}]->("Tracy McGrady" :player{age: 39, name: "Tracy McGrady"})-[:serve@0 {end_year: 2013, start_year: 2013}]->("Spurs" :team{name: "Spurs"})<-[:serve@0 {end_year: 2018, start_year: 2010}]-("Danny Green" :player{age: 31, name: "Danny Green"})>                                                                |
 
   Scenario: Dangling edge
+    Given an empty graph
+    And load "nba" csv data to a new space
     When executing query:
       """
-      INSERT EDGE like(likeness) VALUES "Tim Duncan"->"Tim Parker":(99)
+      INSERT EDGE like(likeness) VALUES "Tim Duncan"->"Tim Parker":(99);
+      INSERT EDGE like(likeness) VALUES "Tim Parker"->"Tony Parker":(90);
       """
     Then the execution should be successful
     When executing query:
