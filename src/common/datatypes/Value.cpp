@@ -416,6 +416,8 @@ bool Value::isPrimaryType() const {
     case Type::SET:
     case Type::DATASET:
       return false;
+    default:
+      LOG(FATAL) << "unknown value type.";
   }
 }
 
@@ -449,7 +451,7 @@ size_t Value::size() const {
     case Type::DATASET:
       return value_.gVal->size();
     default:
-      LOG(FATAL) << "Unknown type";
+      LOG(FATAL) << "Unknown value type";
   }
 }
 
