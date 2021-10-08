@@ -181,6 +181,7 @@ void AdminTaskManager::shutdown() {
     stopUnreportedAdminThread_  = true;
   }
   unreportedCV_.notify_all();
+  unreportedAdminThread_.get()->join();
 
   shutdown_ = true;
   bgThread_->stop();
