@@ -29,8 +29,8 @@ bool AdminTaskManager::init() {
     return false;
   }
 
-  bgThread_->addTask(&AdminTaskManager::schedule, this);
   shutdown_ = false;
+  bgThread_->addTask(&AdminTaskManager::schedule, this);
   handleUnreportedTasks();
   LOG(INFO) << "exit AdminTaskManager::init()";
   return true;
@@ -181,7 +181,9 @@ void AdminTaskManager::shutdown() {
     stopUnreportedAdminThread_ = true;
   }
   unreportedCV_.notify_all();
-  unreportedAdminThread_.get()->join();
+  if (unreportedAdminThread_ != nullptr) {
+    unreportedAdminThread_.->join();
+  }
 
   shutdown_ = true;
   bgThread_->stop();
