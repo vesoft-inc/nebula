@@ -253,3 +253,35 @@ Feature: Integer Vid All Path
       | <("Yao Ming" :player{age: 38, name: "Yao Ming"})-[:like@0 {likeness: 90}]->("Shaquile O'Neal" :player{age: 47, name: "Shaquile O'Neal"})-[:like@0 {likeness: 80}]->("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:teammate@0 {end_year: 2016, start_year: 2010}]->("Danny Green" :player{age: 31, name: "Danny Green"})> |
       | <("Yao Ming" :player{age: 38, name: "Yao Ming"})-[:like@0 {likeness: 90}]->("Tracy McGrady" :player{age: 39, name: "Tracy McGrady"})-[:serve@0 {end_year: 2000, start_year: 1997}]->("Raptors" :team{name: "Raptors"})<-[:serve@0 {end_year: 2019, start_year: 2018}]-("Danny Green" :player{age: 31, name: "Danny Green"})>                                                            |
       | <("Yao Ming" :player{age: 38, name: "Yao Ming"})-[:like@0 {likeness: 90}]->("Tracy McGrady" :player{age: 39, name: "Tracy McGrady"})-[:serve@0 {end_year: 2013, start_year: 2013}]->("Spurs" :team{name: "Spurs"})<-[:serve@0 {end_year: 2018, start_year: 2010}]-("Danny Green" :player{age: 31, name: "Danny Green"})>                                                                |
+
+  Scenario: Integer Vid Dangling edge
+    When executing query:
+      """
+      INSERT EDGE like(likeness) VALUES hash("Tim Duncan")->hash("Tim Parker"):(99)
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      FIND ALL PATH WITH PROP FROM hash("Tim Duncan") TO hash("Tony Parker") OVER like UPTO 2 steps
+      """
+    Then the result should be, in any order, with relax comparison:
+      | path                                                                                                                                                                                                                                   |
+      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:like@0 {likeness: 95}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})>                                          |
+      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:like@0 {likeness: 99}]->("Tim Parker")-[:like@0 {likeness: 90}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})> |
+    When executing query:
+      """
+      FIND ALL PATH WITH PROP FROM hash("Tim Duncan") TO hash("Tony Parker") OVER like BIDIRECT UPTO 2 steps
+      """
+    Then the result should be, in any order, with relax comparison:
+      | path                                                                                                                                                                                                                                                                                      |
+      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})<-[:like@0 {likeness: 95}]-("Tony Parker" :player{age: 36, name: "Tony Parker"})>                                                                                             |
+      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:like@0 {likeness: 95}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})>                                                                                             |
+      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:like@0 {likeness: 99}]->("Tim Parker")-[:like@0 {likeness: 90}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})>                                                    |
+      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})<-[:like@0 {likeness: 55}]-("Marco Belinelli" :player{age: 32, name: "Marco Belinelli"})-[:like@0 {likeness: 50}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})>     |
+      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})<-[:like@0 {likeness: 99}]-("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})-[:like@0 {likeness: 99}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})>     |
+      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})<-[:like@0 {likeness: 75}]-("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})<-[:like@0 {likeness: 90}]-("Tony Parker" :player{age: 36, name: "Tony Parker"})> |
+      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})<-[:like@0 {likeness: 75}]-("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})-[:like@0 {likeness: 75}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})> |
+      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})<-[:like@0 {likeness: 90}]-("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})<-[:like@0 {likeness: 95}]-("Tony Parker" :player{age: 36, name: "Tony Parker"})>         |
+      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:like@0 {likeness: 95}]->("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})<-[:like@0 {likeness: 95}]-("Tony Parker" :player{age: 36, name: "Tony Parker"})>         |
+      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})<-[:like@0 {likeness: 80}]-("Boris Diaw" :player{age: 36, name: "Boris Diaw"})-[:like@0 {likeness: 80}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})>               |
+    Then drop the used space
