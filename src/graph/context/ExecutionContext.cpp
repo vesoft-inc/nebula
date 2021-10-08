@@ -5,7 +5,11 @@
 
 #include "graph/context/ExecutionContext.h"
 
+#include <gflags/gflags.h>
+
 #include "common/runtime/MemoryTracker.h"
+
+DECLARE_bool(enable_experimental_feature);
 
 namespace nebula {
 namespace graph {
@@ -29,7 +33,7 @@ Status ExecutionContext::setResult(const std::string& name, Result&& result) {
   hist.emplace_back(std::move(result));
 
   // TODO(yee): Refine this tracker action
-  if (!memTracker()->consume(result.valuePtr()->size())) {
+  if (FLAGS_enable_experimental_feature && !memTracker()->consume(result.valuePtr()->size())) {
     return Status::Error("This query has exceeded memory limit per query(%ld bytes)",
                          FLAGS_memory_limit_bytes_per_query);
   }
@@ -37,8 +41,10 @@ Status ExecutionContext::setResult(const std::string& name, Result&& result) {
 }
 
 void ExecutionContext::dropResult(const std::string& name) {
-  for (const auto& v : valueMap_[name]) {
-    memTracker()->release(-v.valuePtr()->size());
+  if (FLAGS_enable_experimental_feature) {
+    for (const auto& v : valueMap_[name]) {
+      memTracker()->release(-v.valuePtr()->size());
+    }
   }
   valueMap_[name].clear();
 }
