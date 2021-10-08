@@ -178,7 +178,7 @@ void AdminTaskManager::shutdown() {
   LOG(INFO) << "enter AdminTaskManager::shutdown()";
   {
     std::unique_lock<std::mutex> lk(unreportedMutex_);
-    stopUnreportedAdminThread_  = true;
+    stopUnreportedAdminThread_ = true;
   }
   unreportedCV_.notify_all();
   unreportedAdminThread_.get()->join();
