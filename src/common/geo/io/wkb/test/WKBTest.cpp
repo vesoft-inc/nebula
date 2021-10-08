@@ -52,14 +52,22 @@ TEST_F(WKBTest, TestWKB) {
   {
     Point v(Coordinate(24.7, 36.842));
     auto result = read(v);
-    ASSERT_TRUE(result.ok());
+    ASSERT_TRUE(result.ok()) << result.status();
     EXPECT_EQ(true, v.isValid());
   }
   {
     Point v(Coordinate(298.4, 499.99));
     auto result = read(v);
-    ASSERT_TRUE(result.ok());
+    ASSERT_TRUE(result.ok()) << result.status();
     EXPECT_EQ(true, v.isValid());
+  }
+  {
+    Point v(Coordinate(24.7, 36.842));
+    auto wkb = WKBWriter().write(v);
+    wkb.pop_back();
+    auto geomRet = WKBReader().read(wkb);
+    ASSERT_FALSE(geomRet.ok());
+    EXPECT_EQ("Unexpected EOF when reading double", geomRet.status().toString());
   }
   // LineString
   {
@@ -78,21 +86,37 @@ TEST_F(WKBTest, TestWKB) {
   {
     LineString v(std::vector<Coordinate>{Coordinate(0, 1), Coordinate(2, 3), Coordinate(0, 1)});
     auto result = read(v);
-    ASSERT_TRUE(result.ok());
+    ASSERT_TRUE(result.ok()) << result.status();
     EXPECT_EQ(true, v.isValid());
   }
   {
     LineString v(std::vector<Coordinate>{Coordinate(0, 1), Coordinate(0, 1)});
     auto result = read(v);
-    ASSERT_TRUE(result.ok());
+    ASSERT_TRUE(result.ok()) << result.status();
     EXPECT_EQ(true, v.isValid());
   }
   // LineString must have at least 2 points
   {
     LineString v(std::vector<Coordinate>{Coordinate(0, 1)});
     auto result = read(v);
-    ASSERT_TRUE(result.ok());
+    ASSERT_TRUE(result.ok()) << result.status();
     EXPECT_EQ(false, v.isValid());
+  }
+  {
+    LineString v(std::vector<Coordinate>{Coordinate(26.4, 78.9), Coordinate(138.725, 91.0)});
+    auto wkb = WKBWriter().write(v);
+    wkb.pop_back();
+    auto geomRet = WKBReader().read(wkb);
+    ASSERT_FALSE(geomRet.ok());
+    EXPECT_EQ("Unexpected EOF when reading double", geomRet.status().toString());
+  }
+  {
+    LineString v(std::vector<Coordinate>{Coordinate(26.4, 78.9), Coordinate(138.725, 91.0)});
+    auto wkb = WKBWriter().write(v);
+    wkb.erase(sizeof(uint8_t) + sizeof(uint32_t) + 3);  // Now the numCoord field is missing 1 byte
+    auto geomRet = WKBReader().read(wkb);
+    ASSERT_FALSE(geomRet.ok());
+    EXPECT_EQ("Unexpected EOF when reading uint32_t", geomRet.status().toString());
   }
   // Polygon
   {
@@ -103,7 +127,6 @@ TEST_F(WKBTest, TestWKB) {
     EXPECT_EQ(true, v.isValid());
   }
   {
-    std::string wkt = "POLYGON((0 1, 1 2, 2 3, 0 1), (4 5, 5 6, 6 7, 9 9, 4 5))";
     Polygon v(std::vector<std::vector<Coordinate>>{
         std::vector<Coordinate>{
             Coordinate(0, 1), Coordinate(1, 2), Coordinate(2, 3), Coordinate(0, 1)},
@@ -121,7 +144,7 @@ TEST_F(WKBTest, TestWKB) {
     Polygon v(std::vector<std::vector<Coordinate>>{std::vector<Coordinate>{
         Coordinate(0, 1), Coordinate(1, 2), Coordinate(2, 3), Coordinate(3, 4)}});
     auto result = read(v);
-    ASSERT_TRUE(result.ok());
+    ASSERT_TRUE(result.ok()) << result.status();
     EXPECT_EQ(false, v.isValid());
   }
   // Loop must have at least 4 points
@@ -129,8 +152,27 @@ TEST_F(WKBTest, TestWKB) {
     Polygon v(std::vector<std::vector<Coordinate>>{
         std::vector<Coordinate>{Coordinate(0, 1), Coordinate(1, 2), Coordinate(0, 1)}});
     auto result = read(v);
-    ASSERT_TRUE(result.ok());
+    ASSERT_TRUE(result.ok()) << result.status();
     EXPECT_EQ(false, v.isValid());
+  }
+  {
+    Polygon v(std::vector<std::vector<Coordinate>>{std::vector<Coordinate>{
+        Coordinate(0, 1), Coordinate(1, 2), Coordinate(2, 3), Coordinate(0, 1)}});
+    auto wkb = WKBWriter().write(v);
+    wkb.pop_back();
+    auto geomRet = WKBReader().read(wkb);
+    ASSERT_FALSE(geomRet.ok());
+    EXPECT_EQ("Unexpected EOF when reading double", geomRet.status().toString());
+  }
+  {
+    Polygon v(std::vector<std::vector<Coordinate>>{std::vector<Coordinate>{
+        Coordinate(0, 1), Coordinate(1, 2), Coordinate(2, 3), Coordinate(0, 1)}});
+    auto wkb = WKBWriter().write(v);
+    wkb.erase(sizeof(uint8_t) + sizeof(uint32_t) +
+              3);  // Now the numCoordList field is missing 1 byte
+    auto geomRet = WKBReader().read(wkb);
+    ASSERT_FALSE(geomRet.ok());
+    EXPECT_EQ("Unexpected EOF when reading uint32_t", geomRet.status().toString());
   }
 }
 

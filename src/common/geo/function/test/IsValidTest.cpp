@@ -7,6 +7,7 @@
 #include <gtest/gtest.h>
 
 #include "common/base/Base.h"
+#include "common/datatypes/Geography.h"
 
 namespace nebula {
 

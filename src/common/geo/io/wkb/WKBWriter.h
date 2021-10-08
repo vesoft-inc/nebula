@@ -9,6 +9,7 @@
 #include "common/base/Base.h"
 #include "common/geo/io/Geometry.h"
 #include "common/geo/io/wkb/ByteOrder.h"
+#include "common/geo/io/wkb/ByteOrderDataIOStream.h"
 
 namespace nebula {
 
@@ -18,20 +19,26 @@ class WKBWriter {
 
   ~WKBWriter() {}
 
-  std::string write(const Geometry& geom) const;
+  std::string write(const Geometry& geom, ByteOrder byteOrder = ByteOrder::LittleEndian);
 
-  void writeCoordinate(std::string& wkb, const Coordinate& coord) const;
+  void writePoint(const Point& point);
 
-  void writeCoordinateList(std::string& wkb, const std::vector<Coordinate>& coordList) const;
+  void writeLineString(const LineString& line);
 
-  void writeCoordinateListList(std::string& wkb,
-                               const std::vector<std::vector<Coordinate>>& coordListList) const;
+  void writePolygon(const Polygon& polygon);
 
-  void writeUint8(std::string& wkb, uint8_t v) const;
+  void writeByteOrder(ByteOrder byteOrder);
 
-  void writeUint32(std::string& wkb, uint32_t v) const;
+  void writeShapeType(GeoShape geoShape);
 
-  void writeDouble(std::string& wkb, double v) const;
+  void writeCoordinate(const Coordinate& coord);
+
+  void writeCoordinateList(const std::vector<Coordinate>& coordList);
+
+  void writeCoordinateListList(const std::vector<std::vector<Coordinate>>& coordListList);
+
+ private:
+  ByteOrderDataOutStream os_;
 };
 
 }  // namespace nebula

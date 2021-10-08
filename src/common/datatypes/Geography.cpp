@@ -30,20 +30,18 @@ StatusOr<Geography> Geography::fromWKT(const std::string& wkt) {
 }
 
 GeoShape Geography::shape() const {
-  // TODO(jie) May store the shapetype as the data member of Geography is ok.
-  const uint8_t* beg = reinterpret_cast<const uint8_t*>(wkb.data());
-  const uint8_t* end = beg + wkb.size();
-  WKBReader reader;
-  auto byteOrderRet = reader.readByteOrder(beg, end);
-  if (!byteOrderRet.ok()) {
+  ByteOrderDataInStream dis(wkb);
+  auto byteOrderValRet = dis.readUint8();
+  if (!byteOrderValRet.ok()) {
     return GeoShape::UNKNOWN;
   }
-  ByteOrder byteOrder = byteOrderRet.value();
-  auto shapeTypeRet = reader.readShapeType(beg, end, byteOrder);
-  if (!shapeTypeRet.ok()) {
+  ByteOrder byteOrder = static_cast<ByteOrder>(byteOrderValRet.value());
+  dis.setByteOrder(byteOrder);
+  auto shapeTypeValRet = dis.readUint32();
+  if (!shapeTypeValRet.ok()) {
     return GeoShape::UNKNOWN;
   }
-  return shapeTypeRet.value();
+  return static_cast<GeoShape>(shapeTypeValRet.value());
 }
 
 bool Geography::isValid() const {
@@ -56,7 +54,7 @@ bool Geography::isValid() const {
     return false;
   }
 
-  switch (a.shape()) {
+  switch (shape()) {
     case GeoShape::POINT: {
       const auto& point = geom->point();
       return std::abs(point.coord.x) <= 180.0 && std::abs(point.coord.y) <= 90.0;

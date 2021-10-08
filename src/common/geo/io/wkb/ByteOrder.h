@@ -48,6 +48,30 @@ struct ByteOrderData {
     std::memcpy(&ret, &v, sizeof(double));
     return ret;
   }
+
+  static void putUint32(uint8_t *buf, ByteOrder byteOrder, uint32_t v) {
+    if (byteOrder == ByteOrder::BigEndian) {
+      boost::endian::store_big_u32(buf, v);
+    } else {
+      DCHECK(byteOrder == ByteOrder::LittleEndian);
+      boost::endian::store_little_u32(buf, v);
+    }
+  }
+
+  static void putUint64(uint8_t *buf, ByteOrder byteOrder, uint64_t v) {
+    if (byteOrder == ByteOrder::BigEndian) {
+      boost::endian::store_big_u64(buf, v);
+    } else {
+      DCHECK(byteOrder == ByteOrder::LittleEndian);
+      boost::endian::store_little_u64(buf, v);
+    }
+  }
+
+  static void putDouble(uint8_t *buf, ByteOrder byteOrder, double v) {
+    const char *c = reinterpret_cast<const char *>(&v);
+    uint64_t v2 = *reinterpret_cast<const uint64_t *>(c);
+    putUint64(buf, byteOrder, v2);
+  }
 };
 
 }  // namespace nebula

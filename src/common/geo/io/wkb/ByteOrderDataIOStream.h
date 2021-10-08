@@ -16,14 +16,14 @@ namespace nebula {
 
 class ByteOrderDataInStream {
  public:
-  explicit ByteOrderDataInStream(std::string& s) {
-    std::istringstream is(s);
-    stream_ = &is;
-  }
-
-  explicit ByteOrderDataInStream(std::istream* is) : stream_(is) {}
+  ByteOrderDataInStream() = default;
+  explicit ByteOrderDataInStream(const std::string& s) : stream_(s) {}
 
   ~ByteOrderDataInStream() = default;
+
+  std::string str() const { return stream_.str(); }
+
+  void setInput(const std::string& s) { stream_.str(s); }
 
   void setByteOrder(ByteOrder order) { byteOrder_ = order; }
 
@@ -35,7 +35,29 @@ class ByteOrderDataInStream {
 
  private:
   ByteOrder byteOrder_;
-  std::istream* stream_;
+  std::istringstream stream_;
+  unsigned char buf_[8];
+};
+
+class ByteOrderDataOutStream {
+ public:
+  ByteOrderDataOutStream() = default;
+
+  ~ByteOrderDataOutStream() = default;
+
+  std::string str() const { return stream_.str(); }
+
+  void setByteOrder(ByteOrder order) { byteOrder_ = order; }
+
+  void writeUint8(uint8_t v);
+
+  void writeUint32(uint32_t v);
+
+  void writeDouble(double v);
+
+ private:
+  ByteOrder byteOrder_;
+  std::ostringstream stream_;
   unsigned char buf_[8];
 };
 
