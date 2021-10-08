@@ -42,7 +42,7 @@ SET(CONTEXT_TEST_LIBS
     $<TARGET_OBJECTS:planner_obj>
     $<TARGET_OBJECTS:idgenerator_obj>
     $<TARGET_OBJECTS:ssl_obj>
-    $<TARGET_OBJECTS:version_obj>
+    $<TARGET_OBJECTS:memory_obj>
 )
 
 nebula_add_test(

@@ -6,10 +6,15 @@
 
 #include "graph/executor/StorageAccessExecutor.h"
 
+#include <folly/Format.h>
+
 #include "graph/context/Iterator.h"
 #include "graph/context/QueryExpressionContext.h"
 #include "graph/util/SchemaUtil.h"
+#include "graph/util/Utils.h"
 #include "interface/gen-cpp2/meta_types.h"
+
+using apache::thrift::optional_field_ref;
 
 namespace nebula {
 namespace graph {
@@ -75,6 +80,17 @@ DataSet StorageAccessExecutor::buildRequestDataSetByVidType(Iterator *iter,
     return internal::buildRequestDataSet<int64_t>(space, exprCtx, iter, expr, dedup);
   }
   return internal::buildRequestDataSet<std::string>(space, exprCtx, iter, expr, dedup);
+}
+
+std::string StorageAccessExecutor::getStorageDetail(
+    optional_field_ref<const std::map<std::string, int32_t> &> ref) const {
+  if (ref.has_value()) {
+    auto content = util::join(*ref, [](auto &iter) -> std::string {
+      return folly::sformat("{}:{}(us)", iter.first, iter.second);
+    });
+    return "{" + content + "}";
+  }
+  return "";
 }
 
 }  // namespace graph

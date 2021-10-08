@@ -58,7 +58,6 @@ folly::Future<Status> GetEdgesExecutor::getEdges() {
   }
 
   auto edges = buildRequestDataSet(ge);
-  VLOG(1) << "Edges: " << edges;
 
   if (edges.rows.empty()) {
     // TODO: add test for empty input.
@@ -82,8 +81,7 @@ folly::Future<Status> GetEdgesExecutor::getEdges() {
       .via(runner())
       .ensure([this, getPropsTime]() {
         SCOPED_TIMER(&execTime_);
-        otherStats_.emplace("total_rpc",
-                            folly::stringPrintf("%lu(us)", getPropsTime.elapsedInUSec()));
+        otherStats_.emplace("total_rpc", folly::sformat("{}(us)", getPropsTime.elapsedInUSec()));
       })
       .thenValue([this, ge](StorageRpcResponse<GetPropResponse> &&rpcResp) {
         SCOPED_TIMER(&execTime_);

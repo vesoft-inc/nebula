@@ -19,8 +19,9 @@ folly::Future<Status> FilterExecutor::execute() {
   Result result = ectx_->getResult(filter->inputVar());
   auto* iter = result.iterRef();
   if (iter == nullptr || iter->isDefaultIter()) {
-    LOG(ERROR) << "Internal Error: iterator is nullptr or DefaultIter";
-    return Status::Error("Internal Error: iterator is nullptr or DefaultIter");
+    auto status = Status::Error("iterator is nullptr or DefaultIter");
+    LOG(ERROR) << status;
+    return status;
   }
 
   VLOG(2) << "Get input var: " << filter->inputVar()
@@ -34,9 +35,7 @@ folly::Future<Status> FilterExecutor::execute() {
   while (iter->valid()) {
     auto val = condition->eval(ctx(iter));
     if (val.isBadNull() || (!val.empty() && !val.isBool() && !val.isNull())) {
-      return Status::Error(
-          "Internal Error: Wrong type result, "
-          "the type should be NULL,EMPTY or BOOL");
+      return Status::Error("Wrong type result, the type should be NULL, EMPTY or BOOL");
     }
     if (val.empty() || val.isNull() || !val.getBool()) {
       if (UNLIKELY(filter->needStableFilter())) {

@@ -499,7 +499,7 @@ Feature: Insert string vid of vertex and edge
     Then the execution should be successful
     And wait 3 seconds
     # insert
-    When executing query:
+    When try to execute query:
       """
       INSERT VERTEX t() VALUES "1":()
       """

@@ -128,7 +128,7 @@ jobs:
         timeout-minutes: 20
       - name: Setup cluster
         run: |
-          make ENABLE_SSL=true CA_SIGNED=true up
+          make CONTAINERIZED=true ENABLE_SSL=true CA_SIGNED=true up
         working-directory: tests/
         timeout-minutes: 2
       - name: Pytest

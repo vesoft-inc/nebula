@@ -66,6 +66,7 @@ class TestConfigs(NebulaTestSuite):
             ['GRAPH', 'meta_client_retry_times', 'int', 'MUTABLE', 3],
             ['GRAPH', 'accept_partial_success', 'bool', 'MUTABLE', False],
             ['GRAPH', 'system_memory_high_watermark_ratio', 'float', 'MUTABLE', 0.95],
+            ['GRAPH', 'num_rows_to_check_memory', 'int', 'MUTABLE', 4],
             ['GRAPH', 'session_idle_timeout_secs', 'int', 'MUTABLE', 0],
             ['GRAPH', 'session_reclaim_interval_secs', 'int', 'MUTABLE', 2],
             ['GRAPH', 'max_allowed_connections', 'int', 'MUTABLE', 9223372036854775807],
@@ -75,19 +76,21 @@ class TestConfigs(NebulaTestSuite):
 
         resp = self.client.execute('SHOW CONFIGS storage')
         self.check_resp_succeeded(resp)
-        expected_result = [['STORAGE', 'v', 'int', 'MUTABLE', 3],
-                           ['STORAGE', 'wal_ttl', 'int', 'MUTABLE', 14400],
-                           ['STORAGE', 'minloglevel', 'int', 'MUTABLE', 0],
-                           ['STORAGE', 'custom_filter_interval_secs', 'int', 'MUTABLE', 86400],
-                           ['STORAGE', 'slow_op_threshhold_ms', 'int', 'MUTABLE', 50],
-                           ['STORAGE', 'heartbeat_interval_secs', 'int', 'MUTABLE', 1],
-                           ['STORAGE', 'meta_client_retry_times', 'int', 'MUTABLE', 3],
-                           ['STORAGE', 'rocksdb_db_options', 'map', 'MUTABLE', {}],
-                           ['STORAGE', 'clean_wal_interval_secs', 'int', 'MUTABLE', 600],
-                           ['STORAGE', 'rocksdb_column_family_options', 'map', 'MUTABLE',
-                            {"write_buffer_size":"67108864","max_bytes_for_level_base":"268435456","max_write_buffer_number":"4"}],
-                           ['STORAGE', 'rocksdb_block_based_table_options', 'map', 'MUTABLE', {"block_size":"8192"}],
-                           ["STORAGE", "max_edge_returned_per_vertex", "int", "MUTABLE", 2147483647]]
+        expected_result = [
+            ['STORAGE', 'v', 'int', 'MUTABLE', 3],
+            ['STORAGE', 'wal_ttl', 'int', 'MUTABLE', 14400],
+            ['STORAGE', 'minloglevel', 'int', 'MUTABLE', 0],
+            ['STORAGE', 'custom_filter_interval_secs', 'int', 'MUTABLE', 86400],
+            ['STORAGE', 'slow_op_threshhold_ms', 'int', 'MUTABLE', 50],
+            ['STORAGE', 'heartbeat_interval_secs', 'int', 'MUTABLE', 1],
+            ['STORAGE', 'meta_client_retry_times', 'int', 'MUTABLE', 3],
+            ['STORAGE', 'rocksdb_db_options', 'map', 'MUTABLE', {}],
+            ['STORAGE', 'clean_wal_interval_secs', 'int', 'MUTABLE', 600],
+            ['STORAGE', 'rocksdb_column_family_options', 'map', 'MUTABLE', {"write_buffer_size": "67108864", "max_bytes_for_level_base": "268435456", "max_write_buffer_number": "4"}],
+            ['STORAGE', 'rocksdb_block_based_table_options', 'map', 'MUTABLE', {"block_size": "8192"}],
+            ["STORAGE", "max_edge_returned_per_vertex", "int", "MUTABLE", 2147483647],
+            ['STORAGE', 'system_memory_high_watermark_ratio', 'float', 'MUTABLE', 0.8],
+        ]
         print(resp)
         self.check_out_of_order_result(resp, expected_result)
 

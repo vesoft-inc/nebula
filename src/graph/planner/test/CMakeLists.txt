@@ -49,7 +49,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:util_obj>
         $<TARGET_OBJECTS:idgenerator_obj>
         $<TARGET_OBJECTS:graph_context_obj>
-        $<TARGET_OBJECTS:version_obj>
+        $<TARGET_OBJECTS:memory_obj>
     LIBRARIES
         gtest
         ${PROXYGEN_LIBRARIES}
