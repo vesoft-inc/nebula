@@ -60,6 +60,15 @@ union ID {
 }
 
 
+// Geo shape type
+enum GeoShape {
+    ANY = 0,
+    POINT = 1,
+    LINESTRING = 2,
+    POLYGON = 3,
+} (cpp.enum_strict)
+
+
 // These are all data types supported in the graph properties
 enum PropertyType {
     UNKNOWN = 0,
@@ -83,12 +92,17 @@ enum PropertyType {
     DATE = 24,
     DATETIME = 25,
     TIME = 26,
+
+    // Geo spatial
+    GEOGRAPHY = 31,
 } (cpp.enum_strict)
 
 struct ColumnTypeDef {
     1: required PropertyType    type,
     // type_length is valid for fixed_string type
     2: optional i16             type_length = 0,
+    // geo_shape is valid for geography type
+    3: optional GeoShape        geo_shape,
 }
 
 struct ColumnDef {
@@ -326,6 +340,11 @@ struct StatsItem {
 struct CreateSpaceReq {
     1: SpaceDesc        properties,
     2: bool             if_not_exists,
+}
+
+struct CreateSpaceAsReq {
+    1: binary        old_space_name,
+    2: binary        new_space_name,
 }
 
 struct DropSpaceReq {
@@ -1170,6 +1189,8 @@ service MetaService {
     ExecResp dropSpace(1: DropSpaceReq req);
     GetSpaceResp getSpace(1: GetSpaceReq req);
     ListSpacesResp listSpaces(1: ListSpacesReq req);
+
+    ExecResp createSpaceAs(1: CreateSpaceAsReq req);
 
     ExecResp createTag(1: CreateTagReq req);
     ExecResp alterTag(1: AlterTagReq req);

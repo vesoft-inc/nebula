@@ -82,38 +82,32 @@ Status GoValidator::validateTruncate(TruncateClause* truncate) {
   if (truncate == nullptr) {
     return Status::OK();
   }
-  goCtx_->random = truncate->isSample();
   auto* tExpr = truncate->truncate();
-  if (tExpr->kind() != Expression::Kind::kList) {
-    return Status::SemanticError("`%s' type must be LIST", tExpr->toString().c_str());
+  goCtx_->random = truncate->isSample();
+  auto qeCtx = QueryExpressionContext();
+  auto limits = tExpr->eval(qeCtx);
+  if (!limits.isList()) {
+    return Status::SemanticError("`%s' type must be LIST.", tExpr->toString().c_str());
   }
+  // length of list must be equal to N step
   const auto& steps = goCtx_->steps;
-  // lenght of list must be equal to N step
   uint32_t totalSteps = steps.isMToN() ? steps.nSteps() : steps.steps();
-  if (static_cast<const ListExpression*>(tExpr)->size() != totalSteps) {
+  if (limits.getList().size() != totalSteps) {
     return Status::SemanticError(
-        "`%s' length must be equal to %d", tExpr->toString().c_str(), totalSteps);
+        "`%s' length must be equal to GO step size %d.", tExpr->toString().c_str(), totalSteps);
   }
-  // check if value of list is non-integer
-  auto existNonInteger = [](const Expression* expr) -> bool {
-    if (expr->kind() != Expression::Kind::kConstant && expr->kind() != Expression::Kind::kList) {
-      return true;
+  goCtx_->limits.reserve(limits.getList().size());
+  for (auto& ele : limits.getList().values) {
+    // check if element of list is nonnegative integer
+    if (!ele.isInt()) {
+      return Status::SemanticError("Limit/Sample element type must be Integer.");
     }
-    if (expr->kind() == Expression::Kind::kConstant) {
-      auto& val = static_cast<const ConstantExpression*>(expr)->value();
-      if (!val.isInt()) {
-        return true;
-      }
+    if (ele.getInt() < 0) {
+      return Status::SemanticError("Limit/Sample element must be nonnegative.");
     }
-    return false;
-  };
-  FindVisitor visitor(existNonInteger);
-  tExpr->accept(&visitor);
-  auto res = visitor.results();
-  if (res.size() == 1) {
-    return Status::SemanticError("`%s' must be INT", res.front()->toString().c_str());
+    goCtx_->limits.emplace_back(ele.getInt());
   }
-  return Status::SemanticError("not implement it");
+  return Status::OK();
 }
 
 Status GoValidator::validateYield(YieldClause* yield) {

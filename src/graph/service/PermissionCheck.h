@@ -4,6 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include "graph/service/GraphFlags.h"
 #include "graph/service/PermissionManager.h"
 #include "parser/AdminSentences.h"
 #include "parser/TraverseSentences.h"

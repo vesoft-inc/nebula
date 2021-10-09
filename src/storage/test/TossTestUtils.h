@@ -154,11 +154,91 @@ struct TossTestUtils {
     return ret;
   }
 
-  static cpp2::EdgeKey toVidKey(const cpp2::EdgeKey& input) {
+  static cpp2::EdgeKey makeEdgeKeyS(const cpp2::EdgeKey& input) {
+    if (input.src.type() == Value::Type::STRING) {
+      return input;
+    }
     cpp2::EdgeKey ret(input);
     ret.set_src(std::string(reinterpret_cast<const char*>(&input.get_src().getInt()), 8));
     ret.set_dst(std::string(reinterpret_cast<const char*>(&input.get_dst().getInt()), 8));
     return ret;
+  }
+
+  static std::vector<nebula::Value> makeISValue(int64_t iVal) {
+    boost::uuids::random_generator gen;
+    std::vector<nebula::Value> vals(2);
+    vals[0].setInt(iVal);
+    vals[1].setStr(boost::uuids::to_string(gen()));
+    return vals;
+  }
+
+  // generate a vector of values, 1st is ant i64, 2nd is a random string.
+  static std::vector<std::vector<nebula::Value>> genISValues(size_t num) {
+    std::vector<std::vector<nebula::Value>> ret;
+    for (auto i = 0U; i != num; ++i) {
+      int32_t n = 1024 * (1 + i);
+      ret.emplace_back(makeISValue(n));
+    }
+    return ret;
+  }
+
+  // generate num different edges with same dst
+  // the first src is dst + 1, and increase 1 for each
+  static std::vector<cpp2::NewEdge> makeNeighborEdges(int64_t dst, int edgeType, size_t num) {
+    auto values = genISValues(num);
+    std::vector<cpp2::NewEdge> edges;
+    auto rank = 0;
+    for (auto i = 0U; i < num; ++i) {
+      auto src = dst + i + 1;
+      auto ekey = makeEdgeKeyI(src, edgeType, rank, dst);
+      edges.emplace_back();
+      edges.back().set_key(std::move(ekey));
+      edges.back().set_props(std::move(values[i]));
+    }
+    return edges;
+  }
+
+  static cpp2::NewEdge makeEdge(int64_t src, int edgeType) {
+    cpp2::NewEdge edge;
+    edge.set_key(makeEdgeKeyI(src, edgeType, 0, src + 1));
+    edge.set_props(makeISValue(1024));
+    return edge;
+  }
+
+  static cpp2::NewEdge makeEdgeS(int64_t src, int edgeType) {
+    cpp2::NewEdge edge = makeEdge(src, edgeType);
+    edge.key = makeEdgeKeyS(edge.key);
+    return edge;
+  }
+
+  static cpp2::NewEdge makeTwinEdge(const cpp2::NewEdge& oldEdge) {
+    cpp2::NewEdge newEdge(oldEdge);
+    auto newVal = makeISValue(newEdge.props[0].getInt() + 1024);
+    newEdge.set_props(newVal);
+    return newEdge;
+  }
+
+  static std::vector<std::string> makeColNames(size_t n) {
+    std::vector<std::string> colNames;
+    for (auto i = 0U; i < n; ++i) {
+      colNames.emplace_back(folly::sformat("c{}", i + 1));
+    }
+    return colNames;
+  }
+
+  static std::vector<meta::cpp2::ColumnDef> makeColDefs(
+      const std::vector<meta::cpp2::PropertyType>& types) {
+    auto N = types.size();
+    auto colNames = makeColNames(N);
+    std::vector<meta::cpp2::ColumnDef> columnDefs(N);
+    for (auto i = 0U; i != N; ++i) {
+      columnDefs[i].set_name(colNames[i]);
+      meta::cpp2::ColumnTypeDef colTypeDef;
+      colTypeDef.set_type(types[i]);
+      columnDefs[i].set_type(colTypeDef);
+      columnDefs[i].set_nullable(true);
+    }
+    return columnDefs;
   }
 };  // end TossTestUtils
 

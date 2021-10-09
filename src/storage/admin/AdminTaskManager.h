@@ -32,8 +32,9 @@ class AdminTaskManager {
   using TaskQueue = folly::UnboundedBlockingQueue<TaskHandle>;
 
   AdminTaskManager() = default;
-  static AdminTaskManager* instance() {
-    static AdminTaskManager sAdminTaskManager;
+  explicit AdminTaskManager(storage::StorageEnv* env = nullptr) : env_(env) {}
+  static AdminTaskManager* instance(storage::StorageEnv* env = nullptr) {
+    static AdminTaskManager sAdminTaskManager(env);
     return &sAdminTaskManager;
   }
 
@@ -51,6 +52,17 @@ class AdminTaskManager {
 
   bool isFinished(JobID jobID, TaskID taskID);
 
+  void saveTaskStatus(JobID jobId,
+                      TaskID taskId,
+                      nebula::cpp2::ErrorCode rc,
+                      const nebula::meta::cpp2::StatsItem& result);
+
+  void removeTaskStatus(JobID jobId, TaskID taskId);
+
+  void handleUnreportedTasks();
+
+  void notifyReporting();
+
  private:
   void schedule();
   void runSubTask(TaskHandle handle);
@@ -61,6 +73,10 @@ class AdminTaskManager {
   TaskContainer tasks_;
   TaskQueue taskQueue_;
   std::unique_ptr<thread::GenericWorker> bgThread_;
+  storage::StorageEnv* env_{nullptr};
+  std::unique_ptr<std::thread> unreportedAdminThread_;
+  std::mutex unreportedMutex_;
+  std::condition_variable unreportedCV_;
 };
 
 }  // namespace storage

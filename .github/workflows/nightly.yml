@@ -74,3 +74,86 @@ jobs:
           tags: nightly,v2-nightly
           cache_froms: vesoft/nebula-dev:centos7
           add_git_labels: true
+
+  coverage:
+    name: coverage
+    runs-on: self-hosted
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu2004
+        compiler:
+          - gcc-9.2
+
+    container:
+      image: vesoft/nebula-dev:${{ matrix.os }}
+      env:
+        CCACHE_DIR: /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
+        CCACHE_MAXSIZE: 8G
+      volumes:
+        - /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}:/tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
+      options: --cap-add=SYS_PTRACE
+    steps:
+      - uses: webiny/action-post-run@2.0.1
+        with:
+          run: sh -c "find . -mindepth 1 -delete"
+      - uses: actions/checkout@v2
+      - name: Prepare environment
+        id: prepare
+        run: |
+          [ -d build/ ] && rm -rf build/* || mkdir -p build
+          make init -C tests
+      - name: CMake
+        id: cmake
+        run: |
+          cmake \
+              -DCMAKE_CXX_COMPILER=$TOOLSET_CLANG_DIR/bin/g++ \
+              -DCMAKE_C_COMPILER=$TOOLSET_CLANG_DIR/bin/gcc \
+              -DCMAKE_BUILD_TYPE=Debug \
+              -DENABLE_TESTING=on \
+              -DENABLE_COVERAGE=on \
+              -B build
+          echo "::set-output name=j::10"
+          echo "::set-output name=t::10"
+      - name: Make
+        run: |
+          ccache -z
+          cmake --build build/ -j ${{ steps.cmake.outputs.t }}
+          ccache -s
+      - name: CTest
+        env:
+          ASAN_OPTIONS: fast_unwind_on_malloc=1
+        run: ctest -j $(($(nproc)/2+1)) --timeout 400 --output-on-failure
+        working-directory: build/
+        timeout-minutes: 20
+      - name: Setup cluster
+        run: |
+          make ENABLE_SSL=true CA_SIGNED=true up
+        working-directory: tests/
+        timeout-minutes: 2
+      - name: Pytest
+        run: |
+          make RM_DIR=false DEBUG=false J=${{ steps.cmake.outputs.j }} test
+        working-directory: tests/
+        timeout-minutes: 15
+      - name: TCK
+        run: |
+          make RM_DIR=false DEBUG=false J=${{ steps.cmake.outputs.j }} tck
+        working-directory: tests/
+        timeout-minutes: 60
+      - name: Down cluster
+        run: |
+          make RM_DIR=false down
+        working-directory: tests/
+        timeout-minutes: 2
+      - name: coverage
+        run: |
+            ~/.local/bin/fastcov -d build -l -o fastcov.info -p --exclude /usr/include --exclude=/opt/vesoft --exclude scanner.lex
+            bash <(curl -s https://codecov.io/bash) -Z -f fastcov.info
+      - name: Upload logs
+        uses: actions/upload-artifact@v2
+        if: ${{ failure() }}
+        with:
+          name: ${{ matrix.os }}-${{ matrix.compiler }}-nebula-test-logs
+          path:  ./build/server_*/logs/

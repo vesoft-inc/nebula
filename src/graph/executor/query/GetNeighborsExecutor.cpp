@@ -42,10 +42,12 @@ folly::Future<Status> GetNeighborsExecutor::execute() {
 
   time::Duration getNbrTime;
   GraphStorageClient* storageClient = qctx_->getStorageClient();
+  QueryExpressionContext qec(qctx()->ectx());
   return storageClient
       ->getNeighbors(gn_->space(),
                      qctx()->rctx()->session()->id(),
                      qctx()->plan()->id(),
+                     qctx()->plan()->isProfileEnabled(),
                      std::move(reqDs.colNames),
                      std::move(reqDs.rows),
                      gn_->edgeTypes(),
@@ -57,7 +59,7 @@ folly::Future<Status> GetNeighborsExecutor::execute() {
                      gn_->dedup(),
                      gn_->random(),
                      gn_->orderBy(),
-                     gn_->limit(),
+                     gn_->limit(qec),
                      gn_->filter())
       .via(runner())
       .ensure([this, getNbrTime]() {

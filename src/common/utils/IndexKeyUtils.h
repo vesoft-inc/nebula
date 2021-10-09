@@ -48,6 +48,8 @@ class IndexKeyUtils final {
         return Value::Type::TIME;
       case PropertyType::DATETIME:
         return Value::Type::DATETIME;
+      case PropertyType::GEOGRAPHY:
+        return Value::Type::GEOGRAPHY;
       case PropertyType::UNKNOWN:
         return Value::Type::__EMPTY__;
     }
@@ -83,6 +85,10 @@ class IndexKeyUtils final {
       }
       case Value::Type::DATETIME: {
         len = sizeof(int32_t) + sizeof(int16_t) + sizeof(int8_t) * 5;
+        break;
+      }
+      case Value::Type::GEOGRAPHY: {
+        len = sizeof(uint64_t);  // S2CellId
         break;
       }
       default:
@@ -131,6 +137,10 @@ class IndexKeyUtils final {
       case Value::Type::DATETIME: {
         return encodeDateTime(v.getDateTime());
       }
+      case Value::Type::GEOGRAPHY: {
+        // TODO(jie)
+        return "";
+      }
       default:
         LOG(ERROR) << "Unsupported default value type";
     }
@@ -164,6 +174,14 @@ class IndexKeyUtils final {
     return val;
   }
 
+  static std::string encodeUint64(uint64_t v) {
+    auto val = folly::Endian::big(v);
+    std::string raw;
+    raw.reserve(sizeof(uint64_t));
+    raw.append(reinterpret_cast<const char*>(&val), sizeof(uint64_t));
+    return raw;
+  }
+
   static std::string encodeRank(EdgeRanking rank) { return IndexKeyUtils::encodeInt64(rank); }
 
   static EdgeRanking decodeRank(const folly::StringPiece& raw) {
@@ -184,9 +202,11 @@ class IndexKeyUtils final {
        *   TODO : now, the -(std::numeric_limits<double>::min())
        *   have a problem of precision overflow. current return value is -nan.
        */
-      auto i = *reinterpret_cast<const int64_t*>(&v);
+      auto* c1 = reinterpret_cast<const char*>(&v);
+      auto i = *reinterpret_cast<const int64_t*>(c1);
       i = -(std::numeric_limits<int64_t>::max() + i);
-      v = *reinterpret_cast<const double*>(&i);
+      auto* c2 = reinterpret_cast<const char*>(&i);
+      v = *reinterpret_cast<const double*>(c2);
     }
     auto val = folly::Endian::big(v);
     auto* c = reinterpret_cast<char*>(&val);
@@ -203,9 +223,11 @@ class IndexKeyUtils final {
     auto val = *reinterpret_cast<const double*>(v);
     val = folly::Endian::big(val);
     if (val < 0) {
-      auto i = *reinterpret_cast<const int64_t*>(&val);
+      auto* c1 = reinterpret_cast<const char*>(&val);
+      auto i = *reinterpret_cast<const int64_t*>(c1);
       i = -(std::numeric_limits<int64_t>::max() + i);
-      val = *reinterpret_cast<const double*>(&i);
+      auto* c2 = reinterpret_cast<const char*>(&i);
+      val = *reinterpret_cast<const double*>(c2);
     }
     return val;
   }
@@ -332,6 +354,10 @@ class IndexKeyUtils final {
         v.setDateTime(decodeDateTime(raw));
         break;
       }
+      case Value::Type::GEOGRAPHY: {
+        // unable to get geography value from index key
+        return Value::kNullBadData;
+      }
       default:
         return Value(NullType::BAD_DATA);
     }
@@ -394,6 +420,11 @@ class IndexKeyUtils final {
         }
         case Value::Type::DATETIME: {
           len = sizeof(int32_t) + sizeof(int16_t) + sizeof(int8_t) * 5;
+          break;
+        }
+        case Value::Type::GEOGRAPHY: {
+          // LOG(FATAL) << "unable to get geography value from index key"
+          len = sizeof(uint64_t);
           break;
         }
         default:

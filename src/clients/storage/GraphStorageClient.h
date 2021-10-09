@@ -36,6 +36,7 @@ class GraphStorageClient : public StorageClientBase<cpp2::GraphStorageServiceAsy
       GraphSpaceID space,
       SessionID session,
       ExecutionPlanID plan,
+      bool profile,
       std::vector<std::string> colNames,
       // The first column has to be the VertexID
       const std::vector<Row>& vertices,
@@ -127,7 +128,8 @@ class GraphStorageClient : public StorageClientBase<cpp2::GraphStorageServiceAsy
       bool insertable,
       std::vector<std::string> returnProps,
       std::string condition,
-      folly::EventBase* evb = nullptr);
+      folly::EventBase* evb = nullptr,
+      bool useExperimentalFeature = false);
 
   folly::Future<StatusOr<cpp2::GetUUIDResp>> getUUID(GraphSpaceID space,
                                                      const std::string& name,
@@ -137,10 +139,12 @@ class GraphStorageClient : public StorageClientBase<cpp2::GraphStorageServiceAsy
       GraphSpaceID space,
       SessionID session,
       ExecutionPlanID plan,
+      bool profile,
       const std::vector<storage::cpp2::IndexQueryContext>& contexts,
       bool isEdge,
       int32_t tagOrEdge,
       const std::vector<std::string>& returnCols,
+      int64_t limit,
       folly::EventBase* evb = nullptr);
 
   folly::SemiFuture<StorageRpcResponse<cpp2::GetNeighborsResponse>> lookupAndTraverse(
@@ -175,7 +179,9 @@ class GraphStorageClient : public StorageClientBase<cpp2::GraphStorageServiceAsy
   StatusOr<std::function<const VertexID&(const cpp2::DelTags&)>> getIdFromDelTags(
       GraphSpaceID space) const;
 
-  cpp2::RequestCommon makeRequestCommon(SessionID sessionId, ExecutionPlanID planId);
+  cpp2::RequestCommon makeRequestCommon(SessionID sessionId,
+                                        ExecutionPlanID planId,
+                                        bool profile = false);
 };
 
 }  // namespace storage

@@ -67,3 +67,16 @@ install(
     COMPONENT
         graph
 )
+
+install(
+    FILES
+        meta-transfer-tools.sh
+    PERMISSIONS
+        OWNER_EXECUTE OWNER_WRITE OWNER_READ
+        GROUP_EXECUTE GROUP_READ
+        WORLD_EXECUTE WORLD_READ
+    DESTINATION
+        scripts
+    COMPONENT
+        meta
+)

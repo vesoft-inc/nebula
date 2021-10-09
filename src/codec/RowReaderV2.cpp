@@ -175,6 +175,10 @@ Value RowReaderV2::getValueByIndex(const int64_t index) const noexcept {
       dt.microsec = microsec;
       return dt;
     }
+    case meta::cpp2::PropertyType::GEOGRAPHY: {
+      // TODO(jie)
+      return Geography();
+    }
     case meta::cpp2::PropertyType::UNKNOWN:
       break;
   }

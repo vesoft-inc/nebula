@@ -302,6 +302,7 @@ class Perf {
           ->getNeighbors(spaceId_,
                          0,
                          0,
+                         false,
                          colNames,
                          vertices,
                          {edgeType_},

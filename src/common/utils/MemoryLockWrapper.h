@@ -68,6 +68,13 @@ class MemoryLockGuard {
     return *iter_;
   }
 
+  // this will manual set the lock to unlocked state
+  // which mean will not release all locks automaticly
+  // please make sure you really know the side effect
+  void forceLock() { locked_ = true; }
+
+  void forceUnlock() { locked_ = false; }
+
  protected:
   MemoryLockCore<Key>* lock_;
   std::vector<Key> keys_;

@@ -18,6 +18,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:network_obj>
         $<TARGET_OBJECTS:thread_obj>
         $<TARGET_OBJECTS:datatypes_obj>
+        $<TARGET_OBJECTS:wkt_wkb_io_obj>
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:encryption_obj>
         $<TARGET_OBJECTS:ft_es_storage_adapter_obj>

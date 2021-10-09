@@ -32,6 +32,25 @@ folly::Future<Status> CreateSpaceExecutor::execute() {
       });
 }
 
+folly::Future<Status> CreateSpaceAsExecutor::execute() {
+  SCOPED_TIMER(&execTime_);
+
+  auto *csaNode = asNode<CreateSpaceAsNode>(node());
+  auto oldSpace = csaNode->getOldSpaceName();
+  auto newSpace = csaNode->getNewSpaceName();
+  return qctx()
+      ->getMetaClient()
+      ->createSpaceAs(oldSpace, newSpace)
+      .via(runner())
+      .thenValue([](StatusOr<bool> resp) {
+        if (!resp.ok()) {
+          LOG(ERROR) << resp.status();
+          return resp.status();
+        }
+        return Status::OK();
+      });
+}
+
 folly::Future<Status> DescSpaceExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 

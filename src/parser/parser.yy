@@ -60,6 +60,7 @@ static constexpr size_t kCommentLengthLimit = 256;
     int64_t                                 intval;
     double                                  doubleval;
     std::string                            *strval;
+    nebula::meta::cpp2::GeoShape            geo_shape;
     nebula::meta::cpp2::ColumnTypeDef      *type;
     nebula::Expression                     *expr;
     nebula::Sentence                       *sentence;
@@ -147,6 +148,7 @@ static constexpr size_t kCommentLengthLimit = 256;
     nebula::meta::cpp2::FTClient           *text_search_client_item;
     nebula::TSClientList                   *text_search_client_list;
     nebula::QueryUniqueIdentifier          *query_unique_identifier;
+    nebula::LimitClause                    *limit_clause;
 }
 
 /* destructors */
@@ -154,7 +156,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 // Expression related memory will be managed by object pool
 %destructor {} <expr> <argument_list> <case_list> <expression_list> <map_item_list>
 %destructor {} <text_search_argument> <base_text_search_argument> <fuzzy_text_search_argument>
-%destructor {} <boolval> <intval> <doubleval> <type> <config_module> <integer_list> <list_host_type>
+%destructor {} <boolval> <intval> <doubleval> <type> <config_module> <integer_list> <list_host_type> <geo_shape>
 %destructor { delete $$; } <*>
 
 /* keywords */
@@ -199,6 +201,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %token KW_REDUCE
 %token KW_SESSIONS KW_SESSION
 %token KW_KILL KW_QUERY KW_QUERIES KW_TOP
+%token KW_GEOGRAPHY KW_POINT KW_LINESTRING KW_POLYGON
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -241,6 +244,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <expr> constant_expression
 %type <expr> query_unique_identifier_value
 %type <argument_list> argument_list opt_argument_list
+%type <geo_shape> geo_shape_type
 %type <type> type_spec
 %type <step_clause> step_clause
 %type <from_clause> from_clause
@@ -338,6 +342,8 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <index_field_list> index_field_list opt_index_field_list
 
 %type <query_unique_identifier> query_unique_identifier
+
+%type <limit_clause> limit_clause
 
 %type <sentence> maintain_sentence
 %type <sentence> create_space_sentence describe_space_sentence drop_space_sentence
@@ -524,6 +530,9 @@ unreserved_keyword
     | KW_QUERY              { $$ = new std::string("query"); }
     | KW_KILL               { $$ = new std::string("kill"); }
     | KW_TOP                { $$ = new std::string("top"); }
+    | KW_POINT              { $$ = new std::string("point"); }
+    | KW_LINESTRING         { $$ = new std::string("linestring"); }
+    | KW_POLYGON            { $$ = new std::string("polygon"); }
     ;
 
 expression
@@ -848,10 +857,11 @@ predicate_name
 predicate_expression
     : predicate_name L_PAREN expression KW_IN expression KW_WHERE expression R_PAREN {
         if ($3->kind() != Expression::Kind::kLabel) {
+            delete $1;
             throw nebula::GraphParser::syntax_error(@3, "The loop variable must be a label in predicate functions");
         }
-        auto &innerVar = static_cast<const LabelExpression *>($3)->name();
-        auto *expr = PredicateExpression::make(qctx->objPool(), *$1, innerVar, $5, $7);
+        std::string innerVar = static_cast<const LabelExpression *>($3)->name();
+        auto *expr = PredicateExpression::make(qctx->objPool(), *$1, innerVar, $5, $7);  // TODO(jie) Use std::unique_ptr<std::string>
         nebula::graph::ParserUtil::rewritePred(qctx, expr, innerVar);
         $$ = expr;
         delete $1;
@@ -1072,6 +1082,18 @@ argument_list
     }
     ;
 
+geo_shape_type
+    : KW_POINT {
+        $$ = meta::cpp2::GeoShape::POINT;
+    }
+    | KW_LINESTRING {
+        $$ = meta::cpp2::GeoShape::LINESTRING;
+    }
+    | KW_POLYGON {
+        $$ = meta::cpp2::GeoShape::POLYGON;
+    }
+    ;
+
 type_spec
     : KW_BOOL {
         $$ = new meta::cpp2::ColumnTypeDef();
@@ -1132,6 +1154,16 @@ type_spec
     | KW_DATETIME {
         $$ = new meta::cpp2::ColumnTypeDef();
         $$->set_type(meta::cpp2::PropertyType::DATETIME);
+    }
+    | KW_GEOGRAPHY {
+        $$ = new meta::cpp2::ColumnTypeDef();
+        $$->set_type(meta::cpp2::PropertyType::GEOGRAPHY);
+        $$->set_geo_shape(meta::cpp2::GeoShape::ANY);
+    }
+    | KW_GEOGRAPHY L_PAREN geo_shape_type R_PAREN {
+        $$ = new meta::cpp2::ColumnTypeDef();
+        $$->set_type(meta::cpp2::PropertyType::GEOGRAPHY);
+        $$->set_geo_shape($3);
     }
     ;
 
@@ -1885,9 +1917,14 @@ lookup_where_clause
     | KW_WHERE expression { $$ = new WhereClause($2); }
     ;
 
+limit_clause
+    : %empty { $$ = nullptr; }
+    | KW_LIMIT legal_integer { $$ = new LimitClause($2); }
+    ;
+
 lookup_sentence
-    : KW_LOOKUP KW_ON name_label lookup_where_clause yield_clause {
-        $$ = new LookupSentence($3, $4, $5);
+    : KW_LOOKUP KW_ON name_label lookup_where_clause yield_clause limit_clause {
+        $$ = new LookupSentence($3, $4, $5, $6);
     }
     ;
 
@@ -2278,11 +2315,11 @@ column_spec_list
 
 column_spec
     : name_label type_spec {
-        $$ = new ColumnSpecification($1, $2->type, new ColumnProperties(), $2->type_length_ref().value_or(0));
+        $$ = new ColumnSpecification($1, $2->type, new ColumnProperties(), $2->type_length_ref().value_or(0), $2->geo_shape_ref().value_or(meta::cpp2::GeoShape::ANY));
         delete $2;
     }
     | name_label type_spec column_properties {
-        $$ = new ColumnSpecification($1, $2->type, $3, $2->type_length_ref().value_or(0));
+        $$ = new ColumnSpecification($1, $2->type, $3, $2->type_length_ref().value_or(0), $2->geo_shape_ref().value_or(meta::cpp2::GeoShape::ANY));
         delete $2;
     }
     ;
@@ -2511,8 +2548,9 @@ rebuild_fulltext_index_sentence
         $$ = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
                                   meta::cpp2::AdminCmd::REBUILD_FULLTEXT_INDEX);
     }
+
 add_group_sentence
-    : KW_ADD KW_GROUP name_label zone_name_list{
+    : KW_ADD KW_GROUP name_label zone_name_list {
         $$ = new AddGroupSentence($3, $4);
     }
     ;
@@ -3162,6 +3200,10 @@ create_space_sentence
         sentence->setGroupName($9);
         sentence->setOpts($6);
         sentence->setComment($10);
+        $$ = sentence;
+    }
+    | KW_CREATE KW_SPACE opt_if_not_exists name_label KW_AS name_label {
+        auto sentence = new CreateSpaceAsSentence($6, $4, $3);
         $$ = sentence;
     }
     ;

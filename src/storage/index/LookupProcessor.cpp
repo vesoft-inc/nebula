@@ -28,6 +28,9 @@ void LookupProcessor::doProcess(const cpp2::LookupIndexRequest& req) {
     onFinished();
     return;
   }
+  if (req.common_ref().has_value() && req.get_common()->profile_detail_ref().value_or(false)) {
+    profileDetailFlag_ = true;
+  }
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
     for (auto& p : req.get_parts()) {
       pushResultCode(retCode, p);
@@ -65,7 +68,7 @@ void LookupProcessor::runInSingleThread(const cpp2::LookupIndexRequest& req) {
       }
     }
   }
-  if (FLAGS_profile_storage_detail) {
+  if (UNLIKELY(profileDetailFlag_)) {
     profilePlan(plan.value());
   }
   onProcessFinished();
@@ -117,7 +120,7 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> LookupProcessor::
       return std::make_pair(nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND, partId);
     }
     auto ret = plan.value().go(partId);
-    if (FLAGS_profile_storage_detail) {
+    if (UNLIKELY(this->profileDetailFlag_)) {
       profilePlan(plan.value());
     }
     return std::make_pair(ret, partId);

@@ -8,6 +8,7 @@
 
 #include "graph/context/QueryContext.h"
 #include "graph/planner/plan/Mutate.h"
+#include "graph/service/GraphFlags.h"
 #include "graph/util/SchemaUtil.h"
 #include "graph/util/ScopedTimer.h"
 
@@ -104,7 +105,9 @@ folly::Future<Status> UpdateEdgeExecutor::execute() {
                    ueNode->getUpdatedProps(),
                    ueNode->getInsertable(),
                    ueNode->getReturnProps(),
-                   ueNode->getCondition())
+                   ueNode->getCondition(),
+                   nullptr,
+                   FLAGS_enable_experimental_feature)
       .via(runner())
       .ensure([updateEdgeTime]() {
         VLOG(1) << "Update edge time: " << updateEdgeTime.elapsedInUSec() << "us";
