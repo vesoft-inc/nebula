@@ -396,21 +396,20 @@ class Perf {
     auto vProps = vertexProps();
     auto start = time::WallClock::fastNowInMicroSec();
     GraphStorageClient::CommonRequestParam param(spaceId_, 0, 0);
-    auto f = graphStorageClient_->getProps(param, std::move(input), &vProps, nullptr, nullptr)
-                 .via(evb)
-                 .thenValue([this, start](auto&& resps) {
-                   if (!resps.succeeded()) {
-                     LOG(ERROR) << "Request failed!";
-                   } else {
-                     VLOG(3) << "request successed!";
-                   }
-                   this->finishedRequests_++;
-                   auto now = time::WallClock::fastNowInMicroSec();
-                   latencies_.addValue(std::chrono::seconds(time::WallClock::fastNowInSec()),
-                                       now - start);
-                   qps_.addValue(std::chrono::seconds(time::WallClock::fastNowInSec()), 1);
-                 })
-                 .thenError([](auto&&) { LOG(ERROR) << "Request failed!"; });
+    graphStorageClient_->getProps(param, std::move(input), &vProps, nullptr, nullptr)
+        .via(evb)
+        .thenValue([this, start](auto&& resps) {
+          if (!resps.succeeded()) {
+            LOG(ERROR) << "Request failed!";
+          } else {
+            VLOG(3) << "request successed!";
+          }
+          this->finishedRequests_++;
+          auto now = time::WallClock::fastNowInMicroSec();
+          latencies_.addValue(std::chrono::seconds(time::WallClock::fastNowInSec()), now - start);
+          qps_.addValue(std::chrono::seconds(time::WallClock::fastNowInSec()), 1);
+        })
+        .thenError([](auto&&) { LOG(ERROR) << "Request failed!"; });
   }
 
   void getEdgesTask() {
@@ -422,21 +421,20 @@ class Perf {
     auto eProps = edgeProps();
     auto start = time::WallClock::fastNowInMicroSec();
     GraphStorageClient::CommonRequestParam param(spaceId_, 0, 0);
-    auto f = graphStorageClient_->getProps(param, std::move(input), nullptr, &eProps, nullptr)
-                 .via(evb)
-                 .thenValue([this, start](auto&& resps) {
-                   if (!resps.succeeded()) {
-                     LOG(ERROR) << "Request failed!";
-                   } else {
-                     VLOG(3) << "request successed!";
-                   }
-                   this->finishedRequests_++;
-                   auto now = time::WallClock::fastNowInMicroSec();
-                   latencies_.addValue(std::chrono::seconds(time::WallClock::fastNowInSec()),
-                                       now - start);
-                   qps_.addValue(std::chrono::seconds(time::WallClock::fastNowInSec()), 1);
-                 })
-                 .thenError([](auto&&) { LOG(ERROR) << "Request failed!"; });
+    graphStorageClient_->getProps(param, std::move(input), nullptr, &eProps, nullptr)
+        .via(evb)
+        .thenValue([this, start](auto&& resps) {
+          if (!resps.succeeded()) {
+            LOG(ERROR) << "Request failed!";
+          } else {
+            VLOG(3) << "request successed!";
+          }
+          this->finishedRequests_++;
+          auto now = time::WallClock::fastNowInMicroSec();
+          latencies_.addValue(std::chrono::seconds(time::WallClock::fastNowInSec()), now - start);
+          qps_.addValue(std::chrono::seconds(time::WallClock::fastNowInSec()), 1);
+        })
+        .thenError([](auto&&) { LOG(ERROR) << "Request failed!"; });
   }
 
  private:
