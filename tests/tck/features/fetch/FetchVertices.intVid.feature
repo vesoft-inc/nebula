@@ -283,7 +283,7 @@ Feature: Fetch Int Vid Vertices
       """
       FETCH PROP ON player hash('Boris Diaw') YIELD vertex
       """
-    Then a SyntaxError should be raised at runtime: please add alias when using vertex. near `vertex'
+    Then a SyntaxError should be raised at runtime: please add alias when using `vertex'. near `vertex'
     When executing query:
       """
       FETCH PROP ON player hash('Boris Diaw') YIELD edge as a

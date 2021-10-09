@@ -64,8 +64,7 @@ folly::Future<Status> GetNeighborsExecutor::execute() {
       .via(runner())
       .ensure([this, getNbrTime]() {
         SCOPED_TIMER(&execTime_);
-        otherStats_.emplace("total_rpc_time",
-                            folly::stringPrintf("%lu(us)", getNbrTime.elapsedInUSec()));
+        otherStats_.emplace("total_rpc_time", folly::sformat("{}(us)", getNbrTime.elapsedInUSec()));
       })
       .thenValue([this](StorageRpcResponse<GetNeighborsResponse>&& resp) {
         SCOPED_TIMER(&execTime_);
@@ -78,16 +77,11 @@ folly::Future<Status> GetNeighborsExecutor::execute() {
           }
           auto& info = hostLatency[i];
           otherStats_.emplace(
-              folly::stringPrintf("%s exec/total/vertices", std::get<0>(info).toString().c_str()),
-              folly::stringPrintf(
-                  "%d(us)/%d(us)/%lu,", std::get<1>(info), std::get<2>(info), size));
-          if (result.result.latency_detail_us_ref().has_value()) {
-            std::string storageDetail = "{";
-            for (auto iter : (*result.result.latency_detail_us_ref())) {
-              storageDetail += folly::stringPrintf("%s:%d(us),", iter.first.data(), iter.second);
-            }
-            storageDetail += "}";
-            otherStats_.emplace("storage_detail", storageDetail);
+              folly::sformat("{} exec/total/vertices", std::get<0>(info).toString()),
+              folly::sformat("{}(us)/{}(us)/{},", std::get<1>(info), std::get<2>(info), size));
+          auto detail = getStorageDetail(result.result.latency_detail_us_ref());
+          if (!detail.empty()) {
+            otherStats_.emplace("storage_detail", detail);
           }
         }
         return handleResponse(resp);
@@ -101,7 +95,6 @@ Status GetNeighborsExecutor::handleResponse(RpcResponse& resps) {
   builder.state(result.value());
 
   auto& responses = resps.responses();
-  VLOG(2) << node_->toString() << ", Resp size: " << responses.size();
   List list;
   for (auto& resp : responses) {
     auto dataset = resp.get_vertices();
@@ -110,11 +103,10 @@ Status GetNeighborsExecutor::handleResponse(RpcResponse& resps) {
       continue;
     }
 
-    VLOG(2) << "Resp row size: " << dataset->rows.size() << ", Resp: " << *dataset;
     list.values.emplace_back(std::move(*dataset));
   }
-  builder.value(Value(std::move(list)));
-  return finish(builder.iter(Iterator::Kind::kGetNeighbors).build());
+  builder.value(Value(std::move(list))).iter(Iterator::Kind::kGetNeighbors);
+  return finish(builder.build());
 }
 
 }  // namespace graph

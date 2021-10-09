@@ -139,8 +139,8 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClientBase<ClientType>::c
           // then-callback will be executed on the same IO thread
           .via(evb)
           .then([this, context, host, spaceId, start](folly::Try<Response>&& val) {
-            auto& r = context->findRequest(host);
             if (val.hasException()) {
+              auto& r = context->findRequest(host);
               LOG(ERROR) << "Request to " << host << " failed: " << val.exception().what();
               auto parts = getReqPartsId(r);
               context->resp.appendFailedParts(parts, nebula::cpp2::ErrorCode::E_RPC_FAILURE);

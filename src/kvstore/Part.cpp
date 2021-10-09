@@ -176,23 +176,22 @@ void Part::onLostLeadership(TermID term) { VLOG(1) << "Lost the leadership for t
 
 void Part::onElected(TermID term) {
   VLOG(1) << "Being elected as the leader for the term: " << term;
-  if (onElectedCallBacks_.empty()) {
-    return;
-  }
+}
+
+void Part::onLeaderReady(TermID term) {
+  VLOG(1) << "leader ready to server for the term: " << term;
 
   CallbackOptions opt;
   opt.spaceId = spaceId_;
   opt.partId = partId_;
   opt.term = term_;
 
-  for (auto& cb : onElectedCallBacks_) {
+  for (auto& cb : leaderReadyCB_) {
     cb(opt);
   }
 }
 
-void Part::registerOnElected(OnElectedCallBack cb) {
-  onElectedCallBacks_.emplace_back(std::move(cb));
-}
+void Part::registerOnLeaderReady(LeaderReadyCB cb) { leaderReadyCB_.emplace_back(std::move(cb)); }
 
 void Part::onDiscoverNewLeader(HostAddr nLeader) {
   LOG(INFO) << idStr_ << "Find the new leader " << nLeader;

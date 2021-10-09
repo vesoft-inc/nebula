@@ -86,6 +86,10 @@ class ChainUpdateEdgeProcessorLocal
   PartitionID partId_;
   int retryLimit_{10};
   TermID termOfPrepare_{-1};
+
+  // set to true when prime insert succeed
+  // in processLocal(), we check this to determine if need to do abort()
+  bool primeInserted_{false};
   std::vector<std::string> kvErased_;
   std::vector<kvstore::KV> kvAppend_;
   folly::Optional<int64_t> ver_{folly::none};

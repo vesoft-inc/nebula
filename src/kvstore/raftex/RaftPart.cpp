@@ -870,7 +870,11 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
         firstLogId = lastLogId_ + 1;
         lastMsgAcceptedCostMs_ = lastMsgSentDur_.elapsedInMSec();
         lastMsgAcceptedTime_ = time::WallClock::fastNowInMilliSec();
-        commitInThisTerm_ = true;
+        if (!commitInThisTerm_) {
+          commitInThisTerm_ = true;
+          bgWorkers_->addTask(
+              [self = shared_from_this(), term = term_] { self->onLeaderReady(term); });
+        }
       } else {
         LOG(FATAL) << idStr_ << "Failed to commit logs";
       }

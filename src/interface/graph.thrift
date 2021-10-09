@@ -99,6 +99,17 @@ struct AuthResponse {
 } (cpp.type = "nebula::AuthResponse")
 
 
+struct VerifyClientVersionResp {
+    1: required common.ErrorCode error_code;
+    2: optional binary           error_msg;
+}
+
+
+struct VerifyClientVersionReq {
+    1: required binary version = common.version;
+}
+
+
 service GraphService {
     AuthResponse authenticate(1: binary username, 2: binary password)
 
@@ -108,4 +119,6 @@ service GraphService {
 
     // Same as execute(), but response will be a json string
     binary executeJson(1: i64 sessionId, 2: binary stmt)
+
+    VerifyClientVersionResp verifyClientVersion(1: VerifyClientVersionReq req)
 }

@@ -187,6 +187,7 @@ class MetaClient {
   FRIEND_TEST(MetaClientTest, RetryOnceTest);
   FRIEND_TEST(MetaClientTest, RetryUntilLimitTest);
   FRIEND_TEST(MetaClientTest, RocksdbOptionsTest);
+  FRIEND_TEST(MetaClientTest, VerifyClientTest);
   friend class KillQueryMetaWrapper;
   FRIEND_TEST(ChainAddEdgesTest, AddEdgesLocalTest);
   friend class storage::MetaClientTestUpdater;
@@ -709,6 +710,8 @@ class MetaClient {
   PartsMap doGetPartsMap(const HostAddr& host, const LocalCache& localCache);
 
   ListenersMap doGetListenersMap(const HostAddr& host, const LocalCache& localCache);
+
+  Status verifyVersion();
 
  private:
   std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;

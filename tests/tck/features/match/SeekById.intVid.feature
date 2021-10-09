@@ -138,6 +138,15 @@ Feature: Match seek by id
     Then the result should be, in any order:
       | Name           |
       | 'James Harden' |
+    When executing query:
+      """
+      MATCH (v:player)
+      WHERE id(v) IN [hash('James Harden'), v.age]
+      RETURN v.name AS Name
+      """
+    Then the result should be, in any order:
+      | Name           |
+      | 'James Harden' |
 
   Scenario: complicate logical
     When executing query:
@@ -241,6 +250,13 @@ Feature: Match seek by id
       """
       MATCH (v)
       WHERE id(x) == hash('James Harden')
+      RETURN v.name AS Name
+      """
+    Then a SemanticError should be raised at runtime:
+    When executing query:
+      """
+      MATCH (v)
+      WHERE id(v) IN [hash('James Harden'), v.name]
       RETURN v.name AS Name
       """
     Then a SemanticError should be raised at runtime:

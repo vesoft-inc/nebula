@@ -42,6 +42,7 @@ extern Status setupBreakpad();
 #endif
 
 DECLARE_string(flagfile);
+DECLARE_bool(containerized);
 
 int main(int argc, char *argv[]) {
   google::SetVersionString(nebula::versionString());

@@ -19,26 +19,34 @@ namespace nebula {
  */
 class VertexExpression final : public Expression {
  public:
-  static VertexExpression *make(ObjectPool *pool) { return pool->add(new VertexExpression(pool)); }
+  // default name : VERTEX, $^ : startNode of EDGE, $$ : endNode of EDGE
+  // $$ & $^ only used in go sentence
+  static VertexExpression *make(ObjectPool *pool, const std::string &name = "VERTEX") {
+    return pool->add(new VertexExpression(pool, name));
+  }
 
   const Value &eval(ExpressionContext &ctx) override;
 
   void accept(ExprVisitor *visitor) override;
 
-  Expression *clone() const override { return VertexExpression::make(pool_); }
+  Expression *clone() const override { return VertexExpression::make(pool_, name()); }
 
-  std::string toString() const override { return "VERTEX"; }
+  std::string toString() const override { return name_; }
 
-  bool operator==(const Expression &expr) const override { return kind() == expr.kind(); }
+  const std::string &name() const { return name_; }
 
- private:
-  explicit VertexExpression(ObjectPool *pool) : Expression(pool, Kind::kVertex) {}
-
-  void writeTo(Encoder &encoder) const override { encoder << kind(); }
-
-  void resetFrom(Decoder &) override {}
+  bool operator==(const Expression &expr) const override;
 
  private:
+  explicit VertexExpression(ObjectPool *pool, const std::string &name)
+      : Expression(pool, Kind::kVertex), name_(name) {}
+
+  void writeTo(Encoder &encoder) const override;
+
+  void resetFrom(Decoder &) override;
+
+ private:
+  std::string name_;
   Value result_;
 };
 

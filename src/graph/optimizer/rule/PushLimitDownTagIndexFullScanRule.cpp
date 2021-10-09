@@ -20,7 +20,6 @@
 
 using nebula::graph::Limit;
 using nebula::graph::PlanNode;
-using nebula::graph::Project;
 using nebula::graph::QueryContext;
 using nebula::graph::TagIndexFullScan;
 
@@ -36,20 +35,16 @@ PushLimitDownTagIndexFullScanRule::PushLimitDownTagIndexFullScanRule() {
 
 const Pattern &PushLimitDownTagIndexFullScanRule::pattern() const {
   static Pattern pattern = Pattern::create(
-      graph::PlanNode::Kind::kLimit,
-      {Pattern::create(graph::PlanNode::Kind::kProject,
-                       {Pattern::create(graph::PlanNode::Kind::kTagIndexFullScan)})});
+      graph::PlanNode::Kind::kLimit, {Pattern::create(graph::PlanNode::Kind::kTagIndexFullScan)});
   return pattern;
 }
 
 StatusOr<OptRule::TransformResult> PushLimitDownTagIndexFullScanRule::transform(
     OptContext *octx, const MatchedResult &matched) const {
   auto limitGroupNode = matched.node;
-  auto projGroupNode = matched.dependencies.front().node;
-  auto indexScanGroupNode = matched.dependencies.front().dependencies.front().node;
+  auto indexScanGroupNode = matched.dependencies.front().node;
 
   const auto limit = static_cast<const Limit *>(limitGroupNode->node());
-  const auto proj = static_cast<const Project *>(projGroupNode->node());
   const auto indexScan = static_cast<const TagIndexFullScan *>(indexScanGroupNode->node());
 
   int64_t limitRows = limit->offset() + limit->count();
@@ -60,17 +55,12 @@ StatusOr<OptRule::TransformResult> PushLimitDownTagIndexFullScanRule::transform(
   auto newLimit = static_cast<Limit *>(limit->clone());
   auto newLimitGroupNode = OptGroupNode::create(octx, newLimit, limitGroupNode->group());
 
-  auto newProj = static_cast<Project *>(proj->clone());
-  auto newProjGroup = OptGroup::create(octx);
-  auto newProjGroupNode = newProjGroup->makeGroupNode(newProj);
-
   auto newTagIndexFullScan = static_cast<TagIndexFullScan *>(indexScan->clone());
   newTagIndexFullScan->setLimit(limitRows);
   auto newTagIndexFullScanGroup = OptGroup::create(octx);
   auto newTagIndexFullScanGroupNode = newTagIndexFullScanGroup->makeGroupNode(newTagIndexFullScan);
 
-  newLimitGroupNode->dependsOn(newProjGroup);
-  newProjGroupNode->dependsOn(newTagIndexFullScanGroup);
+  newLimitGroupNode->dependsOn(newTagIndexFullScanGroup);
   for (auto dep : indexScanGroupNode->dependencies()) {
     newTagIndexFullScanGroupNode->dependsOn(dep);
   }

@@ -66,6 +66,20 @@ class ExpressionUtils {
   static Expression* rewriteRelExpr(const Expression* expr);
   static Expression* rewriteRelExprHelper(const Expression* expr, Expression*& relRightOperandExpr);
 
+  // Rewrite IN expression into OR expression or relEQ expression
+  static Expression* rewriteInExpr(const Expression* expr);
+
+  // Rewrite Logical AND expr to Logical OR expr using distributive law
+  // Examples:
+  // A and (B or C)  => (A and B) or (A and C)
+  // (A or B) and (C or D)  =>  (A and C) or (A and D) or (B and C) or (B or D)
+  static Expression* rewriteLogicalAndToLogicalOr(const Expression* expr);
+
+  // Return the operands of container expressions
+  // For list and set, return the operands
+  // For map, return the keys
+  static std::vector<Expression*> getContainerExprOperands(const Expression* expr);
+
   // Clone and fold constant expression
   static StatusOr<Expression*> foldConstantExpr(const Expression* expr);
 
@@ -73,6 +87,10 @@ class ExpressionUtils {
   static Expression* reduceUnaryNotExpr(const Expression* expr);
 
   // Transform filter using multiple expression rewrite strategies
+  // 1. rewrite relational expressions containing arithmetic operands so that
+  //    all constants are on the right side of relExpr.
+  // 2. fold constant
+  // 3. reduce unary expression e.g. !(A and B) => !A or !B
   static StatusOr<Expression*> filterTransform(const Expression* expr);
 
   // Negate the given logical expr: (A && B) -> (!A || !B)

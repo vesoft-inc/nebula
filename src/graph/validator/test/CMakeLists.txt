@@ -35,6 +35,7 @@ set(VALIDATOR_TEST_LIBS
     $<TARGET_OBJECTS:datatypes_obj>
     $<TARGET_OBJECTS:wkt_wkb_io_obj>
     $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:memory_obj>
     $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:meta_obj>
     $<TARGET_OBJECTS:graph_thrift_obj>

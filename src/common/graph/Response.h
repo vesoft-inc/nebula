@@ -176,6 +176,9 @@
   X(E_USER_CANCEL, -3052)                                                     \
   X(E_TASK_EXECUTION_FAILED, -3053)                                           \
                                                                               \
+  X(E_PLAN_IS_KILLED, -3060)                                                  \
+  X(E_CLIENT_SERVER_INCOMPATIBLE, -3061)                                      \
+                                                                              \
   X(E_UNKNOWN, -8000)
 
 namespace nebula {

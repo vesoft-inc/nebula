@@ -61,7 +61,8 @@ class DefaultValueContext final : public ExpressionContext {
 
   void setVar(const std::string&, Value) override {}
 
-  Value getVertex() const override {
+  Value getVertex(const std::string& name = "") const override {
+    UNUSED(name);
     LOG(FATAL) << "Not allowed to call";
     return Value::kEmpty;
   }

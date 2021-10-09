@@ -19,19 +19,11 @@ NEBULA_START_COMMAND_FORMAT = "bin/nebula-{} --flagfile conf/nebula-{}.conf {}"
 
 
 class NebulaService(object):
-    def __init__(self, build_dir, src_dir, cleanup=True):
+    def __init__(self, build_dir, src_dir):
         self.build_dir = str(build_dir)
         self.src_dir = str(src_dir)
         self.work_dir = os.path.join(self.build_dir, 'server_' + time.strftime("%Y-%m-%dT%H-%M-%S", time.localtime()))
         self.pids = {}
-        self._cleanup = cleanup
-
-    def __enter__(self):
-        self.install()
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.stop(cleanup=self._cleanup)
 
     def set_work_dir(self, work_dir):
         self.work_dir = work_dir
@@ -65,6 +57,8 @@ class NebulaService(object):
                     resources_dir)
         shutil.copy(self.src_dir + '/tests/cert/test.ca.pem',
                     resources_dir)
+        shutil.copy(self.src_dir + '/tests/cert/test.ca.password',
+                    resources_dir)
         shutil.copy(self.src_dir + '/tests/cert/test.derive.key',
                     resources_dir)
         shutil.copy(self.src_dir + '/tests/cert/test.derive.crt',
@@ -86,11 +80,13 @@ class NebulaService(object):
         else:
             params.append('--cert_path=share/resources/test.ca.pem')
             params.append('--key_path=share/resources/test.ca.key')
-            
+            params.append('--password_path=share/resources/test.ca.password')
+
         if name == 'graphd':
             params.append('--local_config=false')
             params.append('--enable_authorize=true')
             params.append('--system_memory_high_watermark_ratio=0.95')
+            params.append('--num_rows_to_check_memory=4')
             params.append('--session_reclaim_interval_secs=2')
         if name == 'storaged':
             params.append('--local_config=false')
@@ -169,12 +165,11 @@ class NebulaService(object):
             time.sleep(1)
         return False
 
-    def start(self, debug_log=True, multi_graphd=False, enable_ssl=False, enable_graph_ssl=False, enable_meta_ssl=False, ca_signed=False):
+    def start(self, debug_log="true", multi_graphd=False, ca_signed="false", **kwargs):
         os.chdir(self.work_dir)
 
         metad_ports = self._find_free_port()
         all_ports = [metad_ports[0]]
-        command = ''
         graph_ports = []
         server_ports = []
         servers = []
@@ -189,29 +184,30 @@ class NebulaService(object):
             if server_name != 'metad':
                 while True:
                     ports = self._find_free_port()
-                    if all((ports[0] + i) not in all_ports
-                           for i in range(-2, 3)):
+                    if all((ports[0] + i) not in all_ports for i in range(-2, 3)):
                         all_ports += [ports[0]]
                         break
             else:
                 ports = metad_ports
             server_ports.append(ports[0])
-            new_name = server_name
+            new_name = server_name if server_name != 'graphd1' else 'graphd'
+            command = [
+                self._format_nebula_command(new_name,
+                                            metad_ports[0],
+                                            ports,
+                                            debug_log,
+                                            ca_signed=ca_signed)
+            ]
             if server_name == 'graphd1':
-                new_name = 'graphd'
-            command = self._format_nebula_command(new_name,
-                                                  metad_ports[0],
-                                                  ports,
-                                                  debug_log,
-                                                  ca_signed=ca_signed)
-            if server_name == 'graphd1':
-                command += ' --log_dir=logs1'
-                command += ' --pid_file=pids1/nebula-graphd.pid'
-            command += ' --enable_ssl={}'.format(enable_ssl)
-            command += ' --enable_graph_ssl={}'.format(enable_graph_ssl)
-            command += ' --enable_meta_ssl={}'.format(enable_meta_ssl)
-            print("exec: " + command)
-            p = subprocess.Popen([command], shell=True, stdout=subprocess.PIPE)
+                command.append('--log_dir=logs1')
+                command.append('--pid_file=pids1/nebula-graphd.pid')
+
+            for k,v in kwargs.items():
+                command.append("--{}={}".format(k, v))
+
+            cmd = " ".join(command)
+            print("exec: " + cmd)
+            p = subprocess.Popen([cmd], shell=True, stdout=subprocess.PIPE)
             p.wait()
             if p.returncode != 0:
                 print("error: " + bytes.decode(p.communicate()[0]))
@@ -238,7 +234,7 @@ class NebulaService(object):
             with open(pf) as f:
                 self.pids[f.name] = int(f.readline())
 
-    def stop(self):
+    def stop(self, cleanup):
         print("try to stop nebula services...")
         self._collect_pids()
         self.kill_all(signal.SIGTERM)
@@ -250,7 +246,7 @@ class NebulaService(object):
 
         self.kill_all(signal.SIGKILL)
 
-        if self._cleanup:
+        if cleanup:
             shutil.rmtree(self.work_dir, ignore_errors=True)
 
     def kill_all(self, sig):

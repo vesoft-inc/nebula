@@ -46,6 +46,15 @@ const Pattern& OptimizeTagIndexScanByFilterRule::pattern() const {
   return pattern;
 }
 
+// Match 2 kinds of expressions:
+//
+// 1. Relational expr. If it is an IN expr, its list MUST have only 1 element, so it could always be
+// transformed to an relEQ expr. i.g.  A in [B]  =>  A == B
+// It the list has more than 1 element, the expr will be matched with UnionAllIndexScanBaseRule.
+//
+// 2. Logical AND expr. If the AND expr contains an operand that is an IN expr, the label attribute
+// in the IN expr SHOULD NOT have a valid index, otherwise the expression should be matched with
+// UnionAllIndexScanBaseRule.
 bool OptimizeTagIndexScanByFilterRule::match(OptContext* ctx, const MatchedResult& matched) const {
   if (!OptRule::match(ctx, matched)) {
     return false;
@@ -58,16 +67,23 @@ bool OptimizeTagIndexScanByFilterRule::match(OptContext* ctx, const MatchedResul
     }
   }
   auto condition = filter->condition();
+
+  // Case1: relational expr
   if (condition->isRelExpr()) {
     auto relExpr = static_cast<const RelationalExpression*>(condition);
+    // If the container in the IN expr has only 1 element, it will be converted to an relEQ
+    // expr. If more than 1 element found in the container, UnionAllIndexScanBaseRule will be
+    // applied.
+    if (relExpr->kind() == ExprKind::kRelIn && relExpr->right()->isContainerExpr()) {
+      auto ContainerOperands = graph::ExpressionUtils::getContainerExprOperands(relExpr->right());
+      return ContainerOperands.size() == 1;
+    }
     return relExpr->left()->kind() == ExprKind::kTagProperty &&
            relExpr->right()->kind() == ExprKind::kConstant;
   }
-  if (condition->isLogicalExpr()) {
-    return condition->kind() == Expression::Kind::kLogicalAnd;
-  }
 
-  return false;
+  // Case2: logical AND expr
+  return condition->kind() == ExprKind::kLogicalAnd;
 }
 
 TagIndexScan* makeTagIndexScan(QueryContext* qctx, const TagIndexScan* scan, bool isPrefixScan) {
@@ -94,9 +110,38 @@ StatusOr<TransformResult> OptimizeTagIndexScanByFilterRule::transform(
 
   OptimizerUtils::eraseInvalidIndexItems(scan->schemaId(), &indexItems);
 
+  auto condition = filter->condition();
+  auto conditionType = condition->kind();
+  Expression* transformedExpr = condition->clone();
+
+  // Stand alone IN expr with only 1 element in the list, no need to check index
+  if (conditionType == ExprKind::kRelIn) {
+    transformedExpr = graph::ExpressionUtils::rewriteInExpr(condition);
+    DCHECK(transformedExpr->kind() == ExprKind::kRelEQ);
+  }
+
+  // case2: logical AND expr
+  if (condition->kind() == ExprKind::kLogicalAnd) {
+    for (auto& operand : static_cast<const LogicalExpression*>(condition)->operands()) {
+      if (operand->kind() == ExprKind::kRelIn) {
+        auto inExpr = static_cast<RelationalExpression*>(operand);
+        // Do not apply this rule if the IN expr has a valid index or it has only 1 element in the
+        // list
+        if (static_cast<ListExpression*>(inExpr->right())->size() > 1) {
+          return TransformResult::noTransform();
+        } else {
+          transformedExpr = graph::ExpressionUtils::rewriteInExpr(condition);
+        }
+        if (OptimizerUtils::relExprHasIndex(inExpr, indexItems)) {
+          return TransformResult::noTransform();
+        }
+      }
+    }
+  }
+
   IndexQueryContext ictx;
   bool isPrefixScan = false;
-  if (!OptimizerUtils::findOptimalIndex(filter->condition(), indexItems, &isPrefixScan, &ictx)) {
+  if (!OptimizerUtils::findOptimalIndex(transformedExpr, indexItems, &isPrefixScan, &ictx)) {
     return TransformResult::noTransform();
   }
 

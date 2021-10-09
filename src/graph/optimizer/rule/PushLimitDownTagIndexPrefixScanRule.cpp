@@ -20,7 +20,6 @@
 
 using nebula::graph::Limit;
 using nebula::graph::PlanNode;
-using nebula::graph::Project;
 using nebula::graph::QueryContext;
 using nebula::graph::TagIndexPrefixScan;
 
@@ -36,20 +35,16 @@ PushLimitDownTagIndexPrefixScanRule::PushLimitDownTagIndexPrefixScanRule() {
 
 const Pattern &PushLimitDownTagIndexPrefixScanRule::pattern() const {
   static Pattern pattern = Pattern::create(
-      graph::PlanNode::Kind::kLimit,
-      {Pattern::create(graph::PlanNode::Kind::kProject,
-                       {Pattern::create(graph::PlanNode::Kind::kTagIndexPrefixScan)})});
+      graph::PlanNode::Kind::kLimit, {Pattern::create(graph::PlanNode::Kind::kTagIndexPrefixScan)});
   return pattern;
 }
 
 StatusOr<OptRule::TransformResult> PushLimitDownTagIndexPrefixScanRule::transform(
     OptContext *octx, const MatchedResult &matched) const {
   auto limitGroupNode = matched.node;
-  auto projGroupNode = matched.dependencies.front().node;
-  auto indexScanGroupNode = matched.dependencies.front().dependencies.front().node;
+  auto indexScanGroupNode = matched.dependencies.front().node;
 
   const auto limit = static_cast<const Limit *>(limitGroupNode->node());
-  const auto proj = static_cast<const Project *>(projGroupNode->node());
   const auto indexScan = static_cast<const TagIndexPrefixScan *>(indexScanGroupNode->node());
 
   int64_t limitRows = limit->offset() + limit->count();
@@ -60,18 +55,13 @@ StatusOr<OptRule::TransformResult> PushLimitDownTagIndexPrefixScanRule::transfor
   auto newLimit = static_cast<Limit *>(limit->clone());
   auto newLimitGroupNode = OptGroupNode::create(octx, newLimit, limitGroupNode->group());
 
-  auto newProj = static_cast<Project *>(proj->clone());
-  auto newProjGroup = OptGroup::create(octx);
-  auto newProjGroupNode = newProjGroup->makeGroupNode(newProj);
-
   auto newTagIndexPrefixScan = static_cast<TagIndexPrefixScan *>(indexScan->clone());
   newTagIndexPrefixScan->setLimit(limitRows);
   auto newTagIndexPrefixScanGroup = OptGroup::create(octx);
   auto newTagIndexPrefixScanGroupNode =
       newTagIndexPrefixScanGroup->makeGroupNode(newTagIndexPrefixScan);
 
-  newLimitGroupNode->dependsOn(newProjGroup);
-  newProjGroupNode->dependsOn(newTagIndexPrefixScanGroup);
+  newLimitGroupNode->dependsOn(newTagIndexPrefixScanGroup);
   for (auto dep : indexScanGroupNode->dependencies()) {
     newTagIndexPrefixScanGroupNode->dependsOn(dep);
   }

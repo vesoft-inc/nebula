@@ -39,13 +39,15 @@ class GraphService final : public cpp2::GraphServiceSvIf {
   folly::Future<std::string> future_executeJson(int64_t sessionId,
                                                 const std::string& stmt) override;
 
+  folly::Future<cpp2::VerifyClientVersionResp> future_verifyClientVersion(
+      const cpp2::VerifyClientVersionReq& req) override;
+
  private:
   bool auth(const std::string& username, const std::string& password);
 
   std::unique_ptr<GraphSessionManager> sessionManager_;
   std::unique_ptr<QueryEngine> queryEngine_;
   std::unique_ptr<meta::MetaClient> metaClient_;
-  HostAddr myAddr_;
 };
 
 }  // namespace graph

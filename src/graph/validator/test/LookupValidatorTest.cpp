@@ -134,13 +134,13 @@ TEST_F(LookupValidatorTest, wrongYield) {
     std::string query = "LOOKUP ON person YIELD vertex";
     auto result = checkResult(query);
     EXPECT_EQ(std::string(result.message()),
-              "SyntaxError: please add alias when using vertex. near `vertex'");
+              "SyntaxError: please add alias when using `vertex'. near `vertex'");
   }
   {
     std::string query = "LOOKUP ON person YIELD vertex as node, edge";
     auto result = checkResult(query);
     EXPECT_EQ(std::string(result.message()),
-              "SyntaxError: please add alias when using edge. near `edge'");
+              "SyntaxError: please add alias when using `edge'. near `edge'");
   }
   {
     std::string query = "LOOKUP ON person YIELD edge as e";

@@ -33,8 +33,7 @@ jobs:
         env:
           SHA_EXT: sha256sum.txt
         run: |
-          filename=$(find pkg-build/cpack_output -type f \( -iname \*.deb -o -iname \*.rpm \))
-          sha256sum $filename > $filename.$SHA_EXT
+          find pkg-build/cpack_output -type f \( -iname \*.deb -o -iname \*.rpm -o -iname \*.tar.gz \) -exec bash -c "sha256sum {} > {}.sha256sum.txt" \;
           subdir=$(date -u +%Y.%m.%d)
           echo "::set-output name=subdir::$subdir"
       - uses: actions/upload-artifact@v1
@@ -129,7 +128,7 @@ jobs:
         timeout-minutes: 20
       - name: Setup cluster
         run: |
-          make ENABLE_SSL=true CA_SIGNED=true up
+          make CONTAINERIZED=true ENABLE_SSL=true CA_SIGNED=true up
         working-directory: tests/
         timeout-minutes: 2
       - name: Pytest

@@ -152,7 +152,7 @@ void TransactionManager::scanAll() {
 void TransactionManager::onNewPartAdded(std::shared_ptr<kvstore::Part>& part) {
   LOG(INFO) << folly::sformat("space={}, part={} added", part->spaceId(), part->partitionId());
   auto fn = std::bind(&TransactionManager::onLeaderElectedWrapper, this, std::placeholders::_1);
-  part->registerOnElected(fn);
+  part->registerOnLeaderReady(fn);
 }
 
 void TransactionManager::onLeaderElectedWrapper(
@@ -169,8 +169,12 @@ void TransactionManager::scanPrimes(GraphSpaceID spaceId, PartitionID partId) {
   if (rc == nebula::cpp2::ErrorCode::SUCCEEDED) {
     for (; iter->valid(); iter->next()) {
       auto edgeKey = ConsistUtil::edgeKeyFromPrime(iter->key());
+      VLOG(1) << "scanned edgekey: " << folly::hexlify(edgeKey);
       auto lockKey = makeLockKey(spaceId, edgeKey.str());
-      reserveTable_.insert(std::make_pair(lockKey, ResumeType::RESUME_CHAIN));
+      auto insSucceed = reserveTable_.insert(std::make_pair(lockKey, ResumeType::RESUME_CHAIN));
+      if (!insSucceed.second) {
+        LOG(ERROR) << "not supposed to insert fail: " << folly::hexlify(edgeKey);
+      }
       auto* lk = getLockCore(spaceId, partId, false);
       auto succeed = lk->try_lock(edgeKey.str());
       if (!succeed) {
@@ -184,7 +188,10 @@ void TransactionManager::scanPrimes(GraphSpaceID spaceId, PartitionID partId) {
     for (; iter->valid(); iter->next()) {
       auto edgeKey = ConsistUtil::edgeKeyFromDoublePrime(iter->key());
       auto lockKey = makeLockKey(spaceId, edgeKey.str());
-      reserveTable_.insert(std::make_pair(lockKey, ResumeType::RESUME_REMOTE));
+      auto insSucceed = reserveTable_.insert(std::make_pair(lockKey, ResumeType::RESUME_REMOTE));
+      if (!insSucceed.second) {
+        LOG(ERROR) << "not supposed to insert fail: " << folly::hexlify(edgeKey);
+      }
       auto* lk = getLockCore(spaceId, partId);
       auto succeed = lk->try_lock(edgeKey.str());
       if (!succeed) {

@@ -85,6 +85,8 @@ class Part : public raftex::RaftPart {
 
   void onElected(TermID term) override;
 
+  void onLeaderReady(TermID term) override;
+
   void onDiscoverNewLeader(HostAddr nLeader) override;
 
   cpp2::ErrorCode commitLogs(std::unique_ptr<LogIterator> iter, bool wait) override;
@@ -114,15 +116,15 @@ class Part : public raftex::RaftPart {
     TermID term;
   };
 
-  using OnElectedCallBack = std::function<void(const CallbackOptions& opt)>;
-  void registerOnElected(OnElectedCallBack cb);
+  using LeaderReadyCB = std::function<void(const CallbackOptions& opt)>;
+  void registerOnLeaderReady(LeaderReadyCB cb);
 
  protected:
   GraphSpaceID spaceId_;
   PartitionID partId_;
   std::string walPath_;
   NewLeaderCallback newLeaderCb_ = nullptr;
-  std::vector<OnElectedCallBack> onElectedCallBacks_;
+  std::vector<LeaderReadyCB> leaderReadyCB_;
 
  private:
   KVEngine* engine_ = nullptr;

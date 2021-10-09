@@ -44,6 +44,8 @@ class Executor : private cpp::NonCopyable, private cpp::NonMovable {
   // Cleanup or reset executor some states after each execution
   virtual Status close();
 
+  Status checkMemoryWatermark();
+
   QueryContext *qctx() const { return qctx_; }
 
   int64_t id() const { return id_; }
