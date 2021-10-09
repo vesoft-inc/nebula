@@ -7,7 +7,7 @@
 #pragma once
 
 #include "common/base/Base.h"
-#include "common/geo/io/Geometry.h"
+#include "common/datatypes/Geography.h"
 #include "common/geo/io/wkb/ByteOrder.h"
 #include "common/geo/io/wkb/ByteOrderDataIOStream.h"
 
@@ -19,7 +19,7 @@ class WKBWriter {
 
   ~WKBWriter() {}
 
-  std::string write(const Geometry& geom, ByteOrder byteOrder = ByteOrder::LittleEndian);
+  std::string write(const Geography& geog, ByteOrder byteOrder = ByteOrder::LittleEndian);
 
   void writePoint(const Point& point);
 

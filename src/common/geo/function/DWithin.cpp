@@ -12,13 +12,13 @@
 
 namespace nebula {
 
+// Returns true if any of a is within distance meters of b.
 // We don't need to find the closest points. We just need to find the first point pair whose
 // distance is less than or less equal than the given distance. (Early quit)
 bool dWithin(const Geography& a, const Geography& b, double distance, bool inclusive) {
   auto aRegion = a.asS2();
   auto bRegion = b.asS2();
   if (!aRegion || !bRegion) {
-    LOG(INFO) << "dWithin(), asS2() failed.";
     return false;
   }
 

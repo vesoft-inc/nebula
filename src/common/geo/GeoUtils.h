@@ -12,33 +12,27 @@
 #include "common/base/StatusOr.h"
 #include "common/datatypes/Geography.h"
 #include "common/geo/GeoShape.h"
-#include "common/geo/io/Geometry.h"
 
 namespace nebula {
 
 class GeoUtils final {
  public:
-  // We don't check the validity of s2 when converting a Geometry to an S2Region.
-  // Therefore, the s2Region we got maybe invalid, and any computation based on it may have
-  // undefined behavour. Of course it doesn't cause the program to crash. If the user does not want
-  // to tolerate the UB, they could call `ST_IsValid` on the geography data to filter out the
-  // illegal ones.
-  static std::unique_ptr<S2Region> s2RegionFromGeomtry(const Geometry& geom) {
-    switch (geom.shape()) {
+  static std::unique_ptr<S2Region> s2RegionFromGeography(Geography geog) {
+    switch (geog.shape()) {
       case GeoShape::POINT: {
-        const auto& point = geom.point();
+        const auto& point = geog.point();
         auto s2Point = s2PointFromCoordinate(point.coord);
         return std::make_unique<S2PointRegion>(s2Point);
       }
       case GeoShape::LINESTRING: {
-        const auto& lineString = geom.lineString();
+        const auto& lineString = geog.lineString();
         auto coordList = lineString.coordList;
         auto s2Points = s2PointsFromCoordinateList(coordList);
         auto s2Polyline = std::make_unique<S2Polyline>(s2Points, S2Debug::DISABLE);
         return s2Polyline;
       }
       case GeoShape::POLYGON: {
-        const auto& polygon = geom.polygon();
+        const auto& polygon = geog.polygon();
         uint32_t numCoordList = polygon.numCoordList();
         std::vector<std::unique_ptr<S2Loop>> s2Loops;
         s2Loops.reserve(numCoordList);

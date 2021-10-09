@@ -7,14 +7,14 @@
 %lex-param { nebula::WKTScanner& scanner }
 %parse-param { nebula::WKTScanner& scanner }
 %parse-param { std::string &errmsg }
-%parse-param { nebula::Geometry** geom }
+%parse-param { nebula::Geography** geog }
 
 %code requires {
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <cstddef>
-#include "common/geo/io/Geometry.h"
+#include "common/datatypes/Geography.h"
 
 namespace nebula {
 
@@ -33,7 +33,7 @@ class WKTScanner;
 
 %union {
     double                                  doubleVal;
-    Geometry*                               geomVal;
+    Geography*                              geogVal;
     Point*                                  pointVal;
     LineString*                             lineVal;
     Polygon*                                polygonVal;
@@ -44,7 +44,7 @@ class WKTScanner;
 
 /* destructors */
 %destructor {} <doubleVal> <coordVal>
-%destructor {} <geomVal>
+%destructor {} <geogVal>
 %destructor { delete $$; } <*>
 
 /* wkt shape type prefix */
@@ -56,7 +56,7 @@ class WKTScanner;
 /* token type specification */
 %token <doubleVal> DOUBLE
 
-%type <geomVal> geometry
+%type <geogVal> geometry
 %type <pointVal> point
 %type <lineVal> linestring
 %type <polygonVal> polygon
@@ -72,19 +72,19 @@ class WKTScanner;
 
 geometry
   : point {
-    $$ = new Geometry(std::move(*$1));
+    $$ = new Geography(std::move(*$1));
     delete $1;
-    *geom = $$;
+    *geog = $$;
   }
   | linestring {
-    $$ = new Geometry(std::move(*$1));
+    $$ = new Geography(std::move(*$1));
     delete $1;
-    *geom = $$;
+    *geog = $$;
   }
   | polygon {
-    $$ = new Geometry(std::move(*$1));
+    $$ = new Geography(std::move(*$1));
     delete $1;
-    *geom = $$;
+    *geog = $$;
   }
 ;
 

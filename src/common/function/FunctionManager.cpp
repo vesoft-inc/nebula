@@ -328,10 +328,11 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
      {
          TypeSignature({Value::Type::STRING}, Value::Type::GEOGRAPHY),
      }},
-    {"st_geogfromwkb",
-     {
-         TypeSignature({Value::Type::STRING}, Value::Type::GEOGRAPHY),
-     }},
+    // This function requires binary data to be support first.
+    // {"st_geogfromwkb",
+    //  {
+    //      TypeSignature({Value::Type::STRING}, Value::Type::GEOGRAPHY),
+    //  }},
     // geo formatters
     {"st_astext",
      {
@@ -2363,17 +2364,13 @@ FunctionManager::FunctionManager() {
         return Value::kNullBadType;
       }
       const std::string &wkt = args[0].get().getStr();
-
-      auto geomRet = WKTReader().read(wkt);
-      if (!geomRet.ok()) {
+      // Parse a geography from the wkt, normalize it and then verify its validity.
+      auto geogRet = Geography::fromWKT(wkt, true, true);
+      if (!geogRet.ok()) {
+        LOG(ERROR) << "ST_GeogFromText error: " << geogRet.status();
         return Value::kNullBadData;
       }
-      auto geom = geomRet.value();
-      if (!geom.isValid()) {
-        return Value::kNullBadData;
-      }
-      auto bytes = WKBWriter().write(geom);
-      return Geography(bytes);
+      return std::move(geogRet.value());
     };
   }
   // {
@@ -2386,7 +2383,7 @@ FunctionManager::FunctionManager() {
   //       return Value::kNullBadType;
   //     }
   //     const std::string &wkb = args[0].get().getStr();
-  //     auto geogRet = Geography::fromWKB(wkb);
+  //     auto geogRet = Geography::fromWKB(wkb, true, true);
   //     if (!geogRet.ok()) {
   //       return Value::kNullBadData;
   //     }
@@ -2405,11 +2402,7 @@ FunctionManager::FunctionManager() {
         return Value::kNullBadType;
       }
       const Geography &g = args[0].get().getGeography();
-      auto wktPtr = g.asWKT();
-      if (!wktPtr) {
-        return Value::kNullBadData;
-      }
-      return *wktPtr;
+      return g.asWKT();
     };
   }
   {
@@ -2422,11 +2415,7 @@ FunctionManager::FunctionManager() {
         return Value::kNullBadType;
       }
       const Geography &g = args[0].get().getGeography();
-      auto wkbPtr = g.asWKBHex();
-      if (!wkbPtr) {
-        return Value::kNullBadData;
-      }
-      return *wkbPtr;
+      return g.asWKBHex();
     };
   }
   // geo accessors

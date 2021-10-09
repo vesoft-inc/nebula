@@ -8,14 +8,14 @@
 
 namespace nebula {
 
-std::string WKTWriter::write(const Geometry& geom) const {
+std::string WKTWriter::write(const Geography& geog) const {
   std::string wkt = "";
 
-  auto shape = geom.shape();
+  auto shape = geog.shape();
   switch (shape) {
     case GeoShape::POINT: {
       wkt.append("POINT");
-      const Point& point = geom.point();
+      const Point& point = geog.point();
       wkt.append("(");
       writeCoordinate(wkt, point.coord);
       wkt.append(")");
@@ -23,7 +23,7 @@ std::string WKTWriter::write(const Geometry& geom) const {
     }
     case GeoShape::LINESTRING: {
       wkt.append("LINESTRING");
-      const LineString& line = geom.lineString();
+      const LineString& line = geog.lineString();
       auto coordList = line.coordList;
       uint32_t numCoord = coordList.size();
       UNUSED(numCoord);
@@ -34,7 +34,7 @@ std::string WKTWriter::write(const Geometry& geom) const {
     }
     case GeoShape::POLYGON: {
       wkt.append("POLYGON");
-      const Polygon& polygon = geom.polygon();
+      const Polygon& polygon = geog.polygon();
       auto coordListList = polygon.coordListList;
       uint32_t numCoordList = coordListList.size();
       UNUSED(numCoordList);

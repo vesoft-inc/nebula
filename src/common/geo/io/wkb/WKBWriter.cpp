@@ -8,27 +8,26 @@
 
 namespace nebula {
 
-// TODO(jie) Check the validity of geom when writing wkb
-std::string WKBWriter::write(const Geometry& geom, ByteOrder byteOrder) {
+std::string WKBWriter::write(const Geography& geog, ByteOrder byteOrder) {
   os_.setByteOrder(byteOrder);
   os_.writeUint8(folly::to<uint8_t>(byteOrder));
 
-  GeoShape shape = geom.shape();
+  GeoShape shape = geog.shape();
   uint32_t shapeType = folly::to<uint32_t>(shape);
   os_.writeUint32(shapeType);
   switch (shape) {
     case GeoShape::POINT: {
-      const Point& point = geom.point();
+      const Point& point = geog.point();
       writePoint(point);
       return os_.str();
     }
     case GeoShape::LINESTRING: {
-      const LineString& line = geom.lineString();
+      const LineString& line = geog.lineString();
       writeLineString(line);
       return os_.str();
     }
     case GeoShape::POLYGON: {
-      const Polygon& polygon = geom.polygon();
+      const Polygon& polygon = geog.polygon();
       writePolygon(polygon);
       return os_.str();
     }

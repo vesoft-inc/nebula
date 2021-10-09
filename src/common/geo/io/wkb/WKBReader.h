@@ -8,7 +8,7 @@
 
 #include "common/base/Base.h"
 #include "common/base/StatusOr.h"
-#include "common/geo/io/Geometry.h"
+#include "common/datatypes/Geography.h"
 #include "common/geo/io/wkb/ByteOrder.h"
 #include "common/geo/io/wkb/ByteOrderDataIOStream.h"
 
@@ -20,7 +20,7 @@ class WKBReader {
 
   ~WKBReader() {}
 
-  StatusOr<Geometry> read(const std::string &wkb);
+  StatusOr<Geography> read(const std::string &wkb);
 
  private:
   StatusOr<Point> readPoint();

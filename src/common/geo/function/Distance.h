@@ -10,7 +10,6 @@
 
 namespace nebula {
 
-// Find the closest distance of a and b
 double distance(const Geography& a, const Geography& b);
 
 double distanceOfS2PolylineWithS2Point(const S2Polyline* aLine, const S2Point& bPoint);

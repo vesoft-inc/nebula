@@ -10,8 +10,6 @@
 
 namespace nebula {
 
-// We don't need to find the closest points. We just need to find the first point pair whose
-// distance is less than or less equal than the given distance. (Early quit)
 bool dWithin(const Geography& a, const Geography& b, double distance, bool inclusive);
 
 bool s2PointAndS2PolylineAreWithinDistance(const S2Point& aPoint,

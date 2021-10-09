@@ -10,9 +10,6 @@
 
 namespace nebula {
 
-// Covers returns whether geography b covers geography b.
-// If no point in b lies exterior of b, a covers b.
-// http://lin-ear-th-inking.blogspot.com/2007/06/subtleties-of-ogc-covers-spatial.html
 bool covers(const Geography& a, const Geography& b);
 
 bool coveredBy(const Geography& a, const Geography& b);

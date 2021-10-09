@@ -18,21 +18,21 @@ class WKTTEST : public ::testing::Test {
   void TearDown() override {}
 
  protected:
-  StatusOr<Geometry> read(const std::string& wkt) {
-    auto geomRet = WKTReader().read(wkt);
-    NG_RETURN_IF_ERROR(geomRet);
-    NG_RETURN_IF_ERROR(check(geomRet.value()));
-    return geomRet;
+  StatusOr<Geography> read(const std::string& wkt) {
+    auto geogRet = WKTReader().read(wkt);
+    NG_RETURN_IF_ERROR(geogRet);
+    NG_RETURN_IF_ERROR(check(geogRet.value()));
+    return geogRet;
   }
 
-  Status check(const Geometry& geom) {
-    auto wkt = WKTWriter().write(geom);
-    auto geomCopyRet = WKTReader().read(wkt);
-    auto geomCopy = geomCopyRet.value();
-    auto wktCopy = WKTWriter().write(geomCopy);
+  Status check(const Geography& geog) {
+    auto wkt = WKTWriter().write(geog);
+    auto geogCopyRet = WKTReader().read(wkt);
+    auto geogCopy = geogCopyRet.value();
+    auto wktCopy = WKTWriter().write(geogCopy);
 
     if (wkt != wktCopy) {
-      return Status::Error("The reparsed geometry `%s' is different from origin `%s'.",
+      return Status::Error("The reparsed Geography `%s' is different from origin `%s'.",
                            wktCopy.c_str(),
                            wkt.c_str());
     }

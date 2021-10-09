@@ -13,12 +13,11 @@
 
 namespace nebula {
 
-// Find the closest distance of a and b
+// Return the closest distance in meters of a and b.
 double distance(const Geography& a, const Geography& b) {
   auto aRegion = a.asS2();
   auto bRegion = b.asS2();
   if (!aRegion || !bRegion) {
-    LOG(INFO) << "distance(), asS2() failed.";
     return -1.0;
   }
 
@@ -42,7 +41,7 @@ double distance(const Geography& a, const Geography& b) {
         default: {
           LOG(ERROR)
               << "Geography shapes other than Point/LineString/Polygon are not currently supported";
-          return false;
+          return -1.0;
         }
       }
     }
@@ -70,7 +69,7 @@ double distance(const Geography& a, const Geography& b) {
         default: {
           LOG(ERROR)
               << "Geography shapes other than Point/LineString/Polygon are not currently supported";
-          return false;
+          return -1.0;
         }
       }
     }
@@ -95,7 +94,7 @@ double distance(const Geography& a, const Geography& b) {
         default: {
           LOG(ERROR)
               << "Geography shapes other than Point/LineString/Polygon are not currently supported";
-          return false;
+          return -1.0;
         }
       }
     }
@@ -103,11 +102,11 @@ double distance(const Geography& a, const Geography& b) {
     default: {
       LOG(ERROR)
           << "Geography shapes other than Point/LineString/Polygon are not currently supported";
-      return false;
+      return -1.0;
     }
   }
 
-  return false;
+  return -1.0;
 }
 
 double distanceOfS2PolylineWithS2Point(const S2Polyline* aLine, const S2Point& bPoint) {

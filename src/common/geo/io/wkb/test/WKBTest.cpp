@@ -7,7 +7,7 @@
 #include <gtest/gtest.h>
 
 #include "common/base/Base.h"
-#include "common/geo/io/Geometry.h"
+#include "common/datatypes/Geography.h"
 #include "common/geo/io/wkb/WKBReader.h"
 #include "common/geo/io/wkb/WKBWriter.h"
 
@@ -19,17 +19,17 @@ class WKBTest : public ::testing::Test {
   void TearDown() override {}
 
  protected:
-  StatusOr<Geometry> read(const Geometry& geom) {
-    auto wkb = WKBWriter().write(geom);
-    auto geomRet = WKBReader().read(wkb);
-    NG_RETURN_IF_ERROR(geomRet);
-    NG_RETURN_IF_ERROR(check(geom, geomRet.value()));
-    return geomRet;
+  StatusOr<Geography> read(const Geography& geog) {
+    auto wkb = WKBWriter().write(geog);
+    auto geogRet = WKBReader().read(wkb);
+    NG_RETURN_IF_ERROR(geogRet);
+    NG_RETURN_IF_ERROR(check(geog, geogRet.value()));
+    return geogRet;
   }
 
-  Status check(const Geometry& geom1, const Geometry& geom2) {
-    if (geom1 != geom2) {
-      return Status::Error("The reparsed geometry is different from the origin.");
+  Status check(const Geography& geog1, const Geography& geog2) {
+    if (geog1 != geog2) {
+      return Status::Error("The reparsed Geography is different from the origin.");
     }
     return Status::OK();
   }
@@ -59,15 +59,15 @@ TEST_F(WKBTest, TestWKB) {
     Point v(Coordinate(298.4, 499.99));
     auto result = read(v);
     ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(true, v.isValid());
+    EXPECT_EQ(false, v.isValid());
   }
   {
     Point v(Coordinate(24.7, 36.842));
     auto wkb = WKBWriter().write(v);
     wkb.pop_back();
-    auto geomRet = WKBReader().read(wkb);
-    ASSERT_FALSE(geomRet.ok());
-    EXPECT_EQ("Unexpected EOF when reading double", geomRet.status().toString());
+    auto geogRet = WKBReader().read(wkb);
+    ASSERT_FALSE(geogRet.ok());
+    EXPECT_EQ("Unexpected EOF when reading double", geogRet.status().toString());
   }
   // LineString
   {
@@ -93,7 +93,7 @@ TEST_F(WKBTest, TestWKB) {
     LineString v(std::vector<Coordinate>{Coordinate(0, 1), Coordinate(0, 1)});
     auto result = read(v);
     ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(true, v.isValid());
+    EXPECT_EQ(false, v.isValid());
   }
   // LineString must have at least 2 points
   {
@@ -106,17 +106,17 @@ TEST_F(WKBTest, TestWKB) {
     LineString v(std::vector<Coordinate>{Coordinate(26.4, 78.9), Coordinate(138.725, 91.0)});
     auto wkb = WKBWriter().write(v);
     wkb.pop_back();
-    auto geomRet = WKBReader().read(wkb);
-    ASSERT_FALSE(geomRet.ok());
-    EXPECT_EQ("Unexpected EOF when reading double", geomRet.status().toString());
+    auto geogRet = WKBReader().read(wkb);
+    ASSERT_FALSE(geogRet.ok());
+    EXPECT_EQ("Unexpected EOF when reading double", geogRet.status().toString());
   }
   {
     LineString v(std::vector<Coordinate>{Coordinate(26.4, 78.9), Coordinate(138.725, 91.0)});
     auto wkb = WKBWriter().write(v);
     wkb.erase(sizeof(uint8_t) + sizeof(uint32_t) + 3);  // Now the numCoord field is missing 1 byte
-    auto geomRet = WKBReader().read(wkb);
-    ASSERT_FALSE(geomRet.ok());
-    EXPECT_EQ("Unexpected EOF when reading uint32_t", geomRet.status().toString());
+    auto geogRet = WKBReader().read(wkb);
+    ASSERT_FALSE(geogRet.ok());
+    EXPECT_EQ("Unexpected EOF when reading uint32_t", geogRet.status().toString());
   }
   // Polygon
   {
@@ -160,9 +160,9 @@ TEST_F(WKBTest, TestWKB) {
         Coordinate(0, 1), Coordinate(1, 2), Coordinate(2, 3), Coordinate(0, 1)}});
     auto wkb = WKBWriter().write(v);
     wkb.pop_back();
-    auto geomRet = WKBReader().read(wkb);
-    ASSERT_FALSE(geomRet.ok());
-    EXPECT_EQ("Unexpected EOF when reading double", geomRet.status().toString());
+    auto geogRet = WKBReader().read(wkb);
+    ASSERT_FALSE(geogRet.ok());
+    EXPECT_EQ("Unexpected EOF when reading double", geogRet.status().toString());
   }
   {
     Polygon v(std::vector<std::vector<Coordinate>>{std::vector<Coordinate>{
@@ -170,9 +170,9 @@ TEST_F(WKBTest, TestWKB) {
     auto wkb = WKBWriter().write(v);
     wkb.erase(sizeof(uint8_t) + sizeof(uint32_t) +
               3);  // Now the numCoordList field is missing 1 byte
-    auto geomRet = WKBReader().read(wkb);
-    ASSERT_FALSE(geomRet.ok());
-    EXPECT_EQ("Unexpected EOF when reading uint32_t", geomRet.status().toString());
+    auto geogRet = WKBReader().read(wkb);
+    ASSERT_FALSE(geogRet.ok());
+    EXPECT_EQ("Unexpected EOF when reading uint32_t", geogRet.status().toString());
   }
 }
 

@@ -13,14 +13,13 @@
 
 namespace nebula {
 
-// Covers returns whether geography b covers geography b.
-// If no point in b lies exterior of b, a covers b.
+// Returns true if no point in b lies exterior of b.
+// The difference between ST_Covers, ST_Contains and ST_ContainsProperly, see
 // http://lin-ear-th-inking.blogspot.com/2007/06/subtleties-of-ogc-covers-spatial.html
 bool covers(const Geography& a, const Geography& b) {
   auto aRegion = a.asS2();
   auto bRegion = b.asS2();
   if (!aRegion || !bRegion) {
-    LOG(INFO) << "covers(), asS2() failed.";
     return false;
   }
 
@@ -45,9 +44,15 @@ bool covers(const Geography& a, const Geography& b) {
       switch (b.shape()) {
         case GeoShape::POINT:
           return aLine->MayIntersect(S2Cell(static_cast<S2PointRegion*>(bRegion.get())->point()));
-        case GeoShape::LINESTRING:
-          return aLine->NearlyCovers(*static_cast<S2Polyline*>(bRegion.get()),
-                                     S1Angle::Radians(1e-15));
+        case GeoShape::LINESTRING: {
+          S2Polyline* bLine = static_cast<S2Polyline*>(bRegion.get());
+          if (aLine->NearlyCovers(*bLine, S1Angle::Radians(1e-15))) {
+            return true;
+          }
+          // LineString should covers its reverse
+          aLine->Reverse();
+          return aLine->NearlyCovers(*bLine, S1Angle::Radians(1e-15));
+        }
         case GeoShape::POLYGON:
           return false;
         case GeoShape::UNKNOWN:
@@ -62,8 +67,14 @@ bool covers(const Geography& a, const Geography& b) {
       switch (b.shape()) {
         case GeoShape::POINT:
           return aPolygon->Contains(static_cast<S2PointRegion*>(bRegion.get())->point());
-        case GeoShape::LINESTRING:
-          return aPolygon->Contains(*static_cast<S2Polyline*>(bRegion.get()));
+        case GeoShape::LINESTRING: {
+          S2Polyline* bLine = static_cast<S2Polyline*>(bRegion.get());
+          if (aPolygon->Contains(*bLine)) {
+            return true;
+          }
+          bLine->Reverse();
+          return aPolygon->Contains(*bLine);
+        }
         case GeoShape::POLYGON:
           return aPolygon->Contains(static_cast<S2Polygon*>(bRegion.get()));
         case GeoShape::UNKNOWN:

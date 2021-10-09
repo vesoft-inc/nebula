@@ -26,7 +26,6 @@ nebula_add_library(
     wkb/WKBReader.cpp
     wkb/WKBWriter.cpp
     wkb/ByteOrderDataIOStream.cpp
-    Geometry.cpp
 )
 
 nebula_add_subdirectory(wkt)

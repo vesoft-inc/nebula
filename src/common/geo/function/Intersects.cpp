@@ -11,15 +11,12 @@
 
 namespace nebula {
 
-// Intersects returns whether geography b intersects geography b.
-// If any point in the set that comprises A is also a member of the set of points that make up B,
-// they intersects;
+// Returns true if any point in the set that comprises A is also a member of the set of points that
+// make up B.
 bool intersects(const Geography& a, const Geography& b) {
   auto aRegion = a.asS2();
   auto bRegion = b.asS2();
-  // TODO(jie): Better to ensure the Geography value is valid to build s2 when constructing.
   if (!aRegion || !bRegion) {
-    LOG(INFO) << "intersects(), asS2() failed.";
     return false;
   }
 
