@@ -66,10 +66,12 @@ folly::Future<Status> GetEdgesExecutor::getEdges() {
   }
 
   time::Duration getPropsTime;
+  GraphStorageClient::CommonRequestParam param(ge->space(),
+                                               qctx()->rctx()->session()->id(),
+                                               qctx()->plan()->id(),
+                                               qctx()->plan()->isProfileEnabled());
   return DCHECK_NOTNULL(client)
-      ->getProps(ge->space(),
-                 qctx()->rctx()->session()->id(),
-                 qctx()->plan()->id(),
+      ->getProps(param,
                  std::move(edges),
                  nullptr,
                  ge->props(),
