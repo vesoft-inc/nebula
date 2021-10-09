@@ -18,7 +18,7 @@
 
 namespace nebula {
 
-uint64_t S2CellIdFromPoint(const Geography& a, int level) {
+uint64_t s2CellIdFromPoint(const Geography& a, int level) {
   auto aRegion = a.asS2();
   if (!aRegion) {
     return -1;
@@ -46,7 +46,7 @@ uint64_t S2CellIdFromPoint(const Geography& a, int level) {
   return false;
 }
 
-std::vector<uint64_t> S2CoveringCellIds(
+std::vector<uint64_t> s2CoveringCellIds(
     const Geography& a, int minLevel, int maxLevel, int maxCells, double bufferInMeters) {
   auto aRegion = a.asS2();
   if (!aRegion) {

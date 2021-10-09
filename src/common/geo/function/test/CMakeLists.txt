@@ -92,3 +92,21 @@ nebula_add_test(
         gtest
         gtest_main
 )
+
+nebula_add_test(
+    NAME
+        s2util_test
+    SOURCES
+        S2UtilTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:function_manager_obj>
+        $<TARGET_OBJECTS:wkt_wkb_io_obj>
+        $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:datatypes_obj>
+        $<TARGET_OBJECTS:time_utils_obj>
+        $<TARGET_OBJECTS:time_obj>
+        $<TARGET_OBJECTS:fs_obj>
+    LIBRARIES
+        gtest
+        gtest_main
+)

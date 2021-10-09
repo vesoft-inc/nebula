@@ -12,10 +12,13 @@
 
 namespace nebula {
 
-uint64_t S2CellIdFromPoint(const Geography& a, int level);
+uint64_t s2CellIdFromPoint(const Geography& a, int level = 30);
 
-std::vector<uint64_t> S2CoveringCellIds(
-    const Geography& a, int minLevel, int maxLevel, int maxCells, double bufferInMeters);
+std::vector<uint64_t> s2CoveringCellIds(const Geography& a,
+                                        int minLevel = 0,
+                                        int maxLevel = 30,
+                                        int maxCells = 8,
+                                        double bufferInMeters = 0.0);
 
 std::vector<uint64_t> coveringCellIds(const S2Region& r, const S2RegionCoverer::Options& opts);
 

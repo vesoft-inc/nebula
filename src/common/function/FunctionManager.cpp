@@ -2529,7 +2529,7 @@ FunctionManager::FunctionManager() {
         }
       }
       // TODO(jie) Should return uint64_t Value
-      uint64_t cellId = S2CellIdFromPoint(args[0].get().getGeography(), level);
+      uint64_t cellId = s2CellIdFromPoint(args[0].get().getGeography(), level);
       const char *tmp = reinterpret_cast<const char *>(&cellId);
       int64_t cellId2 = *reinterpret_cast<const int64_t *>(tmp);
       return cellId2;
@@ -2587,7 +2587,7 @@ FunctionManager::FunctionManager() {
           return Value::kNullBadData;
         }
       }
-      std::vector<uint64_t> cellIds = S2CoveringCellIds(
+      std::vector<uint64_t> cellIds = s2CoveringCellIds(
           args[0].get().getGeography(), minLevel, maxLevel, maxCells, bufferInMeters);
       // TODO(jie) Should return uint64_t List
       std::vector<Value> vals;
