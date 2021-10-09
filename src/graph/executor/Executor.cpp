@@ -558,16 +558,6 @@ Status Executor::open() {
             << "ep: " << qctx()->plan()->id() << "query: " << qctx()->rctx()->query();
     return Status::Error("Execution had been killed");
   }
-  auto status = MemInfo::make();
-  NG_RETURN_IF_ERROR(status);
-  auto mem = std::move(status).value();
-  if (node_->isQueryNode() && mem->hitsHighWatermark(FLAGS_system_memory_high_watermark_ratio)) {
-    return Status::Error(
-        "Used memory(%ldKB) hits the high watermark(%lf) of total system memory(%ldKB).",
-        mem->usedInKB(),
-        FLAGS_system_memory_high_watermark_ratio,
-        mem->totalInKB());
-  }
 
   NG_RETURN_IF_ERROR(checkMemoryWatermark());
 
