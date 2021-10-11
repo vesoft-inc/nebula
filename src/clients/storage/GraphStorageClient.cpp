@@ -15,20 +15,20 @@ using nebula::storage::cpp2::GetPropResponse;
 namespace nebula {
 namespace storage {
 
-GraphStorageClient::CommonRequestParam::CommonRequestParam(GraphSpaceID space,
+GraphStorageClient::CommonRequestParam::CommonRequestParam(GraphSpaceID space_,
                                                            SessionID sess,
-                                                           ExecutionPlanID plan,
-                                                           bool profile,
+                                                           ExecutionPlanID plan_,
+                                                           bool profile_,
                                                            bool toss,
                                                            bool experimental,
-                                                           folly::EventBase* evb)
-    : space(space),
+                                                           folly::EventBase* evb_)
+    : space(space_),
       session(sess),
-      plan(plan),
-      profile(profile),
+      plan(plan_),
+      profile(profile_),
       useToss(toss),
       useExperimentalFeature(experimental),
-      evb(evb) {}
+      evb(evb_) {}
 
 cpp2::RequestCommon GraphStorageClient::CommonRequestParam::toReqCommon() const {
   cpp2::RequestCommon common;

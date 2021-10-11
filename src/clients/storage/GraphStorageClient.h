@@ -37,13 +37,13 @@ class GraphStorageClient : public StorageClientBase<cpp2::GraphStorageServiceAsy
     bool useExperimentalFeature{false};
     folly::EventBase* evb{nullptr};
 
-    CommonRequestParam(GraphSpaceID space,
+    CommonRequestParam(GraphSpaceID space_,
                        SessionID sess,
-                       ExecutionPlanID plan,
-                       bool profile = false,
+                       ExecutionPlanID plan_,
+                       bool profile_ = false,
                        bool toss = false,
                        bool experimental = false,
-                       folly::EventBase* evb = nullptr);
+                       folly::EventBase* evb_ = nullptr);
 
     cpp2::RequestCommon toReqCommon() const;
   };
