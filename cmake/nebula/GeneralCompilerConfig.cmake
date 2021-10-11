@@ -33,6 +33,7 @@ include_directories(AFTER ${CMAKE_CURRENT_BINARY_DIR}/src)
 
 if(ENABLE_WERROR)
     add_compile_options(-Werror)
+    add_compile_options(-Wno-attributes)
 endif()
 
 if(NOT ENABLE_STRICT_ALIASING)
