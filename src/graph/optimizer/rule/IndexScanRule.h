@@ -113,14 +113,6 @@ class IndexScanRule final : public OptRule {
 
   size_t hintCount(const FilterItems& items) const noexcept;
 
-  bool isEdge(const OptGroupNode* groupNode) const;
-
-  int32_t schemaId(const OptGroupNode* groupNode) const;
-
-  GraphSpaceID spaceId(const OptGroupNode* groupNode) const;
-
-  Expression* filterExpr(const OptGroupNode* groupNode) const;
-
   Status analyzeExpression(Expression* expr, FilterItems* items, ScanKind* kind, bool isEdge) const;
 
   template <typename E,
@@ -146,8 +138,6 @@ class IndexScanRule final : public OptRule {
 
   std::vector<IndexItem> findIndexForRangeScan(const std::vector<IndexItem>& indexes,
                                                const FilterItems& items) const;
-
-  bool isEmptyResultSet(const OptGroupNode* groupNode) const;
 };
 
 }  // namespace opt

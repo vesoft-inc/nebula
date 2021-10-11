@@ -449,50 +449,21 @@ Value OptimizerUtils::boundValueWithMin(const meta::cpp2::ColumnDef& col) {
   return Value::kNullBadType;
 }
 
-Value OptimizerUtils::normalizeValue(const meta::cpp2::ColumnDef& col, const Value& v) {
-  auto type = SchemaUtil::propTypeToValueType(col.get_type().get_type());
-  switch (type) {
-    case Value::Type::INT:
-    case Value::Type::FLOAT:
-    case Value::Type::BOOL:
-    case Value::Type::DATE:
-    case Value::Type::TIME:
-    case Value::Type::DATETIME: {
-      return v;
-    }
-    case Value::Type::STRING: {
-      if (!col.type.type_length_ref().has_value()) {
-        return Value::kNullBadType;
-      }
-      if (!v.isStr()) {
-        return v;
-      }
-      auto len = static_cast<size_t>(*col.get_type().get_type_length());
-      if (v.getStr().size() > len) {
-        return Value(v.getStr().substr(0, len));
-      } else {
-        std::string s;
-        s.reserve(len);
-        s.append(v.getStr()).append(len - v.getStr().size(), '\0');
-        return Value(std::move(s));
-      }
-    }
-    case Value::Type::__EMPTY__:
-    case Value::Type::NULLVALUE:
-    case Value::Type::VERTEX:
-    case Value::Type::EDGE:
-    case Value::Type::LIST:
-    case Value::Type::SET:
-    case Value::Type::MAP:
-    case Value::Type::DATASET:
-    case Value::Type::GEOGRAPHY:  // TODO(jie)
-    case Value::Type::PATH: {
-      DLOG(FATAL) << "Not supported value type " << type << "for index.";
-      return Value::kNullBadType;
-    }
+Value OptimizerUtils::normalizeStringValue(const meta::cpp2::ColumnDef& col, const Value& v) {
+  DCHECK(col.type.type == meta::cpp2::PropertyType::STRING);
+  DCHECK(v.isStr());
+  if (!col.type.type_length_ref().has_value()) {
+    return Value::kNullBadType;
   }
-  DLOG(FATAL) << "Unknown value type " << static_cast<int>(type);
-  return Value::kNullBadType;
+  auto len = static_cast<size_t>(*col.get_type().get_type_length());
+  if (v.getStr().size() > len) {
+    return Value(v.getStr().substr(0, len));
+  } else {
+    std::string s;
+    s.reserve(len);
+    s.append(v.getStr()).append(len - v.getStr().size(), '\0');
+    return Value(std::move(s));
+  }
 }
 
 Status OptimizerUtils::boundValue(Expression::Kind kind,
@@ -631,7 +602,10 @@ Status handleRangeIndex(const meta::cpp2::ColumnDef& field,
 void handleEqualIndex(const ColumnDef& field, const Value& value, IndexColumnHint* hint) {
   hint->set_scan_type(storage::cpp2::ScanType::PREFIX);
   hint->set_column_name(field.get_name());
-  hint->set_begin_value(OptimizerUtils::normalizeValue(field, value));
+  auto v = field.type.type == meta::cpp2::PropertyType::STRING
+               ? OptimizerUtils::normalizeStringValue(field, value)
+               : value;
+  hint->set_begin_value(v);
 }
 
 StatusOr<ScoredColumnHint> selectRelExprIndex(const ColumnDef& field,

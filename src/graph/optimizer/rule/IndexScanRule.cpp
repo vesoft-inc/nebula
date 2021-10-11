@@ -51,13 +51,21 @@ bool IndexScanRule::match(OptContext* ctx, const MatchedResult& matched) const {
 
 StatusOr<OptRule::TransformResult> IndexScanRule::transform(OptContext* ctx,
                                                             const MatchedResult& matched) const {
+  auto qctx = ctx->qctx();
   auto groupNode = matched.node;
-  if (isEmptyResultSet(groupNode)) {
+  auto* node = groupNode->node();
+  DCHECK_EQ(node->kind(), graph::PlanNode::Kind::kIndexScan);
+  auto* indexScanNode = static_cast<const IndexScan*>(node);
+  if (indexScanNode->isEmptyResultSet()) {
     return TransformResult::noTransform();
   }
 
-  auto filter = filterExpr(groupNode);
-  auto qctx = ctx->qctx();
+  const auto& qct = indexScanNode->queryContext();
+  // TODO: get rid of this assumption
+  // The initial IndexScan plan node has only zero or one queryContext.
+  DCHECK_EQ(qct.size(), 1);
+  auto filter = Expression::decode(qctx->objPool(), qct.front().get_filter());
+
   std::vector<IndexQueryContext> iqctx;
   if (filter == nullptr) {
     // Only filter is nullptr when lookup on tagname
@@ -65,7 +73,7 @@ StatusOr<OptRule::TransformResult> IndexScanRule::transform(OptContext* ctx,
   } else {
     FilterItems items;
     ScanKind kind;
-    NG_RETURN_IF_ERROR(analyzeExpression(filter, &items, &kind, isEdge(groupNode)));
+    NG_RETURN_IF_ERROR(analyzeExpression(filter, &items, &kind, indexScanNode->isEdge()));
     NG_RETURN_IF_ERROR(createIndexQueryCtx(iqctx, kind, items, qctx, groupNode));
   }
 
@@ -213,7 +221,9 @@ Status IndexScanRule::appendColHint(std::vector<IndexColumnHint>& hints,
         return Status::SemanticError();
       }
       isRangeScan = false;
-      begin = OptimizerUtils::normalizeValue(col, item.value_);
+      begin = col.type.type == meta::cpp2::PropertyType::STRING
+                  ? OptimizerUtils::normalizeStringValue(col, item.value_)
+                  : item.value_;
       break;
     }
     // because only type for bool is true/false, which can not satisify [start,
@@ -242,38 +252,6 @@ Status IndexScanRule::appendColHint(std::vector<IndexColumnHint>& hints,
   hint.set_column_name(col.get_name());
   hints.emplace_back(std::move(hint));
   return Status::OK();
-}
-
-bool IndexScanRule::isEdge(const OptGroupNode* groupNode) const {
-  auto in = static_cast<const IndexScan*>(groupNode->node());
-  return in->isEdge();
-}
-
-int32_t IndexScanRule::schemaId(const OptGroupNode* groupNode) const {
-  auto in = static_cast<const IndexScan*>(groupNode->node());
-  return in->schemaId();
-}
-
-GraphSpaceID IndexScanRule::spaceId(const OptGroupNode* groupNode) const {
-  auto in = static_cast<const IndexScan*>(groupNode->node());
-  return in->space();
-}
-
-Expression* IndexScanRule::filterExpr(const OptGroupNode* groupNode) const {
-  auto in = static_cast<const IndexScan*>(groupNode->node());
-  const auto& qct = in->queryContext();
-  // The initial IndexScan plan node has only zero or one queryContext.
-  // TODO(yee): Move this condition to match interface
-  if (qct.empty()) {
-    return nullptr;
-  }
-
-  if (qct.size() != 1) {
-    LOG(ERROR) << "Index Scan plan node error";
-    return nullptr;
-  }
-  auto* pool = in->qctx()->objPool();
-  return Expression::decode(pool, qct.begin()->get_filter());
 }
 
 Status IndexScanRule::analyzeExpression(Expression* expr,
@@ -394,8 +372,12 @@ IndexItem IndexScanRule::findLightestIndex(graph::QueryContext* qctx,
 
 std::vector<IndexItem> IndexScanRule::allIndexesBySchema(graph::QueryContext* qctx,
                                                          const OptGroupNode* groupNode) const {
-  auto ret = isEdge(groupNode) ? qctx->getMetaClient()->getEdgeIndexesFromCache(spaceId(groupNode))
-                               : qctx->getMetaClient()->getTagIndexesFromCache(spaceId(groupNode));
+  auto* node = groupNode->node();
+  DCHECK_EQ(node->kind(), graph::PlanNode::Kind::kIndexScan);
+  auto* indexScanNode = static_cast<const IndexScan*>(node);
+  auto ret = indexScanNode->isEdge()
+                 ? qctx->getMetaClient()->getEdgeIndexesFromCache(indexScanNode->space())
+                 : qctx->getMetaClient()->getTagIndexesFromCache(indexScanNode->space());
   if (!ret.ok()) {
     LOG(ERROR) << "No index was found";
     return {};
@@ -403,9 +385,9 @@ std::vector<IndexItem> IndexScanRule::allIndexesBySchema(graph::QueryContext* qc
   std::vector<IndexItem> indexes;
   for (auto& index : ret.value()) {
     // TODO (sky) : ignore rebuilding indexes
-    auto id = isEdge(groupNode) ? index->get_schema_id().get_edge_type()
-                                : index->get_schema_id().get_tag_id();
-    if (id == schemaId(groupNode)) {
+    auto id = indexScanNode->isEdge() ? index->get_schema_id().get_edge_type()
+                                      : index->get_schema_id().get_tag_id();
+    if (id == indexScanNode->schemaId()) {
       indexes.emplace_back(index);
     }
   }
@@ -534,9 +516,5 @@ std::vector<IndexItem> IndexScanRule::findIndexForRangeScan(const std::vector<In
   return priorityIdxs;
 }
 
-bool IndexScanRule::isEmptyResultSet(const OptGroupNode* groupNode) const {
-  auto in = static_cast<const IndexScan*>(groupNode->node());
-  return in->isEmptyResultSet();
-}
 }  // namespace opt
 }  // namespace nebula

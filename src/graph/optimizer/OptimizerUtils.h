@@ -39,6 +39,7 @@ class OptimizerUtils {
 
   OptimizerUtils() = delete;
 
+  // TODO: delete all boundValue related functions
   static Value boundValue(const meta::cpp2::ColumnDef& col,
                           BoundValueOperator op,
                           const Value& v = Value());
@@ -51,7 +52,7 @@ class OptimizerUtils {
 
   static Value boundValueWithMin(const meta::cpp2::ColumnDef& col);
 
-  static Value normalizeValue(const meta::cpp2::ColumnDef& col, const Value& v);
+  static Value normalizeStringValue(const meta::cpp2::ColumnDef& col, const Value& v);
 
   static Status boundValue(Expression::Kind kind,
                            const Value& val,
