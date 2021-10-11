@@ -151,10 +151,10 @@ Status AlterValidator::alterSchema(const std::vector<AlterSchemaOptItem *> &sche
     if (opType == meta::cpp2::AlterSchemaOp::DROP) {
       const auto &colNames = schemaOpt->columnNames();
       for (auto &colName : colNames) {
-        if (uniqueColName.find(colName) != uniqueColName.end()) {
-          return Status::SemanticError("Duplicate column name `%s'", colName.c_str());
+        if (uniqueColName.find(*colName) != uniqueColName.end()) {
+          return Status::SemanticError("Duplicate column name `%s'", colName->c_str());
         }
-        uniqueColName.emplace(colName);
+        uniqueColName.emplace(*colName);
         meta::cpp2::ColumnDef column;
         column.name = *colName;
         schema.columns_ref().value().emplace_back(std::move(column));
