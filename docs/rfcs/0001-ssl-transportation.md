@@ -14,6 +14,7 @@ Define some global flags:
 | ---------------- | ------- | ---------------------------------------- |
 | cert_path        | ""      | Path to cert pem.                        |
 | key_path         | ""      | Path to cert key.                        |
+| password_path    | ""      | Path to cert password file.              |
 | ca_path          | ""      | Path to trusted CA file.                 |
 | enable_ssl       | false   | Whether enable ssl.                      |
 | enable_graph_ssl | false   | Whether enable ssl in graph server only. |
@@ -21,7 +22,7 @@ Define some global flags:
 
 Two certificate mode:
 
-1. Self Signed: only provide `cert_path` and `key_path`.
+1. Self Signed: only provide `cert_path`, `key_path` and `password_path`.
 2. CA Signed: provide `cert_path`, `key_path` and `ca_path`.
 
 And provide three policies to control crypto components;
