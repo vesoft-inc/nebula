@@ -63,22 +63,18 @@ Status FindPathValidator::validateWhere(WhereClause* where) {
 }
 
 Status FindPathValidator::validateYield(YieldClause* yield) {
-  auto pool = qctx_->objPool();
   if (yield == nullptr) {
-    // TODO: compatible with previous version, this will be deprecated in version 3.0
-    auto* yieldColumns = new YieldColumns();
-    auto* pathExpr = new YieldColumn(LabelExpression::make(pool, "PATH"), "path");
-    yieldColumns->addColumn(pathExpr);
-    yield = pool->add(new YieldClause(yieldColumns));
+    return Status::SemanticError("missing yield clause.");
   }
-
-  for (auto& col : yield->columns()) {
-    if (col->expr()->kind() != Expression::Kind::kLabel || col->expr()->toString() != "PATH") {
-      return Status::SemanticError("illegal yield clauses `%s'. only support yield path",
-                                   col->toString().c_str());
-    }
-    outputs_.emplace_back(col->name(), Value::Type::PATH);
+  if (yield->columns().size() != 1) {
+    return Status::SemanticError("only support yield path");
   }
+  const auto& col = yield->columns().front();
+  if (col->expr()->kind() != Expression::Kind::kLabel || col->expr()->toString() != "PATH") {
+    return Status::SemanticError("illegal yield clauses `%s'. only support yield path",
+                                 col->toString().c_str());
+  }
+  outputs_.emplace_back(col->name(), Value::Type::PATH);
   pathCtx_->colNames = getOutColNames();
   return Status::OK();
 }
