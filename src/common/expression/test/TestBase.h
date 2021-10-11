@@ -59,54 +59,42 @@ class ExpressionTest : public ::testing::Test {
 
  protected:
   void testExpr(const std::string &exprSymbol, Value expected) {
-    if (exprSymbol.find("empty") == std::string::npos) {
-      std::string query = "RETURN " + exprSymbol;
-      nebula::GQLParser gParser(&gQueryCtxt);
-      auto result = gParser.parse(query);
-      auto *sequentialSentences = static_cast<SequentialSentences *>(result.value().get());
-      ASSERT_NE(sequentialSentences, nullptr);
-      auto sentences = sequentialSentences->sentences();
-      ASSERT_GT(sentences.size(), 0);
-      auto *yieldSentence = static_cast<YieldSentence *>(sentences[0]);
-      ASSERT_NE(yieldSentence, nullptr);
-      ASSERT_NE(yieldSentence->yield(), nullptr);
-      ASSERT_NE(yieldSentence->yield()->yields(), nullptr);
-      ASSERT_NE(yieldSentence->yield()->yields()->back(), nullptr);
-      Expression *ep = yieldSentence->yield()->yields()->back()->expr();
-      auto eval = Expression::eval(ep, gExpCtxt);
-      EXPECT_EQ(eval.type(), expected.type()) << "type check failed: " << ep->toString();
-      EXPECT_EQ(eval, expected) << "check failed: " << ep->toString();
-    } else {
-      // Should not reach here.
-      // Empty is parsed separately
-      EXPECT_EQ(exprSymbol.find("empty"), std::string::npos);
-      return;
-    }
+    std::string query = "RETURN " + exprSymbol;
+    nebula::GQLParser gParser(&gQueryCtxt);
+    auto result = gParser.parse(query);
+    ASSERT_EQ(result.ok(), true);
+    auto *sequentialSentences = static_cast<SequentialSentences *>(result.value().get());
+    ASSERT_NE(sequentialSentences, nullptr);
+    auto sentences = sequentialSentences->sentences();
+    ASSERT_GT(sentences.size(), 0);
+    auto *yieldSentence = static_cast<YieldSentence *>(sentences[0]);
+    ASSERT_NE(yieldSentence, nullptr);
+    ASSERT_NE(yieldSentence->yield(), nullptr);
+    ASSERT_NE(yieldSentence->yield()->yields(), nullptr);
+    ASSERT_NE(yieldSentence->yield()->yields()->back(), nullptr);
+    Expression *ep = yieldSentence->yield()->yields()->back()->expr();
+    auto eval = Expression::eval(ep, gExpCtxt);
+    EXPECT_EQ(eval.type(), expected.type()) << "type check failed: " << ep->toString();
+    EXPECT_EQ(eval, expected) << "check failed: " << ep->toString();
   }
 
   void testToString(const std::string &exprSymbol, const char *expected) {
-    if (exprSymbol.find("empty") == std::string::npos) {
-      std::string query = "RETURN " + exprSymbol;
-      nebula::GQLParser gParser(&gQueryCtxt);
-      auto result = gParser.parse(query);
-      auto *sequentialSentences = static_cast<SequentialSentences *>(result.value().get());
-      ASSERT_NE(sequentialSentences, nullptr);
-      auto sentences = sequentialSentences->sentences();
-      ASSERT_GT(sentences.size(), 0);
-      auto *yieldSentence = static_cast<YieldSentence *>(sentences[0]);
-      ASSERT_NE(yieldSentence, nullptr);
-      ASSERT_NE(yieldSentence->yield(), nullptr);
-      ASSERT_NE(yieldSentence->yield()->yields(), nullptr);
-      ASSERT_NE(yieldSentence->yield()->yields()->back(), nullptr);
-      Expression *ep = yieldSentence->yield()->yields()->back()->expr();
-      ASSERT_NE(ep, nullptr);
-      EXPECT_EQ(ep->toString(), expected);
-    } else {
-      // Should not reach here.
-      // Empty is parsed separately
-      EXPECT_EQ(exprSymbol.find("empty"), std::string::npos);
-      return;
-    }
+    std::string query = "RETURN " + exprSymbol;
+    nebula::GQLParser gParser(&gQueryCtxt);
+    auto result = gParser.parse(query);
+    ASSERT_EQ(result.ok(), true);
+    auto *sequentialSentences = static_cast<SequentialSentences *>(result.value().get());
+    ASSERT_NE(sequentialSentences, nullptr);
+    auto sentences = sequentialSentences->sentences();
+    ASSERT_GT(sentences.size(), 0);
+    auto *yieldSentence = static_cast<YieldSentence *>(sentences[0]);
+    ASSERT_NE(yieldSentence, nullptr);
+    ASSERT_NE(yieldSentence->yield(), nullptr);
+    ASSERT_NE(yieldSentence->yield()->yields(), nullptr);
+    ASSERT_NE(yieldSentence->yield()->yields()->back(), nullptr);
+    Expression *ep = yieldSentence->yield()->yields()->back()->expr();
+    ASSERT_NE(ep, nullptr);
+    EXPECT_EQ(ep->toString(), expected);
   }
 
   void testFunction(const char *name, const std::vector<Value> &args, const Value &expected) {
@@ -120,11 +108,12 @@ class ExpressionTest : public ::testing::Test {
     query += ")";
     nebula::GQLParser gParser(&gQueryCtxt);
     auto result = gParser.parse(query);
-    auto *sequentialSentences = static_cast<SequentialSentences*>(result.value().get());
+    ASSERT_EQ(result.ok(), true);
+    auto *sequentialSentences = static_cast<SequentialSentences *>(result.value().get());
     ASSERT_NE(sequentialSentences, nullptr);
     auto sentences = sequentialSentences->sentences();
     ASSERT_GT(sentences.size(), 0);
-    auto *yieldSentence = static_cast<YieldSentence*>(sentences[0]);
+    auto *yieldSentence = static_cast<YieldSentence *>(sentences[0]);
     ASSERT_NE(yieldSentence, nullptr);
     ASSERT_NE(yieldSentence->yield(), nullptr);
     ASSERT_NE(yieldSentence->yield()->yields(), nullptr);
