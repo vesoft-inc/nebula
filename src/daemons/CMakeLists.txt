@@ -98,6 +98,56 @@ nebula_add_executable(
 
 nebula_add_executable(
     NAME
+        nebula-graph-storage
+    SOURCES
+        GraphStorageCoProcessDaemon.cpp
+        SetupLogging.cpp
+        SetupBreakpad.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:stats_def_obj>
+        $<TARGET_OBJECTS:util_obj>
+        $<TARGET_OBJECTS:service_obj>
+        $<TARGET_OBJECTS:graph_session_obj>
+        $<TARGET_OBJECTS:query_engine_obj>
+        $<TARGET_OBJECTS:parser_obj>
+        $<TARGET_OBJECTS:validator_obj>
+        $<TARGET_OBJECTS:expr_visitor_obj>
+        $<TARGET_OBJECTS:optimizer_obj>
+        $<TARGET_OBJECTS:planner_obj>
+        $<TARGET_OBJECTS:executor_obj>
+        $<TARGET_OBJECTS:scheduler_obj>
+        $<TARGET_OBJECTS:idgenerator_obj>
+        $<TARGET_OBJECTS:graph_context_obj>
+        $<TARGET_OBJECTS:optimizer_obj>
+        $<TARGET_OBJECTS:graph_flags_obj>
+        $<TARGET_OBJECTS:graph_auth_obj>
+        $<TARGET_OBJECTS:graph_thrift_obj>
+        $<TARGET_OBJECTS:storage_client_base_obj>
+        $<TARGET_OBJECTS:graph_storage_client_obj>
+        $<TARGET_OBJECTS:concurrent_obj>
+        $<TARGET_OBJECTS:charset_obj>
+        $<TARGET_OBJECTS:graph_obj>
+        $<TARGET_OBJECTS:ft_es_graph_adapter_obj>
+        $<TARGET_OBJECTS:storage_server>
+        $<TARGET_OBJECTS:internal_storage_service_handler>
+        $<TARGET_OBJECTS:graph_storage_service_handler>
+        $<TARGET_OBJECTS:storage_admin_service_handler>
+        $<TARGET_OBJECTS:storage_http_handler>
+        $<TARGET_OBJECTS:storage_transaction_executor>
+        $<TARGET_OBJECTS:internal_storage_client_obj>
+        $<TARGET_OBJECTS:graph_storage_client_obj>
+        $<TARGET_OBJECTS:storage_client_base_obj>
+        $<TARGET_OBJECTS:storage_common_obj>
+        ${storage_meta_deps}
+        ${common_deps}
+    LIBRARIES
+        ${PROXYGEN_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        wangle
+)
+
+nebula_add_executable(
+    NAME
         nebula-graphd
     SOURCES
         GraphDaemon.cpp
