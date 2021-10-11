@@ -156,24 +156,10 @@ void Host::setResponse(const cpp2::AppendLogResponse& r) {
 }
 
 void Host::appendLogsInternal(folly::EventBase* eb, std::shared_ptr<cpp2::AppendLogRequest> req) {
-  sendAppendLogRequest(eb, std::move(req))
+  using TransportException = apache::thrift::transport::TTransportException;
+  sendAppendLogRequest(eb, req)
       .via(eb)
-      .then([eb, self = shared_from_this()](folly::Try<cpp2::AppendLogResponse>&& t) {
-        VLOG(3) << self->idStr_ << "appendLogs() call got response";
-        if (t.hasException()) {
-          VLOG(2) << self->idStr_ << t.exception().what();
-          cpp2::AppendLogResponse r;
-          r.set_error_code(cpp2::ErrorCode::E_EXCEPTION);
-          {
-            std::lock_guard<std::mutex> g(self->lock_);
-            self->setResponse(r);
-            self->lastLogIdSent_ = self->logIdToSend_ - 1;
-          }
-          self->noMoreRequestCV_.notify_all();
-          return;
-        }
-
-        cpp2::AppendLogResponse resp = std::move(t).value();
+      .thenValue([eb, self = shared_from_this()](cpp2::AppendLogResponse&& resp) {
         LOG_IF(INFO, FLAGS_trace_raft)
             << self->idStr_ << "AppendLogResponse "
             << "code " << apache::thrift::util::enumNameSafe(resp.get_error_code()) << ", currTerm "
@@ -358,6 +344,43 @@ void Host::appendLogsInternal(folly::EventBase* eb, std::shared_ptr<cpp2::Append
             return;
           }
         }
+      })
+      .thenError(folly::tag_t<TransportException>{},
+                 [self = shared_from_this(), req](TransportException&& ex) {
+                   VLOG(2) << self->idStr_ << ex.what();
+                   cpp2::AppendLogResponse r;
+                   r.set_error_code(cpp2::ErrorCode::E_EXCEPTION);
+                   {
+                     std::lock_guard<std::mutex> g(self->lock_);
+                     if (ex.getType() == TransportException::TIMED_OUT) {
+                       VLOG(2) << self->idStr_ << "append log time out"
+                               << ", space " << req->get_space() << ", part " << req->get_part()
+                               << ", current term " << req->get_current_term() << ", last_log_id "
+                               << req->get_last_log_id() << ", committed_id "
+                               << req->get_committed_log_id() << ", last_log_term_sent"
+                               << req->get_last_log_term_sent() << ", last_log_id_sent "
+                               << req->get_last_log_id_sent() << ", logs size "
+                               << req->get_log_str_list().size();
+                     }
+                     self->setResponse(r);
+                     self->lastLogIdSent_ = self->logIdToSend_ - 1;
+                   }
+                   // a new raft log or heartbeat will trigger another appendLogs in Host
+                   self->noMoreRequestCV_.notify_all();
+                   return;
+                 })
+      .thenError(folly::tag_t<std::exception>{}, [self = shared_from_this()](std::exception&& ex) {
+        VLOG(2) << self->idStr_ << ex.what();
+        cpp2::AppendLogResponse r;
+        r.set_error_code(cpp2::ErrorCode::E_EXCEPTION);
+        {
+          std::lock_guard<std::mutex> g(self->lock_);
+          self->setResponse(r);
+          self->lastLogIdSent_ = self->logIdToSend_ - 1;
+        }
+        // a new raft log or heartbeat will trigger another appendLogs in Host
+        self->noMoreRequestCV_.notify_all();
+        return;
       });
 }
 
