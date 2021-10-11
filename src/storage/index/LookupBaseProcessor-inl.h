@@ -196,7 +196,7 @@ StatusOr<StoragePlan<IndexID>> LookupBaseProcessor<REQ, RESP>::buildPlan(
     auto fields = indexItem->get_fields();
 
     for (const auto& col : fields) {
-      if (!hasNullableCol && col.get_nullable()) {
+      if (!hasNullableCol && col.nullable_ref().value_or(false)) {
         hasNullableCol = true;
         break;
       }
