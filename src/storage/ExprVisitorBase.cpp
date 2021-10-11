@@ -54,7 +54,7 @@ void ExprVisitorBase::visit(SetExpression *expr) {
 }
 void ExprVisitorBase::visit(MapExpression *expr) { UNUSED(expr); }
 // property Expression
-void visit(TagPropertyExpression *expr) { UNUSED(expr); }
+void ExprVisitorBase::visit(TagPropertyExpression *expr) { UNUSED(expr); }
 void ExprVisitorBase::visit(EdgePropertyExpression *expr) { UNUSED(expr); }
 void ExprVisitorBase::visit(InputPropertyExpression *expr) { UNUSED(expr); }
 void ExprVisitorBase::visit(VariablePropertyExpression *expr) { UNUSED(expr); }

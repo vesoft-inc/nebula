@@ -49,6 +49,7 @@ std::unique_ptr<IndexNode> IndexSelectionNode::copy() {
 }
 Value IndexSelectionNode::ExprContext::getEdgeProp(const std::string& edgeType,
                                                    const std::string& prop) const {
+  UNUSED(edgeType);
   DCHECK(row_ != nullptr);
   auto iter = colPos_.find(prop);
   DCHECK(iter != colPos_.end());
@@ -57,6 +58,7 @@ Value IndexSelectionNode::ExprContext::getEdgeProp(const std::string& edgeType,
 }
 Value IndexSelectionNode::ExprContext::getTagProp(const std::string& tag,
                                                   const std::string& prop) const {
+  UNUSED(tag);
   DCHECK(row_ != nullptr);
   auto iter = colPos_.find(prop);
   DCHECK(iter != colPos_.end());

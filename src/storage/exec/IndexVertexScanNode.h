@@ -38,9 +38,13 @@ class IndexVertexScanNode final : public IndexScanNode {
   std::function<StatusOr<std::shared_ptr<::nebula::meta::cpp2::IndexItem>>()> getIndex;
   std::function<std::shared_ptr<const nebula::meta::NebulaSchemaProvider>()> getTag;
 
+  FRIEND_TEST(IndexScanTest, VertexIndexOnlyScan);
   FRIEND_TEST(IndexScanTest, VertexBase);
   FRIEND_TEST(IndexScanTest, Prefix1);
   FRIEND_TEST(IndexScanTest, Prefix2);
+  FRIEND_TEST(IndexScanTest, Base);
+  FRIEND_TEST(IndexScanTest, Vertex);
+  friend class IndexScanTestHelper;
 };
 }  // namespace storage
 }  // namespace nebula

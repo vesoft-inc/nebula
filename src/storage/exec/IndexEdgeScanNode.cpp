@@ -54,22 +54,29 @@ Row IndexEdgeScanNode::decodeFromIndex(folly::StringPiece key) {
   }
   if (colPosMap.count(kSrc)) {
     auto vId = IndexKeyUtils::getIndexSrcId(context_->vIdLen(), key);
+    DVLOG(1) << folly::hexDump(vId.data(), vId.size());
     if (context_->isIntId()) {
       values[colPosMap[kSrc]] = Value(*reinterpret_cast<const int64_t*>(vId.data()));
     } else {
+      DVLOG(2) << vId.subpiece(0, vId.find_first_of('\0'));
+      DVLOG(2) << vId.subpiece(0, vId.find_first_of('\0')).toString();
+      DVLOG(2) << Value(vId.subpiece(0, vId.find_first_of('\0')).toString());
       values[colPosMap[kSrc]] = Value(vId.subpiece(0, vId.find_first_of('\0')).toString());
     }
   }
+  DVLOG(1) << values[colPosMap[kSrc]];
   if (colPosMap.count(kDst)) {
-    auto vId = IndexKeyUtils::getIndexSrcId(context_->vIdLen(), key);
+    auto vId = IndexKeyUtils::getIndexDstId(context_->vIdLen(), key);
     if (context_->isIntId()) {
-      values[colPosMap[kSrc]] = Value(*reinterpret_cast<const int64_t*>(vId.data()));
+      values[colPosMap[kDst]] = Value(*reinterpret_cast<const int64_t*>(vId.data()));
     } else {
-      values[colPosMap[kSrc]] = Value(vId.subpiece(0, vId.find_first_of('\0')).toString());
+      values[colPosMap[kDst]] = Value(vId.subpiece(0, vId.find_first_of('\0')).toString());
     }
   }
+  DVLOG(1) << values[colPosMap[kDst]];
   if (colPosMap.count(kRank)) {
     auto rank = IndexKeyUtils::getIndexRank(context_->vIdLen(), key);
+    values[colPosMap[kRank]] = Value(rank);
   }
   key.subtract(context_->vIdLen() * 2 + sizeof(EdgeType));
   decodePropFromIndex(key, colPosMap, values);
@@ -101,7 +108,15 @@ Map<std::string, Value> IndexEdgeScanNode::decodeFromBase(const std::string& key
         }
       } break;
       case QueryUtils::ReturnColType::kDst: {
-        values[col] = Value(context_->tagId_);
+        auto vId = NebulaKeyUtils::getDstId(context_->vIdLen(), key);
+        if (context_->isIntId()) {
+          values[col] = Value(*reinterpret_cast<const int64_t*>(vId.data()));
+        } else {
+          values[col] = Value(vId.subpiece(0, vId.find_first_of('\0')).toString());
+        }
+      } break;
+      case QueryUtils::ReturnColType::kRank: {
+        values[col] = Value(NebulaKeyUtils::getRank(context_->vIdLen(), key));
       } break;
       case QueryUtils::ReturnColType::kOther: {
         auto retVal = QueryUtils::readValue(reader.get(), col, edge_->field(col));

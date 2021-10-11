@@ -33,6 +33,9 @@ class IndexEdgeScanNode : public IndexScanNode {
   // Convenient for testing
   std::function<StatusOr<std::shared_ptr<::nebula::meta::cpp2::IndexItem>>()> getIndex;
   std::function<std::shared_ptr<const nebula::meta::NebulaSchemaProvider>()> getEdge;
+
+  FRIEND_TEST(IndexScanTest, Edge);
+  friend class IndexScanTestHelper;
 };
 }  // namespace storage
 }  // namespace nebula

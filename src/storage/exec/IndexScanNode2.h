@@ -4,6 +4,8 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 #pragma once
+#include <gtest/gtest_prod.h>
+
 #include <cstring>
 #include <functional>
 
@@ -21,6 +23,11 @@ class Path;
 class RangePath;
 class PrefixPath;
 class IndexScanNode : public IndexNode {
+  FRIEND_TEST(IndexScanTest, Base);
+  FRIEND_TEST(IndexScanTest, Vertex);
+  FRIEND_TEST(IndexScanTest, Edge);
+  friend class IndexScanTestHelper;
+
  public:
   IndexScanNode(const IndexScanNode& node);
   IndexScanNode(RuntimeContext* context,
@@ -28,16 +35,7 @@ class IndexScanNode : public IndexNode {
                 IndexID indexId,
                 const std::vector<cpp2::IndexColumnHint>& columnHints)
       : IndexNode(context, name), indexId_(indexId), columnHints_(columnHints) {}
-  ::nebula::cpp2::ErrorCode init(InitContext& ctx) override {
-    for (auto& col : ctx.requiredColumns) {
-      requiredColumns_.push_back(col);
-    }
-    ctx.returnColumns = requiredColumns_;
-    for (size_t i = 0; i < ctx.returnColumns.size(); i++) {
-      ctx.retColMap[ctx.returnColumns[i]] = i;
-    }
-    return ::nebula::cpp2::ErrorCode::SUCCEEDED;
-  }
+  ::nebula::cpp2::ErrorCode init(InitContext& ctx) override;
 
  protected:
   nebula::cpp2::ErrorCode doExecute(PartitionID partId) final;
@@ -63,6 +61,7 @@ class IndexScanNode : public IndexNode {
   nebula::kvstore::KVStore* kvstore_;
   std::vector<std::string> requiredColumns_;
   std::pair<bool, std::pair<int64_t, std::string>> ttlProps_;
+  bool needAccessBase_{false};
 };
 /**
  * Path
@@ -74,16 +73,14 @@ class Path {
   enum class Qualified : int16_t { INCOMPATIBLE = 0, UNCERTAIN = 1, COMPATIBLE = 2 };
   using QualifiedFunction = std::function<Qualified(const std::string&)>;
   using ColumnTypeDef = ::nebula::meta::cpp2::ColumnTypeDef;
-  Path(std::shared_ptr<nebula::meta::cpp2::IndexItem> index,
-       std::shared_ptr<const nebula::meta::NebulaSchemaProvider> schema,
-       const std::vector<cpp2::IndexColumnHint>& hints)
-      : index_(index), schema_(schema), hints_(hints) {}
+  Path(nebula::meta::cpp2::IndexItem* index,
+       const meta::SchemaProviderIf* schema,
+       const std::vector<cpp2::IndexColumnHint>& hints);
   virtual ~Path() = default;
 
-  static std::unique_ptr<Path> make(
-      std::shared_ptr<nebula::meta::cpp2::IndexItem> index,
-      std::shared_ptr<const nebula::meta::NebulaSchemaProvider> schema,
-      const std::vector<cpp2::IndexColumnHint>& hints);
+  static std::unique_ptr<Path> make(::nebula::meta::cpp2::IndexItem* index,
+                                    const meta::SchemaProviderIf* schema,
+                                    const std::vector<cpp2::IndexColumnHint>& hints);
   Qualified qualified(const folly::StringPiece& key);
   virtual bool isRange() { return false; }
 
@@ -91,22 +88,26 @@ class Path {
   virtual void resetPart(PartitionID partId) = 0;
 
  protected:
-  std::string encodeValue(const Value& value, const ColumnTypeDef& colDef, std::string& key);
+  std::string encodeValue(const Value& value,
+                          const ColumnTypeDef& colDef,
+                          size_t index,
+                          std::string& key);
   std::vector<QualifiedFunction> QFList_;
-  std::shared_ptr<nebula::meta::cpp2::IndexItem> index_;
-  std::shared_ptr<const nebula::meta::NebulaSchemaProvider> schema_;
+  ::nebula::meta::cpp2::IndexItem* index_;
+  const meta::SchemaProviderIf* schema_;
   const std::vector<cpp2::IndexColumnHint>& hints_;
+  std::vector<bool> nullable_;
 };
 class PrefixPath : public Path {
  public:
-  PrefixPath(std::shared_ptr<nebula::meta::cpp2::IndexItem> index,
-             std::shared_ptr<const nebula::meta::NebulaSchemaProvider> schema,
+  PrefixPath(nebula::meta::cpp2::IndexItem* index,
+             const meta::SchemaProviderIf* schema,
              const std::vector<cpp2::IndexColumnHint>& hints);
   // Override
   Qualified qualified(const Map<std::string, Value>& rowData) override;
   void resetPart(PartitionID partId) override;
 
-  const std::string& getPrefixKey();
+  const std::string& getPrefixKey() { return prefix_; }
 
  private:
   std::string prefix_;
@@ -114,25 +115,33 @@ class PrefixPath : public Path {
 };
 class RangePath : public Path {
  public:
-  RangePath(std::shared_ptr<nebula::meta::cpp2::IndexItem> index,
-            std::shared_ptr<const nebula::meta::NebulaSchemaProvider> schema,
+  RangePath(nebula::meta::cpp2::IndexItem* index,
+            const meta::SchemaProviderIf* schema,
             const std::vector<cpp2::IndexColumnHint>& hints);
   // Override
   Qualified qualified(const Map<std::string, Value>& rowData) override;
   void resetPart(PartitionID partId) override;
 
-  inline bool eqToStart() { return eqToStart_; }
-  inline bool eqToEnd() { return eqToEnd_; }
+  inline bool includeStart() { return includeStart_; }
+  inline bool includeEnd() { return includeEnd_; }
   inline const std::string& getStartKey() { return startKey_; }
   inline const std::string& getEndKey() { return endKey_; }
   virtual bool isRange() { return true; }
 
  private:
   std::string startKey_, endKey_;
-  bool eqToStart_, eqToEnd_;
+  bool includeStart_ = true;
+  bool includeEnd_ = false;
+
   void buildKey();
-  std::string encodeBeginValue(const Value& value, const ColumnTypeDef& colDef, std::string& key);
-  std::string encodeEndValue(const Value& value, const ColumnTypeDef& colDef, std::string& key);
+  std::string encodeBeginValue(const Value& value,
+                               const ColumnTypeDef& colDef,
+                               size_t index,
+                               std::string& key);
+  std::string encodeEndValue(const Value& value,
+                             const ColumnTypeDef& colDef,
+                             size_t index,
+                             std::string& key);
 };
 
 /* define inline functions */

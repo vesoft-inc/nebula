@@ -46,7 +46,6 @@ IndexVertexScanNode::IndexVertexScanNode(RuntimeContext* context,
     return schema;
   });
 }
-
 ::nebula::cpp2::ErrorCode IndexVertexScanNode::init(InitContext& ctx) {
   this->index_ = getIndex().value();
   this->tag_ = getTag();
@@ -58,7 +57,9 @@ nebula::cpp2::ErrorCode IndexVertexScanNode::getBaseData(folly::StringPiece key,
                                        partId_,
                                        key.subpiece(key.size() - context_->vIdLen()).toString(),
                                        context_->tagId_);
-  return context_->env()->kvstore_->get(context_->spaceId(), partId_, kv.first, &kv.second);
+  DVLOG(3) << partId_;
+  DVLOG(1) << '\n' << folly::hexDump(kv.first.data(), kv.first.size());
+  return kvstore_->get(context_->spaceId(), partId_, kv.first, &kv.second);
 }
 Row IndexVertexScanNode::decodeFromIndex(folly::StringPiece key) {
   std::vector<Value> values(requiredColumns_.size());

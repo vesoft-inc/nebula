@@ -41,7 +41,7 @@ class IndexNode {
 
   void addChild(std::unique_ptr<IndexNode> child) { children_.emplace_back(std::move(child)); }
   virtual std::unique_ptr<IndexNode> copy() = 0;
-  const std::vector<std::unique_ptr<IndexNode>>& children();
+  const std::vector<std::unique_ptr<IndexNode>>& children() { return children_; }
 
  protected:
   virtual ErrorOr<Row> doNext(bool& hasNext) = 0;

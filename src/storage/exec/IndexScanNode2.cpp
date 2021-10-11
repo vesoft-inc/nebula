@@ -8,8 +8,22 @@
 namespace nebula {
 namespace storage {
 // Define of Path
-std::unique_ptr<Path> Path::make(std::shared_ptr<nebula::meta::cpp2::IndexItem> index,
-                                 std::shared_ptr<const nebula::meta::NebulaSchemaProvider> schema,
+Path::Path(nebula::meta::cpp2::IndexItem* index,
+           const meta::SchemaProviderIf* schema,
+           const std::vector<cpp2::IndexColumnHint>& hints)
+    : index_(index), schema_(schema), hints_(hints) {
+  bool nullFlag = false;
+  for (auto field : index->get_fields()) {
+    bool tmp = field.nullable_ref().value_or(false);
+    nullable_.push_back(tmp);
+    nullFlag |= tmp;
+  }
+  if (!nullFlag) {
+    nullable_.clear();
+  }
+}
+std::unique_ptr<Path> Path::make(nebula::meta::cpp2::IndexItem* index,
+                                 const meta::SchemaProviderIf* schema,
                                  const std::vector<cpp2::IndexColumnHint>& hints) {
   std::unique_ptr<Path> ret;
   if (hints.back().get_scan_type() == cpp2::ScanType::RANGE) {
@@ -17,7 +31,7 @@ std::unique_ptr<Path> Path::make(std::shared_ptr<nebula::meta::cpp2::IndexItem> 
   } else {
     ret.reset(new PrefixPath(index, schema, hints));
   }
-  return std::move(ret);
+  return ret;
 }
 Path::Qualified Path::qualified(const folly::StringPiece& key) {
   Qualified ret = Qualified::COMPATIBLE;
@@ -26,16 +40,29 @@ Path::Qualified Path::qualified(const folly::StringPiece& key) {
   }
   return ret;
 }
-std::string Path::encodeValue(const Value& value, const ColumnTypeDef& colDef, std::string& key) {
+std::string Path::encodeValue(const Value& value,
+                              const ColumnTypeDef& colDef,
+                              size_t index,
+                              std::string& key) {
   std::string val;
   if (value.type() == Value::Type::STRING) {
     val = IndexKeyUtils::encodeValue(value, *colDef.get_type_length());
     if (val.back() != '\0') {
       QFList_.clear();
-      QFList_.emplace_back([](const std::string& key) { return Qualified::UNCERTAIN; });
+      QFList_.emplace_back([](const std::string&) { return Qualified::UNCERTAIN; });
     }
   } else {
     val = IndexKeyUtils::encodeValue(value);
+  }
+  if (!nullable_.empty() && nullable_[index] == true) {
+    QFList_.emplace_back([isNull = value.isNull(), index](const std::string& k) {
+      std::bitset<16> nullableBit;
+      size_t len = k.size();
+      auto v = *reinterpret_cast<const u_short*>(k.data() + len - 2);
+      nullableBit = v;
+      return nullableBit.test(15 - index) ^ isNull ? Qualified::INCOMPATIBLE
+                                                   : Qualified::COMPATIBLE;
+    });
   }
   key.append(val);
   return val;
@@ -43,8 +70,8 @@ std::string Path::encodeValue(const Value& value, const ColumnTypeDef& colDef, s
 // End of Path
 
 // Define of RangePath
-RangePath::RangePath(std::shared_ptr<nebula::meta::cpp2::IndexItem> index,
-                     std::shared_ptr<const nebula::meta::NebulaSchemaProvider> schema,
+RangePath::RangePath(nebula::meta::cpp2::IndexItem* index,
+                     const meta::SchemaProviderIf* schema,
                      const std::vector<cpp2::IndexColumnHint>& hints)
     : Path(index, schema, hints) {
   buildKey();
@@ -62,15 +89,19 @@ Path::Qualified RangePath::qualified(const Map<std::string, Value>& rowData) {
     }
   }
   auto& hint = hints_.back();
-  // TODO(hs.zhang): IDL添加开闭区间信息
-  if (hint.begin_value_ref().has_value()) {
-    bool ret = hint.get_begin_value() < rowData.at(hint.get_column_name());
+  // TODO(hs.zhang): improve performance.Check include or not during build key.
+  if (hint.begin_value_ref().is_set()) {
+    bool ret = includeStart_ ? hint.get_begin_value() <= rowData.at(hint.get_column_name())
+                             : hint.get_begin_value() < rowData.at(hint.get_column_name());
     if (!ret) {
       return Qualified::INCOMPATIBLE;
     }
   }
-  if (hint.end_value_ref().has_value()) {
-    bool ret = hint.get_end_value() > rowData.at(hint.get_column_name());
+  if (hint.end_value_ref().is_set()) {
+    DVLOG(2) << includeEnd_;
+    bool ret = includeEnd_ ? hint.get_end_value() >= rowData.at(hint.get_column_name())
+                           : hint.get_end_value() > rowData.at(hint.get_column_name());
+    DVLOG(2) << ret;
     if (!ret) {
       return Qualified::INCOMPATIBLE;
     }
@@ -86,63 +117,88 @@ void RangePath::buildKey() {
     CHECK(fieldIter->get_name() == hint.get_column_name());
     auto type = IndexKeyUtils::toValueType(fieldIter->get_type().get_type());
     CHECK(type == Value::Type::STRING && !fieldIter->get_type().type_length_ref().has_value());
-    encodeValue(hint.get_begin_value(), fieldIter->get_type(), common);
+    encodeValue(hint.get_begin_value(), fieldIter->get_type(), i, common);
   }
   auto& hint = hints_.back();
   startKey_ = common;
   endKey_ = std::move(common);
-  if (hint.begin_value_ref().has_value()) {
-    encodeBeginValue(hint.get_begin_value(), fieldIter->get_type(), startKey_);
-  }
-  if (hint.end_value_ref().has_value()) {
-    encodeEndValue(hint.get_end_value(), fieldIter->get_type(), endKey_);
+  size_t index = hints_.size() - 1;
+  if (hint.begin_value_ref().is_set()) {
+    encodeBeginValue(hint.get_begin_value(), fieldIter->get_type(), index, startKey_);
+    includeStart_ = hint.get_include_begin();
   } else {
-    endKey_.append(startKey_.size() - endKey_.size(), '0xFF');
+    includeStart_ = false;
+  }
+  if (hint.end_value_ref().is_set()) {
+    encodeEndValue(hint.get_end_value(), fieldIter->get_type(), index, endKey_);
+    includeEnd_ = hint.get_include_end();
+  } else {
+    endKey_.append(startKey_.size() - endKey_.size(), '\xFF');
+    includeEnd_ = true;
   }
 }
 std::string RangePath::encodeBeginValue(const Value& value,
                                         const ColumnTypeDef& colDef,
+                                        size_t index,
                                         std::string& key) {
-  std::string val = IndexKeyUtils::encodeValue(value, *colDef.get_type_length());
+  std::string val = IndexKeyUtils::encodeValue(value, colDef.type_length_ref().value_or(0));
   if (value.type() == Value::Type::STRING && val.back() != '\0') {
     QFList_.emplace_back([&startKey = this->startKey_, startPos = key.size(), length = val.size()](
-                             const std::string& key) {
-      int ret = memcmp(startKey.data() + startPos, key.data() + startPos, length);
+                             const std::string& k) {
+      int ret = memcmp(startKey.data() + startPos, k.data() + startPos, length);
       CHECK_LE(ret, 0);
       return ret == 0 ? Qualified::UNCERTAIN : Qualified::COMPATIBLE;
     });
   } else {
     QFList_.emplace_back([&startKey = this->startKey_,
-                          &allowEq = this->eqToStart_,
+                          &allowEq = this->includeStart_,
                           startPos = key.size(),
-                          length = val.size()](const std::string& key) {
-      int ret = memcmp(startKey.data() + startPos, key.data() + startPos, length);
+                          length = val.size()](const std::string& k) {
+      int ret = memcmp(startKey.data() + startPos, k.data() + startPos, length);
       CHECK_LE(ret, 0);
       return (ret == 0 && !allowEq) ? Qualified::INCOMPATIBLE : Qualified::COMPATIBLE;
     });
   }
-  key += val;
+  if (!nullable_.empty() && nullable_[index] == true) {
+    QFList_.emplace_back([index](const std::string& k) {
+      std::bitset<16> nullableBit;
+      size_t len = k.size();
+      auto v = *reinterpret_cast<const u_short*>(k.data() + len - 2);
+      nullableBit = v;
+      return nullableBit.test(15 - index) ? Qualified::INCOMPATIBLE : Qualified::COMPATIBLE;
+    });
+  }
   return val;
 }
 std::string RangePath::encodeEndValue(const Value& value,
                                       const ColumnTypeDef& colDef,
+                                      size_t index,
                                       std::string& key) {
-  std::string val = IndexKeyUtils::encodeValue(value, *colDef.get_type_length());
+  std::string val = IndexKeyUtils::encodeValue(value, colDef.type_length_ref().value_or(0));
   if (value.type() == Value::Type::STRING && val.back() != '\0') {
     QFList_.emplace_back([&endKey = this->endKey_, startPos = key.size(), length = val.size()](
-                             const std::string& key) {
-      int ret = memcmp(endKey.data() + startPos, key.data() + startPos, length);
+                             const std::string& k) {
+      int ret = memcmp(endKey.data() + startPos, k.data() + startPos, length);
       CHECK_GE(ret, 0);
       return ret == 0 ? Qualified::UNCERTAIN : Qualified::COMPATIBLE;
     });
   } else {
     QFList_.emplace_back([&endKey = this->endKey_,
-                          &allowEq = this->eqToEnd_,
+                          &allowEq = this->includeEnd_,
                           startPos = key.size(),
-                          length = val.size()](const std::string& key) {
-      int ret = memcmp(endKey.data() + startPos, key.data() + startPos, length);
+                          length = val.size()](const std::string& k) {
+      int ret = memcmp(endKey.data() + startPos, k.data() + startPos, length);
       CHECK_GE(ret, 0);
       return (ret == 0 && !allowEq) ? Qualified::INCOMPATIBLE : Qualified::COMPATIBLE;
+    });
+  }
+  if (!nullable_.empty() && nullable_[index] == true) {
+    QFList_.emplace_back([index](const std::string& k) {
+      std::bitset<16> nullableBit;
+      size_t len = k.size();
+      auto v = *reinterpret_cast<const u_short*>(k.data() + len - 2);
+      nullableBit = v;
+      return nullableBit.test(15 - index) ? Qualified::INCOMPATIBLE : Qualified::COMPATIBLE;
     });
   }
   key += val;
@@ -152,8 +208,8 @@ std::string RangePath::encodeEndValue(const Value& value,
 // End of RangePath
 
 // Define of PrefixPath
-PrefixPath::PrefixPath(std::shared_ptr<nebula::meta::cpp2::IndexItem> index,
-                       std::shared_ptr<const nebula::meta::NebulaSchemaProvider> schema,
+PrefixPath::PrefixPath(nebula::meta::cpp2::IndexItem* index,
+                       const meta::SchemaProviderIf* schema,
                        const std::vector<cpp2::IndexColumnHint>& hints)
     : Path(index, schema, hints) {
   buildKey();
@@ -178,8 +234,8 @@ void PrefixPath::buildKey() {
     auto& hint = hints_[i];
     CHECK(fieldIter->get_name() == hint.get_column_name());
     auto type = IndexKeyUtils::toValueType(fieldIter->get_type().get_type());
-    CHECK(type == Value::Type::STRING && !fieldIter->get_type().type_length_ref().has_value());
-    encodeValue(hint.get_begin_value(), fieldIter->get_type(), common);
+    CHECK(type != Value::Type::STRING || !fieldIter->get_type().type_length_ref().has_value());
+    encodeValue(hint.get_begin_value(), fieldIter->get_type(), i, common);
   }
   prefix_ = std::move(common);
 }
@@ -197,13 +253,41 @@ IndexScanNode::IndexScanNode(const IndexScanNode& node)
       requiredColumns_(node.requiredColumns_),
       ttlProps_(node.ttlProps_) {}
 
+::nebula::cpp2::ErrorCode IndexScanNode::init(InitContext& ctx) {
+  for (auto& col : ctx.requiredColumns) {
+    requiredColumns_.push_back(col);
+  }
+  ctx.returnColumns = requiredColumns_;
+  for (size_t i = 0; i < ctx.returnColumns.size(); i++) {
+    ctx.retColMap[ctx.returnColumns[i]] = i;
+  }
+  // Analyze whether the scan needs to access base data.
+  // TODO(hs.zhang): The performance is better to judge based on whether the string is truncated
+  auto tmp = ctx.requiredColumns;
+  for (auto& field : index_->get_fields()) {
+    if (field.get_type().get_type() == PropertyType::STRING) {
+      continue;
+    }
+    tmp.erase(field.get_name());
+  }
+  tmp.erase(kVid);
+  tmp.erase(kTag);
+  tmp.erase(kRank);
+  tmp.erase(kSrc);
+  tmp.erase(kDst);
+  needAccessBase_ = !tmp.empty();
+  path_ = Path::make(index_.get(), getSchema(), columnHints_);
+  return ::nebula::cpp2::ErrorCode::SUCCEEDED;
+}
 nebula::cpp2::ErrorCode IndexScanNode::doExecute(PartitionID partId) {
+  partId_ = partId;
   auto ret = resetIter(partId);
   return ret;
 }
 IndexNode::ErrorOr<Row> IndexScanNode::doNext(bool& hasNext) {
   hasNext = true;
-  while (iter_ && iter_->valid()) {
+  for (; iter_ && iter_->valid(); iter_->next()) {
+    DVLOG(1) << '\n' << folly::hexDump(iter_->key().data(), iter_->key().size());
     if (!checkTTL()) {
       continue;
     }
@@ -211,26 +295,37 @@ IndexNode::ErrorOr<Row> IndexScanNode::doNext(bool& hasNext) {
     if (q == Path::Qualified::INCOMPATIBLE) {
       continue;
     }
-    if (q == Path::Qualified::COMPATIBLE) {
-      return decodeFromIndex(iter_->key());
+    bool compatible = q == Path::Qualified::COMPATIBLE;
+    if (compatible && !needAccessBase_) {
+      DVLOG(3) << 123;
+      auto key = iter_->key();
+      iter_->next();
+      return decodeFromIndex(key);
     }
+    DVLOG(3) << 123;
     std::pair<std::string, std::string> kv;
     auto ret = getBaseData(iter_->key(), kv);
     if (ret == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
+      DVLOG(3) << 123;
       continue;
     }
     Map<std::string, Value> rowData = decodeFromBase(kv.first, kv.second);
-    q = path_->qualified(rowData);
-    CHECK(q != Path::Qualified::UNCERTAIN);
-    if (q == Path::Qualified::INCOMPATIBLE) {
-      continue;
-    }
-    if (q == Path::Qualified::COMPATIBLE) {
-      Row row;
-      for (auto& col : requiredColumns_) {
-        row.emplace_back(std::move(rowData.at(col)));
+    if (!compatible) {
+      DVLOG(3) << 123;
+      q = path_->qualified(rowData);
+      CHECK(q != Path::Qualified::UNCERTAIN);
+      if (q == Path::Qualified::INCOMPATIBLE) {
+        DVLOG(3) << 123;
+        continue;
       }
     }
+    DVLOG(3) << 123;
+    Row row;
+    for (auto& col : requiredColumns_) {
+      row.emplace_back(std::move(rowData.at(col)));
+    }
+    iter_->next();
+    return row;
   }
   hasNext = false;
   return ErrorOr<Row>(Row());
@@ -246,13 +341,19 @@ bool IndexScanNode::checkTTL() {
   }
   return true;
 }
+
 nebula::cpp2::ErrorCode IndexScanNode::resetIter(PartitionID partId) {
   path_->resetPart(partId);
   nebula::cpp2::ErrorCode ret;
   if (path_->isRange()) {
     auto rangePath = dynamic_cast<RangePath*>(path_.get());
-    ret =
-        kvstore_->range(spaceId_, partId, rangePath->getStartKey(), rangePath->getEndKey(), &iter_);
+    ret = kvstore_->range(spaceId_,
+                          partId,
+                          rangePath->includeStart(),
+                          rangePath->getStartKey(),
+                          rangePath->includeEnd(),
+                          rangePath->getEndKey(),
+                          &iter_);
   } else {
     auto prefixPath = dynamic_cast<PrefixPath*>(path_.get());
     ret = kvstore_->prefix(spaceId_, partId, prefixPath->getPrefixKey(), &iter_);
@@ -263,7 +364,6 @@ void IndexScanNode::decodePropFromIndex(folly::StringPiece key,
                                         const Map<std::string, size_t>& colPosMap,
                                         std::vector<Value>& values) {
   size_t offset = sizeof(PartitionID) + sizeof(IndexID);
-  size_t len = 0;
   std::bitset<16> nullableBit;
   int8_t nullableColPosit = 15;
   if (indexNullable_) {

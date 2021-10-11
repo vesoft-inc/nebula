@@ -51,9 +51,10 @@ class IndexScanNode : public RelNode<T> {
     }
     scanPair_ = scanRet.value();
     std::unique_ptr<kvstore::KVIterator> iter;
-    ret = isRangeScan_ ? kvstore_->range(
-                             context_->spaceId(), partId, scanPair_.first, scanPair_.second, &iter)
-                       : kvstore_->prefix(context_->spaceId(), partId, scanPair_.first, &iter);
+    ret = isRangeScan_
+              ? this->kvstore_->range(
+                    context_->spaceId(), partId, scanPair_.first, scanPair_.second, &iter)
+              : this->kvstore_->prefix(context_->spaceId(), partId, scanPair_.first, &iter);
     if (ret == nebula::cpp2::ErrorCode::SUCCEEDED && iter && iter->valid()) {
       context_->isEdge()
           ? iter_.reset(new EdgeIndexIterator(std::move(iter), context_->vIdLen()))

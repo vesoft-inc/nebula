@@ -7,11 +7,11 @@
 #ifndef STORAGE_EXEC_STORAGEITERATOR_H_
 #define STORAGE_EXEC_STORAGEITERATOR_H_
 
+#include "codec/RowReaderWrapper.h"
 #include "common/base/Base.h"
 #include "kvstore/KVIterator.h"
 #include "storage/CommonUtils.h"
 #include "storage/StorageFlags.h"
-
 namespace nebula {
 namespace storage {
 

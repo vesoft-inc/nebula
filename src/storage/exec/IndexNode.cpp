@@ -9,6 +9,11 @@
 #include "folly/Likely.h"
 namespace nebula {
 namespace storage {
+IndexNode::IndexNode(RuntimeContext* context, const std::string& name)
+    : context_(context), name_(name) {
+  spaceId_ = context_->spaceId();
+}
+
 IndexNode::IndexNode(const IndexNode& node)
     : context_(node.context_), spaceId_(node.spaceId_), name_(node.name_) {}
 

@@ -17,13 +17,16 @@ class LookupProcessor : public BaseProcessor<cpp2::LookupIndexResp> {
  public:
   static LookupProcessor* instance(StorageEnv* env,
                                    const ProcessorCounters* counters = &kLookupCounters,
-                                   folly::Executor* executor = nullptr);
+                                   folly::Executor* executor = nullptr) {
+    return new LookupProcessor(env, counters, executor);
+  }
   void process(const cpp2::LookupIndexRequest& req);
 
  private:
-  LookupProcessor(StorageEnv* env, const ProcessorCounters* counters, folly::Executor* executor);
+  LookupProcessor(StorageEnv* env, const ProcessorCounters* counters, folly::Executor* executor)
+      : BaseProcessor<cpp2::LookupIndexResp>(env, counters), executor_(executor) {}
   void doProcess(const cpp2::LookupIndexRequest& req);
-  void onProcessFinished();
+  void onProcessFinished() {}
 
   void runInSingleThread(const std::vector<PartitionID>& parts, std::unique_ptr<IndexNode> plan);
   void runInMultipleThread(const std::vector<PartitionID>& parts, std::unique_ptr<IndexNode> plan);

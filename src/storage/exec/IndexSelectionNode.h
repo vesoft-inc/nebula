@@ -26,8 +26,8 @@ class IndexSelectionNode : public IndexNode {
     auto &result = expr_->eval(*ctx_);
     return result.type() == Value::Type::BOOL ? result.getBool() : false;
   }
-  Map<std::string, size_t> colPos_;
   Expression *expr_;
+  Map<std::string, size_t> colPos_;
   class ExprContext : public ExpressionContext {
    public:
     explicit ExprContext(const Map<std::string, size_t> &colPos) : colPos_(colPos) {}
@@ -90,8 +90,8 @@ class SelectionExprVisitor : public ExprVisitorBase {
   void visit(EdgeDstIdExpression *expr) override { requiredColumns_.insert(expr->prop()); }
   void visit(TagPropertyExpression *expr) { requiredColumns_.insert(expr->prop()); }
   void visit(EdgePropertyExpression *expr) override { requiredColumns_.insert(expr->prop()); }
-  const Set<std::string> &getRequiredColumns();
-  ::nebula::cpp2::ErrorCode getCode();
+  const Set<std::string> &getRequiredColumns() { return requiredColumns_; }
+  ::nebula::cpp2::ErrorCode getCode() { return code_; }
 
  private:
   using ExprVisitorBase::visit;

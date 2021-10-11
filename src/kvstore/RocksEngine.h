@@ -13,6 +13,7 @@
 #include <rocksdb/utilities/checkpoint.h>
 
 #include "common/base/Base.h"
+#include "folly/Likely.h"
 #include "kvstore/KVEngine.h"
 #include "kvstore/KVIterator.h"
 #include "kvstore/RocksEngineConfig.h"
@@ -22,13 +23,30 @@ namespace kvstore {
 
 class RocksRangeIter : public KVIterator {
  public:
-  RocksRangeIter(rocksdb::Iterator* iter, rocksdb::Slice start, rocksdb::Slice end)
-      : iter_(iter), start_(start), end_(end) {}
+  RocksRangeIter(rocksdb::Iterator* iter,
+                 bool includeStart,
+                 rocksdb::Slice start,
+                 bool includeEnd,
+                 rocksdb::Slice end)
+      : iter_(iter),
+        includeStart_(includeStart),
+        start_(start),
+        includeEnd_(includeEnd),
+        end_(end) {}
 
   ~RocksRangeIter() = default;
 
   bool valid() const override {
-    return !!iter_ && iter_->Valid() && (iter_->key().compare(end_) < 0);
+    if (LIKELY(!!iter_ && iter_->Valid())) {
+      int cmp2end = iter_->key().compare(end_);
+      if (cmp2end < 0 || (cmp2end == 0 && includeEnd_)) {
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      return false;
+    }
   }
 
   void next() override { iter_->Next(); }
@@ -45,7 +63,9 @@ class RocksRangeIter : public KVIterator {
 
  private:
   std::unique_ptr<rocksdb::Iterator> iter_;
+  bool includeStart_;
   rocksdb::Slice start_;
+  bool includeEnd_;
   rocksdb::Slice end_;
 };
 
@@ -143,6 +163,12 @@ class RocksEngine : public KVEngine {
                                std::vector<std::string>* values) override;
 
   nebula::cpp2::ErrorCode range(const std::string& start,
+                                const std::string& end,
+                                std::unique_ptr<KVIterator>* iter) override;
+
+  nebula::cpp2::ErrorCode range(bool includeStart,
+                                const std::string& start,
+                                bool includeEnd,
                                 const std::string& end,
                                 std::unique_ptr<KVIterator>* iter) override;
 

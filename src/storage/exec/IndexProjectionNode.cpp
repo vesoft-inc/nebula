@@ -22,7 +22,7 @@ nebula::cpp2::ErrorCode IndexProjectionNode::init(InitContext& ctx) {
   }
   for (auto& col : requiredColumns_) {
     auto iter = ctx.retColMap.find(col);
-    DCHECK_NE(iter, ctx.retColMap.end());
+    DCHECK(iter != ctx.retColMap.end());
     colPos_[col] = iter->second;
   }
   ctx.returnColumns = requiredColumns_;
