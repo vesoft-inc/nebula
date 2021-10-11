@@ -307,6 +307,10 @@ StatusOr<Expression*> LookupValidator::rewriteRelExpr(RelationalExpression* expr
   // so that LabelAttributeExpr is always on the left
   auto rightOperand = expr->right();
   if (rightOperand->kind() == ExprKind::kLabelAttribute) {
+    if (expr->kind() == ExprKind::kContains) {
+      return Status::SemanticError("Expression %s, right part must be constants",
+                                   expr->toString().c_str());
+    }
     expr = static_cast<RelationalExpression*>(reverseRelKind(expr));
   }
 
@@ -354,6 +358,11 @@ StatusOr<Expression*> LookupValidator::checkConstExpr(Expression* expr,
   auto v = Expression::eval(expr, dummy);
   // TODO(Aiee) extract the type cast logic as a method if we decide to support
   // more cross-type comparisons.
+
+  if (kind == Expression::Kind::kContains &&
+      (graph::SchemaUtil::propTypeToValueType(type) != Value::Type::STRING || !v.isStr())) {
+    return Status::SemanticError("Column type error : %s", prop.c_str());
+  }
 
   // Allow different numeric type to compare
   if (graph::SchemaUtil::propTypeToValueType(type) == Value::Type::FLOAT && v.isInt()) {

@@ -521,6 +521,7 @@ Status OptimizerUtils::boundValue(Expression::Kind kind,
       }
       break;
     }
+    case Expression::Kind::kContains:
     case Expression::Kind::kRelGE: {
       // where c >= 1 and c >= 2 , 2 should be valid.
       if (begin.empty()) {
@@ -674,6 +675,10 @@ StatusOr<ScoredColumnHint> selectRelExprIndex(const ColumnDef& field,
       hint.score = IndexScore::kNotEqual;
       break;
     }
+    case Expression::Kind::kContains:
+      NG_RETURN_IF_ERROR(handleRangeIndex(field, expr, "", &hint.hint));
+      hint.score = IndexScore::kRange;
+      break;
     default: {
       return Status::Error("Invalid expression kind");
     }
@@ -691,6 +696,9 @@ StatusOr<IndexResult> selectRelExprIndex(const RelationalExpression* expr, const
   IndexResult result;
   result.hints.emplace_back(std::move(status).value());
   result.index = &index;
+  if (expr->kind() == Expression::Kind::kContains) {
+    result.unusedExprs.emplace_back(expr);
+  }
   return result;
 }
 
@@ -750,7 +758,9 @@ bool getIndexColumnHintInExpr(const ColumnDef& field,
     auto status = selectRelExprIndex(field, relExpr);
     if (status.ok()) {
       hints.emplace_back(std::move(status).value());
-      operands->emplace_back(operand);
+      if (relExpr->kind() != Expression::Kind::kContains) {
+        operands->emplace_back(operand);
+      }
     }
   }
 
@@ -914,6 +924,7 @@ bool OptimizerUtils::findOptimalIndex(const Expression* condition,
     break;
   }
   // The filter can always be pushed down for lookup query
+  // contains expression always in unusedExprs
   if (iter != index.hints.end() || !index.unusedExprs.empty()) {
     ictx->set_filter(condition->encode());
   }
