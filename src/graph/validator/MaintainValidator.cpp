@@ -24,13 +24,7 @@ namespace graph {
 
 Status SchemaValidator::validateColumns(const std::vector<ColumnSpecification *> &columnSpecs,
                                         meta::cpp2::Schema &schema) {
-  auto status = Status::OK();
-  std::unordered_set<std::string> nameSet;
   for (auto &spec : columnSpecs) {
-    if (nameSet.find(*spec->name()) != nameSet.end()) {
-      return Status::SemanticError("Duplicate column name `%s'", spec->name()->c_str());
-    }
-    nameSet.emplace(*spec->name());
     meta::cpp2::ColumnDef column;
     auto type = spec->type();
     column.set_name(*spec->name());
@@ -147,20 +141,32 @@ Status DescEdgeValidator::toPlan() {
 
 Status AlterValidator::alterSchema(const std::vector<AlterSchemaOptItem *> &schemaOpts,
                                    const std::vector<SchemaPropItem *> &schemaProps) {
-  for (auto &schemaOpt : schemaOpts) {
+  std::unordered_set<std::string> uniqueColName;
+  for (const auto &schemaOpt : schemaOpts) {
     meta::cpp2::AlterSchemaItem schemaItem;
     auto opType = schemaOpt->toType();
     schemaItem.set_op(opType);
     meta::cpp2::Schema schema;
+
     if (opType == meta::cpp2::AlterSchemaOp::DROP) {
       const auto &colNames = schemaOpt->columnNames();
       for (auto &colName : colNames) {
+        if (uniqueColName.find(colName) != uniqueColName.end()) {
+          return Status::SemanticError("Duplicate column name `%s'", colName.c_str());
+        }
+        uniqueColName.emplace(colName);
         meta::cpp2::ColumnDef column;
         column.name = *colName;
         schema.columns_ref().value().emplace_back(std::move(column));
       }
     } else {
       const auto &specs = schemaOpt->columnSpecs();
+      for (auto &spec : specs) {
+        if (uniqueColName.find(*spec->name()) != uniqueColName.end()) {
+          return Status::SemanticError("Duplicate column name `%s'", spec->name()->c_str());
+        }
+        uniqueColName.emplace(*spec->name());
+      }
       NG_LOG_AND_RETURN_IF_ERROR(validateColumns(specs, schema));
     }
 
