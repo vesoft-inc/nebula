@@ -93,8 +93,8 @@ class DeduceTypeVisitor final : public ExprVisitor {
     return type == Value::Type::NULLVALUE || type == Value::Type::__EMPTY__;
   }
 
-  const QueryContext *qctx_;
-  const ValidateContext *vctx_;
+  const QueryContext *qctx_{nullptr};
+  const ValidateContext *vctx_{nullptr};
   const ColsDef &inputs_;
   GraphSpaceID space_;
   Status status_;
