@@ -398,17 +398,17 @@ bool Balancer::balanceParts(BalanceID balanceId,
 
   auto maxPartsHost = sortedHosts.back();
   auto minPartsHost = sortedHosts.front();
+  auto& sourceHost = maxPartsHost.first;
+  auto& targetHost = minPartsHost.first;
   if (innerBalance_) {
-    LOG(INFO) << "maxPartsHost.first " << maxPartsHost.first << " minPartsHost.first "
-              << minPartsHost.first;
-    while (!checkZoneLegal(maxPartsHost.first, minPartsHost.first)) {
+    LOG(INFO) << "Source host " << sourceHost << " Target host " << targetHost;
+    while (!checkZoneLegal(sourceHost, targetHost)) {
       sortedHosts.pop_back();
       maxPartsHost = sortedHosts.back();
     }
 
-    auto& source = maxPartsHost.first;
-    auto iter = std::find_if(zoneParts_.begin(), zoneParts_.end(), [&source](const auto& pair) {
-      return source == pair.first;
+    auto iter = std::find_if(zoneParts_.begin(), zoneParts_.end(), [&](const auto& pair) {
+      return sourceHost == pair.first;
     });
 
     auto& zoneName = iter->second.first;
@@ -432,13 +432,13 @@ bool Balancer::balanceParts(BalanceID balanceId,
   }
 
   while (maxPartsHost.second > maxLoad || minPartsHost.second < minLoad) {
-    auto& partsFrom = confirmedHostParts[maxPartsHost.first];
-    auto& partsTo = confirmedHostParts[minPartsHost.first];
+    auto& partsFrom = confirmedHostParts[sourceHost];
+    auto& partsTo = confirmedHostParts[targetHost];
     std::sort(partsFrom.begin(), partsFrom.end());
     std::sort(partsTo.begin(), partsTo.end());
 
-    LOG(INFO) << maxPartsHost.first << ":" << partsFrom.size() << " -> " << minPartsHost.first
-              << ":" << partsTo.size();
+    LOG(INFO) << sourceHost << ":" << partsFrom.size() << " -> " << targetHost << ":"
+              << partsTo.size();
     std::vector<PartitionID> diff;
     std::set_difference(partsFrom.begin(),
                         partsFrom.end(),
@@ -452,37 +452,57 @@ bool Balancer::balanceParts(BalanceID balanceId,
       if (partsFrom.size() == partsTo.size() + 1 ||
           partsFrom.size() == static_cast<size_t>(minLoad) ||
           partsTo.size() == static_cast<size_t>(maxLoad)) {
-        VLOG(3) << "No need to move any parts from " << maxPartsHost.first << " to "
-                << minPartsHost.first;
+        VLOG(3) << "No need to move any parts from " << sourceHost << " to " << targetHost;
         break;
       }
 
-      LOG(INFO) << "[space:" << spaceId << ", part:" << partId << "] " << maxPartsHost.first << "->"
-                << minPartsHost.first;
+      LOG(INFO) << "[space:" << spaceId << ", part:" << partId << "] " << sourceHost << "->"
+                << targetHost;
       auto it = std::find(partsFrom.begin(), partsFrom.end(), partId);
       if (it == partsFrom.end()) {
-        LOG(ERROR) << "Part " << partId << " not found in partsFrom";
+        LOG(ERROR) << "Part " << partId << " not found in partsFrom " << sourceHost;
         return false;
       }
 
       if (std::find(partsTo.begin(), partsTo.end(), partId) != partsTo.end()) {
-        LOG(ERROR) << "Part " << partId << " already existed in partsTo";
+        LOG(ERROR) << "Part " << partId << " already existed in partsTo " << targetHost;
         return false;
       }
 
       if (dependentOnGroup) {
-        auto& parts = relatedParts_[minPartsHost.first];
-        if (!checkZoneLegal(maxPartsHost.first, minPartsHost.first) &&
+        auto& parts = relatedParts_[targetHost];
+        if (!checkZoneLegal(sourceHost, targetHost) &&
             std::find(parts.begin(), parts.end(), partId) != parts.end()) {
           LOG(INFO) << "Zone have exist part: " << partId;
           continue;
         }
       }
 
+      if (dependentOnGroup && innerBalance_) {
+        auto& minParts = zoneParts_[targetHost].second;
+        auto& maxParts = zoneParts_[sourceHost].second;
+        if (!checkZoneLegal(sourceHost, targetHost)) {
+          auto minIt = std::find(minParts.begin(), minParts.end(), partId);
+          if (minIt != minParts.end()) {
+            LOG(INFO) << "Part " << partId << " have existed";
+            continue;
+          }
+        }
+
+        auto maxIt = std::find(maxParts.begin(), maxParts.end(), partId);
+        if (maxIt == maxParts.end()) {
+          LOG(INFO) << "Part " << partId << " not found on " << sourceHost;
+          continue;
+        }
+        maxParts.erase(maxIt);
+        minParts.emplace_back(partId);
+      }
+
       partsFrom.erase(it);
       partsTo.emplace_back(partId);
-      tasks.emplace_back(
-          balanceId, spaceId, partId, maxPartsHost.first, minPartsHost.first, kv_, client_);
+
+      tasks.emplace_back(balanceId, spaceId, partId, sourceHost, targetHost, kv_, client_);
+      LOG(INFO) << "Part " << partId << " move from " << sourceHost << " to " << targetHost;
       noAction = false;
     }
 
@@ -494,15 +514,15 @@ bool Balancer::balanceParts(BalanceID balanceId,
     maxPartsHost = sortedHosts.back();
     minPartsHost = sortedHosts.front();
     if (innerBalance_) {
-      while (!checkZoneLegal(maxPartsHost.first, minPartsHost.first)) {
+      while (!checkZoneLegal(sourceHost, targetHost)) {
         sortedHosts.pop_back();
         maxPartsHost = sortedHosts.back();
       }
 
-      auto& source = maxPartsHost.first;
-      auto iter = std::find_if(zoneParts_.begin(), zoneParts_.end(), [&source](const auto& pair) {
-        return source == pair.first;
-      });
+      auto iter =
+          std::find_if(zoneParts_.begin(), zoneParts_.end(), [&sourceHost](const auto& pair) {
+            return sourceHost == pair.first;
+          });
 
       auto& zoneName = iter->second.first;
       int32_t hostsSize = zoneHosts_[zoneName].size();
@@ -564,15 +584,15 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> Balancer::getHostParts(GraphSpaceID space
   std::string value;
   retCode = kv_->get(kDefaultSpaceId, kDefaultPartId, key, &value);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Access kvstore failed, spaceId " << spaceId
+    LOG(ERROR) << "Access kvstore failed, spaceId " << spaceId << " "
                << apache::thrift::util::enumNameSafe(retCode);
     return retCode;
   }
 
   auto properties = MetaServiceUtils::parseSpace(value);
   if (totalParts != properties.get_partition_num()) {
-    LOG(ERROR) << "Partition number not equals";
-    LOG(ERROR) << totalParts << " : " << properties.get_partition_num();
+    LOG(ERROR) << "Partition number not equals " << totalParts << " : "
+               << properties.get_partition_num();
     return false;
   }
 
@@ -669,7 +689,7 @@ nebula::cpp2::ErrorCode Balancer::assembleZoneParts(const std::string& groupName
         });
 
     if (zoneIter == zoneHosts.end()) {
-      LOG(INFO) << it->first << " have lost";
+      LOG(INFO) << host << " have lost";
       continue;
     }
 
@@ -678,11 +698,9 @@ nebula::cpp2::ErrorCode Balancer::assembleZoneParts(const std::string& groupName
     zoneHosts_[name] = hosts;
     for (auto hostIter = hosts.begin(); hostIter != hosts.end(); hostIter++) {
       auto partIter = hostParts.find(*hostIter);
-      LOG(INFO) << "Zone " << name << " have the host " << it->first;
-      if (partIter == hostParts.end()) {
-        zoneParts_[it->first] = ZoneNameAndParts(name, std::vector<PartitionID>());
-      } else {
-        zoneParts_[it->first] = ZoneNameAndParts(name, partIter->second);
+      LOG(INFO) << "Zone " << name << " have the host " << host;
+      if (partIter != hostParts.end() && !partIter->second.empty()) {
+        zoneParts_[host] = ZoneNameAndParts(name, partIter->second);
       }
     }
   }
@@ -1177,13 +1195,13 @@ nebula::cpp2::ErrorCode Balancer::collectZoneParts(const std::string& groupName,
 }
 
 bool Balancer::checkZoneLegal(const HostAddr& source, const HostAddr& target) {
-  VLOG(3) << "Check " << source << " : " << target;
+  LOG(INFO) << "Check " << source << " : " << target;
   auto sourceIter = std::find_if(zoneParts_.begin(), zoneParts_.end(), [&source](const auto& pair) {
     return source == pair.first;
   });
 
   if (sourceIter == zoneParts_.end()) {
-    LOG(INFO) << "Source " << source << " not found";
+    LOG(ERROR) << "Source " << source << " not found";
     return false;
   }
 
@@ -1192,7 +1210,7 @@ bool Balancer::checkZoneLegal(const HostAddr& source, const HostAddr& target) {
   });
 
   if (targetIter == zoneParts_.end()) {
-    LOG(INFO) << "Target " << target << " not found";
+    LOG(ERROR) << "Target " << target << " not found";
     return false;
   }
 
@@ -1200,8 +1218,8 @@ bool Balancer::checkZoneLegal(const HostAddr& source, const HostAddr& target) {
     LOG(INFO) << "innerBalance_ is false";
     return true;
   } else {
-    LOG(INFO) << "same zone";
-    LOG(INFO) << sourceIter->second.first << " : " << targetIter->second.first;
+    LOG(INFO) << "Balance in same zone: " << sourceIter->second.first << " : "
+              << targetIter->second.first;
     return sourceIter->second.first == targetIter->second.first;
   }
 }
