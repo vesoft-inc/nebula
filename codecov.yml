@@ -1,0 +1,3 @@
+codecov:
+  allow_pseudo_compare: True
+  allow_coverage_offsets: True
