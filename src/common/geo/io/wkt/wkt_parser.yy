@@ -2,38 +2,38 @@
 %skeleton "lalr1.cc"
 %no-lines
 %locations
-%define api.namespace { nebula }
+%define api.namespace { nebula::geo }
 %define parser_class_name { WKTParser }
-%lex-param { nebula::WKTScanner& scanner }
-%parse-param { nebula::WKTScanner& scanner }
+%lex-param { nebula::geo::WKTScanner& scanner }
+%parse-param { nebula::geo::WKTScanner& scanner }
 %parse-param { std::string &errmsg }
-%parse-param { nebula::Geometry** geom }
+%parse-param { nebula::Geography** geog }
 
 %code requires {
 #include <iostream>
 #include <sstream>
 #include <string>
 #include <cstddef>
-#include "common/geo/io/Geometry.h"
+#include "common/datatypes/Geography.h"
 
 namespace nebula {
-
+namespace geo {
 class WKTScanner;
-
+}
 }
 
 }
 
 %code {
     #include "common/geo/io/wkt/WKTScanner.h"
-    static int yylex(nebula::WKTParser::semantic_type* yylval,
-                     nebula::WKTParser::location_type *yylloc,
-                     nebula::WKTScanner& scanner);
+    static int yylex(nebula::geo::WKTParser::semantic_type* yylval,
+                     nebula::geo::WKTParser::location_type *yylloc,
+                     nebula::geo::WKTScanner& scanner);
 }
 
 %union {
     double                                  doubleVal;
-    Geometry*                               geomVal;
+    Geography*                              geogVal;
     Point*                                  pointVal;
     LineString*                             lineVal;
     Polygon*                                polygonVal;
@@ -44,7 +44,7 @@ class WKTScanner;
 
 /* destructors */
 %destructor {} <doubleVal> <coordVal>
-%destructor {} <geomVal>
+%destructor {} <geogVal>
 %destructor { delete $$; } <*>
 
 /* wkt shape type prefix */
@@ -56,7 +56,7 @@ class WKTScanner;
 /* token type specification */
 %token <doubleVal> DOUBLE
 
-%type <geomVal> geometry
+%type <geogVal> geometry
 %type <pointVal> point
 %type <lineVal> linestring
 %type <polygonVal> polygon
@@ -72,19 +72,19 @@ class WKTScanner;
 
 geometry
   : point {
-    $$ = new Geometry(std::move(*$1));
+    $$ = new Geography(std::move(*$1));
     delete $1;
-    *geom = $$;
+    *geog = $$;
   }
   | linestring {
-    $$ = new Geometry(std::move(*$1));
+    $$ = new Geography(std::move(*$1));
     delete $1;
-    *geom = $$;
+    *geog = $$;
   }
   | polygon {
-    $$ = new Geometry(std::move(*$1));
+    $$ = new Geography(std::move(*$1));
     delete $1;
-    *geom = $$;
+    *geog = $$;
   }
 ;
 
@@ -96,10 +96,6 @@ point
 
 linestring
   : KW_LINESTRING L_PAREN coordinate_list R_PAREN {
-      if ($3->size() < 2) {
-        delete $3;
-        throw nebula::WKTParser::syntax_error(@3, "LineString must have at least 2 coordinates");
-      }
       $$ = new LineString(std::move(*$3));
       delete $3;
   }
@@ -107,17 +103,6 @@ linestring
 
 polygon
   : KW_POLYGON L_PAREN coordinate_list_list R_PAREN {
-      for (size_t i = 0; i < $3->size(); ++i) {
-        const auto &coordList = (*$3)[i];
-        if (coordList.size() < 4) {
-          delete $3;
-          throw nebula::WKTParser::syntax_error(@3, "Polygon's LinearRing must have at least 4 coordinates");
-        }
-        if (coordList.front() != coordList.back()) {
-          delete $3;
-          throw nebula::WKTParser::syntax_error(@3, "Polygon's LinearRing must be closed");
-        }
-      }
       $$ = new Polygon(std::move(*$3));
       delete $3;
   }
@@ -125,12 +110,6 @@ polygon
 
 coordinate
   : DOUBLE DOUBLE {
-      if (!Coordinate::isValidLng($1)) {
-        throw nebula::WKTParser::syntax_error(@1, "Longitude must be between -180 and 180 degrees");
-      }
-      if (!Coordinate::isValidLat($2)) {
-        throw nebula::WKTParser::syntax_error(@2, "Latitude must be between -90 and 90 degrees");
-      }
       $$.x = $1;
       $$.y = $2;
   }
@@ -162,7 +141,7 @@ coordinate_list_list
 
 %%
 
-void nebula::WKTParser::error(const nebula::WKTParser::location_type& loc,
+void nebula::geo::WKTParser::error(const nebula::geo::WKTParser::location_type& loc,
                                 const std::string &msg) {
     std::ostringstream os;
     if (msg.empty()) {
@@ -198,9 +177,9 @@ void nebula::WKTParser::error(const nebula::WKTParser::location_type& loc,
     errmsg = os.str();
 }
 
-static int yylex(nebula::WKTParser::semantic_type* yylval,
-                 nebula::WKTParser::location_type *yylloc,
-                 nebula::WKTScanner& scanner) {
+static int yylex(nebula::geo::WKTParser::semantic_type* yylval,
+                 nebula::geo::WKTParser::location_type *yylloc,
+                 nebula::geo::WKTScanner& scanner) {
     auto token = scanner.yylex(yylval, yylloc);
     return token;
 }

@@ -8,15 +8,16 @@
 
 #include "common/base/Base.h"
 #include "common/base/StatusOr.h"
-#include "common/geo/io/Geometry.h"
+#include "common/datatypes/Geography.h"
 #include "common/geo/io/wkt/WKTParser.hpp"
 #include "common/geo/io/wkt/WKTScanner.h"
 
 namespace nebula {
+namespace geo {
 
 class WKTReader {
  public:
-  WKTReader() : parser_(scanner_, error_, &geom_) {
+  WKTReader() : parser_(scanner_, error_, &geog_) {
     // Callback invoked by WKTScanner
     auto readBuffer = [this](char *buf, int maxSize) -> int {
       // Reach the end
@@ -35,10 +36,10 @@ class WKTReader {
   }
 
   ~WKTReader() {
-    if (geom_ != nullptr) delete geom_;
+    if (geog_ != nullptr) delete geog_;
   }
 
-  StatusOr<Geometry> read(std::string wkt) {
+  StatusOr<Geography> read(std::string wkt) {
     // Since WKTScanner needs a writable buffer, we have to copy the query string
     buffer_ = std::move(wkt);
     pos_ = &buffer_[0];
@@ -50,22 +51,22 @@ class WKTReader {
       end_ = nullptr;
       // To flush the internal buffer to recover from a failure
       scanner_.flushBuffer();
-      if (geom_ != nullptr) {
-        delete geom_;
-        geom_ = nullptr;
+      if (geog_ != nullptr) {
+        delete geog_;
+        geog_ = nullptr;
       }
       scanner_.setWKT(nullptr);
       return Status::SyntaxError(error_);
     }
 
-    if (geom_ == nullptr) {
+    if (geog_ == nullptr) {
       return Status::StatementEmpty();  // WKTEmpty()
     }
-    auto geom = geom_;
-    geom_ = nullptr;
+    auto geog = geog_;
+    geog_ = nullptr;
     scanner_.setWKT(nullptr);
-    auto tmp = std::move(*geom);
-    delete geom;
+    auto tmp = std::move(*geog);
+    delete geog;
     return tmp;
   }
 
@@ -73,10 +74,11 @@ class WKTReader {
   std::string buffer_;
   const char *pos_{nullptr};
   const char *end_{nullptr};
-  nebula::WKTScanner scanner_;
-  nebula::WKTParser parser_;
+  nebula::geo::WKTScanner scanner_;
+  nebula::geo::WKTParser parser_;
   std::string error_;
-  Geometry *geom_{nullptr};
+  Geography *geog_{nullptr};
 };
 
+}  // namespace geo
 }  // namespace nebula
