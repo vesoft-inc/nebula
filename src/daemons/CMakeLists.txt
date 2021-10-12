@@ -141,6 +141,7 @@ nebula_add_executable(
         ${storage_meta_deps}
         ${common_deps}
     LIBRARIES
+        ${ROCKSDB_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         ${THRIFT_LIBRARIES}
         wangle
