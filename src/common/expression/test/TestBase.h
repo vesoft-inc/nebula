@@ -50,7 +50,6 @@
 
 nebula::ExpressionContextMock gExpCtxt;
 nebula::ObjectPool pool;
-nebula::graph::QueryContext gQueryCtxt;
 namespace nebula {
 class ExpressionTest : public ::testing::Test {
  public:
@@ -60,7 +59,8 @@ class ExpressionTest : public ::testing::Test {
  protected:
   void testExpr(const std::string &exprSymbol, Value expected) {
     std::string query = "RETURN " + exprSymbol;
-    nebula::GQLParser gParser(&gQueryCtxt);
+    nebula::graph::QueryContext queryCtxt;
+    nebula::GQLParser gParser(&queryCtxt);
     auto result = gParser.parse(query);
     ASSERT_EQ(result.ok(), true);
     auto *sequentialSentences = static_cast<SequentialSentences *>(result.value().get());
@@ -80,7 +80,8 @@ class ExpressionTest : public ::testing::Test {
 
   void testToString(const std::string &exprSymbol, const char *expected) {
     std::string query = "RETURN " + exprSymbol;
-    nebula::GQLParser gParser(&gQueryCtxt);
+    nebula::graph::QueryContext queryCtxt;
+    nebula::GQLParser gParser(&queryCtxt);
     auto result = gParser.parse(query);
     ASSERT_EQ(result.ok(), true);
     auto *sequentialSentences = static_cast<SequentialSentences *>(result.value().get());
@@ -106,7 +107,8 @@ class ExpressionTest : public ::testing::Test {
       query.pop_back();
     }
     query += ")";
-    nebula::GQLParser gParser(&gQueryCtxt);
+    nebula::graph::QueryContext queryCtxt;
+    nebula::GQLParser gParser(&queryCtxt);
     auto result = gParser.parse(query);
     ASSERT_EQ(result.ok(), true);
     auto *sequentialSentences = static_cast<SequentialSentences *>(result.value().get());
