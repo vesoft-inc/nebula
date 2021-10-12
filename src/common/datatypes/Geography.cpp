@@ -27,8 +27,7 @@ void Coordinate::normalize() {
   double tmp = remainder(y, 360.0);
   if (tmp > 90.0) {
     y = 180.0 - tmp;
-  }
-  if (tmp < -90.0) {
+  } else if (tmp < -90.0) {
     y = -180.0 - tmp;
   }
 }
@@ -39,20 +38,20 @@ void Point::normalize() {}
 
 bool Point::isValid() const { return coord.isValid(); }
 
-void LineString::normalize() { GeoUtils::removeAdjacentDuplicateCoordinates(coordList); }
+void LineString::normalize() { geo::GeoUtils::removeAdjacentDuplicateCoordinates(coordList); }
 
 bool LineString::isValid() const {
   // LineString must have at least 2 coordinates;
   if (coordList.size() < 2) {
     return false;
   }
-  auto s2Region = GeoUtils::s2RegionFromGeography(*this);
+  auto s2Region = geo::GeoUtils::s2RegionFromGeography(*this);
   return static_cast<S2Polyline*>(s2Region.get())->IsValid();
 }
 
 void Polygon::normalize() {
   for (auto& coordList : coordListList) {
-    GeoUtils::removeAdjacentDuplicateCoordinates(coordList);
+    geo::GeoUtils::removeAdjacentDuplicateCoordinates(coordList);
   }
 }
 
@@ -67,18 +66,18 @@ bool Polygon::isValid() const {
       return false;
     }
   }
-  auto s2Region = GeoUtils::s2RegionFromGeography(*this);
+  auto s2Region = geo::GeoUtils::s2RegionFromGeography(*this);
   return static_cast<S2Polygon*>(s2Region.get())->IsValid();
 }
 
 StatusOr<Geography> Geography::fromWKT(const std::string& wkt,
                                        bool needNormalize,
                                        bool verifyValidity) {
-  auto geogRet = WKTReader().read(wkt);
+  auto geogRet = geo::WKTReader().read(wkt);
   if (!geogRet.ok()) {
     return geogRet;
   }
-  auto geog = std::move(geogRet.value());
+  auto geog = std::move(geogRet).value();
   if (needNormalize) {
     geog.normalize();
   }
@@ -185,13 +184,15 @@ bool Geography::isValid() const {
   }
 }
 
-std::string Geography::asWKT() const { return WKTWriter().write(*this); }
+std::string Geography::asWKT() const { return geo::WKTWriter().write(*this); }
 
-std::string Geography::asWKB() const { return WKBWriter().write(*this); }
+std::string Geography::asWKB() const { return geo::WKBWriter().write(*this); }
 
-std::string Geography::asWKBHex() const { return folly::hexlify(WKBWriter().write(*this)); }
+std::string Geography::asWKBHex() const { return folly::hexlify(geo::WKBWriter().write(*this)); }
 
-std::unique_ptr<S2Region> Geography::asS2() const { return GeoUtils::s2RegionFromGeography(*this); }
+std::unique_ptr<S2Region> Geography::asS2() const {
+  return geo::GeoUtils::s2RegionFromGeography(*this);
+}
 
 bool Geography::operator==(const Geography& rhs) const {
   auto lhsShape = shape();

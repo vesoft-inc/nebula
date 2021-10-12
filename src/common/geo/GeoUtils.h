@@ -11,9 +11,9 @@
 
 #include "common/base/StatusOr.h"
 #include "common/datatypes/Geography.h"
-#include "common/geo/GeoShape.h"
 
 namespace nebula {
+namespace geo {
 
 class GeoUtils final {
  public:
@@ -85,4 +85,5 @@ class GeoUtils final {
   }
 };
 
+}  // namespace geo
 }  // namespace nebula

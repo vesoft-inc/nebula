@@ -10,6 +10,7 @@
 #include "common/datatypes/Geography.h"
 
 namespace nebula {
+namespace geo {
 
 class WKTWriter {
  public:
@@ -29,4 +30,5 @@ class WKTWriter {
   void writeDouble(std::string& wkt, double v) const;
 };
 
+}  // namespace geo
 }  // namespace nebula

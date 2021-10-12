@@ -12,6 +12,7 @@
 #include "common/geo/io/wkb/ByteOrderDataIOStream.h"
 
 namespace nebula {
+namespace geo {
 
 class WKBWriter {
  public:
@@ -41,4 +42,5 @@ class WKBWriter {
   ByteOrderDataOutStream os_;
 };
 
+}  // namespace geo
 }  // namespace nebula

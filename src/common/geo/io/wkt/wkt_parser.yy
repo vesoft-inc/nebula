@@ -2,10 +2,10 @@
 %skeleton "lalr1.cc"
 %no-lines
 %locations
-%define api.namespace { nebula }
+%define api.namespace { nebula::geo }
 %define parser_class_name { WKTParser }
-%lex-param { nebula::WKTScanner& scanner }
-%parse-param { nebula::WKTScanner& scanner }
+%lex-param { nebula::geo::WKTScanner& scanner }
+%parse-param { nebula::geo::WKTScanner& scanner }
 %parse-param { std::string &errmsg }
 %parse-param { nebula::Geography** geog }
 
@@ -17,18 +17,18 @@
 #include "common/datatypes/Geography.h"
 
 namespace nebula {
-
+namespace geo {
 class WKTScanner;
-
+}
 }
 
 }
 
 %code {
     #include "common/geo/io/wkt/WKTScanner.h"
-    static int yylex(nebula::WKTParser::semantic_type* yylval,
-                     nebula::WKTParser::location_type *yylloc,
-                     nebula::WKTScanner& scanner);
+    static int yylex(nebula::geo::WKTParser::semantic_type* yylval,
+                     nebula::geo::WKTParser::location_type *yylloc,
+                     nebula::geo::WKTScanner& scanner);
 }
 
 %union {
@@ -141,7 +141,7 @@ coordinate_list_list
 
 %%
 
-void nebula::WKTParser::error(const nebula::WKTParser::location_type& loc,
+void nebula::geo::WKTParser::error(const nebula::geo::WKTParser::location_type& loc,
                                 const std::string &msg) {
     std::ostringstream os;
     if (msg.empty()) {
@@ -177,9 +177,9 @@ void nebula::WKTParser::error(const nebula::WKTParser::location_type& loc,
     errmsg = os.str();
 }
 
-static int yylex(nebula::WKTParser::semantic_type* yylval,
-                 nebula::WKTParser::location_type *yylloc,
-                 nebula::WKTScanner& scanner) {
+static int yylex(nebula::geo::WKTParser::semantic_type* yylval,
+                 nebula::geo::WKTParser::location_type *yylloc,
+                 nebula::geo::WKTScanner& scanner) {
     auto token = scanner.yylex(yylval, yylloc);
     return token;
 }

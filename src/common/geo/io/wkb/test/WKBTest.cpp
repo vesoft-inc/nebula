@@ -12,6 +12,7 @@
 #include "common/geo/io/wkb/WKBWriter.h"
 
 namespace nebula {
+namespace geo {
 
 class WKBTest : public ::testing::Test {
  public:
@@ -176,4 +177,5 @@ TEST_F(WKBTest, TestWKB) {
   }
 }
 
+}  // namespace geo
 }  // namespace nebula

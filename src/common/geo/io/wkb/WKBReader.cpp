@@ -7,6 +7,7 @@
 #include "common/geo/io/wkb/WKBReader.h"
 
 namespace nebula {
+namespace geo {
 
 StatusOr<Geography> WKBReader::read(const std::string &wkb) {
   is_.setInput(wkb);
@@ -124,4 +125,5 @@ StatusOr<std::vector<std::vector<Coordinate>>> WKBReader::readCoordinateListList
   return coordListList;
 }
 
+}  // namespace geo
 }  // namespace nebula

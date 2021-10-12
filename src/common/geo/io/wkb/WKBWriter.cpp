@@ -7,6 +7,7 @@
 #include "common/geo/io/wkb/WKBWriter.h"
 
 namespace nebula {
+namespace geo {
 
 std::string WKBWriter::write(const Geography& geog, ByteOrder byteOrder) {
   os_.setByteOrder(byteOrder);
@@ -74,4 +75,5 @@ void WKBWriter::writeCoordinateListList(const std::vector<std::vector<Coordinate
   }
 }
 
+}  // namespace geo
 }  // namespace nebula

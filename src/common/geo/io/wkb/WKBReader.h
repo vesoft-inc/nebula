@@ -13,6 +13,7 @@
 #include "common/geo/io/wkb/ByteOrderDataIOStream.h"
 
 namespace nebula {
+namespace geo {
 
 class WKBReader {
  public:
@@ -43,4 +44,5 @@ class WKBReader {
   ByteOrderDataInStream is_;
 };
 
+}  // namespace geo
 }  // namespace nebula

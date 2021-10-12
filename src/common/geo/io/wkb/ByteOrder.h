@@ -11,6 +11,7 @@
 #include "common/base/Base.h"
 
 namespace nebula {
+namespace geo {
 
 enum class ByteOrder : uint8_t {
   BigEndian = 0,
@@ -74,4 +75,5 @@ struct ByteOrderData {
   }
 };
 
+}  // namespace geo
 }  // namespace nebula

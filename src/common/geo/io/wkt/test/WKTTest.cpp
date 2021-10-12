@@ -11,6 +11,7 @@
 #include "common/geo/io/wkt/WKTWriter.h"
 
 namespace nebula {
+namespace geo {
 
 class WKTTEST : public ::testing::Test {
  public:
@@ -106,4 +107,5 @@ TEST_F(WKTTEST, TestWKT) {
   }
 }
 
+}  // namespace geo
 }  // namespace nebula

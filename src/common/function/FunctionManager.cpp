@@ -18,11 +18,7 @@
 #include "common/datatypes/Set.h"
 #include "common/datatypes/Vertex.h"
 #include "common/expression/Expression.h"
-#include "common/geo/function/Covers.h"
-#include "common/geo/function/DWithin.h"
-#include "common/geo/function/Distance.h"
-#include "common/geo/function/Intersects.h"
-#include "common/geo/function/S2Util.h"
+#include "common/geo/GeoFunction.h"
 #include "common/geo/io/wkb/WKBReader.h"
 #include "common/geo/io/wkb/WKBWriter.h"
 #include "common/geo/io/wkt/WKTReader.h"
@@ -2370,7 +2366,7 @@ FunctionManager::FunctionManager() {
         LOG(ERROR) << "ST_GeogFromText error: " << geogRet.status();
         return Value::kNullBadData;
       }
-      return std::move(geogRet.value());
+      return std::move(geogRet).value();
     };
   }
   // {
@@ -2387,7 +2383,7 @@ FunctionManager::FunctionManager() {
   //     if (!geogRet.ok()) {
   //       return Value::kNullBadData;
   //     }
-  //     auto geog = std::move(geogRet.value());
+  //     auto geog = std::move(geogRet).value();
   //     return geog;
   //   };
   // }
@@ -2441,7 +2437,8 @@ FunctionManager::FunctionManager() {
       if (!args[0].get().isGeography() || !args[1].get().isGeography()) {
         return Value::kNullBadType;
       }
-      return intersects(args[0].get().getGeography(), args[1].get().getGeography());
+      return geo::GeoFunction::intersects(args[0].get().getGeography(),
+                                          args[1].get().getGeography());
     };
   }
   {
@@ -2453,7 +2450,7 @@ FunctionManager::FunctionManager() {
       if (!args[0].get().isGeography() || !args[1].get().isGeography()) {
         return Value::kNullBadType;
       }
-      return covers(args[0].get().getGeography(), args[1].get().getGeography());
+      return geo::GeoFunction::covers(args[0].get().getGeography(), args[1].get().getGeography());
     };
   }
   {
@@ -2465,7 +2462,8 @@ FunctionManager::FunctionManager() {
       if (!args[0].get().isGeography() || !args[1].get().isGeography()) {
         return Value::kNullBadType;
       }
-      return coveredBy(args[0].get().getGeography(), args[1].get().getGeography());
+      return geo::GeoFunction::coveredBy(args[0].get().getGeography(),
+                                         args[1].get().getGeography());
     };
   }
   {
@@ -2478,10 +2476,10 @@ FunctionManager::FunctionManager() {
           !args[2].get().isFloat()) {
         return Value::kNullBadType;
       }
-      return dWithin(args[0].get().getGeography(),
-                     args[1].get().getGeography(),
-                     args[2].get().getFloat(),
-                     true);
+      return geo::GeoFunction::dWithin(args[0].get().getGeography(),
+                                       args[1].get().getGeography(),
+                                       args[2].get().getFloat(),
+                                       true);
     };
   }
   // geo measures
@@ -2494,7 +2492,7 @@ FunctionManager::FunctionManager() {
       if (!args[0].get().isGeography() || !args[1].get().isGeography()) {
         return Value::kNullBadType;
       }
-      return distance(args[0].get().getGeography(), args[1].get().getGeography());
+      return geo::GeoFunction::distance(args[0].get().getGeography(), args[1].get().getGeography());
     };
   }
   // geo s2 functions
@@ -2518,7 +2516,7 @@ FunctionManager::FunctionManager() {
         }
       }
       // TODO(jie) Should return uint64_t Value
-      uint64_t cellId = s2CellIdFromPoint(args[0].get().getGeography(), level);
+      uint64_t cellId = geo::GeoFunction::s2CellIdFromPoint(args[0].get().getGeography(), level);
       const char *tmp = reinterpret_cast<const char *>(&cellId);
       int64_t cellId2 = *reinterpret_cast<const int64_t *>(tmp);
       return cellId2;
@@ -2576,7 +2574,7 @@ FunctionManager::FunctionManager() {
           return Value::kNullBadData;
         }
       }
-      std::vector<uint64_t> cellIds = s2CoveringCellIds(
+      std::vector<uint64_t> cellIds = geo::GeoFunction::s2CoveringCellIds(
           args[0].get().getGeography(), minLevel, maxLevel, maxCells, bufferInMeters);
       // TODO(jie) Should return uint64_t List
       std::vector<Value> vals;

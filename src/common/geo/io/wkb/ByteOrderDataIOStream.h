@@ -13,6 +13,7 @@
 #include "common/geo/io/wkb/ByteOrder.h"
 
 namespace nebula {
+namespace geo {
 
 class ByteOrderDataInStream {
  public:
@@ -61,4 +62,5 @@ class ByteOrderDataOutStream {
   unsigned char buf_[8];
 };
 
+}  // namespace geo
 }  // namespace nebula

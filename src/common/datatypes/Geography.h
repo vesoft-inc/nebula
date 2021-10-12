@@ -16,7 +16,6 @@
 #include "common/base/Base.h"
 #include "common/base/StatusOr.h"
 #include "common/datatypes/Value.h"
-#include "common/geo/GeoShape.h"
 
 // Do not include <s2/s2polygon.h> here, it will indirectly includes a header file which defines a
 // enum `BEGIN`(not enum class). While Geography.h is indirectly included by parser.yy, which has a
@@ -25,6 +24,13 @@
 class S2Polygon;
 
 namespace nebula {
+
+enum class GeoShape : uint32_t {
+  UNKNOWN = 0,  // illegal
+  POINT = 1,
+  LINESTRING = 2,
+  POLYGON = 3,
+};
 
 // clang-format off
 /*

@@ -7,6 +7,7 @@
 #include "common/geo/io/wkb/ByteOrderDataIOStream.h"
 
 namespace nebula {
+namespace geo {
 
 StatusOr<uint8_t> ByteOrderDataInStream::readUint8() {
   stream_.read(reinterpret_cast<char*>(buf_), 1);
@@ -47,4 +48,5 @@ void ByteOrderDataOutStream::writeDouble(double v) {
   stream_.write(reinterpret_cast<char*>(buf_), 8);
 }
 
+}  // namespace geo
 }  // namespace nebula

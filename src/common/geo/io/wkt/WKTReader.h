@@ -13,6 +13,7 @@
 #include "common/geo/io/wkt/WKTScanner.h"
 
 namespace nebula {
+namespace geo {
 
 class WKTReader {
  public:
@@ -73,10 +74,11 @@ class WKTReader {
   std::string buffer_;
   const char *pos_{nullptr};
   const char *end_{nullptr};
-  nebula::WKTScanner scanner_;
-  nebula::WKTParser parser_;
+  nebula::geo::WKTScanner scanner_;
+  nebula::geo::WKTParser parser_;
   std::string error_;
   Geography *geog_{nullptr};
 };
 
+}  // namespace geo
 }  // namespace nebula

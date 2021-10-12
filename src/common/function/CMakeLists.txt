@@ -6,11 +6,7 @@
 nebula_add_library(
     function_manager_obj OBJECT
     FunctionManager.cpp
-    ../geo/function/Covers.cpp
-    ../geo/function/Distance.cpp
-    ../geo/function/DWithin.cpp
-    ../geo/function/Intersects.cpp
-    ../geo/function/S2Util.cpp
+    ../geo/GeoFunction.cpp
 )
 
 nebula_add_library(

@@ -7,6 +7,7 @@
 #include "common/geo/io/wkt/WKTWriter.h"
 
 namespace nebula {
+namespace geo {
 
 std::string WKTWriter::write(const Geography& geog) const {
   std::string wkt = "";
@@ -83,4 +84,5 @@ void WKTWriter::writeDouble(std::string& wkt, double v) const {
   wkt.append(folly::to<std::string>(v));
 }
 
+}  // namespace geo
 }  // namespace nebula
