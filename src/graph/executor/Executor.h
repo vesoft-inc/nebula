@@ -18,6 +18,7 @@
 #include "common/time/Duration.h"
 #include "common/time/ScopedTimer.h"
 #include "graph/context/ExecutionContext.h"
+#include "graph/executor/ExecTask.h"
 
 namespace nebula {
 namespace graph {
@@ -93,6 +94,15 @@ class Executor : private cpp::NonCopyable, private cpp::NonMovable {
   Status finish(Result &&result);
   // Store the default result which not used for later executor
   Status finish(Value &&value);
+
+  std::function<void()> attachQuery() const;
+  std::function<void()> detachQuery() const;
+
+  template <typename F>
+  auto task(F &&f) {
+    return ExecTask<F>(
+        qctx(), std::move(f), [this] { this->attachQuery(); }, [this] { this->detachQuery(); });
+  }
 
   int64_t id_;
 

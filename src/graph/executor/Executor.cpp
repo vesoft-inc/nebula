@@ -635,5 +635,19 @@ folly::Executor *Executor::runner() const {
   return qctx()->rctx()->runner();
 }
 
+std::function<void()> Executor::attachQuery() const {
+  return [this]() {
+    // TODO(yee):
+    LOG(INFO) << "attachQuery: " << this->name();
+  };
+}
+
+std::function<void()> Executor::detachQuery() const {
+  return [this]() {
+    // TODO(yee):
+    LOG(INFO) << "detachQuery" << this->name();
+  };
+}
+
 }  // namespace graph
 }  // namespace nebula

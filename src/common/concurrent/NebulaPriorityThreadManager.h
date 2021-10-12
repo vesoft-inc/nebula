@@ -4,7 +4,11 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#pragma once
+
 #include <thrift/lib/cpp/concurrency/ThreadManager.h>
+
+#include "common/concurrent/NebulaTask.h"
 
 namespace nebula {
 namespace concurrency {
@@ -67,7 +71,10 @@ class NebulaPriorityThreadManager : public apache::thrift::concurrency::Priority
     return proxy_->getKeepAlive(es, source);
   }
 
-  void add(folly::Func f) override { proxy_->add(std::move(f)); }
+  void add(folly::Func f) override {
+    // TODO(yee)
+    proxy_->add(std::move(f));
+  }
 
   void addWithPriority(folly::Func f, int8_t priority) override {
     proxy_->addWithPriority(std::move(f), priority);
