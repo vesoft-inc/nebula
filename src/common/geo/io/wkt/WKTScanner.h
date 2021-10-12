@@ -18,16 +18,18 @@
 
 // Override the interface for yylex since we namespaced it
 #undef YY_DECL
-#define YY_DECL int nebula::WKTScanner::yylex()
+#define YY_DECL int nebula::geo::WKTScanner::yylex()
 
 #include "common/geo/io/wkt/WKTParser.hpp"
 
 namespace nebula {
+namespace geo {
 
 // TODO(jie) Try to reuse the class GraphScanner
 class WKTScanner : public yyFlexLexer {
  public:
-  int yylex(nebula::WKTParser::semantic_type *lval, nebula::WKTParser::location_type *loc) {
+  int yylex(nebula::geo::WKTParser::semantic_type *lval,
+            nebula::geo::WKTParser::location_type *loc) {
     yylval = lval;
     yylloc = loc;
     return yylex();
@@ -52,16 +54,17 @@ class WKTScanner : public yyFlexLexer {
   // Called when YY_INPUT is invoked
   int LexerInput(char *buf, int maxSize) override { return readBuffer_(buf, maxSize); }
 
-  using TokenType = nebula::WKTParser::token;
+  using TokenType = nebula::geo::WKTParser::token;
 
  private:
   // friend class Scanner_Basic_Test; TODO(jie) add it
   int yylex() override;
 
-  nebula::WKTParser::semantic_type *yylval{nullptr};
-  nebula::WKTParser::location_type *yylloc{nullptr};
+  nebula::geo::WKTParser::semantic_type *yylval{nullptr};
+  nebula::geo::WKTParser::location_type *yylloc{nullptr};
   std::function<int(char *, int)> readBuffer_;
   std::string *wkt_{nullptr};
 };
 
+}  // namespace geo
 }  // namespace nebula
