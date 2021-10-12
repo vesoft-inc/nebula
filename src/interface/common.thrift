@@ -149,8 +149,27 @@ struct DataSet {
     2: list<Row>       rows;
 } (cpp.type = "nebula::DataSet")
 
-struct Geography {
-    1: string          wkb;
+struct Coordinate {
+    1: double          x;
+    2: double          y;
+} (cpp.type = "nebula::Coordinate")
+
+struct Point {
+    1: Coordinate      coord;
+} (cpp.type = "nebula::Point")
+
+struct LineString {
+    1: list<Coordinate>             coordList;
+} (cpp.type = "nebula::LineString")
+
+struct Polygon {
+    1: list<list<Coordinate>>       coordListList;
+} (cpp.type = "nebula::Polygon")
+
+union Geography {
+    1: Point                                    ptVal (cpp.ref_type = "unique");
+    2: LineString                               lsVal (cpp.ref_type = "unique");
+    3: Polygon                                  pgVal (cpp.ref_type = "unique");
 } (cpp.type = "nebula::Geography")
 
 

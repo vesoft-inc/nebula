@@ -11,12 +11,18 @@
 #include "common/base/Base.h"
 #include "common/datatypes/DataSet.h"
 #include "common/datatypes/Edge.h"
+#include "common/datatypes/Geography.h"
 #include "common/datatypes/List.h"
 #include "common/datatypes/Map.h"
 #include "common/datatypes/Path.h"
 #include "common/datatypes/Set.h"
 #include "common/datatypes/Vertex.h"
 #include "common/expression/Expression.h"
+#include "common/geo/GeoFunction.h"
+#include "common/geo/io/wkb/WKBReader.h"
+#include "common/geo/io/wkb/WKBWriter.h"
+#include "common/geo/io/wkt/WKTReader.h"
+#include "common/geo/io/wkt/WKTWriter.h"
 #include "common/thrift/ThriftTypes.h"
 #include "common/time/TimeUtils.h"
 #include "common/time/WallClock.h"
@@ -301,6 +307,94 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
                        Value::Type::__EMPTY__),
          TypeSignature({Value::Type::DATASET, Value::Type::INT, Value::Type::STRING},
                        Value::Type::__EMPTY__),
+     }},
+    // These geo functions of the ST prefix follow the Simple Feature Access and SQL/MM
+    // specification. See https://www.ogc.org/standards/sfa, https://www.ogc.org/standards/sfs, and
+    // https://www.researchgate.net/publication/221323544_SQLMM_Spatial_-_The_Standard_to_Manage_Spatial_Data_in_a_Relational_Database_System
+    // geo constructors
+    {"st_point",
+     {
+         TypeSignature({Value::Type::FLOAT, Value::Type::FLOAT}, Value::Type::GEOGRAPHY),
+         TypeSignature({Value::Type::INT, Value::Type::INT}, Value::Type::GEOGRAPHY),
+         TypeSignature({Value::Type::FLOAT, Value::Type::INT}, Value::Type::GEOGRAPHY),
+         TypeSignature({Value::Type::INT, Value::Type::FLOAT}, Value::Type::GEOGRAPHY),
+     }},
+    // geo parsers
+    {"st_geogfromtext",
+     {
+         TypeSignature({Value::Type::STRING}, Value::Type::GEOGRAPHY),
+     }},
+    // This function requires binary data to be support first.
+    // {"st_geogfromwkb",
+    //  {
+    //      TypeSignature({Value::Type::STRING}, Value::Type::GEOGRAPHY),
+    //  }},
+    // geo formatters
+    {"st_astext",
+     {
+         TypeSignature({Value::Type::GEOGRAPHY}, Value::Type::STRING),
+     }},
+    {"st_asbinary",
+     {
+         TypeSignature({Value::Type::GEOGRAPHY}, Value::Type::STRING),
+     }},
+    // geo accessors
+    {"st_isvalid",
+     {
+         TypeSignature({Value::Type::GEOGRAPHY}, Value::Type::BOOL),
+     }},
+    // TODO(jie) The geo predicates should follow the DE-9IM model. See
+    // https://en.wikipedia.org/wiki/DE-9IM
+    // geo predicates
+    {"st_intersects",
+     {
+         TypeSignature({Value::Type::GEOGRAPHY, Value::Type::GEOGRAPHY}, Value::Type::BOOL),
+     }},
+    {"st_covers",
+     {
+         TypeSignature({Value::Type::GEOGRAPHY, Value::Type::GEOGRAPHY}, Value::Type::BOOL),
+     }},
+    {"st_coveredby",
+     {
+         TypeSignature({Value::Type::GEOGRAPHY, Value::Type::GEOGRAPHY}, Value::Type::BOOL),
+     }},
+    {"st_dwithin",
+     {
+         TypeSignature({Value::Type::GEOGRAPHY, Value::Type::GEOGRAPHY, Value::Type::FLOAT},
+                       Value::Type::BOOL),
+     }},
+    // geo measures
+    {"st_distance",
+     {
+         TypeSignature({Value::Type::GEOGRAPHY, Value::Type::GEOGRAPHY}, Value::Type::FLOAT),
+     }},
+    // geo s2 functions
+    {"s2_cellidfrompoint",
+     {
+         TypeSignature({Value::Type::GEOGRAPHY}, Value::Type::INT),
+         TypeSignature({Value::Type::GEOGRAPHY, Value::Type::INT}, Value::Type::INT),
+     }},
+    {"s2_coveringcellids",
+     {
+         TypeSignature({Value::Type::GEOGRAPHY}, Value::Type::LIST),
+         TypeSignature({Value::Type::GEOGRAPHY, Value::Type::INT}, Value::Type::LIST),
+         TypeSignature({Value::Type::GEOGRAPHY, Value::Type::INT, Value::Type::INT},
+                       Value::Type::LIST),
+         TypeSignature(
+             {Value::Type::GEOGRAPHY, Value::Type::INT, Value::Type::INT, Value::Type::INT},
+             Value::Type::LIST),
+         TypeSignature({Value::Type::GEOGRAPHY,
+                        Value::Type::INT,
+                        Value::Type::INT,
+                        Value::Type::INT,
+                        Value::Type::INT},
+                       Value::Type::LIST),
+         TypeSignature({Value::Type::GEOGRAPHY,
+                        Value::Type::INT,
+                        Value::Type::INT,
+                        Value::Type::INT,
+                        Value::Type::FLOAT},
+                       Value::Type::LIST),
      }},
 };
 
@@ -2237,6 +2331,260 @@ FunctionManager::FunctionManager() {
         }
       }
       return folly::join(args[0].get().getStr(), result);
+    };
+  }
+  // geo constructors
+  {
+    auto &attr = functions_["st_point"];
+    attr.minArity_ = 2;
+    attr.maxArity_ = 2;
+    attr.isPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      if (!args[0].get().isNumeric() || !args[1].get().isNumeric()) {
+        return Value::kNullBadType;
+      }
+      double x = args[0].get().isInt() ? args[0].get().getInt() : args[0].get().getFloat();
+      double y = args[1].get().isInt() ? args[1].get().getInt() : args[1].get().getFloat();
+      Point point(Coordinate(x, y));
+      return Geography(point);
+    };
+  }
+  // geo parsers
+  {
+    auto &attr = functions_["st_geogfromtext"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      if (!args[0].get().isStr()) {
+        return Value::kNullBadType;
+      }
+      const std::string &wkt = args[0].get().getStr();
+      // Parse a geography from the wkt, normalize it and then verify its validity.
+      auto geogRet = Geography::fromWKT(wkt, true, true);
+      if (!geogRet.ok()) {
+        LOG(ERROR) << "ST_GeogFromText error: " << geogRet.status();
+        return Value::kNullBadData;
+      }
+      return std::move(geogRet).value();
+    };
+  }
+  // {
+  //   auto &attr = functions_["st_geogfromwkb"];
+  //   attr.minArity_ = 1;
+  //   attr.maxArity_ = 1;
+  //   attr.isPure_ = true;
+  //   attr.body_ = [](const auto &args) -> Value {
+  //     if (!args[0].get().isStr()) {  // wkb is byte sequence
+  //       return Value::kNullBadType;
+  //     }
+  //     const std::string &wkb = args[0].get().getStr();
+  //     auto geogRet = Geography::fromWKB(wkb, true, true);
+  //     if (!geogRet.ok()) {
+  //       return Value::kNullBadData;
+  //     }
+  //     auto geog = std::move(geogRet).value();
+  //     return geog;
+  //   };
+  // }
+  // geo formatters
+  {
+    auto &attr = functions_["st_astext"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      if (!args[0].get().isGeography()) {
+        return Value::kNullBadType;
+      }
+      const Geography &g = args[0].get().getGeography();
+      return g.asWKT();
+    };
+  }
+  {
+    auto &attr = functions_["st_asbinary"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      if (!args[0].get().isGeography()) {
+        return Value::kNullBadType;
+      }
+      const Geography &g = args[0].get().getGeography();
+      return g.asWKBHex();
+    };
+  }
+  // geo accessors
+  {
+    auto &attr = functions_["st_isvalid"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      if (!args[0].get().isGeography()) {
+        return Value::kNullBadType;
+      }
+      return args[0].get().getGeography().isValid();
+    };
+  }
+  // geo predicates
+  {
+    auto &attr = functions_["st_intersects"];
+    attr.minArity_ = 2;
+    attr.maxArity_ = 2;
+    attr.isPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      if (!args[0].get().isGeography() || !args[1].get().isGeography()) {
+        return Value::kNullBadType;
+      }
+      return geo::GeoFunction::intersects(args[0].get().getGeography(),
+                                          args[1].get().getGeography());
+    };
+  }
+  {
+    auto &attr = functions_["st_covers"];
+    attr.minArity_ = 2;
+    attr.maxArity_ = 2;
+    attr.isPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      if (!args[0].get().isGeography() || !args[1].get().isGeography()) {
+        return Value::kNullBadType;
+      }
+      return geo::GeoFunction::covers(args[0].get().getGeography(), args[1].get().getGeography());
+    };
+  }
+  {
+    auto &attr = functions_["st_coveredby"];
+    attr.minArity_ = 2;
+    attr.maxArity_ = 2;
+    attr.isPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      if (!args[0].get().isGeography() || !args[1].get().isGeography()) {
+        return Value::kNullBadType;
+      }
+      return geo::GeoFunction::coveredBy(args[0].get().getGeography(),
+                                         args[1].get().getGeography());
+    };
+  }
+  {
+    auto &attr = functions_["st_dwithin"];
+    attr.minArity_ = 3;
+    attr.maxArity_ = 3;
+    attr.isPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      if (!args[0].get().isGeography() || !args[1].get().isGeography() ||
+          !args[2].get().isFloat()) {
+        return Value::kNullBadType;
+      }
+      return geo::GeoFunction::dWithin(args[0].get().getGeography(),
+                                       args[1].get().getGeography(),
+                                       args[2].get().getFloat(),
+                                       true);
+    };
+  }
+  // geo measures
+  {
+    auto &attr = functions_["st_distance"];
+    attr.minArity_ = 2;
+    attr.maxArity_ = 2;
+    attr.isPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      if (!args[0].get().isGeography() || !args[1].get().isGeography()) {
+        return Value::kNullBadType;
+      }
+      return geo::GeoFunction::distance(args[0].get().getGeography(), args[1].get().getGeography());
+    };
+  }
+  // geo s2 functions
+  {
+    auto &attr = functions_["s2_cellidfrompoint"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 2;
+    attr.isPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      if (!args[0].get().isGeography()) {
+        return Value::kNullBadType;
+      }
+      int level = 30;
+      if (args.size() == 2) {
+        if (!args[1].get().isInt()) {
+          return Value::kNullBadType;
+        }
+        level = args[1].get().getInt();
+        if (level < 0 || level > 30) {
+          return Value::kNullBadData;
+        }
+      }
+      // TODO(jie) Should return uint64_t Value
+      uint64_t cellId = geo::GeoFunction::s2CellIdFromPoint(args[0].get().getGeography(), level);
+      const char *tmp = reinterpret_cast<const char *>(&cellId);
+      int64_t cellId2 = *reinterpret_cast<const int64_t *>(tmp);
+      return cellId2;
+    };
+  }
+  {
+    auto &attr = functions_["s2_coveringcellids"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 5;
+    attr.isPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      if (!args[0].get().isGeography()) {
+        return Value::kNullBadType;
+      }
+      int minLevel = 0;
+      int maxLevel = 30;
+      int maxCells = 8;
+      double bufferInMeters = 0.0;
+      if (args.size() > 1) {
+        if (!args[1].get().isInt()) {
+          return Value::kNullBadType;
+        }
+        minLevel = args[1].get().getInt();
+        if (minLevel < 0 || minLevel > 30) {
+          return Value::kNullBadData;
+        }
+      }
+      if (args.size() > 2) {
+        if (!args[2].get().isInt()) {
+          return Value::kNullBadType;
+        }
+        maxLevel = args[2].get().getInt();
+        if (maxLevel < 0 || maxLevel > 30) {
+          return Value::kNullBadData;
+        }
+        if (maxLevel < minLevel) {
+          return Value::kNullBadData;
+        }
+      }
+      if (args.size() > 3) {
+        if (!args[3].get().isInt()) {
+          return Value::kNullBadType;
+        }
+        maxCells = args[3].get().getInt();
+        if (maxCells <= 0) {
+          return Value::kNullBadData;
+        }
+      }
+      if (args.size() > 4) {
+        if (!args[4].get().isNumeric()) {
+          return Value::kNullBadType;
+        }
+        bufferInMeters = args[4].get().isInt() ? args[4].get().getInt() : args[4].get().getFloat();
+        if (bufferInMeters < 0.0) {
+          return Value::kNullBadData;
+        }
+      }
+      std::vector<uint64_t> cellIds = geo::GeoFunction::s2CoveringCellIds(
+          args[0].get().getGeography(), minLevel, maxLevel, maxCells, bufferInMeters);
+      // TODO(jie) Should return uint64_t List
+      std::vector<Value> vals;
+      vals.reserve(cellIds.size());
+      for (uint64_t cellId : cellIds) {
+        const char *tmp = reinterpret_cast<const char *>(&cellId);
+        int64_t cellId2 = *reinterpret_cast<const int64_t *>(tmp);
+        vals.emplace_back(cellId2);
+      }
+      return List(vals);
     };
   }
 }  // NOLINT

@@ -6,4 +6,4 @@
 
 #include "common/geo/io/wkt/WKTReader.h"
 
-namespace nebula {}  // namespace nebula
+namespace nebula::geo {}  // namespace nebula::geo

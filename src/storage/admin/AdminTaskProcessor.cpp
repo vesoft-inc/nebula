@@ -18,8 +18,7 @@ void AdminTaskProcessor::process(const cpp2::AddAdminTaskRequest& req) {
 
   auto cb = [taskManager, jobId = req.get_job_id(), taskId = req.get_task_id()](
                 nebula::cpp2::ErrorCode errCode, nebula::meta::cpp2::StatsItem& result) {
-    taskManager->saveTaskStatus(jobId, taskId, errCode, result);
-    taskManager->notifyReporting();
+    taskManager->saveAndNotify(jobId, taskId, errCode, result);
   };
 
   TaskContext ctx(req, std::move(cb));
