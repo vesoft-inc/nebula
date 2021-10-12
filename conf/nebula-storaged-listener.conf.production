@@ -5,7 +5,7 @@
 # The file to host the process id
 --pid_file=pids_listener/nebula-storaged.pid
 # Whether to use the configuration obtained from the configuration file
---local_config=true
+--storage_local_config=true
 
 ########## logging ##########
 # The directory to host logging files
@@ -30,7 +30,7 @@
 # Local ip
 --local_ip=192.168.2.4
 # Storage daemon listening port
---port=9789
+--storage_port=9789
 # HTTP service ip
 --ws_ip=192.168.2.4
 # HTTP service port

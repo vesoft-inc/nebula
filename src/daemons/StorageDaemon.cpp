@@ -34,7 +34,7 @@ DEFINE_string(meta_server_addrs,
               "",
               "list of meta server addresses,"
               "the format looks like ip1:port1, ip2:port2, ip3:port3");
-DECLARE_int32(port);
+DECLARE_int32(storage_port);
 
 using nebula::operator<<;
 using nebula::HostAddr;
@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
 
   auto hostName =
       FLAGS_local_ip != "" ? FLAGS_local_ip : nebula::network::NetworkUtils::getHostname();
-  HostAddr host(hostName, FLAGS_port);
+  HostAddr host(hostName, FLAGS_storage_port);
   LOG(INFO) << "host = " << host;
   auto metaAddrsRet = nebula::network::NetworkUtils::toHosts(FLAGS_meta_server_addrs);
   if (!metaAddrsRet.ok() || metaAddrsRet.value().empty()) {

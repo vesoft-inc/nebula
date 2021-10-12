@@ -34,11 +34,13 @@
 #include "webservice/Router.h"
 #include "webservice/WebService.h"
 
-DEFINE_int32(port, 44500, "Storage daemon listening port");
+DEFINE_int32(storage_port, 44500, "Storage daemon listening port");
 DEFINE_int32(num_io_threads, 16, "Number of IO threads");
-DEFINE_int32(num_worker_threads, 32, "Number of workers");
+DEFINE_int32(num_storage_worker_threads, 32, "Number of workers");
 DEFINE_int32(storage_http_thread_num, 3, "Number of storage daemon's http thread");
-DEFINE_bool(local_config, false, "meta client will not retrieve latest configuration from meta");
+DEFINE_bool(storage_local_config,
+            false,
+            "meta client will not retrieve latest configuration from meta");
 
 namespace nebula {
 namespace storage {
@@ -143,7 +145,7 @@ int32_t StorageServer::getAdminStoreSeqId() {
 bool StorageServer::start() {
   ioThreadPool_ = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_num_io_threads);
   workers_ = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
-      FLAGS_num_worker_threads, true /*stats*/);
+      FLAGS_num_storage_worker_threads, true /*stats*/);
   workers_->setNamePrefix("executor");
   workers_->start();
 
@@ -151,7 +153,7 @@ bool StorageServer::start() {
   meta::MetaClientOptions options;
   options.localHost_ = localHost_;
   options.serviceName_ = "";
-  options.skipConfig_ = FLAGS_local_config;
+  options.skipConfig_ = FLAGS_storage_local_config;
   options.role_ = nebula::meta::cpp2::HostRole::STORAGE;
   // If listener path is specified, it will start as a listener
   if (!listenerPath_.empty()) {
@@ -215,7 +217,7 @@ bool StorageServer::start() {
     try {
       auto handler = std::make_shared<GraphStorageServiceHandler>(env_.get());
       storageServer_ = std::make_unique<apache::thrift::ThriftServer>();
-      storageServer_->setPort(FLAGS_port);
+      storageServer_->setPort(FLAGS_storage_port);
       storageServer_->setIdleTimeout(std::chrono::seconds(0));
       storageServer_->setIOThreadPool(ioThreadPool_);
       storageServer_->setThreadManager(workers_);

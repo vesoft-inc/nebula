@@ -89,7 +89,7 @@ class NebulaService(object):
             params.append('--num_rows_to_check_memory=4')
             params.append('--session_reclaim_interval_secs=2')
         if name == 'storaged':
-            params.append('--local_config=false')
+            params.append('--storage_local_config=false')
             params.append('--raft_heartbeat_interval_secs=30')
             params.append('--skip_wait_in_rate_limiter=true')
         if debug_log:

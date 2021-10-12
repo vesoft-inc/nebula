@@ -4,7 +4,7 @@
 # The file to host the process id
 --pid_file=pids/nebula-storaged.pid
 # Whether to use the configuration obtained from the configuration file
---local_config=true
+--storage_local_config=true
 
 ########## logging ##########
 # The directory to host logging files
@@ -31,7 +31,7 @@
 # will be accessed remotely.
 --local_ip=127.0.0.1
 # Storage daemon listening port
---port=9779
+--storage_port=9779
 # HTTP service ip
 --ws_ip=0.0.0.0
 # HTTP service port
