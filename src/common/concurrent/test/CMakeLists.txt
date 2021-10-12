@@ -14,4 +14,5 @@ nebula_add_test(
     LIBRARIES
         gtest
         gtest_main
+        ${THRIFT_LIBRARIES}
 )

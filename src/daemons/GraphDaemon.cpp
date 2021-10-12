@@ -11,6 +11,7 @@
 
 #include "common/base/Base.h"
 #include "common/base/SignalHandler.h"
+#include "common/concurrent/NebulaPriorityThreadManager.h"
 #include "common/fs/FileUtils.h"
 #include "common/network/NetworkUtils.h"
 #include "common/process/ProcessUtils.h"
@@ -22,9 +23,11 @@
 #include "version/Version.h"
 #include "webservice/WebService.h"
 
+using apache::thrift::concurrency::ThreadManager;
 using nebula::ProcessUtils;
 using nebula::Status;
 using nebula::StatusOr;
+using nebula::concurrency::NebulaPriorityThreadManager;
 using nebula::fs::FileUtils;
 using nebula::graph::GraphService;
 using nebula::network::NetworkUtils;
@@ -213,8 +216,8 @@ void printHelp(const char *prog) { fprintf(stderr, "%s --flagfile <config_file>\
 void setupThreadManager() {
   int numThreads =
       FLAGS_num_worker_threads > 0 ? FLAGS_num_worker_threads : gServer->getNumIOWorkerThreads();
-  std::shared_ptr<apache::thrift::concurrency::ThreadManager> threadManager(
-      PriorityThreadManager::newPriorityThreadManager(numThreads, false /*stats*/));
+  std::shared_ptr<ThreadManager> threadManager(
+      std::make_shared<NebulaPriorityThreadManager>(numThreads));
   threadManager->setNamePrefix("executor");
   threadManager->start();
   gServer->setThreadManager(threadManager);
