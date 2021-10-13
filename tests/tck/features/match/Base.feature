@@ -213,7 +213,7 @@ Feature: Basic match
       | ("Yao Ming" :player{age: 38, name: "Yao Ming"})     | [:like "Yao Ming"->"Tracy McGrady" @0 {likeness: 90}]   | ("Tracy McGrady" :player{age: 39, name: "Tracy McGrady"})     |
     When executing query:
       """
-      MATCH (v:player)-[e:like]-(v2) where id(v) == "Tim Duncan" RETURN DISTINCT properties(e) as props, e
+      MATCH (v:player)-[e:like]->(v2) where id(v) == "Tim Duncan" RETURN DISTINCT properties(e) as props, e
       """
     Then the result should be, in any order, with relax comparison:
       | props          | e                                                       |
@@ -221,7 +221,7 @@ Feature: Basic match
       | {likeness: 95} | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]   |
     When executing query:
       """
-      MATCH (v:player)-[e:like]-(v2) where id(v) == "Tim Duncan" RETURN DISTINCT properties(e) as props
+      MATCH (v:player)-[e:like]->(v2) where id(v) == "Tim Duncan" RETURN DISTINCT properties(e) as props
       """
     Then the result should be, in any order, with relax comparison:
       | props          |

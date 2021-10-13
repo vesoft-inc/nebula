@@ -247,8 +247,8 @@ Feature: Go Yield Vertex And Edge Sentence
       YIELD DISTINCT collect($-.id) as a, collect_set($-.id) as b
       """
     Then the result should be, in any order, with relax comparison:
-      | a                                                                                 | b                                                                   |
-      | ["Tony Parker", "Tim Duncan", "LaMarcus Aldridge", "Manu Ginobili", "Tim Duncan"] | ["Manu Ginobili", "LaMarcus Aldridge", "Tony Parker", "Tim Duncan"] |
+      | a                                                                  | b                                                    |
+      | ["Tim Duncan", "LaMarcus Aldridge", "Manu Ginobili", "Tim Duncan"] | {"Manu Ginobili", "LaMarcus Aldridge", "Tim Duncan"} |
 
   Scenario: distinct
     When executing query:
