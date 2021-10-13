@@ -1,0 +1,14 @@
+# Copyright (c) 2021 vesoft inc. All rights reserved.
+#
+# This source code is licensed under Apache 2.0 License,
+# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+
+# For more configuration details:
+# https://docs.codecov.io/docs/codecov-yaml
+
+# validate the configuration:
+# curl -X POST --data-binary @codecov.yml https://codecov.io/validate
+
+codecov:
+  allow_pseudo_compare: True
+  allow_coverage_offsets: True

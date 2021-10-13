@@ -4,4 +4,4 @@
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
 nebula_add_subdirectory(io)
-# nebula_add_subdirectory(test)
+nebula_add_subdirectory(test)

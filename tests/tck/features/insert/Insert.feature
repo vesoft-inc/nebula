@@ -466,6 +466,8 @@ Feature: Insert string vid of vertex and edge
       """
       CREATE TAG student(name string NOT NULL, age int);
       CREATE TAG course(name fixed_string(5) NOT NULL, introduce string DEFAULT NULL);
+      CREATE TAG INDEX student_i ON student(name(30), age);
+      CREATE TAG INDEX course_i ON course(name, introduce(30));
       """
     # test insert with fixed_string
     When try to execute query:
@@ -491,11 +493,6 @@ Feature: Insert string vid of vertex and edge
       INSERT VERTEX student(name, age) VALUES "Tom":(NULL, 12)
       """
     Then a ExecutionError should be raised at runtime: Storage Error: The not null field cannot be null.
-    When executing query:
-      """
-      INSERT VERTEX student(name, age) VALUES "Tom":(NULL, 12)
-      """
-    Then a ExecutionError should be raised at runtime: Storage Error: The not null field cannot be null.
     # out of fixed_string's size
     When executing query:
       """
@@ -514,6 +511,22 @@ Feature: Insert string vid of vertex and edge
     When executing query:
       """
       FETCH PROP ON student "" YIELD student.name, student.age
+      """
+    Then the result should be, in any order:
+      | VertexID | student.name | student.age |
+      | ''       | 'Tom'        | 12          |
+    # check result
+    When executing query:
+      """
+      LOOKUP on course YIELD course.name, course.introduce
+      """
+    Then the result should be, in any order:
+      | VertexID  | course.name | course.introduce |
+      | 'English' | 'Engli'     | NULL             |
+      | 'Math'    | 'Math'      | NULL             |
+    When executing query:
+      """
+      LOOKUP ON student YIELD student.name, student.age
       """
     Then the result should be, in any order:
       | VertexID | student.name | student.age |

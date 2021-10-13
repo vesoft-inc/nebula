@@ -19,59 +19,232 @@
 
 namespace nebula {
 
-StatusOr<Geography> Geography::fromWKT(const std::string& wkt) {
-  auto geomRet = WKTReader().read(wkt);
-  NG_RETURN_IF_ERROR(geomRet);
-  auto geom = geomRet.value();
-  auto wkb = WKBWriter().write(geom);
-  return Geography(wkb);
+void Coordinate::normalize() {
+  // Reduce the x(longitude) to the range [-180, 180] degrees
+  x = std::remainder(x, 360.0);
+
+  // Reduce the y(latitude) to the range [-90, 90] degrees
+  double tmp = remainder(y, 360.0);
+  if (tmp > 90.0) {
+    y = 180.0 - tmp;
+  } else if (tmp < -90.0) {
+    y = -180.0 - tmp;
+  }
+}
+
+bool Coordinate::isValid() const { return std::abs(x) <= 180.0 && std::abs(y) <= 90.0; }
+
+void Point::normalize() {}
+
+bool Point::isValid() const { return coord.isValid(); }
+
+void LineString::normalize() { geo::GeoUtils::removeAdjacentDuplicateCoordinates(coordList); }
+
+bool LineString::isValid() const {
+  // LineString must have at least 2 coordinates;
+  if (coordList.size() < 2) {
+    return false;
+  }
+  auto s2Region = geo::GeoUtils::s2RegionFromGeography(*this);
+  return static_cast<S2Polyline*>(s2Region.get())->IsValid();
+}
+
+void Polygon::normalize() {
+  for (auto& coordList : coordListList) {
+    geo::GeoUtils::removeAdjacentDuplicateCoordinates(coordList);
+  }
+}
+
+bool Polygon::isValid() const {
+  for (const auto& coordList : coordListList) {
+    // Polygon's LinearRing must have at least 4 coordinates
+    if (coordList.size() < 4) {
+      return false;
+    }
+    // Polygon's LinearRing must be closed
+    if (coordList.front() != coordList.back()) {
+      return false;
+    }
+  }
+  auto s2Region = geo::GeoUtils::s2RegionFromGeography(*this);
+  return static_cast<S2Polygon*>(s2Region.get())->IsValid();
+}
+
+StatusOr<Geography> Geography::fromWKT(const std::string& wkt,
+                                       bool needNormalize,
+                                       bool verifyValidity) {
+  auto geogRet = geo::WKTReader().read(wkt);
+  if (!geogRet.ok()) {
+    return geogRet;
+  }
+  auto geog = std::move(geogRet).value();
+  if (needNormalize) {
+    geog.normalize();
+  }
+  if (verifyValidity) {
+    if (!geog.isValid()) {
+      return Status::Error("Failed to parse an valid Geography instance from the wkt `%s'",
+                           wkt.c_str());
+    }
+  }
+
+  return geog;
 }
 
 GeoShape Geography::shape() const {
-  // TODO(jie) May store the shapetype as the data member of Geography is ok.
-  const uint8_t* beg = reinterpret_cast<const uint8_t*>(wkb.data());
-  const uint8_t* end = beg + wkb.size();
-  WKBReader reader;
-  auto byteOrderRet = reader.readByteOrder(beg, end);
-  if (!byteOrderRet.ok()) {
-    return GeoShape::UNKNOWN;
+  switch (geo_.index()) {
+    case 0:
+      return GeoShape::POINT;
+    case 1:
+      return GeoShape::LINESTRING;
+    case 2:
+      return GeoShape::POLYGON;
+    default:  // May never reaches here, because the default constructor of the variant geo_ will
+              // hold the value-initialized value of the first alternative(Point).
+      return GeoShape::UNKNOWN;
   }
-  ByteOrder byteOrder = byteOrderRet.value();
-  auto shapeTypeRet = reader.readShapeType(beg, end, byteOrder);
-  if (!shapeTypeRet.ok()) {
-    return GeoShape::UNKNOWN;
-  }
-  return shapeTypeRet.value();
 }
 
-std::unique_ptr<std::string> Geography::asWKT() const {
-  auto geomRet = WKBReader().read(wkb);
-  if (!geomRet.ok()) {
-    LOG(ERROR) << geomRet.status();
-    return nullptr;
-  }
-  auto geom = geomRet.value();
-  return std::make_unique<std::string>(WKTWriter().write(geom));
+const Point& Geography::point() const {
+  CHECK(std::holds_alternative<Point>(geo_));
+  return std::get<Point>(geo_);
 }
 
-std::unique_ptr<std::string> Geography::asWKBHex() const {
-  auto geomRet = WKBReader().read(wkb);
-  if (!geomRet.ok()) {
-    LOG(ERROR) << geomRet.status();
-    return nullptr;
-  }
-  auto geom = geomRet.value();
-  return std::make_unique<std::string>(folly::hexlify(WKBWriter().write(geom)));
+const LineString& Geography::lineString() const {
+  CHECK(std::holds_alternative<LineString>(geo_));
+  return std::get<LineString>(geo_);
 }
+
+const Polygon& Geography::polygon() const {
+  CHECK(std::holds_alternative<Polygon>(geo_));
+  return std::get<Polygon>(geo_);
+}
+
+Point& Geography::mutablePoint() {
+  CHECK(std::holds_alternative<Point>(geo_));
+  return std::get<Point>(geo_);
+}
+
+LineString& Geography::mutableLineString() {
+  CHECK(std::holds_alternative<LineString>(geo_));
+  return std::get<LineString>(geo_);
+}
+
+Polygon& Geography::mutablePolygon() {
+  CHECK(std::holds_alternative<Polygon>(geo_));
+  return std::get<Polygon>(geo_);
+}
+
+void Geography::normalize() {
+  switch (shape()) {
+    case GeoShape::POINT: {
+      auto& point = mutablePoint();
+      point.normalize();
+      return;
+    }
+    case GeoShape::LINESTRING: {
+      auto& line = mutableLineString();
+      line.normalize();
+      return;
+    }
+    case GeoShape::POLYGON: {
+      auto& polygon = mutablePolygon();
+      polygon.normalize();
+      return;
+    }
+    case GeoShape::UNKNOWN:
+    default: {
+      LOG(ERROR)
+          << "Geography shapes other than Point/LineString/Polygon are not currently supported";
+      return;
+    }
+  }
+}
+
+bool Geography::isValid() const {
+  switch (shape()) {
+    case GeoShape::POINT: {
+      const auto& point = this->point();
+      return point.isValid();
+    }
+    case GeoShape::LINESTRING: {
+      const auto& line = this->lineString();
+      return line.isValid();
+    }
+    case GeoShape::POLYGON: {
+      const auto& polygon = this->polygon();
+      return polygon.isValid();
+    }
+    case GeoShape::UNKNOWN:
+    default: {
+      LOG(ERROR)
+          << "Geography shapes other than Point/LineString/Polygon are not currently supported";
+      return false;
+    }
+  }
+}
+
+std::string Geography::asWKT() const { return geo::WKTWriter().write(*this); }
+
+std::string Geography::asWKB() const { return geo::WKBWriter().write(*this); }
+
+std::string Geography::asWKBHex() const { return folly::hexlify(geo::WKBWriter().write(*this)); }
 
 std::unique_ptr<S2Region> Geography::asS2() const {
-  auto geomRet = WKBReader().read(wkb);
-  if (!geomRet.ok()) {
-    LOG(ERROR) << geomRet.status();
-    return nullptr;
+  return geo::GeoUtils::s2RegionFromGeography(*this);
+}
+
+bool Geography::operator==(const Geography& rhs) const {
+  auto lhsShape = shape();
+  auto rhsShape = rhs.shape();
+  if (lhsShape != rhsShape) {
+    return false;
   }
-  auto geom = geomRet.value();
-  return GeoUtils::s2RegionFromGeomtry(geom);
+
+  switch (lhsShape) {
+    case GeoShape::POINT: {
+      return point() == rhs.point();
+    }
+    case GeoShape::LINESTRING: {
+      return lineString() == rhs.lineString();
+    }
+    case GeoShape::POLYGON: {
+      return polygon() == rhs.polygon();
+    }
+    case GeoShape::UNKNOWN:
+    default: {
+      LOG(ERROR) << "Geography shapes other than Point/LineString/Polygon are not currently "
+                    "supported";
+      return false;
+    }
+  }
+}
+
+bool Geography::operator<(const Geography& rhs) const {
+  auto lhsShape = shape();
+  auto rhsShape = rhs.shape();
+  if (lhsShape != rhsShape) {
+    return lhsShape < rhsShape;
+  }
+
+  switch (lhsShape) {
+    case GeoShape::POINT: {
+      return point() < rhs.point();
+    }
+    case GeoShape::LINESTRING: {
+      return lineString() < rhs.lineString();
+    }
+    case GeoShape::POLYGON: {
+      return polygon() < rhs.polygon();
+    }
+    case GeoShape::UNKNOWN:
+    default: {
+      LOG(ERROR) << "Geography shapes other than Point/LineString/Polygon are not currently "
+                    "supported";
+      return false;
+    }
+  }
+  return false;
 }
 
 }  // namespace nebula
@@ -79,8 +252,9 @@ std::unique_ptr<S2Region> Geography::asS2() const {
 namespace std {
 
 // Inject a customized hash function
-std::size_t hash<nebula::Geography>::operator()(const nebula::Geography& h) const noexcept {
-  return hash<std::string>{}(h.wkb);
+std::size_t hash<nebula::Geography>::operator()(const nebula::Geography& v) const noexcept {
+  std::string wkb = v.asWKB();
+  return hash<std::string>{}(wkb);
 }
 
 }  // namespace std

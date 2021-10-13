@@ -46,162 +46,86 @@
 #include "common/expression/VariableExpression.h"
 #include "common/expression/VertexExpression.h"
 #include "common/expression/test/ExpressionContextMock.h"
+#include "parser/GQLParser.h"
 
 nebula::ExpressionContextMock gExpCtxt;
 nebula::ObjectPool pool;
 namespace nebula {
-
-static void InsertSpace(std::string &str) {
-  for (unsigned int i = 0; i < str.size(); i++) {
-    if (str[i] == '(') {
-      str.insert(i + 1, 1, ' ');
-    } else if (str[i] == ')') {
-      str.insert(i, 1, ' ');
-      i += 1;
-    } else {
-      continue;
-    }
-  }
-}
-
-static std::vector<std::string> InfixToSuffix(const std::vector<std::string> &expr) {
-  std::vector<std::string> values;
-  std::stack<std::string> operators;
-  std::unordered_map<std::string, int8_t> priority = {{"OR", 1},
-                                                      {"AND", 2},
-                                                      {"XOR", 3},
-                                                      {"==", 4},
-                                                      {"!=", 4},
-                                                      {">=", 5},
-                                                      {"<=", 5},
-                                                      {">", 5},
-                                                      {"<", 5},
-                                                      {"+", 6},
-                                                      {"-", 6},
-                                                      {"*", 7},
-                                                      {"/", 7},
-                                                      {"%", 7},
-                                                      {"!", 8}};
-
-  for (const auto &str : expr) {
-    if (priority.find(str) != priority.end() || str == "(") {
-      if (operators.empty() || str == "(") {
-        operators.push(str);
-      } else {
-        if (operators.top() == "(" || priority[str] > priority[operators.top()]) {
-          operators.push(str);
-        } else {
-          while (!operators.empty() && priority[str] <= priority[operators.top()]) {
-            values.push_back(operators.top());
-            operators.pop();
-          }
-          operators.push(str);
-        }
-      }
-    } else if (str == ")") {
-      while (!operators.empty() && operators.top() != "(") {
-        values.push_back(operators.top());
-        operators.pop();
-      }
-      operators.pop();
-    } else {
-      values.push_back(str);
-    }
-  }
-  while (!operators.empty()) {
-    values.push_back(operators.top());
-    operators.pop();
-  }
-  return values;
-}
-
 class ExpressionTest : public ::testing::Test {
  public:
   void SetUp() override {}
   void TearDown() override {}
 
  protected:
-  static std::unordered_map<std::string, Value> boolen_;
-  // static std::unordered_map<std::string, Expression::Kind> op_;
-  static std::unordered_map<
-      std::string,
-      std::function<Expression *(ObjectPool *pool, Expression *lhs, Expression *rhs)>>
-      op_;
-
- protected:
-  Expression *ExpressionCalu(const std::vector<std::string> &expr) {
-    std::vector<std::string> relationOp = {">", ">=", "<", "<=", "==", "!="};
-    std::vector<std::string> logicalOp = {"AND", "OR", "XOR"};
-    std::vector<std::string> arithmeticOp = {"+", "-", "*", "/", "%"};
-
-    std::vector<std::string> symbol = InfixToSuffix(expr);
-    if (symbol.size() == 1) {
-      // TEST_EXPR(true, true)
-      if (boolen_.find(symbol.front()) != boolen_.end()) {
-        return ConstantExpression::make(&pool, boolen_[symbol.front()]);
-      } else if (symbol.front().find('.') != std::string::npos) {
-        // TEST_EXPR(123.0, 123.0)
-        return ConstantExpression::make(&pool, ::atof(symbol.front().c_str()));
-      }
-      // TEST_EXPR(123, 123)
-      return ConstantExpression::make(&pool, ::atoi(symbol.front().c_str()));
-    }
-
-    // calu suffix expression
-    std::stack<Expression *> value;
-    for (const auto &str : symbol) {
-      if (op_.find(str) == op_.end()) {
-        Expression *ep = nullptr;
-        if (boolen_.find(str) != boolen_.end()) {
-          ep = ConstantExpression::make(&pool, boolen_[str.c_str()]);
-        } else if (str.find('.') != std::string::npos) {
-          ep = ConstantExpression::make(&pool, ::atof(str.c_str()));
-        } else {
-          ep = ConstantExpression::make(&pool, ::atoi(str.c_str()));
-        }
-        value.push(ep);
-      } else {
-        Expression *result = nullptr;
-        Expression *rhs = value.top();
-        value.pop();
-        Expression *lhs = value.top();
-        value.pop();
-        if (std::find(arithmeticOp.begin(), arithmeticOp.end(), str) != arithmeticOp.end()) {
-          result = op_[str](&pool, lhs, rhs);
-        } else if (std::find(relationOp.begin(), relationOp.end(), str) != relationOp.end()) {
-          result = op_[str](&pool, lhs, rhs);
-        } else if (std::find(logicalOp.begin(), logicalOp.end(), str) != logicalOp.end()) {
-          result = op_[str](&pool, lhs, rhs);
-        } else {
-          return ConstantExpression::make(&pool, NullType::UNKNOWN_PROP);
-        }
-        value.push(result);
-      }
-    }
-    return value.top();
-  }
-
   void testExpr(const std::string &exprSymbol, Value expected) {
-    std::string expr(exprSymbol);
-    InsertSpace(expr);
-    std::vector<std::string> splitString;
-    boost::split(splitString, expr, boost::is_any_of(" \t"));
-    Expression *ep = ExpressionCalu(splitString);
+    std::string query = "RETURN " + exprSymbol;
+    nebula::graph::QueryContext queryCtxt;
+    nebula::GQLParser gParser(&queryCtxt);
+    auto result = gParser.parse(query);
+    ASSERT_EQ(result.ok(), true);
+    auto *sequentialSentences = static_cast<SequentialSentences *>(result.value().get());
+    ASSERT_NE(sequentialSentences, nullptr);
+    auto sentences = sequentialSentences->sentences();
+    ASSERT_GT(sentences.size(), 0);
+    auto *yieldSentence = static_cast<YieldSentence *>(sentences[0]);
+    ASSERT_NE(yieldSentence, nullptr);
+    ASSERT_NE(yieldSentence->yield(), nullptr);
+    ASSERT_NE(yieldSentence->yield()->yields(), nullptr);
+    ASSERT_NE(yieldSentence->yield()->yields()->back(), nullptr);
+    Expression *ep = yieldSentence->yield()->yields()->back()->expr();
     auto eval = Expression::eval(ep, gExpCtxt);
     EXPECT_EQ(eval.type(), expected.type()) << "type check failed: " << ep->toString();
     EXPECT_EQ(eval, expected) << "check failed: " << ep->toString();
   }
 
   void testToString(const std::string &exprSymbol, const char *expected) {
-    std::string expr(exprSymbol);
-    InsertSpace(expr);
-    std::vector<std::string> splitString;
-    boost::split(splitString, expr, boost::is_any_of(" \t"));
-    Expression *ep = ExpressionCalu(splitString);
+    std::string query = "RETURN " + exprSymbol;
+    nebula::graph::QueryContext queryCtxt;
+    nebula::GQLParser gParser(&queryCtxt);
+    auto result = gParser.parse(query);
+    ASSERT_EQ(result.ok(), true);
+    auto *sequentialSentences = static_cast<SequentialSentences *>(result.value().get());
+    ASSERT_NE(sequentialSentences, nullptr);
+    auto sentences = sequentialSentences->sentences();
+    ASSERT_GT(sentences.size(), 0);
+    auto *yieldSentence = static_cast<YieldSentence *>(sentences[0]);
+    ASSERT_NE(yieldSentence, nullptr);
+    ASSERT_NE(yieldSentence->yield(), nullptr);
+    ASSERT_NE(yieldSentence->yield()->yields(), nullptr);
+    ASSERT_NE(yieldSentence->yield()->yields()->back(), nullptr);
+    Expression *ep = yieldSentence->yield()->yields()->back()->expr();
+    ASSERT_NE(ep, nullptr);
     EXPECT_EQ(ep->toString(), expected);
   }
 
   void testFunction(const char *name, const std::vector<Value> &args, const Value &expected) {
+    std::string query = "RETURN " + std::string(name) + "(";
+    for (const auto &i : args) {
+      query += i.toString() + ",";
+    }
+    if (query.back() == ',') {
+      query.pop_back();
+    }
+    query += ")";
+    nebula::graph::QueryContext queryCtxt;
+    nebula::GQLParser gParser(&queryCtxt);
+    auto result = gParser.parse(query);
+    ASSERT_EQ(result.ok(), true);
+    auto *sequentialSentences = static_cast<SequentialSentences *>(result.value().get());
+    ASSERT_NE(sequentialSentences, nullptr);
+    auto sentences = sequentialSentences->sentences();
+    ASSERT_GT(sentences.size(), 0);
+    auto *yieldSentence = static_cast<YieldSentence *>(sentences[0]);
+    ASSERT_NE(yieldSentence, nullptr);
+    ASSERT_NE(yieldSentence->yield(), nullptr);
+    ASSERT_NE(yieldSentence->yield()->yields(), nullptr);
+    ASSERT_NE(yieldSentence->yield()->yields()->back(), nullptr);
+    auto eval = Expression::eval(yieldSentence->yield()->yields()->back()->expr(), gExpCtxt);
+    // EXPECT_EQ(eval.type(), expected.type());
+    EXPECT_EQ(eval, expected);
+  }
+
+  void testPathFunction(const char *name, const std::vector<Value> &args, const Value &expected) {
     ArgumentList *argList = ArgumentList::make(&pool);
     for (const auto &i : args) {
       argList->addArgument(ConstantExpression::make(&pool, i));
@@ -212,6 +136,7 @@ class ExpressionTest : public ::testing::Test {
     EXPECT_EQ(eval, expected);
   }
 };
+
 // expr -- the expression can evaluate by nGQL parser may not evaluated by c++
 // expected -- the expected value of expression must evaluated by c++
 #define TEST_EXPR(expr, expected) \
@@ -222,6 +147,11 @@ class ExpressionTest : public ::testing::Test {
 #define TEST_FUNCTION(expr, args, expected) \
   do {                                      \
     testFunction(#expr, args, expected);    \
+  } while (0)
+
+#define TEST_PATH_FUNCTION(expr, args, expected) \
+  do {                                           \
+    testPathFunction(#expr, args, expected);     \
   } while (0)
 
 #define TEST_TOSTRING(expr, expected) \
@@ -238,64 +168,6 @@ class ExpressionTest : public ::testing::Test {
     step.type = TYPE;                         \
     path.steps.emplace_back(std::move(step)); \
   } while (0)
-
-// Functions used to construct corresponding expressions
-using expressionGen =
-    std::function<Expression *(ObjectPool *pool, Expression *lhs, Expression *rhs)>;
-
-expressionGen makeAddExpr{&ArithmeticExpression::makeAdd};
-expressionGen makeMinusExpr{&ArithmeticExpression::makeMinus};
-expressionGen makeMultiplyExpr{&ArithmeticExpression::makeMultiply};
-expressionGen makeDivisionExpr{&ArithmeticExpression::makeDivision};
-expressionGen makeModExpr{&ArithmeticExpression::makeMod};
-expressionGen makeOrExpr{
-    static_cast<LogicalExpression *(*)(ObjectPool *pool, Expression *lhs, Expression *rhs)>(
-        &LogicalExpression::makeOr)};
-expressionGen makeAndExpr{
-    static_cast<LogicalExpression *(*)(ObjectPool *pool, Expression *lhs, Expression *rhs)>(
-        &LogicalExpression::makeAnd)};
-expressionGen makeXorExpr{
-    static_cast<LogicalExpression *(*)(ObjectPool *pool, Expression *lhs, Expression *rhs)>(
-        &LogicalExpression::makeXor)};
-expressionGen makeRelGT{
-    static_cast<RelationalExpression *(*)(ObjectPool *pool, Expression *lhs, Expression *rhs)>(
-        &RelationalExpression::makeGT)};
-expressionGen makeRelLT{
-    static_cast<RelationalExpression *(*)(ObjectPool *pool, Expression *lhs, Expression *rhs)>(
-        &RelationalExpression::makeLT)};
-expressionGen makeRelGE{
-    static_cast<RelationalExpression *(*)(ObjectPool *pool, Expression *lhs, Expression *rhs)>(
-        &RelationalExpression::makeGE)};
-expressionGen makeRelLE{
-    static_cast<RelationalExpression *(*)(ObjectPool *pool, Expression *lhs, Expression *rhs)>(
-        &RelationalExpression::makeLE)};
-expressionGen makeRelEQ{
-    static_cast<RelationalExpression *(*)(ObjectPool *pool, Expression *lhs, Expression *rhs)>(
-        &RelationalExpression::makeEQ)};
-expressionGen makeRelNE{
-    static_cast<RelationalExpression *(*)(ObjectPool *pool, Expression *lhs, Expression *rhs)>(
-        &RelationalExpression::makeNE)};
-
-std::unordered_map<std::string, expressionGen> ExpressionTest::op_ = {{"+", makeAddExpr},
-                                                                      {"-", makeMinusExpr},
-                                                                      {"*", makeMultiplyExpr},
-                                                                      {"/", makeDivisionExpr},
-                                                                      {"%", makeModExpr},
-                                                                      {"OR", makeOrExpr},
-                                                                      {"AND", makeAndExpr},
-                                                                      {"XOR", makeXorExpr},
-                                                                      {">", makeRelGT},
-                                                                      {"<", makeRelLT},
-                                                                      {">=", makeRelGE},
-                                                                      {"<=", makeRelLE},
-                                                                      {"==", makeRelEQ},
-                                                                      {"!=", makeRelNE}};
-
-std::unordered_map<std::string, Value> ExpressionTest::boolen_ = {
-    {"true", Value(true)},
-    {"false", Value(false)},
-    {"empty", Value()},
-    {"null", Value(NullType::__NULL__)}};
 
 static std::unordered_map<std::string, std::vector<Value>> args_ = {
     {"null", {}},
@@ -314,6 +186,5 @@ static std::unordered_map<std::string, std::vector<Value>> args_ = {
     {"neg_side", {"abcdefghijklmnopq", -2}},
     {"pad", {"abcdefghijkl", 16, "123"}},
     {"udf_is_in", {4, 1, 2, 8, 4, 3, 1, 0}}};
-
 }  // namespace nebula
 #endif  // COMMON_EXPRESSION_TEST_TESTBASE_H_
