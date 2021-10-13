@@ -325,9 +325,9 @@ Expression *RewriteVisitor::transform(const Expression *expr, Matcher matcher, R
     return rewriter(expr);
   } else {
     RewriteVisitor visitor(std::move(matcher), std::move(rewriter));
-    auto exprCopy = expr->clone();
-    exprCopy->accept(&visitor);
-    return exprCopy;
+    auto *e = const_cast<Expression *>(expr);
+    e->accept(&visitor);
+    return e;
   }
 }
 
@@ -340,9 +340,9 @@ Expression *RewriteVisitor::transform(
     return rewriter(expr);
   } else {
     RewriteVisitor visitor(std::move(matcher), std::move(rewriter), std::move(needVisitedTypes));
-    auto exprCopy = expr->clone();
-    exprCopy->accept(&visitor);
-    return exprCopy;
+    auto *e = const_cast<Expression *>(expr);
+    e->accept(&visitor);
+    return e;
   }
 }
 }  // namespace graph
