@@ -22,8 +22,8 @@
 namespace nebula {
 namespace graph {
 
-Status SchemaValidator::validateColumns(const std::vector<ColumnSpecification *> &columnSpecs,
-                                        meta::cpp2::Schema &schema) {
+static Status validateColumns(const std::vector<ColumnSpecification *> &columnSpecs,
+                              meta::cpp2::Schema &schema) {
   for (auto &spec : columnSpecs) {
     meta::cpp2::ColumnDef column;
     auto type = spec->type();
@@ -36,13 +36,12 @@ Status SchemaValidator::validateColumns(const std::vector<ColumnSpecification *>
       if (property->isNullable()) {
         column.set_nullable(property->nullable());
       } else if (property->isDefaultValue()) {
-        if (!evaluableExpr(property->defaultValue())) {
+        if (!ExpressionUtils::isEvaluableExpr(property->defaultValue())) {
           return Status::SemanticError("Wrong default value experssion `%s'",
                                        property->defaultValue()->toString().c_str());
         }
         auto *defaultValueExpr = property->defaultValue();
-        // some expression is evaluable but not pure so only fold instead of
-        // eval here
+        // some expression is evaluable but not pure so only fold instead of eval here
         auto foldRes = ExpressionUtils::foldConstantExpr(defaultValueExpr);
         NG_RETURN_IF_ERROR(foldRes);
         column.set_default_value(foldRes.value()->encode());
@@ -55,92 +54,12 @@ Status SchemaValidator::validateColumns(const std::vector<ColumnSpecification *>
     }
     schema.columns_ref().value().emplace_back(std::move(column));
   }
-
   return Status::OK();
 }
 
-Status CreateTagValidator::validateImpl() {
-  auto sentence = static_cast<CreateTagSentence *>(sentence_);
-  name_ = *sentence->name();
-  ifNotExist_ = sentence->isIfNotExist();
-
-  // Check the validateContext has the same name schema
-  auto pro = vctx_->getSchema(name_);
-  if (pro != nullptr) {
-    return Status::SemanticError("Has the same name `%s' in the SequentialSentences",
-                                 name_.c_str());
-  }
-  NG_RETURN_IF_ERROR(validateColumns(sentence->columnSpecs(), schema_));
-  NG_RETURN_IF_ERROR(SchemaUtil::validateProps(sentence->getSchemaProps(), schema_));
-  // Save the schema in validateContext
-  auto pool = qctx_->objPool();
-  auto schemaPro = SchemaUtil::generateSchemaProvider(pool, 0, schema_);
-  vctx_->addSchema(name_, schemaPro);
-  return Status::OK();
-}
-
-Status CreateTagValidator::toPlan() {
-  auto *plan = qctx_->plan();
-  auto doNode =
-      CreateTag::make(qctx_, plan->root(), std::move(name_), std::move(schema_), ifNotExist_);
-  root_ = doNode;
-  tail_ = root_;
-  return Status::OK();
-}
-
-Status CreateEdgeValidator::validateImpl() {
-  auto sentence = static_cast<CreateEdgeSentence *>(sentence_);
-  auto status = Status::OK();
-  name_ = *sentence->name();
-  ifNotExist_ = sentence->isIfNotExist();
-  // Check the validateContext has the same name schema
-  auto pro = vctx_->getSchema(name_);
-  if (pro != nullptr) {
-    return Status::SemanticError("Has the same name `%s' in the SequentialSentences",
-                                 name_.c_str());
-  }
-  NG_RETURN_IF_ERROR(validateColumns(sentence->columnSpecs(), schema_));
-  NG_RETURN_IF_ERROR(SchemaUtil::validateProps(sentence->getSchemaProps(), schema_));
-  // Save the schema in validateContext
-  auto pool = qctx_->objPool();
-  auto schemaPro = SchemaUtil::generateSchemaProvider(pool, 0, schema_);
-  vctx_->addSchema(name_, schemaPro);
-  return Status::OK();
-}
-
-Status CreateEdgeValidator::toPlan() {
-  auto *plan = qctx_->plan();
-  auto doNode =
-      CreateEdge::make(qctx_, plan->root(), std::move(name_), std::move(schema_), ifNotExist_);
-  root_ = doNode;
-  tail_ = root_;
-  return Status::OK();
-}
-
-Status DescTagValidator::validateImpl() { return Status::OK(); }
-
-Status DescTagValidator::toPlan() {
-  auto sentence = static_cast<DescribeTagSentence *>(sentence_);
-  auto name = *sentence->name();
-  auto doNode = DescTag::make(qctx_, nullptr, std::move(name));
-  root_ = doNode;
-  tail_ = root_;
-  return Status::OK();
-}
-
-Status DescEdgeValidator::validateImpl() { return Status::OK(); }
-
-Status DescEdgeValidator::toPlan() {
-  auto sentence = static_cast<DescribeEdgeSentence *>(sentence_);
-  auto name = *sentence->name();
-  auto doNode = DescEdge::make(qctx_, nullptr, std::move(name));
-  root_ = doNode;
-  tail_ = root_;
-  return Status::OK();
-}
-
-Status AlterValidator::alterSchema(const std::vector<AlterSchemaOptItem *> &schemaOpts,
-                                   const std::vector<SchemaPropItem *> &schemaProps) {
+static StatusOr<std::vector<meta::cpp2::AlterSchemaItem>> validateSchemaOpts(
+    const std::vector<AlterSchemaOptItem *> &schemaOpts) {
+  std::vector<meta::cpp2::AlterSchemaItem> schemaItems;
   std::unordered_set<std::string> uniqueColName;
   for (const auto &schemaOpt : schemaOpts) {
     meta::cpp2::AlterSchemaItem schemaItem;
@@ -171,73 +90,146 @@ Status AlterValidator::alterSchema(const std::vector<AlterSchemaOptItem *> &sche
     }
 
     schemaItem.set_schema(std::move(schema));
-    schemaItems_.emplace_back(std::move(schemaItem));
+    schemaItems.emplace_back(std::move(schemaItem));
   }
+  return schemaItems;
+}
 
-  for (auto &schemaProp : schemaProps) {
-    auto propType = schemaProp->getPropType();
-    StatusOr<int64_t> retInt;
-    StatusOr<std::string> retStr;
-    int ttlDuration;
+static StatusOr<meta::cpp2::SchemaProp> validateSchemaProps(
+    const std::vector<SchemaPropItem *> &schemaProps) {
+  meta::cpp2::SchemaProp schemaProp;
+  for (const auto &prop : schemaProps) {
+    auto propType = prop->getPropType();
     switch (propType) {
-      case SchemaPropItem::TTL_DURATION:
-        retInt = schemaProp->getTtlDuration();
-        NG_RETURN_IF_ERROR(retInt);
-        ttlDuration = retInt.value();
-        schemaProp_.set_ttl_duration(ttlDuration);
+      case SchemaPropItem::TTL_DURATION: {
+        auto ttlDur = prop->getTtlDuration();
+        NG_RETURN_IF_ERROR(ttlDur);
+        schemaProp.set_ttl_duration(ttlDur.value());
         break;
-      case SchemaPropItem::TTL_COL:
+      }
+      case SchemaPropItem::TTL_COL: {
         // Check the legality of the column in meta
-        retStr = schemaProp->getTtlCol();
-        NG_RETURN_IF_ERROR(retStr);
-        schemaProp_.set_ttl_col(retStr.value());
+        auto ttlCol = prop->getTtlCol();
+        NG_RETURN_IF_ERROR(ttlCol);
+        schemaProp.set_ttl_col(ttlCol.value());
         break;
-      case SchemaPropItem::COMMENT:
+      }
+      case SchemaPropItem::COMMENT: {
         // Check the legality of the column in meta
-        retStr = schemaProp->getComment();
-        NG_RETURN_IF_ERROR(retStr);
-        schemaProp_.set_comment(retStr.value());
+        auto comment = prop->getComment();
+        NG_RETURN_IF_ERROR(comment);
+        schemaProp.set_comment(comment.value());
         break;
-      default:
+      }
+      default: {
         return Status::SemanticError("Property type not support");
+      }
     }
   }
+  return schemaProp;
+}
+
+static Status checkColName(const std::vector<ColumnSpecification *> specs) {
+  std::unordered_set<std::string> uniqueColName;
+  for (const auto &spec : specs) {
+    auto name = *spec->name();
+    if (uniqueColName.find(name) != uniqueColName.end()) {
+      return Status::SemanticError("Duplicate column name `%s'", name.c_str());
+    }
+    uniqueColName.emplace(name);
+  }
+  return Status::OK();
+}
+
+Status CreateTagValidator::validateImpl() {
+  createCtx_ = getContext<CreateContext>();
+  auto sentence = static_cast<CreateTagSentence *>(sentence_);
+  createCtx_->ifNotExist = sentence->isIfNotExist();
+  auto name = *sentence->name();
+  // Check the validateContext has the same name schema
+  auto pro = vctx_->getSchema(name);
+  if (pro != nullptr) {
+    return Status::SemanticError("Has the same name `%s' in the SequentialSentences", name.c_str());
+  }
+  meta::cpp2::Schema schema;
+  NG_RETURN_IF_ERROR(checkColName(sentence->columnSpecs()));
+  NG_RETURN_IF_ERROR(validateColumns(sentence->columnSpecs(), schema));
+  NG_RETURN_IF_ERROR(SchemaUtil::validateProps(sentence->getSchemaProps(), schema));
+  // Save the schema in validateContext
+  auto pool = qctx_->objPool();
+  auto schemaPro = SchemaUtil::generateSchemaProvider(pool, 0, schema);
+  vctx_->addSchema(name, schemaPro);
+  createCtx_->name = std::move(name);
+  createCtx_->schema = std::move(schema);
+  return Status::OK();
+}
+
+Status CreateEdgeValidator::validateImpl() {
+  createCtx_ = getContext<CreateContext>();
+  auto sentence = static_cast<CreateEdgeSentence *>(sentence_);
+  createCtx_->ifNotExist = sentence->isIfNotExist();
+  auto name = *sentence->name();
+  // Check the validateContext has the same name schema
+  auto pro = vctx_->getSchema(name);
+  if (pro != nullptr) {
+    return Status::SemanticError("Has the same name `%s' in the SequentialSentences", name.c_str());
+  }
+  meta::cpp2::Schema schema;
+  NG_RETURN_IF_ERROR(checkColName(sentence->columnSpecs()));
+  NG_RETURN_IF_ERROR(validateColumns(sentence->columnSpecs(), schema));
+  NG_RETURN_IF_ERROR(SchemaUtil::validateProps(sentence->getSchemaProps(), schema));
+  // Save the schema in validateContext
+  auto pool = qctx_->objPool();
+  auto schemaPro = SchemaUtil::generateSchemaProvider(pool, 0, schema);
+  vctx_->addSchema(name, schemaPro);
+  createCtx_->name = std::move(name);
+  createCtx_->schema = std::move(schema);
+  return Status::OK();
+}
+
+Status DescTagValidator::validateImpl() { return Status::OK(); }
+
+Status DescTagValidator::toPlan() {
+  auto sentence = static_cast<DescribeTagSentence *>(sentence_);
+  auto name = *sentence->name();
+  auto doNode = DescTag::make(qctx_, nullptr, std::move(name));
+  root_ = doNode;
+  tail_ = root_;
+  return Status::OK();
+}
+
+Status DescEdgeValidator::validateImpl() { return Status::OK(); }
+
+Status DescEdgeValidator::toPlan() {
+  auto sentence = static_cast<DescribeEdgeSentence *>(sentence_);
+  auto name = *sentence->name();
+  auto doNode = DescEdge::make(qctx_, nullptr, std::move(name));
+  root_ = doNode;
+  tail_ = root_;
   return Status::OK();
 }
 
 Status AlterTagValidator::validateImpl() {
+  alterCtx_ = getContext<AlterContext>();
   auto sentence = static_cast<AlterTagSentence *>(sentence_);
-  name_ = *sentence->name();
-  return alterSchema(sentence->getSchemaOpts(), sentence->getSchemaProps());
-}
-
-Status AlterTagValidator::toPlan() {
-  auto *doNode = AlterTag::make(qctx_,
-                                nullptr,
-                                vctx_->whichSpace().id,
-                                std::move(name_),
-                                std::move(schemaItems_),
-                                std::move(schemaProp_));
-  root_ = doNode;
-  tail_ = root_;
+  auto schemaItems = validateSchemaOpts(sentence->getSchemaOpts());
+  NG_RETURN_IF_ERROR(schemaItems);
+  alterCtx_->schemaItems = std::move(schemaItems.value());
+  auto schemaProps = validateSchemaProps(sentence->getSchemaProps());
+  NG_RETURN_IF_ERROR(schemaProps);
+  alterCtx_->schemaProps = std::move(schemaProps.value());
   return Status::OK();
 }
 
 Status AlterEdgeValidator::validateImpl() {
+  alterCtx_ = getContext<AlterContext>();
   auto sentence = static_cast<AlterEdgeSentence *>(sentence_);
-  name_ = *sentence->name();
-  return alterSchema(sentence->getSchemaOpts(), sentence->getSchemaProps());
-}
-
-Status AlterEdgeValidator::toPlan() {
-  auto *doNode = AlterEdge::make(qctx_,
-                                 nullptr,
-                                 vctx_->whichSpace().id,
-                                 std::move(name_),
-                                 std::move(schemaItems_),
-                                 std::move(schemaProp_));
-  root_ = doNode;
-  tail_ = root_;
+  auto schemaItems = validateSchemaOpts(sentence->getSchemaOpts());
+  NG_RETURN_IF_ERROR(schemaItems);
+  alterCtx_->schemaItems = std::move(schemaItems.value());
+  auto schemaProps = validateSchemaProps(sentence->getSchemaProps());
+  NG_RETURN_IF_ERROR(schemaProps);
+  alterCtx_->schemaProps = std::move(schemaProps.value());
   return Status::OK();
 }
 
