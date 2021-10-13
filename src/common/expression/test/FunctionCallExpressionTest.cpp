@@ -60,12 +60,7 @@ TEST_F(FunctionCallExpressionTest, FunctionCallTest) {
     path.src.vid = "1";
     STEP("2", "edge", 0, 1);
     STEP("1", "edge", 0, -1);
-    ArgumentList *argList = ArgumentList::make(&pool);
-    argList->addArgument(ConstantExpression::make(&pool, path));
-    auto functionCall = FunctionCallExpression::make(&pool, "hasSameEdgeInPath", argList);
-    auto eval = Expression::eval(functionCall, gExpCtxt);
-    // EXPECT_EQ(eval.type(), expected.type());
-    EXPECT_EQ(eval, Value(true));
+    TEST_PATH_FUNCTION(hasSameEdgeInPath, {path}, true);
   }
   {
     // hasSameEdgeInPath
@@ -75,12 +70,7 @@ TEST_F(FunctionCallExpressionTest, FunctionCallTest) {
     STEP("2", "edge", 0, 1);
     STEP("1", "edge", 0, -1);
     STEP("2", "edge", 0, 1);
-    ArgumentList *argList = ArgumentList::make(&pool);
-    argList->addArgument(ConstantExpression::make(&pool, path));
-    auto functionCall = FunctionCallExpression::make(&pool, "hasSameEdgeInPath", argList);
-    auto eval = Expression::eval(functionCall, gExpCtxt);
-    // EXPECT_EQ(eval.type(), expected.type());
-    EXPECT_EQ(eval, Value(true));
+    TEST_PATH_FUNCTION(hasSameEdgeInPath, {path}, true);
   }
   {
     // hasSameEdgeInPath
@@ -90,12 +80,7 @@ TEST_F(FunctionCallExpressionTest, FunctionCallTest) {
     STEP("2", "edge", 0, 1);
     STEP("1", "edge", 0, 1);
     STEP("2", "edge", 0, 1);
-    ArgumentList *argList = ArgumentList::make(&pool);
-    argList->addArgument(ConstantExpression::make(&pool, path));
-    auto functionCall = FunctionCallExpression::make(&pool, "hasSameEdgeInPath", argList);
-    auto eval = Expression::eval(functionCall, gExpCtxt);
-    // EXPECT_EQ(eval.type(), expected.type());
-    EXPECT_EQ(eval, Value(false));
+    TEST_PATH_FUNCTION(hasSameEdgeInPath, {path}, false);
   }
   {
     // hasSameEdgeInPath
@@ -105,12 +90,7 @@ TEST_F(FunctionCallExpressionTest, FunctionCallTest) {
     STEP("2", "edge", 0, 1);
     STEP("1", "edge", 0, -1);
     STEP("2", "edge", 1, 1);
-    ArgumentList *argList = ArgumentList::make(&pool);
-    argList->addArgument(ConstantExpression::make(&pool, path));
-    auto functionCall = FunctionCallExpression::make(&pool, "hasSameEdgeInPath", argList);
-    auto eval = Expression::eval(functionCall, gExpCtxt);
-    // EXPECT_EQ(eval.type(), expected.type());
-    EXPECT_EQ(eval, Value(false));
+    TEST_PATH_FUNCTION(hasSameEdgeInPath, {path}, false);
   }
   // Check function
   {

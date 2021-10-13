@@ -124,6 +124,17 @@ class ExpressionTest : public ::testing::Test {
     // EXPECT_EQ(eval.type(), expected.type());
     EXPECT_EQ(eval, expected);
   }
+
+  void testPathFunction(const char *name, const std::vector<Value> &args, const Value &expected) {
+    ArgumentList *argList = ArgumentList::make(&pool);
+    for (const auto &i : args) {
+      argList->addArgument(ConstantExpression::make(&pool, i));
+    }
+    auto functionCall = FunctionCallExpression::make(&pool, name, argList);
+    auto eval = Expression::eval(functionCall, gExpCtxt);
+    // EXPECT_EQ(eval.type(), expected.type());
+    EXPECT_EQ(eval, expected);
+  }
 };
 
 // expr -- the expression can evaluate by nGQL parser may not evaluated by c++
@@ -136,6 +147,11 @@ class ExpressionTest : public ::testing::Test {
 #define TEST_FUNCTION(expr, args, expected) \
   do {                                      \
     testFunction(#expr, args, expected);    \
+  } while (0)
+
+#define TEST_PATH_FUNCTION(expr, args, expected) \
+  do {                                           \
+    testPathFunction(#expr, args, expected);     \
   } while (0)
 
 #define TEST_TOSTRING(expr, expected) \
