@@ -3,7 +3,7 @@
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
 
-set(WKT_TEST_LIBS
+set(WKB_TEST_LIBS
     $<TARGET_OBJECTS:parser_obj>
     $<TARGET_OBJECTS:expression_obj>
     $<TARGET_OBJECTS:encryption_obj>
@@ -48,8 +48,8 @@ set(WKT_TEST_LIBS
 )
 
 nebula_add_test(
-    NAME wkt_test
-    SOURCES WKTTest.cpp
-    OBJECTS ${WKT_TEST_LIBS}
+    NAME wkb_test
+    SOURCES WKBTest.cpp
+    OBJECTS ${WKB_TEST_LIBS}
     LIBRARIES gtest gtest_main ${THRIFT_LIBRARIES} ${PROXYGEN_LIBRARIES}
 )

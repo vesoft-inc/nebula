@@ -1117,6 +1117,21 @@ TEST(Value, DecodeEncode) {
 
       // Geography
       Value(Geography::fromWKT("Point(3 8)").value()),
+      Value(Geography::fromWKT("LineString(3 8, 4 6, 5 7)").value()),
+      Value(Geography::fromWKT(
+                "Polygon((1 2, 3 4, 5 6, 7 8, 1 2), (1.2 3.6, 4.7 5.2, 3.9 8.8, 1.2 3.6))")
+                .value()),
+      Value(Geography(Point(Coordinate(4, 9)))),
+      Value(Geography(LineString(
+          std::vector<Coordinate>{Coordinate(0, 1), Coordinate(2, 3), Coordinate(0, 1)}))),
+      Value(Geography(Polygon(std::vector<std::vector<Coordinate>>{
+          std::vector<Coordinate>{Coordinate(0, 1),
+                                  Coordinate(2, 3),
+                                  Coordinate(4, 5),
+                                  Coordinate(6, 7),
+                                  Coordinate(0, 1)},
+          std::vector<Coordinate>{
+              Coordinate(2, 4), Coordinate(5, 6), Coordinate(3, 8), Coordinate(2, 4)}}))),
   };
   for (const auto& val : values) {
     std::string buf;
@@ -1156,12 +1171,17 @@ TEST(Value, Ctor) {
   Value vMap(Map({{"a", 9}, {"b", 10}}));
   EXPECT_TRUE(vMap.isMap());
   // TODO(jie) Add more geography value test
-  Value vGeoPoint(Geography::fromWKT("POINT(0 1)").value());
-  EXPECT_TRUE(vGeoPoint.isGeography());
-  Value vGeoLine(Geography::fromWKT("LINESTRING(0 1,2 7)").value());
-  EXPECT_TRUE(vGeoLine.isGeography());
-  Value vGeoPolygon(Geography::fromWKT("POLYGON((0 1,2 3,4 5,6 7,0 1),(2 4,5 6,3 8,2 4))").value());
-  EXPECT_TRUE(vGeoPolygon.isGeography());
+  Value vGeogPoint{Geography(Point(Coordinate(3, 7)))};
+  EXPECT_TRUE(vGeogPoint.isGeography());
+  Value vGeogLine{
+      Geography(LineString(std::vector<Coordinate>{Coordinate(0, 1), Coordinate(2, 7)}))};
+  EXPECT_TRUE(vGeogLine.isGeography());
+  Value vGeogPolygon{Geography(Polygon(std::vector<std::vector<Coordinate>>{
+      std::vector<Coordinate>{
+          Coordinate(0, 1), Coordinate(2, 3), Coordinate(4, 5), Coordinate(6, 7), Coordinate(0, 1)},
+      std::vector<Coordinate>{
+          Coordinate(2, 4), Coordinate(5, 6), Coordinate(3, 8), Coordinate(2, 4)}}))};
+  EXPECT_TRUE(vGeogPolygon.isGeography());
   // Disabled
   // Lead to compile error
   // Value v(nullptr);
