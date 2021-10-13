@@ -5,14 +5,16 @@
  */
 
 #pragma once
-
 #include <cstring>
 #include <iostream>
+#include <limits>
 #include <map>
 #include <regex>
+#include <string>
 
 #include "common/datatypes/DataSet.h"
 #include "common/meta/NebulaSchemaProvider.h"
+#include "folly/Conv.h"
 #include "folly/String.h"
 #include "kvstore/KVIterator.h"
 #include "kvstore/KVStore.h"
@@ -435,6 +437,14 @@ class RowParser {
       for (size_t i = 0; i < values.size(); i++) {
         if (values[i] == "<null>") {
           row.emplace_back(Value::null());
+        } else if (values[i] == "<INF>") {
+          row.emplace_back(std::numeric_limits<double>::infinity());
+        } else if (values[i] == "<-INF>") {
+          row.emplace_back(-std::numeric_limits<double>::infinity());
+        } else if (values[i] == "<NaN>") {
+          row.emplace_back(std::numeric_limits<double>::quiet_NaN());
+        } else if (values[i] == "<-NaN>") {
+          row.emplace_back(-std::numeric_limits<double>::quiet_NaN());
         } else {
           row.emplace_back(transformMap[typeList_[i]](values[i]));
         }
@@ -451,7 +461,8 @@ class RowParser {
   std::map<std::string, std::function<Value(const std::string& str)>> transformMap{
       {"int", [](const std::string& str) { return Value(std::stol(str)); }},
       {"string", [](const std::string& str) { return Value(str); }},
-      {"double", [](const std::string& str) { return Value(std::stof(str)); }}};
+      {"float", [](const std::string& str) { return Value(folly::to<double>(str)); }},
+      {"bool", [](const std::string& str) { return Value(str == "true" ? true : false); }}};
 };
 
 /**
@@ -463,7 +474,7 @@ class RowParser {
  * std::string str=R"(
  *    a | int        |    |
  *    b | string     |    | true
- *    c | fix_string | 10 |
+ *    c | double | 10 |
  * )"_schema
  */
 class SchemaParser {
@@ -503,7 +514,10 @@ class SchemaParser {
   std::stringstream ss;
   std::shared_ptr<::nebula::meta::NebulaSchemaProvider> schema;
   std::map<std::string, ::nebula::meta::cpp2::PropertyType> typeMap{
-      {"int", ::nebula::meta::cpp2::PropertyType::INT64}};
+      {"int", ::nebula::meta::cpp2::PropertyType::INT64},
+      {"double", ::nebula::meta::cpp2::PropertyType::DOUBLE},
+      {"string", ::nebula::meta::cpp2::PropertyType::STRING},
+      {"bool", ::nebula::meta::cpp2::PropertyType::BOOL}};
 };
 
 /**
@@ -585,8 +599,10 @@ class IndexParser {
       ::nebula::meta::cpp2::ColumnTypeDef type;
       if (length > 0) {
         type.set_type_length(length);
+        type.set_type(::nebula::meta::cpp2::PropertyType::FIXED_STRING);
+      } else {
+        type.set_type(field->type());
       }
-      type.set_type(field->type());
       col.set_type(type);
       col.set_nullable(field->nullable());
       fields.emplace_back(std::move(col));
@@ -604,8 +620,8 @@ class IndexParser {
 };
 
 // Definition of UDL
-std::vector<Row> operator""_row(const char* str, std::size_t) {
-  auto ret = RowParser(std::string(str)).getResult();
+std::vector<Row> operator""_row(const char* str, std::size_t len) {
+  auto ret = RowParser(std::string(str, len)).getResult();
   return ret;
 }
 std::shared_ptr<::nebula::meta::NebulaSchemaProvider> operator"" _schema(const char* str,

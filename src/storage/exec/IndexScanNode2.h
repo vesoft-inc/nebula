@@ -62,6 +62,7 @@ class IndexScanNode : public IndexNode {
   std::vector<std::string> requiredColumns_;
   std::pair<bool, std::pair<int64_t, std::string>> ttlProps_;
   bool needAccessBase_{false};
+  bool fatalOnBaseNotFound_{false};
 };
 /**
  * Path
@@ -97,6 +98,7 @@ class Path {
   const meta::SchemaProviderIf* schema_;
   const std::vector<cpp2::IndexColumnHint>& hints_;
   std::vector<bool> nullable_;
+  int64_t index_nullable_offset_{8};
 };
 class PrefixPath : public Path {
  public:

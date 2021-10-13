@@ -7,12 +7,13 @@
 #ifndef COMMON_UTILS_INDEXKEYUTILS_H_
 #define COMMON_UTILS_INDEXKEYUTILS_H_
 
+#include <cmath>
+
 #include "codec/RowReader.h"
 #include "common/base/Base.h"
 #include "common/base/StatusOr.h"
 #include "common/utils/Types.h"
 #include "interface/gen-cpp2/meta_types.h"
-
 namespace nebula {
 
 using PropertyType = nebula::meta::cpp2::PropertyType;
@@ -197,6 +198,26 @@ class IndexKeyUtils final {
    */
 
   static std::string encodeDouble(double v) {
+    if (std::isnan(v)) {
+      return std::string(sizeof(double), '\xFF');
+    } else if (v >= 0) {
+      auto val = folly::Endian::big(v);
+      auto* c = reinterpret_cast<char*>(&val);
+      c[0] |= 0x80;
+      std::string raw;
+      raw.reserve(sizeof(double));
+      raw.append(c, sizeof(double));
+      return raw;
+    } else {
+      int64_t* x = reinterpret_cast<int64_t*>(&v);
+      *x = ~(*x);
+      auto val = folly::Endian::big(v);
+      auto* c = reinterpret_cast<char*>(&val);
+      std::string raw;
+      raw.reserve(sizeof(double));
+      raw.append(c, sizeof(double));
+      return raw;
+    }
     if (v < 0) {
       /**
        *   TODO : now, the -(std::numeric_limits<double>::min())
@@ -218,6 +239,16 @@ class IndexKeyUtils final {
   }
 
   static double decodeDouble(const folly::StringPiece& raw) {
+    {
+      int64_t val = *reinterpret_cast<const int64_t*>(raw.data());
+      val = folly::Endian::big(val);
+      if (val < 0) {
+        val &= 0x7fffffffffffffff;
+      } else {
+        val = ~val;
+      }
+      return *reinterpret_cast<double*>(&val);
+    }
     char* v = const_cast<char*>(raw.data());
     v[0] ^= 0x80;
     auto val = *reinterpret_cast<const double*>(v);

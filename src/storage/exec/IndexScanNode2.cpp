@@ -17,7 +17,15 @@ Path::Path(nebula::meta::cpp2::IndexItem* index,
     bool tmp = field.nullable_ref().value_or(false);
     nullable_.push_back(tmp);
     nullFlag |= tmp;
+    // TODO: improve performance of compute nullable offset in index_key
+    auto type = IndexKeyUtils::toValueType(field.get_type().get_type());
+    auto tmpStr = IndexKeyUtils::encodeNullValue(type, field.get_type().get_type_length());
+    index_nullable_offset_ += tmpStr.size();
   }
+  for (auto x : nullable_) {
+    DVLOG(1) << x;
+  }
+  DVLOG(1) << nullFlag;
   if (!nullFlag) {
     nullable_.clear();
   }
@@ -55,14 +63,16 @@ std::string Path::encodeValue(const Value& value,
     val = IndexKeyUtils::encodeValue(value);
   }
   if (!nullable_.empty() && nullable_[index] == true) {
-    QFList_.emplace_back([isNull = value.isNull(), index](const std::string& k) {
-      std::bitset<16> nullableBit;
-      size_t len = k.size();
-      auto v = *reinterpret_cast<const u_short*>(k.data() + len - 2);
-      nullableBit = v;
-      return nullableBit.test(15 - index) ^ isNull ? Qualified::INCOMPATIBLE
-                                                   : Qualified::COMPATIBLE;
-    });
+    QFList_.emplace_back(
+        [isNull = value.isNull(), index, offset = index_nullable_offset_](const std::string& k) {
+          std::bitset<16> nullableBit;
+          auto v = *reinterpret_cast<const u_short*>(k.data() + offset);
+          nullableBit = v;
+          DVLOG(3) << isNull;
+          DVLOG(3) << nullableBit.test(15 - index);
+          return nullableBit.test(15 - index) ^ isNull ? Qualified::INCOMPATIBLE
+                                                       : Qualified::COMPATIBLE;
+        });
   }
   key.append(val);
   return val;
@@ -155,19 +165,30 @@ std::string RangePath::encodeBeginValue(const Value& value,
                           startPos = key.size(),
                           length = val.size()](const std::string& k) {
       int ret = memcmp(startKey.data() + startPos, k.data() + startPos, length);
+      DVLOG(3) << '\n' << folly::hexDump(startKey.data() + startPos, length);
+      DVLOG(3) << '\n' << folly::hexDump(k.data() + startPos, length);
       CHECK_LE(ret, 0);
       return (ret == 0 && !allowEq) ? Qualified::INCOMPATIBLE : Qualified::COMPATIBLE;
     });
   }
-  if (!nullable_.empty() && nullable_[index] == true) {
-    QFList_.emplace_back([index](const std::string& k) {
+  if (value.isFloat()) {
+    QFList_.emplace_back([startPos = key.size(), length = val.size()](const std::string& k) {
+      std::string s(length, '\xFF');
+      return memcmp(k.data() + startPos, s.data(), length) == 0 ? Qualified::INCOMPATIBLE
+                                                                : Qualified::COMPATIBLE;
+    });
+  } else if (!nullable_.empty() && nullable_[index] == true) {
+    QFList_.emplace_back([index, offset = index_nullable_offset_](const std::string& k) {
+      DVLOG(1) << "check null";
       std::bitset<16> nullableBit;
-      size_t len = k.size();
-      auto v = *reinterpret_cast<const u_short*>(k.data() + len - 2);
+      auto v = *reinterpret_cast<const u_short*>(k.data() + offset);
       nullableBit = v;
+      DVLOG(1) << nullableBit;
+      DVLOG(1) << nullableBit.test(15 - index);
       return nullableBit.test(15 - index) ? Qualified::INCOMPATIBLE : Qualified::COMPATIBLE;
     });
   }
+  key += val;
   return val;
 }
 std::string RangePath::encodeEndValue(const Value& value,
@@ -192,11 +213,16 @@ std::string RangePath::encodeEndValue(const Value& value,
       return (ret == 0 && !allowEq) ? Qualified::INCOMPATIBLE : Qualified::COMPATIBLE;
     });
   }
-  if (!nullable_.empty() && nullable_[index] == true) {
-    QFList_.emplace_back([index](const std::string& k) {
+  if (value.isFloat()) {
+    QFList_.emplace_back([startPos = key.size(), length = val.size()](const std::string& k) {
+      std::string s(length, '\xFF');
+      return memcmp(k.data() + startPos, s.data(), length) == 0 ? Qualified::INCOMPATIBLE
+                                                                : Qualified::COMPATIBLE;
+    });
+  } else if (!nullable_.empty() && nullable_[index] == true) {
+    QFList_.emplace_back([index, offset = index_nullable_offset_](const std::string& k) {
       std::bitset<16> nullableBit;
-      size_t len = k.size();
-      auto v = *reinterpret_cast<const u_short*>(k.data() + len - 2);
+      auto v = *reinterpret_cast<const u_short*>(k.data() + offset);
       nullableBit = v;
       return nullableBit.test(15 - index) ? Qualified::INCOMPATIBLE : Qualified::COMPATIBLE;
     });
@@ -234,7 +260,7 @@ void PrefixPath::buildKey() {
     auto& hint = hints_[i];
     CHECK(fieldIter->get_name() == hint.get_column_name());
     auto type = IndexKeyUtils::toValueType(fieldIter->get_type().get_type());
-    CHECK(type != Value::Type::STRING || !fieldIter->get_type().type_length_ref().has_value());
+    CHECK(type != Value::Type::STRING || fieldIter->get_type().type_length_ref().has_value());
     encodeValue(hint.get_begin_value(), fieldIter->get_type(), i, common);
   }
   prefix_ = std::move(common);
@@ -265,7 +291,7 @@ IndexScanNode::IndexScanNode(const IndexScanNode& node)
   // TODO(hs.zhang): The performance is better to judge based on whether the string is truncated
   auto tmp = ctx.requiredColumns;
   for (auto& field : index_->get_fields()) {
-    if (field.get_type().get_type() == PropertyType::STRING) {
+    if (field.get_type().get_type() == PropertyType::FIXED_STRING) {
       continue;
     }
     tmp.erase(field.get_name());
@@ -306,7 +332,11 @@ IndexNode::ErrorOr<Row> IndexScanNode::doNext(bool& hasNext) {
     std::pair<std::string, std::string> kv;
     auto ret = getBaseData(iter_->key(), kv);
     if (ret == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
-      DVLOG(3) << 123;
+      if (LIKELY(!fatalOnBaseNotFound_)) {
+        LOG(WARNING) << "base data not found";
+      } else {
+        LOG(FATAL) << "base data not found";
+      }
       continue;
     }
     Map<std::string, Value> rowData = decodeFromBase(kv.first, kv.second);
