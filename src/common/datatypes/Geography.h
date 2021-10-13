@@ -50,6 +50,7 @@ struct Coordinate {
   Coordinate() = default;
   Coordinate(double lng, double lat) : x(lng), y(lat) {}
 
+  size_t size() const { return sizeof(Coordinate); }
   void normalize();
   bool isValid() const;
 
@@ -81,6 +82,7 @@ struct Point {
   explicit Point(const Coordinate& v) : coord(v) {}
   explicit Point(Coordinate&& v) : coord(std::move(v)) {}
 
+  size_t size() const { return coord.size(); }
   void normalize();
   bool isValid() const;
 
@@ -99,6 +101,7 @@ struct LineString {
   explicit LineString(std::vector<Coordinate>&& v) : coordList(std::move(v)) {}
 
   uint32_t numCoord() const { return coordList.size(); }
+  size_t size() const { return numCoord() * sizeof(Coordinate); }
 
   void normalize();
   bool isValid() const;
@@ -118,6 +121,15 @@ struct Polygon {
   explicit Polygon(std::vector<std::vector<Coordinate>>&& v) : coordListList(std::move(v)) {}
 
   uint32_t numCoordList() const { return coordListList.size(); }
+  size_t size() const {
+    size_t sz = 0;
+    for (const auto& v : coordListList) {
+      for (const auto& c : v) {
+        sz += sizeof(c);
+      }
+    }
+    return sz;
+  }
 
   void normalize();
   bool isValid() const;
@@ -150,7 +162,7 @@ struct Geography {
   Geography(Polygon&& v) : geo_(std::move(v)) {}     // NOLINT
 
   GeoShape shape() const;
-  size_t size() const { return wkb.size(); }
+  size_t size() const;
 
   const Point& point() const;
   const LineString& lineString() const;

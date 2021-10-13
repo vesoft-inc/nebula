@@ -162,6 +162,20 @@ GeoShape Geography::shape() const {
   }
 }
 
+size_t Geography::size() const {
+  switch (shape()) {
+    case GeoShape::POINT:
+      return point().size();
+    case GeoShape::LINESTRING:
+      return lineString().size();
+    case GeoShape::POLYGON:
+      return polygon().size();
+    default:
+      LOG(FATAL) << "Unknown geo shape.";
+      return 0;
+  }
+}
+
 const Point& Geography::point() const {
   CHECK(std::holds_alternative<Point>(geo_));
   return std::get<Point>(geo_);
