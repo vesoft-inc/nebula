@@ -7,9 +7,10 @@
 #pragma once
 
 #include "common/base/Base.h"
-#include "common/geo/io/Geometry.h"
+#include "common/datatypes/Geography.h"
 
 namespace nebula {
+namespace geo {
 
 class WKTWriter {
  public:
@@ -17,7 +18,7 @@ class WKTWriter {
 
   ~WKTWriter() {}
 
-  std::string write(const Geometry& geom) const;
+  std::string write(const Geography& geog) const;
 
   void writeCoordinate(std::string& wkt, const Coordinate& coord) const;
 
@@ -29,4 +30,5 @@ class WKTWriter {
   void writeDouble(std::string& wkt, double v) const;
 };
 
+}  // namespace geo
 }  // namespace nebula

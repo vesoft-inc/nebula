@@ -25,7 +25,8 @@ nebula_add_library(
     wkt/WKTWriter.cpp
     wkb/WKBReader.cpp
     wkb/WKBWriter.cpp
+    wkb/ByteOrderDataIOStream.cpp
 )
 
 nebula_add_subdirectory(wkt)
-# nebula_add_subdirectory(wkb)
+nebula_add_subdirectory(wkb)

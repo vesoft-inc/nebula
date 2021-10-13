@@ -7,15 +7,16 @@
 #include "common/geo/io/wkt/WKTWriter.h"
 
 namespace nebula {
+namespace geo {
 
-std::string WKTWriter::write(const Geometry& geom) const {
+std::string WKTWriter::write(const Geography& geog) const {
   std::string wkt = "";
 
-  auto shape = geom.shape();
+  auto shape = geog.shape();
   switch (shape) {
     case GeoShape::POINT: {
       wkt.append("POINT");
-      const Point& point = geom.point();
+      const Point& point = geog.point();
       wkt.append("(");
       writeCoordinate(wkt, point.coord);
       wkt.append(")");
@@ -23,10 +24,10 @@ std::string WKTWriter::write(const Geometry& geom) const {
     }
     case GeoShape::LINESTRING: {
       wkt.append("LINESTRING");
-      const LineString& line = geom.lineString();
+      const LineString& line = geog.lineString();
       auto coordList = line.coordList;
-      uint32_t numPoints = coordList.size();
-      UNUSED(numPoints);
+      uint32_t numCoord = coordList.size();
+      UNUSED(numCoord);
       wkt.append("(");
       writeCoordinateList(wkt, coordList);
       wkt.append(")");
@@ -34,10 +35,10 @@ std::string WKTWriter::write(const Geometry& geom) const {
     }
     case GeoShape::POLYGON: {
       wkt.append("POLYGON");
-      const Polygon& polygon = geom.polygon();
+      const Polygon& polygon = geog.polygon();
       auto coordListList = polygon.coordListList;
-      uint32_t numRings = coordListList.size();
-      UNUSED(numRings);
+      uint32_t numCoordList = coordListList.size();
+      UNUSED(numCoordList);
       wkt.append("(");
       writeCoordinateListList(wkt, coordListList);
       wkt.append(")");
@@ -69,8 +70,8 @@ void WKTWriter::WKTWriter::writeCoordinateListList(
     std::string& wkt, const std::vector<std::vector<Coordinate>>& coordListList) const {
   for (size_t i = 0; i < coordListList.size(); ++i) {
     const auto& coordList = coordListList[i];
-    uint32_t numPoints = coordList.size();
-    UNUSED(numPoints);
+    uint32_t numCoord = coordList.size();
+    UNUSED(numCoord);
     wkt.append("(");
     writeCoordinateList(wkt, coordList);
     wkt.append(")");
@@ -83,4 +84,5 @@ void WKTWriter::writeDouble(std::string& wkt, double v) const {
   wkt.append(folly::to<std::string>(v));
 }
 
+}  // namespace geo
 }  // namespace nebula

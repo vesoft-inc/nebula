@@ -108,8 +108,11 @@ def start_nebula(nb, configs):
 
     with open(SPACE_TMP_PATH, "w") as f:
         spaces = []
-        for space in ("nba", "nba_int_vid", "student"):
-            data_dir = os.path.join(CURR_PATH, "data", space)
+        folder = os.path.join(CURR_PATH, "data")
+        for space in os.listdir(folder):
+            if not os.path.exists(os.path.join(folder, space, "config.yaml")):
+                continue
+            data_dir = os.path.join(folder, space)
             space_desc = load_csv_data(sess, data_dir, space)
             spaces.append(space_desc.__dict__)
         f.write(json.dumps(spaces))

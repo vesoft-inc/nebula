@@ -336,6 +336,9 @@ void StorageServer::stop() {
 
   webSvc_.reset();
 
+  if (txnMan_) {
+    txnMan_->stop();
+  }
   if (taskMgr_) {
     taskMgr_->shutdown();
   }
@@ -347,10 +350,6 @@ void StorageServer::stop() {
   }
   if (adminServer_) {
     adminServer_->stop();
-  }
-  if (txnMan_) {
-    txnMan_->stop();
-    txnMan_.reset();
   }
   if (internalStorageServer_) {
     internalStorageServer_->stop();
