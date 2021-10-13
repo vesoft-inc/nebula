@@ -226,9 +226,7 @@ Feature: Go Yield Vertex And Edge Sentence
       """
     Then a SyntaxError should be raised at runtime: syntax error near `OVER'
 
-  @skip
-  # reason we not support hash<Map> hash<set> hash<DataSet> from now on. line 67 in Value.cpp
-  Scenario: distinct map
+  Scenario: distinct map and set
     When executing query:
       """
       GO FROM "Boris Diaw" OVER like YIELD dst(edge) as id |
@@ -236,7 +234,21 @@ Feature: Go Yield Vertex And Edge Sentence
       GO FROM $-.id OVER serve YIELD DISTINCT dst(edge) as dst, edge as e, properties(edge) as props
       """
     Then the result should be, in any order, with relax comparison:
-      | dst | e | props |
+      | dst             | e                                                                                   | props                              |
+      | "Spurs"         | [:serve "Manu Ginobili"->"Spurs" @0 {end_year: 2018, start_year: 2002}]             | {end_year: 2018, start_year: 2002} |
+      | "Spurs"         | [:serve "Tim Duncan"->"Spurs" @0 {end_year: 2016, start_year: 1997}]                | {end_year: 2016, start_year: 1997} |
+      | "Hornets"       | [:serve "Tony Parker"->"Hornets" @0 {end_year: 2019, start_year: 2018}]             | {end_year: 2019, start_year: 2018} |
+      | "Spurs"         | [:serve "Tony Parker"->"Spurs" @0 {end_year: 2018, start_year: 1999}]               | {end_year: 2018, start_year: 1999} |
+      | "Spurs"         | [:serve "LaMarcus Aldridge"->"Spurs" @0 {end_year: 2019, start_year: 2015}]         | {end_year: 2019, start_year: 2015} |
+      | "Trail Blazers" | [:serve "LaMarcus Aldridge"->"Trail Blazers" @0 {end_year: 2015, start_year: 2006}] | {end_year: 2015, start_year: 2006} |
+    When executing query:
+      """
+      GO 2 STEPS FROM "Tim Duncan" OVER like YIELD dst(edge) as id |
+      YIELD DISTINCT collect($-.id) as a, collect_set($-.id) as b
+      """
+    Then the result should be, in any order, with relax comparison:
+      | a                                                                  | b                                                    |
+      | ["Tim Duncan", "LaMarcus Aldridge", "Manu Ginobili", "Tim Duncan"] | {"Manu Ginobili", "LaMarcus Aldridge", "Tim Duncan"} |
 
   Scenario: distinct
     When executing query:
