@@ -54,6 +54,13 @@ struct Set {
 };
 
 inline std::ostream& operator<<(std::ostream& os, const Set& s) { return os << s.toString(); }
-
 }  // namespace nebula
+
+namespace std {
+template <>
+struct hash<nebula::Set> {
+  std::size_t operator()(const nebula::Set& s) const noexcept;
+};
+
+}  // namespace std
 #endif  // COMMON_DATATYPES_SET_H_
