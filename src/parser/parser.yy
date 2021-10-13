@@ -1247,17 +1247,6 @@ truncate_clause
 go_sentence
     : KW_GO step_clause from_clause over_clause where_clause yield_clause truncate_clause {
         auto go = new GoSentence($2, $3, $4, $5, $7);
-        if ($6 == nullptr) {
-            auto *cols = new YieldColumns();
-            if (!$4->isOverAll()) {
-                for (auto e : $4->edges()) {
-                    auto *expr  = EdgeDstIdExpression::make(qctx->objPool(), *e->edge());
-                    auto *col   = new YieldColumn(expr);
-                    cols->addColumn(col);
-                }
-            }
-            $6 = new YieldClause(cols);
-        }
         go->setYieldClause($6);
         $$ = go;
     }

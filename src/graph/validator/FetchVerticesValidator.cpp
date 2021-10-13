@@ -52,26 +52,15 @@ Status FetchVerticesValidator::validateTag(const NameLabelList *nameLabels) {
 }
 
 Status FetchVerticesValidator::validateYield(YieldClause *yield) {
-  auto pool = qctx_->objPool();
-  bool noYield = false;
   if (yield == nullptr) {
-    // TODO: compatible with previous version, this will be deprecated in version 3.0.
-    auto *yieldColumns = new YieldColumns();
-    auto *vertex = new YieldColumn(VertexExpression::make(pool), "vertices_");
-    yieldColumns->addColumn(vertex);
-    yield = pool->add(new YieldClause(yieldColumns));
-    noYield = true;
+    return Status::SemanticError("Missing yield clause.");
   }
   fetchCtx_->distinct = yield->isDistinct();
   auto size = yield->columns().size();
-  outputs_.reserve(size + 1);
+  outputs_.reserve(size);
 
+  auto pool = qctx_->objPool();
   auto *newCols = pool->add(new YieldColumns());
-  if (!noYield) {
-    outputs_.emplace_back(VertexID, vidType_);
-    auto *vidCol = new YieldColumn(InputPropertyExpression::make(pool, nebula::kVid), VertexID);
-    newCols->addColumn(vidCol);
-  }
 
   auto &exprProps = fetchCtx_->exprProps;
   for (auto col : yield->columns()) {
