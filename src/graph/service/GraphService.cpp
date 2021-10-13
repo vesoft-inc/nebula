@@ -153,9 +153,9 @@ folly::Future<ExecutionResponse> GraphService::future_execute(int64_t sessionId,
 
 folly::Future<std::string> GraphService::future_executeJson(int64_t sessionId,
                                                             const std::string& query) {
-  auto rawResp = future_execute(sessionId, query).get();
-  auto respJsonObj = rawResp.toJson();
-  return folly::toJson(respJsonObj);
+  return future_execute(sessionId, query).thenValue([](ExecutionResponse&& resp) {
+    return folly::toJson(resp.toJson());
+  });
 }
 
 bool GraphService::auth(const std::string& username, const std::string& password) {
