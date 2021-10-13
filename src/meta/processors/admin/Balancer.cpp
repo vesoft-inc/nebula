@@ -469,35 +469,50 @@ bool Balancer::balanceParts(BalanceID balanceId,
         return false;
       }
 
-      if (dependentOnGroup) {
-        auto& parts = relatedParts_[targetHost];
-        if (!checkZoneLegal(sourceHost, targetHost) &&
-            std::find(parts.begin(), parts.end(), partId) != parts.end()) {
-          LOG(INFO) << "Zone have exist part: " << partId;
-          continue;
-        }
-      }
+      // if (dependentOnGroup) {
+      //   auto& parts = relatedParts_[targetHost];
+      //   if (!checkZoneLegal(sourceHost, targetHost) &&
+      //       std::find(parts.begin(), parts.end(), partId) != parts.end()) {
+      //     LOG(INFO) << "Zone have exist part: " << partId;
+      //     continue;
+      //   }
+      // }
 
-      if (dependentOnGroup && innerBalance_) {
-        auto& minParts = zoneParts_[targetHost].second;
-        auto& maxParts = zoneParts_[sourceHost].second;
+      if (dependentOnGroup) {
+        // auto& minParts = zoneParts_[targetHost].second;
+        // auto& maxParts = zoneParts_[sourceHost].second;
         if (!checkZoneLegal(sourceHost, targetHost)) {
-          auto minIt = std::find(minParts.begin(), minParts.end(), partId);
-          if (minIt != minParts.end()) {
+          LOG(INFO) << "sourceHost " << sourceHost << " targetHost " << targetHost
+                    << " not same zone";
+          for (auto p : zoneParts_[targetHost].second) {
+            LOG(INFO) << "Part " << p;
+          }
+          auto minIt = std::find(
+              zoneParts_[targetHost].second.begin(), zoneParts_[targetHost].second.end(), partId);
+          if (minIt != zoneParts_[targetHost].second.end()) {
             LOG(INFO) << "Part " << partId << " have existed";
             continue;
           }
         }
 
-        auto maxIt = std::find(maxParts.begin(), maxParts.end(), partId);
-        if (maxIt == maxParts.end()) {
-          LOG(INFO) << "Part " << partId << " not found on " << sourceHost;
-          continue;
+        auto& sourceNoneName = zoneParts_[sourceHost].first;
+        auto sourceHosts = zoneHosts_.find(sourceNoneName);
+        for (auto& sh : sourceHosts->second) {
+          auto maxIt =
+              std::find(zoneParts_[sh].second.begin(), zoneParts_[sh].second.end(), partId);
+          if (maxIt == zoneParts_[sh].second.end()) {
+            LOG(INFO) << "Part " << partId << " not found on " << sh;
+            continue;
+          }
+          zoneParts_[sh].second.erase(maxIt);
         }
-        maxParts.erase(maxIt);
-        minParts.emplace_back(partId);
-      }
 
+        auto& targetNoneName = zoneParts_[targetHost].first;
+        auto targetHosts = zoneHosts_.find(targetNoneName);
+        for (auto& th : targetHosts->second) {
+          zoneParts_[th].second.emplace_back(partId);
+        }
+      }
       partsFrom.erase(it);
       partsTo.emplace_back(partId);
 
@@ -659,6 +674,7 @@ nebula::cpp2::ErrorCode Balancer::assembleZoneParts(const std::string& groupName
 
   // zoneHosts use to record this host belong to zone's hosts
   std::unordered_map<std::pair<HostAddr, std::string>, std::vector<HostAddr>> zoneHosts;
+  std::unordered_map<HostAddr, std::vector<PartitionID>> zps;
   auto zoneNames = MetaServiceUtils::parseZoneNames(std::move(groupValue));
   for (auto zoneName : zoneNames) {
     LOG(INFO) << "Zone Name: " << zoneName;
@@ -677,6 +693,20 @@ nebula::cpp2::ErrorCode Balancer::assembleZoneParts(const std::string& groupName
       auto pair = std::pair<HostAddr, std::string>(std::move(host), zoneName);
       auto& hs = zoneHosts[std::move(pair)];
       hs.insert(hs.end(), hosts.begin(), hosts.end());
+
+      for (const auto& h : hosts) {
+        auto it = hostParts.find(h);
+        if (it != hostParts.end()) {
+          zps[host].insert(zps[host].end(), it->second.begin(), it->second.end());
+        }
+      }
+    }
+  }
+
+  for (auto it = zps.begin(); it != zps.end(); it++) {
+    LOG(INFO) << "Host " << it->first;
+    for (auto p : it->second) {
+      LOG(INFO) << "  Part " << p;
     }
   }
 
@@ -697,10 +727,15 @@ nebula::cpp2::ErrorCode Balancer::assembleZoneParts(const std::string& groupName
     auto name = zoneIter->first.second;
     zoneHosts_[name] = hosts;
     for (auto hostIter = hosts.begin(); hostIter != hosts.end(); hostIter++) {
-      auto partIter = hostParts.find(*hostIter);
+      auto partIter = zps.find(*hostIter);
       LOG(INFO) << "Zone " << name << " have the host " << host;
-      if (partIter != hostParts.end() && !partIter->second.empty()) {
+      if (partIter != zps.end() && !partIter->second.empty()) {
+        for (auto p : partIter->second) {
+          LOG(INFO) << "part for host " << host << " " << p;
+        }
         zoneParts_[host] = ZoneNameAndParts(name, partIter->second);
+      } else {
+        zoneParts_[host] = ZoneNameAndParts(name, std::vector<PartitionID>());
       }
     }
   }
@@ -748,11 +783,13 @@ void Balancer::calDiff(const HostParts& hostParts,
 std::vector<std::pair<HostAddr, int32_t>> Balancer::sortedHostsByParts(const HostParts& hostParts) {
   std::vector<std::pair<HostAddr, int32_t>> hosts;
   for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
-    LOG(INFO) << "Host " << it->first << " parts " << it->second.size();
     hosts.emplace_back(it->first, it->second.size());
   }
   std::sort(
       hosts.begin(), hosts.end(), [](const auto& l, const auto& r) { return l.second < r.second; });
+  for (auto hp : hosts) {
+    LOG(INFO) << "Host " << hp.first << " Parts " << hp.second;
+  }
   return hosts;
 }
 
@@ -802,8 +839,7 @@ ErrorOr<nebula::cpp2::ErrorCode, HostAddr> Balancer::hostWithMinimalPartsForZone
     }
 
     LOG(INFO) << "source " << source << " h.first " << h.first;
-    if (std::find(it->second.begin(), it->second.end(), partId) == it->second.end() &&
-        checkZoneLegal(source, h.first)) {
+    if (std::find(it->second.begin(), it->second.end(), partId) == it->second.end()) {
       return h.first;
     }
   }
@@ -1214,14 +1250,13 @@ bool Balancer::checkZoneLegal(const HostAddr& source, const HostAddr& target) {
     return false;
   }
 
-  if (!innerBalance_) {
-    LOG(INFO) << "innerBalance_ is false";
-    return true;
-  } else {
-    LOG(INFO) << "Balance in same zone: " << sourceIter->second.first << " : "
-              << targetIter->second.first;
-    return sourceIter->second.first == targetIter->second.first;
-  }
+  // if (!innerBalance_) {
+  //   LOG(INFO) << "innerBalance_ is false";
+  //   return true;
+  // } else {
+  LOG(INFO) << sourceIter->second.first << " : " << targetIter->second.first;
+  return sourceIter->second.first == targetIter->second.first;
+  // }
 }
 
 }  // namespace meta
