@@ -46,7 +46,7 @@ uint32_t Cpp2Ops<nebula::Set>::write(Protocol* proto, nebula::Set const* obj) {
   xfer += proto->writeFieldBegin("values", apache::thrift::protocol::T_SET, 1);
   xfer +=
       detail::pm::protocol_methods<type_class::set<type_class::structure>,
-                                   std::unordered_set<nebula::Value> >::write(*proto, obj->values);
+                                   std::unordered_set<nebula::Value>>::write(*proto, obj->values);
   xfer += proto->writeFieldEnd();
 
   xfer += proto->writeFieldStop();
@@ -69,7 +69,7 @@ void Cpp2Ops<nebula::Set>::read(Protocol* proto, nebula::Set* obj) {
 _readField_values : {
   obj->values = std::unordered_set<nebula::Value>();
   detail::pm::protocol_methods<type_class::set<type_class::structure>,
-                               std::unordered_set<nebula::Value> >::read(*proto, obj->values);
+                               std::unordered_set<nebula::Value>>::read(*proto, obj->values);
 }
 
   if (UNLIKELY(!readState.advanceToNextField(proto, 1, 0, protocol::T_STOP))) {
@@ -116,7 +116,7 @@ uint32_t Cpp2Ops<nebula::Set>::serializedSize(Protocol const* proto, nebula::Set
   xfer += proto->serializedFieldSize("values", apache::thrift::protocol::T_SET, 1);
   xfer += detail::pm::protocol_methods<
       type_class::set<type_class::structure>,
-      std::unordered_set<nebula::Value> >::serializedSize<false>(*proto, obj->values);
+      std::unordered_set<nebula::Value>>::serializedSize<false>(*proto, obj->values);
   xfer += proto->serializedSizeStop();
   return xfer;
 }
@@ -128,7 +128,7 @@ uint32_t Cpp2Ops<nebula::Set>::serializedSizeZC(Protocol const* proto, nebula::S
   xfer += proto->serializedFieldSize("values", apache::thrift::protocol::T_SET, 1);
   xfer += detail::pm::protocol_methods<
       type_class::set<type_class::structure>,
-      std::unordered_set<nebula::Value> >::serializedSize<false>(*proto, obj->values);
+      std::unordered_set<nebula::Value>>::serializedSize<false>(*proto, obj->values);
   xfer += proto->serializedSizeStop();
   return xfer;
 }

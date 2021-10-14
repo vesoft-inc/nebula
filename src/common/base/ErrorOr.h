@@ -30,7 +30,7 @@ namespace nebula {
 template <typename ErrorCode,
           typename ResultType,
           typename = std::enable_if_t<std::is_integral<ErrorCode>::value ||
-                                      std::is_enum<ErrorCode>::value> >
+                                      std::is_enum<ErrorCode>::value>>
 using ErrorOr = EitherOr<ErrorCode, ResultType>;
 
 /***********************************************
