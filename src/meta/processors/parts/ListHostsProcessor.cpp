@@ -90,7 +90,7 @@ nebula::cpp2::ErrorCode ListHostsProcessor::allMetaHostsStatus() {
     item.set_role(cpp2::HostRole::META);
     item.set_git_info_sha(gitInfoSha());
     item.set_status(cpp2::HostStatus::ONLINE);
-    item.set_version(versionString(false));
+    item.set_version(getOriginVersion());
     hostItems_.emplace_back(item);
   }
   return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -111,13 +111,11 @@ nebula::cpp2::ErrorCode ListHostsProcessor::allHostsWithStatus(cpp2::HostRole ro
     return retCode;
   }
 
-  auto iter = nebula::value(ret).get();
   auto now = time::WallClock::fastNowInMilliSec();
   std::vector<std::string> removeHostsKey;
-  while (iter->valid()) {
+  for (auto iter = nebula::value(ret).get(); iter->valid(); iter->next()) {
     HostInfo info = HostInfo::decode(iter->val());
     if (info.role_ != role) {
-      iter->next();
       continue;
     }
 
@@ -143,7 +141,6 @@ nebula::cpp2::ErrorCode ListHostsProcessor::allHostsWithStatus(cpp2::HostRole ro
     } else {
       removeHostsKey.emplace_back(iter->key());
     }
-    iter->next();
   }
 
   removeExpiredHosts(std::move(removeHostsKey));
