@@ -32,7 +32,7 @@ class ThriftClientManager final {
 
  private:
   using ClientMap =
-      std::unordered_map<std::pair<HostAddr, folly::EventBase*>, std::shared_ptr<ClientType> >;
+      std::unordered_map<std::pair<HostAddr, folly::EventBase*>, std::shared_ptr<ClientType>>;
 
   folly::ThreadLocal<ClientMap> clientMap_;
   // whether enable ssl

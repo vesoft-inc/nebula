@@ -86,7 +86,7 @@ uint32_t Cpp2Ops<nebula::Step>::write(Protocol* proto, nebula::Step const* obj) 
   xfer += proto->writeFieldBegin("props", apache::thrift::protocol::T_MAP, 5);
   xfer += detail::pm::protocol_methods<
       type_class::map<type_class::binary, type_class::structure>,
-      std::unordered_map<std::string, nebula::Value> >::write(*proto, obj->props);
+      std::unordered_map<std::string, nebula::Value>>::write(*proto, obj->props);
   xfer += proto->writeFieldEnd();
 
   xfer += proto->writeFieldStop();
@@ -138,8 +138,8 @@ _readField_ranking : {
 _readField_props : {
   obj->props = std::unordered_map<std::string, nebula::Value>();
   detail::pm::protocol_methods<type_class::map<type_class::binary, type_class::structure>,
-                               std::unordered_map<std::string, nebula::Value> >::read(*proto,
-                                                                                      obj->props);
+                               std::unordered_map<std::string, nebula::Value>>::read(*proto,
+                                                                                     obj->props);
 }
 
   if (UNLIKELY(!readState.advanceToNextField(proto, 5, 0, protocol::T_STOP))) {
@@ -231,7 +231,7 @@ uint32_t Cpp2Ops<nebula::Step>::serializedSize(Protocol const* proto, nebula::St
   xfer += proto->serializedFieldSize("props", apache::thrift::protocol::T_MAP, 5);
   xfer += detail::pm::protocol_methods<
       type_class::map<type_class::binary, type_class::structure>,
-      std::unordered_map<std::string, nebula::Value> >::serializedSize<false>(*proto, obj->props);
+      std::unordered_map<std::string, nebula::Value>>::serializedSize<false>(*proto, obj->props);
 
   xfer += proto->serializedSizeStop();
   return xfer;
@@ -261,7 +261,7 @@ uint32_t Cpp2Ops<nebula::Step>::serializedSizeZC(Protocol const* proto, nebula::
   xfer += proto->serializedFieldSize("props", apache::thrift::protocol::T_MAP, 5);
   xfer += detail::pm::protocol_methods<
       type_class::map<type_class::binary, type_class::structure>,
-      std::unordered_map<std::string, nebula::Value> >::serializedSize<false>(*proto, obj->props);
+      std::unordered_map<std::string, nebula::Value>>::serializedSize<false>(*proto, obj->props);
 
   xfer += proto->serializedSizeStop();
   return xfer;
@@ -306,7 +306,7 @@ uint32_t Cpp2Ops<nebula::Path>::write(Protocol* proto, nebula::Path const* obj) 
 
   xfer += proto->writeFieldBegin("steps", apache::thrift::protocol::T_LIST, 2);
   xfer += detail::pm::protocol_methods<type_class::list<type_class::structure>,
-                                       std::vector<nebula::Step> >::write(*proto, obj->steps);
+                                       std::vector<nebula::Step>>::write(*proto, obj->steps);
   xfer += proto->writeFieldEnd();
 
   xfer += proto->writeFieldStop();
@@ -335,7 +335,7 @@ _readField_src : { Cpp2Ops<nebula::Vertex>::read(proto, &obj->src); }
 _readField_steps : {
   obj->steps = std::vector<nebula::Step>();
   detail::pm::protocol_methods<type_class::list<type_class::structure>,
-                               std::vector<nebula::Step> >::read(*proto, obj->steps);
+                               std::vector<nebula::Step>>::read(*proto, obj->steps);
 }
 
   if (UNLIKELY(!readState.advanceToNextField(proto, 2, 0, protocol::T_STOP))) {
@@ -393,8 +393,8 @@ uint32_t Cpp2Ops<nebula::Path>::serializedSize(Protocol const* proto, nebula::Pa
   xfer += proto->serializedFieldSize("steps", apache::thrift::protocol::T_LIST, 2);
   xfer +=
       detail::pm::protocol_methods<type_class::list<type_class::structure>,
-                                   std::vector<nebula::Step> >::serializedSize<false>(*proto,
-                                                                                      obj->steps);
+                                   std::vector<nebula::Step>>::serializedSize<false>(*proto,
+                                                                                     obj->steps);
 
   xfer += proto->serializedSizeStop();
   return xfer;
@@ -411,8 +411,8 @@ uint32_t Cpp2Ops<nebula::Path>::serializedSizeZC(Protocol const* proto, nebula::
   xfer += proto->serializedFieldSize("steps", apache::thrift::protocol::T_LIST, 2);
   xfer +=
       detail::pm::protocol_methods<type_class::list<type_class::structure>,
-                                   std::vector<nebula::Step> >::serializedSize<false>(*proto,
-                                                                                      obj->steps);
+                                   std::vector<nebula::Step>>::serializedSize<false>(*proto,
+                                                                                     obj->steps);
 
   xfer += proto->serializedSizeStop();
   return xfer;
