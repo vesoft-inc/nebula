@@ -2,7 +2,6 @@
 #
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
-@abc
 Feature: Go Yield Vertex And Edge Sentence
 
   Background:
@@ -1735,28 +1734,28 @@ Feature: Go Yield Vertex And Edge Sentence
   Scenario: go step sample
     When executing query:
       """
-      GO FROM "Tim Duncan" OVER like SAMPLE [10,10];
+      GO FROM "Tim Duncan" OVER like YIELD like._dst SAMPLE [10,10];
       """
     Then a SemanticError should be raised at runtime:
     When executing query:
       """
-      GO FROM "Tim Duncan" OVER like SAMPLE ["10"];
+      GO FROM "Tim Duncan" OVER like YIELD like._dst SAMPLE ["10"];
       """
     Then a SemanticError should be raised at runtime:
     When executing query:
       """
-      GO FROM "Tim Duncan" OVER like SAMPLE [a];
+      GO FROM "Tim Duncan" OVER like YIELD like._dst SAMPLE [a];
       """
     Then a SemanticError should be raised at runtime:
     When executing query:
       """
-      GO FROM "Tim Duncan" OVER like SAMPLE [1];
+      GO FROM "Tim Duncan" OVER like YIELD like._dst  SAMPLE [1];
       """
     Then the result should be, in any order, with relax comparison:
       | like._dst |
     When executing query:
       """
-      GO 3 STEPS FROM "Tim Duncan" OVER like SAMPLE [1, 3, 2];
+      GO 3 STEPS FROM "Tim Duncan" OVER like YIELD like._dst SAMPLE [1, 3, 2];
       """
     Then the result should be, in any order, with relax comparison:
       | like._dst |
@@ -1765,13 +1764,13 @@ Feature: Go Yield Vertex And Edge Sentence
   Scenario: go step filter & step sample
     When executing query:
       """
-      GO FROM "Tim Duncan" OVER like WHERE [like._dst == "Tony Parker"]  SAMPLE [1];
+      GO FROM "Tim Duncan" OVER like WHERE [like._dst == "Tony Parker"] YIELD like._dst SAMPLE [1];
       """
     Then the result should be, in any order, with relax comparison:
       | like._dst |
     When executing query:
       """
-      GO 3 STEPS FROM "Tim Duncan" OVER like WHERE [like._dst == "Tony Parker", $$.player.age>20, $$.player.age>22] SAMPLE [1, 2, 2];
+      GO 3 STEPS FROM "Tim Duncan" OVER like WHERE [like._dst == "Tony Parker", $$.player.age>20, $$.player.age>22] YIELD like._dst SAMPLE [1, 2, 2];
       """
     Then the result should be, in any order, with relax comparison:
       | like._dst |

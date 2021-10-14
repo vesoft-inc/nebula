@@ -694,7 +694,7 @@ Feature: Basic Aggregate and GroupBy
     Then a SemanticError should be raised at runtime: `count(*)' is not support in go sentence.
     When executing query:
       """
-      GO FROM "Tim Duncan" OVER like where COUNT(*) > 2
+      GO FROM "Tim Duncan" OVER like where COUNT(*) > 2 YIELD like._dst
       """
     Then a SemanticError should be raised at runtime: `(COUNT(*)>2)', not support aggregate function in where sentence.
     When executing query:
