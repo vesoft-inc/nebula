@@ -124,7 +124,6 @@ Feature: Fetch String Vid Edges
     Then the result should be, in any order:
       | dst       |
       | 'Spurs'   |
-      | 'Spurs'   |
       | 'Hornets' |
     # Fetch prop works with DISTINCT and user define variable
     When executing query:
@@ -201,17 +200,17 @@ Feature: Fetch String Vid Edges
   Scenario: Fetch and Yield
     When executing query:
       """
-      FETCH PROP ON like "Tony Parker"->"Tim Duncan", "Grant Hill" -> "Tracy McGrady" |
-      YIELD properties($-.edges_)
+      FETCH PROP ON like "Tony Parker"->"Tim Duncan", "Grant Hill" -> "Tracy McGrady" YIELD edge as e |
+      YIELD properties($-.e)
       """
     Then the result should be, in any order:
-      | properties($-.edges_) |
-      | {likeness: 95}        |
-      | {likeness: 90}        |
+      | properties($-.e) |
+      | {likeness: 95}   |
+      | {likeness: 90}   |
     When executing query:
       """
-      FETCH PROP ON like "Tony Parker"->"Tim Duncan", "Grant Hill" -> "Tracy McGrady" |
-      YIELD startNode($-.edges_) AS nodes
+      FETCH PROP ON like "Tony Parker"->"Tim Duncan", "Grant Hill" -> "Tracy McGrady" YIELD edge as e |
+      YIELD startNode($-.e) AS nodes
       """
     Then the result should be, in any order, with relax comparison:
       | nodes           |
@@ -219,8 +218,8 @@ Feature: Fetch String Vid Edges
       | ("Grant Hill")  |
     When executing query:
       """
-      FETCH PROP ON like "Tony Parker"->"Tim Duncan", "Grant Hill" -> "Tracy McGrady" |
-      YIELD endNode($-.edges_) AS nodes
+      FETCH PROP ON like "Tony Parker"->"Tim Duncan", "Grant Hill" -> "Tracy McGrady" YIELD edge as e |
+      YIELD endNode($-.e) AS nodes
       """
     Then the result should be, in any order, with relax comparison:
       | nodes             |

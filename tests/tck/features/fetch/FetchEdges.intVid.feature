@@ -9,14 +9,14 @@ Feature: Fetch Int Vid Edges
       """
       FETCH PROP ON serve hash('Boris Diaw') -> hash('Hawks') YIELD serve.start_year, serve.end_year
       """
-    Then the result should be, in any order, and the columns 0,1 should be hashed:
+    Then the result should be, in any order:
       | serve.start_year | serve.end_year |
       | 2003             | 2005           |
     When executing query:
       """
       FETCH PROP ON serve hash('Boris Diaw')->hash('Hawks') YIELD serve.start_year > 2001, serve.end_year
       """
-    Then the result should be, in any order, and the columns 0,1 should be hashed:
+    Then the result should be, in any order:
       | (serve.start_year>2001) | serve.end_year |
       | True                    | 2005           |
     # Fetch prop on an edge without yield
@@ -38,7 +38,7 @@ Feature: Fetch Int Vid Edges
       """
       FETCH PROP ON serve hash('Boris Diaw')->hash('Hawks')@0 YIELD serve.start_year, serve.end_year
       """
-    Then the result should be, in any order, and the columns 0,1 should be hashed:
+    Then the result should be, in any order:
       | serve.start_year | serve.end_year |
       | 2003             | 2005           |
     # Fetch prop on a edge with a rank,but without yield
@@ -55,7 +55,7 @@ Feature: Fetch Int Vid Edges
       """
       FETCH PROP ON serve hash('Boris Diaw')->hash('Hawks'),hash('Boris Diaw')->hash('Suns') YIELD serve.start_year, serve.end_year
       """
-    Then the result should be, in any order, and the columns 0,1 should be hashed:
+    Then the result should be, in any order:
       | serve.start_year | serve.end_year |
       | 2003             | 2005           |
       | 2005             | 2008           |
@@ -64,7 +64,7 @@ Feature: Fetch Int Vid Edges
       """
       FETCH PROP ON serve hash("Zion Williamson")->hash("Spurs"), hash("Boris Diaw")->hash("Hawks") YIELD serve.start_year
       """
-    Then the result should be, in any order, and the columns 0,1 should be hashed:
+    Then the result should be, in any order:
       | serve.start_year |
       | 2003             |
 
@@ -74,7 +74,7 @@ Feature: Fetch Int Vid Edges
       GO FROM hash('Boris Diaw') OVER serve YIELD serve._src AS src, serve._dst AS dst |
       FETCH PROP ON serve $-.src->$-.dst YIELD serve.start_year, serve.end_year
       """
-    Then the result should be, in any order, and the columns 0,1 should be hashed:
+    Then the result should be, in any order:
       | serve.start_year | serve.end_year |
       | 2005             | 2008           |
       | 2003             | 2005           |
@@ -88,7 +88,7 @@ Feature: Fetch Int Vid Edges
       $var = GO FROM hash('Boris Diaw') OVER serve YIELD serve._src AS src, serve._dst AS dst;
       FETCH PROP ON serve $var.src->$var.dst YIELD serve.start_year, serve.end_year
       """
-    Then the result should be, in any order, and the columns 0,1 should be hashed:
+    Then the result should be, in any order:
       | serve.start_year | serve.end_year |
       | 2005             | 2008           |
       | 2003             | 2005           |
@@ -126,7 +126,7 @@ Feature: Fetch Int Vid Edges
       """
       FETCH PROP ON serve hash('Boris Diaw')->hash('Hawks'),hash('Boris Diaw')->hash('Hawks') YIELD DISTINCT serve.start_year, serve.end_year
       """
-    Then the result should be, in any order, and the columns 0,1 should be hashed:
+    Then the result should be, in any order:
       | serve.start_year | serve.end_year |
       | 2003             | 2005           |
     # Fetch prop works with DISTINCT and pipeline
@@ -135,7 +135,7 @@ Feature: Fetch Int Vid Edges
       GO FROM hash('Boris Diaw'),hash('Boris Diaw') OVER serve YIELD serve._src AS src, serve._dst AS dst |
       FETCH PROP ON serve $-.src->$-.dst YIELD DISTINCT serve.start_year, serve.end_year
       """
-    Then the result should be, in any order, and the columns 0,1 should be hashed:
+    Then the result should be, in any order:
       | serve.start_year | serve.end_year |
       | 2005             | 2008           |
       | 2003             | 2005           |
@@ -147,9 +147,8 @@ Feature: Fetch Int Vid Edges
       GO FROM hash('Tim Duncan'),hash('Tony Parker') OVER serve YIELD serve._src AS src, serve._dst AS dst |
       FETCH PROP ON serve $-.src->$-.dst YIELD DISTINCT serve._dst as dst
       """
-    Then the result should be, in any order, and the columns 0,1,3 should be hashed:
+    Then the result should be, in any order, and the columns 0 should be hashed:
       | dst       |
-      | 'Spurs'   |
       | 'Spurs'   |
       | 'Hornets' |
     # Fetch prop works with DISTINCT and user define variable
@@ -158,7 +157,7 @@ Feature: Fetch Int Vid Edges
       $var = GO FROM hash('Boris Diaw'),hash('Boris Diaw') OVER serve YIELD serve._src AS src, serve._dst AS dst;
       FETCH PROP ON serve $var.src->$var.dst YIELD DISTINCT serve.start_year, serve.end_year
       """
-    Then the result should be, in any order, and the columns 0,1 should be hashed:
+    Then the result should be, in any order, with relax comparison:
       | serve.start_year | serve.end_year |
       | 2005             | 2008           |
       | 2003             | 2005           |
@@ -234,7 +233,7 @@ Feature: Fetch Int Vid Edges
       """
       FETCH PROP ON serve hash('Boris Diaw')->hash("Spurs") YIELD serve.start_year, serve.start_year
       """
-    Then the result should be, in any order, and the columns 0,1 should be hashed:
+    Then the result should be, in any order:
       | serve.start_year | serve.start_year |
       | 2012             | 2012             |
 
@@ -243,7 +242,7 @@ Feature: Fetch Int Vid Edges
       """
       FETCH PROP ON serve hash('Boris Diaw')->hash("Spurs") YIELD serve._src, serve._dst, serve._rank
       """
-    Then the result should be, in any order, and the columns 0,1,3,4 should be hashed:
+    Then the result should be, in any order, and the columns 0,1 should be hashed:
       | serve._src   | serve._dst | serve._rank |
       | "Boris Diaw" | "Spurs"    | 0           |
 
@@ -252,28 +251,28 @@ Feature: Fetch Int Vid Edges
       """
       FETCH PROP ON serve hash('Boris Diaw') -> hash('Hawks') YIELD serve.start_year, serve.end_year, edge as relationship
       """
-    Then the result should be, in any order, and the columns 0, 1 should be hashed:
+    Then the result should be, in any order:
       | serve.start_year | serve.end_year | relationship                                                                     |
       | 2003             | 2005           | [:serve hash("Boris Diaw")->hash("Hawks") @0 {end_year: 2005, start_year: 2003}] |
     When executing query:
       """
       FETCH PROP ON serve hash("Boris Diaw")->hash("Spurs") YIELD edge as relationship, src(edge) as src_edge, dst(edge) as dst_edge, type(edge) as type, rank(edge) as rank
       """
-    Then the result should be, in any order, and the columns 0, 1, 4, 5 should be hashed:
+    Then the result should be, in any order, and the columns 1,2 should be hashed:
       | relationship                                                                     | src_edge     | dst_edge | type    | rank |
       | [:serve hash("Boris Diaw")->hash("Spurs") @0 {end_year: 2016, start_year: 2012}] | "Boris Diaw" | "Spurs"  | "serve" | 0    |
     When executing query:
       """
       FETCH PROP ON serve hash("Boris Diaw")->hash("Not Exist") YIELD src(edge) as a
       """
-    Then the result should be, in any order:
+    Then the result should be, in any order, with relax comparison:
       | a |
     When executing query:
       """
       FETCH PROP ON like hash("Tony Parker")->hash("Tim Duncan"), hash("Grant Hill") -> hash("Tracy McGrady") YIELD edge as relationship |
       YIELD properties($-.relationship)
       """
-    Then the result should be, in any order:
+    Then the result should be, in any order, with relax comparison:
       | properties($-.relationship) |
       | {likeness: 95}              |
       | {likeness: 90}              |
@@ -281,7 +280,7 @@ Feature: Fetch Int Vid Edges
       """
       FETCH PROP ON like hash("Tony Parker")->hash("Tim Duncan"), hash("Grant Hill") -> hash("Tracy McGrady") YIELD properties(edge) as properties
       """
-    Then the result should be, in any order, and the columns 0, 1 should be hashed:
+    Then the result should be, in any order, with relax comparison:
       | properties     |
       | {likeness: 95} |
       | {likeness: 90} |
@@ -308,7 +307,7 @@ Feature: Fetch Int Vid Edges
       $var = GO FROM hash('Boris Diaw'),hash('Boris Diaw') OVER serve YIELD serve._src AS src, serve._dst AS dst;
       FETCH PROP ON serve $var.src->$var.dst YIELD DISTINCT serve.start_year, serve.end_year, edge as relationship
       """
-    Then the result should be, in any order, and the columns 0, 1 should be hashed:
+    Then the result should be, in any order, with relax comparison:
       | serve.start_year | serve.end_year | relationship                                                                       |
       | 2005             | 2008           | [:serve hash("Boris Diaw")->hash("Suns") @0 {end_year: 2008, start_year: 2005}]    |
       | 2003             | 2005           | [:serve hash("Boris Diaw")->hash("Hawks") @0 {end_year: 2005, start_year: 2003}]   |

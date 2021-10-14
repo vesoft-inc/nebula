@@ -303,7 +303,7 @@ Feature: Fetch String Vertices
   Scenario: Fetch and Yield id(v)
     When executing query:
       """
-      FETCH PROP ON player 'Boris Diaw', 'Tony Parker' | YIELD id($-.vertices_) as id
+      FETCH PROP ON player 'Boris Diaw', 'Tony Parker' YIELD vertex as node | YIELD id($-.node) as id
       """
     Then the result should be, in any order:
       | id            |
@@ -314,13 +314,13 @@ Feature: Fetch String Vertices
   Scenario: Output fetch result to graph traverse
     When executing query:
       """
-      FETCH PROP ON player 'NON EXIST VERTEX ID' | go from id($-.vertices_) over like yield like._dst
+      FETCH PROP ON player 'NON EXIST VERTEX ID' YIELD vertex as node | go from id($-.node) over like yield like._dst
       """
     Then the result should be, in any order:
       | like._dst |
     When executing query:
       """
-      FETCH PROP ON player "Tim Duncan" | go from id($-.vertices_) over like yield like._dst
+      FETCH PROP ON player "Tim Duncan" YIELD vertex as node | go from id($-.node) over like yield like._dst
       """
     Then the result should be, in any order:
       | like._dst       |
@@ -328,7 +328,7 @@ Feature: Fetch String Vertices
       | "Tony Parker"   |
     When executing query:
       """
-      FETCH PROP ON player "Tim Duncan", "Yao Ming" | go from id($-.vertices_) over like yield like._dst
+      FETCH PROP ON player "Tim Duncan", "Yao Ming" YIELD vertex as node | go from id($-.node) over like yield like._dst
       """
     Then the result should be, in any order:
       | like._dst         |
@@ -357,7 +357,7 @@ Feature: Fetch String Vertices
     When executing query:
       """
       FETCH PROP ON player 'Tony Parker' YIELD player.name as Name |
-      GO FROM $-.Name OVER like
+      GO FROM $-.Name OVER like YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst           |
@@ -366,11 +366,11 @@ Feature: Fetch String Vertices
       | "Tim Duncan"        |
     When executing query:
       """
-      FETCH PROP ON player 'Tony Parker' YIELD player.name as Name |
-      GO FROM $-.VertexID OVER like
+      FETCH PROP ON player 'Tony Parker' YIELD id(vertex) as id, player.name as Name |
+      GO FROM $-.id OVER like YIELD dst(edge) as dst
       """
     Then the result should be, in any order:
-      | like._dst           |
+      | dst                 |
       | "LaMarcus Aldridge" |
       | "Manu Ginobili"     |
       | "Tim Duncan"        |
