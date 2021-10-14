@@ -59,7 +59,7 @@ class IndexSelectionNode : public IndexNode {
       UNUSED(prop);
       return fatal(__FILE__, __LINE__);
     }
-    Value getVertex() const override { return fatal(__FILE__, __LINE__); }
+    Value getVertex(const std::string &) const override { return fatal(__FILE__, __LINE__); }
     Value getEdge() const override { return fatal(__FILE__, __LINE__); }
     Value getColumn(int32_t index) const override {
       UNUSED(index);

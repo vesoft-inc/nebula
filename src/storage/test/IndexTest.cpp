@@ -7,6 +7,7 @@
 #include <gtest/gtest.h>
 
 #include <limits>
+#include <string>
 
 #include "codec/RowReaderWrapper.h"
 #include "codec/RowWriterV2.h"
@@ -24,7 +25,8 @@ namespace nebula {
 namespace storage {
 namespace {
 int schemaVer = 2;
-}
+using std::string_literals::operator""s;
+}  // namespace
 /**
  * IndexScanTest
  *
@@ -1016,6 +1018,11 @@ TEST_F(IndexScanTest, String1) {
       " a1234     | accd      | \x00\x01                     | 5   \n"
       "           |           | <null>                       | 6   \n"
       ""_row;
+  //                        0  1  2  3  4  5  6  7
+  std::vector<int64_t> a = {6, 2, 3, 0, 1, 4, 5};
+  std::vector<int64_t> b = {6, 4, 0, 5, 3};
+  std::vector<int64_t> c = {1, 3, 5, 2, 4, 0};
+
   auto schema = R"(
     a | string  | 10  | false
     b | string  | 10  | true
@@ -1095,16 +1102,13 @@ TEST_F(IndexScanTest, String1) {
     auto columnHint = hint("c", "\xFF\xFF\xFF\xFF\xFF\xFF\xFE");
     check(indices[2], columnHint, {kVid, "c"}, expect({4}, {2}), "case1.6");
   }
-  //                        0  1  2  3  4  5  6  7
-  std::vector<int64_t> a = {6, 2, 3, 0, 1, 4, 5};
-  std::vector<int64_t> b = {6, 4, 0, 5, 3};
-  std::vector<int64_t> c = {1, 3, 5, 2, 4, 0};
-  auto slice = [](decltype(a) all, int begin) {
-    return decltype(all){all.begin() + begin, all.end()};
-  };
+
   /* Case 2: [x, INF)*/ {
     auto hint = [](const char* name, const std::string& value) {
       return std::vector<ColumnHint>{makeBeginColumnHint<true>(name, value)};
+    };
+    auto slice = [](decltype(a) all, int begin) {
+      return decltype(all){all.begin() + begin, all.end()};
     };
     check(indices[0], hint("a", "12345678"), {kVid, "a"}, expect(slice(a, 1), {0}), "case2.1");
     check(indices[0], hint("a", "123456780"), {kVid, "a"}, expect(slice(a, 2), {0}), "case2.2");
@@ -1122,39 +1126,397 @@ TEST_F(IndexScanTest, String1) {
           {kVid, "c"},
           expect(slice(c, 5), {2}),
           "case2.12");
-  } /* Case 3: (x,y) */
-  // {
-
-  // } /* Case 4: (INF,y]*/ {}
+  }
+  /* Case 3: (x,y) */ {
+    auto hint = [](const char* name, const std::string& begin, const std::string& end) {
+      return std::vector<ColumnHint>{makeColumnHint<false, false>(name, begin, end)};
+    };
+    auto slice = [](decltype(a) all, int begin, int end) {
+      return decltype(all){all.begin() + begin, all.begin() + end};
+    };
+    auto columnHint = hint("a", "12345678", "123456789");
+    check(indices[0], columnHint, {kVid, "a"}, expect(slice(a, 2, 3), {0}), "case3.1");
+    check(indices[0], hint("a", "", "123456"), {kVid, "a"}, {}, "case3.2");
+    check(indices[1], hint("b", "", "\xFF"), {kVid, "b"}, expect(slice(b, 1, 4), {1}), "case3.3");
+    columnHint = hint("b", "aaccd", "\xFF\xFF");
+    check(indices[1], columnHint, {kVid, "b"}, expect(slice(b, 1, 4), {1}), "case3.4");
+    columnHint = hint("b", "\xFF", "\xFF\xFF\x01");
+    check(indices[1], columnHint, {kVid, "b"}, expect(slice(b, 4, 5), {1}), "case3.5");
+    check(indices[2], hint("c", "", "\x01"), {kVid, "c"}, expect(slice(c, 2, 3), {2}), "case3.6");
+    columnHint = hint("c", "\x00\x00\x01"s, "\x01\x01");
+    check(indices[2], columnHint, {kVid, "c"}, expect(slice(c, 2, 4), {2}), "case3.7");
+    columnHint = hint("c", "\x00\x01"s, "\x01\x01");
+    check(indices[2], columnHint, {kVid, "c"}, expect(slice(c, 3, 4), {2}), "case3.8");
+  }
+  /* Case 4: (INF,y]*/ {
+    auto hint = [](const char* name, const std::string& value) {
+      return std::vector<ColumnHint>{makeEndColumnHint<true>(name, value)};
+    };
+    auto slice = [](decltype(a) all, int end) {
+      return decltype(all){all.begin(), all.begin() + end};
+    };
+    check(indices[0], hint("a", "123456789"), {kVid, "a"}, expect(slice(a, 5), {0}), "case4.1");
+    check(indices[0], hint("a", ""), {kVid, "a"}, expect(slice(a, 1), {0}), "case4.2");
+    check(indices[0], hint("a", "\xFF"), {kVid, "a"}, expect(slice(a, 7), {0}), "case4.3");
+    check(indices[1], hint("b", "\xFF\xFF"), {kVid, "b"}, expect(slice(b, 5), {1}), "case4.4");
+    check(indices[1], hint("b", "\xFF\xFE"), {kVid, "b"}, expect(slice(b, 4), {1}), "case4.5");
+    check(indices[2], hint("c", "\x00\x00\x01"s), {kVid, "c"}, expect(slice(c, 2), {2}), "case4.6");
+    check(indices[2], hint("c", "\x00\x01"s), {kVid, "c"}, expect(slice(c, 3), {2}), "case4.7");
+    check(indices[2], hint("c", "\x01"), {kVid, "c"}, expect(slice(c, 4), {2}), "case4.8");
+    auto columnHint = hint("c", "\xFF\xFF\xFF\xFF\xFF\xFF\xFF");
+    check(indices[2], columnHint, {kVid, "c"}, expect(c, {2}), "case4.9");
+  }
 }
 TEST_F(IndexScanTest, String2) {
   /**
    * data with truncate
    * query without truncate
+   * That means ScanNode need to access base data only when require indexed column
    */
+  auto rows =
+      " string  | string | string                       | int \n"
+      " 123456  | ABCDE2 | <null>                       | 0   \n"
+      " 1234567 | ABCDE1 | \xFF\xFF\xFF\xFF\xFF         | 1   \n"
+      " 1234567 | ABCDE  | \xFF\xFF\xFF\xFF\xFF\x00\x01 | 2   \n"
+      " 123457  | ABCDF  | \xFF\xFF\xFF\xFF\xFF         | 3   \n"
+      ""_row;
+  auto schema = R"(
+    c1 | string  | | false
+    c2 | string  | | true
+    c3 | string  | | true
+  )"_schema;
+  auto indices = R"(
+    TAG(t,1)
+    (i1,2):c1(5)
+    (i2,3):c2(5)
+    (i3,4):c3(5)
+  )"_index(schema);
+  auto kv = encodeTag(rows, 1, schema, indices);
+  auto kvstore = std::make_unique<MockKVStore>();
+  for (size_t i = 0; i < kv.size(); i++) {
+    for (auto& item : kv[i]) {
+      kvstore->put(item.first, item.second);
+    }
+  }
+  auto check = [&](std::shared_ptr<IndexItem> index,
+                   const std::vector<ColumnHint>& columnHints,
+                   const std::vector<std::string>& acquiredColumns,
+                   const std::vector<Row>& expect,
+                   const std::string& case_) {
+    DVLOG(1) << "Start case " << case_;
+    auto context = makeContext(1, 0);
+    auto scanNode = std::make_unique<IndexVertexScanNode>(context.get(), 0, columnHints);
+    IndexScanTestHelper helper;
+    helper.setKVStore(scanNode.get(), kvstore.get());
+    helper.setIndex(scanNode.get(), index);
+    helper.setTag(scanNode.get(), schema);
+    helper.setFatal(scanNode.get(), true);
+    InitContext initCtx;
+    initCtx.requiredColumns.insert(acquiredColumns.begin(), acquiredColumns.end());
+    scanNode->init(initCtx);
+    scanNode->execute(0);
+    bool hasNext = false;
+    std::vector<Row> result;
+    while (true) {
+      auto res = scanNode->next(hasNext);
+      ASSERT(::nebula::ok(res));
+      if (!hasNext) {
+        break;
+      }
+      result.emplace_back(::nebula::value(std::move(res)));
+    }
+    std::vector<Row> result2(result.size());
+    for (size_t j = 0; j < acquiredColumns.size(); j++) {
+      int p = initCtx.retColMap[acquiredColumns[j]];
+      for (size_t i = 0; i < result.size(); i++) {
+        result2[i].emplace_back(result[i][p]);
+      }
+    }
+    result = result2;
+    EXPECT_EQ(result, expect) << "Fail at case " << case_;
+  };
+  auto expect = [&rows](const std::vector<int64_t>& vidList, const std::vector<size_t>& columns) {
+    std::vector<Row> ret;
+    for (size_t i = 0; i < vidList.size(); i++) {
+      Row row;
+      row.emplace_back(Value(std::to_string(vidList[i])));
+      for (size_t j = 0; j < columns.size(); j++) {
+        row.emplace_back(rows[vidList[i]][columns[j]]);
+      }
+      ret.emplace_back(std::move(row));
+    }
+    return ret;
+  };
+  /* Case 1: Prefix */ {
+    auto hint = [](const char* name, const std::string& value) {
+      return std::vector<ColumnHint>{makeColumnHint(name, value)};
+    };
+    check(indices[0], hint("c1", "1234"), {kVid, "c1"}, {}, "case1.1");
+    check(indices[0], hint("c1", "12345"), {kVid, "c1"}, {}, "case1.2");
+    check(indices[1], hint("c2", "ABCDE"), {kVid, "c2"}, expect({2}, {1}), "case1.3");
+    check(indices[2],
+          hint("c3", "\xFF\xFF\xFF\xFF\xFF"),
+          {kVid, "c3"},
+          expect({1, 3}, {2}),
+          "case1.4");
+  }
+  /* Case 2: (x, INF)*/ {
+    auto hint = [](const char* name, const std::string& value) {
+      return std::vector<ColumnHint>{makeBeginColumnHint<false>(name, value)};
+    };
+    check(indices[0], hint("c1", "12345"), {kVid, "c1"}, expect({0, 1, 2, 3}, {0}), "case2.1");
+    check(indices[1], hint("c2", "ABCDE"), {kVid, "c2"}, expect({0, 1, 3}, {1}), "case2.2");
+    check(
+        indices[2], hint("c3", "\xFF\xFF\xFF\xFF\xFF"), {kVid, "c3"}, expect({2}, {2}), "case2.3");
+  }
+  /* Case 3: [x, y] */ {
+    auto hint = [](const char* name, const std::string& begin, const std::string& end) {
+      return std::vector<ColumnHint>{makeColumnHint<true, true>(name, begin, end)};
+    };
+    auto columnHint = hint("c1", "12345", "12346");
+    check(indices[0], columnHint, {kVid, "c1"}, expect({0, 1, 2, 3}, {0}), "case3.1");
+    columnHint = hint("c1", "12345", "12345");
+    check(indices[0], columnHint, {kVid, "c1"}, {}, "case3.2");
+    columnHint = hint("c2", "ABCDE", "ABCDF");
+    check(indices[1], columnHint, {kVid, "c2"}, expect({0, 1, 2, 3}, {1}), "case3.3");
+    columnHint = hint("c2", "ABCDE", "ABCDE");
+    check(indices[1], columnHint, {kVid, "c2"}, expect({2}, {1}), "case3.4");
+    columnHint = hint("c3", "\xFF\xFF\xFF\xFF\xFF", "\xFF\xFF\xFF\xFF\xFF");
+    check(indices[2], columnHint, {kVid, "c3"}, expect({1, 3}, {2}), "case3.5");
+  }
+  /* Case 4: (INF,y)*/ {
+    auto hint = [](const char* name, const std::string& value) {
+      return std::vector<ColumnHint>{makeEndColumnHint<false>(name, value)};
+    };
+    auto columnHint = hint("c1", "12345");
+    check(indices[0], columnHint, {kVid, "c1"}, {}, "case4.1");
+    columnHint = hint("c2", "ABCDE");
+    check(indices[1], columnHint, {kVid, "c2"}, {}, "case4.2");
+    columnHint = hint("c2", "ABCDF");
+    check(indices[1], columnHint, {kVid, "c2"}, expect({0, 1, 2}, {1}), "case4.3");
+    columnHint = hint("c3", " \xFF\xFF\xFF\xFF\xFF");
+    check(indices[2], columnHint, {kVid, "c3"}, {}, "case4.4");
+  }
 }
 TEST_F(IndexScanTest, String3) {
   /**
    * data without truncate
    * query with truncate
+   * That means ScanNode only access Index Key-Values
    */
+  auto rows =
+      " string  | string  | string                | int \n"
+      " abcde   | 98765   | <null>                | 0   \n"
+      " abcda   | 12345   | \xFF\xFF\xFF\xFF\xFF  | 1   \n"
+      " abcda   | 98766   |                       | 2   \n"
+      "         | <null>  |                       | 3   \n"
+      ""_row;
+  auto schema = R"(
+    a | string  | | false
+    b | string  | | true
+    c | string  | | true
+  )"_schema;
+  auto indices = R"(
+    TAG(t,0)
+    (ia,1): a(6)
+    (ib,2): b(6)
+    (ic,3): c(6)
+  )"_index(schema);
+  auto kv = encodeTag(rows, 1, schema, indices);
+  auto kvstore = std::make_unique<MockKVStore>();
+  for (size_t i = 0; i < kv.size(); i++) {
+    for (auto& item : kv[i]) {
+      kvstore->put(item.first, item.second);
+    }
+  }
+  auto check = [&](std::shared_ptr<IndexItem> index,
+                   const std::vector<ColumnHint>& columnHints,
+                   const std::vector<std::string>& acquiredColumns,
+                   const std::vector<Row>& expect,
+                   const std::string& case_) {
+    DVLOG(1) << "Start case " << case_;
+    auto context = makeContext(1, 0);
+    auto scanNode = std::make_unique<IndexVertexScanNode>(context.get(), 0, columnHints);
+    IndexScanTestHelper helper;
+    helper.setKVStore(scanNode.get(), kvstore.get());
+    helper.setIndex(scanNode.get(), index);
+    helper.setTag(scanNode.get(), schema);
+    helper.setFatal(scanNode.get(), true);
+    InitContext initCtx;
+    initCtx.requiredColumns.insert(acquiredColumns.begin(), acquiredColumns.end());
+    scanNode->init(initCtx);
+    scanNode->execute(0);
+    bool hasNext = false;
+    std::vector<Row> result;
+    while (true) {
+      auto res = scanNode->next(hasNext);
+      ASSERT(::nebula::ok(res));
+      if (!hasNext) {
+        break;
+      }
+      result.emplace_back(::nebula::value(std::move(res)));
+    }
+    std::vector<Row> result2(result.size());
+    for (size_t j = 0; j < acquiredColumns.size(); j++) {
+      int p = initCtx.retColMap[acquiredColumns[j]];
+      for (size_t i = 0; i < result.size(); i++) {
+        result2[i].emplace_back(result[i][p]);
+      }
+    }
+    result = result2;
+    EXPECT_EQ(result, expect) << "Fail at case " << case_;
+  };
+  auto expect = [&rows](const std::vector<int64_t>& vidList, const std::vector<size_t>& columns) {
+    std::vector<Row> ret;
+    for (size_t i = 0; i < vidList.size(); i++) {
+      Row row;
+      row.emplace_back(Value(std::to_string(vidList[i])));
+      for (size_t j = 0; j < columns.size(); j++) {
+        row.emplace_back(rows[vidList[i]][columns[j]]);
+      }
+      ret.emplace_back(std::move(row));
+    }
+    return ret;
+  };
+  /* Case 1: Prefix */ {
+    auto hint = [](const char* name, const std::string& value) {
+      return std::vector<ColumnHint>{makeColumnHint(name, value)};
+    };
+    check(indices[0], hint("a", "abcde  "), {kVid, "a"}, {}, "case1.1");
+    check(indices[2], hint("c", "\xFF\xFF\xFF\xFF\xFF\xFF"), {kVid, "c"}, {}, "case1.2");
+  }
+  /* Case 2: [x, INF)*/ {
+    auto hint = [](const char* name, const std::string& value) {
+      return std::vector<ColumnHint>{makeBeginColumnHint<true>(name, value)};
+    };
+    check(indices[0], hint("a", "abcdef"), {kVid, "a"}, {}, "case2.1");
+    check(indices[0], hint("a", "abcda  "), {kVid, "a"}, expect({0}, {0}), "case2.2");
+    check(indices[1], hint("b", "987654  "), {kVid, "b"}, expect({2}, {1}), "case2.3");
+    check(indices[2], hint("c", "\xFF\xFF\xFF\xFF\xFF\xFF"), {kVid, "c"}, {}, "case2.4");
+  }
+  /* Case 3: (x, y]*/ {
+    auto hint = [](const char* name, const std::string& begin, const std::string& end) {
+      return std::vector<ColumnHint>{makeColumnHint<false, true>(name, begin, end)};
+    };
+    auto columnHint = hint("a", "abcda  ", "abcde  ");
+    check(indices[0], columnHint, {kVid, "a"}, expect({0}, {0}), "case3.1");
+    columnHint = hint("b", "98765  ", "98766  ");
+    check(indices[1], columnHint, {kVid, "b"}, expect({2}, {1}), "case3.2");
+    columnHint = hint("c", "\xFF\xFF\xFF\xFF\xFE  ", "\xFF\xFF\xFF\xFF\xFF  ");
+    check(indices[2], columnHint, {kVid, "c"}, expect({1}, {2}), "case3.3");
+  }
+  /* Case 4: (INF,y)*/ {
+    auto hint = [](const char* name, const std::string& value) {
+      return std::vector<ColumnHint>{makeEndColumnHint<false>(name, value)};
+    };
+    check(indices[0], hint("a", "abcde  "), {kVid, "a"}, expect({3, 1, 2, 0}, {0}), "case4.1");
+    check(indices[1], hint("b", "98764  "), {kVid, "b"}, expect({1}, {1}), "case4.2");
+    check(indices[2],
+          hint("c", "\xFF\xFF\xFF\xFF\xFF  "),
+          {kVid, "c"},
+          expect({2, 3, 1}, {2}),
+          "case4.3");
+  }
 }
 TEST_F(IndexScanTest, String4) {
   /**
    * data with truncate
    * query with truncate
+   * That means ScanNode always need to access base data.
    */
+  auto rows =
+      " string    | string                      | int \n"
+      " abcde1    | 987654                      | 0   \n"
+      " abcdd     | 98765                       | 1   \n"
+      " abcdf     | 12345                       | 2   \n"
+      " abcde     | \xFF\xFF\xFF\xFF\xFF\xFF    | 3   \n"
+      " abcde12   | <null>                      | 4   \n"
+      " abcde123  | \xFF\xFF\xFF\xFF\xFF        | 5   \n"
+      " abcde1234 | \xFF\xFF\xFF\xFF\xFF\xFF\x01| 6   \n"
+      " abcde1234 | <null>                      | 7   \n"
+      ""_row;
+  auto schema = R"(
+    a | string  | | false
+    b | string  | | true
+    c | string  | | true
+  )"_schema;
+  auto indices = R"(
+    TAG(t,0)
+    (ia,1): a(5)
+    (ib,2): b(5)
+    (ic,3): c(5)
+  )"_index(schema);
+  auto kv = encodeTag(rows, 1, schema, indices);
+  auto kvstore = std::make_unique<MockKVStore>();
+  for (size_t i = 0; i < kv.size(); i++) {
+    for (auto& item : kv[i]) {
+      kvstore->put(item.first, item.second);
+    }
+  }
+  auto check = [&](std::shared_ptr<IndexItem> index,
+                   const std::vector<ColumnHint>& columnHints,
+                   const std::vector<std::string>& acquiredColumns,
+                   const std::vector<Row>& expect,
+                   const std::string& case_) {
+    DVLOG(1) << "Start case " << case_;
+    auto context = makeContext(1, 0);
+    auto scanNode = std::make_unique<IndexVertexScanNode>(context.get(), 0, columnHints);
+    IndexScanTestHelper helper;
+    helper.setKVStore(scanNode.get(), kvstore.get());
+    helper.setIndex(scanNode.get(), index);
+    helper.setTag(scanNode.get(), schema);
+    helper.setFatal(scanNode.get(), true);
+    InitContext initCtx;
+    initCtx.requiredColumns.insert(acquiredColumns.begin(), acquiredColumns.end());
+    scanNode->init(initCtx);
+    scanNode->execute(0);
+    bool hasNext = false;
+    std::vector<Row> result;
+    while (true) {
+      auto res = scanNode->next(hasNext);
+      ASSERT(::nebula::ok(res));
+      if (!hasNext) {
+        break;
+      }
+      result.emplace_back(::nebula::value(std::move(res)));
+    }
+    std::vector<Row> result2(result.size());
+    for (size_t j = 0; j < acquiredColumns.size(); j++) {
+      int p = initCtx.retColMap[acquiredColumns[j]];
+      for (size_t i = 0; i < result.size(); i++) {
+        result2[i].emplace_back(result[i][p]);
+      }
+    }
+    result = result2;
+    EXPECT_EQ(result, expect) << "Fail at case " << case_;
+  };
+  auto expect = [&rows](const std::vector<int64_t>& vidList, const std::vector<size_t>& columns) {
+    std::vector<Row> ret;
+    for (size_t i = 0; i < vidList.size(); i++) {
+      Row row;
+      row.emplace_back(Value(std::to_string(vidList[i])));
+      for (size_t j = 0; j < columns.size(); j++) {
+        row.emplace_back(rows[vidList[i]][columns[j]]);
+      }
+      ret.emplace_back(std::move(row));
+    }
+    return ret;
+  };
 }
-TEST_F(IndexScanTest, String5) {
-  /**
-   * mix
-   */
-}
-TEST_F(IndexScanTest, Time) {}
-TEST_F(IndexScanTest, Date) {}
-TEST_F(IndexScanTest, DateTime) {}
-TEST_F(IndexScanTest, Compound) {}
 TEST_F(IndexScanTest, Nullable) {}
+TEST_F(IndexScanTest, Time) {
+  // TODO(hs.zhang): add unittest
+}
+TEST_F(IndexScanTest, Date) {
+  // TODO(hs.zhang): add unittest
+}
+TEST_F(IndexScanTest, DateTime) {
+  // TODO(hs.zhang): add unittest
+}
+TEST_F(IndexScanTest, Compound) {
+  // TODO(hs.zhang): add unittest
+}
+TEST_F(IndexScanTest, TTL) {}
 
 }  // namespace storage
 }  // namespace nebula
