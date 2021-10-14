@@ -32,8 +32,8 @@ from tests.common.utils import (
 from tests.tck.utils.table import dataset, table
 from tests.tck.utils.nbv import murmurhash2
 
-#from nebula2.graph.ttypes import VerifyClientVersionReq
-#from nebula2.graph.ttypes import VerifyClientVersionResp
+from nebula2.graph.ttypes import VerifyClientVersionReq
+from nebula2.graph.ttypes import VerifyClientVersionResp
 
 parse = functools.partial(parsers.parse)
 rparse = functools.partial(parsers.re)
@@ -536,30 +536,30 @@ def executing_query_with_params(query, indices, keys, graph_spaces, session, req
     ngql = combine_query(query).format(*vals)
     exec_query(request, ngql, session, graph_spaces)
 
-#@given(parse("nothing"))
-#def nothing():
-#    pass
-#
-#@when(parse("connecting the servers with a compatible client version"))
-#def connecting_servers_with_a_compatible_client_version(establish_a_rare_connection, graph_spaces):
-#    conn = establish_a_rare_connection
-#    graph_spaces["resp"] = conn.verifyClientVersion(VerifyClientVersionReq())
-#    conn._iprot.trans.close()
-#
-#@then(parse("the connection should be established"))
-#def check_client_compatible(graph_spaces):
-#    resp = graph_spaces["resp"]
-#    assert resp.error_code == ErrorCode.SUCCEEDED, f'The client was rejected by server: {resp}'
-#
-#@when(parse("connecting the servers with a client version of {version}"))
-#def connecting_servers_with_a_compatible_client_version(version, establish_a_rare_connection, graph_spaces):
-#    conn = establish_a_rare_connection
-#    req = VerifyClientVersionReq()
-#    req.version = version
-#    graph_spaces["resp"] = conn.verifyClientVersion(req)
-#    conn._iprot.trans.close()
-#
-#@then(parse("the connection should be rejected"))
-#def check_client_compatible(graph_spaces):
-#    resp = graph_spaces["resp"]
-#    assert resp.error_code == ErrorCode.E_CLIENT_SERVER_INCOMPATIBLE, f'The client was not rejected by server: {resp}'
+@given(parse("nothing"))
+def nothing():
+    pass
+
+@when(parse("connecting the servers with a compatible client version"))
+def connecting_servers_with_a_compatible_client_version(establish_a_rare_connection, graph_spaces):
+    conn = establish_a_rare_connection
+    graph_spaces["resp"] = conn.verifyClientVersion(VerifyClientVersionReq())
+    conn._iprot.trans.close()
+
+@then(parse("the connection should be established"))
+def check_client_compatible(graph_spaces):
+    resp = graph_spaces["resp"]
+    assert resp.error_code == ErrorCode.SUCCEEDED, f'The client was rejected by server: {resp}'
+
+@when(parse("connecting the servers with a client version of {version}"))
+def connecting_servers_with_a_compatible_client_version(version, establish_a_rare_connection, graph_spaces):
+    conn = establish_a_rare_connection
+    req = VerifyClientVersionReq()
+    req.version = version
+    graph_spaces["resp"] = conn.verifyClientVersion(req)
+    conn._iprot.trans.close()
+
+@then(parse("the connection should be rejected"))
+def check_client_compatible(graph_spaces):
+    resp = graph_spaces["resp"]
+    assert resp.error_code == ErrorCode.E_CLIENT_SERVER_INCOMPATIBLE, f'The client was not rejected by server: {resp}'

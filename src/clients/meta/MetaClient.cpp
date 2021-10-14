@@ -2335,9 +2335,7 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
   req.set_host(options_.localHost_);
   req.set_role(options_.role_);
   req.set_git_info_sha(options_.gitInfoSHA_);
-#if defined(NEBULA_BUILD_VERSION)
-  req.set_version(versionString(false));
-#endif
+  req.set_version(getOriginVersion());
   if (options_.role_ == cpp2::HostRole::STORAGE) {
     if (options_.clusterId_.load() == 0) {
       options_.clusterId_ = FileBasedClusterIdMan::getClusterIdFromFile(FLAGS_cluster_id_path);

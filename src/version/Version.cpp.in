@@ -15,10 +15,10 @@ namespace nebula {
 std::string gitInfoSha() { return "@GIT_INFO_SHA@"; }
 
 std::string versionString(bool verbose) {
-  std::string version;
-#if defined(NEBULA_BUILD_VERSION)
-  version = folly::stringPrintf("%s, ", "@NEBULA_BUILD_VERSION@");
-#endif
+  std::string version = getOriginVersion();
+  if (!version.empty()) {
+    version += ", ";
+  }
   if (verbose) {
     version += folly::sformat("Git: {}, ", gitInfoSha());
   }
