@@ -64,6 +64,10 @@ class FunctionManager final {
   static StatusOr<Value::Type> getReturnType(const std::string &funcName,
                                              const std::vector<Value::Type> &argsType);
 
+  static bool findVariadicFunction(std::string funcName);
+  static bool findInvariadicFunction(std::string funcName);
+  bool findFunction(std::string funcName) const;
+
  private:
   struct FunctionAttributes final {
     size_t minArity_{0};

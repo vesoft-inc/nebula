@@ -398,19 +398,33 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
      }},
 };
 
+bool FunctionManager::findVariadicFunction(std::string funcName) {
+  std::transform(funcName.begin(), funcName.end(), funcName.begin(), ::tolower);
+  return variadicFunReturnType_.find(funcName) != variadicFunReturnType_.end();
+}
+
+bool FunctionManager::findInvariadicFunction(std::string funcName) {
+  std::transform(funcName.begin(), funcName.end(), funcName.begin(), ::tolower);
+  return typeSignature_.find(funcName) != typeSignature_.end();
+}
+
+bool FunctionManager::findFunction(std::string funcName) const {
+  std::transform(funcName.begin(), funcName.end(), funcName.begin(), ::tolower);
+  return functions_.find(funcName) != functions_.end();
+}
+
 // static
 StatusOr<Value::Type> FunctionManager::getReturnType(const std::string &funcName,
                                                      const std::vector<Value::Type> &argsType) {
-  auto func = funcName;
-  std::transform(func.begin(), func.end(), func.begin(), ::tolower);
-  if (variadicFunReturnType_.find(func) != variadicFunReturnType_.end()) {
-    return variadicFunReturnType_[func];
+  if (findVariadicFunction(funcName)) {
+    return variadicFunReturnType_[funcName];
   }
-  auto iter = typeSignature_.find(func);
-  if (iter == typeSignature_.end()) {
+  if (!findInvariadicFunction(funcName)) {
     return Status::Error("Function `%s' not defined", funcName.c_str());
   }
 
+  auto iter = typeSignature_.find(funcName);
+  DCHECK(iter != typeSignature_.end());
   for (const auto &args : iter->second) {
     if (argsType == args.argsType_) {
       return args.returnType_;
@@ -2612,11 +2626,11 @@ Status FunctionManager::find(const std::string &func, const size_t arity) {
 /*static*/ StatusOr<const FunctionManager::FunctionAttributes> FunctionManager::getInternal(
     std::string func, size_t arity) const {
   // check existence
-  std::transform(func.begin(), func.end(), func.begin(), ::tolower);
-  auto iter = functions_.find(func);
-  if (iter == functions_.end()) {
+  if (!findFunction(func)) {
     return Status::Error("Function `%s' not defined", func.c_str());
   }
+  auto iter = functions_.find(func);
+  DCHECK(iter != functions_.end());
   // check arity
   auto minArity = iter->second.minArity_;
   auto maxArity = iter->second.maxArity_;
