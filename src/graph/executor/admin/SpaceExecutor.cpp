@@ -168,7 +168,8 @@ folly::Future<Status> ShowSpacesExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
   return qctx()->getMetaClient()->listSpaces().via(runner()).thenValue(
-      task([this](StatusOr<std::vector<meta::SpaceIdName>> resp) {
+      [this](StatusOr<std::vector<meta::SpaceIdName>> resp) {
+        ATTACH_QUERY_TO_THREAD();
         if (!resp.ok()) {
           LOG(ERROR) << "Show spaces failed: " << resp.status();
           return resp.status();
@@ -192,7 +193,7 @@ folly::Future<Status> ShowSpacesExecutor::execute() {
                           .value(Value(std::move(dataSet)))
                           .iter(Iterator::Kind::kDefault)
                           .build());
-      }));
+      });
 }
 
 folly::Future<Status> ShowCreateSpaceExecutor::execute() {

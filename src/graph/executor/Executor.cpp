@@ -12,7 +12,7 @@
 
 #include "common/base/ObjectPool.h"
 #include "common/memory/MemoryUtils.h"
-#include "common/time/ScopedTimer.h"
+#include "common/thread/ThreadState.h"
 #include "graph/context/ExecutionContext.h"
 #include "graph/context/QueryContext.h"
 #include "graph/executor/ExecutionError.h"
@@ -635,18 +635,14 @@ folly::Executor *Executor::runner() const {
   return qctx()->rctx()->runner();
 }
 
-std::function<void()> Executor::attachQuery() const {
-  return [this]() {
-    // TODO(yee):
-    LOG(INFO) << "attachQuery: " << this->name();
-  };
+Status Executor::attachQueryToThread() {
+  thread::kCurrentThreadState.get()->memTracker = qctx()->memTracker();
+  return Status::OK();
 }
 
-std::function<void()> Executor::detachQuery() const {
-  return [this]() {
-    // TODO(yee):
-    LOG(INFO) << "detachQuery" << this->name();
-  };
+Status Executor::detachQueryToThread() {
+  thread::kCurrentThreadState.get()->memTracker = qctx()->memTracker();
+  return Status::OK();
 }
 
 }  // namespace graph

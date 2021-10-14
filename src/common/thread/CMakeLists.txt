@@ -7,6 +7,7 @@ nebula_add_library(
     NamedThread.cpp
     GenericWorker.cpp
     GenericThreadPool.cpp
+    ThreadState.cpp
 )
 
 nebula_add_subdirectory(test)

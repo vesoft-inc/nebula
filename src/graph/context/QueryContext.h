@@ -22,6 +22,9 @@
 #include "parser/SequentialSentences.h"
 
 namespace nebula {
+
+class MemoryTracker;
+
 namespace graph {
 
 /***************************************************************************
@@ -87,6 +90,8 @@ class QueryContext {
 
   SymbolTable* symTable() const { return symTable_.get(); }
 
+  MemoryTracker* memTracker() const { return memTracker_.get(); }
+
   void setPartialSuccess() {
     DCHECK(rctx_ != nullptr);
     rctx_->resp().errorCode = ErrorCode::E_PARTIAL_SUCCEEDED;
@@ -114,6 +119,7 @@ class QueryContext {
   std::unique_ptr<ObjectPool> objPool_;
   std::unique_ptr<IdGenerator> idGen_;
   std::unique_ptr<SymbolTable> symTable_;
+  std::unique_ptr<MemoryTracker> memTracker_;
 
   std::atomic<bool> killed_{false};
 };

@@ -95,14 +95,8 @@ class Executor : private cpp::NonCopyable, private cpp::NonMovable {
   // Store the default result which not used for later executor
   Status finish(Value &&value);
 
-  std::function<void()> attachQuery() const;
-  std::function<void()> detachQuery() const;
-
-  template <typename F>
-  auto task(F &&f) {
-    return ExecTask<F>(
-        qctx(), std::move(f), [this] { this->attachQuery(); }, [this] { this->detachQuery(); });
-  }
+  Status attachQueryToThread();
+  Status detachQueryToThread();
 
   int64_t id_;
 
@@ -129,5 +123,9 @@ class Executor : private cpp::NonCopyable, private cpp::NonMovable {
 
 }  // namespace graph
 }  // namespace nebula
+
+#define ATTACH_QUERY_TO_THREAD()                   \
+  NG_RETURN_IF_ERROR(this->attachQueryToThread()); \
+  SCOPE_EXIT { NG_RETURN_IF_ERROR(this->detachQueryToThread()); }
 
 #endif  // GRAPH_EXECUTOR_EXECUTOR_H_
