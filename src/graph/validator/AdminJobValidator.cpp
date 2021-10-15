@@ -15,7 +15,7 @@ Status AdminJobValidator::validateImpl() {
   if (sentence_->getOp() == meta::cpp2::AdminJobOp::ADD) {
     auto cmd = sentence_->getCmd();
     if (requireSpace()) {
-      const auto &spaceInfo = qctx()->rctx()->session()->space();
+      const auto &spaceInfo = vctx_->whichSpace();
       auto spaceId = spaceInfo.id;
       const auto &spaceName = spaceInfo.name;
       sentence_->addPara(spaceName);

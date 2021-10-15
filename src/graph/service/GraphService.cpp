@@ -41,13 +41,16 @@ Status GraphService::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecuto
   bool loadDataOk = metaClient_->waitForMetadReady(3);
   if (!loadDataOk) {
     // Resort to retrying in the background
-    LOG(WARNING) << "Failed to wait for meta service ready synchronously.";
+    LOG(ERROR) << "Failed to wait for meta service ready synchronously.";
+    return Status::Error("Failed to wait for meta service ready synchronously.");
   }
 
   sessionManager_ = std::make_unique<GraphSessionManager>(metaClient_.get(), hostAddr);
   auto initSessionMgrStatus = sessionManager_->init();
   if (!initSessionMgrStatus.ok()) {
-    LOG(WARNING) << "Failed to initialize session manager: " << initSessionMgrStatus.toString();
+    LOG(ERROR) << "Failed to initialize session manager: " << initSessionMgrStatus.toString();
+    return Status::Error("Failed to initialize session manager: %s",
+                         initSessionMgrStatus.toString().c_str());
   }
 
   queryEngine_ = std::make_unique<QueryEngine>();
@@ -153,9 +156,9 @@ folly::Future<ExecutionResponse> GraphService::future_execute(int64_t sessionId,
 
 folly::Future<std::string> GraphService::future_executeJson(int64_t sessionId,
                                                             const std::string& query) {
-  auto rawResp = future_execute(sessionId, query).get();
-  auto respJsonObj = rawResp.toJson();
-  return folly::toJson(respJsonObj);
+  return future_execute(sessionId, query).thenValue([](ExecutionResponse&& resp) {
+    return folly::toJson(resp.toJson());
+  });
 }
 
 bool GraphService::auth(const std::string& username, const std::string& password) {

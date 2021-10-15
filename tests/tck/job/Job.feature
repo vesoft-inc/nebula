@@ -180,9 +180,18 @@ Feature: Submit job space requirements
       """
     Then an ExecutionError should be raised at runtime:Job not in chosen space!
 
-# This is skipped becuase it is hard to simulate the situation
-# When executing query:
-# """
-# RECOVER JOB;
-# """
-# Then the result should be successful
+  # This is skipped becuase it is hard to simulate the situation
+  # When executing query:
+  # """
+  # RECOVER JOB;
+  # """
+  # Then the result should be successful
+  Scenario: rebuild index after use, fix #2806
+    When executing query:
+      """
+      USE nba;
+      REBUILD TAG INDEX;
+      """
+    Then the result should be, in any order:
+      | New Job Id |
+      | /\d+/      |
