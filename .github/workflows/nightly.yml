@@ -152,7 +152,7 @@ jobs:
       - uses: codecov/codecov-action@v2
         with:
           files: fastcov.info
-          fail_ci_if_error: true
+          fail_ci_if_error: false
       - name: Upload logs
         uses: actions/upload-artifact@v2
         if: ${{ failure() }}

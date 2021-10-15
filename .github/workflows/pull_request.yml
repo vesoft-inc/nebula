@@ -167,9 +167,10 @@ jobs:
         run: |
             ~/.local/bin/fastcov -d build -l -o fastcov.info -p --exclude /usr/include --exclude=/opt/vesoft --exclude scanner.lex
       - uses: codecov/codecov-action@v2
+        if: ${{ matrix.compiler == 'gcc-9.2' && matrix.os == 'ubuntu2004' }}
         with:
           files: fastcov.info
-          fail_ci_if_error: true
+          fail_ci_if_error: false
       - name: Sanitizer
         if: ${{ always() }}
         run: |
