@@ -124,8 +124,6 @@ void AddEdgesProcessor::doProcess(const cpp2::AddEdgesRequest& req) {
         code = writeResultTo(wRet, true);
         break;
       } else {
-        LOG(INFO) << "doProcess() key=" << folly::hexlify(key)
-                  << ", val=" << folly::hexlify(retEnc.value());
         data.emplace_back(std::move(key), std::move(retEnc.value()));
       }
     }

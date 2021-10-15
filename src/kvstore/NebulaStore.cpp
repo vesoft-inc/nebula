@@ -374,7 +374,6 @@ std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
     }
   }
   raftService_->addPartition(part);
-  LOG(INFO) << "TransactionManager onNewPartAdded_.size()=" << onNewPartAdded_.size();
   for (auto& func : onNewPartAdded_) {
     func.second(part);
   }
@@ -1197,11 +1196,8 @@ void NebulaStore::registerOnNewPartAdded(
     const std::string& funcName,
     std::function<void(std::shared_ptr<Part>&)> func,
     std::vector<std::pair<GraphSpaceID, PartitionID>>& existParts) {
-  LOG(INFO) << "spaces_.size() = " << spaces_.size();
   for (auto& item : spaces_) {
-    LOG(INFO) << "registerOnNewPartAdded() space = " << item.first;
     for (auto& partItem : item.second->parts_) {
-      LOG(INFO) << "registerOnNewPartAdded() part = " << partItem.first;
       existParts.emplace_back(std::make_pair(item.first, partItem.first));
       func(partItem.second);
     }

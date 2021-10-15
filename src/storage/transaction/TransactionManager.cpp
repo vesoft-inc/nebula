@@ -27,7 +27,6 @@ TransactionManager::TransactionManager(StorageEnv* env) : env_(env) {
   exec_ = std::make_shared<folly::IOThreadPoolExecutor>(10);
   iClient_ = env_->interClient_;
   resumeThread_ = std::make_unique<thread::GenericWorker>();
-  // scanAll();
   std::vector<std::pair<GraphSpaceID, PartitionID>> existParts;
   auto fn = std::bind(&TransactionManager::onNewPartAdded, this, std::placeholders::_1);
   static_cast<::nebula::kvstore::NebulaStore*>(env_->kvstore_)
@@ -42,9 +41,7 @@ TransactionManager::LockCore* TransactionManager::getLockCore(GraphSpaceID space
                                                               bool checkWhiteList) {
   if (checkWhiteList) {
     if (whiteListParts_.find(std::make_pair(spaceId, partId)) == whiteListParts_.end()) {
-      // LOG(INFO) << folly::sformat("space {}, part {} not in white list", spaceId, partId);
       return nullptr;
-      // scanPrimes(spaceId, partId);
     }
   }
   auto it = memLocks_.find(spaceId);
