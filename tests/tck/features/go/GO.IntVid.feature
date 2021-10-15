@@ -1696,14 +1696,14 @@ Feature: IntegerVid Go  Sentence
       GO FROM hash("Tim Duncan") OVER like LIMIT [1];
       """
     Then the result should be, in any order, with relax comparison:
-      | like._dst |
+      | like._dst  |
       | /[+-]?\d+/ |
     When executing query:
       """
       GO 3 STEPS FROM hash("Tim Duncan") OVER like LIMIT [1, 2, 2];
       """
     Then the result should be, in any order, with relax comparison:
-      | like._dst |
+      | like._dst  |
       | /[+-]?\d+/ |
       | /[+-]?\d+/ |
 
@@ -1743,14 +1743,14 @@ Feature: IntegerVid Go  Sentence
       GO FROM hash("Tim Duncan") OVER like SAMPLE [1];
       """
     Then the result should be, in any order, with relax comparison:
-      | like._dst |
+      | like._dst  |
       | /[+-]?\d+/ |
     When executing query:
       """
       GO 3 STEPS FROM hash("Tim Duncan") OVER like SAMPLE [1, 3, 2];
       """
     Then the result should be, in any order, with relax comparison:
-      | like._dst |
+      | like._dst  |
       | /[+-]?\d+/ |
       | /[+-]?\d+/ |
 
