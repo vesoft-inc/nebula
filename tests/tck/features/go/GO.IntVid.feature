@@ -1675,6 +1675,100 @@ Feature: IntegerVid Go  Sentence
     Then the result should be, in any order:
       | serve._dst |
 
+  Scenario: go step limit
+    When executing query:
+      """
+      GO FROM hash("Tim Duncan") OVER like LIMIT [10,10];
+      """
+    Then a SemanticError should be raised at runtime:
+    When executing query:
+      """
+      GO FROM hash("Tim Duncan") OVER like LIMIT ["10"];
+      """
+    Then a SemanticError should be raised at runtime:
+    When executing query:
+      """
+      GO FROM hash("Tim Duncan") OVER like LIMIT [a];
+      """
+    Then a SemanticError should be raised at runtime:
+    When executing query:
+      """
+      GO FROM hash("Tim Duncan") OVER like LIMIT [1];
+      """
+    Then the result should be, in any order, with relax comparison:
+      | like._dst |
+      | /[+-]?\d+/ |
+    When executing query:
+      """
+      GO 3 STEPS FROM hash("Tim Duncan") OVER like LIMIT [1, 2, 2];
+      """
+    Then the result should be, in any order, with relax comparison:
+      | like._dst |
+      | /[+-]?\d+/ |
+      | /[+-]?\d+/ |
+
+  @skip
+  Scenario: go step filter & step limit
+    When executing query:
+      """
+      GO FROM hash("Tim Duncan") OVER like WHERE [like._dst == "Tony Parker"]  LIMIT [1];
+      """
+    Then the result should be, in any order, with relax comparison:
+      | like._dst |
+    When executing query:
+      """
+      GO 3 STEPS FROM hash("Tim Duncan") OVER like WHERE [like._dst == "Tony Parker", $$.player.age>20, $$.player.age>22] LIMIT [1, 2, 2];
+      """
+    Then the result should be, in any order, with relax comparison:
+      | like._dst |
+
+  Scenario: go step sample
+    When executing query:
+      """
+      GO FROM hash("Tim Duncan") OVER like SAMPLE [10,10];
+      """
+    Then a SemanticError should be raised at runtime:
+    When executing query:
+      """
+      GO FROM hash("Tim Duncan") OVER like SAMPLE ["10"];
+      """
+    Then a SemanticError should be raised at runtime:
+    When executing query:
+      """
+      GO FROM hash("Tim Duncan") OVER like SAMPLE [a];
+      """
+    Then a SemanticError should be raised at runtime:
+    When executing query:
+      """
+      GO FROM hash("Tim Duncan") OVER like SAMPLE [1];
+      """
+    Then the result should be, in any order, with relax comparison:
+      | like._dst |
+      | /[+-]?\d+/ |
+    When executing query:
+      """
+      GO 3 STEPS FROM hash("Tim Duncan") OVER like SAMPLE [1, 3, 2];
+      """
+    Then the result should be, in any order, with relax comparison:
+      | like._dst |
+      | /[+-]?\d+/ |
+      | /[+-]?\d+/ |
+
+  @skip
+  Scenario: go step filter & step sample
+    When executing query:
+      """
+      GO FROM hash("Tim Duncan") OVER like WHERE [like._dst == "Tony Parker"]  SAMPLE [1];
+      """
+    Then the result should be, in any order, with relax comparison:
+      | like._dst |
+    When executing query:
+      """
+      GO 3 STEPS FROM hash("Tim Duncan") OVER like WHERE [like._dst == "Tony Parker", $$.player.age>20, $$.player.age>22] SAMPLE [1, 2, 2];
+      """
+    Then the result should be, in any order, with relax comparison:
+      | like._dst |
+
   Scenario: go from vertices looked up by index
     When executing query:
       """

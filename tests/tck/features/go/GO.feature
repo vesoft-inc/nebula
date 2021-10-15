@@ -1732,7 +1732,6 @@ Feature: Go Sentence
     Then the result should be, in any order:
       | serve._dst |
 
-  @skip
   Scenario: go step limit
     When executing query:
       """
@@ -1755,12 +1754,15 @@ Feature: Go Sentence
       """
     Then the result should be, in any order, with relax comparison:
       | like._dst |
+      | /[\s\w]+/ |
     When executing query:
       """
       GO 3 STEPS FROM "Tim Duncan" OVER like LIMIT [1, 2, 2];
       """
     Then the result should be, in any order, with relax comparison:
       | like._dst |
+      | /[\s\w]+/ |
+      | /[\s\w]+/ |
 
   @skip
   Scenario: go step filter & step limit
@@ -1777,7 +1779,6 @@ Feature: Go Sentence
     Then the result should be, in any order, with relax comparison:
       | like._dst |
 
-  @skip
   Scenario: go step sample
     When executing query:
       """
@@ -1800,12 +1801,15 @@ Feature: Go Sentence
       """
     Then the result should be, in any order, with relax comparison:
       | like._dst |
+      | /[\s\w]+/ |
     When executing query:
       """
       GO 3 STEPS FROM "Tim Duncan" OVER like SAMPLE [1, 3, 2];
       """
     Then the result should be, in any order, with relax comparison:
       | like._dst |
+      | /[\s\w]+/ |
+      | /[\s\w]+/ |
 
   @skip
   Scenario: go step filter & step sample
