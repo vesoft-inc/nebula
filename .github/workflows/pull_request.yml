@@ -97,7 +97,7 @@ jobs:
                   -DENABLE_COVERAGE=on \
                   -B build
               echo "::set-output name=j::10"
-              echo "::set-output name=t::10"
+              echo "::set-output name=t::6"
               ;;
             esac
             ;;
@@ -117,6 +117,7 @@ jobs:
       - name: Make
         run: |
           ccache -z
+          cmake --build build/ -j $(nproc) --target nebula-metad nebula-storaged nebula-graphd
           cmake --build build/ -j ${{ steps.cmake.outputs.t }}
           ccache -s
       - name: CTest

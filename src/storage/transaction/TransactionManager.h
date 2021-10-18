@@ -90,6 +90,8 @@ class TransactionManager {
   // this is a callback register to Part::onElected
   void onLeaderElectedWrapper(const ::nebula::kvstore::Part::CallbackOptions& options);
 
+  void onLeaderLostWrapper(const ::nebula::kvstore::Part::CallbackOptions& options);
+
  protected:
   using PartUUID = std::pair<GraphSpaceID, PartitionID>;
 

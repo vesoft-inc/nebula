@@ -116,15 +116,18 @@ class Part : public raftex::RaftPart {
     TermID term;
   };
 
-  using LeaderReadyCB = std::function<void(const CallbackOptions& opt)>;
-  void registerOnLeaderReady(LeaderReadyCB cb);
+  using LeaderChagneCB = std::function<void(const CallbackOptions& opt)>;
+  void registerOnLeaderReady(LeaderChagneCB cb);
+
+  void registerOnLeaderLost(LeaderChagneCB cb);
 
  protected:
   GraphSpaceID spaceId_;
   PartitionID partId_;
   std::string walPath_;
   NewLeaderCallback newLeaderCb_ = nullptr;
-  std::vector<LeaderReadyCB> leaderReadyCB_;
+  std::vector<LeaderChagneCB> leaderReadyCB_;
+  std::vector<LeaderChagneCB> leaderLostCB_;
 
  private:
   KVEngine* engine_ = nullptr;

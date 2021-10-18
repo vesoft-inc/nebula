@@ -36,11 +36,12 @@ folly::Future<Status> IndexScanExecutor::indexScan() {
     return Status::Error("There is no index to use at runtime");
   }
 
+  GraphStorageClient::CommonRequestParam param(lookup->space(),
+                                               qctx()->rctx()->session()->id(),
+                                               qctx()->plan()->id(),
+                                               qctx()->plan()->isProfileEnabled());
   return storageClient
-      ->lookupIndex(lookup->space(),
-                    qctx()->rctx()->session()->id(),
-                    qctx()->plan()->id(),
-                    qctx()->plan()->isProfileEnabled(),
+      ->lookupIndex(param,
                     ictxs,
                     lookup->isEdge(),
                     lookup->schemaId(),
