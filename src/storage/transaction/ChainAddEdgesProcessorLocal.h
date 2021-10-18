@@ -133,7 +133,8 @@ class ChainAddEdgesProcessorLocal : public BaseProcessor<cpp2::ExecResponse>,
   cpp2::AddEdgesRequest req_;
   std::unique_ptr<TransactionManager::LockGuard> lk_{nullptr};
   int retryLimit_{10};
-  TermID localTerm_{-1};
+  // need to restrict all the phase in the same term.
+  TermID restrictTerm_{-1};
   // set to true when prime insert succeed
   // in processLocal(), we check this to determine if need to do abort()
   bool primeInserted_{false};
