@@ -88,7 +88,7 @@ uint32_t Cpp2Ops<nebula::Edge>::write(Protocol* proto, nebula::Edge const* obj) 
   xfer += proto->writeFieldBegin("props", apache::thrift::protocol::T_MAP, 6);
   xfer += detail::pm::protocol_methods<
       type_class::map<type_class::binary, type_class::structure>,
-      std::unordered_map<std::string, nebula::Value> >::write(*proto, obj->props);
+      std::unordered_map<std::string, nebula::Value>>::write(*proto, obj->props);
   xfer += proto->writeFieldEnd();
 
   xfer += proto->writeFieldStop();
@@ -145,8 +145,8 @@ _readField_ranking : {
 _readField_props : {
   obj->props = std::unordered_map<std::string, nebula::Value>();
   detail::pm::protocol_methods<type_class::map<type_class::binary, type_class::structure>,
-                               std::unordered_map<std::string, nebula::Value> >::read(*proto,
-                                                                                      obj->props);
+                               std::unordered_map<std::string, nebula::Value>>::read(*proto,
+                                                                                     obj->props);
 }
 
   if (UNLIKELY(!readState.advanceToNextField(proto, 6, 0, protocol::T_STOP))) {
@@ -248,7 +248,7 @@ uint32_t Cpp2Ops<nebula::Edge>::serializedSize(Protocol const* proto, nebula::Ed
   xfer += proto->serializedFieldSize("props", apache::thrift::protocol::T_MAP, 6);
   xfer += detail::pm::protocol_methods<
       type_class::map<type_class::binary, type_class::structure>,
-      std::unordered_map<std::string, nebula::Value> >::serializedSize<false>(*proto, obj->props);
+      std::unordered_map<std::string, nebula::Value>>::serializedSize<false>(*proto, obj->props);
 
   xfer += proto->serializedSizeStop();
   return xfer;
@@ -281,7 +281,7 @@ uint32_t Cpp2Ops<nebula::Edge>::serializedSizeZC(Protocol const* proto, nebula::
   xfer += proto->serializedFieldSize("props", apache::thrift::protocol::T_MAP, 6);
   xfer += detail::pm::protocol_methods<
       type_class::map<type_class::binary, type_class::structure>,
-      std::unordered_map<std::string, nebula::Value> >::serializedSize<false>(*proto, obj->props);
+      std::unordered_map<std::string, nebula::Value>>::serializedSize<false>(*proto, obj->props);
 
   xfer += proto->serializedSizeStop();
   return xfer;
