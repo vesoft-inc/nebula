@@ -94,6 +94,14 @@ Status FetchVerticesValidator::validateYield(YieldClause *yield) {
       extractVertexProp(exprProps);
       break;
     }
+    auto *expr = ExpressionUtils::findAny(col->expr(), {Expression::Kind::kFunctionCall});
+    if (expr != nullptr) {
+      const auto &name = static_cast<const FunctionCallExpression *>(expr)->name();
+      if (name == "properties") {
+        extractVertexProp(exprProps);
+        break;
+      }
+    }
   }
 
   for (auto col : yield->columns()) {
