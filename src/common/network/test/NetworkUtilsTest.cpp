@@ -99,6 +99,10 @@ TEST(NetworkUtils, ValidateHostOrIp) {
   result = NetworkUtils::validateHostOrIp(hostOrIp);
   EXPECT_TRUE(result.ok());
 
+  hostOrIp = "000.000.000.000";
+  result = NetworkUtils::validateHostOrIp(hostOrIp);
+  EXPECT_FALSE(result.ok());
+
   hostOrIp = "0.0.0.0.0";
   result = NetworkUtils::validateHostOrIp(hostOrIp);
   EXPECT_FALSE(result.ok());
