@@ -91,7 +91,7 @@ class ConsistUtil final {
 
   static int64_t getTimestamp(const std::string& val) noexcept;
 
-  static cpp2::AddEdgesRequest makeDirectAddReq(const cpp2::ChainAddEdgesRequest& req);
+  static cpp2::AddEdgesRequest toAddEdgesRequest(const cpp2::ChainAddEdgesRequest& req);
 
   static cpp2::EdgeKey reverseEdgeKey(const cpp2::EdgeKey& edgeKey);
 
