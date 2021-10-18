@@ -57,7 +57,7 @@ void QueryEngine::execute(RequestContextPtr rctx) {
 
 Status QueryEngine::setupMemoryMonitorThread() {
   memoryMonitorThread_ = std::make_unique<thread::GenericWorker>();
-  if (!memoryMonitorThread_ || !memoryMonitorThread_->start("query-engine-bg")) {
+  if (!memoryMonitorThread_ || !memoryMonitorThread_->start("graph-memory-monitor")) {
     return Status::Error("Fail to start query engine background thread.");
   }
 
