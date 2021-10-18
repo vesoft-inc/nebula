@@ -97,7 +97,7 @@ jobs:
                   -DENABLE_COVERAGE=on \
                   -B build
               echo "::set-output name=j::10"
-              echo "::set-output name=t::10"
+              echo "::set-output name=t::7"
               ;;
             esac
             ;;
