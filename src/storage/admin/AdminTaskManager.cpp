@@ -195,6 +195,9 @@ void AdminTaskManager::shutdown() {
   if (unreportedAdminThread_ != nullptr) {
     unreportedAdminThread_->join();
   }
+  if (env_) {
+    env_->adminStore_.reset();
+  }
   LOG(INFO) << "exit AdminTaskManager::shutdown()";
 }
 
