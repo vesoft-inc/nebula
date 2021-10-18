@@ -91,12 +91,12 @@ def start_nebula(nb, configs):
         address = "localhost"
         ports = nb.start(
             debug_log=opt_is(configs.debug, "true"),
-            multi_graphd=configs.multi_graphd,
+            multi_graphd=opt_is(configs.multi_graphd, "true"),
             ca_signed=opt_is(configs.ca_signed, "true"),
-            enable_ssl=opt_is(configs.enable_ssl, "true"),
-            enable_graph_ssl=opt_is(configs.enable_graph_ssl, "true"),
-            enable_meta_ssl=opt_is(configs.enable_meta_ssl, "true"),
-            containerized=opt_is(configs.containerized, "true")
+            enable_ssl=configs.enable_ssl,
+            enable_graph_ssl=configs.enable_graph_ssl,
+            enable_meta_ssl=configs.enable_meta_ssl,
+            containerized=configs.containerized
         )
 
     # Load csv data
