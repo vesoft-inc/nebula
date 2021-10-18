@@ -35,6 +35,7 @@ void ChainAddEdgesProcessorLocal::process(const cpp2::AddEdgesRequest& req) {
 folly::SemiFuture<Code> ChainAddEdgesProcessorLocal::prepareLocal() {
   if (FLAGS_trace_toss) {
     uuid_ = ConsistUtil::strUUID();
+    LOG(INFO) << uuid_ << " dumpAddEdgeReq: " << ConsistUtil::dumpAddEdgeReq(req_);
     readableEdgeDesc_ = makeReadableEdge(req_);
     if (!readableEdgeDesc_.empty()) {
       uuid_.append(" ").append(readableEdgeDesc_);
@@ -92,7 +93,7 @@ folly::SemiFuture<Code> ChainAddEdgesProcessorLocal::processLocal(Code code) {
     VLOG(1) << uuid_ << " processRemote(), code = " << apache::thrift::util::enumNameSafe(code);
   }
 
-  bool remoteFailed{true};
+  bool remoteFailed{true};  // iff remote report failed (not include rpc time out.)
 
   if (code == Code::SUCCEEDED) {
     // do nothing
@@ -306,7 +307,6 @@ std::vector<kvstore::KV> ChainAddEdgesProcessorLocal::makeDoublePrime() {
 void ChainAddEdgesProcessorLocal::erasePrime() {
   auto fn = [&](const cpp2::NewEdge& edge) {
     auto key = ConsistUtil::primeKey(spaceVidLen_, localPartId_, edge.get_key());
-    // VLOG(1) << uuid_ << "prepare to erase prime " << folly::hexlify(key);
     return key;
   };
   for (auto& edge : req_.get_parts().begin()->second) {
@@ -317,7 +317,6 @@ void ChainAddEdgesProcessorLocal::erasePrime() {
 void ChainAddEdgesProcessorLocal::eraseDoublePrime() {
   auto fn = [&](const cpp2::NewEdge& edge) {
     auto key = ConsistUtil::doublePrime(spaceVidLen_, localPartId_, edge.get_key());
-    // VLOG(1) << uuid_ << "prepare to erase double prime " << folly::hexlify(key);
     return key;
   };
   for (auto& edge : req_.get_parts().begin()->second) {

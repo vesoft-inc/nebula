@@ -183,7 +183,6 @@ std::string ConsistUtil::dumpAddEdgeReq(const cpp2::AddEdgesRequest& req) {
   }
   oss << " ";
   for (auto& part : req.get_parts()) {
-    // oss << dumpParts(part.second);
     for (auto& edge : part.second) {
       oss << " edge: " << folly::hexlify(edge.get_key().get_src().toString()) << "->"
           << folly::hexlify(edge.get_key().get_dst().toString())
