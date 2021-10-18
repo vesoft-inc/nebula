@@ -95,7 +95,7 @@ void InternalStorageClient::chainAddEdges(cpp2::AddEdgesRequest& directReq,
   }
   HostAddr& leader = optLeader.value();
   leader.port += kInternalPortOffset;
-  VLOG(1) << "leader host: " << leader;
+  VLOG(2) << "leader host: " << leader;
 
   cpp2::ChainAddEdgesRequest chainReq = makeChainAddReq(directReq, termId, optVersion);
   auto resp = getResponse(
