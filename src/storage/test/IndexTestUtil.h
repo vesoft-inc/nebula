@@ -120,33 +120,13 @@ class MockKVStore : public ::nebula::kvstore::KVStore {
                                 const std::string& end,
                                 std::unique_ptr<KVIterator>* iter,
                                 bool canReadFromFollower = false) override {
-    return range(spaceId, partId, true, start, false, end, iter, canReadFromFollower);
-  }
-  nebula::cpp2::ErrorCode range(GraphSpaceID spaceId,
-                                PartitionID partId,
-                                bool includeStart,
-                                const std::string& start,
-                                bool includeEnd,
-                                const std::string& end,
-                                std::unique_ptr<KVIterator>* iter,
-                                bool canReadFromFollower = false) override {
     UNUSED(spaceId);
     UNUSED(partId);
     UNUSED(canReadFromFollower);
     CHECK_EQ(spaceId, spaceId_);
     std::unique_ptr<MockKVIterator> mockIter;
-    if (!includeStart) {
-      mockIter = std::make_unique<MockKVIterator>(kv_, kv_.upper_bound(start));
-    } else {
-      mockIter = std::make_unique<MockKVIterator>(kv_, kv_.lower_bound(start));
-    }
-    mockIter->setValidFunc([includeEnd, end](const decltype(kv_)::iterator& it) {
-      DVLOG(2) << includeEnd;
-      size_t len = end.size();
-      int ret = memcmp(it->first.data(), end.data(), len);
-      DVLOG(2) << ret;
-      return includeEnd ? ret <= 0 : ret < 0;
-    });
+    mockIter = std::make_unique<MockKVIterator>(kv_, kv_.lower_bound(start));
+    mockIter->setValidFunc([end](const decltype(kv_)::iterator& it) { return it->first < end; });
     (*iter) = std::move(mockIter);
     return ::nebula::cpp2::ErrorCode::SUCCEEDED;
   }
@@ -397,6 +377,7 @@ class MockKVStore : public ::nebula::kvstore::KVStore {
 };
 class MockIndexNode : public IndexNode {
  public:
+  explicit MockIndexNode(RuntimeContext* context) : IndexNode(context, "MockIndexNode") {}
   ::nebula::cpp2::ErrorCode init(InitContext& initCtx) { return initFunc(initCtx); }
   std::unique_ptr<IndexNode> copy() { LOG(FATAL) << "Unexpect"; }
   std::function<ErrorOr<Row>(bool&)> nextFunc;
@@ -406,6 +387,8 @@ class MockIndexNode : public IndexNode {
  private:
   ErrorOr<Row> doNext(bool& hasNext) override { return nextFunc(hasNext); }
   ::nebula::cpp2::ErrorCode doExecute(PartitionID partId) override { return executeFunc(partId); };
+  int offset_;
+  int total_;
 };
 
 class RowParser {

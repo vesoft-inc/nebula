@@ -63,12 +63,6 @@ class KVEngine {
                                         const std::string& end,
                                         std::unique_ptr<KVIterator>* iter) = 0;
 
-  virtual nebula::cpp2::ErrorCode range(bool includeStart,
-                                        const std::string& start,
-                                        bool includeEnd,
-                                        const std::string& end,
-                                        std::unique_ptr<KVIterator>* iter) = 0;
-
   // Get all results with 'prefix' str as prefix.
   virtual nebula::cpp2::ErrorCode prefix(const std::string& prefix,
                                          std::unique_ptr<KVIterator>* iter) = 0;

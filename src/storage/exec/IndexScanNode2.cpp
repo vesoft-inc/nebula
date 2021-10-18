@@ -10,7 +10,8 @@ namespace storage {
 // Define of Path
 Path::Path(nebula::meta::cpp2::IndexItem* index,
            const meta::SchemaProviderIf* schema,
-           const std::vector<cpp2::IndexColumnHint>& hints)
+           const std::vector<cpp2::IndexColumnHint>& hints,
+           int64_t vidLen)
     : index_(index), schema_(schema), hints_(hints) {
   bool nullFlag = false;
   for (auto field : index->get_fields()) {
@@ -21,6 +22,7 @@ Path::Path(nebula::meta::cpp2::IndexItem* index,
     auto type = IndexKeyUtils::toValueType(field.get_type().get_type());
     auto tmpStr = IndexKeyUtils::encodeNullValue(type, field.get_type().get_type_length());
     index_nullable_offset_ += tmpStr.size();
+    totalKeyLength_ += tmpStr.size();
   }
   for (auto x : nullable_) {
     DVLOG(1) << x;
@@ -28,16 +30,26 @@ Path::Path(nebula::meta::cpp2::IndexItem* index,
   DVLOG(1) << nullFlag;
   if (!nullFlag) {
     nullable_.clear();
+  } else {
+    totalKeyLength_ += 2;
+  }
+  if (index_->get_schema_id().tag_id_ref().has_value()) {
+    totalKeyLength_ += vidLen;
+    suffixLength_ = vidLen;
+  } else {
+    totalKeyLength_ += vidLen * 2 + sizeof(EdgeRanking);
+    suffixLength_ = vidLen * 2 + sizeof(EdgeRanking);
   }
 }
 std::unique_ptr<Path> Path::make(nebula::meta::cpp2::IndexItem* index,
                                  const meta::SchemaProviderIf* schema,
-                                 const std::vector<cpp2::IndexColumnHint>& hints) {
+                                 const std::vector<cpp2::IndexColumnHint>& hints,
+                                 int64_t vidLen) {
   std::unique_ptr<Path> ret;
   if (hints.back().get_scan_type() == cpp2::ScanType::RANGE) {
-    ret.reset(new RangePath(index, schema, hints));
+    ret.reset(new RangePath(index, schema, hints, vidLen));
   } else {
-    ret.reset(new PrefixPath(index, schema, hints));
+    ret.reset(new PrefixPath(index, schema, hints, vidLen));
   }
   return ret;
 }
@@ -53,26 +65,32 @@ std::string Path::encodeValue(const Value& value,
                               size_t index,
                               std::string& key) {
   std::string val;
+  bool isNull = false;
   if (value.type() == Value::Type::STRING) {
     val = IndexKeyUtils::encodeValue(value, *colDef.get_type_length());
     if (val.back() != '\0') {
       QFList_.clear();
       QFList_.emplace_back([](const std::string&) { return Qualified::UNCERTAIN; });
     }
+  } else if (value.type() == Value::Type::NULLVALUE) {
+    auto vtype = IndexKeyUtils::toValueType(colDef.get_type());
+    val = IndexKeyUtils::encodeNullValue(vtype, colDef.get_type_length());
+    isNull = true;
   } else {
     val = IndexKeyUtils::encodeValue(value);
   }
   if (!nullable_.empty() && nullable_[index] == true) {
-    QFList_.emplace_back(
-        [isNull = value.isNull(), index, offset = index_nullable_offset_](const std::string& k) {
-          std::bitset<16> nullableBit;
-          auto v = *reinterpret_cast<const u_short*>(k.data() + offset);
-          nullableBit = v;
-          DVLOG(3) << isNull;
-          DVLOG(3) << nullableBit.test(15 - index);
-          return nullableBit.test(15 - index) ^ isNull ? Qualified::INCOMPATIBLE
-                                                       : Qualified::COMPATIBLE;
-        });
+    QFList_.emplace_back([isNull, index, offset = index_nullable_offset_](const std::string& k) {
+      std::bitset<16> nullableBit;
+      auto v = *reinterpret_cast<const u_short*>(k.data() + offset);
+      nullableBit = v;
+      DVLOG(3) << isNull;
+      DVLOG(3) << nullableBit.test(15 - index);
+      return nullableBit.test(15 - index) ^ isNull ? Qualified::INCOMPATIBLE
+                                                   : Qualified::COMPATIBLE;
+    });
+  } else if (isNull) {
+    QFList_.emplace_back([](const std::string&) { return Qualified::INCOMPATIBLE; });
   }
   key.append(val);
   return val;
@@ -82,8 +100,9 @@ std::string Path::encodeValue(const Value& value,
 // Define of RangePath
 RangePath::RangePath(nebula::meta::cpp2::IndexItem* index,
                      const meta::SchemaProviderIf* schema,
-                     const std::vector<cpp2::IndexColumnHint>& hints)
-    : Path(index, schema, hints) {
+                     const std::vector<cpp2::IndexColumnHint>& hints,
+                     int64_t vidLen)
+    : Path(index, schema, hints, vidLen) {
   buildKey();
 }
 void RangePath::resetPart(PartitionID partId) {
@@ -130,104 +149,144 @@ void RangePath::buildKey() {
     encodeValue(hint.get_begin_value(), fieldIter->get_type(), i, common);
   }
   auto& hint = hints_.back();
-  startKey_ = common;
-  endKey_ = std::move(common);
   size_t index = hints_.size() - 1;
-  if (hint.begin_value_ref().is_set()) {
-    encodeBeginValue(hint.get_begin_value(), fieldIter->get_type(), index, startKey_);
-    includeStart_ = hint.get_include_begin();
-  } else {
-    includeStart_ = false;
+  auto [a, b] = encodeRange(hint, fieldIter->get_type(), index, common.size());
+  startKey_ = common + a;
+  endKey_ = common + b;
+  if (!hint.end_value_ref().is_set()) {
+    endKey_.append(totalKeyLength_ - endKey_.size() + 1, '\xFF');
   }
-  if (hint.end_value_ref().is_set()) {
-    encodeEndValue(hint.get_end_value(), fieldIter->get_type(), index, endKey_);
-    includeEnd_ = hint.get_include_end();
-  } else {
-    endKey_.append(startKey_.size() - endKey_.size(), '\xFF');
-    includeEnd_ = true;
-  }
+  DVLOG(2) << "start key:\n" << folly::hexDump(startKey_.data(), startKey_.size());
+  DVLOG(2) << "end key:\n" << folly::hexDump(endKey_.data(), endKey_.size());
 }
-std::string RangePath::encodeBeginValue(const Value& value,
-                                        const ColumnTypeDef& colDef,
-                                        size_t index,
-                                        std::string& key) {
-  std::string val = IndexKeyUtils::encodeValue(value, colDef.type_length_ref().value_or(0));
-  if (value.type() == Value::Type::STRING && val.back() != '\0') {
-    QFList_.emplace_back([&startKey = this->startKey_, startPos = key.size(), length = val.size()](
-                             const std::string& k) {
-      int ret = memcmp(startKey.data() + startPos, k.data() + startPos, length);
-      CHECK_LE(ret, 0);
-      return ret == 0 ? Qualified::UNCERTAIN : Qualified::COMPATIBLE;
-    });
-  } else {
-    QFList_.emplace_back([&startKey = this->startKey_,
-                          &allowEq = this->includeStart_,
-                          startPos = key.size(),
-                          length = val.size()](const std::string& k) {
-      int ret = memcmp(startKey.data() + startPos, k.data() + startPos, length);
-      DVLOG(3) << '\n' << folly::hexDump(startKey.data() + startPos, length);
-      DVLOG(3) << '\n' << folly::hexDump(k.data() + startPos, length);
-      CHECK_LE(ret, 0);
-      return (ret == 0 && !allowEq) ? Qualified::INCOMPATIBLE : Qualified::COMPATIBLE;
-    });
+std::tuple<std::string, std::string> RangePath::encodeRange(
+    const cpp2::IndexColumnHint& hint,
+    const nebula::meta::cpp2::ColumnTypeDef& colTypeDef,
+    size_t colIndex,
+    size_t offset) {
+  std::string startKey, endKey;
+  bool needCheckNullable = !nullable_.empty() && nullable_[colIndex];
+  if (hint.end_value_ref().is_set()) {
+    includeEnd_ = hint.get_include_end();
+    auto tmp = encodeEndValue(hint.get_end_value(), colTypeDef, endKey, offset);
+    if (memcmp(tmp.data(), std::string(tmp.size(), '\xFF').data(), tmp.size() != 0)) {
+      needCheckNullable &= false;
+    }
   }
-  if (value.isFloat()) {
-    QFList_.emplace_back([startPos = key.size(), length = val.size()](const std::string& k) {
-      std::string s(length, '\xFF');
-      return memcmp(k.data() + startPos, s.data(), length) == 0 ? Qualified::INCOMPATIBLE
-                                                                : Qualified::COMPATIBLE;
-    });
-  } else if (!nullable_.empty() && nullable_[index] == true) {
-    QFList_.emplace_back([index, offset = index_nullable_offset_](const std::string& k) {
+  if (hint.begin_value_ref().is_set()) {
+    includeStart_ = hint.get_include_begin();
+    encodeBeginValue(hint.get_begin_value(), colTypeDef, startKey, offset);
+  }
+  if (UNLIKELY(needCheckNullable)) {
+    QFList_.emplace_back([colIndex, offset = index_nullable_offset_](const std::string& k) {
       DVLOG(1) << "check null";
       std::bitset<16> nullableBit;
       auto v = *reinterpret_cast<const u_short*>(k.data() + offset);
       nullableBit = v;
       DVLOG(1) << nullableBit;
-      DVLOG(1) << nullableBit.test(15 - index);
-      return nullableBit.test(15 - index) ? Qualified::INCOMPATIBLE : Qualified::COMPATIBLE;
+      DVLOG(1) << nullableBit.test(15 - colIndex);
+      return nullableBit.test(15 - colIndex) ? Qualified::INCOMPATIBLE : Qualified::COMPATIBLE;
     });
+  }
+  return {startKey, endKey};
+}
+std::string RangePath::encodeBeginValue(const Value& value,
+                                        const ColumnTypeDef& colDef,
+                                        std::string& key,
+                                        size_t offset) {
+  std::string val;
+  bool greater = !includeStart_;
+  CHECK_NE(value.type(), Value::Type::NULLVALUE);
+  if (value.type() == Value::Type::STRING) {
+    bool truncated = false;
+    val = encodeString(value, *colDef.get_type_length(), truncated);
+    greater &= !truncated;
+    if (UNLIKELY(truncated)) {
+      QFList_.emplace_back([&startKey = this->startKey_,
+                            startPos = key.size(),
+                            length = val.size()](const std::string& k) {
+        int ret = memcmp(startKey.data() + startPos, k.data() + startPos, length);
+        CHECK_LE(ret, 0);
+        return ret == 0 ? Qualified::UNCERTAIN : Qualified::COMPATIBLE;
+      });
+    }
+  } else if (value.type() == Value::Type::FLOAT) {
+    bool isNaN = false;
+    val = encodeFloat(value, isNaN);
+    greater |= isNaN;
+    // TODO(hs.zhang): Optimize the logic of judging NaN
+    QFList_.emplace_back([startPos = offset, length = val.size()](const std::string& k) {
+      int ret = memcmp("\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF", k.data() + startPos, length);
+      return ret == 0 ? Qualified::INCOMPATIBLE : Qualified::COMPATIBLE;
+    });
+  } else {
+    val = IndexKeyUtils::encodeValue(value);
+  }
+  if (greater) {
+    val.append(suffixLength_ + 1, '\xFF');
   }
   key += val;
   return val;
 }
 std::string RangePath::encodeEndValue(const Value& value,
                                       const ColumnTypeDef& colDef,
-                                      size_t index,
-                                      std::string& key) {
-  std::string val = IndexKeyUtils::encodeValue(value, colDef.type_length_ref().value_or(0));
-  if (value.type() == Value::Type::STRING && val.back() != '\0') {
-    QFList_.emplace_back([&endKey = this->endKey_, startPos = key.size(), length = val.size()](
-                             const std::string& k) {
-      int ret = memcmp(endKey.data() + startPos, k.data() + startPos, length);
-      CHECK_GE(ret, 0);
-      return ret == 0 ? Qualified::UNCERTAIN : Qualified::COMPATIBLE;
-    });
+                                      std::string& key,
+                                      size_t offset) {
+  CHECK_NE(value.type(), Value::Type::NULLVALUE);
+  std::string val;
+  bool greater = includeEnd_;
+  if (value.type() == Value::Type::STRING) {
+    bool truncated = false;
+    val = encodeString(value, *colDef.get_type_length(), truncated);
+    greater |= truncated;
+    if (UNLIKELY(truncated)) {
+      QFList_.emplace_back([&endKey = this->endKey_, startPos = key.size(), length = val.size()](
+                               const std::string& k) {
+        int ret = memcmp(endKey.data() + startPos, k.data() + startPos, length);
+        CHECK_LE(ret, 0);
+        return ret == 0 ? Qualified::UNCERTAIN : Qualified::COMPATIBLE;
+      });
+    }
+  } else if (value.type() == Value::Type::FLOAT) {
+    bool isNaN = false;
+    val = encodeFloat(value, isNaN);
+    greater |= isNaN;
+    if (UNLIKELY(isNaN)) {
+      QFList_.emplace_back([startPos = offset, length = val.size()](const std::string& k) {
+        DLOG(INFO) << "check NaN:" << startPos << "\t" << length;
+        DLOG(INFO) << '\n' << folly::hexDump(k.data(), k.size());
+        int ret = memcmp("\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF", k.data() + startPos, length);
+        return ret == 0 ? Qualified::INCOMPATIBLE : Qualified::COMPATIBLE;
+      });
+    }
   } else {
-    QFList_.emplace_back([&endKey = this->endKey_,
-                          &allowEq = this->includeEnd_,
-                          startPos = key.size(),
-                          length = val.size()](const std::string& k) {
-      int ret = memcmp(endKey.data() + startPos, k.data() + startPos, length);
-      CHECK_GE(ret, 0);
-      return (ret == 0 && !allowEq) ? Qualified::INCOMPATIBLE : Qualified::COMPATIBLE;
-    });
+    val = IndexKeyUtils::encodeValue(value);
   }
-  if (value.isFloat()) {
-    QFList_.emplace_back([startPos = key.size(), length = val.size()](const std::string& k) {
-      std::string s(length, '\xFF');
-      return memcmp(k.data() + startPos, s.data(), length) == 0 ? Qualified::INCOMPATIBLE
-                                                                : Qualified::COMPATIBLE;
-    });
-  } else if (!nullable_.empty() && nullable_[index] == true) {
-    QFList_.emplace_back([index, offset = index_nullable_offset_](const std::string& k) {
-      std::bitset<16> nullableBit;
-      auto v = *reinterpret_cast<const u_short*>(k.data() + offset);
-      nullableBit = v;
-      return nullableBit.test(15 - index) ? Qualified::INCOMPATIBLE : Qualified::COMPATIBLE;
-    });
+  DVLOG(2) << includeEnd_;
+  DVLOG(2) << greater;
+  if (greater) {
+    val.append(suffixLength_ + 1, '\xFF');
   }
   key += val;
+  DVLOG(2) << '\n' << folly::hexDump(key.data(), key.size());
+  return val;
+}
+inline std::string RangePath::encodeString(const Value& value, size_t len, bool& truncated) {
+  std::string val = IndexKeyUtils::encodeValue(value);
+  if (val.size() < len) {
+    val.append(len - val.size(), '\x00');
+  } else {
+    val = val.substr(0, len);
+    truncated = true;
+  }
+  return val;
+}
+std::string RangePath::encodeFloat(const Value& value, bool& isNaN) {
+  std::string val = IndexKeyUtils::encodeValue(value);
+  // check NaN
+  if (UNLIKELY(memcmp(val.data(), "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF", val.size()) == 0)) {
+    isNaN = true;
+  }
   return val;
 }
 
@@ -236,8 +295,9 @@ std::string RangePath::encodeEndValue(const Value& value,
 // Define of PrefixPath
 PrefixPath::PrefixPath(nebula::meta::cpp2::IndexItem* index,
                        const meta::SchemaProviderIf* schema,
-                       const std::vector<cpp2::IndexColumnHint>& hints)
-    : Path(index, schema, hints) {
+                       const std::vector<cpp2::IndexColumnHint>& hints,
+                       int64_t vidLen)
+    : Path(index, schema, hints, vidLen) {
   buildKey();
 }
 Path::Qualified PrefixPath::qualified(const Map<std::string, Value>& rowData) {
@@ -302,7 +362,7 @@ IndexScanNode::IndexScanNode(const IndexScanNode& node)
   tmp.erase(kSrc);
   tmp.erase(kDst);
   needAccessBase_ = !tmp.empty();
-  path_ = Path::make(index_.get(), getSchema(), columnHints_);
+  path_ = Path::make(index_.get(), getSchema(), columnHints_, context_->vIdLen());
   return ::nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 nebula::cpp2::ErrorCode IndexScanNode::doExecute(PartitionID partId) {
@@ -377,15 +437,13 @@ nebula::cpp2::ErrorCode IndexScanNode::resetIter(PartitionID partId) {
   nebula::cpp2::ErrorCode ret;
   if (path_->isRange()) {
     auto rangePath = dynamic_cast<RangePath*>(path_.get());
-    ret = kvstore_->range(spaceId_,
-                          partId,
-                          rangePath->includeStart(),
-                          rangePath->getStartKey(),
-                          rangePath->includeEnd(),
-                          rangePath->getEndKey(),
-                          &iter_);
+    ret =
+        kvstore_->range(spaceId_, partId, rangePath->getStartKey(), rangePath->getEndKey(), &iter_);
   } else {
     auto prefixPath = dynamic_cast<PrefixPath*>(path_.get());
+    DVLOG(1) << '\n'
+             << folly::hexDump(prefixPath->getPrefixKey().data(),
+                               prefixPath->getPrefixKey().size());
     ret = kvstore_->prefix(spaceId_, partId, prefixPath->getPrefixKey(), &iter_);
   }
   return ret;

@@ -610,16 +610,6 @@ nebula::cpp2::ErrorCode NebulaStore::range(GraphSpaceID spaceId,
                                            const std::string& end,
                                            std::unique_ptr<KVIterator>* iter,
                                            bool canReadFromFollower) {
-  return range(spaceId, partId, true, start, false, end, iter, canReadFromFollower);
-}
-nebula::cpp2::ErrorCode NebulaStore::range(GraphSpaceID spaceId,
-                                           PartitionID partId,
-                                           bool includeStart,
-                                           const std::string& start,
-                                           bool includeEnd,
-                                           const std::string& end,
-                                           std::unique_ptr<KVIterator>* iter,
-                                           bool canReadFromFollower) {
   auto ret = part(spaceId, partId);
   if (!ok(ret)) {
     return error(ret);
@@ -628,8 +618,9 @@ nebula::cpp2::ErrorCode NebulaStore::range(GraphSpaceID spaceId,
   if (!checkLeader(part, canReadFromFollower)) {
     return nebula::cpp2::ErrorCode::E_LEADER_CHANGED;
   }
-  return part->engine()->range(includeStart, start, includeEnd, end, iter);
+  return part->engine()->range(start, end, iter);
 }
+
 nebula::cpp2::ErrorCode NebulaStore::prefix(GraphSpaceID spaceId,
                                             PartitionID partId,
                                             const std::string& prefix,

@@ -76,12 +76,14 @@ class Path {
   using ColumnTypeDef = ::nebula::meta::cpp2::ColumnTypeDef;
   Path(nebula::meta::cpp2::IndexItem* index,
        const meta::SchemaProviderIf* schema,
-       const std::vector<cpp2::IndexColumnHint>& hints);
+       const std::vector<cpp2::IndexColumnHint>& hints,
+       int64_t vidLen);
   virtual ~Path() = default;
 
   static std::unique_ptr<Path> make(::nebula::meta::cpp2::IndexItem* index,
                                     const meta::SchemaProviderIf* schema,
-                                    const std::vector<cpp2::IndexColumnHint>& hints);
+                                    const std::vector<cpp2::IndexColumnHint>& hints,
+                                    int64_t vidLen);
   Qualified qualified(const folly::StringPiece& key);
   virtual bool isRange() { return false; }
 
@@ -99,12 +101,15 @@ class Path {
   const std::vector<cpp2::IndexColumnHint>& hints_;
   std::vector<bool> nullable_;
   int64_t index_nullable_offset_{8};
+  int64_t totalKeyLength_{8};
+  int64_t suffixLength_;
 };
 class PrefixPath : public Path {
  public:
   PrefixPath(nebula::meta::cpp2::IndexItem* index,
              const meta::SchemaProviderIf* schema,
-             const std::vector<cpp2::IndexColumnHint>& hints);
+             const std::vector<cpp2::IndexColumnHint>& hints,
+             int64_t vidLen);
   // Override
   Qualified qualified(const Map<std::string, Value>& rowData) override;
   void resetPart(PartitionID partId) override;
@@ -119,7 +124,8 @@ class RangePath : public Path {
  public:
   RangePath(nebula::meta::cpp2::IndexItem* index,
             const meta::SchemaProviderIf* schema,
-            const std::vector<cpp2::IndexColumnHint>& hints);
+            const std::vector<cpp2::IndexColumnHint>& hints,
+            int64_t vidLen);
   // Override
   Qualified qualified(const Map<std::string, Value>& rowData) override;
   void resetPart(PartitionID partId) override;
@@ -136,14 +142,21 @@ class RangePath : public Path {
   bool includeEnd_ = false;
 
   void buildKey();
+  std::tuple<std::string, std::string> encodeRange(
+      const cpp2::IndexColumnHint& hint,
+      const nebula::meta::cpp2::ColumnTypeDef& colTypeDef,
+      size_t colIndex,
+      size_t offset);
+  inline std::string encodeString(const Value& value, size_t len, bool& truncated);
+  inline std::string encodeFloat(const Value& value, bool& isNaN);
   std::string encodeBeginValue(const Value& value,
                                const ColumnTypeDef& colDef,
-                               size_t index,
-                               std::string& key);
+                               std::string& key,
+                               size_t offset);
   std::string encodeEndValue(const Value& value,
                              const ColumnTypeDef& colDef,
-                             size_t index,
-                             std::string& key);
+                             std::string& key,
+                             size_t offset);
 };
 
 /* define inline functions */

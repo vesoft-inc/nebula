@@ -129,15 +129,6 @@ class NebulaStore : public KVStore, public Handler {
                                 std::unique_ptr<KVIterator>* iter,
                                 bool canReadFromFollower = false) override;
 
-  nebula::cpp2::ErrorCode range(GraphSpaceID spaceId,
-                                PartitionID partId,
-                                bool includeStart,
-                                const std::string& start,
-                                bool includeEnd,
-                                const std::string& end,
-                                std::unique_ptr<KVIterator>* iter,
-                                bool canReadFromFollower = false) override;
-
   // Delete the overloading with a rvalue `start' and `end'
   nebula::cpp2::ErrorCode range(GraphSpaceID spaceId,
                                 PartitionID partId,

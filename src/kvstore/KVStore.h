@@ -102,15 +102,6 @@ class KVStore {
                                         std::unique_ptr<KVIterator>* iter,
                                         bool canReadFromFollower = false) = 0;
 
-  virtual nebula::cpp2::ErrorCode range(GraphSpaceID spaceId,
-                                        PartitionID partId,
-                                        bool includeStart,
-                                        const std::string& start,
-                                        bool includeEnd,
-                                        const std::string& end,
-                                        std::unique_ptr<KVIterator>* iter,
-                                        bool canReadFromFollower = false) = 0;
-
   // Since the `range' interface will hold references to its 3rd & 4th
   // parameter, in `iter', thus the arguments must outlive `iter'. Here we
   // forbid one to invoke `range' with rvalues, which is the common mistake.

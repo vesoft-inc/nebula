@@ -201,25 +201,13 @@ std::vector<Status> RocksEngine::multiGet(const std::vector<std::string>& keys,
 nebula::cpp2::ErrorCode RocksEngine::range(const std::string& start,
                                            const std::string& end,
                                            std::unique_ptr<KVIterator>* storageIter) {
-  return range(true, start, false, end, storageIter);
-}
-
-nebula::cpp2::ErrorCode RocksEngine::range(bool includeStart,
-                                           const std::string& start,
-                                           bool includeEnd,
-                                           const std::string& end,
-                                           std::unique_ptr<KVIterator>* storageIter) {
   rocksdb::ReadOptions options;
   options.total_order_seek = FLAGS_enable_rocksdb_prefix_filtering;
   rocksdb::Iterator* iter = db_->NewIterator(options);
   if (iter) {
-    auto seekKey = start;
-    if (!includeStart) {
-      seekKey += '\0';
-    }
-    iter->Seek(rocksdb::Slice(seekKey));
+    iter->Seek(rocksdb::Slice(start));
   }
-  storageIter->reset(new RocksRangeIter(iter, includeStart, start, includeEnd, end));
+  storageIter->reset(new RocksRangeIter(iter, start, end));
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
