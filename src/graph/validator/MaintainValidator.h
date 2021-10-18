@@ -24,7 +24,7 @@ class CreateTagValidator final : public Validator {
  private:
   Status validateImpl() override;
 
-  std::unique_ptr<CreateContext> createCtx_;
+  std::unique_ptr<CreateSchemaContext> createCtx_;
 };
 
 class CreateEdgeValidator final : public Validator {
@@ -36,7 +36,7 @@ class CreateEdgeValidator final : public Validator {
  private:
   Status validateImpl() override;
 
-  std::unique_ptr<CreateContext> createCtx_;
+  std::unique_ptr<CreateSchemaContext> createCtx_;
 };
 
 class DescTagValidator final : public Validator {
@@ -90,7 +90,7 @@ class AlterTagValidator final : public Validator {
  private:
   Status validateImpl() override;
 
-  std::unique_ptr<AlterContext> alterCtx_;
+  std::unique_ptr<AlterSchemaContext> alterCtx_;
 };
 
 class AlterEdgeValidator final : public Validator {
@@ -102,7 +102,7 @@ class AlterEdgeValidator final : public Validator {
  private:
   Status validateImpl() override;
 
-  std::unique_ptr<AlterContext> alterCtx_;
+  std::unique_ptr<AlterSchemaContext> alterCtx_;
 };
 
 class ShowTagsValidator final : public Validator {

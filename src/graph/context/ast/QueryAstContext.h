@@ -157,12 +157,12 @@ struct FetchEdgesContext final : public AstContext {
   std::string inputVarName;
 };
 
-struct AlterContext final : public AstContext {
+struct AlterSchemaContext final : public AstContext {
   std::vector<meta::cpp2::AlterSchemaItem> schemaItems;
   meta::cpp2::SchemaProp schemaProps;
 };
 
-struct CreateContext final : public AstContext {
+struct CreateSchemaContext final : public AstContext {
   bool ifNotExist{false};
   std::string name;
   meta::cpp2::Schema schema;

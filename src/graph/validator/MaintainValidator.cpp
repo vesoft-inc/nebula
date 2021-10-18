@@ -70,10 +70,9 @@ static StatusOr<std::vector<meta::cpp2::AlterSchemaItem>> validateSchemaOpts(
     if (opType == meta::cpp2::AlterSchemaOp::DROP) {
       const auto &colNames = schemaOpt->columnNames();
       for (auto &colName : colNames) {
-        if (uniqueColName.find(*colName) != uniqueColName.end()) {
+        if (!uniqueColName.emplace(*colName).second) {
           return Status::SemanticError("Duplicate column name `%s'", colName->c_str());
         }
-        uniqueColName.emplace(*colName);
         meta::cpp2::ColumnDef column;
         column.name = *colName;
         schema.columns_ref().value().emplace_back(std::move(column));
@@ -81,10 +80,9 @@ static StatusOr<std::vector<meta::cpp2::AlterSchemaItem>> validateSchemaOpts(
     } else {
       const auto &specs = schemaOpt->columnSpecs();
       for (auto &spec : specs) {
-        if (uniqueColName.find(*spec->name()) != uniqueColName.end()) {
+        if (!uniqueColName.emplace(*spec->name()).second) {
           return Status::SemanticError("Duplicate column name `%s'", spec->name()->c_str());
         }
-        uniqueColName.emplace(*spec->name());
       }
       NG_LOG_AND_RETURN_IF_ERROR(validateColumns(specs, schema));
     }
@@ -133,16 +131,15 @@ static Status checkColName(const std::vector<ColumnSpecification *> specs) {
   std::unordered_set<std::string> uniqueColName;
   for (const auto &spec : specs) {
     auto name = *spec->name();
-    if (uniqueColName.find(name) != uniqueColName.end()) {
+    if (!uniqueColName.emplace(name).second) {
       return Status::SemanticError("Duplicate column name `%s'", name.c_str());
     }
-    uniqueColName.emplace(name);
   }
   return Status::OK();
 }
 
 Status CreateTagValidator::validateImpl() {
-  createCtx_ = getContext<CreateContext>();
+  createCtx_ = getContext<CreateSchemaContext>();
   auto sentence = static_cast<CreateTagSentence *>(sentence_);
   createCtx_->ifNotExist = sentence->isIfNotExist();
   auto name = *sentence->name();
@@ -165,7 +162,7 @@ Status CreateTagValidator::validateImpl() {
 }
 
 Status CreateEdgeValidator::validateImpl() {
-  createCtx_ = getContext<CreateContext>();
+  createCtx_ = getContext<CreateSchemaContext>();
   auto sentence = static_cast<CreateEdgeSentence *>(sentence_);
   createCtx_->ifNotExist = sentence->isIfNotExist();
   auto name = *sentence->name();
@@ -210,7 +207,7 @@ Status DescEdgeValidator::toPlan() {
 }
 
 Status AlterTagValidator::validateImpl() {
-  alterCtx_ = getContext<AlterContext>();
+  alterCtx_ = getContext<AlterSchemaContext>();
   auto sentence = static_cast<AlterTagSentence *>(sentence_);
   auto schemaItems = validateSchemaOpts(sentence->getSchemaOpts());
   NG_RETURN_IF_ERROR(schemaItems);
@@ -222,7 +219,7 @@ Status AlterTagValidator::validateImpl() {
 }
 
 Status AlterEdgeValidator::validateImpl() {
-  alterCtx_ = getContext<AlterContext>();
+  alterCtx_ = getContext<AlterSchemaContext>();
   auto sentence = static_cast<AlterEdgeSentence *>(sentence_);
   auto schemaItems = validateSchemaOpts(sentence->getSchemaOpts());
   NG_RETURN_IF_ERROR(schemaItems);

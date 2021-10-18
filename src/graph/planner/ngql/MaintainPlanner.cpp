@@ -13,7 +13,7 @@ namespace nebula {
 namespace graph {
 
 StatusOr<SubPlan> CreateTagPlanner::transform(AstContext* astCtx) {
-  auto createCtx = static_cast<CreateContext*>(astCtx);
+  auto createCtx = static_cast<CreateSchemaContext*>(astCtx);
   SubPlan plan;
   plan.root = plan.tail = CreateTag::make(createCtx->qctx,
                                           nullptr,
@@ -24,7 +24,7 @@ StatusOr<SubPlan> CreateTagPlanner::transform(AstContext* astCtx) {
 }
 
 StatusOr<SubPlan> CreateEdgePlanner::transform(AstContext* astCtx) {
-  auto createCtx = static_cast<CreateContext*>(astCtx);
+  auto createCtx = static_cast<CreateSchemaContext*>(astCtx);
   SubPlan plan;
   plan.root = plan.tail = CreateEdge::make(createCtx->qctx,
                                            nullptr,
@@ -35,7 +35,7 @@ StatusOr<SubPlan> CreateEdgePlanner::transform(AstContext* astCtx) {
 }
 
 StatusOr<SubPlan> AlterTagPlanner::transform(AstContext* astCtx) {
-  auto alterCtx = static_cast<AlterContext*>(astCtx);
+  auto alterCtx = static_cast<AlterSchemaContext*>(astCtx);
   auto qctx = alterCtx->qctx;
   auto name = *static_cast<const AlterTagSentence*>(alterCtx->sentence)->name();
   SubPlan plan;
@@ -49,7 +49,7 @@ StatusOr<SubPlan> AlterTagPlanner::transform(AstContext* astCtx) {
 }
 
 StatusOr<SubPlan> AlterEdgePlanner::transform(AstContext* astCtx) {
-  auto alterCtx = static_cast<AlterContext*>(astCtx);
+  auto alterCtx = static_cast<AlterSchemaContext*>(astCtx);
   auto qctx = alterCtx->qctx;
   auto name = *static_cast<const AlterEdgeSentence*>(alterCtx->sentence)->name();
   SubPlan plan;
