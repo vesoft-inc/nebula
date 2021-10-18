@@ -11,6 +11,8 @@
 #include "graph/service/GraphFlags.h"
 #include "graph/util/ScopedTimer.h"
 
+using nebula::storage::GraphStorageClient;
+
 namespace nebula {
 namespace graph {
 
@@ -21,14 +23,12 @@ folly::Future<Status> InsertVerticesExecutor::insertVertices() {
 
   auto *ivNode = asNode<InsertVertices>(node());
   time::Duration addVertTime;
+  auto plan = qctx()->plan();
+  GraphStorageClient::CommonRequestParam param(
+      ivNode->getSpace(), qctx()->rctx()->session()->id(), plan->id(), plan->isProfileEnabled());
   return qctx()
       ->getStorageClient()
-      ->addVertices(ivNode->getSpace(),
-                    qctx()->rctx()->session()->id(),
-                    qctx()->plan()->id(),
-                    ivNode->getVertices(),
-                    ivNode->getPropNames(),
-                    ivNode->getIfNotExists())
+      ->addVertices(param, ivNode->getVertices(), ivNode->getPropNames(), ivNode->getIfNotExists())
       .via(runner())
       .ensure([addVertTime]() {
         VLOG(1) << "Add vertices time: " << addVertTime.elapsedInUSec() << "us";
@@ -47,16 +47,13 @@ folly::Future<Status> InsertEdgesExecutor::insertEdges() {
 
   auto *ieNode = asNode<InsertEdges>(node());
   time::Duration addEdgeTime;
+  auto plan = qctx()->plan();
+  GraphStorageClient::CommonRequestParam param(
+      ieNode->getSpace(), qctx()->rctx()->session()->id(), plan->id(), plan->isProfileEnabled());
+  param.useExperimentalFeature = FLAGS_enable_experimental_feature;
   return qctx()
       ->getStorageClient()
-      ->addEdges(ieNode->getSpace(),
-                 qctx()->rctx()->session()->id(),
-                 qctx()->plan()->id(),
-                 ieNode->getEdges(),
-                 ieNode->getPropNames(),
-                 ieNode->getIfNotExists(),
-                 nullptr,
-                 FLAGS_enable_experimental_feature)
+      ->addEdges(param, ieNode->getEdges(), ieNode->getPropNames(), ieNode->getIfNotExists())
       .via(runner())
       .ensure(
           [addEdgeTime]() { VLOG(1) << "Add edge time: " << addEdgeTime.elapsedInUSec() << "us"; })
