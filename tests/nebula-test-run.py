@@ -42,7 +42,7 @@ def init_parser():
                           help='start or stop command')
     opt_parser.add_option('--multi_graphd',
                           dest='multi_graphd',
-                          default='',
+                          default='false',
                           help='Support multi graphds')
     opt_parser.add_option('--address',
                           dest='address',
