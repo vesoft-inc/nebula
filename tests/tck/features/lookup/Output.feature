@@ -6,8 +6,8 @@ Feature: Lookup with output
   Scenario: [1] tag output
     When executing query:
       """
-      LOOKUP ON player WHERE player.age == 40 |
-      FETCH PROP ON player $-.VertexID YIELD player.name
+      LOOKUP ON player WHERE player.age == 40 YIELD id(vertex) as id |
+      FETCH PROP ON player $-.id YIELD player.name
       """
     Then the result should be, in any order:
       | player.name     |
@@ -28,8 +28,8 @@ Feature: Lookup with output
   Scenario: [1] tag output by var
     When executing query:
       """
-      $a = LOOKUP ON player WHERE player.age == 40;
-      FETCH PROP ON player $a.VertexID YIELD player.name
+      $a = LOOKUP ON player WHERE player.age == 40 YIELD id(vertex) as id;
+      FETCH PROP ON player $a.id YIELD player.name
       """
     Then the result should be, in any order:
       | player.name     |
