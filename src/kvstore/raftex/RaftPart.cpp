@@ -75,6 +75,8 @@ class AppendLogsIterator final : public LogIterator {
 
   LogID firstLogId() const { return firstLogId_; }
 
+  LogID lastLogId() const { return firstLogId_ + logs_.size() - 1; }
+
   // Return true if the current log is a AtomicOp, otherwise return false
   bool processAtomicOp() {
     while (idx_ < logs_.size()) {
@@ -762,7 +764,8 @@ void RaftPart::replicateLogs(folly::EventBase* eb,
     return;
   }
 
-  VLOG(2) << idStr_ << "About to replicate logs to all peer hosts";
+  LOG_IF(INFO, FLAGS_trace_raft) << idStr_ << "About to replicate logs in range ["
+                                 << iter.firstLogId() << ", " << lastLogId << "] to all peer hosts";
 
   lastMsgSentDur_.reset();
   SlowOpTracker tracker;

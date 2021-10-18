@@ -9,6 +9,7 @@
 #include <folly/futures/Future.h>
 
 #include "common/base/Base.h"
+#include "common/base/ErrorOr.h"
 #include "common/thrift/ThriftClientManager.h"
 #include "interface/gen-cpp2/RaftexServiceAsyncClient.h"
 #include "interface/gen-cpp2/raftex_types.h"
@@ -87,7 +88,7 @@ class Host final : public std::enable_shared_from_this<Host> {
   folly::Future<cpp2::HeartbeatResponse> sendHeartbeatRequest(
       folly::EventBase* eb, std::shared_ptr<cpp2::HeartbeatRequest> req);
 
-  std::shared_ptr<cpp2::AppendLogRequest> prepareAppendLogRequest();
+  ErrorOr<cpp2::ErrorCode, std::shared_ptr<cpp2::AppendLogRequest>> prepareAppendLogRequest();
 
   bool noRequest() const;
 
