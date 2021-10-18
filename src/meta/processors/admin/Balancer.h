@@ -23,7 +23,6 @@ namespace meta {
 using HostParts = std::unordered_map<HostAddr, std::vector<PartitionID>>;
 using PartAllocation = std::unordered_map<PartitionID, std::vector<HostAddr>>;
 using LeaderBalancePlan = std::vector<std::tuple<GraphSpaceID, PartitionID, HostAddr, HostAddr>>;
-using ZoneNameAndParts = std::pair<std::string, std::vector<PartitionID>>;
 
 /**
 There are two interfaces public:
@@ -234,9 +233,9 @@ class Balancer {
                         LeaderBalancePlan& plan,
                         GraphSpaceID spaceId);
 
-  nebula::cpp2::ErrorCode collectZoneParts(const std::string& groupName, HostParts& hostParts);
+  bool checkSameZone(const HostAddr& source, const HostAddr& target);
 
-  bool checkZoneLegal(const HostAddr& source, const HostAddr& target);
+  float calZonePartSize(const HostAddr& host, HostParts& confirmedHostParts);
 
  private:
   std::atomic_bool running_{false};
@@ -253,9 +252,8 @@ class Balancer {
 
   std::unordered_map<HostAddr, std::pair<int32_t, int32_t>> hostBounds_;
 
-  // TODO: (darion) nesting map maybe better
-  std::unordered_map<HostAddr, ZoneNameAndParts> zoneParts_;
-  std::unordered_map<std::string, std::vector<HostAddr>> zoneHosts_;
+  // it is use to record the zone which node belongs
+  std::unordered_map<HostAddr, std::string> hostZone_;
 
   // if the space dependent on group, it use to record the partition
   // contained in the zone related to the node.

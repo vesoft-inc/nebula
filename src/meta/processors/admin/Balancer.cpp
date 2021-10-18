@@ -90,6 +90,7 @@ ErrorOr<nebula::cpp2::ErrorCode, BalanceID> Balancer::cleanLastInValidPlan() {
     return nebula::cpp2::ErrorCode::E_LEADER_CHANGED;
   }
   if (running_) {
+    LOG(INFO) << "The Balancer is still running";
     return nebula::cpp2::ErrorCode::E_BALANCER_RUNNING;
   }
   const auto& prefix = MetaServiceUtils::balancePlanPrefix();
@@ -336,12 +337,6 @@ nebula::cpp2::ErrorCode Balancer::transferLostHost(std::vector<BalanceTask>& tas
   const auto& targetHost = nebula::value(result);
   confirmedHostParts[targetHost].emplace_back(partId);
   tasks.emplace_back(plan_->id_, spaceId, partId, source, targetHost, kv_, client_);
-  zoneParts_[targetHost].second.emplace_back(partId);
-  auto zoneIt =
-      std::find(zoneParts_[source].second.begin(), zoneParts_[source].second.end(), partId);
-  if (zoneIt == zoneParts_[source].second.end()) {
-    LOG(ERROR) << "part not find " << partId << " at " << source;
-  }
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
@@ -384,7 +379,7 @@ bool Balancer::balanceParts(BalanceID balanceId,
                             int32_t totalParts,
                             std::vector<BalanceTask>& tasks,
                             bool dependentOnGroup) {
-  auto avgLoad = static_cast<float>(totalParts) / confirmedHostParts.size();
+  float avgLoad = static_cast<float>(totalParts) / confirmedHostParts.size();
   VLOG(3) << "The expect avg load is " << avgLoad;
   int32_t minLoad = std::floor(avgLoad);
   int32_t maxLoad = std::ceil(avgLoad);
@@ -401,36 +396,17 @@ bool Balancer::balanceParts(BalanceID balanceId,
   auto& sourceHost = maxPartsHost.first;
   auto& targetHost = minPartsHost.first;
   if (innerBalance_) {
-    LOG(INFO) << "maxPartsHost.first " << maxPartsHost.first << " minPartsHost.first "
-              << minPartsHost.first;
-    while (!checkZoneLegal(maxPartsHost.first, minPartsHost.first)) {
+    LOG(INFO) << "Source Host " << sourceHost << " Target Host " << targetHost;
+    while (!checkSameZone(sourceHost, targetHost)) {
       sortedHosts.pop_back();
       maxPartsHost = sortedHosts.back();
     }
 
-    auto& source = maxPartsHost.first;
-    auto iter = std::find_if(zoneParts_.begin(), zoneParts_.end(), [&source](const auto& pair) {
-      return source == pair.first;
-    });
-
-    auto& zoneName = iter->second.first;
-    int32_t hostsSize = zoneHosts_[zoneName].size();
-    int32_t totalPartsZone = 0;
-    for (auto& host : zoneHosts_[zoneName]) {
-      auto it = confirmedHostParts.find(host);
-      if (it == confirmedHostParts.end()) {
-        LOG(ERROR) << "Host " << host << "not in confirmedHostParts";
-        continue;
-      }
-      totalPartsZone += it->second.size();
-    }
-
-    avgLoad = static_cast<float>(totalPartsZone) / hostsSize;
+    avgLoad = calZonePartSize(sourceHost, confirmedHostParts);
     minLoad = std::floor(avgLoad);
     maxLoad = std::ceil(avgLoad);
-    LOG(INFO) << "Update min and max loading Total parts in zone " << totalPartsZone
-              << ", total hosts " << hostsSize << " The expect avg load is " << avgLoad
-              << " The min load is " << minLoad << " max load is " << maxLoad;
+    LOG(INFO) << " The expect avg load is " << avgLoad;
+    LOG(INFO) << " The min load is " << minLoad << " max load is " << maxLoad;
   }
 
   while (maxPartsHost.second > maxLoad || minPartsHost.second < minLoad) {
@@ -473,7 +449,7 @@ bool Balancer::balanceParts(BalanceID balanceId,
       }
 
       if (dependentOnGroup) {
-        if (!checkZoneLegal(sourceHost, targetHost)) {
+        if (!checkSameZone(sourceHost, targetHost)) {
           LOG(INFO) << "sourceHost " << sourceHost << " targetHost " << targetHost
                     << " not same zone";
 
@@ -485,9 +461,15 @@ bool Balancer::balanceParts(BalanceID balanceId,
           }
         }
 
-        auto& sourceNoneName = zoneParts_[sourceHost].first;
-        auto sourceHosts = zoneHosts_.find(sourceNoneName);
-        for (auto& sh : sourceHosts->second) {
+        auto& sourceZoneName = hostZone_[sourceHost];
+        std::vector<HostAddr> sourceHosts;
+        for (auto hz = hostZone_.begin(); hz != hostZone_.end(); hz++) {
+          if (hz->second == sourceZoneName) {
+            sourceHosts.emplace_back(hz->first);
+          }
+        }
+
+        for (auto& sh : sourceHosts) {
           auto& parts = relatedParts_[sh];
           auto maxIt = std::find(parts.begin(), parts.end(), partId);
           if (maxIt == parts.end()) {
@@ -497,9 +479,14 @@ bool Balancer::balanceParts(BalanceID balanceId,
           parts.erase(maxIt);
         }
 
-        auto& targetNoneName = zoneParts_[targetHost].first;
-        auto targetHosts = zoneHosts_.find(targetNoneName);
-        for (auto& th : targetHosts->second) {
+        auto& targetZoneName = hostZone_[targetHost];
+        std::vector<HostAddr> targetHosts;
+        for (auto hz = hostZone_.begin(); hz != hostZone_.end(); hz++) {
+          if (hz->second == targetZoneName) {
+            targetHosts.emplace_back(hz->first);
+          }
+        }
+        for (auto& th : targetHosts) {
           relatedParts_[th].emplace_back(partId);
         }
       }
@@ -518,35 +505,19 @@ bool Balancer::balanceParts(BalanceID balanceId,
     sortedHosts = sortedHostsByParts(confirmedHostParts);
     maxPartsHost = sortedHosts.back();
     minPartsHost = sortedHosts.front();
+    sourceHost = maxPartsHost.first;
+    targetHost = minPartsHost.first;
     if (innerBalance_) {
-      while (!checkZoneLegal(maxPartsHost.first, minPartsHost.first)) {
+      while (!checkSameZone(sourceHost, targetHost)) {
         sortedHosts.pop_back();
         maxPartsHost = sortedHosts.back();
       }
 
-      auto& source = maxPartsHost.first;
-      auto iter = std::find_if(zoneParts_.begin(), zoneParts_.end(), [&source](const auto& pair) {
-        return source == pair.first;
-      });
-
-      auto& zoneName = iter->second.first;
-      int32_t hostsSize = zoneHosts_[zoneName].size();
-      int32_t totalPartsZone = 0;
-      for (auto& host : zoneHosts_[zoneName]) {
-        auto it = confirmedHostParts.find(host);
-        if (it == confirmedHostParts.end()) {
-          LOG(ERROR) << "Host " << host << "not in confirmedHostParts";
-          continue;
-        }
-        totalPartsZone += it->second.size();
-      }
-
-      avgLoad = static_cast<float>(totalPartsZone) / hostsSize;
+      avgLoad = calZonePartSize(sourceHost, confirmedHostParts);
       minLoad = std::floor(avgLoad);
       maxLoad = std::ceil(avgLoad);
-      LOG(INFO) << "Update min and max loading Total parts in zone " << totalPartsZone
-                << ", total hosts " << hostsSize << " The expect avg load is " << avgLoad
-                << " The min load is " << minLoad << " max load is " << maxLoad;
+      LOG(INFO) << " The expect avg load is " << avgLoad;
+      LOG(INFO) << " The min load is " << minLoad << " max load is " << maxLoad;
     }
   }
   LOG(INFO) << "Balance tasks num: " << tasks.size();
@@ -602,7 +573,6 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> Balancer::getHostParts(GraphSpaceID space
   }
 
   int32_t replica = properties.get_replica_factor();
-  LOG(INFO) << "Replica " << replica;
   if (dependentOnGroup && properties.group_name_ref().has_value()) {
     auto groupName = *properties.group_name_ref();
     auto groupKey = MetaServiceUtils::groupKey(groupName);
@@ -615,11 +585,11 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> Balancer::getHostParts(GraphSpaceID space
     }
 
     int32_t zoneSize = MetaServiceUtils::parseZoneNames(std::move(groupValue)).size();
-    LOG(INFO) << "Zone Size " << zoneSize;
     innerBalance_ = (replica == zoneSize);
 
     auto activeHostsRet = ActiveHostsMan::getActiveHostsWithGroup(kv_, spaceId);
     if (!nebula::ok(activeHostsRet)) {
+      LOG(ERROR) << "Get active hosts about space " << spaceId << " failed";
       return nebula::error(activeHostsRet);
     }
 
@@ -698,18 +668,8 @@ nebula::cpp2::ErrorCode Balancer::assembleZoneParts(const std::string& groupName
       continue;
     }
 
-    auto& hosts = zoneIter->second;
     auto name = zoneIter->first.second;
-    zoneHosts_[name] = hosts;
-    for (auto hostIter = hosts.begin(); hostIter != hosts.end(); hostIter++) {
-      auto partIter = hostParts.find(*hostIter);
-      LOG(INFO) << "Zone " << name << " have the host " << it->first;
-      if (partIter == hostParts.end()) {
-        zoneParts_[it->first] = ZoneNameAndParts(name, std::vector<PartitionID>());
-      } else {
-        zoneParts_[it->first] = ZoneNameAndParts(name, partIter->second);
-      }
-    }
+    hostZone_[it->first] = name;
   }
 
   for (auto it = zoneHosts.begin(); it != zoneHosts.end(); it++) {
@@ -889,8 +849,10 @@ nebula::cpp2::ErrorCode Balancer::leaderBalance() {
     inLeaderBalance_ = false;
     if (failed != 0) {
       LOG(ERROR) << failed << " partiton failed to transfer leader";
+      return nebula::cpp2::ErrorCode::E_BALANCER_FAILURE;
+    } else {
+      return nebula::cpp2::ErrorCode::SUCCEEDED;
     }
-    return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
   return nebula::cpp2::ErrorCode::E_BALANCER_RUNNING;
 }
@@ -1147,86 +1109,53 @@ void Balancer::simplifyLeaderBalnacePlan(GraphSpaceID spaceId, LeaderBalancePlan
   }
 }
 
-nebula::cpp2::ErrorCode Balancer::collectZoneParts(const std::string& groupName,
-                                                   HostParts& hostParts) {
-  auto groupKey = MetaServiceUtils::groupKey(groupName);
-  std::string groupValue;
-  auto retCode = kv_->get(kDefaultSpaceId, kDefaultPartId, groupKey, &groupValue);
-  if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Get group " << groupName
-               << " failed, error: " << apache::thrift::util::enumNameSafe(retCode);
-    return retCode;
-  }
-
-  // zoneHosts use to record this host belong to zone's hosts
-  std::unordered_map<std::pair<HostAddr, std::string>, std::vector<HostAddr>> zoneHosts;
-  auto zoneNames = MetaServiceUtils::parseZoneNames(std::move(groupValue));
-  for (auto zoneName : zoneNames) {
-    auto zoneKey = MetaServiceUtils::zoneKey(zoneName);
-    std::string zoneValue;
-    retCode = kv_->get(kDefaultSpaceId, kDefaultPartId, zoneKey, &zoneValue);
-    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(ERROR) << "Get zone " << zoneName
-                 << " failed, error: " << apache::thrift::util::enumNameSafe(retCode);
-      return retCode;
-    }
-
-    auto hosts = MetaServiceUtils::parseZoneHosts(std::move(zoneValue));
-    for (const auto& host : hosts) {
-      auto pair = std::pair<HostAddr, std::string>(std::move(host), zoneName);
-      auto& hs = zoneHosts[std::move(pair)];
-      hs.insert(hs.end(), hosts.begin(), hosts.end());
-    }
-  }
-
-  for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
-    auto host = it->first;
-    auto zoneIter =
-        std::find_if(zoneHosts.begin(), zoneHosts.end(), [host](const auto& pair) -> bool {
-          return host == pair.first.first;
-        });
-
-    if (zoneIter == zoneHosts.end()) {
-      LOG(INFO) << it->first << " have lost";
-      continue;
-    }
-
-    auto& hosts = zoneIter->second;
-    auto name = zoneIter->first.second;
-    for (auto hostIter = hosts.begin(); hostIter != hosts.end(); hostIter++) {
-      auto partIter = hostParts.find(*hostIter);
-      if (partIter == hostParts.end()) {
-        zoneParts_[it->first] = ZoneNameAndParts(name, std::vector<PartitionID>());
-      } else {
-        zoneParts_[it->first] = ZoneNameAndParts(name, partIter->second);
-      }
-    }
-  }
-  return nebula::cpp2::ErrorCode::SUCCEEDED;
-}
-
-bool Balancer::checkZoneLegal(const HostAddr& source, const HostAddr& target) {
+bool Balancer::checkSameZone(const HostAddr& source, const HostAddr& target) {
   VLOG(3) << "Check " << source << " : " << target;
-  auto sourceIter = std::find_if(zoneParts_.begin(), zoneParts_.end(), [&source](const auto& pair) {
+  auto sourceIter = std::find_if(hostZone_.begin(), hostZone_.end(), [&source](const auto& pair) {
     return source == pair.first;
   });
 
-  if (sourceIter == zoneParts_.end()) {
-    LOG(INFO) << "Source " << source << " not found";
+  if (sourceIter == hostZone_.end()) {
+    LOG(ERROR) << "Source " << source << " not found";
     return false;
   }
 
-  auto targetIter = std::find_if(zoneParts_.begin(), zoneParts_.end(), [&target](const auto& pair) {
+  auto targetIter = std::find_if(hostZone_.begin(), hostZone_.end(), [&target](const auto& pair) {
     return target == pair.first;
   });
 
-  if (targetIter == zoneParts_.end()) {
-    LOG(INFO) << "Target " << target << " not found";
+  if (targetIter == hostZone_.end()) {
+    LOG(ERROR) << "Target " << target << " not found";
     return false;
   }
 
-  LOG(INFO) << sourceIter->second.first << " : " << targetIter->second.first;
-  return sourceIter->second.first == targetIter->second.first;
+  LOG(INFO) << sourceIter->second << " : " << targetIter->second;
+  return sourceIter->second == targetIter->second;
+}
+
+float Balancer::calZonePartSize(const HostAddr& host, HostParts& confirmedHostParts) {
+  auto iter = std::find_if(
+      hostZone_.begin(), hostZone_.end(), [&host](const auto& pair) { return host == pair.first; });
+
+  auto& zoneName = iter->second;
+  int32_t hostsSize = 0;
+  int32_t totalPartsZone = 0;
+  for (auto hz = hostZone_.begin(); hz != hostZone_.end(); hz++) {
+    auto& h = hz->first;
+    if (hz->second == zoneName) {
+      hostsSize += 1;
+      auto it = confirmedHostParts.find(h);
+      if (it == confirmedHostParts.end()) {
+        LOG(ERROR) << "Host " << h << "not in confirmed host";
+        continue;
+      }
+      totalPartsZone += it->second.size();
+    }
+  }
+
+  LOG(INFO) << "Update min and max loading Total parts in zone " << totalPartsZone
+            << ", total hosts " << hostsSize;
+  return static_cast<float>(totalPartsZone) / hostsSize;
 }
 
 }  // namespace meta
