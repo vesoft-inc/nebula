@@ -14,10 +14,10 @@
 
 #include "common/http/HttpClient.h"
 #include "common/time/WallClock.h"
+#include "common/utils/MetaKeyUtils.h"
 #include "interface/gen-cpp2/common_types.h"
 #include "kvstore/Common.h"
 #include "kvstore/KVIterator.h"
-#include "meta/MetaServiceUtils.h"
 #include "meta/common/MetaCommon.h"
 #include "meta/processors/Common.h"
 #include "meta/processors/admin/AdminClient.h"
@@ -586,7 +586,7 @@ nebula::cpp2::ErrorCode JobManager::save(const std::string& k, const std::string
 }
 
 ErrorOr<nebula::cpp2::ErrorCode, GraphSpaceID> JobManager::getSpaceId(const std::string& name) {
-  auto indexKey = MetaServiceUtils::indexSpaceKey(name);
+  auto indexKey = MetaKeyUtils::indexSpaceKey(name);
   std::string val;
   auto retCode = kvStore_->get(kDefaultSpaceId, kDefaultPartId, indexKey, &val);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {

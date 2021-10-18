@@ -1577,14 +1577,14 @@ void mockSchemas(kvstore::KVStore* kv) {
     (*srcsch.columns_ref()).emplace_back(std::move(col));
   }
   auto tagIdVal = std::string(reinterpret_cast<const char*>(&tagId), sizeof(tagId));
-  schemas.emplace_back(MetaServiceUtils::indexTagKey(1, "test_tag"), tagIdVal);
-  schemas.emplace_back(MetaServiceUtils::schemaTagKey(1, tagId, ver),
-                       MetaServiceUtils::schemaVal("test_tag", srcsch));
+  schemas.emplace_back(MetaKeyUtils::indexTagKey(1, "test_tag"), tagIdVal);
+  schemas.emplace_back(MetaKeyUtils::schemaTagKey(1, tagId, ver),
+                       MetaKeyUtils::schemaVal("test_tag", srcsch));
 
   auto edgeTypeVal = std::string(reinterpret_cast<const char*>(&edgeType), sizeof(edgeType));
-  schemas.emplace_back(MetaServiceUtils::indexEdgeKey(1, "test_edge"), edgeTypeVal);
-  schemas.emplace_back(MetaServiceUtils::schemaEdgeKey(1, edgeType, ver),
-                       MetaServiceUtils::schemaVal("test_edge", srcsch));
+  schemas.emplace_back(MetaKeyUtils::indexEdgeKey(1, "test_edge"), edgeTypeVal);
+  schemas.emplace_back(MetaKeyUtils::schemaEdgeKey(1, edgeType, ver),
+                       MetaKeyUtils::schemaVal("test_edge", srcsch));
 
   folly::Baton<true, std::atomic> baton;
   kv->asyncMultiPut(0, 0, std::move(schemas), [&](nebula::cpp2::ErrorCode code) {
@@ -2083,7 +2083,7 @@ TEST(ProcessorTest, IndexIdInSpaceRangeTest) {
     // check tag and edge count
     int count = 0;
 
-    auto tagprefix = MetaServiceUtils::schemaTagsPrefix(1);
+    auto tagprefix = MetaKeyUtils::schemaTagsPrefix(1);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto retCode = kv->prefix(kDefaultSpaceId, kDefaultPartId, tagprefix, &iter);
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, retCode);
@@ -2093,7 +2093,7 @@ TEST(ProcessorTest, IndexIdInSpaceRangeTest) {
     }
     ASSERT_EQ(1, count);
 
-    auto edgeprefix = MetaServiceUtils::schemaEdgesPrefix(1);
+    auto edgeprefix = MetaKeyUtils::schemaEdgesPrefix(1);
     retCode = kv->prefix(kDefaultSpaceId, kDefaultPartId, edgeprefix, &iter);
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, retCode);
     while (iter->valid()) {
@@ -2102,7 +2102,7 @@ TEST(ProcessorTest, IndexIdInSpaceRangeTest) {
     }
     ASSERT_EQ(2, count);
 
-    auto indexPrefix = MetaServiceUtils::indexPrefix(1);
+    auto indexPrefix = MetaKeyUtils::indexPrefix(1);
     retCode = kv->prefix(kDefaultSpaceId, kDefaultPartId, indexPrefix, &iter);
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, retCode);
     while (iter->valid()) {

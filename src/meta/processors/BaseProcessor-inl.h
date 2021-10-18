@@ -120,7 +120,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>> BaseProcessor<RESP>::
 template <typename RESP>
 ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> BaseProcessor<RESP>::allHosts() {
   std::vector<HostAddr> hosts;
-  const auto& prefix = MetaServiceUtils::hostPrefix();
+  const auto& prefix = MetaKeyUtils::hostPrefix();
   std::unique_ptr<kvstore::KVIterator> iter;
   auto code = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
   if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -141,7 +141,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> BaseProcessor<RESP>::all
 template <typename RESP>
 ErrorOr<nebula::cpp2::ErrorCode, int32_t> BaseProcessor<RESP>::autoIncrementId() {
   folly::SharedMutex::WriteHolder holder(LockUtils::idLock());
-  const std::string kIdKey = MetaServiceUtils::idKey();
+  const std::string kIdKey = MetaKeyUtils::idKey();
   int32_t id;
   std::string val;
   auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, kIdKey, &val);
@@ -195,7 +195,7 @@ ErrorOr<nebula::cpp2::ErrorCode, int32_t> BaseProcessor<RESP>::autoIncrementIdIn
   folly::SharedMutex::WriteHolder wHolder(LockUtils::localIdLock());
   folly::SharedMutex::ReadHolder rHolder(LockUtils::idLock());
 
-  auto localIdkey = MetaServiceUtils::localIdKey(spaceId);
+  auto localIdkey = MetaKeyUtils::localIdKey(spaceId);
   int32_t id;
   std::string val;
   auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, localIdkey, &val);
@@ -235,7 +235,7 @@ ErrorOr<nebula::cpp2::ErrorCode, int32_t> BaseProcessor<RESP>::autoIncrementIdIn
 template <typename RESP>
 nebula::cpp2::ErrorCode BaseProcessor<RESP>::spaceExist(GraphSpaceID spaceId) {
   folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
-  auto spaceKey = MetaServiceUtils::spaceKey(spaceId);
+  auto spaceKey = MetaKeyUtils::spaceKey(spaceId);
   auto ret = doGet(std::move(spaceKey));
   if (nebula::ok(ret)) {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -249,7 +249,7 @@ nebula::cpp2::ErrorCode BaseProcessor<RESP>::spaceExist(GraphSpaceID spaceId) {
 
 template <typename RESP>
 nebula::cpp2::ErrorCode BaseProcessor<RESP>::userExist(const std::string& account) {
-  auto userKey = MetaServiceUtils::userKey(account);
+  auto userKey = MetaKeyUtils::userKey(account);
   auto ret = doGet(std::move(userKey));
   if (nebula::ok(ret)) {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -273,7 +273,7 @@ nebula::cpp2::ErrorCode BaseProcessor<RESP>::hostExist(const std::string& hostKe
 template <typename RESP>
 ErrorOr<nebula::cpp2::ErrorCode, GraphSpaceID> BaseProcessor<RESP>::getSpaceId(
     const std::string& name) {
-  auto indexKey = MetaServiceUtils::indexSpaceKey(name);
+  auto indexKey = MetaKeyUtils::indexSpaceKey(name);
   auto ret = doGet(indexKey);
   if (nebula::ok(ret)) {
     return *reinterpret_cast<const GraphSpaceID*>(nebula::value(ret).c_str());
@@ -288,7 +288,7 @@ ErrorOr<nebula::cpp2::ErrorCode, GraphSpaceID> BaseProcessor<RESP>::getSpaceId(
 template <typename RESP>
 ErrorOr<nebula::cpp2::ErrorCode, TagID> BaseProcessor<RESP>::getTagId(GraphSpaceID spaceId,
                                                                       const std::string& name) {
-  auto indexKey = MetaServiceUtils::indexTagKey(spaceId, name);
+  auto indexKey = MetaKeyUtils::indexTagKey(spaceId, name);
   std::string val;
   auto ret = doGet(std::move(indexKey));
   if (nebula::ok(ret)) {
@@ -304,7 +304,7 @@ ErrorOr<nebula::cpp2::ErrorCode, TagID> BaseProcessor<RESP>::getTagId(GraphSpace
 template <typename RESP>
 ErrorOr<nebula::cpp2::ErrorCode, EdgeType> BaseProcessor<RESP>::getEdgeType(
     GraphSpaceID spaceId, const std::string& name) {
-  auto indexKey = MetaServiceUtils::indexEdgeKey(spaceId, name);
+  auto indexKey = MetaKeyUtils::indexEdgeKey(spaceId, name);
   auto ret = doGet(std::move(indexKey));
   if (nebula::ok(ret)) {
     return *reinterpret_cast<const EdgeType*>(nebula::value(ret).c_str());
@@ -319,7 +319,7 @@ ErrorOr<nebula::cpp2::ErrorCode, EdgeType> BaseProcessor<RESP>::getEdgeType(
 template <typename RESP>
 ErrorOr<nebula::cpp2::ErrorCode, cpp2::Schema> BaseProcessor<RESP>::getLatestTagSchema(
     GraphSpaceID spaceId, const TagID tagId) {
-  const auto& key = MetaServiceUtils::schemaTagPrefix(spaceId, tagId);
+  const auto& key = MetaKeyUtils::schemaTagPrefix(spaceId, tagId);
   auto ret = doPrefix(key);
   if (!nebula::ok(ret)) {
     LOG(ERROR) << "Tag Prefix " << key << " failed";
@@ -328,7 +328,7 @@ ErrorOr<nebula::cpp2::ErrorCode, cpp2::Schema> BaseProcessor<RESP>::getLatestTag
 
   auto iter = nebula::value(ret).get();
   if (iter->valid()) {
-    return MetaServiceUtils::parseSchema(iter->val());
+    return MetaKeyUtils::parseSchema(iter->val());
   } else {
     LOG(ERROR) << "Tag Prefix " << key << " not found";
     return nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND;
@@ -338,7 +338,7 @@ ErrorOr<nebula::cpp2::ErrorCode, cpp2::Schema> BaseProcessor<RESP>::getLatestTag
 template <typename RESP>
 ErrorOr<nebula::cpp2::ErrorCode, cpp2::Schema> BaseProcessor<RESP>::getLatestEdgeSchema(
     GraphSpaceID spaceId, const EdgeType edgeType) {
-  const auto& key = MetaServiceUtils::schemaEdgePrefix(spaceId, edgeType);
+  const auto& key = MetaKeyUtils::schemaEdgePrefix(spaceId, edgeType);
   auto ret = doPrefix(key);
   if (!nebula::ok(ret)) {
     LOG(ERROR) << "Edge Prefix " << key << " failed";
@@ -347,7 +347,7 @@ ErrorOr<nebula::cpp2::ErrorCode, cpp2::Schema> BaseProcessor<RESP>::getLatestEdg
 
   auto iter = nebula::value(ret).get();
   if (iter->valid()) {
-    return MetaServiceUtils::parseSchema(iter->val());
+    return MetaKeyUtils::parseSchema(iter->val());
   } else {
     LOG(ERROR) << "Edge Prefix " << key << " not found";
     return nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND;
@@ -357,7 +357,7 @@ ErrorOr<nebula::cpp2::ErrorCode, cpp2::Schema> BaseProcessor<RESP>::getLatestEdg
 template <typename RESP>
 ErrorOr<nebula::cpp2::ErrorCode, IndexID> BaseProcessor<RESP>::getIndexID(
     GraphSpaceID spaceId, const std::string& indexName) {
-  auto indexKey = MetaServiceUtils::indexIndexKey(spaceId, indexName);
+  auto indexKey = MetaKeyUtils::indexIndexKey(spaceId, indexName);
   auto ret = doGet(indexKey);
   if (nebula::ok(ret)) {
     return *reinterpret_cast<const IndexID*>(nebula::value(ret).c_str());
@@ -372,10 +372,10 @@ ErrorOr<nebula::cpp2::ErrorCode, IndexID> BaseProcessor<RESP>::getIndexID(
 template <typename RESP>
 ErrorOr<nebula::cpp2::ErrorCode, bool> BaseProcessor<RESP>::checkPassword(
     const std::string& account, const std::string& password) {
-  auto userKey = MetaServiceUtils::userKey(account);
+  auto userKey = MetaKeyUtils::userKey(account);
   auto ret = doGet(userKey);
   if (nebula::ok(ret)) {
-    return MetaServiceUtils::parseUserPwd(nebula::value(ret)) == password;
+    return MetaKeyUtils::parseUserPwd(nebula::value(ret)) == password;
   }
   return nebula::error(ret);
 }
@@ -452,7 +452,7 @@ template <typename RESP>
 ErrorOr<nebula::cpp2::ErrorCode, std::vector<cpp2::IndexItem>> BaseProcessor<RESP>::getIndexes(
     GraphSpaceID spaceId, int32_t tagOrEdge) {
   std::vector<cpp2::IndexItem> items;
-  const auto& indexPrefix = MetaServiceUtils::indexPrefix(spaceId);
+  const auto& indexPrefix = MetaKeyUtils::indexPrefix(spaceId);
   auto iterRet = doPrefix(indexPrefix);
   if (!nebula::ok(iterRet)) {
     auto retCode = nebula::error(iterRet);
@@ -463,7 +463,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<cpp2::IndexItem>> BaseProcessor<RES
   auto indexIter = nebula::value(iterRet).get();
 
   while (indexIter->valid()) {
-    auto item = MetaServiceUtils::parseIndex(indexIter->val());
+    auto item = MetaKeyUtils::parseIndex(indexIter->val());
     if (item.get_schema_id().getType() == nebula::cpp2::SchemaID::Type::tag_id &&
         item.get_schema_id().get_tag_id() == tagOrEdge) {
       items.emplace_back(std::move(item));
@@ -478,7 +478,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<cpp2::IndexItem>> BaseProcessor<RES
 template <typename RESP>
 ErrorOr<nebula::cpp2::ErrorCode, cpp2::FTIndex> BaseProcessor<RESP>::getFTIndex(
     GraphSpaceID spaceId, int32_t tagOrEdge) {
-  const auto& indexPrefix = MetaServiceUtils::fulltextIndexPrefix();
+  const auto& indexPrefix = MetaKeyUtils::fulltextIndexPrefix();
   auto iterRet = doPrefix(indexPrefix);
   if (!nebula::ok(iterRet)) {
     auto retCode = nebula::error(iterRet);
@@ -489,7 +489,7 @@ ErrorOr<nebula::cpp2::ErrorCode, cpp2::FTIndex> BaseProcessor<RESP>::getFTIndex(
   auto indexIter = nebula::value(iterRet).get();
 
   while (indexIter->valid()) {
-    auto index = MetaServiceUtils::parsefulltextIndex(indexIter->val());
+    auto index = MetaKeyUtils::parsefulltextIndex(indexIter->val());
     auto id = index.get_depend_schema().getType() == nebula::cpp2::SchemaID::Type::edge_type
                   ? index.get_depend_schema().get_edge_type()
                   : index.get_depend_schema().get_tag_id();
@@ -570,7 +570,7 @@ bool BaseProcessor<RESP>::checkIndexExist(const std::vector<cpp2::IndexFieldDef>
 template <typename RESP>
 ErrorOr<nebula::cpp2::ErrorCode, GroupID> BaseProcessor<RESP>::getGroupId(
     const std::string& groupName) {
-  auto indexKey = MetaServiceUtils::indexGroupKey(groupName);
+  auto indexKey = MetaKeyUtils::indexGroupKey(groupName);
   auto ret = doGet(std::move(indexKey));
   if (nebula::ok(ret)) {
     return *reinterpret_cast<const GroupID*>(nebula::value(ret).c_str());
@@ -585,7 +585,7 @@ ErrorOr<nebula::cpp2::ErrorCode, GroupID> BaseProcessor<RESP>::getGroupId(
 template <typename RESP>
 ErrorOr<nebula::cpp2::ErrorCode, ZoneID> BaseProcessor<RESP>::getZoneId(
     const std::string& zoneName) {
-  auto indexKey = MetaServiceUtils::indexZoneKey(zoneName);
+  auto indexKey = MetaKeyUtils::indexZoneKey(zoneName);
   auto ret = doGet(std::move(indexKey));
   if (nebula::ok(ret)) {
     return *reinterpret_cast<const ZoneID*>(nebula::value(ret).c_str());
@@ -601,7 +601,7 @@ template <typename RESP>
 nebula::cpp2::ErrorCode BaseProcessor<RESP>::listenerExist(GraphSpaceID space,
                                                            cpp2::ListenerType type) {
   folly::SharedMutex::ReadHolder rHolder(LockUtils::listenerLock());
-  const auto& prefix = MetaServiceUtils::listenerPrefix(space, type);
+  const auto& prefix = MetaKeyUtils::listenerPrefix(space, type);
   auto ret = doPrefix(prefix);
   if (!nebula::ok(ret)) {
     return nebula::error(ret);

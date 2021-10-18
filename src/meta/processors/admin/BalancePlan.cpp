@@ -123,13 +123,12 @@ void BalancePlan::invoke() {
 nebula::cpp2::ErrorCode BalancePlan::saveInStore(bool onlyPlan) {
   CHECK_NOTNULL(kv_);
   std::vector<kvstore::KV> data;
-  data.emplace_back(MetaServiceUtils::balancePlanKey(id_),
-                    MetaServiceUtils::balancePlanVal(status_));
+  data.emplace_back(MetaKeyUtils::balancePlanKey(id_), MetaKeyUtils::balancePlanVal(status_));
   if (!onlyPlan) {
     for (auto& task : tasks_) {
-      data.emplace_back(MetaServiceUtils::balanceTaskKey(
+      data.emplace_back(MetaKeyUtils::balanceTaskKey(
                             task.balanceId_, task.spaceId_, task.partId_, task.src_, task.dst_),
-                        MetaServiceUtils::balanceTaskVal(
+                        MetaKeyUtils::balanceTaskVal(
                             task.status_, task.ret_, task.startTimeMs_, task.endTimeMs_));
     }
   }
@@ -152,7 +151,7 @@ nebula::cpp2::ErrorCode BalancePlan::saveInStore(bool onlyPlan) {
 
 nebula::cpp2::ErrorCode BalancePlan::recovery(bool resume) {
   CHECK_NOTNULL(kv_);
-  const auto& prefix = MetaServiceUtils::balanceTaskPrefix(id_);
+  const auto& prefix = MetaKeyUtils::balanceTaskPrefix(id_);
   std::unique_ptr<kvstore::KVIterator> iter;
   auto ret = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -165,7 +164,7 @@ nebula::cpp2::ErrorCode BalancePlan::recovery(bool resume) {
     task.kv_ = kv_;
     task.client_ = client_;
     {
-      auto tup = MetaServiceUtils::parseBalanceTaskKey(iter->key());
+      auto tup = MetaKeyUtils::parseBalanceTaskKey(iter->key());
       task.balanceId_ = std::get<0>(tup);
       task.spaceId_ = std::get<1>(tup);
       task.partId_ = std::get<2>(tup);
@@ -174,7 +173,7 @@ nebula::cpp2::ErrorCode BalancePlan::recovery(bool resume) {
       task.taskIdStr_ = task.buildTaskId();
     }
     {
-      auto tup = MetaServiceUtils::parseBalanceTaskVal(iter->val());
+      auto tup = MetaKeyUtils::parseBalanceTaskVal(iter->val());
       task.status_ = std::get<0>(tup);
       task.ret_ = std::get<1>(tup);
       task.startTimeMs_ = std::get<2>(tup);

@@ -89,7 +89,7 @@ TEST(BalanceTest, BalanceTaskTest) {
 }
 
 void showHostLoading(kvstore::KVStore* kv, GraphSpaceID spaceId) {
-  auto prefix = MetaServiceUtils::partPrefix(spaceId);
+  auto prefix = MetaKeyUtils::partPrefix(spaceId);
   std::unique_ptr<kvstore::KVIterator> iter;
   auto ret = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
   ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
@@ -98,7 +98,7 @@ void showHostLoading(kvstore::KVStore* kv, GraphSpaceID spaceId) {
     auto key = iter->key();
     PartitionID partId;
     memcpy(&partId, key.data() + prefix.size(), sizeof(PartitionID));
-    auto hs = MetaServiceUtils::parsePartVal(iter->val());
+    auto hs = MetaKeyUtils::parsePartVal(iter->val());
     for (auto h : hs) {
       hostPart[h].emplace_back(partId);
     }
@@ -115,7 +115,7 @@ void showHostLoading(kvstore::KVStore* kv, GraphSpaceID spaceId) {
 }
 
 HostParts assignHostParts(kvstore::KVStore* kv, GraphSpaceID spaceId) {
-  auto prefix = MetaServiceUtils::partPrefix(spaceId);
+  auto prefix = MetaKeyUtils::partPrefix(spaceId);
   std::unique_ptr<kvstore::KVIterator> iter;
   kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
   HostParts hostPart;
@@ -123,7 +123,7 @@ HostParts assignHostParts(kvstore::KVStore* kv, GraphSpaceID spaceId) {
     auto key = iter->key();
     PartitionID partId;
     memcpy(&partId, key.data() + prefix.size(), sizeof(PartitionID));
-    auto hs = MetaServiceUtils::parsePartVal(iter->val());
+    auto hs = MetaKeyUtils::parsePartVal(iter->val());
     for (auto h : hs) {
       hostPart[h].emplace_back(partId);
     }
@@ -893,14 +893,14 @@ TEST(BalanceTest, BalancePlanTest) {
 }
 
 int32_t verifyBalancePlan(kvstore::KVStore* kv, BalanceID balanceId, BalanceStatus balanceStatus) {
-  const auto& prefix = MetaServiceUtils::balancePlanPrefix();
+  const auto& prefix = MetaKeyUtils::balancePlanPrefix();
   std::unique_ptr<kvstore::KVIterator> iter;
   auto retcode = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
   EXPECT_EQ(retcode, nebula::cpp2::ErrorCode::SUCCEEDED);
   int32_t num = 0;
   while (iter->valid()) {
-    auto id = MetaServiceUtils::parseBalanceID(iter->key());
-    auto status = MetaServiceUtils::parseBalanceStatus(iter->val());
+    auto id = MetaKeyUtils::parseBalanceID(iter->key());
+    auto status = MetaKeyUtils::parseBalanceStatus(iter->val());
     EXPECT_EQ(balanceId, id);
     EXPECT_EQ(balanceStatus, status);
     num++;
@@ -915,18 +915,18 @@ void verifyBalanceTask(kvstore::KVStore* kv,
                        BalanceTaskResult result,
                        std::unordered_map<HostAddr, int32_t>& partCount,
                        int32_t exceptNumber = 0) {
-  const auto& prefix = MetaServiceUtils::balanceTaskPrefix(balanceId);
+  const auto& prefix = MetaKeyUtils::balanceTaskPrefix(balanceId);
   std::unique_ptr<kvstore::KVIterator> iter;
   auto code = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
   ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
   int32_t num = 0;
   while (iter->valid()) {
-    auto keyTuple = MetaServiceUtils::parseBalanceTaskKey(iter->key());
+    auto keyTuple = MetaKeyUtils::parseBalanceTaskKey(iter->key());
     ASSERT_EQ(balanceId, std::get<0>(keyTuple));
     ASSERT_EQ(1, std::get<1>(keyTuple));
     partCount[std::get<3>(keyTuple)]--;
     partCount[std::get<4>(keyTuple)]++;
-    auto valueTuple = MetaServiceUtils::parseBalanceTaskVal(iter->val());
+    auto valueTuple = MetaKeyUtils::parseBalanceTaskVal(iter->val());
     ASSERT_EQ(status, std::get<0>(valueTuple));
     ASSERT_EQ(result, std::get<1>(valueTuple));
     ASSERT_LT(0, std::get<2>(valueTuple));
@@ -1252,7 +1252,7 @@ TEST(BalanceTest, StopPlanTest) {
   // wait until the only IN_PROGRESS task finished;
   sleep(3);
   {
-    const auto& prefix = MetaServiceUtils::balanceTaskPrefix(balanceId);
+    const auto& prefix = MetaKeyUtils::balanceTaskPrefix(balanceId);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto retcode = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     ASSERT_EQ(retcode, nebula::cpp2::ErrorCode::SUCCEEDED);
@@ -1263,7 +1263,7 @@ TEST(BalanceTest, StopPlanTest) {
       // PartitionID partId =
       // std::get<2>(BalanceTask::MetaServiceUtils(iter->key()));
       {
-        auto tup = MetaServiceUtils::parseBalanceTaskVal(iter->val());
+        auto tup = MetaKeyUtils::parseBalanceTaskVal(iter->val());
         task.status_ = std::get<0>(tup);
         task.ret_ = std::get<1>(tup);
         task.startTimeMs_ = std::get<2>(tup);
@@ -1325,7 +1325,7 @@ TEST(BalanceTest, CleanLastInvalidBalancePlanTest) {
   ASSERT_EQ(value(cleanRet), balanceId);
 
   {
-    const auto& prefix = MetaServiceUtils::balancePlanPrefix();
+    const auto& prefix = MetaKeyUtils::balancePlanPrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
     auto retcode = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     ASSERT_EQ(retcode, nebula::cpp2::ErrorCode::SUCCEEDED);

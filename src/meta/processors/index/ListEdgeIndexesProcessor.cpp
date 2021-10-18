@@ -14,7 +14,7 @@ void ListEdgeIndexesProcessor::process(const cpp2::ListEdgeIndexesReq& req) {
   CHECK_SPACE_ID_AND_RETURN(space);
 
   folly::SharedMutex::ReadHolder rHolder(LockUtils::edgeIndexLock());
-  const auto& prefix = MetaServiceUtils::indexPrefix(space);
+  const auto& prefix = MetaKeyUtils::indexPrefix(space);
   auto iterRet = doPrefix(prefix);
   if (!nebula::ok(iterRet)) {
     auto retCode = nebula::error(iterRet);
@@ -29,7 +29,7 @@ void ListEdgeIndexesProcessor::process(const cpp2::ListEdgeIndexesReq& req) {
   std::vector<cpp2::IndexItem> items;
   while (iter->valid()) {
     auto val = iter->val();
-    auto item = MetaServiceUtils::parseIndex(val);
+    auto item = MetaKeyUtils::parseIndex(val);
     if (item.get_schema_id().getType() == nebula::cpp2::SchemaID::Type::edge_type) {
       items.emplace_back(std::move(item));
     }

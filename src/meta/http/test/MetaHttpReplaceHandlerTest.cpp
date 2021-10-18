@@ -150,23 +150,23 @@ std::vector<std::string> dumpKVStore(kvstore::KVStore* kvstore) {
   std::vector<std::string> ret;
   // Get all spaces
   std::vector<GraphSpaceID> allSpaceId;
-  const auto& spacePrefix = MetaServiceUtils::spacePrefix();
+  const auto& spacePrefix = MetaKeyUtils::spacePrefix();
   std::unique_ptr<kvstore::KVIterator> iter;
   auto kvRet = kvstore->prefix(kDefaultSpaceId, kDefaultPartId, spacePrefix, &iter);
   EXPECT_EQ(kvRet, nebula::cpp2::ErrorCode::SUCCEEDED);
   while (iter->valid()) {
-    auto spaceId = MetaServiceUtils::spaceId(iter->key());
+    auto spaceId = MetaKeyUtils::spaceId(iter->key());
     allSpaceId.emplace_back(spaceId);
     iter->next();
   }
 
   LOG(INFO) << "allSpaceId.size()=" << allSpaceId.size();
   for (const auto& spaceId : allSpaceId) {
-    const auto& partPrefix = MetaServiceUtils::partPrefix(spaceId);
+    const auto& partPrefix = MetaKeyUtils::partPrefix(spaceId);
     kvRet = kvstore->prefix(kDefaultSpaceId, kDefaultPartId, partPrefix, &iter);
     EXPECT_EQ(kvRet, nebula::cpp2::ErrorCode::SUCCEEDED);
     while (iter->valid()) {
-      auto hostAddrs = MetaServiceUtils::parsePartVal(iter->val());
+      auto hostAddrs = MetaKeyUtils::parsePartVal(iter->val());
       LOG(INFO) << "hostAddrs.size()=" << hostAddrs.size();
       for (auto& hostAddr : hostAddrs) {
         ret.emplace_back(hostAddr.host);

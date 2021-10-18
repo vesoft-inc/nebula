@@ -83,16 +83,16 @@ void AddZoneProcessor::process(const cpp2::AddZoneReq& req) {
 
   auto zoneId = nebula::value(zoneRet);
   std::vector<kvstore::KV> data;
-  data.emplace_back(MetaServiceUtils::indexZoneKey(zoneName),
+  data.emplace_back(MetaKeyUtils::indexZoneKey(zoneName),
                     std::string(reinterpret_cast<const char*>(&zoneId), sizeof(ZoneID)));
-  data.emplace_back(MetaServiceUtils::zoneKey(zoneName), MetaServiceUtils::zoneVal(nodes));
+  data.emplace_back(MetaKeyUtils::zoneKey(zoneName), MetaKeyUtils::zoneVal(nodes));
 
   LOG(INFO) << "Create Zone: " << zoneName;
   doSyncPutAndUpdate(std::move(data));
 }
 
 nebula::cpp2::ErrorCode AddZoneProcessor::checkHostNotOverlap(const std::vector<HostAddr>& nodes) {
-  const auto& prefix = MetaServiceUtils::zonePrefix();
+  const auto& prefix = MetaKeyUtils::zonePrefix();
   auto iterRet = doPrefix(prefix);
   if (!nebula::ok(iterRet)) {
     auto retCode = nebula::error(iterRet);
@@ -102,8 +102,8 @@ nebula::cpp2::ErrorCode AddZoneProcessor::checkHostNotOverlap(const std::vector<
 
   auto iter = nebula::value(iterRet).get();
   while (iter->valid()) {
-    auto zoneName = MetaServiceUtils::parseZoneName(iter->key());
-    auto hosts = MetaServiceUtils::parseZoneHosts(iter->val());
+    auto zoneName = MetaKeyUtils::parseZoneName(iter->key());
+    auto hosts = MetaKeyUtils::parseZoneHosts(iter->val());
     for (auto& node : nodes) {
       auto hostIter = std::find(hosts.begin(), hosts.end(), node);
       if (hostIter != hosts.end()) {
