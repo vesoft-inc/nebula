@@ -111,6 +111,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
                     std::string(reinterpret_cast<const char*>(&spaceId), sizeof(spaceId)));
   data.emplace_back(MetaServiceUtils::spaceKey(spaceId), MetaServiceUtils::spaceVal(properties));
 
+  nebula::cpp2::ErrorCode code = nebula::cpp2::ErrorCode::SUCCEEDED;
   if (properties.group_name_ref().has_value()) {
     auto& groupName = *properties.group_name_ref();
     LOG(INFO) << "Create Space on group: " << groupName;
@@ -154,14 +155,12 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
       auto zoneKey = MetaServiceUtils::zoneKey(zone);
       auto zoneValueRet = doGet(std::move(zoneKey));
       if (!nebula::ok(zoneValueRet)) {
-        auto retCode = nebula::error(zoneValueRet);
-        if (retCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
-          retCode = nebula::cpp2::ErrorCode::E_ZONE_NOT_FOUND;
+        code = nebula::error(zoneValueRet);
+        if (code == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
+          code = nebula::cpp2::ErrorCode::E_ZONE_NOT_FOUND;
         }
         LOG(ERROR) << "Get zone " << zone << " failed.";
-        handleErrorCode(retCode);
-        onFinished();
-        return;
+        break;
       }
 
       auto hosts = MetaServiceUtils::parseZoneHosts(std::move(nebula::value(zoneValueRet)));
@@ -177,30 +176,34 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
       zoneHosts[zone] = std::move(hosts);
     }
 
+    if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      LOG(ERROR) << "Create space failed";
+      handleErrorCode(code);
+      onFinished();
+      return;
+    }
+
     for (auto partId = 1; partId <= partitionNum; partId++) {
       auto pickedZonesRet = pickLightLoadZones(replicaFactor);
       if (!pickedZonesRet.ok()) {
         LOG(ERROR) << "Pick zone failed.";
-        handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
-        onFinished();
-        return;
+        code = nebula::cpp2::ErrorCode::E_INVALID_PARM;
+        break;
       }
 
       auto pickedZones = std::move(pickedZonesRet).value();
       auto partHostsRet = pickHostsWithZone(pickedZones, zoneHosts);
       if (!partHostsRet.ok()) {
         LOG(ERROR) << "Pick hosts with zone failed.";
-        handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
-        onFinished();
-        return;
+        code = nebula::cpp2::ErrorCode::E_INVALID_PARM;
+        break;
       }
 
       auto partHosts = std::move(partHostsRet).value();
       if (partHosts.empty()) {
         LOG(ERROR) << "Pick hosts is empty.";
-        handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
-        onFinished();
-        return;
+        code = nebula::cpp2::ErrorCode::E_INVALID_PARM;
+        break;
       }
 
       std::stringstream ss;
@@ -243,6 +246,13 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
       data.emplace_back(MetaServiceUtils::partKey(spaceId, partId),
                         MetaServiceUtils::partVal(partHosts));
     }
+  }
+
+  if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(ERROR) << "Create space failed";
+    handleErrorCode(code);
+    onFinished();
+    return;
   }
 
   resp_.set_id(to(spaceId, EntryType::SPACE));
@@ -289,6 +299,16 @@ StatusOr<Hosts> CreateSpaceProcessor::pickHostsWithZone(
   Hosts pickedHosts;
   nebula::cpp2::ErrorCode code = nebula::cpp2::ErrorCode::SUCCEEDED;
   for (auto iter = zoneHosts.begin(); iter != zoneHosts.end(); iter++) {
+    if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      break;
+    }
+
+    if (iter->second.empty()) {
+      LOG(ERROR) << "Zone " << iter->first << " is empty";
+      code = nebula::cpp2::ErrorCode::E_INVALID_PARM;
+      break;
+    }
+
     auto zoneIter = std::find(std::begin(zones), std::end(zones), iter->first);
     if (zoneIter == std::end(zones)) {
       continue;
@@ -315,8 +335,6 @@ StatusOr<Hosts> CreateSpaceProcessor::pickHostsWithZone(
   }
 
   if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    handleErrorCode(code);
-    onFinished();
     return Status::Error("Host not found");
   }
   return pickedHosts;

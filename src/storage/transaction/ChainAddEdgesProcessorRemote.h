@@ -30,6 +30,9 @@ class ChainAddEdgesProcessorRemote : public BaseProcessor<cpp2::ExecResponse> {
   void forwardRequest(const cpp2::ChainAddEdgesRequest& req);
 
   std::vector<std::string> getStrEdgeKeys(const cpp2::ChainAddEdgesRequest& req);
+
+ private:
+  std::string uuid_;  // for debug purpose
 };
 
 }  // namespace storage

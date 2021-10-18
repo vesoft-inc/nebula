@@ -72,7 +72,8 @@ folly::SemiFuture<Code> ResumeAddEdgeRemoteProcessor::processLocal(Code code) {
     // if there are something wrong other than rpc failure
     // we need to keep the resume retry(by not remove those prime key)
     ChainAddEdgesProcessorLocal::eraseDoublePrime();
-    return forwardToDelegateProcessor();
+    code_ = forwardToDelegateProcessor().get();
+    return code_;
   }
 
   return code;

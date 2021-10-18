@@ -132,7 +132,7 @@ int64_t ConsistUtil::getTimestamp(const std::string& val) noexcept {
   return *reinterpret_cast<const int64_t*>(val.data() + (val.size() - sizeof(int64_t)));
 }
 
-cpp2::AddEdgesRequest ConsistUtil::makeDirectAddReq(const cpp2::ChainAddEdgesRequest& req) {
+cpp2::AddEdgesRequest ConsistUtil::toAddEdgesRequest(const cpp2::ChainAddEdgesRequest& req) {
   cpp2::AddEdgesRequest ret;
   ret.set_space_id(req.get_space_id());
   ret.set_parts(req.get_parts());
@@ -177,6 +177,11 @@ std::pair<int64_t, nebula::cpp2::ErrorCode> ConsistUtil::versionOfUpdateReq(
 
 std::string ConsistUtil::dumpAddEdgeReq(const cpp2::AddEdgesRequest& req) {
   std::stringstream oss;
+  oss << "prop_names.size() = " << req.get_prop_names().size() << " ";
+  for (auto& name : req.get_prop_names()) {
+    oss << name << " ";
+  }
+  oss << " ";
   for (auto& part : req.get_parts()) {
     // oss << dumpParts(part.second);
     for (auto& edge : part.second) {
