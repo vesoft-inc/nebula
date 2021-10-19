@@ -19,14 +19,12 @@ GraphStorageClient::CommonRequestParam::CommonRequestParam(GraphSpaceID space_,
                                                            SessionID sess,
                                                            ExecutionPlanID plan_,
                                                            bool profile_,
-                                                           bool toss,
                                                            bool experimental,
                                                            folly::EventBase* evb_)
     : space(space_),
       session(sess),
       plan(plan_),
       profile(profile_),
-      useToss(toss),
       useExperimentalFeature(experimental),
       evb(evb_) {}
 
@@ -177,13 +175,13 @@ StorageRpcRespFuture<cpp2::ExecResponse> GraphStorageClient::addEdges(
     req.set_prop_names(propNames);
     req.set_common(common);
   }
-  return collectResponse(param.evb,
-                         std::move(requests),
-                         [useToss = param.useToss](cpp2::GraphStorageServiceAsyncClient* client,
-                                                   const cpp2::AddEdgesRequest& r) {
-                           return useToss ? client->future_chainAddEdges(r)
-                                          : client->future_addEdges(r);
-                         });
+  return collectResponse(
+      param.evb,
+      std::move(requests),
+      [useToss = param.useExperimentalFeature](cpp2::GraphStorageServiceAsyncClient* client,
+                                               const cpp2::AddEdgesRequest& r) {
+        return useToss ? client->future_chainAddEdges(r) : client->future_addEdges(r);
+      });
 }
 
 StorageRpcRespFuture<cpp2::GetPropResponse> GraphStorageClient::getProps(
