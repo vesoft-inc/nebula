@@ -28,6 +28,7 @@ IndexNode::ErrorOr<Row> IndexLimitNode::doNext(bool& hasNext) {
     currentOffset_++;
   }
   if (currentOffset_ < offset_ + limit_) {
+    currentOffset_++;
     return child.next(hasNext);
   } else {
     hasNext = false;

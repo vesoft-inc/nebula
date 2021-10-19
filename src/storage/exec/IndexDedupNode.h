@@ -44,6 +44,7 @@ class IndexDedupNode : public IndexNode {
   std::vector<std::string> dedupColumns_;
   std::vector<size_t> dedupPos_;
   folly::F14FastSet<RowWrapper, Hasher, Equal> dedupSet_;
+  size_t currentChild_ = 0;
 };
 
 /* Definition of inline function */

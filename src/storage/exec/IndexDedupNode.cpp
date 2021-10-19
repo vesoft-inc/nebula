@@ -28,21 +28,36 @@ IndexDedupNode::IndexDedupNode(RuntimeContext* context, const std::vector<std::s
   return ::nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 ::nebula::cpp2::ErrorCode IndexDedupNode::doExecute(PartitionID partId) {
+  currentChild_ = 0;
   dedupSet_.clear();
   return IndexNode::doExecute(partId);
 }
 IndexNode::ErrorOr<Row> IndexDedupNode::doNext(bool& hasNext) {
-  DCHECK_EQ(children_.size(), 1);
-  auto& child = *children_[0];
-  do {
-    auto result = child.next(hasNext);
-    if (!hasNext || !nebula::ok(result)) {
-      return result;
+  Row ret;
+  hasNext = false;
+  while (currentChild_ < children_.size()) {
+    auto& child = *children_[currentChild_];
+    do {
+      auto result = child.next(hasNext);
+      if (!nebula::ok(result)) {
+        return result;
+      }
+      if (!hasNext) {
+        break;
+      }
+      if (dedup(::nebula::value(result))) {
+        ret = ::nebula::value(std::move(result));
+        hasNext = true;
+        break;
+      }
+    } while (true);
+    if (!hasNext) {
+      currentChild_++;
+    } else {
+      break;
     }
-    if (dedup(::nebula::value(result))) {
-      return result;
-    }
-  } while (true);
+  }
+  return ret;
 }
 IndexDedupNode::RowWrapper::RowWrapper(const Row& row, const std::vector<size_t>& posList) {
   for (auto p : posList) {

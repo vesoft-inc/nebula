@@ -38,6 +38,7 @@ IndexNode::ErrorOr<Row> IndexSelectionNode::doNext(bool& hasNext) {
     if (!hasNext || !nebula::ok(result)) {
       return result;
     }
+    DVLOG(1) << nebula::value(result);
     if (filter(nebula::value(result))) {
       return result;
     }
@@ -54,7 +55,8 @@ Value IndexSelectionNode::ExprContext::getEdgeProp(const std::string& edgeType,
   auto iter = colPos_.find(prop);
   DCHECK(iter != colPos_.end());
   DCHECK(iter->second < row_->size());
-  return row_[iter->second];
+  DLOG(INFO) << (*row_)[iter->second];
+  return (*row_)[iter->second];
 }
 Value IndexSelectionNode::ExprContext::getTagProp(const std::string& tag,
                                                   const std::string& prop) const {
@@ -63,7 +65,8 @@ Value IndexSelectionNode::ExprContext::getTagProp(const std::string& tag,
   auto iter = colPos_.find(prop);
   DCHECK(iter != colPos_.end());
   DCHECK(iter->second < row_->size());
-  return row_[iter->second];
+  DLOG(INFO) << (*row_)[iter->second];
+  return (*row_)[iter->second];
 }
 
 }  // namespace storage

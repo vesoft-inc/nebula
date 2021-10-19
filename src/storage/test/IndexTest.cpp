@@ -20,6 +20,7 @@
 #include "kvstore/KVIterator.h"
 #include "storage/exec/IndexDedupNode.h"
 #include "storage/exec/IndexEdgeScanNode.h"
+#include "storage/exec/IndexLimitNode.h"
 #include "storage/exec/IndexNode.h"
 #include "storage/exec/IndexProjectionNode.h"
 #include "storage/exec/IndexSelectionNode.h"
@@ -1760,12 +1761,12 @@ TEST_F(IndexTest, Selection) {
     int     | int 
     1       | 2
     <null>  | <null>
-    2       | 10
-    2       | 10
+    8       | 10
+    8       | 10
   )"_row;
   size_t currentOffset = 0;
   auto ctx = makeContext();
-  auto expr = RelationalExpression::makeLE(&pool,
+  auto expr = RelationalExpression::makeGE(&pool,
                                            TagPropertyExpression::make(&pool, "", "a"),
                                            ConstantExpression::make(&pool, Value(5)));
 
@@ -1790,9 +1791,139 @@ TEST_F(IndexTest, Selection) {
   selection->addChild(std::move(mockChild));
   ASSERT_EQ(collectResult(selection.get()), pick(rows, {2, 3}));
 }
-TEST_F(IndexTest, Projection) {}
-TEST_F(IndexTest, Limit) {}
-TEST_F(IndexTest, Dedup) {}
+TEST_F(IndexTest, Projection) {
+  const auto rows = R"(
+    int | int | int
+    1   | 2   | 3
+    4   | 5   | 6
+    7   | 8   |9
+  )"_row;
+  size_t currentOffset = 0;
+  auto ctx = makeContext();
+  auto projection =
+      std::make_unique<IndexProjectionNode>(ctx.get(), std::vector<std::string>{"c", "a", "b"});
+  auto mockChild = std::make_unique<MockIndexNode>(ctx.get());
+  mockChild->executeFunc = [&rows](PartitionID) { return ::nebula::cpp2::ErrorCode::SUCCEEDED; };
+  mockChild->nextFunc = [&rows, &currentOffset](bool& hasNext) -> IndexNode::ErrorOr<Row> {
+    if (currentOffset < rows.size()) {
+      hasNext = true;
+      return rows[currentOffset++];
+    } else {
+      hasNext = false;
+      return {};
+    }
+  };
+  mockChild->initFunc = [](InitContext& initCtx) -> ::nebula::cpp2::ErrorCode {
+    ASSERT(initCtx.requiredColumns.find("a") != initCtx.requiredColumns.end());
+    ASSERT(initCtx.requiredColumns.find("b") != initCtx.requiredColumns.end());
+    ASSERT(initCtx.requiredColumns.find("c") != initCtx.requiredColumns.end());
+    initCtx.returnColumns = {"a", "b", "c"};
+    initCtx.retColMap = {{"a", 0}, {"b", 1}, {"c", 2}};
+    return ::nebula::cpp2::ErrorCode::SUCCEEDED;
+  };
+  projection->addChild(std::move(mockChild));
+  auto expect = R"(
+    int | int | int
+    3   | 1   | 2
+    6   | 4   | 5
+    9   | 7   | 8
+  )"_row;
+  ASSERT_EQ(collectResult(projection.get()), expect);
+}
+TEST_F(IndexTest, Limit) {
+  auto genRows = [](int start, int end) {
+    std::vector<Row> ret;
+    for (int i = start; i < end; i++) {
+      Row row;
+      row.emplace_back(Value(i));
+      row.emplace_back(Value(i * i));
+      row.emplace_back(Value(i * i * i));
+      ret.emplace_back(std::move(row));
+    }
+    return ret;
+  };
+  auto rows = genRows(0, 1000);
+  size_t currentOffset = 0;
+  auto ctx = makeContext();
+  auto limit = std::make_unique<IndexLimitNode>(ctx.get(), 10);
+  auto mockChild = std::make_unique<MockIndexNode>(ctx.get());
+  mockChild->executeFunc = [&rows](PartitionID) { return ::nebula::cpp2::ErrorCode::SUCCEEDED; };
+  mockChild->nextFunc = [&rows, &currentOffset](bool& hasNext) -> IndexNode::ErrorOr<Row> {
+    if (currentOffset < rows.size()) {
+      hasNext = true;
+      return rows[currentOffset++];
+    } else {
+      hasNext = false;
+      return {};
+    }
+  };
+  mockChild->initFunc = [](InitContext&) -> ::nebula::cpp2::ErrorCode {
+    return ::nebula::cpp2::ErrorCode::SUCCEEDED;
+  };
+  limit->addChild(std::move(mockChild));
+  ASSERT_EQ(collectResult(limit.get()), genRows(0, 10));
+}
+TEST_F(IndexTest, Dedup) {
+  auto rows1 = R"(
+    int | int 
+    1   | 2
+    1   | 3
+    2   | 2
+  )"_row;
+  auto rows2 = R"(
+    int | int
+    1   | 4
+    2   | 3
+    1   | 5
+    3   | 6
+  )"_row;
+  size_t offset1 = 0, offset2 = 0;
+  auto ctx = makeContext();
+  auto dedup = std::make_unique<IndexDedupNode>(ctx.get(), std::vector<std::string>{"a"});
+  auto child1 = std::make_unique<MockIndexNode>(ctx.get());
+  child1->executeFunc = [&rows1](PartitionID) { return ::nebula::cpp2::ErrorCode::SUCCEEDED; };
+  child1->nextFunc = [&rows1, &offset1](bool& hasNext) -> IndexNode::ErrorOr<Row> {
+    if (offset1 < rows1.size()) {
+      hasNext = true;
+      return rows1[offset1++];
+    } else {
+      hasNext = false;
+      return {};
+    }
+  };
+  child1->initFunc = [](InitContext& initCtx) -> ::nebula::cpp2::ErrorCode {
+    ASSERT(initCtx.requiredColumns.find("a") != initCtx.requiredColumns.end());
+    initCtx.returnColumns = {"a", "b"};
+    initCtx.retColMap = {{"a", 0}, {"b", 1}};
+    return ::nebula::cpp2::ErrorCode::SUCCEEDED;
+  };
+  auto child2 = std::make_unique<MockIndexNode>(ctx.get());
+  child2->executeFunc = [&rows2](PartitionID) { return ::nebula::cpp2::ErrorCode::SUCCEEDED; };
+  child2->nextFunc = [&rows2, &offset2](bool& hasNext) -> IndexNode::ErrorOr<Row> {
+    if (offset2 < rows2.size()) {
+      hasNext = true;
+      return rows2[offset2++];
+    } else {
+      hasNext = false;
+      return {};
+    }
+  };
+  child2->initFunc = [](InitContext& initCtx) -> ::nebula::cpp2::ErrorCode {
+    ASSERT(initCtx.requiredColumns.find("a") != initCtx.requiredColumns.end());
+    initCtx.returnColumns = {"a", "b"};
+    initCtx.retColMap = {{"a", 0}, {"b", 1}};
+    return ::nebula::cpp2::ErrorCode::SUCCEEDED;
+  };
+  dedup->addChild(std::move(child1));
+  dedup->addChild(std::move(child2));
+  auto expect = R"(
+    int | int
+    1   | 2
+    2   | 2
+    3   | 6
+  )"_row;
+  ASSERT_EQ(collectResult(dedup.get()), expect);
+}
 }  // namespace storage
 }  // namespace nebula
 int main(int argc, char** argv) {
