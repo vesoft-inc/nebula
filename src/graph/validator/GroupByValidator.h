@@ -7,7 +7,6 @@
 #ifndef GRAPH_VALIDATOR_GROUPBY_VALIDATOR_H_
 #define GRAPH_VALIDATOR_GROUPBY_VALIDATOR_H_
 
-#include "common/base/Base.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/validator/Validator.h"
 

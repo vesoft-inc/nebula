@@ -6,9 +6,7 @@
 #ifndef _VALIDATOR_LOOKUP_VALIDATOR_H_
 #define _VALIDATOR_LOOKUP_VALIDATOR_H_
 
-#include "common/base/Base.h"
 #include "common/plugin/fulltext/elasticsearch/ESGraphAdapter.h"
-#include "graph/planner/plan/Query.h"
 #include "graph/validator/Validator.h"
 
 namespace nebula {
