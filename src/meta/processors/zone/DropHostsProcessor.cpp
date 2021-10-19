@@ -80,6 +80,7 @@ void DropHostsProcessor::process(const cpp2::DropHostsReq& req) {
 
   auto iter = nebula::value(iterRet).get();
   while (iter->valid()) {
+<<<<<<< HEAD
     auto zoneKey = iter->key();
     auto hs = MetaKeyUtils::parseZoneHosts(iter->val());
     // Delete all hosts in the zone

@@ -2889,6 +2889,21 @@ TEST_F(ParserTest, Zone) {
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
+  {
+    std::string query = "MERGE ZONE zone_1,zone_2 INTO zone";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "MERGE ZONE zone_1,zone_2 INTO zone_1";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "RENAME ZONE old_name TO new_name";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
 }
 
 TEST_F(ParserTest, FullText) {

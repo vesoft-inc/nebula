@@ -3303,6 +3303,7 @@ TEST(ProcessorTest, DropHostsTest) {
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     ASSERT_EQ(6, resp.get_zones().size());
     ASSERT_EQ("default_zone_127.0.0.1_8987", resp.get_zones()[0].get_zone_name());
+<<<<<<< HEAD
     ASSERT_EQ(1, resp.get_zones()[0].get_nodes().size());
     ASSERT_EQ("default_zone_127.0.0.1_8988", resp.get_zones()[1].get_zone_name());
     ASSERT_EQ(1, resp.get_zones()[1].get_nodes().size());
@@ -3314,6 +3315,13 @@ TEST(ProcessorTest, DropHostsTest) {
     ASSERT_EQ(1, resp.get_zones()[4].get_nodes().size());
     ASSERT_EQ("zone_2", resp.get_zones()[5].get_zone_name());
     ASSERT_EQ(1, resp.get_zones()[5].get_nodes().size());
+=======
+    ASSERT_EQ("default_zone_127.0.0.1_8988", resp.get_zones()[1].get_zone_name());
+    ASSERT_EQ("default_zone_127.0.0.1_8989", resp.get_zones()[2].get_zone_name());
+    ASSERT_EQ("zone_0", resp.get_zones()[3].get_zone_name());
+    ASSERT_EQ("zone_1", resp.get_zones()[4].get_zone_name());
+    ASSERT_EQ("zone_2", resp.get_zones()[5].get_zone_name());
+>>>>>>> Support white list
   }
   {
     // Create Space on cluster, the replica number same with the zone size
@@ -3472,6 +3480,7 @@ TEST(ProcessorTest, DropHostsTest) {
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     ASSERT_EQ(4, resp.get_zones().size());
     ASSERT_EQ("default_zone_127.0.0.1_8988", resp.get_zones()[0].get_zone_name());
+<<<<<<< HEAD
     ASSERT_EQ(1, resp.get_zones()[0].get_nodes().size());
     ASSERT_EQ("default_zone_127.0.0.1_8989", resp.get_zones()[1].get_zone_name());
     ASSERT_EQ(1, resp.get_zones()[1].get_nodes().size());
@@ -3479,6 +3488,11 @@ TEST(ProcessorTest, DropHostsTest) {
     ASSERT_EQ(1, resp.get_zones()[2].get_nodes().size());
     ASSERT_EQ("zone_2", resp.get_zones()[3].get_zone_name());
     ASSERT_EQ(1, resp.get_zones()[3].get_nodes().size());
+=======
+    ASSERT_EQ("default_zone_127.0.0.1_8989", resp.get_zones()[1].get_zone_name());
+    ASSERT_EQ("zone_0", resp.get_zones()[2].get_zone_name());
+    ASSERT_EQ("zone_2", resp.get_zones()[3].get_zone_name());
+>>>>>>> Support white list
   }
 }
 

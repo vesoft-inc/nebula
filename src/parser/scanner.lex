@@ -283,6 +283,7 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 "POLYGON"                   { return TokenType::KW_POLYGON; }
 "DURATION"                  { return TokenType::KW_DURATION; }
 "MERGE"                     { return TokenType::KW_MERGE; }
+"SPLIT"                     { return TokenType::KW_SPLIT; }
 "RENAME"                    { return TokenType::KW_RENAME; }
 
 "TRUE"                      { yylval->boolval = true; return TokenType::BOOL; }
