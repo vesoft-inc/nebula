@@ -111,10 +111,19 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
-  auto hostName =
-      FLAGS_local_ip != "" ? FLAGS_local_ip : nebula::network::NetworkUtils::getHostname();
-  HostAddr host(hostName, FLAGS_port);
-  LOG(INFO) << "host = " << host;
+  std::string hostName;
+  if (FLAGS_local_ip.empty()) {
+    hostName = nebula::network::NetworkUtils::getHostname();
+  } else {
+    status = NetworkUtils::validateHostOrIp(FLAGS_local_ip);
+    if (!status.ok()) {
+      LOG(ERROR) << status;
+      return EXIT_FAILURE;
+    }
+    hostName = FLAGS_local_ip;
+  }
+  nebula::HostAddr localhost{hostName, FLAGS_port};
+  LOG(INFO) << "localhost = " << localhost;
   auto metaAddrsRet = nebula::network::NetworkUtils::toHosts(FLAGS_meta_server_addrs);
   if (!metaAddrsRet.ok() || metaAddrsRet.value().empty()) {
     LOG(ERROR) << "Can't get metaServer address, status:" << metaAddrsRet.status()
@@ -148,7 +157,7 @@ int main(int argc, char *argv[]) {
   }
 
   gStorageServer = std::make_unique<nebula::storage::StorageServer>(
-      host, metaAddrsRet.value(), paths, FLAGS_wal_path, FLAGS_listener_path);
+      localhost, metaAddrsRet.value(), paths, FLAGS_wal_path, FLAGS_listener_path);
   if (!gStorageServer->start()) {
     LOG(ERROR) << "Storage server start failed";
     gStorageServer->stop();
