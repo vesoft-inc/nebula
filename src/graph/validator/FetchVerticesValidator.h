@@ -30,8 +30,6 @@ class FetchVerticesValidator final : public Validator {
 
   void extractVertexProp(ExpressionProps& exprProps);
 
-  Expression* rewriteIDVertex2Vid(const Expression* expr);
-
  private:
   std::map<TagID, std::shared_ptr<const meta::SchemaProviderIf>> tagsSchema_;
 

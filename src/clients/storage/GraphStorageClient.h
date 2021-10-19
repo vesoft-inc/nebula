@@ -33,7 +33,6 @@ class GraphStorageClient : public StorageClientBase<cpp2::GraphStorageServiceAsy
     SessionID session;
     ExecutionPlanID plan;
     bool profile{false};
-    bool useToss{false};
     bool useExperimentalFeature{false};
     folly::EventBase* evb{nullptr};
 
@@ -41,7 +40,6 @@ class GraphStorageClient : public StorageClientBase<cpp2::GraphStorageServiceAsy
                        SessionID sess,
                        ExecutionPlanID plan_,
                        bool profile_ = false,
-                       bool toss = false,
                        bool experimental = false,
                        folly::EventBase* evb_ = nullptr);
 

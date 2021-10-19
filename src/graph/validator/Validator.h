@@ -110,8 +110,6 @@ class Validator {
 
   Status deduceProps(const Expression* expr, ExpressionProps& exprProps);
 
-  bool evaluableExpr(const Expression* expr) const;
-
   static StatusOr<size_t> checkPropNonexistOrDuplicate(const ColsDef& cols,
                                                        folly::StringPiece prop,
                                                        const std::string& validator);
