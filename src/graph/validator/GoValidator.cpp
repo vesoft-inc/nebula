@@ -142,9 +142,9 @@ Status GoValidator::validateYield(YieldClause* yield) {
       return Status::SemanticError("`%s' is not support in go sentence.", col->toString().c_str());
     }
 
-    auto* vertexExpr = ExpressionUtils::findAny(col->expr(), {Expression::Kind::kVertex});
-    if (vertexExpr != nullptr) {
-      const auto& colName = static_cast<const VertexExpression*>(vertexExpr)->name();
+    const auto& vertexExprs = ExpressionUtils::collectAll(col->expr(), {Expression::Kind::kVertex});
+    for (const auto* expr : vertexExprs) {
+      const auto& colName = static_cast<const VertexExpression*>(expr)->name();
       if (colName == SRC_VERTEX) {
         NG_RETURN_IF_ERROR(extractVertexProp(exprProps, true));
       } else if (colName == DST_VERTEX) {
@@ -266,36 +266,37 @@ Status GoValidator::buildColumns() {
     goCtx_->filter = rewrite2VarProp(newFilter);
   }
 
-  std::unordered_map<std::string, bool> existExpr;
+  std::unordered_set<std::string> existExpr;
   auto* newYieldExpr = pool->add(new YieldColumns());
   for (auto* col : goCtx_->yieldExpr->columns()) {
-    auto* vertexExpr = ExpressionUtils::findAny(col->expr(), {Expression::Kind::kVertex});
-    if (vertexExpr != nullptr) {
-      const auto& colName = static_cast<const VertexExpression*>(vertexExpr)->name();
-      if (colName == SRC_VERTEX && existExpr.count(SRC_VERTEX) == 0) {
-        goCtx_->srcEdgePropsExpr->addColumn(
-            new YieldColumn(VertexExpression::make(pool), SRC_VERTEX));
-        existExpr[SRC_VERTEX] = true;
-      }
-      if (colName == DST_VERTEX && existExpr.count(DST_VERTEX) == 0) {
-        goCtx_->dstPropsExpr->addColumn(new YieldColumn(VertexExpression::make(pool), DST_VERTEX));
-        existExpr[DST_VERTEX] = true;
-      }
-      newYieldExpr->addColumn(col->clone().release());
-    } else if (ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kEdge})) {
-      if (existExpr.count(COLNAME_EDGE) == 0) {
-        goCtx_->srcEdgePropsExpr->addColumn(
-            new YieldColumn(EdgeExpression::make(pool), COLNAME_EDGE));
-        existExpr[COLNAME_EDGE] = true;
-      }
-      newYieldExpr->addColumn(col->clone().release());
-    } else {
+    const auto& vertexExprs = ExpressionUtils::collectAll(col->expr(), {Expression::Kind::kVertex});
+    auto existEdge = ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kEdge});
+    if (!existEdge && vertexExprs.empty()) {
       extractPropExprs(col->expr());
       newYieldExpr->addColumn(new YieldColumn(rewrite2VarProp(col->expr()), col->alias()));
+    } else {
+      if (existEdge) {
+        if (existExpr.emplace(COLNAME_EDGE).second) {
+          goCtx_->srcEdgePropsExpr->addColumn(
+              new YieldColumn(EdgeExpression::make(pool), COLNAME_EDGE));
+        }
+      }
+      for (const auto* expr : vertexExprs) {
+        const auto& colName = static_cast<const VertexExpression*>(expr)->name();
+        if (existExpr.emplace(colName).second) {
+          if (colName == SRC_VERTEX) {
+            goCtx_->srcEdgePropsExpr->addColumn(
+                new YieldColumn(VertexExpression::make(pool), SRC_VERTEX));
+          } else {
+            goCtx_->dstPropsExpr->addColumn(
+                new YieldColumn(VertexExpression::make(pool), DST_VERTEX));
+          }
+        }
+      }
+      newYieldExpr->addColumn(col->clone().release());
     }
   }
   goCtx_->yieldExpr = newYieldExpr;
-
   return Status::OK();
 }
 
