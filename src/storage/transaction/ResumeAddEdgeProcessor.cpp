@@ -53,11 +53,6 @@ folly::SemiFuture<Code> ResumeAddEdgeProcessor::processLocal(Code code) {
     return Code::E_OUTDATED_TERM;
   }
 
-  if (!checkVersion(req_)) {
-    LOG(WARNING) << this << "E_OUTDATED_EDGE";
-    return Code::E_OUTDATED_EDGE;
-  }
-
   if (code == Code::E_RPC_FAILURE) {
     kvAppend_ = ChainAddEdgesProcessorLocal::makeDoublePrime();
   }
@@ -66,7 +61,8 @@ folly::SemiFuture<Code> ResumeAddEdgeProcessor::processLocal(Code code) {
     // if there are something wrong other than rpc failure
     // we need to keep the resume retry(by not remove those prime key)
     erasePrime();
-    return ChainAddEdgesProcessorLocal::forwardToDelegateProcessor();
+    code_ = forwardToDelegateProcessor().get();
+    return code_;
   }
 
   return code;
