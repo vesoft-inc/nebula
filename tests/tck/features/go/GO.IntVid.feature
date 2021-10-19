@@ -1434,6 +1434,22 @@ Feature: IntegerVid Go  Sentence
       | EMPTY      | "Russell Westbrook" |
       | EMPTY      | "Luka Doncic"       |
       | EMPTY      | "Russell Westbrook" |
+    When executing query:
+      """
+      go 1 to 4 steps from hash("Tim Duncan") over like where like.likeness > 90 yield like.likeness, edge as e
+      """
+    Then the result should be, in any order, with relax comparison:
+      | like.likeness | e                                                        |
+      | 95            | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]  |
+      | 95            | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]    |
+      | 95            | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}] |
+      | 95            | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]    |
+      | 95            | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]  |
+      | 95            | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]    |
+      | 95            | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}] |
+      | 95            | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]    |
+      | 95            | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]  |
+      | 95            | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]    |
 
   Scenario: Integer Vid error message
     When executing query:
