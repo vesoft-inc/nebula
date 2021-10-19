@@ -340,7 +340,7 @@ StatusOr<Expression*> LookupValidator::checkConstExpr(Expression* expr,
                                                       const std::string& prop,
                                                       const ExprKind kind) {
   auto* pool = expr->getObjPool();
-  if (!evaluableExpr(expr)) {
+  if (!ExpressionUtils::isEvaluableExpr(expr)) {
     return Status::SemanticError("'%s' is not an evaluable expression.", expr->toString().c_str());
   }
   auto schemaMgr = qctx_->schemaMng();
