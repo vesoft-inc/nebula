@@ -18,6 +18,7 @@ class PlannersRegister final {
   static void registPlanners();
 
  private:
+  static void registDDL();
   static void registSequential();
   static void registMatch();
 };
