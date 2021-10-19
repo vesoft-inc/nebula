@@ -326,6 +326,50 @@ Feature: TTLTest
     Then the result should be, in any order:
       | Edge    | Create Edge                                                                                                                  |
       | "work2" | 'CREATE EDGE `work2` (\n `email` string NULL,\n `age` string NULL,\n `gender` string NULL\n) ttl_duration = 0, ttl_col = ""' |
+    When executing query:
+      """
+      CREATE EDGE player(id int, name string, age int, address string, score float);
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      SHOW CREATE EDGE player;
+      """
+    Then the result should be, in any order:
+      | Edge     | Create Edge                                                                                                                                                           |
+      | "player" | 'CREATE EDGE `player` (\n `id` int64 NULL,\n `name` string NULL,\n `age` int64 NULL,\n `address` string NULL,\n `score` float NULL\n) ttl_duration = 0, ttl_col = ""' |
+    When executing query:
+      """
+      ALTER EDGE player change(name int), drop(name);
+      """
+    Then a SemanticError should be raised at runtime: Duplicate column name `name'
+    When executing query:
+      """
+      ALTER EDGE player drop(name), change(name int);
+      """
+    Then a SemanticError should be raised at runtime: Duplicate column name `name'
+    When executing query:
+      """
+      ALTER EDGE player drop(name, name), change(address int);
+      """
+    Then a SemanticError should be raised at runtime: Duplicate column name `name'
+    When executing query:
+      """
+      ALTER EDGE player change(address int, address string);
+      """
+    Then a SemanticError should be raised at runtime: Duplicate column name `address'
+    When executing query:
+      """
+      ALTER EDGE player change(address int), drop(name);
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      SHOW CREATE EDGE player;
+      """
+    Then the result should be, in any order:
+      | Edge     | Create Edge                                                                                                                                    |
+      | "player" | 'CREATE EDGE `player` (\n `id` int64 NULL,\n `age` int64 NULL,\n `address` int64 NULL,\n `score` float NULL\n) ttl_duration = 0, ttl_col = ""' |
     And drop the used space
 
   Scenario: TTLTest Datatest
