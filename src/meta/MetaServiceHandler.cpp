@@ -73,6 +73,8 @@
 #include "meta/processors/zone/ListZonesProcessor.h"
 #include "meta/processors/zone/MergeZoneProcessor.h"
 #include "meta/processors/zone/RenameZoneProcessor.h"
+#include "meta/processors/zone/SplitZoneProcessor.h"
+#include "meta/processors/zone/RenameZoneProcessor.h"
 
 #define RETURN_FUTURE(processor)   \
   auto f = processor->getFuture(); \

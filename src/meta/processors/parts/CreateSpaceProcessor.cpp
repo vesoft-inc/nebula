@@ -232,11 +232,20 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
       break;
     }
 
+<<<<<<< HEAD
     auto partHosts = std::move(partHostsRet).value();
     if (partHosts.empty()) {
       LOG(ERROR) << "Pick hosts is empty.";
       code = nebula::cpp2::ErrorCode::E_INVALID_PARM;
       break;
+    }
+
+    if ((int32_t)hosts.size() < replicaFactor) {
+      LOG(ERROR) << "Not enough hosts existed for replica " << replicaFactor << ", hosts num "
+                 << hosts.size();
+      handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
+      onFinished();
+      return;
     }
 
     std::stringstream ss;

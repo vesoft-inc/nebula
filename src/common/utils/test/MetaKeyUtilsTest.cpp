@@ -61,8 +61,10 @@ TEST(MetaKeyUtilsTest, SpaceKeyWithZonesTest) {
   spaceDesc.set_zone_names(std::move(zoneNames));
   auto spaceVal = MetaKeyUtils::spaceVal(spaceDesc);
   ASSERT_EQ("default", MetaKeyUtils::spaceName(spaceVal));
-  ASSERT_EQ(100, MetaKeyUtils::parseSpace(spaceVal).get_partition_num());
-  ASSERT_EQ(3, MetaKeyUtils::parseSpace(spaceVal).get_replica_factor());
+  auto properties = MetaKeyUtils::parseSpace(spaceVal);
+  ASSERT_EQ(100, properties.get_partition_num());
+  ASSERT_EQ(3, properties.get_replica_factor());
+  ASSERT_EQ(3, properties.get_zone_names().size());
 }
 
 TEST(MetaKeyUtilsTest, PartKeyTest) {
