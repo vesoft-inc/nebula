@@ -39,7 +39,7 @@ TEST(BalanceTest, BalanceTaskTest) {
   auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
   HostAddr src("0", 0);
   HostAddr dst("1", 1);
-  TestUtils::registerHB(kv, {src, dst});
+  TestUtils::createSomeHosts(kv, {src, dst});
 
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
@@ -159,8 +159,7 @@ TEST(BalanceTest, SimpleTestWithZone) {
                          {"zone_1", {{"1", 1}}},
                          {"zone_2", {{"2", 2}}},
                          {"zone_3", {{"3", 3}}}};
-    GroupInfo groupInfo = {{"group_0", {"zone_0", "zone_1", "zone_2", "zone_3"}}};
-    TestUtils::assembleGroupAndZone(kv, zoneInfo, groupInfo);
+    TestUtils::assembleZone(kv, zoneInfo);
   }
   {
     cpp2::SpaceDesc properties;
@@ -218,8 +217,7 @@ TEST(BalanceTest, ExpansionZoneTest) {
 
     // create zone and group
     ZoneInfo zoneInfo = {{"zone_0", {{"0", 0}}}, {"zone_1", {{"1", 1}}}, {"zone_2", {{"2", 2}}}};
-    GroupInfo groupInfo = {{"default_group", {"zone_0", "zone_1", "zone_2"}}};
-    TestUtils::assembleGroupAndZone(kv, zoneInfo, groupInfo);
+    TestUtils::assembleZone(kv, zoneInfo);
   }
   {
     cpp2::SpaceDesc properties;
@@ -257,8 +255,7 @@ TEST(BalanceTest, ExpansionZoneTest) {
                          {"zone_1", {{"1", 1}}},
                          {"zone_2", {{"2", 2}}},
                          {"zone_3", {{"3", 3}}}};
-    GroupInfo groupInfo = {{"default_group", {"zone_0", "zone_1", "zone_2", "zone_3"}}};
-    TestUtils::assembleGroupAndZone(kv, zoneInfo, groupInfo);
+    TestUtils::assembleZone(kv, zoneInfo);
   }
   {
     cpp2::SpaceDesc properties;
@@ -307,8 +304,7 @@ TEST(BalanceTest, ExpansionHostIntoZoneTest) {
 
     // create zone and group
     ZoneInfo zoneInfo = {{"zone_0", {{"0", 0}}}, {"zone_1", {{"1", 1}}}, {"zone_2", {{"2", 2}}}};
-    GroupInfo groupInfo = {{"default_group", {"zone_0", "zone_1", "zone_2"}}};
-    TestUtils::assembleGroupAndZone(kv, zoneInfo, groupInfo);
+    TestUtils::assembleZone(kv, zoneInfo);
   }
   {
     cpp2::SpaceDesc properties;
@@ -345,8 +341,7 @@ TEST(BalanceTest, ExpansionHostIntoZoneTest) {
     ZoneInfo zoneInfo = {{"zone_0", {{"0", 0}, {"3", 3}}},
                          {"zone_1", {{"1", 1}, {"4", 4}}},
                          {"zone_2", {{"2", 2}, {"5", 5}}}};
-    GroupInfo groupInfo = {{"default_group", {"zone_0", "zone_1", "zone_2"}}};
-    TestUtils::assembleGroupAndZone(kv, zoneInfo, groupInfo);
+    TestUtils::assembleZone(kv, zoneInfo);
   }
   {
     HostParts hostParts;
@@ -386,8 +381,7 @@ TEST(BalanceTest, ShrinkZoneTest) {
                          {"zone_1", {{"1", 1}}},
                          {"zone_2", {{"2", 2}}},
                          {"zone_3", {{"3", 3}}}};
-    GroupInfo groupInfo = {{"default_group", {"zone_0", "zone_1", "zone_2", "zone_3"}}};
-    TestUtils::assembleGroupAndZone(kv, zoneInfo, groupInfo);
+    TestUtils::assembleZone(kv, zoneInfo);
   }
   {
     cpp2::SpaceDesc properties;
@@ -437,8 +431,7 @@ TEST(BalanceTest, ShrinkHostFromZoneTest) {
     ZoneInfo zoneInfo = {{"zone_0", {{"0", 0}, {"3", 3}}},
                          {"zone_1", {{"1", 1}, {"4", 4}}},
                          {"zone_2", {{"2", 2}, {"5", 5}}}};
-    GroupInfo groupInfo = {{"default_group", {"zone_0", "zone_1", "zone_2"}}};
-    TestUtils::assembleGroupAndZone(kv, zoneInfo, groupInfo);
+    TestUtils::assembleZone(kv, zoneInfo);
   }
   {
     cpp2::SpaceDesc properties;
@@ -470,8 +463,7 @@ TEST(BalanceTest, ShrinkHostFromZoneTest) {
   {
     ZoneInfo zoneInfo = {
         {"zone_0", {{"0", 0}}}, {"zone_1", {{"1", 1}, {"4", 4}}}, {"zone_2", {{"2", 2}, {"5", 5}}}};
-    GroupInfo groupInfo = {{"default_group", {"zone_0", "zone_1", "zone_2"}}};
-    TestUtils::assembleGroupAndZone(kv, zoneInfo, groupInfo);
+    TestUtils::assembleZone(kv, zoneInfo);
   }
   balancer.lostHosts_ = {{"3", 3}};
   ret = balancer.executeInternal(HostAddr(), {});
@@ -502,23 +494,7 @@ TEST(BalanceTest, BalanceWithComplexZoneTest) {
         {"zone_7", {HostAddr("14", 14), HostAddr("15", 15)}},
         {"zone_8", {HostAddr("16", 16), HostAddr("17", 17)}},
     };
-    {
-      GroupInfo groupInfo = {{"group_0", {"zone_0", "zone_1", "zone_2", "zone_3", "zone_4"}}};
-      TestUtils::assembleGroupAndZone(kv, zoneInfo, groupInfo);
-    }
-    {
-      GroupInfo groupInfo = {{"group_1",
-                              {"zone_0",
-                               "zone_1",
-                               "zone_2",
-                               "zone_3",
-                               "zone_4",
-                               "zone_5",
-                               "zone_6",
-                               "zone_7",
-                               "zone_8"}}};
-      TestUtils::assembleGroupAndZone(kv, zoneInfo, groupInfo);
-    }
+    TestUtils::assembleZone(kv, zoneInfo);
   }
   {
     {
@@ -888,6 +864,7 @@ TEST(BalanceTest, BalancePlanTest) {
     JobDescription jd(
         testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
     BalancePlan plan(jd, kv, &client);
+    TestUtils::createSomeHosts(kv, hosts);
     TestUtils::registerHB(kv, hosts);
 
     for (int i = 0; i < 10; i++) {
@@ -1674,8 +1651,7 @@ TEST(BalanceTest, LeaderBalanceWithZoneTest) {
     ZoneInfo zoneInfo = {{"zone_0", {HostAddr("0", 0), HostAddr("1", 1)}},
                          {"zone_1", {HostAddr("2", 2), HostAddr("3", 3)}},
                          {"zone_2", {HostAddr("4", 4), HostAddr("5", 5)}}};
-    GroupInfo groupInfo = {{"default_group", {"zone_0", "zone_1", "zone_2"}}};
-    TestUtils::assembleGroupAndZone(kv, zoneInfo, groupInfo);
+    TestUtils::assembleZone(kv, zoneInfo);
   }
   {
     cpp2::SpaceDesc properties;
@@ -1753,8 +1729,7 @@ TEST(BalanceTest, LeaderBalanceWithLargerZoneTest) {
         {"zone_3", {HostAddr("6", 6), HostAddr("7", 7)}},
         {"zone_4", {HostAddr("8", 8), HostAddr("9", 9)}},
     };
-    GroupInfo groupInfo = {{"default_group", {"zone_0", "zone_1", "zone_2", "zone_3", "zone_4"}}};
-    TestUtils::assembleGroupAndZone(kv, zoneInfo, groupInfo);
+    TestUtils::assembleZone(kv, zoneInfo);
   }
   {
     cpp2::SpaceDesc properties;
@@ -1823,23 +1798,7 @@ TEST(BalanceTest, LeaderBalanceWithComplexZoneTest) {
         {"zone_7", {HostAddr("14", 14), HostAddr("15", 15)}},
         {"zone_8", {HostAddr("16", 16), HostAddr("17", 17)}},
     };
-    {
-      GroupInfo groupInfo = {{"group_0", {"zone_0", "zone_1", "zone_2", "zone_3", "zone_4"}}};
-      TestUtils::assembleGroupAndZone(kv, zoneInfo, groupInfo);
-    }
-    {
-      GroupInfo groupInfo = {{"group_1",
-                              {"zone_0",
-                               "zone_1",
-                               "zone_2",
-                               "zone_3",
-                               "zone_4",
-                               "zone_5",
-                               "zone_6",
-                               "zone_7",
-                               "zone_8"}}};
-      TestUtils::assembleGroupAndZone(kv, zoneInfo, groupInfo);
-    }
+    TestUtils::assembleZone(kv, zoneInfo);
   }
   {
     {

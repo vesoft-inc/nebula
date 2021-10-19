@@ -13,6 +13,7 @@
 
 namespace nebula {
 namespace graph {
+
 class CreateTagValidator final : public Validator {
  public:
   CreateTagValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {}
@@ -310,9 +311,21 @@ class ShowEdgeIndexStatusValidator final : public Validator {
   Status toPlan() override;
 };
 
-class AddZoneValidator final : public Validator {
+class MergeZoneValidator final : public Validator {
  public:
-  AddZoneValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
+  MergeZoneValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
+    setNoSpaceRequired();
+  }
+
+ private:
+  Status validateImpl() override;
+
+  Status toPlan() override;
+};
+
+class RenameZoneValidator final : public Validator {
+ public:
+  RenameZoneValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
     setNoSpaceRequired();
   }
 
@@ -325,6 +338,18 @@ class AddZoneValidator final : public Validator {
 class DropZoneValidator final : public Validator {
  public:
   DropZoneValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
+    setNoSpaceRequired();
+  }
+
+ private:
+  Status validateImpl() override;
+
+  Status toPlan() override;
+};
+
+class SplitZoneValidator final : public Validator {
+ public:
+  SplitZoneValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
     setNoSpaceRequired();
   }
 
@@ -358,22 +383,9 @@ class ListZonesValidator final : public Validator {
   Status toPlan() override;
 };
 
-class AddHostIntoZoneValidator final : public Validator {
+class AddHostsIntoZoneValidator final : public Validator {
  public:
-  AddHostIntoZoneValidator(Sentence* sentence, QueryContext* context)
-      : Validator(sentence, context) {
-    setNoSpaceRequired();
-  }
-
- private:
-  Status validateImpl() override;
-
-  Status toPlan() override;
-};
-
-class DropHostFromZoneValidator final : public Validator {
- public:
-  DropHostFromZoneValidator(Sentence* sentence, QueryContext* context)
+  AddHostsIntoZoneValidator(Sentence* sentence, QueryContext* context)
       : Validator(sentence, context) {
     setNoSpaceRequired();
   }

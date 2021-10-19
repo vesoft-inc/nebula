@@ -238,7 +238,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     if ((int32_t)hosts.size() < replicaFactor) {
       LOG(ERROR) << "Not enough hosts existed for replica " << replicaFactor << ", hosts num "
                  << hosts.size();
-      handleErrorCode(nebula::cpp2::ErrorCode::E_UNSUPPORTED);
+      handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
       onFinished();
       return;
     }

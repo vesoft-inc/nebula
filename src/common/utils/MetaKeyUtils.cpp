@@ -21,6 +21,7 @@ static const std::unordered_map<std::string, std::pair<std::string, bool>> syste
     {"users", {"__users__", true}},
     {"hosts", {"__hosts__", false}},
     {"versions", {"__versions__", false}},
+    {"machines", {"__machines__", false}},
     {"snapshots", {"__snapshots__", false}},
     {"configs", {"__configs__", true}},
     {"groups", {"__groups__", true}},
@@ -58,8 +59,9 @@ static const std::unordered_map<
 // clang-format off
 static const std::string kSpacesTable         = tableMaps.at("spaces").first;         // NOLINT
 static const std::string kPartsTable          = tableMaps.at("parts").first;          // NOLINT
-static const std::string kHostsTable          = systemTableMaps.at("hosts").first;          // NOLINT
 static const std::string kVersionsTable       = systemTableMaps.at("versions").first; // NOLINT
+static const std::string kHostsTable          = systemTableMaps.at("hosts").first;    // NOLINT
+static const std::string kMachinesTable       = systemTableMaps.at("machines").first; // NOLINT
 static const std::string kTagsTable           = tableMaps.at("tags").first;           // NOLINT
 static const std::string kEdgesTable          = tableMaps.at("edges").first;          // NOLINT
 static const std::string kIndexesTable        = tableMaps.at("indexes").first;        // NOLINT
@@ -237,6 +239,21 @@ std::vector<HostAddr> MetaKeyUtils::parsePartValV2(folly::StringPiece val) {
     LOG(ERROR) << "invalid input for parsePartValV2()";
   }
   return ret;
+}
+
+std::string MetaKeyUtils::machineKey(std::string addr, Port port) {
+  std::string key;
+  HostAddr h(addr, port);
+  key.append(kMachinesTable.data(), kMachinesTable.size())
+      .append(MetaKeyUtils::serializeHostAddr(h));
+  return key;
+}
+
+const std::string& MetaKeyUtils::machinePrefix() { return kMachinesTable; }
+
+HostAddr MetaKeyUtils::parseMachineKey(folly::StringPiece key) {
+  key.advance(kMachinesTable.size());
+  return MetaKeyUtils::deserializeHostAddr(key);
 }
 
 std::string MetaKeyUtils::hostKey(std::string addr, Port port) { return hostKeyV2(addr, port); }
@@ -959,29 +976,6 @@ MetaKeyUtils::parseBalanceTaskVal(const folly::StringPiece& rawVal) {
   offset += sizeof(int64_t);
   auto end = *reinterpret_cast<const int64_t*>(rawVal.begin() + offset);
   return std::make_tuple(status, ret, start, end);
-}
-
-std::string MetaKeyUtils::groupKey(const std::string& group) {
-  std::string key;
-  key.reserve(kGroupsTable.size() + group.size());
-  key.append(kGroupsTable.data(), kGroupsTable.size()).append(group);
-  return key;
-}
-
-std::string MetaKeyUtils::groupVal(const std::vector<std::string>& zones) {
-  return folly::join(",", zones);
-}
-
-const std::string& MetaKeyUtils::groupPrefix() { return kGroupsTable; }
-
-std::string MetaKeyUtils::parseGroupName(folly::StringPiece rawData) {
-  return rawData.subpiece(kGroupsTable.size(), rawData.size()).toString();
-}
-
-std::vector<std::string> MetaKeyUtils::parseZoneNames(folly::StringPiece rawData) {
-  std::vector<std::string> zones;
-  folly::split(',', rawData.str(), zones);
-  return zones;
 }
 
 std::string MetaKeyUtils::zoneKey(const std::string& zone) {

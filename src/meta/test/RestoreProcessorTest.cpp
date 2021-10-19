@@ -108,7 +108,7 @@ TEST(RestoreProcessorTest, RestoreTest) {
     auto it = std::find_if(files.cbegin(), files.cend(), [](auto& f) {
       auto const pos = f.find_last_of("/");
       auto name = f.substr(pos + 1);
-      if (name == MetaKeyUtils::groupPrefix() || name == MetaKeyUtils::zonePrefix()) {
+      if (name == MetaKeyUtils::zonePrefix()) {
         return true;
       }
       return false;
@@ -187,11 +187,6 @@ TEST(RestoreProcessorTest, RestoreTest) {
       }
       iter->next();
     }
-
-    prefix = MetaKeyUtils::groupPrefix();
-    result = kvRestore->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    // ASSERT_NE(nebula::cpp2::ErrorCode::SUCCEEDED, result);
-    ASSERT_FALSE(iter->valid());
 
     prefix = MetaKeyUtils::userPrefix();
     result = kvRestore->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
@@ -315,7 +310,7 @@ TEST(RestoreProcessorTest, RestoreFullTest) {
     auto it = std::find_if(files.cbegin(), files.cend(), [](auto& f) {
       auto const pos = f.find_last_of("/");
       auto name = f.substr(pos + 1);
-      if (name == MetaKeyUtils::groupPrefix() || name == MetaKeyUtils::zonePrefix()) {
+      if (name == MetaKeyUtils::zonePrefix()) {
         return true;
       }
       return false;

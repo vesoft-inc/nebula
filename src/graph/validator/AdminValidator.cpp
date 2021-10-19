@@ -291,6 +291,46 @@ Status ShowListenerValidator::toPlan() {
   return Status::OK();
 }
 
+Status AddHostsValidator::validateImpl() { return Status::OK(); }
+
+Status AddHostsValidator::toPlan() {
+  auto sentence = static_cast<AddHostsSentence *>(sentence_);
+  auto hosts = sentence->hosts()->hosts();
+  if (hosts.empty()) {
+    return Status::SemanticError("Host is empty");
+  }
+
+  auto it = std::unique(hosts.begin(), hosts.end());
+  if (it != hosts.end()) {
+    return Status::SemanticError("Host have duplicated");
+  }
+
+  auto *addHost = AddHosts::make(qctx_, nullptr, hosts);
+  root_ = addHost;
+  tail_ = root_;
+  return Status::OK();
+}
+
+Status DropHostsValidator::validateImpl() { return Status::OK(); }
+
+Status DropHostsValidator::toPlan() {
+  auto sentence = static_cast<DropHostsSentence *>(sentence_);
+  auto hosts = sentence->hosts()->hosts();
+  if (hosts.empty()) {
+    return Status::SemanticError("Host is empty");
+  }
+
+  auto it = std::unique(hosts.begin(), hosts.end());
+  if (it != hosts.end()) {
+    return Status::SemanticError("Host have duplicated");
+  }
+
+  auto *dropHost = DropHosts::make(qctx_, nullptr, hosts);
+  root_ = dropHost;
+  tail_ = root_;
+  return Status::OK();
+}
+
 Status ShowHostsValidator::validateImpl() { return Status::OK(); }
 
 Status ShowHostsValidator::toPlan() {

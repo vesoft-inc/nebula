@@ -193,7 +193,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %token KW_STARTS KW_ENDS
 %token KW_UNWIND KW_SKIP KW_OPTIONAL
 %token KW_CASE KW_THEN KW_ELSE KW_END
-%token KW_GROUP KW_ZONE KW_GROUPS KW_ZONES KW_INTO
+%token KW_GROUP KW_ZONE KW_GROUPS KW_ZONES KW_INTO KW_NEW
 %token KW_LISTENER KW_ELASTICSEARCH KW_FULLTEXT KW_HTTPS KW_HTTP
 %token KW_AUTO KW_FUZZY KW_PREFIX KW_REGEXP KW_WILDCARD
 %token KW_TEXT KW_SEARCH KW_CLIENTS KW_SIGN KW_SERVICE KW_TEXT_SEARCH
@@ -203,6 +203,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %token KW_KILL KW_QUERY KW_QUERIES KW_TOP
 %token KW_GEOGRAPHY KW_POINT KW_LINESTRING KW_POLYGON
 %token KW_LIST KW_MAP
+%token KW_MERGE KW_SPLIT KW_RENAME
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -355,8 +356,9 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <sentence> drop_tag_index_sentence drop_edge_index_sentence drop_fulltext_index_sentence
 %type <sentence> describe_tag_index_sentence describe_edge_index_sentence
 %type <sentence> rebuild_tag_index_sentence rebuild_edge_index_sentence rebuild_fulltext_index_sentence
-%type <sentence> add_zone_sentence drop_zone_sentence desc_zone_sentence
-%type <sentence> add_host_into_zone_sentence drop_host_from_zone_sentence
+%type <sentence> add_hosts_sentence drop_hosts_sentence
+%type <sentence> drop_zone_sentence desc_zone_sentence
+%type <sentence> merge_zone_sentence split_zone_sentence rename_zone_sentence
 %type <sentence> create_snapshot_sentence drop_snapshot_sentence
 %type <sentence> add_listener_sentence remove_listener_sentence list_listener_sentence
 
@@ -500,6 +502,7 @@ unreserved_keyword
     | KW_ELSE               { $$ = new std::string("else"); }
     | KW_END                { $$ = new std::string("end"); }
     | KW_INTO               { $$ = new std::string("into"); }
+    | KW_NEW                { $$ = new std::string("new"); }
     | KW_GROUPS             { $$ = new std::string("groups"); }
     | KW_ZONE               { $$ = new std::string("zone"); }
     | KW_ZONES              { $$ = new std::string("zones"); }
@@ -534,6 +537,9 @@ unreserved_keyword
     | KW_POLYGON            { $$ = new std::string("polygon"); }
     | KW_HTTP               { $$ = new std::string("http"); }
     | KW_HTTPS              { $$ = new std::string("https"); }
+    | KW_MERGE              { $$ = new std::string("merge"); }
+    | KW_SPLIT              { $$ = new std::string("split"); }
+    | KW_RENAME             { $$ = new std::string("rename"); }
     ;
 
 expression
@@ -2674,11 +2680,30 @@ rebuild_fulltext_index_sentence
         $$ = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
                                   meta::cpp2::AdminCmd::REBUILD_FULLTEXT_INDEX);
     }
+    ;
+
+add_hosts_sentence
+    : KW_ADD KW_HOSTS host_list {
+        $$ = new AddHostsSentence($3);
+    }
+    | KW_ADD KW_HOSTS host_list KW_INTO KW_ZONE name_label {
+        $$ = new AddHostsIntoZoneSentence($3, $6, false);
+    }
+    | KW_ADD KW_HOSTS host_list KW_INTO KW_NEW KW_ZONE name_label {
+        $$ = new AddHostsIntoZoneSentence($3, $7, true);
+    }
+    ;
+
+drop_hosts_sentence
+    : KW_DROP KW_HOSTS host_list {
+        $$ = new DropHostsSentence($3);
+    }
+    ;
 
 
-add_zone_sentence
-    : KW_ADD KW_ZONE name_label host_list {
-        $$ = new AddZoneSentence($3, $4);
+merge_zone_sentence
+    : KW_MERGE KW_ZONE zone_name_list KW_INTO name_label {
+        $$ = new MergeZoneSentence($3, $5);
     }
     ;
 
@@ -2688,24 +2713,24 @@ drop_zone_sentence
     }
     ;
 
+split_zone_sentence
+    : KW_SPLIT KW_ZONE name_label KW_FROM zone_name_list {
+        $$ = new SplitZoneSentence($3, $5);
+    }
+    ;
+
+rename_zone_sentence
+    : KW_RENAME KW_ZONE name_label KW_TO name_label {
+        $$ = new RenameZoneSentence($3, $5);
+    }
+    ;
+
 desc_zone_sentence
     : KW_DESCRIBE KW_ZONE name_label {
         $$ = new DescribeZoneSentence($3);
     }
     | KW_DESC KW_ZONE name_label {
         $$ = new DescribeZoneSentence($3);
-    }
-    ;
-
-add_host_into_zone_sentence
-    : KW_ADD KW_HOST host_item KW_INTO KW_ZONE name_label {
-        $$ = new AddHostIntoZoneSentence($3, $6);
-    }
-    ;
-
-drop_host_from_zone_sentence
-    : KW_DROP KW_HOST host_item KW_FROM KW_ZONE name_label {
-        $$ = new DropHostFromZoneSentence($3, $6);
     }
     ;
 
@@ -3650,11 +3675,13 @@ maintain_sentence
     | rebuild_tag_index_sentence { $$ = $1; }
     | rebuild_edge_index_sentence { $$ = $1; }
     | rebuild_fulltext_index_sentence { $$ = $1; }
-    | add_zone_sentence { $$ = $1; }
+    | add_hosts_sentence { $$ = $1; }
+    | drop_hosts_sentence { $$ = $1; }
+    | merge_zone_sentence { $$ = $1; }
     | drop_zone_sentence { $$ = $1; }
+    | split_zone_sentence { $$ = $1; }
+    | rename_zone_sentence { $$ = $1; }
     | desc_zone_sentence { $$ = $1; }
-    | add_host_into_zone_sentence { $$ = $1; }
-    | drop_host_from_zone_sentence { $$ = $1; }
     | show_sentence { $$ = $1; }
     | create_user_sentence { $$ = $1; }
     | alter_user_sentence { $$ = $1; }

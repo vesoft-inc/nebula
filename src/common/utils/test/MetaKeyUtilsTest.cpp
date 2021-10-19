@@ -24,8 +24,9 @@ TEST(MetaKeyUtilsTest, SpaceKeyTest) {
   spaceDesc.set_replica_factor(3);
   auto spaceVal = MetaKeyUtils::spaceVal(spaceDesc);
   ASSERT_EQ("default", MetaKeyUtils::spaceName(spaceVal));
-  ASSERT_EQ(100, MetaKeyUtils::parseSpace(spaceVal).get_partition_num());
-  ASSERT_EQ(3, MetaKeyUtils::parseSpace(spaceVal).get_replica_factor());
+  auto properties = MetaKeyUtils::parseSpace(spaceVal);
+  ASSERT_EQ(100, properties.get_partition_num());
+  ASSERT_EQ(3, properties.get_replica_factor());
 }
 
 TEST(MetaKeyUtilsTest, SpaceKeyWithZonesTest) {
@@ -41,8 +42,10 @@ TEST(MetaKeyUtilsTest, SpaceKeyWithZonesTest) {
   spaceDesc.set_zone_names(std::move(zoneNames));
   auto spaceVal = MetaKeyUtils::spaceVal(spaceDesc);
   ASSERT_EQ("default", MetaKeyUtils::spaceName(spaceVal));
-  ASSERT_EQ(100, MetaKeyUtils::parseSpace(spaceVal).get_partition_num());
-  ASSERT_EQ(3, MetaKeyUtils::parseSpace(spaceVal).get_replica_factor());
+  auto properties = MetaKeyUtils::parseSpace(spaceVal);
+  ASSERT_EQ(100, properties.get_partition_num());
+  ASSERT_EQ(3, properties.get_replica_factor());
+  ASSERT_EQ(3, properties.get_zone_names().size());
 }
 
 TEST(MetaKeyUtilsTest, PartKeyTest) {
@@ -92,6 +95,13 @@ TEST(MetaKeyUtilsTest, storeStrIpCodecTest) {
     }
   }
 
+  {
+    // kMachinesTable : key
+    auto key = MetaKeyUtils::machineKey(hostnames[0], ports[0]);
+    auto host = MetaKeyUtils::parseMachineKey(key);
+    ASSERT_EQ(host.host, hostnames[0]);
+    ASSERT_EQ(host.port, ports[0]);
+  }
   {
     // kHostsTable : key
     auto key = MetaKeyUtils::hostKey(hostnames[0], ports[0]);
@@ -198,15 +208,6 @@ TEST(MetaKeyUtilsTest, TagTest) {
   auto val = MetaKeyUtils::schemaVal("test_tag", schema);
   auto parsedSchema = MetaKeyUtils::parseSchema(val);
   ASSERT_EQ(parsedSchema, schema);
-}
-
-TEST(MetaKeyUtilsTest, GroupTest) {
-  auto groupKey = MetaKeyUtils::groupKey("test_group");
-  ASSERT_EQ("test_group", MetaKeyUtils::parseGroupName(groupKey));
-
-  std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2"};
-  auto groupValue = MetaKeyUtils::groupVal(zones);
-  ASSERT_EQ(zones, MetaKeyUtils::parseZoneNames(groupValue));
 }
 
 TEST(MetaKeyUtilsTest, ZoneTest) {

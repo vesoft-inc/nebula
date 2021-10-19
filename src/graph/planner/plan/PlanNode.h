@@ -149,11 +149,14 @@ class PlanNode {
 
     // zone related
     kShowZones,
-    kAddZone,
+    kMergeZone,
+    kRenameZone,
     kDropZone,
+    kSplitZone,
+    kAddHosts,
+    kDropHosts,
     kDescribeZone,
-    kAddHostIntoZone,
-    kDropHostFromZone,
+    kAddHostsIntoZone,
 
     // listener related
     kAddListener,

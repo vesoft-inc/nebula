@@ -432,6 +432,14 @@ struct ListEdgesResp {
     3: list<EdgeItem>   edges,
 }
 
+struct AddHostsReq {
+    1: list<common.HostAddr> hosts,
+}
+
+struct DropHostsReq {
+    1: list<common.HostAddr> hosts,
+}
+
 enum ListHostType {
     // nebula 1.0 show hosts, show leader, partition info
     ALLOC       = 0x00,
@@ -815,23 +823,28 @@ struct ListIndexStatusResp {
 }
 
 // Zone related interface
-struct AddZoneReq {
-    1: binary                 zone_name,
-    2: list<common.HostAddr>  nodes,
+struct MergeZoneReq {
+    1: list<binary>      zones,
+    2: binary            zone_name,
 }
 
 struct DropZoneReq {
     1: binary                 zone_name,
 }
 
-struct AddHostIntoZoneReq {
-    1: common.HostAddr  node,
-    2: binary           zone_name,
+struct SplitZoneReq {
+    1: binary            zone_name,
 }
 
-struct DropHostFromZoneReq {
-    1: common.HostAddr  node,
-    2: binary           zone_name,
+struct RenameZoneReq {
+    1: binary            original_zone_name,
+    2: binary            zone_name,
+}
+
+struct AddHostsIntoZoneReq {
+    1: list<common.HostAddr>  hosts,
+    2: binary                 zone_name,
+    3: bool                   is_new,
 }
 
 struct GetZoneReq {
@@ -1134,7 +1147,10 @@ service MetaService {
     GetEdgeResp getEdge(1: GetEdgeReq req);
     ListEdgesResp listEdges(1: ListEdgesReq req);
 
-    ListHostsResp listHosts(1: ListHostsReq req);
+    ExecResp       addHosts(1: AddHostsReq req);
+    ExecResp       addHostsIntoZone(1: AddHostsIntoZoneReq req);
+    ExecResp       dropHosts(1: DropHostsReq req);
+    ListHostsResp  listHosts(1: ListHostsReq req);
 
     GetPartsAllocResp getPartsAlloc(1: GetPartsAllocReq req);
     ListPartsResp listParts(1: ListPartsReq req);
@@ -1182,17 +1198,17 @@ service MetaService {
 
     AdminJobResp runAdminJob(1: AdminJobReq req);
 
-    ExecResp       addZone(1: AddZoneReq req);
+    ExecResp       mergeZone(1: MergeZoneReq req);
     ExecResp       dropZone(1: DropZoneReq req);
-    ExecResp       addHostIntoZone(1: AddHostIntoZoneReq req);
-    ExecResp       dropHostFromZone(1: DropHostFromZoneReq req);
+    ExecResp       splitZone(1: SplitZoneReq req);
+    ExecResp       renameZone(1: RenameZoneReq req);
     GetZoneResp    getZone(1: GetZoneReq req);
     ListZonesResp  listZones(1: ListZonesReq req);
 
     CreateBackupResp createBackup(1: CreateBackupReq req);
-    ExecResp       restoreMeta(1: RestoreMetaReq req);
-    ExecResp       addListener(1: AddListenerReq req);
-    ExecResp       removeListener(1: RemoveListenerReq req);
+    ExecResp         restoreMeta(1: RestoreMetaReq req);
+    ExecResp         addListener(1: AddListenerReq req);
+    ExecResp         removeListener(1: RemoveListenerReq req);
     ListListenerResp listListener(1: ListListenerReq req);
 
     GetStatsResp  getStats(1: GetStatsReq req);
