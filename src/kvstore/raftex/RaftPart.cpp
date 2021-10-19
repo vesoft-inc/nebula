@@ -1865,9 +1865,9 @@ bool RaftPart::checkAppendLogResult(AppendLogResult res) {
       cachingPromise_.setValue(res);
       cachingPromise_.reset();
       bufferOverFlow_ = false;
+      sendingPromise_.setValue(res);
+      replicatingLogs_ = false;
     }
-    sendingPromise_.setValue(res);
-    replicatingLogs_ = false;
     return false;
   }
   return true;
