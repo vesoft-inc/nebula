@@ -2914,11 +2914,36 @@ TEST_F(ParserTest, FullTextServiceTest) {
     std::string query = "SIGN IN TEXT SERVICE (127.0.0.1:9200)";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), query);
+  }
+  {
+    std::string query = "SIGN IN TEXT SERVICE (127.0.0.1:9200, HTTP)";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), query);
+  }
+  {
+    std::string query = "SIGN IN TEXT SERVICE (127.0.0.1:9200, HTTPS)";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), query);
+  }
+  {
+    std::string query = "SIGN IN TEXT SERVICE (127.0.0.1:9200, HTTPS, \"user\")";
+    auto result = parse(query);
+    ASSERT_FALSE(result.ok());
   }
   {
     std::string query = "SIGN IN TEXT SERVICE (127.0.0.1:9200), (127.0.0.1:9300)";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), query);
+  }
+  {
+    std::string query = "SIGN IN TEXT SERVICE (127.0.0.1:9200, HTTPS), (127.0.0.1:9300)";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), query);
   }
   {
     std::string query = "SIGN IN TEXT SERVICE (127.0.0.1:9200, \"user\", \"password\")";
@@ -2926,11 +2951,32 @@ TEST_F(ParserTest, FullTextServiceTest) {
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
+    std::string query = "SIGN IN TEXT SERVICE (127.0.0.1:9200, HTTP, \"user\", \"password\")";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), query);
+  }
+  {
+    std::string query = "SIGN IN TEXT SERVICE (127.0.0.1:9200, HTTPS, \"user\", \"password\")";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), query);
+  }
+  {
     std::string query =
         "SIGN IN TEXT SERVICE (127.0.0.1:9200, \"user\", \"password\"), "
         "(127.0.0.1:9200, \"user\", \"password\")";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), query);
+  }
+  {
+    std::string query =
+        "SIGN IN TEXT SERVICE (127.0.0.1:9200, HTTP, \"user\", \"password\"), "
+        "(127.0.0.1:9200, HTTPS, \"user\", \"password\")";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), query);
   }
   {
     std::string query = "SIGN OUT TEXT SERVICE";

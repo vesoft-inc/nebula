@@ -32,6 +32,7 @@ void ESListener::init() {
       hc.user = *c.user_ref();
       hc.password = *c.pwd_ref();
     }
+    hc.connType = c.conn_type_ref().has_value() ? *c.get_conn_type() : "http";
     esClients_.emplace_back(std::move(hc));
   }
 
