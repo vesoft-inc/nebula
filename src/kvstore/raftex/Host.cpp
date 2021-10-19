@@ -164,11 +164,9 @@ void Host::appendLogsInternal(folly::EventBase* eb, std::shared_ptr<cpp2::Append
           VLOG(2) << self->idStr_ << t.exception().what();
           cpp2::AppendLogResponse r;
           r.set_error_code(cpp2::ErrorCode::E_EXCEPTION);
-          {
-            std::lock_guard<std::mutex> g(self->lock_);
-            self->setResponse(r);
-            self->lastLogIdSent_ = self->logIdToSend_ - 1;
-          }
+          std::lock_guard<std::mutex> g(self->lock_);
+          self->setResponse(r);
+          self->lastLogIdSent_ = self->logIdToSend_ - 1;
           self->noMoreRequestCV_.notify_all();
           return;
         }
@@ -235,12 +233,16 @@ void Host::appendLogsInternal(folly::EventBase* eb, std::shared_ptr<cpp2::Append
                   }  // self->noRequest()
                 }    // self->lastLogIdSent_ < self->logIdToSend_
               }      // else
+
+              if (!newReq) {
+                // we need protect of self->lock_ to avoid missing signal problem
+                self->noMoreRequestCV_.notify_all();
+                return;
+              }
             }
-            if (newReq) {
-              self->appendLogsInternal(eb, newReq);
-            } else {
-              self->noMoreRequestCV_.notify_all();
-            }
+
+            // assume newReq == false
+            self->appendLogsInternal(eb, newReq);
             return;
           }
           case cpp2::ErrorCode::E_LOG_GAP: {
@@ -271,12 +273,15 @@ void Host::appendLogsInternal(folly::EventBase* eb, std::shared_ptr<cpp2::Append
                 self->followerCommittedLogId_ = resp.get_committed_log_id();
                 newReq = self->prepareAppendLogRequest();
               }
+
+              if (!newReq) {
+                self->noMoreRequestCV_.notify_all();
+                return;
+              }
             }
-            if (newReq) {
-              self->appendLogsInternal(eb, newReq);
-            } else {
-              self->noMoreRequestCV_.notify_all();
-            }
+
+            // assume newReq == false
+            self->appendLogsInternal(eb, newReq);
             return;
           }
           case cpp2::ErrorCode::E_WAITING_SNAPSHOT: {
@@ -301,12 +306,15 @@ void Host::appendLogsInternal(folly::EventBase* eb, std::shared_ptr<cpp2::Append
                 self->followerCommittedLogId_ = resp.get_committed_log_id();
                 newReq = self->prepareAppendLogRequest();
               }
+
+              if (!newReq) {
+                self->noMoreRequestCV_.notify_all();
+                return;
+              }
             }
-            if (newReq) {
-              self->appendLogsInternal(eb, newReq);
-            } else {
-              self->noMoreRequestCV_.notify_all();
-            }
+
+            // assume newReq == false
+            self->appendLogsInternal(eb, newReq);
             return;
           }
           case cpp2::ErrorCode::E_LOG_STALE: {
@@ -337,23 +345,24 @@ void Host::appendLogsInternal(folly::EventBase* eb, std::shared_ptr<cpp2::Append
                 self->followerCommittedLogId_ = resp.get_committed_log_id();
                 newReq = self->prepareAppendLogRequest();
               }
+
+              if (!newReq) {
+                self->noMoreRequestCV_.notify_all();
+                return;
+              }
             }
-            if (newReq) {
-              self->appendLogsInternal(eb, newReq);
-            } else {
-              self->noMoreRequestCV_.notify_all();
-            }
+
+            // assume newReq == false
+            self->appendLogsInternal(eb, newReq);
             return;
           }
           default: {
             LOG_EVERY_N(ERROR, 100)
                 << self->idStr_ << "Failed to append logs to the host (Err: "
                 << apache::thrift::util::enumNameSafe(resp.get_error_code()) << ")";
-            {
-              std::lock_guard<std::mutex> g(self->lock_);
-              self->setResponse(resp);
-              self->lastLogIdSent_ = self->logIdToSend_ - 1;
-            }
+            std::lock_guard<std::mutex> g(self->lock_);
+            self->setResponse(resp);
+            self->lastLogIdSent_ = self->logIdToSend_ - 1;
             self->noMoreRequestCV_.notify_all();
             return;
           }
