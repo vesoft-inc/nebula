@@ -67,6 +67,7 @@ Feature: Geo base
     Then the result should be, in any order:
       | Tag          | Create Tag                                                                                  |
       | "only_point" | 'CREATE TAG `only_point` (\n `geo` geography(point) NULL\n) ttl_duration = 0, ttl_col = ""' |
+    Then drop the used space
 
   Scenario: test geo CURD
     # Any geo shape(point/linestring/polygon) is allowed to insert to the column geography
@@ -702,3 +703,4 @@ Feature: Geo base
       DROP EDGE any_shape_edge;
       """
     Then the execution should be successful
+    Then drop the used space

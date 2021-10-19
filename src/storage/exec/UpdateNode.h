@@ -362,37 +362,19 @@ class UpdateTagNode : public UpdateNode<VertexID> {
               LOG(ERROR) << "Bad format row";
               return folly::none;
             }
-            if (index->get_fields().size() == 1 &&
-                index->get_fields().back().get_type().get_type() ==
-                    meta::cpp2::PropertyType::GEOGRAPHY) {
-              auto ois = indexKeysForGeography(partId, vId, reader_, index);
-              if (!ois.empty()) {
-                auto iState = context_->env()->getIndexState(context_->spaceId(), partId);
-                if (context_->env()->checkRebuilding(iState)) {
-                  for (auto& oi : ois) {
-                    auto deleteOpKey = OperationKeyUtils::deleteOperationKey(partId);
-                    batchHolder->put(std::move(deleteOpKey), std::move(oi));
-                  }
-                } else if (context_->env()->checkIndexLocked(iState)) {
-                  LOG(ERROR) << "The index has been locked: " << index->get_index_name();
-                  return folly::none;
-                } else {
-                  for (auto& oi : ois) {
-                    batchHolder->remove(std::move(oi));
-                  }
+            auto ois = indexKeys(partId, vId, reader_, index);
+            if (!ois.empty()) {
+              auto iState = context_->env()->getIndexState(context_->spaceId(), partId);
+              if (context_->env()->checkRebuilding(iState)) {
+                auto deleteOpKey = OperationKeyUtils::deleteOperationKey(partId);
+                for (auto& oi : ois) {
+                  batchHolder->put(std::string(deleteOpKey), std::move(oi));
                 }
-              }
-            } else {
-              auto oi = indexKey(partId, vId, reader_, index);
-              if (!oi.empty()) {
-                auto iState = context_->env()->getIndexState(context_->spaceId(), partId);
-                if (context_->env()->checkRebuilding(iState)) {
-                  auto deleteOpKey = OperationKeyUtils::deleteOperationKey(partId);
-                  batchHolder->put(std::move(deleteOpKey), std::move(oi));
-                } else if (context_->env()->checkIndexLocked(iState)) {
-                  LOG(ERROR) << "The index has been locked: " << index->get_index_name();
-                  return folly::none;
-                } else {
+              } else if (context_->env()->checkIndexLocked(iState)) {
+                LOG(ERROR) << "The index has been locked: " << index->get_index_name();
+                return folly::none;
+              } else {
+                for (auto& oi : ois) {
                   batchHolder->remove(std::move(oi));
                 }
               }
@@ -408,41 +390,22 @@ class UpdateTagNode : public UpdateNode<VertexID> {
             LOG(ERROR) << "Bad format row";
             return folly::none;
           }
-          if (index->get_fields().size() == 1 && index->get_fields().back().get_type().get_type() ==
-                                                     meta::cpp2::PropertyType::GEOGRAPHY) {
-            auto nis = indexKeysForGeography(partId, vId, nReader.get(), index);
-            if (!nis.empty()) {
-              auto v = CommonUtils::ttlValue(schema_, nReader.get());
-              auto niv = v.ok() ? IndexKeyUtils::indexVal(std::move(v).value()) : "";
-              auto indexState = context_->env()->getIndexState(context_->spaceId(), partId);
-              if (context_->env()->checkRebuilding(indexState)) {
-                for (auto& ni : nis) {
-                  auto modifyKey = OperationKeyUtils::modifyOperationKey(partId, std::move(ni));
-                  batchHolder->put(std::move(modifyKey), std::string(niv));
-                }
-              } else if (context_->env()->checkIndexLocked(indexState)) {
-                LOG(ERROR) << "The index has been locked: " << index->get_index_name();
-                return folly::none;
-              } else {
-                for (auto& ni : nis) {
-                  batchHolder->put(std::move(ni), std::string(niv));
-                }
-              }
-            }
-          } else {
-            auto ni = indexKey(partId, vId, nReader.get(), index);
-            if (!ni.empty()) {
-              auto v = CommonUtils::ttlValue(schema_, nReader.get());
-              auto niv = v.ok() ? IndexKeyUtils::indexVal(std::move(v).value()) : "";
-              auto indexState = context_->env()->getIndexState(context_->spaceId(), partId);
-              if (context_->env()->checkRebuilding(indexState)) {
+          auto nis = indexKeys(partId, vId, nReader.get(), index);
+          if (!nis.empty()) {
+            auto v = CommonUtils::ttlValue(schema_, nReader.get());
+            auto niv = v.ok() ? IndexKeyUtils::indexVal(std::move(v).value()) : "";
+            auto indexState = context_->env()->getIndexState(context_->spaceId(), partId);
+            if (context_->env()->checkRebuilding(indexState)) {
+              for (auto& ni : nis) {
                 auto modifyKey = OperationKeyUtils::modifyOperationKey(partId, std::move(ni));
-                batchHolder->put(std::move(modifyKey), std::move(niv));
-              } else if (context_->env()->checkIndexLocked(indexState)) {
-                LOG(ERROR) << "The index has been locked: " << index->get_index_name();
-                return folly::none;
-              } else {
-                batchHolder->put(std::move(ni), std::move(niv));
+                batchHolder->put(std::move(modifyKey), std::string(niv));
+              }
+            } else if (context_->env()->checkIndexLocked(indexState)) {
+              LOG(ERROR) << "The index has been locked: " << index->get_index_name();
+              return folly::none;
+            } else {
+              for (auto& ni : nis) {
+                batchHolder->put(std::move(ni), std::string(niv));
               }
             }
           }
@@ -454,30 +417,15 @@ class UpdateTagNode : public UpdateNode<VertexID> {
     return encodeBatchValue(batchHolder->getBatch());
   }
 
-  std::string indexKey(PartitionID partId,
-                       const VertexID& vId,
-                       RowReader* reader,
-                       std::shared_ptr<nebula::meta::cpp2::IndexItem> index) {
+  std::vector<std::string> indexKeys(PartitionID partId,
+                                     const VertexID& vId,
+                                     RowReader* reader,
+                                     std::shared_ptr<nebula::meta::cpp2::IndexItem> index) {
     auto values = IndexKeyUtils::collectIndexValues(reader, index->get_fields());
-    if (!values.ok()) {
-      return "";
-    }
-    return IndexKeyUtils::vertexIndexKey(
-        context_->vIdLen(), partId, index->get_index_id(), vId, std::move(values).value());
-  }
-
-  std::vector<std::string> indexKeysForGeography(
-      PartitionID partId,
-      const VertexID& vId,
-      RowReader* reader,
-      std::shared_ptr<nebula::meta::cpp2::IndexItem> index) {
-    DCHECK(index->get_fields().size() == 1 &&
-           index->get_fields().back().get_type().get_type() == meta::cpp2::PropertyType::GEOGRAPHY);
-    auto values = IndexKeyUtils::collectIndexValueForGeography(reader, index->get_fields().back());
     if (!values.ok()) {
       return {};
     }
-    return IndexKeyUtils::vertexIndexKeysForGeography(
+    return IndexKeyUtils::vertexIndexKeys(
         context_->vIdLen(), partId, index->get_index_id(), vId, std::move(values).value());
   }
 
@@ -737,37 +685,19 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
               LOG(ERROR) << "Bad format row";
               return folly::none;
             }
-            if (index->get_fields().size() == 1 &&
-                index->get_fields().back().get_type().get_type() ==
-                    meta::cpp2::PropertyType::GEOGRAPHY) {
-              auto ois = indexKeysForGeography(partId, reader_, edgeKey, index);
-              if (!ois.empty()) {
-                auto iState = context_->env()->getIndexState(context_->spaceId(), partId);
-                if (context_->env()->checkRebuilding(iState)) {
-                  for (auto& oi : ois) {
-                    auto deleteOpKey = OperationKeyUtils::deleteOperationKey(partId);
-                    batchHolder->put(std::move(deleteOpKey), std::move(oi));
-                  }
-                } else if (context_->env()->checkIndexLocked(iState)) {
-                  LOG(ERROR) << "The index has been locked: " << index->get_index_name();
-                  return folly::none;
-                } else {
-                  for (auto& oi : ois) {
-                    batchHolder->remove(std::move(oi));
-                  }
+            auto ois = indexKeys(partId, reader_, edgeKey, index);
+            if (!ois.empty()) {
+              auto iState = context_->env()->getIndexState(context_->spaceId(), partId);
+              if (context_->env()->checkRebuilding(iState)) {
+                auto deleteOpKey = OperationKeyUtils::deleteOperationKey(partId);
+                for (auto& oi : ois) {
+                  batchHolder->put(std::string(deleteOpKey), std::move(oi));
                 }
-              }
-            } else {
-              auto oi = indexKey(partId, reader_, edgeKey, index);
-              if (!oi.empty()) {
-                auto iState = context_->env()->getIndexState(context_->spaceId(), partId);
-                if (context_->env()->checkRebuilding(iState)) {
-                  auto deleteOpKey = OperationKeyUtils::deleteOperationKey(partId);
-                  batchHolder->put(std::move(deleteOpKey), std::move(oi));
-                } else if (context_->env()->checkIndexLocked(iState)) {
-                  LOG(ERROR) << "The index has been locked: " << index->get_index_name();
-                  return folly::none;
-                } else {
+              } else if (context_->env()->checkIndexLocked(iState)) {
+                LOG(ERROR) << "The index has been locked: " << index->get_index_name();
+                return folly::none;
+              } else {
+                for (auto& oi : ois) {
                   batchHolder->remove(std::move(oi));
                 }
               }
@@ -783,41 +713,22 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
             LOG(ERROR) << "Bad format row";
             return folly::none;
           }
-          if (index->get_fields().size() == 1 && index->get_fields().back().get_type().get_type() ==
-                                                     meta::cpp2::PropertyType::GEOGRAPHY) {
-            auto niks = indexKeysForGeography(partId, nReader.get(), edgeKey, index);
-            if (!niks.empty()) {
-              auto v = CommonUtils::ttlValue(schema_, nReader.get());
-              auto niv = v.ok() ? IndexKeyUtils::indexVal(std::move(v).value()) : "";
-              auto indexState = context_->env()->getIndexState(context_->spaceId(), partId);
-              if (context_->env()->checkRebuilding(indexState)) {
-                for (auto& nik : niks) {
-                  auto modifyKey = OperationKeyUtils::modifyOperationKey(partId, std::move(nik));
-                  batchHolder->put(std::move(modifyKey), std::string(niv));
-                }
-              } else if (context_->env()->checkIndexLocked(indexState)) {
-                LOG(ERROR) << "The index has been locked: " << index->get_index_name();
-                return folly::none;
-              } else {
-                for (auto& nik : niks) {
-                  batchHolder->put(std::move(nik), std::string(niv));
-                }
-              }
-            }
-          } else {
-            auto nik = indexKey(partId, nReader.get(), edgeKey, index);
-            if (!nik.empty()) {
-              auto v = CommonUtils::ttlValue(schema_, nReader.get());
-              auto niv = v.ok() ? IndexKeyUtils::indexVal(std::move(v).value()) : "";
-              auto indexState = context_->env()->getIndexState(context_->spaceId(), partId);
-              if (context_->env()->checkRebuilding(indexState)) {
+          auto niks = indexKeys(partId, nReader.get(), edgeKey, index);
+          if (!niks.empty()) {
+            auto v = CommonUtils::ttlValue(schema_, nReader.get());
+            auto niv = v.ok() ? IndexKeyUtils::indexVal(std::move(v).value()) : "";
+            auto indexState = context_->env()->getIndexState(context_->spaceId(), partId);
+            if (context_->env()->checkRebuilding(indexState)) {
+              for (auto& nik : niks) {
                 auto modifyKey = OperationKeyUtils::modifyOperationKey(partId, std::move(nik));
-                batchHolder->put(std::move(modifyKey), std::move(niv));
-              } else if (context_->env()->checkIndexLocked(indexState)) {
-                LOG(ERROR) << "The index has been locked: " << index->get_index_name();
-                return folly::none;
-              } else {
-                batchHolder->put(std::move(nik), std::move(niv));
+                batchHolder->put(std::move(modifyKey), std::string(niv));
+              }
+            } else if (context_->env()->checkIndexLocked(indexState)) {
+              LOG(ERROR) << "The index has been locked: " << index->get_index_name();
+              return folly::none;
+            } else {
+              for (auto& nik : niks) {
+                batchHolder->put(std::move(nik), std::string(niv));
               }
             }
           }
@@ -837,42 +748,21 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
     return encodeBatchValue(batchHolder->getBatch());
   }
 
-  // TODO(jie) The indexKey code has been defined many times in many files...
-  std::string indexKey(PartitionID partId,
-                       RowReader* reader,
-                       const cpp2::EdgeKey& edgeKey,
-                       std::shared_ptr<nebula::meta::cpp2::IndexItem> index) {
+  std::vector<std::string> indexKeys(PartitionID partId,
+                                     RowReader* reader,
+                                     const cpp2::EdgeKey& edgeKey,
+                                     std::shared_ptr<nebula::meta::cpp2::IndexItem> index) {
     auto values = IndexKeyUtils::collectIndexValues(reader, index->get_fields());
-    if (!values.ok()) {
-      return "";
-    }
-    return IndexKeyUtils::edgeIndexKey(context_->vIdLen(),
-                                       partId,
-                                       index->get_index_id(),
-                                       edgeKey.get_src().getStr(),
-                                       edgeKey.get_ranking(),
-                                       edgeKey.get_dst().getStr(),
-                                       std::move(values).value());
-  }
-
-  std::vector<std::string> indexKeysForGeography(
-      PartitionID partId,
-      RowReader* reader,
-      const cpp2::EdgeKey& edgeKey,
-      std::shared_ptr<nebula::meta::cpp2::IndexItem> index) {
-    DCHECK(index->get_fields().size() == 1 &&
-           index->get_fields().back().get_type().get_type() == meta::cpp2::PropertyType::GEOGRAPHY);
-    auto values = IndexKeyUtils::collectIndexValueForGeography(reader, index->get_fields().back());
     if (!values.ok()) {
       return {};
     }
-    return IndexKeyUtils::edgeIndexKeysForGeography(context_->vIdLen(),
-                                                    partId,
-                                                    index->get_index_id(),
-                                                    edgeKey.get_src().getStr(),
-                                                    edgeKey.get_ranking(),
-                                                    edgeKey.get_dst().getStr(),
-                                                    std::move(values).value());
+    return IndexKeyUtils::edgeIndexKeys(context_->vIdLen(),
+                                        partId,
+                                        index->get_index_id(),
+                                        edgeKey.get_src().getStr(),
+                                        edgeKey.get_ranking(),
+                                        edgeKey.get_dst().getStr(),
+                                        std::move(values).value());
   }
 
  private:

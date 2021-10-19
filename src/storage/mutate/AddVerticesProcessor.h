@@ -39,16 +39,10 @@ class AddVerticesProcessor : public BaseProcessor<cpp2::ExecResponse> {
                                                              const VertexID& vId,
                                                              TagID tagId);
 
-  std::string indexKey(PartitionID partId,
-                       const VertexID& vId,
-                       RowReader* reader,
-                       std::shared_ptr<nebula::meta::cpp2::IndexItem> index);
-
-  std::vector<std::string> indexKeysForGeography(
-      PartitionID partId,
-      const VertexID& vId,
-      RowReader* reader,
-      std::shared_ptr<nebula::meta::cpp2::IndexItem> index);
+  std::vector<std::string> indexKeys(PartitionID partId,
+                                     const VertexID& vId,
+                                     RowReader* reader,
+                                     std::shared_ptr<nebula::meta::cpp2::IndexItem> index);
 
  private:
   GraphSpaceID spaceId_;

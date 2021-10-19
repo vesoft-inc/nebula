@@ -83,8 +83,8 @@ class GeoIndex {
 
  private:
   RegionCoverParams rcParams_;
-  bool pointsOnly_{
-      false};  // For the column Geography(Point), we don't need to build ancestor cells
+  // For the column Geography(Point), we don't need to build ancestor cells
+  bool pointsOnly_{false};
 };
 
 }  // namespace geo

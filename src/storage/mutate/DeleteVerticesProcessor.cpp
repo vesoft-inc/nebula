@@ -146,48 +146,25 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> DeleteVerticesProcessor::deleteVer
             }
           }
           const auto& cols = index->get_fields();
-          if (cols.size() == 1 &&
-              cols.back().get_type().get_type() == meta::cpp2::PropertyType::GEOGRAPHY) {
-            auto valuesRet =
-                IndexKeyUtils::collectIndexValueForGeography(reader.get(), cols.back());
-            if (!valuesRet.ok()) {
-              continue;
-            }
-            auto indexKeys = IndexKeyUtils::vertexIndexKeysForGeography(
-                spaceVidLen_, partId, indexId, vertex.getStr(), std::move(valuesRet).value());
+          auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(), cols);
+          if (!valuesRet.ok()) {
+            continue;
+          }
+          auto indexKeys = IndexKeyUtils::vertexIndexKeys(
+              spaceVidLen_, partId, indexId, vertex.getStr(), std::move(valuesRet).value());
 
-            // Check the index is building for the specified partition or not
-            auto indexState = env_->getIndexState(spaceId_, partId);
-            if (env_->checkRebuilding(indexState)) {
-              for (auto& indexKey : indexKeys) {
-                auto deleteOpKey = OperationKeyUtils::deleteOperationKey(partId);
-                batchHolder->put(std::move(deleteOpKey), std::move(indexKey));
-              }
-            } else if (env_->checkIndexLocked(indexState)) {
-              LOG(ERROR) << "The index has been locked: " << index->get_index_name();
-              return nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
-            } else {
-              for (auto& indexKey : indexKeys) {
-                batchHolder->remove(std::move(indexKey));
-              }
+          // Check the index is building for the specified partition or not
+          auto indexState = env_->getIndexState(spaceId_, partId);
+          if (env_->checkRebuilding(indexState)) {
+            auto deleteOpKey = OperationKeyUtils::deleteOperationKey(partId);
+            for (auto& indexKey : indexKeys) {
+              batchHolder->put(std::string(deleteOpKey), std::move(indexKey));
             }
+          } else if (env_->checkIndexLocked(indexState)) {
+            LOG(ERROR) << "The index has been locked: " << index->get_index_name();
+            return nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
           } else {
-            auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(), cols);
-            if (!valuesRet.ok()) {
-              continue;
-            }
-            auto indexKey = IndexKeyUtils::vertexIndexKey(
-                spaceVidLen_, partId, indexId, vertex.getStr(), std::move(valuesRet).value());
-
-            // Check the index is building for the specified partition or not
-            auto indexState = env_->getIndexState(spaceId_, partId);
-            if (env_->checkRebuilding(indexState)) {
-              auto deleteOpKey = OperationKeyUtils::deleteOperationKey(partId);
-              batchHolder->put(std::move(deleteOpKey), std::move(indexKey));
-            } else if (env_->checkIndexLocked(indexState)) {
-              LOG(ERROR) << "The index has been locked: " << index->get_index_name();
-              return nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
-            } else {
+            for (auto& indexKey : indexKeys) {
               batchHolder->remove(std::move(indexKey));
             }
           }

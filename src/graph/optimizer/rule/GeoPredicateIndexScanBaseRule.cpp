@@ -84,9 +84,10 @@ StatusOr<TransformResult> GeoPredicateIndexScanBaseRule::transform(
   DCHECK(secondVal.type() == Value::Type::GEOGRAPHY);
   const auto& geog = secondVal.getGeography();
 
-  geo::RegionCoverParams
-      rc;  // TODO(jie): Get index params from meta to construct RegionCoverParams
-  geo::GeoIndex geoIndex(rc, false);  // TODO(jie): Get schema meta to know if it's point only
+  // TODO(jie): Get index params from meta to construct RegionCoverParams
+  geo::RegionCoverParams rc;
+  // TODO(jie): Get schema meta to know if it's point only
+  geo::GeoIndex geoIndex(rc, false);
   std::vector<geo::ScanRange> scanRanges;
   if (geoPredicateName == "st_intersects") {
     scanRanges = geoIndex.intersects(geog);

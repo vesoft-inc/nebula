@@ -33,8 +33,8 @@ nebula::storage::cpp2::IndexColumnHint ScanRange::toIndexColumnHint() {
   // column_name should be set by the caller
   if (isRangeScan) {
     hint.set_scan_type(nebula::storage::cpp2::ScanType::RANGE);
-    hint.set_begin_value(
-        IndexKeyUtils::encodeUint64(rangeMin));  // Encode uint64_t as string in advance
+    // Encode uint64_t as string in advance
+    hint.set_begin_value(IndexKeyUtils::encodeUint64(rangeMin));
     hint.set_end_value(IndexKeyUtils::encodeUint64(rangeMax));
   } else {
     hint.set_scan_type(nebula::storage::cpp2::ScanType::PREFIX);

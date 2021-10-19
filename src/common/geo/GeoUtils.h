@@ -37,10 +37,11 @@ class GeoUtils final {
         std::vector<std::unique_ptr<S2Loop>> s2Loops;
         s2Loops.reserve(numCoordList);
         for (const auto& coordList : polygon.coordListList) {
-          auto s2Points = s2PointsFromCoordinateList(
-              coordList, true);  // S2 doesn't need the redundant last point
+          // S2 doesn't need the redundant last point
+          auto s2Points = s2PointsFromCoordinateList(coordList, true);
           auto s2Loop = std::make_unique<S2Loop>(std::move(s2Points), S2Debug::DISABLE);
-          s2Loop->Normalize();  // All loops must be oriented CCW(counterclockwise) for S2
+          // All loops must be oriented CCW(counterclockwise) for S2
+          s2Loop->Normalize();
           s2Loops.emplace_back(std::move(s2Loop));
         }
         return std::make_unique<S2Polygon>(std::move(s2Loops), S2Debug::DISABLE);
@@ -53,8 +54,8 @@ class GeoUtils final {
   }
 
   static S2Point s2PointFromCoordinate(const Coordinate& coord) {
-    auto latlng = S2LatLng::FromDegrees(
-        coord.y, coord.x);  // Note: S2Point requires latitude to be first, and longitude to be last
+    // Note: S2Point requires latitude to be first, and longitude to be last
+    auto latlng = S2LatLng::FromDegrees(coord.y, coord.x);
     return latlng.ToPoint();
   }
 

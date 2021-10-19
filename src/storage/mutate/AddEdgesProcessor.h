@@ -43,16 +43,10 @@ class AddEdgesProcessor : public BaseProcessor<cpp2::ExecResponse> {
   ErrorOr<nebula::cpp2::ErrorCode, std::string> findOldValue(PartitionID partId,
                                                              const folly::StringPiece& rawKey);
 
-  std::string indexKey(PartitionID partId,
-                       RowReader* reader,
-                       const folly::StringPiece& rawKey,
-                       std::shared_ptr<nebula::meta::cpp2::IndexItem> index);
-
-  std::vector<std::string> indexKeysForGeography(
-      PartitionID partId,
-      RowReader* reader,
-      const folly::StringPiece& rawKey,
-      std::shared_ptr<nebula::meta::cpp2::IndexItem> index);
+  std::vector<std::string> indexKeys(PartitionID partId,
+                                     RowReader* reader,
+                                     const folly::StringPiece& rawKey,
+                                     std::shared_ptr<nebula::meta::cpp2::IndexItem> index);
 
  private:
   GraphSpaceID spaceId_;

@@ -736,9 +736,11 @@ std::vector<std::pair<PartitionID, std::string>> MockData::mockPlayerIndexKeys(b
     values.append(encodeFixedStr(name, 20));
     values.append(IndexKeyUtils::encodeValue(player.age_));
     values.append(IndexKeyUtils::encodeValue(player.playing_));
-    auto key = IndexKeyUtils::vertexIndexKey(32, part, 1, name, std::move(values));
-    auto pair = std::make_pair(part, std::move(key));
-    keys.emplace_back(std::move(pair));
+    auto indexKeys = IndexKeyUtils::vertexIndexKeys(32, part, 1, name, {std::move(values)});
+    for (auto& indexKey : indexKeys) {
+      auto pair = std::make_pair(part, std::move(indexKey));
+      keys.emplace_back(std::move(pair));
+    }
   }
   return keys;
 }
@@ -839,10 +841,12 @@ std::vector<std::pair<PartitionID, std::string>> MockData::mockServeIndexKeys() 
     values.append(encodeFixedStr(serve.playerName_, 20));
     values.append(encodeFixedStr(serve.teamName_, 20));
     values.append(IndexKeyUtils::encodeValue(serve.startYear_));
-    auto key = IndexKeyUtils::edgeIndexKey(
-        32, part, 101, serve.playerName_, serve.startYear_, serve.teamName_, std::move(values));
-    auto pair = std::make_pair(part, std::move(key));
-    keys.emplace_back(std::move(pair));
+    auto idxKeys = IndexKeyUtils::edgeIndexKeys(
+        32, part, 101, serve.playerName_, serve.startYear_, serve.teamName_, {std::move(values)});
+    for (auto& idxkey : idxKeys) {
+      auto pair = std::make_pair(part, std::move(idxkey));
+      keys.emplace_back(std::move(pair));
+    }
   }
   return keys;
 }

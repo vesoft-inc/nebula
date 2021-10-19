@@ -263,10 +263,9 @@ std::string SchemaUtil::typeToString(const meta::cpp2::ColumnTypeDef &col) {
   } else if (col.get_type() == meta::cpp2::PropertyType::GEOGRAPHY) {
     auto geoShape = *col.get_geo_shape();
     if (geoShape == meta::cpp2::GeoShape::ANY) {
-      return folly::stringPrintf("%s", type.c_str());
+      return type;
     }
-    return folly::stringPrintf(
-        "%s(%s)", type.c_str(), apache::thrift::util::enumNameSafe(geoShape).c_str());
+    return folly::sformat("{}({})", type, apache::thrift::util::enumNameSafe(geoShape));
   }
   return type;
 }
