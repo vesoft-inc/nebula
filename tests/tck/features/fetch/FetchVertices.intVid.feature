@@ -409,3 +409,10 @@ Feature: Fetch Int Vid Vertices
     Then the result should be, in any order, and the columns 0, 1 should be hashed:
       | VertexID     | id(VERTEX)   | name         | properties(VERTEX)            |
       | "Tim Duncan" | "Tim Duncan" | "Tim Duncan" | {age: 42, name: "Tim Duncan"} |
+    When executing query:
+      """
+      FETCH PROP ON * hash('Tim Duncan') YIELD  id(vertex), keys(vertex) as keys, tags(vertex) as tagss, properties(vertex) as props
+      """
+    Then the result should be, in any order, and the columns 0, 1 should be hashed:
+      | VertexID     | id(VERTEX)   | keys                          | tagss                  | props                                                   |
+      | "Tim Duncan" | "Tim Duncan" | ["age", "name", "speciality"] | ["bachelor", "player"] | {age: 42, name: "Tim Duncan", speciality: "psychology"} |

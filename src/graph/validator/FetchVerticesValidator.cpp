@@ -26,21 +26,6 @@ Status FetchVerticesValidator::validateImpl() {
   return Status::OK();
 }
 
-Expression *FetchVerticesValidator::rewriteIDVertex2Vid(const Expression *expr) {
-  auto *pool = qctx_->objPool();
-  auto matcher = [](const Expression *e) -> bool {
-    std::string lowerStr = e->toString();
-    folly::toLowerAscii(lowerStr);
-    return e->kind() == Expression::Kind::kFunctionCall && lowerStr == "id(vertex)";
-  };
-  auto rewriter = [pool](const Expression *e) -> Expression * {
-    UNUSED(e);
-    return InputPropertyExpression::make(pool, nebula::kVid);
-  };
-
-  return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
-}
-
 Status FetchVerticesValidator::validateTag(const NameLabelList *nameLabels) {
   if (nameLabels == nullptr) {
     // all tag
@@ -89,21 +74,6 @@ Status FetchVerticesValidator::validateYield(YieldClause *yield) {
   }
 
   auto &exprProps = fetchCtx_->exprProps;
-  for (const auto &col : yield->columns()) {
-    if (col->expr()->kind() == Expression::Kind::kVertex) {
-      extractVertexProp(exprProps);
-      break;
-    }
-    auto *expr = ExpressionUtils::findAny(col->expr(), {Expression::Kind::kFunctionCall});
-    if (expr != nullptr) {
-      const auto &name = static_cast<const FunctionCallExpression *>(expr)->name();
-      if (name == "properties") {
-        extractVertexProp(exprProps);
-        break;
-      }
-    }
-  }
-
   for (auto col : yield->columns()) {
     if (ExpressionUtils::hasAny(col->expr(),
                                 {Expression::Kind::kEdge, Expression::Kind::kPathBuild})) {
@@ -111,13 +81,17 @@ Status FetchVerticesValidator::validateYield(YieldClause *yield) {
     }
     col->setExpr(ExpressionUtils::rewriteLabelAttr2TagProp(col->expr()));
     NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(col->expr()));
+
     auto colExpr = col->expr();
     auto typeStatus = deduceExprType(colExpr);
     NG_RETURN_IF_ERROR(typeStatus);
     outputs_.emplace_back(col->name(), typeStatus.value());
-    if (colExpr->kind() == Expression::Kind::kFunctionCall) {
+    if (colExpr->toString() == "id(VERTEX)") {
       col->setAlias(col->name());
-      col->setExpr(rewriteIDVertex2Vid(colExpr));
+      col->setExpr(InputPropertyExpression::make(pool, nebula::kVid));
+    }
+    if (ExpressionUtils::hasAny(colExpr, {Expression::Kind::kVertex})) {
+      extractVertexProp(exprProps);
     }
     newCols->addColumn(col->clone().release());
 
