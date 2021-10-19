@@ -86,6 +86,40 @@ TEST(NetworkUtils, toHosts) {
   ASSERT_FALSE(s.ok());
 }
 
+TEST(NetworkUtils, ValidateHostOrIp) {
+  std::string hostOrIp = "127.0.0.1";
+  auto result = NetworkUtils::validateHostOrIp(hostOrIp);
+  EXPECT_TRUE(result.ok());
+
+  hostOrIp = "127.0.1.1";
+  result = NetworkUtils::validateHostOrIp(hostOrIp);
+  EXPECT_TRUE(result.ok());
+
+  hostOrIp = "0.0.0.0";
+  result = NetworkUtils::validateHostOrIp(hostOrIp);
+  EXPECT_TRUE(result.ok());
+
+  hostOrIp = "000.000.000.000";
+  result = NetworkUtils::validateHostOrIp(hostOrIp);
+  EXPECT_FALSE(result.ok());
+
+  hostOrIp = "0.0.0.0.0";
+  result = NetworkUtils::validateHostOrIp(hostOrIp);
+  EXPECT_FALSE(result.ok());
+
+  hostOrIp = "127.0.0.0.1";
+  result = NetworkUtils::validateHostOrIp(hostOrIp);
+  EXPECT_FALSE(result.ok());
+
+  hostOrIp = "localhost";
+  result = NetworkUtils::validateHostOrIp(hostOrIp);
+  EXPECT_TRUE(result.ok());
+
+  hostOrIp = "NonvalidHostName";
+  result = NetworkUtils::validateHostOrIp(hostOrIp);
+  EXPECT_FALSE(result.ok());
+}
+
 }  // namespace network
 }  // namespace nebula
 
