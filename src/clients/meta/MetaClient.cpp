@@ -346,6 +346,8 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
     bool hasDef = col.default_value_ref().has_value();
     auto& colType = col.get_type();
     size_t len = colType.type_length_ref().has_value() ? *colType.get_type_length() : 0;
+    cpp2::GeoShape geoShape =
+        colType.geo_shape_ref().has_value() ? *colType.get_geo_shape() : cpp2::GeoShape::ANY;
     bool nullable = col.nullable_ref().has_value() ? *col.get_nullable() : false;
     Expression* defaultValueExpr = nullptr;
     if (hasDef) {
@@ -359,8 +361,12 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
       }
     }
 
-    schema->addField(
-        col.get_name(), colType.get_type(), len, nullable, hasDef ? defaultValueExpr : nullptr);
+    schema->addField(col.get_name(),
+                     colType.get_type(),
+                     len,
+                     nullable,
+                     hasDef ? defaultValueExpr : nullptr,
+                     geoShape);
   };
 
   for (auto& tagIt : tagItemVec) {

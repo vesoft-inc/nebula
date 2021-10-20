@@ -260,7 +260,10 @@ StatusOr<Expression*> LookupValidator::handleLogicalExprOperands(LogicalExpressi
 
 StatusOr<Expression*> LookupValidator::checkFilter(Expression* expr) {
   // TODO: Support IN expression push down
-  if (expr->isRelExpr()) {
+  if (ExpressionUtils::isGeoIndexAcceleratedPredicate(expr)) {
+    NG_RETURN_IF_ERROR(checkGeoPredicate(expr));
+    return rewriteGeoPredicate(expr);
+  } else if (expr->isRelExpr()) {
     // Only starts with can be pushed down as a range scan, so forbid other string-related relExpr
     if (expr->kind() == ExprKind::kRelREG || expr->kind() == ExprKind::kContains ||
         expr->kind() == ExprKind::kNotContains || expr->kind() == ExprKind::kEndsWith ||
@@ -299,7 +302,45 @@ Status LookupValidator::checkRelExpr(RelationalExpression* expr) {
   if (left->kind() == ExprKind::kLabelAttribute || right->kind() == ExprKind::kLabelAttribute) {
     return Status::OK();
   }
+
   return Status::SemanticError("Expression %s not supported yet", expr->toString().c_str());
+}
+
+Status LookupValidator::checkGeoPredicate(const Expression* expr) const {
+  auto checkFunc = [](const FunctionCallExpression* funcExpr) -> Status {
+    if (funcExpr->args()->numArgs() < 2) {
+      return Status::SemanticError("Expression %s has not enough arguments",
+                                   funcExpr->toString().c_str());
+    }
+    auto* first = funcExpr->args()->args()[0];
+    auto* second = funcExpr->args()->args()[1];
+
+    if (first->kind() == ExprKind::kLabelAttribute && second->kind() == ExprKind::kLabelAttribute) {
+      return Status::SemanticError("Expression %s not supported yet", funcExpr->toString().c_str());
+    }
+    if (first->kind() == ExprKind::kLabelAttribute || second->kind() == ExprKind::kLabelAttribute) {
+      return Status::OK();
+    }
+
+    return Status::SemanticError("Expression %s not supported yet", funcExpr->toString().c_str());
+  };
+  if (expr->isRelExpr()) {
+    auto* relExpr = static_cast<const RelationalExpression*>(expr);
+    auto* left = relExpr->left();
+    auto* right = relExpr->right();
+    if (left->kind() == Expression::Kind::kFunctionCall) {
+      NG_RETURN_IF_ERROR(checkFunc(static_cast<const FunctionCallExpression*>(left)));
+    }
+    if (right->kind() == Expression::Kind::kFunctionCall) {
+      NG_RETURN_IF_ERROR(checkFunc(static_cast<const FunctionCallExpression*>(right)));
+    }
+  } else if (expr->kind() == Expression::Kind::kFunctionCall) {
+    NG_RETURN_IF_ERROR(checkFunc(static_cast<const FunctionCallExpression*>(expr)));
+  } else {
+    return Status::SemanticError("Expression %s not supported yet", expr->toString().c_str());
+  }
+
+  return Status::OK();
 }
 
 StatusOr<Expression*> LookupValidator::rewriteRelExpr(RelationalExpression* expr) {
@@ -336,11 +377,77 @@ StatusOr<Expression*> LookupValidator::rewriteRelExpr(RelationalExpression* expr
   return expr;
 }
 
+StatusOr<Expression*> LookupValidator::rewriteGeoPredicate(Expression* expr) {
+  // swap LHS and RHS of relExpr if LabelAttributeExpr in on the right,
+  // so that LabelAttributeExpr is always on the left
+  if (expr->isRelExpr()) {
+    if (static_cast<RelationalExpression*>(expr)->right()->kind() ==
+        Expression::Kind::kFunctionCall) {
+      expr = reverseGeoPredicate(expr);
+    }
+    auto* relExpr = static_cast<RelationalExpression*>(expr);
+    auto* left = relExpr->left();
+    auto* right = relExpr->right();
+    DCHECK(left->kind() == Expression::Kind::kFunctionCall);
+    auto* funcExpr = static_cast<FunctionCallExpression*>(left);
+    DCHECK_EQ(boost::to_lower_copy(funcExpr->name()), "st_distance");
+    // `ST_Distance(g1, g1) < distanceInMeters` is equivalent to `ST_DWithin(g1, g2,
+    // distanceInMeters, true), `ST_Distance(g1, g1) <= distanceInMeters` is equivalent to
+    // `ST_DWithin(g1, g2, distanceInMeters, false)
+    if (relExpr->kind() == Expression::Kind::kRelLT ||
+        relExpr->kind() == Expression::Kind::kRelLE) {
+      auto* newArgList = ArgumentList::make(qctx_->objPool(), 3);
+      if (funcExpr->args()->numArgs() != 2) {
+        return Status::SemanticError("Expression %s has wrong number arguments",
+                                     funcExpr->toString().c_str());
+      }
+      newArgList->addArgument(funcExpr->args()->args()[0]->clone());
+      newArgList->addArgument(funcExpr->args()->args()[1]->clone());
+      newArgList->addArgument(right->clone());  // distanceInMeters
+      bool exclusive = relExpr->kind() == Expression::Kind::kRelLT;
+      newArgList->addArgument(ConstantExpression::make(qctx_->objPool(), exclusive));
+      expr = FunctionCallExpression::make(qctx_->objPool(), "st_dwithin", newArgList);
+    } else {
+      return Status::SemanticError("Expression %s not supported yet", expr->toString().c_str());
+    }
+  }
+
+  DCHECK(expr->kind() == Expression::Kind::kFunctionCall);
+  if (static_cast<FunctionCallExpression*>(expr)->args()->args()[1]->kind() ==
+      ExprKind::kLabelAttribute) {
+    expr = reverseGeoPredicate(expr);
+  }
+
+  auto* geoFuncExpr = static_cast<FunctionCallExpression*>(expr);
+  auto* first = geoFuncExpr->args()->args()[0];
+  auto* la = static_cast<LabelAttributeExpression*>(first);
+  if (la->left()->name() != sentence()->from()) {
+    return Status::SemanticError("Schema name error: %s", la->left()->name().c_str());
+  }
+
+  // fold constant expression
+  auto foldRes = ExpressionUtils::foldConstantExpr(expr);
+  NG_RETURN_IF_ERROR(foldRes);
+  geoFuncExpr = static_cast<FunctionCallExpression*>(foldRes.value());
+
+  // Check schema and value type
+  std::string prop = la->right()->value().getStr();
+  auto c = checkConstExpr(geoFuncExpr->args()->args()[1], prop, Expression::Kind::kFunctionCall);
+  NG_RETURN_IF_ERROR(c);
+  geoFuncExpr->args()->setArg(1, std::move(c).value());
+
+  // rewrite PropertyExpression
+  auto propExpr = lookupCtx_->isEdge ? ExpressionUtils::rewriteLabelAttr2EdgeProp(la)
+                                     : ExpressionUtils::rewriteLabelAttr2TagProp(la);
+  geoFuncExpr->args()->setArg(0, propExpr);
+  return geoFuncExpr;
+}
+
 StatusOr<Expression*> LookupValidator::checkConstExpr(Expression* expr,
                                                       const std::string& prop,
                                                       const ExprKind kind) {
   auto* pool = expr->getObjPool();
-  if (!evaluableExpr(expr)) {
+  if (!ExpressionUtils::isEvaluableExpr(expr)) {
     return Status::SemanticError("'%s' is not an evaluable expression.", expr->toString().c_str());
   }
   auto schemaMgr = qctx_->schemaMng();
@@ -435,6 +542,35 @@ Expression* LookupValidator::reverseRelKind(RelationalExpression* expr) {
   auto right = expr->right();
   auto* pool = qctx_->objPool();
   return RelationalExpression::makeKind(pool, reversedKind, right->clone(), left->clone());
+}
+
+Expression* LookupValidator::reverseGeoPredicate(Expression* expr) {
+  if (expr->isRelExpr()) {
+    auto* relExpr = static_cast<RelationalExpression*>(expr);
+    return reverseRelKind(relExpr);
+  } else {
+    DCHECK(expr->kind() == Expression::Kind::kFunctionCall);
+    auto* funcExpr = static_cast<const FunctionCallExpression*>(expr);
+    auto name = funcExpr->name();
+    folly::toLowerAscii(name);
+    auto newName = name;
+
+    if (name == "st_covers") {
+      newName = "st_coveredby";
+    } else if (name == "st_coveredby") {
+      newName = "st_covers";
+    } else if (name == "st_intersects") {
+    } else if (name == "st_dwithin") {
+    }
+
+    auto* newArgList = ArgumentList::make(qctx_->objPool(), funcExpr->args()->numArgs());
+    for (auto& arg : funcExpr->args()->args()) {
+      newArgList->addArgument(arg->clone());
+    }
+    newArgList->setArg(0, funcExpr->args()->args()[1]);
+    newArgList->setArg(1, funcExpr->args()->args()[0]);
+    return FunctionCallExpression::make(qctx_->objPool(), newName, newArgList);
+  }
 }
 
 Status LookupValidator::getSchemaProvider(shared_ptr<const NebulaSchemaProvider>* provider) const {
