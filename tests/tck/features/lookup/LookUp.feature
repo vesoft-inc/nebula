@@ -220,7 +220,7 @@ Feature: LookUpTest_Vid_String
       """
       LOOKUP ON lookup_tag_2
       WHERE lookup_tag_2.col3 >= 100.5 AND lookup_tag_2.col3 <= 300.5
-      YIELD id(vertex) as id lookup_tag_2.col3 AS col3
+      YIELD id(vertex) as id, lookup_tag_2.col3 AS col3
       """
     Then the result should be, in any order:
       | id    | col3  |

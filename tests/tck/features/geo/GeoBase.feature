@@ -735,7 +735,7 @@ Feature: Geo base
     And wait 3 seconds
     When executing query:
       """
-      LOOKUP ON any_shape;
+      LOOKUP ON any_shape YIELD id(vertex) as id;
       """
     Then a ExecutionError should be raised at runtime: There is no index to use at runtime
     # Drop edge index
@@ -747,7 +747,7 @@ Feature: Geo base
     And wait 3 seconds
     When executing query:
       """
-      LOOKUP ON any_shape_edge;
+      LOOKUP ON any_shape_edge YIELD edge as e;
       """
     Then a ExecutionError should be raised at runtime: There is no index to use at runtime
     # Drop tag

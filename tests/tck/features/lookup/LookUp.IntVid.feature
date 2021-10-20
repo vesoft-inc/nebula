@@ -821,9 +821,9 @@ Feature: LookUpTest_Vid_Int
         identity.NATION == "汉族" AND
         identity.BIRTHDAY > 19620101 AND
         identity.BIRTHDAY < 20021231 AND
-        identity.BIRTHPLACE_CITY == "bbb";
+        identity.BIRTHPLACE_CITY == "bbb"
       YIELD
-        id(vertex) as id
+        id(vertex) as id;
       """
     Then the result should be, in any order:
       | id |

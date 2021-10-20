@@ -8,7 +8,7 @@ Feature: Lookup with yield in integer vid
       """
       LOOKUP ON player WHERE player.age == 40 YIELD player.name
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
+    Then the result should be, in any order:
       | player.name     |
       | 'Kobe Bryant'   |
       | 'Dirk Nowitzki' |
@@ -16,7 +16,7 @@ Feature: Lookup with yield in integer vid
       """
       LOOKUP ON player WHERE player.age == 40 YIELD player.name, player.age + 1
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
+    Then the result should be, in any order:
       | player.name     | (player.age+1) |
       | 'Kobe Bryant'   | 41             |
       | 'Dirk Nowitzki' | 41             |
@@ -24,7 +24,7 @@ Feature: Lookup with yield in integer vid
       """
       LOOKUP ON player WHERE player.age == 40 YIELD player.name, player.age + 1, vertex as node
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
+    Then the result should be, in any order:
       | player.name     | (player.age+1) | node                                                          |
       | 'Kobe Bryant'   | 41             | ("Kobe Bryant" : player {age : 40, name : "Kobe Bryant"})     |
       | 'Dirk Nowitzki' | 41             | ("Dirk Nowitzki" : player {age : 40, name : "Dirk Nowitzki"}) |
@@ -34,7 +34,7 @@ Feature: Lookup with yield in integer vid
       """
       LOOKUP ON player WHERE player.age == 40 YIELD player.name AS name
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
+    Then the result should be, in any order:
       | name            |
       | 'Kobe Bryant'   |
       | 'Dirk Nowitzki' |
@@ -42,7 +42,7 @@ Feature: Lookup with yield in integer vid
       """
       LOOKUP ON team WHERE team.name in ["76ers", "Lakers", "Spurs"] YIELD vertex AS node
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
+    Then the result should be, in any order:
       | node                                |
       | ("76ers" : team {name : "76ers"})   |
       | ("Lakers" : team {name : "Lakers"}) |
@@ -54,7 +54,7 @@ Feature: Lookup with yield in integer vid
       LOOKUP ON serve WHERE serve.start_year == 2008 and serve.end_year == 2019
       YIELD serve.start_year
       """
-    Then the result should be, in any order, and the columns 0,1 should be hashed:
+    Then the result should be, in any order:
       | serve.start_year |
       | 2008             |
       | 2008             |
@@ -63,7 +63,7 @@ Feature: Lookup with yield in integer vid
       LOOKUP ON serve WHERE serve.start_year == 2008 and serve.end_year == 2019
       YIELD serve.start_year, edge as relationship
       """
-    Then the result should be, in any order, and the columns 0,1 should be hashed:
+    Then the result should be, in any order:
       | serve.start_year | relationship                                                                   |
       | 2008             | [:serve "Russell Westbrook"->"Thunders" @0 {end_year: 2019, start_year: 2008}] |
       | 2008             | [:serve "Marc Gasol"->"Grizzlies" @0 {end_year: 2019, start_year: 2008}]       |
@@ -74,7 +74,7 @@ Feature: Lookup with yield in integer vid
       LOOKUP ON serve WHERE serve.start_year == 2008 and serve.end_year == 2019
       YIELD serve.start_year AS startYear
       """
-    Then the result should be, in any order, and the columns 0,1 should be hashed:
+    Then the result should be, in any order:
       | startYear |
       | 2008      |
       | 2008      |
@@ -82,7 +82,7 @@ Feature: Lookup with yield in integer vid
       """
       LOOKUP ON like WHERE like.likeness < 50 + 1 YIELD like.likeness, edge as relationship
       """
-    Then the result should be, in any order, and the columns 0,1 should be hashed:
+    Then the result should be, in any order:
       | like.likeness | relationship                                               |
       | -1            | [:like "Blake Griffin"->"Chris Paul" @0 {likeness: -1}]    |
       | 10            | [:like "Dirk Nowitzki"->"Dwyane Wade" @0 {likeness: 10}]   |

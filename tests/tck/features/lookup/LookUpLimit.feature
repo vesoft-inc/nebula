@@ -9,7 +9,6 @@ Feature: Push Limit down IndexScan Rule
   Scenario: push limit down to IndexScan
     When profiling query:
       """
-      LOOKUP ON player | Limit 2 | ORDER BY $-.VertexID
       LOOKUP ON player YIELD id(vertex) as id | Limit 2 | ORDER BY $-.id
       """
     Then the result should be, in any order:

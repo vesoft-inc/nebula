@@ -9,12 +9,12 @@ Feature: subgraph
   Scenario: invalid input
     When executing query:
       """
-      GET SUBGRAPH WITH PROP FROM $-.id
+      GET SUBGRAPH WITH PROP FROM $-.id YIELD vertices as nodes
       """
     Then a SemanticError should be raised at runtime: `$-.id', not exist prop `id'
     When executing query:
       """
-      GET SUBGRAPH WITH PROP FROM $a.id
+      GET SUBGRAPH WITH PROP FROM $a.id YIELD edges as relationships
       """
     Then a SemanticError should be raised at runtime: `$a.id', not exist variable `a'
     When executing query:
@@ -34,85 +34,85 @@ Feature: subgraph
     Then a SyntaxError should be raised at runtime: please add alias when using `edges'. near `edges'
     When executing query:
       """
-      GO FROM "Tim Duncan" OVER like YIELD $$.player.age AS id | GET SUBGRAPH WITH PROP FROM $-.id
+      GO FROM "Tim Duncan" OVER like YIELD $$.player.age AS id | GET SUBGRAPH WITH PROP FROM $-.id YIELD vertices as nodes
       """
     Then a SemanticError should be raised at runtime: `$-.id', the srcs should be type of FIXED_STRING, but was`INT'
     When executing query:
       """
-      $a = GO FROM "Tim Duncan" OVER like YIELD $$.player.age AS ID; GET SUBGRAPH WITH PROP FROM $a.ID
+      $a = GO FROM "Tim Duncan" OVER like YIELD $$.player.age AS ID; GET SUBGRAPH WITH PROP FROM $a.ID YIELD edges as relationships
       """
     Then a SemanticError should be raised at runtime: `$a.ID', the srcs should be type of FIXED_STRING, but was`INT'
     When executing query:
       """
-      $a = GO FROM "Tim Duncan" OVER like YIELD like._src AS src; GET SUBGRAPH WITH PROP FROM $b.src
+      $a = GO FROM "Tim Duncan" OVER like YIELD like._src AS src; GET SUBGRAPH WITH PROP FROM $b.src YIELD vertices as nodes
       """
     Then a SemanticError should be raised at runtime: `$b.src', not exist variable `b'
     When executing query:
       """
-      GO FROM "Tim Duncan" OVER like YIELD like._dst AS id, like._src AS id | GET SUBGRAPH WITH PROP FROM $-.id
+      GO FROM "Tim Duncan" OVER like YIELD like._dst AS id, like._src AS id | GET SUBGRAPH WITH PROP FROM $-.id YIELD vertices as nodes
       """
     Then a SemanticError should be raised at runtime: Duplicate Column Name : `id'
     When executing query:
       """
-      $a = GO FROM "Tim Duncan" OVER like YIELD like._dst AS id, like._src AS id; GET SUBGRAPH WITH PROP FROM $a.id
+      $a = GO FROM "Tim Duncan" OVER like YIELD like._dst AS id, like._src AS id; GET SUBGRAPH WITH PROP FROM $a.id YIELD vertices as nodes
       """
     Then a SemanticError should be raised at runtime: Duplicate Column Name : `id'
 
   Scenario: zero step
     When executing query:
       """
-      GET SUBGRAPH WITH PROP 0 STEPS FROM "Tim Duncan"
+      GET SUBGRAPH WITH PROP 0 STEPS FROM "Tim Duncan" YIELD vertices as nodes
       """
     Then the result should be, in any order, with relax comparison:
-      | _vertices        |
+      | nodes            |
       | [("Tim Duncan")] |
     When executing query:
       """
-      GET SUBGRAPH WITH PROP 0 STEPS FROM "Tim Duncan", "Spurs"
+      GET SUBGRAPH WITH PROP 0 STEPS FROM "Tim Duncan", "Spurs" YIELD vertices as nodes
       """
     Then the result should be, in any order, with relax comparison:
-      | _vertices                   |
+      | nodes                       |
       | [("Tim Duncan"), ("Spurs")] |
     When executing query:
       """
-      GET SUBGRAPH WITH PROP 0 STEPS FROM "Tim Duncan", "Tony Parker", "Spurs"
+      GET SUBGRAPH WITH PROP 0 STEPS FROM "Tim Duncan", "Tony Parker", "Spurs" YIELD vertices as nodes
       """
     Then the result should be, in any order, with relax comparison:
-      | _vertices                                    |
+      | nodes                                        |
       | [("Tim Duncan"), ("Spurs"), ("Tony Parker")] |
     When executing query:
       """
-      GO FROM 'Tim Duncan' over serve YIELD serve._dst AS id | GET SUBGRAPH WITH PROP 0 STEPS FROM $-.id
+      GO FROM 'Tim Duncan' over serve YIELD serve._dst AS id | GET SUBGRAPH WITH PROP 0 STEPS FROM $-.id YIELD vertices as nodes
       """
     Then the result should be, in any order, with relax comparison:
-      | _vertices   |
+      | nodes       |
       | [("Spurs")] |
     When executing query:
       """
-      GO FROM 'Tim Duncan' over like YIELD like._dst AS id | GET SUBGRAPH WITH PROP 0 STEPS FROM $-.id
+      GO FROM 'Tim Duncan' over like YIELD like._dst AS id | GET SUBGRAPH WITH PROP 0 STEPS FROM $-.id YIELD vertices as nodes
       """
     Then the result should be, in any order, with relax comparison:
-      | _vertices                            |
+      | nodes                                |
       | [("Manu Ginobili"), ("Tony Parker")] |
     When executing query:
       """
-      $a = GO FROM 'Tim Duncan' over serve YIELD serve._dst AS id; GET SUBGRAPH WITH PROP 0 STEPS FROM $a.id
+      $a = GO FROM 'Tim Duncan' over serve YIELD serve._dst AS id; GET SUBGRAPH WITH PROP 0 STEPS FROM $a.id YIELD vertices as nodes
       """
     Then the result should be, in any order, with relax comparison:
-      | _vertices   |
+      | nodes       |
       | [("Spurs")] |
     When executing query:
       """
-      $a = GO FROM 'Tim Duncan' over like YIELD like._dst AS id; GET SUBGRAPH WITH PROP 0 STEPS FROM $a.id
+      $a = GO FROM 'Tim Duncan' over like YIELD like._dst AS id; GET SUBGRAPH WITH PROP 0 STEPS FROM $a.id YIELD vertices as nodes
       """
     Then the result should be, in any order, with relax comparison:
-      | _vertices                            |
+      | nodes                                |
       | [("Manu Ginobili"), ("Tony Parker")] |
 
   Scenario: subgraph
     When executing query:
       """
-      GET SUBGRAPH WITH PROP FROM 'Tim Duncan'
+      GET SUBGRAPH WITH PROP FROM 'Tim Duncan' YIELD vertices as nodes, edges as relationships
       """
     Then define some list variables:
       | edge1                                           | vertex2               | edge2                                            |
@@ -142,14 +142,14 @@ Feature: subgraph
       |                                                 |                       | [:like "Danny Green"->"Marco Belinelli"@0]       |
       |                                                 |                       | [:serve "Danny Green"->"Spurs"@0]                |
     Then the result should be, in any order, with relax comparison:
-      | _vertices        | _edges    |
-      | [("Tim Duncan")] | <[edge1]> |
-      | <[vertex2]>      | <[edge2]> |
+      | nodes            | relationships |
+      | [("Tim Duncan")] | <[edge1]>     |
+      | <[vertex2]>      | <[edge2]>     |
 
   Scenario: two steps
     When executing query:
       """
-      GET SUBGRAPH WITH PROP 2 STEPS FROM 'Tim Duncan'
+      GET SUBGRAPH WITH PROP 2 STEPS FROM 'Tim Duncan' YIELD vertices as nodes, edges as relationships
       """
     Then define some list variables:
       | edge1                                           | vertex2               | edge2                                            | vertex3               | edge3                                         |
@@ -224,15 +224,15 @@ Feature: subgraph
       |                                                 |                       | [:serve "Tiago Splitter"->"76ers"@0]             |                       |                                               |
       |                                                 |                       | [:serve "Tiago Splitter"->"Hawks"@0]             |                       |                                               |
     Then the result should be, in any order, with relax comparison:
-      | _vertices        | _edges    |
-      | [("Tim Duncan")] | <[edge1]> |
-      | <[vertex2]>      | <[edge2]> |
-      | <[vertex3]>      | <[edge3]> |
+      | nodes            | relationships |
+      | [("Tim Duncan")] | <[edge1]>     |
+      | <[vertex2]>      | <[edge2]>     |
+      | <[vertex3]>      | <[edge3]>     |
 
   Scenario: in edge
     When executing query:
       """
-      GET SUBGRAPH WITH PROP 2 STEPS FROM 'Tim Duncan' IN like, serve
+      GET SUBGRAPH WITH PROP 2 STEPS FROM 'Tim Duncan' IN like, serve YIELD vertices as nodes, edges as relationships
       """
     Then define some list variables:
       | edge1                                       | vertex2               | edge2                                           | vertex3            |
@@ -254,15 +254,15 @@ Feature: subgraph
       |                                             |                       | [:like "Marco Belinelli"->"Tony Parker"@0]      |                    |
       |                                             |                       | [:like "Tim Duncan"->"Tony Parker"@0]           |                    |
     Then the result should be, in any order, with relax comparison:
-      | _vertices        | _edges    |
-      | [("Tim Duncan")] | <[edge1]> |
-      | <[vertex2]>      | <[edge2]> |
-      | <[vertex3]>      | []        |
+      | nodes            | relationships |
+      | [("Tim Duncan")] | <[edge1]>     |
+      | <[vertex2]>      | <[edge2]>     |
+      | <[vertex3]>      | []            |
 
   Scenario: in and out edge
     When executing query:
       """
-      GET SUBGRAPH WITH PROP 2 STEPS FROM 'Tim Duncan' IN like OUT serve
+      GET SUBGRAPH WITH PROP 2 STEPS FROM 'Tim Duncan' IN like OUT serve YIELD vertices as nodes, edges as relationships
       """
     Then define some list variables:
       | edge1                                       | vertex2               | edge2                                           | vertex3            | edge3                                        |
@@ -320,15 +320,15 @@ Feature: subgraph
       |                                             |                       | [:like "Marco Belinelli"->"Tony Parker"@0]      |                    |                                              |
       |                                             |                       | [:like "Tim Duncan"->"Tony Parker"@0]           |                    |                                              |
     Then the result should be, in any order, with relax comparison:
-      | _vertices        | _edges    |
-      | [("Tim Duncan")] | <[edge1]> |
-      | <[vertex2]>      | <[edge2]> |
-      | <[vertex3]>      | <[edge3]> |
+      | nodes            | relationships |
+      | [("Tim Duncan")] | <[edge1]>     |
+      | <[vertex2]>      | <[edge2]>     |
+      | <[vertex3]>      | <[edge3]>     |
 
   Scenario: two steps in and out edge
     When executing query:
       """
-      GET SUBGRAPH WITH PROP 2 STEPS FROM 'Tim Duncan', 'James Harden' IN teammate OUT serve
+      GET SUBGRAPH WITH PROP 2 STEPS FROM 'Tim Duncan', 'James Harden' IN teammate OUT serve YIELD vertices as nodes, edges as relationships
       """
     Then define some list variables:
       | vertex1          | edge1                                       | vertex2           | edge2                                        | vertex3     |
@@ -340,15 +340,15 @@ Feature: subgraph
       |                  |                                             |                   | [:teammate "Manu Ginobili"->"Tony Parker"@0] |             |
       |                  |                                             |                   | [:teammate "Tim Duncan"->"Tony Parker"@0]    |             |
     Then the result should be, in any order, with relax comparison:
-      | _vertices   | _edges    |
-      | <[vertex1]> | <[edge1]> |
-      | <[vertex2]> | <[edge2]> |
-      | <[vertex3]> | []        |
+      | nodes       | relationships |
+      | <[vertex1]> | <[edge1]>     |
+      | <[vertex2]> | <[edge2]>     |
+      | <[vertex3]> | []            |
 
   Scenario: three steps
     When executing query:
       """
-      GET SUBGRAPH WITH PROP 3 STEPS FROM 'Paul George' OUT serve BOTH like
+      GET SUBGRAPH WITH PROP 3 STEPS FROM 'Paul George' OUT serve BOTH like YIELD vertices as nodes, edges as relationships
       """
     Then define some list variables:
       | edge1                                        | edge2                                            | edge3                                          | vertex4             | edge4                                      |
@@ -374,11 +374,11 @@ Feature: subgraph
       |                                              |                                                  |                                                |                     | [:serve "Chris Paul"->"Rockets"@0]         |
       |                                              |                                                  |                                                |                     | [:like "Chris Paul"->"LeBron James"@0]     |
     Then the result should be, in any order, with relax comparison:
-      | _vertices                                         | _edges    |
-      | [("Paul George")]                                 | <[edge1]> |
-      | [("Russell Westbrook"), ("Pacers"), ("Thunders")] | <[edge2]> |
-      | [("Dejounte Murray"), ("James Harden")]           | <[edge3]> |
-      | <[vertex4]>                                       | <[edge4]> |
+      | nodes                                             | relationships |
+      | [("Paul George")]                                 | <[edge1]>     |
+      | [("Russell Westbrook"), ("Pacers"), ("Thunders")] | <[edge2]>     |
+      | [("Dejounte Murray"), ("James Harden")]           | <[edge3]>     |
+      | <[vertex4]>                                       | <[edge4]>     |
 
   Scenario: yield bidirect edge
     When executing query:

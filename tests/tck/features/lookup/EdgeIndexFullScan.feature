@@ -317,7 +317,7 @@ Feature: Lookup edge index full scan
       LOOKUP ON edge_1 WHERE edge_1.col1_str STARTS WITH "ABC" YIELD edge_1.col1_str
       """
     Then the result should be, in any order:
-      | SrcVID | DstVID | Ranking | edge_1.col1_str |
+      | edge_1.col1_str |
     When executing query:
       """
       LOOKUP ON edge_1 WHERE edge_1.col1_str STARTS WITH 123 YIELD edge_1.col1_str
