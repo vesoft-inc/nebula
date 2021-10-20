@@ -13,8 +13,6 @@
 namespace nebula {
 namespace graph {
 
-static constexpr char VertexID[] = "VertexID";
-
 Status FetchVerticesValidator::validateImpl() {
   auto *fSentence = static_cast<FetchVerticesSentence *>(sentence_);
   fetchCtx_ = getContext<FetchVerticesContext>();
