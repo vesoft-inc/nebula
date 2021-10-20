@@ -39,7 +39,7 @@ struct HttpClient {
   HostAddr host;
   std::string user;
   std::string password;
-  std::string connType;
+  std::string connType{"http"};
 
   HttpClient() = default;
   ~HttpClient() = default;
@@ -53,19 +53,15 @@ struct HttpClient {
   explicit HttpClient(const HttpClient& v) noexcept
       : host(v.host), user(v.user), password(v.password), connType(v.connType) {}
 
-  explicit HttpClient(HostAddr&& h) noexcept : host(std::move(h)) { connType = "http"; }
+  explicit HttpClient(HostAddr&& h) noexcept : host(std::move(h)) {}
 
-  explicit HttpClient(const HostAddr& h) noexcept : host(h) { connType = "http"; }
+  explicit HttpClient(const HostAddr& h) noexcept : host(h) {}
 
   HttpClient(HostAddr&& h, std::string&& u, std::string&& p) noexcept
-      : host(std::move(h)), user(std::move(u)), password(std::move(p)) {
-    connType = "http";
-  }
+      : host(std::move(h)), user(std::move(u)), password(std::move(p)) {}
 
   HttpClient(const HostAddr& h, const std::string& u, const std::string& p) noexcept
-      : host(h), user(u), password(p) {
-    connType = "http";
-  }
+      : host(h), user(u), password(p) {}
 
   HttpClient(HostAddr&& h, std::string&& u, std::string&& p, std::string&& c) noexcept
       : host(std::move(h)), user(std::move(u)), password(std::move(p)), connType(std::move(c)) {}
@@ -73,7 +69,7 @@ struct HttpClient {
   HttpClient(const HostAddr& h,
              const std::string& u,
              const std::string& p,
-             const std::string&& c) noexcept
+             const std::string& c) noexcept
       : host(h), user(u), password(p), connType(std::move(c)) {}
 
   void clear() {
