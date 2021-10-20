@@ -38,7 +38,6 @@
 #include "graph/validator/SetValidator.h"
 #include "graph/validator/UseValidator.h"
 #include "graph/validator/YieldValidator.h"
-#include "graph/visitor/DeducePropsVisitor.h"
 #include "graph/visitor/DeduceTypeVisitor.h"
 #include "graph/visitor/EvaluableExprVisitor.h"
 #include "parser/Sentence.h"

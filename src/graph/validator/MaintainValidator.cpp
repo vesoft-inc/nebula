@@ -6,7 +6,6 @@
 
 #include "graph/validator/MaintainValidator.h"
 
-#include "common/base/Base.h"
 #include "common/charset/Charset.h"
 #include "common/expression/ConstantExpression.h"
 #include "graph/planner/plan/Admin.h"
