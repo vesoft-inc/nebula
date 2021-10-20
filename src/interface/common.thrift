@@ -25,6 +25,7 @@ cpp_include "common/datatypes/SetOps-inl.h"
 cpp_include "common/datatypes/DataSetOps-inl.h"
 cpp_include "common/datatypes/KeyValueOps-inl.h"
 cpp_include "common/datatypes/HostAddrOps-inl.h"
+cpp_include "common/datatypes/GeographyOps-inl.h"
 
 /*
  *
@@ -32,6 +33,8 @@ cpp_include "common/datatypes/HostAddrOps-inl.h"
  *        have to be defined as **binary** in the thrift file
  *
  */
+
+const binary (cpp.type = "char const *") version = "2.6.0"
 
 typedef i32 (cpp.type = "nebula::GraphSpaceID") GraphSpaceID
 typedef i32 (cpp.type = "nebula::PartitionID") PartitionID
@@ -85,7 +88,6 @@ struct DateTime {
     7: i32 microsec;    // Micro-second: 0 - 999,999
 } (cpp.type = "nebula::DateTime")
 
-
 enum NullType {
     __NULL__ = 0,
     NaN      = 1,
@@ -115,6 +117,7 @@ union Value {
     13: NMap (cpp.type = "nebula::Map")         mVal (cpp.ref_type = "unique");
     14: NSet (cpp.type = "nebula::Set")         uVal (cpp.ref_type = "unique");
     15: DataSet (cpp.type = "nebula::DataSet")  gVal (cpp.ref_type = "unique");
+    16: Geography (cpp.type = "nebula::Geography")   ggVal (cpp.ref_type = "unique");
 } (cpp.type = "nebula::Value")
 
 
@@ -145,6 +148,29 @@ struct DataSet {
     1: list<binary>    column_names;   // Column names
     2: list<Row>       rows;
 } (cpp.type = "nebula::DataSet")
+
+struct Coordinate {
+    1: double          x;
+    2: double          y;
+} (cpp.type = "nebula::Coordinate")
+
+struct Point {
+    1: Coordinate      coord;
+} (cpp.type = "nebula::Point")
+
+struct LineString {
+    1: list<Coordinate>             coordList;
+} (cpp.type = "nebula::LineString")
+
+struct Polygon {
+    1: list<list<Coordinate>>       coordListList;
+} (cpp.type = "nebula::Polygon")
+
+union Geography {
+    1: Point                                    ptVal (cpp.ref_type = "unique");
+    2: LineString                               lsVal (cpp.ref_type = "unique");
+    3: Polygon                                  pgVal (cpp.ref_type = "unique");
+} (cpp.type = "nebula::Geography")
 
 
 struct Tag {
@@ -398,6 +424,13 @@ enum ErrorCode {
     E_TASK_EXECUTION_FAILED           = -3053,
 
     E_PLAN_IS_KILLED                  = -3060,
+    // toss
+    E_NO_TERM                         = -3070,
+    E_OUTDATED_TERM                   = -3071,
+    E_OUTDATED_EDGE                   = -3072,
+    E_WRITE_WRITE_CONFLICT            = -3073,
+
+    E_CLIENT_SERVER_INCOMPATIBLE      = -3061,
 
     E_UNKNOWN                         = -8000,
 } (cpp.enum_strict)

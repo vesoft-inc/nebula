@@ -4,13 +4,16 @@
   <br>A distributed, scalable, lightning-fast graph database<br>
 </p>
 <p align="center">
+  <a href="https://app.codecov.io/gh/vesoft-inc/nebula">
+    <img src="https://codecov.io/github/vesoft-inc/nebula/coverage.svg?branch=master" alt="code coverage"/>
+  </a>
   <a href="https://github.com/vesoft-inc/nebula/actions?workflow=nightly">
     <img src="https://github.com/vesoft-inc/nebula/workflows/nightly/badge.svg" alt="nightly build"/>
   </a>
-  <a href="http://githubbadges.com/star.svg?user=vesoft-inc&repo=nebula&style=default">
+  <a href="https://github.com/vesoft-inc/nebula/stargazers">
     <img src="http://githubbadges.com/star.svg?user=vesoft-inc&repo=nebula&style=default" alt="nebula star"/>
   </a>
-  <a href="http://githubbadges.com/fork.svg?user=vesoft-inc&repo=nebula&style=default">
+  <a href="https://github.com/vesoft-inc/nebula/network/members">
     <img src="http://githubbadges.com/fork.svg?user=vesoft-inc&repo=nebula&style=default" alt="nebula fork"/>
   </a>
   <br>
@@ -31,9 +34,9 @@ Compared with other graph database solutions, **Nebula Graph** has the following
 
 ## Notice of Release
 
-This repository hosts the source code of Nebula Graph versions before 2.0.0-alpha and after v2.5.1. If you are looking to use the versions between v2.0.0 and v2.5.1, please head to [Nebula Graph repo](https://github.com/vesoft-inc/nebula-graph).
+This repository hosts the source code of Nebula Graph versions before 2.0.0-alpha and after v2.5.x. If you are looking to use the versions between v2.0.0 and v2.5.x, please head to [Nebula Graph repo](https://github.com/vesoft-inc/nebula-graph).
 
-Nebula Graph 1.x is not actively maintained. Please move to Nebula Graph 2.x. The data format, rpc protocols, clients, etc. are not compatible between Nebula Graph v1.x and v2.x, but we do offer [upgrade guide from 1.x to v2.5.0](https://docs.nebula-graph.io/2.5.0/4.deployment-and-installation/3.upgrade-nebula-graph/upgrade-nebula-graph-to-250/).
+Nebula Graph 1.x is not actively maintained. Please move to Nebula Graph 2.x. The data format, rpc protocols, clients, etc. are not compatible between Nebula Graph v1.x and v2.x, but we do offer [upgrade guide](https://docs.nebula-graph.io/2.5.0/4.deployment-and-installation/3.upgrade-nebula-graph/upgrade-nebula-graph-to-250/).
 
 <!--
 To use the stable release, see [Nebula Graph 1.0](https://github.com/vesoft-inc/nebula).

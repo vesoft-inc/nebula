@@ -409,9 +409,9 @@ Feature: Go Sentence
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst | like._dst         | serve._type | like._type |
-      | EMPTY      | "James Harden"    | EMPTY       | -5         |
-      | EMPTY      | "Dejounte Murray" | EMPTY       | -5         |
-      | EMPTY      | "Paul George"     | EMPTY       | -5         |
+      | EMPTY      | "James Harden"    | EMPTY       | /-?\d+/    |
+      | EMPTY      | "Dejounte Murray" | EMPTY       | /-?\d+/    |
+      | EMPTY      | "Paul George"     | EMPTY       | /-?\d+/    |
 
   Scenario: multi edges
     When executing query:
@@ -1136,7 +1136,7 @@ Feature: Go Sentence
       """
       GO FROM 'Tim Duncan' OVER like where like.likeness
       """
-    Then a SemanticError should be raised at runtime: `like.likeness', expected Boolean, but was `INT'
+    Then a SemanticError should be raised at runtime: `like.likeness', expected boolean, but was `INT'
 
   Scenario: contain
     When executing query:
@@ -1490,6 +1490,45 @@ Feature: Go Sentence
       | EMPTY      | "Russell Westbrook" |
       | EMPTY      | "Luka Doncic"       |
       | EMPTY      | "Russell Westbrook" |
+    When executing query:
+      """
+      go 1 to 4 steps from "Tim Duncan" over like where like.likeness > 90 yield like.likeness, edge as e
+      """
+    Then the result should be, in any order, with relax comparison:
+      | like.likeness | e                                                        |
+      | 95            | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]  |
+      | 95            | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]    |
+      | 95            | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}] |
+      | 95            | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]    |
+      | 95            | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]  |
+      | 95            | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]    |
+      | 95            | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}] |
+      | 95            | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]    |
+      | 95            | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]  |
+      | 95            | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]    |
+    When executing query:
+      """
+      go 1 to 4 steps from "Tim Duncan" over like yield like.likeness, edge as e
+      """
+    Then the result should be, in any order, with relax comparison:
+      | like.likeness | e                                                            |
+      | 95            | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]      |
+      | 95            | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]        |
+      | 90            | [:like "Manu Ginobili"->"Tim Duncan" @0 {likeness: 90}]      |
+      | 90            | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}] |
+      | 95            | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]     |
+      | 95            | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | 75            | [:like "LaMarcus Aldridge"->"Tim Duncan" @0 {likeness: 75}]  |
+      | 75            | [:like "LaMarcus Aldridge"->"Tony Parker" @0 {likeness: 75}] |
+      | 95            | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]      |
+      | 95            | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]        |
+      | 90            | [:like "Manu Ginobili"->"Tim Duncan" @0 {likeness: 90}]      |
+      | 90            | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}] |
+      | 95            | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]     |
+      | 95            | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | 95            | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]      |
+      | 95            | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]        |
+      | 90            | [:like "Manu Ginobili"->"Tim Duncan" @0 {likeness: 90}]      |
 
   Scenario: error message
     When executing query:

@@ -857,7 +857,8 @@ std::string MetaServiceUtils::roleSpacePrefix(GraphSpaceID spaceId) {
 }
 
 std::string MetaServiceUtils::parseRoleStr(folly::StringPiece key) {
-  auto type = *reinterpret_cast<const cpp2::RoleType*>(&key);
+  auto* c = reinterpret_cast<const char*>(&key);
+  auto type = *reinterpret_cast<const cpp2::RoleType*>(c);
   std::string role;
   switch (type) {
     case cpp2::RoleType::GOD: {

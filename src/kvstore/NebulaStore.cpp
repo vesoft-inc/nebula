@@ -374,6 +374,9 @@ std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
     }
   }
   raftService_->addPartition(part);
+  for (auto& func : onNewPartAdded_) {
+    func.second(part);
+  }
   part->start(std::move(peers), asLearner);
   diskMan_->addPartToPath(spaceId, partId, engine->getDataRoot());
   return part;
@@ -1187,6 +1190,19 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> NebulaStore::getProperty(
     obj[eng] = std::move(value(val));
   }
   return folly::toJson(obj);
+}
+
+void NebulaStore::registerOnNewPartAdded(
+    const std::string& funcName,
+    std::function<void(std::shared_ptr<Part>&)> func,
+    std::vector<std::pair<GraphSpaceID, PartitionID>>& existParts) {
+  for (auto& item : spaces_) {
+    for (auto& partItem : item.second->parts_) {
+      existParts.emplace_back(std::make_pair(item.first, partItem.first));
+      func(partItem.second);
+    }
+  }
+  onNewPartAdded_.insert(std::make_pair(funcName, func));
 }
 
 }  // namespace kvstore

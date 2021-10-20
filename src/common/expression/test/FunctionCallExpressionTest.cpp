@@ -60,7 +60,7 @@ TEST_F(FunctionCallExpressionTest, FunctionCallTest) {
     path.src.vid = "1";
     STEP("2", "edge", 0, 1);
     STEP("1", "edge", 0, -1);
-    TEST_FUNCTION(hasSameEdgeInPath, {path}, true);
+    TEST_PATH_FUNCTION(hasSameEdgeInPath, {path}, true);
   }
   {
     // hasSameEdgeInPath
@@ -70,7 +70,7 @@ TEST_F(FunctionCallExpressionTest, FunctionCallTest) {
     STEP("2", "edge", 0, 1);
     STEP("1", "edge", 0, -1);
     STEP("2", "edge", 0, 1);
-    TEST_FUNCTION(hasSameEdgeInPath, {path}, true);
+    TEST_PATH_FUNCTION(hasSameEdgeInPath, {path}, true);
   }
   {
     // hasSameEdgeInPath
@@ -80,7 +80,7 @@ TEST_F(FunctionCallExpressionTest, FunctionCallTest) {
     STEP("2", "edge", 0, 1);
     STEP("1", "edge", 0, 1);
     STEP("2", "edge", 0, 1);
-    TEST_FUNCTION(hasSameEdgeInPath, {path}, false);
+    TEST_PATH_FUNCTION(hasSameEdgeInPath, {path}, false);
   }
   {
     // hasSameEdgeInPath
@@ -90,7 +90,7 @@ TEST_F(FunctionCallExpressionTest, FunctionCallTest) {
     STEP("2", "edge", 0, 1);
     STEP("1", "edge", 0, -1);
     STEP("2", "edge", 1, 1);
-    TEST_FUNCTION(hasSameEdgeInPath, {path}, false);
+    TEST_PATH_FUNCTION(hasSameEdgeInPath, {path}, false);
   }
   // Check function
   {

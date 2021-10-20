@@ -103,7 +103,10 @@ class ExpressionContextMock final : public ExpressionContext {
     }
   }
 
-  Value getVertex() const override { return Value(); }
+  Value getVertex(const std::string& name = "") const override {
+    UNUSED(name);
+    return Value();
+  }
 
   Value getEdge() const override { return Value(); }
 

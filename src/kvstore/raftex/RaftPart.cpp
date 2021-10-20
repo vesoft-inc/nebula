@@ -19,6 +19,7 @@
 #include "common/thrift/ThriftClientManager.h"
 #include "common/time/WallClock.h"
 #include "interface/gen-cpp2/RaftexServiceAsyncClient.h"
+#include "kvstore/LogEncoder.h"
 #include "kvstore/raftex/Host.h"
 #include "kvstore/raftex/LogStrListIterator.h"
 #include "kvstore/wal/FileBasedWal.h"
@@ -870,7 +871,11 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
         firstLogId = lastLogId_ + 1;
         lastMsgAcceptedCostMs_ = lastMsgSentDur_.elapsedInMSec();
         lastMsgAcceptedTime_ = time::WallClock::fastNowInMilliSec();
-        commitInThisTerm_ = true;
+        if (!commitInThisTerm_) {
+          commitInThisTerm_ = true;
+          bgWorkers_->addTask(
+              [self = shared_from_this(), term = term_] { self->onLeaderReady(term); });
+        }
       } else {
         LOG(FATAL) << idStr_ << "Failed to commit logs";
       }
@@ -1330,6 +1335,9 @@ void RaftPart::processAskForVoteRequest(const cpp2::AskForVoteRequest& req,
     LOG(INFO) << idStr_ << "There is one log " << wal_->lastLogId()
               << " i did not commit when i was leader, rollback to " << lastLogId_;
     wal_->rollbackToLog(lastLogId_);
+  }
+  if (role_ == Role::LEADER) {
+    bgWorkers_->addTask([self = shared_from_this(), term] { self->onLostLeadership(term); });
   }
   role_ = Role::FOLLOWER;
   votedAddr_ = candidate;

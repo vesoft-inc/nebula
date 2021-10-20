@@ -10,8 +10,6 @@
 #include "common/base/Base.h"
 #include "storage/exec/RelNode.h"
 #include "storage/exec/StorageIterator.h"
-#include "storage/transaction/TossEdgeIterator.h"
-#include "storage/transaction/TransactionManager.h"
 
 namespace nebula {
 namespace storage {

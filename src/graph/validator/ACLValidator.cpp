@@ -6,11 +6,8 @@
 
 #include "graph/validator/ACLValidator.h"
 
-#include "clients/meta/MetaClient.h"
-#include "common/base/Base.h"
 #include "graph/planner/plan/Admin.h"
 #include "graph/service/PermissionManager.h"
-#include "graph/util/SchemaUtil.h"
 
 namespace nebula {
 namespace graph {

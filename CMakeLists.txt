@@ -26,6 +26,7 @@ project("Nebula Graph" C CXX)
 
 option(ENABLE_PACK_ONE "Whether to package into one" ON)
 option(ENABLE_VERBOSE_BISON "Enable Bison to report state" OFF)
+option(ENABLE_PACKAGE_TAR "Enable package artifacts to tar." OFF)
 
 add_definitions(-DNEBULA_HOME=${CMAKE_SOURCE_DIR})
 
@@ -85,6 +86,7 @@ macro(nebula_add_library name type)
         raftex_thrift_generator
         # hbase_thrift_generator
         parser_target
+        wkt_parser_target
     )
 endmacro()
 

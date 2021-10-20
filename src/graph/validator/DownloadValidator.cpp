@@ -6,7 +6,6 @@
 
 #include "graph/validator/DownloadValidator.h"
 
-#include "common/base/Base.h"
 #include "graph/planner/plan/Admin.h"
 #include "parser/MutateSentences.h"
 

@@ -21,6 +21,13 @@ std::unique_ptr<PlanNodeDescription> CreateSpace::explain() const {
   return desc;
 }
 
+std::unique_ptr<PlanNodeDescription> CreateSpaceAsNode::explain() const {
+  auto desc = SingleDependencyNode::explain();
+  addDescription("oldSpaceName", oldSpaceName_, desc.get());
+  addDescription("newSpaceName", newSpaceName_, desc.get());
+  return desc;
+}
+
 std::unique_ptr<PlanNodeDescription> DropSpace::explain() const {
   auto desc = SingleDependencyNode::explain();
   addDescription("spaceName", spaceName_, desc.get());

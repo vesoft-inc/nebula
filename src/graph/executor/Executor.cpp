@@ -11,8 +11,8 @@
 
 #include <atomic>
 
-#include "common/base/Memory.h"
 #include "common/base/ObjectPool.h"
+#include "common/memory/MemoryUtils.h"
 #include "graph/context/ExecutionContext.h"
 #include "graph/context/QueryContext.h"
 #include "graph/executor/ExecutionError.h"
@@ -84,6 +84,7 @@
 #include "graph/executor/query/LimitExecutor.h"
 #include "graph/executor/query/MinusExecutor.h"
 #include "graph/executor/query/ProjectExecutor.h"
+#include "graph/executor/query/SampleExecutor.h"
 #include "graph/executor/query/SortExecutor.h"
 #include "graph/executor/query/TopNExecutor.h"
 #include "graph/executor/query/UnionAllVersionVarExecutor.h"
@@ -102,6 +103,7 @@
 using folly::stringPrintf;
 
 DEFINE_bool(enable_lifetime_optimize, true, "Does enable the lifetime optimize.");
+DECLARE_double(system_memory_high_watermark_ratio);
 
 namespace nebula {
 namespace graph {
@@ -178,6 +180,9 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     case PlanNode::Kind::kLimit: {
       return pool->add(new LimitExecutor(node, qctx));
     }
+    case PlanNode::Kind::kSample: {
+      return pool->add(new SampleExecutor(node, qctx));
+    }
     case PlanNode::Kind::kProject: {
       return pool->add(new ProjectExecutor(node, qctx));
     }
@@ -225,6 +230,9 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     }
     case PlanNode::Kind::kCreateSpace: {
       return pool->add(new CreateSpaceExecutor(node, qctx));
+    }
+    case PlanNode::Kind::kCreateSpaceAs: {
+      return pool->add(new CreateSpaceAsExecutor(node, qctx));
     }
     case PlanNode::Kind::kDescSpace: {
       return pool->add(new DescSpaceExecutor(node, qctx));
@@ -550,17 +558,9 @@ Status Executor::open() {
             << "ep: " << qctx()->plan()->id() << "query: " << qctx()->rctx()->query();
     return Status::Error("Execution had been killed");
   }
-  auto status = MemInfo::make();
-  NG_RETURN_IF_ERROR(status);
-  auto mem = std::move(status).value();
-  if (node_->isQueryNode() && mem->hitsHighWatermark(FLAGS_system_memory_high_watermark_ratio)) {
-    return Status::Error(
-        "Used memory(%ldKB) hits the high watermark(%lf) of total system "
-        "memory(%ldKB).",
-        mem->usedInKB(),
-        FLAGS_system_memory_high_watermark_ratio,
-        mem->totalInKB());
-  }
+
+  NG_RETURN_IF_ERROR(checkMemoryWatermark());
+
   numRows_ = 0;
   execTime_ = 0;
   totalDuration_.reset();
@@ -577,6 +577,14 @@ Status Executor::close() {
         std::make_unique<std::unordered_map<std::string, std::string>>(std::move(otherStats_));
   }
   qctx()->plan()->addProfileStats(node_->id(), std::move(stats));
+  return Status::OK();
+}
+
+Status Executor::checkMemoryWatermark() {
+  if (node_->isQueryNode() && MemoryUtils::kHitMemoryHighWatermark.load()) {
+    return Status::Error("Used memory hits the high watermark(%lf) of total system memory.",
+                         FLAGS_system_memory_high_watermark_ratio);
+  }
   return Status::OK();
 }
 
@@ -606,6 +614,7 @@ Status Executor::finish(Result &&result) {
   if (!FLAGS_enable_lifetime_optimize ||
       node()->outputVarPtr()->userCount.load(std::memory_order_relaxed) != 0) {
     numRows_ = result.size();
+    result.checkMemory(node()->isQueryNode());
     ectx_->setResult(node()->outputVar(), std::move(result));
   } else {
     VLOG(1) << "Drop variable " << node()->outputVar();

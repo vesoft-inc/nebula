@@ -315,6 +315,26 @@ class CreateSpaceSentence final : public CreateSentence {
   std::unique_ptr<std::string> comment_;
 };
 
+class CreateSpaceAsSentence final : public CreateSentence {
+ public:
+  CreateSpaceAsSentence(std::string* oldSpace, std::string* newSpace, bool ifNotExist)
+      : CreateSentence(ifNotExist) {
+    oldSpaceName_.reset(oldSpace);
+    newSpaceName_.reset(newSpace);
+    kind_ = Kind::kCreateSpaceAs;
+  }
+
+  std::string getOldSpaceName() const { return *oldSpaceName_; }
+
+  std::string getNewSpaceName() const { return *newSpaceName_; }
+
+  std::string toString() const override;
+
+ private:
+  std::unique_ptr<std::string> newSpaceName_;
+  std::unique_ptr<std::string> oldSpaceName_;
+};
+
 class DropSpaceSentence final : public DropSentence {
  public:
   DropSpaceSentence(std::string* spaceName, bool ifExist) : DropSentence(ifExist) {
@@ -534,7 +554,11 @@ class AdminJobSentence final : public Sentence {
   explicit AdminJobSentence(meta::cpp2::AdminJobOp op,
                             meta::cpp2::AdminCmd cmd = meta::cpp2::AdminCmd::UNKNOWN)
       : op_(op), cmd_(cmd) {
-    kind_ = Kind::kAdminJob;
+    if (op == meta::cpp2::AdminJobOp::SHOW || op == meta::cpp2::AdminJobOp::SHOW_All) {
+      kind_ = Kind::kAdminShowJobs;
+    } else {
+      kind_ = Kind::kAdminJob;
+    }
   }
 
   void addPara(const std::string& para);

@@ -11,6 +11,7 @@ nebula_add_library(
     processors/parts/ListHostsProcessor.cpp
     processors/parts/ListPartsProcessor.cpp
     processors/parts/CreateSpaceProcessor.cpp
+    processors/parts/CreateSpaceAsProcessor.cpp
     processors/parts/GetSpaceProcessor.cpp
     processors/parts/ListSpacesProcessor.cpp
     processors/parts/DropSpaceProcessor.cpp
@@ -58,6 +59,7 @@ nebula_add_library(
     processors/admin/RestoreProcessor.cpp
     processors/admin/ListClusterInfoProcessor.cpp
     processors/admin/GetMetaDirInfoProcessor.cpp
+    processors/admin/VerifyClientVersionProcessor.cpp
     processors/config/RegConfigProcessor.cpp
     processors/config/GetConfigProcessor.cpp
     processors/config/ListConfigsProcessor.cpp
@@ -153,12 +155,14 @@ set(meta_test_deps
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:expression_obj>
     $<TARGET_OBJECTS:function_manager_obj>
+    $<TARGET_OBJECTS:wkt_wkb_io_obj>
     $<TARGET_OBJECTS:agg_function_manager_obj>
     $<TARGET_OBJECTS:time_utils_obj>
     $<TARGET_OBJECTS:encryption_obj>
     $<TARGET_OBJECTS:ft_es_storage_adapter_obj>
     $<TARGET_OBJECTS:version_obj>
     $<TARGET_OBJECTS:ssl_obj>
+    $<TARGET_OBJECTS:geo_index_obj>
 )
 
 nebula_add_subdirectory(http)

@@ -8,8 +8,11 @@
 
 #include "graph/context/QueryContext.h"
 #include "graph/planner/plan/Mutate.h"
+#include "graph/service/GraphFlags.h"
 #include "graph/util/SchemaUtil.h"
 #include "graph/util/ScopedTimer.h"
+
+using nebula::storage::GraphStorageClient;
 
 namespace nebula {
 namespace graph {
@@ -45,11 +48,13 @@ folly::Future<Status> UpdateVertexExecutor::execute() {
   auto *uvNode = asNode<UpdateVertex>(node());
   yieldNames_ = uvNode->getYieldNames();
   time::Duration updateVertTime;
+  auto plan = qctx()->plan();
+  auto sess = qctx()->rctx()->session();
+  GraphStorageClient::CommonRequestParam param(
+      uvNode->getSpaceId(), sess->id(), plan->id(), plan->isProfileEnabled());
   return qctx()
       ->getStorageClient()
-      ->updateVertex(uvNode->getSpaceId(),
-                     qctx()->rctx()->session()->id(),
-                     qctx()->plan()->id(),
+      ->updateVertex(param,
                      uvNode->getVId(),
                      uvNode->getTagId(),
                      uvNode->getUpdatedProps(),
@@ -95,11 +100,13 @@ folly::Future<Status> UpdateEdgeExecutor::execute() {
   yieldNames_ = ueNode->getYieldNames();
 
   time::Duration updateEdgeTime;
+  auto plan = qctx()->plan();
+  GraphStorageClient::CommonRequestParam param(
+      ueNode->getSpaceId(), qctx()->rctx()->session()->id(), plan->id(), plan->isProfileEnabled());
+  param.useExperimentalFeature = FLAGS_enable_experimental_feature;
   return qctx()
       ->getStorageClient()
-      ->updateEdge(ueNode->getSpaceId(),
-                   qctx()->rctx()->session()->id(),
-                   qctx()->plan()->id(),
+      ->updateEdge(param,
                    edgeKey,
                    ueNode->getUpdatedProps(),
                    ueNode->getInsertable(),

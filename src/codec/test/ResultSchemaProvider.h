@@ -22,7 +22,8 @@ class ResultSchemaProvider : public meta::SchemaProviderIf {
                                bool nullable,
                                int32_t offset,
                                size_t nullFlagPos,
-                               Expression* defaultValue = nullptr);
+                               Expression* defaultValue = nullptr,
+                               meta::cpp2::GeoShape = meta::cpp2::GeoShape::ANY);
 
     const char* name() const override;
     meta::cpp2::PropertyType type() const override;
@@ -32,6 +33,7 @@ class ResultSchemaProvider : public meta::SchemaProviderIf {
     size_t size() const override;
     size_t offset() const override;
     size_t nullFlagPos() const override;
+    meta::cpp2::GeoShape geoShape() const override;
 
    private:
     std::string name_;
@@ -41,6 +43,7 @@ class ResultSchemaProvider : public meta::SchemaProviderIf {
     int32_t offset_;
     size_t nullFlagPos_;
     Expression* defaultValue_;
+    meta::cpp2::GeoShape geoShape_;
   };
 
  public:

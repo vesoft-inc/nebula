@@ -691,7 +691,7 @@ Feature: Basic Aggregate and GroupBy
       """
       GO FROM "Tim Duncan" OVER like YIELD count(*)
       """
-    Then a SemanticError should be raised at runtime: `count(*)', not support aggregate function in go sentence.
+    Then a SemanticError should be raised at runtime: `count(*)' is not support in go sentence.
     When executing query:
       """
       GO FROM "Tim Duncan" OVER like where COUNT(*) > 2
@@ -767,7 +767,7 @@ Feature: Basic Aggregate and GroupBy
          YIELD $$.team.name AS name,
                COUNT(serve._dst) AS id
       """
-    Then a SemanticError should be raised at runtime: `COUNT(serve._dst) AS id', not support aggregate function in go sentence.
+    Then a SemanticError should be raised at runtime: `COUNT(serve._dst) AS id' is not support in go sentence.
     When executing query:
       """
       MATCH (v:player)

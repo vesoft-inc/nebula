@@ -47,7 +47,7 @@ class QueryExpressionContext final : public ExpressionContext {
   Value getColumn(int32_t index) const override;
 
   // Get Vertex
-  Value getVertex() const override;
+  Value getVertex(const std::string& name = "") const override;
 
   // Get Edge
   Value getEdge() const override;

@@ -21,12 +21,15 @@ SET(EXEC_QUERY_TEST_OBJS
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:memory_obj>
     $<TARGET_OBJECTS:concurrent_obj>
     $<TARGET_OBJECTS:datatypes_obj>
+    $<TARGET_OBJECTS:wkt_wkb_io_obj>
     $<TARGET_OBJECTS:conf_obj>
     $<TARGET_OBJECTS:file_based_cluster_id_man_obj>
     $<TARGET_OBJECTS:charset_obj>
     $<TARGET_OBJECTS:function_manager_obj>
+    $<TARGET_OBJECTS:wkt_wkb_io_obj>
     $<TARGET_OBJECTS:agg_function_manager_obj>
     $<TARGET_OBJECTS:encryption_obj>
     $<TARGET_OBJECTS:http_client_obj>
@@ -48,6 +51,7 @@ SET(EXEC_QUERY_TEST_OBJS
     $<TARGET_OBJECTS:expr_visitor_obj>
     $<TARGET_OBJECTS:graph_obj>
     $<TARGET_OBJECTS:ssl_obj>
+    $<TARGET_OBJECTS:version_obj>
 )
 
 SET(EXEC_QUERY_TEST_LIBS
@@ -71,6 +75,7 @@ nebula_add_test(
         FilterTest.cpp
         DedupTest.cpp
         LimitTest.cpp
+        SampleTest.cpp
         SortTest.cpp
         TopNTest.cpp
         AggregateTest.cpp

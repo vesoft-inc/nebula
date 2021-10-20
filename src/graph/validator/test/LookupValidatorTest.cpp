@@ -84,13 +84,13 @@ TEST_F(LookupValidatorTest, InvalidYieldExpression) {
   {
     const std::string query =
         "LOOKUP ON person where person.age == 35 YIELD person.age + 1 AS age;";
-    EXPECT_FALSE(checkResult(query,
-                             {
-                                 PlanNode::Kind::kProject,
-                                 PlanNode::Kind::kFilter,
-                                 PlanNode::Kind::kTagIndexFullScan,
-                                 PlanNode::Kind::kStart,
-                             }));
+    EXPECT_TRUE(checkResult(query,
+                            {
+                                PlanNode::Kind::kProject,
+                                PlanNode::Kind::kFilter,
+                                PlanNode::Kind::kTagIndexFullScan,
+                                PlanNode::Kind::kStart,
+                            }));
   }
 }
 
@@ -128,5 +128,31 @@ TEST_F(LookupValidatorTest, InvalidFilterExpression) {
     EXPECT_TRUE(checkResult(query, {}));
   }
 }
+
+TEST_F(LookupValidatorTest, wrongYield) {
+  {
+    std::string query = "LOOKUP ON person YIELD vertex";
+    auto result = checkResult(query);
+    EXPECT_EQ(std::string(result.message()),
+              "SyntaxError: please add alias when using `vertex'. near `vertex'");
+  }
+  {
+    std::string query = "LOOKUP ON person YIELD vertex as node, edge";
+    auto result = checkResult(query);
+    EXPECT_EQ(std::string(result.message()),
+              "SyntaxError: please add alias when using `edge'. near `edge'");
+  }
+  {
+    std::string query = "LOOKUP ON person YIELD edge as e";
+    auto result = checkResult(query);
+    EXPECT_EQ(std::string(result.message()), "SemanticError: illegal yield clauses `EDGE AS e'");
+  }
+  {
+    std::string query = "LOOKUP ON person YIELD vertex as node, player.age";
+    auto result = checkResult(query);
+    EXPECT_EQ(std::string(result.message()), "SemanticError: Schema name error: player");
+  }
+}
+
 }  // namespace graph
 }  // namespace nebula

@@ -21,16 +21,9 @@ folly::Future<Status> LimitExecutor::execute() {
   ResultBuilder builder;
   builder.value(result.valuePtr());
   auto offset = limit->offset();
-  auto count = limit->count();
-  auto size = iter->size();
-  if (size <= static_cast<size_t>(offset)) {
-    iter->clear();
-  } else if (size > static_cast<size_t>(offset + count)) {
-    iter->eraseRange(0, offset);
-    iter->eraseRange(count, size - offset);
-  } else if (size > static_cast<size_t>(offset) && size <= static_cast<size_t>(offset + count)) {
-    iter->eraseRange(0, offset);
-  }
+  QueryExpressionContext qec(ectx_);
+  auto count = limit->count(qec);
+  iter->select(offset, count);
   builder.iter(std::move(result).iter());
   return finish(builder.build());
 }

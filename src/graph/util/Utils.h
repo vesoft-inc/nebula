@@ -13,8 +13,7 @@
 #include <string>
 #include <vector>
 
-namespace nebula {
-namespace util {
+namespace nebula::graph::util {
 
 template <typename Container, typename Fn>
 std::string join(const Container& container, Fn fn, const std::string& delimiter = ",") {
@@ -25,7 +24,6 @@ std::string join(const Container& container, Fn fn, const std::string& delimiter
   return folly::join(delimiter, strs);
 }
 
-}  // namespace util
-}  // namespace nebula
+}  // namespace nebula::graph::util
 
 #endif  // GRAPH_UTIL_UTILS_H_

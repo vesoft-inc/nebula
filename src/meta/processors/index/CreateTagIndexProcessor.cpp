@@ -154,6 +154,12 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
       handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
       onFinished();
       return;
+    } else if (col.type.get_type() == meta::cpp2::PropertyType::GEOGRAPHY && fields.size() > 1) {
+      // TODO(jie): Support joint index for geography
+      LOG(ERROR) << "Only support to create index on a single geography column currently";
+      handleErrorCode(nebula::cpp2::ErrorCode::E_UNSUPPORTED);
+      onFinished();
+      return;
     }
     columns.emplace_back(col);
   }

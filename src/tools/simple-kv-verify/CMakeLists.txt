@@ -41,8 +41,10 @@ nebula_add_executable(
         $<TARGET_OBJECTS:general_storage_client_obj>
         $<TARGET_OBJECTS:expression_obj>
         $<TARGET_OBJECTS:function_manager_obj>
+        $<TARGET_OBJECTS:wkt_wkb_io_obj>
         $<TARGET_OBJECTS:agg_function_manager_obj>
         $<TARGET_OBJECTS:version_obj>
+        $<TARGET_OBJECTS:geo_index_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}

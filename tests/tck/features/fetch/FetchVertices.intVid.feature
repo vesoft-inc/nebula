@@ -283,7 +283,7 @@ Feature: Fetch Int Vid Vertices
       """
       FETCH PROP ON player hash('Boris Diaw') YIELD vertex
       """
-    Then a SyntaxError should be raised at runtime: please add alias when using vertex. near `vertex'
+    Then a SyntaxError should be raised at runtime: please add alias when using `vertex'. near `vertex'
     When executing query:
       """
       FETCH PROP ON player hash('Boris Diaw') YIELD edge as a
@@ -402,3 +402,17 @@ Feature: Fetch Int Vid Vertices
     Then the result should be, in any order, and the columns 0, 2 should be hashed:
       | VertexID     | player.name  | id(VERTEX)   |
       | "Boris Diaw" | "Boris Diaw" | "Boris Diaw" |
+    When executing query:
+      """
+      FETCH PROP ON player hash('Tim Duncan') YIELD  id(vertex), properties(vertex).name as name, properties(vertex)
+      """
+    Then the result should be, in any order, and the columns 0, 1 should be hashed:
+      | VertexID     | id(VERTEX)   | name         | properties(VERTEX)            |
+      | "Tim Duncan" | "Tim Duncan" | "Tim Duncan" | {age: 42, name: "Tim Duncan"} |
+    When executing query:
+      """
+      FETCH PROP ON * hash('Tim Duncan') YIELD  id(vertex), keys(vertex) as keys, tags(vertex) as tagss, properties(vertex) as props
+      """
+    Then the result should be, in any order, and the columns 0, 1 should be hashed:
+      | VertexID     | id(VERTEX)   | keys                          | tagss                  | props                                                   |
+      | "Tim Duncan" | "Tim Duncan" | ["age", "name", "speciality"] | ["bachelor", "player"] | {age: 42, name: "Tim Duncan", speciality: "psychology"} |

@@ -32,6 +32,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:concurrent_obj>
         $<TARGET_OBJECTS:datatypes_obj>
+        $<TARGET_OBJECTS:wkt_wkb_io_obj>
         $<TARGET_OBJECTS:conf_obj>
         $<TARGET_OBJECTS:file_based_cluster_id_man_obj>
         $<TARGET_OBJECTS:charset_obj>
@@ -48,6 +49,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:util_obj>
         $<TARGET_OBJECTS:idgenerator_obj>
         $<TARGET_OBJECTS:graph_context_obj>
+        $<TARGET_OBJECTS:memory_obj>
     LIBRARIES
         gtest
         ${PROXYGEN_LIBRARIES}

@@ -36,14 +36,17 @@ folly::Future<Status> IndexScanExecutor::indexScan() {
     return Status::Error("There is no index to use at runtime");
   }
 
+  GraphStorageClient::CommonRequestParam param(lookup->space(),
+                                               qctx()->rctx()->session()->id(),
+                                               qctx()->plan()->id(),
+                                               qctx()->plan()->isProfileEnabled());
   return storageClient
-      ->lookupIndex(lookup->space(),
-                    qctx()->rctx()->session()->id(),
-                    qctx()->plan()->id(),
+      ->lookupIndex(param,
                     ictxs,
                     lookup->isEdge(),
                     lookup->schemaId(),
-                    lookup->returnColumns())
+                    lookup->returnColumns(),
+                    lookup->limit())
       .via(runner())
       .thenValue([this](StorageRpcResponse<LookupIndexResp> &&rpcResp) {
         addStats(rpcResp, otherStats_);
@@ -63,7 +66,7 @@ Status IndexScanExecutor::handleResp(storage::StorageRpcResponse<Resp> &&rpcResp
   for (auto &resp : rpcResp.responses()) {
     if (resp.data_ref().has_value()) {
       nebula::DataSet &data = *resp.data_ref();
-      // TODO : convert the column name to alias.
+      // TODO: convert the column name to alias.
       if (v.colNames.empty()) {
         v.colNames = data.colNames;
       }
@@ -76,7 +79,6 @@ Status IndexScanExecutor::handleResp(storage::StorageRpcResponse<Resp> &&rpcResp
     DCHECK_EQ(node()->colNames().size(), v.colNames.size());
     v.colNames = node()->colNames();
   }
-  VLOG(2) << "Dataset produced by IndexScan: \n" << v << "\n";
   return finish(
       ResultBuilder().value(std::move(v)).iter(Iterator::Kind::kProp).state(state).build());
 }

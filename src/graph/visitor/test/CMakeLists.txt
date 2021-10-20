@@ -46,6 +46,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:meta_client_obj>
         $<TARGET_OBJECTS:file_based_cluster_id_man_obj>
         $<TARGET_OBJECTS:function_manager_obj>
+        $<TARGET_OBJECTS:wkt_wkb_io_obj>
         $<TARGET_OBJECTS:agg_function_manager_obj>
         $<TARGET_OBJECTS:conf_obj>
         $<TARGET_OBJECTS:encryption_obj>
@@ -57,6 +58,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:version_obj>
         $<TARGET_OBJECTS:ssl_obj>
+        $<TARGET_OBJECTS:memory_obj>
     LIBRARIES
         gtest
         ${THRIFT_LIBRARIES}

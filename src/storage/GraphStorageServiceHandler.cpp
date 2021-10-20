@@ -7,7 +7,6 @@
 #include "storage/GraphStorageServiceHandler.h"
 
 #include "storage/index/LookupProcessor.h"
-#include "storage/mutate/AddEdgesAtomicProcessor.h"
 #include "storage/mutate/AddEdgesProcessor.h"
 #include "storage/mutate/AddVerticesProcessor.h"
 #include "storage/mutate/DeleteEdgesProcessor.h"
@@ -19,7 +18,8 @@
 #include "storage/query/GetPropProcessor.h"
 #include "storage/query/ScanEdgeProcessor.h"
 #include "storage/query/ScanVertexProcessor.h"
-#include "storage/transaction/TransactionProcessor.h"
+#include "storage/transaction/ChainAddEdgesGroupProcessor.h"
+#include "storage/transaction/ChainUpdateEdgeProcessorLocal.h"
 
 #define RETURN_FUTURE(processor)   \
   auto f = processor->getFuture(); \
@@ -48,7 +48,6 @@ GraphStorageServiceHandler::GraphStorageServiceHandler(StorageEnv* env) : env_(e
   // Initialize all counters
   kAddVerticesCounters.init("add_vertices");
   kAddEdgesCounters.init("add_edges");
-  kAddEdgesAtomicCounters.init("add_edges_atomic");
   kDelVerticesCounters.init("delete_vertices");
   kDelTagsCounters.init("delete_tags");
   kDelEdgesCounters.init("delete_edges");
@@ -106,6 +105,12 @@ folly::Future<cpp2::UpdateResponse> GraphStorageServiceHandler::future_updateEdg
   RETURN_FUTURE(processor);
 }
 
+folly::Future<cpp2::UpdateResponse> GraphStorageServiceHandler::future_chainUpdateEdge(
+    const cpp2::UpdateEdgeRequest& req) {
+  auto* proc = ChainUpdateEdgeProcessorLocal::instance(env_);
+  RETURN_FUTURE(proc);
+}
+
 folly::Future<cpp2::GetNeighborsResponse> GraphStorageServiceHandler::future_getNeighbors(
     const cpp2::GetNeighborsRequest& req) {
   auto* processor =
@@ -140,11 +145,13 @@ folly::Future<cpp2::ScanEdgeResponse> GraphStorageServiceHandler::future_scanEdg
 folly::Future<cpp2::GetUUIDResp> GraphStorageServiceHandler::future_getUUID(
     const cpp2::GetUUIDReq&) {
   LOG(FATAL) << "Unsupported in version 2.0";
+  cpp2::GetUUIDResp ret;
+  return ret;
 }
 
-folly::Future<cpp2::ExecResponse> GraphStorageServiceHandler::future_addEdgesAtomic(
+folly::Future<cpp2::ExecResponse> GraphStorageServiceHandler::future_chainAddEdges(
     const cpp2::AddEdgesRequest& req) {
-  auto* processor = AddEdgesAtomicProcessor::instance(env_, &kAddEdgesAtomicCounters);
+  auto* processor = ChainAddEdgesGroupProcessor::instance(env_);
   RETURN_FUTURE(processor);
 }
 

@@ -4,7 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include <folly/String.h>
+#include <folly/Format.h>
 
 #include "version/Version.h"
 
@@ -15,14 +15,14 @@ namespace nebula {
 std::string gitInfoSha() { return "@GIT_INFO_SHA@"; }
 
 std::string versionString(bool verbose) {
-  std::string version;
-#if defined(NEBULA_BUILD_VERSION)
-  version = folly::stringPrintf("%s, ", "@NEBULA_BUILD_VERSION@");
-#endif
-  if (verbose) {
-    version += folly::stringPrintf("Git: %s, ", gitInfoSha().c_str());
+  std::string version = getOriginVersion();
+  if (!version.empty()) {
+    version += ", ";
   }
-  version += folly::stringPrintf("Build Time: %s %s", __DATE__, __TIME__);
+  if (verbose) {
+    version += folly::sformat("Git: {}, ", gitInfoSha());
+  }
+  version += folly::sformat("Build Time: {} {}", __DATE__, __TIME__);
   if (verbose) {
     version +=
         "\nThis source code is licensed under Apache 2.0 License,"
@@ -31,4 +31,11 @@ std::string versionString(bool verbose) {
   return version;
 }
 
+std::string getOriginVersion() {
+#if defined(NEBULA_BUILD_VERSION)
+  return "@NEBULA_BUILD_VERSION@";
+#else
+  return "";
+#endif
+}
 }  // namespace nebula

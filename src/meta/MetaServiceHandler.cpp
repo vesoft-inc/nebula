@@ -17,6 +17,7 @@
 #include "meta/processors/admin/ListClusterInfoProcessor.h"
 #include "meta/processors/admin/ListSnapshotsProcessor.h"
 #include "meta/processors/admin/RestoreProcessor.h"
+#include "meta/processors/admin/VerifyClientVersionProcessor.h"
 #include "meta/processors/config/GetConfigProcessor.h"
 #include "meta/processors/config/ListConfigsProcessor.h"
 #include "meta/processors/config/RegConfigProcessor.h"
@@ -43,6 +44,7 @@
 #include "meta/processors/kv/RemoveRangeProcessor.h"
 #include "meta/processors/kv/ScanProcessor.h"
 #include "meta/processors/listener/ListenerProcessor.h"
+#include "meta/processors/parts/CreateSpaceAsProcessor.h"
 #include "meta/processors/parts/CreateSpaceProcessor.h"
 #include "meta/processors/parts/DropSpaceProcessor.h"
 #include "meta/processors/parts/GetPartsAllocProcessor.h"
@@ -84,6 +86,12 @@ namespace meta {
 folly::Future<cpp2::ExecResp> MetaServiceHandler::future_createSpace(
     const cpp2::CreateSpaceReq& req) {
   auto* processor = CreateSpaceProcessor::instance(kvstore_);
+  RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp> MetaServiceHandler::future_createSpaceAs(
+    const cpp2::CreateSpaceAsReq& req) {
+  auto* processor = CreateSpaceAsProcessor::instance(kvstore_);
   RETURN_FUTURE(processor);
 }
 
@@ -570,6 +578,12 @@ folly::Future<cpp2::ExecResp> MetaServiceHandler::future_removeSession(
 
 folly::Future<cpp2::ExecResp> MetaServiceHandler::future_killQuery(const cpp2::KillQueryReq& req) {
   auto* processor = KillQueryProcessor::instance(kvstore_);
+  RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::VerifyClientVersionResp> MetaServiceHandler::future_verifyClientVersion(
+    const cpp2::VerifyClientVersionReq& req) {
+  auto* processor = VerifyClientVersionProcessor::instance(kvstore_);
   RETURN_FUTURE(processor);
 }
 }  // namespace meta

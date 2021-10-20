@@ -37,7 +37,6 @@ DECLARE_bool(enable_authorize);
 DECLARE_string(auth_type);
 DECLARE_string(cloud_http_url);
 DECLARE_uint32(max_allowed_statements);
-DECLARE_double(system_memory_high_watermark_ratio);
 
 // optimizer
 DECLARE_bool(enable_optimizer);
@@ -45,5 +44,12 @@ DECLARE_bool(enable_optimizer);
 DECLARE_int64(max_allowed_connections);
 
 DECLARE_string(local_ip);
+
+DECLARE_bool(enable_experimental_feature);
+
+DECLARE_bool(enable_client_white_list);
+DECLARE_string(client_white_list);
+
+DECLARE_int32(num_rows_to_check_memory);
 
 #endif  // GRAPH_GRAPHFLAGS_H_

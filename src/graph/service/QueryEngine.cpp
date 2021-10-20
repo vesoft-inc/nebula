@@ -7,6 +7,7 @@
 #include "graph/service/QueryEngine.h"
 
 #include "common/base/Base.h"
+#include "common/memory/MemoryUtils.h"
 #include "common/meta/ServerBasedIndexManager.h"
 #include "common/meta/ServerBasedSchemaManager.h"
 #include "graph/context/QueryContext.h"
@@ -19,6 +20,7 @@
 DECLARE_bool(local_config);
 DECLARE_bool(enable_optimizer);
 DECLARE_string(meta_server_addrs);
+DEFINE_int32(check_memory_interval_in_secs, 1, "Memory check interval in seconds");
 
 namespace nebula {
 namespace graph {
@@ -39,18 +41,39 @@ Status QueryEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor
   }
   optimizer_ = std::make_unique<opt::Optimizer>(rulesets);
 
-  return Status::OK();
+  return setupMemoryMonitorThread();
 }
 
 void QueryEngine::execute(RequestContextPtr rctx) {
-  auto ectx = std::make_unique<QueryContext>(std::move(rctx),
+  auto qctx = std::make_unique<QueryContext>(std::move(rctx),
                                              schemaManager_.get(),
                                              indexManager_.get(),
                                              storage_.get(),
                                              metaClient_,
                                              charsetInfo_);
-  auto* instance = new QueryInstance(std::move(ectx), optimizer_.get());
+  auto* instance = new QueryInstance(std::move(qctx), optimizer_.get());
   instance->execute();
+}
+
+Status QueryEngine::setupMemoryMonitorThread() {
+  memoryMonitorThread_ = std::make_unique<thread::GenericWorker>();
+  if (!memoryMonitorThread_ || !memoryMonitorThread_->start("graph-memory-monitor")) {
+    return Status::Error("Fail to start query engine background thread.");
+  }
+
+  auto updateMemoryWatermark = []() -> Status {
+    auto status = MemoryUtils::hitsHighWatermark();
+    NG_RETURN_IF_ERROR(status);
+    MemoryUtils::kHitMemoryHighWatermark.store(std::move(status).value());
+    return Status::OK();
+  };
+
+  // Just to test whether to get the right memory info
+  NG_RETURN_IF_ERROR(updateMemoryWatermark());
+
+  memoryMonitorThread_->addRepeatTask(FLAGS_check_memory_interval_in_secs, updateMemoryWatermark);
+
+  return Status::OK();
 }
 
 }  // namespace graph

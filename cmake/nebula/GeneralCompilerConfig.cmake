@@ -21,7 +21,11 @@ add_compile_options(-Wnon-virtual-dtor)
 add_compile_options(-Woverloaded-virtual)
 add_compile_options(-Wignored-qualifiers)
 
+# For s2
 add_definitions(-DS2_USE_GLOG)
+add_definitions(-DS2_USE_GFLAGS)
+# For breakpad
+add_definitions(-D__STDC_FORMAT_MACROS)
 
 include_directories(AFTER ${CMAKE_SOURCE_DIR}/src)
 include_directories(AFTER ${CMAKE_CURRENT_BINARY_DIR}/src)
@@ -29,6 +33,7 @@ include_directories(AFTER ${CMAKE_CURRENT_BINARY_DIR}/src)
 
 if(ENABLE_WERROR)
     add_compile_options(-Werror)
+    add_compile_options(-Wno-attributes)
 endif()
 
 if(NOT ENABLE_STRICT_ALIASING)

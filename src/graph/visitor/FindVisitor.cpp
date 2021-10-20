@@ -121,6 +121,15 @@ void FindVisitor::visit(ListComprehensionExpression* expr) {
   }
 }
 
+void FindVisitor::visit(LogicalExpression* expr) {
+  findInCurrentExpr(expr);
+  if (!needFindAll_ && !foundExprs_.empty()) return;
+  for (const auto& operand : expr->operands()) {
+    operand->accept(this);
+    if (!needFindAll_ && !foundExprs_.empty()) return;
+  }
+}
+
 void FindVisitor::visit(ConstantExpression* expr) { findInCurrentExpr(expr); }
 
 void FindVisitor::visit(EdgePropertyExpression* expr) { findInCurrentExpr(expr); }

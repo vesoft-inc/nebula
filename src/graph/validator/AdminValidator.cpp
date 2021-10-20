@@ -8,14 +8,10 @@
 
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
-#include "common/base/Base.h"
 #include "common/charset/Charset.h"
 #include "graph/planner/plan/Admin.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/service/GraphFlags.h"
-#include "graph/util/ExpressionUtils.h"
-#include "graph/util/SchemaUtil.h"
-#include "interface/gen-cpp2/meta_types.h"
 #include "parser/MaintainSentences.h"
 
 namespace nebula {
@@ -93,8 +89,6 @@ Status CreateSpaceValidator::validateImpl() {
       case SpaceOptItem::ATOMIC_EDGE: {
         if (item->getAtomicEdge()) {
           spaceDesc_.set_isolation_level(meta::cpp2::IsolationLevel::TOSS);
-          // for 2.0 GA, no matter how this option set, don't use toss.
-          return ::nebula::Status::NotSupported("not support enable toss in 2.0 GA");
         } else {
           spaceDesc_.set_isolation_level(meta::cpp2::IsolationLevel::DEFAULT);
         }
@@ -155,6 +149,20 @@ Status CreateSpaceValidator::validateImpl() {
 
 Status CreateSpaceValidator::toPlan() {
   auto *doNode = CreateSpace::make(qctx_, nullptr, std::move(spaceDesc_), ifNotExist_);
+  root_ = doNode;
+  tail_ = root_;
+  return Status::OK();
+}
+
+Status CreateSpaceAsValidator::validateImpl() {
+  auto sentence = static_cast<CreateSpaceAsSentence *>(sentence_);
+  oldSpaceName_ = sentence->getOldSpaceName();
+  newSpaceName_ = sentence->getNewSpaceName();
+  return Status::OK();
+}
+
+Status CreateSpaceAsValidator::toPlan() {
+  auto *doNode = CreateSpaceAsNode::make(qctx_, nullptr, oldSpaceName_, newSpaceName_);
   root_ = doNode;
   tail_ = root_;
   return Status::OK();

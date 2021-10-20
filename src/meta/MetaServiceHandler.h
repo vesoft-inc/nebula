@@ -31,6 +31,8 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
    * */
   folly::Future<cpp2::ExecResp> future_createSpace(const cpp2::CreateSpaceReq& req) override;
 
+  folly::Future<cpp2::ExecResp> future_createSpaceAs(const cpp2::CreateSpaceAsReq& req) override;
+
   folly::Future<cpp2::ExecResp> future_dropSpace(const cpp2::DropSpaceReq& req) override;
 
   folly::Future<cpp2::ListSpacesResp> future_listSpaces(const cpp2::ListSpacesReq& req) override;
@@ -240,6 +242,9 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
   folly::Future<cpp2::ExecResp> future_removeSession(const cpp2::RemoveSessionReq& req) override;
 
   folly::Future<cpp2::ExecResp> future_killQuery(const cpp2::KillQueryReq& req) override;
+
+  folly::Future<cpp2::VerifyClientVersionResp> future_verifyClientVersion(
+      const cpp2::VerifyClientVersionReq& req) override;
 
  private:
   kvstore::KVStore* kvstore_ = nullptr;
