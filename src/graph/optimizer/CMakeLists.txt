@@ -32,6 +32,9 @@ nebula_add_library(
     rule/UnionAllIndexScanBaseRule.cpp
     rule/UnionAllTagIndexScanRule.cpp
     rule/UnionAllEdgeIndexScanRule.cpp
+    rule/GeoPredicateIndexScanBaseRule.cpp
+    rule/GeoPredicateTagIndexScanRule.cpp
+    rule/GeoPredicateEdgeIndexScanRule.cpp
     rule/IndexFullScanBaseRule.cpp
     rule/TagIndexFullScanRule.cpp
     rule/EdgeIndexFullScanRule.cpp
