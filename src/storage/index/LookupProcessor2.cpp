@@ -5,7 +5,13 @@
  */
 #include "storage/index/LookupProcessor2.h"
 
+#include <thrift/lib/cpp2/protocol/JSONProtocol.h>
+#include <thrift/lib/cpp2/protocol/Serializer.h>
+
 #include "folly/Likely.h"
+#include "interface/gen-cpp2/common_types.tcc"
+#include "interface/gen-cpp2/meta_types.tcc"
+#include "interface/gen-cpp2/storage_types.tcc"
 #include "storage/exec/IndexDedupNode.h"
 #include "storage/exec/IndexEdgeScanNode.h"
 #include "storage/exec/IndexLimitNode.h"
@@ -17,6 +23,7 @@ namespace nebula {
 namespace storage {
 ProcessorCounters kLookupCounters;
 void LookupProcessor::process(const cpp2::LookupIndexRequest& req) {
+  DLOG(INFO) << ::apache::thrift::SimpleJSONSerializer::serialize<std::string>(req);
   if (executor_ != nullptr) {
     executor_->add([req, this]() { this->doProcess(req); });
   } else {
@@ -26,8 +33,6 @@ void LookupProcessor::process(const cpp2::LookupIndexRequest& req) {
 void LookupProcessor::doProcess(const cpp2::LookupIndexRequest& req) {
   prepare(req);
   auto plan = buildPlan(req);
-  InitContext context;
-  plan->init(context);
   if (!FLAGS_query_concurrently) {
     runInSingleThread(req.get_parts(), std::move(plan));
   } else {
@@ -44,6 +49,21 @@ void LookupProcessor::doProcess(const cpp2::LookupIndexRequest& req) {
   planContext_->isEdge_ =
       req.get_indices().get_schema_id().getType() == nebula::cpp2::SchemaID::Type::edge_type;
   context_ = std::make_unique<RuntimeContext>(this->planContext_.get());
+  std::string schemaName;
+  if (planContext_->isEdge_) {
+    auto edgeType = req.get_indices().get_schema_id().get_edge_type();
+    schemaName = env_->schemaMan_->toEdgeName(req.get_space_id(), edgeType).value();
+    context_->edgeType_ = edgeType;
+  } else {
+    auto tagId = req.get_indices().get_schema_id().get_tag_id();
+    schemaName = env_->schemaMan_->toTagName(req.get_space_id(), tagId).value();
+    context_->tagId_ = tagId;
+  }
+  std::vector<std::string> colNames;
+  for (auto& col : *req.get_return_columns()) {
+    colNames.emplace_back(schemaName + "." + col);
+  }
+  resultDataSet_ = ::nebula::DataSet(colNames);
   return ::nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
@@ -51,6 +71,7 @@ std::unique_ptr<IndexNode> LookupProcessor::buildPlan(const cpp2::LookupIndexReq
   std::vector<std::unique_ptr<IndexNode>> nodes;
   for (auto& ctx : req.get_indices().get_contexts()) {
     auto node = buildOneContext(ctx);
+    nodes.emplace_back(std::move(node));
   }
   for (size_t i = 0; i < nodes.size(); i++) {
     auto projection =
@@ -67,7 +88,7 @@ std::unique_ptr<IndexNode> LookupProcessor::buildPlan(const cpp2::LookupIndexReq
     }
     auto dedup = std::make_unique<IndexDedupNode>(context_.get(), dedupColumn);
     for (auto& node : nodes) {
-      node->addChild(std::move(node));
+      dedup->addChild(std::move(node));
     }
     nodes.clear();
     nodes[0] = std::move(dedup);
@@ -88,30 +109,48 @@ std::unique_ptr<IndexNode> LookupProcessor::buildPlan(const cpp2::LookupIndexReq
 
 std::unique_ptr<IndexNode> LookupProcessor::buildOneContext(const cpp2::IndexQueryContext& ctx) {
   std::unique_ptr<IndexNode> node;
+  DLOG(INFO) << ctx.get_column_hints().size();
+  DLOG(INFO) << &ctx.get_column_hints();
+  DLOG(INFO) << ::apache::thrift::SimpleJSONSerializer::serialize<std::string>(ctx);
   if (context_->isEdge()) {
     node = std::make_unique<IndexEdgeScanNode>(
-        context_.get(), ctx.get_index_id(), ctx.get_column_hints());
+        context_.get(), ctx.get_index_id(), ctx.get_column_hints(), context_->env()->kvstore_);
   } else {
     node = std::make_unique<IndexVertexScanNode>(
-        context_.get(), ctx.get_index_id(), ctx.get_column_hints());
+        context_.get(), ctx.get_index_id(), ctx.get_column_hints(), context_->env()->kvstore_);
   }
-  if (ctx.filter_ref().is_set()) {
-    auto filterNode = std::make_unique<IndexSelectionNode>(context_.get(), nullptr);
+  if (ctx.filter_ref().is_set() && !ctx.get_filter().empty()) {
+    auto expr = Expression::decode(context_->objPool(), *ctx.filter_ref());
+    auto filterNode = std::make_unique<IndexSelectionNode>(context_.get(), expr);
+    filterNode->addChild(std::move(node));
+    node = std::move(filterNode);
   }
   return node;
 }
+void printPlan(IndexNode* node, int tab = 0) {
+  DLOG(INFO) << std::string(tab, '\t') << node->name() << "(" << node << ")";
+  for (auto& child : node->children()) {
+    printPlan(child.get(), tab + 1);
+  }
+}
 void LookupProcessor::runInSingleThread(const std::vector<PartitionID>& parts,
                                         std::unique_ptr<IndexNode> plan) {
+  printPlan(plan.get());
   std::vector<std::deque<Row>> datasetList;
   std::vector<::nebula::cpp2::ErrorCode> codeList;
   for (auto part : parts) {
+    DLOG(INFO) << "execute part:" << part;
     plan->execute(part);
     bool hasNext = true;
-    ::nebula::cpp2::ErrorCode code;
+    ::nebula::cpp2::ErrorCode code = ::nebula::cpp2::ErrorCode::SUCCEEDED;
     decltype(datasetList)::value_type dataset;
     do {
       auto result = plan->next(hasNext);
-      if (hasNext && ::nebula::ok(result)) {
+      if (!::nebula::ok(result)) {
+        code = ::nebula::error(result);
+        break;
+      }
+      if (hasNext) {
         dataset.emplace_back(::nebula::value(std::move(result)));
       } else {
         break;
@@ -127,63 +166,67 @@ void LookupProcessor::runInSingleThread(const std::vector<PartitionID>& parts,
         datasetList[i].pop_front();
       }
     } else {
+      DLOG(INFO) << int(codeList[i]);
       handleErrorCode(codeList[i], context_->spaceId(), parts[i]);
     }
   }
   onProcessFinished();
   onFinished();
 }
+
 void LookupProcessor::runInMultipleThread(const std::vector<PartitionID>& parts,
                                           std::unique_ptr<IndexNode> plan) {
   std::vector<std::unique_ptr<IndexNode>> planCopy = reproducePlan(plan.get(), parts.size());
-  std::vector<std::deque<Row>> datasetList(parts.size());
-  std::vector<::nebula::cpp2::ErrorCode> codeList(parts.size());
-  std::vector<std::function<size_t()>> funcs;
-  std::vector<folly::Future<size_t>> futures;
+  using ReturnType = std::tuple<PartitionID, ::nebula::cpp2::ErrorCode, std::deque<Row>>;
+  std::vector<folly::Future<ReturnType>> futures;
   for (size_t i = 0; i < parts.size(); i++) {
-    funcs.emplace_back([this,
-                        &plan = planCopy[i],
-                        &dataset = datasetList[i],
-                        &code = codeList[i],
-                        part = parts[i],
-                        index = i]() {
-      plan->execute(part);
-      bool hasNext = true;
-      do {
-        auto result = plan->next(hasNext);
-        if (hasNext && ::nebula::ok(result)) {
-          dataset.emplace_back(::nebula::value(std::move(result)));
-        } else {
-          break;
+    futures.emplace_back(folly::via(
+        executor_, [this, plan = std::move(planCopy[i]), part = parts[i]]() -> ReturnType {
+          ::nebula::cpp2::ErrorCode code = ::nebula::cpp2::ErrorCode::SUCCEEDED;
+          std::deque<Row> dataset;
+          plan->execute(part);
+          bool hasNext = true;
+          do {
+            auto result = plan->next(hasNext);
+            if (!::nebula::ok(result)) {
+              code = ::nebula::error(result);
+              break;
+            }
+            if (hasNext) {
+              dataset.emplace_back(::nebula::value(std::move(result)));
+            } else {
+              break;
+            }
+          } while (true);
+          return {part, code, dataset};
+        }));
+  }
+  DLOG(INFO) << "xxxxxxxxxxxxxxxxxxxxxxx";
+  folly::collectAll(futures).via(executor_).thenTry([this](auto&& t) {
+    CHECK(!t.hasException());
+    const auto& tries = t.value();
+    for (size_t j = 0; j < tries.size(); j++) {
+      CHECK(!tries[j].hasException());
+      auto& [partId, code, dataset] = tries[j].value();
+      if (code == ::nebula::cpp2::ErrorCode::SUCCEEDED) {
+        for (auto& row : dataset) {
+          resultDataSet_.emplace_back(std::move(row));
         }
-      } while (true);
-      return index;
-    });
-  }
-  for (size_t i = 0; i < parts.size(); i++) {
-    futures.emplace_back(folly::via(executor_, std::move(funcs[i])));
-  }
-  for (size_t i = 0; i < parts.size(); i++) {
-    futures[i].result();
-  }
-  for (size_t i = 0; i < datasetList.size(); i++) {
-    if (codeList[i] == ::nebula::cpp2::ErrorCode::SUCCEEDED) {
-      while (!datasetList[i].empty()) {
-        resultDataSet_.emplace_back(std::move(datasetList[i].front()));
-        datasetList[i].pop_front();
+      } else {
+        handleErrorCode(code, context_->spaceId(), partId);
       }
-    } else {
-      handleErrorCode(codeList[i], context_->spaceId(), parts[i]);
     }
-  }
-  onProcessFinished();
-  onFinished();
+    DLOG(INFO) << "finish";
+    this->onProcessFinished();
+    this->onFinished();
+  });
 }
 std::vector<std::unique_ptr<IndexNode>> LookupProcessor::reproducePlan(IndexNode* root,
                                                                        size_t count) {
   std::vector<std::unique_ptr<IndexNode>> ret(count);
   for (size_t i = 0; i < count; i++) {
-    ret.emplace_back(root->copy());
+    ret[i] = root->copy();
+    DLOG(INFO) << ret[i].get();
   }
   for (auto& child : root->children()) {
     auto childPerPlan = reproducePlan(child.get(), count);

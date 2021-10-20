@@ -26,7 +26,9 @@ class LookupProcessor : public BaseProcessor<cpp2::LookupIndexResp> {
   LookupProcessor(StorageEnv* env, const ProcessorCounters* counters, folly::Executor* executor)
       : BaseProcessor<cpp2::LookupIndexResp>(env, counters), executor_(executor) {}
   void doProcess(const cpp2::LookupIndexRequest& req);
-  void onProcessFinished() {}
+  void onProcessFinished() {
+    BaseProcessor<cpp2::LookupIndexResp>::resp_.set_data(std::move(resultDataSet_));
+  }
 
   void runInSingleThread(const std::vector<PartitionID>& parts, std::unique_ptr<IndexNode> plan);
   void runInMultipleThread(const std::vector<PartitionID>& parts, std::unique_ptr<IndexNode> plan);

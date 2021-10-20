@@ -68,7 +68,6 @@ using std::string_literals::operator""s;
  *
  */
 struct IndexScanTestHelper {
-  void setKVStore(IndexScanNode* node, kvstore::KVStore* store) { node->kvstore_ = store; }
   void setIndex(IndexVertexScanNode* node, std::shared_ptr<::nebula::meta::cpp2::IndexItem> index) {
     node->getIndex = [index]() { return index; };
   }
@@ -526,9 +525,9 @@ TEST_F(IndexScanTest, Int) {
                    const std::string& case_) {
     DVLOG(1) << "Start case " << case_;
     auto context = makeContext(1, 0);
-    auto scanNode = std::make_unique<IndexVertexScanNode>(context.get(), 0, columnHints);
+    auto scanNode =
+        std::make_unique<IndexVertexScanNode>(context.get(), 0, columnHints, kvstore.get());
     IndexScanTestHelper helper;
-    helper.setKVStore(scanNode.get(), kvstore.get());
     helper.setIndex(scanNode.get(), index);
     helper.setTag(scanNode.get(), schema);
     InitContext initCtx;
@@ -740,9 +739,9 @@ float     | float                     | float                   | int
                    const std::string& case_) {
     DVLOG(1) << "Start case " << case_;
     auto context = makeContext(0, 1);
-    auto scanNode = std::make_unique<IndexEdgeScanNode>(context.get(), 0, columnHints);
+    auto scanNode =
+        std::make_unique<IndexEdgeScanNode>(context.get(), 0, columnHints, kvstore.get());
     IndexScanTestHelper helper;
-    helper.setKVStore(scanNode.get(), kvstore.get());
     helper.setIndex(scanNode.get(), index);
     helper.setEdge(scanNode.get(), schema);
     InitContext initCtx;
@@ -963,9 +962,9 @@ TEST_F(IndexScanTest, Bool) {
                    const std::string& case_) {
     DVLOG(1) << "Start case " << case_;
     auto context = makeContext(1, 0);
-    auto scanNode = std::make_unique<IndexVertexScanNode>(context.get(), 0, columnHints);
+    auto scanNode =
+        std::make_unique<IndexVertexScanNode>(context.get(), 0, columnHints, kvstore.get());
     IndexScanTestHelper helper;
-    helper.setKVStore(scanNode.get(), kvstore.get());
     helper.setIndex(scanNode.get(), index);
     helper.setTag(scanNode.get(), schema);
     InitContext initCtx;
@@ -1053,9 +1052,9 @@ TEST_F(IndexScanTest, String1) {
                    const std::string& case_) {
     DVLOG(1) << "Start case " << case_;
     auto context = makeContext(1, 0);
-    auto scanNode = std::make_unique<IndexVertexScanNode>(context.get(), 0, columnHints);
+    auto scanNode =
+        std::make_unique<IndexVertexScanNode>(context.get(), 0, columnHints, kvstore.get());
     IndexScanTestHelper helper;
-    helper.setKVStore(scanNode.get(), kvstore.get());
     helper.setIndex(scanNode.get(), index);
     helper.setTag(scanNode.get(), schema);
     helper.setFatal(scanNode.get(), true);
@@ -1210,9 +1209,9 @@ TEST_F(IndexScanTest, String2) {
                    const std::string& case_) {
     DVLOG(1) << "Start case " << case_;
     auto context = makeContext(1, 0);
-    auto scanNode = std::make_unique<IndexVertexScanNode>(context.get(), 0, columnHints);
+    auto scanNode =
+        std::make_unique<IndexVertexScanNode>(context.get(), 0, columnHints, kvstore.get());
     IndexScanTestHelper helper;
-    helper.setKVStore(scanNode.get(), kvstore.get());
     helper.setIndex(scanNode.get(), index);
     helper.setTag(scanNode.get(), schema);
     helper.setFatal(scanNode.get(), true);
@@ -1341,9 +1340,9 @@ TEST_F(IndexScanTest, String3) {
                    const std::string& case_) {
     DVLOG(1) << "Start case " << case_;
     auto context = makeContext(1, 0);
-    auto scanNode = std::make_unique<IndexVertexScanNode>(context.get(), 0, columnHints);
+    auto scanNode =
+        std::make_unique<IndexVertexScanNode>(context.get(), 0, columnHints, kvstore.get());
     IndexScanTestHelper helper;
-    helper.setKVStore(scanNode.get(), kvstore.get());
     helper.setIndex(scanNode.get(), index);
     helper.setTag(scanNode.get(), schema);
     helper.setFatal(scanNode.get(), true);
@@ -1463,9 +1462,9 @@ TEST_F(IndexScanTest, String4) {
                    const std::string& case_) {
     DVLOG(1) << "Start case " << case_;
     auto context = makeContext(1, 0);
-    auto scanNode = std::make_unique<IndexVertexScanNode>(context.get(), 0, columnHints);
+    auto scanNode =
+        std::make_unique<IndexVertexScanNode>(context.get(), 0, columnHints, kvstore.get());
     IndexScanTestHelper helper;
-    helper.setKVStore(scanNode.get(), kvstore.get());
     helper.setIndex(scanNode.get(), index);
     helper.setTag(scanNode.get(), schema);
     helper.setFatal(scanNode.get(), true);
@@ -1579,9 +1578,9 @@ TEST_F(IndexScanTest, Nullable) {
                    const std::string& case_) {
     DVLOG(1) << "Start case " << case_;
     auto context = makeContext(1, 0);
-    auto scanNode = std::make_unique<IndexVertexScanNode>(context.get(), 0, columnHints);
+    auto scanNode =
+        std::make_unique<IndexVertexScanNode>(context.get(), 0, columnHints, kvstore.get());
     IndexScanTestHelper helper;
-    helper.setKVStore(scanNode.get(), kvstore.get());
     helper.setIndex(scanNode.get(), index);
     helper.setTag(scanNode.get(), schema);
     helper.setFatal(scanNode.get(), true);

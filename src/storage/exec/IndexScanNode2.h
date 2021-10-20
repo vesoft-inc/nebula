@@ -33,8 +33,9 @@ class IndexScanNode : public IndexNode {
   IndexScanNode(RuntimeContext* context,
                 const std::string& name,
                 IndexID indexId,
-                const std::vector<cpp2::IndexColumnHint>& columnHints)
-      : IndexNode(context, name), indexId_(indexId), columnHints_(columnHints) {}
+                const std::vector<cpp2::IndexColumnHint>& columnHints,
+                ::nebula::kvstore::KVStore* kvstore)
+      : IndexNode(context, name), indexId_(indexId), columnHints_(columnHints), kvstore_(kvstore) {}
   ::nebula::cpp2::ErrorCode init(InitContext& ctx) override;
 
  protected:
@@ -98,7 +99,7 @@ class Path {
   std::vector<QualifiedFunction> QFList_;
   ::nebula::meta::cpp2::IndexItem* index_;
   const meta::SchemaProviderIf* schema_;
-  const std::vector<cpp2::IndexColumnHint>& hints_;
+  const std::vector<cpp2::IndexColumnHint> hints_;
   std::vector<bool> nullable_;
   int64_t index_nullable_offset_{8};
   int64_t totalKeyLength_{8};

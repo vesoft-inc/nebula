@@ -30,8 +30,9 @@ IndexVertexScanNode::IndexVertexScanNode(const IndexVertexScanNode& node)
 
 IndexVertexScanNode::IndexVertexScanNode(RuntimeContext* context,
                                          IndexID indexId,
-                                         const std::vector<cpp2::IndexColumnHint>& clolumnHint)
-    : IndexScanNode(context, "IndexVertexScanNode", indexId, clolumnHint) {
+                                         const std::vector<cpp2::IndexColumnHint>& clolumnHint,
+                                         ::nebula::kvstore::KVStore* kvstore)
+    : IndexScanNode(context, "IndexVertexScanNode", indexId, clolumnHint, kvstore) {
   getIndex = std::function([this]() {
     auto env = this->context_->env();
     auto indexMgr = env->indexMan_;
@@ -87,6 +88,7 @@ Map<std::string, Value> IndexVertexScanNode::decodeFromBase(const std::string& k
   Map<std::string, Value> values;
   auto reader = RowReaderWrapper::getRowReader(tag_.get(), value);
   for (auto& col : requiredColumns_) {
+    DLOG(INFO) << col;
     switch (QueryUtils::toReturnColType(col)) {
       case QueryUtils::ReturnColType::kVid: {
         auto vId = NebulaKeyUtils::getVertexId(context_->vIdLen(), key);

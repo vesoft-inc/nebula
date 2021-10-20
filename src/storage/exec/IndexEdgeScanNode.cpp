@@ -25,12 +25,13 @@ IndexEdgeScanNode::IndexEdgeScanNode(const IndexEdgeScanNode& node)
 }
 IndexEdgeScanNode::IndexEdgeScanNode(RuntimeContext* context,
                                      IndexID indexId,
-                                     const std::vector<cpp2::IndexColumnHint>& columnHint)
-    : IndexScanNode(context, "IndexEdgeScanNode", indexId, columnHint) {
+                                     const std::vector<cpp2::IndexColumnHint>& columnHint,
+                                     ::nebula::kvstore::KVStore* kvstore)
+    : IndexScanNode(context, "IndexEdgeScanNode", indexId, columnHint, kvstore) {
   getIndex = std::function([this]() {
     auto env = this->context_->env();
     auto indexMgr = env->indexMan_;
-    auto index = indexMgr->getTagIndex(this->spaceId_, this->indexId_).value();
+    auto index = indexMgr->getEdgeIndex(this->spaceId_, this->indexId_).value();
     return index;
   });
   getEdge = std::function([this]() {
@@ -78,6 +79,9 @@ Row IndexEdgeScanNode::decodeFromIndex(folly::StringPiece key) {
     auto rank = IndexKeyUtils::getIndexRank(context_->vIdLen(), key);
     values[colPosMap[kRank]] = Value(rank);
   }
+  if (colPosMap.count(kType)) {
+    values[colPosMap[kType]] = Value(context_->edgeType_);
+  }
   key.subtract(context_->vIdLen() * 2 + sizeof(EdgeType));
   decodePropFromIndex(key, colPosMap, values);
   return Row(std::move(values));
@@ -99,6 +103,9 @@ Map<std::string, Value> IndexEdgeScanNode::decodeFromBase(const std::string& key
   auto reader = RowReaderWrapper::getRowReader(edge_.get(), value);
   for (auto& col : requiredColumns_) {
     switch (QueryUtils::toReturnColType(col)) {
+      case QueryUtils::ReturnColType::kType: {
+        values[col] = Value(context_->edgeType_);
+      } break;
       case QueryUtils::ReturnColType::kSrc: {
         auto vId = NebulaKeyUtils::getSrcId(context_->vIdLen(), key);
         if (context_->isIntId()) {
@@ -128,6 +135,8 @@ Map<std::string, Value> IndexEdgeScanNode::decodeFromBase(const std::string& key
       default:
         LOG(FATAL) << "Unexpect column name:" << col;
     }
+    DLOG(INFO) << col;
+    DLOG(INFO) << values[col];
   }
   return values;
 }

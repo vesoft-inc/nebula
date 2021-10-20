@@ -17,7 +17,8 @@ class IndexEdgeScanNode : public IndexScanNode {
   IndexEdgeScanNode(const IndexEdgeScanNode& node);
   IndexEdgeScanNode(RuntimeContext* context,
                     IndexID indexId,
-                    const std::vector<cpp2::IndexColumnHint>& columnHint);
+                    const std::vector<cpp2::IndexColumnHint>& columnHint,
+                    ::nebula::kvstore::KVStore* kvstore);
   ::nebula::cpp2::ErrorCode init(InitContext& ctx) override;
   std::unique_ptr<IndexNode> copy() override;
 

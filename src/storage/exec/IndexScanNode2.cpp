@@ -46,18 +46,23 @@ std::unique_ptr<Path> Path::make(nebula::meta::cpp2::IndexItem* index,
                                  const std::vector<cpp2::IndexColumnHint>& hints,
                                  int64_t vidLen) {
   std::unique_ptr<Path> ret;
-  if (hints.back().get_scan_type() == cpp2::ScanType::RANGE) {
-    ret.reset(new RangePath(index, schema, hints, vidLen));
-  } else {
+  if (hints.empty() || hints.back().get_scan_type() == cpp2::ScanType::PREFIX) {
     ret.reset(new PrefixPath(index, schema, hints, vidLen));
+
+  } else {
+    ret.reset(new RangePath(index, schema, hints, vidLen));
   }
   return ret;
 }
 Path::Qualified Path::qualified(const folly::StringPiece& key) {
+  DLOG(INFO) << "x";
+
   Qualified ret = Qualified::COMPATIBLE;
   for (auto& func : QFList_) {
     ret = std::min(ret, func(key.toString()));
   }
+  DLOG(INFO) << "x";
+
   return ret;
 }
 std::string Path::encodeValue(const Value& value,
@@ -106,13 +111,29 @@ RangePath::RangePath(nebula::meta::cpp2::IndexItem* index,
   buildKey();
 }
 void RangePath::resetPart(PartitionID partId) {
+  DLOG(INFO) << hints_.size();
   std::string p = IndexKeyUtils::indexPrefix(partId);
-  startKey_.replace(0, p.size(), p);
-  endKey_.replace(0, p.size(), p);
+  DLOG(INFO) << hints_.size();
+  DLOG(INFO) << folly::hexDump(&hints_, sizeof(hints_));
+  // DVLOG(3) << '\n' << folly::hexDump(startKey_.data(), startKey_.size());
+  DLOG(INFO) << folly::hexDump(&hints_, sizeof(hints_));
+  DLOG(INFO) << folly::hexDump(&hints_, sizeof(hints_));
+
+  DLOG(INFO) << hints_.size();
+  startKey_ = startKey_.replace(0, p.size(), p);
+  DLOG(INFO) << hints_.size();
+  // DVLOG(3) << '\n' << folly::hexDump(startKey_.data(), startKey_.size());
+  DVLOG(3) << '\n' << folly::hexDump(endKey_.data(), endKey_.size());
+  DLOG(INFO) << hints_.size();
+  endKey_ = endKey_.replace(0, p.size(), p);
+  DLOG(INFO) << hints_.size();
+  // DVLOG(3) << '\n' << folly::hexDump(endKey_.data(), endKey_.size());
 }
 Path::Qualified RangePath::qualified(const Map<std::string, Value>& rowData) {
+  DLOG(INFO) << hints_.size();
   for (size_t i = 0; i < hints_.size() - 1; i++) {
     auto& hint = hints_[i];
+    DLOG(INFO) << ::apache::thrift::SimpleJSONSerializer::serialize<std::string>(hint);
     if (hint.get_begin_value() != rowData.at(hint.get_column_name())) {
       return Qualified::INCOMPATIBLE;
     }
@@ -120,6 +141,7 @@ Path::Qualified RangePath::qualified(const Map<std::string, Value>& rowData) {
   auto& hint = hints_.back();
   // TODO(hs.zhang): improve performance.Check include or not during build key.
   if (hint.begin_value_ref().is_set()) {
+    DLOG(INFO) << hint.get_column_name();
     bool ret = includeStart_ ? hint.get_begin_value() <= rowData.at(hint.get_column_name())
                              : hint.get_begin_value() < rowData.at(hint.get_column_name());
     if (!ret) {
@@ -128,6 +150,7 @@ Path::Qualified RangePath::qualified(const Map<std::string, Value>& rowData) {
   }
   if (hint.end_value_ref().is_set()) {
     DVLOG(2) << includeEnd_;
+    DLOG(INFO) << hint.get_column_name();
     bool ret = includeEnd_ ? hint.get_end_value() >= rowData.at(hint.get_column_name())
                            : hint.get_end_value() > rowData.at(hint.get_column_name());
     DVLOG(2) << ret;
@@ -145,7 +168,7 @@ void RangePath::buildKey() {
     auto& hint = hints_[i];
     CHECK(fieldIter->get_name() == hint.get_column_name());
     auto type = IndexKeyUtils::toValueType(fieldIter->get_type().get_type());
-    CHECK(type == Value::Type::STRING && !fieldIter->get_type().type_length_ref().has_value());
+    CHECK(type != Value::Type::STRING || fieldIter->get_type().type_length_ref().has_value());
     encodeValue(hint.get_begin_value(), fieldIter->get_type(), i, common);
   }
   auto& hint = hints_.back();
@@ -302,6 +325,7 @@ PrefixPath::PrefixPath(nebula::meta::cpp2::IndexItem* index,
 }
 Path::Qualified PrefixPath::qualified(const Map<std::string, Value>& rowData) {
   for (auto& hint : hints_) {
+    DLOG(INFO) << hint.get_column_name();
     if (hint.get_begin_value() != rowData.at(hint.get_column_name())) {
       return Qualified::INCOMPATIBLE;
     }
@@ -310,7 +334,7 @@ Path::Qualified PrefixPath::qualified(const Map<std::string, Value>& rowData) {
 }
 void PrefixPath::resetPart(PartitionID partId) {
   std::string p = IndexKeyUtils::indexPrefix(partId);
-  prefix_.replace(0, p.size(), p);
+  prefix_ = prefix_.replace(0, p.size(), p);
 }
 void PrefixPath::buildKey() {
   std::string common;
@@ -337,11 +361,37 @@ IndexScanNode::IndexScanNode(const IndexScanNode& node)
       columnHints_(node.columnHints_),
       kvstore_(node.kvstore_),
       requiredColumns_(node.requiredColumns_),
-      ttlProps_(node.ttlProps_) {}
+      ttlProps_(node.ttlProps_),
+      needAccessBase_(node.needAccessBase_) {
+  if (node.path_->isRange()) {
+    path_ = std::make_unique<RangePath>(*dynamic_cast<RangePath*>(node.path_.get()));
+  } else {
+    path_ = std::make_unique<PrefixPath>(*dynamic_cast<PrefixPath*>(node.path_.get()));
+  }
+}
 
 ::nebula::cpp2::ErrorCode IndexScanNode::init(InitContext& ctx) {
+  DLOG(INFO) << columnHints_.size();
+  CHECK(requiredColumns_.empty());
+  for (auto& hint : columnHints_) {
+    ctx.requiredColumns.insert(hint.get_column_name());
+  }
+  DLOG(INFO) << "vvvvvv";
+  for (auto& col : requiredColumns_) {
+    DLOG(INFO) << col;
+  }
+  DLOG(INFO) << "aaaaaaaaaaa";
+  for (auto& x : ctx.requiredColumns) {
+    DLOG(INFO) << x.size() << '\t' << x;
+  }
+  DLOG(INFO) << "bbbbbbbbbbb";
   for (auto& col : ctx.requiredColumns) {
     requiredColumns_.push_back(col);
+    DLOG(INFO) << col;
+  }
+  DLOG(INFO) << "xxxxxxxxxxxxxxxxxxxx";
+  for (auto& col : requiredColumns_) {
+    DLOG(INFO) << col;
   }
   ctx.returnColumns = requiredColumns_;
   for (size_t i = 0; i < ctx.returnColumns.size(); i++) {
@@ -361,33 +411,48 @@ IndexScanNode::IndexScanNode(const IndexScanNode& node)
   tmp.erase(kRank);
   tmp.erase(kSrc);
   tmp.erase(kDst);
+  tmp.erase(kType);
   needAccessBase_ = !tmp.empty();
+  DLOG(INFO) << needAccessBase_;
+  DLOG(INFO) << tmp.size();
   path_ = Path::make(index_.get(), getSchema(), columnHints_, context_->vIdLen());
+  DLOG(INFO) << columnHints_.size();
   return ::nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 nebula::cpp2::ErrorCode IndexScanNode::doExecute(PartitionID partId) {
+  DLOG(INFO) << columnHints_.size();
   partId_ = partId;
   auto ret = resetIter(partId);
+  DLOG(INFO) << columnHints_.size();
   return ret;
 }
 IndexNode::ErrorOr<Row> IndexScanNode::doNext(bool& hasNext) {
+  DVLOG(3) << "x";
+  DVLOG(3) << columnHints_.size();
   hasNext = true;
   for (; iter_ && iter_->valid(); iter_->next()) {
     DVLOG(1) << '\n' << folly::hexDump(iter_->key().data(), iter_->key().size());
     if (!checkTTL()) {
       continue;
     }
+    DVLOG(3) << "x";
     auto q = path_->qualified(iter_->key());
     if (q == Path::Qualified::INCOMPATIBLE) {
       continue;
     }
+    DVLOG(3) << "x";
     bool compatible = q == Path::Qualified::COMPATIBLE;
+    DLOG(INFO) << compatible;
+    DLOG(INFO) << needAccessBase_;
     if (compatible && !needAccessBase_) {
       DVLOG(3) << 123;
-      auto key = iter_->key();
+      auto key = iter_->key().toString();
       iter_->next();
-      return decodeFromIndex(key);
+      auto ret = decodeFromIndex(key);
+      DVLOG(3) << ret;
+      return ret;
     }
+    DVLOG(3) << "x";
     DVLOG(3) << 123;
     std::pair<std::string, std::string> kv;
     auto ret = getBaseData(iter_->key(), kv);
@@ -399,22 +464,31 @@ IndexNode::ErrorOr<Row> IndexScanNode::doNext(bool& hasNext) {
       }
       continue;
     }
+    DVLOG(3) << "x";
+
     Map<std::string, Value> rowData = decodeFromBase(kv.first, kv.second);
+    DVLOG(3) << "x";
+    for (auto& iter : rowData) {
+      DVLOG(3) << iter.first << ":" << iter.second;
+    }
     if (!compatible) {
-      DVLOG(3) << 123;
+      DVLOG(3) << "x";
+      DVLOG(3) << path_.get();
       q = path_->qualified(rowData);
       CHECK(q != Path::Qualified::UNCERTAIN);
       if (q == Path::Qualified::INCOMPATIBLE) {
-        DVLOG(3) << 123;
         continue;
       }
     }
     DVLOG(3) << 123;
     Row row;
     for (auto& col : requiredColumns_) {
+      DVLOG(3) << col;
+      DVLOG(3) << rowData.at(col);
       row.emplace_back(std::move(rowData.at(col)));
     }
     iter_->next();
+    DVLOG(3) << row;
     return row;
   }
   hasNext = false;
@@ -434,17 +508,31 @@ bool IndexScanNode::checkTTL() {
 
 nebula::cpp2::ErrorCode IndexScanNode::resetIter(PartitionID partId) {
   path_->resetPart(partId);
+  DLOG(INFO) << columnHints_.size();
+  DLOG(INFO) << path_.get();
   nebula::cpp2::ErrorCode ret;
   if (path_->isRange()) {
     auto rangePath = dynamic_cast<RangePath*>(path_.get());
-    ret =
-        kvstore_->range(spaceId_, partId, rangePath->getStartKey(), rangePath->getEndKey(), &iter_);
+    DLOG(INFO) << rangePath;
+    DLOG(INFO) << columnHints_.size();
+    DVLOG(1) << '\n'
+             << folly::hexDump(rangePath->getStartKey().data(), rangePath->getStartKey().size());
+    DLOG(INFO) << columnHints_.size();
+    DVLOG(1) << '\n'
+             << folly::hexDump(rangePath->getEndKey().data(), rangePath->getEndKey().size());
+    DLOG(INFO) << columnHints_.size();
+    std::unique_ptr<::nebula::kvstore::KVIterator> iter;
+    kvstore_->range(spaceId_, partId, rangePath->getStartKey(), rangePath->getEndKey(), &iter);
+    DLOG(INFO) << columnHints_.size();
+    iter_ = std::move(iter);
+    DLOG(INFO) << columnHints_.size();
   } else {
     auto prefixPath = dynamic_cast<PrefixPath*>(path_.get());
     DVLOG(1) << '\n'
              << folly::hexDump(prefixPath->getPrefixKey().data(),
                                prefixPath->getPrefixKey().size());
     ret = kvstore_->prefix(spaceId_, partId, prefixPath->getPrefixKey(), &iter_);
+    DLOG(INFO) << columnHints_.size();
   }
   return ret;
 }
