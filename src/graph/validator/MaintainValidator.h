@@ -11,7 +11,6 @@
 #include "graph/context/ast/QueryAstContext.h"
 #include "graph/validator/Validator.h"
 #include "parser/AdminSentences.h"
-#include "parser/MaintainSentences.h"
 
 namespace nebula {
 namespace graph {

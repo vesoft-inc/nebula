@@ -14,7 +14,6 @@
 #include "graph/util/FTIndexUtils.h"
 #include "graph/util/SchemaUtil.h"
 #include "graph/util/ValidateUtil.h"
-#include "interface/gen-cpp2/meta_types.h"
 #include "parser/TraverseSentences.h"
 
 using nebula::meta::NebulaSchemaProvider;
