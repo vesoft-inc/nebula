@@ -94,6 +94,8 @@ class Host final : public std::enable_shared_from_this<Host> {
 
   void setResponse(const cpp2::AppendLogResponse& r);
 
+  std::shared_ptr<cpp2::AppendLogRequest> getPendingReqIfAny(std::shared_ptr<Host> self);
+
  private:
   // <term, logId, committedLogId>
   using Request = std::tuple<TermID, LogID, LogID>;
