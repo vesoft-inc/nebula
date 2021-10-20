@@ -120,7 +120,7 @@ using Direction = nebula::storage::cpp2::EdgeDirection;
 /**
  * Get neighbors' property
  */
-class GetNeighbors final : public Explore {
+class GetNeighbors : public Explore {
  public:
   static GetNeighbors* make(QueryContext* qctx, PlanNode* input, GraphSpaceID space) {
     return qctx->objPool()->add(new GetNeighbors(qctx, input, space));
@@ -198,15 +198,15 @@ class GetNeighbors final : public Explore {
   PlanNode* clone() const override;
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
- private:
+ protected:
   GetNeighbors(QueryContext* qctx, PlanNode* input, GraphSpaceID space)
       : Explore(qctx, Kind::kGetNeighbors, input, space) {
     setLimit(-1);
   }
 
- private:
   void cloneMembers(const GetNeighbors&);
 
+ private:
   Expression* src_{nullptr};
   std::vector<EdgeType> edgeTypes_;
   storage::cpp2::EdgeDirection edgeDirection_{Direction::OUT_EDGE};
@@ -1146,6 +1146,73 @@ class UnionAllVersionVar final : public SingleInputNode {
   void cloneMembers(const UnionAllVersionVar&);
 };
 
+class Traverse final : public GetNeighbors {
+ public:
+  using VertexProps = std::unique_ptr<std::vector<storage::cpp2::VertexProp>>;
+  using EdgeProps = std::unique_ptr<std::vector<storage::cpp2::EdgeProp>>;
+  using StatProps = std::unique_ptr<std::vector<storage::cpp2::StatProp>>;
+  using Exprs = std::unique_ptr<std::vector<storage::cpp2::Expr>>;
+
+  static Traverse* make(QueryContext* qctx, PlanNode* input, GraphSpaceID space) {
+    return qctx->objPool()->add(new Traverse(qctx, input, space));
+  }
+
+  static Traverse* make(QueryContext* qctx,
+                        PlanNode* input,
+                        GraphSpaceID space,
+                        Expression* src,
+                        std::vector<EdgeType> edgeTypes,
+                        storage::cpp2::EdgeDirection edgeDirection,
+                        VertexProps&& vertexProps,
+                        EdgeProps&& edgeProps,
+                        StatProps&& statProps,
+                        Exprs&& exprs,
+                        bool dedup = false,
+                        bool random = false,
+                        std::vector<storage::cpp2::OrderBy> orderBy = {},
+                        int64_t limit = -1,
+                        Expression* filter = nullptr) {
+    auto traverse = make(qctx, input, space);
+    traverse->setSrc(src);
+    traverse->setEdgeTypes(std::move(edgeTypes));
+    traverse->setEdgeDirection(edgeDirection);
+    traverse->setVertexProps(std::move(vertexProps));
+    traverse->setEdgeProps(std::move(edgeProps));
+    traverse->setExprs(std::move(exprs));
+    traverse->setStatProps(std::move(statProps));
+    traverse->setRandom(random);
+    traverse->setDedup(dedup);
+    traverse->setOrderBy(std::move(orderBy));
+    traverse->setLimit(limit);
+    traverse->setFilter(std::move(filter));
+    return traverse;
+  }
+
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
+  Traverse* clone() const;
+
+  StepClause steps() const { return steps_; }
+
+  const std::vector<storage::cpp2::EdgeProp>* edgeDst() const { return edgeDst_.get(); }
+
+  void setSteps(StepClause steps) { steps_ = steps; }
+
+  void setEdgeDst(EdgeProps edgeProps) { edgeDst_ = std::move(edgeProps); }
+
+ private:
+  Traverse(QueryContext* qctx, PlanNode* input, GraphSpaceID space)
+      : GetNeighbors(qctx, input, space) {
+    setLimit(-1);
+    kind_ = Kind::kTraverse;
+  }
+
+ private:
+  void cloneMembers(const Traverse& g);
+
+  StepClause steps_;
+  EdgeProps edgeDst_;
+};
 }  // namespace graph
 }  // namespace nebula
 #endif  // GRAPH_PLANNER_PLAN_QUERY_H_

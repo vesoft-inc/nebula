@@ -601,5 +601,23 @@ void UnionAllVersionVar::cloneMembers(const UnionAllVersionVar& f) {
   SingleInputNode::cloneMembers(f);
 }
 
+Traverse* Traverse::clone() const {
+  auto newGN = Traverse::make(qctx_, nullptr, space_);
+  newGN->cloneMembers(*this);
+  return newGN;
+}
+
+void Traverse::cloneMembers(const Traverse& g) {
+  GetNeighbors::cloneMembers(g);
+
+  setSteps(g.steps_);
+}
+
+std::unique_ptr<PlanNodeDescription> Traverse::explain() const {
+  auto desc = GetNeighbors::explain();
+  addDescription("steps", steps_.toString(), desc.get());
+  return desc;
+}
+
 }  // namespace graph
 }  // namespace nebula

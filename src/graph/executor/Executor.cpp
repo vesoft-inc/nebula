@@ -87,6 +87,7 @@
 #include "graph/executor/query/SampleExecutor.h"
 #include "graph/executor/query/SortExecutor.h"
 #include "graph/executor/query/TopNExecutor.h"
+#include "graph/executor/query/TraverseExecutor.h"
 #include "graph/executor/query/UnionAllVersionVarExecutor.h"
 #include "graph/executor/query/UnionExecutor.h"
 #include "graph/executor/query/UnwindExecutor.h"
@@ -526,6 +527,9 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     }
     case PlanNode::Kind::kKillQuery: {
       return pool->add(new KillQueryExecutor(node, qctx));
+    }
+    case PlanNode::Kind::kTraverse: {
+      return pool->add(new TraverseExecutor(node, qctx));
     }
     case PlanNode::Kind::kUnknown: {
       LOG(FATAL) << "Unknown plan node kind " << static_cast<int32_t>(node->kind());

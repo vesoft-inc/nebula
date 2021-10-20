@@ -295,6 +295,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "ShowQueries";
     case Kind::kKillQuery:
       return "KillQuery";
+    case Kind::kTraverse:
+      return "Traverse";
       // no default so the compiler will warning when lack
   }
   LOG(FATAL) << "Impossible kind plan node " << static_cast<int>(kind);
