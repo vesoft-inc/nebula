@@ -17,7 +17,8 @@ SchemaWriter& SchemaWriter::appendCol(folly::StringPiece name,
                                       PropertyType type,
                                       int32_t fixedStrLen,
                                       bool nullable,
-                                      Expression* defaultValue) noexcept {
+                                      Expression* defaultValue,
+                                      meta::cpp2::GeoShape geoShape) noexcept {
   using folly::hash::SpookyHashV2;
   uint64_t hash = SpookyHashV2::Hash64(name.data(), name.size(), 0);
   DCHECK(nameIndex_.find(hash) == nameIndex_.end());
@@ -87,7 +88,8 @@ SchemaWriter& SchemaWriter::appendCol(folly::StringPiece name,
     nullFlagPos = numNullableFields_++;
   }
 
-  columns_.emplace_back(name.toString(), type, size, nullable, offset, nullFlagPos, defaultValue);
+  columns_.emplace_back(
+      name.toString(), type, size, nullable, offset, nullFlagPos, defaultValue, geoShape);
   nameIndex_.emplace(std::make_pair(hash, columns_.size() - 1));
 
   return *this;

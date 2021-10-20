@@ -42,4 +42,5 @@ nebula_add_library(
     ngql/LookupPlanner.cpp
     ngql/FetchVerticesPlanner.cpp
     ngql/FetchEdgesPlanner.cpp
+    ngql/MaintainPlanner.cpp
 )

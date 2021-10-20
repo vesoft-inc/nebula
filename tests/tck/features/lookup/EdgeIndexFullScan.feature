@@ -26,11 +26,11 @@ Feature: Lookup edge index full scan
     And having executed:
       """
       INSERT EDGE
-        edge_1(col1_str, col2_int)
+      edge_1(col1_str, col2_int)
       VALUES
-        '101'->'102':('Red1', 11),
-        '102'->'103':('Yellow', 22),
-        '103'->'101':('Blue', 33);
+      '101'->'102':('Red1', 11),
+      '102'->'103':('Yellow', 22),
+      '103'->'101':('Blue', 33);
       """
 
   Scenario: Edge with relational RegExp filter
@@ -147,10 +147,11 @@ Feature: Lookup edge index full scan
       | SrcVID | DstVID | Ranking | edge_1.col2_int |
       | "101"  | "102"  | 0       | 11              |
     And the execution plan should be:
-      | id | name                | dependencies | operator info |
-      | 3  | Project             | 4            |               |
-      | 4  | EdgeIndexPrefixScan | 0            |               |
-      | 0  | Start               |              |               |
+      | id | name              | dependencies | operator info |
+      | 3  | Project           | 2            |               |
+      | 2  | Filter            | 4            |               |
+      | 4  | EdgeIndexFullScan | 0            |               |
+      | 0  | Start             |              |               |
 
   Scenario: Edge with complex relational IN filter
     # (a IN b) AND (c IN d)

@@ -94,11 +94,15 @@ TEST_P(LookupIndexTest, LookupIndexTestV1) {
     indexVal1.append(IndexKeyUtils::encodeValue("row1"));
     std::string indexVal2 = indexVal1;
 
-    key = IndexKeyUtils::vertexIndexKey(vIdLen.value(), 1, 3, vId1, std::move(indexVal1));
-    keyValues.emplace_back(std::move(key), "");
+    auto keys = IndexKeyUtils::vertexIndexKeys(vIdLen.value(), 1, 3, vId1, {std::move(indexVal1)});
+    for (auto& k : keys) {
+      keyValues.emplace_back(std::move(k), "");
+    }
 
-    key = IndexKeyUtils::vertexIndexKey(vIdLen.value(), 1, 3, vId2, std::move(indexVal2));
-    keyValues.emplace_back(std::move(key), "");
+    keys = IndexKeyUtils::vertexIndexKeys(vIdLen.value(), 1, 3, vId2, {std::move(indexVal2)});
+    for (auto& k : keys) {
+      keyValues.emplace_back(std::move(k), "");
+    }
 
     folly::Baton<true, std::atomic> baton;
     env->kvstore_->asyncMultiPut(

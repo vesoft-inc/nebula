@@ -133,10 +133,12 @@ nebula::cpp2::ErrorCode RebuildTagIndexTask::buildIndexGlobal(GraphSpaceID space
           LOG(WARNING) << "Collect index value failed";
           continue;
         }
-        auto indexKey = IndexKeyUtils::vertexIndexKey(
+        auto indexKeys = IndexKeyUtils::vertexIndexKeys(
             vidSize, part, item->get_index_id(), vertex.toString(), std::move(valuesRet).value());
-        batchSize += indexKey.size() + indexVal.size();
-        data.emplace_back(std::move(indexKey), indexVal);
+        for (auto& indexKey : indexKeys) {
+          batchSize += indexKey.size() + indexVal.size();
+          data.emplace_back(std::move(indexKey), indexVal);
+        }
       }
     }
     iter->next();

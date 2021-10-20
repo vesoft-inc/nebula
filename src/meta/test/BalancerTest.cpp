@@ -172,13 +172,15 @@ TEST(BalanceTest, SimpleTestWithZone) {
   {
     HostParts hostParts;
     hostParts.emplace(HostAddr("0", 0), std::vector<PartitionID>{1, 2, 3, 4});
-    hostParts.emplace(HostAddr("1", 0), std::vector<PartitionID>{1, 2, 3, 4});
-    hostParts.emplace(HostAddr("2", 0), std::vector<PartitionID>{1, 2, 3, 4});
-    hostParts.emplace(HostAddr("3", 0), std::vector<PartitionID>{});
+    hostParts.emplace(HostAddr("1", 1), std::vector<PartitionID>{1, 2, 3, 4});
+    hostParts.emplace(HostAddr("2", 2), std::vector<PartitionID>{1, 2, 3, 4});
+    hostParts.emplace(HostAddr("3", 3), std::vector<PartitionID>{});
     int32_t totalParts = 12;
     std::vector<BalanceTask> tasks;
     NiceMock<MockAdminClient> client;
     Balancer balancer(kv, &client);
+    auto code = balancer.assembleZoneParts("group_0", hostParts);
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
     balancer.balanceParts(0, 0, hostParts, totalParts, tasks, true);
     for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
       EXPECT_EQ(3, it->second.size());
@@ -244,7 +246,8 @@ TEST(BalanceTest, ExpansionZoneTest) {
   {
     HostParts hostParts;
     int32_t totalParts = 0;
-    balancer.getHostParts(1, true, hostParts, totalParts);
+    auto result = balancer.getHostParts(1, true, hostParts, totalParts);
+    ASSERT_TRUE(nebula::ok(result));
     std::vector<BalanceTask> tasks;
     hostParts.emplace(HostAddr("3", 3), std::vector<PartitionID>{});
     balancer.balanceParts(0, 0, hostParts, totalParts, tasks, true);
@@ -262,7 +265,7 @@ TEST(BalanceTest, ExpansionHostIntoZoneTest) {
   FLAGS_heartbeat_interval_secs = 1;
   {
     std::vector<HostAddr> hosts;
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 6; i++) {
       hosts.emplace_back(std::to_string(i), i);
     }
     TestUtils::createSomeHosts(kv, hosts);
@@ -311,7 +314,8 @@ TEST(BalanceTest, ExpansionHostIntoZoneTest) {
   {
     HostParts hostParts;
     int32_t totalParts = 0;
-    balancer.getHostParts(1, true, hostParts, totalParts);
+    auto result = balancer.getHostParts(1, true, hostParts, totalParts);
+    ASSERT_TRUE(nebula::ok(result));
 
     std::vector<BalanceTask> tasks;
     hostParts.emplace(HostAddr("3", 3), std::vector<PartitionID>{});
@@ -538,6 +542,8 @@ TEST(BalanceTest, BalanceWithComplexZoneTest) {
     int32_t totalParts = 64 * 3;
     std::vector<BalanceTask> tasks;
     auto hostParts = assignHostParts(kv, 2);
+    auto code = balancer.assembleZoneParts("group_0", hostParts);
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
     balancer.balanceParts(0, 2, hostParts, totalParts, tasks, true);
   }
   {
@@ -557,7 +563,7 @@ TEST(BalanceTest, BalanceWithComplexZoneTest) {
 
     HostParts hostParts;
     std::vector<PartitionID> parts;
-    for (int32_t i = 0; i < 81; i++) {
+    for (int32_t i = 1; i <= 81; i++) {
       parts.emplace_back(i);
     }
 
@@ -573,6 +579,8 @@ TEST(BalanceTest, BalanceWithComplexZoneTest) {
     int32_t totalParts = 243;
     std::vector<BalanceTask> tasks;
     dump(hostParts, tasks);
+    auto code = balancer.assembleZoneParts("group_1", hostParts);
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
     balancer.balanceParts(0, 3, hostParts, totalParts, tasks, true);
 
     LOG(INFO) << "=== new map ====";

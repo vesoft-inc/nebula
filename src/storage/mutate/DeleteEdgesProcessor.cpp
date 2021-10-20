@@ -166,18 +166,22 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> DeleteEdgesProcessor::deleteEdges(
           if (!valuesRet.ok()) {
             continue;
           }
-          auto indexKey = IndexKeyUtils::edgeIndexKey(
+          auto indexKeys = IndexKeyUtils::edgeIndexKeys(
               spaceVidLen_, partId, indexId, srcId, rank, dstId, std::move(valuesRet).value());
 
           auto indexState = env_->getIndexState(spaceId_, partId);
           if (env_->checkRebuilding(indexState)) {
             auto deleteOpKey = OperationKeyUtils::deleteOperationKey(partId);
-            batchHolder->put(std::move(deleteOpKey), std::move(indexKey));
+            for (auto& indexKey : indexKeys) {
+              batchHolder->put(std::string(deleteOpKey), std::move(indexKey));
+            }
           } else if (env_->checkIndexLocked(indexState)) {
             LOG(ERROR) << "The index has been locked: " << index->get_index_name();
             return nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
           } else {
-            batchHolder->remove(std::move(indexKey));
+            for (auto& indexKey : indexKeys) {
+              batchHolder->remove(std::move(indexKey));
+            }
           }
         }
       }
