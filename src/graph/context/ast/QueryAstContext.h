@@ -157,6 +157,17 @@ struct FetchEdgesContext final : public AstContext {
   std::string inputVarName;
 };
 
+struct AlterSchemaContext final : public AstContext {
+  std::vector<meta::cpp2::AlterSchemaItem> schemaItems;
+  meta::cpp2::SchemaProp schemaProps;
+};
+
+struct CreateSchemaContext final : public AstContext {
+  bool ifNotExist{false};
+  std::string name;
+  meta::cpp2::Schema schema;
+};
+
 }  // namespace graph
 }  // namespace nebula
 #endif  // GRAPH_CONTEXT_AST_QUERYASTCONTEXT_H_

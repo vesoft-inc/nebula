@@ -12,6 +12,7 @@
 #include "codec/RowReader.h"
 #include "common/base/Base.h"
 #include "common/base/StatusOr.h"
+#include "common/geo/GeoIndex.h"
 #include "common/utils/Types.h"
 #include "interface/gen-cpp2/meta_types.h"
 namespace nebula {
@@ -139,7 +140,7 @@ class IndexKeyUtils final {
         return encodeDateTime(v.getDateTime());
       }
       case Value::Type::GEOGRAPHY: {
-        // TODO(jie)
+        LOG(FATAL) << "Should call encodeGeography separately";
         return "";
       }
       default:
@@ -330,6 +331,19 @@ class IndexKeyUtils final {
     return buf;
   }
 
+  static std::vector<std::string> encodeGeography(const nebula::Geography& gg) {
+    // TODO(jie): Get index params from meta to construct RegionCoverParams
+    geo::RegionCoverParams rc;
+    // TODO(jie): Get schema meta to know if it's point only
+    geo::GeoIndex geoIndex(rc, false);
+    auto cellIds = geoIndex.indexCells(gg);
+    std::vector<std::string> bufs;
+    for (auto cellId : cellIds) {
+      bufs.emplace_back(encodeUint64(cellId));
+    }
+    return bufs;
+  }
+
   static nebula::DateTime decodeDateTime(const folly::StringPiece& raw) {
     int16_t year = *reinterpret_cast<const int16_t*>(raw.data());
     int8_t month = *reinterpret_cast<const int8_t*>(raw.data() + sizeof(int16_t));
@@ -511,30 +525,30 @@ class IndexKeyUtils final {
   /**
    * Generate vertex|edge index key for kv store
    **/
-  static std::string encodeValues(std::vector<Value>&& values,
-                                  const std::vector<nebula::meta::cpp2::ColumnDef>& cols);
+  static std::vector<std::string> encodeValues(
+      std::vector<Value>&& values, const std::vector<nebula::meta::cpp2::ColumnDef>& cols);
 
   /**
    * param valueTypes ： column type of each index column. If there are no
    *nullable columns in the index, the parameter can be empty.
    **/
-  static std::string vertexIndexKey(size_t vIdLen,
-                                    PartitionID partId,
-                                    IndexID indexId,
-                                    const VertexID& vId,
-                                    std::string&& values);
+  static std::vector<std::string> vertexIndexKeys(size_t vIdLen,
+                                                  PartitionID partId,
+                                                  IndexID indexId,
+                                                  const VertexID& vId,
+                                                  std::vector<std::string>&& values);
 
   /**
    * param valueTypes ： column type of each index column. If there are no
    *nullable columns in the index, the parameter can be empty.
    **/
-  static std::string edgeIndexKey(size_t vIdLen,
-                                  PartitionID partId,
-                                  IndexID indexId,
-                                  const VertexID& srcId,
-                                  EdgeRanking rank,
-                                  const VertexID& dstId,
-                                  std::string&& values);
+  static std::vector<std::string> edgeIndexKeys(size_t vIdLen,
+                                                PartitionID partId,
+                                                IndexID indexId,
+                                                const VertexID& srcId,
+                                                EdgeRanking rank,
+                                                const VertexID& dstId,
+                                                std::vector<std::string>&& values);
 
   static std::string indexPrefix(PartitionID partId, IndexID indexId);
 
@@ -544,7 +558,7 @@ class IndexKeyUtils final {
 
   static Value parseIndexTTL(const folly::StringPiece& raw);
 
-  static StatusOr<std::string> collectIndexValues(
+  static StatusOr<std::vector<std::string>> collectIndexValues(
       RowReader* reader, const std::vector<nebula::meta::cpp2::ColumnDef>& cols);
 
  private:

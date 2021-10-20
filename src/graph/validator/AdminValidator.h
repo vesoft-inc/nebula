@@ -8,7 +8,6 @@
 #define GRAPH_VALIDATOR_ADMINVALIDATOR_H_
 
 #include "clients/meta/MetaClient.h"
-#include "common/base/Base.h"
 #include "common/plugin/fulltext/elasticsearch/ESGraphAdapter.h"
 #include "graph/validator/Validator.h"
 #include "parser/AdminSentences.h"

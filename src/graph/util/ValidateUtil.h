@@ -6,7 +6,6 @@
 
 #ifndef GRAPH_UTIL_VALIDATE_UTIL_H_
 #define GRAPH_UTIL_VALIDATE_UTIL_H_
-#include "common/base/Base.h"
 #include "common/base/StatusOr.h"
 #include "common/expression/Expression.h"
 #include "parser/Clauses.h"

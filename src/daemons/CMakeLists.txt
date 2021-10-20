@@ -45,6 +45,7 @@ set(storage_meta_deps
     $<TARGET_OBJECTS:raftex_thrift_obj>
     $<TARGET_OBJECTS:hdfs_helper_obj>
     $<TARGET_OBJECTS:ft_es_storage_adapter_obj>
+    $<TARGET_OBJECTS:geo_index_obj>
 )
 
 nebula_add_executable(
@@ -118,7 +119,6 @@ nebula_add_executable(
         $<TARGET_OBJECTS:scheduler_obj>
         $<TARGET_OBJECTS:idgenerator_obj>
         $<TARGET_OBJECTS:graph_context_obj>
-        $<TARGET_OBJECTS:optimizer_obj>
         $<TARGET_OBJECTS:graph_flags_obj>
         $<TARGET_OBJECTS:graph_auth_obj>
         $<TARGET_OBJECTS:graph_thrift_obj>
@@ -128,6 +128,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:charset_obj>
         $<TARGET_OBJECTS:graph_obj>
         $<TARGET_OBJECTS:ft_es_graph_adapter_obj>
+        $<TARGET_OBJECTS:geo_index_obj>
         ${common_deps}
     LIBRARIES
         ${PROXYGEN_LIBRARIES}

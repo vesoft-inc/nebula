@@ -63,6 +63,7 @@ enum class WriteResult {
         TIMESTAMP       (8 bytes)
         DATE            (4 bytes)
         DATETIME        (15 bytes)
+        GEOGRAPHY       (8 bytes) *
 
   All except STRING typed properties are stored in-place. The STRING property
   stored the offset of the string content in the first 4 bytes and the length
@@ -188,6 +189,8 @@ class RowWriterV2 {
   WriteResult write(ssize_t index, const Date& v) noexcept;
   WriteResult write(ssize_t index, const Time& v) noexcept;
   WriteResult write(ssize_t index, const DateTime& v) noexcept;
+
+  WriteResult write(ssize_t index, const Geography& v) noexcept;
 };
 
 }  // namespace nebula

@@ -7,7 +7,6 @@
 #ifndef GRAPH_VALIDATOR_ACLVALIDATOR_H_
 #define GRAPH_VALIDATOR_ACLVALIDATOR_H_
 
-#include "common/base/Base.h"
 #include "graph/validator/Validator.h"
 #include "parser/UserSentences.h"
 

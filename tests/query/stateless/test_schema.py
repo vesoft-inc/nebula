@@ -148,20 +148,6 @@ class TestSchema(NebulaTestSuite):
                   ['age', 'int64', 'YES', T_EMPTY, T_EMPTY]]
         self.check_result(resp, expect)
 
-        # alter all
-        resp = self.execute('ALTER TAG student drop (name),'
-                            'ADD (gender string),'
-                            'CHANGE (gender int)')
-        self.check_resp_succeeded(resp)
-
-        resp = self.execute('DESC TAG student')
-        self.check_resp_succeeded(resp)
-        expect = [['email', 'string', 'YES', T_EMPTY, T_EMPTY],
-                  ['birthday', 'timestamp', 'YES', T_EMPTY, T_EMPTY],
-                  ['age', 'int64', 'YES', T_EMPTY, T_EMPTY],
-                  ['gender', 'int64', 'YES', T_EMPTY, T_EMPTY]]
-        self.check_result(resp, expect)
-
     def test_alter_tag_failed(self):
         # alter ttl_col on wrong type
         try:
@@ -302,19 +288,6 @@ class TestSchema(NebulaTestSuite):
         expect = [['name', 'string', 'YES', T_EMPTY, T_EMPTY],
                   ['email', 'string', 'YES', T_EMPTY, T_EMPTY],
                   ['start_year', 'int64', 'YES', T_EMPTY, T_EMPTY]]
-        self.check_result(resp, expect)
-
-        # alter all
-        resp = self.execute('ALTER EDGE relationship drop (name),'
-                            'ADD (end_year string),'
-                            'CHANGE (end_year int)')
-        self.check_resp_succeeded(resp)
-
-        resp = self.execute('DESC EDGE relationship')
-        self.check_resp_succeeded(resp)
-        expect = [['email', 'string', 'YES', T_EMPTY, T_EMPTY],
-                  ['start_year', 'int64', 'YES', T_EMPTY, T_EMPTY],
-                  ['end_year', 'int64', 'YES', T_EMPTY, T_EMPTY]]
         self.check_result(resp, expect)
 
     def test_alter_edge_failed(self):
