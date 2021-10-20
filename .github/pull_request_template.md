@@ -16,9 +16,9 @@ close #xxx
 
 
 #### Checklist：
-- [ ] Documentation affected （please label it)
-- [ ] Incompatible （If it is incompatile, please describle it and label it）
-- [ ] need to cherry pick （please label the destination version)
+- [ ] Documentation affected （If need to modify document, please label it.)
+- [ ] Incompatible （If it is incompatile, please describle it and label it.）
+- [ ] Need to cherry pick （If need to cherry pick to some branchs, please label the destination version(s).)
 - [ ] Performance regression: Consumes more CPU
 - [ ] Performance regression: Consumes more Memory
 
