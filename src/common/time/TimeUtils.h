@@ -47,6 +47,25 @@ class TimeUtils {
     return Status::OK();
   }
 
+  template <
+      typename D,
+      typename = std::enable_if_t<std::is_same<D, Time>::value || std::is_same<D, DateTime>::value>>
+  static Status validateTime(const D &time) {
+    if (time.hour < 0 || time.hour >= 24) {
+      return Status::Error("Invalid hour number %d.", time.hour);
+    }
+    if (time.minute < 0 || time.minute >= 60) {
+      return Status::Error("Invalid minute number %d.", time.minute);
+    }
+    if (time.sec < 0 || time.sec >= 60) {
+      return Status::Error("Invalid second number %d.", time.sec);
+    }
+    if (time.microsec < 0 || time.microsec >= 1000000) {
+      return Status::Error("Invalid microsecond number %d.", time.microsec);
+    }
+    return Status::OK();
+  }
+
   // TODO(shylock) support more format
   static StatusOr<DateTime> parseDateTime(const std::string &str) {
     std::tm tm;
