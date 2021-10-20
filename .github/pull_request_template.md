@@ -3,7 +3,7 @@
 - [ ] feature
 
 #### Which issue(s) this PR fixes:
-close #xxx
+close #xxx   
 （If it is requirement, issue(s) number must be listed.）
 
 #### What this PR does / why we need it?
