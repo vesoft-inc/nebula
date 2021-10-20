@@ -1490,6 +1490,45 @@ Feature: Go Sentence
       | EMPTY      | "Russell Westbrook" |
       | EMPTY      | "Luka Doncic"       |
       | EMPTY      | "Russell Westbrook" |
+    When executing query:
+      """
+      go 1 to 4 steps from "Tim Duncan" over like where like.likeness > 90 yield like.likeness, edge as e
+      """
+    Then the result should be, in any order, with relax comparison:
+      | like.likeness | e                                                        |
+      | 95            | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]  |
+      | 95            | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]    |
+      | 95            | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}] |
+      | 95            | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]    |
+      | 95            | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]  |
+      | 95            | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]    |
+      | 95            | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}] |
+      | 95            | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]    |
+      | 95            | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]  |
+      | 95            | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]    |
+    When executing query:
+      """
+      go 1 to 4 steps from "Tim Duncan" over like yield like.likeness, edge as e
+      """
+    Then the result should be, in any order, with relax comparison:
+      | like.likeness | e                                                            |
+      | 95            | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]      |
+      | 95            | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]        |
+      | 90            | [:like "Manu Ginobili"->"Tim Duncan" @0 {likeness: 90}]      |
+      | 90            | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}] |
+      | 95            | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]     |
+      | 95            | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | 75            | [:like "LaMarcus Aldridge"->"Tim Duncan" @0 {likeness: 75}]  |
+      | 75            | [:like "LaMarcus Aldridge"->"Tony Parker" @0 {likeness: 75}] |
+      | 95            | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]      |
+      | 95            | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]        |
+      | 90            | [:like "Manu Ginobili"->"Tim Duncan" @0 {likeness: 90}]      |
+      | 90            | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}] |
+      | 95            | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]     |
+      | 95            | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | 95            | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]      |
+      | 95            | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]        |
+      | 90            | [:like "Manu Ginobili"->"Tim Duncan" @0 {likeness: 90}]      |
 
   Scenario: error message
     When executing query:
