@@ -17,12 +17,6 @@ namespace time {
 
 class DatetimeReader {
  public:
-  // enum class Type {
-  // kDate,
-  // kTime,
-  // kDateTime,
-  // };
-
   ~DatetimeReader() {
     if (dt_ != nullptr) delete dt_;
   }
