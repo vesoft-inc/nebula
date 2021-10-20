@@ -142,15 +142,17 @@ nebula::cpp2::ErrorCode RebuildEdgeIndexTask::buildIndexGlobal(GraphSpaceID spac
           LOG(WARNING) << "Collect index value failed";
           continue;
         }
-        auto indexKey = IndexKeyUtils::edgeIndexKey(vidSize,
-                                                    part,
-                                                    item->get_index_id(),
-                                                    source.toString(),
-                                                    ranking,
-                                                    destination.toString(),
-                                                    std::move(valuesRet).value());
-        batchSize += indexKey.size() + indexVal.size();
-        data.emplace_back(std::move(indexKey), indexVal);
+        auto indexKeys = IndexKeyUtils::edgeIndexKeys(vidSize,
+                                                      part,
+                                                      item->get_index_id(),
+                                                      source.toString(),
+                                                      ranking,
+                                                      destination.toString(),
+                                                      std::move(valuesRet).value());
+        for (auto& indexKey : indexKeys) {
+          batchSize += indexKey.size() + indexVal.size();
+          data.emplace_back(std::move(indexKey), indexVal);
+        }
       }
     }
     iter->next();

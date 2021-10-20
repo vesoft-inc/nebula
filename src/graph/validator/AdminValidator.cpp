@@ -8,14 +8,10 @@
 
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
-#include "common/base/Base.h"
 #include "common/charset/Charset.h"
 #include "graph/planner/plan/Admin.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/service/GraphFlags.h"
-#include "graph/util/ExpressionUtils.h"
-#include "graph/util/SchemaUtil.h"
-#include "interface/gen-cpp2/meta_types.h"
 #include "parser/MaintainSentences.h"
 
 namespace nebula {

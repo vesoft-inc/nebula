@@ -105,7 +105,7 @@ Status FetchEdgesValidator::validateEdgeKey() {
   auto keys = sentence->keys()->keys();
   edgeKeys.rows.reserve(keys.size());
   for (const auto &key : keys) {
-    if (!evaluableExpr(key->srcid())) {
+    if (!ExpressionUtils::isEvaluableExpr(key->srcid())) {
       return Status::SemanticError("`%s' is not evaluable.", key->srcid()->toString().c_str());
     }
     auto src = key->srcid()->eval(ctx);
@@ -116,7 +116,7 @@ Status FetchEdgesValidator::validateEdgeKey() {
     }
     auto ranking = key->rank();
 
-    if (!evaluableExpr(key->dstid())) {
+    if (!ExpressionUtils::isEvaluableExpr(key->dstid())) {
       return Status::SemanticError("`%s' is not evaluable.", key->dstid()->toString().c_str());
     }
     auto dst = key->dstid()->eval(ctx);

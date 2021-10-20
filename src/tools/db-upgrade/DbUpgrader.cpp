@@ -656,8 +656,8 @@ void UpgraderSpace::encodeVertexValue(PartitionID partId,
       return;
     }
     for (auto& index : it->second) {
-      auto newIndexKey = indexVertexKey(partId, strVid, nReader.get(), index);
-      if (!newIndexKey.empty()) {
+      auto newIndexKeys = indexVertexKeys(partId, strVid, nReader.get(), index);
+      for (auto& newIndexKey : newIndexKeys) {
         data.emplace_back(std::move(newIndexKey), "");
       }
     }
@@ -881,15 +881,16 @@ std::string UpgraderSpace::encodeRowVal(const RowReader* reader,
   return std::move(rowWrite).moveEncodedStr();
 }
 
-std::string UpgraderSpace::indexVertexKey(PartitionID partId,
-                                          VertexID& vId,
-                                          RowReader* reader,
-                                          std::shared_ptr<nebula::meta::cpp2::IndexItem> index) {
+std::vector<std::string> UpgraderSpace::indexVertexKeys(
+    PartitionID partId,
+    VertexID& vId,
+    RowReader* reader,
+    std::shared_ptr<nebula::meta::cpp2::IndexItem> index) {
   auto values = IndexKeyUtils::collectIndexValues(reader, index->get_fields());
   if (!values.ok()) {
-    return "";
+    return {};
   }
-  return IndexKeyUtils::vertexIndexKey(
+  return IndexKeyUtils::vertexIndexKeys(
       spaceVidLen_, partId, index->get_index_id(), vId, std::move(values).value());
 }
 
@@ -926,25 +927,26 @@ void UpgraderSpace::encodeEdgeValue(PartitionID partId,
       return;
     }
     for (auto& index : it->second) {
-      auto newIndexKey = indexEdgeKey(partId, nReader.get(), svId, rank, dstId, index);
-      if (!newIndexKey.empty()) {
+      auto newIndexKeys = indexEdgeKeys(partId, nReader.get(), svId, rank, dstId, index);
+      for (auto& newIndexKey : newIndexKeys) {
         data.emplace_back(std::move(newIndexKey), "");
       }
     }
   }
 }
 
-std::string UpgraderSpace::indexEdgeKey(PartitionID partId,
-                                        RowReader* reader,
-                                        VertexID& svId,
-                                        EdgeRanking rank,
-                                        VertexID& dstId,
-                                        std::shared_ptr<nebula::meta::cpp2::IndexItem> index) {
+std::vector<std::string> UpgraderSpace::indexEdgeKeys(
+    PartitionID partId,
+    RowReader* reader,
+    VertexID& svId,
+    EdgeRanking rank,
+    VertexID& dstId,
+    std::shared_ptr<nebula::meta::cpp2::IndexItem> index) {
   auto values = IndexKeyUtils::collectIndexValues(reader, index->get_fields());
   if (!values.ok()) {
-    return "";
+    return {};
   }
-  return IndexKeyUtils::edgeIndexKey(
+  return IndexKeyUtils::edgeIndexKeys(
       spaceVidLen_, partId, index->get_index_id(), svId, rank, dstId, std::move(values).value());
 }
 

@@ -176,8 +176,22 @@ Value RowReaderV2::getValueByIndex(const int64_t index) const noexcept {
       return dt;
     }
     case meta::cpp2::PropertyType::GEOGRAPHY: {
-      // TODO(jie)
-      return Geography();
+      int32_t strOffset;
+      int32_t strLen;
+      memcpy(reinterpret_cast<void*>(&strOffset), &data_[offset], sizeof(int32_t));
+      memcpy(reinterpret_cast<void*>(&strLen), &data_[offset + sizeof(int32_t)], sizeof(int32_t));
+      if (static_cast<size_t>(strOffset) == data_.size() && strLen == 0) {
+        return Value::kEmpty;  // Is it ok to return Value::kEmpty?
+      }
+      CHECK_LT(strOffset, data_.size());
+      auto wkb = std::string(&data_[strOffset], strLen);
+      // Parse a geography from the wkb, normalize it and then verify its validity.
+      auto geogRet = Geography::fromWKB(wkb, true, true);
+      if (!geogRet.ok()) {
+        LOG(ERROR) << "Geography::fromWKB failed: " << geogRet.status();
+        return Value::kNullBadData;  // Is it ok to return Value::kNullBadData?
+      }
+      return std::move(geogRet).value();
     }
     case meta::cpp2::PropertyType::UNKNOWN:
       break;

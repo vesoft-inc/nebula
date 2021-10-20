@@ -504,7 +504,7 @@ SubPlan GoPlanner::mToNStepsPlan(SubPlan& startVidPlan) {
   }
 
   const auto& projectInput =
-      (joinInput || joinDst) ? loopBody->outputVar() : sampleLimit->outputVar();
+      (loopBody != getDst) ? loopBody->outputVar() : sampleLimit->outputVar();
   loopBody = Project::make(qctx, loopBody, goCtx_->yieldExpr);
   loopBody->setInputVar(projectInput);
   loopBody->setColNames(std::move(goCtx_->colNames));
