@@ -254,18 +254,18 @@ Feature: Integer Vid All Path
     Then the execution should be successful
     When executing query:
       """
-      FIND ALL PATH WITH PROP FROM hash("Tim Duncan") TO hash("Tony Parker") OVER like UPTO 2 steps
+      FIND ALL PATH WITH PROP FROM hash("Tim Duncan") TO hash("Tony Parker") OVER like UPTO 2 steps YIELD path as p
       """
     Then the result should be, in any order, with relax comparison:
-      | path                                                                                                                                                                                                                                   |
+      | p                                                                                                                                                                                                                                      |
       | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:like@0 {likeness: 95}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})>                                          |
       | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:like@0 {likeness: 99}]->("Tim Parker")-[:like@0 {likeness: 90}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})> |
     When executing query:
       """
-      FIND ALL PATH WITH PROP FROM hash("Tim Duncan") TO hash("Tony Parker") OVER like BIDIRECT UPTO 2 steps
+      FIND ALL PATH WITH PROP FROM hash("Tim Duncan") TO hash("Tony Parker") OVER like BIDIRECT UPTO 2 steps YIELD path as p
       """
     Then the result should be, in any order, with relax comparison:
-      | path                                                                                                                                                                                                                                                                                      |
+      | p                                                                                                                                                                                                                                                                                         |
       | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})<-[:like@0 {likeness: 95}]-("Tony Parker" :player{age: 36, name: "Tony Parker"})>                                                                                             |
       | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:like@0 {likeness: 95}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})>                                                                                             |
       | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:like@0 {likeness: 99}]->("Tim Parker")-[:like@0 {likeness: 90}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})>                                                    |
