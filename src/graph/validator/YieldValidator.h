@@ -7,8 +7,6 @@
 #ifndef GRAPH_VALIDATOR_YIELDVALIDATOR_H_
 #define GRAPH_VALIDATOR_YIELDVALIDATOR_H_
 
-#include <vector>
-
 #include "common/base/Status.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/validator/GroupByValidator.h"

@@ -8,9 +8,6 @@
 
 #include <memory>
 
-#include "common/expression/UnaryExpression.h"
-#include "common/expression/VariableExpression.h"
-#include "common/expression/VertexExpression.h"
 #include "graph/context/QueryExpressionContext.h"
 #include "graph/planner/plan/Logic.h"
 #include "graph/planner/plan/Query.h"

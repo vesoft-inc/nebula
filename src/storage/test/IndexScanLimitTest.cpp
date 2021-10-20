@@ -124,24 +124,28 @@ class IndexScanLimitTest : public ::testing::Test {
         data.emplace_back(std::move(vertexKey), std::move(val));
         if (indexMan_ != nullptr) {
           if (indexMan_->getTagIndex(spaceId, tagIndex).ok()) {
-            auto vertexIndexKey =
-                IndexKeyUtils::vertexIndexKey(vertexLen,
-                                              pId,
-                                              tagIndex,
-                                              vertex,
-                                              IndexKeyUtils::encodeValues({col1Val}, genCols()));
-            data.emplace_back(std::move(vertexIndexKey), "");
+            auto vertexIndexKeys =
+                IndexKeyUtils::vertexIndexKeys(vertexLen,
+                                               pId,
+                                               tagIndex,
+                                               vertex,
+                                               IndexKeyUtils::encodeValues({col1Val}, genCols()));
+            for (auto& vertexIndexKey : vertexIndexKeys) {
+              data.emplace_back(std::move(vertexIndexKey), "");
+            }
           }
           if (indexMan_->getEdgeIndex(spaceId, edgeIndex).ok()) {
-            auto edgeIndexKey =
-                IndexKeyUtils::edgeIndexKey(vertexLen,
-                                            pId,
-                                            edgeIndex,
-                                            vertex,
-                                            0,
-                                            vertex,
-                                            IndexKeyUtils::encodeValues({col1Val}, genCols()));
-            data.emplace_back(std::move(edgeIndexKey), "");
+            auto edgeIndexKeys =
+                IndexKeyUtils::edgeIndexKeys(vertexLen,
+                                             pId,
+                                             edgeIndex,
+                                             vertex,
+                                             0,
+                                             vertex,
+                                             IndexKeyUtils::encodeValues({col1Val}, genCols()));
+            for (auto& edgeIndexKey : edgeIndexKeys) {
+              data.emplace_back(std::move(edgeIndexKey), "");
+            }
           }
         }
       }
