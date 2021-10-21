@@ -107,15 +107,15 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
 
   auto spaceId = nebula::value(idRet);
   std::vector<kvstore::KV> data;
-  data.emplace_back(MetaServiceUtils::indexSpaceKey(spaceName),
+  data.emplace_back(MetaKeyUtils::indexSpaceKey(spaceName),
                     std::string(reinterpret_cast<const char*>(&spaceId), sizeof(spaceId)));
-  data.emplace_back(MetaServiceUtils::spaceKey(spaceId), MetaServiceUtils::spaceVal(properties));
+  data.emplace_back(MetaKeyUtils::spaceKey(spaceId), MetaKeyUtils::spaceVal(properties));
 
   nebula::cpp2::ErrorCode code = nebula::cpp2::ErrorCode::SUCCEEDED;
   if (properties.group_name_ref().has_value()) {
     auto& groupName = *properties.group_name_ref();
     LOG(INFO) << "Create Space on group: " << groupName;
-    auto groupKey = MetaServiceUtils::groupKey(groupName);
+    auto groupKey = MetaKeyUtils::groupKey(groupName);
     auto ret = doGet(groupKey);
     if (!nebula::ok(ret)) {
       auto retCode = nebula::error(ret);
@@ -128,7 +128,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
       return;
     }
 
-    auto zones = MetaServiceUtils::parseZoneNames(nebula::value(ret));
+    auto zones = MetaKeyUtils::parseZoneNames(nebula::value(ret));
     int32_t zoneNum = zones.size();
     if (replicaFactor > zoneNum) {
       LOG(ERROR) << "Replication number should less than or equal to zone number.";
@@ -152,7 +152,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     hostLoading_ = std::move(nebula::value(hostLoadingRet));
     std::unordered_map<std::string, Hosts> zoneHosts;
     for (auto& zone : zones) {
-      auto zoneKey = MetaServiceUtils::zoneKey(zone);
+      auto zoneKey = MetaKeyUtils::zoneKey(zone);
       auto zoneValueRet = doGet(std::move(zoneKey));
       if (!nebula::ok(zoneValueRet)) {
         code = nebula::error(zoneValueRet);
@@ -163,7 +163,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
         break;
       }
 
-      auto hosts = MetaServiceUtils::parseZoneHosts(std::move(nebula::value(zoneValueRet)));
+      auto hosts = MetaKeyUtils::parseZoneHosts(std::move(nebula::value(zoneValueRet)));
       for (auto& host : hosts) {
         auto hostIter = hostLoading_.find(host);
         if (hostIter == hostLoading_.end()) {
@@ -212,8 +212,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
       }
 
       VLOG(3) << "Space " << spaceId << " part " << partId << " hosts " << ss.str();
-      data.emplace_back(MetaServiceUtils::partKey(spaceId, partId),
-                        MetaServiceUtils::partVal(partHosts));
+      data.emplace_back(MetaKeyUtils::partKey(spaceId, partId), MetaKeyUtils::partVal(partHosts));
     }
   } else {
     auto hostsRet = ActiveHostsMan::getActiveHosts(kvstore_);
@@ -243,8 +242,7 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
 
     for (auto partId = 1; partId <= partitionNum; partId++) {
       auto partHosts = pickHosts(partId, hosts, replicaFactor);
-      data.emplace_back(MetaServiceUtils::partKey(spaceId, partId),
-                        MetaServiceUtils::partVal(partHosts));
+      data.emplace_back(MetaKeyUtils::partKey(spaceId, partId), MetaKeyUtils::partVal(partHosts));
     }
   }
 
@@ -273,7 +271,7 @@ Hosts CreateSpaceProcessor::pickHosts(PartitionID partId,
 
 ErrorOr<nebula::cpp2::ErrorCode, std::unordered_map<HostAddr, int32_t>>
 CreateSpaceProcessor::getHostLoading() {
-  const auto& prefix = MetaServiceUtils::partPrefix();
+  const auto& prefix = MetaKeyUtils::partPrefix();
   auto iterRet = doPrefix(prefix);
 
   if (!nebula::ok(iterRet)) {
@@ -284,7 +282,7 @@ CreateSpaceProcessor::getHostLoading() {
   std::unordered_map<HostAddr, int32_t> result;
   auto iter = nebula::value(iterRet).get();
   while (iter->valid()) {
-    auto hosts = MetaServiceUtils::parsePartVal(iter->val());
+    auto hosts = MetaKeyUtils::parsePartVal(iter->val());
     for (auto& host : hosts) {
       result[host]++;
     }

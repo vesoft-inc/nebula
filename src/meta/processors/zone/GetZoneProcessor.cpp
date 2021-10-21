@@ -25,7 +25,7 @@ void GetZoneProcessor::process(const cpp2::GetZoneReq& req) {
     return;
   }
 
-  auto zoneKey = MetaServiceUtils::zoneKey(zoneName);
+  auto zoneKey = MetaKeyUtils::zoneKey(zoneName);
   auto zoneValueRet = doGet(std::move(zoneKey));
   if (!nebula::ok(zoneValueRet)) {
     auto retCode = nebula::error(zoneValueRet);
@@ -39,7 +39,7 @@ void GetZoneProcessor::process(const cpp2::GetZoneReq& req) {
     return;
   }
 
-  auto hosts = MetaServiceUtils::parseZoneHosts(std::move(nebula::value(zoneValueRet)));
+  auto hosts = MetaKeyUtils::parseZoneHosts(std::move(nebula::value(zoneValueRet)));
   LOG(INFO) << "Get Zone: " << zoneName << " node size: " << hosts.size();
   resp_.set_hosts(std::move(hosts));
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);

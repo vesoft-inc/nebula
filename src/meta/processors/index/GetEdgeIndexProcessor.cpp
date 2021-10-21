@@ -26,7 +26,7 @@ void GetEdgeIndexProcessor::process(const cpp2::GetEdgeIndexReq& req) {
 
   auto indexId = nebula::value(edgeIndexIDRet);
   LOG(INFO) << "Get Edge Index SpaceID: " << spaceID << " Index Name: " << indexName;
-  const auto& indexKey = MetaServiceUtils::indexKey(spaceID, indexId);
+  const auto& indexKey = MetaKeyUtils::indexKey(spaceID, indexId);
   auto indexItemRet = doGet(indexKey);
   if (!nebula::ok(indexItemRet)) {
     auto retCode = nebula::error(indexItemRet);
@@ -40,7 +40,7 @@ void GetEdgeIndexProcessor::process(const cpp2::GetEdgeIndexReq& req) {
     return;
   }
 
-  auto item = MetaServiceUtils::parseIndex(nebula::value(indexItemRet));
+  auto item = MetaKeyUtils::parseIndex(nebula::value(indexItemRet));
   if (item.get_schema_id().getType() != nebula::cpp2::SchemaID::Type::edge_type) {
     LOG(ERROR) << "Get Edge Index Failed: Index Name " << indexName << " is not EdgeIndex";
     resp_.set_code(nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND);
