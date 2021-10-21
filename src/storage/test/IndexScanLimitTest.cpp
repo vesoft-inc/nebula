@@ -14,7 +14,7 @@
 #include "mock/AdHocIndexManager.h"
 #include "mock/AdHocSchemaManager.h"
 #include "mock/MockCluster.h"
-#include "storage/index/LookupProcessor.h"
+#include "storage/index/LookupProcessor2.h"
 #include "storage/query/GetNeighborsProcessor.h"
 #include "storage/test/TestUtils.h"
 

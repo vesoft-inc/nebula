@@ -371,6 +371,7 @@ IndexScanNode::IndexScanNode(const IndexScanNode& node)
 }
 
 ::nebula::cpp2::ErrorCode IndexScanNode::init(InitContext& ctx) {
+  ttlProps_ = CommonUtils::ttlProps(getSchema());
   DLOG(INFO) << columnHints_.size();
   CHECK(requiredColumns_.empty());
   for (auto& hint : columnHints_) {

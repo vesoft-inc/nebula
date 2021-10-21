@@ -19,7 +19,7 @@
 #include "storage/admin/AdminTaskManager.h"
 #include "storage/admin/RebuildEdgeIndexTask.h"
 #include "storage/admin/RebuildTagIndexTask.h"
-#include "storage/index/LookupProcessor.h"
+#include "storage/index/LookupProcessor2.h"
 #include "storage/mutate/AddEdgesProcessor.h"
 #include "storage/mutate/AddVerticesProcessor.h"
 #include "storage/mutate/UpdateEdgeProcessor.h"
