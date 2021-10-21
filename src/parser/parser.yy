@@ -148,7 +148,6 @@ static constexpr size_t kCommentLengthLimit = 256;
     nebula::meta::cpp2::FTClient           *text_search_client_item;
     nebula::TSClientList                   *text_search_client_list;
     nebula::QueryUniqueIdentifier          *query_unique_identifier;
-    nebula::LimitClause                    *limit_clause;
 }
 
 /* destructors */
@@ -342,8 +341,6 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <index_field_list> index_field_list opt_index_field_list
 
 %type <query_unique_identifier> query_unique_identifier
-
-%type <limit_clause> limit_clause
 
 %type <sentence> maintain_sentence
 %type <sentence> create_space_sentence describe_space_sentence drop_space_sentence
@@ -1932,14 +1929,9 @@ lookup_where_clause
     | KW_WHERE expression { $$ = new WhereClause($2); }
     ;
 
-limit_clause
-    : %empty { $$ = nullptr; }
-    | KW_LIMIT legal_integer { $$ = new LimitClause($2); }
-    ;
-
 lookup_sentence
-    : KW_LOOKUP KW_ON name_label lookup_where_clause yield_clause limit_clause {
-        $$ = new LookupSentence($3, $4, $5, $6);
+    : KW_LOOKUP KW_ON name_label lookup_where_clause yield_clause {
+        $$ = new LookupSentence($3, $4, $5);
     }
     ;
 
