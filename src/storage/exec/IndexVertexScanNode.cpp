@@ -88,7 +88,6 @@ Map<std::string, Value> IndexVertexScanNode::decodeFromBase(const std::string& k
   Map<std::string, Value> values;
   auto reader = RowReaderWrapper::getRowReader(tag_.get(), value);
   for (auto& col : requiredAndHintColumns_) {
-    DLOG(INFO) << col;
     switch (QueryUtils::toReturnColType(col)) {
       case QueryUtils::ReturnColType::kVid: {
         auto vId = NebulaKeyUtils::getVertexId(context_->vIdLen(), key);

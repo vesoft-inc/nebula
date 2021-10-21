@@ -22,7 +22,7 @@
 #include "mock/AdHocSchemaManager.h"
 #include "mock/MockCluster.h"
 #include "mock/MockData.h"
-#include "storage/index/LookupProcessor2.h"
+#include "storage/index/LookupProcessor.h"
 #include "storage/mutate/AddVerticesProcessor.h"
 #include "storage/test/QueryTestUtils.h"
 

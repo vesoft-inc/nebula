@@ -23,7 +23,6 @@ class IndexSelectionNode : public IndexNode {
  private:
   ErrorOr<Row> doNext(bool &hasNext) override;
   inline bool filter(const Row &row) {
-    DLOG(INFO) << row;
     ctx_->setRow(row);
     auto &result = expr_->eval(*ctx_);
     return result.type() == Value::Type::BOOL ? result.getBool() : false;

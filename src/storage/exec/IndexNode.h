@@ -23,6 +23,7 @@ struct InitContext {
   std::vector<std::string> returnColumns;
   Map<std::string, size_t> retColMap;
 };
+/***/
 class IndexNode {
  public:
   template <typename ResultType>

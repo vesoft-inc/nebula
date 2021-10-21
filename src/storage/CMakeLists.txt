@@ -40,7 +40,7 @@ nebula_add_library(
     query/GetPropProcessor.cpp
     query/ScanVertexProcessor.cpp
     query/ScanEdgeProcessor.cpp
-    index/LookupProcessor2.cpp
+    index/LookupProcessor.cpp
     exec/IndexNode.cpp
     exec/IndexDedupNode.cpp
     exec/IndexEdgeScanNode.cpp

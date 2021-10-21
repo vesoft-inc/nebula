@@ -135,8 +135,6 @@ Map<std::string, Value> IndexEdgeScanNode::decodeFromBase(const std::string& key
       default:
         LOG(FATAL) << "Unexpect column name:" << col;
     }
-    DLOG(INFO) << col;
-    DLOG(INFO) << values[col];
   }
   return values;
 }

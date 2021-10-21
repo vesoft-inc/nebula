@@ -58,7 +58,6 @@ Value IndexSelectionNode::ExprContext::getEdgeProp(const std::string& edgeType,
   auto iter = colPos_.find(prop);
   DCHECK(iter != colPos_.end());
   DCHECK(iter->second < row_->size());
-  DLOG(INFO) << (*row_)[iter->second];
   return (*row_)[iter->second];
 }
 Value IndexSelectionNode::ExprContext::getTagProp(const std::string& tag,
@@ -68,7 +67,6 @@ Value IndexSelectionNode::ExprContext::getTagProp(const std::string& tag,
   auto iter = colPos_.find(prop);
   DCHECK(iter != colPos_.end());
   DCHECK(iter->second < row_->size());
-  DLOG(INFO) << (*row_)[iter->second];
   return (*row_)[iter->second];
 }
 
