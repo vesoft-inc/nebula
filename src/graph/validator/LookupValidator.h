@@ -33,16 +33,18 @@ class LookupValidator final : public Validator {
   Status validateFilter();
   Status validateYieldTag();
   Status validateYieldEdge();
-  Status validateLimit();
 
   StatusOr<Expression*> checkFilter(Expression* expr);
   Status checkRelExpr(RelationalExpression* expr);
+  Status checkGeoPredicate(const Expression* expr) const;
   StatusOr<std::string> checkTSExpr(Expression* expr);
   StatusOr<Expression*> checkConstExpr(Expression* expr,
                                        const std::string& prop,
                                        const Expression::Kind kind);
   StatusOr<Expression*> rewriteRelExpr(RelationalExpression* expr);
+  StatusOr<Expression*> rewriteGeoPredicate(Expression* expr);
   Expression* reverseRelKind(RelationalExpression* expr);
+  Expression* reverseGeoPredicate(Expression* expr);
 
   const LookupSentence* sentence() const;
   int32_t schemaId() const;

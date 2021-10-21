@@ -19,20 +19,25 @@
 
 namespace nebula {
 
+constexpr double kMaxLongitude = 180.0;
+constexpr double kMaxLatitude = 90.0;
+
 void Coordinate::normalize() {
   // Reduce the x(longitude) to the range [-180, 180] degrees
   x = std::remainder(x, 360.0);
 
   // Reduce the y(latitude) to the range [-90, 90] degrees
   double tmp = remainder(y, 360.0);
-  if (tmp > 90.0) {
+  if (tmp > kMaxLatitude) {
     y = 180.0 - tmp;
-  } else if (tmp < -90.0) {
+  } else if (tmp < -kMaxLatitude) {
     y = -180.0 - tmp;
   }
 }
 
-bool Coordinate::isValid() const { return std::abs(x) <= 180.0 && std::abs(y) <= 90.0; }
+bool Coordinate::isValid() const {
+  return std::abs(x) <= kMaxLongitude && std::abs(y) <= kMaxLatitude;
+}
 
 void Point::normalize() {}
 
@@ -46,6 +51,7 @@ bool LineString::isValid() const {
     return false;
   }
   auto s2Region = geo::GeoUtils::s2RegionFromGeography(*this);
+  CHECK_NOTNULL(s2Region);
   return static_cast<S2Polyline*>(s2Region.get())->IsValid();
 }
 
@@ -67,6 +73,7 @@ bool Polygon::isValid() const {
     }
   }
   auto s2Region = geo::GeoUtils::s2RegionFromGeography(*this);
+  CHECK_NOTNULL(s2Region);
   return static_cast<S2Polygon*>(s2Region.get())->IsValid();
 }
 
@@ -85,6 +92,27 @@ StatusOr<Geography> Geography::fromWKT(const std::string& wkt,
     if (!geog.isValid()) {
       return Status::Error("Failed to parse an valid Geography instance from the wkt `%s'",
                            wkt.c_str());
+    }
+  }
+
+  return geog;
+}
+
+StatusOr<Geography> Geography::fromWKB(const std::string& wkb,
+                                       bool needNormalize,
+                                       bool verifyValidity) {
+  auto geogRet = geo::WKBReader().read(wkb);
+  if (!geogRet.ok()) {
+    return geogRet;
+  }
+  auto geog = std::move(geogRet).value();
+  if (needNormalize) {
+    geog.normalize();
+  }
+  if (verifyValidity) {
+    if (!geog.isValid()) {
+      return Status::Error("Failed to parse an valid Geography instance from the wkb `%s'",
+                           wkb.c_str());
     }
   }
 
@@ -180,6 +208,32 @@ bool Geography::isValid() const {
       LOG(ERROR)
           << "Geography shapes other than Point/LineString/Polygon are not currently supported";
       return false;
+    }
+  }
+}
+
+Point Geography::centroid() const {
+  switch (shape()) {
+    case GeoShape::POINT: {
+      return this->point();
+    }
+    case GeoShape::LINESTRING: {
+      auto s2Region = geo::GeoUtils::s2RegionFromGeography(*this);
+      CHECK_NOTNULL(s2Region);
+      S2Point s2Point = static_cast<S2Polyline*>(s2Region.get())->GetCentroid();
+      return Point(geo::GeoUtils::coordinateFromS2Point(s2Point));
+    }
+    case GeoShape::POLYGON: {
+      auto s2Region = geo::GeoUtils::s2RegionFromGeography(*this);
+      CHECK_NOTNULL(s2Region);
+      S2Point s2Point = static_cast<S2Polygon*>(s2Region.get())->GetCentroid();
+      return Point(geo::GeoUtils::coordinateFromS2Point(s2Point));
+    }
+    case GeoShape::UNKNOWN:
+    default: {
+      LOG(ERROR)
+          << "Geography shapes other than Point/LineString/Polygon are not currently supported";
+      return Point();
     }
   }
 }

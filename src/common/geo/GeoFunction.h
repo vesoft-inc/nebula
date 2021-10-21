@@ -29,7 +29,10 @@ class GeoFunction {
   // Returns true if any of a is within distance meters of b.
   // We don't need to find the closest points. We just need to find the first point pair whose
   // distance is less than or less equal than the given distance. (Early quit)
-  static bool dWithin(const Geography& a, const Geography& b, double distance, bool inclusive);
+  static bool dWithin(const Geography& a,
+                      const Geography& b,
+                      double distance,
+                      bool exclusive = false);
 
   // Return the closest distance in meters of a and b.
   static double distance(const Geography& a, const Geography& b);
@@ -56,17 +59,17 @@ class GeoFunction {
   static bool s2PointAndS2PolylineAreWithinDistance(const S2Point& aPoint,
                                                     const S2Polyline* bLine,
                                                     double distance,
-                                                    bool inclusive);
+                                                    bool exclusive);
 
   static bool s2PointAndS2PolygonAreWithinDistance(const S2Point& aPoint,
                                                    const S2Polygon* bPolygon,
                                                    double distance,
-                                                   bool inclusive);
+                                                   bool exclusive);
 
   static bool s2PolylineAndS2PolygonAreWithinDistance(const S2Polyline* aLine,
                                                       const S2Polygon* bPolygon,
                                                       double distance,
-                                                      bool inclusive);
+                                                      bool exclusive);
 };
 
 }  // namespace geo

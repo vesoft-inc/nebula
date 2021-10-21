@@ -127,7 +127,7 @@ RowWriterV2::RowWriterV2(RowReader& reader) : RowWriterV2(reader.getSchema()) {
         set(i, v.moveDateTime());
         break;
       case Value::Type::GEOGRAPHY:
-        // TODO(jie)
+        set(i, v.moveGeography());
         break;
       default:
         LOG(FATAL) << "Invalid data: " << v << ", type: " << v.typeName();
@@ -207,8 +207,7 @@ WriteResult RowWriterV2::setValue(ssize_t index, const Value& val) noexcept {
     case Value::Type::DATETIME:
       return write(index, val.getDateTime());
     case Value::Type::GEOGRAPHY:
-      // TODO(jie)
-      return WriteResult::TYPE_MISMATCH;
+      return write(index, val.getGeography());
     default:
       return WriteResult::TYPE_MISMATCH;
   }
@@ -762,6 +761,17 @@ WriteResult RowWriterV2::write(ssize_t index, const DateTime& v) noexcept {
   return WriteResult::SUCCEEDED;
 }
 
+WriteResult RowWriterV2::write(ssize_t index, const Geography& v) noexcept {
+  auto field = schema_->field(index);
+  auto geoShape = field->geoShape();
+  if (geoShape != meta::cpp2::GeoShape::ANY &&
+      folly::to<uint32_t>(geoShape) != folly::to<uint32_t>(v.shape())) {
+    return WriteResult::TYPE_MISMATCH;
+  }
+  std::string wkb = v.asWKB();
+  return write(index, folly::StringPiece(wkb));
+}
+
 WriteResult RowWriterV2::checkUnsetFields() noexcept {
   DefaultValueContext expCtx;
   for (size_t i = 0; i < schema_->getNumFields(); i++) {
@@ -802,7 +812,7 @@ WriteResult RowWriterV2::checkUnsetFields() noexcept {
             r = write(i, defVal.getDateTime());
             break;
           case Value::Type::GEOGRAPHY:
-            // TODO(jie)
+            r = write(i, defVal.getGeography());
             break;
           default:
             LOG(FATAL) << "Unsupported default value type: " << defVal.typeName()

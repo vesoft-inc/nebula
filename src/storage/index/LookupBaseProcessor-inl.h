@@ -210,7 +210,11 @@ StatusOr<StoragePlan<IndexID>> LookupBaseProcessor<REQ, RESP>::buildPlan(
       auto it = std::find_if(fields.begin(), fields.end(), [&yieldCol](const auto& columnDef) {
         return yieldCol == columnDef.get_name();
       });
-      if (it == fields.end()) {
+      if (it == fields.end() ||
+          it->get_type().get_type() ==
+              nebula::meta::cpp2::PropertyType::GEOGRAPHY) {  // geography index just stores
+                                                              // S2CellId, so must read the
+                                                              // original geo data.
         needData = true;
         break;
       }

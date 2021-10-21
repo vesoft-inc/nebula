@@ -23,7 +23,7 @@ namespace geo {
 bool GeoFunction::intersects(const Geography& a, const Geography& b) {
   auto aRegion = a.asS2();
   auto bRegion = b.asS2();
-  if (!aRegion || !bRegion) {
+  if (UNLIKELY(!aRegion || !bRegion)) {
     return false;
   }
 
@@ -99,7 +99,7 @@ bool GeoFunction::intersects(const Geography& a, const Geography& b) {
 bool GeoFunction::covers(const Geography& a, const Geography& b) {
   auto aRegion = a.asS2();
   auto bRegion = b.asS2();
-  if (!aRegion || !bRegion) {
+  if (UNLIKELY(!aRegion || !bRegion)) {
     return false;
   }
 
@@ -178,10 +178,10 @@ bool GeoFunction::covers(const Geography& a, const Geography& b) {
 
 bool GeoFunction::coveredBy(const Geography& a, const Geography& b) { return covers(b, a); }
 
-bool GeoFunction::dWithin(const Geography& a, const Geography& b, double distance, bool inclusive) {
+bool GeoFunction::dWithin(const Geography& a, const Geography& b, double distance, bool exclusive) {
   auto aRegion = a.asS2();
   auto bRegion = b.asS2();
-  if (!aRegion || !bRegion) {
+  if (UNLIKELY(!aRegion || !bRegion)) {
     return false;
   }
 
@@ -192,15 +192,15 @@ bool GeoFunction::dWithin(const Geography& a, const Geography& b, double distanc
         case GeoShape::POINT: {
           const S2Point& bPoint = static_cast<S2PointRegion*>(bRegion.get())->point();
           double closestDistance = S2Earth::GetDistanceMeters(aPoint, bPoint);
-          return inclusive ? closestDistance <= distance : closestDistance < distance;
+          return exclusive ? closestDistance < distance : closestDistance <= distance;
         }
         case GeoShape::LINESTRING: {
           S2Polyline* bLine = static_cast<S2Polyline*>(bRegion.get());
-          return s2PointAndS2PolylineAreWithinDistance(aPoint, bLine, distance, inclusive);
+          return s2PointAndS2PolylineAreWithinDistance(aPoint, bLine, distance, exclusive);
         }
         case GeoShape::POLYGON: {
           S2Polygon* bPolygon = static_cast<S2Polygon*>(bRegion.get());
-          return s2PointAndS2PolygonAreWithinDistance(aPoint, bPolygon, distance, inclusive);
+          return s2PointAndS2PolygonAreWithinDistance(aPoint, bPolygon, distance, exclusive);
         }
         case GeoShape::UNKNOWN:
         default: {
@@ -215,7 +215,7 @@ bool GeoFunction::dWithin(const Geography& a, const Geography& b, double distanc
       switch (b.shape()) {
         case GeoShape::POINT: {
           const S2Point& bPoint = static_cast<S2PointRegion*>(bRegion.get())->point();
-          return s2PointAndS2PolylineAreWithinDistance(bPoint, aLine, distance, inclusive);
+          return s2PointAndS2PolylineAreWithinDistance(bPoint, aLine, distance, exclusive);
         }
         case GeoShape::LINESTRING: {
           S2Polyline* bLine = static_cast<S2Polyline*>(bRegion.get());
@@ -224,16 +224,16 @@ bool GeoFunction::dWithin(const Geography& a, const Geography& b, double distanc
           bIndex.Add(std::make_unique<S2Polyline::Shape>(bLine));
           S2ClosestEdgeQuery query(&aIndex);
           S2ClosestEdgeQuery::ShapeIndexTarget target(&bIndex);
-          if (inclusive) {
-            return query.IsDistanceLessOrEqual(
-                &target, S2Earth::ToChordAngle(util::units::Meters(distance)));
+          if (exclusive) {
+            return query.IsDistanceLess(&target,
+                                        S2Earth::ToChordAngle(util::units::Meters(distance)));
           }
-          return query.IsDistanceLess(&target,
-                                      S2Earth::ToChordAngle(util::units::Meters(distance)));
+          return query.IsDistanceLessOrEqual(&target,
+                                             S2Earth::ToChordAngle(util::units::Meters(distance)));
         }
         case GeoShape::POLYGON: {
           S2Polygon* bPolygon = static_cast<S2Polygon*>(bRegion.get());
-          return s2PolylineAndS2PolygonAreWithinDistance(aLine, bPolygon, distance, inclusive);
+          return s2PolylineAndS2PolygonAreWithinDistance(aLine, bPolygon, distance, exclusive);
         }
         case GeoShape::UNKNOWN:
         default: {
@@ -248,22 +248,22 @@ bool GeoFunction::dWithin(const Geography& a, const Geography& b, double distanc
       switch (b.shape()) {
         case GeoShape::POINT: {
           const S2Point& bPoint = static_cast<S2PointRegion*>(bRegion.get())->point();
-          return s2PointAndS2PolygonAreWithinDistance(bPoint, aPolygon, distance, inclusive);
+          return s2PointAndS2PolygonAreWithinDistance(bPoint, aPolygon, distance, exclusive);
         }
         case GeoShape::LINESTRING: {
           S2Polyline* bLine = static_cast<S2Polyline*>(bRegion.get());
-          return s2PolylineAndS2PolygonAreWithinDistance(bLine, aPolygon, distance, inclusive);
+          return s2PolylineAndS2PolygonAreWithinDistance(bLine, aPolygon, distance, exclusive);
         }
         case GeoShape::POLYGON: {
           S2Polygon* bPolygon = static_cast<S2Polygon*>(bRegion.get());
           S2ClosestEdgeQuery query(&aPolygon->index());
           S2ClosestEdgeQuery::ShapeIndexTarget target(&bPolygon->index());
-          if (inclusive) {
-            return query.IsDistanceLessOrEqual(
-                &target, S2Earth::ToChordAngle(util::units::Meters(distance)));
+          if (exclusive) {
+            return query.IsDistanceLess(&target,
+                                        S2Earth::ToChordAngle(util::units::Meters(distance)));
           }
-          return query.IsDistanceLess(&target,
-                                      S2Earth::ToChordAngle(util::units::Meters(distance)));
+          return query.IsDistanceLessOrEqual(&target,
+                                             S2Earth::ToChordAngle(util::units::Meters(distance)));
         }
         case GeoShape::UNKNOWN:
         default: {
@@ -287,7 +287,7 @@ bool GeoFunction::dWithin(const Geography& a, const Geography& b, double distanc
 double GeoFunction::distance(const Geography& a, const Geography& b) {
   auto aRegion = a.asS2();
   auto bRegion = b.asS2();
-  if (!aRegion || !bRegion) {
+  if (UNLIKELY(!aRegion || !bRegion)) {
     return -1.0;
   }
 
@@ -381,7 +381,7 @@ double GeoFunction::distance(const Geography& a, const Geography& b) {
 
 uint64_t GeoFunction::s2CellIdFromPoint(const Geography& a, int level) {
   auto aRegion = a.asS2();
-  if (!aRegion) {
+  if (UNLIKELY(!aRegion)) {
     return -1;
   }
   if (level < 0 || level > 30) {
@@ -410,7 +410,7 @@ uint64_t GeoFunction::s2CellIdFromPoint(const Geography& a, int level) {
 std::vector<uint64_t> GeoFunction::s2CoveringCellIds(
     const Geography& a, int minLevel, int maxLevel, int maxCells, double bufferInMeters) {
   auto aRegion = a.asS2();
-  if (!aRegion) {
+  if (UNLIKELY(!aRegion)) {
     return {};
   }
   if (minLevel < 0 || minLevel > 30) {
@@ -507,47 +507,41 @@ double GeoFunction::distanceOfS2PolygonWithS2Point(const S2Polygon* aPolygon,
 bool GeoFunction::s2PointAndS2PolylineAreWithinDistance(const S2Point& aPoint,
                                                         const S2Polyline* bLine,
                                                         double distance,
-                                                        bool inclusive) {
+                                                        bool exclusive) {
   MutableS2ShapeIndex bIndex;
   bIndex.Add(std::make_unique<S2Polyline::Shape>(bLine));
   S2ClosestEdgeQuery query(&bIndex);
   S2ClosestEdgeQuery::PointTarget target(aPoint);
-  if (inclusive) {
-    return query.IsDistanceLessOrEqual(&target,
-                                       S2Earth::ToChordAngle(util::units::Meters(distance)));
-  } else {
+  if (exclusive) {
     return query.IsDistanceLess(&target, S2Earth::ToChordAngle(util::units::Meters(distance)));
   }
+  return query.IsDistanceLessOrEqual(&target, S2Earth::ToChordAngle(util::units::Meters(distance)));
 }
 
 bool GeoFunction::s2PointAndS2PolygonAreWithinDistance(const S2Point& aPoint,
                                                        const S2Polygon* bPolygon,
                                                        double distance,
-                                                       bool inclusive) {
+                                                       bool exclusive) {
   S2ClosestEdgeQuery query(&bPolygon->index());
   S2ClosestEdgeQuery::PointTarget target(aPoint);
-  if (inclusive) {
-    return query.IsDistanceLessOrEqual(&target,
-                                       S2Earth::ToChordAngle(util::units::Meters(distance)));
-  } else {
+  if (exclusive) {
     return query.IsDistanceLess(&target, S2Earth::ToChordAngle(util::units::Meters(distance)));
   }
+  return query.IsDistanceLessOrEqual(&target, S2Earth::ToChordAngle(util::units::Meters(distance)));
 }
 
 bool GeoFunction::s2PolylineAndS2PolygonAreWithinDistance(const S2Polyline* aLine,
                                                           const S2Polygon* bPolygon,
                                                           double distance,
-                                                          bool inclusive) {
+                                                          bool exclusive) {
   MutableS2ShapeIndex aIndex;
   aIndex.Add(std::make_unique<S2Polyline::Shape>(aLine));
   S2ClosestEdgeQuery::ShapeIndexTarget target(&aIndex);
   S2ClosestEdgeQuery query(&bPolygon->index());
-  if (inclusive) {
-    return query.IsDistanceLessOrEqual(&target,
-                                       S2Earth::ToChordAngle(util::units::Meters(distance)));
-  } else {
+  if (exclusive) {
     return query.IsDistanceLess(&target, S2Earth::ToChordAngle(util::units::Meters(distance)));
   }
+  return query.IsDistanceLessOrEqual(&target, S2Earth::ToChordAngle(util::units::Meters(distance)));
 }
 
 }  // namespace geo
