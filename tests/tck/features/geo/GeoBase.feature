@@ -2,6 +2,7 @@
 #
 # This source code is licensed under Apache 2.0 License,
 # attached with Common Clause Condition 1.0, found in the LICENSES directory.
+@jie
 Feature: Geo base
 
   Background:
@@ -420,6 +421,16 @@ Feature: Geo base
       LOOKUP ON any_shape WHERE ST_Intersects(any_shape.geo, any_shape.geo) YIELD ST_ASText(any_shape.geo);
       """
     Then a SemanticError should be raised at runtime: Expression ST_Intersects(any_shape.geo,any_shape.geo) not supported yet
+    When executing query:
+      """
+      LOOKUP ON any_shape WHERE ST_Distance(any_shape.geo, ST_Point(3, 8.4)) < true YIELD ST_ASText(any_shape.geo);
+      """
+    Then a SemanticError should be raised at runtime:
+    When executing query:
+      """
+      LOOKUP ON any_shape WHERE ST_DWithin(any_shape.geo, ST_Point(3, 8.4), true) YIELD ST_ASText(any_shape.geo);
+      """
+    Then a SemanticError should be raised at runtime:
     # Match with geo predicate
     When executing query:
       """
@@ -518,6 +529,14 @@ Feature: Geo base
     When executing query:
       """
       LOOKUP ON any_shape WHERE ST_DWithin(any_shape.geo, ST_Point(3, 8), 100.0) YIELD ST_ASText(any_shape.geo);
+      """
+    Then the result should be, in any order:
+      | VertexID | ST_ASText(any_shape.geo)     |
+      | "101"    | "POINT(3 8)"                 |
+      | "102"    | "LINESTRING(3 8, 4.7 73.23)" |
+    When executing query:
+      """
+      LOOKUP ON any_shape WHERE ST_DWithin(any_shape.geo, ST_Point(3, 8), 100) YIELD ST_ASText(any_shape.geo);
       """
     Then the result should be, in any order:
       | VertexID | ST_ASText(any_shape.geo)     |

@@ -50,6 +50,9 @@ bool LineString::isValid() const {
   if (coordList.size() < 2) {
     return false;
   }
+  for (const auto& coord : coordList) {
+    if (!coord.isValid()) return false;
+  }
   auto s2Region = geo::GeoUtils::s2RegionFromGeography(*this);
   CHECK_NOTNULL(s2Region);
   return static_cast<S2Polyline*>(s2Region.get())->IsValid();
@@ -70,6 +73,9 @@ bool Polygon::isValid() const {
     // Polygon's LinearRing must be closed
     if (coordList.front() != coordList.back()) {
       return false;
+    }
+    for (const auto& coord : coordList) {
+      if (!coord.isValid()) return false;
     }
   }
   auto s2Region = geo::GeoUtils::s2RegionFromGeography(*this);
