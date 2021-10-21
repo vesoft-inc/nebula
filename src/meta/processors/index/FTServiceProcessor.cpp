@@ -11,7 +11,7 @@ namespace meta {
 
 void SignInFTServiceProcessor::process(const cpp2::SignInFTServiceReq& req) {
   folly::SharedMutex::WriteHolder wHolder(LockUtils::fulltextServicesLock());
-  auto serviceKey = MetaServiceUtils::fulltextServiceKey();
+  auto serviceKey = MetaKeyUtils::fulltextServiceKey();
   auto ret = doGet(serviceKey);
   if (nebula::ok(ret)) {
     LOG(ERROR) << "Fulltext already exists.";
@@ -31,13 +31,13 @@ void SignInFTServiceProcessor::process(const cpp2::SignInFTServiceReq& req) {
 
   std::vector<kvstore::KV> data;
   data.emplace_back(std::move(serviceKey),
-                    MetaServiceUtils::fulltextServiceVal(req.get_type(), req.get_clients()));
+                    MetaKeyUtils::fulltextServiceVal(req.get_type(), req.get_clients()));
   doSyncPutAndUpdate(std::move(data));
 }
 
 void SignOutFTServiceProcessor::process(const cpp2::SignOutFTServiceReq&) {
   folly::SharedMutex::WriteHolder wHolder(LockUtils::fulltextServicesLock());
-  auto serviceKey = MetaServiceUtils::fulltextServiceKey();
+  auto serviceKey = MetaKeyUtils::fulltextServiceKey();
   auto ret = doGet(serviceKey);
   if (!nebula::ok(ret)) {
     auto retCode = nebula::error(ret);
@@ -57,7 +57,7 @@ void SignOutFTServiceProcessor::process(const cpp2::SignOutFTServiceReq&) {
 
 void ListFTClientsProcessor::process(const cpp2::ListFTClientsReq&) {
   folly::SharedMutex::ReadHolder rHolder(LockUtils::fulltextServicesLock());
-  const auto& prefix = MetaServiceUtils::fulltextServiceKey();
+  const auto& prefix = MetaKeyUtils::fulltextServiceKey();
   auto iterRet = doPrefix(prefix);
   if (!nebula::ok(iterRet)) {
     auto retCode = nebula::error(iterRet);
@@ -70,7 +70,7 @@ void ListFTClientsProcessor::process(const cpp2::ListFTClientsReq&) {
   auto iter = nebula::value(iterRet).get();
   std::vector<nebula::meta::cpp2::FTClient> clients;
   if (iter->valid()) {
-    clients = MetaServiceUtils::parseFTClients(iter->val());
+    clients = MetaKeyUtils::parseFTClients(iter->val());
   }
   resp_.set_clients(std::move(clients));
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);

@@ -5,33 +5,6 @@
 
 nebula_add_test(
     NAME
-        meta_utils_test
-    SOURCES
-        MetaServiceUtilsTest.cpp
-        ../MetaServiceUtils.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:meta_thrift_obj>
-        $<TARGET_OBJECTS:common_thrift_obj>
-        $<TARGET_OBJECTS:thrift_obj>
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        $<TARGET_OBJECTS:network_obj>
-        $<TARGET_OBJECTS:thread_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
-        $<TARGET_OBJECTS:process_obj>
-        $<TARGET_OBJECTS:encryption_obj>
-        $<TARGET_OBJECTS:ft_es_storage_adapter_obj>
-        $<TARGET_OBJECTS:datetime_parser_obj>
-        $<TARGET_OBJECTS:time_utils_obj>
-    LIBRARIES
-        ${THRIFT_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
-        gtest
-)
-
-nebula_add_test(
-    NAME
         processor_test
     SOURCES
         ProcessorTest.cpp

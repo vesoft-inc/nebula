@@ -9,8 +9,8 @@
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
 #include "common/network/NetworkUtils.h"
+#include "common/utils/MetaKeyUtils.h"
 #include "meta/ActiveHostsMan.h"
-#include "meta/MetaServiceUtils.h"
 #include "meta/common/MetaCommon.h"
 #include "meta/processors/Common.h"
 
@@ -108,7 +108,7 @@ nebula::cpp2::ErrorCode Snapshot::blockingWrites(storage::cpp2::EngineSignType s
 ErrorOr<nebula::cpp2::ErrorCode, std::map<GraphSpaceID, std::set<HostAddr>>>
 Snapshot::getSpacesHosts() {
   folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
-  const auto& prefix = MetaServiceUtils::partPrefix();
+  const auto& prefix = MetaKeyUtils::partPrefix();
   std::unique_ptr<kvstore::KVIterator> iter;
   auto retCode = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -120,8 +120,8 @@ Snapshot::getSpacesHosts() {
   std::map<GraphSpaceID, std::set<HostAddr>> hostsByspaces;
 
   for (; iter->valid(); iter->next()) {
-    auto partHosts = MetaServiceUtils::parsePartVal(iter->val());
-    auto space = MetaServiceUtils::parsePartKeySpaceId(iter->key());
+    auto partHosts = MetaKeyUtils::parsePartVal(iter->val());
+    auto space = MetaKeyUtils::parsePartKeySpaceId(iter->key());
     if (!spaces_.empty()) {
       auto it = spaces_.find(space);
       if (it == spaces_.end()) {

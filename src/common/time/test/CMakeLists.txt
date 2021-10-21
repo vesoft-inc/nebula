@@ -8,6 +8,7 @@ nebula_add_test(
         duration_test
     SOURCES
         DurationTest.cpp
+        ScopedTimerTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:time_obj>

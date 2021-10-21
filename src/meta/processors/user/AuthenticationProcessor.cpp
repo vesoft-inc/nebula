@@ -33,7 +33,7 @@ void CreateUserProcessor::process(const cpp2::CreateUserReq& req) {
   }
 
   std::vector<kvstore::KV> data;
-  data.emplace_back(MetaServiceUtils::userKey(account), MetaServiceUtils::userVal(password));
+  data.emplace_back(MetaKeyUtils::userKey(account), MetaKeyUtils::userVal(password));
   doSyncPutAndUpdate(std::move(data));
 }
 
@@ -41,8 +41,8 @@ void AlterUserProcessor::process(const cpp2::AlterUserReq& req) {
   folly::SharedMutex::WriteHolder wHolder(LockUtils::userLock());
   const auto& account = req.get_account();
   const auto& password = req.get_encoded_pwd();
-  auto userKey = MetaServiceUtils::userKey(account);
-  auto userVal = MetaServiceUtils::userVal(password);
+  auto userKey = MetaKeyUtils::userKey(account);
+  auto userVal = MetaKeyUtils::userVal(password);
 
   auto iRet = doGet(userKey);
   if (!nebula::ok(iRet)) {
@@ -84,10 +84,10 @@ void DropUserProcessor::process(const cpp2::DropUserReq& req) {
   }
 
   std::vector<std::string> keys;
-  keys.emplace_back(MetaServiceUtils::userKey(account));
+  keys.emplace_back(MetaKeyUtils::userKey(account));
 
   // Collect related roles by user.
-  auto prefix = MetaServiceUtils::rolesPrefix();
+  auto prefix = MetaKeyUtils::rolesPrefix();
   auto iterRet = doPrefix(prefix);
   if (!nebula::ok(iterRet)) {
     retCode = nebula::error(iterRet);
@@ -102,7 +102,7 @@ void DropUserProcessor::process(const cpp2::DropUserReq& req) {
   auto iter = nebula::value(iterRet).get();
   while (iter->valid()) {
     auto key = iter->key();
-    auto user = MetaServiceUtils::parseRoleUser(key);
+    auto user = MetaKeyUtils::parseRoleUser(key);
     if (user == account) {
       keys.emplace_back(key);
     }
@@ -139,8 +139,8 @@ void GrantProcessor::process(const cpp2::GrantRoleReq& req) {
   }
 
   std::vector<kvstore::KV> data;
-  data.emplace_back(MetaServiceUtils::roleKey(spaceId, account),
-                    MetaServiceUtils::roleVal(roleItem.get_role_type()));
+  data.emplace_back(MetaKeyUtils::roleKey(spaceId, account),
+                    MetaKeyUtils::roleVal(roleItem.get_role_type()));
   doSyncPutAndUpdate(std::move(data));
 }
 
@@ -161,7 +161,7 @@ void RevokeProcessor::process(const cpp2::RevokeRoleReq& req) {
     return;
   }
 
-  auto roleKey = MetaServiceUtils::roleKey(spaceId, account);
+  auto roleKey = MetaKeyUtils::roleKey(spaceId, account);
   auto result = doGet(roleKey);
   if (!nebula::ok(result)) {
     userRet = nebula::error(result);
@@ -220,8 +220,8 @@ void ChangePasswordProcessor::process(const cpp2::ChangePasswordReq& req) {
     }
   }
 
-  auto userKey = MetaServiceUtils::userKey(account);
-  auto userVal = MetaServiceUtils::userVal(req.get_new_encoded_pwd());
+  auto userKey = MetaKeyUtils::userKey(account);
+  auto userVal = MetaKeyUtils::userVal(req.get_new_encoded_pwd());
   std::vector<kvstore::KV> data;
   data.emplace_back(std::move(userKey), std::move(userVal));
   doSyncPutAndUpdate(std::move(data));
@@ -243,8 +243,8 @@ void ListUsersProcessor::process(const cpp2::ListUsersReq& req) {
   auto iter = nebula::value(ret).get();
   std::unordered_map<std::string, std::string> users;
   while (iter->valid()) {
-    auto account = MetaServiceUtils::parseUser(iter->key());
-    auto password = MetaServiceUtils::parseUserPwd(iter->val());
+    auto account = MetaKeyUtils::parseUser(iter->key());
+    auto password = MetaKeyUtils::parseUserPwd(iter->val());
     users.emplace(std::move(account), std::move(password));
     iter->next();
   }
@@ -258,7 +258,7 @@ void ListRolesProcessor::process(const cpp2::ListRolesReq& req) {
   CHECK_SPACE_ID_AND_RETURN(spaceId);
 
   folly::SharedMutex::ReadHolder rHolder(LockUtils::userLock());
-  auto prefix = MetaServiceUtils::roleSpacePrefix(spaceId);
+  auto prefix = MetaKeyUtils::roleSpacePrefix(spaceId);
   auto ret = doPrefix(prefix);
   if (!nebula::ok(ret)) {
     auto retCode = nebula::error(ret);
@@ -271,7 +271,7 @@ void ListRolesProcessor::process(const cpp2::ListRolesReq& req) {
   auto iter = nebula::value(ret).get();
   std::vector<nebula::meta::cpp2::RoleItem> roles;
   while (iter->valid()) {
-    auto account = MetaServiceUtils::parseRoleUser(iter->key());
+    auto account = MetaKeyUtils::parseRoleUser(iter->key());
     auto val = iter->val();
     cpp2::RoleItem role;
     role.set_user_id(std::move(account));
@@ -289,7 +289,7 @@ void GetUserRolesProcessor::process(const cpp2::GetUserRolesReq& req) {
   folly::SharedMutex::WriteHolder wHolder(LockUtils::userLock());
   const auto& act = req.get_account();
 
-  auto prefix = MetaServiceUtils::rolesPrefix();
+  auto prefix = MetaKeyUtils::rolesPrefix();
   auto ret = doPrefix(prefix);
   if (!nebula::ok(ret)) {
     auto retCode = nebula::error(ret);
@@ -302,8 +302,8 @@ void GetUserRolesProcessor::process(const cpp2::GetUserRolesReq& req) {
   auto iter = nebula::value(ret).get();
   std::vector<nebula::meta::cpp2::RoleItem> roles;
   while (iter->valid()) {
-    auto account = MetaServiceUtils::parseRoleUser(iter->key());
-    auto spaceId = MetaServiceUtils::parseRoleSpace(iter->key());
+    auto account = MetaKeyUtils::parseRoleUser(iter->key());
+    auto spaceId = MetaKeyUtils::parseRoleSpace(iter->key());
     if (account == act) {
       auto val = iter->val();
       cpp2::RoleItem role;

@@ -9,7 +9,7 @@
 #include <folly/String.h>
 
 #include "common/time/WallClock.h"
-#include "meta/MetaServiceUtils.h"
+#include "common/utils/MetaKeyUtils.h"
 #include "meta/processors/job/JobStatus.h"
 #include "meta/processors/job/JobUtils.h"
 
@@ -81,7 +81,7 @@ std::string TaskDescription::archiveKey() {
 std::string TaskDescription::taskVal() {
   std::string str;
   str.reserve(128);
-  str.append(MetaServiceUtils::serializeHostAddr(dest_))
+  str.append(MetaKeyUtils::serializeHostAddr(dest_))
       .append(reinterpret_cast<const char*>(&status_), sizeof(Status))
       .append(reinterpret_cast<const char*>(&startTime_), sizeof(startTime_))
       .append(reinterpret_cast<const char*>(&stopTime_), sizeof(stopTime_));
@@ -100,7 +100,7 @@ std::tuple<HostAddr, Status, int64_t, int64_t> TaskDescription::parseVal(
   size_t offset = 0;
 
   folly::StringPiece raw = rawVal;
-  HostAddr host = MetaServiceUtils::deserializeHostAddr(raw);
+  HostAddr host = MetaKeyUtils::deserializeHostAddr(raw);
   offset += sizeof(size_t);
   offset += host.host.size();
   offset += sizeof(uint32_t);

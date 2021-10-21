@@ -13,7 +13,7 @@ void GetStatsProcessor::process(const cpp2::GetStatsReq& req) {
   auto spaceId = req.get_space_id();
   CHECK_SPACE_ID_AND_RETURN(spaceId);
 
-  auto statsKey = MetaServiceUtils::statsKey(spaceId);
+  auto statsKey = MetaKeyUtils::statsKey(spaceId);
   std::string val;
   auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, statsKey, &val);
 
@@ -30,7 +30,7 @@ void GetStatsProcessor::process(const cpp2::GetStatsReq& req) {
     onFinished();
     return;
   }
-  auto statsItem = MetaServiceUtils::parseStatsVal(val);
+  auto statsItem = MetaKeyUtils::parseStatsVal(val);
   auto statisJobStatus = statsItem.get_status();
   if (statisJobStatus != cpp2::JobStatus::FINISHED) {
     LOG(ERROR) << "SpaceId " << spaceId

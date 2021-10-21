@@ -8,10 +8,10 @@
 
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
+#include "common/utils/MetaKeyUtils.h"
 #include "common/utils/Utils.h"
 #include "kvstore/Part.h"
 #include "meta/ActiveHostsMan.h"
-#include "meta/MetaServiceUtils.h"
 #include "meta/common/MetaCommon.h"
 #include "meta/processors/Common.h"
 
@@ -224,7 +224,7 @@ folly::Future<Status> AdminClient::updateMeta(GraphSpaceID spaceId,
   folly::Promise<Status> pro;
   auto f = pro.getFuture();
   std::vector<kvstore::KV> data;
-  data.emplace_back(MetaServiceUtils::partKey(spaceId, partId), MetaServiceUtils::partVal(peers));
+  data.emplace_back(MetaKeyUtils::partKey(spaceId, partId), MetaKeyUtils::partVal(peers));
   kv_->asyncMultiPut(
       kDefaultSpaceId,
       kDefaultPartId,
@@ -524,11 +524,11 @@ void AdminClient::getResponse(std::vector<HostAddr> hosts,
 ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> AdminClient::getPeers(GraphSpaceID spaceId,
                                                                               PartitionID partId) {
   CHECK_NOTNULL(kv_);
-  auto partKey = MetaServiceUtils::partKey(spaceId, partId);
+  auto partKey = MetaKeyUtils::partKey(spaceId, partId);
   std::string value;
   auto code = kv_->get(kDefaultSpaceId, kDefaultPartId, partKey, &value);
   if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
-    return MetaServiceUtils::parsePartVal(value);
+    return MetaKeyUtils::parsePartVal(value);
   }
   return code;
 }

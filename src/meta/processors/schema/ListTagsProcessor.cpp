@@ -14,7 +14,7 @@ void ListTagsProcessor::process(const cpp2::ListTagsReq &req) {
   CHECK_SPACE_ID_AND_RETURN(spaceId);
 
   folly::SharedMutex::ReadHolder rHolder(LockUtils::tagLock());
-  auto prefix = MetaServiceUtils::schemaTagsPrefix(spaceId);
+  auto prefix = MetaKeyUtils::schemaTagsPrefix(spaceId);
   auto ret = doPrefix(prefix);
   if (!nebula::ok(ret)) {
     LOG(ERROR) << "List Tags failed, SpaceID: " << spaceId;
@@ -29,10 +29,10 @@ void ListTagsProcessor::process(const cpp2::ListTagsReq &req) {
     auto key = iter->key();
     auto val = iter->val();
     auto tagID = *reinterpret_cast<const TagID *>(key.data() + prefix.size());
-    auto version = MetaServiceUtils::parseTagVersion(key);
+    auto version = MetaKeyUtils::parseTagVersion(key);
     auto nameLen = *reinterpret_cast<const int32_t *>(val.data());
     auto tagName = val.subpiece(sizeof(int32_t), nameLen).str();
-    auto schema = MetaServiceUtils::parseSchema(val);
+    auto schema = MetaKeyUtils::parseSchema(val);
     cpp2::TagItem item;
     item.set_tag_id(tagID);
     item.set_tag_name(std::move(tagName));
