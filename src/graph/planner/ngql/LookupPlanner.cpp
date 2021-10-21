@@ -38,10 +38,8 @@ StatusOr<SubPlan> LookupPlanner::transform(AstContext* astCtx) {
                                                       lookupCtx->idxReturnCols,
                                                       lookupCtx->schemaId,
                                                       lookupCtx->isEmptyResultSet);
-    if (lookupCtx->limit >= 0) {
-      edgeIndexFullScan->setLimit(lookupCtx->limit);
-    }
     plan.tail = edgeIndexFullScan;
+    plan.root = edgeIndexFullScan;
   } else {
     auto* tagIndexFullScan = TagIndexFullScan::make(qctx,
                                                     nullptr,
@@ -51,14 +49,10 @@ StatusOr<SubPlan> LookupPlanner::transform(AstContext* astCtx) {
                                                     lookupCtx->idxReturnCols,
                                                     lookupCtx->schemaId,
                                                     lookupCtx->isEmptyResultSet);
-    if (lookupCtx->limit >= 0) {
-      tagIndexFullScan->setLimit(lookupCtx->limit);
-    }
     plan.tail = tagIndexFullScan;
+    plan.root = tagIndexFullScan;
   }
   plan.tail->setColNames(lookupCtx->idxColNames);
-
-  plan.root = plan.tail;
 
   if (lookupCtx->filter) {
     plan.root = Filter::make(qctx, plan.root, lookupCtx->filter);
