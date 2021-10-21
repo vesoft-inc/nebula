@@ -48,6 +48,9 @@ IndexNode::ErrorOr<Row> IndexSelectionNode::doNext(bool& hasNext) {
 std::unique_ptr<IndexNode> IndexSelectionNode::copy() {
   return std::make_unique<IndexSelectionNode>(*this);
 }
+std::string IndexSelectionNode::identify() {
+  return fmt::format("{}(expr=[{}])", name_, expr_->toString());
+}
 Value IndexSelectionNode::ExprContext::getEdgeProp(const std::string& edgeType,
                                                    const std::string& prop) const {
   UNUSED(edgeType);

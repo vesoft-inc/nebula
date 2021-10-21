@@ -29,7 +29,7 @@ class LookupProcessor : public BaseProcessor<cpp2::LookupIndexResp> {
   void onProcessFinished() {
     BaseProcessor<cpp2::LookupIndexResp>::resp_.set_data(std::move(resultDataSet_));
   }
-
+  void profilePlan(IndexNode* plan);
   void runInSingleThread(const std::vector<PartitionID>& parts, std::unique_ptr<IndexNode> plan);
   void runInMultipleThread(const std::vector<PartitionID>& parts, std::unique_ptr<IndexNode> plan);
   ::nebula::cpp2::ErrorCode prepare(const cpp2::LookupIndexRequest& req);

@@ -15,6 +15,7 @@ class IndexDedupNode : public IndexNode {
   IndexDedupNode(RuntimeContext* context, const std::vector<std::string>& dedupColumn);
   ::nebula::cpp2::ErrorCode init(InitContext& ctx) override;
   std::unique_ptr<IndexNode> copy() override;
+  std::string identify() override;
 
  private:
   inline bool dedup(const Row& row);

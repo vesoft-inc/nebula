@@ -31,6 +31,9 @@ void LookupProcessor::process(const cpp2::LookupIndexRequest& req) {
   }
 }
 void LookupProcessor::doProcess(const cpp2::LookupIndexRequest& req) {
+  if (req.common_ref().has_value() && req.get_common()->profile_detail_ref().value_or(false)) {
+    profileDetailFlag_ = true;
+  }
   prepare(req);
   auto plan = buildPlan(req);
   if (!FLAGS_query_concurrently) {
@@ -101,6 +104,10 @@ std::unique_ptr<IndexNode> LookupProcessor::buildPlan(const cpp2::LookupIndexReq
   }
   InitContext ctx;
   auto result = nodes[0]->init(ctx);
+  if (profileDetailFlag_) {
+    nodes[0]->enableProfileDetail();
+  }
+  // TODO(hs.zhang): check init result
   if (result == ::nebula::cpp2::ErrorCode::SUCCEEDED) {
   } else {
   }
@@ -170,6 +177,9 @@ void LookupProcessor::runInSingleThread(const std::vector<PartitionID>& parts,
       handleErrorCode(codeList[i], context_->spaceId(), parts[i]);
     }
   }
+  if (UNLIKELY(profileDetailFlag_)) {
+    profilePlan(plan.get());
+  }
   onProcessFinished();
   onFinished();
 }
@@ -198,6 +208,9 @@ void LookupProcessor::runInMultipleThread(const std::vector<PartitionID>& parts,
               break;
             }
           } while (true);
+          if (UNLIKELY(profileDetailFlag_)) {
+            profilePlan(plan.get());
+          }
           return {part, code, dataset};
         }));
   }
@@ -235,6 +248,24 @@ std::vector<std::unique_ptr<IndexNode>> LookupProcessor::reproducePlan(IndexNode
     }
   }
   return ret;
+}
+void LookupProcessor::profilePlan(IndexNode* root) {
+  std::queue<IndexNode*> q;
+  q.push(root);
+  while (!q.empty()) {
+    auto node = q.front();
+    q.pop();
+    auto id = node->identify();
+    auto iter = profileDetail_.find(id);
+    if (iter == profileDetail_.end()) {
+      profileDetail_[id] = node->duration().elapsedInUSec();
+    } else {
+      iter->second += node->duration().elapsedInUSec();
+    }
+    for (auto& child : node->children()) {
+      q.push(child.get());
+    }
+  }
 }
 
 }  // namespace storage

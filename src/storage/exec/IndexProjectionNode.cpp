@@ -52,6 +52,9 @@ Row IndexProjectionNode::project(Row&& row) {
 std::unique_ptr<IndexNode> IndexProjectionNode::copy() {
   return std::make_unique<IndexProjectionNode>(*this);
 }
+std::string IndexProjectionNode::identify() {
+  return fmt::format("{}(projectColumn=[{}])", name_, folly::join(",", requiredColumns_));
+}
 
 }  // namespace storage
 }  // namespace nebula

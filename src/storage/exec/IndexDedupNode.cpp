@@ -67,6 +67,9 @@ IndexDedupNode::RowWrapper::RowWrapper(const Row& row, const std::vector<size_t>
 std::unique_ptr<IndexNode> IndexDedupNode::copy() {
   return std::make_unique<IndexDedupNode>(*this);
 }
+std::string IndexDedupNode::identify() {
+  return fmt::format("{}(dedup=[{}])", name_, folly::join(',', dedupColumns_));
+}
 
 }  // namespace storage
 }  // namespace nebula

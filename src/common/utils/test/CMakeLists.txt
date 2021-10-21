@@ -11,6 +11,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:wkt_wkb_io_obj>
         $<TARGET_OBJECTS:meta_thrift_obj>
         $<TARGET_OBJECTS:common_thrift_obj>
+        $<TARGET_OBJECTS:storage_thrift_obj>
         $<TARGET_OBJECTS:geo_index_obj>
     LIBRARIES
         gtest
@@ -30,6 +31,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:wkt_wkb_io_obj>
         $<TARGET_OBJECTS:meta_thrift_obj>
         $<TARGET_OBJECTS:common_thrift_obj>
+        $<TARGET_OBJECTS:storage_thrift_obj>
         $<TARGET_OBJECTS:geo_index_obj>
     LIBRARIES
         gtest
@@ -49,6 +51,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:wkt_wkb_io_obj>
         $<TARGET_OBJECTS:meta_thrift_obj>
         $<TARGET_OBJECTS:common_thrift_obj>
+        $<TARGET_OBJECTS:storage_thrift_obj>
         $<TARGET_OBJECTS:geo_index_obj>
     LIBRARIES
         gtest

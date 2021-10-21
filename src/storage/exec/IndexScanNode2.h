@@ -37,6 +37,7 @@ class IndexScanNode : public IndexNode {
                 ::nebula::kvstore::KVStore* kvstore)
       : IndexNode(context, name), indexId_(indexId), columnHints_(columnHints), kvstore_(kvstore) {}
   ::nebula::cpp2::ErrorCode init(InitContext& ctx) override;
+  std::string identify() override;
 
  protected:
   nebula::cpp2::ErrorCode doExecute(PartitionID partId) final;
@@ -61,6 +62,7 @@ class IndexScanNode : public IndexNode {
   std::unique_ptr<kvstore::KVIterator> iter_;
   nebula::kvstore::KVStore* kvstore_;
   std::vector<std::string> requiredColumns_;
+  Set<std::string> requiredAndHintColumns_;
   std::pair<bool, std::pair<int64_t, std::string>> ttlProps_;
   bool needAccessBase_{false};
   bool fatalOnBaseNotFound_{false};
@@ -90,6 +92,7 @@ class Path {
 
   virtual Qualified qualified(const Map<std::string, Value>& rowData) = 0;
   virtual void resetPart(PartitionID partId) = 0;
+  const std::string& toString();
 
  protected:
   std::string encodeValue(const Value& value,
@@ -104,6 +107,7 @@ class Path {
   int64_t index_nullable_offset_{8};
   int64_t totalKeyLength_{8};
   int64_t suffixLength_;
+  std::string serializeString_;
 };
 class PrefixPath : public Path {
  public:
@@ -161,6 +165,7 @@ class RangePath : public Path {
 };
 
 /* define inline functions */
+
 }  // namespace storage
 
 }  // namespace nebula

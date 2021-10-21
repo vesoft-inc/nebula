@@ -38,6 +38,13 @@ IndexNode::ErrorOr<Row> IndexLimitNode::doNext(bool& hasNext) {
 std::unique_ptr<IndexNode> IndexLimitNode::copy() {
   return std::make_unique<IndexLimitNode>(*this);
 }
+std::string IndexLimitNode::identify() {
+  if (offset_ > 0) {
+    return fmt::format("{}(offset={}, limit={})", name_, offset_, limit_);
+  } else {
+    return fmt::format("{}(limit={})", name_, limit_);
+  }
+}
 
 }  // namespace storage
 }  // namespace nebula

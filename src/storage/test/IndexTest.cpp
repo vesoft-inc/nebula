@@ -145,8 +145,8 @@ class IndexScanTest : public ::testing::Test {
         auto& index = indices[j];
         auto indexValue = IndexKeyUtils::collectIndexValues(&reader, index->get_fields()).value();
         DVLOG(1) << folly::hexDump(indexValue.data(), indexValue.size());
-        auto indexKey = IndexKeyUtils::vertexIndexKey(
-            8, 0, index->get_index_id(), std::to_string(i), std::move(indexValue));
+        auto indexKey = IndexKeyUtils::vertexIndexKeys(
+            8, 0, index->get_index_id(), std::to_string(i), std::move(indexValue))[0];
         assert(ret[j + 1].insert({indexKey, ""}).second);
       }
     }
@@ -172,13 +172,13 @@ class IndexScanTest : public ::testing::Test {
       for (size_t j = 0; j < indices.size(); j++) {
         auto& index = indices[j];
         auto indexValue = IndexKeyUtils::collectIndexValues(&reader, index->get_fields()).value();
-        auto indexKey = IndexKeyUtils::edgeIndexKey(8,
-                                                    0,
-                                                    index->get_index_id(),
-                                                    std::to_string(i),
-                                                    i,
-                                                    std::to_string(i),
-                                                    std::move(indexValue));
+        auto indexKey = IndexKeyUtils::edgeIndexKeys(8,
+                                                     0,
+                                                     index->get_index_id(),
+                                                     std::to_string(i),
+                                                     i,
+                                                     std::to_string(i),
+                                                     std::move(indexValue))[0];
         DVLOG(1) << '\n' << folly::hexDump(indexKey.data(), indexKey.size());
         assert(ret[j + 1].insert({indexKey, ""}).second);
       }
@@ -224,8 +224,8 @@ TEST_F(IndexScanTest, Base) {
     };
     IndexID indexId = 2;
     auto context = makeContext(1, 0);
-    auto scanNode = std::make_unique<IndexVertexScanNode>(context.get(), indexId, columnHints);
-    scanNode->kvstore_ = kvstore.get();
+    auto scanNode =
+        std::make_unique<IndexVertexScanNode>(context.get(), indexId, columnHints, kvstore.get());
     scanNode->getIndex = [index = indices[0]]() { return index; };
     scanNode->getTag = [schema]() { return schema; };
     InitContext initCtx;
@@ -262,9 +262,8 @@ TEST_F(IndexScanTest, Base) {
     };
     IndexID indexId = 3;
     auto context = makeContext(1, 0);
-    auto scanNode = std::make_unique<IndexVertexScanNode>(context.get(), indexId, columnHints);
-    DVLOG(1) << kvstore.get();
-    scanNode->kvstore_ = kvstore.get();
+    auto scanNode =
+        std::make_unique<IndexVertexScanNode>(context.get(), indexId, columnHints, kvstore.get());
     scanNode->getIndex = [index = indices[1]]() { return index; };
     scanNode->getTag = [schema]() { return schema; };
     InitContext initCtx;
@@ -321,8 +320,8 @@ TEST_F(IndexScanTest, Vertex) {
     for (auto& item : kv[1]) {
       kvstore->put(item.first, item.second);
     }
-    auto scanNode = std::make_unique<IndexVertexScanNode>(context.get(), indexId, columnHints);
-    scanNode->kvstore_ = kvstore.get();
+    auto scanNode =
+        std::make_unique<IndexVertexScanNode>(context.get(), indexId, columnHints, kvstore.get());
     scanNode->getIndex = [index = indices[0]]() { return index; };
     scanNode->getTag = [schema]() { return schema; };
     InitContext initCtx;
@@ -358,8 +357,8 @@ TEST_F(IndexScanTest, Vertex) {
     for (auto& item : kv[0]) {
       kvstore->put(item.first, item.second);
     }
-    auto scanNode = std::make_unique<IndexVertexScanNode>(context.get(), indexId, columnHints);
-    scanNode->kvstore_ = kvstore.get();
+    auto scanNode =
+        std::make_unique<IndexVertexScanNode>(context.get(), indexId, columnHints, kvstore.get());
     scanNode->getIndex = [index = indices[0]]() { return index; };
     scanNode->getTag = [schema]() { return schema; };
     InitContext initCtx;
@@ -419,8 +418,8 @@ TEST_F(IndexScanTest, Edge) {
     for (auto& item : kv[1]) {
       kvstore->put(item.first, item.second);
     }
-    auto scanNode = std::make_unique<IndexEdgeScanNode>(context.get(), indexId, columnHints);
-    scanNode->kvstore_ = kvstore.get();
+    auto scanNode =
+        std::make_unique<IndexEdgeScanNode>(context.get(), indexId, columnHints, kvstore.get());
     scanNode->getIndex = [index = indices[0]]() { return index; };
     scanNode->getEdge = [schema]() { return schema; };
     InitContext initCtx;
@@ -456,9 +455,8 @@ TEST_F(IndexScanTest, Edge) {
     for (auto& item : kv[0]) {
       kvstore->put(item.first, item.second);
     }
-    auto scanNode = std::make_unique<IndexEdgeScanNode>(context.get(), indexId, columnHints);
-    scanNode->kvstore_ = kvstore.get();
-    scanNode->kvstore_ = kvstore.get();
+    auto scanNode =
+        std::make_unique<IndexEdgeScanNode>(context.get(), indexId, columnHints, kvstore.get());
     scanNode->getIndex = [index = indices[0]]() { return index; };
     scanNode->getEdge = [schema]() { return schema; };
     InitContext initCtx;

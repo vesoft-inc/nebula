@@ -100,6 +100,8 @@ std::string Path::encodeValue(const Value& value,
   key.append(val);
   return val;
 }
+const std::string& Path::toString() { return serializeString_; }
+
 // End of Path
 
 // Define of RangePath
@@ -170,10 +172,22 @@ void RangePath::buildKey() {
     auto type = IndexKeyUtils::toValueType(fieldIter->get_type().get_type());
     CHECK(type != Value::Type::STRING || fieldIter->get_type().type_length_ref().has_value());
     encodeValue(hint.get_begin_value(), fieldIter->get_type(), i, common);
+    serializeString_ +=
+        fmt::format("{}={}, ", hint.get_column_name(), hint.get_begin_value().toString());
   }
   auto& hint = hints_.back();
   size_t index = hints_.size() - 1;
   auto [a, b] = encodeRange(hint, fieldIter->get_type(), index, common.size());
+  std::string left =
+      hint.begin_value_ref().is_set()
+          ? fmt::format(
+                "{}{}", hint.get_include_begin() ? '[' : '(', hint.get_begin_value().toString())
+          : "[-INF";
+  std::string right =
+      hint.end_value_ref().is_set()
+          ? fmt::format("{}{}", hint.get_end_value().toString(), hint.get_include_end() ? ']' : ')')
+          : "INF]";
+  serializeString_ += fmt::format("{}={},{}", hint.get_column_name(), left, right);
   startKey_ = common + a;
   endKey_ = common + b;
   if (!hint.end_value_ref().is_set()) {
@@ -346,6 +360,8 @@ void PrefixPath::buildKey() {
     auto type = IndexKeyUtils::toValueType(fieldIter->get_type().get_type());
     CHECK(type != Value::Type::STRING || fieldIter->get_type().type_length_ref().has_value());
     encodeValue(hint.get_begin_value(), fieldIter->get_type(), i, common);
+    serializeString_ +=
+        fmt::format("{}={}, ", hint.get_column_name(), hint.get_begin_value().toString());
   }
   prefix_ = std::move(common);
 }
@@ -361,6 +377,7 @@ IndexScanNode::IndexScanNode(const IndexScanNode& node)
       columnHints_(node.columnHints_),
       kvstore_(node.kvstore_),
       requiredColumns_(node.requiredColumns_),
+      requiredAndHintColumns_(node.requiredAndHintColumns_),
       ttlProps_(node.ttlProps_),
       needAccessBase_(node.needAccessBase_) {
   if (node.path_->isRange()) {
@@ -371,28 +388,15 @@ IndexScanNode::IndexScanNode(const IndexScanNode& node)
 }
 
 ::nebula::cpp2::ErrorCode IndexScanNode::init(InitContext& ctx) {
+  DCHECK(requiredColumns_.empty());
   ttlProps_ = CommonUtils::ttlProps(getSchema());
-  DLOG(INFO) << columnHints_.size();
-  CHECK(requiredColumns_.empty());
+  requiredAndHintColumns_ = ctx.requiredColumns;
+
   for (auto& hint : columnHints_) {
-    ctx.requiredColumns.insert(hint.get_column_name());
+    requiredAndHintColumns_.insert(hint.get_column_name());
   }
-  DLOG(INFO) << "vvvvvv";
-  for (auto& col : requiredColumns_) {
-    DLOG(INFO) << col;
-  }
-  DLOG(INFO) << "aaaaaaaaaaa";
-  for (auto& x : ctx.requiredColumns) {
-    DLOG(INFO) << x.size() << '\t' << x;
-  }
-  DLOG(INFO) << "bbbbbbbbbbb";
   for (auto& col : ctx.requiredColumns) {
     requiredColumns_.push_back(col);
-    DLOG(INFO) << col;
-  }
-  DLOG(INFO) << "xxxxxxxxxxxxxxxxxxxx";
-  for (auto& col : requiredColumns_) {
-    DLOG(INFO) << col;
   }
   ctx.returnColumns = requiredColumns_;
   for (size_t i = 0; i < ctx.returnColumns.size(); i++) {
@@ -414,10 +418,7 @@ IndexScanNode::IndexScanNode(const IndexScanNode& node)
   tmp.erase(kDst);
   tmp.erase(kType);
   needAccessBase_ = !tmp.empty();
-  DLOG(INFO) << needAccessBase_;
-  DLOG(INFO) << tmp.size();
   path_ = Path::make(index_.get(), getSchema(), columnHints_, context_->vIdLen());
-  DLOG(INFO) << columnHints_.size();
   return ::nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 nebula::cpp2::ErrorCode IndexScanNode::doExecute(PartitionID partId) {
@@ -588,7 +589,9 @@ void IndexScanNode::decodePropFromIndex(folly::StringPiece key,
     nullableColPosit -= 1;
   }
 }
-
+std::string IndexScanNode::identify() {
+  return fmt::format("{}(IndexID={}, Path=({}))", name_, indexId_, path_->toString());
+}
 // End of IndexScan
 }  // namespace storage
 }  // namespace nebula

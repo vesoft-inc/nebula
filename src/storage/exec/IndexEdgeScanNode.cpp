@@ -101,7 +101,7 @@ Map<std::string, Value> IndexEdgeScanNode::decodeFromBase(const std::string& key
                                                           const std::string& value) {
   Map<std::string, Value> values;
   auto reader = RowReaderWrapper::getRowReader(edge_.get(), value);
-  for (auto& col : requiredColumns_) {
+  for (auto& col : requiredAndHintColumns_) {
     switch (QueryUtils::toReturnColType(col)) {
       case QueryUtils::ReturnColType::kType: {
         values[col] = Value(context_->edgeType_);

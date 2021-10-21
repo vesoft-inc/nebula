@@ -77,7 +77,8 @@ static std::string genEdgeIndexKey(meta::SchemaManager* schemaMan,
                                    VertexID dst) {
   auto reader = RowReaderWrapper::getEdgePropReader(schemaMan, prop, spaceId, type);
   auto values = collectIndexValues(reader.get(), index->get_fields());
-  auto indexKey = NebulaKeyUtils::edgeIndexKey(partId, index->get_index_id(), src, 0, dst, values);
+  auto indexKey =
+      NebulaKeyUtils::edgeIndexKeys(partId, index->get_index_id(), src, 0, dst, values)[0];
   return indexKey;
 }
 

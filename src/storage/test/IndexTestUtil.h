@@ -383,6 +383,7 @@ class MockIndexNode : public IndexNode {
   std::function<ErrorOr<Row>(bool&)> nextFunc;
   std::function<::nebula::cpp2::ErrorCode(PartitionID)> executeFunc;
   std::function<::nebula::cpp2::ErrorCode(InitContext& initCtx)> initFunc;
+  std::string identify() override { return "MockIndexNode"; }
 
  private:
   ErrorOr<Row> doNext(bool& hasNext) override { return nextFunc(hasNext); }

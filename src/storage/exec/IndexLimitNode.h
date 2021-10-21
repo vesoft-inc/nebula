@@ -14,6 +14,7 @@ class IndexLimitNode : public IndexNode {
   IndexLimitNode(RuntimeContext* context, uint64_t offset, uint64_t limit);
   IndexLimitNode(RuntimeContext* context, uint64_t limit);
   std::unique_ptr<IndexNode> copy() override;
+  std::string identify() override;
 
  private:
   nebula::cpp2::ErrorCode doExecute(PartitionID partId) override;

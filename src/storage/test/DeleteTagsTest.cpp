@@ -14,7 +14,7 @@
 #include "interface/gen-cpp2/storage_types.h"
 #include "mock/MockCluster.h"
 #include "mock/MockData.h"
-#include "storage/index/LookupProcessor.h"
+#include "storage/index/LookupProcessor2.h"
 #include "storage/mutate/DeleteTagsProcessor.h"
 #include "storage/query/GetPropProcessor.h"
 #include "storage/test/QueryTestUtils.h"

@@ -9,7 +9,7 @@
 #include "common/fs/TempDir.h"
 #include "interface/gen-cpp2/common_types.h"
 #include "mock/MockCluster.h"
-#include "storage/index/LookupProcessor.h"
+#include "storage/index/LookupProcessor2.h"
 #include "storage/query/GetNeighborsProcessor.h"
 #include "storage/test/QueryTestUtils.h"
 
