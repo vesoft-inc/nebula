@@ -6,8 +6,8 @@
 
 #include "graph/executor/admin/CharsetExecutor.h"
 
+#include "common/time/ScopedTimer.h"
 #include "graph/context/QueryContext.h"
-#include "graph/util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {

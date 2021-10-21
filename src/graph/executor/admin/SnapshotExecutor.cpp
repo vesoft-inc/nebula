@@ -8,9 +8,9 @@
 
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
+#include "common/time/ScopedTimer.h"
 #include "graph/context/QueryContext.h"
 #include "graph/planner/plan/Admin.h"
-#include "graph/util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {

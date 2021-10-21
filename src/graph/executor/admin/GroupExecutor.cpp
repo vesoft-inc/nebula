@@ -6,8 +6,8 @@
 
 #include "graph/executor/admin/GroupExecutor.h"
 
+#include "common/time/ScopedTimer.h"
 #include "graph/planner/plan/Admin.h"
-#include "graph/util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {
