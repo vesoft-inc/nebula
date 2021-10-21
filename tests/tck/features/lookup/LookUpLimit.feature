@@ -16,92 +16,61 @@ Feature: Push Limit down IndexScan Rule
       | VertexID            |
       | "Amar'e Stoudemire" |
       | "Aron Baynes"       |
-      | "Ben Simmons"       |
-      | "Blake Griffin"     |
-      | "Boris Diaw"        |
-      | "Carmelo Anthony"   |
-      | "Chris Paul"        |
-      | "Cory Joseph"       |
-      | "Damian Lillard"    |
-      | "DeAndre Jordan"    |
-      | "Dwyane Wade"       |
-      | "JaVale McGee"      |
-      | "Klay Thompson"     |
-      | "Luka Doncic"       |
     And the execution plan should be:
       | id | name             | dependencies | operator info  |
       | 4  | DataCollect      | 5            |                |
       | 5  | Sort             | 6            |                |
       | 6  | Project          | 7            |                |
-      | 7  | TagIndexFullScan | 0            | {"limit": "2"} |
+      | 7  | Limit            | 8            | {"count": "2"} |
+      | 8  | TagIndexFullScan | 0            | {"limit": "2"} |
       | 0  | Start            |              |                |
     When profiling query:
       """
       LOOKUP ON like Limit 2 | ORDER BY $-.SrcVID
       """
     Then the result should be, in any order:
-      | SrcVID              | DstVID              | Ranking |
-      | "Ben Simmons"       | "Joel Embiid"       | 0       |
-      | "Blake Griffin"     | "Chris Paul"        | 0       |
-      | "Damian Lillard"    | "LaMarcus Aldridge" | 0       |
-      | "Dirk Nowitzki"     | "Dwyane Wade"       | 0       |
-      | "Jason Kidd"        | "Vince Carter"      | 0       |
-      | "Klay Thompson"     | "Stephen Curry"     | 0       |
-      | "Kyrie Irving"      | "LeBron James"      | 0       |
-      | "LaMarcus Aldridge" | "Tim Duncan"        | 0       |
-      | "LaMarcus Aldridge" | "Tony Parker"       | 0       |
-      | "Marco Belinelli"   | "Tim Duncan"        | 0       |
-      | "Marco Belinelli"   | "Tony Parker"       | 0       |
-      | "Rajon Rondo"       | "Ray Allen"         | 0       |
-      | "Ray Allen"         | "Rajon Rondo"       | 0       |
-      | "Rudy Gay"          | "LaMarcus Aldridge" | 0       |
+      | SrcVID          | DstVID        | Ranking |
+      | "Ben Simmons"   | "Joel Embiid" | 0       |
+      | "Blake Griffin" | "Chris Paul"  | 0       |
     And the execution plan should be:
       | id | name              | dependencies | operator info  |
       | 4  | DataCollect       | 5            |                |
       | 5  | Sort              | 6            |                |
       | 6  | Project           | 7            |                |
-      | 7  | EdgeIndexFullScan | 0            | {"limit": "2"} |
+      | 7  | Limit             | 8            | {"count": "2"} |
+      | 8  | EdgeIndexFullScan | 0            | {"limit": "2"} |
       | 0  | Start             |              |                |
     When profiling query:
       """
       LOOKUP ON player WHERE player.age == 33 Limit 2 | ORDER BY $-.VertexID
       """
     Then the result should be, in any order:
-      | VertexID            |
-      | "Chris Paul"        |
-      | "Dwight Howard"     |
-      | "LaMarcus Aldridge" |
-      | "Rajon Rondo"       |
+      | VertexID        |
+      | "Chris Paul"    |
+      | "Dwight Howard" |
     And the execution plan should be:
       | id | name               | dependencies | operator info  |
       | 4  | DataCollect        | 5            |                |
       | 5  | Sort               | 6            |                |
       | 6  | Project            | 7            |                |
-      | 7  | TagIndexPrefixScan | 0            | {"limit": "2"} |
+      | 7  | Limit              | 8            | {"count": "2"} |
+      | 8  | TagIndexPrefixScan | 0            | {"limit": "2"} |
       | 0  | Start              |              |                |
     When profiling query:
       """
       LOOKUP ON like WHERE like.likeness == 90 Limit 2 | ORDER BY $-.SrcVID
       """
     Then the result should be, in any order:
-      | SrcVID              | DstVID               | Ranking |
-      | "Amar'e Stoudemire" | "Steve Nash"         | 0       |
-      | "Carmelo Anthony"   | "Chris Paul"         | 0       |
-      | "Chris Paul"        | "Carmelo Anthony"    | 0       |
-      | "Chris Paul"        | "Dwyane Wade"        | 0       |
-      | "Dwyane Wade"       | "Carmelo Anthony"    | 0       |
-      | "Dwyane Wade"       | "Chris Paul"         | 0       |
-      | "Jason Kidd"        | "Steve Nash"         | 0       |
-      | "Klay Thompson"     | "Stephen Curry"      | 0       |
-      | "Luka Doncic"       | "Dirk Nowitzki"      | 0       |
-      | "Luka Doncic"       | "Kristaps Porzingis" | 0       |
-      | "Paul Gasol"        | "Kobe Bryant"        | 0       |
+      | SrcVID              | DstVID       | Ranking |
+      | "Amar'e Stoudemire" | "Steve Nash" | 0       |
+      | "Carmelo Anthony"   | "Chris Paul" | 0       |
     And the execution plan should be:
       | id | name                | dependencies | operator info  |
       | 4  | DataCollect         | 5            |                |
       | 5  | Sort                | 6            |                |
       | 6  | Project             | 7            |                |
-      | 7  | EdgeIndexPrefixScan | 0            | {"limit": "2"} |
+      | 7  | Limit               | 8            | {"count": "2"} |
+      | 8  | EdgeIndexPrefixScan | 0            | {"limit": "2"} |
       | 0  | Start               |              |                |
 
   Scenario: push limit down to IndexScan with limit
@@ -120,8 +89,9 @@ Feature: Push Limit down IndexScan Rule
       | 4  | Sort             | 5            |                |
       | 5  | Project          | 6            |                |
       | 6  | Limit            | 7            |                |
-      | 7  | TagIndexFullScan | 8            | {"limit": "3"} |
-      | 8  | Start            |              |                |
+      | 7  | Limit            | 8            |                |
+      | 8  | TagIndexFullScan | 9            | {"limit": "3"} |
+      | 9  | Start            |              |                |
     When profiling query:
       """
       LOOKUP ON like Limit 3 | LIMIT 3 | ORDER BY $-.SrcVID
@@ -137,8 +107,9 @@ Feature: Push Limit down IndexScan Rule
       | 4  | Sort              | 5            |                |
       | 5  | Project           | 6            |                |
       | 6  | Limit             | 7            |                |
-      | 7  | EdgeIndexFullScan | 8            | {"limit": "3"} |
-      | 8  | Start             |              |                |
+      | 7  | Limit             | 8            |                |
+      | 8  | EdgeIndexFullScan | 9            | {"limit": "3"} |
+      | 9  | Start             |              |                |
     When profiling query:
       """
       LOOKUP ON player WHERE player.age == 33 Limit 3 | LIMIT 3 | ORDER BY $-.VertexID
@@ -154,8 +125,9 @@ Feature: Push Limit down IndexScan Rule
       | 4  | Sort               | 5            |                |
       | 5  | Project            | 6            |                |
       | 6  | Limit              | 7            |                |
-      | 7  | TagIndexPrefixScan | 8            | {"limit": "3"} |
-      | 8  | Start              |              |                |
+      | 7  | Limit              | 8            |                |
+      | 8  | TagIndexPrefixScan | 9            | {"limit": "3"} |
+      | 9  | Start              |              |                |
     When profiling query:
       """
       LOOKUP ON like WHERE like.likeness == 90 Limit 3 | LIMIT 3 | ORDER BY $-.SrcVID
@@ -171,5 +143,6 @@ Feature: Push Limit down IndexScan Rule
       | 4  | Sort                | 5            |                |
       | 5  | Project             | 6            |                |
       | 6  | Limit               | 7            |                |
-      | 7  | EdgeIndexPrefixScan | 8            | {"limit": "3"} |
-      | 8  | Start               |              |                |
+      | 7  | Limit               | 8            |                |
+      | 8  | EdgeIndexPrefixScan | 9            | {"limit": "3"} |
+      | 9  | Start               |              |                |
