@@ -13,6 +13,7 @@
 
 #include "common/base/ObjectPool.h"
 #include "common/memory/MemoryUtils.h"
+#include "common/time/ScopedTimer.h"
 #include "graph/context/ExecutionContext.h"
 #include "graph/context/QueryContext.h"
 #include "graph/executor/ExecutionError.h"
@@ -97,7 +98,6 @@
 #include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/service/GraphFlags.h"
-#include "graph/util/ScopedTimer.h"
 #include "interface/gen-cpp2/graph_types.h"
 
 using folly::stringPrintf;
