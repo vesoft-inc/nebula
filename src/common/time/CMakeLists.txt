@@ -15,7 +15,6 @@ nebula_add_library(
     TimeUtils.cpp
     TimezoneInfo.cpp
     TimeConversion.cpp
-    TimeParser.cpp
 )
 
 nebula_add_subdirectory(parser)

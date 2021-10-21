@@ -31,6 +31,7 @@ set(common_deps
     $<TARGET_OBJECTS:wkt_wkb_io_obj>
     $<TARGET_OBJECTS:agg_function_manager_obj>
     $<TARGET_OBJECTS:time_utils_obj>
+    $<TARGET_OBJECTS:datetime_parser_obj>
     $<TARGET_OBJECTS:version_obj>
     $<TARGET_OBJECTS:ssl_obj>
 )

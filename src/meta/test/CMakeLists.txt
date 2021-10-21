@@ -22,6 +22,8 @@ nebula_add_test(
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:encryption_obj>
         $<TARGET_OBJECTS:ft_es_storage_adapter_obj>
+        $<TARGET_OBJECTS:datetime_parser_obj>
+        $<TARGET_OBJECTS:time_utils_obj>
     LIBRARIES
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}

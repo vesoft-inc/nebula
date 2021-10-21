@@ -20,7 +20,6 @@
 #include "common/datatypes/Map.h"
 #include "common/fs/FileUtils.h"
 #include "common/time/TimeConversion.h"
-#include "common/time/TimeParser.h"
 #include "common/time/TimezoneInfo.h"
 #include "common/time/WallClock.h"
 
@@ -67,13 +66,7 @@ class TimeUtils {
     return Status::OK();
   }
 
-  static StatusOr<DateTime> parseDateTime(const std::string &str) {
-    TimeParser p;
-    auto result = p.parseDateTime(str);
-    NG_RETURN_IF_ERROR(result);
-    NG_RETURN_IF_ERROR(validateDate(result.value()));
-    return result.value();
-  }
+  static StatusOr<DateTime> parseDateTime(const std::string &str);
 
   static StatusOr<DateTime> dateTimeFromMap(const Map &m);
 
@@ -124,13 +117,7 @@ class TimeUtils {
 
   static StatusOr<Date> dateFromMap(const Map &m);
 
-  static StatusOr<Date> parseDate(const std::string &str) {
-    TimeParser p;
-    auto result = p.parseDate(str);
-    NG_RETURN_IF_ERROR(result);
-    NG_RETURN_IF_ERROR(validateDate(result.value()));
-    return result.value();
-  }
+  static StatusOr<Date> parseDate(const std::string &str);
 
   static StatusOr<Date> localDate() {
     Date d;
@@ -166,10 +153,7 @@ class TimeUtils {
 
   static StatusOr<Time> timeFromMap(const Map &m);
 
-  static StatusOr<Time> parseTime(const std::string &str) {
-    TimeParser p;
-    return p.parseTime(str);
-  }
+  static StatusOr<Time> parseTime(const std::string &str);
 
   // utc + offset = local
   static Time timeToUTC(const Time &time) {

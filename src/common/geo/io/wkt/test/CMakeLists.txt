@@ -30,6 +30,7 @@ set(WKT_TEST_LIBS
     $<TARGET_OBJECTS:file_based_cluster_id_man_obj>
     $<TARGET_OBJECTS:process_obj>
     $<TARGET_OBJECTS:time_utils_obj>
+    $<TARGET_OBJECTS:datetime_parser_obj>
     $<TARGET_OBJECTS:ft_es_graph_adapter_obj>
     $<TARGET_OBJECTS:ws_common_obj>
     $<TARGET_OBJECTS:version_obj>

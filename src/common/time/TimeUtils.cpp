@@ -10,6 +10,7 @@
 
 #include "common/fs/FileUtils.h"
 #include "common/time/TimezoneInfo.h"
+#include "common/time/parser/DatetimeReader.h"
 
 namespace nebula {
 namespace time {
@@ -169,6 +170,25 @@ StatusOr<Value> TimeUtils::toTimestamp(const Value &val) {
     return Status::Error("Incorrect timestamp value: `%s'", val.toString().c_str());
   }
   return timestamp;
+}
+
+/*static*/ StatusOr<DateTime> TimeUtils::parseDateTime(const std::string &str) {
+  auto p = DatetimeReader::makeDateTimeReader();
+  auto result = p.readDatetime(str);
+  NG_RETURN_IF_ERROR(result);
+  return result.value();
+}
+
+/*static*/ StatusOr<Date> TimeUtils::parseDate(const std::string &str) {
+  auto p = DatetimeReader::makeDateReader();
+  auto result = p.readDate(str);
+  NG_RETURN_IF_ERROR(result);
+  return result.value();
+}
+
+/*static*/ StatusOr<Time> TimeUtils::parseTime(const std::string &str) {
+  auto p = DatetimeReader::makeTimeReader();
+  return p.readTime(str);
 }
 
 }  // namespace time

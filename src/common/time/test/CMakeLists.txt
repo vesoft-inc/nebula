@@ -51,20 +51,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:fs_obj>
         $<TARGET_OBJECTS:wkt_wkb_io_obj>
-    LIBRARIES
-        gtest
-)
-
-nebula_add_test(
-    NAME
-        time_parser_test
-    SOURCES
-        TimeParserTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:time_utils_obj>
+        $<TARGET_OBJECTS:datetime_parser_obj>
     LIBRARIES
         gtest
 )

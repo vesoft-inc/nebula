@@ -11,6 +11,7 @@ set(expression_test_common_libs
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:stats_obj>
     $<TARGET_OBJECTS:time_obj>
+    $<TARGET_OBJECTS:datetime_parser_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:thread_obj>
@@ -90,6 +91,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:agg_function_manager_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:time_utils_obj>
+        $<TARGET_OBJECTS:datetime_parser_obj>
         $<TARGET_OBJECTS:fs_obj>
         ${expression_test_common_libs}
     LIBRARIES
@@ -113,6 +115,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:wkt_wkb_io_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:time_utils_obj>
+        $<TARGET_OBJECTS:datetime_parser_obj>
         $<TARGET_OBJECTS:fs_obj>
         $<TARGET_OBJECTS:agg_function_manager_obj>
     LIBRARIES
@@ -136,6 +139,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:agg_function_manager_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:time_utils_obj>
+        $<TARGET_OBJECTS:datetime_parser_obj>
         $<TARGET_OBJECTS:fs_obj>
     LIBRARIES
         follybenchmark
@@ -157,6 +161,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:agg_function_manager_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:time_utils_obj>
+        $<TARGET_OBJECTS:datetime_parser_obj>
         $<TARGET_OBJECTS:fs_obj>
         ${expression_test_common_libs}
     LIBRARIES
@@ -178,6 +183,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:agg_function_manager_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:time_utils_obj>
+        $<TARGET_OBJECTS:datetime_parser_obj>
         $<TARGET_OBJECTS:fs_obj>
         ${expression_test_common_libs}
     LIBRARIES
@@ -199,6 +205,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:agg_function_manager_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:time_utils_obj>
+        $<TARGET_OBJECTS:datetime_parser_obj>
         $<TARGET_OBJECTS:fs_obj>
         ${expression_test_common_libs}
     LIBRARIES
@@ -220,6 +227,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:agg_function_manager_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:time_utils_obj>
+        $<TARGET_OBJECTS:datetime_parser_obj>
         $<TARGET_OBJECTS:fs_obj>
         ${expression_test_common_libs}
     LIBRARIES
@@ -241,6 +249,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:agg_function_manager_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:time_utils_obj>
+        $<TARGET_OBJECTS:datetime_parser_obj>
         $<TARGET_OBJECTS:fs_obj>
         ${expression_test_common_libs}
     LIBRARIES
@@ -262,6 +271,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:agg_function_manager_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:time_utils_obj>
+        $<TARGET_OBJECTS:datetime_parser_obj>
         $<TARGET_OBJECTS:fs_obj>
         ${expression_test_common_libs}
     LIBRARIES
@@ -283,6 +293,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:agg_function_manager_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:time_utils_obj>
+        $<TARGET_OBJECTS:datetime_parser_obj>
         $<TARGET_OBJECTS:fs_obj>
         ${expression_test_common_libs}
     LIBRARIES
@@ -304,6 +315,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:agg_function_manager_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:time_utils_obj>
+        $<TARGET_OBJECTS:datetime_parser_obj>
         $<TARGET_OBJECTS:fs_obj>
         ${expression_test_common_libs}
     LIBRARIES
@@ -325,6 +337,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:agg_function_manager_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:time_utils_obj>
+        $<TARGET_OBJECTS:datetime_parser_obj>
         $<TARGET_OBJECTS:fs_obj>
         ${expression_test_common_libs}
     LIBRARIES
@@ -346,6 +359,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:agg_function_manager_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:time_utils_obj>
+        $<TARGET_OBJECTS:datetime_parser_obj>
         $<TARGET_OBJECTS:fs_obj>
         ${expression_test_common_libs}
     LIBRARIES
@@ -367,6 +381,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:agg_function_manager_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:time_utils_obj>
+        $<TARGET_OBJECTS:datetime_parser_obj>
         $<TARGET_OBJECTS:fs_obj>
         ${expression_test_common_libs}
     LIBRARIES
@@ -388,6 +403,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:agg_function_manager_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:time_utils_obj>
+        $<TARGET_OBJECTS:datetime_parser_obj>
         $<TARGET_OBJECTS:fs_obj>
         ${expression_test_common_libs}
     LIBRARIES
@@ -409,6 +425,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:agg_function_manager_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:time_utils_obj>
+        $<TARGET_OBJECTS:datetime_parser_obj>
         $<TARGET_OBJECTS:fs_obj>
         ${expression_test_common_libs}
     LIBRARIES
@@ -430,6 +447,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:agg_function_manager_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:time_utils_obj>
+        $<TARGET_OBJECTS:datetime_parser_obj>
         $<TARGET_OBJECTS:fs_obj>
         ${expression_test_common_libs}
     LIBRARIES

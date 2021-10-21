@@ -69,7 +69,7 @@ enum class Type {
 %type <dtVal> datetime
 %type <dVal> date
 %type <tVal> time
-%type <intVal> opt_time_zone opt_time_zone_name time_zone_offset
+%type <intVal> opt_time_zone time_zone_offset opt_time_zone_offset opt_time_zone_name
 
 %define api.prefix {datetime}
 
@@ -162,16 +162,25 @@ opt_time_zone
   : %empty {
     $$ = 0;
   }
-  | POSITIVE time_zone_offset opt_time_zone_name {
-    if ($3 != 0 && $2 != $3) {
+  | opt_time_zone_offset opt_time_zone_name {
+    if ($1 != $2) {
       throw DatetimeParser::syntax_error(@1, "Mismatched timezone offset.");
     }
+    $$ = $1;
+  }
+  | opt_time_zone_offset {
+    $$ = $1;
+  }
+  | opt_time_zone_name {
+    $$ = $1;
+  }
+  ;
+
+opt_time_zone_offset
+  : POSITIVE time_zone_offset {
     $$ = $2;
   }
-  | NEGATIVE time_zone_offset opt_time_zone_name {
-    if ($3 != 0 && $2 != $3) {
-      throw DatetimeParser::syntax_error(@1, "Mismatched timezone offset.");
-    }
+  | NEGATIVE time_zone_offset {
     $$ = -$2;
   }
   ;
@@ -188,10 +197,7 @@ time_zone_offset
   ;
 
 opt_time_zone_name
-  : %empty {
-    $$ = 0;
-  }
-  | TIME_ZONE_NAME {
+  : TIME_ZONE_NAME {
     auto zone = nebula::time::Timezone();
     auto result = zone.loadFromDb(*$1);
     if (!result.ok()) {
