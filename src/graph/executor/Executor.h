@@ -17,8 +17,8 @@
 #include "common/cpp/helpers.h"
 #include "common/datatypes/Value.h"
 #include "common/time/Duration.h"
+#include "common/time/ScopedTimer.h"
 #include "graph/context/ExecutionContext.h"
-#include "graph/util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {
