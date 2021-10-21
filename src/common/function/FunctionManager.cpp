@@ -56,7 +56,9 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
       TypeSignature({Value::Type::FLOAT}, Value::Type::FLOAT)}},
     {"round",
      {TypeSignature({Value::Type::INT}, Value::Type::FLOAT),
-      TypeSignature({Value::Type::FLOAT}, Value::Type::FLOAT)}},
+      TypeSignature({Value::Type::INT, Value::Type::INT}, Value::Type::FLOAT),
+      TypeSignature({Value::Type::FLOAT}, Value::Type::FLOAT),
+      TypeSignature({Value::Type::FLOAT, Value::Type::INT}, Value::Type::FLOAT)}},
     {"sqrt",
      {TypeSignature({Value::Type::INT}, Value::Type::FLOAT),
       TypeSignature({Value::Type::FLOAT}, Value::Type::FLOAT)}},
@@ -531,21 +533,33 @@ FunctionManager::FunctionManager() {
       }
     };
   }
+  {"round",
+   {TypeSignature({Value::Type::INT}, Value::Type::FLOAT),
+    TypeSignature({Value::Type::INT, Value::Type::INT}, Value::Type::FLOAT),
+    TypeSignature({Value::Type::FLOAT}, Value::Type::FLOAT),
+    TypeSignature({Value::Type::FLOAT, Value::Type::INT}, Value::Type::FLOAT)}},
+
   {
     // to nearest integral (as a floating-point value)
     auto &attr = functions_["round"];
     attr.minArity_ = 1;
-    attr.maxArity_ = 1;
+    attr.maxArity_ = 2;
     attr.isPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
         }
-        case Value::Type::INT: {
-          return std::round(args[0].get().getInt());
-        }
-        case Value::Type::FLOAT: {
+        case Value::Type::FLOAT, Value::Type::INT: {
+          if (args.size() == 2) {
+            switch (args[1].get().type()) {
+              case Value::Type::INT:
+                return std::round(args[0].get().getFloat() * pow(10, args[1].get().getInt())) /
+                       pow(10, args[1].get().getInt());
+              default:
+                return Value::kNullBadType;
+            }
+          }
           return std::round(args[0].get().getFloat());
         }
         default: {
