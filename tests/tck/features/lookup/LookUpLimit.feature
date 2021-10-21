@@ -10,7 +10,7 @@ Feature: Push Limit down IndexScan Rule
   Scenario: push limit down to IndexScan
     When profiling query:
       """
-      LOOKUP ON player Limit 2 | ORDER BY $-.VertexID
+      LOOKUP ON player | Limit 2 | ORDER BY $-.VertexID
       """
     Then the result should be, in any order:
       | VertexID      |
@@ -26,7 +26,7 @@ Feature: Push Limit down IndexScan Rule
       | 0  | Start            |              |                |
     When profiling query:
       """
-      LOOKUP ON like Limit 2 | ORDER BY $-.SrcVID
+      LOOKUP ON like | Limit 2 | ORDER BY $-.SrcVID
       """
     Then the result should be, in any order:
       | SrcVID        | DstVID        | Ranking |
@@ -42,7 +42,7 @@ Feature: Push Limit down IndexScan Rule
       | 0  | Start             |              |                |
     When profiling query:
       """
-      LOOKUP ON player WHERE player.age == 33 Limit 2 | ORDER BY $-.VertexID
+      LOOKUP ON player WHERE player.age == 33 | Limit 2 | ORDER BY $-.VertexID
       """
     Then the result should be, in any order:
       | VertexID      |
@@ -58,7 +58,7 @@ Feature: Push Limit down IndexScan Rule
       | 0  | Start              |              |                |
     When profiling query:
       """
-      LOOKUP ON like WHERE like.likeness == 90 Limit 2 | ORDER BY $-.SrcVID
+      LOOKUP ON like WHERE like.likeness == 90 | Limit 2 | ORDER BY $-.SrcVID
       """
     Then the result should be, in any order:
       | SrcVID        | DstVID        | Ranking |
@@ -76,7 +76,7 @@ Feature: Push Limit down IndexScan Rule
   Scenario: push limit down to IndexScan with limit
     When profiling query:
       """
-      LOOKUP ON player Limit 3 | LIMIT 3 | ORDER BY $-.VertexID
+      LOOKUP ON player | LIMIT 3 | ORDER BY $-.VertexID
       """
     Then the result should be, in any order:
       | VertexID      |
@@ -87,14 +87,13 @@ Feature: Push Limit down IndexScan Rule
       | id | name             | dependencies | operator info  |
       | 3  | DataCollect      | 4            |                |
       | 4  | Sort             | 5            |                |
-      | 5  | Project          | 6            |                |
-      | 6  | Limit            | 7            |                |
+      | 5  | Project          | 7            |                |
       | 7  | Limit            | 8            |                |
       | 8  | TagIndexFullScan | 9            | {"limit": "3"} |
       | 9  | Start            |              |                |
     When profiling query:
       """
-      LOOKUP ON like Limit 3 | LIMIT 3 | ORDER BY $-.SrcVID
+      LOOKUP ON like | LIMIT 3 | ORDER BY $-.SrcVID
       """
     Then the result should be, in any order:
       | SrcVID        | DstVID        | Ranking |
@@ -105,14 +104,13 @@ Feature: Push Limit down IndexScan Rule
       | id | name              | dependencies | operator info  |
       | 3  | DataCollect       | 4            |                |
       | 4  | Sort              | 5            |                |
-      | 5  | Project           | 6            |                |
-      | 6  | Limit             | 7            |                |
+      | 5  | Project           | 7            |                |
       | 7  | Limit             | 8            |                |
       | 8  | EdgeIndexFullScan | 9            | {"limit": "3"} |
       | 9  | Start             |              |                |
     When profiling query:
       """
-      LOOKUP ON player WHERE player.age == 33 Limit 3 | LIMIT 3 | ORDER BY $-.VertexID
+      LOOKUP ON player WHERE player.age == 33 | LIMIT 3 | ORDER BY $-.VertexID
       """
     Then the result should be, in any order:
       | VertexID      |
@@ -123,14 +121,13 @@ Feature: Push Limit down IndexScan Rule
       | id | name               | dependencies | operator info  |
       | 3  | DataCollect        | 4            |                |
       | 4  | Sort               | 5            |                |
-      | 5  | Project            | 6            |                |
-      | 6  | Limit              | 7            |                |
+      | 5  | Project            | 7            |                |
       | 7  | Limit              | 8            |                |
       | 8  | TagIndexPrefixScan | 9            | {"limit": "3"} |
       | 9  | Start              |              |                |
     When profiling query:
       """
-      LOOKUP ON like WHERE like.likeness == 90 Limit 3 | LIMIT 3 | ORDER BY $-.SrcVID
+      LOOKUP ON like WHERE like.likeness == 90 | LIMIT 3 | ORDER BY $-.SrcVID
       """
     Then the result should be, in any order:
       | SrcVID        | DstVID        | Ranking |
@@ -141,8 +138,7 @@ Feature: Push Limit down IndexScan Rule
       | id | name                | dependencies | operator info  |
       | 3  | DataCollect         | 4            |                |
       | 4  | Sort                | 5            |                |
-      | 5  | Project             | 6            |                |
-      | 6  | Limit               | 7            |                |
+      | 5  | Project             | 7            |                |
       | 7  | Limit               | 8            |                |
       | 8  | EdgeIndexPrefixScan | 9            | {"limit": "3"} |
       | 9  | Start               |              |                |

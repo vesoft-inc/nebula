@@ -40,15 +40,11 @@ std::string GoSentence::toString() const {
   return buf;
 }
 
-LookupSentence::LookupSentence(std::string *from,
-                               WhereClause *where,
-                               YieldClause *yield,
-                               LimitClause *limit)
+LookupSentence::LookupSentence(std::string *from, WhereClause *where, YieldClause *yield)
     : Sentence(Kind::kLookup),
       from_(DCHECK_NOTNULL(from)),
       whereClause_(where),
-      yieldClause_(yield),
-      limitClause_(limit) {}
+      yieldClause_(yield) {}
 
 std::string LookupSentence::toString() const {
   std::string buf;
@@ -62,10 +58,6 @@ std::string LookupSentence::toString() const {
   if (yieldClause_ != nullptr) {
     buf += " ";
     buf += yieldClause_->toString();
-  }
-  if (limitClause_ != nullptr) {
-    buf += " ";
-    buf += limitClause_->toString();
   }
   return buf;
 }

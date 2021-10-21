@@ -1370,20 +1370,6 @@ TEST_F(ParserTest, Lookup) {
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
-  {
-    std::string query =
-        "LOOKUP ON transfer WHERE transfer.amount > 1000 YIELD transfer.amount,"
-        " transfer.test LIMIT 1";
-    auto result = parse(query);
-    EXPECT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query =
-        "LOOKUP ON transfer WHERE transfer.amount > 1000 YIELD transfer.amount,"
-        " transfer.test LIMIT -1";
-    auto result = parse(query);
-    EXPECT_FALSE(result.ok());
-  }
 }
 
 TEST_F(ParserTest, subgraph) {
