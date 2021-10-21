@@ -13,9 +13,9 @@ Feature: Push Limit down IndexScan Rule
       LOOKUP ON player Limit 2 | ORDER BY $-.VertexID
       """
     Then the result should be, in any order:
-      | VertexID            |
-      | "Amar'e Stoudemire" |
-      | "Aron Baynes"       |
+      | VertexID      |
+      | /[a-zA-Z ']+/ |
+      | /[a-zA-Z ']+/ |
     And the execution plan should be:
       | id | name             | dependencies | operator info  |
       | 4  | DataCollect      | 5            |                |
@@ -29,9 +29,9 @@ Feature: Push Limit down IndexScan Rule
       LOOKUP ON like Limit 2 | ORDER BY $-.SrcVID
       """
     Then the result should be, in any order:
-      | SrcVID          | DstVID        | Ranking |
-      | "Ben Simmons"   | "Joel Embiid" | 0       |
-      | "Blake Griffin" | "Chris Paul"  | 0       |
+      | SrcVID        | DstVID        | Ranking |
+      | /[a-zA-Z ']+/ | /[a-zA-Z ']+/ | /\d+/   |
+      | /[a-zA-Z ']+/ | /[a-zA-Z ']+/ | /\d+/   |
     And the execution plan should be:
       | id | name              | dependencies | operator info  |
       | 4  | DataCollect       | 5            |                |
@@ -45,9 +45,9 @@ Feature: Push Limit down IndexScan Rule
       LOOKUP ON player WHERE player.age == 33 Limit 2 | ORDER BY $-.VertexID
       """
     Then the result should be, in any order:
-      | VertexID        |
-      | "Chris Paul"    |
-      | "Dwight Howard" |
+      | VertexID      |
+      | /[a-zA-Z ']+/ |
+      | /[a-zA-Z ']+/ |
     And the execution plan should be:
       | id | name               | dependencies | operator info  |
       | 4  | DataCollect        | 5            |                |
@@ -61,9 +61,9 @@ Feature: Push Limit down IndexScan Rule
       LOOKUP ON like WHERE like.likeness == 90 Limit 2 | ORDER BY $-.SrcVID
       """
     Then the result should be, in any order:
-      | SrcVID              | DstVID       | Ranking |
-      | "Amar'e Stoudemire" | "Steve Nash" | 0       |
-      | "Carmelo Anthony"   | "Chris Paul" | 0       |
+      | SrcVID        | DstVID        | Ranking |
+      | /[a-zA-Z ']+/ | /[a-zA-Z ']+/ | /\d+/   |
+      | /[a-zA-Z ']+/ | /[a-zA-Z ']+/ | /\d+/   |
     And the execution plan should be:
       | id | name                | dependencies | operator info  |
       | 4  | DataCollect         | 5            |                |
@@ -79,10 +79,10 @@ Feature: Push Limit down IndexScan Rule
       LOOKUP ON player Limit 3 | LIMIT 3 | ORDER BY $-.VertexID
       """
     Then the result should be, in any order:
-      | VertexID            |
-      | "Amar'e Stoudemire" |
-      | "Aron Baynes"       |
-      | "Ben Simmons"       |
+      | VertexID      |
+      | /[a-zA-Z ']+/ |
+      | /[a-zA-Z ']+/ |
+      | /[a-zA-Z ']+/ |
     And the execution plan should be:
       | id | name             | dependencies | operator info  |
       | 3  | DataCollect      | 4            |                |
@@ -97,10 +97,10 @@ Feature: Push Limit down IndexScan Rule
       LOOKUP ON like Limit 3 | LIMIT 3 | ORDER BY $-.SrcVID
       """
     Then the result should be, in any order:
-      | SrcVID          | DstVID        | Ranking |
-      | "Aron Baynes"   | "Tim Duncan"  | 0       |
-      | "Ben Simmons"   | "Joel Embiid" | 0       |
-      | "Blake Griffin" | "Chris Paul"  | 0       |
+      | SrcVID        | DstVID        | Ranking |
+      | /[a-zA-Z ']+/ | /[a-zA-Z ']+/ | /\d+/   |
+      | /[a-zA-Z ']+/ | /[a-zA-Z ']+/ | /\d+/   |
+      | /[a-zA-Z ']+/ | /[a-zA-Z ']+/ | /\d+/   |
     And the execution plan should be:
       | id | name              | dependencies | operator info  |
       | 3  | DataCollect       | 4            |                |
@@ -115,10 +115,10 @@ Feature: Push Limit down IndexScan Rule
       LOOKUP ON player WHERE player.age == 33 Limit 3 | LIMIT 3 | ORDER BY $-.VertexID
       """
     Then the result should be, in any order:
-      | VertexID            |
-      | "Chris Paul"        |
-      | "Dwight Howard"     |
-      | "LaMarcus Aldridge" |
+      | VertexID      |
+      | /[a-zA-Z ']+/ |
+      | /[a-zA-Z ']+/ |
+      | /[a-zA-Z ']+/ |
     And the execution plan should be:
       | id | name               | dependencies | operator info  |
       | 3  | DataCollect        | 4            |                |
@@ -133,10 +133,10 @@ Feature: Push Limit down IndexScan Rule
       LOOKUP ON like WHERE like.likeness == 90 Limit 3 | LIMIT 3 | ORDER BY $-.SrcVID
       """
     Then the result should be, in any order:
-      | SrcVID              | DstVID        | Ranking |
-      | "Amar'e Stoudemire" | "Steve Nash"  | 0       |
-      | "Carmelo Anthony"   | "Chris Paul"  | 0       |
-      | "Carmelo Anthony"   | "Dwyane Wade" | 0       |
+      | SrcVID        | DstVID        | Ranking |
+      | /[a-zA-Z ']+/ | /[a-zA-Z ']+/ | /\d+/   |
+      | /[a-zA-Z ']+/ | /[a-zA-Z ']+/ | /\d+/   |
+      | /[a-zA-Z ']+/ | /[a-zA-Z ']+/ | /\d+/   |
     And the execution plan should be:
       | id | name                | dependencies | operator info  |
       | 3  | DataCollect         | 4            |                |
