@@ -71,7 +71,8 @@ Status QueryEngine::setupMemoryMonitorThread() {
   // Just to test whether to get the right memory info
   NG_RETURN_IF_ERROR(updateMemoryWatermark());
 
-  memoryMonitorThread_->addRepeatTask(FLAGS_check_memory_interval_in_secs, updateMemoryWatermark);
+  auto ms = FLAGS_check_memory_interval_in_secs * 1000;
+  memoryMonitorThread_->addRepeatTask(ms, updateMemoryWatermark);
 
   return Status::OK();
 }

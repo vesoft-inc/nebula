@@ -6,8 +6,8 @@
 
 #include "graph/executor/logic/StartExecutor.h"
 
+#include "common/time/ScopedTimer.h"
 #include "graph/planner/plan/PlanNode.h"
-#include "graph/util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {
