@@ -8,8 +8,8 @@
 #define META_METAVERSIONMAN_H_
 
 #include "common/base/Base.h"
+#include "common/utils/MetaKeyUtils.h"
 #include "kvstore/KVStore.h"
-#include "meta/MetaServiceUtils.h"
 
 namespace nebula {
 namespace meta {

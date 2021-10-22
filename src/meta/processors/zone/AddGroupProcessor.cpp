@@ -29,7 +29,7 @@ void AddGroupProcessor::process(const cpp2::AddGroupReq& req) {
   }
 
   // check the zone existed
-  const auto& prefix = MetaServiceUtils::zonePrefix();
+  const auto& prefix = MetaKeyUtils::zonePrefix();
   auto iterRet = doPrefix(prefix);
   if (!nebula::ok(iterRet)) {
     auto retCode = nebula::error(iterRet);
@@ -42,7 +42,7 @@ void AddGroupProcessor::process(const cpp2::AddGroupReq& req) {
   auto iter = nebula::value(iterRet).get();
   std::vector<std::string> zones;
   while (iter->valid()) {
-    auto zoneName = MetaServiceUtils::parseZoneName(iter->key());
+    auto zoneName = MetaKeyUtils::parseZoneName(iter->key());
     zones.emplace_back(std::move(zoneName));
     iter->next();
   }
@@ -90,16 +90,16 @@ void AddGroupProcessor::process(const cpp2::AddGroupReq& req) {
 
   std::vector<kvstore::KV> data;
   auto groupId = nebula::value(groupIdRet);
-  data.emplace_back(MetaServiceUtils::indexGroupKey(groupName),
+  data.emplace_back(MetaKeyUtils::indexGroupKey(groupName),
                     std::string(reinterpret_cast<const char*>(&groupId), sizeof(GroupID)));
-  data.emplace_back(MetaServiceUtils::groupKey(groupName), MetaServiceUtils::groupVal(zoneNames));
+  data.emplace_back(MetaKeyUtils::groupKey(groupName), MetaKeyUtils::groupVal(zoneNames));
 
   LOG(INFO) << "Create Group: " << groupName;
   doSyncPutAndUpdate(std::move(data));
 }
 
 nebula::cpp2::ErrorCode AddGroupProcessor::checkGroupRedundancy(std::vector<std::string> zones) {
-  const auto& prefix = MetaServiceUtils::groupPrefix();
+  const auto& prefix = MetaKeyUtils::groupPrefix();
   auto iterRet = doPrefix(prefix);
   if (!nebula::ok(iterRet)) {
     auto retCode = nebula::error(iterRet);
@@ -110,8 +110,8 @@ nebula::cpp2::ErrorCode AddGroupProcessor::checkGroupRedundancy(std::vector<std:
 
   std::sort(zones.begin(), zones.end());
   while (iter->valid()) {
-    auto groupName = MetaServiceUtils::parseGroupName(iter->key());
-    auto zoneNames = MetaServiceUtils::parseZoneNames(iter->val());
+    auto groupName = MetaKeyUtils::parseGroupName(iter->key());
+    auto zoneNames = MetaKeyUtils::parseZoneNames(iter->val());
     std::sort(zoneNames.begin(), zoneNames.end());
     if (zones == zoneNames) {
       LOG(ERROR) << "Group " << groupName

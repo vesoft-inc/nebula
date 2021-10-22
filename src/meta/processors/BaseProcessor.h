@@ -16,6 +16,7 @@
 #include "common/charset/Charset.h"
 #include "common/network/NetworkUtils.h"
 #include "common/time/Duration.h"
+#include "common/utils/MetaKeyUtils.h"
 #include "interface/gen-cpp2/storage_types.h"
 #include "kvstore/KVStore.h"
 #include "meta/ActiveHostsMan.h"

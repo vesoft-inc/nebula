@@ -7,9 +7,9 @@
 #include "meta/processors/job/RebuildJobExecutor.h"
 
 #include "common/network/NetworkUtils.h"
+#include "common/utils/MetaKeyUtils.h"
 #include "common/utils/Utils.h"
 #include "meta/ActiveHostsMan.h"
-#include "meta/MetaServiceUtils.h"
 #include "meta/common/MetaCommon.h"
 #include "meta/processors/Common.h"
 
@@ -32,7 +32,7 @@ nebula::cpp2::ErrorCode RebuildJobExecutor::prepare() {
   std::string indexValue;
   IndexID indexId = -1;
   for (auto i = 0u; i < paras_.size() - 1; i++) {
-    auto indexKey = MetaServiceUtils::indexIndexKey(space_, paras_[i]);
+    auto indexKey = MetaKeyUtils::indexIndexKey(space_, paras_[i]);
     auto retCode = kvstore_->get(kDefaultSpaceId, kDefaultPartId, indexKey, &indexValue);
     if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
       LOG(ERROR) << "Get indexKey error indexName: " << paras_[i]

@@ -12,7 +12,7 @@ namespace meta {
 void MultiGetProcessor::process(const cpp2::MultiGetReq& req) {
   std::vector<std::string> keys;
   for (auto& key : req.get_keys()) {
-    keys.emplace_back(MetaServiceUtils::assembleSegmentKey(req.get_segment(), key));
+    keys.emplace_back(MetaKeyUtils::assembleSegmentKey(req.get_segment(), key));
   }
 
   auto result = doMultiGet(std::move(keys));

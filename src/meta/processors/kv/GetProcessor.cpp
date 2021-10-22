@@ -10,7 +10,7 @@ namespace nebula {
 namespace meta {
 
 void GetProcessor::process(const cpp2::GetReq& req) {
-  auto key = MetaServiceUtils::assembleSegmentKey(req.get_segment(), req.get_key());
+  auto key = MetaKeyUtils::assembleSegmentKey(req.get_segment(), req.get_key());
   auto result = doGet(key);
   if (!nebula::ok(result)) {
     auto retCode = nebula::error(result);

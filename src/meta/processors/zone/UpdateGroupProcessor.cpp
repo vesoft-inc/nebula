@@ -22,7 +22,7 @@ void AddZoneIntoGroupProcessor::process(const cpp2::AddZoneIntoGroupReq& req) {
     return;
   }
 
-  auto groupKey = MetaServiceUtils::groupKey(groupName);
+  auto groupKey = MetaKeyUtils::groupKey(groupName);
   auto groupValueRet = doGet(std::move(groupKey));
   if (!nebula::ok(groupValueRet)) {
     auto retCode = nebula::error(groupValueRet);
@@ -37,7 +37,7 @@ void AddZoneIntoGroupProcessor::process(const cpp2::AddZoneIntoGroupReq& req) {
   }
 
   auto zoneName = req.get_zone_name();
-  auto zoneNames = MetaServiceUtils::parseZoneNames(std::move(nebula::value(groupValueRet)));
+  auto zoneNames = MetaKeyUtils::parseZoneNames(std::move(nebula::value(groupValueRet)));
   auto iter = std::find(zoneNames.begin(), zoneNames.end(), zoneName);
   if (iter != zoneNames.end()) {
     LOG(ERROR) << "Zone " << zoneName << " already exist in the group " << groupName;
@@ -46,7 +46,7 @@ void AddZoneIntoGroupProcessor::process(const cpp2::AddZoneIntoGroupReq& req) {
     return;
   }
 
-  const auto& zonePrefix = MetaServiceUtils::zonePrefix();
+  const auto& zonePrefix = MetaKeyUtils::zonePrefix();
   auto iterRet = doPrefix(zonePrefix);
   if (!nebula::ok(iterRet)) {
     auto retCode = nebula::error(iterRet);
@@ -59,7 +59,7 @@ void AddZoneIntoGroupProcessor::process(const cpp2::AddZoneIntoGroupReq& req) {
 
   bool found = false;
   while (zoneIter->valid()) {
-    auto name = MetaServiceUtils::parseZoneName(zoneIter->key());
+    auto name = MetaKeyUtils::parseZoneName(zoneIter->key());
     if (name == zoneName) {
       found = true;
       break;
@@ -76,7 +76,7 @@ void AddZoneIntoGroupProcessor::process(const cpp2::AddZoneIntoGroupReq& req) {
 
   zoneNames.emplace_back(zoneName);
   std::vector<kvstore::KV> data;
-  data.emplace_back(std::move(groupKey), MetaServiceUtils::groupVal(zoneNames));
+  data.emplace_back(std::move(groupKey), MetaKeyUtils::groupVal(zoneNames));
   LOG(INFO) << "Add Zone " << zoneName << " Into Group " << groupName;
   doSyncPutAndUpdate(std::move(data));
 }
@@ -94,7 +94,7 @@ void DropZoneFromGroupProcessor::process(const cpp2::DropZoneFromGroupReq& req) 
     return;
   }
 
-  auto groupKey = MetaServiceUtils::groupKey(groupName);
+  auto groupKey = MetaKeyUtils::groupKey(groupName);
   auto groupValueRet = doGet(groupKey);
   if (!nebula::ok(groupValueRet)) {
     auto retCode = nebula::error(groupValueRet);
@@ -109,7 +109,7 @@ void DropZoneFromGroupProcessor::process(const cpp2::DropZoneFromGroupReq& req) 
   }
 
   auto zoneName = req.get_zone_name();
-  auto zoneNames = MetaServiceUtils::parseZoneNames(std::move(nebula::value(groupValueRet)));
+  auto zoneNames = MetaKeyUtils::parseZoneNames(std::move(nebula::value(groupValueRet)));
   auto iter = std::find(zoneNames.begin(), zoneNames.end(), zoneName);
   if (iter == zoneNames.end()) {
     LOG(ERROR) << "Zone " << zoneName << " not exist in the group " << groupName;
@@ -118,7 +118,7 @@ void DropZoneFromGroupProcessor::process(const cpp2::DropZoneFromGroupReq& req) 
     return;
   }
 
-  const auto& spacePrefix = MetaServiceUtils::spacePrefix();
+  const auto& spacePrefix = MetaKeyUtils::spacePrefix();
   auto spaceRet = doPrefix(spacePrefix);
   if (!nebula::ok(spaceRet)) {
     auto retCode = nebula::error(spaceRet);
@@ -131,7 +131,7 @@ void DropZoneFromGroupProcessor::process(const cpp2::DropZoneFromGroupReq& req) 
   nebula::cpp2::ErrorCode spaceCode = nebula::cpp2::ErrorCode::SUCCEEDED;
   auto spaceIter = nebula::value(spaceRet).get();
   while (spaceIter->valid()) {
-    auto properties = MetaServiceUtils::parseSpace(spaceIter->val());
+    auto properties = MetaKeyUtils::parseSpace(spaceIter->val());
     if (properties.group_name_ref().has_value() && *properties.group_name_ref() == groupName) {
       LOG(ERROR) << "Space is bind to the group " << *properties.group_name_ref();
       spaceCode = nebula::cpp2::ErrorCode::E_CONFLICT;
@@ -147,7 +147,7 @@ void DropZoneFromGroupProcessor::process(const cpp2::DropZoneFromGroupReq& req) 
 
   zoneNames.erase(iter);
   std::vector<kvstore::KV> data;
-  data.emplace_back(std::move(groupKey), MetaServiceUtils::groupVal(zoneNames));
+  data.emplace_back(std::move(groupKey), MetaKeyUtils::groupVal(zoneNames));
   LOG(INFO) << "Drop Zone " << zoneName << " From Group " << groupName;
   doSyncPutAndUpdate(std::move(data));
 }

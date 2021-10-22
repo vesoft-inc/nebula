@@ -14,7 +14,7 @@
 #include "common/network/NetworkUtils.h"
 #include "common/process/ProcessUtils.h"
 #include "common/thread/GenericThreadPool.h"
-#include "meta/MetaServiceUtils.h"
+#include "common/utils/MetaKeyUtils.h"
 #include "webservice/Common.h"
 #include "webservice/WebService.h"
 
@@ -106,7 +106,7 @@ void MetaHttpIngestHandler::onError(ProxygenError error) noexcept {
 
 bool MetaHttpIngestHandler::ingestSSTFiles(GraphSpaceID space) {
   std::unique_ptr<kvstore::KVIterator> iter;
-  auto prefix = MetaServiceUtils::partPrefix(space);
+  auto prefix = MetaKeyUtils::partPrefix(space);
 
   static const GraphSpaceID metaSpaceId = 0;
   static const PartitionID metaPartId = 0;
@@ -118,7 +118,7 @@ bool MetaHttpIngestHandler::ingestSSTFiles(GraphSpaceID space) {
 
   std::set<std::string> storageIPs;
   while (iter->valid()) {
-    for (auto &host : MetaServiceUtils::parsePartVal(iter->val())) {
+    for (auto &host : MetaKeyUtils::parsePartVal(iter->val())) {
       if (storageIPs.count(host.host) == 0) {
         storageIPs.insert(std::move(host.host));
       }

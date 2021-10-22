@@ -236,8 +236,8 @@ void BalanceTask::rollback() {
 bool BalanceTask::saveInStore() {
   CHECK_NOTNULL(kv_);
   std::vector<kvstore::KV> data;
-  data.emplace_back(MetaServiceUtils::balanceTaskKey(balanceId_, spaceId_, partId_, src_, dst_),
-                    MetaServiceUtils::balanceTaskVal(status_, ret_, startTimeMs_, endTimeMs_));
+  data.emplace_back(MetaKeyUtils::balanceTaskKey(balanceId_, spaceId_, partId_, src_, dst_),
+                    MetaKeyUtils::balanceTaskVal(status_, ret_, startTimeMs_, endTimeMs_));
   folly::Baton<true, std::atomic> baton;
   bool ret = true;
   kv_->asyncMultiPut(kDefaultSpaceId,

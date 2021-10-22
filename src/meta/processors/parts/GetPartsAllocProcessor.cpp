@@ -12,7 +12,7 @@ namespace meta {
 void GetPartsAllocProcessor::process(const cpp2::GetPartsAllocReq& req) {
   folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
   auto spaceId = req.get_space_id();
-  auto prefix = MetaServiceUtils::partPrefix(spaceId);
+  auto prefix = MetaKeyUtils::partPrefix(spaceId);
   auto iterRet = doPrefix(prefix);
   if (!nebula::ok(iterRet)) {
     auto retCode = nebula::error(iterRet);
@@ -28,7 +28,7 @@ void GetPartsAllocProcessor::process(const cpp2::GetPartsAllocReq& req) {
     auto key = iter->key();
     PartitionID partId;
     memcpy(&partId, key.data() + prefix.size(), sizeof(PartitionID));
-    std::vector<HostAddr> partHosts = MetaServiceUtils::parsePartVal(iter->val());
+    std::vector<HostAddr> partHosts = MetaKeyUtils::parsePartVal(iter->val());
     parts.emplace(partId, std::move(partHosts));
     iter->next();
   }
@@ -44,7 +44,7 @@ void GetPartsAllocProcessor::process(const cpp2::GetPartsAllocReq& req) {
 std::unordered_map<PartitionID, TermID> GetPartsAllocProcessor::getTerm(GraphSpaceID spaceId) {
   std::unordered_map<PartitionID, TermID> ret;
 
-  auto spaceKey = MetaServiceUtils::spaceKey(spaceId);
+  auto spaceKey = MetaKeyUtils::spaceKey(spaceId);
   auto spaceVal = doGet(spaceKey);
   if (!nebula::ok(spaceVal)) {
     auto rc = nebula::error(spaceVal);
@@ -54,14 +54,14 @@ std::unordered_map<PartitionID, TermID> GetPartsAllocProcessor::getTerm(GraphSpa
     return ret;
   }
 
-  auto properties = MetaServiceUtils::parseSpace(nebula::value(spaceVal));
+  auto properties = MetaKeyUtils::parseSpace(nebula::value(spaceVal));
   auto partNum = properties.get_partition_num();
 
   std::vector<PartitionID> partIdVec;
   std::vector<std::string> leaderKeys;
   for (auto partId = 1; partId <= partNum; ++partId) {
     partIdVec.emplace_back(partId);
-    leaderKeys.emplace_back(MetaServiceUtils::leaderKey(spaceId, partId));
+    leaderKeys.emplace_back(MetaKeyUtils::leaderKey(spaceId, partId));
   }
 
   std::vector<std::string> vals;
@@ -76,7 +76,7 @@ std::unordered_map<PartitionID, TermID> GetPartsAllocProcessor::getTerm(GraphSpa
   TermID term;
   for (auto i = 0U; i != vals.size(); ++i) {
     if (statusVec[i].ok()) {
-      std::tie(std::ignore, term, code) = MetaServiceUtils::parseLeaderValV3(vals[i]);
+      std::tie(std::ignore, term, code) = MetaKeyUtils::parseLeaderValV3(vals[i]);
       if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
         LOG(WARNING) << apache::thrift::util::enumNameSafe(code);
         LOG(INFO) << folly::sformat("term of part {} is invalid", partIdVec[i]);

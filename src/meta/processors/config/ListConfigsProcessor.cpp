@@ -12,7 +12,7 @@ namespace meta {
 void ListConfigsProcessor::process(const cpp2::ListConfigsReq& req) {
   folly::SharedMutex::ReadHolder rHolder(LockUtils::configLock());
 
-  const auto& prefix = MetaServiceUtils::configKeyPrefix(req.get_module());
+  const auto& prefix = MetaKeyUtils::configKeyPrefix(req.get_module());
   auto iterRet = doPrefix(prefix);
   if (!nebula::ok(iterRet)) {
     auto retCode = nebula::error(iterRet);
@@ -27,8 +27,8 @@ void ListConfigsProcessor::process(const cpp2::ListConfigsReq& req) {
   while (iter->valid()) {
     auto key = iter->key();
     auto value = iter->val();
-    auto item = MetaServiceUtils::parseConfigValue(value);
-    auto configName = MetaServiceUtils::parseConfigKey(key);
+    auto item = MetaKeyUtils::parseConfigValue(value);
+    auto configName = MetaKeyUtils::parseConfigKey(key);
     item.set_module(configName.first);
     item.set_name(configName.second);
     items.emplace_back(std::move(item));
