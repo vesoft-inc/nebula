@@ -725,6 +725,21 @@ class MetaClient {
   int64_t metaServerVersion_{-1};
   static constexpr int64_t EXPECT_META_VERSION = 2;
 
+  struct ThreadLocalInfo {
+    int64_t localLastUpdateTime_{-1};
+    LocalCache localCache_;
+    SpaceNameIdMap spaceIndexByName_;
+    SpaceTagNameIdMap spaceTagIndexByName_;
+    SpaceEdgeNameTypeMap spaceEdgeIndexByName_;
+    SpaceEdgeTypeNameMap spaceEdgeIndexByType_;
+    SpaceTagIdNameMap spaceTagIndexById_;
+    SpaceNewestTagVerMap spaceNewestTagVerMap_;
+    SpaceNewestEdgeVerMap spaceNewestEdgeVerMap_;
+    SpaceAllEdgeMap spaceAllEdgeMap_;
+  };
+
+  const ThreadLocalInfo& getThreadLocalInfo();
+
   // leadersLock_ is used to protect leadersInfo
   folly::RWSpinLock leadersLock_;
   LeaderInfo leadersInfo_;
