@@ -46,7 +46,7 @@ class TraverseExecutor final : public StorageAccessExecutor {
 
   Status buildInterimPath(GetNeighborsIter* iter);
 
-  void buildResult();
+  Status buildResult();
 
   bool isFinalStep() const { return currentStep_ == steps_.nSteps(); }
 

@@ -150,16 +150,15 @@ void TraverseExecutor::handleResponse(RpcResponse& resps) {
     if (reqDs_.rows.empty()) {
       VLOG(1) << "Empty input.";
       if (steps_.isMToN()) {
-        buildResult();
+        promise_.setValue(buildResult());
+      } else {
+        promise_.setValue(Status::OK());
       }
-      promise_.setValue(Status::OK());
-      return;
     } else {
       getNeighbors();
     }
   } else {
-    buildResult();
-    promise_.setValue(Status::OK());
+    promise_.setValue(buildResult());
   }
 }
 
@@ -232,6 +231,39 @@ Status TraverseExecutor::buildInterimPath(GetNeighborsIter* iter) {
   return Status::OK();
 }
 
-void TraverseExecutor::buildResult() { return; }
+Status TraverseExecutor::buildResult() {
+  auto inputVar = traverse_->inputVar();
+  VLOG(1) << node()->outputVar() << " : " << inputVar;
+  auto& inputResult = ectx_->getResult(inputVar);
+  auto iter = inputResult.iter();
+
+  std::unordered_map<Value, std::vector<const Row*>> hashTable;
+  auto hashKey = traverse_->src();
+  QueryExpressionContext ctx(ectx_);
+  for (; iter->valid(); iter->next()) {
+    Value key = hashKey->eval(ctx(iter.get()));
+    auto& vals = hashTable[key];
+    vals.emplace_back(iter->row());
+  }
+
+  DataSet result;
+  for (auto& currentStepPaths : paths_) {
+    for (auto& paths : currentStepPaths) {
+      for (auto& path : paths.second) {
+        auto prevPathFound = hashTable.find(path.values[0].getVertex().vid);
+        if (prevPathFound == hashTable.end()) {
+          return Status::Error("Can't find prev paths.");
+        }
+        auto& prevPaths = prevPathFound->second;
+        for (const auto* prevPath : prevPaths) {
+          auto newPath = *prevPath;
+          newPath.values.insert(newPath.values.end(), path.values.begin(), path.values.end());
+          result.emplace_back(std::move(newPath));
+        }
+      }
+    }
+  }
+  return finish(ResultBuilder().value(Value(std::move(result))).build());
+}
 }  // namespace graph
 }  // namespace nebula
