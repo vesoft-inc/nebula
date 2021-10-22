@@ -734,6 +734,8 @@ TEST(RebuildPrefixBloomFilter, RebuildPrefixBloomFilter) {
       EXPECT_EQ("123", value);
     };
 
+    auto checkSystemPart = [&]() { EXPECT_EQ(10, engine->allParts().size()); };
+
     checkVertexPrefix(1, "1");
     checkVertexPrefix(1, "2");
     checkVertexPrefix(2, "3");
@@ -748,11 +750,16 @@ TEST(RebuildPrefixBloomFilter, RebuildPrefixBloomFilter) {
     checkEdgePartPrefix(2);
     checkRangeWithPartPrefix(1);
     checkRangeWithPartPrefix(2);
+    checkSystemPart();
     checkSystemCommit(1);
     checkSystemCommit(2);
   };
 
   auto writeData = [&engine] {
+    for (PartitionID partId = 1; partId <= 10; partId++) {
+      engine->addPart(partId);
+    }
+
     LOG(INFO) << "Write some data";
     std::vector<KV> data;
     for (TagID tagId = 0; tagId < 10; tagId++) {
