@@ -171,9 +171,16 @@ void FindVisitor::visit(VertexExpression* expr) { findInCurrentExpr(expr); }
 
 void FindVisitor::visit(EdgeExpression* expr) { findInCurrentExpr(expr); }
 
-void FindVisitor::visit(PathBuildExpression* expr) { findInCurrentExpr(expr); }
-
 void FindVisitor::visit(ColumnExpression* expr) { findInCurrentExpr(expr); }
+
+void FindVisitor::visit(PathBuildExpression* expr) {
+  findInCurrentExpr(expr);
+  if (!needFindAll_ && !foundExprs_.empty()) return;
+  for (const auto& item : expr->items()) {
+    item->accept(this);
+    if (!needFindAll_ && !foundExprs_.empty()) return;
+  }
+}
 
 void FindVisitor::visit(SubscriptRangeExpression* expr) {
   findInCurrentExpr(expr);
