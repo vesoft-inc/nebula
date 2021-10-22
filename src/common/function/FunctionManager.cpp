@@ -533,12 +533,6 @@ FunctionManager::FunctionManager() {
       }
     };
   }
-  {"round",
-   {TypeSignature({Value::Type::INT}, Value::Type::FLOAT),
-    TypeSignature({Value::Type::INT, Value::Type::INT}, Value::Type::FLOAT),
-    TypeSignature({Value::Type::FLOAT}, Value::Type::FLOAT),
-    TypeSignature({Value::Type::FLOAT, Value::Type::INT}, Value::Type::FLOAT)}},
-
   {
     // to nearest integral (as a floating-point value)
     auto &attr = functions_["round"];
@@ -550,7 +544,8 @@ FunctionManager::FunctionManager() {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
         }
-        case Value::Type::FLOAT, Value::Type::INT: {
+        case Value::Type::INT:
+        case Value::Type::FLOAT: {
           if (args.size() == 2) {
             switch (args[1].get().type()) {
               case Value::Type::INT:
