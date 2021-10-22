@@ -37,8 +37,8 @@ void DropEdgeIndexProcessor::process(const cpp2::DropEdgeIndexReq& req) {
   auto edgeIndexID = nebula::value(edgeIndexIDRet);
 
   std::vector<std::string> keys;
-  keys.emplace_back(MetaServiceUtils::indexIndexKey(spaceID, indexName));
-  keys.emplace_back(MetaServiceUtils::indexKey(spaceID, edgeIndexID));
+  keys.emplace_back(MetaKeyUtils::indexIndexKey(spaceID, indexName));
+  keys.emplace_back(MetaKeyUtils::indexKey(spaceID, edgeIndexID));
 
   LOG(INFO) << "Drop Edge Index " << indexName;
   resp_.set_id(to(edgeIndexID, EntryType::INDEX));

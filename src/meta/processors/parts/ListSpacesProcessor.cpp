@@ -11,7 +11,7 @@ namespace meta {
 
 void ListSpacesProcessor::process(const cpp2::ListSpacesReq&) {
   folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
-  const auto& prefix = MetaServiceUtils::spacePrefix();
+  const auto& prefix = MetaKeyUtils::spacePrefix();
   auto ret = doPrefix(prefix);
   if (!nebula::ok(ret)) {
     auto retCode = nebula::error(ret);
@@ -24,8 +24,8 @@ void ListSpacesProcessor::process(const cpp2::ListSpacesReq&) {
 
   std::vector<cpp2::IdName> spaces;
   while (iter->valid()) {
-    auto spaceId = MetaServiceUtils::spaceId(iter->key());
-    auto spaceName = MetaServiceUtils::spaceName(iter->val());
+    auto spaceId = MetaKeyUtils::spaceId(iter->key());
+    auto spaceName = MetaKeyUtils::spaceName(iter->val());
     VLOG(3) << "List spaces " << spaceId << ", name " << spaceName;
     cpp2::IdName space;
     space.set_id(to(spaceId, EntryType::SPACE));

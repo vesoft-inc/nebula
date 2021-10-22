@@ -6,7 +6,7 @@
 
 #include "meta/MetaServiceHandler.h"
 
-#include "meta/MetaServiceUtils.h"
+#include "common/utils/MetaKeyUtils.h"
 #include "meta/processors/admin/BalanceProcessor.h"
 #include "meta/processors/admin/CreateBackupProcessor.h"
 #include "meta/processors/admin/CreateSnapshotProcessor.h"

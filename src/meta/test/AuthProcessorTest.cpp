@@ -34,7 +34,7 @@ TEST(AuthProcessorTest, CreateUserTest) {
     std::string userVal;
     std::unique_ptr<kvstore::KVIterator> iter;
     auto retCode =
-        kv->get(kDefaultSpaceId, kDefaultPartId, MetaServiceUtils::userKey("user1"), &userVal);
+        kv->get(kDefaultSpaceId, kDefaultPartId, MetaKeyUtils::userKey("user1"), &userVal);
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, retCode);
   }
   // Test user exists and param 'if_not_exists' == false;
@@ -154,7 +154,7 @@ TEST(AuthProcessorTest, DropUserTest) {
     std::string userVal;
     std::unique_ptr<kvstore::KVIterator> iter;
     auto retCode =
-        kv->get(kDefaultSpaceId, kDefaultPartId, MetaServiceUtils::userKey("user1"), &userVal);
+        kv->get(kDefaultSpaceId, kDefaultPartId, MetaKeyUtils::userKey("user1"), &userVal);
     ASSERT_EQ(nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND, retCode);
   }
 }
@@ -523,7 +523,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
 
     // check role deleted after drop space
-    auto rolePrefix = MetaServiceUtils::roleSpacePrefix(space1);
+    auto rolePrefix = MetaKeyUtils::roleSpacePrefix(space1);
     std::unique_ptr<kvstore::KVIterator> roleIter;
     auto roleRet = kv->prefix(kDefaultSpaceId, kDefaultPartId, rolePrefix, &roleIter);
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, roleRet);

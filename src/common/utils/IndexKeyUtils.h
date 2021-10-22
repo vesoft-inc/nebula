@@ -468,7 +468,7 @@ class IndexKeyUtils final {
           break;
         }
         case Value::Type::GEOGRAPHY: {
-          // LOG(FATAL) << "unable to get geography value from index key"
+          // NOTE: The data read from index key is S2CellId which type is uint64, not wkb
           len = sizeof(uint64_t);
           break;
         }

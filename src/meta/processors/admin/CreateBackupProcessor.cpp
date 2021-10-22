@@ -26,7 +26,7 @@ CreateBackupProcessor::spaceNameToId(const std::vector<std::string>* backupSpace
 
     std::transform(
         backupSpaces->begin(), backupSpaces->end(), std::back_inserter(keys), [](auto& name) {
-          return MetaServiceUtils::indexSpaceKey(name);
+          return MetaKeyUtils::indexSpaceKey(name);
         });
 
     auto result = doMultiGet(std::move(keys));
@@ -48,7 +48,7 @@ CreateBackupProcessor::spaceNameToId(const std::vector<std::string>* backupSpace
                    });
 
   } else {
-    const auto& prefix = MetaServiceUtils::spacePrefix();
+    const auto& prefix = MetaKeyUtils::spacePrefix();
     auto iterRet = doPrefix(prefix);
     if (!nebula::ok(iterRet)) {
       auto retCode = nebula::error(iterRet);
@@ -58,8 +58,8 @@ CreateBackupProcessor::spaceNameToId(const std::vector<std::string>* backupSpace
 
     auto iter = nebula::value(iterRet).get();
     while (iter->valid()) {
-      auto spaceId = MetaServiceUtils::spaceId(iter->key());
-      auto spaceName = MetaServiceUtils::spaceName(iter->val());
+      auto spaceId = MetaKeyUtils::spaceId(iter->key());
+      auto spaceName = MetaKeyUtils::spaceName(iter->val());
       VLOG(3) << "List spaces " << spaceId << ", name " << spaceName;
       spaces.emplace(spaceId);
       iter->next();
@@ -128,11 +128,11 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
 
   // The entire process follows mostly snapshot logic.
   std::vector<kvstore::KV> data;
-  auto backupName = folly::format("BACKUP_{}", MetaServiceUtils::genTimestampStr()).str();
+  auto backupName = folly::format("BACKUP_{}", MetaKeyUtils::genTimestampStr()).str();
 
-  data.emplace_back(MetaServiceUtils::snapshotKey(backupName),
-                    MetaServiceUtils::snapshotVal(cpp2::SnapshotStatus::INVALID,
-                                                  NetworkUtils::toHostsStr(hosts)));
+  data.emplace_back(
+      MetaKeyUtils::snapshotKey(backupName),
+      MetaKeyUtils::snapshotVal(cpp2::SnapshotStatus::INVALID, NetworkUtils::toHostsStr(hosts)));
   Snapshot::instance(kvstore_, client_)->setSpaces(spaces);
 
   // step 1 : Blocking all writes action for storage engines.
@@ -181,8 +181,8 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
 
   // step 6 : update snapshot status from INVALID to VALID.
   data.emplace_back(
-      MetaServiceUtils::snapshotKey(backupName),
-      MetaServiceUtils::snapshotVal(cpp2::SnapshotStatus::VALID, NetworkUtils::toHostsStr(hosts)));
+      MetaKeyUtils::snapshotKey(backupName),
+      MetaKeyUtils::snapshotVal(cpp2::SnapshotStatus::VALID, NetworkUtils::toHostsStr(hosts)));
 
   auto putRet = doSyncPut(std::move(data));
   if (putRet != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -202,14 +202,14 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
   for (auto id : spaces) {
     LOG(INFO) << "backup space " << id;
     cpp2::SpaceBackupInfo spaceInfo;
-    auto spaceKey = MetaServiceUtils::spaceKey(id);
+    auto spaceKey = MetaKeyUtils::spaceKey(id);
     auto spaceRet = doGet(spaceKey);
     if (!nebula::ok(spaceRet)) {
       handleErrorCode(nebula::error(spaceRet));
       onFinished();
       return;
     }
-    auto properties = MetaServiceUtils::parseSpace(nebula::value(spaceRet));
+    auto properties = MetaKeyUtils::parseSpace(nebula::value(spaceRet));
     // todo we should save partition info.
     auto it = snapshotInfo.find(id);
     DCHECK(it != snapshotInfo.end());

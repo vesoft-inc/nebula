@@ -6,10 +6,10 @@
 
 #include "graph/executor/query/GetEdgesExecutor.h"
 
+#include "common/time/ScopedTimer.h"
 #include "graph/context/QueryContext.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/util/SchemaUtil.h"
-#include "graph/util/ScopedTimer.h"
 
 using nebula::storage::GraphStorageClient;
 using nebula::storage::StorageRpcResponse;

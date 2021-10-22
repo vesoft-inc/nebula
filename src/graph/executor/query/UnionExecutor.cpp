@@ -6,9 +6,9 @@
 
 #include "graph/executor/query/UnionExecutor.h"
 
+#include "common/time/ScopedTimer.h"
 #include "graph/context/ExecutionContext.h"
 #include "graph/planner/plan/Query.h"
-#include "graph/util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {
