@@ -80,6 +80,8 @@ enum class Type {
 datetime
   : date date_time_delimiter time opt_time_zone {
     if (outputType != nebula::time::Type::kDateTime) {
+      delete $1;
+      delete $3;
       throw DatetimeParser::syntax_error(@1, "Mismatched date time type.");
     }
     $$ = new DateTime(TimeConversion::dateTimeShift(DateTime(*$1, *$3), -$4));
@@ -89,6 +91,7 @@ datetime
   }
   | date {
     if (outputType != nebula::time::Type::kDate) {
+      delete $1;
       throw DatetimeParser::syntax_error(@1, "Mismatched date time type.");
     }
     $$ = new DateTime(*$1);
@@ -97,6 +100,7 @@ datetime
   }
   | time opt_time_zone {
     if (outputType != nebula::time::Type::kTime) {
+      delete $1;
       throw DatetimeParser::syntax_error(@1, "Mismatched date time type.");
     }
     $$ = new DateTime(TimeConversion::dateTimeShift(DateTime(1970, 1, 1, $1->hour, $1->minute, $1->sec, $1->microsec), -$2));
@@ -112,20 +116,20 @@ date_time_delimiter
 
 date
   : INTEGER NEGATIVE INTEGER NEGATIVE INTEGER {
-    auto *d = new nebula::Date($1, $3, $5);
-    auto result = nebula::time::TimeUtils::validateDate(*d);
+    $$ = new nebula::Date($1, $3, $5);
+    auto result = nebula::time::TimeUtils::validateDate(*$$);
     if (!result.ok()) {
+      delete $$;
       throw DatetimeParser::syntax_error(@1, result.toString());
     }
-    $$ = d;
   }
   | INTEGER NEGATIVE INTEGER {
-    auto *d = new nebula::Date($1, $3, 1);
-    auto result = nebula::time::TimeUtils::validateDate(*d);
+    $$ = new nebula::Date($1, $3, 1);
+    auto result = nebula::time::TimeUtils::validateDate(*$$);
     if (!result.ok()) {
+      delete $$;
       throw DatetimeParser::syntax_error(@1, result.toString());
     }
-    $$ = d;
   }
   ;
 
@@ -133,28 +137,28 @@ time
   : INTEGER TIME_DELIMITER INTEGER TIME_DELIMITER DOUBLE {
     double integer = 0;
     auto fraction = std::modf($5, &integer);
-    auto *t = new nebula::Time($1, $3, static_cast<int>(integer), std::round(fraction * 1000 * 1000));
-    auto result = nebula::time::TimeUtils::validateTime(*t);
+    $$ = new nebula::Time($1, $3, static_cast<int>(integer), std::round(fraction * 1000 * 1000));
+    auto result = nebula::time::TimeUtils::validateTime(*$$);
     if (!result.ok()) {
+      delete $$;
       throw DatetimeParser::syntax_error(@1, result.toString());
     }
-    $$ = t;
   }
   | INTEGER TIME_DELIMITER INTEGER TIME_DELIMITER INTEGER {
-    auto *t = new nebula::Time($1, $3, $5, 0);
-    auto result = nebula::time::TimeUtils::validateTime(*t);
+    $$ = new nebula::Time($1, $3, $5, 0);
+    auto result = nebula::time::TimeUtils::validateTime(*$$);
     if (!result.ok()) {
+      delete $$;
       throw DatetimeParser::syntax_error(@1, result.toString());
     }
-    $$ = t;
   }
   | INTEGER TIME_DELIMITER INTEGER {
-    auto *t = new nebula::Time($1, $3, 0, 0);
-    auto result = nebula::time::TimeUtils::validateTime(*t);
+    $$ = new nebula::Time($1, $3, 0, 0);
+    auto result = nebula::time::TimeUtils::validateTime(*$$);
     if (!result.ok()) {
+      delete $$;
       throw DatetimeParser::syntax_error(@1, result.toString());
     }
-    $$ = t;
   }
   ;
 
