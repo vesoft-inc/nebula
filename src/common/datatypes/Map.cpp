@@ -46,3 +46,14 @@ folly::dynamic Map::getMetaData() const {
 }
 
 }  // namespace nebula
+
+namespace std {
+std::size_t hash<nebula::Map>::operator()(const nebula::Map& m) const noexcept {
+  size_t seed = 0;
+  for (auto& v : m.kvs) {
+    seed ^= hash<std::string>()(v.first) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+  }
+  return seed;
+}
+
+}  // namespace std

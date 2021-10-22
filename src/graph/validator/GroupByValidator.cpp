@@ -174,7 +174,7 @@ Status GroupByValidator::groupClauseSemanticCheck() {
       return false;
     };
     for (auto* expr : yieldCols_) {
-      if (evaluableExpr(expr)) {
+      if (ExpressionUtils::isEvaluableExpr(expr)) {
         continue;
       }
       FindVisitor visitor(finder);

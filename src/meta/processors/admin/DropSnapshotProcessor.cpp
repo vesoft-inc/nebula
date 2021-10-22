@@ -17,7 +17,7 @@ void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
   folly::SharedMutex::WriteHolder wHolder(LockUtils::snapshotLock());
 
   // Check snapshot is exists
-  auto key = MetaServiceUtils::snapshotKey(snapshot);
+  auto key = MetaKeyUtils::snapshotKey(snapshot);
   auto ret = doGet(std::move(key));
   if (!nebula::ok(ret)) {
     auto retCode = nebula::error(ret);
@@ -29,7 +29,7 @@ void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
   }
   auto val = nebula::value(ret);
 
-  auto hosts = MetaServiceUtils::parseSnapshotHosts(val);
+  auto hosts = MetaKeyUtils::parseSnapshotHosts(val);
   auto peersRet = NetworkUtils::toHosts(hosts);
   if (!peersRet.ok()) {
     LOG(ERROR) << "Get checkpoint hosts error";
@@ -45,8 +45,8 @@ void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
     LOG(ERROR) << "Drop snapshot error on storage engine";
     // Need update the snapshot status to invalid, maybe some storage engine
     // drop done.
-    data.emplace_back(MetaServiceUtils::snapshotKey(snapshot),
-                      MetaServiceUtils::snapshotVal(cpp2::SnapshotStatus::INVALID, hosts));
+    data.emplace_back(MetaKeyUtils::snapshotKey(snapshot),
+                      MetaKeyUtils::snapshotVal(cpp2::SnapshotStatus::INVALID, hosts));
     auto putRet = doSyncPut(std::move(data));
     if (putRet != nebula::cpp2::ErrorCode::SUCCEEDED) {
       LOG(ERROR) << "Update snapshot status error. "
@@ -64,8 +64,8 @@ void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
     LOG(ERROR) << "Drop snapshot error on meta engine";
     // Need update the snapshot status to invalid, maybe storage engines drop
     // done.
-    data.emplace_back(MetaServiceUtils::snapshotKey(snapshot),
-                      MetaServiceUtils::snapshotVal(cpp2::SnapshotStatus::INVALID, hosts));
+    data.emplace_back(MetaKeyUtils::snapshotKey(snapshot),
+                      MetaKeyUtils::snapshotVal(cpp2::SnapshotStatus::INVALID, hosts));
     auto putRet = doSyncPut(std::move(data));
     if (putRet != nebula::cpp2::ErrorCode::SUCCEEDED) {
       LOG(ERROR) << "Update snapshot status error. "
@@ -77,7 +77,7 @@ void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
     return;
   }
   // Delete metadata of checkpoint
-  doRemove(MetaServiceUtils::snapshotKey(snapshot));
+  doRemove(MetaKeyUtils::snapshotKey(snapshot));
   LOG(INFO) << "Drop snapshot " << snapshot << " successfully";
 }
 

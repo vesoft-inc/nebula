@@ -83,10 +83,10 @@ void CreateEdgeProcessor::process(const cpp2::CreateEdgeReq& req) {
 
   auto edgeType = nebula::value(edgeTypeRet);
   std::vector<kvstore::KV> data;
-  data.emplace_back(MetaServiceUtils::indexEdgeKey(spaceId, edgeName),
+  data.emplace_back(MetaKeyUtils::indexEdgeKey(spaceId, edgeName),
                     std::string(reinterpret_cast<const char*>(&edgeType), sizeof(EdgeType)));
-  data.emplace_back(MetaServiceUtils::schemaEdgeKey(spaceId, edgeType, 0),
-                    MetaServiceUtils::schemaVal(edgeName, schema));
+  data.emplace_back(MetaKeyUtils::schemaEdgeKey(spaceId, edgeType, 0),
+                    MetaKeyUtils::schemaVal(edgeName, schema));
 
   LOG(INFO) << "Create Edge " << edgeName << ", edgeType " << edgeType;
   resp_.set_id(to(edgeType, EntryType::EDGE));

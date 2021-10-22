@@ -113,7 +113,6 @@ struct LookupContext final : public AstContext {
   bool dedup{false};
   bool isEmptyResultSet{false};
   int32_t schemaId{-1};
-  int64_t limit{-1};
   Expression* filter{nullptr};
   YieldColumns* yieldExpr{nullptr};
   std::vector<std::string> idxReturnCols;
@@ -155,6 +154,17 @@ struct FetchEdgesContext final : public AstContext {
   bool distinct{false};
   // store the result of the previous sentence
   std::string inputVarName;
+};
+
+struct AlterSchemaContext final : public AstContext {
+  std::vector<meta::cpp2::AlterSchemaItem> schemaItems;
+  meta::cpp2::SchemaProp schemaProps;
+};
+
+struct CreateSchemaContext final : public AstContext {
+  bool ifNotExist{false};
+  std::string name;
+  meta::cpp2::Schema schema;
 };
 
 }  // namespace graph

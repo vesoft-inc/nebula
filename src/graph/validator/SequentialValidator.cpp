@@ -6,7 +6,6 @@
 
 #include "graph/validator/SequentialValidator.h"
 
-#include "common/base/Base.h"
 #include "graph/planner/plan/Logic.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/service/GraphFlags.h"

@@ -6,9 +6,9 @@
 
 #include "graph/executor/query/GetVerticesExecutor.h"
 
+#include "common/time/ScopedTimer.h"
 #include "graph/context/QueryContext.h"
 #include "graph/util/SchemaUtil.h"
-#include "graph/util/ScopedTimer.h"
 
 using nebula::storage::GraphStorageClient;
 using nebula::storage::StorageRpcResponse;
@@ -33,10 +33,12 @@ folly::Future<Status> GetVerticesExecutor::getVertices() {
   }
 
   time::Duration getPropsTime;
+  GraphStorageClient::CommonRequestParam param(gv->space(),
+                                               qctx()->rctx()->session()->id(),
+                                               qctx()->plan()->id(),
+                                               qctx()->plan()->isProfileEnabled());
   return DCHECK_NOTNULL(storageClient)
-      ->getProps(gv->space(),
-                 qctx()->rctx()->session()->id(),
-                 qctx()->plan()->id(),
+      ->getProps(param,
                  std::move(vertices),
                  gv->props(),
                  nullptr,

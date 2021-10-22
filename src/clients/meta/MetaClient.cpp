@@ -346,6 +346,8 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
     bool hasDef = col.default_value_ref().has_value();
     auto& colType = col.get_type();
     size_t len = colType.type_length_ref().has_value() ? *colType.get_type_length() : 0;
+    cpp2::GeoShape geoShape =
+        colType.geo_shape_ref().has_value() ? *colType.get_geo_shape() : cpp2::GeoShape::ANY;
     bool nullable = col.nullable_ref().has_value() ? *col.get_nullable() : false;
     Expression* defaultValueExpr = nullptr;
     if (hasDef) {
@@ -359,8 +361,12 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
       }
     }
 
-    schema->addField(
-        col.get_name(), colType.get_type(), len, nullable, hasDef ? defaultValueExpr : nullptr);
+    schema->addField(col.get_name(),
+                     colType.get_type(),
+                     len,
+                     nullable,
+                     hasDef ? defaultValueExpr : nullptr,
+                     geoShape);
   };
 
   for (auto& tagIt : tagItemVec) {
@@ -2335,9 +2341,7 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
   req.set_host(options_.localHost_);
   req.set_role(options_.role_);
   req.set_git_info_sha(options_.gitInfoSHA_);
-#if defined(NEBULA_BUILD_VERSION)
-  req.set_version(versionString(false));
-#endif
+  req.set_version(getOriginVersion());
   if (options_.role_ == cpp2::HostRole::STORAGE) {
     if (options_.clusterId_.load() == 0) {
       options_.clusterId_ = FileBasedClusterIdMan::getClusterIdFromFile(FLAGS_cluster_id_path);

@@ -19,6 +19,7 @@
 #include "common/thrift/ThriftClientManager.h"
 #include "common/time/WallClock.h"
 #include "interface/gen-cpp2/RaftexServiceAsyncClient.h"
+#include "kvstore/LogEncoder.h"
 #include "kvstore/raftex/Host.h"
 #include "kvstore/raftex/LogStrListIterator.h"
 #include "kvstore/wal/FileBasedWal.h"
@@ -1335,6 +1336,9 @@ void RaftPart::processAskForVoteRequest(const cpp2::AskForVoteRequest& req,
               << " i did not commit when i was leader, rollback to " << lastLogId_;
     wal_->rollbackToLog(lastLogId_);
   }
+  if (role_ == Role::LEADER) {
+    bgWorkers_->addTask([self = shared_from_this(), term] { self->onLostLeadership(term); });
+  }
   role_ = Role::FOLLOWER;
   votedAddr_ = candidate;
   proposedTerm_ = req.get_term();
@@ -1861,9 +1865,9 @@ bool RaftPart::checkAppendLogResult(AppendLogResult res) {
       cachingPromise_.setValue(res);
       cachingPromise_.reset();
       bufferOverFlow_ = false;
+      sendingPromise_.setValue(res);
+      replicatingLogs_ = false;
     }
-    sendingPromise_.setValue(res);
-    replicatingLogs_ = false;
     return false;
   }
   return true;

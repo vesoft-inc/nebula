@@ -32,7 +32,7 @@ namespace nebula {
 namespace opt {
 
 // The matched expression should be either a OR expression or an expression that could be
-// rewrote to a OR expression. There are 3 senarios.
+// rewrote to a OR expression. There are 3 scenarios.
 //
 // 1. OR expr. If OR expr has an IN expr operand that has a valid index, expand it to OR expr.
 //
@@ -162,8 +162,7 @@ StatusOr<TransformResult> UnionAllIndexScanBaseRule::transform(OptContext* ctx,
       break;
   }
 
-  DCHECK(transformedExpr->kind() == ExprKind::kLogicalOr ||
-         transformedExpr->kind() == ExprKind::kRelEQ);
+  DCHECK(transformedExpr->kind() == ExprKind::kLogicalOr);
   std::vector<IndexQueryContext> idxCtxs;
   auto logicalExpr = static_cast<const LogicalExpression*>(transformedExpr);
   for (auto operand : logicalExpr->operands()) {

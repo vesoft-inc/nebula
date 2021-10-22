@@ -16,8 +16,8 @@
 #include "common/meta/GflagsManager.h"
 #include "common/meta/ServerBasedSchemaManager.h"
 #include "common/network/NetworkUtils.h"
+#include "common/utils/MetaKeyUtils.h"
 #include "interface/gen-cpp2/common_constants.h"
-#include "meta/MetaServiceUtils.h"
 #include "meta/test/TestUtils.h"
 #include "mock/MockCluster.h"
 

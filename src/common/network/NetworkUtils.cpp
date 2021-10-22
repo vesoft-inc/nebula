@@ -306,5 +306,32 @@ std::string NetworkUtils::toHostsStr(const std::vector<HostAddr>& hosts) {
   return hostsString;
 }
 
+Status NetworkUtils::validateHostOrIp(const std::string& hostOrIp) {
+  if (hostOrIp.empty()) {
+    return Status::Error("local_ip is empty, need to config it through config file.");
+  }
+  const std::regex ipv4(
+      "((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}"
+      "(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)");
+  if (std::regex_match(hostOrIp, ipv4)) {
+    const std::regex loopbackOrAny(
+        "^127(?:\\.[0-9]+){0,2}\\.[0-9]+$|^(?:0*\\:)*?:?0*1$|(0\\.){3}0");
+    if (std::regex_match(hostOrIp, loopbackOrAny)) {
+      return Status::OK();
+    }
+    auto ipsStatus = listIPv4s();
+    NG_RETURN_IF_ERROR(ipsStatus);
+    const auto& ips = ipsStatus.value();
+    auto result = std::find(ips.begin(), ips.end(), hostOrIp);
+    if (result == ips.end()) {
+      return Status::Error("%s is not a valid ip in current host, candidates: %s",
+                           hostOrIp.c_str(),
+                           folly::join(",", ips).c_str());
+    }
+  } else {
+    NG_RETURN_IF_ERROR(resolveHost(hostOrIp, 0));
+  }
+  return Status::OK();
+}
 }  // namespace network
 }  // namespace nebula

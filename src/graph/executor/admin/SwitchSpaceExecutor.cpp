@@ -7,10 +7,10 @@
 #include "graph/executor/admin/SwitchSpaceExecutor.h"
 
 #include "clients/meta/MetaClient.h"
+#include "common/time/ScopedTimer.h"
 #include "graph/context/QueryContext.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/service/PermissionManager.h"
-#include "graph/util/ScopedTimer.h"
 #include "interface/gen-cpp2/meta_types.h"
 
 namespace nebula {

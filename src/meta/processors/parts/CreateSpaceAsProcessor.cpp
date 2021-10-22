@@ -103,7 +103,7 @@ void CreateSpaceAsProcessor::process(const cpp2::CreateSpaceAsReq &req) {
 
 ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> CreateSpaceAsProcessor::makeNewSpaceData(
     GraphSpaceID oldSpaceId, GraphSpaceID newSpaceId, const std::string &spaceName) {
-  auto oldSpaceKey = MetaServiceUtils::spaceKey(oldSpaceId);
+  auto oldSpaceKey = MetaKeyUtils::spaceKey(oldSpaceId);
   auto oldSpaceVal = doGet(oldSpaceKey);
   if (!nebula::ok(oldSpaceVal)) {
     LOG(ERROR) << "Create Space Failed : Generate new space id failed";
@@ -112,21 +112,21 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> CreateSpaceAsProcesso
   }
 
   std::vector<kvstore::KV> data;
-  data.emplace_back(MetaServiceUtils::indexSpaceKey(spaceName),
+  data.emplace_back(MetaKeyUtils::indexSpaceKey(spaceName),
                     std::string(reinterpret_cast<const char *>(&newSpaceId), sizeof(newSpaceId)));
-  cpp2::SpaceDesc spaceDesc = MetaServiceUtils::parseSpace(nebula::value(oldSpaceVal));
+  cpp2::SpaceDesc spaceDesc = MetaKeyUtils::parseSpace(nebula::value(oldSpaceVal));
   spaceDesc.set_space_name(spaceName);
-  data.emplace_back(MetaServiceUtils::spaceKey(newSpaceId), MetaServiceUtils::spaceVal(spaceDesc));
+  data.emplace_back(MetaKeyUtils::spaceKey(newSpaceId), MetaKeyUtils::spaceVal(spaceDesc));
 
-  auto prefix = MetaServiceUtils::partPrefix(oldSpaceId);
+  auto prefix = MetaKeyUtils::partPrefix(oldSpaceId);
   auto partPrefix = doPrefix(prefix);
   if (!nebula::ok(partPrefix)) {
     return nebula::error(partPrefix);
   }
   auto iter = nebula::value(partPrefix).get();
   for (; iter->valid(); iter->next()) {
-    auto partId = MetaServiceUtils::parsePartKeyPartId(iter->key());
-    data.emplace_back(MetaServiceUtils::partKey(newSpaceId, partId), iter->val());
+    auto partId = MetaKeyUtils::parsePartKeyPartId(iter->key());
+    data.emplace_back(MetaKeyUtils::partKey(newSpaceId, partId), iter->val());
   }
   return data;
 }
@@ -134,7 +134,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> CreateSpaceAsProcesso
 ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> CreateSpaceAsProcessor::makeNewTags(
     GraphSpaceID oldSpaceId, GraphSpaceID newSpaceId) {
   folly::SharedMutex::ReadHolder rHolder(LockUtils::tagLock());
-  auto prefix = MetaServiceUtils::schemaTagsPrefix(oldSpaceId);
+  auto prefix = MetaKeyUtils::schemaTagsPrefix(oldSpaceId);
   auto tagPrefix = doPrefix(prefix);
   if (!nebula::ok(tagPrefix)) {
     if (nebula::error(tagPrefix) == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
@@ -149,14 +149,14 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> CreateSpaceAsProcesso
   for (; iter->valid(); iter->next()) {
     auto val = iter->val();
 
-    auto tagId = MetaServiceUtils::parseTagId(iter->key());
+    auto tagId = MetaKeyUtils::parseTagId(iter->key());
     auto tagNameLen = *reinterpret_cast<const int32_t *>(val.data());
     auto tagName = val.subpiece(sizeof(int32_t), tagNameLen).str();
-    data.emplace_back(MetaServiceUtils::indexTagKey(newSpaceId, tagName),
+    data.emplace_back(MetaKeyUtils::indexTagKey(newSpaceId, tagName),
                       std::string(reinterpret_cast<const char *>(&tagId), sizeof(tagId)));
 
-    auto tagVer = MetaServiceUtils::parseTagVersion(iter->key());
-    auto key = MetaServiceUtils::schemaTagKey(newSpaceId, tagId, tagVer);
+    auto tagVer = MetaKeyUtils::parseTagVersion(iter->key());
+    auto key = MetaKeyUtils::schemaTagKey(newSpaceId, tagId, tagVer);
     data.emplace_back(std::move(key), val.str());
   }
   return data;
@@ -165,7 +165,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> CreateSpaceAsProcesso
 ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> CreateSpaceAsProcessor::makeNewEdges(
     GraphSpaceID oldSpaceId, GraphSpaceID newSpaceId) {
   folly::SharedMutex::ReadHolder rHolder(LockUtils::edgeLock());
-  auto prefix = MetaServiceUtils::schemaEdgesPrefix(oldSpaceId);
+  auto prefix = MetaKeyUtils::schemaEdgesPrefix(oldSpaceId);
   auto edgePrefix = doPrefix(prefix);
   if (!nebula::ok(edgePrefix)) {
     if (nebula::error(edgePrefix) == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
@@ -180,14 +180,14 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> CreateSpaceAsProcesso
   for (; iter->valid(); iter->next()) {
     auto val = iter->val();
 
-    auto edgeType = MetaServiceUtils::parseEdgeType(iter->key());
+    auto edgeType = MetaKeyUtils::parseEdgeType(iter->key());
     auto edgeNameLen = *reinterpret_cast<const int32_t *>(val.data());
     auto edgeName = val.subpiece(sizeof(int32_t), edgeNameLen).str();
-    data.emplace_back(MetaServiceUtils::indexTagKey(newSpaceId, edgeName),
+    data.emplace_back(MetaKeyUtils::indexTagKey(newSpaceId, edgeName),
                       std::string(reinterpret_cast<const char *>(&edgeType), sizeof(edgeType)));
 
-    auto ver = MetaServiceUtils::parseEdgeVersion(iter->key());
-    auto key = MetaServiceUtils::schemaEdgeKey(newSpaceId, edgeType, ver);
+    auto ver = MetaKeyUtils::parseEdgeVersion(iter->key());
+    auto key = MetaKeyUtils::schemaEdgeKey(newSpaceId, edgeType, ver);
     data.emplace_back(std::move(key), val.str());
   }
   return data;
@@ -196,7 +196,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> CreateSpaceAsProcesso
 ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> CreateSpaceAsProcessor::makeNewIndexes(
     GraphSpaceID oldSpaceId, GraphSpaceID newSpaceId) {
   folly::SharedMutex::ReadHolder rHolder(LockUtils::edgeLock());
-  auto prefix = MetaServiceUtils::indexPrefix(oldSpaceId);
+  auto prefix = MetaKeyUtils::indexPrefix(oldSpaceId);
   auto indexPrefix = doPrefix(prefix);
   if (!nebula::ok(indexPrefix)) {
     if (nebula::error(indexPrefix) == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
@@ -211,16 +211,15 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> CreateSpaceAsProcesso
   for (; iter->valid(); iter->next()) {
     auto val = iter->val();
 
-    auto indexId = MetaServiceUtils::parseIndexesKeyIndexID(iter->key());
+    auto indexId = MetaKeyUtils::parseIndexesKeyIndexID(iter->key());
 
-    cpp2::IndexItem idxItem = MetaServiceUtils::parseIndex(val.str());
+    cpp2::IndexItem idxItem = MetaKeyUtils::parseIndex(val.str());
     auto indexName = idxItem.get_index_name();
 
-    data.emplace_back(MetaServiceUtils::indexIndexKey(newSpaceId, indexName),
+    data.emplace_back(MetaKeyUtils::indexIndexKey(newSpaceId, indexName),
                       std::string(reinterpret_cast<const char *>(&indexId), sizeof(indexId)));
 
-    data.emplace_back(MetaServiceUtils::indexKey(newSpaceId, indexId),
-                      MetaServiceUtils::indexVal(idxItem));
+    data.emplace_back(MetaKeyUtils::indexKey(newSpaceId, indexId), MetaKeyUtils::indexVal(idxItem));
   }
   return data;
 }

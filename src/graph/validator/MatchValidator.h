@@ -7,7 +7,6 @@
 #ifndef GRAPH_VALIDATOR_MATCHVALIDATOR_H_
 #define GRAPH_VALIDATOR_MATCHVALIDATOR_H_
 
-#include "common/base/Base.h"
 #include "graph/context/ast/CypherAstContext.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/util/AnonVarGenerator.h"

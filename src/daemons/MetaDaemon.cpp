@@ -16,12 +16,12 @@
 #include "common/ssl/SSLConfig.h"
 #include "common/thread/GenericThreadPool.h"
 #include "common/time/TimezoneInfo.h"
+#include "common/utils/MetaKeyUtils.h"
 #include "kvstore/NebulaStore.h"
 #include "kvstore/PartManager.h"
 #include "meta/ActiveHostsMan.h"
 #include "meta/KVBasedClusterIdMan.h"
 #include "meta/MetaServiceHandler.h"
-#include "meta/MetaServiceUtils.h"
 #include "meta/MetaVersionMan.h"
 #include "meta/RootUserMan.h"
 #include "meta/http/MetaHttpDownloadHandler.h"
@@ -36,6 +36,7 @@ using nebula::operator<<;
 using nebula::ProcessUtils;
 using nebula::Status;
 using nebula::StatusOr;
+using nebula::network::NetworkUtils;
 using nebula::web::PathParams;
 
 DEFINE_string(local_ip, "", "Local ip specified for NetworkUtils::getLocalIP");
@@ -77,7 +78,7 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
                                                  nebula::HostAddr localhost) {
   auto partMan = std::make_unique<nebula::kvstore::MemPartManager>();
   // The meta server has only one space (0), one part (0)
-  partMan->addPart(nebula::meta::kDefaultSpaceId, nebula::meta::kDefaultPartId, std::move(peers));
+  partMan->addPart(nebula::kDefaultSpaceId, nebula::kDefaultPartId, std::move(peers));
   // folly IOThreadPoolExecutor
   auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_num_io_threads);
   std::shared_ptr<apache::thrift::concurrency::ThreadManager> threadManager(
@@ -98,7 +99,7 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
   LOG(INFO) << "Waiting for the leader elected...";
   nebula::HostAddr leader;
   while (true) {
-    auto ret = kvstore->partLeader(nebula::meta::kDefaultSpaceId, nebula::meta::kDefaultPartId);
+    auto ret = kvstore->partLeader(nebula::kDefaultSpaceId, nebula::kDefaultPartId);
     if (!nebula::ok(ret)) {
       LOG(ERROR) << "Nebula store init failed";
       return nullptr;
@@ -247,10 +248,19 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  auto hostIdentity =
-      FLAGS_local_ip == "" ? nebula::network::NetworkUtils::getHostname() : FLAGS_local_ip;
-  nebula::HostAddr localhost{hostIdentity, FLAGS_port};
-  LOG(INFO) << "identify myself as " << localhost;
+  std::string hostName;
+  if (FLAGS_local_ip.empty()) {
+    hostName = nebula::network::NetworkUtils::getHostname();
+  } else {
+    status = NetworkUtils::validateHostOrIp(FLAGS_local_ip);
+    if (!status.ok()) {
+      LOG(ERROR) << status;
+      return EXIT_FAILURE;
+    }
+    hostName = FLAGS_local_ip;
+  }
+  nebula::HostAddr localhost{hostName, FLAGS_port};
+  LOG(INFO) << "localhost = " << localhost;
   auto peersRet = nebula::network::NetworkUtils::toHosts(FLAGS_meta_server_addrs);
   if (!peersRet.ok()) {
     LOG(ERROR) << "Can't get peers address, status:" << peersRet.status();
@@ -287,7 +297,7 @@ int main(int argc, char* argv[]) {
     /**
      *  Only leader part needed.
      */
-    auto ret = gKVStore->partLeader(nebula::meta::kDefaultSpaceId, nebula::meta::kDefaultPartId);
+    auto ret = gKVStore->partLeader(nebula::kDefaultSpaceId, nebula::kDefaultPartId);
     if (!nebula::ok(ret)) {
       LOG(ERROR) << "Part leader get failed";
       return EXIT_FAILURE;

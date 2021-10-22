@@ -11,9 +11,9 @@
 #include "clients/storage/GraphStorageClient.h"
 #include "common/datatypes/List.h"
 #include "common/datatypes/Vertex.h"
+#include "common/time/ScopedTimer.h"
 #include "graph/context/QueryContext.h"
 #include "graph/service/GraphFlags.h"
-#include "graph/util/ScopedTimer.h"
 
 using nebula::storage::GraphStorageClient;
 using nebula::storage::StorageRpcResponse;
@@ -43,11 +43,12 @@ folly::Future<Status> GetNeighborsExecutor::execute() {
   time::Duration getNbrTime;
   GraphStorageClient* storageClient = qctx_->getStorageClient();
   QueryExpressionContext qec(qctx()->ectx());
+  GraphStorageClient::CommonRequestParam param(gn_->space(),
+                                               qctx()->rctx()->session()->id(),
+                                               qctx()->plan()->id(),
+                                               qctx()->plan()->isProfileEnabled());
   return storageClient
-      ->getNeighbors(gn_->space(),
-                     qctx()->rctx()->session()->id(),
-                     qctx()->plan()->id(),
-                     qctx()->plan()->isProfileEnabled(),
+      ->getNeighbors(param,
                      std::move(reqDs.colNames),
                      std::move(reqDs.rows),
                      gn_->edgeTypes(),

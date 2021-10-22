@@ -72,7 +72,7 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
   }
   auto edgeType = nebula::value(edgeTypeRet);
 
-  const auto& prefix = MetaServiceUtils::indexPrefix(space);
+  const auto& prefix = MetaKeyUtils::indexPrefix(space);
   auto iterRet = doPrefix(prefix);
   if (!nebula::ok(iterRet)) {
     auto retCode = nebula::error(iterRet);
@@ -86,7 +86,7 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
 
   while (checkIter->valid()) {
     auto val = checkIter->val();
-    auto item = MetaServiceUtils::parseIndex(val);
+    auto item = MetaKeyUtils::parseIndex(val);
     if (item.get_schema_id().getType() != nebula::cpp2::SchemaID::Type::edge_type ||
         fields.size() > item.get_fields().size() ||
         edgeType != item.get_schema_id().get_edge_type()) {
@@ -156,6 +156,12 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
       handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
       onFinished();
       return;
+    } else if (col.type.get_type() == meta::cpp2::PropertyType::GEOGRAPHY && fields.size() > 1) {
+      // TODO(jie): Support joint index for geography
+      LOG(ERROR) << "Only support to create index on a single geography column currently";
+      handleErrorCode(nebula::cpp2::ErrorCode::E_UNSUPPORTED);
+      onFinished();
+      return;
     }
     columns.emplace_back(col);
   }
@@ -182,9 +188,9 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
     item.set_comment(*req.comment_ref());
   }
 
-  data.emplace_back(MetaServiceUtils::indexIndexKey(space, indexName),
+  data.emplace_back(MetaKeyUtils::indexIndexKey(space, indexName),
                     std::string(reinterpret_cast<const char*>(&edgeIndex), sizeof(IndexID)));
-  data.emplace_back(MetaServiceUtils::indexKey(space, edgeIndex), MetaServiceUtils::indexVal(item));
+  data.emplace_back(MetaKeyUtils::indexKey(space, edgeIndex), MetaKeyUtils::indexVal(item));
   LOG(INFO) << "Create Edge Index " << indexName << ", edgeIndex " << edgeIndex;
   resp_.set_id(to(edgeIndex, EntryType::INDEX));
   doSyncPutAndUpdate(std::move(data));

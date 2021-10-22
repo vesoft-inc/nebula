@@ -7,7 +7,6 @@
 #ifndef GRAPH_VALIDATOR_FINDPATHVALIDATOR_H_
 #define GRAPH_VALIDATOR_FINDPATHVALIDATOR_H_
 
-#include "common/base/Base.h"
 #include "graph/context/ast/QueryAstContext.h"
 #include "graph/validator/Validator.h"
 

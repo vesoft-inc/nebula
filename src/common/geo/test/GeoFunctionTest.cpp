@@ -546,43 +546,43 @@ TEST(DWithin, point2Point) {
   {
     auto point1 = Geography::fromWKT("POINT(1.0 1.0)").value();
     auto point2 = Geography::fromWKT("POINT(1.0 1.0)").value();
-    bool b = GeoFunction::dWithin(point1, point2, 0.0, true);
+    bool b = GeoFunction::dWithin(point1, point2, 0.0, false);
     EXPECT_EQ(true, b);
   }
   {
     auto point1 = Geography::fromWKT("POINT(1.0 1.0)").value();
     auto point2 = Geography::fromWKT("POINT(1.0 1.0)").value();
-    bool b = GeoFunction::dWithin(point1, point2, 0.0, false);
+    bool b = GeoFunction::dWithin(point1, point2, 0.0, true);
     EXPECT_EQ(false, b);
   }
   {
     auto point1 = Geography::fromWKT("POINT(1.0 1.0)").value();
     auto point2 = Geography::fromWKT("POINT(1.0 1.0)").value();
-    bool b = GeoFunction::dWithin(point1, point2, 0.1, false);
-    EXPECT_EQ(true, b);
-  }
-  {
-    auto point1 = Geography::fromWKT("POINT(1.0 1.0)").value();
-    auto point2 = Geography::fromWKT("POINT(1.0 1.2)").value();
-    bool b = GeoFunction::dWithin(point1, point2, 22239.020235496788, true);
+    bool b = GeoFunction::dWithin(point1, point2, 0.1, true);
     EXPECT_EQ(true, b);
   }
   {
     auto point1 = Geography::fromWKT("POINT(1.0 1.0)").value();
     auto point2 = Geography::fromWKT("POINT(1.0 1.2)").value();
     bool b = GeoFunction::dWithin(point1, point2, 22239.020235496788, false);
+    EXPECT_EQ(true, b);
+  }
+  {
+    auto point1 = Geography::fromWKT("POINT(1.0 1.0)").value();
+    auto point2 = Geography::fromWKT("POINT(1.0 1.2)").value();
+    bool b = GeoFunction::dWithin(point1, point2, 22239.020235496788, true);
     EXPECT_EQ(false, b);
   }
   {
     auto point1 = Geography::fromWKT("POINT(1.0 1.0)").value();
     auto point2 = Geography::fromWKT("POINT(1.0 1.2)").value();
-    bool b = GeoFunction::dWithin(point1, point2, 22240, true);
+    bool b = GeoFunction::dWithin(point1, point2, 22240, false);
     EXPECT_EQ(true, b);
   }
   {
     auto point1 = Geography::fromWKT("POINT(-118.4079 33.9434)").value();
     auto point2 = Geography::fromWKT("POINT(2.5559 49.0083)").value();
-    bool b = GeoFunction::dWithin(point1, point2, 10000, false);
+    bool b = GeoFunction::dWithin(point1, point2, 10000, true);
     EXPECT_EQ(false, b);
   }
 }
@@ -591,25 +591,25 @@ TEST(DWithin, point2LineString) {
   {
     auto point1 = Geography::fromWKT("POINT(1.0 1.0)").value();
     auto line2 = Geography::fromWKT("LINESTRING(1.0 1.0, 2.0 2.0)").value();
-    bool b = GeoFunction::dWithin(point1, line2, 0.0, true);
+    bool b = GeoFunction::dWithin(point1, line2, 0.0, false);
     EXPECT_EQ(true, b);
   }
   {
     auto point1 = Geography::fromWKT("POINT(1.5 1.6)").value();
     auto line2 = Geography::fromWKT("LINESTRING(1.0 1.0, 1.5 1.6, 2.0 2.2)").value();
-    bool b = GeoFunction::dWithin(point1, line2, 0.0, true);
+    bool b = GeoFunction::dWithin(point1, line2, 0.0, false);
     EXPECT_EQ(true, b);
   }
   {
     auto point1 = Geography::fromWKT("POINT(1.5 1.6)").value();
     auto line2 = Geography::fromWKT("LINESTRING(1.0 1.0, 2.0 2.2, 1.5 1.6)").value();
-    bool b = GeoFunction::dWithin(point1, line2, 0.0, true);
+    bool b = GeoFunction::dWithin(point1, line2, 0.0, false);
     EXPECT_EQ(true, b);
   }
   {
     auto point1 = Geography::fromWKT("POINT(1.2 3.8)").value();
     auto point2 = Geography::fromWKT("LINESTRING(1.0 1.0, 1.5 1.6, 2.0 2.2)").value();
-    bool b = GeoFunction::dWithin(point1, point2, 1.0, false);
+    bool b = GeoFunction::dWithin(point1, point2, 1.0, true);
     EXPECT_EQ(false, b);
   }
 }
@@ -618,28 +618,28 @@ TEST(DWithin, point2Polygon) {
   {
     auto point1 = Geography::fromWKT("POINT(1.0 1.0)").value();
     auto polygon2 = Geography::fromWKT("POLYGON((1.0 1.0, 2.0 2.0, 0.0 2.0, 1.0 1.0))").value();
-    bool b = GeoFunction::dWithin(point1, polygon2, 0.0, true);
+    bool b = GeoFunction::dWithin(point1, polygon2, 0.0, false);
     EXPECT_EQ(true, b);
   }
   // Point lies on the interior of the polygon
   {
     auto point1 = Geography::fromWKT("POINT(1.5 1.9)").value();
     auto polygon2 = Geography::fromWKT("POLYGON((1.0 1.0, 2.0 2.0, 0.0 2.0, 1.0 1.0))").value();
-    bool b = GeoFunction::dWithin(point1, polygon2, 0.0, true);
+    bool b = GeoFunction::dWithin(point1, polygon2, 0.0, false);
     EXPECT_EQ(true, b);
   }
   {
     auto point1 = Geography::fromWKT("POINT(0.5 0.5)").value();
     auto polygon2 =
         Geography::fromWKT("POLYGON((0.0 0.0, 1.0 0.0, 1.0 1.0, 0.0 1.0, 0.0 0.0))").value();
-    bool b = GeoFunction::dWithin(point1, polygon2, 0.0, true);
+    bool b = GeoFunction::dWithin(point1, polygon2, 0.0, false);
     EXPECT_EQ(true, b);
   }
   {
     auto point1 = Geography::fromWKT("POINT(1.5 1.6)").value();
     auto polygon2 =
         Geography::fromWKT("POLYGON((0.0 0.0, 1.0 0.0, 1.0 1.0, 0.0 1.0, 0.0 0.0))").value();
-    bool b = GeoFunction::dWithin(point1, polygon2, 99999, false);
+    bool b = GeoFunction::dWithin(point1, polygon2, 99999, true);
     EXPECT_EQ(true, b);
   }
   {
@@ -648,7 +648,7 @@ TEST(DWithin, point2Polygon) {
                         "POLYGON((0.0 0.0, 1.0 0.0, 1.0 1.0, 0.0 1.0, 0.0 0.0), (0.2 0.2, 0.2 0.4, "
                         "0.4 0.4, 0.4 0.2, 0.2 0.2))")
                         .value();
-    bool b = GeoFunction::dWithin(point1, polygon2, 10000, true);
+    bool b = GeoFunction::dWithin(point1, polygon2, 10000, false);
     EXPECT_EQ(false, b);
   }
 }
@@ -657,31 +657,31 @@ TEST(DWithin, lineString2LineString) {
   {
     auto line1 = Geography::fromWKT("LINESTRING(2.0 2.0, 3.0 3.0)").value();
     auto line2 = Geography::fromWKT("LINESTRING(2.0 2.0, 3.0 3.0)").value();
-    bool b = GeoFunction::dWithin(line1, line2, 0.0, true);
+    bool b = GeoFunction::dWithin(line1, line2, 0.0, false);
     EXPECT_EQ(true, b);
   }
   {
     auto line1 = Geography::fromWKT("LINESTRING(1.0 1.0, 1.5 1.5, 2.0 2.0)").value();
     auto line2 = Geography::fromWKT("LINESTRING(2.0 2.0, 3.0 3.0)").value();
-    bool b = GeoFunction::dWithin(line1, line2, 0.0, true);
+    bool b = GeoFunction::dWithin(line1, line2, 0.0, false);
     EXPECT_EQ(true, b);
   }
   {
     auto line1 = Geography::fromWKT("LINESTRING(0.0 0.0, 1.0 1.0)").value();
     auto line2 = Geography::fromWKT("LINESTRING(5.0 5.0, 6.0 6.0)").value();
-    bool b = GeoFunction::dWithin(line1, line2, 628519, true);
+    bool b = GeoFunction::dWithin(line1, line2, 628519, false);
     EXPECT_EQ(false, b);
   }
   {
     auto line1 = Geography::fromWKT("LINESTRING(1.0 1.0, 1.5 1.5, 2.0 2.0)").value();
     auto line2 = Geography::fromWKT("LINESTRING(1.0 2.0, 2.0 1.0)").value();
-    bool b = GeoFunction::dWithin(line1, line2, 1.0, false);
+    bool b = GeoFunction::dWithin(line1, line2, 1.0, true);
     EXPECT_EQ(true, b);
   }
   {
     auto line1 = Geography::fromWKT("LINESTRING(1.0 1.0, 1.5 1.5, 2.0 2.0)").value();
     auto line2 = Geography::fromWKT("LINESTRING(1.0 2.0, 1.0 4.0)").value();
-    bool b = GeoFunction::dWithin(line1, line2, 78609, false);
+    bool b = GeoFunction::dWithin(line1, line2, 78609, true);
     EXPECT_EQ(true, b);
   }
 }
@@ -691,21 +691,21 @@ TEST(DWithin, lineString2Polygon) {
     auto line1 = Geography::fromWKT("LINESTRING(1.0 1.0, 1.5 1.5, 2.0 2.0)").value();
     auto polygon2 =
         Geography::fromWKT("POLYGON((0.0 0.0, 1.0 0.0, 1.0 1.0, 0.0 1.0, 0.0 0.0))").value();
-    bool b = GeoFunction::dWithin(line1, polygon2, 0.0, true);
+    bool b = GeoFunction::dWithin(line1, polygon2, 0.0, false);
     EXPECT_EQ(true, b);
   }
   {
     auto line1 = Geography::fromWKT("LINESTRING(0.2 0.2, 0.4 0.4)").value();
     auto polygon2 =
         Geography::fromWKT("POLYGON((0.0 0.0, 1.0 0.0, 1.0 1.0, 0.0 1.0, 0.0 0.0))").value();
-    bool b = GeoFunction::dWithin(line1, polygon2, 0.0, false);
+    bool b = GeoFunction::dWithin(line1, polygon2, 0.0, true);
     EXPECT_EQ(false, b);
   }
   {
     auto line1 = Geography::fromWKT("LINESTRING(-0.5 0.5, 0.5 0.5)").value();
     auto polygon2 =
         Geography::fromWKT("POLYGON((0.0 0.0, 1.0 0.0, 1.0 1.0, 0.0 1.0, 0.0 0.0))").value();
-    bool b = GeoFunction::dWithin(line1, polygon2, 9999, false);
+    bool b = GeoFunction::dWithin(line1, polygon2, 9999, true);
     EXPECT_EQ(true, b);
   }
   {
@@ -714,7 +714,7 @@ TEST(DWithin, lineString2Polygon) {
                         "POLYGON((0.0 0.0, 1.0 0.0, 1.0 1.0, 0.0 1.0, 0.0 0.0), (0.2 0.2, 0.2 0.4, "
                         "0.4 0.4, 0.4 0.2, 0.2 0.2))")
                         .value();
-    bool b = GeoFunction::dWithin(line1, polygon2, 5555, true);
+    bool b = GeoFunction::dWithin(line1, polygon2, 5555, false);
     EXPECT_EQ(false, b);
   }
   {
@@ -723,7 +723,7 @@ TEST(DWithin, lineString2Polygon) {
                         "POLYGON((0.0 0.0, 1.0 0.0, 1.0 1.0, 0.0 1.0, 0.0 0.0), (0.2 0.2, 0.2 0.4, "
                         "0.4 0.4, 0.4 0.2, 0.2 0.2))")
                         .value();
-    bool b = GeoFunction::dWithin(line1, polygon2, 0.1, false);
+    bool b = GeoFunction::dWithin(line1, polygon2, 0.1, true);
     EXPECT_EQ(true, b);
   }
   {
@@ -732,7 +732,7 @@ TEST(DWithin, lineString2Polygon) {
                         "POLYGON((0.0 0.0, 1.0 0.0, 1.0 1.0, 0.0 1.0, 0.0 0.0), (0.2 0.2, 0.2 0.4, "
                         "0.4 0.4, 0.4 0.2, 0.2 0.2))")
                         .value();
-    bool b = GeoFunction::dWithin(line1, polygon2, 628520, false);
+    bool b = GeoFunction::dWithin(line1, polygon2, 628520, true);
     EXPECT_EQ(true, b);
   }
 }
@@ -743,7 +743,7 @@ TEST(DWithin, polygon2Polygon) {
         Geography::fromWKT("POLYGON((0.0 0.0, 1.0 0.0, 1.0 1.0, 0.0 1.0, 0.0 0.0))").value();
     auto polygon2 =
         Geography::fromWKT("POLYGON((0.0 0.0, 1.0 0.0, 1.0 1.0, 0.0 1.0, 0.0 0.0))").value();
-    bool b = GeoFunction::dWithin(polygon1, polygon2, 0.0, true);
+    bool b = GeoFunction::dWithin(polygon1, polygon2, 0.0, false);
     EXPECT_EQ(true, b);
   }
   {
@@ -751,7 +751,7 @@ TEST(DWithin, polygon2Polygon) {
         Geography::fromWKT("POLYGON((0.0 0.0, 1.0 0.0, 1.0 1.0, 0.0 1.0, 0.0 0.0))").value();
     auto polygon2 =
         Geography::fromWKT("POLYGON((0.2 0.2, 1.0 0.0, 1.0 1.0, 0.0 1.0, 0.2 0.2))").value();
-    bool b = GeoFunction::dWithin(polygon1, polygon2, 1.1, false);
+    bool b = GeoFunction::dWithin(polygon1, polygon2, 1.1, true);
     EXPECT_EQ(true, b);
   }
   {
@@ -759,7 +759,7 @@ TEST(DWithin, polygon2Polygon) {
         Geography::fromWKT("POLYGON((0.0 0.0, 1.0 0.0, 1.0 1.0, 0.0 1.0, 0.0 0.0))").value();
     auto polygon2 =
         Geography::fromWKT("POLYGON((3.0 3.0, 4.0 3.0, 4.0 4.0, 3.0 4.0, 3.0 3.0))").value();
-    bool b = GeoFunction::dWithin(polygon1, polygon2, 314402, true);
+    bool b = GeoFunction::dWithin(polygon1, polygon2, 314402, false);
     EXPECT_EQ(false, b);
   }
   {
@@ -770,7 +770,7 @@ TEST(DWithin, polygon2Polygon) {
                         "POLYGON((0.0 0.0, 1.0 0.0, 1.0 1.0, 0.0 1.0, 0.0 0.0), (0.2 0.2, 0.2 0.4, "
                         "0.4 0.4, 0.4 0.2, 0.2 0.2))")
                         .value();
-    bool b = GeoFunction::dWithin(polygon1, polygon2, 5560, false);
+    bool b = GeoFunction::dWithin(polygon1, polygon2, 5560, true);
     EXPECT_EQ(true, b);
   }
   {
@@ -779,7 +779,7 @@ TEST(DWithin, polygon2Polygon) {
     auto polygon2 =
         Geography::fromWKT("POLYGON((-8.0 -8.0, -4.0 -8.0, -4.0 -4.0, -8.0 -4.0, -8.0 -8.0))")
             .value();
-    bool b = GeoFunction::dWithin(polygon1, polygon2, 628750, false);
+    bool b = GeoFunction::dWithin(polygon1, polygon2, 628750, true);
     EXPECT_EQ(false, b);
   }
 }
@@ -1096,6 +1096,16 @@ TEST(isValid, lineString) {
     bool b = line.isValid();
     EXPECT_EQ(false, b);
   }
+  {
+    auto line = Geography::fromWKT("LINESTRING(1.0 1.0, 181.0 2.0)").value();
+    bool b = line.isValid();
+    EXPECT_EQ(false, b);
+  }
+  {
+    auto line = Geography::fromWKT("LINESTRING(1.0 1.0, 1.0 90.001)").value();
+    bool b = line.isValid();
+    EXPECT_EQ(false, b);
+  }
 }
 
 TEST(isValid, polygon) {
@@ -1153,6 +1163,17 @@ TEST(isValid, polygon) {
   //   bool b = polygon.isValid();
   //   EXPECT_EQ(false, b);  // Expect false, got true
   // }
+  {
+    auto polygon =
+        Geography::fromWKT("POLYGON((1.0 1.0, -180.0001 2.0, 0.0 2.0, 1.0 1.0))").value();
+    bool b = polygon.isValid();
+    EXPECT_EQ(false, b);
+  }
+  {
+    auto polygon = Geography::fromWKT("POLYGON((1.0 1.0, 2.0 2.0, 0.0 -90.001, 1.0 1.0))").value();
+    bool b = polygon.isValid();
+    EXPECT_EQ(false, b);
+  }
 }
 
 }  // namespace geo

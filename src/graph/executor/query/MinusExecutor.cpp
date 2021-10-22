@@ -8,8 +8,8 @@
 
 #include <unordered_set>
 
+#include "common/time/ScopedTimer.h"
 #include "graph/planner/plan/Query.h"
-#include "graph/util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {

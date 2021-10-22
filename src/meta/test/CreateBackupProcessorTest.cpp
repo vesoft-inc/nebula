@@ -106,21 +106,21 @@ TEST(ProcessorTest, CreateBackupTest) {
   properties.set_space_name("test_space");
   properties.set_partition_num(1);
   properties.set_replica_factor(1);
-  auto spaceVal = MetaServiceUtils::spaceVal(properties);
+  auto spaceVal = MetaKeyUtils::spaceVal(properties);
   std::vector<nebula::kvstore::KV> data;
-  data.emplace_back(MetaServiceUtils::indexSpaceKey("test_space"),
+  data.emplace_back(MetaKeyUtils::indexSpaceKey("test_space"),
                     std::string(reinterpret_cast<const char*>(&id), sizeof(GraphSpaceID)));
-  data.emplace_back(MetaServiceUtils::spaceKey(id), MetaServiceUtils::spaceVal(properties));
+  data.emplace_back(MetaKeyUtils::spaceKey(id), MetaKeyUtils::spaceVal(properties));
 
   cpp2::SpaceDesc properties2;
   GraphSpaceID id2 = 2;
   properties2.set_space_name("test_space2");
   properties2.set_partition_num(1);
   properties2.set_replica_factor(1);
-  spaceVal = MetaServiceUtils::spaceVal(properties2);
-  data.emplace_back(MetaServiceUtils::indexSpaceKey("test_space2"),
+  spaceVal = MetaKeyUtils::spaceVal(properties2);
+  data.emplace_back(MetaKeyUtils::indexSpaceKey("test_space2"),
                     std::string(reinterpret_cast<const char*>(&id), sizeof(GraphSpaceID)));
-  data.emplace_back(MetaServiceUtils::spaceKey(id2), MetaServiceUtils::spaceVal(properties2));
+  data.emplace_back(MetaKeyUtils::spaceKey(id2), MetaKeyUtils::spaceVal(properties2));
 
   std::string indexName = "test_space_index";
   int32_t tagIndex = 2;
@@ -134,9 +134,9 @@ TEST(ProcessorTest, CreateBackupTest) {
   schemaID.set_tag_id(tagID);
   item.set_schema_id(schemaID);
   item.set_schema_name(tagName);
-  data.emplace_back(MetaServiceUtils::indexIndexKey(id, indexName),
+  data.emplace_back(MetaKeyUtils::indexIndexKey(id, indexName),
                     std::string(reinterpret_cast<const char*>(&tagIndex), sizeof(IndexID)));
-  data.emplace_back(MetaServiceUtils::indexKey(id, tagIndex), MetaServiceUtils::indexVal(item));
+  data.emplace_back(MetaKeyUtils::indexKey(id, tagIndex), MetaKeyUtils::indexVal(item));
 
   std::vector<HostAddr> allHosts;
   allHosts.emplace_back(storageHost);
@@ -147,8 +147,8 @@ TEST(ProcessorTest, CreateBackupTest) {
     for (int32_t i = 0; i < 1; i++, idx++) {
       hosts2.emplace_back(allHosts[idx % 1]);
     }
-    data.emplace_back(MetaServiceUtils::partKey(id, partId), MetaServiceUtils::partVal(hosts2));
-    data.emplace_back(MetaServiceUtils::partKey(id2, partId), MetaServiceUtils::partVal(hosts2));
+    data.emplace_back(MetaKeyUtils::partKey(id, partId), MetaKeyUtils::partVal(hosts2));
+    data.emplace_back(MetaKeyUtils::partKey(id2, partId), MetaKeyUtils::partVal(hosts2));
   }
   folly::Baton<true, std::atomic> baton;
   kv->asyncMultiPut(0, 0, std::move(data), [&](nebula::cpp2::ErrorCode code) {

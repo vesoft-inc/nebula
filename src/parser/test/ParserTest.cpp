@@ -91,6 +91,27 @@ TEST_F(ParserTest, TestSchemaCreation) {
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
+  // Geo spatial
+  {
+    std::string query = "CREATE TAG any_shape(geo geography)";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "CREATE TAG any_shape(geo geography(point))";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "CREATE TAG any_shape(geo geography(linestring))";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "CREATE TAG any_shape(geo geography(polygon))";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
 }
 
 TEST_F(ParserTest, Go) {
@@ -1348,20 +1369,6 @@ TEST_F(ParserTest, Lookup) {
         " transfer.test";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query =
-        "LOOKUP ON transfer WHERE transfer.amount > 1000 YIELD transfer.amount,"
-        " transfer.test LIMIT 1";
-    auto result = parse(query);
-    EXPECT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query =
-        "LOOKUP ON transfer WHERE transfer.amount > 1000 YIELD transfer.amount,"
-        " transfer.test LIMIT -1";
-    auto result = parse(query);
-    EXPECT_FALSE(result.ok());
   }
 }
 
