@@ -81,7 +81,7 @@ StatusOr<TransformResult> GeoPredicateIndexScanBaseRule::transform(
          first->kind() == Expression::Kind::kEdgeProperty);
   DCHECK(second->kind() == Expression::Kind::kConstant);
   const auto& secondVal = static_cast<const ConstantExpression*>(second)->value();
-  DCHECK(secondVal.type() == Value::Type::GEOGRAPHY);
+  DCHECK(secondVal.isGeography());
   const auto& geog = secondVal.getGeography();
 
   // TODO(jie): Get index params from meta to construct RegionCoverParams
@@ -100,8 +100,8 @@ StatusOr<TransformResult> GeoPredicateIndexScanBaseRule::transform(
     auto* third = geoPredicate->args()->args()[2];
     DCHECK_EQ(third->kind(), Expression::Kind::kConstant);
     const auto& thirdVal = static_cast<const ConstantExpression*>(third)->value();
-    DCHECK_EQ(thirdVal.type(), Value::Type::FLOAT);
-    double distanceInMeters = thirdVal.getFloat();
+    DCHECK(thirdVal.isNumeric());
+    double distanceInMeters = thirdVal.isFloat() ? thirdVal.getFloat() : thirdVal.getInt();
     scanRanges = geoIndex.dWithin(geog, distanceInMeters);
   }
   std::vector<IndexQueryContext> idxCtxs;
