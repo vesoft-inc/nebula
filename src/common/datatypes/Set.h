@@ -26,6 +26,9 @@ struct Set {
   void __clear() { clear(); }
 
   std::string toString() const;
+  folly::dynamic toJson() const;
+  // Extract the metadata of each element
+  folly::dynamic getMetaData() const;
 
   Set& operator=(const Set& rhs) {
     if (this == &rhs) {
@@ -51,6 +54,13 @@ struct Set {
 };
 
 inline std::ostream& operator<<(std::ostream& os, const Set& s) { return os << s.toString(); }
-
 }  // namespace nebula
+
+namespace std {
+template <>
+struct hash<nebula::Set> {
+  std::size_t operator()(const nebula::Set& s) const noexcept;
+};
+
+}  // namespace std
 #endif  // COMMON_DATATYPES_SET_H_

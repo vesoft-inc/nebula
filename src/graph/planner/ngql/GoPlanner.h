@@ -12,7 +12,6 @@
 #include "graph/planner/Planner.h"
 #include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Query.h"
-#include "graph/util/ExpressionUtils.h"
 
 namespace nebula {
 namespace graph {
@@ -65,6 +64,28 @@ class GoPlanner final : public Planner {
 
   PlanNode* buildOneStepJoinPlan(PlanNode* gn);
 
+  template <typename T>
+  PlanNode* buildSampleLimitImpl(PlanNode* input, T sampleLimit);
+  // build step sample limit plan
+  PlanNode* buildSampleLimit(PlanNode* input, std::size_t currentStep) {
+    if (goCtx_->limits.empty()) {
+      // No sample/limit
+      return input;
+    }
+    return buildSampleLimitImpl(input, goCtx_->limits[currentStep - 1]);
+  }
+  // build step sample in loop
+  PlanNode* buildSampleLimit(PlanNode* input) {
+    if (goCtx_->limits.empty()) {
+      // No sample/limit
+      return input;
+    }
+    return buildSampleLimitImpl(input, stepSampleLimit());
+  }
+
+  // Get step sample/limit number
+  Expression* stepSampleLimit();
+
  private:
   GoPlanner() = default;
 
@@ -72,6 +93,8 @@ class GoPlanner final : public Planner {
 
   const int16_t VID_INDEX = 0;
   const int16_t LAST_COL_INDEX = -1;
+
+  std::string loopStepVar_;
 };
 }  // namespace graph
 }  // namespace nebula

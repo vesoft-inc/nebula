@@ -7,6 +7,9 @@
 #ifndef COMMON_GRAPH_RESPONSE_H
 #define COMMON_GRAPH_RESPONSE_H
 
+#include <folly/DynamicConverter.h>
+#include <folly/dynamic.h>
+
 #include <algorithm>
 #include <memory>
 #include <ostream>
@@ -173,6 +176,9 @@
   X(E_USER_CANCEL, -3052)                                                     \
   X(E_TASK_EXECUTION_FAILED, -3053)                                           \
                                                                               \
+  X(E_PLAN_IS_KILLED, -3060)                                                  \
+  X(E_CLIENT_SERVER_INCOMPATIBLE, -3061)                                      \
+                                                                              \
   X(E_UNKNOWN, -8000)
 
 namespace nebula {
@@ -183,10 +189,10 @@ enum class ErrorCode { ErrorCodeEnums };
 
 #undef X
 
-const char *errorCode(ErrorCode code);
+const char *getErrorCode(ErrorCode code);
 
 static inline std::ostream &operator<<(std::ostream &os, ErrorCode code) {
-  os << errorCode(code);
+  os << getErrorCode(code);
   return os;
 }
 
@@ -266,6 +272,16 @@ struct ProfilingStats {
   int64_t totalDurationInUs{0};
   // Other profiling stats data map
   std::unique_ptr<std::unordered_map<std::string, std::string>> otherStats;
+
+  folly::dynamic toJson() const {
+    folly::dynamic ProfilingStatsObj = folly::dynamic::object();
+    ProfilingStatsObj.insert("rows", rows);
+    ProfilingStatsObj.insert("execDurationInUs", execDurationInUs);
+    ProfilingStatsObj.insert("totalDurationInUs", totalDurationInUs);
+    ProfilingStatsObj.insert("otherStats", folly::toDynamic(*otherStats));
+
+    return ProfilingStatsObj;
+  }
 };
 
 // The info used for select/loop.
@@ -285,6 +301,14 @@ struct PlanNodeBranchInfo {
   bool isDoBranch{0};
   // select/loop node id
   int64_t conditionNodeId{-1};
+
+  folly::dynamic toJson() const {
+    folly::dynamic PlanNodeBranchInfoObj = folly::dynamic::object();
+    PlanNodeBranchInfoObj.insert("isDoBranch", isDoBranch);
+    PlanNodeBranchInfoObj.insert("conditionNodeId", conditionNodeId);
+
+    return PlanNodeBranchInfoObj;
+  }
 };
 
 struct Pair {
@@ -299,6 +323,11 @@ struct Pair {
 
   std::string key;
   std::string value;
+
+  folly::dynamic toJson() const {
+    folly::dynamic pairObj = folly::dynamic::object(key, value);
+    return pairObj;
+  }
 };
 
 struct PlanNodeDescription {
@@ -326,6 +355,32 @@ struct PlanNodeDescription {
   std::unique_ptr<std::vector<ProfilingStats>> profiles{nullptr};
   std::unique_ptr<PlanNodeBranchInfo> branchInfo{nullptr};
   std::unique_ptr<std::vector<int64_t>> dependencies{nullptr};
+
+  folly::dynamic toJson() const {
+    folly::dynamic planNodeDescObj = folly::dynamic::object();
+    planNodeDescObj.insert("name", name);
+    planNodeDescObj.insert("id", id);
+    planNodeDescObj.insert("outputVar", outputVar);
+
+    auto descriptionObj = folly::dynamic::array();
+    descriptionObj.resize(description->size());
+    std::transform(
+        description->begin(), description->end(), descriptionObj.begin(), [](const auto &ele) {
+          return ele.toJson();
+        });
+    planNodeDescObj.insert("description", descriptionObj);
+
+    auto profilesObj = folly::dynamic::array();
+    profilesObj.resize(profiles->size());
+    std::transform(profiles->begin(), profiles->end(), profilesObj.begin(), [](const auto &ele) {
+      return ele.toJson();
+    });
+    planNodeDescObj.insert("profiles", profilesObj);
+    planNodeDescObj.insert("branchInfo", branchInfo->toJson());
+    planNodeDescObj.insert("dependencies", folly::toDynamic(*dependencies));
+
+    return planNodeDescObj;
+  }
 };
 
 struct PlanDescription {
@@ -350,6 +405,29 @@ struct PlanDescription {
   std::string format;
   // the optimization spent time
   int32_t optimize_time_in_us{0};
+
+  folly::dynamic toJson() const {
+    folly::dynamic PlanDescObj = folly::dynamic::object();
+
+    auto planNodeDescsObj = folly::dynamic::array();
+    planNodeDescsObj.resize(planNodeDescs.size());
+    std::transform(planNodeDescs.begin(),
+                   planNodeDescs.end(),
+                   planNodeDescsObj.begin(),
+                   [](const PlanNodeDescription &ele) { return ele.toJson(); });
+    PlanDescObj.insert("planNodeDescs", planNodeDescsObj);
+    // nodeIndexMap uses int as the key of the map, but strict json format only accepts string as
+    // the key, so convert the int to string here.
+    folly::dynamic nodeIndexMapObj = folly::dynamic::object();
+    for (const auto &kv : nodeIndexMap) {
+      nodeIndexMapObj.insert(folly::to<std::string>(kv.first), kv.second);
+    }
+    PlanDescObj.insert("nodeIndexMap", nodeIndexMapObj);
+    PlanDescObj.insert("format", format);
+    PlanDescObj.insert("optimize_time_in_us", optimize_time_in_us);
+
+    return PlanDescObj;
+  }
 };
 
 struct ExecutionResponse {
@@ -397,6 +475,103 @@ struct ExecutionResponse {
   std::unique_ptr<std::string> errorMsg{nullptr};
   std::unique_ptr<PlanDescription> planDesc{nullptr};
   std::unique_ptr<std::string> comment{nullptr};
+
+  // Return the response as a JSON string
+  // only errorCode and latencyInUs are required fields, the rest are optional
+  // if the dataset contains a value of TIME or DATETIME, it will be returned in UTC.
+  //
+  // JSON struct:
+  // {
+  //   "results": [
+  //     {
+  //       "columns": [],
+  //       "data": [
+  //         {
+  //           "row": [
+  //             "row-data"
+  //           ],
+  //           "meta": [
+  //             "metadata"
+  //           ]
+  //         }
+  //       ],
+  //       "latencyInUs": 0,
+  //       "spaceName": "",
+  //       "planDesc ": {
+  //         "planNodeDescs": [
+  //           {
+  //             "name": "",
+  //             "id": 0,
+  //             "outputVar": "",
+  //             "description": {
+  //               "key": ""
+  //             },
+  //             "profiles": [
+  //               {
+  //                 "rows": 1,
+  //                 "execDurationInUs": 0,
+  //                 "totalDurationInUs": 0,
+  //                 "otherStats": {}
+  //               }
+  //             ],
+  //             "branchInfo": {
+  //               "isDoBranch": false,
+  //               "conditionNodeId": -1
+  //             },
+  //             "dependencies": []
+  //           }
+  //         ],
+  //         "nodeIndexMap": {},
+  //         "format": "",
+  //         "optimize_time_in_us": 0
+  //       },
+  //       "comment ": ""
+  //     }
+  //   ],
+  //   "errors": [
+  //     {
+  //       "code": 0,
+  //       "message": ""
+  //     }
+  //   ]
+  // }
+
+  folly::dynamic toJson() const {
+    folly::dynamic respJsonObj = folly::dynamic::object();
+    folly::dynamic resultBody = folly::dynamic::object();
+
+    // required fields
+    folly::dynamic errorsBody = folly::dynamic::object();
+    errorsBody.insert("code", static_cast<int>(errorCode));
+    resultBody.insert("latencyInUs", latencyInUs);
+
+    // optional fields
+    if (errorMsg) {
+      errorsBody.insert("message", *errorMsg);
+    }
+    resultBody.insert("errors", errorsBody);
+
+    if (data) {
+      resultBody.insert("columns", folly::toDynamic(data->keys()));
+      resultBody.insert("data", data->toJson());
+    }
+    if (spaceName) {
+      resultBody.insert("spaceName", *spaceName);
+    }
+    if (planDesc) {
+      resultBody.insert("planDesc", planDesc->toJson());
+    }
+    if (comment) {
+      resultBody.insert("comment", *comment);
+    }
+
+    auto resultArray = folly::dynamic::array();
+    resultArray.push_back(resultBody);
+    respJsonObj.insert("results", resultArray);
+    respJsonObj.insert("errors", folly::dynamic::array(errorsBody));
+
+    return respJsonObj;
+  }
 };
 
 }  // namespace nebula

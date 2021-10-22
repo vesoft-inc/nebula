@@ -10,6 +10,7 @@
 #include "codec/RowReader.h"
 #include "common/base/Base.h"
 #include "common/base/StatusOr.h"
+#include "common/geo/GeoIndex.h"
 #include "common/utils/Types.h"
 #include "interface/gen-cpp2/meta_types.h"
 
@@ -48,6 +49,8 @@ class IndexKeyUtils final {
         return Value::Type::TIME;
       case PropertyType::DATETIME:
         return Value::Type::DATETIME;
+      case PropertyType::GEOGRAPHY:
+        return Value::Type::GEOGRAPHY;
       case PropertyType::UNKNOWN:
         return Value::Type::__EMPTY__;
     }
@@ -83,6 +86,10 @@ class IndexKeyUtils final {
       }
       case Value::Type::DATETIME: {
         len = sizeof(int32_t) + sizeof(int16_t) + sizeof(int8_t) * 5;
+        break;
+      }
+      case Value::Type::GEOGRAPHY: {
+        len = sizeof(uint64_t);  // S2CellId
         break;
       }
       default:
@@ -131,6 +138,10 @@ class IndexKeyUtils final {
       case Value::Type::DATETIME: {
         return encodeDateTime(v.getDateTime());
       }
+      case Value::Type::GEOGRAPHY: {
+        LOG(FATAL) << "Should call encodeGeography separately";
+        return "";
+      }
       default:
         LOG(ERROR) << "Unsupported default value type";
     }
@@ -164,6 +175,14 @@ class IndexKeyUtils final {
     return val;
   }
 
+  static std::string encodeUint64(uint64_t v) {
+    auto val = folly::Endian::big(v);
+    std::string raw;
+    raw.reserve(sizeof(uint64_t));
+    raw.append(reinterpret_cast<const char*>(&val), sizeof(uint64_t));
+    return raw;
+  }
+
   static std::string encodeRank(EdgeRanking rank) { return IndexKeyUtils::encodeInt64(rank); }
 
   static EdgeRanking decodeRank(const folly::StringPiece& raw) {
@@ -184,9 +203,11 @@ class IndexKeyUtils final {
        *   TODO : now, the -(std::numeric_limits<double>::min())
        *   have a problem of precision overflow. current return value is -nan.
        */
-      auto i = *reinterpret_cast<const int64_t*>(&v);
+      auto* c1 = reinterpret_cast<const char*>(&v);
+      auto i = *reinterpret_cast<const int64_t*>(c1);
       i = -(std::numeric_limits<int64_t>::max() + i);
-      v = *reinterpret_cast<const double*>(&i);
+      auto* c2 = reinterpret_cast<const char*>(&i);
+      v = *reinterpret_cast<const double*>(c2);
     }
     auto val = folly::Endian::big(v);
     auto* c = reinterpret_cast<char*>(&val);
@@ -203,9 +224,11 @@ class IndexKeyUtils final {
     auto val = *reinterpret_cast<const double*>(v);
     val = folly::Endian::big(val);
     if (val < 0) {
-      auto i = *reinterpret_cast<const int64_t*>(&val);
+      auto* c1 = reinterpret_cast<const char*>(&val);
+      auto i = *reinterpret_cast<const int64_t*>(c1);
       i = -(std::numeric_limits<int64_t>::max() + i);
-      val = *reinterpret_cast<const double*>(&i);
+      auto* c2 = reinterpret_cast<const char*>(&i);
+      val = *reinterpret_cast<const double*>(c2);
     }
     return val;
   }
@@ -277,6 +300,19 @@ class IndexKeyUtils final {
     return buf;
   }
 
+  static std::vector<std::string> encodeGeography(const nebula::Geography& gg) {
+    // TODO(jie): Get index params from meta to construct RegionCoverParams
+    geo::RegionCoverParams rc;
+    // TODO(jie): Get schema meta to know if it's point only
+    geo::GeoIndex geoIndex(rc, false);
+    auto cellIds = geoIndex.indexCells(gg);
+    std::vector<std::string> bufs;
+    for (auto cellId : cellIds) {
+      bufs.emplace_back(encodeUint64(cellId));
+    }
+    return bufs;
+  }
+
   static nebula::DateTime decodeDateTime(const folly::StringPiece& raw) {
     int16_t year = *reinterpret_cast<const int16_t*>(raw.data());
     int8_t month = *reinterpret_cast<const int8_t*>(raw.data() + sizeof(int16_t));
@@ -331,6 +367,10 @@ class IndexKeyUtils final {
       case Value::Type::DATETIME: {
         v.setDateTime(decodeDateTime(raw));
         break;
+      }
+      case Value::Type::GEOGRAPHY: {
+        // unable to get geography value from index key
+        return Value::kNullBadData;
       }
       default:
         return Value(NullType::BAD_DATA);
@@ -396,6 +436,11 @@ class IndexKeyUtils final {
           len = sizeof(int32_t) + sizeof(int16_t) + sizeof(int8_t) * 5;
           break;
         }
+        case Value::Type::GEOGRAPHY: {
+          // NOTE: The data read from index key is S2CellId which type is uint64, not wkb
+          len = sizeof(uint64_t);
+          break;
+        }
         default:
           len = 0;
       }
@@ -449,30 +494,30 @@ class IndexKeyUtils final {
   /**
    * Generate vertex|edge index key for kv store
    **/
-  static std::string encodeValues(std::vector<Value>&& values,
-                                  const std::vector<nebula::meta::cpp2::ColumnDef>& cols);
+  static std::vector<std::string> encodeValues(
+      std::vector<Value>&& values, const std::vector<nebula::meta::cpp2::ColumnDef>& cols);
 
   /**
    * param valueTypes ： column type of each index column. If there are no
    *nullable columns in the index, the parameter can be empty.
    **/
-  static std::string vertexIndexKey(size_t vIdLen,
-                                    PartitionID partId,
-                                    IndexID indexId,
-                                    const VertexID& vId,
-                                    std::string&& values);
+  static std::vector<std::string> vertexIndexKeys(size_t vIdLen,
+                                                  PartitionID partId,
+                                                  IndexID indexId,
+                                                  const VertexID& vId,
+                                                  std::vector<std::string>&& values);
 
   /**
    * param valueTypes ： column type of each index column. If there are no
    *nullable columns in the index, the parameter can be empty.
    **/
-  static std::string edgeIndexKey(size_t vIdLen,
-                                  PartitionID partId,
-                                  IndexID indexId,
-                                  const VertexID& srcId,
-                                  EdgeRanking rank,
-                                  const VertexID& dstId,
-                                  std::string&& values);
+  static std::vector<std::string> edgeIndexKeys(size_t vIdLen,
+                                                PartitionID partId,
+                                                IndexID indexId,
+                                                const VertexID& srcId,
+                                                EdgeRanking rank,
+                                                const VertexID& dstId,
+                                                std::vector<std::string>&& values);
 
   static std::string indexPrefix(PartitionID partId, IndexID indexId);
 
@@ -482,7 +527,7 @@ class IndexKeyUtils final {
 
   static Value parseIndexTTL(const folly::StringPiece& raw);
 
-  static StatusOr<std::string> collectIndexValues(
+  static StatusOr<std::vector<std::string>> collectIndexValues(
       RowReader* reader, const std::vector<nebula::meta::cpp2::ColumnDef>& cols);
 
  private:

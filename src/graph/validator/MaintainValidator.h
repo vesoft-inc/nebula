@@ -8,50 +8,34 @@
 #define GRAPH_VALIDATOR_MAINTAINVALIDATOR_H_
 
 #include "clients/meta/MetaClient.h"
+#include "graph/context/ast/QueryAstContext.h"
 #include "graph/validator/Validator.h"
 #include "parser/AdminSentences.h"
-#include "parser/MaintainSentences.h"
 
 namespace nebula {
 namespace graph {
-class SchemaValidator : public Validator {
+class CreateTagValidator final : public Validator {
  public:
-  SchemaValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {}
+  CreateTagValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {}
 
- protected:
-  Status validateColumns(const std::vector<ColumnSpecification*>& columnSpecs,
-                         meta::cpp2::Schema& schema);
-
- protected:
-  std::string name_;
-};
-
-class CreateTagValidator final : public SchemaValidator {
- public:
-  CreateTagValidator(Sentence* sentence, QueryContext* context)
-      : SchemaValidator(sentence, context) {}
+  AstContext* getAstContext() override { return createCtx_.get(); }
 
  private:
   Status validateImpl() override;
-  Status toPlan() override;
 
- private:
-  meta::cpp2::Schema schema_;
-  bool ifNotExist_;
+  std::unique_ptr<CreateSchemaContext> createCtx_;
 };
 
-class CreateEdgeValidator final : public SchemaValidator {
+class CreateEdgeValidator final : public Validator {
  public:
-  CreateEdgeValidator(Sentence* sentence, QueryContext* context)
-      : SchemaValidator(sentence, context) {}
+  CreateEdgeValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {}
+
+  AstContext* getAstContext() override { return createCtx_.get(); }
 
  private:
   Status validateImpl() override;
-  Status toPlan() override;
 
- private:
-  meta::cpp2::Schema schema_;
-  bool ifNotExist_;
+  std::unique_ptr<CreateSchemaContext> createCtx_;
 };
 
 class DescTagValidator final : public Validator {
@@ -96,39 +80,28 @@ class ShowCreateEdgeValidator final : public Validator {
   Status toPlan() override;
 };
 
-class AlterValidator : public SchemaValidator {
+class AlterTagValidator final : public Validator {
  public:
-  AlterValidator(Sentence* sentence, QueryContext* context) : SchemaValidator(sentence, context) {}
+  AlterTagValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {}
 
- protected:
-  Status alterSchema(const std::vector<AlterSchemaOptItem*>& schemaOpts,
-                     const std::vector<SchemaPropItem*>& schemaProps);
-
- protected:
-  std::vector<meta::cpp2::AlterSchemaItem> schemaItems_;
-  meta::cpp2::SchemaProp schemaProp_;
-};
-
-class AlterTagValidator final : public AlterValidator {
- public:
-  AlterTagValidator(Sentence* sentence, QueryContext* context)
-      : AlterValidator(sentence, context) {}
+  AstContext* getAstContext() override { return alterCtx_.get(); }
 
  private:
   Status validateImpl() override;
 
-  Status toPlan() override;
+  std::unique_ptr<AlterSchemaContext> alterCtx_;
 };
 
-class AlterEdgeValidator final : public AlterValidator {
+class AlterEdgeValidator final : public Validator {
  public:
-  AlterEdgeValidator(Sentence* sentence, QueryContext* context)
-      : AlterValidator(sentence, context) {}
+  AlterEdgeValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {}
+
+  AstContext* getAstContext() override { return alterCtx_.get(); }
 
  private:
   Status validateImpl() override;
 
-  Status toPlan() override;
+  std::unique_ptr<AlterSchemaContext> alterCtx_;
 };
 
 class ShowTagsValidator final : public Validator {

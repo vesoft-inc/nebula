@@ -173,19 +173,19 @@ TEST_F(GetSubgraphValidatorTest, invalidYield) {
     std::string query = "GET SUBGRAPH WITH PROP FROM \"Tim Duncan\" YIELD vertices";
     auto result = checkResult(query);
     EXPECT_EQ(std::string(result.message()),
-              "SyntaxError: please add alias when using vertices. near `vertices'");
+              "SyntaxError: please add alias when using `vertices'. near `vertices'");
   }
   {
     std::string query = "GET SUBGRAPH WITH PROP FROM \"Tim Duncan\" YIELD vertices as a, edge";
     auto result = checkResult(query);
     EXPECT_EQ(std::string(result.message()),
-              "SyntaxError: please add alias when using edge. near `edge'");
+              "SyntaxError: please add alias when using `edge'. near `edge'");
   }
   {
     std::string query = "GET SUBGRAPH WITH PROP FROM \"Tim Duncan\" YIELD vertices as a, edges";
     auto result = checkResult(query);
     EXPECT_EQ(std::string(result.message()),
-              "SyntaxError: please add alias when using edges. near `edges'");
+              "SyntaxError: please add alias when using `edges'. near `edges'");
   }
   {
     std::string query = "GET SUBGRAPH WITH PROP FROM \"Tim Duncan\" YIELD path";

@@ -6,9 +6,7 @@
 
 #include "graph/validator/IngestValidator.h"
 
-#include "common/base/Base.h"
 #include "graph/planner/plan/Admin.h"
-#include "parser/MutateSentences.h"
 
 namespace nebula {
 namespace graph {

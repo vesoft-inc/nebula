@@ -158,6 +158,23 @@ bool SchemaUtil::checkType(std::vector<cpp2::ColumnDef>& columns) {
             return false;
           }
           break;
+        case cpp2::PropertyType::GEOGRAPHY: {
+          if (!value.isGeography()) {  // TODO(jie)
+            LOG(ERROR) << "Invalid default value for ` " << name << "', value type is "
+                       << value.type();
+            return false;
+          }
+          meta::cpp2::GeoShape columnGeoShape =
+              column.get_type().geo_shape_ref().value_or(meta::cpp2::GeoShape::ANY);
+          GeoShape defaultExprGeoShape = value.getGeography().shape();
+          if (columnGeoShape != meta::cpp2::GeoShape::ANY &&
+              folly::to<uint32_t>(columnGeoShape) != folly::to<uint32_t>(defaultExprGeoShape)) {
+            LOG(ERROR) << "Invalid default value for ` " << name << "', value type is "
+                       << value.type() << ", geo shape is " << defaultExprGeoShape;
+            return false;
+          }
+          break;
+        }
         default:
           LOG(ERROR) << "Unsupported type";
           return false;

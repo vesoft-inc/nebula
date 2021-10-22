@@ -374,6 +374,9 @@ std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
     }
   }
   raftService_->addPartition(part);
+  for (auto& func : onNewPartAdded_) {
+    func.second(part);
+  }
   part->start(std::move(peers), asLearner);
   diskMan_->addPartToPath(spaceId, partId, engine->getDataRoot());
   return part;
@@ -1166,6 +1169,40 @@ nebula::cpp2::ErrorCode NebulaStore::multiPutWithoutReplicator(GraphSpaceID spac
   }
 
   return nebula::cpp2::ErrorCode::SUCCEEDED;
+}
+
+ErrorOr<nebula::cpp2::ErrorCode, std::string> NebulaStore::getProperty(
+    GraphSpaceID spaceId, const std::string& property) {
+  auto spaceRet = space(spaceId);
+  if (!ok(spaceRet)) {
+    LOG(ERROR) << "Get Space " << spaceId << " Failed";
+    return error(spaceRet);
+  }
+  auto space = nebula::value(spaceRet);
+
+  folly::dynamic obj = folly::dynamic::object;
+  for (size_t i = 0; i < space->engines_.size(); i++) {
+    auto val = space->engines_[i]->getProperty(property);
+    if (!ok(val)) {
+      return error(val);
+    }
+    auto eng = folly::stringPrintf("Engine %zu", i);
+    obj[eng] = std::move(value(val));
+  }
+  return folly::toJson(obj);
+}
+
+void NebulaStore::registerOnNewPartAdded(
+    const std::string& funcName,
+    std::function<void(std::shared_ptr<Part>&)> func,
+    std::vector<std::pair<GraphSpaceID, PartitionID>>& existParts) {
+  for (auto& item : spaces_) {
+    for (auto& partItem : item.second->parts_) {
+      existParts.emplace_back(std::make_pair(item.first, partItem.first));
+      func(partItem.second);
+    }
+  }
+  onNewPartAdded_.insert(std::make_pair(funcName, func));
 }
 
 }  // namespace kvstore

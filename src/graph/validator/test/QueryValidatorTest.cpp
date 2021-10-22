@@ -918,8 +918,7 @@ TEST_F(QueryValidatorTest, GoInvalid) {
     std::string query = "GO FROM \"2\" OVER like YIELD COUNT(123);";
     auto result = checkResult(query);
     EXPECT_EQ(std::string(result.message()),
-              "SemanticError: `COUNT(123)', "
-              "not support aggregate function in go sentence.");
+              "SemanticError: `COUNT(123)' is not support in go sentence.");
   }
   {
     std::string query =
@@ -949,6 +948,47 @@ TEST_F(QueryValidatorTest, GoInvalid) {
         "GO FROM $a.DST OVER like";
     auto result = checkResult(query);
     EXPECT_EQ(std::string(result.message()), "SemanticError: Duplicate Column Name : `id'");
+  }
+  {
+    std::string query = "GO FROM id(vertex) OVER * ";
+    auto result = checkResult(query);
+    EXPECT_EQ(std::string(result.message()),
+              "SemanticError: `id(VERTEX)' is not an evaluable expression.");
+  }
+  {
+    std::string query = "GO FROM \"Tim\" OVER * YIELD vertex as v";
+    auto result = checkResult(query);
+    EXPECT_EQ(std::string(result.message()),
+              "SemanticError: `VERTEX AS v' is not support in go sentence.");
+  }
+  {
+    std::string query = "GO FROM \"Tim\" OVER * YIELD path as p";
+    auto result = checkResult(query);
+    EXPECT_EQ(std::string(result.message()), "SemanticError: Invalid label identifiers: path");
+  }
+  {
+    std::string query = "GO FROM \"Tim\" OVER * YIELD $$";
+    auto result = checkResult(query);
+    EXPECT_EQ(std::string(result.message()),
+              "SyntaxError: please add alias when using `$$'. near `$$'");
+  }
+  {
+    std::string query = "GO FROM \"Tim\" OVER * YIELD $^";
+    auto result = checkResult(query);
+    EXPECT_EQ(std::string(result.message()),
+              "SyntaxError: please add alias when using `$^'. near `$^'");
+  }
+  {
+    std::string query = "GO 1 TO 4 STEPS FROM \"Tim\" OVER * YIELD id(vertex) as id";
+    auto result = checkResult(query);
+    EXPECT_EQ(std::string(result.message()),
+              "SemanticError: `id(VERTEX) AS id' is not support in go sentence.");
+  }
+  {
+    std::string query = "GO 2 STEPS FROM \"Tim\" OVER * YIELD vertex as v";
+    auto result = checkResult(query);
+    EXPECT_EQ(std::string(result.message()),
+              "SemanticError: `VERTEX AS v' is not support in go sentence.");
   }
 }
 

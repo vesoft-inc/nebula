@@ -269,6 +269,8 @@ class NebulaKeyUtils final {
     LOG(FATAL) << msg.str();
   }
 
+  static std::string adminTaskKey(int32_t seqId, JobID jobId, TaskID taskId);
+
   static_assert(sizeof(NebulaKeyType) == sizeof(PartitionID));
 
  private:

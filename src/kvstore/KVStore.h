@@ -216,6 +216,9 @@ class KVStore {
 
   virtual std::vector<std::string> getDataRoot() const = 0;
 
+  virtual ErrorOr<nebula::cpp2::ErrorCode, std::string> getProperty(
+      GraphSpaceID spaceId, const std::string& property) = 0;
+
  protected:
   KVStore() = default;
 };

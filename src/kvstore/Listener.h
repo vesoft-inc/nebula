@@ -134,6 +134,8 @@ class Listener : public raftex::RaftPart {
 
   void onElected(TermID) override { LOG(FATAL) << "Should not reach here"; }
 
+  void onLeaderReady(TermID) override { LOG(FATAL) << "Should not reach here"; }
+
   void onDiscoverNewLeader(HostAddr nLeader) override {
     LOG(INFO) << idStr_ << "Find the new leader " << nLeader;
   }

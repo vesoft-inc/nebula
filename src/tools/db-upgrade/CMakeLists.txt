@@ -23,6 +23,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:disk_man_obj>
         $<TARGET_OBJECTS:codec_obj>
         $<TARGET_OBJECTS:keyutils_obj>
+        $<TARGET_OBJECTS:meta_keyutils_obj>
         $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:storage_thrift_obj>
@@ -46,11 +47,14 @@ nebula_add_executable(
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:expression_obj>
         $<TARGET_OBJECTS:function_manager_obj>
+        $<TARGET_OBJECTS:wkt_wkb_io_obj>
         $<TARGET_OBJECTS:agg_function_manager_obj>
         $<TARGET_OBJECTS:time_utils_obj>
         $<TARGET_OBJECTS:encryption_obj>
         $<TARGET_OBJECTS:ft_es_storage_adapter_obj>
         $<TARGET_OBJECTS:version_obj>
+        $<TARGET_OBJECTS:ssl_obj>
+        $<TARGET_OBJECTS:geo_index_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}

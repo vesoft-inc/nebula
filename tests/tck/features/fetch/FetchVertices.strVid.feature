@@ -213,8 +213,8 @@ Feature: Fetch String Vertices
       | "Tim Duncan"  | "Tim Duncan"  | 42         |
     When executing query:
       """
-      GO FROM 'Boris Diaw' over like YIELD like._dst as id
-      | FETCH PROP ON player, bachelor $-.id YIELD player.name, player.age, bachelor.name, bachelor.speciality
+      GO FROM 'Boris Diaw' over like YIELD like._dst as id |
+      FETCH PROP ON player, bachelor $-.id YIELD player.name, player.age, bachelor.name, bachelor.speciality
       """
     Then the result should be, in any order:
       | VertexID      | player.name   | player.age | bachelor.name | bachelor.speciality |
@@ -223,8 +223,8 @@ Feature: Fetch String Vertices
     # Fetch prop on multi tags of vertices from pipe
     When executing query:
       """
-      GO FROM "Boris Diaw" over like YIELD like._dst as id
-      | FETCH PROP ON player, team, bachelor $-.id YIELD player.name, player.age, team.name, bachelor.name, bachelor.speciality
+      GO FROM "Boris Diaw" over like YIELD like._dst as id |
+      FETCH PROP ON player, team, bachelor $-.id YIELD player.name, player.age, team.name, bachelor.name, bachelor.speciality
       """
     Then the result should be, in any order:
       | VertexID      | player.name   | player.age | team.name | bachelor.name | bachelor.speciality |
@@ -232,8 +232,8 @@ Feature: Fetch String Vertices
       | "Tony Parker" | "Tony Parker" | 36         | EMPTY     | EMPTY         | EMPTY               |
     When executing query:
       """
-      GO FROM 'Boris Diaw' over like YIELD like._dst as id
-      | FETCH PROP ON player, bachelor $-.id YIELD player.name, player.age, bachelor.name, bachelor.speciality
+      GO FROM 'Boris Diaw' over like YIELD like._dst as id |
+      FETCH PROP ON player, bachelor $-.id YIELD player.name, player.age, bachelor.name, bachelor.speciality
       """
     Then the result should be, in any order:
       | VertexID      | player.name   | player.age | bachelor.name | bachelor.speciality |
@@ -248,8 +248,9 @@ Feature: Fetch String Vertices
       | VertexID | player.name |
     When executing query:
       """
-      GO FROM 'NON EXIST VERTEX ID' over serve YIELD serve._dst as id, serve.start_year as start
-      | YIELD $-.id as id WHERE $-.start > 20000 | FETCH PROP ON player $-.id yield player.name
+      GO FROM 'NON EXIST VERTEX ID' over serve YIELD serve._dst as id, serve.start_year as start |
+      YIELD $-.id as id WHERE $-.start > 20000 |
+      FETCH PROP ON player $-.id yield player.name
       """
     Then the result should be, in any order:
       | VertexID | player.name |
@@ -263,8 +264,8 @@ Feature: Fetch String Vertices
       | "Tim Duncan" | "Tim Duncan" | 42         | "Tim Duncan"  | "psychology"        |
     When executing query:
       """
-      GO FROM "Boris Diaw" over like YIELD like._dst as id
-      | FETCH PROP ON * $-.id YIELD player.name, player.age, team.name, bachelor.name, bachelor.speciality
+      GO FROM "Boris Diaw" over like YIELD like._dst as id |
+      FETCH PROP ON * $-.id YIELD player.name, player.age, team.name, bachelor.name, bachelor.speciality
       """
     Then the result should be, in any order:
       | VertexID      | player.name   | player.age | team.name | bachelor.name | bachelor.speciality |
@@ -355,8 +356,8 @@ Feature: Fetch String Vertices
       | "Tracy McGrady"   |
     When executing query:
       """
-      FETCH PROP ON player 'Tony Parker' YIELD player.name as Name
-      | GO FROM $-.Name OVER like
+      FETCH PROP ON player 'Tony Parker' YIELD player.name as Name |
+      GO FROM $-.Name OVER like
       """
     Then the result should be, in any order:
       | like._dst           |
@@ -365,8 +366,8 @@ Feature: Fetch String Vertices
       | "Tim Duncan"        |
     When executing query:
       """
-      FETCH PROP ON player 'Tony Parker' YIELD player.name as Name
-      | GO FROM $-.VertexID OVER like
+      FETCH PROP ON player 'Tony Parker' YIELD player.name as Name |
+      GO FROM $-.VertexID OVER like
       """
     Then the result should be, in any order:
       | like._dst           |
@@ -375,6 +376,21 @@ Feature: Fetch String Vertices
       | "Tim Duncan"        |
 
   Scenario: Typical errors
+    When executing query:
+      """
+      FETCH PROP ON player 'Boris Diaw' YIELD vertex
+      """
+    Then a SyntaxError should be raised at runtime: please add alias when using `vertex'. near `vertex'
+    When executing query:
+      """
+      FETCH PROP ON player 'Boris Diaw' YIELD edge as a
+      """
+    Then a SemanticError should be raised at runtime: illegal yield clauses `EDGE AS a'
+    When executing query:
+      """
+      FETCH PROP ON player 'Boris Diaw' YIELD src(edge)
+      """
+    Then a SemanticError should be raised at runtime: illegal yield clauses `src(EDGE)'
     # Fetch Vertices not support get src property
     When executing query:
       """
@@ -444,3 +460,70 @@ Feature: Fetch String Vertices
       GO FROM 'NON EXIST VERTEX ID' OVER serve | FETCH PROP ON team $-
       """
     Then a SyntaxError should be raised at runtime:
+
+  Scenario: format yield
+    When executing query:
+      """
+      FETCH PROP ON * 'Boris Diaw' YIELD id(vertex)
+      """
+    Then the result should be, in any order:
+      | VertexID     | id(VERTEX)   |
+      | "Boris Diaw" | "Boris Diaw" |
+    When executing query:
+      """
+      FETCH PROP ON * 'Boris Diaw' YIELD id(vertex), player.age
+      """
+    Then the result should be, in any order:
+      | VertexID     | id(VERTEX)   | player.age |
+      | "Boris Diaw" | "Boris Diaw" | 36         |
+    When executing query:
+      """
+      FETCH PROP ON * 'Boris Diaw' YIELD id(vertex), player.age, vertex as node
+      """
+    Then the result should be, in any order:
+      | VertexID     | id(VERTEX)   | player.age | node                                             |
+      | "Boris Diaw" | "Boris Diaw" | 36         | ("Boris Diaw":player{name:"Boris Diaw", age:36}) |
+    When executing query:
+      """
+      FETCH PROP ON * 'Boris Diaw' YIELD vertex as node
+      """
+    Then the result should be, in any order:
+      | VertexID     | node                                             |
+      | "Boris Diaw" | ("Boris Diaw":player{name:"Boris Diaw", age:36}) |
+    When executing query:
+      """
+      FETCH PROP ON * "Tim Duncan" YIELD player.name, player.age, team.name, bachelor.name, bachelor.speciality, vertex as node
+      """
+    Then the result should be, in any order:
+      | VertexID     | player.name  | player.age | team.name | bachelor.name | bachelor.speciality | node                                                                                                        |
+      | "Tim Duncan" | "Tim Duncan" | 42         | EMPTY     | "Tim Duncan"  | "psychology"        | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+    When executing query:
+      """
+      GO FROM "Tim Duncan" OVER like YIELD like._dst as id |
+      FETCH PROP ON * $-.id YIELD vertex as node
+      """
+    Then the result should be, in any order:
+      | VertexID        | node                                                      |
+      | "Manu Ginobili" | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"}) |
+      | "Tony Parker"   | ("Tony Parker" :player{age: 36, name: "Tony Parker"})     |
+    When executing query:
+      """
+      FETCH PROP ON * 'NON EXIST VERTEX ID', 'Boris Diaw' yield player.name, id(vertex)
+      """
+    Then the result should be, in any order:
+      | VertexID     | player.name  | id(VERTEX)   |
+      | "Boris Diaw" | "Boris Diaw" | "Boris Diaw" |
+    When executing query:
+      """
+      FETCH PROP ON player 'Tim Duncan' YIELD  id(vertex), properties(vertex).name as name, properties(vertex)
+      """
+    Then the result should be, in any order:
+      | VertexID     | id(VERTEX)   | name         | properties(VERTEX)            |
+      | "Tim Duncan" | "Tim Duncan" | "Tim Duncan" | {age: 42, name: "Tim Duncan"} |
+    When executing query:
+      """
+      FETCH PROP ON * 'Tim Duncan' YIELD  id(vertex), keys(vertex) as keys, tags(vertex) as tagss, properties(vertex) as props
+      """
+    Then the result should be, in any order:
+      | VertexID     | id(VERTEX)   | keys                          | tagss                  | props                                                   |
+      | "Tim Duncan" | "Tim Duncan" | ["age", "name", "speciality"] | ["bachelor", "player"] | {age: 42, name: "Tim Duncan", speciality: "psychology"} |

@@ -91,7 +91,8 @@ void NebulaSchemaProvider::addField(folly::StringPiece name,
                                     cpp2::PropertyType type,
                                     size_t fixedStrLen,
                                     bool nullable,
-                                    Expression* defaultValue) {
+                                    Expression* defaultValue,
+                                    cpp2::GeoShape geoShape) {
   size_t size = fieldSize(type, fixedStrLen);
 
   size_t offset = 0;
@@ -112,7 +113,8 @@ void NebulaSchemaProvider::addField(folly::StringPiece name,
                        defaultValue,
                        size,
                        offset,
-                       nullFlagPos);
+                       nullFlagPos,
+                       geoShape);
   fieldNameIndex_.emplace(name.toString(), static_cast<int64_t>(fields_.size() - 1));
 }
 
@@ -160,6 +162,8 @@ std::size_t NebulaSchemaProvider::fieldSize(cpp2::PropertyType type, std::size_t
              sizeof(int8_t) +   // minute
              sizeof(int8_t) +   // sec
              sizeof(int32_t);   // microsec
+    case cpp2::PropertyType::GEOGRAPHY:
+      return 8;  // as same as STRING
     case cpp2::PropertyType::UNKNOWN:
       break;
   }

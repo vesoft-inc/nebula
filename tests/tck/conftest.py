@@ -32,12 +32,16 @@ from tests.common.utils import (
 from tests.tck.utils.table import dataset, table
 from tests.tck.utils.nbv import murmurhash2
 
+from nebula2.graph.ttypes import VerifyClientVersionReq
+from nebula2.graph.ttypes import VerifyClientVersionResp
+
 parse = functools.partial(parsers.parse)
 rparse = functools.partial(parsers.re)
 example_pattern = re.compile(r"<(\w+)>")
 
 register_dict = {}
 register_lock = threading.Lock()
+
 
 def normalize_outline_scenario(request, name):
     for group in example_pattern.findall(name):
@@ -167,6 +171,7 @@ def new_space(request, options, session, graph_spaces):
     graph_spaces["space_desc"] = space_desc
     graph_spaces["drop_space"] = True
 
+
 @given(parse("Any graph"))
 def new_space(request, session, graph_spaces):
     name = "EmptyGraph_" + space_generator()
@@ -181,6 +186,7 @@ def new_space(request, session, graph_spaces):
     create_space(space_desc, session)
     graph_spaces["space_desc"] = space_desc
     graph_spaces["drop_space"] = True
+
 
 @given(parse('load "{data}" csv data to a new space'))
 def import_csv_data(request, data, graph_spaces, session, pytestconfig):
@@ -221,6 +227,18 @@ def try_to_execute_query(query, graph_spaces, session, request):
     for stmt in ngql.split(';'):
         exec_query(request, stmt, session, graph_spaces, True)
 
+@when(parse("clone a new space according to current space"))
+def clone_space(graph_spaces, session, request):
+    space_desc = graph_spaces["space_desc"]
+    current_space = space_desc._name
+    new_space = "EmptyGraph_" + space_generator()
+    space_desc._name = new_space
+    resp_ok(session, space_desc.drop_stmt(), True)
+    ngql = "create space " + new_space + " as " + current_space;
+    exec_query(request, ngql, session, graph_spaces)
+    resp_ok(session, space_desc.use_stmt(), True)
+    graph_spaces["space_desc"] = space_desc
+    graph_spaces["drop_space"] = True
 
 @given("wait all indexes ready")
 @when("wait all indexes ready")
@@ -477,6 +495,7 @@ def check_plan(plan, graph_spaces):
     differ = PlanDiffer(resp.plan_desc(), expect)
     assert differ.diff(), differ.err_msg()
 
+
 @when(parse("executing query via graph {index:d}:\n{query}"))
 def executing_query(query, index, graph_spaces, session_from_first_conn_pool, session_from_second_conn_pool, request):
     assert index < 2, "There exists only 0,1 graph: {}".format(index)
@@ -486,11 +505,13 @@ def executing_query(query, index, graph_spaces, session_from_first_conn_pool, se
     else:
         exec_query(request, ngql, session_from_second_conn_pool, graph_spaces)
 
+
 @then(parse("the result should be, the first {n:d} records in order, and register {column_name} as a list named {key}:\n{result}"))
 def result_should_be_in_order_and_register_key(n, column_name, key, request, result, graph_spaces):
     assert n > 0, f"The records number should be an positive integer: {n}"
     result_ds = cmp_dataset(request, graph_spaces, result, order=True, strict=True, contains=CmpType.CONTAINS, first_n_records=n)
     register_result_key(request.node.name, result_ds, column_name, key)
+
 
 def register_result_key(test_name, result_ds, column_name, key):
     if column_name.encode() not in result_ds.column_names:
@@ -500,6 +521,7 @@ def register_result_key(test_name, result_ds, column_name, key):
     register_lock.acquire()
     register_dict[test_name + key] = val;
     register_lock.release()
+
 
 @when(parse("executing query, fill replace holders with element index of {indices} in {keys}:\n{query}"))
 def executing_query_with_params(query, indices, keys, graph_spaces, session, request):
@@ -513,3 +535,31 @@ def executing_query_with_params(query, indices, keys, graph_spaces, session, req
     register_lock.release()
     ngql = combine_query(query).format(*vals)
     exec_query(request, ngql, session, graph_spaces)
+
+@given(parse("nothing"))
+def nothing():
+    pass
+
+@when(parse("connecting the servers with a compatible client version"))
+def connecting_servers_with_a_compatible_client_version(establish_a_rare_connection, graph_spaces):
+    conn = establish_a_rare_connection
+    graph_spaces["resp"] = conn.verifyClientVersion(VerifyClientVersionReq())
+    conn._iprot.trans.close()
+
+@then(parse("the connection should be established"))
+def check_client_compatible(graph_spaces):
+    resp = graph_spaces["resp"]
+    assert resp.error_code == ErrorCode.SUCCEEDED, f'The client was rejected by server: {resp}'
+
+@when(parse("connecting the servers with a client version of {version}"))
+def connecting_servers_with_a_compatible_client_version(version, establish_a_rare_connection, graph_spaces):
+    conn = establish_a_rare_connection
+    req = VerifyClientVersionReq()
+    req.version = version
+    graph_spaces["resp"] = conn.verifyClientVersion(req)
+    conn._iprot.trans.close()
+
+@then(parse("the connection should be rejected"))
+def check_client_compatible(graph_spaces):
+    resp = graph_spaces["resp"]
+    assert resp.error_code == ErrorCode.E_CLIENT_SERVER_INCOMPATIBLE, f'The client was not rejected by server: {resp}'

@@ -52,11 +52,11 @@ jobs:
         exclude:
           - os: centos7
             compiler: clang-10
+    env:
+      CCACHE_DIR: /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
+      CCACHE_MAXSIZE: 8G
     container:
       image: vesoft/nebula-dev:${{ matrix.os }}
-      env:
-        CCACHE_DIR: /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
-        CCACHE_MAXSIZE: 8G
       volumes:
         - /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}:/tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
       options: --cap-add=SYS_PTRACE
@@ -94,9 +94,10 @@ jobs:
                   -DCMAKE_C_COMPILER=$TOOLSET_CLANG_DIR/bin/gcc \
                   -DCMAKE_BUILD_TYPE=Debug \
                   -DENABLE_TESTING=on \
+                  -DENABLE_COVERAGE=on \
                   -B build
               echo "::set-output name=j::10"
-              echo "::set-output name=t::10"
+              echo "::set-output name=t::6"
               ;;
             esac
             ;;
@@ -109,13 +110,14 @@ jobs:
                 -DENABLE_ASAN=on \
                 -DENABLE_TESTING=on \
                 -B build
-              echo "::set-output name=j::6"
-              echo "::set-output name=t::10"
+            echo "::set-output name=j::6"
+            echo "::set-output name=t::10"
             ;;
           esac
       - name: Make
         run: |
           ccache -z
+          cmake --build build/ -j $(nproc) --target nebula-metad nebula-storaged nebula-graphd
           cmake --build build/ -j ${{ steps.cmake.outputs.t }}
           ccache -s
       - name: CTest
@@ -126,7 +128,24 @@ jobs:
         timeout-minutes: 20
       - name: Setup cluster
         run: |
-          make up
+          case ${{ matrix.compiler }} in
+          gcc-*)
+            case ${{ matrix.os }} in
+            centos7)
+              # normal cluster
+              make CONTAINERIZED=true up
+              ;;
+            ubuntu2004)
+              # ssl cluster
+              make CONTAINERIZED=true ENABLE_SSL=true CA_SIGNED=true up
+              ;;
+            esac
+            ;;
+          clang-*)
+            # graph ssl only cluster
+            make CONTAINERIZED=true ENABLE_SSL=false ENABLE_GRAPH_SSL=true up
+            ;;
+          esac
         working-directory: tests/
         timeout-minutes: 2
       - name: Pytest
@@ -144,6 +163,15 @@ jobs:
           make RM_DIR=false down
         working-directory: tests/
         timeout-minutes: 2
+      - name: coverage
+        if: ${{ matrix.compiler == 'gcc-9.2' && matrix.os == 'ubuntu2004' }}
+        run: |
+            ~/.local/bin/fastcov -d build -l -o fastcov.info -p --exclude /usr/include --exclude=/opt/vesoft --exclude scanner.lex
+      - uses: codecov/codecov-action@v2
+        if: ${{ matrix.compiler == 'gcc-9.2' && matrix.os == 'ubuntu2004' }}
+        with:
+          files: fastcov.info
+          fail_ci_if_error: false
       - name: Sanitizer
         if: ${{ always() }}
         run: |

@@ -7,9 +7,6 @@
 #ifndef GRAPH_PLANNER_NGQL_LOOKUPPLANNER_H_
 #define GRAPH_PLANNER_NGQL_LOOKUPPLANNER_H_
 
-#include <memory>
-#include <string>
-
 #include "graph/planner/Planner.h"
 
 namespace nebula {
@@ -28,15 +25,6 @@ class LookupPlanner final : public Planner {
   static bool match(AstContext* astCtx);
 
   StatusOr<SubPlan> transform(AstContext* astCtx) override;
-
- private:
-  YieldColumns* prepareReturnCols(LookupContext* lookupCtx);
-  void appendColumns(LookupContext* lookupCtx, YieldColumns* columns);
-  void extractUsedColumns(Expression* filter);
-  void addLookupColumns(const std::string& retCol, const std::string& outCol);
-
-  std::vector<std::string> returnCols_;
-  std::vector<std::string> colNames_;
 };
 
 }  // namespace graph

@@ -6,7 +6,7 @@
 
 #include "meta/processors/job/BalanceJobExecutor.h"
 
-#include "meta/MetaServiceUtils.h"
+#include "common/utils/MetaKeyUtils.h"
 
 namespace nebula {
 namespace meta {

@@ -21,7 +21,7 @@ void RegConfigProcessor::process(const cpp2::RegConfigReq& req) {
       VLOG(1) << "Config name: " << name << ", mode: " << apache::thrift::util::enumNameSafe(mode)
               << ", module: " << apache::thrift::util::enumNameSafe(module) << ", value: " << value;
 
-      std::string configKey = MetaServiceUtils::configKey(module, name);
+      std::string configKey = MetaKeyUtils::configKey(module, name);
       // ignore config which has been registered before
       auto configRet = doGet(configKey);
       if (nebula::ok(configRet)) {
@@ -36,7 +36,7 @@ void RegConfigProcessor::process(const cpp2::RegConfigReq& req) {
         }
       }
 
-      std::string configValue = MetaServiceUtils::configValue(mode, value);
+      std::string configValue = MetaKeyUtils::configValue(mode, value);
       data.emplace_back(std::move(configKey), std::move(configValue));
     }
 

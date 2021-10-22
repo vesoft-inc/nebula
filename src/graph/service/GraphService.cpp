@@ -32,7 +32,6 @@ Status GraphService::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecuto
   options.serviceName_ = "graph";
   options.skipConfig_ = FLAGS_local_config;
   options.role_ = meta::cpp2::HostRole::GRAPH;
-  std::string localIP = network::NetworkUtils::getIPv4FromDevice(FLAGS_listen_netdev).value();
   options.localHost_ = hostAddr;
   options.gitInfoSHA_ = gitInfoSha();
 
@@ -42,17 +41,19 @@ Status GraphService::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecuto
   bool loadDataOk = metaClient_->waitForMetadReady(3);
   if (!loadDataOk) {
     // Resort to retrying in the background
-    LOG(WARNING) << "Failed to synchronously wait for meta service ready";
+    LOG(ERROR) << "Failed to wait for meta service ready synchronously.";
+    return Status::Error("Failed to wait for meta service ready synchronously.");
   }
 
   sessionManager_ = std::make_unique<GraphSessionManager>(metaClient_.get(), hostAddr);
   auto initSessionMgrStatus = sessionManager_->init();
   if (!initSessionMgrStatus.ok()) {
-    LOG(WARNING) << "Init sessin manager failed: " << initSessionMgrStatus.toString();
+    LOG(ERROR) << "Failed to initialize session manager: " << initSessionMgrStatus.toString();
+    return Status::Error("Failed to initialize session manager: %s",
+                         initSessionMgrStatus.toString().c_str());
   }
-  queryEngine_ = std::make_unique<QueryEngine>();
 
-  myAddr_ = hostAddr;
+  queryEngine_ = std::make_unique<QueryEngine>();
   return queryEngine_->init(std::move(ioExecutor), metaClient_.get());
 }
 
@@ -153,20 +154,53 @@ folly::Future<ExecutionResponse> GraphService::future_execute(int64_t sessionId,
   return future;
 }
 
+folly::Future<std::string> GraphService::future_executeJson(int64_t sessionId,
+                                                            const std::string& query) {
+  return future_execute(sessionId, query).thenValue([](ExecutionResponse&& resp) {
+    return folly::toJson(resp.toJson());
+  });
+}
+
 bool GraphService::auth(const std::string& username, const std::string& password) {
   if (!FLAGS_enable_authorize) {
     return true;
   }
+
   if (FLAGS_auth_type == "password") {
     auto authenticator = std::make_unique<PasswordAuthenticator>(queryEngine_->metaClient());
     return authenticator->auth(username, encryption::MD5Utils::md5Encode(password));
   } else if (FLAGS_auth_type == "cloud") {
-    auto authenticator = std::make_unique<CloudAuthenticator>(queryEngine_->metaClient());
-    return authenticator->auth(username, password);
+    // Cloud user and native user will be mixed.
+    // Since cloud user and native user has the same transport protocol,
+    // There is no way to identify which one is in the graph layer，
+    // let's check the native user's password first, then cloud user.
+    auto pwdAuth = std::make_unique<PasswordAuthenticator>(queryEngine_->metaClient());
+    if (pwdAuth->auth(username, encryption::MD5Utils::md5Encode(password))) {
+      return true;
+    }
+    auto cloudAuth = std::make_unique<CloudAuthenticator>(queryEngine_->metaClient());
+    return cloudAuth->auth(username, password);
   }
   LOG(WARNING) << "Unknown auth type: " << FLAGS_auth_type;
   return false;
 }
 
+folly::Future<cpp2::VerifyClientVersionResp> GraphService::future_verifyClientVersion(
+    const cpp2::VerifyClientVersionReq& req) {
+  std::unordered_set<std::string> whiteList;
+  folly::splitTo<std::string>(
+      ":", FLAGS_client_white_list, std::inserter(whiteList, whiteList.begin()));
+  cpp2::VerifyClientVersionResp resp;
+  if (FLAGS_enable_client_white_list && whiteList.find(req.get_version()) == whiteList.end()) {
+    resp.set_error_code(nebula::cpp2::ErrorCode::E_CLIENT_SERVER_INCOMPATIBLE);
+    resp.set_error_msg(folly::stringPrintf(
+        "Graph client version(%s) is not accepted, current graph client white list: %s.",
+        req.get_version().c_str(),
+        FLAGS_client_white_list.c_str()));
+  } else {
+    resp.set_error_code(nebula::cpp2::ErrorCode::SUCCEEDED);
+  }
+  return folly::makeFuture<cpp2::VerifyClientVersionResp>(std::move(resp));
+}
 }  // namespace graph
 }  // namespace nebula

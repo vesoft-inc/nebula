@@ -12,7 +12,7 @@ namespace nebula {
 namespace meta {
 
 void ListSnapshotsProcessor::process(const cpp2::ListSnapshotsReq&) {
-  const auto& prefix = MetaServiceUtils::snapshotPrefix();
+  const auto& prefix = MetaKeyUtils::snapshotPrefix();
   auto iterRet = doPrefix(prefix);
   if (!nebula::ok(iterRet)) {
     auto retCode = nebula::error(iterRet);
@@ -26,9 +26,9 @@ void ListSnapshotsProcessor::process(const cpp2::ListSnapshotsReq&) {
   std::vector<nebula::meta::cpp2::Snapshot> snapshots;
   while (iter->valid()) {
     auto val = iter->val();
-    auto name = MetaServiceUtils::parseSnapshotName(iter->key());
-    auto status = MetaServiceUtils::parseSnapshotStatus(val);
-    auto hosts = MetaServiceUtils::parseSnapshotHosts(val);
+    auto name = MetaKeyUtils::parseSnapshotName(iter->key());
+    auto status = MetaKeyUtils::parseSnapshotStatus(val);
+    auto hosts = MetaKeyUtils::parseSnapshotHosts(val);
     cpp2::Snapshot snapshot;
     snapshot.set_name(std::move(name));
     snapshot.set_status(std::move(status));

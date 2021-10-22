@@ -29,12 +29,12 @@ bool PropIndexSeek::matchEdge(EdgeContext* edgeCtx) {
   Expression* filter = nullptr;
   if (matchClauseCtx->where != nullptr && matchClauseCtx->where->filter != nullptr) {
     filter = MatchSolver::makeIndexFilter(
-        *edge.types.back(), edge.alias, matchClauseCtx->where->filter, matchClauseCtx->qctx, true);
+        edge.types.back(), edge.alias, matchClauseCtx->where->filter, matchClauseCtx->qctx, true);
   }
   if (filter == nullptr) {
     if (edge.props != nullptr && !edge.props->items().empty()) {
       filter =
-          MatchSolver::makeIndexFilter(*edge.types.back(), edge.props, matchClauseCtx->qctx, true);
+          MatchSolver::makeIndexFilter(edge.types.back(), edge.props, matchClauseCtx->qctx, true);
     }
   }
 
@@ -122,18 +122,18 @@ bool PropIndexSeek::matchNode(NodeContext* nodeCtx) {
   Expression* filter = nullptr;
   if (matchClauseCtx->where != nullptr && matchClauseCtx->where->filter != nullptr) {
     filter = MatchSolver::makeIndexFilter(
-        *node.labels.back(), node.alias, matchClauseCtx->where->filter, matchClauseCtx->qctx);
+        node.labels.back(), node.alias, matchClauseCtx->where->filter, matchClauseCtx->qctx);
   }
   if (filter == nullptr) {
     if (node.props != nullptr && !node.props->items().empty()) {
-      filter = MatchSolver::makeIndexFilter(*node.labels.back(), node.props, matchClauseCtx->qctx);
+      filter = MatchSolver::makeIndexFilter(node.labels.back(), node.props, matchClauseCtx->qctx);
     }
   }
   // TODO(yee): Refactor these index choice logic
   if (filter == nullptr && !node.labelProps.empty()) {
     auto props = node.labelProps.back();
     if (props != nullptr) {
-      filter = MatchSolver::makeIndexFilter(*node.labels.back(), props, matchClauseCtx->qctx);
+      filter = MatchSolver::makeIndexFilter(node.labels.back(), props, matchClauseCtx->qctx);
     }
   }
 

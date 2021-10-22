@@ -28,7 +28,7 @@ void GetTagProcessor::process(const cpp2::GetTagReq& req) {
   std::string schemaValue;
   // Get the lastest version
   if (ver < 0) {
-    auto tagPrefix = MetaServiceUtils::schemaTagPrefix(spaceId, tagId);
+    auto tagPrefix = MetaKeyUtils::schemaTagPrefix(spaceId, tagId);
     auto ret = doPrefix(tagPrefix);
     if (!nebula::ok(ret)) {
       LOG(ERROR) << "Get Tag SpaceID: " << spaceId << ", tagName: " << tagName
@@ -48,7 +48,7 @@ void GetTagProcessor::process(const cpp2::GetTagReq& req) {
     }
     schemaValue = iter->val().str();
   } else {
-    auto tagKey = MetaServiceUtils::schemaTagKey(spaceId, tagId, ver);
+    auto tagKey = MetaKeyUtils::schemaTagKey(spaceId, tagId, ver);
     auto ret = doGet(tagKey);
     if (!nebula::ok(ret)) {
       LOG(ERROR) << "Get Tag SpaceID: " << spaceId << ", tagName: " << tagName << ", version "
@@ -63,7 +63,7 @@ void GetTagProcessor::process(const cpp2::GetTagReq& req) {
   VLOG(3) << "Get Tag SpaceID: " << spaceId << ", tagName: " << tagName << ", version " << ver;
 
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
-  resp_.set_schema(MetaServiceUtils::parseSchema(schemaValue));
+  resp_.set_schema(MetaKeyUtils::parseSchema(schemaValue));
   onFinished();
 }
 

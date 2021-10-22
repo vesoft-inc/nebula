@@ -53,7 +53,7 @@ class ExpressionContext {
   virtual const Value& getInputProp(const std::string& prop) const = 0;
 
   // Get Vertex
-  virtual Value getVertex() const = 0;
+  virtual Value getVertex(const std::string& name = "") const = 0;
 
   // Get Edge
   virtual Value getEdge() const = 0;

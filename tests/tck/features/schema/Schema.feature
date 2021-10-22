@@ -499,7 +499,7 @@ Feature: Insert string vid of vertex and edge
     Then the execution should be successful
     And wait 3 seconds
     # insert
-    When executing query:
+    When try to execute query:
       """
       INSERT VERTEX t() VALUES "1":()
       """
@@ -577,7 +577,7 @@ Feature: Insert string vid of vertex and edge
       """
       INSERT EDGE e() VALUES "1"->"2":()
       """
-    Then a ExecutionError should be raised at runtime: Storage Error: The not null field doesn't have a default value.
+    Then a SemanticError should be raised at runtime: The property `description' is not nullable and has no default value.
     # test alter edge with timestamp default
     When executing query:
       """

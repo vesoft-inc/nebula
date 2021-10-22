@@ -145,7 +145,7 @@ TEST(IndexKeyUtilsTest, encodeDouble) {
 
 TEST(IndexKeyUtilsTest, vertexIndexKeyV1) {
   auto values = getIndexValues();
-  auto key = IndexKeyUtils::vertexIndexKey(8, 1, 1, getStringId(1), std::move(values));
+  auto key = IndexKeyUtils::vertexIndexKeys(8, 1, 1, getStringId(1), {std::move(values)})[0];
   ASSERT_EQ(1, IndexKeyUtils::getIndexId(key));
   ASSERT_EQ(getStringId(1), IndexKeyUtils::getIndexVertexID(8, key));
   ASSERT_EQ(true, IndexKeyUtils::isIndexKey(key));
@@ -153,19 +153,21 @@ TEST(IndexKeyUtilsTest, vertexIndexKeyV1) {
 
 TEST(IndexKeyUtilsTest, vertexIndexKeyV2) {
   auto values = getIndexValues();
-  auto key = IndexKeyUtils::vertexIndexKey(100, 1, 1, "vertex_1_1_1_1", std::move(values));
-  ASSERT_EQ(1, IndexKeyUtils::getIndexId(key));
+  auto keys = IndexKeyUtils::vertexIndexKeys(100, 1, 1, "vertex_1_1_1_1", {std::move(values)});
+  for (auto& key : keys) {
+    ASSERT_EQ(1, IndexKeyUtils::getIndexId(key));
 
-  VertexID vid = "vertex_1_1_1_1";
-  vid.append(100 - vid.size(), '\0');
-  ASSERT_EQ(vid, IndexKeyUtils::getIndexVertexID(100, key));
-  ASSERT_EQ(true, IndexKeyUtils::isIndexKey(key));
+    VertexID vid = "vertex_1_1_1_1";
+    vid.append(100 - vid.size(), '\0');
+    ASSERT_EQ(vid, IndexKeyUtils::getIndexVertexID(100, key));
+    ASSERT_EQ(true, IndexKeyUtils::isIndexKey(key));
+  }
 }
 
 TEST(IndexKeyUtilsTest, edgeIndexKeyV1) {
   auto values = getIndexValues();
-  auto key =
-      IndexKeyUtils::edgeIndexKey(8, 1, 1, getStringId(1), 1, getStringId(2), std::move(values));
+  auto key = IndexKeyUtils::edgeIndexKeys(
+      8, 1, 1, getStringId(1), 1, getStringId(2), {std::move(values)})[0];
   ASSERT_EQ(1, IndexKeyUtils::getIndexId(key));
   ASSERT_EQ(getStringId(1), IndexKeyUtils::getIndexSrcId(8, key));
   ASSERT_EQ(1, IndexKeyUtils::getIndexRank(8, key));
@@ -176,22 +178,31 @@ TEST(IndexKeyUtilsTest, edgeIndexKeyV1) {
 TEST(IndexKeyUtilsTest, edgeIndexKeyV2) {
   VertexID vid = "vertex_1_1_1_1";
   auto values = getIndexValues();
-  auto key = IndexKeyUtils::edgeIndexKey(100, 1, 1, vid, 1, vid, std::move(values));
-  ASSERT_EQ(1, IndexKeyUtils::getIndexId(key));
-  vid.append(100 - vid.size(), '\0');
-  ASSERT_EQ(vid, IndexKeyUtils::getIndexSrcId(100, key));
-  ASSERT_EQ(1, IndexKeyUtils::getIndexRank(100, key));
-  ASSERT_EQ(vid, IndexKeyUtils::getIndexDstId(100, key));
-  ASSERT_EQ(true, IndexKeyUtils::isIndexKey(key));
+  auto keys = IndexKeyUtils::edgeIndexKeys(100, 1, 1, vid, 1, vid, {std::move(values)});
+  for (auto& key : keys) {
+    ASSERT_EQ(1, IndexKeyUtils::getIndexId(key));
+    vid.append(100 - vid.size(), '\0');
+    ASSERT_EQ(vid, IndexKeyUtils::getIndexSrcId(100, key));
+    ASSERT_EQ(1, IndexKeyUtils::getIndexRank(100, key));
+    ASSERT_EQ(vid, IndexKeyUtils::getIndexDstId(100, key));
+    ASSERT_EQ(true, IndexKeyUtils::isIndexKey(key));
+  }
 
-  key = IndexKeyUtils::edgeIndexKey(100, 1, 1, vid, -1, vid, std::move(values));
-  ASSERT_EQ(-1, IndexKeyUtils::getIndexRank(100, key));
+  keys = IndexKeyUtils::edgeIndexKeys(100, 1, 1, vid, -1, vid, {std::move(values)});
+  for (auto& key : keys) {
+    ASSERT_EQ(-1, IndexKeyUtils::getIndexRank(100, key));
+  }
 
-  key = IndexKeyUtils::edgeIndexKey(100, 1, 1, vid, 9223372036854775807, vid, std::move(values));
-  ASSERT_EQ(9223372036854775807, IndexKeyUtils::getIndexRank(100, key));
+  keys =
+      IndexKeyUtils::edgeIndexKeys(100, 1, 1, vid, 9223372036854775807, vid, {std::move(values)});
+  for (auto& key : keys) {
+    ASSERT_EQ(9223372036854775807, IndexKeyUtils::getIndexRank(100, key));
+  }
 
-  key = IndexKeyUtils::edgeIndexKey(100, 1, 1, vid, 0, vid, std::move(values));
-  ASSERT_EQ(0, IndexKeyUtils::getIndexRank(100, key));
+  keys = IndexKeyUtils::edgeIndexKeys(100, 1, 1, vid, 0, vid, {std::move(values)});
+  for (auto& key : keys) {
+    ASSERT_EQ(0, IndexKeyUtils::getIndexRank(100, key));
+  }
 }
 
 TEST(IndexKeyUtilsTest, nullableValue) {
@@ -212,11 +223,12 @@ TEST(IndexKeyUtilsTest, nullableValue) {
       values.emplace_back(Value(NullType::__NULL__));
       cols.emplace_back(nullCol(folly::stringPrintf("col%ld", j), meta::cpp2::PropertyType::BOOL));
     }
-    auto raw = IndexKeyUtils::encodeValues(std::move(values), std::move(cols));
+    // TODO(jie) Add index key tests for geography
+    auto raws = IndexKeyUtils::encodeValues(std::move(values), std::move(cols));
     u_short s = 0xfc00; /* the binary is '11111100 00000000'*/
     std::string expected;
     expected.append(reinterpret_cast<const char*>(&s), sizeof(u_short));
-    auto result = raw.substr(raw.size() - sizeof(u_short), sizeof(u_short));
+    auto result = raws[0].substr(raws[0].size() - sizeof(u_short), sizeof(u_short));
     ASSERT_EQ(expected, result);
   }
   {
@@ -227,11 +239,11 @@ TEST(IndexKeyUtilsTest, nullableValue) {
     for (int64_t j = 1; j <= 2; j++) {
       cols.emplace_back(nullCol(folly::stringPrintf("col%ld", j), meta::cpp2::PropertyType::BOOL));
     }
-    auto raw = IndexKeyUtils::encodeValues(std::move(values), std::move(cols));
+    auto raws = IndexKeyUtils::encodeValues(std::move(values), std::move(cols));
     u_short s = 0x4000; /* the binary is '01000000 00000000'*/
     std::string expected;
     expected.append(reinterpret_cast<const char*>(&s), sizeof(u_short));
-    auto result = raw.substr(raw.size() - sizeof(u_short), sizeof(u_short));
+    auto result = raws[0].substr(raws[0].size() - sizeof(u_short), sizeof(u_short));
     ASSERT_EQ(expected, result);
   }
   {
@@ -242,11 +254,11 @@ TEST(IndexKeyUtilsTest, nullableValue) {
     for (int64_t j = 1; j <= 2; j++) {
       cols.emplace_back(nullCol(folly::stringPrintf("col%ld", j), meta::cpp2::PropertyType::BOOL));
     }
-    auto raw = IndexKeyUtils::encodeValues(std::move(values), std::move(cols));
+    auto raws = IndexKeyUtils::encodeValues(std::move(values), std::move(cols));
     u_short s = 0x0000; /* the binary is '01000000 00000000'*/
     std::string expected;
     expected.append(reinterpret_cast<const char*>(&s), sizeof(u_short));
-    auto result = raw.substr(raw.size() - sizeof(u_short), sizeof(u_short));
+    auto result = raws[0].substr(raws[0].size() - sizeof(u_short), sizeof(u_short));
     ASSERT_EQ(expected, result);
   }
   {
@@ -257,11 +269,11 @@ TEST(IndexKeyUtilsTest, nullableValue) {
       cols.emplace_back(nullCol(folly::stringPrintf("col%ld", i), meta::cpp2::PropertyType::INT64));
     }
 
-    auto raw = IndexKeyUtils::encodeValues(std::move(values), std::move(cols));
+    auto raws = IndexKeyUtils::encodeValues(std::move(values), std::move(cols));
     u_short s = 0xfff0; /* the binary is '11111111 11110000'*/
     std::string expected;
     expected.append(reinterpret_cast<const char*>(&s), sizeof(u_short));
-    auto result = raw.substr(raw.size() - sizeof(u_short), sizeof(u_short));
+    auto result = raws[0].substr(raws[0].size() - sizeof(u_short), sizeof(u_short));
     ASSERT_EQ(expected, result);
   }
   {
@@ -295,11 +307,11 @@ TEST(IndexKeyUtilsTest, nullableValue) {
         cols.emplace_back(nullCol(folly::stringPrintf("col_%ld_%ld", i, j), types[j]));
       }
     }
-    auto raw = IndexKeyUtils::encodeValues(std::move(values), cols);
+    auto raws = IndexKeyUtils::encodeValues(std::move(values), cols);
     u_short s = 0xaaa0; /* the binary is '10101010 10100000'*/
     std::string expected;
     expected.append(reinterpret_cast<const char*>(&s), sizeof(u_short));
-    auto result = raw.substr(raw.size() - sizeof(u_short), sizeof(u_short));
+    auto result = raws[0].substr(raws[0].size() - sizeof(u_short), sizeof(u_short));
     ASSERT_EQ(expected, result);
   }
   {
@@ -309,11 +321,11 @@ TEST(IndexKeyUtilsTest, nullableValue) {
       values.emplace_back(Value(NullType::__NULL__));
       cols.emplace_back(nullCol(folly::stringPrintf("col%ld", i), meta::cpp2::PropertyType::BOOL));
     }
-    auto raw = IndexKeyUtils::encodeValues(std::move(values), std::move(cols));
+    auto raws = IndexKeyUtils::encodeValues(std::move(values), std::move(cols));
     u_short s = 0xff80; /* the binary is '11111111 10000000'*/
     std::string expected;
     expected.append(reinterpret_cast<const char*>(&s), sizeof(u_short));
-    auto result = raw.substr(raw.size() - sizeof(u_short), sizeof(u_short));
+    auto result = raws[0].substr(raws[0].size() - sizeof(u_short), sizeof(u_short));
     ASSERT_EQ(expected, result);
   }
 }
@@ -408,9 +420,12 @@ TEST(IndexKeyUtilsTest, getValueFromIndexKeyTest) {
     std::vector<std::string> indexKeys;
     for (auto& row : vertices) {
       auto values = IndexKeyUtils::encodeValues(std::move(row.second), cols);
-      ASSERT_EQ(indexValueSize, values.size());
-      indexKeys.emplace_back(
-          IndexKeyUtils::vertexIndexKey(vIdLen, partId, indexId, row.first, std::move(values)));
+      ASSERT_EQ(indexValueSize, values[0].size());
+      auto keys =
+          IndexKeyUtils::vertexIndexKeys(vIdLen, partId, indexId, row.first, std::move(values));
+      for (auto& key : keys) {
+        indexKeys.emplace_back(key);
+      }
     }
 
     verifyDecodeIndexKey(false, false, vIdLen, expected, indexKeys, cols);
@@ -427,9 +442,13 @@ TEST(IndexKeyUtilsTest, getValueFromIndexKeyTest) {
     std::vector<std::string> indexKeys;
     for (auto& row : edges) {
       auto values = IndexKeyUtils::encodeValues(std::move(row.second), cols);
-      ASSERT_EQ(indexValueSize, values.size());
-      indexKeys.emplace_back(IndexKeyUtils::edgeIndexKey(
-          vIdLen, partId, indexId, row.first, 0, row.first, std::move(values)));
+      ASSERT_EQ(indexValueSize, values[0].size());
+
+      auto keys = IndexKeyUtils::edgeIndexKeys(
+          vIdLen, partId, indexId, row.first, 0, row.first, std::move(values));
+      for (auto& key : keys) {
+        indexKeys.emplace_back(key);
+      }
     }
 
     verifyDecodeIndexKey(true, false, vIdLen, expected, indexKeys, cols);
@@ -459,10 +478,12 @@ TEST(IndexKeyUtilsTest, getValueFromIndexKeyTest) {
     std::vector<std::string> indexKeys;
     for (auto& row : vertices) {
       auto values = IndexKeyUtils::encodeValues(std::move(row.second), cols);
-      ASSERT_EQ(indexValueSize, values.size());
-      auto key =
-          IndexKeyUtils::vertexIndexKey(vIdLen, partId, indexId, row.first, std::move(values));
-      indexKeys.emplace_back(key);
+      ASSERT_EQ(indexValueSize, values[0].size());
+      auto keys =
+          IndexKeyUtils::vertexIndexKeys(vIdLen, partId, indexId, row.first, std::move(values));
+      for (auto& key : keys) {
+        indexKeys.emplace_back(key);
+      }
     }
     verifyDecodeIndexKey(false, true, vIdLen, expected, indexKeys, cols);
   }
@@ -484,9 +505,12 @@ TEST(IndexKeyUtilsTest, getValueFromIndexKeyTest) {
     std::vector<std::string> indexKeys;
     for (auto& row : edges) {
       auto values = IndexKeyUtils::encodeValues(std::move(row.second), cols);
-      ASSERT_EQ(indexValueSize, values.size());
-      indexKeys.emplace_back(IndexKeyUtils::edgeIndexKey(
-          vIdLen, partId, indexId, row.first, 0, row.first, std::move(values)));
+      ASSERT_EQ(indexValueSize, values[0].size());
+      auto keys = IndexKeyUtils::edgeIndexKeys(
+          vIdLen, partId, indexId, row.first, 0, row.first, std::move(values));
+      for (auto& key : keys) {
+        indexKeys.emplace_back(key);
+      }
     }
 
     verifyDecodeIndexKey(true, true, vIdLen, expected, indexKeys, cols);

@@ -7,6 +7,7 @@
 #pragma once
 
 #include "LookupBaseProcessor.h"
+#include "folly/container/Enumerate.h"
 namespace nebula {
 namespace storage {
 
@@ -167,6 +168,8 @@ template <typename REQ, typename RESP>
 StatusOr<StoragePlan<IndexID>> LookupBaseProcessor<REQ, RESP>::buildPlan(
     IndexFilterItem* filterItem, nebula::DataSet* result) {
   StoragePlan<IndexID> plan;
+  // TODO(sky) : Limit is not supported yet for de-dup node.
+  //             Related to paging scan, the de-dup execution plan needs to be refactored
   auto deDup = std::make_unique<DeDupNode<IndexID>>(result, deDupColPos_);
   int32_t filterId = 0;
   std::unique_ptr<IndexOutputNode<IndexID>> out;
@@ -193,7 +196,7 @@ StatusOr<StoragePlan<IndexID>> LookupBaseProcessor<REQ, RESP>::buildPlan(
     auto fields = indexItem->get_fields();
 
     for (const auto& col : fields) {
-      if (!hasNullableCol && col.get_nullable()) {
+      if (!hasNullableCol && col.nullable_ref().value_or(false)) {
         hasNullableCol = true;
         break;
       }
@@ -207,7 +210,11 @@ StatusOr<StoragePlan<IndexID>> LookupBaseProcessor<REQ, RESP>::buildPlan(
       auto it = std::find_if(fields.begin(), fields.end(), [&yieldCol](const auto& columnDef) {
         return yieldCol == columnDef.get_name();
       });
-      if (it == fields.end()) {
+      if (it == fields.end() ||
+          it->get_type().get_type() ==
+              nebula::meta::cpp2::PropertyType::GEOGRAPHY) {  // geography index just stores
+                                                              // S2CellId, so must read the
+                                                              // original geo data.
         needData = true;
         break;
       }
@@ -319,8 +326,8 @@ std::unique_ptr<IndexOutputNode<IndexID>> LookupBaseProcessor<REQ, RESP>::buildP
   auto indexId = ctx.get_index_id();
   auto colHints = ctx.get_column_hints();
 
-  auto indexScan = std::make_unique<IndexScanNode<IndexID>>(
-      context_.get(), indexId, std::move(colHints), limit_);
+  auto indexScan =
+      std::make_unique<IndexScanNode<IndexID>>(context_.get(), indexId, std::move(colHints));
   if (context_->isEdge()) {
     auto edge = std::make_unique<IndexEdgeNode<IndexID>>(
         context_.get(), indexScan.get(), schemas_, context_->edgeName_, limit_);
@@ -370,11 +377,11 @@ std::unique_ptr<IndexOutputNode<IndexID>> LookupBaseProcessor<REQ, RESP>::buildP
   auto indexId = ctx.get_index_id();
   auto colHints = ctx.get_column_hints();
 
-  auto indexScan = std::make_unique<IndexScanNode<IndexID>>(
-      context_.get(), indexId, std::move(colHints), limit_);
+  auto indexScan =
+      std::make_unique<IndexScanNode<IndexID>>(context_.get(), indexId, std::move(colHints));
 
   auto filter = std::make_unique<IndexFilterNode<IndexID>>(
-      context_.get(), indexScan.get(), exprCtx, exp, context_->isEdge());
+      context_.get(), indexScan.get(), exprCtx, exp, context_->isEdge(), limit_);
   filter->addDependency(indexScan.get());
   auto output =
       std::make_unique<IndexOutputNode<IndexID>>(result, context_.get(), filter.get(), true);
@@ -421,14 +428,14 @@ LookupBaseProcessor<REQ, RESP>::buildPlanWithDataAndFilter(nebula::DataSet* resu
   auto indexId = ctx.get_index_id();
   auto colHints = ctx.get_column_hints();
 
-  auto indexScan = std::make_unique<IndexScanNode<IndexID>>(
-      context_.get(), indexId, std::move(colHints), limit_);
+  auto indexScan =
+      std::make_unique<IndexScanNode<IndexID>>(context_.get(), indexId, std::move(colHints));
   if (context_->isEdge()) {
     auto edge = std::make_unique<IndexEdgeNode<IndexID>>(
-        context_.get(), indexScan.get(), schemas_, context_->edgeName_, limit_);
+        context_.get(), indexScan.get(), schemas_, context_->edgeName_);
     edge->addDependency(indexScan.get());
-    auto filter =
-        std::make_unique<IndexFilterNode<IndexID>>(context_.get(), edge.get(), exprCtx, exp);
+    auto filter = std::make_unique<IndexFilterNode<IndexID>>(
+        context_.get(), edge.get(), exprCtx, exp, limit_);
     filter->addDependency(edge.get());
 
     auto output = std::make_unique<IndexOutputNode<IndexID>>(result, context_.get(), filter.get());
@@ -439,10 +446,10 @@ LookupBaseProcessor<REQ, RESP>::buildPlanWithDataAndFilter(nebula::DataSet* resu
     return output;
   } else {
     auto vertex = std::make_unique<IndexVertexNode<IndexID>>(
-        context_.get(), indexScan.get(), schemas_, context_->tagName_, limit_);
+        context_.get(), indexScan.get(), schemas_, context_->tagName_);
     vertex->addDependency(indexScan.get());
-    auto filter =
-        std::make_unique<IndexFilterNode<IndexID>>(context_.get(), vertex.get(), exprCtx, exp);
+    auto filter = std::make_unique<IndexFilterNode<IndexID>>(
+        context_.get(), vertex.get(), exprCtx, exp, limit_);
     filter->addDependency(vertex.get());
 
     auto output = std::make_unique<IndexOutputNode<IndexID>>(result, context_.get(), filter.get());

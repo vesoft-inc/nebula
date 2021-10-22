@@ -11,6 +11,7 @@
 #include "common/datatypes/DataSet.h"
 #include "common/datatypes/Date.h"
 #include "common/datatypes/Edge.h"
+#include "common/datatypes/Geography.h"
 #include "common/datatypes/List.h"
 #include "common/datatypes/Map.h"
 #include "common/datatypes/Path.h"
@@ -290,6 +291,9 @@ TEST(Value, Comparison) {
   Value vDateTime1(DateTime(1998, 9, 8, 12, 30, 04, 56));
   Value vDateTime2(DateTime(1998, 9, 8, 13, 30, 04, 56));
   Value vDateTime3(DateTime(1998, 9, 8, 13, 30, 04, 56));  // for further tests
+  Value vGeo1 = Geography::fromWKT("POINT(4 7)").value();
+  Value vGeo2 = Geography::fromWKT("POINT(5 7)").value();
+  Value vGeo3 = Geography::fromWKT("POINT(5 7)").value();
 
   // null/empty
   {
@@ -549,6 +553,25 @@ TEST(Value, Comparison) {
     v = vDateTime1 <= vDateTime2;
     EXPECT_EQ(Value::Type::BOOL, v.type());
     EXPECT_EQ(true, v.getBool());
+  }
+  // geography
+  {
+    Value v = vGeo1 == vGeo2;
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(false, v.getBool());
+
+    v = vGeo1 != vGeo2;
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(true, v.getBool());
+
+    v = vGeo2 == vGeo3;
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(true, v.getBool());
+
+    v = vGeo2 != vGeo3;
+    EXPECT_EQ(Value::Type::BOOL, v.type());
+    EXPECT_EQ(false, v.getBool());
+    // TODO(jie) Add more geo test
   }
 }
 
@@ -1000,6 +1023,7 @@ TEST(Value, typeName) {
   EXPECT_EQ("map", Value(Map()).typeName());
   EXPECT_EQ("set", Value(Set()).typeName());
   EXPECT_EQ("dataset", Value(DataSet()).typeName());
+  EXPECT_EQ("geography", Value(Geography()).typeName());
   EXPECT_EQ("__NULL__", Value::kNullValue.typeName());
   EXPECT_EQ("NaN", Value::kNullNaN.typeName());
   EXPECT_EQ("BAD_DATA", Value::kNullBadData.typeName());
@@ -1090,6 +1114,24 @@ TEST(Value, DecodeEncode) {
 
       // DataSet
       Value(DataSet({"col1", "col2"})),
+
+      // Geography
+      Value(Geography::fromWKT("Point(3 8)").value()),
+      Value(Geography::fromWKT("LineString(3 8, 4 6, 5 7)").value()),
+      Value(Geography::fromWKT(
+                "Polygon((1 2, 3 4, 5 6, 7 8, 1 2), (1.2 3.6, 4.7 5.2, 3.9 8.8, 1.2 3.6))")
+                .value()),
+      Value(Geography(Point(Coordinate(4, 9)))),
+      Value(Geography(LineString(
+          std::vector<Coordinate>{Coordinate(0, 1), Coordinate(2, 3), Coordinate(0, 1)}))),
+      Value(Geography(Polygon(std::vector<std::vector<Coordinate>>{
+          std::vector<Coordinate>{Coordinate(0, 1),
+                                  Coordinate(2, 3),
+                                  Coordinate(4, 5),
+                                  Coordinate(6, 7),
+                                  Coordinate(0, 1)},
+          std::vector<Coordinate>{
+              Coordinate(2, 4), Coordinate(5, 6), Coordinate(3, 8), Coordinate(2, 4)}}))),
   };
   for (const auto& val : values) {
     std::string buf;
@@ -1128,7 +1170,18 @@ TEST(Value, Ctor) {
   EXPECT_TRUE(vSet.isSet());
   Value vMap(Map({{"a", 9}, {"b", 10}}));
   EXPECT_TRUE(vMap.isMap());
-
+  // TODO(jie) Add more geography value test
+  Value vGeogPoint{Geography(Point(Coordinate(3, 7)))};
+  EXPECT_TRUE(vGeogPoint.isGeography());
+  Value vGeogLine{
+      Geography(LineString(std::vector<Coordinate>{Coordinate(0, 1), Coordinate(2, 7)}))};
+  EXPECT_TRUE(vGeogLine.isGeography());
+  Value vGeogPolygon{Geography(Polygon(std::vector<std::vector<Coordinate>>{
+      std::vector<Coordinate>{
+          Coordinate(0, 1), Coordinate(2, 3), Coordinate(4, 5), Coordinate(6, 7), Coordinate(0, 1)},
+      std::vector<Coordinate>{
+          Coordinate(2, 4), Coordinate(5, 6), Coordinate(3, 8), Coordinate(2, 4)}}))};
+  EXPECT_TRUE(vGeogPolygon.isGeography());
   // Disabled
   // Lead to compile error
   // Value v(nullptr);

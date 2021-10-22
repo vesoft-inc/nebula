@@ -72,7 +72,7 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
   }
   auto tagID = nebula::value(tagIDRet);
 
-  const auto& prefix = MetaServiceUtils::indexPrefix(space);
+  const auto& prefix = MetaKeyUtils::indexPrefix(space);
   auto iterRet = doPrefix(prefix);
   if (!nebula::ok(iterRet)) {
     auto retCode = nebula::error(iterRet);
@@ -86,7 +86,7 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
 
   while (checkIter->valid()) {
     auto val = checkIter->val();
-    auto item = MetaServiceUtils::parseIndex(val);
+    auto item = MetaKeyUtils::parseIndex(val);
     if (item.get_schema_id().getType() != nebula::cpp2::SchemaID::Type::tag_id ||
         fields.size() > item.get_fields().size() || tagID != item.get_schema_id().get_tag_id()) {
       checkIter->next();
@@ -154,6 +154,12 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
       handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
       onFinished();
       return;
+    } else if (col.type.get_type() == meta::cpp2::PropertyType::GEOGRAPHY && fields.size() > 1) {
+      // TODO(jie): Support joint index for geography
+      LOG(ERROR) << "Only support to create index on a single geography column currently";
+      handleErrorCode(nebula::cpp2::ErrorCode::E_UNSUPPORTED);
+      onFinished();
+      return;
     }
     columns.emplace_back(col);
   }
@@ -180,9 +186,9 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
     item.set_comment(*req.comment_ref());
   }
 
-  data.emplace_back(MetaServiceUtils::indexIndexKey(space, indexName),
+  data.emplace_back(MetaKeyUtils::indexIndexKey(space, indexName),
                     std::string(reinterpret_cast<const char*>(&tagIndex), sizeof(IndexID)));
-  data.emplace_back(MetaServiceUtils::indexKey(space, tagIndex), MetaServiceUtils::indexVal(item));
+  data.emplace_back(MetaKeyUtils::indexKey(space, tagIndex), MetaKeyUtils::indexVal(item));
   LOG(INFO) << "Create Tag Index " << indexName << ", tagIndex " << tagIndex;
   resp_.set_id(to(tagIndex, EntryType::INDEX));
   doSyncPutAndUpdate(std::move(data));

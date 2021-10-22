@@ -38,6 +38,8 @@ class ExecutionPlan final {
 
   void setExplainFormat(const std::string& format) { explainFormat_ = format; }
 
+  bool isProfileEnabled() { return planDescription_ != nullptr; }
+
  private:
   uint64_t makePlanNodeDesc(const PlanNode* node);
   void descBranchInfo(const PlanNode* node, bool isDoBranch, int64_t id);

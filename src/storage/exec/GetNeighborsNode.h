@@ -160,7 +160,7 @@ class GetNeighborsSampleNode : public GetNeighborsNode {
     }
 
     RowReaderWrapper reader;
-    auto samples = std::move(*sampler_).samples();
+    auto samples = sampler_->samples();
     for (auto& sample : samples) {
       auto columnIdx = std::get<4>(sample);
       // add edge prop value to the target column

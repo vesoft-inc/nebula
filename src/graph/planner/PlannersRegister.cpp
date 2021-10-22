@@ -13,8 +13,11 @@
 #include "graph/planner/match/PropIndexSeek.h"
 #include "graph/planner/match/StartVidFinder.h"
 #include "graph/planner/match/VertexIdSeek.h"
+#include "graph/planner/ngql/FetchEdgesPlanner.h"
+#include "graph/planner/ngql/FetchVerticesPlanner.h"
 #include "graph/planner/ngql/GoPlanner.h"
 #include "graph/planner/ngql/LookupPlanner.h"
+#include "graph/planner/ngql/MaintainPlanner.h"
 #include "graph/planner/ngql/PathPlanner.h"
 #include "graph/planner/ngql/SubgraphPlanner.h"
 
@@ -22,8 +25,28 @@ namespace nebula {
 namespace graph {
 
 void PlannersRegister::registPlanners() {
+  registDDL();
   registSequential();
   registMatch();
+}
+
+void PlannersRegister::registDDL() {
+  {
+    auto& planners = Planner::plannersMap()[Sentence::Kind::kAlterTag];
+    planners.emplace_back(&AlterTagPlanner::match, &AlterTagPlanner::make);
+  }
+  {
+    auto& planners = Planner::plannersMap()[Sentence::Kind::kAlterEdge];
+    planners.emplace_back(&AlterEdgePlanner::match, &AlterEdgePlanner::make);
+  }
+  {
+    auto& planners = Planner::plannersMap()[Sentence::Kind::kCreateTag];
+    planners.emplace_back(&CreateTagPlanner::match, &CreateTagPlanner::make);
+  }
+  {
+    auto& planners = Planner::plannersMap()[Sentence::Kind::kCreateEdge];
+    planners.emplace_back(&CreateEdgePlanner::match, &CreateEdgePlanner::make);
+  }
 }
 
 void PlannersRegister::registSequential() {
@@ -46,6 +69,14 @@ void PlannersRegister::registSequential() {
   {
     auto& planners = Planner::plannersMap()[Sentence::Kind::kGetSubgraph];
     planners.emplace_back(&SubgraphPlanner::match, &SubgraphPlanner::make);
+  }
+  {
+    auto& planners = Planner::plannersMap()[Sentence::Kind::kFetchVertices];
+    planners.emplace_back(&FetchVerticesPlanner::match, &FetchVerticesPlanner::make);
+  }
+  {
+    auto& planners = Planner::plannersMap()[Sentence::Kind::kFetchEdges];
+    planners.emplace_back(&FetchEdgesPlanner::match, &FetchEdgesPlanner::make);
   }
 }
 

@@ -28,7 +28,7 @@ void GetEdgeProcessor::process(const cpp2::GetEdgeReq& req) {
   std::string schemaValue;
   // Get the lastest version
   if (ver < 0) {
-    auto edgePrefix = MetaServiceUtils::schemaEdgePrefix(spaceId, edgeType);
+    auto edgePrefix = MetaKeyUtils::schemaEdgePrefix(spaceId, edgeType);
     auto ret = doPrefix(edgePrefix);
     if (!nebula::ok(ret)) {
       LOG(ERROR) << "Get Edge SpaceID: " << spaceId << ", edgeName: " << edgeName
@@ -48,7 +48,7 @@ void GetEdgeProcessor::process(const cpp2::GetEdgeReq& req) {
     }
     schemaValue = iter->val().str();
   } else {
-    auto edgeKey = MetaServiceUtils::schemaEdgeKey(spaceId, edgeType, ver);
+    auto edgeKey = MetaKeyUtils::schemaEdgeKey(spaceId, edgeType, ver);
     auto ret = doGet(edgeKey);
     if (!nebula::ok(ret)) {
       LOG(ERROR) << "Get Edge SpaceID: " << spaceId << ", edgeName: " << edgeName << ", version "
@@ -62,7 +62,7 @@ void GetEdgeProcessor::process(const cpp2::GetEdgeReq& req) {
 
   VLOG(3) << "Get Edge SpaceID: " << spaceId << ", edgeName: " << edgeName << ", version " << ver;
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
-  resp_.set_schema(MetaServiceUtils::parseSchema(schemaValue));
+  resp_.set_schema(MetaKeyUtils::parseSchema(schemaValue));
   onFinished();
 }
 

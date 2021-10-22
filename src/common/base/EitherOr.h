@@ -159,7 +159,7 @@ class EitherOr {
   template <typename U,
             typename V,
             typename = std::enable_if_t<std::is_constructible<LEFT, U>::value &&
-                                        std::is_constructible<RIGHT, V>::value> >
+                                        std::is_constructible<RIGHT, V>::value>>
   EitherOr(const EitherOr<U, V>& rhs) noexcept {
     switch (rhs.state_) {
       case State::VOID:
@@ -178,7 +178,7 @@ class EitherOr {
   template <typename U,
             typename V,
             typename = std::enable_if_t<std::is_constructible<LEFT, U>::value &&
-                                        std::is_constructible<RIGHT, V>::value> >
+                                        std::is_constructible<RIGHT, V>::value>>
   EitherOr(EitherOr<U, V>&& rhs) noexcept {
     switch (rhs.state_) {
       case State::VOID:
@@ -218,7 +218,7 @@ class EitherOr {
   // LEFT or RIGHT, not both
   template <class... Args,
             typename = std::enable_if_t<std::is_constructible<LEFT, Args...>::value ||
-                                        std::is_constructible<RIGHT, Args...>::value> >
+                                        std::is_constructible<RIGHT, Args...>::value>>
   EitherOr(Args&&... v) noexcept {  // NOLINT
     new (&val_) Variant(convert_to_t<Args...>, std::forward<Args>(v)...);
     state_ = convert_to_s<Args...>;
@@ -228,7 +228,7 @@ class EitherOr {
   // So we use a type tag to force selecting LEFT
   template <typename U,
             typename = std::enable_if_t<std::is_constructible<LEFT, U>::value &&
-                                        std::is_constructible<RIGHT, U>::value> >
+                                        std::is_constructible<RIGHT, U>::value>>
   EitherOr(const LeftType*, U&& v) noexcept {
     new (&val_) Variant(kConstructLeft, std::forward<U>(v));
     state_ = State::LEFT_TYPE;
@@ -238,7 +238,7 @@ class EitherOr {
   // So we use a type tag to force selecting RIGHT
   template <typename U,
             typename = std::enable_if_t<std::is_constructible<LEFT, U>::value &&
-                                        std::is_constructible<RIGHT, U>::value> >
+                                        std::is_constructible<RIGHT, U>::value>>
   EitherOr(const RightType*, U&& v) noexcept {
     new (&val_) Variant(kConstructRight, std::forward<U>(v));
     state_ = State::RIGHT_TYPE;

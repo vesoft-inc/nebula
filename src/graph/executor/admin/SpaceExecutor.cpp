@@ -6,12 +6,12 @@
 
 #include "graph/executor/admin/SpaceExecutor.h"
 
+#include "common/time/ScopedTimer.h"
 #include "graph/context/QueryContext.h"
 #include "graph/planner/plan/Admin.h"
 #include "graph/service/PermissionManager.h"
 #include "graph/util/FTIndexUtils.h"
 #include "graph/util/SchemaUtil.h"
-#include "graph/util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {
@@ -22,6 +22,25 @@ folly::Future<Status> CreateSpaceExecutor::execute() {
   return qctx()
       ->getMetaClient()
       ->createSpace(csNode->getSpaceDesc(), csNode->getIfNotExists())
+      .via(runner())
+      .thenValue([](StatusOr<bool> resp) {
+        if (!resp.ok()) {
+          LOG(ERROR) << resp.status();
+          return resp.status();
+        }
+        return Status::OK();
+      });
+}
+
+folly::Future<Status> CreateSpaceAsExecutor::execute() {
+  SCOPED_TIMER(&execTime_);
+
+  auto *csaNode = asNode<CreateSpaceAsNode>(node());
+  auto oldSpace = csaNode->getOldSpaceName();
+  auto newSpace = csaNode->getNewSpaceName();
+  return qctx()
+      ->getMetaClient()
+      ->createSpaceAs(oldSpace, newSpace)
       .via(runner())
       .thenValue([](StatusOr<bool> resp) {
         if (!resp.ok()) {

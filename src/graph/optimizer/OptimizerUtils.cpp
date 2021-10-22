@@ -190,6 +190,7 @@ Value OptimizerUtils::boundValueWithGT(const meta::cpp2::ColumnDef& col, const V
     case Value::Type::SET:
     case Value::Type::MAP:
     case Value::Type::DATASET:
+    case Value::Type::GEOGRAPHY:  // TODO(jie)
     case Value::Type::PATH: {
       DLOG(FATAL) << "Not supported value type " << type << "for index.";
       return Value::kNullBadType;
@@ -336,6 +337,7 @@ Value OptimizerUtils::boundValueWithLT(const meta::cpp2::ColumnDef& col, const V
     case Value::Type::SET:
     case Value::Type::MAP:
     case Value::Type::DATASET:
+    case Value::Type::GEOGRAPHY:  // TODO(jie)
     case Value::Type::PATH: {
       DLOG(FATAL) << "Not supported value type " << type << "for index.";
       return Value::kNullBadType;
@@ -395,6 +397,7 @@ Value OptimizerUtils::boundValueWithMax(const meta::cpp2::ColumnDef& col) {
     case Value::Type::SET:
     case Value::Type::MAP:
     case Value::Type::DATASET:
+    case Value::Type::GEOGRAPHY:  // TODO(jie)
     case Value::Type::PATH: {
       DLOG(FATAL) << "Not supported value type " << type << "for index.";
       return Value::kNullBadType;
@@ -437,6 +440,7 @@ Value OptimizerUtils::boundValueWithMin(const meta::cpp2::ColumnDef& col) {
     case Value::Type::SET:
     case Value::Type::MAP:
     case Value::Type::DATASET:
+    case Value::Type::GEOGRAPHY:  // TODO(jie)
     case Value::Type::PATH: {
       DLOG(FATAL) << "Not supported value type " << type << "for index.";
       return Value::kNullBadType;
@@ -482,6 +486,7 @@ Value OptimizerUtils::normalizeValue(const meta::cpp2::ColumnDef& col, const Val
     case Value::Type::SET:
     case Value::Type::MAP:
     case Value::Type::DATASET:
+    case Value::Type::GEOGRAPHY:  // TODO(jie)
     case Value::Type::PATH: {
       DLOG(FATAL) << "Not supported value type " << type << "for index.";
       return Value::kNullBadType;
@@ -642,7 +647,12 @@ StatusOr<ScoredColumnHint> selectRelExprIndex(const ColumnDef& field,
   }
 
   auto right = expr->right();
-  DCHECK(right->kind() == Expression::Kind::kConstant);
+  if (expr->kind() == Expression::Kind::kRelIn) {  // container expressions
+    DCHECK(right->isContainerExpr());
+  } else {  // other expressions
+    DCHECK(right->kind() == Expression::Kind::kConstant);
+  }
+
   const auto& value = static_cast<const ConstantExpression*>(right)->value();
 
   ScoredColumnHint hint;
@@ -912,6 +922,32 @@ bool OptimizerUtils::findOptimalIndex(const Expression* condition,
   return true;
 }
 
+// Check if the relational expression has a valid index
+// The left operand should either be a kEdgeProperty or kTagProperty expr
+bool OptimizerUtils::relExprHasIndex(
+    const Expression* expr,
+    const std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>>& indexItems) {
+  DCHECK(expr->isRelExpr());
+
+  for (auto& index : indexItems) {
+    const auto& fields = index->get_fields();
+    if (fields.empty()) {
+      return false;
+    }
+
+    auto left = static_cast<const RelationalExpression*>(expr)->left();
+    DCHECK(left->kind() == Expression::Kind::kEdgeProperty ||
+           left->kind() == Expression::Kind::kTagProperty);
+
+    auto propExpr = static_cast<const PropertyExpression*>(left);
+    if (propExpr->prop() == fields[0].get_name()) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 void OptimizerUtils::copyIndexScanData(const nebula::graph::IndexScan* from,
                                        nebula::graph::IndexScan* to) {
   to->setEmptyResultSet(from->isEmptyResultSet());
@@ -922,7 +958,7 @@ void OptimizerUtils::copyIndexScanData(const nebula::graph::IndexScan* from,
   to->setDedup(from->dedup());
   to->setOrderBy(from->orderBy());
   to->setLimit(from->limit());
-  to->setFilter(from->filter());
+  to->setFilter(from->filter() == nullptr ? nullptr : from->filter()->clone());
 }
 
 }  // namespace graph

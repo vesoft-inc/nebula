@@ -51,6 +51,14 @@ class SpaceDesc:
     def is_int_vid(self) -> bool:
         return self.vid_type == 'int'
 
+    @property
+    def _name(self):
+        return self.name
+
+    @_name.setter
+    def _name(self, _name: str):
+        self.name = _name
+
 
 class Column:
     def __init__(self, index: int):

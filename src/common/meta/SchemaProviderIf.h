@@ -40,6 +40,10 @@ class SchemaProviderIf {
     // In v2, if the field is nullable, it returns the position of
     // the null flag bit, otherwise, it returns 0
     virtual size_t nullFlagPos() const = 0;
+    // In v1, this always returns cpp2::GeoShape::ANY
+    // In v2, if the field type is cpp2::PropertyType::Geography,
+    // it returns the specified geo shape type
+    virtual cpp2::GeoShape geoShape() const = 0;
   };
 
   // Inherited classes do not need to implement the Iterator

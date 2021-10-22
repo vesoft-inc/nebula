@@ -111,9 +111,9 @@ Feature: Insert with time-dependent types
       """
       UPDATE VERTEX "test"
       SET
-        tag_date.f_date = Date("2018-03-04"),
-        tag_date.f_time = Time("22:01:00"),
-        tag_date.f_datetime = DateTime("2018-03-04T22:30:40")
+        tag_date.f_date = Date({year: 2018, month: 3, day: 4}),
+        tag_date.f_time = Time({hour: 22, minute: 1, second: 0, millisecond: 0, microsecond: 0}),
+        tag_date.f_datetime = DateTime({year: 2018, month: 3, day: 4, hour: 22, minute: 30, second: 40, millisecond: 0, microsecond: 0})
       YIELD f_date, f_time, f_datetime;
       """
     Then the result should be, in any order:

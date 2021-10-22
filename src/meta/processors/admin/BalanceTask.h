@@ -15,8 +15,10 @@
 #include "meta/ActiveHostsMan.h"
 #include "meta/processors/Common.h"
 #include "meta/processors/admin/AdminClient.h"
+
 namespace nebula {
 namespace meta {
+
 class BalanceTask {
   friend class BalancePlan;
   FRIEND_TEST(BalanceTest, BalanceTaskTest);

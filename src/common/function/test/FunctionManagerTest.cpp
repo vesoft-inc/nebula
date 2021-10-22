@@ -37,10 +37,12 @@ class FunctionManagerTest : public ::testing::Test {
     }
     auto res = result.value()(argsRef);
     if (res.type() != expect.type()) {
-      return ::testing::AssertionFailure() << "function return type check failed: " << expr;
+      return ::testing::AssertionFailure() << "function return type check failed, expect "
+                                           << expect.type() << ", got " << res.type();
     }
     if (res != expect) {
-      return ::testing::AssertionFailure() << "function return value check failed: " << expr;
+      return ::testing::AssertionFailure()
+             << "function return value check failed, expect " << expect << ", got " << res;
     }
     return ::testing::AssertionSuccess();
   }
@@ -443,6 +445,9 @@ TEST_F(FunctionManagerTest, functionCall) {
     auto res = std::move(result).value()(genArgsRef({true}));
     EXPECT_EQ(res, Value::kNullBadType);
   }
+}
+
+TEST_F(FunctionManagerTest, time) {
   // current time
   static constexpr std::size_t kCurrentTimeParaNumber = 0;
   // time from literal
@@ -519,6 +524,42 @@ TEST_F(FunctionManagerTest, functionCall) {
                   {Map({{"hour", 20}, {"minute", 9}, {"second", 15}})},
                   Value(time::TimeUtils::timeToUTC(Time(20, 9, 15, 0))));
   }
+  {
+    TEST_FUNCTION(time,
+                  {Map({{"hour", 20},
+                        {"minute", 9},
+                        {"second", 15},
+                        {"millisecond", 10},
+                        {"microsecond", 15}})},
+                  Value(time::TimeUtils::timeToUTC(Time(20, 9, 15, 10015))));
+  }
+  {
+    TEST_FUNCTION(time,
+                  {Map({{"hour", 20},
+                        {"minute", 9},
+                        {"second", 15},
+                        {"millisecond", 999},
+                        {"microsecond", 999}})},
+                  Value(time::TimeUtils::timeToUTC(Time(20, 9, 15, 999999))));
+  }
+  {
+    TEST_FUNCTION(time,
+                  {Map({{"hour", 20},
+                        {"minute", 9},
+                        {"second", 15},
+                        {"millisecond", 1000},
+                        {"microsecond", 999}})},
+                  Value::kNullBadData);
+  }
+  {
+    TEST_FUNCTION(time,
+                  {Map({{"hour", 20},
+                        {"minute", 9},
+                        {"second", 15},
+                        {"millisecond", 999},
+                        {"microsecond", 1000}})},
+                  Value::kNullBadData);
+  }
   // range [(0, 0, 0, 0), (23, 59, 59, 999999)]
   {
     TEST_FUNCTION(time,
@@ -566,8 +607,46 @@ TEST_F(FunctionManagerTest, functionCall) {
                         {"day", 15},
                         {"hour", 20},
                         {"minute", 9},
-                        {"second", 15}})},
-                  Value(time::TimeUtils::dateTimeToUTC(DateTime(2020, 9, 15, 20, 9, 15, 0))));
+                        {"second", 15},
+                        {"millisecond", 10},
+                        {"microsecond", 15}})},
+                  Value(time::TimeUtils::dateTimeToUTC(DateTime(2020, 9, 15, 20, 9, 15, 10015))));
+  }
+  {
+    TEST_FUNCTION(datetime,
+                  {Map({{"year", 2020},
+                        {"month", 9},
+                        {"day", 15},
+                        {"hour", 20},
+                        {"minute", 9},
+                        {"second", 15},
+                        {"millisecond", 999},
+                        {"microsecond", 999}})},
+                  Value(time::TimeUtils::dateTimeToUTC(DateTime(2020, 9, 15, 20, 9, 15, 999999))));
+  }
+  {
+    TEST_FUNCTION(datetime,
+                  {Map({{"year", 2020},
+                        {"month", 9},
+                        {"day", 15},
+                        {"hour", 20},
+                        {"minute", 9},
+                        {"second", 15},
+                        {"millisecond", 1000},
+                        {"microsecond", 999}})},
+                  Value::kNullBadData);
+  }
+  {
+    TEST_FUNCTION(datetime,
+                  {Map({{"year", 2020},
+                        {"month", 9},
+                        {"day", 15},
+                        {"hour", 20},
+                        {"minute", 9},
+                        {"second", 15},
+                        {"millisecond", 999},
+                        {"microsecond", 1000}})},
+                  Value::kNullBadData);
   }
   {
     TEST_FUNCTION(datetime,

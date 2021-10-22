@@ -243,9 +243,7 @@ class FetchVerticesSentence final : public Sentence {
     yieldClause_.reset(clause);
   }
 
-  bool isAllTagProps() { return tags_->empty(); }
-
-  const NameLabelList* tags() const { return tags_.get(); }
+  const NameLabelList* tags() const { return tags_->empty() ? nullptr : tags_.get(); }
 
   const VerticesClause* vertices() const { return vertices_.get(); }
 
@@ -291,7 +289,7 @@ class FetchEdgesSentence final : public Sentence {
 
   YieldClause* yieldClause() const { return yieldClause_.get(); }
 
-  const std::string* edge() const { return edge_->front(); }
+  const std::string& edgeName() const { return *edge_->front(); }
 
   std::size_t edgeSize() const { return edge_->size(); }
 
