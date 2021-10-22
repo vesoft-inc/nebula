@@ -54,7 +54,6 @@ R_BRACKET                   "]"
                         }
 
 \[[^\]]+\]              {
-                          DLOG(ERROR) << "DEBUG POINT: " << " lex time zone name.";
                           std::string *str = new std::string(yytext + 1, yyleng - 2);
                           yylval->strVal = str;
                           return TokenType::TIME_ZONE_NAME;
@@ -73,7 +72,6 @@ R_BRACKET                   "]"
                             * Please note that it is not Flex but Bison to regard illegal
                             * characters as errors, in such case.
                             */
-                          DLOG(ERROR) << "DEBUG POINT: unmatched char " << yytext[0];
                           return static_cast<unsigned char>(yytext[0]);
 
                           /**
