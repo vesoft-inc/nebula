@@ -8,10 +8,10 @@
 
 #include <folly/String.h>
 
+#include "common/time/ScopedTimer.h"
 #include "graph/context/QueryExpressionContext.h"
 #include "graph/planner/plan/Logic.h"
 #include "graph/planner/plan/Query.h"
-#include "graph/util/ScopedTimer.h"
 #include "interface/gen-cpp2/common_types.h"
 
 using folly::stringPrintf;

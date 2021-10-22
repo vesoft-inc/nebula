@@ -6,10 +6,10 @@
 
 #include "graph/executor/mutate/InsertExecutor.h"
 
+#include "common/time/ScopedTimer.h"
 #include "graph/context/QueryContext.h"
 #include "graph/planner/plan/Mutate.h"
 #include "graph/service/GraphFlags.h"
-#include "graph/util/ScopedTimer.h"
 
 using nebula::storage::GraphStorageClient;
 

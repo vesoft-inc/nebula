@@ -7,6 +7,7 @@
 #include "graph/service/QueryInstance.h"
 
 #include "common/base/Base.h"
+#include "common/time/ScopedTimer.h"
 #include "graph/executor/ExecutionError.h"
 #include "graph/executor/Executor.h"
 #include "graph/optimizer/OptRule.h"
@@ -16,7 +17,6 @@
 #include "graph/scheduler/Scheduler.h"
 #include "graph/stats/StatsDef.h"
 #include "graph/util/AstUtils.h"
-#include "graph/util/ScopedTimer.h"
 #include "graph/validator/Validator.h"
 #include "parser/ExplainSentence.h"
 
