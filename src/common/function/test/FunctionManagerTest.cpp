@@ -918,8 +918,9 @@ TEST_F(FunctionManagerTest, returnType) {
     EXPECT_EQ(result.value(), Value::Type::FLOAT);
   }
   {
-    auto result = FunctionManager::getReturnType("round", {Value::Type::Int, Value::Type::Int})
-        ASSERT_TRUE(result.ok()) EXPECT_EQ(result.value(), Value::Type::FLOAT);
+    auto result = FunctionManager::getReturnType("round", {Value::Type::INT, Value::Type::INT});
+    ASSERT_TRUE(result.ok());
+    EXPECT_EQ(result.value(), Value::Type::FLOAT);
   }
   {
     auto result = FunctionManager::getReturnType("round", {Value::Type::FLOAT});
@@ -927,8 +928,9 @@ TEST_F(FunctionManagerTest, returnType) {
     EXPECT_EQ(result.value(), Value::Type::FLOAT);
   }
   {
-    auto result = FunctionManager::getReturnType("round", {Value::Type::FLOAT, Value::Type::Int})
-        ASSERT_TRUE(result.ok()) EXPECT_EQ(result.value(), Value::Type::FLOAT);
+    auto result = FunctionManager::getReturnType("round", {Value::Type::FLOAT, Value::Type::INT});
+    ASSERT_TRUE(result.ok());
+    EXPECT_EQ(result.value(), Value::Type::FLOAT);
   }
   {
     auto result = FunctionManager::getReturnType("cbrt", {Value::Type::INT});
