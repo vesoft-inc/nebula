@@ -6,9 +6,9 @@
 
 #include "graph/executor/admin/PartExecutor.h"
 
+#include "common/time/ScopedTimer.h"
 #include "graph/context/QueryContext.h"
 #include "graph/planner/plan/Admin.h"
-#include "graph/util/ScopedTimer.h"
 
 using nebula::network::NetworkUtils;
 

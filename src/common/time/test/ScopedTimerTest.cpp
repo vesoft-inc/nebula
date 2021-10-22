@@ -6,7 +6,7 @@
 
 #include <gtest/gtest.h>
 
-#include "graph/util/ScopedTimer.h"
+#include "common/time/ScopedTimer.h"
 
 namespace nebula {
 
