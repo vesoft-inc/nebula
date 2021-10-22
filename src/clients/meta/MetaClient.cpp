@@ -967,7 +967,8 @@ void MetaClient::diff(const LocalCache& oldCache, const LocalCache& newCache) {
       VLOG(1) << "SpaceId " << spaceId << " was added!";
       listener_->onSpaceAdded(spaceId);
       for (const auto& newPart : newParts) {
-        listener_->onPartAdded(newPart.second);
+        auto& partHosts = newPart.second;
+        listener_->onPartAdded(partHosts.spaceId_, partHosts.partId_, "");
       }
     } else {
       const auto& oldParts = oldIt->second;
@@ -975,13 +976,14 @@ void MetaClient::diff(const LocalCache& oldCache, const LocalCache& newCache) {
         auto oldPartIt = oldParts.find(newPart.first);
         if (oldPartIt == oldParts.end()) {
           VLOG(1) << "SpaceId " << spaceId << ", partId " << newPart.first << " was added!";
-          listener_->onPartAdded(newPart.second);
+          auto& partHosts = newPart.second;
+          listener_->onPartAdded(partHosts.spaceId_, partHosts.partId_, "");
         } else {
           const auto& oldPartHosts = oldPartIt->second;
           const auto& newPartHosts = newPart.second;
           if (oldPartHosts != newPartHosts) {
             VLOG(1) << "SpaceId " << spaceId << ", partId " << newPart.first << " was updated!";
-            listener_->onPartUpdated(newPartHosts);
+            listener_->onPartUpdated(newPartHosts.spaceId_, newPartHosts.partId_, "");
           }
         }
       }
@@ -2247,10 +2249,10 @@ StatusOr<HostAddr> MetaClient::getStorageLeaderFromCache(GraphSpaceID spaceId, P
     folly::RWSpinLock::WriteHolder wh(leadersLock_);
     VLOG(1) << "No leader exists. Choose one in round-robin.";
     auto index = (leadersInfo_.pickedIndex_[{spaceId, partId}] + 1) % partHosts.hosts_.size();
-    auto picked = partHosts.hosts_[index].host;
-    leadersInfo_.leaderMap_[{spaceId, partId}] = picked;
+    auto picked = partHosts.hosts_[index];
+    leadersInfo_.leaderMap_[{spaceId, partId}] = picked.host;
     leadersInfo_.pickedIndex_[{spaceId, partId}] = index;
-    return picked;
+    return picked.host;
   }
 }
 

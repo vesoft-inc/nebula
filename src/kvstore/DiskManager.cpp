@@ -65,6 +65,7 @@ StatusOr<std::string> DiskManager::path(GraphSpaceID spaceId, PartitionID partId
 }
 
 void DiskManager::addPartToPath(GraphSpaceID spaceId, PartitionID partId, const std::string& path) {
+  LOG(INFO) << "Disk Manager Add Part " << partId << " to path " << path;
   std::lock_guard<std::mutex> lg(lock_);
   try {
     auto canonical = boost::filesystem::canonical(path);
@@ -96,6 +97,14 @@ void DiskManager::removePartFromPath(GraphSpaceID spaceId,
   }
 }
 
+StatusOr<PartDiskMap> DiskManager::partDist(GraphSpaceID spaceId) {
+  auto spaceIt = partPath_.find(spaceId);
+  if (spaceIt == partPath_.end()) {
+    return Status::Error("Space not found");
+  }
+  return spaceIt->second;
+}
+
 void DiskManager::getDiskParts(SpaceDiskPartsMap& diskParts) {
   std::lock_guard<std::mutex> lg(lock_);
   for (const auto& [space, partDiskMap] : partPath_) {
@@ -116,10 +125,12 @@ void DiskManager::getDiskParts(SpaceDiskPartsMap& diskParts) {
 bool DiskManager::hasEnoughSpace(GraphSpaceID spaceId, PartitionID partId) {
   auto spaceIt = partIndex_.find(spaceId);
   if (spaceIt == partIndex_.end()) {
+    LOG(ERROR) << "Space " << spaceId << " not found";
     return false;
   }
   auto partIt = spaceIt->second.find(partId);
   if (partIt == spaceIt->second.end()) {
+    LOG(ERROR) << "Part " << partId << " not found";
     return false;
   }
   return freeBytes_[partIt->second].load(std::memory_order_relaxed) >= FLAGS_minimum_reserved_bytes;

@@ -265,23 +265,23 @@ std::string AdminJobSentence::toString() const {
           if (paras_.empty()) {
             return "SUBMIT JOB BALANCE IN ZONE";
           } else {
-            std::string str = "SUBMIT JOB BALANCE IN ZONE REMOVE";
-            for (size_t i = 0; i < paras_.size(); i++) {
-              auto &s = paras_[i];
-              str += i == 0 ? " " + s : ", " + s;
-            }
-            return str;
+            return folly::stringPrintf("SUBMIT JOB BALANCE IN ZONE REMOVE %s",
+                                       folly::join(", ", paras_).c_str());
           }
+        case meta::cpp2::AdminCmd::DISK_BALANCE_ATTACH: {
+          return folly::stringPrintf("SUBMIT JOB BALANCE DISK ATTACH %s",
+                                     folly::join(" ", paras_).c_str());
+        }
+        case meta::cpp2::AdminCmd::DISK_BALANCE_DETACH: {
+          return folly::stringPrintf("SUBMIT JOB BALANCE DISK DETACH %s",
+                                     folly::join(" ", paras_).c_str());
+        }
         case meta::cpp2::AdminCmd::ZONE_BALANCE:
           if (paras_.empty()) {
             return "SUBMIT JOB BALANCE ACROSS ZONE";
           } else {
-            std::string str = "SUBMIT JOB BALANCE ACROSS ZONE REMOVE";
-            for (size_t i = 0; i < paras_.size(); i++) {
-              auto &s = paras_[i];
-              str += i == 0 ? " " + s : ", " + s;
-            }
-            return str;
+            return folly::stringPrintf("SUBMIT JOB BALANCE ACROSS ZONE REMOVE %s",
+                                       folly::join(", ", paras_).c_str());
           }
         case meta::cpp2::AdminCmd::LEADER_BALANCE:
           return "SUBMIT JOB BALANCE LEADER";
@@ -302,11 +302,7 @@ std::string AdminJobSentence::toString() const {
       if (paras_.empty()) {
         return "RECOVER JOB";
       } else {
-        std::string str = "RECOVER JOB";
-        for (size_t i = 0; i < paras_.size(); i++) {
-          str += i == 0 ? " " + paras_[i] : ", " + paras_[i];
-        }
-        return str;
+        return folly::stringPrintf("RECOVER JOB %s", folly::join(", ", paras_).c_str());
       }
   }
   LOG(FATAL) << "Unknown job operation " << static_cast<uint8_t>(op_);

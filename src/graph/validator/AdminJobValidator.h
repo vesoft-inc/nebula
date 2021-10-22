@@ -39,6 +39,8 @@ class AdminJobValidator final : public Validator {
           case meta::cpp2::AdminCmd::DATA_BALANCE:
           case meta::cpp2::AdminCmd::LEADER_BALANCE:
           case meta::cpp2::AdminCmd::ZONE_BALANCE:
+          case meta::cpp2::AdminCmd::DISK_BALANCE_ATTACH:
+          case meta::cpp2::AdminCmd::DISK_BALANCE_DETACH:
             return true;
           // TODO: Also space related, but not available in CreateJobExecutor now.
           case meta::cpp2::AdminCmd::DOWNLOAD:

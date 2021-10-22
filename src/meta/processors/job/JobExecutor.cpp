@@ -14,6 +14,7 @@
 #include "meta/processors/admin/AdminClient.h"
 #include "meta/processors/job/CompactJobExecutor.h"
 #include "meta/processors/job/DataBalanceJobExecutor.h"
+#include "meta/processors/job/DiskBalanceJobExecutor.h"
 #include "meta/processors/job/FlushJobExecutor.h"
 #include "meta/processors/job/LeaderBalanceJobExecutor.h"
 #include "meta/processors/job/RebuildEdgeJobExecutor.h"
@@ -56,6 +57,12 @@ std::unique_ptr<JobExecutor> JobExecutorFactory::createJobExecutor(const JobDesc
       break;
     case cpp2::AdminCmd::ZONE_BALANCE:
       ret.reset(new ZoneBalanceJobExecutor(jd, store, client, jd.getParas()));
+      break;
+    case cpp2::AdminCmd::DISK_BALANCE_ATTACH:
+      ret.reset(new DiskBalanceJobExecutor(jd, store, client, false, jd.getParas()));
+      break;
+    case cpp2::AdminCmd::DISK_BALANCE_DETACH:
+      ret.reset(new DiskBalanceJobExecutor(jd, store, client, true, jd.getParas()));
       break;
     case cpp2::AdminCmd::LEADER_BALANCE:
       ret.reset(new LeaderBalanceJobExecutor(jd.getJobId(), store, client, jd.getParas()));

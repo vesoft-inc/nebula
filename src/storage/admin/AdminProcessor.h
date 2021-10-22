@@ -127,7 +127,6 @@ class AddPartProcessor : public BaseProcessor<cpp2::AdminExecResp> {
   void process(const cpp2::AddPartReq& req) {
     auto spaceId = req.get_space_id();
     auto partId = req.get_part_id();
-    auto path = req.get_path();
     if (FLAGS_store_type != "nebula") {
       this->pushResultCode(nebula::cpp2::ErrorCode::E_INVALID_STORE, partId);
       onFinished();
@@ -142,11 +141,11 @@ class AddPartProcessor : public BaseProcessor<cpp2::AdminExecResp> {
       store->addSpace(spaceId);
     }
     std::vector<HostAndPath> peers;
-    for (auto& p : req.get_peers()) {
-      // TODO
-      peers.emplace_back(kvstore::NebulaStore::getRaftAddr(p), "");
-    }
-    store->addPart(spaceId, partId, req.get_as_learner(), path, peers);
+    // TODO
+    // for (auto& p : req.get_peers()) {
+    //   peers.emplace_back(kvstore::NebulaStore::getRaftAddr(p), "");
+    // }
+    store->addPart(spaceId, partId, req.get_as_learner(), req.get_path(), peers);
     onFinished();
   }
 
@@ -171,6 +170,7 @@ class RemovePartProcessor : public BaseProcessor<cpp2::AdminExecResp> {
       return;
     }
     auto* store = static_cast<kvstore::NebulaStore*>(env_->kvstore_);
+    LOG(INFO) << "Using Path: " << path;
     store->removePart(spaceId, partId, path);
     onFinished();
   }
@@ -208,10 +208,10 @@ class MemberChangeProcessor : public BaseProcessor<cpp2::AdminExecResp> {
     };
     if (req.get_add()) {
       LOG(INFO) << "Add peer " << peer;
-      part->asyncAddPeer(peer, cb);
+      part->asyncAddPeer(peer, path, cb);
     } else {
       LOG(INFO) << "Remove peer " << peer;
-      part->asyncRemovePeer(peer, cb);
+      part->asyncRemovePeer(peer, path, cb);
     }
   }
 
@@ -228,6 +228,7 @@ class AddLearnerProcessor : public BaseProcessor<cpp2::AdminExecResp> {
   void process(const cpp2::AddLearnerReq& req) {
     auto spaceId = req.get_space_id();
     auto partId = req.get_part_id();
+    auto path = req.get_path();
     LOG(INFO) << "Receive add learner for space " << spaceId << ", part " << partId;
     auto ret = env_->kvstore_->part(spaceId, partId);
     if (!ok(ret)) {
@@ -238,7 +239,7 @@ class AddLearnerProcessor : public BaseProcessor<cpp2::AdminExecResp> {
     }
     auto part = nebula::value(ret);
     auto learner = kvstore::NebulaStore::getRaftAddr(req.get_learner());
-    part->asyncAddLearner(learner, [this, spaceId, partId](nebula::cpp2::ErrorCode code) {
+    part->asyncAddLearner(learner, path, [this, spaceId, partId](nebula::cpp2::ErrorCode code) {
       handleErrorCode(code, spaceId, partId);
       onFinished();
       return;
@@ -330,9 +331,9 @@ class CheckPeersProcessor : public BaseProcessor<cpp2::AdminExecResp> {
     }
     auto part = nebula::value(ret);
     std::vector<HostAndPath> peers;
-    for (auto& p : req.get_peers()) {
-      peers.emplace_back(kvstore::NebulaStore::getRaftAddr(p.host), p.path);
-    }
+    // for (auto& p : req.get_peers()) {
+    //   peers.emplace_back(kvstore::NebulaStore::getRaftAddr(p));
+    // }
     part->checkAndResetPeers(peers);
     this->onFinished();
   }
@@ -368,23 +369,27 @@ class GetLeaderProcessor : public BaseProcessor<cpp2::GetLeaderPartsResp> {
 
 class GetPartsDistProcessor : public BaseProcessor<cpp2::GetPartsDistResp> {
  public:
-  static GetPartsDistProcessor* instance(StorageEnv* env) { return new GetPartsDistProcessor(env); }
+  static GetPartsDistProcessor* instance(StorageEnv* env) {
+    return new GetPartsDistProcessor(env);
+  }
 
   void process(const cpp2::GetPartsDistReq& req) {
     CHECK_NOTNULL(env_->kvstore_);
     auto spaceId = req.get_space_id();
     auto diskPartsRet = env_->kvstore_->partsDist(spaceId);
-    auto diskPartsMap = value(std::move(diskPartsRet));
-    std::unordered_map<PartitionID, std::string> partsDiskMap;
-    for (const auto& diskParts : diskPartsMap) {
-      auto& disk = diskParts.first;
-      for (auto& part : diskParts.second) {
-        LOG(INFO) << "Part " << part << " at " << disk;
-        partsDiskMap[part] = disk;
+    if (ok(diskPartsRet)) {
+      auto diskPartsMap = value(std::move(diskPartsRet));
+      std::unordered_map<PartitionID, std::string> partsDiskMap;
+      for (const auto& diskParts : diskPartsMap) {
+        auto& disk = diskParts.first;
+        for (auto& part : diskParts.second) {
+          LOG(INFO) << "Part " << part << " at " << disk;
+          partsDiskMap[part] = disk;
+        }
       }
+      resp_.parts_dist_ref() = std::move(partsDiskMap);
+      this->onFinished();
     }
-    resp_.parts_dist_ref() = std::move(partsDiskMap);
-    this->onFinished();
   }
 
  private:

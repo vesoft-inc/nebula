@@ -9,8 +9,8 @@
 #include "MetaDaemonInit.h"
 #include "common/base/Base.h"
 #include "common/base/SignalHandler.h"
-#include "common/fs/FileUtils.h"
 #include "common/datatypes/HostAndPath.h"
+#include "common/fs/FileUtils.h"
 #include "common/hdfs/HdfsCommandHelper.h"
 #include "common/hdfs/HdfsHelper.h"
 #include "common/network/NetworkUtils.h"
@@ -143,7 +143,12 @@ int main(int argc, char* argv[]) {
     return EXIT_FAILURE;
   }
 
-  gKVStore = initKV(peersRet.value(), localhost);
+  auto hosts = peersRet.value();
+  std::vector<nebula::HostAndPath> hps;
+  std::transform(hosts.begin(), hosts.end(), hps.begin(), [](auto& host) -> nebula::HostAndPath {
+    return nebula::HostAndPath(host, "");
+  });
+  gKVStore = initKV(hps, localhost);
   if (gKVStore == nullptr) {
     LOG(ERROR) << "Init kv failed!";
     return EXIT_FAILURE;

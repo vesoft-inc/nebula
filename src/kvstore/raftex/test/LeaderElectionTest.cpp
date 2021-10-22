@@ -11,6 +11,7 @@
 #include "common/fs/TempDir.h"
 #include "common/network/NetworkUtils.h"
 #include "common/thread/GenericThreadPool.h"
+#include "kvstore/PartManager.h"
 #include "kvstore/raftex/RaftexService.h"
 #include "kvstore/raftex/test/RaftexTestBase.h"
 #include "kvstore/raftex/test/TestShard.h"
@@ -22,13 +23,14 @@ TEST(LeaderElection, ElectionWithThreeCopies) {
   LOG(INFO) << "=====> Start ElectionWithThreeCopies test";
   fs::TempDir walRoot("/tmp/election_with_three_copies.XXXXXX");
   std::shared_ptr<thread::GenericThreadPool> workers;
+  std::vector<std::string> paths;
   std::vector<std::string> wals;
   std::vector<HostAddr> allHosts;
   std::vector<std::shared_ptr<RaftexService>> services;
   std::vector<std::shared_ptr<test::TestShard>> copies;
 
   std::shared_ptr<test::TestShard> leader;
-  setupRaft(3, walRoot, workers, wals, allHosts, services, copies, leader);
+  setupRaft(3, walRoot, workers, paths, wals, allHosts, services, copies, leader);
 
   // Check all hosts agree on the same leader
   checkLeadership(copies, leader);
@@ -42,13 +44,14 @@ TEST(LeaderElection, ElectionWithOneCopy) {
   LOG(INFO) << "=====> Start ElectionWithOneCopy test";
   fs::TempDir walRoot("/tmp/election_with_one_copy.XXXXXX");
   std::shared_ptr<thread::GenericThreadPool> workers;
+  std::vector<std::string> paths;
   std::vector<std::string> wals;
   std::vector<HostAddr> allHosts;
   std::vector<std::shared_ptr<RaftexService>> services;
   std::vector<std::shared_ptr<test::TestShard>> copies;
 
   std::shared_ptr<test::TestShard> leader;
-  setupRaft(1, walRoot, workers, wals, allHosts, services, copies, leader);
+  setupRaft(1, walRoot, workers, paths, wals, allHosts, services, copies, leader);
 
   // Check all hosts agree on the same leader
   checkLeadership(copies, leader);
@@ -63,13 +66,14 @@ TEST(LeaderElection, LeaderCrash) {
 
   fs::TempDir walRoot("/tmp/leader_crash.XXXXXX");
   std::shared_ptr<thread::GenericThreadPool> workers;
+  std::vector<std::string> paths;
   std::vector<std::string> wals;
   std::vector<HostAddr> allHosts;
   std::vector<std::shared_ptr<RaftexService>> services;
   std::vector<std::shared_ptr<test::TestShard>> copies;
 
   std::shared_ptr<test::TestShard> leader;
-  setupRaft(3, walRoot, workers, wals, allHosts, services, copies, leader);
+  setupRaft(3, walRoot, workers, paths, wals, allHosts, services, copies, leader);
 
   // Check all hosts agree on the same leader
   checkLeadership(copies, leader);
@@ -85,16 +89,31 @@ TEST(LeaderElection, LeaderCrash) {
     leader.reset();
   }
 
+  auto partMan = std::make_shared<kvstore::MemPartManager>();
+  std::vector<HostAndPath> peers;
+  for (int i = 0; i < 3; i++) {
+    uint16_t port = services[i]->getServerPort();
+    LOG(INFO) << "Add Part 127.0.0.1:" << port - 1 << ", Path: " << paths[i];
+    peers.emplace_back(HostAddr("127.0.0.1", port - 1), paths[i]);
+  }
+  meta::PartHosts pm;
+  pm.spaceId_ = 1;
+  pm.partId_ = 1;
+  pm.hosts_ = peers;
+  partMan->partsMap_[1][1] = std::move(pm);
+
   // Add a new copy
   copies.emplace_back(std::make_shared<test::TestShard>(copies.size(),
                                                         services[idx],
                                                         1,  // Shard ID
                                                         allHosts[idx],
-                                                        wals[3],
+                                                        paths[idx],
+                                                        wals[idx],
                                                         services[idx]->getIOThreadPool(),
                                                         workers,
                                                         services[idx]->getThreadManager(),
                                                         nullptr,
+                                                        partMan,
                                                         std::bind(&onLeadershipLost,
                                                                   std::ref(copies),
                                                                   std::ref(leader),

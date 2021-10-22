@@ -13,8 +13,6 @@
 namespace nebula {
 namespace raftex {
 
-// class RaftexService;
-
 namespace test {
 
 enum class CommandType : int8_t {
@@ -23,9 +21,10 @@ enum class CommandType : int8_t {
   ADD_PEER = 0x03,
   REMOVE_PEER = 0x04,
 };
-std::string encodeLearner(const HostAddr& addr);
 
-HostAddr decodeLearner(const folly::StringPiece& log);
+std::string encodeLearner(const HostAddr& addr, const std::string& path);
+
+HostAndPath decodeLearner(const folly::StringPiece& log);
 
 folly::Optional<std::string> compareAndSet(const std::string& log);
 
@@ -37,13 +36,13 @@ std::string encodeSnapshotRow(LogID logId, const std::string& row);
 
 std::pair<LogID, std::string> decodeSnapshotRow(const std::string& rawData);
 
-std::string encodeAddPeer(const HostAddr& addr);
+std::string encodeAddPeer(const HostAddr& addr, const std::string& path);
 
-HostAddr decodeAddPeer(const folly::StringPiece& log);
+HostAndPath decodeAddPeer(const folly::StringPiece& log);
 
-std::string encodeRemovePeer(const HostAddr& addr);
+std::string encodeRemovePeer(const HostAddr& addr, const std::string& path);
 
-HostAddr decodeRemovePeer(const folly::StringPiece& log);
+HostAndPath decodeRemovePeer(const folly::StringPiece& log);
 
 class TestShard : public RaftPart {
   friend class NebulaSnapshotManager;
@@ -53,11 +52,13 @@ class TestShard : public RaftPart {
             std::shared_ptr<RaftexService> svc,
             PartitionID partId,
             HostAddr addr,
+            const std::string& path,
             const folly::StringPiece walRoot,
             std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
             std::shared_ptr<thread::GenericThreadPool> workers,
             std::shared_ptr<folly::Executor> handlersPool,
             std::shared_ptr<SnapshotManager> snapshotMan,
+            std::shared_ptr<kvstore::PartManager> partMan,
             std::function<void(size_t idx, const char*, TermID)> leadershipLostCB,
             std::function<void(size_t idx, const char*, TermID)> becomeLeaderCB);
 
@@ -86,7 +87,7 @@ class TestShard : public RaftPart {
       switch (static_cast<CommandType>(log[0])) {
         case CommandType::ADD_LEARNER: {
           auto learner = decodeLearner(log);
-          addLearner(learner);
+          addLearner(learner.host, learner.path);
           LOG(INFO) << idStr_ << "Add learner " << learner;
           break;
         }
@@ -98,13 +99,13 @@ class TestShard : public RaftPart {
         }
         case CommandType::ADD_PEER: {
           auto peer = decodeAddPeer(log);
-          addPeer(peer);
+          addPeer(peer.host, peer.path);
           LOG(INFO) << idStr_ << "Add peer " << peer;
           break;
         }
         case CommandType::REMOVE_PEER: {
           auto peer = decodeRemovePeer(log);
-          preProcessRemovePeer(peer);
+          preProcessRemovePeer(peer.host, peer.path);
           LOG(INFO) << idStr_ << "Remove peer " << peer;
           break;
         }
@@ -155,7 +156,7 @@ class NebulaSnapshotManager : public SnapshotManager {
   void accessAllRowsInSnapshot(GraphSpaceID spaceId,
                                PartitionID partId,
                                SnapshotCallback cb) override {
-    auto part = std::dynamic_pointer_cast<TestShard>(service_->findPart(spaceId, partId));
+    auto part = std::dynamic_pointer_cast<TestShard>(service_->findPart(spaceId, partId, ""));
     CHECK(!!part);
     int64_t totalCount = 0;
     int64_t totalSize = 0;

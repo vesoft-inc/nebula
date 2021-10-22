@@ -9,6 +9,7 @@
 #include "codec/RowReaderWrapper.h"
 #include "common/plugin/fulltext/FTStorageAdapter.h"
 #include "kvstore/Listener.h"
+#include "kvstore/PartManager.h"
 
 namespace nebula {
 namespace kvstore {
@@ -20,6 +21,7 @@ class ESListener : public Listener {
   ESListener(GraphSpaceID spaceId,
              PartitionID partId,
              HostAddr localAddr,
+             const std::string& path,
              const std::string& walPath,
              std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
              std::shared_ptr<thread::GenericThreadPool> workers,
@@ -27,10 +29,12 @@ class ESListener : public Listener {
              std::shared_ptr<raftex::SnapshotManager> snapshotMan,
              std::shared_ptr<RaftClient> clientMan,
              std::shared_ptr<DiskManager> diskMan,
+             std::shared_ptr<kvstore::PartManager> partMan,
              meta::SchemaManager* schemaMan)
       : Listener(spaceId,
                  partId,
                  std::move(localAddr),
+                 path,
                  walPath,
                  ioPool,
                  workers,
@@ -38,6 +42,7 @@ class ESListener : public Listener {
                  snapshotMan,
                  clientMan,
                  diskMan,
+                 partMan,
                  schemaMan) {
     CHECK(!!schemaMan);
     lastApplyLogFile_ = std::make_unique<std::string>(

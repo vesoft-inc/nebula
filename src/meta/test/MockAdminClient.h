@@ -23,7 +23,7 @@ class MockAdminClient : public AdminClient {
                                      const HostAndPath&));
   MOCK_METHOD5(
       addPart,
-      folly::Future<Status>(GraphSpaceID, PartitionID, const HostAddr&, const std::string&, bool));
+      folly::Future<Status>(GraphSpaceID, PartitionID, const HostAddr&, bool, const std::string&));
   MOCK_METHOD4(
       addLearner,
       folly::Future<Status>(GraphSpaceID, PartitionID, const HostAddr&, const std::string&));

@@ -25,6 +25,7 @@ class Handler {
   virtual void addPart(GraphSpaceID spaceId,
                        PartitionID partId,
                        bool asLearner,
+                       const std::string& path,
                        const std::vector<HostAndPath>& peers) = 0;
 
   virtual void updateSpaceOption(GraphSpaceID spaceId,
@@ -74,10 +75,6 @@ class PartManager {
    * */
   virtual StatusOr<meta::PartHosts> partMeta(GraphSpaceID spaceId, PartitionID partId) = 0;
 
-  virtual StatusOr<std::string> partLocation(GraphSpaceID spaceId,
-                                             PartitionID partId,
-                                             const HostAddr& host) = 0;
-
   /**
    * Check current part exist or not on host.
    * */
@@ -100,6 +97,10 @@ class PartManager {
     handler_ = handler;
   }
 
+  virtual StatusOr<std::string> getPath(HostAddr host,
+                                        GraphSpaceID spaceId,
+                                        PartitionID partId) = 0;
+
  protected:
   Handler* handler_ = nullptr;
 };
@@ -118,6 +119,9 @@ class MemPartManager final : public PartManager {
   FRIEND_TEST(NebulaStoreTest, AtomicOpBatchTest);
   FRIEND_TEST(NebulaStoreTest, RemoveInvalidSpaceTest);
   FRIEND_TEST(NebulaStoreTest, BackupRestoreTest);
+  FRIEND_TEST(LogAppend, SimpleAppendWithOneCopy);
+  FRIEND_TEST(LogAppend, SimpleAppendWithThreeCopies);
+  FRIEND_TEST(LogAppend, MultiThreadAppend);
   friend class ListenerBasicTest;
 
  public:
@@ -129,7 +133,10 @@ class MemPartManager final : public PartManager {
 
   StatusOr<meta::PartHosts> partMeta(GraphSpaceID spaceId, PartitionID partId) override;
 
-  void addPart(GraphSpaceID spaceId, PartitionID partId, std::vector<HostAndPath> peers = {}) {
+  void addPart(GraphSpaceID spaceId,
+               PartitionID partId,
+               const std::string& path,
+               std::vector<HostAndPath> peers = {}) {
     bool noSpace = partsMap_.find(spaceId) == partsMap_.end();
     auto& p = partsMap_[spaceId];
     bool noPart = p.find(partId) == p.end();
@@ -142,7 +149,7 @@ class MemPartManager final : public PartManager {
       handler_->addSpace(spaceId);
     }
     if (noPart && handler_) {
-      handler_->addPart(spaceId, partId, false, {});
+      handler_->addPart(spaceId, partId, false, path, {});
     }
   }
 
@@ -159,10 +166,6 @@ class MemPartManager final : public PartManager {
       }
     }
   }
-
-  StatusOr<std::string> partLocation(GraphSpaceID spaceId,
-                                     PartitionID partId,
-                                     const HostAddr& host) override;
 
   Status partExist(const HostAddr& host, GraphSpaceID spaceId, PartitionID partId) override;
 
@@ -183,7 +186,12 @@ class MemPartManager final : public PartManager {
   StatusOr<std::vector<meta::RemoteListenerInfo>> listenerPeerExist(GraphSpaceID spaceId,
                                                                     PartitionID partId) override;
 
- private:
+  // std::unordered_map<std::tuple<HostAddr, GraphSpaceID, PartitionID>, std::string> partsLocation(
+  //     GraphSpaceID spaceId) override;
+
+  StatusOr<std::string> getPath(HostAddr host, GraphSpaceID spaceId, PartitionID partId) override;
+
+ public:
   meta::PartsMap partsMap_;
   meta::ListenersMap listenersMap_;
   meta::RemoteListeners remoteListeners_;
@@ -199,10 +207,6 @@ class MetaServerBasedPartManager : public PartManager, public meta::MetaChangedL
 
   StatusOr<meta::PartHosts> partMeta(GraphSpaceID spaceId, PartitionID partId) override;
 
-  StatusOr<std::string> partLocation(GraphSpaceID spaceId,
-                                     PartitionID partId,
-                                     const HostAddr& host) override;
-
   Status partExist(const HostAddr& host, GraphSpaceID spaceId, PartitionID partId) override;
 
   Status spaceExist(const HostAddr& host, GraphSpaceID spaceId) override;
@@ -211,6 +215,11 @@ class MetaServerBasedPartManager : public PartManager, public meta::MetaChangedL
 
   StatusOr<std::vector<meta::RemoteListenerInfo>> listenerPeerExist(GraphSpaceID spaceId,
                                                                     PartitionID partId) override;
+
+  // std::unordered_map<std::tuple<HostAddr, GraphSpaceID, PartitionID>, std::string> partsLocation(
+  //     GraphSpaceID spaceId) override;
+
+  StatusOr<std::string> getPath(HostAddr host, GraphSpaceID spaceId, PartitionID partId) override;
 
   /**
    * Implement the interfaces in MetaChangedListener
@@ -222,11 +231,11 @@ class MetaServerBasedPartManager : public PartManager, public meta::MetaChangedL
   void onSpaceOptionUpdated(GraphSpaceID spaceId,
                             const std::unordered_map<std::string, std::string>& options) override;
 
-  void onPartAdded(const meta::PartHosts& partMeta) override;
+  void onPartAdded(GraphSpaceID spaceId, PartitionID partId, const std::string& path) override;
 
   void onPartRemoved(GraphSpaceID spaceId, PartitionID partId, const std::string& path) override;
 
-  void onPartUpdated(const meta::PartHosts& partMeta) override;
+  void onPartUpdated(GraphSpaceID spaceId, PartitionID partId, const std::string& path) override;
 
   void fetchLeaderInfo(
       std::unordered_map<GraphSpaceID, std::vector<meta::cpp2::LeaderInfo>>& leaderParts) override;

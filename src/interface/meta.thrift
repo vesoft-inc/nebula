@@ -246,6 +246,8 @@ enum AdminCmd {
     INGEST                   = 8,
     LEADER_BALANCE           = 9,
     ZONE_BALANCE             = 10,
+    DISK_BALANCE_ATTACH      = 11,
+    DISK_BALANCE_DETACH      = 12,
     UNKNOWN                  = 99,
 } (cpp.enum_strict)
 

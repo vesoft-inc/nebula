@@ -23,6 +23,7 @@ namespace raftex {
 TEST(MemberChangeTest, AddRemovePeerTest) {
   fs::TempDir walRoot("/tmp/member_change.XXXXXX");
   std::shared_ptr<thread::GenericThreadPool> workers;
+  std::vector<std::string> paths;
   std::vector<std::string> wals;
   std::vector<HostAddr> allHosts;
   std::vector<std::shared_ptr<RaftexService>> services;
@@ -30,20 +31,22 @@ TEST(MemberChangeTest, AddRemovePeerTest) {
 
   std::shared_ptr<test::TestShard> leader;
   std::vector<bool> isLearner = {false, false, false, true};
-  setupRaft(4, walRoot, workers, wals, allHosts, services, copies, leader, isLearner);
+  setupRaft(4, walRoot, workers, paths, wals, allHosts, services, copies, leader, isLearner);
 
   // Check all hosts agree on the same leader
   checkLeadership(copies, leader);
 
-  CHECK_EQ(2, leader->hosts_.size());
+  ASSERT_EQ(2, leader->hosts_.size());
 
   {
-    auto f = leader->sendCommandAsync(test::encodeAddPeer(allHosts[3]));
+    LOG(INFO) << "******************************";
+    auto f = leader->sendCommandAsync(test::encodeAddPeer(allHosts[3], paths[3]));
     f.wait();
     sleep(FLAGS_raft_heartbeat_interval_secs);
 
+    LOG(INFO) << "1111111111111111111111111111111111111";
     for (auto& c : copies) {
-      CHECK_EQ(3, c->hosts_.size());
+      ASSERT_EQ(3, c->hosts_.size());
     }
   }
   std::vector<std::string> msgs;
@@ -57,24 +60,23 @@ TEST(MemberChangeTest, AddRemovePeerTest) {
 
   {
     LOG(INFO) << "Add the same peer again!";
-    auto f = leader->sendCommandAsync(test::encodeAddPeer(allHosts[3]));
+    auto f = leader->sendCommandAsync(test::encodeAddPeer(allHosts[3], paths[3]));
     f.wait();
     sleep(FLAGS_raft_heartbeat_interval_secs);
 
     for (auto& c : copies) {
-      CHECK_EQ(3, c->hosts_.size());
+      ASSERT_EQ(3, c->hosts_.size());
     }
   }
   {
     LOG(INFO) << "Remove the peer added!";
-    auto f = leader->sendCommandAsync(test::encodeRemovePeer(allHosts[3]));
+    auto f = leader->sendCommandAsync(test::encodeRemovePeer(allHosts[3], paths[3]));
     f.wait();
     sleep(FLAGS_raft_heartbeat_interval_secs);
 
     for (size_t i = 0; i < copies.size() - 1; i++) {
-      CHECK_EQ(2, copies[i]->hosts_.size());
+      ASSERT_EQ(2, copies[i]->hosts_.size());
     }
-    //        CHECK(copies[3]->isStopped());
   }
   finishRaft(services, copies, workers, leader);
 }
@@ -82,30 +84,32 @@ TEST(MemberChangeTest, AddRemovePeerTest) {
 TEST(MemberChangeTest, RemoveLeaderTest) {
   fs::TempDir walRoot("/tmp/member_change.XXXXXX");
   std::shared_ptr<thread::GenericThreadPool> workers;
+  std::vector<std::string> paths;
   std::vector<std::string> wals;
-  std::vector<HostAddr> allHosts;
   std::vector<std::shared_ptr<RaftexService>> services;
+  std::vector<HostAddr> allHosts;
   std::vector<std::shared_ptr<test::TestShard>> copies;
 
   std::shared_ptr<test::TestShard> leader;
   std::vector<bool> isLearner = {false, false, false, false};
-  setupRaft(4, walRoot, workers, wals, allHosts, services, copies, leader, isLearner);
+  setupRaft(4, walRoot, workers, paths, wals, allHosts, services, copies, leader, isLearner);
 
   // Check all hosts agree on the same leader
   auto leaderIndex = checkLeadership(copies, leader);
 
-  CHECK_EQ(3, leader->hosts_.size());
+  ASSERT_EQ(3, leader->hosts_.size());
 
   {
     LOG(INFO) << "Send remove peer request, remove " << allHosts[leaderIndex];
     leader.reset();
-    auto f = copies[leaderIndex]->sendCommandAsync(test::encodeRemovePeer(allHosts[leaderIndex]));
+    auto f = copies[leaderIndex]->sendCommandAsync(
+        test::encodeRemovePeer(allHosts[leaderIndex], paths[leaderIndex]));
     f.wait();
     copies[leaderIndex]->stop();
     //        CHECK(copies[leaderIndex]->isStopped());
     for (size_t i = 0; i < copies.size(); i++) {
       if (static_cast<int>(i) != leaderIndex) {
-        CHECK_EQ(2, copies[i]->hosts_.size());
+        ASSERT_EQ(2, copies[i]->hosts_.size());
       }
     }
   }

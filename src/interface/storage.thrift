@@ -717,11 +717,11 @@ struct TransLeaderReq {
 
 
 struct AddPartReq {
-    1: common.GraphSpaceID   space_id,
-    2: common.PartitionID    part_id,
-    3: bool                  as_learner,
-    4: list<common.HostAddr> peers,
-    5: binary                path,
+    1: common.GraphSpaceID      space_id,
+    2: common.PartitionID       part_id,
+    3: bool                     as_learner,
+    4: list<common.HostAddr>    peers,
+    5: binary                   path,
 }
 
 
@@ -729,14 +729,14 @@ struct AddLearnerReq {
     1: common.GraphSpaceID space_id,
     2: common.PartitionID  part_id,
     3: common.HostAddr     learner,
-    4: binary              path
+    4: binary              path,
 }
 
 
 struct RemovePartReq {
     1: common.GraphSpaceID space_id,
     2: common.PartitionID  part_id,
-    3: binary              path
+    3: binary              path,
 }
 
 
@@ -815,7 +815,7 @@ struct GetPartsDistResp {
 struct CheckPeersReq {
     1: common.GraphSpaceID      space_id,
     2: common.PartitionID       part_id,
-    3: list<common.HostAndPath> peers,
+    3: list<common.HostAddr>    peers,
 }
 
 

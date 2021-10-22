@@ -5,9 +5,10 @@
 
 #include "kvstore/PartManager.h"
 
+#include "common/utils/Utils.h"
+
 namespace nebula {
 namespace kvstore {
-
 meta::PartsMap MemPartManager::parts(const HostAddr&) {
   return partsMap_;
 }
@@ -23,15 +24,6 @@ StatusOr<std::vector<meta::RemoteListenerInfo>> MemPartManager::listenerPeerExis
     return Status::ListenerNotFound();
   }
   return listeners;
-}
-
-StatusOr<std::string> MemPartManager::partLocation(GraphSpaceID spaceId,
-                                                   PartitionID partId,
-                                                   const HostAddr& host) {
-  UNUSED(spaceId);
-  UNUSED(partId);
-  UNUSED(host);
-  return "";
 }
 
 StatusOr<meta::PartHosts> MemPartManager::partMeta(GraphSpaceID spaceId, PartitionID partId) {
@@ -60,6 +52,27 @@ Status MemPartManager::partExist(const HostAddr&, GraphSpaceID spaceId, Partitio
   return Status::SpaceNotFound();
 }
 
+StatusOr<std::string> MemPartManager::getPath(HostAddr host,
+                                              GraphSpaceID spaceId,
+                                              PartitionID partId) {
+  auto it = partsMap_.find(spaceId);
+  if (it != partsMap_.end()) {
+    auto partIt = it->second.find(partId);
+    if (partIt != it->second.end()) {
+      for (auto& hp : partIt->second.hosts_) {
+        LOG(INFO) << "Host " << host << " hp.host " << hp.host;
+        if (host == hp.host) {
+          return hp.path;
+        }
+      }
+      return Status::HostNotFound();
+    } else {
+      return Status::PartNotFound();
+    }
+  }
+  return Status::SpaceNotFound();
+}
+
 MetaServerBasedPartManager::MetaServerBasedPartManager(HostAddr, meta::MetaClient* client) {
   client_ = client;
   CHECK_NOTNULL(client_);
@@ -76,26 +89,6 @@ MetaServerBasedPartManager::~MetaServerBasedPartManager() {
 
 meta::PartsMap MetaServerBasedPartManager::parts(const HostAddr& hostAddr) {
   return client_->getPartsMapFromCache(hostAddr);
-}
-
-StatusOr<std::string> MetaServerBasedPartManager::partLocation(GraphSpaceID spaceId,
-                                                               PartitionID partId,
-                                                               const HostAddr& host) {
-  UNUSED(spaceId);
-  UNUSED(partId);
-  UNUSED(host);
-  // auto partInfoResult = partMeta(spaceId, partId);
-  // if (!partInfoResult.ok()) {
-  //   return Status::Error("Space %d part %d not found",
-  //                        spaceId, partId);
-  // }
-
-  // for (auto& pair : partInfoResult.value().hosts_) {
-  //   if (pair.first == host) {
-  //     return pair.second;
-  //   }
-  // }
-  return Status::Error("Host not found: %s", host.toString().c_str());
 }
 
 StatusOr<meta::PartHosts> MetaServerBasedPartManager::partMeta(GraphSpaceID spaceId,
@@ -193,9 +186,11 @@ void MetaServerBasedPartManager::onSpaceOptionUpdated(
   }
 }
 
-void MetaServerBasedPartManager::onPartAdded(const meta::PartHosts& partMeta) {
+void MetaServerBasedPartManager::onPartAdded(GraphSpaceID spaceId,
+                                             PartitionID partId,
+                                             const std::string& path) {
   if (handler_ != nullptr) {
-    handler_->addPart(partMeta.spaceId_, partMeta.partId_, false, {});
+    handler_->addPart(spaceId, partId, false, path, {});
   } else {
     VLOG(1) << "handler_ is nullptr!";
   }
@@ -211,9 +206,7 @@ void MetaServerBasedPartManager::onPartRemoved(GraphSpaceID spaceId,
   }
 }
 
-void MetaServerBasedPartManager::onPartUpdated(const meta::PartHosts& partMeta) {
-  UNUSED(partMeta);
-}
+void MetaServerBasedPartManager::onPartUpdated(GraphSpaceID, PartitionID, const std::string&) {}
 
 void MetaServerBasedPartManager::fetchLeaderInfo(
     std::unordered_map<GraphSpaceID, std::vector<meta::cpp2::LeaderInfo>>& leaderIds) {
@@ -274,5 +267,14 @@ void MetaServerBasedPartManager::onCheckRemoteListeners(
   }
 }
 
+StatusOr<std::string> MetaServerBasedPartManager::getPath(HostAddr host,
+                                                          GraphSpaceID spaceId,
+                                                          PartitionID partId) {
+  LOG(INFO) << "MetaServerBasedPartManager getPath";
+  UNUSED(host);
+  UNUSED(spaceId);
+  UNUSED(partId);
+  return Status::OK();
+}
 }  // namespace kvstore
 }  // namespace nebula

@@ -38,7 +38,6 @@ ErrOrHosts StorageJobExecutor::getTargetHost(GraphSpaceID spaceId) {
 
   // use vector instead of set because this can convenient for next step
   std::unordered_map<HostAddr, std::vector<PartitionID>> hostAndPart;
-  std::vector<std::pair<HostAddr, std::vector<PartitionID>>> hosts;
   while (iter->valid()) {
     auto part = MetaKeyUtils::parsePartKeyPartId(iter->key());
     auto targets = MetaKeyUtils::parsePartVal(iter->val());
@@ -47,10 +46,7 @@ ErrOrHosts StorageJobExecutor::getTargetHost(GraphSpaceID spaceId) {
     }
     iter->next();
   }
-  for (auto it = hostAndPart.begin(); it != hostAndPart.end(); it++) {
-    hosts.emplace_back(std::pair(it->first, it->second));
-  }
-  return hosts;
+  return std::vector<PartsOfHost>(hostAndPart.begin(), hostAndPart.end());
 }
 
 ErrOrHosts StorageJobExecutor::getLeaderHost(GraphSpaceID space) {

@@ -5,8 +5,6 @@
 
 #include "meta/processors/job/ZoneBalanceJobExecutor.h"
 
-#include <folly/executors/CPUThreadPoolExecutor.h>
-
 #include "common/utils/MetaKeyUtils.h"
 #include "kvstore/NebulaStore.h"
 #include "meta/processors/job/JobUtils.h"
@@ -29,11 +27,6 @@ nebula::cpp2::ErrorCode ZoneBalanceJobExecutor::prepare() {
   for (size_t i = 0; i < paras_.size() - 1; i++) {
     lostZones_.emplace_back(paras_[i]);
   }
-  return nebula::cpp2::ErrorCode::SUCCEEDED;
-}
-
-nebula::cpp2::ErrorCode ZoneBalanceJobExecutor::stop() {
-  plan_->stop();
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
@@ -62,10 +55,10 @@ folly::Future<Status> ZoneBalanceJobExecutor::executeInternal() {
 }
 
 nebula::cpp2::ErrorCode ZoneBalanceJobExecutor::updateMeta() {
-  std::string spaceKey = MetaKeyUtils::spaceKey(spaceInfo_.spaceId_);
+  auto spaceKey = MetaKeyUtils::spaceKey(spaceInfo_.spaceId_);
   std::string spaceVal;
   kvstore_->get(kDefaultSpaceId, kDefaultPartId, spaceKey, &spaceVal);
-  meta::cpp2::SpaceDesc properties = MetaKeyUtils::parseSpace(spaceVal);
+  auto properties = MetaKeyUtils::parseSpace(spaceVal);
   std::vector<std::string> zones;
   for (std::string& zn : lostZones_) {
     spaceInfo_.zones_.erase(zn);
@@ -74,24 +67,7 @@ nebula::cpp2::ErrorCode ZoneBalanceJobExecutor::updateMeta() {
     zones.emplace_back(zoneMapEntry.first);
   }
   properties.zone_names_ref() = std::move(zones);
-  std::vector<kvstore::KV> data;
-  data.emplace_back(MetaKeyUtils::spaceKey(spaceInfo_.spaceId_),
-                    MetaKeyUtils::spaceVal(properties));
-  folly::Baton<true, std::atomic> baton;
-  auto ret = nebula::cpp2::ErrorCode::SUCCEEDED;
-  kvstore_->asyncMultiPut(kDefaultSpaceId,
-                          kDefaultPartId,
-                          std::move(data),
-                          [&baton, &ret](nebula::cpp2::ErrorCode code) {
-                            if (nebula::cpp2::ErrorCode::SUCCEEDED != code) {
-                              ret = code;
-                              LOG(INFO) << "Can't write the kvstore, ret = "
-                                        << static_cast<int32_t>(code);
-                            }
-                            baton.post();
-                          });
-  baton.wait();
-  return ret;
+  return save(spaceKey, MetaKeyUtils::spaceVal(properties));
 }
 
 HostAddr ZoneBalanceJobExecutor::insertPartIntoZone(
@@ -148,7 +124,7 @@ nebula::cpp2::ErrorCode ZoneBalanceJobExecutor::rebalanceActiveZones(
       if (!sortedActiveZonesRef[leftIndex]->partExist(partId)) {
         HostAddr dst = insertPartIntoZone(sortedZoneHosts, sortedActiveZonesRef[leftIndex], partId);
         insertOneTask(
-            BalanceTask(jobId_, spaceInfo_.spaceId_, partId, srcHost, dst, kvstore_, adminClient_),
+            BalanceTask(jobId_, spaceInfo_.spaceId_, partId, srcHost, "", dst, "", kvstore_, adminClient_),
             existTasks);
         int32_t newLeftIndex = leftIndex;
         for (; newLeftIndex < leftEnd - 1; newLeftIndex++) {
@@ -295,7 +271,7 @@ Status ZoneBalanceJobExecutor::buildBalancePlan() {
       for (PartitionID partId : host.parts_) {
         HostAddr dst = chooseZoneToInsert(partId);
         existTasks[partId].emplace_back(
-            jobId_, spaceInfo_.spaceId_, partId, hostAddr, dst, kvstore_, adminClient_);
+            jobId_, spaceInfo_.spaceId_, partId, hostAddr, "", dst, "", kvstore_, adminClient_);
       }
       host.parts_.clear();
     }

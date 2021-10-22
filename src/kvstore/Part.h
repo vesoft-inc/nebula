@@ -10,6 +10,7 @@
 #include "common/utils/NebulaKeyUtils.h"
 #include "kvstore/Common.h"
 #include "kvstore/KVEngine.h"
+#include "kvstore/PartManager.h"
 #include "kvstore/raftex/SnapshotManager.h"
 #include "kvstore/wal/FileBasedWal.h"
 #include "raftex/RaftPart.h"
@@ -26,6 +27,7 @@ class Part : public raftex::RaftPart {
   Part(GraphSpaceID spaceId,
        PartitionID partId,
        HostAddr localAddr,
+       const std::string& path,
        const std::string& walPath,
        KVEngine* engine,
        std::shared_ptr<folly::IOThreadPoolExecutor> pool,
@@ -34,6 +36,7 @@ class Part : public raftex::RaftPart {
        std::shared_ptr<raftex::SnapshotManager> snapshotMan,
        std::shared_ptr<RaftClient> clientMan,
        std::shared_ptr<DiskManager> diskMan,
+       std::shared_ptr<kvstore::PartManager> partMan,
        int32_t vIdLen);
 
   virtual ~Part() {
@@ -55,13 +58,13 @@ class Part : public raftex::RaftPart {
 
   void asyncAtomicOp(raftex::AtomicOp op, KVCallback cb);
 
-  void asyncAddLearner(const HostAddr& learner, KVCallback cb);
+  void asyncAddLearner(const HostAddr& learner, const std::string& path, KVCallback cb);
 
   void asyncTransferLeader(const HostAddr& target, KVCallback cb);
 
-  void asyncAddPeer(const HostAddr& peer, KVCallback cb);
+  void asyncAddPeer(const HostAddr& peer, const std::string& path, KVCallback cb);
 
-  void asyncRemovePeer(const HostAddr& peer, KVCallback cb);
+  void asyncRemovePeer(const HostAddr& peer, const std::string& path, KVCallback cb);
 
   void setBlocking(bool sign);
 

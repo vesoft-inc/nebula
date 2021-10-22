@@ -60,11 +60,12 @@ nebula::ClusterID& metaClusterId() {
   return gClusterId;
 }
 
-std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> peers,
+std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAndPath> peers,
                                                  nebula::HostAddr localhost) {
   auto partMan = std::make_unique<nebula::kvstore::MemPartManager>();
   // The meta server has only one space (0), one part (0)
-  partMan->addPart(nebula::kDefaultSpaceId, nebula::kDefaultPartId, std::move(peers));
+  partMan->addPart(
+      nebula::kDefaultSpaceId, nebula::kDefaultPartId, FLAGS_data_path, std::move(peers));
 #ifndef BUILD_STANDALONE
   int32_t numMetaIoThreads = FLAGS_num_io_threads;
   int32_t numMetaWorkerThreads = FLAGS_num_worker_threads;

@@ -7,6 +7,8 @@
 
 #include "common/base/Base.h"
 #include "common/ssl/SSLConfig.h"
+#include "common/time/WallClock.h"
+#include "kvstore/PartManager.h"
 #include "kvstore/raftex/Host.h"
 #include "kvstore/raftex/RaftexService.h"
 #include "kvstore/wal/FileBasedWal.h"
@@ -37,18 +39,34 @@ HostAddr deserializeHostAddr(folly::StringPiece raw) {
   return addr;
 }
 
-std::string encodeLearner(const HostAddr& addr) {
-  std::string str;
+std::string encodeLearner(const HostAddr& host, const std::string& path) {
   CommandType type = CommandType::ADD_LEARNER;
-  str.append(reinterpret_cast<const char*>(&type), 1);
-  str.append(serializeHostAddr(addr));
-  return str;
+  std::string encoded;
+  std::string encodedHost;
+  LOG(INFO) << "encodeLearner host: " << host;
+  apache::thrift::CompactSerializer::serialize(host, &encodedHost);
+
+  int32_t pathSize = path.size();
+  encoded.append(reinterpret_cast<char*>(&type), 1)
+      .append(reinterpret_cast<char*>(&pathSize), sizeof(int32_t))
+      .append(path)
+      .append(encodedHost);
+  return encoded;
 }
 
-HostAddr decodeLearner(const folly::StringPiece& log) {
-  auto rawlog = log;
-  rawlog.advance(1);
-  return deserializeHostAddr(rawlog);
+HostAndPath decodeLearner(const folly::StringPiece& log) {
+  HostAddr addr;
+
+  folly::StringPiece raw = log;
+  raw.advance(1);
+
+  auto pathSize = *reinterpret_cast<const uint32_t*>(raw.data());
+  auto path = folly::StringPiece(raw.data() + sizeof(pathSize), pathSize);
+  raw.advance(sizeof(int32_t) + pathSize);
+  HostAddr host;
+  apache::thrift::CompactSerializer::deserialize(raw, host);
+  LOG(INFO) << "decodeLearner host: " << host;
+  return HostAndPath(host, std::string(path.data(), pathSize));
 }
 
 folly::Optional<std::string> compareAndSet(const std::string& log) {
@@ -88,32 +106,60 @@ std::pair<LogID, std::string> decodeSnapshotRow(const std::string& rawData) {
   return std::make_pair(id, std::move(str));
 }
 
-std::string encodeAddPeer(const HostAddr& addr) {
-  std::string str;
+std::string encodeAddPeer(const HostAddr& host, const std::string& path) {
   CommandType type = CommandType::ADD_PEER;
-  str.append(reinterpret_cast<const char*>(&type), 1);
-  str.append(serializeHostAddr(addr));
-  return str;
+  std::string encoded;
+  std::string encodedHost;
+  apache::thrift::CompactSerializer::serialize(host, &encodedHost);
+
+  int32_t pathSize = path.size();
+  encoded.append(reinterpret_cast<char*>(&type), 1)
+      .append(reinterpret_cast<char*>(&pathSize), sizeof(int32_t))
+      .append(path)
+      .append(encodedHost);
+  return encoded;
 }
 
-HostAddr decodeAddPeer(const folly::StringPiece& log) {
-  auto rawlog = log;
-  rawlog.advance(1);
-  return deserializeHostAddr(rawlog);
+HostAndPath decodeAddPeer(const folly::StringPiece& log) {
+  HostAddr addr;
+
+  folly::StringPiece raw = log;
+  raw.advance(1);
+
+  auto pathSize = *reinterpret_cast<const uint32_t*>(raw.data());
+  auto path = folly::StringPiece(raw.data() + sizeof(pathSize), pathSize);
+  raw.advance(sizeof(int32_t) + pathSize);
+  HostAddr host;
+  apache::thrift::CompactSerializer::deserialize(raw, host);
+  return HostAndPath(host, std::string(path.data(), pathSize));
 }
 
-std::string encodeRemovePeer(const HostAddr& addr) {
-  std::string str;
+std::string encodeRemovePeer(const HostAddr& host, const std::string& path) {
   CommandType type = CommandType::REMOVE_PEER;
-  str.append(reinterpret_cast<const char*>(&type), 1);
-  str.append(serializeHostAddr(addr));
-  return str;
+  std::string encoded;
+  std::string encodedHost;
+  apache::thrift::CompactSerializer::serialize(host, &encodedHost);
+
+  int32_t pathSize = path.size();
+  encoded.append(reinterpret_cast<char*>(&type), 1)
+      .append(reinterpret_cast<char*>(&pathSize), sizeof(int32_t))
+      .append(path)
+      .append(encodedHost);
+  return encoded;
 }
 
-HostAddr decodeRemovePeer(const folly::StringPiece& log) {
-  auto rawlog = log;
-  rawlog.advance(1);
-  return deserializeHostAddr(rawlog);
+HostAndPath decodeRemovePeer(const folly::StringPiece& log) {
+  HostAddr addr;
+
+  folly::StringPiece raw = log;
+  raw.advance(1);
+
+  auto pathSize = *reinterpret_cast<const uint32_t*>(raw.data());
+  auto path = folly::StringPiece(raw.data() + sizeof(pathSize), pathSize);
+  raw.advance(sizeof(int32_t) + pathSize);
+  HostAddr host;
+  apache::thrift::CompactSerializer::deserialize(raw, host);
+  return HostAndPath(host, std::string(path.data(), pathSize));
 }
 
 std::shared_ptr<thrift::ThriftClientManager<cpp2::RaftexServiceAsyncClient>> getClientMan() {
@@ -126,24 +172,28 @@ TestShard::TestShard(size_t idx,
                      std::shared_ptr<RaftexService> svc,
                      PartitionID partId,
                      HostAddr addr,
+                     const std::string& path,
                      const folly::StringPiece walRoot,
                      std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
                      std::shared_ptr<thread::GenericThreadPool> workers,
                      std::shared_ptr<folly::Executor> handlersPool,
                      std::shared_ptr<SnapshotManager> snapshotMan,
+                     std::shared_ptr<kvstore::PartManager> partMan,
                      std::function<void(size_t idx, const char*, TermID)> leadershipLostCB,
                      std::function<void(size_t idx, const char*, TermID)> becomeLeaderCB)
     : RaftPart(1,  // clusterId
                1,  // spaceId
                partId,
                addr,
+               path,
                walRoot,
                ioPool,
                workers,
                handlersPool,
                snapshotMan,
                getClientMan(),
-               nullptr),
+               nullptr,
+               partMan),
       idx_(idx),
       service_(svc),
       leadershipLostCB_(leadershipLostCB),
@@ -167,6 +217,7 @@ void TestShard::onLeaderReady(TermID term) {
 
 std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> TestShard::commitLogs(
     std::unique_ptr<LogIterator> iter, bool) {
+  LOG(INFO) << "enter commitLogs";
   LogID lastId = kNoCommitLogId;
   TermID lastTerm = kNoCommitLogTerm;
   int32_t commitLogsNum = 0;
@@ -177,17 +228,23 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> TestShard::commitLogs(
     if (!log.empty()) {
       switch (static_cast<CommandType>(log[0])) {
         case CommandType::TRANSFER_LEADER: {
+          LOG(INFO) << "commitLogs TRANSFER_LEADER";
           auto nLeader = decodeTransferLeader(log);
           commitTransLeader(nLeader);
           break;
         }
         case CommandType::REMOVE_PEER: {
+          LOG(INFO) << "commitLogs REMOVE_PEER";
           auto peer = decodeRemovePeer(log);
-          commitRemovePeer(peer);
+          commitRemovePeer(peer.host, peer.path);
           break;
         }
-        case CommandType::ADD_PEER:
+        case CommandType::ADD_PEER: {
+          LOG(INFO) << "commitLogs ADD_PEER";
+          break;
+        }
         case CommandType::ADD_LEARNER: {
+          LOG(INFO) << "commitLogs ADD_LEARNER";
           break;
         }
         default: {

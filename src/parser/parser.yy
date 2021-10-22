@@ -175,7 +175,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_CHARSET KW_COLLATE KW_COLLATION KW_VID_TYPE
 %token KW_ATOMIC_EDGE
 %token KW_COMMENT KW_S2_MAX_LEVEL KW_S2_MAX_CELLS
-%token KW_DROP KW_REMOVE KW_ATTACH KW_SPACES KW_INGEST KW_INDEX KW_INDEXES
+%token KW_DROP KW_REMOVE KW_ATTACH KW_DETACH KW_SPACES KW_INGEST KW_INDEX KW_INDEXES
 %token KW_IF KW_NOT KW_EXISTS KW_WITH
 %token KW_BY KW_DOWNLOAD KW_HDFS KW_UUID KW_CONFIGS KW_FORCE
 %token KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE KW_AGENT
@@ -557,6 +557,7 @@ unreserved_keyword
     | KW_RENAME             { $$ = new std::string("rename"); }
     | KW_DISK               { $$ = new std::string("disk"); }
     | KW_ATTACH             { $$ = new std::string("attach"); }
+    | KW_DETACH             { $$ = new std::string("detach"); }
     ;
 
 expression
@@ -3320,11 +3321,25 @@ admin_job_sentence
                                               meta::cpp2::AdminCmd::ZONE_BALANCE);
          ZoneNameList* nl = $7;
          std::vector<std::string> names = nl->zoneNames();
-         for (std::string& name: names) {
+         for (auto& name: names) {
            sentence->addPara(name);
          }
          delete nl;
          $$ = sentence;
+    }
+    | KW_SUBMIT KW_JOB KW_BALANCE KW_DISK KW_ATTACH host_item path_list {
+        auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
+                                             meta::cpp2::AdminCmd::DISK_BALANCE_ATTACH);
+        sentence->addPara($6->toString());
+        sentence->addPara($7->toString());
+        $$ = sentence;
+    }
+    | KW_SUBMIT KW_JOB KW_BALANCE KW_DISK KW_DETACH host_item path_list {
+        auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
+                                             meta::cpp2::AdminCmd::DISK_BALANCE_DETACH);
+        sentence->addPara($6->toString());
+        sentence->addPara($7->toString());
+        $$ = sentence;
     }
     ;
 
@@ -3775,10 +3790,18 @@ integer_list
 
 balance_disk_sentence
     : KW_BALANCE KW_DISK KW_ATTACH host_item path_list {
-        $$ = new BalanceDiskSentence(BalanceDiskSentence::SubType::kDiskAttach, $4, $5);
+        auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
+                                             meta::cpp2::AdminCmd::DISK_BALANCE_ATTACH);
+        sentence->addPara($4->toString());
+        sentence->addPara($5->toString());
+        $$ = sentence;
     }
-    | KW_BALANCE KW_DISK KW_REMOVE host_item path_list {
-        $$ = new BalanceDiskSentence(BalanceDiskSentence::SubType::kDiskRemove, $4, $5);
+    | KW_BALANCE KW_DISK KW_DETACH host_item path_list {
+        auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
+                                             meta::cpp2::AdminCmd::DISK_BALANCE_DETACH);
+        sentence->addPara($4->toString());
+        sentence->addPara($5->toString());
+        $$ = sentence;
     }
     ;
 
@@ -3815,7 +3838,7 @@ balance_sentence
                                               meta::cpp2::AdminCmd::ZONE_BALANCE);
          ZoneNameList* nl = $5;
          std::vector<std::string> names = nl->zoneNames();
-         for (std::string& name: names) {
+         for (auto& name: names) {
            sentence->addPara(name);
          }
          delete nl;

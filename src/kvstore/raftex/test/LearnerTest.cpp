@@ -23,6 +23,7 @@ namespace raftex {
 TEST(LearnerTest, OneLeaderOneFollowerOneLearnerTest) {
   fs::TempDir walRoot("/tmp/learner_test.XXXXXX");
   std::shared_ptr<thread::GenericThreadPool> workers;
+  std::vector<std::string> paths;
   std::vector<std::string> wals;
   std::vector<HostAddr> allHosts;
   std::vector<std::shared_ptr<RaftexService>> services;
@@ -31,15 +32,17 @@ TEST(LearnerTest, OneLeaderOneFollowerOneLearnerTest) {
   std::shared_ptr<test::TestShard> leader;
   std::vector<bool> isLearner = {false, false, true};
   // The last one is learner
-  setupRaft(3, walRoot, workers, wals, allHosts, services, copies, leader, isLearner);
+  setupRaft(3, walRoot, workers, paths, wals, allHosts, services, copies, leader, isLearner);
 
   checkLeadership(copies, leader);
 
-  auto f = leader->sendCommandAsync(test::encodeLearner(allHosts[2]));
+  auto f = leader->sendCommandAsync(test::encodeLearner(allHosts[2], paths[2]));
   f.wait();
 
   std::vector<std::string> msgs;
+  LOG(INFO) << "Append Logs";
   appendLogs(0, 99, leader, msgs);
+  LOG(INFO) << "Check Consensus";
   checkConsensus(copies, 0, 99, msgs);
 
   finishRaft(services, copies, workers, leader);
@@ -48,6 +51,7 @@ TEST(LearnerTest, OneLeaderOneFollowerOneLearnerTest) {
 TEST(LearnerTest, OneLeaderTwoLearnerTest) {
   fs::TempDir walRoot("/tmp/learner_test.XXXXXX");
   std::shared_ptr<thread::GenericThreadPool> workers;
+  std::vector<std::string> paths;
   std::vector<std::string> wals;
   std::vector<HostAddr> allHosts;
   std::vector<std::shared_ptr<RaftexService>> services;
@@ -57,13 +61,13 @@ TEST(LearnerTest, OneLeaderTwoLearnerTest) {
   std::vector<bool> isLearner = {false, true, true};
   // Start three services, the first one will be the leader, the left two will
   // be learners.
-  setupRaft(3, walRoot, workers, wals, allHosts, services, copies, leader, isLearner);
+  setupRaft(3, walRoot, workers, paths, wals, allHosts, services, copies, leader, isLearner);
 
   // The copies[0] is the leader.
   checkLeadership(copies, 0, leader);
 
-  leader->sendCommandAsync(test::encodeLearner(allHosts[1]));
-  auto f = leader->sendCommandAsync(test::encodeLearner(allHosts[2]));
+  leader->sendCommandAsync(test::encodeLearner(allHosts[1], paths[1]));
+  auto f = leader->sendCommandAsync(test::encodeLearner(allHosts[2], paths[2]));
   f.wait();
 
   std::vector<std::string> msgs;
@@ -85,6 +89,7 @@ TEST(LearnerTest, OneLeaderTwoLearnerTest) {
 TEST(LearnerTest, CatchUpDataTest) {
   fs::TempDir walRoot("/tmp/catch_up_data.XXXXXX");
   std::shared_ptr<thread::GenericThreadPool> workers;
+  std::vector<std::string> paths;
   std::vector<std::string> wals;
   std::vector<HostAddr> allHosts;
   std::vector<std::shared_ptr<RaftexService>> services;
@@ -92,7 +97,7 @@ TEST(LearnerTest, CatchUpDataTest) {
 
   std::shared_ptr<test::TestShard> leader;
   std::vector<bool> isLearner = {false, false, false, true};
-  setupRaft(4, walRoot, workers, wals, allHosts, services, copies, leader, isLearner);
+  setupRaft(4, walRoot, workers, paths, wals, allHosts, services, copies, leader, isLearner);
 
   // Check all hosts agree on the same leader
   checkLeadership(copies, leader);
@@ -116,7 +121,7 @@ TEST(LearnerTest, CatchUpDataTest) {
   }
 
   LOG(INFO) << "Add learner, we need to catch up data!";
-  auto f = leader->sendCommandAsync(test::encodeLearner(allHosts[3]));
+  auto f = leader->sendCommandAsync(test::encodeLearner(allHosts[3], paths[3]));
   f.wait();
 
   sleep(FLAGS_raft_heartbeat_interval_secs);

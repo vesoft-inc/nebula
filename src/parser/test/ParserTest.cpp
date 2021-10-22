@@ -2035,6 +2035,26 @@ TEST_F(ParserTest, BalanceOperation) {
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
+  {
+    std::string query = "BALANCE DISK ATTACH 192.168.0.1:50000 \"/data\"";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "BALANCE DISK ATTACH 192.168.0.1:50000 \"/data0\",\"/data1\"";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "BALANCE DISK DETACH 192.168.0.1:50000 \"/data\"";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "BALANCE DISK DETACH 192.168.0.1:50000 \"/data0\",\"/data1\"";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
 }
 
 TEST_F(ParserTest, CrashByFuzzer) {
@@ -3211,6 +3231,16 @@ TEST_F(ParserTest, JobTest) {
       "SUBMIT JOB BALANCE IN ZONE REMOVE 192.168.0.1:50000, 192.168.0.1:50001, 192.168.0.1:50002",
       "SUBMIT JOB BALANCE IN ZONE REMOVE \"192.168.0.1\":50000, \"192.168.0.1\":50001, "
       "\"192.168.0.1\":50002");
+
+  checkTest("SUBMIT JOB BALANCE DISK ATTACH 192.168.0.1:50000 \"/data\"",
+            "SUBMIT JOB BALANCE DISK ATTACH \"192.168.0.1\":50000 \"/data\"");
+  checkTest("SUBMIT JOB BALANCE DISK ATTACH 192.168.0.1:50000 \"/data0\",\"/data1\"",
+            "SUBMIT JOB BALANCE DISK ATTACH \"192.168.0.1\":50000 \"/data0\",\"/data1\"");
+  checkTest("SUBMIT JOB BALANCE DISK DETACH 192.168.0.1:50000 \"/data\"",
+            "SUBMIT JOB BALANCE DISK DETACH \"192.168.0.1\":50000 \"/data\"");
+  checkTest("SUBMIT JOB BALANCE DISK DETACH 192.168.0.1:50000 \"/data0\",\"/data1\"",
+            "SUBMIT JOB BALANCE DISK DETACH \"192.168.0.1\":50000 \"/data0\",\"/data1\"");
+
   checkTest("SUBMIT JOB BALANCE LEADER", "SUBMIT JOB BALANCE LEADER");
   checkTest("SHOW JOBS", "SHOW JOBS");
   checkTest("SHOW JOB 111", "SHOW JOB 111");

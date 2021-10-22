@@ -37,6 +37,7 @@ class DummyListener : public Listener {
   DummyListener(GraphSpaceID spaceId,
                 PartitionID partId,
                 HostAddr localAddr,
+                const std::string& path,
                 const std::string& walPath,
                 std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
                 std::shared_ptr<thread::GenericThreadPool> workers,
@@ -45,10 +46,12 @@ class DummyListener : public Listener {
       : Listener(spaceId,
                  partId,
                  localAddr,
+                 path,
                  walPath,
                  ioPool,
                  workers,
                  handlers,
+                 nullptr,
                  nullptr,
                  nullptr,
                  nullptr,
@@ -152,7 +155,8 @@ class ListenerBasicTest : public ::testing::TestWithParam<std::tuple<int32_t, in
   void getAvailablePort() {
     std::string ip("127.0.0.1");
     for (int32_t i = 0; i < replicas_; i++) {
-      peers_.emplace_back(HostAddr(ip, network::NetworkUtils::getAvailablePort()), "");
+      peers_.emplace_back(HostAddr(ip, network::NetworkUtils::getAvailablePort()),
+                          rootPath_->path());
     }
     for (int32_t i = 0; i < listenerCount_; i++) {
       listenerHosts_.emplace_back(ip, network::NetworkUtils::getAvailablePort());
@@ -226,16 +230,17 @@ class ListenerBasicTest : public ::testing::TestWithParam<std::tuple<int32_t, in
       auto dummy = std::make_shared<DummyListener>(spaceId_,
                                                    partId,
                                                    local,
+                                                   "",
                                                    walPath,
                                                    listeners_[index]->ioPool_,
                                                    listeners_[index]->bgWorkers_,
                                                    listeners_[index]->workers_,
                                                    nullptr);
       listeners_[index]->raftService_->addPartition(dummy);
-      std::vector<HostAndPath> raftPeers;
+      std::vector<HostAddr> raftPeers;
       std::transform(
           peers_.begin(), peers_.end(), std::back_inserter(raftPeers), [](const auto& host) {
-            return HostAndPath(NebulaStore::getRaftAddr(host.host), host.path);
+            return NebulaStore::getRaftAddr(host.host);
           });
       dummy->start(std::move(raftPeers));
       listeners_[index]->spaceListeners_[spaceId_]->listeners_[partId].emplace(
@@ -265,7 +270,7 @@ class ListenerBasicTest : public ::testing::TestWithParam<std::tuple<int32_t, in
     }
   }
 
-  HostAndPath findLeader(PartitionID partId) {
+  HostAddr findLeader(PartitionID partId) {
     while (true) {
       auto leaderRet = stores_[0]->partLeader(spaceId_, partId);
       CHECK(ok(leaderRet));
@@ -274,13 +279,13 @@ class ListenerBasicTest : public ::testing::TestWithParam<std::tuple<int32_t, in
         sleep(1);
         continue;
       }
-      return HostAndPath(leader, "");
+      return leader;
     }
   }
 
-  size_t findStoreIndex(const HostAndPath& addr) {
+  size_t findStoreIndex(const HostAddr& addr) {
     for (size_t i = 0; i < peers_.size(); i++) {
-      if (peers_[i] == addr) {
+      if (peers_[i].host == addr) {
         return i;
       }
     }

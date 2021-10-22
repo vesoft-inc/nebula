@@ -27,16 +27,23 @@ void GetPartsAllocProcessor::process(const cpp2::GetPartsAllocReq& req) {
     auto key = iter->key();
     PartitionID partId;
     memcpy(&partId, key.data() + prefix.size(), sizeof(PartitionID));
+    std::vector<HostAndPath> partLocation;
     auto partHosts = MetaKeyUtils::parsePartVal(iter->val());
 
-    std::vector<nebula::HostAndPath> hostPaths(partHosts.size());
-    std::transform(partHosts.begin(),
-                   partHosts.end(),
-                   hostPaths.begin(),
-                   [](auto& host) -> nebula::HostAndPath {
-                     return HostAndPath(host, "");
-                   });
-    parts.emplace(partId, std::move(hostPaths));
+    for (auto& host : partHosts) {
+      auto diskPartsPrefix = MetaKeyUtils::diskPartsPrefix(host, spaceId);
+      auto diskPartsIterRet = doPrefix(diskPartsPrefix);
+      if (nebula::ok(diskPartsIterRet)) {
+        auto diskPartsIter = nebula::value(diskPartsIterRet).get();
+        while (diskPartsIter->valid()) {
+          auto diskPartsKey = diskPartsIter->key();
+          auto path = MetaKeyUtils::parseDiskPartsPath(diskPartsKey);
+          partLocation.emplace_back(host, path);
+          diskPartsIter->next();
+        }
+      }
+    }
+    parts.emplace(partId, std::move(partLocation));
     iter->next();
   }
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);

@@ -139,16 +139,20 @@ TEST(NebulaStoreTest, PartsTest) {
   auto ioThreadPool = std::make_shared<folly::IOThreadPoolExecutor>(4);
   auto partMan = std::make_unique<MemPartManager>();
 
+  std::vector<std::string> paths;
+  paths.emplace_back(folly::stringPrintf("%s/disk1", rootPath.path()));
+  paths.emplace_back(folly::stringPrintf("%s/disk2", rootPath.path()));
+
   // GraphSpaceID =>  {PartitionIDs}
   // 0 => {0, 1, 2, 3...9}
   // The parts on PartMan is 0...9
   for (auto partId = 0; partId < 10; partId++) {
-    partMan->addPart(0, partId);
+    if (partId % 2 == 0) {
+      partMan->addPart(0, partId, paths[0]);
+    } else {
+      partMan->addPart(0, partId, paths[1]);
+    }
   }
-
-  std::vector<std::string> paths;
-  paths.emplace_back(folly::stringPrintf("%s/disk1", rootPath.path()));
-  paths.emplace_back(folly::stringPrintf("%s/disk2", rootPath.path()));
 
   for (size_t i = 0; i < paths.size(); i++) {
     auto db = std::make_unique<RocksEngine>(0, /* spaceId */
@@ -207,7 +211,7 @@ TEST(NebulaStoreTest, PartsTest) {
   auto* pm = dynamic_cast<MemPartManager*>(store->options_.partMan_.get());
   // Let's create another space with 10 parts.
   for (auto partId = 0; partId < 10; partId++) {
-    pm->addPart(1, partId);
+    pm->addPart(1, partId, "");
   }
   check(1);
   {
@@ -271,11 +275,14 @@ TEST(NebulaStoreTest, ThreeCopiesTest) {
     HostAddr local = peers[index].host;
     return std::make_unique<NebulaStore>(std::move(options), sIoThreadPool, local, getHandlers());
   };
+
   int32_t replicas = 3;
-  std::string ip("127.0.0.1");
   std::vector<HostAndPath> peers;
   for (int32_t i = 0; i < replicas; i++) {
-    peers.emplace_back(HostAddr(ip, network::NetworkUtils::getAvailablePort()), "");
+    auto host = HostAddr("127.0.0.1", network::NetworkUtils::getAvailablePort());
+    auto path = folly::stringPrintf("%s/disk%d", rootPath.path(), i);
+    LOG(INFO) << "Host " << host << " Path " << path;
+    peers.emplace_back(host, path);
   }
 
   std::vector<std::unique_ptr<NebulaStore>> stores;
@@ -385,7 +392,7 @@ TEST(NebulaStoreTest, PartsDuplicateTest) {
   // 0 => {0, 1, 2, 3...9}
   // The parts on PartMan is 0...9
   for (auto partId = 0; partId < 10; partId++) {
-    partMan->addPart(0, partId);
+    partMan->addPart(0, partId, "");
   }
 
   std::vector<std::string> paths;
@@ -445,10 +452,10 @@ TEST(NebulaStoreTest, TransLeaderTest) {
 
   // 3 replicas, 3 partition
   int32_t replicas = 3;
-  std::string ip("127.0.0.1");
   std::vector<HostAndPath> peers;
   for (int32_t i = 0; i < replicas; i++) {
-    peers.emplace_back(HostAddr(ip, network::NetworkUtils::getAvailablePort()), "");
+    peers.emplace_back(HostAddr("127.0.0.1", network::NetworkUtils::getAvailablePort()),
+                       folly::stringPrintf("%s/disk%d", rootPath.path(), i));
   }
 
   std::vector<std::unique_ptr<NebulaStore>> stores;
@@ -641,10 +648,10 @@ TEST(NebulaStoreTest, ThreeCopiesCheckpointTest) {
   };
 
   int32_t replicas = 3;
-  std::string ip("127.0.0.1");
   std::vector<HostAndPath> peers;
   for (int32_t i = 0; i < replicas; i++) {
-    peers.emplace_back(HostAddr(ip, network::NetworkUtils::getAvailablePort()), "");
+    auto path = folly::stringPrintf("%s/disk%d", rootPath.path(), i);
+    peers.emplace_back(HostAddr("127.0.0.1", network::NetworkUtils::getAvailablePort()), path);
   }
 
   std::vector<std::unique_ptr<NebulaStore>> stores;
@@ -758,7 +765,8 @@ TEST(NebulaStoreTest, ThreeCopiesCheckpointTest) {
   LOG(INFO) << "Let's start the engine via checkpoint";
   std::vector<HostAndPath> cPeers;
   for (int32_t i = 0; i < replicas; i++) {
-    cPeers.emplace_back(HostAddr(ip, network::NetworkUtils::getAvailablePort()), "");
+    auto path = folly::stringPrintf("%s/disk%d", rootPath.path(), i);
+    cPeers.emplace_back(HostAddr("127.0.0.1", network::NetworkUtils::getAvailablePort()), path);
   }
 
   std::vector<std::unique_ptr<NebulaStore>> cStores;

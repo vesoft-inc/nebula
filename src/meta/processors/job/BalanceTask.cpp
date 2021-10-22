@@ -20,6 +20,7 @@ namespace meta {
   }
 
 void BalanceTask::invoke() {
+  LOG(INFO) << "BalanceTask invoke()";
   // All steps in BalanceTask should work even if the task is executed more than
   // once.
   CHECK_NOTNULL(client_);
@@ -55,6 +56,7 @@ void BalanceTask::invoke() {
           LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Check the peers failed, status " << resp;
           ret_ = BalanceTaskResult::FAILED;
         } else {
+          LOG(INFO) << "Check Peers SUCCESSED -> CHANGE_LEADER";
           status_ = BalanceTaskStatus::CHANGE_LEADER;
         }
         invoke();
@@ -80,6 +82,7 @@ void BalanceTask::invoke() {
               ret_ = BalanceTaskResult::FAILED;
             }
           } else {
+            LOG(INFO) << "Trans Leader SUCCESSED -> ADD_PART_ON_DST";
             status_ = BalanceTaskStatus::ADD_PART_ON_DST;
           }
           invoke();
@@ -100,6 +103,7 @@ void BalanceTask::invoke() {
           LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Open part failed, status " << resp;
           ret_ = BalanceTaskResult::FAILED;
         } else {
+          LOG(INFO) << "ADD_PART_ON_DST SUCCESSED -> ADD_LEARNER";
           status_ = BalanceTaskStatus::ADD_LEARNER;
         }
         invoke();
@@ -114,6 +118,7 @@ void BalanceTask::invoke() {
           LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Add learner failed, status " << resp;
           ret_ = BalanceTaskResult::FAILED;
         } else {
+          LOG(INFO) << "ADD_LEARNER SUCCESSED -> CATCH_UP_DATA";
           status_ = BalanceTaskStatus::CATCH_UP_DATA;
         }
         invoke();
@@ -126,9 +131,15 @@ void BalanceTask::invoke() {
       client_->waitingForCatchUpData(spaceId_, partId_, dst_, dstPath_)
           .thenValue([this](auto&& resp) {
             if (!resp.ok()) {
+<<<<<<< HEAD
               LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Catchup data failed, status " << resp;
+=======
+              LOG(ERROR) << taskIdStr_ + "," + commandStr_ << " Catchup data failed, status "
+                         << resp;
+>>>>>>> adapt admin processor
               ret_ = BalanceTaskResult::FAILED;
             } else {
+              LOG(INFO) << "CATCH_UP_DATA SUCCESSED -> MEMBER_CHANGE_ADD";
               status_ = BalanceTaskStatus::MEMBER_CHANGE_ADD;
             }
             invoke();
@@ -144,6 +155,7 @@ void BalanceTask::invoke() {
           LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Add peer failed, status " << resp;
           ret_ = BalanceTaskResult::FAILED;
         } else {
+          LOG(INFO) << "MEMBER_CHANGE_ADD SUCCESSED -> MEMBER_CHANGE_REMOVE";
           status_ = BalanceTaskStatus::MEMBER_CHANGE_REMOVE;
         }
         invoke();
@@ -157,9 +169,15 @@ void BalanceTask::invoke() {
       client_->memberChange(spaceId_, partId_, src_, srcPath_, false)
           .thenValue([this](auto&& resp) {
             if (!resp.ok()) {
+<<<<<<< HEAD
               LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Remove peer failed, status " << resp;
+=======
+              LOG(ERROR) << taskIdStr_ + "," + commandStr_ << " Remove peer failed, status "
+                         << resp;
+>>>>>>> adapt admin processor
               ret_ = BalanceTaskResult::FAILED;
             } else {
+              LOG(INFO) << "MEMBER_CHANGE_REMOVE SUCCESSED -> UPDATE_PART_META";
               status_ = BalanceTaskStatus::UPDATE_PART_META;
             }
             invoke();
@@ -174,7 +192,12 @@ void BalanceTask::invoke() {
             // The callback will be called inside raft set value. So don't call
             // invoke directly here.
             if (!resp.ok()) {
+<<<<<<< HEAD
               LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Update meta failed, status " << resp;
+=======
+              LOG(ERROR) << taskIdStr_ + "," + commandStr_ << " Update meta failed, status "
+                         << resp;
+>>>>>>> adapt admin processor
               ret_ = BalanceTaskResult::FAILED;
             } else {
               LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Update meta succeeded!";
@@ -194,6 +217,7 @@ void BalanceTask::invoke() {
             LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Remove part failed, status " << resp;
             ret_ = BalanceTaskResult::FAILED;
           } else {
+            LOG(INFO) << "REMOVE_PART_ON_SRC SUCCESSED -> CHECK";
             status_ = BalanceTaskStatus::CHECK;
           }
           invoke();
@@ -203,7 +227,6 @@ void BalanceTask::invoke() {
         LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Don't remove part on src " << src_;
         status_ = BalanceTaskStatus::CHECK;
       }
-      break;
     }
     // fallthrough
     case BalanceTaskStatus::CHECK: {
@@ -214,6 +237,7 @@ void BalanceTask::invoke() {
           LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Check the peers failed, status " << resp;
           ret_ = BalanceTaskResult::FAILED;
         } else {
+          LOG(INFO) << "CHECK SUCCESSED -> END";
           status_ = BalanceTaskStatus::END;
         }
         invoke();
@@ -243,8 +267,9 @@ void BalanceTask::rollback() {
 bool BalanceTask::saveInStore() {
   CHECK_NOTNULL(kv_);
   std::vector<kvstore::KV> data;
-  data.emplace_back(MetaKeyUtils::balanceTaskKey(jobId_, spaceId_, partId_, src_, srcPath_, dst_, dstPath_),
-                    MetaKeyUtils::balanceTaskVal(status_, ret_, startTimeMs_, endTimeMs_));
+  data.emplace_back(
+      MetaKeyUtils::balanceTaskKey(jobId_, spaceId_, partId_, src_, srcPath_, dst_, dstPath_),
+      MetaKeyUtils::balanceTaskVal(status_, ret_, startTimeMs_, endTimeMs_));
   folly::Baton<true, std::atomic> baton;
   bool ret = true;
   kv_->asyncMultiPut(kDefaultSpaceId,

@@ -24,13 +24,14 @@ TEST(LeaderTransferTest, SimpleTest) {
   FLAGS_raft_heartbeat_interval_secs = 1;
   fs::TempDir walRoot("/tmp/leader_transfer_test.simple_test.XXXXXX");
   std::shared_ptr<thread::GenericThreadPool> workers;
+  std::vector<std::string> paths;
   std::vector<std::string> wals;
   std::vector<HostAddr> allHosts;
   std::vector<std::shared_ptr<RaftexService>> services;
   std::vector<std::shared_ptr<test::TestShard>> copies;
 
   std::shared_ptr<test::TestShard> leader;
-  setupRaft(3, walRoot, workers, wals, allHosts, services, copies, leader);
+  setupRaft(3, walRoot, workers, paths, wals, allHosts, services, copies, leader);
 
   // Check all hosts agree on the same leader
   auto index = checkLeadership(copies, leader);
@@ -57,13 +58,14 @@ TEST(LeaderTransferTest, SimpleTest) {
 TEST(LeaderTransferTest, DISABLED_ChangeLeaderServalTimesTest) {
   fs::TempDir walRoot("/tmp/leader_transfer_test.simple_test.XXXXXX");
   std::shared_ptr<thread::GenericThreadPool> workers;
+  std::vector<std::string> paths;
   std::vector<std::string> wals;
   std::vector<HostAddr> allHosts;
   std::vector<std::shared_ptr<RaftexService>> services;
   std::vector<std::shared_ptr<test::TestShard>> copies;
 
   std::shared_ptr<test::TestShard> leader;
-  setupRaft(3, walRoot, workers, wals, allHosts, services, copies, leader);
+  setupRaft(3, walRoot, workers, paths, wals, allHosts, services, copies, leader);
 
   // Check all hosts agree on the same leader
   auto nLeaderIndex = checkLeadership(copies, leader);

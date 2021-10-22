@@ -40,6 +40,10 @@ struct SpacePartInfo {
   std::vector<std::unique_ptr<KVEngine>> engines_;
 };
 
+struct SpacePartLearner {
+  std::unordered_map<PartitionID, std::shared_ptr<Part>> learners_;
+};
+
 struct SpaceListenerInfo {
   std::unordered_map<PartitionID, ListenerMap> listeners_;
 };
@@ -113,7 +117,9 @@ class NebulaStore : public KVStore, public Handler {
 
   ErrorOr<nebula::cpp2::ErrorCode, PartDiskMap> partsDist(GraphSpaceID spaceId) override;
 
-  PartManager* partManager() const override { return options_.partMan_.get(); }
+  PartManager* partManager() const override {
+    return options_.partMan_.get();
+  }
 
   bool isListener() const {
     return !options_.listenerPath_.empty();
@@ -241,6 +247,9 @@ class NebulaStore : public KVStore, public Handler {
   ErrorOr<nebula::cpp2::ErrorCode, std::shared_ptr<Part>> part(GraphSpaceID spaceId,
                                                                PartitionID partId) override;
 
+  ErrorOr<nebula::cpp2::ErrorCode, std::shared_ptr<Part>> learners(GraphSpaceID spaceId,
+                                                                   PartitionID partId) override;
+
   nebula::cpp2::ErrorCode ingest(GraphSpaceID spaceId) override;
 
   nebula::cpp2::ErrorCode setOption(GraphSpaceID spaceId,
@@ -279,6 +288,7 @@ class NebulaStore : public KVStore, public Handler {
   void addPart(GraphSpaceID spaceId,
                PartitionID partId,
                bool asLearner,
+               const std::string& path,
                const std::vector<HostAndPath>& peers = {}) override;
 
   void removeSpace(GraphSpaceID spaceId, bool isListener) override;
@@ -358,6 +368,7 @@ class NebulaStore : public KVStore, public Handler {
 
   std::shared_ptr<Listener> newListener(GraphSpaceID spaceId,
                                         PartitionID partId,
+                                        const std::string& path,
                                         meta::cpp2::ListenerType type,
                                         const std::vector<HostAndPath>& peers);
 
@@ -375,7 +386,9 @@ class NebulaStore : public KVStore, public Handler {
   // The lock used to protect spaces_
   folly::RWSpinLock lock_;
   std::unordered_map<GraphSpaceID, std::shared_ptr<SpacePartInfo>> spaces_;
+  std::unordered_map<GraphSpaceID, std::shared_ptr<SpacePartLearner>> learners_;
   std::unordered_map<GraphSpaceID, std::shared_ptr<SpaceListenerInfo>> spaceListeners_;
+  std::unordered_map<std::tuple<HostAddr, GraphSpaceID, PartitionID>, std::string> partsLocation_;
 
   std::shared_ptr<folly::IOThreadPoolExecutor> ioPool_;
   std::shared_ptr<thread::GenericWorker> storeWorker_;

@@ -149,7 +149,7 @@ class AdminClient {
   virtual folly::Future<Status> removePart(GraphSpaceID spaceId,
                                            PartitionID partId,
                                            const HostAddr& host,
-                                           const std::string& path);  
+                                           const std::string& path);
 
   /**
    * @brief Check and adjust(add/remove) each peer's peers info according to meta kv store
@@ -195,8 +195,6 @@ class AdminClient {
   virtual folly::Future<Status> getPartsDist(const HostAddr& host,
                                              GraphSpaceID spaceId,
                                              PartDiskMap* result);
-
-  
 
   /**
    * @brief Blocking/Allowing writings to given spaces in specified storage host
@@ -326,10 +324,10 @@ class AdminClient {
 
   Status handleResponse(const storage::cpp2::AdminExecResp& resp);
 
-  ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAndPath>> getPeers(GraphSpaceID spaceId,
-                                                                      PartitionID partId);
+  ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> getPeers(GraphSpaceID spaceId,
+                                                                   PartitionID partId);
 
-  std::vector<HostAndPath> getAdminAddrFromPeers(const std::vector<HostAndPath>& peers);
+  std::vector<HostAddr> getAdminAddrFromPeers(const std::vector<HostAddr>& peers);
 
  private:
   kvstore::KVStore* kv_{nullptr};

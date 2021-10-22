@@ -7,6 +7,7 @@
 
 #include "common/base/Base.h"
 #include "common/thrift/ThriftClientManager.h"
+#include "common/utils/Utils.h"
 #include "kvstore/raftex/RaftexService.h"
 #include "kvstore/raftex/test/TestShard.h"
 
@@ -21,18 +22,18 @@ using network::NetworkUtils;
 std::mutex leaderMutex;
 std::condition_variable leaderCV;
 
-std::vector<HostAndPath> getPeers(const std::vector<HostAddr>& all,
-                                  const HostAddr& self,
-                                  std::vector<bool> isLearner) {
+std::vector<HostAddr> getPeers(const std::vector<HostAddr>& all,
+                               const HostAddr& self,
+                               std::vector<bool> isLearner) {
   if (isLearner.empty()) {
     isLearner.resize(all.size(), false);
   }
-  std::vector<HostAndPath> peers;
+  std::vector<HostAddr> peers;
   size_t index = 0;
   for (const auto& host : all) {
     if (host != self && !isLearner[index]) {
       VLOG(2) << "Adding host " << host.host << ":" << host.port;
-      peers.emplace_back(host, "");
+      peers.emplace_back(host);
     }
     index++;
   }
@@ -141,46 +142,62 @@ void waitUntilAllHasLeader(const std::vector<std::shared_ptr<test::TestShard>>& 
 void setupRaft(int32_t numCopies,
                fs::TempDir& walRoot,
                std::shared_ptr<thread::GenericThreadPool>& workers,
+               std::vector<std::string>& paths,
                std::vector<std::string>& wals,
                std::vector<HostAddr>& allHosts,
                std::vector<std::shared_ptr<RaftexService>>& services,
                std::vector<std::shared_ptr<test::TestShard>>& copies,
                std::shared_ptr<test::TestShard>& leader,
                std::vector<bool> isLearner) {
-  std::string ipStr("127.0.0.1");
-
   workers = std::make_shared<thread::GenericThreadPool>();
   workers->start(4);
 
   // Set up WAL folders (Create one extra for leader crash test)
   for (int i = 0; i < numCopies + 1; ++i) {
+    paths.emplace_back(folly::stringPrintf("%s/path%d", walRoot.path(), i + 1));
     wals.emplace_back(folly::stringPrintf("%s/copy%d", walRoot.path(), i + 1));
+    CHECK(FileUtils::makeDir(paths.back()));
     CHECK(FileUtils::makeDir(wals.back()));
   }
 
   // Set up services
-  for (int i = 0; i < numCopies; ++i) {
+  auto partMan = std::make_shared<kvstore::MemPartManager>();
+  std::vector<HostAndPath> peers;
+  for (int i = 0; i < numCopies; i++) {
     services.emplace_back(RaftexService::createService(nullptr, nullptr));
+    LOG(INFO) << "RaftexService start()";
     if (!services.back()->start()) return;
     uint16_t port = services.back()->getServerPort();
-    allHosts.emplace_back(ipStr, port);
+    allHosts.emplace_back("127.0.0.1", port);
+
+    LOG(INFO) << "Add peer 127.0.0.1:" << port - 1 << ", path " << paths[i];
+    peers.emplace_back(HostAddr("127.0.0.1", port - 1), paths[i]);
   }
 
+  meta::PartHosts pm;
+  pm.spaceId_ = 1;
+  pm.partId_ = 1;
+  pm.hosts_ = peers;
+  partMan->partsMap_[1][1] = std::move(pm);
   if (isLearner.empty()) {
     isLearner.resize(allHosts.size(), false);
   }
   auto sps = snapshots(services);
   // Create one copy of the shard for each service
+  LOG(INFO) << "services size: " << services.size();
   for (size_t i = 0; i < services.size(); i++) {
+    LOG(INFO) << "TestShard start";
     copies.emplace_back(std::make_shared<test::TestShard>(copies.size(),
                                                           services[i],
                                                           1,  // Shard ID
                                                           allHosts[i],
+                                                          paths[i],
                                                           wals[i],
                                                           services[i]->getIOThreadPool(),
                                                           workers,
                                                           services[i]->getThreadManager(),
                                                           sps[i],
+                                                          partMan,
                                                           std::bind(&onLeadershipLost,
                                                                     std::ref(copies),
                                                                     std::ref(leader),
@@ -289,12 +306,15 @@ bool checkConsensus(std::vector<std::shared_ptr<test::TestShard>>& copies,
     for (auto& c : copies) {
       if (c != nullptr && c->isRunning()) {
         if (msgs.size() != c->getNumLogs() || !checkLog(c, start, end, msgs)) {
+          LOG(INFO) << "setting consensus to false";
+          LOG(INFO) << "msgs.size() " << msgs.size() << " c->getNumLogs() " << c->getNumLogs();
+
           consensus = false;
           break;
         }
       }
     }
-    if (consensus == true) {
+    if (consensus) {
       return true;
     }
   }
@@ -310,6 +330,13 @@ bool checkLog(std::shared_ptr<test::TestShard>& copy,
   for (size_t i = start; i <= end; i++) {
     folly::StringPiece msg;
     if (!copy->getLogMsg(i, msg) || msgs[i] != msg.toString()) {
+      if (!copy->getLogMsg(i, msg)) {
+        LOG(INFO) << "copy->getLogMsg(i, msg) failed";
+      }
+
+      if (msgs[i] != msg.toString()) {
+        LOG(INFO) << "msgs[i] != msg.toString()";
+      }
       return false;
     }
   }

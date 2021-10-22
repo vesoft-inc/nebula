@@ -67,7 +67,6 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> LeaderBalanceJobExecutor::getHostParts(Gr
     iter->next();
   }
 
-  LOG(INFO) << "Host size: " << hostParts.size();
   auto key = MetaKeyUtils::spaceKey(spaceId);
   std::string value;
   retCode = kvstore_->get(kDefaultSpaceId, kDefaultPartId, key, &value);
@@ -85,11 +84,8 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> LeaderBalanceJobExecutor::getHostParts(Gr
   }
 
   int32_t replica = properties.get_replica_factor();
-  LOG(INFO) << "Replica " << replica;
   if (dependentOnZone && !properties.get_zone_names().empty()) {
     auto zoneNames = properties.get_zone_names();
-    int32_t zoneSize = zoneNames.size();
-    LOG(INFO) << "Zone Size " << zoneSize;
     auto activeHostsRet = ActiveHostsMan::getActiveHostsWithZones(kvstore_, spaceId);
     if (!nebula::ok(activeHostsRet)) {
       return nebula::error(activeHostsRet);
@@ -268,7 +264,8 @@ folly::Future<Status> LeaderBalanceJobExecutor::executeInternal() {
         futures.emplace_back(adminClient_->transLeader(std::get<0>(task),
                                                        std::get<1>(task),
                                                        std::move(std::get<2>(task)),
-                                                       std::move(std::get<3>(task))));
+                                                       "",
+                                                       HostAndPath(std::get<3>(task), "")));
       }
     }
 
@@ -289,8 +286,6 @@ folly::Future<Status> LeaderBalanceJobExecutor::executeInternal() {
     if (failed != 0) {
       return Status::Error("partiton failed to transfer leader");
     }
-    executorOnFinished_(meta::cpp2::JobStatus::FINISHED);
-    return Status::OK();
   }
   executorOnFinished_(meta::cpp2::JobStatus::FINISHED);
   return Status::OK();
@@ -312,7 +307,8 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> LeaderBalanceJobExecutor::buildLeaderBala
   std::unique_ptr<kvstore::KVIterator> iter;
   auto retCode = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(INFO) << "Access kvstore failed, spaceId " << spaceId << static_cast<int32_t>(retCode);
+    LOG(INFO) << "Access kvstore failed, spaceId " << spaceId
+              << " code: " << apache::thrift::util::enumNameSafe(retCode);
     return retCode;
   }
 

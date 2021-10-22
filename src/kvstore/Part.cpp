@@ -10,6 +10,7 @@
 #include "common/utils/NebulaKeyUtils.h"
 #include "common/utils/OperationKeyUtils.h"
 #include "kvstore/LogEncoder.h"
+#include "kvstore/PartManager.h"
 #include "kvstore/RocksEngineConfig.h"
 
 DEFINE_int32(cluster_id, 0, "A unique id for each cluster");
@@ -20,6 +21,7 @@ namespace kvstore {
 Part::Part(GraphSpaceID spaceId,
            PartitionID partId,
            HostAddr localAddr,
+           const std::string& path,
            const std::string& walPath,
            KVEngine* engine,
            std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
@@ -28,18 +30,21 @@ Part::Part(GraphSpaceID spaceId,
            std::shared_ptr<raftex::SnapshotManager> snapshotMan,
            std::shared_ptr<RaftClient> clientMan,
            std::shared_ptr<DiskManager> diskMan,
+           std::shared_ptr<kvstore::PartManager> partMan,
            int32_t vIdLen)
     : RaftPart(FLAGS_cluster_id,
                spaceId,
                partId,
                localAddr,
+               path,
                walPath,
                ioPool,
                workers,
                handlers,
                snapshotMan,
                clientMan,
-               diskMan),
+               diskMan,
+               partMan),
       spaceId_(spaceId),
       partId_(partId),
       walPath_(walPath),
@@ -120,8 +125,8 @@ void Part::asyncAtomicOp(raftex::AtomicOp op, KVCallback cb) {
           [callback = std::move(cb)](nebula::cpp2::ErrorCode code) mutable { callback(code); });
 }
 
-void Part::asyncAddLearner(const HostAddr& learner, KVCallback cb) {
-  std::string log = encodeHost(OP_ADD_LEARNER, learner);
+void Part::asyncAddLearner(const HostAddr& learner, const std::string& path, KVCallback cb) {
+  std::string log = encodeHostAndPath(OP_ADD_LEARNER, learner, path);
   sendCommandAsync(std::move(log))
       .thenValue([callback = std::move(cb), learner, this](nebula::cpp2::ErrorCode code) mutable {
         LOG(INFO) << idStr_ << "add learner " << learner
@@ -140,8 +145,8 @@ void Part::asyncTransferLeader(const HostAddr& target, KVCallback cb) {
       });
 }
 
-void Part::asyncAddPeer(const HostAddr& peer, KVCallback cb) {
-  std::string log = encodeHost(OP_ADD_PEER, peer);
+void Part::asyncAddPeer(const HostAddr& peer, const std::string& path, KVCallback cb) {
+  std::string log = encodeHostAndPath(OP_ADD_PEER, peer, path);
   sendCommandAsync(std::move(log))
       .thenValue([callback = std::move(cb), peer, this](nebula::cpp2::ErrorCode code) mutable {
         LOG(INFO) << idStr_ << "add peer " << peer
@@ -150,8 +155,8 @@ void Part::asyncAddPeer(const HostAddr& peer, KVCallback cb) {
       });
 }
 
-void Part::asyncRemovePeer(const HostAddr& peer, KVCallback cb) {
-  std::string log = encodeHost(OP_REMOVE_PEER, peer);
+void Part::asyncRemovePeer(const HostAddr& peer, const std::string& path, KVCallback cb) {
+  std::string log = encodeHostAndPath(OP_REMOVE_PEER, peer, path);
   sendCommandAsync(std::move(log))
       .thenValue([callback = std::move(cb), peer, this](nebula::cpp2::ErrorCode code) mutable {
         LOG(INFO) << idStr_ << "remove peer " << peer
@@ -302,8 +307,12 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Part::commitLogs(
         }
         break;
       }
-      case OP_ADD_PEER:
+      case OP_ADD_PEER: {
+        LOG(INFO) << "Add Peer";
+        break;
+      }
       case OP_ADD_LEARNER: {
+        LOG(INFO) << "Add Learner";
         break;
       }
       case OP_TRANS_LEADER: {
@@ -319,12 +328,12 @@ std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Part::commitLogs(
         break;
       }
       case OP_REMOVE_PEER: {
-        auto peer = decodeHost(OP_REMOVE_PEER, log);
+        auto peerAndPath = decodeHostAndPath(OP_REMOVE_PEER, log);
         auto ts = getTimestamp(log);
         if (ts > startTimeMs_) {
-          commitRemovePeer(peer);
+          commitRemovePeer(peerAndPath.host, peerAndPath.path);
         } else {
-          LOG(INFO) << idStr_ << "Skip commit stale remove peer " << peer
+          LOG(INFO) << idStr_ << "Skip commit stale remove peer " << peerAndPath
                     << ", the part is opened at " << startTimeMs_ << ", but the log timestamp is "
                     << ts;
         }
@@ -404,11 +413,11 @@ bool Part::preProcessLog(LogID logId, TermID termId, ClusterID clusterId, const 
   if (!log.empty()) {
     switch (log[sizeof(int64_t)]) {
       case OP_ADD_LEARNER: {
-        auto learner = decodeHost(OP_ADD_LEARNER, log);
+        auto learner = decodeHostAndPath(OP_ADD_LEARNER, log);
         auto ts = getTimestamp(log);
         if (ts > startTimeMs_) {
           LOG(INFO) << idStr_ << "preprocess add learner " << learner;
-          addLearner(learner);
+          addLearner(learner.host, learner.path);
         } else {
           LOG(INFO) << idStr_ << "Skip stale add learner " << learner << ", the part is opened at "
                     << startTimeMs_ << ", but the log timestamp is " << ts;
@@ -429,26 +438,27 @@ bool Part::preProcessLog(LogID logId, TermID termId, ClusterID clusterId, const 
         break;
       }
       case OP_ADD_PEER: {
-        auto peer = decodeHost(OP_ADD_PEER, log);
+        auto peerAndPath = decodeHostAndPath(OP_ADD_PEER, log);
         auto ts = getTimestamp(log);
         if (ts > startTimeMs_) {
-          LOG(INFO) << idStr_ << "preprocess add peer " << peer;
-          addPeer(peer);
+          LOG(INFO) << idStr_ << "preprocess add peer " << peerAndPath;
+          addPeer(peerAndPath.host, peerAndPath.path);
         } else {
-          LOG(INFO) << idStr_ << "Skip stale add peer " << peer << ", the part is opened at "
+          LOG(INFO) << idStr_ << "Skip stale add peer " << peerAndPath << ", the part is opened at "
                     << startTimeMs_ << ", but the log timestamp is " << ts;
         }
         break;
       }
       case OP_REMOVE_PEER: {
-        auto peer = decodeHost(OP_REMOVE_PEER, log);
+        auto peerAndPath = decodeHostAndPath(OP_REMOVE_PEER, log);
         auto ts = getTimestamp(log);
         if (ts > startTimeMs_) {
-          LOG(INFO) << idStr_ << "preprocess remove peer " << peer;
-          preProcessRemovePeer(peer);
+          LOG(INFO) << idStr_ << "preprocess remove peer " << peerAndPath;
+          preProcessRemovePeer(peerAndPath.host, peerAndPath.path);
         } else {
-          LOG(INFO) << idStr_ << "Skip stale remove peer " << peer << ", the part is opened at "
-                    << startTimeMs_ << ", but the log timestamp is " << ts;
+          LOG(INFO) << idStr_ << "Skip stale remove peer " << peerAndPath
+                    << ", the part is opened at " << startTimeMs_ << ", but the log timestamp is "
+                    << ts;
         }
         break;
       }

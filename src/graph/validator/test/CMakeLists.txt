@@ -73,7 +73,6 @@ nebula_add_test(
         validator_test
     SOURCES
         ACLValidatorTest.cpp
-        # BalanceValidatorTest.cpp
         FetchVerticesTest.cpp
         FetchEdgesTest.cpp
         MockSchemaManagerTest.cpp

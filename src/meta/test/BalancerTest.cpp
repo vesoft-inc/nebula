@@ -11,9 +11,11 @@
 #include "common/fs/TempDir.h"
 #include "meta/processors/job/BalanceJobExecutor.h"
 #include "meta/processors/job/DataBalanceJobExecutor.h"
+#include "meta/processors/job/DiskBalanceJobExecutor.h"
 #include "meta/processors/job/LeaderBalanceJobExecutor.h"
 #include "meta/processors/job/ZoneBalanceJobExecutor.h"
 #include "meta/processors/parts/CreateSpaceProcessor.h"
+#include "meta/processors/zone/AddHostsProcessor.h"
 #include "meta/test/MockAdminClient.h"
 #include "meta/test/TestUtils.h"
 
@@ -50,7 +52,7 @@ TEST(BalanceTest, BalanceTaskTest) {
     StrictMock<MockAdminClient> client;
     EXPECT_CALL(client, checkPeers(0, 0)).Times(2);
     EXPECT_CALL(client, transLeader(0, 0, src, _, _)).Times(1);
-    EXPECT_CALL(client, addPart(0, 0, dst, _, true)).Times(1);
+    EXPECT_CALL(client, addPart(0, 0, dst, true, _)).Times(1);
     EXPECT_CALL(client, addLearner(0, 0, dst, _)).Times(1);
     EXPECT_CALL(client, waitingForCatchUpData(0, 0, dst, _)).Times(1);
     EXPECT_CALL(client, memberChange(0, 0, dst, _, true)).Times(1);
@@ -396,16 +398,12 @@ TEST(BalanceTest, BalanceDataPlanTest) {
   balancer.spaceInfo_ = spaceInfo;
   Status status = balancer.buildBalancePlan();
   EXPECT_EQ(status, Status::OK());
-  EXPECT_EQ(balancer.spaceInfo_.zones_["zone1"].hosts_[HostAddr("127.0.0.1", 11)].parts_.size(),
-            11);
-  EXPECT_EQ(balancer.spaceInfo_.zones_["zone1"].hosts_[HostAddr("127.0.0.1", 12)].parts_.size(),
-            11);
-  EXPECT_EQ(balancer.spaceInfo_.zones_["zone1"].hosts_[HostAddr("127.0.0.1", 13)].parts_.size(),
-            10);
-  EXPECT_EQ(balancer.spaceInfo_.zones_["zone1"].hosts_[HostAddr("127.0.0.1", 14)].parts_.size(),
-            11);
-  EXPECT_EQ(balancer.spaceInfo_.zones_["zone1"].hosts_[HostAddr("127.0.0.1", 15)].parts_.size(),
-            11);
+  auto& zone1 = balancer.spaceInfo_.zones_["zone1"];
+  EXPECT_EQ(zone1.hosts_[HostAddr("127.0.0.1", 11)].parts_.size(), 11);
+  EXPECT_EQ(zone1.hosts_[HostAddr("127.0.0.1", 12)].parts_.size(), 11);
+  EXPECT_EQ(zone1.hosts_[HostAddr("127.0.0.1", 13)].parts_.size(), 10);
+  EXPECT_EQ(zone1.hosts_[HostAddr("127.0.0.1", 14)].parts_.size(), 11);
+  EXPECT_EQ(zone1.hosts_[HostAddr("127.0.0.1", 15)].parts_.size(), 11);
 
   spaceInfo = createSpaceInfo("space1",
                               1,
@@ -422,16 +420,12 @@ TEST(BalanceTest, BalanceDataPlanTest) {
   balancer.lostHosts_ = {{"127.0.0.1", 16}, {"127.0.0.1", 17}};
   status = balancer.buildBalancePlan();
   EXPECT_EQ(status, Status::OK());
-  EXPECT_EQ(balancer.spaceInfo_.zones_["zone1"].hosts_[HostAddr("127.0.0.1", 11)].parts_.size(),
-            11);
-  EXPECT_EQ(balancer.spaceInfo_.zones_["zone1"].hosts_[HostAddr("127.0.0.1", 12)].parts_.size(),
-            11);
-  EXPECT_EQ(balancer.spaceInfo_.zones_["zone1"].hosts_[HostAddr("127.0.0.1", 13)].parts_.size(),
-            11);
-  EXPECT_EQ(balancer.spaceInfo_.zones_["zone1"].hosts_[HostAddr("127.0.0.1", 14)].parts_.size(),
-            11);
-  EXPECT_EQ(balancer.spaceInfo_.zones_["zone1"].hosts_[HostAddr("127.0.0.1", 15)].parts_.size(),
-            10);
+  zone1 = balancer.spaceInfo_.zones_["zone1"];
+  EXPECT_EQ(zone1.hosts_[HostAddr("127.0.0.1", 11)].parts_.size(), 11);
+  EXPECT_EQ(zone1.hosts_[HostAddr("127.0.0.1", 12)].parts_.size(), 11);
+  EXPECT_EQ(zone1.hosts_[HostAddr("127.0.0.1", 13)].parts_.size(), 11);
+  EXPECT_EQ(zone1.hosts_[HostAddr("127.0.0.1", 14)].parts_.size(), 11);
+  EXPECT_EQ(zone1.hosts_[HostAddr("127.0.0.1", 15)].parts_.size(), 10);
   status = balancer.buildBalancePlan();
   EXPECT_EQ(status, Status::Balanced());
 }
@@ -454,11 +448,7 @@ void showHostLoading(kvstore::KVStore* kv, GraphSpaceID spaceId) {
   }
 
   for (auto it = hostPart.begin(); it != hostPart.end(); it++) {
-    std::stringstream ss;
-    for (auto part : it->second) {
-      ss << part << " ";
-    }
-    LOG(INFO) << "Host: " << it->first << " parts: " << ss.str();
+    LOG(INFO) << "Host: " << it->first << " parts: " << folly::join(" ", it->second);
   }
 }
 
@@ -831,7 +821,7 @@ TEST(BalanceTest, RecoveryTest) {
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
   NiceMock<MockAdminClient> client;
-  EXPECT_CALL(client, waitingForCatchUpData(_, _, _))
+  EXPECT_CALL(client, waitingForCatchUpData(_, _, _, _))
       .Times(12)
       .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))))
       .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))))
@@ -860,18 +850,12 @@ TEST(BalanceTest, RecoveryTest) {
                     partCount,
                     6);
   balancer.recovery();
-<<<<<<< HEAD
   verifyBalanceTask(kv,
                     balancer.jobId_,
                     BalanceTaskStatus::CATCH_UP_DATA,
                     BalanceTaskResult::IN_PROGRESS,
                     partCount,
                     6);
-=======
-  verifyBalanceTask(
-<<<<<<< HEAD
-      kv, balancer.jobId_, BalanceTaskStatus::START, BalanceTaskResult::IN_PROGRESS, partCount, 6);
->>>>>>> support path in admin processor
   baton.reset();
   balancer.setFinishCallBack([&](meta::cpp2::JobStatus) {
     baton.post();
@@ -879,59 +863,6 @@ TEST(BalanceTest, RecoveryTest) {
   });
   ret = balancer.executeInternal();
   baton.wait();
-=======
-      kv, balancer.jobId_, BalanceTaskStatus::START, BalanceTaskResult::INVALID, partCount, 6);
-}
-
-TEST(BalanceTest, RecoveryTest) {
-  FLAGS_task_concurrency = 1;
-  fs::TempDir rootPath("/tmp/RecoveryTest.XXXXXX");
-  auto store = MockCluster::initMetaKV(rootPath.path());
-  auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
-  FLAGS_heartbeat_interval_secs = 1;
-  TestUtils::createSomeHosts(kv);
-  TestUtils::assembleSpace(kv, 1, 8, 3, 4);
-
-  DefaultValue<folly::Future<Status>>::SetFactory(
-      [] { return folly::Future<Status>(Status::OK()); });
-  NiceMock<MockAdminClient> client;
-  // first 6 call is the failed case, the later call will return default value
-  // In gtest release 1.8.0 we can only write as follows:
-  EXPECT_CALL(client, waitingForCatchUpData(_, _, _, _))
-      .Times(AtLeast(12))
-      .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))))
-      .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))))
-      .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))))
-      .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))))
-      .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))))
-      .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))));
-
-  sleep(FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor + 1);
-  LOG(INFO) << "Now, we lost host " << HostAddr("3", 3);
-  TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"2", 2}});
-  JobDescription jd(
-      testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
-  DataBalanceJobExecutor balancer(jd, kv, &client, {});
-  auto ret = balancer.executeInternal(HostAddr(), {});
-  ASSERT_EQ(Status::OK(), ret.value());
-  testRestBlancer();
-  sleep(1);
-  std::unordered_map<HostAddr, int32_t> partCount;
-  verifyBalanceTask(kv,
-                    balancer.jobId_,
-                    BalanceTaskStatus::CATCH_UP_DATA,
-                    BalanceTaskResult::FAILED,
-                    partCount,
-                    6);
-
-  // register hb again to prevent from regarding src as offline
-  TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"2", 2}});
-  LOG(INFO) << "Now let's try to recovery it.";
-  balancer.recovery();
-  ret = balancer.executeInternal(HostAddr(), {});
-  ASSERT_EQ(Status::OK(), ret.value());
-  sleep(1);
->>>>>>> support path in admin processor
   verifyBalanceTask(
       kv, balancer.jobId_, BalanceTaskStatus::END, BalanceTaskResult::SUCCEEDED, partCount, 6);
 }
@@ -946,8 +877,7 @@ TEST(BalanceTest, StopPlanTest) {
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
   NiceMock<MockAdminClient> delayClient;
-<<<<<<< HEAD
-  EXPECT_CALL(delayClient, waitingForCatchUpData(_, _, _))
+  EXPECT_CALL(delayClient, waitingForCatchUpData(_, _, _, _))
       .Times(8)
       .WillOnce(
           Return(ByMove(folly::makeFuture<Status>(Status::OK()).delayed(std::chrono::seconds(3)))))
@@ -963,12 +893,6 @@ TEST(BalanceTest, StopPlanTest) {
           Return(ByMove(folly::makeFuture<Status>(Status::OK()).delayed(std::chrono::seconds(3)))))
       .WillOnce(
           Return(ByMove(folly::makeFuture<Status>(Status::OK()).delayed(std::chrono::seconds(3)))))
-=======
-  EXPECT_CALL(delayClient, waitingForCatchUpData(_, _, _, _))
-      // first task in first plan will be blocked, all other tasks will be
-      // skipped,
-      .Times(1)
->>>>>>> support path in admin processor
       .WillOnce(
           Return(ByMove(folly::makeFuture<Status>(Status::OK()).delayed(std::chrono::seconds(3)))));
   FLAGS_task_concurrency = 8;
@@ -997,27 +921,21 @@ TEST(BalanceTest, StopPlanTest) {
   int32_t progress = 0;
   while (iter->valid()) {
     BalanceTask task;
-    {
-      auto tup = MetaKeyUtils::parseBalanceTaskVal(iter->val());
-      task.status_ = std::get<0>(tup);
-      task.ret_ = std::get<1>(tup);
-      task.startTimeMs_ = std::get<2>(tup);
-      task.endTimeMs_ = std::get<3>(tup);
+    auto tup = MetaKeyUtils::parseBalanceTaskVal(iter->val());
+    task.status_ = std::get<0>(tup);
+    task.ret_ = std::get<1>(tup);
+    task.startTimeMs_ = std::get<2>(tup);
+    task.endTimeMs_ = std::get<3>(tup);
 
-      if (task.ret_ == BalanceTaskResult::SUCCEEDED) {
-        success++;
-      } else if (task.ret_ == BalanceTaskResult::INVALID) {
-        invalid++;
-      } else if (task.ret_ == BalanceTaskResult::IN_PROGRESS) {
-        progress++;
-      }
-
-      if (task.status_ == BalanceTaskStatus::END) {
-        taskEnded++;
-      } else {
-        taskStopped++;
-      }
+    if (task.ret_ == BalanceTaskResult::SUCCEEDED) {
+      success++;
+    } else if (task.ret_ == BalanceTaskResult::INVALID) {
+      invalid++;
+    } else if (task.ret_ == BalanceTaskResult::IN_PROGRESS) {
+      progress++;
     }
+
+    task.status_ == BalanceTaskStatus::END ? taskEnded++ : taskStopped++;
     iter->next();
   }
   EXPECT_EQ(8, taskEnded);
@@ -1224,7 +1142,7 @@ TEST(BalanceTest, IntersectHostsLeaderBalancePlanTest) {
 }
 
 TEST(BalanceTest, ManyHostsLeaderBalancePlanTest) {
-  fs::TempDir rootPath("/tmp/SimpleLeaderBalancePlanTest.XXXXXX");
+  fs::TempDir rootPath("/tmp/ManyHostsLeaderBalancePlanTest.XXXXXX");
   auto store = MockCluster::initMetaKV(rootPath.path());
   auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
   FLAGS_heartbeat_interval_secs = 1;
@@ -1560,46 +1478,38 @@ TEST(BalanceTest, DetachDiskTest) {
   auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
   FLAGS_heartbeat_interval_secs = 1;
 
-  std::vector<HostAddr> hosts;
-  for (int i = 0; i < 1; i++) {
-    hosts.emplace_back(std::to_string(i), i);
+  {
+    cpp2::AddHostsReq req;
+    std::vector<HostAddr> hosts = {{"127.0.0.1", 8989}};
+    req.hosts_ref() = std::move(hosts);
+    auto* processor = AddHostsProcessor::instance(kv);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
   }
-  TestUtils::createSomeHosts(kv, hosts);
-
-  cpp2::SpaceDesc properties;
-  properties.set_space_name("default_space");
-  properties.set_partition_num(12);
-  properties.set_replica_factor(1);
-  cpp2::CreateSpaceReq req;
-  req.set_properties(std::move(properties));
-  auto* processor = CreateSpaceProcessor::instance(kv);
-  auto f = processor->getFuture();
-  processor->process(req);
-  auto resp = std::move(f).get();
-  ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-  ASSERT_EQ(1, resp.get_id().get_space_id());
-
-  // folly::Baton<true, std::atomic> baton;
-  // std::vector<nebula::kvstore::KV> data;
-  // data.emplace_back(
-  //     MetaServiceUtils::diskKey(HostAddr("0", 0)),
-  //     MetaServiceUtils::diskVal({"/data/storage.0", "/data/storage.1", "/data/storage.2"}));
-  // for (int i = 1; i <= 12; i++) {
-  //   data.emplace_back(MetaServiceUtils::locationKey(HostAddr("0", 0), 1, i),
-  //                     folly::stringPrintf("/data/storage.%d", i % 3));
-  // }
-
-  // kv->asyncMultiPut(
-  //     kDefaultSpaceId, kDefaultPartId, std::move(data), [&baton](nebula::cpp2::ErrorCode code) {
-  //       EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
-  //       baton.post();
-  //     });
-  // baton.wait();
-
+  {
+    std::vector<HostAddr> hosts = {{"127.0.0.1", 8989}};
+    TestUtils::registerHB(kv, hosts);
+  }
+  {
+    cpp2::SpaceDesc properties;
+    properties.space_name_ref() = "default_space";
+    properties.partition_num_ref() = 12;
+    properties.replica_factor_ref() = 1;
+    cpp2::CreateSpaceReq req;
+    req.properties_ref() = std::move(properties);
+    auto* processor = CreateSpaceProcessor::instance(kv);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    ASSERT_EQ(1, resp.get_id().get_space_id());
+  }
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
   NiceMock<MockAdminClient> client;
-  Balancer balancer(kv, &client);
+  DiskBalanceJobExecutor balancer(JobDescription(), store.get(), &client, true, {});
 
   DiskParts partsLocation;
   std::vector<PartitionID> parts0 = {1, 2, 3, 4};
@@ -1608,8 +1518,8 @@ TEST(BalanceTest, DetachDiskTest) {
   // Remove the unique node
   {
     std::vector<BalanceTask> tasks;
-    auto code = balancer.detachDiskBalance(
-        0, HostAddr("0", 0), 1, partsLocation, {"/data/storage.0"}, tasks);
+    auto code =
+        balancer.detachDiskBalance(HostAddr("0", 0), 1, partsLocation, {"/data/storage.0"}, tasks);
     EXPECT_EQ(code, nebula::cpp2::ErrorCode::E_INVALID_PARM);
   }
 
@@ -1622,19 +1532,19 @@ TEST(BalanceTest, DetachDiskTest) {
   // Remove the path which is not exist
   {
     std::vector<BalanceTask> tasks;
-    auto code = balancer.detachDiskBalance(
-        0, HostAddr("0", 0), 1, partsLocation, {"/data/storage.3"}, tasks);
+    auto code =
+        balancer.detachDiskBalance(HostAddr("0", 0), 1, partsLocation, {"/data/storage.3"}, tasks);
     EXPECT_EQ(code, nebula::cpp2::ErrorCode::E_INVALID_PARM);
   }
   {
     std::vector<BalanceTask> tasks;
-    auto code = balancer.detachDiskBalance(0, HostAddr("0", 0), 1, partsLocation, {}, tasks);
+    auto code = balancer.detachDiskBalance(HostAddr("0", 0), 1, partsLocation, {}, tasks);
     EXPECT_EQ(code, nebula::cpp2::ErrorCode::E_INVALID_PARM);
   }
   {
     std::vector<BalanceTask> tasks;
-    auto code = balancer.detachDiskBalance(
-        0, HostAddr("0", 0), 1, partsLocation, {"/data/storage.2"}, tasks);
+    auto code =
+        balancer.detachDiskBalance(HostAddr("0", 0), 1, partsLocation, {"/data/storage.2"}, tasks);
     EXPECT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
     ASSERT_EQ(4, tasks.size());
   }
@@ -1646,50 +1556,38 @@ TEST(BalanceTest, DetachMultiDiskTest) {
   auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
   FLAGS_heartbeat_interval_secs = 1;
 
-  std::vector<HostAddr> hosts;
-  for (int i = 0; i < 1; i++) {
-    hosts.emplace_back(std::to_string(i), i);
+  {
+    cpp2::AddHostsReq req;
+    std::vector<HostAddr> hosts = {{"127.0.0.1", 8989}};
+    req.hosts_ref() = std::move(hosts);
+    auto* processor = AddHostsProcessor::instance(kv);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
   }
-  TestUtils::createSomeHosts(kv, hosts);
-
-  cpp2::SpaceDesc properties;
-  properties.set_space_name("default_space");
-  properties.set_partition_num(12);
-  properties.set_replica_factor(1);
-  cpp2::CreateSpaceReq req;
-  req.set_properties(std::move(properties));
-  auto* processor = CreateSpaceProcessor::instance(kv);
-  auto f = processor->getFuture();
-  processor->process(req);
-  auto resp = std::move(f).get();
-  ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-  ASSERT_EQ(1, resp.get_id().get_space_id());
-
-  // folly::Baton<true, std::atomic> baton;
-  // std::vector<nebula::kvstore::KV> data;
-  // data.emplace_back(MetaServiceUtils::diskKey(HostAddr("0", 0)),
-  //                   MetaServiceUtils::diskVal({"/data/storage.0",
-  //                                              "/data/storage.1",
-  //                                              "/data/storage.2",
-  //                                              "/data/storage.3",
-  //                                              "/data/storage.4",
-  //                                              "/data/storage.5"}));
-  // for (int i = 1; i <= 12; i++) {
-  //   data.emplace_back(MetaServiceUtils::locationKey(HostAddr("0", 0), 1, i),
-  //                     folly::stringPrintf("/data/storage.%d", i % 6));
-  // }
-
-  // kv->asyncMultiPut(
-  //     kDefaultSpaceId, kDefaultPartId, std::move(data), [&baton](nebula::cpp2::ErrorCode code) {
-  //       EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
-  //       baton.post();
-  //     });
-  // baton.wait();
-
+  {
+    std::vector<HostAddr> hosts = {{"127.0.0.1", 8989}};
+    TestUtils::registerHB(kv, hosts);
+  }
+  {
+    cpp2::SpaceDesc properties;
+    properties.space_name_ref() = "default_space";
+    properties.partition_num_ref() = 12;
+    properties.replica_factor_ref() = 1;
+    cpp2::CreateSpaceReq req;
+    req.properties_ref() = std::move(properties);
+    auto* processor = CreateSpaceProcessor::instance(kv);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    ASSERT_EQ(1, resp.get_id().get_space_id());
+  }
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
   NiceMock<MockAdminClient> client;
-  Balancer balancer(kv, &client);
+  DiskBalanceJobExecutor balancer(JobDescription(), store.get(), &client, true, {});
 
   DiskParts partsLocation;
   std::vector<PartitionID> parts0 = {1, 2};
@@ -1713,8 +1611,7 @@ TEST(BalanceTest, DetachMultiDiskTest) {
   {
     std::vector<BalanceTask> tasks;
     auto code =
-        balancer.detachDiskBalance(0,
-                                   HostAddr("0", 0),
+        balancer.detachDiskBalance(HostAddr("0", 0),
                                    1,
                                    partsLocation,
                                    {"/data/storage.0", "/data/storage.1", "/data/storage.2"},
@@ -1725,8 +1622,7 @@ TEST(BalanceTest, DetachMultiDiskTest) {
   {
     std::vector<BalanceTask> tasks;
     auto code =
-        balancer.detachDiskBalance(0,
-                                   HostAddr("0", 0),
+        balancer.detachDiskBalance(HostAddr("0", 0),
                                    1,
                                    partsLocation,
                                    {"/data/storage.0", "/data/storage.1", "/data/storage.1"},
@@ -1735,8 +1631,7 @@ TEST(BalanceTest, DetachMultiDiskTest) {
   }
   {
     std::vector<BalanceTask> tasks;
-    auto code = balancer.detachDiskBalance(0,
-                                           HostAddr("0", 0),
+    auto code = balancer.detachDiskBalance(HostAddr("0", 0),
                                            1,
                                            partsLocation,
                                            {"/data/storage.0",
@@ -1750,8 +1645,7 @@ TEST(BalanceTest, DetachMultiDiskTest) {
   }
   {
     std::vector<BalanceTask> tasks;
-    auto code = balancer.detachDiskBalance(0,
-                                           HostAddr("0", 0),
+    auto code = balancer.detachDiskBalance(HostAddr("0", 0),
                                            1,
                                            partsLocation,
                                            {"/data/storage.0",
@@ -1766,8 +1660,7 @@ TEST(BalanceTest, DetachMultiDiskTest) {
   }
   {
     std::vector<BalanceTask> tasks;
-    auto code = balancer.detachDiskBalance(0,
-                                           HostAddr("0", 0),
+    auto code = balancer.detachDiskBalance(HostAddr("0", 0),
                                            1,
                                            partsLocation,
                                            {"/data/storage.0",
@@ -1787,47 +1680,39 @@ TEST(BalanceTest, AdditionDiskTest) {
   auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
   FLAGS_heartbeat_interval_secs = 1;
 
-  std::vector<HostAddr> hosts;
-  for (int i = 0; i < 1; i++) {
-    hosts.emplace_back(std::to_string(i), i);
+  {
+    cpp2::AddHostsReq req;
+    std::vector<HostAddr> hosts = {{"127.0.0.1", 8989}};
+    req.hosts_ref() = std::move(hosts);
+    auto* processor = AddHostsProcessor::instance(kv);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
   }
-  TestUtils::createSomeHosts(kv, hosts);
-
-  cpp2::SpaceDesc properties;
-  properties.set_space_name("default_space");
-  properties.set_partition_num(12);
-  properties.set_replica_factor(1);
-  cpp2::CreateSpaceReq req;
-  req.set_properties(std::move(properties));
-  auto* processor = CreateSpaceProcessor::instance(kv);
-  auto f = processor->getFuture();
-  processor->process(req);
-  auto resp = std::move(f).get();
-  ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-  ASSERT_EQ(1, resp.get_id().get_space_id());
-
-  // folly::Baton<true, std::atomic> baton;
-  // std::vector<nebula::kvstore::KV> data;
-  // data.emplace_back(
-  //     MetaServiceUtils::diskKey(HostAddr("0", 0)),
-  //     MetaServiceUtils::diskVal(
-  //         {"/data/storage.0", "/data/storage.1", "/data/storage.2", "/data/storage.3"}));
-  // for (int i = 1; i <= 12; i++) {
-  //   data.emplace_back(MetaServiceUtils::locationKey(HostAddr("0", 0), 1, i),
-  //                     folly::stringPrintf("/data/storage.%d", i % 3));
-  // }
-
-  // kv->asyncMultiPut(
-  //     kDefaultSpaceId, kDefaultPartId, std::move(data), [&baton](nebula::cpp2::ErrorCode code) {
-  //       EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
-  //       baton.post();
-  //     });
-  // baton.wait();
+  {
+    std::vector<HostAddr> hosts = {{"127.0.0.1", 8989}};
+    TestUtils::registerHB(kv, hosts);
+  }
+  {
+    cpp2::SpaceDesc properties;
+    properties.space_name_ref() = "default_space";
+    properties.partition_num_ref() = 12;
+    properties.replica_factor_ref() = 1;
+    cpp2::CreateSpaceReq req;
+    req.properties_ref() = std::move(properties);
+    auto* processor = CreateSpaceProcessor::instance(kv);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    ASSERT_EQ(1, resp.get_id().get_space_id());
+  }
 
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
   NiceMock<MockAdminClient> client;
-  Balancer balancer(kv, &client);
+  DiskBalanceJobExecutor balancer(JobDescription(), store.get(), &client, false, {});
 
   int32_t totalParts = 12;
   DiskParts partsLocation;
@@ -1843,20 +1728,20 @@ TEST(BalanceTest, AdditionDiskTest) {
   {
     std::vector<BalanceTask> tasks;
     auto code = balancer.additionDiskBalance(
-        0, HostAddr("0", 0), 1, partsLocation, {"/data/storage.3"}, totalParts, tasks);
+        HostAddr("0", 0), 1, partsLocation, {"/data/storage.3"}, totalParts, tasks);
     EXPECT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
     ASSERT_EQ(3, tasks.size());
   }
   {
     std::vector<BalanceTask> tasks;
     auto code =
-        balancer.additionDiskBalance(0, HostAddr("0", 0), 1, partsLocation, {}, totalParts, tasks);
+        balancer.additionDiskBalance(HostAddr("0", 0), 1, partsLocation, {}, totalParts, tasks);
     EXPECT_EQ(code, nebula::cpp2::ErrorCode::E_INVALID_PARM);
   }
   {
     std::vector<BalanceTask> tasks;
     auto code = balancer.additionDiskBalance(
-        0, HostAddr("0", 0), 1, partsLocation, {"/data/storage.1"}, totalParts, tasks);
+        HostAddr("0", 0), 1, partsLocation, {"/data/storage.1"}, totalParts, tasks);
     EXPECT_EQ(code, nebula::cpp2::ErrorCode::E_INVALID_PARM);
   }
 }
@@ -1867,50 +1752,39 @@ TEST(BalanceTest, AdditionMultiDiskTest) {
   auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
   FLAGS_heartbeat_interval_secs = 1;
 
-  std::vector<HostAddr> hosts;
-  for (int i = 0; i < 1; i++) {
-    hosts.emplace_back(std::to_string(i), i);
+  {
+    cpp2::AddHostsReq req;
+    std::vector<HostAddr> hosts = {{"127.0.0.1", 8989}};
+    req.hosts_ref() = std::move(hosts);
+    auto* processor = AddHostsProcessor::instance(kv);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
   }
-  TestUtils::createSomeHosts(kv, hosts);
-
-  cpp2::SpaceDesc properties;
-  properties.set_space_name("default_space");
-  properties.set_partition_num(12);
-  properties.set_replica_factor(1);
-  cpp2::CreateSpaceReq req;
-  req.set_properties(std::move(properties));
-  auto* processor = CreateSpaceProcessor::instance(kv);
-  auto f = processor->getFuture();
-  processor->process(req);
-  auto resp = std::move(f).get();
-  ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-  ASSERT_EQ(1, resp.get_id().get_space_id());
-
-  // folly::Baton<true, std::atomic> baton;
-  // std::vector<nebula::kvstore::KV> data;
-  // data.emplace_back(MetaServiceUtils::diskKey(HostAddr("0", 0)),
-  //                   MetaServiceUtils::diskVal({"/data/storage.0",
-  //                                              "/data/storage.1",
-  //                                              "/data/storage.2",
-  //                                              "/data/storage.3",
-  //                                              "/data/storage.4",
-  //                                              "/data/storage.5"}));
-  // for (int i = 1; i <= 12; i++) {
-  //   data.emplace_back(MetaServiceUtils::locationKey(HostAddr("0", 0), 1, i),
-  //                     folly::stringPrintf("/data/storage.%d", i % 6));
-  // }
-
-  // kv->asyncMultiPut(
-  //     kDefaultSpaceId, kDefaultPartId, std::move(data), [&baton](nebula::cpp2::ErrorCode code) {
-  //       EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
-  //       baton.post();
-  //     });
-  // baton.wait();
+  {
+    std::vector<HostAddr> hosts = {{"127.0.0.1", 8989}};
+    TestUtils::registerHB(kv, hosts);
+  }
+  {
+    cpp2::SpaceDesc properties;
+    properties.space_name_ref() = "default_space";
+    properties.partition_num_ref() = 12;
+    properties.replica_factor_ref() = 1;
+    cpp2::CreateSpaceReq req;
+    req.properties_ref() = std::move(properties);
+    auto* processor = CreateSpaceProcessor::instance(kv);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    ASSERT_EQ(1, resp.get_id().get_space_id());
+  }
 
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
   NiceMock<MockAdminClient> client;
-  Balancer balancer(kv, &client);
+  DiskBalanceJobExecutor balancer(JobDescription(), store.get(), &client, false, {});
 
   int32_t totalParts = 12;
   DiskParts partsLocation;
@@ -1926,8 +1800,7 @@ TEST(BalanceTest, AdditionMultiDiskTest) {
   {
     std::vector<BalanceTask> tasks;
     auto code =
-        balancer.additionDiskBalance(0,
-                                     HostAddr("0", 0),
+        balancer.additionDiskBalance(HostAddr("0", 0),
                                      1,
                                      partsLocation,
                                      {"/data/storage.3", "/data/storage.4", "/data/storage.5"},
@@ -1939,8 +1812,7 @@ TEST(BalanceTest, AdditionMultiDiskTest) {
   {
     std::vector<BalanceTask> tasks;
     auto code =
-        balancer.additionDiskBalance(0,
-                                     HostAddr("0", 0),
+        balancer.additionDiskBalance(HostAddr("0", 0),
                                      1,
                                      partsLocation,
                                      {"/data/storage.3", "/data/storage.3", "/data/storage.5"},
@@ -1951,8 +1823,7 @@ TEST(BalanceTest, AdditionMultiDiskTest) {
   {
     std::vector<BalanceTask> tasks;
     auto code =
-        balancer.additionDiskBalance(0,
-                                     HostAddr("0", 0),
+        balancer.additionDiskBalance(HostAddr("0", 0),
                                      1,
                                      partsLocation,
                                      {"/data/storage.1", "/data/storage.4", "/data/storage.5"},
@@ -1963,7 +1834,7 @@ TEST(BalanceTest, AdditionMultiDiskTest) {
   {
     std::vector<BalanceTask> tasks;
     auto code =
-        balancer.additionDiskBalance(0, HostAddr("0", 0), 1, partsLocation, {}, totalParts, tasks);
+        balancer.additionDiskBalance(HostAddr("0", 0), 1, partsLocation, {}, totalParts, tasks);
     EXPECT_EQ(code, nebula::cpp2::ErrorCode::E_INVALID_PARM);
   }
 }

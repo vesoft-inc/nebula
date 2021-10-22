@@ -151,7 +151,7 @@ void RaftexService::addPartition(std::shared_ptr<RaftPart> part) {
   // todo(doodle): If we need to start both listener and normal replica on same
   // hosts, this class need to be aware of type.
   folly::RWSpinLock::WriteHolder wh(partsLock_);
-  parts_.emplace(std::make_pair(part->spaceId(), part->partitionId()), part);
+  parts_.emplace(std::make_tuple(part->spaceId(), part->partitionId(), part->path()), part);
 }
 
 void RaftexService::removePartition(std::shared_ptr<RaftPart> part) {
@@ -161,7 +161,7 @@ void RaftexService::removePartition(std::shared_ptr<RaftPart> part) {
   folly::makeFuture()
       .thenValue([this, &part](FTValype) {
         folly::RWSpinLock::WriteHolder wh(partsLock_);
-        parts_.erase(std::make_pair(part->spaceId(), part->partitionId()));
+        parts_.erase(std::make_tuple(part->spaceId(), part->partitionId(), part->path()));
       })
       // the part->stop() would wait for requestOnGoing_ in Host, and the requestOnGoing_ will
       // release in response in ioThreadPool,this may cause deadlock, so doing it in another
@@ -171,13 +171,20 @@ void RaftexService::removePartition(std::shared_ptr<RaftPart> part) {
       .wait();
 }
 
-std::shared_ptr<RaftPart> RaftexService::findPart(GraphSpaceID spaceId, PartitionID partId) {
+std::shared_ptr<RaftPart> RaftexService::findPart(GraphSpaceID spaceId,
+                                                  PartitionID partId,
+                                                  const std::string& path) {
   folly::RWSpinLock::ReadHolder rh(partsLock_);
-  auto it = parts_.find(std::make_pair(spaceId, partId));
+  for (auto iter = parts_.begin(); iter != parts_.end(); iter++) {
+    LOG(INFO) << "Space " << std::get<0>(iter->first) << " Part " << std::get<1>(iter->first)
+              << " Path " << std::get<2>(iter->first);
+  }
+
+  auto it = parts_.find(std::make_tuple(spaceId, partId, path));
   if (it == parts_.end()) {
     // Part not found
-    LOG_EVERY_N(WARNING, 100) << "Cannot find the part " << partId << " in the graph space "
-                              << spaceId;
+    LOG(WARNING) << "Cannot find the part " << partId << " in the graph space " << spaceId
+                 << ", path " << path;
     return std::shared_ptr<RaftPart>();
   }
 
@@ -186,7 +193,9 @@ std::shared_ptr<RaftPart> RaftexService::findPart(GraphSpaceID spaceId, Partitio
 }
 
 void RaftexService::getState(cpp2::GetStateResponse& resp, const cpp2::GetStateRequest& req) {
-  auto part = findPart(req.get_space(), req.get_part());
+  LOG(INFO) << "Get State Space " << req.get_space() << ", Part " << req.get_part() << ", Path "
+            << req.get_path();
+  auto part = findPart(req.get_space(), req.get_part(), req.get_path());
   if (part != nullptr) {
     part->getState(resp);
   } else {
@@ -196,7 +205,9 @@ void RaftexService::getState(cpp2::GetStateResponse& resp, const cpp2::GetStateR
 }
 
 void RaftexService::askForVote(cpp2::AskForVoteResponse& resp, const cpp2::AskForVoteRequest& req) {
-  auto part = findPart(req.get_space(), req.get_part());
+  LOG(INFO) << "Ask For Vote Space " << req.get_space() << ", Part " << req.get_part() << ", Path "
+            << req.get_path();
+  auto part = findPart(req.get_space(), req.get_part(), req.get_path());
   if (!part) {
     // Not found
     resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_UNKNOWN_PART;
@@ -207,7 +218,9 @@ void RaftexService::askForVote(cpp2::AskForVoteResponse& resp, const cpp2::AskFo
 }
 
 void RaftexService::appendLog(cpp2::AppendLogResponse& resp, const cpp2::AppendLogRequest& req) {
-  auto part = findPart(req.get_space(), req.get_part());
+  LOG(INFO) << "Append Log " << req.get_space() << ", Part " << req.get_part() << ", Path "
+            << req.get_path();
+  auto part = findPart(req.get_space(), req.get_part(), req.get_path());
   if (!part) {
     // Not found
     resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_UNKNOWN_PART;
@@ -219,7 +232,9 @@ void RaftexService::appendLog(cpp2::AppendLogResponse& resp, const cpp2::AppendL
 
 void RaftexService::sendSnapshot(cpp2::SendSnapshotResponse& resp,
                                  const cpp2::SendSnapshotRequest& req) {
-  auto part = findPart(req.get_space(), req.get_part());
+  LOG(INFO) << "Send Snapshot " << req.get_space() << ", Part " << req.get_part() << ", Path "
+            << req.get_path();
+  auto part = findPart(req.get_space(), req.get_part(), req.get_path());
   if (!part) {
     // Not found
     resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_UNKNOWN_PART;
@@ -232,8 +247,10 @@ void RaftexService::sendSnapshot(cpp2::SendSnapshotResponse& resp,
 void RaftexService::async_eb_heartbeat(
     std::unique_ptr<apache::thrift::HandlerCallback<cpp2::HeartbeatResponse>> callback,
     const cpp2::HeartbeatRequest& req) {
+  LOG(INFO) << "Heartbeat " << req.get_space() << ", Part " << req.get_part() << ", Path "
+            << req.get_path();
   cpp2::HeartbeatResponse resp;
-  auto part = findPart(req.get_space(), req.get_part());
+  auto part = findPart(req.get_space(), req.get_part(), req.get_path());
   if (!part) {
     // Not found
     resp.error_code_ref() = nebula::cpp2::ErrorCode::E_RAFT_UNKNOWN_PART;

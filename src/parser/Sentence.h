@@ -195,9 +195,24 @@ class HostList final {
 
 class PathList final {
  public:
-  void addPath(std::string *path) { paths_.emplace_back(path); }
+  void addPath(std::string *path) {
+    paths_.emplace_back(path);
+  }
 
-  std::string toString() const;
+  std::string toString() const {
+    std::string buf;
+    buf.reserve(256);
+    for (auto &path : paths_) {
+      buf += "\"";
+      buf += *path.get();
+      buf += "\"";
+      buf += ",";
+    }
+    if (!buf.empty()) {
+      buf.pop_back();
+    }
+    return buf;
+  }
 
   std::vector<std::string> paths() const {
     std::vector<std::string> result;
@@ -212,8 +227,7 @@ class PathList final {
   std::vector<std::unique_ptr<std::string>> paths_;
 };
 
-inline std::ostream &
-operator<<(std::ostream &os, Sentence::Kind kind) {
+inline std::ostream &operator<<(std::ostream &os, Sentence::Kind kind) {
   return os << static_cast<uint32_t>(kind);
 }
 

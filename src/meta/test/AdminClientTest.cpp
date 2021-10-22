@@ -168,7 +168,7 @@ TEST(AdminClientTest, SimpleTest) {
   {
     LOG(INFO) << "Test addPart...";
     folly::Baton<true, std::atomic> baton;
-    client->addPart(0, 0, {localIp, rpcServer->port_}, "", true).thenValue([&baton](auto&&) {
+    client->addPart(0, 0, {localIp, rpcServer->port_}, true, "").thenValue([&baton](auto&&) {
       baton.post();
     });
     baton.wait();
@@ -291,9 +291,9 @@ TEST(AdminClientTest, RetryTest) {
     CHECK(nebula::ok(peersRet));
     auto hosts = std::move(nebula::value(peersRet));
     ASSERT_EQ(3, hosts.size());
-    ASSERT_EQ(Utils::getStoreAddrFromAdminAddr({localIp, rpcServer2->port_}), hosts[0].host);
-    ASSERT_EQ(Utils::getStoreAddrFromAdminAddr({localIp, rpcServer1->port_}), hosts[1].host);
-    ASSERT_EQ(HostAddr("1", 1), hosts[2].host);
+    ASSERT_EQ(Utils::getStoreAddrFromAdminAddr({localIp, rpcServer2->port_}), hosts[0]);
+    ASSERT_EQ(Utils::getStoreAddrFromAdminAddr({localIp, rpcServer1->port_}), hosts[1]);
+    ASSERT_EQ(HostAddr("1", 1), hosts[2]);
   }
 }
 

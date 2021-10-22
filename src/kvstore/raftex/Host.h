@@ -28,7 +28,10 @@ class Host final : public std::enable_shared_from_this<Host> {
   friend class RaftPart;
 
  public:
-  Host(const HostAddr& addr, std::shared_ptr<RaftPart> part, bool isLearner = false);
+  Host(const HostAddr& addr,
+       const std::string& path,
+       std::shared_ptr<RaftPart> part,
+       bool isLearner = false);
 
   ~Host() {
     LOG(INFO) << idStr_ << " The host has been destroyed!";
@@ -96,6 +99,10 @@ class Host final : public std::enable_shared_from_this<Host> {
     return addr_;
   }
 
+  const std::string& path() const {
+    return path_;
+  }
+
  private:
   nebula::cpp2::ErrorCode canAppendLog() const;
 
@@ -124,6 +131,7 @@ class Host final : public std::enable_shared_from_this<Host> {
 
   std::shared_ptr<RaftPart> part_;
   const HostAddr addr_;
+  const std::string path_;
   bool isLearner_ = false;
   const std::string idStr_;
 

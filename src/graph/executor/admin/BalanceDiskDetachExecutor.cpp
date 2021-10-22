@@ -1,19 +1,18 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
-#include "graph/executor/admin/BalanceDiskRemoveExecutor.h"
+#include "graph/executor/admin/BalanceDiskDetachExecutor.h"
 
 #include "graph/planner/plan/Admin.h"
 
 namespace nebula {
 namespace graph {
 
-folly::Future<Status> BalanceDiskRemoveExecutor::execute() {
+folly::Future<Status> BalanceDiskDetachExecutor::execute() {
   SCOPED_TIMER(&execTime_);
-  auto *bdrNode = asNode<BalanceDiskRemove>(node());
+  auto *bdrNode = asNode<BalanceDiskDetach>(node());
   return qctx()
       ->getMetaClient()
       ->balanceDisk(bdrNode->targetHost(), bdrNode->paths(), true)

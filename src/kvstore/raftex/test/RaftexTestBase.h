@@ -30,9 +30,9 @@ class TestShard;
 extern std::mutex leaderMutex;
 extern std::condition_variable leaderCV;
 
-std::vector<HostAndPath> getPeers(const std::vector<HostAddr>& all,
-                                  const HostAddr& self,
-                                  std::vector<bool> isLearner = {});
+std::vector<HostAddr> getPeers(const std::vector<HostAddr>& all,
+                               const HostAddr& self,
+                               std::vector<bool> isLearner = {});
 
 void onLeaderElected(std::vector<std::shared_ptr<test::TestShard>>& copies,
                      std::shared_ptr<test::TestShard>& leader,
@@ -55,6 +55,7 @@ void waitUntilAllHasLeader(const std::vector<std::shared_ptr<test::TestShard>>& 
 void setupRaft(int32_t numCopies,
                fs::TempDir& walRoot,
                std::shared_ptr<thread::GenericThreadPool>& workers,
+               std::vector<std::string>& paths,
                std::vector<std::string>& wals,
                std::vector<HostAddr>& allHosts,
                std::vector<std::shared_ptr<RaftexService>>& services,
@@ -113,7 +114,7 @@ class RaftexTestFixture : public ::testing::Test {
   void SetUp() override {
     walRoot_ = std::make_unique<fs::TempDir>(
         folly::stringPrintf("/tmp/%s.XXXXXX", testName_.c_str()).c_str());
-    setupRaft(size_, *walRoot_, workers_, wals_, allHosts_, services_, copies_, leader_);
+    setupRaft(size_, *walRoot_, workers_, paths_, wals_, allHosts_, services_, copies_, leader_);
 
     // Check all hosts agree on the same leader
     checkLeadership(copies_, leader_);
@@ -129,6 +130,7 @@ class RaftexTestFixture : public ::testing::Test {
   int32_t size_;
   std::unique_ptr<fs::TempDir> walRoot_;
   std::shared_ptr<thread::GenericThreadPool> workers_;
+  std::vector<std::string> paths_;
   std::vector<std::string> wals_;
   std::vector<HostAddr> allHosts_;
   std::vector<std::shared_ptr<RaftexService>> services_;

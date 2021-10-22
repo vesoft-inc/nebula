@@ -24,13 +24,14 @@ namespace raftex {
 TEST(LogAppend, SimpleAppendWithOneCopy) {
   fs::TempDir walRoot("/tmp/simple_append_with_one_copy.XXXXXX");
   std::shared_ptr<thread::GenericThreadPool> workers;
+  std::vector<std::string> paths;
   std::vector<std::string> wals;
   std::vector<HostAddr> allHosts;
   std::vector<std::shared_ptr<RaftexService>> services;
   std::vector<std::shared_ptr<test::TestShard>> copies;
 
   std::shared_ptr<test::TestShard> leader;
-  setupRaft(1, walRoot, workers, wals, allHosts, services, copies, leader);
+  setupRaft(1, walRoot, workers, paths, wals, allHosts, services, copies, leader);
 
   // Check all hosts agree on the same leader
   checkLeadership(copies, leader);
@@ -45,13 +46,14 @@ TEST(LogAppend, SimpleAppendWithOneCopy) {
 TEST(LogAppend, SimpleAppendWithThreeCopies) {
   fs::TempDir walRoot("/tmp/simple_append_with_three_copies.XXXXXX");
   std::shared_ptr<thread::GenericThreadPool> workers;
+  std::vector<std::string> paths;
   std::vector<std::string> wals;
   std::vector<HostAddr> allHosts;
   std::vector<std::shared_ptr<RaftexService>> services;
   std::vector<std::shared_ptr<test::TestShard>> copies;
 
   std::shared_ptr<test::TestShard> leader;
-  setupRaft(3, walRoot, workers, wals, allHosts, services, copies, leader);
+  setupRaft(3, walRoot, workers, paths, wals, allHosts, services, copies, leader);
 
   // Check all hosts agree on the same leader
   checkLeadership(copies, leader);
@@ -66,13 +68,14 @@ TEST(LogAppend, SimpleAppendWithThreeCopies) {
 TEST(LogAppend, MultiThreadAppend) {
   fs::TempDir walRoot("/tmp/multi_thread_append.XXXXXX");
   std::shared_ptr<thread::GenericThreadPool> workers;
+  std::vector<std::string> paths;
   std::vector<std::string> wals;
   std::vector<HostAddr> allHosts;
   std::vector<std::shared_ptr<RaftexService>> services;
   std::vector<std::shared_ptr<test::TestShard>> copies;
 
   std::shared_ptr<test::TestShard> leader;
-  setupRaft(3, walRoot, workers, wals, allHosts, services, copies, leader);
+  setupRaft(3, walRoot, workers, paths, wals, allHosts, services, copies, leader);
 
   // Check all hosts agree on the same leader
   checkLeadership(copies, leader);

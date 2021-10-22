@@ -160,21 +160,31 @@ class MetaChangedListener {
   virtual ~MetaChangedListener() = default;
 
   virtual void onSpaceAdded(GraphSpaceID spaceId, bool isListener = false) = 0;
+
   virtual void onSpaceRemoved(GraphSpaceID spaceId, bool isListener = false) = 0;
+
   virtual void onSpaceOptionUpdated(
       GraphSpaceID spaceId, const std::unordered_map<std::string, std::string>& options) = 0;
-  virtual void onPartAdded(const PartHosts& partHosts) = 0;
+
+  virtual void onPartAdded(GraphSpaceID spaceId, PartitionID partId, const std::string& path) = 0;
+
   virtual void onPartRemoved(GraphSpaceID spaceId, PartitionID partId, const std::string& path) = 0;
-  virtual void onPartUpdated(const PartHosts& partHosts) = 0;
+
+  virtual void onPartUpdated(GraphSpaceID spaceId, PartitionID partId, const std::string& path) = 0;
+
   virtual void fetchLeaderInfo(
       std::unordered_map<GraphSpaceID, std::vector<cpp2::LeaderInfo>>& leaders) = 0;
+
   virtual void fetchDiskParts(kvstore::SpaceDiskPartsMap& diskParts) = 0;
+
   virtual void onListenerAdded(GraphSpaceID spaceId,
                                PartitionID partId,
                                const ListenerHosts& listenerHosts) = 0;
+
   virtual void onListenerRemoved(GraphSpaceID spaceId,
                                  PartitionID partId,
                                  cpp2::ListenerType type) = 0;
+
   virtual void onCheckRemoteListeners(GraphSpaceID spaceId,
                                       PartitionID partId,
                                       const std::vector<HostAddr>& remoteListeners) = 0;

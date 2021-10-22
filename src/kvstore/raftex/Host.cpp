@@ -27,12 +27,19 @@ namespace raftex {
 
 using nebula::network::NetworkUtils;
 
-Host::Host(const HostAddr& addr, std::shared_ptr<RaftPart> part, bool isLearner)
+Host::Host(const HostAddr& addr,
+           const std::string& path,
+           std::shared_ptr<RaftPart> part,
+           bool isLearner)
     : part_(std::move(part)),
       addr_(addr),
+      path_(path),
       isLearner_(isLearner),
-      idStr_(folly::stringPrintf(
-          "%s[Host: %s:%d] ", part_->idStr_.c_str(), addr_.host.c_str(), addr_.port)),
+      idStr_(folly::stringPrintf("%s[Host: %s:%d Path: %s] ",
+                                 part_->idStr_.c_str(),
+                                 addr_.host.c_str(),
+                                 addr_.port,
+                                 path_.c_str())),
       cachingPromise_(folly::SharedPromise<cpp2::AppendLogResponse>()) {}
 
 void Host::waitForStop() {
@@ -69,6 +76,7 @@ folly::Future<cpp2::AskForVoteResponse> Host::askForVote(const cpp2::AskForVoteR
     }
   }
   auto client = part_->clientMan_->client(addr_, eb, false, FLAGS_raft_rpc_timeout_ms);
+  LOG(INFO) << "client send askForVote";
   return client->future_askForVote(req);
 }
 
@@ -280,6 +288,7 @@ Host::prepareAppendLogRequest() {
     req->leader_port_ref() = part_->address().port;
     req->last_log_term_sent_ref() = lastLogTermSent_;
     req->last_log_id_sent_ref() = lastLogIdSent_;
+    req->path_ref() = path_;
     return req;
   };
 
@@ -373,13 +382,17 @@ folly::Future<cpp2::AppendLogResponse> Host::sendAppendLogRequest(
     }
   }
 
+  // auto p = part_->path_;
+  // LOG(INFO) << "    Path: " << p;
+  // (*req).path_ref() == std::move(p);
+
   LOG_IF(INFO, FLAGS_trace_raft) << idStr_ << "Sending appendLog: space " << req->get_space()
                                  << ", part " << req->get_part() << ", current term "
                                  << req->get_current_term() << ", committed_id "
                                  << req->get_committed_log_id() << ", last_log_term_sent "
                                  << req->get_last_log_term_sent() << ", last_log_id_sent "
                                  << req->get_last_log_id_sent() << ", logs in request "
-                                 << req->get_log_str_list().size();
+                                 << req->get_log_str_list().size() << ", path " << req->get_path();
   // Get client connection
   auto client = part_->clientMan_->client(addr_, eb, false, FLAGS_raft_rpc_timeout_ms);
   return client->future_appendLog(*req);
@@ -396,6 +409,8 @@ folly::Future<cpp2::HeartbeatResponse> Host::sendHeartbeat(
   req->leader_port_ref() = part_->address().port;
   req->last_log_term_sent_ref() = lastLogTerm;
   req->last_log_id_sent_ref() = lastLogId;
+  // req->path_ref() = part_->path();
+  req->path_ref() = path_;
   folly::Promise<cpp2::HeartbeatResponse> promise;
   auto future = promise.getFuture();
   sendHeartbeatRequest(eb, std::move(req))

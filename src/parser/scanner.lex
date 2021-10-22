@@ -126,6 +126,7 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 "DROP"                      { return TokenType::KW_DROP; }
 "REMOVE"                    { return TokenType::KW_REMOVE; }
 "ATTACH"                    { return TokenType::KW_ATTACH; }
+"DETACH"                    { return TokenType::KW_DETACH; }
 "IF"                        { return TokenType::KW_IF; }
 "NOT"                       { return TokenType::KW_NOT; }
 "EXISTS"                    { return TokenType::KW_EXISTS; }

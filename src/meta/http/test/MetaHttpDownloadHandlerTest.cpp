@@ -39,8 +39,8 @@ class MetaHttpDownloadHandlerTestEnv : public ::testing::Environment {
     // Because we reuse the kvstore for storage handler, let's add part
     // manually.
     auto* partMan = static_cast<kvstore::MemPartManager*>(kv_->partManager());
-    partMan->addPart(1, 1);
-    partMan->addPart(1, 2);
+    partMan->addPart(1, 1, "");
+    partMan->addPart(1, 2, "");
 
     // wait for the leader election
     sleep(3);

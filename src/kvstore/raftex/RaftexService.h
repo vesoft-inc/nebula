@@ -54,7 +54,9 @@ class RaftexService : public cpp2::RaftexServiceSvIf {
   void addPartition(std::shared_ptr<RaftPart> part);
   void removePartition(std::shared_ptr<RaftPart> part);
 
-  std::shared_ptr<RaftPart> findPart(GraphSpaceID spaceId, PartitionID partId);
+  std::shared_ptr<RaftPart> findPart(GraphSpaceID spaceId,
+                                     PartitionID partId,
+                                     const std::string& path);
 
  private:
   void initThriftServer(std::shared_ptr<folly::IOThreadPoolExecutor> pool,
@@ -77,7 +79,8 @@ class RaftexService : public cpp2::RaftexServiceSvIf {
   std::atomic_int status_{STATUS_NOT_RUNNING};
 
   folly::RWSpinLock partsLock_;
-  std::unordered_map<std::pair<GraphSpaceID, PartitionID>, std::shared_ptr<RaftPart>> parts_;
+  std::unordered_map<std::tuple<GraphSpaceID, PartitionID, std::string>, std::shared_ptr<RaftPart>>
+      parts_;
 };
 
 }  // namespace raftex

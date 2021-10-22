@@ -80,7 +80,9 @@ Status DataBalanceJobExecutor::buildBalancePlan() {
                                         spaceInfo_.spaceId_,
                                         partId,
                                         host->host_,
+                                        "",
                                         dstHost->host_,
+                                        "",
                                         kvstore_,
                                         adminClient_);
         for (size_t i = 0; i < activeVec.size() - 1; i++) {
@@ -97,11 +99,17 @@ Status DataBalanceJobExecutor::buildBalancePlan() {
   lostZoneHost.clear();
   // rebalance for hosts in a zone
   auto balanceHostVec = [this, &existTasks](std::vector<Host*>& hostVec) {
+    if (hostVec.empty()) {
+      LOG(ERROR) << "rebalance error: zone has no host";
+      return;
+    }
+
     size_t totalPartNum = 0;
     size_t avgPartNum = 0;
     for (Host* h : hostVec) {
       totalPartNum += h->parts_.size();
     }
+  
     if (hostVec.size() == 0) {
       LOG(INFO) << "rebalance error: zone has no host";
       return;
@@ -142,7 +150,9 @@ Status DataBalanceJobExecutor::buildBalancePlan() {
                                 spaceInfo_.spaceId_,
                                 partId,
                                 srcHost->host_,
+                                "",
                                 hostVec[leftBegin]->host_,
+                                "",
                                 kvstore_,
                                 adminClient_),
                     &existTasks);
@@ -166,12 +176,12 @@ Status DataBalanceJobExecutor::buildBalancePlan() {
     std::vector<Host*>& hvec = pair.second;
     balanceHostVec(hvec);
   }
-  bool emty = std::find_if(existTasks.begin(),
-                           existTasks.end(),
-                           [](std::pair<const PartitionID, std::vector<BalanceTask>>& p) {
-                             return !p.second.empty();
-                           }) == existTasks.end();
-  if (emty) {
+  bool empty = std::find_if(existTasks.begin(),
+                            existTasks.end(),
+                            [](std::pair<const PartitionID, std::vector<BalanceTask>>& p) {
+                              return !p.second.empty();
+                            }) == existTasks.end();
+  if (empty) {
     return Status::Balanced();
   }
   plan_.reset(new BalancePlan(jobDescription_, kvstore_, adminClient_));
@@ -180,17 +190,11 @@ Status DataBalanceJobExecutor::buildBalancePlan() {
                 [this](std::pair<const PartitionID, std::vector<BalanceTask>>& p) {
                   plan_->insertTask(p.second.begin(), p.second.end());
                 });
-  nebula::cpp2::ErrorCode rc = plan_->saveInStore();
+  auto rc = plan_->saveInStore();
   if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
     return Status::Error("save balance zone plan failed");
   }
   return Status::OK();
-}
-
-nebula::cpp2::ErrorCode DataBalanceJobExecutor::stop() {
-  stopped_ = true;
-  plan_->stop();
-  return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 nebula::cpp2::ErrorCode DataBalanceJobExecutor::prepare() {
@@ -199,8 +203,8 @@ nebula::cpp2::ErrorCode DataBalanceJobExecutor::prepare() {
     LOG(INFO) << "Can't find the space: " << paras_.back();
     return nebula::error(spaceRet);
   }
-  GraphSpaceID spaceId = nebula::value(spaceRet);
-  nebula::cpp2::ErrorCode rc = spaceInfo_.loadInfo(spaceId, kvstore_);
+  auto spaceId = nebula::value(spaceRet);
+  auto rc = spaceInfo_.loadInfo(spaceId, kvstore_);
   if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
     return rc;
   }

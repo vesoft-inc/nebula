@@ -255,16 +255,6 @@ TEST(MetaKeyUtilsTest, BalanceTaskTest) {
   }
 }
 
-// TEST(MetaKeyUtilsTest, BalancePlanTest) {
-//   auto balancePlanKey = MetaKeyUtils::balancePlanKey(1);
-//   auto balanceID = MetaKeyUtils::parseBalanceID(balancePlanKey);
-//   ASSERT_EQ(1, balanceID);
-
-//   auto balancePlanVal = MetaKeyUtils::balancePlanVal(BalanceStatus::IN_PROGRESS);
-//   auto parseBalanceStatus = MetaKeyUtils::parseBalanceStatus(balancePlanVal);
-//   ASSERT_EQ(BalanceStatus::IN_PROGRESS, parseBalanceStatus);
-// }
-
 }  // namespace nebula
 
 int main(int argc, char** argv) {

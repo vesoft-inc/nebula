@@ -19,6 +19,7 @@
 #include "interface/gen-cpp2/raftex_types.h"
 #include "kvstore/Common.h"
 #include "kvstore/DiskManager.h"
+#include "kvstore/PartManager.h"
 #include "kvstore/raftex/SnapshotManager.h"
 
 namespace folly {
@@ -110,6 +111,10 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
     return addr_;
   }
 
+  const std::string& path() const {
+    return path_;
+  }
+
   HostAddr leader() const {
     std::lock_guard<std::mutex> g(raftLock_);
     return leader_;
@@ -123,23 +128,23 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
     return wal_;
   }
 
-  void addLearner(const HostAddr& learner);
+  void addLearner(const HostAddr& learner, const std::string& path);
 
   void commitTransLeader(const HostAddr& target);
 
   void preProcessTransLeader(const HostAddr& target);
 
-  void preProcessRemovePeer(const HostAddr& peer);
+  void preProcessRemovePeer(const HostAddr& peer, const std::string& path);
 
-  void commitRemovePeer(const HostAddr& peer);
+  void commitRemovePeer(const HostAddr& peer, const std::string& path);
 
-  void addListenerPeer(const HostAddr& peer);
+  void addListenerPeer(const HostAddr& peer, const std::string& path);
 
-  void removeListenerPeer(const HostAddr& peer);
+  void removeListenerPeer(const HostAddr& peer, const std::string& path);
 
   // Change the partition status to RUNNING. This is called
   // by the inherited class, when it's ready to serve
-  virtual void start(std::vector<HostAndPath>&& peers, bool asLearner = false);
+  virtual void start(std::vector<HostAddr>&& peers, bool asLearner = false);
 
   // Change the partition status to STOPPED. This is called
   // by the inherited class, when it's about to stop
@@ -215,6 +220,8 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   // leader + followers
   std::vector<HostAddr> peers() const;
 
+  std::vector<HostAndPath> hostAndPaths() const;
+
   std::set<HostAddr> listeners() const;
 
   std::pair<LogID, TermID> lastLogInfo() const;
@@ -232,13 +239,15 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
            GraphSpaceID spaceId,
            PartitionID partId,
            HostAddr localAddr,
+           const std::string& path,
            const folly::StringPiece walRoot,
            std::shared_ptr<folly::IOThreadPoolExecutor> pool,
            std::shared_ptr<thread::GenericThreadPool> workers,
            std::shared_ptr<folly::Executor> executor,
            std::shared_ptr<SnapshotManager> snapshotMan,
            std::shared_ptr<thrift::ThriftClientManager<cpp2::RaftexServiceAsyncClient>> clientMan,
-           std::shared_ptr<kvstore::DiskManager> diskMan);
+           std::shared_ptr<kvstore::DiskManager> diskMan,
+           std::shared_ptr<kvstore::PartManager> partMan);
 
   using Status = cpp2::Status;
   using Role = cpp2::Role;
@@ -270,7 +279,7 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   virtual void onDiscoverNewLeader(HostAddr nLeader) = 0;
 
   // Check if we can accept candidate's message
-  virtual nebula::cpp2::ErrorCode checkPeer(const HostAddr& candidate);
+  virtual nebula::cpp2::ErrorCode checkPeer(const HostAddr& candidate, const std::string& path);
 
   // The inherited classes need to implement this method to commit a batch of log messages.
   // Return {error code, last commit log id, last commit log term}.
@@ -293,9 +302,9 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   // Clean up extra data about the part, usually related to state machine
   virtual nebula::cpp2::ErrorCode cleanup() = 0;
 
-  void addPeer(const HostAddr& peer);
+  void addPeer(const HostAddr& peer, const std::string& path);
 
-  void removePeer(const HostAddr& peer);
+  void removePeer(const HostAddr& peer, const std::string& path);
 
  private:
   // A list of <idx, resp>
@@ -486,6 +495,7 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   const GraphSpaceID spaceId_;
   const PartitionID partId_;
   const HostAddr addr_;
+  const std::string path_;
   // hosts_ contains all connection, hosts_ = all peers and listeners
   std::vector<std::shared_ptr<Host>> hosts_;
   size_t quorum_{0};
@@ -571,6 +581,8 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
 
   // Check if disk has enough space before write wal
   std::shared_ptr<kvstore::DiskManager> diskMan_;
+
+  std::shared_ptr<kvstore::PartManager> partMan_;
 
   // Used to bypass the stale command
   int64_t startTimeMs_ = 0;

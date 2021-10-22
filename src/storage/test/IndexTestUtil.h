@@ -64,7 +64,15 @@ class MockKVStore : public ::nebula::kvstore::KVStore {
     CHECK(false);
     return 0;
   };
+
   void stop() override {}
+
+  ErrorOr<nebula::cpp2::ErrorCode, nebula::kvstore::PartDiskMap> partsDist(
+      GraphSpaceID spaceId) override {
+    UNUSED(spaceId);
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  }
+
   ErrorOr<nebula::cpp2::ErrorCode, HostAddr> partLeader(GraphSpaceID spaceId,
                                                         PartitionID partID) override {
     UNUSED(spaceId), UNUSED(partID);
@@ -80,12 +88,20 @@ class MockKVStore : public ::nebula::kvstore::KVStore {
     UNUSED(canReadFromFollower);
     return nullptr;
   }
+
   void ReleaseSnapshot(GraphSpaceID spaceId, PartitionID partId, const void* snapshot) override {
     UNUSED(spaceId);
     UNUSED(partId);
     UNUSED(snapshot);
     return;
   }
+
+  ErrorOr<nebula::cpp2::ErrorCode, std::shared_ptr<nebula::kvstore::Part>> learners(
+      GraphSpaceID spaceId, PartitionID partId) {
+    UNUSED(spaceId), UNUSED(partId);
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  }
+
   // Read a single key
   nebula::cpp2::ErrorCode get(GraphSpaceID spaceId,
                               PartitionID partId,
@@ -149,23 +165,7 @@ class MockKVStore : public ::nebula::kvstore::KVStore {
     (*iter) = std::move(mockIter);
     return ::nebula::cpp2::ErrorCode::SUCCEEDED;
   }
-  //   virtual nebula::cpp2::ErrorCode prefix(GraphSpaceID spaceId,
-  //                                          PartitionID partId,
-  //                                          std::string&& prefix,
-  //                                          std::unique_ptr<KVIterator>* iter,
-  //                                          bool canReadFromFollower = false) = delete override;
-  //   virtual nebula::cpp2::ErrorCode rangeWithPrefix(GraphSpaceID spaceId,
-  //                                                   PartitionID partId,
-  //                                                   std::string&& start,
-  //                                                   std::string&& prefix,
-  //                                                   std::unique_ptr<KVIterator>* iter,
-  //                                                   bool canReadFromFollower = false) = delete;
-  //   virtual nebula::cpp2::ErrorCode range(GraphSpaceID spaceId,
-  //                                         PartitionID partId,
-  //                                         std::string&& start,
-  //                                         std::string&& end,
-  //                                         std::unique_ptr<KVIterator>* iter,
-  //                                         bool canReadFromFollower = false) = delete;
+
   nebula::cpp2::ErrorCode prefix(GraphSpaceID spaceId,
                                  PartitionID partId,
                                  const std::string& prefix,

@@ -29,7 +29,6 @@ class ZoneBalanceJobExecutor : public BalanceJobExecutor {
         jobDescription_(jobDescription) {}
 
   nebula::cpp2::ErrorCode prepare() override;
-  nebula::cpp2::ErrorCode stop() override;
 
  protected:
   folly::Future<Status> executeInternal() override;

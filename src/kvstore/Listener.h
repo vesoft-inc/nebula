@@ -9,6 +9,7 @@
 #include "common/base/Base.h"
 #include "common/meta/SchemaManager.h"
 #include "kvstore/Common.h"
+#include "kvstore/PartManager.h"
 #include "kvstore/raftex/Host.h"
 #include "kvstore/raftex/RaftPart.h"
 #include "kvstore/wal/FileBasedWal.h"
@@ -92,6 +93,7 @@ class Listener : public raftex::RaftPart {
   Listener(GraphSpaceID spaceId,
            PartitionID partId,
            HostAddr localAddr,
+           const std::string& path,
            const std::string& walPath,
            std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
            std::shared_ptr<thread::GenericThreadPool> workers,
@@ -99,10 +101,11 @@ class Listener : public raftex::RaftPart {
            std::shared_ptr<raftex::SnapshotManager> snapshotMan,
            std::shared_ptr<RaftClient> clientMan,
            std::shared_ptr<DiskManager> diskMan,
+           std::shared_ptr<kvstore::PartManager> partMan,
            meta::SchemaManager* schemaMan);
 
   // Initialize listener, all Listener must call this method
-  void start(std::vector<HostAndPath>&& peers, bool asLearner = true) override;
+  void start(std::vector<HostAddr>&& peers, bool asLearner = true) override;
 
   // Stop listener
   void stop() override;
@@ -149,7 +152,7 @@ class Listener : public raftex::RaftPart {
     LOG(INFO) << idStr_ << "Find the new leader " << nLeader;
   }
 
-  nebula::cpp2::ErrorCode checkPeer(const HostAddr& candidate) override {
+  nebula::cpp2::ErrorCode checkPeer(const HostAddr& candidate, const std::string&) override {
     CHECK(!raftLock_.try_lock());
     if (peers_.find(candidate) == peers_.end()) {
       LOG(WARNING) << idStr_ << "The candidate " << candidate << " is not in my peers";

@@ -21,6 +21,7 @@ namespace kvstore {
 Listener::Listener(GraphSpaceID spaceId,
                    PartitionID partId,
                    HostAddr localAddr,
+                   const std::string& path,
                    const std::string& walPath,
                    std::shared_ptr<folly::IOThreadPoolExecutor> ioPool,
                    std::shared_ptr<thread::GenericThreadPool> workers,
@@ -28,21 +29,24 @@ Listener::Listener(GraphSpaceID spaceId,
                    std::shared_ptr<raftex::SnapshotManager> snapshotMan,
                    std::shared_ptr<RaftClient> clientMan,
                    std::shared_ptr<DiskManager> diskMan,
+                   std::shared_ptr<kvstore::PartManager> partMan,
                    meta::SchemaManager* schemaMan)
     : RaftPart(FLAGS_cluster_id,
                spaceId,
                partId,
                localAddr,
+               path,
                walPath,
                ioPool,
                workers,
                handlers,
                snapshotMan,
                clientMan,
-               diskMan),
+               diskMan,
+               partMan),
       schemaMan_(schemaMan) {}
 
-void Listener::start(std::vector<HostAndPath>&& peers, bool) {
+void Listener::start(std::vector<HostAddr>&& peers, bool) {
   std::lock_guard<std::mutex> g(raftLock_);
 
   init();
@@ -77,7 +81,7 @@ void Listener::start(std::vector<HostAndPath>&& peers, bool) {
   // As for listener, we don't need Host actually. However, listener need to be
   // aware of membership change, it can be handled in preProcessLog.
   for (auto& addr : peers) {
-    peers_.emplace(addr.host);
+    peers_.emplace(addr);
   }
 
   status_ = Status::RUNNING;

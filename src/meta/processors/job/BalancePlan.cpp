@@ -139,8 +139,13 @@ nebula::cpp2::ErrorCode BalancePlan::saveInStore() {
   std::vector<kvstore::KV> data;
   for (auto& task : tasks_) {
     data.emplace_back(
-        MetaKeyUtils::balanceTaskKey(
-            task.jobId_, task.spaceId_, task.partId_, task.src_, task.srcPath_, task.dst_, task.dstPath_),
+        MetaKeyUtils::balanceTaskKey(task.jobId_,
+                                     task.spaceId_,
+                                     task.partId_,
+                                     task.src_,
+                                     task.srcPath_,
+                                     task.dst_,
+                                     task.dstPath_),
         MetaKeyUtils::balanceTaskVal(task.status_, task.ret_, task.startTimeMs_, task.endTimeMs_));
   }
   folly::Baton<true, std::atomic> baton;

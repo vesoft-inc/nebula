@@ -41,8 +41,6 @@ nebula_add_library(
     processors/admin/HBProcessor.cpp
     processors/admin/AgentHBProcessor.cpp
     processors/user/AuthenticationProcessor.cpp
-    # processors/admin/BalanceProcessor.cpp
-    # processors/admin/BalanceDiskProcessor.cpp
     processors/admin/CreateSnapshotProcessor.cpp
     processors/admin/DropSnapshotProcessor.cpp
     processors/admin/ListSnapshotsProcessor.cpp
@@ -75,6 +73,7 @@ nebula_add_library(
     processors/job/BalanceJobExecutor.cpp
     processors/job/ZoneBalanceJobExecutor.cpp
     processors/job/DataBalanceJobExecutor.cpp
+    processors/job/DiskBalanceJobExecutor.cpp
     processors/job/LeaderBalanceJobExecutor.cpp
     processors/job/RebuildJobExecutor.cpp
     processors/job/RebuildTagJobExecutor.cpp

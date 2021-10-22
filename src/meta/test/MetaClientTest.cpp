@@ -1066,8 +1066,8 @@ class TestListener : public MetaChangedListener {
     }
   }
 
-  void onPartAdded(const PartHosts& partMeta) override {
-    LOG(INFO) << "[" << partMeta.spaceId_ << ", " << partMeta.partId_ << "] added!";
+  void onPartAdded(GraphSpaceID spaceId, PartitionID partId, const std::string& path) override {
+    LOG(INFO) << "[" << spaceId << ", " << partId << ", " << path << " ] added!";
     partNum++;
   }
 
@@ -1079,12 +1079,13 @@ class TestListener : public MetaChangedListener {
   }
 
   void onPartRemoved(GraphSpaceID spaceId, PartitionID partId, const std::string& path) override {
-    LOG(INFO) << "[" << spaceId << ", " << partId << "] on path " << path << " removed!";
+    LOG(INFO) << "[" << spaceId << ", " << partId << ", " << path << " ] on path " << path
+              << " removed!";
     partNum--;
   }
 
-  void onPartUpdated(const PartHosts& partMeta) override {
-    LOG(INFO) << "[" << partMeta.spaceId_ << ", " << partMeta.partId_ << "] updated!";
+  void onPartUpdated(GraphSpaceID spaceId, PartitionID partId, const std::string& path) override {
+    LOG(INFO) << "[" << spaceId << ", " << partId << ", " << path << "] updated!";
     partChanged++;
   }
 
@@ -2724,8 +2725,6 @@ TEST(MetaClientTest, RocksdbOptionsTest) {
 
   mock::MockCluster cluster;
   cluster.startMeta(rootPath.path());
-  // auto* kv = cluster.metaKV_.get();
-  // TestUtils::createSomeHosts(kv, {{"0", 0}});
 
   MetaClientOptions options;
   // Now the `--local_config' option only affect if initialize the configuration

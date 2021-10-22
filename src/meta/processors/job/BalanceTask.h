@@ -109,11 +109,15 @@ class BalanceTask {
   std::string buildCommand() {
     if (!srcPath_.empty() && !dstPath_.empty()) {
       return folly::stringPrintf("%s:%d:%s->%s:%d:%s",
-                                 src_.host.c_str(), src_.port, srcPath_.c_str(),
-                                 dst_.host.c_str(), dst_.port, dstPath_.c_str());
+                                 src_.host.c_str(),
+                                 src_.port,
+                                 srcPath_.c_str(),
+                                 dst_.host.c_str(),
+                                 dst_.port,
+                                 dstPath_.c_str());
     } else {
       return folly::stringPrintf(
-        "%s:%d->%s:%d", src_.host.c_str(), src_.port, dst_.host.c_str(), dst_.port);
+          "%s:%d->%s:%d", src_.host.c_str(), src_.port, dst_.host.c_str(), dst_.port);
     }
   }
 

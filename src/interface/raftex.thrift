@@ -41,6 +41,7 @@ struct AskForVoteRequest {
     6: LogID        last_log_id;        // The last received log id
     7: TermID       last_log_term;      // The term receiving the last log
     8: bool         is_pre_vote;        // Is pre vote or not
+    9: binary       path;
 }
 
 
@@ -68,6 +69,7 @@ struct AppendLogRequest {
     7: TermID              last_log_term_sent;  // Term of log entry preceding log_str_list
     8: LogID               last_log_id_sent;    // Id of log entry preceding log_str_list
     9: list<RaftLogEntry>  log_str_list;        // First log id in log_str_list is last_log_id_sent + 1
+    10: binary             path;
 }
 
 struct AppendLogResponse {
@@ -92,6 +94,7 @@ struct SendSnapshotRequest {
     9: i64          total_size;
     10: i64         total_count;
     11: bool        done;
+    12: binary      path;
 }
 
 struct HeartbeatRequest {
@@ -103,6 +106,7 @@ struct HeartbeatRequest {
     7: Port         leader_port;        // The leader's Port
     8: TermID       last_log_term_sent;
     9: LogID        last_log_id_sent;
+    10: binary      path;
 }
 
 struct HeartbeatResponse {
@@ -122,6 +126,7 @@ struct SendSnapshotResponse {
 struct GetStateRequest {
     1: GraphSpaceID space;              // Graphspace ID
     2: PartitionID  part;               // Partition ID
+    3: binary       path;
 }
 
 struct GetStateResponse {

@@ -34,6 +34,8 @@ struct KVOptions {
   // otherwise it would mix up the data on disk.
   std::vector<std::string> dataPaths_;
 
+  std::unordered_map<std::tuple<HostAddr, GraphSpaceID, PartitionID>, std::string> partsLocation_;
+
   std::string walPath_;
 
   // Path for listener, only wal is stored, the structure would be
@@ -76,7 +78,9 @@ class KVStore {
 
   virtual ErrorOr<nebula::cpp2::ErrorCode, PartDiskMap> partsDist(GraphSpaceID spaceId) = 0;
 
-  virtual PartManager* partManager() const { return nullptr; }
+  virtual PartManager* partManager() const {
+    return nullptr;
+  }
 
   /**
    * @brief Get the Snapshot object
@@ -232,6 +236,9 @@ class KVStore {
 
   virtual ErrorOr<nebula::cpp2::ErrorCode, std::shared_ptr<Part>> part(GraphSpaceID spaceId,
                                                                        PartitionID partId) = 0;
+
+  virtual ErrorOr<nebula::cpp2::ErrorCode, std::shared_ptr<Part>> learners(GraphSpaceID spaceId,
+                                                                           PartitionID partId) = 0;
 
   virtual nebula::cpp2::ErrorCode compact(GraphSpaceID spaceId) = 0;
 

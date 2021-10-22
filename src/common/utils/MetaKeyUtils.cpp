@@ -1025,26 +1025,6 @@ std::string MetaKeyUtils::balanceTaskPrefix(JobID jobId) {
   return prefix;
 }
 
-// std::string MetaKeyUtils::balancePlanKey(BalanceID id) {
-//   CHECK_GE(id, 0);
-//   // make the balance id is stored in decend order
-//   auto encode = folly::Endian::big(std::numeric_limits<BalanceID>::max() - id);
-//   std::string key;
-//   key.reserve(sizeof(BalanceID) + kBalancePlanTable.size());
-//   key.append(reinterpret_cast<const char*>(kBalancePlanTable.data()), kBalancePlanTable.size())
-//       .append(reinterpret_cast<const char*>(&encode), sizeof(BalanceID));
-//   return key;
-// }
-
-// std::string MetaKeyUtils::balancePlanVal(BalanceStatus status) {
-//   std::string val;
-//   val.reserve(sizeof(BalanceStatus));
-//   val.append(reinterpret_cast<const char*>(&status), sizeof(BalanceStatus));
-//   return val;
-// }
-
-// std::string MetaKeyUtils::balancePlanPrefix() { return kBalancePlanTable; }
-
 std::tuple<JobID, GraphSpaceID, PartitionID, HostAddr, std::string, HostAddr, std::string>
 MetaKeyUtils::parseBalanceTaskKey(const folly::StringPiece& rawKey) {
   uint32_t offset = kBalanceTaskTable.size();
