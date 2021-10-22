@@ -225,6 +225,8 @@ Status LookupValidator::validateFilter() {
     auto ret = checkFilter(filter);
     NG_RETURN_IF_ERROR(ret);
     lookupCtx_->filter = std::move(ret).value();
+    // Make sure the type of the rewritted filter expr is right
+    NG_RETURN_IF_ERROR(deduceExprType(lookupCtx_->filter));
   }
   NG_RETURN_IF_ERROR(deduceProps(lookupCtx_->filter, exprProps_));
   return Status::OK();

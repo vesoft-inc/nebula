@@ -436,6 +436,10 @@ std::vector<uint64_t> GeoFunction::s2CoveringCellIds(
   opts.set_max_cells(maxCells);
 
   if (bufferInMeters == 0.0) {
+    if (a.shape() == GeoShape::POINT) {
+      const S2Point& gPoint = static_cast<const S2PointRegion*>(aRegion.get())->point();
+      return {S2CellId(gPoint).id()};
+    }
     return coveringCellIds(*aRegion, opts);
   }
 
