@@ -217,10 +217,10 @@ std::string RangePath::encodeBeginValue(const Value& value,
     val = encodeString(value, *colDef.get_type_length(), truncated);
     greater &= !truncated;
     if (UNLIKELY(truncated)) {
-      QFList_.emplace_back([&startKey = this->startKey_,
-                            startPos = key.size(),
-                            length = val.size()](const std::string& k) {
-        int ret = memcmp(startKey.data() + startPos, k.data() + startPos, length);
+      QFList_.emplace_back([val, startPos = offset](const std::string& k) {
+        int ret = memcmp(val.data(), k.data() + startPos, val.size());
+        DVLOG(1) << folly::hexDump(val.data(), val.size());
+        DVLOG(1) << folly::hexDump(k.data(), k.size());
         CHECK_LE(ret, 0);
         return ret == 0 ? Qualified::UNCERTAIN : Qualified::COMPATIBLE;
       });
@@ -255,10 +255,11 @@ std::string RangePath::encodeEndValue(const Value& value,
     val = encodeString(value, *colDef.get_type_length(), truncated);
     greater |= truncated;
     if (UNLIKELY(truncated)) {
-      QFList_.emplace_back([&endKey = this->endKey_, startPos = key.size(), length = val.size()](
-                               const std::string& k) {
-        int ret = memcmp(endKey.data() + startPos, k.data() + startPos, length);
-        CHECK_LE(ret, 0);
+      QFList_.emplace_back([val, startPos = offset](const std::string& k) {
+        int ret = memcmp(val.data(), k.data() + startPos, val.size());
+        DVLOG(3) << folly::hexDump(val.data(), val.size());
+        DVLOG(3) << folly::hexDump(k.data(), k.size());
+        CHECK_GE(ret, 0);
         return ret == 0 ? Qualified::UNCERTAIN : Qualified::COMPATIBLE;
       });
     }
@@ -386,6 +387,9 @@ IndexScanNode::IndexScanNode(const IndexScanNode& node)
     if (field.get_type().get_type() == PropertyType::FIXED_STRING) {
       continue;
     }
+    if (field.get_type().get_type() == PropertyType::GEOGRAPHY) {
+      continue;
+    }
     tmp.erase(field.get_name());
   }
   tmp.erase(kVid);
@@ -408,7 +412,7 @@ IndexNode::ErrorOr<Row> IndexScanNode::doNext(bool& hasNext) {
   DVLOG(3) << columnHints_.size();
   hasNext = true;
   for (; iter_ && iter_->valid(); iter_->next()) {
-    DVLOG(1) << '\n' << folly::hexDump(iter_->key().data(), iter_->key().size());
+    DLOG(INFO) << '\n' << folly::hexDump(iter_->key().data(), iter_->key().size());
     if (!checkTTL()) {
       continue;
     }
@@ -424,7 +428,7 @@ IndexNode::ErrorOr<Row> IndexScanNode::doNext(bool& hasNext) {
       auto key = iter_->key().toString();
       iter_->next();
       auto ret = decodeFromIndex(key);
-      DVLOG(3) << ret;
+      DLOG(INFO) << ret;
       return ret;
     }
     DVLOG(3) << "x";
@@ -463,7 +467,7 @@ IndexNode::ErrorOr<Row> IndexScanNode::doNext(bool& hasNext) {
       row.emplace_back(std::move(rowData.at(col)));
     }
     iter_->next();
-    DVLOG(3) << row;
+    DLOG(INFO) << row;
     return row;
   }
   hasNext = false;
@@ -483,7 +487,7 @@ bool IndexScanNode::checkTTL() {
 
 nebula::cpp2::ErrorCode IndexScanNode::resetIter(PartitionID partId) {
   path_->resetPart(partId);
-  nebula::cpp2::ErrorCode ret;
+  nebula::cpp2::ErrorCode ret = nebula::cpp2::ErrorCode::SUCCEEDED;
   if (path_->isRange()) {
     auto rangePath = dynamic_cast<RangePath*>(path_.get());
     DVLOG(1) << '\n'
@@ -491,7 +495,8 @@ nebula::cpp2::ErrorCode IndexScanNode::resetIter(PartitionID partId) {
     DVLOG(1) << '\n'
              << folly::hexDump(rangePath->getEndKey().data(), rangePath->getEndKey().size());
     std::unique_ptr<::nebula::kvstore::KVIterator> iter;
-    kvstore_->range(spaceId_, partId, rangePath->getStartKey(), rangePath->getEndKey(), &iter);
+    ret =
+        kvstore_->range(spaceId_, partId, rangePath->getStartKey(), rangePath->getEndKey(), &iter);
     iter_ = std::move(iter);
   } else {
     auto prefixPath = dynamic_cast<PrefixPath*>(path_.get());

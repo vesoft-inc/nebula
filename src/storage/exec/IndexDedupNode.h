@@ -39,7 +39,11 @@ class IndexDedupNode : public IndexNode {
   };
   struct Equal {
     bool operator()(const RowWrapper& a, const RowWrapper& b) const {
-      return a.values() == b.values();
+      bool cmp = a.values() == b.values();
+      DLOG(INFO) << a.values();
+      DLOG(INFO) << b.values();
+      DLOG(INFO) << cmp;
+      return cmp;
     }
   };
   std::vector<std::string> dedupColumns_;

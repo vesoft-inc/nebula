@@ -17,13 +17,19 @@ IndexDedupNode::IndexDedupNode(RuntimeContext* context, const std::vector<std::s
   }
   // The return Row format of each child node must be the same
   InitContext childCtx = ctx;
+  InitContext ctx2;
   for (auto& child : children_) {
     child->init(childCtx);
+    ctx2 = childCtx;
     childCtx = ctx;
   }
-  ctx = childCtx;
+  ctx = ctx2;
+  for (auto& iter : ctx.retColMap) {
+    DLOG(INFO) << iter.first << ":" << iter.second;
+  }
   for (auto& col : dedupColumns_) {
     dedupPos_.push_back(ctx.retColMap[col]);
+    DLOG(INFO) << dedupPos_.back();
   }
   return ::nebula::cpp2::ErrorCode::SUCCEEDED;
 }
@@ -37,6 +43,7 @@ IndexNode::ErrorOr<Row> IndexDedupNode::doNext(bool& hasNext) {
   hasNext = false;
   while (currentChild_ < children_.size()) {
     auto& child = *children_[currentChild_];
+    DLOG(INFO) << currentChild_;
     do {
       auto result = child.next(hasNext);
       if (!nebula::ok(result)) {
@@ -45,7 +52,9 @@ IndexNode::ErrorOr<Row> IndexDedupNode::doNext(bool& hasNext) {
       if (!hasNext) {
         break;
       }
-      if (dedup(::nebula::value(result))) {
+      auto d = dedup(::nebula::value(result));
+      DLOG(INFO) << d << "\t" << ::nebula::value(result);
+      if (d) {
         ret = ::nebula::value(std::move(result));
         hasNext = true;
         break;

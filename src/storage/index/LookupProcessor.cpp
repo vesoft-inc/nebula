@@ -30,12 +30,19 @@ void LookupProcessor::process(const cpp2::LookupIndexRequest& req) {
     doProcess(req);
   }
 }
+void printPlan(IndexNode* node, int tab = 0) {
+  LOG(INFO) << std::string(tab, '\t') << node->identify();
+  for (auto& child : node->children()) {
+    printPlan(child.get(), tab + 1);
+  }
+}
 void LookupProcessor::doProcess(const cpp2::LookupIndexRequest& req) {
   if (req.common_ref().has_value() && req.get_common()->profile_detail_ref().value_or(false)) {
     profileDetailFlag_ = true;
   }
   prepare(req);
   auto plan = buildPlan(req);
+  printPlan(plan.get());
   if (!FLAGS_query_concurrently) {
     runInSingleThread(req.get_parts(), std::move(plan));
   } else {
@@ -134,12 +141,7 @@ std::unique_ptr<IndexNode> LookupProcessor::buildOneContext(const cpp2::IndexQue
   }
   return node;
 }
-void printPlan(IndexNode* node, int tab = 0) {
-  DLOG(INFO) << std::string(tab, '\t') << node->name() << "(" << node << ")";
-  for (auto& child : node->children()) {
-    printPlan(child.get(), tab + 1);
-  }
-}
+
 void LookupProcessor::runInSingleThread(const std::vector<PartitionID>& parts,
                                         std::unique_ptr<IndexNode> plan) {
   printPlan(plan.get());
