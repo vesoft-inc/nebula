@@ -124,8 +124,8 @@ RocksEngine::RocksEngine(GraphSpaceID spaceId,
   }
   CHECK(status.ok()) << status.ToString();
   db_.reset(db);
-  partsNum_ = allParts().size();
   extractorLen_ = sizeof(PartitionID) + vIdLen;
+  partsNum_ = allParts().size();
   LOG(INFO) << "open rocksdb on " << path;
 
   backup();
