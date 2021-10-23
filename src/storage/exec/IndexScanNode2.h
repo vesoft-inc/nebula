@@ -50,7 +50,7 @@ class IndexScanNode : public IndexNode {
                                               std::pair<std::string, std::string>& kv) = 0;
   virtual Map<std::string, Value> decodeFromBase(const std::string& key,
                                                  const std::string& value) = 0;
-  virtual const meta::SchemaProviderIf* getSchema() = 0;
+  virtual const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& getSchema() = 0;
   bool checkTTL();
   nebula::cpp2::ErrorCode resetIter(PartitionID partId);
   PartitionID partId_;

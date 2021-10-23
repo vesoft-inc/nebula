@@ -31,13 +31,15 @@ class IndexVertexScanNode final : public IndexScanNode {
                                       std::pair<std::string, std::string>& kv) override;
   Row decodeFromIndex(folly::StringPiece key) override;
   Map<std::string, Value> decodeFromBase(const std::string& key, const std::string& value) override;
-  const meta::SchemaProviderIf* getSchema() override { return tag_.get(); }
+  const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& getSchema() override {
+    return tag_;
+  }
 
-  std::shared_ptr<const nebula::meta::NebulaSchemaProvider> tag_;
+  std::vector<std::shared_ptr<const nebula::meta::NebulaSchemaProvider>> tag_;
 
   // Convenient for testing
   std::function<StatusOr<std::shared_ptr<::nebula::meta::cpp2::IndexItem>>()> getIndex;
-  std::function<std::shared_ptr<const nebula::meta::NebulaSchemaProvider>()> getTag;
+  std::function<std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>()> getTag;
 
   FRIEND_TEST(IndexScanTest, VertexIndexOnlyScan);
   FRIEND_TEST(IndexScanTest, VertexBase);

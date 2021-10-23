@@ -367,7 +367,7 @@ IndexScanNode::IndexScanNode(const IndexScanNode& node)
 
 ::nebula::cpp2::ErrorCode IndexScanNode::init(InitContext& ctx) {
   DCHECK(requiredColumns_.empty());
-  ttlProps_ = CommonUtils::ttlProps(getSchema());
+  ttlProps_ = CommonUtils::ttlProps(getSchema().back().get());
   requiredAndHintColumns_ = ctx.requiredColumns;
 
   for (auto& hint : columnHints_) {
@@ -399,7 +399,7 @@ IndexScanNode::IndexScanNode(const IndexScanNode& node)
   tmp.erase(kDst);
   tmp.erase(kType);
   needAccessBase_ = !tmp.empty();
-  path_ = Path::make(index_.get(), getSchema(), columnHints_, context_->vIdLen());
+  path_ = Path::make(index_.get(), getSchema().back().get(), columnHints_, context_->vIdLen());
   return ::nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 nebula::cpp2::ErrorCode IndexScanNode::doExecute(PartitionID partId) {
@@ -478,8 +478,10 @@ bool IndexScanNode::checkTTL() {
     return true;
   }
   auto v = IndexKeyUtils::parseIndexTTL(iter_->val());
-  if (CommonUtils::checkDataExpiredForTTL(
-          getSchema(), std::move(v), ttlProps_.second.second, ttlProps_.second.first)) {
+  if (CommonUtils::checkDataExpiredForTTL(getSchema().back().get(),
+                                          std::move(v),
+                                          ttlProps_.second.second,
+                                          ttlProps_.second.first)) {
     return false;
   }
   return true;

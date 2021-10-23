@@ -8,21 +8,7 @@
 namespace nebula {
 namespace storage {
 IndexEdgeScanNode::IndexEdgeScanNode(const IndexEdgeScanNode& node)
-    : IndexScanNode(node), edge_(node.edge_) {
-  getIndex = std::function([this]() {
-    auto env = this->context_->env();
-    auto indexMgr = env->indexMan_;
-    auto index = indexMgr->getTagIndex(this->spaceId_, this->indexId_).value();
-    return index;
-  });
-  getEdge = std::function([this]() {
-    auto env = this->context_->env();
-    auto schemaMgr = env->schemaMan_;
-    auto schema =
-        schemaMgr->getEdgeSchema(this->spaceId_, this->index_->get_schema_id().get_edge_type());
-    return schema;
-  });
-}
+    : IndexScanNode(node), edge_(node.edge_) {}
 IndexEdgeScanNode::IndexEdgeScanNode(RuntimeContext* context,
                                      IndexID indexId,
                                      const std::vector<cpp2::IndexColumnHint>& columnHint,
@@ -37,8 +23,8 @@ IndexEdgeScanNode::IndexEdgeScanNode(RuntimeContext* context,
   getEdge = std::function([this]() {
     auto env = this->context_->env();
     auto schemaMgr = env->schemaMan_;
-    auto schema =
-        schemaMgr->getEdgeSchema(this->spaceId_, this->index_->get_schema_id().get_edge_type());
+    auto schema = schemaMgr->getAllVerEdgeSchema(this->spaceId_)
+                      .value()[this->index_->get_schema_id().get_edge_type()];
     return schema;
   });
 }
@@ -100,7 +86,7 @@ nebula::cpp2::ErrorCode IndexEdgeScanNode::getBaseData(folly::StringPiece key,
 Map<std::string, Value> IndexEdgeScanNode::decodeFromBase(const std::string& key,
                                                           const std::string& value) {
   Map<std::string, Value> values;
-  auto reader = RowReaderWrapper::getRowReader(edge_.get(), value);
+  auto reader = RowReaderWrapper::getRowReader(edge_, value);
   for (auto& col : requiredAndHintColumns_) {
     switch (QueryUtils::toReturnColType(col)) {
       case QueryUtils::ReturnColType::kType: {
@@ -126,7 +112,7 @@ Map<std::string, Value> IndexEdgeScanNode::decodeFromBase(const std::string& key
         values[col] = Value(NebulaKeyUtils::getRank(context_->vIdLen(), key));
       } break;
       case QueryUtils::ReturnColType::kOther: {
-        auto retVal = QueryUtils::readValue(reader.get(), col, edge_->field(col));
+        auto retVal = QueryUtils::readValue(reader.get(), col, edge_.back()->field(col));
         if (!retVal.ok()) {
           LOG(FATAL) << "Bad value for field" << col;
         }
@@ -138,7 +124,10 @@ Map<std::string, Value> IndexEdgeScanNode::decodeFromBase(const std::string& key
   }
   return values;
 }
-const meta::SchemaProviderIf* IndexEdgeScanNode::getSchema() { return edge_.get(); }
+const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>&
+IndexEdgeScanNode::getSchema() {
+  return edge_;
+}
 
 std::unique_ptr<IndexNode> IndexEdgeScanNode::copy() {
   return std::make_unique<IndexEdgeScanNode>(*this);

@@ -22,8 +22,8 @@ IndexVertexScanNode::IndexVertexScanNode(const IndexVertexScanNode& node)
   getTag = std::function([this]() {
     auto env = this->context_->env();
     auto schemaMgr = env->schemaMan_;
-    auto schema =
-        schemaMgr->getTagSchema(this->spaceId_, this->index_->get_schema_id().get_tag_id());
+    auto schema = schemaMgr->getAllVerTagSchema(this->spaceId_)
+                      .value()[this->index_->get_schema_id().get_tag_id()];
     return schema;
   });
 }
@@ -42,8 +42,8 @@ IndexVertexScanNode::IndexVertexScanNode(RuntimeContext* context,
   getTag = std::function([this]() {
     auto env = this->context_->env();
     auto schemaMgr = env->schemaMan_;
-    auto schema =
-        schemaMgr->getTagSchema(this->spaceId_, this->index_->get_schema_id().get_tag_id());
+    auto schema = schemaMgr->getAllVerTagSchema(this->spaceId_)
+                      .value()[this->index_->get_schema_id().get_tag_id()];
     return schema;
   });
 }
@@ -86,7 +86,7 @@ Row IndexVertexScanNode::decodeFromIndex(folly::StringPiece key) {
 Map<std::string, Value> IndexVertexScanNode::decodeFromBase(const std::string& key,
                                                             const std::string& value) {
   Map<std::string, Value> values;
-  auto reader = RowReaderWrapper::getRowReader(tag_.get(), value);
+  auto reader = RowReaderWrapper::getRowReader(tag_, folly::StringPiece(value));
   for (auto& col : requiredAndHintColumns_) {
     switch (QueryUtils::toReturnColType(col)) {
       case QueryUtils::ReturnColType::kVid: {
@@ -101,7 +101,7 @@ Map<std::string, Value> IndexVertexScanNode::decodeFromBase(const std::string& k
         values[col] = Value(context_->tagId_);
       } break;
       case QueryUtils::ReturnColType::kOther: {
-        auto retVal = QueryUtils::readValue(reader.get(), col, tag_->field(col));
+        auto retVal = QueryUtils::readValue(reader.get(), col, tag_.back()->field(col));
         if (!retVal.ok()) {
           LOG(FATAL) << "Bad value for field" << col;
         }

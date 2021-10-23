@@ -464,7 +464,7 @@ class RowParser {
 class SchemaParser {
  public:
   explicit SchemaParser(const std::string& str) {
-    schema = std::make_shared<::nebula::meta::NebulaSchemaProvider>(2);
+    schema = std::make_shared<::nebula::meta::NebulaSchemaProvider>(0);
     ss = std::stringstream(folly::trimWhitespace(folly::StringPiece(str)).toString());
     parse();
   }
