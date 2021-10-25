@@ -3,7 +3,7 @@
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
-#include "storage/exec/IndexScanNode2.h"
+#include "storage/exec/IndexScanNode.h"
 
 namespace nebula {
 namespace storage {

@@ -46,7 +46,7 @@ nebula_add_library(
     exec/IndexEdgeScanNode.cpp
     exec/IndexLimitNode.cpp
     exec/IndexProjectionNode.cpp
-    exec/IndexScanNode2.cpp
+    exec/IndexScanNode.cpp
     exec/IndexSelectionNode.cpp
     exec/IndexVertexScanNode.cpp
 )

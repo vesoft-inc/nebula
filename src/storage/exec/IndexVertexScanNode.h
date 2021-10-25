@@ -11,7 +11,7 @@
 #include <memory>
 
 #include "common/base/Base.h"
-#include "storage/exec/IndexScanNode2.h"
+#include "storage/exec/IndexScanNode.h"
 #include "storage/exec/StorageIterator.h"
 
 namespace nebula {

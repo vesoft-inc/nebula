@@ -6,7 +6,7 @@
 #pragma once
 #include "common/base/Base.h"
 #include "common/utils/NebulaKeyUtils.h"
-#include "storage/exec/IndexScanNode2.h"
+#include "storage/exec/IndexScanNode.h"
 #include "storage/exec/QueryUtils.h"
 #include "storage/exec/StorageIterator.h"
 namespace nebula {
