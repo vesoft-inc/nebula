@@ -346,7 +346,7 @@ TEST(ConfigManTest, MetaConfigManTest) {
     auto getRet = cfgMan.getConfig(module, name).get();
     ASSERT_TRUE(getRet.ok());
     auto item = toConfigItem(getRet.value().front());
-    auto value = boost::get<int64_t>(item.value_);
+    auto value = std::get<int64_t>(item.value_);
     ASSERT_EQ(value, 100);
 
     sleep(FLAGS_heartbeat_interval_secs + 1);
@@ -366,7 +366,7 @@ TEST(ConfigManTest, MetaConfigManTest) {
     auto getRet = cfgMan.getConfig(module, name).get();
     ASSERT_TRUE(getRet.ok());
     auto item = toConfigItem(getRet.value().front());
-    auto value = boost::get<int64_t>(item.value_);
+    auto value = std::get<int64_t>(item.value_);
     ASSERT_EQ(value, 102);
 
     // get from cache
@@ -386,7 +386,7 @@ TEST(ConfigManTest, MetaConfigManTest) {
     auto getRet = cfgMan.getConfig(module, name).get();
     ASSERT_TRUE(getRet.ok());
     auto item = toConfigItem(getRet.value().front());
-    auto value = boost::get<bool>(item.value_);
+    auto value = std::get<bool>(item.value_);
     ASSERT_EQ(value, true);
 
     // get from cache
@@ -406,7 +406,7 @@ TEST(ConfigManTest, MetaConfigManTest) {
     auto getRet = cfgMan.getConfig(module, name).get();
     ASSERT_TRUE(getRet.ok());
     auto item = toConfigItem(getRet.value().front());
-    auto value = boost::get<double>(item.value_);
+    auto value = std::get<double>(item.value_);
     ASSERT_EQ(value, 3.14);
 
     // get from cache
@@ -427,7 +427,7 @@ TEST(ConfigManTest, MetaConfigManTest) {
     auto getRet = cfgMan.getConfig(module, name).get();
     ASSERT_TRUE(getRet.ok());
     auto item = toConfigItem(getRet.value().front());
-    auto value = boost::get<std::string>(item.value_);
+    auto value = std::get<std::string>(item.value_);
     ASSERT_EQ(value, "abc");
 
     // get from cache
@@ -448,7 +448,7 @@ TEST(ConfigManTest, MetaConfigManTest) {
     auto getRet = cfgMan.getConfig(module, name).get();
     ASSERT_TRUE(getRet.ok());
     auto item = toConfigItem(getRet.value().front());
-    auto value = boost::get<std::string>(item.value_);
+    auto value = std::get<std::string>(item.value_);
 
     Configuration conf;
     auto confRet = conf.parseFromString(value);
@@ -521,7 +521,7 @@ TEST(ConfigManTest, MockConfigTest) {
     auto getRet = console.getConfig(module, name).get();
     ASSERT_TRUE(getRet.ok());
     auto item = toConfigItem(getRet.value().front());
-    ASSERT_EQ(boost::get<std::string>(item.value_), value);
+    ASSERT_EQ(std::get<std::string>(item.value_), value);
   }
 
   // check values in ClientBaseGflagsManager
@@ -610,7 +610,7 @@ TEST(ConfigManTest, RocksdbOptionsTest) {
     auto getRet = cfgMan.getConfig(module, name).get();
     ASSERT_TRUE(getRet.ok());
     auto item = getRet.value().front();
-    auto value = boost::get<std::string>(item.get_value());
+    auto value = std::get<std::string>(item.get_value());
 
     sleep(FLAGS_heartbeat_interval_secs + 3);
     ASSERT_EQ(FLAGS_rocksdb_db_options, value);
@@ -629,7 +629,7 @@ TEST(ConfigManTest, RocksdbOptionsTest) {
     auto getRet = cfgMan.getConfig(module, name).get();
     ASSERT_TRUE(getRet.ok());
     auto item = getRet.value().front();
-    auto value = boost::get<std::string>(item.get_value());
+    auto value = std::get<std::string>(item.get_value());
 
     sleep(FLAGS_heartbeat_interval_secs + 3);
     ASSERT_EQ(FLAGS_rocksdb_column_family_options, value);

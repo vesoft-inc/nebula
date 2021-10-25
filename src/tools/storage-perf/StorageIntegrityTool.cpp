@@ -254,7 +254,7 @@ class IntegrityTest {
                 auto tagReader = RowReaderWrapper::getRowReader(iter->data, tagProvider);
                 auto ret = RowReader::getPropByName(tagReader.get(), propName_);
                 CHECK(ok(ret));
-                nextId = boost::get<int64_t>(value(ret));
+                nextId = std::get<int64_t>(value(ret));
             }
 #endif
       count++;

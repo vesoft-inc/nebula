@@ -160,12 +160,12 @@ class SpaceOptItem final {
     optValue_ = val ? 1 : 0;
   }
 
-  int64_t asInt() const { return boost::get<int64_t>(optValue_); }
+  int64_t asInt() const { return std::get<int64_t>(optValue_); }
 
-  const std::string& asString() const { return boost::get<std::string>(optValue_); }
+  const std::string& asString() const { return std::get<std::string>(optValue_); }
 
   const meta::cpp2::ColumnTypeDef& asTypeDef() const {
-    return boost::get<meta::cpp2::ColumnTypeDef>(optValue_);
+    return std::get<meta::cpp2::ColumnTypeDef>(optValue_);
   }
 
   bool isInt() const { return optValue_.which() == 0; }

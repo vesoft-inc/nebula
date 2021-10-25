@@ -126,28 +126,28 @@ Status MetaDataUpgrade::rewriteConfigs(const folly::StringPiece &key,
   switch (item.get_type()) {
     case meta::v1::cpp2::ConfigType::INT64: {
       auto value = *reinterpret_cast<const int64_t *>(item.get_value().data());
-      configVal.setInt(boost::get<int64_t>(value));
+      configVal.setInt(std::get<int64_t>(value));
       break;
     }
     case meta::v1::cpp2::ConfigType::DOUBLE: {
       auto value = *reinterpret_cast<const double *>(item.get_value().data());
-      configVal.setFloat(boost::get<double>(value));
+      configVal.setFloat(std::get<double>(value));
       break;
     }
     case meta::v1::cpp2::ConfigType::BOOL: {
       auto value = *reinterpret_cast<const bool *>(item.get_value().data());
-      configVal.setBool(boost::get<bool>(value) ? "True" : "False");
+      configVal.setBool(std::get<bool>(value) ? "True" : "False");
       break;
     }
     case meta::v1::cpp2::ConfigType::STRING: {
-      configVal.setStr(boost::get<std::string>(item.get_value()));
+      configVal.setStr(std::get<std::string>(item.get_value()));
       break;
     }
     case meta::v1::cpp2::ConfigType::NESTED: {
       auto value = item.get_value();
       // transform to map value
       conf::Configuration conf;
-      auto status = conf.parseFromString(boost::get<std::string>(value));
+      auto status = conf.parseFromString(std::get<std::string>(value));
       if (!status.ok()) {
         LOG(ERROR) << "Parse value: " << value << " failed: " << status;
         return Status::Error("Parse value: %s failed", value.c_str());
@@ -373,28 +373,28 @@ void MetaDataUpgrade::printConfigs(const folly::StringPiece &key, const folly::S
   switch (item.get_type()) {
     case meta::v1::cpp2::ConfigType::INT64: {
       auto value = *reinterpret_cast<const int64_t *>(item.get_value().data());
-      configVal.setInt(boost::get<int64_t>(value));
+      configVal.setInt(std::get<int64_t>(value));
       break;
     }
     case meta::v1::cpp2::ConfigType::DOUBLE: {
       auto value = *reinterpret_cast<const double *>(item.get_value().data());
-      configVal.setFloat(boost::get<double>(value));
+      configVal.setFloat(std::get<double>(value));
       break;
     }
     case meta::v1::cpp2::ConfigType::BOOL: {
       auto value = *reinterpret_cast<const bool *>(item.get_value().data());
-      configVal.setBool(boost::get<bool>(value) ? "True" : "False");
+      configVal.setBool(std::get<bool>(value) ? "True" : "False");
       break;
     }
     case meta::v1::cpp2::ConfigType::STRING: {
-      configVal.setStr(boost::get<std::string>(item.get_value()));
+      configVal.setStr(std::get<std::string>(item.get_value()));
       break;
     }
     case meta::v1::cpp2::ConfigType::NESTED: {
       auto value = item.get_value();
       // transform to map value
       conf::Configuration conf;
-      auto status = conf.parseFromString(boost::get<std::string>(value));
+      auto status = conf.parseFromString(std::get<std::string>(value));
       if (!status.ok()) {
         LOG(ERROR) << "Parse value: " << value << " failed: " << status;
         return;

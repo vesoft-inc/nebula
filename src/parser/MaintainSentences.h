@@ -215,16 +215,16 @@ class SchemaPropItem final {
   std::string toString() const;
 
  private:
-  int64_t asInt() { return boost::get<int64_t>(propValue_); }
+  int64_t asInt() { return std::get<int64_t>(propValue_); }
 
-  const std::string &asString() { return boost::get<std::string>(propValue_); }
+  const std::string &asString() { return std::get<std::string>(propValue_); }
 
   bool asBool() {
     switch (propValue_.which()) {
       case 0:
         return asInt() != 0;
       case 1:
-        return boost::get<bool>(propValue_);
+        return std::get<bool>(propValue_);
       case 2:
         return asString().empty();
       default:

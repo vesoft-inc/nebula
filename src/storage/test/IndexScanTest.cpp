@@ -30,7 +30,7 @@ std::string indexStr(RowReader* reader, const nebula::cpp2::ColumnDef& col) {
   auto&& v = value(std::move(res));
   switch (col.get_type().get_type()) {
     case nebula::cpp2::SupportedType::BOOL: {
-      auto val = boost::get<bool>(v);
+      auto val = std::get<bool>(v);
       std::string raw;
       raw.reserve(sizeof(bool));
       raw.append(reinterpret_cast<const char*>(&val), sizeof(bool));
@@ -38,14 +38,14 @@ std::string indexStr(RowReader* reader, const nebula::cpp2::ColumnDef& col) {
     }
     case nebula::cpp2::SupportedType::INT:
     case nebula::cpp2::SupportedType::TIMESTAMP: {
-      return NebulaKeyUtils::encodeInt64(boost::get<int64_t>(v));
+      return NebulaKeyUtils::encodeInt64(std::get<int64_t>(v));
     }
     case nebula::cpp2::SupportedType::FLOAT:
     case nebula::cpp2::SupportedType::DOUBLE: {
-      return NebulaKeyUtils::encodeDouble(boost::get<double>(v));
+      return NebulaKeyUtils::encodeDouble(std::get<double>(v));
     }
     case nebula::cpp2::SupportedType::STRING: {
-      return boost::get<std::string>(v);
+      return std::get<std::string>(v);
     }
     default:
       LOG(ERROR) << "Unknown type: "
@@ -533,7 +533,7 @@ static cpp2::LookUpEdgeIndexResp checkLookupEdgesDouble(const std::string& filte
         VertexID dstId = 10;
         auto eKey = NebulaKeyUtils::edgeKey(partId, srcId, type, 0, dstId);
         RowWriter ewriter(nullptr);
-        ewriter << boost::get<double>(1.1) << boost::get<double>(0.0) << boost::get<double>(-1.1);
+        ewriter << std::get<double>(1.1) << std::get<double>(0.0) << std::get<double>(-1.1);
         auto eval = ewriter.encode();
         auto edgeIndex =
             genEdgeIndexKey(schemaMan.get(), eval, spaceId, partId, type, eindex, srcId, dstId);
@@ -545,7 +545,7 @@ static cpp2::LookUpEdgeIndexResp checkLookupEdgesDouble(const std::string& filte
         VertexID dstId = 20;
         auto eKey = NebulaKeyUtils::edgeKey(partId, srcId, type, 0, dstId);
         RowWriter ewriter(nullptr);
-        ewriter << boost::get<double>(2.2) << boost::get<double>(0.0) << boost::get<double>(-2.2);
+        ewriter << std::get<double>(2.2) << std::get<double>(0.0) << std::get<double>(-2.2);
         auto eval = ewriter.encode();
         auto edgeIndex =
             genEdgeIndexKey(schemaMan.get(), eval, spaceId, partId, type, eindex, srcId, dstId);
@@ -620,7 +620,7 @@ static cpp2::LookUpVertexIndexResp checkLookupVerticesDouble(const std::string& 
         VertexID vertexId = 100;
         auto key = NebulaKeyUtils::vertexKey(partId, vertexId, tagId, version);
         RowWriter twriter(nullptr);
-        twriter << boost::get<double>(1.1) << boost::get<double>(0.0) << boost::get<double>(-1.1);
+        twriter << std::get<double>(1.1) << std::get<double>(0.0) << std::get<double>(-1.1);
         auto tval = twriter.encode();
         auto vIndex =
             genVertexIndexKey(schemaMan.get(), tval, spaceId, partId, tagId, vindex, vertexId);
@@ -631,7 +631,7 @@ static cpp2::LookUpVertexIndexResp checkLookupVerticesDouble(const std::string& 
         VertexID vertexId = 200;
         auto key = NebulaKeyUtils::vertexKey(partId, vertexId, tagId, version);
         RowWriter twriter(nullptr);
-        twriter << boost::get<double>(2.2) << boost::get<double>(0.0) << boost::get<double>(-2.2);
+        twriter << std::get<double>(2.2) << std::get<double>(0.0) << std::get<double>(-2.2);
         auto tval = twriter.encode();
         auto vIndex =
             genVertexIndexKey(schemaMan.get(), tval, spaceId, partId, tagId, vindex, vertexId);
@@ -1146,7 +1146,7 @@ TEST(IndexScanTest, EdgeDoubleTest) {
     EXPECT_EQ(3, resp.get_schema()->get_columns().size());
     EXPECT_EQ(3, resp.rows.size());
     RowWriter ewriter(nullptr);
-    ewriter << boost::get<double>(1.1) << boost::get<double>(0.0) << boost::get<double>(-1.1);
+    ewriter << std::get<double>(1.1) << std::get<double>(0.0) << std::get<double>(-1.1);
     auto eval = ewriter.encode();
     for (const auto& row : resp.rows) {
       EXPECT_EQ(eval, row.get_props());
@@ -1177,7 +1177,7 @@ TEST(IndexScanTest, EdgeDoubleTest) {
     EXPECT_EQ(3, resp.get_schema()->get_columns().size());
     EXPECT_EQ(3, resp.rows.size());
     RowWriter ewriter(nullptr);
-    ewriter << boost::get<double>(1.1) << boost::get<double>(0.0) << boost::get<double>(-1.1);
+    ewriter << std::get<double>(1.1) << std::get<double>(0.0) << std::get<double>(-1.1);
     auto eval = ewriter.encode();
     for (const auto& row : resp.rows) {
       EXPECT_EQ(eval, row.get_props());
@@ -1208,7 +1208,7 @@ TEST(IndexScanTest, EdgeDoubleTest) {
     EXPECT_EQ(3, resp.get_schema()->get_columns().size());
     EXPECT_EQ(3, resp.rows.size());
     RowWriter ewriter(nullptr);
-    ewriter << boost::get<double>(2.2) << boost::get<double>(0.0) << boost::get<double>(-2.2);
+    ewriter << std::get<double>(2.2) << std::get<double>(0.0) << std::get<double>(-2.2);
     auto eval = ewriter.encode();
     for (const auto& row : resp.rows) {
       EXPECT_EQ(eval, row.get_props());
@@ -1263,7 +1263,7 @@ TEST(IndexScanTest, VertexDoubleTest) {
     EXPECT_EQ(3, resp.get_schema()->get_columns().size());
     EXPECT_EQ(3, resp.rows.size());
     RowWriter ewriter(nullptr);
-    ewriter << boost::get<double>(1.1) << boost::get<double>(0.0) << boost::get<double>(-1.1);
+    ewriter << std::get<double>(1.1) << std::get<double>(0.0) << std::get<double>(-1.1);
     auto eval = ewriter.encode();
     for (const auto& row : resp.rows) {
       EXPECT_EQ(eval, row.get_props());
@@ -1291,7 +1291,7 @@ TEST(IndexScanTest, VertexDoubleTest) {
     EXPECT_EQ(3, resp.get_schema()->get_columns().size());
     EXPECT_EQ(3, resp.rows.size());
     RowWriter ewriter(nullptr);
-    ewriter << boost::get<double>(1.1) << boost::get<double>(0.0) << boost::get<double>(-1.1);
+    ewriter << std::get<double>(1.1) << std::get<double>(0.0) << std::get<double>(-1.1);
     auto eval = ewriter.encode();
     for (const auto& row : resp.rows) {
       EXPECT_EQ(eval, row.get_props());
@@ -1319,7 +1319,7 @@ TEST(IndexScanTest, VertexDoubleTest) {
     EXPECT_EQ(3, resp.get_schema()->get_columns().size());
     EXPECT_EQ(3, resp.rows.size());
     RowWriter ewriter(nullptr);
-    ewriter << boost::get<double>(2.2) << boost::get<double>(0.0) << boost::get<double>(-2.2);
+    ewriter << std::get<double>(2.2) << std::get<double>(0.0) << std::get<double>(-2.2);
     auto eval = ewriter.encode();
     for (const auto& row : resp.rows) {
       EXPECT_EQ(eval, row.get_props());
