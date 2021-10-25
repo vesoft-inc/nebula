@@ -67,6 +67,48 @@ Feature: Geo base
     Then the result should be, in any order:
       | Tag          | Create Tag                                                                                  |
       | "only_point" | 'CREATE TAG `only_point` (\n `geo` geography(point) NULL\n) ttl_duration = 0, ttl_col = ""' |
+    # Test default property value
+    When executing query:
+      """
+      CREATE TAG test_1(geo geography DEFAULT ST_Point(3, 8));
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      CREATE EDGE test_2(geo geography DEFAULT ST_GeogFromText("LINESTRING(0 1, 2 3)"));
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      CREATE EDGE test_2(geo geography DEFAULT ST_GeogFromText("LINESTRING(0 1, 2xxxx"));
+      """
+    Then a ExecutionError should be raised at runtime: Invalid parm!
+    When executing query:
+      """
+      CREATE TAG test_3(geo geography(point) DEFAULT ST_GeogFromText("LineString(0 1, 2 3)"));
+      """
+    Then a ExecutionError should be raised at runtime: Invalid parm!
+    When executing query:
+      """
+      CREATE TAG test_3(geo geography(linestring) DEFAULT ST_GeogFromText("LineString(0 1, 2 3)"));
+      """
+    Then the execution should be successful
+    And wait 3 seconds
+    When executing query:
+      """
+      INSERT VERTEX test_1() VALUES "test_101":()
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      INSERT EDGE test_2() VALUES "test_101"->"test_102":()
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      INSERT VERTEX test_3() VALUES "test_103":()
+      """
+    Then the execution should be successful
 
   Scenario: test geo CURD
     # Any geo shape(point/linestring/polygon) is allowed to insert to the column geography
@@ -420,6 +462,16 @@ Feature: Geo base
       LOOKUP ON any_shape WHERE ST_Intersects(any_shape.geo, any_shape.geo) YIELD ST_ASText(any_shape.geo);
       """
     Then a SemanticError should be raised at runtime: Expression ST_Intersects(any_shape.geo,any_shape.geo) not supported yet
+    When executing query:
+      """
+      LOOKUP ON any_shape WHERE ST_Distance(any_shape.geo, ST_Point(3, 8.4)) < true YIELD ST_ASText(any_shape.geo);
+      """
+    Then a SemanticError should be raised at runtime:
+    When executing query:
+      """
+      LOOKUP ON any_shape WHERE ST_DWithin(any_shape.geo, ST_Point(3, 8.4), true) YIELD ST_ASText(any_shape.geo);
+      """
+    Then a SemanticError should be raised at runtime:
     # Match with geo predicate
     When executing query:
       """
@@ -518,6 +570,14 @@ Feature: Geo base
     When executing query:
       """
       LOOKUP ON any_shape WHERE ST_DWithin(any_shape.geo, ST_Point(3, 8), 100.0) YIELD ST_ASText(any_shape.geo);
+      """
+    Then the result should be, in any order:
+      | VertexID | ST_ASText(any_shape.geo)     |
+      | "101"    | "POINT(3 8)"                 |
+      | "102"    | "LINESTRING(3 8, 4.7 73.23)" |
+    When executing query:
+      """
+      LOOKUP ON any_shape WHERE ST_DWithin(any_shape.geo, ST_Point(3, 8), 100) YIELD ST_ASText(any_shape.geo);
       """
     Then the result should be, in any order:
       | VertexID | ST_ASText(any_shape.geo)     |
