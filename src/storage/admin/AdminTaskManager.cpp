@@ -232,7 +232,7 @@ void AdminTaskManager::schedule() {
     LOG(INFO) << "waiting for incoming task";
     std::optional<TaskHandle> optTaskHandle{std::nullopt};
     while (!optTaskHandle && !shutdown_.load(std::memory_order_acquire)) {
-      optTaskHandle = taskQueue_.try_take_for(interval);
+      optTaskHandle = taskQueue_.try_take_for(interval).value();
     }
 
     if (shutdown_.load(std::memory_order_acquire)) {
