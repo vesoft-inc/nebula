@@ -33,6 +33,12 @@ class GetTagPropNode : public QueryNode<VertexID> {
 
 
     List row;
+    // vertexId is the first column
+    if (context_->isIntId()) {
+      row.emplace_back(*reinterpret_cast<const int64_t*>(vId.data()));
+    } else {
+      row.emplace_back(vId);
+    }
     auto vIdLen = context_->vIdLen();
     auto isIntId = context_->isIntId();
     for (auto* tagNode : tagNodes_) {
@@ -45,16 +51,10 @@ class GetTagPropNode : public QueryNode<VertexID> {
             }
             return nebula::cpp2::ErrorCode::SUCCEEDED;
           },
-          [&row, vIdLen, isIntId, vId, this](
+          [&row, vIdLen, isIntId](
               folly::StringPiece key,
               RowReader* reader,
               const std::vector<PropContext>* props) -> nebula::cpp2::ErrorCode {
-            // vertexId is the first column
-            if (context_->isIntId()) {
-              row.emplace_back(*reinterpret_cast<const int64_t*>(vId.data()));
-            } else {
-              row.emplace_back(vId);
-            }
             if (!QueryUtils::collectVertexProps(key, vIdLen, isIntId, reader, props, row).ok()) {
               return nebula::cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND;
             }
