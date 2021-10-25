@@ -10,7 +10,7 @@ Feature: IntegerVid Go  Sentence
   Scenario: Integer Vid one step
     When executing query:
       """
-      GO FROM hash("Tim Duncan") OVER serve
+      GO FROM hash("Tim Duncan") OVER serve YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
       | serve._dst |
@@ -36,7 +36,7 @@ Feature: IntegerVid Go  Sentence
       | "Tony Parker" | 36  |
     When executing query:
       """
-      GO FROM hash("Tim Duncan"), hash("Tim Duncan") OVER serve
+      GO FROM hash("Tim Duncan"), hash("Tim Duncan") OVER serve YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
       | serve._dst |
@@ -44,7 +44,7 @@ Feature: IntegerVid Go  Sentence
       | "Spurs"    |
     When executing query:
       """
-      YIELD hash("Tim Duncan") as vid | GO FROM $-.vid OVER serve
+      YIELD hash("Tim Duncan") as vid | GO FROM $-.vid OVER serve YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
       | serve._dst |
@@ -73,8 +73,9 @@ Feature: IntegerVid Go  Sentence
       | "Rajon Rondo"  | 2017             | 2018           | "Pelicans"   |
     When executing query:
       """
-      GO FROM hash("Boris Diaw") OVER like YIELD like._dst as id
-      | GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve
+      GO FROM hash("Boris Diaw") OVER like YIELD like._dst as id |
+      GO FROM $-.id OVER like YIELD like._dst as id |
+      GO FROM $-.id OVER serve YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
       | serve._dst      |
@@ -87,7 +88,7 @@ Feature: IntegerVid Go  Sentence
       | "Trail Blazers" |
     When executing query:
       """
-      GO FROM hash('Thunders') OVER serve REVERSELY
+      GO FROM hash('Thunders') OVER serve REVERSELY YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
       | serve._dst          |
@@ -100,7 +101,7 @@ Feature: IntegerVid Go  Sentence
     When executing query:
       """
       GO FROM hash("Boris Diaw") OVER like YIELD like._dst as id
-      |(GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve)
+      |(GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve YIELD serve._dst)
       """
     Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
       | serve._dst      |
@@ -114,14 +115,14 @@ Feature: IntegerVid Go  Sentence
     When executing query:
       """
       GO FROM hash("No Exist Vertex Id") OVER like YIELD like._dst as id
-      |(GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve)
+      |(GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve YIELD serve._dst)
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst |
     When executing query:
       """
       GO FROM hash("Boris Diaw") OVER like, serve YIELD like._dst as id
-      |(GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve)
+      |(GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve YIELD serve._dst)
       """
     Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
       | serve._dst      |
@@ -136,7 +137,7 @@ Feature: IntegerVid Go  Sentence
   Scenario: Integer Vid assignment simple
     When executing query:
       """
-      $var = GO FROM hash("Tracy McGrady") OVER like YIELD like._dst as id; GO FROM $var.id OVER like
+      $var = GO FROM hash("Tracy McGrady") OVER like YIELD like._dst as id; GO FROM $var.id OVER like YIELD like._dst
       """
     Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
       | like._dst           |
@@ -147,7 +148,7 @@ Feature: IntegerVid Go  Sentence
     When executing query:
       """
       $var = (GO FROM hash("Tracy McGrady") OVER like YIELD like._dst as id | GO FROM $-.id OVER like YIELD like._dst as id);
-      GO FROM $var.id OVER like
+      GO FROM $var.id OVER like YIELD like._dst
       """
     Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
       | like._dst     |
@@ -180,7 +181,7 @@ Feature: IntegerVid Go  Sentence
   Scenario: Integer Vid assignment empty result
     When executing query:
       """
-      $var = GO FROM -1 OVER like YIELD like._dst as id; GO FROM $var.id OVER like
+      $var = GO FROM -1 OVER like YIELD like._dst as id; GO FROM $var.id OVER like YIELD like._dst
       """
     Then the result should be, in any order, with relax comparison:
       | like._dst |
@@ -188,7 +189,7 @@ Feature: IntegerVid Go  Sentence
   Scenario: Integer Vid variable undefined
     When executing query:
       """
-      GO FROM $var OVER like
+      GO FROM $var OVER like YIELD like._dst
       """
     Then a SyntaxError should be raised at runtime: syntax error near `OVER'
 
@@ -224,7 +225,7 @@ Feature: IntegerVid Go  Sentence
   Scenario: Integer Vid vertex noexist
     When executing query:
       """
-      GO FROM hash("NON EXIST VERTEX ID") OVER serve
+      GO FROM hash("NON EXIST VERTEX ID") OVER serve YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst |
@@ -246,7 +247,7 @@ Feature: IntegerVid Go  Sentence
       """
       GO FROM hash("NON EXIST VERTEX ID") OVER like YIELD like._dst as id
       | GO FROM $-.id OVER like YIELD like._dst as id
-      | GO FROM $-.id OVER serve
+      | GO FROM $-.id OVER serve YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst |
@@ -254,7 +255,7 @@ Feature: IntegerVid Go  Sentence
       """
       GO FROM hash("NON EXIST VERTEX ID") OVER serve YIELD serve._dst as id, serve.start_year as start
       | YIELD $-.id as id WHERE $-.start > 20000
-      | Go FROM $-.id over serve
+      | Go FROM $-.id over serve YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst |
@@ -280,7 +281,7 @@ Feature: IntegerVid Go  Sentence
       | EMPTY      | "Russell Westbrook" |
     When executing query:
       """
-      GO FROM hash("Russell Westbrook") OVER * REVERSELY
+      GO FROM hash("Russell Westbrook") OVER * REVERSELY YIELD like._dst, serve._dst, teammate._dst
       """
     Then the result should be, in any order, with relax comparison, and the columns 0,1,2 should be hashed:
       | like._dst         | serve._dst | teammate._dst |
@@ -299,7 +300,7 @@ Feature: IntegerVid Go  Sentence
       | EMPTY       | "Dwyane Wade" |
     When executing query:
       """
-      GO FROM hash("Paul Gasol") OVER *
+      GO FROM hash("Paul Gasol") OVER * YIELD like._dst, serve._dst, teammate._dst
       """
     Then the result should be, in any order, with relax comparison, and the columns 0,1,2 should be hashed:
       | like._dst     | serve._dst  | teammate._dst |
@@ -335,7 +336,7 @@ Feature: IntegerVid Go  Sentence
     When executing query:
       """
       GO FROM hash("Boris Diaw") OVER * YIELD like._dst as id
-      | ( GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve )
+      | ( GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve YIELD serve._dst )
       """
     Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
       | serve._dst      |
@@ -376,7 +377,7 @@ Feature: IntegerVid Go  Sentence
       | EMPTY            | 90            |
     When executing query:
       """
-      GO FROM hash("Shaquile O\'Neal") OVER serve, like
+      GO FROM hash("Shaquile O\'Neal") OVER serve, like YIELD serve._dst, like._dst
       """
     Then the result should be, in any order, with relax comparison, and the columns 0,1 should be hashed:
       | serve._dst  | like._dst      |
@@ -390,7 +391,7 @@ Feature: IntegerVid Go  Sentence
       | EMPTY       | "Tim Duncan"   |
     When executing query:
       """
-      GO FROM hash('Russell Westbrook') OVER serve, like
+      GO FROM hash('Russell Westbrook') OVER serve, like YIELD serve._dst, like._dst
       """
     Then the result should be, in any order, with relax comparison, and the columns 0,1 should be hashed:
       | serve._dst | like._dst      |
@@ -418,7 +419,7 @@ Feature: IntegerVid Go  Sentence
       | EMPTY      | "Russell Westbrook" |
     When executing query:
       """
-      GO FROM hash("Russell Westbrook") OVER serve, like REVERSELY
+      GO FROM hash("Russell Westbrook") OVER serve, like REVERSELY YIELD serve._dst, like._dst
       """
     Then the result should be, in any order, with relax comparison, and the columns 0,1 should be hashed:
       | serve._dst | like._dst         |
@@ -614,7 +615,7 @@ Feature: IntegerVid Go  Sentence
     When executing query:
       """
       GO FROM hash('Tim Duncan') OVER like YIELD like._dst AS id |
-      GO FROM  $-.id OVER serve WHERE $-.id IN [hash('Tony Parker'), 123]
+      GO FROM  $-.id OVER serve WHERE $-.id IN [hash('Tony Parker'), 123] YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
       | serve._dst |
@@ -623,7 +624,7 @@ Feature: IntegerVid Go  Sentence
     When executing query:
       """
       GO FROM hash('Tim Duncan') OVER like YIELD like._dst AS id |
-      GO FROM  $-.id OVER serve WHERE $-.id IN [hash('Tony Parker'), 123] AND 1 == 1
+      GO FROM  $-.id OVER serve WHERE $-.id IN [hash('Tony Parker'), 123] AND 1 == 1 YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
       | serve._dst |
@@ -637,7 +638,7 @@ Feature: IntegerVid Go  Sentence
       $A = GO FROM hash('Tim Duncan') OVER like YIELD like._dst AS dst;
       $rA = YIELD $A.* WHERE $A.dst == 123;
       RETURN $rA IF $rA IS NOT NULL;
-      GO FROM $A.dst OVER serve
+      GO FROM $A.dst OVER serve YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
       | serve._dst |
@@ -649,7 +650,7 @@ Feature: IntegerVid Go  Sentence
       $A = GO FROM hash('Tim Duncan') OVER like YIELD like._dst AS dst;
       $rA = YIELD $A.* WHERE 1 == 1;
       RETURN $rA IF $rA IS NOT NULL;
-      GO FROM $A.dst OVER serve
+      GO FROM $A.dst OVER serve YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
       | serve._dst      |
@@ -663,7 +664,7 @@ Feature: IntegerVid Go  Sentence
       $B = GO FROM $A.dstA OVER like YIELD like._dst AS dstB;
       $rB = YIELD $B.* WHERE $B.dstB == 456;
       RETURN $rB IF $rB IS NOT NULL;
-      GO FROM $B.dstB OVER serve
+      GO FROM $B.dstB OVER serve YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
       | serve._dst      |
@@ -831,7 +832,7 @@ Feature: IntegerVid Go  Sentence
     When executing query:
       """
       GO FROM hash('Manu Ginobili') OVER * REVERSELY YIELD like._dst AS id
-      | GO FROM $-.id OVER serve
+      | GO FROM $-.id OVER serve YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
       | serve._dst |
@@ -908,7 +909,7 @@ Feature: IntegerVid Go  Sentence
     When executing query:
       """
       GO FROM hash('Manu Ginobili') OVER like REVERSELY YIELD like._dst AS id
-      | GO FROM $-.id OVER serve
+      | GO FROM $-.id OVER serve YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
       | serve._dst |
@@ -923,14 +924,14 @@ Feature: IntegerVid Go  Sentence
   Scenario: Integer Vid bidirect
     When executing query:
       """
-      GO FROM hash('Tim Duncan') OVER serve bidirect
+      GO FROM hash('Tim Duncan') OVER serve bidirect YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
       | serve._dst |
       | "Spurs"    |
     When executing query:
       """
-      GO FROM hash('Tim Duncan') OVER like bidirect
+      GO FROM hash('Tim Duncan') OVER like bidirect YIELD like._dst
       """
     Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
       | like._dst           |
@@ -948,7 +949,7 @@ Feature: IntegerVid Go  Sentence
       | "Shaquile O'Neal"   |
     When executing query:
       """
-      GO FROM hash('Tim Duncan') OVER serve, like bidirect
+      GO FROM hash('Tim Duncan') OVER serve, like bidirect YIELD serve._dst, like._dst
       """
     Then the result should be, in any order, with relax comparison, and the columns 0,1 should be hashed:
       | serve._dst | like._dst           |
@@ -1030,7 +1031,7 @@ Feature: IntegerVid Go  Sentence
       | "Tim Duncan"   | EMPTY      | EMPTY        | EMPTY               | "Manu Ginobili"     |
     When executing query:
       """
-      GO FROM hash('Tim Duncan') OVER * bidirect
+      GO FROM hash('Tim Duncan') OVER * bidirect YIELD like._dst, serve._dst, teammate._dst
       """
     Then the result should be, in any order, with relax comparison, and the columns 0,1,2 should be hashed:
       | like._dst           | serve._dst | teammate._dst       |
@@ -1065,20 +1066,20 @@ Feature: IntegerVid Go  Sentence
     When executing query:
       """
       GO FROM hash('Tim Duncan') OVER like YIELD like._dst AS id, like.likeness AS id
-      | GO FROM $-.id OVER serve
+      | GO FROM $-.id OVER serve YIELD serve._dst
       """
     Then a SemanticError should be raised at runtime: Duplicate Column Name : `id'
     When executing query:
       """
       GO FROM hash('Tim Duncan') OVER like, serve YIELD serve.start_year AS year, serve.end_year AS year, serve._dst AS id
-      | GO FROM $-.id OVER *
+      | GO FROM $-.id OVER * YIELD like._dst
       """
     Then a SemanticError should be raised at runtime: Duplicate Column Name : `year'
     When executing query:
       """
       $a = GO FROM hash('Tim Duncan') OVER *
       YIELD serve.start_year AS year, serve.end_year AS year, serve._dst AS id;
-      | GO FROM $-.id OVER serve
+      | GO FROM $-.id OVER serve YIELD serve._dst
       """
     Then a SyntaxError should be raised at runtime: syntax error near `| GO FRO'
 
@@ -1181,14 +1182,14 @@ Feature: IntegerVid Go  Sentence
       | "Tim Duncan"        | 90            | "Tim Duncan"        |
     When executing query:
       """
-      GO 0 TO 3 STEPS FROM hash('Tim Duncan') OVER serve
+      GO 0 TO 3 STEPS FROM hash('Tim Duncan') OVER serve YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
       | serve._dst |
       | "Spurs"    |
     When executing query:
       """
-      GO 2 TO 3 STEPS FROM hash('Tim Duncan') OVER serve
+      GO 2 TO 3 STEPS FROM hash('Tim Duncan') OVER serve YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst |
@@ -1250,7 +1251,7 @@ Feature: IntegerVid Go  Sentence
       | "Damian Lillard"    |
     When executing query:
       """
-      GO 1 TO 3 STEPS FROM hash('Spurs') OVER serve REVERSELY
+      GO 1 TO 3 STEPS FROM hash('Spurs') OVER serve REVERSELY YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
       | serve._dst          |
@@ -1274,7 +1275,7 @@ Feature: IntegerVid Go  Sentence
       | "Marco Belinelli"   |
     When executing query:
       """
-      GO 0 TO 3 STEPS FROM hash('Spurs') OVER serve REVERSELY
+      GO 0 TO 3 STEPS FROM hash('Spurs') OVER serve REVERSELY YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
       | serve._dst          |
@@ -1486,19 +1487,19 @@ Feature: IntegerVid Go  Sentence
   Scenario: Integer Vid zero step
     When executing query:
       """
-      GO 0 STEPS FROM hash('Tim Duncan') OVER serve BIDIRECT
+      GO 0 STEPS FROM hash('Tim Duncan') OVER serve BIDIRECT YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst |
     When executing query:
       """
-      GO 0 STEPS FROM hash('Tim Duncan') OVER serve
+      GO 0 STEPS FROM hash('Tim Duncan') OVER serve YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst |
     When executing query:
       """
-      GO 0 STEPS FROM hash('Tim Duncan') OVER like YIELD like._dst as id | GO FROM $-.id OVER serve
+      GO 0 STEPS FROM hash('Tim Duncan') OVER like YIELD like._dst as id | GO FROM $-.id OVER serve YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst |
@@ -1669,7 +1670,7 @@ Feature: IntegerVid Go  Sentence
   Scenario: Integer Vid Bugfix filter not pushdown
     When executing query:
       """
-      GO FROM hash("Tim Duncan") OVER like WHERE like._dst == hash("Tony Parker") | limit 10;
+      GO FROM hash("Tim Duncan") OVER like WHERE like._dst == hash("Tony Parker") YIELD like._dst | limit 10;
       """
     Then the result should be, in any order, with relax comparison, and the columns 0 should be hashed:
       | like._dst     |
@@ -1678,38 +1679,38 @@ Feature: IntegerVid Go  Sentence
   Scenario: Step over end
     When executing query:
       """
-      GO 2 STEPS FROM hash("Tim Duncan") OVER serve;
+      GO 2 STEPS FROM hash("Tim Duncan") OVER serve YIELD serve._dst;
       """
     Then the result should be, in any order:
       | serve._dst |
     When executing query:
       """
-      GO 10 STEPS FROM hash("Tim Duncan") OVER serve;
+      GO 10 STEPS FROM hash("Tim Duncan") OVER serve YIELD serve._dst;
       """
     Then the result should be, in any order:
       | serve._dst |
     When executing query:
       """
-      GO 10000000000000 STEPS FROM hash("Tim Duncan") OVER serve;
+      GO 10000000000000 STEPS FROM hash("Tim Duncan") OVER serve YIELD serve._dst;
       """
     Then the result should be, in any order:
       | serve._dst |
     When executing query:
       """
-      GO 1 TO 10 STEPS FROM hash("Tim Duncan") OVER serve;
+      GO 1 TO 10 STEPS FROM hash("Tim Duncan") OVER serve YIELD serve._dst;
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
       | serve._dst |
       | "Spurs"    |
     When executing query:
       """
-      GO 2 TO 10 STEPS FROM hash("Tim Duncan") OVER serve;
+      GO 2 TO 10 STEPS FROM hash("Tim Duncan") OVER serve YIELD serve._dst;
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
       | serve._dst |
     When executing query:
       """
-      GO 10000000000 TO 10000000002 STEPS FROM hash("Tim Duncan") OVER serve;
+      GO 10000000000 TO 10000000002 STEPS FROM hash("Tim Duncan") OVER serve YIELD serve._dst;
       """
     Then the result should be, in any order:
       | serve._dst |
