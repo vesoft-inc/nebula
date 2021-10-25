@@ -32,6 +32,8 @@ enum class GeoShape : uint32_t {
   POLYGON = 3,
 };
 
+std::ostream& operator<<(std::ostream& os, const GeoShape& shape);
+
 // clang-format off
 /*
 static const std::unordered_map<GeoShape, S2Region> kShapeTypeToS2Region = {

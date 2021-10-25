@@ -19,6 +19,30 @@
 
 namespace nebula {
 
+std::ostream& operator<<(std::ostream& os, const GeoShape& shape) {
+  switch (shape) {
+    case GeoShape::POINT: {
+      os << "POINT";
+      break;
+    }
+    case GeoShape::LINESTRING: {
+      os << "LINESTRING";
+      break;
+    }
+    case GeoShape::POLYGON: {
+      os << "POLYGON";
+      break;
+    }
+    case GeoShape::UNKNOWN:
+    default: {
+      os << "__UNKNOWN__";
+      break;
+    }
+  }
+
+  return os;
+}
+
 constexpr double kMaxLongitude = 180.0;
 constexpr double kMaxLatitude = 90.0;
 
