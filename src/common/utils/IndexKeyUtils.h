@@ -219,49 +219,17 @@ class IndexKeyUtils final {
       raw.append(c, sizeof(double));
       return raw;
     }
-    if (v < 0) {
-      /**
-       *   TODO : now, the -(std::numeric_limits<double>::min())
-       *   have a problem of precision overflow. current return value is -nan.
-       */
-      auto* c1 = reinterpret_cast<const char*>(&v);
-      auto i = *reinterpret_cast<const int64_t*>(c1);
-      i = -(std::numeric_limits<int64_t>::max() + i);
-      auto* c2 = reinterpret_cast<const char*>(&i);
-      v = *reinterpret_cast<const double*>(c2);
-    }
-    auto val = folly::Endian::big(v);
-    auto* c = reinterpret_cast<char*>(&val);
-    c[0] ^= 0x80;
-    std::string raw;
-    raw.reserve(sizeof(double));
-    raw.append(c, sizeof(double));
-    return raw;
   }
 
   static double decodeDouble(const folly::StringPiece& raw) {
-    {
-      int64_t val = *reinterpret_cast<const int64_t*>(raw.data());
-      val = folly::Endian::big(val);
-      if (val < 0) {
-        val &= 0x7fffffffffffffff;
-      } else {
-        val = ~val;
-      }
-      return *reinterpret_cast<double*>(&val);
-    }
-    char* v = const_cast<char*>(raw.data());
-    v[0] ^= 0x80;
-    auto val = *reinterpret_cast<const double*>(v);
+    int64_t val = *reinterpret_cast<const int64_t*>(raw.data());
     val = folly::Endian::big(val);
     if (val < 0) {
-      auto* c1 = reinterpret_cast<const char*>(&val);
-      auto i = *reinterpret_cast<const int64_t*>(c1);
-      i = -(std::numeric_limits<int64_t>::max() + i);
-      auto* c2 = reinterpret_cast<const char*>(&i);
-      val = *reinterpret_cast<const double*>(c2);
+      val &= 0x7fffffffffffffff;
+    } else {
+      val = ~val;
     }
-    return val;
+    return *reinterpret_cast<double*>(&val);
   }
 
   static std::string encodeTime(const nebula::Time& t) {
