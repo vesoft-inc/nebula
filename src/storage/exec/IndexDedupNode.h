@@ -40,9 +40,6 @@ class IndexDedupNode : public IndexNode {
   struct Equal {
     bool operator()(const RowWrapper& a, const RowWrapper& b) const {
       bool cmp = a.values() == b.values();
-      DLOG(INFO) << a.values();
-      DLOG(INFO) << b.values();
-      DLOG(INFO) << cmp;
       return cmp;
     }
   };

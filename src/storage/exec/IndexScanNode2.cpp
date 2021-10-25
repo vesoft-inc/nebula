@@ -24,10 +24,6 @@ Path::Path(nebula::meta::cpp2::IndexItem* index,
     index_nullable_offset_ += tmpStr.size();
     totalKeyLength_ += tmpStr.size();
   }
-  for (auto x : nullable_) {
-    DVLOG(1) << x;
-  }
-  DVLOG(1) << nullFlag;
   if (!nullFlag) {
     nullable_.clear();
   } else {
@@ -201,6 +197,15 @@ std::tuple<std::string, std::string> RangePath::encodeRange(
       DVLOG(1) << nullableBit;
       DVLOG(1) << nullableBit.test(15 - colIndex);
       return nullableBit.test(15 - colIndex) ? Qualified::INCOMPATIBLE : Qualified::COMPATIBLE;
+    });
+  }
+  // One GEO data will generator more than one index key. So need dedup.
+  if (UNLIKELY(colTypeDef.get_type() == nebula::meta::cpp2::PropertyType::GEOGRAPHY)) {
+    QFList_.emplace_back([suffixSet = Set<std::string>(),
+                          suffixLength = suffixLength_](const std::string& k) mutable {
+      auto suffix = k.substr(k.size() - suffixLength, suffixLength);
+      auto [iter, result] = suffixSet.insert(suffix);
+      return result ? Qualified::COMPATIBLE : Qualified::INCOMPATIBLE;
     });
   }
   return {startKey, endKey};
@@ -408,31 +413,24 @@ nebula::cpp2::ErrorCode IndexScanNode::doExecute(PartitionID partId) {
   return ret;
 }
 IndexNode::ErrorOr<Row> IndexScanNode::doNext(bool& hasNext) {
-  DVLOG(3) << "x";
-  DVLOG(3) << columnHints_.size();
   hasNext = true;
   for (; iter_ && iter_->valid(); iter_->next()) {
-    DLOG(INFO) << '\n' << folly::hexDump(iter_->key().data(), iter_->key().size());
+    DVLOG(3) << '\n' << folly::hexDump(iter_->key().data(), iter_->key().size());
     if (!checkTTL()) {
       continue;
     }
-    DVLOG(3) << "x";
     auto q = path_->qualified(iter_->key());
     if (q == Path::Qualified::INCOMPATIBLE) {
       continue;
     }
-    DVLOG(3) << "x";
     bool compatible = q == Path::Qualified::COMPATIBLE;
     if (compatible && !needAccessBase_) {
-      DVLOG(3) << 123;
       auto key = iter_->key().toString();
       iter_->next();
       auto ret = decodeFromIndex(key);
-      DLOG(INFO) << ret;
+      DVLOG(3) << ret;
       return ret;
     }
-    DVLOG(3) << "x";
-    DVLOG(3) << 123;
     std::pair<std::string, std::string> kv;
     auto ret = getBaseData(iter_->key(), kv);
     if (ret == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
@@ -443,31 +441,20 @@ IndexNode::ErrorOr<Row> IndexScanNode::doNext(bool& hasNext) {
       }
       continue;
     }
-    DVLOG(3) << "x";
-
     Map<std::string, Value> rowData = decodeFromBase(kv.first, kv.second);
-    DVLOG(3) << "x";
-    for (auto& iter : rowData) {
-      DVLOG(3) << iter.first << ":" << iter.second;
-    }
     if (!compatible) {
-      DVLOG(3) << "x";
-      DVLOG(3) << path_.get();
       q = path_->qualified(rowData);
       CHECK(q != Path::Qualified::UNCERTAIN);
       if (q == Path::Qualified::INCOMPATIBLE) {
         continue;
       }
     }
-    DVLOG(3) << 123;
     Row row;
     for (auto& col : requiredColumns_) {
-      DVLOG(3) << col;
-      DVLOG(3) << rowData.at(col);
       row.emplace_back(std::move(rowData.at(col)));
     }
     iter_->next();
-    DLOG(INFO) << row;
+    DVLOG(3) << row;
     return row;
   }
   hasNext = false;
