@@ -943,3 +943,54 @@ Feature: IndexTest_Vid_String
     Then the result should be, in any order:
       | Tag Index Name     | Create Tag Index                                               |
       | "player_age_index" | "CREATE TAG INDEX `player_age_index` ON `player` (\n `age`\n)" |
+
+  Scenario: stringid duplicate vertex and edge when insert
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 9                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(30) |
+      | charset        | utf8             |
+      | collate        | utf8_bin         |
+    And having executed:
+      """
+      CREATE TAG tag1(col1 string, col2 int, col3 double, col4 timestamp);
+      CREATE EDGE edge1(col1 string, col2 int, col3 double, col4 timestamp);
+      CREATE TAG INDEX tag1_index ON tag1(col2);
+      CREATE EDGE INDEX edge1_index ON edge1(col2);
+      """
+    And wait 6 seconds
+    When executing query:
+      """
+      INSERT VERTEX
+        tag1(col1, col2, col3, col4)
+      VALUES
+        '1':('Tom', 18, 35.4, `timestamp`('2010-09-01T08:00:00')),
+        '1':('Jerry', 22, 38.4, `timestamp`('2011-09-01T08:00:00')),
+        '1':('Bob', 19, 36.4, `timestamp`('2010-09-01T12:00:00'));
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON tag1 WHERE tag1.col2 < 20 YIELD tag1.col2
+      """
+    Then the result should be, in any order:
+      | VertexID | tag1.col2 |
+      | '1'      | 18        |
+    When executing query:
+      """
+      INSERT EDGE
+        edge1(col1, col2, col3, col4)
+      VALUES
+        '1' -> '2'@0:('Tom', 18, 35.4, `timestamp`('2010-09-01T08:00:00')),
+        '1' -> '2'@0:('Jerry', 22, 38.4, `timestamp`('2011-09-01T08:00:00')),
+        '1' -> '2'@0:('Bob', 19, 36.4, `timestamp`('2010-09-01T12:00:00'));
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON edge1 WHERE edge1.col2 < 20 YIELD edge1.col2
+      """
+    Then the result should be, in any order:
+      | SrcVID | DstVID | Ranking | edge1.col2 |
+      | '1'    | '2'    | 0       | 18         |

@@ -178,7 +178,7 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
         }
 
         auto key = NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vid, tagId);
-        if (ifNotExists_ && !visited.emplace(key).second) {
+        if (!visited.emplace(key).second) {
           continue;
         }
         auto props = newTag.get_props();

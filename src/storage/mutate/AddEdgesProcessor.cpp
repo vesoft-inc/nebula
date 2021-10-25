@@ -200,7 +200,7 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
                                          *edgeKey.edge_type_ref(),
                                          *edgeKey.ranking_ref(),
                                          (*edgeKey.dst_ref()).getStr());
-      if (ifNotExists_ && !visited.emplace(key).second) {
+      if (!visited.emplace(key).second) {
         continue;
       }
       auto schema = env_->schemaMan_->getEdgeSchema(spaceId_, std::abs(*edgeKey.edge_type_ref()));
