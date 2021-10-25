@@ -89,7 +89,7 @@ class AppendLogsIterator final : public LogIterator {
       // Process AtomicOp log
       CHECK(!!opCB_);
       opResult_ = opCB_(std::move(std::get<3>(tup)));
-      if (opResult_.hasValue()) {
+      if (opResult_.has_value()) {
         // AtomicOp Succeeded
         return true;
       } else {
@@ -139,7 +139,7 @@ class AppendLogsIterator final : public LogIterator {
   folly::StringPiece logMsg() const override {
     DCHECK(valid());
     if (currLogType_ == LogType::ATOMIC_OP) {
-      CHECK(opResult_.hasValue());
+      CHECK(opResult_.has_value());
       return opResult_.value();
     } else {
       return std::get<2>(logs_.at(idx_));
@@ -677,7 +677,7 @@ folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
                         [this](AtomicOp opCB) -> std::optional<std::string> {
                           CHECK(opCB != nullptr);
                           auto opRet = opCB();
-                          if (!opRet.hasValue()) {
+                          if (!opRet.has_value()) {
                             // Failed
                             sendingPromise_.setOneSingleValue(AppendLogResult::E_ATOMIC_OP_FAILURE);
                           }
@@ -915,7 +915,7 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
               std::move(logs_),
               [this](AtomicOp op) -> std::optional<std::string> {
                 auto opRet = op();
-                if (!opRet.hasValue()) {
+                if (!opRet.has_value()) {
                   // Failed
                   sendingPromise_.setOneSingleValue(AppendLogResult::E_ATOMIC_OP_FAILURE);
                 }

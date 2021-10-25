@@ -43,7 +43,7 @@ class SingleEdgeIterator : public StorageIterator {
                      const std::optional<std::pair<std::string, int64_t>>* ttl)
       : context_(context), iter_(std::move(iter)), edgeType_(edgeType), schemas_(schemas) {
     CHECK(!!iter_);
-    if (ttl->hasValue()) {
+    if (ttl->has_value()) {
       hasTtl_ = true;
       ttlCol_ = ttl->value().first;
       ttlDuration_ = ttl->value().second;

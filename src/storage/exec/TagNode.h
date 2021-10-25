@@ -90,7 +90,7 @@ class TagNode final : public IterateNode<VertexID> {
   void resetReader() {
     reader_.reset(*schemas_, value_);
     if (!reader_ ||
-        (ttl_.hasValue() &&
+        (ttl_.has_value() &&
          CommonUtils::checkDataExpiredForTTL(
              schemas_->back().get(), reader_.get(), ttl_.value().first, ttl_.value().second))) {
       reader_.reset();

@@ -127,7 +127,7 @@ class FetchEdgeNode final : public EdgeNode<cpp2::EdgeKey> {
   void resetReader() {
     reader_.reset(*schemas_, val_);
     if (!reader_ ||
-        (ttl_.hasValue() &&
+        (ttl_.has_value() &&
          CommonUtils::checkDataExpiredForTTL(
              schemas_->back().get(), reader_.get(), ttl_.value().first, ttl_.value().second))) {
       reader_.reset();
