@@ -10,9 +10,9 @@ Feature: Lookup with output
       FETCH PROP ON player $-.VertexID YIELD player.name
       """
     Then the result should be, in any order:
-      | VertexID        | player.name     |
-      | 'Kobe Bryant'   | 'Kobe Bryant'   |
-      | 'Dirk Nowitzki' | 'Dirk Nowitzki' |
+      | player.name     |
+      | 'Kobe Bryant'   |
+      | 'Dirk Nowitzki' |
 
   Scenario: [1] tag ouput with yield rename
     When executing query:
@@ -21,9 +21,9 @@ Feature: Lookup with output
       FETCH PROP ON player $-.name YIELD player.name AS name
       """
     Then the result should be, in any order:
-      | VertexID        | name            |
-      | 'Kobe Bryant'   | 'Kobe Bryant'   |
-      | 'Dirk Nowitzki' | 'Dirk Nowitzki' |
+      | name            |
+      | 'Kobe Bryant'   |
+      | 'Dirk Nowitzki' |
 
   Scenario: [1] tag output by var
     When executing query:
@@ -32,9 +32,9 @@ Feature: Lookup with output
       FETCH PROP ON player $a.VertexID YIELD player.name
       """
     Then the result should be, in any order:
-      | VertexID        | player.name     |
-      | 'Kobe Bryant'   | 'Kobe Bryant'   |
-      | 'Dirk Nowitzki' | 'Dirk Nowitzki' |
+      | player.name     |
+      | 'Kobe Bryant'   |
+      | 'Dirk Nowitzki' |
 
   Scenario: [1] tag ouput with yield rename by var
     When executing query:
@@ -43,9 +43,9 @@ Feature: Lookup with output
       FETCH PROP ON player $a.name YIELD player.name AS name
       """
     Then the result should be, in any order:
-      | VertexID        | name            |
-      | 'Kobe Bryant'   | 'Kobe Bryant'   |
-      | 'Dirk Nowitzki' | 'Dirk Nowitzki' |
+      | name            |
+      | 'Kobe Bryant'   |
+      | 'Dirk Nowitzki' |
 
   Scenario: [2] edge output
     When executing query:
@@ -55,9 +55,9 @@ Feature: Lookup with output
       FETCH PROP ON serve $-.SrcVID->$-.DstVID YIELD serve.start_year
       """
     Then the result should be, in any order:
-      | serve._src          | serve._dst  | serve._rank | serve.start_year |
-      | 'Russell Westbrook' | 'Thunders'  | 0           | 2008             |
-      | 'Marc Gasol'        | 'Grizzlies' | 0           | 2008             |
+      | serve.start_year |
+      | 2008             |
+      | 2008             |
 
   Scenario: [2] edge output with yield rename
     When executing query:
@@ -67,9 +67,9 @@ Feature: Lookup with output
       FETCH PROP ON serve $-.SrcVID->$-.DstVID YIELD serve.start_year AS startYear
       """
     Then the result should be, in any order:
-      | serve._src          | serve._dst  | serve._rank | startYear |
-      | 'Russell Westbrook' | 'Thunders'  | 0           | 2008      |
-      | 'Marc Gasol'        | 'Grizzlies' | 0           | 2008      |
+      | startYear |
+      | 2008      |
+      | 2008      |
 
   Scenario: [2] edge output by var
     When executing query:
@@ -79,9 +79,9 @@ Feature: Lookup with output
       FETCH PROP ON serve $a.SrcVID->$a.DstVID YIELD serve.start_year
       """
     Then the result should be, in any order:
-      | serve._src          | serve._dst  | serve._rank | serve.start_year |
-      | 'Russell Westbrook' | 'Thunders'  | 0           | 2008             |
-      | 'Marc Gasol'        | 'Grizzlies' | 0           | 2008             |
+      | serve.start_year |
+      | 2008             |
+      | 2008             |
 
   Scenario: [2] edge output with yield rename by var
     When executing query:
@@ -91,6 +91,6 @@ Feature: Lookup with output
       FETCH PROP ON serve $a.SrcVID->$a.DstVID YIELD serve.start_year AS startYear
       """
     Then the result should be, in any order:
-      | serve._src          | serve._dst  | serve._rank | startYear |
-      | 'Russell Westbrook' | 'Thunders'  | 0           | 2008      |
-      | 'Marc Gasol'        | 'Grizzlies' | 0           | 2008      |
+      | startYear |
+      | 2008      |
+      | 2008      |

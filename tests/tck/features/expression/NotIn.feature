@@ -69,6 +69,7 @@ Feature: Not In Expression
       """
       GO FROM 'Tony Parker' OVER like
       WHERE like._dst NOT IN ['Danny Green']
+      YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst           |
@@ -113,6 +114,7 @@ Feature: Not In Expression
       """
       GO FROM 'Tony Parker' OVER like
       WHERE like._dst NOT IN {'Danny Green'}
+      YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst           |

@@ -410,14 +410,14 @@ Feature: Yield Sentence
       | 34.666666666666664 | 270          | 3        | 2     |
     When executing query:
       """
-      GO FROM hash("Carmelo Anthony") OVER like | YIELD COUNT(*)
+      GO FROM hash("Carmelo Anthony") OVER like YIELD like._dst| YIELD COUNT(*)
       """
     Then the result should be, in any order:
       | COUNT(*) |
       | 3        |
     When executing query:
       """
-      GO FROM hash("Carmelo Anthony") OVER like | YIELD 1
+      GO FROM hash("Carmelo Anthony") OVER like YIELD edge as e| YIELD 1
       """
     Then the result should be, in any order:
       | 1 |
@@ -426,7 +426,7 @@ Feature: Yield Sentence
       | 1 |
     When executing query:
       """
-      GO FROM hash("Nobody") OVER like | YIELD 1
+      GO FROM hash("Nobody") OVER like YIELD like._dst | YIELD 1
       """
     Then the result should be, in any order:
       | 1 |

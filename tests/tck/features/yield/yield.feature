@@ -420,14 +420,14 @@ Feature: Yield Sentence
       | 34.666666666666664 | 270          | 3        | 2     |
     When executing query:
       """
-      GO FROM "Carmelo Anthony" OVER like | YIELD COUNT(*)
+      GO FROM "Carmelo Anthony" OVER like YIELD like._dst| YIELD COUNT(*)
       """
     Then the result should be, in any order, with relax comparison:
       | COUNT(*) |
       | 3        |
     When executing query:
       """
-      GO FROM "Carmelo Anthony" OVER like | YIELD 1
+      GO FROM "Carmelo Anthony" OVER like YIELD edge as e| YIELD 1
       """
     Then the result should be, in any order, with relax comparison:
       | 1 |
@@ -436,7 +436,7 @@ Feature: Yield Sentence
       | 1 |
     When executing query:
       """
-      GO FROM "Nobody" OVER like | YIELD 1
+      GO FROM "Nobody" OVER like YIELD like._dst| YIELD 1
       """
     Then the result should be, in any order, with relax comparison:
       | 1 |
