@@ -188,7 +188,8 @@ class SchemaPropItem final {
     if (isInt()) {
       return asInt();
     } else {
-      LOG(ERROR) << "Ttl_duration value illegal: " << propValue_;
+      std::visit([](const auto &val) { LOG(ERROR) << "Ttl_duration value illegal: " << val; },
+                 propValue_);
       return Status::Error("Ttl_duration value illegal");
     }
   }
@@ -197,7 +198,8 @@ class SchemaPropItem final {
     if (isString()) {
       return asString();
     } else {
-      LOG(ERROR) << "Ttl_col value illegal: " << propValue_;
+      std::visit([](const auto &val) { LOG(ERROR) << "Ttl_col value illegal: " << val; },
+                 propValue_);
       return Status::Error("Ttl_col value illegal");
     }
   }
@@ -220,7 +222,7 @@ class SchemaPropItem final {
   const std::string &asString() { return std::get<std::string>(propValue_); }
 
   bool asBool() {
-    switch (propValue_.which()) {
+    switch (propValue_.index()) {
       case 0:
         return asInt() != 0;
       case 1:
@@ -233,11 +235,11 @@ class SchemaPropItem final {
     return false;
   }
 
-  bool isInt() { return propValue_.which() == 0; }
+  bool isInt() { return propValue_.index() == 0; }
 
-  bool isBool() { return propValue_.which() == 1; }
+  bool isBool() { return propValue_.index() == 1; }
 
-  bool isString() { return propValue_.which() == 2; }
+  bool isString() { return propValue_.index() == 2; }
 
  private:
   Value propValue_;

@@ -168,11 +168,11 @@ class SpaceOptItem final {
     return std::get<meta::cpp2::ColumnTypeDef>(optValue_);
   }
 
-  bool isInt() const { return optValue_.which() == 0; }
+  bool isInt() const { return optValue_.index() == 0; }
 
-  bool isString() const { return optValue_.which() == 1; }
+  bool isString() const { return optValue_.index() == 1; }
 
-  bool isTypeDef() const { return optValue_.which() == 2; }
+  bool isTypeDef() const { return optValue_.index() == 2; }
 
   int64_t getPartitionNum() const {
     if (isInt()) {
