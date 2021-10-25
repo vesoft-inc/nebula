@@ -128,7 +128,7 @@ class ShowZonesSentence final : public Sentence {
 
 class SpaceOptItem final {
  public:
-  using Value = boost::variant<int64_t, std::string, meta::cpp2::ColumnTypeDef>;
+  using Value = std::variant<int64_t, std::string, meta::cpp2::ColumnTypeDef>;
 
   enum OptionType : uint8_t {
     PARTITION_NUM,

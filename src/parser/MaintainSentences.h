@@ -165,7 +165,7 @@ class ColumnNameList final {
 
 class SchemaPropItem final {
  public:
-  using Value = boost::variant<int64_t, bool, std::string>;
+  using Value = std::variant<int64_t, bool, std::string>;
 
   enum PropType : uint8_t { TTL_DURATION, TTL_COL, COMMENT };
 

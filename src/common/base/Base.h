@@ -19,7 +19,6 @@
 
 #include <any>
 #include <atomic>
-#include <boost/variant.hpp>
 #include <cassert>
 #include <cerrno>
 #include <chrono>
@@ -48,6 +47,7 @@
 #include <tuple>
 #include <unordered_map>
 #include <unordered_set>
+#include <variant>
 #include <vector>
 
 #if defined(__clang__) && defined(__aarch64__)
@@ -108,7 +108,7 @@
 
 namespace nebula {
 
-using VariantType = boost::variant<int64_t, double, bool, std::string>;
+using VariantType = std::variant<int64_t, double, bool, std::string>;
 
 #ifndef VAR_INT64
 #define VAR_INT64 0
