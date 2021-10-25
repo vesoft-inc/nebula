@@ -4,11 +4,13 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include <folly/String.h>
 #include <gtest/gtest.h>
+
+#include <cmath>
 
 #include "common/base/Base.h"
 #include "common/utils/IndexKeyUtils.h"
-
 namespace nebula {
 
 VertexID getStringId(int64_t vId) {
@@ -44,7 +46,10 @@ bool evalInt64(int64_t val) {
 bool evalDouble(double val) {
   Value v(val);
   auto str = IndexKeyUtils::encodeValue(v);
+  DVLOG(3) << folly::hexDump(str.data(), str.size());
   auto res = IndexKeyUtils::decodeValue(str, Value::Type::FLOAT);
+  DVLOG(3) << val;
+  DVLOG(3) << res;
   EXPECT_EQ(Value::Type::FLOAT, res.type());
   EXPECT_EQ(v, res);
   return val == res.getFloat();
@@ -102,6 +107,9 @@ TEST(IndexKeyUtilsTest, encodeValue) {
   EXPECT_TRUE(evalInt64(std::numeric_limits<int64_t>::min()));
   EXPECT_TRUE(evalDouble(1.1));
   EXPECT_TRUE(evalDouble(0.0));
+  EXPECT_TRUE(evalDouble(-0.0));
+  EXPECT_TRUE(evalDouble(4.9406564584124654e-324));
+  EXPECT_TRUE(evalDouble(-4.9406564584124654e-324));
   EXPECT_TRUE(evalDouble(std::numeric_limits<double>::max()));
   EXPECT_TRUE(evalDouble(std::numeric_limits<double>::min()));
   EXPECT_TRUE(evalDouble(-std::numeric_limits<double>::max()));
