@@ -19,6 +19,30 @@
 
 namespace nebula {
 
+std::ostream& operator<<(std::ostream& os, const GeoShape& shape) {
+  switch (shape) {
+    case GeoShape::POINT: {
+      os << "POINT";
+      break;
+    }
+    case GeoShape::LINESTRING: {
+      os << "LINESTRING";
+      break;
+    }
+    case GeoShape::POLYGON: {
+      os << "POLYGON";
+      break;
+    }
+    case GeoShape::UNKNOWN:
+    default: {
+      os << "__UNKNOWN__";
+      break;
+    }
+  }
+
+  return os;
+}
+
 constexpr double kMaxLongitude = 180.0;
 constexpr double kMaxLatitude = 90.0;
 
@@ -50,6 +74,9 @@ bool LineString::isValid() const {
   if (coordList.size() < 2) {
     return false;
   }
+  for (const auto& coord : coordList) {
+    if (!coord.isValid()) return false;
+  }
   auto s2Region = geo::GeoUtils::s2RegionFromGeography(*this);
   CHECK_NOTNULL(s2Region);
   return static_cast<S2Polyline*>(s2Region.get())->IsValid();
@@ -70,6 +97,9 @@ bool Polygon::isValid() const {
     // Polygon's LinearRing must be closed
     if (coordList.front() != coordList.back()) {
       return false;
+    }
+    for (const auto& coord : coordList) {
+      if (!coord.isValid()) return false;
     }
   }
   auto s2Region = geo::GeoUtils::s2RegionFromGeography(*this);

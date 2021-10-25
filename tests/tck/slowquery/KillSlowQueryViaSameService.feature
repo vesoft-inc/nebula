@@ -10,7 +10,7 @@ Feature: Slow Query Test
     Given a graph with space named "nba"
     When executing query:
       """
-      GO 100000 STEPS FROM "Tim Duncan" OVER like
+      GO 100000 STEPS FROM "Tim Duncan" OVER like YIELD like._dst
       """
     Then an ExecutionError should be raised at runtime: Execution had been killed
 
@@ -32,8 +32,8 @@ Feature: Slow Query Test
       SHOW ALL QUERIES
       """
     Then the result should be, in order:
-      | SessionID | ExecutionPlanID | User   | Host | StartTime | DurationInUSec | Status    | Query                                           |
-      | /\d+/     | /\d+/           | "root" | /.*/ | /.*/      | /\d+/          | "RUNNING" | "GO 100000 STEPS FROM \"Tim Duncan\" OVER like" |
+      | SessionID | ExecutionPlanID | User   | Host | StartTime | DurationInUSec | Status    | Query                                                           |
+      | /\d+/     | /\d+/           | "root" | /.*/ | /.*/      | /\d+/          | "RUNNING" | "GO 100000 STEPS FROM \"Tim Duncan\" OVER like YIELD like._dst" |
     When executing query:
       """
       SHOW ALL QUERIES
