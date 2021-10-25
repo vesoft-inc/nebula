@@ -17,8 +17,8 @@ Feature: Lookup with output in integer vid
   Scenario: [1] tag output with yield rename
     When executing query:
       """
-      LOOKUP ON player WHERE player.age == 40 YIELD player.name AS name |
-      FETCH PROP ON player $-.VertexID YIELD player.name AS name
+      LOOKUP ON player WHERE player.age == 40 YIELD player.name AS name, id(vertex) as id |
+      FETCH PROP ON player $-.id YIELD player.name AS name
       """
     Then the result should be, in any order:
       | name            |

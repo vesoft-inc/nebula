@@ -516,7 +516,7 @@ Feature: Lookup by index itself in integer vid
       LOOKUP ON player WHERE player.age < 40
       YIELD player.age AS Age, player.name AS Name | order by $-.Age DESC, $-.Name| limit 10
       """
-    Then the result should be, in order, with relax comparison, and the columns 0 should be hashed:
+    Then the result should be, in order, with relax comparison:
       | Age | Name                |
       | 39  | "Tracy McGrady"     |
       | 38  | "David West"        |
@@ -533,7 +533,7 @@ Feature: Lookup by index itself in integer vid
       LOOKUP ON player WHERE player.age <= 40
       YIELD player.age AS Age, player.name AS Name | order by $-.Age DESC, $-.Name| limit 10
       """
-    Then the result should be, in order, with relax comparison, and the columns 0 should be hashed:
+    Then the result should be, in order, with relax comparison:
       | Age | Name                |
       | 40  | "Dirk Nowitzki"     |
       | 40  | "Kobe Bryant"       |

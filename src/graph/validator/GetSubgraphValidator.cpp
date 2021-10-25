@@ -97,30 +97,21 @@ Status GetSubgraphValidator::validateBothInOutBound(BothInOutClause* out) {
 }
 
 Status GetSubgraphValidator::validateYield(YieldClause* yield) {
-  auto pool = qctx_->objPool();
   if (yield == nullptr) {
-    // version 3.0: return Status::SemanticError("No Yield Clause");
-    auto* yieldColumns = new YieldColumns();
-    auto* vertex = new YieldColumn(LabelExpression::make(pool, "_vertices"));
-    yieldColumns->addColumn(vertex);
-    if (subgraphCtx_->steps.steps() != 0) {
-      auto* edge = new YieldColumn(LabelExpression::make(pool, "_edges"));
-      yieldColumns->addColumn(edge);
-    }
-    yield = pool->add(new YieldClause(yieldColumns));
+    return Status::SemanticError("Missing yield clause.");
   }
   auto size = yield->columns().size();
   outputs_.reserve(size);
+  auto pool = qctx_->objPool();
   YieldColumns* newCols = pool->add(new YieldColumns());
 
   for (const auto& col : yield->columns()) {
-    std::string lowerStr = col->expr()->toString();
-    folly::toLowerAscii(lowerStr);
-    if (lowerStr == "vertices" || lowerStr == "_vertices") {
+    const std::string& colStr = col->expr()->toString();
+    if (colStr == "VERTICES") {
       subgraphCtx_->getVertexProp = true;
       auto* newCol = new YieldColumn(InputPropertyExpression::make(pool, "VERTICES"), col->name());
       newCols->addColumn(newCol);
-    } else if (lowerStr == "edges" || lowerStr == "_edges") {
+    } else if (colStr == "EDGES") {
       if (subgraphCtx_->steps.steps() == 0) {
         return Status::SemanticError("Get Subgraph 0 STEPS only support YIELD vertices");
       }
