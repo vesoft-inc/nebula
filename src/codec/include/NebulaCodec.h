@@ -13,7 +13,7 @@ namespace nebula {
 
 class NebulaCodec {
  public:
-  typedef boost::any Value;
+  using Value = std::any;
 
   virtual ~NebulaCodec() = default;
 

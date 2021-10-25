@@ -17,8 +17,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <any>
 #include <atomic>
-#include <boost/any.hpp>
 #include <boost/variant.hpp>
 #include <cassert>
 #include <cerrno>
