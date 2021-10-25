@@ -46,7 +46,7 @@ using nebula::wal::FileBasedWal;
 using nebula::wal::FileBasedWalInfo;
 using nebula::wal::FileBasedWalPolicy;
 
-using OpProcessor = folly::Function<folly::Optional<std::string>(AtomicOp op)>;
+using OpProcessor = folly::Function<std::optional<std::string>(AtomicOp op)>;
 
 class AppendLogsIterator final : public LogIterator {
  public:
@@ -171,7 +171,7 @@ class AppendLogsIterator final : public LogIterator {
   bool valid_{true};
   LogType lastLogType_{LogType::NORMAL};
   LogType currLogType_{LogType::NORMAL};
-  folly::Optional<std::string> opResult_;
+  std::optional<std::string> opResult_;
   LogID firstLogId_;
   TermID termId_;
   LogID logId_;
@@ -674,7 +674,7 @@ folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
   AppendLogsIterator it(firstId,
                         termId,
                         std::move(swappedOutLogs),
-                        [this](AtomicOp opCB) -> folly::Optional<std::string> {
+                        [this](AtomicOp opCB) -> std::optional<std::string> {
                           CHECK(opCB != nullptr);
                           auto opRet = opCB();
                           if (!opRet.hasValue()) {
@@ -913,7 +913,7 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
               firstLogId,
               currTerm,
               std::move(logs_),
-              [this](AtomicOp op) -> folly::Optional<std::string> {
+              [this](AtomicOp op) -> std::optional<std::string> {
                 auto opRet = op();
                 if (!opRet.hasValue()) {
                   // Failed

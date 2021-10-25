@@ -33,20 +33,20 @@ class InternalStorageClient : public StorageClientBase<cpp2::InternalStorageServ
 
   virtual void chainUpdateEdge(cpp2::UpdateEdgeRequest& reversedRequest,
                                TermID termOfSrc,
-                               folly::Optional<int64_t> optVersion,
+                               std::optional<int64_t> optVersion,
                                folly::Promise<::nebula::cpp2::ErrorCode>&& p,
                                folly::EventBase* evb = nullptr);
 
   virtual void chainAddEdges(cpp2::AddEdgesRequest& req,
                              TermID termId,
-                             folly::Optional<int64_t> optVersion,
+                             std::optional<int64_t> optVersion,
                              folly::Promise<::nebula::cpp2::ErrorCode>&& p,
                              folly::EventBase* evb = nullptr);
 
  private:
   cpp2::ChainAddEdgesRequest makeChainAddReq(const cpp2::AddEdgesRequest& req,
                                              TermID termId,
-                                             folly::Optional<int64_t> optVersion);
+                                             std::optional<int64_t> optVersion);
 };
 
 }  // namespace storage

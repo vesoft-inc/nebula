@@ -39,7 +39,7 @@ template <typename T>
 
 void InternalStorageClient::chainUpdateEdge(cpp2::UpdateEdgeRequest& reversedRequest,
                                             TermID termOfSrc,
-                                            folly::Optional<int64_t> optVersion,
+                                            std::optional<int64_t> optVersion,
                                             folly::Promise<::nebula::cpp2::ErrorCode>&& p,
                                             folly::EventBase* evb) {
   auto spaceId = reversedRequest.get_space_id();
@@ -82,7 +82,7 @@ void InternalStorageClient::chainUpdateEdge(cpp2::UpdateEdgeRequest& reversedReq
 
 void InternalStorageClient::chainAddEdges(cpp2::AddEdgesRequest& directReq,
                                           TermID termId,
-                                          folly::Optional<int64_t> optVersion,
+                                          std::optional<int64_t> optVersion,
                                           folly::Promise<nebula::cpp2::ErrorCode>&& p,
                                           folly::EventBase* evb) {
   auto spaceId = directReq.get_space_id();
@@ -119,7 +119,7 @@ void InternalStorageClient::chainAddEdges(cpp2::AddEdgesRequest& directReq,
 
 cpp2::ChainAddEdgesRequest InternalStorageClient::makeChainAddReq(const cpp2::AddEdgesRequest& req,
                                                                   TermID termId,
-                                                                  folly::Optional<int64_t> ver) {
+                                                                  std::optional<int64_t> ver) {
   cpp2::ChainAddEdgesRequest ret;
   ret.set_space_id(req.get_space_id());
   ret.set_parts(req.get_parts());

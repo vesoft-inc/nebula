@@ -65,7 +65,7 @@ class EdgeNode : public IterateNode<T> {
   Expression* exp_;
 
   const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>* schemas_ = nullptr;
-  folly::Optional<std::pair<std::string, int64_t>> ttl_;
+  std::optional<std::pair<std::string, int64_t>> ttl_;
   std::string edgeName_;
 };
 

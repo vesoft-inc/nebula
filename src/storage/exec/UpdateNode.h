@@ -313,7 +313,7 @@ class UpdateTagNode : public UpdateNode<VertexID> {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
-  folly::Optional<std::string> updateAndWriteBack(const PartitionID partId, const VertexID vId) {
+  std::optional<std::string> updateAndWriteBack(const PartitionID partId, const VertexID vId) {
     ObjectPool pool;
     for (auto& updateProp : updatedProps_) {
       auto propName = updateProp.get_name();
@@ -477,7 +477,7 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
       return nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
     }
 
-    auto op = [&partId, &edgeKey, this]() -> folly::Optional<std::string> {
+    auto op = [&partId, &edgeKey, this]() -> std::optional<std::string> {
       this->exeResult_ = RelNode::doExecute(partId, edgeKey);
       if (this->exeResult_ == nebula::cpp2::ErrorCode::SUCCEEDED) {
         if (*edgeKey.edge_type_ref() != this->edgeType_) {
@@ -637,8 +637,8 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
-  folly::Optional<std::string> updateAndWriteBack(const PartitionID partId,
-                                                  const cpp2::EdgeKey& edgeKey) {
+  std::optional<std::string> updateAndWriteBack(const PartitionID partId,
+                                                const cpp2::EdgeKey& edgeKey) {
     ObjectPool pool;
     for (auto& updateProp : updatedProps_) {
       auto propName = updateProp.get_name();

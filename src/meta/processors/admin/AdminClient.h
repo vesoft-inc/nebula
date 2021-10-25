@@ -21,7 +21,7 @@ namespace meta {
 
 using HostLeaderMap =
     std::unordered_map<HostAddr, std::unordered_map<GraphSpaceID, std::vector<PartitionID>>>;
-using HandleResultOpt = folly::Optional<std::function<void(storage::cpp2::AdminExecResp&&)>>;
+using HandleResultOpt = std::optional<std::function<void(storage::cpp2::AdminExecResp&&)>>;
 
 static const HostAddr kRandomPeer("", 0);
 

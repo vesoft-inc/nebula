@@ -131,11 +131,11 @@ class FakeChainAddEdgesProcessorLocal : public ChainAddEdgesProcessorLocal {
     return ChainAddEdgesProcessorLocal::reverseRequest(req);
   }
 
-  folly::Optional<Code> rcPrepareLocal;
+  std::optional<Code> rcPrepareLocal;
 
-  folly::Optional<Code> rcProcessRemote;
+  std::optional<Code> rcProcessRemote;
 
-  folly::Optional<Code> rcProcessLocal;
+  std::optional<Code> rcProcessLocal;
 };
 
 class FakeChainUpdateProcessor : public ChainUpdateEdgeProcessorLocal {
@@ -180,9 +180,9 @@ class FakeChainUpdateProcessor : public ChainUpdateEdgeProcessorLocal {
   void wrapAddUnfinishedEdge(ResumeType type) { addUnfinishedEdge(type); }
 
  public:
-  folly::Optional<Code> rcPrepareLocal;
-  folly::Optional<Code> rcProcessRemote;
-  folly::Optional<Code> rcProcessLocal;
+  std::optional<Code> rcPrepareLocal;
+  std::optional<Code> rcProcessRemote;
+  std::optional<Code> rcProcessLocal;
 };
 
 class MetaClientTestUpdater {
@@ -246,7 +246,7 @@ class FakeInternalStorageClient : public InternalStorageClient {
 
   void chainUpdateEdge(cpp2::UpdateEdgeRequest& req,
                        TermID termOfSrc,
-                       folly::Optional<int64_t> optVersion,
+                       std::optional<int64_t> optVersion,
                        folly::Promise<Code>&& p,
                        folly::EventBase* evb = nullptr) override {
     cpp2::ChainUpdateEdgeRequest chainReq;
@@ -267,7 +267,7 @@ class FakeInternalStorageClient : public InternalStorageClient {
 
   void chainAddEdges(cpp2::AddEdgesRequest& req,
                      TermID termId,
-                     folly::Optional<int64_t> optVersion,
+                     std::optional<int64_t> optVersion,
                      folly::Promise<::nebula::cpp2::ErrorCode>&& p,
                      folly::EventBase* evb = nullptr) override {
     UNUSED(req);

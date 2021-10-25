@@ -35,7 +35,7 @@ struct HostInfo {
   cpp2::HostRole role_{cpp2::HostRole::UNKNOWN};
   std::string gitInfoSha_;
   // version of binary
-  folly::Optional<std::string> version_;
+  std::optional<std::string> version_;
 
   static HostInfo decode(const folly::StringPiece& data) {
     if (data.size() == sizeof(int64_t)) {

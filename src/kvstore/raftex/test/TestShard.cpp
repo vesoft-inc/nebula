@@ -52,7 +52,7 @@ HostAddr decodeLearner(const folly::StringPiece& log) {
   return deserializeHostAddr(rawlog);
 }
 
-folly::Optional<std::string> compareAndSet(const std::string& log) {
+std::optional<std::string> compareAndSet(const std::string& log) {
   switch (log[0]) {
     case 'T':
       return log.substr(1);
