@@ -115,7 +115,7 @@ class AdminClient {
   folly::Future<Status> getResponse(const HostAddr& host,
                                     Request req,
                                     RemoteFunc remoteFunc,
-                                    RespGenerator respGen);
+                                    RespGenerator respGen = std::nullopt);
 
   template <typename Request, typename RemoteFunc>
   void getResponse(std::vector<HostAddr> hosts,
@@ -125,7 +125,7 @@ class AdminClient {
                    int32_t retry,
                    folly::Promise<Status> pro,
                    int32_t retryLimit,
-                   HandleResultOpt respGen);
+                   HandleResultOpt respGen = std::nullopt);
 
   void getLeaderDist(const HostAddr& host,
                      folly::Promise<StatusOr<storage::cpp2::GetLeaderPartsResp>>&& pro,
