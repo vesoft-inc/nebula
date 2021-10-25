@@ -95,7 +95,7 @@ class JobDescription {
   bool setStatus(Status newStatus);
 
   /*
-   * get a existed job from kvstore, return folly::none if there isn't
+   * get a existed job from kvstore, return std::nullopt if there isn't
    * */
   static ErrorOr<nebula::cpp2::ErrorCode, JobDescription> loadJobDescription(
       JobID iJob, nebula::kvstore::KVStore* kv);

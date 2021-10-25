@@ -57,7 +57,7 @@ std::optional<std::string> compareAndSet(const std::string& log) {
     case 'T':
       return log.substr(1);
     default:
-      return folly::none;
+      return std::nullopt;
   }
 }
 

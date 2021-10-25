@@ -220,7 +220,7 @@ TEST_F(LogCASTest, EmptyTest) {
   {
     LOG(INFO) << "return none string for atomic operation!";
     folly::Baton<> baton;
-    leader_->atomicOpAsync([log = std::move(log)]() mutable { return folly::none; })
+    leader_->atomicOpAsync([log = std::move(log)]() mutable { return std::nullopt; })
         .thenValue([&baton](AppendLogResult res) {
           ASSERT_EQ(AppendLogResult::E_ATOMIC_OP_FAILURE, res);
           baton.post();

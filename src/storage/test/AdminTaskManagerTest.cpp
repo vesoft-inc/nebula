@@ -147,7 +147,7 @@ TEST(TaskManagerTest, component_IOThreadPool) {
     };
 
     for (int i = 0; i < totalTask; ++i) {
-      pool->add(std::bind(f, folly::none));
+      pool->add(std::bind(f, std::nullopt));
     }
     pool->join();
 

@@ -125,7 +125,7 @@ class AdminClient {
                    int32_t retry,
                    folly::Promise<Status> pro,
                    int32_t retryLimit,
-                   HandleResultOpt respGen = folly::none);
+                   HandleResultOpt respGen);
 
   void getLeaderDist(const HostAddr& host,
                      folly::Promise<StatusOr<storage::cpp2::GetLeaderPartsResp>>&& pro,

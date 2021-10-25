@@ -431,7 +431,7 @@ void AdminClient::getResponse(std::vector<HostAddr> hosts,
                      auto&& adminResp = std::move(t.value());
                      if (adminResp.result.get_failed_parts().empty()) {
                        // succeeded
-                       if (respGen != folly::none) {
+                       if (respGen != std::nullopt) {
                          auto val = respGen.value();
                          val(std::move(adminResp));
                        }

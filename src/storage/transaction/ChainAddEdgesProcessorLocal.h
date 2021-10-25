@@ -141,7 +141,7 @@ class ChainAddEdgesProcessorLocal : public BaseProcessor<cpp2::ExecResponse>,
 
   std::vector<std::string> kvErased_;
   std::vector<kvstore::KV> kvAppend_;
-  std::optional<int64_t> edgeVer_{folly::none};
+  std::optional<int64_t> edgeVer_;
   int64_t resumedEdgeVer_{-1};
 
   std::string uuid_;
