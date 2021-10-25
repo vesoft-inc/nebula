@@ -83,6 +83,22 @@ struct SpaceInfoCache {
   // objPool used to decode when adding field
   ObjectPool pool_;
   std::unordered_map<PartitionID, TermID> termOfPartition_;
+
+  SpaceInfoCache() {}
+
+  SpaceInfoCache(const SpaceInfoCache& info) {
+    this->spaceDesc_ = info.spaceDesc_;
+    this->partsAlloc_ = info.partsAlloc_;
+    this->tagSchemas_ = info.tagSchemas_;
+    this->edgeSchemas_ = info.edgeSchemas_;
+    this->tagIndexes_ = info.tagIndexes_;
+    this->edgeIndexes_ = info.edgeIndexes_;
+    this->listeners_ = info.listeners_;
+    this->partsOnHost_ = info.partsOnHost_;
+    this->termOfPartition_ = info.termOfPartition_;
+  }
+
+  ~SpaceInfoCache() {}
 };
 
 using LocalCache = std::unordered_map<GraphSpaceID, std::shared_ptr<SpaceInfoCache>>;
@@ -502,7 +518,7 @@ class MetaClient {
 
   Status checkSpaceExistInCache(const HostAddr& host, GraphSpaceID spaceId);
 
-  StatusOr<int32_t> partsNum(GraphSpaceID spaceId) const;
+  StatusOr<int32_t> partsNum(GraphSpaceID spaceId);
 
   PartitionID partId(int32_t numParts, VertexID id) const;
 
@@ -564,7 +580,7 @@ class MetaClient {
 
   bool authCheckFromCache(const std::string& account, const std::string& password) const;
 
-  StatusOr<TermID> getTermFromCache(GraphSpaceID spaceId, PartitionID) const;
+  StatusOr<TermID> getTermFromCache(GraphSpaceID spaceId, PartitionID);
 
   bool checkShadowAccountFromCache(const std::string& account) const;
 
