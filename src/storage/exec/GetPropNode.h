@@ -26,21 +26,16 @@ class GetTagPropNode : public QueryNode<VertexID> {
   }
 
   nebula::cpp2::ErrorCode doExecute(PartitionID partId, const VertexID& vId) override {
+    auto vidPrefix = NebulaKeyUtils::vertexPrefix(context_->vIdLen(), partId, vId);
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto rc = context_->env()->kvstore_->prefix(context_->spaceId(), partId, vidPrefix, &iter);
+    if (rc == nebula::cpp2::ErrorCode::SUCCEEDED && !iter->valid()) {
+      return nebula::cpp2::ErrorCode::SUCCEEDED;
+    }
+
     auto ret = RelNode::doExecute(partId, vId);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
       return ret;
-    }
-
-    // if none of the tag node valid, do not emplace the row
-    if (!std::any_of(tagNodes_.begin(), tagNodes_.end(), [](const auto& tagNode) {
-          return tagNode->valid();
-        })) {
-      auto key = NebulaKeyUtils::vertexPrefix(context_->vIdLen(), partId, vId);
-      std::unique_ptr<kvstore::KVIterator> iter;
-      auto rc = context_->env()->kvstore_->prefix(context_->spaceId(), partId, key, &iter);
-      if (rc != nebula::cpp2::ErrorCode::SUCCEEDED || !iter->valid()) {
-        return nebula::cpp2::ErrorCode::SUCCEEDED;
-      }
     }
 
     List row;
