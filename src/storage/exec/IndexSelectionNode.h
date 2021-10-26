@@ -12,6 +12,37 @@
 #include "storage/exec/IndexNode.h"
 namespace nebula {
 namespace storage {
+/**
+ *
+ * IndexSelectionNode
+ *
+ * reference: IndexNode
+ *
+ * `IndexSelectionNode` is the class which is used to filter data by given expression in RPC
+ * request.
+ *                   ┌───────────┐
+ *                   │ IndexNode │
+ *                   └─────┬─────┘
+ *                         │
+ *               ┌─────────┴──────────┐
+ *               │ IndexSelectionNode │
+ *               └────────────────────┘
+ * Member:
+ * `expr_`  : expression used to filter
+ * `colPos_`: column's position in Row which is during eval `expr_`
+ * `ctx_`   : used to eval expression
+ * Function:
+ * `filter` : compute `expr_`
+ *
+ *
+ * ------------------------------------------------------------------------------------------------
+ * IndexSelectionNode::ExprContext
+ *
+ * `ExprContext` is a derive class of ExpressionContext which is needed in eval expression.
+ *  NOTICE: There are many node in the entire storage plan tree where expressions need to be
+ *          evaluated(e.g., Projection,Aggregate,etc.). So `ExprContext` may be not an internal
+ *          class of IndexSelectionNode.
+ */
 class IndexSelectionNode : public IndexNode {
  public:
   IndexSelectionNode(const IndexSelectionNode &node);

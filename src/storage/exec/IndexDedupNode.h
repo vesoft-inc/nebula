@@ -9,6 +9,28 @@
 #include "storage/exec/IndexNode.h"
 namespace nebula {
 namespace storage {
+/**
+ *
+ * IndexDedupNode
+ *
+ * reference: IndexNode
+ *
+ * `IndexDedupNode` is the class which is used to eliminate duplicate rows of data returned by
+ * multiple child nodes.
+ *                   ┌───────────┐
+ *                   │ IndexNode │
+ *                   └─────┬─────┘
+ *                         │
+ *                ┌────────┴───────┐
+ *                │ IndexDedupNode │
+ *                └────────────────┘
+ * Member:
+ * `dedupColumns_`: columns' name which are used to dedup
+ * `dedupPos_`    : dedup columns' position in child return row
+ * `dedupSet_`    : the set which record the rows have been return to parent
+ * `currentChild_`: current iterate child
+ */
+
 class IndexDedupNode : public IndexNode {
  public:
   IndexDedupNode(const IndexDedupNode& node);
