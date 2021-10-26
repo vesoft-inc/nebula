@@ -531,6 +531,11 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     case PlanNode::Kind::kTraverse: {
       return pool->add(new TraverseExecutor(node, qctx));
     }
+    case PlanNode::Kind::kAppendVertices: {
+      // TODO
+      DCHECK(false);
+      return nullptr;
+    }
     case PlanNode::Kind::kUnknown: {
       LOG(FATAL) << "Unknown plan node kind " << static_cast<int32_t>(node->kind());
       break;

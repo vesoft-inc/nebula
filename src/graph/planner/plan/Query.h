@@ -220,7 +220,7 @@ class GetNeighbors : public Explore {
 /**
  * Get property with given vertex keys.
  */
-class GetVertices final : public Explore {
+class GetVertices : public Explore {
  public:
   static GetVertices* make(QueryContext* qctx,
                            PlanNode* input,
@@ -259,7 +259,7 @@ class GetVertices final : public Explore {
   PlanNode* clone() const override;
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
- private:
+ protected:
   GetVertices(QueryContext* qctx,
               PlanNode* input,
               GraphSpaceID space,
@@ -1190,7 +1190,7 @@ class Traverse final : public GetNeighbors {
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
-  Traverse* clone() const;
+  Traverse* clone() const override;
 
   StepClause steps() const { return steps_; }
 
@@ -1199,6 +1199,16 @@ class Traverse final : public GetNeighbors {
   void setSteps(StepClause steps) { steps_ = steps; }
 
   void setEdgeDst(EdgeProps edgeProps) { edgeDst_ = std::move(edgeProps); }
+
+  void setVertexFilter(Expression* vFilter) {
+    UNUSED(vFilter);
+    DCHECK(false);
+  }
+
+  void setEdgeFilter(Expression* eFilter) {
+    UNUSED(eFilter);
+    DCHECK(false);
+  }
 
  private:
   Traverse(QueryContext* qctx, PlanNode* input, GraphSpaceID space)
@@ -1212,6 +1222,30 @@ class Traverse final : public GetNeighbors {
 
   StepClause steps_;
   EdgeProps edgeDst_;
+};
+
+class AppendVertices final : public GetVertices {
+ public:
+  static AppendVertices* make(QueryContext* qctx, PlanNode* input, GraphSpaceID space) {
+    return qctx->objPool()->add(new AppendVertices(qctx, input, space));
+  }
+
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
+  AppendVertices* clone() const override;
+
+  void setVertexFilter(Expression* vFilter) {
+    UNUSED(vFilter);
+    DCHECK(false);
+  }
+
+ private:
+  AppendVertices(QueryContext* qctx, PlanNode* input, GraphSpaceID space)
+      : GetVertices(qctx, input, space, nullptr, nullptr, nullptr, false, {}, 0, nullptr) {
+    kind_ = Kind::kAppendVertices;
+  }
+
+  void cloneMembers(const AppendVertices& a);
 };
 }  // namespace graph
 }  // namespace nebula
