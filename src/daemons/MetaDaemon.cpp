@@ -6,6 +6,7 @@
 #include <folly/ssl/Init.h>
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 
+#include "MetaDaemonInit.h"
 #include "common/base/Base.h"
 #include "common/base/SignalHandler.h"
 #include "common/fs/FileUtils.h"
@@ -38,22 +39,16 @@ using nebula::ProcessUtils;
 using nebula::Status;
 using nebula::StatusOr;
 using nebula::network::NetworkUtils;
-using nebula::web::PathParams;
 
 DEFINE_string(local_ip, "", "Local ip specified for NetworkUtils::getLocalIP");
 DEFINE_int32(port, 45500, "Meta daemon listening port");
 DEFINE_bool(reuse_port, true, "Whether to turn on the SO_REUSEPORT option");
-DEFINE_string(data_path, "", "Root data path");
-DEFINE_string(meta_server_addrs,
-              "",
-              "It is a list of IPs split by comma, used in cluster deployment"
-              "the ips number is equal to the replica number."
-              "If empty, it means it's a single node");
+DECLARE_string(data_path);
+DECLARE_string(meta_server_addrs);
+
 // DEFINE_string(local_ip, "", "Local ip specified for
 // NetworkUtils::getLocalIP");
-DEFINE_int32(num_io_threads, 16, "Number of IO threads");
 DEFINE_int32(meta_http_thread_num, 3, "Number of meta daemon's http thread");
-DEFINE_int32(num_worker_threads, 32, "Number of workers");
 DEFINE_string(pid_file, "pids/nebula-metad.pid", "File to hold the process id");
 DEFINE_bool(daemonize, true, "Whether run as a daemon process");
 
@@ -343,7 +338,8 @@ int main(int argc, char* argv[]) {
     return EXIT_FAILURE;
   }
 
-  auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(gKVStore.get(), gClusterId);
+  auto handler =
+      std::make_shared<nebula::meta::MetaServiceHandler>(gKVStore.get(), metaClusterId());
   LOG(INFO) << "The meta daemon start on " << localhost;
   try {
     gServer = std::make_unique<apache::thrift::ThriftServer>();

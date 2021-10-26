@@ -55,6 +55,12 @@ set(perf_test_deps
     $<TARGET_OBJECTS:geo_index_obj>
 )
 
+if(ENABLE_STANDALONE_VERSION)
+set(perf_test_deps ${perf_test_deps}
+    $<TARGET_OBJECTS:storage_local_server_obj>
+)
+endif()
+
 nebula_add_executable(
     NAME
         storage_perf
