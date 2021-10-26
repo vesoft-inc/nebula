@@ -345,7 +345,7 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
                                           const cpp2::ColumnDef& col) {
     bool hasDef = col.default_value_ref().has_value();
     auto& colType = col.get_type();
-    size_t len = colType.type_length_ref().has_value() ? *colType.get_type_length() : 0;
+    size_t len = colType.type_length_ref().has_value() ? colType.get_type_length() : 0;
     cpp2::GeoShape geoShape =
         colType.geo_shape_ref().has_value() ? *colType.get_geo_shape() : cpp2::GeoShape::ANY;
     bool nullable = col.nullable_ref().has_value() ? *col.get_nullable() : false;
@@ -1858,7 +1858,7 @@ StatusOr<int32_t> MetaClient::getSpaceVidLen(const GraphSpaceID& spaceId) {
     return Status::Error("Space %d not found", spaceId);
   }
   auto& vidType = spaceIt->second->spaceDesc_.get_vid_type();
-  auto vIdLen = vidType.type_length_ref().has_value() ? *vidType.get_type_length() : 0;
+  auto vIdLen = vidType.type_length_ref().has_value() ? vidType.get_type_length() : 0;
   if (vIdLen <= 0) {
     return Status::Error("Space %d vertexId length invalid", spaceId);
   }

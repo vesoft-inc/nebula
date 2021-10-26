@@ -100,7 +100,7 @@ enum PropertyType {
 struct ColumnTypeDef {
     1: required PropertyType    type,
     // type_length is valid for fixed_string type
-    2: optional i16             type_length = 0,
+    2: required i16             type_length,
     // geo_shape is valid for geography type
     3: optional GeoShape        geo_shape,
 }
@@ -109,7 +109,7 @@ struct ColumnDef {
     1: required binary          name,
     2: required ColumnTypeDef   type,
     3: optional binary          default_value,
-    4: optional bool            nullable = false,
+    4: optional bool            nullable,
     5: optional binary          comment,
 }
 

@@ -128,9 +128,9 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
     }
     cpp2::ColumnDef col = *iter;
     if (col.type.get_type() == meta::cpp2::PropertyType::FIXED_STRING) {
-      if (*col.type.get_type_length() > MAX_INDEX_TYPE_LENGTH) {
-        LOG(ERROR) << "Unsupport index type lengths greater than " << MAX_INDEX_TYPE_LENGTH << " : "
-                   << field.get_name();
+      if (col.type.get_type_length() > MAX_INDEX_TYPE_LENGTH) {
+        LOG(ERROR) << "Unsupported index type lengths greater than " << MAX_INDEX_TYPE_LENGTH
+                   << " : " << field.get_name();
         handleErrorCode(nebula::cpp2::ErrorCode::E_UNSUPPORTED);
         onFinished();
         return;
@@ -143,8 +143,8 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
         return;
       }
       if (*field.get_type_length() > MAX_INDEX_TYPE_LENGTH) {
-        LOG(ERROR) << "Unsupport index type lengths greater than " << MAX_INDEX_TYPE_LENGTH << " : "
-                   << field.get_name();
+        LOG(ERROR) << "Unsupported index type lengths greater than " << MAX_INDEX_TYPE_LENGTH
+                   << " : " << field.get_name();
         handleErrorCode(nebula::cpp2::ErrorCode::E_UNSUPPORTED);
         onFinished();
         return;

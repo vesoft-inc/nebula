@@ -57,7 +57,7 @@ class IndexKeyUtils final {
     return Value::Type::__EMPTY__;
   }
 
-  static std::string encodeNullValue(Value::Type type, const int16_t* strLen) {
+  static std::string encodeNullValue(Value::Type type, const int16_t strLen) {
     size_t len = 0;
     switch (type) {
       case Value::Type::INT: {
@@ -73,7 +73,7 @@ class IndexKeyUtils final {
         break;
       }
       case Value::Type::STRING: {
-        len = static_cast<size_t>(*strLen);
+        len = static_cast<size_t>(strLen);
         break;
       }
       case Value::Type::TIME: {
@@ -421,7 +421,7 @@ class IndexKeyUtils final {
           break;
         }
         case Value::Type::STRING: {
-          len = *col.type.get_type_length();
+          len = col.type.get_type_length();
           break;
         }
         case Value::Type::TIME: {

@@ -460,7 +460,7 @@ class TestUtils {
     expr = Expression::decode(metaPool, *(*schema.columns_ref())[8].get_default_value());
     ASSERT_EQ(Expression::eval(expr, defaultContext), Value("longlongst"));
     ASSERT_EQ(*(*schema.columns_ref())[8].get_nullable(), false);
-    ASSERT_EQ(*(*schema.columns_ref())[8].get_type().get_type_length(), 10);
+    ASSERT_EQ((*schema.columns_ref())[8].get_type().get_type_length(), 10);
 
     ASSERT_EQ((*schema.columns_ref())[9].get_name(), "col_9");
     ASSERT_EQ((*schema.columns_ref())[9].get_type().get_type(), PropertyType::TIMESTAMP);

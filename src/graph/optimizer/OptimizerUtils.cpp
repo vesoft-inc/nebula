@@ -468,7 +468,7 @@ Value OptimizerUtils::normalizeValue(const meta::cpp2::ColumnDef& col, const Val
       if (!v.isStr()) {
         return v;
       }
-      auto len = static_cast<size_t>(*col.get_type().get_type_length());
+      auto len = static_cast<size_t>(col.get_type().get_type_length());
       if (v.getStr().size() > len) {
         return Value(v.getStr().substr(0, len));
       } else {

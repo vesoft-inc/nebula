@@ -115,7 +115,7 @@ bool SchemaUtil::checkType(std::vector<cpp2::ColumnDef>& columns) {
             return false;
           }
           auto& colType = column.get_type();
-          size_t typeLen = colType.type_length_ref().value_or(0);
+          size_t typeLen = colType.get_type_length();
           if (value.getStr().size() > typeLen) {
             const auto trimStr = value.getStr().substr(0, typeLen);
             value.setStr(trimStr);

@@ -2322,11 +2322,11 @@ column_spec_list
 
 column_spec
     : name_label type_spec {
-        $$ = new ColumnSpecification($1, $2->type, new ColumnProperties(), $2->type_length_ref().value_or(0), $2->geo_shape_ref().value_or(meta::cpp2::GeoShape::ANY));
+        $$ = new ColumnSpecification($1, $2->type, new ColumnProperties(), $2->get_type_length(), $2->geo_shape_ref().value_or(meta::cpp2::GeoShape::ANY));
         delete $2;
     }
     | name_label type_spec column_properties {
-        $$ = new ColumnSpecification($1, $2->type, $3, $2->type_length_ref().value_or(0), $2->geo_shape_ref().value_or(meta::cpp2::GeoShape::ANY));
+        $$ = new ColumnSpecification($1, $2->type, $3, $2->get_type_length(), $2->geo_shape_ref().value_or(meta::cpp2::GeoShape::ANY));
         delete $2;
     }
     ;

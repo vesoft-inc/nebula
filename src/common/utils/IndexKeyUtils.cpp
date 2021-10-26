@@ -35,7 +35,7 @@ std::vector<std::string> IndexKeyUtils::encodeValues(
       if (!values[i].isNull()) {
         // string index need to fill with '\0' if length is less than schema
         if (cols[i].type.type == meta::cpp2::PropertyType::FIXED_STRING) {
-          auto len = static_cast<size_t>(*cols[i].type.get_type_length());
+          auto len = static_cast<size_t>(cols[i].type.get_type_length());
           index.append(encodeValue(values[i], len));
         } else {
           index.append(encodeValue(values[i]));
@@ -57,7 +57,7 @@ std::vector<std::string> IndexKeyUtils::encodeValues(
     } else {
       nullableBitSet |= 0x8000;
       auto type = IndexKeyUtils::toValueType(cols.back().type.get_type());
-      indexes.emplace_back(encodeNullValue(type, nullptr));
+      indexes.emplace_back(encodeNullValue(type, cols.back().type.get_type_length()));
     }
   }
   // if has nullable field, append nullableBitSet to the end

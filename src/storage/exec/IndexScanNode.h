@@ -159,12 +159,12 @@ class IndexScanNode : public RelNode<T> {
   }
 
   // precondition: if type is STRING, strLen must be valid
-  std::string encodeValue(const Value& val, Value::Type type, const int16_t* strLen) {
+  std::string encodeValue(const Value& val, Value::Type type, const int16_t strLen) {
     if (val.isNull()) {
       return IndexKeyUtils::encodeNullValue(type, strLen);
     }
     if (type == Value::Type::STRING) {
-      return IndexKeyUtils::encodeValue(val, *strLen);
+      return IndexKeyUtils::encodeValue(val, strLen);
     } else {
       return IndexKeyUtils::encodeValue(val);
     }
