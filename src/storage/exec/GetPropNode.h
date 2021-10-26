@@ -31,6 +31,17 @@ class GetTagPropNode : public QueryNode<VertexID> {
       return ret;
     }
 
+    // if none of the tag node valid, do not emplace the row
+    if (!std::any_of(tagNodes_.begin(), tagNodes_.end(), [](const auto& tagNode) {
+          return tagNode->valid();
+        })) {
+      auto key = NebulaKeyUtils::vertexPrefix(context_->vIdLen(), partId, vId);
+      std::unique_ptr<kvstore::KVIterator> iter;
+      auto rc = context_->env()->kvstore_->prefix(context_->spaceId(), partId, key, &iter);
+      if (rc != nebula::cpp2::ErrorCode::SUCCEEDED || !iter->valid()) {
+        return nebula::cpp2::ErrorCode::SUCCEEDED;
+      }
+    }
 
     List row;
     // vertexId is the first column
