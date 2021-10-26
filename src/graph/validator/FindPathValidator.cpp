@@ -64,14 +64,14 @@ Status FindPathValidator::validateWhere(WhereClause* where) {
 
 Status FindPathValidator::validateYield(YieldClause* yield) {
   if (yield == nullptr) {
-    return Status::SemanticError("missing yield clause.");
+    return Status::SemanticError("Missing yield clause.");
   }
   if (yield->columns().size() != 1) {
-    return Status::SemanticError("only support yield path");
+    return Status::SemanticError("Only support yield path");
   }
-  const auto& col = yield->columns().front();
+  auto col = yield->columns().front();
   if (col->expr()->kind() != Expression::Kind::kLabel || col->expr()->toString() != "PATH") {
-    return Status::SemanticError("illegal yield clauses `%s'. only support yield path",
+    return Status::SemanticError("Illegal yield clauses `%s'. only support yield path",
                                  col->toString().c_str());
   }
   outputs_.emplace_back(col->name(), Value::Type::PATH);

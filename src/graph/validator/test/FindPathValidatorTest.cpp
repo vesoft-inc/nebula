@@ -21,7 +21,7 @@ TEST_F(FindPathValidatorTest, invalidYield) {
   {
     std::string query = "FIND SHORTEST PATH  FROM \"Tim\" TO \"Tony\" OVER *";
     auto result = checkResult(query);
-    EXPECT_EQ(std::string(result.message()), "SemanticError: missing yield clause.");
+    EXPECT_EQ(std::string(result.message()), "SemanticError: Missing yield clause.");
   }
   {
     std::string query = "FIND SHORTEST PATH  FROM \"Tim\" TO \"Tony\" OVER * YIELD vertex";
@@ -34,7 +34,7 @@ TEST_F(FindPathValidatorTest, invalidYield) {
         "FIND ALL PATH WITH PROP FROM \"Tim\" TO \"Tony\" OVER like YIELD edge as e";
     auto result = checkResult(query);
     EXPECT_EQ(std::string(result.message()),
-              "SemanticError: illegal yield clauses `EDGE AS e'. only support yield path");
+              "SemanticError: Illegal yield clauses `EDGE AS e'. only support yield path");
   }
   {
     std::string query =
@@ -49,7 +49,7 @@ TEST_F(FindPathValidatorTest, invalidYield) {
         "$$.player.name";
     auto result = checkResult(query);
     EXPECT_EQ(std::string(result.message()),
-              "SemanticError: illegal yield clauses `$$.player.name'. only support yield path");
+              "SemanticError: Illegal yield clauses `$$.player.name'. only support yield path");
   }
 }
 
