@@ -16,6 +16,12 @@
 
 namespace nebula {
 namespace storage {
+
+/**
+ * IndexVertexScanNode
+ *
+ * reference: IndexScanNode
+ */
 class IndexVertexScanNode final : public IndexScanNode {
  public:
   IndexVertexScanNode(const IndexVertexScanNode& node);

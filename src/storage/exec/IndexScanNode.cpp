@@ -199,7 +199,9 @@ std::tuple<std::string, std::string> RangePath::encodeRange(
       return nullableBit.test(15 - colIndex) ? Qualified::INCOMPATIBLE : Qualified::COMPATIBLE;
     });
   }
-  // One GEO data will generator more than one index key. So need dedup.
+  // The data of a geo may generate multiple indexes, so it needs to be de duplicated. Because there
+  // is no duplicate data between different parts, the suffixset does not clear and does not affect
+  // the results.
   if (UNLIKELY(colTypeDef.get_type() == nebula::meta::cpp2::PropertyType::GEOGRAPHY)) {
     QFList_.emplace_back([suffixSet = Set<std::string>(),
                           suffixLength = suffixLength_](const std::string& k) mutable {

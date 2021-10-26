@@ -47,7 +47,8 @@ namespace storage {
  * Batch processing and loop unrolling can be used to optimize performance if
  * necessary, but there are no serious performance problems at present.
  * `end` and `finish` are used to release resources at the end of execute or plan
- * (e.g, external sort free disk,release schema lease if support Online DDL,etc.).
+ * (e.g, external sort free disk,release schema lease if support Online DDL, commit
+ * write, etc.).
  * However, there are no relevant requirements, so it will not be implemented for
  * the time being.
  * `xxx` is the interface function.It will recursive call child node's `xxx`. `doXxx`
