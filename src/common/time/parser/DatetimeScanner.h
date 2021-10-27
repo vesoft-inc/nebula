@@ -25,7 +25,6 @@
 namespace nebula {
 namespace time {
 
-// TODO(jie) Try to reuse the class GraphScanner
 class DatetimeScanner : public yyFlexLexer {
  public:
   int yylex(nebula::time::DatetimeParser::semantic_type *lval,
