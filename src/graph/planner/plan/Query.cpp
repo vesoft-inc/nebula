@@ -22,9 +22,9 @@ std::unique_ptr<PlanNodeDescription> Explore::explain() const {
   auto desc = SingleInputNode::explain();
   addDescription("space", folly::to<std::string>(space_), desc.get());
   addDescription("dedup", util::toJson(dedup_), desc.get());
-  addDescription("limit", folly::to<std::string>(limit_), desc.get());
-  auto filter =
-      filter_.empty() ? filter_ : Expression::decode(qctx_->objPool(), filter_)->toString();
+  addDescription(
+      "limit", folly::to<std::string>(limit_ == nullptr ? "" : limit_->toString()), desc.get());
+  std::string filter = filter_ == nullptr ? "" : filter_->toString();
   addDescription("filter", filter, desc.get());
   addDescription("orderBy", folly::toJson(util::toJson(orderBy_)), desc.get());
   return desc;
@@ -322,12 +322,12 @@ void Sort::cloneMembers(const Sort& p) {
 std::unique_ptr<PlanNodeDescription> Limit::explain() const {
   auto desc = SingleInputNode::explain();
   addDescription("offset", folly::to<std::string>(offset_), desc.get());
-  addDescription("count", folly::to<std::string>(count_), desc.get());
+  addDescription("count", count_->toString(), desc.get());
   return desc;
 }
 
 PlanNode* Limit::clone() const {
-  auto* newLimit = Limit::make(qctx_, nullptr);
+  auto* newLimit = Limit::make(qctx_, nullptr, -1, nullptr);
   newLimit->cloneMembers(*this);
   return newLimit;
 }
@@ -363,6 +363,24 @@ void TopN::cloneMembers(const TopN& l) {
   factors_ = std::move(factors);
   offset_ = l.offset_;
   count_ = l.count_;
+}
+
+std::unique_ptr<PlanNodeDescription> Sample::explain() const {
+  auto desc = SingleInputNode::explain();
+  addDescription("count", count_->toString(), desc.get());
+  return desc;
+}
+
+PlanNode* Sample::clone() const {
+  auto* newSample = Sample::make(qctx_, nullptr, -1);
+  newSample->cloneMembers(*this);
+  return newSample;
+}
+
+void Sample::cloneMembers(const Sample& l) {
+  SingleInputNode::cloneMembers(l);
+
+  count_ = l.count_->clone();
 }
 
 std::unique_ptr<PlanNodeDescription> Aggregate::explain() const {

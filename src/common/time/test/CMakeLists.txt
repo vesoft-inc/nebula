@@ -8,6 +8,7 @@ nebula_add_test(
         duration_test
     SOURCES
         DurationTest.cpp
+        ScopedTimerTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:time_obj>
@@ -50,6 +51,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:datatypes_obj>
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:fs_obj>
+        $<TARGET_OBJECTS:wkt_wkb_io_obj>
     LIBRARIES
         gtest
 )

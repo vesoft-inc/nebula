@@ -48,6 +48,7 @@ class PlanNode {
     kSort,
     kTopN,
     kLimit,
+    kSample,
     kAggregate,
     kDedup,
     kAssign,
@@ -69,6 +70,7 @@ class PlanNode {
 
     // schema related
     kCreateSpace,
+    kCreateSpaceAs,
     kCreateTag,
     kCreateEdge,
     kDescSpace,

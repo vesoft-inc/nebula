@@ -35,7 +35,7 @@ MetaVersion MetaVersionMan::getMetaVersionFromKV(kvstore::KVStore* kv) {
 
 // static
 MetaVersion MetaVersionMan::getVersionByHost(kvstore::KVStore* kv) {
-  const auto& hostPrefix = nebula::meta::MetaServiceUtils::hostPrefix();
+  const auto& hostPrefix = nebula::MetaKeyUtils::hostPrefix();
   std::unique_ptr<nebula::kvstore::KVIterator> iter;
   auto code = kv->prefix(kDefaultSpaceId, kDefaultPartId, hostPrefix, &iter, true);
   if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -75,8 +75,7 @@ bool MetaVersionMan::setMetaVersionToKV(kvstore::KVStore* kv) {
 // static
 Status MetaVersionMan::updateMetaV1ToV2(kvstore::KVStore* kv) {
   CHECK_NOTNULL(kv);
-  auto snapshot =
-      folly::format("META_UPGRADE_SNAPSHOT_{}", MetaServiceUtils::genTimestampStr()).str();
+  auto snapshot = folly::format("META_UPGRADE_SNAPSHOT_{}", MetaKeyUtils::genTimestampStr()).str();
   auto meteRet = kv->createCheckpoint(kDefaultSpaceId, snapshot);
   if (meteRet.isLeftType()) {
     LOG(ERROR) << "Create snapshot failed: " << snapshot;
@@ -311,9 +310,9 @@ Status MetaVersionMan::doUpgrade(kvstore::KVStore* kv) {
               upgrader.printIndexes(iter->val());
             }
             auto oldItem = meta::v1::MetaServiceUtilsV1::parseIndex(iter->val());
-            auto spaceId = MetaServiceUtils::parseIndexesKeySpaceID(iter->key());
+            auto spaceId = MetaKeyUtils::parseIndexesKeySpaceID(iter->key());
             status = upgrader.deleteKeyVal(
-                MetaServiceUtils::indexIndexKey(spaceId, oldItem.get_index_name()));
+                MetaKeyUtils::indexIndexKey(spaceId, oldItem.get_index_name()));
             if (!status.ok()) {
               LOG(ERROR) << status;
               return status;

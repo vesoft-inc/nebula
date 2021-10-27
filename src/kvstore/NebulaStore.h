@@ -8,9 +8,11 @@
 #define KVSTORE_NEBULASTORE_H_
 
 #include <folly/RWSpinLock.h>
+#include <folly/concurrency/ConcurrentHashMap.h>
 #include <gtest/gtest_prod.h>
 
 #include "common/base/Base.h"
+#include "common/ssl/SSLConfig.h"
 #include "common/utils/Utils.h"
 #include "interface/gen-cpp2/RaftexServiceAsyncClient.h"
 #include "kvstore/DiskManager.h"
@@ -65,7 +67,8 @@ class NebulaStore : public KVStore, public Handler {
         options_(std::move(options)) {
     CHECK_NOTNULL(options_.partMan_);
     clientMan_ =
-        std::make_shared<thrift::ThriftClientManager<raftex::cpp2::RaftexServiceAsyncClient>>();
+        std::make_shared<thrift::ThriftClientManager<raftex::cpp2::RaftexServiceAsyncClient>>(
+            FLAGS_enable_ssl);
   }
 
   ~NebulaStore();
@@ -273,6 +276,14 @@ class NebulaStore : public KVStore, public Handler {
   nebula::cpp2::ErrorCode multiPutWithoutReplicator(GraphSpaceID spaceId,
                                                     std::vector<KV> keyValues) override;
 
+  ErrorOr<nebula::cpp2::ErrorCode, std::string> getProperty(GraphSpaceID spaceId,
+                                                            const std::string& property) override;
+  void registerOnNewPartAdded(const std::string& funcName,
+                              std::function<void(std::shared_ptr<Part>&)> func,
+                              std::vector<std::pair<GraphSpaceID, PartitionID>>& existParts);
+
+  void unregisterOnNewPartAdded(const std::string& funcName) { onNewPartAdded_.erase(funcName); }
+
  private:
   void loadPartFromDataPath();
 
@@ -329,6 +340,8 @@ class NebulaStore : public KVStore, public Handler {
   std::shared_ptr<raftex::SnapshotManager> snapshot_;
   std::shared_ptr<thrift::ThriftClientManager<raftex::cpp2::RaftexServiceAsyncClient>> clientMan_;
   std::shared_ptr<DiskManager> diskMan_;
+  folly::ConcurrentHashMap<std::string, std::function<void(std::shared_ptr<Part>&)>>
+      onNewPartAdded_;
 };
 
 }  // namespace kvstore

@@ -7,7 +7,6 @@
 #ifndef GRAPH_VALIDATOR_PIPEVALIDATOR_H_
 #define GRAPH_VALIDATOR_PIPEVALIDATOR_H_
 
-#include "common/base/Base.h"
 #include "graph/validator/Validator.h"
 
 namespace nebula {

@@ -10,6 +10,7 @@ set(OPTIMIZER_TEST_LIB
     $<TARGET_OBJECTS:datatypes_obj>
     $<TARGET_OBJECTS:expression_obj>
     $<TARGET_OBJECTS:function_manager_obj>
+    $<TARGET_OBJECTS:wkt_wkb_io_obj>
     $<TARGET_OBJECTS:agg_function_manager_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:meta_thrift_obj>
@@ -43,6 +44,9 @@ set(OPTIMIZER_TEST_LIB
     $<TARGET_OBJECTS:graph_context_obj>
     $<TARGET_OBJECTS:validator_obj>
     $<TARGET_OBJECTS:optimizer_obj>
+    $<TARGET_OBJECTS:ssl_obj>
+    $<TARGET_OBJECTS:memory_obj>
+    $<TARGET_OBJECTS:geo_index_obj>
 )
 
 nebula_add_test(

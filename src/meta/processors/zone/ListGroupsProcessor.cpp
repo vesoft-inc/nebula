@@ -11,7 +11,7 @@ namespace meta {
 
 void ListGroupsProcessor::process(const cpp2::ListGroupsReq&) {
   folly::SharedMutex::ReadHolder rHolder(LockUtils::groupLock());
-  const auto& prefix = MetaServiceUtils::groupPrefix();
+  const auto& prefix = MetaKeyUtils::groupPrefix();
   auto iterRet = doPrefix(prefix);
   if (!nebula::ok(iterRet)) {
     auto retCode = nebula::error(iterRet);
@@ -24,8 +24,8 @@ void ListGroupsProcessor::process(const cpp2::ListGroupsReq&) {
 
   std::vector<cpp2::Group> groups;
   while (iter->valid()) {
-    auto groupName = MetaServiceUtils::parseGroupName(iter->key());
-    auto zoneNames = MetaServiceUtils::parseZoneNames(iter->val());
+    auto groupName = MetaKeyUtils::parseGroupName(iter->key());
+    auto zoneNames = MetaKeyUtils::parseZoneNames(iter->val());
     cpp2::Group group;
     group.set_group_name(std::move(groupName));
     group.set_zone_names(std::move(zoneNames));

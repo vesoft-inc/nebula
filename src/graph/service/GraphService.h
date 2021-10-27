@@ -25,8 +25,8 @@ class GraphService final : public cpp2::GraphServiceSvIf {
   GraphService() = default;
   ~GraphService() = default;
 
-  Status MUST_USE_RESULT init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor,
-                              const HostAddr& hostAddr);
+  Status NG_MUST_USE_RESULT init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor,
+                                 const HostAddr& hostAddr);
 
   folly::Future<AuthResponse> future_authenticate(const std::string& username,
                                                   const std::string& password) override;
@@ -36,13 +36,18 @@ class GraphService final : public cpp2::GraphServiceSvIf {
   folly::Future<ExecutionResponse> future_execute(int64_t sessionId,
                                                   const std::string& stmt) override;
 
+  folly::Future<std::string> future_executeJson(int64_t sessionId,
+                                                const std::string& stmt) override;
+
+  folly::Future<cpp2::VerifyClientVersionResp> future_verifyClientVersion(
+      const cpp2::VerifyClientVersionReq& req) override;
+
  private:
   bool auth(const std::string& username, const std::string& password);
 
   std::unique_ptr<GraphSessionManager> sessionManager_;
   std::unique_ptr<QueryEngine> queryEngine_;
   std::unique_ptr<meta::MetaClient> metaClient_;
-  HostAddr myAddr_;
 };
 
 }  // namespace graph

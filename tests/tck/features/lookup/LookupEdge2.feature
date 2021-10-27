@@ -29,6 +29,11 @@ Feature: Test lookup on edge index 2
   Scenario Outline: [edge] Simple test cases
     When executing query:
       """
+      LOOKUP ON lookup_edge_1 WHERE lookup_edge_1.col1 == 201 OR lookup_edge_1.col2 == 201 AND lookup_edge_1.col3 == 202
+      """
+    Then the execution should be successful
+    When executing query:
+      """
       LOOKUP ON lookup_edge_1 WHERE col1 == 201
       """
     Then a SemanticError should be raised at runtime: Expression (col1==201) not supported yet
@@ -37,11 +42,6 @@ Feature: Test lookup on edge index 2
       LOOKUP ON lookup_edge_1 WHERE lookup_edge_1.col1 == 201 OR lookup_edge_1.col5 == 201
       """
     Then a SemanticError should be raised at runtime: Invalid column: col5
-    When executing query:
-      """
-      LOOKUP ON lookup_edge_1 WHERE lookup_edge_1.col1 == 201 OR lookup_edge_1.col2 == 201 AND lookup_edge_1.col3 == 202
-      """
-    Then a SemanticError should be raised at runtime: Not supported filter
     When executing query:
       """
       LOOKUP ON lookup_edge_1 WHERE lookup_edge_1.col1 == 300

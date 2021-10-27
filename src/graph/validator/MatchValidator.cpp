@@ -13,7 +13,7 @@
 namespace nebula {
 namespace graph {
 MatchValidator::MatchValidator(Sentence *sentence, QueryContext *context)
-    : TraversalValidator(sentence, context) {
+    : Validator(sentence, context) {
   matchCtx_ = getContext<MatchAstContext>();
 }
 
@@ -169,7 +169,7 @@ Status MatchValidator::buildNodeInfo(const MatchPath *path,
             return Status::SemanticError("`%s': Unknown tag", label->label()->c_str());
           }
           nodeInfos[i].tids.emplace_back(tid.value());
-          nodeInfos[i].labels.emplace_back(label->label());
+          nodeInfos[i].labels.emplace_back(*label->label());
           nodeInfos[i].labelProps.emplace_back(label->props());
         }
       }
@@ -224,7 +224,7 @@ Status MatchValidator::buildEdgeInfo(const MatchPath *path,
           return Status::SemanticError("`%s': Unknown edge type", type->c_str());
         }
         edgeInfos[i].edgeTypes.emplace_back(etype.value());
-        edgeInfos[i].types.emplace_back(type.get());
+        edgeInfos[i].types.emplace_back(*type);
       }
     } else {
       const auto allEdgesResult = matchCtx_->qctx->schemaMng()->getAllVerEdgeSchema(space_.id);
@@ -232,8 +232,9 @@ Status MatchValidator::buildEdgeInfo(const MatchPath *path,
       const auto allEdges = std::move(allEdgesResult).value();
       for (const auto &edgeSchema : allEdges) {
         edgeInfos[i].edgeTypes.emplace_back(edgeSchema.first);
-        // TODO:
-        // edgeInfos[i].types.emplace_back(*type);
+        auto typeName = matchCtx_->qctx->schemaMng()->toEdgeName(space_.id, edgeSchema.first);
+        NG_RETURN_IF_ERROR(typeName);
+        edgeInfos[i].types.emplace_back(typeName.value());
       }
     }
     auto *stepRange = edge->range();
@@ -353,6 +354,12 @@ Status MatchValidator::validateReturn(MatchReturn *ret,
   }
   if (ret->returnItems()->columns()) {
     for (auto *column : ret->returnItems()->columns()->columns()) {
+      if (ExpressionUtils::hasAny(column->expr(),
+                                  {Expression::Kind::kVertex, Expression::Kind::kEdge})) {
+        return Status::SemanticError(
+            "keywords: vertex and edge are not supported in return clause `%s'",
+            column->toString().c_str());
+      }
       columns->addColumn(column->clone().release());
     }
   }
@@ -611,7 +618,7 @@ Status MatchValidator::validatePagination(const Expression *skipExpr,
   int64_t skip = 0;
   int64_t limit = std::numeric_limits<int64_t>::max();
   if (skipExpr != nullptr) {
-    if (!evaluableExpr(skipExpr)) {
+    if (!ExpressionUtils::isEvaluableExpr(skipExpr)) {
       return Status::SemanticError("SKIP should be instantly evaluable");
     }
     QueryExpressionContext ctx;
@@ -626,7 +633,7 @@ Status MatchValidator::validatePagination(const Expression *skipExpr,
   }
 
   if (limitExpr != nullptr) {
-    if (!evaluableExpr(limitExpr)) {
+    if (!ExpressionUtils::isEvaluableExpr(limitExpr)) {
       return Status::SemanticError("SKIP should be instantly evaluable");
     }
     QueryExpressionContext ctx;

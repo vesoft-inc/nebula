@@ -6,6 +6,8 @@
 
 #include "graph/validator/Validator.h"
 
+#include <thrift/lib/cpp/util/EnumUtils.h>
+
 #include "common/function/FunctionManager.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/util/ExpressionUtils.h"
@@ -36,7 +38,6 @@
 #include "graph/validator/SetValidator.h"
 #include "graph/validator/UseValidator.h"
 #include "graph/validator/YieldValidator.h"
-#include "graph/visitor/DeducePropsVisitor.h"
 #include "graph/visitor/DeduceTypeVisitor.h"
 #include "graph/visitor/EvaluableExprVisitor.h"
 #include "parser/Sentence.h"
@@ -78,6 +79,8 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
       return std::make_unique<GroupByValidator>(sentence, context);
     case Sentence::Kind::kCreateSpace:
       return std::make_unique<CreateSpaceValidator>(sentence, context);
+    case Sentence::Kind::kCreateSpaceAs:
+      return std::make_unique<CreateSpaceAsValidator>(sentence, context);
     case Sentence::Kind::kCreateTag:
       return std::make_unique<CreateTagValidator>(sentence, context);
     case Sentence::Kind::kCreateEdge:
@@ -133,6 +136,7 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
     case Sentence::Kind::kBalance:
       return std::make_unique<BalanceValidator>(sentence, context);
     case Sentence::Kind::kAdminJob:
+    case Sentence::Kind::kAdminShowJobs:
       return std::make_unique<AdminJobValidator>(sentence, context);
     case Sentence::Kind::kFetchVertices:
       return std::make_unique<FetchVerticesValidator>(sentence, context);
@@ -368,44 +372,6 @@ Status Validator::deduceProps(const Expression* expr, ExpressionProps& exprProps
   return std::move(visitor).status();
 }
 
-bool Validator::evaluableExpr(const Expression* expr) const {
-  EvaluableExprVisitor visitor;
-  const_cast<Expression*>(expr)->accept(&visitor);
-  return visitor.ok();
-}
-
-StatusOr<std::string> Validator::checkRef(const Expression* ref, Value::Type type) {
-  if (ref->kind() == Expression::Kind::kInputProperty) {
-    const auto* propExpr = static_cast<const PropertyExpression*>(ref);
-    ColDef col(propExpr->prop(), type);
-    const auto find = std::find(inputs_.begin(), inputs_.end(), col);
-    if (find == inputs_.end()) {
-      return Status::SemanticError("No input property `%s'", propExpr->prop().c_str());
-    }
-    return inputVarName_;
-  }
-  if (ref->kind() == Expression::Kind::kVarProperty) {
-    const auto* propExpr = static_cast<const PropertyExpression*>(ref);
-    ColDef col(propExpr->prop(), type);
-
-    const auto& outputVar = propExpr->sym();
-    const auto& var = vctx_->getVar(outputVar);
-    if (var.empty()) {
-      return Status::SemanticError("No variable `%s'", outputVar.c_str());
-    }
-    const auto find = std::find(var.begin(), var.end(), col);
-    if (find == var.end()) {
-      return Status::SemanticError(
-          "No property `%s' in variable `%s'", propExpr->prop().c_str(), outputVar.c_str());
-    }
-    userDefinedVarNameList_.emplace(outputVar);
-    return outputVar;
-  }
-  // it's guranteed by parser
-  DLOG(FATAL) << "Unexpected expression " << ref->kind();
-  return Status::SemanticError("Unexpected expression.");
-}
-
 Status Validator::toPlan() {
   auto* astCtx = getAstContext();
   if (astCtx != nullptr) {
@@ -449,20 +415,58 @@ Status Validator::checkDuplicateColName() {
   return Status::OK();
 }
 
-Status Validator::invalidLabelIdentifiers(const Expression* expr) const {
-  auto labelExprs = ExpressionUtils::collectAll(expr, {Expression::Kind::kLabel});
-  if (!labelExprs.empty()) {
-    std::stringstream ss;
-    ss << "Invalid label identifiers: ";
-    for (auto* label : labelExprs) {
-      ss << label->toString() << ",";
-    }
-    auto errMsg = ss.str();
-    errMsg.pop_back();
-    return Status::SemanticError(std::move(errMsg));
+Status Validator::validateStarts(const VerticesClause* clause, Starts& starts) {
+  if (clause == nullptr) {
+    return Status::SemanticError("From clause nullptr.");
   }
-
+  if (clause->isRef()) {
+    auto* src = clause->ref();
+    if (src->kind() != Expression::Kind::kInputProperty &&
+        src->kind() != Expression::Kind::kVarProperty) {
+      return Status::SemanticError(
+          "`%s', Only input and variable expression is acceptable"
+          " when starts are evaluated at runtime.",
+          src->toString().c_str());
+    }
+    starts.fromType = src->kind() == Expression::Kind::kInputProperty ? kPipe : kVariable;
+    auto type = deduceExprType(src);
+    if (!type.ok()) {
+      return type.status();
+    }
+    auto vidType = space_.spaceDesc.vid_type_ref().value().get_type();
+    if (type.value() != SchemaUtil::propTypeToValueType(vidType)) {
+      std::stringstream ss;
+      ss << "`" << src->toString() << "', the srcs should be type of "
+         << apache::thrift::util::enumNameSafe(vidType) << ", but was`" << type.value() << "'";
+      return Status::SemanticError(ss.str());
+    }
+    starts.originalSrc = src;
+    auto* propExpr = static_cast<PropertyExpression*>(src);
+    if (starts.fromType == kVariable) {
+      starts.userDefinedVarName = propExpr->sym();
+      userDefinedVarNameList_.emplace(starts.userDefinedVarName);
+    }
+    starts.runtimeVidName = propExpr->prop();
+  } else {
+    auto vidList = clause->vidList();
+    QueryExpressionContext ctx;
+    for (auto* expr : vidList) {
+      if (!ExpressionUtils::isEvaluableExpr(expr)) {
+        return Status::SemanticError("`%s' is not an evaluable expression.",
+                                     expr->toString().c_str());
+      }
+      auto vid = expr->eval(ctx(nullptr));
+      auto vidType = space_.spaceDesc.vid_type_ref().value().get_type();
+      if (!SchemaUtil::isValidVid(vid, vidType)) {
+        std::stringstream ss;
+        ss << "Vid should be a " << apache::thrift::util::enumNameSafe(vidType);
+        return Status::SemanticError(ss.str());
+      }
+      starts.vids.emplace_back(std::move(vid));
+    }
+  }
   return Status::OK();
 }
+
 }  // namespace graph
 }  // namespace nebula

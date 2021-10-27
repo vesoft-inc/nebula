@@ -18,9 +18,9 @@ void CreateFTIndexProcessor::process(const cpp2::CreateFTIndexReq& req) {
   CHECK_SPACE_ID_AND_RETURN(index.get_space_id());
   auto isEdge = index.get_depend_schema().getType() == nebula::cpp2::SchemaID::Type::edge_type;
   folly::SharedMutex::ReadHolder rHolder(isEdge ? LockUtils::edgeLock() : LockUtils::tagLock());
-  auto schemaPrefix = isEdge ? MetaServiceUtils::schemaEdgePrefix(
+  auto schemaPrefix = isEdge ? MetaKeyUtils::schemaEdgePrefix(
                                    index.get_space_id(), index.get_depend_schema().get_edge_type())
-                             : MetaServiceUtils::schemaTagPrefix(
+                             : MetaKeyUtils::schemaTagPrefix(
                                    index.get_space_id(), index.get_depend_schema().get_tag_id());
 
   // Check tag or edge exist.
@@ -43,7 +43,7 @@ void CreateFTIndexProcessor::process(const cpp2::CreateFTIndexReq& req) {
   }
 
   // verify the columns.
-  auto schema = MetaServiceUtils::parseSchema(iter->val());
+  auto schema = MetaKeyUtils::parseSchema(iter->val());
   auto columns = schema.get_columns();
   for (const auto& col : index.get_fields()) {
     auto targetCol = std::find_if(
@@ -80,7 +80,7 @@ void CreateFTIndexProcessor::process(const cpp2::CreateFTIndexReq& req) {
   }
 
   // Check fulltext index exist.
-  auto ftPrefix = MetaServiceUtils::fulltextIndexPrefix();
+  auto ftPrefix = MetaKeyUtils::fulltextIndexPrefix();
   auto ret = doPrefix(ftPrefix);
   if (!nebula::ok(ret)) {
     auto retCode = nebula::error(ret);
@@ -93,8 +93,8 @@ void CreateFTIndexProcessor::process(const cpp2::CreateFTIndexReq& req) {
   // If already have a full-text index that depend on this tag or edge,  reject
   // to create it. even though it's a different column.
   while (it->valid()) {
-    auto indexName = MetaServiceUtils::parsefulltextIndexName(it->key());
-    auto indexItem = MetaServiceUtils::parsefulltextIndex(it->val());
+    auto indexName = MetaKeyUtils::parsefulltextIndexName(it->key());
+    auto indexItem = MetaKeyUtils::parsefulltextIndex(it->val());
     if (indexName == name) {
       LOG(ERROR) << "Fulltext index exist : " << indexName;
       handleErrorCode(nebula::cpp2::ErrorCode::E_EXISTED);
@@ -110,15 +110,14 @@ void CreateFTIndexProcessor::process(const cpp2::CreateFTIndexReq& req) {
     it->next();
   }
   std::vector<kvstore::KV> data;
-  data.emplace_back(MetaServiceUtils::fulltextIndexKey(name),
-                    MetaServiceUtils::fulltextIndexVal(index));
+  data.emplace_back(MetaKeyUtils::fulltextIndexKey(name), MetaKeyUtils::fulltextIndexVal(index));
   doSyncPutAndUpdate(std::move(data));
 }
 
 void DropFTIndexProcessor::process(const cpp2::DropFTIndexReq& req) {
   CHECK_SPACE_ID_AND_RETURN(req.get_space_id());
   folly::SharedMutex::WriteHolder wHolder(LockUtils::fulltextIndexLock());
-  auto indexKey = MetaServiceUtils::fulltextIndexKey(req.get_fulltext_index_name());
+  auto indexKey = MetaKeyUtils::fulltextIndexKey(req.get_fulltext_index_name());
   auto ret = doGet(indexKey);
   if (!nebula::ok(ret)) {
     auto retCode = nebula::error(ret);
@@ -139,7 +138,7 @@ void DropFTIndexProcessor::process(const cpp2::DropFTIndexReq& req) {
 
 void ListFTIndexesProcessor::process(const cpp2::ListFTIndexesReq&) {
   folly::SharedMutex::ReadHolder rHolder(LockUtils::fulltextIndexLock());
-  const auto& prefix = MetaServiceUtils::fulltextIndexPrefix();
+  const auto& prefix = MetaKeyUtils::fulltextIndexPrefix();
   auto iterRet = doPrefix(prefix);
   if (!nebula::ok(iterRet)) {
     auto retCode = nebula::error(iterRet);
@@ -153,8 +152,8 @@ void ListFTIndexesProcessor::process(const cpp2::ListFTIndexesReq&) {
   auto iter = nebula::value(iterRet).get();
   std::unordered_map<std::string, nebula::meta::cpp2::FTIndex> indexes;
   while (iter->valid()) {
-    auto name = MetaServiceUtils::parsefulltextIndexName(iter->key());
-    auto index = MetaServiceUtils::parsefulltextIndex(iter->val());
+    auto name = MetaKeyUtils::parsefulltextIndexName(iter->key());
+    auto index = MetaKeyUtils::parsefulltextIndex(iter->val());
     indexes.emplace(std::move(name), std::move(index));
     iter->next();
   }

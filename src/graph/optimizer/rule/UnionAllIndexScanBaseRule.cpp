@@ -15,6 +15,7 @@
 #include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/planner/plan/Scan.h"
+#include "graph/util/ExpressionUtils.h"
 #include "interface/gen-cpp2/storage_types.h"
 
 using nebula::graph::Filter;
@@ -24,11 +25,23 @@ using nebula::graph::TagIndexFullScan;
 using nebula::storage::cpp2::IndexQueryContext;
 
 using Kind = nebula::graph::PlanNode::Kind;
+using ExprKind = nebula::Expression::Kind;
 using TransformResult = nebula::opt::OptRule::TransformResult;
 
 namespace nebula {
 namespace opt {
 
+// The matched expression should be either a OR expression or an expression that could be
+// rewrote to a OR expression. There are 3 scenarios.
+//
+// 1. OR expr. If OR expr has an IN expr operand that has a valid index, expand it to OR expr.
+//
+// 2. AND expr such as A in [a, b] AND B when A has a valid index, because it can be transformed to
+// (A==a AND B) OR (A==b AND B)
+//
+// 3. IN expr with its list size > 1, such as A in [a, b] since it can be transformed to (A==a) OR
+// (A==b).
+// If the list has a size of 1, the expr will be matched with OptimizeTagIndexScanByFilterRule.
 bool UnionAllIndexScanBaseRule::match(OptContext* ctx, const MatchedResult& matched) const {
   if (!OptRule::match(ctx, matched)) {
     return false;
@@ -36,13 +49,34 @@ bool UnionAllIndexScanBaseRule::match(OptContext* ctx, const MatchedResult& matc
   auto filter = static_cast<const Filter*>(matched.planNode());
   auto scan = static_cast<const IndexScan*>(matched.planNode({0, 0}));
   auto condition = filter->condition();
-  if (!condition->isLogicalExpr() || condition->kind() != Expression::Kind::kLogicalOr) {
-    return false;
+  auto conditionType = condition->kind();
+
+  if (condition->isLogicalExpr()) {
+    // Case1: OR Expr
+    if (conditionType == ExprKind::kLogicalOr) {
+      return true;
+    }
+    // Case2: AND Expr
+    if (conditionType == ExprKind::kLogicalAnd &&
+        graph::ExpressionUtils::findAny(static_cast<LogicalExpression*>(condition),
+                                        {ExprKind::kRelIn})) {
+      return true;
+    }
+    // Check logical operands
+    for (auto operand : static_cast<const LogicalExpression*>(condition)->operands()) {
+      if (!operand->isRelExpr() || !operand->isLogicalExpr()) {
+        return false;
+      }
+    }
   }
 
-  for (auto operand : static_cast<const LogicalExpression*>(condition)->operands()) {
-    if (!operand->isRelExpr()) {
-      return false;
+  // If the number of elements is less or equal than 1, the IN expr will be transformed into a
+  // relEQ expr by the OptimizeTagIndexScanByFilterRule.
+  if (condition->isRelExpr()) {
+    auto relExpr = static_cast<const RelationalExpression*>(condition);
+    if (relExpr->kind() == ExprKind::kRelIn && relExpr->right()->isContainerExpr()) {
+      auto operandsVec = graph::ExpressionUtils::getContainerExprOperands(relExpr->right());
+      return operandsVec.size() > 1;
     }
   }
 
@@ -52,7 +86,7 @@ bool UnionAllIndexScanBaseRule::match(OptContext* ctx, const MatchedResult& matc
     }
   }
 
-  return true;
+  return false;
 }
 
 StatusOr<TransformResult> UnionAllIndexScanBaseRule::transform(OptContext* ctx,
@@ -62,20 +96,76 @@ StatusOr<TransformResult> UnionAllIndexScanBaseRule::transform(OptContext* ctx,
   auto scan = static_cast<const IndexScan*>(node);
 
   auto metaClient = ctx->qctx()->getMetaClient();
-  StatusOr<std::vector<std::shared_ptr<meta::cpp2::IndexItem>>> status;
-  if (node->kind() == graph::PlanNode::Kind::kTagIndexFullScan) {
-    status = metaClient->getTagIndexesFromCache(scan->space());
-  } else {
-    status = metaClient->getEdgeIndexesFromCache(scan->space());
-  }
+  auto status = node->kind() == graph::PlanNode::Kind::kTagIndexFullScan
+                    ? metaClient->getTagIndexesFromCache(scan->space())
+                    : metaClient->getEdgeIndexesFromCache(scan->space());
+
   NG_RETURN_IF_ERROR(status);
   auto indexItems = std::move(status).value();
 
   OptimizerUtils::eraseInvalidIndexItems(scan->schemaId(), &indexItems);
 
+  // Check whether the prop has index.
+  // Rewrite if the property in the IN expr has a valid index
+  if (indexItems.empty()) {
+    return TransformResult::noTransform();
+  }
+
+  auto condition = filter->condition();
+  auto conditionType = condition->kind();
+  Expression* transformedExpr = condition->clone();
+
+  switch (conditionType) {
+    // Stand alone IN expr
+    // If it has multiple elements in the list, check valid index before expanding to OR expr
+    case ExprKind::kRelIn: {
+      if (!OptimizerUtils::relExprHasIndex(condition, indexItems)) {
+        return TransformResult::noTransform();
+      }
+      transformedExpr = graph::ExpressionUtils::rewriteInExpr(condition);
+      break;
+    }
+
+    // AND expr containing IN expr operand
+    case ExprKind::kLogicalAnd: {
+      // Iterate all operands and expand IN exprs if possible
+      for (auto& expr : static_cast<LogicalExpression*>(transformedExpr)->operands()) {
+        if (expr->kind() == ExprKind::kRelIn) {
+          if (OptimizerUtils::relExprHasIndex(expr, indexItems)) {
+            expr = graph::ExpressionUtils::rewriteInExpr(expr);
+          }
+        }
+      }
+
+      // Reconstruct AND expr using distributive law
+      transformedExpr = graph::ExpressionUtils::rewriteLogicalAndToLogicalOr(transformedExpr);
+      break;
+    }
+
+    // OR expr
+    case ExprKind::kLogicalOr: {
+      // Iterate all operands and expand IN exprs if possible
+      for (auto& expr : static_cast<LogicalExpression*>(transformedExpr)->operands()) {
+        if (expr->kind() == ExprKind::kRelIn) {
+          if (OptimizerUtils::relExprHasIndex(expr, indexItems)) {
+            expr = graph::ExpressionUtils::rewriteInExpr(expr);
+          }
+        }
+      }
+      // Flatten OR exprs
+      graph::ExpressionUtils::pullOrs(transformedExpr);
+
+      break;
+    }
+    default:
+      LOG(FATAL) << "Invalid expression kind: " << static_cast<uint8_t>(conditionType);
+      break;
+  }
+
+  DCHECK(transformedExpr->kind() == ExprKind::kLogicalOr);
   std::vector<IndexQueryContext> idxCtxs;
-  auto condition = static_cast<const LogicalExpression*>(filter->condition());
-  for (auto operand : condition->operands()) {
+  auto logicalExpr = static_cast<const LogicalExpression*>(transformedExpr);
+  for (auto operand : logicalExpr->operands()) {
     IndexQueryContext ictx;
     bool isPrefixScan = false;
     if (!OptimizerUtils::findOptimalIndex(operand, indexItems, &isPrefixScan, &ictx)) {

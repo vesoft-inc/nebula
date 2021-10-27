@@ -917,6 +917,7 @@ TEST(NebulaStoreTest, BackupRestoreTest) {
   FLAGS_rocksdb_table_format = "PlainTable";
   FLAGS_rocksdb_wal_dir = rocksdbWalPath.path();
   FLAGS_rocksdb_backup_dir = backupPath.path();
+  FLAGS_enable_rocksdb_prefix_filtering = true;
 
   auto waitLeader = [](const std::unique_ptr<NebulaStore>& store) {
     while (true) {

@@ -30,25 +30,24 @@ nebula::cpp2::ErrorCode ActiveHostsMan::updateHostInfo(kvstore::KVStore* kv,
     for (auto& spaceLeaders : *allLeaders) {
       auto spaceId = spaceLeaders.first;
       for (auto& partLeader : spaceLeaders.second) {
-        auto key = MetaServiceUtils::leaderKey(spaceId, partLeader.get_part_id());
+        auto key = MetaKeyUtils::leaderKey(spaceId, partLeader.get_part_id());
         leaderKeys.emplace_back(std::move(key));
         terms.emplace_back(partLeader.get_term());
       }
     }
     auto keys = leaderKeys;
     std::vector<std::string> vals;
-    // let see if this c++17 syntax can pass
-    auto [rc, statuses] = kv->multiGet(kDefaultSpaceId, kDefaultPartId, std::move(keys), &vals);
+    auto [rc, statusVec] = kv->multiGet(kDefaultSpaceId, kDefaultPartId, std::move(keys), &vals);
     if (rc != nebula::cpp2::ErrorCode::SUCCEEDED &&
         rc != nebula::cpp2::ErrorCode::E_PARTIAL_RESULT) {
       LOG(INFO) << "error rc = " << apache::thrift::util::enumNameSafe(rc);
       return rc;
     }
-    TermID term;
+    TermID term = -1;
     nebula::cpp2::ErrorCode code;
-    for (auto i = 0U; i != statuses.size(); ++i) {
-      if (statuses[i].ok()) {
-        std::tie(std::ignore, term, code) = MetaServiceUtils::parseLeaderValV3(vals[i]);
+    for (auto i = 0U; i != leaderKeys.size(); ++i) {
+      if (statusVec[i].ok()) {
+        std::tie(std::ignore, term, code) = MetaKeyUtils::parseLeaderValV3(vals[i]);
         if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
           LOG(WARNING) << apache::thrift::util::enumNameSafe(code);
           continue;
@@ -58,7 +57,7 @@ nebula::cpp2::ErrorCode ActiveHostsMan::updateHostInfo(kvstore::KVStore* kv,
         }
       }
       // write directly if not exist, or update if has greater term
-      auto val = MetaServiceUtils::leaderValV3(hostAddr, terms[i]);
+      auto val = MetaKeyUtils::leaderValV3(hostAddr, terms[i]);
       data.emplace_back(std::make_pair(leaderKeys[i], std::move(val)));
     }
   }
@@ -67,8 +66,7 @@ nebula::cpp2::ErrorCode ActiveHostsMan::updateHostInfo(kvstore::KVStore* kv,
   if (!data.empty()) {
     hasUpdate = true;
   }
-  data.emplace_back(MetaServiceUtils::hostKey(hostAddr.host, hostAddr.port),
-                    HostInfo::encodeV2(info));
+  data.emplace_back(MetaKeyUtils::hostKey(hostAddr.host, hostAddr.port), HostInfo::encodeV2(info));
 
   folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
   folly::Baton<true, std::atomic> baton;
@@ -90,7 +88,7 @@ nebula::cpp2::ErrorCode ActiveHostsMan::updateHostInfo(kvstore::KVStore* kv,
 
 ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> ActiveHostsMan::getActiveHosts(
     kvstore::KVStore* kv, int32_t expiredTTL, cpp2::HostRole role) {
-  const auto& prefix = MetaServiceUtils::hostPrefix();
+  const auto& prefix = MetaKeyUtils::hostPrefix();
   std::unique_ptr<kvstore::KVIterator> iter;
   auto retCode = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -104,7 +102,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> ActiveHostsMan::getActiv
       1000;
   auto now = time::WallClock::fastNowInMilliSec();
   while (iter->valid()) {
-    auto host = MetaServiceUtils::parseHostKey(iter->key());
+    auto host = MetaKeyUtils::parseHostKey(iter->key());
     HostInfo info = HostInfo::decode(iter->val());
     if (info.role_ == role) {
       if (now - info.lastHBTimeInMilliSec_ < threshold) {
@@ -121,7 +119,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> ActiveHostsMan::getActiv
     kvstore::KVStore* kv, const std::string& zoneName, int32_t expiredTTL) {
   std::vector<HostAddr> activeHosts;
   std::string zoneValue;
-  auto zoneKey = MetaServiceUtils::zoneKey(zoneName);
+  auto zoneKey = MetaKeyUtils::zoneKey(zoneName);
   auto retCode = kv->get(kDefaultSpaceId, kDefaultPartId, zoneKey, &zoneValue);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << "Get zone " << zoneName
@@ -129,7 +127,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> ActiveHostsMan::getActiv
     return retCode;
   }
 
-  auto hosts = MetaServiceUtils::parseZoneHosts(std::move(zoneValue));
+  auto hosts = MetaKeyUtils::parseZoneHosts(std::move(zoneValue));
   auto now = time::WallClock::fastNowInMilliSec();
   int64_t threshold =
       (expiredTTL == 0 ? FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor : expiredTTL) *
@@ -152,7 +150,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> ActiveHostsMan::getActiv
     kvstore::KVStore* kv, GraphSpaceID spaceId, int32_t expiredTTL) {
   std::string spaceValue;
   std::vector<HostAddr> activeHosts;
-  auto spaceKey = MetaServiceUtils::spaceKey(spaceId);
+  auto spaceKey = MetaKeyUtils::spaceKey(spaceId);
   auto retCode = kv->get(kDefaultSpaceId, kDefaultPartId, spaceKey, &spaceValue);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << "Get space failed, error: " << apache::thrift::util::enumNameSafe(retCode);
@@ -160,8 +158,8 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> ActiveHostsMan::getActiv
   }
 
   std::string groupValue;
-  auto space = MetaServiceUtils::parseSpace(std::move(spaceValue));
-  auto groupKey = MetaServiceUtils::groupKey(*space.group_name_ref());
+  auto space = MetaKeyUtils::parseSpace(std::move(spaceValue));
+  auto groupKey = MetaKeyUtils::groupKey(*space.group_name_ref());
   retCode = kv->get(kDefaultSpaceId, kDefaultPartId, groupKey, &groupValue);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << "Get group " << *space.group_name_ref()
@@ -169,7 +167,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> ActiveHostsMan::getActiv
     return retCode;
   }
 
-  auto zoneNames = MetaServiceUtils::parseZoneNames(std::move(groupValue));
+  auto zoneNames = MetaKeyUtils::parseZoneNames(std::move(groupValue));
   for (const auto& zoneName : zoneNames) {
     auto hostsRet = getActiveHostsInZone(kv, zoneName, expiredTTL);
     if (!nebula::ok(hostsRet)) {
@@ -209,7 +207,7 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> ActiveHostsMan::isLived(kvstore::KVStore*
 
 ErrorOr<nebula::cpp2::ErrorCode, HostInfo> ActiveHostsMan::getHostInfo(kvstore::KVStore* kv,
                                                                        const HostAddr& host) {
-  auto hostKey = MetaServiceUtils::hostKey(host.host, host.port);
+  auto hostKey = MetaKeyUtils::hostKey(host.host, host.port);
   std::string hostValue;
   auto retCode = kv->get(kDefaultSpaceId, kDefaultPartId, hostKey, &hostValue);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -224,8 +222,8 @@ nebula::cpp2::ErrorCode LastUpdateTimeMan::update(kvstore::KVStore* kv,
                                                   const int64_t timeInMilliSec) {
   CHECK_NOTNULL(kv);
   std::vector<kvstore::KV> data;
-  data.emplace_back(MetaServiceUtils::lastUpdateTimeKey(),
-                    MetaServiceUtils::lastUpdateTimeVal(timeInMilliSec));
+  data.emplace_back(MetaKeyUtils::lastUpdateTimeKey(),
+                    MetaKeyUtils::lastUpdateTimeVal(timeInMilliSec));
 
   folly::SharedMutex::WriteHolder wHolder(LockUtils::lastUpdateTimeLock());
   folly::Baton<true, std::atomic> baton;
@@ -241,7 +239,7 @@ nebula::cpp2::ErrorCode LastUpdateTimeMan::update(kvstore::KVStore* kv,
 
 ErrorOr<nebula::cpp2::ErrorCode, int64_t> LastUpdateTimeMan::get(kvstore::KVStore* kv) {
   CHECK_NOTNULL(kv);
-  auto key = MetaServiceUtils::lastUpdateTimeKey();
+  auto key = MetaKeyUtils::lastUpdateTimeKey();
   std::string val;
   auto retCode = kv->get(kDefaultSpaceId, kDefaultPartId, key, &val);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {

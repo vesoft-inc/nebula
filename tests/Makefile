@@ -8,7 +8,6 @@
 PYPI_MIRROR = https://mirrors.aliyun.com/pypi/simple/
 # PYPI_MIRROR = http://pypi.mirrors.ustc.edu.cn/simple --trusted-host pypi.mirrors.ustc.edu.cn
 CURR_DIR = $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
-gherkin_fmt = ~/.local/bin/reformat-gherkin
 PY_VERSION = $(shell python3 --version | cut -f2 -d' ' | cut -f2 -d'.')
 
 RM_DIR ?= true
@@ -16,6 +15,17 @@ TEST_DIR ?= $(CURR_DIR)
 BUILD_DIR ?= $(CURR_DIR)/../build
 DEBUG ?= true
 J ?= 10
+ENABLE_SSL ?= false
+ENABLE_GRAPH_SSL ?= false
+ENABLE_META_SSL ?= false
+CA_SIGNED ?= false
+CONTAINERIZED ?= false
+
+# commands
+gherkin_fmt = ~/.local/bin/reformat-gherkin
+run_test = PYTHONPATH=$$PYTHONPATH:$(CURR_DIR)/.. $(CURR_DIR)/nebula-test-run.py
+test_without_skip = python3 -m pytest -m "not skip"
+test_j = $(test_without_skip) -n$(J)
 
 install-deps:
 	pip3 install --user -U setuptools wheel -i $(PYPI_MIRROR)
@@ -49,42 +59,54 @@ check:
 
 up: clean
 	@mkdir -p $(CURR_DIR)/.pytest
-	PYTHONPATH=$$PYTHONPATH:$(CURR_DIR)/.. $(CURR_DIR)/nebula-test-run.py --cmd=start --rm_dir=$(RM_DIR) --build_dir=$(BUILD_DIR) --debug=$(DEBUG) --multi_graphd=true
+	$(run_test) --cmd=start \
+		--build_dir=$(BUILD_DIR) \
+		--debug=$(DEBUG) \
+		--multi_graphd=true \
+		--enable_ssl=$(ENABLE_SSL) \
+		--enable_graph_ssl=$(ENABLE_GRAPH_SSL) \
+		--enable_meta_ssl=$(ENABLE_META_SSL) \
+		--ca_signed=$(CA_SIGNED) \
+		--containerized=$(CONTAINERIZED)
 
 down:
-	PYTHONPATH=$$PYTHONPATH:$(CURR_DIR)/.. $(CURR_DIR)/nebula-test-run.py --cmd=stop --rm_dir=$(RM_DIR)
+	$(run_test) --cmd=stop --rm_dir=$(RM_DIR)
 
 currdir:
 	cd $(CURR_DIR)
 
 sess: currdir
-	python3 -m pytest -m "not skip" -k "not tck" job/test_session.py
+	$(test_without_skip) -k "not tck" job/test_session.py
 
 jobs: currdir
-	python3 -m pytest -m "not skip" -k "not tck" job/test_jobs.py
+	$(test_without_skip) tck/steps/test_jobs.py
 
-test: sess jobs
-	python3 -m pytest -n$(J) --dist=loadfile -m "not skip" -k "not tck" $(TEST_DIR)
+test: sess
+	$(test_j) --dist=loadfile -k "not tck" $(TEST_DIR)
 
 slow-query: currdir
-	python3 -m pytest -n$(J) -m "not skip" tck/steps/test_kill_slow_query_via_same_service.py && \
-	python3 -m pytest -n$(J) -m "not skip" tck/steps/test_kill_slow_query_via_different_service.py
+	$(test_j) tck/steps/test_kill_slow_query_via_same_service.py && \
+	$(test_j) tck/steps/test_kill_slow_query_via_different_service.py
 
-tck: slow-query
-	python3 -m pytest -n$(J) -m "not skip" tck/steps/test_tck.py
+tck: jobs slow-query
+	$(test_j) tck/steps/test_tck.py
 
 test-all: test tck
 
 fail: currdir
-	python3 -m pytest --last-failed --gherkin-terminal-reporter --gherkin-terminal-reporter-expanded tck/steps/test_tck.py
-
-report:
-	@mv $(CURR_DIR)/tck-report.json $(CURR_DIR)/tck-report-bak.json
-	@jq . $(CURR_DIR)/tck-report-bak.json > tck-report.json
-	@rm -rf $(CURR_DIR)/tck-report-bak.json
+	python3 -m pytest \
+		--last-failed \
+		--gherkin-terminal-reporter \
+		--gherkin-terminal-reporter-expanded \
+		tck/steps/test_tck.py
 
 clean:
-	@rm -rf $(CURR_DIR)/nebula-python $(CURR_DIR)/reformat-gherkin $(CURR_DIR)/.pytest/* $(CURR_DIR)/.pytest_cache $(CURR_DIR)/tck-report.json $(CURR_DIR)/*.lock
+	@rm -rf $(CURR_DIR)/nebula-python \
+		$(CURR_DIR)/reformat-gherkin \
+		$(CURR_DIR)/.pytest/* \
+		$(CURR_DIR)/.pytest_cache \
+		$(CURR_DIR)/*.lock \
+		$(BUILD_DIR)/server_*
 
 kill:
 	ps -ef | grep -P '\sbin/nebula-' | grep "$$(whoami)" | sed 's/\s\s*/ /g' | cut -f2 -d' ' | xargs kill -9

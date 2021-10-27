@@ -25,6 +25,7 @@ include "meta.thrift"
 struct RequestCommon {
     1: optional common.SessionID session_id,
     2: optional common.ExecutionPlanID plan_id,
+    3: optional bool profile_detail,
 }
 
 struct PartitionResult {
@@ -524,8 +525,7 @@ struct IndexQueryContext {
 struct IndexSpec {
     // In order to union multiple indices, multiple index hints are allowed
     1: required list<IndexQueryContext>   contexts,
-    2: required bool                      is_edge,
-    3: required i32                       tag_or_edge_id,
+    2: common.SchemaID                    schema_id,
 }
 
 
@@ -537,6 +537,8 @@ struct LookupIndexRequest {
     // Support kVid and kTag for vertex, kSrc, kType, kRank and kDst for edge.
     4: optional list<binary>                return_columns,
     5: optional RequestCommon               common,
+    // max row count of each partition in this response
+    6: optional i64                         limit,
 }
 
 
@@ -662,7 +664,9 @@ service GraphStorageService {
     LookupIndexResp lookupIndex(1: LookupIndexRequest req);
 
     GetNeighborsResponse lookupAndTraverse(1: LookupAndTraverseRequest req);
-    ExecResponse addEdgesAtomic(1: AddEdgesRequest req);
+
+    UpdateResponse chainUpdateEdge(1: UpdateEdgeRequest req);
+    ExecResponse chainAddEdges(1: AddEdgesRequest req);
 }
 
 
@@ -863,27 +867,42 @@ service GeneralStorageService {
 
 // transaction request
 struct InternalTxnRequest {
-    1: i64                                  txn_id,
-    2: i32                                  space_id,
-    // need this(part_id) to satisfy getResponse
-    3: i32                                  part_id,
-    // position of chain
-    4: i32                                  position,
-    5: list<list<binary>>                   data
+    1: i64                                      txn_id,
+    2: map<common.PartitionID, i64>             term_of_parts,
+    3: optional AddEdgesRequest                 add_edge_req,
+    4: optional UpdateEdgeRequest               upd_edge_req,
+    5: optional map<common.PartitionID, list<i64>>(
+        cpp.template = "std::unordered_map")    edge_ver,
 }
 
-struct GetValueRequest {
-    1: common.GraphSpaceID space_id,
-    2: common.PartitionID part_id,
-    3: binary key
+
+struct ChainAddEdgesRequest {
+    1: common.GraphSpaceID                      space_id,
+    // partId => edges
+    2: map<common.PartitionID, list<NewEdge>>(
+        cpp.template = "std::unordered_map")    parts,
+    // A list of property names. The order of the property names should match
+    //   the data order specified in the NewEdge.props
+    3: list<binary>                             prop_names,
+    // if ture, when edge already exists, do nothing
+    4: bool                                     if_not_exists,
+    // 5: map<common.PartitionID, i64>             term_of_parts,
+    5: i64                                      term
+    6: optional i64                             edge_version
+    // 6: optional map<common.PartitionID, list<i64>>(
+        // cpp.template = "std::unordered_map")    edge_ver,
 }
 
-struct GetValueResponse {
-    1: required ResponseCommon result
-    2: binary value
+
+struct ChainUpdateEdgeRequest {
+    1: UpdateEdgeRequest                        update_edge_request,
+    2: i64                                      term,
+    3: optional i64                             edge_version
+    4: common.GraphSpaceID                      space_id,
+    5: required list<common.PartitionID>        parts,
 }
 
 service InternalStorageService {
-    GetValueResponse  getValue(1: GetValueRequest req);
-    ExecResponse    forwardTransaction(1: InternalTxnRequest req);
+    ExecResponse chainAddEdges(1: ChainAddEdgesRequest req);
+    UpdateResponse chainUpdateEdge(1: ChainUpdateEdgeRequest req);
 }

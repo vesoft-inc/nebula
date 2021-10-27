@@ -98,7 +98,10 @@ class StorageExpressionContext final : public ExpressionContext {
     valueMap_[name].emplace_back(std::move(val));
   }
 
-  Value getVertex() const override { LOG(FATAL) << "Unimplemented"; }
+  Value getVertex(const std::string& name = "") const override {
+    UNUSED(name);
+    LOG(FATAL) << "Unimplemented";
+  }
 
   Value getEdge() const override { LOG(FATAL) << "Unimplemented"; }
 

@@ -60,6 +60,7 @@ static constexpr size_t kCommentLengthLimit = 256;
     int64_t                                 intval;
     double                                  doubleval;
     std::string                            *strval;
+    nebula::meta::cpp2::GeoShape            geo_shape;
     nebula::meta::cpp2::ColumnTypeDef      *type;
     nebula::Expression                     *expr;
     nebula::Sentence                       *sentence;
@@ -154,14 +155,14 @@ static constexpr size_t kCommentLengthLimit = 256;
 // Expression related memory will be managed by object pool
 %destructor {} <expr> <argument_list> <case_list> <expression_list> <map_item_list>
 %destructor {} <text_search_argument> <base_text_search_argument> <fuzzy_text_search_argument>
-%destructor {} <boolval> <intval> <doubleval> <type> <config_module> <integer_list> <list_host_type>
+%destructor {} <boolval> <intval> <doubleval> <type> <config_module> <integer_list> <list_host_type> <geo_shape>
 %destructor { delete $$; } <*>
 
 /* keywords */
 %token KW_BOOL KW_INT8 KW_INT16 KW_INT32 KW_INT64 KW_INT KW_FLOAT KW_DOUBLE
 %token KW_STRING KW_FIXED_STRING KW_TIMESTAMP KW_DATE KW_TIME KW_DATETIME
 %token KW_GO KW_AS KW_TO KW_USE KW_SET KW_FROM KW_WHERE KW_ALTER
-%token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX
+%token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX KW_VERTICES
 %token KW_EDGE KW_EDGES KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND
 %token KW_TAG KW_TAGS KW_UNION KW_INTERSECT KW_MINUS
 %token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOST KW_HOSTS KW_PART KW_PARTS KW_ADD
@@ -199,6 +200,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %token KW_REDUCE
 %token KW_SESSIONS KW_SESSION
 %token KW_KILL KW_QUERY KW_QUERIES KW_TOP
+%token KW_GEOGRAPHY KW_POINT KW_LINESTRING KW_POLYGON
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -241,6 +243,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <expr> constant_expression
 %type <expr> query_unique_identifier_value
 %type <argument_list> argument_list opt_argument_list
+%type <geo_shape> geo_shape_type
 %type <type> type_spec
 %type <step_clause> step_clause
 %type <from_clause> from_clause
@@ -444,7 +447,6 @@ unreserved_keyword
     | KW_DBA                { $$ = new std::string("dba"); }
     | KW_GUEST              { $$ = new std::string("guest"); }
     | KW_GROUP              { $$ = new std::string("group"); }
-    | KW_PATH               { $$ = new std::string("path"); }
     | KW_DATA               { $$ = new std::string("data"); }
     | KW_LEADER             { $$ = new std::string("leader"); }
     | KW_UUID               { $$ = new std::string("uuid"); }
@@ -491,6 +493,7 @@ unreserved_keyword
     | KW_BOTH               { $$ = new std::string("both"); }
     | KW_OUT                { $$ = new std::string("out"); }
     | KW_SUBGRAPH           { $$ = new std::string("subgraph"); }
+    | KW_PATH               { $$ = new std::string("path"); }
     | KW_THEN               { $$ = new std::string("then"); }
     | KW_ELSE               { $$ = new std::string("else"); }
     | KW_END                { $$ = new std::string("end"); }
@@ -524,6 +527,9 @@ unreserved_keyword
     | KW_QUERY              { $$ = new std::string("query"); }
     | KW_KILL               { $$ = new std::string("kill"); }
     | KW_TOP                { $$ = new std::string("top"); }
+    | KW_POINT              { $$ = new std::string("point"); }
+    | KW_LINESTRING         { $$ = new std::string("linestring"); }
+    | KW_POLYGON            { $$ = new std::string("polygon"); }
     ;
 
 expression
@@ -848,10 +854,11 @@ predicate_name
 predicate_expression
     : predicate_name L_PAREN expression KW_IN expression KW_WHERE expression R_PAREN {
         if ($3->kind() != Expression::Kind::kLabel) {
+            delete $1;
             throw nebula::GraphParser::syntax_error(@3, "The loop variable must be a label in predicate functions");
         }
-        auto &innerVar = static_cast<const LabelExpression *>($3)->name();
-        auto *expr = PredicateExpression::make(qctx->objPool(), *$1, innerVar, $5, $7);
+        std::string innerVar = static_cast<const LabelExpression *>($3)->name();
+        auto *expr = PredicateExpression::make(qctx->objPool(), *$1, innerVar, $5, $7);  // TODO(jie) Use std::unique_ptr<std::string>
         nebula::graph::ParserUtil::rewritePred(qctx, expr, innerVar);
         $$ = expr;
         delete $1;
@@ -1048,7 +1055,27 @@ opt_argument_list
     ;
 
 argument_list
-    : expression {
+    : KW_VERTEX {
+        $$ = ArgumentList::make(qctx->objPool());
+        Expression* arg = VertexExpression::make(qctx->objPool());
+        $$->addArgument(arg);
+    }
+    | SRC_REF {
+        $$ = ArgumentList::make(qctx->objPool());
+        Expression* arg = VertexExpression::make(qctx->objPool(), "$^");
+        $$->addArgument(arg);
+    }
+    | DST_REF {
+        $$ = ArgumentList::make(qctx->objPool());
+        Expression* arg = VertexExpression::make(qctx->objPool(), "$$");
+        $$->addArgument(arg);
+    }
+    | KW_EDGE {
+        $$ = ArgumentList::make(qctx->objPool());
+        Expression *arg = EdgeExpression::make(qctx->objPool());
+        $$->addArgument(arg);
+    }
+    | expression {
         $$ = ArgumentList::make(qctx->objPool());
         Expression* arg = nullptr;
         arg = $1;
@@ -1059,6 +1086,18 @@ argument_list
         Expression* arg = nullptr;
         arg = $3;
         $$->addArgument(arg);
+    }
+    ;
+
+geo_shape_type
+    : KW_POINT {
+        $$ = meta::cpp2::GeoShape::POINT;
+    }
+    | KW_LINESTRING {
+        $$ = meta::cpp2::GeoShape::LINESTRING;
+    }
+    | KW_POLYGON {
+        $$ = meta::cpp2::GeoShape::POLYGON;
     }
     ;
 
@@ -1122,6 +1161,16 @@ type_spec
     | KW_DATETIME {
         $$ = new meta::cpp2::ColumnTypeDef();
         $$->set_type(meta::cpp2::PropertyType::DATETIME);
+    }
+    | KW_GEOGRAPHY {
+        $$ = new meta::cpp2::ColumnTypeDef();
+        $$->set_type(meta::cpp2::PropertyType::GEOGRAPHY);
+        $$->set_geo_shape(meta::cpp2::GeoShape::ANY);
+    }
+    | KW_GEOGRAPHY L_PAREN geo_shape_type R_PAREN {
+        $$ = new meta::cpp2::ColumnTypeDef();
+        $$->set_type(meta::cpp2::PropertyType::GEOGRAPHY);
+        $$->set_geo_shape($3);
     }
     ;
 
@@ -1195,17 +1244,6 @@ truncate_clause
 go_sentence
     : KW_GO step_clause from_clause over_clause where_clause yield_clause truncate_clause {
         auto go = new GoSentence($2, $3, $4, $5, $7);
-        if ($6 == nullptr) {
-            auto *cols = new YieldColumns();
-            if (!$4->isOverAll()) {
-                for (auto e : $4->edges()) {
-                    auto *expr  = EdgeDstIdExpression::make(qctx->objPool(), *e->edge());
-                    auto *col   = new YieldColumn(expr);
-                    cols->addColumn(col);
-                }
-            }
-            $6 = new YieldClause(cols);
-        }
         go->setYieldClause($6);
         $$ = go;
     }
@@ -1349,7 +1387,55 @@ yield_columns
     ;
 
 yield_column
-    : expression {
+    : KW_VERTEX {
+        $$ = nullptr;
+        throw nebula::GraphParser::syntax_error(@1, "please add alias when using `vertex'.");
+    }
+    | KW_VERTEX KW_AS name_label {
+        $$ = new YieldColumn(VertexExpression::make(qctx->objPool()), *$3);
+        delete $3;
+    }
+    | SRC_REF {
+        $$ = nullptr;
+        throw nebula::GraphParser::syntax_error(@1, "please add alias when using `$^'.");
+    }
+    | SRC_REF KW_AS name_label {
+        $$ = new YieldColumn(VertexExpression::make(qctx->objPool(), "$^"), *$3);
+        delete $3;
+    }
+    | DST_REF {
+        $$ = nullptr;
+        throw nebula::GraphParser::syntax_error(@1, "please add alias when using `$$'.");
+    }
+    | DST_REF KW_AS name_label {
+        $$ = new YieldColumn(VertexExpression::make(qctx->objPool(), "$$"), *$3);
+        delete $3;
+    }
+    | KW_VERTICES {
+        $$ = nullptr;
+        throw nebula::GraphParser::syntax_error(@1, "please add alias when using `vertices'.");
+    }
+    | KW_VERTICES KW_AS name_label {
+        $$ = new YieldColumn(LabelExpression::make(qctx->objPool(), "VERTICES"), *$3);
+        delete $3;
+    }
+    | KW_EDGE {
+        $$ = nullptr;
+        throw nebula::GraphParser::syntax_error(@1, "please add alias when using `edge'.");
+    }
+    | KW_EDGE KW_AS name_label {
+        $$ = new YieldColumn(EdgeExpression::make(qctx->objPool()), *$3);
+        delete $3;
+    }
+    | KW_EDGES {
+        $$ = nullptr;
+        throw nebula::GraphParser::syntax_error(@1, "please add alias when using `edges'.");
+    }
+    | KW_EDGES KW_AS name_label {
+        $$ = new YieldColumn(LabelExpression::make(qctx->objPool(), "EDGES"), *$3);
+        delete $3;
+    }
+    | expression {
         $$ = new YieldColumn($1);
     }
     | expression KW_AS name_label {
@@ -2046,8 +2132,8 @@ both_in_out_clause
     | KW_BOTH over_edges { $$ = new BothInOutClause($2, BoundClause::BOTH); }
 
 get_subgraph_sentence
-    : KW_GET KW_SUBGRAPH opt_with_properites step_clause from_clause in_bound_clause out_bound_clause both_in_out_clause {
-        $$ = new GetSubgraphSentence($3, $4, $5, $6, $7, $8);
+    : KW_GET KW_SUBGRAPH opt_with_properites step_clause from_clause in_bound_clause out_bound_clause both_in_out_clause yield_clause {
+        $$ = new GetSubgraphSentence($3, $4, $5, $6, $7, $8, $9);
     }
 
 use_sentence
@@ -2236,11 +2322,11 @@ column_spec_list
 
 column_spec
     : name_label type_spec {
-        $$ = new ColumnSpecification($1, $2->type, new ColumnProperties(), $2->type_length_ref().value_or(0));
+        $$ = new ColumnSpecification($1, $2->type, new ColumnProperties(), $2->type_length_ref().value_or(0), $2->geo_shape_ref().value_or(meta::cpp2::GeoShape::ANY));
         delete $2;
     }
     | name_label type_spec column_properties {
-        $$ = new ColumnSpecification($1, $2->type, $3, $2->type_length_ref().value_or(0));
+        $$ = new ColumnSpecification($1, $2->type, $3, $2->type_length_ref().value_or(0), $2->geo_shape_ref().value_or(meta::cpp2::GeoShape::ANY));
         delete $2;
     }
     ;
@@ -2469,8 +2555,9 @@ rebuild_fulltext_index_sentence
         $$ = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
                                   meta::cpp2::AdminCmd::REBUILD_FULLTEXT_INDEX);
     }
+
 add_group_sentence
-    : KW_ADD KW_GROUP name_label zone_name_list{
+    : KW_ADD KW_GROUP name_label zone_name_list {
         $$ = new AddGroupSentence($3, $4);
     }
     ;
@@ -3120,6 +3207,10 @@ create_space_sentence
         sentence->setGroupName($9);
         sentence->setOpts($6);
         sentence->setComment($10);
+        $$ = sentence;
+    }
+    | KW_CREATE KW_SPACE opt_if_not_exists name_label KW_AS name_label {
+        auto sentence = new CreateSpaceAsSentence($6, $4, $3);
         $$ = sentence;
     }
     ;

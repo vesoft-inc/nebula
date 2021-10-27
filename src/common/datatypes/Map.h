@@ -43,6 +43,9 @@ struct Map {
   // the configs of rocksdb will use the interface, so the value need modify to
   // string
   std::string toString() const;
+  folly::dynamic toJson() const;
+  // Extract the metadata of the value of each kv pair
+  folly::dynamic getMetaData() const;
 
   bool operator==(const Map& rhs) const { return kvs == rhs.kvs; }
 
@@ -67,4 +70,12 @@ struct Map {
 inline std::ostream& operator<<(std::ostream& os, const Map& m) { return os << m.toString(); }
 
 }  // namespace nebula
+
+namespace std {
+template <>
+struct hash<nebula::Map> {
+  std::size_t operator()(const nebula::Map& m) const noexcept;
+};
+
+}  // namespace std
 #endif  // COMMON_DATATYPES_MAP_H_

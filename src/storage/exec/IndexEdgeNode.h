@@ -16,19 +16,23 @@ namespace storage {
 template <typename T>
 class IndexEdgeNode final : public RelNode<T> {
  public:
-  using RelNode<T>::execute;
+  using RelNode<T>::doExecute;
 
   IndexEdgeNode(RuntimeContext* context,
                 IndexScanNode<T>* indexScanNode,
                 const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas,
-                const std::string& schemaName)
+                const std::string& schemaName,
+                int64_t limit = -1)
       : context_(context),
         indexScanNode_(indexScanNode),
         schemas_(schemas),
-        schemaName_(schemaName) {}
+        schemaName_(schemaName),
+        limit_(limit) {
+    RelNode<T>::name_ = "IndexEdgeNode";
+  }
 
-  nebula::cpp2::ErrorCode execute(PartitionID partId) override {
-    auto ret = RelNode<T>::execute(partId);
+  nebula::cpp2::ErrorCode doExecute(PartitionID partId) override {
+    auto ret = RelNode<T>::doExecute(partId);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
       return ret;
     }
@@ -58,6 +62,7 @@ class IndexEdgeNode final : public RelNode<T> {
       edges.emplace_back(std::move(edge));
       iter->next();
     }
+    int64_t count = 0;
     for (const auto& edge : edges) {
       auto key = NebulaKeyUtils::edgeKey(context_->vIdLen(),
                                          partId,
@@ -73,6 +78,9 @@ class IndexEdgeNode final : public RelNode<T> {
         continue;
       } else {
         return ret;
+      }
+      if (limit_ > 0 && ++count >= limit_) {
+        break;
       }
     }
     return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -91,6 +99,7 @@ class IndexEdgeNode final : public RelNode<T> {
   IndexScanNode<T>* indexScanNode_;
   const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& schemas_;
   const std::string& schemaName_;
+  int64_t limit_;
   std::vector<kvstore::KV> data_;
 };
 

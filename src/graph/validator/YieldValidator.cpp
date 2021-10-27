@@ -6,11 +6,10 @@
 
 #include "graph/validator/YieldValidator.h"
 
-#include "common/expression/Expression.h"
 #include "graph/context/QueryContext.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/util/ExpressionUtils.h"
-#include "parser/Clauses.h"
+#include "graph/util/ValidateUtil.h"
 #include "parser/TraverseSentences.h"
 
 namespace nebula {
@@ -111,7 +110,7 @@ Status YieldValidator::validateYieldAndBuildOutputs(const YieldClause *clause) {
   columns_ = pool->add(new YieldColumns);
   for (auto column : columns) {
     auto expr = DCHECK_NOTNULL(column->expr());
-    NG_RETURN_IF_ERROR(invalidLabelIdentifiers(expr));
+    NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(expr));
 
     if (expr->kind() == Expression::Kind::kInputProperty) {
       auto ipe = static_cast<const InputPropertyExpression *>(expr);

@@ -17,8 +17,8 @@
 #include "common/cpp/helpers.h"
 #include "common/datatypes/Value.h"
 #include "common/time/Duration.h"
+#include "common/time/ScopedTimer.h"
 #include "graph/context/ExecutionContext.h"
-#include "graph/util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {
@@ -43,6 +43,8 @@ class Executor : private cpp::NonCopyable, private cpp::NonMovable {
 
   // Cleanup or reset executor some states after each execution
   virtual Status close();
+
+  Status checkMemoryWatermark();
 
   QueryContext *qctx() const { return qctx_; }
 

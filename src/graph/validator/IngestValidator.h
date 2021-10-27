@@ -7,9 +7,7 @@
 #ifndef GRAPH_VALIDATOR_INGESTVALIDATOR_H_
 #define GRAPH_VALIDATOR_INGESTVALIDATOR_H_
 
-#include "common/base/Base.h"
 #include "graph/validator/Validator.h"
-#include "parser/AdminSentences.h"
 
 namespace nebula {
 namespace graph {

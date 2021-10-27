@@ -7,7 +7,6 @@
 #ifndef GRAPH_VALIDATOR_DOWNLOADVALIDATOR_H_
 #define GRAPH_VALIDATOR_DOWNLOADVALIDATOR_H_
 
-#include "common/base/Base.h"
 #include "graph/validator/Validator.h"
 #include "parser/AdminSentences.h"
 

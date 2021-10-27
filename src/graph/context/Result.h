@@ -43,6 +43,13 @@ class Result final {
 
   Iterator* iterRef() { return core_.iter.get(); }
 
+  void checkMemory(bool checkMemory) {
+    core_.checkMemory = checkMemory;
+    if (core_.iter) {
+      core_.iter->setCheckMemory(checkMemory);
+    }
+  }
+
  private:
   friend class ResultBuilder;
   friend class ExecutionContext;
@@ -64,6 +71,7 @@ class Result final {
       return *this;
     }
 
+    bool checkMemory{false};
     State state;
     std::string msg;
     std::shared_ptr<Value> value;
@@ -84,6 +92,11 @@ class ResultBuilder final {
     if (!core_.iter) iter(Iterator::Kind::kSequential);
     if (!core_.value && core_.iter) value(core_.iter->valuePtr());
     return Result(std::move(core_));
+  }
+
+  ResultBuilder& checkMemory(bool checkMemory = false) {
+    core_.checkMemory = checkMemory;
+    return *this;
   }
 
   ResultBuilder& value(Value&& value) {

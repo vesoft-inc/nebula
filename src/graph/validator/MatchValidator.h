@@ -7,18 +7,17 @@
 #ifndef GRAPH_VALIDATOR_MATCHVALIDATOR_H_
 #define GRAPH_VALIDATOR_MATCHVALIDATOR_H_
 
-#include "common/base/Base.h"
 #include "graph/context/ast/CypherAstContext.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/util/AnonVarGenerator.h"
-#include "graph/validator/TraversalValidator.h"
+#include "graph/validator/Validator.h"
 
 namespace nebula {
 
 class MatchStepRange;
 class ObjectPool;
 namespace graph {
-class MatchValidator final : public TraversalValidator {
+class MatchValidator final : public Validator {
  public:
   MatchValidator(Sentence *sentence, QueryContext *context);
 

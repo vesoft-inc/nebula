@@ -91,6 +91,27 @@ TEST_F(ParserTest, TestSchemaCreation) {
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
+  // Geo spatial
+  {
+    std::string query = "CREATE TAG any_shape(geo geography)";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "CREATE TAG any_shape(geo geography(point))";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "CREATE TAG any_shape(geo geography(linestring))";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "CREATE TAG any_shape(geo geography(polygon))";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
 }
 
 TEST_F(ParserTest, Go) {
@@ -3001,4 +3022,51 @@ TEST_F(ParserTest, ShowAndKillQueryTest) {
     ASSERT_EQ(result.value()->toString(), "KILL QUERY (session=123, plan=123)");
   }
 }
+
+TEST_F(ParserTest, DetectMemoryLeakTest) {
+  {
+    std::string query = "YIELD any(n IN [1, 2, 3, 4, 5] WHERE n > 2)";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), "YIELD any(n IN [1,2,3,4,5] WHERE (n>2))");
+  }
+  // 3 is not expr of kLabel
+  {
+    std::string query = "YIELD [3 IN [1, 2] WHERE n > 2]";
+    auto result = parse(query);
+    ASSERT_FALSE(result.ok()) << result.status();
+  }
+  // a+b is not expr of kLabel
+  {
+    std::string query = "YIELD [a+b IN [1, 2] | n + 10]";
+    auto result = parse(query);
+    ASSERT_FALSE(result.ok()) << result.status();
+  }
+  // a+b is not expr of kLabel
+  {
+    std::string query = "YIELD [a+b IN [1, 2] WHERE n > 2 | n + 10]";
+    auto result = parse(query);
+    ASSERT_FALSE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "YIELD EXISTS(v.age)";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), "YIELD exists(v.age)");
+  }
+  /// 333 is not expr of kLabelAttribute, kAttribute or kSubscript
+  {
+    std::string query = "YIELD EXISTS(233)";
+    auto result = parse(query);
+    ASSERT_FALSE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "YIELD reduce(totalNum = 10, n IN range(1, 3) | totalNum + n)";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(),
+              "YIELD reduce(totalNum = 10, n IN range(1,3) | (totalNum+n))");
+  }
+}
+
 }  // namespace nebula

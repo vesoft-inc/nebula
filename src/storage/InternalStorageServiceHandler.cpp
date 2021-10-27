@@ -6,8 +6,8 @@
 
 #include "storage/InternalStorageServiceHandler.h"
 
-#include "storage/transaction/GetValueProcessor.h"
-#include "storage/transaction/TransactionProcessor.h"
+#include "storage/transaction/ChainAddEdgesProcessorRemote.h"
+#include "storage/transaction/ChainUpdateEdgeProcessorRemote.h"
 
 #define RETURN_FUTURE(processor)   \
   auto f = processor->getFuture(); \
@@ -17,20 +17,17 @@
 namespace nebula {
 namespace storage {
 
-InternalStorageServiceHandler::InternalStorageServiceHandler(StorageEnv* env) : env_(env) {
-  kForwardTranxCounters.init("forward_tranx");
-  kGetValueCounters.init("get_value");
-}
+InternalStorageServiceHandler::InternalStorageServiceHandler(StorageEnv* env) : env_(env) {}
 
-folly::Future<cpp2::ExecResponse> InternalStorageServiceHandler::future_forwardTransaction(
-    const cpp2::InternalTxnRequest& req) {
-  auto* processor = InterTxnProcessor::instance(env_);
+folly::Future<cpp2::ExecResponse> InternalStorageServiceHandler::future_chainAddEdges(
+    const cpp2::ChainAddEdgesRequest& req) {
+  auto* processor = ChainAddEdgesProcessorRemote::instance(env_);
   RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::GetValueResponse> InternalStorageServiceHandler::future_getValue(
-    const cpp2::GetValueRequest& req) {
-  auto* processor = GetValueProcessor::instance(env_);
+folly::Future<cpp2::UpdateResponse> InternalStorageServiceHandler::future_chainUpdateEdge(
+    const cpp2::ChainUpdateEdgeRequest& req) {
+  auto* processor = ChainUpdateEdgeProcessorRemote::instance(env_);
   RETURN_FUTURE(processor);
 }
 

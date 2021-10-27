@@ -67,10 +67,10 @@ Feature: Insert string vid of vertex and edge
     Then the execution should be successful
     When executing query:
       """
-      FETCH PROP ON * "Tom"
+      FETCH PROP ON * "Tom" YIELD vertex as node
       """
     Then the result should be, in any order, with relax comparison:
-      | vertices_                                                      |
+      | node                                                           |
       | ("Tom":person{name:"Tom", age:18}:interest{name:"basketball"}) |
     # insert vertex wrong type value
     When executing query:
@@ -144,10 +144,10 @@ Feature: Insert string vid of vertex and edge
     # check vertex result with fetch
     When executing query:
       """
-      FETCH PROP ON person "Conan"
+      FETCH PROP ON person "Conan" YIELD vertex as node
       """
     Then the result should be, in any order, with relax comparison:
-      | vertices_ |
+      | node      |
       | ('Conan') |
     # insert vertex with string timestamp succeeded
     When try to execute query:
@@ -167,8 +167,8 @@ Feature: Insert string vid of vertex and edge
       FETCH PROP ON schoolmate "Tom"->"Bob" YIELD schoolmate.likeness, schoolmate.nickname
       """
     Then the result should be, in any order:
-      | schoolmate._src | schoolmate._dst | schoolmate._rank | schoolmate.likeness | schoolmate.nickname |
-      | 'Tom'           | 'Bob'           | 0                | 87                  | 'Superman'          |
+      | schoolmate.likeness | schoolmate.nickname |
+      | 87                  | 'Superman'          |
     # check edge result with go
     When executing query:
       """
@@ -184,8 +184,8 @@ Feature: Insert string vid of vertex and edge
       FETCH PROP ON school "sun_school" YIELD school.name, school.create_time
       """
     Then the result should be, in any order:
-      | VertexID     | school.name  | school.create_time |
-      | "sun_school" | "sun_school" | 1262340000         |
+      | school.name  | school.create_time |
+      | "sun_school" | 1262340000         |
     # insert one vertex multi tags
     When executing query:
       """
@@ -204,16 +204,16 @@ Feature: Insert string vid of vertex and edge
       FETCH PROP ON person "Bob" YIELD person.name, person.age
       """
     Then the result should be, in any order:
-      | VertexID | person.name | person.age |
-      | 'Bob'    | 'Bob'       | 9          |
+      | person.name | person.age |
+      | 'Bob'       | 9          |
     # check student tag result with fetch
     When executing query:
       """
       FETCH PROP ON student "Bob" YIELD student.grade, student.number
       """
     Then the result should be, in any order:
-      | VertexID | student.grade | student.number |
-      | 'Bob'    | 'four'        | 20191106001    |
+      | student.grade | student.number |
+      | 'four'        | 20191106001    |
     # insert multi vertex multi tags
     When executing query:
       """
@@ -466,6 +466,8 @@ Feature: Insert string vid of vertex and edge
       """
       CREATE TAG student(name string NOT NULL, age int);
       CREATE TAG course(name fixed_string(5) NOT NULL, introduce string DEFAULT NULL);
+      CREATE TAG INDEX student_i ON student(name(30), age);
+      CREATE TAG INDEX course_i ON course(name, introduce(30));
       """
     # test insert with fixed_string
     When try to execute query:
@@ -491,11 +493,6 @@ Feature: Insert string vid of vertex and edge
       INSERT VERTEX student(name, age) VALUES "Tom":(NULL, 12)
       """
     Then a ExecutionError should be raised at runtime: Storage Error: The not null field cannot be null.
-    When executing query:
-      """
-      INSERT VERTEX student(name, age) VALUES "Tom":(NULL, 12)
-      """
-    Then a ExecutionError should be raised at runtime: Storage Error: The not null field cannot be null.
     # out of fixed_string's size
     When executing query:
       """
@@ -505,15 +502,31 @@ Feature: Insert string vid of vertex and edge
     # check result
     When executing query:
       """
-      FETCH PROP ON course "English"
+      FETCH PROP ON course "English" YIELD vertex as node
       """
     Then the result should be, in any order, with relax comparison:
-      | vertices_   |
+      | node        |
       | ('English') |
     # check result
     When executing query:
       """
       FETCH PROP ON student "" YIELD student.name, student.age
+      """
+    Then the result should be, in any order:
+      | student.name | student.age |
+      | 'Tom'        | 12          |
+    # check result
+    When executing query:
+      """
+      LOOKUP on course YIELD course.name, course.introduce
+      """
+    Then the result should be, in any order:
+      | VertexID  | course.name | course.introduce |
+      | 'English' | 'Engli'     | NULL             |
+      | 'Math'    | 'Math'      | NULL             |
+    When executing query:
+      """
+      LOOKUP ON student YIELD student.name, student.age
       """
     Then the result should be, in any order:
       | VertexID | student.name | student.age |

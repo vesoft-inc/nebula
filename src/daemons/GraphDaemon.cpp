@@ -5,16 +5,17 @@
  */
 
 #include <errno.h>
+#include <folly/ssl/Init.h>
 #include <signal.h>
 #include <string.h>
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 
 #include "common/base/Base.h"
 #include "common/base/SignalHandler.h"
-#include "common/base/Status.h"
 #include "common/fs/FileUtils.h"
 #include "common/network/NetworkUtils.h"
 #include "common/process/ProcessUtils.h"
+#include "common/ssl/SSLConfig.h"
 #include "common/time/TimezoneInfo.h"
 #include "graph/service/GraphFlags.h"
 #include "graph/service/GraphService.h"
@@ -24,6 +25,7 @@
 
 using nebula::ProcessUtils;
 using nebula::Status;
+using nebula::StatusOr;
 using nebula::fs::FileUtils;
 using nebula::graph::GraphService;
 using nebula::network::NetworkUtils;
@@ -35,8 +37,12 @@ static Status setupSignalHandler();
 extern Status setupLogging();
 static void printHelp(const char *prog);
 static void setupThreadManager();
+#if defined(__x86_64__)
+extern Status setupBreakpad();
+#endif
 
 DECLARE_string(flagfile);
+DECLARE_bool(containerized);
 
 int main(int argc, char *argv[]) {
   google::SetVersionString(nebula::versionString());
@@ -52,6 +58,9 @@ int main(int argc, char *argv[]) {
   }
 
   folly::init(&argc, &argv, true);
+  if (FLAGS_enable_ssl || FLAGS_enable_graph_ssl || FLAGS_enable_meta_ssl) {
+    folly::ssl::init();
+  }
   nebula::initCounters();
 
   if (FLAGS_flagfile.empty()) {
@@ -65,6 +74,14 @@ int main(int argc, char *argv[]) {
     LOG(ERROR) << status;
     return EXIT_FAILURE;
   }
+
+#if defined(__x86_64__)
+  status = setupBreakpad();
+  if (!status.ok()) {
+    LOG(ERROR) << status;
+    return EXIT_FAILURE;
+  }
+#endif
 
   // Detect if the server has already been started
   auto pidPath = FLAGS_pid_file;
@@ -89,12 +106,12 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  // Get the IPv4 address the server will listen on
-  if (FLAGS_local_ip.empty()) {
-    LOG(ERROR) << "local_ip is empty, need to config it through config file";
+  // Validate the IPv4 address or hostname
+  status = NetworkUtils::validateHostOrIp(FLAGS_local_ip);
+  if (!status.ok()) {
+    LOG(ERROR) << status;
     return EXIT_FAILURE;
   }
-  // TODO: Check the ip is valid
   nebula::HostAddr localhost{FLAGS_local_ip, FLAGS_port};
 
   // Initialize the global timezone, it's only used for datetime type compute
@@ -149,6 +166,9 @@ int main(int argc, char *argv[]) {
   gServer->setIdleTimeout(std::chrono::seconds(FLAGS_client_idle_timeout_secs));
   gServer->setNumAcceptThreads(FLAGS_num_accept_threads);
   gServer->setListenBacklog(FLAGS_listen_backlog);
+  if (FLAGS_enable_ssl || FLAGS_enable_graph_ssl) {
+    gServer->setSSLConfig(nebula::sslContextConfig());
+  }
   setupThreadManager();
 
   // Setup the signal handlers

@@ -53,7 +53,7 @@ nebula::cpp2::ErrorCode SetConfigProcessor::setConfig(const cpp2::ConfigModule& 
                                                       const std::string& name,
                                                       const Value& value,
                                                       std::vector<kvstore::KV>& data) {
-  std::string configKey = MetaServiceUtils::configKey(module, name);
+  std::string configKey = MetaKeyUtils::configKey(module, name);
   auto ret = doGet(std::move(configKey));
   if (!nebula::ok(ret)) {
     auto retCode = nebula::error((ret));
@@ -65,12 +65,12 @@ nebula::cpp2::ErrorCode SetConfigProcessor::setConfig(const cpp2::ConfigModule& 
     return retCode;
   }
 
-  cpp2::ConfigItem item = MetaServiceUtils::parseConfigValue(nebula::value(ret));
+  cpp2::ConfigItem item = MetaKeyUtils::parseConfigValue(nebula::value(ret));
   cpp2::ConfigMode curMode = item.get_mode();
   if (curMode == cpp2::ConfigMode::IMMUTABLE) {
     return nebula::cpp2::ErrorCode::E_CONFIG_IMMUTABLE;
   }
-  std::string configValue = MetaServiceUtils::configValue(curMode, value);
+  std::string configValue = MetaKeyUtils::configValue(curMode, value);
   data.emplace_back(std::move(configKey), std::move(configValue));
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }

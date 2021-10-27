@@ -211,6 +211,21 @@ Feature: Basic match
       | ("Paul Gasol" :player{age: 38, name: "Paul Gasol"}) | [:like "Paul Gasol"->"Marc Gasol" @0 {likeness: 99}]    | ("Marc Gasol" :player{age: 34, name: "Marc Gasol"})           |
       | ("Yao Ming" :player{age: 38, name: "Yao Ming"})     | [:like "Yao Ming"->"Shaquile O'Neal" @0 {likeness: 90}] | ("Shaquile O'Neal" :player{age: 47, name: "Shaquile O'Neal"}) |
       | ("Yao Ming" :player{age: 38, name: "Yao Ming"})     | [:like "Yao Ming"->"Tracy McGrady" @0 {likeness: 90}]   | ("Tracy McGrady" :player{age: 39, name: "Tracy McGrady"})     |
+    When executing query:
+      """
+      MATCH (v:player)-[e:like]->(v2) where id(v) == "Tim Duncan" RETURN DISTINCT properties(e) as props, e
+      """
+    Then the result should be, in any order, with relax comparison:
+      | props          | e                                                       |
+      | {likeness: 95} | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}] |
+      | {likeness: 95} | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]   |
+    When executing query:
+      """
+      MATCH (v:player)-[e:like]->(v2) where id(v) == "Tim Duncan" RETURN DISTINCT properties(e) as props
+      """
+    Then the result should be, in any order, with relax comparison:
+      | props          |
+      | {likeness: 95} |
 
   Scenario: two steps
     When executing query:
@@ -514,7 +529,7 @@ Feature: Basic match
       """
       MATCH (v:player) where v.name return v
       """
-    Then a ExecutionError should be raised at runtime: Internal Error: Wrong type result, the type should be NULL,EMPTY or BOOL
+    Then a ExecutionError should be raised at runtime: Wrong type result, the type should be NULL, EMPTY or BOOL
 
   Scenario: Unimplemented features
     When executing query:

@@ -7,4 +7,10 @@ nebula_add_library(
     OperationKeyUtils.cpp
 )
 
+nebula_add_library(
+    meta_keyutils_obj OBJECT
+    MetaKeyUtils.cpp
+)
+
+
 nebula_add_subdirectory(test)

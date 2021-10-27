@@ -10,19 +10,19 @@ Feature: Go Sentence
   Scenario: one step
     When executing query:
       """
-      GO FROM "Tim Duncan" OVER serve
+      GO FROM "Tim Duncan" OVER serve YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst |
       | "Spurs"    |
     When executing query:
       """
-      GO FROM "Tim Duncan", "Tony Parker" OVER like WHERE $$.player.age > 9223372036854775807+1
+      GO FROM "Tim Duncan", "Tony Parker" OVER like WHERE $$.player.age > 9223372036854775807+1 YIELD like._dst
       """
     Then a ExecutionError should be raised at runtime: result of (9223372036854775807+1) cannot be represented as an integer
     When executing query:
       """
-      GO FROM "Tim Duncan", "Tony Parker" OVER like WHERE $$.player.age > -9223372036854775808-1
+      GO FROM "Tim Duncan", "Tony Parker" OVER like WHERE $$.player.age > -9223372036854775808-1 YIELD like._dst
       """
     Then a ExecutionError should be raised at runtime: result of (-9223372036854775808-1) cannot be represented as an integer
     When executing query:
@@ -46,7 +46,7 @@ Feature: Go Sentence
       | "Tony Parker" | 36  |
     When executing query:
       """
-      GO FROM "Tim Duncan", "Tim Duncan" OVER serve
+      GO FROM "Tim Duncan", "Tim Duncan" OVER serve YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst |
@@ -54,7 +54,7 @@ Feature: Go Sentence
       | "Spurs"    |
     When executing query:
       """
-      YIELD "Tim Duncan" as vid | GO FROM $-.vid OVER serve
+      YIELD "Tim Duncan" as vid | GO FROM $-.vid OVER serve YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst |
@@ -83,8 +83,9 @@ Feature: Go Sentence
       | "Rajon Rondo"  | 2017             | 2018           | "Pelicans"   |
     When executing query:
       """
-      GO FROM "Boris Diaw" OVER like YIELD like._dst as id
-      | GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve
+      GO FROM "Boris Diaw" OVER like YIELD like._dst as id |
+      GO FROM $-.id OVER like YIELD like._dst as id |
+      GO FROM $-.id OVER serve YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst      |
@@ -97,7 +98,7 @@ Feature: Go Sentence
       | "Trail Blazers" |
     When executing query:
       """
-      GO FROM 'Thunders' OVER serve REVERSELY
+      GO FROM 'Thunders' OVER serve REVERSELY YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst          |
@@ -110,7 +111,7 @@ Feature: Go Sentence
     When executing query:
       """
       GO FROM "Boris Diaw" OVER like YIELD like._dst as id
-      |(GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve)
+      |(GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve YIELD serve._dst)
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst      |
@@ -124,14 +125,14 @@ Feature: Go Sentence
     When executing query:
       """
       GO FROM "No Exist Vertex Id" OVER like YIELD like._dst as id
-      |(GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve)
+      |(GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve YIELD serve._dst)
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst |
     When executing query:
       """
       GO FROM "Boris Diaw" OVER like, serve YIELD like._dst as id
-      |(GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve)
+      |(GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve YIELD serve._dst)
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst      |
@@ -162,7 +163,7 @@ Feature: Go Sentence
   Scenario: assignment simple
     When executing query:
       """
-      $var = GO FROM "Tracy McGrady" OVER like YIELD like._dst as id; GO FROM $var.id OVER like
+      $var = GO FROM "Tracy McGrady" OVER like YIELD like._dst as id; GO FROM $var.id OVER like YIELD like._dst
       """
     Then the result should be, in any order, with relax comparison:
       | like._dst           |
@@ -173,7 +174,7 @@ Feature: Go Sentence
     When executing query:
       """
       $var = (GO FROM "Tracy McGrady" OVER like YIELD like._dst as id | GO FROM $-.id OVER like YIELD like._dst as id);
-      GO FROM $var.id OVER like
+      GO FROM $var.id OVER like YIELD like._dst
       """
     Then the result should be, in any order, with relax comparison:
       | like._dst     |
@@ -206,7 +207,7 @@ Feature: Go Sentence
   Scenario: assignment empty result
     When executing query:
       """
-      $var = GO FROM "-1" OVER like YIELD like._dst as id; GO FROM $var.id OVER like
+      $var = GO FROM "-1" OVER like YIELD like._dst as id; GO FROM $var.id OVER like YIELD like._dst
       """
     Then the result should be, in any order, with relax comparison:
       | like._dst |
@@ -214,7 +215,7 @@ Feature: Go Sentence
   Scenario: variable undefined
     When executing query:
       """
-      GO FROM $var OVER like
+      GO FROM $var OVER like YIELD like._dst
       """
     Then a SyntaxError should be raised at runtime: syntax error near `OVER'
 
@@ -250,7 +251,7 @@ Feature: Go Sentence
   Scenario: vertex noexist
     When executing query:
       """
-      GO FROM "NON EXIST VERTEX ID" OVER serve
+      GO FROM "NON EXIST VERTEX ID" OVER serve YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst |
@@ -272,7 +273,7 @@ Feature: Go Sentence
       """
       GO FROM "NON EXIST VERTEX ID" OVER like YIELD like._dst as id
       | GO FROM $-.id OVER like YIELD like._dst as id
-      | GO FROM $-.id OVER serve
+      | GO FROM $-.id OVER serve YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst |
@@ -280,7 +281,7 @@ Feature: Go Sentence
       """
       GO FROM "NON EXIST VERTEX ID" OVER serve YIELD serve._dst as id, serve.start_year as start
       | YIELD $-.id as id WHERE $-.start > 20000
-      | Go FROM $-.id over serve
+      | Go FROM $-.id over serve YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst |
@@ -306,7 +307,7 @@ Feature: Go Sentence
       | EMPTY      | "Russell Westbrook" |
     When executing query:
       """
-      GO FROM "Russell Westbrook" OVER * REVERSELY
+      GO FROM "Russell Westbrook" OVER * REVERSELY YIELD like._dst, serve._dst, teammate._dst
       """
     Then the result should be, in any order, with relax comparison:
       | like._dst         | serve._dst | teammate._dst |
@@ -325,7 +326,7 @@ Feature: Go Sentence
       | EMPTY       | "Dwyane Wade" |
     When executing query:
       """
-      GO FROM "Paul Gasol" OVER *
+      GO FROM "Paul Gasol" OVER * YIELD like._dst, serve._dst, teammate._dst
       """
     Then the result should be, in any order, with relax comparison:
       | like._dst     | serve._dst  | teammate._dst |
@@ -384,7 +385,7 @@ Feature: Go Sentence
     When executing query:
       """
       GO FROM "Boris Diaw" OVER * YIELD like._dst as id
-      | ( GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve )
+      | ( GO FROM $-.id OVER like YIELD like._dst as id | GO FROM $-.id OVER serve YIELD serve._dst)
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst      |
@@ -409,9 +410,9 @@ Feature: Go Sentence
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst | like._dst         | serve._type | like._type |
-      | EMPTY      | "James Harden"    | EMPTY       | -5         |
-      | EMPTY      | "Dejounte Murray" | EMPTY       | -5         |
-      | EMPTY      | "Paul George"     | EMPTY       | -5         |
+      | EMPTY      | "James Harden"    | EMPTY       | /-?\d+/    |
+      | EMPTY      | "Dejounte Murray" | EMPTY       | /-?\d+/    |
+      | EMPTY      | "Paul George"     | EMPTY       | /-?\d+/    |
 
   Scenario: multi edges
     When executing query:
@@ -425,7 +426,7 @@ Feature: Go Sentence
       | EMPTY            | 90            |
     When executing query:
       """
-      GO FROM "Shaquile O\'Neal" OVER serve, like
+      GO FROM "Shaquile O\'Neal" OVER serve, like YIELD serve._dst, like._dst
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst  | like._dst      |
@@ -439,7 +440,7 @@ Feature: Go Sentence
       | EMPTY       | "Tim Duncan"   |
     When executing query:
       """
-      GO FROM 'Russell Westbrook' OVER serve, like
+      GO FROM 'Russell Westbrook' OVER serve, like YIELD serve._dst, like._dst
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst | like._dst      |
@@ -467,7 +468,7 @@ Feature: Go Sentence
       | EMPTY      | "Russell Westbrook" |
     When executing query:
       """
-      GO FROM "Russell Westbrook" OVER serve, like REVERSELY
+      GO FROM "Russell Westbrook" OVER serve, like REVERSELY YIELD serve._dst, like._dst
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst | like._dst         |
@@ -663,7 +664,7 @@ Feature: Go Sentence
     When executing query:
       """
       GO FROM 'Tim Duncan' OVER like YIELD like._dst AS id |
-      GO FROM  $-.id OVER serve WHERE $-.id IN ['Tony Parker', 123]
+      GO FROM  $-.id OVER serve WHERE $-.id IN ['Tony Parker', 123] YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst |
@@ -672,7 +673,7 @@ Feature: Go Sentence
     When executing query:
       """
       GO FROM 'Tim Duncan' OVER like YIELD like._dst AS id |
-      GO FROM  $-.id OVER serve WHERE $-.id IN ['Tony Parker', 123] AND 1 == 1
+      GO FROM  $-.id OVER serve WHERE $-.id IN ['Tony Parker', 123] AND 1 == 1 YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst |
@@ -686,7 +687,7 @@ Feature: Go Sentence
       $A = GO FROM 'Tim Duncan' OVER like YIELD like._dst AS dst;
       $rA = YIELD $A.* WHERE $A.dst == 123;
       RETURN $rA IF $rA IS NOT NULL;
-      GO FROM $A.dst OVER serve
+      GO FROM $A.dst OVER serve YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst |
@@ -698,7 +699,7 @@ Feature: Go Sentence
       $A = GO FROM 'Tim Duncan' OVER like YIELD like._dst AS dst;
       $rA = YIELD $A.* WHERE 1 == 1;
       RETURN $rA IF $rA IS NOT NULL;
-      GO FROM $A.dst OVER serve
+      GO FROM $A.dst OVER serve YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst      |
@@ -712,7 +713,7 @@ Feature: Go Sentence
       $B = GO FROM $A.dstA OVER like YIELD like._dst AS dstB;
       $rB = YIELD $B.* WHERE $B.dstB == 456;
       RETURN $rB IF $rB IS NOT NULL;
-      GO FROM $B.dstB OVER serve
+      GO FROM $B.dstB OVER serve YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst      |
@@ -880,7 +881,7 @@ Feature: Go Sentence
     When executing query:
       """
       GO FROM 'Manu Ginobili' OVER * REVERSELY YIELD like._dst AS id
-      | GO FROM $-.id OVER serve
+      | GO FROM $-.id OVER serve YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst |
@@ -957,7 +958,7 @@ Feature: Go Sentence
     When executing query:
       """
       GO FROM 'Manu Ginobili' OVER like REVERSELY YIELD like._dst AS id
-      | GO FROM $-.id OVER serve
+      | GO FROM $-.id OVER serve YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst |
@@ -972,14 +973,14 @@ Feature: Go Sentence
   Scenario: bidirect
     When executing query:
       """
-      GO FROM 'Tim Duncan' OVER serve bidirect
+      GO FROM 'Tim Duncan' OVER serve bidirect YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst |
       | "Spurs"    |
     When executing query:
       """
-      GO FROM 'Tim Duncan' OVER like bidirect
+      GO FROM 'Tim Duncan' OVER like bidirect YIELD like._dst
       """
     Then the result should be, in any order, with relax comparison:
       | like._dst           |
@@ -997,7 +998,7 @@ Feature: Go Sentence
       | "Shaquile O'Neal"   |
     When executing query:
       """
-      GO FROM 'Tim Duncan' OVER serve, like bidirect
+      GO FROM 'Tim Duncan' OVER serve, like bidirect YIELD serve._dst, like._dst
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst | like._dst           |
@@ -1079,7 +1080,7 @@ Feature: Go Sentence
       | "Tim Duncan"   | EMPTY      | EMPTY        | EMPTY               | "Manu Ginobili"     |
     When executing query:
       """
-      GO FROM 'Tim Duncan' OVER * bidirect
+      GO FROM 'Tim Duncan' OVER * bidirect YIELD like._dst, serve._dst, teammate._dst
       """
     Then the result should be, in any order, with relax comparison:
       | like._dst           | serve._dst | teammate._dst       |
@@ -1114,29 +1115,29 @@ Feature: Go Sentence
     When executing query:
       """
       GO FROM 'Tim Duncan' OVER like YIELD like._dst AS id, like.likeness AS id
-      | GO FROM $-.id OVER serve
+      | GO FROM $-.id OVER serve YIELD serve._dst
       """
     Then a SemanticError should be raised at runtime: Duplicate Column Name : `id'
     When executing query:
       """
       GO FROM 'Tim Duncan' OVER like, serve YIELD serve.start_year AS year, serve.end_year AS year, serve._dst AS id
-      | GO FROM $-.id OVER *
+      | GO FROM $-.id OVER * YIELD like._dst
       """
     Then a SemanticError should be raised at runtime: Duplicate Column Name : `year'
     When executing query:
       """
       $a = GO FROM 'Tim Duncan' OVER *
       YIELD serve.start_year AS year, serve.end_year AS year, serve._dst AS id;
-      | GO FROM $-.id OVER serve
+      | GO FROM $-.id OVER serve YIELD serve._dst
       """
     Then a SyntaxError should be raised at runtime: syntax error near `| GO FRO'
 
   Scenario: invalid condition in where
     When executing query:
       """
-      GO FROM 'Tim Duncan' OVER like where like.likeness
+      GO FROM 'Tim Duncan' OVER like where like.likeness YIELD like._dst
       """
-    Then a SemanticError should be raised at runtime: `like.likeness', expected Boolean, but was `INT'
+    Then a SemanticError should be raised at runtime: `like.likeness', expected boolean, but was `INT'
 
   Scenario: contain
     When executing query:
@@ -1237,14 +1238,14 @@ Feature: Go Sentence
       | "Tim Duncan"        | 90            | "Tim Duncan"        |
     When executing query:
       """
-      GO 0 TO 3 STEPS FROM 'Tim Duncan' OVER serve
+      GO 0 TO 3 STEPS FROM 'Tim Duncan' OVER serve YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst |
       | "Spurs"    |
     When executing query:
       """
-      GO 2 TO 3 STEPS FROM 'Tim Duncan' OVER serve
+      GO 2 TO 3 STEPS FROM 'Tim Duncan' OVER serve YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst |
@@ -1306,7 +1307,7 @@ Feature: Go Sentence
       | "Damian Lillard"    |
     When executing query:
       """
-      GO 1 TO 3 STEPS FROM 'Spurs' OVER serve REVERSELY
+      GO 1 TO 3 STEPS FROM 'Spurs' OVER serve REVERSELY YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst          |
@@ -1330,7 +1331,7 @@ Feature: Go Sentence
       | "Marco Belinelli"   |
     When executing query:
       """
-      GO 0 TO 3 STEPS FROM 'Spurs' OVER serve REVERSELY
+      GO 0 TO 3 STEPS FROM 'Spurs' OVER serve REVERSELY YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst          |
@@ -1490,6 +1491,45 @@ Feature: Go Sentence
       | EMPTY      | "Russell Westbrook" |
       | EMPTY      | "Luka Doncic"       |
       | EMPTY      | "Russell Westbrook" |
+    When executing query:
+      """
+      go 1 to 4 steps from "Tim Duncan" over like where like.likeness > 90 yield like.likeness, edge as e
+      """
+    Then the result should be, in any order, with relax comparison:
+      | like.likeness | e                                                        |
+      | 95            | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]  |
+      | 95            | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]    |
+      | 95            | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}] |
+      | 95            | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]    |
+      | 95            | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]  |
+      | 95            | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]    |
+      | 95            | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}] |
+      | 95            | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]    |
+      | 95            | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]  |
+      | 95            | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]    |
+    When executing query:
+      """
+      go 1 to 4 steps from "Tim Duncan" over like yield like.likeness, edge as e
+      """
+    Then the result should be, in any order, with relax comparison:
+      | like.likeness | e                                                            |
+      | 95            | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]      |
+      | 95            | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]        |
+      | 90            | [:like "Manu Ginobili"->"Tim Duncan" @0 {likeness: 90}]      |
+      | 90            | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}] |
+      | 95            | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]     |
+      | 95            | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | 75            | [:like "LaMarcus Aldridge"->"Tim Duncan" @0 {likeness: 75}]  |
+      | 75            | [:like "LaMarcus Aldridge"->"Tony Parker" @0 {likeness: 75}] |
+      | 95            | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]      |
+      | 95            | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]        |
+      | 90            | [:like "Manu Ginobili"->"Tim Duncan" @0 {likeness: 90}]      |
+      | 90            | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}] |
+      | 95            | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]     |
+      | 95            | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | 95            | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]      |
+      | 95            | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]        |
+      | 90            | [:like "Manu Ginobili"->"Tim Duncan" @0 {likeness: 90}]      |
 
   Scenario: error message
     When executing query:
@@ -1503,19 +1543,19 @@ Feature: Go Sentence
   Scenario: zero step
     When executing query:
       """
-      GO 0 STEPS FROM 'Tim Duncan' OVER serve BIDIRECT
+      GO 0 STEPS FROM 'Tim Duncan' OVER serve BIDIRECT YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst |
     When executing query:
       """
-      GO 0 STEPS FROM 'Tim Duncan' OVER serve
+      GO 0 STEPS FROM 'Tim Duncan' OVER serve YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst |
     When executing query:
       """
-      GO 0 STEPS FROM 'Tim Duncan' OVER like YIELD like._dst as id | GO FROM $-.id OVER serve
+      GO 0 STEPS FROM 'Tim Duncan' OVER like YIELD like._dst as id | GO FROM $-.id OVER serve YIELD serve._dst
       """
     Then the result should be, in any order, with relax comparison:
       | serve._dst |
@@ -1687,7 +1727,7 @@ Feature: Go Sentence
   Scenario: Bugfix filter not pushdown
     When executing query:
       """
-      GO FROM "Tim Duncan" OVER like WHERE like._dst == "Tony Parker" | limit 10;
+      GO FROM "Tim Duncan" OVER like WHERE like._dst == "Tony Parker" YIELD like._dst | limit 10;
       """
     Then the result should be, in any order, with relax comparison:
       | like._dst     |
@@ -1696,38 +1736,38 @@ Feature: Go Sentence
   Scenario: Step over end
     When executing query:
       """
-      GO 2 STEPS FROM "Tim Duncan" OVER serve;
+      GO 2 STEPS FROM "Tim Duncan" OVER serve YIELD serve._dst;
       """
     Then the result should be, in any order:
       | serve._dst |
     When executing query:
       """
-      GO 10 STEPS FROM "Tim Duncan" OVER serve;
+      GO 10 STEPS FROM "Tim Duncan" OVER serve YIELD serve._dst;
       """
     Then the result should be, in any order:
       | serve._dst |
     When executing query:
       """
-      GO 10000000000000 STEPS FROM "Tim Duncan" OVER serve;
+      GO 10000000000000 STEPS FROM "Tim Duncan" OVER serve YIELD serve._dst;
       """
     Then the result should be, in any order:
       | serve._dst |
     When executing query:
       """
-      GO 1 TO 10 STEPS FROM "Tim Duncan" OVER serve;
+      GO 1 TO 10 STEPS FROM "Tim Duncan" OVER serve YIELD serve._dst;
       """
     Then the result should be, in any order:
       | serve._dst |
       | "Spurs"    |
     When executing query:
       """
-      GO 2 TO 10 STEPS FROM "Tim Duncan" OVER serve;
+      GO 2 TO 10 STEPS FROM "Tim Duncan" OVER serve YIELD serve._dst;
       """
     Then the result should be, in any order:
       | serve._dst |
     When executing query:
       """
-      GO 1000000000 TO 1000000002 STEPS FROM "Tim Duncan" OVER serve;
+      GO 1000000000 TO 1000000002 STEPS FROM "Tim Duncan" OVER serve YIELD serve._dst;
       """
     Then the result should be, in any order:
       | serve._dst |
@@ -1736,28 +1776,28 @@ Feature: Go Sentence
   Scenario: go step limit
     When executing query:
       """
-      GO FROM "Tim Duncan" OVER like LIMIT [10,10];
+      GO FROM "Tim Duncan" OVER like LIMIT [10,10] YIELD like._dst;
       """
     Then a SemanticError should be raised at runtime:
     When executing query:
       """
-      GO FROM "Tim Duncan" OVER like LIMIT ["10"];
+      GO FROM "Tim Duncan" OVER like LIMIT ["10"] YIELD like._dst;
       """
     Then a SemanticError should be raised at runtime:
     When executing query:
       """
-      GO FROM "Tim Duncan" OVER like LIMIT [a];
+      GO FROM "Tim Duncan" OVER like LIMIT [a] YIELD like._dst;
       """
     Then a SemanticError should be raised at runtime:
     When executing query:
       """
-      GO FROM "Tim Duncan" OVER like LIMIT [1];
+      GO FROM "Tim Duncan" OVER like LIMIT [1] YIELD like._dst;
       """
     Then the result should be, in any order, with relax comparison:
       | like._dst |
     When executing query:
       """
-      GO 3 STEPS FROM "Tim Duncan" OVER like LIMIT [1, 2, 2];
+      GO 3 STEPS FROM "Tim Duncan" OVER like LIMIT [1, 2, 2] YIELD like._dst;
       """
     Then the result should be, in any order, with relax comparison:
       | like._dst |
@@ -1773,51 +1813,6 @@ Feature: Go Sentence
     When executing query:
       """
       GO 3 STEPS FROM "Tim Duncan" OVER like WHERE [like._dst == "Tony Parker", $$.player.age>20, $$.player.age>22] LIMIT [1, 2, 2];
-      """
-    Then the result should be, in any order, with relax comparison:
-      | like._dst |
-
-  @skip
-  Scenario: go step sample
-    When executing query:
-      """
-      GO FROM "Tim Duncan" OVER like SAMPLE [10,10];
-      """
-    Then a SemanticError should be raised at runtime:
-    When executing query:
-      """
-      GO FROM "Tim Duncan" OVER like SAMPLE ["10"];
-      """
-    Then a SemanticError should be raised at runtime:
-    When executing query:
-      """
-      GO FROM "Tim Duncan" OVER like SAMPLE [a];
-      """
-    Then a SemanticError should be raised at runtime:
-    When executing query:
-      """
-      GO FROM "Tim Duncan" OVER like SAMPLE [1];
-      """
-    Then the result should be, in any order, with relax comparison:
-      | like._dst |
-    When executing query:
-      """
-      GO 3 STEPS FROM "Tim Duncan" OVER like SAMPLE [1, 3, 2];
-      """
-    Then the result should be, in any order, with relax comparison:
-      | like._dst |
-
-  @skip
-  Scenario: go step filter & step sample
-    When executing query:
-      """
-      GO FROM "Tim Duncan" OVER like WHERE [like._dst == "Tony Parker"]  SAMPLE [1];
-      """
-    Then the result should be, in any order, with relax comparison:
-      | like._dst |
-    When executing query:
-      """
-      GO 3 STEPS FROM "Tim Duncan" OVER like WHERE [like._dst == "Tony Parker", $$.player.age>20, $$.player.age>22] SAMPLE [1, 2, 2];
       """
     Then the result should be, in any order, with relax comparison:
       | like._dst |

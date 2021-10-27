@@ -31,6 +31,8 @@
 # Whether to treat partial success as an error.
 # This flag is only used for Read-only access, and Modify access always treats partial success as an error.
 --accept_partial_success=false
+# Maximum sentence length, unit byte
+--max_allowed_query_size=4194304
 
 ########## networking ##########
 # Comma separated Meta Server Addresses
@@ -77,3 +79,7 @@
 ########## memory ##########
 # System memory high watermark ratio
 --system_memory_high_watermark_ratio=0.8
+
+########## experimental feature ##########
+# if use experimental features
+--enable_experimental_feature=false

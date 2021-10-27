@@ -31,6 +31,9 @@ class UpdateEdgeProcessor
 
   void doProcess(const cpp2::UpdateEdgeRequest& req);
 
+  using ContextAdjuster = folly::Function<void(EdgeContext& ctx)>;
+  void adjustContext(ContextAdjuster fn);
+
  private:
   UpdateEdgeProcessor(StorageEnv* env, const ProcessorCounters* counters, folly::Executor* executor)
       : QueryBaseProcessor<cpp2::UpdateEdgeRequest, cpp2::UpdateResponse>(env, counters, executor) {
@@ -49,13 +52,12 @@ class UpdateEdgeProcessor
 
   void onProcessFinished() override;
 
-  std::vector<Expression*> getReturnPropsExp() {
-    // std::vector<Expression*> result;
-    // result.resize(returnPropsExp_.size());
-    // auto get = [] (auto &ptr) {return ptr.get(); };
-    // std::transform(returnPropsExp_.begin(), returnPropsExp_.end(),
-    // result.begin(), get); return result;
-    return returnPropsExp_;
+  std::vector<Expression*> getReturnPropsExp() { return returnPropsExp_; }
+  void profilePlan(StoragePlan<cpp2::EdgeKey>& plan) {
+    auto& nodes = plan.getNodes();
+    for (auto& node : nodes) {
+      profileDetail(node->name_, node->duration_.elapsedInUSec());
+    }
   }
 
  private:
@@ -71,6 +73,9 @@ class UpdateEdgeProcessor
   // update <prop name, new value expression>
   std::vector<storage::cpp2::UpdatedProp> updatedProps_;
 
+  folly::Optional<std::vector<std::string>> returnProps_;
+  folly::Optional<std::string> condition_;
+
   // return props expression
   std::vector<Expression*> returnPropsExp_;
 
@@ -79,6 +84,8 @@ class UpdateEdgeProcessor
 
   // updatedProps_ dependent props in value expression
   std::vector<std::pair<std::string, std::unordered_set<std::string>>> depPropMap_;
+
+  std::list<ContextAdjuster> ctxAdjuster_;
 };
 
 }  // namespace storage

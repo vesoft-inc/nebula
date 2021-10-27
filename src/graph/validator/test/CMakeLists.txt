@@ -33,7 +33,9 @@ set(VALIDATOR_TEST_LIBS
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:datatypes_obj>
+    $<TARGET_OBJECTS:wkt_wkb_io_obj>
     $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:memory_obj>
     $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:meta_obj>
     $<TARGET_OBJECTS:graph_thrift_obj>
@@ -41,6 +43,7 @@ set(VALIDATOR_TEST_LIBS
     $<TARGET_OBJECTS:meta_client_obj>
     $<TARGET_OBJECTS:file_based_cluster_id_man_obj>
     $<TARGET_OBJECTS:function_manager_obj>
+    $<TARGET_OBJECTS:wkt_wkb_io_obj>
     $<TARGET_OBJECTS:agg_function_manager_obj>
     $<TARGET_OBJECTS:conf_obj>
     $<TARGET_OBJECTS:encryption_obj>
@@ -51,6 +54,7 @@ set(VALIDATOR_TEST_LIBS
     $<TARGET_OBJECTS:ft_es_graph_adapter_obj>
     $<TARGET_OBJECTS:ws_common_obj>
     $<TARGET_OBJECTS:version_obj>
+    $<TARGET_OBJECTS:ssl_obj>
 )
 
 nebula_add_test(

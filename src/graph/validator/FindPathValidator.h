@@ -7,17 +7,15 @@
 #ifndef GRAPH_VALIDATOR_FINDPATHVALIDATOR_H_
 #define GRAPH_VALIDATOR_FINDPATHVALIDATOR_H_
 
-#include "common/base/Base.h"
 #include "graph/context/ast/QueryAstContext.h"
-#include "graph/validator/TraversalValidator.h"
+#include "graph/validator/Validator.h"
 
 namespace nebula {
 namespace graph {
 
-class FindPathValidator final : public TraversalValidator {
+class FindPathValidator final : public Validator {
  public:
-  FindPathValidator(Sentence* sentence, QueryContext* context)
-      : TraversalValidator(sentence, context) {}
+  FindPathValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {}
 
  private:
   Status validateImpl() override;

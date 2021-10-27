@@ -8,7 +8,7 @@
 #include "graph/planner/plan/Algo.h"
 #include "graph/planner/plan/Logic.h"
 #include "graph/util/ExpressionUtils.h"
-#include "graph/util/QueryUtil.h"
+#include "graph/util/PlannerUtil.h"
 #include "graph/util/SchemaUtil.h"
 #include "graph/validator/Validator.h"
 
@@ -17,7 +17,7 @@ namespace graph {
 
 StatusOr<std::unique_ptr<std::vector<EdgeProp>>> SubgraphPlanner::buildEdgeProps() {
   auto* qctx = subgraphCtx_->qctx;
-  auto withProp = subgraphCtx_->withProp;
+  bool getEdgeProp = subgraphCtx_->withProp && subgraphCtx_->getEdgeProp;
   const auto& space = subgraphCtx_->space;
   auto& edgeTypes = subgraphCtx_->edgeTypes;
 
@@ -31,7 +31,7 @@ StatusOr<std::unique_ptr<std::vector<EdgeProp>>> SubgraphPlanner::buildEdgeProps
     }
   }
   std::vector<EdgeType> vEdgeTypes(edgeTypes.begin(), edgeTypes.end());
-  auto edgeProps = SchemaUtil::getEdgeProps(qctx, space, std::move(vEdgeTypes), withProp);
+  auto edgeProps = SchemaUtil::getEdgeProps(qctx, space, std::move(vEdgeTypes), getEdgeProp);
   NG_RETURN_IF_ERROR(edgeProps);
   return edgeProps;
 }
@@ -55,7 +55,8 @@ StatusOr<SubPlan> SubgraphPlanner::nSteps(SubPlan& startVidPlan, const std::stri
   const auto& steps = subgraphCtx_->steps;
 
   auto* startNode = StartNode::make(qctx);
-  auto vertexProps = SchemaUtil::getAllVertexProp(qctx, space, subgraphCtx_->withProp);
+  bool getVertexProp = subgraphCtx_->withProp && subgraphCtx_->getVertexProp;
+  auto vertexProps = SchemaUtil::getAllVertexProp(qctx, space, getVertexProp);
   NG_RETURN_IF_ERROR(vertexProps);
   auto edgeProps = buildEdgeProps();
   NG_RETURN_IF_ERROR(edgeProps);
@@ -78,10 +79,12 @@ StatusOr<SubPlan> SubgraphPlanner::nSteps(SubPlan& startVidPlan, const std::stri
   auto* dc = DataCollect::make(qctx, DataCollect::DCKind::kSubgraph);
   dc->addDep(loop);
   dc->setInputVars({gn->outputVar(), oneMoreStepOutput});
-  dc->setColNames({kVertices, kEdges});
+  dc->setColNames({"VERTICES", "EDGES"});
+
+  auto* project = Project::make(qctx, dc, subgraphCtx_->yieldExpr);
 
   SubPlan subPlan;
-  subPlan.root = dc;
+  subPlan.root = project;
   subPlan.tail = startVidPlan.tail != nullptr ? startVidPlan.tail : loop;
   return subPlan;
 }
@@ -106,7 +109,7 @@ StatusOr<SubPlan> SubgraphPlanner::zeroStep(SubPlan& startVidPlan, const std::st
   auto* func = AggregateExpression::make(pool, "COLLECT", vertexExpr, false);
 
   auto* collect = Aggregate::make(qctx, getVertex, {}, {func});
-  collect->setColNames({kVertices});
+  collect->setColNames(std::move(subgraphCtx_->colNames));
 
   SubPlan subPlan;
   subPlan.root = collect;
@@ -119,7 +122,7 @@ StatusOr<SubPlan> SubgraphPlanner::transform(AstContext* astCtx) {
   auto qctx = subgraphCtx_->qctx;
   std::string vidsVar;
 
-  SubPlan startPlan = QueryUtil::buildStart(qctx, subgraphCtx_->from, vidsVar);
+  SubPlan startPlan = PlannerUtil::buildStart(qctx, subgraphCtx_->from, vidsVar);
   if (subgraphCtx_->steps.steps() == 0) {
     return zeroStep(startPlan, vidsVar);
   }

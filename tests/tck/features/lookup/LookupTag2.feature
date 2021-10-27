@@ -30,6 +30,11 @@ Feature: Test lookup on tag index 2
   Scenario Outline: [tag] simple tag test cases
     When executing query:
       """
+      LOOKUP ON lookup_tag_1 WHERE lookup_tag_1.col1 == 201 OR lookup_tag_1.col2 == 201 AND lookup_tag_1.col3 == 202
+      """
+    Then the execution should be successful
+    When executing query:
+      """
       LOOKUP ON lookup_tag_1 WHERE col1 == 200;
       """
     Then a SemanticError should be raised at runtime: Expression (col1==200) not supported yet
@@ -38,11 +43,6 @@ Feature: Test lookup on tag index 2
       LOOKUP ON lookup_tag_1 WHERE lookup_tag_1.col1 == 200 OR lookup_tag_1.col5 == 20;
       """
     Then a SemanticError should be raised at runtime: Invalid column: col5
-    When executing query:
-      """
-      LOOKUP ON lookup_tag_1 WHERE lookup_tag_1.col1 == 201 OR lookup_tag_1.col2 == 201 AND lookup_tag_1.col3 == 202
-      """
-    Then a SemanticError should be raised at runtime: Not supported filter
     When executing query:
       """
       LOOKUP ON lookup_tag_1 WHERE lookup_tag_1.col1 == 300

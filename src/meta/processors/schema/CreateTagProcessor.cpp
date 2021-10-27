@@ -83,10 +83,10 @@ void CreateTagProcessor::process(const cpp2::CreateTagReq& req) {
 
   auto tagId = nebula::value(tagRet);
   std::vector<kvstore::KV> data;
-  data.emplace_back(MetaServiceUtils::indexTagKey(spaceId, tagName),
+  data.emplace_back(MetaKeyUtils::indexTagKey(spaceId, tagName),
                     std::string(reinterpret_cast<const char*>(&tagId), sizeof(TagID)));
-  data.emplace_back(MetaServiceUtils::schemaTagKey(spaceId, tagId, 0),
-                    MetaServiceUtils::schemaVal(tagName, schema));
+  data.emplace_back(MetaKeyUtils::schemaTagKey(spaceId, tagId, 0),
+                    MetaKeyUtils::schemaVal(tagName, schema));
 
   LOG(INFO) << "Create Tag " << tagName << ", TagID " << tagId;
 

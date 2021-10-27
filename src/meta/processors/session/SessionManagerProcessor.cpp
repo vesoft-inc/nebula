@@ -30,8 +30,8 @@ void CreateSessionProcessor::process(const cpp2::CreateSessionReq& req) {
   session.set_client_ip(req.get_client_ip());
 
   std::vector<kvstore::KV> data;
-  data.emplace_back(MetaServiceUtils::sessionKey(session.get_session_id()),
-                    MetaServiceUtils::sessionVal(session));
+  data.emplace_back(MetaKeyUtils::sessionKey(session.get_session_id()),
+                    MetaKeyUtils::sessionVal(session));
   resp_.set_session(session);
   ret = doSyncPut(std::move(data));
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -50,7 +50,7 @@ void UpdateSessionsProcessor::process(const cpp2::UpdateSessionsReq& req) {
       killedQueries;
   for (auto& session : req.get_sessions()) {
     auto sessionId = session.get_session_id();
-    auto sessionKey = MetaServiceUtils::sessionKey(sessionId);
+    auto sessionKey = MetaKeyUtils::sessionKey(sessionId);
     auto ret = doGet(sessionKey);
     if (!nebula::ok(ret)) {
       auto errCode = nebula::error(ret);
@@ -67,7 +67,7 @@ void UpdateSessionsProcessor::process(const cpp2::UpdateSessionsReq& req) {
     // client.
     auto& newQueries = *session.queries_ref();
     std::unordered_map<nebula::ExecutionPlanID, cpp2::QueryDesc> killedQueriesInCurrentSession;
-    auto sessionInMeta = MetaServiceUtils::parseSessionVal(nebula::value(ret));
+    auto sessionInMeta = MetaKeyUtils::parseSessionVal(nebula::value(ret));
     for (const auto& savedQuery : sessionInMeta.get_queries()) {
       auto epId = savedQuery.first;
       auto newQuery = newQueries.find(epId);
@@ -91,8 +91,7 @@ void UpdateSessionsProcessor::process(const cpp2::UpdateSessionsReq& req) {
       continue;
     }
 
-    data.emplace_back(MetaServiceUtils::sessionKey(sessionId),
-                      MetaServiceUtils::sessionVal(session));
+    data.emplace_back(MetaKeyUtils::sessionKey(sessionId), MetaKeyUtils::sessionVal(session));
   }
 
   auto ret = doSyncPut(std::move(data));
@@ -111,7 +110,7 @@ void UpdateSessionsProcessor::process(const cpp2::UpdateSessionsReq& req) {
 
 void ListSessionsProcessor::process(const cpp2::ListSessionsReq&) {
   folly::SharedMutex::ReadHolder rHolder(LockUtils::sessionLock());
-  auto& prefix = MetaServiceUtils::sessionPrefix();
+  auto& prefix = MetaKeyUtils::sessionPrefix();
   auto ret = doPrefix(prefix);
   if (!nebula::ok(ret)) {
     handleErrorCode(nebula::error(ret));
@@ -122,7 +121,7 @@ void ListSessionsProcessor::process(const cpp2::ListSessionsReq&) {
   std::vector<cpp2::Session> sessions;
   auto iter = nebula::value(ret).get();
   while (iter->valid()) {
-    auto session = MetaServiceUtils::parseSessionVal(iter->val());
+    auto session = MetaKeyUtils::parseSessionVal(iter->val());
     VLOG(3) << "List session: " << session.get_session_id();
     sessions.emplace_back(std::move(session));
     iter->next();
@@ -138,7 +137,7 @@ void ListSessionsProcessor::process(const cpp2::ListSessionsReq&) {
 void GetSessionProcessor::process(const cpp2::GetSessionReq& req) {
   folly::SharedMutex::ReadHolder rHolder(LockUtils::sessionLock());
   auto sessionId = req.get_session_id();
-  auto sessionKey = MetaServiceUtils::sessionKey(sessionId);
+  auto sessionKey = MetaKeyUtils::sessionKey(sessionId);
   auto ret = doGet(sessionKey);
   if (!nebula::ok(ret)) {
     auto errCode = nebula::error(ret);
@@ -151,7 +150,7 @@ void GetSessionProcessor::process(const cpp2::GetSessionReq& req) {
     return;
   }
 
-  auto session = MetaServiceUtils::parseSessionVal(nebula::value(ret));
+  auto session = MetaKeyUtils::parseSessionVal(nebula::value(ret));
   resp_.set_session(std::move(session));
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
   onFinished();
@@ -160,7 +159,7 @@ void GetSessionProcessor::process(const cpp2::GetSessionReq& req) {
 void RemoveSessionProcessor::process(const cpp2::RemoveSessionReq& req) {
   folly::SharedMutex::WriteHolder wHolder(LockUtils::sessionLock());
   auto sessionId = req.get_session_id();
-  auto sessionKey = MetaServiceUtils::sessionKey(sessionId);
+  auto sessionKey = MetaKeyUtils::sessionKey(sessionId);
   auto ret = doGet(sessionKey);
   if (!nebula::ok(ret)) {
     auto errCode = nebula::error(ret);
@@ -184,7 +183,7 @@ void KillQueryProcessor::process(const cpp2::KillQueryReq& req) {
   std::vector<kvstore::KV> data;
   for (auto& kv : killQueries) {
     auto sessionId = kv.first;
-    auto sessionKey = MetaServiceUtils::sessionKey(sessionId);
+    auto sessionKey = MetaKeyUtils::sessionKey(sessionId);
     auto ret = doGet(sessionKey);
     if (!nebula::ok(ret)) {
       auto errCode = nebula::error(ret);
@@ -197,7 +196,7 @@ void KillQueryProcessor::process(const cpp2::KillQueryReq& req) {
       return;
     }
 
-    auto session = MetaServiceUtils::parseSessionVal(nebula::value(ret));
+    auto session = MetaKeyUtils::parseSessionVal(nebula::value(ret));
     for (auto& epId : kv.second) {
       auto query = session.queries_ref()->find(epId);
       if (query == session.queries_ref()->end()) {
@@ -208,8 +207,7 @@ void KillQueryProcessor::process(const cpp2::KillQueryReq& req) {
       query->second.set_status(cpp2::QueryStatus::KILLING);
     }
 
-    data.emplace_back(MetaServiceUtils::sessionKey(sessionId),
-                      MetaServiceUtils::sessionVal(session));
+    data.emplace_back(MetaKeyUtils::sessionKey(sessionId), MetaKeyUtils::sessionVal(session));
   }
 
   auto putRet = doSyncPut(std::move(data));

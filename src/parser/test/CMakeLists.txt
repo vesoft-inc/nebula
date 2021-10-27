@@ -17,6 +17,7 @@ set(PARSER_TEST_LIBS
     $<TARGET_OBJECTS:datatypes_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:function_manager_obj>
+    $<TARGET_OBJECTS:wkt_wkb_io_obj>
     $<TARGET_OBJECTS:agg_function_manager_obj>
     $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:graph_thrift_obj>
@@ -42,6 +43,8 @@ set(PARSER_TEST_LIBS
     $<TARGET_OBJECTS:validator_obj>
     $<TARGET_OBJECTS:idgenerator_obj>
     $<TARGET_OBJECTS:graph_obj>
+    $<TARGET_OBJECTS:ssl_obj>
+    $<TARGET_OBJECTS:memory_obj>
 )
 
 nebula_add_test(

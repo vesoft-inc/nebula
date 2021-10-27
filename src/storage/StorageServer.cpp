@@ -13,9 +13,11 @@
 #include "common/meta/ServerBasedIndexManager.h"
 #include "common/meta/ServerBasedSchemaManager.h"
 #include "common/network/NetworkUtils.h"
+#include "common/ssl/SSLConfig.h"
 #include "common/thread/GenericThreadPool.h"
 #include "common/utils/Utils.h"
 #include "kvstore/PartManager.h"
+#include "kvstore/RocksEngine.h"
 #include "storage/BaseProcessor.h"
 #include "storage/CompactionFilter.h"
 #include "storage/GraphStorageServiceHandler.h"
@@ -25,6 +27,7 @@
 #include "storage/http/StorageHttpAdminHandler.h"
 #include "storage/http/StorageHttpDownloadHandler.h"
 #include "storage/http/StorageHttpIngestHandler.h"
+#include "storage/http/StorageHttpPropertyHandler.h"
 #include "storage/http/StorageHttpStatsHandler.h"
 #include "storage/transaction/TransactionManager.h"
 #include "version/Version.h"
@@ -104,9 +107,37 @@ bool StorageServer::initWebService() {
   router.get("/rocksdb_stats").handler([](web::PathParams&&) {
     return new storage::StorageHttpStatsHandler();
   });
+  router.get("/rocksdb_property").handler([this](web::PathParams&&) {
+    return new storage::StorageHttpPropertyHandler(schemaMan_.get(), kvstore_.get());
+  });
 
   auto status = webSvc_->start();
   return status.ok();
+}
+
+std::unique_ptr<kvstore::KVEngine> StorageServer::getAdminStoreInstance() {
+  int32_t vIdLen = NebulaKeyUtils::adminTaskKey(-1, 0, 0).size();
+  std::unique_ptr<kvstore::KVEngine> re(
+      new kvstore::RocksEngine(0, vIdLen, dataPaths_[0], walPath_));
+  return re;
+}
+
+int32_t StorageServer::getAdminStoreSeqId() {
+  std::string key = NebulaKeyUtils::adminTaskKey(-1, 0, 0);
+  std::string val;
+  nebula::cpp2::ErrorCode rc = env_->adminStore_->get(key, &val);
+  int32_t curSeqId = 1;
+  if (rc == nebula::cpp2::ErrorCode::SUCCEEDED) {
+    int32_t lastSeqId = *reinterpret_cast<const int32_t*>(val.data());
+    curSeqId = lastSeqId + 1;
+  }
+  std::string newVal;
+  newVal.append(reinterpret_cast<char*>(&curSeqId), sizeof(int32_t));
+  auto ret = env_->adminStore_->put(key, newVal);
+  if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(FATAL) << "Write put in admin-storage seq id " << curSeqId << " failed.";
+  }
+  return curSeqId;
 }
 
 bool StorageServer::start() {
@@ -153,11 +184,7 @@ bool StorageServer::start() {
     return false;
   }
 
-  taskMgr_ = AdminTaskManager::instance();
-  if (!taskMgr_->init()) {
-    LOG(ERROR) << "Init task manager failed!";
-    return false;
-  }
+  interClient_ = std::make_unique<InternalStorageClient>(ioThreadPool_, metaClient_.get());
 
   env_ = std::make_unique<storage::StorageEnv>();
   env_->kvstore_ = kvstore_.get();
@@ -165,12 +192,24 @@ bool StorageServer::start() {
   env_->schemaMan_ = schemaMan_.get();
   env_->rebuildIndexGuard_ = std::make_unique<IndexGuard>();
   env_->metaClient_ = metaClient_.get();
+  env_->interClient_ = interClient_.get();
 
   txnMan_ = std::make_unique<TransactionManager>(env_.get());
+  if (!txnMan_->start()) {
+    LOG(ERROR) << "Start transaction manager failed!";
+    return false;
+  }
   env_->txnMan_ = txnMan_.get();
 
   env_->verticesML_ = std::make_unique<VerticesMemLock>();
   env_->edgesML_ = std::make_unique<EdgesMemLock>();
+  env_->adminStore_ = getAdminStoreInstance();
+  env_->adminSeqId_ = getAdminStoreSeqId();
+  taskMgr_ = AdminTaskManager::instance(env_.get());
+  if (!taskMgr_->init()) {
+    LOG(ERROR) << "Init task manager failed!";
+    return false;
+  }
 
   storageThread_.reset(new std::thread([this] {
     try {
@@ -182,6 +221,9 @@ bool StorageServer::start() {
       storageServer_->setThreadManager(workers_);
       storageServer_->setStopWorkersOnStopListening(false);
       storageServer_->setInterface(std::move(handler));
+      if (FLAGS_enable_ssl) {
+        storageServer_->setSSLConfig(nebula::sslContextConfig());
+      }
 
       ServiceStatus expected = STATUS_UNINITIALIZED;
       if (!storageSvcStatus_.compare_exchange_strong(expected, STATUS_RUNNING)) {
@@ -208,6 +250,9 @@ bool StorageServer::start() {
       adminServer_->setThreadManager(workers_);
       adminServer_->setStopWorkersOnStopListening(false);
       adminServer_->setInterface(std::move(handler));
+      if (FLAGS_enable_ssl) {
+        adminServer_->setSSLConfig(nebula::sslContextConfig());
+      }
 
       ServiceStatus expected = STATUS_UNINITIALIZED;
       if (!adminSvcStatus_.compare_exchange_strong(expected, STATUS_RUNNING)) {
@@ -234,6 +279,9 @@ bool StorageServer::start() {
       internalStorageServer_->setThreadManager(workers_);
       internalStorageServer_->setStopWorkersOnStopListening(false);
       internalStorageServer_->setInterface(std::move(handler));
+      if (FLAGS_enable_ssl) {
+        internalStorageServer_->setSSLConfig(nebula::sslContextConfig());
+      }
 
       internalStorageSvcStatus_.store(STATUS_RUNNING);
       LOG(INFO) << "The internal storage service start(same with admin) on " << internalAddr;
@@ -288,6 +336,9 @@ void StorageServer::stop() {
 
   webSvc_.reset();
 
+  if (txnMan_) {
+    txnMan_->stop();
+  }
   if (taskMgr_) {
     taskMgr_->shutdown();
   }

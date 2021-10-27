@@ -19,7 +19,7 @@
 
 namespace nebula {
 namespace graph {
-
+struct Starts;
 class Validator {
  public:
   virtual ~Validator() = default;
@@ -32,7 +32,7 @@ class Validator {
 
   Status validate();
 
-  MUST_USE_RESULT Status appendPlan(PlanNode* tail);
+  NG_MUST_USE_RESULT Status appendPlan(PlanNode* tail);
 
   void setInputVarName(std::string name) { inputVarName_ = std::move(name); }
 
@@ -110,8 +110,6 @@ class Validator {
 
   Status deduceProps(const Expression* expr, ExpressionProps& exprProps);
 
-  bool evaluableExpr(const Expression* expr) const;
-
   static StatusOr<size_t> checkPropNonexistOrDuplicate(const ColsDef& cols,
                                                        folly::StringPiece prop,
                                                        const std::string& validator);
@@ -127,14 +125,10 @@ class Validator {
     return Status::OK();
   }
 
-  // Check the variable or input property reference
-  // return the input variable
-  StatusOr<std::string> checkRef(const Expression* ref, const Value::Type type);
-
   // Check the output for duplicate column names
   Status checkDuplicateColName();
 
-  Status invalidLabelIdentifiers(const Expression* expr) const;
+  Status validateStarts(const VerticesClause* clause, Starts& starts);
 
   template <typename T>
   std::unique_ptr<T> getContext() const {

@@ -65,6 +65,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "DESCRIBE"                  { return TokenType::KW_DESCRIBE; }
 "DESC"                      { return TokenType::KW_DESC; }
 "VERTEX"                    { return TokenType::KW_VERTEX; }
+"VERTICES"                  { return TokenType::KW_VERTICES; }
 "EDGE"                      { return TokenType::KW_EDGE; }
 "EDGES"                     { return TokenType::KW_EDGES; }
 "UPDATE"                    { return TokenType::KW_UPDATE; }
@@ -188,7 +189,6 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "ACCOUNT"                   { return TokenType::KW_ACCOUNT; }
 "JOBS"                      { return TokenType::KW_JOBS; }
 "JOB"                       { return TokenType::KW_JOB; }
-"PATH"                      { return TokenType::KW_PATH; }
 "BIDIRECT"                  { return TokenType::KW_BIDIRECT; }
 "STATS"                     { return TokenType::KW_STATS; }
 "STATUS"                    { return TokenType::KW_STATUS; }
@@ -205,6 +205,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "STORAGE"                   { return TokenType::KW_STORAGE; }
 "SHORTEST"                  { return TokenType::KW_SHORTEST; }
 "NOLOOP"                    { return TokenType::KW_NOLOOP; }
+"PATH"                      { return TokenType::KW_PATH; }
 "OUT"                       { return TokenType::KW_OUT; }
 "BOTH"                      { return TokenType::KW_BOTH; }
 "SUBGRAPH"                  { return TokenType::KW_SUBGRAPH; }
@@ -254,6 +255,10 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "QUERY"                     { return TokenType::KW_QUERY; }
 "KILL"                      { return TokenType::KW_KILL; }
 "TOP"                       { return TokenType::KW_TOP; }
+"GEOGRAPHY"                 { return TokenType::KW_GEOGRAPHY; }
+"POINT"                     { return TokenType::KW_POINT; }
+"LINESTRING"                { return TokenType::KW_LINESTRING; }
+"POLYGON"                   { return TokenType::KW_POLYGON; }
 
 "TRUE"                      { yylval->boolval = true; return TokenType::BOOL; }
 "FALSE"                     { yylval->boolval = false; return TokenType::BOOL; }

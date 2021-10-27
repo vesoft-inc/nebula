@@ -573,7 +573,7 @@ class TestPermission(NebulaTestSuite):
         resp = self.dbaClient.execute(query)
         self.check_resp_succeeded(resp)
 
-        query = 'GO FROM "1" OVER e1';
+        query = 'GO FROM "1" OVER e1 YIELD e1._dst';
         resp = self.dbaClient.execute(query)
         self.check_resp_succeeded(resp)
 
@@ -590,7 +590,7 @@ class TestPermission(NebulaTestSuite):
         resp = self.adminClient.execute(query)
         self.check_resp_succeeded(resp)
 
-        query = 'GO FROM "1" OVER e1';
+        query = 'GO FROM "1" OVER e1 YIELD e1._dst';
         resp = self.adminClient.execute(query)
         self.check_resp_succeeded(resp)
 
@@ -607,7 +607,7 @@ class TestPermission(NebulaTestSuite):
         resp = self.dbaClient.execute(query)
         self.check_resp_succeeded(resp)
 
-        query = 'GO FROM "1" OVER e1';
+        query = 'GO FROM "1" OVER e1 YIELD e1._dst';
         resp = self.dbaClient.execute(query)
         self.check_resp_succeeded(resp)
 
@@ -624,7 +624,7 @@ class TestPermission(NebulaTestSuite):
         resp = self.userClient.execute(query)
         self.check_resp_succeeded(resp)
 
-        query = 'GO FROM "1" OVER e1';
+        query = 'GO FROM "1" OVER e1 YIELD e1._dst';
         resp = self.userClient.execute(query)
         self.check_resp_succeeded(resp)
 
@@ -641,7 +641,7 @@ class TestPermission(NebulaTestSuite):
         resp = self.guestClient.execute(query)
         self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
 
-        query = 'GO FROM "1" OVER e1';
+        query = 'GO FROM "1" OVER e1 YIELD e1._dst';
         resp = self.guestClient.execute(query)
         self.check_resp_succeeded(resp)
 
@@ -762,6 +762,8 @@ class TestPermission(NebulaTestSuite):
         self.check_resp_succeeded(resp)
         time.sleep(self.delay)
 
+        ret, self.testClient = self.spawn_nebula_client_and_auth('test', 'test')
+        assert ret
         ret, self.adminClient = self.spawn_nebula_client_and_auth('admin', 'admin')
         assert ret
         ret, self.dbaClient = self.spawn_nebula_client_and_auth('dba', 'dba')
@@ -770,6 +772,11 @@ class TestPermission(NebulaTestSuite):
         assert ret
         ret, self.guestClient = self.spawn_nebula_client_and_auth('guest', 'guest')
         assert ret
+
+        query = 'SHOW ROLES IN space5'
+        expected_result = []
+        resp = self.testClient.execute(query)
+        self.check_resp_failed(resp, ttypes.ErrorCode.E_BAD_PERMISSION)
 
         query = 'SHOW ROLES IN space5'
         expected_result = [['guest', 'GUEST'],

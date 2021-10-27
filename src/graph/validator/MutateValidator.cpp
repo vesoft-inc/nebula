@@ -89,7 +89,7 @@ Status InsertVerticesValidator::prepareVertices() {
     if (propSize_ != row->values().size()) {
       return Status::SemanticError("Column count doesn't match value count.");
     }
-    if (!evaluableExpr(row->id())) {
+    if (!ExpressionUtils::isEvaluableExpr(row->id())) {
       LOG(ERROR) << "Wrong vid expression `" << row->id()->toString() << "\"";
       return Status::SemanticError("Wrong vid expression `%s'", row->id()->toString().c_str());
     }
@@ -99,7 +99,7 @@ Status InsertVerticesValidator::prepareVertices() {
 
     // check value expr
     for (auto &value : row->values()) {
-      if (!evaluableExpr(value)) {
+      if (!ExpressionUtils::isEvaluableExpr(value)) {
         LOG(ERROR) << "Insert wrong value: `" << value->toString() << "'.";
         return Status::SemanticError("Insert wrong value: `%s'.", value->toString().c_str());
       }
@@ -148,7 +148,7 @@ Status InsertEdgesValidator::toPlan() {
                                   nullptr,
                                   spaceId_,
                                   std::move(edges_),
-                                  std::move(propNames_),
+                                  std::move(entirePropNames_),
                                   ifNotExists_,
                                   useChainInsert);
   root_ = doNode;
@@ -191,23 +191,25 @@ Status InsertEdgesValidator::check() {
 }
 
 Status InsertEdgesValidator::prepareEdges() {
-  using IsoLevel = meta::cpp2::IsolationLevel;
-  auto isoLevel = space_.spaceDesc.isolation_level_ref().value_or(IsoLevel::DEFAULT);
-  auto useToss = isoLevel == IsoLevel::TOSS;
-  auto size = useToss ? rows_.size() : rows_.size() * 2;
+  auto size = FLAGS_enable_experimental_feature ? rows_.size() : rows_.size() * 2;
   edges_.reserve(size);
+
+  size_t fieldNum = schema_->getNumFields();
+  for (size_t j = 0; j < fieldNum; ++j) {
+    entirePropNames_.emplace_back(schema_->field(j)->name());
+  }
   for (auto i = 0u; i < rows_.size(); i++) {
     auto *row = rows_[i];
     if (propNames_.size() != row->values().size()) {
       return Status::SemanticError("Column count doesn't match value count.");
     }
-    if (!evaluableExpr(row->srcid())) {
+    if (!ExpressionUtils::isEvaluableExpr(row->srcid())) {
       LOG(ERROR) << "Wrong src vid expression `" << row->srcid()->toString() << "\"";
       return Status::SemanticError("Wrong src vid expression `%s'",
                                    row->srcid()->toString().c_str());
     }
 
-    if (!evaluableExpr(row->dstid())) {
+    if (!ExpressionUtils::isEvaluableExpr(row->dstid())) {
       LOG(ERROR) << "Wrong dst vid expression `" << row->dstid()->toString() << "\"";
       return Status::SemanticError("Wrong dst vid expression `%s'",
                                    row->dstid()->toString().c_str());
@@ -224,7 +226,7 @@ Status InsertEdgesValidator::prepareEdges() {
 
     // check value expr
     for (auto &value : row->values()) {
-      if (!evaluableExpr(value)) {
+      if (!ExpressionUtils::isEvaluableExpr(value)) {
         LOG(ERROR) << "Insert wrong value: `" << value->toString() << "'.";
         return Status::SemanticError("Insert wrong value: `%s'.", value->toString().c_str());
       }
@@ -233,6 +235,34 @@ Status InsertEdgesValidator::prepareEdges() {
     auto valsRet = SchemaUtil::toValueVec(row->values());
     NG_RETURN_IF_ERROR(valsRet);
     auto props = std::move(valsRet).value();
+
+    std::vector<Value> entirePropValues;
+    for (size_t j = 0; j < fieldNum; ++j) {
+      auto *field = schema_->field(j);
+      auto propName = entirePropNames_[j];
+      auto iter = std::find(propNames_.begin(), propNames_.end(), propName);
+      if (iter == propNames_.end()) {
+        if (field->hasDefault()) {
+          auto *defaultValue = field->defaultValue();
+          DCHECK(!!defaultValue);
+          auto v = defaultValue->eval(QueryExpressionContext()(nullptr));
+          entirePropValues.emplace_back(v);
+        } else {
+          if (!field->nullable()) {
+            return Status::SemanticError(
+                "The property `%s' is not nullable and has no default value.", field->name());
+          }
+          entirePropValues.emplace_back(Value(NullType::__NULL__));
+        }
+      } else {
+        auto v = props[std::distance(propNames_.begin(), iter)];
+        if (!field->nullable() && v.isNull()) {
+          return Status::SemanticError("The non-nullable property `%s' could not be NULL.",
+                                       field->name());
+        }
+        entirePropValues.emplace_back(v);
+      }
+    }
     storage::cpp2::NewEdge edge;
     storage::cpp2::EdgeKey key;
 
@@ -241,9 +271,9 @@ Status InsertEdgesValidator::prepareEdges() {
     key.set_edge_type(edgeType_);
     key.set_ranking(rank);
     edge.set_key(key);
-    edge.set_props(std::move(props));
+    edge.set_props(std::move(entirePropValues));
     edges_.emplace_back(edge);
-    if (!useToss) {
+    if (!FLAGS_enable_experimental_feature) {
       // inbound
       key.set_src(dstId);
       key.set_dst(srcId);
@@ -759,10 +789,7 @@ Status UpdateEdgeValidator::toPlan() {
                                    {},
                                    condition_,
                                    {});
-  using IsoLevel = meta::cpp2::IsolationLevel;
-  auto isoLevel = space_.spaceDesc.isolation_level_ref().value_or(IsoLevel::DEFAULT);
-  auto useToss = isoLevel == IsoLevel::TOSS;
-  if (useToss) {
+  if (FLAGS_enable_experimental_feature) {
     root_ = outNode;
     tail_ = root_;
   } else {

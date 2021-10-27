@@ -40,4 +40,7 @@ nebula_add_library(
     ngql/GoPlanner.cpp
     ngql/SubgraphPlanner.cpp
     ngql/LookupPlanner.cpp
+    ngql/FetchVerticesPlanner.cpp
+    ngql/FetchEdgesPlanner.cpp
+    ngql/MaintainPlanner.cpp
 )

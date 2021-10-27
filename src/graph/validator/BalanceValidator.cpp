@@ -6,7 +6,6 @@
 
 #include "graph/validator/BalanceValidator.h"
 
-#include "common/base/Base.h"
 #include "graph/planner/plan/Admin.h"
 
 namespace nebula {

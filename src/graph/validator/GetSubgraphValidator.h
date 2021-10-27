@@ -8,15 +8,14 @@
 #define GRAPH_VALIDATOR_GETSUBGRAPHVALIDATOR_H_
 
 #include "graph/context/ast/QueryAstContext.h"
-#include "graph/validator/TraversalValidator.h"
+#include "graph/validator/Validator.h"
 #include "parser/Clauses.h"
 
 namespace nebula {
 namespace graph {
-class GetSubgraphValidator final : public TraversalValidator {
+class GetSubgraphValidator final : public Validator {
  public:
-  GetSubgraphValidator(Sentence* sentence, QueryContext* context)
-      : TraversalValidator(sentence, context) {}
+  GetSubgraphValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {}
 
  private:
   Status validateImpl() override;
@@ -26,6 +25,8 @@ class GetSubgraphValidator final : public TraversalValidator {
   Status validateOutBound(OutBoundClause* out);
 
   Status validateBothInOutBound(BothInOutClause* out);
+
+  Status validateYield(YieldClause* yield);
 
   AstContext* getAstContext() override { return subgraphCtx_.get(); }
 

@@ -11,74 +11,111 @@
 namespace nebula {
 
 // static
-std::string IndexKeyUtils::encodeValues(std::vector<Value>&& values,
-                                        const std::vector<nebula::meta::cpp2::ColumnDef>& cols) {
+std::vector<std::string> IndexKeyUtils::encodeValues(
+    std::vector<Value>&& values, const std::vector<nebula::meta::cpp2::ColumnDef>& cols) {
   bool hasNullCol = false;
   // An index has a maximum of 16 columns. 2 byte (16 bit) is enough.
   u_short nullableBitSet = 0;
-  std::string index;
+  auto findGeo = [](const meta::cpp2::ColumnDef& col) {
+    return col.get_type().get_type() == meta::cpp2::PropertyType::GEOGRAPHY;
+  };
+  bool hasGeo = std::find_if(cols.begin(), cols.end(), findGeo) != cols.end();
+  // Only support to create index on a single geography column currently;
+  DCHECK(!hasGeo || cols.size() == 1);
+  std::vector<std::string> indexes;
 
-  for (size_t i = 0; i < values.size(); i++) {
-    auto isNullable = cols[i].nullable_ref().value_or(false);
-    if (isNullable) {
-      hasNullCol = true;
-    }
-
-    if (!values[i].isNull()) {
-      // string index need to fill with '\0' if length is less than schema
-      if (cols[i].type.type == meta::cpp2::PropertyType::FIXED_STRING) {
-        auto len = static_cast<size_t>(*cols[i].type.get_type_length());
-        index.append(encodeValue(values[i], len));
-      } else {
-        index.append(encodeValue(values[i]));
+  if (!hasGeo) {
+    std::string index;
+    for (size_t i = 0; i < values.size(); i++) {
+      auto isNullable = cols[i].nullable_ref().value_or(false);
+      if (isNullable) {
+        hasNullCol = true;
       }
+
+      if (!values[i].isNull()) {
+        // string index need to fill with '\0' if length is less than schema
+        if (cols[i].type.type == meta::cpp2::PropertyType::FIXED_STRING) {
+          auto len = static_cast<size_t>(*cols[i].type.get_type_length());
+          index.append(encodeValue(values[i], len));
+        } else {
+          index.append(encodeValue(values[i]));
+        }
+      } else {
+        nullableBitSet |= 0x8000 >> i;
+        auto type = IndexKeyUtils::toValueType(cols[i].type.get_type());
+        index.append(encodeNullValue(type, cols[i].type.get_type_length()));
+      }
+    }
+    indexes.emplace_back(std::move(index));
+  } else {
+    hasNullCol = cols.back().nullable_ref().value_or(false);
+    DCHECK_EQ(values.size(), 1);
+    const auto& value = values.back();
+    if (!value.isNull()) {
+      DCHECK(value.type() == Value::Type::GEOGRAPHY);
+      indexes = encodeGeography(value.getGeography());
     } else {
-      nullableBitSet |= 0x8000 >> i;
-      auto type = IndexKeyUtils::toValueType(cols[i].type.get_type());
-      index.append(encodeNullValue(type, cols[i].type.get_type_length()));
+      nullableBitSet |= 0x8000;
+      auto type = IndexKeyUtils::toValueType(cols.back().type.get_type());
+      indexes.emplace_back(encodeNullValue(type, nullptr));
     }
   }
   // if has nullable field, append nullableBitSet to the end
   if (hasNullCol) {
-    index.append(reinterpret_cast<const char*>(&nullableBitSet), sizeof(u_short));
+    for (auto& index : indexes) {
+      index.append(reinterpret_cast<const char*>(&nullableBitSet), sizeof(u_short));
+    }
   }
-  return index;
+  return indexes;
 }
 
 // static
-std::string IndexKeyUtils::vertexIndexKey(
-    size_t vIdLen, PartitionID partId, IndexID indexId, const VertexID& vId, std::string&& values) {
+std::vector<std::string> IndexKeyUtils::vertexIndexKeys(size_t vIdLen,
+                                                        PartitionID partId,
+                                                        IndexID indexId,
+                                                        const VertexID& vId,
+                                                        std::vector<std::string>&& values) {
   int32_t item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kIndex);
-  std::string key;
-  key.reserve(256);
-  key.append(reinterpret_cast<const char*>(&item), sizeof(int32_t))
-      .append(reinterpret_cast<const char*>(&indexId), sizeof(IndexID))
-      .append(values)
-      .append(vId.data(), vId.size())
-      .append(vIdLen - vId.size(), '\0');
-  return key;
+  std::vector<std::string> keys;
+  keys.reserve(values.size());
+  for (const auto& value : values) {
+    std::string key;
+    key.reserve(256);
+    key.append(reinterpret_cast<const char*>(&item), sizeof(int32_t))
+        .append(reinterpret_cast<const char*>(&indexId), sizeof(IndexID))
+        .append(value)
+        .append(vId.data(), vId.size())
+        .append(vIdLen - vId.size(), '\0');
+    keys.emplace_back(key);
+  }
+  return keys;
 }
 
 // static
-std::string IndexKeyUtils::edgeIndexKey(size_t vIdLen,
-                                        PartitionID partId,
-                                        IndexID indexId,
-                                        const VertexID& srcId,
-                                        EdgeRanking rank,
-                                        const VertexID& dstId,
-                                        std::string&& values) {
+std::vector<std::string> IndexKeyUtils::edgeIndexKeys(size_t vIdLen,
+                                                      PartitionID partId,
+                                                      IndexID indexId,
+                                                      const VertexID& srcId,
+                                                      EdgeRanking rank,
+                                                      const VertexID& dstId,
+                                                      std::vector<std::string>&& values) {
   int32_t item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kIndex);
-  std::string key;
-  key.reserve(256);
-  key.append(reinterpret_cast<const char*>(&item), sizeof(int32_t))
-      .append(reinterpret_cast<const char*>(&indexId), sizeof(IndexID))
-      .append(values)
-      .append(srcId.data(), srcId.size())
-      .append(vIdLen - srcId.size(), '\0')
-      .append(IndexKeyUtils::encodeRank(rank))
-      .append(dstId.data(), dstId.size())
-      .append(vIdLen - dstId.size(), '\0');
-  return key;
+  std::vector<std::string> keys;
+  keys.reserve(values.size());
+  for (const auto& value : values) {
+    std::string key;
+    key.reserve(256);
+    key.append(reinterpret_cast<const char*>(&item), sizeof(int32_t))
+        .append(reinterpret_cast<const char*>(&indexId), sizeof(IndexID))
+        .append(value)
+        .append(srcId.data(), srcId.size())
+        .append(vIdLen - srcId.size(), '\0')
+        .append(IndexKeyUtils::encodeRank(rank))
+        .append(dstId.data(), dstId.size())
+        .append(vIdLen - dstId.size(), '\0');
+    keys.emplace_back(key);
+  }
+  return keys;
 }
 
 // static
@@ -120,7 +157,7 @@ Value IndexKeyUtils::parseIndexTTL(const folly::StringPiece& raw) {
 }
 
 // static
-StatusOr<std::string> IndexKeyUtils::collectIndexValues(
+StatusOr<std::vector<std::string>> IndexKeyUtils::collectIndexValues(
     RowReader* reader, const std::vector<nebula::meta::cpp2::ColumnDef>& cols) {
   if (reader == nullptr) {
     return Status::Error("Invalid row reader");

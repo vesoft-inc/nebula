@@ -36,6 +36,13 @@ Feature: Case Expression
     Then the result should be, in any order:
       | r |
       | 1 |
+    When executing query:
+      """
+      YIELD CASE WHEN null THEN 0 ELSE 1 END AS r
+      """
+    Then the result should be, in any order:
+      | r |
+      | 1 |
 
   Scenario: yield conditional case
     When executing query:
@@ -292,7 +299,7 @@ Feature: Case Expression
   Scenario: Using the return value of case expr as an input
     When executing query:
       """
-      RETURN CASE WHEN true THEN "Tim Duncan" ELSE "ABC" END AS a | GO FROM $-.a OVER like;
+      RETURN CASE WHEN true THEN "Tim Duncan" ELSE "ABC" END AS a | GO FROM $-.a OVER like YIELD like._dst;
       """
     Then the result should be, in order:
       | like._dst       |

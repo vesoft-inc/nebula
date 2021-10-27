@@ -13,6 +13,7 @@ namespace nebula {
 
 std::string gitInfoSha();
 std::string versionString(bool verbose = true);
+std::string getOriginVersion();
 
 }  // namespace nebula
 

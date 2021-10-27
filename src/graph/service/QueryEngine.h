@@ -20,15 +20,14 @@
 #include "graph/service/RequestContext.h"
 #include "interface/gen-cpp2/GraphService.h"
 
+namespace nebula {
+namespace graph {
+
 /**
  * QueryEngine is responsible to create and manage ExecutionPlan.
  * For the time being, we don't have the execution plan cache support,
  * instead we create a plan for each query, and destroy it upon finish.
  */
-
-namespace nebula {
-namespace graph {
-
 class QueryEngine final : public cpp::NonCopyable, public cpp::NonMovable {
  public:
   QueryEngine() = default;
@@ -43,11 +42,14 @@ class QueryEngine final : public cpp::NonCopyable, public cpp::NonMovable {
   const meta::MetaClient* metaClient() const { return metaClient_; }
 
  private:
+  Status setupMemoryMonitorThread();
+
   std::unique_ptr<meta::SchemaManager> schemaManager_;
   std::unique_ptr<meta::IndexManager> indexManager_;
   std::unique_ptr<storage::GraphStorageClient> storage_;
   std::unique_ptr<opt::Optimizer> optimizer_;
-  meta::MetaClient* metaClient_;
+  std::unique_ptr<thread::GenericWorker> memoryMonitorThread_;
+  meta::MetaClient* metaClient_{nullptr};
   CharsetInfo* charsetInfo_{nullptr};
 };
 
