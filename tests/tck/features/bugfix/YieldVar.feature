@@ -11,14 +11,9 @@ Feature: Test yield var
   Scenario: yield constant after pipe
     When executing query:
       """
-      $var = GO FROM "Tim Duncan" OVER *; YIELD $var[0][0] as var00;
+      $var = GO FROM "Tim Duncan" OVER like YIELD like._dst; YIELD $var[0][0] as var00;
       """
     Then the result should be, in any order:
       | var00           |
-      | "Manu Ginobili" |
-      | "Manu Ginobili" |
-      | "Manu Ginobili" |
-      | "Manu Ginobili" |
-      | "Manu Ginobili" |
       | "Manu Ginobili" |
       | "Manu Ginobili" |
