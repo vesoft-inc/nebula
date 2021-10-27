@@ -122,6 +122,36 @@ Feature: Function Call Expression
       | result |
       | NULL   |
 
+  Scenario: round
+    When executing query:
+      """
+      YIELD round(1.1111111111, 8) as result
+      """
+    Then the result should be, in any order:
+      | result     |
+      | 1.11111111 |
+    When executing query:
+      """
+      YIELD round(1111.111111, 0) as result
+      """
+    Then the result should be, in any order:
+      | result |
+      | 1111.0 |
+    When executing query:
+      """
+      YIELD round(1111.111111, -3) as result
+      """
+    Then the result should be, in any order:
+      | result |
+      | 1000.0 |
+    When executing query:
+      """
+      YIELD round(1111.111111, -4) as result
+      """
+    Then the result should be, in any order:
+      | result |
+      | 0.0    |
+
   Scenario: error check
     When executing query:
       """
