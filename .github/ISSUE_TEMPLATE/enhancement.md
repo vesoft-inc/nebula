@@ -1,6 +1,6 @@
 ---
 name: Enhancement
-about: I want to make an enhancement.
+about: make the code neat or more efficient.
 labels: enhancement
 title: ''
 assignees: ''
