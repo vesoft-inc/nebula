@@ -342,7 +342,7 @@ TEST(ProcessorTest, SpaceTest) {
     ASSERT_EQ("default_space", resp.get_item().get_properties().get_space_name());
     ASSERT_EQ(8, resp.get_item().get_properties().get_partition_num());
     ASSERT_EQ(3, resp.get_item().get_properties().get_replica_factor());
-    ASSERT_EQ(8, *resp.get_item().get_properties().get_vid_type().get_type_length());
+    ASSERT_EQ(8, resp.get_item().get_properties().get_vid_type().get_type_length());
     ASSERT_EQ(cpp2::PropertyType::FIXED_STRING,
               resp.get_item().get_properties().get_vid_type().get_type());
     ASSERT_EQ("utf8", resp.get_item().get_properties().get_charset_name());
