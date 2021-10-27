@@ -14,23 +14,35 @@ IndexEdgeScanNode::IndexEdgeScanNode(RuntimeContext* context,
                                      const std::vector<cpp2::IndexColumnHint>& columnHint,
                                      ::nebula::kvstore::KVStore* kvstore)
     : IndexScanNode(context, "IndexEdgeScanNode", indexId, columnHint, kvstore) {
-  getIndex = std::function([this]() {
+  getIndex = std::function([this](std::shared_ptr<IndexItem>& index) {
     auto env = this->context_->env();
     auto indexMgr = env->indexMan_;
-    auto index = indexMgr->getEdgeIndex(this->spaceId_, this->indexId_).value();
-    return index;
+    auto indexVal = indexMgr->getEdgeIndex(this->spaceId_, this->indexId_);
+    if (!indexVal.ok()) {
+      return ::nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND;
+    }
+    index = indexVal.value();
+    return ::nebula::cpp2::ErrorCode::SUCCEEDED;
   });
-  getEdge = std::function([this]() {
+  getEdge = std::function([this](EdgeSchemas& edge) {
     auto env = this->context_->env();
     auto schemaMgr = env->schemaMan_;
-    auto schema = schemaMgr->getAllVerEdgeSchema(this->spaceId_)
-                      .value()[this->index_->get_schema_id().get_edge_type()];
-    return schema;
+    auto allSchema = schemaMgr->getAllVerEdgeSchema(this->spaceId_);
+    auto edgeType = this->index_->get_schema_id().get_edge_type();
+    if (!allSchema.ok() || !allSchema.value().count(edgeType)) {
+      return ::nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND;
+    }
+    edge = allSchema.value().at(edgeType);
+    return ::nebula::cpp2::ErrorCode::SUCCEEDED;
   });
 }
 ::nebula::cpp2::ErrorCode IndexEdgeScanNode::init(InitContext& ctx) {
-  index_ = getIndex().value();
-  edge_ = getEdge();
+  if (auto ret = getIndex(this->index_); UNLIKELY(ret != ::nebula::cpp2::ErrorCode::SUCCEEDED)) {
+    return ret;
+  }
+  if (auto ret = getEdge(edge_); UNLIKELY(ret != ::nebula::cpp2::ErrorCode::SUCCEEDED)) {
+    return ret;
+  }
   return IndexScanNode::init(ctx);
 }
 Row IndexEdgeScanNode::decodeFromIndex(folly::StringPiece key) {

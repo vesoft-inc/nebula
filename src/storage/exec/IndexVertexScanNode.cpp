@@ -12,44 +12,42 @@ namespace nebula {
 namespace storage {
 
 IndexVertexScanNode::IndexVertexScanNode(const IndexVertexScanNode& node)
-    : IndexScanNode(node), tag_(node.tag_) {
-  getIndex = std::function([this]() {
-    auto env = this->context_->env();
-    auto indexMgr = env->indexMan_;
-    auto index = indexMgr->getTagIndex(this->spaceId_, this->indexId_).value();
-    return index;
-  });
-  getTag = std::function([this]() {
-    auto env = this->context_->env();
-    auto schemaMgr = env->schemaMan_;
-    auto schema = schemaMgr->getAllVerTagSchema(this->spaceId_)
-                      .value()[this->index_->get_schema_id().get_tag_id()];
-    return schema;
-  });
-}
+    : IndexScanNode(node), tag_(node.tag_) {}
 
 IndexVertexScanNode::IndexVertexScanNode(RuntimeContext* context,
                                          IndexID indexId,
                                          const std::vector<cpp2::IndexColumnHint>& clolumnHint,
                                          ::nebula::kvstore::KVStore* kvstore)
     : IndexScanNode(context, "IndexVertexScanNode", indexId, clolumnHint, kvstore) {
-  getIndex = std::function([this]() {
+  getIndex = std::function([this](std::shared_ptr<IndexItem>& index) {
     auto env = this->context_->env();
     auto indexMgr = env->indexMan_;
-    auto index = indexMgr->getTagIndex(this->spaceId_, this->indexId_).value();
-    return index;
+    auto indexVal = indexMgr->getTagIndex(this->spaceId_, this->indexId_);
+    if (!indexVal.ok()) {
+      return ::nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND;
+    }
+    index = indexVal.value();
+    return ::nebula::cpp2::ErrorCode::SUCCEEDED;
   });
-  getTag = std::function([this]() {
+  getTag = std::function([this](TagSchemas& tag) {
     auto env = this->context_->env();
     auto schemaMgr = env->schemaMan_;
-    auto schema = schemaMgr->getAllVerTagSchema(this->spaceId_)
-                      .value()[this->index_->get_schema_id().get_tag_id()];
-    return schema;
+    auto allSchema = schemaMgr->getAllVerTagSchema(this->spaceId_);
+    auto tagId = this->index_->get_schema_id().get_tag_id();
+    if (!allSchema.ok() || !allSchema.value().count(tagId)) {
+      return ::nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND;
+    }
+    tag = allSchema.value().at(tagId);
+    return ::nebula::cpp2::ErrorCode::SUCCEEDED;
   });
 }
 ::nebula::cpp2::ErrorCode IndexVertexScanNode::init(InitContext& ctx) {
-  this->index_ = getIndex().value();
-  this->tag_ = getTag();
+  if (auto ret = getIndex(this->index_); UNLIKELY(ret != ::nebula::cpp2::ErrorCode::SUCCEEDED)) {
+    return ret;
+  }
+  if (auto ret = getTag(tag_); UNLIKELY(ret != ::nebula::cpp2::ErrorCode::SUCCEEDED)) {
+    return ret;
+  }
   return IndexScanNode::init(ctx);
 }
 nebula::cpp2::ErrorCode IndexVertexScanNode::getBaseData(folly::StringPiece key,

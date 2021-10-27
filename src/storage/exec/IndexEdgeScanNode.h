@@ -33,13 +33,15 @@ class IndexEdgeScanNode : public IndexScanNode {
   nebula::cpp2::ErrorCode getBaseData(folly::StringPiece key,
                                       std::pair<std::string, std::string>& kv) override;
   Map<std::string, Value> decodeFromBase(const std::string& key, const std::string& value) override;
-  const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& getSchema() override;
 
-  std::vector<std::shared_ptr<const nebula::meta::NebulaSchemaProvider>> edge_;
+  using EdgeSchemas = std::vector<std::shared_ptr<const nebula::meta::NebulaSchemaProvider>>;
+  using IndexItem = ::nebula::meta::cpp2::IndexItem;
+  const EdgeSchemas& getSchema() override;
+  EdgeSchemas edge_;
 
   // Convenient for testing
-  std::function<StatusOr<std::shared_ptr<::nebula::meta::cpp2::IndexItem>>()> getIndex;
-  std::function<std::vector<std::shared_ptr<const nebula::meta::NebulaSchemaProvider>>()> getEdge;
+  std::function<::nebula::cpp2::ErrorCode(std::shared_ptr<IndexItem>&)> getIndex;
+  std::function<::nebula::cpp2::ErrorCode(EdgeSchemas&)> getEdge;
 
   FRIEND_TEST(IndexScanTest, Edge);
   friend class IndexScanTestHelper;

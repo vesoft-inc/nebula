@@ -69,21 +69,29 @@ using std::string_literals::operator""s;
  */
 struct IndexScanTestHelper {
   void setIndex(IndexVertexScanNode* node, std::shared_ptr<::nebula::meta::cpp2::IndexItem> index) {
-    node->getIndex = [index]() { return index; };
+    node->getIndex = [index](std::shared_ptr<::nebula::meta::cpp2::IndexItem>& ret) {
+      ret = index;
+      return ::nebula::cpp2::ErrorCode::SUCCEEDED;
+    };
   }
   void setIndex(IndexEdgeScanNode* node, std::shared_ptr<::nebula::meta::cpp2::IndexItem> index) {
-    node->getIndex = [index]() { return index; };
+    node->getIndex = [index](std::shared_ptr<::nebula::meta::cpp2::IndexItem>& ret) {
+      ret = index;
+      return ::nebula::cpp2::ErrorCode::SUCCEEDED;
+    };
   }
   void setTag(IndexVertexScanNode* node,
               std::shared_ptr<::nebula::meta::NebulaSchemaProvider> schema) {
-    node->getTag = [schema]() {
-      return std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>{schema};
+    node->getTag = [schema](IndexVertexScanNode::TagSchemas& tag) {
+      tag = std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>{schema};
+      return ::nebula::cpp2::ErrorCode::SUCCEEDED;
     };
   }
   void setEdge(IndexEdgeScanNode* node,
                std::shared_ptr<::nebula::meta::NebulaSchemaProvider> schema) {
-    node->getEdge = [schema]() {
-      return std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>{schema};
+    node->getEdge = [schema](IndexEdgeScanNode::EdgeSchemas& edge) {
+      edge = std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>{schema};
+      return ::nebula::cpp2::ErrorCode::SUCCEEDED;
     };
   }
   void setFatal(IndexScanNode* node, bool value) { node->fatalOnBaseNotFound_ = value; }
@@ -231,7 +239,7 @@ TEST_F(IndexScanTest, Base) {
     auto scanNode =
         std::make_unique<IndexVertexScanNode>(context.get(), indexId, columnHints, kvstore.get());
     IndexScanTestHelper helper;
-    scanNode->getIndex = [index = indices[0]]() { return index; };
+    helper.setIndex(scanNode.get(), indices[0]);
     helper.setTag(scanNode.get(), schema);
     InitContext initCtx;
     initCtx.requiredColumns = {kVid, "a"};
@@ -270,7 +278,7 @@ TEST_F(IndexScanTest, Base) {
     auto scanNode =
         std::make_unique<IndexVertexScanNode>(context.get(), indexId, columnHints, kvstore.get());
     IndexScanTestHelper helper;
-    scanNode->getIndex = [index = indices[1]]() { return index; };
+    helper.setIndex(scanNode.get(), indices[1]);
     helper.setTag(scanNode.get(), schema);
     InitContext initCtx;
     initCtx.requiredColumns = {kVid, "b"};
@@ -329,8 +337,7 @@ TEST_F(IndexScanTest, Vertex) {
     auto scanNode =
         std::make_unique<IndexVertexScanNode>(context.get(), indexId, columnHints, kvstore.get());
     IndexScanTestHelper helper;
-
-    scanNode->getIndex = [index = indices[0]]() { return index; };
+    helper.setIndex(scanNode.get(), indices[0]);
     helper.setTag(scanNode.get(), schema);
     InitContext initCtx;
     initCtx.requiredColumns = {kVid, "a"};
@@ -368,7 +375,7 @@ TEST_F(IndexScanTest, Vertex) {
     auto scanNode =
         std::make_unique<IndexVertexScanNode>(context.get(), indexId, columnHints, kvstore.get());
     IndexScanTestHelper helper;
-    scanNode->getIndex = [index = indices[0]]() { return index; };
+    helper.setIndex(scanNode.get(), indices[0]);
     helper.setTag(scanNode.get(), schema);
     InitContext initCtx;
     initCtx.requiredColumns = {kVid, "b"};
@@ -430,7 +437,7 @@ TEST_F(IndexScanTest, Edge) {
     auto scanNode =
         std::make_unique<IndexEdgeScanNode>(context.get(), indexId, columnHints, kvstore.get());
     IndexScanTestHelper helper;
-    scanNode->getIndex = [index = indices[0]]() { return index; };
+    helper.setIndex(scanNode.get(), indices[0]);
     helper.setEdge(scanNode.get(), schema);
     InitContext initCtx;
     initCtx.requiredColumns = {kSrc, kRank, kDst, "c"};
@@ -468,7 +475,7 @@ TEST_F(IndexScanTest, Edge) {
     auto scanNode =
         std::make_unique<IndexEdgeScanNode>(context.get(), indexId, columnHints, kvstore.get());
     IndexScanTestHelper helper;
-    scanNode->getIndex = [index = indices[0]]() { return index; };
+    helper.setIndex(scanNode.get(), indices[0]);
     helper.setEdge(scanNode.get(), schema);
     InitContext initCtx;
     initCtx.requiredColumns = {kSrc, kRank, kDst, "a"};

@@ -22,27 +22,45 @@
 namespace nebula {
 namespace storage {
 ProcessorCounters kLookupCounters;
+// print Plan for debug
+inline void printPlan(IndexNode* node, int tab = 0);
 void LookupProcessor::process(const cpp2::LookupIndexRequest& req) {
-  DLOG(INFO) << ::apache::thrift::SimpleJSONSerializer::serialize<std::string>(req);
+  DVLOG(1) << ::apache::thrift::SimpleJSONSerializer::serialize<std::string>(req);
   if (executor_ != nullptr) {
     executor_->add([req, this]() { this->doProcess(req); });
   } else {
     doProcess(req);
   }
 }
-void printPlan(IndexNode* node, int tab = 0) {
-  LOG(INFO) << std::string(tab, '\t') << node->identify();
-  for (auto& child : node->children()) {
-    printPlan(child.get(), tab + 1);
-  }
-}
+
 void LookupProcessor::doProcess(const cpp2::LookupIndexRequest& req) {
   if (req.common_ref().has_value() && req.get_common()->profile_detail_ref().value_or(false)) {
     profileDetailFlag_ = true;
   }
-  prepare(req);
+  auto code = prepare(req);
+  if (UNLIKELY(code != ::nebula::cpp2::ErrorCode::SUCCEEDED)) {
+    for (auto& p : req.get_parts()) {
+      pushResultCode(code, p);
+    }
+    onFinished();
+    DVLOG(1) << static_cast<int>(code);
+    return;
+  }
   auto plan = buildPlan(req);
-  printPlan(plan.get());
+
+  if (UNLIKELY(profileDetailFlag_)) {
+    plan->enableProfileDetail();
+  }
+  InitContext ctx;
+  code = plan->init(ctx);
+  if (UNLIKELY(code != ::nebula::cpp2::ErrorCode::SUCCEEDED)) {
+    for (auto& p : req.get_parts()) {
+      pushResultCode(code, p);
+    }
+    onFinished();
+    DVLOG(1) << static_cast<int>(code);
+    return;
+  }
   if (!FLAGS_query_concurrently) {
     runInSingleThread(req.get_parts(), std::move(plan));
   } else {
@@ -109,15 +127,6 @@ std::unique_ptr<IndexNode> LookupProcessor::buildPlan(const cpp2::LookupIndexReq
     node->addChild(std::move(nodes[0]));
     nodes[0] = std::move(node);
   }
-  InitContext ctx;
-  auto result = nodes[0]->init(ctx);
-  if (profileDetailFlag_) {
-    nodes[0]->enableProfileDetail();
-  }
-  // TODO(hs.zhang): check init result
-  if (result == ::nebula::cpp2::ErrorCode::SUCCEEDED) {
-  } else {
-  }
   return std::move(nodes[0]);
 }
 
@@ -144,7 +153,7 @@ std::unique_ptr<IndexNode> LookupProcessor::buildOneContext(const cpp2::IndexQue
 
 void LookupProcessor::runInSingleThread(const std::vector<PartitionID>& parts,
                                         std::unique_ptr<IndexNode> plan) {
-  printPlan(plan.get());
+  // printPlan(plan.get());
   std::vector<std::deque<Row>> datasetList;
   std::vector<::nebula::cpp2::ErrorCode> codeList;
   for (auto part : parts) {
@@ -216,7 +225,6 @@ void LookupProcessor::runInMultipleThread(const std::vector<PartitionID>& parts,
           return {part, code, dataset};
         }));
   }
-  DLOG(INFO) << "xxxxxxxxxxxxxxxxxxxxxxx";
   folly::collectAll(futures).via(executor_).thenTry([this](auto&& t) {
     CHECK(!t.hasException());
     const auto& tries = t.value();
@@ -269,6 +277,11 @@ void LookupProcessor::profilePlan(IndexNode* root) {
     }
   }
 }
-
+inline void printPlan(IndexNode* node, int tab) {
+  DVLOG(2) << std::string(tab, '\t') << node->identify();
+  for (auto& child : node->children()) {
+    printPlan(child.get(), tab + 1);
+  }
+}
 }  // namespace storage
 }  // namespace nebula

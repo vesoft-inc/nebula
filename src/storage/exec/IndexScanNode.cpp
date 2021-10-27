@@ -376,7 +376,7 @@ IndexScanNode::IndexScanNode(const IndexScanNode& node)
   DCHECK(requiredColumns_.empty());
   ttlProps_ = CommonUtils::ttlProps(getSchema().back().get());
   requiredAndHintColumns_ = ctx.requiredColumns;
-
+  auto schema = getSchema().back();
   for (auto& hint : columnHints_) {
     requiredAndHintColumns_.insert(hint.get_column_name());
   }

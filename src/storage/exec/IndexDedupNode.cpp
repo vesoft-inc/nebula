@@ -19,7 +19,10 @@ IndexDedupNode::IndexDedupNode(RuntimeContext* context, const std::vector<std::s
   InitContext childCtx = ctx;
   InitContext ctx2;
   for (auto& child : children_) {
-    child->init(childCtx);
+    auto ret = child->init(childCtx);
+    if (ret != ::nebula::cpp2::ErrorCode::SUCCEEDED) {
+      return ret;
+    }
     ctx2 = childCtx;
     childCtx = ctx;
   }

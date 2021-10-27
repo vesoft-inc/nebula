@@ -37,15 +37,14 @@ class IndexVertexScanNode final : public IndexScanNode {
                                       std::pair<std::string, std::string>& kv) override;
   Row decodeFromIndex(folly::StringPiece key) override;
   Map<std::string, Value> decodeFromBase(const std::string& key, const std::string& value) override;
-  const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>& getSchema() override {
-    return tag_;
-  }
 
-  std::vector<std::shared_ptr<const nebula::meta::NebulaSchemaProvider>> tag_;
-
+  using TagSchemas = std::vector<std::shared_ptr<const nebula::meta::NebulaSchemaProvider>>;
+  const TagSchemas& getSchema() override { return tag_; }
+  TagSchemas tag_;
+  using IndexItem = ::nebula::meta::cpp2::IndexItem;
   // Convenient for testing
-  std::function<StatusOr<std::shared_ptr<::nebula::meta::cpp2::IndexItem>>()> getIndex;
-  std::function<std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>()> getTag;
+  std::function<::nebula::cpp2::ErrorCode(std::shared_ptr<IndexItem>&)> getIndex;
+  std::function<::nebula::cpp2::ErrorCode(TagSchemas&)> getTag;
 
   FRIEND_TEST(IndexScanTest, VertexIndexOnlyScan);
   FRIEND_TEST(IndexScanTest, VertexBase);
