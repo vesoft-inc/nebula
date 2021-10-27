@@ -3,7 +3,7 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include "storage/transaction/ChainAddEdgesProcessorRemote.h"
+#include "storage/transaction/ChainAddEdgesRemoteProcessor.h"
 
 #include "storage/mutate/AddEdgesProcessor.h"
 #include "storage/transaction/ConsistUtil.h"
@@ -12,11 +12,8 @@
 namespace nebula {
 namespace storage {
 
-void ChainAddEdgesProcessorRemote::process(const cpp2::ChainAddEdgesRequest& req) {
-  if (FLAGS_trace_toss) {
-    uuid_ = ConsistUtil::strUUID();
-  }
-  VLOG(1) << uuid_ << ConsistUtil::dumpParts(req.get_parts());
+void ChainAddEdgesRemoteProcessor::process(const cpp2::ChainAddEdgesRequest& req) {
+  uuid_ = ConsistUtil::strUUID();
   auto partId = req.get_parts().begin()->first;
   auto code = nebula::cpp2::ErrorCode::SUCCEEDED;
   do {
@@ -45,19 +42,19 @@ void ChainAddEdgesProcessorRemote::process(const cpp2::ChainAddEdgesRequest& req
         LOG(INFO) << uuid_ << ", key = " << folly::hexlify(key);
       }
     }
-    forwardRequest(req);
+    commit(req);
   } else {
     pushResultCode(code, partId);
     onFinished();
   }
 }
 
-bool ChainAddEdgesProcessorRemote::checkTerm(const cpp2::ChainAddEdgesRequest& req) {
+bool ChainAddEdgesRemoteProcessor::checkTerm(const cpp2::ChainAddEdgesRequest& req) {
   auto partId = req.get_parts().begin()->first;
   return env_->txnMan_->checkTerm(req.get_space_id(), partId, req.get_term());
 }
 
-void ChainAddEdgesProcessorRemote::forwardRequest(const cpp2::ChainAddEdgesRequest& req) {
+void ChainAddEdgesRemoteProcessor::commit(const cpp2::ChainAddEdgesRequest& req) {
   auto spaceId = req.get_space_id();
   auto* proc = AddEdgesProcessor::instance(env_);
   proc->getFuture().thenValue([=](auto&& resp) {
@@ -73,25 +70,7 @@ void ChainAddEdgesProcessorRemote::forwardRequest(const cpp2::ChainAddEdgesReque
   proc->process(ConsistUtil::toAddEdgesRequest(req));
 }
 
-bool ChainAddEdgesProcessorRemote::checkVersion(const cpp2::ChainAddEdgesRequest& req) {
-  if (!req.edge_version_ref()) {
-    return true;
-  }
-  auto spaceId = req.get_space_id();
-  auto partId = req.get_parts().begin()->first;
-  auto strEdgeKeys = getStrEdgeKeys(req);
-  auto currVer = ConsistUtil::getMultiEdgeVers(env_->kvstore_, spaceId, partId, strEdgeKeys);
-  auto edgeVer = *req.edge_version_ref();
-  for (auto i = 0U; i != currVer.size(); ++i) {
-    if (currVer[i] > edgeVer) {
-      LOG(WARNING) << "currVer[i]=" << currVer[i] << ", edgeVer=" << edgeVer;
-      return false;
-    }
-  }
-  return true;
-}
-
-std::vector<std::string> ChainAddEdgesProcessorRemote::getStrEdgeKeys(
+std::vector<std::string> ChainAddEdgesRemoteProcessor::getStrEdgeKeys(
     const cpp2::ChainAddEdgesRequest& req) {
   std::vector<std::string> ret;
   for (auto& edgesOfPart : req.get_parts()) {

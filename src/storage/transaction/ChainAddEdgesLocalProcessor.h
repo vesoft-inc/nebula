@@ -14,15 +14,15 @@
 namespace nebula {
 namespace storage {
 
-class ChainAddEdgesProcessorLocal : public BaseProcessor<cpp2::ExecResponse>,
+class ChainAddEdgesLocalProcessor : public BaseProcessor<cpp2::ExecResponse>,
                                     public ChainBaseProcessor {
   friend class ChainResumeProcessorTestHelper;  // for test friendly
  public:
-  static ChainAddEdgesProcessorLocal* instance(StorageEnv* env) {
-    return new ChainAddEdgesProcessorLocal(env);
+  static ChainAddEdgesLocalProcessor* instance(StorageEnv* env) {
+    return new ChainAddEdgesLocalProcessor(env);
   }
 
-  virtual ~ChainAddEdgesProcessorLocal() = default;
+  virtual ~ChainAddEdgesLocalProcessor() = default;
 
   virtual void process(const cpp2::AddEdgesRequest& req);
 
@@ -39,7 +39,7 @@ class ChainAddEdgesProcessorLocal : public BaseProcessor<cpp2::ExecResponse>,
   void finish() override;
 
  protected:
-  explicit ChainAddEdgesProcessorLocal(StorageEnv* env) : BaseProcessor<cpp2::ExecResponse>(env) {}
+  explicit ChainAddEdgesLocalProcessor(StorageEnv* env) : BaseProcessor<cpp2::ExecResponse>(env) {}
 
   bool prepareRequest(const cpp2::AddEdgesRequest& req);
 
@@ -55,8 +55,6 @@ class ChainAddEdgesProcessorLocal : public BaseProcessor<cpp2::ExecResponse>,
 
   bool checkTerm(const cpp2::AddEdgesRequest& req);
 
-  bool checkVersion(const cpp2::AddEdgesRequest& req);
-
   /**
    * @brief This is a call back function, to let AddEdgesProcessor so some
    *        addition thing for chain operation
@@ -68,7 +66,7 @@ class ChainAddEdgesProcessorLocal : public BaseProcessor<cpp2::ExecResponse>,
   /**
    * @brief helper function to generate string form of keys of request
    */
-  std::vector<std::string> sEdgeKey(const cpp2::AddEdgesRequest& req);
+  std::vector<std::string> toStrKeys(const cpp2::AddEdgesRequest& req);
 
   /**
    * @brief normally, the prime/double prime keys will be deleted at AddEdgeProcessor

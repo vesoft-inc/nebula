@@ -12,21 +12,19 @@
 namespace nebula {
 namespace storage {
 
-class ChainUpdateEdgeProcessorRemote : public BaseProcessor<cpp2::UpdateResponse> {
+class ChainUpdateEdgeRemoteProcessor : public BaseProcessor<cpp2::UpdateResponse> {
  public:
-  static ChainUpdateEdgeProcessorRemote* instance(StorageEnv* env) {
-    return new ChainUpdateEdgeProcessorRemote(env);
+  static ChainUpdateEdgeRemoteProcessor* instance(StorageEnv* env) {
+    return new ChainUpdateEdgeRemoteProcessor(env);
   }
 
   void process(const cpp2::ChainUpdateEdgeRequest& req);
 
  private:
-  explicit ChainUpdateEdgeProcessorRemote(StorageEnv* env)
+  explicit ChainUpdateEdgeRemoteProcessor(StorageEnv* env)
       : BaseProcessor<cpp2::UpdateResponse>(env) {}
 
   bool checkTerm(const cpp2::ChainUpdateEdgeRequest& req);
-
-  bool checkVersion(const cpp2::ChainUpdateEdgeRequest& req);
 
   void updateEdge(const cpp2::ChainUpdateEdgeRequest& req);
 

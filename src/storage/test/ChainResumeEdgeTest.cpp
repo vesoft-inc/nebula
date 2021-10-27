@@ -19,7 +19,7 @@
 #include "storage/test/QueryTestUtils.h"
 #include "storage/test/TestUtils.h"
 #include "storage/transaction/ChainAddEdgesGroupProcessor.h"
-#include "storage/transaction/ChainAddEdgesProcessorLocal.h"
+#include "storage/transaction/ChainAddEdgesLocalProcessor.h"
 #include "storage/transaction/ChainResumeProcessor.h"
 #include "storage/transaction/ConsistUtil.h"
 
@@ -47,10 +47,10 @@ TEST(ChainResumeEdgesTest, resumeTest1) {
   mock::MockCluster cluster;
   cluster.initStorageKV(rootPath.path());
   auto* env = cluster.storageEnv_.get();
-  auto mClient = MetaClientTestUpdater::makeDefaultMetaClient();
+  auto mClient = MetaClientTestUpdater::makeDefault();
 
   env->metaClient_ = mClient.get();
-  auto* proc = new FakeChainAddEdgesProcessorLocal(env);
+  auto* proc = new FakeChainAddEdgesLocalProcessor(env);
 
   proc->rcProcessRemote = nebula::cpp2::ErrorCode::SUCCEEDED;
   proc->rcProcessLocal = nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -92,10 +92,10 @@ TEST(ChainResumeEdgesTest, resumeTest2) {
   mock::MockCluster cluster;
   cluster.initStorageKV(rootPath.path());
   auto* env = cluster.storageEnv_.get();
-  auto mClient = MetaClientTestUpdater::makeDefaultMetaClient();
+  auto mClient = MetaClientTestUpdater::makeDefault();
 
   env->metaClient_ = mClient.get();
-  auto* proc = new FakeChainAddEdgesProcessorLocal(env);
+  auto* proc = new FakeChainAddEdgesLocalProcessor(env);
 
   proc->rcProcessRemote = nebula::cpp2::ErrorCode::SUCCEEDED;
   proc->rcProcessLocal = nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -132,10 +132,10 @@ TEST(ChainResumeEdgesTest, resumePrimeTest3) {
   mock::MockCluster cluster;
   cluster.initStorageKV(rootPath.path());
   auto* env = cluster.storageEnv_.get();
-  auto mClient = MetaClientTestUpdater::makeDefaultMetaClient();
+  auto mClient = MetaClientTestUpdater::makeDefault();
 
   env->metaClient_ = mClient.get();
-  auto* proc = new FakeChainAddEdgesProcessorLocal(env);
+  auto* proc = new FakeChainAddEdgesLocalProcessor(env);
 
   proc->rcProcessRemote = nebula::cpp2::ErrorCode::SUCCEEDED;
   proc->rcProcessLocal = nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -181,10 +181,10 @@ TEST(ChainResumeEdgesTest, resumeTest4) {
   mock::MockCluster cluster;
   cluster.initStorageKV(rootPath.path());
   auto* env = cluster.storageEnv_.get();
-  auto mClient = MetaClientTestUpdater::makeDefaultMetaClient();
+  auto mClient = MetaClientTestUpdater::makeDefault();
 
   env->metaClient_ = mClient.get();
-  auto* proc = new FakeChainAddEdgesProcessorLocal(env);
+  auto* proc = new FakeChainAddEdgesLocalProcessor(env);
 
   proc->rcProcessRemote = nebula::cpp2::ErrorCode::E_RPC_FAILURE;
 
@@ -222,10 +222,10 @@ TEST(ChainResumeEdgesTest, resumeTest5) {
   mock::MockCluster cluster;
   cluster.initStorageKV(rootPath.path());
   auto* env = cluster.storageEnv_.get();
-  auto mClient = MetaClientTestUpdater::makeDefaultMetaClient();
+  auto mClient = MetaClientTestUpdater::makeDefault();
 
   env->metaClient_ = mClient.get();
-  auto* proc = new FakeChainAddEdgesProcessorLocal(env);
+  auto* proc = new FakeChainAddEdgesLocalProcessor(env);
 
   proc->rcProcessRemote = nebula::cpp2::ErrorCode::E_RPC_FAILURE;
 
@@ -262,10 +262,10 @@ TEST(ChainResumeEdgesTest, resumeTest6) {
   mock::MockCluster cluster;
   cluster.initStorageKV(rootPath.path());
   auto* env = cluster.storageEnv_.get();
-  auto mClient = MetaClientTestUpdater::makeDefaultMetaClient();
+  auto mClient = MetaClientTestUpdater::makeDefault();
 
   env->metaClient_ = mClient.get();
-  auto* proc = new FakeChainAddEdgesProcessorLocal(env);
+  auto* proc = new FakeChainAddEdgesLocalProcessor(env);
 
   proc->rcProcessRemote = nebula::cpp2::ErrorCode::E_RPC_FAILURE;
 
@@ -300,7 +300,7 @@ TEST(ChainUpdateEdgeTest, resumeTest7) {
   mock::MockCluster cluster;
   cluster.initStorageKV(rootPath.path());
   auto* env = cluster.storageEnv_.get();
-  auto mClient = MetaClientTestUpdater::makeDefaultMetaClient();
+  auto mClient = MetaClientTestUpdater::makeDefault();
   env->metaClient_ = mClient.get();
 
   auto parts = cluster.getTotalParts();
@@ -341,7 +341,7 @@ TEST(ChainUpdateEdgeTest, resumeTest8) {
   mock::MockCluster cluster;
   cluster.initStorageKV(rootPath.path());
   auto* env = cluster.storageEnv_.get();
-  auto mClient = MetaClientTestUpdater::makeDefaultMetaClient();
+  auto mClient = MetaClientTestUpdater::makeDefault();
   env->metaClient_ = mClient.get();
 
   auto parts = cluster.getTotalParts();
@@ -381,7 +381,7 @@ TEST(ChainUpdateEdgeTest, resumeTest9) {
   mock::MockCluster cluster;
   cluster.initStorageKV(rootPath.path());
   auto* env = cluster.storageEnv_.get();
-  auto mClient = MetaClientTestUpdater::makeDefaultMetaClient();
+  auto mClient = MetaClientTestUpdater::makeDefault();
   env->metaClient_ = mClient.get();
 
   auto parts = cluster.getTotalParts();
@@ -422,7 +422,7 @@ TEST(ChainUpdateEdgeTest, resumeTest10) {
   mock::MockCluster cluster;
   cluster.initStorageKV(rootPath.path());
   auto* env = cluster.storageEnv_.get();
-  auto mClient = MetaClientTestUpdater::makeDefaultMetaClient();
+  auto mClient = MetaClientTestUpdater::makeDefault();
   env->metaClient_ = mClient.get();
 
   auto parts = cluster.getTotalParts();
@@ -460,7 +460,7 @@ TEST(ChainUpdateEdgeTest, resumeTest11) {
   mock::MockCluster cluster;
   cluster.initStorageKV(rootPath.path());
   auto* env = cluster.storageEnv_.get();
-  auto mClient = MetaClientTestUpdater::makeDefaultMetaClient();
+  auto mClient = MetaClientTestUpdater::makeDefault();
   env->metaClient_ = mClient.get();
 
   auto parts = cluster.getTotalParts();
@@ -499,7 +499,7 @@ TEST(ChainUpdateEdgeTest, resumeTest12) {
   mock::MockCluster cluster;
   cluster.initStorageKV(rootPath.path());
   auto* env = cluster.storageEnv_.get();
-  auto mClient = MetaClientTestUpdater::makeDefaultMetaClient();
+  auto mClient = MetaClientTestUpdater::makeDefault();
   env->metaClient_ = mClient.get();
 
   auto parts = cluster.getTotalParts();

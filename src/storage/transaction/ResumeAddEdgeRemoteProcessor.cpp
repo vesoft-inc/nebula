@@ -9,21 +9,15 @@ namespace nebula {
 namespace storage {
 
 ResumeAddEdgeRemoteProcessor::ResumeAddEdgeRemoteProcessor(StorageEnv* env, const std::string& val)
-    : ChainAddEdgesProcessorLocal(env) {
+    : ChainAddEdgesLocalProcessor(env) {
   req_ = ConsistUtil::parseAddRequest(val);
-  LOG(WARNING) << ConsistUtil::dumpAddEdgeReq(req_);
-  ChainAddEdgesProcessorLocal::prepareRequest(req_);
+  ChainAddEdgesLocalProcessor::prepareRequest(req_);
 }
 
 folly::SemiFuture<nebula::cpp2::ErrorCode> ResumeAddEdgeRemoteProcessor::prepareLocal() {
   if (!checkTerm(req_)) {
     LOG(WARNING) << this << "E_OUTDATED_TERM";
     return Code::E_OUTDATED_TERM;
-  }
-
-  if (!checkVersion(req_)) {
-    LOG(WARNING) << this << "E_OUTDATED_EDGE";
-    return Code::E_OUTDATED_EDGE;
   }
 
   auto spaceId = req_.get_space_id();
@@ -34,26 +28,18 @@ folly::SemiFuture<nebula::cpp2::ErrorCode> ResumeAddEdgeRemoteProcessor::prepare
   auto& parts = req_.get_parts();
   auto& dstId = parts.begin()->second.back().get_key().get_dst().getStr();
   remotePartId_ = env_->metaClient_->partId(numOfPart.value(), dstId);
-  std::vector<std::string> keys = sEdgeKey(req_);
-  auto vers = ConsistUtil::getMultiEdgeVers(env_->kvstore_, spaceId, localPartId_, keys);
-  edgeVer_ = vers.front();
 
   return Code::SUCCEEDED;
 }
 
 folly::SemiFuture<Code> ResumeAddEdgeRemoteProcessor::processRemote(Code code) {
-  return ChainAddEdgesProcessorLocal::processRemote(code);
+  return ChainAddEdgesLocalProcessor::processRemote(code);
 }
 
 folly::SemiFuture<Code> ResumeAddEdgeRemoteProcessor::processLocal(Code code) {
   if (!checkTerm(req_)) {
     LOG(WARNING) << this << "E_OUTDATED_TERM";
     return Code::E_OUTDATED_TERM;
-  }
-
-  if (!checkVersion(req_)) {
-    LOG(WARNING) << this << "E_OUTDATED_EDGE";
-    return Code::E_OUTDATED_EDGE;
   }
 
   if (code == Code::E_OUTDATED_TERM) {
@@ -70,7 +56,7 @@ folly::SemiFuture<Code> ResumeAddEdgeRemoteProcessor::processLocal(Code code) {
   if (code == Code::SUCCEEDED) {
     // if there are something wrong other than rpc failure
     // we need to keep the resume retry(by not remove those prime key)
-    ChainAddEdgesProcessorLocal::eraseDoublePrime();
+    ChainAddEdgesLocalProcessor::eraseDoublePrime();
     code_ = forwardToDelegateProcessor().get();
     return code_;
   }

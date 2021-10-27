@@ -63,6 +63,8 @@ class TransactionManager {
 
   void stop();
 
+  void reportFailed();
+
   // leave a record for (double)prime edge, to let resume processor there is one dangling edge
   void addPrime(GraphSpaceID spaceId, const std::string& edgeKey, ResumeType type);
 
@@ -70,11 +72,7 @@ class TransactionManager {
 
   bool checkUnfinishedEdge(GraphSpaceID spaceId, const folly::StringPiece& key);
 
-  // return false if there is no "edge" in reserveTable_
-  //        true if there is, and also erase the edge from reserveTable_.
-  bool takeDanglingEdge(GraphSpaceID spaceId, const std::string& edge);
-
-  folly::ConcurrentHashMap<std::string, ResumeType>* getReserveTable();
+  folly::ConcurrentHashMap<std::string, ResumeType>* getDangleEdges();
 
   void scanPrimes(GraphSpaceID spaceId, PartitionID partId);
 
@@ -106,18 +104,16 @@ class TransactionManager {
   std::unique_ptr<thread::GenericWorker> resumeThread_;
 
   /**
-   * an update request may re-entered to an existing (double)prime key
-   * and wants to have its own (double)prime.
-   * also MVCC doesn't work.
-   * because (double)prime can't judge if remote side succeeded.
-   * to prevent insert/update re
+   * edges need to recover will put into this,
+   * resume processor will get edge from this then do resume.
    * */
-  folly::ConcurrentHashMap<std::string, ResumeType> reserveTable_;
+  folly::ConcurrentHashMap<std::string, ResumeType> dangleEdges_;
 
   /**
-   * @brief only part in this white list allowed to get lock
+   * @brief every raft part need to do a scan,
+   *        only scanned part allowed to insert edges
    */
-  folly::ConcurrentHashMap<std::pair<GraphSpaceID, PartitionID>, int> whiteListParts_;
+  folly::ConcurrentHashMap<std::pair<GraphSpaceID, PartitionID>, int> scannedParts_;
 };
 
 }  // namespace storage

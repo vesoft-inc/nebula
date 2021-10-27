@@ -11,9 +11,9 @@ namespace nebula {
 namespace storage {
 
 ResumeUpdateRemoteProcessor::ResumeUpdateRemoteProcessor(StorageEnv* env, const std::string& val)
-    : ChainUpdateEdgeProcessorLocal(env) {
+    : ChainUpdateEdgeLocalProcessor(env) {
   req_ = ConsistUtil::parseUpdateRequest(val);
-  ChainUpdateEdgeProcessorLocal::prepareRequest(req_);
+  ChainUpdateEdgeLocalProcessor::prepareRequest(req_);
 }
 
 folly::SemiFuture<nebula::cpp2::ErrorCode> ResumeUpdateRemoteProcessor::prepareLocal() {
@@ -21,7 +21,7 @@ folly::SemiFuture<nebula::cpp2::ErrorCode> ResumeUpdateRemoteProcessor::prepareL
 }
 
 folly::SemiFuture<Code> ResumeUpdateRemoteProcessor::processRemote(Code code) {
-  return ChainUpdateEdgeProcessorLocal::processRemote(code);
+  return ChainUpdateEdgeLocalProcessor::processRemote(code);
 }
 
 folly::SemiFuture<Code> ResumeUpdateRemoteProcessor::processLocal(Code code) {
@@ -32,10 +32,10 @@ folly::SemiFuture<Code> ResumeUpdateRemoteProcessor::processLocal(Code code) {
     return Code::E_OUTDATED_TERM;
   }
 
-  if (!checkVersion()) {
-    LOG(WARNING) << "E_OUTDATED_EDGE";
-    return Code::E_OUTDATED_EDGE;
-  }
+  // if (!checkVersion()) {
+  //   LOG(WARNING) << "E_OUTDATED_EDGE";
+  //   return Code::E_OUTDATED_EDGE;
+  // }
 
   if (code == Code::SUCCEEDED) {
     // if there are something wrong other than rpc failure
