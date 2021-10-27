@@ -120,6 +120,16 @@ Feature: Insert int vid of vertex and edge
         hash("Laura")->hash("sun_school"):(timestamp("2300-01-01T10:00:00"), now()+3600*24*365*3);
       """
     Then a ExecutionError should be raised at runtime:
+    When executing query:
+      """
+      INSERT EDGE schoolmate(likeness, nickname) VALUES hash("Tony")->hash("Mack")@1:(1, ""), hash("Tony")->hash("Mack")@1:(3, "nick");
+      """
+    Then a SemanticError should be raised at runtime: Can't insert duplicate edges in one statement.
+    When executing query:
+      """
+      INSERT VERTEX person(name, age) VALUES hash("Tom"):(NULL, 12), hash("Tom"):("Tom", 22)
+      """
+    Then a SemanticError should be raised at runtime: Can't insert duplicate vertices in one statement.
     And drop the used space
 
   Scenario: insert vertex unordered order prop vertex succeeded

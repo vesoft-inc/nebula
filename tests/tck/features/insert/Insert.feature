@@ -454,6 +454,16 @@ Feature: Insert string vid of vertex and edge
     Then the result should be, in any order:
       | $$.person.name | $$.person.age | schoolmate.likeness |
       | 'Mack'         | 21            | 3                   |
+    When executing query:
+      """
+      INSERT EDGE schoolmate(likeness, nickname) VALUES "Tony"->"Mack"@1:(1, ""), "Tony"->"Mack"@1:(3, "nick");
+      """
+    Then a SemanticError should be raised at runtime: Can't insert duplicate edges in one statement.
+    When executing query:
+      """
+      INSERT VERTEX person(name, age) VALUES "Tom":(NULL, 12), "Tom":("Tom", 22)
+      """
+    Then a SemanticError should be raised at runtime: Can't insert duplicate vertices in one statement.
     Then drop the used space
 
   Scenario: insert vertex and edge test by the 2.0 new type

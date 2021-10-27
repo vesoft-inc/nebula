@@ -1161,21 +1161,20 @@ TEST_F(QueryValidatorTest, TestMaxAllowedStatements) {
 
 TEST_F(QueryValidatorTest, TestMaxAllowedQuerySize) {
   FLAGS_max_allowed_query_size = 256;
-  std::string query = "INSERT VERTEX person(name, age) VALUES ";
-  std::string value = "\"person_1\":(\"person_1\", 1),";
+  std::string query = "SHOW SPACES; ";
+  std::string value = "SHOW SPACES; ";
   int count = (FLAGS_max_allowed_query_size - query.size()) / value.size();
   std::string values;
   values.reserve(FLAGS_max_allowed_query_size);
   for (int i = 0; i < count; ++i) {
     values.append(value);
   }
-  values.erase(values.size() - 1);
   query += values;
   EXPECT_TRUE(checkResult(query));
-  query.append(",\"person_2\":(\"person_2\", 2);");
+  query.append("SHOW SPACES;");
   auto result = checkResult(query);
   EXPECT_FALSE(result);
-  EXPECT_EQ(std::string(result.message()), "SyntaxError: Query is too large (282 > 256).");
+  EXPECT_EQ(std::string(result.message()), "SyntaxError: Query is too large (259 > 256).");
   FLAGS_max_allowed_query_size = 4194304;
 }
 

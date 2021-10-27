@@ -84,6 +84,8 @@ Status InsertVerticesValidator::check() {
 
 Status InsertVerticesValidator::prepareVertices() {
   vertices_.reserve(rows_.size());
+  std::unordered_set<Value> vidSet;
+  vidSet.reserve(rows_.size());
   for (auto i = 0u; i < rows_.size(); i++) {
     auto *row = rows_[i];
     if (propSize_ != row->values().size()) {
@@ -96,6 +98,10 @@ Status InsertVerticesValidator::prepareVertices() {
     auto idStatus = SchemaUtil::toVertexID(row->id(), vidType_);
     NG_RETURN_IF_ERROR(idStatus);
     auto vertexId = std::move(idStatus).value();
+    if (vidSet.emplace(vertexId).second == false) {
+      // duplicate vertex
+      return Status::SemanticError("Can't insert duplicate vertices in one statement.");
+    }
 
     // check value expr
     for (auto &value : row->values()) {
@@ -193,6 +199,7 @@ Status InsertEdgesValidator::check() {
 Status InsertEdgesValidator::prepareEdges() {
   auto size = FLAGS_enable_experimental_feature ? rows_.size() : rows_.size() * 2;
   edges_.reserve(size);
+  std::unordered_set<std::tuple<Value, Value, EdgeRanking>> edgeSet;
 
   size_t fieldNum = schema_->getNumFields();
   for (size_t j = 0; j < fieldNum; ++j) {
@@ -223,6 +230,10 @@ Status InsertEdgesValidator::prepareEdges() {
     auto dstId = std::move(idStatus).value();
 
     int64_t rank = row->rank();
+    if (edgeSet.emplace(std::make_tuple(srcId, dstId, rank)).second == false) {
+      // duplicate edges
+      return Status::SemanticError("Can't insert duplicate edges in one statement.");
+    }
 
     // check value expr
     for (auto &value : row->values()) {

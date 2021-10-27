@@ -28,8 +28,7 @@ Feature: Insert vertex and edge with if not exists
         person(name, age)
       VALUES
         "Conan":("Conan", 10),
-        "Yao":("Yao", 11),
-        "Conan":("Conan", 11);
+        "Yao":("Yao", 11);
       """
     Then the execution should be successful
     # check vertex result with fetch
@@ -223,9 +222,8 @@ Feature: Insert vertex and edge with if not exists
       INSERT VERTEX IF NOT EXISTS
         person
       VALUES
-        "Conan":("Conan", 10),
-        "Yao":("Yao", 11),
         "Conan":("Conan", 11),
+        "Yao":("Yao", 11),
         "Tom":("Tom", 3);
       """
     Then the execution should be successful
