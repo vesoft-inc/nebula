@@ -227,7 +227,7 @@ struct TossTestUtils {
   }
 
   static std::vector<meta::cpp2::ColumnDef> makeColDefs(
-      const std::vector<meta::cpp2::PropertyType>& types) {
+      const std::vector<nebula::cpp2::PropertyType>& types) {
     auto N = types.size();
     auto colNames = makeColNames(N);
     std::vector<meta::cpp2::ColumnDef> columnDefs(N);

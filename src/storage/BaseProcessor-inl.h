@@ -59,7 +59,7 @@ void BaseProcessor<RESP>::handleAsync(GraphSpaceID spaceId,
 
 template <typename RESP>
 meta::cpp2::ColumnDef BaseProcessor<RESP>::columnDef(std::string name,
-                                                     meta::cpp2::PropertyType type) {
+                                                     nebula::cpp2::PropertyType type) {
   nebula::meta::cpp2::ColumnDef column;
   column.set_name(std::move(name));
   column.set_type(type);

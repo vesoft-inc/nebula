@@ -35,7 +35,7 @@ class SchemaManager {
 
   virtual StatusOr<int32_t> getSpaceVidLen(GraphSpaceID space) = 0;
 
-  virtual StatusOr<cpp2::PropertyType> getSpaceVidType(GraphSpaceID) {
+  virtual StatusOr<nebula::cpp2::PropertyType> getSpaceVidType(GraphSpaceID) {
     return Status::Error("Not implemented");
   }
 

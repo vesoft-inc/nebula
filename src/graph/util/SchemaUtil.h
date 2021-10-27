@@ -51,11 +51,11 @@ class SchemaUtil final {
   static std::string typeToString(const meta::cpp2::ColumnTypeDef& col);
   static std::string typeToString(const meta::cpp2::ColumnDef& col);
 
-  static Value::Type propTypeToValueType(meta::cpp2::PropertyType propType);
+  static Value::Type propTypeToValueType(nebula::cpp2::PropertyType propType);
 
   static bool isValidVid(const Value& value, const meta::cpp2::ColumnTypeDef& type);
 
-  static bool isValidVid(const Value& value, meta::cpp2::PropertyType type);
+  static bool isValidVid(const Value& value, nebula::cpp2::PropertyType type);
 
   static bool isValidVid(const Value& value);
 

@@ -73,7 +73,7 @@ class AdHocSchemaManager final : public nebula::meta::SchemaManager {
 
   StatusOr<int32_t> getSpaceVidLen(GraphSpaceID space) override;
 
-  StatusOr<meta::cpp2::PropertyType> getSpaceVidType(GraphSpaceID) override;
+  StatusOr<nebula::cpp2::PropertyType> getSpaceVidType(GraphSpaceID) override;
 
   // Get all versions of all tags
   StatusOr<TagSchemas> getAllVerTagSchema(GraphSpaceID space) override;

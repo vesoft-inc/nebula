@@ -1104,72 +1104,72 @@ geo_shape_type
 type_spec
     : KW_BOOL {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::BOOL);
+        $$->set_type(nebula::cpp2::PropertyType::BOOL);
     }
     | KW_INT8 {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::INT8);
+        $$->set_type(nebula::cpp2::PropertyType::INT8);
     }
     | KW_INT16 {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::INT16);
+        $$->set_type(nebula::cpp2::PropertyType::INT16);
     }
     | KW_INT32 {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::INT32);
+        $$->set_type(nebula::cpp2::PropertyType::INT32);
     }
     | KW_INT64 {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::INT64);
+        $$->set_type(nebula::cpp2::PropertyType::INT64);
     }
     | KW_INT {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::INT64);
+        $$->set_type(nebula::cpp2::PropertyType::INT64);
     }
     | KW_FLOAT {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::FLOAT);
+        $$->set_type(nebula::cpp2::PropertyType::FLOAT);
     }
     | KW_DOUBLE {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::DOUBLE);
+        $$->set_type(nebula::cpp2::PropertyType::DOUBLE);
     }
     | KW_STRING {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::STRING);
+        $$->set_type(nebula::cpp2::PropertyType::STRING);
     }
     | KW_FIXED_STRING L_PAREN INTEGER R_PAREN {
         if ($3 > std::numeric_limits<int16_t>::max()) {
             throw nebula::GraphParser::syntax_error(@3, "Out of range:");
         }
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::FIXED_STRING);
+        $$->set_type(nebula::cpp2::PropertyType::FIXED_STRING);
         $$->set_type_length($3);
     }
     | KW_TIMESTAMP {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::TIMESTAMP);
+        $$->set_type(nebula::cpp2::PropertyType::TIMESTAMP);
     }
     | KW_DATE {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::DATE);
+        $$->set_type(nebula::cpp2::PropertyType::DATE);
     }
     | KW_TIME {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::TIME);
+        $$->set_type(nebula::cpp2::PropertyType::TIME);
     }
     | KW_DATETIME {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::DATETIME);
+        $$->set_type(nebula::cpp2::PropertyType::DATETIME);
     }
     | KW_GEOGRAPHY {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::GEOGRAPHY);
+        $$->set_type(nebula::cpp2::PropertyType::GEOGRAPHY);
         $$->set_geo_shape(meta::cpp2::GeoShape::ANY);
     }
     | KW_GEOGRAPHY L_PAREN geo_shape_type R_PAREN {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::GEOGRAPHY);
+        $$->set_type(nebula::cpp2::PropertyType::GEOGRAPHY);
         $$->set_geo_shape($3);
     }
     ;

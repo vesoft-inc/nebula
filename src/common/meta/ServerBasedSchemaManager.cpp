@@ -27,7 +27,7 @@ StatusOr<int32_t> ServerBasedSchemaManager::getSpaceVidLen(GraphSpaceID space) {
   return metaClient_->getSpaceVidLen(space);
 }
 
-StatusOr<cpp2::PropertyType> ServerBasedSchemaManager::getSpaceVidType(GraphSpaceID space) {
+StatusOr<nebula::cpp2::PropertyType> ServerBasedSchemaManager::getSpaceVidType(GraphSpaceID space) {
   CHECK(metaClient_);
   return metaClient_->getSpaceVidType(space);
 }

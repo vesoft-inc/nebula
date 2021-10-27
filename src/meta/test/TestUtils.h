@@ -36,7 +36,7 @@ namespace nebula {
 namespace meta {
 
 using mock::MockCluster;
-using nebula::meta::cpp2::PropertyType;
+using nebula::cpp2::PropertyType;
 
 using ZoneInfo = std::unordered_map<std::string, std::vector<HostAddr>>;
 using GroupInfo = std::unordered_map<std::string, std::vector<std::string>>;
@@ -47,7 +47,7 @@ auto metaPool = &metaTestPool;
 class TestUtils {
  public:
   static cpp2::ColumnDef columnDef(int32_t index,
-                                   cpp2::PropertyType type,
+                                   PropertyType type,
                                    Value defaultValue = Value(),
                                    bool isNull = true,
                                    int16_t typeLen = 0) {
