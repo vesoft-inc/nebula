@@ -47,10 +47,10 @@ Feature: Create space as another space
     # query
     When executing query:
       """
-      fetch prop on t1 "1";
+      fetch prop on t1 "1" YIELD vertex as node;
       """
     Then the result should be, in any order:
-      | vertices_          |
+      | node               |
       | ("1" :t1{col1: 1}) |
     When executing query:
       """
@@ -61,10 +61,10 @@ Feature: Create space as another space
       | "1"      |
     When executing query:
       """
-      fetch prop on e1 "1" -> "2";
+      fetch prop on e1 "1" -> "2" YIELD edge as e;
       """
     Then the result should be, in any order:
-      | edges_                      |
+      | e                           |
       | [:e1 "1"->"2" @0 {col1: 1}] |
     When executing query:
       """
@@ -109,16 +109,16 @@ Feature: Create space as another space
     # check no data in new space
     When executing query:
       """
-      fetch prop on t1 "1";
+      fetch prop on t1 "1" YIELD vertex as node;
       """
     Then the result should be, in any order:
-      | vertices_ |
+      | node |
     When executing query:
       """
-      fetch prop on e1 "1" -> "2";
+      fetch prop on e1 "1" -> "2" YIELD edge as e;
       """
     Then the result should be, in any order:
-      | edges_ |
+      | e |
     # write new data into cloned space
     When executing query:
       """
@@ -132,10 +132,10 @@ Feature: Create space as another space
     # query
     When executing query:
       """
-      fetch prop on t1 "1";
+      fetch prop on t1 "1" YIELD vertex as node;
       """
     Then the result should be, in any order:
-      | vertices_          |
+      | node               |
       | ("1" :t1{col1: 2}) |
     When executing query:
       """
@@ -146,10 +146,10 @@ Feature: Create space as another space
       | "1"      |
     When executing query:
       """
-      fetch prop on e1 "1" -> "2";
+      fetch prop on e1 "1" -> "2" YIELD edge as e;
       """
     Then the result should be, in any order:
-      | edges_                      |
+      | e                           |
       | [:e1 "1"->"2" @0 {col1: 2}] |
     When executing query:
       """

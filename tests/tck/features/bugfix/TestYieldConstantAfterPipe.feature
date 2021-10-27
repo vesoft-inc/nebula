@@ -10,7 +10,7 @@ Feature: Test yield constant after pipe
   Scenario: yield constant after pipe
     When executing query:
       """
-      GO FROM "Tim Duncan" OVER * | YIELD 1 AS a;
+      GO FROM "Tim Duncan" OVER * YIELD dst(edge) | YIELD 1 AS a;
       """
     Then the result should be, in any order:
       | a |
@@ -23,7 +23,7 @@ Feature: Test yield constant after pipe
       | 1 |
     When executing query:
       """
-      GO FROM "Tim Duncan" OVER * | YIELD 1 AS a WHERE true;
+      GO FROM "Tim Duncan" OVER * YIELD dst(edge) | YIELD 1 AS a WHERE true;
       """
     Then the result should be, in any order:
       | a |
@@ -36,7 +36,7 @@ Feature: Test yield constant after pipe
       | 1 |
     When executing query:
       """
-      GO FROM "Tim Duncan" OVER * | YIELD 1 AS a WHERE false;
+      GO FROM "Tim Duncan" OVER * YIELD dst(edge) | YIELD 1 AS a WHERE false;
       """
     Then the result should be, in any order:
       | a |

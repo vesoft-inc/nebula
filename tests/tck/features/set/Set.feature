@@ -292,7 +292,7 @@ Feature: Set Test
     When executing query:
       """
       GO FROM "123" OVER like YIELD like._src as src, like._dst as dst
-      | (GO FROM $-.src OVER serve UNION GO FROM $-.dst OVER serve)
+      | (GO FROM $-.src OVER serve YIELD serve._dst UNION GO FROM $-.dst OVER serve YIELD serve._dst)
       """
     Then a SemanticError should be raised at runtime: `$-.src', not exist prop `src'
 

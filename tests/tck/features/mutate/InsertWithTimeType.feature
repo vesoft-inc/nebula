@@ -98,15 +98,15 @@ Feature: Insert with time-dependent types
       FETCH PROP ON tag_date "test" YIELD tag_date.f_date, tag_date.f_time, tag_date.f_datetime;
       """
     Then the result should be, in any order:
-      | VertexID | tag_date.f_date | tag_date.f_time   | tag_date.f_datetime          |
-      | 'test'   | '2017-03-04'    | '23:01:00.000000' | '2017-03-04T22:30:40.000000' |
+      | tag_date.f_date | tag_date.f_time   | tag_date.f_datetime          |
+      | '2017-03-04'    | '23:01:00.000000' | '2017-03-04T22:30:40.000000' |
     When executing query:
       """
       FETCH PROP ON edge_date "test_src"->"test_dst" YIELD edge_date.f_date, edge_date.f_time, edge_date.f_datetime;
       """
     Then the result should be, in any order:
-      | edge_date._src | edge_date._dst | edge_date._rank | edge_date.f_date | edge_date.f_time  | edge_date.f_datetime         |
-      | 'test_src'     | 'test_dst'     | 0               | '2017-03-04'     | '23:01:00.000000' | '2017-03-04T22:30:40.000000' |
+      | edge_date.f_date | edge_date.f_time  | edge_date.f_datetime         |
+      | '2017-03-04'     | '23:01:00.000000' | '2017-03-04T22:30:40.000000' |
     # insert with timezone offset and microseconds
     When try to execute query:
       """
@@ -119,15 +119,15 @@ Feature: Insert with time-dependent types
       FETCH PROP ON tag_date "test" YIELD tag_date.f_date, tag_date.f_time, tag_date.f_datetime;
       """
     Then the result should be, in any order:
-      | VertexID | tag_date.f_date | tag_date.f_time   | tag_date.f_datetime          |
-      | 'test'   | '2017-03-04'    | '22:01:00.010000' | '2017-03-05T01:00:40.003000' |
+      | tag_date.f_date | tag_date.f_time   | tag_date.f_datetime          |
+      | '2017-03-04'    | '22:01:00.010000' | '2017-03-05T01:00:40.003000' |
     When executing query:
       """
       FETCH PROP ON edge_date "test_src"->"test_dst" YIELD edge_date.f_date, edge_date.f_time, edge_date.f_datetime;
       """
     Then the result should be, in any order:
-      | edge_date._src | edge_date._dst | edge_date._rank | edge_date.f_date | edge_date.f_time  | edge_date.f_datetime         |
-      | 'test_src'     | 'test_dst'     | 0               | '2017-03-04'     | '22:01:00.010000' | '2017-03-05T01:00:40.003000' |
+      | edge_date.f_date | edge_date.f_time  | edge_date.f_datetime         |
+      | '2017-03-04'     | '22:01:00.010000' | '2017-03-05T01:00:40.003000' |
     # insert with timezone name and microseconds
     When try to execute query:
       """
@@ -140,15 +140,15 @@ Feature: Insert with time-dependent types
       FETCH PROP ON tag_date "test" YIELD tag_date.f_date, tag_date.f_time, tag_date.f_datetime;
       """
     Then the result should be, in any order:
-      | VertexID | tag_date.f_date | tag_date.f_time   | tag_date.f_datetime          |
-      | 'test'   | '2017-03-04'    | '15:01:00.010000' | '2017-03-04T14:30:40.003000' |
+      | tag_date.f_date | tag_date.f_time   | tag_date.f_datetime          |
+      | '2017-03-04'    | '15:01:00.010000' | '2017-03-04T14:30:40.003000' |
     When executing query:
       """
       FETCH PROP ON edge_date "test_src"->"test_dst" YIELD edge_date.f_date, edge_date.f_time, edge_date.f_datetime;
       """
     Then the result should be, in any order:
-      | edge_date._src | edge_date._dst | edge_date._rank | edge_date.f_date | edge_date.f_time  | edge_date.f_datetime         |
-      | 'test_src'     | 'test_dst'     | 0               | '2017-03-04'     | '15:01:00.010000' | '2017-03-04T14:30:40.003000' |
+      | edge_date.f_date | edge_date.f_time  | edge_date.f_datetime         |
+      | '2017-03-04'     | '15:01:00.010000' | '2017-03-04T14:30:40.003000' |
     # insert with timezone name and utc offset
     When try to execute query:
       """
@@ -161,15 +161,15 @@ Feature: Insert with time-dependent types
       FETCH PROP ON tag_date "test" YIELD tag_date.f_date, tag_date.f_time, tag_date.f_datetime;
       """
     Then the result should be, in any order:
-      | VertexID | tag_date.f_date | tag_date.f_time   | tag_date.f_datetime          |
-      | 'test'   | '2017-03-04'    | '15:01:00.010000' | '2017-03-04T14:30:40.003000' |
+      | tag_date.f_date | tag_date.f_time   | tag_date.f_datetime          |
+      | '2017-03-04'    | '15:01:00.010000' | '2017-03-04T14:30:40.003000' |
     When executing query:
       """
       FETCH PROP ON edge_date "test_src"->"test_dst" YIELD edge_date.f_date, edge_date.f_time, edge_date.f_datetime;
       """
     Then the result should be, in any order:
-      | edge_date._src | edge_date._dst | edge_date._rank | edge_date.f_date | edge_date.f_time  | edge_date.f_datetime         |
-      | 'test_src'     | 'test_dst'     | 0               | '2017-03-04'     | '15:01:00.010000' | '2017-03-04T14:30:40.003000' |
+      | edge_date.f_date | edge_date.f_time  | edge_date.f_datetime         |
+      | '2017-03-04'     | '15:01:00.010000' | '2017-03-04T14:30:40.003000' |
     # insert with timezone name and mismatched utc offset
     When try to execute query:
       """
@@ -209,14 +209,14 @@ Feature: Insert with time-dependent types
     Then the execution should be successful
     When executing query:
       """
-      FETCH PROP ON tag_date "test";
+      FETCH PROP ON tag_date "test" YIELD vertex as node;
       """
     Then the result should be, in any order, with relax comparison:
-      | vertices_ |
+      | node |
     When executing query:
       """
-      FETCH PROP ON edge_date "test_src"->"test_dst";
+      FETCH PROP ON edge_date "test_src"->"test_dst" YIELD edge as e;
       """
     Then the result should be, in any order, with relax comparison:
-      | edges_ |
+      | e |
     And drop the used space
