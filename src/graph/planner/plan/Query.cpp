@@ -612,14 +612,12 @@ void Traverse::cloneMembers(const Traverse& g) {
 
   setSteps(g.steps_);
   // TODO
-  DCHECK(false);
 }
 
 std::unique_ptr<PlanNodeDescription> Traverse::explain() const {
   auto desc = GetNeighbors::explain();
   addDescription("steps", steps_.toString(), desc.get());
   // TODO
-  DCHECK(false);
   return desc;
 }
 
@@ -633,13 +631,11 @@ void AppendVertices::cloneMembers(const AppendVertices& a) {
   GetVertices::cloneMembers(a);
 
   // TODO
-  DCHECK(false);
 }
 
 std::unique_ptr<PlanNodeDescription> AppendVertices::explain() const {
   auto desc = GetVertices::explain();
   // TODO
-  DCHECK(false);
   return desc;
 }
 }  // namespace graph

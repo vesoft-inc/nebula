@@ -1200,15 +1200,9 @@ class Traverse final : public GetNeighbors {
 
   void setEdgeDst(EdgeProps edgeProps) { edgeDst_ = std::move(edgeProps); }
 
-  void setVertexFilter(Expression* vFilter) {
-    UNUSED(vFilter);
-    DCHECK(false);
-  }
+  void setVertexFilter(Expression* vFilter) { vFilter_ = vFilter; }
 
-  void setEdgeFilter(Expression* eFilter) {
-    UNUSED(eFilter);
-    DCHECK(false);
-  }
+  void setEdgeFilter(Expression* eFilter) { eFilter_ = eFilter; }
 
  private:
   Traverse(QueryContext* qctx, PlanNode* input, GraphSpaceID space)
@@ -1222,6 +1216,8 @@ class Traverse final : public GetNeighbors {
 
   StepClause steps_;
   EdgeProps edgeDst_;
+  Expression* vFilter_;
+  Expression* eFilter_;
 };
 
 class AppendVertices final : public GetVertices {
@@ -1234,10 +1230,7 @@ class AppendVertices final : public GetVertices {
 
   AppendVertices* clone() const override;
 
-  void setVertexFilter(Expression* vFilter) {
-    UNUSED(vFilter);
-    DCHECK(false);
-  }
+  void setVertexFilter(Expression* vFilter) { vFilter_ = vFilter; }
 
  private:
   AppendVertices(QueryContext* qctx, PlanNode* input, GraphSpaceID space)
@@ -1246,6 +1239,8 @@ class AppendVertices final : public GetVertices {
   }
 
   void cloneMembers(const AppendVertices& a);
+
+  Expression* vFilter_;
 };
 }  // namespace graph
 }  // namespace nebula

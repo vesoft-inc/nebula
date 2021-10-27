@@ -19,8 +19,20 @@ using JoinStrategyPos = nebula::graph::InnerJoinStrategy::JoinPos;
 
 namespace nebula {
 namespace graph {
-static std::vector<std::string> genTraverseColNames(const NodeInfo& node, const EdgeInfo& edge) {
-  return {node.alias, edge.alias};
+static std::vector<std::string> genTraverseColNames(const std::vector<std::string>& inputCols,
+                                                    const NodeInfo& node,
+                                                    const EdgeInfo& edge) {
+  auto cols = inputCols;
+  cols.emplace_back(node.alias);
+  cols.emplace_back(edge.alias);
+  return cols;
+}
+
+static std::vector<std::string> genAppendVColNames(const std::vector<std::string>& inputCols,
+                                                   const NodeInfo& node) {
+  auto cols = inputCols;
+  cols.emplace_back(node.alias);
+  return cols;
 }
 
 static Expression* genNextTraverseStart(ObjectPool* pool, const EdgeInfo& edge) {
@@ -58,6 +70,44 @@ static std::unique_ptr<std::vector<VertexProp>> genVertexProps(const NodeInfo& n
   return std::make_unique<std::vector<VertexProp>>();
 }
 
+static std::unique_ptr<std::vector<storage::cpp2::EdgeProp>> genEdgeDst(const EdgeInfo& edge,
+                                                                        bool reversely,
+                                                                        QueryContext* qctx,
+                                                                        GraphSpaceID spaceId) {
+  auto edgeProps = std::make_unique<std::vector<EdgeProp>>();
+  for (auto edgeType : edge.edgeTypes) {
+    auto edgeSchema = qctx->schemaMng()->getEdgeSchema(spaceId, edgeType);
+
+    switch (edge.direction) {
+      case Direction::OUT_EDGE: {
+        if (reversely) {
+          edgeType = -edgeType;
+        }
+        break;
+      }
+      case Direction::IN_EDGE: {
+        if (!reversely) {
+          edgeType = -edgeType;
+        }
+        break;
+      }
+      case Direction::BOTH: {
+        EdgeProp edgeProp;
+        edgeProp.set_type(-edgeType);
+        std::vector<std::string> props{kSrc, kType, kRank, kDst};
+        edgeProp.set_props(std::move(props));
+        edgeProps->emplace_back(std::move(edgeProp));
+        break;
+      }
+    }
+    EdgeProp edgeProp;
+    edgeProp.set_type(edgeType);
+    std::vector<std::string> props{kSrc, kType, kRank, kDst};
+    edgeProp.set_props(std::move(props));
+    edgeProps->emplace_back(std::move(edgeProp));
+  }
+  return edgeProps;
+}
 static std::unique_ptr<std::vector<storage::cpp2::EdgeProp>> genEdgeProps(const EdgeInfo& edge,
                                                                           bool reversely,
                                                                           QueryContext* qctx,
@@ -118,7 +168,7 @@ StatusOr<SubPlan> MatchClausePlanner::transform(CypherClauseContextBase* clauseC
   NG_RETURN_IF_ERROR(findStarts(matchClauseCtx, startFromEdge, startIndex, matchClausePlan));
   NG_RETURN_IF_ERROR(
       expand(nodeInfos, edgeInfos, matchClauseCtx, startFromEdge, startIndex, matchClausePlan));
-  NG_RETURN_IF_ERROR(projectColumnsBySymbols(matchClauseCtx, startIndex, matchClausePlan));
+  // NG_RETURN_IF_ERROR(projectColumnsBySymbols(matchClauseCtx, startIndex, matchClausePlan));
   NG_RETURN_IF_ERROR(appendFilterPlan(matchClauseCtx, matchClausePlan));
   return matchClausePlan;
 }
@@ -241,10 +291,12 @@ Status MatchClausePlanner::leftExpandFromNode(const std::vector<NodeInfo>& nodeI
     traverse->setSrc(startIndex == i ? initialExpr_ : nextTraverseStart);
     traverse->setVertexProps(genVertexProps(node, qctx, spaceId));
     traverse->setEdgeProps(genEdgeProps(edge, reversely, qctx, spaceId));
+    traverse->setEdgeProps(genEdgeDst(edge, reversely, qctx, spaceId));
     traverse->setVertexFilter(genVertexFilter(node));
     traverse->setEdgeFilter(genEdgeFilter(edge));
     traverse->setEdgeDirection(edge.direction);  // TODO: reverse the direction
-    traverse->setColNames(genTraverseColNames(node, edge));
+    traverse->setColNames(genTraverseColNames(subplan.root->colNames(), node, edge));
+    traverse->setSteps(StepClause(edge.range->min(), edge.range->max()));
     subplan.root = traverse;
     nextTraverseStart = genNextTraverseStart(qctx->objPool(), edge);
     inputVar = traverse->outputVar();
@@ -256,6 +308,7 @@ Status MatchClausePlanner::leftExpandFromNode(const std::vector<NodeInfo>& nodeI
   appendV->setVertexProps(genVertexProps(node, qctx, spaceId));
   appendV->setSrc(genNextTraverseStart(qctx->objPool(), edgeInfos.back()));
   appendV->setVertexFilter(genVertexFilter(node));
+  appendV->setColNames(genAppendVColNames(subplan.root->colNames(), node));
   subplan.root = appendV;
 
   VLOG(1) << subplan;
@@ -271,28 +324,32 @@ Status MatchClausePlanner::rightExpandFromNode(const std::vector<NodeInfo>& node
   auto qctx = matchClauseCtx->qctx;
   auto spaceId = matchClauseCtx->space.id;
   Expression* nextTraverseStart = nullptr;
+  bool reversely = false;
   for (size_t i = startIndex; i < edgeInfos.size(); ++i) {
     auto& node = nodeInfos[i];
     auto& edge = edgeInfos[i];
     auto traverse = Traverse::make(qctx, subplan.root, spaceId);
     traverse->setSrc(startIndex == i ? initialExpr_ : nextTraverseStart);
     traverse->setVertexProps(genVertexProps(node, qctx, spaceId));
-    traverse->setEdgeProps(genEdgeProps(edge, true, qctx, spaceId));
+    traverse->setEdgeProps(genEdgeProps(edge, reversely, qctx, spaceId));
+    traverse->setEdgeDst(genEdgeDst(edge, reversely, qctx, spaceId));
     traverse->setVertexFilter(genVertexFilter(node));
     traverse->setEdgeFilter(genEdgeFilter(edge));
     traverse->setEdgeDirection(edge.direction);
-    traverse->setColNames(genTraverseColNames(node, edge));
+    traverse->setColNames(genTraverseColNames(subplan.root->colNames(), node, edge));
+    traverse->setSteps(StepClause(edge.range->min(), edge.range->max()));
     subplan.root = traverse;
     nextTraverseStart = genNextTraverseStart(qctx->objPool(), edge);
     inputVar = traverse->outputVar();
   }
 
   VLOG(1) << subplan;
-  auto& node = nodeInfos.front();
+  auto& node = nodeInfos.back();
   auto appendV = AppendVertices::make(qctx, subplan.root, spaceId);
   appendV->setSrc(genNextTraverseStart(qctx->objPool(), edgeInfos.back()));
   appendV->setVertexProps(genVertexProps(node, qctx, spaceId));
   appendV->setVertexFilter(genVertexFilter(node));
+  appendV->setColNames(genAppendVColNames(subplan.root->colNames(), node));
   subplan.root = appendV;
 
   VLOG(1) << subplan;

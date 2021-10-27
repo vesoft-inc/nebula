@@ -170,7 +170,7 @@ Status TraverseExecutor::buildInterimPath(GetNeighborsIter* iter) {
 
   const std::unordered_map<Value, Paths>* prev = nullptr;
   std::unordered_map<Value, Paths>* current = nullptr;
-  if (currentStep_ == 0) {
+  if (currentStep_ == 1) {
     paths_.emplace_back();
     current = &paths_.back();
   } else {
@@ -197,11 +197,13 @@ Status TraverseExecutor::buildInterimPath(GetNeighborsIter* iter) {
       List neighbors;
       neighbors.values.emplace_back(std::move(e));
       row.values.emplace_back(std::move(neighbors));
+      VLOG(1) << "path " << __LINE__ << " :" << row;
       std::vector<Row> rows;
       rows.emplace_back(std::move(row));
       current->emplace(dst, std::move(rows));
     } else {
       // Join on dst = src
+      VLOG(1) << "Find prev path: " << srcV.getVertex().vid;
       auto pathToSrcFound = prev->find(srcV.getVertex().vid);
       if (pathToSrcFound == prev->end()) {
         return Status::Error("Can't find prev paths.");
@@ -210,6 +212,7 @@ Status TraverseExecutor::buildInterimPath(GetNeighborsIter* iter) {
       for (auto path : paths) {
         path.values[1].mutableList().values.emplace_back(std::move(srcV));
         path.values[1].mutableList().values.emplace_back(std::move(e));
+        VLOG(1) << "path " << __LINE__ << " :" << path;
         auto pathToDstFound = current->find(dst);
         if (pathToDstFound == current->end()) {
           std::vector<Row> rows;
@@ -223,11 +226,17 @@ Status TraverseExecutor::buildInterimPath(GetNeighborsIter* iter) {
     }
   }
 
-  if (steps_.isMToN() && currentStep_ < steps_.mSteps() && paths_.size() > 1) {
-    paths_.pop_front();
+  if (steps_.isMToN()) {
+    if (currentStep_ < steps_.mSteps() && paths_.size() > 1) {
+      VLOG(1) << "Delete front path.";
+      paths_.pop_front();
+    }
   } else if (paths_.size() > 1) {
+    VLOG(1) << "Delete front path.";
     paths_.pop_front();
   }
+  reqDs_ = std::move(reqDs);
+  VLOG(1) << "paths size: " << paths_.size();
   return Status::OK();
 }
 
@@ -244,12 +253,15 @@ Status TraverseExecutor::buildResult() {
     Value key = hashKey->eval(ctx(iter.get()));
     auto& vals = hashTable[key];
     vals.emplace_back(iter->row());
+    VLOG(1) << "row" << __LINE__ << " :" << *iter->row();
   }
 
   DataSet result;
+  result.colNames = traverse_->colNames();
   for (auto& currentStepPaths : paths_) {
     for (auto& paths : currentStepPaths) {
       for (auto& path : paths.second) {
+        VLOG(1) << "path " << __LINE__ << " :" << path;
         auto prevPathFound = hashTable.find(path.values[0].getVertex().vid);
         if (prevPathFound == hashTable.end()) {
           return Status::Error("Can't find prev paths.");
@@ -258,11 +270,14 @@ Status TraverseExecutor::buildResult() {
         for (const auto* prevPath : prevPaths) {
           auto newPath = *prevPath;
           newPath.values.insert(newPath.values.end(), path.values.begin(), path.values.end());
+          VLOG(1) << "path " << __LINE__ << " :" << newPath;
           result.emplace_back(std::move(newPath));
         }
       }
     }
   }
+
+  VLOG(1) << "Traverse result: " << result;
   return finish(ResultBuilder().value(Value(std::move(result))).build());
 }
 }  // namespace graph

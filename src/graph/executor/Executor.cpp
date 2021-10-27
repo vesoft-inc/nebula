@@ -70,6 +70,7 @@
 #include "graph/executor/mutate/InsertExecutor.h"
 #include "graph/executor/mutate/UpdateExecutor.h"
 #include "graph/executor/query/AggregateExecutor.h"
+#include "graph/executor/query/AppendVerticesExecutor.h"
 #include "graph/executor/query/AssignExecutor.h"
 #include "graph/executor/query/DataCollectExecutor.h"
 #include "graph/executor/query/DedupExecutor.h"
@@ -532,9 +533,7 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
       return pool->add(new TraverseExecutor(node, qctx));
     }
     case PlanNode::Kind::kAppendVertices: {
-      // TODO
-      DCHECK(false);
-      return nullptr;
+      return pool->add(new AppendVerticesExecutor(node, qctx));
     }
     case PlanNode::Kind::kUnknown: {
       LOG(FATAL) << "Unknown plan node kind " << static_cast<int32_t>(node->kind());
