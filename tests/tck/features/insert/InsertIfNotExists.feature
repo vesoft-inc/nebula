@@ -37,8 +37,8 @@ Feature: Insert vertex and edge with if not exists
       FETCH PROP ON person "Conan" YIELD person.age as age
       """
     Then the result should be, in any order, with relax comparison:
-      | VertexID | age |
-      | "Conan"  | 10  |
+      | age |
+      | 10  |
     # insert vertex if not exists
     When executing query:
       """
@@ -50,8 +50,8 @@ Feature: Insert vertex and edge with if not exists
       FETCH PROP ON person "Conan" YIELD person.age as age
       """
     Then the result should be, in any order, with relax comparison:
-      | VertexID | age |
-      | "Conan"  | 10  |
+      | age |
+      | 10  |
     # insert same vertex
     When executing query:
       """
@@ -63,8 +63,8 @@ Feature: Insert vertex and edge with if not exists
       FETCH PROP ON person "Conan" YIELD person.age as age
       """
     Then the result should be, in any order, with relax comparison:
-      | VertexID | age |
-      | "Conan"  | 40  |
+      | age |
+      | 40  |
     # insert edge
     When try to execute query:
       """
@@ -77,8 +77,8 @@ Feature: Insert vertex and edge with if not exists
       FETCH PROP ON like "Tom"->"Conan" YIELD like.likeness
       """
     Then the result should be, in any order:
-      | like._src | like._dst | like._rank | like.likeness |
-      | 'Tom'     | 'Conan'   | 0          | 87            |
+      | like.likeness |
+      | 87            |
     # insert edge if not exists
     When executing query:
       """
@@ -91,8 +91,8 @@ Feature: Insert vertex and edge with if not exists
       FETCH PROP ON like "Tom"->"Conan" YIELD like.likeness
       """
     Then the result should be, in any order:
-      | like._src | like._dst | like._rank | like.likeness |
-      | 'Tom'     | 'Conan'   | 0          | 87            |
+      | like.likeness |
+      | 87            |
     # insert same edge
     When executing query:
       """
@@ -105,8 +105,8 @@ Feature: Insert vertex and edge with if not exists
       FETCH PROP ON like "Tom"->"Conan" YIELD like.likeness
       """
     Then the result should be, in any order:
-      | like._src | like._dst | like._rank | like.likeness |
-      | 'Tom'     | 'Conan'   | 0          | 100           |
+      | like.likeness |
+      | 100           |
     # check result with go
     When executing query:
       """
@@ -133,15 +133,15 @@ Feature: Insert vertex and edge with if not exists
       FETCH PROP ON person "Conan" YIELD person.age as age
       """
     Then the result should be, in any order, with relax comparison:
-      | VertexID | age |
-      | "Conan"  | 40  |
+      | age |
+      | 40  |
     When executing query:
       """
       FETCH PROP ON student "Conan" YIELD student.number as number
       """
     Then the result should be, in any order, with relax comparison:
-      | VertexID | number      |
-      | "Conan"  | 20180901003 |
+      | number      |
+      | 20180901003 |
     # insert multi edges if not exists
     When executing query:
       """
@@ -158,15 +158,15 @@ Feature: Insert vertex and edge with if not exists
       FETCH PROP ON like "Tom"->"Conan" YIELD like.likeness
       """
     Then the result should be, in any order:
-      | like._src | like._dst | like._rank | like.likeness |
-      | 'Tom'     | 'Conan'   | 0          | 100           |
+      | like.likeness |
+      | 100           |
     When executing query:
       """
       FETCH PROP ON like "Tom"->"Peter" YIELD like.likeness
       """
     Then the result should be, in any order:
-      | like._src | like._dst | like._rank | like.likeness |
-      | 'Tom'     | 'Peter'   | 0          | 83            |
+      | like.likeness |
+      | 83            |
     And drop the used space
 
   Scenario: insert vertex and edge with default propNames
@@ -233,8 +233,8 @@ Feature: Insert vertex and edge with if not exists
       FETCH PROP ON person "Tom" YIELD person.age as age
       """
     Then the result should be, in any order, with relax comparison:
-      | VertexID | age |
-      | "Tom"    | 2   |
+      | age |
+      | 2   |
     # check insert edge with default props
     When try to execute query:
       """
@@ -272,6 +272,6 @@ Feature: Insert vertex and edge with if not exists
       FETCH PROP ON like "Tom"->"Conan" YIELD like.likeness
       """
     Then the result should be, in any order:
-      | like._src | like._dst | like._rank | like.likeness |
-      | 'Tom'     | 'Conan'   | 0          | 200           |
+      | like.likeness |
+      | 200           |
     And drop the used space

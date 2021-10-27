@@ -150,34 +150,14 @@ void FetchEdgesValidator::extractEdgeProp(ExpressionProps &exprProps) {
 }
 
 Status FetchEdgesValidator::validateYield(const YieldClause *yield) {
-  auto pool = qctx_->objPool();
-  bool noYield = false;
   if (yield == nullptr) {
-    // TODO: compatible with previous version, this will be deprecated in version 3.0.
-    auto *yieldColumns = new YieldColumns();
-    auto *edge = new YieldColumn(EdgeExpression::make(pool), "edges_");
-    yieldColumns->addColumn(edge);
-    yield = pool->add(new YieldClause(yieldColumns));
-    noYield = true;
+    return Status::SemanticError("Missing yield clause.");
   }
   fetchCtx_->distinct = yield->isDistinct();
-
   auto &exprProps = fetchCtx_->exprProps;
-  auto *newCols = pool->add(new YieldColumns());
-  if (!noYield) {
-    auto *src = new YieldColumn(EdgeSrcIdExpression::make(pool, edgeName_));
-    auto *dst = new YieldColumn(EdgeDstIdExpression::make(pool, edgeName_));
-    auto *rank = new YieldColumn(EdgeRankExpression::make(pool, edgeName_));
-    outputs_.emplace_back(src->name(), vidType_);
-    outputs_.emplace_back(dst->name(), vidType_);
-    outputs_.emplace_back(rank->name(), Value::Type::INT);
-    newCols->addColumn(src);
-    newCols->addColumn(dst);
-    newCols->addColumn(rank);
-    exprProps.insertEdgeProp(edgeType_, kSrc);
-    exprProps.insertEdgeProp(edgeType_, kDst);
-    exprProps.insertEdgeProp(edgeType_, kRank);
-  }
+  exprProps.insertEdgeProp(edgeType_, nebula::kSrc);
+  exprProps.insertEdgeProp(edgeType_, nebula::kDst);
+  exprProps.insertEdgeProp(edgeType_, nebula::kRank);
 
   for (const auto &col : yield->columns()) {
     if (ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kEdge})) {
@@ -186,8 +166,10 @@ Status FetchEdgesValidator::validateYield(const YieldClause *yield) {
     }
   }
   auto size = yield->columns().size();
-  outputs_.reserve(size + 3);
+  outputs_.reserve(size);
 
+  auto pool = qctx_->objPool();
+  auto *newCols = pool->add(new YieldColumns());
   for (auto col : yield->columns()) {
     if (ExpressionUtils::hasAny(col->expr(),
                                 {Expression::Kind::kVertex, Expression::Kind::kPathBuild})) {

@@ -10,7 +10,7 @@ Feature: Push Limit down rule
   Scenario: push limit down to GetNeighbors
     When profiling query:
       """
-      GO 1 STEPS FROM "James Harden" OVER like REVERSELY LIMIT [2]
+      GO 1 STEPS FROM "James Harden" OVER like REVERSELY YIELD like._dst LIMIT [2]
       """
     Then the result should be, in any order:
       | like._dst         |
@@ -24,7 +24,7 @@ Feature: Push Limit down rule
       | 0  | Start        |              |                |
     When profiling query:
       """
-      GO 2 STEPS FROM "James Harden" OVER like REVERSELY LIMIT [2, 2]
+      GO 2 STEPS FROM "James Harden" OVER like REVERSELY YIELD like._dst LIMIT [2, 2]
       """
     Then the result should be, in any order:
       | like._dst            |
@@ -104,7 +104,7 @@ Feature: Push Limit down rule
   Scenario: push sample down to GetNeighbors
     When profiling query:
       """
-      GO 1 STEPS FROM "James Harden" OVER like REVERSELY SAMPLE [2]
+      GO 1 STEPS FROM "James Harden" OVER like REVERSELY YIELD like._dst SAMPLE [2]
       """
     Then the result should be, in any order:
       | like._dst |
@@ -118,7 +118,7 @@ Feature: Push Limit down rule
       | 4  | Start        |              |                                  |
     When profiling query:
       """
-      GO 2 STEPS FROM "James Harden" OVER like REVERSELY SAMPLE [2, 2]
+      GO 2 STEPS FROM "James Harden" OVER like REVERSELY YIELD like._dst SAMPLE [2, 2]
       """
     Then the result should be, in any order:
       | like._dst |
