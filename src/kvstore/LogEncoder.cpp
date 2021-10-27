@@ -243,6 +243,37 @@ HostAddr decodeHost(LogType type, const folly::StringPiece& encoded) {
   return host;
 }
 
+std::string encodeHostAndPath(LogType type, const HostAddr& host, const std::string& path) {
+  std::string encoded;
+  encoded.reserve(sizeof(int64_t) + 1 + sizeof(int32_t) + path.size() + 15 + sizeof(int));
+  int64_t ts = time::WallClock::fastNowInMilliSec();
+  std::string encodedHost;
+  apache::thrift::CompactSerializer::serialize(host, &encodedHost);
+
+  int32_t pathSize = path.size();
+  encoded.append(reinterpret_cast<char*>(&ts), sizeof(int64_t))
+      .append(reinterpret_cast<char*>(&type), 1)
+      .append(reinterpret_cast<char*>(&pathSize), sizeof(int32_t))
+      .append(path)
+      .append(encodedHost);
+  return encoded;
+}
+
+HostAndPath decodeHostAndPath(LogType type, const folly::StringPiece& encoded) {
+  HostAddr addr;
+
+  CHECK(encoded[sizeof(int64_t)] == type);
+  folly::StringPiece raw = encoded;
+  raw.advance(sizeof(int64_t) + 1);
+
+  auto pathSize = *reinterpret_cast<const uint32_t*>(raw.data());
+  auto path = folly::StringPiece(raw.data() + sizeof(pathSize), pathSize);
+  raw.advance(sizeof(int32_t) + pathSize);
+  HostAddr host;
+  apache::thrift::CompactSerializer::deserialize(raw, host);
+  return HostAndPath(host, std::string(path.data(), pathSize));
+}
+
 int64_t getTimestamp(const folly::StringPiece& command) {
   return *reinterpret_cast<const int64_t*>(command.begin());
 }

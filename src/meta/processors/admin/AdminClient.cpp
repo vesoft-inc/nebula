@@ -21,6 +21,7 @@ namespace meta {
 folly::Future<Status> AdminClient::transLeader(GraphSpaceID spaceId,
                                                PartitionID partId,
                                                const HostAddr& src,
+                                               const std::string& path,
                                                const HostAddr& dst) {
   storage::cpp2::TransLeaderReq req;
   req.space_id_ref() = spaceId;
@@ -33,6 +34,7 @@ folly::Future<Status> AdminClient::transLeader(GraphSpaceID spaceId,
   }
 
   auto peers = std::move(nebula::value(partHosts));
+  HostAndPath leaderAndPath = HostAndPath(src, path);
   auto it = std::find(peers.begin(), peers.end(), src);
   if (it == peers.end()) {
     return Status::PartNotFound();
@@ -44,8 +46,8 @@ folly::Future<Status> AdminClient::transLeader(GraphSpaceID spaceId,
   auto target = dst;
   if (dst == kRandomPeer) {
     for (auto& p : peers) {
-      if (p != src) {
-        auto retCode = ActiveHostsMan::isLived(kv_, p);
+      if (p.host != src) {
+        auto retCode = ActiveHostsMan::isLived(kv_, p.host);
         if (nebula::ok(retCode) && nebula::value(retCode)) {
           target = p;
           break;
@@ -53,7 +55,7 @@ folly::Future<Status> AdminClient::transLeader(GraphSpaceID spaceId,
       }
     }
   }
-  req.new_leader_ref() = std::move(target);
+  req.new_leader_ref() = std::move(target.host);
   return getResponseFromPart(
       Utils::getAdminAddrFromStoreAddr(src),
       std::move(req),
@@ -77,6 +79,7 @@ folly::Future<Status> AdminClient::transLeader(GraphSpaceID spaceId,
 folly::Future<Status> AdminClient::addPart(GraphSpaceID spaceId,
                                            PartitionID partId,
                                            const HostAddr& host,
+                                           const std::string& /*path*/,
                                            bool asLearner) {
   storage::cpp2::AddPartReq req;
   req.space_id_ref() = spaceId;
@@ -106,15 +109,18 @@ folly::Future<Status> AdminClient::addPart(GraphSpaceID spaceId,
 
 folly::Future<Status> AdminClient::addLearner(GraphSpaceID spaceId,
                                               PartitionID partId,
-                                              const HostAddr& learner) {
+                                              const HostAddr& learner,
+                                              const std::string& path) {
   storage::cpp2::AddLearnerReq req;
   req.space_id_ref() = spaceId;
   req.part_id_ref() = partId;
   req.learner_ref() = learner;
+  req.path_ref() = path;
   auto partHosts = getPeers(spaceId, partId);
   if (!nebula::ok(partHosts)) {
     LOG(INFO) << "Get peers failed: "
               << apache::thrift::util::enumNameSafe(nebula::error(partHosts));
+  
     return Status::Error("Get peers failed");
   }
 
@@ -134,11 +140,13 @@ folly::Future<Status> AdminClient::addLearner(GraphSpaceID spaceId,
 
 folly::Future<Status> AdminClient::waitingForCatchUpData(GraphSpaceID spaceId,
                                                          PartitionID partId,
-                                                         const HostAddr& target) {
+                                                         const HostAddr& target,
+                                                         const std::string& path) {
   storage::cpp2::CatchUpDataReq req;
   req.space_id_ref() = spaceId;
   req.part_id_ref() = partId;
   req.target_ref() = target;
+  req.path_ref() = path;
   auto partHosts = getPeers(spaceId, partId);
   if (!nebula::ok(partHosts)) {
     LOG(INFO) << "Get peers failed: "
@@ -163,12 +171,14 @@ folly::Future<Status> AdminClient::waitingForCatchUpData(GraphSpaceID spaceId,
 folly::Future<Status> AdminClient::memberChange(GraphSpaceID spaceId,
                                                 PartitionID partId,
                                                 const HostAddr& peer,
+                                                const std::string& path,
                                                 bool added) {
   storage::cpp2::MemberChangeReq req;
   req.space_id_ref() = spaceId;
   req.part_id_ref() = partId;
   req.add_ref() = added;
   req.peer_ref() = peer;
+  req.path_ref() = path;
   auto partHosts = getPeers(spaceId, partId);
   if (!nebula::ok(partHosts)) {
     LOG(INFO) << "Get peers failed: "
@@ -193,7 +203,9 @@ folly::Future<Status> AdminClient::memberChange(GraphSpaceID spaceId,
 folly::Future<Status> AdminClient::updateMeta(GraphSpaceID spaceId,
                                               PartitionID partId,
                                               const HostAddr& src,
-                                              const HostAddr& dst) {
+                                              const std::string& srcPath,
+                                              const HostAddr& dst,
+                                              const std::string& dstPath) {
   CHECK_NOTNULL(kv_);
   auto ret = getPeers(spaceId, partId);
   auto partHosts = getPeers(spaceId, partId);
@@ -204,7 +216,7 @@ folly::Future<Status> AdminClient::updateMeta(GraphSpaceID spaceId,
   }
 
   auto peers = std::move(nebula::value(partHosts));
-  auto strHosts = [](const std::vector<HostAddr>& hosts) -> std::string {
+  auto strHosts = [](const std::vector<HostAndPath>& hosts) -> std::string {
     std::stringstream peersStr;
     for (auto& h : hosts) {
       peersStr << h << ",";
@@ -212,26 +224,36 @@ folly::Future<Status> AdminClient::updateMeta(GraphSpaceID spaceId,
     return peersStr.str();
   };
   LOG(INFO) << "[space:" << spaceId << ", part:" << partId << "] Update original peers "
-            << strHosts(peers) << " remove " << src << ", add " << dst;
-  auto it = std::find(peers.begin(), peers.end(), src);
-  if (it == peers.end()) {
+            << strHosts(peers) << " remove " << src << " on path " << srcPath << ", add " << dst
+            << " on path " << dstPath;
+  auto srcIt = std::find_if(peers.begin(), peers.end(), [&src, &srcPath](const auto& peer) {
+    return src == peer.host && srcPath == peer.path;
+  });
+  if (srcIt == peers.end()) {
     LOG(INFO) << "src " << src << " has been removed in [" << spaceId << ", " << partId << "]";
   } else {
     LOG(INFO) << "remove [" << spaceId << ", " << partId << "] from " << src;
-    peers.erase(it);
+    peers.erase(srcIt);
   }
 
-  if (std::find(peers.begin(), peers.end(), dst) != peers.end()) {
+  auto dstIt = std::find_if(peers.begin(), peers.end(), [&dst, &dstPath](const auto& peer) {
+    return dst == peer.host && dstPath == peer.path;
+  });
+  if (dstIt != peers.end()) {
     LOG(INFO) << "dst " << dst << " has been added to [" << spaceId << ", " << partId << "]";
   } else {
     LOG(INFO) << "add [" << spaceId << ", " << partId << "] to " << dst;
-    peers.emplace_back(dst);
+    peers.emplace_back(dst, "");
   }
+
+  std::vector<HostAddr> hosts(peers.size());
+  std::transform(
+      peers.begin(), peers.end(), hosts.begin(), [](auto& peer) -> HostAddr { return peer.host; });
 
   folly::Promise<Status> pro;
   auto f = pro.getFuture();
   std::vector<kvstore::KV> data;
-  data.emplace_back(MetaKeyUtils::partKey(spaceId, partId), MetaKeyUtils::partVal(peers));
+  data.emplace_back(MetaKeyUtils::partKey(spaceId, partId), MetaKeyUtils::partVal(hosts));
   kv_->asyncMultiPut(
       kDefaultSpaceId,
       kDefaultPartId,
@@ -251,10 +273,12 @@ folly::Future<Status> AdminClient::updateMeta(GraphSpaceID spaceId,
 
 folly::Future<Status> AdminClient::removePart(GraphSpaceID spaceId,
                                               PartitionID partId,
-                                              const HostAddr& host) {
+                                              const HostAddr& host,
+                                              const std::string& path) {
   storage::cpp2::RemovePartReq req;
   req.space_id_ref() = spaceId;
   req.part_id_ref() = partId;
+  req.path_ref() = path;
   return getResponseFromPart(
       Utils::getAdminAddrFromStoreAddr(host),
       std::move(req),
@@ -286,7 +310,7 @@ folly::Future<Status> AdminClient::checkPeers(GraphSpaceID spaceId, PartitionID 
   auto fut = pro.getFuture();
   std::vector<folly::Future<Status>> futures;
   for (auto& p : peers) {
-    auto ret = ActiveHostsMan::isLived(kv_, p);
+    auto ret = ActiveHostsMan::isLived(kv_, p.host);
     if (!nebula::ok(ret)) {
       auto retCode = nebula::error(ret);
       LOG(INFO) << "Get active host failed, error: " << apache::thrift::util::enumNameSafe(retCode);
@@ -299,7 +323,7 @@ folly::Future<Status> AdminClient::checkPeers(GraphSpaceID spaceId, PartitionID 
       }
     }
     auto f = getResponseFromPart(
-        Utils::getAdminAddrFromStoreAddr(p),
+        Utils::getAdminAddrFromStoreAddr(p.host),
         req,
         [](auto client, auto request) { return client->future_checkPeers(request); },
         [](auto&& resp) -> Status {
@@ -426,7 +450,7 @@ void AdminClient::getResponseFromHost(const HostAddr& host,
 }
 
 template <typename Request, typename RemoteFunc>
-void AdminClient::getResponseFromLeader(std::vector<HostAddr> hosts,
+void AdminClient::getResponseFromLeader(std::vector<HostAndPath> hosts,
                                         int32_t index,
                                         Request req,
                                         RemoteFunc remoteFunc,
@@ -446,7 +470,7 @@ void AdminClient::getResponseFromLeader(std::vector<HostAddr> hosts,
               pro = std::move(pro),
               retryLimit,
               this]() mutable {
-               auto client = clientsMan_->client(hosts[index], evb);
+               auto client = clientsMan_->client(hosts[index].host, evb);
                remoteFunc(client, req)
                    .via(evb)
                    .then([p = std::move(pro),
@@ -509,7 +533,7 @@ void AdminClient::getResponseFromLeader(std::vector<HostAddr> hosts,
                            leader = Utils::getAdminAddrFromStoreAddr(leader);
                            int32_t leaderIndex = 0;
                            for (auto& h : hosts) {
-                             if (h == leader) {
+                             if (h.host == leader) {
                                break;
                              }
                              leaderIndex++;
@@ -521,7 +545,7 @@ void AdminClient::getResponseFromLeader(std::vector<HostAddr> hosts,
                              // doesn't include new host, which will make this task
                              // failed forever.
                              index = leaderIndex;
-                             hosts.emplace_back(leader);
+                             hosts.emplace_back(leader, "");
                            }
                            LOG(INFO)
                                << "Return leader change from " << hosts[index] << ", new leader is "
@@ -564,23 +588,28 @@ void AdminClient::getResponseFromLeader(std::vector<HostAddr> hosts,
 }
 
 // todo(doodle): add related locks
-ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> AdminClient::getPeers(GraphSpaceID spaceId,
-                                                                              PartitionID partId) {
+ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAndPath>>
+AdminClient::getPeers(GraphSpaceID spaceId, PartitionID partId) {
   CHECK_NOTNULL(kv_);
   auto partKey = MetaKeyUtils::partKey(spaceId, partId);
   std::string value;
   auto code = kv_->get(kDefaultSpaceId, kDefaultPartId, partKey, &value);
   if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
-    return MetaKeyUtils::parsePartVal(value);
+    auto hosts = MetaKeyUtils::parsePartVal(value);
+    std::vector<HostAndPath> hostPaths(hosts.size());
+    std::transform(hosts.begin(), hosts.end(), hostPaths.begin(), [](const auto& host) {
+      return HostAndPath(host, "");
+    });
+    return hostPaths;
   }
   return code;
 }
 
-std::vector<HostAddr> AdminClient::getAdminAddrFromPeers(const std::vector<HostAddr>& peers) {
-  std::vector<HostAddr> adminHosts;
+std::vector<HostAndPath> AdminClient::getAdminAddrFromPeers(const std::vector<HostAndPath>& peers) {
+  std::vector<HostAndPath> adminHosts;
   adminHosts.resize(peers.size());
   std::transform(peers.begin(), peers.end(), adminHosts.begin(), [](const auto& h) {
-    return Utils::getAdminAddrFromStoreAddr(h);
+    return HostAndPath(Utils::getAdminAddrFromStoreAddr(h.host), h.path);
   });
   return adminHosts;
 }
@@ -724,6 +753,11 @@ folly::Future<StatusOr<bool>> AdminClient::addTask(
   auto adminAddr = Utils::getAdminAddrFromStoreAddr(host);
 
   storage::cpp2::AddTaskRequest req;
+  // std::vector<HostAndPath> hostPaths(hosts.size());
+  // std::transform(hosts.begin(), hosts.end(), hostPaths.begin(), [](auto& host) -> HostAndPath {
+  //   return HostAndPath(host, "");
+  // });
+
   req.cmd_ref() = cmd;
   req.job_id_ref() = jobId;
   req.task_id_ref() = taskId;
@@ -756,6 +790,12 @@ folly::Future<StatusOr<bool>> AdminClient::stopTask(const HostAddr& host,
   storage::cpp2::StopTaskRequest req;
   req.job_id_ref() = jobId;
   req.task_id_ref() = taskId;
+  
+  // std::vector<HostAndPath> hostPaths(hosts.size());
+  // std::transform(hosts.begin(), hosts.end(), hostPaths.begin(), [](auto& host) -> HostAndPath {
+  //   return HostAndPath(host, "");
+  // });
+  
   getResponseFromHost(
       adminAddr,
       std::move(req),

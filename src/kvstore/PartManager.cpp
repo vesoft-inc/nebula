@@ -173,9 +173,11 @@ void MetaServerBasedPartManager::onPartAdded(const meta::PartHosts& partMeta) {
   }
 }
 
-void MetaServerBasedPartManager::onPartRemoved(GraphSpaceID spaceId, PartitionID partId) {
+void MetaServerBasedPartManager::onPartRemoved(GraphSpaceID spaceId,
+                                               PartitionID partId,
+                                               const std::string& path) {
   if (handler_ != nullptr) {
-    handler_->removePart(spaceId, partId);
+    handler_->removePart(spaceId, partId, path);
   } else {
     VLOG(1) << "handler_ is nullptr!";
   }

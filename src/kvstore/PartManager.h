@@ -25,7 +25,7 @@ class Handler {
   virtual void addPart(GraphSpaceID spaceId,
                        PartitionID partId,
                        bool asLearner,
-                       const std::vector<HostAddr>& peers) = 0;
+                       const std::vector<HostAndPath>& peers) = 0;
 
   virtual void updateSpaceOption(GraphSpaceID spaceId,
                                  const std::unordered_map<std::string, std::string>& options,
@@ -33,12 +33,12 @@ class Handler {
 
   virtual void removeSpace(GraphSpaceID spaceId, bool isListener = false) = 0;
 
-  virtual void removePart(GraphSpaceID spaceId, PartitionID partId) = 0;
+  virtual void removePart(GraphSpaceID spaceId, PartitionID partId, const std::string& path) = 0;
 
   virtual void addListener(GraphSpaceID spaceId,
                            PartitionID partId,
                            meta::cpp2::ListenerType type,
-                           const std::vector<HostAddr>& peers) = 0;
+                           const std::vector<HostAndPath>& peers) = 0;
 
   virtual void removeListener(GraphSpaceID spaceId,
                               PartitionID partId,
@@ -125,7 +125,7 @@ class MemPartManager final : public PartManager {
 
   StatusOr<meta::PartHosts> partMeta(GraphSpaceID spaceId, PartitionID partId) override;
 
-  void addPart(GraphSpaceID spaceId, PartitionID partId, std::vector<HostAddr> peers = {}) {
+  void addPart(GraphSpaceID spaceId, PartitionID partId, std::vector<HostAndPath> peers = {}) {
     bool noSpace = partsMap_.find(spaceId) == partsMap_.end();
     auto& p = partsMap_[spaceId];
     bool noPart = p.find(partId) == p.end();
@@ -142,13 +142,13 @@ class MemPartManager final : public PartManager {
     }
   }
 
-  void removePart(GraphSpaceID spaceId, PartitionID partId) {
+  void removePart(GraphSpaceID spaceId, PartitionID partId, const std::string& path) {
     auto it = partsMap_.find(spaceId);
     CHECK(it != partsMap_.end());
     if (it->second.find(partId) != it->second.end()) {
       it->second.erase(partId);
       if (handler_) {
-        handler_->removePart(spaceId, partId);
+        handler_->removePart(spaceId, partId, path);
         if (it->second.empty()) {
           handler_->removeSpace(spaceId);
         }
@@ -212,7 +212,7 @@ class MetaServerBasedPartManager : public PartManager, public meta::MetaChangedL
 
   void onPartAdded(const meta::PartHosts& partMeta) override;
 
-  void onPartRemoved(GraphSpaceID spaceId, PartitionID partId) override;
+  void onPartRemoved(GraphSpaceID spaceId, PartitionID partId, const std::string& path) override;
 
   void onPartUpdated(const meta::PartHosts& partMeta) override;
 

@@ -10,6 +10,7 @@
 #include <gtest/gtest.h>
 
 #include "common/base/Base.h"
+#include "common/datatypes/HostAndPath.h"
 #include "common/fs/FileUtils.h"
 #include "common/fs/TempDir.h"
 #include "common/network/NetworkUtils.h"
@@ -29,9 +30,9 @@ class TestShard;
 extern std::mutex leaderMutex;
 extern std::condition_variable leaderCV;
 
-std::vector<HostAddr> getPeers(const std::vector<HostAddr>& all,
-                               const HostAddr& self,
-                               std::vector<bool> isLearner = {});
+std::vector<HostAndPath> getPeers(const std::vector<HostAddr>& all,
+                                  const HostAddr& self,
+                                  std::vector<bool> isLearner = {});
 
 void onLeaderElected(std::vector<std::shared_ptr<test::TestShard>>& copies,
                      std::shared_ptr<test::TestShard>& leader,

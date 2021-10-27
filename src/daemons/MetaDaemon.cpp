@@ -10,6 +10,7 @@
 #include "common/base/Base.h"
 #include "common/base/SignalHandler.h"
 #include "common/fs/FileUtils.h"
+#include "common/datatypes/HostAndPath.h"
 #include "common/hdfs/HdfsCommandHelper.h"
 #include "common/hdfs/HdfsHelper.h"
 #include "common/network/NetworkUtils.h"

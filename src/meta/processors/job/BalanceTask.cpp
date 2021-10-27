@@ -67,7 +67,7 @@ void BalanceTask::invoke() {
       SAVE_STATE();
       auto srcLivedRet = ActiveHostsMan::isLived(kv_, src_);
       if (nebula::ok(srcLivedRet) && nebula::value(srcLivedRet)) {
-        client_->transLeader(spaceId_, partId_, src_).thenValue([this](auto&& resp) {
+        client_->transLeader(spaceId_, partId_, src_, srcPath_).thenValue([this](auto&& resp) {
           if (!resp.ok()) {
             if (resp == nebula::Status::PartNotFound()) {
               // if the partition has been removed before, regard as
@@ -95,7 +95,7 @@ void BalanceTask::invoke() {
     case BalanceTaskStatus::ADD_PART_ON_DST: {
       LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Open the part as learner on dst.";
       SAVE_STATE();
-      client_->addPart(spaceId_, partId_, dst_, true).thenValue([this](auto&& resp) {
+      client_->addPart(spaceId_, partId_, dst_, dstPath_, true).thenValue([this](auto&& resp) {
         if (!resp.ok()) {
           LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Open part failed, status " << resp;
           ret_ = BalanceTaskResult::FAILED;
@@ -109,7 +109,7 @@ void BalanceTask::invoke() {
     case BalanceTaskStatus::ADD_LEARNER: {
       LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Add learner dst.";
       SAVE_STATE();
-      client_->addLearner(spaceId_, partId_, dst_).thenValue([this](auto&& resp) {
+      client_->addLearner(spaceId_, partId_, dst_, dstPath_).thenValue([this](auto&& resp) {
         if (!resp.ok()) {
           LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Add learner failed, status " << resp;
           ret_ = BalanceTaskResult::FAILED;
@@ -123,22 +123,23 @@ void BalanceTask::invoke() {
     case BalanceTaskStatus::CATCH_UP_DATA: {
       LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Waiting for the data catch up.";
       SAVE_STATE();
-      client_->waitingForCatchUpData(spaceId_, partId_, dst_).thenValue([this](auto&& resp) {
-        if (!resp.ok()) {
-          LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Catchup data failed, status " << resp;
-          ret_ = BalanceTaskResult::FAILED;
-        } else {
-          status_ = BalanceTaskStatus::MEMBER_CHANGE_ADD;
-        }
-        invoke();
-      });
+      client_->waitingForCatchUpData(spaceId_, partId_, dst_, dstPath_)
+          .thenValue([this](auto&& resp) {
+            if (!resp.ok()) {
+              LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Catchup data failed, status " << resp;
+              ret_ = BalanceTaskResult::FAILED;
+            } else {
+              status_ = BalanceTaskStatus::MEMBER_CHANGE_ADD;
+            }
+            invoke();
+          });
       break;
     }
     case BalanceTaskStatus::MEMBER_CHANGE_ADD: {
       LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Send member change request to the leader"
                 << ", it will add the new member on dst host";
       SAVE_STATE();
-      client_->memberChange(spaceId_, partId_, dst_, true).thenValue([this](auto&& resp) {
+      client_->memberChange(spaceId_, partId_, dst_, dstPath_, true).thenValue([this](auto&& resp) {
         if (!resp.ok()) {
           LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Add peer failed, status " << resp;
           ret_ = BalanceTaskResult::FAILED;
@@ -153,32 +154,34 @@ void BalanceTask::invoke() {
       LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Send member change request to the leader"
                 << ", it will remove the old member on src host";
       SAVE_STATE();
-      client_->memberChange(spaceId_, partId_, src_, false).thenValue([this](auto&& resp) {
-        if (!resp.ok()) {
-          LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Remove peer failed, status " << resp;
-          ret_ = BalanceTaskResult::FAILED;
-        } else {
-          status_ = BalanceTaskStatus::UPDATE_PART_META;
-        }
-        invoke();
-      });
+      client_->memberChange(spaceId_, partId_, src_, srcPath_, false)
+          .thenValue([this](auto&& resp) {
+            if (!resp.ok()) {
+              LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Remove peer failed, status " << resp;
+              ret_ = BalanceTaskResult::FAILED;
+            } else {
+              status_ = BalanceTaskStatus::UPDATE_PART_META;
+            }
+            invoke();
+          });
       break;
     }
     case BalanceTaskStatus::UPDATE_PART_META: {
       LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Update meta for part.";
       SAVE_STATE();
-      client_->updateMeta(spaceId_, partId_, src_, dst_).thenValue([this](auto&& resp) {
-        // The callback will be called inside raft set value. So don't call
-        // invoke directly here.
-        if (!resp.ok()) {
-          LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Update meta failed, status " << resp;
-          ret_ = BalanceTaskResult::FAILED;
-        } else {
-          LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Update meta succeeded!";
-          status_ = BalanceTaskStatus::REMOVE_PART_ON_SRC;
-        }
-        invoke();
-      });
+      client_->updateMeta(spaceId_, partId_, src_, srcPath_, dst_, dstPath_)
+          .thenValue([this](auto&& resp) {
+            // The callback will be called inside raft set value. So don't call
+            // invoke directly here.
+            if (!resp.ok()) {
+              LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Update meta failed, status " << resp;
+              ret_ = BalanceTaskResult::FAILED;
+            } else {
+              LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Update meta succeeded!";
+              status_ = BalanceTaskStatus::REMOVE_PART_ON_SRC;
+            }
+            invoke();
+          });
       break;
     }
     case BalanceTaskStatus::REMOVE_PART_ON_SRC: {
@@ -186,7 +189,7 @@ void BalanceTask::invoke() {
       LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Close part on src host, srcLived.";
       SAVE_STATE();
       if (nebula::ok(srcLivedRet) && nebula::value(srcLivedRet)) {
-        client_->removePart(spaceId_, partId_, src_).thenValue([this](auto&& resp) {
+        client_->removePart(spaceId_, partId_, src_, srcPath_).thenValue([this](auto&& resp) {
           if (!resp.ok()) {
             LOG(INFO) << taskIdStr_ + "," + commandStr_ << " Remove part failed, status " << resp;
             ret_ = BalanceTaskResult::FAILED;
@@ -239,7 +242,7 @@ void BalanceTask::rollback() {
 bool BalanceTask::saveInStore() {
   CHECK_NOTNULL(kv_);
   std::vector<kvstore::KV> data;
-  data.emplace_back(MetaKeyUtils::balanceTaskKey(jobId_, spaceId_, partId_, src_, dst_),
+  data.emplace_back(MetaKeyUtils::balanceTaskKey(jobId_, spaceId_, partId_, src_, srcPath_, dst_, dstPath_),
                     MetaKeyUtils::balanceTaskVal(status_, ret_, startTimeMs_, endTimeMs_));
   folly::Baton<true, std::atomic> baton;
   bool ret = true;

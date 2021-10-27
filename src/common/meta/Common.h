@@ -17,7 +17,7 @@ namespace meta {
 struct PartHosts {
   GraphSpaceID spaceId_;
   PartitionID partId_;
-  std::vector<HostAddr> hosts_;
+  std::vector<HostAndPath> hosts_;
 
   bool operator==(const PartHosts& rhs) const {
     return this->spaceId_ == rhs.spaceId_ && this->partId_ == rhs.partId_ &&
@@ -31,7 +31,7 @@ struct PartHosts {
 
 // ListenerHosts saves the listener type and the peers of the data replica
 struct ListenerHosts {
-  ListenerHosts(cpp2::ListenerType type, std::vector<HostAddr> peers)
+  ListenerHosts(cpp2::ListenerType type, std::vector<HostAndPath> peers)
       : type_(std::move(type)), peers_(std::move(peers)) {}
 
   bool operator==(const ListenerHosts& rhs) const {
@@ -47,7 +47,7 @@ struct ListenerHosts {
 
   cpp2::ListenerType type_;
   // peers is the part peers which would send logs to the listener
-  std::vector<HostAddr> peers_;
+  std::vector<HostAndPath> peers_;
 };
 
 using PartsMap = std::unordered_map<GraphSpaceID, std::unordered_map<PartitionID, PartHosts>>;

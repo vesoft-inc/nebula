@@ -22,13 +22,21 @@ void GetPartsAllocProcessor::process(const cpp2::GetPartsAllocReq& req) {
   }
 
   auto iter = nebula::value(iterRet).get();
-  std::unordered_map<PartitionID, std::vector<nebula::HostAddr>> parts;
+  std::unordered_map<PartitionID, std::vector<nebula::HostAndPath>> parts;
   while (iter->valid()) {
     auto key = iter->key();
     PartitionID partId;
     memcpy(&partId, key.data() + prefix.size(), sizeof(PartitionID));
-    std::vector<HostAddr> partHosts = MetaKeyUtils::parsePartVal(iter->val());
-    parts.emplace(partId, std::move(partHosts));
+    auto partHosts = MetaKeyUtils::parsePartVal(iter->val());
+
+    std::vector<nebula::HostAndPath> hostPaths(partHosts.size());
+    std::transform(partHosts.begin(),
+                   partHosts.end(),
+                   hostPaths.begin(),
+                   [](auto& host) -> nebula::HostAndPath {
+                     return HostAndPath(host, "");
+                   });
+    parts.emplace(partId, std::move(hostPaths));
     iter->next();
   }
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);

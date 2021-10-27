@@ -21,7 +21,7 @@ namespace meta {
 using HostLeaderMap =
     std::unordered_map<HostAddr, std::unordered_map<GraphSpaceID, std::vector<PartitionID>>>;
 
-static const HostAddr kRandomPeer("", 0);
+static const HostAndPath kRandomPeer(HostAddr("", 0), "");
 
 class AdminClient {
   FRIEND_TEST(AdminClientTest, RetryTest);
@@ -57,7 +57,8 @@ class AdminClient {
   virtual folly::Future<Status> transLeader(GraphSpaceID spaceId,
                                             PartitionID partId,
                                             const HostAddr& src,
-                                            const HostAddr& dst = kRandomPeer);
+                                            const std::string& path,
+                                            const HostAndPath& dst = kRandomPeer);
 
   /**
    * @brief Open a new partition on specified host. The rpc will be sent to the new partition peer,
@@ -72,6 +73,7 @@ class AdminClient {
   virtual folly::Future<Status> addPart(GraphSpaceID spaceId,
                                         PartitionID partId,
                                         const HostAddr& host,
+                                        const std::string& path,
                                         bool asLearner);
 
   /**
@@ -85,7 +87,8 @@ class AdminClient {
    */
   virtual folly::Future<Status> addLearner(GraphSpaceID spaceId,
                                            PartitionID partId,
-                                           const HostAddr& learner);
+                                           const HostAddr& learner,
+                                           const std::string& path);
 
   /**
    * @brief Waiting for give partition peer catching data
@@ -97,7 +100,8 @@ class AdminClient {
    */
   virtual folly::Future<Status> waitingForCatchUpData(GraphSpaceID spaceId,
                                                       PartitionID partId,
-                                                      const HostAddr& target);
+                                                      const HostAddr& target,
+                                                      const std::string& path);
 
   /**
    * @brief Add/Remove one peer for partition (spaceId, partId). The rpc will be sent to the
@@ -113,6 +117,7 @@ class AdminClient {
   virtual folly::Future<Status> memberChange(GraphSpaceID spaceId,
                                              PartitionID partId,
                                              const HostAddr& peer,
+                                             const std::string& path,
                                              bool added);
 
   /**
@@ -127,7 +132,9 @@ class AdminClient {
   virtual folly::Future<Status> updateMeta(GraphSpaceID spaceId,
                                            PartitionID partId,
                                            const HostAddr& src,
-                                           const HostAddr& dst);
+                                           const std::string& srcPath,
+                                           const HostAddr& dst,
+                                           const std::string& dstPath);
 
   /**
    * @brief Remove partition peer in given storage host
@@ -139,7 +146,8 @@ class AdminClient {
    */
   virtual folly::Future<Status> removePart(GraphSpaceID spaceId,
                                            PartitionID partId,
-                                           const HostAddr& host);
+                                           const HostAddr& host,
+                                           const std::string& path);
 
   /**
    * @brief Check and adjust(add/remove) each peer's peers info according to meta kv store
@@ -291,7 +299,7 @@ class AdminClient {
    * @param retryLimit Max retry times
    */
   template <typename Request, typename RemoteFunc>
-  void getResponseFromLeader(std::vector<HostAddr> hosts,
+  void getResponseFromLeader(std::vector<HostAndPath> hosts,
                              int32_t index,
                              Request req,
                              RemoteFunc remoteFunc,
@@ -304,10 +312,10 @@ class AdminClient {
 
   Status handleResponse(const storage::cpp2::AdminExecResp& resp);
 
-  ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> getPeers(GraphSpaceID spaceId,
-                                                                   PartitionID partId);
+  ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAndPath>> getPeers(GraphSpaceID spaceId,
+                                                                      PartitionID partId);
 
-  std::vector<HostAddr> getAdminAddrFromPeers(const std::vector<HostAddr>& peers);
+  std::vector<HostAndPath> getAdminAddrFromPeers(const std::vector<HostAndPath>& peers);
 
  private:
   kvstore::KVStore* kv_{nullptr};

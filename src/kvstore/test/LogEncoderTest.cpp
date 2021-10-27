@@ -124,6 +124,14 @@ TEST(LogEncoderTest, HostTest) {
   ASSERT_EQ(HostAddr("1.1.1.1", 1), decoded);
 }
 
+TEST(LogEncoderTest, HostAndPathTest) {
+  auto host = HostAddr("1.1.1.1", 1);
+  auto encoded = encodeHostAndPath(OP_ADD_LEARNER, host, "/data");
+  auto decoded = decodeHostAndPath(OP_ADD_LEARNER, encoded);
+  ASSERT_EQ(HostAddr("1.1.1.1", 1), decoded.host);
+  ASSERT_EQ("/data", decoded.path);
+}
+
 TEST(LogEncoderTest, BatchTest) {
   auto helper = std::make_unique<BatchHolder>();
   helper->remove("remove");

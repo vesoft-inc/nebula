@@ -140,7 +140,7 @@ nebula::cpp2::ErrorCode BalancePlan::saveInStore() {
   for (auto& task : tasks_) {
     data.emplace_back(
         MetaKeyUtils::balanceTaskKey(
-            task.jobId_, task.spaceId_, task.partId_, task.src_, task.dst_),
+            task.jobId_, task.spaceId_, task.partId_, task.src_, task.srcPath_, task.dst_, task.dstPath_),
         MetaKeyUtils::balanceTaskVal(task.status_, task.ret_, task.startTimeMs_, task.endTimeMs_));
   }
   folly::Baton<true, std::atomic> baton;
@@ -218,7 +218,9 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<BalanceTask>> BalancePlan::getBalan
       task.spaceId_ = std::get<1>(tup);
       task.partId_ = std::get<2>(tup);
       task.src_ = std::get<3>(tup);
-      task.dst_ = std::get<4>(tup);
+      task.srcPath_ = std::get<4>(tup);
+      task.dst_ = std::get<5>(tup);
+      task.dstPath_ = std::get<6>(tup);
       task.taskIdStr_ = task.buildTaskId();
       task.commandStr_ = task.buildCommand();
     }

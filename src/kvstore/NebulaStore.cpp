@@ -295,7 +295,7 @@ int32_t NebulaStore::getSpaceVidLen(GraphSpaceID spaceId) {
 void NebulaStore::addPart(GraphSpaceID spaceId,
                           PartitionID partId,
                           bool asLearner,
-                          const std::vector<HostAddr>& peers) {
+                          const std::vector<HostAndPath>& peers) {
   folly::RWSpinLock::WriteHolder wh(&lock_);
   auto spaceIt = this->spaces_.find(spaceId);
   CHECK(spaceIt != this->spaces_.end()) << "Space should exist!";
@@ -335,7 +335,7 @@ std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
                                            PartitionID partId,
                                            KVEngine* engine,
                                            bool asLearner,
-                                           const std::vector<HostAddr>& defaultPeers) {
+                                           const std::vector<HostAndPath>& defaultPeers) {
   auto walPath = folly::stringPrintf("%s/wal/%d", engine->getWalRoot(), partId);
   auto part = std::make_shared<Part>(spaceId,
                                      partId,
@@ -349,7 +349,7 @@ std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
                                      clientMan_,
                                      diskMan_,
                                      getSpaceVidLen(spaceId));
-  std::vector<HostAddr> peers;
+  std::vector<HostAndPath> peers;
   if (defaultPeers.empty()) {
     // pull the information from meta
     auto metaStatus = options_.partMan_->partMeta(spaceId, partId);
@@ -362,14 +362,14 @@ std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
 
     auto partMeta = metaStatus.value();
     for (auto& h : partMeta.hosts_) {
-      if (h != storeSvcAddr_) {
-        peers.emplace_back(getRaftAddr(h));
+      if (h.host != storeSvcAddr_) {
+        peers.emplace_back(getRaftAddr(h.host), h.path);
         VLOG(1) << "Add peer " << peers.back();
       }
     }
   } else {
     for (auto& h : defaultPeers) {
-      if (h != raftAddr_) {
+      if (h.host != raftAddr_) {
         peers.emplace_back(h);
       }
     }
@@ -427,7 +427,9 @@ void NebulaStore::removeSpace(GraphSpaceID spaceId, bool isListener) {
   }
 }
 
-void NebulaStore::removePart(GraphSpaceID spaceId, PartitionID partId) {
+void NebulaStore::removePart(GraphSpaceID spaceId,
+                             PartitionID partId,
+                             const std::string& /*path*/) {
   folly::RWSpinLock::WriteHolder wh(&lock_);
   auto spaceIt = this->spaces_.find(spaceId);
   if (spaceIt != this->spaces_.end()) {
@@ -448,7 +450,7 @@ void NebulaStore::removePart(GraphSpaceID spaceId, PartitionID partId) {
 void NebulaStore::addListener(GraphSpaceID spaceId,
                               PartitionID partId,
                               meta::cpp2::ListenerType type,
-                              const std::vector<HostAddr>& peers) {
+                              const std::vector<HostAndPath>& peers) {
   folly::RWSpinLock::WriteHolder wh(&lock_);
   auto spaceIt = spaceListeners_.find(spaceId);
   if (spaceIt == spaceListeners_.end()) {
@@ -473,7 +475,7 @@ void NebulaStore::addListener(GraphSpaceID spaceId,
 std::shared_ptr<Listener> NebulaStore::newListener(GraphSpaceID spaceId,
                                                    PartitionID partId,
                                                    meta::cpp2::ListenerType type,
-                                                   const std::vector<HostAddr>& peers) {
+                                                   const std::vector<HostAndPath>& peers) {
   auto walPath =
       folly::stringPrintf("%s/%d/%d/wal", options_.listenerPath_.c_str(), spaceId, partId);
   // snapshot manager and client manager is set to nullptr, listener should
@@ -492,11 +494,13 @@ std::shared_ptr<Listener> NebulaStore::newListener(GraphSpaceID spaceId,
                                                   options_.schemaMan_);
   raftService_->addPartition(listener);
   // add raft group as learner
-  std::vector<HostAddr> raftPeers;
-  std::transform(peers.begin(), peers.end(), std::back_inserter(raftPeers), [this](auto&& host) {
-    CHECK_NE(host, storeSvcAddr_) << "Should not start part and listener on same host";
-    return getRaftAddr(host);
-  });
+  std::vector<HostAndPath> raftPeers;
+  std::transform(
+      peers.begin(), peers.end(), std::back_inserter(raftPeers), [this](auto&& hostAndPath) {
+        CHECK_NE(hostAndPath.host, storeSvcAddr_)
+            << "Should not start part and listener on same host";
+        return HostAndPath(getRaftAddr(hostAndPath.host), hostAndPath.path);
+      });
   listener->start(std::move(raftPeers));
   return listener;
 }

@@ -230,6 +230,41 @@ TEST(MetaKeyUtilsTest, DiskPathsTest) {
   ASSERT_EQ(path, MetaKeyUtils::parseDiskPartsPath(diskPartsKey));
 }
 
+TEST(MetaKeyUtilsTest, BalanceTaskTest) {
+  {
+    auto balanceTaskKey = MetaKeyUtils::balanceTaskKey(
+        1, 2, 3, HostAddr("1.1.1.1", 1), "/source", HostAddr("2.2.2.2", 2), "/target");
+
+    auto parseBalanceTaskKey = MetaKeyUtils::parseBalanceTaskKey(balanceTaskKey);
+    ASSERT_EQ(1, std::get<0>(parseBalanceTaskKey));
+    ASSERT_EQ(2, std::get<1>(parseBalanceTaskKey));
+    ASSERT_EQ(3, std::get<2>(parseBalanceTaskKey));
+    ASSERT_EQ(HostAddr("1.1.1.1", 1), std::get<3>(parseBalanceTaskKey));
+    ASSERT_EQ("/source", std::get<4>(parseBalanceTaskKey));
+    ASSERT_EQ(HostAddr("2.2.2.2", 2), std::get<5>(parseBalanceTaskKey));
+    ASSERT_EQ("/target", std::get<6>(parseBalanceTaskKey));
+  }
+  {
+    auto balanceTaskVal = MetaKeyUtils::balanceTaskVal(
+        BalanceTaskStatus::START, BalanceTaskResult::IN_PROGRESS, 0, 1);
+    auto parseBalanceTaskVal = MetaKeyUtils::parseBalanceTaskVal(balanceTaskVal);
+    ASSERT_EQ(BalanceTaskStatus::START, std::get<0>(parseBalanceTaskVal));
+    ASSERT_EQ(BalanceTaskResult::IN_PROGRESS, std::get<1>(parseBalanceTaskVal));
+    ASSERT_EQ(0, std::get<2>(parseBalanceTaskVal));
+    ASSERT_EQ(1, std::get<3>(parseBalanceTaskVal));
+  }
+}
+
+// TEST(MetaKeyUtilsTest, BalancePlanTest) {
+//   auto balancePlanKey = MetaKeyUtils::balancePlanKey(1);
+//   auto balanceID = MetaKeyUtils::parseBalanceID(balancePlanKey);
+//   ASSERT_EQ(1, balanceID);
+
+//   auto balancePlanVal = MetaKeyUtils::balancePlanVal(BalanceStatus::IN_PROGRESS);
+//   auto parseBalanceStatus = MetaKeyUtils::parseBalanceStatus(balancePlanVal);
+//   ASSERT_EQ(BalanceStatus::IN_PROGRESS, parseBalanceStatus);
+// }
+
 }  // namespace nebula
 
 int main(int argc, char** argv) {

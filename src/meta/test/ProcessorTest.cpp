@@ -405,7 +405,7 @@ TEST(ProcessorTest, SpaceTest) {
     std::unordered_map<HostAddr, std::set<PartitionID>> hostsParts;
     for (auto& p : resp.get_parts()) {
       for (auto& h : p.second) {
-        hostsParts[HostAddr(h.host, h.port)].insert(p.first);
+        hostsParts[h.host].insert(p.first);
         // ASSERT_EQ(h.host, std::to_string(h.port));
       }
     }

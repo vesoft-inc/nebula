@@ -712,14 +712,15 @@ struct TransLeaderReq {
     1: common.GraphSpaceID space_id,
     2: common.PartitionID  part_id,
     3: common.HostAddr     new_leader,
+    4: binary              path,
 }
 
 
 struct AddPartReq {
-    1: common.GraphSpaceID   space_id,
-    2: common.PartitionID    part_id,
-    3: bool                  as_learner,
-    4: list<common.HostAddr> peers,
+    1: common.GraphSpaceID      space_id,
+    2: common.PartitionID       part_id,
+    3: bool                     as_learner,
+    4: list<common.HostAndPath> peers,
 }
 
 
@@ -727,12 +728,14 @@ struct AddLearnerReq {
     1: common.GraphSpaceID space_id,
     2: common.PartitionID  part_id,
     3: common.HostAddr     learner,
+    4: binary              path
 }
 
 
 struct RemovePartReq {
     1: common.GraphSpaceID space_id,
     2: common.PartitionID  part_id,
+    3: binary              path
 }
 
 
@@ -742,6 +745,7 @@ struct MemberChangeReq {
     3: common.HostAddr     peer,
     // true means add a peer, false means remove a peer.
     4: bool                add,
+    5: binary              path
 }
 
 
@@ -749,6 +753,7 @@ struct CatchUpDataReq {
     1: common.GraphSpaceID space_id,
     2: common.PartitionID  part_id,
     3: common.HostAddr     target,
+    4: binary              path
 }
 
 struct GetLeaderReq {
@@ -795,9 +800,9 @@ struct GetLeaderPartsResp {
 
 
 struct CheckPeersReq {
-    1: common.GraphSpaceID   space_id,
-    2: common.PartitionID    part_id,
-    3: list<common.HostAddr> peers,
+    1: common.GraphSpaceID      space_id,
+    2: common.PartitionID       part_id,
+    3: list<common.HostAndPath> peers,
 }
 
 

@@ -21,18 +21,18 @@ using network::NetworkUtils;
 std::mutex leaderMutex;
 std::condition_variable leaderCV;
 
-std::vector<HostAddr> getPeers(const std::vector<HostAddr>& all,
-                               const HostAddr& self,
-                               std::vector<bool> isLearner) {
+std::vector<HostAndPath> getPeers(const std::vector<HostAddr>& all,
+                                  const HostAddr& self,
+                                  std::vector<bool> isLearner) {
   if (isLearner.empty()) {
     isLearner.resize(all.size(), false);
   }
-  std::vector<HostAddr> peers;
+  std::vector<HostAndPath> peers;
   size_t index = 0;
   for (const auto& host : all) {
     if (host != self && !isLearner[index]) {
       VLOG(2) << "Adding host " << host.host << ":" << host.port;
-      peers.emplace_back(host);
+      peers.emplace_back(host, "");
     }
     index++;
   }

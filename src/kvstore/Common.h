@@ -11,6 +11,7 @@
 
 #include "common/base/Base.h"
 #include "common/datatypes/HostAddr.h"
+#include "common/datatypes/HostAndPath.h"
 #include "common/thrift/ThriftTypes.h"
 #include "interface/gen-cpp2/common_types.h"
 

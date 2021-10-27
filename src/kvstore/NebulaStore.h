@@ -279,11 +279,11 @@ class NebulaStore : public KVStore, public Handler {
   void addPart(GraphSpaceID spaceId,
                PartitionID partId,
                bool asLearner,
-               const std::vector<HostAddr>& peers = {}) override;
+               const std::vector<HostAndPath>& peers = {}) override;
 
   void removeSpace(GraphSpaceID spaceId, bool isListener) override;
 
-  void removePart(GraphSpaceID spaceId, PartitionID partId) override;
+  void removePart(GraphSpaceID spaceId, PartitionID partId, const std::string& path) override;
 
   int32_t allLeader(
       std::unordered_map<GraphSpaceID, std::vector<meta::cpp2::LeaderInfo>>& leaderIds) override;
@@ -300,7 +300,7 @@ class NebulaStore : public KVStore, public Handler {
   void addListener(GraphSpaceID spaceId,
                    PartitionID partId,
                    meta::cpp2::ListenerType type,
-                   const std::vector<HostAddr>& peers) override;
+                   const std::vector<HostAndPath>& peers) override;
 
   void removeListener(GraphSpaceID spaceId,
                       PartitionID partId,
@@ -354,12 +354,12 @@ class NebulaStore : public KVStore, public Handler {
                                 PartitionID partId,
                                 KVEngine* engine,
                                 bool asLearner,
-                                const std::vector<HostAddr>& defaultPeers);
+                                const std::vector<HostAndPath>& defaultPeers);
 
   std::shared_ptr<Listener> newListener(GraphSpaceID spaceId,
                                         PartitionID partId,
                                         meta::cpp2::ListenerType type,
-                                        const std::vector<HostAddr>& peers);
+                                        const std::vector<HostAndPath>& peers);
 
   ErrorOr<nebula::cpp2::ErrorCode, KVEngine*> engine(GraphSpaceID spaceId, PartitionID partId);
 

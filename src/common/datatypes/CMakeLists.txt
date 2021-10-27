@@ -8,6 +8,7 @@ nebula_add_library(
     Path.cpp
     Value.cpp
     HostAddr.cpp
+    HostAndPath.cpp
     Edge.cpp
     Vertex.cpp
     Map.cpp

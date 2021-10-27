@@ -52,6 +52,9 @@ decodeBatchValue(folly::StringPiece encoded);
 std::string encodeHost(LogType type, const HostAddr& learner);
 HostAddr decodeHost(LogType type, const folly::StringPiece& encoded);
 
+std::string encodeHostAndPath(LogType type, const HostAddr& host, const std::string& path);
+HostAndPath decodeHostAndPath(LogType type, const folly::StringPiece& encoded);
+
 int64_t getTimestamp(const folly::StringPiece& command);
 
 class BatchHolder : public nebula::cpp::NonCopyable, public nebula::cpp::NonMovable {

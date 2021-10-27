@@ -265,7 +265,7 @@ TEST(MetaClientTest, InterfacesTest) {
     auto partMeta = metaStatus.value();
     ASSERT_EQ(3, partMeta.hosts_.size());
     for (auto& h : partMeta.hosts_) {
-      ASSERT_EQ(h.host, std::to_string(h.port));
+      ASSERT_EQ(h.host.host, std::to_string(h.host.port));
     }
   }
   {
@@ -1078,8 +1078,8 @@ class TestListener : public MetaChangedListener {
     }
   }
 
-  void onPartRemoved(GraphSpaceID spaceId, PartitionID partId) override {
-    LOG(INFO) << "[" << spaceId << ", " << partId << "] removed!";
+  void onPartRemoved(GraphSpaceID spaceId, PartitionID partId, const std::string& path) override {
+    LOG(INFO) << "[" << spaceId << ", " << partId << "] on path " << path << " removed!";
     partNum--;
   }
 

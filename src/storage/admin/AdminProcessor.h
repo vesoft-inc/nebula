@@ -27,8 +27,8 @@ class TransLeaderProcessor : public BaseProcessor<cpp2::AdminExecResp> {
   void process(const cpp2::TransLeaderReq& req) {
     CHECK_NOTNULL(env_->kvstore_);
     LOG(INFO) << "Receive transfer leader for space " << req.get_space_id() << ", part "
-              << req.get_part_id() << ", to [" << req.get_new_leader().host << ", "
-              << req.get_new_leader().port << "]";
+              << req.get_part_id() << ", to [" << req.get_new_leader() << ", " << req.get_path()
+              << "]";
     auto spaceId = req.get_space_id();
     auto partId = req.get_part_id();
     auto ret = env_->kvstore_->part(spaceId, partId);
@@ -140,9 +140,9 @@ class AddPartProcessor : public BaseProcessor<cpp2::AdminExecResp> {
       LOG(INFO) << "Space " << spaceId << " not exist, create it!";
       store->addSpace(spaceId);
     }
-    std::vector<HostAddr> peers;
+    std::vector<HostAndPath> peers;
     for (auto& p : req.get_peers()) {
-      peers.emplace_back(kvstore::NebulaStore::getRaftAddr(p));
+      peers.emplace_back(kvstore::NebulaStore::getRaftAddr(p.host), p.path);
     }
     store->addPart(spaceId, partId, req.get_as_learner(), peers);
     onFinished();
@@ -161,13 +161,15 @@ class RemovePartProcessor : public BaseProcessor<cpp2::AdminExecResp> {
   void process(const cpp2::RemovePartReq& req) {
     auto spaceId = req.get_space_id();
     auto partId = req.get_part_id();
+    auto path = req.get_path();
+    LOG(INFO) << "Remove space " << spaceId << " part " << partId << " on path " << path;
     if (FLAGS_store_type != "nebula") {
       this->pushResultCode(nebula::cpp2::ErrorCode::E_INVALID_STORE, partId);
       onFinished();
       return;
     }
     auto* store = static_cast<kvstore::NebulaStore*>(env_->kvstore_);
-    store->removePart(spaceId, partId);
+    store->removePart(spaceId, partId, path);
     onFinished();
   }
 
@@ -185,8 +187,9 @@ class MemberChangeProcessor : public BaseProcessor<cpp2::AdminExecResp> {
     CHECK_NOTNULL(env_->kvstore_);
     auto spaceId = req.get_space_id();
     auto partId = req.get_part_id();
-    LOG(INFO) << "Receive member change for space " << spaceId << ", part " << partId
-              << ", add/remove " << (req.get_add() ? "add" : "remove");
+    auto path = req.get_path();
+    LOG(INFO) << "Receive member change for space " << spaceId << ", part " << partId << " on path "
+              << path << ", add/remove " << (req.get_add() ? "add" : "remove");
     auto ret = env_->kvstore_->part(spaceId, partId);
     if (!ok(ret)) {
       LOG(ERROR) << "Space: " << spaceId << " Part: " << partId << " not found";
@@ -255,8 +258,9 @@ class WaitingForCatchUpDataProcessor : public BaseProcessor<cpp2::AdminExecResp>
   void process(const cpp2::CatchUpDataReq& req) {
     auto spaceId = req.get_space_id();
     auto partId = req.get_part_id();
+    auto path = req.get_path();
     LOG(INFO) << "Received waiting for catching up data for space " << spaceId << ", part "
-              << partId;
+              << partId << " on path " << path;
     auto ret = env_->kvstore_->part(spaceId, partId);
     if (!ok(ret)) {
       this->pushResultCode(error(ret), partId);
@@ -323,9 +327,9 @@ class CheckPeersProcessor : public BaseProcessor<cpp2::AdminExecResp> {
       return;
     }
     auto part = nebula::value(ret);
-    std::vector<HostAddr> peers;
+    std::vector<HostAndPath> peers;
     for (auto& p : req.get_peers()) {
-      peers.emplace_back(kvstore::NebulaStore::getRaftAddr(p));
+      peers.emplace_back(kvstore::NebulaStore::getRaftAddr(p.host), p.path);
     }
     part->checkAndResetPeers(peers);
     this->onFinished();

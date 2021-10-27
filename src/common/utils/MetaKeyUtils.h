@@ -294,8 +294,13 @@ class MetaKeyUtils final {
 
   static HostAddr deserializeHostAddr(folly::StringPiece str);
 
-  static std::string balanceTaskKey(
-      JobID jobId, GraphSpaceID spaceId, PartitionID partId, HostAddr src, HostAddr dst);
+  static std::string balanceTaskKey(JobID jobId,
+                                    GraphSpaceID spaceId,
+                                    PartitionID partId,
+                                    HostAddr src,
+                                    const std::string& srcPath,
+                                    HostAddr dst,
+                                    const std::string& dstPath);
 
   static std::string balanceTaskVal(BalanceTaskStatus status,
                                     BalanceTaskResult result,
@@ -304,8 +309,9 @@ class MetaKeyUtils final {
 
   static std::string balanceTaskPrefix(JobID jobId);
 
-  static std::tuple<BalanceID, GraphSpaceID, PartitionID, HostAddr, HostAddr> parseBalanceTaskKey(
-      const folly::StringPiece& rawKey);
+  static std::
+      tuple<JobID, GraphSpaceID, PartitionID, HostAddr, std::string, HostAddr, std::string>
+      parseBalanceTaskKey(const folly::StringPiece& rawKey);
 
   static std::tuple<BalanceTaskStatus, BalanceTaskResult, int64_t, int64_t> parseBalanceTaskVal(
       const folly::StringPiece& rawVal);

@@ -227,7 +227,7 @@ TEST(NebulaStoreTest, PartsTest) {
 
   // Let's remove space some parts in GraphSpace 0
   for (auto partId = 0; partId < 5; partId++) {
-    pm->removePart(0, partId);
+    pm->removePart(0, partId, "");
   }
 
   int32_t totalParts = 0;
@@ -241,14 +241,14 @@ TEST(NebulaStoreTest, PartsTest) {
   ASSERT_EQ(5, totalParts);
 
   for (auto partId = 5; partId < 10; partId++) {
-    pm->removePart(0, partId);
+    pm->removePart(0, partId, "");
   }
   ASSERT_TRUE(store->spaces_.find(0) == store->spaces_.end());
 }
 
 TEST(NebulaStoreTest, ThreeCopiesTest) {
   fs::TempDir rootPath("/tmp/nebula_store_test.XXXXXX");
-  auto initNebulaStore = [](const std::vector<HostAddr>& peers,
+  auto initNebulaStore = [](const std::vector<HostAndPath>& peers,
                             int32_t index,
                             const std::string& path) -> std::unique_ptr<NebulaStore> {
     LOG(INFO) << "Start nebula store on " << peers[index];
@@ -266,14 +266,14 @@ TEST(NebulaStoreTest, ThreeCopiesTest) {
     KVOptions options;
     options.dataPaths_ = std::move(paths);
     options.partMan_ = std::move(partMan);
-    HostAddr local = peers[index];
+    HostAddr local = peers[index].host;
     return std::make_unique<NebulaStore>(std::move(options), sIoThreadPool, local, getHandlers());
   };
   int32_t replicas = 3;
   std::string ip("127.0.0.1");
-  std::vector<HostAddr> peers;
+  std::vector<HostAndPath> peers;
   for (int32_t i = 0; i < replicas; i++) {
-    peers.emplace_back(ip, network::NetworkUtils::getAvailablePort());
+    peers.emplace_back(HostAddr(ip, network::NetworkUtils::getAvailablePort()), "");
   }
 
   std::vector<std::unique_ptr<NebulaStore>> stores;
@@ -297,7 +297,7 @@ TEST(NebulaStoreTest, ThreeCopiesTest) {
 
   auto findStoreIndex = [&](const HostAddr& addr) {
     for (size_t i = 0; i < peers.size(); i++) {
-      if (peers[i] == addr) {
+      if (peers[i].host == addr) {
         return i;
       }
     }
@@ -376,7 +376,7 @@ TEST(NebulaStoreTest, ThreeCopiesTest) {
 
 TEST(NebulaStoreTest, TransLeaderTest) {
   fs::TempDir rootPath("/tmp/trans_leader_test.XXXXXX");
-  auto initNebulaStore = [](const std::vector<HostAddr>& peers,
+  auto initNebulaStore = [](const std::vector<HostAndPath>& peers,
                             int32_t index,
                             const std::string& path) -> std::unique_ptr<NebulaStore> {
     LOG(INFO) << "Start nebula store on " << peers[index];
@@ -394,16 +394,16 @@ TEST(NebulaStoreTest, TransLeaderTest) {
     KVOptions options;
     options.dataPaths_ = std::move(paths);
     options.partMan_ = std::move(partMan);
-    HostAddr local = peers[index];
+    HostAddr local = peers[index].host;
     return std::make_unique<NebulaStore>(std::move(options), sIoThreadPool, local, getHandlers());
   };
 
   // 3 replicas, 3 partition
   int32_t replicas = 3;
   std::string ip("127.0.0.1");
-  std::vector<HostAddr> peers;
+  std::vector<HostAndPath> peers;
   for (int32_t i = 0; i < replicas; i++) {
-    peers.emplace_back(ip, network::NetworkUtils::getAvailablePort());
+    peers.emplace_back(HostAddr(ip, network::NetworkUtils::getAvailablePort()), "");
   }
 
   std::vector<std::unique_ptr<NebulaStore>> stores;
@@ -427,7 +427,7 @@ TEST(NebulaStoreTest, TransLeaderTest) {
 
   auto findStoreIndex = [&](const HostAddr& addr) {
     for (size_t i = 0; i < peers.size(); i++) {
-      if (peers[i] == addr) {
+      if (peers[i].host == addr) {
         return i;
       }
     }
@@ -440,7 +440,7 @@ TEST(NebulaStoreTest, TransLeaderTest) {
   GraphSpaceID spaceId = 0;
   for (int i = 0; i < 3; i++) {
     PartitionID partId = i;
-    auto targetAddr = NebulaStore::getRaftAddr(peers[0]);
+    auto targetAddr = NebulaStore::getRaftAddr(peers[0].host);
     folly::Baton<true, std::atomic> baton;
     LOG(INFO) << "try to trans leader to " << targetAddr;
 
@@ -465,7 +465,7 @@ TEST(NebulaStoreTest, TransLeaderTest) {
   // leader of parts would be {0: peers[0], 1: peers[1], 2: peers[2]}
   for (int i = 0; i < 3; i++) {
     PartitionID partId = i;
-    auto targetAddr = NebulaStore::getRaftAddr(peers[i]);
+    auto targetAddr = NebulaStore::getRaftAddr(peers[i].host);
     folly::Baton<true, std::atomic> baton;
     auto ret = stores[0]->part(spaceId, partId);
     CHECK(ok(ret));
@@ -556,7 +556,7 @@ TEST(NebulaStoreTest, CheckpointTest) {
 
 TEST(NebulaStoreTest, ThreeCopiesCheckpointTest) {
   fs::TempDir rootPath("/tmp/nebula_store_test.XXXXXX");
-  auto initNebulaStore = [](const std::vector<HostAddr>& peers,
+  auto initNebulaStore = [](const std::vector<HostAndPath>& peers,
                             int32_t index,
                             const std::string& path) -> std::unique_ptr<NebulaStore> {
     LOG(INFO) << "Start nebula store on " << peers[index];
@@ -575,7 +575,7 @@ TEST(NebulaStoreTest, ThreeCopiesCheckpointTest) {
     KVOptions options;
     options.dataPaths_ = paths;
     options.partMan_ = std::move(partMan);
-    HostAddr local = peers[index];
+    HostAddr local = peers[index].host;
     return std::make_unique<NebulaStore>(std::move(options), sIoThreadPool, local, getHandlers());
   };
 
@@ -596,9 +596,9 @@ TEST(NebulaStoreTest, ThreeCopiesCheckpointTest) {
 
   int32_t replicas = 3;
   std::string ip("127.0.0.1");
-  std::vector<HostAddr> peers;
+  std::vector<HostAndPath> peers;
   for (int32_t i = 0; i < replicas; i++) {
-    peers.emplace_back(ip, network::NetworkUtils::getAvailablePort());
+    peers.emplace_back(HostAddr(ip, network::NetworkUtils::getAvailablePort()), "");
   }
 
   std::vector<std::unique_ptr<NebulaStore>> stores;
@@ -613,7 +613,7 @@ TEST(NebulaStoreTest, ThreeCopiesCheckpointTest) {
 
   auto findStoreIndex = [&](const HostAddr& addr) {
     for (size_t i = 0; i < peers.size(); i++) {
-      if (peers[i] == addr) {
+      if (peers[i].host == addr) {
         return i;
       }
     }
@@ -710,9 +710,9 @@ TEST(NebulaStoreTest, ThreeCopiesCheckpointTest) {
   }
 
   LOG(INFO) << "Let's start the engine via checkpoint";
-  std::vector<HostAddr> cPeers;
+  std::vector<HostAndPath> cPeers;
   for (int32_t i = 0; i < replicas; i++) {
-    cPeers.emplace_back(ip, network::NetworkUtils::getAvailablePort());
+    cPeers.emplace_back(HostAddr(ip, network::NetworkUtils::getAvailablePort()), "");
   }
 
   std::vector<std::unique_ptr<NebulaStore>> cStores;
@@ -958,7 +958,7 @@ TEST(NebulaStoreTest, RemoveInvalidSpaceTest) {
   FLAGS_auto_remove_invalid_space = true;
   // remove space1, when the flag is true, the directory will be removed
   for (auto partId = 1; partId <= 6; partId++) {
-    store->removePart(1, partId);
+    store->removePart(1, partId, "");
   }
   store->removeSpace(1, false);
   EXPECT_EQ(1, store->spaces_.size());
@@ -968,7 +968,7 @@ TEST(NebulaStoreTest, RemoveInvalidSpaceTest) {
   FLAGS_auto_remove_invalid_space = false;
   // remove space2, when the flag is false, the directory won't be removed
   for (auto partId = 1; partId <= 6; partId++) {
-    store->removePart(2, partId);
+    store->removePart(2, partId, "");
   }
   store->removeSpace(2, false);
   EXPECT_EQ(0, store->spaces_.size());

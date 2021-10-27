@@ -102,7 +102,7 @@ class Listener : public raftex::RaftPart {
            meta::SchemaManager* schemaMan);
 
   // Initialize listener, all Listener must call this method
-  void start(std::vector<HostAddr>&& peers, bool asLearner = true) override;
+  void start(std::vector<HostAndPath>&& peers, bool asLearner = true) override;
 
   // Stop listener
   void stop() override;

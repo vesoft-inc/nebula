@@ -15,17 +15,34 @@ namespace meta {
 
 class MockAdminClient : public AdminClient {
  public:
-  MOCK_METHOD4(transLeader,
-               folly::Future<Status>(GraphSpaceID, PartitionID, const HostAddr&, const HostAddr&));
-  MOCK_METHOD4(addPart, folly::Future<Status>(GraphSpaceID, PartitionID, const HostAddr&, bool));
-  MOCK_METHOD3(addLearner, folly::Future<Status>(GraphSpaceID, PartitionID, const HostAddr&));
-  MOCK_METHOD3(waitingForCatchUpData,
-               folly::Future<Status>(GraphSpaceID, PartitionID, const HostAddr&));
-  MOCK_METHOD4(memberChange,
-               folly::Future<Status>(GraphSpaceID, PartitionID, const HostAddr&, bool));
-  MOCK_METHOD4(updateMeta,
-               folly::Future<Status>(GraphSpaceID, PartitionID, const HostAddr&, const HostAddr&));
-  MOCK_METHOD3(removePart, folly::Future<Status>(GraphSpaceID, PartitionID, const HostAddr&));
+  MOCK_METHOD5(transLeader,
+               folly::Future<Status>(GraphSpaceID,
+                                     PartitionID,
+                                     const HostAddr&,
+                                     const std::string&,
+                                     const HostAndPath&));
+  MOCK_METHOD5(
+      addPart,
+      folly::Future<Status>(GraphSpaceID, PartitionID, const HostAddr&, const std::string&, bool));
+  MOCK_METHOD4(
+      addLearner,
+      folly::Future<Status>(GraphSpaceID, PartitionID, const HostAddr&, const std::string&));
+  MOCK_METHOD4(
+      waitingForCatchUpData,
+      folly::Future<Status>(GraphSpaceID, PartitionID, const HostAddr&, const std::string&));
+  MOCK_METHOD5(
+      memberChange,
+      folly::Future<Status>(GraphSpaceID, PartitionID, const HostAddr&, const std::string&, bool));
+  MOCK_METHOD6(updateMeta,
+               folly::Future<Status>(GraphSpaceID,
+                                     PartitionID,
+                                     const HostAddr&,
+                                     const std::string&,
+                                     const HostAddr&,
+                                     const std::string&));
+  MOCK_METHOD4(
+      removePart,
+      folly::Future<Status>(GraphSpaceID, PartitionID, const HostAddr&, const std::string&));
   MOCK_METHOD2(checkPeers, folly::Future<Status>(GraphSpaceID, PartitionID));
   MOCK_METHOD1(getLeaderDist, folly::Future<Status>(HostLeaderMap*));
   MOCK_METHOD3(createSnapshot,

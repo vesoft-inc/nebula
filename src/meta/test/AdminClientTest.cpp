@@ -161,14 +161,14 @@ TEST(AdminClientTest, SimpleTest) {
   {
     LOG(INFO) << "Test transLeader...";
     folly::Baton<true, std::atomic> baton;
-    client->transLeader(0, 0, {localIp, rpcServer->port_}, HostAddr("1", 1))
+    client->transLeader(0, 0, {localIp, rpcServer->port_}, "", HostAndPath(HostAddr("1", 1), ""))
         .thenValue([&baton](auto&&) { baton.post(); });
     baton.wait();
   }
   {
     LOG(INFO) << "Test addPart...";
     folly::Baton<true, std::atomic> baton;
-    client->addPart(0, 0, {localIp, rpcServer->port_}, true).thenValue([&baton](auto&&) {
+    client->addPart(0, 0, {localIp, rpcServer->port_}, "", true).thenValue([&baton](auto&&) {
       baton.post();
     });
     baton.wait();
@@ -176,7 +176,7 @@ TEST(AdminClientTest, SimpleTest) {
   {
     LOG(INFO) << "Test removePart...";
     folly::Baton<true, std::atomic> baton;
-    client->removePart(0, 0, {localIp, rpcServer->port_}).thenValue([&baton](auto&&) {
+    client->removePart(0, 0, {localIp, rpcServer->port_}, "").thenValue([&baton](auto&&) {
       baton.post();
     });
     baton.wait();
@@ -229,8 +229,11 @@ TEST(AdminClientTest, RetryTest) {
     LOG(INFO) << "Test transLeader, return ok if target is not leader";
     folly::Baton<true, std::atomic> baton;
     client
-        ->transLeader(
-            0, 1, Utils::getStoreAddrFromAdminAddr({localIp, rpcServer2->port_}), HostAddr("1", 1))
+        ->transLeader(0,
+                      1,
+                      Utils::getStoreAddrFromAdminAddr({localIp, rpcServer2->port_}),
+                      "",
+                      HostAndPath(HostAddr("1", 1), ""))
         .thenValue([&baton](auto&& st) {
           CHECK(st.ok()) << st;
           baton.post();
@@ -240,7 +243,7 @@ TEST(AdminClientTest, RetryTest) {
   {
     LOG(INFO) << "Test member change...";
     folly::Baton<true, std::atomic> baton;
-    client->memberChange(0, 1, HostAddr("0", 0), true).thenValue([&baton](auto&& st) {
+    client->memberChange(0, 1, HostAddr("0", 0), "", true).thenValue([&baton](auto&& st) {
       CHECK(st.ok()) << st;
       baton.post();
     });
@@ -249,7 +252,7 @@ TEST(AdminClientTest, RetryTest) {
   {
     LOG(INFO) << "Test add learner...";
     folly::Baton<true, std::atomic> baton;
-    client->addLearner(0, 1, HostAddr("0", 0)).thenValue([&baton](auto&& st) {
+    client->addLearner(0, 1, HostAddr("0", 0), "").thenValue([&baton](auto&& st) {
       CHECK(st.ok()) << st;
       baton.post();
     });
@@ -258,7 +261,7 @@ TEST(AdminClientTest, RetryTest) {
   {
     LOG(INFO) << "Test waitingForCatchUpData...";
     folly::Baton<true, std::atomic> baton;
-    client->waitingForCatchUpData(0, 1, HostAddr("0", 0)).thenValue([&baton](auto&& st) {
+    client->waitingForCatchUpData(0, 1, HostAddr("0", 0), "").thenValue([&baton](auto&& st) {
       CHECK(st.ok()) << st;
       baton.post();
     });
@@ -268,7 +271,7 @@ TEST(AdminClientTest, RetryTest) {
   {
     LOG(INFO) << "Test member change...";
     folly::Baton<true, std::atomic> baton;
-    client->memberChange(0, 1, HostAddr("0", 0), true).thenValue([&baton](auto&& st) {
+    client->memberChange(0, 1, HostAddr("0", 0), "", true).thenValue([&baton](auto&& st) {
       CHECK(!st.ok());
       CHECK_EQ("Leader changed!", st.toString());
       baton.post();
@@ -278,18 +281,19 @@ TEST(AdminClientTest, RetryTest) {
   {
     LOG(INFO) << "Test update meta...";
     folly::Baton<true, std::atomic> baton;
-    client->updateMeta(0, 1, HostAddr("0", 0), HostAddr("1", 1)).thenValue([&baton](auto&& st) {
-      CHECK(st.ok()) << st;
-      baton.post();
-    });
+    client->updateMeta(0, 1, HostAddr("0", 0), "", HostAddr("1", 1), "")
+        .thenValue([&baton](auto&& st) {
+          CHECK(st.ok()) << st;
+          baton.post();
+        });
     baton.wait();
     auto peersRet = client->getPeers(0, 1);
     CHECK(nebula::ok(peersRet));
     auto hosts = std::move(nebula::value(peersRet));
     ASSERT_EQ(3, hosts.size());
-    ASSERT_EQ(Utils::getStoreAddrFromAdminAddr({localIp, rpcServer2->port_}), hosts[0]);
-    ASSERT_EQ(Utils::getStoreAddrFromAdminAddr({localIp, rpcServer1->port_}), hosts[1]);
-    ASSERT_EQ(HostAddr("1", 1), hosts[2]);
+    ASSERT_EQ(Utils::getStoreAddrFromAdminAddr({localIp, rpcServer2->port_}), hosts[0].host);
+    ASSERT_EQ(Utils::getStoreAddrFromAdminAddr({localIp, rpcServer1->port_}), hosts[1].host);
+    ASSERT_EQ(HostAddr("1", 1), hosts[2].host);
   }
 }
 

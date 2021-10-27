@@ -43,7 +43,7 @@ class MetaClientTestUpdater;
 namespace nebula {
 namespace meta {
 
-using PartsAlloc = std::unordered_map<PartitionID, std::vector<HostAddr>>;
+using PartsAlloc = std::unordered_map<PartitionID, std::vector<HostAndPath>>;
 using SpaceIdName = std::pair<GraphSpaceID, std::string>;
 using HostStatus = std::pair<HostAddr, std::string>;
 
@@ -164,7 +164,7 @@ class MetaChangedListener {
   virtual void onSpaceOptionUpdated(
       GraphSpaceID spaceId, const std::unordered_map<std::string, std::string>& options) = 0;
   virtual void onPartAdded(const PartHosts& partHosts) = 0;
-  virtual void onPartRemoved(GraphSpaceID spaceId, PartitionID partId) = 0;
+  virtual void onPartRemoved(GraphSpaceID spaceId, PartitionID partId, const std::string& path) = 0;
   virtual void onPartUpdated(const PartHosts& partHosts) = 0;
   virtual void fetchLeaderInfo(
       std::unordered_map<GraphSpaceID, std::vector<cpp2::LeaderInfo>>& leaders) = 0;

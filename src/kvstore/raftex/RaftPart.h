@@ -139,7 +139,7 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
 
   // Change the partition status to RUNNING. This is called
   // by the inherited class, when it's ready to serve
-  virtual void start(std::vector<HostAddr>&& peers, bool asLearner = false);
+  virtual void start(std::vector<HostAndPath>&& peers, bool asLearner = false);
 
   // Change the partition status to STOPPED. This is called
   // by the inherited class, when it's about to stop
@@ -182,7 +182,7 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   /**
    * Reset my peers if not equals the argument
    */
-  void checkAndResetPeers(const std::vector<HostAddr>& peers);
+  void checkAndResetPeers(const std::vector<HostAndPath>& peers);
 
   /**
    * Add listener into peers or remove from peers

@@ -42,7 +42,7 @@ Listener::Listener(GraphSpaceID spaceId,
                diskMan),
       schemaMan_(schemaMan) {}
 
-void Listener::start(std::vector<HostAddr>&& peers, bool) {
+void Listener::start(std::vector<HostAndPath>&& peers, bool) {
   std::lock_guard<std::mutex> g(raftLock_);
 
   init();
@@ -77,7 +77,7 @@ void Listener::start(std::vector<HostAddr>&& peers, bool) {
   // As for listener, we don't need Host actually. However, listener need to be
   // aware of membership change, it can be handled in preProcessLog.
   for (auto& addr : peers) {
-    peers_.emplace(addr);
+    peers_.emplace(addr.host);
   }
 
   status_ = Status::RUNNING;
