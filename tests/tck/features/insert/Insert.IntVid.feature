@@ -66,9 +66,9 @@ Feature: Insert int vid of vertex and edge
       """
       FETCH PROP ON * hash("Tom") YIELD person.name, person.age, interest.name
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID | person.name | person.age | interest.name |
-      | "Tom"    | "Tom"       | 18         | "basketball"  |
+    Then the result should be, in any order:
+      | person.name | person.age | interest.name |
+      | "Tom"       | 18         | "basketball"  |
     # insert vertex wrong type value
     When executing query:
       """
@@ -139,9 +139,9 @@ Feature: Insert int vid of vertex and edge
       """
       FETCH PROP ON person hash("Conan") YIELD person.name, person.age
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID | person.name | person.age |
-      | 'Conan'  | "Conan"     | 10         |
+    Then the result should be, in any order:
+      | person.name | person.age |
+      | "Conan"     | 10         |
     # # insert vertex with uuid
     # When executing query:
     # """
@@ -171,9 +171,9 @@ Feature: Insert int vid of vertex and edge
       """
       FETCH PROP ON schoolmate hash("Tom")->hash("Bob") YIELD schoolmate.likeness, schoolmate.nickname
       """
-    Then the result should be, in any order, and the columns 0,1 should be hashed:
-      | schoolmate._src | schoolmate._dst | schoolmate._rank | schoolmate.likeness | schoolmate.nickname |
-      | 'Tom'           | 'Bob'           | 0                | 87                  | "Superman"          |
+    Then the result should be, in any order:
+      | schoolmate.likeness | schoolmate.nickname |
+      | 87                  | "Superman"          |
     # insert edge with timestamp succeed
     When try to execute query:
       """
@@ -197,9 +197,9 @@ Feature: Insert int vid of vertex and edge
       """
       FETCH PROP ON school hash("sun_school") YIELD school.name, school.create_time
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID     | school.name  | school.create_time |
-      | "sun_school" | "sun_school" | 1262340000         |
+    Then the result should be, in any order:
+      | school.name  | school.create_time |
+      | "sun_school" | 1262340000         |
     # insert one vertex multi tags
     When executing query:
       """
@@ -219,17 +219,17 @@ Feature: Insert int vid of vertex and edge
       """
       FETCH PROP ON person hash("Bob") YIELD person.name, person.age
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID | person.name | person.age |
-      | 'Bob'    | 'Bob'       | 9          |
+    Then the result should be, in any order:
+      | person.name | person.age |
+      | 'Bob'       | 9          |
     # check student tag result with fetch
     When executing query:
       """
       FETCH PROP ON student hash("Bob") YIELD student.grade, student.number
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID | student.grade | student.number |
-      | 'Bob'    | 'four'        | 20191106001    |
+    Then the result should be, in any order:
+      | student.grade | student.number |
+      | 'four'        | 20191106001    |
     # insert multi vertex multi tags
     When executing query:
       """

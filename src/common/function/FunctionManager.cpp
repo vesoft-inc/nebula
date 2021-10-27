@@ -370,11 +370,16 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
      {
          TypeSignature({Value::Type::GEOGRAPHY, Value::Type::GEOGRAPHY, Value::Type::FLOAT},
                        Value::Type::BOOL),
+         TypeSignature({Value::Type::GEOGRAPHY, Value::Type::GEOGRAPHY, Value::Type::INT},
+                       Value::Type::BOOL),
          TypeSignature({Value::Type::GEOGRAPHY,
                         Value::Type::GEOGRAPHY,
                         Value::Type::FLOAT,
                         Value::Type::BOOL},
                        Value::Type::BOOL),
+         TypeSignature(
+             {Value::Type::GEOGRAPHY, Value::Type::GEOGRAPHY, Value::Type::INT, Value::Type::BOOL},
+             Value::Type::BOOL),
      }},
     // geo measures
     {"st_distance",
@@ -2508,7 +2513,7 @@ FunctionManager::FunctionManager() {
     attr.isPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       if (!args[0].get().isGeography() || !args[1].get().isGeography() ||
-          !args[2].get().isFloat()) {
+          !args[2].get().isNumeric()) {
         return Value::kNullBadType;
       }
       bool exclusive = false;
@@ -2518,10 +2523,11 @@ FunctionManager::FunctionManager() {
         }
         exclusive = args[3].get().getBool();
       }
-      return geo::GeoFunction::dWithin(args[0].get().getGeography(),
-                                       args[1].get().getGeography(),
-                                       args[2].get().getFloat(),
-                                       exclusive);
+      return geo::GeoFunction::dWithin(
+          args[0].get().getGeography(),
+          args[1].get().getGeography(),
+          args[2].get().isFloat() ? args[2].get().getFloat() : args[2].get().getInt(),
+          exclusive);
     };
   }
   // geo measures

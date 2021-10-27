@@ -48,7 +48,7 @@ include(NebulaCustomTargets)
 
 add_custom_target(
     install-all
-    COMMAND $(MAKE) install
+    COMMAND $MAKE install
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
 )
 
