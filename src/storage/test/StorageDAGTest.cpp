@@ -28,7 +28,7 @@ TEST_F(StorageDAGTest, SimpleTest) {
 
 TEST_F(StorageDAGTest, ChainTest) {
   StoragePlan<VertexID> dag;
-  size_t lastIdx;
+  size_t lastIdx = 0;
   for (size_t i = 0; i < 10; i++) {
     auto node = std::make_unique<RelNode<VertexID>>(folly::to<std::string>(i));
     if (i != 0) {

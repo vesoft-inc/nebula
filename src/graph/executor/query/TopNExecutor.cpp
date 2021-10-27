@@ -7,6 +7,7 @@
 #include "graph/executor/query/TopNExecutor.h"
 
 #include "common/time/ScopedTimer.h"
+#include "common/utils/TopKHeap.h"
 #include "graph/planner/plan/Query.h"
 
 namespace nebula {
@@ -20,7 +21,7 @@ folly::Future<Status> TopNExecutor::execute() {
   if (UNLIKELY(iter == nullptr)) {
     return Status::Error("Internal error: nullptr iterator in topn executor");
   }
-  if (UNLIKELY(!result.iter()->isSequentialIter())) {
+  if (UNLIKELY(!result.iter()->isSequentialIter() && !result.iter()->isPropIter())) {
     std::stringstream ss;
     ss << "Internal error: Sort executor does not supported " << iter->kind();
     LOG(ERROR) << ss.str();
@@ -71,23 +72,18 @@ folly::Future<Status> TopNExecutor::execute() {
 template <typename U>
 void TopNExecutor::executeTopN(Iterator *iter) {
   auto uIter = static_cast<U *>(iter);
-  std::vector<Row> heap(uIter->begin(), uIter->begin() + heapSize_);
-  std::make_heap(heap.begin(), heap.end(), comparator_);
-  auto it = uIter->begin() + heapSize_;
+  auto it = uIter->begin();
+  TopKHeap<Row> topKHeap(heapSize_, comparator_);
   while (it != uIter->end()) {
-    if (comparator_(*it, heap[0])) {
-      std::pop_heap(heap.begin(), heap.end(), comparator_);
-      heap.pop_back();
-      heap.push_back(*it);
-      std::push_heap(heap.begin(), heap.end(), comparator_);
-    }
-    ++it;
+    topKHeap.push(*it);
+    it++;
   }
-  std::sort_heap(heap.begin(), heap.end(), comparator_);
+  std::vector<Row> topK = topKHeap.moveTopK();
+  std::sort_heap(topK.begin(), topK.end(), comparator_);
 
   auto beg = uIter->begin();
   for (int i = 0; i < maxCount_; ++i) {
-    beg[i] = heap[offset_ + i];
+    beg[i] = topK[offset_ + i];
   }
 }
 

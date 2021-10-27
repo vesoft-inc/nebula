@@ -69,21 +69,18 @@ nebula::cpp2::ErrorCode LookupBaseProcessor<REQ, RESP>::requestCheck(
   if (req.return_columns_ref().has_value()) {
     yieldCols_ = *req.return_columns_ref();
   }
+  if (req.order_by_ref().has_value()) {
+    orderBy_ = *req.get_order_by();
+  }
+  if (req.limit_ref().has_value()) {
+    limit_ = *req.get_limit();
+  }
 
   for (auto&& it : folly::enumerate(yieldCols_)) {
     resultDataSet_.colNames.emplace_back(*it);
     if (QueryUtils::toReturnColType(*it) != QueryUtils::ReturnColType::kOther) {
       deDupColPos_.emplace_back(it.index);
     }
-  }
-
-  // limit
-  if (req.limit_ref().has_value()) {
-    if (*req.limit_ref() < 0) {
-      LOG(ERROR) << "Incorrect parameter : LIMIT = " << *req.limit_ref();
-      return nebula::cpp2::ErrorCode::E_INVALID_PARM;
-    }
-    limit_ = *req.limit_ref();
   }
 
   return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -171,6 +168,11 @@ StatusOr<StoragePlan<IndexID>> LookupBaseProcessor<REQ, RESP>::buildPlan(
   // TODO(sky) : Limit is not supported yet for de-dup node.
   //             Related to paging scan, the de-dup execution plan needs to be refactored
   auto deDup = std::make_unique<DeDupNode<IndexID>>(result, deDupColPos_);
+  std::unique_ptr<TopKNode<IndexID>> topK = nullptr;
+  if (!orderBy_.empty()) {
+    topK = std::make_unique<TopKNode<IndexID>>(result, orderBy_, limit_);
+    limit_ = -1;
+  }
   int32_t filterId = 0;
   std::unique_ptr<IndexOutputNode<IndexID>> out;
   auto pool = &planContext_->objPool_;
@@ -262,8 +264,16 @@ StatusOr<StoragePlan<IndexID>> LookupBaseProcessor<REQ, RESP>::buildPlan(
     if (out == nullptr) {
       return Status::Error("Index scan plan error");
     }
-    deDup->addDependency(out.get());
+    if (topK != nullptr) {
+      topK->addDependency(out.get());
+    } else {
+      deDup->addDependency(out.get());
+    }
     plan.addNode(std::move(out));
+  }
+  if (topK != nullptr) {
+    deDup->addDependency(topK.get());
+    plan.addNode(std::move(topK));
   }
   plan.addNode(std::move(deDup));
   return plan;

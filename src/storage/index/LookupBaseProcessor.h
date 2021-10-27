@@ -17,6 +17,7 @@
 #include "storage/exec/IndexScanNode.h"
 #include "storage/exec/IndexVertexNode.h"
 #include "storage/exec/StoragePlan.h"
+#include "storage/exec/TopKNode.h"
 
 namespace nebula {
 namespace storage {
@@ -83,7 +84,8 @@ class LookupBaseProcessor : public BaseProcessor<RESP> {
   // Save schemas when column is out of index, need to read from data
   std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>> schemas_;
   std::vector<size_t> deDupColPos_;
-  int64_t limit_ = -1;
+  int limit_ = -1;
+  std::vector<cpp2::OrderBy> orderBy_{};
 };
 
 }  // namespace storage

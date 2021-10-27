@@ -171,6 +171,9 @@ folly::dynamic toJson(const storage::cpp2::OrderBy &orderBy) {
   if (orderBy.prop_ref().is_set()) {
     obj.insert("prop", *orderBy.prop_ref());
   }
+  if (orderBy.pos_ref().is_set()) {
+    obj.insert("pos", toJson(*orderBy.pos_ref()));
+  }
   return obj;
 }
 

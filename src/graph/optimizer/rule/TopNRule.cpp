@@ -44,12 +44,6 @@ StatusOr<OptRule::TransformResult> TopNRule::transform(OptContext *ctx,
   auto limit = static_cast<const Limit *>(limitGroupNode->node());
   auto sort = static_cast<const Sort *>(sortGroupNode->node());
 
-  // Currently, we cannot know the total amount of input data,
-  // so only apply topn rule when offset of limit is 0
-  if (limit->offset() != 0) {
-    return TransformResult::noTransform();
-  }
-
   auto qctx = ctx->qctx();
   auto topn = TopN::make(qctx, nullptr, sort->factors(), limit->offset(), limit->count());
   topn->setOutputVar(limit->outputVar());

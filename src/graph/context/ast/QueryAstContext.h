@@ -117,6 +117,7 @@ struct LookupContext final : public AstContext {
   YieldColumns* yieldExpr{nullptr};
   std::vector<std::string> idxReturnCols;
   std::vector<std::string> idxColNames;
+  std::unordered_map<std::string, std::string> idxOutColsToReturnColsMap_;
   // order by
 };
 

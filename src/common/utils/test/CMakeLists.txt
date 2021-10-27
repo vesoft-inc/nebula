@@ -82,3 +82,14 @@ nebula_add_test(
         ${PROXYGEN_LIBRARIES}
         gtest
 )
+
+nebula_add_test(
+    NAME
+        topk_heap_test
+    SOURCES
+        TopKHeapTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:base_obj>
+    LIBRARIES
+        gtest
+)

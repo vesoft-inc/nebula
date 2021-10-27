@@ -50,26 +50,6 @@ Feature: TopN rule
     When profiling query:
       """
       GO 1 STEPS FROM "Marco Belinelli" OVER like
-      YIELD like.likeness as likeness |
-      ORDER BY $-.likeness |
-      LIMIT 2, 3
-      """
-    Then the result should be, in order:
-      | likeness |
-      | 60       |
-    And the execution plan should be:
-      | id | name         | dependencies | operator info |
-      | 0  | DataCollect  | 1            |               |
-      | 1  | Limit        | 2            |               |
-      | 2  | Sort         | 3            |               |
-      | 3  | Project      | 4            |               |
-      | 4  | GetNeighbors | 5            |               |
-      | 5  | Start        |              |               |
-
-  Scenario: [2] fail to apply topn rule
-    When profiling query:
-      """
-      GO 1 STEPS FROM "Marco Belinelli" OVER like
       YIELD like.likeness AS likeness |
       ORDER BY $-.likeness
       """

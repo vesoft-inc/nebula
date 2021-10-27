@@ -412,6 +412,10 @@ class IndexScan : public Explore {
 
   const std::vector<std::string>& returnColumns() const { return returnCols_; }
 
+  const std::unordered_map<std::string, std::string>& outPutColsToReturnCols() const {
+    return outPutColsToReturnColsMap_;
+  }
+
   bool isEdge() const { return isEdge_; }
 
   int32_t schemaId() const { return schemaId_; }
@@ -427,6 +431,11 @@ class IndexScan : public Explore {
   }
 
   void setReturnCols(std::vector<std::string> cols) { returnCols_ = std::move(cols); }
+
+  void setOutPutColsToReturnCols(
+      std::unordered_map<std::string, std::string> outPutColsToReturnColsMap) {
+    outPutColsToReturnColsMap_ = std::move(outPutColsToReturnColsMap);
+  }
 
   void setIsEdge(bool isEdge) { isEdge_ = isEdge; }
 
@@ -460,6 +469,7 @@ class IndexScan : public Explore {
  private:
   std::vector<IndexQueryContext> contexts_;
   std::vector<std::string> returnCols_;
+  std::unordered_map<std::string, std::string> outPutColsToReturnColsMap_;
   bool isEdge_;
   int32_t schemaId_;
 
@@ -736,8 +746,8 @@ class TopN final : public SingleInputNode {
   static TopN* make(QueryContext* qctx,
                     PlanNode* input,
                     std::vector<std::pair<size_t, OrderFactor::OrderType>> factors = {},
-                    int64_t offset = -1,
-                    int64_t count = -1) {
+                    int64_t offset = 0,
+                    int64_t count = 0) {
     return qctx->objPool()->add(new TopN(qctx, input, std::move(factors), offset, count));
   }
 

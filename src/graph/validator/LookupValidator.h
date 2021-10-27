@@ -61,6 +61,7 @@ class LookupValidator final : public Validator {
   std::vector<nebula::plugin::HttpClient> tsClients_;
   ExpressionProps exprProps_;
   std::vector<std::string> idxReturnCols_;
+  std::unordered_map<std::string, std::string> idxOutColsToReturnColsMap_;
 };
 
 }  // namespace graph

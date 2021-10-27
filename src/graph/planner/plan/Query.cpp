@@ -184,6 +184,7 @@ void IndexScan::cloneMembers(const IndexScan& g) {
 
   contexts_ = g.contexts_;
   returnCols_ = g.returnCols_;
+  outPutColsToReturnColsMap_ = g.outPutColsToReturnColsMap_;
   isEdge_ = g.isEdge();
   schemaId_ = g.schemaId();
   isEmptyResultSet_ = g.isEmptyResultSet();

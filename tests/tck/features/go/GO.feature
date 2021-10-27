@@ -1695,21 +1695,21 @@ Feature: Go Sentence
     When executing query:
       """
       $a = GO FROM 'Tony Parker' OVER like YIELD like._src as src, like._dst as dst;
-      GO 2 STEPS FROM $a.src OVER like YIELD $a.src as src, $a.dst, like._src as like_src, like._dst
-      | ORDER BY $-.src,$-.like_src | OFFSET 1 LIMIT 2
+      GO 2 STEPS FROM $a.src OVER like YIELD $a.src as src, $a.dst as dst, like._src as like_src, like._dst as like_dst
+      | ORDER BY $-.src,$-.like_src,$-.like_dst,$-.dst | OFFSET 1 LIMIT 2
       """
     Then the result should be, in any order, with relax comparison:
-      | src           | $a.dst          | like_src            | like._dst    |
+      | src           | dst             | like_src            | like_dst     |
       | "Tony Parker" | "Manu Ginobili" | "LaMarcus Aldridge" | "Tim Duncan" |
       | "Tony Parker" | "Tim Duncan"    | "LaMarcus Aldridge" | "Tim Duncan" |
     When executing query:
       """
       $a = GO FROM 'Tony Parker' OVER like YIELD like._src as src, like._dst as dst;
-      GO 2 STEPS FROM $a.src OVER like YIELD $a.src as src, $a.dst, like._src as like_src, like._dst
-      | ORDER BY $-.src,$-.like_src | LIMIT 2 OFFSET 1
+      GO 2 STEPS FROM $a.src OVER like YIELD $a.src as src, $a.dst as dst, like._src as like_src, like._dst as like_dst
+      | ORDER BY $-.src,$-.like_src,$-.like_dst,$-.dst | LIMIT 2 OFFSET 1
       """
     Then the result should be, in any order, with relax comparison:
-      | src           | $a.dst          | like_src            | like._dst    |
+      | src           | dst             | like_src            | like_dst     |
       | "Tony Parker" | "Manu Ginobili" | "LaMarcus Aldridge" | "Tim Duncan" |
       | "Tony Parker" | "Tim Duncan"    | "LaMarcus Aldridge" | "Tim Duncan" |
 

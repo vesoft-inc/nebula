@@ -126,7 +126,8 @@ class GraphStorageClient : public StorageClientBase<cpp2::GraphStorageServiceAsy
       bool isEdge,
       int32_t tagOrEdge,
       const std::vector<std::string>& returnCols,
-      int64_t limit);
+      const std::vector<cpp2::OrderBy>& orderBy = std::vector<cpp2::OrderBy>(),
+      int64_t limit = std::numeric_limits<int64_t>::max());
 
   StorageRpcRespFuture<cpp2::GetNeighborsResponse> lookupAndTraverse(
       const CommonRequestParam& param, cpp2::IndexSpec indexSpec, cpp2::TraverseSpec traverseSpec);

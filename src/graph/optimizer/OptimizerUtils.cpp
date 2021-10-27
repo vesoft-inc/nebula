@@ -953,6 +953,7 @@ void OptimizerUtils::copyIndexScanData(const nebula::graph::IndexScan* from,
   to->setEmptyResultSet(from->isEmptyResultSet());
   to->setSpace(from->space());
   to->setReturnCols(from->returnColumns());
+  to->setOutPutColsToReturnCols(from->outPutColsToReturnCols());
   to->setIsEdge(from->isEdge());
   to->setSchemaId(from->schemaId());
   to->setDedup(from->dedup());

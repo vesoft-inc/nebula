@@ -46,6 +46,7 @@ folly::Future<Status> IndexScanExecutor::indexScan() {
                     lookup->isEdge(),
                     lookup->schemaId(),
                     lookup->returnColumns(),
+                    lookup->orderBy(),
                     lookup->limit())
       .via(runner())
       .thenValue([this](StorageRpcResponse<LookupIndexResp> &&rpcResp) {

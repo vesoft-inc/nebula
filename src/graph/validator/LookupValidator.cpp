@@ -98,6 +98,7 @@ void LookupValidator::extractExprProps() {
     lookupCtx_->idxColNames = std::move(idxColNames);
   }
   lookupCtx_->idxReturnCols = std::move(idxReturnCols_);
+  lookupCtx_->idxOutColsToReturnColsMap_ = std::move(idxOutColsToReturnColsMap_);
 }
 
 Status LookupValidator::validateYieldEdge() {
@@ -126,6 +127,10 @@ Status LookupValidator::validateYieldEdge() {
     outputs_.emplace_back(col->name(), typeStatus.value());
     yieldExpr->addColumn(col->clone().release());
     NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps_));
+    if (col->expr()->kind() == Expression::Kind::kEdgeProperty) {
+      const auto& propName = static_cast<EdgePropertyExpression*>(col->expr())->prop();
+      idxOutColsToReturnColsMap_.emplace(col->name(), propName);
+    }
   }
   return Status::OK();
 }
@@ -156,6 +161,10 @@ Status LookupValidator::validateYieldTag() {
     outputs_.emplace_back(col->name(), typeStatus.value());
     yieldExpr->addColumn(col->clone().release());
     NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps_));
+    if (col->expr()->kind() == Expression::Kind::kTagProperty) {
+      const auto& propName = static_cast<TagPropertyExpression*>(col->expr())->prop();
+      idxOutColsToReturnColsMap_.emplace(col->name(), propName);
+    }
   }
   return Status::OK();
 }
@@ -175,9 +184,13 @@ Status LookupValidator::validateYield() {
     newCols->addColumn(new YieldColumn(ColumnExpression::make(pool, 0), kSrcVID));
     newCols->addColumn(new YieldColumn(ColumnExpression::make(pool, 1), kDstVID));
     newCols->addColumn(new YieldColumn(ColumnExpression::make(pool, 2), kRanking));
+    idxOutColsToReturnColsMap_.emplace(kSrcVID, kSrc);
+    idxOutColsToReturnColsMap_.emplace(kDstVID, kDst);
+    idxOutColsToReturnColsMap_.emplace(kRanking, kRank);
   } else {
     idxReturnCols_.emplace_back(kVid);
     outputs_.emplace_back(kVertexID, vidType_);
+    idxOutColsToReturnColsMap_.emplace(kVertexID, kVid);
     newCols->addColumn(new YieldColumn(ColumnExpression::make(pool, 0), kVertexID));
   }
 

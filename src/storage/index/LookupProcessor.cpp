@@ -103,6 +103,9 @@ void LookupProcessor::runInMultipleThread(const cpp2::LookupIndexRequest& req) {
         resultDataSet_.append(std::move(partResults_[j]));
       }
     }
+    if (limit_ > 0) {
+      resultDataSet_.rows = TopKNode<IndexID>::topK(resultDataSet_.rows, orderBy_, limit_);
+    }
     // when run each part concurrently, we need to dedup again.
     if (!deDupColPos_.empty()) {
       DeDupNode<IndexID>::dedup(resultDataSet_.rows, deDupColPos_);

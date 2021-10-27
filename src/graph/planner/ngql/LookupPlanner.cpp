@@ -40,6 +40,7 @@ StatusOr<SubPlan> LookupPlanner::transform(AstContext* astCtx) {
                                                       lookupCtx->isEmptyResultSet);
     plan.tail = edgeIndexFullScan;
     plan.root = edgeIndexFullScan;
+    edgeIndexFullScan->setOutPutColsToReturnCols(lookupCtx->idxOutColsToReturnColsMap_);
   } else {
     auto* tagIndexFullScan = TagIndexFullScan::make(qctx,
                                                     nullptr,
@@ -51,6 +52,7 @@ StatusOr<SubPlan> LookupPlanner::transform(AstContext* astCtx) {
                                                     lookupCtx->isEmptyResultSet);
     plan.tail = tagIndexFullScan;
     plan.root = tagIndexFullScan;
+    tagIndexFullScan->setOutPutColsToReturnCols(lookupCtx->idxOutColsToReturnColsMap_);
   }
   plan.tail->setColNames(lookupCtx->idxColNames);
 

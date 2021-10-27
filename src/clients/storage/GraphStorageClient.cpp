@@ -488,6 +488,7 @@ StorageRpcRespFuture<cpp2::LookupIndexResp> GraphStorageClient::lookupIndex(
     bool isEdge,
     int32_t tagOrEdge,
     const std::vector<std::string>& returnCols,
+    const std::vector<cpp2::OrderBy>& orderBy,
     int64_t limit) {
   // TODO(sky) : instead of isEdge and tagOrEdge to nebula::cpp2::SchemaID for graph layer.
   auto space = param.space;
@@ -516,9 +517,13 @@ StorageRpcRespFuture<cpp2::LookupIndexResp> GraphStorageClient::lookupIndex(
     cpp2::IndexSpec spec;
     spec.set_contexts(contexts);
     spec.set_schema_id(schemaId);
+
     req.set_indices(spec);
     req.set_common(common);
     req.set_limit(limit);
+    if (!orderBy.empty()) {
+      req.set_order_by(orderBy);
+    }
   }
 
   return collectResponse(
