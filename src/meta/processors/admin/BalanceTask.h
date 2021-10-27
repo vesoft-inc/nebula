@@ -39,14 +39,18 @@ class BalanceTask {
               GraphSpaceID spaceId,
               PartitionID partId,
               const HostAddr& src,
+              const std::string& srcPath,
               const HostAddr& dst,
+              const std::string& dstPath,
               kvstore::KVStore* kv,
               AdminClient* client)
       : balanceId_(balanceId),
         spaceId_(spaceId),
         partId_(partId),
         src_(src),
+        srcPath_(srcPath),
         dst_(dst),
+        dstPath_(dstPath),
         taskIdStr_(buildTaskId()),
         kv_(kv),
         client_(client) {}
@@ -61,14 +65,27 @@ class BalanceTask {
 
  private:
   std::string buildTaskId() {
-    return folly::stringPrintf("[%ld, %d:%d, %s:%d->%s:%d]",
-                               balanceId_,
-                               spaceId_,
-                               partId_,
-                               src_.host.c_str(),
-                               src_.port,
-                               dst_.host.c_str(),
-                               dst_.port);
+    if (!srcPath_.empty() && !dstPath_.empty()) {
+      return folly::stringPrintf("[%ld, %d:%d, %s:%d:%s->%s:%d:%s]",
+                                 balanceId_,
+                                 spaceId_,
+                                 partId_,
+                                 src_.host.c_str(),
+                                 src_.port,
+                                 srcPath_.c_str(),
+                                 dst_.host.c_str(),
+                                 dst_.port,
+                                 dstPath_.c_str());
+    } else {
+      return folly::stringPrintf("[%ld, %d:%d, %s:%d->%s:%d]",
+                                 balanceId_,
+                                 spaceId_,
+                                 partId_,
+                                 src_.host.c_str(),
+                                 src_.port,
+                                 dst_.host.c_str(),
+                                 dst_.port);
+    }
   }
 
   bool saveInStore();
@@ -78,7 +95,9 @@ class BalanceTask {
   GraphSpaceID spaceId_;
   PartitionID partId_;
   HostAddr src_;
+  std::string srcPath_;
   HostAddr dst_;
+  std::string dstPath_;
   std::string taskIdStr_;
   kvstore::KVStore* kv_ = nullptr;
   AdminClient* client_ = nullptr;

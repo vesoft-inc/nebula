@@ -9,6 +9,7 @@
 
 #include "common/base/Base.h"
 #include "common/base/SignalHandler.h"
+#include "common/datatypes/HostAndPath.h"
 #include "common/hdfs/HdfsCommandHelper.h"
 #include "common/hdfs/HdfsHelper.h"
 #include "common/network/NetworkUtils.h"
@@ -48,8 +49,6 @@ DEFINE_string(meta_server_addrs,
               "It is a list of IPs split by comma, used in cluster deployment"
               "the ips number is equal to the replica number."
               "If empty, it means it's a single node");
-// DEFINE_string(local_ip, "", "Local ip specified for
-// NetworkUtils::getLocalIP");
 DEFINE_int32(num_io_threads, 16, "Number of IO threads");
 DEFINE_int32(meta_http_thread_num, 3, "Number of meta daemon's http thread");
 DEFINE_int32(num_worker_threads, 32, "Number of workers");
@@ -76,9 +75,13 @@ nebula::ClusterID gClusterId = 0;
 
 std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> peers,
                                                  nebula::HostAddr localhost) {
+  std::vector<nebula::HostAndPath> hosts;
+  std::transform(peers.begin(), peers.end(), hosts.begin(), [](const auto& peer) {
+    return nebula::HostAndPath(peer, "");
+  });
   auto partMan = std::make_unique<nebula::kvstore::MemPartManager>();
   // The meta server has only one space (0), one part (0)
-  partMan->addPart(nebula::kDefaultSpaceId, nebula::kDefaultPartId, std::move(peers));
+  partMan->addPart(nebula::kDefaultSpaceId, nebula::kDefaultPartId, std::move(hosts));
   // folly IOThreadPoolExecutor
   auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_num_io_threads);
   std::shared_ptr<apache::thrift::concurrency::ThreadManager> threadManager(

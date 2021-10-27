@@ -126,8 +126,13 @@ nebula::cpp2::ErrorCode BalancePlan::saveInStore(bool onlyPlan) {
   data.emplace_back(MetaKeyUtils::balancePlanKey(id_), MetaKeyUtils::balancePlanVal(status_));
   if (!onlyPlan) {
     for (auto& task : tasks_) {
-      data.emplace_back(MetaKeyUtils::balanceTaskKey(
-                            task.balanceId_, task.spaceId_, task.partId_, task.src_, task.dst_),
+      data.emplace_back(MetaKeyUtils::balanceTaskKey(task.balanceId_,
+                                                     task.spaceId_,
+                                                     task.partId_,
+                                                     task.src_,
+                                                     task.srcPath_,
+                                                     task.dst_,
+                                                     task.dstPath_),
                         MetaKeyUtils::balanceTaskVal(
                             task.status_, task.ret_, task.startTimeMs_, task.endTimeMs_));
     }
@@ -169,7 +174,9 @@ nebula::cpp2::ErrorCode BalancePlan::recovery(bool resume) {
       task.spaceId_ = std::get<1>(tup);
       task.partId_ = std::get<2>(tup);
       task.src_ = std::get<3>(tup);
-      task.dst_ = std::get<4>(tup);
+      task.srcPath_ = std::get<4>(tup);
+      task.dst_ = std::get<5>(tup);
+      task.dstPath_ = std::get<6>(tup);
       task.taskIdStr_ = task.buildTaskId();
     }
     {

@@ -335,7 +335,7 @@ nebula::cpp2::ErrorCode Balancer::transferLostHost(std::vector<BalanceTask>& tas
   }
   const auto& targetHost = nebula::value(result);
   confirmedHostParts[targetHost].emplace_back(partId);
-  tasks.emplace_back(plan_->id_, spaceId, partId, source, targetHost, kv_, client_);
+  tasks.emplace_back(plan_->id_, spaceId, partId, source, "", targetHost, "", kv_, client_);
   zoneParts_[targetHost].second.emplace_back(partId);
   auto zoneIt =
       std::find(zoneParts_[source].second.begin(), zoneParts_[source].second.end(), partId);
@@ -507,7 +507,7 @@ bool Balancer::balanceParts(BalanceID balanceId,
       partsFrom.erase(it);
       partsTo.emplace_back(partId);
       tasks.emplace_back(
-          balanceId, spaceId, partId, maxPartsHost.first, minPartsHost.first, kv_, client_);
+          balanceId, spaceId, partId, maxPartsHost.first, "", minPartsHost.first, "", kv_, client_);
       noAction = false;
     }
 
@@ -868,8 +868,9 @@ nebula::cpp2::ErrorCode Balancer::leaderBalance() {
       for (const auto& task : plan) {
         futures.emplace_back(client_->transLeader(std::get<0>(task),
                                                   std::get<1>(task),
-                                                  std::move(std::get<2>(task)),
-                                                  std::move(std::get<3>(task))));
+                                                  std::get<2>(task),
+                                                  "",
+                                                  HostAndPath(std::get<3>(task), "")));
       }
     }
 

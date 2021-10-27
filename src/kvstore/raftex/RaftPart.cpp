@@ -256,7 +256,7 @@ const char* RaftPart::roleStr(Role role) const {
   return nullptr;
 }
 
-void RaftPart::start(std::vector<HostAddr>&& peers, bool asLearner) {
+void RaftPart::start(std::vector<HostAndPath>&& peers, bool asLearner) {
   std::lock_guard<std::mutex> g(raftLock_);
 
   lastLogId_ = wal_->lastLogId();
@@ -283,8 +283,8 @@ void RaftPart::start(std::vector<HostAddr>&& peers, bool asLearner) {
 
   // Start all peer hosts
   for (auto& addr : peers) {
-    LOG(INFO) << idStr_ << "Add peer " << addr;
-    auto hostPtr = std::make_shared<Host>(addr, shared_from_this());
+    LOG(INFO) << idStr_ << "Add peer " << addr.host;
+    auto hostPtr = std::make_shared<Host>(addr.host, shared_from_this());
     hosts_.emplace_back(hostPtr);
   }
 
@@ -1915,13 +1915,14 @@ bool RaftPart::linkCurrentWAL(const char* newPath) {
   return wal_->linkCurrentWAL(newPath);
 }
 
-void RaftPart::checkAndResetPeers(const std::vector<HostAddr>& peers) {
+void RaftPart::checkAndResetPeers(const std::vector<HostAndPath>& peers) {
   std::lock_guard<std::mutex> lck(raftLock_);
   // To avoid the iterator invalid, we use another container for it.
   decltype(hosts_) hosts = hosts_;
   for (auto& h : hosts) {
     LOG(INFO) << idStr_ << "Check host " << h->addr_;
-    auto it = std::find(peers.begin(), peers.end(), h->addr_);
+    auto it = std::find_if(
+        peers.begin(), peers.end(), [&](const auto& peer) { return peer.host == h->addr_; });
     if (it == peers.end()) {
       LOG(INFO) << idStr_ << "The peer " << h->addr_ << " should not exist in my peers";
       removePeer(h->addr_);
@@ -1929,7 +1930,7 @@ void RaftPart::checkAndResetPeers(const std::vector<HostAddr>& peers) {
   }
   for (auto& p : peers) {
     LOG(INFO) << idStr_ << "Add peer " << p << " if not exist!";
-    addPeer(p);
+    addPeer(p.host);
   }
 }
 

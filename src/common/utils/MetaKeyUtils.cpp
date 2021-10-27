@@ -876,16 +876,27 @@ std::string MetaKeyUtils::genTimestampStr() {
 
 std::string MetaKeyUtils::idKey() { return kIdKey; }
 
-std::string MetaKeyUtils::balanceTaskKey(
-    BalanceID balanceId, GraphSpaceID spaceId, PartitionID partId, HostAddr src, HostAddr dst) {
+std::string MetaKeyUtils::balanceTaskKey(BalanceID balanceId,
+                                         GraphSpaceID spaceId,
+                                         PartitionID partId,
+                                         HostAddr src,
+                                         const std::string& srcPath,
+                                         HostAddr dst,
+                                         const std::string& dstPath) {
   std::string str;
-  str.reserve(64);
+  str.reserve();
+  int32_t srcPathSize = srcPath.size();
+  int32_t dstPathSize = dstPath.size();
   str.append(reinterpret_cast<const char*>(kBalanceTaskTable.data()), kBalanceTaskTable.size())
       .append(reinterpret_cast<const char*>(&balanceId), sizeof(BalanceID))
       .append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID))
       .append(reinterpret_cast<const char*>(&partId), sizeof(PartitionID))
       .append(serializeHostAddr(src))
-      .append(serializeHostAddr(dst));
+      .append(reinterpret_cast<const char*>(&srcPathSize), sizeof(int32_t))
+      .append(srcPath)
+      .append(serializeHostAddr(dst))
+      .append(reinterpret_cast<const char*>(&dstPathSize), sizeof(int32_t))
+      .append(dstPath);
   return str;
 }
 
@@ -930,7 +941,7 @@ std::string MetaKeyUtils::balancePlanVal(BalanceStatus status) {
 
 std::string MetaKeyUtils::balancePlanPrefix() { return kBalancePlanTable; }
 
-std::tuple<BalanceID, GraphSpaceID, PartitionID, HostAddr, HostAddr>
+std::tuple<BalanceID, GraphSpaceID, PartitionID, HostAddr, std::string, HostAddr, std::string>
 MetaKeyUtils::parseBalanceTaskKey(const folly::StringPiece& rawKey) {
   uint32_t offset = kBalanceTaskTable.size();
   auto balanceId = *reinterpret_cast<const BalanceID*>(rawKey.begin() + offset);
@@ -941,8 +952,18 @@ MetaKeyUtils::parseBalanceTaskKey(const folly::StringPiece& rawKey) {
   offset += sizeof(PartitionID);
   auto src = MetaKeyUtils::deserializeHostAddr({rawKey, offset});
   offset += src.host.size() + sizeof(size_t) + sizeof(uint32_t);
+
+  auto srcPathSize = *reinterpret_cast<const int32_t*>(rawKey.begin() + offset);
+  offset += sizeof(int32_t);
+  std::string srcPath = std::string(rawKey.begin() + offset, srcPathSize);
+  offset += srcPath.size();
+
   auto dst = MetaKeyUtils::deserializeHostAddr({rawKey, offset});
-  return std::make_tuple(balanceId, spaceId, partId, src, dst);
+  offset += src.host.size() + sizeof(size_t) + sizeof(uint32_t);
+  auto dstPathSize = *reinterpret_cast<const int32_t*>(rawKey.begin() + offset);
+  offset += sizeof(int32_t);
+  std::string dstPath = std::string(rawKey.begin() + offset, dstPathSize);
+  return std::make_tuple(balanceId, spaceId, partId, src, srcPath, dst, dstPath);
 }
 
 std::tuple<BalanceTaskStatus, BalanceTaskResult, int64_t, int64_t>

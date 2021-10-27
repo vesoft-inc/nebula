@@ -65,8 +65,12 @@ void ListClusterInfoProcessor::process(const cpp2::ListClusterInfoReq& req) {
   auto& map = mpm->partsMap();
   auto hosts = map[kDefaultSpaceId][kDefaultPartId].hosts_;
   LOG(INFO) << "meta servers count: " << hosts.size();
-  resp_.set_meta_servers(std::move(hosts));
 
+  std::vector<HostAddr> hs(hosts.size());
+  std::transform(
+      hosts.begin(), hosts.end(), hs.begin(), [](const auto& host) { return host.host; });
+
+  resp_.set_meta_servers(std::move(hs));
   resp_.set_code(nebula::cpp2::ErrorCode::SUCCEEDED);
   resp_.set_storage_servers(std::move(storages));
   onFinished();

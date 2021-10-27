@@ -556,7 +556,7 @@ std::unordered_map<HostAddr, std::vector<PartitionID>> MetaClient::reverse(
   std::unordered_map<HostAddr, std::vector<PartitionID>> hosts;
   for (auto& partHost : parts) {
     for (auto& h : partHost.second) {
-      hosts[h].emplace_back(partHost.first);
+      hosts[h.host].emplace_back(partHost.first);
     }
   }
   return hosts;
@@ -894,7 +894,7 @@ void MetaClient::diff(const LocalCache& oldCache, const LocalCache& newCache) {
     if (newIt == newPartsMap.end()) {
       VLOG(1) << "SpaceId " << spaceId << " was removed!";
       for (auto partIt = oldParts.begin(); partIt != oldParts.end(); partIt++) {
-        listener_->onPartRemoved(spaceId, partIt->first);
+        listener_->onPartRemoved(spaceId, partIt->first, "");
       }
       listener_->onSpaceRemoved(spaceId);
     } else {
@@ -903,7 +903,7 @@ void MetaClient::diff(const LocalCache& oldCache, const LocalCache& newCache) {
         auto newPartIt = newParts.find(partIt->first);
         if (newPartIt == newParts.end()) {
           VLOG(1) << "SpaceId " << spaceId << ", partId " << partIt->first << " was removed!";
-          listener_->onPartRemoved(spaceId, partIt->first);
+          listener_->onPartRemoved(spaceId, partIt->first, "");
         }
       }
     }
@@ -1167,17 +1167,17 @@ folly::Future<StatusOr<std::vector<cpp2::PartItem>>> MetaClient::listParts(
   return future;
 }
 
-folly::Future<StatusOr<std::unordered_map<PartitionID, std::vector<HostAddr>>>>
-MetaClient::getPartsAlloc(GraphSpaceID spaceId, PartTerms* partTerms) {
+folly::Future<StatusOr<PartsAlloc>> MetaClient::getPartsAlloc(GraphSpaceID spaceId,
+                                                              PartTerms* partTerms) {
   cpp2::GetPartsAllocReq req;
   req.set_space_id(spaceId);
-  folly::Promise<StatusOr<std::unordered_map<PartitionID, std::vector<HostAddr>>>> promise;
+  folly::Promise<StatusOr<PartsAlloc>> promise;
   auto future = promise.getFuture();
   getResponse(
       std::move(req),
       [](auto client, auto request) { return client->future_getPartsAlloc(request); },
       [=](cpp2::GetPartsAllocResp&& resp) -> decltype(auto) {
-        std::unordered_map<PartitionID, std::vector<HostAddr>> parts;
+        PartsAlloc parts;
         for (auto it = resp.get_parts().begin(); it != resp.get_parts().end(); it++) {
           parts.emplace(it->first, it->second);
         }
@@ -2220,7 +2220,7 @@ StatusOr<HostAddr> MetaClient::getStorageLeaderFromCache(GraphSpaceID spaceId, P
     folly::RWSpinLock::WriteHolder wh(leadersLock_);
     VLOG(1) << "No leader exists. Choose one in round-robin.";
     auto index = (leadersInfo_.pickedIndex_[{spaceId, partId}] + 1) % partHosts.hosts_.size();
-    auto picked = partHosts.hosts_[index];
+    auto picked = partHosts.hosts_[index].host;
     leadersInfo_.leaderMap_[{spaceId, partId}] = picked;
     leadersInfo_.pickedIndex_[{spaceId, partId}] = index;
     return picked;
@@ -2996,7 +2996,7 @@ void MetaClient::loadLeader(const std::vector<cpp2::HostItem>& hostItems,
         if (partHosts.ok()) {
           const auto& peers = partHosts.value().hosts_;
           for (size_t i = 0; i < peers.size(); i++) {
-            if (peers[i] == item.get_hostAddr()) {
+            if (peers[i].host == item.get_hostAddr()) {
               leaderIndex = i;
               break;
             }

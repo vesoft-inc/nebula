@@ -140,7 +140,7 @@ class ListenerBasicTest : public ::testing::TestWithParam<std::tuple<int32_t, in
   void getAvailablePort() {
     std::string ip("127.0.0.1");
     for (int32_t i = 0; i < replicas_; i++) {
-      peers_.emplace_back(ip, network::NetworkUtils::getAvailablePort());
+      peers_.emplace_back(HostAddr(ip, network::NetworkUtils::getAvailablePort()), "");
     }
     for (int32_t i = 0; i < listenerCount_; i++) {
       listenerHosts_.emplace_back(ip, network::NetworkUtils::getAvailablePort());
@@ -188,7 +188,7 @@ class ListenerBasicTest : public ::testing::TestWithParam<std::tuple<int32_t, in
     KVOptions options;
     options.dataPaths_ = std::move(paths);
     options.partMan_ = std::move(partMan);
-    HostAddr local = peers_[index];
+    HostAddr local = peers_[index].host;
     return std::make_unique<NebulaStore>(std::move(options), ioThreadPool, local, getWorkers());
   }
 
@@ -220,10 +220,10 @@ class ListenerBasicTest : public ::testing::TestWithParam<std::tuple<int32_t, in
                                                    listeners_[index]->workers_,
                                                    nullptr);
       listeners_[index]->raftService_->addPartition(dummy);
-      std::vector<HostAddr> raftPeers;
+      std::vector<HostAndPath> raftPeers;
       std::transform(
           peers_.begin(), peers_.end(), std::back_inserter(raftPeers), [](const auto& host) {
-            return NebulaStore::getRaftAddr(host);
+            return HostAndPath(NebulaStore::getRaftAddr(host.host), host.path);
           });
       dummy->start(std::move(raftPeers));
       listeners_[index]->spaceListeners_[spaceId_]->listeners_[partId].emplace(
@@ -254,7 +254,7 @@ class ListenerBasicTest : public ::testing::TestWithParam<std::tuple<int32_t, in
     }
   }
 
-  HostAddr findLeader(PartitionID partId) {
+  HostAndPath findLeader(PartitionID partId) {
     while (true) {
       auto leaderRet = stores_[0]->partLeader(spaceId_, partId);
       CHECK(ok(leaderRet));
@@ -263,11 +263,11 @@ class ListenerBasicTest : public ::testing::TestWithParam<std::tuple<int32_t, in
         sleep(1);
         continue;
       }
-      return leader;
+      return HostAndPath(leader, "");
     }
   }
 
-  size_t findStoreIndex(const HostAddr& addr) {
+  size_t findStoreIndex(const HostAndPath& addr) {
     for (size_t i = 0; i < peers_.size(); i++) {
       if (peers_[i] == addr) {
         return i;
@@ -284,7 +284,7 @@ class ListenerBasicTest : public ::testing::TestWithParam<std::tuple<int32_t, in
 
   std::unique_ptr<fs::TempDir> rootPath_;
   GraphSpaceID spaceId_ = 1;
-  std::vector<HostAddr> peers_;
+  std::vector<HostAndPath> peers_;
   std::vector<HostAddr> listenerHosts_;
   std::vector<std::unique_ptr<NebulaStore>> stores_;
   std::vector<std::unique_ptr<NebulaStore>> listeners_;
@@ -369,7 +369,7 @@ TEST_P(ListenerBasicTest, TransLeaderTest) {
   }
 
   LOG(INFO) << "Trasfer all part leader to first replica";
-  auto targetAddr = NebulaStore::getRaftAddr(peers_[0]);
+  auto targetAddr = NebulaStore::getRaftAddr(peers_[0].host);
   for (int32_t partId = 1; partId <= partCount_; partId++) {
     folly::Baton<true, std::atomic> baton;
     auto leader = findLeader(partId);

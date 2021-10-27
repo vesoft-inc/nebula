@@ -25,6 +25,7 @@ cpp_include "common/datatypes/SetOps-inl.h"
 cpp_include "common/datatypes/DataSetOps-inl.h"
 cpp_include "common/datatypes/KeyValueOps-inl.h"
 cpp_include "common/datatypes/HostAddrOps-inl.h"
+cpp_include "common/datatypes/HostAndPathOps-inl.h"
 cpp_include "common/datatypes/GeographyOps-inl.h"
 
 /*
@@ -219,6 +220,10 @@ struct HostAddr {
     2: Port     port,
 } (cpp.type = "nebula::HostAddr")
 
+struct HostAndPath {
+    1: HostAddr   host,
+    2: binary     path,
+} (cpp.type = "nebula::HostAndPath")
 
 struct KeyValue {
     1: binary key,

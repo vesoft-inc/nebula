@@ -46,17 +46,17 @@ TEST(BalanceTest, BalanceTaskTest) {
   {
     StrictMock<MockAdminClient> client;
     EXPECT_CALL(client, checkPeers(0, 0)).Times(2);
-    EXPECT_CALL(client, transLeader(0, 0, src, _)).Times(1);
-    EXPECT_CALL(client, addPart(0, 0, dst, true)).Times(1);
-    EXPECT_CALL(client, addLearner(0, 0, dst)).Times(1);
-    EXPECT_CALL(client, waitingForCatchUpData(0, 0, dst)).Times(1);
-    EXPECT_CALL(client, memberChange(0, 0, dst, true)).Times(1);
-    EXPECT_CALL(client, memberChange(0, 0, src, false)).Times(1);
-    EXPECT_CALL(client, updateMeta(0, 0, src, dst)).Times(1);
-    EXPECT_CALL(client, removePart(0, 0, src)).Times(1);
+    EXPECT_CALL(client, transLeader(0, 0, src, _, _)).Times(1);
+    EXPECT_CALL(client, addPart(0, 0, dst, _, true)).Times(1);
+    EXPECT_CALL(client, addLearner(0, 0, dst, _)).Times(1);
+    EXPECT_CALL(client, waitingForCatchUpData(0, 0, dst, _)).Times(1);
+    EXPECT_CALL(client, memberChange(0, 0, dst, _, true)).Times(1);
+    EXPECT_CALL(client, memberChange(0, 0, src, _, false)).Times(1);
+    EXPECT_CALL(client, updateMeta(0, 0, src, _, dst, _)).Times(1);
+    EXPECT_CALL(client, removePart(0, 0, src, _)).Times(1);
 
     folly::Baton<true, std::atomic> b;
-    BalanceTask task(0, 0, 0, src, dst, kv, &client);
+    BalanceTask task(0, 0, 0, src, "", dst, "", kv, &client);
     task.onFinished_ = [&]() {
       LOG(INFO) << "Task finished!";
       EXPECT_EQ(BalanceTaskResult::SUCCEEDED, task.ret_);
@@ -69,12 +69,12 @@ TEST(BalanceTest, BalanceTaskTest) {
   }
   {
     NiceMock<MockAdminClient> client;
-    EXPECT_CALL(client, transLeader(_, _, _, _))
+    EXPECT_CALL(client, transLeader(_, _, _, _, _))
         .Times(1)
         .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("Transfer failed")))));
 
     folly::Baton<true, std::atomic> b;
-    BalanceTask task(0, 0, 0, src, dst, kv, &client);
+    BalanceTask task(0, 0, 0, src, "", dst, "", kv, &client);
     task.onFinished_ = []() { LOG(FATAL) << "We should not reach here!"; };
     task.onError_ = [&]() {
       LOG(INFO) << "Error happens!";
@@ -735,7 +735,9 @@ TEST(BalanceTest, DispatchTasksTest) {
                        0,
                        0,
                        HostAddr(std::to_string(i), 0),
+                       "",
                        HostAddr(std::to_string(i), 1),
+                       "",
                        nullptr,
                        nullptr);
       plan.addTask(std::move(task));
@@ -754,7 +756,9 @@ TEST(BalanceTest, DispatchTasksTest) {
                        0,
                        i,
                        HostAddr(std::to_string(i), 0),
+                       "",
                        HostAddr(std::to_string(i), 1),
+                       "",
                        nullptr,
                        nullptr);
       plan.addTask(std::move(task));
@@ -773,7 +777,9 @@ TEST(BalanceTest, DispatchTasksTest) {
                        0,
                        i,
                        HostAddr(std::to_string(i), 0),
+                       "",
                        HostAddr(std::to_string(i), 1),
+                       "",
                        nullptr,
                        nullptr);
       plan.addTask(std::move(task));
@@ -783,7 +789,9 @@ TEST(BalanceTest, DispatchTasksTest) {
                        0,
                        i,
                        HostAddr(std::to_string(i), 2),
+                       "",
                        HostAddr(std::to_string(i), 3),
+                       "",
                        nullptr,
                        nullptr);
       plan.addTask(std::move(task));
@@ -819,8 +827,15 @@ TEST(BalanceTest, BalancePlanTest) {
     TestUtils::registerHB(kv, hosts);
 
     for (int i = 0; i < 10; i++) {
-      BalanceTask task(
-          0, 0, 0, HostAddr(std::to_string(i), 0), HostAddr(std::to_string(i), 1), kv, &client);
+      BalanceTask task(0,
+                       0,
+                       0,
+                       HostAddr(std::to_string(i), 0),
+                       "",
+                       HostAddr(std::to_string(i), 1),
+                       "",
+                       kv,
+                       &client);
       plan.addTask(std::move(task));
     }
     folly::Baton<true, std::atomic> b;
@@ -843,8 +858,15 @@ TEST(BalanceTest, BalancePlanTest) {
     TestUtils::registerHB(kv, hosts);
 
     for (int i = 0; i < 10; i++) {
-      BalanceTask task(
-          0, 0, i, HostAddr(std::to_string(i), 0), HostAddr(std::to_string(i), 1), kv, &client);
+      BalanceTask task(0,
+                       0,
+                       i,
+                       HostAddr(std::to_string(i), 0),
+                       "",
+                       HostAddr(std::to_string(i), 1),
+                       "",
+                       kv,
+                       &client);
       plan.addTask(std::move(task));
     }
     folly::Baton<true, std::atomic> b;
@@ -868,16 +890,23 @@ TEST(BalanceTest, BalancePlanTest) {
     NiceMock<MockAdminClient> client1, client2;
     {
       for (int i = 0; i < 9; i++) {
-        BalanceTask task(
-            0, 0, i, HostAddr(std::to_string(i), 0), HostAddr(std::to_string(i), 1), kv, &client1);
+        BalanceTask task(0,
+                         0,
+                         i,
+                         HostAddr(std::to_string(i), 0),
+                         "",
+                         HostAddr(std::to_string(i), 1),
+                         "",
+                         kv,
+                         &client1);
         plan.addTask(std::move(task));
       }
     }
     {
-      EXPECT_CALL(client2, transLeader(_, _, _, _))
+      EXPECT_CALL(client2, transLeader(_, _, _, _, _))
           .Times(1)
           .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("Transfer failed")))));
-      BalanceTask task(0, 0, 9, HostAddr("9", 0), HostAddr("9", 1), kv, &client2);
+      BalanceTask task(0, 0, 9, HostAddr("9", 0), "", HostAddr("9", 1), "", kv, &client2);
       plan.addTask(std::move(task));
     }
     TestUtils::registerHB(kv, hosts);
@@ -925,7 +954,7 @@ void verifyBalanceTask(kvstore::KVStore* kv,
     ASSERT_EQ(balanceId, std::get<0>(keyTuple));
     ASSERT_EQ(1, std::get<1>(keyTuple));
     partCount[std::get<3>(keyTuple)]--;
-    partCount[std::get<4>(keyTuple)]++;
+    partCount[std::get<5>(keyTuple)]++;
     auto valueTuple = MetaKeyUtils::parseBalanceTaskVal(iter->val());
     ASSERT_EQ(status, std::get<0>(valueTuple));
     ASSERT_EQ(result, std::get<1>(valueTuple));
@@ -1129,7 +1158,7 @@ TEST(BalanceTest, TryToRecoveryTest) {
   NiceMock<MockAdminClient> client;
   // first 6 call is the failed case, since we can't recover the plan, so only 6
   // call
-  EXPECT_CALL(client, waitingForCatchUpData(_, _, _))
+  EXPECT_CALL(client, waitingForCatchUpData(_, _, _, _))
       .Times(6)
       .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))))
       .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))))
@@ -1176,7 +1205,7 @@ TEST(BalanceTest, RecoveryTest) {
   NiceMock<MockAdminClient> client;
   // first 6 call is the failed case, the later call will return default value
   // In gtest release 1.8.0 we can only write as follows:
-  EXPECT_CALL(client, waitingForCatchUpData(_, _, _))
+  EXPECT_CALL(client, waitingForCatchUpData(_, _, _, _))
       .Times(AtLeast(12))
       .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))))
       .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))))
@@ -1228,7 +1257,7 @@ TEST(BalanceTest, StopPlanTest) {
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
   NiceMock<MockAdminClient> delayClient;
-  EXPECT_CALL(delayClient, waitingForCatchUpData(_, _, _))
+  EXPECT_CALL(delayClient, waitingForCatchUpData(_, _, _, _))
       // first task in first plan will be blocked, all other tasks will be
       // skipped,
       .Times(1)
@@ -1305,7 +1334,7 @@ TEST(BalanceTest, CleanLastInvalidBalancePlanTest) {
   NiceMock<MockAdminClient> client;
 
   // concurrency = 1, we could only block first task
-  EXPECT_CALL(client, waitingForCatchUpData(_, _, _))
+  EXPECT_CALL(client, waitingForCatchUpData(_, _, _, _))
       .Times(AtLeast(12))
       .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))));
 
