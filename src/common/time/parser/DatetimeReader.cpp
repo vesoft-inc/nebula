@@ -10,7 +10,7 @@ namespace nebula {
 namespace time {
 
 DatetimeReader::DatetimeReader(Type type) : parser_(scanner_, error_, &dt_, type) {
-  // Callback invoked by WKTScanner
+  // Callback invoked by DatetimeScanner
   auto readBuffer = [this](char *buf, int maxSize) -> int {
     // Reach the end
     if (pos_ >= end_) {
@@ -28,7 +28,7 @@ DatetimeReader::DatetimeReader(Type type) : parser_(scanner_, error_, &dt_, type
 }
 
 StatusOr<DateTime> DatetimeReader::read(std::string input) {
-  // Since WKTScanner needs a writable buffer, we have to copy the query string
+  // Since DatetimeScanner needs a writable buffer, we have to copy the query string
   buffer_ = std::move(input);
   pos_ = &buffer_[0];
   end_ = pos_ + buffer_.size();

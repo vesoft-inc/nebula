@@ -36,11 +36,11 @@ class DatetimeScanner : public yyFlexLexer {
   }
 
  public:
-  // Called by WKTReader to set the `readBuffer' callback, which would be
+  // Called by DatetimeReader to set the `readBuffer' callback, which would be
   // invoked by LexerInput to fill the stream buffer.
   void setReadBuffer(std::function<int(char *, int)> readBuffer) { readBuffer_ = readBuffer; }
 
-  // Manually invoked by WKTReader to recover from a failure state.
+  // Manually invoked by DatetimeReader to recover from a failure state.
   // This makes the scanner reentrant.
   void flushBuffer() {
     yy_flush_buffer(yy_buffer_stack ? yy_buffer_stack[yy_buffer_stack_top] : nullptr);
@@ -57,7 +57,7 @@ class DatetimeScanner : public yyFlexLexer {
   using TokenType = nebula::time::DatetimeParser::token;
 
  private:
-  // friend class Scanner_Basic_Test; TODO(jie) add it
+  // friend class Scanner_Basic_Test; TODO: add it
   int yylex() override;
 
   nebula::time::DatetimeParser::semantic_type *yylval{nullptr};
