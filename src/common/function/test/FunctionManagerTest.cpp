@@ -6,6 +6,9 @@
 
 #include <gtest/gtest.h>
 
+#include <string>
+#include <vector>
+
 #include "common/base/Base.h"
 #include "common/datatypes/DataSet.h"
 #include "common/datatypes/Edge.h"
@@ -104,6 +107,9 @@ std::unordered_map<std::string, std::vector<Value>> FunctionManagerTest::args_ =
     {"one", {-1.2}},
     {"two", {2, 4}},
     {"pow", {2, 3}},
+    {"round1", {11111.11111, 2}},
+    {"round2", {11111.11111, -1}},
+    {"round3", {11111.11111, -5}},
     {"radians", {180}},
     {"range1", {1, 5}},
     {"range2", {1, 5, 2}},
@@ -268,6 +274,11 @@ TEST_F(FunctionManagerTest, functionCall) {
 
     TEST_FUNCTION(log, args_["int"], std::log(4));
     TEST_FUNCTION(log2, args_["int"], 2.0);
+  }
+  {
+    TEST_FUNCTION(round, args_["round1"], 11111.11);
+    TEST_FUNCTION(round, args_["round2"], 11110.0);
+    TEST_FUNCTION(round, args_["round3"], 0.0);
   }
   {
     TEST_FUNCTION(range, args_["range1"], Value(List({1, 2, 3, 4, 5})));
@@ -818,657 +829,175 @@ TEST_F(FunctionManagerTest, time) {
 
 TEST_F(FunctionManagerTest, returnType) {
   {
-    auto result = FunctionManager::getReturnType("abs", {Value::Type::INT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::INT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("bit_and", {Value::Type::INT, Value::Type::INT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::INT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("bit_or", {Value::Type::INT, Value::Type::INT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::INT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("bit_xor", {Value::Type::INT, Value::Type::INT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::INT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("abs", {Value::Type::FLOAT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::FLOAT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("abs", {Value::Type::BOOL});
-    ASSERT_FALSE(result.ok());
-    EXPECT_EQ(result.status().toString(), "Parameter's type error");
-  }
-  {
-    auto result = FunctionManager::getReturnType("now", {});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::INT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("now", {Value::Type::BOOL});
-    ASSERT_FALSE(result.ok());
-    EXPECT_EQ(result.status().toString(), "Parameter's type error");
-  }
-  {
-    auto result = FunctionManager::getReturnType("rand32", {});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::INT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("rand32", {Value::Type::INT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::INT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("rand32", {Value::Type::INT, Value::Type::INT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::INT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("rand32", {Value::Type::INT, Value::Type::FLOAT});
-    ASSERT_FALSE(result.ok());
-    EXPECT_EQ(result.status().toString(), "Parameter's type error");
-  }
-  {
-    auto result = FunctionManager::getReturnType("sqrt", {Value::Type::INT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::FLOAT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("sqrt", {Value::Type::FLOAT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::FLOAT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("ceil", {Value::Type::INT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::FLOAT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("ceil", {Value::Type::FLOAT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::FLOAT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("floor", {Value::Type::FLOAT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::FLOAT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("floor", {Value::Type::INT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::FLOAT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("floor", {Value::Type::STRING});
-    ASSERT_FALSE(result.ok());
-    EXPECT_EQ(result.status().toString(), "Parameter's type error");
-  }
-  {
-    auto result = FunctionManager::getReturnType("round", {Value::Type::INT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::FLOAT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("round", {Value::Type::FLOAT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::FLOAT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("cbrt", {Value::Type::INT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::FLOAT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("cbrt", {Value::Type::FLOAT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::FLOAT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("pow", {Value::Type::INT, Value::Type::INT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::INT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("pow", {Value::Type::INT, Value::Type::FLOAT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::FLOAT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("pow", {Value::Type::FLOAT, Value::Type::INT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::FLOAT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("pow", {Value::Type::FLOAT, Value::Type::FLOAT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::FLOAT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("cos", {Value::Type::FLOAT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::FLOAT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("sin", {Value::Type::INT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::FLOAT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("asin", {Value::Type::INT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::FLOAT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("acos", {Value::Type::FLOAT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::FLOAT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("acos", {Value::Type::STRING});
-    ASSERT_FALSE(result.ok());
-    EXPECT_EQ(result.status().toString(), "Parameter's type error");
-  }
-  {
-    auto result = FunctionManager::getReturnType("hypot", {Value::Type::FLOAT, Value::Type::INT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::FLOAT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("hypot", {Value::Type::INT, Value::Type::INT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::FLOAT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("hypot", {Value::Type::BOOL, Value::Type::INT});
-    ASSERT_FALSE(result.ok());
-    EXPECT_EQ(result.status().toString(), "Parameter's type error");
-  }
-  {
-    auto result = FunctionManager::getReturnType("lower", {Value::Type::STRING});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::STRING);
-  }
-  {
-    auto result = FunctionManager::getReturnType("toLower", {Value::Type::STRING});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::STRING);
-  }
-  {
-    auto result = FunctionManager::getReturnType("upper", {Value::Type::STRING});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::STRING);
-  }
-  {
-    auto result = FunctionManager::getReturnType("upper", {Value::Type::BOOL});
-    ASSERT_FALSE(result.ok());
-    EXPECT_EQ(result.status().toString(), "Parameter's type error");
-  }
-  {
-    auto result = FunctionManager::getReturnType("toUpper", {Value::Type::STRING});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::STRING);
-  }
-  {
-    auto result = FunctionManager::getReturnType("toUpper", {Value::Type::BOOL});
-    ASSERT_FALSE(result.ok());
-    EXPECT_EQ(result.status().toString(), "Parameter's type error");
-  }
-  {
-    auto result = FunctionManager::getReturnType("length", {Value::Type::STRING});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::INT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("length", {Value::Type::PATH});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::INT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("length", {});
-    ASSERT_FALSE(result.ok());
-    EXPECT_EQ(result.status().toString(), "Parameter's type error");
-  }
-  {
-    auto result = FunctionManager::getReturnType("length", {Value::Type::STRING, Value::Type::INT});
-    ASSERT_FALSE(result.ok());
-    EXPECT_EQ(result.status().toString(), "Parameter's type error");
-  }
-  {
-    auto result = FunctionManager::getReturnType("length", {Value::Type::FLOAT});
-    ASSERT_FALSE(result.ok());
-    EXPECT_EQ(result.status().toString(), "Parameter's type error");
-  }
-  {
-    auto result = FunctionManager::getReturnType("trim", {Value::Type::STRING});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::STRING);
-  }
-  {
-    auto result = FunctionManager::getReturnType("ltrim", {Value::Type::STRING});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::STRING);
-  }
-  {
-    auto result = FunctionManager::getReturnType(
-        "replace", {Value::Type::STRING, Value::Type::STRING, Value::Type::STRING});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::STRING);
-  }
-  {
-    auto result = FunctionManager::getReturnType(
-        "replace",
-        {Value::Type::STRING, Value::Type::STRING, Value::Type::STRING, Value::Type::STRING});
-    ASSERT_FALSE(result.ok());
-    EXPECT_EQ(result.status().toString(), "Parameter's type error");
-  }
-  {
-    auto result = FunctionManager::getReturnType("reverse", {Value::Type::STRING});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::STRING);
-  }
-  {
-    auto result = FunctionManager::getReturnType("reverse", {Value::Type::INT});
-    ASSERT_FALSE(result.ok());
-    EXPECT_EQ(result.status().toString(), "Parameter's type error");
-  }
-  {
-    auto result =
-        FunctionManager::getReturnType("split", {Value::Type::STRING, Value::Type::STRING});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::LIST);
-  }
-  {
-    auto result = FunctionManager::getReturnType("split", {Value::Type::STRING, Value::Type::INT});
-    ASSERT_FALSE(result.ok());
-    EXPECT_EQ(result.status().toString(), "Parameter's type error");
-  }
-  {
-    auto result = FunctionManager::getReturnType(
-        "substring", {Value::Type::STRING, Value::Type::INT, Value::Type::INT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::STRING);
-  }
-  {
-    auto result =
-        FunctionManager::getReturnType("substring", {Value::Type::STRING, Value::Type::INT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::STRING);
-  }
-  {
-    auto result = FunctionManager::getReturnType("toString", {Value::Type::INT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::STRING);
-  }
-  {
-    auto result = FunctionManager::getReturnType("toString", {Value::Type::FLOAT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::STRING);
-  }
-  {
-    auto result = FunctionManager::getReturnType("toString", {Value::Type::STRING});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::STRING);
-  }
-  {
-    auto result = FunctionManager::getReturnType("toString", {Value::Type::DATE});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::STRING);
-  }
-  {
-    auto result = FunctionManager::getReturnType("toBoolean", {Value::Type::BOOL});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::BOOL);
-  }
-  {
-    auto result = FunctionManager::getReturnType("toBoolean", {Value::Type::STRING});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::BOOL);
-  }
-  {
-    auto result = FunctionManager::getReturnType("toFloat", {Value::Type::INT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::FLOAT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("toFloat", {Value::Type::FLOAT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::FLOAT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("toFloat", {Value::Type::STRING});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::FLOAT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("toInteger", {Value::Type::INT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::INT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("toInteger", {Value::Type::FLOAT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::INT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("toInteger", {Value::Type::STRING});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::INT);
-  }
-  {
-    auto result =
-        FunctionManager::getReturnType("strcasecmp", {Value::Type::STRING, Value::Type::STRING});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::STRING);
-  }
-  {
-    auto result = FunctionManager::getReturnType("strcasecmp", {Value::Type::STRING});
-    ASSERT_FALSE(result.ok());
-    EXPECT_EQ(result.status().toString(), "Parameter's type error");
-  }
-  {
-    auto result = FunctionManager::getReturnType(
-        "lpad", {Value::Type::STRING, Value::Type::INT, Value::Type::STRING});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::STRING);
-  }
-  {
-    auto result = FunctionManager::getReturnType(
-        "lpad", {Value::Type::STRING, Value::Type::INT, Value::Type::INT});
-    ASSERT_FALSE(result.ok());
-    EXPECT_EQ(result.status().toString(), "Parameter's type error");
-  }
-  {
-    auto result = FunctionManager::getReturnType("lpad", {Value::Type::STRING, Value::Type::INT});
-    ASSERT_FALSE(result.ok());
-    EXPECT_EQ(result.status().toString(), "Parameter's type error");
-  }
-  {
-    auto result = FunctionManager::getReturnType("hash", {Value::Type::STRING});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::INT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("hash", {Value::Type::INT});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::INT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("hash", {Value::Type::NULLVALUE});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::INT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("hash", {Value::Type::__EMPTY__});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::INT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("hash", {Value::Type::DATE});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::INT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("hash", {Value::Type::STRING, Value::Type::INT});
-    ASSERT_FALSE(result.ok());
-    EXPECT_EQ(result.status().toString(), "Parameter's type error");
-  }
-  {
-    auto result = FunctionManager::getReturnType("hash", {});
-    ASSERT_FALSE(result.ok());
-    EXPECT_EQ(result.status().toString(), "Parameter's type error");
-  }
-  {
-    auto result = FunctionManager::getReturnType("hash", {Value::Type::DATASET});
-    ASSERT_FALSE(result.ok());
-    EXPECT_EQ(result.status().toString(), "Parameter's type error");
-  }
-  {
-    auto result = FunctionManager::getReturnType("noexist", {Value::Type::INT});
-    ASSERT_FALSE(result.ok());
-    EXPECT_EQ(result.status().toString(), "Function `noexist' not defined");
-  }
-  {
-    auto result = FunctionManager::getReturnType("size", {Value::Type::STRING});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::INT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("size", {Value::Type::LIST});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::INT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("size", {Value::Type::MAP});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::INT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("size", {Value::Type::SET});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::INT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("size", {Value::Type::DATASET});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::INT);
-  }
-  {
-    auto result = FunctionManager::getReturnType("size", {Value::Type::__EMPTY__});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::__EMPTY__);
-  }
-  {
-    auto result = FunctionManager::getReturnType("size", {Value::Type::NULLVALUE});
-    ASSERT_TRUE(result.ok());
-    EXPECT_EQ(result.value(), Value::Type::NULLVALUE);
-  }
-  {
-    auto result = FunctionManager::getReturnType("size", {Value::Type::BOOL});
-    ASSERT_FALSE(result.ok());
-    EXPECT_EQ(result.status().toString(), "Parameter's type error");
-  }
-  // time
-  {
-    auto result = FunctionManager::getReturnType("time", {Value::Type::BOOL});
-    ASSERT_FALSE(result.ok());
-    EXPECT_EQ(result.status().toString(), "Parameter's type error");
-  }
-  {
-    auto result = FunctionManager::getReturnType("time", {});
-    ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(result.value(), Value::Type::TIME);
-  }
-  {
-    auto result = FunctionManager::getReturnType("time", {Value::Type::STRING});
-    ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(result.value(), Value::Type::TIME);
-  }
-  {
-    auto result = FunctionManager::getReturnType("time", {Value::Type::MAP});
-    ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(result.value(), Value::Type::TIME);
-  }
-  // date
-  {
-    auto result = FunctionManager::getReturnType("date", {Value::Type::INT});
-    ASSERT_FALSE(result.ok());
-    EXPECT_EQ(result.status().toString(), "Parameter's type error");
-  }
-  {
-    auto result = FunctionManager::getReturnType("date", {});
-    ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(result.value(), Value::Type::DATE);
-  }
-  {
-    auto result = FunctionManager::getReturnType("date", {Value::Type::STRING});
-    ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(result.value(), Value::Type::DATE);
-  }
-  {
-    auto result = FunctionManager::getReturnType("date", {Value::Type::MAP});
-    ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(result.value(), Value::Type::DATE);
-  }
-  // datetime
-  {
-    auto result = FunctionManager::getReturnType("datetime", {Value::Type::FLOAT});
-    ASSERT_FALSE(result.ok());
-    EXPECT_EQ(result.status().toString(), "Parameter's type error");
-  }
-  {
-    auto result = FunctionManager::getReturnType("datetime", {});
-    ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(result.value(), Value::Type::DATETIME);
-  }
-  {
-    auto result = FunctionManager::getReturnType("datetime", {Value::Type::STRING});
-    ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(result.value(), Value::Type::DATETIME);
-  }
-  {
-    auto result = FunctionManager::getReturnType("datetime", {Value::Type::MAP});
-    ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(result.value(), Value::Type::DATETIME);
-  }
-  {
-    auto result = FunctionManager::getReturnType("tags", {Value::Type::VERTEX});
-    ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(Value::Type::LIST, result.value());
-  }
-  {
-    auto result = FunctionManager::getReturnType("labels", {Value::Type::VERTEX});
-    ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(Value::Type::LIST, result.value());
-  }
-  {
-    auto result = FunctionManager::getReturnType("properties", {Value::Type::VERTEX});
-    ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(Value::Type::MAP, result.value());
-  }
-  {
-    auto result = FunctionManager::getReturnType("properties", {Value::Type::EDGE});
-    ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(Value::Type::MAP, result.value());
-  }
-  {
-    auto result = FunctionManager::getReturnType("properties", {Value::Type::MAP});
-    ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(Value::Type::MAP, result.value());
-  }
-  {
-    auto result = FunctionManager::getReturnType("type", {Value::Type::EDGE});
-    ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(Value::Type::STRING, result.value());
-  }
-  {
-    auto result = FunctionManager::getReturnType("typeid", {Value::Type::EDGE});
-    ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(Value::Type::INT, result.value());
-  }
-  {
-    auto result = FunctionManager::getReturnType("rank", {Value::Type::EDGE});
-    ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(Value::Type::INT, result.value());
-  }
-  {
-    auto result = FunctionManager::getReturnType("startNode", {Value::Type::EDGE});
-    ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(Value::Type::VERTEX, result.value());
-  }
-  {
-    auto result = FunctionManager::getReturnType("startNode", {Value::Type::PATH});
-    ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(Value::Type::VERTEX, result.value());
-  }
-  {
-    auto result = FunctionManager::getReturnType("startNode", {Value::Type::NULLVALUE});
-    ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(Value::Type::NULLVALUE, result.value());
-  }
-  {
-    auto result = FunctionManager::getReturnType("endNode", {Value::Type::EDGE});
-    ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(Value::Type::VERTEX, result.value());
-  }
-  {
-    auto result = FunctionManager::getReturnType("endNode", {Value::Type::PATH});
-    ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(Value::Type::VERTEX, result.value());
-  }
-  {
-    auto result = FunctionManager::getReturnType("endNode", {Value::Type::NULLVALUE});
-    ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(Value::Type::NULLVALUE, result.value());
-  }
-  {
-    auto result = FunctionManager::getReturnType("keys", {Value::Type::VERTEX});
-    ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(Value::Type::LIST, result.value());
-  }
-  {
-    auto result = FunctionManager::getReturnType("keys", {Value::Type::EDGE});
-    ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(Value::Type::LIST, result.value());
-  }
-  {
-    auto result = FunctionManager::getReturnType("keys", {Value::Type::MAP});
-    ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(Value::Type::LIST, result.value());
-  }
-  {
-    auto result = FunctionManager::getReturnType("nodes", {Value::Type::PATH});
-    ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(Value::Type::LIST, result.value());
-  }
-  {
-    auto result = FunctionManager::getReturnType("reverse", {Value::Type::LIST});
-    ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(Value::Type::LIST, result.value());
-  }
-  {
-    auto result = FunctionManager::getReturnType("tail", {Value::Type::LIST});
-    ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(Value::Type::LIST, result.value());
-  }
-  {
-    auto result = FunctionManager::getReturnType("relationships", {Value::Type::PATH});
-    ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(Value::Type::LIST, result.value());
-  }
-  {
-    auto result = FunctionManager::getReturnType("head", {Value::Type::LIST});
-    ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(Value::Type::__EMPTY__, result.value());
-  }
-  {
-    auto result = FunctionManager::getReturnType("last", {Value::Type::LIST});
-    ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(Value::Type::__EMPTY__, result.value());
-  }
-  {
-    auto result = FunctionManager::getReturnType("coalesce", {Value::Type::LIST});
-    ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(Value::Type::__EMPTY__, result.value());
-  }
-  {
-    auto result = FunctionManager::getReturnType("range", {Value::Type::INT, Value::Type::INT});
-    ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(Value::Type::LIST, result.value());
-  }
-  {
-    auto result = FunctionManager::getReturnType(
-        "range", {Value::Type::INT, Value::Type::INT, Value::Type::INT});
-    ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(Value::Type::LIST, result.value());
+    struct TestReurnType {
+      std::string func_name;          // function being tested
+      std::vector<Value::Type> args;  // parameters for test
+      Value::Type returnType;         // the correct return type expected
+    };
+
+    // add test case
+    std::vector<TestReurnType> test_cases = {
+        TestReurnType{"abs", {Value::Type::INT}, Value::Type::INT},
+        TestReurnType{"bit_and", {Value::Type::INT, Value::Type::INT}, Value::Type::INT},
+        TestReurnType{"bit_or", {Value::Type::INT, Value::Type::INT}, Value::Type::INT},
+        TestReurnType{"bit_xor", {Value::Type::INT, Value::Type::INT}, Value::Type::INT},
+        TestReurnType{"abs", {Value::Type::FLOAT}, Value::Type::FLOAT},
+        TestReurnType{"now", {}, Value::Type::INT},
+        TestReurnType{"rand32", {}, Value::Type::INT},
+        TestReurnType{"rand32", {Value::Type::INT}, Value::Type::INT},
+        TestReurnType{"rand32", {Value::Type::INT, Value::Type::INT}, Value::Type::INT},
+        TestReurnType{"sqrt", {Value::Type::INT}, Value::Type::FLOAT},
+        TestReurnType{"sqrt", {Value::Type::FLOAT}, Value::Type::FLOAT},
+        TestReurnType{"ceil", {Value::Type::INT}, Value::Type::FLOAT},
+        TestReurnType{"ceil", {Value::Type::FLOAT}, Value::Type::FLOAT},
+        TestReurnType{"floor", {Value::Type::FLOAT}, Value::Type::FLOAT},
+        TestReurnType{"floor", {Value::Type::INT}, Value::Type::FLOAT},
+        TestReurnType{"round", {Value::Type::INT}, Value::Type::FLOAT},
+        TestReurnType{"round", {Value::Type::FLOAT}, Value::Type::FLOAT},
+        TestReurnType{"cbrt", {Value::Type::INT}, Value::Type::FLOAT},
+        TestReurnType{"cbrt", {Value::Type::FLOAT}, Value::Type::FLOAT},
+        TestReurnType{"pow", {Value::Type::INT, Value::Type::INT}, Value::Type::INT},
+        TestReurnType{"pow", {Value::Type::INT, Value::Type::FLOAT}, Value::Type::FLOAT},
+        TestReurnType{"pow", {Value::Type::FLOAT, Value::Type::INT}, Value::Type::FLOAT},
+        TestReurnType{"pow", {Value::Type::FLOAT, Value::Type::FLOAT}, Value::Type::FLOAT},
+        TestReurnType{"cos", {Value::Type::FLOAT}, Value::Type::FLOAT},
+        TestReurnType{"sin", {Value::Type::INT}, Value::Type::FLOAT},
+        TestReurnType{"asin", {Value::Type::INT}, Value::Type::FLOAT},
+        TestReurnType{"acos", {Value::Type::FLOAT}, Value::Type::FLOAT},
+        TestReurnType{"hypot", {Value::Type::FLOAT, Value::Type::INT}, Value::Type::FLOAT},
+        TestReurnType{"hypot", {Value::Type::INT, Value::Type::INT}, Value::Type::FLOAT},
+        TestReurnType{"lower", {Value::Type::STRING}, Value::Type::STRING},
+        TestReurnType{"toLower", {Value::Type::STRING}, Value::Type::STRING},
+        TestReurnType{"upper", {Value::Type::STRING}, Value::Type::STRING},
+        TestReurnType{"toUpper", {Value::Type::STRING}, Value::Type::STRING},
+        TestReurnType{"length", {Value::Type::STRING}, Value::Type::INT},
+        TestReurnType{"length", {Value::Type::PATH}, Value::Type::INT},
+        TestReurnType{"trim", {Value::Type::STRING}, Value::Type::STRING},
+        TestReurnType{"ltrim", {Value::Type::STRING}, Value::Type::STRING},
+        TestReurnType{"replace",
+                      {Value::Type::STRING, Value::Type::STRING, Value::Type::STRING},
+                      Value::Type::STRING},
+        TestReurnType{"reverse", {Value::Type::STRING}, Value::Type::STRING},
+        TestReurnType{"split", {Value::Type::STRING, Value::Type::STRING}, Value::Type::LIST},
+        TestReurnType{"substring",
+                      {Value::Type::STRING, Value::Type::INT, Value::Type::INT},
+                      Value::Type::STRING},
+        TestReurnType{"substring", {Value::Type::STRING, Value::Type::INT}, Value::Type::STRING},
+        TestReurnType{"toString", {Value::Type::INT}, Value::Type::STRING},
+        TestReurnType{"toString", {Value::Type::FLOAT}, Value::Type::STRING},
+        TestReurnType{"toString", {Value::Type::STRING}, Value::Type::STRING},
+        TestReurnType{"toString", {Value::Type::DATE}, Value::Type::STRING},
+        TestReurnType{"toBoolean", {Value::Type::BOOL}, Value::Type::BOOL},
+        TestReurnType{"toBoolean", {Value::Type::STRING}, Value::Type::BOOL},
+        TestReurnType{"toFloat", {Value::Type::INT}, Value::Type::FLOAT},
+        TestReurnType{"toFloat", {Value::Type::FLOAT}, Value::Type::FLOAT},
+        TestReurnType{"toFloat", {Value::Type::STRING}, Value::Type::FLOAT},
+        TestReurnType{"toInteger", {Value::Type::INT}, Value::Type::INT},
+        TestReurnType{"toInteger", {Value::Type::FLOAT}, Value::Type::INT},
+        TestReurnType{"toInteger", {Value::Type::STRING}, Value::Type::INT},
+        TestReurnType{
+            "strcasecmp", {Value::Type::STRING, Value::Type::STRING}, Value::Type::STRING},
+        TestReurnType{"lpad",
+                      {Value::Type::STRING, Value::Type::INT, Value::Type::STRING},
+                      Value::Type::STRING},
+        TestReurnType{"hash", {Value::Type::STRING}, Value::Type::INT},
+        TestReurnType{"hash", {Value::Type::INT}, Value::Type::INT},
+        TestReurnType{"hash", {Value::Type::NULLVALUE}, Value::Type::INT},
+        TestReurnType{"hash", {Value::Type::__EMPTY__}, Value::Type::INT},
+        TestReurnType{"hash", {Value::Type::DATE}, Value::Type::INT},
+        TestReurnType{"size", {Value::Type::STRING}, Value::Type::INT},
+        TestReurnType{"size", {Value::Type::LIST}, Value::Type::INT},
+        TestReurnType{"size", {Value::Type::MAP}, Value::Type::INT},
+        TestReurnType{"size", {Value::Type::SET}, Value::Type::INT},
+        TestReurnType{"size", {Value::Type::DATASET}, Value::Type::INT},
+        TestReurnType{"size", {Value::Type::__EMPTY__}, Value::Type::__EMPTY__},
+        TestReurnType{"size", {Value::Type::NULLVALUE}, Value::Type::NULLVALUE},
+        TestReurnType{"time", {}, Value::Type::TIME},
+        TestReurnType{"time", {Value::Type::STRING}, Value::Type::TIME},
+        TestReurnType{"time", {Value::Type::MAP}, Value::Type::TIME},
+        TestReurnType{"date", {}, Value::Type::DATE},
+        TestReurnType{"date", {Value::Type::STRING}, Value::Type::DATE},
+        TestReurnType{"date", {Value::Type::MAP}, Value::Type::DATE},
+        TestReurnType{"datetime", {}, Value::Type::DATETIME},
+        TestReurnType{"datetime", {Value::Type::STRING}, Value::Type::DATETIME},
+        TestReurnType{"datetime", {Value::Type::MAP}, Value::Type::DATETIME},
+        TestReurnType{"tags", {Value::Type::VERTEX}, Value::Type::LIST},
+        TestReurnType{"labels", {Value::Type::VERTEX}, Value::Type::LIST},
+        TestReurnType{"properties", {Value::Type::VERTEX}, Value::Type::MAP},
+        TestReurnType{"properties", {Value::Type::EDGE}, Value::Type::MAP},
+        TestReurnType{"properties", {Value::Type::MAP}, Value::Type::MAP},
+        TestReurnType{"type", {Value::Type::EDGE}, Value::Type::STRING},
+        TestReurnType{"typeid", {Value::Type::EDGE}, Value::Type::INT},
+        TestReurnType{"rank", {Value::Type::EDGE}, Value::Type::INT},
+        TestReurnType{"startNode", {Value::Type::EDGE}, Value::Type::VERTEX},
+        TestReurnType{"startNode", {Value::Type::PATH}, Value::Type::VERTEX},
+        TestReurnType{"startNode", {Value::Type::NULLVALUE}, Value::Type::NULLVALUE},
+        TestReurnType{"endNode", {Value::Type::EDGE}, Value::Type::VERTEX},
+        TestReurnType{"endNode", {Value::Type::PATH}, Value::Type::VERTEX},
+        TestReurnType{"endNode", {Value::Type::NULLVALUE}, Value::Type::NULLVALUE},
+        TestReurnType{"keys", {Value::Type::VERTEX}, Value::Type::LIST},
+        TestReurnType{"keys", {Value::Type::EDGE}, Value::Type::LIST},
+        TestReurnType{"keys", {Value::Type::MAP}, Value::Type::LIST},
+        TestReurnType{"nodes", {Value::Type::PATH}, Value::Type::LIST},
+        TestReurnType{"reverse", {Value::Type::LIST}, Value::Type::LIST},
+        TestReurnType{"tail", {Value::Type::LIST}, Value::Type::LIST},
+        TestReurnType{"relationships", {Value::Type::PATH}, Value::Type::LIST},
+        TestReurnType{"head", {Value::Type::LIST}, Value::Type::__EMPTY__},
+        TestReurnType{"last", {Value::Type::LIST}, Value::Type::__EMPTY__},
+        TestReurnType{"coalesce", {Value::Type::LIST}, Value::Type::__EMPTY__},
+        TestReurnType{"range", {Value::Type::INT, Value::Type::INT}, Value::Type::LIST},
+        TestReurnType{
+            "range", {Value::Type::INT, Value::Type::INT, Value::Type::INT}, Value::Type::LIST},
+    };
+
+    for (const TestReurnType &test_case : test_cases) {
+      auto result = FunctionManager::getReturnType(test_case.func_name, test_case.args);
+      ASSERT_TRUE(result.ok());
+      EXPECT_EQ(result.value(), test_case.returnType);
+    }
+
+    // Test base case
+    // result.status will be "Parameter's type error"
+    struct TestBadReurnType {
+      std::string func_name;
+      std::vector<Value::Type> args;
+    };
+
+    // add bad test case
+    std::vector<TestBadReurnType> test_bad_cases = {
+        TestBadReurnType{"abs", {Value::Type::BOOL}},
+        TestBadReurnType{"now", {Value::Type::BOOL}},
+        TestBadReurnType{"rand32", {Value::Type::INT, Value::Type::FLOAT}},
+        TestBadReurnType{"floor", {Value::Type::STRING}},
+        TestBadReurnType{"acos", {Value::Type::STRING}},
+        TestBadReurnType{"hypot", {Value::Type::BOOL, Value::Type::INT}},
+        TestBadReurnType{"upper", {Value::Type::BOOL}},
+        TestBadReurnType{"toUpper", {Value::Type::BOOL}},
+        TestBadReurnType{"length", {}},
+        TestBadReurnType{"length", {Value::Type::STRING, Value::Type::INT}},
+        TestBadReurnType{"length", {Value::Type::FLOAT}},
+        TestBadReurnType{
+            "replace",
+            {Value::Type::STRING, Value::Type::STRING, Value::Type::STRING, Value::Type::STRING}},
+        TestBadReurnType{"reverse", {Value::Type::INT}},
+        TestBadReurnType{"split", {Value::Type::STRING, Value::Type::INT}},
+        TestBadReurnType{"strcasecmp", {Value::Type::STRING}},
+        TestBadReurnType{"lpad", {Value::Type::STRING, Value::Type::INT, Value::Type::INT}},
+        TestBadReurnType{"lpad", {Value::Type::STRING, Value::Type::INT}},
+        TestBadReurnType{"hash", {Value::Type::STRING, Value::Type::INT}},
+        TestBadReurnType{"hash", {}},
+        TestBadReurnType{"hash", {Value::Type::DATASET}},
+        TestBadReurnType{"size", {Value::Type::BOOL}},
+        TestBadReurnType{"time", {Value::Type::BOOL}},
+        TestBadReurnType{"datetime", {Value::Type::FLOAT}},
+        TestBadReurnType{"date", {Value::Type::INT}},
+    };
+
+    for (const TestBadReurnType &test_case : test_bad_cases) {
+      auto result = FunctionManager::getReturnType(test_case.func_name, test_case.args);
+      ASSERT_FALSE(result.ok());
+      EXPECT_EQ(result.status().toString(), "Parameter's type error");
+    }
   }
 }
 
@@ -1633,7 +1162,7 @@ TEST_F(FunctionManagerTest, ScalarFunctionTest) {
     std::vector<Value> args;
     List list;
     list.values.emplace_back(Value::kNullValue);
-    args.push_back(list);
+    args.emplace_back(list);
 
     TEST_FUNCTION(head, args, Value::kNullValue);
     TEST_FUNCTION(last, args, Value::kNullValue);
