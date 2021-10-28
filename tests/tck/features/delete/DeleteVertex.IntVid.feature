@@ -9,7 +9,7 @@ Feature: Delete int vid of vertex
     # get vertex info
     When executing query:
       """
-      GO FROM hash("Boris Diaw") OVER like
+      GO FROM hash("Boris Diaw") OVER like YIELD like._dst
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
       | like._dst     |
@@ -17,7 +17,7 @@ Feature: Delete int vid of vertex
       | "Tim Duncan"  |
     When executing query:
       """
-      GO FROM hash("Tony Parker") OVER like REVERSELY
+      GO FROM hash("Tony Parker") OVER like REVERSELY YIELD like._dst
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
       | like._dst           |
@@ -31,17 +31,17 @@ Feature: Delete int vid of vertex
       """
       FETCH PROP ON player hash("Tony Parker") YIELD player.name, player.age
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID      | player.name   | player.age |
-      | "Tony Parker" | "Tony Parker" | 36         |
+    Then the result should be, in any order:
+      | player.name   | player.age |
+      | "Tony Parker" | 36         |
     # check value by fetch
     When executing query:
       """
       FETCH PROP ON serve hash("Tony Parker")->hash("Spurs") YIELD serve.start_year, serve.end_year
       """
-    Then the result should be, in any order, and the columns 0,1 should be hashed:
-      | serve._src    | serve._dst | serve._rank | serve.start_year | serve.end_year |
-      | 'Tony Parker' | 'Spurs'    | 0           | 1999             | 2018           |
+    Then the result should be, in any order:
+      | serve.start_year | serve.end_year |
+      | 1999             | 2018           |
     # delete one vertex
     When executing query:
       """
@@ -54,18 +54,18 @@ Feature: Delete int vid of vertex
       FETCH PROP ON player hash("Tony Parker") YIELD player.name, player.age
       """
     Then the result should be, in any order:
-      | VertexID | player.name | player.age |
+      | player.name | player.age |
     # check value by fetch
     When executing query:
       """
       FETCH PROP ON serve hash("Tony Parker")->hash("Spurs") YIELD serve.start_year, serve.end_year
       """
     Then the result should be, in any order:
-      | serve._src | serve._dst | serve._rank | serve.start_year | serve.end_year |
+      | serve.start_year | serve.end_year |
     # after delete to check value by go
     When executing query:
       """
-      GO FROM hash("Boris Diaw") OVER like
+      GO FROM hash("Boris Diaw") OVER like YIELD like._dst
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
       | like._dst    |
@@ -73,14 +73,14 @@ Feature: Delete int vid of vertex
     # after delete to check value by go
     When executing query:
       """
-      GO FROM hash("Tony Parker") OVER like REVERSELY
+      GO FROM hash("Tony Parker") OVER like REVERSELY YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst |
     # before delete multi vertexes to check value by go
     When executing query:
       """
-      GO FROM hash("Chris Paul") OVER like
+      GO FROM hash("Chris Paul") OVER like YIELD like._dst
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
       | like._dst         |
@@ -99,11 +99,11 @@ Feature: Delete int vid of vertex
       FETCH PROP ON player hash("Tony Parker") YIELD player.name, player.age
       """
     Then the result should be, in any order:
-      | VertexID | player.name | player.age |
+      | player.name | player.age |
     # before delete hash id vertex to check value by go
     When executing query:
       """
-      GO FROM hash("Tracy McGrady") OVER like
+      GO FROM hash("Tracy McGrady") OVER like YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst            |
@@ -113,7 +113,7 @@ Feature: Delete int vid of vertex
     # before delete hash id vertex to check value by go
     When executing query:
       """
-      GO FROM hash("Grant Hill") OVER like REVERSELY
+      GO FROM hash("Grant Hill") OVER like REVERSELY YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst           |
@@ -124,16 +124,16 @@ Feature: Delete int vid of vertex
       FETCH PROP ON player hash("Grant Hill") YIELD player.name, player.age
       """
     Then the result should be, in any order:
-      | VertexID            | player.name  | player.age |
-      | 6293765385213992205 | "Grant Hill" | 46         |
+      | player.name  | player.age |
+      | "Grant Hill" | 46         |
     # before delete hash id vertex to check value by fetch
     When executing query:
       """
       FETCH PROP ON serve hash("Grant Hill")->hash("Pistons") YIELD serve.start_year, serve.end_year
       """
     Then the result should be, in any order:
-      | serve._src          | serve._dst           | serve._rank | serve.start_year | serve.end_year |
-      | 6293765385213992205 | -2742277443392542725 | 0           | 1994             | 2000           |
+      | serve.start_year | serve.end_year |
+      | 1994             | 2000           |
     # delete hash id vertex
     When executing query:
       """
@@ -143,7 +143,7 @@ Feature: Delete int vid of vertex
     # after delete hash id vertex to check value by go
     When executing query:
       """
-      GO FROM hash("Tracy McGrady") OVER like
+      GO FROM hash("Tracy McGrady") OVER like YIELD like._dst
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
       | like._dst     |
@@ -152,7 +152,7 @@ Feature: Delete int vid of vertex
     # after delete hash id vertex to check value by go
     When executing query:
       """
-      GO FROM hash("Grant Hill") OVER like REVERSELY
+      GO FROM hash("Grant Hill") OVER like REVERSELY YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst |
@@ -162,7 +162,7 @@ Feature: Delete int vid of vertex
       FETCH PROP ON player hash("Grant Hill") YIELD player.name, player.age
       """
     Then the result should be, in any order:
-      | VertexID | player.name | player.age |
+      | player.name | player.age |
     # delete not existed vertex
     When executing query:
       """
@@ -182,7 +182,7 @@ Feature: Delete int vid of vertex
       FETCH PROP ON player hash("A Loner") YIELD player.name, player.age
       """
     Then the result should be, in any order:
-      | VertexID | player.name | player.age |
+      | player.name | player.age |
     # delete with no edge
     When executing query:
       """
@@ -195,7 +195,7 @@ Feature: Delete int vid of vertex
       FETCH PROP ON player hash("Nobody") YIELD player.name, player.age
       """
     Then the result should be, in any order:
-      | VertexID | player.name | player.age |
+      | player.name | player.age |
 
   Scenario: delete int vertex by pipe successed
     Given load "nba_int_vid" csv data to a new space
@@ -208,7 +208,7 @@ Feature: Delete int vid of vertex
     # delete with pipe, get result by go
     When executing query:
       """
-      GO FROM hash("Boris Diaw") OVER like
+      GO FROM hash("Boris Diaw") OVER like YIELD like._dst
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
       | like._dst     |
@@ -216,7 +216,7 @@ Feature: Delete int vid of vertex
       | "Tim Duncan"  |
     When executing query:
       """
-      GO FROM hash("Tony Parker") OVER like
+      GO FROM hash("Tony Parker") OVER like YIELD like._dst
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
       | like._dst           |
@@ -225,7 +225,7 @@ Feature: Delete int vid of vertex
       | "Tim Duncan"        |
     When executing query:
       """
-      GO FROM hash("Tim Duncan") OVER like
+      GO FROM hash("Tim Duncan") OVER like YIELD like._dst
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
       | like._dst       |
@@ -238,19 +238,19 @@ Feature: Delete int vid of vertex
     Then the execution should be successful
     When executing query:
       """
-      GO FROM hash("Boris Diaw") OVER like
+      GO FROM hash("Boris Diaw") OVER like YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst |
     When executing query:
       """
-      GO FROM hash("Tony Parker") OVER like
+      GO FROM hash("Tony Parker") OVER like YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst |
     When executing query:
       """
-      GO FROM hash("Tim Duncan") OVER like
+      GO FROM hash("Tim Duncan") OVER like YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst |
@@ -267,7 +267,7 @@ Feature: Delete int vid of vertex
     Given load "nba_int_vid" csv data to a new space
     When executing query:
       """
-      GO FROM hash("Russell Westbrook") OVER like
+      GO FROM hash("Russell Westbrook") OVER like YIELD like._dst
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
       | like._dst      |
@@ -275,14 +275,14 @@ Feature: Delete int vid of vertex
       | "James Harden" |
     When executing query:
       """
-      GO FROM hash("Paul George") OVER like
+      GO FROM hash("Paul George") OVER like YIELD like._dst
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
       | like._dst           |
       | "Russell Westbrook" |
     When executing query:
       """
-      GO FROM hash("James Harden") OVER like
+      GO FROM hash("James Harden") OVER like YIELD like._dst
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
       | like._dst           |
@@ -294,19 +294,19 @@ Feature: Delete int vid of vertex
     Then the execution should be successful
     When executing query:
       """
-      GO FROM hash("Russell Westbrook") OVER like
+      GO FROM hash("Russell Westbrook") OVER like YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst |
     When executing query:
       """
-      GO FROM hash("Paul George") OVER like
+      GO FROM hash("Paul George") OVER like YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst |
     When executing query:
       """
-      GO FROM hash("Russell Westbrook") OVER like
+      GO FROM hash("Russell Westbrook") OVER like YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst |

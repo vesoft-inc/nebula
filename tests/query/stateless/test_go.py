@@ -151,8 +151,7 @@ class TestGoQuery(NebulaTestSuite):
         self.check_resp_succeeded(resp)
         self.check_out_of_order_result(resp, expect_result)
 
-        # go 2 steps without YIELD
-        cmd = 'GO 2 STEPS FROM "1016" OVER is_friend;'
+        cmd = 'GO 2 STEPS FROM "1016" OVER is_friend YIELD is_friend._dst;'
         resp = self.execute(cmd)
         expect_result = [["1016"], ["1020"]]
         self.check_resp_succeeded(resp)

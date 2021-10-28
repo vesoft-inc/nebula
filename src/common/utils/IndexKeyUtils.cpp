@@ -17,7 +17,7 @@ std::vector<std::string> IndexKeyUtils::encodeValues(
   // An index has a maximum of 16 columns. 2 byte (16 bit) is enough.
   u_short nullableBitSet = 0;
   auto findGeo = [](const meta::cpp2::ColumnDef& col) {
-    return col.get_type().get_type() == meta::cpp2::PropertyType::GEOGRAPHY;
+    return col.get_type().get_type() == nebula::cpp2::PropertyType::GEOGRAPHY;
   };
   bool hasGeo = std::find_if(cols.begin(), cols.end(), findGeo) != cols.end();
   // Only support to create index on a single geography column currently;
@@ -34,7 +34,7 @@ std::vector<std::string> IndexKeyUtils::encodeValues(
 
       if (!values[i].isNull()) {
         // string index need to fill with '\0' if length is less than schema
-        if (cols[i].type.type == meta::cpp2::PropertyType::FIXED_STRING) {
+        if (cols[i].type.type == nebula::cpp2::PropertyType::FIXED_STRING) {
           auto len = static_cast<size_t>(*cols[i].type.get_type_length());
           index.append(encodeValue(values[i], len));
         } else {

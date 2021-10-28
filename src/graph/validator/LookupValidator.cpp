@@ -224,6 +224,8 @@ Status LookupValidator::validateFilter() {
     auto ret = checkFilter(filter);
     NG_RETURN_IF_ERROR(ret);
     lookupCtx_->filter = std::move(ret).value();
+    // Make sure the type of the rewritted filter expr is right
+    NG_RETURN_IF_ERROR(deduceExprType(lookupCtx_->filter));
   }
   NG_RETURN_IF_ERROR(deduceProps(lookupCtx_->filter, exprProps_));
   return Status::OK();
@@ -440,7 +442,7 @@ StatusOr<Expression*> LookupValidator::checkConstExpr(Expression* expr,
   auto schema = lookupCtx_->isEdge ? schemaMgr->getEdgeSchema(spaceId(), schemaId())
                                    : schemaMgr->getTagSchema(spaceId(), schemaId());
   auto type = schema->getFieldType(prop);
-  if (type == meta::cpp2::PropertyType::UNKNOWN) {
+  if (type == nebula::cpp2::PropertyType::UNKNOWN) {
     return Status::SemanticError("Invalid column: %s", prop.c_str());
   }
   QueryExpressionContext dummy(nullptr);

@@ -10,7 +10,7 @@ Feature: Push Limit down rule
   Scenario: push limit down to GetNeighbors
     When profiling query:
       """
-      GO 1 STEPS FROM "James Harden" OVER like REVERSELY |
+      GO 1 STEPS FROM "James Harden" OVER like REVERSELY YIELD like._dst |
       Limit 2
       """
     Then the result should be, in any order:

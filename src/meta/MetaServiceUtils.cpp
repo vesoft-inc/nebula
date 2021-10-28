@@ -118,7 +118,8 @@ nebula::cpp2::ErrorCode MetaServiceUtils::alterSchemaProp(std::vector<cpp2::Colu
       if (col.get_name() == ttlCol) {
         auto colType = col.get_type().get_type();
         // Only integer and timestamp columns can be used as ttl_col
-        if (colType != cpp2::PropertyType::INT64 && colType != cpp2::PropertyType::TIMESTAMP) {
+        if (colType != nebula::cpp2::PropertyType::INT64 &&
+            colType != nebula::cpp2::PropertyType::TIMESTAMP) {
           LOG(ERROR) << "TTL column type illegal";
           return nebula::cpp2::ErrorCode::E_UNSUPPORTED;
         }
