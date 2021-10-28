@@ -81,7 +81,7 @@ class Perf {
       nebula::meta::cpp2::Schema schema;
       nebula::meta::cpp2::ColumnDef column;
       column.name = "col_1";
-      column.type.set_type(meta::cpp2::PropertyType::STRING);
+      column.type.set_type(nebula::cpp2::PropertyType::STRING);
       (*schema.columns_ref()).emplace_back(std::move(column));
       auto ret = mClient_->createTagSchema(spaceId_, FLAGS_tag_name, schema).get();
       if (!ret.ok()) {
@@ -109,7 +109,7 @@ class Perf {
       nebula::meta::cpp2::Schema schema;
       nebula::meta::cpp2::ColumnDef column;
       column.name = "col_1";
-      column.type.set_type(meta::cpp2::PropertyType::STRING);
+      column.type.set_type(nebula::cpp2::PropertyType::STRING);
       (*schema.columns_ref()).emplace_back(std::move(column));
       auto ret = mClient_->createEdgeSchema(spaceId_, FLAGS_edge_name, schema).get();
       if (!ret.ok()) {

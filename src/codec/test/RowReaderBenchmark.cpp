@@ -18,7 +18,7 @@ using nebula::RowReaderWrapper;
 using nebula::RowWriterV1;
 using nebula::RowWriterV2;
 using nebula::SchemaWriter;
-using nebula::meta::cpp2::PropertyType;
+using nebula::cpp2::PropertyType;
 
 SchemaWriter schemaShort;
 SchemaWriter schemaLong;

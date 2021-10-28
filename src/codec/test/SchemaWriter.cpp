@@ -10,8 +10,8 @@
 
 namespace nebula {
 
-using meta::cpp2::PropertyType;
 using meta::cpp2::Schema;
+using nebula::cpp2::PropertyType;
 
 SchemaWriter& SchemaWriter::appendCol(folly::StringPiece name,
                                       PropertyType type,

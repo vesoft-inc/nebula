@@ -16,7 +16,7 @@
 
 namespace nebula {
 
-using PropertyType = nebula::meta::cpp2::PropertyType;
+using PropertyType = nebula::cpp2::PropertyType;
 
 /**
  * This class supply some utils for index in kvstore.
