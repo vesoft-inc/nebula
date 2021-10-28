@@ -1,8 +1,8 @@
 ---
 name: Enhancement
 about: make the code neat or more efficient.
+title: ''
 labels: enhancement
-title: '[Enhancement]'
 assignees: ''
 ---
 
