@@ -192,15 +192,21 @@ Status TraverseExecutor::buildInterimPath(GetNeighborsIter* iter) {
     auto e = iter->getEdge();
     // If we don't find one, it means the first step
     if (prev == nullptr) {
-      Row row;
-      row.values.emplace_back(std::move(srcV));
+      Row path;
+      path.values.emplace_back(std::move(srcV));
       List neighbors;
       neighbors.values.emplace_back(std::move(e));
-      row.values.emplace_back(std::move(neighbors));
-      VLOG(1) << "path " << __LINE__ << " :" << row;
-      std::vector<Row> rows;
-      rows.emplace_back(std::move(row));
-      current->emplace(dst, std::move(rows));
+      path.values.emplace_back(std::move(neighbors));
+      VLOG(1) << "path " << __LINE__ << " :" << path;
+      auto pathToDstFound = current->find(dst);
+      if (pathToDstFound == current->end()) {
+        Paths interimPaths;
+        interimPaths.emplace_back(std::move(path));
+        current->emplace(dst, std::move(interimPaths));
+      } else {
+        auto& interimPaths = pathToDstFound->second;
+        interimPaths.emplace_back(std::move(path));
+      }
     } else {
       // Join on dst = src
       VLOG(1) << "Find prev path: " << srcV.getVertex().vid;
@@ -219,12 +225,12 @@ Status TraverseExecutor::buildInterimPath(GetNeighborsIter* iter) {
         VLOG(1) << "path " << __LINE__ << " :" << path;
         auto pathToDstFound = current->find(dst);
         if (pathToDstFound == current->end()) {
-          std::vector<Row> rows;
-          rows.emplace_back(std::move(path));
-          current->emplace(dst, std::move(rows));
+          Paths interimPaths;
+          interimPaths.emplace_back(std::move(path));
+          current->emplace(dst, std::move(interimPaths));
         } else {
-          auto& rows = pathToDstFound->second;
-          rows.emplace_back(std::move(path));
+          auto& interimPaths = pathToDstFound->second;
+          interimPaths.emplace_back(std::move(path));
         }
       }
     }
