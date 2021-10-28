@@ -552,14 +552,11 @@ FunctionManager::FunctionManager() {
         case Value::Type::INT:
         case Value::Type::FLOAT: {
           if (args.size() == 2) {
-            switch (args[1].get().type()) {
-              case Value::Type::INT: {
-                auto decimal = args[1].get().getInt();
-                return std::round(args[0].get().getFloat() * pow(10, decimal)) / pow(10, decimal);
-              }
-              default: {
-                return Value::kNullBadType;
-              }
+            if (args[1].get().type() == Value::Type::INT) {
+              auto decimal = args[1].get().getInt();
+              return std::round(args[0].get().getFloat() * pow(10, decimal)) / pow(10, decimal);
+            } else {
+              return Value::kNullBadType;
             }
           }
           return std::round(args[0].get().getFloat());
