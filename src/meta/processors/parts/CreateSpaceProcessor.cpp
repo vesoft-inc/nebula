@@ -82,14 +82,15 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
     onFinished();
     return;
   }
-  if (vidType != cpp2::PropertyType::INT64 && vidType != cpp2::PropertyType::FIXED_STRING) {
+  if (vidType != nebula::cpp2::PropertyType::INT64 &&
+      vidType != nebula::cpp2::PropertyType::FIXED_STRING) {
     LOG(ERROR) << "Create Space Failed : vid_type is illegal: "
                << apache::thrift::util::enumNameSafe(vidType);
     handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
     onFinished();
     return;
   }
-  if (vidType == cpp2::PropertyType::INT64 && vidSize != 8) {
+  if (vidType == nebula::cpp2::PropertyType::INT64 && vidSize != 8) {
     LOG(ERROR) << "Create Space Failed : vid_size should be 8 if vid type is integer: " << vidSize;
     handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
     onFinished();

@@ -87,7 +87,7 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
   }
 
   auto vIdLen = vIdLenRet.value();
-  bool isIntId = (vIdType.value() == meta::cpp2::PropertyType::INT64);
+  bool isIntId = (vIdType.value() == nebula::cpp2::PropertyType::INT64);
   auto partitionNumRet = env_->schemaMan_->getPartsNum(spaceId);
   if (!partitionNumRet.ok()) {
     LOG(ERROR) << "Get space partition number failed";

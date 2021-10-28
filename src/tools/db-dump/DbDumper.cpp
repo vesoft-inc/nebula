@@ -99,7 +99,7 @@ Status DbDumper::initParams() {
   std::vector<std::string> tags, edges;
   try {
     folly::splitTo<PartitionID>(',', FLAGS_parts, std::inserter(parts_, parts_.begin()), true);
-    if (spaceVidType_ == meta::cpp2::PropertyType::INT64) {
+    if (spaceVidType_ == nebula::cpp2::PropertyType::INT64) {
       std::vector<int64_t> intVids;
       folly::splitTo<int64_t>(',', FLAGS_vids, std::inserter(intVids, intVids.begin()), true);
       for (auto vid : intVids) {
@@ -576,7 +576,7 @@ std::string DbDumper::getEdgeName(const EdgeType edgeType) {
 }
 
 Value DbDumper::getVertexId(const folly::StringPiece& vidStr) {
-  if (spaceVidType_ == meta::cpp2::PropertyType::INT64) {
+  if (spaceVidType_ == nebula::cpp2::PropertyType::INT64) {
     int64_t val;
     memcpy(reinterpret_cast<void*>(&val), vidStr.begin(), sizeof(int64_t));
     return val;

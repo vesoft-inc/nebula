@@ -24,7 +24,8 @@ bool CommonUtils::checkDataExpiredForTTL(const meta::SchemaProviderIf* schema,
                                          const std::string& ttlCol,
                                          int64_t ttlDuration) {
   const auto& ftype = schema->getFieldType(ttlCol);
-  if (ftype != meta::cpp2::PropertyType::TIMESTAMP && ftype != meta::cpp2::PropertyType::INT64) {
+  if (ftype != nebula::cpp2::PropertyType::TIMESTAMP &&
+      ftype != nebula::cpp2::PropertyType::INT64) {
     return false;
   }
   auto now = time::WallClock::fastNowInSec();
