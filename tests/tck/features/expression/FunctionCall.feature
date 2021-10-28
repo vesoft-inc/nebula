@@ -125,28 +125,42 @@ Feature: Function Call Expression
   Scenario: round
     When executing query:
       """
-      YIELD round(1.1111111111, 8) as result
+      YIELD round(3.1415926, 9) as result
       """
     Then the result should be, in any order:
-      | result     |
-      | 1.11111111 |
+      | result    |
+      | 3.1415926 |
     When executing query:
       """
-      YIELD round(1111.111111, 0) as result
-      """
-    Then the result should be, in any order:
-      | result |
-      | 1111.0 |
-    When executing query:
-      """
-      YIELD round(1111.111111, -3) as result
+      YIELD round(3.1415926, 2) as result
       """
     Then the result should be, in any order:
       | result |
-      | 1000.0 |
+      | 3.14   |
     When executing query:
       """
-      YIELD round(1111.111111, -4) as result
+      YIELD round(3.1415926, 3) as result
+      """
+    Then the result should be, in any order:
+      | result |
+      | 3.142  |
+    When executing query:
+      """
+      YIELD round(3.14159265359, 0) as result
+      """
+    Then the result should be, in any order:
+      | result |
+      | 3.0    |
+    When executing query:
+      """
+      YIELD round(35543.14159265359, -3) as result
+      """
+    Then the result should be, in any order:
+      | result  |
+      | 36000.0 |
+    When executing query:
+      """
+      YIELD round(35543.14159265359, -5) as result
       """
     Then the result should be, in any order:
       | result |
