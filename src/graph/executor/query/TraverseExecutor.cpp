@@ -210,6 +210,10 @@ Status TraverseExecutor::buildInterimPath(GetNeighborsIter* iter) {
       }
       const auto& paths = pathToSrcFound->second;
       for (auto path : paths) {
+        // Unique edge in a path.
+        if (path.values[1].mutableList().values.back() == e) {
+          continue;
+        }
         path.values[1].mutableList().values.emplace_back(std::move(srcV));
         path.values[1].mutableList().values.emplace_back(std::move(e));
         VLOG(1) << "path " << __LINE__ << " :" << path;
@@ -268,6 +272,8 @@ Status TraverseExecutor::buildResult() {
         }
         auto& prevPaths = prevPathFound->second;
         for (const auto* prevPath : prevPaths) {
+          // Unique edge in a path.
+          // TODO
           auto newPath = *prevPath;
           newPath.values.insert(newPath.values.end(), path.values.begin(), path.values.end());
           VLOG(1) << "path " << __LINE__ << " :" << newPath;

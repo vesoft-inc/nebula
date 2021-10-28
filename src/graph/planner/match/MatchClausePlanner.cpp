@@ -296,7 +296,9 @@ Status MatchClausePlanner::leftExpandFromNode(const std::vector<NodeInfo>& nodeI
     traverse->setEdgeFilter(genEdgeFilter(edge));
     traverse->setEdgeDirection(edge.direction);  // TODO: reverse the direction
     traverse->setColNames(genTraverseColNames(subplan.root->colNames(), node, edge));
-    traverse->setSteps(StepClause(edge.range->min(), edge.range->max()));
+    if (edge.range != nullptr) {
+      traverse->setSteps(StepClause(edge.range->min(), edge.range->max()));
+    }
     subplan.root = traverse;
     nextTraverseStart = genNextTraverseStart(qctx->objPool(), edge);
     inputVar = traverse->outputVar();
@@ -337,7 +339,9 @@ Status MatchClausePlanner::rightExpandFromNode(const std::vector<NodeInfo>& node
     traverse->setEdgeFilter(genEdgeFilter(edge));
     traverse->setEdgeDirection(edge.direction);
     traverse->setColNames(genTraverseColNames(subplan.root->colNames(), node, edge));
-    traverse->setSteps(StepClause(edge.range->min(), edge.range->max()));
+    if (edge.range != nullptr) {
+      traverse->setSteps(StepClause(edge.range->min(), edge.range->max()));
+    }
     subplan.root = traverse;
     nextTraverseStart = genNextTraverseStart(qctx->objPool(), edge);
     inputVar = traverse->outputVar();
