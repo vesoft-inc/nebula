@@ -50,12 +50,8 @@ std::unique_ptr<Path> Path::make(nebula::meta::cpp2::IndexItem* index,
   }
   return ret;
 }
-Path::Qualified Path::qualified(const folly::StringPiece& key) {
-  Qualified ret = Qualified::COMPATIBLE;
-  for (auto& func : QFList_) {
-    ret = std::min(ret, func(key.toString()));
-  }
-  return ret;
+QualifiedStrategy::Result Path::qualified(const folly::StringPiece& key) {
+  return strategySet_(key);
 }
 std::string Path::encodeValue(const Value& value,
                               const ColumnTypeDef& colDef,
@@ -69,8 +65,7 @@ std::string Path::encodeValue(const Value& value,
   } else if (value.type() == Value::Type::STRING) {
     val = IndexKeyUtils::encodeValue(value, *colDef.get_type_length());
     if (val.back() != '\0') {
-      QFList_.clear();
-      QFList_.emplace_back([](const std::string&) { return Qualified::UNCERTAIN; });
+      strategySet_.insert(QualifiedStrategy::constant<QualifiedStrategy::UNCERTAIN>());
     }
   } else if (value.type() == Value::Type::NULLVALUE) {
     auto vtype = IndexKeyUtils::toValueType(colDef.get_type());
@@ -80,17 +75,13 @@ std::string Path::encodeValue(const Value& value,
     val = IndexKeyUtils::encodeValue(value);
   }
   if (!nullable_.empty() && nullable_[index] == true) {
-    QFList_.emplace_back([isNull, index, offset = index_nullable_offset_](const std::string& k) {
-      std::bitset<16> nullableBit;
-      auto v = *reinterpret_cast<const u_short*>(k.data() + offset);
-      nullableBit = v;
-      DVLOG(3) << isNull;
-      DVLOG(3) << nullableBit.test(15 - index);
-      return nullableBit.test(15 - index) ^ isNull ? Qualified::INCOMPATIBLE
-                                                   : Qualified::COMPATIBLE;
-    });
+    if (isNull) {
+      strategySet_.insert(QualifiedStrategy::checkNull<true>(index, index_nullable_offset_));
+    } else {
+      strategySet_.insert(QualifiedStrategy::checkNull<false>(index, index_nullable_offset_));
+    }
   } else if (isNull) {
-    QFList_.emplace_back([](const std::string&) { return Qualified::INCOMPATIBLE; });
+    strategySet_.insert(QualifiedStrategy::constant<QualifiedStrategy::INCOMPATIBLE>());
   }
   key.append(val);
   return val;
@@ -112,11 +103,11 @@ void RangePath::resetPart(PartitionID partId) {
   startKey_ = startKey_.replace(0, p.size(), p);
   endKey_ = endKey_.replace(0, p.size(), p);
 }
-Path::Qualified RangePath::qualified(const Map<std::string, Value>& rowData) {
+QualifiedStrategy::Result RangePath::qualified(const Map<std::string, Value>& rowData) {
   for (size_t i = 0; i < hints_.size() - 1; i++) {
     auto& hint = hints_[i];
     if (hint.get_begin_value() != rowData.at(hint.get_column_name())) {
-      return Qualified::INCOMPATIBLE;
+      return QualifiedStrategy::INCOMPATIBLE;
     }
   }
   auto& hint = hints_.back();
@@ -125,7 +116,7 @@ Path::Qualified RangePath::qualified(const Map<std::string, Value>& rowData) {
     bool ret = includeStart_ ? hint.get_begin_value() <= rowData.at(hint.get_column_name())
                              : hint.get_begin_value() < rowData.at(hint.get_column_name());
     if (!ret) {
-      return Qualified::INCOMPATIBLE;
+      return QualifiedStrategy::INCOMPATIBLE;
     }
   }
   if (hint.end_value_ref().is_set()) {
@@ -134,10 +125,10 @@ Path::Qualified RangePath::qualified(const Map<std::string, Value>& rowData) {
                            : hint.get_end_value() > rowData.at(hint.get_column_name());
     DVLOG(2) << ret;
     if (!ret) {
-      return Qualified::INCOMPATIBLE;
+      return QualifiedStrategy::INCOMPATIBLE;
     }
   }
-  return Qualified::COMPATIBLE;
+  return QualifiedStrategy::COMPATIBLE;
 }
 void RangePath::buildKey() {
   std::string common;
@@ -192,26 +183,10 @@ std::tuple<std::string, std::string> RangePath::encodeRange(
     encodeBeginValue(hint.get_begin_value(), colTypeDef, startKey, offset);
   }
   if (UNLIKELY(needCheckNullable)) {
-    QFList_.emplace_back([colIndex, offset = index_nullable_offset_](const std::string& k) {
-      DVLOG(1) << "check null";
-      std::bitset<16> nullableBit;
-      auto v = *reinterpret_cast<const u_short*>(k.data() + offset);
-      nullableBit = v;
-      DVLOG(1) << nullableBit;
-      DVLOG(1) << nullableBit.test(15 - colIndex);
-      return nullableBit.test(15 - colIndex) ? Qualified::INCOMPATIBLE : Qualified::COMPATIBLE;
-    });
+    strategySet_.insert(QualifiedStrategy::checkNull(colIndex, index_nullable_offset_));
   }
-  // The data of a geo may generate multiple indexes, so it needs to be de duplicated. Because there
-  // is no duplicate data between different parts, the suffixset does not clear and does not affect
-  // the results.
   if (UNLIKELY(colTypeDef.get_type() == nebula::meta::cpp2::PropertyType::GEOGRAPHY)) {
-    QFList_.emplace_back([suffixSet = Set<std::string>(),
-                          suffixLength = suffixLength_](const std::string& k) mutable {
-      auto suffix = k.substr(k.size() - suffixLength, suffixLength);
-      auto [iter, result] = suffixSet.insert(suffix);
-      return result ? Qualified::COMPATIBLE : Qualified::INCOMPATIBLE;
-    });
+    strategySet_.insert(QualifiedStrategy::dedupGeoIndex(suffixLength_));
   }
   return {startKey, endKey};
 }
@@ -229,23 +204,14 @@ std::string RangePath::encodeBeginValue(const Value& value,
     val = encodeString(value, *colDef.get_type_length(), truncated);
     greater &= !truncated;
     if (UNLIKELY(truncated)) {
-      QFList_.emplace_back([val, startPos = offset](const std::string& k) {
-        int ret = memcmp(val.data(), k.data() + startPos, val.size());
-        DVLOG(1) << folly::hexDump(val.data(), val.size());
-        DVLOG(1) << folly::hexDump(k.data(), k.size());
-        CHECK_LE(ret, 0);
-        return ret == 0 ? Qualified::UNCERTAIN : Qualified::COMPATIBLE;
-      });
+      strategySet_.insert(QualifiedStrategy::compareTruncated<true>(val, offset));
     }
   } else if (value.type() == Value::Type::FLOAT) {
     bool isNaN = false;
     val = encodeFloat(value, isNaN);
     greater |= isNaN;
     // TODO(hs.zhang): Optimize the logic of judging NaN
-    QFList_.emplace_back([startPos = offset, length = val.size()](const std::string& k) {
-      int ret = memcmp("\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF", k.data() + startPos, length);
-      return ret == 0 ? Qualified::INCOMPATIBLE : Qualified::COMPATIBLE;
-    });
+    strategySet_.insert(QualifiedStrategy::checkNaN(offset));
   } else {
     val = IndexKeyUtils::encodeValue(value);
   }
@@ -269,25 +235,14 @@ std::string RangePath::encodeEndValue(const Value& value,
     val = encodeString(value, *colDef.get_type_length(), truncated);
     greater |= truncated;
     if (UNLIKELY(truncated)) {
-      QFList_.emplace_back([val, startPos = offset](const std::string& k) {
-        int ret = memcmp(val.data(), k.data() + startPos, val.size());
-        DVLOG(3) << folly::hexDump(val.data(), val.size());
-        DVLOG(3) << folly::hexDump(k.data(), k.size());
-        CHECK_GE(ret, 0);
-        return ret == 0 ? Qualified::UNCERTAIN : Qualified::COMPATIBLE;
-      });
+      strategySet_.insert(QualifiedStrategy::compareTruncated<false>(val, offset));
     }
   } else if (value.type() == Value::Type::FLOAT) {
     bool isNaN = false;
     val = encodeFloat(value, isNaN);
     greater |= isNaN;
     if (UNLIKELY(isNaN)) {
-      QFList_.emplace_back([startPos = offset, length = val.size()](const std::string& k) {
-        DVLOG(3) << "check NaN:" << startPos << "\t" << length;
-        DVLOG(3) << '\n' << folly::hexDump(k.data(), k.size());
-        int ret = memcmp("\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF", k.data() + startPos, length);
-        return ret == 0 ? Qualified::INCOMPATIBLE : Qualified::COMPATIBLE;
-      });
+      strategySet_.insert(QualifiedStrategy::checkNaN(offset));
     }
   } else {
     val = IndexKeyUtils::encodeValue(value);
@@ -330,13 +285,13 @@ PrefixPath::PrefixPath(nebula::meta::cpp2::IndexItem* index,
     : Path(index, schema, hints, vidLen) {
   buildKey();
 }
-Path::Qualified PrefixPath::qualified(const Map<std::string, Value>& rowData) {
+QualifiedStrategy::Result PrefixPath::qualified(const Map<std::string, Value>& rowData) {
   for (auto& hint : hints_) {
     if (hint.get_begin_value() != rowData.at(hint.get_column_name())) {
-      return Qualified::INCOMPATIBLE;
+      return QualifiedStrategy::INCOMPATIBLE;
     }
   }
-  return Qualified::COMPATIBLE;
+  return QualifiedStrategy::COMPATIBLE;
 }
 void PrefixPath::resetPart(PartitionID partId) {
   std::string p = IndexKeyUtils::indexPrefix(partId);
@@ -357,13 +312,8 @@ void PrefixPath::buildKey() {
   }
   for (; fieldIter != index_->get_fields().end(); fieldIter++) {
     if (UNLIKELY(fieldIter->get_type().get_type() == nebula::meta::cpp2::PropertyType::GEOGRAPHY)) {
-      QFList_.emplace_back([suffixSet = Set<std::string>(),
-                            suffixLength = suffixLength_](const std::string& k) mutable {
-        auto suffix = k.substr(k.size() - suffixLength, suffixLength);
-        auto [iter, result] = suffixSet.insert(suffix);
-        DLOG(INFO) << "qualified geo dedup " << result;
-        return result ? Qualified::COMPATIBLE : Qualified::INCOMPATIBLE;
-      });
+      strategySet_.insert(QualifiedStrategy::dedupGeoIndex(suffixLength_));
+      break;
     }
   }
   prefix_ = std::move(common);
@@ -440,10 +390,10 @@ IndexNode::ErrorOr<Row> IndexScanNode::doNext(bool& hasNext) {
       continue;
     }
     auto q = path_->qualified(iter_->key());
-    if (q == Path::Qualified::INCOMPATIBLE) {
+    if (q == QualifiedStrategy::INCOMPATIBLE) {
       continue;
     }
-    bool compatible = q == Path::Qualified::COMPATIBLE;
+    bool compatible = q == QualifiedStrategy::COMPATIBLE;
     if (compatible && !needAccessBase_) {
       auto key = iter_->key().toString();
       iter_->next();
@@ -464,8 +414,8 @@ IndexNode::ErrorOr<Row> IndexScanNode::doNext(bool& hasNext) {
     Map<std::string, Value> rowData = decodeFromBase(kv.first, kv.second);
     if (!compatible) {
       q = path_->qualified(rowData);
-      CHECK(q != Path::Qualified::UNCERTAIN);
-      if (q == Path::Qualified::INCOMPATIBLE) {
+      CHECK(q != QualifiedStrategy::UNCERTAIN);
+      if (q == QualifiedStrategy::INCOMPATIBLE) {
         continue;
       }
     }
