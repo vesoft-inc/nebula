@@ -34,16 +34,16 @@ void MockSchemaManager::init() {
   Tags tagSchemas;
   // person {name : string, age : int8}
   std::shared_ptr<meta::NebulaSchemaProvider> personSchema(new meta::NebulaSchemaProvider(0));
-  personSchema->addField("name", meta::cpp2::PropertyType::STRING);
-  personSchema->addField("age", meta::cpp2::PropertyType::INT8);
+  personSchema->addField("name", nebula::cpp2::PropertyType::STRING);
+  personSchema->addField("age", nebula::cpp2::PropertyType::INT8);
   tagSchemas.emplace(2, personSchema);
   // book {name : string}
   std::shared_ptr<meta::NebulaSchemaProvider> bookSchema(new meta::NebulaSchemaProvider(0));
-  bookSchema->addField("name", meta::cpp2::PropertyType::STRING);
+  bookSchema->addField("name", nebula::cpp2::PropertyType::STRING);
   tagSchemas.emplace(5, bookSchema);
   // room {number : int8}
   std::shared_ptr<meta::NebulaSchemaProvider> roomSchema(new meta::NebulaSchemaProvider(0));
-  roomSchema->addField("number", meta::cpp2::PropertyType::INT8);
+  roomSchema->addField("number", nebula::cpp2::PropertyType::INT8);
   tagSchemas.emplace(5, roomSchema);
 
   tagSchemas_.emplace(1, std::move(tagSchemas));
@@ -51,14 +51,14 @@ void MockSchemaManager::init() {
   Edges edgeSchemas;
   // like {start : timestamp, end : datetime}
   std::shared_ptr<meta::NebulaSchemaProvider> likeSchema(new meta::NebulaSchemaProvider(0));
-  likeSchema->addField("start", meta::cpp2::PropertyType::TIMESTAMP);
-  likeSchema->addField("end", meta::cpp2::PropertyType::TIMESTAMP);
-  likeSchema->addField("likeness", meta::cpp2::PropertyType::INT64);
+  likeSchema->addField("start", nebula::cpp2::PropertyType::TIMESTAMP);
+  likeSchema->addField("end", nebula::cpp2::PropertyType::TIMESTAMP);
+  likeSchema->addField("likeness", nebula::cpp2::PropertyType::INT64);
   edgeSchemas.emplace(3, likeSchema);
 
   std::shared_ptr<meta::NebulaSchemaProvider> serveSchema(new meta::NebulaSchemaProvider(0));
-  serveSchema->addField("start", meta::cpp2::PropertyType::TIMESTAMP);
-  serveSchema->addField("end", meta::cpp2::PropertyType::DATETIME);
+  serveSchema->addField("start", nebula::cpp2::PropertyType::TIMESTAMP);
+  serveSchema->addField("end", nebula::cpp2::PropertyType::DATETIME);
   edgeSchemas.emplace(4, serveSchema);
 
   edgeSchemas_.emplace(1, std::move(edgeSchemas));

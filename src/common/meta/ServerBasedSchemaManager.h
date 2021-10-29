@@ -23,7 +23,7 @@ class ServerBasedSchemaManager : public SchemaManager {
 
   StatusOr<int32_t> getSpaceVidLen(GraphSpaceID space) override;
 
-  StatusOr<cpp2::PropertyType> getSpaceVidType(GraphSpaceID space) override;
+  StatusOr<nebula::cpp2::PropertyType> getSpaceVidType(GraphSpaceID space) override;
 
   StatusOr<int32_t> getPartsNum(GraphSpaceID space) override;
 

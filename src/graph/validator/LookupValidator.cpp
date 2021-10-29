@@ -442,7 +442,7 @@ StatusOr<Expression*> LookupValidator::checkConstExpr(Expression* expr,
   auto schema = lookupCtx_->isEdge ? schemaMgr->getEdgeSchema(spaceId(), schemaId())
                                    : schemaMgr->getTagSchema(spaceId(), schemaId());
   auto type = schema->getFieldType(prop);
-  if (type == meta::cpp2::PropertyType::UNKNOWN) {
+  if (type == nebula::cpp2::PropertyType::UNKNOWN) {
     return Status::SemanticError("Invalid column: %s", prop.c_str());
   }
   QueryExpressionContext dummy(nullptr);

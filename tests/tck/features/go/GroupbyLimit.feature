@@ -6,7 +6,7 @@ Feature: Groupby & limit Sentence
   Scenario: Syntax test1
     When executing query:
       """
-      GO FROM 1 OVER server | LIMIT 1, -2
+      GO FROM 1 OVER server  YIELD server._dst | LIMIT 1, -2
       """
     Then a SyntaxError should be raised at runtime:
 

@@ -29,7 +29,7 @@
 namespace nebula {
 namespace meta {
 
-using cpp2::PropertyType;
+using nebula::cpp2::PropertyType;
 
 TEST(IndexProcessorTest, AlterEdgeWithTTLTest) {
   fs::TempDir rootPath("/tmp/AlterEdgeWithTTLTest.XXXXXX");
@@ -1564,7 +1564,7 @@ void mockSchemas(kvstore::KVStore* kv) {
   {
     cpp2::ColumnDef col;
     col.set_name("col_fixed_string_1");
-    col.type.set_type(meta::cpp2::PropertyType::FIXED_STRING);
+    col.type.set_type(PropertyType::FIXED_STRING);
     col.type.set_type_length(MAX_INDEX_TYPE_LENGTH);
     (*srcsch.columns_ref()).emplace_back(std::move(col));
   }
@@ -1572,7 +1572,7 @@ void mockSchemas(kvstore::KVStore* kv) {
   {
     cpp2::ColumnDef col;
     col.set_name("col_fixed_string_2");
-    col.type.set_type(meta::cpp2::PropertyType::FIXED_STRING);
+    col.type.set_type(PropertyType::FIXED_STRING);
     col.type.set_type_length(257);
     (*srcsch.columns_ref()).emplace_back(std::move(col));
   }
