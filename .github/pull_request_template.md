@@ -6,7 +6,7 @@
 close #xxx   
 （If it is requirement, issue(s) number must be listed.）
 
-#### What this PR does / why we need it?
+#### What does this PR do / why we need it?
 
   
 #### Special notes for your reviewer, ex. impact of this fix, etc:
