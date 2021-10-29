@@ -63,7 +63,10 @@ std::string Path::encodeValue(const Value& value,
                               std::string& key) {
   std::string val;
   bool isNull = false;
-  if (value.type() == Value::Type::STRING) {
+  if (colDef.get_type() == ::nebula::meta::cpp2::PropertyType::GEOGRAPHY) {
+    CHECK_EQ(value.type(), Value::Type::STRING);
+    val = value.getStr();
+  } else if (value.type() == Value::Type::STRING) {
     val = IndexKeyUtils::encodeValue(value, *colDef.get_type_length());
     if (val.back() != '\0') {
       QFList_.clear();
@@ -219,7 +222,9 @@ std::string RangePath::encodeBeginValue(const Value& value,
   std::string val;
   bool greater = !includeStart_;
   CHECK_NE(value.type(), Value::Type::NULLVALUE);
-  if (value.type() == Value::Type::STRING) {
+  if (colDef.get_type() == ::nebula::meta::cpp2::PropertyType::GEOGRAPHY) {
+    val = value.getStr();
+  } else if (value.type() == Value::Type::STRING) {
     bool truncated = false;
     val = encodeString(value, *colDef.get_type_length(), truncated);
     greater &= !truncated;
@@ -257,7 +262,9 @@ std::string RangePath::encodeEndValue(const Value& value,
   CHECK_NE(value.type(), Value::Type::NULLVALUE);
   std::string val;
   bool greater = includeEnd_;
-  if (value.type() == Value::Type::STRING) {
+  if (colDef.get_type() == ::nebula::meta::cpp2::PropertyType::GEOGRAPHY) {
+    val = value.getStr();
+  } else if (value.type() == Value::Type::STRING) {
     bool truncated = false;
     val = encodeString(value, *colDef.get_type_length(), truncated);
     greater |= truncated;
@@ -347,6 +354,17 @@ void PrefixPath::buildKey() {
     encodeValue(hint.get_begin_value(), fieldIter->get_type(), i, common);
     serializeString_ +=
         fmt::format("{}={}, ", hint.get_column_name(), hint.get_begin_value().toString());
+  }
+  for (; fieldIter != index_->get_fields().end(); fieldIter++) {
+    if (UNLIKELY(fieldIter->get_type().get_type() == nebula::meta::cpp2::PropertyType::GEOGRAPHY)) {
+      QFList_.emplace_back([suffixSet = Set<std::string>(),
+                            suffixLength = suffixLength_](const std::string& k) mutable {
+        auto suffix = k.substr(k.size() - suffixLength, suffixLength);
+        auto [iter, result] = suffixSet.insert(suffix);
+        DLOG(INFO) << "qualified geo dedup " << result;
+        return result ? Qualified::COMPATIBLE : Qualified::INCOMPATIBLE;
+      });
+    }
   }
   prefix_ = std::move(common);
 }
@@ -533,6 +551,9 @@ void IndexScanNode::decodePropFromIndex(folly::StringPiece key,
         break;
       case Value::Type::DATETIME:
         len = sizeof(int32_t) + sizeof(int16_t) + sizeof(int8_t) * 5;
+        break;
+      case Value::Type::GEOGRAPHY:  // colPosMap will never need GEOGRAPHY type
+        len = 8;
         break;
       default:
         LOG(FATAL) << "Unexpect value type:" << int(field.type.get_type());
