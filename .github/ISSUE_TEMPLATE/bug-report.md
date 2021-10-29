@@ -18,7 +18,7 @@ A clear and concise description of what the bug is.
 **Your Environments (__must be provided__)**
 
 * OS: `uname -a`
-* Compliler: `g++ --version` or `clang++ --version`
+* Compiler: `g++ --version` or `clang++ --version`
 * CPU: `lscpu`
 * Commit id (e.g. `a3ffc7d8`)
 
