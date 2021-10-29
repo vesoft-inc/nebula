@@ -2,7 +2,7 @@ name: nightly
 
 on:
   schedule:
-    - cron: '0 18 * * *'
+    - cron: '30 0 * * *'
 
 defaults:
   run:
