@@ -1,10 +1,10 @@
 #### What type of PR is this?
 - [ ] bug
 - [ ] feature
+- [ ] enhancement
 
-#### Which issue(s) this PR fixes:
-close #xxx   
-（If it is requirement, issue(s) number must be listed.）
+#### Which issue(s) this PR relates to?:
+
 
 #### What does this PR do / why we need it?
 
