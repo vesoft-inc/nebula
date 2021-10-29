@@ -1110,7 +1110,11 @@ bool RaftPart::leaderElection() {
     VLOG(2) << idStr_
             << "AskForVoteRequest has been sent to all peers"
                ", waiting for responses";
-    futures.wait();
+    futures.wait(std::chrono::seconds(FLAGS_raft_heartbeat_interval_secs));
+    if (futures.hasException()) {
+      LOG(INFO) << idStr_ << "Election timeout";
+      return false;
+    }
     CHECK(!futures.hasException())
         << "Got exception -- " << futures.result().exception().what().toStdString();
     VLOG(2) << idStr_ << "Got AskForVote response back";
