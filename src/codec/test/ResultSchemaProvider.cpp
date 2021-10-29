@@ -9,8 +9,8 @@
 namespace nebula {
 
 using folly::hash::SpookyHashV2;
-using meta::cpp2::PropertyType;
 using meta::cpp2::Schema;
+using nebula::cpp2::PropertyType;
 
 /***********************************
  *
@@ -18,7 +18,7 @@ using meta::cpp2::Schema;
  *
  **********************************/
 ResultSchemaProvider::ResultSchemaField::ResultSchemaField(std::string name,
-                                                           meta::cpp2::PropertyType type,
+                                                           PropertyType type,
                                                            int16_t size,
                                                            bool nullable,
                                                            int32_t offset,
