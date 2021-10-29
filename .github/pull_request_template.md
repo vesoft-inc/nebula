@@ -3,10 +3,10 @@
 - [ ] feature
 - [ ] enhancement
 
-#### Which issue(s) this PR relates to?:
+#### What does this PR do?
 
 
-#### What does this PR do / why we need it?
+#### Which issue(s)/PR(s) this PR relates to?
 
   
 #### Special notes for your reviewer, ex. impact of this fix, etc:
@@ -17,11 +17,9 @@
 
 #### Checklist：
 - [ ] Documentation affected （Please add the label if documentation needs to be modified.)
-- [ ] Incompatible （If it is incompatible, please describe it and label it.）
+- [ ] Incompatible （If it is incompatible, please describe it and add corresponding label.）
 - [ ] Need to cherry-pick （If need to cherry-pick to some branches, please label the destination version(s).)
-- [ ] Performance regression: Consumes more CPU
-- [ ] Performance regression: Consumes more Memory
-
+- [ ] Performance impacted: Consumes more CPU/Memory
 
 
 #### Release notes：
