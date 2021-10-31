@@ -75,7 +75,6 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: |
             vesoft/nebula-${{ matrix.service }}:nightly
-            vesoft/nebula-${{ matrix.service }}:v2-nightly
           push: true
 
   coverage:
@@ -88,7 +87,6 @@ jobs:
           - ubuntu2004
         compiler:
           - gcc-9.2
-
     container:
       image: vesoft/nebula-dev:${{ matrix.os }}
       env:
