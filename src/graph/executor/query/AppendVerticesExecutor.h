@@ -24,6 +24,8 @@ class AppendVerticesExecutor final : public GetPropExecutor {
   DataSet buildRequestDataSet(const AppendVertices *gv);
 
   folly::Future<Status> appendVertices();
+
+  Status handleResp(storage::StorageRpcResponse<storage::cpp2::GetPropResponse> &&rpcResp);
 };
 
 }  // namespace graph

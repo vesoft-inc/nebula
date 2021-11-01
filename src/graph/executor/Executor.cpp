@@ -611,7 +611,7 @@ void Executor::drop() {
         // Make sure drop happened-after count decrement
         CHECK_EQ(inputVar->userCount.load(std::memory_order_acquire), 0);
         ectx_->dropResult(inputVar->name);
-        VLOG(1) << "Drop variable " << node()->outputVar();
+        VLOG(1) << node()->kind() << " Drop variable " << inputVar->name;
       }
     }
   }

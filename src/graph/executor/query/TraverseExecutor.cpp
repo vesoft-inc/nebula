@@ -67,6 +67,7 @@ void TraverseExecutor::getNeighbors() {
   time::Duration getNbrTime;
   GraphStorageClient* storageClient = qctx_->getStorageClient();
   bool finalStep = isFinalStep();
+  VLOG(1) << "Traverse start:" << reqDs_;
   storageClient
       ->getNeighbors(traverse_->space(),
                      qctx()->rctx()->session()->id(),
@@ -197,7 +198,7 @@ Status TraverseExecutor::buildInterimPath(GetNeighborsIter* iter) {
       List neighbors;
       neighbors.values.emplace_back(std::move(e));
       path.values.emplace_back(std::move(neighbors));
-      VLOG(1) << "path " << __LINE__ << " :" << path;
+      // VLOG(1) << "path " << __LINE__ << " :" << path;
       auto pathToDstFound = current->find(dst);
       if (pathToDstFound == current->end()) {
         Paths interimPaths;
@@ -209,7 +210,7 @@ Status TraverseExecutor::buildInterimPath(GetNeighborsIter* iter) {
       }
     } else {
       // Join on dst = src
-      VLOG(1) << "Find prev path: " << srcV.getVertex().vid;
+      // VLOG(1) << "Find prev path: " << srcV.getVertex().vid;
       auto pathToSrcFound = prev->find(srcV.getVertex().vid);
       if (pathToSrcFound == prev->end()) {
         return Status::Error("Can't find prev paths.");
@@ -220,9 +221,9 @@ Status TraverseExecutor::buildInterimPath(GetNeighborsIter* iter) {
         if (path.values[1].mutableList().values.back() == e) {
           continue;
         }
-        path.values[1].mutableList().values.emplace_back(std::move(srcV));
-        path.values[1].mutableList().values.emplace_back(std::move(e));
-        VLOG(1) << "path " << __LINE__ << " :" << path;
+        path.values[1].mutableList().values.emplace_back(srcV);
+        path.values[1].mutableList().values.emplace_back(e);
+        // VLOG(1) << "path " << __LINE__ << " :" << path;
         auto pathToDstFound = current->find(dst);
         if (pathToDstFound == current->end()) {
           Paths interimPaths;
@@ -238,15 +239,15 @@ Status TraverseExecutor::buildInterimPath(GetNeighborsIter* iter) {
 
   if (steps_.isMToN()) {
     if (currentStep_ < steps_.mSteps() && paths_.size() > 1) {
-      VLOG(1) << "Delete front path.";
+      // VLOG(1) << "Delete front path.";
       paths_.pop_front();
     }
   } else if (paths_.size() > 1) {
-    VLOG(1) << "Delete front path.";
+    // VLOG(1) << "Delete front path.";
     paths_.pop_front();
   }
   reqDs_ = std::move(reqDs);
-  VLOG(1) << "paths size: " << paths_.size();
+  // VLOG(1) << "paths size: " << paths_.size();
   return Status::OK();
 }
 
@@ -263,7 +264,7 @@ Status TraverseExecutor::buildResult() {
     Value key = hashKey->eval(ctx(iter.get()));
     auto& vals = hashTable[key];
     vals.emplace_back(iter->row());
-    VLOG(1) << "row" << __LINE__ << " :" << *iter->row();
+    // VLOG(1) << "row" << __LINE__ << " :" << *iter->row();
   }
 
   DataSet result;
@@ -271,7 +272,7 @@ Status TraverseExecutor::buildResult() {
   for (auto& currentStepPaths : paths_) {
     for (auto& paths : currentStepPaths) {
       for (auto& path : paths.second) {
-        VLOG(1) << "path " << __LINE__ << " :" << path;
+        // VLOG(1) << "path " << __LINE__ << " :" << path;
         auto prevPathFound = hashTable.find(path.values[0].getVertex().vid);
         if (prevPathFound == hashTable.end()) {
           return Status::Error("Can't find prev paths.");
@@ -282,7 +283,7 @@ Status TraverseExecutor::buildResult() {
           // TODO
           auto newPath = *prevPath;
           newPath.values.insert(newPath.values.end(), path.values.begin(), path.values.end());
-          VLOG(1) << "path " << __LINE__ << " :" << newPath;
+          // VLOG(1) << "path " << __LINE__ << " :" << newPath;
           result.emplace_back(std::move(newPath));
         }
       }

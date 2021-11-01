@@ -36,24 +36,13 @@ static std::vector<std::string> genAppendVColNames(const std::vector<std::string
 }
 
 static Expression* genNextTraverseStart(ObjectPool* pool, const EdgeInfo& edge) {
-  if (edge.range != nullptr) {
-    if (edge.range->max() != edge.range->min() || edge.range->max() > 1) {
-      // dst(last(list))
-      auto args = ArgumentList::make(pool);
-      args->addArgument(InputPropertyExpression::make(pool, edge.alias));
-      auto last = FunctionCallExpression::make(pool, "last", args);
-      auto args1 = ArgumentList::make(pool);
-      args1->addArgument(last);
-      return FunctionCallExpression::make(pool, "dst", args1);
-    } else {
-      // dst(edge)
-      auto args1 = ArgumentList::make(pool);
-      args1->addArgument(InputPropertyExpression::make(pool, edge.alias));
-      return FunctionCallExpression::make(pool, "dst", args1);
-    }
-  } else {
-    return nullptr;
-  }
+  // dst(last(list))
+  auto args = ArgumentList::make(pool);
+  args->addArgument(InputPropertyExpression::make(pool, edge.alias));
+  auto last = FunctionCallExpression::make(pool, "last", args);
+  auto args1 = ArgumentList::make(pool);
+  args1->addArgument(last);
+  return FunctionCallExpression::make(pool, "dst", args1);
 }
 
 static Expression* genVertexFilter(const NodeInfo& node) { return node.filter; }
