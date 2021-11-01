@@ -32,15 +32,14 @@ nebula::cpp2::ErrorCode IndexProjectionNode::init(InitContext& ctx) {
   }
   return ::nebula::cpp2::ErrorCode::SUCCEEDED;
 }
-IndexNode::ErrorOr<Row> IndexProjectionNode::doNext(bool& hasNext) {
+IndexNode::Result IndexProjectionNode::doNext() {
   DCHECK_EQ(children_.size(), 1);
   auto& child = *children_[0];
-  auto result = child.next(hasNext);
-  if (::nebula::ok(result) && hasNext) {
-    return ErrorOr<Row>(project(::nebula::value(std::move(result))));
-  } else {
-    return ErrorOr<Row>(Row());
+  Result result = child.next();
+  if (result.hasData()) {
+    result = Result(project(std::move(result).row()));
   }
+  return result;
 }
 Row IndexProjectionNode::project(Row&& row) {
   Row ret;

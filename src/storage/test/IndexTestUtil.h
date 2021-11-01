@@ -380,13 +380,13 @@ class MockIndexNode : public IndexNode {
   explicit MockIndexNode(RuntimeContext* context) : IndexNode(context, "MockIndexNode") {}
   ::nebula::cpp2::ErrorCode init(InitContext& initCtx) { return initFunc(initCtx); }
   std::unique_ptr<IndexNode> copy() { LOG(FATAL) << "Unexpect"; }
-  std::function<ErrorOr<Row>(bool&)> nextFunc;
+  std::function<Result()> nextFunc;
   std::function<::nebula::cpp2::ErrorCode(PartitionID)> executeFunc;
   std::function<::nebula::cpp2::ErrorCode(InitContext& initCtx)> initFunc;
   std::string identify() override { return "MockIndexNode"; }
 
  private:
-  ErrorOr<Row> doNext(bool& hasNext) override { return nextFunc(hasNext); }
+  Result doNext() override { return nextFunc(); }
   ::nebula::cpp2::ErrorCode doExecute(PartitionID partId) override { return executeFunc(partId); };
   int offset_;
   int total_;

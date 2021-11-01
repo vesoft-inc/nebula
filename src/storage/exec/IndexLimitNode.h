@@ -18,7 +18,7 @@ class IndexLimitNode : public IndexNode {
 
  private:
   nebula::cpp2::ErrorCode doExecute(PartitionID partId) override;
-  ErrorOr<Row> doNext(bool& hasNext) override;
+  Result doNext() override;
   const uint64_t offset_, limit_;
   uint64_t currentOffset_ = 0;
 };

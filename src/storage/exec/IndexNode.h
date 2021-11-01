@@ -74,10 +74,32 @@ struct InitContext {
 
 class IndexNode {
  public:
-  /* typedef */
-  template <typename ResultType>
-  using ErrorOr = ::nebula::ErrorOr<ErrorCode, ResultType>;
+  /* Iterate result*/
+  class Result {
+   public:
+    Result() : code_(ErrorCode::SUCCEEDED), empty_(true) {}
+    Result(const Result& result) : code_(result.code_), row_(result.row_), empty_(result.empty_) {}
+    Result(Result&& result)
+        : code_(result.code_), row_(std::move(result.row_)), empty_(result.empty_) {}
+    explicit Result(ErrorCode code) : code_(code), empty_(true) {}
+    explicit Result(Row&& row) : row_(row), empty_(false) {}
+    Result& operator=(Result&& result) {
+      this->code_ = result.code_;
+      this->row_ = std::move(result.row_);
+      this->empty_ = result.empty_;
+      return *this;
+    }
+    inline bool success() { return code_ == ErrorCode::SUCCEEDED; }
+    inline bool hasData() { return success() && empty_ == false; }
+    inline Row row() && { return std::move(row_); }
+    inline Row& row() & { return row_; }
+    ErrorCode code() { return code_; }
 
+   private:
+    ErrorCode code_{ErrorCode::SUCCEEDED};
+    Row row_;
+    bool empty_{true};
+  };
   /* build */
   IndexNode(const IndexNode& node);
   explicit IndexNode(RuntimeContext* context, const std::string& name);
@@ -91,7 +113,7 @@ class IndexNode {
   }
   /* execution */
   inline nebula::cpp2::ErrorCode execute(PartitionID partId);
-  inline ErrorOr<Row> next(bool& hasNext);
+  inline Result next();
   // inline nebula::cpp2::ErrorCode finish();
 
   /* assist */
@@ -101,7 +123,7 @@ class IndexNode {
   inline const time::Duration& duration();
 
  protected:
-  virtual ErrorOr<Row> doNext(bool& hasNext) = 0;
+  virtual Result doNext() = 0;
   void beforeNext();
   void afterNext();
   virtual nebula::cpp2::ErrorCode doExecute(PartitionID partId);
@@ -117,12 +139,12 @@ class IndexNode {
 };
 
 /* Defination of inline function */
-inline IndexNode::ErrorOr<Row> IndexNode::next(bool& hasNext) {
+inline IndexNode::Result IndexNode::next() {
   beforeNext();
   if (context_->isPlanKilled()) {
-    return nebula::cpp2::ErrorCode::E_PLAN_IS_KILLED;
+    return Result(::nebula::cpp2::ErrorCode::E_PLAN_IS_KILLED);
   }
-  auto ret = doNext(hasNext);
+  Result ret = doNext();
   afterNext();
   return ret;
 }
@@ -140,7 +162,7 @@ inline nebula::cpp2::ErrorCode IndexNode::execute(PartitionID partId) {
   beforeExecute();
   auto ret = doExecute(partId);
   afterExecute();
-  return std::move(ret);
+  return ret;
 }
 inline void IndexNode::beforeExecute() {
   if (UNLIKELY(profileDetail_)) {

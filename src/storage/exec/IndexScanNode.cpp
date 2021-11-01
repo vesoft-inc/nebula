@@ -396,8 +396,7 @@ nebula::cpp2::ErrorCode IndexScanNode::doExecute(PartitionID partId) {
   auto ret = resetIter(partId);
   return ret;
 }
-IndexNode::ErrorOr<Row> IndexScanNode::doNext(bool& hasNext) {
-  hasNext = true;
+IndexNode::Result IndexScanNode::doNext() {
   for (; iter_ && iter_->valid(); iter_->next()) {
     DVLOG(3) << '\n' << folly::hexDump(iter_->key().data(), iter_->key().size());
     if (!checkTTL()) {
@@ -411,9 +410,9 @@ IndexNode::ErrorOr<Row> IndexScanNode::doNext(bool& hasNext) {
     if (compatible && !needAccessBase_) {
       auto key = iter_->key().toString();
       iter_->next();
-      auto ret = decodeFromIndex(key);
-      DVLOG(3) << ret;
-      return ret;
+      Row row = decodeFromIndex(key);
+      DVLOG(3) << row;
+      return Result(std::move(row));
     }
     std::pair<std::string, std::string> kv;
     auto ret = getBaseData(iter_->key(), kv);
@@ -426,7 +425,7 @@ IndexNode::ErrorOr<Row> IndexScanNode::doNext(bool& hasNext) {
       }
       continue;
     } else {
-      return ret;
+      return Result(ret);
     }
     Map<std::string, Value> rowData = decodeFromBase(kv.first, kv.second);
     if (!compatible) {
@@ -442,10 +441,9 @@ IndexNode::ErrorOr<Row> IndexScanNode::doNext(bool& hasNext) {
     }
     iter_->next();
     DVLOG(3) << row;
-    return row;
+    return Result(std::move(row));
   }
-  hasNext = false;
-  return ErrorOr<Row>(Row());
+  return Result();
 }
 bool IndexScanNode::checkTTL() {
   if (iter_->val().empty() || ttlProps_.first == false) {

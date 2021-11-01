@@ -147,7 +147,7 @@ class IndexScanNode : public IndexNode {
 
  protected:
   nebula::cpp2::ErrorCode doExecute(PartitionID partId) final;
-  ErrorOr<Row> doNext(bool& hasNext) final;
+  Result doNext() final;
   void decodePropFromIndex(folly::StringPiece key,
                            const Map<std::string, size_t>& colPosMap,
                            std::vector<Value>& values);

@@ -38,7 +38,7 @@ class IndexProjectionNode : public IndexNode {
   std::string identify() override;
 
  private:
-  ErrorOr<Row> doNext(bool& hasNext) override;
+  Result doNext() override;
   Row project(Row&& row);
   std::vector<std::string> requiredColumns_;
   Map<std::string, size_t> colPos_;

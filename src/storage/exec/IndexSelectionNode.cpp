@@ -30,20 +30,20 @@ nebula::cpp2::ErrorCode IndexSelectionNode::init(InitContext& ctx) {
   ctx_ = std::make_unique<ExprContext>(colPos_);
   return ::nebula::cpp2::ErrorCode::SUCCEEDED;
 }
-IndexNode::ErrorOr<Row> IndexSelectionNode::doNext(bool& hasNext) {
+IndexNode::Result IndexSelectionNode::doNext() {
   DCHECK_EQ(children_.size(), 1);
   auto& child = *children_[0];
   do {
-    auto result = child.next(hasNext);
-    if (!hasNext || !nebula::ok(result)) {
+    auto result = child.next();
+    if (!result.hasData()) {
       return result;
     }
-    DVLOG(1) << nebula::value(result);
-    if (filter(nebula::value(result))) {
+    DVLOG(1) << result.row();
+    if (filter(result.row())) {
       return result;
     }
   } while (true);
-  return ErrorOr<Row>(Row());
+  return Result();
 }
 std::unique_ptr<IndexNode> IndexSelectionNode::copy() {
   return std::make_unique<IndexSelectionNode>(*this);

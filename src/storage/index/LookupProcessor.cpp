@@ -167,17 +167,16 @@ void LookupProcessor::runInSingleThread(const std::vector<PartitionID>& parts,
   for (auto part : parts) {
     DLOG(INFO) << "execute part:" << part;
     plan->execute(part);
-    bool hasNext = true;
     ::nebula::cpp2::ErrorCode code = ::nebula::cpp2::ErrorCode::SUCCEEDED;
     decltype(datasetList)::value_type dataset;
     do {
-      auto result = plan->next(hasNext);
-      if (!::nebula::ok(result)) {
-        code = ::nebula::error(result);
+      auto result = plan->next();
+      if (!result.success()) {
+        code = result.code();
         break;
       }
-      if (hasNext) {
-        dataset.emplace_back(::nebula::value(std::move(result)));
+      if (result.hasData()) {
+        dataset.emplace_back(std::move(result).row());
       } else {
         break;
       }
@@ -214,15 +213,14 @@ void LookupProcessor::runInMultipleThread(const std::vector<PartitionID>& parts,
           ::nebula::cpp2::ErrorCode code = ::nebula::cpp2::ErrorCode::SUCCEEDED;
           std::deque<Row> dataset;
           plan->execute(part);
-          bool hasNext = true;
           do {
-            auto result = plan->next(hasNext);
-            if (!::nebula::ok(result)) {
-              code = ::nebula::error(result);
+            auto result = plan->next();
+            if (!result.success()) {
+              code = result.code();
               break;
             }
-            if (hasNext) {
-              dataset.emplace_back(::nebula::value(std::move(result)));
+            if (result.hasData()) {
+              dataset.emplace_back(std::move(result).row());
             } else {
               break;
             }

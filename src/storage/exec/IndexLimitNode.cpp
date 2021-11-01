@@ -17,22 +17,21 @@ nebula::cpp2::ErrorCode IndexLimitNode::doExecute(PartitionID partId) {
   currentOffset_ = 0;
   return children_[0]->execute(partId);
 }
-IndexNode::ErrorOr<Row> IndexLimitNode::doNext(bool& hasNext) {
+IndexNode::Result IndexLimitNode::doNext() {
   DCHECK_EQ(children_.size(), 1);
   auto& child = *children_[0];
   while (UNLIKELY(currentOffset_ < offset_)) {
-    auto result = child.next(hasNext);
-    if (!::nebula::ok(result) || !hasNext) {
+    auto result = child.next();
+    if (!result.hasData()) {
       return result;
     }
     currentOffset_++;
   }
   if (currentOffset_ < offset_ + limit_) {
     currentOffset_++;
-    return child.next(hasNext);
+    return child.next();
   } else {
-    hasNext = false;
-    return ErrorOr<Row>(Row());
+    return Result();
   }
 }
 std::unique_ptr<IndexNode> IndexLimitNode::copy() {

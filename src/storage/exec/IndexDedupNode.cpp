@@ -15,18 +15,19 @@ IndexDedupNode::IndexDedupNode(RuntimeContext* context, const std::vector<std::s
   for (auto& col : dedupColumns_) {
     ctx.requiredColumns.insert(col);
   }
-  // The return Row format of each child node must be the same
-  InitContext childCtx = ctx;
-  InitContext ctx2;
-  for (auto& child : children_) {
-    auto ret = child->init(childCtx);
+  // The contents of `ctx` should be the same when all child nodes are initialized, and `ctx` should
+  // be the same after initialization.
+  for (size_t i = 0; i < children_.size() - 1; i++) {
+    auto tmp = ctx;  //
+    auto ret = children_[i]->init(tmp);
     if (ret != ::nebula::cpp2::ErrorCode::SUCCEEDED) {
       return ret;
     }
-    ctx2 = childCtx;
-    childCtx = ctx;
   }
-  ctx = ctx2;
+  auto ret = children_.back()->init(ctx);
+  if (ret != ::nebula::cpp2::ErrorCode::SUCCEEDED) {
+    return ret;
+  }
   for (auto& col : dedupColumns_) {
     dedupPos_.push_back(ctx.retColMap[col]);
   }
@@ -37,35 +38,39 @@ IndexDedupNode::IndexDedupNode(RuntimeContext* context, const std::vector<std::s
   dedupSet_.clear();
   return IndexNode::doExecute(partId);
 }
-IndexNode::ErrorOr<Row> IndexDedupNode::doNext(bool& hasNext) {
-  Row ret;
-  hasNext = false;
-  while (currentChild_ < children_.size()) {
-    auto& child = *children_[currentChild_];
-    DVLOG(3) << currentChild_;
-    do {
-      auto result = child.next(hasNext);
-      if (!nebula::ok(result)) {
-        return result;
-      }
-      if (!hasNext) {
-        break;
-      }
-      auto dedupResult = dedup(::nebula::value(result));
-      DVLOG(3) << dedupResult << "\t" << ::nebula::value(result);
-      if (dedupResult) {
-        ret = ::nebula::value(std::move(result));
-        hasNext = true;
-        break;
-      }
-    } while (true);
-    if (!hasNext) {
-      currentChild_++;
-    } else {
-      break;
+IndexNode::Result IndexDedupNode::iterateCurrentChild(size_t currentChild) {
+  auto& child = *children_[currentChild];
+  Result result;
+  do {
+    result = child.next();
+    // error or meet end
+    if (!result.hasData()) {
+      return result;
     }
+    auto dedupResult = dedup(result.row());
+    if (!dedupResult) {
+      continue;
+    }
+    return result;
+  } while (true);
+}
+
+IndexNode::Result IndexDedupNode::doNext() {
+  Result result;
+  while (currentChild_ < children_.size()) {
+    result = iterateCurrentChild(currentChild_);
+    // error
+    if (!result.success()) {
+      return result;
+    }
+    // finish iterate one child
+    if (!result.hasData()) {
+      currentChild_++;
+      continue;
+    }
+    return result;
   }
-  return ret;
+  return Result();
 }
 IndexDedupNode::RowWrapper::RowWrapper(const Row& row, const std::vector<size_t>& posList) {
   values_.reserve(posList.size());

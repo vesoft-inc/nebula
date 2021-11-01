@@ -42,8 +42,8 @@ class IndexDedupNode : public IndexNode {
  private:
   inline bool dedup(const Row& row);
   ::nebula::cpp2::ErrorCode doExecute(PartitionID partId) override;
-  ErrorOr<Row> doNext(bool& hasNext) override;
-
+  Result doNext() override;
+  Result iterateCurrentChild(size_t currentChild);
   // Define RowWrapper for dedup
   class RowWrapper {
    public:

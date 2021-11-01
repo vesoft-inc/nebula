@@ -253,15 +253,14 @@ TEST_F(IndexScanTest, Base) {
     initCtx.requiredColumns = {kVid, "a"};
     scanNode->init(initCtx);
     scanNode->execute(0);
-    bool hasNext = false;
     std::vector<Row> result;
     while (true) {
-      auto res = scanNode->next(hasNext);
-      ASSERT(::nebula::ok(res));
-      if (!hasNext) {
+      auto res = scanNode->next();
+      ASSERT(res.success());
+      if (!res.hasData()) {
         break;
       }
-      result.emplace_back(::nebula::value(std::move(res)));
+      result.emplace_back(std::move(res).row());
     }
     auto expect = R"(
       string | int
@@ -292,15 +291,15 @@ TEST_F(IndexScanTest, Base) {
     initCtx.requiredColumns = {kVid, "b"};
     scanNode->init(initCtx);
     scanNode->execute(0);
-    bool hasNext = false;
+
     std::vector<Row> result;
     while (true) {
-      auto res = scanNode->next(hasNext);
-      ASSERT(::nebula::ok(res));
-      if (!hasNext) {
+      auto res = scanNode->next();
+      ASSERT(res.success());
+      if (!res.hasData()) {
         break;
       }
-      result.emplace_back(::nebula::value(std::move(res)));
+      result.emplace_back(std::move(res).row());
     }
     auto expect = R"(
       string | int
@@ -351,15 +350,15 @@ TEST_F(IndexScanTest, Vertex) {
     initCtx.requiredColumns = {kVid, "a"};
     scanNode->init(initCtx);
     scanNode->execute(0);
-    bool hasNext = false;
+
     std::vector<Row> result;
     while (true) {
-      auto res = scanNode->next(hasNext);
-      ASSERT(::nebula::ok(res));
-      if (!hasNext) {
+      auto res = scanNode->next();
+      ASSERT(res.success());
+      if (!res.hasData()) {
         break;
       }
-      result.emplace_back(::nebula::value(std::move(res)));
+      result.emplace_back(std::move(res).row());
     }
     auto expect = R"(
       string | int
@@ -389,15 +388,15 @@ TEST_F(IndexScanTest, Vertex) {
     initCtx.requiredColumns = {kVid, "b"};
     scanNode->init(initCtx);
     scanNode->execute(0);
-    bool hasNext = false;
+
     std::vector<Row> result;
     while (true) {
-      auto res = scanNode->next(hasNext);
-      ASSERT(::nebula::ok(res));
-      if (!hasNext) {
+      auto res = scanNode->next();
+      ASSERT(res.success());
+      if (!res.hasData()) {
         break;
       }
-      result.emplace_back(::nebula::value(std::move(res)));
+      result.emplace_back(std::move(res).row());
     }
     auto expect = R"(
       string | int
@@ -451,15 +450,15 @@ TEST_F(IndexScanTest, Edge) {
     initCtx.requiredColumns = {kSrc, kRank, kDst, "c"};
     scanNode->init(initCtx);
     scanNode->execute(0);
-    bool hasNext = false;
+
     std::vector<Row> result;
     while (true) {
-      auto res = scanNode->next(hasNext);
-      ASSERT(::nebula::ok(res));
-      if (!hasNext) {
+      auto res = scanNode->next();
+      ASSERT(res.success());
+      if (!res.hasData()) {
         break;
       }
-      result.emplace_back(::nebula::value(std::move(res)));
+      result.emplace_back(std::move(res).row());
     }
     auto expect = R"(
       string | int  | string | int
@@ -489,15 +488,15 @@ TEST_F(IndexScanTest, Edge) {
     initCtx.requiredColumns = {kSrc, kRank, kDst, "a"};
     scanNode->init(initCtx);
     scanNode->execute(0);
-    bool hasNext = false;
+
     std::vector<Row> result;
     while (true) {
-      auto res = scanNode->next(hasNext);
-      ASSERT(::nebula::ok(res));
-      if (!hasNext) {
+      auto res = scanNode->next();
+      ASSERT(res.success());
+      if (!res.hasData()) {
         break;
       }
-      result.emplace_back(::nebula::value(std::move(res)));
+      result.emplace_back(std::move(res).row());
     }
     auto expect = R"(
       string | int  | string | int
@@ -558,15 +557,15 @@ TEST_F(IndexScanTest, Int) {
     initCtx.requiredColumns = {kVid};
     scanNode->init(initCtx);
     scanNode->execute(0);
-    bool hasNext = false;
+
     std::vector<Row> result;
     while (true) {
-      auto res = scanNode->next(hasNext);
-      ASSERT(::nebula::ok(res));
-      if (!hasNext) {
+      auto res = scanNode->next();
+      ASSERT(res.success());
+      if (!res.hasData()) {
         break;
       }
-      result.emplace_back(::nebula::value(std::move(res)));
+      result.emplace_back(std::move(res).row());
     }
     EXPECT_EQ(result, expect) << "Fail at case " << case_;
   };
@@ -772,15 +771,15 @@ float     | float                     | float                   | int
     initCtx.requiredColumns = {kSrc};
     scanNode->init(initCtx);
     scanNode->execute(0);
-    bool hasNext = false;
+
     std::vector<Row> result;
     while (true) {
-      auto res = scanNode->next(hasNext);
-      ASSERT(::nebula::ok(res));
-      if (!hasNext) {
+      auto res = scanNode->next();
+      ASSERT(res.success());
+      if (!res.hasData()) {
         break;
       }
-      result.emplace_back(::nebula::value(std::move(res)));
+      result.emplace_back(std::move(res).row());
     }
     EXPECT_EQ(result, expect) << "Fail at case " << case_;
     DVLOG(1) << "End case " << case_;
@@ -995,15 +994,15 @@ TEST_F(IndexScanTest, Bool) {
     initCtx.requiredColumns = {kVid};
     scanNode->init(initCtx);
     scanNode->execute(0);
-    bool hasNext = false;
+
     std::vector<Row> result;
     while (true) {
-      auto res = scanNode->next(hasNext);
-      ASSERT(::nebula::ok(res));
-      if (!hasNext) {
+      auto res = scanNode->next();
+      ASSERT(res.success());
+      if (!res.hasData()) {
         break;
       }
-      result.emplace_back(::nebula::value(std::move(res)));
+      result.emplace_back(std::move(res).row());
     }
     EXPECT_EQ(result, expect) << "Fail at case " << case_;
     DVLOG(1) << "End case " << case_;
@@ -1086,15 +1085,15 @@ TEST_F(IndexScanTest, String1) {
     initCtx.requiredColumns.insert(acquiredColumns.begin(), acquiredColumns.end());
     scanNode->init(initCtx);
     scanNode->execute(0);
-    bool hasNext = false;
+
     std::vector<Row> result;
     while (true) {
-      auto res = scanNode->next(hasNext);
-      ASSERT(::nebula::ok(res));
-      if (!hasNext) {
+      auto res = scanNode->next();
+      ASSERT(res.success());
+      if (!res.hasData()) {
         break;
       }
-      result.emplace_back(::nebula::value(std::move(res)));
+      result.emplace_back(std::move(res).row());
     }
     std::vector<Row> result2(result.size());
     for (size_t j = 0; j < acquiredColumns.size(); j++) {
@@ -1243,15 +1242,15 @@ TEST_F(IndexScanTest, String2) {
     initCtx.requiredColumns.insert(acquiredColumns.begin(), acquiredColumns.end());
     scanNode->init(initCtx);
     scanNode->execute(0);
-    bool hasNext = false;
+
     std::vector<Row> result;
     while (true) {
-      auto res = scanNode->next(hasNext);
-      ASSERT(::nebula::ok(res));
-      if (!hasNext) {
+      auto res = scanNode->next();
+      ASSERT(res.success());
+      if (!res.hasData()) {
         break;
       }
-      result.emplace_back(::nebula::value(std::move(res)));
+      result.emplace_back(std::move(res).row());
     }
     std::vector<Row> result2(result.size());
     for (size_t j = 0; j < acquiredColumns.size(); j++) {
@@ -1374,15 +1373,15 @@ TEST_F(IndexScanTest, String3) {
     initCtx.requiredColumns.insert(acquiredColumns.begin(), acquiredColumns.end());
     scanNode->init(initCtx);
     scanNode->execute(0);
-    bool hasNext = false;
+
     std::vector<Row> result;
     while (true) {
-      auto res = scanNode->next(hasNext);
-      ASSERT(::nebula::ok(res));
-      if (!hasNext) {
+      auto res = scanNode->next();
+      ASSERT(res.success());
+      if (!res.hasData()) {
         break;
       }
-      result.emplace_back(::nebula::value(std::move(res)));
+      result.emplace_back(std::move(res).row());
     }
     std::vector<Row> result2(result.size());
     for (size_t j = 0; j < acquiredColumns.size(); j++) {
@@ -1496,15 +1495,15 @@ TEST_F(IndexScanTest, String4) {
     initCtx.requiredColumns.insert(acquiredColumns.begin(), acquiredColumns.end());
     scanNode->init(initCtx);
     scanNode->execute(0);
-    bool hasNext = false;
+
     std::vector<Row> result;
     while (true) {
-      auto res = scanNode->next(hasNext);
-      ASSERT(::nebula::ok(res));
-      if (!hasNext) {
+      auto res = scanNode->next();
+      ASSERT(res.success());
+      if (!res.hasData()) {
         break;
       }
-      result.emplace_back(::nebula::value(std::move(res)));
+      result.emplace_back(std::move(res).row());
     }
     std::vector<Row> result2(result.size());
     for (size_t j = 0; j < acquiredColumns.size(); j++) {
@@ -1612,15 +1611,15 @@ TEST_F(IndexScanTest, Nullable) {
     initCtx.requiredColumns = {kVid};
     scanNode->init(initCtx);
     scanNode->execute(0);
-    bool hasNext = false;
+
     std::vector<Row> result;
     while (true) {
-      auto res = scanNode->next(hasNext);
-      ASSERT(::nebula::ok(res));
-      if (!hasNext) {
+      auto res = scanNode->next();
+      ASSERT(res.success());
+      if (!res.hasData()) {
         break;
       }
-      result.emplace_back(::nebula::value(std::move(res)));
+      result.emplace_back(std::move(res).row());
     }
     EXPECT_EQ(result, expect) << "Fail at case " << case_;
   };
@@ -1757,15 +1756,14 @@ class IndexTest : public ::testing::Test {
   static std::vector<Row> collectResult(IndexNode* node) {
     std::vector<Row> result;
     InitContext initCtx;
-    bool hasNext = false;
     node->init(initCtx);
     while (true) {
-      auto res = node->next(hasNext);
-      ASSERT(::nebula::ok(res));
-      if (!hasNext) {
+      auto res = node->next();
+      ASSERT(res.success());
+      if (!res.hasData()) {
         break;
       }
-      result.emplace_back(::nebula::value(std::move(res)));
+      result.emplace_back(std::move(res).row());
     }
     return result;
   }
@@ -1796,13 +1794,12 @@ TEST_F(IndexTest, Selection) {
   auto selection = std::make_unique<IndexSelectionNode>(ctx.get(), expr);
   auto mockChild = std::make_unique<MockIndexNode>(ctx.get());
   mockChild->executeFunc = [&rows](PartitionID) { return ::nebula::cpp2::ErrorCode::SUCCEEDED; };
-  mockChild->nextFunc = [&rows, &currentOffset](bool& hasNext) -> IndexNode::ErrorOr<Row> {
+  mockChild->nextFunc = [&rows, &currentOffset]() -> IndexNode::Result {
     if (currentOffset < rows.size()) {
-      hasNext = true;
-      return rows[currentOffset++];
+      auto row = rows[currentOffset++];
+      return IndexNode::Result(std::move(row));
     } else {
-      hasNext = false;
-      return {};
+      return IndexNode::Result();
     }
   };
   mockChild->initFunc = [](InitContext& initCtx) -> ::nebula::cpp2::ErrorCode {
@@ -1827,13 +1824,12 @@ TEST_F(IndexTest, Projection) {
       std::make_unique<IndexProjectionNode>(ctx.get(), std::vector<std::string>{"c", "a", "b"});
   auto mockChild = std::make_unique<MockIndexNode>(ctx.get());
   mockChild->executeFunc = [&rows](PartitionID) { return ::nebula::cpp2::ErrorCode::SUCCEEDED; };
-  mockChild->nextFunc = [&rows, &currentOffset](bool& hasNext) -> IndexNode::ErrorOr<Row> {
+  mockChild->nextFunc = [&rows, &currentOffset]() -> IndexNode::Result {
     if (currentOffset < rows.size()) {
-      hasNext = true;
-      return rows[currentOffset++];
+      auto row = rows[currentOffset++];
+      return IndexNode::Result(std::move(row));
     } else {
-      hasNext = false;
-      return {};
+      return IndexNode::Result();
     }
   };
   mockChild->initFunc = [](InitContext& initCtx) -> ::nebula::cpp2::ErrorCode {
@@ -1871,13 +1867,12 @@ TEST_F(IndexTest, Limit) {
   auto limit = std::make_unique<IndexLimitNode>(ctx.get(), 10);
   auto mockChild = std::make_unique<MockIndexNode>(ctx.get());
   mockChild->executeFunc = [&rows](PartitionID) { return ::nebula::cpp2::ErrorCode::SUCCEEDED; };
-  mockChild->nextFunc = [&rows, &currentOffset](bool& hasNext) -> IndexNode::ErrorOr<Row> {
+  mockChild->nextFunc = [&rows, &currentOffset]() -> IndexNode::Result {
     if (currentOffset < rows.size()) {
-      hasNext = true;
-      return rows[currentOffset++];
+      auto row = rows[currentOffset++];
+      return IndexNode::Result(std::move(row));
     } else {
-      hasNext = false;
-      return {};
+      return IndexNode::Result();
     }
   };
   mockChild->initFunc = [](InitContext&) -> ::nebula::cpp2::ErrorCode {
@@ -1905,13 +1900,12 @@ TEST_F(IndexTest, Dedup) {
   auto dedup = std::make_unique<IndexDedupNode>(ctx.get(), std::vector<std::string>{"a"});
   auto child1 = std::make_unique<MockIndexNode>(ctx.get());
   child1->executeFunc = [&rows1](PartitionID) { return ::nebula::cpp2::ErrorCode::SUCCEEDED; };
-  child1->nextFunc = [&rows1, &offset1](bool& hasNext) -> IndexNode::ErrorOr<Row> {
+  child1->nextFunc = [&rows1, &offset1]() -> IndexNode::Result {
     if (offset1 < rows1.size()) {
-      hasNext = true;
-      return rows1[offset1++];
+      auto row = rows1[offset1++];
+      return IndexNode::Result(std::move(row));
     } else {
-      hasNext = false;
-      return {};
+      return IndexNode::Result();
     }
   };
   child1->initFunc = [](InitContext& initCtx) -> ::nebula::cpp2::ErrorCode {
@@ -1922,13 +1916,12 @@ TEST_F(IndexTest, Dedup) {
   };
   auto child2 = std::make_unique<MockIndexNode>(ctx.get());
   child2->executeFunc = [&rows2](PartitionID) { return ::nebula::cpp2::ErrorCode::SUCCEEDED; };
-  child2->nextFunc = [&rows2, &offset2](bool& hasNext) -> IndexNode::ErrorOr<Row> {
+  child2->nextFunc = [&rows2, &offset2]() -> IndexNode::Result {
     if (offset2 < rows2.size()) {
-      hasNext = true;
-      return rows2[offset2++];
+      auto row = rows2[offset2++];
+      return IndexNode::Result(std::move(row));
     } else {
-      hasNext = false;
-      return {};
+      return IndexNode::Result();
     }
   };
   child2->initFunc = [](InitContext& initCtx) -> ::nebula::cpp2::ErrorCode {

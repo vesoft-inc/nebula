@@ -52,7 +52,7 @@ class IndexSelectionNode : public IndexNode {
   std::string identify() override;
 
  private:
-  ErrorOr<Row> doNext(bool &hasNext) override;
+  Result doNext() override;
   inline bool filter(const Row &row) {
     ctx_->setRow(row);
     auto &result = expr_->eval(*ctx_);
