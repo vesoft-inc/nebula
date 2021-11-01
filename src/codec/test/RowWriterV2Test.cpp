@@ -15,7 +15,7 @@
 
 namespace nebula {
 
-using meta::cpp2::PropertyType;
+using nebula::cpp2::PropertyType;
 
 const double e = 2.71828182845904523536028747135266249775724709369995;
 const float pi = 3.14159265358979;

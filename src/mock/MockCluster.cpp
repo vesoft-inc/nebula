@@ -151,7 +151,7 @@ void MockCluster::initStorageKV(const char* dataPath,
     spaceDesc.set_charset_name("utf8");
     spaceDesc.set_collate_name("utf8_bin");
     meta::cpp2::ColumnTypeDef type;
-    type.set_type(meta::cpp2::PropertyType::FIXED_STRING);
+    type.set_type(nebula::cpp2::PropertyType::FIXED_STRING);
     type.set_type_length(32);
     spaceDesc.set_vid_type(std::move(type));
     auto ret = metaClient_->createSpace(spaceDesc).get();

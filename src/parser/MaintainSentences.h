@@ -18,7 +18,7 @@
 
 namespace nebula {
 
-std::ostream &operator<<(std::ostream &os, meta::cpp2::PropertyType type);
+std::ostream &operator<<(std::ostream &os, nebula::cpp2::PropertyType type);
 
 class ColumnProperty final {
  public:
@@ -82,7 +82,7 @@ class ColumnProperties final {
 class ColumnSpecification final {
  public:
   ColumnSpecification(std::string *name,
-                      meta::cpp2::PropertyType type,
+                      nebula::cpp2::PropertyType type,
                       ColumnProperties *properties = nullptr,
                       int16_t typeLen = 0,
                       meta::cpp2::GeoShape geoShape = meta::cpp2::GeoShape::ANY)
@@ -92,7 +92,7 @@ class ColumnSpecification final {
         typeLen_(typeLen),
         geoShape_(geoShape) {}
 
-  meta::cpp2::PropertyType type() const { return type_; }
+  nebula::cpp2::PropertyType type() const { return type_; }
 
   const std::string *name() const { return name_.get(); }
 
@@ -106,7 +106,7 @@ class ColumnSpecification final {
 
  private:
   std::unique_ptr<std::string> name_;
-  meta::cpp2::PropertyType type_;
+  nebula::cpp2::PropertyType type_;
   std::unique_ptr<ColumnProperties> properties_;
   int16_t typeLen_;
   meta::cpp2::GeoShape geoShape_;

@@ -485,7 +485,7 @@ class MetaClient {
 
   StatusOr<int32_t> getSpaceVidLen(const GraphSpaceID& space);
 
-  StatusOr<cpp2::PropertyType> getSpaceVidType(const GraphSpaceID& space);
+  StatusOr<nebula::cpp2::PropertyType> getSpaceVidType(const GraphSpaceID& space);
 
   StatusOr<meta::cpp2::SpaceDesc> getSpaceDesc(const GraphSpaceID& space);
 
