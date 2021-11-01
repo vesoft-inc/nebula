@@ -457,7 +457,7 @@ class MetaClient {
       GraphSpaceID spaceId);
 
   StatusOr<std::pair<std::string, cpp2::FTIndex>> getFTIndexBySpaceSchemaFromCache(
-      GraphSpaceID spaceId, int32_t schemaId);
+      GraphSpaceID spaceId, int32_t schemaId) const;
 
   StatusOr<cpp2::FTIndex> getFTIndexByNameFromCache(GraphSpaceID spaceId, const std::string& name);
 
@@ -574,7 +574,7 @@ class MetaClient {
                                                            EdgeType edgeType,
                                                            const std::string& field);
 
-  std::vector<cpp2::RoleItem> getRolesByUserFromCache(const std::string& user);
+  std::vector<cpp2::RoleItem> getRolesByUserFromCache(const std::string& user) const;
 
   bool authCheckFromCache(const std::string& account, const std::string& password) const;
 

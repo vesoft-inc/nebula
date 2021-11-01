@@ -176,8 +176,6 @@ const MetaClient::ThreadLocalInfo& MetaClient::getThreadLocalInfo() {
     threadLocalInfo.spaceTagIndexById_ = spaceTagIndexById_;
     threadLocalInfo.spaceAllEdgeMap_ = spaceAllEdgeMap_;
     threadLocalInfo.storageHosts_ = storageHosts_;
-    threadLocalInfo.userRolesMap_ = userRolesMap_;
-    threadLocalInfo.fulltextIndexMap_ = fulltextIndexMap_;
   }
 
   return threadLocalInfo;
@@ -2306,14 +2304,13 @@ StatusOr<LeaderInfo> MetaClient::getLeaderInfo() {
 
 const std::vector<HostAddr>& MetaClient::getAddresses() { return addrs_; }
 
-std::vector<cpp2::RoleItem> MetaClient::getRolesByUserFromCache(const std::string& user) {
+std::vector<cpp2::RoleItem> MetaClient::getRolesByUserFromCache(const std::string& user) const {
   if (!ready_) {
     return std::vector<cpp2::RoleItem>(0);
   }
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-  const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
-  auto iter = threadLocalInfo.userRolesMap_.find(user);
-  if (iter == threadLocalInfo.userRolesMap_.end()) {
+  folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+  auto iter = userRolesMap_.find(user);
+  if (iter == userRolesMap_.end()) {
     return std::vector<cpp2::RoleItem>(0);
   }
   return iter->second;
@@ -3418,9 +3415,8 @@ StatusOr<std::unordered_map<std::string, cpp2::FTIndex>> MetaClient::getFTIndexe
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-  const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
-  return threadLocalInfo.fulltextIndexMap_;
+  folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+  return fulltextIndexMap_;
 }
 
 StatusOr<std::unordered_map<std::string, cpp2::FTIndex>> MetaClient::getFTIndexBySpaceFromCache(
@@ -3428,10 +3424,9 @@ StatusOr<std::unordered_map<std::string, cpp2::FTIndex>> MetaClient::getFTIndexB
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-  const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
+  folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   std::unordered_map<std::string, cpp2::FTIndex> indexes;
-  for (const auto& it : threadLocalInfo.fulltextIndexMap_) {
+  for (const auto& it : fulltextIndexMap_) {
     if (it.second.get_space_id() == spaceId) {
       indexes[it.first] = it.second;
     }
@@ -3440,13 +3435,12 @@ StatusOr<std::unordered_map<std::string, cpp2::FTIndex>> MetaClient::getFTIndexB
 }
 
 StatusOr<std::pair<std::string, cpp2::FTIndex>> MetaClient::getFTIndexBySpaceSchemaFromCache(
-    GraphSpaceID spaceId, int32_t schemaId) {
+    GraphSpaceID spaceId, int32_t schemaId) const {
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-  const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
-  for (const auto& it : threadLocalInfo.fulltextIndexMap_) {
+  folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+  for (const auto& it : fulltextIndexMap_) {
     auto id = it.second.get_depend_schema().getType() == nebula::cpp2::SchemaID::Type::edge_type
                   ? it.second.get_depend_schema().get_edge_type()
                   : it.second.get_depend_schema().get_tag_id();
