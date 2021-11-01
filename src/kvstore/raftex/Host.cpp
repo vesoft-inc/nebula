@@ -65,8 +65,7 @@ folly::Future<cpp2::AskForVoteResponse> Host::askForVote(const cpp2::AskForVoteR
       return resp;
     }
   }
-  auto client =
-      part_->clientMan_->client(addr_, eb, false, FLAGS_raft_heartbeat_interval_secs * 1000);
+  auto client = part_->clientMan_->client(addr_, eb, false, FLAGS_raft_rpc_timeout_ms);
   return client->future_askForVote(req);
 }
 

@@ -384,7 +384,7 @@ void RaftPart::preProcessTransLeader(const HostAddr& target) {
             self->role_ = Role::CANDIDATE;
             self->leader_ = HostAddr("", 0);
           }
-          self->leaderElection();
+          self->leaderElection().get();
         });
       }
       break;
@@ -1053,15 +1053,15 @@ typename RaftPart::Role RaftPart::processElectionResponses(
   return role_;
 }
 
-bool RaftPart::leaderElection() {
+folly::Future<bool> RaftPart::leaderElection() {
   VLOG(2) << idStr_ << "Start leader election...";
   using namespace folly;  // NOLINT since the fancy overload of | operator
 
   bool expected = false;
+
   if (!inElection_.compare_exchange_strong(expected, true)) {
-    return true;
+    return false;
   }
-  SCOPE_EXIT { inElection_ = false; };
 
   cpp2::AskForVoteRequest voteReq;
   decltype(hosts_) hosts;
@@ -1076,6 +1076,7 @@ bool RaftPart::leaderElection() {
     // So we neeed to go back to the follower state to avoid the case.
     std::lock_guard<std::mutex> g(raftLock_);
     role_ = Role::FOLLOWER;
+    inElection_ = false;
     return false;
   }
 
@@ -1090,38 +1091,46 @@ bool RaftPart::leaderElection() {
   auto proposedTerm = voteReq.get_term();
   auto resps = ElectionResponses();
   if (hosts.empty()) {
-    VLOG(2) << idStr_ << "No peer found, I will be the leader";
+    auto ret = handleElectionResponses(voteReq, resps, hosts, proposedTerm);
+    inElection_ = false;
+    return ret;
   } else {
+    folly::Promise<bool> promise;
+    auto future = promise.getFuture();
     auto eb = ioThreadPool_->getEventBase();
-    auto futures = collectNSucceeded(
-        gen::from(hosts) | gen::map([eb, self = shared_from_this(), &voteReq](auto& host) {
-          VLOG(2) << self->idStr_ << "Sending AskForVoteRequest to " << host->idStr();
-          return via(eb, [&voteReq, &host, eb]() -> Future<cpp2::AskForVoteResponse> {
-            return host->askForVote(voteReq, eb);
-          });
-        }) | gen::as<std::vector>(),
+    collectNSucceeded(
+        gen::from(hosts) |
+            gen::map([eb, self = shared_from_this(), voteReq](std::shared_ptr<Host> host) {
+              VLOG(2) << self->idStr_ << "Sending AskForVoteRequest to " << host->idStr();
+              return via(eb, [voteReq, host, eb]() -> Future<cpp2::AskForVoteResponse> {
+                return host->askForVote(voteReq, eb);
+              });
+            }) |
+            gen::as<std::vector>(),
         // Number of succeeded required
         quorum_,
         // Result evaluator
         [hosts](size_t idx, cpp2::AskForVoteResponse& resp) {
           return resp.get_error_code() == cpp2::ErrorCode::SUCCEEDED && !hosts[idx]->isLearner();
+        })
+        .via(executor_.get())
+        .then([self = shared_from_this(), pro = std::move(promise), voteReq, hosts, proposedTerm](
+                  auto&& t) mutable {
+          VLOG(2) << self->idStr_
+                  << "AskForVoteRequest has been sent to all peers, waiting for responses";
+          CHECK(!t.hasException());
+          pro.setValue(
+              self->handleElectionResponses(voteReq, t.value(), std::move(hosts), proposedTerm));
+          self->inElection_ = false;
         });
-
-    VLOG(2) << idStr_
-            << "AskForVoteRequest has been sent to all peers"
-               ", waiting for responses";
-    futures.wait(std::chrono::seconds(FLAGS_raft_heartbeat_interval_secs));
-    if (futures.hasException()) {
-      LOG(INFO) << idStr_ << "Election timeout";
-      return false;
-    }
-    CHECK(!futures.hasException())
-        << "Got exception -- " << futures.result().exception().what().toStdString();
-    VLOG(2) << idStr_ << "Got AskForVote response back";
-
-    resps = std::move(futures).get();
+    return future;
   }
+}
 
+bool RaftPart::handleElectionResponses(const cpp2::AskForVoteRequest& voteReq,
+                                       const ElectionResponses& resps,
+                                       const std::vector<std::shared_ptr<Host>>& hosts,
+                                       TermID proposedTerm) {
   // Process the responses
   switch (processElectionResponses(resps, std::move(hosts), proposedTerm)) {
     case Role::LEADER: {
@@ -1176,7 +1185,7 @@ void RaftPart::statusPolling(int64_t startTime) {
   }
   size_t delay = FLAGS_raft_heartbeat_interval_secs * 1000 / 3;
   if (needToStartElection()) {
-    if (leaderElection()) {
+    if (leaderElection().get()) {
       VLOG(2) << idStr_ << "Stop the election";
     } else {
       // No leader has been elected, need to continue
