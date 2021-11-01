@@ -37,6 +37,8 @@ DEFINE_uint32(max_concurrent_spaces, 5, "The spaces could be processed simultane
 namespace nebula {
 namespace storage {
 
+using nebula::cpp2::PropertyType;
+
 Status UpgraderSpace::init(meta::MetaClient* mclient,
                            meta::ServerBasedSchemaManager* sMan,
                            meta::IndexManager* iMan,
@@ -686,12 +688,12 @@ WriteResult UpgraderSpace::convertValue(const meta::NebulaSchemaProvider* nSchem
       return WriteResult::SUCCEEDED;
     case Value::Type::BOOL: {
       switch (newpropType) {
-        case meta::cpp2::PropertyType::INT8:
-        case meta::cpp2::PropertyType::INT16:
-        case meta::cpp2::PropertyType::INT32:
-        case meta::cpp2::PropertyType::INT64:
-        case meta::cpp2::PropertyType::TIMESTAMP:
-        case meta::cpp2::PropertyType::VID: {
+        case PropertyType::INT8:
+        case PropertyType::INT16:
+        case PropertyType::INT32:
+        case PropertyType::INT64:
+        case PropertyType::TIMESTAMP:
+        case PropertyType::VID: {
           bval = val.getBool();
           if (bval) {
             val.setInt(1);
@@ -700,8 +702,8 @@ WriteResult UpgraderSpace::convertValue(const meta::NebulaSchemaProvider* nSchem
           }
           return WriteResult::SUCCEEDED;
         }
-        case meta::cpp2::PropertyType::STRING:
-        case meta::cpp2::PropertyType::FIXED_STRING: {
+        case PropertyType::STRING:
+        case PropertyType::FIXED_STRING: {
           try {
             bval = val.getBool();
             sval = folly::to<std::string>(bval);
@@ -711,8 +713,8 @@ WriteResult UpgraderSpace::convertValue(const meta::NebulaSchemaProvider* nSchem
             return WriteResult::TYPE_MISMATCH;
           }
         }
-        case meta::cpp2::PropertyType::FLOAT:
-        case meta::cpp2::PropertyType::DOUBLE: {
+        case PropertyType::FLOAT:
+        case PropertyType::DOUBLE: {
           try {
             bval = val.getBool();
             fval = folly::to<double>(bval);
@@ -729,8 +731,8 @@ WriteResult UpgraderSpace::convertValue(const meta::NebulaSchemaProvider* nSchem
     }
     case Value::Type::INT: {
       switch (newpropType) {
-        case meta::cpp2::PropertyType::STRING:
-        case meta::cpp2::PropertyType::FIXED_STRING: {
+        case PropertyType::STRING:
+        case PropertyType::FIXED_STRING: {
           try {
             ival = val.getInt();
             sval = folly::to<std::string>(ival);
@@ -747,8 +749,8 @@ WriteResult UpgraderSpace::convertValue(const meta::NebulaSchemaProvider* nSchem
     }
     case Value::Type::FLOAT: {
       switch (newpropType) {
-        case meta::cpp2::PropertyType::STRING:
-        case meta::cpp2::PropertyType::FIXED_STRING: {
+        case PropertyType::STRING:
+        case PropertyType::FIXED_STRING: {
           try {
             fval = val.getFloat();
             sval = folly::to<std::string>(fval);
@@ -758,7 +760,7 @@ WriteResult UpgraderSpace::convertValue(const meta::NebulaSchemaProvider* nSchem
             return WriteResult::TYPE_MISMATCH;
           }
         }
-        case meta::cpp2::PropertyType::BOOL: {
+        case PropertyType::BOOL: {
           try {
             fval = val.getFloat();
             bval = folly::to<bool>(fval);
@@ -775,12 +777,12 @@ WriteResult UpgraderSpace::convertValue(const meta::NebulaSchemaProvider* nSchem
     }
     case Value::Type::STRING: {
       switch (newpropType) {
-        case meta::cpp2::PropertyType::INT8:
-        case meta::cpp2::PropertyType::INT16:
-        case meta::cpp2::PropertyType::INT32:
-        case meta::cpp2::PropertyType::INT64:
-        case meta::cpp2::PropertyType::TIMESTAMP:
-        case meta::cpp2::PropertyType::VID: {
+        case PropertyType::INT8:
+        case PropertyType::INT16:
+        case PropertyType::INT32:
+        case PropertyType::INT64:
+        case PropertyType::TIMESTAMP:
+        case PropertyType::VID: {
           try {
             sval = val.getStr();
             ival = folly::to<int64_t>(sval);
@@ -790,7 +792,7 @@ WriteResult UpgraderSpace::convertValue(const meta::NebulaSchemaProvider* nSchem
             return WriteResult::TYPE_MISMATCH;
           }
         }
-        case meta::cpp2::PropertyType::BOOL: {
+        case PropertyType::BOOL: {
           try {
             sval = val.getStr();
             bval = folly::to<bool>(sval);
@@ -800,8 +802,8 @@ WriteResult UpgraderSpace::convertValue(const meta::NebulaSchemaProvider* nSchem
             return WriteResult::TYPE_MISMATCH;
           }
         }
-        case meta::cpp2::PropertyType::FLOAT:
-        case meta::cpp2::PropertyType::DOUBLE: {
+        case PropertyType::FLOAT:
+        case PropertyType::DOUBLE: {
           try {
             sval = val.getStr();
             fval = folly::to<double>(sval);

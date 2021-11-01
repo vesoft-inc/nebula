@@ -8,6 +8,7 @@
 
 #include "common/base/Base.h"
 
+using nebula::cpp2::PropertyType;
 using nebula::storage::cpp2::ExecResponse;
 using nebula::storage::cpp2::GetNeighborsResponse;
 using nebula::storage::cpp2::GetPropResponse;
@@ -600,7 +601,7 @@ StatusOr<std::function<const VertexID&(const Row&)>> GraphStorageClient::getIdFr
   auto vidType = std::move(vidTypeStatus).value();
 
   std::function<const VertexID&(const Row&)> cb;
-  if (vidType == meta::cpp2::PropertyType::INT64) {
+  if (vidType == PropertyType::INT64) {
     if (isEdgeProps) {
       cb = [](const Row& r) -> const VertexID& {
         // The first column has to be the src, the thrid column has to be the
@@ -624,7 +625,7 @@ StatusOr<std::function<const VertexID&(const Row&)>> GraphStorageClient::getIdFr
         return mutableR.values[0].getStr();
       };
     }
-  } else if (vidType == meta::cpp2::PropertyType::FIXED_STRING) {
+  } else if (vidType == PropertyType::FIXED_STRING) {
     cb = [](const Row& r) -> const VertexID& {
       // The first column has to be the vid
       DCHECK_EQ(Value::Type::STRING, r.values[0].type());
@@ -646,14 +647,14 @@ GraphStorageClient::getIdFromNewVertex(GraphSpaceID space) const {
   auto vidType = std::move(vidTypeStatus).value();
 
   std::function<const VertexID&(const cpp2::NewVertex&)> cb;
-  if (vidType == meta::cpp2::PropertyType::INT64) {
+  if (vidType == PropertyType::INT64) {
     cb = [](const cpp2::NewVertex& v) -> const VertexID& {
       DCHECK_EQ(Value::Type::INT, v.get_id().type());
       auto& mutableV = const_cast<cpp2::NewVertex&>(v);
       mutableV.set_id(Value(std::string(reinterpret_cast<const char*>(&v.get_id().getInt()), 8)));
       return mutableV.get_id().getStr();
     };
-  } else if (vidType == meta::cpp2::PropertyType::FIXED_STRING) {
+  } else if (vidType == PropertyType::FIXED_STRING) {
     cb = [](const cpp2::NewVertex& v) -> const VertexID& {
       DCHECK_EQ(Value::Type::STRING, v.get_id().type());
       return v.get_id().getStr();
@@ -673,7 +674,7 @@ StatusOr<std::function<const VertexID&(const cpp2::NewEdge&)>> GraphStorageClien
   auto vidType = std::move(vidTypeStatus).value();
 
   std::function<const VertexID&(const cpp2::NewEdge&)> cb;
-  if (vidType == meta::cpp2::PropertyType::INT64) {
+  if (vidType == PropertyType::INT64) {
     cb = [](const cpp2::NewEdge& e) -> const VertexID& {
       DCHECK_EQ(Value::Type::INT, e.get_key().get_src().type());
       DCHECK_EQ(Value::Type::INT, e.get_key().get_dst().type());
@@ -688,7 +689,7 @@ StatusOr<std::function<const VertexID&(const cpp2::NewEdge&)>> GraphStorageClien
               std::string(reinterpret_cast<const char*>(&e.get_key().get_dst().getInt()), 8)));
       return mutableE.get_key().get_src().getStr();
     };
-  } else if (vidType == meta::cpp2::PropertyType::FIXED_STRING) {
+  } else if (vidType == PropertyType::FIXED_STRING) {
     cb = [](const cpp2::NewEdge& e) -> const VertexID& {
       DCHECK_EQ(Value::Type::STRING, e.get_key().get_src().type());
       DCHECK_EQ(Value::Type::STRING, e.get_key().get_dst().type());
@@ -709,7 +710,7 @@ StatusOr<std::function<const VertexID&(const cpp2::EdgeKey&)>> GraphStorageClien
   auto vidType = std::move(vidTypeStatus).value();
 
   std::function<const VertexID&(const cpp2::EdgeKey&)> cb;
-  if (vidType == meta::cpp2::PropertyType::INT64) {
+  if (vidType == PropertyType::INT64) {
     cb = [](const cpp2::EdgeKey& eKey) -> const VertexID& {
       DCHECK_EQ(Value::Type::INT, eKey.get_src().type());
       DCHECK_EQ(Value::Type::INT, eKey.get_dst().type());
@@ -720,7 +721,7 @@ StatusOr<std::function<const VertexID&(const cpp2::EdgeKey&)>> GraphStorageClien
           Value(std::string(reinterpret_cast<const char*>(&eKey.get_dst().getInt()), 8)));
       return mutableEK.get_src().getStr();
     };
-  } else if (vidType == meta::cpp2::PropertyType::FIXED_STRING) {
+  } else if (vidType == PropertyType::FIXED_STRING) {
     cb = [](const cpp2::EdgeKey& eKey) -> const VertexID& {
       DCHECK_EQ(Value::Type::STRING, eKey.get_src().type());
       DCHECK_EQ(Value::Type::STRING, eKey.get_dst().type());
@@ -741,14 +742,14 @@ StatusOr<std::function<const VertexID&(const Value&)>> GraphStorageClient::getId
   auto vidType = std::move(vidTypeStatus).value();
 
   std::function<const VertexID&(const Value&)> cb;
-  if (vidType == meta::cpp2::PropertyType::INT64) {
+  if (vidType == PropertyType::INT64) {
     cb = [](const Value& v) -> const VertexID& {
       DCHECK_EQ(Value::Type::INT, v.type());
       auto& mutableV = const_cast<Value&>(v);
       mutableV = Value(std::string(reinterpret_cast<const char*>(&v.getInt()), 8));
       return mutableV.getStr();
     };
-  } else if (vidType == meta::cpp2::PropertyType::FIXED_STRING) {
+  } else if (vidType == PropertyType::FIXED_STRING) {
     cb = [](const Value& v) -> const VertexID& {
       DCHECK_EQ(Value::Type::STRING, v.type());
       return v.getStr();
@@ -768,7 +769,7 @@ StatusOr<std::function<const VertexID&(const cpp2::DelTags&)>> GraphStorageClien
   auto vidType = std::move(vidTypeStatus).value();
 
   std::function<const VertexID&(const cpp2::DelTags&)> cb;
-  if (vidType == meta::cpp2::PropertyType::INT64) {
+  if (vidType == PropertyType::INT64) {
     cb = [](const cpp2::DelTags& delTags) -> const VertexID& {
       const auto& vId = delTags.get_id();
       DCHECK_EQ(Value::Type::INT, vId.type());
@@ -776,7 +777,7 @@ StatusOr<std::function<const VertexID&(const cpp2::DelTags&)>> GraphStorageClien
       mutableV = Value(std::string(reinterpret_cast<const char*>(&vId.getInt()), 8));
       return mutableV.getStr();
     };
-  } else if (vidType == meta::cpp2::PropertyType::FIXED_STRING) {
+  } else if (vidType == PropertyType::FIXED_STRING) {
     cb = [](const cpp2::DelTags& delTags) -> const VertexID& {
       const auto& vId = delTags.get_id();
       DCHECK_EQ(Value::Type::STRING, vId.type());

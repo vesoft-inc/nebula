@@ -28,7 +28,7 @@ namespace nebula {
 namespace meta {
 
 using nebula::network::NetworkUtils;
-using FieldType = std::pair<std::string, cpp2::PropertyType>;
+using FieldType = std::pair<std::string, nebula::cpp2::PropertyType>;
 using SignType = storage::cpp2::EngineSignType;
 
 #define CHECK_SPACE_ID_AND_RETURN(spaceID)              \

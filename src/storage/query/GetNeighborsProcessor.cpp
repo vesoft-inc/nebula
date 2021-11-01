@@ -440,9 +440,11 @@ nebula::cpp2::ErrorCode GetNeighborsProcessor::checkStatType(
     case cpp2::StatType::AVG:
     case cpp2::StatType::MIN:
     case cpp2::StatType::MAX: {
-      if (fType == meta::cpp2::PropertyType::INT64 || fType == meta::cpp2::PropertyType::INT32 ||
-          fType == meta::cpp2::PropertyType::INT16 || fType == meta::cpp2::PropertyType::INT8 ||
-          fType == meta::cpp2::PropertyType::FLOAT || fType == meta::cpp2::PropertyType::DOUBLE) {
+      if (fType == nebula::cpp2::PropertyType::INT64 ||
+          fType == nebula::cpp2::PropertyType::INT32 ||
+          fType == nebula::cpp2::PropertyType::INT16 || fType == nebula::cpp2::PropertyType::INT8 ||
+          fType == nebula::cpp2::PropertyType::FLOAT ||
+          fType == nebula::cpp2::PropertyType::DOUBLE) {
         return nebula::cpp2::ErrorCode::SUCCEEDED;
       }
       return nebula::cpp2::ErrorCode::E_INVALID_STAT_TYPE;

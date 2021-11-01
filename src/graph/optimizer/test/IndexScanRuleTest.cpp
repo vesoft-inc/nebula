@@ -9,6 +9,7 @@
 #include "graph/optimizer/OptimizerUtils.h"
 #include "graph/optimizer/rule/IndexScanRule.h"
 
+using nebula::cpp2::PropertyType;
 using nebula::graph::OptimizerUtils;
 
 namespace nebula {
@@ -20,7 +21,7 @@ TEST(IndexScanRuleTest, BoundValueTest) {
   {
     Value begin, end;
     col.set_name("col1");
-    col.type.set_type(meta::cpp2::PropertyType::INT64);
+    col.type.set_type(PropertyType::INT64);
     // col > 1 and col < 5
     items.addItem("col1", RelationalExpression::Kind::kRelGT, Value(1L));
     items.addItem("col1", RelationalExpression::Kind::kRelLT, Value(5L));
@@ -36,7 +37,7 @@ TEST(IndexScanRuleTest, BoundValueTest) {
     Value begin, end;
     items.items.clear();
     col.set_name("col1");
-    col.type.set_type(meta::cpp2::PropertyType::INT64);
+    col.type.set_type(PropertyType::INT64);
     // col > 1 and col > 6
     items.addItem("col1", RelationalExpression::Kind::kRelGT, Value(1L));
     items.addItem("col1", RelationalExpression::Kind::kRelGT, Value(6L));
@@ -52,7 +53,7 @@ TEST(IndexScanRuleTest, BoundValueTest) {
     Value begin, end;
     items.items.clear();
     col.set_name("col1");
-    col.type.set_type(meta::cpp2::PropertyType::INT64);
+    col.type.set_type(PropertyType::INT64);
     // col > 1 and col >= 6
     items.addItem("col1", RelationalExpression::Kind::kRelGT, Value(1L));
     items.addItem("col1", RelationalExpression::Kind::kRelGE, Value(6L));
@@ -68,7 +69,7 @@ TEST(IndexScanRuleTest, BoundValueTest) {
     Value begin, end;
     items.items.clear();
     col.set_name("col1");
-    col.type.set_type(meta::cpp2::PropertyType::INT64);
+    col.type.set_type(PropertyType::INT64);
     // col < 1 and col <= 6
     items.addItem("col1", RelationalExpression::Kind::kRelLT, Value(1L));
     items.addItem("col1", RelationalExpression::Kind::kRelLE, Value(6L));
@@ -102,7 +103,7 @@ TEST(IndexScanRuleTest, IQCtxTest) {
       for (int8_t i = 0; i < 5; i++) {
         meta::cpp2::ColumnDef col;
         col.set_name(folly::stringPrintf("col%d", i));
-        col.type.set_type(meta::cpp2::PropertyType::INT64);
+        col.type.set_type(PropertyType::INT64);
         cols.emplace_back(std::move(col));
       }
       index->set_fields(std::move(cols));
@@ -249,7 +250,7 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
   {
     meta::cpp2::ColumnDef col;
     col.set_name("col_int");
-    col.type.set_type(meta::cpp2::PropertyType::INT64);
+    col.type.set_type(PropertyType::INT64);
     {
       std::vector<storage::cpp2::IndexColumnHint> hints;
       // col_int < 2
@@ -340,7 +341,7 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
   {
     meta::cpp2::ColumnDef col;
     col.set_name("col_bool");
-    col.type.set_type(meta::cpp2::PropertyType::BOOL);
+    col.type.set_type(PropertyType::BOOL);
     {
       std::vector<storage::cpp2::IndexColumnHint> hints;
       // col_bool < true
@@ -361,7 +362,7 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
   {
     meta::cpp2::ColumnDef col;
     col.set_name("col_double");
-    col.type.set_type(meta::cpp2::PropertyType::DOUBLE);
+    col.type.set_type(PropertyType::DOUBLE);
     {
       std::vector<storage::cpp2::IndexColumnHint> hints;
       // col_double < 1.0
@@ -424,7 +425,7 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
     meta::cpp2::ColumnDef col;
     size_t len = 10;
     col.set_name("col_str");
-    col.type.set_type(meta::cpp2::PropertyType::STRING);
+    col.type.set_type(PropertyType::STRING);
     col.type.set_type_length(len);
     {
       std::vector<storage::cpp2::IndexColumnHint> hints;

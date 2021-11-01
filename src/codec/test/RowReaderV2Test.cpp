@@ -13,7 +13,7 @@
 
 namespace nebula {
 
-using meta::cpp2::PropertyType;
+using nebula::cpp2::PropertyType;
 
 TEST(RowReaderV2, headerInfo) {
   // Simplest row, nothing in it
@@ -330,7 +330,7 @@ TEST(RowReaderV2, iterator) {
 
   SchemaWriter schema;
   for (int i = 0; i < 64; i++) {
-    schema.appendCol(folly::stringPrintf("Col%02d", i), meta::cpp2::PropertyType::INT64);
+    schema.appendCol(folly::stringPrintf("Col%02d", i), PropertyType::INT64);
     encoded.append(1, i + 1);
     encoded.append(7, 0);
   }
