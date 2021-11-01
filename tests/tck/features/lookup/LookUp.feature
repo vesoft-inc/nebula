@@ -941,6 +941,12 @@ Feature: LookUpTest_Vid_String
       """
     Then the result should be, in any order:
       | VertexID |
+    When executing query:
+      """
+      LOOKUP ON player where player.name == "Useless" and player.age > 30
+      """
+    Then the result should be, in any order:
+      | VertexID |
       | '121'    |
     When executing query:
       """
