@@ -81,6 +81,7 @@ Feature: In Expression
       """
       GO FROM 'Tony Parker' OVER like
       WHERE like._dst IN ['Danny Green']
+      YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst |
@@ -88,6 +89,7 @@ Feature: In Expression
       """
       GO FROM 'Tony Parker' OVER like
       WHERE like.likeness IN [95,56,21]
+      YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst       |
@@ -96,7 +98,7 @@ Feature: In Expression
     When executing query:
       """
       GO FROM 'Tony Parker' OVER like YIELD like._dst AS ID |
-      GO FROM $-.ID OVER like WHERE like.likeness IN [95,56,21]
+      GO FROM $-.ID OVER like WHERE like.likeness IN [95,56,21] YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst       |
@@ -117,7 +119,7 @@ Feature: In Expression
     When executing query:
       """
       GO FROM 'Tony Parker' OVER like
-      WHERE like._dst IN {'Danny Green'}
+      WHERE like._dst IN {'Danny Green'} YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst |

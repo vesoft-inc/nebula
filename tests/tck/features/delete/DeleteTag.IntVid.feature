@@ -12,16 +12,16 @@ Feature: Delete int vid of tag
       """
       FETCH PROP ON player hash("Tim Duncan") YIELD player.name, player.age
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID     | player.name  | player.age |
-      | "Tim Duncan" | "Tim Duncan" | 42         |
+    Then the result should be, in any order:
+      | player.name  | player.age |
+      | "Tim Duncan" | 42         |
     When executing query:
       """
       FETCH PROP ON bachelor hash("Tim Duncan") YIELD bachelor.name, bachelor.speciality
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID     | bachelor.name | bachelor.speciality |
-      | "Tim Duncan" | "Tim Duncan"  | "psychology"        |
+    Then the result should be, in any order:
+      | bachelor.name | bachelor.speciality |
+      | "Tim Duncan"  | "psychology"        |
     When executing query:
       """
       LOOKUP ON player WHERE player.name == "Tim Duncan"
@@ -40,15 +40,15 @@ Feature: Delete int vid of tag
       """
       FETCH PROP ON player hash("Tim Duncan") YIELD player.name, player.age
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID | player.name | player.age |
+    Then the result should be, in any order:
+      | player.name | player.age |
     When executing query:
       """
       FETCH PROP ON bachelor hash("Tim Duncan") YIELD bachelor.name, bachelor.speciality
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID     | bachelor.name | bachelor.speciality |
-      | "Tim Duncan" | "Tim Duncan"  | "psychology"        |
+    Then the result should be, in any order:
+      | bachelor.name | bachelor.speciality |
+      | "Tim Duncan"  | "psychology"        |
     When executing query:
       """
       LOOKUP ON player WHERE player.name == "Tim Duncan"
@@ -65,16 +65,16 @@ Feature: Delete int vid of tag
       """
       FETCH PROP ON player hash("Tim Duncan") YIELD player.name, player.age
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID     | player.name  | player.age |
-      | "Tim Duncan" | "Tim Duncan" | 42         |
+    Then the result should be, in any order:
+      | player.name  | player.age |
+      | "Tim Duncan" | 42         |
     When executing query:
       """
       FETCH PROP ON bachelor hash("Tim Duncan") YIELD bachelor.name, bachelor.speciality
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID     | bachelor.name | bachelor.speciality |
-      | "Tim Duncan" | "Tim Duncan"  | "psychology"        |
+    Then the result should be, in any order:
+      | bachelor.name | bachelor.speciality |
+      | "Tim Duncan"  | "psychology"        |
     When executing query:
       """
       LOOKUP ON player WHERE player.name == "Tim Duncan"
@@ -93,14 +93,14 @@ Feature: Delete int vid of tag
       """
       FETCH PROP ON player hash("Tim Duncan") YIELD player.name, player.age
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID | player.name | player.age |
+    Then the result should be, in any order:
+      | player.name | player.age |
     When executing query:
       """
       FETCH PROP ON bachelor hash("Tim Duncan") YIELD bachelor.name, bachelor.speciality
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID | bachelor.name | bachelor.speciality |
+    Then the result should be, in any order:
+      | bachelor.name | bachelor.speciality |
     When executing query:
       """
       LOOKUP ON player WHERE player.name == "Tim Duncan"
@@ -117,16 +117,16 @@ Feature: Delete int vid of tag
       """
       FETCH PROP ON player hash("Tim Duncan") YIELD player.name, player.age
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID     | player.name  | player.age |
-      | "Tim Duncan" | "Tim Duncan" | 42         |
+    Then the result should be, in any order:
+      | player.name  | player.age |
+      | "Tim Duncan" | 42         |
     When executing query:
       """
       FETCH PROP ON bachelor hash("Tim Duncan") YIELD bachelor.name, bachelor.speciality
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID     | bachelor.name | bachelor.speciality |
-      | "Tim Duncan" | "Tim Duncan"  | "psychology"        |
+    Then the result should be, in any order:
+      | bachelor.name | bachelor.speciality |
+      | "Tim Duncan"  | "psychology"        |
     When executing query:
       """
       LOOKUP ON player WHERE player.name == "Tim Duncan"
@@ -145,14 +145,14 @@ Feature: Delete int vid of tag
       """
       FETCH PROP ON player hash("Tim Duncan") YIELD player.name, player.age
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID | player.name | player.age |
+    Then the result should be, in any order:
+      | player.name | player.age |
     When executing query:
       """
       FETCH PROP ON bachelor hash("Tim Duncan") YIELD bachelor.name, bachelor.speciality
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID | bachelor.name | bachelor.speciality |
+    Then the result should be, in any order:
+      | bachelor.name | bachelor.speciality |
     When executing query:
       """
       LOOKUP ON player WHERE player.name == "Tim Duncan"
@@ -169,16 +169,16 @@ Feature: Delete int vid of tag
       """
       FETCH PROP ON player hash("Tim Duncan") YIELD player.name, player.age
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID     | player.name  | player.age |
-      | "Tim Duncan" | "Tim Duncan" | 42         |
+    Then the result should be, in any order:
+      | player.name  | player.age |
+      | "Tim Duncan" | 42         |
     When executing query:
       """
       FETCH PROP ON player hash("Tony Parker") YIELD player.name, player.age
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID      | player.name   | player.age |
-      | "Tony Parker" | "Tony Parker" | 36         |
+    Then the result should be, in any order:
+      | player.name   | player.age |
+      | "Tony Parker" | 36         |
     When executing query:
       """
       LOOKUP ON player WHERE player.name == "Tim Duncan"
@@ -204,14 +204,14 @@ Feature: Delete int vid of tag
       """
       FETCH PROP ON player hash("Tim Duncan") YIELD player.name, player.age
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID | player.name | player.age |
+    Then the result should be, in any order:
+      | player.name | player.age |
     When executing query:
       """
       FETCH PROP ON player hash("Tony Parker") YIELD player.name, player.age
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID | player.name | player.age |
+    Then the result should be, in any order:
+      | player.name | player.age |
     When executing query:
       """
       LOOKUP ON player WHERE player.name == "Tim Duncan"
@@ -241,9 +241,9 @@ Feature: Delete int vid of tag
       """
       FETCH PROP ON team hash("Spurs") YIELD team.name
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID | team.name |
-      | "Spurs"  | "Spurs"   |
+    Then the result should be, in any order:
+      | team.name |
+      | "Spurs"   |
     # delete one tag
     When executing query:
       """
@@ -256,7 +256,7 @@ Feature: Delete int vid of tag
       FETCH PROP ON team hash("Spurs") YIELD team.name
       """
     Then the result should be, in any order:
-      | VertexID | team.name |
+      | team.name |
     # delete tag from pipe and normal
     When executing query:
       """
@@ -280,9 +280,9 @@ Feature: Delete int vid of tag
       """
       FETCH PROP ON team hash("Spurs") YIELD team.name
       """
-    Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID | team.name |
-      | "Spurs"  | "Spurs"   |
+    Then the result should be, in any order:
+      | team.name |
+      | "Spurs"   |
     # delete one tag
     When executing query:
       """
@@ -295,7 +295,7 @@ Feature: Delete int vid of tag
       FETCH PROP ON team hash("Spurs") YIELD team.name
       """
     Then the result should be, in any order:
-      | VertexID | team.name |
+      | team.name |
     # delete one tag from var and normal
     When executing query:
       """
