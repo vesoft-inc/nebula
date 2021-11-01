@@ -57,8 +57,8 @@ void CreateFTIndexProcessor::process(const cpp2::CreateFTIndexReq& req) {
       return;
     }
     // Only string or fixed_string types are supported.
-    if (targetCol->get_type().get_type() != meta::cpp2::PropertyType::STRING &&
-        targetCol->get_type().get_type() != meta::cpp2::PropertyType::FIXED_STRING) {
+    if (targetCol->get_type().get_type() != nebula::cpp2::PropertyType::STRING &&
+        targetCol->get_type().get_type() != nebula::cpp2::PropertyType::FIXED_STRING) {
       LOG(ERROR) << "Column data type error : "
                  << apache::thrift::util::enumNameSafe(targetCol->get_type().get_type());
       handleErrorCode(nebula::cpp2::ErrorCode::E_UNSUPPORTED);
@@ -69,7 +69,7 @@ void CreateFTIndexProcessor::process(const cpp2::CreateFTIndexReq& req) {
     // the data length must be less than MAX_INDEX_TYPE_LENGTH.
     // else if the data type is string,
     // will be truncated to MAX_INDEX_TYPE_LENGTH bytes when data insert.
-    if (targetCol->get_type().get_type() == meta::cpp2::PropertyType::FIXED_STRING &&
+    if (targetCol->get_type().get_type() == nebula::cpp2::PropertyType::FIXED_STRING &&
         *targetCol->get_type().get_type_length() > MAX_INDEX_TYPE_LENGTH) {
       LOG(ERROR) << "Unsupported data length more than " << MAX_INDEX_TYPE_LENGTH
                  << " bytes : " << col << "(" << *targetCol->get_type().get_type_length() << ")";

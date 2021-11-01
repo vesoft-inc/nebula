@@ -248,8 +248,8 @@ StatusOr<int32_t> AdHocSchemaManager::getSpaceVidLen(GraphSpaceID space) {
   return 32;
 }
 
-StatusOr<meta::cpp2::PropertyType> AdHocSchemaManager::getSpaceVidType(GraphSpaceID) {
-  return meta::cpp2::PropertyType::FIXED_STRING;
+StatusOr<nebula::cpp2::PropertyType> AdHocSchemaManager::getSpaceVidType(GraphSpaceID) {
+  return nebula::cpp2::PropertyType::FIXED_STRING;
 }
 
 StatusOr<TagSchemas> AdHocSchemaManager::getAllVerTagSchema(GraphSpaceID space) {

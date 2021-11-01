@@ -228,7 +228,7 @@ class MetaClientTestUpdater {
       UNUSED(ignoreItem);
     }
     meta::cpp2::ColumnTypeDef type;
-    type.set_type(meta::cpp2::PropertyType::FIXED_STRING);
+    type.set_type(nebula::cpp2::PropertyType::FIXED_STRING);
     type.set_type_length(32);
 
     mClient->localCache_[mockSpaceId]->spaceDesc_.set_vid_type(std::move(type));

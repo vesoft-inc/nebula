@@ -252,6 +252,35 @@ struct CheckpointInfo {
     2: binary                path,
 }
 
+
+// These are all data types supported in the graph properties
+enum PropertyType {
+    UNKNOWN = 0,
+
+    // Simple types
+    BOOL = 1,
+    INT64 = 2,          // This is the same as INT in v1
+    VID = 3,            // Deprecated, only supported by v1
+    FLOAT = 4,
+    DOUBLE = 5,
+    STRING = 6,
+    // String with fixed length. If the string content is shorteri
+    // than the given length, '\0' will be padded to the end
+    FIXED_STRING = 7,   // New in v2
+    INT8 = 8,           // New in v2
+    INT16 = 9,          // New in v2
+    INT32 = 10,         // New in v2
+
+    // Date time
+    TIMESTAMP = 21,
+    DATE = 24,
+    DATETIME = 25,
+    TIME = 26,
+
+    // Geo spatial
+    GEOGRAPHY = 31,
+} (cpp.enum_strict)
+
 /*
  * ErrorCode for graphd, metad, storaged,raftd
  * -1xxx for graphd

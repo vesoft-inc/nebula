@@ -17,7 +17,7 @@ class ResultSchemaProvider : public meta::SchemaProviderIf {
   class ResultSchemaField : public meta::SchemaProviderIf::Field {
    public:
     explicit ResultSchemaField(std::string name,
-                               meta::cpp2::PropertyType type,
+                               nebula::cpp2::PropertyType type,
                                int16_t size,
                                bool nullable,
                                int32_t offset,
@@ -26,7 +26,7 @@ class ResultSchemaProvider : public meta::SchemaProviderIf {
                                meta::cpp2::GeoShape = meta::cpp2::GeoShape::ANY);
 
     const char* name() const override;
-    meta::cpp2::PropertyType type() const override;
+    nebula::cpp2::PropertyType type() const override;
     bool nullable() const override;
     bool hasDefault() const override;
     Expression* defaultValue() const override;
@@ -37,7 +37,7 @@ class ResultSchemaProvider : public meta::SchemaProviderIf {
 
    private:
     std::string name_;
-    meta::cpp2::PropertyType type_;
+    nebula::cpp2::PropertyType type_;
     int16_t size_;
     bool nullable_;
     int32_t offset_;
@@ -60,8 +60,8 @@ class ResultSchemaProvider : public meta::SchemaProviderIf {
   int64_t getFieldIndex(const std::string& name) const override;
   const char* getFieldName(int64_t index) const override;
 
-  meta::cpp2::PropertyType getFieldType(int64_t index) const override;
-  meta::cpp2::PropertyType getFieldType(const std::string& name) const override;
+  nebula::cpp2::PropertyType getFieldType(int64_t index) const override;
+  nebula::cpp2::PropertyType getFieldType(const std::string& name) const override;
 
   const meta::SchemaProviderIf::Field* field(int64_t index) const override;
   const meta::SchemaProviderIf::Field* field(const std::string& name) const override;

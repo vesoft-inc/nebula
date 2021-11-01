@@ -18,7 +18,7 @@ class SchemaWriter : public ResultSchemaProvider {
   explicit SchemaWriter(SchemaVer ver = 0) : ResultSchemaProvider(ver) {}
 
   SchemaWriter& appendCol(folly::StringPiece name,
-                          meta::cpp2::PropertyType type,
+                          nebula::cpp2::PropertyType type,
                           int32_t fixedStrLen = 0,
                           bool nullable = false,
                           Expression* defaultValue = nullptr,
