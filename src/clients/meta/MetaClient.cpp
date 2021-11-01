@@ -165,10 +165,6 @@ const MetaClient::ThreadLocalInfo& MetaClient::getThreadLocalInfo() {
       GraphSpaceID spaceId = spaceInfo.first;
       std::shared_ptr<SpaceInfoCache> info = spaceInfo.second;
       std::shared_ptr<SpaceInfoCache> infoDeepCopy = std::make_shared<SpaceInfoCache>(*info);
-      // infoDeepCopy->tagSchemas_ = __buildTagSchemas(infoDeepCopy->tagItemVec_);
-      // infoDeepCopy->edgeSchemas_ = __buildEdgeSchemas(infoDeepCopy->edgeItemVec_);
-      // infoDeepCopy->tagIndexes_ = __buildIndexes(infoDeepCopy->tagIndexItemVec_);
-      // infoDeepCopy->edgeIndexes_ = __buildIndexes(infoDeepCopy->edgeIndexItemVec_);
       threadLocalInfo.localCache_[spaceId] = infoDeepCopy;
     }
     threadLocalInfo.spaceIndexByName_ = spaceIndexByName_;
@@ -178,6 +174,10 @@ const MetaClient::ThreadLocalInfo& MetaClient::getThreadLocalInfo() {
     threadLocalInfo.spaceNewestTagVerMap_ = spaceNewestTagVerMap_;
     threadLocalInfo.spaceNewestEdgeVerMap_ = spaceNewestEdgeVerMap_;
     threadLocalInfo.spaceTagIndexById_ = spaceTagIndexById_;
+    threadLocalInfo.spaceAllEdgeMap_ = spaceAllEdgeMap_;
+    threadLocalInfo.storageHosts_ = storageHosts_;
+    threadLocalInfo.userRolesMap_ = userRolesMap_;
+    threadLocalInfo.fulltextIndexMap_ = fulltextIndexMap_;
   }
 
   return threadLocalInfo;
@@ -862,9 +862,9 @@ Status MetaClient::handleResponse(const RESP& resp) {
 
 PartsMap MetaClient::doGetPartsMap(const HostAddr& host, const LocalCache& localCache) {
   PartsMap partMap;
-  for (auto it = localCache.begin(); it != localCache.end(); it++) {
-    auto spaceId = it->first;
-    auto& cache = it->second;
+  for (const auto& it : localCache) {
+    auto spaceId = it.first;
+    auto& cache = it.second;
     auto partsIt = cache->partsOnHost_.find(host);
     if (partsIt != cache->partsOnHost_.end()) {
       for (auto& partId : partsIt->second) {
@@ -889,28 +889,28 @@ void MetaClient::diff(const LocalCache& oldCache, const LocalCache& newCache) {
   auto newPartsMap = doGetPartsMap(options_.localHost_, newCache);
   auto oldPartsMap = doGetPartsMap(options_.localHost_, oldCache);
   VLOG(1) << "Let's check if any new parts added/updated for " << options_.localHost_;
-  for (auto it = newPartsMap.begin(); it != newPartsMap.end(); it++) {
-    auto spaceId = it->first;
-    const auto& newParts = it->second;
+  for (auto& it : newPartsMap) {
+    auto spaceId = it.first;
+    const auto& newParts = it.second;
     auto oldIt = oldPartsMap.find(spaceId);
     if (oldIt == oldPartsMap.end()) {
       VLOG(1) << "SpaceId " << spaceId << " was added!";
       listener_->onSpaceAdded(spaceId);
-      for (auto partIt = newParts.begin(); partIt != newParts.end(); partIt++) {
-        listener_->onPartAdded(partIt->second);
+      for (const auto& newPart : newParts) {
+        listener_->onPartAdded(newPart.second);
       }
     } else {
       const auto& oldParts = oldIt->second;
-      for (auto partIt = newParts.begin(); partIt != newParts.end(); partIt++) {
-        auto oldPartIt = oldParts.find(partIt->first);
+      for (const auto& newPart : newParts) {
+        auto oldPartIt = oldParts.find(newPart.first);
         if (oldPartIt == oldParts.end()) {
-          VLOG(1) << "SpaceId " << spaceId << ", partId " << partIt->first << " was added!";
-          listener_->onPartAdded(partIt->second);
+          VLOG(1) << "SpaceId " << spaceId << ", partId " << newPart.first << " was added!";
+          listener_->onPartAdded(newPart.second);
         } else {
           const auto& oldPartHosts = oldPartIt->second;
-          const auto& newPartHosts = partIt->second;
+          const auto& newPartHosts = newPart.second;
           if (oldPartHosts != newPartHosts) {
-            VLOG(1) << "SpaceId " << spaceId << ", partId " << partIt->first << " was updated!";
+            VLOG(1) << "SpaceId " << spaceId << ", partId " << newPart.first << " was updated!";
             listener_->onPartUpdated(newPartHosts);
           }
         }
@@ -918,23 +918,23 @@ void MetaClient::diff(const LocalCache& oldCache, const LocalCache& newCache) {
     }
   }
   VLOG(1) << "Let's check if any old parts removed....";
-  for (auto it = oldPartsMap.begin(); it != oldPartsMap.end(); it++) {
-    auto spaceId = it->first;
-    const auto& oldParts = it->second;
+  for (auto& it : oldPartsMap) {
+    auto spaceId = it.first;
+    const auto& oldParts = it.second;
     auto newIt = newPartsMap.find(spaceId);
     if (newIt == newPartsMap.end()) {
       VLOG(1) << "SpaceId " << spaceId << " was removed!";
-      for (auto partIt = oldParts.begin(); partIt != oldParts.end(); partIt++) {
-        listener_->onPartRemoved(spaceId, partIt->first);
+      for (const auto& oldPart : oldParts) {
+        listener_->onPartRemoved(spaceId, oldPart.first);
       }
       listener_->onSpaceRemoved(spaceId);
     } else {
       const auto& newParts = newIt->second;
-      for (auto partIt = oldParts.begin(); partIt != oldParts.end(); partIt++) {
-        auto newPartIt = newParts.find(partIt->first);
+      for (const auto& oldPart : oldParts) {
+        auto newPartIt = newParts.find(oldPart.first);
         if (newPartIt == newParts.end()) {
-          VLOG(1) << "SpaceId " << spaceId << ", partId " << partIt->first << " was removed!";
-          listener_->onPartRemoved(spaceId, partIt->first);
+          VLOG(1) << "SpaceId " << spaceId << ", partId " << oldPart.first << " was removed!";
+          listener_->onPartRemoved(spaceId, oldPart.first);
         }
       }
     }
@@ -1209,8 +1209,8 @@ MetaClient::getPartsAlloc(GraphSpaceID spaceId, PartTerms* partTerms) {
       [](auto client, auto request) { return client->future_getPartsAlloc(request); },
       [=](cpp2::GetPartsAllocResp&& resp) -> decltype(auto) {
         std::unordered_map<PartitionID, std::vector<HostAddr>> parts;
-        for (auto it = resp.get_parts().begin(); it != resp.get_parts().end(); it++) {
-          parts.emplace(it->first, it->second);
+        for (const auto& it : resp.get_parts()) {
+          parts.emplace(it.first, it.second);
         }
         if (partTerms && resp.terms_ref().has_value()) {
           for (auto& termOfPart : resp.terms_ref().value()) {
@@ -1227,9 +1227,10 @@ StatusOr<GraphSpaceID> MetaClient::getSpaceIdByNameFromCache(const std::string& 
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-  auto it = spaceIndexByName_.find(name);
-  if (it != spaceIndexByName_.end()) {
+  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+  const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
+  auto it = threadLocalInfo.spaceIndexByName_.find(name);
+  if (it != threadLocalInfo.spaceIndexByName_.end()) {
     return it->second;
   }
   return Status::SpaceNotFound();
@@ -1254,9 +1255,10 @@ StatusOr<TagID> MetaClient::getTagIDByNameFromCache(const GraphSpaceID& spaceId,
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-  auto it = spaceTagIndexByName_.find(std::make_pair(spaceId, name));
-  if (it == spaceTagIndexByName_.end()) {
+  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+  const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
+  auto it = threadLocalInfo.spaceTagIndexByName_.find(std::make_pair(spaceId, name));
+  if (it == threadLocalInfo.spaceTagIndexByName_.end()) {
     return Status::Error("TagName `%s'  is nonexistent", name.c_str());
   }
   return it->second;
@@ -1267,9 +1269,10 @@ StatusOr<std::string> MetaClient::getTagNameByIdFromCache(const GraphSpaceID& sp
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-  auto it = spaceTagIndexById_.find(std::make_pair(spaceId, tagId));
-  if (it == spaceTagIndexById_.end()) {
+  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+  const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
+  auto it = threadLocalInfo.spaceTagIndexById_.find(std::make_pair(spaceId, tagId));
+  if (it == threadLocalInfo.spaceTagIndexById_.end()) {
     return Status::Error("TagID `%d'  is nonexistent", tagId);
   }
   return it->second;
@@ -1280,9 +1283,10 @@ StatusOr<EdgeType> MetaClient::getEdgeTypeByNameFromCache(const GraphSpaceID& sp
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-  auto it = spaceEdgeIndexByName_.find(std::make_pair(space, name));
-  if (it == spaceEdgeIndexByName_.end()) {
+  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+  const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
+  auto it = threadLocalInfo.spaceEdgeIndexByName_.find(std::make_pair(space, name));
+  if (it == threadLocalInfo.spaceEdgeIndexByName_.end()) {
     return Status::Error("EdgeName `%s'  is nonexistent", name.c_str());
   }
   return it->second;
@@ -1293,9 +1297,10 @@ StatusOr<std::string> MetaClient::getEdgeNameByTypeFromCache(const GraphSpaceID&
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-  auto it = spaceEdgeIndexByType_.find(std::make_pair(space, edgeType));
-  if (it == spaceEdgeIndexByType_.end()) {
+  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+  const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
+  auto it = threadLocalInfo.spaceEdgeIndexByType_.find(std::make_pair(space, edgeType));
+  if (it == threadLocalInfo.spaceEdgeIndexByType_.end()) {
     return Status::Error("EdgeType `%d'  is nonexistent", edgeType);
   }
   return it->second;
@@ -1305,9 +1310,10 @@ StatusOr<std::vector<std::string>> MetaClient::getAllEdgeFromCache(const GraphSp
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-  auto it = spaceAllEdgeMap_.find(space);
-  if (it == spaceAllEdgeMap_.end()) {
+  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+  const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
+  auto it = threadLocalInfo.spaceAllEdgeMap_.find(space);
+  if (it == threadLocalInfo.spaceAllEdgeMap_.end()) {
     return Status::Error("SpaceId `%d'  is nonexistent", space);
   }
   return it->second;
@@ -2300,13 +2306,14 @@ StatusOr<LeaderInfo> MetaClient::getLeaderInfo() {
 
 const std::vector<HostAddr>& MetaClient::getAddresses() { return addrs_; }
 
-std::vector<cpp2::RoleItem> MetaClient::getRolesByUserFromCache(const std::string& user) const {
+std::vector<cpp2::RoleItem> MetaClient::getRolesByUserFromCache(const std::string& user) {
   if (!ready_) {
     return std::vector<cpp2::RoleItem>(0);
   }
-  folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-  auto iter = userRolesMap_.find(user);
-  if (iter == userRolesMap_.end()) {
+  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+  const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
+  auto iter = threadLocalInfo.userRolesMap_.find(user);
+  if (iter == threadLocalInfo.userRolesMap_.end()) {
     return std::vector<cpp2::RoleItem>(0);
   }
   return iter->second;
@@ -2352,13 +2359,14 @@ StatusOr<TermID> MetaClient::getTermFromCache(GraphSpaceID spaceId, PartitionID 
   return termInfo->second;
 }
 
-StatusOr<std::vector<HostAddr>> MetaClient::getStorageHosts() const {
+StatusOr<std::vector<HostAddr>> MetaClient::getStorageHosts() {
   if (!ready_) {
     return Status::Error("Not ready!");
   }
 
-  folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-  return storageHosts_;
+  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+  const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
+  return threadLocalInfo.storageHosts_;
 }
 
 StatusOr<SchemaVer> MetaClient::getLatestTagVersionFromCache(const GraphSpaceID& spaceID,
@@ -2366,9 +2374,10 @@ StatusOr<SchemaVer> MetaClient::getLatestTagVersionFromCache(const GraphSpaceID&
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-  auto it = spaceNewestTagVerMap_.find(std::make_pair(spaceID, tagId));
-  if (it == spaceNewestTagVerMap_.end()) {
+  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+  const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
+  auto it = threadLocalInfo.spaceNewestTagVerMap_.find(std::make_pair(spaceID, tagId));
+  if (it == threadLocalInfo.spaceNewestTagVerMap_.end()) {
     return Status::TagNotFound();
   }
   return it->second;
@@ -2379,9 +2388,10 @@ StatusOr<SchemaVer> MetaClient::getLatestEdgeVersionFromCache(const GraphSpaceID
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-  auto it = spaceNewestEdgeVerMap_.find(std::make_pair(spaceID, edgeType));
-  if (it == spaceNewestEdgeVerMap_.end()) {
+  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+  const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
+  auto it = threadLocalInfo.spaceNewestEdgeVerMap_.find(std::make_pair(spaceID, edgeType));
+  if (it == threadLocalInfo.spaceNewestEdgeVerMap_.end()) {
     return Status::EdgeNotFound();
   }
   return it->second;
@@ -2991,7 +3001,7 @@ void MetaClient::updateGflagsValue(const cpp2::ConfigItem& item) {
   if (item.get_mode() != cpp2::ConfigMode::MUTABLE) {
     return;
   }
-  auto value = item.get_value();
+  const auto& value = item.get_value();
   std::string curValue;
   if (!gflags::GetCommandLineOption(item.get_name().c_str(), &curValue)) {
     return;
@@ -3408,8 +3418,9 @@ StatusOr<std::unordered_map<std::string, cpp2::FTIndex>> MetaClient::getFTIndexe
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-  return fulltextIndexMap_;
+  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+  const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
+  return threadLocalInfo.fulltextIndexMap_;
 }
 
 StatusOr<std::unordered_map<std::string, cpp2::FTIndex>> MetaClient::getFTIndexBySpaceFromCache(
@@ -3417,11 +3428,12 @@ StatusOr<std::unordered_map<std::string, cpp2::FTIndex>> MetaClient::getFTIndexB
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+  const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   std::unordered_map<std::string, cpp2::FTIndex> indexes;
-  for (auto it = fulltextIndexMap_.begin(); it != fulltextIndexMap_.end(); ++it) {
-    if (it->second.get_space_id() == spaceId) {
-      indexes[it->first] = it->second;
+  for (const auto& it : threadLocalInfo.fulltextIndexMap_) {
+    if (it.second.get_space_id() == spaceId) {
+      indexes[it.first] = it.second;
     }
   }
   return indexes;
@@ -3432,13 +3444,14 @@ StatusOr<std::pair<std::string, cpp2::FTIndex>> MetaClient::getFTIndexBySpaceSch
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-  for (auto it = fulltextIndexMap_.begin(); it != fulltextIndexMap_.end(); ++it) {
-    auto id = it->second.get_depend_schema().getType() == nebula::cpp2::SchemaID::Type::edge_type
-                  ? it->second.get_depend_schema().get_edge_type()
-                  : it->second.get_depend_schema().get_tag_id();
-    if (it->second.get_space_id() == spaceId && id == schemaId) {
-      return std::make_pair(it->first, it->second);
+  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+  const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
+  for (const auto& it : threadLocalInfo.fulltextIndexMap_) {
+    auto id = it.second.get_depend_schema().getType() == nebula::cpp2::SchemaID::Type::edge_type
+                  ? it.second.get_depend_schema().get_edge_type()
+                  : it.second.get_depend_schema().get_tag_id();
+    if (it.second.get_space_id() == spaceId && id == schemaId) {
+      return std::make_pair(it.first, it.second);
     }
   }
   return Status::IndexNotFound();

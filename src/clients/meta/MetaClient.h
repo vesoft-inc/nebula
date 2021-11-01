@@ -84,21 +84,19 @@ struct SpaceInfoCache {
   ObjectPool pool_;
   std::unordered_map<PartitionID, TermID> termOfPartition_;
 
-  SpaceInfoCache() {}
+  SpaceInfoCache() = default;
+  SpaceInfoCache(const SpaceInfoCache& info)
+      : spaceDesc_(info.spaceDesc_),
+        partsAlloc_(info.partsAlloc_),
+        partsOnHost_(info.partsOnHost_),
+        tagSchemas_(info.tagSchemas_),
+        edgeSchemas_(info.edgeSchemas_),
+        tagIndexes_(info.tagIndexes_),
+        edgeIndexes_(info.edgeIndexes_),
+        listeners_(info.listeners_),
+        termOfPartition_(info.termOfPartition_) {}
 
-  SpaceInfoCache(const SpaceInfoCache& info) {
-    this->spaceDesc_ = info.spaceDesc_;
-    this->partsAlloc_ = info.partsAlloc_;
-    this->tagSchemas_ = info.tagSchemas_;
-    this->edgeSchemas_ = info.edgeSchemas_;
-    this->tagIndexes_ = info.tagIndexes_;
-    this->edgeIndexes_ = info.edgeIndexes_;
-    this->listeners_ = info.listeners_;
-    this->partsOnHost_ = info.partsOnHost_;
-    this->termOfPartition_ = info.termOfPartition_;
-  }
-
-  ~SpaceInfoCache() {}
+  ~SpaceInfoCache() = default;
 };
 
 using LocalCache = std::unordered_map<GraphSpaceID, std::shared_ptr<SpaceInfoCache>>;
@@ -576,7 +574,7 @@ class MetaClient {
                                                            EdgeType edgeType,
                                                            const std::string& field);
 
-  std::vector<cpp2::RoleItem> getRolesByUserFromCache(const std::string& user) const;
+  std::vector<cpp2::RoleItem> getRolesByUserFromCache(const std::string& user);
 
   bool authCheckFromCache(const std::string& account, const std::string& password) const;
 
@@ -584,7 +582,7 @@ class MetaClient {
 
   bool checkShadowAccountFromCache(const std::string& account) const;
 
-  StatusOr<std::vector<HostAddr>> getStorageHosts() const;
+  StatusOr<std::vector<HostAddr>> getStorageHosts();
 
   StatusOr<cpp2::Session> getSessionFromCache(const nebula::SessionID& session_id);
 
@@ -752,6 +750,9 @@ class MetaClient {
     SpaceNewestTagVerMap spaceNewestTagVerMap_;
     SpaceNewestEdgeVerMap spaceNewestEdgeVerMap_;
     SpaceAllEdgeMap spaceAllEdgeMap_;
+    std::vector<HostAddr> storageHosts_;
+    UserRolesMap userRolesMap_;
+    FTIndexMap fulltextIndexMap_;
   };
 
   const ThreadLocalInfo& getThreadLocalInfo();
