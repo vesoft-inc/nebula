@@ -604,7 +604,7 @@ Status handleRangeIndex(const meta::cpp2::ColumnDef& field,
                         const Expression* expr,
                         const Value& value,
                         IndexColumnHint* hint) {
-  if (field.get_type().get_type() == meta::cpp2::PropertyType::BOOL) {
+  if (field.get_type().get_type() == nebula::cpp2::PropertyType::BOOL) {
     return Status::Error("Range scan for bool type is illegal");
   }
   Value begin, end;

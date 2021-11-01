@@ -29,8 +29,8 @@ DECLARE_string(client_white_list);
 namespace nebula {
 namespace meta {
 
-using cpp2::PropertyType;
 using nebula::Value;
+using nebula::cpp2::PropertyType;
 
 TEST(MetaClientTest, InterfacesTest) {
   FLAGS_heartbeat_interval_secs = 1;

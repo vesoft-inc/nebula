@@ -11,6 +11,8 @@
 
 namespace nebula {
 
+using nebula::cpp2::PropertyType;
+
 VertexID getStringId(int64_t vId) {
   std::string id;
   id.append(reinterpret_cast<const char*>(&vId), sizeof(int64_t));
@@ -206,12 +208,12 @@ TEST(IndexKeyUtilsTest, edgeIndexKeyV2) {
 }
 
 TEST(IndexKeyUtilsTest, nullableValue) {
-  auto nullCol = [](const std::string& name, const meta::cpp2::PropertyType type) {
+  auto nullCol = [](const std::string& name, const PropertyType type) {
     meta::cpp2::ColumnDef col;
     col.name = name;
     col.type.set_type(type);
     col.set_nullable(true);
-    if (type == meta::cpp2::PropertyType::FIXED_STRING) {
+    if (type == PropertyType::FIXED_STRING) {
       col.type.set_type_length(10);
     }
     return col;
@@ -221,7 +223,7 @@ TEST(IndexKeyUtilsTest, nullableValue) {
     std::vector<nebula::meta::cpp2::ColumnDef> cols;
     for (int64_t j = 1; j <= 6; j++) {
       values.emplace_back(Value(NullType::__NULL__));
-      cols.emplace_back(nullCol(folly::stringPrintf("col%ld", j), meta::cpp2::PropertyType::BOOL));
+      cols.emplace_back(nullCol(folly::stringPrintf("col%ld", j), PropertyType::BOOL));
     }
     // TODO(jie) Add index key tests for geography
     auto raws = IndexKeyUtils::encodeValues(std::move(values), std::move(cols));
@@ -237,7 +239,7 @@ TEST(IndexKeyUtilsTest, nullableValue) {
     values.emplace_back(Value(NullType::__NULL__));
     std::vector<nebula::meta::cpp2::ColumnDef> cols;
     for (int64_t j = 1; j <= 2; j++) {
-      cols.emplace_back(nullCol(folly::stringPrintf("col%ld", j), meta::cpp2::PropertyType::BOOL));
+      cols.emplace_back(nullCol(folly::stringPrintf("col%ld", j), PropertyType::BOOL));
     }
     auto raws = IndexKeyUtils::encodeValues(std::move(values), std::move(cols));
     u_short s = 0x4000; /* the binary is '01000000 00000000'*/
@@ -252,7 +254,7 @@ TEST(IndexKeyUtilsTest, nullableValue) {
     values.emplace_back(Value(false));
     std::vector<nebula::meta::cpp2::ColumnDef> cols;
     for (int64_t j = 1; j <= 2; j++) {
-      cols.emplace_back(nullCol(folly::stringPrintf("col%ld", j), meta::cpp2::PropertyType::BOOL));
+      cols.emplace_back(nullCol(folly::stringPrintf("col%ld", j), PropertyType::BOOL));
     }
     auto raws = IndexKeyUtils::encodeValues(std::move(values), std::move(cols));
     u_short s = 0x0000; /* the binary is '01000000 00000000'*/
@@ -266,7 +268,7 @@ TEST(IndexKeyUtilsTest, nullableValue) {
     std::vector<nebula::meta::cpp2::ColumnDef> cols;
     for (int64_t i = 0; i < 12; i++) {
       values.emplace_back(Value(NullType::__NULL__));
-      cols.emplace_back(nullCol(folly::stringPrintf("col%ld", i), meta::cpp2::PropertyType::INT64));
+      cols.emplace_back(nullCol(folly::stringPrintf("col%ld", i), PropertyType::INT64));
     }
 
     auto raws = IndexKeyUtils::encodeValues(std::move(values), std::move(cols));
@@ -277,13 +279,13 @@ TEST(IndexKeyUtilsTest, nullableValue) {
     ASSERT_EQ(expected, result);
   }
   {
-    std::vector<meta::cpp2::PropertyType> types;
-    types.emplace_back(meta::cpp2::PropertyType::BOOL);
-    types.emplace_back(meta::cpp2::PropertyType::INT64);
-    types.emplace_back(meta::cpp2::PropertyType::FLOAT);
-    types.emplace_back(meta::cpp2::PropertyType::STRING);
-    types.emplace_back(meta::cpp2::PropertyType::DATE);
-    types.emplace_back(meta::cpp2::PropertyType::DATETIME);
+    std::vector<PropertyType> types;
+    types.emplace_back(PropertyType::BOOL);
+    types.emplace_back(PropertyType::INT64);
+    types.emplace_back(PropertyType::FLOAT);
+    types.emplace_back(PropertyType::STRING);
+    types.emplace_back(PropertyType::DATE);
+    types.emplace_back(PropertyType::DATETIME);
 
     std::vector<Value> values;
     std::vector<nebula::meta::cpp2::ColumnDef> cols;
@@ -319,7 +321,7 @@ TEST(IndexKeyUtilsTest, nullableValue) {
     std::vector<nebula::meta::cpp2::ColumnDef> cols;
     for (int64_t i = 0; i < 9; i++) {
       values.emplace_back(Value(NullType::__NULL__));
-      cols.emplace_back(nullCol(folly::stringPrintf("col%ld", i), meta::cpp2::PropertyType::BOOL));
+      cols.emplace_back(nullCol(folly::stringPrintf("col%ld", i), PropertyType::BOOL));
     }
     auto raws = IndexKeyUtils::encodeValues(std::move(values), std::move(cols));
     u_short s = 0xff80; /* the binary is '11111111 10000000'*/
@@ -368,28 +370,28 @@ TEST(IndexKeyUtilsTest, getValueFromIndexKeyTest) {
   {
     meta::cpp2::ColumnDef col;
     col.set_name("col_bool");
-    col.type.set_type(meta::cpp2::PropertyType::BOOL);
+    col.type.set_type(PropertyType::BOOL);
     cols.emplace_back(col);
     indexValueSize += sizeof(bool);
   }
   {
     meta::cpp2::ColumnDef col;
     col.set_name("col_int");
-    col.type.set_type(meta::cpp2::PropertyType::INT64);
+    col.type.set_type(PropertyType::INT64);
     cols.emplace_back(col);
     indexValueSize += sizeof(int64_t);
   }
   {
     meta::cpp2::ColumnDef col;
     col.set_name("col_float");
-    col.type.set_type(meta::cpp2::PropertyType::FLOAT);
+    col.type.set_type(PropertyType::FLOAT);
     cols.emplace_back(col);
     indexValueSize += sizeof(double);
   }
   {
     meta::cpp2::ColumnDef col;
     col.set_name("col_string");
-    col.type.set_type(meta::cpp2::PropertyType::FIXED_STRING);
+    col.type.set_type(PropertyType::FIXED_STRING);
     col.type.set_type_length(4);
     cols.emplace_back(col);
     indexValueSize += 4;
@@ -397,14 +399,14 @@ TEST(IndexKeyUtilsTest, getValueFromIndexKeyTest) {
   {
     meta::cpp2::ColumnDef col;
     col.set_name("col_date");
-    col.type.set_type(meta::cpp2::PropertyType::DATE);
+    col.type.set_type(PropertyType::DATE);
     cols.emplace_back(col);
     indexValueSize += sizeof(int8_t) * 2 + sizeof(int16_t);
   }
   {
     meta::cpp2::ColumnDef col;
     col.set_name("col_datetime");
-    col.type.set_type(meta::cpp2::PropertyType::DATETIME);
+    col.type.set_type(PropertyType::DATETIME);
     cols.emplace_back(col);
     indexValueSize += sizeof(int32_t) + sizeof(int16_t) + sizeof(int8_t) * 5;
   }
