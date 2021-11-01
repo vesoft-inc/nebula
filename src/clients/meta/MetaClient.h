@@ -751,8 +751,6 @@ class MetaClient {
     SpaceNewestEdgeVerMap spaceNewestEdgeVerMap_;
     SpaceAllEdgeMap spaceAllEdgeMap_;
     std::vector<HostAddr> storageHosts_;
-    UserRolesMap userRolesMap_;
-    FTIndexMap fulltextIndexMap_;
   };
 
   const ThreadLocalInfo& getThreadLocalInfo();
