@@ -423,8 +423,7 @@ Expression *ExpressionUtils::rewriteRelExpr(const Expression *expr) {
     return nullptr;
   };
 
-  std::function<Expression *(const Expression *)> rewriter =
-      [&](const Expression *e) -> Expression * {
+  auto rewriter = [&](const Expression *e) -> Expression * {
     auto exprCopy = e->clone();
     auto relExpr = static_cast<RelationalExpression *>(exprCopy);
     auto lExpr = relExpr->left();

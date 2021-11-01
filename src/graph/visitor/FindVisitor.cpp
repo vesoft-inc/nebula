@@ -145,6 +145,10 @@ void FindVisitor::visit(InputPropertyExpression* expr) {
   findInCurrentExpr(expr);
 }
 
+void FindVisitor::visit(LabelTagPropertyExpression* expr) {
+  findInCurrentExpr(expr);
+}
+
 void FindVisitor::visit(VariablePropertyExpression* expr) {
   findInCurrentExpr(expr);
 }

@@ -352,6 +352,29 @@ void DeduceTypeVisitor::visit(SubscriptExpression *expr) {
   type_ = Value::Type::__EMPTY__;
 }
 
+void DeduceTypeVisitor::visit(LabelTagPropertyExpression *expr) {
+  const auto &tag = expr->tag();
+  auto tagId = qctx_->schemaMng()->toTagID(space_, tag);
+  if (!tagId.ok()) {
+    status_ = tagId.status();
+    return;
+  }
+  auto schema = qctx_->schemaMng()->getTagSchema(space_, tagId.value());
+  if (!schema) {
+    status_ =
+        Status::SemanticError("`%s', not found tag `%s'.", expr->toString().c_str(), tag.c_str());
+    return;
+  }
+  const auto &prop = expr->prop();
+  auto *field = schema->field(prop);
+  if (field == nullptr) {
+    status_ = Status::SemanticError(
+        "`%s', not found the property `%s'.", expr->toString().c_str(), prop.c_str());
+    return;
+  }
+  type_ = SchemaUtil::propTypeToValueType(field->type());
+}
+
 void DeduceTypeVisitor::visit(AttributeExpression *expr) {
   expr->left()->accept(this);
   if (!ok()) return;

@@ -18,6 +18,7 @@
 #include "common/expression/FunctionCallExpression.h"
 #include "common/expression/LabelAttributeExpression.h"
 #include "common/expression/LabelExpression.h"
+#include "common/expression/LabelTagPropertyExpression.h"
 #include "common/expression/ListComprehensionExpression.h"
 #include "common/expression/LogicalExpression.h"
 #include "common/expression/PathBuildExpression.h"
@@ -62,6 +63,7 @@ class ExprVisitor {
   virtual void visit(MapExpression *expr) = 0;
   // property Expression
   virtual void visit(TagPropertyExpression *expr) = 0;
+  virtual void visit(LabelTagPropertyExpression *expr) = 0;
   virtual void visit(EdgePropertyExpression *expr) = 0;
   virtual void visit(InputPropertyExpression *expr) = 0;
   virtual void visit(VariablePropertyExpression *expr) = 0;

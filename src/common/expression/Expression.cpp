@@ -19,6 +19,7 @@
 #include "common/expression/FunctionCallExpression.h"
 #include "common/expression/LabelAttributeExpression.h"
 #include "common/expression/LabelExpression.h"
+#include "common/expression/LabelTagPropertyExpression.h"
 #include "common/expression/ListComprehensionExpression.h"
 #include "common/expression/LogicalExpression.h"
 #include "common/expression/PathBuildExpression.h"
@@ -354,6 +355,11 @@ Expression* Expression::decode(ObjectPool* pool, Expression::Decoder& decoder) {
       exp->resetFrom(decoder);
       return exp;
     }
+    case Expression::Kind::kLabelTagProperty: {
+      exp = LabelTagPropertyExpression::make(pool);
+      exp->resetFrom(decoder);
+      return exp;
+    }
     case Expression::Kind::kLabelAttribute: {
       exp = LabelAttributeExpression::make(pool);
       exp->resetFrom(decoder);
@@ -625,6 +631,9 @@ std::ostream& operator<<(std::ostream& os, Expression::Kind kind) {
       break;
     case Expression::Kind::kLabelAttribute:
       os << "LabelAttribute";
+      break;
+    case Expression::Kind::kLabelTagProperty:
+      os << "LabelTagProperty";
       break;
     case Expression::Kind::kLogicalAnd:
       os << "LogicalAnd";
