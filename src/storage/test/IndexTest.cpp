@@ -46,26 +46,34 @@ using std::string_literals::operator""s;
  *    b. range with begin is include/exclude/-INF
  *    c. range with end id include/exclude/+INF
  * 5. nullable
+ * 6. multiPart
  * Case:
- * ┌──────────┬─────────────────────────────────────────┐
- * │ section1 │ name │ case │ description  │  NOTICE  │
- *   Base     | Base |
- *            | Vertex| IndexOnly
- *            |       | BackToTable
- *            | Edge  | indexOnly
- *                    | BackToTable
- *   Value Type | Int     |  PrefixWithTruncate
- *              | Float   |  PrefixWithoutTruncate
- *              | Bool    |  INCLUDE_INF
- *              | String  |  INCLUDE_EXCLUDE
- *              | Time    |  EXCLUDE_INF
- *              | Date    |  EXCLUDE_INCLUDE
- *              | DateTime|  INF_INCLUDE
- *              | Compound|  INF_EXCLUDE
- *              | Nullable|
+ * ┌────────────┬───────────┬───────────────┬─────────────────────────┬─────────┐
+ * │ section1   │ name      │    case       │     description         │  NOTICE │
+ * ├────────────┼───────────┼───────────────┼─────────────────────────┼─────────┤
+ * | Base       | Base      |               |                         |         |
+ * |            ├───────────┼───────────────┼─────────────────────────┼─────────┤
+ * |            | Vertex    | IndexOnly     |                         |         |
+ * |            | Edge      | BackToTable   |                         |         |
+ * |            ├───────────┼───────────────┼─────────────────────────┼─────────┤
+ * |            | MultiPart |               |                         |         |
+ * ├────────────┼───────────┼───────────────┼─────────────────────────┼─────────┤
+ * | Value Type | Int       | Truncate      | Test different interval |         |
+ * |            | Float     | NoTruncate    | with each type of Value |         |
+ * |            | Bool      | INCLUDE_BEGIN |                         |         |
+ * |            | String    | INCLUDE_END   |                         |         |
+ * |            | Time      | EXCLUDE_BEGIN |                         |         |
+ * |            | Date      | EXCLUDE_END   |                         |         |
+ * |            | DateTime  | POSITIVE_INF  |                         |         |
+ * |            | Compound  | NEGATIVE_INF  |                         |         |
+ * |            | Nullable  |               |                         |         |
+ * |            | Geography |               |                         |         |
+ * └────────────┴───────────┴───────────────┴─────────────────────────┴─────────┘
  *
- * ┌┬┐├┼┤└┴┘┌─┐│┼│└─┘
- *
+ * ┌─┬┐
+ * │ ││
+ * ├─┼┤
+ * └─┴┘
  */
 struct IndexScanTestHelper {
   void setIndex(IndexVertexScanNode* node, std::shared_ptr<::nebula::meta::cpp2::IndexItem> index) {

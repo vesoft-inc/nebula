@@ -62,23 +62,19 @@ nebula::cpp2::ErrorCode IndexVertexScanNode::getBaseData(folly::StringPiece key,
 }
 Row IndexVertexScanNode::decodeFromIndex(folly::StringPiece key) {
   std::vector<Value> values(requiredColumns_.size());
-  Map<std::string, size_t> colPosMap;
-  for (size_t i = 0; i < requiredColumns_.size(); i++) {
-    colPosMap[requiredColumns_[i]] = i;
-  }
-  if (colPosMap.count(kVid)) {
+  if (colPosMap_.count(kVid)) {
     auto vId = IndexKeyUtils::getIndexVertexID(context_->vIdLen(), key);
     if (context_->isIntId()) {
-      values[colPosMap[kVid]] = Value(*reinterpret_cast<const int64_t*>(vId.data()));
+      values[colPosMap_[kVid]] = Value(*reinterpret_cast<const int64_t*>(vId.data()));
     } else {
-      values[colPosMap[kVid]] = Value(vId.subpiece(0, vId.find_first_of('\0')).toString());
+      values[colPosMap_[kVid]] = Value(vId.subpiece(0, vId.find_first_of('\0')).toString());
     }
   }
-  if (colPosMap.count(kTag)) {
-    values[colPosMap[kTag]] = Value(context_->tagId_);
+  if (colPosMap_.count(kTag)) {
+    values[colPosMap_[kTag]] = Value(context_->tagId_);
   }
   key.subtract(context_->vIdLen());
-  decodePropFromIndex(key, colPosMap, values);
+  decodePropFromIndex(key, colPosMap_, values);
   return Row(std::move(values));
 }
 Map<std::string, Value> IndexVertexScanNode::decodeFromBase(const std::string& key,

@@ -80,11 +80,19 @@ void LookupProcessor::doProcess(const cpp2::LookupIndexRequest& req) {
   std::string schemaName;
   if (planContext_->isEdge_) {
     auto edgeType = req.get_indices().get_schema_id().get_edge_type();
-    schemaName = env_->schemaMan_->toEdgeName(req.get_space_id(), edgeType).value();
+    auto schemaNameValue = env_->schemaMan_->toEdgeName(req.get_space_id(), edgeType);
+    if (!schemaNameValue.ok()) {
+      return ::nebula::cpp2::ErrorCode::E_EDGE_NOT_FOUND;
+    }
+    schemaName = schemaNameValue.value();
     context_->edgeType_ = edgeType;
   } else {
     auto tagId = req.get_indices().get_schema_id().get_tag_id();
-    schemaName = env_->schemaMan_->toTagName(req.get_space_id(), tagId).value();
+    auto schemaNameValue = env_->schemaMan_->toTagName(req.get_space_id(), tagId);
+    if (!schemaNameValue.ok()) {
+      return ::nebula::cpp2::ErrorCode::E_TAG_NOT_FOUND;
+    }
+    schemaName = schemaNameValue.value();
     context_->tagId_ = tagId;
   }
   std::vector<std::string> colNames;

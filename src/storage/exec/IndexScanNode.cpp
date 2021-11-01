@@ -59,7 +59,7 @@ std::string Path::encodeValue(const Value& value,
                               std::string& key) {
   std::string val;
   bool isNull = false;
-  if (colDef.get_type() == ::nebula::meta::cpp2::PropertyType::GEOGRAPHY) {
+  if (colDef.get_type() == ::nebula::cpp2::PropertyType::GEOGRAPHY) {
     CHECK_EQ(value.type(), Value::Type::STRING);
     val = value.getStr();
   } else if (value.type() == Value::Type::STRING) {
@@ -74,6 +74,9 @@ std::string Path::encodeValue(const Value& value,
   } else {
     val = IndexKeyUtils::encodeValue(value);
   }
+  // If the current colDef can be null, then it is necessary to additionally determine whether the
+  // corresponding value under a nullable is null when parsing the key (the encoding of the maximum
+  // value, for example, the encoding of INT_MAX and null are the same, both are 8*' \xFF')
   if (!nullable_.empty() && nullable_[index] == true) {
     if (isNull) {
       strategySet_.insert(QualifiedStrategy::checkNull<true>(index, index_nullable_offset_));
@@ -131,33 +134,42 @@ QualifiedStrategy::Result RangePath::qualified(const Map<std::string, Value>& ro
   return QualifiedStrategy::COMPATIBLE;
 }
 void RangePath::buildKey() {
-  std::string common;
-  common.append(IndexKeyUtils::indexPrefix(0, index_->index_id_ref().value()));
+  std::string commonIndexPrefix;
+  commonIndexPrefix.append(IndexKeyUtils::indexPrefix(0, index_->index_id_ref().value()));
   auto fieldIter = index_->get_fields().begin();
   for (size_t i = 0; i < hints_.size() - 1; i++, fieldIter++) {
     auto& hint = hints_[i];
     CHECK(fieldIter->get_name() == hint.get_column_name());
     auto type = IndexKeyUtils::toValueType(fieldIter->get_type().get_type());
     CHECK(type != Value::Type::STRING || fieldIter->get_type().type_length_ref().has_value());
-    encodeValue(hint.get_begin_value(), fieldIter->get_type(), i, common);
+    encodeValue(hint.get_begin_value(), fieldIter->get_type(), i, commonIndexPrefix);
     serializeString_ +=
         fmt::format("{}={}, ", hint.get_column_name(), hint.get_begin_value().toString());
   }
   auto& hint = hints_.back();
   size_t index = hints_.size() - 1;
-  auto [a, b] = encodeRange(hint, fieldIter->get_type(), index, common.size());
+  // The first n-1 columnHint has been spelled out the common prefix, and then according to the nth
+  // columnHint to determine the RangePath Scan range [a, b). Note that [a, b) must be the range of
+  // include begin but exclude end.
+  // [startKey, endKey) = common prefix + [a, b)
+  auto [a, b] = encodeRange(hint, fieldIter->get_type(), index, commonIndexPrefix.size());
+  // left will be `[a`,`(a`, or `[INF`
   std::string left =
       hint.begin_value_ref().is_set()
           ? fmt::format(
                 "{}{}", hint.get_include_begin() ? '[' : '(', hint.get_begin_value().toString())
           : "[-INF";
+  // left will be `b]`,`b)`, or `[INF`
   std::string right =
       hint.end_value_ref().is_set()
           ? fmt::format("{}{}", hint.get_end_value().toString(), hint.get_include_end() ? ']' : ')')
           : "INF]";
   serializeString_ += fmt::format("{}={},{}", hint.get_column_name(), left, right);
-  startKey_ = common + a;
-  endKey_ = common + b;
+  startKey_ = commonIndexPrefix + a;
+  endKey_ = commonIndexPrefix + b;
+  // If `end_value` is not set, `b` will be empty. So `endKey_` should append '\xFF' until
+  // endKey_.size() > `totalKeyLength_` to indicate positive infinity prefixed with
+  // `commonIndexPrefix`
   if (!hint.end_value_ref().is_set()) {
     endKey_.append(totalKeyLength_ - endKey_.size() + 1, '\xFF');
   }
@@ -185,7 +197,7 @@ std::tuple<std::string, std::string> RangePath::encodeRange(
   if (UNLIKELY(needCheckNullable)) {
     strategySet_.insert(QualifiedStrategy::checkNull(colIndex, index_nullable_offset_));
   }
-  if (UNLIKELY(colTypeDef.get_type() == nebula::meta::cpp2::PropertyType::GEOGRAPHY)) {
+  if (UNLIKELY(colTypeDef.get_type() == nebula::cpp2::PropertyType::GEOGRAPHY)) {
     strategySet_.insert(QualifiedStrategy::dedupGeoIndex(suffixLength_));
   }
   return {startKey, endKey};
@@ -197,7 +209,7 @@ std::string RangePath::encodeBeginValue(const Value& value,
   std::string val;
   bool greater = !includeStart_;
   CHECK_NE(value.type(), Value::Type::NULLVALUE);
-  if (colDef.get_type() == ::nebula::meta::cpp2::PropertyType::GEOGRAPHY) {
+  if (colDef.get_type() == ::nebula::cpp2::PropertyType::GEOGRAPHY) {
     val = value.getStr();
   } else if (value.type() == Value::Type::STRING) {
     bool truncated = false;
@@ -228,7 +240,7 @@ std::string RangePath::encodeEndValue(const Value& value,
   CHECK_NE(value.type(), Value::Type::NULLVALUE);
   std::string val;
   bool greater = includeEnd_;
-  if (colDef.get_type() == ::nebula::meta::cpp2::PropertyType::GEOGRAPHY) {
+  if (colDef.get_type() == ::nebula::cpp2::PropertyType::GEOGRAPHY) {
     val = value.getStr();
   } else if (value.type() == Value::Type::STRING) {
     bool truncated = false;
@@ -311,7 +323,7 @@ void PrefixPath::buildKey() {
         fmt::format("{}={}, ", hint.get_column_name(), hint.get_begin_value().toString());
   }
   for (; fieldIter != index_->get_fields().end(); fieldIter++) {
-    if (UNLIKELY(fieldIter->get_type().get_type() == nebula::meta::cpp2::PropertyType::GEOGRAPHY)) {
+    if (UNLIKELY(fieldIter->get_type().get_type() == nebula::cpp2::PropertyType::GEOGRAPHY)) {
       strategySet_.insert(QualifiedStrategy::dedupGeoIndex(suffixLength_));
       break;
     }
@@ -332,7 +344,8 @@ IndexScanNode::IndexScanNode(const IndexScanNode& node)
       requiredColumns_(node.requiredColumns_),
       requiredAndHintColumns_(node.requiredAndHintColumns_),
       ttlProps_(node.ttlProps_),
-      needAccessBase_(node.needAccessBase_) {
+      needAccessBase_(node.needAccessBase_),
+      colPosMap_(node.colPosMap_) {
   if (node.path_->isRange()) {
     path_ = std::make_unique<RangePath>(*dynamic_cast<RangePath*>(node.path_.get()));
   } else {
@@ -355,14 +368,15 @@ IndexScanNode::IndexScanNode(const IndexScanNode& node)
   for (size_t i = 0; i < ctx.returnColumns.size(); i++) {
     ctx.retColMap[ctx.returnColumns[i]] = i;
   }
+  colPosMap_ = ctx.retColMap;
   // Analyze whether the scan needs to access base data.
   // TODO(hs.zhang): The performance is better to judge based on whether the string is truncated
   auto tmp = ctx.requiredColumns;
   for (auto& field : index_->get_fields()) {
-    if (field.get_type().get_type() == PropertyType::FIXED_STRING) {
+    if (field.get_type().get_type() == ::nebula::cpp2::PropertyType::FIXED_STRING) {
       continue;
     }
-    if (field.get_type().get_type() == PropertyType::GEOGRAPHY) {
+    if (field.get_type().get_type() == ::nebula::cpp2::PropertyType::GEOGRAPHY) {
       continue;
     }
     tmp.erase(field.get_name());
@@ -403,13 +417,16 @@ IndexNode::ErrorOr<Row> IndexScanNode::doNext(bool& hasNext) {
     }
     std::pair<std::string, std::string> kv;
     auto ret = getBaseData(iter_->key(), kv);
-    if (ret == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
+    if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {  // do nothing
+    } else if (ret == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
       if (LIKELY(!fatalOnBaseNotFound_)) {
         LOG(WARNING) << "base data not found";
       } else {
         LOG(FATAL) << "base data not found";
       }
       continue;
+    } else {
+      return ret;
     }
     Map<std::string, Value> rowData = decodeFromBase(kv.first, kv.second);
     if (!compatible) {
@@ -453,10 +470,7 @@ nebula::cpp2::ErrorCode IndexScanNode::resetIter(PartitionID partId) {
              << folly::hexDump(rangePath->getStartKey().data(), rangePath->getStartKey().size());
     DVLOG(1) << '\n'
              << folly::hexDump(rangePath->getEndKey().data(), rangePath->getEndKey().size());
-    std::unique_ptr<::nebula::kvstore::KVIterator> iter;
-    ret =
-        kvstore_->range(spaceId_, partId, rangePath->getStartKey(), rangePath->getEndKey(), &iter);
-    iter_ = std::move(iter);
+    kvstore_->range(spaceId_, partId, rangePath->getStartKey(), rangePath->getEndKey(), &iter_);
   } else {
     auto prefixPath = dynamic_cast<PrefixPath*>(path_.get());
     DVLOG(1) << '\n'
@@ -469,6 +483,9 @@ nebula::cpp2::ErrorCode IndexScanNode::resetIter(PartitionID partId) {
 void IndexScanNode::decodePropFromIndex(folly::StringPiece key,
                                         const Map<std::string, size_t>& colPosMap,
                                         std::vector<Value>& values) {
+  if (colPosMap.empty()) {
+    return;
+  }
   size_t offset = sizeof(PartitionID) + sizeof(IndexID);
   std::bitset<16> nullableBit;
   int8_t nullableColPosit = 15;

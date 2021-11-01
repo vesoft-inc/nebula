@@ -44,6 +44,7 @@ IndexNode::ErrorOr<Row> IndexProjectionNode::doNext(bool& hasNext) {
 }
 Row IndexProjectionNode::project(Row&& row) {
   Row ret;
+  ret.reserve(requiredColumns_.size());
   for (auto& col : requiredColumns_) {
     ret.emplace_back(std::move(row[colPos_[col]]));
   }

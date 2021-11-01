@@ -172,6 +172,7 @@ class IndexScanNode : public IndexNode {
   std::pair<bool, std::pair<int64_t, std::string>> ttlProps_;
   bool needAccessBase_{false};
   bool fatalOnBaseNotFound_{false};
+  Map<std::string, size_t> colPosMap_;
 };
 class QualifiedStrategy {
  public:

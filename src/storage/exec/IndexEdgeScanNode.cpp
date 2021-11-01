@@ -47,41 +47,39 @@ IndexEdgeScanNode::IndexEdgeScanNode(RuntimeContext* context,
 }
 Row IndexEdgeScanNode::decodeFromIndex(folly::StringPiece key) {
   std::vector<Value> values(requiredColumns_.size());
-  Map<std::string, size_t> colPosMap;
-  for (size_t i = 0; i < requiredColumns_.size(); i++) {
-    colPosMap[requiredColumns_[i]] = i;
-  }
-  if (colPosMap.count(kSrc)) {
+  if (colPosMap_.count(kSrc)) {
     auto vId = IndexKeyUtils::getIndexSrcId(context_->vIdLen(), key);
     DVLOG(1) << folly::hexDump(vId.data(), vId.size());
     if (context_->isIntId()) {
-      values[colPosMap[kSrc]] = Value(*reinterpret_cast<const int64_t*>(vId.data()));
+      values[colPosMap_[kSrc]] = Value(*reinterpret_cast<const int64_t*>(vId.data()));
     } else {
       DVLOG(2) << vId.subpiece(0, vId.find_first_of('\0'));
       DVLOG(2) << vId.subpiece(0, vId.find_first_of('\0')).toString();
       DVLOG(2) << Value(vId.subpiece(0, vId.find_first_of('\0')).toString());
-      values[colPosMap[kSrc]] = Value(vId.subpiece(0, vId.find_first_of('\0')).toString());
+      values[colPosMap_[kSrc]] = Value(vId.subpiece(0, vId.find_first_of('\0')).toString());
     }
   }
-  DVLOG(1) << values[colPosMap[kSrc]];
-  if (colPosMap.count(kDst)) {
+  DVLOG(1) << values[colPosMap_[kSrc]];
+  if (colPosMap_.count(kDst)) {
     auto vId = IndexKeyUtils::getIndexDstId(context_->vIdLen(), key);
     if (context_->isIntId()) {
-      values[colPosMap[kDst]] = Value(*reinterpret_cast<const int64_t*>(vId.data()));
+      values[colPosMap_[kDst]] = Value(*reinterpret_cast<const int64_t*>(vId.data()));
     } else {
-      values[colPosMap[kDst]] = Value(vId.subpiece(0, vId.find_first_of('\0')).toString());
+      values[colPosMap_[kDst]] = Value(vId.subpiece(0, vId.find_first_of('\0')).toString());
     }
   }
-  DVLOG(1) << values[colPosMap[kDst]];
-  if (colPosMap.count(kRank)) {
+  DVLOG(1) << values[colPosMap_[kDst]];
+  if (colPosMap_.count(kRank)) {
     auto rank = IndexKeyUtils::getIndexRank(context_->vIdLen(), key);
-    values[colPosMap[kRank]] = Value(rank);
+    values[colPosMap_[kRank]] = Value(rank);
   }
-  if (colPosMap.count(kType)) {
-    values[colPosMap[kType]] = Value(context_->edgeType_);
+  if (colPosMap_.count(kType)) {
+    values[colPosMap_[kType]] = Value(context_->edgeType_);
   }
+  // Truncate the src/rank/dst at the end to facilitate obtaining the two bytes representing the
+  // nullableBit directly at the end when needed
   key.subtract(context_->vIdLen() * 2 + sizeof(EdgeType));
-  decodePropFromIndex(key, colPosMap, values);
+  decodePropFromIndex(key, colPosMap_, values);
   return Row(std::move(values));
 }
 nebula::cpp2::ErrorCode IndexEdgeScanNode::getBaseData(folly::StringPiece key,

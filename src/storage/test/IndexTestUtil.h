@@ -497,11 +497,11 @@ class SchemaParser {
  private:
   std::stringstream ss;
   std::shared_ptr<::nebula::meta::NebulaSchemaProvider> schema;
-  std::map<std::string, ::nebula::meta::cpp2::PropertyType> typeMap{
-      {"int", ::nebula::meta::cpp2::PropertyType::INT64},
-      {"double", ::nebula::meta::cpp2::PropertyType::DOUBLE},
-      {"string", ::nebula::meta::cpp2::PropertyType::STRING},
-      {"bool", ::nebula::meta::cpp2::PropertyType::BOOL}};
+  std::map<std::string, ::nebula::cpp2::PropertyType> typeMap{
+      {"int", ::nebula::cpp2::PropertyType::INT64},
+      {"double", ::nebula::cpp2::PropertyType::DOUBLE},
+      {"string", ::nebula::cpp2::PropertyType::STRING},
+      {"bool", ::nebula::cpp2::PropertyType::BOOL}};
 };
 
 /**
@@ -583,7 +583,7 @@ class IndexParser {
       ::nebula::meta::cpp2::ColumnTypeDef type;
       if (length > 0) {
         type.set_type_length(length);
-        type.set_type(::nebula::meta::cpp2::PropertyType::FIXED_STRING);
+        type.set_type(::nebula::cpp2::PropertyType::FIXED_STRING);
       } else {
         type.set_type(field->type());
       }

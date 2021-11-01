@@ -51,9 +51,9 @@ IndexNode::ErrorOr<Row> IndexDedupNode::doNext(bool& hasNext) {
       if (!hasNext) {
         break;
       }
-      auto d = dedup(::nebula::value(result));
-      DVLOG(3) << d << "\t" << ::nebula::value(result);
-      if (d) {
+      auto dedupResult = dedup(::nebula::value(result));
+      DVLOG(3) << dedupResult << "\t" << ::nebula::value(result);
+      if (dedupResult) {
         ret = ::nebula::value(std::move(result));
         hasNext = true;
         break;
@@ -68,6 +68,7 @@ IndexNode::ErrorOr<Row> IndexDedupNode::doNext(bool& hasNext) {
   return ret;
 }
 IndexDedupNode::RowWrapper::RowWrapper(const Row& row, const std::vector<size_t>& posList) {
+  values_.reserve(posList.size());
   for (auto p : posList) {
     values_.emplace_back(row[p]);
   }
