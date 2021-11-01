@@ -79,7 +79,7 @@ void TraverseExecutor::getNeighbors() {
                      traverse_->edgeDirection(),
                      finalStep ? traverse_->statProps() : nullptr,
                      finalStep ? traverse_->vertexProps() : nullptr,
-                     finalStep ? traverse_->edgeProps() : traverse_->edgeDst(),
+                     traverse_->edgeProps(),
                      finalStep ? traverse_->exprs() : nullptr,
                      finalStep ? traverse_->dedup() : false,
                      finalStep ? traverse_->random() : false,
@@ -210,20 +210,21 @@ Status TraverseExecutor::buildInterimPath(GetNeighborsIter* iter) {
       }
     } else {
       // Join on dst = src
-      // VLOG(1) << "Find prev path: " << srcV.getVertex().vid;
       auto pathToSrcFound = prev->find(srcV.getVertex().vid);
       if (pathToSrcFound == prev->end()) {
         return Status::Error("Can't find prev paths.");
       }
       const auto& paths = pathToSrcFound->second;
       for (auto path : paths) {
+        VLOG(1) << "prev path: " << path;
+        auto& eList = path.values[1].mutableList().values;
         // Unique edge in a path.
-        if (path.values[1].mutableList().values.back() == e) {
+        if (eList.back().getEdge().keyEqual(e.getEdge())) {
           continue;
         }
-        path.values[1].mutableList().values.emplace_back(srcV);
-        path.values[1].mutableList().values.emplace_back(e);
-        // VLOG(1) << "path " << __LINE__ << " :" << path;
+        eList.emplace_back(srcV);
+        eList.emplace_back(e);
+        VLOG(1) << "path " << __LINE__ << " :" << path;
         auto pathToDstFound = current->find(dst);
         if (pathToDstFound == current->end()) {
           Paths interimPaths;

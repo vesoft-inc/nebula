@@ -36,13 +36,13 @@ static std::vector<std::string> genAppendVColNames(const std::vector<std::string
 }
 
 static Expression* genNextTraverseStart(ObjectPool* pool, const EdgeInfo& edge) {
-  // dst(last(list))
+  // none_direct_dst(last(list))
   auto args = ArgumentList::make(pool);
   args->addArgument(InputPropertyExpression::make(pool, edge.alias));
   auto last = FunctionCallExpression::make(pool, "last", args);
   auto args1 = ArgumentList::make(pool);
   args1->addArgument(last);
-  return FunctionCallExpression::make(pool, "dst", args1);
+  return FunctionCallExpression::make(pool, "none_direct_dst", args1);
 }
 
 static Expression* genVertexFilter(const NodeInfo& node) { return node.filter; }
@@ -280,7 +280,7 @@ Status MatchClausePlanner::leftExpandFromNode(const std::vector<NodeInfo>& nodeI
     traverse->setSrc(startIndex == i ? initialExpr_ : nextTraverseStart);
     traverse->setVertexProps(genVertexProps(node, qctx, spaceId));
     traverse->setEdgeProps(genEdgeProps(edge, reversely, qctx, spaceId));
-    traverse->setEdgeProps(genEdgeDst(edge, reversely, qctx, spaceId));
+    traverse->setEdgeDst(genEdgeDst(edge, reversely, qctx, spaceId));
     traverse->setVertexFilter(genVertexFilter(node));
     traverse->setEdgeFilter(genEdgeFilter(edge));
     traverse->setEdgeDirection(edge.direction);  // TODO: reverse the direction

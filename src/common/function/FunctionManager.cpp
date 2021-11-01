@@ -1946,6 +1946,26 @@ FunctionManager::FunctionManager() {
     };
   }
   {
+    auto &attr = functions_["none_direct_dst"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      switch (args[0].get().type()) {
+        case Value::Type::NULLVALUE: {
+          return Value::kNullValue;
+        }
+        case Value::Type::EDGE: {
+          const auto &edge = args[0].get().getEdge();
+          return edge.dst;
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
+    };
+  }
+  {
     auto &attr = functions_["rank"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
