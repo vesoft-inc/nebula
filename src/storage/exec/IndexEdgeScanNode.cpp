@@ -58,8 +58,8 @@ Row IndexEdgeScanNode::decodeFromIndex(folly::StringPiece key) {
       DVLOG(2) << Value(vId.subpiece(0, vId.find_first_of('\0')).toString());
       values[colPosMap_[kSrc]] = Value(vId.subpiece(0, vId.find_first_of('\0')).toString());
     }
+    DVLOG(1) << values[colPosMap_[kSrc]];
   }
-  DVLOG(1) << values[colPosMap_[kSrc]];
   if (colPosMap_.count(kDst)) {
     auto vId = IndexKeyUtils::getIndexDstId(context_->vIdLen(), key);
     if (context_->isIntId()) {
@@ -67,8 +67,8 @@ Row IndexEdgeScanNode::decodeFromIndex(folly::StringPiece key) {
     } else {
       values[colPosMap_[kDst]] = Value(vId.subpiece(0, vId.find_first_of('\0')).toString());
     }
+    DVLOG(1) << values[colPosMap_[kDst]];
   }
-  DVLOG(1) << values[colPosMap_[kDst]];
   if (colPosMap_.count(kRank)) {
     auto rank = IndexKeyUtils::getIndexRank(context_->vIdLen(), key);
     values[colPosMap_[kRank]] = Value(rank);
@@ -78,7 +78,7 @@ Row IndexEdgeScanNode::decodeFromIndex(folly::StringPiece key) {
   }
   // Truncate the src/rank/dst at the end to facilitate obtaining the two bytes representing the
   // nullableBit directly at the end when needed
-  key.subtract(context_->vIdLen() * 2 + sizeof(EdgeType));
+  key.subtract(context_->vIdLen() * 2 + sizeof(EdgeRanking));
   decodePropFromIndex(key, colPosMap_, values);
   return Row(std::move(values));
 }
