@@ -516,7 +516,7 @@ class MetaClient {
 
   Status checkSpaceExistInCache(const HostAddr& host, GraphSpaceID spaceId);
 
-  StatusOr<int32_t> partsNum(GraphSpaceID spaceId) const;
+  StatusOr<int32_t> partsNum(GraphSpaceID spaceId);
 
   PartitionID partId(int32_t numParts, VertexID id) const;
 
@@ -578,11 +578,11 @@ class MetaClient {
 
   bool authCheckFromCache(const std::string& account, const std::string& password) const;
 
-  StatusOr<TermID> getTermFromCache(GraphSpaceID spaceId, PartitionID) const;
+  StatusOr<TermID> getTermFromCache(GraphSpaceID spaceId, PartitionID);
 
   bool checkShadowAccountFromCache(const std::string& account) const;
 
-  StatusOr<std::vector<HostAddr>> getStorageHosts() const;
+  StatusOr<std::vector<HostAddr>> getStorageHosts();
 
   StatusOr<cpp2::Session> getSessionFromCache(const nebula::SessionID& session_id);
 
