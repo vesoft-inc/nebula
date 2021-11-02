@@ -90,3 +90,10 @@ Feature: Lookup with yield
       | "Marco Belinelli" | "Tony Parker"  | 0       | 50            | [:like "Marco Belinelli"->"Tony Parker" @0 {likeness: 50}] |
       | "Rajon Rondo"     | "Ray Allen"    | 0       | -1            | [:like "Rajon Rondo"->"Ray Allen" @0 {likeness: -1}]       |
       | "Ray Allen"       | "Rajon Rondo"  | 0       | 9             | [:like "Ray Allen"->"Rajon Rondo" @0 {likeness: 9}]        |
+    When executing query:
+      """
+      LOOKUP ON like WHERE like.likeness < 50 + 1 YIELD like.likeness, edge as relationship | YIELD count(*) as nums
+      """
+    Then the result should be, in any order:
+      | nums |
+      | 6    |
