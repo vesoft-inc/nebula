@@ -6,9 +6,6 @@
 
 #include <gtest/gtest.h>
 
-#include <string>
-#include <vector>
-
 #include "common/base/Base.h"
 #include "common/datatypes/DataSet.h"
 #include "common/datatypes/Edge.h"
