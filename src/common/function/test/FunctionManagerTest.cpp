@@ -16,6 +16,7 @@
 #include "common/datatypes/Map.h"
 #include "common/datatypes/Path.h"
 #include "common/datatypes/Set.h"
+#include "common/datatypes/Value.h"
 #include "common/datatypes/Vertex.h"
 #include "common/function/FunctionManager.h"
 #include "common/time/TimeUtils.h"
@@ -944,8 +945,9 @@ TEST_F(FunctionManagerTest, returnType) {
 
     for (const TestReurnType &test_case : test_cases) {
       auto result = FunctionManager::getReturnType(test_case.func_name, test_case.args);
-      ASSERT_TRUE(result.ok());
-      EXPECT_EQ(result.value(), test_case.returnType);
+      ASSERT_TRUE(result.ok()) << "Fail in function: " << test_case.func_name;
+      EXPECT_EQ(result.value(), test_case.returnType)
+          << "Fail in function: " << test_case.func_name;
     }
 
     // Test base case
@@ -987,8 +989,9 @@ TEST_F(FunctionManagerTest, returnType) {
 
     for (const TestBadReurnType &test_case : test_bad_cases) {
       auto result = FunctionManager::getReturnType(test_case.func_name, test_case.args);
-      ASSERT_FALSE(result.ok());
-      EXPECT_EQ(result.status().toString(), "Parameter's type error");
+      ASSERT_FALSE(result.ok()) << "Fail in function: " << test_case.func_name;
+      EXPECT_EQ(result.status().toString(), "Parameter's type error")
+          << "Fail in function: " << test_case.func_name;
     }
   }
 }
