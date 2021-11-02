@@ -831,9 +831,9 @@ Status MetaClient::handleResponse(const RESP& resp) {
 
 PartsMap MetaClient::doGetPartsMap(const HostAddr& host, const LocalCache& localCache) {
   PartsMap partMap;
-  for (const auto& it : localCache) {
-    auto spaceId = it.first;
-    auto& cache = it.second;
+  for (auto it = localCache.begin(); it != localCache.end(); it++) {
+    auto spaceId = it->first;
+    auto& cache = it->second;
     auto partsIt = cache->partsOnHost_.find(host);
     if (partsIt != cache->partsOnHost_.end()) {
       for (auto& partId : partsIt->second) {
@@ -858,28 +858,28 @@ void MetaClient::diff(const LocalCache& oldCache, const LocalCache& newCache) {
   auto newPartsMap = doGetPartsMap(options_.localHost_, newCache);
   auto oldPartsMap = doGetPartsMap(options_.localHost_, oldCache);
   VLOG(1) << "Let's check if any new parts added/updated for " << options_.localHost_;
-  for (auto& it : newPartsMap) {
-    auto spaceId = it.first;
-    const auto& newParts = it.second;
+  for (auto it = newPartsMap.begin(); it != newPartsMap.end(); it++) {
+    auto spaceId = it->first;
+    const auto& newParts = it->second;
     auto oldIt = oldPartsMap.find(spaceId);
     if (oldIt == oldPartsMap.end()) {
       VLOG(1) << "SpaceId " << spaceId << " was added!";
       listener_->onSpaceAdded(spaceId);
-      for (const auto& newPart : newParts) {
-        listener_->onPartAdded(newPart.second);
+      for (auto partIt = newParts.begin(); partIt != newParts.end(); partIt++) {
+        listener_->onPartAdded(partIt->second);
       }
     } else {
       const auto& oldParts = oldIt->second;
-      for (const auto& newPart : newParts) {
-        auto oldPartIt = oldParts.find(newPart.first);
+      for (auto partIt = newParts.begin(); partIt != newParts.end(); partIt++) {
+        auto oldPartIt = oldParts.find(partIt->first);
         if (oldPartIt == oldParts.end()) {
-          VLOG(1) << "SpaceId " << spaceId << ", partId " << newPart.first << " was added!";
-          listener_->onPartAdded(newPart.second);
+          VLOG(1) << "SpaceId " << spaceId << ", partId " << partIt->first << " was added!";
+          listener_->onPartAdded(partIt->second);
         } else {
           const auto& oldPartHosts = oldPartIt->second;
-          const auto& newPartHosts = newPart.second;
+          const auto& newPartHosts = partIt->second;
           if (oldPartHosts != newPartHosts) {
-            VLOG(1) << "SpaceId " << spaceId << ", partId " << newPart.first << " was updated!";
+            VLOG(1) << "SpaceId " << spaceId << ", partId " << partIt->first << " was updated!";
             listener_->onPartUpdated(newPartHosts);
           }
         }
@@ -887,23 +887,23 @@ void MetaClient::diff(const LocalCache& oldCache, const LocalCache& newCache) {
     }
   }
   VLOG(1) << "Let's check if any old parts removed....";
-  for (auto& it : oldPartsMap) {
-    auto spaceId = it.first;
-    const auto& oldParts = it.second;
+  for (auto it = oldPartsMap.begin(); it != oldPartsMap.end(); it++) {
+    auto spaceId = it->first;
+    const auto& oldParts = it->second;
     auto newIt = newPartsMap.find(spaceId);
     if (newIt == newPartsMap.end()) {
       VLOG(1) << "SpaceId " << spaceId << " was removed!";
-      for (const auto& oldPart : oldParts) {
-        listener_->onPartRemoved(spaceId, oldPart.first);
+      for (auto partIt = oldParts.begin(); partIt != oldParts.end(); partIt++) {
+        listener_->onPartRemoved(spaceId, partIt->first);
       }
       listener_->onSpaceRemoved(spaceId);
     } else {
       const auto& newParts = newIt->second;
-      for (const auto& oldPart : oldParts) {
-        auto newPartIt = newParts.find(oldPart.first);
+      for (auto partIt = oldParts.begin(); partIt != oldParts.end(); partIt++) {
+        auto newPartIt = newParts.find(partIt->first);
         if (newPartIt == newParts.end()) {
-          VLOG(1) << "SpaceId " << spaceId << ", partId " << oldPart.first << " was removed!";
-          listener_->onPartRemoved(spaceId, oldPart.first);
+          VLOG(1) << "SpaceId " << spaceId << ", partId " << partIt->first << " was removed!";
+          listener_->onPartRemoved(spaceId, partIt->first);
         }
       }
     }
@@ -1178,8 +1178,8 @@ MetaClient::getPartsAlloc(GraphSpaceID spaceId, PartTerms* partTerms) {
       [](auto client, auto request) { return client->future_getPartsAlloc(request); },
       [=](cpp2::GetPartsAllocResp&& resp) -> decltype(auto) {
         std::unordered_map<PartitionID, std::vector<HostAddr>> parts;
-        for (const auto& it : resp.get_parts()) {
-          parts.emplace(it.first, it.second);
+        for (auto it = resp.get_parts().begin(); it != resp.get_parts().end(); it++) {
+          parts.emplace(it->first, it->second);
         }
         if (partTerms && resp.terms_ref().has_value()) {
           for (auto& termOfPart : resp.terms_ref().value()) {
@@ -3364,9 +3364,9 @@ StatusOr<std::unordered_map<std::string, cpp2::FTIndex>> MetaClient::getFTIndexB
   }
   folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   std::unordered_map<std::string, cpp2::FTIndex> indexes;
-  for (const auto& it : fulltextIndexMap_) {
-    if (it.second.get_space_id() == spaceId) {
-      indexes[it.first] = it.second;
+  for (auto it = fulltextIndexMap_.begin(); it != fulltextIndexMap_.end(); ++it) {
+    if (it->second.get_space_id() == spaceId) {
+      indexes[it->first] = it->second;
     }
   }
   return indexes;
@@ -3378,12 +3378,12 @@ StatusOr<std::pair<std::string, cpp2::FTIndex>> MetaClient::getFTIndexBySpaceSch
     return Status::Error("Not ready!");
   }
   folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-  for (const auto& it : fulltextIndexMap_) {
-    auto id = it.second.get_depend_schema().getType() == nebula::cpp2::SchemaID::Type::edge_type
-                  ? it.second.get_depend_schema().get_edge_type()
-                  : it.second.get_depend_schema().get_tag_id();
-    if (it.second.get_space_id() == spaceId && id == schemaId) {
-      return std::make_pair(it.first, it.second);
+  for (auto it = fulltextIndexMap_.begin(); it != fulltextIndexMap_.end(); ++it) {
+    auto id = it->second.get_depend_schema().getType() == nebula::cpp2::SchemaID::Type::edge_type
+                  ? it->second.get_depend_schema().get_edge_type()
+                  : it->second.get_depend_schema().get_tag_id();
+    if (it->second.get_space_id() == spaceId && id == schemaId) {
+      return std::make_pair(it->first, it->second);
     }
   }
   return Status::IndexNotFound();
