@@ -22,6 +22,9 @@ jobs:
           # - centos6
           - centos7
           - centos8
+        arch:
+          - linux/amd64
+          - linux/arm64
     steps:
       - uses: webiny/action-post-run@2.0.1
         with:
@@ -37,8 +40,8 @@ jobs:
         with:
           context: .
           file: ./docker/Dockerfile.buildx
-          platforms: linux/amd64,linux/arm64
-          tags: vesoft/nebula-buildx:${{ matrix.os }}
+          platforms: ${{ matrix.arch }}
+          tags: vesoft/nebula-buildx:${{ matrix.os }}-${{ matrix.arch }}
           target: nightly
           push: false
           build-args: |
