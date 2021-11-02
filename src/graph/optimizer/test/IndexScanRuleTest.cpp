@@ -124,8 +124,9 @@ TEST(IndexScanRuleTest, IQCtxTest) {
       const auto& colHints = iqctx.begin()->get_column_hints();
       ASSERT_EQ("col0", colHints.begin()->get_column_name());
       ASSERT_EQ(storage::cpp2::ScanType::RANGE, colHints.begin()->get_scan_type());
-      ASSERT_EQ(Value(std::numeric_limits<int64_t>::min()), colHints.begin()->get_begin_value());
-      ASSERT_EQ(Value(1L), colHints.begin()->get_end_value());
+      ASSERT_EQ(1, colHints.begin()->get_end_value());
+      ASSERT_FALSE(colHints.begin()->get_include_end());
+      ASSERT_FALSE(colHints.begin()->begin_value_ref().is_set());
     }
 
     // setup FilterItems col0 > 1 and col1 <= 2 and col1 > -1 and col2 > 3
@@ -152,8 +153,9 @@ TEST(IndexScanRuleTest, IQCtxTest) {
         auto hint = colHints[0];
         ASSERT_EQ("col0", hint.get_column_name());
         ASSERT_EQ(storage::cpp2::ScanType::RANGE, hint.get_scan_type());
-        ASSERT_EQ(Value(2L), hint.get_begin_value());
-        ASSERT_EQ(Value(std::numeric_limits<int64_t>::max()), hint.get_end_value());
+        ASSERT_EQ(1, hint.get_begin_value());
+        ASSERT_FALSE(hint.get_include_begin());
+        ASSERT_FALSE(hint.end_value_ref().is_set());
       }
     }
 
@@ -188,8 +190,10 @@ TEST(IndexScanRuleTest, IQCtxTest) {
         auto hint = colHints[1];
         ASSERT_EQ("col1", hint.get_column_name());
         ASSERT_EQ(storage::cpp2::ScanType::RANGE, hint.get_scan_type());
-        ASSERT_EQ(Value(0L), hint.get_begin_value());
-        ASSERT_EQ(Value(3L), hint.get_end_value());
+        ASSERT_EQ(Value(-1L), hint.get_begin_value());
+        ASSERT_FALSE(hint.get_include_begin());
+        ASSERT_EQ(Value(2L), hint.get_end_value());
+        ASSERT_TRUE(hint.get_include_end());
       }
     }
     // setup FilterItems col0 == 1 and col1 == 2 and col2 == -1 and col3 > 3
@@ -235,8 +239,8 @@ TEST(IndexScanRuleTest, IQCtxTest) {
         auto hint = colHints[3];
         ASSERT_EQ("col3", hint.get_column_name());
         ASSERT_EQ(storage::cpp2::ScanType::RANGE, hint.get_scan_type());
-        ASSERT_EQ(Value(4L), hint.get_begin_value());
-        ASSERT_EQ(Value(std::numeric_limits<int64_t>::max()), hint.get_end_value());
+        ASSERT_EQ(Value(3L), hint.get_begin_value());
+        ASSERT_FALSE(hint.get_include_begin());
       }
     }
   }
@@ -261,7 +265,8 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
       const auto& hint = hints[0];
       EXPECT_EQ("col_int", *hint.column_name_ref());
       EXPECT_EQ(storage::cpp2::ScanType::RANGE, *hint.scan_type_ref());
-      EXPECT_EQ(std::numeric_limits<int64_t>::min(), *hint.begin_value_ref());
+      EXPECT_FALSE(hint.begin_value_ref().is_set());
+      EXPECT_FALSE(hint.get_include_end());
       EXPECT_EQ(2, *hint.end_value_ref());
     }
     {
@@ -275,8 +280,9 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
       const auto& hint = hints[0];
       EXPECT_EQ("col_int", *hint.column_name_ref());
       EXPECT_EQ(storage::cpp2::ScanType::RANGE, *hint.scan_type_ref());
-      EXPECT_EQ(std::numeric_limits<int64_t>::min(), *hint.begin_value_ref());
-      EXPECT_EQ(3, *hint.end_value_ref());
+      EXPECT_FALSE(hint.begin_value_ref().is_set());
+      EXPECT_TRUE(hint.get_include_end());
+      EXPECT_EQ(2, *hint.end_value_ref());
     }
     {
       std::vector<storage::cpp2::IndexColumnHint> hints;
@@ -289,8 +295,9 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
       const auto& hint = hints[0];
       EXPECT_EQ("col_int", *hint.column_name_ref());
       EXPECT_EQ(storage::cpp2::ScanType::RANGE, *hint.scan_type_ref());
-      EXPECT_EQ(3, *hint.begin_value_ref());
-      EXPECT_EQ(std::numeric_limits<int64_t>::max(), *hint.end_value_ref());
+      EXPECT_FALSE(hint.end_value_ref().is_set());
+      EXPECT_FALSE(hint.get_include_begin());
+      EXPECT_EQ(2, *hint.begin_value_ref());
     }
     {
       std::vector<storage::cpp2::IndexColumnHint> hints;
@@ -303,8 +310,9 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
       const auto& hint = hints[0];
       EXPECT_EQ("col_int", *hint.column_name_ref());
       EXPECT_EQ(storage::cpp2::ScanType::RANGE, *hint.scan_type_ref());
+      EXPECT_FALSE(hint.end_value_ref().is_set());
+      EXPECT_TRUE(hint.get_include_begin());
       EXPECT_EQ(2, *hint.begin_value_ref());
-      EXPECT_EQ(std::numeric_limits<int64_t>::max(), *hint.end_value_ref());
     }
     {
       std::vector<storage::cpp2::IndexColumnHint> hints;
@@ -318,8 +326,10 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
       const auto& hint = hints[0];
       EXPECT_EQ("col_int", *hint.column_name_ref());
       EXPECT_EQ(storage::cpp2::ScanType::RANGE, *hint.scan_type_ref());
-      EXPECT_EQ(3, *hint.begin_value_ref());
-      EXPECT_EQ(5, *hint.end_value_ref());
+      EXPECT_EQ(2, hint.get_begin_value());
+      EXPECT_FALSE(hint.get_include_begin());
+      EXPECT_EQ(5, hint.get_end_value());
+      EXPECT_FALSE(hint.get_include_end());
     }
     {
       std::vector<storage::cpp2::IndexColumnHint> hints;
@@ -333,8 +343,10 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
       const auto& hint = hints[0];
       EXPECT_EQ("col_int", *hint.column_name_ref());
       EXPECT_EQ(storage::cpp2::ScanType::RANGE, *hint.scan_type_ref());
-      EXPECT_EQ(2, *hint.begin_value_ref());
-      EXPECT_EQ(6, *hint.end_value_ref());
+      EXPECT_EQ(2, hint.get_begin_value());
+      EXPECT_TRUE(hint.get_include_begin());
+      EXPECT_EQ(5, hint.get_end_value());
+      EXPECT_TRUE(hint.get_include_end());
     }
   }
   {
@@ -373,8 +385,9 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
       const auto& hint = hints[0];
       EXPECT_EQ("col_double", *hint.column_name_ref());
       EXPECT_EQ(storage::cpp2::ScanType::RANGE, *hint.scan_type_ref());
-      EXPECT_EQ(-std::numeric_limits<double>::max(), *hint.begin_value_ref());
-      EXPECT_EQ(1, *hint.end_value_ref());
+      EXPECT_EQ(1.0, hint.get_end_value());
+      EXPECT_FALSE(hint.get_include_end());
+      EXPECT_FALSE(hint.begin_value_ref().is_set());
     }
     {
       std::vector<storage::cpp2::IndexColumnHint> hints;
@@ -387,8 +400,9 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
       const auto& hint = hints[0];
       EXPECT_EQ("col_double", *hint.column_name_ref());
       EXPECT_EQ(storage::cpp2::ScanType::RANGE, *hint.scan_type_ref());
-      EXPECT_EQ(-std::numeric_limits<double>::max(), *hint.begin_value_ref());
-      EXPECT_EQ(3 + kEpsilon, *hint.end_value_ref());
+      EXPECT_EQ(3.0, hint.get_end_value());
+      EXPECT_TRUE(hint.get_include_end());
+      EXPECT_FALSE(hint.begin_value_ref().is_set());
     }
     {
       std::vector<storage::cpp2::IndexColumnHint> hints;
@@ -401,8 +415,9 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
       const auto& hint = hints[0];
       EXPECT_EQ("col_double", *hint.column_name_ref());
       EXPECT_EQ(storage::cpp2::ScanType::RANGE, *hint.scan_type_ref());
-      EXPECT_EQ(1, *hint.begin_value_ref());
-      EXPECT_EQ(std::numeric_limits<double>::max(), *hint.end_value_ref());
+      EXPECT_EQ(1.0, hint.get_begin_value());
+      EXPECT_TRUE(hint.get_include_begin());
+      EXPECT_FALSE(hint.end_value_ref().is_set());
     }
     {
       std::vector<storage::cpp2::IndexColumnHint> hints;
@@ -416,8 +431,10 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
       const auto& hint = hints[0];
       EXPECT_EQ("col_double", *hint.column_name_ref());
       EXPECT_EQ(storage::cpp2::ScanType::RANGE, *hint.scan_type_ref());
-      EXPECT_EQ(1 + kEpsilon, *hint.begin_value_ref());
-      EXPECT_EQ(5 + kEpsilon, *hint.end_value_ref());
+      EXPECT_FALSE(hint.get_include_begin());
+      EXPECT_EQ(1, hint.get_begin_value());
+      EXPECT_TRUE(hint.get_include_end());
+      EXPECT_EQ(5, hint.get_end_value());
     }
   }
   {
@@ -437,7 +454,8 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
       const auto& hint = hints[0];
       EXPECT_EQ("col_str", *hint.column_name_ref());
       EXPECT_EQ(storage::cpp2::ScanType::RANGE, *hint.scan_type_ref());
-      EXPECT_EQ(std::string(len, '\0'), *hint.begin_value_ref());
+      EXPECT_FALSE(hint.begin_value_ref().is_set());
+      EXPECT_FALSE(hint.get_include_end());
       EXPECT_EQ("ccc", *hint.end_value_ref());
     }
     {
@@ -451,10 +469,9 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
       const auto& hint = hints[0];
       EXPECT_EQ("col_str", *hint.column_name_ref());
       EXPECT_EQ(storage::cpp2::ScanType::RANGE, *hint.scan_type_ref());
-      std::string begin = std::string(3, 'c').append(6, 0x00).append(1, 0x01);
-      std::string end = std::string(len, static_cast<char>(0xFF));
-      EXPECT_EQ(begin, *hint.begin_value_ref());
-      EXPECT_EQ(end, *hint.end_value_ref());
+      EXPECT_FALSE(hint.end_value_ref().is_set());
+      EXPECT_FALSE(hint.get_include_begin());
+      EXPECT_EQ("ccc", hint.get_begin_value());
     }
     {
       std::vector<storage::cpp2::IndexColumnHint> hints;
@@ -468,10 +485,10 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
       const auto& hint = hints[0];
       EXPECT_EQ("col_str", *hint.column_name_ref());
       EXPECT_EQ(storage::cpp2::ScanType::RANGE, *hint.scan_type_ref());
-      std::string begin = std::string(3, 'a').append(6, 0x00).append(1, 0x01);
-      std::string end = "ccc";
-      EXPECT_EQ(begin, *hint.begin_value_ref());
-      EXPECT_EQ(end, *hint.end_value_ref());
+      EXPECT_FALSE(hint.get_include_begin());
+      EXPECT_EQ("aaa", hint.get_begin_value());
+      EXPECT_FALSE(hint.get_include_end());
+      EXPECT_EQ("ccc", hint.get_end_value());
     }
     {
       std::vector<storage::cpp2::IndexColumnHint> hints;
@@ -485,10 +502,10 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
       const auto& hint = hints[0];
       EXPECT_EQ("col_str", *hint.column_name_ref());
       EXPECT_EQ(storage::cpp2::ScanType::RANGE, *hint.scan_type_ref());
-      std::string begin = "aaa";
-      std::string end = std::string(3, 'c').append(6, 0x00).append(1, 0x01);
-      EXPECT_EQ(begin, *hint.begin_value_ref());
-      EXPECT_EQ(end, *hint.end_value_ref());
+      EXPECT_TRUE(hint.get_include_begin());
+      EXPECT_EQ("aaa", hint.get_begin_value());
+      EXPECT_TRUE(hint.get_include_end());
+      EXPECT_EQ("ccc", hint.get_end_value());
     }
     {
       std::vector<storage::cpp2::IndexColumnHint> hints;
@@ -502,8 +519,10 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
       const auto& hint = hints[0];
       EXPECT_EQ("col_str", *hint.column_name_ref());
       EXPECT_EQ(storage::cpp2::ScanType::RANGE, *hint.scan_type_ref());
-      EXPECT_EQ("aaa", *hint.begin_value_ref());
-      EXPECT_EQ("ccc", *hint.end_value_ref());
+      EXPECT_TRUE(hint.get_include_begin());
+      EXPECT_EQ("aaa", hint.get_begin_value());
+      EXPECT_FALSE(hint.get_include_end());
+      EXPECT_EQ("ccc", hint.get_end_value());
     }
   }
 }

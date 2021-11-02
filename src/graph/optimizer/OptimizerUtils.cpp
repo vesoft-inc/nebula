@@ -949,5 +949,15 @@ void OptimizerUtils::copyIndexScanData(const nebula::graph::IndexScan* from,
   to->setFilter(from->filter() == nullptr ? nullptr : from->filter()->clone());
 }
 
+Status OptimizerUtils::compareAndSwapBound(std::pair<Value, bool>& a, std::pair<Value, bool>& b) {
+  if (a.first > b.first) {
+    std::swap(a, b);
+  } else if (a.first < b.first) {  // do nothing
+  } else if (a.second > b.second) {
+    std::swap(a, b);
+  }
+  return Status::OK();
+}
+
 }  // namespace graph
 }  // namespace nebula

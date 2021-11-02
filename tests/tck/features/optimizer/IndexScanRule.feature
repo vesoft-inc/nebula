@@ -20,15 +20,15 @@ Feature: Match index selection
       | ("Tony Parker" :player{age: 36, name: "Tony Parker"})     |
       | ("Vince Carter" :player{age: 42, name: "Vince Carter"})   |
     And the execution plan should be:
-      | id | name        | dependencies | operator info                                                                                                          |
-      | 10 | Project     | 13           |                                                                                                                        |
-      | 13 | Filter      | 7            |                                                                                                                        |
-      | 7  | Project     | 6            |                                                                                                                        |
-      | 6  | Project     | 5            |                                                                                                                        |
-      | 5  | Filter      | 15           |                                                                                                                        |
-      | 15 | GetVertices | 11           |                                                                                                                        |
-      | 11 | IndexScan   | 0            | {"indexCtx": {"columnHints":{"scanType":"RANGE","column":"name","beginValue":"\"Tim Duncan","endValue":"\"Yao Ming"}}} |
-      | 0  | Start       |              |                                                                                                                        |
+      | id | name        | dependencies | operator info                                                                                                               |
+      | 10 | Project     | 13           |                                                                                                                             |
+      | 13 | Filter      | 7            |                                                                                                                             |
+      | 7  | Project     | 6            |                                                                                                                             |
+      | 6  | Project     | 5            |                                                                                                                             |
+      | 5  | Filter      | 15           |                                                                                                                             |
+      | 15 | GetVertices | 11           |                                                                                                                             |
+      | 11 | IndexScan   | 0            | {"indexCtx": {"columnHints":{"scanType":"RANGE","column":"name","beginValue":"\"Tim Duncan\"","endValue":"\"Yao Ming\""}}}  |
+      | 0  | Start       |              |                                                                                                                             |
 
   Scenario: or filter embeding
     When profiling query:

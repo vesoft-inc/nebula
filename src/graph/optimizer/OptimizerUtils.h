@@ -59,6 +59,7 @@ class OptimizerUtils {
                            Value& begin,
                            Value& end);
 
+  static Status compareAndSwapBound(std::pair<Value, bool>& a, std::pair<Value, bool>& b);
   static void eraseInvalidIndexItems(
       int32_t schemaId, std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>>* indexItems);
 
