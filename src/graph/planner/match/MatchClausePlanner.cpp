@@ -288,6 +288,7 @@ Status MatchClausePlanner::leftExpandFromNode(const std::vector<NodeInfo>& nodeI
     if (edge.range != nullptr) {
       traverse->setSteps(StepClause(edge.range->min(), edge.range->max()));
     }
+    traverse->setDedup();
     subplan.root = traverse;
     nextTraverseStart = genNextTraverseStart(qctx->objPool(), edge);
     inputVar = traverse->outputVar();
@@ -300,6 +301,7 @@ Status MatchClausePlanner::leftExpandFromNode(const std::vector<NodeInfo>& nodeI
   appendV->setSrc(genNextTraverseStart(qctx->objPool(), edgeInfos.back()));
   appendV->setVertexFilter(genVertexFilter(node));
   appendV->setColNames(genAppendVColNames(subplan.root->colNames(), node));
+  appendV->setDedup();
   subplan.root = appendV;
 
   VLOG(1) << subplan;
@@ -331,6 +333,7 @@ Status MatchClausePlanner::rightExpandFromNode(const std::vector<NodeInfo>& node
     if (edge.range != nullptr) {
       traverse->setSteps(StepClause(edge.range->min(), edge.range->max()));
     }
+    traverse->setDedup();
     subplan.root = traverse;
     nextTraverseStart = genNextTraverseStart(qctx->objPool(), edge);
     inputVar = traverse->outputVar();
@@ -343,6 +346,7 @@ Status MatchClausePlanner::rightExpandFromNode(const std::vector<NodeInfo>& node
   appendV->setVertexProps(genVertexProps(node, qctx, spaceId));
   appendV->setVertexFilter(genVertexFilter(node));
   appendV->setColNames(genAppendVColNames(subplan.root->colNames(), node));
+  appendV->setDedup();
   subplan.root = appendV;
 
   VLOG(1) << subplan;

@@ -30,15 +30,18 @@ folly::Future<Status> AppendVerticesExecutor::appendVertices() {
   GraphStorageClient *storageClient = qctx()->getStorageClient();
 
   DataSet vertices = buildRequestDataSet(av);
+  VLOG(1) << "Get V size: " << vertices.rows.size();
   if (vertices.rows.empty()) {
     return finish(ResultBuilder().value(Value(DataSet(av->colNames()))).build());
   }
 
+  GraphStorageClient::CommonRequestParam param(av->space(),
+                                               qctx()->rctx()->session()->id(),
+                                               qctx()->plan()->id(),
+                                               qctx()->plan()->isProfileEnabled());
   time::Duration getPropsTime;
   return DCHECK_NOTNULL(storageClient)
-      ->getProps(av->space(),
-                 qctx()->rctx()->session()->id(),
-                 qctx()->plan()->id(),
+      ->getProps(param,
                  std::move(vertices),
                  av->props(),
                  nullptr,

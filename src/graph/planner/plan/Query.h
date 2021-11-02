@@ -123,7 +123,7 @@ using Direction = nebula::storage::cpp2::EdgeDirection;
 class GetNeighbors : public Explore {
  public:
   static GetNeighbors* make(QueryContext* qctx, PlanNode* input, GraphSpaceID space) {
-    return qctx->objPool()->add(new GetNeighbors(qctx, input, space));
+    return qctx->objPool()->add(new GetNeighbors(qctx, Kind::kGetNeighbors, input, space));
   }
 
   static GetNeighbors* make(QueryContext* qctx,
@@ -199,8 +199,8 @@ class GetNeighbors : public Explore {
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
  protected:
-  GetNeighbors(QueryContext* qctx, PlanNode* input, GraphSpaceID space)
-      : Explore(qctx, Kind::kGetNeighbors, input, space) {
+  GetNeighbors(QueryContext* qctx, Kind kind, PlanNode* input, GraphSpaceID space)
+      : Explore(qctx, kind, input, space) {
     setLimit(-1);
   }
 
@@ -233,6 +233,7 @@ class GetVertices : public Explore {
                            int64_t limit = std::numeric_limits<int64_t>::max(),
                            Expression* filter = nullptr) {
     return qctx->objPool()->add(new GetVertices(qctx,
+                                                Kind::kGetVertices,
                                                 input,
                                                 space,
                                                 src,
@@ -261,6 +262,7 @@ class GetVertices : public Explore {
 
  protected:
   GetVertices(QueryContext* qctx,
+              Kind kind,
               PlanNode* input,
               GraphSpaceID space,
               Expression* src,
@@ -270,7 +272,7 @@ class GetVertices : public Explore {
               std::vector<storage::cpp2::OrderBy> orderBy,
               int64_t limit,
               Expression* filter)
-      : Explore(qctx, Kind::kGetVertices, input, space, dedup, limit, filter, std::move(orderBy)),
+      : Explore(qctx, kind, input, space, dedup, limit, filter, std::move(orderBy)),
         src_(src),
         props_(std::move(props)),
         exprs_(std::move(exprs)) {}
@@ -1206,9 +1208,8 @@ class Traverse final : public GetNeighbors {
 
  private:
   Traverse(QueryContext* qctx, PlanNode* input, GraphSpaceID space)
-      : GetNeighbors(qctx, input, space) {
+      : GetNeighbors(qctx, Kind::kTraverse, input, space) {
     setLimit(-1);
-    kind_ = Kind::kTraverse;
   }
 
  private:
@@ -1234,9 +1235,17 @@ class AppendVertices final : public GetVertices {
 
  private:
   AppendVertices(QueryContext* qctx, PlanNode* input, GraphSpaceID space)
-      : GetVertices(qctx, input, space, nullptr, nullptr, nullptr, false, {}, 0, nullptr) {
-    kind_ = Kind::kAppendVertices;
-  }
+      : GetVertices(qctx,
+                    Kind::kAppendVertices,
+                    input,
+                    space,
+                    nullptr,
+                    nullptr,
+                    nullptr,
+                    false,
+                    {},
+                    0,
+                    nullptr) {}
 
   void cloneMembers(const AppendVertices& a);
 

@@ -101,11 +101,12 @@ void TraverseExecutor::getNeighbors() {
   GraphStorageClient* storageClient = qctx_->getStorageClient();
   bool finalStep = isFinalStep();
   VLOG(1) << "Traverse start size:" << reqDs_.size();
+  GraphStorageClient::CommonRequestParam param(traverse_->space(),
+                                               qctx()->rctx()->session()->id(),
+                                               qctx()->plan()->id(),
+                                               qctx()->plan()->isProfileEnabled());
   storageClient
-      ->getNeighbors(traverse_->space(),
-                     qctx()->rctx()->session()->id(),
-                     qctx()->plan()->id(),
-                     qctx()->plan()->isProfileEnabled(),
+      ->getNeighbors(param,
                      reqDs_.colNames,
                      std::move(reqDs_.rows),
                      traverse_->edgeTypes(),
