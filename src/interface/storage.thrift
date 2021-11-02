@@ -507,6 +507,8 @@ struct IndexColumnHint {
     2: ScanType                 scan_type,
     3: common.Value             begin_value,
     4: common.Value             end_value,
+    // When `columnhint` means ` >= begin_value`, `include_begin` is true
+    // and include_end is similar
     5: bool                     include_begin = true,
     6: bool                     include_end = false,
 }
