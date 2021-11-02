@@ -1506,10 +1506,9 @@ Status MetaClient::checkSpaceExistInCache(const HostAddr& host, GraphSpaceID spa
 }
 
 StatusOr<int32_t> MetaClient::partsNum(GraphSpaceID spaceId) const {
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-  const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
-  auto it = threadLocalInfo.localCache_.find(spaceId);
-  if (it == threadLocalInfo.localCache_.end()) {
+  folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+  auto it = localCache_.find(spaceId);
+  if (it == localCache_.end()) {
     return Status::Error("Space not found, spaceid: %d", spaceId);
   }
   return it->second->partsAlloc_.size();
