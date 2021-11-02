@@ -31,7 +31,7 @@ jobs:
     steps:
       - uses: webiny/action-post-run@2.0.1
         with:
-          run: sh -c "find . -mindepth 1 -delete"
+          run: sh -c "rm -rf ${{ github.workspace }}"
       - uses: actions/checkout@v2
       - uses: ./.github/actions/tagname-action
         id: tag
@@ -72,7 +72,7 @@ jobs:
     steps:
       - uses: webiny/action-post-run@2.0.1
         with:
-          run: sh -c "find . -mindepth 1 -delete"
+          run: sh -c "rm -rf ${{ github.workspace }}"
       - uses: actions/checkout@v2
       - uses: ./.github/actions/tagname-action
         id: tagname
