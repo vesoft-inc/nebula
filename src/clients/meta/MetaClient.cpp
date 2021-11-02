@@ -89,6 +89,33 @@ bool MetaClient::isMetadReady() {
   return ready_;
 }
 
+const MetaClient::ThreadLocalInfo& MetaClient::getThreadLocalInfo() {
+  ThreadLocalInfo& threadLocalInfo = folly::SingletonThreadLocal<ThreadLocalInfo>::get();
+
+  if (threadLocalInfo.localLastUpdateTime_ < localLastUpdateTime_) {
+    threadLocalInfo.localLastUpdateTime_ = localLastUpdateTime_;
+
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    for (auto& spaceInfo : localCache_) {
+      GraphSpaceID spaceId = spaceInfo.first;
+      std::shared_ptr<SpaceInfoCache> info = spaceInfo.second;
+      std::shared_ptr<SpaceInfoCache> infoDeepCopy = std::make_shared<SpaceInfoCache>(*info);
+      threadLocalInfo.localCache_[spaceId] = infoDeepCopy;
+    }
+    threadLocalInfo.spaceIndexByName_ = spaceIndexByName_;
+    threadLocalInfo.spaceTagIndexByName_ = spaceTagIndexByName_;
+    threadLocalInfo.spaceEdgeIndexByName_ = spaceEdgeIndexByName_;
+    threadLocalInfo.spaceEdgeIndexByType_ = spaceEdgeIndexByType_;
+    threadLocalInfo.spaceNewestTagVerMap_ = spaceNewestTagVerMap_;
+    threadLocalInfo.spaceNewestEdgeVerMap_ = spaceNewestEdgeVerMap_;
+    threadLocalInfo.spaceTagIndexById_ = spaceTagIndexById_;
+    threadLocalInfo.spaceAllEdgeMap_ = spaceAllEdgeMap_;
+    threadLocalInfo.storageHosts_ = storageHosts_;
+  }
+
+  return threadLocalInfo;
+}
+
 bool MetaClient::waitForMetadReady(int count, int retryIntervalSecs) {
   auto status = verifyVersion();
   if (!status.ok()) {
@@ -523,10 +550,11 @@ bool MetaClient::loadFulltextIndexes() {
   return true;
 }
 
-Status MetaClient::checkTagIndexed(GraphSpaceID space, IndexID indexID) {
-  folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-  auto it = localCache_.find(space);
-  if (it != localCache_.end()) {
+Status MetaClient::checkTagIndexed(GraphSpaceID spaceId, IndexID indexID) {
+  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+  const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
+  auto it = threadLocalInfo.localCache_.find(spaceId);
+  if (it != threadLocalInfo.localCache_.end()) {
     auto indexIt = it->second->tagIndexes_.find(indexID);
     if (indexIt != it->second->tagIndexes_.end()) {
       return Status::OK();

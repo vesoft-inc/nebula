@@ -83,6 +83,20 @@ struct SpaceInfoCache {
   // objPool used to decode when adding field
   ObjectPool pool_;
   std::unordered_map<PartitionID, TermID> termOfPartition_;
+
+  SpaceInfoCache() = default;
+  SpaceInfoCache(const SpaceInfoCache& info)
+      : spaceDesc_(info.spaceDesc_),
+        partsAlloc_(info.partsAlloc_),
+        partsOnHost_(info.partsOnHost_),
+        tagSchemas_(info.tagSchemas_),
+        edgeSchemas_(info.edgeSchemas_),
+        tagIndexes_(info.tagIndexes_),
+        edgeIndexes_(info.edgeIndexes_),
+        listeners_(info.listeners_),
+        termOfPartition_(info.termOfPartition_) {}
+
+  ~SpaceInfoCache() = default;
 };
 
 using LocalCache = std::unordered_map<GraphSpaceID, std::shared_ptr<SpaceInfoCache>>;
@@ -736,6 +750,21 @@ class MetaClient {
   HostAddr active_;
   HostAddr leader_;
   HostAddr localHost_;
+
+  struct ThreadLocalInfo {
+    int64_t localLastUpdateTime_{-1};
+    LocalCache localCache_;
+    SpaceNameIdMap spaceIndexByName_;
+    SpaceTagNameIdMap spaceTagIndexByName_;
+    SpaceEdgeNameTypeMap spaceEdgeIndexByName_;
+    SpaceEdgeTypeNameMap spaceEdgeIndexByType_;
+    SpaceTagIdNameMap spaceTagIndexById_;
+    SpaceNewestTagVerMap spaceNewestTagVerMap_;
+    SpaceNewestEdgeVerMap spaceNewestEdgeVerMap_;
+    SpaceAllEdgeMap spaceAllEdgeMap_;
+  };
+
+  const ThreadLocalInfo& getThreadLocalInfo();
 
   std::unique_ptr<thread::GenericWorker> bgThread_;
   SpaceNameIdMap spaceIndexByName_;
