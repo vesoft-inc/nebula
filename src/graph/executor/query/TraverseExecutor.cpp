@@ -43,9 +43,42 @@ Status TraverseExecutor::buildRequestDataSet() {
   auto inputVar = traverse_->inputVar();
   VLOG(1) << node()->outputVar() << " : " << inputVar;
   auto& inputResult = ectx_->getResult(inputVar);
-  auto iter = inputResult.iter();
+  auto inputIter = inputResult.iter();
+  auto iter = static_cast<SequentialIter*>(inputIter.get());
 
-  reqDs_ = buildRequestDataSetByVidType(iter.get(), traverse_->src(), traverse_->dedup());
+  reqDs_.colNames = {kVid};
+  reqDs_.rows.reserve(iter->size());
+
+  std::unordered_set<Value> uniqueSet;
+  uniqueSet.reserve(iter->size());
+  std::unordered_map<Value, Paths> prev;
+  const auto& spaceInfo = qctx()->rctx()->session()->space();
+  const auto& vidType = *(spaceInfo.spaceDesc.vid_type_ref());
+  auto* src = traverse_->src();
+  QueryExpressionContext ctx(ectx_);
+
+  for (; iter->valid(); iter->next()) {
+    auto vid = src->eval(ctx(iter));
+    if (!SchemaUtil::isValidVid(vid, vidType)) {
+      LOG(WARNING) << "Mismatched vid type: " << vid.type()
+                   << ", space vid type: " << SchemaUtil::typeToString(vidType);
+      continue;
+    }
+    auto pathToDstFound = prev.find(vid);
+    if (pathToDstFound == prev.end()) {
+      Paths interimPaths;
+      interimPaths.emplace_back(iter->moveRow());
+      prev.emplace(vid, std::move(interimPaths));
+    } else {
+      auto& interimPaths = pathToDstFound->second;
+      interimPaths.emplace_back(iter->moveRow());
+    }
+    if (!uniqueSet.emplace(vid).second) {
+      continue;
+    }
+    reqDs_.emplace_back(Row({std::move(vid)}));
+  }
+  paths_.emplace_back(std::move(prev));
   return Status::OK();
 }
 
@@ -67,7 +100,7 @@ void TraverseExecutor::getNeighbors() {
   time::Duration getNbrTime;
   GraphStorageClient* storageClient = qctx_->getStorageClient();
   bool finalStep = isFinalStep();
-  VLOG(1) << "Traverse start:" << reqDs_;
+  VLOG(1) << "Traverse start size:" << reqDs_.size();
   storageClient
       ->getNeighbors(traverse_->space(),
                      qctx()->rctx()->session()->id(),
@@ -169,62 +202,66 @@ Status TraverseExecutor::buildInterimPath(GetNeighborsIter* iter) {
   reqDs.colNames = reqDs_.colNames;
   std::unordered_set<Value> uniqueVid;
 
-  const std::unordered_map<Value, Paths>* prev = nullptr;
-  std::unordered_map<Value, Paths>* current = nullptr;
-  if (currentStep_ == 1) {
-    paths_.emplace_back();
-    current = &paths_.back();
-  } else {
-    prev = &paths_.back();
-    paths_.emplace_back();
-    current = &paths_.back();
-  }
+  const std::unordered_map<Value, Paths>* prev = &paths_.back();
+  paths_.emplace_back();
+  std::unordered_map<Value, Paths>* current = &paths_.back();
 
+  size_t count = 0;
+  size_t cntCE = 0;
   for (; iter->valid(); iter->next()) {
+    ++cntCE;
     auto& dst = iter->getEdgeProp("*", kDst);
     if (!SchemaUtil::isValidVid(dst, *(spaceInfo.spaceDesc.vid_type_ref()))) {
       continue;
     }
-    if (uniqueVid.emplace(dst).second) {
-      reqDs.rows.emplace_back(Row({std::move(dst)}));
-    }
-
     auto srcV = iter->getVertex();
     auto e = iter->getEdge();
-    // If we don't find one, it means the first step
-    if (prev == nullptr) {
-      Row path;
-      path.values.emplace_back(std::move(srcV));
-      List neighbors;
-      neighbors.values.emplace_back(std::move(e));
-      path.values.emplace_back(std::move(neighbors));
-      // VLOG(1) << "path " << __LINE__ << " :" << path;
-      auto pathToDstFound = current->find(dst);
-      if (pathToDstFound == current->end()) {
-        Paths interimPaths;
-        interimPaths.emplace_back(std::move(path));
-        current->emplace(dst, std::move(interimPaths));
-      } else {
-        auto& interimPaths = pathToDstFound->second;
-        interimPaths.emplace_back(std::move(path));
-      }
-    } else {
-      // Join on dst = src
-      auto pathToSrcFound = prev->find(srcV.getVertex().vid);
-      if (pathToSrcFound == prev->end()) {
-        return Status::Error("Can't find prev paths.");
-      }
-      const auto& paths = pathToSrcFound->second;
-      for (auto path : paths) {
-        VLOG(1) << "prev path: " << path;
-        auto& eList = path.values[1].mutableList().values;
+    // Join on dst = src
+    auto pathToSrcFound = prev->find(srcV.getVertex().vid);
+    if (pathToSrcFound == prev->end()) {
+      return Status::Error("Can't find prev paths.");
+    }
+    const auto& paths = pathToSrcFound->second;
+    VLOG(1) << "paths size: " << paths.size();
+    size_t cntCP = 0;
+    for (auto& prevPath : paths) {
+      // VLOG(1) << "prev path: " << prevPath;
+      if (prevPath.values.back().isList()) {
+        auto& eList = prevPath.values.back().getList().values;
+        VLOG(1) << "prev e: " << eList.back() << " current e: " << e
+                << " equal: " << eList.back().getEdge().keyEqual(e.getEdge());
         // Unique edge in a path.
         if (eList.back().getEdge().keyEqual(e.getEdge())) {
           continue;
         }
+      } else {
+        VLOG(1) << "Not a list: " << prevPath.values.back();
+      }
+      if (uniqueVid.emplace(dst).second) {
+        reqDs.rows.emplace_back(Row({std::move(dst)}));
+      }
+      ++count;
+      ++cntCP;
+      auto path = prevPath;
+      if (currentStep_ == 1) {
+        path.values.emplace_back(srcV);
+        List neighbors;
+        neighbors.values.emplace_back(e);
+        path.values.emplace_back(std::move(neighbors));
+        auto pathToDstFound = current->find(dst);
+        if (pathToDstFound == current->end()) {
+          Paths interimPaths;
+          interimPaths.emplace_back(std::move(path));
+          current->emplace(dst, std::move(interimPaths));
+        } else {
+          auto& interimPaths = pathToDstFound->second;
+          interimPaths.emplace_back(std::move(path));
+        }
+      } else {
+        auto& eList = path.values.back().mutableList().values;
         eList.emplace_back(srcV);
         eList.emplace_back(e);
-        VLOG(1) << "path " << __LINE__ << " :" << path;
+        // VLOG(1) << "path " << __LINE__ << " :" << path;
         auto pathToDstFound = current->find(dst);
         if (pathToDstFound == current->end()) {
           Paths interimPaths;
@@ -236,10 +273,12 @@ Status TraverseExecutor::buildInterimPath(GetNeighborsIter* iter) {
         }
       }
     }
+    VLOG(1) << "Build new path size: " << cntCP;
   }
+  VLOG(1) << "Total cnt: " << count << " current es: " << cntCE;
 
   if (steps_.isMToN()) {
-    if (currentStep_ < steps_.mSteps() && paths_.size() > 1) {
+    if ((currentStep_ - 1) < steps_.mSteps() && paths_.size() > 1) {
       // VLOG(1) << "Delete front path.";
       paths_.pop_front();
     }
@@ -253,45 +292,16 @@ Status TraverseExecutor::buildInterimPath(GetNeighborsIter* iter) {
 }
 
 Status TraverseExecutor::buildResult() {
-  auto inputVar = traverse_->inputVar();
-  VLOG(1) << node()->outputVar() << " : " << inputVar;
-  auto& inputResult = ectx_->getResult(inputVar);
-  auto iter = inputResult.iter();
-
-  std::unordered_map<Value, std::vector<const Row*>> hashTable;
-  auto hashKey = traverse_->src();
-  QueryExpressionContext ctx(ectx_);
-  for (; iter->valid(); iter->next()) {
-    Value key = hashKey->eval(ctx(iter.get()));
-    auto& vals = hashTable[key];
-    vals.emplace_back(iter->row());
-    // VLOG(1) << "row" << __LINE__ << " :" << *iter->row();
-  }
-
   DataSet result;
   result.colNames = traverse_->colNames();
   for (auto& currentStepPaths : paths_) {
     for (auto& paths : currentStepPaths) {
-      for (auto& path : paths.second) {
-        // VLOG(1) << "path " << __LINE__ << " :" << path;
-        auto prevPathFound = hashTable.find(path.values[0].getVertex().vid);
-        if (prevPathFound == hashTable.end()) {
-          return Status::Error("Can't find prev paths.");
-        }
-        auto& prevPaths = prevPathFound->second;
-        for (const auto* prevPath : prevPaths) {
-          // Unique edge in a path.
-          // TODO
-          auto newPath = *prevPath;
-          newPath.values.insert(newPath.values.end(), path.values.begin(), path.values.end());
-          // VLOG(1) << "path " << __LINE__ << " :" << newPath;
-          result.emplace_back(std::move(newPath));
-        }
-      }
+      result.rows.reserve(paths.second.size());
+      std::move(paths.second.begin(), paths.second.end(), std::back_inserter(result.rows));
     }
   }
 
-  VLOG(1) << "Traverse result: " << result;
+  // VLOG(1) << "Traverse result: " << result;
   return finish(ResultBuilder().value(Value(std::move(result))).build());
 }
 }  // namespace graph
