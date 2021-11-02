@@ -362,13 +362,3 @@ class NebulaManager(object):
         pid_file = os.path.join(self.pids_dir, 'nebula-metad.pid.{}'.format(index))
         stop_process(pid_file)
         print(self.meta_ports)
-
-# if __name__ == '__main__':
-#     build_dir = '/data/src/wwl/nebula/build'
-#     cluster_dir = '/data/src/wwl/test'
-
-#     mgr = NebulaManager(build_dir, cluster_dir=cluster_dir, storage_num=1, graph_num=1, meta_num=1, local_ip='192.168.15.11')
-#     mgr.prepare()
-#     mgr.cleanup()
-#     mgr.cleanup()
-
