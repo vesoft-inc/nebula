@@ -9,7 +9,7 @@
 
 # Always use bash
 shell=$(basename $(readlink /proc/$$/exe))
-if [ ! x$shell = x"bash" ]
+if [ ! x$shell = x"bash" ] && [[ x$shell != x"qemu-aarch64"* ]]
 then
     bash $0 $@
     exit $?
