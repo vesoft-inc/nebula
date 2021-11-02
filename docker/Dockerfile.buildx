@@ -1,6 +1,6 @@
-ARG PLATFORM
+ARG OS
 
-FROM vesoft/nebula-dev:PLATFORM as release
+FROM vesoft/nebula-dev:OS as release
 
 ARG BRANCH=master
 ARG TAGNUM=""
@@ -19,7 +19,7 @@ RUN [[ $(uname -m) = "aarch64" ]] && ARCH="arm"; \
 
 RUN --mount=type=secret,id=ossutilconfig,target=$HOME/.ossutilconfig ossutil64 cp -rf ./pkg-build/cpack_output/ oss://nebula-graph/package/$TAGNUM/
 
-FROM vesoft/nebula-dev:PLATFORM as nightly
+FROM vesoft/nebula-dev:OS as nightly
 
 COPY . /home/nebula/BUILD
 

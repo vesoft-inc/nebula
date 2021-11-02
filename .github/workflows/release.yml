@@ -47,9 +47,9 @@ jobs:
           target: release
           push: false
           build-args: |
+            OS=${{ matrix.os }}
             BRANCH=${{ steps.tag.outputs.tag }}
             TAGNUM=${{ steps.tag.outputs.tagnum }}
-            PLATFORM=${{ matrix.os }}
           secrets: |
             "ossutilconfig=${{ secrets.OSS_UTIL_CONFIG }}"
 

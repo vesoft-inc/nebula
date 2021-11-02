@@ -45,7 +45,7 @@ jobs:
           target: nightly
           push: false
           build-args: |
-            PLATFORM=${{ matrix.os }}
+            OS=${{ matrix.os }}
           secrets: |
             "ossutilconfig=${{ secrets.OSS_UTIL_CONFIG }}"
 
