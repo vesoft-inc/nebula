@@ -1,0 +1,35 @@
+ARG PLATFORM
+
+FROM vesoft/nebula-dev:PLATFORM as release
+
+ARG BRANCH=master
+ARG TAGNUM=""
+
+COPY . /home/nebula/BUILD
+
+WORKDIR /home/nebula/BUILD
+
+RUN ./package/package.sh -b ${BRANCH} -t RelWithDebInfo -r OFF -p ON -s TRUE \
+  && tar zcf ./pkg-build/cpack_output/nebula-$TAGNUM.tar.gz --exclude=./pkg-build ./* \
+  && find ./pkg-build/cpack_output -type f \( -iname \*.deb -o -iname \*.rpm -o -iname \*.tar.gz \) -exec bash -c "sha256sum {} > {}.sha256sum.txt" \;
+
+RUN [[ $(uname -m) = "aarch64" ]] && ARCH="arm"; \
+  wget -q -O /usr/bin/ossutil64 "http://gosspublic.alicdn.com/ossutil/1.7.0/ossutil${ARCH}64" \
+  && chmod +x /usr/bin/ossutil64
+
+RUN --mount=type=secret,id=ossutilconfig,target=$HOME/.ossutilconfig ossutil64 cp -rf ./pkg-build/cpack_output/ oss://nebula-graph/package/$TAGNUM/
+
+FROM vesoft/nebula-dev:PLATFORM as nightly
+
+COPY . /home/nebula/BUILD
+
+WORKDIR /home/nebula/BUILD
+
+RUN ./package/package.sh \
+  && find ./pkg-build/cpack_output -type f \( -iname \*.deb -o -iname \*.rpm -o -iname \*.tar.gz \) -exec bash -c "sha256sum {} > {}.sha256sum.txt" \;
+
+RUN [[ $(uname -m) = "aarch64" ]] && ARCH="arm"; \
+  wget -q -O /usr/bin/ossutil64 "http://gosspublic.alicdn.com/ossutil/1.7.0/ossutil${ARCH}64" \
+  && chmod +x /usr/bin/ossutil64
+
+RUN --mount=type=secret,id=ossutilconfig,target=$HOME/.ossutilconfig ossutil64 cp -rf ./pkg-build/cpack_output/ oss://nebula-graph/nightly/$(date -u +%Y.%m.%d)/

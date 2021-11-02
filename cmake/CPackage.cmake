@@ -24,7 +24,7 @@ macro(package to_one name home_page scripts_dir)
         endif()
         file (STRINGS "/etc/redhat-release" SYSTEM_NAME)
         if (${SYSTEM_NAME} MATCHES "CentOS")
-	    set(HOST_SYSTEM_NAME "el")
+            set(HOST_SYSTEM_NAME "el")
             execute_process(
                 COMMAND echo ${SYSTEM_NAME}
                 COMMAND tr -dc "0-9."
@@ -34,7 +34,7 @@ macro(package to_one name home_page scripts_dir)
             )
             string(CONCAT HOST_SYSTEM_VER ${HOST_SYSTEM_NAME} ${HOST_SYSTEM_VER})
         elseif (${SYSTEM_NAME} MATCHES "Fedora")
-	    set(HOST_SYSTEM_NAME "fc")
+            set(HOST_SYSTEM_NAME "fc")
             execute_process(
                 COMMAND echo ${SYSTEM_NAME}
                 COMMAND cut -d " " -f3
