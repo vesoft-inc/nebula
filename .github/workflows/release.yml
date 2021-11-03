@@ -29,6 +29,9 @@ jobs:
       CPACK_DIR: ./pkg-build/cpack_output
       SYMS_DIR: ./pkg-build/symbols
     steps:
+      - uses: webiny/action-post-run@2.0.1
+        with:
+          run: sh -c "find . -mindepth 1 -delete"
       - uses: actions/checkout@v2
       - uses: ./.github/actions/tagname-action
         id: tag
@@ -57,7 +60,7 @@ jobs:
 
   docker_build:
     name: docker-build
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     strategy:
       fail-fast: false
       matrix:
@@ -67,6 +70,9 @@ jobs:
           - storaged
           - tools
     steps:
+      - uses: webiny/action-post-run@2.0.1
+        with:
+          run: sh -c "find . -mindepth 1 -delete"
       - uses: actions/checkout@v2
       - uses: ./.github/actions/tagname-action
         id: tagname
