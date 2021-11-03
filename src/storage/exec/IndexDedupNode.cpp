@@ -33,11 +33,13 @@ IndexDedupNode::IndexDedupNode(RuntimeContext* context, const std::vector<std::s
   }
   return ::nebula::cpp2::ErrorCode::SUCCEEDED;
 }
+
 ::nebula::cpp2::ErrorCode IndexDedupNode::doExecute(PartitionID partId) {
   currentChild_ = 0;
   dedupSet_.clear();
   return IndexNode::doExecute(partId);
 }
+
 IndexNode::Result IndexDedupNode::iterateCurrentChild(size_t currentChild) {
   auto& child = *children_[currentChild];
   Result result;
@@ -72,15 +74,18 @@ IndexNode::Result IndexDedupNode::doNext() {
   }
   return Result();
 }
+
 IndexDedupNode::RowWrapper::RowWrapper(const Row& row, const std::vector<size_t>& posList) {
   values_.reserve(posList.size());
   for (auto p : posList) {
     values_.emplace_back(row[p]);
   }
 }
+
 std::unique_ptr<IndexNode> IndexDedupNode::copy() {
   return std::make_unique<IndexDedupNode>(*this);
 }
+
 std::string IndexDedupNode::identify() {
   return fmt::format("{}(dedup=[{}])", name_, folly::join(',', dedupColumns_));
 }

@@ -37,6 +37,7 @@ Path::Path(nebula::meta::cpp2::IndexItem* index,
     suffixLength_ = vidLen * 2 + sizeof(EdgeRanking);
   }
 }
+
 std::unique_ptr<Path> Path::make(nebula::meta::cpp2::IndexItem* index,
                                  const meta::SchemaProviderIf* schema,
                                  const std::vector<cpp2::IndexColumnHint>& hints,
@@ -50,9 +51,11 @@ std::unique_ptr<Path> Path::make(nebula::meta::cpp2::IndexItem* index,
   }
   return ret;
 }
+
 QualifiedStrategy::Result Path::qualified(const folly::StringPiece& key) {
   return strategySet_(key);
 }
+
 std::string Path::encodeValue(const Value& value,
                               const ColumnTypeDef& colDef,
                               size_t index,
@@ -89,6 +92,7 @@ std::string Path::encodeValue(const Value& value,
   key.append(val);
   return val;
 }
+
 const std::string& Path::toString() { return serializeString_; }
 
 // End of Path
@@ -101,11 +105,13 @@ RangePath::RangePath(nebula::meta::cpp2::IndexItem* index,
     : Path(index, schema, hints, vidLen) {
   buildKey();
 }
+
 void RangePath::resetPart(PartitionID partId) {
   std::string p = IndexKeyUtils::indexPrefix(partId);
   startKey_ = startKey_.replace(0, p.size(), p);
   endKey_ = endKey_.replace(0, p.size(), p);
 }
+
 QualifiedStrategy::Result RangePath::qualified(const Map<std::string, Value>& rowData) {
   for (size_t i = 0; i < hints_.size() - 1; i++) {
     auto& hint = hints_[i];
@@ -133,6 +139,7 @@ QualifiedStrategy::Result RangePath::qualified(const Map<std::string, Value>& ro
   }
   return QualifiedStrategy::COMPATIBLE;
 }
+
 void RangePath::buildKey() {
   std::string commonIndexPrefix;
   commonIndexPrefix.append(IndexKeyUtils::indexPrefix(0, index_->index_id_ref().value()));
@@ -176,6 +183,7 @@ void RangePath::buildKey() {
   DVLOG(2) << "start key:\n" << folly::hexDump(startKey_.data(), startKey_.size());
   DVLOG(2) << "end key:\n" << folly::hexDump(endKey_.data(), endKey_.size());
 }
+
 std::tuple<std::string, std::string> RangePath::encodeRange(
     const cpp2::IndexColumnHint& hint,
     const nebula::meta::cpp2::ColumnTypeDef& colTypeDef,
@@ -202,6 +210,7 @@ std::tuple<std::string, std::string> RangePath::encodeRange(
   }
   return {startKey, endKey};
 }
+
 std::string RangePath::encodeBeginValue(const Value& value,
                                         const ColumnTypeDef& colDef,
                                         std::string& key,
@@ -233,6 +242,7 @@ std::string RangePath::encodeBeginValue(const Value& value,
   key += val;
   return val;
 }
+
 std::string RangePath::encodeEndValue(const Value& value,
                                       const ColumnTypeDef& colDef,
                                       std::string& key,
@@ -268,6 +278,7 @@ std::string RangePath::encodeEndValue(const Value& value,
   DVLOG(2) << '\n' << folly::hexDump(key.data(), key.size());
   return val;
 }
+
 inline std::string RangePath::encodeString(const Value& value, size_t len, bool& truncated) {
   std::string val = IndexKeyUtils::encodeValue(value);
   if (val.size() < len) {
@@ -278,6 +289,7 @@ inline std::string RangePath::encodeString(const Value& value, size_t len, bool&
   }
   return val;
 }
+
 std::string RangePath::encodeFloat(const Value& value, bool& isNaN) {
   std::string val = IndexKeyUtils::encodeValue(value);
   // check NaN
@@ -297,6 +309,7 @@ PrefixPath::PrefixPath(nebula::meta::cpp2::IndexItem* index,
     : Path(index, schema, hints, vidLen) {
   buildKey();
 }
+
 QualifiedStrategy::Result PrefixPath::qualified(const Map<std::string, Value>& rowData) {
   for (auto& hint : hints_) {
     if (hint.get_begin_value() != rowData.at(hint.get_column_name())) {
@@ -305,10 +318,12 @@ QualifiedStrategy::Result PrefixPath::qualified(const Map<std::string, Value>& r
   }
   return QualifiedStrategy::COMPATIBLE;
 }
+
 void PrefixPath::resetPart(PartitionID partId) {
   std::string p = IndexKeyUtils::indexPrefix(partId);
   prefix_ = prefix_.replace(0, p.size(), p);
 }
+
 void PrefixPath::buildKey() {
   std::string common;
   common.append(IndexKeyUtils::indexPrefix(0, index_->index_id_ref().value()));
@@ -330,6 +345,7 @@ void PrefixPath::buildKey() {
   }
   prefix_ = std::move(common);
 }
+
 // End of PrefixPath
 // Define of IndexScan
 
@@ -391,11 +407,13 @@ IndexScanNode::IndexScanNode(const IndexScanNode& node)
   path_ = Path::make(index_.get(), getSchema().back().get(), columnHints_, context_->vIdLen());
   return ::nebula::cpp2::ErrorCode::SUCCEEDED;
 }
+
 nebula::cpp2::ErrorCode IndexScanNode::doExecute(PartitionID partId) {
   partId_ = partId;
   auto ret = resetIter(partId);
   return ret;
 }
+
 IndexNode::Result IndexScanNode::doNext() {
   for (; iter_ && iter_->valid(); iter_->next()) {
     DVLOG(3) << '\n' << folly::hexDump(iter_->key().data(), iter_->key().size());
@@ -445,6 +463,7 @@ IndexNode::Result IndexScanNode::doNext() {
   }
   return Result();
 }
+
 bool IndexScanNode::checkTTL() {
   if (iter_->val().empty() || ttlProps_.first == false) {
     return true;
@@ -478,6 +497,7 @@ nebula::cpp2::ErrorCode IndexScanNode::resetIter(PartitionID partId) {
   }
   return ret;
 }
+
 void IndexScanNode::decodePropFromIndex(folly::StringPiece key,
                                         const Map<std::string, size_t>& colPosMap,
                                         std::vector<Value>& values) {
@@ -535,9 +555,11 @@ void IndexScanNode::decodePropFromIndex(folly::StringPiece key,
     nullableColPosit -= 1;
   }
 }
+
 std::string IndexScanNode::identify() {
   return fmt::format("{}(IndexID={}, Path=({}))", name_, indexId_, path_->toString());
 }
+
 // End of IndexScan
 }  // namespace storage
 }  // namespace nebula

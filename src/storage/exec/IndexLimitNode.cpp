@@ -17,6 +17,7 @@ nebula::cpp2::ErrorCode IndexLimitNode::doExecute(PartitionID partId) {
   currentOffset_ = 0;
   return children_[0]->execute(partId);
 }
+
 IndexNode::Result IndexLimitNode::doNext() {
   DCHECK_EQ(children_.size(), 1);
   auto& child = *children_[0];
@@ -34,9 +35,11 @@ IndexNode::Result IndexLimitNode::doNext() {
     return Result();
   }
 }
+
 std::unique_ptr<IndexNode> IndexLimitNode::copy() {
   return std::make_unique<IndexLimitNode>(*this);
 }
+
 std::string IndexLimitNode::identify() {
   if (offset_ > 0) {
     return fmt::format("{}(offset={}, limit={})", name_, offset_, limit_);

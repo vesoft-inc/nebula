@@ -148,38 +148,45 @@ inline IndexNode::Result IndexNode::next() {
   afterNext();
   return ret;
 }
+
 inline void IndexNode::beforeNext() {
   if (UNLIKELY(profileDetail_)) {
     duration_.resume();
   }
 }
+
 inline void IndexNode::afterNext() {
   if (UNLIKELY(profileDetail_)) {
     duration_.pause();
   }
 }
+
 inline nebula::cpp2::ErrorCode IndexNode::execute(PartitionID partId) {
   beforeExecute();
   auto ret = doExecute(partId);
   afterExecute();
   return ret;
 }
+
 inline void IndexNode::beforeExecute() {
   if (UNLIKELY(profileDetail_)) {
     duration_.resume();
   }
 }
+
 inline void IndexNode::afterExecute() {
   if (UNLIKELY(profileDetail_)) {
     duration_.pause();
   }
 }
+
 inline void IndexNode::enableProfileDetail() {
   profileDetail_ = true;
   for (auto& child : children_) {
     child->enableProfileDetail();
   }
 }
+
 inline const time::Duration& IndexNode::duration() { return duration_; }
 
 }  // namespace storage

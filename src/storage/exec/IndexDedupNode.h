@@ -75,5 +75,6 @@ inline bool IndexDedupNode::dedup(const Row& row) {
   auto result = dedupSet_.emplace(row, dedupPos_);
   return result.second;
 }
+
 }  // namespace storage
 }  // namespace nebula

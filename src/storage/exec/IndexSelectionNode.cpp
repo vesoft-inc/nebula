@@ -30,6 +30,7 @@ nebula::cpp2::ErrorCode IndexSelectionNode::init(InitContext& ctx) {
   ctx_ = std::make_unique<ExprContext>(colPos_);
   return ::nebula::cpp2::ErrorCode::SUCCEEDED;
 }
+
 IndexNode::Result IndexSelectionNode::doNext() {
   DCHECK_EQ(children_.size(), 1);
   auto& child = *children_[0];
@@ -45,12 +46,15 @@ IndexNode::Result IndexSelectionNode::doNext() {
   } while (true);
   return Result();
 }
+
 std::unique_ptr<IndexNode> IndexSelectionNode::copy() {
   return std::make_unique<IndexSelectionNode>(*this);
 }
+
 std::string IndexSelectionNode::identify() {
   return fmt::format("{}(expr=[{}])", name_, expr_->toString());
 }
+
 Value IndexSelectionNode::ExprContext::getEdgeProp(const std::string& edgeType,
                                                    const std::string& prop) const {
   UNUSED(edgeType);
@@ -60,6 +64,7 @@ Value IndexSelectionNode::ExprContext::getEdgeProp(const std::string& edgeType,
   DCHECK(iter->second < row_->size());
   return (*row_)[iter->second];
 }
+
 Value IndexSelectionNode::ExprContext::getTagProp(const std::string& tag,
                                                   const std::string& prop) const {
   UNUSED(tag);

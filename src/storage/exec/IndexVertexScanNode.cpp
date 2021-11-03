@@ -41,6 +41,7 @@ IndexVertexScanNode::IndexVertexScanNode(RuntimeContext* context,
     return ::nebula::cpp2::ErrorCode::SUCCEEDED;
   });
 }
+
 ::nebula::cpp2::ErrorCode IndexVertexScanNode::init(InitContext& ctx) {
   if (auto ret = getIndex(this->index_); UNLIKELY(ret != ::nebula::cpp2::ErrorCode::SUCCEEDED)) {
     return ret;
@@ -50,6 +51,7 @@ IndexVertexScanNode::IndexVertexScanNode(RuntimeContext* context,
   }
   return IndexScanNode::init(ctx);
 }
+
 nebula::cpp2::ErrorCode IndexVertexScanNode::getBaseData(folly::StringPiece key,
                                                          std::pair<std::string, std::string>& kv) {
   kv.first = NebulaKeyUtils::vertexKey(context_->vIdLen(),
@@ -60,6 +62,7 @@ nebula::cpp2::ErrorCode IndexVertexScanNode::getBaseData(folly::StringPiece key,
   DVLOG(1) << '\n' << folly::hexDump(kv.first.data(), kv.first.size());
   return kvstore_->get(context_->spaceId(), partId_, kv.first, &kv.second);
 }
+
 Row IndexVertexScanNode::decodeFromIndex(folly::StringPiece key) {
   std::vector<Value> values(requiredColumns_.size());
   if (colPosMap_.count(kVid)) {
@@ -77,6 +80,7 @@ Row IndexVertexScanNode::decodeFromIndex(folly::StringPiece key) {
   decodePropFromIndex(key, colPosMap_, values);
   return Row(std::move(values));
 }
+
 Map<std::string, Value> IndexVertexScanNode::decodeFromBase(const std::string& key,
                                                             const std::string& value) {
   Map<std::string, Value> values;
@@ -107,6 +111,7 @@ Map<std::string, Value> IndexVertexScanNode::decodeFromBase(const std::string& k
   }
   return values;
 }
+
 std::unique_ptr<IndexNode> IndexVertexScanNode::copy() {
   return std::make_unique<IndexVertexScanNode>(*this);
 }

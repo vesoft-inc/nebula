@@ -36,6 +36,7 @@ IndexEdgeScanNode::IndexEdgeScanNode(RuntimeContext* context,
     return ::nebula::cpp2::ErrorCode::SUCCEEDED;
   });
 }
+
 ::nebula::cpp2::ErrorCode IndexEdgeScanNode::init(InitContext& ctx) {
   if (auto ret = getIndex(this->index_); UNLIKELY(ret != ::nebula::cpp2::ErrorCode::SUCCEEDED)) {
     return ret;
@@ -45,6 +46,7 @@ IndexEdgeScanNode::IndexEdgeScanNode(RuntimeContext* context,
   }
   return IndexScanNode::init(ctx);
 }
+
 Row IndexEdgeScanNode::decodeFromIndex(folly::StringPiece key) {
   std::vector<Value> values(requiredColumns_.size());
   if (colPosMap_.count(kSrc)) {
@@ -82,6 +84,7 @@ Row IndexEdgeScanNode::decodeFromIndex(folly::StringPiece key) {
   decodePropFromIndex(key, colPosMap_, values);
   return Row(std::move(values));
 }
+
 nebula::cpp2::ErrorCode IndexEdgeScanNode::getBaseData(folly::StringPiece key,
                                                        std::pair<std::string, std::string>& kv) {
   auto vIdLen = context_->vIdLen();
@@ -93,6 +96,7 @@ nebula::cpp2::ErrorCode IndexEdgeScanNode::getBaseData(folly::StringPiece key,
                                      IndexKeyUtils::getIndexDstId(vIdLen, key).str());
   return kvstore_->get(context_->spaceId(), partId_, kv.first, &kv.second);
 }
+
 Map<std::string, Value> IndexEdgeScanNode::decodeFromBase(const std::string& key,
                                                           const std::string& value) {
   Map<std::string, Value> values;
@@ -134,6 +138,7 @@ Map<std::string, Value> IndexEdgeScanNode::decodeFromBase(const std::string& key
   }
   return values;
 }
+
 const std::vector<std::shared_ptr<const meta::NebulaSchemaProvider>>&
 IndexEdgeScanNode::getSchema() {
   return edge_;

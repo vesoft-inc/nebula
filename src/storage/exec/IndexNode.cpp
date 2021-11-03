@@ -26,5 +26,6 @@ nebula::cpp2::ErrorCode IndexNode::doExecute(PartitionID partId) {
   }
   return ::nebula::cpp2::ErrorCode::SUCCEEDED;
 }
+
 }  // namespace storage
 }  // namespace nebula

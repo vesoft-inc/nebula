@@ -32,6 +32,7 @@ nebula::cpp2::ErrorCode IndexProjectionNode::init(InitContext& ctx) {
   }
   return ::nebula::cpp2::ErrorCode::SUCCEEDED;
 }
+
 IndexNode::Result IndexProjectionNode::doNext() {
   DCHECK_EQ(children_.size(), 1);
   auto& child = *children_[0];
@@ -41,6 +42,7 @@ IndexNode::Result IndexProjectionNode::doNext() {
   }
   return result;
 }
+
 Row IndexProjectionNode::project(Row&& row) {
   Row ret;
   ret.reserve(requiredColumns_.size());
@@ -49,9 +51,11 @@ Row IndexProjectionNode::project(Row&& row) {
   }
   return ret;
 }
+
 std::unique_ptr<IndexNode> IndexProjectionNode::copy() {
   return std::make_unique<IndexProjectionNode>(*this);
 }
+
 std::string IndexProjectionNode::identify() {
   return fmt::format("{}(projectColumn=[{}])", name_, folly::join(",", requiredColumns_));
 }
