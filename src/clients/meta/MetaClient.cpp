@@ -565,9 +565,10 @@ Status MetaClient::checkTagIndexed(GraphSpaceID spaceId, IndexID indexID) {
 }
 
 Status MetaClient::checkEdgeIndexed(GraphSpaceID space, IndexID indexID) {
-  folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-  auto it = localCache_.find(space);
-  if (it != localCache_.end()) {
+  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+  const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
+  auto it = threadLocalInfo.localCache_.find(space);
+  if (it != threadLocalInfo.localCache_.end()) {
     auto indexIt = it->second->edgeIndexes_.find(indexID);
     if (indexIt != it->second->edgeIndexes_.end()) {
       return Status::OK();
@@ -1223,9 +1224,10 @@ StatusOr<GraphSpaceID> MetaClient::getSpaceIdByNameFromCache(const std::string& 
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-  auto it = spaceIndexByName_.find(name);
-  if (it != spaceIndexByName_.end()) {
+  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+  const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
+  auto it = threadLocalInfo.spaceIndexByName_.find(name);
+  if (it != threadLocalInfo.spaceIndexByName_.end()) {
     return it->second;
   }
   return Status::SpaceNotFound();
@@ -1235,9 +1237,10 @@ StatusOr<std::string> MetaClient::getSpaceNameByIdFromCache(GraphSpaceID spaceId
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-  auto spaceIt = localCache_.find(spaceId);
-  if (spaceIt == localCache_.end()) {
+  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+  const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
+  auto spaceIt = threadLocalInfo.localCache_.find(spaceId);
+  if (spaceIt == threadLocalInfo.localCache_.end()) {
     LOG(ERROR) << "Space " << spaceId << " not found!";
     return Status::Error("Space %d not found", spaceId);
   }
@@ -1249,9 +1252,10 @@ StatusOr<TagID> MetaClient::getTagIDByNameFromCache(const GraphSpaceID& space,
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-  auto it = spaceTagIndexByName_.find(std::make_pair(space, name));
-  if (it == spaceTagIndexByName_.end()) {
+  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+  const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
+  auto it = threadLocalInfo.spaceTagIndexByName_.find(std::make_pair(space, name));
+  if (it == threadLocalInfo.spaceTagIndexByName_.end()) {
     return Status::Error("TagName `%s'  is nonexistent", name.c_str());
   }
   return it->second;
@@ -1262,9 +1266,10 @@ StatusOr<std::string> MetaClient::getTagNameByIdFromCache(const GraphSpaceID& sp
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-  auto it = spaceTagIndexById_.find(std::make_pair(space, tagId));
-  if (it == spaceTagIndexById_.end()) {
+  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+  const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
+  auto it = threadLocalInfo.spaceTagIndexById_.find(std::make_pair(space, tagId));
+  if (it == threadLocalInfo.spaceTagIndexById_.end()) {
     return Status::Error("TagID `%d'  is nonexistent", tagId);
   }
   return it->second;
@@ -1275,9 +1280,10 @@ StatusOr<EdgeType> MetaClient::getEdgeTypeByNameFromCache(const GraphSpaceID& sp
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-  auto it = spaceEdgeIndexByName_.find(std::make_pair(space, name));
-  if (it == spaceEdgeIndexByName_.end()) {
+  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+  const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
+  auto it = threadLocalInfo.spaceEdgeIndexByName_.find(std::make_pair(space, name));
+  if (it == threadLocalInfo.spaceEdgeIndexByName_.end()) {
     return Status::Error("EdgeName `%s'  is nonexistent", name.c_str());
   }
   return it->second;
@@ -1288,9 +1294,10 @@ StatusOr<std::string> MetaClient::getEdgeNameByTypeFromCache(const GraphSpaceID&
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-  auto it = spaceEdgeIndexByType_.find(std::make_pair(space, edgeType));
-  if (it == spaceEdgeIndexByType_.end()) {
+  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+  const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
+  auto it = threadLocalInfo.spaceEdgeIndexByType_.find(std::make_pair(space, edgeType));
+  if (it == threadLocalInfo.spaceEdgeIndexByType_.end()) {
     return Status::Error("EdgeType `%d'  is nonexistent", edgeType);
   }
   return it->second;
