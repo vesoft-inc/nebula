@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #pragma once
@@ -149,7 +148,7 @@ class ChainAddEdgesProcessorLocal : public BaseProcessor<cpp2::ExecResponse>,
   // for debug, edge "100"->"101" will print like 2231303022->2231303122
   // which is hard to recognize. Transform to human readable format
   std::string readableEdgeDesc_;
-  ::nebula::meta::cpp2::PropertyType spaceVidType_{meta::cpp2::PropertyType::UNKNOWN};
+  nebula::cpp2::PropertyType spaceVidType_{nebula::cpp2::PropertyType::UNKNOWN};
 };
 
 }  // namespace storage

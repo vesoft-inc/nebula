@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "clients/meta/MetaClient.h"
@@ -1865,7 +1864,7 @@ StatusOr<int32_t> MetaClient::getSpaceVidLen(const GraphSpaceID& spaceId) {
   return vIdLen;
 }
 
-StatusOr<cpp2::PropertyType> MetaClient::getSpaceVidType(const GraphSpaceID& spaceId) {
+StatusOr<nebula::cpp2::PropertyType> MetaClient::getSpaceVidType(const GraphSpaceID& spaceId) {
   if (!ready_) {
     return Status::Error("Not ready!");
   }
@@ -1876,7 +1875,8 @@ StatusOr<cpp2::PropertyType> MetaClient::getSpaceVidType(const GraphSpaceID& spa
     return Status::Error("Space %d not found", spaceId);
   }
   auto vIdType = spaceIt->second->spaceDesc_.get_vid_type().get_type();
-  if (vIdType != cpp2::PropertyType::INT64 && vIdType != cpp2::PropertyType::FIXED_STRING) {
+  if (vIdType != nebula::cpp2::PropertyType::INT64 &&
+      vIdType != nebula::cpp2::PropertyType::FIXED_STRING) {
     std::stringstream ss;
     ss << "Space " << spaceId
        << ", vertexId type invalid: " << apache::thrift::util::enumNameSafe(vIdType);

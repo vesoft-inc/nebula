@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "parser/MaintainSentences.h"
@@ -12,7 +11,7 @@
 
 namespace nebula {
 
-std::ostream& operator<<(std::ostream& os, meta::cpp2::PropertyType type) {
+std::ostream& operator<<(std::ostream& os, nebula::cpp2::PropertyType type) {
   os << apache::thrift::util::enumNameSafe(type);
   return os;
 }
@@ -66,7 +65,7 @@ std::string ColumnSpecification::toString() const {
   buf += "`";
   buf += *name_;
   buf += "` ";
-  if (meta::cpp2::PropertyType::FIXED_STRING == type_) {
+  if (nebula::cpp2::PropertyType::FIXED_STRING == type_) {
     buf += "FIXED_STRING(";
     buf += std::to_string(typeLen_);
     buf += ")";

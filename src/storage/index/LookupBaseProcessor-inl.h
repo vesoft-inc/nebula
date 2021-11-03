@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #pragma once
@@ -212,9 +211,9 @@ StatusOr<StoragePlan<IndexID>> LookupBaseProcessor<REQ, RESP>::buildPlan(
       });
       if (it == fields.end() ||
           it->get_type().get_type() ==
-              nebula::meta::cpp2::PropertyType::GEOGRAPHY) {  // geography index just stores
-                                                              // S2CellId, so must read the
-                                                              // original geo data.
+              nebula::cpp2::PropertyType::GEOGRAPHY) {  // geography index just stores
+                                                        // S2CellId, so must read the
+                                                        // original geo data.
         needData = true;
         break;
       }

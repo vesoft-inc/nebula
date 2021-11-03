@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef CLIENTS_META_METACLIENT_H_
@@ -471,7 +470,7 @@ class MetaClient {
 
   StatusOr<int32_t> getSpaceVidLen(const GraphSpaceID& space);
 
-  StatusOr<cpp2::PropertyType> getSpaceVidType(const GraphSpaceID& space);
+  StatusOr<nebula::cpp2::PropertyType> getSpaceVidType(const GraphSpaceID& space);
 
   StatusOr<meta::cpp2::SpaceDesc> getSpaceDesc(const GraphSpaceID& space);
 

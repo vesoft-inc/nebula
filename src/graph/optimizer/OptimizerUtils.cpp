@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/optimizer/OptimizerUtils.h"
@@ -615,7 +614,7 @@ Status handleRangeIndex(const meta::cpp2::ColumnDef& field,
                         const Expression* expr,
                         const Value& value,
                         IndexColumnHint* hint) {
-  if (field.get_type().get_type() == meta::cpp2::PropertyType::BOOL) {
+  if (field.get_type().get_type() == nebula::cpp2::PropertyType::BOOL) {
     return Status::Error("Range scan for bool type is illegal");
   }
   Value begin, end;

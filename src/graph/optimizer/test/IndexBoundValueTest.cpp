@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -12,12 +11,13 @@ namespace nebula {
 namespace graph {
 
 using OP = OptimizerUtils::BoundValueOperator;
+using nebula::cpp2::PropertyType;
 
 TEST(IndexBoundValueTest, StringTest) {
   meta::cpp2::ColumnDef col;
   {
     meta::cpp2::ColumnTypeDef typeDef;
-    typeDef.set_type(meta::cpp2::PropertyType::FIXED_STRING);
+    typeDef.set_type(PropertyType::FIXED_STRING);
     typeDef.set_type_length(8);
     col.set_type(std::move(typeDef));
   }
@@ -73,7 +73,7 @@ TEST(IndexBoundValueTest, IntTest) {
   meta::cpp2::ColumnDef col;
   {
     meta::cpp2::ColumnTypeDef typeDef;
-    typeDef.set_type(meta::cpp2::PropertyType::INT64);
+    typeDef.set_type(PropertyType::INT64);
     col.set_type(std::move(typeDef));
   }
   auto maxInt = std::numeric_limits<int64_t>::max();
@@ -99,7 +99,7 @@ TEST(IndexBoundValueTest, DoubleTest) {
   meta::cpp2::ColumnDef col;
   {
     meta::cpp2::ColumnTypeDef typeDef;
-    typeDef.set_type(meta::cpp2::PropertyType::DOUBLE);
+    typeDef.set_type(PropertyType::DOUBLE);
     col.set_type(std::move(typeDef));
   }
   auto maxDouble = std::numeric_limits<double_t>::max();
@@ -135,7 +135,7 @@ TEST(IndexBoundValueTest, DateTest) {
   meta::cpp2::ColumnDef col;
   {
     meta::cpp2::ColumnTypeDef typeDef;
-    typeDef.set_type(meta::cpp2::PropertyType::DATE);
+    typeDef.set_type(PropertyType::DATE);
     col.set_type(std::move(typeDef));
   }
   auto maxYear = std::numeric_limits<int16_t>::max();
@@ -159,7 +159,7 @@ TEST(IndexBoundValueTest, TimeTest) {
   meta::cpp2::ColumnDef col;
   {
     meta::cpp2::ColumnTypeDef typeDef;
-    typeDef.set_type(meta::cpp2::PropertyType::TIME);
+    typeDef.set_type(PropertyType::TIME);
     col.set_type(std::move(typeDef));
   }
   Time maxT{23, 59, 59, 999999};
@@ -219,7 +219,7 @@ TEST(IndexBoundValueTest, DateTimeTest) {
   meta::cpp2::ColumnDef col;
   {
     meta::cpp2::ColumnTypeDef typeDef;
-    typeDef.set_type(meta::cpp2::PropertyType::DATETIME);
+    typeDef.set_type(PropertyType::DATETIME);
     col.set_type(std::move(typeDef));
   }
   DateTime maxDT;

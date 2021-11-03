@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #include <gtest/gtest.h>
 
@@ -47,7 +46,7 @@ DECLARE_uint32(expired_time_factor);
 namespace nebula {
 namespace meta {
 
-using cpp2::PropertyType;
+using nebula::cpp2::PropertyType;
 
 TEST(ProcessorTest, ListHostsTest) {
   fs::TempDir rootPath("/tmp/ListHostsTest.XXXXXX");
@@ -343,7 +342,7 @@ TEST(ProcessorTest, SpaceTest) {
     ASSERT_EQ(8, resp.get_item().get_properties().get_partition_num());
     ASSERT_EQ(3, resp.get_item().get_properties().get_replica_factor());
     ASSERT_EQ(8, *resp.get_item().get_properties().get_vid_type().get_type_length());
-    ASSERT_EQ(cpp2::PropertyType::FIXED_STRING,
+    ASSERT_EQ(PropertyType::FIXED_STRING,
               resp.get_item().get_properties().get_vid_type().get_type());
     ASSERT_EQ("utf8", resp.get_item().get_properties().get_charset_name());
     ASSERT_EQ("utf8_bin", resp.get_item().get_properties().get_collate_name());

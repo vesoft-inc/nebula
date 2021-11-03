@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #pragma once
@@ -227,7 +226,7 @@ struct TossTestUtils {
   }
 
   static std::vector<meta::cpp2::ColumnDef> makeColDefs(
-      const std::vector<meta::cpp2::PropertyType>& types) {
+      const std::vector<nebula::cpp2::PropertyType>& types) {
     auto N = types.size();
     auto colNames = makeColNames(N);
     std::vector<meta::cpp2::ColumnDef> columnDefs(N);

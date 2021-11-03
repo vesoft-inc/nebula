@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/validator/LookupValidator.h"
@@ -105,7 +104,7 @@ Status LookupValidator::validateYieldEdge() {
   auto yieldExpr = lookupCtx_->yieldExpr;
   for (auto col : yield->columns()) {
     if (ExpressionUtils::hasAny(col->expr(),
-                                {Expression::Kind::kPathBuild, Expression::Kind::kVertex})) {
+                                {Expression::Kind::kAggregate, Expression::Kind::kVertex})) {
       return Status::SemanticError("illegal yield clauses `%s'", col->toString().c_str());
     }
     if (ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kEdge})) {
@@ -135,7 +134,7 @@ Status LookupValidator::validateYieldTag() {
   auto yieldExpr = lookupCtx_->yieldExpr;
   for (auto col : yield->columns()) {
     if (ExpressionUtils::hasAny(col->expr(),
-                                {Expression::Kind::kPathBuild, Expression::Kind::kEdge})) {
+                                {Expression::Kind::kAggregate, Expression::Kind::kEdge})) {
       return Status::SemanticError("illegal yield clauses `%s'", col->toString().c_str());
     }
     if (ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kVertex})) {
@@ -442,7 +441,7 @@ StatusOr<Expression*> LookupValidator::checkConstExpr(Expression* expr,
   auto schema = lookupCtx_->isEdge ? schemaMgr->getEdgeSchema(spaceId(), schemaId())
                                    : schemaMgr->getTagSchema(spaceId(), schemaId());
   auto type = schema->getFieldType(prop);
-  if (type == meta::cpp2::PropertyType::UNKNOWN) {
+  if (type == nebula::cpp2::PropertyType::UNKNOWN) {
     return Status::SemanticError("Invalid column: %s", prop.c_str());
   }
   QueryExpressionContext dummy(nullptr);

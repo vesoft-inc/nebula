@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_UTILS_INDEXKEYUTILS_H_
@@ -16,7 +15,7 @@
 
 namespace nebula {
 
-using PropertyType = nebula::meta::cpp2::PropertyType;
+using PropertyType = nebula::cpp2::PropertyType;
 
 /**
  * This class supply some utils for index in kvstore.

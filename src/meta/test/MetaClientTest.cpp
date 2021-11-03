@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -29,8 +28,8 @@ DECLARE_string(client_white_list);
 namespace nebula {
 namespace meta {
 
-using cpp2::PropertyType;
 using nebula::Value;
+using nebula::cpp2::PropertyType;
 
 TEST(MetaClientTest, InterfacesTest) {
   FLAGS_heartbeat_interval_secs = 1;

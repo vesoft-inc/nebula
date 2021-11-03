@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -61,8 +60,8 @@ class IndexScanLimitTest : public ::testing::Test {
 
   std::shared_ptr<meta::NebulaSchemaProvider> mockSchema() {
     std::shared_ptr<meta::NebulaSchemaProvider> schema(new meta::NebulaSchemaProvider(0));
-    schema->addField("col1", meta::cpp2::PropertyType::INT64);
-    schema->addField("col2", meta::cpp2::PropertyType::STRING);
+    schema->addField("col1", nebula::cpp2::PropertyType::INT64);
+    schema->addField("col2", nebula::cpp2::PropertyType::STRING);
     return schema;
   }
 
@@ -77,7 +76,7 @@ class IndexScanLimitTest : public ::testing::Test {
     std::vector<nebula::meta::cpp2::ColumnDef> cols;
     meta::cpp2::ColumnDef col;
     col.name = "col1";
-    col.type.set_type(meta::cpp2::PropertyType::INT64);
+    col.type.set_type(nebula::cpp2::PropertyType::INT64);
     cols.emplace_back(std::move(col));
     return cols;
   }

@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "storage/transaction/ChainAddEdgesProcessorLocal.h"
@@ -420,14 +419,14 @@ cpp2::AddEdgesRequest ChainAddEdgesProcessorLocal::makeSingleEdgeRequest(
 }
 
 int64_t ChainAddEdgesProcessorLocal::toInt(const ::nebula::Value& val) {
-  if (spaceVidType_ == meta::cpp2::PropertyType::FIXED_STRING) {
+  if (spaceVidType_ == nebula::cpp2::PropertyType::FIXED_STRING) {
     auto str = val.toString();
     if (str.size() < 3) {
       return 0;
     }
     auto str2 = str.substr(1, str.size() - 2);
     return atoll(str2.c_str());
-  } else if (spaceVidType_ == meta::cpp2::PropertyType::INT64) {
+  } else if (spaceVidType_ == nebula::cpp2::PropertyType::INT64) {
     return *reinterpret_cast<int64_t*>(const_cast<char*>(val.toString().c_str() + 1));
   }
   return 0;

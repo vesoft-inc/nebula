@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #ifndef PARSER_ADMINSENTENCES_H_
 #define PARSER_ADMINSENTENCES_H_
@@ -198,7 +197,7 @@ class SpaceOptItem final {
     } else {
       LOG(ERROR) << "vid type illegal.";
       static meta::cpp2::ColumnTypeDef unknownTypeDef;
-      unknownTypeDef.set_type(meta::cpp2::PropertyType::UNKNOWN);
+      unknownTypeDef.set_type(nebula::cpp2::PropertyType::UNKNOWN);
       return unknownTypeDef;
     }
   }

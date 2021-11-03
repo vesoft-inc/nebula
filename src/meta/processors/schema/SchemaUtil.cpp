@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/schema/SchemaUtil.h"
@@ -13,6 +12,9 @@
 
 namespace nebula {
 namespace meta {
+
+using nebula::cpp2::PropertyType;
+
 bool SchemaUtil::checkType(std::vector<cpp2::ColumnDef>& columns) {
   DefaultValueContext mContext;
   ObjectPool Objpool;
@@ -37,14 +39,14 @@ bool SchemaUtil::checkType(std::vector<cpp2::ColumnDef>& columns) {
         continue;
       }
       switch (column.get_type().get_type()) {
-        case cpp2::PropertyType::BOOL:
+        case PropertyType::BOOL:
           if (!value.isBool()) {
             LOG(ERROR) << "Invalid default value for ` " << name << "', value type is "
                        << value.type();
             return false;
           }
           break;
-        case cpp2::PropertyType::INT8: {
+        case PropertyType::INT8: {
           if (!value.isInt()) {
             LOG(ERROR) << "Invalid default value for ` " << name << "', value type is "
                        << value.type();
@@ -58,7 +60,7 @@ bool SchemaUtil::checkType(std::vector<cpp2::ColumnDef>& columns) {
           }
           break;
         }
-        case cpp2::PropertyType::INT16: {
+        case PropertyType::INT16: {
           if (!value.isInt()) {
             LOG(ERROR) << "Invalid default value for ` " << name << "', value type is "
                        << value.type();
@@ -72,7 +74,7 @@ bool SchemaUtil::checkType(std::vector<cpp2::ColumnDef>& columns) {
           }
           break;
         }
-        case cpp2::PropertyType::INT32: {
+        case PropertyType::INT32: {
           if (!value.isInt()) {
             LOG(ERROR) << "Invalid default value for ` " << name << "', value type is "
                        << value.type();
@@ -86,29 +88,29 @@ bool SchemaUtil::checkType(std::vector<cpp2::ColumnDef>& columns) {
           }
           break;
         }
-        case cpp2::PropertyType::INT64:
+        case PropertyType::INT64:
           if (!value.isInt()) {
             LOG(ERROR) << "Invalid default value for ` " << name << "', value type is "
                        << value.type();
             return false;
           }
           break;
-        case cpp2::PropertyType::FLOAT:
-        case cpp2::PropertyType::DOUBLE:
+        case PropertyType::FLOAT:
+        case PropertyType::DOUBLE:
           if (!value.isFloat()) {
             LOG(ERROR) << "Invalid default value for ` " << name << "', value type is "
                        << value.type();
             return false;
           }
           break;
-        case cpp2::PropertyType::STRING:
+        case PropertyType::STRING:
           if (!value.isStr()) {
             LOG(ERROR) << "Invalid default value for ` " << name << "', value type is "
                        << value.type();
             return false;
           }
           break;
-        case cpp2::PropertyType::FIXED_STRING: {
+        case PropertyType::FIXED_STRING: {
           if (!value.isStr()) {
             LOG(ERROR) << "Invalid default value for ` " << name << "', value type is "
                        << value.type();
@@ -124,7 +126,7 @@ bool SchemaUtil::checkType(std::vector<cpp2::ColumnDef>& columns) {
           }
           break;
         }
-        case cpp2::PropertyType::TIMESTAMP: {
+        case PropertyType::TIMESTAMP: {
           if (!value.isInt()) {
             LOG(ERROR) << "Invalid default value for ` " << name << "', value type is "
                        << value.type();
@@ -137,28 +139,28 @@ bool SchemaUtil::checkType(std::vector<cpp2::ColumnDef>& columns) {
           }
           break;
         }
-        case cpp2::PropertyType::DATE:
+        case PropertyType::DATE:
           if (!value.isDate()) {
             LOG(ERROR) << "Invalid default value for ` " << name << "', value type is "
                        << value.type();
             return false;
           }
           break;
-        case cpp2::PropertyType::TIME:
+        case PropertyType::TIME:
           if (!value.isTime()) {
             LOG(ERROR) << "Invalid default value for ` " << name << "', value type is "
                        << value.type();
             return false;
           }
           break;
-        case cpp2::PropertyType::DATETIME:
+        case PropertyType::DATETIME:
           if (!value.isDateTime()) {
             LOG(ERROR) << "Invalid default value for ` " << name << "', value type is "
                        << value.type();
             return false;
           }
           break;
-        case cpp2::PropertyType::GEOGRAPHY: {
+        case PropertyType::GEOGRAPHY: {
           if (!value.isGeography()) {  // TODO(jie)
             LOG(ERROR) << "Invalid default value for ` " << name << "', value type is "
                        << value.type();

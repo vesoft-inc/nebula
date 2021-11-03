@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "codec/test/ResultSchemaProvider.h"
@@ -9,8 +8,8 @@
 namespace nebula {
 
 using folly::hash::SpookyHashV2;
-using meta::cpp2::PropertyType;
 using meta::cpp2::Schema;
+using nebula::cpp2::PropertyType;
 
 /***********************************
  *
@@ -18,7 +17,7 @@ using meta::cpp2::Schema;
  *
  **********************************/
 ResultSchemaProvider::ResultSchemaField::ResultSchemaField(std::string name,
-                                                           meta::cpp2::PropertyType type,
+                                                           PropertyType type,
                                                            int16_t size,
                                                            bool nullable,
                                                            int32_t offset,

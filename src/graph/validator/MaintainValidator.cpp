@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/validator/MaintainValidator.h"
@@ -28,9 +27,9 @@ static Status validateColumns(const std::vector<ColumnSpecification *> &columnSp
     auto type = spec->type();
     column.set_name(*spec->name());
     column.type.set_type(type);
-    if (meta::cpp2::PropertyType::FIXED_STRING == type) {
+    if (nebula::cpp2::PropertyType::FIXED_STRING == type) {
       column.type.set_type_length(spec->typeLen());
-    } else if (meta::cpp2::PropertyType::GEOGRAPHY == type) {
+    } else if (nebula::cpp2::PropertyType::GEOGRAPHY == type) {
       column.type.set_geo_shape(spec->geoShape());
     }
     for (const auto &property : spec->properties()->properties()) {
