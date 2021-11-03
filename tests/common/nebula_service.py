@@ -34,9 +34,6 @@ class NebulaProcess(object):
     def update_meta_server_addrs(self, address):
         self.params['meta_server_addrs'] = address
 
-    def copy_conf(self):
-        pass
-
     def _format_nebula_command(self):
         process_params = {
             'log_dir': 'logs{}'.format(self.suffix_index),
