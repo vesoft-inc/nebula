@@ -38,7 +38,7 @@ class StorageCompactionFilter final : public kvstore::KVFilter {
     }
 
     if (NebulaKeyUtils::isTag(vIdLen_, key)) {
-      return !vertexValid(spaceId, key, val);
+      return !tagValid(spaceId, key, val);
     } else if (NebulaKeyUtils::isEdge(vIdLen_, key)) {
       return !edgeValid(spaceId, key, val);
     } else if (IndexKeyUtils::isIndexKey(key)) {
@@ -53,9 +53,9 @@ class StorageCompactionFilter final : public kvstore::KVFilter {
   }
 
  private:
-  bool vertexValid(GraphSpaceID spaceId,
-                   const folly::StringPiece& key,
-                   const folly::StringPiece& val) const {
+  bool tagValid(GraphSpaceID spaceId,
+                const folly::StringPiece& key,
+                const folly::StringPiece& val) const {
     auto tagId = NebulaKeyUtils::getTagId(vIdLen_, key);
     auto schema = schemaMan_->getTagSchema(spaceId, tagId);
     if (!schema) {
