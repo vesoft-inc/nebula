@@ -252,14 +252,9 @@ Status MatchClausePlanner::expandFromNode(const std::vector<NodeInfo>& nodeInfos
   // Pattern: ()-[]-...-(start)-...-[]-()
   NG_RETURN_IF_ERROR(
       rightExpandFromNode(nodeInfos, edgeInfos, matchClauseCtx, startIndex, subplan));
-  auto left = subplan.root;
-  NG_RETURN_IF_ERROR(
-      leftExpandFromNode(nodeInfos, edgeInfos, matchClauseCtx, startIndex, var, subplan));
+  NG_RETURN_IF_ERROR(leftExpandFromNode(
+      nodeInfos, edgeInfos, matchClauseCtx, startIndex, subplan.root->outputVar(), subplan));
 
-  // Connect the left expand and right expand part.
-  auto right = subplan.root;
-  subplan.root = SegmentsConnector::innerJoinSegments(
-      matchClauseCtx->qctx, left, right, JoinStrategyPos::kStart, JoinStrategyPos::kStart);
   return Status::OK();
 }
 
@@ -269,15 +264,23 @@ Status MatchClausePlanner::leftExpandFromNode(const std::vector<NodeInfo>& nodeI
                                               size_t startIndex,
                                               std::string inputVar,
                                               SubPlan& subplan) {
-  auto qctx = matchClauseCtx->qctx;
-  auto spaceId = matchClauseCtx->space.id;
   Expression* nextTraverseStart = nullptr;
+  auto qctx = matchClauseCtx->qctx;
+  if (startIndex == nodeInfos.size() - 1) {
+    nextTraverseStart = initialExpr_;
+  } else {
+    auto* pool = qctx->objPool();
+    auto args = ArgumentList::make(pool);
+    args->addArgument(InputPropertyExpression::make(pool, nodeInfos[startIndex].alias));
+    nextTraverseStart = FunctionCallExpression::make(pool, "id", args);
+  }
+  auto spaceId = matchClauseCtx->space.id;
   bool reversely = true;
   for (size_t i = startIndex; i > 0; --i) {
     auto& node = nodeInfos[i];
     auto& edge = edgeInfos[i - 1];
     auto traverse = Traverse::make(qctx, subplan.root, spaceId);
-    traverse->setSrc(startIndex == i ? initialExpr_ : nextTraverseStart);
+    traverse->setSrc(nextTraverseStart);
     traverse->setVertexProps(genVertexProps(node, qctx, spaceId));
     traverse->setEdgeProps(genEdgeProps(edge, reversely, qctx, spaceId));
     traverse->setEdgeDst(genEdgeDst(edge, reversely, qctx, spaceId));
