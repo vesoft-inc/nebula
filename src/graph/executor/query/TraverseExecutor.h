@@ -52,6 +52,12 @@ class TraverseExecutor final : public StorageAccessExecutor {
 
   bool hasSameEdge(const Row& prevPath, const Edge& currentEdge);
 
+  void releasePrevPaths(size_t cnt);
+
+  void buildPath(std::unordered_map<Value, std::vector<Row>>& currentPaths,
+                 const Value& dst,
+                 Row&& path);
+
  private:
   DataSet reqDs_;
   const Traverse* traverse_{nullptr};
@@ -61,6 +67,7 @@ class TraverseExecutor final : public StorageAccessExecutor {
   using Dst = Value;
   using Paths = std::vector<Row>;
   std::list<std::unordered_map<Value, Paths>> paths_;
+  size_t cnt_{0};
 };
 
 }  // namespace graph

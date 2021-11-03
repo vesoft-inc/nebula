@@ -64,15 +64,7 @@ Status TraverseExecutor::buildRequestDataSet() {
                    << ", space vid type: " << SchemaUtil::typeToString(vidType);
       continue;
     }
-    auto pathToDstFound = prev.find(vid);
-    if (pathToDstFound == prev.end()) {
-      Paths interimPaths;
-      interimPaths.emplace_back(iter->moveRow());
-      prev.emplace(vid, std::move(interimPaths));
-    } else {
-      auto& interimPaths = pathToDstFound->second;
-      interimPaths.emplace_back(iter->moveRow());
-    }
+    buildPath(prev, vid, iter->moveRow());
     if (!uniqueSet.emplace(vid).second) {
       continue;
     }
@@ -203,14 +195,12 @@ Status TraverseExecutor::buildInterimPath(GetNeighborsIter* iter) {
   reqDs.colNames = reqDs_.colNames;
   std::unordered_set<Value> uniqueVid;
 
-  const std::unordered_map<Value, Paths>* prev = &paths_.back();
+  const std::unordered_map<Value, Paths>& prev = paths_.back();
   paths_.emplace_back();
-  std::unordered_map<Value, Paths>* current = &paths_.back();
+  std::unordered_map<Value, Paths>& current = paths_.back();
 
   size_t count = 0;
-  size_t cntCE = 0;
   for (; iter->valid(); iter->next()) {
-    ++cntCE;
     auto& dst = iter->getEdgeProp("*", kDst);
     if (!SchemaUtil::isValidVid(dst, *(spaceInfo.spaceDesc.vid_type_ref()))) {
       continue;
@@ -218,15 +208,12 @@ Status TraverseExecutor::buildInterimPath(GetNeighborsIter* iter) {
     auto srcV = iter->getVertex();
     auto e = iter->getEdge();
     // Join on dst = src
-    auto pathToSrcFound = prev->find(srcV.getVertex().vid);
-    if (pathToSrcFound == prev->end()) {
+    auto pathToSrcFound = prev.find(srcV.getVertex().vid);
+    if (pathToSrcFound == prev.end()) {
       return Status::Error("Can't find prev paths.");
     }
     const auto& paths = pathToSrcFound->second;
-    VLOG(1) << "paths size: " << paths.size();
-    size_t cntCP = 0;
     for (auto& prevPath : paths) {
-      // VLOG(1) << "prev path: " << prevPath;
       if (hasSameEdge(prevPath, e.getEdge())) {
         continue;
       }
@@ -234,62 +221,48 @@ Status TraverseExecutor::buildInterimPath(GetNeighborsIter* iter) {
         reqDs.rows.emplace_back(Row({std::move(dst)}));
       }
       ++count;
-      ++cntCP;
       auto path = prevPath;
       if (currentStep_ == 1) {
         path.values.emplace_back(srcV);
         List neighbors;
         neighbors.values.emplace_back(e);
         path.values.emplace_back(std::move(neighbors));
-        auto pathToDstFound = current->find(dst);
-        if (pathToDstFound == current->end()) {
-          Paths interimPaths;
-          interimPaths.emplace_back(std::move(path));
-          current->emplace(dst, std::move(interimPaths));
-        } else {
-          auto& interimPaths = pathToDstFound->second;
-          interimPaths.emplace_back(std::move(path));
-        }
+        buildPath(current, dst, std::move(path));
       } else {
         auto& eList = path.values.back().mutableList().values;
         eList.emplace_back(srcV);
         eList.emplace_back(e);
         // VLOG(1) << "path " << __LINE__ << " :" << path;
-        auto pathToDstFound = current->find(dst);
-        if (pathToDstFound == current->end()) {
-          Paths interimPaths;
-          interimPaths.emplace_back(std::move(path));
-          current->emplace(dst, std::move(interimPaths));
-        } else {
-          auto& interimPaths = pathToDstFound->second;
-          interimPaths.emplace_back(std::move(path));
-        }
+        buildPath(current, dst, std::move(path));
       }
-    }
-    VLOG(1) << "Build new path size: " << cntCP;
-  }
-  VLOG(1) << "Total cnt: " << count << " current es: " << cntCE;
+    }  // `prevPath'
+  }    // `iter'
 
-  if (steps_.isMToN()) {
-    if ((currentStep_ - 1) < steps_.mSteps() && paths_.size() > 1) {
-      // VLOG(1) << "Delete front path.";
-      paths_.pop_front();
-    }
-  } else if (paths_.size() > 1) {
-    // VLOG(1) << "Delete front path.";
-    paths_.pop_front();
-  }
+  releasePrevPaths(count);
   reqDs_ = std::move(reqDs);
-  // VLOG(1) << "paths size: " << paths_.size();
   return Status::OK();
+}
+
+void TraverseExecutor::buildPath(std::unordered_map<Value, std::vector<Row>>& currentPaths,
+                                 const Value& dst,
+                                 Row&& path) {
+  auto pathToDstFound = currentPaths.find(dst);
+  if (pathToDstFound == currentPaths.end()) {
+    Paths interimPaths;
+    interimPaths.emplace_back(std::move(path));
+    currentPaths.emplace(dst, std::move(interimPaths));
+  } else {
+    auto& interimPaths = pathToDstFound->second;
+    interimPaths.emplace_back(std::move(path));
+  }
 }
 
 Status TraverseExecutor::buildResult() {
   DataSet result;
   result.colNames = traverse_->colNames();
+  result.rows.reserve(cnt_);
   for (auto& currentStepPaths : paths_) {
     for (auto& paths : currentStepPaths) {
-      result.rows.reserve(paths.second.size());
       std::move(paths.second.begin(), paths.second.end(), std::back_inserter(result.rows));
     }
   }
@@ -311,6 +284,23 @@ bool TraverseExecutor::hasSameEdge(const Row& prevPath, const Edge& currentEdge)
     }
   }
   return false;
+}
+
+void TraverseExecutor::releasePrevPaths(size_t cnt) {
+  if (steps_.isMToN()) {
+    if (currentStep_ == steps_.mSteps() && paths_.size() > 1) {
+      auto rangeEnd = paths_.begin();
+      std::advance(rangeEnd, paths_.size() - 1);
+      paths_.erase(paths_.begin(), rangeEnd);
+    }
+
+    if (currentStep_ >= steps_.mSteps()) {
+      cnt_ += cnt;
+    }
+  } else {
+    paths_.pop_front();
+    cnt_ = cnt;
+  }
 }
 }  // namespace graph
 }  // namespace nebula
