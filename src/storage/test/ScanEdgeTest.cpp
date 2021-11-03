@@ -4,6 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include <bits/c++config.h>
 #include <gtest/gtest.h>
 
 #include "common/base/Base.h"
@@ -240,6 +241,52 @@ TEST(ScanEdgeTest, MultiplePartsTest) {
     ASSERT_EQ(0, resp.result.failed_parts.size());
     // all 9 columns in value
     checkResponse(*resp.edge_data_ref(), edge, 9, totalRowCount);
+  }
+}
+
+TEST(ScanEdgeTest, LimitTest) {
+  fs::TempDir rootPath("/tmp/ScanVertexTest.XXXXXX");
+  mock::MockCluster cluster;
+  cluster.initStorageKV(rootPath.path());
+  auto* env = cluster.storageEnv_.get();
+  auto totalParts = cluster.getTotalParts();
+  ASSERT_EQ(true, QueryTestUtils::mockVertexData(env, totalParts));
+  ASSERT_EQ(true, QueryTestUtils::mockEdgeData(env, totalParts));
+
+  EdgeType serve = 101;
+
+  {
+    LOG(INFO) << "Scan one edge with some properties in one batch";
+    constexpr std::size_t limit = 3;
+    size_t totalRowCount = 0;
+    auto edge = std::make_pair(
+        serve,
+        std::vector<std::string>{kSrc, kType, kRank, kDst, "teamName", "startYear", "endYear"});
+    auto req = buildRequest({1}, {""}, edge, limit);
+    auto* processor = ScanEdgeProcessor::instance(env, nullptr);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+
+    ASSERT_EQ(0, resp.result.failed_parts.size());
+    checkResponse(*resp.edge_data_ref(), edge, edge.second.size(), totalRowCount);
+    EXPECT_EQ(totalRowCount, limit);
+  }
+  {
+    LOG(INFO) << "Scan one edge with all properties in one batch";
+    constexpr std::size_t limit = 3;
+    size_t totalRowCount = 0;
+    auto edge = std::make_pair(serve, std::vector<std::string>{});
+    auto req = buildRequest({1}, {""}, edge, limit);
+    auto* processor = ScanEdgeProcessor::instance(env, nullptr);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+
+    ASSERT_EQ(0, resp.result.failed_parts.size());
+    // all 9 columns in value
+    checkResponse(*resp.edge_data_ref(), edge, 9, totalRowCount);
+    EXPECT_EQ(totalRowCount, limit);
   }
 }
 

@@ -31,7 +31,8 @@ class ScanVertexPropNode : public QueryNode<Cursor> {
         tagNodes_(std::move(tagNodes)),
         enableReadFollower_(enableReadFollower),
         limit_(limit),
-        cursors_(cursors) {
+        cursors_(cursors),
+        resultDataSet_(resultDataSet) {
     name_ = "ScanVertexPropNode";
     std::vector<TagNode*> tags;
     for (const auto& t : tagNodes_) {
@@ -67,7 +68,8 @@ class ScanVertexPropNode : public QueryNode<Cursor> {
     const auto rowLimit = limit_;
     RowReaderWrapper reader;
     std::string currentVertexId;
-    for (int64_t rowCount = 0; iter->valid() && rowCount < rowLimit; iter->next()) {
+    for (; iter->valid() && static_cast<int64_t>(resultDataSet_->rowSize()) < rowLimit;
+         iter->next()) {
       auto key = iter->key();
 
       auto vertexId = NebulaKeyUtils::getVertexId(context_->vIdLen(), key);
@@ -78,7 +80,6 @@ class ScanVertexPropNode : public QueryNode<Cursor> {
         continue;
       }
       node_->doExecute(partId, vertexId.subpiece(0, vertexId.find_first_of('\0')).toString());
-      rowCount++;
     }
 
     cpp2::ScanCursor c;
@@ -100,6 +101,7 @@ class ScanVertexPropNode : public QueryNode<Cursor> {
   int64_t limit_;
   // cursors for next scan
   std::unordered_map<PartitionID, cpp2::ScanCursor>* cursors_;
+  nebula::DataSet* resultDataSet_;
 };
 
 // Node to scan edge of one partition
@@ -119,7 +121,8 @@ class ScanEdgePropNode : public QueryNode<Cursor> {
         edgeNodes_(std::move(edgeNodes)),
         enableReadFollower_(enableReadFollower),
         limit_(limit),
-        cursors_(cursors) {
+        cursors_(cursors),
+        resultDataSet_(resultDataSet) {
     QueryNode::name_ = "ScanEdgePropNode";
     std::vector<EdgeNode<cpp2::EdgeKey>*> edges;
     for (const auto& e : edgeNodes_) {
@@ -156,7 +159,8 @@ class ScanEdgePropNode : public QueryNode<Cursor> {
     auto rowLimit = limit_;
     RowReaderWrapper reader;
 
-    for (int64_t rowCount = 0; iter->valid() && rowCount < rowLimit; iter->next()) {
+    for (; iter->valid() && static_cast<int64_t>(resultDataSet_->rowSize()) < rowLimit;
+         iter->next()) {
       auto key = iter->key();
       if (!NebulaKeyUtils::isEdge(context_->vIdLen(), key)) {
         continue;
@@ -199,6 +203,7 @@ class ScanEdgePropNode : public QueryNode<Cursor> {
   int64_t limit_;
   // cursors for next scan
   std::unordered_map<PartitionID, cpp2::ScanCursor>* cursors_;
+  nebula::DataSet* resultDataSet_;
 };
 
 }  // namespace storage

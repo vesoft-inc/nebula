@@ -271,6 +271,63 @@ TEST(ScanVertexTest, MultiplePartsTest) {
   }
 }
 
+TEST(ScanVertexTest, LimitTest) {
+  fs::TempDir rootPath("/tmp/ScanVertexTest.XXXXXX");
+  mock::MockCluster cluster;
+  cluster.initStorageKV(rootPath.path());
+  auto* env = cluster.storageEnv_.get();
+  auto totalParts = cluster.getTotalParts();
+  ASSERT_EQ(true, QueryTestUtils::mockVertexData(env, totalParts));
+  ASSERT_EQ(true, QueryTestUtils::mockEdgeData(env, totalParts));
+
+  TagID player = 1;
+
+  {
+    LOG(INFO) << "Scan one tag with some properties in one batch";
+    constexpr std::size_t limit = 3;
+    size_t totalRowCount = 0;
+    auto tag =
+        std::make_pair(player, std::vector<std::string>{kVid, kTag, "name", "age", "avgScore"});
+    auto req = buildRequest({2}, {""}, tag, limit);
+    auto* processor = ScanVertexProcessor::instance(env, nullptr);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+
+    ASSERT_EQ(0, resp.result.failed_parts.size());
+    checkResponse(*resp.vertex_data_ref(), tag, tag.second.size() + 1 /* kVid */, totalRowCount);
+    EXPECT_EQ(totalRowCount, limit);
+  }
+  {
+    LOG(INFO) << "Scan one tag with all properties in one batch";
+    constexpr std::size_t limit = 3;
+    size_t totalRowCount = 0;
+    auto tag = std::make_pair(player, std::vector<std::string>{});
+    auto respTag = std::make_pair(player,
+                                  std::vector<std::string>{"name",
+                                                           "age",
+                                                           "playing",
+                                                           "career",
+                                                           "startYear",
+                                                           "endYear",
+                                                           "games",
+                                                           "avgScore",
+                                                           "serveTeams",
+                                                           "country",
+                                                           "champions"});
+    auto req = buildRequest({2}, {""}, tag, limit);
+    auto* processor = ScanVertexProcessor::instance(env, nullptr);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+
+    ASSERT_EQ(0, resp.result.failed_parts.size());
+    // all 11 columns in value
+    checkResponse(*resp.vertex_data_ref(), respTag, 11 + 1 /* kVid */, totalRowCount);
+    EXPECT_EQ(totalRowCount, limit);
+  }
+}
+
 }  // namespace storage
 }  // namespace nebula
 
