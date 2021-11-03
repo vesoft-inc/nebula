@@ -4,6 +4,7 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
+#include <bits/c++config.h>
 #include <gtest/gtest.h>
 
 #include "common/base/Base.h"
@@ -14,8 +15,8 @@
 namespace nebula {
 namespace storage {
 
-cpp2::ScanVertexRequest buildRequest(PartitionID partId,
-                                     const std::string& cursor,
+cpp2::ScanVertexRequest buildRequest(std::vector<PartitionID> partIds,
+                                     std::vector<std::string> cursors,
                                      const std::pair<TagID, std::vector<std::string>>& tag,
                                      int64_t rowLimit = 100,
                                      int64_t startTime = 0,
@@ -24,10 +25,13 @@ cpp2::ScanVertexRequest buildRequest(PartitionID partId,
   cpp2::ScanVertexRequest req;
   req.set_space_id(1);
   cpp2::ScanCursor c;
-  c.set_has_next(true);
-  c.set_next_cursor(cursor);
+  CHECK_EQ(partIds.size(), cursors.size());
   std::unordered_map<PartitionID, cpp2::ScanCursor> parts;
-  parts.emplace(partId, std::move(c));
+  for (std::size_t i = 0; i < partIds.size(); ++i) {
+    c.set_has_next(!cursors[i].empty());
+    c.set_next_cursor(cursors[i]);
+    parts.emplace(partIds[i], c);
+  }
   req.set_parts(std::move(parts));
   TagID tagId = tag.first;
   cpp2::VertexProp vertexProp;
@@ -105,7 +109,7 @@ TEST(ScanVertexTest, PropertyTest) {
     auto tag =
         std::make_pair(player, std::vector<std::string>{kVid, kTag, "name", "age", "avgScore"});
     for (PartitionID partId = 1; partId <= totalParts; partId++) {
-      auto req = buildRequest(partId, "", tag);
+      auto req = buildRequest({partId}, {""}, tag);
       auto* processor = ScanVertexProcessor::instance(env, nullptr);
       auto f = processor->getFuture();
       processor->process(req);
@@ -133,7 +137,7 @@ TEST(ScanVertexTest, PropertyTest) {
                                                            "country",
                                                            "champions"});
     for (PartitionID partId = 1; partId <= totalParts; partId++) {
-      auto req = buildRequest(partId, "", tag);
+      auto req = buildRequest({partId}, {""}, tag);
       auto* processor = ScanVertexProcessor::instance(env, nullptr);
       auto f = processor->getFuture();
       processor->process(req);
@@ -167,7 +171,7 @@ TEST(ScanVertexTest, CursorTest) {
       bool hasNext = true;
       std::string cursor = "";
       while (hasNext) {
-        auto req = buildRequest(partId, cursor, tag, 5);
+        auto req = buildRequest({partId}, {cursor}, tag, 5);
         auto* processor = ScanVertexProcessor::instance(env, nullptr);
         auto f = processor->getFuture();
         processor->process(req);
@@ -194,7 +198,7 @@ TEST(ScanVertexTest, CursorTest) {
       bool hasNext = true;
       std::string cursor = "";
       while (hasNext) {
-        auto req = buildRequest(partId, cursor, tag, 1);
+        auto req = buildRequest({partId}, {cursor}, tag, 1);
         auto* processor = ScanVertexProcessor::instance(env, nullptr);
         auto f = processor->getFuture();
         processor->process(req);
@@ -211,6 +215,59 @@ TEST(ScanVertexTest, CursorTest) {
       }
     }
     CHECK_EQ(mock::MockData::players_.size(), totalRowCount);
+  }
+}
+
+TEST(ScanVertexTest, MultiplePartsTest) {
+  fs::TempDir rootPath("/tmp/ScanVertexTest.XXXXXX");
+  mock::MockCluster cluster;
+  cluster.initStorageKV(rootPath.path());
+  auto* env = cluster.storageEnv_.get();
+  auto totalParts = cluster.getTotalParts();
+  ASSERT_EQ(true, QueryTestUtils::mockVertexData(env, totalParts));
+  ASSERT_EQ(true, QueryTestUtils::mockEdgeData(env, totalParts));
+
+  TagID player = 1;
+
+  {
+    LOG(INFO) << "Scan one tag with some properties in one batch";
+    size_t totalRowCount = 0;
+    auto tag =
+        std::make_pair(player, std::vector<std::string>{kVid, kTag, "name", "age", "avgScore"});
+    auto req = buildRequest({1, 3}, {"", ""}, tag);
+    auto* processor = ScanVertexProcessor::instance(env, nullptr);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+
+    ASSERT_EQ(0, resp.result.failed_parts.size());
+    checkResponse(*resp.vertex_data_ref(), tag, tag.second.size() + 1 /* kVid */, totalRowCount);
+  }
+  {
+    LOG(INFO) << "Scan one tag with all properties in one batch";
+    size_t totalRowCount = 0;
+    auto tag = std::make_pair(player, std::vector<std::string>{});
+    auto respTag = std::make_pair(player,
+                                  std::vector<std::string>{"name",
+                                                           "age",
+                                                           "playing",
+                                                           "career",
+                                                           "startYear",
+                                                           "endYear",
+                                                           "games",
+                                                           "avgScore",
+                                                           "serveTeams",
+                                                           "country",
+                                                           "champions"});
+    auto req = buildRequest({1, 3}, {"", ""}, tag);
+    auto* processor = ScanVertexProcessor::instance(env, nullptr);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+
+    ASSERT_EQ(0, resp.result.failed_parts.size());
+    // all 11 columns in value
+    checkResponse(*resp.vertex_data_ref(), respTag, 11 + 1 /* kVid */, totalRowCount);
   }
 }
 
