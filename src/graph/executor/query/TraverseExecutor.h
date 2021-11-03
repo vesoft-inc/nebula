@@ -50,6 +50,8 @@ class TraverseExecutor final : public StorageAccessExecutor {
 
   bool isFinalStep() const { return currentStep_ == steps_.nSteps(); }
 
+  bool hasSameEdge(const Row& prevPath, const Edge& currentEdge);
+
  private:
   DataSet reqDs_;
   const Traverse* traverse_{nullptr};

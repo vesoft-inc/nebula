@@ -227,16 +227,8 @@ Status TraverseExecutor::buildInterimPath(GetNeighborsIter* iter) {
     size_t cntCP = 0;
     for (auto& prevPath : paths) {
       // VLOG(1) << "prev path: " << prevPath;
-      if (prevPath.values.back().isList()) {
-        auto& eList = prevPath.values.back().getList().values;
-        VLOG(1) << "prev e: " << eList.back() << " current e: " << e
-                << " equal: " << eList.back().getEdge().keyEqual(e.getEdge());
-        // Unique edge in a path.
-        if (eList.back().getEdge().keyEqual(e.getEdge())) {
-          continue;
-        }
-      } else {
-        VLOG(1) << "Not a list: " << prevPath.values.back();
+      if (hasSameEdge(prevPath, e.getEdge())) {
+        continue;
       }
       if (uniqueVid.emplace(dst).second) {
         reqDs.rows.emplace_back(Row({std::move(dst)}));
@@ -304,6 +296,21 @@ Status TraverseExecutor::buildResult() {
 
   // VLOG(1) << "Traverse result: " << result;
   return finish(ResultBuilder().value(Value(std::move(result))).build());
+}
+
+bool TraverseExecutor::hasSameEdge(const Row& prevPath, const Edge& currentEdge) {
+  for (const auto& v : prevPath.values) {
+    if (v.isList()) {
+      for (const auto& e : v.getList().values) {
+        if (e.isEdge()) {
+          if (e.getEdge().keyEqual(currentEdge)) {
+            return true;
+          }
+        }
+      }
+    }
+  }
+  return false;
 }
 }  // namespace graph
 }  // namespace nebula
