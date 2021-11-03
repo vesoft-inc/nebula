@@ -1129,26 +1129,28 @@ folly::Future<bool> RaftPart::leaderElection() {
 
 bool RaftPart::handleElectionResponses(const cpp2::AskForVoteRequest& voteReq,
                                        const ElectionResponses& resps,
-                                       const std::vector<std::shared_ptr<Host>>& hosts,
+                                       const std::vector<std::shared_ptr<Host>>& peers,
                                        TermID proposedTerm) {
   // Process the responses
-  switch (processElectionResponses(resps, std::move(hosts), proposedTerm)) {
+  switch (processElectionResponses(resps, std::move(peers), proposedTerm)) {
     case Role::LEADER: {
       // Elected
       LOG(INFO) << idStr_ << "The partition is elected as the leader";
+      std::vector<std::shared_ptr<Host>> hosts;
       {
         std::lock_guard<std::mutex> g(raftLock_);
         if (status_ == Status::RUNNING) {
           leader_ = addr_;
-          for (auto& host : hosts_) {
-            host->reset();
-          }
+          hosts = hosts_;
           bgWorkers_->addTask(
               [self = shared_from_this(), term = voteReq.get_term()] { self->onElected(term); });
           lastMsgAcceptedTime_ = 0;
         }
         weight_ = 1;
         commitInThisTerm_ = false;
+      }
+      for (auto& host : hosts) {
+        host->reset();
       }
       sendHeartbeat();
       return true;
