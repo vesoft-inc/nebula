@@ -35,7 +35,7 @@ void checkTagVertexData(int32_t spaceVidLen,
   VertexID lastVertexId = "";
 
   for (int part = 1; part <= parts; part++) {
-    auto prefix = NebulaKeyUtils::vertexPrefix(part);
+    auto prefix = NebulaKeyUtils::tagPrefix(part);
     auto ret = env->kvstore_->prefix(spaceId, part, prefix, &iter);
     ASSERT_EQ(ret, nebula::cpp2::ErrorCode::SUCCEEDED);
 

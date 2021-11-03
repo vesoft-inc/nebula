@@ -156,7 +156,7 @@ void mockData(kvstore::KVStore* kv,
   for (auto partId = 0; partId < 3; partId++) {
     std::vector<kvstore::KV> data;
     for (auto vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
-      auto key = NebulaKeyUtils::vertexKey(partId, vertexId, tagId, 0);
+      auto key = NebulaKeyUtils::tagKey(partId, vertexId, tagId, 0);
       RowWriter writer;
       for (uint64_t numInt = 0; numInt < 3; numInt++) {
         writer << (numInt + 1);
@@ -440,7 +440,7 @@ static cpp2::LookUpVertexIndexResp checkLookupVerticesString(const std::string& 
       auto version = std::numeric_limits<int>::max() - 1;
       {
         VertexID vertexId = 100;
-        auto key = NebulaKeyUtils::vertexKey(partId, vertexId, tagId, version);
+        auto key = NebulaKeyUtils::tagKey(partId, vertexId, tagId, version);
         RowWriter twriter(nullptr);
         twriter << "AB"
                 << "CAB"
@@ -453,7 +453,7 @@ static cpp2::LookUpVertexIndexResp checkLookupVerticesString(const std::string& 
       }
       {
         VertexID vertexId = 200;
-        auto key = NebulaKeyUtils::vertexKey(partId, vertexId, tagId, version);
+        auto key = NebulaKeyUtils::tagKey(partId, vertexId, tagId, version);
         RowWriter twriter(nullptr);
         twriter << "ABC"
                 << "ABC"
@@ -618,7 +618,7 @@ static cpp2::LookUpVertexIndexResp checkLookupVerticesDouble(const std::string& 
       auto version = std::numeric_limits<int>::max() - 1;
       {
         VertexID vertexId = 100;
-        auto key = NebulaKeyUtils::vertexKey(partId, vertexId, tagId, version);
+        auto key = NebulaKeyUtils::tagKey(partId, vertexId, tagId, version);
         RowWriter twriter(nullptr);
         twriter << boost::get<double>(1.1) << boost::get<double>(0.0) << boost::get<double>(-1.1);
         auto tval = twriter.encode();
@@ -629,7 +629,7 @@ static cpp2::LookUpVertexIndexResp checkLookupVerticesDouble(const std::string& 
       }
       {
         VertexID vertexId = 200;
-        auto key = NebulaKeyUtils::vertexKey(partId, vertexId, tagId, version);
+        auto key = NebulaKeyUtils::tagKey(partId, vertexId, tagId, version);
         RowWriter twriter(nullptr);
         twriter << boost::get<double>(2.2) << boost::get<double>(0.0) << boost::get<double>(-2.2);
         auto tval = twriter.encode();

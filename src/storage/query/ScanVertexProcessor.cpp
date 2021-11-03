@@ -41,7 +41,7 @@ void ScanVertexProcessor::doProcess(const cpp2::ScanVertexRequest& req) {
   }
 
   std::string start;
-  std::string prefix = NebulaKeyUtils::vertexPrefix(partId_);
+  std::string prefix = NebulaKeyUtils::tagPrefix(partId_);
   if (req.get_cursor() == nullptr || req.get_cursor()->empty()) {
     start = prefix;
   } else {

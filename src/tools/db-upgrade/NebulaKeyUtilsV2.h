@@ -50,9 +50,9 @@ class NebulaKeyUtilsV2 final {
   static bool isValidVidLen(size_t vIdLen, VertexID srcvId, VertexID dstvId = "");
 
   /**
-   * Generate vertex key for kv store
+   * Generate tag key for kv store
    * */
-  static std::string vertexKey(
+  static std::string tagKey(
       size_t vIdLen, PartitionID partId, VertexID vId, TagID tagId, TagVersion tv);
 
   /**
