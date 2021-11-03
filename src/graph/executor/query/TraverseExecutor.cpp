@@ -113,20 +113,17 @@ void TraverseExecutor::getNeighbors() {
                      finalStep ? traverse_->limit() : -1,
                      finalStep ? traverse_->filter() : nullptr)
       .via(runner())
-      .ensure([this, getNbrTime]() {
+      .thenValue([this, getNbrTime](StorageRpcResponse<GetNeighborsResponse>&& resp) {
         SCOPED_TIMER(&execTime_);
-        otherStats_.emplace("total_rpc_time",
-                            folly::stringPrintf("%lu(us)", getNbrTime.elapsedInUSec()));
-      })
-      .thenValue([this](StorageRpcResponse<GetNeighborsResponse>&& resp) {
-        SCOPED_TIMER(&execTime_);
-        addStats(resp);
+        addStats(resp, getNbrTime.elapsedInUSec());
         handleResponse(resp);
       });
 }
 
-void TraverseExecutor::addStats(RpcResponse& resp) {
+void TraverseExecutor::addStats(RpcResponse& resp, int64_t getNbrTimeInUSec) {
   auto& hostLatency = resp.hostLatency();
+  std::stringstream ss;
+  ss << "{\n";
   for (size_t i = 0; i < hostLatency.size(); ++i) {
     size_t size = 0u;
     auto& result = resp.responses()[i];
@@ -134,14 +131,17 @@ void TraverseExecutor::addStats(RpcResponse& resp) {
       size = (*result.vertices_ref()).size();
     }
     auto& info = hostLatency[i];
-    otherStats_.emplace(
-        folly::sformat("{} exec/total/vertices", std::get<0>(info).toString()),
-        folly::sformat("{}(us)/{}(us)/{},", std::get<1>(info), std::get<2>(info), size));
+    ss << "{" << folly::sformat("{} exec/total/vertices: ", std::get<0>(info).toString())
+       << folly::sformat("{}(us)/{}(us)/{},", std::get<1>(info), std::get<2>(info), size) << "\n"
+       << folly::sformat("total_rpc_time: {}(us)", getNbrTimeInUSec) << "\n";
     auto detail = getStorageDetail(result.result.latency_detail_us_ref());
     if (!detail.empty()) {
-      otherStats_.emplace("storage_detail", detail);
+      ss << folly::sformat("storage_detail: {}", detail);
     }
+    ss << "\n}";
   }
+  ss << "\n}";
+  otherStats_.emplace(folly::sformat("step {}", currentStep_), ss.str());
 }
 
 void TraverseExecutor::handleResponse(RpcResponse& resps) {

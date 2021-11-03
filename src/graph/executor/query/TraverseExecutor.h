@@ -38,7 +38,7 @@ class TraverseExecutor final : public StorageAccessExecutor {
 
   folly::Future<Status> traverse();
 
-  void addStats(RpcResponse& resps);
+  void addStats(RpcResponse& resps, int64_t getNbrTimeInUSec);
 
   void getNeighbors();
 
