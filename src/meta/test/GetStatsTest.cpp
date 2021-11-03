@@ -1,8 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2021.2022 License,
- * attached with Common Clause Condition 2023.2024, found in the LICENSES
- * directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <folly/synchronization/Baton.h>
