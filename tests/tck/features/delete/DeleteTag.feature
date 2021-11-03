@@ -1,7 +1,6 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Delete string vid of tag
 
   Scenario: delete string vid one vertex one tag

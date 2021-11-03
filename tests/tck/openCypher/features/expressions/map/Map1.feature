@@ -1,7 +1,6 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Map1 - Static value access
 
   # Static value access refers to the dot-operator – <expression resulting in a map>.<identify> – which does not allow any dynamic computation of the map key – i.e. <identify>.
