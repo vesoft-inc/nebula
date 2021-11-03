@@ -90,11 +90,3 @@ Feature: Lookup with yield in integer vid
       | "Marco Belinelli" | "Tony Parker"  | 0       | 50            | [:like "Marco Belinelli"->"Tony Parker" @0 {likeness: 50}] |
       | "Rajon Rondo"     | "Ray Allen"    | 0       | -1            | [:like "Rajon Rondo"->"Ray Allen" @0 {likeness: -1}]       |
       | "Ray Allen"       | "Rajon Rondo"  | 0       | 9             | [:like "Ray Allen"->"Rajon Rondo" @0 {likeness: 9}]        |
-    When executing query:
-      """
-      LOOKUP ON serve WHERE serve.start_year == 2008 and serve.end_year == 2019
-      YIELD serve.start_year AS startYear | YIELD count(*) as nums
-      """
-    Then the result should be, in any order:
-      | nums |
-      | 2    |

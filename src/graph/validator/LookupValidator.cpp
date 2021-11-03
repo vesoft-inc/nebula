@@ -106,7 +106,7 @@ Status LookupValidator::validateYieldEdge() {
   auto yieldExpr = lookupCtx_->yieldExpr;
   for (auto col : yield->columns()) {
     if (ExpressionUtils::hasAny(col->expr(),
-                                {Expression::Kind::kAggregate, Expression::Kind::kVertex})) {
+                                {Expression::Kind::kPathBuild, Expression::Kind::kVertex})) {
       return Status::SemanticError("illegal yield clauses `%s'", col->toString().c_str());
     }
     if (ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kEdge})) {
@@ -136,7 +136,7 @@ Status LookupValidator::validateYieldTag() {
   auto yieldExpr = lookupCtx_->yieldExpr;
   for (auto col : yield->columns()) {
     if (ExpressionUtils::hasAny(col->expr(),
-                                {Expression::Kind::kAggregate, Expression::Kind::kEdge})) {
+                                {Expression::Kind::kPathBuild, Expression::Kind::kEdge})) {
       return Status::SemanticError("illegal yield clauses `%s'", col->toString().c_str());
     }
     if (ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kVertex})) {

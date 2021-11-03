@@ -137,11 +137,6 @@ TEST_F(LookupValidatorTest, wrongYield) {
               "SyntaxError: please add alias when using `vertex'. near `vertex'");
   }
   {
-    std::string query = "LOOKUP ON person YIELD count(*)";
-    auto result = checkResult(query);
-    EXPECT_EQ(std::string(result.message()), "SemanticError: illegal yield clauses `count(*)'");
-  }
-  {
     std::string query = "LOOKUP ON person YIELD vertex as node, edge";
     auto result = checkResult(query);
     EXPECT_EQ(std::string(result.message()),
