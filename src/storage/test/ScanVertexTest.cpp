@@ -23,8 +23,12 @@ cpp2::ScanVertexRequest buildRequest(PartitionID partId,
                                      bool onlyLatestVer = false) {
   cpp2::ScanVertexRequest req;
   req.set_space_id(1);
-  req.set_part_id(partId);
-  req.set_cursor(cursor);
+  cpp2::ScanCursor c;
+  c.set_has_next(true);
+  c.set_next_cursor(cursor);
+  std::unordered_map<PartitionID, cpp2::ScanCursor> parts;
+  parts.emplace(partId, std::move(c));
+  req.set_parts(std::move(parts));
   TagID tagId = tag.first;
   cpp2::VertexProp vertexProp;
   vertexProp.set_tag(tagId);
@@ -45,9 +49,10 @@ void checkResponse(const nebula::DataSet& dataSet,
                    size_t& totalRowCount) {
   ASSERT_EQ(dataSet.colNames.size(), expectColumnCount);
   if (!tag.second.empty()) {
-    ASSERT_EQ(dataSet.colNames.size(), tag.second.size());
-    for (size_t i = 0; i < dataSet.colNames.size(); i++) {
-      ASSERT_EQ(dataSet.colNames[i], std::to_string(tag.first) + "." + tag.second[i]);
+    ASSERT_EQ(dataSet.colNames.size(), tag.second.size() + 1 /* kVid*/);
+    for (size_t i = 0; i < dataSet.colNames.size() - 1 /* kVid */; i++) {
+      ASSERT_EQ(dataSet.colNames[i + 1 /* kVid */],
+                std::to_string(tag.first) + "." + tag.second[i]);
     }
   }
   totalRowCount += dataSet.rows.size();
@@ -64,13 +69,17 @@ void checkResponse(const nebula::DataSet& dataSet,
                                  mock::MockData::players_.end(),
                                  [&](const auto& player) { return player.name_ == vId; });
         CHECK(iter != mock::MockData::players_.end());
-        QueryTestUtils::checkPlayer(props, *iter, row.values);
+        std::vector<std::string> returnProps({kVid});
+        returnProps.insert(returnProps.end(), props.begin(), props.end());
+        QueryTestUtils::checkPlayer(returnProps, *iter, row.values);
         break;
       }
       case 2: {
         // tag team
         auto iter = std::find(mock::MockData::teams_.begin(), mock::MockData::teams_.end(), vId);
-        QueryTestUtils::checkTeam(props, *iter, row.values);
+        std::vector<std::string> returnProps({kVid});
+        returnProps.insert(returnProps.end(), props.begin(), props.end());
+        QueryTestUtils::checkTeam(returnProps, *iter, row.values);
         break;
       }
       default:
@@ -103,7 +112,7 @@ TEST(ScanVertexTest, PropertyTest) {
       auto resp = std::move(f).get();
 
       ASSERT_EQ(0, resp.result.failed_parts.size());
-      checkResponse(*resp.vertex_data_ref(), tag, tag.second.size(), totalRowCount);
+      checkResponse(*resp.vertex_data_ref(), tag, tag.second.size() + 1 /* kVid */, totalRowCount);
     }
     CHECK_EQ(mock::MockData::players_.size(), totalRowCount);
   }
@@ -111,6 +120,18 @@ TEST(ScanVertexTest, PropertyTest) {
     LOG(INFO) << "Scan one tag with all properties in one batch";
     size_t totalRowCount = 0;
     auto tag = std::make_pair(player, std::vector<std::string>{});
+    auto respTag = std::make_pair(player,
+                                  std::vector<std::string>{"name",
+                                                           "age",
+                                                           "playing",
+                                                           "career",
+                                                           "startYear",
+                                                           "endYear",
+                                                           "games",
+                                                           "avgScore",
+                                                           "serveTeams",
+                                                           "country",
+                                                           "champions"});
     for (PartitionID partId = 1; partId <= totalParts; partId++) {
       auto req = buildRequest(partId, "", tag);
       auto* processor = ScanVertexProcessor::instance(env, nullptr);
@@ -120,7 +141,7 @@ TEST(ScanVertexTest, PropertyTest) {
 
       ASSERT_EQ(0, resp.result.failed_parts.size());
       // all 11 columns in value
-      checkResponse(*resp.vertex_data_ref(), tag, 11, totalRowCount);
+      checkResponse(*resp.vertex_data_ref(), respTag, 11 + 1 /* kVid */, totalRowCount);
     }
     CHECK_EQ(mock::MockData::players_.size(), totalRowCount);
   }
@@ -153,11 +174,12 @@ TEST(ScanVertexTest, CursorTest) {
         auto resp = std::move(f).get();
 
         ASSERT_EQ(0, resp.result.failed_parts.size());
-        checkResponse(*resp.vertex_data_ref(), tag, tag.second.size(), totalRowCount);
-        hasNext = resp.get_has_next();
+        checkResponse(
+            *resp.vertex_data_ref(), tag, tag.second.size() + 1 /* kVid */, totalRowCount);
+        hasNext = resp.get_cursors().at(partId).get_has_next();
         if (hasNext) {
-          CHECK(resp.next_cursor_ref());
-          cursor = *resp.next_cursor_ref();
+          CHECK(resp.get_cursors().at(partId).next_cursor_ref());
+          cursor = *resp.get_cursors().at(partId).next_cursor_ref();
         }
       }
     }
@@ -179,11 +201,12 @@ TEST(ScanVertexTest, CursorTest) {
         auto resp = std::move(f).get();
 
         ASSERT_EQ(0, resp.result.failed_parts.size());
-        checkResponse(*resp.vertex_data_ref(), tag, tag.second.size(), totalRowCount);
-        hasNext = resp.get_has_next();
+        checkResponse(
+            *resp.vertex_data_ref(), tag, tag.second.size() + 1 /* kVid */, totalRowCount);
+        hasNext = resp.get_cursors().at(partId).get_has_next();
         if (hasNext) {
-          CHECK(resp.next_cursor_ref());
-          cursor = *resp.next_cursor_ref();
+          CHECK(resp.get_cursors().at(partId).next_cursor_ref());
+          cursor = *resp.get_cursors().at(partId).next_cursor_ref();
         }
       }
     }

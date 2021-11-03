@@ -23,8 +23,12 @@ cpp2::ScanEdgeRequest buildRequest(PartitionID partId,
                                    bool onlyLatestVer = false) {
   cpp2::ScanEdgeRequest req;
   req.set_space_id(1);
-  req.set_part_id(partId);
-  req.set_cursor(cursor);
+  cpp2::ScanCursor c;
+  c.set_has_next(true);
+  c.set_next_cursor(cursor);
+  std::unordered_map<PartitionID, cpp2::ScanCursor> parts;
+  parts.emplace(partId, std::move(c));
+  req.set_parts(std::move(parts));
   EdgeType edgeType = edge.first;
   cpp2::EdgeProp edgeProp;
   edgeProp.set_type(edgeType);
@@ -156,10 +160,10 @@ TEST(ScanEdgeTest, CursorTest) {
 
         ASSERT_EQ(0, resp.result.failed_parts.size());
         checkResponse(*resp.edge_data_ref(), edge, edge.second.size(), totalRowCount);
-        hasNext = resp.get_has_next();
+        hasNext = resp.get_cursors().at(partId).get_has_next();
         if (hasNext) {
-          CHECK(resp.next_cursor_ref().has_value());
-          cursor = *resp.next_cursor_ref();
+          CHECK(resp.get_cursors().at(partId).next_cursor_ref().has_value());
+          cursor = *resp.get_cursors().at(partId).next_cursor_ref();
         }
       }
     }
@@ -183,10 +187,10 @@ TEST(ScanEdgeTest, CursorTest) {
 
         ASSERT_EQ(0, resp.result.failed_parts.size());
         checkResponse(*resp.edge_data_ref(), edge, edge.second.size(), totalRowCount);
-        hasNext = resp.get_has_next();
+        hasNext = resp.get_cursors().at(partId).get_has_next();
         if (hasNext) {
-          CHECK(resp.next_cursor_ref().has_value());
-          cursor = *resp.next_cursor_ref();
+          CHECK(resp.get_cursors().at(partId).next_cursor_ref().has_value());
+          cursor = *resp.get_cursors().at(partId).next_cursor_ref();
         }
       }
     }

@@ -167,6 +167,9 @@ class StorageClientBase {
       std::unordered_map<PartitionID, std::vector<typename Container::value_type>>>>
   clusterIdsToHosts(GraphSpaceID spaceId, const Container& ids, GetIdFunc f) const;
 
+  StatusOr<std::unordered_map<HostAddr, std::unordered_map<PartitionID, cpp2::ScanCursor>>>
+  getHostPartsWithCursor(GraphSpaceID spaceId) const;
+
   virtual StatusOr<meta::PartHosts> getPartHosts(GraphSpaceID spaceId, PartitionID partId) const {
     CHECK(metaClient_ != nullptr);
     return metaClient_->getPartHostsFromCache(spaceId, partId);
@@ -206,14 +209,6 @@ class StorageClientBase {
   }
 
   std::vector<PartitionID> getReqPartsId(const cpp2::GetUUIDReq& req) const {
-    return {req.get_part_id()};
-  }
-
-  std::vector<PartitionID> getReqPartsId(const cpp2::ScanEdgeRequest& req) const {
-    return {req.get_part_id()};
-  }
-
-  std::vector<PartitionID> getReqPartsId(const cpp2::ScanVertexRequest& req) const {
     return {req.get_part_id()};
   }
 

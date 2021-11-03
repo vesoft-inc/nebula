@@ -557,24 +557,29 @@ struct LookupAndTraverseRequest {
  * End of Index section
  */
 
+struct ScanCursor {
+    3: bool                                 has_next,
+    // next start key of scan, only valid when has_next is true
+    4: optional binary                      next_cursor,
+}
+
 struct ScanVertexRequest {
     1: common.GraphSpaceID                  space_id,
-    2: common.PartitionID                   part_id,
-    // start key of this block
-    3: optional binary                      cursor,
-    4: VertexProp                           return_columns,
+    2: map<common.PartitionID, ScanCursor> (cpp.template = "std::unordered_map")
+                                            parts,
+    3: VertexProp                           return_columns,
     // max row count of tag in this response
-    5: i64                                  limit,
+    4: i64                                  limit,
     // only return data in time range [start_time, end_time)
-    6: optional i64                         start_time,
-    7: optional i64                         end_time,
-    8: optional binary                      filter,
+    5: optional i64                         start_time,
+    6: optional i64                         end_time,
+    7: optional binary                      filter,
     // when storage enable multi versions and only_latest_version is true, only return latest version.
     // when storage disable multi versions, just use the default value.
-    9: bool                                 only_latest_version = false,
+    8: bool                                 only_latest_version = false,
     // if set to false, forbid follower read
-    10: bool                                enable_read_from_follower = true,
-    11: optional RequestCommon              common,
+    9: bool                                enable_read_from_follower = true,
+    10: optional RequestCommon              common,
 }
 
 struct ScanVertexResponse {
@@ -583,29 +588,27 @@ struct ScanVertexResponse {
     // Each column represents one property. the column name is in the form of "tag_name.prop_alias"
     // in the same order which specified in VertexProp in request.
     2: common.DataSet                       vertex_data,
-    3: bool                                 has_next,
-    // next start key of scan, only valid when has_next is true
-    4: optional binary                      next_cursor,
+    3: map<common.PartitionID, ScanCursor> (cpp.template = "std::unordered_map")
+                                            cursors;
 }
 
 struct ScanEdgeRequest {
     1: common.GraphSpaceID                  space_id,
-    2: common.PartitionID                   part_id,
-    // start key of this block
-    3: optional binary                      cursor,
-    4: EdgeProp                             return_columns,
+    2: map<common.PartitionID, ScanCursor> (cpp.template = "std::unordered_map")
+                                            parts,
+    3: EdgeProp                             return_columns,
     // max row count of edge in this response
-    5: i64                                  limit,
+    4: i64                                  limit,
     // only return data in time range [start_time, end_time)
-    6: optional i64                         start_time,
-    7: optional i64                         end_time,
-    8: optional binary                      filter,
+    5: optional i64                         start_time,
+    6: optional i64                         end_time,
+    7: optional binary                      filter,
     // when storage enable multi versions and only_latest_version is true, only return latest version.
     // when storage disable multi versions, just use the default value.
-    9: bool                                only_latest_version = false,
+    8: bool                                only_latest_version = false,
     // if set to false, forbid follower read
-    10: bool                                enable_read_from_follower = true,
-    11: optional RequestCommon              common,
+    9: bool                                enable_read_from_follower = true,
+    10: optional RequestCommon              common,
 }
 
 struct ScanEdgeResponse {
@@ -614,9 +617,8 @@ struct ScanEdgeResponse {
     // Each column represents one property. the column name is in the form of "edge_name.prop_alias"
     // in the same order which specified in EdgeProp in requesss.
     2: common.DataSet                       edge_data,
-    3: bool                                 has_next,
-    // next start key of scan, only valid when has_next is true
-    4: optional binary                      next_cursor,
+    3: map<common.PartitionID, ScanCursor> (cpp.template = "std::unordered_map")
+                                            cursors;
 }
 
 struct TaskPara {

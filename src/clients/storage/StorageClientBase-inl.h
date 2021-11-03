@@ -330,5 +330,28 @@ StorageClientBase<ClientType>::getHostParts(GraphSpaceID spaceId) const {
   return hostParts;
 }
 
+template <typename ClientType>
+StatusOr<std::unordered_map<HostAddr, std::unordered_map<PartitionID, cpp2::ScanCursor>>>
+StorageClientBase<ClientType>::getHostPartsWithCursor(GraphSpaceID spaceId) const {
+  std::unordered_map<HostAddr, std::unordered_map<PartitionID, cpp2::ScanCursor>> hostParts;
+  auto status = metaClient_->partsNum(spaceId);
+  if (!status.ok()) {
+    return Status::Error("Space not found, spaceid: %d", spaceId);
+  }
+
+  // TODO support cursor
+  cpp2::ScanCursor c;
+  c.set_has_next(false);
+  auto parts = status.value();
+  for (auto partId = 1; partId <= parts; partId++) {
+    auto leader = getLeader(spaceId, partId);
+    if (!leader.ok()) {
+      return leader.status();
+    }
+    hostParts[leader.value()].emplace(partId, c);
+  }
+  return hostParts;
+}
+
 }  // namespace storage
 }  // namespace nebula
