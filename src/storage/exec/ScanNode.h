@@ -6,8 +6,6 @@
 
 #pragma once
 
-#include <bits/stdint-intn.h>
-
 #include "common/base/Base.h"
 #include "storage/exec/GetPropNode.h"
 
