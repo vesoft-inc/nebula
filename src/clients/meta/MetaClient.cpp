@@ -110,7 +110,6 @@ const MetaClient::ThreadLocalInfo& MetaClient::getThreadLocalInfo() {
     threadLocalInfo.spaceNewestEdgeVerMap_ = spaceNewestEdgeVerMap_;
     threadLocalInfo.spaceTagIndexById_ = spaceTagIndexById_;
     threadLocalInfo.spaceAllEdgeMap_ = spaceAllEdgeMap_;
-    threadLocalInfo.storageHosts_ = storageHosts_;
   }
 
   return threadLocalInfo;
