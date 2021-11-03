@@ -1,12 +1,12 @@
 #### What type of PR is this?
 - [ ] bug
 - [ ] feature
+- [ ] enhancement
 
-#### Which issue(s) this PR fixes:
-close #xxx   
-（If it is requirement, issue(s) number must be listed.）
+#### What does this PR do?
 
-#### What this PR does / why we need it?
+
+#### Which issue(s)/PR(s) this PR relates to?
 
   
 #### Special notes for your reviewer, ex. impact of this fix, etc:
@@ -16,12 +16,10 @@ close #xxx
 
 
 #### Checklist：
-- [ ] Documentation affected （If need to modify document, please label it.)
-- [ ] Incompatible （If it is incompatile, please describle it and label it.）
-- [ ] Need to cherry pick （If need to cherry pick to some branchs, please label the destination version(s).)
-- [ ] Performance regression: Consumes more CPU
-- [ ] Performance regression: Consumes more Memory
-
+- [ ] Documentation affected （Please add the label if documentation needs to be modified.)
+- [ ] Incompatible （If it is incompatible, please describe it and add corresponding label.）
+- [ ] Need to cherry-pick （If need to cherry-pick to some branches, please label the destination version(s).)
+- [ ] Performance impacted: Consumes more CPU/Memory
 
 
 #### Release notes：
