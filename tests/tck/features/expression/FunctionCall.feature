@@ -121,6 +121,50 @@ Feature: Function Call Expression
       | result |
       | NULL   |
 
+  Scenario: round
+    When executing query:
+      """
+      YIELD round(3.1415926, 9) as result
+      """
+    Then the result should be, in any order:
+      | result    |
+      | 3.1415926 |
+    When executing query:
+      """
+      YIELD round(3.1415926, 2) as result
+      """
+    Then the result should be, in any order:
+      | result |
+      | 3.14   |
+    When executing query:
+      """
+      YIELD round(3.1415926, 3) as result
+      """
+    Then the result should be, in any order:
+      | result |
+      | 3.142  |
+    When executing query:
+      """
+      YIELD round(3.14159265359, 0) as result
+      """
+    Then the result should be, in any order:
+      | result |
+      | 3.0    |
+    When executing query:
+      """
+      YIELD round(35543.14159265359, -3) as result
+      """
+    Then the result should be, in any order:
+      | result  |
+      | 36000.0 |
+    When executing query:
+      """
+      YIELD round(35543.14159265359, -5) as result
+      """
+    Then the result should be, in any order:
+      | result |
+      | 0.0    |
+
   Scenario: error check
     When executing query:
       """
