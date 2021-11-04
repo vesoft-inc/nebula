@@ -1,7 +1,6 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 # Feature: Map2 - Dynamic Value Access
 # # Dynamic value access refers to the bracket-operator – <expression resulting in a map>'['<expression resulting in a string>']' – irrespectively of whether the map key – i.e. <expression resulting in a string> – could be evaluated statically in a given scenario.
 # Background:

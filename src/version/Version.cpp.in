@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <folly/Format.h>
@@ -24,9 +23,7 @@ std::string versionString(bool verbose) {
   }
   version += folly::sformat("Build Time: {} {}", __DATE__, __TIME__);
   if (verbose) {
-    version +=
-        "\nThis source code is licensed under Apache 2.0 License,"
-        " attached with Common Clause Condition 1.0.";
+    version += "\nThis source code is licensed under Apache 2.0 License.";
   }
   return version;
 }
