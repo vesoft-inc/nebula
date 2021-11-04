@@ -10,7 +10,7 @@ import os
 import shutil
 from tests.common.nebula_service import NebulaService
 from tests.common.utils import get_conn_pool, load_csv_data
-from tests.common.constants import NEBULA_HOME, TMP_DIR, NB_TMP_PATH, SPACE_TMP_PATH
+from tests.common.constants import NEBULA_HOME, TMP_DIR, NB_TMP_PATH, SPACE_TMP_PATH, BUILD_DIR
 
 
 CURR_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -23,7 +23,7 @@ def init_parser():
     opt_parser.add_option(
         '--build_dir',
         dest='build_dir',
-        default=os.path.join(NEBULA_HOME, 'build'),
+        default=BUILD_DIR,
         help='Build directory of nebula graph',
     )
     opt_parser.add_option(

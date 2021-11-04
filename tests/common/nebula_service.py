@@ -101,6 +101,7 @@ class NebulaService(object):
         debug_log='true',
         **kwargs,
     ):
+        assert graphd_num > 0 and metad_num > 0 and storaged_num > 0
         self.build_dir = str(build_dir)
         self.src_dir = str(src_dir)
         self.work_dir = os.path.join(
@@ -230,7 +231,9 @@ class NebulaService(object):
             result = sk.connect_ex(('127.0.0.1', port))
             return result == 0
 
-    def install(self):
+    def install(self, work_dir=None):
+        if work_dir is not None:
+            self.work_dir = work_dir
         if os.path.exists(self.work_dir):
             shutil.rmtree(self.work_dir)
         os.mkdir(self.work_dir)
@@ -340,6 +343,9 @@ class NebulaService(object):
     def stop(self, cleanup=True):
         print("try to stop nebula services...")
         self._collect_pids()
+        if len(self.pids) == 0:
+            print("the cluster has been stopped and deleted.")
+            return
         self.kill_all(signal.SIGTERM)
 
         max_retries = 20
@@ -347,7 +353,8 @@ class NebulaService(object):
             time.sleep(1)
             max_retries = max_retries - 1
 
-        self.kill_all(signal.SIGKILL)
+        if self.is_proc_alive():
+            self.kill_all(signal.SIGKILL)
 
         if cleanup:
             shutil.rmtree(self.work_dir, ignore_errors=True)

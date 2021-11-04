@@ -11,7 +11,8 @@ import pytest
 from tests.common.configs import all_configs
 from tests.common.types import SpaceDesc
 from tests.common.utils import get_conn_pool
-from tests.common.constants import NB_TMP_PATH, SPACE_TMP_PATH
+from tests.common.constants import NB_TMP_PATH, SPACE_TMP_PATH, BUILD_DIR, NEBULA_HOME
+from tests.common.nebula_service import NebulaService
 
 from nebula2.fbthrift.transport import TSocket
 from nebula2.fbthrift.transport import TTransport
@@ -19,11 +20,10 @@ from nebula2.fbthrift.protocol import TBinaryProtocol
 from nebula2.gclient.net import Connection
 from nebula2.graph import GraphService
 
+
 tests_collected = set()
 tests_executed = set()
 data_dir = os.getenv('NEBULA_DATA_DIR')
-
-CURR_PATH = os.path.dirname(os.path.abspath(__file__))
 
 
 # pytest hook to handle test collection when xdist is used (parallel tests)
@@ -56,8 +56,13 @@ def pytest_addoption(parser):
 
     parser.addoption("--build_dir",
                      dest="build_dir",
-                     default=f"{CURR_PATH}/../build",
+                     default=BUILD_DIR,
                      help="Nebula Graph CMake build directory")
+    parser.addoption("--src_dir",
+                     dest="src_dir",
+                     default=NEBULA_HOME,
+                     help="Nebula Graph workspace")
+
 
 
 def pytest_configure(config):
@@ -70,6 +75,8 @@ def pytest_configure(config):
         pytest.cmdline.data_dir = config.getoption("data_dir")
     else:
         pytest.cmdline.data_dir = data_dir
+    pytest.cmdline.build_dir = config.getoption("build_dir")
+    pytest.cmdline.src_dir = config.getoption("src_dir")
     pytest.cmdline.stop_nebula = config.getoption("stop_nebula")
     pytest.cmdline.rm_dir = config.getoption("rm_dir")
     pytest.cmdline.debug_log = config.getoption("debug_log")
@@ -90,6 +97,27 @@ def get_ports():
         if port is None:
             raise Exception(f"Invalid port: {port}")
         return port
+
+@pytest.fixture(scope="class")
+def class_fixture_variables():
+    """save class scope fixture, used for session update.
+    """
+    # cluster is the instance of NebulaService
+    res = dict(
+        pool=None,
+        session=None,
+        cluster=None,
+    )
+    yield res
+    if res["session"] is not None:
+        res["session"].release()
+    if res["pool"] is not None:
+        res["pool"].close()
+    if res["cluster"] is not None:
+        _cluster = res["cluster"]
+        assert isinstance(_cluster, NebulaService)
+        _cluster.stop()
+
 
 @pytest.fixture(scope="session")
 def conn_pool_to_first_graph_service(pytestconfig):
@@ -130,7 +158,9 @@ def session_from_second_conn_pool(conn_pool_to_second_graph_service, pytestconfi
     sess.release()
 
 @pytest.fixture(scope="class")
-def session(session_from_first_conn_pool):
+def session(session_from_first_conn_pool, class_fixture_variables):
+    if class_fixture_variables.get('session', None) is not None:
+        return class_fixture_variables.get('session')
     return session_from_first_conn_pool
 
 def load_csv_data_once(space: str):
