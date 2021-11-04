@@ -8,6 +8,7 @@
 #include <thrift/lib/cpp/concurrency/ThreadManager.h>
 
 #include "clients/storage/InternalStorageClient.h"
+#include "common/cpu/CpuBinder.h"
 #include "common/hdfs/HdfsCommandHelper.h"
 #include "common/meta/ServerBasedIndexManager.h"
 #include "common/meta/ServerBasedSchemaManager.h"
@@ -34,8 +35,8 @@
 #include "webservice/WebService.h"
 
 DEFINE_int32(port, 44500, "Storage daemon listening port");
-DEFINE_int32(num_io_threads, 16, "Number of IO threads");
-DEFINE_int32(num_worker_threads, 32, "Number of workers");
+DEFINE_int32(num_io_threads, 0, "Number of IO threads");
+DEFINE_int32(num_worker_threads, 0, "Number of workers");
 DEFINE_int32(storage_http_thread_num, 3, "Number of storage daemon's http thread");
 DEFINE_bool(local_config, false, "meta client will not retrieve latest configuration from meta");
 
@@ -139,12 +140,89 @@ int32_t StorageServer::getAdminStoreSeqId() {
   return curSeqId;
 }
 
+void StorageServer::sanitizeThreadNum() {
+  auto nproc = static_cast<int32_t>(std::thread::hardware_concurrency());
+  if (FLAGS_num_io_threads + FLAGS_num_worker_threads + FLAGS_reader_handlers > nproc) {
+    LOG(WARNING)
+        << "Total thread count exceed maximum hardware concurrency, some thread will fail to bind";
+  } else {
+    if (FLAGS_num_io_threads == 0) {
+      FLAGS_num_io_threads = std::max(1, nproc / 4);
+    }
+    if (FLAGS_num_worker_threads == 0) {
+      FLAGS_num_worker_threads = std::max(1, nproc / 4);
+    }
+    if (FLAGS_reader_handlers == 0) {
+      FLAGS_reader_handlers = std::max(1, nproc - FLAGS_num_io_threads - FLAGS_num_worker_threads);
+    }
+  }
+  LOG(INFO) << folly::sformat("io thread size {}, worker thread size {}, reader thread size {}",
+                              FLAGS_num_io_threads,
+                              FLAGS_num_worker_threads,
+                              FLAGS_reader_handlers);
+}
+
+void StorageServer::setupThreadPool() {
+  sanitizeThreadNum();
+
+  // Assuming read operation is way more than write operation, we try to bind cpu by the order of
+  // 1) reader pool, 2) worker pool, 3) io pool. Since we bind exclusively, the latter pool would
+  // fail to bind when all cpu has been bound.
+  if (FLAGS_reader_handlers_type == "io") {
+    auto tf = std::make_shared<folly::NamedThreadFactory>("reader-pool");
+    auto readerPool =
+        std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_reader_handlers, std::move(tf));
+    auto cpuBinder =
+        cpu::CpuBinder::instance().spawn(FLAGS_reader_handlers, cpu::CpuBinder::kExclusive);
+    if (cpuBinder) {
+      cpuBinder->bind(readerPool);
+    }
+    readerPool_ = std::move(readerPool);
+  } else {
+    using PriorityThreadManager = apache::thrift::concurrency::PriorityThreadManager;
+    using PRIORITY = apache::thrift::concurrency::PRIORITY;
+    // todo(doodle): set thread numbers according to rpc severity
+    const std::array<size_t, PRIORITY::N_PRIORITIES> counts{
+        {0, 0, 0, static_cast<size_t>(FLAGS_reader_handlers), 0}};
+    auto readerPool = PriorityThreadManager::newPriorityThreadManager(counts, false);
+    readerPool->setNamePrefix("reader-pool");
+    readerPool->start();
+    auto total = std::accumulate(counts.begin(), counts.end(), 0);
+    auto cpuBinder = cpu::CpuBinder::instance().spawn(total, cpu::CpuBinder::kExclusive);
+    if (cpuBinder) {
+      cpuBinder->bind(readerPool, counts);
+    }
+    readerPool_ = std::move(readerPool);
+  }
+
+  {
+    using PriorityThreadManager = apache::thrift::concurrency::PriorityThreadManager;
+    using PRIORITY = apache::thrift::concurrency::PRIORITY;
+    // todo(doodle): set thread numbers according to rpc severity
+    const std::array<size_t, PRIORITY::N_PRIORITIES> counts{
+        {0, 0, 0, static_cast<size_t>(FLAGS_num_worker_threads), 0}};
+    workers_ = PriorityThreadManager::newPriorityThreadManager(counts, false);
+    auto total = std::accumulate(counts.begin(), counts.end(), 0);
+    workers_->setNamePrefix("worker");
+    workers_->start();
+    auto cpuBinder = cpu::CpuBinder::instance().spawn(total, cpu::CpuBinder::kExclusive);
+    if (cpuBinder) {
+      cpuBinder->bind(workers_, counts);
+    }
+  }
+
+  {
+    ioThreadPool_ = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_num_io_threads);
+    auto cpuBinder =
+        cpu::CpuBinder::instance().spawn(FLAGS_num_io_threads, cpu::CpuBinder::kExclusive);
+    if (cpuBinder) {
+      cpuBinder->bind(ioThreadPool_);
+    }
+  }
+}
+
 bool StorageServer::start() {
-  ioThreadPool_ = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_num_io_threads);
-  workers_ = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
-      FLAGS_num_worker_threads, true /*stats*/);
-  workers_->setNamePrefix("executor");
-  workers_->start();
+  setupThreadPool();
 
   // Meta client
   meta::MetaClientOptions options;
@@ -212,7 +290,7 @@ bool StorageServer::start() {
 
   storageThread_.reset(new std::thread([this] {
     try {
-      auto handler = std::make_shared<GraphStorageServiceHandler>(env_.get());
+      auto handler = std::make_shared<GraphStorageServiceHandler>(env_.get(), readerPool_);
       storageServer_ = std::make_unique<apache::thrift::ThriftServer>();
       storageServer_->setPort(FLAGS_port);
       storageServer_->setIdleTimeout(std::chrono::seconds(0));

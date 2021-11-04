@@ -51,10 +51,15 @@ class StorageServer final {
 
   int32_t getAdminStoreSeqId();
 
+  void setupThreadPool();
+
+  void sanitizeThreadNum();
+
   bool initWebService();
 
   std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
-  std::shared_ptr<apache::thrift::concurrency::ThreadManager> workers_;
+  std::shared_ptr<apache::thrift::concurrency::PriorityThreadManager> workers_;
+  std::shared_ptr<folly::Executor> readerPool_;
 
   std::unique_ptr<std::thread> storageThread_;
   std::unique_ptr<std::thread> adminThread_;

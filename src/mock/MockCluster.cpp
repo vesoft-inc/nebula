@@ -229,7 +229,8 @@ void MockCluster::startStorage(HostAddr addr,
 
   if (!isGeneralService) {
     graphStorageServer_ = std::make_unique<RpcServer>();
-    auto graphHandler = std::make_shared<storage::GraphStorageServiceHandler>(env);
+    auto graphHandler = std::make_shared<storage::GraphStorageServiceHandler>(
+        env, std::make_shared<folly::IOThreadPoolExecutor>(4));
     graphStorageServer_->start("graph-storage", addr.port, graphHandler);
     LOG(INFO) << "The graph storage daemon started on port " << graphStorageServer_->port_;
   } else {

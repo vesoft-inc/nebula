@@ -28,7 +28,7 @@ DEFINE_uint32(rebuild_index_part_rate_limit,
 
 DEFINE_uint32(rebuild_index_batch_size, 1024 * 128, "batch size for rebuild index, in bytes");
 
-DEFINE_int32(reader_handlers, 32, "Total reader handlers");
+DEFINE_int32(reader_handlers, 0, "Total reader handlers");
 
 DEFINE_uint64(default_mvcc_ver,
               0L,
