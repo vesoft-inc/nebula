@@ -301,7 +301,7 @@ Status MatchClausePlanner::leftExpandFromNode(const std::vector<NodeInfo>& nodeI
   auto& node = nodeInfos.front();
   auto appendV = AppendVertices::make(qctx, subplan.root, spaceId);
   appendV->setVertexProps(genVertexProps(node, qctx, spaceId));
-  appendV->setSrc(genNextTraverseStart(qctx->objPool(), edgeInfos.back()));
+  appendV->setSrc(nextTraverseStart);
   appendV->setVertexFilter(genVertexFilter(node));
   appendV->setColNames(genAppendVColNames(subplan.root->colNames(), node));
   appendV->setDedup();
@@ -319,13 +319,13 @@ Status MatchClausePlanner::rightExpandFromNode(const std::vector<NodeInfo>& node
   auto inputVar = subplan.root->outputVar();
   auto qctx = matchClauseCtx->qctx;
   auto spaceId = matchClauseCtx->space.id;
-  Expression* nextTraverseStart = nullptr;
+  Expression* nextTraverseStart = initialExpr_;
   bool reversely = false;
   for (size_t i = startIndex; i < edgeInfos.size(); ++i) {
     auto& node = nodeInfos[i];
     auto& edge = edgeInfos[i];
     auto traverse = Traverse::make(qctx, subplan.root, spaceId);
-    traverse->setSrc(startIndex == i ? initialExpr_ : nextTraverseStart);
+    traverse->setSrc(nextTraverseStart);
     traverse->setVertexProps(genVertexProps(node, qctx, spaceId));
     traverse->setEdgeProps(genEdgeProps(edge, reversely, qctx, spaceId));
     traverse->setEdgeDst(genEdgeDst(edge, reversely, qctx, spaceId));
@@ -345,7 +345,7 @@ Status MatchClausePlanner::rightExpandFromNode(const std::vector<NodeInfo>& node
   VLOG(1) << subplan;
   auto& node = nodeInfos.back();
   auto appendV = AppendVertices::make(qctx, subplan.root, spaceId);
-  appendV->setSrc(genNextTraverseStart(qctx->objPool(), edgeInfos.back()));
+  appendV->setSrc(nextTraverseStart);
   appendV->setVertexProps(genVertexProps(node, qctx, spaceId));
   appendV->setVertexFilter(genVertexFilter(node));
   appendV->setColNames(genAppendVColNames(subplan.root->colNames(), node));
