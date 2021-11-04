@@ -15,13 +15,14 @@
 namespace nebula {
 namespace storage {
 
-cpp2::ScanVertexRequest buildRequest(std::vector<PartitionID> partIds,
-                                     std::vector<std::string> cursors,
-                                     const std::pair<TagID, std::vector<std::string>>& tag,
-                                     int64_t rowLimit = 100,
-                                     int64_t startTime = 0,
-                                     int64_t endTime = std::numeric_limits<int64_t>::max(),
-                                     bool onlyLatestVer = false) {
+cpp2::ScanVertexRequest buildRequest(
+    std::vector<PartitionID> partIds,
+    std::vector<std::string> cursors,
+    const std::vector<std::pair<TagID, std::vector<std::string>>>& tags,
+    int64_t rowLimit = 100,
+    int64_t startTime = 0,
+    int64_t endTime = std::numeric_limits<int64_t>::max(),
+    bool onlyLatestVer = false) {
   cpp2::ScanVertexRequest req;
   req.set_space_id(1);
   cpp2::ScanCursor c;
@@ -33,13 +34,17 @@ cpp2::ScanVertexRequest buildRequest(std::vector<PartitionID> partIds,
     parts.emplace(partIds[i], c);
   }
   req.set_parts(std::move(parts));
-  TagID tagId = tag.first;
-  cpp2::VertexProp vertexProp;
-  vertexProp.set_tag(tagId);
-  for (const auto& prop : tag.second) {
-    (*vertexProp.props_ref()).emplace_back(std::move(prop));
+  std::vector<cpp2::VertexProp> vertexProps;
+  for (const auto& tag : tags) {
+    TagID tagId = tag.first;
+    cpp2::VertexProp vertexProp;
+    vertexProp.set_tag(tagId);
+    for (const auto& prop : tag.second) {
+      (*vertexProp.props_ref()).emplace_back(std::move(prop));
+    }
+    vertexProps.emplace_back(std::move(vertexProp));
   }
-  req.set_return_columns(std::move(vertexProp));
+  req.set_return_columns(std::move(vertexProps));
   req.set_limit(rowLimit);
   req.set_start_time(startTime);
   req.set_end_time(endTime);
@@ -109,7 +114,7 @@ TEST(ScanVertexTest, PropertyTest) {
     auto tag =
         std::make_pair(player, std::vector<std::string>{kVid, kTag, "name", "age", "avgScore"});
     for (PartitionID partId = 1; partId <= totalParts; partId++) {
-      auto req = buildRequest({partId}, {""}, tag);
+      auto req = buildRequest({partId}, {""}, {tag});
       auto* processor = ScanVertexProcessor::instance(env, nullptr);
       auto f = processor->getFuture();
       processor->process(req);
@@ -137,7 +142,7 @@ TEST(ScanVertexTest, PropertyTest) {
                                                            "country",
                                                            "champions"});
     for (PartitionID partId = 1; partId <= totalParts; partId++) {
-      auto req = buildRequest({partId}, {""}, tag);
+      auto req = buildRequest({partId}, {""}, {tag});
       auto* processor = ScanVertexProcessor::instance(env, nullptr);
       auto f = processor->getFuture();
       processor->process(req);
@@ -171,7 +176,7 @@ TEST(ScanVertexTest, CursorTest) {
       bool hasNext = true;
       std::string cursor = "";
       while (hasNext) {
-        auto req = buildRequest({partId}, {cursor}, tag, 5);
+        auto req = buildRequest({partId}, {cursor}, {tag}, 5);
         auto* processor = ScanVertexProcessor::instance(env, nullptr);
         auto f = processor->getFuture();
         processor->process(req);
@@ -198,7 +203,7 @@ TEST(ScanVertexTest, CursorTest) {
       bool hasNext = true;
       std::string cursor = "";
       while (hasNext) {
-        auto req = buildRequest({partId}, {cursor}, tag, 1);
+        auto req = buildRequest({partId}, {cursor}, {tag}, 1);
         auto* processor = ScanVertexProcessor::instance(env, nullptr);
         auto f = processor->getFuture();
         processor->process(req);
@@ -234,7 +239,7 @@ TEST(ScanVertexTest, MultiplePartsTest) {
     size_t totalRowCount = 0;
     auto tag =
         std::make_pair(player, std::vector<std::string>{kVid, kTag, "name", "age", "avgScore"});
-    auto req = buildRequest({1, 3}, {"", ""}, tag);
+    auto req = buildRequest({1, 3}, {"", ""}, {tag});
     auto* processor = ScanVertexProcessor::instance(env, nullptr);
     auto f = processor->getFuture();
     processor->process(req);
@@ -259,7 +264,7 @@ TEST(ScanVertexTest, MultiplePartsTest) {
                                                            "serveTeams",
                                                            "country",
                                                            "champions"});
-    auto req = buildRequest({1, 3}, {"", ""}, tag);
+    auto req = buildRequest({1, 3}, {"", ""}, {tag});
     auto* processor = ScanVertexProcessor::instance(env, nullptr);
     auto f = processor->getFuture();
     processor->process(req);
@@ -288,7 +293,7 @@ TEST(ScanVertexTest, LimitTest) {
     size_t totalRowCount = 0;
     auto tag =
         std::make_pair(player, std::vector<std::string>{kVid, kTag, "name", "age", "avgScore"});
-    auto req = buildRequest({2}, {""}, tag, limit);
+    auto req = buildRequest({2}, {""}, {tag}, limit);
     auto* processor = ScanVertexProcessor::instance(env, nullptr);
     auto f = processor->getFuture();
     processor->process(req);
@@ -315,7 +320,7 @@ TEST(ScanVertexTest, LimitTest) {
                                                            "serveTeams",
                                                            "country",
                                                            "champions"});
-    auto req = buildRequest({2}, {""}, tag, limit);
+    auto req = buildRequest({2}, {""}, {tag}, limit);
     auto* processor = ScanVertexProcessor::instance(env, nullptr);
     auto f = processor->getFuture();
     processor->process(req);
@@ -325,6 +330,111 @@ TEST(ScanVertexTest, LimitTest) {
     // all 11 columns in value
     checkResponse(*resp.vertex_data_ref(), respTag, 11 + 1 /* kVid */, totalRowCount);
     EXPECT_EQ(totalRowCount, limit);
+  }
+}
+
+TEST(ScanVertexTest, MultipleTagsTest) {
+  fs::TempDir rootPath("/tmp/ScanVertexTest.XXXXXX");
+  mock::MockCluster cluster;
+  cluster.initStorageKV(rootPath.path());
+  auto* env = cluster.storageEnv_.get();
+  auto totalParts = cluster.getTotalParts();
+  ASSERT_EQ(true, QueryTestUtils::mockVertexData(env, totalParts));
+  ASSERT_EQ(true, QueryTestUtils::mockEdgeData(env, totalParts));
+
+  TagID player = 1;
+  TagID team = 2;
+
+  {
+    LOG(INFO) << "Scan one tag with some properties in one batch";
+    //    size_t totalRowCount = 0;
+    auto playerTag =
+        std::make_pair(player, std::vector<std::string>{kVid, kTag, "name", "age", "avgScore"});
+    auto teamTag = std::make_pair(team, std::vector<std::string>{kTag, "name"});
+    auto req = buildRequest({1}, {""}, {playerTag, teamTag});
+    auto* processor = ScanVertexProcessor::instance(env, nullptr);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+
+    ASSERT_EQ(0, resp.result.failed_parts.size());
+    nebula::DataSet expect(
+        {"_vid", "1._vid", "1._tag", "1.name", "1.age", "1.avgScore", "2._tag", "2.name"});
+    expect.emplace_back(List({"Bulls",
+                              Value::kEmpty,
+                              Value::kEmpty,
+                              Value::kEmpty,
+                              Value::kEmpty,
+                              Value::kEmpty,
+                              2,
+                              "Bulls"}));
+    expect.emplace_back(List({"Cavaliers",
+                              Value::kEmpty,
+                              Value::kEmpty,
+                              Value::kEmpty,
+                              Value::kEmpty,
+                              Value::kEmpty,
+                              2,
+                              "Cavaliers"}));
+    expect.emplace_back(List({"Damian Lillard",
+                              "Damian Lillard",
+                              1,
+                              "Damian Lillard",
+                              29,
+                              24,
+                              Value::kEmpty,
+                              Value::kEmpty}));
+    expect.emplace_back(List(
+        {"Jason Kidd", "Jason Kidd", 1, "Jason Kidd", 47, 12.6, Value::kEmpty, Value::kEmpty}));
+    expect.emplace_back(List(
+        {"Kevin Durant", "Kevin Durant", 1, "Kevin Durant", 31, 27, Value::kEmpty, Value::kEmpty}));
+    expect.emplace_back(List(
+        {"Kobe Bryant", "Kobe Bryant", 1, "Kobe Bryant", 41, 25, Value::kEmpty, Value::kEmpty}));
+    expect.emplace_back(List({"Kristaps Porzingis",
+                              "Kristaps Porzingis",
+                              1,
+                              "Kristaps Porzingis",
+                              24,
+                              18.1,
+                              Value::kEmpty,
+                              Value::kEmpty}));
+    expect.emplace_back(List(
+        {"Luka Doncic", "Luka Doncic", 1, "Luka Doncic", 21, 24.4, Value::kEmpty, Value::kEmpty}));
+    expect.emplace_back(List({"Mavericks",
+                              Value::kEmpty,
+                              Value::kEmpty,
+                              Value::kEmpty,
+                              Value::kEmpty,
+                              Value::kEmpty,
+                              2,
+                              "Mavericks"}));
+    expect.emplace_back(List({"Nuggets",
+                              Value::kEmpty,
+                              Value::kEmpty,
+                              Value::kEmpty,
+                              Value::kEmpty,
+                              Value::kEmpty,
+                              2,
+                              "Nuggets"}));
+    expect.emplace_back(List(
+        {"Paul George", "Paul George", 1, "Paul George", 30, 19.9, Value::kEmpty, Value::kEmpty}));
+    expect.emplace_back(List({"Tracy McGrady",
+                              "Tracy McGrady",
+                              1,
+                              "Tracy McGrady",
+                              41,
+                              19.6,
+                              Value::kEmpty,
+                              Value::kEmpty}));
+    expect.emplace_back(List({"Vince Carter",
+                              "Vince Carter",
+                              1,
+                              "Vince Carter",
+                              43,
+                              16.7,
+                              Value::kEmpty,
+                              Value::kEmpty}));
+    EXPECT_EQ(expect, *resp.vertex_data_ref());
   }
 }
 

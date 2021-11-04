@@ -593,7 +593,7 @@ StorageRpcRespFuture<cpp2::ScanEdgeResponse> GraphStorageClient::scanEdge(
 
 StorageRpcRespFuture<cpp2::ScanVertexResponse> GraphStorageClient::scanVertex(
     const CommonRequestParam& param,
-    const cpp2::VertexProp& vertexProp,
+    const std::vector<cpp2::VertexProp>& vertexProp,
     int64_t limit,
     const Expression* filter) {
   std::unordered_map<HostAddr, cpp2::ScanVertexRequest> requests;

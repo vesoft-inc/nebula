@@ -136,10 +136,11 @@ class GraphStorageClient : public StorageClientBase<cpp2::GraphStorageServiceAsy
                                                         int64_t limit,
                                                         const Expression* filter);
 
-  StorageRpcRespFuture<cpp2::ScanVertexResponse> scanVertex(const CommonRequestParam& param,
-                                                            const cpp2::VertexProp& vertexProp,
-                                                            int64_t limit,
-                                                            const Expression* filter);
+  StorageRpcRespFuture<cpp2::ScanVertexResponse> scanVertex(
+      const CommonRequestParam& param,
+      const std::vector<cpp2::VertexProp>& vertexProp,
+      int64_t limit,
+      const Expression* filter);
 
  private:
   StatusOr<std::function<const VertexID&(const Row&)>> getIdFromRow(GraphSpaceID space,

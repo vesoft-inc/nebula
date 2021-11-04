@@ -567,7 +567,7 @@ struct ScanVertexRequest {
     1: common.GraphSpaceID                  space_id,
     2: map<common.PartitionID, ScanCursor> (cpp.template = "std::unordered_map")
                                             parts,
-    3: VertexProp                           return_columns,
+    3: list<VertexProp>                     return_columns,
     // max row count of tag in this response
     4: i64                                  limit,
     // only return data in time range [start_time, end_time)

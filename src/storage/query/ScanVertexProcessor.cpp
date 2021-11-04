@@ -63,7 +63,7 @@ nebula::cpp2::ErrorCode ScanVertexProcessor::checkAndBuildContexts(
     return ret;
   }
 
-  std::vector<cpp2::VertexProp> returnProps = {*req.return_columns_ref()};
+  std::vector<cpp2::VertexProp> returnProps = *req.return_columns_ref();
   ret = handleVertexProps(returnProps);
   buildTagColName(returnProps);
   return ret;
