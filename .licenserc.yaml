@@ -2,14 +2,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
 # This source code is licensed under Apache 2.0 License.
-#
-# Copyright (c) 2020 vesoft inc. All rights reserved.
-#
-# This source code is licensed under Apache 2.0 License.
-#
-# Copyright (c) 2020 vesoft inc. All rights reserved.
-#
-# This source code is licensed under Apache 2.0 License.
 header:
   license:
     spdx-id: Apache-2.0
@@ -27,6 +19,7 @@ header:
       This source code is licensed under Apache 2.0 License.
 
   paths-ignore:
+    - '.licenserc.yaml'
     - '.clang-tidy'
     - '.dockerignore'
     - '**/.gitignore'
