@@ -39,7 +39,6 @@ IndexNode::Result IndexSelectionNode::doNext() {
     if (!result.hasData()) {
       return result;
     }
-    DVLOG(1) << result.row();
     if (filter(result.row())) {
       return result;
     }

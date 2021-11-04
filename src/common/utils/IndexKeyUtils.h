@@ -229,7 +229,9 @@ class IndexKeyUtils final {
     } else {
       val = ~val;
     }
-    return *reinterpret_cast<double*>(&val);
+    double ret;
+    ::memcpy(&ret, &val, 8);
+    return ret;
   }
 
   static std::string encodeTime(const nebula::Time& t) {

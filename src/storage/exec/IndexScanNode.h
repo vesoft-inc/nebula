@@ -204,8 +204,6 @@ class QualifiedStrategy {
       std::bitset<16> nullableBit;
       auto v = *reinterpret_cast<const u_short*>(key.data() + keyOffset);
       nullableBit = v;
-      DVLOG(3) << targetIsNull;
-      DVLOG(3) << nullableBit.test(15 - columnIndex);
       return nullableBit.test(15 - columnIndex) == targetIsNull ? Result::COMPATIBLE
                                                                 : Result::INCOMPATIBLE;
     };
@@ -217,7 +215,6 @@ class QualifiedStrategy {
       std::bitset<16> nullableBit;
       auto v = *reinterpret_cast<const u_short*>(key.data() + keyOffset);
       nullableBit = v;
-      DVLOG(3) << nullableBit.test(15 - columnIndex);
       return nullableBit.test(15 - columnIndex) ? Result::INCOMPATIBLE : Result::COMPATIBLE;
     };
     return q;
@@ -302,8 +299,6 @@ class QualifiedStrategy {
     QualifiedStrategy q;
     q.func_ = [val, keyStartPos](const folly::StringPiece& key) {
       int ret = memcmp(val.data(), key.data() + keyStartPos, val.size());
-      DVLOG(1) << folly::hexDump(val.data(), val.size());
-      DVLOG(1) << folly::hexDump(key.data(), key.size());
       if constexpr (LEorGE == true) {
         CHECK_LE(ret, 0);
       } else {
@@ -394,7 +389,7 @@ class RangePath : public Path {
   inline bool includeEnd() { return includeEnd_; }
   inline const std::string& getStartKey() { return startKey_; }
   inline const std::string& getEndKey() { return endKey_; }
-  virtual bool isRange() { return true; }
+  bool isRange() override { return true; }
 
  private:
   std::string startKey_, endKey_;

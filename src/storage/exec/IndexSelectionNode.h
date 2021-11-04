@@ -121,7 +121,7 @@ class SelectionExprVisitor : public ExprVisitorBase {
   void visit(EdgeTypeExpression *expr) override { requiredColumns_.insert(expr->prop()); }
   void visit(EdgeRankExpression *expr) override { requiredColumns_.insert(expr->prop()); }
   void visit(EdgeDstIdExpression *expr) override { requiredColumns_.insert(expr->prop()); }
-  void visit(TagPropertyExpression *expr) { requiredColumns_.insert(expr->prop()); }
+  void visit(TagPropertyExpression *expr) override { requiredColumns_.insert(expr->prop()); }
   void visit(EdgePropertyExpression *expr) override { requiredColumns_.insert(expr->prop()); }
   const Set<std::string> &getRequiredColumns() { return requiredColumns_; }
   ::nebula::cpp2::ErrorCode getCode() { return code_; }

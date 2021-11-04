@@ -28,14 +28,7 @@ class MockKVIterator : public KVIterator {
  public:
   MockKVIterator(const KVMap& kv, KVMap::iterator&& iter) : kv_(kv), iter_(std::move(iter)) {}
   bool valid() const { return iter_ != kv_.end() && validFunc_(iter_); }
-  void next() {
-    iter_++;
-    if (iter_ != kv_.end()) {
-      DVLOG(2) << '\n' << folly::hexDump(iter_->first.data(), iter_->first.size());
-    } else {
-      DVLOG(2) << "InValid!!!";
-    }
-  }
+  void next() { iter_++; }
   void prev() { iter_--; }
   folly::StringPiece key() const { return folly::StringPiece(iter_->first); }
   folly::StringPiece val() const { return folly::StringPiece(iter_->second); }
@@ -57,14 +50,14 @@ class MockKVStore : public ::nebula::kvstore::KVStore {
   MockKVStore() {}
   // Return bit-OR of StoreCapability values;
   uint32_t capability() const override {
-    assert(false);
+    CHECK(false);
     return 0;
   };
   void stop() override {}
   ErrorOr<nebula::cpp2::ErrorCode, HostAddr> partLeader(GraphSpaceID spaceId,
                                                         PartitionID partID) override {
     UNUSED(spaceId), UNUSED(partID);
-    assert(false);
+    CHECK(false);
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
   // Read a single key
@@ -130,23 +123,23 @@ class MockKVStore : public ::nebula::kvstore::KVStore {
     (*iter) = std::move(mockIter);
     return ::nebula::cpp2::ErrorCode::SUCCEEDED;
   }
-  virtual nebula::cpp2::ErrorCode prefix(GraphSpaceID spaceId,
-                                         PartitionID partId,
-                                         std::string&& prefix,
-                                         std::unique_ptr<KVIterator>* iter,
-                                         bool canReadFromFollower = false) = delete;
-  virtual nebula::cpp2::ErrorCode rangeWithPrefix(GraphSpaceID spaceId,
-                                                  PartitionID partId,
-                                                  std::string&& start,
-                                                  std::string&& prefix,
-                                                  std::unique_ptr<KVIterator>* iter,
-                                                  bool canReadFromFollower = false) = delete;
-  virtual nebula::cpp2::ErrorCode range(GraphSpaceID spaceId,
-                                        PartitionID partId,
-                                        std::string&& start,
-                                        std::string&& end,
-                                        std::unique_ptr<KVIterator>* iter,
-                                        bool canReadFromFollower = false) = delete;
+  //   virtual nebula::cpp2::ErrorCode prefix(GraphSpaceID spaceId,
+  //                                          PartitionID partId,
+  //                                          std::string&& prefix,
+  //                                          std::unique_ptr<KVIterator>* iter,
+  //                                          bool canReadFromFollower = false) = delete override;
+  //   virtual nebula::cpp2::ErrorCode rangeWithPrefix(GraphSpaceID spaceId,
+  //                                                   PartitionID partId,
+  //                                                   std::string&& start,
+  //                                                   std::string&& prefix,
+  //                                                   std::unique_ptr<KVIterator>* iter,
+  //                                                   bool canReadFromFollower = false) = delete;
+  //   virtual nebula::cpp2::ErrorCode range(GraphSpaceID spaceId,
+  //                                         PartitionID partId,
+  //                                         std::string&& start,
+  //                                         std::string&& end,
+  //                                         std::unique_ptr<KVIterator>* iter,
+  //                                         bool canReadFromFollower = false) = delete;
   nebula::cpp2::ErrorCode prefix(GraphSpaceID spaceId,
                                  PartitionID partId,
                                  const std::string& prefix,
@@ -199,7 +192,7 @@ class MockKVStore : public ::nebula::kvstore::KVStore {
     return ::nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
-  nebula::cpp2::ErrorCode sync(GraphSpaceID spaceId, PartitionID partId) {
+  nebula::cpp2::ErrorCode sync(GraphSpaceID spaceId, PartitionID partId) override {
     UNUSED(spaceId);
     UNUSED(partId);
     LOG(FATAL) << "Unexpect";
@@ -316,14 +309,14 @@ class MockKVStore : public ::nebula::kvstore::KVStore {
     LOG(FATAL) << "Unexpect";
     return ::nebula::cpp2::ErrorCode::SUCCEEDED;
   };
-  nebula::cpp2::ErrorCode dropCheckpoint(GraphSpaceID spaceId, const std::string& name) {
+  nebula::cpp2::ErrorCode dropCheckpoint(GraphSpaceID spaceId, const std::string& name) override {
     UNUSED(spaceId);
     UNUSED(name);
     LOG(FATAL) << "Unexpect";
     return ::nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
-  nebula::cpp2::ErrorCode setWriteBlocking(GraphSpaceID spaceId, bool sign) {
+  nebula::cpp2::ErrorCode setWriteBlocking(GraphSpaceID spaceId, bool sign) override {
     UNUSED(spaceId);
     UNUSED(sign);
     LOG(FATAL) << "Unexpect";
@@ -334,7 +327,7 @@ class MockKVStore : public ::nebula::kvstore::KVStore {
       GraphSpaceID spaceId,
       const std::string& name,
       const std::string& tablePrefix,
-      std::function<bool(const folly::StringPiece& key)> filter) {
+      std::function<bool(const folly::StringPiece& key)> filter) override {
     UNUSED(spaceId);
     UNUSED(name);
     UNUSED(tablePrefix);
@@ -344,20 +337,20 @@ class MockKVStore : public ::nebula::kvstore::KVStore {
   }
   // for meta BR
   nebula::cpp2::ErrorCode restoreFromFiles(GraphSpaceID spaceId,
-                                           const std::vector<std::string>& files) {
+                                           const std::vector<std::string>& files) override {
     UNUSED(spaceId);
     UNUSED(files);
     LOG(FATAL) << "Unexpect";
     return ::nebula::cpp2::ErrorCode::SUCCEEDED;
   }
-  nebula::cpp2::ErrorCode multiPutWithoutReplicator(GraphSpaceID spaceId,
-                                                    std::vector<::nebula::kvstore::KV> keyValues) {
+  nebula::cpp2::ErrorCode multiPutWithoutReplicator(
+      GraphSpaceID spaceId, std::vector<::nebula::kvstore::KV> keyValues) override {
     UNUSED(spaceId);
     UNUSED(keyValues);
     LOG(FATAL) << "Unexpect";
     return ::nebula::cpp2::ErrorCode::SUCCEEDED;
   }
-  std::vector<std::string> getDataRoot() const {
+  std::vector<std::string> getDataRoot() const override {
     LOG(FATAL) << "Unexpect";
     return {};
   }
@@ -378,8 +371,8 @@ class MockKVStore : public ::nebula::kvstore::KVStore {
 class MockIndexNode : public IndexNode {
  public:
   explicit MockIndexNode(RuntimeContext* context) : IndexNode(context, "MockIndexNode") {}
-  ::nebula::cpp2::ErrorCode init(InitContext& initCtx) { return initFunc(initCtx); }
-  std::unique_ptr<IndexNode> copy() { LOG(FATAL) << "Unexpect"; }
+  ::nebula::cpp2::ErrorCode init(InitContext& initCtx) override { return initFunc(initCtx); }
+  std::unique_ptr<IndexNode> copy() override { LOG(FATAL) << "Unexpect"; }
   std::function<Result()> nextFunc;
   std::function<::nebula::cpp2::ErrorCode(PartitionID)> executeFunc;
   std::function<::nebula::cpp2::ErrorCode(InitContext& initCtx)> initFunc;
@@ -388,8 +381,6 @@ class MockIndexNode : public IndexNode {
  private:
   Result doNext() override { return nextFunc(); }
   ::nebula::cpp2::ErrorCode doExecute(PartitionID partId) override { return executeFunc(partId); };
-  int offset_;
-  int total_;
 };
 
 class RowParser {
@@ -529,7 +520,7 @@ class IndexParser {
     std::smatch match;
     std::string line;
     std::getline(ss, line);
-    assert(std::regex_match(line, match, pattern));
+    CHECK(std::regex_match(line, match, pattern));
     std::string name = match.str(2);
     int32_t id = std::stoi(match.str(3));
     schemaName_ = name;
@@ -555,7 +546,7 @@ class IndexParser {
     ret->set_schema_name(schemaName_);
     static std::regex pattern(R"(\((.+),(\d+)\):(.+))");
     std::smatch match;
-    assert(std::regex_match(line, match, pattern));
+    CHECK(std::regex_match(line, match, pattern));
     ret->set_index_name(folly::trimWhitespace(folly::StringPiece(match.str(1)).toString()));
     ret->set_index_id(std::stoi(match.str(2)));
     std::string columnStr = match.str(3);

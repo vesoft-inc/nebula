@@ -75,7 +75,8 @@ using std::string_literals::operator""s;
  * ├─┼┤
  * └─┴┘
  */
-struct IndexScanTestHelper {
+class IndexScanTestHelper {
+ public:
   void setIndex(IndexVertexScanNode* node, std::shared_ptr<::nebula::meta::cpp2::IndexItem> index) {
     node->getIndex = [index](std::shared_ptr<::nebula::meta::cpp2::IndexItem>& ret) {
       ret = index;
@@ -159,15 +160,14 @@ class IndexScanTest : public ::testing::Test {
       }
       writer.finish();
       auto value = writer.moveEncodedStr();
-      assert(ret[0].insert({key, value}).second);
+      CHECK(ret[0].insert({key, value}).second);
       RowReaderWrapper reader(schema.get(), folly::StringPiece(value), schemaVer);
       for (size_t j = 0; j < indices.size(); j++) {
         auto& index = indices[j];
         auto indexValue = IndexKeyUtils::collectIndexValues(&reader, index->get_fields()).value();
-        DVLOG(1) << folly::hexDump(indexValue.data(), indexValue.size());
         auto indexKey = IndexKeyUtils::vertexIndexKeys(
             8, 0, index->get_index_id(), std::to_string(i), std::move(indexValue))[0];
-        assert(ret[j + 1].insert({indexKey, ""}).second);
+        CHECK(ret[j + 1].insert({indexKey, ""}).second);
       }
     }
     return ret;
@@ -180,14 +180,13 @@ class IndexScanTest : public ::testing::Test {
     std::vector<std::map<std::string, std::string>> ret(indices.size() + 1);
     for (size_t i = 0; i < rows.size(); i++) {
       auto key = NebulaKeyUtils::edgeKey(8, 0, std::to_string(i), edgeType, i, std::to_string(i));
-      DVLOG(1) << '\n' << folly::hexDump(key.data(), key.size());
       RowWriterV2 writer(schema.get());
       for (size_t j = 0; j < rows[i].size(); j++) {
         writer.setValue(j, rows[i][j]);
       }
       writer.finish();
       auto value = writer.moveEncodedStr();
-      assert(ret[0].insert({key, value}).second);
+      CHECK(ret[0].insert({key, value}).second);
       RowReaderWrapper reader(schema.get(), folly::StringPiece(value), schemaVer);
       for (size_t j = 0; j < indices.size(); j++) {
         auto& index = indices[j];
@@ -199,8 +198,7 @@ class IndexScanTest : public ::testing::Test {
                                                      i,
                                                      std::to_string(i),
                                                      std::move(indexValue))[0];
-        DVLOG(1) << '\n' << folly::hexDump(indexKey.data(), indexKey.size());
-        assert(ret[j + 1].insert({indexKey, ""}).second);
+        CHECK(ret[j + 1].insert({indexKey, ""}).second);
       }
     }
     return ret;
@@ -469,7 +467,6 @@ TEST_F(IndexScanTest, Edge) {
     ASSERT_EQ(result.size(), expect.size());
     for (size_t i = 0; i < result.size(); i++) {
       ASSERT_EQ(result[i].size(), expect[i].size());
-      DVLOG(1) << result[i];
       for (size_t j = 0; j < expect[i].size(); j++) {
         EXPECT_EQ(expect[i][j], result[i][initCtx.retColMap[colOrder[j]]]);
       }
@@ -507,7 +504,6 @@ TEST_F(IndexScanTest, Edge) {
     ASSERT_EQ(result.size(), expect.size());
     for (size_t i = 0; i < result.size(); i++) {
       ASSERT_EQ(result[i].size(), expect[i].size());
-      DVLOG(1) << result[i];
       for (size_t j = 0; j < expect[i].size(); j++) {
         EXPECT_EQ(expect[i][j], result[i][initCtx.retColMap[colOrder[j]]]);
       }
@@ -546,7 +542,6 @@ TEST_F(IndexScanTest, Int) {
                    const std::vector<ColumnHint>& columnHints,
                    const std::vector<Row>& expect,
                    const std::string& case_) {
-    DVLOG(1) << "Start case " << case_;
     auto context = makeContext(1, 0);
     auto scanNode =
         std::make_unique<IndexVertexScanNode>(context.get(), 0, columnHints, kvstore.get());
@@ -760,7 +755,6 @@ float     | float                     | float                   | int
                    const std::vector<ColumnHint>& columnHints,
                    const std::vector<Row>& expect,
                    const std::string& case_) {
-    DVLOG(1) << "Start case " << case_;
     auto context = makeContext(0, 1);
     auto scanNode =
         std::make_unique<IndexEdgeScanNode>(context.get(), 0, columnHints, kvstore.get());
@@ -782,7 +776,6 @@ float     | float                     | float                   | int
       result.emplace_back(std::move(res).row());
     }
     EXPECT_EQ(result, expect) << "Fail at case " << case_;
-    DVLOG(1) << "End case " << case_;
   };
   auto expect = [](auto... vidList) {
     std::vector<Row> ret;
@@ -880,9 +873,13 @@ float     | float                     | float                   | int
     };
     check(indices[0], hint("a", 100), slice(aOrder, 11), "case4.1");
     check(indices[1], hint("b", INF), {}, "case4.2");
-    int64_t x = *reinterpret_cast<const int64_t*>(&INF);
+    int64_t x;
+    ::memcpy(&x, &INF, 8);
+    // int64_t x = *reinterpret_cast<const int64_t*>(&INF);
     x--;
-    double y = *reinterpret_cast<double*>(&x);
+    double y;
+    ::memcpy(&y, &x, 8);
+    // double y = *reinterpret_cast<double*>(&x);
     check(indices[1], hint("b", y), slice(bOrder, 11), "case4.3");
     check(indices[2], hint("c", INF), {}, "case4.4");
     check(indices[2], hint("c", y), slice(cOrder, 6), "case4.5");
@@ -946,9 +943,13 @@ float     | float                     | float                   | int
     };
     check(indices[0], hint("a", 100), slice(aOrder, 10), "case7.1");
     check(indices[1], hint("b", -INF), {}, "case7.2");
-    int64_t x = *reinterpret_cast<const int64_t*>(&INF);
+    int64_t x;
+    ::memcpy(&x, &INF, 8);
+    // int64_t x = *reinterpret_cast<const int64_t*>(&INF);
     x--;
-    double y = *reinterpret_cast<double*>(&x);
+    double y;
+    ::memcpy(&y, &x, 8);
+    // double y = *reinterpret_cast<double*>(&x);
     check(indices[1], hint("b", -y), slice(bOrder, 1), "case7.3");
     check(indices[2], hint("c", -INF), {}, "case7.4");
     check(indices[2], hint("c", -y), slice(cOrder, 2), "case7.5");
@@ -983,7 +984,6 @@ TEST_F(IndexScanTest, Bool) {
                    const std::vector<ColumnHint>& columnHints,
                    const std::vector<Row>& expect,
                    const std::string& case_) {
-    DVLOG(1) << "Start case " << case_;
     auto context = makeContext(1, 0);
     auto scanNode =
         std::make_unique<IndexVertexScanNode>(context.get(), 0, columnHints, kvstore.get());
@@ -1005,7 +1005,6 @@ TEST_F(IndexScanTest, Bool) {
       result.emplace_back(std::move(res).row());
     }
     EXPECT_EQ(result, expect) << "Fail at case " << case_;
-    DVLOG(1) << "End case " << case_;
   };
   auto expect = [](auto... vidList) {
     std::vector<Row> ret;
@@ -1073,7 +1072,6 @@ TEST_F(IndexScanTest, String1) {
                    const std::vector<std::string>& acquiredColumns,
                    const std::vector<Row>& expect,
                    const std::string& case_) {
-    DVLOG(1) << "Start case " << case_;
     auto context = makeContext(1, 0);
     auto scanNode =
         std::make_unique<IndexVertexScanNode>(context.get(), 0, columnHints, kvstore.get());
@@ -1230,7 +1228,6 @@ TEST_F(IndexScanTest, String2) {
                    const std::vector<std::string>& acquiredColumns,
                    const std::vector<Row>& expect,
                    const std::string& case_) {
-    DVLOG(1) << "Start case " << case_;
     auto context = makeContext(1, 0);
     auto scanNode =
         std::make_unique<IndexVertexScanNode>(context.get(), 0, columnHints, kvstore.get());
@@ -1361,7 +1358,6 @@ TEST_F(IndexScanTest, String3) {
                    const std::vector<std::string>& acquiredColumns,
                    const std::vector<Row>& expect,
                    const std::string& case_) {
-    DVLOG(1) << "Start case " << case_;
     auto context = makeContext(1, 0);
     auto scanNode =
         std::make_unique<IndexVertexScanNode>(context.get(), 0, columnHints, kvstore.get());
@@ -1483,7 +1479,6 @@ TEST_F(IndexScanTest, String4) {
                    const std::vector<std::string>& acquiredColumns,
                    const std::vector<Row>& expect,
                    const std::string& case_) {
-    DVLOG(1) << "Start case " << case_;
     auto context = makeContext(1, 0);
     auto scanNode =
         std::make_unique<IndexVertexScanNode>(context.get(), 0, columnHints, kvstore.get());
@@ -1599,7 +1594,6 @@ TEST_F(IndexScanTest, Nullable) {
                    const std::vector<ColumnHint>& columnHints,
                    const std::vector<Row>& expect,
                    const std::string& case_) {
-    DVLOG(1) << "Start case " << case_;
     auto context = makeContext(1, 0);
     auto scanNode =
         std::make_unique<IndexVertexScanNode>(context.get(), 0, columnHints, kvstore.get());
@@ -1793,7 +1787,7 @@ TEST_F(IndexTest, Selection) {
 
   auto selection = std::make_unique<IndexSelectionNode>(ctx.get(), expr);
   auto mockChild = std::make_unique<MockIndexNode>(ctx.get());
-  mockChild->executeFunc = [&rows](PartitionID) { return ::nebula::cpp2::ErrorCode::SUCCEEDED; };
+  mockChild->executeFunc = [](PartitionID) { return ::nebula::cpp2::ErrorCode::SUCCEEDED; };
   mockChild->nextFunc = [&rows, &currentOffset]() -> IndexNode::Result {
     if (currentOffset < rows.size()) {
       auto row = rows[currentOffset++];
@@ -1803,7 +1797,6 @@ TEST_F(IndexTest, Selection) {
     }
   };
   mockChild->initFunc = [](InitContext& initCtx) -> ::nebula::cpp2::ErrorCode {
-    ASSERT(initCtx.requiredColumns.find("a") != initCtx.requiredColumns.end());
     initCtx.returnColumns = {"a", "b"};
     initCtx.retColMap = {{"a", 0}, {"b", 1}};
     return ::nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -1823,7 +1816,7 @@ TEST_F(IndexTest, Projection) {
   auto projection =
       std::make_unique<IndexProjectionNode>(ctx.get(), std::vector<std::string>{"c", "a", "b"});
   auto mockChild = std::make_unique<MockIndexNode>(ctx.get());
-  mockChild->executeFunc = [&rows](PartitionID) { return ::nebula::cpp2::ErrorCode::SUCCEEDED; };
+  mockChild->executeFunc = [](PartitionID) { return ::nebula::cpp2::ErrorCode::SUCCEEDED; };
   mockChild->nextFunc = [&rows, &currentOffset]() -> IndexNode::Result {
     if (currentOffset < rows.size()) {
       auto row = rows[currentOffset++];
@@ -1833,9 +1826,6 @@ TEST_F(IndexTest, Projection) {
     }
   };
   mockChild->initFunc = [](InitContext& initCtx) -> ::nebula::cpp2::ErrorCode {
-    ASSERT(initCtx.requiredColumns.find("a") != initCtx.requiredColumns.end());
-    ASSERT(initCtx.requiredColumns.find("b") != initCtx.requiredColumns.end());
-    ASSERT(initCtx.requiredColumns.find("c") != initCtx.requiredColumns.end());
     initCtx.returnColumns = {"a", "b", "c"};
     initCtx.retColMap = {{"a", 0}, {"b", 1}, {"c", 2}};
     return ::nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -1866,7 +1856,7 @@ TEST_F(IndexTest, Limit) {
   auto ctx = makeContext();
   auto limit = std::make_unique<IndexLimitNode>(ctx.get(), 10);
   auto mockChild = std::make_unique<MockIndexNode>(ctx.get());
-  mockChild->executeFunc = [&rows](PartitionID) { return ::nebula::cpp2::ErrorCode::SUCCEEDED; };
+  mockChild->executeFunc = [](PartitionID) { return ::nebula::cpp2::ErrorCode::SUCCEEDED; };
   mockChild->nextFunc = [&rows, &currentOffset]() -> IndexNode::Result {
     if (currentOffset < rows.size()) {
       auto row = rows[currentOffset++];
@@ -1899,7 +1889,7 @@ TEST_F(IndexTest, Dedup) {
   auto ctx = makeContext();
   auto dedup = std::make_unique<IndexDedupNode>(ctx.get(), std::vector<std::string>{"a"});
   auto child1 = std::make_unique<MockIndexNode>(ctx.get());
-  child1->executeFunc = [&rows1](PartitionID) { return ::nebula::cpp2::ErrorCode::SUCCEEDED; };
+  child1->executeFunc = [](PartitionID) { return ::nebula::cpp2::ErrorCode::SUCCEEDED; };
   child1->nextFunc = [&rows1, &offset1]() -> IndexNode::Result {
     if (offset1 < rows1.size()) {
       auto row = rows1[offset1++];
@@ -1909,13 +1899,12 @@ TEST_F(IndexTest, Dedup) {
     }
   };
   child1->initFunc = [](InitContext& initCtx) -> ::nebula::cpp2::ErrorCode {
-    ASSERT(initCtx.requiredColumns.find("a") != initCtx.requiredColumns.end());
     initCtx.returnColumns = {"a", "b"};
     initCtx.retColMap = {{"a", 0}, {"b", 1}};
     return ::nebula::cpp2::ErrorCode::SUCCEEDED;
   };
   auto child2 = std::make_unique<MockIndexNode>(ctx.get());
-  child2->executeFunc = [&rows2](PartitionID) { return ::nebula::cpp2::ErrorCode::SUCCEEDED; };
+  child2->executeFunc = [](PartitionID) { return ::nebula::cpp2::ErrorCode::SUCCEEDED; };
   child2->nextFunc = [&rows2, &offset2]() -> IndexNode::Result {
     if (offset2 < rows2.size()) {
       auto row = rows2[offset2++];
@@ -1925,7 +1914,6 @@ TEST_F(IndexTest, Dedup) {
     }
   };
   child2->initFunc = [](InitContext& initCtx) -> ::nebula::cpp2::ErrorCode {
-    ASSERT(initCtx.requiredColumns.find("a") != initCtx.requiredColumns.end());
     initCtx.returnColumns = {"a", "b"};
     initCtx.retColMap = {{"a", 0}, {"b", 1}};
     return ::nebula::cpp2::ErrorCode::SUCCEEDED;

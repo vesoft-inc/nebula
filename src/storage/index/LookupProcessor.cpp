@@ -25,7 +25,6 @@ ProcessorCounters kLookupCounters;
 // print Plan for debug
 inline void printPlan(IndexNode* node, int tab = 0);
 void LookupProcessor::process(const cpp2::LookupIndexRequest& req) {
-  DVLOG(1) << ::apache::thrift::SimpleJSONSerializer::serialize<std::string>(req);
   if (executor_ != nullptr) {
     executor_->add([req, this]() { this->doProcess(req); });
   } else {
@@ -43,7 +42,6 @@ void LookupProcessor::doProcess(const cpp2::LookupIndexRequest& req) {
       pushResultCode(code, p);
     }
     onFinished();
-    DVLOG(1) << static_cast<int>(code);
     return;
   }
   auto plan = buildPlan(req);
@@ -58,7 +56,6 @@ void LookupProcessor::doProcess(const cpp2::LookupIndexRequest& req) {
       pushResultCode(code, p);
     }
     onFinished();
-    DVLOG(1) << static_cast<int>(code);
     return;
   }
   if (!FLAGS_query_concurrently) {
@@ -284,7 +281,6 @@ void LookupProcessor::profilePlan(IndexNode* root) {
   }
 }
 inline void printPlan(IndexNode* node, int tab) {
-  DVLOG(2) << std::string(tab, '\t') << node->identify();
   for (auto& child : node->children()) {
     printPlan(child.get(), tab + 1);
   }
