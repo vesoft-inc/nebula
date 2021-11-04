@@ -1436,9 +1436,26 @@ yield_column
         delete $3;
     }
     | expression {
+        auto vars = graph::ExpressionUtils::collectAll($1, {Expression::Kind::kVar});
+        if (!vars.empty()) {
+            for (auto* var : vars) {
+                if (!static_cast<const VariableExpression*>(var)->isInner()) {
+                    throw nebula::GraphParser::syntax_error(@1, "Direct output of variable is prohibited");
+                }
+            }
+        }
         $$ = new YieldColumn($1);
     }
     | expression KW_AS name_label {
+        auto vars = graph::ExpressionUtils::collectAll($1, {Expression::Kind::kVar});
+        if (!vars.empty()) {
+            for (auto* var : vars) {
+                if (!static_cast<const VariableExpression*>(var)->isInner()) {
+                    delete $3;
+                    throw nebula::GraphParser::syntax_error(@1, "Direct output of variable is prohibited");
+                }
+            }
+        }
         $$ = new YieldColumn($1, *$3);
         delete $3;
     }
