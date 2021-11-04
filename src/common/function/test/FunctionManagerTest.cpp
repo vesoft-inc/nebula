@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -104,6 +103,9 @@ std::unordered_map<std::string, std::vector<Value>> FunctionManagerTest::args_ =
     {"one", {-1.2}},
     {"two", {2, 4}},
     {"pow", {2, 3}},
+    {"round1", {11111.11111, 2}},
+    {"round2", {11111.11111, -1}},
+    {"round3", {11111.11111, -5}},
     {"radians", {180}},
     {"range1", {1, 5}},
     {"range2", {1, 5, 2}},
@@ -268,6 +270,11 @@ TEST_F(FunctionManagerTest, functionCall) {
 
     TEST_FUNCTION(log, args_["int"], std::log(4));
     TEST_FUNCTION(log2, args_["int"], 2.0);
+  }
+  {
+    TEST_FUNCTION(round, args_["round1"], 11111.11);
+    TEST_FUNCTION(round, args_["round2"], 11110.0);
+    TEST_FUNCTION(round, args_["round3"], 0.0);
   }
   {
     TEST_FUNCTION(range, args_["range1"], Value(List({1, 2, 3, 4, 5})));
@@ -918,7 +925,17 @@ TEST_F(FunctionManagerTest, returnType) {
     EXPECT_EQ(result.value(), Value::Type::FLOAT);
   }
   {
+    auto result = FunctionManager::getReturnType("round", {Value::Type::INT, Value::Type::INT});
+    ASSERT_TRUE(result.ok());
+    EXPECT_EQ(result.value(), Value::Type::FLOAT);
+  }
+  {
     auto result = FunctionManager::getReturnType("round", {Value::Type::FLOAT});
+    ASSERT_TRUE(result.ok());
+    EXPECT_EQ(result.value(), Value::Type::FLOAT);
+  }
+  {
+    auto result = FunctionManager::getReturnType("round", {Value::Type::FLOAT, Value::Type::INT});
     ASSERT_TRUE(result.ok());
     EXPECT_EQ(result.value(), Value::Type::FLOAT);
   }
