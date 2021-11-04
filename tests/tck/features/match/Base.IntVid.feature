@@ -415,6 +415,71 @@ Feature: Basic match
       | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]                             |
       | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]                                |
 
+  Scenario: filter evaluable
+    When executing query:
+      """
+      match (v:player{age: -1}) return v
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v                                          |
+      | ("Null1" :player{age: -1, name: __NULL__}) |
+    When executing query:
+      """
+      match (v:player{age: +20}) return v
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v                                                     |
+      | ("Luka Doncic" :player{age: 20, name: "Luka Doncic"}) |
+    When executing query:
+      """
+      match (v:player{age: 1+19}) return v
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v                                                     |
+      | ("Luka Doncic" :player{age: 20, name: "Luka Doncic"}) |
+    When executing query:
+      """
+      match (v:player)-[e:like{likeness:-1}]->()  return e
+      """
+    Then the result should be, in any order, with relax comparison:
+      | e                                                       |
+      | [:like "Blake Griffin"->"Chris Paul" @0 {likeness: -1}] |
+      | [:like "Rajon Rondo"->"Ray Allen" @0 {likeness: -1}]    |
+    When executing query:
+      """
+      match (v:player)-[e:like{likeness:40+50+5}]->()  return e
+      """
+    Then the result should be, in any order, with relax comparison:
+      | e                                                            |
+      | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]      |
+      | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]        |
+      | [:like "Paul George"->"Russell Westbrook" @0 {likeness: 95}] |
+      | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]     |
+      | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+    When executing query:
+      """
+      match (v:player)-[e:like{likeness:4*20+5}]->()  return e
+      """
+    Then the result should be, in any order, with relax comparison:
+      | e                                                            |
+      | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]      |
+      | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]        |
+      | [:like "Paul George"->"Russell Westbrook" @0 {likeness: 95}] |
+      | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]     |
+      | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+    When executing query:
+      """
+      match (v:player)-[e:like{likeness:"99"}]->()  return e
+      """
+    Then the result should be, in any order, with relax comparison:
+      | e |
+    When executing query:
+      """
+      match (v:player{age:"24"-1})  return v
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v |
+
   Scenario: No return
     When executing query:
       """
