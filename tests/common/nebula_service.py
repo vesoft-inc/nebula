@@ -13,6 +13,8 @@ import socket
 import glob
 import signal
 import copy
+import fcntl
+from pathlib import Path
 from contextlib import closing
 
 NEBULA_START_COMMAND_FORMAT = "bin/nebula-{} --flagfile conf/nebula-{}.conf {}"
@@ -31,8 +33,11 @@ class NebulaProcess(object):
         self.pid = None
         pass
 
+    def update_param(self, params):
+        self.params.update(params)
+
     def update_meta_server_addrs(self, address):
-        self.params['meta_server_addrs'] = address
+        self.update_param({'meta_server_addrs': address})
 
     def _format_nebula_command(self):
         process_params = {
@@ -120,11 +125,65 @@ class NebulaService(object):
             [],
         )
         self.all_processes = []
+        self.all_ports = []
         self.metad_param, self.storaged_param, self.graphd_param = {}, {}, {}
         self.ca_signed = ca_signed
         self.debug_log = debug_log
         self.ports_per_process = 4
+        self.lock_file = os.path.join(self.build_dir, "cluster_port.lock")
+        self.delimiter = "\n"
         self._make_params(**kwargs)
+        self.init_process()
+
+    def init_process(self):
+        process_count = self.metad_num + self.storaged_num + self.graphd_num
+        ports_count = process_count * self.ports_per_process
+        self.all_ports = self._find_free_port(ports_count)
+        index = 0
+
+        for suffix_index in range(self.metad_num):
+            metad = NebulaProcess(
+                "metad",
+                self.all_ports[index : index + self.ports_per_process],
+                suffix_index,
+                self.metad_param,
+            )
+            self.metad_processes.append(metad)
+            index += self.ports_per_process
+
+        for suffix_index in range(self.storaged_num):
+            storaged = NebulaProcess(
+                "storaged",
+                self.all_ports[index : index + self.ports_per_process],
+                suffix_index,
+                self.storaged_param,
+            )
+            self.storaged_processes.append(storaged)
+            index += self.ports_per_process
+
+        for suffix_index in range(self.graphd_num):
+            graphd = NebulaProcess(
+                "graphd",
+                self.all_ports[index : index + self.ports_per_process],
+                suffix_index,
+                self.graphd_param,
+            )
+            self.graphd_processes.append(graphd)
+            index += self.ports_per_process
+
+        self.all_processes = (
+            self.metad_processes + self.storaged_processes + self.graphd_processes
+        )
+        # update meta address
+        meta_server_addrs = ','.join(
+            [
+                '{}:{}'.format(process.host, process.tcp_port)
+                for process in self.metad_processes
+            ]
+        )
+
+        for p in self.all_processes:
+            p.update_meta_server_addrs(meta_server_addrs)
 
     def _make_params(self, **kwargs):
         _params = {
@@ -203,25 +262,40 @@ class NebulaService(object):
     # TODO(yee): Find free port range
     def _find_free_port(self, count):
         assert count % self.ports_per_process == 0
-        all_ports = []
-        for i in range(count):
-            if i % self.ports_per_process == 0:
-                for _ in range(100):
-                    tcp_port = NebulaService.get_free_port()
-                    # force internal tcp port with port+1
-                    if all((tcp_port + i) not in all_ports for i in range(0, 2)):
-                        all_ports.append(tcp_port)
-                        all_ports.append(tcp_port + 1)
-                        break
+        Path(self.lock_file).touch(exist_ok=True)
+        # thread safe
+        with open(self.lock_file, 'r+') as fl:
+            fcntl.flock(fl.fileno(), fcntl.LOCK_EX)
+            context = fl.read().strip()
+            lock_ports = [int(p) for p in context.split(self.delimiter) if p != ""]
 
-            elif i % self.ports_per_process == 1:
-                continue
-            else:
-                for _ in range(100):
-                    port = NebulaService.get_free_port()
-                    if port not in all_ports:
-                        all_ports.append(port)
-                        break
+            all_ports = []
+            for i in range(count):
+                if i % self.ports_per_process == 0:
+                    for _ in range(100):
+                        tcp_port = NebulaService.get_free_port()
+                        # force internal tcp port with port+1
+                        if all(
+                            (tcp_port + i) not in all_ports + lock_ports
+                            for i in range(0, 2)
+                        ):
+                            all_ports.append(tcp_port)
+                            all_ports.append(tcp_port + 1)
+                            break
+
+                elif i % self.ports_per_process == 1:
+                    continue
+                else:
+                    for _ in range(100):
+                        port = NebulaService.get_free_port()
+                        if port not in all_ports + lock_ports:
+                            all_ports.append(port)
+                            break
+            fl.seek(0)
+            fl.truncate()
+
+            fl.write(self.delimiter.join([str(p) for p in all_ports + lock_ports]))
+            fl.write(self.delimiter)
 
         return all_ports
 
@@ -243,6 +317,10 @@ class NebulaService(object):
         for f in installed_files:
             os.mkdir(self.work_dir + '/' + f)
         self._copy_nebula_conf()
+        max_suffix = max([self.graphd_num, self.storaged_num, self.metad_num])
+        for i in range(max_suffix):
+            os.mkdir(self.work_dir + '/logs{}'.format(i))
+            os.mkdir(self.work_dir + '/pids{}'.format(i))
 
     def _check_servers_status(self, ports):
         ports_status = {}
@@ -266,59 +344,6 @@ class NebulaService(object):
 
     def start(self):
         os.chdir(self.work_dir)
-        process_count = self.metad_num + self.storaged_num + self.graphd_num
-        ports_count = process_count * self.ports_per_process
-        all_ports = self._find_free_port(ports_count)
-        index = 0
-
-        for suffix_index in range(self.metad_num):
-            metad = NebulaProcess(
-                "metad",
-                all_ports[index : index + self.ports_per_process],
-                suffix_index,
-                self.metad_param,
-            )
-            self.metad_processes.append(metad)
-            index += self.ports_per_process
-
-        for suffix_index in range(self.storaged_num):
-            storaged = NebulaProcess(
-                "storaged",
-                all_ports[index : index + self.ports_per_process],
-                suffix_index,
-                self.storaged_param,
-            )
-            self.storaged_processes.append(storaged)
-            index += self.ports_per_process
-
-        for suffix_index in range(self.graphd_num):
-            graphd = NebulaProcess(
-                "graphd",
-                all_ports[index : index + self.ports_per_process],
-                suffix_index,
-                self.graphd_param,
-            )
-            self.graphd_processes.append(graphd)
-            index += self.ports_per_process
-
-        self.all_processes = (
-            self.metad_processes + self.storaged_processes + self.graphd_processes
-        )
-        # update meta address
-        meta_server_addrs = ','.join(
-            [
-                '{}:{}'.format(process.host, process.tcp_port)
-                for process in self.metad_processes
-            ]
-        )
-        for p in self.all_processes:
-            p.update_meta_server_addrs(meta_server_addrs)
-
-        max_suffix = max([self.graphd_num, self.storaged_num, self.metad_num])
-        for i in range(max_suffix):
-            os.mkdir(self.work_dir + '/logs{}'.format(i))
-            os.mkdir(self.work_dir + '/pids{}'.format(i))
-
         start_time = time.time()
         for p in self.all_processes:
             p.start()
@@ -353,8 +378,20 @@ class NebulaService(object):
             time.sleep(1)
             max_retries = max_retries - 1
 
-        if self.is_proc_alive():
+        if self.is_procs_alive():
             self.kill_all(signal.SIGKILL)
+
+        # thread safe
+        with open(self.lock_file, 'r+') as fl:
+            fcntl.flock(fl.fileno(), fcntl.LOCK_EX)
+            context = fl.read().strip()
+            lock_ports = {int(p) for p in context.split(self.delimiter) if p != ""}
+            for p in self.all_ports:
+                lock_ports.remove(p)
+            fl.seek(0)
+            fl.truncate()
+            fl.write(self.delimiter.join([str(p) for p in lock_ports]))
+            fl.write(self.delimiter)
 
         if cleanup:
             shutil.rmtree(self.work_dir, ignore_errors=True)

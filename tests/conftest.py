@@ -90,6 +90,7 @@ def get_port():
             raise Exception(f"Invalid port: {port}")
         return port[0]
 
+
 def get_ports():
     with open(NB_TMP_PATH, "r") as f:
         data = json.loads(f.readline())
@@ -128,6 +129,7 @@ def conn_pool_to_first_graph_service(pytestconfig):
     yield pool
     pool.close()
 
+
 @pytest.fixture(scope="session")
 def conn_pool_to_second_graph_service(pytestconfig):
     addr = pytestconfig.getoption("address")
@@ -137,9 +139,11 @@ def conn_pool_to_second_graph_service(pytestconfig):
     yield pool
     pool.close()
 
+
 @pytest.fixture(scope="session")
 def conn_pool(conn_pool_to_first_graph_service):
     return conn_pool_to_first_graph_service
+
 
 @pytest.fixture(scope="class")
 def session_from_first_conn_pool(conn_pool_to_first_graph_service, pytestconfig):
@@ -149,6 +153,7 @@ def session_from_first_conn_pool(conn_pool_to_first_graph_service, pytestconfig)
     yield sess
     sess.release()
 
+
 @pytest.fixture(scope="class")
 def session_from_second_conn_pool(conn_pool_to_second_graph_service, pytestconfig):
     user = pytestconfig.getoption("user")
@@ -157,11 +162,13 @@ def session_from_second_conn_pool(conn_pool_to_second_graph_service, pytestconfi
     yield sess
     sess.release()
 
+
 @pytest.fixture(scope="class")
 def session(session_from_first_conn_pool, class_fixture_variables):
     if class_fixture_variables.get('session', None) is not None:
         return class_fixture_variables.get('session')
     return session_from_first_conn_pool
+
 
 def load_csv_data_once(space: str):
     with open(SPACE_TMP_PATH, "r") as f:
@@ -188,8 +195,9 @@ def load_student_data():
 
 # TODO(yee): Delete this when we migrate all test cases
 @pytest.fixture(scope="class")
-def workarround_for_class(request, pytestconfig, conn_pool,
-                          session, load_nba_data, load_student_data):
+def workarround_for_class(
+    request, pytestconfig, conn_pool, session, load_nba_data, load_student_data
+):
     if request.cls is None:
         return
 

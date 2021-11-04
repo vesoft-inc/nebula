@@ -150,7 +150,7 @@ if __name__ == "__main__":
             configs.build_dir,
             NEBULA_HOME,
             graphd_num=2,
-            storaged_num=3,
+            storaged_num=1,
             debug_log=opt_is(configs.debug, True),
             ca_signed=opt_is(configs.ca_signed, True),
             enable_ssl=configs.enable_ssl,

@@ -113,8 +113,6 @@ Feature: Submit job space requirements
       | Job Id(TaskId) | Command(Dest) | Status     | Start Time | Stop Time |
       | /\d+/          | "STATS"       | "FINISHED" | /\w+/      | /\w+/     |
       | /\d+/          | /\w+/         | "FINISHED" | /\w+/      | /\w+/     |
-      | /\d+/          | /\w+/         | "FINISHED" | /\w+/      | /\w+/     |
-      | /\d+/          | /\w+/         | "FINISHED" | /\w+/      | /\w+/     |
     When executing query, fill replace holders with element index of 0 in job_id:
       """
       STOP JOB {};

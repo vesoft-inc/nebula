@@ -248,19 +248,36 @@ def given_nebulacluster_with_param(
     class_fixture_variables,
     pytestconfig,
 ):
-    params_dict = {}
+    grpahd_param, metad_param, storaged_param = {}, {}, {}
     if params is not None:
         for param in params.splitlines():
-            key, value = param.strip().split("=")
-            params_dict[key] = value
+            module, config = param.strip().split(":")
+            assert module.lower() in ["graphd", "storaged", "metad"]
+            key, value = config.strip().split("=")
+            if module.lower() == "graphd":
+                grpahd_param[key] = value
+            elif module.lower() == "storaged":
+                storaged_param[key] = value
+            else:
+                metad_param[key] = value
 
     user = pytestconfig.getoption("user")
     password = pytestconfig.getoption("password")
     build_dir = pytestconfig.getoption("build_dir")
     src_dir = pytestconfig.getoption("src_dir")
     nebula_svc = NebulaService(
-        build_dir, src_dir, int(metad_num), int(storaged_num), int(graphd_num), **params_dict
+        build_dir,
+        src_dir,
+        int(metad_num),
+        int(storaged_num),
+        int(graphd_num),
     )
+    for process in nebula_svc.graphd_processes:
+        process.update_param(grpahd_param)
+    for process in nebula_svc.storaged_processes:
+        process.update_param(storaged_param)
+    for process in nebula_svc.metad_processes:
+        process.update_param(metad_param)
     work_dir = os.path.join(
         build_dir,
         "C" + space_generator() + time.strftime('%Y-%m-%dT%H-%M-%S', time.localtime()),

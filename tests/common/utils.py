@@ -110,9 +110,12 @@ def compare_value(real, expect):
         if eedge.type < 0:
             esrc, edst = edst, esrc
         # ignore props comparation
-        return rsrc == esrc and rdst == edst \
-            and redge.ranking == eedge.ranking \
+        return (
+            rsrc == esrc
+            and rdst == edst
+            and redge.ranking == eedge.ranking
             and redge.name == eedge.name
+        )
 
     return real == expect
 
@@ -249,13 +252,11 @@ def step_to_string(step):
 
 
 def path_to_string(path):
-    return vertex_to_string(path.src) \
-        + ''.join(map(step_to_string, path.steps))
+    return vertex_to_string(path.src) + ''.join(map(step_to_string, path.steps))
 
 
 def dataset_to_string(dataset):
-    column_names = ','.join(
-        map(lambda x: x.decode('utf-8'), dataset.column_names))
+    column_names = ','.join(map(lambda x: x.decode('utf-8'), dataset.column_names))
     rows = '\n'.join(map(row_to_string, dataset.rows))
     return '\n'.join([column_names, rows])
 
