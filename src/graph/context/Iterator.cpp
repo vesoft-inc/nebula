@@ -324,16 +324,35 @@ const Value& GetNeighborsIter::getTagProp(const std::string& tag, const std::str
     return Value::kNullValue;
   }
 
-  auto& tagPropIndices = currentDs_->tagPropsMap;
-  auto index = tagPropIndices.find(tag);
-  if (index == tagPropIndices.end()) {
-    return Value::kEmpty;
+  size_t colId = 0;
+  size_t propId = 0;
+  if (tag == "*") {
+    bool found = false;
+    for (auto& index : currentDs_->tagPropsMap) {
+      auto propIndex = index.second.propIndices.find(prop);
+      if (propIndex != index.second.propIndices.end()) {
+        found = true;
+        colId = index.second.colIdx;
+        propId = propIndex->second;
+      }
+    }
+    if (!found) {
+      return Value::kEmpty;
+    }
+  } else {
+    auto& tagPropIndices = currentDs_->tagPropsMap;
+    auto index = tagPropIndices.find(tag);
+    if (index == tagPropIndices.end()) {
+      return Value::kEmpty;
+    }
+    auto propIndex = index->second.propIndices.find(prop);
+    if (propIndex == index->second.propIndices.end()) {
+      return Value::kEmpty;
+    }
+    colId = index->second.colIdx;
+    propId = propIndex->second;
   }
-  auto propIndex = index->second.propIndices.find(prop);
-  if (propIndex == index->second.propIndices.end()) {
-    return Value::kEmpty;
-  }
-  auto colId = index->second.colIdx;
+
   auto& row = *currentRow_;
   DCHECK_GT(row.size(), colId);
   if (row[colId].empty()) {
@@ -343,7 +362,7 @@ const Value& GetNeighborsIter::getTagProp(const std::string& tag, const std::str
     return Value::kNullBadType;
   }
   auto& list = row[colId].getList();
-  return list.values[propIndex->second];
+  return list.values[propId];
 }
 
 const Value& GetNeighborsIter::getEdgeProp(const std::string& edge, const std::string& prop) const {

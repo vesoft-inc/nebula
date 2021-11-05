@@ -113,7 +113,7 @@ void TraverseExecutor::getNeighbors() {
                      finalStep ? traverse_->limit() : -1,
                      finalStep ? traverse_->filter() : nullptr)
       .via(runner())
-      .thenValue([this, getNbrTime](StorageRpcResponse<GetNeighborsResponse>&& resp) {
+      .thenValue([this, getNbrTime](StorageRpcResponse<GetNeighborsResponse>&& resp) mutable {
         SCOPED_TIMER(&execTime_);
         addStats(resp, getNbrTime.elapsedInUSec());
         handleResponse(resp);
@@ -200,10 +200,26 @@ Status TraverseExecutor::buildInterimPath(GetNeighborsIter* iter) {
   std::unordered_map<Value, Paths>& current = paths_.back();
 
   size_t count = 0;
+  auto* vFilter = traverse_->vFilter();
+  auto* eFilter = traverse_->eFilter();
+  QueryExpressionContext ctx(ectx_);
+
   for (; iter->valid(); iter->next()) {
     auto& dst = iter->getEdgeProp("*", kDst);
     if (!SchemaUtil::isValidVid(dst, *(spaceInfo.spaceDesc.vid_type_ref()))) {
       continue;
+    }
+    if (vFilter != nullptr) {
+      auto& vFilterVal = vFilter->eval(ctx(iter));
+      if (!vFilterVal.isBool() || !vFilterVal.getBool()) {
+        continue;
+      }
+    }
+    if (eFilter != nullptr) {
+      auto& eFilterVal = eFilter->eval(ctx(iter));
+      if (!eFilterVal.isBool() || !eFilterVal.getBool()) {
+        continue;
+      }
     }
     auto srcV = iter->getVertex();
     auto e = iter->getEdge();

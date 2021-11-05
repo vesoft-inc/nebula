@@ -1198,6 +1198,10 @@ class Traverse final : public GetNeighbors {
 
   const std::vector<storage::cpp2::EdgeProp>* edgeDst() const { return edgeDst_.get(); }
 
+  Expression* vFilter() const { return vFilter_; }
+
+  Expression* eFilter() const { return eFilter_; }
+
   void setSteps(StepClause steps) { steps_ = steps; }
 
   void setEdgeDst(EdgeProps edgeProps) { edgeDst_ = std::move(edgeProps); }
