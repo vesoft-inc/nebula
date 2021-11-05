@@ -68,29 +68,35 @@ Status AppendVerticesExecutor::handleResp(
   NG_RETURN_IF_ERROR(result);
   auto state = std::move(result).value();
   std::unordered_map<Value, Value> map;
+  auto *av = asNode<AppendVertices>(node());
+  auto *vFilter = av->vFilter();
+  QueryExpressionContext ctx(qctx()->ectx());
   for (auto &resp : rpcResp.responses()) {
     if (resp.props_ref().has_value()) {
       auto iter = PropIter(std::make_shared<Value>(std::move(*resp.props_ref())));
       for (; iter.valid(); iter.next()) {
+        if (vFilter != nullptr) {
+          auto &vFilterVal = vFilter->eval(ctx(&iter));
+          if (!vFilterVal.isBool() || !vFilterVal.getBool()) {
+            continue;
+          }
+        }
         map.emplace(iter.getColumn(kVid), iter.getVertex());
       }
     }
   }
 
-  auto *av = asNode<GetVertices>(node());
   auto iter = qctx()->ectx()->getResult(av->inputVar()).iter();
-  auto src = av->src();
-  QueryExpressionContext ctx(qctx()->ectx());
+  auto *src = av->src();
 
   DataSet ds;
   ds.colNames = av->colNames();
   ds.rows.reserve(iter->size());
   for (; iter->valid(); iter->next()) {
-    VLOG(1) << "dst: " << src->eval(ctx(iter.get()));
     auto dstFound = map.find(src->eval(ctx(iter.get())));
     auto row = static_cast<SequentialIter *>(iter.get())->moveRow();
     if (dstFound == map.end()) {
-      return Status::Error("Dst not faound.");
+      continue;
     }
     row.values.emplace_back(dstFound->second);
     ds.rows.emplace_back(std::move(row));

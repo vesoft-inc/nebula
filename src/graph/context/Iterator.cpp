@@ -326,19 +326,30 @@ const Value& GetNeighborsIter::getTagProp(const std::string& tag, const std::str
 
   size_t colId = 0;
   size_t propId = 0;
+  auto& row = *currentRow_;
   if (tag == "*") {
-    bool found = false;
     for (auto& index : currentDs_->tagPropsMap) {
       auto propIndex = index.second.propIndices.find(prop);
       if (propIndex != index.second.propIndices.end()) {
-        found = true;
         colId = index.second.colIdx;
         propId = propIndex->second;
+        DCHECK_GT(row.size(), colId);
+        if (row[colId].empty()) {
+          continue;
+        }
+        if (!row[colId].isList()) {
+          return Value::kNullBadType;
+        }
+        auto& list = row[colId].getList();
+        auto& val = list.values[propId];
+        if (val.empty()) {
+          continue;
+        } else {
+          return val;
+        }
       }
     }
-    if (!found) {
-      return Value::kEmpty;
-    }
+    return Value::kEmpty;
   } else {
     auto& tagPropIndices = currentDs_->tagPropsMap;
     auto index = tagPropIndices.find(tag);
@@ -351,18 +362,16 @@ const Value& GetNeighborsIter::getTagProp(const std::string& tag, const std::str
     }
     colId = index->second.colIdx;
     propId = propIndex->second;
+    DCHECK_GT(row.size(), colId);
+    if (row[colId].empty()) {
+      return Value::kEmpty;
+    }
+    if (!row[colId].isList()) {
+      return Value::kNullBadType;
+    }
+    auto& list = row[colId].getList();
+    return list.values[propId];
   }
-
-  auto& row = *currentRow_;
-  DCHECK_GT(row.size(), colId);
-  if (row[colId].empty()) {
-    return Value::kEmpty;
-  }
-  if (!row[colId].isList()) {
-    return Value::kNullBadType;
-  }
-  auto& list = row[colId].getList();
-  return list.values[propId];
 }
 
 const Value& GetNeighborsIter::getEdgeProp(const std::string& edge, const std::string& prop) const {
@@ -707,20 +716,39 @@ const Value& PropIter::getProp(const std::string& name, const std::string& prop)
     return Value::kNullValue;
   }
   auto& propsMap = dsIndex_.propsMap;
-  auto index = propsMap.find(name);
-  if (index == propsMap.end()) {
-    return Value::kEmpty;
-  }
-
-  auto propIndex = index->second.find(prop);
-  if (propIndex == index->second.end()) {
-    VLOG(1) << "No prop found : " << prop;
-    return Value::kNullValue;
-  }
-  auto colId = propIndex->second;
+  size_t colId = 0;
   auto& row = *iter_;
-  DCHECK_GT(row.size(), colId);
-  return row[colId];
+  if (name == "*") {
+    for (auto& index : propsMap) {
+      auto propIndex = index.second.find(prop);
+      if (propIndex == index.second.end()) {
+        continue;
+      }
+      colId = propIndex->second;
+      DCHECK_GT(row.size(), colId);
+      VLOG(1) << row << "id:" << colId << "Prop: " << row[colId];
+      auto& val = row[colId];
+      if (val.empty()) {
+        continue;
+      } else {
+        return val;
+      }
+    }
+    return Value::kNullValue;
+  } else {
+    auto index = propsMap.find(name);
+    if (index == propsMap.end()) {
+      return Value::kEmpty;
+    }
+    auto propIndex = index->second.find(prop);
+    if (propIndex == index->second.end()) {
+      return Value::kNullValue;
+    }
+    colId = propIndex->second;
+    DCHECK_GT(row.size(), colId);
+    VLOG(1) << row << "id:" << colId << "Prop: " << row[colId];
+    return row[colId];
+  }
 }
 
 Value PropIter::getVertex(const std::string& name) const {

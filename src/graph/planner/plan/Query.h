@@ -1235,6 +1235,8 @@ class AppendVertices final : public GetVertices {
 
   AppendVertices* clone() const override;
 
+  Expression* vFilter() const { return vFilter_; }
+
   void setVertexFilter(Expression* vFilter) { vFilter_ = vFilter; }
 
  private:
