@@ -422,7 +422,7 @@ Feature: Basic match
       """
     Then the result should be, in any order, with relax comparison:
       | v                                          |
-      | ("Null1" :player{age: -1, name: __NULL__}) |
+      | ("Null1" :player{age: -1, name: NULL}) |
     When executing query:
       """
       match (v:player{age: +20}) return v
