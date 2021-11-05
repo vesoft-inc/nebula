@@ -22,4 +22,4 @@ Feature: Mathematical function Expression
       """
       return [bit_and(5,true),bit_or(2,1.3),bit_xor("5",1)] as error_test
       """
-    Then a SemanticError should be raised at runtime: Type error Type error `bit_and(5,true)'
+    Then a SemanticError should be raised at runtime: Type error `bit_and(5,true)'

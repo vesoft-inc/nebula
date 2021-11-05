@@ -180,7 +180,7 @@ Status MatchValidator::buildNodeInfo(const MatchPath *path,
     }
     Expression *filter = nullptr;
     if (props != nullptr) {
-      auto result = makeNodeSubFilter(props, "*");
+      auto result = makeNodeSubFilter(const_cast<MapExpression *>(props), "*");
       NG_RETURN_IF_ERROR(result);
       filter = result.value();
     } else if (node->labels() != nullptr && !node->labels()->labels().empty()) {
@@ -248,7 +248,7 @@ Status MatchValidator::buildEdgeInfo(const MatchPath *path,
     }
     Expression *filter = nullptr;
     if (props != nullptr) {
-      auto result = makeEdgeSubFilter(props);
+      auto result = makeEdgeSubFilter(const_cast<MapExpression *>(props));
       NG_RETURN_IF_ERROR(result);
       filter = result.value();
     }
@@ -519,7 +519,7 @@ Status MatchValidator::validateUnwind(const UnwindClause *unwindClause,
   return Status::OK();
 }
 
-StatusOr<Expression *> MatchValidator::makeEdgeSubFilter(const MapExpression *map) const {
+StatusOr<Expression *> MatchValidator::makeEdgeSubFilter(MapExpression *map) const {
   auto *pool = qctx_->objPool();
   DCHECK(map != nullptr);
   auto &items = map->items();
@@ -529,9 +529,10 @@ StatusOr<Expression *> MatchValidator::makeEdgeSubFilter(const MapExpression *ma
   NG_RETURN_IF_ERROR(foldStatus);
   auto foldExpr = foldStatus.value();
   if (!ExpressionUtils::isEvaluableExpr(foldExpr)) {
-    return Status::SemanticError("Props must be constant: `%s'",
+    return Status::SemanticError("Props must be evaluable: `%s'",
                                  items[0].second->toString().c_str());
   }
+  map->setItem(0, std::make_pair(items[0].first, foldExpr));
   Expression *root = RelationalExpression::makeEQ(
       pool, EdgePropertyExpression::make(pool, "*", items[0].first), foldExpr);
   for (auto i = 1u; i < items.size(); i++) {
@@ -539,9 +540,10 @@ StatusOr<Expression *> MatchValidator::makeEdgeSubFilter(const MapExpression *ma
     NG_RETURN_IF_ERROR(foldStatus);
     foldExpr = foldStatus.value();
     if (!ExpressionUtils::isEvaluableExpr(foldExpr)) {
-      return Status::SemanticError("Props must be constant: `%s'",
+      return Status::SemanticError("Props must be evaluable: `%s'",
                                    items[i].second->toString().c_str());
     }
+    map->setItem(0, std::make_pair(items[i].first, foldExpr));
     auto *left = root;
     auto *right = RelationalExpression::makeEQ(
         pool, EdgePropertyExpression::make(pool, "*", items[i].first), foldExpr);
@@ -550,7 +552,7 @@ StatusOr<Expression *> MatchValidator::makeEdgeSubFilter(const MapExpression *ma
   return root;
 }
 
-StatusOr<Expression *> MatchValidator::makeNodeSubFilter(const MapExpression *map,
+StatusOr<Expression *> MatchValidator::makeNodeSubFilter(MapExpression *map,
                                                          const std::string &label) const {
   auto *pool = qctx_->objPool();
   // Node has tag without property
@@ -573,7 +575,7 @@ StatusOr<Expression *> MatchValidator::makeNodeSubFilter(const MapExpression *ma
     return Status::SemanticError("Props must be evaluable: `%s'",
                                  items[0].second->toString().c_str());
   }
-  // map->setItem(0, std::make_pair(items[0].first, foldExpr));
+  map->setItem(0, std::make_pair(items[0].first, foldExpr));
   Expression *root = RelationalExpression::makeEQ(
       pool, TagPropertyExpression::make(pool, label, items[0].first), foldExpr);
   for (auto i = 1u; i < items.size(); i++) {
@@ -584,7 +586,7 @@ StatusOr<Expression *> MatchValidator::makeNodeSubFilter(const MapExpression *ma
       return Status::SemanticError("Props must be evaluable: `%s'",
                                    items[i].second->toString().c_str());
     }
-    // map->setItem(i, std::make_pair(items[i].first, foldExpr));
+    map->setItem(i, std::make_pair(items[i].first, foldExpr));
     auto *left = root;
     auto *right = RelationalExpression::makeEQ(
         pool, TagPropertyExpression::make(pool, label, items[i].first), foldExpr);

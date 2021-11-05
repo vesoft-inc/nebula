@@ -38,18 +38,18 @@ Feature: NULL related operations
       | NULL   | NULL   | NULL   | NULL   | NULL   |
     When executing query:
       """
-      RETURN cos(NULL) AS value1, acos(NULL) AS value2, tan(NULL) AS value3, atan(NULL) AS value4, rand32(NULL) AS value5
+      RETURN cos(NULL) AS value1, acos(NULL) AS value2, tan(NULL) AS value3, atan(NULL) AS value4
       """
     Then the result should be, in any order:
-      | value1 | value2 | value3 | value4 | value5   |
-      | NULL   | NULL   | NULL   | NULL   | BAD_TYPE |
+      | value1 | value2 | value3 | value4 |
+      | NULL   | NULL   | NULL   | NULL   |
     When executing query:
       """
-      RETURN collect(NULL) AS value1, avg(NULL) AS value2, count(NULL) AS value3, max(NULL) AS value4, rand64(NULL,NULL) AS value5
+      RETURN collect(NULL) AS value1, avg(NULL) AS value2, count(NULL) AS value3, max(NULL) AS value4
       """
     Then the result should be, in any order:
-      | value1 | value2 | value3 | value4 | value5   |
-      | []     | NULL   | 0      | NULL   | BAD_TYPE |
+      | value1 | value2 | value3 | value4 |
+      | []     | NULL   | 0      | NULL   |
     When executing query:
       """
       RETURN min(NULL) AS value1, std(NULL) AS value2, sum(NULL) AS value3, bit_and(NULL) AS value4, bit_or(NULL,NULL) AS value5

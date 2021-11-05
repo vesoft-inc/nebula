@@ -367,7 +367,7 @@ Feature: Yield Sentence
       """
       YIELD --9223372036854775808
       """
-    Then a ExecutionError should be raised at runtime: result of -(-9223372036854775808) cannot be represented as an integer
+    Then a SemanticError should be raised at runtime: result of -(-9223372036854775808) cannot be represented as an integer
     When executing query:
       """
       YIELD -9223372036854775809

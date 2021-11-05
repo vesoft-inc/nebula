@@ -89,10 +89,9 @@ class MatchValidator final : public Validator {
 
   Status buildOutputs(const YieldColumns *yields);
 
-  StatusOr<Expression *> makeEdgeSubFilter(const MapExpression *map) const;
+  StatusOr<Expression *> makeEdgeSubFilter(MapExpression *map) const;
 
-  StatusOr<Expression *> makeNodeSubFilter(const MapExpression *map,
-                                           const std::string &label) const;
+  StatusOr<Expression *> makeNodeSubFilter(MapExpression *map, const std::string &label) const;
 
  private:
   std::unique_ptr<MatchAstContext> matchCtx_;

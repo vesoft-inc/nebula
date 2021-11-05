@@ -1,6 +1,7 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
 # This source code is licensed under Apache 2.0 License.
+@jmq
 Feature: Basic match
 
   Background:
@@ -577,8 +578,7 @@ Feature: Basic match
       """
       match (v:player{age:"24"-1})  return v
       """
-    Then the result should be, in any order, with relax comparison:
-      | v |
+    Then a SemanticError should be raised at runtime: Type error `("24"-1)'
 
   Scenario: No return
     When executing query:

@@ -460,12 +460,9 @@ Feature: Basic match
       match (v:player)-[e:like{likeness:4*20+5}]->()  return e
       """
     Then the result should be, in any order, with relax comparison:
-      | e                                                            |
-      | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]      |
-      | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]        |
-      | [:like "Paul George"->"Russell Westbrook" @0 {likeness: 95}] |
-      | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]     |
-      | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+      | e                                                    |
+      | [:like "Jason Kidd"->"Dirk Nowitzki"@0{likeness:85}] |
+      | [:like "Steve Nash"->"Jason Kidd"@0{likeness:85}]    |
     When executing query:
       """
       match (v:player)-[e:like{likeness:"99"}]->()  return e
