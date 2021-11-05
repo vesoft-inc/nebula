@@ -59,12 +59,12 @@ Feature: Basic match
       """
       MATCH (v:player) where v.age > 9223372036854775807+1  return v
       """
-    Then a ExecutionError should be raised at runtime: result of (9223372036854775807+1) cannot be represented as an integer
+    Then a SemanticError should be raised at runtime: result of (9223372036854775807+1) cannot be represented as an integer
     When executing query:
       """
       MATCH (v:player) where v.age > -9223372036854775808-1  return v
       """
-    Then a ExecutionError should be raised at runtime: result of (-9223372036854775808-1) cannot be represented as an integer
+    Then a SemanticError should be raised at runtime: result of (-9223372036854775808-1) cannot be represented as an integer
 
   Scenario: Une step
     When executing query:
@@ -421,8 +421,7 @@ Feature: Basic match
       match (v:player{age: -1}) return v
       """
     Then the result should be, in any order, with relax comparison:
-      | v                                          |
-      | ("Null1" :player{age: -1, name: NULL}) |
+      | v |
     When executing query:
       """
       match (v:player{age: +20}) return v
@@ -477,8 +476,7 @@ Feature: Basic match
       """
       match (v:player{age:"24"-1})  return v
       """
-    Then the result should be, in any order, with relax comparison:
-      | v |
+    Then a SemanticError should be raised at runtime: Type error `("24"-1)'
 
   Scenario: No return
     When executing query:

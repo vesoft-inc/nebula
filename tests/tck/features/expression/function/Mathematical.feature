@@ -22,6 +22,4 @@ Feature: Mathematical function Expression
       """
       return [bit_and(5,true),bit_or(2,1.3),bit_xor("5",1)] as error_test
       """
-    Then the result should be, in any order:
-      | error_test                     |
-      | [BAD_TYPE, BAD_TYPE, BAD_TYPE] |
+    Then a SemanticError should be raised at runtime: Type error Type error `bit_and(5,true)'
