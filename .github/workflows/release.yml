@@ -33,6 +33,8 @@ jobs:
         with:
           run: sh -c "find . -mindepth 1 -delete"
       - uses: actions/checkout@v2
+      - name: Check License Header
+        uses: apache/skywalking-eyes@main
       - uses: ./.github/actions/tagname-action
         id: tag
       - name: package
@@ -74,6 +76,8 @@ jobs:
         with:
           run: sh -c "find . -mindepth 1 -delete"
       - uses: actions/checkout@v2
+      - name: Check License Header
+        uses: apache/skywalking-eyes@main
       - uses: ./.github/actions/tagname-action
         id: tagname
       - id: docker
