@@ -195,7 +195,7 @@ static rocksdb::Status initRocksdbKVSeparation(rocksdb::Options &baseOpts) {
     }
     baseOpts.blob_compression_type = it->second;
 
-    // set blob
+    // set blob gc
     baseOpts.enable_blob_garbage_collection = FLAGS_rocksdb_enable_blob_garbage_collection;
   }
   return rocksdb::Status::OK();
