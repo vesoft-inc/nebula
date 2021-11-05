@@ -186,7 +186,7 @@ static rocksdb::Status initRocksdbKVSeparation(rocksdb::Options &baseOpts) {
   if (FLAGS_rocksdb_enable_kv_separation) {
     baseOpts.enable_blob_files = true;
     baseOpts.min_blob_size = FLAGS_rocksdb_kv_separation_threshold;
-    
+
     // set blob compresstion algorithm
     auto it = kCompressionTypeMap.find(FLAGS_rocksdb_blob_compression);
     if (it == kCompressionTypeMap.end()) {
