@@ -4,6 +4,10 @@ on:
   schedule:
     - cron: '0 18 * * *'
 
+concurrency:
+  group: nightly
+  cancel-in-progress: true
+
 defaults:
   run:
     shell: bash
@@ -12,9 +16,6 @@ jobs:
   package:
     name: build package
     runs-on: self-hosted
-    concurrency:
-      group: package-nightly
-      cancel-in-progress: true
     strategy:
       fail-fast: false
       matrix:
@@ -58,9 +59,6 @@ jobs:
   docker:
     name: build docker image
     runs-on: self-hosted
-    concurrency:
-      group: docker-nightly
-      cancel-in-progress: true
     strategy:
       fail-fast: false
       matrix:
@@ -92,9 +90,6 @@ jobs:
   coverage:
     name: coverage
     runs-on: self-hosted
-    concurrency:
-      group: coverage-nightly
-      cancel-in-progress: true
     strategy:
       fail-fast: false
       matrix:
