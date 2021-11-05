@@ -7,6 +7,10 @@ on:
       - master
       - 'v[0-9]+.*'
 
+concurrency:
+  group: ${{ github.head_ref }}
+  cancel-in-progress: true
+
 defaults:
   run:
     shell: bash
@@ -42,9 +46,6 @@ jobs:
     name: build
     needs: lint
     runs-on: self-hosted
-    concurrency:
-      group: ${{ github.head_ref }}
-      cancel-in-progress: true
     strategy:
       fail-fast: false
       matrix:
