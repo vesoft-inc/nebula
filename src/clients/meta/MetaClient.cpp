@@ -11,6 +11,8 @@
 #include <folly/hash/Hash.h>
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
+#include <boost/filesystem.hpp>
+
 #include "clients/meta/FileBasedClusterIdMan.h"
 #include "common/base/Base.h"
 #include "common/base/MurmurHash2.h"
@@ -55,6 +57,8 @@ MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool
   updateLeader();
   bgThread_ = std::make_unique<thread::GenericWorker>();
   LOG(INFO) << "Create meta client to " << active_;
+  LOG(INFO) << folly::sformat(
+      "root path: {}, data path size: {}", options_.rootPath_, options_.dataPaths_.size());
 }
 
 MetaClient::~MetaClient() {
@@ -2440,6 +2444,20 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
     }
   }
 
+  // info used in the agent, only set once
+  // TOOD(spw): if we could add data path(disk) dynamicly in the future, it should be
+  // reported every time it changes
+  if (!dirInfoReported_) {
+    nebula::cpp2::DirInfo dirInfo;
+    if (options_.role_ == cpp2::HostRole::GRAPH) {
+      dirInfo.set_root(options_.rootPath_);
+    } else if (options_.role_ == cpp2::HostRole::STORAGE) {
+      dirInfo.set_root(options_.rootPath_);
+      dirInfo.set_data(options_.dataPaths_);
+    }
+    req.set_dir(dirInfo);
+  }
+
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
   VLOG(1) << "Send heartbeat to " << leader_ << ", clusterId " << req.get_cluster_id();
@@ -2459,7 +2477,12 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
         metadLastUpdateTime_ = resp.get_last_update_time_in_ms();
         VLOG(1) << "Metad last update time: " << metadLastUpdateTime_;
         metaServerVersion_ = resp.get_meta_version();
-        return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
+
+        bool succeeded = resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
+        if (succeeded) {
+          dirInfoReported_ = true;
+        }
+        return succeeded;
       },
       std::move(promise),
       true);

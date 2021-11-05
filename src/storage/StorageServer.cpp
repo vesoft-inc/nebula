@@ -7,6 +7,8 @@
 
 #include <thrift/lib/cpp/concurrency/ThreadManager.h>
 
+#include <boost/filesystem.hpp>
+
 #include "clients/storage/InternalStorageClient.h"
 #include "common/hdfs/HdfsCommandHelper.h"
 #include "common/meta/ServerBasedIndexManager.h"
@@ -160,6 +162,8 @@ bool StorageServer::start() {
     options.role_ = nebula::meta::cpp2::HostRole::LISTENER;
   }
   options.gitInfoSHA_ = gitInfoSha();
+  options.rootPath_ = boost::filesystem::current_path().string();
+  options.dataPaths_ = dataPaths_;
 
   metaClient_ = std::make_unique<meta::MetaClient>(ioThreadPool_, metaAddrs_, options);
   if (!metaClient_->waitForMetadReady()) {

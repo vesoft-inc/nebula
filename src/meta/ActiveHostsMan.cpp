@@ -92,6 +92,31 @@ bool ActiveHostsMan::machineRegisted(kvstore::KVStore* kv, const HostAddr& hostA
   return code == nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
+ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::pair<HostAddr, cpp2::HostRole>>>
+ActiveHostsMan::getServicesInHost(kvstore::KVStore* kv, std::string hostname) {
+  const auto& prefix = MetaKeyUtils::hostPrefix();
+  std::unique_ptr<kvstore::KVIterator> iter;
+  auto retCode = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+  if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(ERROR) << "Failed to get services in the host: " << hostname << ", error "
+               << apache::thrift::util::enumNameSafe(retCode);
+    return retCode;
+  }
+
+  std::vector<std::pair<HostAddr, cpp2::HostRole>> hosts;
+  while (iter->valid()) {
+    auto addr = MetaKeyUtils::parseHostKey(iter->key());
+    HostInfo info = HostInfo::decode(iter->val());
+
+    if (addr.host == hostname) {
+      hosts.emplace_back(addr, info.role_);
+    }
+    iter->next();
+  }
+
+  return hosts;
+}
+
 ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> ActiveHostsMan::getActiveHosts(
     kvstore::KVStore* kv, int32_t expiredTTL, cpp2::HostRole role) {
   const auto& machinePrefix = MetaKeyUtils::machinePrefix();

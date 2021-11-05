@@ -184,7 +184,9 @@ struct MetaClientOptions {
         serviceName_(opt.serviceName_),
         skipConfig_(opt.skipConfig_),
         role_(opt.role_),
-        gitInfoSHA_(opt.gitInfoSHA_) {}
+        gitInfoSHA_(opt.gitInfoSHA_),
+        dataPaths_(opt.dataPaths_),
+        rootPath_(opt.rootPath_) {}
 
   // Current host address
   HostAddr localHost_{"", 0};
@@ -200,6 +202,10 @@ struct MetaClientOptions {
   cpp2::HostRole role_ = cpp2::HostRole::UNKNOWN;
   // gitInfoSHA of Host using this client
   std::string gitInfoSHA_{""};
+  // data path list, used in storaged
+  std::vector<std::string> dataPaths_;
+  // install path, used in metad/graphd/storaged
+  std::string rootPath_;
 };
 
 class MetaClient {
@@ -759,6 +765,8 @@ class MetaClient {
   HostAddr leader_;
   HostAddr localHost_;
 
+  // Only report dir info once when started
+  bool dirInfoReported_ = false;
   struct ThreadLocalInfo {
     int64_t localLastUpdateTime_{-2};
     LocalCache localCache_;

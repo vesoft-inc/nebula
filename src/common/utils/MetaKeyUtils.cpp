@@ -22,6 +22,7 @@ static const std::unordered_map<std::string, std::pair<std::string, bool>> syste
     {"hosts", {"__hosts__", false}},
     {"versions", {"__versions__", false}},
     {"machines", {"__machines__", false}},
+    {"host_dirs", {"__host_dirs__", false}},
     {"snapshots", {"__snapshots__", false}},
     {"configs", {"__configs__", true}},
     {"groups", {"__groups__", true}},
@@ -62,6 +63,7 @@ static const std::string kPartsTable          = tableMaps.at("parts").first;    
 static const std::string kVersionsTable       = systemTableMaps.at("versions").first; // NOLINT
 static const std::string kHostsTable          = systemTableMaps.at("hosts").first;    // NOLINT
 static const std::string kMachinesTable       = systemTableMaps.at("machines").first; // NOLINT
+static const std::string kHostDirsTable       = systemTableMaps.at("host_dirs").first;// NOLINT
 static const std::string kTagsTable           = tableMaps.at("tags").first;           // NOLINT
 static const std::string kEdgesTable          = tableMaps.at("edges").first;          // NOLINT
 static const std::string kIndexesTable        = tableMaps.at("indexes").first;        // NOLINT
@@ -97,7 +99,7 @@ const std::string kLastUpdateTimeTable = systemInfoMaps.at("lastUpdateTime").fir
 
 const int kMaxIpAddrLen = 15;  // '255.255.255.255'
 
-std::string MetaKeyUtils::getIndexTable() { return tableMaps.at("index").first; }
+std::string MetaKeyUtils::getIndexTable() { return kIndexTable; }
 
 std::unordered_map<std::string,
                    std::pair<std::string, std::function<decltype(MetaKeyUtils::spaceId)>>>
@@ -254,6 +256,41 @@ const std::string& MetaKeyUtils::machinePrefix() { return kMachinesTable; }
 HostAddr MetaKeyUtils::parseMachineKey(folly::StringPiece key) {
   key.advance(kMachinesTable.size());
   return MetaKeyUtils::deserializeHostAddr(key);
+}
+
+const std::string& MetaKeyUtils::hostDirPrefix() { return kHostDirsTable; }
+
+const std::string MetaKeyUtils::hostDirHostPrefix(std::string host) {
+  return kHostDirsTable + host;
+}
+
+std::string MetaKeyUtils::hostDirKey(std::string host, Port port) {
+  std::string key;
+  key.reserve(kHostDirsTable.size() + host.size() + sizeof(port));
+  key.append(kHostDirsTable.data(), kHostDirsTable.size()).append(host);
+  key.append(reinterpret_cast<const char*>(&port), sizeof(Port));
+  return key;
+}
+
+HostAddr MetaKeyUtils::parseHostDirKey(folly::StringPiece key) {
+  HostAddr addr;
+  auto hostSize = key.size() - kHostDirsTable.size() - sizeof(Port);
+  addr.host = key.subpiece(kHostDirsTable.size(), hostSize).toString();
+  key.advance(kHostDirsTable.size() + hostSize);
+  addr.port = *reinterpret_cast<const Port*>(key.begin());
+  return addr;
+}
+
+std::string MetaKeyUtils::hostDirVal(cpp2::DirInfo dir) {
+  std::string val;
+  apache::thrift::CompactSerializer::serialize(dir, &val);
+  return val;
+}
+
+cpp2::DirInfo MetaKeyUtils::parseHostDir(folly::StringPiece val) {
+  cpp2::DirInfo dir;
+  apache::thrift::CompactSerializer::deserialize(val, dir);
+  return dir;
 }
 
 std::string MetaKeyUtils::hostKey(std::string addr, Port port) { return hostKeyV2(addr, port); }
@@ -637,6 +674,16 @@ std::string MetaKeyUtils::indexSpaceKey(const std::string& name) {
       .append(reinterpret_cast<const char*>(&type), sizeof(type))
       .append(name);
   return key;
+}
+
+std::string MetaKeyUtils::parseIndexSpaceKey(folly::StringPiece key) {
+  auto nameSize = key.size() - kIndexTable.size() - sizeof(EntryType);
+  return key.subpiece(kIndexTable.size() + sizeof(EntryType), nameSize).str();
+}
+
+EntryType MetaKeyUtils::parseIndexType(folly::StringPiece key) {
+  auto type = *reinterpret_cast<const EntryType*>(key.data() + kIndexTable.size());
+  return type;
 }
 
 std::string MetaKeyUtils::indexTagKey(GraphSpaceID spaceId, const std::string& name) {

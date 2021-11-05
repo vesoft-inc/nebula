@@ -17,18 +17,19 @@ nebula::cpp2::ErrorCode backupTable(kvstore::KVStore* kvstore,
                                     const std::string& tableName,
                                     std::vector<std::string>& files,
                                     std::function<bool(const folly::StringPiece& key)> filter) {
-  auto backupFilePath = kvstore->backupTable(kDefaultSpaceId, backupName, tableName, filter);
-  if (!ok(backupFilePath)) {
-    auto result = error(backupFilePath);
-    if (result == nebula::cpp2::ErrorCode::E_BACKUP_EMPTY_TABLE) {
+  auto backupRet = kvstore->backupTable(kDefaultSpaceId, backupName, tableName, filter);
+  if (!ok(backupRet)) {
+    auto code = error(backupRet);
+    if (code == nebula::cpp2::ErrorCode::E_BACKUP_EMPTY_TABLE) {
       return nebula::cpp2::ErrorCode::SUCCEEDED;
     }
-    return result;
+    return code;
   }
 
+  auto backupTableFiles = std::move(value(backupRet));
   files.insert(files.end(),
-               std::make_move_iterator(value(backupFilePath).begin()),
-               std::make_move_iterator(value(backupFilePath).end()));
+               std::make_move_iterator(backupTableFiles.begin()),
+               std::make_move_iterator(backupTableFiles.end()));
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 }  // namespace
@@ -174,70 +175,73 @@ std::function<bool(const folly::StringPiece& key)> MetaServiceUtils::spaceFilter
 
 ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>> MetaServiceUtils::backupIndex(
     kvstore::KVStore* kvstore,
-    const std::unordered_set<GraphSpaceID>& spaces,
+    const std::unordered_set<GraphSpaceID>& spaceIds,
     const std::string& backupName,
-    const std::vector<std::string>* spaceName) {
+    const std::vector<std::string>* spaceNames) {
   auto indexTable = MetaKeyUtils::getIndexTable();
-  return kvstore->backupTable(
-      kDefaultSpaceId,
-      backupName,
-      indexTable,
-      [spaces, spaceName, indexTable](const folly::StringPiece& key) -> bool {
-        if (spaces.empty()) {
-          return false;
-        }
+  return kvstore->backupTable(kDefaultSpaceId,
+                              backupName,
+                              indexTable,
+                              // will filter out the index table when this function returns true
+                              [spaceIds, spaceNames](const folly::StringPiece& key) -> bool {
+                                if (spaceIds.empty()) {
+                                  return false;
+                                }
 
-        auto type = *reinterpret_cast<const EntryType*>(key.data() + indexTable.size());
-        if (type == EntryType::SPACE) {
-          if (spaceName == nullptr) {
-            return false;
-          }
-          auto sn = key.subpiece(indexTable.size() + sizeof(EntryType),
-                                 key.size() - indexTable.size() - sizeof(EntryType))
-                        .str();
-          LOG(INFO) << "sn was " << sn;
-          auto it = std::find_if(
-              spaceName->cbegin(), spaceName->cend(), [&sn](auto& name) { return sn == name; });
+                                // space index: space name -> space id
+                                auto type = MetaKeyUtils::parseIndexType(key);
+                                if (type == EntryType::SPACE) {
+                                  if (spaceNames == nullptr || spaceNames->empty()) {
+                                    return false;
+                                  }
 
-          if (it == spaceName->cend()) {
-            return true;
-          }
-          return false;
-        }
+                                  auto spaceName = MetaKeyUtils::parseIndexSpaceKey(key);
+                                  LOG(INFO) << "Space name was " << spaceName;
+                                  auto it = std::find_if(
+                                      spaceNames->cbegin(),
+                                      spaceNames->cend(),
+                                      [&spaceName](auto& name) { return spaceName == name; });
+                                  if (it == spaceNames->cend()) {
+                                    return true;
+                                  }
+                                  return false;
+                                }
 
-        auto id = MetaKeyUtils::parseIndexKeySpaceID(key);
-        auto it = spaces.find(id);
-        if (it == spaces.end()) {
-          return true;
-        }
-
-        return false;
-      });
+                                // other index: space id -> values
+                                auto id = MetaKeyUtils::parseIndexKeySpaceID(key);
+                                auto it = spaceIds.find(id);
+                                if (it == spaceIds.end()) {
+                                  return true;
+                                }
+                                return false;
+                              });
 }
 
-ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>> MetaServiceUtils::backupSpaces(
+ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>> MetaServiceUtils::backupTables(
     kvstore::KVStore* kvstore,
-    const std::unordered_set<GraphSpaceID>& spaces,
+    const std::unordered_set<GraphSpaceID>& spaceIds,
     const std::string& backupName,
     const std::vector<std::string>* spaceNames) {
   std::vector<std::string> files;
-  auto tables = MetaKeyUtils::getTableMaps();
-  files.reserve(tables.size());
 
+  // backup space relative tables
+  auto tables = MetaKeyUtils::getTableMaps();
   for (const auto& table : tables) {
     if (table.second.second == nullptr) {
       LOG(INFO) << table.first << " table skipped";
       continue;
     }
     auto result = backupTable(
-        kvstore, backupName, table.second.first, files, spaceFilter(spaces, table.second.second));
+        kvstore, backupName, table.second.first, files, spaceFilter(spaceIds, table.second.second));
     if (result != nebula::cpp2::ErrorCode::SUCCEEDED) {
       return result;
     }
     LOG(INFO) << table.first << " table backup succeeded";
   }
 
-  if (spaceNames == nullptr) {
+  // backup system tables if backup all spaces
+  bool allSpaces = spaceNames == nullptr || spaceNames->empty();
+  if (allSpaces) {
     auto sysTables = MetaKeyUtils::getSystemTableMaps();
     for (const auto& table : sysTables) {
       if (!table.second.second) {
@@ -252,6 +256,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>> MetaServiceUtils::bac
     }
   }
 
+  // backup system info tables
   auto sysInfos = MetaKeyUtils::getSystemInfoMaps();
   for (const auto& table : sysInfos) {
     if (!table.second.second) {
@@ -265,8 +270,9 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>> MetaServiceUtils::bac
     LOG(INFO) << table.first << " table backup succeeded";
   }
 
-  // The mapping of space name and space id needs to be handled separately.
-  auto ret = backupIndex(kvstore, spaces, backupName, spaceNames);
+  // backup the mapping of space name and space id separately,
+  // which skipped in space relative tables
+  auto ret = backupIndex(kvstore, spaceIds, backupName, spaceNames);
   if (!ok(ret)) {
     auto result = error(ret);
     if (result == nebula::cpp2::ErrorCode::E_BACKUP_EMPTY_TABLE) {

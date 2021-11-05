@@ -69,6 +69,7 @@ void DiskManager::addPartToPath(GraphSpaceID spaceId, PartitionID partId, const 
   try {
     auto canonical = boost::filesystem::canonical(path);
     auto dataPath = canonical.parent_path().parent_path();
+    dataPath = boost::filesystem::absolute(dataPath);
     auto iter = std::find(dataPaths_.begin(), dataPaths_.end(), dataPath);
     CHECK(iter != dataPaths_.end());
     partIndex_[spaceId][partId] = iter - dataPaths_.begin();
@@ -85,6 +86,7 @@ void DiskManager::removePartFromPath(GraphSpaceID spaceId,
   try {
     auto canonical = boost::filesystem::canonical(path);
     auto dataPath = canonical.parent_path().parent_path();
+    dataPath = boost::filesystem::absolute(dataPath);
     auto iter = std::find(dataPaths_.begin(), dataPaths_.end(), dataPath);
     CHECK(iter != dataPaths_.end());
     partIndex_[spaceId].erase(partId);

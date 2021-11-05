@@ -8,6 +8,7 @@
 
 #include "common/base/Base.h"
 #include "common/base/SignalHandler.h"
+#include "common/fs/FileUtils.h"
 #include "common/hdfs/HdfsCommandHelper.h"
 #include "common/hdfs/HdfsHelper.h"
 #include "common/network/NetworkUtils.h"
@@ -87,7 +88,10 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
   threadManager->setNamePrefix("executor");
   threadManager->start();
   nebula::kvstore::KVOptions options;
-  options.dataPaths_ = {FLAGS_data_path};
+
+  auto absolute = boost::filesystem::absolute(FLAGS_data_path);
+  options.dataPaths_ = {absolute.string()};
+
   options.partMan_ = std::move(partMan);
   auto kvstore = std::make_unique<nebula::kvstore::NebulaStore>(
       std::move(options), ioPool, localhost, threadManager);

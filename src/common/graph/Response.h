@@ -120,6 +120,7 @@
   X(E_GET_META_DIR_FAILURE, -2072)                                            \
                                                                               \
   X(E_QUERY_NOT_FOUND, -2073)                                                 \
+  X(E_AGENT_HB_FAILUE, -2074)                                                 \
   /* 3xxx for storaged */                                                     \
   X(E_CONSENSUS_ERROR, -3001)                                                 \
   X(E_KEY_HAS_EXISTS, -3002)                                                  \

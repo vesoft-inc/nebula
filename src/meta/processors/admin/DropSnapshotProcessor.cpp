@@ -17,9 +17,14 @@ void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
 
   // Check snapshot is exists
   auto key = MetaKeyUtils::snapshotKey(snapshot);
-  auto ret = doGet(std::move(key));
+  auto ret = doGet(key);
   if (!nebula::ok(ret)) {
     auto retCode = nebula::error(ret);
+    if (retCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
+      LOG(INFO) << "Snapshot " << snapshot << " does not exist or already dropped.";
+      onFinished();
+      return;
+    }
     LOG(ERROR) << "Get snapshot " << snapshot << " failed, error "
                << apache::thrift::util::enumNameSafe(retCode);
     handleErrorCode(retCode);
@@ -76,7 +81,7 @@ void DropSnapshotProcessor::process(const cpp2::DropSnapshotReq& req) {
     return;
   }
   // Delete metadata of checkpoint
-  doRemove(MetaKeyUtils::snapshotKey(snapshot));
+  doRemove(key);
   LOG(INFO) << "Drop snapshot " << snapshot << " successfully";
 }
 

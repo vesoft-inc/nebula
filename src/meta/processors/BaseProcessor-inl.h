@@ -117,27 +117,6 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>> BaseProcessor<RESP>::
 }
 
 template <typename RESP>
-ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> BaseProcessor<RESP>::allHosts() {
-  std::vector<HostAddr> hosts;
-  const auto& prefix = MetaKeyUtils::hostPrefix();
-  std::unique_ptr<kvstore::KVIterator> iter;
-  auto code = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-  if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    VLOG(2) << "Can't find any hosts";
-    return code;
-  }
-
-  while (iter->valid()) {
-    HostAddr h;
-    auto hostAddrPiece = iter->key().subpiece(prefix.size());
-    memcpy(&h, hostAddrPiece.data(), hostAddrPiece.size());
-    hosts.emplace_back(std::move(h));
-    iter->next();
-  }
-  return hosts;
-}
-
-template <typename RESP>
 ErrorOr<nebula::cpp2::ErrorCode, int32_t> BaseProcessor<RESP>::autoIncrementId() {
   folly::SharedMutex::WriteHolder holder(LockUtils::idLock());
   const std::string kIdKey = MetaKeyUtils::idKey();

@@ -150,11 +150,6 @@ class BaseProcessor {
   void doMultiRemove(std::vector<std::string> keys);
 
   /**
-   * Get all hosts
-   * */
-  ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> allHosts();
-
-  /**
    * Get one auto-increment Id.
    * */
   ErrorOr<nebula::cpp2::ErrorCode, int32_t> autoIncrementId();

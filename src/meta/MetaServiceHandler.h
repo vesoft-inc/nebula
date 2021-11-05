@@ -10,6 +10,7 @@
 #include "interface/gen-cpp2/MetaService.h"
 #include "kvstore/KVStore.h"
 #include "meta/processors/admin/AdminClient.h"
+#include "meta/processors/admin/AgentHBProcessor.h"
 #include "meta/processors/admin/HBProcessor.h"
 
 namespace nebula {
@@ -23,6 +24,7 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
 
     // Initialize counters
     kHBCounters.init();
+    kAgentHBCounters.init();
   }
 
   /**
@@ -157,6 +159,8 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
    * HeartBeat
    * */
   folly::Future<cpp2::HBResp> future_heartBeat(const cpp2::HBReq& req) override;
+
+  folly::Future<cpp2::AgentHBResp> future_agentHeartbeat(const cpp2::AgentHBReq& req) override;
 
   folly::Future<cpp2::ExecResp> future_regConfig(const cpp2::RegConfigReq& req) override;
 
