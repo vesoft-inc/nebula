@@ -53,8 +53,7 @@ class CpuBinder {
   bool bind(std::shared_ptr<PriorityThreadManager> threadManager,
             const std::array<size_t, PRIORITY::N_PRIORITIES>& counts);
 
-  // return available cores number if hyper thread disabled
-  // return available processors number if hyper thread enabled
+  // return available processors number
   uint32_t availableNumber() {
     std::lock_guard<std::mutex> guard(lock_);
     return availables_.size();
