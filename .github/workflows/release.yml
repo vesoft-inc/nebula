@@ -13,6 +13,9 @@ jobs:
   package:
     name: build package
     runs-on: self-hosted
+    concurrency:
+      group: package-release
+      cancel-in-progress: true
     strategy:
       fail-fast: false
       matrix:
@@ -63,6 +66,9 @@ jobs:
   docker_build:
     name: docker-build
     runs-on: self-hosted
+    concurrency:
+      group: docker-release
+      cancel-in-progress: true
     strategy:
       fail-fast: false
       matrix:
