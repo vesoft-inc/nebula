@@ -36,3 +36,9 @@ Testing/
 target/
 cluster.id
 pids/
+
+# git
+.git/
+.github/
+.linters/
+tests/
