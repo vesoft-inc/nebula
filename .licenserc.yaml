@@ -1,0 +1,46 @@
+#
+# Copyright (c) 2020 vesoft inc. All rights reserved.
+#
+# This source code is licensed under Apache 2.0 License.
+header:
+  license:
+    spdx-id: Apache-2.0
+    copyright-owner: vesoft inc
+    content: |
+
+      Copyright (c) 2020 vesoft inc. All rights reserved.
+
+      This source code is licensed under Apache 2.0 License.
+
+    pattern: |
+
+      Copyright (c) \d{4} vesoft inc. All rights reserved.
+
+      This source code is licensed under Apache 2.0 License.
+
+  paths-ignore:
+    - '.licenserc.yaml'
+    - '.clang-tidy'
+    - '.dockerignore'
+    - '**/.gitignore'
+    - 'cmake'
+    - 'conf'
+    - 'docker'
+    - 'package'
+    - 'resources/*.csv'
+    - 'resources/*.json'
+    - 'scripts/*.service'
+    - 'src/**/*.thrift'
+    - 'src/**/*.lex'
+    - 'src/**/*.yy'
+    - 'src/**/*.dict'
+    - 'src/**/*.in'
+    - 'tests'
+    - '.github'
+    - '.linters'
+    - '**/*.md'
+    - 'third-party'
+    - 'LICENSE'
+    - 'NOTICE'
+
+  comment: on-failure
