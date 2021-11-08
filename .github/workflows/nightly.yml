@@ -4,6 +4,10 @@ on:
   schedule:
     - cron: '0 18 * * *'
 
+concurrency:
+  group: nightly
+  cancel-in-progress: true
+
 defaults:
   run:
     shell: bash
