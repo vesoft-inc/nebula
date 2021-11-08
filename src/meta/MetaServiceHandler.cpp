@@ -360,6 +360,12 @@ folly::Future<cpp2::ListUsersResp> MetaServiceHandler::future_listUsers(
   RETURN_FUTURE(processor);
 }
 
+folly::Future<cpp2::ListUsersWithDescResp> MetaServiceHandler::future_listUsersWithDesc(
+    const cpp2::ListUsersReq& req) {
+  auto* processor = ListUsersWithDescProcessor::instance(kvstore_);
+  RETURN_FUTURE(processor);
+}
+
 folly::Future<cpp2::ListRolesResp> MetaServiceHandler::future_listRoles(
     const cpp2::ListRolesReq& req) {
   auto* processor = ListRolesProcessor::instance(kvstore_);

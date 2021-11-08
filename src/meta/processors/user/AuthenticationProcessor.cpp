@@ -252,6 +252,65 @@ void ListUsersProcessor::process(const cpp2::ListUsersReq& req) {
   onFinished();
 }
 
+void ListUsersWithDescProcessor::process(const cpp2::ListUsersReq& req) {
+  UNUSED(req);
+  folly::SharedMutex::ReadHolder rHolder1(LockUtils::userLock());
+  folly::SharedMutex::ReadHolder rHolder2(LockUtils::spaceLock());
+  // list users
+  std::string userPrefix = "__users__";
+  auto usersRet = doPrefix(userPrefix);
+  if (!nebula::ok(usersRet)) {
+    auto retCode = nebula::error(usersRet);
+    LOG(ERROR) << "List User failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+    handleErrorCode(retCode);
+    onFinished();
+    return;
+  }
+  std::unordered_map<std::string, nebula::meta::cpp2::UserDescItem> usersMap;
+  // trans users to map
+  auto iter1 = nebula::value(usersRet).get();
+  while (iter1->valid()) {
+    auto account = MetaKeyUtils::parseUser(iter1->key());
+    cpp2::UserDescItem user;
+    user.set_account(account);
+    std::map<GraphSpaceID, cpp2::RoleType> spaceRoleMap;
+    user.set_space_role_map(spaceRoleMap);
+    usersMap[std::move(account)] = std::move(user);
+    iter1->next();
+  }
+  // add desc
+  auto rolePrefix = MetaKeyUtils::rolesPrefix();
+  auto roleRet = doPrefix(rolePrefix);
+  if (!nebula::ok(roleRet)) {
+    auto retCode = nebula::error(roleRet);
+    LOG(ERROR) << "Prefix roles failed, error: " << apache::thrift::util::enumNameSafe(retCode);
+    handleErrorCode(retCode);
+    onFinished();
+    return;
+  }
+  auto iter2 = nebula::value(roleRet).get();
+  while (iter2->valid()) {
+    auto account = MetaKeyUtils::parseRoleUser(iter2->key());
+    auto userDesc = usersMap.find(account);
+    if (userDesc != usersMap.end()) {
+      auto spaceId = MetaKeyUtils::parseRoleSpace(iter2->key());
+      auto val = iter2->val();
+      auto map = userDesc->second.get_space_role_map();
+      map[spaceId] = *reinterpret_cast<const cpp2::RoleType*>(val.begin());
+      userDesc->second.set_space_role_map(std::move(map));
+    }
+    iter2->next();
+  }
+  // trans to vector
+  std::vector<cpp2::UserDescItem> users;
+  for (auto iter = usersMap.begin(); iter != usersMap.end(); iter++) {
+    users.emplace_back(iter->second);
+  }
+  resp_.set_users(std::move(users));
+  handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
+  onFinished();
+}
+
 void ListRolesProcessor::process(const cpp2::ListRolesReq& req) {
   auto spaceId = req.get_space_id();
   CHECK_SPACE_ID_AND_RETURN(spaceId);
