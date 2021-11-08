@@ -102,7 +102,6 @@ def start_nebula(nb, configs):
     # Load csv data
     pool = get_conn_pool(address, ports[0])
     sess = pool.get_session(configs.user, configs.password)
-    print('get session')
 
     if not os.path.exists(TMP_DIR):
         os.mkdir(TMP_DIR)
@@ -114,13 +113,9 @@ def start_nebula(nb, configs):
             if not os.path.exists(os.path.join(folder, space, "config.yaml")):
                 continue
             data_dir = os.path.join(folder, space)
-            print('load csv data')
             space_desc = load_csv_data(sess, data_dir, space)
-            print('load csv data done')
             spaces.append(space_desc.__dict__)
-        print(space)
         f.write(json.dumps(spaces))
-    print('SPACE_TMP_PATH')
 
     with open(NB_TMP_PATH, "w") as f:
         data = {

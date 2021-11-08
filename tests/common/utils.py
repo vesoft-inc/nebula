@@ -404,14 +404,12 @@ def load_csv_data(
     config_path = os.path.join(data_dir, 'config.yaml')
 
     with open(config_path, 'r') as f:
-        print(f'load config from {config_path}')
         config = yaml.full_load(f)
 
         space = config.get('space', None)
         assert space is not None
         if not space_name:
             space_name = space.get('name', "A" + space_generator())
-        print(f'create space {space_name}')
 
         space_desc = SpaceDesc(
             name=space_name,
@@ -423,20 +421,17 @@ def load_csv_data(
         )
 
         create_space(space_desc, sess)
-        print(f'create space {space_name} successfully')
 
         schemas = config['schema']
         for line in schemas.splitlines():
             resp_ok(sess, line.strip(), True)
-        print(f'create schema successfully')
 
         # wait heartbeat_interval_secs + 1 seconds for schema synchronization
         time.sleep(2)
 
-        print(f'load data from {data_dir}')
         for fd in config["files"]:
             _load_data_from_file(sess, data_dir, fd)
-        print(f'load data successfully')
+
         return space_desc
 
 
@@ -446,9 +441,6 @@ def get_conn_pool(host: str, port: int):
     config.timeout = 180000
     # init connection pool
     pool = ConnectionPool()
-    print("get pool")
     if not pool.init([(host, port)], config):
         raise Exception("Fail to init connection pool.")
-
-    print("pool init")
     return pool
