@@ -15,54 +15,17 @@ defaults:
 
 jobs:
   package:
-    name: build package
-    runs-on: [self-hosted, nebula]
-    strategy:
-      fail-fast: false
-      matrix:
-        os:
-          - ubuntu1604
-          - ubuntu1804
-          - ubuntu2004
-          - centos7
-          - centos8
+    name: package
+    runs-on: ubuntu-latest
     container:
-      image: vesoft/nebula-dev:${{ matrix.os }}
-    env:
-      BUILD_DIR: ./pkg-build
-      CPACK_DIR: ./pkg-build/cpack_output
-      SYMS_DIR: ./pkg-build/symbols
+      image: vesoft/nebula-dev:centos7
     steps:
-      - uses: webiny/action-post-run@2.0.1
-        with:
-          run: sh -c "find . -mindepth 1 -delete"
       - uses: actions/checkout@v2
-      - name: Check License Header
-        uses: apache/skywalking-eyes@main
       - uses: ./.github/actions/tagname-action
         id: tag
-      - name: package
-        run: ./package/package.sh -b ${{ steps.tag.outputs.tag }} -t RelWithDebInfo -r OFF -p ON -s TRUE
-      - name: output some vars
-        run: |
-          tar zcf ${{ env.CPACK_DIR }}/nebula-${{ steps.tag.outputs.tagnum }}.tar.gz --exclude=${{ env.BUILD_DIR }} ./*
-          find ${{ env.CPACK_DIR }} -type f \( -iname \*.deb -o -iname \*.rpm -o -iname \*.tar.gz \) -exec bash -c "sha256sum {} > {}.sha256sum.txt" \;
-      - uses: ./.github/actions/upload-to-oss-action
-        with:
-          key-id: ${{ secrets.OSS_ID }}
-          key-secret: ${{ secrets.OSS_SECRET }}
-          endpoint: ${{ secrets.OSS_ENDPOINT }}
-          bucket: nebula-graph
-          asset-path: ${{ env.CPACK_DIR }}
-          target-path: package/${{ steps.tag.outputs.tagnum }}
-      - uses: ./.github/actions/upload-to-oss-action
-        with:
-          key-id: ${{ secrets.OSS_ID }}
-          key-secret: ${{ secrets.OSS_SECRET }}
-          endpoint: ${{ secrets.OSS_ENDPOINT }}
-          bucket: nebula-graph
-          asset-path: ${{ env.SYMS_DIR }}
-          target-path: package/${{ steps.tag.outputs.tagnum }}/symbols
+      - run: |
+          echo "${{ secrets.OSS_UTIL_CONFIG }}" >> $HOME/.ossutilconfig
+          ossutil64 cp -rf oss://nebula-graph/rc/${{ steps.tag.outputs.tagnum }} oss://nebula-graph/package/
 
   docker_build:
     name: docker-build
@@ -80,8 +43,6 @@ jobs:
         with:
           run: sh -c "find . -mindepth 1 -delete"
       - uses: actions/checkout@v2
-      - name: Check License Header
-        uses: apache/skywalking-eyes@main
       - uses: ./.github/actions/tagname-action
         id: tagname
       - id: docker
@@ -92,21 +53,23 @@ jobs:
             tag="vesoft/nebula-${{ matrix.service }}:latest"
           fi
           echo "::set-output name=tag::$tag"
-      - uses: docker/setup-qemu-action@v1
-      - uses: docker/setup-buildx-action@v1
       - uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - uses: docker/build-push-action@v2
+      - uses: docker/login-action@v1
         with:
-          context: .
-          file: ./docker/Dockerfile.${{ matrix.service }}
-          platforms: linux/amd64,linux/arm64
-          tags: |
-            vesoft/nebula-${{ matrix.service }}:${{ steps.tagname.outputs.tag }}
-            vesoft/nebula-${{ matrix.service }}:${{ steps.tagname.outputs.majorver }}
-            ${{ steps.docker.outputs.tag }}
-          push: true
-          build-args: |
-            BRANCH=${{ steps.tagname.outputs.tag }}
+          registry: ${{ secrets.HARBOR_REGISTRY }}
+          username: ${{ secrets.HARBOR_USERNAME }}
+          password: ${{ secrets.HARBOR_PASSWORD }}
+      - name: Tag docker images
+        env:
+          IMAGE: ${{ secrets.HARBOR_REGISTRY }}/vesoft/nebula-${{ matrix.service }}:${{ steps.tagname.outputs.tag }}
+        run: |
+          docker pull ${{ env.IMAGE }}
+          docker tag ${{ env.IMAGE }} vesoft/nebula-${{ matrix.service }}:${{ steps.tagname.outputs.tag }}
+          docker tag ${{ env.IMAGE }} vesoft/nebula-${{ matrix.service }}:${{ steps.tagname.outputs.majorver }}
+          if [[ ! -z "${{ steps.docker.outputs.tag }}" ]]; then
+            docker tag ${{ env.IMAGE }} ${{ steps.docker.outputs.tag }}
+          fi
+          docker push vesoft/nebula-${{ matrix.service }}
