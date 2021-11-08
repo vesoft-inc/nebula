@@ -77,11 +77,8 @@ Status TraverseExecutor::buildRequestDataSet() {
 folly::Future<Status> TraverseExecutor::traverse() {
   if (reqDs_.rows.empty()) {
     VLOG(1) << "Empty input.";
-    List emptyResult;
-    return finish(ResultBuilder()
-                      .value(Value(std::move(emptyResult)))
-                      .iter(Iterator::Kind::kGetNeighbors)
-                      .build());
+    DataSet emptyResult;
+    return finish(ResultBuilder().value(Value(std::move(emptyResult))).build());
   }
   getNeighbors();
   return promise_.getFuture();
@@ -274,6 +271,9 @@ void TraverseExecutor::buildPath(std::unordered_map<Value, std::vector<Row>>& cu
 }
 
 Status TraverseExecutor::buildResult() {
+  if (currentStep_ < steps_.mSteps()) {
+    return finish(ResultBuilder().value(Value(DataSet())).build());
+  }
   DataSet result;
   result.colNames = traverse_->colNames();
   result.rows.reserve(cnt_);
