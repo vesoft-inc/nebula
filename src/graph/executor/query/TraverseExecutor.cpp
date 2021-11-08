@@ -101,7 +101,7 @@ void TraverseExecutor::getNeighbors() {
                      traverse_->edgeTypes(),
                      traverse_->edgeDirection(),
                      finalStep ? traverse_->statProps() : nullptr,
-                     finalStep ? traverse_->vertexProps() : nullptr,
+                     traverse_->vertexProps(),
                      traverse_->edgeProps(),
                      finalStep ? traverse_->exprs() : nullptr,
                      finalStep ? traverse_->dedup() : false,
@@ -206,13 +206,15 @@ Status TraverseExecutor::buildInterimPath(GetNeighborsIter* iter) {
     if (!SchemaUtil::isValidVid(dst, *(spaceInfo.spaceDesc.vid_type_ref()))) {
       continue;
     }
-    if (vFilter != nullptr) {
+    if (vFilter != nullptr && currentStep_ == 1) {
+      VLOG(1) << "vFilter:" << vFilter->toString();
       auto& vFilterVal = vFilter->eval(ctx(iter));
       if (!vFilterVal.isBool() || !vFilterVal.getBool()) {
         continue;
       }
     }
     if (eFilter != nullptr) {
+      VLOG(1) << "eFilter:" << eFilter->toString();
       auto& eFilterVal = eFilter->eval(ctx(iter));
       if (!eFilterVal.isBool() || !eFilterVal.getBool()) {
         continue;
