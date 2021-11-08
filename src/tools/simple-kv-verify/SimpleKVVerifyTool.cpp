@@ -4,6 +4,7 @@
  */
 
 #include <folly/executors/IOThreadPoolExecutor.h>
+#include <thrift/lib/cpp/util/EnumUtils.h>
 
 #include "clients/meta/MetaClient.h"
 #include "clients/storage/GraphStorageClient.h"
@@ -107,8 +108,9 @@ class SimpleKVVerifyTool {
       auto key = pair.first;
       bool found = false;
       for (const auto& result : resp.responses()) {
-        auto iter = result.key_values.find(key);
-        if (iter != result.key_values.end()) {
+        auto kvs = result.get_key_values();
+        auto iter = kvs.find(key);
+        if (iter != kvs.end()) {
           if (iter->second != pairs[key]) {
             LOG(ERROR) << "Check Fail: key = " << key << ", values: " << iter->second
                        << " != " << pairs[key];
