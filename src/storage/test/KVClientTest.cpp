@@ -5,7 +5,7 @@
 
 #include <gtest/gtest.h>
 
-#include "clients/storage/GeneralStorageClient.h"
+#include "clients/storage/GraphStorageClient.h"
 #include "common/base/Base.h"
 #include "common/datatypes/KeyValue.h"
 #include "common/fs/TempDir.h"
@@ -44,9 +44,9 @@ TEST(KVClientTest, SimpleTest) {
   options.localHost_ = storageAddr;
   options.role_ = meta::cpp2::HostRole::STORAGE;
   cluster.initMetaClient(options);
-  cluster.startStorage(storageAddr, storagePath.path(), true);
+  cluster.startStorage(storageAddr, storagePath.path());
 
-  auto client = cluster.initGeneralStorageClient();
+  auto client = cluster.initGraphStorageClient();
   // kv interface test
   {
     std::vector<nebula::KeyValue> pairs;

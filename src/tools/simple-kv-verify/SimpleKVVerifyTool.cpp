@@ -6,7 +6,7 @@
 #include <folly/executors/IOThreadPoolExecutor.h>
 
 #include "clients/meta/MetaClient.h"
-#include "clients/storage/GeneralStorageClient.h"
+#include "clients/storage/GraphStorageClient.h"
 #include "common/base/Base.h"
 #include "common/datatypes/KeyValue.h"
 #include "common/meta/SchemaManager.h"
@@ -52,8 +52,7 @@ class SimpleKVVerifyTool {
     spaceId_ = spaceResult.value();
     LOG(INFO) << "Space ID: " << spaceId_;
 
-    generalStorageClient_ =
-        std::make_unique<storage::GeneralStorageClient>(ioExecutor, metaClient_.get());
+    storageClient_ = std::make_unique<storage::GraphStorageClient>(ioExecutor, metaClient_.get());
     return EXIT_SUCCESS;
   }
 
@@ -66,7 +65,7 @@ class SimpleKVVerifyTool {
       keyValues.emplace_back(std::make_pair(key, value));
     }
 
-    auto future = generalStorageClient_->put(spaceId_, std::move(keyValues));
+    auto future = storageClient_->put(spaceId_, std::move(keyValues));
     auto resp = std::move(future).get();
     if (!resp.succeeded()) {
       LOG(ERROR) << "Put Failed";
@@ -89,7 +88,7 @@ class SimpleKVVerifyTool {
       keys.emplace_back(pair.first);
     }
 
-    auto future = generalStorageClient_->get(spaceId_, std::move(keys));
+    auto future = storageClient_->get(spaceId_, std::move(keys));
     auto resp = std::move(future).get();
     if (!resp.succeeded()) {
       LOG(ERROR) << "Get Failed";
@@ -128,7 +127,7 @@ class SimpleKVVerifyTool {
   }
 
  private:
-  std::unique_ptr<nebula::storage::GeneralStorageClient> generalStorageClient_;
+  std::unique_ptr<nebula::storage::GraphStorageClient> storageClient_;
   std::unique_ptr<nebula::meta::MetaClient> metaClient_;
   nebula::GraphSpaceID spaceId_;
 };

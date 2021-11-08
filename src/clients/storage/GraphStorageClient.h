@@ -141,6 +141,19 @@ class GraphStorageClient : public StorageClientBase<cpp2::GraphStorageServiceAsy
       int64_t limit,
       const Expression* filter);
 
+  folly::SemiFuture<StorageRpcResponse<cpp2::KVGetResponse>> get(GraphSpaceID space,
+                                                                 std::vector<std::string>&& keys,
+                                                                 bool returnPartly = false,
+                                                                 folly::EventBase* evb = nullptr);
+
+  folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> put(GraphSpaceID space,
+                                                                std::vector<KeyValue> kvs,
+                                                                folly::EventBase* evb = nullptr);
+
+  folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> remove(GraphSpaceID space,
+                                                                   std::vector<std::string> keys,
+                                                                   folly::EventBase* evb = nullptr);
+
  private:
   StatusOr<std::function<const VertexID&(const Row&)>> getIdFromRow(GraphSpaceID space,
                                                                     bool isEdgeProps) const;

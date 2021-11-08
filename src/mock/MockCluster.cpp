@@ -12,7 +12,6 @@
 #include "mock/AdHocSchemaManager.h"
 #include "mock/MockData.h"
 #include "storage/CompactionFilter.h"
-#include "storage/GeneralStorageServiceHandler.h"
 #include "storage/GraphStorageServiceHandler.h"
 #include "storage/StorageAdminServiceHandler.h"
 #include "storage/transaction/TransactionManager.h"
@@ -217,7 +216,6 @@ void MockCluster::initStorageKV(const char* dataPath,
 
 void MockCluster::startStorage(HostAddr addr,
                                const std::string& rootPath,
-                               bool isGeneralService,
                                SchemaVer schemaVerCount) {
   initStorageKV(rootPath.c_str(), addr, schemaVerCount);
 
@@ -227,17 +225,10 @@ void MockCluster::startStorage(HostAddr addr,
   storageAdminServer_->start("admin-storage", addr.port - 1, adminHandler);
   LOG(INFO) << "The admin storage daemon started on port " << storageAdminServer_->port_;
 
-  if (!isGeneralService) {
-    graphStorageServer_ = std::make_unique<RpcServer>();
-    auto graphHandler = std::make_shared<storage::GraphStorageServiceHandler>(env);
-    graphStorageServer_->start("graph-storage", addr.port, graphHandler);
-    LOG(INFO) << "The graph storage daemon started on port " << graphStorageServer_->port_;
-  } else {
-    generalStorageServer_ = std::make_unique<RpcServer>();
-    auto generalHandler = std::make_shared<storage::GeneralStorageServiceHandler>(env);
-    generalStorageServer_->start("general-storage", addr.port, generalHandler);
-    LOG(INFO) << "The general storage daemon started on port " << generalStorageServer_->port_;
-  }
+  graphStorageServer_ = std::make_unique<RpcServer>();
+  auto graphHandler = std::make_shared<storage::GraphStorageServiceHandler>(env);
+  graphStorageServer_->start("graph-storage", addr.port, graphHandler);
+  LOG(INFO) << "The graph storage daemon started on port " << graphStorageServer_->port_;
 }
 
 std::unique_ptr<meta::SchemaManager> MockCluster::memSchemaMan(SchemaVer schemaVerCount,
@@ -297,12 +288,6 @@ storage::GraphStorageClient* MockCluster::initGraphStorageClient() {
   auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
   storageClient_ = std::make_unique<storage::GraphStorageClient>(threadPool, metaClient_.get());
   return storageClient_.get();
-}
-
-storage::GeneralStorageClient* MockCluster::initGeneralStorageClient() {
-  auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
-  generalClient_ = std::make_unique<storage::GeneralStorageClient>(threadPool, metaClient_.get());
-  return generalClient_.get();
 }
 
 }  // namespace mock

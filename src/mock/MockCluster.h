@@ -12,7 +12,6 @@
 #include <thrift/lib/cpp/concurrency/ThreadManager.h>
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 
-#include "clients/storage/GeneralStorageClient.h"
 #include "clients/storage/GraphStorageClient.h"
 #include "common/base/Base.h"
 #include "common/base/ObjectPool.h"
@@ -36,7 +35,6 @@ class MockCluster {
     stop();
     storageAdminServer_.reset();
     graphStorageServer_.reset();
-    generalStorageServer_.reset();
   }
 
   void startAll();
@@ -45,7 +43,6 @@ class MockCluster {
 
   void startStorage(HostAddr addr,
                     const std::string& rootPath,
-                    bool isGeneralService = false,
                     SchemaVer schemaVerCount = 1);
 
   /**
@@ -59,8 +56,6 @@ class MockCluster {
    * The meta server, and meta client must started first
    * */
   storage::GraphStorageClient* initGraphStorageClient();
-
-  storage::GeneralStorageClient* initGeneralStorageClient();
 
   std::unique_ptr<meta::SchemaManager> memSchemaMan(SchemaVer schemaVerCount = 1,
                                                     GraphSpaceID spaceId = 1,
@@ -119,12 +114,10 @@ class MockCluster {
   std::unique_ptr<RpcServer> metaServer_{nullptr};
   std::unique_ptr<meta::MetaClient> metaClient_{nullptr};
   std::unique_ptr<storage::GraphStorageClient> storageClient_{nullptr};
-  std::unique_ptr<storage::GeneralStorageClient> generalClient_{nullptr};
   std::unique_ptr<kvstore::NebulaStore> metaKV_{nullptr};
 
   std::unique_ptr<RpcServer> storageAdminServer_{nullptr};
   std::unique_ptr<RpcServer> graphStorageServer_{nullptr};
-  std::unique_ptr<RpcServer> generalStorageServer_{nullptr};
   std::unique_ptr<kvstore::NebulaStore> storageKV_{nullptr};
   std::unique_ptr<storage::StorageEnv> storageEnv_{nullptr};
 

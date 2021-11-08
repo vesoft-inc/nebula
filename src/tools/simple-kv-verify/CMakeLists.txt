@@ -40,7 +40,6 @@ nebula_add_executable(
         $<TARGET_OBJECTS:conf_obj>
         $<TARGET_OBJECTS:datatypes_obj>
         $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:general_storage_client_obj>
         $<TARGET_OBJECTS:expression_obj>
         $<TARGET_OBJECTS:function_manager_obj>
         $<TARGET_OBJECTS:wkt_wkb_io_obj>

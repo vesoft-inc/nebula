@@ -5,7 +5,7 @@
 
 #include <gtest/gtest.h>
 
-#include "clients/storage/GeneralStorageClient.h"
+#include "clients/storage/GraphStorageClient.h"
 #include "common/base/Base.h"
 #include "common/fs/TempDir.h"
 #include "common/network/NetworkUtils.h"
