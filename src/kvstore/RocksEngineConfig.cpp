@@ -247,6 +247,7 @@ rocksdb::Status initRocksdbOptions(rocksdb::Options& baseOpts,
   }
 
   baseOpts = rocksdb::Options(dbOpts, cfOpts);
+
   s = initRocksdbCompression(baseOpts);
   if (!s.ok()) {
     return s;
