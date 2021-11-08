@@ -46,24 +46,24 @@ Feature: Truncated string index
       match (v:person) where v.name >= "abc" return v;
       """
     Then the result should be, in any order, with relax comparison:
-      |v                          |
-      |("1" :person{name: "abc1"})|
-      |("2" :person{name: "abc2"})|
+      | v                           |
+      | ("1" :person{name: "abc1"}) |
+      | ("2" :person{name: "abc2"}) |
     When executing query:
       """
       match (v:person{name:"abc1"}) return v;
       """
     Then the result should be, in any order, with relax comparison:
-      |v                          |
-      |("1" :person{name: "abc1"})|
+      | v                           |
+      | ("1" :person{name: "abc1"}) |
     When executing query:
       """
       match (v:person) where v.name>"abc" return v;
       """
     Then the result should be, in any order, with relax comparison:
-      |v                          |
-      |("1" :person{name: "abc1"})|
-      |("2" :person{name: "abc2"})|
+      | v                           |
+      | ("1" :person{name: "abc1"}) |
+      | ("2" :person{name: "abc2"}) |
     When executing query:
       """
       match (v:person) where v.name<="abc2" return v;
