@@ -19,6 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: vesoft/nebula-dev:centos7
+      options: --user $(id -u):$(id -g)
     steps:
       - uses: actions/checkout@v2
       - uses: ./.github/actions/tagname-action
