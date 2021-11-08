@@ -1,0 +1,25 @@
+# See https://github.com/check-spelling/check-spelling/wiki/Configuration-Examples:-excludes
+(?:^|/)(?i)COPYRIGHT
+(?:^|/)(?i)LICEN[CS]E
+(?:^|/)package(?:-lock|)\.json$
+(?:^|/)vendor/
+ignore$
+\.avi$
+\.crt$
+\.csr$
+\.ico$
+\.jpe?g$
+\.key$
+\.lock$
+\.map$
+\.min\..
+\.mod$
+\.mp[34]$
+\.pem$
+\.png$
+\.wav$
+^\.github/
+^\Qresources/date_time_zonespec.csv\E$
+^\Qsrc/storage/test/IndexTest.cpp\E$
+^\Qtests/cert/test.ca.password\E$
+^\Qtests/requirements.txt\E$
