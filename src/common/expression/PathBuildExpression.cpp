@@ -26,46 +26,67 @@ const Value& PathBuildExpression::eval(ExpressionContext& ctx) {
 
   for (size_t i = 1; i < items_.size(); ++i) {
     auto& value = items_[i]->eval(ctx);
-    if (value.isEdge()) {
-      if (!path.steps.empty()) {
-        const auto& lastStep = path.steps.back();
-        const auto& edge = value.getEdge();
-        if (lastStep.dst.vid != edge.src) {
-          return Value::kNullBadData;
-        }
-      }
-      Step step;
-      getEdge(value, step);
-      path.steps.emplace_back(std::move(step));
-    } else if (value.isVertex()) {
-      if (path.steps.empty()) {
-        return Value::kNullBadData;
-      }
-      auto& lastStep = path.steps.back();
-      const auto& vert = value.getVertex();
-      if (lastStep.dst.vid != vert.vid) {
-        return Value::kNullBadData;
-      }
-      getVertex(value, lastStep.dst);
-    } else if (value.isPath()) {
-      const auto& p = value.getPath();
-      if (!path.steps.empty()) {
-        auto& lastStep = path.steps.back();
-        if (lastStep.dst.vid != p.src.vid) {
-          return Value::kNullBadData;
-        }
-        lastStep.dst = p.src;
-      }
-      path.steps.insert(path.steps.end(), p.steps.begin(), p.steps.end());
-    } else {
-      if ((i & 1) == 1 || path.steps.empty() || !getVertex(value, path.steps.back().dst)) {
-        return Value::kNullBadData;
-      }
+    if (!buildPath(value, path)) {
+      return Value::kNullBadData;
     }
   }
 
   result_ = path;
   return result_;
+}
+
+bool PathBuildExpression::buildPath(const Value& value, Path& path) const {
+  switch (value.type()) {
+    case Value::Type::EDGE: {
+      if (!path.steps.empty()) {
+        const auto& lastStep = path.steps.back();
+        const auto& edge = value.getEdge();
+        if (lastStep.dst.vid != edge.src) {
+          return false;
+        }
+      }
+      Step step;
+      getEdge(value, step);
+      path.steps.emplace_back(std::move(step));
+      break;
+    }
+    case Value::Type::VERTEX: {
+      if (path.steps.empty()) {
+        return false;
+      }
+      auto& lastStep = path.steps.back();
+      const auto& vert = value.getVertex();
+      if (lastStep.dst.vid != vert.vid) {
+        return false;
+      }
+      getVertex(value, lastStep.dst);
+      break;
+    }
+    case Value::Type::PATH: {
+      const auto& p = value.getPath();
+      if (!path.steps.empty()) {
+        auto& lastStep = path.steps.back();
+        if (lastStep.dst.vid != p.src.vid) {
+          return false;
+        }
+        lastStep.dst = p.src;
+      }
+      path.steps.insert(path.steps.end(), p.steps.begin(), p.steps.end());
+      break;
+    }
+    case Value::Type::LIST: {
+      for (const auto& val : value.getList().values) {
+        if (!buildPath(val, path)) {
+          return false;
+        }
+      }
+      break;
+    }
+    default: {
+      return false;
+    }
+  }
+  return true;
 }
 
 bool PathBuildExpression::getVertex(const Value& value, Vertex& vertex) const {

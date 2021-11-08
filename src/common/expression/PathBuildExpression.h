@@ -58,6 +58,8 @@ class PathBuildExpression final : public Expression {
 
   bool getEdge(const Value& value, Step& step) const;
 
+  bool buildPath(const Value& value, Path& path) const;
+
  private:
   std::vector<Expression*> items_;
   Value result_;

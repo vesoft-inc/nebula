@@ -157,7 +157,7 @@ StatusOr<SubPlan> MatchClausePlanner::transform(CypherClauseContextBase* clauseC
   NG_RETURN_IF_ERROR(findStarts(matchClauseCtx, startFromEdge, startIndex, matchClausePlan));
   NG_RETURN_IF_ERROR(
       expand(nodeInfos, edgeInfos, matchClauseCtx, startFromEdge, startIndex, matchClausePlan));
-  // NG_RETURN_IF_ERROR(projectColumnsBySymbols(matchClauseCtx, startIndex, matchClausePlan));
+  NG_RETURN_IF_ERROR(projectColumnsBySymbols(matchClauseCtx, matchClausePlan));
   NG_RETURN_IF_ERROR(appendFilterPlan(matchClauseCtx, matchClausePlan));
   return matchClausePlan;
 }
@@ -365,146 +365,80 @@ Status MatchClausePlanner::expandFromEdge(const std::vector<NodeInfo>& nodeInfos
 }
 
 Status MatchClausePlanner::projectColumnsBySymbols(MatchClauseContext* matchClauseCtx,
-                                                   size_t startIndex,
                                                    SubPlan& plan) {
   auto qctx = matchClauseCtx->qctx;
   auto& nodeInfos = matchClauseCtx->nodeInfos;
   auto& edgeInfos = matchClauseCtx->edgeInfos;
-  auto input = plan.root;
-  const auto& inColNames = input->colNames();
   auto columns = qctx->objPool()->add(new YieldColumns);
   std::vector<std::string> colNames;
 
-  auto addNode = [&, this](size_t i) {
-    auto& nodeInfo = nodeInfos[i];
+  auto addNode = [this, columns, &colNames, matchClauseCtx](auto& nodeInfo) {
     if (!nodeInfo.alias.empty() && !nodeInfo.anonymous) {
-      if (i >= startIndex) {
-        columns->addColumn(
-            buildVertexColumn(matchClauseCtx, inColNames[i - startIndex], nodeInfo.alias));
-      } else if (startIndex == (nodeInfos.size() - 1)) {
-        columns->addColumn(
-            buildVertexColumn(matchClauseCtx, inColNames[startIndex - i], nodeInfo.alias));
-      } else {
-        columns->addColumn(
-            buildVertexColumn(matchClauseCtx, inColNames[nodeInfos.size() - i], nodeInfo.alias));
-      }
+      columns->addColumn(buildVertexColumn(matchClauseCtx, nodeInfo.alias));
       colNames.emplace_back(nodeInfo.alias);
     }
   };
 
-  for (size_t i = 0; i < edgeInfos.size(); i++) {
-    VLOG(1) << "colSize: " << inColNames.size() << "i: " << i << " nodesize: " << nodeInfos.size()
-            << " start: " << startIndex;
-    addNode(i);
-    auto& edgeInfo = edgeInfos[i];
+  auto addEdge = [this, columns, &colNames, matchClauseCtx](auto& edgeInfo) {
     if (!edgeInfo.alias.empty() && !edgeInfo.anonymous) {
-      if (i >= startIndex) {
-        columns->addColumn(buildEdgeColumn(matchClauseCtx, inColNames[i - startIndex], edgeInfo));
-      } else if (startIndex == (nodeInfos.size() - 1)) {
-        columns->addColumn(
-            buildEdgeColumn(matchClauseCtx, inColNames[edgeInfos.size() - 1 - i], edgeInfo));
-      } else {
-        columns->addColumn(
-            buildEdgeColumn(matchClauseCtx, inColNames[edgeInfos.size() - i], edgeInfo));
-      }
+      columns->addColumn(buildEdgeColumn(matchClauseCtx, edgeInfo));
       colNames.emplace_back(edgeInfo.alias);
     }
+  };
+
+  for (size_t i = 0; i < edgeInfos.size(); i++) {
+    addNode(nodeInfos[i]);
+    addEdge(edgeInfos[i]);
   }
 
   // last vertex
   DCHECK(!nodeInfos.empty());
-  addNode(nodeInfos.size() - 1);
+  addNode(nodeInfos.back());
 
   const auto& aliases = matchClauseCtx->aliasesGenerated;
   auto iter = std::find_if(aliases.begin(), aliases.end(), [](const auto& alias) {
     return alias.second == AliasType::kPath;
   });
-  std::string alias = iter != aliases.end() ? iter->first : qctx->vctx()->anonColGen()->getCol();
-  columns->addColumn(
-      buildPathColumn(matchClauseCtx, alias, startIndex, inColNames, nodeInfos.size()));
-  colNames.emplace_back(alias);
+  if (iter != aliases.end()) {
+    auto& alias = iter->first;
+    columns->addColumn(buildPathColumn(matchClauseCtx, alias));
+    colNames.emplace_back(alias);
+  }
 
-  auto project = Project::make(qctx, input, columns);
+  auto project = Project::make(qctx, plan.root, columns);
   project->setColNames(std::move(colNames));
 
-  plan.root = MatchSolver::filtPathHasSameEdge(project, alias, qctx);
+  plan.root = project;
   VLOG(1) << plan;
   return Status::OK();
 }
 
 YieldColumn* MatchClausePlanner::buildVertexColumn(MatchClauseContext* matchClauseCtx,
-                                                   const std::string& colName,
                                                    const std::string& alias) const {
-  auto* pool = matchClauseCtx->qctx->objPool();
-  auto colExpr = InputPropertyExpression::make(pool, colName);
-  // startNode(path) => head node of path
-  auto args = ArgumentList::make(pool);
-  args->addArgument(colExpr);
-  auto firstVertexExpr = FunctionCallExpression::make(pool, "startNode", args);
-  return new YieldColumn(firstVertexExpr, alias);
+  return new YieldColumn(InputPropertyExpression::make(matchClauseCtx->qctx->objPool(), alias),
+                         alias);
 }
 
 YieldColumn* MatchClausePlanner::buildEdgeColumn(MatchClauseContext* matchClauseCtx,
-                                                 const std::string& colName,
                                                  EdgeInfo& edge) const {
   auto* pool = matchClauseCtx->qctx->objPool();
-  auto colExpr = InputPropertyExpression::make(pool, colName);
-  // relationships(p)
-  auto args = ArgumentList::make(pool);
-  args->addArgument(colExpr);
-  auto relExpr = FunctionCallExpression::make(pool, "relationships", args);
   Expression* expr = nullptr;
-  if (edge.range != nullptr) {
-    expr = relExpr;
+  if (edge.range == nullptr || (edge.range->min() == 1 && edge.range->max() == 1)) {
+    expr = SubscriptExpression::make(
+        pool, InputPropertyExpression::make(pool, edge.alias), ConstantExpression::make(pool, 0));
   } else {
-    // Get first edge in path list [e1, e2, ...]
-    auto idxExpr = ConstantExpression::make(pool, 0);
-    auto subExpr = SubscriptExpression::make(pool, relExpr, idxExpr);
-    expr = subExpr;
+    auto* args = ArgumentList::make(pool);
+    args->addArgument(VariableExpression::make(pool, "e"));
+    auto* filter = FunctionCallExpression::make(pool, "is_edge", args);
+    expr = ListComprehensionExpression::make(
+        pool, "e", InputPropertyExpression::make(pool, edge.alias), filter);
   }
   return new YieldColumn(expr, edge.alias);
 }
 
 YieldColumn* MatchClausePlanner::buildPathColumn(MatchClauseContext* matchClauseCtx,
-                                                 const std::string& alias,
-                                                 size_t startIndex,
-                                                 const std::vector<std::string> colNames,
-                                                 size_t nodeInfoSize) const {
-  auto colSize = colNames.size();
-  DCHECK((nodeInfoSize == colSize) || (nodeInfoSize + 1 == colSize));
-  size_t bound = 0;
-  if (colSize > nodeInfoSize) {
-    bound = colSize - startIndex - 1;
-  } else if (startIndex == (nodeInfoSize - 1)) {
-    bound = 0;
-  } else {
-    bound = colSize - startIndex;
-  }
-  auto* pool = matchClauseCtx->qctx->objPool();
-  auto rightExpandPath = PathBuildExpression::make(pool);
-  for (size_t i = 0; i < bound; ++i) {
-    rightExpandPath->add(InputPropertyExpression::make(pool, colNames[i]));
-  }
-
-  auto leftExpandPath = PathBuildExpression::make(pool);
-  for (size_t i = bound; i < colNames.size(); ++i) {
-    leftExpandPath->add(InputPropertyExpression::make(pool, colNames[i]));
-  }
-
-  auto finalPath = PathBuildExpression::make(pool);
-  if (leftExpandPath->size() != 0) {
-    auto args = ArgumentList::make(pool);
-    args->addArgument(leftExpandPath);
-    auto reversePath = FunctionCallExpression::make(pool, "reversePath", args);
-    if (rightExpandPath->size() == 0) {
-      return new YieldColumn(reversePath, alias);
-    }
-    finalPath->add(reversePath);
-  }
-  if (rightExpandPath->size() != 0) {
-    finalPath->add(rightExpandPath);
-  }
-  return new YieldColumn(finalPath, alias);
+                                                 const std::string& alias) const {
+  return new YieldColumn(matchClauseCtx->pathBuild, alias);
 }
 
 Status MatchClausePlanner::appendFilterPlan(MatchClauseContext* matchClauseCtx, SubPlan& subplan) {

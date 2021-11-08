@@ -138,10 +138,10 @@ Status MatchValidator::buildPathExpr(const MatchPath *path,
   auto *pool = qctx_->objPool();
   auto pathBuild = PathBuildExpression::make(pool);
   for (size_t i = 0; i < edgeInfos.size(); ++i) {
-    pathBuild->add(VariablePropertyExpression::make(pool, "", nodeInfos[i].alias));
-    pathBuild->add(VariablePropertyExpression::make(pool, "", edgeInfos[i].alias));
+    pathBuild->add(InputPropertyExpression::make(pool, nodeInfos[i].alias));
+    pathBuild->add(InputPropertyExpression::make(pool, edgeInfos[i].alias));
   }
-  pathBuild->add(VariablePropertyExpression::make(pool, "", nodeInfos.back().alias));
+  pathBuild->add(InputPropertyExpression::make(pool, nodeInfos.back().alias));
   matchClauseCtx.pathBuild = std::move(pathBuild);
   return Status::OK();
 }

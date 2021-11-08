@@ -413,6 +413,7 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
                         Value::Type::FLOAT},
                        Value::Type::LIST),
      }},
+    {"is_edge", {TypeSignature({Value::Type::EDGE}, Value::Type::BOOL)}},
 };
 
 // static
@@ -2655,6 +2656,13 @@ FunctionManager::FunctionManager() {
       }
       return List(vals);
     };
+  }
+  {
+    auto &attr = functions_["is_edge"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isPure_ = true;
+    attr.body_ = [](const auto &args) -> Value { return args[0].get().isEdge(); };
   }
 }  // NOLINT
 
