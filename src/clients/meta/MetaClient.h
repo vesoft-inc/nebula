@@ -75,9 +75,13 @@ struct SpaceInfoCache {
   cpp2::SpaceDesc spaceDesc_;
   PartsAlloc partsAlloc_;
   std::unordered_map<HostAddr, std::vector<PartitionID>> partsOnHost_;
+  // std::vector<cpp2::TagItem> tagItemVec_;
   TagSchemas tagSchemas_;
+  // std::vector<cpp2::EdgeItem> edgeItemVec_;
   EdgeSchemas edgeSchemas_;
+  // std::vector<cpp2::IndexItem> tagIndexItemVec_;
   Indexes tagIndexes_;
+  // std::vector<cpp2::IndexItem> edgeIndexItemVec_;
   Indexes edgeIndexes_;
   Listeners listeners_;
   // objPool used to decode when adding field
@@ -516,7 +520,7 @@ class MetaClient {
 
   Status checkSpaceExistInCache(const HostAddr& host, GraphSpaceID spaceId);
 
-  StatusOr<int32_t> partsNum(GraphSpaceID spaceId) const;
+  StatusOr<int32_t> partsNum(GraphSpaceID spaceId);
 
   PartitionID partId(int32_t numParts, VertexID id) const;
 
@@ -578,7 +582,7 @@ class MetaClient {
 
   bool authCheckFromCache(const std::string& account, const std::string& password) const;
 
-  StatusOr<TermID> getTermFromCache(GraphSpaceID spaceId, PartitionID) const;
+  StatusOr<TermID> getTermFromCache(GraphSpaceID spaceId, PartitionID);
 
   bool checkShadowAccountFromCache(const std::string& account) const;
 
@@ -734,8 +738,10 @@ class MetaClient {
   // leaderIdsLock_ is used to protect leaderIds_
   std::unordered_map<GraphSpaceID, std::vector<cpp2::LeaderInfo>> leaderIds_;
   folly::RWSpinLock leaderIdsLock_;
-  int64_t localLastUpdateTime_{0};
-  int64_t metadLastUpdateTime_{0};
+  std::atomic<int64_t> localDataLastUpdateTime_{-1};
+  std::atomic<int64_t> localCfgLastUpdateTime_{-1};
+  std::atomic<int64_t> metadLastUpdateTime_{0};
+
   int64_t metaServerVersion_{-1};
   static constexpr int64_t EXPECT_META_VERSION = 2;
 
