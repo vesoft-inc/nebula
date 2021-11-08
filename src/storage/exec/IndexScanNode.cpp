@@ -128,7 +128,6 @@ QualifiedStrategy::Result RangePath::qualified(const Map<std::string, Value>& ro
     }
   }
   if (hint.end_value_ref().is_set() && !hint.get_end_value().empty()) {
-    DVLOG(2) << includeEnd_;
     bool ret = includeEnd_ ? hint.get_end_value() >= rowData.at(hint.get_column_name())
                            : hint.get_end_value() > rowData.at(hint.get_column_name());
     if (!ret) {

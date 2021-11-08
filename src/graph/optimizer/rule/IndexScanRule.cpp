@@ -231,9 +231,6 @@ Status IndexScanRule::appendColHint(std::vector<IndexColumnHint>& hints,
       return Status::SemanticError(
           fmt::format("Not supported value type {} for index.", item.value_.type()));
     }
-    if (item.value_.type() != graph::SchemaUtil::propTypeToValueType(col.type.type)) {
-      return Status::SemanticError("Data type error of field : %s", col.get_name().c_str());
-    }
     if (item.relOP_ == Expression::Kind::kRelEQ) {
       // check the items, don't allow where c1 == 1 and c1 == 2 and c1 > 3....
       // If EQ item appears, only one element is allowed
@@ -248,6 +245,9 @@ Status IndexScanRule::appendColHint(std::vector<IndexColumnHint>& hints,
     // end)
     if (col.get_type().get_type() == nebula::cpp2::PropertyType::BOOL) {
       return Status::SemanticError("Range scan for bool type is illegal");
+    }
+    if (item.value_.type() != graph::SchemaUtil::propTypeToValueType(col.type.type)) {
+      return Status::SemanticError("Data type error of field : %s", col.get_name().c_str());
     }
     bool include = false;
     switch (item.relOP_) {
