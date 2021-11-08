@@ -71,7 +71,7 @@ jobs:
       image: vesoft/nebula-dev:${{ matrix.os }}
       volumes:
         - /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}:/tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
-      options: --cap-add=SYS_PTRACE --user "$(id -u):$(id -g)"
+      options: --cap-add=SYS_PTRACE --user 1000:1000
     steps:
       - uses: webiny/action-post-run@2.0.1
         with:
