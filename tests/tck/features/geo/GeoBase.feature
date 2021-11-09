@@ -349,7 +349,7 @@ Feature: Geo base
       INSERT EDGE any_shape_edge(geo) VALUES "108"->"408":(ST_GeogFromText("POLYGON((-20 -20, -20 20, 20 20, 20 -20, -20 -20), (1.0 1.0, 2.0 2.0, 0.0 2.0, 1.0 1.0))"));
       """
     Then the execution should be successful
-    # Lookup on geo index agagin
+    # Lookup on geo index again
     When executing query:
       """
       LOOKUP ON any_shape YIELD ST_ASText(any_shape.geo);
