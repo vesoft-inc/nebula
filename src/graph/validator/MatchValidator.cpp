@@ -429,7 +429,7 @@ Status MatchValidator::validateStepRange(const MatchStepRange *range) const {
   }
   if (min < 0) {
     return Status::SemanticError(
-        "Cannot set negative steps minumum hop for variable length "
+        "Cannot set negative steps minimum hop for variable length "
         "relationships");
   }
   return Status::OK();
