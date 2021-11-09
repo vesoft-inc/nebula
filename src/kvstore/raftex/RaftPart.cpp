@@ -1188,7 +1188,7 @@ void RaftPart::statusPolling(int64_t startTime) {
       VLOG(2) << idStr_ << "Stop the election";
     } else {
       // No leader has been elected, need to continue
-      // (After sleeping a random period betwen [500ms, 2s])
+      // (After sleeping a random period between [500ms, 2s])
       VLOG(2) << idStr_ << "Wait for a while and continue the leader election";
       delay = (folly::Random::rand32(1500) + 500) * weight_;
     }
