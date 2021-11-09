@@ -379,7 +379,7 @@ int main(int argc, char** argv) {
 }
 /*
 Intel(R) Xeon(R) CPU E5-2690 v2 @ 3.00GHz
--O2  kMaxLenght=64    write test
+-O2  kMaxLength=64    write test
 ============================================================================
 LogBufferBenchmark.cpprelative                            time/iter  iters/s
 ============================================================================
