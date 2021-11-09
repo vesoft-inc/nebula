@@ -279,7 +279,7 @@ nebula::cpp2::ErrorCode JobManager::reportTaskFinish(const cpp2::ReportTaskReq& 
         "report to an in-active job manager, job={}, task={}", jobId, taskId);
     return nebula::cpp2::ErrorCode::E_UNKNOWN;
   }
-  // bacause the last task will update the job's status
+  // because the last task will update the job's status
   // tasks shoule report once a time
   std::lock_guard<std::mutex> lk(muReportFinish_);
   auto tasksRet = getAllTasks(jobId);
