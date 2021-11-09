@@ -159,7 +159,7 @@ TEST(ValueToJson, Set) {
                         DateTime(2021, 12, 21, 13, 30, 15, 0)}));  // datetime
   dynamic expectedSetJsonObj = dynamic::array(
       2, 2.33, true, "str", "2021-12-21", "13:30:15.000000Z", "2021-12-21T13:30:15.0Z");
-  // The underlying data strcuture is unordered_set, so sort before the comparison
+  // The underlying data structure is unordered_set, so sort before the comparison
   auto actualJson = set.toJson();
   std::sort(actualJson.begin(), actualJson.end());
   std::sort(expectedSetJsonObj.begin(), expectedSetJsonObj.end());
