@@ -88,7 +88,7 @@ bool NetworkUtils::getDynamicPortRange(uint16_t& low, uint16_t& high) {
 
   if (fscanf(pipe, "%hu %hu", &low, &high) != 2) {
     LOG(ERROR) << "Failed to read from /proc/sys/net/ipv4/ip_local_port_range";
-    // According to ICANN, the port range is devided into three sections
+    // According to ICANN, the port range is divided into three sections
     //
     // Well-known ports: 0 to 1023 (used for system services)
     // Registered/user ports: 1024 to 49151
