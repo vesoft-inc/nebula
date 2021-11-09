@@ -86,7 +86,7 @@ class ChainAddEdgesProcessorLocal : public BaseProcessor<cpp2::ExecResponse>,
   /**
    * @brief   a normal AddEdgeRequest may contain multi edges
    *          even though they will fail or succeed as a batch in this time
-   *          some of them may by overwrite by othere request
+   *          some of them may by overwrite by other request
    *          so when resume each edge
    */
   cpp2::AddEdgesRequest makeSingleEdgeRequest(PartitionID partId, const cpp2::NewEdge& edge);
