@@ -12,7 +12,7 @@
 #include "common/base/Status.h"
 
 /**
- * SignalHandler is a singleton to do the basic signal hanling,
+ * SignalHandler is a singleton to do the basic signal handling,
  * mainly used in a daemon executable.
  *
  * By default, it ignores SIGPIPE and SIGHUP as we usually do.
