@@ -19,7 +19,7 @@ Feature: subgraph
     Then a SemanticError should be raised at runtime: `$a.id', not exist variable `a'
     When executing query:
       """
-      GET SUBGRAPH WITH PROP FROM "Tim Duncan" YIELD vertexs
+      GET SUBGRAPH WITH PROP FROM "Tim Duncan" YIELD vertices
       """
     Then a SemanticError should be raised at runtime: Get Subgraph only support YIELD vertices OR edges
     When executing query:
