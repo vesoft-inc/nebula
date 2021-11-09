@@ -287,7 +287,7 @@ class ListenerBasicTest : public ::testing::TestWithParam<std::tuple<int32_t, in
   std::vector<HostAddr> listenerHosts_;
   std::vector<std::unique_ptr<NebulaStore>> stores_;
   std::vector<std::unique_ptr<NebulaStore>> listeners_;
-  // dummys_ is a copy of Listener in listeners_, for convience to check
+  // dummys_ is a copy of Listener in listeners_, for convenience to check
   // consensus
   std::unordered_map<PartitionID, std::shared_ptr<DummyListener>> dummys_;
 };
