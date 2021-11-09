@@ -1088,7 +1088,7 @@ TEST(ProcessorTest, CreateEdgeTest) {
 
     cpp2::CreateEdgeReq req;
     req.set_space_id(1);
-    req.set_edge_name("edge_with_defaule");
+    req.set_edge_name("edge_with_default");
     req.set_schema(std::move(schemaWithDefault));
     auto* processor = CreateEdgeProcessor::instance(kv.get());
     auto f = processor->getFuture();

@@ -1114,7 +1114,7 @@ TEST(UpdateVertexTest, TTL_Insert_Test) {
 
 // upsert, insert faild
 // age filed has not default value and not nullable, not in set clause
-TEST(UpdateVertexTest, Insertable_No_Defalut_Test) {
+TEST(UpdateVertexTest, Insertable_No_Default_Test) {
   fs::TempDir rootPath("/tmp/UpdateVertexTest.XXXXXX");
   mock::MockCluster cluster;
   cluster.initStorageKV(rootPath.path());

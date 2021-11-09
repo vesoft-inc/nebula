@@ -28,7 +28,7 @@ optional:
          scan: print to screen when records meet the condition, and also print statistics
                to screen in final.
          stat: print statistics to screen.
-         Defualt: scan
+         Default: scan
 
        --vids=<list of vid>
          A list of vid seperated by comma. This parameter means vertex_id/edge_src_id
