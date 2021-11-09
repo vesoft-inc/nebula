@@ -30,7 +30,7 @@ struct RequestCommon {
 struct PartitionResult {
     1: required common.ErrorCode    code,
     2: required common.PartitionID  part_id,
-    // Only valid when code is E_LEADER_CHANAGED.
+    // Only valid when code is E_LEADER_CHANGED.
     3: optional common.HostAddr     leader,
 }
 
