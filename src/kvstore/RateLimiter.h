@@ -16,7 +16,7 @@ DECLARE_bool(skip_wait_in_rate_limiter);
 namespace nebula {
 namespace kvstore {
 
-// A simple wrapper for foly::TokenBucket, it would limit the speed to rate_ * buckets_.size().
+// A simple wrapper for folly::TokenBucket, it would limit the speed to rate_ * buckets_.size().
 // For now, there are two major cases: snapshot (both for balance or catch up) and rebuild index.
 class RateLimiter {
  public:
