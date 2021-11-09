@@ -1149,7 +1149,7 @@ TEST(BalanceTest, TryToRecoveryTest) {
       kv, balanceId, BalanceTaskStatus::CATCH_UP_DATA, BalanceTaskResult::FAILED, partCount, 6);
 
   sleep(FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor + 1);
-  LOG(INFO) << "Now let's try to recovery it. Sinc eall host would be regarded "
+  LOG(INFO) << "Now let's try to recovery it. Since all host would be regarded "
                "as offline, "
             << "so all task will be invalid";
   ret = balancer.balance();
