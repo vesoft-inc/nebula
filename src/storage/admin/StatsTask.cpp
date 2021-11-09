@@ -131,7 +131,7 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
 
   VertexID lastVertexId = "";
 
-  // Only stats valid vetex data, no multi version
+  // Only stats valid vertex data, no multi version
   // For example
   // Vid  tagId
   // 1     1

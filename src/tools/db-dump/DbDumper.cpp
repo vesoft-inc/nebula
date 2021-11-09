@@ -110,7 +110,7 @@ Status DbDumper::initParams() {
     folly::splitTo<std::string>(',', FLAGS_tags, std::inserter(tags, tags.begin()), true);
     folly::splitTo<std::string>(',', FLAGS_edges, std::inserter(edges, edges.begin()), true);
   } catch (const std::exception& e) {
-    return Status::Error("Parse parts/vetexIds/tags/edges error: %s", e.what());
+    return Status::Error("Parse parts/vertexIds/tags/edges error: %s", e.what());
   }
 
   for (auto& tagName : tags) {
