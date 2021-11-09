@@ -634,10 +634,10 @@ class ShowSessionsSentence final : public Sentence {
   explicit ShowSessionsSentence(SessionID sessionId) {
     kind_ = Kind::kShowSessions;
     sessionId_ = sessionId;
-    setSeesionId_ = true;
+    setSessionId_ = true;
   }
 
-  bool isSetSessionID() const { return setSeesionId_; }
+  bool isSetSessionID() const { return setSessionId_; }
 
   SessionID getSessionID() const { return sessionId_; }
 
@@ -645,7 +645,7 @@ class ShowSessionsSentence final : public Sentence {
 
  private:
   SessionID sessionId_{0};
-  bool setSeesionId_{false};
+  bool setSessionId_{false};
 };
 
 class ShowQueriesSentence final : public Sentence {
