@@ -134,17 +134,17 @@ TEST(LogEncoderTest, BatchTest) {
   auto encoded = encodeBatchValue(helper->getBatch());
   auto decoded = decodeBatchValue(encoded.c_str());
 
-  std::vector<std::pair<BatchLogType, std::pair<folly::StringPiece, folly::StringPiece>>> expectd;
-  expectd.emplace_back(OP_BATCH_REMOVE,
+  std::vector<std::pair<BatchLogType, std::pair<folly::StringPiece, folly::StringPiece>>> expected;
+  expected.emplace_back(OP_BATCH_REMOVE,
                        std::pair<folly::StringPiece, folly::StringPiece>("remove", ""));
-  expectd.emplace_back(OP_BATCH_PUT,
+  expected.emplace_back(OP_BATCH_PUT,
                        std::pair<folly::StringPiece, folly::StringPiece>("put_key", "put_value"));
-  expectd.emplace_back(OP_BATCH_REMOVE_RANGE,
+  expected.emplace_back(OP_BATCH_REMOVE_RANGE,
                        std::pair<folly::StringPiece, folly::StringPiece>("begin", "end"));
-  expectd.emplace_back(
+  expected.emplace_back(
       OP_BATCH_PUT,
       std::pair<folly::StringPiece, folly::StringPiece>("put_key_again", "put_value_again"));
-  ASSERT_EQ(expectd, decoded);
+  ASSERT_EQ(expected, decoded);
 }
 
 }  // namespace kvstore
