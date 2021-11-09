@@ -1238,7 +1238,7 @@ bool RaftPart::needToCleanWal() {
 
 void RaftPart::processAskForVoteRequest(const cpp2::AskForVoteRequest& req,
                                         cpp2::AskForVoteResponse& resp) {
-  LOG(INFO) << idStr_ << "Recieved a VOTING request"
+  LOG(INFO) << idStr_ << "Received a VOTING request"
             << ": space = " << req.get_space() << ", partition = " << req.get_part()
             << ", candidateAddr = " << req.get_candidate_addr() << ":" << req.get_candidate_port()
             << ", term = " << req.get_term() << ", lastLogId = " << req.get_last_log_id()
