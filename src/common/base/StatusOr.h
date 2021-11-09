@@ -236,7 +236,7 @@ class StatusOr final {
   }
 
   // Return the non-const lvalue reference to the associated value
-  // `ok()' is DCHECKed
+  // `ok()' is DCHECK'd
   T &value() & {
     DCHECK(ok());
     return variant_.value_;
