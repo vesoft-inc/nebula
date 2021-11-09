@@ -143,9 +143,6 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
 
   folly::Future<cpp2::ListUsersResp> future_listUsers(const cpp2::ListUsersReq& req) override;
 
-  folly::Future<cpp2::ListUsersWithDescResp> future_listUsersWithDesc(
-      const cpp2::ListUsersReq& req) override;
-
   folly::Future<cpp2::ListRolesResp> future_listRoles(const cpp2::ListRolesReq& req) override;
 
   folly::Future<cpp2::ExecResp> future_changePassword(const cpp2::ChangePasswordReq& req) override;

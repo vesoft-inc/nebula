@@ -20,37 +20,37 @@ folly::Future<Status> ListUsersExecutor::execute() {
 }
 
 folly::Future<Status> ListUsersExecutor::listUsers() {
-  return qctx()->getMetaClient()->listUsersWithDesc().via(runner()).thenValue(
-      [this](StatusOr<std::vector<meta::cpp2::UserDescItem>> &&resp) {
+  return qctx()->getMetaClient()->listUsers().via(runner()).thenValue(
+      [this](StatusOr<std::map<std::string, meta::cpp2::UserDescItem>>&& resp) {
         SCOPED_TIMER(&execTime_);
         if (!resp.ok()) {
           return std::move(resp).status();
         }
 
         nebula::DataSet v({"Account", "Roles in spaces"});
-        auto items = std::move(resp).value();
-        for (const auto &item : items) {
-          auto spaceRoleMap = item.get_space_role_map();
+        auto users = std::move(resp).value();
+        for (auto& user : users) {
+          meta::cpp2::UserDescItem userDescItem = user.second;
+          auto spaceRoleMap = userDescItem.get_space_role_map();
           std::vector<std::string> rolesInSpacesStrVector;
-          for (auto iter = spaceRoleMap.begin(); iter != spaceRoleMap.end(); iter++) {
-            auto spaceNameResult = qctx_->schemaMng()->toGraphSpaceName(iter->first);
+          for (auto& iter : spaceRoleMap) {
+            auto spaceNameResult = qctx_->schemaMng()->toGraphSpaceName(iter.first);
             if (!spaceNameResult.ok()) {
-              if (iter->first == 0) {
+              if (iter.first == 0) {
                 rolesInSpacesStrVector.emplace_back(folly::sformat(
-                    "{} in ALL_SPACE", apache::thrift::util::enumNameSafe(iter->second)));
+                    "{} in ALL_SPACE", apache::thrift::util::enumNameSafe(iter.second)));
               } else {
-                LOG(ERROR) << "Space name of " << iter->first << " no found";
+                LOG(ERROR) << "Space name of " << iter.first << " no found";
                 return Status::Error("Space not found");
               }
             } else {
               rolesInSpacesStrVector.emplace_back(
                   folly::sformat("{} in {}",
-                                 apache::thrift::util::enumNameSafe(iter->second),
+                                 apache::thrift::util::enumNameSafe(iter.second),
                                  spaceNameResult.value()));
             }
           }
-          v.emplace_back(
-              nebula::Row({item.get_account(), folly::join(',', rolesInSpacesStrVector)}));
+          v.emplace_back(nebula::Row({user.first, folly::join(',', rolesInSpacesStrVector)}));
         }
         return finish(std::move(v));
       });

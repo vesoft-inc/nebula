@@ -168,7 +168,7 @@ bool MetaClient::loadUsersAndRoles() {
       return false;
     }
     userRolesMap[user.first] = rolesRet.value();
-    userPasswordMap[user.first] = user.second;
+    userPasswordMap[user.first] = user.second.get_encoded_pwd();
   }
   {
     folly::RWSpinLock::WriteHolder holder(localCacheLock_);
@@ -2469,28 +2469,14 @@ folly::Future<StatusOr<bool>> MetaClient::revokeFromUser(cpp2::RoleItem roleItem
   return future;
 }
 
-folly::Future<StatusOr<std::unordered_map<std::string, std::string>>> MetaClient::listUsers() {
+folly::Future<StatusOr<std::map<std::string, cpp2::UserDescItem>>> MetaClient::listUsers() {
   cpp2::ListUsersReq req;
-  folly::Promise<StatusOr<std::unordered_map<std::string, std::string>>> promise;
+  folly::Promise<StatusOr<std::map<std::string, cpp2::UserDescItem>>> promise;
   auto future = promise.getFuture();
   getResponse(
       std::move(req),
       [](auto client, auto request) { return client->future_listUsers(request); },
       [](cpp2::ListUsersResp&& resp) -> decltype(auto) { return std::move(resp).get_users(); },
-      std::move(promise));
-  return future;
-}
-
-folly::Future<StatusOr<std::vector<cpp2::UserDescItem>>> MetaClient::listUsersWithDesc() {
-  cpp2::ListUsersReq req;
-  folly::Promise<StatusOr<std::vector<cpp2::UserDescItem>>> promise;
-  auto future = promise.getFuture();
-  getResponse(
-      std::move(req),
-      [](auto client, auto request) { return client->future_listUsersWithDesc(request); },
-      [](cpp2::ListUsersWithDescResp&& resp) -> decltype(auto) {
-        return std::move(resp.get_users());
-      },
       std::move(promise));
   return future;
 }

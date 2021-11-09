@@ -678,21 +678,16 @@ struct ListUsersResp {
     1: common.ErrorCode code,
     // Valid if ret equals E_LEADER_CHANGED.
     2: common.HostAddr  leader,
-    // map<account, encoded password>
-    3: map<binary, binary> (cpp.template = "std::unordered_map") users,
-}
-
-struct ListUsersWithDescResp {
-    1: common.ErrorCode     code,
-    // Valid if ret equals E_LEADER_CHANGED.
-    2: common.HostAddr      leader,
-    3: list<UserDescItem>   users,
+    // map<account, user info>
+    3: map<binary, UserDescItem> users,
 }
 
 struct UserDescItem {
     1: binary               account,
+    // encoded password
+    2: binary               encoded_pwd,
     // map<space, role>
-    2: map<common.GraphSpaceID, RoleType> (cpp.template = "std::map")  space_role_map,
+    3: map<common.GraphSpaceID, RoleType> (cpp.template = "std::map")  space_role_map,
 }
 
 struct ListRolesReq {
@@ -1230,7 +1225,6 @@ service MetaService {
     ExecResp grantRole(1: GrantRoleReq req);
     ExecResp revokeRole(1: RevokeRoleReq req);
     ListUsersResp listUsers(1: ListUsersReq req);
-    ListUsersWithDescResp listUsersWithDesc(1: ListUsersReq req);
     ListRolesResp listRoles(1: ListRolesReq req);
     ListRolesResp getUserRoles(1: GetUserRolesReq req);
     ExecResp changePassword(1: ChangePasswordReq req);
