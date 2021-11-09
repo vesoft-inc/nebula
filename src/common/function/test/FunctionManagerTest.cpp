@@ -1489,7 +1489,7 @@ TEST_F(FunctionManagerTest, returnType) {
   }
 }
 
-TEST_F(FunctionManagerTest, SchemaReleated) {
+TEST_F(FunctionManagerTest, SchemaRelated) {
   Vertex vertex;
   Edge edge;
 
