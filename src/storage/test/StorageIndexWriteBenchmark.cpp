@@ -361,7 +361,7 @@ int main(int argc, char** argv) {
  * withoutIndex: Without index, insert data only.
  * unmatchIndex: There are no matched indexes.
  * attachIndex: One index, the index contains all the columns of tag.
- * duplicateVerticesIndex: One index, and insert deplicate vertices.
+ * duplicateVerticesIndex: One index, and insert duplicate vertices.
  * multipleIndex: Three indexes by one tag.
  *
  * 56 processors, Intel(R) Xeon(R) CPU E5-2697 v3 @ 2.60GHz
