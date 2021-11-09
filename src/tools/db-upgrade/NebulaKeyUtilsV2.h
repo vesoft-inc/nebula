@@ -31,7 +31,7 @@ enum class NebulaKeyTypeV2 : uint32_t {
  * space property.
  *
  * LockKeyUtils:
- * EdgeKeyWithNoVersion + placeHolder(8) + version(8) + surfix(2)
+ * EdgeKeyWithNoVersion + placeHolder(8) + version(8) + suffix(2)
  * */
 
 const std::string kLockSuffix = "lk";  // NOLINT
