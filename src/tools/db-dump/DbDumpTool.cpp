@@ -36,7 +36,7 @@ optional:
 
        --parts=<list of partition id>
          A list of partition id seperated by comma.
-         Would output all patitions if it is not given.
+         Would output all partitions if it is not given.
 
        --tags=<list of tag name>
          A list of tag name seperated by comma.
