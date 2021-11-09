@@ -33,7 +33,7 @@ void prepareData(std::shared_ptr<AtomicLogBuffer> logBuffer, int32_t len, size_t
 }
 
 /*************************
- * Begining of benchmarks
+ * Beginning of benchmarks
  ************************/
 
 void runInMemoryLogBufferWriteTest(size_t iters, int32_t len) {
