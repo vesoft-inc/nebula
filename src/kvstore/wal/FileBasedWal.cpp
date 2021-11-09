@@ -226,7 +226,7 @@ void FileBasedWal::scanAllWalFiles() {
 
   if (!walFiles_.empty()) {
     auto it = walFiles_.rbegin();
-    // Try to scan last wal, if it is invalid or empty, scan the privous one
+    // Try to scan last wal, if it is invalid or empty, scan the previous one
     scanLastWal(it->second, it->second->firstId());
     if (it->second->lastId() <= 0) {
       unlink(it->second->path());
