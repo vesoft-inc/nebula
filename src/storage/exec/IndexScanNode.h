@@ -286,7 +286,7 @@ class QualifiedStrategy {
    * `UNCERTAIN`, and (ab)c > aa is COMPATIBLE.
    *
    * Args:
-   * `LEorGE`       : It's an assit arg. true means LE and false means GE.
+   * `LEorGE`       : It's an assist arg. true means LE and false means GE.
    * `val`          : Truncated `String` index value,whose length has been define in `IndexItem`.
    * `keyStartPos`  : The position in indexKey where start compare with `val`
    *
