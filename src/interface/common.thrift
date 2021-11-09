@@ -263,7 +263,7 @@ enum PropertyType {
     FLOAT = 4,
     DOUBLE = 5,
     STRING = 6,
-    // String with fixed length. If the string content is shorteri
+    // String with fixed length. If the string content is shorter
     // than the given length, '\0' will be padded to the end
     FIXED_STRING = 7,   // New in v2
     INT8 = 8,           // New in v2
