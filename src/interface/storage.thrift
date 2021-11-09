@@ -156,7 +156,7 @@ struct TraverseSpec {
     9: optional bool                            random,
     // Return the top/bottom N rows for each given vertex
     10: optional i64                            limit,
-    // If provided, only the rows satified the given expression will be returned
+    // If provided, only the rows satisfied the given expression will be returned
     11: optional binary                         filter,
 }
 
