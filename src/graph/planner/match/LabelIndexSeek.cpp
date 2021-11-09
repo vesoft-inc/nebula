@@ -104,19 +104,19 @@ StatusOr<SubPlan> LabelIndexSeek::transformNode(NodeContext* nodeCtx) {
         auto flattenFilter = ExpressionUtils::flattenInnerLogicalExpr(filter);
         DCHECK_EQ(flattenFilter->kind(), Expression::Kind::kLogicalOr);
         auto& filterItems = static_cast<LogicalExpression*>(flattenFilter)->operands();
-        auto canBeEmbeded = [](Expression::Kind k) -> bool {
+        auto canBeEmbedded = [](Expression::Kind k) -> bool {
           return k == Expression::Kind::kRelEQ || k == Expression::Kind::kRelLT ||
                  k == Expression::Kind::kRelLE || k == Expression::Kind::kRelGT ||
                  k == Expression::Kind::kRelGE;
         };
-        bool canBeEmbeded2IndexScan = true;
+        bool canBeEmbedded2IndexScan = true;
         for (auto& f : filterItems) {
-          if (!canBeEmbeded(f->kind())) {
-            canBeEmbeded2IndexScan = false;
+          if (!canBeEmbedded(f->kind())) {
+            canBeEmbedded2IndexScan = false;
             break;
           }
         }
-        if (canBeEmbeded2IndexScan) {
+        if (canBeEmbedded2IndexScan) {
           auto* srcFilter = ExpressionUtils::rewriteLabelAttr2TagProp(flattenFilter);
           storage::cpp2::IndexQueryContext ctx;
           ctx.set_filter(Expression::encode(*srcFilter));
