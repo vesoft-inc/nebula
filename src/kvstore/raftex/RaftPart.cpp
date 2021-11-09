@@ -1027,7 +1027,7 @@ typename RaftPart::Role RaftPart::processElectionResponses(
   }
 
   if (UNLIKELY(status_ == Status::WAITING_SNAPSHOT)) {
-    LOG(INFO) << idStr_ << "The partition is still waitiong snapshot";
+    LOG(INFO) << idStr_ << "The partition is still waiting snapshot";
     return role_;
   }
 
