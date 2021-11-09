@@ -644,7 +644,7 @@ void FileBasedWal::cleanWAL() {
     return;
   }
   auto now = time::WallClock::fastNowInSec();
-  // In theory we only need to keep the latest wal file because it is beging
+  // In theory we only need to keep the latest wal file because it is being
   // written now. However, sometimes will trigger raft snapshot even only a
   // small amount of logs is missing, especially when we reboot all storage, so
   // se keep one more wal.
