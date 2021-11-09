@@ -26,6 +26,7 @@ const Value& PathBuildExpression::eval(ExpressionContext& ctx) {
 
   for (size_t i = 1; i < items_.size(); ++i) {
     auto& value = items_[i]->eval(ctx);
+    VLOG(1) << "val in path:" << value;
     if (!buildPath(value, path)) {
       return Value::kNullBadData;
     }
@@ -38,15 +39,19 @@ const Value& PathBuildExpression::eval(ExpressionContext& ctx) {
 bool PathBuildExpression::buildPath(const Value& value, Path& path) const {
   switch (value.type()) {
     case Value::Type::EDGE: {
+      Step step;
       if (!path.steps.empty()) {
         const auto& lastStep = path.steps.back();
         const auto& edge = value.getEdge();
-        if (lastStep.dst.vid != edge.src) {
+        if (lastStep.dst.vid != edge.src && lastStep.dst.vid != edge.dst) {
+          VLOG(1) << "not valid: " << edge << " path: " << path << " last step vid"
+                  << lastStep.dst.vid;
           return false;
         }
+        getEdge(value, path.steps.back().dst.vid, step);
+      } else {
+        getEdge(value, path.src.vid, step);
       }
-      Step step;
-      getEdge(value, step);
       path.steps.emplace_back(std::move(step));
       break;
     }
@@ -57,6 +62,7 @@ bool PathBuildExpression::buildPath(const Value& value, Path& path) const {
       auto& lastStep = path.steps.back();
       const auto& vert = value.getVertex();
       if (lastStep.dst.vid != vert.vid) {
+        VLOG(1) << "not valid: " << vert;
         return false;
       }
       getVertex(value, lastStep.dst);
@@ -67,6 +73,7 @@ bool PathBuildExpression::buildPath(const Value& value, Path& path) const {
       if (!path.steps.empty()) {
         auto& lastStep = path.steps.back();
         if (lastStep.dst.vid != p.src.vid) {
+          VLOG(1) << "not valid: " << p;
           return false;
         }
         lastStep.dst = p.src;
@@ -77,12 +84,14 @@ bool PathBuildExpression::buildPath(const Value& value, Path& path) const {
     case Value::Type::LIST: {
       for (const auto& val : value.getList().values) {
         if (!buildPath(val, path)) {
+          VLOG(1) << "not valid: " << val;
           return false;
         }
       }
       break;
     }
     default: {
+      VLOG(1) << "not valid: " << value.type();
       return false;
     }
   }
@@ -105,18 +114,26 @@ bool PathBuildExpression::getVertex(const Value& value, Vertex& vertex) const {
   return false;
 }
 
-bool PathBuildExpression::getEdge(const Value& value, Step& step) const {
-  if (value.isEdge()) {
-    const auto& edge = value.getEdge();
+bool PathBuildExpression::getEdge(const Value& value, const Value& lastStepVid, Step& step) const {
+  if (!value.isEdge()) {
+    return false;
+  }
+
+  const auto& edge = value.getEdge();
+  if (lastStepVid == edge.src) {
     step.type = edge.type;
     step.name = edge.name;
     step.ranking = edge.ranking;
     step.props = edge.props;
     step.dst.vid = edge.dst;
-    return true;
+  } else {
+    step.type = -edge.type;
+    step.name = edge.name;
+    step.ranking = edge.ranking;
+    step.props = edge.props;
+    step.dst.vid = edge.src;
   }
-
-  return false;
+  return true;
 }
 
 bool PathBuildExpression::operator==(const Expression& rhs) const {

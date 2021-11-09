@@ -56,7 +56,7 @@ class PathBuildExpression final : public Expression {
 
   bool getVertex(const Value& value, Vertex& vertex) const;
 
-  bool getEdge(const Value& value, Step& step) const;
+  bool getEdge(const Value& value, const Value& lastStepVid, Step& step) const;
 
   bool buildPath(const Value& value, Path& path) const;
 
