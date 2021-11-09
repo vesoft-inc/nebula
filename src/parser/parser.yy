@@ -1508,7 +1508,7 @@ match_clause
             delete($3);
             throw nebula::GraphParser::syntax_error(@3, "Invalid use of aggregating function in this context.");
         } else {
-            $$ = new MatchClause($2, $3, false/*optinal*/);
+            $$ = new MatchClause($2, $3, false/*optional*/);
         }
     }
     | KW_OPTIONAL KW_MATCH match_path where_clause {
