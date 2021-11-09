@@ -728,7 +728,7 @@ folly::Future<Status> AdminClient::addTask(cpp2::AdminCmd cmd,
   storage::cpp2::TaskPara para;
   para.set_space_id(spaceId);
   para.set_parts(std::move(parts));
-  para.set_task_specfic_paras(taskSpecficParas);
+  para.set_task_specific_paras(taskSpecficParas);
   req.set_para(std::move(para));
 
   std::function<void(storage::cpp2::AdminExecResp && resp)> respGen =

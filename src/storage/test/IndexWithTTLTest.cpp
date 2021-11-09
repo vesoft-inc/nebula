@@ -425,7 +425,7 @@ TEST(IndexWithTTLTest, RebuildTagIndexWithTTL) {
   parameter.set_space_id(1);
   std::vector<PartitionID> parts = {1, 2, 3, 4, 5, 6};
   parameter.set_parts(parts);
-  parameter.set_task_specfic_paras({"2021002"});
+  parameter.set_task_specific_paras({"2021002"});
 
   cpp2::AddAdminTaskRequest request;
   request.set_cmd(meta::cpp2::AdminCmd::REBUILD_TAG_INDEX);
@@ -494,7 +494,7 @@ TEST(IndexWithTTLTest, RebuildEdgeIndexWithTTL) {
   parameter.set_space_id(1);
   std::vector<PartitionID> parts = {1, 2, 3, 4, 5, 6};
   parameter.set_parts(parts);
-  parameter.set_task_specfic_paras({"2021002"});
+  parameter.set_task_specific_paras({"2021002"});
 
   cpp2::AddAdminTaskRequest request;
   request.set_cmd(meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX);
@@ -565,7 +565,7 @@ TEST(IndexWithTTLTest, RebuildTagIndexWithTTLExpired) {
   parameter.set_space_id(1);
   std::vector<PartitionID> parts = {1, 2, 3, 4, 5, 6};
   parameter.set_parts(parts);
-  parameter.set_task_specfic_paras({"2021002"});
+  parameter.set_task_specific_paras({"2021002"});
 
   cpp2::AddAdminTaskRequest request;
   request.set_cmd(meta::cpp2::AdminCmd::REBUILD_TAG_INDEX);
@@ -636,7 +636,7 @@ TEST(IndexWithTTLTest, RebuildEdgeIndexWithTTLExpired) {
   parameter.set_space_id(1);
   std::vector<PartitionID> parts = {1, 2, 3, 4, 5, 6};
   parameter.set_parts(parts);
-  parameter.set_task_specfic_paras({"2021002"});
+  parameter.set_task_specific_paras({"2021002"});
 
   cpp2::AddAdminTaskRequest request;
   request.set_cmd(meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX);

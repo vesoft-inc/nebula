@@ -31,8 +31,8 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>> RebuildIndexTask::ge
   auto parts = *ctx_.parameters_.parts_ref();
 
   IndexItems items;
-  if (!ctx_.parameters_.task_specfic_paras_ref().has_value() ||
-      (*ctx_.parameters_.task_specfic_paras_ref()).empty()) {
+  if (!ctx_.parameters_.task_specific_paras_ref().has_value() ||
+      (*ctx_.parameters_.task_specific_paras_ref()).empty()) {
     auto itemsRet = getIndexes(space_);
     if (!itemsRet.ok()) {
       LOG(ERROR) << "Indexes not found";
@@ -41,7 +41,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>> RebuildIndexTask::ge
 
     items = std::move(itemsRet).value();
   } else {
-    for (const auto& index : *ctx_.parameters_.task_specfic_paras_ref()) {
+    for (const auto& index : *ctx_.parameters_.task_specific_paras_ref()) {
       auto indexID = folly::to<IndexID>(index);
       auto indexRet = getIndex(space_, indexID);
       if (!indexRet.ok()) {
