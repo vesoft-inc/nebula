@@ -140,7 +140,7 @@ Feature: Predicate
       MATCH(n:player) WHERE EXISTS("abc")
       RETURN n.name AS name ORDER BY name LIMIT 10
       """
-    Then a SyntaxError should be raised at runtime: The exists only accept LabelAttribe, Attribute and Subscript
+    Then a SyntaxError should be raised at runtime: The exists only accept LabelAttribute, Attribute and Subscript
     Then drop the used space
 
   Scenario: use a exists with null properties
