@@ -436,7 +436,7 @@ TEST(NebulaStoreTest, TransLeaderTest) {
   };
 
   LOG(INFO) << "Transfer leader to first copy";
-  // all partition tranfer leaders to first replica
+  // all partition transfer leaders to first replica
   GraphSpaceID spaceId = 0;
   for (int i = 0; i < 3; i++) {
     PartitionID partId = i;

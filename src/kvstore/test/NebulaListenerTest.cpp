@@ -367,7 +367,7 @@ TEST_P(ListenerBasicTest, TransLeaderTest) {
     baton.wait();
   }
 
-  LOG(INFO) << "Trasfer all part leader to first replica";
+  LOG(INFO) << "Transfer all part leader to first replica";
   auto targetAddr = NebulaStore::getRaftAddr(peers_[0]);
   for (int32_t partId = 1; partId <= partCount_; partId++) {
     folly::Baton<true, std::atomic> baton;
