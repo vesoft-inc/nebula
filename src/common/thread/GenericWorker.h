@@ -39,7 +39,7 @@ class GenericWorker final : public nebula::cpp::NonCopyable, public nebula::cpp:
   ~GenericWorker();
 
   /**
-   * To allocate resouces and launch the internal thread which executes
+   * To allocate resources and launch the internal thread which executes
    * the event loop to make this worker usable.
    *
    * Optionally, you could give the internal thread a specific name,
