@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <bits/c++config.h>
+
 #include "common/base/Base.h"
 #include "storage/exec/GetPropNode.h"
 
@@ -58,7 +60,6 @@ class ScanVertexPropNode : public QueryNode<Cursor> {
     }
 
     const auto rowLimit = limit_;
-    RowReaderWrapper reader;
     auto vIdLen = context_->vIdLen();
     auto isIntId = context_->isIntId();
     std::string currentVertexId;
@@ -214,7 +215,6 @@ class ScanEdgePropNode : public QueryNode<Cursor> {
     }
 
     auto rowLimit = limit_;
-    RowReaderWrapper reader;
     auto vIdLen = context_->vIdLen();
     auto isIntId = context_->isIntId();
     for (; iter->valid() && static_cast<int64_t>(resultDataSet_->rowSize()) < rowLimit;
@@ -230,35 +230,7 @@ class ScanEdgePropNode : public QueryNode<Cursor> {
       }
       auto value = iter->val();
       edgeNodes_[edgeNodeIndex->second]->doExecute(key.toString(), value.toString());
-
-      List row;
-      for (auto& edgeNode : edgeNodes_) {
-        ret = edgeNode->collectEdgePropsIfValid(
-            [&row](const std::vector<PropContext>* props) -> nebula::cpp2::ErrorCode {
-              for (const auto& prop : *props) {
-                if (prop.returned_) {
-                  row.emplace_back(Value());
-                }
-              }
-              return nebula::cpp2::ErrorCode::SUCCEEDED;
-            },
-            [&row, vIdLen, isIntId](
-                folly::StringPiece key,
-                RowReader* reader,
-                const std::vector<PropContext>* props) -> nebula::cpp2::ErrorCode {
-              if (!QueryUtils::collectEdgeProps(key, vIdLen, isIntId, reader, props, row).ok()) {
-                return nebula::cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
-              }
-              return nebula::cpp2::ErrorCode::SUCCEEDED;
-            });
-        if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-          return ret;
-        }
-      }
-      resultDataSet_->rows.emplace_back(std::move(row));
-      for (auto& edgeNode : edgeNodes_) {
-        edgeNode->clear();
-      }
+      collectOneRow(isIntId, vIdLen);
     }
 
     cpp2::ScanCursor c;
@@ -270,6 +242,40 @@ class ScanEdgePropNode : public QueryNode<Cursor> {
     }
     cursors_->emplace(partId, std::move(c));
     return nebula::cpp2::ErrorCode::SUCCEEDED;
+  }
+
+  void collectOneRow(bool isIntId, std::size_t vIdLen) {
+    List row;
+    nebula::cpp2::ErrorCode ret = nebula::cpp2::ErrorCode::SUCCEEDED;
+    for (auto& edgeNode : edgeNodes_) {
+      ret = edgeNode->collectEdgePropsIfValid(
+          [&row](const std::vector<PropContext>* props) -> nebula::cpp2::ErrorCode {
+            for (const auto& prop : *props) {
+              if (prop.returned_) {
+                row.emplace_back(Value());
+              }
+            }
+            return nebula::cpp2::ErrorCode::SUCCEEDED;
+          },
+          [&row, vIdLen, isIntId](
+              folly::StringPiece key,
+              RowReader* reader,
+              const std::vector<PropContext>* props) -> nebula::cpp2::ErrorCode {
+            if (!QueryUtils::collectEdgeProps(key, vIdLen, isIntId, reader, props, row).ok()) {
+              return nebula::cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
+            }
+            return nebula::cpp2::ErrorCode::SUCCEEDED;
+          });
+      if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+        break;
+      }
+    }
+    if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
+      resultDataSet_->rows.emplace_back(std::move(row));
+    }
+    for (auto& edgeNode : edgeNodes_) {
+      edgeNode->clear();
+    }
   }
 
  private:
