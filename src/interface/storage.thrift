@@ -615,7 +615,7 @@ struct ScanEdgeResponse {
     1: required ResponseCommon              result,
     // The data will return as a dataset. The format is as follows:
     // Each column represents one property. the column name is in the form of "edge_name.prop_alias"
-    // in the same order which specified in EdgeProp in requesss.
+    // in the same order which specified in EdgeProp in requests.
     2: common.DataSet                       edge_data,
     3: bool                                 has_next,
     // next start key of scan, only valid when has_next is true
