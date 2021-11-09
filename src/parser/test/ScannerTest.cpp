@@ -107,10 +107,10 @@ TEST(Scanner, Basic) {
     };                                                               \
     GraphScanner lexer;                                              \
     lexer.setReadBuffer(input);                                      \
-    nebula::GraphParser::semantic_type dumyyylval;                   \
-    nebula::GraphParser::location_type dumyyyloc;                    \
+    nebula::GraphParser::semantic_type dummyyylval;                  \
+    nebula::GraphParser::location_type dummyyyloc;                   \
     try {                                                            \
-      auto token = lexer.yylex(&dumyyylval, &dumyyyloc);             \
+      auto token = lexer.yylex(&dummyyylval, &dummyyyloc);           \
       if (token != 0) {                                              \
         return AssertionFailure() << "Lexical error should've "      \
                                   << "happened for `" << STR << "'"; \
