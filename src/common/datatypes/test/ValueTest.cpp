@@ -627,7 +627,7 @@ TEST(Value, TypeCast) {
   Value vNull(NullType::__NULL__);
   Value vIntMin(std::numeric_limits<int64_t>::min());
   Value vIntMax(std::numeric_limits<int64_t>::max());
-  Value vFloatMin(std::numeric_limits<double_t>::lowest());  // non-negtive
+  Value vFloatMin(std::numeric_limits<double_t>::lowest());  // non-negative
   Value vFloatMax(std::numeric_limits<double_t>::max());
 
   {
