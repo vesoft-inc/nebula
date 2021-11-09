@@ -88,7 +88,7 @@ void JobManager::scheduleThread() {
     auto jobDescRet = JobDescription::loadJobDescription(iJob, kvStore_);
     if (!nebula::ok(jobDescRet)) {
       LOG(ERROR) << "[JobManager] load an invalid job from queue " << iJob;
-      continue;  // leader change or archive happend
+      continue;  // leader change or archive happened
     }
     auto jobDesc = nebula::value(jobDescRet);
     if (!jobDesc.setStatus(cpp2::JobStatus::RUNNING)) {

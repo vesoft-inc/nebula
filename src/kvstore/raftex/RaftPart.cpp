@@ -697,7 +697,7 @@ void RaftPart::appendLogsInternal(AppendLogsIterator iter, TermID termId) {
     VLOG(2) << idStr_ << "Ready to append logs from id " << iter.logId() << " (Current term is "
             << currTerm << ")";
   } else {
-    LOG(ERROR) << idStr_ << "Only happend when Atomic op failed";
+    LOG(ERROR) << idStr_ << "Only happened when Atomic op failed";
     replicatingLogs_ = false;
     return;
   }
