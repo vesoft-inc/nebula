@@ -1921,7 +1921,7 @@ text_search_expression
     }
     ;
 
-    // TODO : unfiy the text_search_expression into expression in the future
+    // TODO : unify the text_search_expression into expression in the future
     // The current version only support independent text_search_expression for lookup_sentence
 lookup_where_clause
     : %empty { $$ = nullptr; }
