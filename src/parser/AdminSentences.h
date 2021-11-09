@@ -215,7 +215,7 @@ class SpaceOptItem final {
     if (isString()) {
       return asString();
     } else {
-      LOG(ERROR) << "collate value illage.";
+      LOG(ERROR) << "collate value illegal.";
       return "";
     }
   }
@@ -224,7 +224,7 @@ class SpaceOptItem final {
     if (isString()) {
       return asString();
     } else {
-      LOG(ERROR) << "group name value illage.";
+      LOG(ERROR) << "group name value illegal.";
       return "";
     }
   }
