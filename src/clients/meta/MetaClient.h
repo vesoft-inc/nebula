@@ -116,7 +116,7 @@ using UserRolesMap = std::unordered_map<std::string, std::vector<cpp2::RoleItem>
 // get user password by account
 using UserPasswordMap = std::unordered_map<std::string, std::string>;
 
-// config cahce, get config via module and name
+// config cache, get config via module and name
 using MetaConfigMap =
     std::unordered_map<std::pair<cpp2::ConfigModule, std::string>, cpp2::ConfigItem>;
 
