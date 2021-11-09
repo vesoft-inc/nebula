@@ -1072,7 +1072,7 @@ TEST(UpdateVertexTest, TTL_Insert_Test) {
   EXPECT_EQ("Tim Duncan", (*resp.props_ref()).rows[0].values[4].getStr());
   EXPECT_EQ(1, (*resp.props_ref()).rows[0].values[5].getInt());
 
-  // Get player from kvstore directly, ttl expired data can be readed
+  // Get player from kvstore directly, ttl expired data can be readded
   // First record is inserted record data
   // Second record is expired ttl data
   auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);
