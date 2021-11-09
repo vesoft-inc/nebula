@@ -53,7 +53,7 @@ namespace storage {
  * `kvstore_`               : server kvstore
  * `requiredColumns_`       : row format that `doNext` needs to return
  * `requiredAndHintColumns_`: columns that `decodeFromBase` needs to decode
- * `ttlProps`               : ttl properties `needAccesBase_`         : if need
+ * `ttlProps`               : ttl properties `needAccessBase_`         : if need
  * `fatalOnBaseNotFound_`   : for debug
  *
  * Function:
