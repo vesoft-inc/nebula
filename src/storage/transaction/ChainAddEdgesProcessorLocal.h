@@ -114,9 +114,9 @@ class ChainAddEdgesProcessorLocal : public BaseProcessor<cpp2::ExecResponse>,
    *
    * storage will insert datetime() as default value on both
    * in/out edge, but they will calculate independent
-   * which lead to inconsistance
+   * which lead to inconsistency
    *
-   * that why we need to replace the inconsistance prone value
+   * that why we need to replace the inconsistency prone value
    * at the monment the request comes
    * */
   void replaceNullWithDefaultValue(cpp2::AddEdgesRequest& req);
