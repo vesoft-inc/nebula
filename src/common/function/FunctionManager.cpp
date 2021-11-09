@@ -805,7 +805,7 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    // return the mathmatical constant PI
+    // return the mathematical constant PI
     auto &attr = functions_["pi"];
     attr.minArity_ = 0;
     attr.maxArity_ = 0;
