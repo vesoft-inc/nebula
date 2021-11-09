@@ -779,7 +779,7 @@ class QueryTestUtils {
       if (cols.size() < 2) {
         LOG(FATAL) << "Invalid column name";
       }
-      // cols[1] is the tagName, which can be transfromed to entryId
+      // cols[1] is the tagName, which can be transformed to entryId
       auto entryId = folly::to<int32_t>(cols[1]);
       auto props = findExpectProps(entryId, tags, edges);
       switch (entryId) {
