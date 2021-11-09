@@ -411,8 +411,8 @@ Feature: Fetch Int Vid Vertices
       | "Tim Duncan" | "Tim Duncan" | {age: 42, name: "Tim Duncan"} |
     When executing query:
       """
-      FETCH PROP ON * hash('Tim Duncan') YIELD  id(vertex), keys(vertex) as keys, tags(vertex) as tagss, properties(vertex) as props
+      FETCH PROP ON * hash('Tim Duncan') YIELD  id(vertex), keys(vertex) as keys, tags(vertex) as tags_, properties(vertex) as props
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
-      | id(VERTEX)   | keys                          | tagss                  | props                                                   |
+      | id(VERTEX)   | keys                          | tags_                  | props                                                   |
       | "Tim Duncan" | ["age", "name", "speciality"] | ["bachelor", "player"] | {age: 42, name: "Tim Duncan", speciality: "psychology"} |
