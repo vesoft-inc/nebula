@@ -354,7 +354,7 @@ Expression *ExpressionUtils::reduceUnaryNotExpr(const Expression *expr) {
 
 Expression *ExpressionUtils::rewriteRelExpr(const Expression *expr) {
   ObjectPool *pool = expr->getObjPool();
-  // Match relational expressions containing at least one airthmetic expr
+  // Match relational expressions containing at least one arithmetic expr
   auto matcher = [](const Expression *e) -> bool {
     if (e->isRelExpr()) {
       auto relExpr = static_cast<const RelationalExpression *>(e);
@@ -456,7 +456,7 @@ Expression *ExpressionUtils::rewriteRelExprHelper(const Expression *expr,
     case Expression::Kind::kMinus:
       relRightOperandExpr = ArithmeticExpression::makeMinus(pool, lexpr, rexpr);
       break;
-    // Unsupported arithm kind
+    // Unsupported arithmetic kind
     // case Expression::Kind::kMultiply:
     // case Expression::Kind::kDivision:
     default:
