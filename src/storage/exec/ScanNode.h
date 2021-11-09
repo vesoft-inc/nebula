@@ -5,8 +5,6 @@
 
 #pragma once
 
-#include <bits/c++config.h>
-
 #include "common/base/Base.h"
 #include "storage/exec/GetPropNode.h"
 
@@ -63,18 +61,6 @@ class ScanVertexPropNode : public QueryNode<Cursor> {
     auto vIdLen = context_->vIdLen();
     auto isIntId = context_->isIntId();
     std::string currentVertexId;
-    for (; iter->valid(); iter->next()) {
-      auto key = iter->key();
-      auto tagId = NebulaKeyUtils::getTagId(vIdLen, key);
-      auto tagIdIndex = tagNodesIndex_.find(tagId);
-      if (tagIdIndex != tagNodesIndex_.end()) {
-        break;
-      }
-    }
-    if (iter->valid()) {
-      auto vIdSlice = NebulaKeyUtils::getVertexId(vIdLen, iter->key());
-      currentVertexId = vIdSlice.subpiece(0, vIdSlice.find_first_of('\0')).toString();
-    }
     for (; iter->valid() && static_cast<int64_t>(resultDataSet_->rowSize()) < rowLimit;
          iter->next()) {
       auto key = iter->key();
@@ -83,12 +69,11 @@ class ScanVertexPropNode : public QueryNode<Cursor> {
       if (tagIdIndex == tagNodesIndex_.end()) {
         continue;
       }
-      auto vIdSlice = NebulaKeyUtils::getVertexId(vIdLen, key);
-      auto vertexId = vIdSlice.subpiece(0, vIdSlice.find_first_of('\0'));
-      if (vertexId != currentVertexId) {
+      auto vertexId = NebulaKeyUtils::getVertexId(vIdLen, key);
+      if (vertexId != currentVertexId && !currentVertexId.empty()) {
         collectOneRow(isIntId, vIdLen, currentVertexId);
-        currentVertexId = vertexId;
       }  // collect vertex row
+      currentVertexId = vertexId;
       if (static_cast<int64_t>(resultDataSet_->rowSize()) >= rowLimit) {
         break;
       }
@@ -121,7 +106,7 @@ class ScanVertexPropNode : public QueryNode<Cursor> {
     if (isIntId) {
       row.emplace_back(*reinterpret_cast<const int64_t*>(currentVertexId.data()));
     } else {
-      row.emplace_back(currentVertexId);
+      row.emplace_back(currentVertexId.c_str());
     }
     // if none of the tag node valid, do not emplace the row
     if (std::any_of(tagNodes_.begin(), tagNodes_.end(), [](const auto& tagNode) {
