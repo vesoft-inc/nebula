@@ -633,7 +633,7 @@ TEST_P(ListenerSnapshotTest, SnapshotRateLimitTest) {
 
   // listener will try to pull snapshot for now. Since we have limit the snapshot send rate to 40Kb
   // in 1 second and batch size will be 10Kb, it would take at least 10 second to finish. Besides,
-  // there be at least 40 batchs
+  // there be at least 40 batches
   auto startTime = time::WallClock::fastNowInSec();
 
   while (true) {
