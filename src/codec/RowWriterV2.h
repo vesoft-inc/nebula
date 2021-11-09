@@ -35,7 +35,7 @@ enum class WriteResult {
   Version 1:
                  v v v 0 0 b b b
     In version 1, the middle two bits are always zeros. The left three bits
-    indicats the number of bytes used for the schema version, while the right
+    indicates the number of bytes used for the schema version, while the right
     three bits indicates the number of bytes used for the block offsets
 
   Version 2:
