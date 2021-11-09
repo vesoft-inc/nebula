@@ -21,7 +21,7 @@ optional:
          Default: ./
 
        --meta_server=<ip:port,...>
-         A list of meta severs' ip:port seperated by comma.
+         A list of meta severs' ip:port separated by comma.
          Default: 127.0.0.1:45500
 
        --mode= scan | stat
@@ -31,18 +31,18 @@ optional:
          Default: scan
 
        --vids=<list of vid>
-         A list of vid seperated by comma. This parameter means vertex_id/edge_src_id
+         A list of vid separated by comma. This parameter means vertex_id/edge_src_id
          Would scan the whole space's records if it is not given.
 
        --parts=<list of partition id>
-         A list of partition id seperated by comma.
+         A list of partition id separated by comma.
          Would output all partitions if it is not given.
 
        --tags=<list of tag name>
-         A list of tag name seperated by comma.
+         A list of tag name separated by comma.
 
        --edges=<list of edge name>
-         A list of edge name seperated by comma.
+         A list of edge name separated by comma.
 
        --limit=<N>
          A positive number that limits the output.

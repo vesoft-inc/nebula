@@ -36,7 +36,7 @@ required:
          src_db_path and dst_db_path must be different.
 
        --upgrade_meta_server=<ip:port,...>
-         A list of meta severs' ip:port seperated by comma.
+         A list of meta severs' ip:port separated by comma.
          Default: 127.0.0.1:45500
 
        --upgrade_version=<1|2>

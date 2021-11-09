@@ -13,10 +13,10 @@ DEFINE_string(space_name, "", "The space name.");
 DEFINE_string(db_path, "./", "Path to rocksdb.");
 DEFINE_string(meta_server, "127.0.0.1:45500", "Meta servers' address.");
 DEFINE_string(mode, "scan", "Dump mode, scan | stat");
-DEFINE_string(parts, "", "A list of partition id seperated by comma.");
-DEFINE_string(vids, "", "A list of vertex ids seperated by comma.");
-DEFINE_string(tags, "", "A list of tag name seperated by comma.");
-DEFINE_string(edges, "", "A list of edge name seperated by comma.");
+DEFINE_string(parts, "", "A list of partition id separated by comma.");
+DEFINE_string(vids, "", "A list of vertex ids separated by comma.");
+DEFINE_string(tags, "", "A list of tag name separated by comma.");
+DEFINE_string(edges, "", "A list of edge name separated by comma.");
 DEFINE_int64(limit, 1000, "Limit to output.");
 
 namespace nebula {
