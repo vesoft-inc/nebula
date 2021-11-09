@@ -877,7 +877,7 @@ class QueryTestUtils {
                           return teammate.player1_ == player2 && teammate.player2_ == player1;
                         });
     if (iter == mock::MockData::teammates_.end()) {
-      LOG(FATAL) << "Can't find speicied teammate";
+      LOG(FATAL) << "Can't find specified teammate";
     }
     return *iter;
   }
