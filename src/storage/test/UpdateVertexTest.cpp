@@ -1112,7 +1112,7 @@ TEST(UpdateVertexTest, TTL_Insert_Test) {
   EXPECT_EQ(1, count);
 }
 
-// upsert, insert faild
+// upsert, insert failed
 // age filed has not default value and not nullable, not in set clause
 TEST(UpdateVertexTest, Insertable_No_Default_Test) {
   fs::TempDir rootPath("/tmp/UpdateVertexTest.XXXXXX");

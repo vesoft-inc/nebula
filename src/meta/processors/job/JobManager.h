@@ -95,7 +95,7 @@ class JobManager : public nebula::cpp::NonCopyable, public nebula::cpp::NonMovab
   size_t jobSize() const;
 
   // Tries to extract an element from the front of the highPriorityQueue_,
-  // if faild, then extract an element from lowPriorityQueue_.
+  // if failed, then extract an element from lowPriorityQueue_.
   // If the element is obtained, return true, otherwise return false.
   bool try_dequeue(JobID& jobId);
 
