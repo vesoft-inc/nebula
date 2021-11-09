@@ -172,7 +172,7 @@ class StatusOr final {
     return *this;
   }
 
-  // Move assigment operator from a rvalue of `StatusOr<U>'
+  // Move assignment operator from a rvalue of `StatusOr<U>'
   template <typename U, typename = std::enable_if_t<is_initializable_v<U>>>
   StatusOr &operator=(StatusOr<U> &&rhs) noexcept {
     reset();
@@ -190,7 +190,7 @@ class StatusOr final {
     return *this;
   }
 
-  // Move assigment operator from a rvalue of any compatible type with `T'
+  // Move assignment operator from a rvalue of any compatible type with `T'
   template <typename U, typename = std::enable_if_t<is_initializable_v<U>>>
   StatusOr &operator=(U &&value) noexcept {
     destruct();
