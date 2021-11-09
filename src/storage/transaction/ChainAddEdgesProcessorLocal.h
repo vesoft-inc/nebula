@@ -117,7 +117,7 @@ class ChainAddEdgesProcessorLocal : public BaseProcessor<cpp2::ExecResponse>,
    * which lead to inconsistency
    *
    * that why we need to replace the inconsistency prone value
-   * at the monment the request comes
+   * at the moment the request comes
    * */
   void replaceNullWithDefaultValue(cpp2::AddEdgesRequest& req);
 

@@ -464,7 +464,7 @@ std::string ChainAddEdgesProcessorLocal::makeReadableEdge(const cpp2::AddEdgesRe
  * which lead to inconsistency
  *
  * that's why we need to replace the inconsistency prone value
- * at the monment the request comes
+ * at the moment the request comes
  * */
 void ChainAddEdgesProcessorLocal::replaceNullWithDefaultValue(cpp2::AddEdgesRequest& req) {
   auto& edgesOfPart = *req.parts_ref();
