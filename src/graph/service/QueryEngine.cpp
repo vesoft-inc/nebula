@@ -32,7 +32,7 @@ Status QueryEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor
   storage_ = std::make_unique<storage::GraphStorageClient>(ioExecutor, metaClient_);
   charsetInfo_ = CharsetInfo::instance();
 
-  PlannersRegister::registPlanners();
+  PlannersRegister::registerPlanners();
 
   std::vector<const opt::RuleSet*> rulesets{&opt::RuleSet::DefaultRules()};
   if (FLAGS_enable_optimizer) {
