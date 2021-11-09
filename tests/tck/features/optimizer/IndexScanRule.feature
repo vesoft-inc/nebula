@@ -6,7 +6,7 @@ Feature: Match index selection
   Background:
     Given a graph with space named "nba"
 
-  Scenario: and filter embeding
+  Scenario: and filter embedding
     When profiling query:
       """
       MATCH (v:player)
@@ -30,7 +30,7 @@ Feature: Match index selection
       | 11 | IndexScan   | 0            | {"indexCtx": {"columnHints":{"scanType":"RANGE","column":"name","beginValue":"\"Tim Duncan","endValue":"\"Yao Ming"}}} |
       | 0  | Start       |              |                                                                                                                        |
 
-  Scenario: or filter embeding
+  Scenario: or filter embedding
     When profiling query:
       """
       MATCH (v:player)

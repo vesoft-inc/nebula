@@ -81,7 +81,7 @@ StatusOr<SubPlan> LabelIndexSeek::transformNode(NodeContext* nodeCtx) {
   plan.tail = scan;
   plan.root = scan;
 
-  // This if-block is a patch for or-filter-embeding to avoid OOM,
+  // This if-block is a patch for or-filter-embedding to avoid OOM,
   // and it should be converted to an `optRule` after the match validator is
   // refactored
   auto& whereCtx = matchClauseCtx->where;
