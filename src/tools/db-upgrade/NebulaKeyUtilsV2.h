@@ -224,7 +224,7 @@ class NebulaKeyUtilsV2 final {
   }
 
   static folly::StringPiece keyWithNoVersion(const folly::StringPiece& rawKey) {
-    // TODO(heng) We should change the method if varint data version supportted.
+    // TODO(heng) We should change the method if varint data version supported.
     return rawKey.subpiece(0, rawKey.size() - sizeof(int64_t));
   }
 
@@ -244,14 +244,14 @@ class NebulaKeyUtilsV2 final {
 
   static EdgeVersion getLockVersion(const folly::StringPiece& rawKey) {
     // TODO(liuyu) We should change the method if varint data version
-    // supportted.
+    // supported.
     auto offset = rawKey.size() - sizeof(int64_t) * 2 - kLockSuffix.size();
     return readInt<int64_t>(rawKey.data() + offset, sizeof(int64_t));
   }
 
   static folly::StringPiece lockWithNoVersion(const folly::StringPiece& rawKey) {
     // TODO(liuyu) We should change the method if varint data version
-    // supportted.
+    // supported.
     return rawKey.subpiece(0, rawKey.size() - sizeof(int64_t) * 2 - kLockSuffix.size());
   }
 
