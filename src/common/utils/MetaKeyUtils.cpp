@@ -911,7 +911,7 @@ std::string MetaKeyUtils::balanceTaskPrefix(BalanceID balanceId) {
 
 std::string MetaKeyUtils::balancePlanKey(BalanceID id) {
   CHECK_GE(id, 0);
-  // make the balance id is stored in decend order
+  // make the balance id is stored in descend order
   auto encode = folly::Endian::big(std::numeric_limits<BalanceID>::max() - id);
   std::string key;
   key.reserve(sizeof(BalanceID) + kBalancePlanTable.size());
