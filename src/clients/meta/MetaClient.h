@@ -396,7 +396,7 @@ class MetaClient {
 
   folly::Future<StatusOr<std::vector<cpp2::Snapshot>>> listSnapshots();
 
-  // Opeartions for listener.
+  // Operations for listener.
 
   folly::Future<StatusOr<bool>> addListener(GraphSpaceID spaceId,
                                             cpp2::ListenerType type,
@@ -428,7 +428,7 @@ class MetaClient {
 
   StatusOr<std::vector<cpp2::FTClient>> getFTClientsFromCache();
 
-  // Opeartions for fulltext index.
+  // Operations for fulltext index.
 
   folly::Future<StatusOr<bool>> createFTIndex(const std::string& name, const cpp2::FTIndex& index);
 
@@ -463,7 +463,7 @@ class MetaClient {
   folly::Future<StatusOr<cpp2::ExecResp>> killQuery(
       std::unordered_map<SessionID, std::unordered_set<ExecutionPlanID>> killQueries);
 
-  // Opeartions for cache.
+  // Operations for cache.
   StatusOr<GraphSpaceID> getSpaceIdByNameFromCache(const std::string& name);
 
   StatusOr<std::string> getSpaceNameByIdFromCache(GraphSpaceID spaceId);
