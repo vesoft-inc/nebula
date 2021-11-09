@@ -87,20 +87,13 @@ StoragePlan<Cursor> ScanEdgeProcessor::buildPlan(
     nebula::DataSet* result,
     std::unordered_map<PartitionID, cpp2::ScanCursor>* cursors) {
   StoragePlan<Cursor> plan;
-  std::vector<std::unique_ptr<EdgeNode<cpp2::EdgeKey>>> edges;
-  std::unordered_set<EdgeType> edgeTypes;
+  std::vector<std::unique_ptr<FetchEdgeNode>> edges;
   for (const auto& ec : edgeContext_.propContexts_) {
     edges.emplace_back(
         std::make_unique<FetchEdgeNode>(context, &edgeContext_, ec.first, &ec.second));
-    edgeTypes.emplace(ec.first);
   }
-  auto output = std::make_unique<ScanEdgePropNode>(context,
-                                                   std::move(edgeTypes),
-                                                   std::move(edges),
-                                                   enableReadFollower_,
-                                                   limit_,
-                                                   cursors,
-                                                   result);
+  auto output = std::make_unique<ScanEdgePropNode>(
+      context, std::move(edges), enableReadFollower_, limit_, cursors, result);
 
   plan.addNode(std::move(output));
   return plan;
