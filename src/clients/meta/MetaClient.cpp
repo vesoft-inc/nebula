@@ -2371,7 +2371,7 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
       [](auto client, auto request) { return client->future_heartBeat(request); },
       [this](cpp2::HBResp&& resp) -> bool {
         if (options_.role_ == cpp2::HostRole::STORAGE && options_.clusterId_.load() == 0) {
-          LOG(INFO) << "Persisit the cluster Id from metad " << resp.get_cluster_id();
+          LOG(INFO) << "Persist the cluster Id from metad " << resp.get_cluster_id();
           if (FileBasedClusterIdMan::persistInFile(resp.get_cluster_id(), FLAGS_cluster_id_path)) {
             options_.clusterId_.store(resp.get_cluster_id());
           } else {
