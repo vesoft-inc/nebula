@@ -185,6 +185,10 @@ StatusOr<SubPlan> LabelIndexSeek::transformEdge(EdgeContext* edgeCtx) {
     plan.root = unwind;
   }
 
+  auto* dedup = Dedup::make(qctx, plan.root);
+  dedup->setColNames(plan.root->colNames());
+  plan.root = dedup;
+
   // initialize start expression in project node
   edgeCtx->initialExpr = VariablePropertyExpression::make(pool, "", kVid);
   return plan;

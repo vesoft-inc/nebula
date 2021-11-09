@@ -39,10 +39,7 @@ static Expression* genNextTraverseStart(ObjectPool* pool, const EdgeInfo& edge) 
   // none_direct_dst(last(list))
   auto args = ArgumentList::make(pool);
   args->addArgument(InputPropertyExpression::make(pool, edge.alias));
-  auto last = FunctionCallExpression::make(pool, "last", args);
-  auto args1 = ArgumentList::make(pool);
-  args1->addArgument(last);
-  return FunctionCallExpression::make(pool, "none_direct_dst", args1);
+  return FunctionCallExpression::make(pool, "none_direct_dst", args);
 }
 
 static Expression* genVertexFilter(const NodeInfo& node) { return node.filter; }

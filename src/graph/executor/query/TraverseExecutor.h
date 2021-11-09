@@ -34,6 +34,8 @@ class TraverseExecutor final : public StorageAccessExecutor {
   Status close() override;
 
  private:
+  using Dst = Value;
+  using Paths = std::vector<Row>;
   Status buildRequestDataSet();
 
   folly::Future<Status> traverse();
@@ -48,7 +50,9 @@ class TraverseExecutor final : public StorageAccessExecutor {
 
   Status buildResult();
 
-  bool isFinalStep() const { return currentStep_ == steps_.nSteps(); }
+  bool isFinalStep() const { return currentStep_ == steps_.nSteps() || steps_.nSteps() == 0; }
+
+  bool zeroStep() const { return steps_.mSteps() == 0; }
 
   bool hasSameEdge(const Row& prevPath, const Edge& currentEdge);
 
@@ -58,14 +62,17 @@ class TraverseExecutor final : public StorageAccessExecutor {
                  const Value& dst,
                  Row&& path);
 
+  Status handleZeroStep(const std::unordered_map<Value, Paths>& prev,
+                        List&& vertices,
+                        std::unordered_map<Value, Paths>& zeroSteps,
+                        size_t& count);
+
  private:
   DataSet reqDs_;
   const Traverse* traverse_{nullptr};
   folly::Promise<Status> promise_;
   StepClause steps_;
   size_t currentStep_{0};
-  using Dst = Value;
-  using Paths = std::vector<Row>;
   std::list<std::unordered_map<Value, Paths>> paths_;
   size_t cnt_{0};
 };

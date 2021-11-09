@@ -89,11 +89,11 @@ void TraverseExecutor::getNeighbors() {
   time::Duration getNbrTime;
   GraphStorageClient* storageClient = qctx_->getStorageClient();
   bool finalStep = isFinalStep();
-  VLOG(1) << "Traverse start size:" << reqDs_.size();
   GraphStorageClient::CommonRequestParam param(traverse_->space(),
                                                qctx()->rctx()->session()->id(),
                                                qctx()->plan()->id(),
                                                qctx()->plan()->isProfileEnabled());
+  VLOG(1) << "ReqDs: " << reqDs_;
   storageClient
       ->getNeighbors(param,
                      reqDs_.colNames,
@@ -149,7 +149,6 @@ void TraverseExecutor::handleResponse(RpcResponse& resps) {
   }
 
   auto& responses = resps.responses();
-  VLOG(1) << "Resp size: " << responses.size();
   List list;
   for (auto& resp : responses) {
     auto dataset = resp.get_vertices();
@@ -157,8 +156,7 @@ void TraverseExecutor::handleResponse(RpcResponse& resps) {
       LOG(INFO) << "Empty dataset in response";
       continue;
     }
-
-    VLOG(1) << "Resp row size: " << dataset->rows.size() << "Resp : " << *dataset;
+    VLOG(1) << "Resp: " << *dataset;
     list.values.emplace_back(std::move(*dataset));
   }
   auto listVal = std::make_shared<Value>(std::move(list));
@@ -190,16 +188,24 @@ Status TraverseExecutor::buildInterimPath(GetNeighborsIter* iter) {
   const auto& spaceInfo = qctx()->rctx()->session()->space();
   DataSet reqDs;
   reqDs.colNames = reqDs_.colNames;
-  std::unordered_set<Value> uniqueVid;
+  size_t count = 0;
 
   const std::unordered_map<Value, Paths>& prev = paths_.back();
+  if (currentStep_ == 1 && zeroStep()) {
+    paths_.emplace_back();
+    NG_RETURN_IF_ERROR(handleZeroStep(prev, iter->getVertices(), paths_.back(), count));
+    if (steps_.nSteps() == 0) {
+      releasePrevPaths(count);
+      return Status::OK();
+    }
+  }
   paths_.emplace_back();
   std::unordered_map<Value, Paths>& current = paths_.back();
 
-  size_t count = 0;
   auto* vFilter = traverse_->vFilter();
   auto* eFilter = traverse_->eFilter();
   QueryExpressionContext ctx(ectx_);
+  std::unordered_set<Value> uniqueDst;
 
   for (; iter->valid(); iter->next()) {
     auto& dst = iter->getEdgeProp("*", kDst);
@@ -207,14 +213,12 @@ Status TraverseExecutor::buildInterimPath(GetNeighborsIter* iter) {
       continue;
     }
     if (vFilter != nullptr && currentStep_ == 1) {
-      VLOG(1) << "vFilter:" << vFilter->toString();
       auto& vFilterVal = vFilter->eval(ctx(iter));
       if (!vFilterVal.isBool() || !vFilterVal.getBool()) {
         continue;
       }
     }
     if (eFilter != nullptr) {
-      VLOG(1) << "eFilter:" << eFilter->toString();
       auto& eFilterVal = eFilter->eval(ctx(iter));
       if (!eFilterVal.isBool() || !eFilterVal.getBool()) {
         continue;
@@ -232,23 +236,25 @@ Status TraverseExecutor::buildInterimPath(GetNeighborsIter* iter) {
       if (hasSameEdge(prevPath, e.getEdge())) {
         continue;
       }
-      if (uniqueVid.emplace(dst).second) {
+      if (uniqueDst.emplace(dst).second) {
         reqDs.rows.emplace_back(Row({std::move(dst)}));
       }
-      ++count;
       auto path = prevPath;
       if (currentStep_ == 1) {
         path.values.emplace_back(srcV);
         List neighbors;
         neighbors.values.emplace_back(e);
         path.values.emplace_back(std::move(neighbors));
+        VLOG(1) << "path: " << path;
         buildPath(current, dst, std::move(path));
+        ++count;
       } else {
         auto& eList = path.values.back().mutableList().values;
         eList.emplace_back(srcV);
         eList.emplace_back(e);
         // VLOG(1) << "path " << __LINE__ << " :" << path;
         buildPath(current, dst, std::move(path));
+        ++count;
       }
     }  // `prevPath'
   }    // `iter'
@@ -279,13 +285,14 @@ Status TraverseExecutor::buildResult() {
   DataSet result;
   result.colNames = traverse_->colNames();
   result.rows.reserve(cnt_);
+  VLOG(1) << "paths size:" << paths_.size();
   for (auto& currentStepPaths : paths_) {
     for (auto& paths : currentStepPaths) {
       std::move(paths.second.begin(), paths.second.end(), std::back_inserter(result.rows));
     }
   }
 
-  // VLOG(1) << "Traverse result: " << result;
+  VLOG(1) << "Traverse result: " << result;
   return finish(ResultBuilder().value(Value(std::move(result))).build());
 }
 
@@ -293,10 +300,8 @@ bool TraverseExecutor::hasSameEdge(const Row& prevPath, const Edge& currentEdge)
   for (const auto& v : prevPath.values) {
     if (v.isList()) {
       for (const auto& e : v.getList().values) {
-        if (e.isEdge()) {
-          if (e.getEdge().keyEqual(currentEdge)) {
-            return true;
-          }
+        if (e.isEdge() && e.getEdge().keyEqual(currentEdge)) {
+          return true;
         }
       }
     }
@@ -310,6 +315,8 @@ void TraverseExecutor::releasePrevPaths(size_t cnt) {
       auto rangeEnd = paths_.begin();
       std::advance(rangeEnd, paths_.size() - 1);
       paths_.erase(paths_.begin(), rangeEnd);
+    } else if (steps_.mSteps() == 0 && currentStep_ == 1 && paths_.size() > 1) {
+      paths_.pop_front();
     }
 
     if (currentStep_ >= steps_.mSteps()) {
@@ -319,6 +326,34 @@ void TraverseExecutor::releasePrevPaths(size_t cnt) {
     paths_.pop_front();
     cnt_ = cnt;
   }
+}
+
+Status TraverseExecutor::handleZeroStep(const std::unordered_map<Value, Paths>& prev,
+                                        List&& vertices,
+                                        std::unordered_map<Value, Paths>& zeroSteps,
+                                        size_t& count) {
+  std::unordered_set<Value> uniqueSrc;
+  for (auto& srcV : vertices.values) {
+    auto src = srcV.getVertex().vid;
+    if (!uniqueSrc.emplace(src).second) {
+      continue;
+    }
+    auto pathToSrcFound = prev.find(src);
+    if (pathToSrcFound == prev.end()) {
+      return Status::Error("Can't find prev paths.");
+    }
+    const auto& paths = pathToSrcFound->second;
+    for (auto path : paths) {
+      path.values.emplace_back(srcV);
+      List neighbors;
+      neighbors.values.emplace_back(srcV);
+      path.values.emplace_back(std::move(neighbors));
+      VLOG(1) << "path: " << path;
+      buildPath(zeroSteps, src, std::move(path));
+      ++count;
+    }
+  }
+  return Status::OK();
 }
 }  // namespace graph
 }  // namespace nebula

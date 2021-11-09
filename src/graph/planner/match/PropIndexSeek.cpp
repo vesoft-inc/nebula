@@ -104,6 +104,11 @@ StatusOr<SubPlan> PropIndexSeek::transformEdge(EdgeContext* edgeCtx) {
     plan.root = unwind;
   }
 
+  VLOG(1) << "Build dedup.";
+  auto* dedup = Dedup::make(qctx, plan.root);
+  dedup->setColNames(plan.root->colNames());
+  plan.root = dedup;
+
   // initialize start expression in project edge
   edgeCtx->initialExpr = VariablePropertyExpression::make(pool, "", kVid);
   return plan;

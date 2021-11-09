@@ -1960,6 +1960,21 @@ FunctionManager::FunctionManager() {
           const auto &edge = args[0].get().getEdge();
           return edge.dst;
         }
+        case Value::Type::VERTEX: {
+          const auto &v = args[0].get().getVertex();
+          return v.vid;
+        }
+        case Value::Type::LIST: {
+          const auto &listVal = args[0].get().getList();
+          auto &lastVal = listVal.values.back();
+          if (lastVal.isEdge()) {
+            return lastVal.getEdge().dst;
+          } else if (lastVal.isVertex()) {
+            return lastVal.getVertex().vid;
+          } else {
+            return Value::kNullBadType;
+          }
+        }
         default: {
           return Value::kNullBadType;
         }

@@ -1,3 +1,4 @@
+@match_tag
 Feature: Match seek by tag
 
   Background: Prepare space
