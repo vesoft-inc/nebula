@@ -17,7 +17,7 @@ bool LabelIndexSeek::matchNode(NodeContext* nodeCtx) {
   // only require the tag
   if (node.tids.size() != 1) {
     // TODO multiple tag index seek need the IndexScan support
-    VLOG(2) << "Multple tag index seek is not supported now.";
+    VLOG(2) << "Multiple tag index seek is not supported now.";
     return false;
   }
 

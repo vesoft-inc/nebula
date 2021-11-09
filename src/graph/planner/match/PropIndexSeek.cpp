@@ -113,7 +113,7 @@ bool PropIndexSeek::matchNode(NodeContext* nodeCtx) {
   auto& node = *nodeCtx->info;
   if (node.labels.size() != 1) {
     // TODO multiple tag index seek need the IndexScan support
-    VLOG(2) << "Multple tag index seek is not supported now.";
+    VLOG(2) << "Multiple tag index seek is not supported now.";
     return false;
   }
 

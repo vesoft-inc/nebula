@@ -204,7 +204,7 @@ TEST(BalanceIntegrationTest, BalanceTest) {
     int num = 0;
     std::string lastKey = "";
     while (iter->valid()) {
-      // filter the multipule versions for data.
+      // filter the multiple versions for data.
       auto key = NebulaKeyUtils::keyWithNoVersion(iter->key());
       if (lastKey == key) {
         iter->next();

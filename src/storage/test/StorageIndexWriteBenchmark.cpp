@@ -31,7 +31,7 @@ using NewTag = nebula::storage::cpp2::NewTag;
 enum class IndexENV : uint8_t {
   NO_INDEX = 1,
   ONE_INDEX = 2,
-  MULITPLE_INDEX = 3,
+  MULTIPLE_INDEX = 3,
   INVALID_INDEX = 4,
 };
 
@@ -97,7 +97,7 @@ std::unique_ptr<meta::IndexManager> memIndexMan(IndexENV type) {
       indexMan->addTagIndex(spaceId, -1, indexId, mockTagIndexColumns());
       break;
     }
-    case IndexENV::MULITPLE_INDEX: {
+    case IndexENV::MULTIPLE_INDEX: {
       indexMan->addTagIndex(spaceId, tagId, indexId, mockTagIndexColumns());
       indexMan->addTagIndex(spaceId, tagId, indexId + 1, mockTagIndexColumns());
       indexMan->addTagIndex(spaceId, tagId, indexId + 2, mockTagIndexColumns());
@@ -315,7 +315,7 @@ void insertVerticesMultIndex() {
   int32_t vId = 0;
   BENCHMARK_SUSPEND {
     std::string dataPath = folly::stringPrintf("%s/%s", FLAGS_root_data_path.c_str(), "multIndex");
-    initEnv(IndexENV::MULITPLE_INDEX, dataPath, env, kv, sm, im);
+    initEnv(IndexENV::MULTIPLE_INDEX, dataPath, env, kv, sm, im);
   };
 
   while (vId < FLAGS_total_vertices_size) {
