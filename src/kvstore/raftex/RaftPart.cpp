@@ -1085,7 +1085,7 @@ bool RaftPart::leaderElection() {
     // so prepareElectionRequest will return false and go on the election.
     // Because C is in Candidate, so it will reject the snapshot request from B.
     // Infinite loop begins.
-    // So we neeed to go back to the follower state to avoid the case.
+    // So we need to go back to the follower state to avoid the case.
     std::lock_guard<std::mutex> g(raftLock_);
     role_ = Role::FOLLOWER;
     return false;
