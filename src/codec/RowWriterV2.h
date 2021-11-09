@@ -144,7 +144,7 @@ class RowWriterV2 {
   const meta::SchemaProviderIf* schema_;
   std::string buf_;
   std::vector<bool> isSet_;
-  // Ther number of bytes occupied by header and the schema version
+  // The number of bytes occupied by header and the schema version
   size_t headerLen_;
   size_t numNullBytes_;
   size_t approxStrLen_;
