@@ -41,7 +41,7 @@ class RowReaderV1 : public RowReader {
  private:
   int32_t headerLen_ = 0;
   int32_t numBytesForOffset_ = 0;
-  // Block offet value is composed by two integers. The first one is
+  // Block offset value is composed by two integers. The first one is
   // the block offset, the second one is the largest index being visited
   // in the block. This index is zero-based
   mutable std::vector<std::pair<int64_t, uint8_t>> blockOffsets_;
