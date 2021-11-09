@@ -14,7 +14,7 @@ namespace nebula {
 namespace storage {
 
 /*
-Origined from folly::FutureDAG, not thread-safe.
+Originated from folly::FutureDAG, not thread-safe.
 
 The StoragePlan contains a set of RelNode, all you need to do is define a
 RelNode, add it to plan by calling addNode, which will return the index of the
