@@ -212,7 +212,7 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
 
   bool needToCleanWal();
 
-  // leader + follwers
+  // leader + followers
   std::vector<HostAddr> peers() const;
 
   std::set<HostAddr> listeners() const;
