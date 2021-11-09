@@ -272,7 +272,7 @@ Feature: Fetch String Vertices
       | "Tony Parker" | 36         | EMPTY     | EMPTY         | EMPTY               |
       | "Tim Duncan"  | 42         | EMPTY     | "Tim Duncan"  | "psychology"        |
 
-  Scenario: fetch from varibles
+  Scenario: fetch from variables
     When executing query:
       """
       $var = GO FROM 'Boris Diaw' over like YIELD like._dst as id; FETCH PROP ON player $var.id YIELD player.name, player.age
