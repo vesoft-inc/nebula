@@ -770,6 +770,10 @@ WriteResult RowWriterV2::write(ssize_t index, const Geography& v) noexcept {
     return WriteResult::TYPE_MISMATCH;
   }
   std::string wkb = v.asWKB();
+  std::cout << "wkb.size()=" << wkb.size() << ", wkb.content=" << wkb << std::endl;
+  std::string hexedWkb = folly::hexlify(wkb);
+  std::cout << "hexedWkb.size()=" << hexedWkb.size() << ", hexedWkb.content=" << hexedWkb
+            << std::endl;
   return write(index, folly::StringPiece(wkb));
 }
 
@@ -844,7 +848,7 @@ std::string RowWriterV2::processOutOfSpace() noexcept {
   // Now let's process all strings
   for (size_t i = 0; i < schema_->getNumFields(); i++) {
     auto field = schema_->field(i);
-    if (field->type() != PropertyType::STRING) {
+    if (field->type() != PropertyType::STRING && field->type() != PropertyType::GEOGRAPHY) {
       continue;
     }
 

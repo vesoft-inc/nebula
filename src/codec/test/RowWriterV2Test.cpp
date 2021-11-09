@@ -27,6 +27,22 @@ const DateTime dt = {2020, 2, 20, 10, 30, 45, 0};
 const Value sVal("Hello world!");
 const Value iVal(64);
 const Time t = {10, 30, 45, 0};
+// POINT(179.0 89.9)
+const Geography geogPoint = Point(Coordinate(179.0, 89.9));
+// LINESTRING(0 1, 1 2, 3 7)
+const Geography geogLineString =
+    LineString(std::vector<Coordinate>{Coordinate(0, 1), Coordinate(1, 2), Coordinate(3, 7)});
+// POLYGON((-108.7 35.0, -100.0 46.5, -90.7 34.9, -108.7 35.0),
+// (-100.1 41.4, -102.9 37.6, -96.8 37.5, -100.1 41.4))
+const Geography geogPolygon = Polygon(
+    std::vector<std::vector<Coordinate>>{std::vector<Coordinate>{Coordinate(-108.7, 35.0),
+                                                                 Coordinate(-100.0, 46.5),
+                                                                 Coordinate(-90.7, 34.9),
+                                                                 Coordinate(-108.7, 35.0)},
+                                         std::vector<Coordinate>{Coordinate(-100.1, 41.4),
+                                                                 Coordinate(-102.9, 37.6),
+                                                                 Coordinate(-96.8, 37.5),
+                                                                 Coordinate(-100.1, 41.4)}});
 
 TEST(RowWriterV2, NoDefaultValue) {
   SchemaWriter schema(12 /*Schema version*/);
@@ -45,6 +61,9 @@ TEST(RowWriterV2, NoDefaultValue) {
   schema.appendCol("Col13", PropertyType::DATETIME);
   schema.appendCol("Col14", PropertyType::INT64, 0, true);
   schema.appendCol("Col15", PropertyType::INT32, 0, true);
+  schema.appendCol("Col16", PropertyType::GEOGRAPHY);
+  schema.appendCol("Col17", PropertyType::GEOGRAPHY);
+  schema.appendCol("Col18", PropertyType::GEOGRAPHY);
 
   ASSERT_EQ(Value::Type::STRING, sVal.type());
   ASSERT_EQ(Value::Type::INT, iVal.type());
@@ -65,6 +84,9 @@ TEST(RowWriterV2, NoDefaultValue) {
   EXPECT_EQ(WriteResult::SUCCEEDED, writer1.set(12, dt));
   EXPECT_EQ(WriteResult::SUCCEEDED, writer1.setNull(13));
   // Purposely skip the col15
+  EXPECT_EQ(WriteResult::SUCCEEDED, writer1.set(15, geogPoint));
+  EXPECT_EQ(WriteResult::SUCCEEDED, writer1.set(16, geogLineString));
+  EXPECT_EQ(WriteResult::SUCCEEDED, writer1.set(17, geogPolygon));
   ASSERT_EQ(WriteResult::SUCCEEDED, writer1.finish());
 
   RowWriterV2 writer2(&schema);
@@ -83,10 +105,15 @@ TEST(RowWriterV2, NoDefaultValue) {
   EXPECT_EQ(WriteResult::SUCCEEDED, writer2.set("Col13", dt));
   EXPECT_EQ(WriteResult::SUCCEEDED, writer2.setNull("Col14"));
   // Purposely skip the col15
+  EXPECT_EQ(WriteResult::SUCCEEDED, writer2.set("Col16", geogPoint));
+  EXPECT_EQ(WriteResult::SUCCEEDED, writer2.set("Col17", geogLineString));
+  EXPECT_EQ(WriteResult::SUCCEEDED, writer2.set("Col18", geogPolygon));
   ASSERT_EQ(WriteResult::SUCCEEDED, writer2.finish());
 
   std::string encoded1 = std::move(writer1).moveEncodedStr();
   std::string encoded2 = writer2.getEncodedStr();
+  LOG(INFO) << "encoded1, size=" << encoded1.size() << "content=" << folly::hexlify(encoded1);
+  LOG(INFO) << "encoded2, size=" << encoded2.size() << "content=" << folly::hexlify(encoded2);
 
   auto reader1 = RowReaderWrapper::getRowReader(&schema, encoded1);
   auto reader2 = RowReaderWrapper::getRowReader(&schema, encoded2);
@@ -175,7 +202,7 @@ TEST(RowWriterV2, NoDefaultValue) {
   EXPECT_EQ(t, v1.getTime());
   EXPECT_EQ(v1, v2);
 
-  // Col1333
+  // Col13
   v1 = reader1->getValueByName("Col13");
   v2 = reader2->getValueByIndex(12);
   EXPECT_EQ(Value::Type::DATETIME, v1.type());
@@ -192,6 +219,27 @@ TEST(RowWriterV2, NoDefaultValue) {
   v1 = reader1->getValueByName("Col15");
   v2 = reader2->getValueByIndex(14);
   EXPECT_EQ(Value::Type::NULLVALUE, v1.type());
+  EXPECT_EQ(v1, v2);
+
+  // Col16
+  v1 = reader1->getValueByName("Col16");
+  v2 = reader2->getValueByIndex(15);
+  EXPECT_EQ(Value::Type::GEOGRAPHY, v1.type());
+  EXPECT_EQ(geogPoint, v1.getGeography());
+  EXPECT_EQ(v1, v2);
+
+  // Col17
+  v1 = reader1->getValueByName("Col17");
+  v2 = reader2->getValueByIndex(16);
+  EXPECT_EQ(Value::Type::GEOGRAPHY, v1.type());
+  EXPECT_EQ(geogLineString, v1.getGeography());
+  EXPECT_EQ(v1, v2);
+
+  // Col18
+  v1 = reader1->getValueByName("Col18");
+  v2 = reader2->getValueByIndex(17);
+  EXPECT_EQ(Value::Type::GEOGRAPHY, v1.type());
+  EXPECT_EQ(geogPolygon, v1.getGeography());
   EXPECT_EQ(v1, v2);
 }
 
