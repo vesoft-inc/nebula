@@ -79,7 +79,7 @@ nebula::cpp2::ErrorCode ListHostsProcessor::allMetaHostsStatus() {
     return retCode;
   }
   auto metaPeers = nebula::value(errOrPart)->peers();
-  // transform raft port to servre port
+  // transform raft port to severe port
   for (auto& metaHost : metaPeers) {
     metaHost = Utils::getStoreAddrFromRaftAddr(metaHost);
   }
