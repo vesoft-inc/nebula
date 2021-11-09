@@ -92,8 +92,8 @@ Feature: With clause
       RETURN collect(names)
       """
     Then the result should be, in any order, with relax comparison:
-      | collect(names)                                                                   |
-      | ["Tony Parker", "Tiago Splitter", "Spurs", "Shaquile O'Neal", "Marco Belinelli"] |
+      | collect(names)                                                                    |
+      | ["Tony Parker", "Tiago Splitter", "Spurs", "Shaquille O'Neal", "Marco Belinelli"] |
     When profiling query:
       """
       MATCH (v:player)
@@ -105,7 +105,7 @@ Feature: With clause
       """
     Then the result should be, in order, with relax comparison:
       | v                                                                                                           | age |
-      | ("Shaquile O'Neal" :player{age: 47, name: "Shaquile O'Neal"})                                               | 47  |
+      | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})                                             | 47  |
       | ("Grant Hill" :player{age: 46, name: "Grant Hill"})                                                         | 46  |
       | ("Jason Kidd" :player{age: 45, name: "Jason Kidd"})                                                         | 45  |
       | ("Steve Nash" :player{age: 45, name: "Steve Nash"})                                                         | 45  |

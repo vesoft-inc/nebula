@@ -331,11 +331,11 @@ Feature: Fetch String Vertices
       FETCH PROP ON player "Tim Duncan", "Yao Ming" YIELD vertex as node | go from id($-.node) over like yield like._dst
       """
     Then the result should be, in any order:
-      | like._dst         |
-      | "Shaquile O'Neal" |
-      | "Tracy McGrady"   |
-      | "Manu Ginobili"   |
-      | "Tony Parker"     |
+      | like._dst          |
+      | "Shaquille O'Neal" |
+      | "Tracy McGrady"    |
+      | "Manu Ginobili"    |
+      | "Tony Parker"      |
     When executing query:
       """
       FETCH PROP ON player "Tim Duncan" yield player.name as id | go from $-.id over like yield like._dst
@@ -349,11 +349,11 @@ Feature: Fetch String Vertices
       $var = FETCH PROP ON player "Tim Duncan", "Yao Ming"; go from id($var.vertices_) over like yield like._dst
       """
     Then the result should be, in any order:
-      | like._dst         |
-      | "Manu Ginobili"   |
-      | "Tony Parker"     |
-      | "Shaquile O'Neal" |
-      | "Tracy McGrady"   |
+      | like._dst          |
+      | "Manu Ginobili"    |
+      | "Tony Parker"      |
+      | "Shaquille O'Neal" |
+      | "Tracy McGrady"    |
     When executing query:
       """
       FETCH PROP ON player 'Tony Parker' YIELD player.name as Name |

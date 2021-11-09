@@ -119,7 +119,7 @@ Feature: Predicate
       | ("LeBron James" :player{age: 34, name: "LeBron James"})                                                     |
       | ("Rajon Rondo" :player{age: 33, name: "Rajon Rondo"})                                                       |
       | ("Tiago Splitter" :player{age: 34, name: "Tiago Splitter"})                                                 |
-      | ("Shaquile O'Neal" :player{age: 47, name: "Shaquile O'Neal"})                                               |
+      | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})                                             |
       | ("Boris Diaw" :player{age: 36, name: "Boris Diaw"})                                                         |
       | ("Aron Baynes" :player{age: 32, name: "Aron Baynes"})                                                       |
       | ("Paul Gasol" :player{age: 38, name: "Paul Gasol"})                                                         |
