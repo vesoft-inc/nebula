@@ -490,7 +490,7 @@ class MetaClient {
   StatusOr<std::string> getEdgeNameByTypeFromCache(const GraphSpaceID& space,
                                                    const EdgeType edgeType);
 
-  // get all lastest version edge
+  // get all latest version edge
   StatusOr<std::vector<std::string>> getAllEdgeFromCache(const GraphSpaceID& space);
 
   PartsMap getPartsMapFromCache(const HostAddr& host);
