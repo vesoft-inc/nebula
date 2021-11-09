@@ -20,7 +20,7 @@
 namespace nebula {
 namespace graph {
 /**
- * Now we hava four kind of exploration nodes:
+ * Now we have four kind of exploration nodes:
  *  GetNeighbors,
  *  GetVertices,
  *  GetEdges,
