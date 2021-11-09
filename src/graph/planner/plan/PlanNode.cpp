@@ -32,7 +32,7 @@ PlanNode::PlanNode(QueryContext* qctx, Kind kind) : qctx_(qctx), kind_(kind) {
 const char* PlanNode::toString(PlanNode::Kind kind) {
   switch (kind) {
     case Kind::kUnknown:
-      return "Unkonwn";
+      return "Unknown";
     case Kind::kStart:
       return "Start";
     case Kind::kGetNeighbors:

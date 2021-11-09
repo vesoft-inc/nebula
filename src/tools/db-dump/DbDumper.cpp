@@ -129,7 +129,7 @@ Status DbDumper::initParams() {
   }
 
   if (FLAGS_mode.compare("scan") != 0 && FLAGS_mode.compare("stat") != 0) {
-    return Status::Error("Unkown mode '%s'.", FLAGS_mode.c_str());
+    return Status::Error("Unknown mode '%s'.", FLAGS_mode.c_str());
   }
   return Status::OK();
 }
