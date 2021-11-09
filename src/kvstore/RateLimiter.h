@@ -28,7 +28,7 @@ class RateLimiter {
   }
 
   // Caller must make sure the **the partition has been add, and won't be removed during consume.**
-  // Snaphot and rebuild index follow this principle by design.
+  // Snapshot and rebuild index follow this principle by design.
   void consume(double toConsume, double rate, double burstSize) {
     if (toConsume > burstSize) {
       // consumeWithBorrowAndWait do nothing when toConsume > burstSize_, we sleep 1s instead

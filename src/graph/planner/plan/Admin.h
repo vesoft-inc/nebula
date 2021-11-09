@@ -313,7 +313,7 @@ class DropSnapshot final : public SingleDependencyNode {
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
-  const std::string& getShapshotName() const { return snapshotName_; }
+  const std::string& getSnapshotName() const { return snapshotName_; }
 
  private:
   explicit DropSnapshot(QueryContext* qctx, PlanNode* input, std::string snapshotName)
