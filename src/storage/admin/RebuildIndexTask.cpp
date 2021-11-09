@@ -78,7 +78,7 @@ nebula::cpp2::ErrorCode RebuildIndexTask::invoke(GraphSpaceID space,
                                                  PartitionID part,
                                                  const IndexItems& items) {
   auto rateLimiter = std::make_unique<kvstore::RateLimiter>();
-  // TaskMananger will make sure that there won't be cocurrent invoke of a given part
+  // TaskManager will make sure that there won't be cocurrent invoke of a given part
   auto result = removeLegacyLogs(space, part);
   if (result != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << "Remove legacy logs at part: " << part << " failed";
