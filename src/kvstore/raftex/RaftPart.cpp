@@ -1579,7 +1579,7 @@ cpp2::ErrorCode RaftPart::verifyLeader(const REQ& req) {
                            << ". The local term is " << term_ << ". The remote term is not newer";
     return cpp2::ErrorCode::E_TERM_OUT_OF_DATE;
   } else if (req.get_current_term() > term_) {
-    // Leader stickness, no matter the term in Request is larger or not.
+    // Leader stickiness, no matter the term in Request is larger or not.
     // TODO(heng) Maybe we should reconsider the logic
     if (leader_ != HostAddr("", 0) && leader_ != candidate &&
         lastMsgRecvDur_.elapsedInMSec() < FLAGS_raft_heartbeat_interval_secs * 1000) {
