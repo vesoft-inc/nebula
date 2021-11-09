@@ -1643,7 +1643,7 @@ FunctionManager::FunctionManager() {
   }
   {
     auto &attr = functions_["date"];
-    // 0 for corrent time
+    // 0 for current time
     // 1 for string or map
     attr.minArity_ = 0;
     attr.maxArity_ = 1;
@@ -1715,7 +1715,7 @@ FunctionManager::FunctionManager() {
   }
   {
     auto &attr = functions_["datetime"];
-    // 0 for corrent time
+    // 0 for current time
     // 1 for string or map
     attr.minArity_ = 0;
     attr.maxArity_ = 1;
