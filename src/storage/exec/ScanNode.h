@@ -82,10 +82,6 @@ class ScanVertexPropNode : public QueryNode<Cursor> {
     }  // iterate key
     if (static_cast<int64_t>(resultDataSet_->rowSize()) < rowLimit) {
       collectOneRow(isIntId, vIdLen, currentVertexId);
-    } else {
-      for (auto& tagNode : tagNodes_) {
-        tagNode->clear();
-      }
     }
 
     cpp2::ScanCursor c;
