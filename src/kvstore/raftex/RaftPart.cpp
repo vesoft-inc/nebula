@@ -1460,7 +1460,7 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
               << ", the log term is " << req.get_last_log_term_sent()
               << ", but my committedLogId is " << committedLogId_ << ", my term is " << term_
               << ", to make the cluster stable i will follow the high term"
-              << " candidate and clenaup my data";
+              << " candidate and cleanup my data";
     reset();
     resp.set_committed_log_id(committedLogId_);
     resp.set_last_log_id(lastLogId_);
