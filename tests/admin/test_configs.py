@@ -118,7 +118,7 @@ class TestConfigs(NebulaTestSuite):
                                    ''')
         self.check_resp_succeeded(resp)
 
-    @pytest.mark.skip("The change of minloglevel will infulence the whole test.")
+    @pytest.mark.skip("The change of minloglevel will influence the whole test.")
     def test_update_configs(self):
         # set and get a config of all module
         resp = self.client.execute('UPDATE CONFIGS minloglevel={}'.format(2))
