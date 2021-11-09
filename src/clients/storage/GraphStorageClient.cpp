@@ -603,7 +603,7 @@ StatusOr<std::function<const VertexID&(const Row&)>> GraphStorageClient::getIdFr
   if (vidType == PropertyType::INT64) {
     if (isEdgeProps) {
       cb = [](const Row& r) -> const VertexID& {
-        // The first column has to be the src, the thrid column has to be the
+        // The first column has to be the src, the third column has to be the
         // dst
         DCHECK_EQ(Value::Type::INT, r.values[0].type());
         DCHECK_EQ(Value::Type::INT, r.values[3].type());
