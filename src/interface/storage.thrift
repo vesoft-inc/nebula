@@ -286,7 +286,7 @@ struct GetPropResponse {
     //   | .....                            |
     //   ====================================
     //
-    // Each column represents one peoperty. the column name is in the form of "tag_name.prop_alias"
+    // Each column represents one property. the column name is in the form of "tag_name.prop_alias"
     // or "edge_type_name.prop_alias" in the same order which specified in VertexProp or EdgeProp
     //
     // If the request is to get tag prop, the first column will **always** be the vid,
@@ -407,7 +407,7 @@ struct UpdateResponse {
     // The name of the first column is "_inserted". It has a boolean value. It's
     //   TRUE if insertion happens
     // Starting from the second column, it's the all returned properties, one column
-    //   per peoperty. If there is no given property, the value will be a NULL
+    //   per property. If there is no given property, the value will be a NULL
     2: optional common.DataSet      props,
 }
 
@@ -489,7 +489,7 @@ struct LookupIndexResp {
     //   properties; when looking up the edge index, each row represents one edge
     //   and its properties.
     //
-    // Each column represents one peoperty. the column name is in the form of "tag_name.prop_alias"
+    // Each column represents one property. the column name is in the form of "tag_name.prop_alias"
     // or "edge_type_name.prop_alias" in the same order which specified in return_columns of request
     2: optional common.DataSet          data,
 }
