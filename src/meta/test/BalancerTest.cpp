@@ -1031,7 +1031,7 @@ TEST(BalanceTest, SpecifyMultiHostTest) {
   ASSERT_EQ(1, verifyBalancePlan(kv, balanceId, BalanceStatus::SUCCEEDED));
 
   // In theory, there should be only 12 tasks, but in some environment, 13 tasks
-  // is generated. A parition is moved more than once from A -> B -> C, actually
+  // is generated. A partition is moved more than once from A -> B -> C, actually
   // A -> C is enough.
   verifyBalanceTask(kv, balanceId, BalanceTaskStatus::END, BalanceTaskResult::SUCCEEDED, partCount);
   ASSERT_EQ(9, partCount[HostAddr("0", 0)]);

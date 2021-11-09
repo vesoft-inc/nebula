@@ -661,7 +661,7 @@ folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
   }
 
   if (!checkAppendLogResult(res)) {
-    // Mosy likely failed because the parttion is not leader
+    // Mosy likely failed because the partition is not leader
     LOG_EVERY_N(WARNING, 1000) << idStr_ << "Cannot append logs, clean the buffer";
     return res;
   }

@@ -206,7 +206,7 @@ std::vector<HostAddr> MetaKeyUtils::parsePartVal(folly::StringPiece val, int par
   return parsePartValV2(val);
 }
 
-// partion val is ip(int) + port(int)
+// partition val is ip(int) + port(int)
 std::vector<HostAddr> MetaKeyUtils::parsePartValV1(folly::StringPiece val) {
   std::vector<HostAddr> hosts;
   static const size_t unitSize = sizeof(int32_t) * 2;

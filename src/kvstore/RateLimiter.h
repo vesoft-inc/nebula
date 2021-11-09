@@ -27,7 +27,7 @@ class RateLimiter {
     bucket_.reset(new folly::DynamicTokenBucket(static_cast<double>(now + waitInSec)));
   }
 
-  // Caller must make sure the **the parition has been add, and won't be removed during consume.**
+  // Caller must make sure the **the partition has been add, and won't be removed during consume.**
   // Snaphot and rebuild index follow this principle by design.
   void consume(double toConsume, double rate, double burstSize) {
     if (toConsume > burstSize) {

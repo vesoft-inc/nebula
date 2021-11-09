@@ -13,7 +13,7 @@
 DEFINE_string(meta_server_addrs, "", "meta server address");
 DEFINE_int32(io_threads, 10, "client io threads");
 
-DEFINE_int32(partition_num, 1024, "partititon for space");
+DEFINE_int32(partition_num, 1024, "partition for space");
 DEFINE_string(space_name, "test_space", "the space name");
 DEFINE_string(tag_name, "test_tag", "the tag name");
 DEFINE_string(prop_name, "test_prop", "the property name");

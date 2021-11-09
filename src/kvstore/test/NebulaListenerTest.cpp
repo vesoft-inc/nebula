@@ -579,8 +579,9 @@ TEST_P(ListenerAdvanceTest, ListenerResetBySnapshotTest) {
 TEST_P(ListenerSnapshotTest, SnapshotRateLimitTest) {
   for (int32_t partId = 1; partId <= partCount_; partId++) {
     // Write 10000 kvs in a part, key size is sizeof(partId) + vId + tagId = 4 + 8 + 4 = 16,
-    // value size is 24, so total size of a kv is 40. The snapshot size of a parition will be around
-    // 400Kb, and the rate limit is set to 40Kb, so snapshot will be sent at least 10 seconds.
+    // value size is 24, so total size of a kv is 40. The snapshot size of a partition will be
+    // around 400Kb, and the rate limit is set to 40Kb, so snapshot will be sent at least 10
+    // seconds.
     for (int32_t i = 0; i < 10; i++) {
       std::vector<KV> data;
       for (int32_t j = 0; j < 1000; j++) {

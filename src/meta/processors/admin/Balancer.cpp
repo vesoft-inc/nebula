@@ -887,7 +887,7 @@ nebula::cpp2::ErrorCode Balancer::leaderBalance() {
 
     inLeaderBalance_ = false;
     if (failed != 0) {
-      LOG(ERROR) << failed << " partiton failed to transfer leader";
+      LOG(ERROR) << failed << " partition failed to transfer leader";
     }
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
@@ -904,7 +904,7 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> Balancer::buildLeaderBalancePlan(
   PartAllocation peersMap;
   HostParts leaderHostParts;
   size_t leaderParts = 0;
-  // store peers of all paritions in peerMap
+  // store peers of all partitions in peerMap
   folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
   const auto& prefix = MetaKeyUtils::partPrefix(spaceId);
   std::unique_ptr<kvstore::KVIterator> iter;
