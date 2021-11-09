@@ -387,7 +387,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 
 %type <boolval> opt_if_not_exists
 %type <boolval> opt_if_exists
-%type <boolval> opt_with_properites
+%type <boolval> opt_with_properties
 
 %left QM COLON
 %left KW_OR KW_XOR
@@ -2045,7 +2045,7 @@ fetch_sentence
     ;
 
 find_path_sentence
-    : KW_FIND KW_ALL KW_PATH opt_with_properites from_clause to_clause over_clause where_clause find_path_upto_clause {
+    : KW_FIND KW_ALL KW_PATH opt_with_properties from_clause to_clause over_clause where_clause find_path_upto_clause {
         auto *s = new FindPathSentence(false, $4, false);
         s->setFrom($5);
         s->setTo($6);
@@ -2054,7 +2054,7 @@ find_path_sentence
         s->setStep($9);
         $$ = s;
     }
-    | KW_FIND KW_SHORTEST KW_PATH opt_with_properites from_clause to_clause over_clause where_clause find_path_upto_clause {
+    | KW_FIND KW_SHORTEST KW_PATH opt_with_properties from_clause to_clause over_clause where_clause find_path_upto_clause {
         auto *s = new FindPathSentence(true, $4, false);
         s->setFrom($5);
         s->setTo($6);
@@ -2063,7 +2063,7 @@ find_path_sentence
         s->setStep($9);
         $$ = s;
     }
-    | KW_FIND KW_NOLOOP KW_PATH opt_with_properites from_clause to_clause over_clause where_clause find_path_upto_clause {
+    | KW_FIND KW_NOLOOP KW_PATH opt_with_properties from_clause to_clause over_clause where_clause find_path_upto_clause {
         auto *s = new FindPathSentence(false, $4, true);
         s->setFrom($5);
         s->setTo($6);
@@ -2074,7 +2074,7 @@ find_path_sentence
     }
     ;
 
-opt_with_properites
+opt_with_properties
     : %empty { $$ = false; }
     | KW_WITH KW_PROP { $$ = true; }
     ;
@@ -2132,7 +2132,7 @@ both_in_out_clause
     | KW_BOTH over_edges { $$ = new BothInOutClause($2, BoundClause::BOTH); }
 
 get_subgraph_sentence
-    : KW_GET KW_SUBGRAPH opt_with_properites step_clause from_clause in_bound_clause out_bound_clause both_in_out_clause yield_clause {
+    : KW_GET KW_SUBGRAPH opt_with_properties step_clause from_clause in_bound_clause out_bound_clause both_in_out_clause yield_clause {
         $$ = new GetSubgraphSentence($3, $4, $5, $6, $7, $8, $9);
     }
 
