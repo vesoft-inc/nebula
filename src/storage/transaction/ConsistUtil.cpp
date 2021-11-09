@@ -62,7 +62,7 @@ RequestType ConsistUtil::parseType(folly::StringPiece val) {
     case 'a':
       return RequestType::INSERT;
     default:
-      LOG(FATAL) << "shoule not happen, identifier is " << identifier;
+      LOG(FATAL) << "should not happen, identifier is " << identifier;
   }
 }
 

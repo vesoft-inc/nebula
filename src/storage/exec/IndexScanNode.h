@@ -247,7 +247,7 @@ class QualifiedStrategy {
    *
    * Args:
    * `dedupSuffixLength`  : If indexed schema is a tag, `dedupSuffixLength` should be vid.len;
-   *                        If the indexed schema is an edge, `dedupSuffixLength` shoule be
+   *                        If the indexed schema is an edge, `dedupSuffixLength` should be
    *                        srcId.len+sizeof(rank)+dstId.len
    * Return:
    * When suffix first appears, the function returns `COMPATIBLE`; otherwise, the function returns
