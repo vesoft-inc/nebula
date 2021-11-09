@@ -143,7 +143,7 @@ Expression* MatchSolver::makeIndexFilter(const std::string& label,
     auto* right = binary->right();
     const LabelAttributeExpression* la = nullptr;
     const ConstantExpression* constant = nullptr;
-    // TODO(aiee) extract the logic that apllies to both match and lookup
+    // TODO(aiee) extract the logic that applies to both match and lookup
     if (left->kind() == Expression::Kind::kLabelAttribute &&
         right->kind() == Expression::Kind::kConstant) {
       la = static_cast<const LabelAttributeExpression*>(left);
