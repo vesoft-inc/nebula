@@ -83,32 +83,6 @@ bool MetaClient::isMetadReady() {
   return ready_;
 }
 
-const MetaClient::ThreadLocalInfo& MetaClient::getThreadLocalInfo() {
-  ThreadLocalInfo& threadLocalInfo = folly::SingletonThreadLocal<ThreadLocalInfo>::get();
-
-  if (threadLocalInfo.localLastUpdateTime_ < localDataLastUpdateTime_) {
-    threadLocalInfo.localLastUpdateTime_ = localDataLastUpdateTime_;
-
-    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-    for (auto& spaceInfo : localCache_) {
-      GraphSpaceID spaceId = spaceInfo.first;
-      std::shared_ptr<SpaceInfoCache> info = spaceInfo.second;
-      std::shared_ptr<SpaceInfoCache> infoShallowCopy = std::make_shared<SpaceInfoCache>(*info);
-      threadLocalInfo.localCache_[spaceId] = infoShallowCopy;
-    }
-    threadLocalInfo.spaceIndexByName_ = spaceIndexByName_;
-    threadLocalInfo.spaceTagIndexByName_ = spaceTagIndexByName_;
-    threadLocalInfo.spaceEdgeIndexByName_ = spaceEdgeIndexByName_;
-    threadLocalInfo.spaceEdgeIndexByType_ = spaceEdgeIndexByType_;
-    threadLocalInfo.spaceNewestTagVerMap_ = spaceNewestTagVerMap_;
-    threadLocalInfo.spaceNewestEdgeVerMap_ = spaceNewestEdgeVerMap_;
-    threadLocalInfo.spaceTagIndexById_ = spaceTagIndexById_;
-    threadLocalInfo.spaceAllEdgeMap_ = spaceAllEdgeMap_;
-  }
-
-  return threadLocalInfo;
-}
-
 bool MetaClient::waitForMetadReady(int count, int retryIntervalSecs) {
   auto status = verifyVersion();
   if (!status.ok()) {
@@ -331,48 +305,77 @@ bool MetaClient::loadData() {
   return true;
 }
 
-// static TagSchemas __buildTagSchemas(std::vector<cpp2::TagItem> tagItemVec) {
-//   TagSchemas tagSchemas;
-//   TagID lastTagId = -1;
-//   for (auto& tagIt : tagItemVec) {
-//     // meta will return the different version from new to old
-//     auto schema = std::make_shared<NebulaSchemaProvider>(tagIt.get_version());
-//     for (const auto& colIt : tagIt.get_schema().get_columns()) {
-//       addSchemaField(schema.get(), colIt);
-//     }
-//     // handle schema property
-//     schema->setProp(tagIt.get_schema().get_schema_prop());
-//     if (tagIt.get_tag_id() != lastTagId) {
-//       // init schema vector, since schema version is zero-based, need to add one
-//       tagSchemas[tagIt.get_tag_id()].resize(schema->getVersion() + 1);
-//       lastTagId = tagIt.get_tag_id();
-//     }
-//     tagSchemas[tagIt.get_tag_id()][schema->getVersion()] = std::move(schema);
-//   }
-//   return tagSchemas;
-// }
+TagSchemas MetaClient::buildTagSchemas(std::vector<cpp2::TagItem> tagItemVec, ObjectPool* pool) {
+  TagSchemas tagSchemas;
+  TagID lastTagId = -1;
+  for (auto& tagIt : tagItemVec) {
+    // meta will return the different version from new to old
+    auto schema = std::make_shared<NebulaSchemaProvider>(tagIt.get_version());
+    for (const auto& colIt : tagIt.get_schema().get_columns()) {
+      addSchemaField(schema.get(), colIt, pool);
+    }
+    // handle schema property
+    schema->setProp(tagIt.get_schema().get_schema_prop());
+    if (tagIt.get_tag_id() != lastTagId) {
+      // init schema vector, since schema version is zero-based, need to add one
+      tagSchemas[tagIt.get_tag_id()].resize(schema->getVersion() + 1);
+      lastTagId = tagIt.get_tag_id();
+    }
+    tagSchemas[tagIt.get_tag_id()][schema->getVersion()] = std::move(schema);
+  }
+  return tagSchemas;
+}
 
-// static EdgeSchemas __buildEdgeSchemas(std::vector<cpp2::EdgeItem> edgeItemVec) {
-//   EdgeSchemas edgeSchemas;
-//   std::unordered_set<std::pair<GraphSpaceID, EdgeType>> edges;
-//   EdgeType lastEdgeType = -1;
-//   for (auto& edgeIt : edgeItemVec) {
-//     // meta will return the different version from new to old
-//     auto schema = std::make_shared<NebulaSchemaProvider>(edgeIt.get_version());
-//     for (const auto& col : edgeIt.get_schema().get_columns()) {
-//       addSchemaField(schema.get(), col);
-//     }
-//     // handle shcem property
-//     schema->setProp(edgeIt.get_schema().get_schema_prop());
-//     if (edgeIt.get_edge_type() != lastEdgeType) {
-//       // init schema vector, since schema version is zero-based, need to add one
-//       edgeSchemas[edgeIt.get_edge_type()].resize(schema->getVersion() + 1);
-//       lastEdgeType = edgeIt.get_edge_type();
-//     }
-//     edgeSchemas[edgeIt.get_edge_type()][schema->getVersion()] = std::move(schema);
-//   }
-//   return edgeSchemas;
-// }
+EdgeSchemas MetaClient::buildEdgeSchemas(std::vector<cpp2::EdgeItem> edgeItemVec,
+                                         ObjectPool* pool) {
+  EdgeSchemas edgeSchemas;
+  std::unordered_set<std::pair<GraphSpaceID, EdgeType>> edges;
+  EdgeType lastEdgeType = -1;
+  for (auto& edgeIt : edgeItemVec) {
+    // meta will return the different version from new to old
+    auto schema = std::make_shared<NebulaSchemaProvider>(edgeIt.get_version());
+    for (const auto& col : edgeIt.get_schema().get_columns()) {
+      MetaClient::addSchemaField(schema.get(), col, pool);
+    }
+    // handle shcem property
+    schema->setProp(edgeIt.get_schema().get_schema_prop());
+    if (edgeIt.get_edge_type() != lastEdgeType) {
+      // init schema vector, since schema version is zero-based, need to add one
+      edgeSchemas[edgeIt.get_edge_type()].resize(schema->getVersion() + 1);
+      lastEdgeType = edgeIt.get_edge_type();
+    }
+    edgeSchemas[edgeIt.get_edge_type()][schema->getVersion()] = std::move(schema);
+  }
+  return edgeSchemas;
+}
+
+void MetaClient::addSchemaField(NebulaSchemaProvider* schema,
+                                const cpp2::ColumnDef& col,
+                                ObjectPool* pool) {
+  bool hasDef = col.default_value_ref().has_value();
+  auto& colType = col.get_type();
+  size_t len = colType.type_length_ref().has_value() ? *colType.get_type_length() : 0;
+  cpp2::GeoShape geoShape =
+      colType.geo_shape_ref().has_value() ? *colType.get_geo_shape() : cpp2::GeoShape::ANY;
+  bool nullable = col.nullable_ref().has_value() ? *col.get_nullable() : false;
+  Expression* defaultValueExpr = nullptr;
+  if (hasDef) {
+    auto encoded = *col.get_default_value();
+    defaultValueExpr = Expression::decode(pool, folly::StringPiece(encoded.data(), encoded.size()));
+
+    if (defaultValueExpr == nullptr) {
+      LOG(ERROR) << "Wrong expr default value for column name: " << col.get_name();
+      hasDef = false;
+    }
+  }
+
+  schema->addField(col.get_name(),
+                   colType.get_type(),
+                   len,
+                   nullable,
+                   hasDef ? defaultValueExpr : nullptr,
+                   geoShape);
+}
 
 bool MetaClient::loadSchemas(GraphSpaceID spaceId,
                              std::shared_ptr<SpaceInfoCache> spaceInfoCache,
@@ -398,52 +401,26 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
   auto tagItemVec = tagRet.value();
   auto edgeItemVec = edgeRet.value();
   allEdgeMap[spaceId] = {};
-  TagSchemas tagSchemas;
-  EdgeSchemas edgeSchemas;
-  TagID lastTagId = -1;
-
-  auto addSchemaField = [&spaceInfoCache](NebulaSchemaProvider* schema,
-                                          const cpp2::ColumnDef& col) {
-    bool hasDef = col.default_value_ref().has_value();
-    auto& colType = col.get_type();
-    size_t len = colType.type_length_ref().has_value() ? *colType.get_type_length() : 0;
-    cpp2::GeoShape geoShape =
-        colType.geo_shape_ref().has_value() ? *colType.get_geo_shape() : cpp2::GeoShape::ANY;
-    bool nullable = col.nullable_ref().has_value() ? *col.get_nullable() : false;
-    Expression* defaultValueExpr = nullptr;
-    if (hasDef) {
-      auto encoded = *col.get_default_value();
-      defaultValueExpr = Expression::decode(&(spaceInfoCache->pool_),
-                                            folly::StringPiece(encoded.data(), encoded.size()));
-
-      if (defaultValueExpr == nullptr) {
-        LOG(ERROR) << "Wrong expr default value for column name: " << col.get_name();
-        hasDef = false;
-      }
-    }
-
-    schema->addField(col.get_name(),
-                     colType.get_type(),
-                     len,
-                     nullable,
-                     hasDef ? defaultValueExpr : nullptr,
-                     geoShape);
-  };
+  spaceInfoCache->tagItemVec_ = tagItemVec;
+  spaceInfoCache->tagSchemas_ = buildTagSchemas(tagItemVec, &spaceInfoCache->pool_);
+  spaceInfoCache->edgeItemVec_ = edgeItemVec;
+  spaceInfoCache->edgeSchemas_ = buildEdgeSchemas(edgeItemVec, &spaceInfoCache->pool_);
+  // TagID lastTagId = -1;
 
   for (auto& tagIt : tagItemVec) {
-    // meta will return the different version from new to old
-    auto schema = std::make_shared<NebulaSchemaProvider>(tagIt.get_version());
-    for (const auto& colIt : tagIt.get_schema().get_columns()) {
-      addSchemaField(schema.get(), colIt);
-    }
-    // handle schema property
-    schema->setProp(tagIt.get_schema().get_schema_prop());
-    if (tagIt.get_tag_id() != lastTagId) {
-      // init schema vector, since schema version is zero-based, need to add one
-      tagSchemas[tagIt.get_tag_id()].resize(schema->getVersion() + 1);
-      lastTagId = tagIt.get_tag_id();
-    }
-    tagSchemas[tagIt.get_tag_id()][schema->getVersion()] = std::move(schema);
+    // // meta will return the different version from new to old
+    // auto schema = std::make_shared<NebulaSchemaProvider>(tagIt.get_version());
+    // for (const auto& colIt : tagIt.get_schema().get_columns()) {
+    //   addSchemaField(schema.get(), colIt, &spaceInfoCache->pool_);
+    // }
+    // // handle schema property
+    // schema->setProp(tagIt.get_schema().get_schema_prop());
+    // if (tagIt.get_tag_id() != lastTagId) {
+    //   // init schema vector, since schema version is zero-based, need to add one
+    //   tagSchemas[tagIt.get_tag_id()].resize(schema->getVersion() + 1);
+    //   lastTagId = tagIt.get_tag_id();
+    // }
+    // tagSchemas[tagIt.get_tag_id()][schema->getVersion()] = std::move(schema);
     tagNameIdMap.emplace(std::make_pair(spaceId, tagIt.get_tag_name()), tagIt.get_tag_id());
     tagIdNameMap.emplace(std::make_pair(spaceId, tagIt.get_tag_id()), tagIt.get_tag_name());
     // get the latest tag version
@@ -460,21 +437,21 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
   }
 
   std::unordered_set<std::pair<GraphSpaceID, EdgeType>> edges;
-  EdgeType lastEdgeType = -1;
+  // EdgeType lastEdgeType = -1;
   for (auto& edgeIt : edgeItemVec) {
-    // meta will return the different version from new to old
-    auto schema = std::make_shared<NebulaSchemaProvider>(edgeIt.get_version());
-    for (const auto& col : edgeIt.get_schema().get_columns()) {
-      addSchemaField(schema.get(), col);
-    }
-    // handle shcem property
-    schema->setProp(edgeIt.get_schema().get_schema_prop());
-    if (edgeIt.get_edge_type() != lastEdgeType) {
-      // init schema vector, since schema version is zero-based, need to add one
-      edgeSchemas[edgeIt.get_edge_type()].resize(schema->getVersion() + 1);
-      lastEdgeType = edgeIt.get_edge_type();
-    }
-    edgeSchemas[edgeIt.get_edge_type()][schema->getVersion()] = std::move(schema);
+    // // meta will return the different version from new to old
+    // auto schema = std::make_shared<NebulaSchemaProvider>(edgeIt.get_version());
+    // for (const auto& col : edgeIt.get_schema().get_columns()) {
+    //   addSchemaField(schema.get(), col, &spaceInfoCache->pool_);
+    // }
+    // // handle shcem property
+    // schema->setProp(edgeIt.get_schema().get_schema_prop());
+    // if (edgeIt.get_edge_type() != lastEdgeType) {
+    //   // init schema vector, since schema version is zero-based, need to add one
+    //   edgeSchemas[edgeIt.get_edge_type()].resize(schema->getVersion() + 1);
+    //   lastEdgeType = edgeIt.get_edge_type();
+    // }
+    // edgeSchemas[edgeIt.get_edge_type()][schema->getVersion()] = std::move(schema);
     edgeNameTypeMap.emplace(std::make_pair(spaceId, edgeIt.get_edge_name()),
                             edgeIt.get_edge_type());
     edgeTypeNameMap.emplace(std::make_pair(spaceId, edgeIt.get_edge_type()),
@@ -499,21 +476,21 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
             << " Successfully!";
   }
 
-  spaceInfoCache->tagSchemas_ = std::move(tagSchemas);
-  spaceInfoCache->edgeSchemas_ = std::move(edgeSchemas);
+  // spaceInfoCache->tagSchemas_ = std::move(tagSchemas);
+  // spaceInfoCache->edgeSchemas_ = std::move(edgeSchemas);
   return true;
 }
 
-// static Indexes __buildIndexes(std::vector<cpp2::IndexItem> indexItemVec) {
-//   Indexes indexes;
-//   for (auto index : indexItemVec) {
-//     auto indexName = index.get_index_name();
-//     auto indexID = index.get_index_id();
-//     auto indexPtr = std::make_shared<cpp2::IndexItem>(index);
-//     indexes.emplace(indexID, indexPtr);
-//   }
-//   return indexes;
-// }
+static Indexes __buildIndexes(std::vector<cpp2::IndexItem> indexItemVec) {
+  Indexes indexes;
+  for (auto index : indexItemVec) {
+    auto indexName = index.get_index_name();
+    auto indexID = index.get_index_id();
+    auto indexPtr = std::make_shared<cpp2::IndexItem>(index);
+    indexes.emplace(indexID, indexPtr);
+  }
+  return indexes;
+}
 
 bool MetaClient::loadIndexes(GraphSpaceID spaceId, std::shared_ptr<SpaceInfoCache> cache) {
   auto tagIndexesRet = listTagIndexes(spaceId).get();
@@ -530,27 +507,25 @@ bool MetaClient::loadIndexes(GraphSpaceID spaceId, std::shared_ptr<SpaceInfoCach
     return false;
   }
 
-  Indexes tagIndexes;
-  for (auto tagIndex : tagIndexesRet.value()) {
+  auto tagIndexItemVec = tagIndexesRet.value();
+  cache->tagIndexItemVec_ = tagIndexItemVec;
+  cache->tagIndexes_ = __buildIndexes(tagIndexItemVec);
+  for (const auto& tagIndex : tagIndexItemVec) {
     auto indexName = tagIndex.get_index_name();
     auto indexID = tagIndex.get_index_id();
     std::pair<GraphSpaceID, std::string> pair(spaceId, indexName);
     tagNameIndexMap_[pair] = indexID;
-    auto tagIndexPtr = std::make_shared<cpp2::IndexItem>(tagIndex);
-    tagIndexes.emplace(indexID, tagIndexPtr);
   }
-  cache->tagIndexes_ = std::move(tagIndexes);
 
-  Indexes edgeIndexes;
-  for (auto& edgeIndex : edgeIndexesRet.value()) {
+  auto edgeIndexItemVec = edgeIndexesRet.value();
+  cache->edgeIndexItemVec_ = edgeIndexItemVec;
+  cache->edgeIndexes_ = __buildIndexes(edgeIndexItemVec);
+  for (auto& edgeIndex : edgeIndexItemVec) {
     auto indexName = edgeIndex.get_index_name();
     auto indexID = edgeIndex.get_index_id();
     std::pair<GraphSpaceID, std::string> pair(spaceId, indexName);
     edgeNameIndexMap_[pair] = indexID;
-    auto edgeIndexPtr = std::make_shared<cpp2::IndexItem>(edgeIndex);
-    edgeIndexes.emplace(indexID, edgeIndexPtr);
   }
-  cache->edgeIndexes_ = std::move(edgeIndexes);
   return true;
 }
 
@@ -593,6 +568,37 @@ bool MetaClient::loadFulltextIndexes() {
     fulltextIndexMap_ = std::move(ftRet).value();
   }
   return true;
+}
+
+const MetaClient::ThreadLocalInfo& MetaClient::getThreadLocalInfo() {
+  ThreadLocalInfo& threadLocalInfo = folly::SingletonThreadLocal<ThreadLocalInfo>::get();
+
+  if (threadLocalInfo.localLastUpdateTime_ < localDataLastUpdateTime_) {
+    threadLocalInfo.localLastUpdateTime_ = localDataLastUpdateTime_;
+
+    folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+    for (auto& spaceInfo : localCache_) {
+      GraphSpaceID spaceId = spaceInfo.first;
+      std::shared_ptr<SpaceInfoCache> info = spaceInfo.second;
+      std::shared_ptr<SpaceInfoCache> infoDeepCopy = std::make_shared<SpaceInfoCache>(*info);
+      infoDeepCopy->tagSchemas_ = buildTagSchemas(infoDeepCopy->tagItemVec_, &infoDeepCopy->pool_);
+      infoDeepCopy->edgeSchemas_ =
+          buildEdgeSchemas(infoDeepCopy->edgeItemVec_, &infoDeepCopy->pool_);
+      infoDeepCopy->tagIndexes_ = __buildIndexes(infoDeepCopy->tagIndexItemVec_);
+      infoDeepCopy->edgeIndexes_ = __buildIndexes(infoDeepCopy->edgeIndexItemVec_);
+      threadLocalInfo.localCache_[spaceId] = infoDeepCopy;
+    }
+    threadLocalInfo.spaceIndexByName_ = spaceIndexByName_;
+    threadLocalInfo.spaceTagIndexByName_ = spaceTagIndexByName_;
+    threadLocalInfo.spaceEdgeIndexByName_ = spaceEdgeIndexByName_;
+    threadLocalInfo.spaceEdgeIndexByType_ = spaceEdgeIndexByType_;
+    threadLocalInfo.spaceNewestTagVerMap_ = spaceNewestTagVerMap_;
+    threadLocalInfo.spaceNewestEdgeVerMap_ = spaceNewestEdgeVerMap_;
+    threadLocalInfo.spaceTagIndexById_ = spaceTagIndexById_;
+    threadLocalInfo.spaceAllEdgeMap_ = spaceAllEdgeMap_;
+  }
+
+  return threadLocalInfo;
 }
 
 Status MetaClient::checkTagIndexed(GraphSpaceID spaceId, IndexID indexID) {

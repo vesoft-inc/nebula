@@ -17,6 +17,7 @@
 #include <atomic>
 
 #include "common/base/Base.h"
+#include "common/base/ObjectPool.h"
 #include "common/base/Status.h"
 #include "common/base/StatusOr.h"
 #include "common/meta/Common.h"
@@ -75,13 +76,13 @@ struct SpaceInfoCache {
   cpp2::SpaceDesc spaceDesc_;
   PartsAlloc partsAlloc_;
   std::unordered_map<HostAddr, std::vector<PartitionID>> partsOnHost_;
-  // std::vector<cpp2::TagItem> tagItemVec_;
+  std::vector<cpp2::TagItem> tagItemVec_;
   TagSchemas tagSchemas_;
-  // std::vector<cpp2::EdgeItem> edgeItemVec_;
+  std::vector<cpp2::EdgeItem> edgeItemVec_;
   EdgeSchemas edgeSchemas_;
-  // std::vector<cpp2::IndexItem> tagIndexItemVec_;
+  std::vector<cpp2::IndexItem> tagIndexItemVec_;
   Indexes tagIndexes_;
-  // std::vector<cpp2::IndexItem> edgeIndexItemVec_;
+  std::vector<cpp2::IndexItem> edgeIndexItemVec_;
   Indexes edgeIndexes_;
   Listeners listeners_;
   // objPool used to decode when adding field
@@ -93,9 +94,13 @@ struct SpaceInfoCache {
       : spaceDesc_(info.spaceDesc_),
         partsAlloc_(info.partsAlloc_),
         partsOnHost_(info.partsOnHost_),
+        tagItemVec_(info.tagItemVec_),
         tagSchemas_(info.tagSchemas_),
+        edgeItemVec_(info.edgeItemVec_),
         edgeSchemas_(info.edgeSchemas_),
+        tagIndexItemVec_(info.tagIndexItemVec_),
         tagIndexes_(info.tagIndexes_),
+        edgeIndexItemVec_(info.edgeIndexItemVec_),
         edgeIndexes_(info.edgeIndexes_),
         listeners_(info.listeners_),
         termOfPartition_(info.termOfPartition_) {}
@@ -771,6 +776,11 @@ class MetaClient {
   };
 
   const ThreadLocalInfo& getThreadLocalInfo();
+
+  void addSchemaField(NebulaSchemaProvider* schema, const cpp2::ColumnDef& col, ObjectPool* pool);
+
+  TagSchemas buildTagSchemas(std::vector<cpp2::TagItem> tagItemVec, ObjectPool* pool);
+  EdgeSchemas buildEdgeSchemas(std::vector<cpp2::EdgeItem> edgeItemVec, ObjectPool* pool);
 
   std::unique_ptr<thread::GenericWorker> bgThread_;
   SpaceNameIdMap spaceIndexByName_;
