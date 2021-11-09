@@ -198,7 +198,7 @@ void setupRaft(int32_t numCopies,
     copies.back()->start(getPeers(allHosts, allHosts[i], isLearner), isLearner[i]);
   }
 
-  // Wait untill all copies agree on the same leader
+  // Wait until all copies agree on the same leader
   waitUntilLeaderElected(copies, leader, isLearner);
 }
 
