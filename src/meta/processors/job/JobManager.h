@@ -102,7 +102,7 @@ class JobManager : public nebula::cpp::NonCopyable, public nebula::cpp::NonMovab
   // Enter different priority queues according to the command type
   void enqueue(const JobID& jobId, const cpp2::AdminCmd& cmd);
 
-  ErrorOr<nebula::cpp2::ErrorCode, bool> checkIndexJobRuning();
+  ErrorOr<nebula::cpp2::ErrorCode, bool> checkIndexJobRunning();
 
  private:
   JobManager() = default;

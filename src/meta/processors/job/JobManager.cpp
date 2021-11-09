@@ -598,7 +598,7 @@ ErrorOr<nebula::cpp2::ErrorCode, GraphSpaceID> JobManager::getSpaceId(const std:
   return *reinterpret_cast<const GraphSpaceID*>(val.c_str());
 }
 
-ErrorOr<nebula::cpp2::ErrorCode, bool> JobManager::checkIndexJobRuning() {
+ErrorOr<nebula::cpp2::ErrorCode, bool> JobManager::checkIndexJobRunning() {
   std::unique_ptr<kvstore::KVIterator> iter;
   auto retCode = kvStore_->prefix(kDefaultSpaceId, kDefaultPartId, JobUtil::jobPrefix(), &iter);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
