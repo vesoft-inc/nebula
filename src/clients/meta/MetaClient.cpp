@@ -762,7 +762,7 @@ Status MetaClient::handleResponse(const RESP& resp) {
     case nebula::cpp2::ErrorCode::E_NO_VALID_HOST:
       return Status::Error("No valid host hold the partition!");
     case nebula::cpp2::ErrorCode::E_CORRUPTTED_BALANCE_PLAN:
-      return Status::Error("No corrupted blance plan!");
+      return Status::Error("No corrupted balance plan!");
     case nebula::cpp2::ErrorCode::E_INVALID_PASSWORD:
       return Status::Error("Invalid password!");
     case nebula::cpp2::ErrorCode::E_IMPROPER_ROLE:

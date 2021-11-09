@@ -216,7 +216,7 @@ class Balancer {
                                                                 LeaderBalancePlan& plan,
                                                                 bool useDeviation = true);
 
-  void simplifyLeaderBalnacePlan(GraphSpaceID spaceId, LeaderBalancePlan& plan);
+  void simplifyLeaderBalancePlan(GraphSpaceID spaceId, LeaderBalancePlan& plan);
 
   int32_t acquireLeaders(HostParts& allHostParts,
                          HostParts& leaderHostParts,

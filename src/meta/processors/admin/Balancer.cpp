@@ -863,7 +863,7 @@ nebula::cpp2::ErrorCode Balancer::leaderBalance() {
                    << "Space: " << spaceId;
         continue;
       }
-      simplifyLeaderBalnacePlan(spaceId, plan);
+      simplifyLeaderBalancePlan(spaceId, plan);
       for (const auto& task : plan) {
         futures.emplace_back(client_->transLeader(std::get<0>(task),
                                                   std::get<1>(task),
@@ -1129,7 +1129,7 @@ int32_t Balancer::giveupLeaders(HostParts& leaderParts,
   return taskCount;
 }
 
-void Balancer::simplifyLeaderBalnacePlan(GraphSpaceID spaceId, LeaderBalancePlan& plan) {
+void Balancer::simplifyLeaderBalancePlan(GraphSpaceID spaceId, LeaderBalancePlan& plan) {
   // Within a leader balance plan, a partition may be moved several times, but
   // actually we only need to transfer the leadership of a partition from the
   // first host to the last host, and ignore the intermediate ones
