@@ -341,7 +341,7 @@ struct AddVerticesRequest {
     //   in the NewVertex.NewTag.props
     3: map<common.TagID, list<binary>>
         (cpp.template = "std::unordered_map")   prop_names,
-    // if ture, when (vertexID,tagID) already exists, do nothing
+    // if true, when (vertexID,tagID) already exists, do nothing
     4: bool                                     if_not_exists,
     5: optional RequestCommon                   common,
 }
@@ -354,7 +354,7 @@ struct AddEdgesRequest {
     // A list of property names. The order of the property names should match
     //   the data order specified in the NewEdge.props
     3: list<binary>                             prop_names,
-    // if ture, when edge already exists, do nothing
+    // if true, when edge already exists, do nothing
     4: bool                                     if_not_exists,
     5: optional RequestCommon                   common,
 }
@@ -887,7 +887,7 @@ struct ChainAddEdgesRequest {
     // A list of property names. The order of the property names should match
     //   the data order specified in the NewEdge.props
     3: list<binary>                             prop_names,
-    // if ture, when edge already exists, do nothing
+    // if true, when edge already exists, do nothing
     4: bool                                     if_not_exists,
     // 5: map<common.PartitionID, i64>             term_of_parts,
     5: i64                                      term

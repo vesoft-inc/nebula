@@ -234,7 +234,7 @@ TEST(UpdateVertexTest, Filter_Yield_Test2) {
   auto* srcExp2 = SourcePropertyExpression::make(pool, "1", "endYear");
   auto* priExp2 = ConstantExpression::make(pool, 2017L);
   auto* right = RelationalExpression::makeEQ(pool, srcExp2, priExp2);
-  // left AND right is ture
+  // left AND right is true
   auto logExp = LogicalExpression::makeAnd(pool, left, right);
   req.set_condition(Expression::encode(*logExp));
 
@@ -537,7 +537,7 @@ TEST(UpdateVertexTest, Invalid_Filter_Test) {
   auto* srcExp2 = SourcePropertyExpression::make(pool, "1", "birth");
   auto* priExp2 = ConstantExpression::make(pool, 1990L);
   auto* right = RelationalExpression::makeEQ(pool, srcExp2, priExp2);
-  // left AND right is ture
+  // left AND right is true
   auto logExp = LogicalExpression::makeAnd(pool, left, right);
   req.set_condition(Expression::encode(*logExp));
 
