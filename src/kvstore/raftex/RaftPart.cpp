@@ -1544,7 +1544,7 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
     } else if (code == nebula::cpp2::ErrorCode::E_WRITE_STALLED) {
       VLOG(1) << idStr_ << "Follower delay committing log " << committedLogId_ + 1 << " to "
               << lastLogIdCanCommit;
-      // Even if log is not applied to state machine, still regard as succeded:
+      // Even if log is not applied to state machine, still regard as succeeded:
       // 1. As a follower, upcoming request will try to commit them
       // 2. If it is elected as leader later, it will try to commit them as well
       resp.set_committed_log_id(committedLogId_);
