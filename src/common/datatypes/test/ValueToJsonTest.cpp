@@ -246,7 +246,7 @@ TEST(ValueToJson, DecodeEncode) {
       // time
       Value(Time{1, 2, 3, 4}),
 
-      // datatime
+      // datetime
       Value(DateTime{1, 2, 3, 4, 5, 6, 7}),
 
       // vertex
