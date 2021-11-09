@@ -81,12 +81,12 @@ Feature: Geo base
       """
       CREATE EDGE test_2(geo geography DEFAULT ST_GeogFromText("LINESTRING(0 1, 2xxxx"));
       """
-    Then a ExecutionError should be raised at runtime: Invalid parm!
+    Then a ExecutionError should be raised at runtime: Invalid param!
     When executing query:
       """
       CREATE TAG test_3(geo geography(point) DEFAULT ST_GeogFromText("LineString(0 1, 2 3)"));
       """
-    Then a ExecutionError should be raised at runtime: Invalid parm!
+    Then a ExecutionError should be raised at runtime: Invalid param!
     When executing query:
       """
       CREATE TAG test_3(geo geography(linestring) DEFAULT ST_GeogFromText("LineString(0 1, 2 3)"));
