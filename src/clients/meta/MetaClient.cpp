@@ -140,7 +140,7 @@ void MetaClient::heartBeatThreadFunc() {
     return;
   }
 
-  // if MetaServer has some changes, refesh the localCache_
+  // if MetaServer has some changes, refresh the localCache_
   if (localLastUpdateTime_ < metadLastUpdateTime_) {
     bool ldRet = loadData();
     bool lcRet = true;
