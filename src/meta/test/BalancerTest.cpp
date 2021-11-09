@@ -1564,7 +1564,7 @@ TEST(BalanceTest, ManyHostsLeaderBalancePlanTest) {
   NiceMock<MockAdminClient> client;
   Balancer balancer(kv, &client);
 
-  // chcek several times if they are balanced
+  // check several times if they are balanced
   for (int count = 0; count < 1; count++) {
     HostLeaderMap hostLeaderMap;
     // all part will random choose a leader
