@@ -176,7 +176,7 @@ TEST(BalanceIntegrationTest, BalanceTest) {
         newMetaClient.get(), dataPath.c_str(), localIp, storagePort, true);
     LOG(INFO) << "Start a new storage server on " << storageAddr;
   }
-  LOG(INFO) << "Let's stop the last storage servcie " << storagePorts.back();
+  LOG(INFO) << "Let's stop the last storage service " << storagePorts.back();
   {
     metaClients.back()->stop();
     serverContexts.back().reset();
