@@ -720,7 +720,7 @@ TEST(Value, TypeCast) {
     EXPECT_EQ(Value::Type::FLOAT, vf.type());
     EXPECT_EQ(vf.getFloat(), std::numeric_limits<double_t>::max());
 
-    // Invlaid string
+    // Invalid string
     vf = Value("12abc").toFloat();
     EXPECT_EQ(Value::kNullValue, vf);
 
@@ -788,7 +788,7 @@ TEST(Value, TypeCast) {
     vi = Value("-9223372036854775809").toInt();
     EXPECT_EQ(Value::kNullOverflow, vi);
 
-    // Invlaid string
+    // Invalid string
     vi = Value("12abc").toInt();
     EXPECT_EQ(Value::kNullValue, vi);
 
