@@ -71,7 +71,7 @@ class RowReaderV1 : public RowReader {
   int64_t skipToNext(int64_t index, int64_t offset) const noexcept;
 
   // Skip to the {index}Th field
-  // The method retuns the offset of the field
+  // The method returns the offset of the field
   // It returns a negative number when the data corrupts
   int64_t skipToField(int64_t index) const noexcept;
 
