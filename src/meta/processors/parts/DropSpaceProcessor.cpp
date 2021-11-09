@@ -98,7 +98,7 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
   auto statiskey = MetaKeyUtils::statsKey(spaceId);
   deleteKeys.emplace_back(statiskey);
 
-  // 6. Delte related fulltext index meta data
+  // 6. Delete related fulltext index meta data
   auto ftPrefix = MetaKeyUtils::fulltextIndexPrefix();
   auto ftRet = doPrefix(ftPrefix);
   if (!nebula::ok(ftRet)) {
