@@ -261,7 +261,7 @@ Expression* Expand::buildExpandCondition(const std::string& lastStepResult,
   matchCtx_->qctx->ectx()->setValue(loopSteps, startIndex);
   // ++loopSteps{startIndex} << maxHop
   auto stepCondition = ExpressionUtils::stepCondition(pool, loopSteps, maxHop);
-  // lastStepResult == empty || size(lastStepReult) != 0
+  // lastStepResult == empty || size(lastStepResult) != 0
   auto* eqEmpty = RelationalExpression::makeEQ(pool,
                                                VariableExpression::make(pool, lastStepResult),
                                                ConstantExpression::make(pool, Value()));
