@@ -216,13 +216,13 @@ TEST(FulltextPluginTest, ESResultTest) {
   //            "root_cause": [
   //            {
   //                "type": "parsing_exception",
-  //                    "reason": "Unknown key for a VALUE_STRING in [_soure].",
+  //                    "reason": "Unknown key for a VALUE_STRING in [_source].",
   //                    "line": 1,
   //                    "col": 128
   //            }
   //            ],
   //            "type": "parsing_exception",
-  //                "reason": "Unknown key for a VALUE_STRING in [_soure].",
+  //                "reason": "Unknown key for a VALUE_STRING in [_source].",
   //                "line": 1,
   //                "col": 128
   //        },
@@ -231,9 +231,9 @@ TEST(FulltextPluginTest, ESResultTest) {
   {
     std::string json =
         R"({"error": {"root_cause": [{"type": "parsing_exception","reason":
-                           "Unknown key for a VALUE_STRING in [_soure].","line": 1,"col": 128}],
+                           "Unknown key for a VALUE_STRING in [_source].","line": 1,"col": 128}],
                            "type": "parsing_exception","reason": "Unknown key for a VALUE_STRING
-                           in [_soure].","line": 1,"col": 128},"status": 400})";
+                           in [_source].","line": 1,"col": 128},"status": 400})";
     HostAddr localHost_{"127.0.0.1", 9200};
     HttpClient hc(localHost_);
     std::vector<std::string> rows;
