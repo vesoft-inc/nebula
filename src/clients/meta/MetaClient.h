@@ -163,7 +163,7 @@ struct MetaClientOptions {
 
   // Current host address
   HostAddr localHost_{"", 0};
-  // Current cluster Id, it is requried by storaged only.
+  // Current cluster Id, it is required by storaged only.
   std::atomic<ClusterID> clusterId_{0};
   // If current client being used in storaged.
   bool inStoraged_ = false;
