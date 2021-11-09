@@ -63,7 +63,7 @@ class StatusOr final {
   // `StatusOr<T>' contains neither a Status nor a value
   // in the default-constructed case.
   // From the semantics aspect, it must have been associated with
-  // a Status or value eventualy before being used.
+  // a Status or value eventually before being used.
   StatusOr() { state_ = kVoid; }
 
   // Destruct the `Status' or value if it's holding one.
