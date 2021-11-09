@@ -100,18 +100,18 @@ TEST(FulltextPluginTest, ESBulkTest) {
       "charset=utf-8\" -XPOST \"http://127.0.0.1:9200/_bulk\"";
   ASSERT_EQ(expected, header);
 
-  std::vector<folly::dynamic> bodys;
+  std::vector<folly::dynamic> bodies;
   for (const auto& item : items) {
     folly::dynamic meta =
         folly::dynamic::object("_id", DocIDTraits::docId(item))("_index", item.index);
     folly::dynamic data = folly::dynamic::object("value", DocIDTraits::val(item.val))(
         "column_id", DocIDTraits::column(item.column));
-    bodys.emplace_back(folly::dynamic::object("index", std::move(meta)));
-    bodys.emplace_back(std::move(data));
+    bodies.emplace_back(folly::dynamic::object("index", std::move(meta)));
+    bodies.emplace_back(std::move(data));
   }
 
   auto body = ESStorageAdapter().bulkBody(items);
-  verifyBodyStr(body, std::move(bodys));
+  verifyBodyStr(body, std::move(bodies));
 }
 
 TEST(FulltextPluginTest, ESPutToTest) {
