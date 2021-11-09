@@ -5,6 +5,10 @@ on:
     types:
       - published
 
+concurrency:
+  group: release
+  cancel-in-progress: true
+
 defaults:
   run:
     shell: bash

@@ -27,6 +27,7 @@ nebula_add_library(
 nebula_add_library(
     graph_storage_service_handler OBJECT
     GraphStorageServiceHandler.cpp
+    ExprVisitorBase.cpp
     context/StorageExpressionContext.cpp
     mutate/AddVerticesProcessor.cpp
     mutate/DeleteVerticesProcessor.cpp
@@ -40,6 +41,14 @@ nebula_add_library(
     query/ScanVertexProcessor.cpp
     query/ScanEdgeProcessor.cpp
     index/LookupProcessor.cpp
+    exec/IndexNode.cpp
+    exec/IndexDedupNode.cpp
+    exec/IndexEdgeScanNode.cpp
+    exec/IndexLimitNode.cpp
+    exec/IndexProjectionNode.cpp
+    exec/IndexScanNode.cpp
+    exec/IndexSelectionNode.cpp
+    exec/IndexVertexScanNode.cpp
 )
 
 nebula_add_library(
