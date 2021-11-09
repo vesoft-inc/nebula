@@ -53,7 +53,7 @@ nebula_add_test(
 
 nebula_add_test(
     NAME
-        structral_value_test
+        structural_value_test
     SOURCES
         PathTest.cpp
         EdgeTest.cpp
