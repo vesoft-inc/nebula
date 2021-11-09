@@ -77,7 +77,7 @@ ErrOrHosts MetaJobExecutor::getTargetHost(GraphSpaceID spaceId) {
     return retCode;
   }
 
-  // use vector instead of set because this can convient for next step
+  // use vector instead of set because this can convenient for next step
   std::unordered_map<HostAddr, std::vector<PartitionID>> hostAndPart;
   std::vector<std::pair<HostAddr, std::vector<PartitionID>>> hosts;
   while (iter->valid()) {
