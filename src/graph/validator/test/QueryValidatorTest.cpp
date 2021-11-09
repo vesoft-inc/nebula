@@ -1015,7 +1015,7 @@ TEST_F(QueryValidatorTest, OrderBy) {
   }
 }
 
-TEST_F(QueryValidatorTest, OrderByAndLimt) {
+TEST_F(QueryValidatorTest, OrderByAndLimit) {
   {
     std::string query =
         "GO FROM \"Ann\" OVER like YIELD $^.person.age AS age"
