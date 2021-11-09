@@ -54,7 +54,7 @@ class GenericWorker final : public nebula::cpp::NonCopyable, public nebula::cpp:
   bool NG_MUST_USE_RESULT start(std::string name = "");
 
   /**
-   * Asynchronouly to notify the worker to stop handling further new tasks.
+   * Asynchronously to notify the worker to stop handling further new tasks.
    */
   bool stop();
 
