@@ -34,7 +34,7 @@ class RateLimiter {
       // consumeWithBorrowAndWait do nothing when toConsume > burstSize_, we sleep 1s instead
       std::this_thread::sleep_for(std::chrono::seconds(1));
     } else {
-      // If there are enouth tokens, consume and return immediately.
+      // If there are enough tokens, consume and return immediately.
       // If not, consume anyway, but sleep enough time before return.
       auto now = time::WallClock::fastNowInSec();
       bucket_->consumeWithBorrowAndWait(toConsume, rate, burstSize, static_cast<double>(now));
