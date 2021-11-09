@@ -2104,7 +2104,7 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
   req.set_parts({1, 2, 3, 4, 5, 6});
   req.set_return_columns({kVid});
 
-  // bool range scan will be forbidden in query engine, so only test preix for
+  // bool range scan will be forbidden in query engine, so only test prefix for
   // bool
   {
     LOG(INFO) << "lookup on tag where tag.col_bool == true";
