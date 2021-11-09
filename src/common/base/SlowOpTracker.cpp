@@ -8,4 +8,4 @@
 #include "common/base/Base.h"
 #include "common/time/WallClock.h"
 
-DEFINE_int64(slow_op_threshhold_ms, 50, "default threshhold for slow operation");
+DEFINE_int64(slow_op_threshold_ms, 50, "default threshold for slow operation");
