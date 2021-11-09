@@ -109,7 +109,7 @@ class Balancer {
   /**
    * TODO(heng): rollback some balance plan.
    */
-  Status rollback(BalanceID id) { return Status::Error("unplemented, %ld", id); }
+  Status rollback(BalanceID id) { return Status::Error("unimplemented, %ld", id); }
 
   /**
    * TODO(heng): Execute balance plan from outside.
