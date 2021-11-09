@@ -19,8 +19,8 @@ RebuildIndexTask::RebuildIndexTask(StorageEnv* env, TaskContext&& ctx)
   // Rebuild index rate is limited to FLAGS_rebuild_index_part_rate_limit * SubTaskConcurrency. As
   // for default configuration in a 3 replica cluster, send rate is 512Kb for a partition. From a
   // global perspective, the leaders are distributed evenly, so both send and recv traffic will be
-  // 1Mb (512 * 2 peers). Muliplied by the subtasks concurrency, the total send/recv traffic will be
-  // 10Mb, which is non-trival.
+  // 1Mb (512 * 2 peers). Multiplied by the subtasks concurrency, the total send/recv traffic will
+  // be 10Mb, which is non-trival.
   LOG(INFO) << "Rebuild index task is rate limited to " << FLAGS_rebuild_index_part_rate_limit
             << " for each subtask by default";
 }
