@@ -517,7 +517,7 @@ void RocksEngine::openBackupEngine(GraphSpaceID spaceId) {
     } else if (!status.ok()) {
       LOG(FATAL) << status.ToString();
     }
-    LOG(INFO) << "restore from latest backup succesfully"
+    LOG(INFO) << "restore from latest backup successfully"
               << ", backup path " << backupPath_ << ", wal path " << walDir << ", data path "
               << dataPath;
   }
