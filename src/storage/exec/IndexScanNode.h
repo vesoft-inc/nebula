@@ -44,7 +44,7 @@ namespace storage {
  *  Member:
  * `indexId_`               : index_ in this Node to access
  * `partId_`                : part to access.It will be modify while `doExecute`
- * `index_`                 : index defination
+ * `index_`                 : index definition
  * `indexNullable_`         : if index contain nullable field or not
  * `columnHints_`           :
  * `path_`                  :
