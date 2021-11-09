@@ -127,7 +127,7 @@ enum EdgeDirection {
 
 struct TraverseSpec {
     // When edge_type > 0, going along the out-edge, otherwise, along the in-edge
-    // If the edge type list is empty, all edges will be scaned
+    // If the edge type list is empty, all edges will be scanned
     1: list<common.EdgeType>                    edge_types,
     // When above edge_types is not empty, edge_direction should be ignored
     // When edge_types is empty, edge_direction decided which edge types will be
