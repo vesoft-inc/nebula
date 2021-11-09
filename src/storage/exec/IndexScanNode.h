@@ -76,8 +76,8 @@ namespace storage {
  * `Path` not only generate the key to access, but also `qualified` whether the key complies with
  * the columnhint constraint or not.For example, if there is a truncated string index, we cannot
  * simply compare bytes to determine whether the current key complies with the columnhints
- * constraint, the result of `qulified(bytes)` should be `UNCERTAIN` and `IndexScanNode` will
- * access base data then `Path` reconfirm `ColumnHint` constraint by `qulified(RowData)`. In
+ * constraint, the result of `qualified(bytes)` should be `UNCERTAIN` and `IndexScanNode` will
+ * access base data then `Path` reconfirm `ColumnHint` constraint by `qualified(RowData)`. In
  * addition to the above examples, there are other cases to deal with.`Path` and it's derive class
  * will dynamic different strategy by `ColumnHint`,`IndexItem`,and `Schema`.All strategy will be
  * added to `QFList_`(QualifiedFunctionList) during `buildKey`, and executed during `qualified`.
@@ -112,8 +112,8 @@ namespace storage {
  *
  * Function:
  * `make`                   : construct `PrefixPath` or `RangePath` according to `hints`
- * `qualified(StringPiece)` : qulified key by bytes
- * `qualified(Map)`         : qulified row by value
+ * `qualified(StringPiece)` : qualified key by bytes
+ * `qualified(Map)`         : qualified row by value
  * `resetPart`              : reset current partitionID and reset `iter_`
  * `encodeValue`            : encode a Value to bytes
  *
