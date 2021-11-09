@@ -27,7 +27,7 @@ static const std::unordered_map<std::string, std::pair<std::string, bool>> syste
     {"ft_service", {"__ft_service__", false}},
     {"sessions", {"__sessions__", true}}};
 
-// SystemInfo will always be backuped
+// SystemInfo will always be backed up
 static const std::unordered_map<std::string, std::pair<std::string, bool>> systemInfoMaps{
     {"autoIncrementId", {"__id__", true}}, {"lastUpdateTime", {"__last_update_time__", true}}};
 
