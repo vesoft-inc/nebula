@@ -68,7 +68,7 @@ void ListHostsProcessor::process(const cpp2::ListHostsReq& req) {
  * now(2020-04-29), assume all metad have same gitInfoSHA
  * this will change if some day
  * meta.thrift support interface like getHostStatus()
- * which return a bunch of host infomation
+ * which return a bunch of host information
  * it's not necessary add this interface only for gitInfoSHA
  * */
 nebula::cpp2::ErrorCode ListHostsProcessor::allMetaHostsStatus() {

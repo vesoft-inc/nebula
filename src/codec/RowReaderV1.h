@@ -53,7 +53,7 @@ class RowReaderV1 : public RowReader {
  private:
   RowReaderV1() = default;
 
-  // Process the row header infomation
+  // Process the row header information
   // Returns false when the row data is invalid
   bool processHeader(folly::StringPiece row);
 
