@@ -206,13 +206,13 @@ TEST_P(RocksEngineTest, IngestTest) {
   rocksdb::SstFileWriter writer(rocksdb::EnvOptions(), options);
   fs::TempDir rootPath("/tmp/rocksdb_engine_IngestTest.XXXXXX");
   auto file = folly::stringPrintf("%s/%s", rootPath.path(), "data.sst");
-  auto stauts = writer.Open(file);
-  ASSERT_TRUE(stauts.ok());
+  auto status = writer.Open(file);
+  ASSERT_TRUE(status.ok());
 
-  stauts = writer.Put("key", "value");
-  ASSERT_TRUE(stauts.ok());
-  stauts = writer.Put("key_empty", "");
-  ASSERT_TRUE(stauts.ok());
+  status = writer.Put("key", "value");
+  ASSERT_TRUE(status.ok());
+  status = writer.Put("key_empty", "");
+  ASSERT_TRUE(status.ok());
   writer.Finish();
 
   auto engine = std::make_unique<RocksEngine>(0, kDefaultVIdLen, rootPath.path());
