@@ -421,7 +421,7 @@ Expression *ExpressionUtils::rewriteRelExpr(const Expression *expr) {
 Expression *ExpressionUtils::rewriteRelExprHelper(const Expression *expr,
                                                   Expression *&relRightOperandExpr) {
   ObjectPool *pool = expr->getObjPool();
-  // TODO: Support rewrite mul/div expressoion after fixing overflow
+  // TODO: Support rewrite mul/div expression after fixing overflow
   auto matcher = [](const Expression *e) -> bool {
     if (!e->isArithmeticExpr() || e->kind() == Expression::Kind::kMultiply ||
         e->kind() == Expression::Kind::kDivision)

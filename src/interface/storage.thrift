@@ -63,7 +63,7 @@ enum StatType {
 struct StatProp {
     // Alias of the stats property
     1: binary           alias,
-    // An eperssion. In most of cases, it is a reference to a specific property
+    // An expression. In most of cases, it is a reference to a specific property
     2: binary           prop,
     // Stats method
     3: StatType         stat,
@@ -74,7 +74,7 @@ struct StatProp {
 struct Expr {
     // Alias of the expression
     1: binary           alias,
-    // An eperssion. It could be any valid expression,
+    // An expression. It could be any valid expression,
     2: binary           expr,
 }
 
