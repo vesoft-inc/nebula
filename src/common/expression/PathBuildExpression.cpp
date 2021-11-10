@@ -41,13 +41,6 @@ bool PathBuildExpression::buildPath(const Value& value, Path& path) const {
     case Value::Type::EDGE: {
       Step step;
       if (!path.steps.empty()) {
-        const auto& lastStep = path.steps.back();
-        const auto& edge = value.getEdge();
-        if (lastStep.dst.vid != edge.src && lastStep.dst.vid != edge.dst) {
-          VLOG(1) << "not valid: " << edge << " path: " << path << " last step vid"
-                  << lastStep.dst.vid;
-          return false;
-        }
         getEdge(value, path.steps.back().dst.vid, step);
       } else {
         getEdge(value, path.src.vid, step);
@@ -57,14 +50,12 @@ bool PathBuildExpression::buildPath(const Value& value, Path& path) const {
     }
     case Value::Type::VERTEX: {
       if (path.steps.empty()) {
+        if (path.src.vid == value.getVertex().vid) {
+          return true;
+        }
         return false;
       }
       auto& lastStep = path.steps.back();
-      const auto& vert = value.getVertex();
-      if (lastStep.dst.vid != vert.vid) {
-        VLOG(1) << "not valid: " << vert;
-        return false;
-      }
       getVertex(value, lastStep.dst);
       break;
     }
@@ -72,10 +63,6 @@ bool PathBuildExpression::buildPath(const Value& value, Path& path) const {
       const auto& p = value.getPath();
       if (!path.steps.empty()) {
         auto& lastStep = path.steps.back();
-        if (lastStep.dst.vid != p.src.vid) {
-          VLOG(1) << "not valid: " << p;
-          return false;
-        }
         lastStep.dst = p.src;
       }
       path.steps.insert(path.steps.end(), p.steps.begin(), p.steps.end());
@@ -84,14 +71,12 @@ bool PathBuildExpression::buildPath(const Value& value, Path& path) const {
     case Value::Type::LIST: {
       for (const auto& val : value.getList().values) {
         if (!buildPath(val, path)) {
-          VLOG(1) << "not valid: " << val;
           return false;
         }
       }
       break;
     }
     default: {
-      VLOG(1) << "not valid: " << value.type();
       return false;
     }
   }
