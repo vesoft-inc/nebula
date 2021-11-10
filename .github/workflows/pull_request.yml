@@ -7,6 +7,10 @@ on:
       - master
       - 'v[0-9]+.*'
 
+concurrency:
+  group: ${{ github.head_ref }}
+  cancel-in-progress: true
+
 defaults:
   run:
     shell: bash
@@ -20,6 +24,8 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 2
+      - name: Check License Header
+        uses: apache/skywalking-eyes@main
       - name: Cpplint
         run: |
           ln -snf $PWD/.linters/cpp/hooks/pre-commit.sh $PWD/.linters/cpp/pre-commit.sh
