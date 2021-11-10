@@ -123,6 +123,7 @@ class PlanNode {
     kListUserRoles,
     kListUsers,
     kListRoles,
+    kDescribeUser,
 
     // Snapshot
     kCreateSnapshot,

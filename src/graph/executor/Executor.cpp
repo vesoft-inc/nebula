@@ -22,6 +22,7 @@
 #include "graph/executor/admin/CharsetExecutor.h"
 #include "graph/executor/admin/ConfigExecutor.h"
 #include "graph/executor/admin/CreateUserExecutor.h"
+#include "graph/executor/admin/DescribeUserExecutor.h"
 #include "graph/executor/admin/DownloadExecutor.h"
 #include "graph/executor/admin/DropUserExecutor.h"
 #include "graph/executor/admin/GrantRoleExecutor.h"
@@ -388,6 +389,9 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     }
     case PlanNode::Kind::kListRoles: {
       return pool->add(new ListRolesExecutor(node, qctx));
+    }
+    case PlanNode::Kind::kDescribeUser: {
+      return pool->add(new DescribeUserExecutor(node, qctx));
     }
     case PlanNode::Kind::kBalanceLeaders: {
       return pool->add(new BalanceLeadersExecutor(node, qctx));

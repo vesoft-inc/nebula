@@ -458,7 +458,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
   // list users
   {
     cpp2::ListUsersReq req;
-    auto* processor = ListUsersWithDescProcessor::instance(kv.get());
+    auto* processor = ListUsersProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();

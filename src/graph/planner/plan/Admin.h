@@ -653,6 +653,23 @@ class ListUsers final : public SingleDependencyNode {
       : SingleDependencyNode(qctx, Kind::kListUsers, dep) {}
 };
 
+class DescribeUser final : public SingleDependencyNode {
+ public:
+  static DescribeUser* make(QueryContext* qctx, PlanNode* dep, const std::string* username) {
+    return qctx->objPool()->add(new DescribeUser(qctx, dep, username));
+  }
+
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
+  const std::string* username() const { return username_; }
+
+ private:
+  explicit DescribeUser(QueryContext* qctx, PlanNode* dep, const std::string* username)
+      : SingleDependencyNode(qctx, Kind::kDescribeUser, dep), username_(username) {}
+
+  const std::string* username_;
+};
+
 class ListRoles final : public SingleDependencyNode {
  public:
   static ListRoles* make(QueryContext* qctx, PlanNode* dep, GraphSpaceID space) {

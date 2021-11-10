@@ -360,7 +360,7 @@ class MetaClient {
 
   folly::Future<StatusOr<std::unordered_map<std::string, std::string>>> listUsers();
 
-  folly::Future<StatusOr<std::vector<cpp2::UserDescItem>>> listUsersWithDesc();
+  folly::Future<StatusOr<cpp2::UserDescItem>> describeUser(std::string account);
 
   folly::Future<StatusOr<std::vector<cpp2::RoleItem>>> listRoles(GraphSpaceID space);
 

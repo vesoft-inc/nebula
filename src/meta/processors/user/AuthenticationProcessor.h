@@ -96,17 +96,17 @@ class ListUsersProcessor : public BaseProcessor<cpp2::ListUsersResp> {
       : BaseProcessor<cpp2::ListUsersResp>(kvstore) {}
 };
 
-class ListUsersWithDescProcessor : public BaseProcessor<cpp2::ListUsersWithDescResp> {
+class DescribeUserProcessor : public BaseProcessor<cpp2::DescribeUserResp> {
  public:
-  static ListUsersWithDescProcessor* instance(kvstore::KVStore* kvstore) {
-    return new ListUsersWithDescProcessor(kvstore);
+  static DescribeUserProcessor* instance(kvstore::KVStore* kvstore) {
+    return new DescribeUserProcessor(kvstore);
   }
 
-  void process(const cpp2::ListUsersReq& req);
+  void process(const cpp2::DescribeUserReq& req);
 
  private:
-  explicit ListUsersWithDescProcessor(kvstore::KVStore* kvstore)
-      : BaseProcessor<cpp2::ListUsersWithDescResp>(kvstore) {}
+  explicit DescribeUserProcessor(kvstore::KVStore* kvstore)
+      : BaseProcessor<cpp2::DescribeUserResp>(kvstore) {}
 };
 
 class ListRolesProcessor : public BaseProcessor<cpp2::ListRolesResp> {

@@ -2481,16 +2481,15 @@ folly::Future<StatusOr<std::unordered_map<std::string, std::string>>> MetaClient
   return future;
 }
 
-folly::Future<StatusOr<std::vector<cpp2::UserDescItem>>> MetaClient::listUsersWithDesc() {
-  cpp2::ListUsersReq req;
-  folly::Promise<StatusOr<std::vector<cpp2::UserDescItem>>> promise;
+folly::Future<StatusOr<cpp2::UserDescItem>> MetaClient::describeUser(std::string account) {
+  cpp2::DescribeUserReq req;
+  req.set_account(account);
+  folly::Promise<StatusOr<cpp2::UserDescItem>> promise;
   auto future = promise.getFuture();
   getResponse(
       std::move(req),
-      [](auto client, auto request) { return client->future_listUsersWithDesc(request); },
-      [](cpp2::ListUsersWithDescResp&& resp) -> decltype(auto) {
-        return std::move(resp.get_users());
-      },
+      [](auto client, auto request) { return client->future_describeUser(request); },
+      [](cpp2::DescribeUserResp&& resp) -> decltype(auto) { return std::move(resp.get_user()); },
       std::move(promise));
   return future;
 }
