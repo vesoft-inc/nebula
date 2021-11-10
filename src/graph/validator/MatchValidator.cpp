@@ -369,7 +369,9 @@ Status MatchValidator::validateReturn(MatchReturn *ret,
       return Status::SemanticError("RETURN * is not allowed when there are no variables in scope");
     }
   }
+  std::vector<const Expression *> exprs;
   if (ret->returnItems()->columns()) {
+    exprs.reserve(ret->returnItems()->columns()->size());
     for (auto *column : ret->returnItems()->columns()->columns()) {
       if (ExpressionUtils::hasAny(column->expr(),
                                   {Expression::Kind::kVertex, Expression::Kind::kEdge})) {
@@ -377,6 +379,12 @@ Status MatchValidator::validateReturn(MatchReturn *ret,
             "keywords: vertex and edge are not supported in return clause `%s'",
             column->toString().c_str());
       }
+      if (!retClauseCtx.yield->hasAgg_ &&
+          ExpressionUtils::hasAny(column->expr(), {Expression::Kind::kAggregate})) {
+        retClauseCtx.yield->hasAgg_ = true;
+      }
+      column->setExpr(ExpressionUtils::rewriteAttr2LabelTagProp(column->expr()));
+      exprs.push_back(column->expr());
       columns->addColumn(column->clone().release());
     }
   }
@@ -815,11 +823,12 @@ Status MatchValidator::checkAlias(
       return Status::OK();
     }
     case Expression::Kind::kLabelTagProperty: {
-      auto name = static_cast<const LabelTagPropertyExpression *>(refExpr)->label();
+      auto labelExpr = static_cast<const LabelTagPropertyExpression *>(refExpr)->label();
+      auto name = static_cast<const VariablePropertyExpression *>(labelExpr)->prop();
       auto res = getAliasType(aliasesUsed, name);
       NG_RETURN_IF_ERROR(res);
       if (res.value() != AliasType::kNode) {
-        return Status::SemanticError("Alias: %s 's type must be vertex", name.c_str());
+        return Status::SemanticError("The type of `%s' must be tag", name.c_str());
       }
       return Status::OK();
     }

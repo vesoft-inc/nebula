@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #pragma once
@@ -22,7 +21,7 @@ class LabelTagPropertyExpression final : public Expression {
   LabelTagPropertyExpression& operator=(LabelTagPropertyExpression&&) = delete;
 
   static LabelTagPropertyExpression* make(ObjectPool* pool,
-                                          const std::string& label = "",
+                                          Expression* label = nullptr,
                                           const std::string& tag = "",
                                           const std::string& prop = "") {
     return pool->add(new LabelTagPropertyExpression(pool, label, tag, prop));
@@ -44,11 +43,11 @@ class LabelTagPropertyExpression final : public Expression {
 
   const std::string& tag() const { return tag_; }
 
-  const std::string& label() const { return label_; }
+  const Expression* label() const { return label_; }
 
  private:
   LabelTagPropertyExpression(ObjectPool* pool,
-                             const std::string& label = "",
+                             Expression* label = nullptr,
                              const std::string& tag = "",
                              const std::string& prop = "")
       : Expression(pool, Kind::kLabelTagProperty), label_(label), tag_(tag), prop_(prop) {}
@@ -57,7 +56,7 @@ class LabelTagPropertyExpression final : public Expression {
   void resetFrom(Decoder& decoder) override;
 
  private:
-  std::string label_;
+  Expression* label_{nullptr};
   std::string tag_;
   std::string prop_;
 };

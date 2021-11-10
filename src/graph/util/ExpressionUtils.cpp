@@ -126,7 +126,7 @@ Expression *ExpressionUtils::rewriteAttr2LabelTagProp(const Expression *expr) {
     if (e->kind() == Expression::Kind::kAttribute) {
       auto attrExpr = static_cast<const AttributeExpression *>(e);
       if (attrExpr->left()->kind() == Expression::Kind::kLabelAttribute &&
-          attrExpr->right()->kind() == Expression::Kind::kLabel) {
+          attrExpr->right()->kind() == Expression::Kind::kConstant) {
         return true;
       }
     }
@@ -140,10 +140,11 @@ Expression *ExpressionUtils::rewriteAttr2LabelTagProp(const Expression *expr) {
     auto tagExpr = const_cast<ConstantExpression *>(labelAttrExpr->right());
     auto propExpr = static_cast<const LabelExpression *>(attrExpr->right());
     QueryExpressionContext ctx(nullptr);
-    const auto &label = labelExpr->eval(ctx);
+    const auto &labelVal = labelExpr->eval(ctx);
+    auto label = VariablePropertyExpression::make(pool, "", labelVal.getStr());
     const auto &tag = tagExpr->eval(ctx);
     const auto &prop = const_cast<LabelExpression *>(propExpr)->eval(ctx);
-    return LabelTagPropertyExpression::make(pool, label.getStr(), tag.getStr(), prop.getStr());
+    return LabelTagPropertyExpression::make(pool, label, tag.getStr(), prop.getStr());
   };
 
   return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));

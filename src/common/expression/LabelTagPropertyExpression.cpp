@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #include "common/expression/LabelTagPropertyExpression.h"
 
@@ -10,7 +9,7 @@
 namespace nebula {
 
 const Value& LabelTagPropertyExpression::eval(ExpressionContext& ctx) {
-  const auto& var = ctx.getVar(label_);
+  const auto& var = label_->eval(ctx);
   if (var.type() != Value::Type::VERTEX) {
     return Value::kNullBadType;
   }
@@ -26,7 +25,8 @@ const Value& LabelTagPropertyExpression::eval(ExpressionContext& ctx) {
 }
 
 std::string LabelTagPropertyExpression::toString() const {
-  return label_ + "." + tag_ + "." + prop_;
+  std::string labelStr = label_->toString();
+  return labelStr.erase(0, 1) + "." + tag_ + "." + prop_;
 }
 
 bool LabelTagPropertyExpression::operator==(const Expression& rhs) const {
@@ -34,18 +34,18 @@ bool LabelTagPropertyExpression::operator==(const Expression& rhs) const {
     return false;
   }
   const auto& expr = static_cast<const LabelTagPropertyExpression&>(rhs);
-  return label_ == expr.label_ && tag_ == expr.tag_ && prop_ == expr.prop_;
+  return *label_ == *expr.label_ && tag_ == expr.tag_ && prop_ == expr.prop_;
 }
 
 void LabelTagPropertyExpression::writeTo(Encoder& encoder) const {
   encoder << kind_;
-  encoder << label_;
+  encoder << *label_;
   encoder << tag_;
   encoder << prop_;
 }
 
 void LabelTagPropertyExpression::resetFrom(Decoder& decoder) {
-  label_ = decoder.readStr();
+  label_ = decoder.readExpression(pool_);
   tag_ = decoder.readStr();
   prop_ = decoder.readStr();
 }
