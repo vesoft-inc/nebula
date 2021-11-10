@@ -94,7 +94,7 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
   }
 
   auto partitionNum = partitionNumRet.value();
-  LOG(INFO) << "Start statis task";
+  LOG(INFO) << "Start stats task";
   CHECK_NOTNULL(env_->kvstore_);
   auto vertexPrefix = NebulaKeyUtils::vertexPrefix(part);
   std::unique_ptr<kvstore::KVIterator> vertexIter;
@@ -131,7 +131,7 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
 
   VertexID lastVertexId = "";
 
-  // Only statis valid vetex data, no multi version
+  // Only stats valid vetex data, no multi version
   // For example
   // Vid  tagId
   // 1     1
@@ -161,7 +161,7 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
     vertexIter->next();
   }
 
-  // Only statis valid edge data, no multi version
+  // Only stats valid edge data, no multi version
   // For example
   // src edgetype rank dst
   // 1    1       1    2

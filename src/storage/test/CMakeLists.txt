@@ -85,7 +85,7 @@ nebula_add_test(
 
 nebula_add_test(
     NAME
-        statis_task_test
+        stats_task_test
     SOURCES
         StatsTaskTest.cpp
     OBJECTS

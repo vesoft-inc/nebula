@@ -103,7 +103,7 @@ TEST_F(StatsTaskTest, StatsTagAndEdgeData) {
       }
     }
 
-    // Check statis result
+    // Check stats result
     ASSERT_EQ(nebula::meta::cpp2::JobStatus::FINISHED, statsItem.get_status());
     // Three tags
     ASSERT_EQ(3, (*statsItem.tag_vertices_ref()).size());
@@ -168,7 +168,7 @@ TEST_F(StatsTaskTest, StatsTagAndEdgeData) {
       }
     }
 
-    // Check statis result
+    // Check stats result
     ASSERT_EQ(nebula::meta::cpp2::JobStatus::FINISHED, statsItem.get_status());
     // Three tags
     ASSERT_EQ(3, (*statsItem.tag_vertices_ref()).size());
@@ -239,7 +239,7 @@ TEST_F(StatsTaskTest, StatsTagAndEdgeData) {
       }
     }
 
-    // Check statis result
+    // Check stats result
     ASSERT_EQ(nebula::meta::cpp2::JobStatus::FINISHED, statsItem.get_status());
     // Three tags
     ASSERT_EQ(3, (*statsItem.tag_vertices_ref()).size());

@@ -629,7 +629,7 @@ struct TaskPara {
 }
 
 struct AddAdminTaskRequest {
-    // rebuild index / flush / compact / statis
+    // rebuild index / flush / compact / stats
     1: meta.AdminCmd                        cmd
     2: i32                                  job_id
     3: i32                                  task_id

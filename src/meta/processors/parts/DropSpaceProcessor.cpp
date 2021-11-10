@@ -94,9 +94,9 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
     lstIter->next();
   }
 
-  // 5. Delete related statis data
-  auto statiskey = MetaKeyUtils::statsKey(spaceId);
-  deleteKeys.emplace_back(statiskey);
+  // 5. Delete related stats data
+  auto statskey = MetaKeyUtils::statsKey(spaceId);
+  deleteKeys.emplace_back(statskey);
 
   // 6. Delete related fulltext index meta data
   auto ftPrefix = MetaKeyUtils::fulltextIndexPrefix();
