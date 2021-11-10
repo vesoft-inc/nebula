@@ -79,6 +79,7 @@ class Sentence {
     kShowStats,
     kShowTSClients,
     kShowFTIndexes,
+    kDescribeUser,
     kDeleteVertices,
     kDeleteTags,
     kDeleteEdges,

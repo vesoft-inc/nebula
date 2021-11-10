@@ -358,7 +358,9 @@ class MetaClient {
 
   folly::Future<StatusOr<bool>> revokeFromUser(cpp2::RoleItem roleItem);
 
-  folly::Future<StatusOr<std::map<std::string, cpp2::UserDescItem>>> listUsers();
+  folly::Future<StatusOr<std::unordered_map<std::string, std::string>>> listUsers();
+
+  folly::Future<StatusOr<cpp2::UserDescItem>> describeUser(std::string account);
 
   folly::Future<StatusOr<std::vector<cpp2::RoleItem>>> listRoles(GraphSpaceID space);
 

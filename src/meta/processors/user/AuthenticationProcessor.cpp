@@ -228,33 +228,33 @@ void ChangePasswordProcessor::process(const cpp2::ChangePasswordReq& req) {
 
 void ListUsersProcessor::process(const cpp2::ListUsersReq& req) {
   UNUSED(req);
-  folly::SharedMutex::ReadHolder rHolder1(LockUtils::userLock());
-  folly::SharedMutex::ReadHolder rHolder2(LockUtils::spaceLock());
-  // list users
-  std::string userPrefix = "__users__";
-  auto usersRet = doPrefix(userPrefix);
-  if (!nebula::ok(usersRet)) {
-    auto retCode = nebula::error(usersRet);
+  folly::SharedMutex::ReadHolder rHolder(LockUtils::userLock());
+  std::string prefix = "__users__";
+  auto ret = doPrefix(prefix);
+  if (!nebula::ok(ret)) {
+    auto retCode = nebula::error(ret);
     LOG(ERROR) << "List User failed, error: " << apache::thrift::util::enumNameSafe(retCode);
     handleErrorCode(retCode);
     onFinished();
     return;
   }
-  std::map<std::string, nebula::meta::cpp2::UserDescItem> usersMap;
-  // trans users to map
-  auto iter1 = nebula::value(usersRet).get();
-  while (iter1->valid()) {
-    auto account = MetaKeyUtils::parseUser(iter1->key());
-    auto password = MetaKeyUtils::parseUserPwd(iter1->val());
-    cpp2::UserDescItem user;
-    user.set_account(account);
-    user.set_encoded_pwd(password);
-    std::map<GraphSpaceID, cpp2::RoleType> spaceRoleMap;
-    user.set_space_role_map(spaceRoleMap);
-    usersMap[std::move(account)] = std::move(user);
-    iter1->next();
+
+  auto iter = nebula::value(ret).get();
+  std::unordered_map<std::string, std::string> users;
+  while (iter->valid()) {
+    auto account = MetaKeyUtils::parseUser(iter->key());
+    auto password = MetaKeyUtils::parseUserPwd(iter->val());
+    users.emplace(std::move(account), std::move(password));
+    iter->next();
   }
-  // add desc
+  resp_.set_users(std::move(users));
+  handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
+  onFinished();
+}
+
+void DescribeUserProcessor::process(const cpp2::DescribeUserReq& req) {
+  UNUSED(req);
+  folly::SharedMutex::ReadHolder rHolder1(LockUtils::userLock());
   auto rolePrefix = MetaKeyUtils::rolesPrefix();
   auto roleRet = doPrefix(rolePrefix);
   if (!nebula::ok(roleRet)) {
@@ -264,21 +264,22 @@ void ListUsersProcessor::process(const cpp2::ListUsersReq& req) {
     onFinished();
     return;
   }
-  auto iter2 = nebula::value(roleRet).get();
-  while (iter2->valid()) {
-    auto account = MetaKeyUtils::parseRoleUser(iter2->key());
-    auto userDesc = usersMap.find(account);
-    if (userDesc != usersMap.end()) {
-      auto spaceId = MetaKeyUtils::parseRoleSpace(iter2->key());
-      auto val = iter2->val();
-      auto map = userDesc->second.get_space_role_map();
+  auto& act = req.get_account();
+  std::map<::nebula::cpp2::GraphSpaceID, ::nebula::meta::cpp2::RoleType> map;
+  auto iter = nebula::value(roleRet).get();
+  while (iter->valid()) {
+    auto account = MetaKeyUtils::parseRoleUser(iter->key());
+    if (account == act) {
+      auto spaceId = MetaKeyUtils::parseRoleSpace(iter->key());
+      auto val = iter->val();
       map[spaceId] = *reinterpret_cast<const cpp2::RoleType*>(val.begin());
-      userDesc->second.set_space_role_map(std::move(map));
     }
-    iter2->next();
+    iter->next();
   }
-
-  resp_.set_users(std::move(usersMap));
+  nebula::meta::cpp2::UserDescItem user;
+  user.set_account(std::move(act));
+  user.set_space_role_map(std::move(map));
+  resp_.set_user(std::move(user));
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
   onFinished();
 }

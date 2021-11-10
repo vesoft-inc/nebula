@@ -62,7 +62,6 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "INSERT"                    { return TokenType::KW_INSERT; }
 "YIELD"                     { return TokenType::KW_YIELD; }
 "RETURN"                    { return TokenType::KW_RETURN; }
-"DESCRIBE"                  { return TokenType::KW_DESCRIBE; }
 "DESC"                      { return TokenType::KW_DESC; }
 "VERTEX"                    { return TokenType::KW_VERTEX; }
 "VERTICES"                  { return TokenType::KW_VERTICES; }
@@ -105,6 +104,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "NO"                        { return TokenType::KW_NO; }
 "OVERWRITE"                 { return TokenType::KW_OVERWRITE; }
 "SHOW"                      { return TokenType::KW_SHOW; }
+"DESCRIBE"                  { return TokenType::KW_DESCRIBE; }
 "ADD"                       { return TokenType::KW_ADD; }
 "CREATE"                    { return TokenType::KW_CREATE;}
 "DROP"                      { return TokenType::KW_DROP; }
