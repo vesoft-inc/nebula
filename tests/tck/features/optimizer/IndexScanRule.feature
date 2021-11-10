@@ -29,7 +29,7 @@ Feature: Match index selection
       | 15 | GetVertices | 11           |                                                                                                                                                                       |
       | 11 | IndexScan   | 0            | {"indexCtx": {"columnHints":{"scanType":"RANGE","column":"name","beginValue":"\"Tim Duncan\"","endValue":"\"Yao Ming\"","includeBegin":"false","includeEnd":"true"}}} |
       | 0  | Start       |              |                                                                                                                                                                       |
-   When profiling query:
+    When profiling query:
       """
       MATCH (v:player)
       WHERE v.age>30 and v.age<=40
@@ -50,7 +50,7 @@ Feature: Match index selection
       | 15 | GetVertices | 11           |                                                                                                                                                 |
       | 11 | IndexScan   | 0            | {"indexCtx": {"columnHints":{"scanType":"RANGE","column":"name","beginValue":"30","endValue":"40","includeBegin":"false","includeEnd","true"}}} |
       | 0  | Start       |              |                                                                                                                                                 |
-  
+
   Scenario: or filter embeding
     When profiling query:
       """
