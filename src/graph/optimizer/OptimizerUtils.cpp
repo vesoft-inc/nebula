@@ -189,6 +189,18 @@ bool mergeRangeColumnHints(const std::vector<ScoredColumnHint>& hints,
         break;
       }
       case IndexScore::kPrefix: {
+        auto tmp = std::make_pair(h.hint.get_begin_value(), true);
+        if (begin->first.empty()) {
+          *begin = tmp;
+        } else {
+          OptimizerUtils::compareAndSwapBound(tmp, *begin);
+        }
+        tmp = std::make_pair(h.hint.get_begin_value(), true);
+        if (end->first.empty()) {
+          *end = std::move(tmp);
+        } else {
+          OptimizerUtils::compareAndSwapBound(*end, tmp);
+        }
         break;
       }
       case IndexScore::kNotEqual: {
@@ -196,7 +208,15 @@ bool mergeRangeColumnHints(const std::vector<ScoredColumnHint>& hints,
       }
     }
   }
-  return !(begin->first > end->first);
+  bool ret = true;
+  if (begin->first > end->first) {
+    ret = false;
+  } else if (begin->first == end->first) {
+    if (begin->second == false && end->second == false) {
+      ret = false;
+    }
+  }
+  return ret;
 }
 
 bool getIndexColumnHintInExpr(const ColumnDef& field,
@@ -236,6 +256,13 @@ bool getIndexColumnHintInExpr(const ColumnDef& field,
   } else if (begin.first == end.first) {
     if (begin.second == false && end.second == false) {
       return false;
+    } else {
+      h.hint.set_scan_type(storage::cpp2::ScanType::RANGE);
+      h.hint.set_begin_value(std::move(begin.first));
+      h.hint.set_end_value(std::move(end.first));
+      h.hint.set_include_begin(begin.second);
+      h.hint.set_include_end(end.second);
+      h.score = IndexScore::kRange;
     }
   } else {
     return false;
