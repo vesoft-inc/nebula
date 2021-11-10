@@ -2,7 +2,7 @@
 #
 # This source code is licensed under Apache 2.0 License.
 
-.PHONY: fmt check init init-all clean test tck fail up down
+.PHONY: fmt check check-and-diff init init-all clean test tck fail up down
 
 PYPI_MIRROR = https://mirrors.aliyun.com/pypi/simple/
 # PYPI_MIRROR = http://pypi.mirrors.ustc.edu.cn/simple --trusted-host pypi.mirrors.ustc.edu.cn
