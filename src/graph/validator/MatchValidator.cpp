@@ -272,7 +272,8 @@ Status MatchValidator::validateFilter(const Expression *filter,
                                       WhereClauseContext &whereClauseCtx) const {
   auto transformRes = ExpressionUtils::filterTransform(filter);
   NG_RETURN_IF_ERROR(transformRes);
-  whereClauseCtx.filter = transformRes.value();
+  // rewrite Attribute to LabelTagProperty
+  whereClauseCtx.filter = ExpressionUtils::rewriteAttr2LabelTagProp(transformRes.value());
 
   auto typeStatus = deduceExprType(whereClauseCtx.filter);
   NG_RETURN_IF_ERROR(typeStatus);
@@ -416,6 +417,7 @@ Status MatchValidator::validateAliases(
     const std::unordered_map<std::string, AliasType> &aliasesAvailable) const {
   static const std::unordered_set<Expression::Kind> kinds = {Expression::Kind::kLabel,
                                                              Expression::Kind::kLabelAttribute,
+                                                             Expression::Kind::kLabelTagProperty,
                                                              // primitive props
                                                              Expression::Kind::kEdgeSrc,
                                                              Expression::Kind::kEdgeDst,
@@ -808,26 +810,29 @@ Status MatchValidator::checkAlias(
   switch (kind) {
     case Expression::Kind::kLabel: {
       auto name = static_cast<const LabelExpression *>(refExpr)->name();
-      auto res = getAliasType(aliasesAvailable, name);
-      if (!res.ok()) {
-        return res.status();
+      auto res = getAliasType(aliasesUsed, name);
+      NG_RETURN_IF_ERROR(res);
+      return Status::OK();
+    }
+    case Expression::Kind::kLabelTagProperty: {
+      auto name = static_cast<const LabelTagPropertyExpression *>(refExpr)->label();
+      auto res = getAliasType(aliasesUsed, name);
+      NG_RETURN_IF_ERROR(res);
+      if (res.value() != AliasType::kNode) {
+        return Status::SemanticError("Alias: %s 's type must be vertex", name.c_str());
       }
       return Status::OK();
     }
     case Expression::Kind::kLabelAttribute: {
       auto name = static_cast<const LabelAttributeExpression *>(refExpr)->left()->name();
-      auto res = getAliasType(aliasesAvailable, name);
-      if (!res.ok()) {
-        return res.status();
-      }
+      auto res = getAliasType(aliasesUsed, name);
+      NG_RETURN_IF_ERROR(res);
       return Status::OK();
     }
     case Expression::Kind::kEdgeSrc: {
       auto name = static_cast<const EdgeSrcIdExpression *>(refExpr)->sym();
-      auto res = getAliasType(aliasesAvailable, name);
-      if (!res.ok()) {
-        return res.status();
-      }
+      auto res = getAliasType(aliasesUsed, name);
+      NG_RETURN_IF_ERROR(res);
       aliasType = res.value();
       switch (aliasType) {
         case AliasType::kNode:
@@ -844,10 +849,8 @@ Status MatchValidator::checkAlias(
     }
     case Expression::Kind::kEdgeDst: {
       auto name = static_cast<const EdgeDstIdExpression *>(refExpr)->sym();
-      auto res = getAliasType(aliasesAvailable, name);
-      if (!res.ok()) {
-        return res.status();
-      }
+      auto res = getAliasType(aliasesUsed, name);
+      NG_RETURN_IF_ERROR(res);
       aliasType = res.value();
       switch (aliasType) {
         case AliasType::kNode:
@@ -864,10 +867,8 @@ Status MatchValidator::checkAlias(
     }
     case Expression::Kind::kEdgeRank: {
       auto name = static_cast<const EdgeRankExpression *>(refExpr)->sym();
-      auto res = getAliasType(aliasesAvailable, name);
-      if (!res.ok()) {
-        return res.status();
-      }
+      auto res = getAliasType(aliasesUsed, name);
+      NG_RETURN_IF_ERROR(res);
       aliasType = res.value();
       switch (aliasType) {
         case AliasType::kNode:
@@ -886,10 +887,8 @@ Status MatchValidator::checkAlias(
     }
     case Expression::Kind::kEdgeType: {
       auto name = static_cast<const EdgeTypeExpression *>(refExpr)->sym();
-      auto res = getAliasType(aliasesAvailable, name);
-      if (!res.ok()) {
-        return res.status();
-      }
+      auto res = getAliasType(aliasesUsed, name);
+      NG_RETURN_IF_ERROR(res);
       aliasType = res.value();
       switch (aliasType) {
         case AliasType::kNode:

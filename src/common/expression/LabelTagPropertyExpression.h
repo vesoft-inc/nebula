@@ -40,11 +40,11 @@ class LabelTagPropertyExpression final : public Expression {
     return LabelTagPropertyExpression::make(pool_, label_, tag_, prop_);
   }
 
-  const std::string& prop() { return prop_; }
+  const std::string& prop() const { return prop_; }
 
-  const std::string& tag() { return tag_; }
+  const std::string& tag() const { return tag_; }
 
-  const std::string& label() { return label_; }
+  const std::string& label() const { return label_; }
 
  private:
   LabelTagPropertyExpression(ObjectPool* pool,

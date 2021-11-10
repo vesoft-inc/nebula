@@ -140,6 +140,9 @@ class SelectionExprVisitor : public ExprVisitorBase {
   void visit(EdgePropertyExpression *expr) override {
     requiredColumns_.insert(expr->prop());
   }
+  void visit(LabelTagPropertyExpression *expr) override {
+    requiredColumns_.insert(expr->prop());
+  }
   const Set<std::string> &getRequiredColumns() {
     return requiredColumns_;
   }
