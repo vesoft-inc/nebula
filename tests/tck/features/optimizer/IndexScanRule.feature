@@ -62,15 +62,15 @@ Feature: Match index selection
       | ("JaVale McGee" :player{age: 31, name: "JaVale McGee"})           |
       | ("Dwight Howard" :player{age: 33, name: "Dwight Howard"})         |
     And the execution plan should be:
-      | id | name        | dependencies | operator info                                                                                                                                   |
-      | 10 | Project     | 13           |                                                                                                                                                 |
-      | 13 | Filter      | 7            |                                                                                                                                                 |
-      | 7  | Project     | 6            |                                                                                                                                                 |
-      | 6  | Project     | 5            |                                                                                                                                                 |
-      | 5  | Filter      | 15           |                                                                                                                                                 |
-      | 15 | GetVertices | 11           |                                                                                                                                                 |
+      | id | name        | dependencies | operator info                                                                                                                                  |
+      | 10 | Project     | 13           |                                                                                                                                                |
+      | 13 | Filter      | 7            |                                                                                                                                                |
+      | 7  | Project     | 6            |                                                                                                                                                |
+      | 6  | Project     | 5            |                                                                                                                                                |
+      | 5  | Filter      | 15           |                                                                                                                                                |
+      | 15 | GetVertices | 11           |                                                                                                                                                |
       | 11 | IndexScan   | 0            | {"indexCtx": {"columnHints":{"scanType":"RANGE","column":"age","beginValue":"30","endValue":"40","includeBegin":"false","includeEnd":"true"}}} |
-      | 0  | Start       |              |                                                                                                                                                 |
+      | 0  | Start       |              |                                                                                                                                                |
 
   Scenario: or filter embeding
     When profiling query:
