@@ -13,6 +13,7 @@
 #include "graph/planner/match/WhereClausePlanner.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/util/ExpressionUtils.h"
+#include "graph/util/SchemaUtil.h"
 #include "graph/visitor/RewriteVisitor.h"
 
 using JoinStrategyPos = nebula::graph::InnerJoinStrategy::JoinPos;
@@ -36,7 +37,6 @@ static std::vector<std::string> genAppendVColNames(const std::vector<std::string
 }
 
 static Expression* genNextTraverseStart(ObjectPool* pool, const EdgeInfo& edge) {
-  // none_direct_dst(last(list))
   auto args = ArgumentList::make(pool);
   args->addArgument(InputPropertyExpression::make(pool, edge.alias));
   return FunctionCallExpression::make(pool, "none_direct_dst", args);
@@ -297,7 +297,9 @@ Status MatchClausePlanner::leftExpandFromNode(const std::vector<NodeInfo>& nodeI
   VLOG(1) << subplan;
   auto& node = nodeInfos.front();
   auto appendV = AppendVertices::make(qctx, subplan.root, spaceId);
-  appendV->setVertexProps(genVertexProps(node, qctx, spaceId));
+  auto vertexProps = SchemaUtil::getAllVertexProp(qctx, spaceId, true);
+  NG_RETURN_IF_ERROR(vertexProps);
+  appendV->setVertexProps(std::move(vertexProps).value());
   appendV->setSrc(nextTraverseStart);
   appendV->setVertexFilter(genVertexFilter(node));
   appendV->setColNames(genAppendVColNames(subplan.root->colNames(), node));
@@ -342,8 +344,10 @@ Status MatchClausePlanner::rightExpandFromNode(const std::vector<NodeInfo>& node
   VLOG(1) << subplan;
   auto& node = nodeInfos.back();
   auto appendV = AppendVertices::make(qctx, subplan.root, spaceId);
+  auto vertexProps = SchemaUtil::getAllVertexProp(qctx, spaceId, true);
+  NG_RETURN_IF_ERROR(vertexProps);
+  appendV->setVertexProps(std::move(vertexProps).value());
   appendV->setSrc(nextTraverseStart);
-  appendV->setVertexProps(genVertexProps(node, qctx, spaceId));
   appendV->setVertexFilter(genVertexFilter(node));
   appendV->setColNames(genAppendVColNames(subplan.root->colNames(), node));
   appendV->setDedup();
@@ -420,7 +424,7 @@ YieldColumn* MatchClausePlanner::buildEdgeColumn(MatchClauseContext* matchClause
                                                  EdgeInfo& edge) const {
   auto* pool = matchClauseCtx->qctx->objPool();
   Expression* expr = nullptr;
-  if (edge.range == nullptr || (edge.range->min() == 1 && edge.range->max() == 1)) {
+  if (edge.range == nullptr) {
     expr = SubscriptExpression::make(
         pool, InputPropertyExpression::make(pool, edge.alias), ConstantExpression::make(pool, 0));
   } else {
