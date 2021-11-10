@@ -40,7 +40,7 @@ jobs:
       - name: Prepare Gherkin exec environ
         run: make init-all -C tests
       - name: Check Gherkin feature format
-        run: make check -C tests
+        run: make check-and-diff -C tests
 
   build:
     name: build

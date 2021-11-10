@@ -55,6 +55,11 @@ fmt:
 check:
 	@find $(CURR_DIR)/tck/ -type f -iname "*.feature" -print | xargs $(gherkin_fmt) --check
 
+check-and-diff:
+	@(find $(CURR_DIR)/tck/ -type f -iname '*.feature' -print | xargs $(gherkin_fmt)) 2>&1 | tee .gherkin_fmt
+	@git diff
+	@tail -1 .gherkin_fmt | grep -qv ,
+
 up: clean
 	@mkdir -p $(CURR_DIR)/.pytest
 	$(run_test) --cmd=start \
