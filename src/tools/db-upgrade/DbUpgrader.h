@@ -84,7 +84,8 @@ class UpgraderSpace {
   std::vector<std::string> indexVertexKeys(PartitionID partId,
                                            VertexID& vId,
                                            RowReader* reader,
-                                           std::shared_ptr<nebula::meta::cpp2::IndexItem> index);
+                                           std::shared_ptr<nebula::meta::cpp2::IndexItem> index,
+                                           const meta::SchemaProviderIf* latestSchema);
 
   void encodeEdgeValue(PartitionID partId,
                        RowReader* reader,
@@ -101,7 +102,8 @@ class UpgraderSpace {
                                          VertexID& svId,
                                          EdgeRanking rank,
                                          VertexID& dstId,
-                                         std::shared_ptr<nebula::meta::cpp2::IndexItem> index);
+                                         std::shared_ptr<nebula::meta::cpp2::IndexItem> index,
+                                         const meta::SchemaProviderIf* latestSchema);
 
   WriteResult convertValue(const meta::NebulaSchemaProvider* newSchema,
                            const meta::SchemaProviderIf* oldSchema,
