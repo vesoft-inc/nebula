@@ -596,6 +596,13 @@ const MetaClient::ThreadLocalInfo& MetaClient::getThreadLocalInfo() {
     threadLocalInfo.spaceNewestEdgeVerMap_ = spaceNewestEdgeVerMap_;
     threadLocalInfo.spaceTagIndexById_ = spaceTagIndexById_;
     threadLocalInfo.spaceAllEdgeMap_ = spaceAllEdgeMap_;
+
+    threadLocalInfo.userRolesMap_ = userRolesMap_;
+    threadLocalInfo.userPasswordMap_ = userPasswordMap_;
+
+    threadLocalInfo.storageHosts_ = storageHosts_;
+
+    threadLocalInfo.fulltextIndexMap_ = fulltextIndexMap_;
   }
 
   return threadLocalInfo;
@@ -2356,13 +2363,14 @@ StatusOr<LeaderInfo> MetaClient::getLeaderInfo() {
 
 const std::vector<HostAddr>& MetaClient::getAddresses() { return addrs_; }
 
-std::vector<cpp2::RoleItem> MetaClient::getRolesByUserFromCache(const std::string& user) const {
+std::vector<cpp2::RoleItem> MetaClient::getRolesByUserFromCache(const std::string& user) {
   if (!ready_) {
     return std::vector<cpp2::RoleItem>(0);
   }
-  folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-  auto iter = userRolesMap_.find(user);
-  if (iter == userRolesMap_.end()) {
+  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+  const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
+  auto iter = threadLocalInfo.userRolesMap_.find(user);
+  if (iter == threadLocalInfo.userRolesMap_.end()) {
     return std::vector<cpp2::RoleItem>(0);
   }
   return iter->second;
@@ -2408,13 +2416,14 @@ StatusOr<TermID> MetaClient::getTermFromCache(GraphSpaceID spaceId, PartitionID 
   return termInfo->second;
 }
 
-StatusOr<std::vector<HostAddr>> MetaClient::getStorageHosts() const {
+StatusOr<std::vector<HostAddr>> MetaClient::getStorageHosts() {
   if (!ready_) {
     return Status::Error("Not ready!");
   }
 
-  folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-  return storageHosts_;
+  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+  const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
+  return threadLocalInfo.storageHosts_;
 }
 
 StatusOr<SchemaVer> MetaClient::getLatestTagVersionFromCache(const GraphSpaceID& space,
@@ -2422,9 +2431,10 @@ StatusOr<SchemaVer> MetaClient::getLatestTagVersionFromCache(const GraphSpaceID&
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-  auto it = spaceNewestTagVerMap_.find(std::make_pair(space, tagId));
-  if (it == spaceNewestTagVerMap_.end()) {
+  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+  const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
+  auto it = threadLocalInfo.spaceNewestTagVerMap_.find(std::make_pair(space, tagId));
+  if (it == threadLocalInfo.spaceNewestTagVerMap_.end()) {
     return Status::TagNotFound();
   }
   return it->second;
@@ -2435,9 +2445,10 @@ StatusOr<SchemaVer> MetaClient::getLatestEdgeVersionFromCache(const GraphSpaceID
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-  auto it = spaceNewestEdgeVerMap_.find(std::make_pair(space, edgeType));
-  if (it == spaceNewestEdgeVerMap_.end()) {
+  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+  const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
+  auto it = threadLocalInfo.spaceNewestEdgeVerMap_.find(std::make_pair(space, edgeType));
+  if (it == threadLocalInfo.spaceNewestEdgeVerMap_.end()) {
     return Status::EdgeNotFound();
   }
   return it->second;
@@ -2928,8 +2939,9 @@ StatusOr<ListenersMap> MetaClient::getListenersByHostFromCache(const HostAddr& h
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-  return doGetListenersMap(host, localCache_);
+  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+  const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
+  return doGetListenersMap(host, threadLocalInfo.localCache_);
 }
 
 ListenersMap MetaClient::doGetListenersMap(const HostAddr& host, const LocalCache& localCache) {
@@ -3467,8 +3479,9 @@ StatusOr<std::unordered_map<std::string, cpp2::FTIndex>> MetaClient::getFTIndexe
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-  return fulltextIndexMap_;
+  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+  const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
+  return threadLocalInfo.fulltextIndexMap_;
 }
 
 StatusOr<std::unordered_map<std::string, cpp2::FTIndex>> MetaClient::getFTIndexBySpaceFromCache(
@@ -3476,11 +3489,12 @@ StatusOr<std::unordered_map<std::string, cpp2::FTIndex>> MetaClient::getFTIndexB
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+  const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   std::unordered_map<std::string, cpp2::FTIndex> indexes;
-  for (auto it = fulltextIndexMap_.begin(); it != fulltextIndexMap_.end(); ++it) {
-    if (it->second.get_space_id() == spaceId) {
-      indexes[it->first] = it->second;
+  for (const auto& it : threadLocalInfo.fulltextIndexMap_) {
+    if (it.second.get_space_id() == spaceId) {
+      indexes[it.first] = it.second;
     }
   }
   return indexes;
@@ -3491,8 +3505,9 @@ StatusOr<std::pair<std::string, cpp2::FTIndex>> MetaClient::getFTIndexBySpaceSch
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-  for (auto& it : fulltextIndexMap_) {
+  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+  const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
+  for (auto& it : threadLocalInfo.fulltextIndexMap_) {
     auto id = it.second.get_depend_schema().getType() == nebula::cpp2::SchemaID::Type::edge_type
                   ? it.second.get_depend_schema().get_edge_type()
                   : it.second.get_depend_schema().get_tag_id();
@@ -3508,12 +3523,13 @@ StatusOr<cpp2::FTIndex> MetaClient::getFTIndexByNameFromCache(GraphSpaceID space
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-  if (fulltextIndexMap_.find(name) != fulltextIndexMap_.end() &&
-      fulltextIndexMap_[name].get_space_id() != spaceId) {
+  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
+  const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
+  if (threadLocalInfo.fulltextIndexMap_.find(name) != fulltextIndexMap_.end() &&
+      threadLocalInfo.fulltextIndexMap_.at(name).get_space_id() != spaceId) {
     return Status::IndexNotFound();
   }
-  return fulltextIndexMap_[name];
+  return threadLocalInfo.fulltextIndexMap_.at(name);
 }
 
 folly::Future<StatusOr<cpp2::CreateSessionResp>> MetaClient::createSession(

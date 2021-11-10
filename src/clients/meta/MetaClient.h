@@ -583,7 +583,7 @@ class MetaClient {
                                                            EdgeType edgeType,
                                                            const std::string& field);
 
-  std::vector<cpp2::RoleItem> getRolesByUserFromCache(const std::string& user) const;
+  std::vector<cpp2::RoleItem> getRolesByUserFromCache(const std::string& user);
 
   bool authCheckFromCache(const std::string& account, const std::string& password) const;
 
@@ -591,7 +591,7 @@ class MetaClient {
 
   bool checkShadowAccountFromCache(const std::string& account) const;
 
-  StatusOr<std::vector<HostAddr>> getStorageHosts() const;
+  StatusOr<std::vector<HostAddr>> getStorageHosts();
 
   StatusOr<cpp2::Session> getSessionFromCache(const nebula::SessionID& session_id);
 
@@ -763,7 +763,7 @@ class MetaClient {
   HostAddr localHost_;
 
   struct ThreadLocalInfo {
-    int64_t localLastUpdateTime_{-1};
+    int64_t localLastUpdateTime_{-2};
     LocalCache localCache_;
     SpaceNameIdMap spaceIndexByName_;
     SpaceTagNameIdMap spaceTagIndexByName_;
@@ -773,6 +773,16 @@ class MetaClient {
     SpaceNewestTagVerMap spaceNewestTagVerMap_;
     SpaceNewestEdgeVerMap spaceNewestEdgeVerMap_;
     SpaceAllEdgeMap spaceAllEdgeMap_;
+
+    HostAddr active_;
+    HostAddr leader_;
+
+    UserRolesMap userRolesMap_;
+    UserPasswordMap userPasswordMap_;
+
+    std::vector<HostAddr> storageHosts_;
+
+    FTIndexMap fulltextIndexMap_;
   };
 
   const ThreadLocalInfo& getThreadLocalInfo();
