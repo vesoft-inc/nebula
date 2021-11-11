@@ -120,7 +120,7 @@ TEST(ScanVertexTest, PropertyTest) {
       auto resp = std::move(f).get();
 
       ASSERT_EQ(0, resp.result.failed_parts.size());
-      checkResponse(*resp.vertex_data_ref(), tag, tag.second.size() + 1 /* kVid */, totalRowCount);
+      checkResponse(*resp.props_ref(), tag, tag.second.size() + 1 /* kVid */, totalRowCount);
     }
     CHECK_EQ(mock::MockData::players_.size(), totalRowCount);
   }
@@ -149,7 +149,7 @@ TEST(ScanVertexTest, PropertyTest) {
 
       ASSERT_EQ(0, resp.result.failed_parts.size());
       // all 11 columns in value
-      checkResponse(*resp.vertex_data_ref(), respTag, 11 + 1 /* kVid */, totalRowCount);
+      checkResponse(*resp.props_ref(), respTag, 11 + 1 /* kVid */, totalRowCount);
     }
     CHECK_EQ(mock::MockData::players_.size(), totalRowCount);
   }
@@ -182,8 +182,7 @@ TEST(ScanVertexTest, CursorTest) {
         auto resp = std::move(f).get();
 
         ASSERT_EQ(0, resp.result.failed_parts.size());
-        checkResponse(
-            *resp.vertex_data_ref(), tag, tag.second.size() + 1 /* kVid */, totalRowCount);
+        checkResponse(*resp.props_ref(), tag, tag.second.size() + 1 /* kVid */, totalRowCount);
         hasNext = resp.get_cursors().at(partId).get_has_next();
         if (hasNext) {
           CHECK(resp.get_cursors().at(partId).next_cursor_ref());
@@ -209,8 +208,7 @@ TEST(ScanVertexTest, CursorTest) {
         auto resp = std::move(f).get();
 
         ASSERT_EQ(0, resp.result.failed_parts.size());
-        checkResponse(
-            *resp.vertex_data_ref(), tag, tag.second.size() + 1 /* kVid */, totalRowCount);
+        checkResponse(*resp.props_ref(), tag, tag.second.size() + 1 /* kVid */, totalRowCount);
         hasNext = resp.get_cursors().at(partId).get_has_next();
         if (hasNext) {
           CHECK(resp.get_cursors().at(partId).next_cursor_ref());
@@ -245,7 +243,7 @@ TEST(ScanVertexTest, MultiplePartsTest) {
     auto resp = std::move(f).get();
 
     ASSERT_EQ(0, resp.result.failed_parts.size());
-    checkResponse(*resp.vertex_data_ref(), tag, tag.second.size() + 1 /* kVid */, totalRowCount);
+    checkResponse(*resp.props_ref(), tag, tag.second.size() + 1 /* kVid */, totalRowCount);
   }
   {
     LOG(INFO) << "Scan one tag with all properties in one batch";
@@ -271,7 +269,7 @@ TEST(ScanVertexTest, MultiplePartsTest) {
 
     ASSERT_EQ(0, resp.result.failed_parts.size());
     // all 11 columns in value
-    checkResponse(*resp.vertex_data_ref(), respTag, 11 + 1 /* kVid */, totalRowCount);
+    checkResponse(*resp.props_ref(), respTag, 11 + 1 /* kVid */, totalRowCount);
   }
 }
 
@@ -299,7 +297,7 @@ TEST(ScanVertexTest, LimitTest) {
     auto resp = std::move(f).get();
 
     ASSERT_EQ(0, resp.result.failed_parts.size());
-    checkResponse(*resp.vertex_data_ref(), tag, tag.second.size() + 1 /* kVid */, totalRowCount);
+    checkResponse(*resp.props_ref(), tag, tag.second.size() + 1 /* kVid */, totalRowCount);
     EXPECT_EQ(totalRowCount, limit);
   }
   {
@@ -327,7 +325,7 @@ TEST(ScanVertexTest, LimitTest) {
 
     ASSERT_EQ(0, resp.result.failed_parts.size());
     // all 11 columns in value
-    checkResponse(*resp.vertex_data_ref(), respTag, 11 + 1 /* kVid */, totalRowCount);
+    checkResponse(*resp.props_ref(), respTag, 11 + 1 /* kVid */, totalRowCount);
     EXPECT_EQ(totalRowCount, limit);
   }
 }
@@ -433,7 +431,7 @@ TEST(ScanVertexTest, MultipleTagsTest) {
                               16.7,
                               Value::kEmpty,
                               Value::kEmpty}));
-    EXPECT_EQ(expect, *resp.vertex_data_ref());
+    EXPECT_EQ(expect, *resp.props_ref());
   }
 }
 

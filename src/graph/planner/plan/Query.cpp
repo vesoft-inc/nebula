@@ -188,6 +188,64 @@ void IndexScan::cloneMembers(const IndexScan& g) {
   isEmptyResultSet_ = g.isEmptyResultSet();
 }
 
+std::unique_ptr<PlanNodeDescription> ScanVertices::explain() const {
+  auto desc = Explore::explain();
+  addDescription("props", props_ ? folly::toJson(util::toJson(*props_)) : "", desc.get());
+  addDescription("exprs", exprs_ ? folly::toJson(util::toJson(*exprs_)) : "", desc.get());
+  return desc;
+}
+
+PlanNode* ScanVertices::clone() const {
+  auto* newGV = ScanVertices::make(qctx_, nullptr, space_);
+  newGV->cloneMembers(*this);
+  return newGV;
+}
+
+void ScanVertices::cloneMembers(const ScanVertices& gv) {
+  Explore::cloneMembers(gv);
+
+  if (gv.props_) {
+    auto vertexProps = *gv.props_;
+    auto vertexPropsPtr = std::make_unique<decltype(vertexProps)>(std::move(vertexProps));
+    setVertexProps(std::move(vertexPropsPtr));
+  }
+
+  if (gv.exprs_) {
+    auto exprs = *gv.exprs_;
+    auto exprsPtr = std::make_unique<decltype(exprs)>(std::move(exprs));
+    setExprs(std::move(exprsPtr));
+  }
+}
+
+std::unique_ptr<PlanNodeDescription> ScanEdges::explain() const {
+  auto desc = Explore::explain();
+  addDescription("props", props_ ? folly::toJson(util::toJson(*props_)) : "", desc.get());
+  addDescription("exprs", exprs_ ? folly::toJson(util::toJson(*exprs_)) : "", desc.get());
+  return desc;
+}
+
+PlanNode* ScanEdges::clone() const {
+  auto* newGE = ScanEdges::make(qctx_, nullptr, space_);
+  newGE->cloneMembers(*this);
+  return newGE;
+}
+
+void ScanEdges::cloneMembers(const ScanEdges& ge) {
+  Explore::cloneMembers(ge);
+
+  if (ge.props_) {
+    auto edgeProps = *ge.props_;
+    auto edgePropsPtr = std::make_unique<decltype(edgeProps)>(std::move(edgeProps));
+    setEdgeProps(std::move(edgePropsPtr));
+  }
+
+  if (ge.exprs_) {
+    auto exprs = *ge.exprs_;
+    auto exprsPtr = std::make_unique<decltype(exprs)>(std::move(exprs));
+    setExprs(std::move(exprsPtr));
+  }
+}
+
 Filter::Filter(QueryContext* qctx, PlanNode* input, Expression* condition, bool needStableFilter)
     : SingleInputNode(qctx, Kind::kFilter, input) {
   condition_ = condition;

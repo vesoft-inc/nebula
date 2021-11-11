@@ -559,15 +559,15 @@ StorageRpcRespFuture<cpp2::GetNeighborsResponse> GraphStorageClient::lookupAndTr
       });
 }
 
-StorageRpcRespFuture<cpp2::ScanEdgeResponse> GraphStorageClient::scanEdge(
+StorageRpcRespFuture<cpp2::ScanResponse> GraphStorageClient::scanEdge(
     const CommonRequestParam& param,
-    const cpp2::EdgeProp& edgeProp,
+    const std::vector<cpp2::EdgeProp>& edgeProp,
     int64_t limit,
     const Expression* filter) {
   std::unordered_map<HostAddr, cpp2::ScanEdgeRequest> requests;
   auto status = getHostPartsWithCursor(param.space);
   if (!status.ok()) {
-    return folly::makeFuture<StorageRpcResponse<cpp2::ScanEdgeResponse>>(
+    return folly::makeFuture<StorageRpcResponse<cpp2::ScanResponse>>(
         std::runtime_error(status.status().toString()));
   }
   auto& clusters = status.value();
@@ -590,7 +590,7 @@ StorageRpcRespFuture<cpp2::ScanEdgeResponse> GraphStorageClient::scanEdge(
                             const cpp2::ScanEdgeRequest& r) { return client->future_scanEdge(r); });
 }
 
-StorageRpcRespFuture<cpp2::ScanVertexResponse> GraphStorageClient::scanVertex(
+StorageRpcRespFuture<cpp2::ScanResponse> GraphStorageClient::scanVertex(
     const CommonRequestParam& param,
     const std::vector<cpp2::VertexProp>& vertexProp,
     int64_t limit,
@@ -598,7 +598,7 @@ StorageRpcRespFuture<cpp2::ScanVertexResponse> GraphStorageClient::scanVertex(
   std::unordered_map<HostAddr, cpp2::ScanVertexRequest> requests;
   auto status = getHostPartsWithCursor(param.space);
   if (!status.ok()) {
-    return folly::makeFuture<StorageRpcResponse<cpp2::ScanVertexResponse>>(
+    return folly::makeFuture<StorageRpcResponse<cpp2::ScanResponse>>(
         std::runtime_error(status.status().toString()));
   }
   auto& clusters = status.value();

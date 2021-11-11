@@ -61,7 +61,7 @@ nebula::cpp2::ErrorCode ScanEdgeProcessor::checkAndBuildContexts(const cpp2::Sca
     return ret;
   }
 
-  std::vector<cpp2::EdgeProp> returnProps = {*req.return_columns_ref()};
+  std::vector<cpp2::EdgeProp> returnProps = *req.return_columns_ref();
   ret = handleEdgeProps(returnProps);
   buildEdgeColName(returnProps);
   return ret;
@@ -78,7 +78,7 @@ void ScanEdgeProcessor::buildEdgeColName(const std::vector<cpp2::EdgeProp>& edge
 }
 
 void ScanEdgeProcessor::onProcessFinished() {
-  resp_.set_edge_data(std::move(resultDataSet_));
+  resp_.set_props(std::move(resultDataSet_));
   resp_.set_cursors(std::move(cursors_));
 }
 

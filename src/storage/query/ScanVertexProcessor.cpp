@@ -80,7 +80,7 @@ void ScanVertexProcessor::buildTagColName(const std::vector<cpp2::VertexProp>& t
 }
 
 void ScanVertexProcessor::onProcessFinished() {
-  resp_.set_vertex_data(std::move(resultDataSet_));
+  resp_.set_props(std::move(resultDataSet_));
   resp_.set_cursors(std::move(cursors_));
 }
 

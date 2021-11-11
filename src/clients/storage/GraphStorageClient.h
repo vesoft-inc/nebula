@@ -130,12 +130,12 @@ class GraphStorageClient : public StorageClientBase<cpp2::GraphStorageServiceAsy
   StorageRpcRespFuture<cpp2::GetNeighborsResponse> lookupAndTraverse(
       const CommonRequestParam& param, cpp2::IndexSpec indexSpec, cpp2::TraverseSpec traverseSpec);
 
-  StorageRpcRespFuture<cpp2::ScanEdgeResponse> scanEdge(const CommonRequestParam& param,
-                                                        const cpp2::EdgeProp& vertexProp,
-                                                        int64_t limit,
-                                                        const Expression* filter);
+  StorageRpcRespFuture<cpp2::ScanResponse> scanEdge(const CommonRequestParam& param,
+                                                    const std::vector<cpp2::EdgeProp>& vertexProp,
+                                                    int64_t limit,
+                                                    const Expression* filter);
 
-  StorageRpcRespFuture<cpp2::ScanVertexResponse> scanVertex(
+  StorageRpcRespFuture<cpp2::ScanResponse> scanVertex(
       const CommonRequestParam& param,
       const std::vector<cpp2::VertexProp>& vertexProp,
       int64_t limit,
