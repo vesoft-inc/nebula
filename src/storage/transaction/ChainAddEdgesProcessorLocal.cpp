@@ -174,6 +174,7 @@ folly::SemiFuture<Code> ChainAddEdgesProcessorLocal::forwardToDelegateProcessor(
   auto [pro, fut] = folly::makePromiseContract<Code>();
   std::move(futProc).thenTry([&, p = std::move(pro)](auto&& t) mutable {
     auto rc = Code::SUCCEEDED;
+<<<<<<< 65fdeedb76382ae3ee795d5f47f11ff4e2789d7c
     if (t.hasException()) {
       LOG(INFO) << "catch ex: " << t.exception().what();
       rc = Code::E_UNKNOWN;
@@ -185,6 +186,18 @@ folly::SemiFuture<Code> ChainAddEdgesProcessorLocal::forwardToDelegateProcessor(
           for (auto& k : kvErased_) {
             VLOG(1) << uuid_ << " erase prime " << folly::hexlify(k);
           }
+=======
+    if (!t.hasException()) {
+      LOG(INFO) << "catch ex: " << t.exception().what();
+      rc = Code::E_UNKNOWN;
+    }
+    auto& resp = t.value();
+    rc = extractRpcError(resp);
+    if (rc == Code::SUCCEEDED) {
+      if (FLAGS_trace_toss) {
+        for (auto& k : kvErased_) {
+          VLOG(1) << uuid_ << " erase prime " << folly::hexlify(k);
+>>>>>>> fix a bug may stuck
         }
       } else {
         VLOG(1) << uuid_ << " forwardToDelegateProcessor(), code = "
