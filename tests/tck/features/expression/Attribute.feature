@@ -149,6 +149,4 @@ Feature: Attribute
       """
       MATCH (v) WHERE id(v) == 'Tim Duncan' RETURN v.name.not_exists_attr
       """
-    Then the result should be, in any order:
-      | v.name.not_exists_attr |
-      | BAD_TYPE               |
+    Then a ExecutionError should be raised at runtime: TagName `name'  is nonexistent
