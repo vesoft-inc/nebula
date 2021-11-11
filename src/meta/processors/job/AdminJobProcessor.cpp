@@ -111,7 +111,14 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
       break;
     }
     case nebula::meta::cpp2::AdminJobOp::RECOVER: {
-      auto ret = jobMgr->recoverJob(req.get_paras().back());
+      const std::vector<std::string>& paras = req.get_paras();
+      const std::string& spaceName = req.get_paras().back();
+      std::vector<int32_t> jobIds;
+      jobIds.reserve(paras.size() - 1);
+      for (size_t i = 0; i < paras.size() - 1; i++) {
+        jobIds.push_back(std::stoi(paras[i]));
+      }
+      auto ret = jobMgr->recoverJob(spaceName, adminClient_, jobIds);
       if (nebula::ok(ret)) {
         result.set_recovered_job_num(nebula::value(ret));
       } else {

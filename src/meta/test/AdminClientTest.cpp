@@ -11,7 +11,6 @@
 #include "common/fs/TempDir.h"
 #include "common/utils/Utils.h"
 #include "interface/gen-cpp2/StorageAdminService.h"
-#include "meta/processors/admin/Balancer.h"
 #include "meta/test/TestUtils.h"
 
 #define RETURN_OK(req)                                       \
