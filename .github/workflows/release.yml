@@ -16,7 +16,7 @@ defaults:
 jobs:
   package:
     name: build package
-    runs-on: self-hosted
+    runs-on: [self-hosted, nebula]
     strategy:
       fail-fast: false
       matrix:
@@ -66,7 +66,7 @@ jobs:
 
   docker_build:
     name: docker-build
-    runs-on: self-hosted
+    runs-on: [self-hosted, nebula]
     strategy:
       fail-fast: false
       matrix:
