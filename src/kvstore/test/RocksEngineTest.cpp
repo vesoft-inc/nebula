@@ -300,7 +300,7 @@ TEST_P(RocksEngineTest, VertexWholeKeyBloomFilterTest) {
   auto engine = std::make_unique<RocksEngine>(0, kDefaultVIdLen, rootPath.path());
   PartitionID partId = 1;
   VertexID vId = "vertex";
-  VertexID nonexistent = "nonexistent";
+  VertexID nonexistent = "notExist";
 
   auto writeVertex = [&](TagID tagId) {
     std::vector<KV> data;
@@ -377,7 +377,7 @@ TEST_P(RocksEngineTest, EdgeWholeKeyBloomFilterTest) {
   auto engine = std::make_unique<RocksEngine>(0, kDefaultVIdLen, rootPath.path());
   PartitionID partId = 1;
   VertexID vId = "vertex";
-  VertexID nonexistent = "nonexistent";
+  VertexID nonexistent = "notExist";
 
   auto writeEdge = [&](EdgeType edgeType) {
     std::vector<KV> data;
