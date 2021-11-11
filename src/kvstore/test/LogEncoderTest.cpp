@@ -136,11 +136,11 @@ TEST(LogEncoderTest, BatchTest) {
 
   std::vector<std::pair<BatchLogType, std::pair<folly::StringPiece, folly::StringPiece>>> expected;
   expected.emplace_back(OP_BATCH_REMOVE,
-                       std::pair<folly::StringPiece, folly::StringPiece>("remove", ""));
+                        std::pair<folly::StringPiece, folly::StringPiece>("remove", ""));
   expected.emplace_back(OP_BATCH_PUT,
-                       std::pair<folly::StringPiece, folly::StringPiece>("put_key", "put_value"));
+                        std::pair<folly::StringPiece, folly::StringPiece>("put_key", "put_value"));
   expected.emplace_back(OP_BATCH_REMOVE_RANGE,
-                       std::pair<folly::StringPiece, folly::StringPiece>("begin", "end"));
+                        std::pair<folly::StringPiece, folly::StringPiece>("begin", "end"));
   expected.emplace_back(
       OP_BATCH_PUT,
       std::pair<folly::StringPiece, folly::StringPiece>("put_key_again", "put_value_again"));
