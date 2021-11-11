@@ -212,7 +212,7 @@ bool mergeRangeColumnHints(const std::vector<ScoredColumnHint>& hints,
   if (begin->first > end->first) {
     ret = false;
   } else if (begin->first == end->first) {
-    if (begin->second == false && end->second == false) {
+    if (!(begin->second && end->second)) {
       ret = false;
     }
   }
