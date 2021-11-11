@@ -130,7 +130,7 @@ Status PermissionManager::canReadUser(ClientSession *session, const std::string 
     return Status::OK();
   }
 
-  return Status::PermissionError("No permission to read user.");
+  return Status::PermissionError("No permission to read user `%s'.", targetUser.c_str());
 }
 
 Status PermissionManager::canWriteRole(ClientSession *session,
