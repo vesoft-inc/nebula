@@ -26,14 +26,17 @@ jobs:
           fetch-depth: 2
       - name: Check License Header
         uses: apache/skywalking-eyes@main
+      - name: Ensure clang-format-10 is available
+        run: |
+          command -v clang-format-10 > /dev/null || (apt-get update && apt-get install -y clang-format-10)
       - name: Cpplint
         run: |
           ln -snf $PWD/.linters/cpp/hooks/pre-commit.sh $PWD/.linters/cpp/pre-commit.sh
-          .linters/cpp/pre-commit.sh $(git --no-pager diff --diff-filter=d --name-only HEAD^ HEAD)
+          .linters/cpp/pre-commit.sh $(git --no-pager diff --diff-filter=d --name-only $GITHUB_BASE_REF HEAD)
       - name: Format check
         run: |
-          res=$(git diff -U0 --no-color HEAD^ | /usr/share/clang/clang-format-10/clang-format-diff.py -p1)
-          [[ ! -z "$res" ]] && exit 1 || true
+          git diff -U0 --no-color $GITHUB_BASE_REF HEAD | /usr/share/clang/clang-format-10/clang-format-diff.py -p1 | tee /tmp/.clang-format-diff
+          [ -s /tmp/.clang-format-diff ] && exit 1 || true
       - uses: actions/setup-python@v2
         with:
           python-version: 3.7
