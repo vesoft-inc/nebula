@@ -598,10 +598,7 @@ const MetaClient::ThreadLocalInfo& MetaClient::getThreadLocalInfo() {
     threadLocalInfo.spaceAllEdgeMap_ = spaceAllEdgeMap_;
 
     threadLocalInfo.userRolesMap_ = userRolesMap_;
-    threadLocalInfo.userPasswordMap_ = userPasswordMap_;
-
     threadLocalInfo.storageHosts_ = storageHosts_;
-
     threadLocalInfo.fulltextIndexMap_ = fulltextIndexMap_;
   }
 
@@ -918,9 +915,9 @@ Status MetaClient::handleResponse(const RESP& resp) {
 
 PartsMap MetaClient::doGetPartsMap(const HostAddr& host, const LocalCache& localCache) {
   PartsMap partMap;
-  for (auto it = localCache.begin(); it != localCache.end(); it++) {
-    auto spaceId = it->first;
-    auto& cache = it->second;
+  for (const auto& it : localCache) {
+    auto spaceId = it.first;
+    auto& cache = it.second;
     auto partsIt = cache->partsOnHost_.find(host);
     if (partsIt != cache->partsOnHost_.end()) {
       for (auto& partId : partsIt->second) {
@@ -945,28 +942,28 @@ void MetaClient::diff(const LocalCache& oldCache, const LocalCache& newCache) {
   auto newPartsMap = doGetPartsMap(options_.localHost_, newCache);
   auto oldPartsMap = doGetPartsMap(options_.localHost_, oldCache);
   VLOG(1) << "Let's check if any new parts added/updated for " << options_.localHost_;
-  for (auto it = newPartsMap.begin(); it != newPartsMap.end(); it++) {
-    auto spaceId = it->first;
-    const auto& newParts = it->second;
+  for (auto& it : newPartsMap) {
+    auto spaceId = it.first;
+    const auto& newParts = it.second;
     auto oldIt = oldPartsMap.find(spaceId);
     if (oldIt == oldPartsMap.end()) {
       VLOG(1) << "SpaceId " << spaceId << " was added!";
       listener_->onSpaceAdded(spaceId);
-      for (auto partIt = newParts.begin(); partIt != newParts.end(); partIt++) {
-        listener_->onPartAdded(partIt->second);
+      for (const auto& newPart : newParts) {
+        listener_->onPartAdded(newPart.second);
       }
     } else {
       const auto& oldParts = oldIt->second;
-      for (auto partIt = newParts.begin(); partIt != newParts.end(); partIt++) {
-        auto oldPartIt = oldParts.find(partIt->first);
+      for (const auto& newPart : newParts) {
+        auto oldPartIt = oldParts.find(newPart.first);
         if (oldPartIt == oldParts.end()) {
-          VLOG(1) << "SpaceId " << spaceId << ", partId " << partIt->first << " was added!";
-          listener_->onPartAdded(partIt->second);
+          VLOG(1) << "SpaceId " << spaceId << ", partId " << newPart.first << " was added!";
+          listener_->onPartAdded(newPart.second);
         } else {
           const auto& oldPartHosts = oldPartIt->second;
-          const auto& newPartHosts = partIt->second;
+          const auto& newPartHosts = newPart.second;
           if (oldPartHosts != newPartHosts) {
-            VLOG(1) << "SpaceId " << spaceId << ", partId " << partIt->first << " was updated!";
+            VLOG(1) << "SpaceId " << spaceId << ", partId " << newPart.first << " was updated!";
             listener_->onPartUpdated(newPartHosts);
           }
         }
@@ -974,23 +971,23 @@ void MetaClient::diff(const LocalCache& oldCache, const LocalCache& newCache) {
     }
   }
   VLOG(1) << "Let's check if any old parts removed....";
-  for (auto it = oldPartsMap.begin(); it != oldPartsMap.end(); it++) {
-    auto spaceId = it->first;
-    const auto& oldParts = it->second;
+  for (auto& it : oldPartsMap) {
+    auto spaceId = it.first;
+    const auto& oldParts = it.second;
     auto newIt = newPartsMap.find(spaceId);
     if (newIt == newPartsMap.end()) {
       VLOG(1) << "SpaceId " << spaceId << " was removed!";
-      for (auto partIt = oldParts.begin(); partIt != oldParts.end(); partIt++) {
-        listener_->onPartRemoved(spaceId, partIt->first);
+      for (const auto& oldPart : oldParts) {
+        listener_->onPartRemoved(spaceId, oldPart.first);
       }
       listener_->onSpaceRemoved(spaceId);
     } else {
       const auto& newParts = newIt->second;
-      for (auto partIt = oldParts.begin(); partIt != oldParts.end(); partIt++) {
-        auto newPartIt = newParts.find(partIt->first);
+      for (const auto& oldPart : oldParts) {
+        auto newPartIt = newParts.find(oldPart.first);
         if (newPartIt == newParts.end()) {
-          VLOG(1) << "SpaceId " << spaceId << ", partId " << partIt->first << " was removed!";
-          listener_->onPartRemoved(spaceId, partIt->first);
+          VLOG(1) << "SpaceId " << spaceId << ", partId " << oldPart.first << " was removed!";
+          listener_->onPartRemoved(spaceId, oldPart.first);
         }
       }
     }

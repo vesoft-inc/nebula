@@ -774,14 +774,8 @@ class MetaClient {
     SpaceNewestEdgeVerMap spaceNewestEdgeVerMap_;
     SpaceAllEdgeMap spaceAllEdgeMap_;
 
-    HostAddr active_;
-    HostAddr leader_;
-
     UserRolesMap userRolesMap_;
-    UserPasswordMap userPasswordMap_;
-
     std::vector<HostAddr> storageHosts_;
-
     FTIndexMap fulltextIndexMap_;
   };
 
