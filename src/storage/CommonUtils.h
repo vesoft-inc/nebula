@@ -200,6 +200,9 @@ struct RuntimeContext {
   ObjectPool* objPool() { return &planContext_->objPool_; }
 
   bool isPlanKilled() {
+    if (env() == nullptr) {
+      return false;
+    }
     return env()->metaClient_ &&
            env()->metaClient_->checkIsPlanKilled(planContext_->sessionId_, planContext_->planId_);
   }
