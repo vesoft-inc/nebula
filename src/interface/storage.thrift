@@ -1,8 +1,7 @@
 /* vim: ft=proto
  * Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 namespace cpp nebula.storage
@@ -507,6 +506,10 @@ struct IndexColumnHint {
     2: ScanType                 scan_type,
     3: common.Value             begin_value,
     4: common.Value             end_value,
+    // When `columnhint` means ` >= begin_value`, `include_begin` is true
+    // and include_end is similar
+    5: bool                     include_begin = true,
+    6: bool                     include_end = false,
 }
 
 struct IndexQueryContext {

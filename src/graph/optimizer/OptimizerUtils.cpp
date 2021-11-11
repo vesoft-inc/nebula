@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/optimizer/OptimizerUtils.h"
@@ -465,18 +464,7 @@ Value OptimizerUtils::normalizeValue(const meta::cpp2::ColumnDef& col, const Val
       if (!col.type.type_length_ref().has_value()) {
         return Value::kNullBadType;
       }
-      if (!v.isStr()) {
-        return v;
-      }
-      auto len = static_cast<size_t>(*col.get_type().get_type_length());
-      if (v.getStr().size() > len) {
-        return Value(v.getStr().substr(0, len));
-      } else {
-        std::string s;
-        s.reserve(len);
-        s.append(v.getStr()).append(len - v.getStr().size(), '\0');
-        return Value(std::move(s));
-      }
+      return v;
     }
     case Value::Type::__EMPTY__:
     case Value::Type::NULLVALUE:

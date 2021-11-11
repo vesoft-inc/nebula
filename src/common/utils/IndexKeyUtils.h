@@ -1,11 +1,12 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_UTILS_INDEXKEYUTILS_H_
 #define COMMON_UTILS_INDEXKEYUTILS_H_
+
+#include <cmath>
 
 #include "codec/RowReader.h"
 #include "common/base/Base.h"
@@ -13,7 +14,6 @@
 #include "common/geo/GeoIndex.h"
 #include "common/utils/Types.h"
 #include "interface/gen-cpp2/meta_types.h"
-
 namespace nebula {
 
 using PropertyType = nebula::cpp2::PropertyType;
@@ -198,39 +198,39 @@ class IndexKeyUtils final {
    */
 
   static std::string encodeDouble(double v) {
-    if (v < 0) {
-      /**
-       *   TODO : now, the -(std::numeric_limits<double>::min())
-       *   have a problem of precision overflow. current return value is -nan.
-       */
-      auto* c1 = reinterpret_cast<const char*>(&v);
-      auto i = *reinterpret_cast<const int64_t*>(c1);
-      i = -(std::numeric_limits<int64_t>::max() + i);
-      auto* c2 = reinterpret_cast<const char*>(&i);
-      v = *reinterpret_cast<const double*>(c2);
+    if (std::isnan(v)) {
+      return std::string(sizeof(double), '\xFF');
+    } else if (v >= 0) {
+      auto val = folly::Endian::big(v);
+      auto* c = reinterpret_cast<char*>(&val);
+      c[0] |= 0x80;
+      std::string raw;
+      raw.reserve(sizeof(double));
+      raw.append(c, sizeof(double));
+      return raw;
+    } else {
+      int64_t* x = reinterpret_cast<int64_t*>(&v);
+      *x = ~(*x);
+      auto val = folly::Endian::big(v);
+      auto* c = reinterpret_cast<char*>(&val);
+      std::string raw;
+      raw.reserve(sizeof(double));
+      raw.append(c, sizeof(double));
+      return raw;
     }
-    auto val = folly::Endian::big(v);
-    auto* c = reinterpret_cast<char*>(&val);
-    c[0] ^= 0x80;
-    std::string raw;
-    raw.reserve(sizeof(double));
-    raw.append(c, sizeof(double));
-    return raw;
   }
 
   static double decodeDouble(const folly::StringPiece& raw) {
-    char* v = const_cast<char*>(raw.data());
-    v[0] ^= 0x80;
-    auto val = *reinterpret_cast<const double*>(v);
+    int64_t val = *reinterpret_cast<const int64_t*>(raw.data());
     val = folly::Endian::big(val);
     if (val < 0) {
-      auto* c1 = reinterpret_cast<const char*>(&val);
-      auto i = *reinterpret_cast<const int64_t*>(c1);
-      i = -(std::numeric_limits<int64_t>::max() + i);
-      auto* c2 = reinterpret_cast<const char*>(&i);
-      val = *reinterpret_cast<const double*>(c2);
+      val &= 0x7fffffffffffffff;
+    } else {
+      val = ~val;
     }
-    return val;
+    double ret;
+    ::memcpy(&ret, &val, 8);
+    return ret;
   }
 
   static std::string encodeTime(const nebula::Time& t) {

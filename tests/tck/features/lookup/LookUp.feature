@@ -840,7 +840,6 @@ Feature: LookUpTest_Vid_String
         "104":("yyy", 28),
         "105":("zzz", 21),
         "106":("kkk", 21),
-        "121":("Useless", 60),
         "121":("Useless", 20);
         INSERT VERTEX
           team(name)
