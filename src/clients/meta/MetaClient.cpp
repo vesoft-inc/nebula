@@ -606,7 +606,6 @@ const MetaClient::ThreadLocalInfo& MetaClient::getThreadLocalInfo() {
 }
 
 Status MetaClient::checkTagIndexed(GraphSpaceID spaceId, IndexID indexID) {
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   auto it = threadLocalInfo.localCache_.find(spaceId);
   if (it != threadLocalInfo.localCache_.end()) {
@@ -621,7 +620,6 @@ Status MetaClient::checkTagIndexed(GraphSpaceID spaceId, IndexID indexID) {
 }
 
 Status MetaClient::checkEdgeIndexed(GraphSpaceID space, IndexID indexID) {
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   auto it = threadLocalInfo.localCache_.find(space);
   if (it != threadLocalInfo.localCache_.end()) {
@@ -1280,7 +1278,6 @@ StatusOr<GraphSpaceID> MetaClient::getSpaceIdByNameFromCache(const std::string& 
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   auto it = threadLocalInfo.spaceIndexByName_.find(name);
   if (it != threadLocalInfo.spaceIndexByName_.end()) {
@@ -1293,7 +1290,6 @@ StatusOr<std::string> MetaClient::getSpaceNameByIdFromCache(GraphSpaceID spaceId
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   auto spaceIt = threadLocalInfo.localCache_.find(spaceId);
   if (spaceIt == threadLocalInfo.localCache_.end()) {
@@ -1308,7 +1304,6 @@ StatusOr<TagID> MetaClient::getTagIDByNameFromCache(const GraphSpaceID& space,
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   auto it = threadLocalInfo.spaceTagIndexByName_.find(std::make_pair(space, name));
   if (it == threadLocalInfo.spaceTagIndexByName_.end()) {
@@ -1322,7 +1317,6 @@ StatusOr<std::string> MetaClient::getTagNameByIdFromCache(const GraphSpaceID& sp
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   auto it = threadLocalInfo.spaceTagIndexById_.find(std::make_pair(space, tagId));
   if (it == threadLocalInfo.spaceTagIndexById_.end()) {
@@ -1336,7 +1330,6 @@ StatusOr<EdgeType> MetaClient::getEdgeTypeByNameFromCache(const GraphSpaceID& sp
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   auto it = threadLocalInfo.spaceEdgeIndexByName_.find(std::make_pair(space, name));
   if (it == threadLocalInfo.spaceEdgeIndexByName_.end()) {
@@ -1350,7 +1343,6 @@ StatusOr<std::string> MetaClient::getEdgeNameByTypeFromCache(const GraphSpaceID&
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   auto it = threadLocalInfo.spaceEdgeIndexByType_.find(std::make_pair(space, edgeType));
   if (it == threadLocalInfo.spaceEdgeIndexByType_.end()) {
@@ -1363,7 +1355,6 @@ StatusOr<std::vector<std::string>> MetaClient::getAllEdgeFromCache(const GraphSp
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   auto it = threadLocalInfo.spaceAllEdgeMap_.find(space);
   if (it == threadLocalInfo.spaceAllEdgeMap_.end()) {
@@ -1499,13 +1490,11 @@ folly::Future<StatusOr<bool>> MetaClient::removeRange(std::string segment,
 }
 
 PartsMap MetaClient::getPartsMapFromCache(const HostAddr& host) {
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   return doGetPartsMap(host, threadLocalInfo.localCache_);
 }
 
 StatusOr<PartHosts> MetaClient::getPartHostsFromCache(GraphSpaceID spaceId, PartitionID partId) {
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   auto it = threadLocalInfo.localCache_.find(spaceId);
   if (it == threadLocalInfo.localCache_.end()) {
@@ -1526,7 +1515,6 @@ StatusOr<PartHosts> MetaClient::getPartHostsFromCache(GraphSpaceID spaceId, Part
 Status MetaClient::checkPartExistInCache(const HostAddr& host,
                                          GraphSpaceID spaceId,
                                          PartitionID partId) {
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   auto it = threadLocalInfo.localCache_.find(spaceId);
   if (it != threadLocalInfo.localCache_.end()) {
@@ -1546,7 +1534,6 @@ Status MetaClient::checkPartExistInCache(const HostAddr& host,
 }
 
 Status MetaClient::checkSpaceExistInCache(const HostAddr& host, GraphSpaceID spaceId) {
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   auto it = threadLocalInfo.localCache_.find(spaceId);
   if (it != threadLocalInfo.localCache_.end()) {
@@ -1561,7 +1548,6 @@ Status MetaClient::checkSpaceExistInCache(const HostAddr& host, GraphSpaceID spa
 }
 
 StatusOr<int32_t> MetaClient::partsNum(GraphSpaceID spaceId) {
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   auto it = threadLocalInfo.localCache_.find(spaceId);
   if (it == threadLocalInfo.localCache_.end()) {
@@ -1947,7 +1933,6 @@ StatusOr<int32_t> MetaClient::getSpaceVidLen(const GraphSpaceID& spaceId) {
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   auto spaceIt = threadLocalInfo.localCache_.find(spaceId);
   if (spaceIt == threadLocalInfo.localCache_.end()) {
@@ -1966,7 +1951,6 @@ StatusOr<nebula::cpp2::PropertyType> MetaClient::getSpaceVidType(const GraphSpac
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   auto spaceIt = threadLocalInfo.localCache_.find(spaceId);
   if (spaceIt == threadLocalInfo.localCache_.end()) {
@@ -1988,7 +1972,6 @@ StatusOr<cpp2::SpaceDesc> MetaClient::getSpaceDesc(const GraphSpaceID& space) {
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   auto spaceIt = threadLocalInfo.localCache_.find(space);
   if (spaceIt == threadLocalInfo.localCache_.end()) {
@@ -2012,7 +1995,6 @@ StatusOr<std::shared_ptr<const NebulaSchemaProvider>> MetaClient::getTagSchemaFr
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   auto spaceIt = threadLocalInfo.localCache_.find(spaceId);
   if (spaceIt != threadLocalInfo.localCache_.end()) {
@@ -2033,7 +2015,6 @@ StatusOr<std::shared_ptr<const NebulaSchemaProvider>> MetaClient::getEdgeSchemaF
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   auto spaceIt = threadLocalInfo.localCache_.find(spaceId);
   if (spaceIt != threadLocalInfo.localCache_.end()) {
@@ -2053,7 +2034,6 @@ StatusOr<TagSchemas> MetaClient::getAllVerTagSchema(GraphSpaceID spaceId) {
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   auto iter = threadLocalInfo.localCache_.find(spaceId);
   if (iter == threadLocalInfo.localCache_.end()) {
@@ -2066,7 +2046,6 @@ StatusOr<TagSchema> MetaClient::getAllLatestVerTagSchema(const GraphSpaceID& spa
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   auto iter = threadLocalInfo.localCache_.find(spaceId);
   if (iter == threadLocalInfo.localCache_.end()) {
@@ -2085,7 +2064,6 @@ StatusOr<EdgeSchemas> MetaClient::getAllVerEdgeSchema(GraphSpaceID spaceId) {
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   auto iter = threadLocalInfo.localCache_.find(spaceId);
   if (iter == threadLocalInfo.localCache_.end()) {
@@ -2098,7 +2076,6 @@ StatusOr<EdgeSchema> MetaClient::getAllLatestVerEdgeSchemaFromCache(const GraphS
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   auto iter = threadLocalInfo.localCache_.find(spaceId);
   if (iter == threadLocalInfo.localCache_.end()) {
@@ -2189,7 +2166,6 @@ StatusOr<std::shared_ptr<cpp2::IndexItem>> MetaClient::getTagIndexFromCache(Grap
     return Status::Error("Not ready!");
   }
 
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   auto spaceIt = threadLocalInfo.localCache_.find(spaceId);
   if (spaceIt == threadLocalInfo.localCache_.end()) {
@@ -2227,7 +2203,6 @@ StatusOr<std::shared_ptr<cpp2::IndexItem>> MetaClient::getEdgeIndexFromCache(Gra
     return Status::Error("Not ready!");
   }
 
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   auto spaceIt = threadLocalInfo.localCache_.find(spaceId);
   if (spaceIt == threadLocalInfo.localCache_.end()) {
@@ -2265,7 +2240,6 @@ StatusOr<std::vector<std::shared_ptr<cpp2::IndexItem>>> MetaClient::getTagIndexe
     return Status::Error("Not ready!");
   }
 
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   auto spaceIt = threadLocalInfo.localCache_.find(spaceId);
   if (spaceIt == threadLocalInfo.localCache_.end()) {
@@ -2289,7 +2263,6 @@ StatusOr<std::vector<std::shared_ptr<cpp2::IndexItem>>> MetaClient::getEdgeIndex
     return Status::Error("Not ready!");
   }
 
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   auto spaceIt = threadLocalInfo.localCache_.find(spaceId);
   if (spaceIt == threadLocalInfo.localCache_.end()) {
@@ -2364,7 +2337,6 @@ std::vector<cpp2::RoleItem> MetaClient::getRolesByUserFromCache(const std::strin
   if (!ready_) {
     return std::vector<cpp2::RoleItem>(0);
   }
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   auto iter = threadLocalInfo.userRolesMap_.find(user);
   if (iter == threadLocalInfo.userRolesMap_.end()) {
@@ -2398,7 +2370,6 @@ bool MetaClient::checkShadowAccountFromCache(const std::string& account) const {
 }
 
 StatusOr<TermID> MetaClient::getTermFromCache(GraphSpaceID spaceId, PartitionID partId) {
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   auto spaceInfo = threadLocalInfo.localCache_.find(spaceId);
   if (spaceInfo == threadLocalInfo.localCache_.end()) {
@@ -2418,7 +2389,6 @@ StatusOr<std::vector<HostAddr>> MetaClient::getStorageHosts() {
     return Status::Error("Not ready!");
   }
 
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   return threadLocalInfo.storageHosts_;
 }
@@ -2428,7 +2398,6 @@ StatusOr<SchemaVer> MetaClient::getLatestTagVersionFromCache(const GraphSpaceID&
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   auto it = threadLocalInfo.spaceNewestTagVerMap_.find(std::make_pair(space, tagId));
   if (it == threadLocalInfo.spaceNewestTagVerMap_.end()) {
@@ -2442,7 +2411,6 @@ StatusOr<SchemaVer> MetaClient::getLatestEdgeVersionFromCache(const GraphSpaceID
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   auto it = threadLocalInfo.spaceNewestEdgeVerMap_.find(std::make_pair(space, edgeType));
   if (it == threadLocalInfo.spaceNewestEdgeVerMap_.end()) {
@@ -2916,7 +2884,6 @@ MetaClient::getListenersBySpaceHostFromCache(GraphSpaceID spaceId, const HostAdd
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   auto spaceIt = threadLocalInfo.localCache_.find(spaceId);
   if (spaceIt == threadLocalInfo.localCache_.end()) {
@@ -2936,7 +2903,6 @@ StatusOr<ListenersMap> MetaClient::getListenersByHostFromCache(const HostAddr& h
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   return doGetListenersMap(host, threadLocalInfo.localCache_);
 }
@@ -2974,7 +2940,6 @@ StatusOr<HostAddr> MetaClient::getListenerHostsBySpacePartType(GraphSpaceID spac
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   auto spaceIt = threadLocalInfo.localCache_.find(spaceId);
   if (spaceIt == threadLocalInfo.localCache_.end()) {
@@ -2996,7 +2961,6 @@ StatusOr<std::vector<RemoteListenerInfo>> MetaClient::getListenerHostTypeBySpace
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   auto spaceIt = threadLocalInfo.localCache_.find(spaceId);
   if (spaceIt == threadLocalInfo.localCache_.end()) {
@@ -3088,7 +3052,6 @@ void MetaClient::updateNestedGflags(const std::unordered_map<std::string, Value>
     optionMap.emplace(value.first, value.second.toString());
   }
 
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   for (const auto& spaceEntry : threadLocalInfo.localCache_) {
     listener_->onSpaceOptionUpdated(spaceEntry.first, optionMap);
@@ -3476,7 +3439,6 @@ StatusOr<std::unordered_map<std::string, cpp2::FTIndex>> MetaClient::getFTIndexe
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   return threadLocalInfo.fulltextIndexMap_;
 }
@@ -3486,7 +3448,6 @@ StatusOr<std::unordered_map<std::string, cpp2::FTIndex>> MetaClient::getFTIndexB
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   std::unordered_map<std::string, cpp2::FTIndex> indexes;
   for (const auto& it : threadLocalInfo.fulltextIndexMap_) {
@@ -3502,7 +3463,6 @@ StatusOr<std::pair<std::string, cpp2::FTIndex>> MetaClient::getFTIndexBySpaceSch
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   for (auto& it : threadLocalInfo.fulltextIndexMap_) {
     auto id = it.second.get_depend_schema().getType() == nebula::cpp2::SchemaID::Type::edge_type
@@ -3520,7 +3480,6 @@ StatusOr<cpp2::FTIndex> MetaClient::getFTIndexByNameFromCache(GraphSpaceID space
   if (!ready_) {
     return Status::Error("Not ready!");
   }
-  // folly::RWSpinLock::ReadHolder holder(localCacheLock_);
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   if (threadLocalInfo.fulltextIndexMap_.find(name) != fulltextIndexMap_.end() &&
       threadLocalInfo.fulltextIndexMap_.at(name).get_space_id() != spaceId) {
