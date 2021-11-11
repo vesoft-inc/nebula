@@ -61,9 +61,13 @@ TEST(RowWriterV2, NoDefaultValue) {
   schema.appendCol("Col13", PropertyType::DATETIME);
   schema.appendCol("Col14", PropertyType::INT64, 0, true);
   schema.appendCol("Col15", PropertyType::INT32, 0, true);
-  schema.appendCol("Col16", PropertyType::GEOGRAPHY);
-  schema.appendCol("Col17", PropertyType::GEOGRAPHY);
-  schema.appendCol("Col18", PropertyType::GEOGRAPHY);
+  schema.appendCol(
+      "Col16", PropertyType::GEOGRAPHY, 0, false, nullptr, meta::cpp2::GeoShape::POINT);
+  schema.appendCol(
+      "Col17", PropertyType::GEOGRAPHY, 0, false, nullptr, meta::cpp2::GeoShape::LINESTRING);
+  schema.appendCol(
+      "Col18", PropertyType::GEOGRAPHY, 0, false, nullptr, meta::cpp2::GeoShape::POLYGON);
+  schema.appendCol("Col19", PropertyType::GEOGRAPHY, 0, true, nullptr, meta::cpp2::GeoShape::ANY);
 
   ASSERT_EQ(Value::Type::STRING, sVal.type());
   ASSERT_EQ(Value::Type::INT, iVal.type());
@@ -87,6 +91,7 @@ TEST(RowWriterV2, NoDefaultValue) {
   EXPECT_EQ(WriteResult::SUCCEEDED, writer1.set(15, geogPoint));
   EXPECT_EQ(WriteResult::SUCCEEDED, writer1.set(16, geogLineString));
   EXPECT_EQ(WriteResult::SUCCEEDED, writer1.set(17, geogPolygon));
+  // Purposely skip the col19
   ASSERT_EQ(WriteResult::SUCCEEDED, writer1.finish());
 
   RowWriterV2 writer2(&schema);
@@ -108,6 +113,7 @@ TEST(RowWriterV2, NoDefaultValue) {
   EXPECT_EQ(WriteResult::SUCCEEDED, writer2.set("Col16", geogPoint));
   EXPECT_EQ(WriteResult::SUCCEEDED, writer2.set("Col17", geogLineString));
   EXPECT_EQ(WriteResult::SUCCEEDED, writer2.set("Col18", geogPolygon));
+  // Purposely skip the col19
   ASSERT_EQ(WriteResult::SUCCEEDED, writer2.finish());
 
   std::string encoded1 = std::move(writer1).moveEncodedStr();
@@ -240,6 +246,12 @@ TEST(RowWriterV2, NoDefaultValue) {
   v2 = reader2->getValueByIndex(17);
   EXPECT_EQ(Value::Type::GEOGRAPHY, v1.type());
   EXPECT_EQ(geogPolygon, v1.getGeography());
+  EXPECT_EQ(v1, v2);
+
+  // Col19
+  v1 = reader1->getValueByName("Col19");
+  v2 = reader2->getValueByIndex(18);
+  EXPECT_EQ(Value::Type::NULLVALUE, v1.type());
   EXPECT_EQ(v1, v2);
 }
 
