@@ -26,7 +26,6 @@ const Value& PathBuildExpression::eval(ExpressionContext& ctx) {
 
   for (size_t i = 1; i < items_.size(); ++i) {
     auto& value = items_[i]->eval(ctx);
-    VLOG(1) << "val in path:" << value;
     if (!buildPath(value, path)) {
       return Value::kNullBadData;
     }

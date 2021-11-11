@@ -6,7 +6,6 @@
 #include "graph/planner/match/MatchClausePlanner.h"
 
 #include "graph/context/ast/CypherAstContext.h"
-#include "graph/planner/match/Expand.h"
 #include "graph/planner/match/MatchSolver.h"
 #include "graph/planner/match/SegmentsConnector.h"
 #include "graph/planner/match/StartVidFinder.h"
@@ -283,7 +282,7 @@ Status MatchClausePlanner::leftExpandFromNode(const std::vector<NodeInfo>& nodeI
     traverse->setEdgeDst(genEdgeDst(edge, reversely, qctx, spaceId));
     traverse->setVertexFilter(genVertexFilter(node));
     traverse->setEdgeFilter(genEdgeFilter(edge));
-    traverse->setEdgeDirection(edge.direction);  // TODO: reverse the direction
+    traverse->setEdgeDirection(edge.direction);
     traverse->setColNames(genTraverseColNames(subplan.root->colNames(), node, edge));
     if (edge.range != nullptr) {
       traverse->setSteps(StepClause(edge.range->min(), edge.range->max()));

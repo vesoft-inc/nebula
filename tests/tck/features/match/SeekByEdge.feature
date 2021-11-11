@@ -1,4 +1,3 @@
-@match_edge
 Feature: Match seek by edge
   Examples:
     | space_name  |

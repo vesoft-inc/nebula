@@ -726,7 +726,6 @@ const Value& PropIter::getProp(const std::string& name, const std::string& prop)
       }
       colId = propIndex->second;
       DCHECK_GT(row.size(), colId);
-      VLOG(1) << row << "id:" << colId << "Prop: " << row[colId];
       auto& val = row[colId];
       if (val.empty()) {
         continue;
@@ -746,7 +745,6 @@ const Value& PropIter::getProp(const std::string& name, const std::string& prop)
     }
     colId = propIndex->second;
     DCHECK_GT(row.size(), colId);
-    VLOG(1) << row << "id:" << colId << "Prop: " << row[colId];
     return row[colId];
   }
 }

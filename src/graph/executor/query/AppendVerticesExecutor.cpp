@@ -19,7 +19,6 @@ DataSet AppendVerticesExecutor::buildRequestDataSet(const AppendVertices *av) {
     return nebula::DataSet({kVid});
   }
   auto valueIter = ectx_->getResult(av->inputVar()).iter();
-  VLOG(1) << "src expr: " << av->src()->toString();
   return buildRequestDataSetByVidType(valueIter.get(), av->src(), av->dedup());
 }
 
@@ -30,7 +29,6 @@ folly::Future<Status> AppendVerticesExecutor::appendVertices() {
   GraphStorageClient *storageClient = qctx()->getStorageClient();
 
   DataSet vertices = buildRequestDataSet(av);
-  VLOG(1) << "Get V size: " << vertices.rows.size();
   if (vertices.rows.empty()) {
     return finish(ResultBuilder().value(Value(DataSet(av->colNames()))).build());
   }

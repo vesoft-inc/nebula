@@ -41,7 +41,6 @@ Status TraverseExecutor::close() {
 Status TraverseExecutor::buildRequestDataSet() {
   SCOPED_TIMER(&execTime_);
   auto inputVar = traverse_->inputVar();
-  VLOG(1) << node()->outputVar() << " : " << inputVar;
   auto& inputResult = ectx_->getResult(inputVar);
   auto inputIter = inputResult.iter();
   auto iter = static_cast<SequentialIter*>(inputIter.get());
@@ -93,7 +92,6 @@ void TraverseExecutor::getNeighbors() {
                                                qctx()->rctx()->session()->id(),
                                                qctx()->plan()->id(),
                                                qctx()->plan()->isProfileEnabled());
-  VLOG(1) << "ReqDs: " << reqDs_;
   storageClient
       ->getNeighbors(param,
                      reqDs_.colNames,
@@ -156,12 +154,10 @@ void TraverseExecutor::handleResponse(RpcResponse& resps) {
       LOG(INFO) << "Empty dataset in response";
       continue;
     }
-    VLOG(1) << "Resp: " << *dataset;
     list.values.emplace_back(std::move(*dataset));
   }
   auto listVal = std::make_shared<Value>(std::move(list));
   auto iter = std::make_unique<GetNeighborsIter>(listVal);
-  VLOG(1) << "curr step: " << currentStep_ << " steps: " << steps_.nSteps();
 
   auto status = buildInterimPath(iter.get());
   if (!status.ok()) {
@@ -170,7 +166,6 @@ void TraverseExecutor::handleResponse(RpcResponse& resps) {
   }
   if (!isFinalStep()) {
     if (reqDs_.rows.empty()) {
-      VLOG(1) << "Empty input.";
       if (steps_.isMToN()) {
         promise_.setValue(buildResult());
       } else {
@@ -245,14 +240,12 @@ Status TraverseExecutor::buildInterimPath(GetNeighborsIter* iter) {
         List neighbors;
         neighbors.values.emplace_back(e);
         path.values.emplace_back(std::move(neighbors));
-        VLOG(1) << "path: " << path;
         buildPath(current, dst, std::move(path));
         ++count;
       } else {
         auto& eList = path.values.back().mutableList().values;
         eList.emplace_back(srcV);
         eList.emplace_back(e);
-        // VLOG(1) << "path " << __LINE__ << " :" << path;
         buildPath(current, dst, std::move(path));
         ++count;
       }
@@ -285,14 +278,12 @@ Status TraverseExecutor::buildResult() {
   DataSet result;
   result.colNames = traverse_->colNames();
   result.rows.reserve(cnt_);
-  VLOG(1) << "paths size:" << paths_.size();
   for (auto& currentStepPaths : paths_) {
     for (auto& paths : currentStepPaths) {
       std::move(paths.second.begin(), paths.second.end(), std::back_inserter(result.rows));
     }
   }
 
-  VLOG(1) << "Traverse result: " << result;
   return finish(ResultBuilder().value(Value(std::move(result))).build());
 }
 
@@ -348,7 +339,6 @@ Status TraverseExecutor::handleZeroStep(const std::unordered_map<Value, Paths>& 
       List neighbors;
       neighbors.values.emplace_back(srcV);
       path.values.emplace_back(std::move(neighbors));
-      VLOG(1) << "path: " << path;
       buildPath(zeroSteps, src, std::move(path));
       ++count;
     }
