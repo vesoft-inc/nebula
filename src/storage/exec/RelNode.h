@@ -77,6 +77,8 @@ class RelNode {
 
   explicit RelNode(const std::string& name) : name_(name) {}
 
+  const std::string& name() const { return name_; }
+
   std::string name_ = "RelNode";
   std::vector<RelNode<T>*> dependencies_;
   bool hasDependents_ = false;
