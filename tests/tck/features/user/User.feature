@@ -1,3 +1,4 @@
+@li
 Feature: User & privilege Test
 
   Background:

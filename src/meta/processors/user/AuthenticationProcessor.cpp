@@ -255,6 +255,16 @@ void ListUsersProcessor::process(const cpp2::ListUsersReq& req) {
 void DescribeUserProcessor::process(const cpp2::DescribeUserReq& req) {
   UNUSED(req);
   folly::SharedMutex::ReadHolder rHolder1(LockUtils::userLock());
+  auto& act = req.get_account();
+  auto userRet = userExist(act);
+  if (userRet != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(ERROR) << "Describe user Failed, get user " << act << " failed, "
+               << " error: " << apache::thrift::util::enumNameSafe(userRet);
+    handleErrorCode(userRet);
+    onFinished();
+    return;
+  }
+
   auto rolePrefix = MetaKeyUtils::rolesPrefix();
   auto roleRet = doPrefix(rolePrefix);
   if (!nebula::ok(roleRet)) {
@@ -264,7 +274,6 @@ void DescribeUserProcessor::process(const cpp2::DescribeUserReq& req) {
     onFinished();
     return;
   }
-  auto& act = req.get_account();
   std::map<::nebula::cpp2::GraphSpaceID, ::nebula::meta::cpp2::RoleType> map;
   auto iter = nebula::value(roleRet).get();
   while (iter->valid()) {
