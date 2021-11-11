@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -10,6 +9,10 @@
 #include "codec/RowWriterV2.h"
 #include "codec/test/RowWriterV1.h"
 #include "common/base/Base.h"
+#include "common/expression/ConstantExpression.h"
+#include "common/expression/LogicalExpression.h"
+#include "common/expression/PropertyExpression.h"
+#include "common/expression/RelationalExpression.h"
 #include "common/fs/TempDir.h"
 #include "common/utils/IndexKeyUtils.h"
 #include "interface/gen-cpp2/common_types.h"
