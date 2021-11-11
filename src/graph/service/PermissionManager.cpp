@@ -113,6 +113,26 @@ Status PermissionManager::canWriteUser(ClientSession *session) {
   }
 }
 
+// static
+Status PermissionManager::canReadUser(ClientSession *session, const std::string &targetUser) {
+  if (!FLAGS_enable_authorize) {
+    return Status::OK();
+  }
+  // Cloud auth user cannot create user
+  if (FLAGS_auth_type == "cloud") {
+    return Status::PermissionError("Cloud authenticate user can't write user.");
+  }
+  if (session->isGod()) {
+    return Status::OK();
+  }
+
+  if (session->user() == targetUser) {
+    return Status::OK();
+  }
+
+  return Status::PermissionError("No permission to read user.");
+}
+
 Status PermissionManager::canWriteRole(ClientSession *session,
                                        meta::cpp2::RoleType targetRole,
                                        GraphSpaceID spaceId,

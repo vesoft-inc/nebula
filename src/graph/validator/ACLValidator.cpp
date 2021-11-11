@@ -141,6 +141,11 @@ Status DescribeUserValidator::validateImpl() {
   return Status::OK();
 }
 
+Status DescribeUserValidator::checkPermission() {
+  auto sentence = static_cast<DescribeUserSentence *>(sentence_);
+  return PermissionManager::canReadUser(qctx_->rctx()->session(), *sentence->account());
+}
+
 Status DescribeUserValidator::toPlan() {
   auto sentence = static_cast<DescribeUserSentence *>(sentence_);
   return genSingleNodePlan<DescribeUser>(sentence->account());
