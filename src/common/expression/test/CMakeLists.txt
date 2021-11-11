@@ -46,12 +46,16 @@ set(expression_test_common_libs
     $<TARGET_OBJECTS:memory_obj>
 )
 
+nebula_add_library(
+    expr_ctx_mock_obj OBJECT
+    ExpressionContextMock.cpp
+)
+
 nebula_add_test(
     NAME
         expression_test
     SOURCES
         ExpressionTest.cpp
-        ExpressionContextMock.cpp
         EncodeDecodeTest.cpp
         AggregateExpressionTest.cpp
         ArithmeticExpressionTest.cpp
