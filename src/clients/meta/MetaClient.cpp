@@ -405,22 +405,8 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
   spaceInfoCache->tagSchemas_ = buildTagSchemas(tagItemVec, &spaceInfoCache->pool_);
   spaceInfoCache->edgeItemVec_ = edgeItemVec;
   spaceInfoCache->edgeSchemas_ = buildEdgeSchemas(edgeItemVec, &spaceInfoCache->pool_);
-  // TagID lastTagId = -1;
 
   for (auto& tagIt : tagItemVec) {
-    // // meta will return the different version from new to old
-    // auto schema = std::make_shared<NebulaSchemaProvider>(tagIt.get_version());
-    // for (const auto& colIt : tagIt.get_schema().get_columns()) {
-    //   addSchemaField(schema.get(), colIt, &spaceInfoCache->pool_);
-    // }
-    // // handle schema property
-    // schema->setProp(tagIt.get_schema().get_schema_prop());
-    // if (tagIt.get_tag_id() != lastTagId) {
-    //   // init schema vector, since schema version is zero-based, need to add one
-    //   tagSchemas[tagIt.get_tag_id()].resize(schema->getVersion() + 1);
-    //   lastTagId = tagIt.get_tag_id();
-    // }
-    // tagSchemas[tagIt.get_tag_id()][schema->getVersion()] = std::move(schema);
     tagNameIdMap.emplace(std::make_pair(spaceId, tagIt.get_tag_name()), tagIt.get_tag_id());
     tagIdNameMap.emplace(std::make_pair(spaceId, tagIt.get_tag_id()), tagIt.get_tag_name());
     // get the latest tag version
@@ -437,21 +423,7 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
   }
 
   std::unordered_set<std::pair<GraphSpaceID, EdgeType>> edges;
-  // EdgeType lastEdgeType = -1;
   for (auto& edgeIt : edgeItemVec) {
-    // // meta will return the different version from new to old
-    // auto schema = std::make_shared<NebulaSchemaProvider>(edgeIt.get_version());
-    // for (const auto& col : edgeIt.get_schema().get_columns()) {
-    //   addSchemaField(schema.get(), col, &spaceInfoCache->pool_);
-    // }
-    // // handle shcem property
-    // schema->setProp(edgeIt.get_schema().get_schema_prop());
-    // if (edgeIt.get_edge_type() != lastEdgeType) {
-    //   // init schema vector, since schema version is zero-based, need to add one
-    //   edgeSchemas[edgeIt.get_edge_type()].resize(schema->getVersion() + 1);
-    //   lastEdgeType = edgeIt.get_edge_type();
-    // }
-    // edgeSchemas[edgeIt.get_edge_type()][schema->getVersion()] = std::move(schema);
     edgeNameTypeMap.emplace(std::make_pair(spaceId, edgeIt.get_edge_name()),
                             edgeIt.get_edge_type());
     edgeTypeNameMap.emplace(std::make_pair(spaceId, edgeIt.get_edge_type()),
@@ -476,12 +448,10 @@ bool MetaClient::loadSchemas(GraphSpaceID spaceId,
             << " Successfully!";
   }
 
-  // spaceInfoCache->tagSchemas_ = std::move(tagSchemas);
-  // spaceInfoCache->edgeSchemas_ = std::move(edgeSchemas);
   return true;
 }
 
-static Indexes __buildIndexes(std::vector<cpp2::IndexItem> indexItemVec) {
+static Indexes buildIndexes(std::vector<cpp2::IndexItem> indexItemVec) {
   Indexes indexes;
   for (auto index : indexItemVec) {
     auto indexName = index.get_index_name();
@@ -509,7 +479,7 @@ bool MetaClient::loadIndexes(GraphSpaceID spaceId, std::shared_ptr<SpaceInfoCach
 
   auto tagIndexItemVec = tagIndexesRet.value();
   cache->tagIndexItemVec_ = tagIndexItemVec;
-  cache->tagIndexes_ = __buildIndexes(tagIndexItemVec);
+  cache->tagIndexes_ = buildIndexes(tagIndexItemVec);
   for (const auto& tagIndex : tagIndexItemVec) {
     auto indexName = tagIndex.get_index_name();
     auto indexID = tagIndex.get_index_id();
@@ -519,7 +489,7 @@ bool MetaClient::loadIndexes(GraphSpaceID spaceId, std::shared_ptr<SpaceInfoCach
 
   auto edgeIndexItemVec = edgeIndexesRet.value();
   cache->edgeIndexItemVec_ = edgeIndexItemVec;
-  cache->edgeIndexes_ = __buildIndexes(edgeIndexItemVec);
+  cache->edgeIndexes_ = buildIndexes(edgeIndexItemVec);
   for (auto& edgeIndex : edgeIndexItemVec) {
     auto indexName = edgeIndex.get_index_name();
     auto indexID = edgeIndex.get_index_id();
@@ -584,8 +554,8 @@ const MetaClient::ThreadLocalInfo& MetaClient::getThreadLocalInfo() {
       infoDeepCopy->tagSchemas_ = buildTagSchemas(infoDeepCopy->tagItemVec_, &infoDeepCopy->pool_);
       infoDeepCopy->edgeSchemas_ =
           buildEdgeSchemas(infoDeepCopy->edgeItemVec_, &infoDeepCopy->pool_);
-      infoDeepCopy->tagIndexes_ = __buildIndexes(infoDeepCopy->tagIndexItemVec_);
-      infoDeepCopy->edgeIndexes_ = __buildIndexes(infoDeepCopy->edgeIndexItemVec_);
+      infoDeepCopy->tagIndexes_ = buildIndexes(infoDeepCopy->tagIndexItemVec_);
+      infoDeepCopy->edgeIndexes_ = buildIndexes(infoDeepCopy->edgeIndexItemVec_);
       threadLocalInfo.localCache_[spaceId] = infoDeepCopy;
     }
     threadLocalInfo.spaceIndexByName_ = spaceIndexByName_;
@@ -600,6 +570,7 @@ const MetaClient::ThreadLocalInfo& MetaClient::getThreadLocalInfo() {
     threadLocalInfo.userRolesMap_ = userRolesMap_;
     threadLocalInfo.storageHosts_ = storageHosts_;
     threadLocalInfo.fulltextIndexMap_ = fulltextIndexMap_;
+    threadLocalInfo.userPasswordMap_ = userPasswordMap_;
   }
 
   return threadLocalInfo;
@@ -2345,25 +2316,25 @@ std::vector<cpp2::RoleItem> MetaClient::getRolesByUserFromCache(const std::strin
   return iter->second;
 }
 
-bool MetaClient::authCheckFromCache(const std::string& account, const std::string& password) const {
+bool MetaClient::authCheckFromCache(const std::string& account, const std::string& password) {
   if (!ready_) {
     return false;
   }
-  folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-  auto iter = userPasswordMap_.find(account);
-  if (iter == userPasswordMap_.end()) {
+  const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
+  auto iter = threadLocalInfo.userPasswordMap_.find(account);
+  if (iter == threadLocalInfo.userPasswordMap_.end()) {
     return false;
   }
   return iter->second == password;
 }
 
-bool MetaClient::checkShadowAccountFromCache(const std::string& account) const {
+bool MetaClient::checkShadowAccountFromCache(const std::string& account) {
   if (!ready_) {
     return false;
   }
-  folly::RWSpinLock::ReadHolder holder(localCacheLock_);
-  auto iter = userPasswordMap_.find(account);
-  if (iter != userPasswordMap_.end()) {
+  const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
+  auto iter = threadLocalInfo.userPasswordMap_.find(account);
+  if (iter != threadLocalInfo.userPasswordMap_.end()) {
     return true;
   }
   return false;

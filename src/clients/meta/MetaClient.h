@@ -585,11 +585,11 @@ class MetaClient {
 
   std::vector<cpp2::RoleItem> getRolesByUserFromCache(const std::string& user);
 
-  bool authCheckFromCache(const std::string& account, const std::string& password) const;
+  bool authCheckFromCache(const std::string& account, const std::string& password);
 
   StatusOr<TermID> getTermFromCache(GraphSpaceID spaceId, PartitionID);
 
-  bool checkShadowAccountFromCache(const std::string& account) const;
+  bool checkShadowAccountFromCache(const std::string& account);
 
   StatusOr<std::vector<HostAddr>> getStorageHosts();
 
@@ -777,6 +777,7 @@ class MetaClient {
     UserRolesMap userRolesMap_;
     std::vector<HostAddr> storageHosts_;
     FTIndexMap fulltextIndexMap_;
+    UserPasswordMap userPasswordMap_;
   };
 
   const ThreadLocalInfo& getThreadLocalInfo();
