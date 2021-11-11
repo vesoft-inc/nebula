@@ -7,6 +7,8 @@
 #define STORAGE_QUERY_SCANEDGEPROCESSOR_H_
 
 #include "common/base/Base.h"
+#include "storage/exec/ScanNode.h"
+#include "storage/exec/StoragePlan.h"
 #include "storage/query/QueryBaseProcessor.h"
 
 namespace nebula {
@@ -35,9 +37,30 @@ class ScanEdgeProcessor : public QueryBaseProcessor<cpp2::ScanEdgeRequest, cpp2:
 
   void buildEdgeColName(const std::vector<cpp2::EdgeProp>& edgeProps);
 
+  StoragePlan<Cursor> buildPlan(RuntimeContext* context,
+                                nebula::DataSet* result,
+                                std::unordered_map<PartitionID, cpp2::ScanCursor>* cursors);
+
+  folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> runInExecutor(
+      RuntimeContext* context,
+      nebula::DataSet* result,
+      std::unordered_map<PartitionID, cpp2::ScanCursor>* cursors,
+      PartitionID partId,
+      Cursor cursor);
+
+  void runInSingleThread(const cpp2::ScanEdgeRequest& req);
+
+  void runInMultipleThread(const cpp2::ScanEdgeRequest& req);
+
   void onProcessFinished() override;
 
-  PartitionID partId_;
+  std::vector<RuntimeContext> contexts_;
+  std::vector<nebula::DataSet> results_;
+  std::vector<std::unordered_map<PartitionID, cpp2::ScanCursor>> cursorsOfPart_;
+
+  std::unordered_map<PartitionID, cpp2::ScanCursor> cursors_;
+  int64_t limit_{-1};
+  bool enableReadFollower_{false};
 };
 
 }  // namespace storage
