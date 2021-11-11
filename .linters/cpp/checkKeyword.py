@@ -20,6 +20,8 @@ reserved_key_words = [
     'KW_XOR',
     'KW_USE',
     'KW_SET',
+    'KW_LIST',
+    'KW_MAP',
     'KW_FROM',
     'KW_WHERE',
     'KW_MATCH',
