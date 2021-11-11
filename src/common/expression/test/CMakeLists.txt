@@ -55,6 +55,7 @@ nebula_add_test(
     NAME
         expression_test
     SOURCES
+        TestBase.cpp
         ExpressionTest.cpp
         EncodeDecodeTest.cpp
         AggregateExpressionTest.cpp
