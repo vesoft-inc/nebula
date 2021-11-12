@@ -5,7 +5,7 @@ COPY . /home/nebula/BUILD
 ARG BRANCH=master
 
 RUN cd /home/nebula/BUILD/package \
-  && ./package.sh -v $(git rev-parse --short HEAD) -n OFF -b ${BRANCH} -g OFF
+  && ./package.sh -n OFF -b ${BRANCH} -t RelWithDebInfo -s TRUE
 
 FROM centos:7
 
@@ -20,4 +20,4 @@ RUN rpm -ivh *.rpm \
 
 EXPOSE 9669 19669 19670
 
-ENTRYPOINT ["/usr/local/nebula/bin/nebula-graphd", "--flagfile=/usr/local/nebula/etc/nebula-graphd.conf", "--daemonize=false"]
+ENTRYPOINT ["/usr/local/nebula/bin/nebula-graphd", "--flagfile=/usr/local/nebula/etc/nebula-graphd.conf", "--daemonize=false", "--containerized=true"]

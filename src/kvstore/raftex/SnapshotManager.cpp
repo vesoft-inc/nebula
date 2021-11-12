@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "kvstore/raftex/SnapshotManager.h"
@@ -19,8 +18,12 @@ namespace nebula {
 namespace raftex {
 
 SnapshotManager::SnapshotManager() {
-  executor_.reset(new folly::IOThreadPoolExecutor(FLAGS_snapshot_worker_threads));
-  ioThreadPool_.reset(new folly::IOThreadPoolExecutor(FLAGS_snapshot_io_threads));
+  executor_.reset(new folly::IOThreadPoolExecutor(
+      FLAGS_snapshot_worker_threads,
+      std::make_shared<folly::NamedThreadFactory>("snapshot-worker")));
+  ioThreadPool_.reset(new folly::IOThreadPoolExecutor(
+      FLAGS_snapshot_io_threads,
+      std::make_shared<folly::NamedThreadFactory>("snapshot-ioexecutor")));
 }
 
 folly::Future<Status> SnapshotManager::sendSnapshot(std::shared_ptr<RaftPart> part,

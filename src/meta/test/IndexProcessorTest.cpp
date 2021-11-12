@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #include <gtest/gtest.h>
 
@@ -29,7 +28,7 @@
 namespace nebula {
 namespace meta {
 
-using cpp2::PropertyType;
+using nebula::cpp2::PropertyType;
 
 TEST(IndexProcessorTest, AlterEdgeWithTTLTest) {
   fs::TempDir rootPath("/tmp/AlterEdgeWithTTLTest.XXXXXX");
@@ -1564,7 +1563,7 @@ void mockSchemas(kvstore::KVStore* kv) {
   {
     cpp2::ColumnDef col;
     col.set_name("col_fixed_string_1");
-    col.type.set_type(meta::cpp2::PropertyType::FIXED_STRING);
+    col.type.set_type(PropertyType::FIXED_STRING);
     col.type.set_type_length(MAX_INDEX_TYPE_LENGTH);
     (*srcsch.columns_ref()).emplace_back(std::move(col));
   }
@@ -1572,19 +1571,19 @@ void mockSchemas(kvstore::KVStore* kv) {
   {
     cpp2::ColumnDef col;
     col.set_name("col_fixed_string_2");
-    col.type.set_type(meta::cpp2::PropertyType::FIXED_STRING);
+    col.type.set_type(PropertyType::FIXED_STRING);
     col.type.set_type_length(257);
     (*srcsch.columns_ref()).emplace_back(std::move(col));
   }
   auto tagIdVal = std::string(reinterpret_cast<const char*>(&tagId), sizeof(tagId));
-  schemas.emplace_back(MetaServiceUtils::indexTagKey(1, "test_tag"), tagIdVal);
-  schemas.emplace_back(MetaServiceUtils::schemaTagKey(1, tagId, ver),
-                       MetaServiceUtils::schemaVal("test_tag", srcsch));
+  schemas.emplace_back(MetaKeyUtils::indexTagKey(1, "test_tag"), tagIdVal);
+  schemas.emplace_back(MetaKeyUtils::schemaTagKey(1, tagId, ver),
+                       MetaKeyUtils::schemaVal("test_tag", srcsch));
 
   auto edgeTypeVal = std::string(reinterpret_cast<const char*>(&edgeType), sizeof(edgeType));
-  schemas.emplace_back(MetaServiceUtils::indexEdgeKey(1, "test_edge"), edgeTypeVal);
-  schemas.emplace_back(MetaServiceUtils::schemaEdgeKey(1, edgeType, ver),
-                       MetaServiceUtils::schemaVal("test_edge", srcsch));
+  schemas.emplace_back(MetaKeyUtils::indexEdgeKey(1, "test_edge"), edgeTypeVal);
+  schemas.emplace_back(MetaKeyUtils::schemaEdgeKey(1, edgeType, ver),
+                       MetaKeyUtils::schemaVal("test_edge", srcsch));
 
   folly::Baton<true, std::atomic> baton;
   kv->asyncMultiPut(0, 0, std::move(schemas), [&](nebula::cpp2::ErrorCode code) {
@@ -2083,7 +2082,7 @@ TEST(ProcessorTest, IndexIdInSpaceRangeTest) {
     // check tag and edge count
     int count = 0;
 
-    auto tagprefix = MetaServiceUtils::schemaTagsPrefix(1);
+    auto tagprefix = MetaKeyUtils::schemaTagsPrefix(1);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto retCode = kv->prefix(kDefaultSpaceId, kDefaultPartId, tagprefix, &iter);
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, retCode);
@@ -2093,7 +2092,7 @@ TEST(ProcessorTest, IndexIdInSpaceRangeTest) {
     }
     ASSERT_EQ(1, count);
 
-    auto edgeprefix = MetaServiceUtils::schemaEdgesPrefix(1);
+    auto edgeprefix = MetaKeyUtils::schemaEdgesPrefix(1);
     retCode = kv->prefix(kDefaultSpaceId, kDefaultPartId, edgeprefix, &iter);
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, retCode);
     while (iter->valid()) {
@@ -2102,7 +2101,7 @@ TEST(ProcessorTest, IndexIdInSpaceRangeTest) {
     }
     ASSERT_EQ(2, count);
 
-    auto indexPrefix = MetaServiceUtils::indexPrefix(1);
+    auto indexPrefix = MetaKeyUtils::indexPrefix(1);
     retCode = kv->prefix(kDefaultSpaceId, kDefaultPartId, indexPrefix, &iter);
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, retCode);
     while (iter->valid()) {

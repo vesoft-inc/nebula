@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/admin/ListClusterInfoProcessor.h"
@@ -23,7 +22,7 @@ void ListClusterInfoProcessor::process(const cpp2::ListClusterInfoReq& req) {
     return;
   }
 
-  const auto& prefix = MetaServiceUtils::hostPrefix();
+  const auto& prefix = MetaKeyUtils::hostPrefix();
   std::unique_ptr<kvstore::KVIterator> iter;
   auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter, true);
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -35,7 +34,7 @@ void ListClusterInfoProcessor::process(const cpp2::ListClusterInfoReq& req) {
 
   std::vector<nebula::cpp2::NodeInfo> storages;
   while (iter->valid()) {
-    auto host = MetaServiceUtils::parseHostKey(iter->key());
+    auto host = MetaKeyUtils::parseHostKey(iter->key());
     HostInfo info = HostInfo::decode(iter->val());
 
     if (info.role_ != cpp2::HostRole::STORAGE) {
@@ -63,7 +62,7 @@ void ListClusterInfoProcessor::process(const cpp2::ListClusterInfoReq& req) {
     return;
   }
   auto& map = mpm->partsMap();
-  auto hosts = map[nebula::meta::kDefaultSpaceId][nebula::meta::kDefaultPartId].hosts_;
+  auto hosts = map[kDefaultSpaceId][kDefaultPartId].hosts_;
   LOG(INFO) << "meta servers count: " << hosts.size();
   resp_.set_meta_servers(std::move(hosts));
 

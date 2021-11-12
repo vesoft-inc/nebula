@@ -1,11 +1,12 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_DATATYPES_DATE_H_
 #define COMMON_DATATYPES_DATE_H_
+
+#include <folly/dynamic.h>
 
 #include <string>
 
@@ -62,6 +63,7 @@ struct Date {
   Date operator-(int64_t days) const;
 
   std::string toString() const;
+  folly::dynamic toJson() const { return toString(); }
 
   // Return the number of days since -32768/1/1
   int64_t toInt() const;
@@ -113,6 +115,8 @@ struct Time {
   }
 
   std::string toString() const;
+  // 'Z' representing UTC timezone
+  folly::dynamic toJson() const { return toString() + "Z"; }
 };
 
 inline std::ostream& operator<<(std::ostream& os, const Time& d) {
@@ -203,6 +207,8 @@ struct DateTime {
   }
 
   std::string toString() const;
+  // 'Z' representing UTC timezone
+  folly::dynamic toJson() const { return toString() + "Z"; }
 };
 
 inline std::ostream& operator<<(std::ostream& os, const DateTime& d) {

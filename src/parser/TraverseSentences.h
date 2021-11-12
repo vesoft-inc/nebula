@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #ifndef PARSER_TRAVERSESENTENCES_H_
 #define PARSER_TRAVERSESENTENCES_H_
@@ -243,9 +242,7 @@ class FetchVerticesSentence final : public Sentence {
     yieldClause_.reset(clause);
   }
 
-  bool isAllTagProps() { return tags_->empty(); }
-
-  const NameLabelList* tags() const { return tags_.get(); }
+  const NameLabelList* tags() const { return tags_->empty() ? nullptr : tags_.get(); }
 
   const VerticesClause* vertices() const { return vertices_.get(); }
 
@@ -291,7 +288,7 @@ class FetchEdgesSentence final : public Sentence {
 
   YieldClause* yieldClause() const { return yieldClause_.get(); }
 
-  const std::string* edge() const { return edge_->front(); }
+  const std::string& edgeName() const { return *edge_->front(); }
 
   std::size_t edgeSize() const { return edge_->size(); }
 
@@ -432,7 +429,8 @@ class GetSubgraphSentence final : public Sentence {
                       FromClause* from,
                       InBoundClause* in,
                       OutBoundClause* out,
-                      BothInOutClause* both) {
+                      BothInOutClause* both,
+                      YieldClause* yield) {
     kind_ = Kind::kGetSubgraph;
     withProp_ = withProp;
     step_.reset(step);
@@ -440,6 +438,7 @@ class GetSubgraphSentence final : public Sentence {
     in_.reset(in);
     out_.reset(out);
     both_.reset(both);
+    yield_.reset(yield);
   }
 
   StepClause* step() const { return step_.get(); }
@@ -454,6 +453,8 @@ class GetSubgraphSentence final : public Sentence {
 
   BothInOutClause* both() const { return both_.get(); }
 
+  YieldClause* yield() const { return yield_.get(); }
+
   std::string toString() const override;
 
  private:
@@ -463,6 +464,7 @@ class GetSubgraphSentence final : public Sentence {
   std::unique_ptr<InBoundClause> in_;
   std::unique_ptr<OutBoundClause> out_;
   std::unique_ptr<BothInOutClause> both_;
+  std::unique_ptr<YieldClause> yield_;
 };
 }  // namespace nebula
 #endif  // PARSER_TRAVERSESENTENCES_H_

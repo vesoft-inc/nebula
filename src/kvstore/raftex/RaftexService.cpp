@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "kvstore/raftex/RaftexService.h"
@@ -9,6 +8,7 @@
 #include <folly/ScopeGuard.h>
 
 #include "common/base/Base.h"
+#include "common/ssl/SSLConfig.h"
 #include "kvstore/raftex/RaftPart.h"
 
 namespace nebula {
@@ -60,6 +60,9 @@ void RaftexService::initThriftServer(std::shared_ptr<folly::IOThreadPoolExecutor
                                      std::shared_ptr<folly::Executor> workers,
                                      uint16_t port) {
   LOG(INFO) << "Init thrift server for raft service, port: " << port;
+  if (FLAGS_enable_ssl) {
+    server_->setSSLConfig(nebula::sslContextConfig());
+  }
   server_->setPort(port);
   server_->setIdleTimeout(std::chrono::seconds(0));
   if (pool != nullptr) {

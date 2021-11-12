@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/executor/admin/ListRolesExecutor.h"
@@ -38,10 +37,17 @@ folly::Future<Status> ListRolesExecutor::listRoles() {
         auto foundItem = std::find_if(items.begin(), items.end(), [&account](const auto &item) {
           return item.get_user_id() == account;
         });
-        if (foundItem != items.end() && foundItem->get_role_type() != meta::cpp2::RoleType::ADMIN) {
-          v.emplace_back(Row({foundItem->get_user_id(),
-                              apache::thrift::util::enumNameSafe(foundItem->get_role_type())}));
-        } else {
+        if (foundItem != items.end()) {
+          if (foundItem->get_role_type() != meta::cpp2::RoleType::ADMIN) {
+            v.emplace_back(Row({foundItem->get_user_id(),
+                                apache::thrift::util::enumNameSafe(foundItem->get_role_type())}));
+          } else {
+            for (const auto &item : items) {
+              v.emplace_back(nebula::Row(
+                  {item.get_user_id(), apache::thrift::util::enumNameSafe(item.get_role_type())}));
+            }
+          }
+        } else if (qctx_->rctx()->session()->isGod()) {
           for (const auto &item : items) {
             v.emplace_back(nebula::Row(
                 {item.get_user_id(), apache::thrift::util::enumNameSafe(item.get_role_type())}));

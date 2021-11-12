@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef KVSTORE_PART_H_
@@ -85,6 +84,8 @@ class Part : public raftex::RaftPart {
 
   void onElected(TermID term) override;
 
+  void onLeaderReady(TermID term) override;
+
   void onDiscoverNewLeader(HostAddr nLeader) override;
 
   cpp2::ErrorCode commitLogs(std::unique_ptr<LogIterator> iter, bool wait) override;
@@ -114,15 +115,18 @@ class Part : public raftex::RaftPart {
     TermID term;
   };
 
-  using OnElectedCallBack = std::function<void(const CallbackOptions& opt)>;
-  void registerOnElected(OnElectedCallBack cb);
+  using LeaderChagneCB = std::function<void(const CallbackOptions& opt)>;
+  void registerOnLeaderReady(LeaderChagneCB cb);
+
+  void registerOnLeaderLost(LeaderChagneCB cb);
 
  protected:
   GraphSpaceID spaceId_;
   PartitionID partId_;
   std::string walPath_;
   NewLeaderCallback newLeaderCb_ = nullptr;
-  std::vector<OnElectedCallBack> onElectedCallBacks_;
+  std::vector<LeaderChagneCB> leaderReadyCB_;
+  std::vector<LeaderChagneCB> leaderLostCB_;
 
  private:
   KVEngine* engine_ = nullptr;

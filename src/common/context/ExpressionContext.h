@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_CONTEXT_EXPRESSIONCONTEXT_H_
@@ -53,7 +52,7 @@ class ExpressionContext {
   virtual const Value& getInputProp(const std::string& prop) const = 0;
 
   // Get Vertex
-  virtual Value getVertex() const = 0;
+  virtual Value getVertex(const std::string& name = "") const = 0;
 
   // Get Edge
   virtual Value getEdge() const = 0;

@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Delete int vid of edge
 
   Scenario: delete edges
@@ -147,7 +146,7 @@ Feature: Delete int vid of edge
     # delete with pipe, get result by go
     When executing query:
       """
-      GO FROM hash("Boris Diaw") OVER like
+      GO FROM hash("Boris Diaw") OVER like YIELD like._dst
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
       | like._dst     |
@@ -162,14 +161,14 @@ Feature: Delete int vid of edge
     Then the execution should be successful
     When executing query:
       """
-      GO FROM hash("Boris Diaw") OVER like
+      GO FROM hash("Boris Diaw") OVER like YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst |
     # delete with var, get result by go
     When executing query:
       """
-      GO FROM hash("Russell Westbrook") OVER like
+      GO FROM hash("Russell Westbrook") OVER like YIELD like._dst
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
       | like._dst      |
@@ -184,7 +183,7 @@ Feature: Delete int vid of edge
     Then the execution should be successful
     When executing query:
       """
-      GO FROM hash("Russell Westbrook") OVER like
+      GO FROM hash("Russell Westbrook") OVER like YIELD like._dst
       """
     Then the result should be, in any order:
       | like._dst |

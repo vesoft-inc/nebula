@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #ifndef COMMON_THREAD_GENERICWORKER_H_
 #define COMMON_THREAD_GENERICWORKER_H_
@@ -52,7 +51,7 @@ class GenericWorker final : public nebula::cpp::NonCopyable, public nebula::cpp:
    * A GenericWorker MUST be `start'ed successfully before invoking
    * any other interfaces.
    */
-  bool MUST_USE_RESULT start(std::string name = "");
+  bool NG_MUST_USE_RESULT start(std::string name = "");
 
   /**
    * Asynchronouly to notify the worker to stop handling further new tasks.

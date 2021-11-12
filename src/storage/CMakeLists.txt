@@ -27,12 +27,12 @@ nebula_add_library(
 nebula_add_library(
     graph_storage_service_handler OBJECT
     GraphStorageServiceHandler.cpp
+    ExprVisitorBase.cpp
     context/StorageExpressionContext.cpp
     mutate/AddVerticesProcessor.cpp
     mutate/DeleteVerticesProcessor.cpp
     mutate/DeleteTagsProcessor.cpp
     mutate/AddEdgesProcessor.cpp
-    mutate/AddEdgesAtomicProcessor.cpp
     mutate/DeleteEdgesProcessor.cpp
     mutate/UpdateVertexProcessor.cpp
     mutate/UpdateEdgeProcessor.cpp
@@ -41,6 +41,14 @@ nebula_add_library(
     query/ScanVertexProcessor.cpp
     query/ScanEdgeProcessor.cpp
     index/LookupProcessor.cpp
+    exec/IndexNode.cpp
+    exec/IndexDedupNode.cpp
+    exec/IndexEdgeScanNode.cpp
+    exec/IndexLimitNode.cpp
+    exec/IndexProjectionNode.cpp
+    exec/IndexScanNode.cpp
+    exec/IndexSelectionNode.cpp
+    exec/IndexVertexScanNode.cpp
 )
 
 nebula_add_library(
@@ -62,14 +70,24 @@ nebula_add_library(
     http/StorageHttpDownloadHandler.cpp
     http/StorageHttpAdminHandler.cpp
     http/StorageHttpStatsHandler.cpp
+    http/StorageHttpPropertyHandler.cpp
 )
 
 nebula_add_library(
     storage_transaction_executor OBJECT
     transaction/TransactionManager.cpp
-    transaction/TransactionProcessor.cpp
-    transaction/GetValueProcessor.cpp
-    transaction/TransactionUtils.cpp
+    transaction/ConsistUtil.cpp
+    transaction/ChainUpdateEdgeProcessorLocal.cpp
+    transaction/ChainUpdateEdgeProcessorRemote.cpp
+    transaction/ChainResumeProcessor.cpp
+    transaction/ChainAddEdgesGroupProcessor.cpp
+    transaction/ChainAddEdgesProcessorLocal.cpp
+    transaction/ChainAddEdgesProcessorRemote.cpp
+    transaction/ResumeAddEdgeProcessor.cpp
+    transaction/ResumeAddEdgeRemoteProcessor.cpp
+    transaction/ResumeUpdateProcessor.cpp
+    transaction/ResumeUpdateRemoteProcessor.cpp
+    transaction/ChainProcessorFactory.cpp
 )
 
 nebula_add_library(

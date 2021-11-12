@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -67,9 +66,9 @@ void createSchema(meta::SchemaManager* schemaMan,
                   bool isEdge = false) {
   auto* sm = reinterpret_cast<mock::AdHocSchemaManager*>(schemaMan);
   std::shared_ptr<meta::NebulaSchemaProvider> schema(new meta::NebulaSchemaProvider(0));
-  schema->addField("c1", meta::cpp2::PropertyType::INT64, 0, false);
+  schema->addField("c1", nebula::cpp2::PropertyType::INT64, 0, false);
   schema->addField(
-      "c2", meta::cpp2::PropertyType::INT64, 0, false, ConstantExpression::make(pool, 0L));
+      "c2", nebula::cpp2::PropertyType::INT64, 0, false, ConstantExpression::make(pool, 0L));
   meta::cpp2::SchemaProp prop;
   prop.set_ttl_col("c2");
   prop.set_ttl_duration(duration);
@@ -90,7 +89,7 @@ void createIndex(meta::IndexManager* indexMan,
   std::vector<nebula::meta::cpp2::ColumnDef> cols;
   meta::cpp2::ColumnDef col;
   col.name = "c1";
-  col.type.set_type(meta::cpp2::PropertyType::INT64);
+  col.type.set_type(nebula::cpp2::PropertyType::INT64);
   cols.emplace_back(std::move(col));
   if (isEdge) {
     im->addEdgeIndex(1, schemaId, indexId, std::move(cols));
@@ -442,7 +441,7 @@ TEST(IndexWithTTLTest, RebuildTagIndexWithTTL) {
 
   // Wait for the task finished
   do {
-    usleep(500);
+    sleep(1);
   } while (!manager_->isFinished(context.jobId_, context.taskId_));
 
   manager_->shutdown();
@@ -511,7 +510,7 @@ TEST(IndexWithTTLTest, RebuildEdgeIndexWithTTL) {
 
   // Wait for the task finished
   do {
-    usleep(500);
+    sleep(1);
   } while (!manager_->isFinished(context.jobId_, context.taskId_));
 
   manager_->shutdown();
@@ -582,7 +581,7 @@ TEST(IndexWithTTLTest, RebuildTagIndexWithTTLExpired) {
 
   // Wait for the task finished
   do {
-    usleep(500);
+    sleep(1);
   } while (!manager_->isFinished(context.jobId_, context.taskId_));
 
   manager_->shutdown();
@@ -653,7 +652,7 @@ TEST(IndexWithTTLTest, RebuildEdgeIndexWithTTLExpired) {
 
   // Wait for the task finished
   do {
-    usleep(500);
+    sleep(1);
   } while (!manager_->isFinished(context.jobId_, context.taskId_));
   manager_->shutdown();
 
@@ -687,8 +686,9 @@ TEST(IndexWithTTLTest, LookupTagIndexWithTTL) {
   cpp2::LookupIndexRequest req;
   nebula::storage::cpp2::IndexSpec indices;
   req.set_space_id(1);
-  indices.set_tag_or_edge_id(2021001);
-  indices.set_is_edge(false);
+  nebula::cpp2::SchemaID schemaId;
+  schemaId.set_tag_id(2021001);
+  indices.set_schema_id(schemaId);
   std::vector<PartitionID> parts;
   for (int32_t p = 1; p <= 6; p++) {
     parts.emplace_back(p);
@@ -730,8 +730,10 @@ TEST(IndexWithTTLTest, LookupEdgeIndexWithTTL) {
   cpp2::LookupIndexRequest req;
   nebula::storage::cpp2::IndexSpec indices;
   req.set_space_id(1);
-  indices.set_tag_or_edge_id(2021001);
-  indices.set_is_edge(true);
+  nebula::cpp2::SchemaID schemaId;
+  schemaId.set_edge_type(2021001);
+  indices.set_schema_id(schemaId);
+
   std::vector<PartitionID> parts;
   for (int32_t p = 1; p <= 6; p++) {
     parts.emplace_back(p);
@@ -775,8 +777,9 @@ TEST(IndexWithTTLTest, LookupTagIndexWithTTLExpired) {
   cpp2::LookupIndexRequest req;
   nebula::storage::cpp2::IndexSpec indices;
   req.set_space_id(1);
-  indices.set_tag_or_edge_id(2021001);
-  indices.set_is_edge(false);
+  nebula::cpp2::SchemaID schemaId;
+  schemaId.set_tag_id(2021001);
+  indices.set_schema_id(schemaId);
   std::vector<PartitionID> parts;
   for (int32_t p = 1; p <= 6; p++) {
     parts.emplace_back(p);
@@ -820,8 +823,9 @@ TEST(IndexWithTTLTest, LookupEdgeIndexWithTTLExpired) {
   cpp2::LookupIndexRequest req;
   nebula::storage::cpp2::IndexSpec indices;
   req.set_space_id(1);
-  indices.set_tag_or_edge_id(2021001);
-  indices.set_is_edge(true);
+  nebula::cpp2::SchemaID schemaId;
+  schemaId.set_edge_type(2021001);
+  indices.set_schema_id(schemaId);
   std::vector<PartitionID> parts;
   for (int32_t p = 1; p <= 6; p++) {
     parts.emplace_back(p);

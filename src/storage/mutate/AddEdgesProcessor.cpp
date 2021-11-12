@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "storage/mutate/AddEdgesProcessor.h"
@@ -130,7 +129,18 @@ void AddEdgesProcessor::doProcess(const cpp2::AddEdgesRequest& req) {
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
       handleAsync(spaceId_, partId, code);
     } else {
-      doPut(spaceId_, partId, std::move(data));
+      if (consistOp_) {
+        auto batchHolder = std::make_unique<kvstore::BatchHolder>();
+        (*consistOp_)(*batchHolder, &data);
+        auto batch = encodeBatchValue(std::move(batchHolder)->getBatch());
+
+        env_->kvstore_->asyncAppendBatch(
+            spaceId_, partId, std::move(batch), [partId, this](auto rc) {
+              handleAsync(spaceId_, partId, rc);
+            });
+      } else {
+        doPut(spaceId_, partId, std::move(data));
+      }
     }
   }
 }
@@ -234,20 +244,23 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
              * step 1 , Delete old version index if exists.
              */
             if (oReader != nullptr) {
-              auto oi = indexKey(partId, oReader.get(), key, index);
-              if (!oi.empty()) {
-                // Check the index is building for the specified partition or
-                // not.
+              auto ois = indexKeys(partId, oReader.get(), key, index);
+              if (!ois.empty()) {
+                // Check the index is building for the specified partition or not.
                 auto indexState = env_->getIndexState(spaceId_, partId);
                 if (env_->checkRebuilding(indexState)) {
                   auto delOpKey = OperationKeyUtils::deleteOperationKey(partId);
-                  batchHolder->put(std::move(delOpKey), std::move(oi));
+                  for (auto& oi : ois) {
+                    batchHolder->put(std::string(delOpKey), std::move(oi));
+                  }
                 } else if (env_->checkIndexLocked(indexState)) {
                   LOG(ERROR) << "The index has been locked: " << index->get_index_name();
                   code = nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
                   break;
                 } else {
-                  batchHolder->remove(std::move(oi));
+                  for (auto& oi : ois) {
+                    batchHolder->remove(std::move(oi));
+                  }
                 }
               }
             }
@@ -255,22 +268,25 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
              * step 2 , Insert new edge index
              */
             if (nReader != nullptr) {
-              auto nik = indexKey(partId, nReader.get(), key, index);
-              if (!nik.empty()) {
+              auto niks = indexKeys(partId, nReader.get(), key, index);
+              if (!niks.empty()) {
                 auto v = CommonUtils::ttlValue(schema.get(), nReader.get());
                 auto niv = v.ok() ? IndexKeyUtils::indexVal(std::move(v).value()) : "";
-                // Check the index is building for the specified partition or
-                // not.
+                // Check the index is building for the specified partition or not.
                 auto indexState = env_->getIndexState(spaceId_, partId);
                 if (env_->checkRebuilding(indexState)) {
-                  auto opKey = OperationKeyUtils::modifyOperationKey(partId, std::move(nik));
-                  batchHolder->put(std::move(opKey), std::move(niv));
+                  for (auto& nik : niks) {
+                    auto opKey = OperationKeyUtils::modifyOperationKey(partId, std::move(nik));
+                    batchHolder->put(std::move(opKey), std::string(niv));
+                  }
                 } else if (env_->checkIndexLocked(indexState)) {
                   LOG(ERROR) << "The index has been locked: " << index->get_index_name();
                   code = nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
                   break;
                 } else {
-                  batchHolder->put(std::move(nik), std::move(niv));
+                  for (auto& nik : niks) {
+                    batchHolder->put(std::move(nik), std::string(niv));
+                  }
                 }
               }
             }
@@ -286,6 +302,9 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
       env_->edgesML_->unlockBatch(dummyLock);
       handleAsync(spaceId_, partId, code);
       continue;
+    }
+    if (consistOp_) {
+      (*consistOp_)(*batchHolder, nullptr);
     }
     auto batch = encodeBatchValue(batchHolder->getBatch());
     DCHECK(!batch.empty());
@@ -318,8 +337,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> AddEdgesProcessor::addEdges(
    *     kv(part1_src1_edgeType1_rank1_dst1 , v3)
    *     kv(part1_src1_edgeType1_rank1_dst1 , v4)
    *
-   * Ultimately, kv(part1_src1_edgeType1_rank1_dst1 , v4) . It's just what I
-   * need.
+   * Ultimately, kv(part1_src1_edgeType1_rank1_dst1 , v4) . It's just what I need.
    */
   std::unordered_map<std::string, std::string> newEdges;
   std::for_each(
@@ -357,18 +375,22 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> AddEdgesProcessor::addEdges(
         }
 
         if (!val.empty()) {
-          auto oi = indexKey(partId, oReader.get(), e.first, index);
-          if (!oi.empty()) {
+          auto ois = indexKeys(partId, oReader.get(), e.first, index);
+          if (!ois.empty()) {
             // Check the index is building for the specified partition or not.
             auto indexState = env_->getIndexState(spaceId_, partId);
             if (env_->checkRebuilding(indexState)) {
               auto deleteOpKey = OperationKeyUtils::deleteOperationKey(partId);
-              batchHolder->put(std::move(deleteOpKey), std::move(oi));
+              for (auto& oi : ois) {
+                batchHolder->put(std::string(deleteOpKey), std::move(oi));
+              }
             } else if (env_->checkIndexLocked(indexState)) {
               LOG(ERROR) << "The index has been locked: " << index->get_index_name();
               return nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
             } else {
-              batchHolder->remove(std::move(oi));
+              for (auto& oi : ois) {
+                batchHolder->remove(std::move(oi));
+              }
             }
           }
         }
@@ -385,20 +407,24 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> AddEdgesProcessor::addEdges(
           }
         }
 
-        auto nik = indexKey(partId, nReader.get(), e.first, index);
-        if (!nik.empty()) {
+        auto niks = indexKeys(partId, nReader.get(), e.first, index);
+        if (!niks.empty()) {
           auto v = CommonUtils::ttlValue(schema.get(), nReader.get());
           auto niv = v.ok() ? IndexKeyUtils::indexVal(std::move(v).value()) : "";
           // Check the index is building for the specified partition or not.
           auto indexState = env_->getIndexState(spaceId_, partId);
           if (env_->checkRebuilding(indexState)) {
-            auto modifyOpKey = OperationKeyUtils::modifyOperationKey(partId, std::move(nik));
-            batchHolder->put(std::move(modifyOpKey), std::move(niv));
+            for (auto& nik : niks) {
+              auto modifyOpKey = OperationKeyUtils::modifyOperationKey(partId, std::move(nik));
+              batchHolder->put(std::move(modifyOpKey), std::string(niv));
+            }
           } else if (env_->checkIndexLocked(indexState)) {
             LOG(ERROR) << "The index has been locked: " << index->get_index_name();
             return nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
           } else {
-            batchHolder->put(std::move(nik), std::move(niv));
+            for (auto& nik : niks) {
+              batchHolder->put(std::move(nik), std::string(niv));
+            }
           }
         }
       }
@@ -434,21 +460,22 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> AddEdgesProcessor::findOldValue(
   }
 }
 
-std::string AddEdgesProcessor::indexKey(PartitionID partId,
-                                        RowReader* reader,
-                                        const folly::StringPiece& rawKey,
-                                        std::shared_ptr<nebula::meta::cpp2::IndexItem> index) {
+std::vector<std::string> AddEdgesProcessor::indexKeys(
+    PartitionID partId,
+    RowReader* reader,
+    const folly::StringPiece& rawKey,
+    std::shared_ptr<nebula::meta::cpp2::IndexItem> index) {
   auto values = IndexKeyUtils::collectIndexValues(reader, index->get_fields());
   if (!values.ok()) {
-    return "";
+    return {};
   }
-  return IndexKeyUtils::edgeIndexKey(spaceVidLen_,
-                                     partId,
-                                     index->get_index_id(),
-                                     NebulaKeyUtils::getSrcId(spaceVidLen_, rawKey).str(),
-                                     NebulaKeyUtils::getRank(spaceVidLen_, rawKey),
-                                     NebulaKeyUtils::getDstId(spaceVidLen_, rawKey).str(),
-                                     std::move(values).value());
+  return IndexKeyUtils::edgeIndexKeys(spaceVidLen_,
+                                      partId,
+                                      index->get_index_id(),
+                                      NebulaKeyUtils::getSrcId(spaceVidLen_, rawKey).str(),
+                                      NebulaKeyUtils::getRank(spaceVidLen_, rawKey),
+                                      NebulaKeyUtils::getDstId(spaceVidLen_, rawKey).str(),
+                                      std::move(values).value());
 }
 
 }  // namespace storage

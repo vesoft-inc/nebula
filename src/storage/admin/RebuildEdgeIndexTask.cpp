@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "storage/admin/RebuildEdgeIndexTask.h"
@@ -142,15 +141,17 @@ nebula::cpp2::ErrorCode RebuildEdgeIndexTask::buildIndexGlobal(GraphSpaceID spac
           LOG(WARNING) << "Collect index value failed";
           continue;
         }
-        auto indexKey = IndexKeyUtils::edgeIndexKey(vidSize,
-                                                    part,
-                                                    item->get_index_id(),
-                                                    source.toString(),
-                                                    ranking,
-                                                    destination.toString(),
-                                                    std::move(valuesRet).value());
-        batchSize += indexKey.size() + indexVal.size();
-        data.emplace_back(std::move(indexKey), indexVal);
+        auto indexKeys = IndexKeyUtils::edgeIndexKeys(vidSize,
+                                                      part,
+                                                      item->get_index_id(),
+                                                      source.toString(),
+                                                      ranking,
+                                                      destination.toString(),
+                                                      std::move(valuesRet).value());
+        for (auto& indexKey : indexKeys) {
+          batchSize += indexKey.size() + indexVal.size();
+          data.emplace_back(std::move(indexKey), indexVal);
+        }
       }
     }
     iter->next();

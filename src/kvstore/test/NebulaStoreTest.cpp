@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -917,6 +916,7 @@ TEST(NebulaStoreTest, BackupRestoreTest) {
   FLAGS_rocksdb_table_format = "PlainTable";
   FLAGS_rocksdb_wal_dir = rocksdbWalPath.path();
   FLAGS_rocksdb_backup_dir = backupPath.path();
+  FLAGS_enable_rocksdb_prefix_filtering = true;
 
   auto waitLeader = [](const std::unique_ptr<NebulaStore>& store) {
     while (true) {

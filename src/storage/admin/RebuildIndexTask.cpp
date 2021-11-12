@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "storage/admin/RebuildIndexTask.h"
@@ -23,7 +22,7 @@ RebuildIndexTask::RebuildIndexTask(StorageEnv* env, TaskContext&& ctx)
   // 1Mb (512 * 2 peers). Muliplied by the subtasks concurrency, the total send/recv traffic will be
   // 10Mb, which is non-trival.
   LOG(INFO) << "Rebuild index task is rate limited to " << FLAGS_rebuild_index_part_rate_limit
-            << " for each subtask";
+            << " for each subtask by default";
 }
 
 ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>> RebuildIndexTask::genSubTasks() {
@@ -78,8 +77,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>> RebuildIndexTask::ge
 nebula::cpp2::ErrorCode RebuildIndexTask::invoke(GraphSpaceID space,
                                                  PartitionID part,
                                                  const IndexItems& items) {
-  auto rateLimiter = std::make_unique<kvstore::RateLimiter>(FLAGS_rebuild_index_part_rate_limit,
-                                                            FLAGS_rebuild_index_part_rate_limit);
+  auto rateLimiter = std::make_unique<kvstore::RateLimiter>();
   // TaskMananger will make sure that there won't be cocurrent invoke of a given part
   auto result = removeLegacyLogs(space, part);
   if (result != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -221,7 +219,9 @@ nebula::cpp2::ErrorCode RebuildIndexTask::writeData(GraphSpaceID space,
                                                     kvstore::RateLimiter* rateLimiter) {
   folly::Baton<true, std::atomic> baton;
   auto result = nebula::cpp2::ErrorCode::SUCCEEDED;
-  rateLimiter->consume(batchSize);
+  rateLimiter->consume(static_cast<double>(batchSize),                             // toConsume
+                       static_cast<double>(FLAGS_rebuild_index_part_rate_limit),   // rate
+                       static_cast<double>(FLAGS_rebuild_index_part_rate_limit));  // burstSize
   env_->kvstore_->asyncMultiPut(
       space, part, std::move(data), [&result, &baton](nebula::cpp2::ErrorCode code) {
         if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -240,7 +240,9 @@ nebula::cpp2::ErrorCode RebuildIndexTask::writeOperation(GraphSpaceID space,
   folly::Baton<true, std::atomic> baton;
   auto result = nebula::cpp2::ErrorCode::SUCCEEDED;
   auto encoded = encodeBatchValue(batchHolder->getBatch());
-  rateLimiter->consume(batchHolder->size());
+  rateLimiter->consume(static_cast<double>(batchHolder->size()),                   // toConsume
+                       static_cast<double>(FLAGS_rebuild_index_part_rate_limit),   // rate
+                       static_cast<double>(FLAGS_rebuild_index_part_rate_limit));  // burstSize
   env_->kvstore_->asyncAppendBatch(
       space, part, std::move(encoded), [&result, &baton](nebula::cpp2::ErrorCode code) {
         if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {

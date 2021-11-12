@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/validator/UseValidator.h"
@@ -43,12 +42,9 @@ Status UseValidator::validateImpl() {
 
 Status UseValidator::toPlan() {
   // The input will be set by father validator later.
-  auto switchSpace = SwitchSpace::make(qctx_, nullptr, *spaceName_);
-  qctx_->rctx()->session()->updateSpaceName(*spaceName_);
-  auto session = qctx_->rctx()->session()->getSession();
-  auto update = UpdateSession::make(qctx_, switchSpace, std::move(session));
-  root_ = update;
-  tail_ = switchSpace;
+  auto reg = SwitchSpace::make(qctx_, nullptr, *spaceName_);
+  root_ = reg;
+  tail_ = root_;
   return Status::OK();
 }
 }  // namespace graph

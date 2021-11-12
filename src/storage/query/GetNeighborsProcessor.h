@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_QUERY_GETNEIGHBORSPROCESSOR_H_
@@ -75,6 +74,7 @@ class GetNeighborsProcessor
       const std::vector<nebula::Row>& rows,
       int64_t limit,
       bool random);
+  void profilePlan(StoragePlan<VertexID>& plan);
 
  private:
   std::vector<RuntimeContext> contexts_;

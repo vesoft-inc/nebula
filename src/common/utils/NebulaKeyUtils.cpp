@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/utils/NebulaKeyUtils.h"
@@ -238,6 +237,15 @@ std::string NebulaKeyUtils::toEdgeKey(const folly::StringPiece& lockKey) {
   std::string ret = lockKey.str();
   ret.back() = 1;
   return ret;
+}
+
+std::string NebulaKeyUtils::adminTaskKey(int32_t seqId, JobID jobId, TaskID taskId) {
+  std::string key;
+  key.reserve(sizeof(int32_t) + sizeof(JobID) + sizeof(TaskID));
+  key.append(reinterpret_cast<char*>(&seqId), sizeof(int32_t));
+  key.append(reinterpret_cast<char*>(&jobId), sizeof(JobID));
+  key.append(reinterpret_cast<char*>(&taskId), sizeof(TaskID));
+  return key;
 }
 
 }  // namespace nebula

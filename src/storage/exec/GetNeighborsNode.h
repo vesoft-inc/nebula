@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_EXEC_GETNEIGHBORSNODE_H_
@@ -22,7 +21,7 @@ namespace storage {
 // target cell of a row.
 class GetNeighborsNode : public QueryNode<VertexID> {
  public:
-  using RelNode::execute;
+  using RelNode::doExecute;
 
   GetNeighborsNode(RuntimeContext* context,
                    IterateNode<VertexID>* hashJoinNode,
@@ -35,10 +34,12 @@ class GetNeighborsNode : public QueryNode<VertexID> {
         upstream_(upstream),
         edgeContext_(edgeContext),
         resultDataSet_(resultDataSet),
-        limit_(limit) {}
+        limit_(limit) {
+    name_ = "GetNeighborsNode";
+  }
 
-  nebula::cpp2::ErrorCode execute(PartitionID partId, const VertexID& vId) override {
-    auto ret = RelNode::execute(partId, vId);
+  nebula::cpp2::ErrorCode doExecute(PartitionID partId, const VertexID& vId) override {
+    auto ret = RelNode::doExecute(partId, vId);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
       return ret;
     }
@@ -158,7 +159,7 @@ class GetNeighborsSampleNode : public GetNeighborsNode {
     }
 
     RowReaderWrapper reader;
-    auto samples = std::move(*sampler_).samples();
+    auto samples = sampler_->samples();
     for (auto& sample : samples) {
       auto columnIdx = std::get<4>(sample);
       // add edge prop value to the target column

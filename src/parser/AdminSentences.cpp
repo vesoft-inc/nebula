@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "parser/AdminSentences.h"
@@ -97,6 +96,11 @@ std::string CreateSpaceSentence::toString() const {
     buf += *comment_;
     buf += "\"";
   }
+  return buf;
+}
+
+std::string CreateSpaceAsSentence::toString() const {
+  auto buf = folly::sformat("CREATE SPACE {} AS {}", *newSpaceName_, *oldSpaceName_);
   return buf;
 }
 

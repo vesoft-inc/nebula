@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_GRAPHSTORAGESERVICEHANDLER_H_
@@ -22,7 +21,6 @@ class StorageEnv;
 class GraphStorageServiceHandler final : public cpp2::GraphStorageServiceSvIf {
  public:
   explicit GraphStorageServiceHandler(StorageEnv* env);
-
   // Vertice section
   folly::Future<cpp2::ExecResponse> future_addVertices(
       const cpp2::AddVerticesRequest& req) override;
@@ -52,8 +50,10 @@ class GraphStorageServiceHandler final : public cpp2::GraphStorageServiceSvIf {
   folly::Future<cpp2::LookupIndexResp> future_lookupIndex(
       const cpp2::LookupIndexRequest& req) override;
 
-  folly::Future<cpp2::ExecResponse> future_addEdgesAtomic(
-      const cpp2::AddEdgesRequest& req) override;
+  folly::Future<cpp2::UpdateResponse> future_chainUpdateEdge(
+      const cpp2::UpdateEdgeRequest& req) override;
+
+  folly::Future<cpp2::ExecResponse> future_chainAddEdges(const cpp2::AddEdgesRequest& req) override;
 
   folly::Future<cpp2::ScanVertexResponse> future_scanVertex(
       const cpp2::ScanVertexRequest& req) override;

@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_UTILS_NEBULAKEYUTILS_H_
@@ -268,6 +267,8 @@ class NebulaKeyUtils final {
     msg << folly::hexDump(rawKey.data(), rawKey.size());
     LOG(FATAL) << msg.str();
   }
+
+  static std::string adminTaskKey(int32_t seqId, JobID jobId, TaskID taskId);
 
   static_assert(sizeof(NebulaKeyType) == sizeof(PartitionID));
 

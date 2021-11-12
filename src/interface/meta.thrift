@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 namespace cpp nebula.meta
@@ -60,35 +59,21 @@ union ID {
 }
 
 
-// These are all data types supported in the graph properties
-enum PropertyType {
-    UNKNOWN = 0,
-
-    // Simple types
-    BOOL = 1,
-    INT64 = 2,          // This is the same as INT in v1
-    VID = 3,            // Deprecated, only supported by v1
-    FLOAT = 4,
-    DOUBLE = 5,
-    STRING = 6,
-    // String with fixed length. If the string content is shorteri
-    // than the given length, '\0' will be padded to the end
-    FIXED_STRING = 7,   // New in v2
-    INT8 = 8,           // New in v2
-    INT16 = 9,          // New in v2
-    INT32 = 10,         // New in v2
-
-    // Date time
-    TIMESTAMP = 21,
-    DATE = 24,
-    DATETIME = 25,
-    TIME = 26,
+// Geo shape type
+enum GeoShape {
+    ANY = 0,
+    POINT = 1,
+    LINESTRING = 2,
+    POLYGON = 3,
 } (cpp.enum_strict)
 
+
 struct ColumnTypeDef {
-    1: required PropertyType    type,
+    1: required common.PropertyType    type,
     // type_length is valid for fixed_string type
-    2: optional i16             type_length = 0,
+    2: optional i16                    type_length = 0,
+    // geo_shape is valid for geography type
+    3: optional GeoShape               geo_shape,
 }
 
 struct ColumnDef {
@@ -126,7 +111,7 @@ struct SpaceDesc {
     3: i32                      replica_factor = 0,
     4: binary                   charset_name,
     5: binary                   collate_name,
-    6: ColumnTypeDef            vid_type = {"type": PropertyType.FIXED_STRING, "type_length": 8},
+    6: ColumnTypeDef            vid_type = {"type": common.PropertyType.FIXED_STRING, "type_length": 8},
     7: optional binary          group_name,
     8: optional IsolationLevel  isolation_level,
     9: optional binary          comment,
@@ -326,6 +311,11 @@ struct StatsItem {
 struct CreateSpaceReq {
     1: SpaceDesc        properties,
     2: bool             if_not_exists,
+}
+
+struct CreateSpaceAsReq {
+    1: binary        old_space_name,
+    2: binary        new_space_name,
 }
 
 struct DropSpaceReq {
@@ -1165,11 +1155,24 @@ struct GetMetaDirInfoResp {
 struct GetMetaDirInfoReq {
 }
 
+struct VerifyClientVersionResp {
+    1: common.ErrorCode         code,
+    2: common.HostAddr          leader,
+    3: optional binary           error_msg;
+}
+
+
+struct VerifyClientVersionReq {
+    1: required binary version = common.version;
+}
+
 service MetaService {
     ExecResp createSpace(1: CreateSpaceReq req);
     ExecResp dropSpace(1: DropSpaceReq req);
     GetSpaceResp getSpace(1: GetSpaceReq req);
     ListSpacesResp listSpaces(1: ListSpacesReq req);
+
+    ExecResp createSpaceAs(1: CreateSpaceAsReq req);
 
     ExecResp createTag(1: CreateTagReq req);
     ExecResp alterTag(1: AlterTagReq req);
@@ -1273,4 +1276,6 @@ service MetaService {
 
     ListClusterInfoResp listCluster(1: ListClusterInfoReq req);
     GetMetaDirInfoResp getMetaDirInfo(1: GetMetaDirInfoReq req);
+
+    VerifyClientVersionResp verifyClientVersion(1: VerifyClientVersionReq req)
 }

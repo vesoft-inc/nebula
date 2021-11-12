@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_QUERY_QUERYBASEPROCESSOR_H_
@@ -125,6 +124,10 @@ struct EdgeContext {
   // offset is the start index of first edge type in a response row
   size_t offset_;
   size_t statCount_ = 0;
+
+  // additional operator for eventually-consistent edges
+  std::vector<std::pair<std::string, std::string>> kvAppend;
+  std::vector<std::string> kvErased;
 };
 
 template <typename REQ, typename RESP>

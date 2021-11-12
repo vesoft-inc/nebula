@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <thrift/lib/cpp/util/EnumUtils.h>
@@ -107,7 +106,7 @@ class IntegrityTest {
       nebula::meta::cpp2::Schema schema;
       nebula::meta::cpp2::ColumnDef column;
       column.name = FLAGS_prop_name;
-      column.type.set_type(meta::cpp2::PropertyType::INT64);
+      column.type.set_type(nebula::cpp2::PropertyType::INT64);
       (*schema.columns_ref()).emplace_back(std::move(column));
       auto ret = mClient_->createTagSchema(spaceId_, FLAGS_tag_name, schema).get();
       if (!ret.ok()) {
@@ -170,8 +169,8 @@ class IntegrityTest {
   void addVertex(std::vector<VertexID>& prev, std::vector<VertexID>& cur, VertexID startId) {
     std::unordered_map<TagID, std::vector<std::string>> propNames;
     propNames[tagId_].emplace_back(propName_);
-    auto future =
-        client_->addVertices(spaceId_, 0, 0, genVertices(prev, cur, startId), propNames, true);
+    GraphStorageClient::CommonRequestParam param(spaceId_, 0, 0);
+    auto future = client_->addVertices(param, genVertices(prev, cur, startId), propNames, true);
     auto resp = std::move(future).get();
     if (!resp.succeeded()) {
       for (auto& err : resp.failedParts()) {
@@ -226,7 +225,8 @@ class IntegrityTest {
       tagProp.set_tag(tagId_);
       (*tagProp.props_ref()).emplace_back(propName_);
       DataSet dataset({kVid});
-      auto future = client_->getProps(spaceId_, 0, 0, dataset, &props, nullptr, nullptr);
+      GraphStorageClient::CommonRequestParam param(spaceId_, 0, 0);
+      auto future = client_->getProps(param, dataset, &props, nullptr, nullptr);
       auto resp = std::move(future).get();
       if (!resp.succeeded()) {
         LOG(ERROR) << "Failed to fetch props of vertex " << nextId;

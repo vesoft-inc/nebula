@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/zone/GetGroupProcessor.h"
@@ -25,7 +24,7 @@ void GetGroupProcessor::process(const cpp2::GetGroupReq& req) {
     return;
   }
 
-  auto groupKey = MetaServiceUtils::groupKey(groupName);
+  auto groupKey = MetaKeyUtils::groupKey(groupName);
   auto groupValueRet = doGet(std::move(groupKey));
   if (!nebula::ok(groupValueRet)) {
     auto retCode = nebula::error(groupValueRet);
@@ -36,7 +35,7 @@ void GetGroupProcessor::process(const cpp2::GetGroupReq& req) {
     return;
   }
 
-  auto zoneNames = MetaServiceUtils::parseZoneNames(std::move(nebula::value(groupValueRet)));
+  auto zoneNames = MetaKeyUtils::parseZoneNames(std::move(nebula::value(groupValueRet)));
   LOG(INFO) << "Get Group: " << groupName << " zone size: " << zoneNames.size();
   resp_.set_zone_names(std::move(zoneNames));
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);

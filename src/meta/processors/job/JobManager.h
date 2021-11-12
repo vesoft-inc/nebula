@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_JOBMANAGER_H_
@@ -36,7 +35,9 @@ class JobManager : public nebula::cpp::NonCopyable, public nebula::cpp::NonMovab
   FRIEND_TEST(JobManagerTest, JobDeduplication);
   FRIEND_TEST(JobManagerTest, loadJobDescription);
   FRIEND_TEST(JobManagerTest, showJobs);
+  FRIEND_TEST(JobManagerTest, showJobsFromMultiSpace);
   FRIEND_TEST(JobManagerTest, showJob);
+  FRIEND_TEST(JobManagerTest, showJobInOtherSpace);
   FRIEND_TEST(JobManagerTest, recoverJob);
   FRIEND_TEST(JobManagerTest, AddRebuildTagIndexJob);
   FRIEND_TEST(JobManagerTest, AddRebuildEdgeIndexJob);
@@ -69,14 +70,16 @@ class JobManager : public nebula::cpp::NonCopyable, public nebula::cpp::NonMovab
    */
   bool checkJobExist(const cpp2::AdminCmd& cmd, const std::vector<std::string>& paras, JobID& iJob);
 
-  ErrorOr<nebula::cpp2::ErrorCode, std::vector<cpp2::JobDesc>> showJobs();
+  ErrorOr<nebula::cpp2::ErrorCode, std::vector<cpp2::JobDesc>> showJobs(
+      const std::string& spaceName);
 
   ErrorOr<nebula::cpp2::ErrorCode, std::pair<cpp2::JobDesc, std::vector<cpp2::TaskDesc>>> showJob(
-      JobID iJob);
+      JobID iJob, const std::string& spaceName);
 
-  nebula::cpp2::ErrorCode stopJob(JobID iJob);
+  nebula::cpp2::ErrorCode stopJob(JobID iJob, const std::string& spaceName);
 
-  ErrorOr<nebula::cpp2::ErrorCode, JobID> recoverJob();
+  // return error/recovered job num
+  ErrorOr<nebula::cpp2::ErrorCode, uint32_t> recoverJob(const std::string& spaceName);
 
   /**
    * @brief persist job executed result, and do the cleanup

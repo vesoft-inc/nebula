@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "storage/admin/StatsTask.h"
@@ -87,7 +86,7 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
   }
 
   auto vIdLen = vIdLenRet.value();
-  bool isIntId = (vIdType.value() == meta::cpp2::PropertyType::INT64);
+  bool isIntId = (vIdType.value() == nebula::cpp2::PropertyType::INT64);
   auto partitionNumRet = env_->schemaMan_->getPartsNum(spaceId);
   if (!partitionNumRet.ok()) {
     LOG(ERROR) << "Get space partition number failed";

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/optimizer/rule/IndexScanRule.h"
@@ -219,7 +218,7 @@ Status IndexScanRule::appendColHint(std::vector<IndexColumnHint>& hints,
     }
     // because only type for bool is true/false, which can not satisify [start,
     // end)
-    if (col.get_type().get_type() == meta::cpp2::PropertyType::BOOL) {
+    if (col.get_type().get_type() == nebula::cpp2::PropertyType::BOOL) {
       return Status::SemanticError("Range scan for bool type is illegal");
     }
     NG_RETURN_IF_ERROR(OptimizerUtils::boundValue(item.relOP_, item.value_, col, begin, end));

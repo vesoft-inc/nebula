@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_TEST_QUERYTESTUTILS_H_
@@ -260,9 +259,12 @@ class QueryTestUtils {
         row.append(IndexKeyUtils::encodeValue(v));
       }
     }
-    auto index = IndexKeyUtils::vertexIndexKey(spaceVidLen, partId, indexId, vId, std::move(row));
+    auto indexes =
+        IndexKeyUtils::vertexIndexKeys(spaceVidLen, partId, indexId, vId, {std::move(row)});
     auto val = FLAGS_mock_ttl_col ? IndexKeyUtils::indexVal(time::WallClock::fastNowInSec()) : "";
-    data.emplace_back(std::move(index), std::move(val));
+    for (auto& index : indexes) {
+      data.emplace_back(std::move(index), std::move(val));
+    }
   }
 
   static void encodeEdgeIndex(size_t spaceVidLen,
@@ -283,10 +285,12 @@ class QueryTestUtils {
         row.append(IndexKeyUtils::encodeValue(v));
       }
     }
-    auto index = IndexKeyUtils::edgeIndexKey(
-        spaceVidLen, partId, indexId, srcId, rank, dstId, std::move(row));
+    auto indexes = IndexKeyUtils::edgeIndexKeys(
+        spaceVidLen, partId, indexId, srcId, rank, dstId, {std::move(row)});
     auto val = FLAGS_mock_ttl_col ? IndexKeyUtils::indexVal(time::WallClock::fastNowInSec()) : "";
-    data.emplace_back(std::move(index), std::move(val));
+    for (auto& index : indexes) {
+      data.emplace_back(std::move(index), val);
+    }
   }
 
   static cpp2::GetNeighborsRequest buildRequest(

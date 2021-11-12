@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef CLIENTS_META_METACLIENT_H_
@@ -30,6 +29,12 @@
 
 DECLARE_int32(meta_client_retry_times);
 DECLARE_int32(heartbeat_interval_secs);
+
+namespace nebula {
+namespace storage {
+class MetaClientTestUpdater;
+}  // namespace storage
+}  // namespace nebula
 
 namespace nebula {
 namespace meta {
@@ -181,7 +186,10 @@ class MetaClient {
   FRIEND_TEST(MetaClientTest, RetryOnceTest);
   FRIEND_TEST(MetaClientTest, RetryUntilLimitTest);
   FRIEND_TEST(MetaClientTest, RocksdbOptionsTest);
+  FRIEND_TEST(MetaClientTest, VerifyClientTest);
   friend class KillQueryMetaWrapper;
+  FRIEND_TEST(ChainAddEdgesTest, AddEdgesLocalTest);
+  friend class storage::MetaClientTestUpdater;
 
  public:
   MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
@@ -214,6 +222,9 @@ class MetaClient {
   // Operations for parts
   folly::Future<StatusOr<GraphSpaceID>> createSpace(meta::cpp2::SpaceDesc spaceDesc,
                                                     bool ifNotExists = false);
+
+  folly::Future<StatusOr<GraphSpaceID>> createSpaceAs(const std::string& oldSpaceName,
+                                                      const std::string& newSpaceName);
 
   folly::Future<StatusOr<std::vector<SpaceIdName>>> listSpaces();
 
@@ -459,7 +470,7 @@ class MetaClient {
 
   StatusOr<int32_t> getSpaceVidLen(const GraphSpaceID& space);
 
-  StatusOr<cpp2::PropertyType> getSpaceVidType(const GraphSpaceID& space);
+  StatusOr<nebula::cpp2::PropertyType> getSpaceVidType(const GraphSpaceID& space);
 
   StatusOr<meta::cpp2::SpaceDesc> getSpaceDesc(const GraphSpaceID& space);
 
@@ -552,9 +563,9 @@ class MetaClient {
 
   bool authCheckFromCache(const std::string& account, const std::string& password) const;
 
-  bool checkShadowAccountFromCache(const std::string& account) const;
+  StatusOr<TermID> getTermFromCache(GraphSpaceID spaceId, PartitionID) const;
 
-  TermID getTermFromCache(GraphSpaceID spaceId, PartitionID) const;
+  bool checkShadowAccountFromCache(const std::string& account) const;
 
   StatusOr<std::vector<HostAddr>> getStorageHosts() const;
 
@@ -698,6 +709,8 @@ class MetaClient {
   PartsMap doGetPartsMap(const HostAddr& host, const LocalCache& localCache);
 
   ListenersMap doGetListenersMap(const HostAddr& host, const LocalCache& localCache);
+
+  Status verifyVersion();
 
  private:
   std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;

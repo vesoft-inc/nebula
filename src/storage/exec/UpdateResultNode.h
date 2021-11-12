@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_EXEC_UPDATERESULTNODE_H_
@@ -17,7 +16,7 @@ namespace storage {
 template <typename T>
 class UpdateResNode : public RelNode<T> {
  public:
-  using RelNode<T>::execute;
+  using RelNode<T>::doExecute;
 
   UpdateResNode(RuntimeContext* context,
                 RelNode<T>* updateNode,
@@ -28,10 +27,12 @@ class UpdateResNode : public RelNode<T> {
         updateNode_(updateNode),
         returnPropsExp_(returnPropsExp),
         expCtx_(expCtx),
-        result_(result) {}
+        result_(result) {
+    RelNode<T>::name_ = "UpdateResNode";
+  }
 
-  nebula::cpp2::ErrorCode execute(PartitionID partId, const T& vId) override {
-    auto ret = RelNode<T>::execute(partId, vId);
+  nebula::cpp2::ErrorCode doExecute(PartitionID partId, const T& vId) override {
+    auto ret = RelNode<T>::doExecute(partId, vId);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED && ret != nebula::cpp2::ErrorCode::E_FILTER_OUT) {
       return ret;
     }

@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_BASEPROCESSOR_H_
@@ -43,6 +42,9 @@ class BaseProcessor {
     }
 
     this->result_.set_latency_in_us(this->duration_.elapsedInUSec());
+    if (!profileDetail_.empty()) {
+      this->result_.set_latency_detail_us(std::move(profileDetail_));
+    }
     this->result_.set_failed_parts(this->codes_);
     this->resp_.set_result(std::move(this->result_));
     this->promise_.setValue(std::move(this->resp_));
@@ -65,7 +67,7 @@ class BaseProcessor {
     if (!vIdType.ok()) {
       return nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND;
     }
-    isIntId_ = (vIdType.value() == meta::cpp2::PropertyType::INT64);
+    isIntId_ = (vIdType.value() == nebula::cpp2::PropertyType::INT64);
 
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
@@ -85,7 +87,7 @@ class BaseProcessor {
 
   nebula::cpp2::ErrorCode writeResultTo(WriteResult code, bool isEdge);
 
-  nebula::meta::cpp2::ColumnDef columnDef(std::string name, nebula::meta::cpp2::PropertyType type);
+  nebula::meta::cpp2::ColumnDef columnDef(std::string name, nebula::cpp2::PropertyType type);
 
   void pushResultCode(nebula::cpp2::ErrorCode code,
                       PartitionID partId,
@@ -102,6 +104,14 @@ class BaseProcessor {
                                      const std::vector<Value>& props,
                                      WriteResult& wRet);
 
+  virtual void profileDetail(const std::string& name, int32_t latency) {
+    if (!profileDetail_.count(name)) {
+      profileDetail_[name] = latency;
+    } else {
+      profileDetail_[name] += latency;
+    }
+  }
+
  protected:
   StorageEnv* env_{nullptr};
   const ProcessorCounters* counters_;
@@ -116,6 +126,9 @@ class BaseProcessor {
   int32_t callingNum_{0};
   int32_t spaceVidLen_;
   bool isIntId_;
+  std::map<std::string, int32_t> profileDetail_;
+  std::mutex profileMut_;
+  bool profileDetailFlag_{false};
 };
 
 }  // namespace storage

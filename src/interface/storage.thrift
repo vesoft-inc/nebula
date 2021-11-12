@@ -1,8 +1,7 @@
 /* vim: ft=proto
  * Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 namespace cpp nebula.storage
@@ -25,6 +24,7 @@ include "meta.thrift"
 struct RequestCommon {
     1: optional common.SessionID session_id,
     2: optional common.ExecutionPlanID plan_id,
+    3: optional bool profile_detail,
 }
 
 struct PartitionResult {
@@ -506,6 +506,10 @@ struct IndexColumnHint {
     2: ScanType                 scan_type,
     3: common.Value             begin_value,
     4: common.Value             end_value,
+    // When `columnhint` means ` >= begin_value`, `include_begin` is true
+    // and include_end is similar
+    5: bool                     include_begin = true,
+    6: bool                     include_end = false,
 }
 
 struct IndexQueryContext {
@@ -524,8 +528,7 @@ struct IndexQueryContext {
 struct IndexSpec {
     // In order to union multiple indices, multiple index hints are allowed
     1: required list<IndexQueryContext>   contexts,
-    2: required bool                      is_edge,
-    3: required i32                       tag_or_edge_id,
+    2: common.SchemaID                    schema_id,
 }
 
 
@@ -537,6 +540,8 @@ struct LookupIndexRequest {
     // Support kVid and kTag for vertex, kSrc, kType, kRank and kDst for edge.
     4: optional list<binary>                return_columns,
     5: optional RequestCommon               common,
+    // max row count of each partition in this response
+    6: optional i64                         limit,
 }
 
 
@@ -555,24 +560,29 @@ struct LookupAndTraverseRequest {
  * End of Index section
  */
 
+struct ScanCursor {
+    3: bool                                 has_next,
+    // next start key of scan, only valid when has_next is true
+    4: optional binary                      next_cursor,
+}
+
 struct ScanVertexRequest {
     1: common.GraphSpaceID                  space_id,
-    2: common.PartitionID                   part_id,
-    // start key of this block
-    3: optional binary                      cursor,
-    4: VertexProp                           return_columns,
+    2: map<common.PartitionID, ScanCursor> (cpp.template = "std::unordered_map")
+                                            parts,
+    3: list<VertexProp>                     return_columns,
     // max row count of tag in this response
-    5: i64                                  limit,
+    4: i64                                  limit,
     // only return data in time range [start_time, end_time)
-    6: optional i64                         start_time,
-    7: optional i64                         end_time,
-    8: optional binary                      filter,
+    5: optional i64                         start_time,
+    6: optional i64                         end_time,
+    7: optional binary                      filter,
     // when storage enable multi versions and only_latest_version is true, only return latest version.
     // when storage disable multi versions, just use the default value.
-    9: bool                                 only_latest_version = false,
+    8: bool                                 only_latest_version = false,
     // if set to false, forbid follower read
-    10: bool                                enable_read_from_follower = true,
-    11: optional RequestCommon              common,
+    9: bool                                enable_read_from_follower = true,
+    10: optional RequestCommon              common,
 }
 
 struct ScanVertexResponse {
@@ -581,29 +591,27 @@ struct ScanVertexResponse {
     // Each column represents one property. the column name is in the form of "tag_name.prop_alias"
     // in the same order which specified in VertexProp in request.
     2: common.DataSet                       vertex_data,
-    3: bool                                 has_next,
-    // next start key of scan, only valid when has_next is true
-    4: optional binary                      next_cursor,
+    3: map<common.PartitionID, ScanCursor> (cpp.template = "std::unordered_map")
+                                            cursors;
 }
 
 struct ScanEdgeRequest {
     1: common.GraphSpaceID                  space_id,
-    2: common.PartitionID                   part_id,
-    // start key of this block
-    3: optional binary                      cursor,
-    4: EdgeProp                             return_columns,
+    2: map<common.PartitionID, ScanCursor> (cpp.template = "std::unordered_map")
+                                            parts,
+    3: EdgeProp                             return_columns,
     // max row count of edge in this response
-    5: i64                                  limit,
+    4: i64                                  limit,
     // only return data in time range [start_time, end_time)
-    6: optional i64                         start_time,
-    7: optional i64                         end_time,
-    8: optional binary                      filter,
+    5: optional i64                         start_time,
+    6: optional i64                         end_time,
+    7: optional binary                      filter,
     // when storage enable multi versions and only_latest_version is true, only return latest version.
     // when storage disable multi versions, just use the default value.
-    9: bool                                only_latest_version = false,
+    8: bool                                only_latest_version = false,
     // if set to false, forbid follower read
-    10: bool                                enable_read_from_follower = true,
-    11: optional RequestCommon              common,
+    9: bool                                enable_read_from_follower = true,
+    10: optional RequestCommon              common,
 }
 
 struct ScanEdgeResponse {
@@ -612,9 +620,8 @@ struct ScanEdgeResponse {
     // Each column represents one property. the column name is in the form of "edge_name.prop_alias"
     // in the same order which specified in EdgeProp in requesss.
     2: common.DataSet                       edge_data,
-    3: bool                                 has_next,
-    // next start key of scan, only valid when has_next is true
-    4: optional binary                      next_cursor,
+    3: map<common.PartitionID, ScanCursor> (cpp.template = "std::unordered_map")
+                                            cursors;
 }
 
 struct TaskPara {
@@ -662,7 +669,9 @@ service GraphStorageService {
     LookupIndexResp lookupIndex(1: LookupIndexRequest req);
 
     GetNeighborsResponse lookupAndTraverse(1: LookupAndTraverseRequest req);
-    ExecResponse addEdgesAtomic(1: AddEdgesRequest req);
+
+    UpdateResponse chainUpdateEdge(1: UpdateEdgeRequest req);
+    ExecResponse chainAddEdges(1: AddEdgesRequest req);
 }
 
 
@@ -863,27 +872,42 @@ service GeneralStorageService {
 
 // transaction request
 struct InternalTxnRequest {
-    1: i64                                  txn_id,
-    2: i32                                  space_id,
-    // need this(part_id) to satisfy getResponse
-    3: i32                                  part_id,
-    // position of chain
-    4: i32                                  position,
-    5: list<list<binary>>                   data
+    1: i64                                      txn_id,
+    2: map<common.PartitionID, i64>             term_of_parts,
+    3: optional AddEdgesRequest                 add_edge_req,
+    4: optional UpdateEdgeRequest               upd_edge_req,
+    5: optional map<common.PartitionID, list<i64>>(
+        cpp.template = "std::unordered_map")    edge_ver,
 }
 
-struct GetValueRequest {
-    1: common.GraphSpaceID space_id,
-    2: common.PartitionID part_id,
-    3: binary key
+
+struct ChainAddEdgesRequest {
+    1: common.GraphSpaceID                      space_id,
+    // partId => edges
+    2: map<common.PartitionID, list<NewEdge>>(
+        cpp.template = "std::unordered_map")    parts,
+    // A list of property names. The order of the property names should match
+    //   the data order specified in the NewEdge.props
+    3: list<binary>                             prop_names,
+    // if ture, when edge already exists, do nothing
+    4: bool                                     if_not_exists,
+    // 5: map<common.PartitionID, i64>             term_of_parts,
+    5: i64                                      term
+    6: optional i64                             edge_version
+    // 6: optional map<common.PartitionID, list<i64>>(
+        // cpp.template = "std::unordered_map")    edge_ver,
 }
 
-struct GetValueResponse {
-    1: required ResponseCommon result
-    2: binary value
+
+struct ChainUpdateEdgeRequest {
+    1: UpdateEdgeRequest                        update_edge_request,
+    2: i64                                      term,
+    3: optional i64                             edge_version
+    4: common.GraphSpaceID                      space_id,
+    5: required list<common.PartitionID>        parts,
 }
 
 service InternalStorageService {
-    GetValueResponse  getValue(1: GetValueRequest req);
-    ExecResponse    forwardTransaction(1: InternalTxnRequest req);
+    ExecResponse chainAddEdges(1: ChainAddEdgesRequest req);
+    UpdateResponse chainUpdateEdge(1: ChainUpdateEdgeRequest req);
 }

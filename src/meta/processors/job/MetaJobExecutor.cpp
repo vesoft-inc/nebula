@@ -1,16 +1,15 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/job/MetaJobExecutor.h"
 
 #include "common/network/NetworkUtils.h"
+#include "common/utils/MetaKeyUtils.h"
 #include "common/utils/Utils.h"
 #include "interface/gen-cpp2/common_types.h"
 #include "meta/ActiveHostsMan.h"
-#include "meta/MetaServiceUtils.h"
 #include "meta/common/MetaCommon.h"
 #include "meta/processors/Common.h"
 #include "meta/processors/admin/AdminClient.h"
@@ -58,7 +57,7 @@ std::unique_ptr<MetaJobExecutor> MetaJobExecutorFactory::createMetaJobExecutor(
 
 ErrorOr<nebula::cpp2::ErrorCode, GraphSpaceID> MetaJobExecutor::getSpaceIdFromName(
     const std::string& spaceName) {
-  auto indexKey = MetaServiceUtils::indexSpaceKey(spaceName);
+  auto indexKey = MetaKeyUtils::indexSpaceKey(spaceName);
   std::string val;
   auto retCode = kvstore_->get(kDefaultSpaceId, kDefaultPartId, indexKey, &val);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -71,7 +70,7 @@ ErrorOr<nebula::cpp2::ErrorCode, GraphSpaceID> MetaJobExecutor::getSpaceIdFromNa
 
 ErrOrHosts MetaJobExecutor::getTargetHost(GraphSpaceID spaceId) {
   std::unique_ptr<kvstore::KVIterator> iter;
-  const auto& partPrefix = MetaServiceUtils::partPrefix(spaceId);
+  const auto& partPrefix = MetaKeyUtils::partPrefix(spaceId);
   auto retCode = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, partPrefix, &iter);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << "Fetch Parts Failed, error: " << apache::thrift::util::enumNameSafe(retCode);
@@ -79,23 +78,24 @@ ErrOrHosts MetaJobExecutor::getTargetHost(GraphSpaceID spaceId) {
   }
 
   // use vector instead of set because this can convient for next step
+  std::unordered_map<HostAddr, std::vector<PartitionID>> hostAndPart;
   std::vector<std::pair<HostAddr, std::vector<PartitionID>>> hosts;
   while (iter->valid()) {
-    auto targets = MetaServiceUtils::parsePartVal(iter->val());
+    auto part = MetaKeyUtils::parsePartKeyPartId(iter->key());
+    auto targets = MetaKeyUtils::parsePartVal(iter->val());
     for (auto& target : targets) {
-      std::vector<PartitionID> parts;
-      hosts.emplace_back(std::make_pair(std::move(target), std::move(parts)));
+      hostAndPart[target].emplace_back(part);
     }
     iter->next();
   }
-  std::sort(hosts.begin(), hosts.end());
-  auto last = std::unique(hosts.begin(), hosts.end());
-  hosts.erase(last, hosts.end());
+  for (auto it = hostAndPart.begin(); it != hostAndPart.end(); it++) {
+    hosts.emplace_back(std::pair(it->first, it->second));
+  }
   return hosts;
 }
 
 ErrOrHosts MetaJobExecutor::getLeaderHost(GraphSpaceID space) {
-  const auto& hostPrefix = MetaServiceUtils::leaderPrefix(space);
+  const auto& hostPrefix = MetaKeyUtils::leaderPrefix(space);
   std::unique_ptr<kvstore::KVIterator> leaderIter;
   auto retCode = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, hostPrefix, &leaderIter);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -108,9 +108,9 @@ ErrOrHosts MetaJobExecutor::getLeaderHost(GraphSpaceID space) {
   HostAddr host;
   nebula::cpp2::ErrorCode code;
   for (; leaderIter->valid(); leaderIter->next()) {
-    auto spaceAndPart = MetaServiceUtils::parseLeaderKeyV3(leaderIter->key());
+    auto spaceAndPart = MetaKeyUtils::parseLeaderKeyV3(leaderIter->key());
     auto partId = spaceAndPart.second;
-    std::tie(host, std::ignore, code) = MetaServiceUtils::parseLeaderValV3(leaderIter->val());
+    std::tie(host, std::ignore, code) = MetaKeyUtils::parseLeaderValV3(leaderIter->val());
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
       continue;
     }
@@ -126,7 +126,7 @@ ErrOrHosts MetaJobExecutor::getLeaderHost(GraphSpaceID space) {
 }
 
 ErrOrHosts MetaJobExecutor::getListenerHost(GraphSpaceID space, cpp2::ListenerType type) {
-  const auto& prefix = MetaServiceUtils::listenerPrefix(space, type);
+  const auto& prefix = MetaKeyUtils::listenerPrefix(space, type);
   std::unique_ptr<kvstore::KVIterator> iter;
   auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -147,8 +147,8 @@ ErrOrHosts MetaJobExecutor::getListenerHost(GraphSpaceID space, cpp2::ListenerTy
   std::vector<std::pair<HostAddr, std::vector<PartitionID>>> hosts;
 
   while (iter->valid()) {
-    auto host = MetaServiceUtils::deserializeHostAddr(iter->val());
-    auto part = MetaServiceUtils::parseListenerPart(iter->key());
+    auto host = MetaKeyUtils::deserializeHostAddr(iter->val());
+    auto part = MetaKeyUtils::parseListenerPart(iter->key());
     if (std::find(activeHosts.begin(), activeHosts.end(), host) == activeHosts.end()) {
       LOG(ERROR) << "Invalid host : " << network::NetworkUtils::toHostsStr({host});
       return nebula::cpp2::ErrorCode::E_INVALID_HOST;

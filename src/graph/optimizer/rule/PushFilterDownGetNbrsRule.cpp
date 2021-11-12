@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/optimizer/rule/PushFilterDownGetNbrsRule.h"
@@ -74,11 +73,10 @@ StatusOr<OptRule::TransformResult> PushFilterDownGetNbrsRule::transform(
     newFilterGroupNode = OptGroupNode::create(ctx, newFilter, filterGroupNode->group());
   }
 
-  auto newGNFilter = condition->encode();
-  if (!gn->filter().empty()) {
-    auto filterExpr = Expression::decode(pool, gn->filter());
-    auto logicExpr = LogicalExpression::makeAnd(pool, condition, filterExpr);
-    newGNFilter = logicExpr->encode();
+  auto newGNFilter = condition;
+  if (gn->filter() != nullptr) {
+    auto logicExpr = LogicalExpression::makeAnd(pool, condition, gn->filter()->clone());
+    newGNFilter = logicExpr;
   }
 
   auto newGN = static_cast<GetNeighbors *>(gn->clone());

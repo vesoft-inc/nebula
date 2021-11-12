@@ -1,7 +1,6 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Case Expression
 
   Background:
@@ -299,7 +298,7 @@ Feature: Case Expression
   Scenario: Using the return value of case expr as an input
     When executing query:
       """
-      RETURN CASE WHEN true THEN "Tim Duncan" ELSE "ABC" END AS a | GO FROM $-.a OVER like;
+      RETURN CASE WHEN true THEN "Tim Duncan" ELSE "ABC" END AS a | GO FROM $-.a OVER like YIELD like._dst;
       """
     Then the result should be, in order:
       | like._dst       |

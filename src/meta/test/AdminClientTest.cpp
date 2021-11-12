@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <folly/executors/CPUThreadPoolExecutor.h>
@@ -216,7 +215,7 @@ TEST(AdminClientTest, RetryTest) {
     thriftPeers.emplace_back(Utils::getStoreAddrFromAdminAddr({localIp, rpcServer1->port_}));
 
     std::vector<kvstore::KV> data;
-    data.emplace_back(MetaServiceUtils::partKey(0, 1), MetaServiceUtils::partVal(thriftPeers));
+    data.emplace_back(MetaKeyUtils::partKey(0, 1), MetaKeyUtils::partVal(thriftPeers));
     folly::Baton<true, std::atomic> baton;
     kv->asyncMultiPut(
         kDefaultSpaceId, kDefaultPartId, std::move(data), [&baton](nebula::cpp2::ErrorCode code) {

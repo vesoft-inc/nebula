@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #include "mock/MockCluster.h"
 
@@ -16,6 +15,7 @@
 #include "storage/GeneralStorageServiceHandler.h"
 #include "storage/GraphStorageServiceHandler.h"
 #include "storage/StorageAdminServiceHandler.h"
+#include "storage/transaction/TransactionManager.h"
 
 DECLARE_int32(heartbeat_interval_secs);
 
@@ -150,7 +150,7 @@ void MockCluster::initStorageKV(const char* dataPath,
     spaceDesc.set_charset_name("utf8");
     spaceDesc.set_collate_name("utf8_bin");
     meta::cpp2::ColumnTypeDef type;
-    type.set_type(meta::cpp2::PropertyType::FIXED_STRING);
+    type.set_type(nebula::cpp2::PropertyType::FIXED_STRING);
     type.set_type_length(32);
     spaceDesc.set_vid_type(std::move(type));
     auto ret = metaClient_->createSpace(spaceDesc).get();
@@ -210,6 +210,9 @@ void MockCluster::initStorageKV(const char* dataPath,
   storageEnv_->rebuildIndexGuard_ = std::make_unique<storage::IndexGuard>();
   storageEnv_->verticesML_ = std::make_unique<storage::VerticesMemLock>();
   storageEnv_->edgesML_ = std::make_unique<storage::EdgesMemLock>();
+
+  txnMan_ = std::make_unique<storage::TransactionManager>(storageEnv_.get());
+  storageEnv_->txnMan_ = txnMan_.get();
 }
 
 void MockCluster::startStorage(HostAddr addr,

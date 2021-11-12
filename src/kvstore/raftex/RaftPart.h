@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef RAFTEX_RAFTPART_H_
@@ -268,6 +267,11 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   // This method is called when this partition is elected as
   // a new leader
   virtual void onElected(TermID term) = 0;
+
+  // called after leader committed first log
+  // (a little bit later onElected)
+  // leader need to set some internal status after elected.
+  virtual void onLeaderReady(TermID term) = 0;
 
   virtual void onDiscoverNewLeader(HostAddr nLeader) = 0;
 

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/validator/test/MockIndexManager.h"
@@ -38,7 +37,7 @@ void MockIndexManager::init() {
   meta::cpp2::ColumnDef field;
   field.set_name("name");
   meta::cpp2::ColumnTypeDef type;
-  type.set_type(meta::cpp2::PropertyType::FIXED_STRING);
+  type.set_type(nebula::cpp2::PropertyType::FIXED_STRING);
   type.set_type_length(32);
   field.set_type(std::move(type));
   book_name_index.set_fields({});

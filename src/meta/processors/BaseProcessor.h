@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_BASEPROCESSOR_H_
@@ -16,6 +15,7 @@
 #include "common/charset/Charset.h"
 #include "common/network/NetworkUtils.h"
 #include "common/time/Duration.h"
+#include "common/utils/MetaKeyUtils.h"
 #include "interface/gen-cpp2/storage_types.h"
 #include "kvstore/KVStore.h"
 #include "meta/ActiveHostsMan.h"
@@ -27,7 +27,7 @@ namespace nebula {
 namespace meta {
 
 using nebula::network::NetworkUtils;
-using FieldType = std::pair<std::string, cpp2::PropertyType>;
+using FieldType = std::pair<std::string, nebula::cpp2::PropertyType>;
 using SignType = storage::cpp2::EngineSignType;
 
 #define CHECK_SPACE_ID_AND_RETURN(spaceID)              \

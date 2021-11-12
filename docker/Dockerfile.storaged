@@ -5,7 +5,7 @@ ARG BRANCH=master
 COPY . /home/nebula/BUILD
 
 RUN cd /home/nebula/BUILD/package \
-  && ./package.sh -v $(git rev-parse --short HEAD) -n OFF -b ${BRANCH}
+  && ./package.sh -n OFF -b ${BRANCH} -t RelWithDebInfo -s TRUE
 
 FROM centos:7
 
@@ -20,4 +20,4 @@ RUN rpm -ivh *.rpm \
 
 EXPOSE 9777 9778 9779 9780 19779 19780
 
-ENTRYPOINT ["/usr/local/nebula/bin/nebula-storaged", "--flagfile=/usr/local/nebula/etc/nebula-storaged.conf", "--daemonize=false"]
+ENTRYPOINT ["/usr/local/nebula/bin/nebula-storaged", "--flagfile=/usr/local/nebula/etc/nebula-storaged.conf", "--daemonize=false", "--containerized=true"]

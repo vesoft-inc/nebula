@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #ifndef PARSER_ADMINSENTENCES_H_
 #define PARSER_ADMINSENTENCES_H_
@@ -198,7 +197,7 @@ class SpaceOptItem final {
     } else {
       LOG(ERROR) << "vid type illegal.";
       static meta::cpp2::ColumnTypeDef unknownTypeDef;
-      unknownTypeDef.set_type(meta::cpp2::PropertyType::UNKNOWN);
+      unknownTypeDef.set_type(nebula::cpp2::PropertyType::UNKNOWN);
       return unknownTypeDef;
     }
   }
@@ -313,6 +312,26 @@ class CreateSpaceSentence final : public CreateSentence {
   std::unique_ptr<std::string> groupName_;
   std::unique_ptr<SpaceOptList> spaceOpts_;
   std::unique_ptr<std::string> comment_;
+};
+
+class CreateSpaceAsSentence final : public CreateSentence {
+ public:
+  CreateSpaceAsSentence(std::string* oldSpace, std::string* newSpace, bool ifNotExist)
+      : CreateSentence(ifNotExist) {
+    oldSpaceName_.reset(oldSpace);
+    newSpaceName_.reset(newSpace);
+    kind_ = Kind::kCreateSpaceAs;
+  }
+
+  std::string getOldSpaceName() const { return *oldSpaceName_; }
+
+  std::string getNewSpaceName() const { return *newSpaceName_; }
+
+  std::string toString() const override;
+
+ private:
+  std::unique_ptr<std::string> newSpaceName_;
+  std::unique_ptr<std::string> oldSpaceName_;
 };
 
 class DropSpaceSentence final : public DropSentence {
@@ -534,7 +553,11 @@ class AdminJobSentence final : public Sentence {
   explicit AdminJobSentence(meta::cpp2::AdminJobOp op,
                             meta::cpp2::AdminCmd cmd = meta::cpp2::AdminCmd::UNKNOWN)
       : op_(op), cmd_(cmd) {
-    kind_ = Kind::kAdminJob;
+    if (op == meta::cpp2::AdminJobOp::SHOW || op == meta::cpp2::AdminJobOp::SHOW_All) {
+      kind_ = Kind::kAdminShowJobs;
+    } else {
+      kind_ = Kind::kAdminJob;
+    }
   }
 
   void addPara(const std::string& para);

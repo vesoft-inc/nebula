@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef TOOLS_DBUPGRADE_DBUPGRADER_H_
@@ -82,10 +81,10 @@ class UpgraderSpace {
                            const meta::NebulaSchemaProvider* schema,
                            std::vector<std::string>& fieldName);
 
-  std::string indexVertexKey(PartitionID partId,
-                             VertexID& vId,
-                             RowReader* reader,
-                             std::shared_ptr<nebula::meta::cpp2::IndexItem> index);
+  std::vector<std::string> indexVertexKeys(PartitionID partId,
+                                           VertexID& vId,
+                                           RowReader* reader,
+                                           std::shared_ptr<nebula::meta::cpp2::IndexItem> index);
 
   void encodeEdgeValue(PartitionID partId,
                        RowReader* reader,
@@ -97,12 +96,12 @@ class UpgraderSpace {
                        VertexID& dstId,
                        std::vector<kvstore::KV>& data);
 
-  std::string indexEdgeKey(PartitionID partId,
-                           RowReader* reader,
-                           VertexID& svId,
-                           EdgeRanking rank,
-                           VertexID& dstId,
-                           std::shared_ptr<nebula::meta::cpp2::IndexItem> index);
+  std::vector<std::string> indexEdgeKeys(PartitionID partId,
+                                         RowReader* reader,
+                                         VertexID& svId,
+                                         EdgeRanking rank,
+                                         VertexID& dstId,
+                                         std::shared_ptr<nebula::meta::cpp2::IndexItem> index);
 
   WriteResult convertValue(const meta::NebulaSchemaProvider* newSchema,
                            const meta::SchemaProviderIf* oldSchema,

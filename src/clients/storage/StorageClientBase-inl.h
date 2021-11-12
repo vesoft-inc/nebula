@@ -1,13 +1,13 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #pragma once
 
 #include <folly/Try.h>
 
+#include "common/ssl/SSLConfig.h"
 #include "common/time/WallClock.h"
 
 namespace nebula {
@@ -72,7 +72,7 @@ template <typename ClientType>
 StorageClientBase<ClientType>::StorageClientBase(
     std::shared_ptr<folly::IOThreadPoolExecutor> threadPool, meta::MetaClient* metaClient)
     : metaClient_(metaClient), ioThreadPool_(threadPool) {
-  clientsMan_ = std::make_unique<thrift::ThriftClientManager<ClientType>>();
+  clientsMan_ = std::make_unique<thrift::ThriftClientManager<ClientType>>(FLAGS_enable_ssl);
 }
 
 template <typename ClientType>
@@ -138,8 +138,8 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClientBase<ClientType>::c
           // then-callback will be executed on the same IO thread
           .via(evb)
           .then([this, context, host, spaceId, start](folly::Try<Response>&& val) {
-            auto& r = context->findRequest(host);
             if (val.hasException()) {
+              auto& r = context->findRequest(host);
               LOG(ERROR) << "Request to " << host << " failed: " << val.exception().what();
               auto parts = getReqPartsId(r);
               context->resp.appendFailedParts(parts, nebula::cpp2::ErrorCode::E_RPC_FAILURE);
@@ -325,6 +325,29 @@ StorageClientBase<ClientType>::getHostParts(GraphSpaceID spaceId) const {
       return leader.status();
     }
     hostParts[leader.value()].emplace_back(partId);
+  }
+  return hostParts;
+}
+
+template <typename ClientType>
+StatusOr<std::unordered_map<HostAddr, std::unordered_map<PartitionID, cpp2::ScanCursor>>>
+StorageClientBase<ClientType>::getHostPartsWithCursor(GraphSpaceID spaceId) const {
+  std::unordered_map<HostAddr, std::unordered_map<PartitionID, cpp2::ScanCursor>> hostParts;
+  auto status = metaClient_->partsNum(spaceId);
+  if (!status.ok()) {
+    return Status::Error("Space not found, spaceid: %d", spaceId);
+  }
+
+  // TODO support cursor
+  cpp2::ScanCursor c;
+  c.set_has_next(false);
+  auto parts = status.value();
+  for (auto partId = 1; partId <= parts; partId++) {
+    auto leader = getLeader(spaceId, partId);
+    if (!leader.ok()) {
+      return leader.status();
+    }
+    hostParts[leader.value()].emplace(partId, c);
   }
   return hostParts;
 }

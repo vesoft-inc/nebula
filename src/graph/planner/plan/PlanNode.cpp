@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/planner/plan/PlanNode.h"
@@ -76,6 +75,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "TopN";
     case Kind::kLimit:
       return "Limit";
+    case Kind::kSample:
+      return "Sample";
     case Kind::kAggregate:
       return "Aggregate";
     case Kind::kSelect:
@@ -92,6 +93,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "RegisterSpaceToSession";
     case Kind::kCreateSpace:
       return "CreateSpace";
+    case Kind::kCreateSpaceAs:
+      return "CreateSpaceAs";
     case Kind::kCreateTag:
       return "CreateTag";
     case Kind::kCreateEdge:

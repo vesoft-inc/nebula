@@ -2,8 +2,7 @@
 #
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 import json
 import os
@@ -13,6 +12,12 @@ from tests.common.configs import all_configs
 from tests.common.types import SpaceDesc
 from tests.common.utils import get_conn_pool
 from tests.common.constants import NB_TMP_PATH, SPACE_TMP_PATH
+
+from nebula2.fbthrift.transport import TSocket
+from nebula2.fbthrift.transport import TTransport
+from nebula2.fbthrift.protocol import TBinaryProtocol
+from nebula2.gclient.net import Connection
+from nebula2.graph import GraphService
 
 tests_collected = set()
 tests_executed = set()
@@ -186,3 +191,13 @@ def workarround_for_class(request, pytestconfig, conn_pool,
     if request.cls.client is not None:
         request.cls.cleanup()
         request.cls.drop_data()
+
+@pytest.fixture(scope="class")
+def establish_a_rare_connection(pytestconfig):
+    addr = pytestconfig.getoption("address")
+    host_addr = addr.split(":") if addr else ["localhost", get_ports()[0]]
+    socket = TSocket.TSocket(host_addr[0], host_addr[1])
+    transport = TTransport.TBufferedTransport(socket)
+    protocol = TBinaryProtocol.TBinaryProtocol(transport)
+    transport.open()
+    return GraphService.Client(protocol)

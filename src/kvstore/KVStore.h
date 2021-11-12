@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef KVSTORE_KVSTORE_H_
@@ -215,6 +214,9 @@ class KVStore {
                                                             std::vector<KV> keyValues) = 0;
 
   virtual std::vector<std::string> getDataRoot() const = 0;
+
+  virtual ErrorOr<nebula::cpp2::ErrorCode, std::string> getProperty(
+      GraphSpaceID spaceId, const std::string& property) = 0;
 
  protected:
   KVStore() = default;

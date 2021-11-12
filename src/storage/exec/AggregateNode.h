@@ -1,8 +1,7 @@
 
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_EXEC_AGGREGATENODE_H_
@@ -35,13 +34,15 @@ struct PropStat {
 template <typename T>
 class AggregateNode : public IterateNode<T> {
  public:
-  using RelNode<T>::execute;
+  using RelNode<T>::doExecute;
 
   AggregateNode(RuntimeContext* context, IterateNode<T>* upstream, EdgeContext* edgeContext)
-      : IterateNode<T>(upstream), context_(context), edgeContext_(edgeContext) {}
+      : IterateNode<T>(upstream), context_(context), edgeContext_(edgeContext) {
+    IterateNode<T>::name_ = "AggregateNode";
+  }
 
-  nebula::cpp2::ErrorCode execute(PartitionID partId, const T& input) override {
-    auto ret = RelNode<T>::execute(partId, input);
+  nebula::cpp2::ErrorCode doExecute(PartitionID partId, const T& input) override {
+    auto ret = RelNode<T>::doExecute(partId, input);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
       return ret;
     }
@@ -51,8 +52,8 @@ class AggregateNode : public IterateNode<T> {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
-  nebula::cpp2::ErrorCode execute(PartitionID partId) override {
-    auto ret = RelNode<T>::execute(partId);
+  nebula::cpp2::ErrorCode doExecute(PartitionID partId) override {
+    auto ret = RelNode<T>::doExecute(partId);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
       return ret;
     }

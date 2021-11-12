@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/validator/GroupByValidator.h"
@@ -309,8 +308,7 @@ TEST_F(GroupByValidatorTest, InvalidTest) {
         "COUNT(like._dst) AS id ";
     auto result = checkResult(query);
     EXPECT_EQ(std::string(result.message()),
-              "SemanticError: `COUNT(like._dst) AS id', "
-              "not support aggregate function in go sentence.");
+              "SemanticError: `COUNT(like._dst) AS id' is not support in go sentence.");
   }
   {
     // yield without group by
@@ -319,8 +317,7 @@ TEST_F(GroupByValidatorTest, InvalidTest) {
         "COUNT(like._dst)+1 AS id ";
     auto result = checkResult(query);
     EXPECT_EQ(std::string(result.message()),
-              "SemanticError: `(COUNT(like._dst)+1) AS id', "
-              "not support aggregate function in go sentence.");
+              "SemanticError: `(COUNT(like._dst)+1) AS id' is not support in go sentence.");
   }
   {
     // yield without group by

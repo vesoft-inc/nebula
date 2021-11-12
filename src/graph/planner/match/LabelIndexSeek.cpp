@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/planner/match/LabelIndexSeek.h"
@@ -212,7 +211,7 @@ StatusOr<SubPlan> LabelIndexSeek::transformEdge(EdgeContext* edgeCtx) {
     }
     if (candidateIndex == nullptr) {
       return Status::SemanticError("No valid index for label `%s'.",
-                                   nodeCtx->scanInfo.schemaNames[i]->c_str());
+                                   nodeCtx->scanInfo.schemaNames[i].c_str());
     }
     indexIds.emplace_back(candidateIndex->get_index_id());
   }
@@ -241,7 +240,7 @@ StatusOr<SubPlan> LabelIndexSeek::transformEdge(EdgeContext* edgeCtx) {
     }
     if (candidateIndex == nullptr) {
       return Status::SemanticError("No valid index for label `%s'.",
-                                   edgeCtx->scanInfo.schemaNames[i]->c_str());
+                                   edgeCtx->scanInfo.schemaNames[i].c_str());
     }
     indexIds.emplace_back(candidateIndex->get_index_id());
   }

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #include <gtest/gtest.h>
 
@@ -102,8 +101,9 @@ TEST_F(KillQueryTest, TagIndex) {
     cpp2::LookupIndexRequest req;
     nebula::storage::cpp2::IndexSpec indices;
     req.set_space_id(spaceId);
-    indices.set_tag_or_edge_id(1);
-    indices.set_is_edge(false);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_tag_id(1);
+    indices.set_schema_id(schemaId);
     std::vector<PartitionID> parts;
     for (int32_t p = 1; p <= totalParts; p++) {
       parts.emplace_back(p);
@@ -161,8 +161,9 @@ TEST_F(KillQueryTest, EdgeIndex) {
     cpp2::LookupIndexRequest req;
     nebula::storage::cpp2::IndexSpec indices;
     req.set_space_id(spaceId);
-    indices.set_tag_or_edge_id(102);
-    indices.set_is_edge(true);
+    nebula::cpp2::SchemaID schemaId;
+    schemaId.set_edge_type(102);
+    indices.set_schema_id(schemaId);
     std::vector<PartitionID> parts;
     for (int32_t p = 1; p <= totalParts; p++) {
       parts.emplace_back(p);

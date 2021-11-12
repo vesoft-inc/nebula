@@ -2,8 +2,7 @@
 #
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 import os
 import random
@@ -426,7 +425,7 @@ def load_csv_data(
         for line in schemas.splitlines():
             resp_ok(sess, line.strip(), True)
 
-        # wait heartbeat_interval_secs seconds for schema synchronization
+        # wait heartbeat_interval_secs + 1 seconds for schema synchronization
         time.sleep(2)
 
         for fd in config["files"]:
