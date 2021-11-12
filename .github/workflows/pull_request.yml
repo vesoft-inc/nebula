@@ -22,21 +22,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+      - uses: actions/checkout@v2
+        with:
+          clean: false
       - name: Check License Header
         uses: apache/skywalking-eyes@main
       - name: Ensure clang-format-10 is available
         run: |
           command -v clang-format-10 > /dev/null || (apt-get update && apt-get install -y clang-format-10)
-      - name: Get base commit
-        run: |
-          git fetch origin $GITHUB_BASE_REF
       - name: Cpplint
         run: |
           ln -snf $PWD/.linters/cpp/hooks/pre-commit.sh $PWD/.linters/cpp/pre-commit.sh
-          .linters/cpp/pre-commit.sh $(git --no-pager diff --diff-filter=d --name-only $GITHUB_BASE_REF HEAD)
+          .linters/cpp/pre-commit.sh $(git --no-pager diff --diff-filter=d --name-only ${{ github.event.pull_request.base.sha }} HEAD)
       - name: Format check
         run: |
-          git diff -U0 --no-color $GITHUB_BASE_REF HEAD | /usr/share/clang/clang-format-10/clang-format-diff.py -p1 | tee /tmp/.clang-format-diff
+          git diff -U0 --no-color ${{ github.event.pull_request.base.sha }} HEAD | /usr/share/clang/clang-format-10/clang-format-diff.py -p1 | tee /tmp/.clang-format-diff
           [ -s /tmp/.clang-format-diff ] && exit 1 || true
       - uses: actions/setup-python@v2
         with:
