@@ -15,12 +15,12 @@ namespace graph {
 
 class CloudAuthenticator final : public Authenticator {
  public:
-  explicit CloudAuthenticator(const meta::MetaClient* client);
+  explicit CloudAuthenticator(meta::MetaClient* client);
 
   bool auth(const std::string& user, const std::string& password) override;
 
  private:
-  const meta::MetaClient* metaClient_;
+  meta::MetaClient* metaClient_;
 };
 
 }  // namespace graph
