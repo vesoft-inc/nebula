@@ -130,11 +130,16 @@ class GraphStorageClient : public StorageClientBase<cpp2::GraphStorageServiceAsy
   StorageRpcRespFuture<cpp2::GetNeighborsResponse> lookupAndTraverse(
       const CommonRequestParam& param, cpp2::IndexSpec indexSpec, cpp2::TraverseSpec traverseSpec);
 
-  folly::Future<StatusOr<cpp2::ScanEdgeResponse>> scanEdge(cpp2::ScanEdgeRequest req,
-                                                           folly::EventBase* evb = nullptr);
+  StorageRpcRespFuture<cpp2::ScanEdgeResponse> scanEdge(const CommonRequestParam& param,
+                                                        const cpp2::EdgeProp& vertexProp,
+                                                        int64_t limit,
+                                                        const Expression* filter);
 
-  folly::Future<StatusOr<cpp2::ScanVertexResponse>> scanVertex(cpp2::ScanVertexRequest req,
-                                                               folly::EventBase* evb = nullptr);
+  StorageRpcRespFuture<cpp2::ScanVertexResponse> scanVertex(
+      const CommonRequestParam& param,
+      const std::vector<cpp2::VertexProp>& vertexProp,
+      int64_t limit,
+      const Expression* filter);
 
  private:
   StatusOr<std::function<const VertexID&(const Row&)>> getIdFromRow(GraphSpaceID space,
