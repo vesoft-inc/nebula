@@ -611,7 +611,8 @@ void Traverse::cloneMembers(const Traverse& g) {
   GetNeighbors::cloneMembers(g);
 
   setStepRange(g.range_);
-  // TODO
+  setVertexFilter(g.vFilter_->clone());
+  setEdgeFilter(g.eFilter_->clone());
 }
 
 std::unique_ptr<PlanNodeDescription> Traverse::explain() const {
@@ -619,8 +620,12 @@ std::unique_ptr<PlanNodeDescription> Traverse::explain() const {
   if (range_ != nullptr) {
     addDescription("steps", range_->toString(), desc.get());
   }
-
-  // TODO
+  if (vFilter_ != nullptr) {
+    addDescription("vertex filter", vFilter_->toString(), desc.get());
+  }
+  if (eFilter_ != nullptr) {
+    addDescription("edge filter", eFilter_->toString(), desc.get());
+  }
   return desc;
 }
 
@@ -633,12 +638,14 @@ AppendVertices* AppendVertices::clone() const {
 void AppendVertices::cloneMembers(const AppendVertices& a) {
   GetVertices::cloneMembers(a);
 
-  // TODO
+  setVertexFilter(a.vFilter_->clone());
 }
 
 std::unique_ptr<PlanNodeDescription> AppendVertices::explain() const {
   auto desc = GetVertices::explain();
-  // TODO
+  if (vFilter_ != nullptr) {
+    addDescription("vertex filter", vFilter_->toString(), desc.get());
+  }
   return desc;
 }
 }  // namespace graph
