@@ -55,44 +55,6 @@ static std::unique_ptr<std::vector<VertexProp>> genVertexProps(const NodeInfo& n
   return std::make_unique<std::vector<VertexProp>>();
 }
 
-static std::unique_ptr<std::vector<storage::cpp2::EdgeProp>> genEdgeDst(const EdgeInfo& edge,
-                                                                        bool reversely,
-                                                                        QueryContext* qctx,
-                                                                        GraphSpaceID spaceId) {
-  auto edgeProps = std::make_unique<std::vector<EdgeProp>>();
-  for (auto edgeType : edge.edgeTypes) {
-    auto edgeSchema = qctx->schemaMng()->getEdgeSchema(spaceId, edgeType);
-
-    switch (edge.direction) {
-      case Direction::OUT_EDGE: {
-        if (reversely) {
-          edgeType = -edgeType;
-        }
-        break;
-      }
-      case Direction::IN_EDGE: {
-        if (!reversely) {
-          edgeType = -edgeType;
-        }
-        break;
-      }
-      case Direction::BOTH: {
-        EdgeProp edgeProp;
-        edgeProp.set_type(-edgeType);
-        std::vector<std::string> props{kSrc, kType, kRank, kDst};
-        edgeProp.set_props(std::move(props));
-        edgeProps->emplace_back(std::move(edgeProp));
-        break;
-      }
-    }
-    EdgeProp edgeProp;
-    edgeProp.set_type(edgeType);
-    std::vector<std::string> props{kSrc, kType, kRank, kDst};
-    edgeProp.set_props(std::move(props));
-    edgeProps->emplace_back(std::move(edgeProp));
-  }
-  return edgeProps;
-}
 static std::unique_ptr<std::vector<storage::cpp2::EdgeProp>> genEdgeProps(const EdgeInfo& edge,
                                                                           bool reversely,
                                                                           QueryContext* qctx,
@@ -279,14 +241,11 @@ Status MatchClausePlanner::leftExpandFromNode(const std::vector<NodeInfo>& nodeI
     traverse->setSrc(nextTraverseStart);
     traverse->setVertexProps(genVertexProps(node, qctx, spaceId));
     traverse->setEdgeProps(genEdgeProps(edge, reversely, qctx, spaceId));
-    traverse->setEdgeDst(genEdgeDst(edge, reversely, qctx, spaceId));
     traverse->setVertexFilter(genVertexFilter(node));
     traverse->setEdgeFilter(genEdgeFilter(edge));
     traverse->setEdgeDirection(edge.direction);
     traverse->setColNames(genTraverseColNames(subplan.root->colNames(), node, edge));
-    if (edge.range != nullptr) {
-      traverse->setSteps(StepClause(edge.range->min(), edge.range->max()));
-    }
+    traverse->setStepRange(edge.range);
     traverse->setDedup();
     subplan.root = traverse;
     nextTraverseStart = genNextTraverseStart(qctx->objPool(), edge);
@@ -326,14 +285,11 @@ Status MatchClausePlanner::rightExpandFromNode(const std::vector<NodeInfo>& node
     traverse->setSrc(nextTraverseStart);
     traverse->setVertexProps(genVertexProps(node, qctx, spaceId));
     traverse->setEdgeProps(genEdgeProps(edge, reversely, qctx, spaceId));
-    traverse->setEdgeDst(genEdgeDst(edge, reversely, qctx, spaceId));
     traverse->setVertexFilter(genVertexFilter(node));
     traverse->setEdgeFilter(genEdgeFilter(edge));
     traverse->setEdgeDirection(edge.direction);
     traverse->setColNames(genTraverseColNames(subplan.root->colNames(), node, edge));
-    if (edge.range != nullptr) {
-      traverse->setSteps(StepClause(edge.range->min(), edge.range->max()));
-    }
+    traverse->setStepRange(edge.range);
     traverse->setDedup();
     subplan.root = traverse;
     nextTraverseStart = genNextTraverseStart(qctx->objPool(), edge);

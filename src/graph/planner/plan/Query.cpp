@@ -610,13 +610,16 @@ Traverse* Traverse::clone() const {
 void Traverse::cloneMembers(const Traverse& g) {
   GetNeighbors::cloneMembers(g);
 
-  setSteps(g.steps_);
+  setStepRange(g.range_);
   // TODO
 }
 
 std::unique_ptr<PlanNodeDescription> Traverse::explain() const {
   auto desc = GetNeighbors::explain();
-  addDescription("steps", steps_.toString(), desc.get());
+  if (range_ != nullptr) {
+    addDescription("steps", range_->toString(), desc.get());
+  }
+
   // TODO
   return desc;
 }

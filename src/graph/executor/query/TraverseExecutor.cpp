@@ -24,7 +24,7 @@ namespace nebula {
 namespace graph {
 
 folly::Future<Status> TraverseExecutor::execute() {
-  steps_ = traverse_->steps();
+  range_ = traverse_->stepRange();
   auto status = buildRequestDataSet();
   if (!status.ok()) {
     return error(std::move(status));
@@ -166,7 +166,7 @@ void TraverseExecutor::handleResponse(RpcResponse& resps) {
   }
   if (!isFinalStep()) {
     if (reqDs_.rows.empty()) {
-      if (steps_.isMToN()) {
+      if (range_ != nullptr) {
         promise_.setValue(buildResult());
       } else {
         promise_.setValue(Status::OK());
@@ -189,7 +189,8 @@ Status TraverseExecutor::buildInterimPath(GetNeighborsIter* iter) {
   if (currentStep_ == 1 && zeroStep()) {
     paths_.emplace_back();
     NG_RETURN_IF_ERROR(handleZeroStep(prev, iter->getVertices(), paths_.back(), count));
-    if (steps_.nSteps() == 0) {
+    // If 0..0 case, release memory and return immediately.
+    if (range_ != nullptr && range_->max() == 0) {
       releasePrevPaths(count);
       return Status::OK();
     }
@@ -272,9 +273,11 @@ void TraverseExecutor::buildPath(std::unordered_map<Value, std::vector<Row>>& cu
 }
 
 Status TraverseExecutor::buildResult() {
-  if (currentStep_ < steps_.mSteps()) {
+  // This means we are reaching a dead end, return empty.
+  if (range_ != nullptr && currentStep_ < range_->min()) {
     return finish(ResultBuilder().value(Value(DataSet())).build());
   }
+
   DataSet result;
   result.colNames = traverse_->colNames();
   result.rows.reserve(cnt_);
@@ -301,16 +304,16 @@ bool TraverseExecutor::hasSameEdge(const Row& prevPath, const Edge& currentEdge)
 }
 
 void TraverseExecutor::releasePrevPaths(size_t cnt) {
-  if (steps_.isMToN()) {
-    if (currentStep_ == steps_.mSteps() && paths_.size() > 1) {
+  if (range_ != nullptr) {
+    if (currentStep_ == range_->min() && paths_.size() > 1) {
       auto rangeEnd = paths_.begin();
       std::advance(rangeEnd, paths_.size() - 1);
       paths_.erase(paths_.begin(), rangeEnd);
-    } else if (steps_.mSteps() == 0 && currentStep_ == 1 && paths_.size() > 1) {
+    } else if (range_->min() == 0 && currentStep_ == 1 && paths_.size() > 1) {
       paths_.pop_front();
     }
 
-    if (currentStep_ >= steps_.mSteps()) {
+    if (currentStep_ >= range_->min()) {
       cnt_ += cnt;
     }
   } else {

@@ -1194,17 +1194,13 @@ class Traverse final : public GetNeighbors {
 
   Traverse* clone() const override;
 
-  StepClause steps() const { return steps_; }
-
-  const std::vector<storage::cpp2::EdgeProp>* edgeDst() const { return edgeDst_.get(); }
+  MatchStepRange* stepRange() const { return range_; }
 
   Expression* vFilter() const { return vFilter_; }
 
   Expression* eFilter() const { return eFilter_; }
 
-  void setSteps(StepClause steps) { steps_ = steps; }
-
-  void setEdgeDst(EdgeProps edgeProps) { edgeDst_ = std::move(edgeProps); }
+  void setStepRange(MatchStepRange* range) { range_ = range; }
 
   void setVertexFilter(Expression* vFilter) { vFilter_ = vFilter; }
 
@@ -1219,10 +1215,9 @@ class Traverse final : public GetNeighbors {
  private:
   void cloneMembers(const Traverse& g);
 
-  StepClause steps_;
-  EdgeProps edgeDst_;
-  Expression* vFilter_;
-  Expression* eFilter_;
+  MatchStepRange* range_{nullptr};
+  Expression* vFilter_{nullptr};
+  Expression* eFilter_{nullptr};
 };
 
 class AppendVertices final : public GetVertices {
