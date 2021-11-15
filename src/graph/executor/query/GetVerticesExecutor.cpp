@@ -21,7 +21,7 @@ folly::Future<Status> GetVerticesExecutor::execute() { return getVertices(); }
 folly::Future<Status> GetVerticesExecutor::getVertices() {
   SCOPED_TIMER(&execTime_);
 
-  auto *gv = asNode<AppendVertices>(node());
+  auto *gv = asNode<GetVertices>(node());
   GraphStorageClient *storageClient = qctx()->getStorageClient();
 
   DataSet vertices = buildRequestDataSet(gv);
