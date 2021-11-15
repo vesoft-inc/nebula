@@ -3,6 +3,7 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
+#include <bits/c++config.h>
 #include <gtest/gtest.h>
 
 #include "common/base/Base.h"
@@ -13,8 +14,8 @@
 namespace nebula {
 namespace storage {
 
-cpp2::ScanEdgeRequest buildRequest(PartitionID partId,
-                                   const std::string& cursor,
+cpp2::ScanEdgeRequest buildRequest(std::vector<PartitionID> partIds,
+                                   std::vector<std::string> cursors,
                                    const std::pair<EdgeType, std::vector<std::string>>& edge,
                                    int64_t rowLimit = 100,
                                    int64_t startTime = 0,
@@ -22,8 +23,15 @@ cpp2::ScanEdgeRequest buildRequest(PartitionID partId,
                                    bool onlyLatestVer = false) {
   cpp2::ScanEdgeRequest req;
   req.set_space_id(1);
-  req.set_part_id(partId);
-  req.set_cursor(cursor);
+  cpp2::ScanCursor c;
+  CHECK_EQ(partIds.size(), cursors.size());
+  std::unordered_map<PartitionID, cpp2::ScanCursor> parts;
+  for (std::size_t i = 0; i < partIds.size(); ++i) {
+    c.set_has_next(!cursors[i].empty());
+    c.set_next_cursor(cursors[i]);
+    parts.emplace(partIds[i], c);
+  }
+  req.set_parts(std::move(parts));
   EdgeType edgeType = edge.first;
   cpp2::EdgeProp edgeProp;
   edgeProp.set_type(edgeType);
@@ -96,7 +104,7 @@ TEST(ScanEdgeTest, PropertyTest) {
         serve,
         std::vector<std::string>{kSrc, kType, kRank, kDst, "teamName", "startYear", "endYear"});
     for (PartitionID partId = 1; partId <= totalParts; partId++) {
-      auto req = buildRequest(partId, "", edge);
+      auto req = buildRequest({partId}, {""}, edge);
       auto* processor = ScanEdgeProcessor::instance(env, nullptr);
       auto f = processor->getFuture();
       processor->process(req);
@@ -112,7 +120,7 @@ TEST(ScanEdgeTest, PropertyTest) {
     size_t totalRowCount = 0;
     auto edge = std::make_pair(serve, std::vector<std::string>{});
     for (PartitionID partId = 1; partId <= totalParts; partId++) {
-      auto req = buildRequest(partId, "", edge);
+      auto req = buildRequest({partId}, {""}, edge);
       auto* processor = ScanEdgeProcessor::instance(env, nullptr);
       auto f = processor->getFuture();
       processor->process(req);
@@ -147,7 +155,7 @@ TEST(ScanEdgeTest, CursorTest) {
       bool hasNext = true;
       std::string cursor = "";
       while (hasNext) {
-        auto req = buildRequest(partId, cursor, edge, 5);
+        auto req = buildRequest({partId}, {cursor}, edge, 5);
         auto* processor = ScanEdgeProcessor::instance(env, nullptr);
         auto f = processor->getFuture();
         processor->process(req);
@@ -155,10 +163,10 @@ TEST(ScanEdgeTest, CursorTest) {
 
         ASSERT_EQ(0, resp.result.failed_parts.size());
         checkResponse(*resp.edge_data_ref(), edge, edge.second.size(), totalRowCount);
-        hasNext = resp.get_has_next();
+        hasNext = resp.get_cursors().at(partId).get_has_next();
         if (hasNext) {
-          CHECK(resp.next_cursor_ref().has_value());
-          cursor = *resp.next_cursor_ref();
+          CHECK(resp.get_cursors().at(partId).next_cursor_ref().has_value());
+          cursor = *resp.get_cursors().at(partId).next_cursor_ref();
         }
       }
     }
@@ -174,7 +182,7 @@ TEST(ScanEdgeTest, CursorTest) {
       bool hasNext = true;
       std::string cursor = "";
       while (hasNext) {
-        auto req = buildRequest(partId, cursor, edge, 1);
+        auto req = buildRequest({partId}, {cursor}, edge, 1);
         auto* processor = ScanEdgeProcessor::instance(env, nullptr);
         auto f = processor->getFuture();
         processor->process(req);
@@ -182,14 +190,102 @@ TEST(ScanEdgeTest, CursorTest) {
 
         ASSERT_EQ(0, resp.result.failed_parts.size());
         checkResponse(*resp.edge_data_ref(), edge, edge.second.size(), totalRowCount);
-        hasNext = resp.get_has_next();
+        hasNext = resp.get_cursors().at(partId).get_has_next();
         if (hasNext) {
-          CHECK(resp.next_cursor_ref().has_value());
-          cursor = *resp.next_cursor_ref();
+          CHECK(resp.get_cursors().at(partId).next_cursor_ref().has_value());
+          cursor = *resp.get_cursors().at(partId).next_cursor_ref();
         }
       }
     }
     CHECK_EQ(mock::MockData::serves_.size(), totalRowCount);
+  }
+}
+
+TEST(ScanEdgeTest, MultiplePartsTest) {
+  fs::TempDir rootPath("/tmp/ScanVertexTest.XXXXXX");
+  mock::MockCluster cluster;
+  cluster.initStorageKV(rootPath.path());
+  auto* env = cluster.storageEnv_.get();
+  auto totalParts = cluster.getTotalParts();
+  ASSERT_EQ(true, QueryTestUtils::mockVertexData(env, totalParts));
+  ASSERT_EQ(true, QueryTestUtils::mockEdgeData(env, totalParts));
+
+  EdgeType serve = 101;
+
+  {
+    LOG(INFO) << "Scan one edge with some properties in one batch";
+    size_t totalRowCount = 0;
+    auto edge = std::make_pair(
+        serve,
+        std::vector<std::string>{kSrc, kType, kRank, kDst, "teamName", "startYear", "endYear"});
+    auto req = buildRequest({1, 3}, {"", ""}, edge);
+    auto* processor = ScanEdgeProcessor::instance(env, nullptr);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+
+    ASSERT_EQ(0, resp.result.failed_parts.size());
+    checkResponse(*resp.edge_data_ref(), edge, edge.second.size(), totalRowCount);
+  }
+  {
+    LOG(INFO) << "Scan one edge with all properties in one batch";
+    size_t totalRowCount = 0;
+    auto edge = std::make_pair(serve, std::vector<std::string>{});
+    auto req = buildRequest({1, 3}, {"", ""}, edge);
+    auto* processor = ScanEdgeProcessor::instance(env, nullptr);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+
+    ASSERT_EQ(0, resp.result.failed_parts.size());
+    // all 9 columns in value
+    checkResponse(*resp.edge_data_ref(), edge, 9, totalRowCount);
+  }
+}
+
+TEST(ScanEdgeTest, LimitTest) {
+  fs::TempDir rootPath("/tmp/ScanVertexTest.XXXXXX");
+  mock::MockCluster cluster;
+  cluster.initStorageKV(rootPath.path());
+  auto* env = cluster.storageEnv_.get();
+  auto totalParts = cluster.getTotalParts();
+  ASSERT_EQ(true, QueryTestUtils::mockVertexData(env, totalParts));
+  ASSERT_EQ(true, QueryTestUtils::mockEdgeData(env, totalParts));
+
+  EdgeType serve = 101;
+
+  {
+    LOG(INFO) << "Scan one edge with some properties in one batch";
+    constexpr std::size_t limit = 3;
+    size_t totalRowCount = 0;
+    auto edge = std::make_pair(
+        serve,
+        std::vector<std::string>{kSrc, kType, kRank, kDst, "teamName", "startYear", "endYear"});
+    auto req = buildRequest({1}, {""}, edge, limit);
+    auto* processor = ScanEdgeProcessor::instance(env, nullptr);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+
+    ASSERT_EQ(0, resp.result.failed_parts.size());
+    checkResponse(*resp.edge_data_ref(), edge, edge.second.size(), totalRowCount);
+    EXPECT_EQ(totalRowCount, limit);
+  }
+  {
+    LOG(INFO) << "Scan one edge with all properties in one batch";
+    constexpr std::size_t limit = 3;
+    size_t totalRowCount = 0;
+    auto edge = std::make_pair(serve, std::vector<std::string>{});
+    auto req = buildRequest({1}, {""}, edge, limit);
+    auto* processor = ScanEdgeProcessor::instance(env, nullptr);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+
+    ASSERT_EQ(0, resp.result.failed_parts.size());
+    // all 9 columns in value
+    checkResponse(*resp.edge_data_ref(), edge, 9, totalRowCount);
+    EXPECT_EQ(totalRowCount, limit);
   }
 }
 
