@@ -208,6 +208,10 @@ class MatchPathList final {
 
   void add(MatchPath* path);
 
+  size_t pathSize() const { return pathList_.size(); }
+
+  const MatchPath* path(size_t i) const { return pathList_[i].get(); }
+
   std::string toString() const;
 
  private:

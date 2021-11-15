@@ -27,6 +27,17 @@ nebula_add_library(
     match/VertexIdSeek.cpp
     match/Expand.cpp
     match/LabelIndexSeek.cpp
+    ngql/PathPlanner.cpp
+    ngql/GoPlanner.cpp
+    ngql/SubgraphPlanner.cpp
+    ngql/LookupPlanner.cpp
+    ngql/FetchVerticesPlanner.cpp
+    ngql/FetchEdgesPlanner.cpp
+    ngql/MaintainPlanner.cpp
+)
+
+nebula_add_library(
+    plan_obj OBJECT
     plan/PlanNode.cpp
     plan/ExecutionPlan.cpp
     plan/Algo.cpp
@@ -35,11 +46,4 @@ nebula_add_library(
     plan/Query.cpp
     plan/Mutate.cpp
     plan/Maintain.cpp
-    ngql/PathPlanner.cpp
-    ngql/GoPlanner.cpp
-    ngql/SubgraphPlanner.cpp
-    ngql/LookupPlanner.cpp
-    ngql/FetchVerticesPlanner.cpp
-    ngql/FetchEdgesPlanner.cpp
-    ngql/MaintainPlanner.cpp
 )
