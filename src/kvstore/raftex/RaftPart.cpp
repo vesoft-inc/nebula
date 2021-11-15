@@ -1091,7 +1091,7 @@ folly::Future<bool> RaftPart::leaderElection() {
   auto proposedTerm = voteReq.get_term();
   auto resps = ElectionResponses();
   if (hosts.empty()) {
-    auto ret = handleElectionResponses(voteReq, resps, hosts, proposedTerm);
+    auto ret = handleElectionResponses(resps, hosts, proposedTerm);
     inElection_ = false;
     return ret;
   } else {
@@ -1114,21 +1114,19 @@ folly::Future<bool> RaftPart::leaderElection() {
           return resp.get_error_code() == cpp2::ErrorCode::SUCCEEDED && !hosts[idx]->isLearner();
         })
         .via(executor_.get())
-        .then([self = shared_from_this(), pro = std::move(promise), voteReq, hosts, proposedTerm](
+        .then([self = shared_from_this(), pro = std::move(promise), hosts, proposedTerm](
                   auto&& t) mutable {
           VLOG(2) << self->idStr_
                   << "AskForVoteRequest has been sent to all peers, waiting for responses";
           CHECK(!t.hasException());
-          pro.setValue(
-              self->handleElectionResponses(voteReq, t.value(), std::move(hosts), proposedTerm));
+          pro.setValue(self->handleElectionResponses(t.value(), std::move(hosts), proposedTerm));
           self->inElection_ = false;
         });
     return future;
   }
 }
 
-bool RaftPart::handleElectionResponses(const cpp2::AskForVoteRequest& voteReq,
-                                       const ElectionResponses& resps,
+bool RaftPart::handleElectionResponses(const ElectionResponses& resps,
                                        const std::vector<std::shared_ptr<Host>>& peers,
                                        TermID proposedTerm) {
   // Process the responses
@@ -1143,12 +1141,13 @@ bool RaftPart::handleElectionResponses(const cpp2::AskForVoteRequest& voteReq,
           leader_ = addr_;
           hosts = hosts_;
           bgWorkers_->addTask(
-              [self = shared_from_this(), term = voteReq.get_term()] { self->onElected(term); });
+              [self = shared_from_this(), proposedTerm] { self->onElected(proposedTerm); });
           lastMsgAcceptedTime_ = 0;
         }
         weight_ = 1;
         commitInThisTerm_ = false;
       }
+      // reset host can't be executed with raftLock_, otherwise it may encounter deadlock
       for (auto& host : hosts) {
         host->reset();
       }
