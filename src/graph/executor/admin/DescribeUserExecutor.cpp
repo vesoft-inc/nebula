@@ -31,7 +31,7 @@ folly::Future<Status> DescribeUserExecutor::describeUser() {
           return std::move(resp).status();
         }
 
-        nebula::DataSet v({"Account", "Roles in spaces"});
+        nebula::DataSet v({"Role", "Space"});
         auto user = std::move(resp).value();
         auto spaceRoleMap = user.get_space_role_map();
         std::vector<std::string> rolesInSpacesStrVector;
@@ -39,20 +39,16 @@ folly::Future<Status> DescribeUserExecutor::describeUser() {
           auto spaceNameResult = qctx_->schemaMng()->toGraphSpaceName(item.first);
           if (!spaceNameResult.ok()) {
             if (item.first == 0) {
-              rolesInSpacesStrVector.emplace_back(folly::sformat(
-                  " {} in ALL_SPACE", apache::thrift::util::enumNameSafe(item.second)));
+              v.emplace_back(nebula::Row({apache::thrift::util::enumNameSafe(item.second), ""}));
             } else {
               LOG(ERROR) << " Space name of " << item.first << " no found";
               return Status::Error("Space not found");
             }
           } else {
-            rolesInSpacesStrVector.emplace_back(
-                folly::sformat(" {} in {}",
-                               apache::thrift::util::enumNameSafe(item.second),
-                               spaceNameResult.value()));
+            v.emplace_back(nebula::Row(
+                {apache::thrift::util::enumNameSafe(item.second), spaceNameResult.value()}));
           }
         }
-        v.emplace_back(nebula::Row({user.get_account(), folly::join(',', rolesInSpacesStrVector)}));
         return finish(std::move(v));
       });
 }

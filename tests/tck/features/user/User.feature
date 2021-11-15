@@ -322,15 +322,15 @@ Feature: User & privilege Test
       DESC USER root
       """
     Then the result should be, in any order, with relax comparison:
-      | Account | Roles in spaces     |
-      | "root"  | " GOD in ALL_SPACE" |
+      | Role  | Space |
+      | "GOD" | ""    |
     When executing query:
       """
       DESC USER user1
       """
     Then the result should be, in any order, with relax comparison:
-      | Account | Roles in spaces              |
-      | "user1" | " ADMIN in user_tmp_space_4" |
+      | Role    | Space              |
+      | "ADMIN" | "user_tmp_space_4" |
     When executing query:
       """
       DESC USER user_not_exist
@@ -341,8 +341,8 @@ Feature: User & privilege Test
       DESC USER user1
       """
     Then the result should be, in any order, with relax comparison:
-      | Account | Roles in spaces              |
-      | "user1" | " ADMIN in user_tmp_space_4" |
+      | Role    | Space              |
+      | "ADMIN" | "user_tmp_space_4" |
     When executing query via graph 2:
       """
       DESC USER user2
