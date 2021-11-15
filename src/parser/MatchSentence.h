@@ -202,6 +202,18 @@ class MatchPath final {
   std::vector<std::unique_ptr<MatchEdge>> edges_;
 };
 
+class MatchPathList final {
+ public:
+  explicit MatchPathList(MatchPath* path);
+
+  void add(MatchPath* path);
+
+  std::string toString() const;
+
+ private:
+  std::vector<std::unique_ptr<MatchPath>> pathList_;
+};
+
 class MatchReturnItems final {
  public:
   explicit MatchReturnItems(bool includeExisting, YieldColumns* columns = nullptr)
@@ -284,15 +296,16 @@ class ReadingClause {
 
 class MatchClause final : public ReadingClause {
  public:
-  MatchClause(MatchPath* path, WhereClause* where, bool optional) : ReadingClause(Kind::kMatch) {
-    path_.reset(path);
+  MatchClause(MatchPathList* pathList, WhereClause* where, bool optional)
+      : ReadingClause(Kind::kMatch) {
+    pathList_.reset(pathList);
     where_.reset(where);
     isOptional_ = optional;
   }
 
-  MatchPath* path() { return path_.get(); }
+  MatchPathList* pathList() { return pathList_.get(); }
 
-  const MatchPath* path() const { return path_.get(); }
+  const MatchPathList* path() const { return pathList_.get(); }
 
   WhereClause* where() { return where_.get(); }
 
@@ -304,7 +317,7 @@ class MatchClause final : public ReadingClause {
 
  private:
   bool isOptional_{false};
-  std::unique_ptr<MatchPath> path_;
+  std::unique_ptr<MatchPathList> pathList_;
   std::unique_ptr<WhereClause> where_;
 };
 
