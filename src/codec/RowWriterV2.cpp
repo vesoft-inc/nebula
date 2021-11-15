@@ -770,10 +770,6 @@ WriteResult RowWriterV2::write(ssize_t index, const Geography& v) noexcept {
     return WriteResult::TYPE_MISMATCH;
   }
   std::string wkb = v.asWKB();
-  std::cout << "wkb.size()=" << wkb.size() << ", wkb.content=" << wkb << std::endl;
-  std::string hexedWkb = folly::hexlify(wkb);
-  std::cout << "hexedWkb.size()=" << hexedWkb.size() << ", hexedWkb.content=" << hexedWkb
-            << std::endl;
   return write(index, folly::StringPiece(wkb));
 }
 
