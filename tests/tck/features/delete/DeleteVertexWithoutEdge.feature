@@ -2,13 +2,15 @@
 #
 # This source code is licensed under Apache 2.0 License.
 Feature: delete vertex without edge
+
   Background:
     Given an empty graph
     And create a space with following options:
       | partition_num  | 9     |
       | replica_factor | 1     |
       | vid_type       | int64 |
-    Scenario: delete vertex with edge
+
+  Scenario: delete vertex with edge
     Given having executed:
       """
       CREATE TAG t(id int);
@@ -64,6 +66,7 @@ Feature: delete vertex without edge
     Then the result should be, in any order:
       | dst | id |
     Then drop the used space
+
   Scenario: delete vertex without edge
     Given having executed:
       """
@@ -82,9 +85,9 @@ Feature: delete vertex without edge
       GO 1 STEP FROM 1 OVER e YIELD e._dst AS a, $^.t.id AS id;
       """
     Then the result should be, in any order:
-      | a | id    |
-      | 2 | 1 |
-      | 3 | 1 |
+      | a | id |
+      | 2 | 1  |
+      | 3 | 1  |
     When executing query:
       """
       DELETE VERTEX 1;
