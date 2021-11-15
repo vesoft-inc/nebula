@@ -46,13 +46,6 @@ include(GitInfoConfig)
 include(NebulaCustomTargets)
 
 add_custom_target(
-    install-all
-    COMMAND $MAKE install
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-)
-
-
-add_custom_target(
   clang-format
   COMMAND "find" "src/" "-type" "f" "\\(" "-iname" "\\*.h" "-o" "-iname" "\\*.cpp" "\\)" "|" "xargs" "clang-format" "-i"
   WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
