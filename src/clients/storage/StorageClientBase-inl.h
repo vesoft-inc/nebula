@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #pragma once
@@ -326,6 +325,29 @@ StorageClientBase<ClientType>::getHostParts(GraphSpaceID spaceId) const {
       return leader.status();
     }
     hostParts[leader.value()].emplace_back(partId);
+  }
+  return hostParts;
+}
+
+template <typename ClientType>
+StatusOr<std::unordered_map<HostAddr, std::unordered_map<PartitionID, cpp2::ScanCursor>>>
+StorageClientBase<ClientType>::getHostPartsWithCursor(GraphSpaceID spaceId) const {
+  std::unordered_map<HostAddr, std::unordered_map<PartitionID, cpp2::ScanCursor>> hostParts;
+  auto status = metaClient_->partsNum(spaceId);
+  if (!status.ok()) {
+    return Status::Error("Space not found, spaceid: %d", spaceId);
+  }
+
+  // TODO support cursor
+  cpp2::ScanCursor c;
+  c.set_has_next(false);
+  auto parts = status.value();
+  for (auto partId = 1; partId <= parts; partId++) {
+    auto leader = getLeader(spaceId, partId);
+    if (!leader.ok()) {
+      return leader.status();
+    }
+    hostParts[leader.value()].emplace(partId, c);
   }
   return hostParts;
 }

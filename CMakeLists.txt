@@ -1,7 +1,6 @@
 # Copyright (c) 2018 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 # The build can be controlled by defining following variables on the
 # <cmake> command line
@@ -45,13 +44,6 @@ include(SanitizerConfig)
 include(GitHooksConfig)
 include(GitInfoConfig)
 include(NebulaCustomTargets)
-
-add_custom_target(
-    install-all
-    COMMAND $MAKE install
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-)
-
 
 add_custom_target(
   clang-format

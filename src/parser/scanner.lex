@@ -157,7 +157,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "HOSTS"                     { return TokenType::KW_HOSTS; }
 "SPACE"                     { return TokenType::KW_SPACE; }
 "SPACES"                    { return TokenType::KW_SPACES; }
-"VALUE"                     { return TokenType::KW_VALUES; }
+"VALUE"                     { return TokenType::KW_VALUE; }
 "VALUES"                    { return TokenType::KW_VALUES; }
 "USER"                      { return TokenType::KW_USER; }
 "USERS"                     { return TokenType::KW_USERS; }

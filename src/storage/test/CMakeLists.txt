@@ -709,6 +709,20 @@ nebula_add_test(
         gtest
 )
 
+nebula_add_test(
+    NAME
+        index_test
+    SOURCES
+        IndexTest.cpp
+    OBJECTS
+        ${storage_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        gtest
+)
+
 nebula_add_executable(
     NAME
         chain_update_edge_test
