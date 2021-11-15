@@ -138,6 +138,11 @@ Status DescribeUserValidator::validateImpl() {
     return Status::SemanticError("Username exceed maximum length %ld characters.",
                                  kUsernameMaxLength);
   }
+  if (!inputs_.empty()) {
+    return Status::SemanticError("Show queries sentence do not support input");
+  }
+  outputs_.emplace_back("role", Value::Type::STRING);
+  outputs_.emplace_back("space", Value::Type::STRING);
   return Status::OK();
 }
 

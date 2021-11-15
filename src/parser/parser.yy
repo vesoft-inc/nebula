@@ -2647,6 +2647,7 @@ traverse_sentence
     | delete_edge_sentence { $$ = $1; }
     | show_queries_sentence { $$ = $1; }
     | kill_query_sentence { $$ = $1; }
+    | describe_user_sentence { $$ = $1; }
     ;
 
 piped_sentence
@@ -3536,7 +3537,6 @@ maintain_sentence
     | show_sentence { $$ = $1; }
     | create_user_sentence { $$ = $1; }
     | alter_user_sentence { $$ = $1; }
-    | describe_user_sentence { $$ = $1; }
     | drop_user_sentence { $$ = $1; }
     | change_password_sentence { $$ = $1; }
     | grant_sentence { $$ = $1; }

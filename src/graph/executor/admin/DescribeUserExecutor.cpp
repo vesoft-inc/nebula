@@ -31,7 +31,7 @@ folly::Future<Status> DescribeUserExecutor::describeUser() {
           return std::move(resp).status();
         }
 
-        nebula::DataSet v({"Role", "Space"});
+        DataSet v({"role", "space"});
         auto user = std::move(resp).value();
         auto spaceRoleMap = user.get_space_role_map();
         std::vector<std::string> rolesInSpacesStrVector;
@@ -49,7 +49,8 @@ folly::Future<Status> DescribeUserExecutor::describeUser() {
                 {apache::thrift::util::enumNameSafe(item.second), spaceNameResult.value()}));
           }
         }
-        return finish(std::move(v));
+        return finish(
+            ResultBuilder().value(Value(std::move(v))).iter(Iterator::Kind::kSequential).build());
       });
 }
 
