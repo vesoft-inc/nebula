@@ -197,6 +197,7 @@ Feature: Match seek by scan
       | "is_teacher" | 2014      | 2015    |
       | "is_teacher" | 2017      | 2018    |
       | "is_teacher" | 2018      | 2019    |
+
 # TODO check index validation in match planner entry
 # When executing query:
 # """
