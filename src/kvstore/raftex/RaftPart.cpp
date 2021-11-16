@@ -1323,8 +1323,8 @@ void RaftPart::processAskForVoteRequest(const cpp2::AskForVoteRequest& req,
     * not enough votes: the candidate will trigger another round election
     * majority votes: the candidate will be leader
   */
-  if (proposedTerm_ == req.get_term() && votedAddr_ != candidate) {
-    LOG(INFO) << idStr_ << "We have voted " << votedAddr_ << " on term " << proposedTerm_
+  if (votedTerm_ == req.get_term() && votedAddr_ != candidate) {
+    LOG(INFO) << idStr_ << "We have voted " << votedAddr_ << " on term " << votedTerm_
               << ", so we should reject the candidate " << candidate << " request on term "
               << req.get_term();
     resp.set_error_code(cpp2::ErrorCode::E_TERM_OUT_OF_DATE);
@@ -1351,7 +1351,7 @@ void RaftPart::processAskForVoteRequest(const cpp2::AskForVoteRequest& req,
   }
   role_ = Role::FOLLOWER;
   votedAddr_ = candidate;
-  proposedTerm_ = req.get_term();
+  votedTerm_ = req.get_term();
   leader_ = HostAddr("", 0);
 
   // Reset the last message time

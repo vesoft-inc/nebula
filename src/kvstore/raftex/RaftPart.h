@@ -515,17 +515,15 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   HostAddr leader_;
 
   // After voted for somebody, it will not be empty anymore.
-  // And it will be reset to empty after current election finished.
   HostAddr votedAddr_;
 
   // The current term id
   // the term id proposed by that candidate
   TermID term_{0};
 
-  // If voted for somebody, the proposeTerm will be reset to the candidate
-  // propose term. So we could use it to prevent revote if someone else ask for
-  // vote for current proposedTerm.
-  TermID proposedTerm_{0};
+  // Once we have voted some one in formal election, we will set votedTerm_ and votedAddr_.
+  // To prevent we have voted more than once in a same term
+  TermID votedTerm_{0};
 
   // The id and term of the last-sent log
   LogID lastLogId_{0};
