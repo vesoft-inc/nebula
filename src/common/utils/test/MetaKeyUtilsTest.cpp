@@ -48,6 +48,23 @@ TEST(MetaKeyUtilsTest, SpaceKeyWithZonesTest) {
   ASSERT_EQ(3, properties.get_zone_names().size());
 }
 
+TEST(MetaKeyUtilsTest, SpaceKeyWithZonesTest) {
+  auto prefix = MetaKeyUtils::spacePrefix();
+  ASSERT_EQ("__spaces__", prefix);
+  auto spaceKey = MetaKeyUtils::spaceKey(101);
+  ASSERT_EQ(101, MetaKeyUtils::spaceId(spaceKey));
+  meta::cpp2::SpaceDesc spaceDesc;
+  spaceDesc.set_space_name("default");
+  spaceDesc.set_partition_num(100);
+  spaceDesc.set_replica_factor(3);
+  std::vector<std::string> zoneNames{"z1", "z2", "z3"};
+  spaceDesc.set_zone_names(std::move(zoneNames));
+  auto spaceVal = MetaKeyUtils::spaceVal(spaceDesc);
+  ASSERT_EQ("default", MetaKeyUtils::spaceName(spaceVal));
+  ASSERT_EQ(100, MetaKeyUtils::parseSpace(spaceVal).get_partition_num());
+  ASSERT_EQ(3, MetaKeyUtils::parseSpace(spaceVal).get_replica_factor());
+}
+
 TEST(MetaKeyUtilsTest, PartKeyTest) {
   auto partKey = MetaKeyUtils::partKey(0, 1);
   auto prefix = MetaKeyUtils::partPrefix(0);
