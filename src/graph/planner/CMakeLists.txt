@@ -27,6 +27,7 @@ nebula_add_library(
     match/VertexIdSeek.cpp
     match/Expand.cpp
     match/LabelIndexSeek.cpp
+    match/ScanSeek.cpp
     plan/PlanNode.cpp
     plan/ExecutionPlan.cpp
     plan/Algo.cpp

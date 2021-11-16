@@ -215,59 +215,58 @@ Feature: Match seek by id
       | 'Paul Gasol' | 'Spurs'     |
       | 'Paul Gasol' | 'Bucks'     |
 
-  Scenario: can't refer
-    When executing query:
-      """
-      MATCH (v)
-      WHERE NOT id(v) == 'Paul Gasol'
-      RETURN v.name AS Name, v.age AS Age
-      """
-    Then a SemanticError should be raised at runtime:
-    When executing query:
-      """
-      MATCH (v)
-      WHERE NOT id(v) IN ['James Harden', 'Jonathon Simmons', 'Klay Thompson', 'Dejounte Murray']
-      RETURN v.name AS Name
-      """
-    Then a SemanticError should be raised at runtime:
-    When executing query:
-      """
-      MATCH (v)
-      WHERE id(v) IN ['James Harden', 'Jonathon Simmons', 'Klay Thompson', 'Dejounte Murray']
-            OR v.age == 23
-      RETURN v.name AS Name
-      """
-    Then a SemanticError should be raised at runtime:
-    When executing query:
-      """
-      MATCH (v)
-      WHERE id(v) == 'James Harden'
-            OR v.age == 23
-      RETURN v.name AS Name
-      """
-    Then a SemanticError should be raised at runtime:
-    When executing query:
-      """
-      MATCH (v)
-      WHERE id(x) == 'James Harden'
-      RETURN v.name AS Name
-      """
-    Then a SemanticError should be raised at runtime:
-    When executing query:
-      """
-      MATCH (v)
-      WHERE (id(v) + '') == 'James Harden'
-      RETURN v.name AS Name
-      """
-    Then a SemanticError should be raised at runtime:
-    When executing query:
-      """
-      MATCH (v)
-      WHERE id(v) IN ['James Harden', v.name]
-      RETURN v.name AS Name
-      """
-    Then a SemanticError should be raised at runtime:
-
+  # Scenario: can't refer
+  # When executing query:
+  # """
+  # MATCH (v)
+  # WHERE NOT id(v) == 'Paul Gasol'
+  # RETURN v.name AS Name, v.age AS Age
+  # """
+  # Then a SemanticError should be raised at runtime:
+  # When executing query:
+  # """
+  # MATCH (v)
+  # WHERE NOT id(v) IN ['James Harden', 'Jonathon Simmons', 'Klay Thompson', 'Dejounte Murray']
+  # RETURN v.name AS Name
+  # """
+  # Then a SemanticError should be raised at runtime:
+  # When executing query:
+  # """
+  # MATCH (v)
+  # WHERE id(v) IN ['James Harden', 'Jonathon Simmons', 'Klay Thompson', 'Dejounte Murray']
+  # OR v.age == 23
+  # RETURN v.name AS Name
+  # """
+  # Then a SemanticError should be raised at runtime:
+  # When executing query:
+  # """
+  # MATCH (v)
+  # WHERE id(v) == 'James Harden'
+  # OR v.age == 23
+  # RETURN v.name AS Name
+  # """
+  # Then a SemanticError should be raised at runtime:
+  # When executing query:
+  # """
+  # MATCH (v)
+  # WHERE id(x) == 'James Harden'
+  # RETURN v.name AS Name
+  # """
+  # Then a SemanticError should be raised at runtime:
+  # When executing query:
+  # """
+  # MATCH (v)
+  # WHERE (id(v) + '') == 'James Harden'
+  # RETURN v.name AS Name
+  # """
+  # Then a SemanticError should be raised at runtime:
+  # When executing query:
+  # """
+  # MATCH (v)
+  # WHERE id(v) IN ['James Harden', v.name]
+  # RETURN v.name AS Name
+  # """
+  # Then a SemanticError should be raised at runtime:
   Scenario: Start from end
     When executing query:
       """

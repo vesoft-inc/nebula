@@ -1463,14 +1463,13 @@ Feature: Match seek by edge
       | "Grant Hill"         | "Grant Hill"         |
       | "Grant Hill"         | "Rudy Gay"           |
 
-  Scenario Outline: seek by edge without index
-    When executing query:
-      """
-      MATCH (p1)-[:teammate]->(p2)
-      RETURN p1.name, id(p2)
-      """
-    Then a SemanticError should be raised at runtime: Can't solve the start vids from the sentence: MATCH (p1)-[:teammate]->(p2) RETURN p1.name,id(p2)
-
+  # Scenario Outline: seek by edge without index
+  # When executing query:
+  # """
+  # MATCH (p1)-[:teammate]->(p2)
+  # RETURN p1.name, id(p2)
+  # """
+  # Then a SemanticError should be raised at runtime: Can't solve the start vids from the sentence: MATCH (p1)-[:teammate]->(p2) RETURN p1.name,id(p2)
   Scenario Outline: seek by edge in a single edge type space
     Given an empty graph
     And create a space with following options:
@@ -1485,21 +1484,22 @@ Feature: Match seek by edge
       CREATE EDGE edge_1(col1 string, col2 int, col3 double, col4 timestamp);
       """
     And wait 5 seconds
-    When executing query:
-      """
-      MATCH (p1)-[]->(p2)
-      RETURN p1.name, id(p2)
-      """
-    Then a SemanticError should be raised at runtime: Can't solve the start vids from the sentence: MATCH (p1)-->(p2) RETURN p1.name,id(p2)
-    When executing query:
-      """
-      MATCH (p1)-[b]->(p2)
-      RETURN p1.name, id(p2)
-      """
-    Then a SemanticError should be raised at runtime: Can't solve the start vids from the sentence: MATCH (p1)-[b]->(p2) RETURN p1.name,id(p2)
-    When executing query:
-      """
-      MATCH (p1)-[:edge_1]->(p2)
-      RETURN p1.name, id(p2)
-      """
-    Then a SemanticError should be raised at runtime: Can't solve the start vids from the sentence: MATCH (p1)-[:edge_1]->(p2) RETURN p1.name,id(p2)
+
+# When executing query:
+# """
+# MATCH (p1)-[]->(p2)
+# RETURN p1.name, id(p2)
+# """
+# Then a SemanticError should be raised at runtime: Can't solve the start vids from the sentence: MATCH (p1)-->(p2) RETURN p1.name,id(p2)
+# When executing query:
+# """
+# MATCH (p1)-[b]->(p2)
+# RETURN p1.name, id(p2)
+# """
+# Then a SemanticError should be raised at runtime: Can't solve the start vids from the sentence: MATCH (p1)-[b]->(p2) RETURN p1.name,id(p2)
+# When executing query:
+# """
+# MATCH (p1)-[:edge_1]->(p2)
+# RETURN p1.name, id(p2)
+# """
+# Then a SemanticError should be raised at runtime: Can't solve the start vids from the sentence: MATCH (p1)-[:edge_1]->(p2) RETURN p1.name,id(p2)

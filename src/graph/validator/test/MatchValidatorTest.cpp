@@ -69,7 +69,18 @@ TEST_F(MatchValidatorTest, SeekByTagIndex) {
   // non index
   {
     std::string query = "MATCH (v:room) RETURN id(v) AS id;";
-    EXPECT_FALSE(validate(query));
+    std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kProject,
+                                            PlanNode::Kind::kFilter,
+                                            PlanNode::Kind::kProject,
+                                            PlanNode::Kind::kProject,
+                                            PlanNode::Kind::kFilter,
+                                            PlanNode::Kind::kGetVertices,
+                                            PlanNode::Kind::kDedup,
+                                            PlanNode::Kind::kProject,
+                                            PlanNode::Kind::kFilter,
+                                            PlanNode::Kind::kScanVertices,
+                                            PlanNode::Kind::kStart};
+    EXPECT_TRUE(checkResult(query, expected));
   }
 }
 

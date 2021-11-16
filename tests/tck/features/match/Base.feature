@@ -531,40 +531,40 @@ Feature: Basic match
     Then a ExecutionError should be raised at runtime: Wrong type result, the type should be NULL, EMPTY or BOOL
 
   Scenario: Unimplemented features
-    When executing query:
-      """
-      MATCH (v) return v
-      """
-    Then a SemanticError should be raised at runtime: Can't solve the start vids from the sentence: MATCH (v) RETURN v
-    When executing query:
-      """
-      MATCH (v{name: "Tim Duncan"}) return v
-      """
-    Then a SemanticError should be raised at runtime: Can't solve the start vids from the sentence: MATCH (v{name:"Tim Duncan"}) RETURN v
-    When executing query:
-      """
-      MATCH (v:player:bachelor) RETURN v
-      """
-    Then a SemanticError should be raised at runtime: Can't solve the start vids from the sentence: MATCH (v:player:bachelor) RETURN v
-    When executing query:
-      """
-      MATCH (v:player{age:23}:bachelor) RETURN v
-      """
-    Then a SemanticError should be raised at runtime: Can't solve the start vids from the sentence: MATCH (v:player{age:23}:bachelor) RETURN v
-    When executing query:
-      """
-      MATCH () -[]-> (v) return *
-      """
-    Then a SemanticError should be raised at runtime: Can't solve the start vids from the sentence: MATCH ()-->(v) RETURN *
-    When executing query:
-      """
-      MATCH () --> (v) --> () return *
-      """
-    Then a SemanticError should be raised at runtime: Can't solve the start vids from the sentence: MATCH ()-->(v)-->() RETURN *
-    # The 0 step means node scan in fact, but p and t has no label or properties for index seek
-    # So it's not workable now
-    When executing query:
-      """
-      MATCH (p)-[:serve*0..3]->(t) RETURN p
-      """
-    Then a SemanticError should be raised at runtime: Can't solve the start vids from the sentence: MATCH (p)-[:serve*0..3]->(t) RETURN p
+# When executing query:
+# """
+# MATCH (v) return v
+# """
+# Then a SemanticError should be raised at runtime: Can't solve the start vids from the sentence: MATCH (v) RETURN v
+# When executing query:
+# """
+# MATCH (v{name: "Tim Duncan"}) return v
+# """
+# Then a SemanticError should be raised at runtime: Can't solve the start vids from the sentence: MATCH (v{name:"Tim Duncan"}) RETURN v
+# When executing query:
+# """
+# MATCH (v:player:bachelor) RETURN v
+# """
+# Then a SemanticError should be raised at runtime: Can't solve the start vids from the sentence: MATCH (v:player:bachelor) RETURN v
+# When executing query:
+# """
+# MATCH (v:player{age:23}:bachelor) RETURN v
+# """
+# Then a SemanticError should be raised at runtime: Can't solve the start vids from the sentence: MATCH (v:player{age:23}:bachelor) RETURN v
+# When executing query:
+# """
+# MATCH () -[]-> (v) return *
+# """
+# Then a SemanticError should be raised at runtime: Can't solve the start vids from the sentence: MATCH ()-->(v) RETURN *
+# When executing query:
+# """
+# MATCH () --> (v) --> () return *
+# """
+# Then a SemanticError should be raised at runtime: Can't solve the start vids from the sentence: MATCH ()-->(v)-->() RETURN *
+# The 0 step means node scan in fact, but p and t has no label or properties for index seek
+# So it's not workable now
+# When executing query:
+# """
+# MATCH (p)-[:serve*0..3]->(t) RETURN p
+# """
+# Then a SemanticError should be raised at runtime: Can't solve the start vids from the sentence: MATCH (p)-[:serve*0..3]->(t) RETURN p
