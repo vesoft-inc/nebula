@@ -344,25 +344,27 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   void cleanupSnapshot();
 
   // The method sends out AskForVote request
-  // Return true if a leader is elected (the leader could be self or others),
-  // otherwise returns false
-  folly::Future<bool> leaderElection();
+  // Return true if I have been granted majority votes on proposedTerm, no matter isPreVote or not
+  folly::Future<bool> leaderElection(bool isPreVote);
 
   // The method will fill up the request object and return TRUE
   // if the election should continue. Otherwise the method will
   // return FALSE
   bool prepareElectionRequest(cpp2::AskForVoteRequest& req,
-                              std::vector<std::shared_ptr<Host>>& hosts);
+                              std::vector<std::shared_ptr<Host>>& hosts,
+                              bool isPreVote);
 
-  // return true if elected as the leader, else return false
+  // Return true if I have been granted majority votes on proposedTerm, no matter isPreVote or not
   bool handleElectionResponses(const ElectionResponses& resps,
                                const std::vector<std::shared_ptr<Host>>& hosts,
-                               TermID proposedTerm);
+                               TermID proposedTerm,
+                               bool isPreVote);
 
-  // The method returns the partition's role after the election
-  Role processElectionResponses(const ElectionResponses& results,
+  // Return true if I have been granted majority votes on proposedTerm, no matter isPreVote or not
+  bool processElectionResponses(const ElectionResponses& results,
                                 std::vector<std::shared_ptr<Host>> hosts,
-                                TermID proposedTerm);
+                                TermID proposedTerm,
+                                bool isPreVote);
 
   // Check whether new logs can be appended
   // Pre-condition: The caller needs to hold the raftLock_
@@ -519,20 +521,10 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   // The current term id
   // the term id proposed by that candidate
   TermID term_{0};
-  // During normal operation, proposedTerm_ is equal to term_,
-  // when the partition becomes a candidate, proposedTerm_ will be
-  // bumped up by 1 every time when sending out the AskForVote
-  // Request
 
   // If voted for somebody, the proposeTerm will be reset to the candidate
   // propose term. So we could use it to prevent revote if someone else ask for
   // vote for current proposedTerm.
-
-  // TODO(heng) We should persist it on the disk in the future
-  // Otherwise, after restart the whole cluster, maybe the stale
-  // leader still has the unsend log with larger term, and after other
-  // replicas elected the new leader, the stale one will not join in the
-  // Raft group any more.
   TermID proposedTerm_{0};
 
   // The id and term of the last-sent log
@@ -581,8 +573,6 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
 
   // Used to bypass the stale command
   int64_t startTimeMs_ = 0;
-
-  std::atomic<uint64_t> weight_;
 
   std::atomic<bool> blocking_{false};
 };
