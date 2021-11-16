@@ -16,6 +16,7 @@
 #include <atomic>
 
 #include "common/base/Base.h"
+#include "common/base/ObjectPool.h"
 #include "common/base/Status.h"
 #include "common/base/StatusOr.h"
 #include "common/meta/Common.h"
@@ -74,14 +75,36 @@ struct SpaceInfoCache {
   cpp2::SpaceDesc spaceDesc_;
   PartsAlloc partsAlloc_;
   std::unordered_map<HostAddr, std::vector<PartitionID>> partsOnHost_;
+  std::vector<cpp2::TagItem> tagItemVec_;
   TagSchemas tagSchemas_;
+  std::vector<cpp2::EdgeItem> edgeItemVec_;
   EdgeSchemas edgeSchemas_;
+  std::vector<cpp2::IndexItem> tagIndexItemVec_;
   Indexes tagIndexes_;
+  std::vector<cpp2::IndexItem> edgeIndexItemVec_;
   Indexes edgeIndexes_;
   Listeners listeners_;
   // objPool used to decode when adding field
   ObjectPool pool_;
   std::unordered_map<PartitionID, TermID> termOfPartition_;
+
+  SpaceInfoCache() = default;
+  SpaceInfoCache(const SpaceInfoCache& info)
+      : spaceDesc_(info.spaceDesc_),
+        partsAlloc_(info.partsAlloc_),
+        partsOnHost_(info.partsOnHost_),
+        tagItemVec_(info.tagItemVec_),
+        tagSchemas_(info.tagSchemas_),
+        edgeItemVec_(info.edgeItemVec_),
+        edgeSchemas_(info.edgeSchemas_),
+        tagIndexItemVec_(info.tagIndexItemVec_),
+        tagIndexes_(info.tagIndexes_),
+        edgeIndexItemVec_(info.edgeIndexItemVec_),
+        edgeIndexes_(info.edgeIndexes_),
+        listeners_(info.listeners_),
+        termOfPartition_(info.termOfPartition_) {}
+
+  ~SpaceInfoCache() = default;
 };
 
 using LocalCache = std::unordered_map<GraphSpaceID, std::shared_ptr<SpaceInfoCache>>;
@@ -501,7 +524,7 @@ class MetaClient {
 
   Status checkSpaceExistInCache(const HostAddr& host, GraphSpaceID spaceId);
 
-  StatusOr<int32_t> partsNum(GraphSpaceID spaceId) const;
+  StatusOr<int32_t> partsNum(GraphSpaceID spaceId);
 
   PartitionID partId(int32_t numParts, VertexID id) const;
 
@@ -559,15 +582,15 @@ class MetaClient {
                                                            EdgeType edgeType,
                                                            const std::string& field);
 
-  std::vector<cpp2::RoleItem> getRolesByUserFromCache(const std::string& user) const;
+  std::vector<cpp2::RoleItem> getRolesByUserFromCache(const std::string& user);
 
-  bool authCheckFromCache(const std::string& account, const std::string& password) const;
+  bool authCheckFromCache(const std::string& account, const std::string& password);
 
-  StatusOr<TermID> getTermFromCache(GraphSpaceID spaceId, PartitionID) const;
+  StatusOr<TermID> getTermFromCache(GraphSpaceID spaceId, PartitionID);
 
-  bool checkShadowAccountFromCache(const std::string& account) const;
+  bool checkShadowAccountFromCache(const std::string& account);
 
-  StatusOr<std::vector<HostAddr>> getStorageHosts() const;
+  StatusOr<std::vector<HostAddr>> getStorageHosts();
 
   StatusOr<cpp2::Session> getSessionFromCache(const nebula::SessionID& session_id);
 
@@ -719,8 +742,10 @@ class MetaClient {
   // leaderIdsLock_ is used to protect leaderIds_
   std::unordered_map<GraphSpaceID, std::vector<cpp2::LeaderInfo>> leaderIds_;
   folly::RWSpinLock leaderIdsLock_;
-  int64_t localLastUpdateTime_{0};
-  int64_t metadLastUpdateTime_{0};
+  std::atomic<int64_t> localDataLastUpdateTime_{-1};
+  std::atomic<int64_t> localCfgLastUpdateTime_{-1};
+  std::atomic<int64_t> metadLastUpdateTime_{0};
+
   int64_t metaServerVersion_{-1};
   static constexpr int64_t EXPECT_META_VERSION = 2;
 
@@ -735,6 +760,31 @@ class MetaClient {
   HostAddr active_;
   HostAddr leader_;
   HostAddr localHost_;
+
+  struct ThreadLocalInfo {
+    int64_t localLastUpdateTime_{-2};
+    LocalCache localCache_;
+    SpaceNameIdMap spaceIndexByName_;
+    SpaceTagNameIdMap spaceTagIndexByName_;
+    SpaceEdgeNameTypeMap spaceEdgeIndexByName_;
+    SpaceEdgeTypeNameMap spaceEdgeIndexByType_;
+    SpaceTagIdNameMap spaceTagIndexById_;
+    SpaceNewestTagVerMap spaceNewestTagVerMap_;
+    SpaceNewestEdgeVerMap spaceNewestEdgeVerMap_;
+    SpaceAllEdgeMap spaceAllEdgeMap_;
+
+    UserRolesMap userRolesMap_;
+    std::vector<HostAddr> storageHosts_;
+    FTIndexMap fulltextIndexMap_;
+    UserPasswordMap userPasswordMap_;
+  };
+
+  const ThreadLocalInfo& getThreadLocalInfo();
+
+  void addSchemaField(NebulaSchemaProvider* schema, const cpp2::ColumnDef& col, ObjectPool* pool);
+
+  TagSchemas buildTagSchemas(std::vector<cpp2::TagItem> tagItemVec, ObjectPool* pool);
+  EdgeSchemas buildEdgeSchemas(std::vector<cpp2::EdgeItem> edgeItemVec, ObjectPool* pool);
 
   std::unique_ptr<thread::GenericWorker> bgThread_;
   SpaceNameIdMap spaceIndexByName_;
