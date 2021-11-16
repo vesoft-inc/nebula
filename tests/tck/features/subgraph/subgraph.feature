@@ -19,7 +19,7 @@ Feature: subgraph
     Then a SemanticError should be raised at runtime: `$a.id', not exist variable `a'
     When executing query:
       """
-      GET SUBGRAPH WITH PROP FROM "Tim Duncan" YIELD vertices
+      GET SUBGRAPH WITH PROP FROM "Tim Duncan" YIELD invalidColumn
       """
     Then a SemanticError should be raised at runtime: Get Subgraph only support YIELD vertices OR edges
     When executing query:
@@ -243,7 +243,7 @@ Feature: subgraph
       | [:like "LaMarcus Aldridge"->"Tim Duncan"@0] | ("Shaquille O'Neal")  | [:like "Marco Belinelli"->"Danny Green"@0]      |                    |
       | [:like "Manu Ginobili"->"Tim Duncan"@0]     | ("Tony Parker")       | [:like "Danny Green"->"Marco Belinelli"@0]      |                    |
       | [:like "Marco Belinelli"->"Tim Duncan"@0]   | ("Boris Diaw")        | [:like "Dejounte Murray"->"Marco Belinelli"@0]  |                    |
-      | [:like "Shaquille O'Neal"->"Tim Duncan"@0   | ("Dejounte Murray")   | [:like "Dejounte Murray"->"Manu Ginobili"@0]    |                    |
+      | [:like "Shaquille O'Neal"->"Tim Duncan"@0]  | ("Dejounte Murray")   | [:like "Dejounte Murray"->"Manu Ginobili"@0]    |                    |
       | [:like "Tiago Splitter"->"Tim Duncan"@0]    | ("Aron Baynes")       | [:like "Tiago Splitter"->"Manu Ginobili"@0]     |                    |
       | [:like "Tony Parker"->"Tim Duncan"@0]       | ("Tiago Splitter")    | [:like "Tim Duncan"->"Manu Ginobili"@0]         |                    |
       |                                             |                       | [:like "Tony Parker"->"Manu Ginobili"@0]        |                    |
