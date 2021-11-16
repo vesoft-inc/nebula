@@ -30,35 +30,10 @@ class IndexScan;
 
 class OptimizerUtils {
  public:
-  enum class BoundValueOperator {
-    GREATER_THAN = 0,
-    LESS_THAN,
-    MAX,
-    MIN,
-  };
-
   OptimizerUtils() = delete;
 
-  static Value boundValue(const meta::cpp2::ColumnDef& col,
-                          BoundValueOperator op,
-                          const Value& v = Value());
-
-  static Value boundValueWithGT(const meta::cpp2::ColumnDef& col, const Value& v);
-
-  static Value boundValueWithLT(const meta::cpp2::ColumnDef& col, const Value& v);
-
-  static Value boundValueWithMax(const meta::cpp2::ColumnDef& col);
-
-  static Value boundValueWithMin(const meta::cpp2::ColumnDef& col);
-
-  static Value normalizeValue(const meta::cpp2::ColumnDef& col, const Value& v);
-
-  static Status boundValue(Expression::Kind kind,
-                           const Value& val,
-                           const meta::cpp2::ColumnDef& col,
-                           Value& begin,
-                           Value& end);
-
+  // Compare `a` and `b`, if `a`>`b` then swap a and b.That means `b`>=`a` after call this function.
+  static Status compareAndSwapBound(std::pair<Value, bool>& a, std::pair<Value, bool>& b);
   static void eraseInvalidIndexItems(
       int32_t schemaId, std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>>* indexItems);
 
