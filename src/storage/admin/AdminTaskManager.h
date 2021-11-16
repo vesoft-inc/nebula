@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_ADMIN_ADMINTASKMANAGER_H_
@@ -63,12 +62,17 @@ class AdminTaskManager {
 
   void notifyReporting();
 
+  void saveAndNotify(JobID jobId,
+                     TaskID taskId,
+                     nebula::cpp2::ErrorCode rc,
+                     const nebula::meta::cpp2::StatsItem& result);
+
  private:
   void schedule();
   void runSubTask(TaskHandle handle);
 
  private:
-  bool shutdown_{false};
+  std::atomic<bool> shutdown_{false};
   std::unique_ptr<ThreadPool> pool_{nullptr};
   TaskContainer tasks_;
   TaskQueue taskQueue_;
@@ -77,6 +81,7 @@ class AdminTaskManager {
   std::unique_ptr<std::thread> unreportedAdminThread_;
   std::mutex unreportedMutex_;
   std::condition_variable unreportedCV_;
+  bool ifAnyUnreported_{true};
 };
 
 }  // namespace storage

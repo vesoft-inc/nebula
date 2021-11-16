@@ -3,8 +3,7 @@
 #
 # Copyright (c) 2019 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 import json
 import os
@@ -42,7 +41,7 @@ def init_parser():
                           help='start or stop command')
     opt_parser.add_option('--multi_graphd',
                           dest='multi_graphd',
-                          default='',
+                          default='false',
                           help='Support multi graphds')
     opt_parser.add_option('--address',
                           dest='address',
@@ -91,12 +90,12 @@ def start_nebula(nb, configs):
         address = "localhost"
         ports = nb.start(
             debug_log=opt_is(configs.debug, "true"),
-            multi_graphd=configs.multi_graphd,
+            multi_graphd=opt_is(configs.multi_graphd, "true"),
             ca_signed=opt_is(configs.ca_signed, "true"),
-            enable_ssl=opt_is(configs.enable_ssl, "true"),
-            enable_graph_ssl=opt_is(configs.enable_graph_ssl, "true"),
-            enable_meta_ssl=opt_is(configs.enable_meta_ssl, "true"),
-            containerized=opt_is(configs.containerized, "true")
+            enable_ssl=configs.enable_ssl,
+            enable_graph_ssl=configs.enable_graph_ssl,
+            enable_meta_ssl=configs.enable_meta_ssl,
+            containerized=configs.containerized
         )
 
     # Load csv data
@@ -108,8 +107,11 @@ def start_nebula(nb, configs):
 
     with open(SPACE_TMP_PATH, "w") as f:
         spaces = []
-        for space in ("nba", "nba_int_vid", "student"):
-            data_dir = os.path.join(CURR_PATH, "data", space)
+        folder = os.path.join(CURR_PATH, "data")
+        for space in os.listdir(folder):
+            if not os.path.exists(os.path.join(folder, space, "config.yaml")):
+                continue
+            data_dir = os.path.join(folder, space)
             space_desc = load_csv_data(sess, data_dir, space)
             spaces.append(space_desc.__dict__)
         f.write(json.dumps(spaces))

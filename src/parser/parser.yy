@@ -148,7 +148,6 @@ static constexpr size_t kCommentLengthLimit = 256;
     nebula::meta::cpp2::FTClient           *text_search_client_item;
     nebula::TSClientList                   *text_search_client_list;
     nebula::QueryUniqueIdentifier          *query_unique_identifier;
-    nebula::LimitClause                    *limit_clause;
 }
 
 /* destructors */
@@ -163,7 +162,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %token KW_BOOL KW_INT8 KW_INT16 KW_INT32 KW_INT64 KW_INT KW_FLOAT KW_DOUBLE
 %token KW_STRING KW_FIXED_STRING KW_TIMESTAMP KW_DATE KW_TIME KW_DATETIME
 %token KW_GO KW_AS KW_TO KW_USE KW_SET KW_FROM KW_WHERE KW_ALTER
-%token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX KW_VERTICES
+%token KW_MATCH KW_INSERT KW_VALUE KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX KW_VERTICES
 %token KW_EDGE KW_EDGES KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND
 %token KW_TAG KW_TAGS KW_UNION KW_INTERSECT KW_MINUS
 %token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOST KW_HOSTS KW_PART KW_PARTS KW_ADD
@@ -343,8 +342,6 @@ static constexpr size_t kCommentLengthLimit = 256;
 
 %type <query_unique_identifier> query_unique_identifier
 
-%type <limit_clause> limit_clause
-
 %type <sentence> maintain_sentence
 %type <sentence> create_space_sentence describe_space_sentence drop_space_sentence
 %type <sentence> create_tag_sentence create_edge_sentence
@@ -436,6 +433,7 @@ legal_integer
  */
 unreserved_keyword
     : KW_SPACE              { $$ = new std::string("space"); }
+    | KW_VALUE              { $$ = new std::string("value"); }
     | KW_VALUES             { $$ = new std::string("values"); }
     | KW_HOST               { $$ = new std::string("host"); }
     | KW_HOSTS              { $$ = new std::string("hosts"); }
@@ -1107,72 +1105,72 @@ geo_shape_type
 type_spec
     : KW_BOOL {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::BOOL);
+        $$->set_type(nebula::cpp2::PropertyType::BOOL);
     }
     | KW_INT8 {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::INT8);
+        $$->set_type(nebula::cpp2::PropertyType::INT8);
     }
     | KW_INT16 {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::INT16);
+        $$->set_type(nebula::cpp2::PropertyType::INT16);
     }
     | KW_INT32 {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::INT32);
+        $$->set_type(nebula::cpp2::PropertyType::INT32);
     }
     | KW_INT64 {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::INT64);
+        $$->set_type(nebula::cpp2::PropertyType::INT64);
     }
     | KW_INT {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::INT64);
+        $$->set_type(nebula::cpp2::PropertyType::INT64);
     }
     | KW_FLOAT {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::FLOAT);
+        $$->set_type(nebula::cpp2::PropertyType::FLOAT);
     }
     | KW_DOUBLE {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::DOUBLE);
+        $$->set_type(nebula::cpp2::PropertyType::DOUBLE);
     }
     | KW_STRING {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::STRING);
+        $$->set_type(nebula::cpp2::PropertyType::STRING);
     }
     | KW_FIXED_STRING L_PAREN INTEGER R_PAREN {
         if ($3 > std::numeric_limits<int16_t>::max()) {
             throw nebula::GraphParser::syntax_error(@3, "Out of range:");
         }
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::FIXED_STRING);
+        $$->set_type(nebula::cpp2::PropertyType::FIXED_STRING);
         $$->set_type_length($3);
     }
     | KW_TIMESTAMP {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::TIMESTAMP);
+        $$->set_type(nebula::cpp2::PropertyType::TIMESTAMP);
     }
     | KW_DATE {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::DATE);
+        $$->set_type(nebula::cpp2::PropertyType::DATE);
     }
     | KW_TIME {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::TIME);
+        $$->set_type(nebula::cpp2::PropertyType::TIME);
     }
     | KW_DATETIME {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::DATETIME);
+        $$->set_type(nebula::cpp2::PropertyType::DATETIME);
     }
     | KW_GEOGRAPHY {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::GEOGRAPHY);
+        $$->set_type(nebula::cpp2::PropertyType::GEOGRAPHY);
         $$->set_geo_shape(meta::cpp2::GeoShape::ANY);
     }
     | KW_GEOGRAPHY L_PAREN geo_shape_type R_PAREN {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::GEOGRAPHY);
+        $$->set_type(nebula::cpp2::PropertyType::GEOGRAPHY);
         $$->set_geo_shape($3);
     }
     ;
@@ -1247,17 +1245,6 @@ truncate_clause
 go_sentence
     : KW_GO step_clause from_clause over_clause where_clause yield_clause truncate_clause {
         auto go = new GoSentence($2, $3, $4, $5, $7);
-        if ($6 == nullptr) {
-            auto *cols = new YieldColumns();
-            if (!$4->isOverAll()) {
-                for (auto e : $4->edges()) {
-                    auto *expr  = EdgeDstIdExpression::make(qctx->objPool(), *e->edge());
-                    auto *col   = new YieldColumn(expr);
-                    cols->addColumn(col);
-                }
-            }
-            $6 = new YieldClause(cols);
-        }
         go->setYieldClause($6);
         $$ = go;
     }
@@ -1943,14 +1930,9 @@ lookup_where_clause
     | KW_WHERE expression { $$ = new WhereClause($2); }
     ;
 
-limit_clause
-    : %empty { $$ = nullptr; }
-    | KW_LIMIT legal_integer { $$ = new LimitClause($2); }
-    ;
-
 lookup_sentence
-    : KW_LOOKUP KW_ON name_label lookup_where_clause yield_clause limit_clause {
-        $$ = new LookupSentence($3, $4, $5, $6);
+    : KW_LOOKUP KW_ON name_label lookup_where_clause yield_clause {
+        $$ = new LookupSentence($3, $4, $5);
     }
     ;
 

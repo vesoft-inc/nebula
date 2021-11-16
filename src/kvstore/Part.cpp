@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "kvstore/Part.h"
@@ -172,7 +171,18 @@ void Part::asyncRemovePeer(const HostAddr& peer, KVCallback cb) {
 
 void Part::setBlocking(bool sign) { blocking_ = sign; }
 
-void Part::onLostLeadership(TermID term) { VLOG(1) << "Lost the leadership for the term " << term; }
+void Part::onLostLeadership(TermID term) {
+  VLOG(1) << "Lost the leadership for the term " << term;
+
+  CallbackOptions opt;
+  opt.spaceId = spaceId_;
+  opt.partId = partId_;
+  opt.term = term_;
+
+  for (auto& cb : leaderLostCB_) {
+    cb(opt);
+  }
+}
 
 void Part::onElected(TermID term) {
   VLOG(1) << "Being elected as the leader for the term: " << term;
@@ -191,7 +201,9 @@ void Part::onLeaderReady(TermID term) {
   }
 }
 
-void Part::registerOnLeaderReady(LeaderReadyCB cb) { leaderReadyCB_.emplace_back(std::move(cb)); }
+void Part::registerOnLeaderReady(LeaderChagneCB cb) { leaderReadyCB_.emplace_back(std::move(cb)); }
+
+void Part::registerOnLeaderLost(LeaderChagneCB cb) { leaderLostCB_.emplace_back(std::move(cb)); }
 
 void Part::onDiscoverNewLeader(HostAddr nLeader) {
   LOG(INFO) << idStr_ << "Find the new leader " << nLeader;
@@ -231,6 +243,8 @@ cpp2::ErrorCode Part::commitLogs(std::unique_ptr<LogIterator> iter, bool wait) {
         // Make the number of values are an even number
         DCHECK_EQ((kvs.size() + 1) / 2, kvs.size() / 2);
         for (size_t i = 0; i < kvs.size(); i += 2) {
+          VLOG(1) << "OP_MULTI_PUT " << folly::hexlify(kvs[i])
+                  << ", val = " << folly::hexlify(kvs[i + 1]);
           auto code = batch->put(kvs[i], kvs[i + 1]);
           if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
             LOG(ERROR) << idStr_ << "Failed to call WriteBatch::put()";
@@ -272,6 +286,8 @@ cpp2::ErrorCode Part::commitLogs(std::unique_ptr<LogIterator> iter, bool wait) {
       case OP_BATCH_WRITE: {
         auto data = decodeBatchValue(log);
         for (auto& op : data) {
+          VLOG(1) << "OP_BATCH_WRITE: " << folly::hexlify(op.second.first)
+                  << ", val=" << folly::hexlify(op.second.second);
           auto code = nebula::cpp2::ErrorCode::SUCCEEDED;
           if (op.first == BatchLogType::OP_BATCH_PUT) {
             code = batch->put(op.second.first, op.second.second);

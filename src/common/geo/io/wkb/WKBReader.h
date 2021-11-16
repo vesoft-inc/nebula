@@ -1,17 +1,18 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #pragma once
 
 #include "common/base/Base.h"
 #include "common/base/StatusOr.h"
-#include "common/geo/io/Geometry.h"
+#include "common/datatypes/Geography.h"
 #include "common/geo/io/wkb/ByteOrder.h"
+#include "common/geo/io/wkb/ByteOrderDataIOStream.h"
 
 namespace nebula {
+namespace geo {
 
 class WKBReader {
  public:
@@ -19,35 +20,28 @@ class WKBReader {
 
   ~WKBReader() {}
 
-  // TODO(jie) Check the validity of geometry when reading the wkb
-  StatusOr<Geometry> read(const std::string &wkb) const;
+  StatusOr<Geography> read(const std::string &wkb);
 
-  StatusOr<Geometry> read(const uint8_t *&beg, const uint8_t *end) const;
+ private:
+  StatusOr<Point> readPoint();
 
-  StatusOr<ByteOrder> readByteOrder(const uint8_t *&beg, const uint8_t *end) const;
+  StatusOr<LineString> readLineString();
 
-  StatusOr<GeoShape> readShapeType(const uint8_t *&beg,
-                                   const uint8_t *end,
-                                   ByteOrder byteOrder) const;
+  StatusOr<Polygon> readPolygon();
 
-  StatusOr<Coordinate> readCoordinate(const uint8_t *&beg,
-                                      const uint8_t *end,
-                                      ByteOrder byteOrder) const;
+  StatusOr<ByteOrder> readByteOrder();
 
-  StatusOr<std::vector<Coordinate>> readCoordinateList(const uint8_t *&beg,
-                                                       const uint8_t *end,
-                                                       ByteOrder byteOrder,
-                                                       uint32_t num) const;
+  StatusOr<GeoShape> readShapeType();
 
-  StatusOr<std::vector<std::vector<Coordinate>>> readCoordinateListList(const uint8_t *&beg,
-                                                                        const uint8_t *end,
-                                                                        ByteOrder byteOrder,
-                                                                        uint32_t num) const;
-  StatusOr<uint8_t> readUint8(const uint8_t *&beg, const uint8_t *end) const;
+  StatusOr<Coordinate> readCoordinate();
 
-  StatusOr<uint32_t> readUint32(const uint8_t *&beg, const uint8_t *end, ByteOrder byteOrder) const;
+  StatusOr<std::vector<Coordinate>> readCoordinateList(uint32_t num);
 
-  StatusOr<double> readDouble(const uint8_t *&beg, const uint8_t *end, ByteOrder byteOrder) const;
+  StatusOr<std::vector<std::vector<Coordinate>>> readCoordinateListList(uint32_t num);
+
+ private:
+  ByteOrderDataInStream is_;
 };
 
+}  // namespace geo
 }  // namespace nebula

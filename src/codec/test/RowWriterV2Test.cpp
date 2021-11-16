@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -15,7 +14,7 @@
 
 namespace nebula {
 
-using meta::cpp2::PropertyType;
+using nebula::cpp2::PropertyType;
 
 const double e = 2.71828182845904523536028747135266249775724709369995;
 const float pi = 3.14159265358979;

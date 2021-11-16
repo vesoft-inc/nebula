@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/planner/PlannersRegister.h"
@@ -17,6 +16,7 @@
 #include "graph/planner/ngql/FetchVerticesPlanner.h"
 #include "graph/planner/ngql/GoPlanner.h"
 #include "graph/planner/ngql/LookupPlanner.h"
+#include "graph/planner/ngql/MaintainPlanner.h"
 #include "graph/planner/ngql/PathPlanner.h"
 #include "graph/planner/ngql/SubgraphPlanner.h"
 
@@ -24,8 +24,28 @@ namespace nebula {
 namespace graph {
 
 void PlannersRegister::registPlanners() {
+  registDDL();
   registSequential();
   registMatch();
+}
+
+void PlannersRegister::registDDL() {
+  {
+    auto& planners = Planner::plannersMap()[Sentence::Kind::kAlterTag];
+    planners.emplace_back(&AlterTagPlanner::match, &AlterTagPlanner::make);
+  }
+  {
+    auto& planners = Planner::plannersMap()[Sentence::Kind::kAlterEdge];
+    planners.emplace_back(&AlterEdgePlanner::match, &AlterEdgePlanner::make);
+  }
+  {
+    auto& planners = Planner::plannersMap()[Sentence::Kind::kCreateTag];
+    planners.emplace_back(&CreateTagPlanner::match, &CreateTagPlanner::make);
+  }
+  {
+    auto& planners = Planner::plannersMap()[Sentence::Kind::kCreateEdge];
+    planners.emplace_back(&CreateEdgePlanner::match, &CreateEdgePlanner::make);
+  }
 }
 
 void PlannersRegister::registSequential() {

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/executor/admin/ConfigExecutor.h"
@@ -9,10 +8,10 @@
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
 #include "common/conf/Configuration.h"
+#include "common/time/ScopedTimer.h"
 #include "graph/context/QueryContext.h"
 #include "graph/planner/plan/Admin.h"
 #include "graph/util/SchemaUtil.h"
-#include "graph/util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {

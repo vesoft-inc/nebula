@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #include "graph/validator/FetchVerticesValidator.h"
 
@@ -13,8 +12,6 @@
 namespace nebula {
 namespace graph {
 
-static constexpr char VertexID[] = "VertexID";
-
 Status FetchVerticesValidator::validateImpl() {
   auto *fSentence = static_cast<FetchVerticesSentence *>(sentence_);
   fetchCtx_ = getContext<FetchVerticesContext>();
@@ -24,21 +21,6 @@ Status FetchVerticesValidator::validateImpl() {
   NG_RETURN_IF_ERROR(validateStarts(fSentence->vertices(), fetchCtx_->from));
   NG_RETURN_IF_ERROR(validateYield(fSentence->yieldClause()));
   return Status::OK();
-}
-
-Expression *FetchVerticesValidator::rewriteIDVertex2Vid(const Expression *expr) {
-  auto *pool = qctx_->objPool();
-  auto matcher = [](const Expression *e) -> bool {
-    std::string lowerStr = e->toString();
-    folly::toLowerAscii(lowerStr);
-    return e->kind() == Expression::Kind::kFunctionCall && lowerStr == "id(vertex)";
-  };
-  auto rewriter = [pool](const Expression *e) -> Expression * {
-    UNUSED(e);
-    return InputPropertyExpression::make(pool, nebula::kVid);
-  };
-
-  return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
 }
 
 Status FetchVerticesValidator::validateTag(const NameLabelList *nameLabels) {
@@ -67,35 +49,17 @@ Status FetchVerticesValidator::validateTag(const NameLabelList *nameLabels) {
 }
 
 Status FetchVerticesValidator::validateYield(YieldClause *yield) {
-  auto pool = qctx_->objPool();
-  bool noYield = false;
   if (yield == nullptr) {
-    // TODO: compatible with previous version, this will be deprecated in version 3.0.
-    auto *yieldColumns = new YieldColumns();
-    auto *vertex = new YieldColumn(VertexExpression::make(pool), "vertices_");
-    yieldColumns->addColumn(vertex);
-    yield = pool->add(new YieldClause(yieldColumns));
-    noYield = true;
+    return Status::SemanticError("Missing yield clause.");
   }
   fetchCtx_->distinct = yield->isDistinct();
   auto size = yield->columns().size();
-  outputs_.reserve(size + 1);
+  outputs_.reserve(size);
 
+  auto pool = qctx_->objPool();
   auto *newCols = pool->add(new YieldColumns());
-  if (!noYield) {
-    outputs_.emplace_back(VertexID, vidType_);
-    auto *vidCol = new YieldColumn(InputPropertyExpression::make(pool, nebula::kVid), VertexID);
-    newCols->addColumn(vidCol);
-  }
 
   auto &exprProps = fetchCtx_->exprProps;
-  for (const auto &col : yield->columns()) {
-    if (col->expr()->kind() == Expression::Kind::kVertex) {
-      extractVertexProp(exprProps);
-      break;
-    }
-  }
-
   for (auto col : yield->columns()) {
     if (ExpressionUtils::hasAny(col->expr(),
                                 {Expression::Kind::kEdge, Expression::Kind::kPathBuild})) {
@@ -103,13 +67,17 @@ Status FetchVerticesValidator::validateYield(YieldClause *yield) {
     }
     col->setExpr(ExpressionUtils::rewriteLabelAttr2TagProp(col->expr()));
     NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(col->expr()));
+
     auto colExpr = col->expr();
     auto typeStatus = deduceExprType(colExpr);
     NG_RETURN_IF_ERROR(typeStatus);
     outputs_.emplace_back(col->name(), typeStatus.value());
-    if (colExpr->kind() == Expression::Kind::kFunctionCall) {
+    if (colExpr->toString() == "id(VERTEX)") {
       col->setAlias(col->name());
-      col->setExpr(rewriteIDVertex2Vid(colExpr));
+      col->setExpr(InputPropertyExpression::make(pool, nebula::kVid));
+    }
+    if (ExpressionUtils::hasAny(colExpr, {Expression::Kind::kVertex})) {
+      extractVertexProp(exprProps);
     }
     newCols->addColumn(col->clone().release());
 

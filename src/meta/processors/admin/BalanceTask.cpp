@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/admin/BalanceTask.h"
@@ -236,8 +235,8 @@ void BalanceTask::rollback() {
 bool BalanceTask::saveInStore() {
   CHECK_NOTNULL(kv_);
   std::vector<kvstore::KV> data;
-  data.emplace_back(MetaServiceUtils::balanceTaskKey(balanceId_, spaceId_, partId_, src_, dst_),
-                    MetaServiceUtils::balanceTaskVal(status_, ret_, startTimeMs_, endTimeMs_));
+  data.emplace_back(MetaKeyUtils::balanceTaskKey(balanceId_, spaceId_, partId_, src_, dst_),
+                    MetaKeyUtils::balanceTaskVal(status_, ret_, startTimeMs_, endTimeMs_));
   folly::Baton<true, std::atomic> baton;
   bool ret = true;
   kv_->asyncMultiPut(kDefaultSpaceId,

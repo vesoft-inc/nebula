@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_MUTATE_ADDEDGESPROCESSOR_H_
@@ -43,10 +42,10 @@ class AddEdgesProcessor : public BaseProcessor<cpp2::ExecResponse> {
   ErrorOr<nebula::cpp2::ErrorCode, std::string> findOldValue(PartitionID partId,
                                                              const folly::StringPiece& rawKey);
 
-  std::string indexKey(PartitionID partId,
-                       RowReader* reader,
-                       const folly::StringPiece& rawKey,
-                       std::shared_ptr<nebula::meta::cpp2::IndexItem> index);
+  std::vector<std::string> indexKeys(PartitionID partId,
+                                     RowReader* reader,
+                                     const folly::StringPiece& rawKey,
+                                     std::shared_ptr<nebula::meta::cpp2::IndexItem> index);
 
  private:
   GraphSpaceID spaceId_;

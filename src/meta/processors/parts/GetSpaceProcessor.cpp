@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/parts/GetSpaceProcessor.h"
@@ -24,7 +23,7 @@ void GetSpaceProcessor::process(const cpp2::GetSpaceReq& req) {
   }
 
   auto spaceId = nebula::value(spaceRet);
-  std::string spaceKey = MetaServiceUtils::spaceKey(spaceId);
+  std::string spaceKey = MetaKeyUtils::spaceKey(spaceId);
   auto ret = doGet(spaceKey);
   if (!nebula::ok(ret)) {
     auto retCode = nebula::error(ret);
@@ -35,7 +34,7 @@ void GetSpaceProcessor::process(const cpp2::GetSpaceReq& req) {
     return;
   }
 
-  auto properties = MetaServiceUtils::parseSpace(nebula::value(ret));
+  auto properties = MetaKeyUtils::parseSpace(nebula::value(ret));
   VLOG(3) << "Get Space SpaceName: " << spaceName << ", Partition Num "
           << properties.get_partition_num() << ", Replica Factor "
           << properties.get_replica_factor();

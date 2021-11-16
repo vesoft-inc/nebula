@@ -1,16 +1,17 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "DeleteExecutor.h"
 
+#include "common/time/ScopedTimer.h"
 #include "graph/context/QueryContext.h"
 #include "graph/executor/mutate/DeleteExecutor.h"
 #include "graph/planner/plan/Mutate.h"
 #include "graph/util/SchemaUtil.h"
-#include "graph/util/ScopedTimer.h"
+
+using nebula::storage::GraphStorageClient;
 
 namespace nebula {
 namespace graph {
@@ -61,10 +62,12 @@ folly::Future<Status> DeleteVerticesExecutor::deleteVertices() {
   }
   auto spaceId = spaceInfo.id;
   time::Duration deleteVertTime;
+  auto plan = qctx()->plan();
+  GraphStorageClient::CommonRequestParam param(
+      spaceId, qctx()->rctx()->session()->id(), plan->id(), plan->isProfileEnabled());
   return qctx()
       ->getStorageClient()
-      ->deleteVertices(
-          spaceId, qctx()->rctx()->session()->id(), qctx()->plan()->id(), std::move(vertices))
+      ->deleteVertices(param, std::move(vertices))
       .via(runner())
       .ensure([deleteVertTime]() {
         VLOG(1) << "Delete vertices time: " << deleteVertTime.elapsedInUSec() << "us";
@@ -115,10 +118,12 @@ folly::Future<Status> DeleteTagsExecutor::deleteTags() {
 
   auto spaceId = spaceInfo.id;
   time::Duration deleteTagTime;
+  auto plan = qctx()->plan();
+  GraphStorageClient::CommonRequestParam param(
+      spaceId, qctx()->rctx()->session()->id(), plan->id(), plan->isProfileEnabled());
   return qctx()
       ->getStorageClient()
-      ->deleteTags(
-          spaceId, qctx()->rctx()->session()->id(), qctx()->plan()->id(), std::move(delTags))
+      ->deleteTags(param, std::move(delTags))
       .via(runner())
       .ensure([deleteTagTime]() {
         VLOG(1) << "Delete vertices time: " << deleteTagTime.elapsedInUSec() << "us";
@@ -198,10 +203,12 @@ folly::Future<Status> DeleteEdgesExecutor::deleteEdges() {
 
   auto spaceId = spaceInfo.id;
   time::Duration deleteEdgeTime;
+  auto plan = qctx()->plan();
+  GraphStorageClient::CommonRequestParam param(
+      spaceId, qctx()->rctx()->session()->id(), plan->id(), plan->isProfileEnabled());
   return qctx()
       ->getStorageClient()
-      ->deleteEdges(
-          spaceId, qctx()->rctx()->session()->id(), qctx()->plan()->id(), std::move(edgeKeys))
+      ->deleteEdges(param, std::move(edgeKeys))
       .via(runner())
       .ensure([deleteEdgeTime]() {
         VLOG(1) << "Delete edge time: " << deleteEdgeTime.elapsedInUSec() << "us";

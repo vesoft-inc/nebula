@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/http/MetaHttpDownloadHandler.h"
@@ -17,7 +16,7 @@
 #include "common/network/NetworkUtils.h"
 #include "common/process/ProcessUtils.h"
 #include "common/thread/GenericThreadPool.h"
-#include "meta/MetaServiceUtils.h"
+#include "common/utils/MetaKeyUtils.h"
 #include "webservice/Common.h"
 #include "webservice/WebService.h"
 
@@ -132,7 +131,7 @@ bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string &hdfsHost,
   folly::split("\n", result.value(), files, true);
 
   std::unique_ptr<kvstore::KVIterator> iter;
-  auto prefix = MetaServiceUtils::partPrefix(spaceID_);
+  auto prefix = MetaKeyUtils::partPrefix(spaceID_);
   auto ret = kvstore_->prefix(0, 0, prefix, &iter);
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << "Fetch Parts Failed";
@@ -145,7 +144,7 @@ bool MetaHttpDownloadHandler::dispatchSSTFiles(const std::string &hdfsHost,
     auto key = iter->key();
     PartitionID partId;
     memcpy(&partId, key.data() + prefix.size(), sizeof(PartitionID));
-    for (auto host : MetaServiceUtils::parsePartVal(iter->val())) {
+    for (auto host : MetaKeyUtils::parsePartVal(iter->val())) {
       auto address = HostAddr(host.host, host.port);
       auto addressIter = hostPartition.find(address);
       if (addressIter == hostPartition.end()) {

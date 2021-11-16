@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/validator/Validator.h"
@@ -38,7 +37,6 @@
 #include "graph/validator/SetValidator.h"
 #include "graph/validator/UseValidator.h"
 #include "graph/validator/YieldValidator.h"
-#include "graph/visitor/DeducePropsVisitor.h"
 #include "graph/visitor/DeduceTypeVisitor.h"
 #include "graph/visitor/EvaluableExprVisitor.h"
 #include "parser/Sentence.h"
@@ -373,12 +371,6 @@ Status Validator::deduceProps(const Expression* expr, ExpressionProps& exprProps
   return std::move(visitor).status();
 }
 
-bool Validator::evaluableExpr(const Expression* expr) const {
-  EvaluableExprVisitor visitor;
-  const_cast<Expression*>(expr)->accept(&visitor);
-  return visitor.ok();
-}
-
 Status Validator::toPlan() {
   auto* astCtx = getAstContext();
   if (astCtx != nullptr) {
@@ -458,7 +450,7 @@ Status Validator::validateStarts(const VerticesClause* clause, Starts& starts) {
     auto vidList = clause->vidList();
     QueryExpressionContext ctx;
     for (auto* expr : vidList) {
-      if (!evaluableExpr(expr)) {
+      if (!ExpressionUtils::isEvaluableExpr(expr)) {
         return Status::SemanticError("`%s' is not an evaluable expression.",
                                      expr->toString().c_str());
       }

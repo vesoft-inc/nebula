@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 if(ENABLE_VERBOSE_BISON)
     set(bison_flags "-Werror -v")
@@ -25,7 +24,8 @@ nebula_add_library(
     wkt/WKTWriter.cpp
     wkb/WKBReader.cpp
     wkb/WKBWriter.cpp
+    wkb/ByteOrderDataIOStream.cpp
 )
 
 nebula_add_subdirectory(wkt)
-# nebula_add_subdirectory(wkb)
+nebula_add_subdirectory(wkb)

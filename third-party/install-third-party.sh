@@ -2,8 +2,7 @@
 
 # Copyright (c) 2019 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 # Usage: install-third-party.sh --prefix=/opt/vesoft/third-party
 
@@ -14,7 +13,7 @@
 
 # Always use bash
 shell=$(basename $(readlink /proc/$$/exe))
-if [ ! x$shell = x"bash" ]
+if [ ! x$shell = x"bash" ] && [[ x$shell != x"qemu-aarch64"* ]]
 then
     bash $0 $@
     exit $?

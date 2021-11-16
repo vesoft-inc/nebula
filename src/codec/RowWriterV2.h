@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef CODEC_ROWWRITERV2_H_
@@ -63,6 +62,7 @@ enum class WriteResult {
         TIMESTAMP       (8 bytes)
         DATE            (4 bytes)
         DATETIME        (15 bytes)
+        GEOGRAPHY       (8 bytes) *
 
   All except STRING typed properties are stored in-place. The STRING property
   stored the offset of the string content in the first 4 bytes and the length
@@ -188,6 +188,8 @@ class RowWriterV2 {
   WriteResult write(ssize_t index, const Date& v) noexcept;
   WriteResult write(ssize_t index, const Time& v) noexcept;
   WriteResult write(ssize_t index, const DateTime& v) noexcept;
+
+  WriteResult write(ssize_t index, const Geography& v) noexcept;
 };
 
 }  // namespace nebula

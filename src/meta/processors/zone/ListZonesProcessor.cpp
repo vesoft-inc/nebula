@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/zone/ListZonesProcessor.h"
@@ -11,7 +10,7 @@ namespace meta {
 
 void ListZonesProcessor::process(const cpp2::ListZonesReq&) {
   folly::SharedMutex::ReadHolder rHolder(LockUtils::zoneLock());
-  const auto& prefix = MetaServiceUtils::zonePrefix();
+  const auto& prefix = MetaKeyUtils::zonePrefix();
   auto iterRet = doPrefix(prefix);
   if (!nebula::ok(iterRet)) {
     auto retCode = nebula::error(iterRet);
@@ -24,8 +23,8 @@ void ListZonesProcessor::process(const cpp2::ListZonesReq&) {
 
   std::vector<cpp2::Zone> zones;
   while (iter->valid()) {
-    auto zoneName = MetaServiceUtils::parseZoneName(iter->key());
-    auto hosts = MetaServiceUtils::parseZoneHosts(iter->val());
+    auto zoneName = MetaKeyUtils::parseZoneName(iter->key());
+    auto hosts = MetaKeyUtils::parseZoneHosts(iter->val());
     cpp2::Zone zone;
     zone.set_zone_name(std::move(zoneName));
     if (hosts.size() != 0) {

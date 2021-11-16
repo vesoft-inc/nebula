@@ -1,15 +1,15 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #pragma once
 
 #include "common/base/Base.h"
-#include "common/geo/io/Geometry.h"
+#include "common/datatypes/Geography.h"
 
 namespace nebula {
+namespace geo {
 
 class WKTWriter {
  public:
@@ -17,7 +17,7 @@ class WKTWriter {
 
   ~WKTWriter() {}
 
-  std::string write(const Geometry& geom) const;
+  std::string write(const Geography& geog) const;
 
   void writeCoordinate(std::string& wkt, const Coordinate& coord) const;
 
@@ -29,4 +29,5 @@ class WKTWriter {
   void writeDouble(std::string& wkt, double v) const;
 };
 
+}  // namespace geo
 }  // namespace nebula

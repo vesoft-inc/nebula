@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/schema/DropEdgeProcessor.h"
@@ -18,7 +17,7 @@ void DropEdgeProcessor::process(const cpp2::DropEdgeReq& req) {
   auto edgeName = req.get_edge_name();
 
   EdgeType edgeType;
-  auto indexKey = MetaServiceUtils::indexEdgeKey(spaceId, edgeName);
+  auto indexKey = MetaKeyUtils::indexEdgeKey(spaceId, edgeName);
   auto iRet = doGet(indexKey);
   if (nebula::ok(iRet)) {
     edgeType = *reinterpret_cast<const EdgeType*>(nebula::value(iRet).c_str());
@@ -85,7 +84,7 @@ void DropEdgeProcessor::process(const cpp2::DropEdgeReq& req) {
 ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>> DropEdgeProcessor::getEdgeKeys(
     GraphSpaceID id, EdgeType edgeType) {
   std::vector<std::string> keys;
-  auto key = MetaServiceUtils::schemaEdgePrefix(id, edgeType);
+  auto key = MetaKeyUtils::schemaEdgePrefix(id, edgeType);
   auto iterRet = doPrefix(key);
   if (!nebula::ok(iterRet)) {
     LOG(ERROR) << "Edge schema prefix failed, edgetype " << edgeType;

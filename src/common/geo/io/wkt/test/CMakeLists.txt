@@ -1,9 +1,8 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
-set(WKT_PARSER_TEST_LIBS
+set(WKT_TEST_LIBS
     $<TARGET_OBJECTS:parser_obj>
     $<TARGET_OBJECTS:expression_obj>
     $<TARGET_OBJECTS:encryption_obj>
@@ -48,8 +47,8 @@ set(WKT_PARSER_TEST_LIBS
 )
 
 nebula_add_test(
-    NAME wkt_parser_test
-    SOURCES WKTParserTest.cpp
-    OBJECTS ${WKT_PARSER_TEST_LIBS}
+    NAME wkt_test
+    SOURCES WKTTest.cpp
+    OBJECTS ${WKT_TEST_LIBS}
     LIBRARIES gtest gtest_main ${THRIFT_LIBRARIES} ${PROXYGEN_LIBRARIES}
 )

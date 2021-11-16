@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/util/SchemaUtil.h"
@@ -67,7 +66,8 @@ std::shared_ptr<const meta::NebulaSchemaProvider> SchemaUtil::generateSchemaProv
                         col.get_type().get_type(),
                         col.type.type_length_ref().value_or(0),
                         col.nullable_ref().value_or(false),
-                        hasDef ? defaultValueExpr : nullptr);
+                        hasDef ? defaultValueExpr : nullptr,
+                        col.type.geo_shape_ref().value_or(meta::cpp2::GeoShape::ANY));
   }
   return schemaPtr;
 }
@@ -101,8 +101,8 @@ Status SchemaUtil::setTTLCol(SchemaPropItem *schemaProp, meta::cpp2::Schema &sch
     if (col.name == ttlColName) {
       // Only integer columns and timestamp columns can be used as ttl_col
       // TODO(YT) Ttl_duration supports datetime type
-      if (col.type.type != meta::cpp2::PropertyType::INT64 &&
-          col.type.type != meta::cpp2::PropertyType::TIMESTAMP) {
+      if (col.type.type != nebula::cpp2::PropertyType::INT64 &&
+          col.type.type != nebula::cpp2::PropertyType::TIMESTAMP) {
         return Status::Error("Ttl column type illegal");
       }
       schema.schema_prop_ref().value().set_ttl_col(ttlColName);
@@ -257,8 +257,14 @@ StatusOr<DataSet> SchemaUtil::toShowCreateSchema(bool isTag,
 
 std::string SchemaUtil::typeToString(const meta::cpp2::ColumnTypeDef &col) {
   auto type = apache::thrift::util::enumNameSafe(col.get_type());
-  if (col.get_type() == meta::cpp2::PropertyType::FIXED_STRING) {
+  if (col.get_type() == nebula::cpp2::PropertyType::FIXED_STRING) {
     return folly::stringPrintf("%s(%d)", type.c_str(), *col.get_type_length());
+  } else if (col.get_type() == nebula::cpp2::PropertyType::GEOGRAPHY) {
+    auto geoShape = *col.get_geo_shape();
+    if (geoShape == meta::cpp2::GeoShape::ANY) {
+      return type;
+    }
+    return folly::sformat("{}({})", type, apache::thrift::util::enumNameSafe(geoShape));
   }
   return type;
 }
@@ -270,33 +276,33 @@ std::string SchemaUtil::typeToString(const meta::cpp2::ColumnDef &col) {
   return str;
 }
 
-Value::Type SchemaUtil::propTypeToValueType(meta::cpp2::PropertyType propType) {
+Value::Type SchemaUtil::propTypeToValueType(nebula::cpp2::PropertyType propType) {
   switch (propType) {
-    case meta::cpp2::PropertyType::BOOL:
+    case nebula::cpp2::PropertyType::BOOL:
       return Value::Type::BOOL;
-    case meta::cpp2::PropertyType::INT8:
-    case meta::cpp2::PropertyType::INT16:
-    case meta::cpp2::PropertyType::INT32:
-    case meta::cpp2::PropertyType::INT64:
-    case meta::cpp2::PropertyType::TIMESTAMP:
+    case nebula::cpp2::PropertyType::INT8:
+    case nebula::cpp2::PropertyType::INT16:
+    case nebula::cpp2::PropertyType::INT32:
+    case nebula::cpp2::PropertyType::INT64:
+    case nebula::cpp2::PropertyType::TIMESTAMP:
       return Value::Type::INT;
-    case meta::cpp2::PropertyType::TIME:
+    case nebula::cpp2::PropertyType::TIME:
       return Value::Type::TIME;
-    case meta::cpp2::PropertyType::VID:
+    case nebula::cpp2::PropertyType::VID:
       return Value::Type::STRING;
-    case meta::cpp2::PropertyType::FLOAT:
-    case meta::cpp2::PropertyType::DOUBLE:
+    case nebula::cpp2::PropertyType::FLOAT:
+    case nebula::cpp2::PropertyType::DOUBLE:
       return Value::Type::FLOAT;
-    case meta::cpp2::PropertyType::STRING:
-    case meta::cpp2::PropertyType::FIXED_STRING:
+    case nebula::cpp2::PropertyType::STRING:
+    case nebula::cpp2::PropertyType::FIXED_STRING:
       return Value::Type::STRING;
-    case meta::cpp2::PropertyType::DATE:
+    case nebula::cpp2::PropertyType::DATE:
       return Value::Type::DATE;
-    case meta::cpp2::PropertyType::DATETIME:
+    case nebula::cpp2::PropertyType::DATETIME:
       return Value::Type::DATETIME;
-    case meta::cpp2::PropertyType::GEOGRAPHY:
+    case nebula::cpp2::PropertyType::GEOGRAPHY:
       return Value::Type::GEOGRAPHY;
-    case meta::cpp2::PropertyType::UNKNOWN:
+    case nebula::cpp2::PropertyType::UNKNOWN:
       return Value::Type::__EMPTY__;
   }
   return Value::Type::__EMPTY__;
@@ -306,7 +312,7 @@ bool SchemaUtil::isValidVid(const Value &value, const meta::cpp2::ColumnTypeDef 
   return isValidVid(value, type.get_type());
 }
 
-bool SchemaUtil::isValidVid(const Value &value, meta::cpp2::PropertyType type) {
+bool SchemaUtil::isValidVid(const Value &value, nebula::cpp2::PropertyType type) {
   return isValidVid(value) && value.type() == propTypeToValueType(type);
 }
 

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #include "common/datatypes/Value.h"
 
@@ -69,10 +68,10 @@ std::size_t hash<nebula::Value>::operator()(const nebula::Value& v) const noexce
       return hash<nebula::Geography>()(v.getGeography());
     }
     case nebula::Value::Type::MAP: {
-      LOG(FATAL) << "Hash for MAP has not been implemented";
+      return hash<nebula::Map>()(v.getMap());
     }
     case nebula::Value::Type::SET: {
-      LOG(FATAL) << "Hash for SET has not been implemented";
+      return hash<nebula::Set>()(v.getSet());
     }
     case nebula::Value::Type::DATASET: {
       LOG(FATAL) << "Hash for DATASET has not been implemented";

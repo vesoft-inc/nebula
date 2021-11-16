@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "storage/transaction/ChainAddEdgesProcessorLocal.h"
@@ -47,19 +46,26 @@ folly::SemiFuture<Code> ChainAddEdgesProcessorLocal::prepareLocal() {
 
   auto [pro, fut] = folly::makePromiseContract<Code>();
   auto primes = makePrime();
+  std::vector<kvstore::KV> debugPrimes;
   if (FLAGS_trace_toss) {
-    for (auto& kv : primes) {
-      VLOG(1) << uuid_ << " put prime " << folly::hexlify(kv.first);
-    }
+    debugPrimes = primes;
   }
 
   erasePrime();
   env_->kvstore_->asyncMultiPut(
-      spaceId_, localPartId_, std::move(primes), [p = std::move(pro), this](auto rc) mutable {
+      spaceId_,
+      localPartId_,
+      std::move(primes),
+      [p = std::move(pro), debugPrimes, this](auto rc) mutable {
         if (rc == nebula::cpp2::ErrorCode::SUCCEEDED) {
           primeInserted_ = true;
+          if (FLAGS_trace_toss) {
+            for (auto& kv : debugPrimes) {
+              VLOG(1) << uuid_ << " put prime " << folly::hexlify(kv.first);
+            }
+          }
         } else {
-          LOG(WARNING) << "kvstore err: " << apache::thrift::util::enumNameSafe(rc);
+          LOG(WARNING) << uuid_ << "kvstore err: " << apache::thrift::util::enumNameSafe(rc);
         }
 
         p.setValue(rc);
@@ -85,10 +91,14 @@ folly::SemiFuture<Code> ChainAddEdgesProcessorLocal::processLocal(Code code) {
     VLOG(1) << uuid_ << " processRemote(), code = " << apache::thrift::util::enumNameSafe(code);
   }
 
+  bool remoteFailed{true};
+
   if (code == Code::SUCCEEDED) {
     // do nothing
+    remoteFailed = false;
   } else if (code == Code::E_RPC_FAILURE) {
     code_ = Code::SUCCEEDED;
+    remoteFailed = false;
   } else {
     code_ = code;
   }
@@ -106,7 +116,7 @@ folly::SemiFuture<Code> ChainAddEdgesProcessorLocal::processLocal(Code code) {
   if (code_ == Code::SUCCEEDED) {
     return forwardToDelegateProcessor();
   } else {
-    if (primeInserted_) {
+    if (primeInserted_ && remoteFailed) {
       return abort();
     }
   }
@@ -136,13 +146,13 @@ bool ChainAddEdgesProcessorLocal::prepareRequest(const cpp2::AddEdgesRequest& re
     spaceVidType_ = vidType.value();
   }
   localPartId_ = req.get_parts().begin()->first;
-  // replaceNullWithDefaultValue(req_);
+  replaceNullWithDefaultValue(req_);
   auto part = env_->kvstore_->part(spaceId_, localPartId_);
   if (!nebula::ok(part)) {
     pushResultCode(nebula::error(part), localPartId_);
     return false;
   }
-  localTerm_ = (nebula::value(part))->termId();
+  restrictTerm_ = (nebula::value(part))->termId();
 
   auto vidLen = env_->schemaMan_->getSpaceVidLen(spaceId_);
   if (!vidLen.ok()) {
@@ -162,12 +172,25 @@ folly::SemiFuture<Code> ChainAddEdgesProcessorLocal::forwardToDelegateProcessor(
   };
   auto futProc = proc->getFuture();
   auto [pro, fut] = folly::makePromiseContract<Code>();
-  std::move(futProc).thenValue([&, p = std::move(pro)](auto&& resp) mutable {
-    auto rc = extractRpcError(resp);
-    if (rc != Code::SUCCEEDED) {
-      VLOG(1) << uuid_
-              << " forwardToDelegateProcessor(), code = " << apache::thrift::util::enumNameSafe(rc);
-      addUnfinishedEdge(ResumeType::RESUME_CHAIN);
+  std::move(futProc).thenTry([&, p = std::move(pro)](auto&& t) mutable {
+    auto rc = Code::SUCCEEDED;
+    if (t.hasException()) {
+      LOG(INFO) << "catch ex: " << t.exception().what();
+      rc = Code::E_UNKNOWN;
+    } else {
+      auto& resp = t.value();
+      rc = extractRpcError(resp);
+      if (rc == Code::SUCCEEDED) {
+        if (FLAGS_trace_toss) {
+          for (auto& k : kvErased_) {
+            VLOG(1) << uuid_ << " erase prime " << folly::hexlify(k);
+          }
+        }
+      } else {
+        VLOG(1) << uuid_ << " forwardToDelegateProcessor(), code = "
+                << apache::thrift::util::enumNameSafe(rc);
+        addUnfinishedEdge(ResumeType::RESUME_CHAIN);
+      }
     }
     p.setValue(rc);
   });
@@ -194,7 +217,7 @@ void ChainAddEdgesProcessorLocal::doRpc(folly::Promise<Code>&& promise,
   auto* iClient = env_->txnMan_->getInternalClient();
   folly::Promise<Code> p;
   auto f = p.getFuture();
-  iClient->chainAddEdges(req, localTerm_, edgeVer_, std::move(p));
+  iClient->chainAddEdges(req, restrictTerm_, edgeVer_, std::move(p));
 
   std::move(f).thenTry([=, p = std::move(promise)](auto&& t) mutable {
     auto code = t.hasValue() ? t.value() : Code::E_RPC_FAILURE;
@@ -229,14 +252,26 @@ folly::SemiFuture<Code> ChainAddEdgesProcessorLocal::abort() {
   if (kvErased_.empty()) {
     return Code::SUCCEEDED;
   }
+
+  std::vector<std::string> debugErased;
+  if (FLAGS_trace_toss) {
+    debugErased = kvErased_;
+  }
+
   auto [pro, fut] = folly::makePromiseContract<Code>();
   env_->kvstore_->asyncMultiRemove(
       req_.get_space_id(),
       localPartId_,
       std::move(kvErased_),
-      [p = std::move(pro), this](auto rc) mutable {
+      [p = std::move(pro), debugErased, this](auto rc) mutable {
         VLOG(1) << uuid_ << " abort()=" << apache::thrift::util::enumNameSafe(rc);
-        if (rc != Code::SUCCEEDED) {
+        if (rc == Code::SUCCEEDED) {
+          if (FLAGS_trace_toss) {
+            for (auto& k : debugErased) {
+              VLOG(1) << uuid_ << "erase prime " << folly::hexlify(k);
+            }
+          }
+        } else {
           addUnfinishedEdge(ResumeType::RESUME_CHAIN);
         }
         p.setValue(rc);
@@ -313,9 +348,19 @@ bool ChainAddEdgesProcessorLocal::lockEdges(const cpp2::AddEdgesRequest& req) {
 bool ChainAddEdgesProcessorLocal::checkTerm(const cpp2::AddEdgesRequest& req) {
   auto space = req.get_space_id();
   auto partId = req.get_parts().begin()->first;
-  auto ret = env_->txnMan_->checkTerm(space, partId, localTerm_);
-  LOG_IF(WARNING, !ret) << "check term failed, localTerm_ = " << localTerm_;
-  return ret;
+
+  auto part = env_->kvstore_->part(space, partId);
+  if (!nebula::ok(part)) {
+    pushResultCode(nebula::error(part), localPartId_);
+    return false;
+  }
+  auto curTerm = (nebula::value(part))->termId();
+  if (restrictTerm_ != curTerm) {
+    VLOG(1) << folly::sformat(
+        "check term failed, restrictTerm_={}, currTerm={}", restrictTerm_, curTerm);
+    return false;
+  }
+  return true;
 }
 
 // check if current edge is not newer than the one trying to resume.
@@ -381,14 +426,14 @@ cpp2::AddEdgesRequest ChainAddEdgesProcessorLocal::makeSingleEdgeRequest(
 }
 
 int64_t ChainAddEdgesProcessorLocal::toInt(const ::nebula::Value& val) {
-  if (spaceVidType_ == meta::cpp2::PropertyType::FIXED_STRING) {
+  if (spaceVidType_ == nebula::cpp2::PropertyType::FIXED_STRING) {
     auto str = val.toString();
     if (str.size() < 3) {
       return 0;
     }
     auto str2 = str.substr(1, str.size() - 2);
     return atoll(str2.c_str());
-  } else if (spaceVidType_ == meta::cpp2::PropertyType::INT64) {
+  } else if (spaceVidType_ == nebula::cpp2::PropertyType::INT64) {
     return *reinterpret_cast<int64_t*>(const_cast<char*>(val.toString().c_str() + 1));
   }
   return 0;
@@ -425,44 +470,96 @@ std::string ChainAddEdgesProcessorLocal::makeReadableEdge(const cpp2::AddEdgesRe
  * in/out edge, but they will calculate independent
  * which lead to inconsistance
  *
- * that why we need to replace the inconsistance prone value
+ * that's why we need to replace the inconsistance prone value
  * at the monment the request comes
  * */
 void ChainAddEdgesProcessorLocal::replaceNullWithDefaultValue(cpp2::AddEdgesRequest& req) {
+  auto& edgesOfPart = *req.parts_ref();
+  if (edgesOfPart.empty()) {
+    return;
+  }
+  auto& edgesOfFirstPart = edgesOfPart.begin()->second;
+  if (edgesOfFirstPart.empty()) {
+    return;
+  }
+  auto firstEdgeKey = edgesOfFirstPart.front().get_key();
+  auto edgeType = std::abs(*firstEdgeKey.edge_type_ref());
+  auto schema = env_->schemaMan_->getEdgeSchema(spaceId_, edgeType);
+
   DefaultValueContext expCtx;
+  // the coming request has two forms
+  // 1st "propNames" is empty,
+  //    which means all vals should be write as the same sequence of schema
+  // 2nd "propNames" is not empty
+  //    vals of request should be write according to propName of schema
+  // use the following "idxVec" to identify which index a val should be write to.
+  std::vector<int64_t> idxVec;
   auto& propNames = *req.prop_names_ref();
+  if (propNames.empty()) {
+    for (auto i = 0U; i < schema->getNumFields(); ++i) {
+      idxVec.emplace_back(i);
+    }
+  } else {
+    // first scan the origin input propNames
+    for (auto& name : propNames) {
+      int64_t index = schema->getFieldIndex(name);
+      idxVec.emplace_back(index);
+    }
+    // second, check if there any cols not filled but has default val
+    // we need to append these cols
+    for (auto i = 0U; i < schema->getNumFields(); ++i) {
+      auto it = std::find(idxVec.begin(), idxVec.end(), i);
+      if (it == idxVec.end()) {
+        auto field = schema->field(i);
+        if (field->hasDefault()) {
+          idxVec.emplace_back(i);
+        }
+      }
+    }
+  }
+
   for (auto& part : *req.parts_ref()) {
     for (auto& edge : part.second) {
-      auto edgeKey = edge.get_key();
-      auto edgeType = std::abs(*edgeKey.edge_type_ref());
-      auto schema = env_->schemaMan_->getEdgeSchema(spaceId_, edgeType);
       auto& vals = *edge.props_ref();
-      for (auto i = 0U; i < schema->getNumFields(); ++i) {
-        std::string fieldName(schema->getFieldName(i));
-        auto it = std::find(propNames.begin(), propNames.end(), fieldName);
-        if (it == propNames.end()) {
-          auto field = schema->field(i);
-          if (field->hasDefault()) {
-            auto expr = field->defaultValue()->clone();
-            propNames.emplace_back(fieldName);
-            auto defVal = Expression::eval(expr, expCtx);
-            switch (defVal.type()) {
-              case Value::Type::DATE:
-                vals.emplace_back(defVal.getDate());
-                break;
-              case Value::Type::TIME:
-                vals.emplace_back(defVal.getTime());
-                break;
-              case Value::Type::DATETIME:
-                vals.emplace_back(defVal.getDateTime());
-                break;
-              default:
-                // for other type, local and remote should behavior same.
-                break;
-            }
-          } else {
-            // it's ok if this field doesn't have a default value
+      if (vals.size() > idxVec.size()) {
+        LOG(ERROR) << folly::sformat(
+            "error vals.size()={} > idxVec.size()={}", vals.size(), idxVec.size());
+        continue;
+      }
+      for (auto i = vals.size(); i < idxVec.size(); ++i) {
+        auto field = schema->field(idxVec[i]);
+        if (field->hasDefault()) {
+          auto expr = field->defaultValue()->clone();
+          auto defVal = Expression::eval(expr, expCtx);
+          switch (defVal.type()) {
+            case Value::Type::BOOL:
+              vals.emplace_back(defVal.getBool());
+              break;
+            case Value::Type::INT:
+              vals.emplace_back(defVal.getInt());
+              break;
+            case Value::Type::FLOAT:
+              vals.emplace_back(defVal.getFloat());
+              break;
+            case Value::Type::STRING:
+              vals.emplace_back(defVal.getStr());
+              break;
+            case Value::Type::DATE:
+              vals.emplace_back(defVal.getDate());
+              break;
+            case Value::Type::TIME:
+              vals.emplace_back(defVal.getTime());
+              break;
+            case Value::Type::DATETIME:
+              vals.emplace_back(defVal.getDateTime());
+              break;
+            default:
+              // for other type, local and remote should behavior same.
+              break;
           }
+        } else {
+          // set null
+          vals.emplace_back(Value::kNullValue);
         }
       }
     }

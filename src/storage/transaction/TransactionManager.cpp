@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "storage/transaction/TransactionManager.h"
@@ -23,13 +22,17 @@ DEFINE_int32(resume_interval_secs, 10, "Resume interval");
 ProcessorCounters kForwardTranxCounters;
 
 TransactionManager::TransactionManager(StorageEnv* env) : env_(env) {
+  LOG(INFO) << "TransactionManager ctor()";
   exec_ = std::make_shared<folly::IOThreadPoolExecutor>(10);
   iClient_ = env_->interClient_;
   resumeThread_ = std::make_unique<thread::GenericWorker>();
-  scanAll();
+  std::vector<std::pair<GraphSpaceID, PartitionID>> existParts;
   auto fn = std::bind(&TransactionManager::onNewPartAdded, this, std::placeholders::_1);
   static_cast<::nebula::kvstore::NebulaStore*>(env_->kvstore_)
-      ->registerOnNewPartAdded("TransactionManager", fn);
+      ->registerOnNewPartAdded("TransactionManager", fn, existParts);
+  for (auto& partOfSpace : existParts) {
+    scanPrimes(partOfSpace.first, partOfSpace.second);
+  }
 }
 
 TransactionManager::LockCore* TransactionManager::getLockCore(GraphSpaceID spaceId,
@@ -37,10 +40,7 @@ TransactionManager::LockCore* TransactionManager::getLockCore(GraphSpaceID space
                                                               bool checkWhiteList) {
   if (checkWhiteList) {
     if (whiteListParts_.find(std::make_pair(spaceId, partId)) == whiteListParts_.end()) {
-      LOG(WARNING) << folly::sformat("space {}, part {} not in white list", spaceId, partId);
-      scanPrimes(spaceId, partId);
-      auto key = std::make_pair(spaceId, partId);
-      whiteListParts_.insert(std::make_pair(key, 0));
+      return nullptr;
     }
   }
   auto it = memLocks_.find(spaceId);
@@ -61,8 +61,8 @@ bool TransactionManager::checkTerm(GraphSpaceID spaceId, PartitionID partId, Ter
   if (termOfMeta.ok()) {
     if (term < termOfMeta.value()) {
       LOG(WARNING) << "checkTerm() failed: "
-                   << "spaceId=" << spaceId << ", partId=" << partId << ", expect term=" << term
-                   << ", actual term=" << termOfMeta.value();
+                   << "spaceId=" << spaceId << ", partId=" << partId << ", in-coming term=" << term
+                   << ", term in meta cache=" << termOfMeta.value();
       return false;
     }
   }
@@ -151,13 +151,26 @@ void TransactionManager::scanAll() {
 
 void TransactionManager::onNewPartAdded(std::shared_ptr<kvstore::Part>& part) {
   LOG(INFO) << folly::sformat("space={}, part={} added", part->spaceId(), part->partitionId());
-  auto fn = std::bind(&TransactionManager::onLeaderElectedWrapper, this, std::placeholders::_1);
-  part->registerOnLeaderReady(fn);
+  auto fnLeaderReady =
+      std::bind(&TransactionManager::onLeaderElectedWrapper, this, std::placeholders::_1);
+  auto fnLeaderLost =
+      std::bind(&TransactionManager::onLeaderLostWrapper, this, std::placeholders::_1);
+  part->registerOnLeaderReady(fnLeaderReady);
+  part->registerOnLeaderLost(fnLeaderLost);
+}
+
+void TransactionManager::onLeaderLostWrapper(const ::nebula::kvstore::Part::CallbackOptions& opt) {
+  LOG(INFO) << folly::sformat("leader lost, del space={}, part={}, term={} from white list",
+                              opt.spaceId,
+                              opt.partId,
+                              opt.term);
+  whiteListParts_.erase(std::make_pair(opt.spaceId, opt.partId));
 }
 
 void TransactionManager::onLeaderElectedWrapper(
     const ::nebula::kvstore::Part::CallbackOptions& opt) {
-  LOG(INFO) << folly::sformat("onLeaderElectedWrapper space={}, part={}", opt.spaceId, opt.partId);
+  LOG(INFO) << folly::sformat(
+      "leader get do scanPrimes space={}, part={}, term={}", opt.spaceId, opt.partId, opt.term);
   scanPrimes(opt.spaceId, opt.partId);
 }
 
@@ -181,6 +194,11 @@ void TransactionManager::scanPrimes(GraphSpaceID spaceId, PartitionID partId) {
         LOG(ERROR) << "not supposed to lock fail: " << folly::hexlify(edgeKey);
       }
     }
+  } else {
+    VLOG(1) << "primePrefix() " << apache::thrift::util::enumNameSafe(rc);
+    if (rc == nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
+      return;
+    }
   }
   prefix = ConsistUtil::doublePrimePrefix(partId);
   rc = env_->kvstore_->prefix(spaceId, partId, prefix, &iter);
@@ -192,16 +210,22 @@ void TransactionManager::scanPrimes(GraphSpaceID spaceId, PartitionID partId) {
       if (!insSucceed.second) {
         LOG(ERROR) << "not supposed to insert fail: " << folly::hexlify(edgeKey);
       }
-      auto* lk = getLockCore(spaceId, partId);
+      auto* lk = getLockCore(spaceId, partId, false);
       auto succeed = lk->try_lock(edgeKey.str());
       if (!succeed) {
         LOG(ERROR) << "not supposed to lock fail: " << folly::hexlify(edgeKey);
       }
     }
+  } else {
+    VLOG(1) << "doublePrimePrefix() " << apache::thrift::util::enumNameSafe(rc);
+    if (rc == nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
+      return;
+    }
   }
   auto partOfSpace = std::make_pair(spaceId, partId);
   auto insRet = whiteListParts_.insert(std::make_pair(partOfSpace, 0));
-  LOG(ERROR) << "insert space=" << spaceId << ", part=" << partId << ", suc=" << insRet.second;
+  LOG(INFO) << "insert space=" << spaceId << ", part=" << partId
+            << ", into white list suc=" << insRet.second;
 }
 
 folly::ConcurrentHashMap<std::string, ResumeType>* TransactionManager::getReserveTable() {

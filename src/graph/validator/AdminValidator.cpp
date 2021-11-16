@@ -1,21 +1,16 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/validator/AdminValidator.h"
 
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
-#include "common/base/Base.h"
 #include "common/charset/Charset.h"
 #include "graph/planner/plan/Admin.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/service/GraphFlags.h"
-#include "graph/util/ExpressionUtils.h"
-#include "graph/util/SchemaUtil.h"
-#include "interface/gen-cpp2/meta_types.h"
 #include "parser/MaintainSentences.h"
 
 namespace nebula {
@@ -53,8 +48,8 @@ Status CreateSpaceValidator::validateImpl() {
       }
       case SpaceOptItem::VID_TYPE: {
         auto typeDef = item->getVidType();
-        if (typeDef.type != meta::cpp2::PropertyType::INT64 &&
-            typeDef.type != meta::cpp2::PropertyType::FIXED_STRING) {
+        if (typeDef.type != nebula::cpp2::PropertyType::INT64 &&
+            typeDef.type != nebula::cpp2::PropertyType::FIXED_STRING) {
           std::stringstream ss;
           ss << "Only support FIXED_STRING or INT64 vid type, but was given "
              << apache::thrift::util::enumNameSafe(typeDef.type);
@@ -62,7 +57,7 @@ Status CreateSpaceValidator::validateImpl() {
         }
         spaceDesc_.vid_type_ref().value().set_type(typeDef.type);
 
-        if (typeDef.type == meta::cpp2::PropertyType::INT64) {
+        if (typeDef.type == nebula::cpp2::PropertyType::INT64) {
           spaceDesc_.vid_type_ref().value().set_type_length(8);
         } else {
           if (!typeDef.type_length_ref().has_value()) {

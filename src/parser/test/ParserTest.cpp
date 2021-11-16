@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -88,6 +87,27 @@ TEST_F(ParserTest, TestSchemaCreation) {
   }
   {
     std::string query = "CREATE TAG person(profession string NULL DEFAULT \"HELLO\")";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  // Geo spatial
+  {
+    std::string query = "CREATE TAG any_shape(geo geography)";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "CREATE TAG any_shape(geo geography(point))";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "CREATE TAG any_shape(geo geography(linestring))";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "CREATE TAG any_shape(geo geography(polygon))";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -1348,20 +1368,6 @@ TEST_F(ParserTest, Lookup) {
         " transfer.test";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query =
-        "LOOKUP ON transfer WHERE transfer.amount > 1000 YIELD transfer.amount,"
-        " transfer.test LIMIT 1";
-    auto result = parse(query);
-    EXPECT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query =
-        "LOOKUP ON transfer WHERE transfer.amount > 1000 YIELD transfer.amount,"
-        " transfer.test LIMIT -1";
-    auto result = parse(query);
-    EXPECT_FALSE(result.ok());
   }
 }
 

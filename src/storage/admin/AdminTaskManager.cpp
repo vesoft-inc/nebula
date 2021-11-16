@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "storage/admin/AdminTaskManager.h"
@@ -29,8 +28,9 @@ bool AdminTaskManager::init() {
     return false;
   }
 
+  shutdown_.store(false, std::memory_order_release);
   bgThread_->addTask(&AdminTaskManager::schedule, this);
-  shutdown_ = false;
+  ifAnyUnreported_ = true;
   handleUnreportedTasks();
   LOG(INFO) << "exit AdminTaskManager::init()";
   return true;
@@ -41,20 +41,29 @@ void AdminTaskManager::handleUnreportedTasks() {
       std::tuple<JobID, TaskID, std::string, folly::Future<StatusOr<nebula::cpp2::ErrorCode>>>;
   if (env_ == nullptr) return;
   unreportedAdminThread_.reset(new std::thread([this] {
-    bool ifAny = true;
     while (true) {
       std::unique_lock<std::mutex> lk(unreportedMutex_);
-      if (!ifAny) unreportedCV_.wait(lk);
-      ifAny = false;
+      if (!ifAnyUnreported_) {
+        unreportedCV_.wait(lk);
+      }
+      if (shutdown_.load(std::memory_order_acquire)) {
+        break;
+      }
+      ifAnyUnreported_ = false;
       std::unique_ptr<kvstore::KVIterator> iter;
       auto kvRet = env_->adminStore_->scan(&iter);
-      if (kvRet != nebula::cpp2::ErrorCode::SUCCEEDED || iter == nullptr) continue;
+      lk.unlock();
+      if (kvRet != nebula::cpp2::ErrorCode::SUCCEEDED || iter == nullptr) {
+        continue;
+      }
       std::vector<std::string> keys;
       std::vector<futTuple> futVec;
       for (; iter->valid(); iter->next()) {
         folly::StringPiece key = iter->key();
         int32_t seqId = *reinterpret_cast<const int32_t*>(key.data());
-        if (seqId < 0) continue;
+        if (seqId < 0) {
+          continue;
+        }
         JobID jobId = *reinterpret_cast<const JobID*>(key.data() + sizeof(int32_t));
         TaskID taskId =
             *reinterpret_cast<const TaskID*>(key.data() + sizeof(int32_t) + sizeof(JobID));
@@ -67,14 +76,17 @@ void AdminTaskManager::handleUnreportedTasks() {
         nebula::cpp2::ErrorCode errCode =
             *reinterpret_cast<const nebula::cpp2::ErrorCode*>(val.data());
         meta::cpp2::StatsItem* pStats = nullptr;
-        if (errCode == nebula::cpp2::ErrorCode::SUCCEEDED) pStats = &statsItem;
+        if (errCode == nebula::cpp2::ErrorCode::SUCCEEDED) {
+          pStats = &statsItem;
+        }
         LOG(INFO) << folly::sformat("reportTaskFinish(), job={}, task={}, rc={}",
                                     jobId,
                                     taskId,
                                     apache::thrift::util::enumNameSafe(errCode));
         if (seqId < env_->adminSeqId_) {
-          if (jobStatus == nebula::meta::cpp2::JobStatus::RUNNING && pStats != nullptr)
+          if (jobStatus == nebula::meta::cpp2::JobStatus::RUNNING && pStats != nullptr) {
             pStats->set_status(nebula::meta::cpp2::JobStatus::FAILED);
+          }
           auto fut = env_->metaClient_->reportTaskFinish(jobId, taskId, errCode, pStats);
           futVec.emplace_back(std::move(jobId), std::move(taskId), std::move(key), std::move(fut));
         } else if (jobStatus != nebula::meta::cpp2::JobStatus::RUNNING) {
@@ -92,7 +104,7 @@ void AdminTaskManager::handleUnreportedTasks() {
         if (!fut.hasValue()) {
           LOG(INFO) << folly::sformat(
               "reportTaskFinish() got rpc error:, job={}, task={}", jobId, taskId);
-          ifAny = true;
+          ifAnyUnreported_ = true;
           continue;
         }
         if (!fut.value().ok()) {
@@ -100,7 +112,7 @@ void AdminTaskManager::handleUnreportedTasks() {
                                       jobId,
                                       taskId,
                                       fut.value().status().toString());
-          ifAny = true;
+          ifAnyUnreported_ = true;
           continue;
         }
         rc = fut.value().value();
@@ -110,7 +122,7 @@ void AdminTaskManager::handleUnreportedTasks() {
                                     apache::thrift::util::enumNameSafe(rc));
         if (rc == nebula::cpp2::ErrorCode::E_LEADER_CHANGED ||
             rc == nebula::cpp2::ErrorCode::E_STORE_FAILURE) {
-          ifAny = true;
+          ifAnyUnreported_ = true;
           continue;
         } else {
           keys.emplace_back(key.data(), key.size());
@@ -119,6 +131,7 @@ void AdminTaskManager::handleUnreportedTasks() {
       }
       env_->adminStore_->multiRemove(keys);
     }
+    LOG(INFO) << "Unreported-Admin-Thread stopped";
   }));
 }
 
@@ -168,7 +181,8 @@ nebula::cpp2::ErrorCode AdminTaskManager::cancelTask(JobID jobId, TaskID taskId)
 
 void AdminTaskManager::shutdown() {
   LOG(INFO) << "enter AdminTaskManager::shutdown()";
-  shutdown_ = true;
+  shutdown_.store(true, std::memory_order_release);
+  notifyReporting();
   bgThread_->stop();
   bgThread_->wait();
 
@@ -177,6 +191,12 @@ void AdminTaskManager::shutdown() {
   }
 
   pool_->join();
+  if (unreportedAdminThread_ != nullptr) {
+    unreportedAdminThread_->join();
+  }
+  if (env_) {
+    env_->adminStore_.reset();
+  }
   LOG(INFO) << "exit AdminTaskManager::shutdown()";
 }
 
@@ -207,14 +227,14 @@ void AdminTaskManager::removeTaskStatus(JobID jobId, TaskID taskId) {
 // schedule
 void AdminTaskManager::schedule() {
   std::chrono::milliseconds interval{20};  // 20ms
-  while (!shutdown_) {
+  while (!shutdown_.load(std::memory_order_acquire)) {
     LOG(INFO) << "waiting for incoming task";
     folly::Optional<TaskHandle> optTaskHandle{folly::none};
-    while (!optTaskHandle && !shutdown_) {
+    while (!optTaskHandle && !shutdown_.load(std::memory_order_acquire)) {
       optTaskHandle = taskQueue_.try_take_for(interval);
     }
 
-    if (shutdown_) {
+    if (shutdown_.load(std::memory_order_acquire)) {
       LOG(INFO) << "detect AdminTaskManager::shutdown()";
       return;
     }
@@ -308,7 +328,21 @@ void AdminTaskManager::runSubTask(TaskHandle handle) {
   }
 }
 
-void AdminTaskManager::notifyReporting() { unreportedCV_.notify_one(); }
+void AdminTaskManager::notifyReporting() {
+  std::unique_lock<std::mutex> lk(unreportedMutex_);
+  ifAnyUnreported_ = true;
+  unreportedCV_.notify_one();
+}
+
+void AdminTaskManager::saveAndNotify(JobID jobId,
+                                     TaskID taskId,
+                                     nebula::cpp2::ErrorCode rc,
+                                     const nebula::meta::cpp2::StatsItem& result) {
+  std::unique_lock<std::mutex> lk(unreportedMutex_);
+  saveTaskStatus(jobId, taskId, rc, result);
+  ifAnyUnreported_ = true;
+  unreportedCV_.notify_one();
+}
 
 bool AdminTaskManager::isFinished(JobID jobID, TaskID taskID) {
   auto iter = tasks_.find(std::make_pair(jobID, taskID));

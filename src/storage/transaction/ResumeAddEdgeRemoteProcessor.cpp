@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "storage/transaction/ResumeAddEdgeRemoteProcessor.h"
@@ -72,7 +71,8 @@ folly::SemiFuture<Code> ResumeAddEdgeRemoteProcessor::processLocal(Code code) {
     // if there are something wrong other than rpc failure
     // we need to keep the resume retry(by not remove those prime key)
     ChainAddEdgesProcessorLocal::eraseDoublePrime();
-    return forwardToDelegateProcessor();
+    code_ = forwardToDelegateProcessor().get();
+    return code_;
   }
 
   return code;

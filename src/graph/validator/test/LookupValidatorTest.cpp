@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/base/ObjectPool.h"
@@ -20,7 +19,7 @@ TEST_F(LookupValidatorTest, InputOutput) {
   {
     const std::string query =
         "LOOKUP ON person where person.age == 35 | "
-        "FETCH PROP ON person $-.VertexID";
+        "FETCH PROP ON person $-.VertexID YIELD vertex as node";
     EXPECT_TRUE(checkResult(query,
                             {
                                 PlanNode::Kind::kProject,
@@ -35,7 +34,7 @@ TEST_F(LookupValidatorTest, InputOutput) {
   {
     const std::string query =
         "LOOKUP ON person where person.age == 35 YIELD person.name AS name | "
-        "FETCH PROP ON person $-.name";
+        "FETCH PROP ON person $-.name YIELD vertex as node";
     EXPECT_TRUE(checkResult(query,
                             {
                                 PlanNode::Kind::kProject,
@@ -50,7 +49,7 @@ TEST_F(LookupValidatorTest, InputOutput) {
   {
     const std::string query =
         "$a = LOOKUP ON person where person.age == 35; "
-        "FETCH PROP ON person $a.VertexID";
+        "FETCH PROP ON person $a.VertexID YIELD vertex as node";
     EXPECT_TRUE(checkResult(query,
                             {
                                 PlanNode::Kind::kProject,
@@ -66,7 +65,7 @@ TEST_F(LookupValidatorTest, InputOutput) {
     const std::string query =
         "$a = LOOKUP ON person where person.age == 35 YIELD person.name AS "
         "name;"
-        "FETCH PROP ON person $a.name";
+        "FETCH PROP ON person $a.name YIELD vertex as node";
     EXPECT_TRUE(checkResult(query,
                             {
                                 PlanNode::Kind::kProject,
@@ -135,6 +134,11 @@ TEST_F(LookupValidatorTest, wrongYield) {
     auto result = checkResult(query);
     EXPECT_EQ(std::string(result.message()),
               "SyntaxError: please add alias when using `vertex'. near `vertex'");
+  }
+  {
+    std::string query = "LOOKUP ON person YIELD count(*)";
+    auto result = checkResult(query);
+    EXPECT_EQ(std::string(result.message()), "SemanticError: illegal yield clauses `count(*)'");
   }
   {
     std::string query = "LOOKUP ON person YIELD vertex as node, edge";

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/validator/MatchValidator.h"
@@ -618,7 +617,7 @@ Status MatchValidator::validatePagination(const Expression *skipExpr,
   int64_t skip = 0;
   int64_t limit = std::numeric_limits<int64_t>::max();
   if (skipExpr != nullptr) {
-    if (!evaluableExpr(skipExpr)) {
+    if (!ExpressionUtils::isEvaluableExpr(skipExpr)) {
       return Status::SemanticError("SKIP should be instantly evaluable");
     }
     QueryExpressionContext ctx;
@@ -633,7 +632,7 @@ Status MatchValidator::validatePagination(const Expression *skipExpr,
   }
 
   if (limitExpr != nullptr) {
-    if (!evaluableExpr(limitExpr)) {
+    if (!ExpressionUtils::isEvaluableExpr(limitExpr)) {
       return Status::SemanticError("SKIP should be instantly evaluable");
     }
     QueryExpressionContext ctx;

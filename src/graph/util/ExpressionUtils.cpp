@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/util/ExpressionUtils.h"
@@ -899,5 +898,32 @@ Expression *ExpressionUtils::equalCondition(ObjectPool *pool,
   return RelationalExpression::makeEQ(
       pool, VariableExpression::make(pool, var), ConstantExpression::make(pool, value));
 }
+
+bool ExpressionUtils::isGeoIndexAcceleratedPredicate(const Expression *expr) {
+  static std::unordered_set<std::string> geoIndexAcceleratedPredicates{
+      "st_intersects", "st_covers", "st_coveredby", "st_dwithin"};
+
+  if (expr->isRelExpr()) {
+    auto *relExpr = static_cast<const RelationalExpression *>(expr);
+    auto isSt_Distance = [](const Expression *e) {
+      if (e->kind() == Expression::Kind::kFunctionCall) {
+        auto *funcExpr = static_cast<const FunctionCallExpression *>(e);
+        return boost::algorithm::iequals(funcExpr->name(), "st_distance");
+      }
+      return false;
+    };
+    return isSt_Distance(relExpr->left()) || isSt_Distance(relExpr->right());
+  } else if (expr->kind() == Expression::Kind::kFunctionCall) {
+    auto *funcExpr = static_cast<const FunctionCallExpression *>(expr);
+    std::string funcName = funcExpr->name();
+    folly::toLowerAscii(funcName);
+    if (geoIndexAcceleratedPredicates.count(funcName) != 0) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 }  // namespace graph
 }  // namespace nebula

@@ -1,14 +1,16 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #pragma once
 
+#include <boost/endian/conversion.hpp>
+
 #include "common/base/Base.h"
 
 namespace nebula {
+namespace geo {
 
 enum class ByteOrder : uint8_t {
   BigEndian = 0,
@@ -24,27 +26,19 @@ struct ByteOrderData {
 
   static uint32_t getUint32(const uint8_t *buf, ByteOrder byteOrder) {
     if (byteOrder == ByteOrder::BigEndian) {
-      return ((uint32_t)(buf[0] & 0xff) << 24) | ((uint32_t)(buf[1] & 0xff) << 16) |
-             ((uint32_t)(buf[2] & 0xff) << 8) | ((uint32_t)(buf[3] & 0xff));
+      return boost::endian::load_big_u32(buf);
     } else {
       DCHECK(byteOrder == ByteOrder::LittleEndian);
-      return ((uint32_t)(buf[3] & 0xff) << 24) | ((uint32_t)(buf[2] & 0xff) << 16) |
-             ((uint32_t)(buf[1] & 0xff) << 8) | ((uint32_t)(buf[0] & 0xff));
+      return boost::endian::load_little_u32(buf);
     }
   }
 
   static uint64_t getUint64(const uint8_t *buf, ByteOrder byteOrder) {
     if (byteOrder == ByteOrder::BigEndian) {
-      return (uint64_t)(buf[0]) << 56 | (uint64_t)(buf[1] & 0xff) << 48 |
-             (uint64_t)(buf[2] & 0xff) << 40 | (uint64_t)(buf[3] & 0xff) << 32 |
-             (uint64_t)(buf[4] & 0xff) << 24 | (uint64_t)(buf[5] & 0xff) << 16 |
-             (uint64_t)(buf[6] & 0xff) << 8 | (uint64_t)(buf[7] & 0xff);
+      return boost::endian::load_big_u64(buf);
     } else {
       DCHECK(byteOrder == ByteOrder::LittleEndian);
-      return (uint64_t)(buf[7]) << 56 | (uint64_t)(buf[6] & 0xff) << 48 |
-             (uint64_t)(buf[5] & 0xff) << 40 | (uint64_t)(buf[4] & 0xff) << 32 |
-             (uint64_t)(buf[3] & 0xff) << 24 | (uint64_t)(buf[2] & 0xff) << 16 |
-             (uint64_t)(buf[1] & 0xff) << 8 | (uint64_t)(buf[0] & 0xff);
+      return boost::endian::load_little_u64(buf);
     }
   }
 
@@ -54,6 +48,31 @@ struct ByteOrderData {
     std::memcpy(&ret, &v, sizeof(double));
     return ret;
   }
+
+  static void putUint32(uint8_t *buf, ByteOrder byteOrder, uint32_t v) {
+    if (byteOrder == ByteOrder::BigEndian) {
+      boost::endian::store_big_u32(buf, v);
+    } else {
+      DCHECK(byteOrder == ByteOrder::LittleEndian);
+      boost::endian::store_little_u32(buf, v);
+    }
+  }
+
+  static void putUint64(uint8_t *buf, ByteOrder byteOrder, uint64_t v) {
+    if (byteOrder == ByteOrder::BigEndian) {
+      boost::endian::store_big_u64(buf, v);
+    } else {
+      DCHECK(byteOrder == ByteOrder::LittleEndian);
+      boost::endian::store_little_u64(buf, v);
+    }
+  }
+
+  static void putDouble(uint8_t *buf, ByteOrder byteOrder, double v) {
+    const char *c = reinterpret_cast<const char *>(&v);
+    uint64_t v2 = *reinterpret_cast<const uint64_t *>(c);
+    putUint64(buf, byteOrder, v2);
+  }
 };
 
+}  // namespace geo
 }  // namespace nebula
