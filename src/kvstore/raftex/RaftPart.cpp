@@ -1314,16 +1314,25 @@ void RaftPart::processAskForVoteRequest(const cpp2::AskForVoteRequest& req,
     }
   }
 
-  if (req.get_is_pre_vote()) {
-    // return succeed if it is prevote, do not change any state
-    resp.set_error_code(cpp2::ErrorCode::SUCCEEDED);
-    return;
-  } else if (proposedTerm_ == req.get_term() && votedAddr_ != candidate) {
-    // not a prevote: check if we have voted some one in the candidate's proposed term
+  /*
+  check if we have voted some one in the candidate's proposed term
+  1. if this is a prevote:
+    * not enough votes: the candidate will trigger another round election
+    * majority votes: the candidate will start formal election (I'll reject the formal one as well)
+  2. if this is a formal election:
+    * not enough votes: the candidate will trigger another round election
+    * majority votes: the candidate will be leader
+  */
+  if (proposedTerm_ == req.get_term() && votedAddr_ != candidate) {
     LOG(INFO) << idStr_ << "We have voted " << votedAddr_ << " on term " << proposedTerm_
               << ", so we should reject the candidate " << candidate << " request on term "
               << req.get_term();
     resp.set_error_code(cpp2::ErrorCode::E_TERM_OUT_OF_DATE);
+    return;
+  }
+  if (req.get_is_pre_vote()) {
+    // return succeed if it is prevote, do not change any state
+    resp.set_error_code(cpp2::ErrorCode::SUCCEEDED);
     return;
   }
 
