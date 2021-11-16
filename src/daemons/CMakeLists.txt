@@ -32,6 +32,7 @@ set(common_deps
     $<TARGET_OBJECTS:time_utils_obj>
     $<TARGET_OBJECTS:version_obj>
     $<TARGET_OBJECTS:ssl_obj>
+    $<TARGET_OBJECTS:geo_index_obj>
 )
 
 set(storage_meta_deps
@@ -130,7 +131,6 @@ nebula_add_executable(
         $<TARGET_OBJECTS:graph_obj>
         $<TARGET_OBJECTS:ft_es_graph_adapter_obj>
         $<TARGET_OBJECTS:storage_thrift_obj>
-        $<TARGET_OBJECTS:geo_index_obj>
         ${common_deps}
     LIBRARIES
         ${PROXYGEN_LIBRARIES}
