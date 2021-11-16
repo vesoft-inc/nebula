@@ -57,7 +57,6 @@ struct AskForVoteRequest {
 // Response message for the vote call
 struct AskForVoteResponse {
     1: ErrorCode error_code;
-    2: TermID current_term;
 }
 
 

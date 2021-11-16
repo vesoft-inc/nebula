@@ -1039,15 +1039,6 @@ bool RaftPart::processElectionResponses(const RaftPart::ElectionResponses& resul
 
   size_t numSucceeded = 0;
   for (auto& r : results) {
-    // prevote won't modify peer's term
-    if (!isPreVote && r.second.get_current_term() != proposedTerm) {
-      LOG(WARNING) << idStr_ << "Term in req " << proposedTerm << " is different from resp "
-                   << r.second.get_current_term() << " of " << hosts[r.first]->address()
-                   << ", error code is "
-                   << apache::thrift::util::enumNameSafe(r.second.get_error_code())
-                   << ", just ignore it, isPreVote = " << isPreVote;
-      continue;
-    }
     if (r.second.get_error_code() == cpp2::ErrorCode::SUCCEEDED) {
       ++numSucceeded;
     } else {
@@ -1253,7 +1244,6 @@ void RaftPart::processAskForVoteRequest(const cpp2::AskForVoteRequest& req,
             << ", isPreVote = " << req.get_is_pre_vote();
 
   std::lock_guard<std::mutex> g(raftLock_);
-  resp.set_current_term(term_);
 
   // Make sure the partition is running
   if (UNLIKELY(status_ == Status::STOPPED)) {
@@ -1302,7 +1292,6 @@ void RaftPart::processAskForVoteRequest(const cpp2::AskForVoteRequest& req,
   // req.get_term() >= term_, we won't update term in prevote
   if (!req.get_is_pre_vote()) {
     term_ = req.get_term();
-    resp.set_current_term(term_);
   }
 
   // Check the last term to receive a log
