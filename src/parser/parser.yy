@@ -3225,14 +3225,14 @@ create_space_sentence
         sentence->setComment($5);
         $$ = sentence;
     }
-    | KW_CREATE KW_SPACE opt_if_not_exists name_label KW_ON name_label {
+    | KW_CREATE KW_SPACE opt_if_not_exists name_label KW_ON zone_name_list {
         auto sentence = new CreateSpaceSentence($4, $3);
-        sentence->setGroupName($6);
+        sentence->setZoneNames($6);
         $$ = sentence;
     }
-    | KW_CREATE KW_SPACE opt_if_not_exists name_label KW_ON name_label comment_prop_assignment {
+    | KW_CREATE KW_SPACE opt_if_not_exists name_label KW_ON zone_name_list comment_prop_assignment {
         auto sentence = new CreateSpaceSentence($4, $3);
-        sentence->setGroupName($6);
+        sentence->setZoneNames($6);
         sentence->setComment($7);
         $$ = sentence;
     }
@@ -3247,15 +3247,15 @@ create_space_sentence
         sentence->setComment($8);
         $$ = sentence;
     }
-    | KW_CREATE KW_SPACE opt_if_not_exists name_label L_PAREN space_opt_list R_PAREN KW_ON name_label {
+    | KW_CREATE KW_SPACE opt_if_not_exists name_label L_PAREN space_opt_list R_PAREN KW_ON zone_name_list {
         auto sentence = new CreateSpaceSentence($4, $3);
-        sentence->setGroupName($9);
+        sentence->setZoneNames($9);
         sentence->setOpts($6);
         $$ = sentence;
     }
-    | KW_CREATE KW_SPACE opt_if_not_exists name_label L_PAREN space_opt_list R_PAREN KW_ON name_label comment_prop_assignment {
+    | KW_CREATE KW_SPACE opt_if_not_exists name_label L_PAREN space_opt_list R_PAREN KW_ON zone_name_list comment_prop_assignment {
         auto sentence = new CreateSpaceSentence($4, $3);
-        sentence->setGroupName($9);
+        sentence->setZoneNames($9);
         sentence->setOpts($6);
         sentence->setComment($10);
         $$ = sentence;

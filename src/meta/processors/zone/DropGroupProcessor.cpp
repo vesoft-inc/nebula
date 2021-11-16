@@ -39,7 +39,7 @@ void DropGroupProcessor::process(const cpp2::DropGroupReq& req) {
   doSyncMultiRemoveAndUpdate(std::move(keys));
 }
 
-nebula::cpp2::ErrorCode DropGroupProcessor::checkSpaceDependency(const std::string& groupName) {
+nebula::cpp2::ErrorCode DropGroupProcessor::checkSpaceDependency(const std::string&) {
   const auto& prefix = MetaKeyUtils::spacePrefix();
   auto iterRet = doPrefix(prefix);
   if (!nebula::ok(iterRet)) {
@@ -51,9 +51,8 @@ nebula::cpp2::ErrorCode DropGroupProcessor::checkSpaceDependency(const std::stri
 
   while (iter->valid()) {
     auto properties = MetaKeyUtils::parseSpace(iter->val());
-    if (properties.group_name_ref().has_value() && *properties.group_name_ref() == groupName) {
-      LOG(ERROR) << "Space " << properties.get_space_name() << " is bind to the group "
-                 << groupName;
+    if (!properties.get_zone_names().empty()) {
+      LOG(ERROR) << "Space " << properties.get_space_name() << " is bind to the zone";
       return nebula::cpp2::ErrorCode::E_NOT_DROP;
     }
     iter->next();

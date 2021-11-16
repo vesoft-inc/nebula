@@ -110,7 +110,7 @@ nebula::cpp2::ErrorCode BalanceJobExecutor::getAllSpaces(
   while (iter->valid()) {
     auto spaceId = MetaKeyUtils::spaceId(iter->key());
     auto properties = MetaKeyUtils::parseSpace(iter->val());
-    bool zoned = properties.group_name_ref().has_value();
+    bool zoned = !properties.get_zone_names().empty();
     spaces.emplace_back(spaceId, *properties.replica_factor_ref(), zoned);
     iter->next();
   }
@@ -146,9 +146,9 @@ nebula::cpp2::ErrorCode DataBalanceJobExecutor::buildBalancePlan() {
   for (const auto& spaceInfo : spaces) {
     auto spaceId = std::get<0>(spaceInfo);
     auto spaceReplica = std::get<1>(spaceInfo);
-    auto dependentOnGroup = std::get<2>(spaceInfo);
+    auto dependentOnZone = std::get<2>(spaceInfo);
     LOG(INFO) << "Balance Space " << spaceId;
-    auto taskRet = genTasks(spaceId, spaceReplica, dependentOnGroup, lostHosts_);
+    auto taskRet = genTasks(spaceId, spaceReplica, dependentOnZone, lostHosts_);
     if (!ok(taskRet)) {
       LOG(ERROR) << "Generate tasks on space " << std::get<0>(spaceInfo) << " failed";
       return error(taskRet);
@@ -177,12 +177,12 @@ nebula::cpp2::ErrorCode DataBalanceJobExecutor::buildBalancePlan() {
 ErrorOr<nebula::cpp2::ErrorCode, std::vector<BalanceTask>> DataBalanceJobExecutor::genTasks(
     GraphSpaceID spaceId,
     int32_t spaceReplica,
-    bool dependentOnGroup,
+    bool dependentOnZone,
     std::vector<HostAddr>& lostHosts) {
   HostParts hostParts;
   int32_t totalParts = 0;
   // hostParts is current part allocation map
-  auto result = getHostParts(spaceId, dependentOnGroup, hostParts, totalParts);
+  auto result = getHostParts(spaceId, dependentOnZone, hostParts, totalParts);
   if (!nebula::ok(result)) {
     return nebula::error(result);
   }
@@ -193,7 +193,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<BalanceTask>> DataBalanceJobExecuto
     return nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND;
   }
 
-  auto fetchHostPartsRet = fetchHostParts(spaceId, dependentOnGroup, hostParts, lostHosts);
+  auto fetchHostPartsRet = fetchHostParts(spaceId, dependentOnZone, hostParts, lostHosts);
   if (!nebula::ok(fetchHostPartsRet)) {
     LOG(ERROR) << "Fetch hosts and parts failed";
     return nebula::error(fetchHostPartsRet);
@@ -223,7 +223,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<BalanceTask>> DataBalanceJobExecuto
       }
 
       auto retCode =
-          transferLostHost(tasks, confirmedHostParts, lostHost, spaceId, partId, dependentOnGroup);
+          transferLostHost(tasks, confirmedHostParts, lostHost, spaceId, partId, dependentOnZone);
       if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
         LOG(ERROR) << "Transfer lost host " << lostHost << " failed";
         return retCode;
@@ -232,7 +232,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<BalanceTask>> DataBalanceJobExecuto
   }
 
   // 2. Make all hosts in confirmedHostParts balanced
-  if (balanceParts(spaceId, confirmedHostParts, totalParts, tasks, dependentOnGroup)) {
+  if (balanceParts(spaceId, confirmedHostParts, totalParts, tasks, dependentOnZone)) {
     return tasks;
   } else {
     return nebula::cpp2::ErrorCode::E_BAD_BALANCE_PLAN;
@@ -244,10 +244,10 @@ nebula::cpp2::ErrorCode DataBalanceJobExecutor::transferLostHost(std::vector<Bal
                                                                  const HostAddr& source,
                                                                  GraphSpaceID spaceId,
                                                                  PartitionID partId,
-                                                                 bool dependentOnGroup) {
+                                                                 bool dependentOnZone) {
   // find a host with minimum parts which doesn't have this part
   ErrorOr<nebula::cpp2::ErrorCode, HostAddr> result;
-  if (dependentOnGroup) {
+  if (dependentOnZone) {
     result = hostWithMinimalPartsForZone(source, confirmedHostParts, partId);
   } else {
     result = hostWithMinimalParts(confirmedHostParts, partId);
@@ -271,12 +271,12 @@ nebula::cpp2::ErrorCode DataBalanceJobExecutor::transferLostHost(std::vector<Bal
 
 ErrorOr<nebula::cpp2::ErrorCode, std::pair<HostParts, std::vector<HostAddr>>>
 DataBalanceJobExecutor::fetchHostParts(GraphSpaceID spaceId,
-                                       bool dependentOnGroup,
+                                       bool dependentOnZone,
                                        const HostParts& hostParts,
                                        std::vector<HostAddr>& lostHosts) {
   ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> activeHostsRet;
-  if (dependentOnGroup) {
-    activeHostsRet = ActiveHostsMan::getActiveHostsWithGroup(kvstore_, spaceId);
+  if (dependentOnZone) {
+    activeHostsRet = ActiveHostsMan::getActiveHostsWithZones(kvstore_, spaceId);
   } else {
     activeHostsRet = ActiveHostsMan::getActiveHosts(kvstore_);
   }
@@ -306,7 +306,7 @@ bool DataBalanceJobExecutor::balanceParts(GraphSpaceID spaceId,
                                           HostParts& confirmedHostParts,
                                           int32_t totalParts,
                                           std::vector<BalanceTask>& tasks,
-                                          bool dependentOnGroup) {
+                                          bool dependentOnZone) {
   auto avgLoad = static_cast<float>(totalParts) / confirmedHostParts.size();
   VLOG(3) << "The expect avg load is " << avgLoad;
   int32_t minLoad = std::floor(avgLoad);
@@ -395,7 +395,7 @@ bool DataBalanceJobExecutor::balanceParts(GraphSpaceID spaceId,
         return false;
       }
 
-      if (dependentOnGroup) {
+      if (dependentOnZone) {
         if (!checkZoneLegal(sourceHost, targetHost)) {
           LOG(INFO) << "sourceHost " << sourceHost << " targetHost " << targetHost
                     << " not same zone";
@@ -492,7 +492,7 @@ nebula::cpp2::ErrorCode DataBalanceJobExecutor::stop() {
 }
 
 ErrorOr<nebula::cpp2::ErrorCode, bool> BalanceJobExecutor::getHostParts(GraphSpaceID spaceId,
-                                                                        bool dependentOnGroup,
+                                                                        bool dependentOnZone,
                                                                         HostParts& hostParts,
                                                                         int32_t& totalParts) {
   folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
@@ -529,29 +529,20 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> BalanceJobExecutor::getHostParts(GraphSpa
 
   auto properties = MetaKeyUtils::parseSpace(value);
   if (totalParts != properties.get_partition_num()) {
-    LOG(ERROR) << "Partition number not equals";
-    LOG(ERROR) << totalParts << " : " << properties.get_partition_num();
+    LOG(ERROR) << "Partition number not equals " << totalParts << " : "
+               << properties.get_partition_num();
     return false;
   }
 
   int32_t replica = properties.get_replica_factor();
   LOG(INFO) << "Replica " << replica;
-  if (dependentOnGroup && properties.group_name_ref().has_value()) {
-    auto groupName = *properties.group_name_ref();
-    auto groupKey = MetaKeyUtils::groupKey(groupName);
-    std::string groupValue;
-    retCode = kvstore_->get(kDefaultSpaceId, kDefaultPartId, groupKey, &groupValue);
-    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(ERROR) << "Get group " << groupName
-                 << " failed: " << apache::thrift::util::enumNameSafe(retCode);
-      return retCode;
-    }
-
-    int32_t zoneSize = MetaKeyUtils::parseZoneNames(std::move(groupValue)).size();
+  if (dependentOnZone && !properties.get_zone_names().empty()) {
+    auto zoneNames = properties.get_zone_names();
+    int32_t zoneSize = zoneNames.size();
     LOG(INFO) << "Zone Size " << zoneSize;
     innerBalance_ = (replica == zoneSize);
 
-    auto activeHostsRet = ActiveHostsMan::getActiveHostsWithGroup(kvstore_, spaceId);
+    auto activeHostsRet = ActiveHostsMan::getActiveHostsWithZones(kvstore_, spaceId);
     if (!nebula::ok(activeHostsRet)) {
       return nebula::error(activeHostsRet);
     }
@@ -572,9 +563,9 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> BalanceJobExecutor::getHostParts(GraphSpa
       confirmedHostParts.erase(h);
     }
 
-    auto zonePartsRet = assembleZoneParts(groupName, confirmedHostParts);
+    auto zonePartsRet = assembleZoneParts(zoneNames, confirmedHostParts);
     if (zonePartsRet != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(ERROR) << "Assemble Zone Parts failed group: " << groupName;
+      LOG(ERROR) << "Assemble Zone Parts failed";
       return zonePartsRet;
     }
   }
@@ -583,26 +574,15 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> BalanceJobExecutor::getHostParts(GraphSpa
   return true;
 }
 
-nebula::cpp2::ErrorCode BalanceJobExecutor::assembleZoneParts(const std::string& groupName,
-                                                              HostParts& hostParts) {
-  LOG(INFO) << "Balancer assembleZoneParts";
-  auto groupKey = MetaKeyUtils::groupKey(groupName);
-  std::string groupValue;
-  auto retCode = kvstore_->get(kDefaultSpaceId, kDefaultPartId, groupKey, &groupValue);
-  if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Get group " << groupName
-               << " failed: " << apache::thrift::util::enumNameSafe(retCode);
-    return retCode;
-  }
-
+nebula::cpp2::ErrorCode BalanceJobExecutor::assembleZoneParts(
+    const std::vector<std::string>& zoneNames, HostParts& hostParts) {
   // zoneHosts use to record this host belong to zone's hosts
   std::unordered_map<std::pair<HostAddr, std::string>, std::vector<HostAddr>> zoneHosts;
-  auto zoneNames = MetaKeyUtils::parseZoneNames(std::move(groupValue));
   for (const auto& zoneName : zoneNames) {
     LOG(INFO) << "Zone Name: " << zoneName;
     auto zoneKey = MetaKeyUtils::zoneKey(zoneName);
     std::string zoneValue;
-    retCode = kvstore_->get(kDefaultSpaceId, kDefaultPartId, zoneKey, &zoneValue);
+    auto retCode = kvstore_->get(kDefaultSpaceId, kDefaultPartId, zoneKey, &zoneValue);
     if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
       LOG(ERROR) << "Get zone " << zoneName
                  << " failed: " << apache::thrift::util::enumNameSafe(retCode);
@@ -755,64 +735,6 @@ ErrorOr<nebula::cpp2::ErrorCode, HostAddr> DataBalanceJobExecutor::hostWithMinim
   return nebula::cpp2::ErrorCode::E_NO_HOSTS;
 }
 
-nebula::cpp2::ErrorCode BalanceJobExecutor::collectZoneParts(const std::string& groupName,
-                                                             HostParts& hostParts) {
-  auto groupKey = MetaKeyUtils::groupKey(groupName);
-  std::string groupValue;
-  auto retCode = kvstore_->get(kDefaultSpaceId, kDefaultPartId, groupKey, &groupValue);
-  if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Get group " << groupName
-               << " failed, error: " << apache::thrift::util::enumNameSafe(retCode);
-    return retCode;
-  }
-
-  // zoneHosts use to record this host belong to zone's hosts
-  std::unordered_map<std::pair<HostAddr, std::string>, std::vector<HostAddr>> zoneHosts;
-  auto zoneNames = MetaKeyUtils::parseZoneNames(std::move(groupValue));
-  for (auto zoneName : zoneNames) {
-    auto zoneKey = MetaKeyUtils::zoneKey(zoneName);
-    std::string zoneValue;
-    retCode = kvstore_->get(kDefaultSpaceId, kDefaultPartId, zoneKey, &zoneValue);
-    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(ERROR) << "Get zone " << zoneName
-                 << " failed, error: " << apache::thrift::util::enumNameSafe(retCode);
-      return retCode;
-    }
-
-    auto hosts = MetaKeyUtils::parseZoneHosts(std::move(zoneValue));
-    for (const auto& host : hosts) {
-      auto pair = std::pair<HostAddr, std::string>(std::move(host), zoneName);
-      auto& hs = zoneHosts[std::move(pair)];
-      hs.insert(hs.end(), hosts.begin(), hosts.end());
-    }
-  }
-
-  for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
-    auto host = it->first;
-    auto zoneIter =
-        std::find_if(zoneHosts.begin(), zoneHosts.end(), [host](const auto& pair) -> bool {
-          return host == pair.first.first;
-        });
-
-    if (zoneIter == zoneHosts.end()) {
-      LOG(INFO) << it->first << " have lost";
-      continue;
-    }
-
-    auto& hosts = zoneIter->second;
-    auto name = zoneIter->first.second;
-    for (auto hostIter = hosts.begin(); hostIter != hosts.end(); hostIter++) {
-      auto partIter = hostParts.find(*hostIter);
-      if (partIter == hostParts.end()) {
-        zoneParts_[it->first] = ZoneNameAndParts(name, std::vector<PartitionID>());
-      } else {
-        zoneParts_[it->first] = ZoneNameAndParts(name, partIter->second);
-      }
-    }
-  }
-  return nebula::cpp2::ErrorCode::SUCCEEDED;
-}
-
 bool DataBalanceJobExecutor::checkZoneLegal(const HostAddr& source, const HostAddr& target) {
   VLOG(3) << "Check " << source << " : " << target;
   auto sourceIter = std::find_if(zoneParts_.begin(), zoneParts_.end(), [&source](const auto& pair) {
@@ -936,10 +858,10 @@ folly::Future<Status> LeaderBalanceJobExecutor::executeInternal(HostAddr&& addre
     for (const auto& spaceInfo : spaces) {
       auto spaceId = std::get<0>(spaceInfo);
       auto replicaFactor = std::get<1>(spaceInfo);
-      auto dependentOnGroup = std::get<2>(spaceInfo);
+      auto dependentOnZone = std::get<2>(spaceInfo);
       LeaderBalancePlan plan;
       auto balanceResult = buildLeaderBalancePlan(
-          hostLeaderMap_.get(), spaceId, replicaFactor, dependentOnGroup, plan);
+          hostLeaderMap_.get(), spaceId, replicaFactor, dependentOnZone, plan);
       if (!nebula::ok(balanceResult) || !nebula::value(balanceResult)) {
         LOG(ERROR) << "Building leader balance plan failed "
                    << "Space: " << spaceId;
@@ -982,7 +904,7 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> LeaderBalanceJobExecutor::buildLeaderBala
     HostLeaderMap* hostLeaderMap,
     GraphSpaceID spaceId,
     int32_t replicaFactor,
-    bool dependentOnGroup,
+    bool dependentOnZone,
     LeaderBalancePlan& plan,
     bool useDeviation) {
   PartAllocation peersMap;
@@ -1010,7 +932,7 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> LeaderBalanceJobExecutor::buildLeaderBala
 
   int32_t totalParts = 0;
   HostParts allHostParts;
-  auto result = getHostParts(spaceId, dependentOnGroup, allHostParts, totalParts);
+  auto result = getHostParts(spaceId, dependentOnZone, allHostParts, totalParts);
   if (!nebula::ok(result)) {
     return nebula::error(result);
   } else {
@@ -1035,7 +957,7 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> LeaderBalanceJobExecutor::buildLeaderBala
     return false;
   }
 
-  if (dependentOnGroup) {
+  if (dependentOnZone) {
     for (auto it = allHostParts.begin(); it != allHostParts.end(); it++) {
       auto min = it->second.size() / replicaFactor;
       VLOG(3) << "Host: " << it->first << " Bounds: " << min << " : " << min + 1;

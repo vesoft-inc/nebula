@@ -20,8 +20,8 @@ Status CreateSpaceValidator::validateImpl() {
   ifNotExist_ = sentence->isIfNotExist();
   auto status = Status::OK();
   spaceDesc_.set_space_name(std::move(*(sentence->spaceName())));
-  if (sentence->groupName()) {
-    spaceDesc_.set_group_name(std::move(*(sentence->groupName())));
+  if (sentence->zoneNames()) {
+    spaceDesc_.set_zone_names(sentence->zoneNames()->zoneNames());
   }
   StatusOr<std::string> retStatusOr;
   std::string result;
@@ -101,10 +101,6 @@ Status CreateSpaceValidator::validateImpl() {
   // check comment
   if (sentence->comment() != nullptr) {
     spaceDesc_.set_comment(*sentence->comment());
-  }
-
-  if (sentence->groupName() != nullptr && *sentence->groupName() == "default") {
-    return Status::SemanticError("Group default conflict");
   }
 
   // if charset and collate are not specified, set default value

@@ -131,8 +131,7 @@ void DropZoneFromGroupProcessor::process(const cpp2::DropZoneFromGroupReq& req) 
   auto spaceIter = nebula::value(spaceRet).get();
   while (spaceIter->valid()) {
     auto properties = MetaKeyUtils::parseSpace(spaceIter->val());
-    if (properties.group_name_ref().has_value() && *properties.group_name_ref() == groupName) {
-      LOG(ERROR) << "Space is bind to the group " << *properties.group_name_ref();
+    if (properties.get_zone_names().empty()) {
       spaceCode = nebula::cpp2::ErrorCode::E_CONFLICT;
     }
     spaceIter->next();

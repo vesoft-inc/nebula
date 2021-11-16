@@ -297,7 +297,8 @@ TEST(GroupAndZoneTest, GroupAndZoneTest) {
   properties.set_space_name("space");
   properties.set_partition_num(12);
   properties.set_replica_factor(3);
-  properties.set_group_name("group_0");
+  std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2"};
+  properties.set_zone_names(std::move(zones));
   cpp2::CreateSpaceReq req;
   req.set_properties(std::move(properties));
   auto* processor = CreateSpaceProcessor::instance(kv.get());

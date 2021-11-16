@@ -619,7 +619,8 @@ TEST(ProcessorTest, SpaceWithGroupTest) {
   properties.set_space_name("space_on_group_0_3");
   properties.set_partition_num(9);
   properties.set_replica_factor(3);
-  properties.set_group_name("group_0");
+  std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2"};
+  properties.set_zone_names(std::move(zones));
   cpp2::CreateSpaceReq req;
   req.set_properties(std::move(properties));
   auto* processor = CreateSpaceProcessor::instance(kv.get());
@@ -644,7 +645,8 @@ TEST(ProcessorTest, SpaceWithGroupTest) {
   properties.set_space_name("space_on_group_0_1");
   properties.set_partition_num(9);
   properties.set_replica_factor(1);
-  properties.set_group_name("group_0");
+  std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2"};
+  properties.set_zone_names(std::move(zones));
   cpp2::CreateSpaceReq req;
   req.set_properties(std::move(properties));
   auto* processor = CreateSpaceProcessor::instance(kv.get());
@@ -659,7 +661,8 @@ TEST(ProcessorTest, SpaceWithGroupTest) {
   properties.set_space_name("space_on_group_0_4");
   properties.set_partition_num(9);
   properties.set_replica_factor(4);
-  properties.set_group_name("group_0");
+  std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2"};
+  properties.set_zone_names(std::move(zones));
   cpp2::CreateSpaceReq req;
   req.set_properties(std::move(properties));
   auto* processor = CreateSpaceProcessor::instance(kv.get());
@@ -677,35 +680,6 @@ TEST(ProcessorTest, SpaceWithGroupTest) {
   processor->process(req);
   auto resp = std::move(f).get();
   ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-}
-{
-  cpp2::SpaceDesc properties;
-  properties.set_space_name("space_on_group_0_4");
-  properties.set_partition_num(9);
-  properties.set_replica_factor(4);
-  properties.set_group_name("group_0");
-  cpp2::CreateSpaceReq req;
-  req.set_properties(std::move(properties));
-  auto* processor = CreateSpaceProcessor::instance(kv.get());
-  auto f = processor->getFuture();
-  processor->process(req);
-  auto resp = std::move(f).get();
-  ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-}
-// Create Space on a group which is not exist
-{
-  cpp2::SpaceDesc properties;
-  properties.set_space_name("space_on_group_not_exist");
-  properties.set_partition_num(9);
-  properties.set_replica_factor(4);
-  properties.set_group_name("group_not_exist");
-  cpp2::CreateSpaceReq req;
-  req.set_properties(std::move(properties));
-  auto* processor = CreateSpaceProcessor::instance(kv.get());
-  auto f = processor->getFuture();
-  processor->process(req);
-  auto resp = std::move(f).get();
-  ASSERT_EQ(nebula::cpp2::ErrorCode::E_GROUP_NOT_FOUND, resp.get_code());
 }
 // Create space on empty zone
 {
@@ -740,21 +714,22 @@ TEST(ProcessorTest, SpaceWithGroupTest) {
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
-    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_CONFLICT, resp.get_code());
   }
   {
     cpp2::SpaceDesc properties;
     properties.set_space_name("space_on_empty_hosts");
     properties.set_partition_num(1);
     properties.set_replica_factor(1);
-    properties.set_group_name("group_2");
+    std::vector<std::string> zones = {};
+    properties.set_zone_names(std::move(zones));
     cpp2::CreateSpaceReq req;
     req.set_properties(std::move(properties));
     auto* processor = CreateSpaceProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
-    ASSERT_EQ(nebula::cpp2::ErrorCode::E_INVALID_PARM, resp.get_code());
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
   }
 }
 }  // namespace nebula

@@ -286,11 +286,11 @@ class CreateSpaceSentence final : public CreateSentence {
 
   const std::string* spaceName() const { return spaceName_.get(); }
 
-  const std::string* groupName() const { return groupName_.get(); }
+  const ZoneNameList* zoneNames() const { return zoneNames_.get(); }
 
   void setOpts(SpaceOptList* spaceOpts) { spaceOpts_.reset(spaceOpts); }
 
-  void setGroupName(std::string* name) { groupName_.reset(name); }
+  void setZoneNames(ZoneNameList* names) { zoneNames_.reset(names); }
 
   const SpaceOptList* spaceOpts() const { return spaceOpts_.get(); }
 
@@ -309,7 +309,7 @@ class CreateSpaceSentence final : public CreateSentence {
 
  private:
   std::unique_ptr<std::string> spaceName_;
-  std::unique_ptr<std::string> groupName_;
+  std::unique_ptr<ZoneNameList> zoneNames_;
   std::unique_ptr<SpaceOptList> spaceOpts_;
   std::unique_ptr<std::string> comment_;
 };
