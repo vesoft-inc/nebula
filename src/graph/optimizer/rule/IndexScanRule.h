@@ -15,7 +15,6 @@ namespace opt {
 using graph::QueryContext;
 using storage::cpp2::IndexColumnHint;
 using storage::cpp2::IndexQueryContext;
-using BVO = graph::OptimizerUtils::BoundValueOperator;
 using IndexItem = std::shared_ptr<meta::cpp2::IndexItem>;
 
 class OptContext;
