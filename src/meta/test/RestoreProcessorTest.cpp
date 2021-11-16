@@ -37,19 +37,16 @@ TEST(RestoreProcessorTest, RestoreTest) {
   bool ret = false;
   cpp2::SpaceDesc properties;
   GraphSpaceID id = 1;
-  std::string groupName = "test_group";
   properties.set_space_name("test_space");
   int partNum = 10;
   properties.set_partition_num(partNum);
   properties.set_replica_factor(3);
-  properties.set_group_name(groupName);
 
   cpp2::SpaceDesc properties2;
   GraphSpaceID id2 = 2;
   properties2.set_space_name("test_space2");
   properties2.set_partition_num(partNum);
   properties2.set_replica_factor(3);
-  properties2.set_group_name(groupName);
 
   auto spaceVal = MetaKeyUtils::spaceVal(properties);
   std::vector<nebula::kvstore::KV> data;
@@ -74,12 +71,8 @@ TEST(RestoreProcessorTest, RestoreTest) {
     data.emplace_back(MetaKeyUtils::partKey(id, partId), MetaKeyUtils::partVal(hosts4));
   }
 
-  auto groupId = 1;
   std::string zoneName = "test_zone";
   std::vector<std::string> zoneNames = {zoneName};
-  data.emplace_back(MetaKeyUtils::indexGroupKey(groupName),
-                    std::string(reinterpret_cast<const char*>(&groupId), sizeof(GroupID)));
-  data.emplace_back(MetaKeyUtils::groupKey(groupName), MetaKeyUtils::groupVal(zoneNames));
 
   data.emplace_back(MetaKeyUtils::userKey("root"), MetaKeyUtils::userVal("root"));
 
@@ -262,19 +255,16 @@ TEST(RestoreProcessorTest, RestoreFullTest) {
   bool ret = false;
   cpp2::SpaceDesc properties;
   GraphSpaceID id = 1;
-  std::string groupName = "test_group";
   properties.set_space_name("test_space");
   int partNum = 10;
   properties.set_partition_num(partNum);
   properties.set_replica_factor(3);
-  properties.set_group_name(groupName);
 
   cpp2::SpaceDesc properties2;
   GraphSpaceID id2 = 2;
   properties2.set_space_name("test_space2");
   properties2.set_partition_num(partNum);
   properties2.set_replica_factor(3);
-  properties2.set_group_name(groupName);
 
   auto spaceVal = MetaKeyUtils::spaceVal(properties);
   std::vector<nebula::kvstore::KV> data;
@@ -299,13 +289,8 @@ TEST(RestoreProcessorTest, RestoreFullTest) {
     data.emplace_back(MetaKeyUtils::partKey(id, partId), MetaKeyUtils::partVal(hosts4));
   }
 
-  auto groupId = 1;
   std::string zoneName = "test_zone";
   std::vector<std::string> zoneNames = {zoneName};
-  data.emplace_back(MetaKeyUtils::indexGroupKey(groupName),
-                    std::string(reinterpret_cast<const char*>(&groupId), sizeof(GroupID)));
-  data.emplace_back(MetaKeyUtils::groupKey(groupName), MetaKeyUtils::groupVal(zoneNames));
-
   data.emplace_back(MetaKeyUtils::userKey("root"), MetaKeyUtils::userVal("root"));
 
   auto zoneId = 1;
@@ -409,11 +394,6 @@ TEST(RestoreProcessorTest, RestoreFullTest) {
       }
       iter->next();
     }
-
-    prefix = MetaKeyUtils::groupPrefix();
-    result = kvRestore->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    // ASSERT_NE(nebula::cpp2::ErrorCode::SUCCEEDED, result);
-    ASSERT_TRUE(iter->valid());
 
     prefix = MetaKeyUtils::userPrefix();
     result = kvRestore->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);

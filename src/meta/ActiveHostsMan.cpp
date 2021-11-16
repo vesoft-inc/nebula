@@ -145,7 +145,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> ActiveHostsMan::getActiv
   return activeHosts;
 }
 
-ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> ActiveHostsMan::getActiveHostsWithGroup(
+ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> ActiveHostsMan::getActiveHostsWithZones(
     kvstore::KVStore* kv, GraphSpaceID spaceId, int32_t expiredTTL) {
   std::string spaceValue;
   std::vector<HostAddr> activeHosts;
@@ -158,15 +158,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> ActiveHostsMan::getActiv
 
   std::string groupValue;
   auto space = MetaKeyUtils::parseSpace(std::move(spaceValue));
-  auto groupKey = MetaKeyUtils::groupKey(*space.group_name_ref());
-  retCode = kv->get(kDefaultSpaceId, kDefaultPartId, groupKey, &groupValue);
-  if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Get group " << *space.group_name_ref()
-               << " failed, error: " << apache::thrift::util::enumNameSafe(retCode);
-    return retCode;
-  }
-
-  auto zoneNames = MetaKeyUtils::parseZoneNames(std::move(groupValue));
+  auto zoneNames = *space.zone_names_ref();
   for (const auto& zoneName : zoneNames) {
     auto hostsRet = getActiveHostsInZone(kv, zoneName, expiredTTL);
     if (!nebula::ok(hostsRet)) {

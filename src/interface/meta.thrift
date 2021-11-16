@@ -112,7 +112,7 @@ struct SpaceDesc {
     4: binary                   charset_name,
     5: binary                   collate_name,
     6: ColumnTypeDef            vid_type = {"type": common.PropertyType.FIXED_STRING, "type_length": 8},
-    7: optional binary          group_name,
+    7: list<binary>             zone_names,
     8: optional IsolationLevel  isolation_level,
     9: optional binary          comment,
 }

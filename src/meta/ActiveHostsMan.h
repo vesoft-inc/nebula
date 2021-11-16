@@ -116,7 +116,7 @@ class ActiveHostsMan final {
   static ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> getActiveHostsInZone(
       kvstore::KVStore* kv, const std::string& zoneName, int32_t expiredTTL = 0);
 
-  static ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> getActiveHostsWithGroup(
+  static ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> getActiveHostsWithZones(
       kvstore::KVStore* kv, GraphSpaceID spaceId, int32_t expiredTTL = 0);
 
   static ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> getActiveAdminHosts(

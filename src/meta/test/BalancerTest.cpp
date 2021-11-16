@@ -167,7 +167,8 @@ TEST(BalanceTest, SimpleTestWithZone) {
     properties.set_space_name("default_space");
     properties.set_partition_num(4);
     properties.set_replica_factor(3);
-    properties.set_group_name("group_0");
+    std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2", "zone_3"};
+    properties.set_zone_names(std::move(zones));
     cpp2::CreateSpaceReq req;
     req.set_properties(std::move(properties));
     auto* processor = CreateSpaceProcessor::instance(kv);
@@ -190,7 +191,8 @@ TEST(BalanceTest, SimpleTestWithZone) {
     JobDescription jd(
         testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
     DataBalanceJobExecutor balancer(jd, kv, &client, {});
-    auto code = balancer.assembleZoneParts("group_0", hostParts);
+    std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2", "zone_3"};
+    auto code = balancer.assembleZoneParts(zones, hostParts);
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
     balancer.balanceParts(0, hostParts, totalParts, tasks, true);
     for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
@@ -224,7 +226,8 @@ TEST(BalanceTest, ExpansionZoneTest) {
     properties.set_space_name("default_space");
     properties.set_partition_num(4);
     properties.set_replica_factor(3);
-    properties.set_group_name("default_group");
+    std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2"};
+    properties.set_zone_names(std::move(zones));
     cpp2::CreateSpaceReq req;
     req.set_properties(std::move(properties));
     auto* processor = CreateSpaceProcessor::instance(kv);
@@ -256,6 +259,22 @@ TEST(BalanceTest, ExpansionZoneTest) {
                          {"zone_3", {{"3", 3}}}};
     GroupInfo groupInfo = {{"default_group", {"zone_0", "zone_1", "zone_2", "zone_3"}}};
     TestUtils::assembleGroupAndZone(kv, zoneInfo, groupInfo);
+  }
+  {
+    cpp2::SpaceDesc properties;
+    properties.set_space_name("default_space");
+    properties.set_partition_num(4);
+    properties.set_replica_factor(3);
+    std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2", "zone_3"};
+    properties.set_zone_names(std::move(zones));
+    std::vector<kvstore::KV> data;
+    data.emplace_back(MetaKeyUtils::spaceKey(1), MetaKeyUtils::spaceVal(properties));
+    folly::Baton<true, std::atomic> baton;
+    kv->asyncMultiPut(0, 0, std::move(data), [&](nebula::cpp2::ErrorCode code) {
+      ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
+      baton.post();
+    });
+    baton.wait();
   }
   {
     HostParts hostParts;
@@ -296,7 +315,8 @@ TEST(BalanceTest, ExpansionHostIntoZoneTest) {
     properties.set_space_name("default_space");
     properties.set_partition_num(4);
     properties.set_replica_factor(3);
-    properties.set_group_name("default_group");
+    std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2"};
+    properties.set_zone_names(std::move(zones));
     cpp2::CreateSpaceReq req;
     req.set_properties(std::move(properties));
     auto* processor = CreateSpaceProcessor::instance(kv);
@@ -374,7 +394,8 @@ TEST(BalanceTest, ShrinkZoneTest) {
     properties.set_space_name("default_space");
     properties.set_partition_num(4);
     properties.set_replica_factor(3);
-    properties.set_group_name("default_group");
+    std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2", "zone_3"};
+    properties.set_zone_names(std::move(zones));
     cpp2::CreateSpaceReq req;
     req.set_properties(std::move(properties));
     auto* processor = CreateSpaceProcessor::instance(kv);
@@ -424,7 +445,8 @@ TEST(BalanceTest, ShrinkHostFromZoneTest) {
     properties.set_space_name("default_space");
     properties.set_partition_num(4);
     properties.set_replica_factor(3);
-    properties.set_group_name("default_group");
+    std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2"};
+    properties.set_zone_names(std::move(zones));
     cpp2::CreateSpaceReq req;
     req.set_properties(std::move(properties));
     auto* processor = CreateSpaceProcessor::instance(kv);
@@ -520,7 +542,8 @@ TEST(BalanceTest, BalanceWithComplexZoneTest) {
       properties.set_space_name("space_on_group_0");
       properties.set_partition_num(64);
       properties.set_replica_factor(3);
-      properties.set_group_name("group_0");
+      std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2", "zone_3", "zone_4"};
+      properties.set_zone_names(std::move(zones));
       cpp2::CreateSpaceReq req;
       req.set_properties(std::move(properties));
       auto* processor = CreateSpaceProcessor::instance(kv);
@@ -537,7 +560,9 @@ TEST(BalanceTest, BalanceWithComplexZoneTest) {
       properties.set_space_name("space_on_group_1");
       properties.set_partition_num(81);
       properties.set_replica_factor(3);
-      properties.set_group_name("group_1");
+      std::vector<std::string> zones = {
+          "zone_0", "zone_1", "zone_2", "zone_3", "zone_4", "zone_5", "zone_6", "zone_7", "zone_8"};
+      properties.set_zone_names(std::move(zones));
       cpp2::CreateSpaceReq req;
       req.set_properties(std::move(properties));
       auto* processor = CreateSpaceProcessor::instance(kv);
@@ -568,7 +593,8 @@ TEST(BalanceTest, BalanceWithComplexZoneTest) {
     int32_t totalParts = 64 * 3;
     std::vector<BalanceTask> tasks;
     auto hostParts = assignHostParts(kv, 2);
-    auto code = balancer.assembleZoneParts("group_0", hostParts);
+    std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2", "zone_3", "zone_4"};
+    auto code = balancer.assembleZoneParts(zones, hostParts);
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
     balancer.balanceParts(2, hostParts, totalParts, tasks, true);
   }
@@ -605,7 +631,9 @@ TEST(BalanceTest, BalanceWithComplexZoneTest) {
     int32_t totalParts = 243;
     std::vector<BalanceTask> tasks;
     dump(hostParts, tasks);
-    auto code = balancer.assembleZoneParts("group_1", hostParts);
+    std::vector<std::string> zones = {
+        "zone_0", "zone_1", "zone_2", "zone_3", "zone_4", "zone_5", "zone_6", "zone_7", "zone_8"};
+    auto code = balancer.assembleZoneParts(zones, hostParts);
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
     balancer.balanceParts(3, hostParts, totalParts, tasks, true);
 
@@ -1654,7 +1682,8 @@ TEST(BalanceTest, LeaderBalanceWithZoneTest) {
     properties.set_space_name("default_space");
     properties.set_partition_num(8);
     properties.set_replica_factor(3);
-    properties.set_group_name("default_group");
+    std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2"};
+    properties.set_zone_names(std::move(zones));
     cpp2::CreateSpaceReq req;
     req.set_properties(std::move(properties));
     auto* processor = CreateSpaceProcessor::instance(kv);
@@ -1732,7 +1761,8 @@ TEST(BalanceTest, LeaderBalanceWithLargerZoneTest) {
     properties.set_space_name("default_space");
     properties.set_partition_num(8);
     properties.set_replica_factor(3);
-    properties.set_group_name("default_group");
+    std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2", "zone_3", "zone_4"};
+    properties.set_zone_names(std::move(zones));
     cpp2::CreateSpaceReq req;
     req.set_properties(std::move(properties));
     auto* processor = CreateSpaceProcessor::instance(kv);
@@ -1832,7 +1862,8 @@ TEST(BalanceTest, LeaderBalanceWithComplexZoneTest) {
       properties.set_space_name("space_on_group_0");
       properties.set_partition_num(64);
       properties.set_replica_factor(3);
-      properties.set_group_name("group_0");
+      std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2", "zone_3", "zone_4"};
+      properties.set_zone_names(std::move(zones));
       cpp2::CreateSpaceReq req;
       req.set_properties(std::move(properties));
       auto* processor = CreateSpaceProcessor::instance(kv);
@@ -1848,7 +1879,9 @@ TEST(BalanceTest, LeaderBalanceWithComplexZoneTest) {
       properties.set_space_name("space_on_group_1");
       properties.set_partition_num(81);
       properties.set_replica_factor(3);
-      properties.set_group_name("group_1");
+      std::vector<std::string> zones = {
+          "zone_0", "zone_1", "zone_2", "zone_3", "zone_4", "zone_5", "zone_6", "zone_7", "zone_8"};
+      properties.set_zone_names(std::move(zones));
       cpp2::CreateSpaceReq req;
       req.set_properties(std::move(properties));
       auto* processor = CreateSpaceProcessor::instance(kv);

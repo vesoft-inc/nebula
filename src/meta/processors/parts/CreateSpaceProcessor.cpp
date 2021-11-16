@@ -13,8 +13,6 @@ DEFINE_int32(default_replica_factor, 1, "The default replica factor when a space
 namespace nebula {
 namespace meta {
 
-const std::string defaultGroup = "default";  // NOLINT
-
 void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
   folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
   auto properties = req.get_properties();
@@ -112,23 +110,28 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
   data.emplace_back(MetaKeyUtils::spaceKey(spaceId), MetaKeyUtils::spaceVal(properties));
 
   nebula::cpp2::ErrorCode code = nebula::cpp2::ErrorCode::SUCCEEDED;
-  if (properties.group_name_ref().has_value()) {
-    auto& groupName = *properties.group_name_ref();
-    LOG(INFO) << "Create Space on group: " << groupName;
-    auto groupKey = MetaKeyUtils::groupKey(groupName);
-    auto ret = doGet(groupKey);
-    if (!nebula::ok(ret)) {
-      auto retCode = nebula::error(ret);
-      if (retCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
-        retCode = nebula::cpp2::ErrorCode::E_GROUP_NOT_FOUND;
+  if (!properties.get_zone_names().empty()) {
+    auto zones = properties.get_zone_names();
+    for (auto& zone : zones) {
+      auto zoneKey = MetaKeyUtils::zoneKey(zone);
+      auto ret = doGet(zoneKey);
+      if (!nebula::ok(ret)) {
+        auto retCode = nebula::error(ret);
+        if (retCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
+          code = nebula::cpp2::ErrorCode::E_ZONE_NOT_FOUND;
+        }
+        LOG(ERROR) << " Get Zone Name: " << zone << " failed.";
+        break;
       }
-      LOG(ERROR) << " Get Group Name: " << groupName << " failed.";
-      handleErrorCode(retCode);
+    }
+
+    if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      LOG(ERROR) << "Create space failed";
+      handleErrorCode(code);
       onFinished();
       return;
     }
 
-    auto zones = MetaKeyUtils::parseZoneNames(nebula::value(ret));
     int32_t zoneNum = zones.size();
     if (replicaFactor > zoneNum) {
       LOG(ERROR) << "Replication number should less than or equal to zone number.";

@@ -119,41 +119,52 @@ void DropHostFromZoneProcessor::process(const cpp2::DropHostFromZoneReq& req) {
   const auto& spacePrefix = MetaKeyUtils::spacePrefix();
   auto spaceIterRet = doPrefix(spacePrefix);
   auto spaceIter = nebula::value(spaceIterRet).get();
+  auto code = nebula::cpp2::ErrorCode::SUCCEEDED;
   while (spaceIter->valid()) {
     auto spaceId = MetaKeyUtils::spaceId(spaceIter->key());
     auto spaceKey = MetaKeyUtils::spaceKey(spaceId);
     auto ret = doGet(spaceKey);
     if (!nebula::ok(ret)) {
-      auto retCode = nebula::error(ret);
+      code = nebula::error(ret);
       LOG(ERROR) << "Get Space " << spaceId
-                 << " error: " << apache::thrift::util::enumNameSafe(retCode);
-      handleErrorCode(retCode);
-      onFinished();
-      return;
+                 << " error: " << apache::thrift::util::enumNameSafe(code);
+      break;
     }
 
     auto properties = MetaKeyUtils::parseSpace(nebula::value(ret));
-    if (!properties.group_name_ref().has_value()) {
-      spaceIter->next();
-      continue;
-    }
 
     const auto& partPrefix = MetaKeyUtils::partPrefix(spaceId);
     auto partIterRet = doPrefix(partPrefix);
     auto partIter = nebula::value(partIterRet).get();
+
     while (partIter->valid()) {
       auto partHosts = MetaKeyUtils::parsePartVal(partIter->val());
       for (auto& h : partHosts) {
         if (h == req.get_node()) {
           LOG(ERROR) << h << " is related with partition";
-          handleErrorCode(nebula::cpp2::ErrorCode::E_CONFLICT);
-          onFinished();
-          return;
+          code = nebula::cpp2::ErrorCode::E_CONFLICT;
+          break;
         }
       }
-      partIter->next();
+
+      if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+        break;
+      } else {
+        partIter->next();
+      }
     }
-    spaceIter->next();
+
+    if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      break;
+    } else {
+      spaceIter->next();
+    }
+  }
+
+  if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    handleErrorCode(nebula::cpp2::ErrorCode::E_CONFLICT);
+    onFinished();
+    return;
   }
 
   auto hosts = MetaKeyUtils::parseZoneHosts(std::move(nebula::value(zoneValueRet)));

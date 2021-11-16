@@ -120,6 +120,7 @@ static constexpr size_t kCommentLengthLimit = 256;
     nebula::GroupClause                    *group_clause;
     nebula::HostList                       *host_list;
     nebula::HostAddr                       *host_item;
+    nebula::ZoneNameList                   *zone_name_list;
     std::vector<int32_t>                   *integer_list;
     nebula::InBoundClause                  *in_bound_clause;
     nebula::OutBoundClause                 *out_bound_clause;
@@ -333,6 +334,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <colspec> column_spec
 %type <colspeclist> column_spec_list
 %type <column_name_list> column_name_list
+%type <zone_name_list> zone_name_list
 
 %type <role_type_clause> role_type_clause
 %type <acl_item_clause> acl_item_clause
@@ -3279,6 +3281,17 @@ show_config_item
     }
     ;
 
+zone_name_list
+    : name_label {
+        $$ = new ZoneNameList();
+        $$->addZone($1);
+    }
+    | zone_name_list COMMA name_label {
+        $$ = $1;
+        $$->addZone($3);
+    }
+    ;
+
 create_space_sentence
     : KW_CREATE KW_SPACE opt_if_not_exists name_label {
         auto sentence = new CreateSpaceSentence($4, $3);
@@ -3289,14 +3302,14 @@ create_space_sentence
         sentence->setComment($5);
         $$ = sentence;
     }
-    | KW_CREATE KW_SPACE opt_if_not_exists name_label KW_ON name_label {
+    | KW_CREATE KW_SPACE opt_if_not_exists name_label KW_ON zone_name_list {
         auto sentence = new CreateSpaceSentence($4, $3);
-        sentence->setGroupName($6);
+        sentence->setZoneNames($6);
         $$ = sentence;
     }
-    | KW_CREATE KW_SPACE opt_if_not_exists name_label KW_ON name_label comment_prop_assignment {
+    | KW_CREATE KW_SPACE opt_if_not_exists name_label KW_ON zone_name_list comment_prop_assignment {
         auto sentence = new CreateSpaceSentence($4, $3);
-        sentence->setGroupName($6);
+        sentence->setZoneNames($6);
         sentence->setComment($7);
         $$ = sentence;
     }
@@ -3311,15 +3324,15 @@ create_space_sentence
         sentence->setComment($8);
         $$ = sentence;
     }
-    | KW_CREATE KW_SPACE opt_if_not_exists name_label L_PAREN space_opt_list R_PAREN KW_ON name_label {
+    | KW_CREATE KW_SPACE opt_if_not_exists name_label L_PAREN space_opt_list R_PAREN KW_ON zone_name_list {
         auto sentence = new CreateSpaceSentence($4, $3);
-        sentence->setGroupName($9);
+        sentence->setZoneNames($9);
         sentence->setOpts($6);
         $$ = sentence;
     }
-    | KW_CREATE KW_SPACE opt_if_not_exists name_label L_PAREN space_opt_list R_PAREN KW_ON name_label comment_prop_assignment {
+    | KW_CREATE KW_SPACE opt_if_not_exists name_label L_PAREN space_opt_list R_PAREN KW_ON zone_name_list comment_prop_assignment {
         auto sentence = new CreateSpaceSentence($4, $3);
-        sentence->setGroupName($9);
+        sentence->setZoneNames($9);
         sentence->setOpts($6);
         sentence->setComment($10);
         $$ = sentence;

@@ -185,6 +185,36 @@ inline std::ostream &operator<<(std::ostream &os, Sentence::Kind kind) {
   return os << static_cast<uint32_t>(kind);
 }
 
+class ZoneNameList final {
+ public:
+  ZoneNameList() = default;
+
+  void addZone(std::string *zone) { zones_.emplace_back(zone); }
+
+  std::vector<std::string> zoneNames() const {
+    std::vector<std::string> result;
+    result.resize(zones_.size());
+    auto get = [](auto &ptr) { return *ptr.get(); };
+    std::transform(zones_.begin(), zones_.end(), result.begin(), get);
+    return result;
+  }
+
+  std::string toString() const {
+    std::string buf;
+    for (const auto &zone : zones_) {
+      buf += *zone;
+      buf += ",";
+    }
+    if (!zones_.empty()) {
+      buf.pop_back();
+    }
+    return buf;
+  }
+
+ private:
+  std::vector<std::unique_ptr<std::string>> zones_;
+};
+
 }  // namespace nebula
 
 #endif  // PARSER_SENTENCE_H_
