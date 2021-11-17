@@ -55,7 +55,7 @@ StatusOr<SubPlan> SubgraphPlanner::nSteps(SubPlan& startVidPlan, const std::stri
 
   auto* startNode = StartNode::make(qctx);
   bool getVertexProp = subgraphCtx_->withProp && subgraphCtx_->getVertexProp;
-  auto vertexProps = SchemaUtil::getAllVertexProp(qctx, space, getVertexProp);
+  auto vertexProps = SchemaUtil::getAllVertexProp(qctx, space.id, getVertexProp);
   NG_RETURN_IF_ERROR(vertexProps);
   auto edgeProps = buildEdgeProps();
   NG_RETURN_IF_ERROR(edgeProps);
@@ -93,7 +93,7 @@ StatusOr<SubPlan> SubgraphPlanner::zeroStep(SubPlan& startVidPlan, const std::st
   const auto& space = subgraphCtx_->space;
   auto* pool = qctx->objPool();
   // get all vertexProp
-  auto vertexProp = SchemaUtil::getAllVertexProp(qctx, space, subgraphCtx_->withProp);
+  auto vertexProp = SchemaUtil::getAllVertexProp(qctx, space.id, subgraphCtx_->withProp);
   NG_RETURN_IF_ERROR(vertexProp);
   auto* getVertex = GetVertices::make(qctx,
                                       startVidPlan.root,
