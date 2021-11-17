@@ -9,7 +9,6 @@
 
 #include "common/base/Base.h"
 #include "common/fs/TempDir.h"
-#include "meta/processors/admin/Balancer.h"
 #include "meta/test/TestUtils.h"
 #include "storage/client/StorageClient.h"
 #include "storage/test/TestUtils.h"
