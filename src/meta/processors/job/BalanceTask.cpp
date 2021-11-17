@@ -3,7 +3,7 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include "meta/processors/admin/BalanceTask.h"
+#include "meta/processors/job/BalanceTask.h"
 
 #include <folly/synchronization/Baton.h>
 
@@ -24,7 +24,7 @@ void BalanceTask::invoke() {
   // once.
   CHECK_NOTNULL(client_);
   if (ret_ == BalanceTaskResult::INVALID) {
-    endTimeMs_ = time::WallClock::fastNowInMilliSec();
+    endTimeMs_ = time::WallClock::fastNowInSec();
     saveInStore();
     LOG(ERROR) << taskIdStr_ << " Task invalid, status " << static_cast<int32_t>(status_);
     // When a plan is stopped or dst is not alive any more, a task will be
@@ -33,7 +33,7 @@ void BalanceTask::invoke() {
     onFinished_();
     return;
   } else if (ret_ == BalanceTaskResult::FAILED) {
-    endTimeMs_ = time::WallClock::fastNowInMilliSec();
+    endTimeMs_ = time::WallClock::fastNowInSec();
     saveInStore();
     LOG(ERROR) << taskIdStr_ << " Task failed, status " << static_cast<int32_t>(status_);
     onError_();
@@ -46,7 +46,7 @@ void BalanceTask::invoke() {
     case BalanceTaskStatus::START: {
       LOG(INFO) << taskIdStr_ << " Start to move part, check the peers firstly!";
       ret_ = BalanceTaskResult::IN_PROGRESS;
-      startTimeMs_ = time::WallClock::fastNowInMilliSec();
+      startTimeMs_ = time::WallClock::fastNowInSec();
       SAVE_STATE();
       client_->checkPeers(spaceId_, partId_).thenValue([this](auto&& resp) {
         if (!resp.ok()) {
@@ -235,7 +235,7 @@ void BalanceTask::rollback() {
 bool BalanceTask::saveInStore() {
   CHECK_NOTNULL(kv_);
   std::vector<kvstore::KV> data;
-  data.emplace_back(MetaKeyUtils::balanceTaskKey(balanceId_, spaceId_, partId_, src_, dst_),
+  data.emplace_back(MetaKeyUtils::balanceTaskKey(jobId_, spaceId_, partId_, src_, dst_),
                     MetaKeyUtils::balanceTaskVal(status_, ret_, startTimeMs_, endTimeMs_));
   folly::Baton<true, std::atomic> baton;
   bool ret = true;

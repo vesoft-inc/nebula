@@ -91,7 +91,7 @@ class JobDescription {
    * will set start time if newStatus is running
    * will set stop time if newStatus is finished / failed / stopped
    * */
-  bool setStatus(Status newStatus);
+  bool setStatus(Status newStatus, bool force = false);
 
   /*
    * get a existed job from kvstore, return folly::none if there isn't
