@@ -27,6 +27,9 @@ static const std::regex reTotalCache(R"(^total_(cache|inactive_file)\s+(\d+)$)")
 std::atomic_bool MemoryUtils::kHitMemoryHighWatermark{false};
 
 StatusOr<bool> MemoryUtils::hitsHighWatermark() {
+  if (FLAGS_system_memory_high_watermark_ratio >= 1.0) {
+    return false;
+  }
   double available = 0.0, total = 0.0;
   if (FLAGS_containerized) {
     FileUtils::FileLineIterator iter("/sys/fs/cgroup/memory/memory.stat", &reTotalCache);

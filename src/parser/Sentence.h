@@ -103,7 +103,6 @@ class Sentence {
     kGetConfig,
     kFetchVertices,
     kFetchEdges,
-    kBalance,
     kFindPath,
     kLimit,
     kGroupBy,

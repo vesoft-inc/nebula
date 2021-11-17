@@ -15,7 +15,6 @@
 #include "graph/validator/AdminJobValidator.h"
 #include "graph/validator/AdminValidator.h"
 #include "graph/validator/AssignmentValidator.h"
-#include "graph/validator/BalanceValidator.h"
 #include "graph/validator/DownloadValidator.h"
 #include "graph/validator/ExplainValidator.h"
 #include "graph/validator/FetchEdgesValidator.h"

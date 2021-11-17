@@ -67,7 +67,6 @@ Status PermissionCheck::permissionCheck(ClientSession *session,
     case Sentence::Kind::kListZones:
     case Sentence::Kind::kAddHostIntoZone:
     case Sentence::Kind::kDropHostFromZone:
-    case Sentence::Kind::kBalance:
     case Sentence::Kind::kShowConfigs:
     case Sentence::Kind::kSetConfig:
     case Sentence::Kind::kGetConfig:
