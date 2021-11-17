@@ -45,6 +45,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:time_utils_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:fs_obj>
+        $<TARGET_OBJECTS:wkt_wkb_io_obj>
     LIBRARIES
         gtest
         ${THRIFT_LIBRARIES}

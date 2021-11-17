@@ -131,6 +131,16 @@ void Edge::clear() {
   props.clear();
 }
 
+bool Edge::keyEqual(const Edge& rhs) const {
+  if (type != rhs.type && type != -rhs.type) {
+    return false;
+  }
+  if (type == rhs.type) {
+    return src == rhs.src && dst == rhs.dst && ranking == rhs.ranking;
+  }
+  return src == rhs.dst && dst == rhs.src && ranking == rhs.ranking;
+}
+
 }  // namespace nebula
 
 namespace std {

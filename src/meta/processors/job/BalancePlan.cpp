@@ -3,7 +3,7 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include "meta/processors/admin/BalancePlan.h"
+#include "meta/processors/job/BalancePlan.h"
 
 #include <folly/synchronization/Baton.h>
 
@@ -41,8 +41,8 @@ void BalancePlan::dispatchTasks() {
 }
 
 void BalancePlan::invoke() {
-  status_ = BalanceStatus::IN_PROGRESS;
   // Sort the tasks by its id to ensure the order after recovery.
+  setStatus(meta::cpp2::JobStatus::RUNNING);
   std::sort(
       tasks_.begin(), tasks_.end(), [](auto& l, auto& r) { return l.taskIdStr() < r.taskIdStr(); });
   dispatchTasks();
@@ -55,12 +55,12 @@ void BalancePlan::invoke() {
         {
           std::lock_guard<std::mutex> lg(lock_);
           finishedTaskNum_++;
-          VLOG(1) << "Balance " << id_ << " has completed " << finishedTaskNum_ << " task";
+          VLOG(1) << "Balance " << id() << " has completed " << finishedTaskNum_ << " task";
           if (finishedTaskNum_ == tasks_.size()) {
             finished = true;
-            if (status_ == BalanceStatus::IN_PROGRESS) {
-              status_ = BalanceStatus::SUCCEEDED;
-              LOG(INFO) << "Balance " << id_ << " succeeded!";
+            if (status() == meta::cpp2::JobStatus::RUNNING) {
+              setStatus(meta::cpp2::JobStatus::FINISHED);
+              LOG(INFO) << "Balance " << id() << " succeeded!";
             }
           }
           stopped = stopped_;
@@ -83,17 +83,16 @@ void BalancePlan::invoke() {
         {
           std::lock_guard<std::mutex> lg(lock_);
           finishedTaskNum_++;
-          VLOG(1) << "Balance " << id_ << " has completed " << finishedTaskNum_ << " task";
-          status_ = BalanceStatus::FAILED;
+          VLOG(1) << "Balance " << id() << " has completed " << finishedTaskNum_ << " task";
+          setStatus(meta::cpp2::JobStatus::FAILED);
           if (finishedTaskNum_ == tasks_.size()) {
             finished = true;
-            LOG(INFO) << "Balance " << id_ << " failed!";
+            LOG(INFO) << "Balance " << id() << " failed!";
           }
           stopped = stopped_;
         }
         if (finished) {
           CHECK_EQ(j, this->buckets_[i].size() - 1);
-          saveInStore(true);
           onFinished_();
         } else if (j + 1 < this->buckets_[i].size()) {
           auto& task = this->tasks_[this->buckets_[i][j + 1]];
@@ -122,11 +121,11 @@ void BalancePlan::invoke() {
 nebula::cpp2::ErrorCode BalancePlan::saveInStore(bool onlyPlan) {
   CHECK_NOTNULL(kv_);
   std::vector<kvstore::KV> data;
-  data.emplace_back(MetaKeyUtils::balancePlanKey(id_), MetaKeyUtils::balancePlanVal(status_));
+  data.emplace_back(jobDescription_.jobKey(), jobDescription_.jobVal());
   if (!onlyPlan) {
     for (auto& task : tasks_) {
       data.emplace_back(MetaKeyUtils::balanceTaskKey(
-                            task.balanceId_, task.spaceId_, task.partId_, task.src_, task.dst_),
+                            task.jobId_, task.spaceId_, task.partId_, task.src_, task.dst_),
                         MetaKeyUtils::balanceTaskVal(
                             task.status_, task.ret_, task.startTimeMs_, task.endTimeMs_));
     }
@@ -148,28 +147,63 @@ nebula::cpp2::ErrorCode BalancePlan::saveInStore(bool onlyPlan) {
   return ret;
 }
 
-nebula::cpp2::ErrorCode BalancePlan::recovery(bool resume) {
-  CHECK_NOTNULL(kv_);
-  const auto& prefix = MetaKeyUtils::balanceTaskPrefix(id_);
+ErrorOr<nebula::cpp2::ErrorCode, std::vector<cpp2::BalanceTask>> BalancePlan::show(
+    JobID jobId, kvstore::KVStore* kv, AdminClient* client) {
+  auto ret = getBalanceTasks(jobId, kv, client, true);
+  if (!ok(ret)) {
+    return error(ret);
+  }
+  std::vector<BalanceTask> tasks = value(ret);
+  std::vector<cpp2::BalanceTask> thriftTasks;
+  for (auto& task : tasks) {
+    cpp2::BalanceTask t;
+    t.set_id(task.taskIdStr());
+    t.set_command(task.taskCommandStr());
+    switch (task.result()) {
+      case BalanceTaskResult::SUCCEEDED:
+        t.set_result(cpp2::TaskResult::SUCCEEDED);
+        break;
+      case BalanceTaskResult::FAILED:
+        t.set_result(cpp2::TaskResult::FAILED);
+        break;
+      case BalanceTaskResult::IN_PROGRESS:
+        t.set_result(cpp2::TaskResult::IN_PROGRESS);
+        break;
+      case BalanceTaskResult::INVALID:
+        t.set_result(cpp2::TaskResult::INVALID);
+        break;
+    }
+    t.set_start_time(task.startTime());
+    t.set_stop_time(task.endTime());
+    thriftTasks.emplace_back(std::move(t));
+  }
+  return thriftTasks;
+}
+
+ErrorOr<nebula::cpp2::ErrorCode, std::vector<BalanceTask>> BalancePlan::getBalanceTasks(
+    JobID jobId, kvstore::KVStore* kv, AdminClient* client, bool resume) {
+  CHECK_NOTNULL(kv);
+  const auto& prefix = MetaKeyUtils::balanceTaskPrefix(jobId);
   std::unique_ptr<kvstore::KVIterator> iter;
-  auto ret = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+  auto ret = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << "Can't access kvstore, ret = " << static_cast<int32_t>(ret);
     return ret;
   }
-
+  std::vector<BalanceTask> tasks;
   while (iter->valid()) {
     BalanceTask task;
-    task.kv_ = kv_;
-    task.client_ = client_;
+    task.kv_ = kv;
+    task.client_ = client;
     {
       auto tup = MetaKeyUtils::parseBalanceTaskKey(iter->key());
-      task.balanceId_ = std::get<0>(tup);
+      task.jobId_ = std::get<0>(tup);
       task.spaceId_ = std::get<1>(tup);
       task.partId_ = std::get<2>(tup);
       task.src_ = std::get<3>(tup);
       task.dst_ = std::get<4>(tup);
       task.taskIdStr_ = task.buildTaskId();
+      task.commandStr_ = task.buildCommand();
     }
     {
       auto tup = MetaKeyUtils::parseBalanceTaskVal(iter->val());
@@ -183,7 +217,7 @@ nebula::cpp2::ErrorCode BalancePlan::recovery(bool resume) {
           task.ret_ = BalanceTaskResult::IN_PROGRESS;
         }
         task.status_ = BalanceTaskStatus::START;
-        auto activeHostRet = ActiveHostsMan::isLived(kv_, task.dst_);
+        auto activeHostRet = ActiveHostsMan::isLived(kv, task.dst_);
         if (!nebula::ok(activeHostRet)) {
           auto retCode = nebula::error(activeHostRet);
           LOG(ERROR) << "Get active hosts failed, error: " << static_cast<int32_t>(retCode);
@@ -197,10 +231,20 @@ nebula::cpp2::ErrorCode BalancePlan::recovery(bool resume) {
         }
       }
     }
-    tasks_.emplace_back(std::move(task));
+    tasks.emplace_back(std::move(task));
     iter->next();
   }
-  return nebula::cpp2::ErrorCode::SUCCEEDED;
+  return tasks;
+}
+
+nebula::cpp2::ErrorCode BalancePlan::recovery(bool resume) {
+  auto ret = getBalanceTasks(id(), kv_, client_, resume);
+  if (!ok(ret)) {
+    return error(ret);
+  }
+  tasks_ = value(ret);
+  return tasks_.empty() ? nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND
+                        : nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 }  // namespace meta
