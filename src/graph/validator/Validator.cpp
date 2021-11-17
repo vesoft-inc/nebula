@@ -133,8 +133,6 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
       return std::make_unique<ShowRolesInSpaceValidator>(sentence, context);
     case Sentence::Kind::kDescribeUser:
       return std::make_unique<DescribeUserValidator>(sentence, context);
-    case Sentence::Kind::kBalance:
-      return std::make_unique<BalanceValidator>(sentence, context);
     case Sentence::Kind::kAdminJob:
     case Sentence::Kind::kAdminShowJobs:
       return std::make_unique<AdminJobValidator>(sentence, context);

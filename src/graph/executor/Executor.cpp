@@ -388,21 +388,6 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     case PlanNode::Kind::kDescribeUser: {
       return pool->add(new DescribeUserExecutor(node, qctx));
     }
-    case PlanNode::Kind::kBalanceLeaders: {
-      return pool->add(new BalanceLeadersExecutor(node, qctx));
-    }
-    case PlanNode::Kind::kBalance: {
-      return pool->add(new BalanceExecutor(node, qctx));
-    }
-    case PlanNode::Kind::kStopBalance: {
-      return pool->add(new StopBalanceExecutor(node, qctx));
-    }
-    case PlanNode::Kind::kResetBalance: {
-      return pool->add(new ResetBalanceExecutor(node, qctx));
-    }
-    case PlanNode::Kind::kShowBalance: {
-      return pool->add(new ShowBalanceExecutor(node, qctx));
-    }
     case PlanNode::Kind::kShowConfigs: {
       return pool->add(new ShowConfigsExecutor(node, qctx));
     }
