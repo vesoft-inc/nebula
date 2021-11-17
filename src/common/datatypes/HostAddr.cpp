@@ -17,6 +17,12 @@ bool HostAddr::operator==(const HostAddr& rhs) const {
 
 bool HostAddr::operator!=(const HostAddr& rhs) const { return !(*this == rhs); }
 
+HostAddr& HostAddr::operator=(const HostAddr& rhs) {
+  host = rhs.host;
+  port = rhs.port;
+  return *this;
+}
+
 bool HostAddr::operator<(const HostAddr& rhs) const {
   if (host == rhs.host) {
     return port < rhs.port;
