@@ -365,7 +365,3 @@ Feature: User & privilege Test
       DESC USER root
       """
     Then a PermissionError should be raised at runtime:
-
-
-
-
