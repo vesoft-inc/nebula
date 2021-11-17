@@ -9,9 +9,11 @@ nebula_add_test(
         StatsManagerTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:datatypes_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:thread_obj>
+        $<TARGET_OBJECTS:wkt_wkb_io_obj>
     LIBRARIES
         gtest
 )
@@ -23,9 +25,11 @@ nebula_add_test(
         StatsManagerRateTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:datatypes_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:thread_obj>
+        $<TARGET_OBJECTS:wkt_wkb_io_obj>
     LIBRARIES
         gtest
 )
@@ -37,9 +41,11 @@ nebula_add_test(
         StatsManagerCrossLevelTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:datatypes_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:thread_obj>
+        $<TARGET_OBJECTS:wkt_wkb_io_obj>
     LIBRARIES
         gtest
 )
@@ -52,8 +58,10 @@ nebula_add_executable(
         StatsManagerBenchmark.cpp
     OBJECTS
         $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:datatypes_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:base_obj>
+        $<TARGET_OBJECTS:wkt_wkb_io_obj>
     LIBRARIES
         follybenchmark boost_regex
 )

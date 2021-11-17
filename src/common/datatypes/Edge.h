@@ -68,6 +68,8 @@ struct Edge {
   bool contains(const Value& key) const;
 
   const Value& value(const std::string& key) const;
+
+  bool keyEqual(const Edge& rhs) const;
 };
 
 inline std::ostream& operator<<(std::ostream& os, const Edge& v) { return os << v.toString(); }
