@@ -457,7 +457,7 @@ bool Part::preProcessLog(LogID logId, TermID termId, ClusterID clusterId, const 
 void Part::cleanup() {
   LOG(INFO) << idStr_ << "Clean rocksdb part data";
   // Remove the vertex, edge, index, systemCommitKey, operation data under the part
-  const auto& vertexPre = NebulaKeyUtils::vertexPrefix(partId_);
+  const auto& vertexPre = NebulaKeyUtils::tagPrefix(partId_);
   auto ret = engine_->removeRange(NebulaKeyUtils::firstKey(vertexPre, vIdLen_),
                                   NebulaKeyUtils::lastKey(vertexPre, vIdLen_));
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
