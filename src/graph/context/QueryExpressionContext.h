@@ -53,7 +53,7 @@ class QueryExpressionContext final : public ExpressionContext {
 
   void setVar(const std::string&, Value val) override;
 
-  QueryExpressionContext& operator()(Iterator* iter) {
+  QueryExpressionContext& operator()(Iterator* iter = nullptr) {
     iter_ = iter;
     return *this;
   }
