@@ -1687,16 +1687,36 @@ match_step_range
         $$ = new MatchStepRange(1);
     }
     | STAR legal_integer {
-        $$ = new MatchStepRange($2, $2);
+        if ($2 < 0) {
+            throw nebula::GraphParser::syntax_error(@2, "Expected an unsigned integer.");
+        }
+        auto step = static_cast<size_t>($2);
+        $$ = new MatchStepRange(step, step);
     }
     | STAR DOT_DOT legal_integer {
-        $$ = new MatchStepRange(1, $3);
+        if ($3 < 0) {
+            throw nebula::GraphParser::syntax_error(@3, "Expected an unsigned integer.");
+        }
+        auto step = static_cast<size_t>($3);
+        $$ = new MatchStepRange(1, step);
     }
     | STAR legal_integer DOT_DOT {
-        $$ = new MatchStepRange($2);
+        if ($2 < 0) {
+            throw nebula::GraphParser::syntax_error(@2, "Expected an unsigned integer.");
+        }
+        auto step = static_cast<size_t>($2);
+        $$ = new MatchStepRange(step);
     }
     | STAR legal_integer DOT_DOT legal_integer {
-        $$ = new MatchStepRange($2, $4);
+        if ($2 < 0) {
+            throw nebula::GraphParser::syntax_error(@2, "Expected an unsigned integer.");
+        }
+        auto min = static_cast<size_t>($2);
+        if ($4 < 0) {
+            throw nebula::GraphParser::syntax_error(@4, "Expected an unsigned integer.");
+        }
+        auto max = static_cast<size_t>($4);
+        $$ = new MatchStepRange(min, max);
     }
     ;
 

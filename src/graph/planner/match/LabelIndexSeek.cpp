@@ -170,20 +170,28 @@ StatusOr<SubPlan> LabelIndexSeek::transformEdge(EdgeContext* edgeCtx) {
 
   auto* pool = qctx->objPool();
   if (edgeCtx->scanInfo.direction == MatchEdge::Direction::BOTH) {
-    // merge the src,dst to one column
-    auto* yieldColumns = pool->makeAndAdd<YieldColumns>();
-    auto* exprList = ExpressionList::make(pool);
-    exprList->add(ColumnExpression::make(pool, 0));  // src
-    exprList->add(ColumnExpression::make(pool, 1));  // dst
-    yieldColumns->addColumn(new YieldColumn(ListExpression::make(pool, exprList)));
-    auto* project = Project::make(qctx, scan, yieldColumns);
-    project->setColNames({kVid});
+    PlanNode* left = nullptr;
+    {
+      auto* yieldColumns = pool->makeAndAdd<YieldColumns>();
+      yieldColumns->addColumn(new YieldColumn(InputPropertyExpression::make(pool, kSrc)));
+      left = Project::make(qctx, scan, yieldColumns);
+      left->setColNames({kVid});
+    }
+    PlanNode* right = nullptr;
+    {
+      auto* yieldColumns = pool->makeAndAdd<YieldColumns>();
+      yieldColumns->addColumn(new YieldColumn(InputPropertyExpression::make(pool, kDst)));
+      right = Project::make(qctx, scan, yieldColumns);
+      right->setColNames({kVid});
+    }
 
-    auto* unwindExpr = ColumnExpression::make(pool, 0);
-    auto* unwind = Unwind::make(matchClauseCtx->qctx, project, unwindExpr, kVid);
-    unwind->setColNames({"vidList", kVid});
-    plan.root = unwind;
+    plan.root = Union::make(qctx, left, right);
+    plan.root->setColNames({kVid});
   }
+
+  auto* dedup = Dedup::make(qctx, plan.root);
+  dedup->setColNames(plan.root->colNames());
+  plan.root = dedup;
 
   // initialize start expression in project node
   edgeCtx->initialExpr = VariablePropertyExpression::make(pool, "", kVid);
