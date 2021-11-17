@@ -161,7 +161,7 @@ TEST_F(GetStatsTest, StatsJob) {
   // Insert running status statis data in prepare function of runJobInternal.
   // Update statis data to finished or failed status in finish function of
   // runJobInternal.
-  auto result = jobMgr->runJobInternal(statisJob);
+  auto result = jobMgr->runJobInternal(statisJob, JobManager::JbOp::ADD);
   ASSERT_TRUE(result);
   // JobManager does not set the job finished status in RunJobInternal function.
   // But set statis data.
@@ -295,7 +295,7 @@ TEST_F(GetStatsTest, StatsJob) {
   // Insert running status statis data in prepare function of runJobInternal.
   // Update statis data to finished or failed status in finish function of
   // runJobInternal.
-  auto result2 = jobMgr->runJobInternal(statisJob2);
+  auto result2 = jobMgr->runJobInternal(statisJob2, JobManager::JbOp::ADD);
 
   auto jobId2 = statisJob2.getJobId();
   auto statsKey2 = MetaKeyUtils::statsKey(spaceId);
