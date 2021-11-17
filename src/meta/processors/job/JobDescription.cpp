@@ -149,8 +149,8 @@ std::string JobDescription::archiveKey() {
   return str;
 }
 
-bool JobDescription::setStatus(Status newStatus) {
-  if (JobStatus::laterThan(status_, newStatus)) {
+bool JobDescription::setStatus(Status newStatus, bool force) {
+  if (JobStatus::laterThan(status_, newStatus) && !force) {
     return false;
   }
   status_ = newStatus;
