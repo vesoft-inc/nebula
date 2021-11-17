@@ -114,17 +114,19 @@ def conn_pool(conn_pool_to_first_graph_service):
     return conn_pool_to_first_graph_service
 
 @pytest.fixture(scope="class")
-def session_from_first_conn_pool(conn_pool_to_first_graph_service, pytestconfig):
+def session():
+    sess_dict = dict(result_set=None)
+    yield sess_dict
+    for sess in sess_dict:
+        if sess_dict[sess]:
+            sess_dict[sess].release()
+
+@pytest.fixture(scope="class", autouse=True)
+def set_default_session(session, pytestconfig, conn_pool_to_first_graph_service):
     user = pytestconfig.getoption("user")
     password = pytestconfig.getoption("password")
-    sess = conn_pool_to_first_graph_service.get_session(user, password)
-    yield sess
-    sess.release()
-
-
-@pytest.fixture(scope="class")
-def session(session_from_first_conn_pool):
-    return session_from_first_conn_pool
+    session['current'] = conn_pool_to_first_graph_service.get_session(user, password)
+    yield
 
 def load_csv_data_once(space: str):
     with open(SPACE_TMP_PATH, "r") as f:
@@ -175,7 +177,7 @@ def workarround_for_class(request, pytestconfig, conn_pool,
     request.cls.check_format_str = 'result: {}, expect: {}'
     request.cls.data_loaded = False
     request.cls.client_pool = conn_pool
-    request.cls.client = session
+    request.cls.client = session['current']
     request.cls.set_delay()
     request.cls.prepare()
 

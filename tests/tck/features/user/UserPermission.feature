@@ -1,4 +1,3 @@
-@mintest
 Feature: User & privilege Test
 
   Scenario: CheckUserJobPermission
@@ -55,7 +54,8 @@ Feature: User & privilege Test
       """
     Then the execution should be successful
     And wait 6 seconds
-    When try to execute query on admin_job_space from user root with password nebula:
+    Then change user to root with password nebula
+    When executing query:
       """
       SHOW USERS
       """
@@ -67,28 +67,37 @@ Feature: User & privilege Test
       | "job_user"  |
       | "job_guest" |
       | "job_none"  |
-    When try to execute query on admin_job_space from user job_none with password password:
+    Then change user to job_none with password password
+    When use current space
+    Then a PermissionError should be raised at runtime: No permission to read space
+    When executing query:
       """
       SUBMIT JOB COMPACT;
       """
-    Then a PermissionError should be raised at runtime: No permission to read space
-    When try to execute query on admin_job_space from user job_none with password password:
+    Then a SemanticError should be raised at runtime: Space was not chosen
+    When executing query:
       """
       SHOW JOBS
       """
-    Then a PermissionError should be raised at runtime: No permission to read space
-    When try to execute query on admin_job_space from user job_guest with password password:
+    Then a SemanticError should be raised at runtime: Space was not chosen
+    Then change user to job_guest with password password
+    When use current space
+    Then the execution should be successful
+    When executing query:
       """
       SUBMIT JOB COMPACT;
       """
     Then a PermissionError should be raised at runtime: No permission to write data
-    When try to execute query on admin_job_space from user job_guest with password password:
+    When executing query:
       """
       SHOW JOBS
       """
     Then the result should be, in order:
       | Job Id | Command | Status | Start Time | Stop Time |
-    When try to execute query on admin_job_space from user job_user with password password:
+    Then change user to job_user with password password
+    When use current space
+    Then the execution should be successful
+    When executing query:
       """
       SUBMIT JOB COMPACT;
       """
@@ -96,14 +105,17 @@ Feature: User & privilege Test
       | New Job Id |
       | /\d+/      |
     And wait 1 seconds
-    When try to execute query on admin_job_space from user job_user with password password:
+    When executing query:
       """
       SHOW JOBS
       """
     Then the result should be, in order:
       | Job Id | Command   | Status     | Start Time | Stop Time |
       | /\d+/  | "COMPACT" | "FINISHED" | /\w+/      | /\w+/     |
-    When try to execute query on admin_job_space from user job_dba with password password:
+    Then change user to job_dba with password password
+    When use current space
+    Then the execution should be successful
+    When executing query:
       """
       SUBMIT JOB COMPACT;
       """
@@ -111,7 +123,7 @@ Feature: User & privilege Test
       | New Job Id |
       | /\d+/      |
     And wait 1 seconds
-    When try to execute query on admin_job_space from user job_dba with password password:
+    When executing query:
       """
       SHOW JOBS
       """
@@ -119,7 +131,10 @@ Feature: User & privilege Test
       | Job Id | Command   | Status     | Start Time | Stop Time |
       | /\d+/  | "COMPACT" | "FINISHED" | /\w+/      | /\w+/     |
       | /\d+/  | "COMPACT" | "FINISHED" | /\w+/      | /\w+/     |
-    When try to execute query on admin_job_space from user job_admin with password password:
+    Then change user to job_admin with password password
+    When use current space
+    Then the execution should be successful
+    When executing query:
       """
       SUBMIT JOB COMPACT;
       """
@@ -127,7 +142,7 @@ Feature: User & privilege Test
       | New Job Id |
       | /\d+/      |
     And wait 1 seconds
-    When try to execute query on admin_job_space from user job_admin with password password:
+    When executing query:
       """
       SHOW JOBS
       """

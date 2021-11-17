@@ -134,7 +134,7 @@ def preload_space(
         graph_spaces["space_desc"] = load_student_data
     else:
         raise ValueError(f"Invalid space name given: {space}")
-    resp_ok(session, f'USE {space};', True)
+    resp_ok(session['current'], f'USE {space};', True)
 
 
 @given("an empty graph")
@@ -147,7 +147,7 @@ def having_executed(query, session, request):
     ngql = combine_query(query)
     ngql = normalize_outline_scenario(request, ngql)
     for stmt in ngql.split(';'):
-        stmt and resp_ok(session, stmt, True)
+        stmt and resp_ok(session['current'], stmt, True)
 
 
 @given(parse("create a space with following options:\n{options}"))
@@ -166,7 +166,7 @@ def new_space(request, options, session, graph_spaces):
         charset=opts.get("charset", "utf8"),
         collate=opts.get("collate", "utf8_bin"),
     )
-    create_space(space_desc, session)
+    create_space(space_desc, session['current'])
     graph_spaces["space_desc"] = space_desc
     graph_spaces["drop_space"] = True
 
@@ -182,7 +182,7 @@ def new_space(request, session, graph_spaces):
         charset="utf8",
         collate="utf8_bin",
     )
-    create_space(space_desc, session)
+    create_space(space_desc, session['current'])
     graph_spaces["space_desc"] = space_desc
     graph_spaces["drop_space"] = True
 
@@ -191,7 +191,7 @@ def new_space(request, session, graph_spaces):
 def import_csv_data(request, data, graph_spaces, session, pytestconfig):
     data_dir = os.path.join(DATA_DIR, normalize_outline_scenario(request, data))
     space_desc = load_csv_data(
-        session,
+        session['current'],
         data_dir,
         "I" + space_generator(),
     )
@@ -207,24 +207,34 @@ def exec_query(request, ngql, session, graph_spaces, need_try: bool = False):
     graph_spaces['result_set'] = response(session, ngql, need_try)
     graph_spaces['ngql'] = ngql
 
+@then(parse("change user to {username} with password {password}"))
+def change_current_user(session, username, password, graph_spaces, conn_pool_to_first_graph_service):
+    session['current'].release()
+    session['current'] = conn_pool_to_first_graph_service.get_session(username, password)
+
+@when(parse("use current space"))
+def use_current_space(session, graph_spaces):
+    space_desc = graph_spaces["space_desc"]
+    graph_spaces['result_set'] = response(session['current'], space_desc.use_stmt(), True)
+    graph_spaces['ngql'] = space_desc.use_stmt()
 
 @when(parse("executing query:\n{query}"))
 def executing_query(query, graph_spaces, session, request):
     ngql = combine_query(query)
-    exec_query(request, ngql, session, graph_spaces)
+    exec_query(request, ngql, session['current'], graph_spaces)
 
 
 @when(parse("profiling query:\n{query}"))
 def profiling_query(query, graph_spaces, session, request):
     ngql = "PROFILE {" + combine_query(query) + "}"
-    exec_query(request, ngql, session, graph_spaces)
+    exec_query(request, ngql, session['current'], graph_spaces)
 
 
 @when(parse("try to execute query:\n{query}"))
 def try_to_execute_query(query, graph_spaces, session, request):
     ngql = normalize_outline_scenario(request, combine_query(query))
     for stmt in ngql.split(';'):
-        exec_query(request, stmt, session, graph_spaces, True)
+        exec_query(request, stmt, session['current'], graph_spaces, True)
 
 @when(parse("clone a new space according to current space"))
 def clone_space(graph_spaces, session, request):
@@ -232,32 +242,12 @@ def clone_space(graph_spaces, session, request):
     current_space = space_desc._name
     new_space = "EmptyGraph_" + space_generator()
     space_desc._name = new_space
-    resp_ok(session, space_desc.drop_stmt(), True)
+    resp_ok(session['current'], space_desc.drop_stmt(), True)
     ngql = "create space " + new_space + " as " + current_space;
-    exec_query(request, ngql, session, graph_spaces)
-    resp_ok(session, space_desc.use_stmt(), True)
+    exec_query(request, ngql, session['current'], graph_spaces)
+    resp_ok(session['current'], space_desc.use_stmt(), True)
     graph_spaces["space_desc"] = space_desc
     graph_spaces["drop_space"] = True
-
-
-@when(parse("try to execute query on {space} from user {username} with password {password}:\n{query}"))
-def execute_query_from_user(query, space, username, password, conn_pool_to_second_graph_service, graph_spaces, session, request):
-    ngql = normalize_outline_scenario(request, combine_query(query))
-    sess = None
-    try:
-        sess = conn_pool_to_second_graph_service.get_session(username, password)
-    except Exception as e:
-        if sess:
-            sess.release()
-        print(f"Login {username} with {password} failed")
-    use_sentence = f"USE {space}"
-    exec_query(request, use_sentence, sess, graph_spaces, True)
-    resp = graph_spaces['result_set']
-    if resp.error_code() != ErrorCode.SUCCEEDED:
-        pass
-    else:
-        exec_query(request, ngql, sess, graph_spaces, True)
-    sess.release()
 
 @given("wait all indexes ready")
 @when("wait all indexes ready")
@@ -266,21 +256,21 @@ def wait_index_ready(graph_spaces, session):
     space_desc = graph_spaces.get("space_desc", None)
     assert space_desc is not None
     space = space_desc.name
-    resp_ok(session, f"USE {space}", True)
-    wait_indexes_ready(session)
+    resp_ok(session['current'], f"USE {space}", True)
+    wait_indexes_ready(session['current'])
 
 
 @when(parse("submit a job:\n{query}"))
 def submit_job(query, graph_spaces, session, request):
     ngql = normalize_outline_scenario(request, combine_query(query))
-    exec_query(request, ngql, session, graph_spaces, True)
+    exec_query(request, ngql, session['current'], graph_spaces, True)
 
 
 @then("wait the job to finish")
 def wait_job_to_finish(graph_spaces, session):
     resp = graph_spaces['result_set']
     jid = job_id(resp)
-    is_finished = wait_all_jobs_finished(session, [jid])
+    is_finished = wait_all_jobs_finished(session['current'], [jid])
     assert is_finished, f"Fail to finish job {jid}"
 
 
@@ -496,7 +486,7 @@ def drop_used_space(session, graph_spaces):
     space_desc = graph_spaces.get("space_desc", None)
     if space_desc is not None:
         stmt = space_desc.drop_stmt()
-        response(session, stmt)
+        response(session['current'], stmt)
 
 
 @then(parse("the execution plan should be:\n{plan}"))
@@ -516,11 +506,11 @@ def check_plan(plan, graph_spaces):
 
 
 @when(parse("executing query via graph {index:d}:\n{query}"))
-def executing_query(query, index, graph_spaces, session_from_first_conn_pool, conn_pool_to_second_graph_service, pytestconfig, request):
+def executing_query(query, index, graph_spaces, session, conn_pool_to_second_graph_service, pytestconfig, request):
     assert index < 2, "There exists only 0,1 graph: {}".format(index)
     ngql = combine_query(query)
     if index == 0:
-        exec_query(request, ngql, session_from_first_conn_pool, graph_spaces)
+        exec_query(request, ngql, session['current'], graph_spaces)
     else:
         user = pytestconfig.getoption("user")
         password = pytestconfig.getoption("password")
@@ -557,7 +547,7 @@ def executing_query_with_params(query, indices, keys, graph_spaces, session, req
         vals.append(ValueWrapper(register_dict[key][index]))
     register_lock.release()
     ngql = combine_query(query).format(*vals)
-    exec_query(request, ngql, session, graph_spaces)
+    exec_query(request, ngql, session['current'], graph_spaces)
 
 @given(parse("nothing"))
 def nothing():
