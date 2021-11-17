@@ -143,7 +143,7 @@ class IndexKeyUtils final {
         return "";
       }
       default:
-        LOG(ERROR) << "Unsupported default value type";
+        LOG(FATAL) << "Unsupported default value type";
     }
     return "";
   }

@@ -141,11 +141,9 @@ class StorageClientBase {
             class RemoteFunc,
             class Response = typename std::result_of<RemoteFunc(ClientType* client,
                                                                 const Request&)>::type::value_type>
-  folly::Future<StatusOr<Response>> getResponse(
-      folly::EventBase* evb,
-      std::pair<HostAddr, Request>&& request,
-      RemoteFunc&& remoteFunc,
-      folly::Promise<StatusOr<Response>> pro = folly::Promise<StatusOr<Response>>());
+  folly::Future<StatusOr<Response>> getResponse(folly::EventBase* evb,
+                                                std::pair<HostAddr, Request>&& request,
+                                                RemoteFunc&& remoteFunc);
 
   template <class Request,
             class RemoteFunc,
@@ -154,7 +152,7 @@ class StorageClientBase {
   void getResponseImpl(folly::EventBase* evb,
                        std::pair<HostAddr, Request> request,
                        RemoteFunc remoteFunc,
-                       folly::Promise<StatusOr<Response>> pro);
+                       std::shared_ptr<folly::Promise<StatusOr<Response>>> pro);
 
   // Cluster given ids into the host they belong to
   // The method returns a map

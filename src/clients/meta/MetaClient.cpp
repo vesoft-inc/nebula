@@ -2579,57 +2579,6 @@ folly::Future<StatusOr<std::vector<cpp2::RoleItem>>> MetaClient::getUserRoles(st
   return future;
 }
 
-folly::Future<StatusOr<int64_t>> MetaClient::balance(std::vector<HostAddr> hostDel,
-                                                     bool isStop,
-                                                     bool isReset) {
-  cpp2::BalanceReq req;
-  if (!hostDel.empty()) {
-    req.set_host_del(std::move(hostDel));
-  }
-  if (isStop) {
-    req.set_stop(isStop);
-  }
-  if (isReset) {
-    req.set_reset(isReset);
-  }
-
-  folly::Promise<StatusOr<int64_t>> promise;
-  auto future = promise.getFuture();
-  getResponse(
-      std::move(req),
-      [](auto client, auto request) { return client->future_balance(request); },
-      [](cpp2::BalanceResp&& resp) -> int64_t { return resp.get_id(); },
-      std::move(promise));
-  return future;
-}
-
-folly::Future<StatusOr<std::vector<cpp2::BalanceTask>>> MetaClient::showBalance(int64_t balanceId) {
-  cpp2::BalanceReq req;
-  req.set_id(balanceId);
-  folly::Promise<StatusOr<std::vector<cpp2::BalanceTask>>> promise;
-  auto future = promise.getFuture();
-  getResponse(
-      std::move(req),
-      [](auto client, auto request) { return client->future_balance(request); },
-      [](cpp2::BalanceResp&& resp) -> std::vector<cpp2::BalanceTask> { return resp.get_tasks(); },
-      std::move(promise));
-  return future;
-}
-
-folly::Future<StatusOr<bool>> MetaClient::balanceLeader() {
-  cpp2::LeaderBalanceReq req;
-  folly::Promise<StatusOr<bool>> promise;
-  auto future = promise.getFuture();
-  getResponse(
-      std::move(req),
-      [](auto client, auto request) { return client->future_leaderBalance(request); },
-      [](cpp2::ExecResp&& resp) -> bool {
-        return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
-      },
-      std::move(promise));
-  return future;
-}
-
 folly::Future<StatusOr<std::string>> MetaClient::getTagDefaultValue(GraphSpaceID spaceId,
                                                                     TagID tagId,
                                                                     const std::string& field) {
