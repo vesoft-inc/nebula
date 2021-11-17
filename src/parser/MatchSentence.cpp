@@ -7,6 +7,10 @@
 
 namespace nebula {
 
+std::string MatchStepRange::toString() const {
+  return folly::stringPrintf("%lu..%lu", min(), max());
+}
+
 std::string MatchClause::toString() const {
   std::string buf;
   buf.reserve(256);
@@ -107,7 +111,7 @@ std::string MatchEdge::toString() const {
       buf += "*";
       if (range_->min() == range_->max()) {
         buf += folly::to<std::string>(range_->min());
-      } else if (range_->max() == std::numeric_limits<int64_t>::max()) {
+      } else if (range_->max() == std::numeric_limits<size_t>::max()) {
         if (range_->min() != 1) {
           buf += folly::to<std::string>(range_->min());
           buf += "..";

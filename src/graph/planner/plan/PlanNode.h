@@ -27,6 +27,9 @@ class PlanNode {
     kGetNeighbors,
     kGetVertices,
     kGetEdges,
+    kTraverse,
+    kAppendVertices,
+
     // ------------------
     // TODO(yee): refactor in logical plan
     kIndexScan,

@@ -20,15 +20,12 @@ Feature: Match index selection
       | ("Tony Parker" :player{age: 36, name: "Tony Parker"})     |
       | ("Vince Carter" :player{age: 42, name: "Vince Carter"})   |
     And the execution plan should be:
-      | id | name        | dependencies | operator info                                                                                                                                                         |
-      | 10 | Project     | 13           |                                                                                                                                                                       |
-      | 13 | Filter      | 7            |                                                                                                                                                                       |
-      | 7  | Project     | 6            |                                                                                                                                                                       |
-      | 6  | Project     | 5            |                                                                                                                                                                       |
-      | 5  | Filter      | 15           |                                                                                                                                                                       |
-      | 15 | GetVertices | 11           |                                                                                                                                                                       |
-      | 11 | IndexScan   | 0            | {"indexCtx": {"columnHints":{"scanType":"RANGE","column":"name","beginValue":"\"Tim Duncan\"","endValue":"\"Yao Ming\"","includeBegin":"false","includeEnd":"true"}}} |
-      | 0  | Start       |              |                                                                                                                                                                       |
+      | id | name           | dependencies | operator info                                                                                                                                                         |
+      | 9  | Project        | 8            |                                                                                                                                                                       |
+      | 8  | Filter         | 2            |                                                                                                                                                                       |
+      | 2  | AppendVertices | 6            |                                                                                                                                                                       |
+      | 6  | IndexScan      | 0            | {"indexCtx": {"columnHints":{"scanType":"RANGE","column":"name","beginValue":"\"Tim Duncan\"","endValue":"\"Yao Ming\"","includeBegin":"false","includeEnd":"true"}}} |
+      | 0  | Start          |              |                                                                                                                                                                       |
     When profiling query:
       """
       MATCH (v:player)
@@ -62,15 +59,12 @@ Feature: Match index selection
       | ("JaVale McGee" :player{age: 31, name: "JaVale McGee"})           |
       | ("Dwight Howard" :player{age: 33, name: "Dwight Howard"})         |
     And the execution plan should be:
-      | id | name        | dependencies | operator info                                                                                                                                  |
-      | 10 | Project     | 13           |                                                                                                                                                |
-      | 13 | Filter      | 7            |                                                                                                                                                |
-      | 7  | Project     | 6            |                                                                                                                                                |
-      | 6  | Project     | 5            |                                                                                                                                                |
-      | 5  | Filter      | 15           |                                                                                                                                                |
-      | 15 | GetVertices | 11           |                                                                                                                                                |
-      | 11 | IndexScan   | 0            | {"indexCtx": {"columnHints":{"scanType":"RANGE","column":"age","beginValue":"30","endValue":"40","includeBegin":"false","includeEnd":"true"}}} |
-      | 0  | Start       |              |                                                                                                                                                |
+      | id | name           | dependencies | operator info                                                                                                                                  |
+      | 9  | Project        | 8            |                                                                                                                                                |
+      | 8  | Filter         | 2            |                                                                                                                                                |
+      | 2  | AppendVertices | 6            |                                                                                                                                                |
+      | 6  | IndexScan      | 0            | {"indexCtx": {"columnHints":{"scanType":"RANGE","column":"age","beginValue":"30","endValue":"40","includeBegin":"false","includeEnd":"true"}}} |
+      | 0  | Start          |              |                                                                                                                                                |
 
   Scenario: or filter embedding
     When profiling query:
@@ -97,15 +91,11 @@ Feature: Match index selection
       | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
       | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})                                             |
     And the execution plan should be:
-      | id | name        | dependencies | operator info                                    |
-      | 10 | Project     | 13           |                                                  |
-      | 13 | Filter      | 7            | {"condition":"!(hasSameEdgeInPath($-.__COL_0))"} |
-      | 7  | Project     | 6            |                                                  |
-      | 6  | Project     | 5            |                                                  |
-      | 5  | Filter      | 15           |                                                  |
-      | 15 | GetVertices | 11           |                                                  |
-      | 11 | IndexScan   | 0            |                                                  |
-      | 0  | Start       |              |                                                  |
+      | id | name           | dependencies | operator info |
+      | 6  | Project        | 2            |               |
+      | 2  | AppendVertices | 5            |               |
+      | 5  | IndexScan      | 0            |               |
+      | 0  | Start          |              |               |
 
   Scenario: degenerate to full tag scan
     When profiling query:
@@ -123,19 +113,13 @@ Feature: Match index selection
       | ("Yao Ming" :player{age: 38, name: "Yao Ming"})                   | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})                                             |
       | ("Aron Baynes" :player{age: 32, name: "Aron Baynes"})             | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
     And the execution plan should be:
-      | id | name         | dependencies | operator info                                                                                        |
-      | 16 | Project      | 19           |                                                                                                      |
-      | 19 | Filter       | 13           | { "condition": "((($v.name<=\"Aron Baynes\") OR ($n.age>45)) AND !(hasSameEdgeInPath($-.__COL_0)))"} |
-      | 13 | Project      | 12           |                                                                                                      |
-      | 12 | InnerJoin    | 11           |                                                                                                      |
-      | 11 | Project      | 21           |                                                                                                      |
-      | 21 | GetVertices  | 7            |                                                                                                      |
-      | 7  | Filter       | 6            |                                                                                                      |
-      | 6  | Project      | 5            |                                                                                                      |
-      | 5  | Filter       | 23           |                                                                                                      |
-      | 23 | GetNeighbors | 17           |                                                                                                      |
-      | 17 | IndexScan    | 0            |                                                                                                      |
-      | 0  | Start        |              |                                                                                                      |
+      | id | name           | dependencies | operator info |
+      | 9  | Project        | 8            |               |
+      | 8  | Filter         | 3            |               |
+      | 3  | AppendVertices | 2            |               |
+      | 2  | Traverse       | 1            |               |
+      | 1  | IndexScan      | 0            |               |
+      | 0  | Start          |              |               |
     # This is actually the optimization for another optRule,
     # but it is necessary to ensure that the current optimization does not destroy this scenario
     # and it can be considered in the subsequent refactoring
@@ -154,16 +138,11 @@ Feature: Match index selection
       | count |
       | 81    |
     And the execution plan should be:
-      | id | name         | dependencies | operator info |
-      | 16 | Aggregate    | 18           |               |
-      | 18 | Filter       | 13           |               |
-      | 13 | Project      | 12           |               |
-      | 12 | InnerJoin    | 11           |               |
-      | 11 | Project      | 20           |               |
-      | 20 | GetVertices  | 7            |               |
-      | 7  | Filter       | 6            |               |
-      | 6  | Project      | 5            |               |
-      | 5  | Filter       | 22           |               |
-      | 22 | GetNeighbors | 17           |               |
-      | 17 | IndexScan    | 0            |               |
-      | 0  | Start        |              |               |
+      | id | name           | dependencies | operator info |
+      | 6  | Aggregate      | 8            |               |
+      | 8  | Project        | 7            |               |
+      | 7  | Filter         | 3            |               |
+      | 3  | AppendVertices | 2            |               |
+      | 2  | Traverse       | 1            |               |
+      | 1  | IndexScan      | 0            |               |
+      | 0  | Start          |              |               |
