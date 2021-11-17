@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/optimizer/rule/PushLimitDownProjectRule.h"
@@ -49,15 +48,17 @@ StatusOr<OptRule::TransformResult> PushLimitDownProjectRule::transform(
   auto newLimit = static_cast<Limit *>(limit->clone());
   auto newLimitGroup = OptGroup::create(octx);
   auto newLimitGroupNode = newLimitGroup->makeGroupNode(newLimit);
+  auto projInputVar = proj->inputVar();
   newLimit->setOutputVar(proj->outputVar());
-  newLimit->setInputVar(proj->inputVar());
-  //  newLimit->setColNames(proj->colNames());
+  newLimit->setInputVar(projInputVar);
+  auto *varPtr = octx->qctx()->symTable()->getVar(projInputVar);
+  DCHECK(!!varPtr);
+  newLimit->setColNames(varPtr->colNames);
 
   auto newProj = static_cast<Project *>(proj->clone());
   auto newProjGroupNode = OptGroupNode::create(octx, newProj, limitGroupNode->group());
   newProj->setOutputVar(limit->outputVar());
   newProj->setInputVar(newLimit->outputVar());
-  //  newProj->setColNames(limit->colNames());
 
   newProjGroupNode->dependsOn(const_cast<OptGroup *>(newLimitGroupNode->group()));
   for (auto dep : projGroupNode->dependencies()) {

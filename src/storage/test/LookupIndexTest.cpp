@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -10,6 +9,10 @@
 #include "codec/RowWriterV2.h"
 #include "codec/test/RowWriterV1.h"
 #include "common/base/Base.h"
+#include "common/expression/ConstantExpression.h"
+#include "common/expression/LogicalExpression.h"
+#include "common/expression/PropertyExpression.h"
+#include "common/expression/RelationalExpression.h"
 #include "common/fs/TempDir.h"
 #include "common/utils/IndexKeyUtils.h"
 #include "interface/gen-cpp2/common_types.h"
@@ -23,6 +26,7 @@
 #include "storage/test/QueryTestUtils.h"
 
 using nebula::cpp2::PartitionID;
+using nebula::cpp2::PropertyType;
 using nebula::cpp2::TagID;
 using nebula::storage::cpp2::IndexColumnHint;
 using nebula::storage::cpp2::NewVertex;
@@ -94,11 +98,15 @@ TEST_P(LookupIndexTest, LookupIndexTestV1) {
     indexVal1.append(IndexKeyUtils::encodeValue("row1"));
     std::string indexVal2 = indexVal1;
 
-    key = IndexKeyUtils::vertexIndexKey(vIdLen.value(), 1, 3, vId1, std::move(indexVal1));
-    keyValues.emplace_back(std::move(key), "");
+    auto keys = IndexKeyUtils::vertexIndexKeys(vIdLen.value(), 1, 3, vId1, {std::move(indexVal1)});
+    for (auto& k : keys) {
+      keyValues.emplace_back(std::move(k), "");
+    }
 
-    key = IndexKeyUtils::vertexIndexKey(vIdLen.value(), 1, 3, vId2, std::move(indexVal2));
-    keyValues.emplace_back(std::move(key), "");
+    keys = IndexKeyUtils::vertexIndexKeys(vIdLen.value(), 1, 3, vId2, {std::move(indexVal2)});
+    for (auto& k : keys) {
+      keyValues.emplace_back(std::move(k), "");
+    }
 
     folly::Baton<true, std::atomic> baton;
     env->kvstore_->asyncMultiPut(
@@ -1426,10 +1434,10 @@ TEST_P(LookupIndexTest, NullableInIndexAndFilterTest) {
   {
     auto* schemaMan = reinterpret_cast<mock::AdHocSchemaManager*>(env->schemaMan_);
     std::shared_ptr<meta::NebulaSchemaProvider> schema(new meta::NebulaSchemaProvider(0));
-    schema->addField("col1", meta::cpp2::PropertyType::INT64, 0, true);
-    schema->addField("col2", meta::cpp2::PropertyType::STRING, 0, true);
-    schema->addField("col3", meta::cpp2::PropertyType::INT64, 0, true);
-    schema->addField("col4", meta::cpp2::PropertyType::STRING, 0, true);
+    schema->addField("col1", PropertyType::INT64, 0, true);
+    schema->addField("col2", PropertyType::STRING, 0, true);
+    schema->addField("col3", PropertyType::INT64, 0, true);
+    schema->addField("col4", PropertyType::STRING, 0, true);
     schemaMan->addTagSchema(spaceId, tagId, schema);
   }
   {
@@ -1438,13 +1446,13 @@ TEST_P(LookupIndexTest, NullableInIndexAndFilterTest) {
 
     meta::cpp2::ColumnDef col1;
     col1.name = "col1";
-    col1.type.set_type(meta::cpp2::PropertyType::INT64);
+    col1.type.set_type(PropertyType::INT64);
     col1.set_nullable(true);
     cols.emplace_back(std::move(col1));
 
     meta::cpp2::ColumnDef col2;
     col2.name = "col2";
-    col2.type.set_type(meta::cpp2::PropertyType::FIXED_STRING);
+    col2.type.set_type(PropertyType::FIXED_STRING);
     col2.type.set_type_length(20);
     col2.set_nullable(true);
     cols.emplace_back(std::move(col2));
@@ -1926,18 +1934,18 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
   {
     auto* schemaMan = reinterpret_cast<mock::AdHocSchemaManager*>(env->schemaMan_);
     std::shared_ptr<meta::NebulaSchemaProvider> schema(new meta::NebulaSchemaProvider(0));
-    schema->addField("col_bool", meta::cpp2::PropertyType::BOOL, 0, true);
-    schema->addField("col_int", meta::cpp2::PropertyType::INT64, 0, true);
-    schema->addField("col_double", meta::cpp2::PropertyType::DOUBLE, 0, true);
-    schema->addField("col_str", meta::cpp2::PropertyType::STRING, strColLen, true);
+    schema->addField("col_bool", PropertyType::BOOL, 0, true);
+    schema->addField("col_int", PropertyType::INT64, 0, true);
+    schema->addField("col_double", PropertyType::DOUBLE, 0, true);
+    schema->addField("col_str", PropertyType::STRING, strColLen, true);
     schemaMan->addTagSchema(spaceId, tagId, schema);
   }
-  auto nullColumnDef = [strColLen](const std::string& name, const meta::cpp2::PropertyType type) {
+  auto nullColumnDef = [strColLen](const std::string& name, const PropertyType type) {
     meta::cpp2::ColumnDef col;
     col.name = name;
     col.type.set_type(type);
     col.set_nullable(true);
-    if (type == meta::cpp2::PropertyType::FIXED_STRING) {
+    if (type == PropertyType::FIXED_STRING) {
       col.type.set_type_length(strColLen);
     }
     return col;
@@ -1945,10 +1953,10 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
   {
     auto* indexMan = reinterpret_cast<mock::AdHocIndexManager*>(env->indexMan_);
     std::vector<nebula::meta::cpp2::ColumnDef> cols;
-    cols.emplace_back(nullColumnDef("col_bool", meta::cpp2::PropertyType::BOOL));
-    cols.emplace_back(nullColumnDef("col_int", meta::cpp2::PropertyType::INT64));
-    cols.emplace_back(nullColumnDef("col_double", meta::cpp2::PropertyType::DOUBLE));
-    cols.emplace_back(nullColumnDef("col_str", meta::cpp2::PropertyType::FIXED_STRING));
+    cols.emplace_back(nullColumnDef("col_bool", PropertyType::BOOL));
+    cols.emplace_back(nullColumnDef("col_int", PropertyType::INT64));
+    cols.emplace_back(nullColumnDef("col_double", PropertyType::DOUBLE));
+    cols.emplace_back(nullColumnDef("col_str", PropertyType::FIXED_STRING));
     indexMan->addTagIndex(spaceId, tagId, indexId, std::move(cols));
   }
   auto genVid = [vIdLen](std::string& vId) -> std::string {

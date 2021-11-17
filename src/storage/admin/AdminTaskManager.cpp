@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "storage/admin/AdminTaskManager.h"
@@ -194,6 +193,9 @@ void AdminTaskManager::shutdown() {
   pool_->join();
   if (unreportedAdminThread_ != nullptr) {
     unreportedAdminThread_->join();
+  }
+  if (env_) {
+    env_->adminStore_.reset();
   }
   LOG(INFO) << "exit AdminTaskManager::shutdown()";
 }

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "FunctionManager.h"
@@ -56,7 +55,9 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
       TypeSignature({Value::Type::FLOAT}, Value::Type::FLOAT)}},
     {"round",
      {TypeSignature({Value::Type::INT}, Value::Type::FLOAT),
-      TypeSignature({Value::Type::FLOAT}, Value::Type::FLOAT)}},
+      TypeSignature({Value::Type::INT, Value::Type::INT}, Value::Type::FLOAT),
+      TypeSignature({Value::Type::FLOAT}, Value::Type::FLOAT),
+      TypeSignature({Value::Type::FLOAT, Value::Type::INT}, Value::Type::FLOAT)}},
     {"sqrt",
      {TypeSignature({Value::Type::INT}, Value::Type::FLOAT),
       TypeSignature({Value::Type::FLOAT}, Value::Type::FLOAT)}},
@@ -334,9 +335,15 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
      {
          TypeSignature({Value::Type::GEOGRAPHY}, Value::Type::STRING),
      }},
-    {"st_asbinary",
+    // This function requires binary data to be support first.
+    // {"st_asbinary",
+    //  {
+    //      TypeSignature({Value::Type::GEOGRAPHY}, Value::Type::STRING),
+    //  }},
+    // geo transformations
+    {"st_centroid",
      {
-         TypeSignature({Value::Type::GEOGRAPHY}, Value::Type::STRING),
+         TypeSignature({Value::Type::GEOGRAPHY}, Value::Type::GEOGRAPHY),
      }},
     // geo accessors
     {"st_isvalid",
@@ -362,6 +369,16 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
      {
          TypeSignature({Value::Type::GEOGRAPHY, Value::Type::GEOGRAPHY, Value::Type::FLOAT},
                        Value::Type::BOOL),
+         TypeSignature({Value::Type::GEOGRAPHY, Value::Type::GEOGRAPHY, Value::Type::INT},
+                       Value::Type::BOOL),
+         TypeSignature({Value::Type::GEOGRAPHY,
+                        Value::Type::GEOGRAPHY,
+                        Value::Type::FLOAT,
+                        Value::Type::BOOL},
+                       Value::Type::BOOL),
+         TypeSignature(
+             {Value::Type::GEOGRAPHY, Value::Type::GEOGRAPHY, Value::Type::INT, Value::Type::BOOL},
+             Value::Type::BOOL),
      }},
     // geo measures
     {"st_distance",
@@ -524,17 +541,23 @@ FunctionManager::FunctionManager() {
     // to nearest integral (as a floating-point value)
     auto &attr = functions_["round"];
     attr.minArity_ = 1;
-    attr.maxArity_ = 1;
+    attr.maxArity_ = 2;
     attr.isPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
         }
-        case Value::Type::INT: {
-          return std::round(args[0].get().getInt());
-        }
+        case Value::Type::INT:
         case Value::Type::FLOAT: {
+          if (args.size() == 2) {
+            if (args[1].get().type() == Value::Type::INT) {
+              auto decimal = args[1].get().getInt();
+              return std::round(args[0].get().getFloat() * pow(10, decimal)) / pow(10, decimal);
+            } else {
+              return Value::kNullBadType;
+            }
+          }
           return std::round(args[0].get().getFloat());
         }
         default: {
@@ -2401,8 +2424,22 @@ FunctionManager::FunctionManager() {
       return g.asWKT();
     };
   }
+  // {
+  //   auto &attr = functions_["st_asbinary"];
+  //   attr.minArity_ = 1;
+  //   attr.maxArity_ = 1;
+  //   attr.isPure_ = true;
+  //   attr.body_ = [](const auto &args) -> Value {
+  //     if (!args[0].get().isGeography()) {
+  //       return Value::kNullBadType;
+  //     }
+  //     const Geography &g = args[0].get().getGeography();
+  //     return g.asWKBHex();
+  //   };
+  // }
+  // geo transformations
   {
-    auto &attr = functions_["st_asbinary"];
+    auto &attr = functions_["st_centroid"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
     attr.isPure_ = true;
@@ -2410,8 +2447,7 @@ FunctionManager::FunctionManager() {
       if (!args[0].get().isGeography()) {
         return Value::kNullBadType;
       }
-      const Geography &g = args[0].get().getGeography();
-      return g.asWKBHex();
+      return Geography(args[0].get().getGeography().centroid());
     };
   }
   // geo accessors
@@ -2469,17 +2505,25 @@ FunctionManager::FunctionManager() {
   {
     auto &attr = functions_["st_dwithin"];
     attr.minArity_ = 3;
-    attr.maxArity_ = 3;
+    attr.maxArity_ = 4;
     attr.isPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       if (!args[0].get().isGeography() || !args[1].get().isGeography() ||
-          !args[2].get().isFloat()) {
+          !args[2].get().isNumeric()) {
         return Value::kNullBadType;
       }
-      return geo::GeoFunction::dWithin(args[0].get().getGeography(),
-                                       args[1].get().getGeography(),
-                                       args[2].get().getFloat(),
-                                       true);
+      bool exclusive = false;
+      if (args.size() == 4) {
+        if (!args[3].get().isBool()) {
+          return Value::kNullBadType;
+        }
+        exclusive = args[3].get().getBool();
+      }
+      return geo::GeoFunction::dWithin(
+          args[0].get().getGeography(),
+          args[1].get().getGeography(),
+          args[2].get().isFloat() ? args[2].get().getFloat() : args[2].get().getInt(),
+          exclusive);
     };
   }
   // geo measures
@@ -2514,6 +2558,11 @@ FunctionManager::FunctionManager() {
         if (level < 0 || level > 30) {
           return Value::kNullBadData;
         }
+      }
+      const auto &geog = args[0].get().getGeography();
+      if (geog.shape() != GeoShape::POINT) {
+        LOG(ERROR) << "S2_CellIdFromPoint only accepts point argument";
+        return Value::kNullBadData;
       }
       // TODO(jie) Should return uint64_t Value
       uint64_t cellId = geo::GeoFunction::s2CellIdFromPoint(args[0].get().getGeography(), level);

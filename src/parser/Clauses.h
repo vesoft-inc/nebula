@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #ifndef PARSER_CLAUSES_H_
 #define PARSER_CLAUSES_H_
@@ -380,22 +379,6 @@ class NameLabelList {
 
  private:
   std::vector<std::unique_ptr<std::string>> labels_;
-};
-
-class LimitClause {
- public:
-  explicit LimitClause(std::size_t limit) : limit_(limit) {}
-
-  int64_t limit() const { return limit_; }
-
-  std::string toString() const {
-    std::stringstream ss;
-    ss << "LIMIT " << limit_;
-    return ss.str();
-  }
-
- private:
-  int64_t limit_{0};
 };
 
 }  // namespace nebula

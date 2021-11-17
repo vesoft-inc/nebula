@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/index/DropTagIndexProcessor.h"
@@ -36,8 +35,8 @@ void DropTagIndexProcessor::process(const cpp2::DropTagIndexReq& req) {
 
   auto tagIndexID = nebula::value(tagIndexIDRet);
   std::vector<std::string> keys;
-  keys.emplace_back(MetaServiceUtils::indexIndexKey(spaceID, indexName));
-  keys.emplace_back(MetaServiceUtils::indexKey(spaceID, tagIndexID));
+  keys.emplace_back(MetaKeyUtils::indexIndexKey(spaceID, indexName));
+  keys.emplace_back(MetaKeyUtils::indexKey(spaceID, tagIndexID));
 
   LOG(INFO) << "Drop Tag Index " << indexName;
   resp_.set_id(to(tagIndexID, EntryType::INDEX));

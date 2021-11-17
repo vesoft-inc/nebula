@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "storage/mutate/DeleteTagsProcessor.h"
@@ -128,18 +127,22 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> DeleteTagsProcessor::deleteTags(
           if (!valuesRet.ok()) {
             return nebula::cpp2::ErrorCode::E_INVALID_DATA;
           }
-          auto indexKey = IndexKeyUtils::vertexIndexKey(
+          auto indexKeys = IndexKeyUtils::vertexIndexKeys(
               spaceVidLen_, partId, indexId, vId, std::move(valuesRet).value());
 
           // Check the index is building for the specified partition or not
           auto indexState = env_->getIndexState(spaceId_, partId);
           if (env_->checkRebuilding(indexState)) {
             auto deleteOpKey = OperationKeyUtils::deleteOperationKey(partId);
-            batchHolder->put(std::move(deleteOpKey), std::move(indexKey));
+            for (auto& indexKey : indexKeys) {
+              batchHolder->put(std::string(deleteOpKey), std::move(indexKey));
+            }
           } else if (env_->checkIndexLocked(indexState)) {
             return nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
           } else {
-            batchHolder->remove(std::move(indexKey));
+            for (auto& indexKey : indexKeys) {
+              batchHolder->remove(std::move(indexKey));
+            }
           }
         }
       }

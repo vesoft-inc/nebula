@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_NETWORK_NETWORKUTILS_H_
@@ -50,6 +49,8 @@ class NetworkUtils final {
   // Return Status::Error if peersStr is invalid.
   static StatusOr<std::vector<HostAddr>> toHosts(const std::string& peersStr);
   static std::string toHostsStr(const std::vector<HostAddr>& hosts);
+
+  static Status validateHostOrIp(const std::string& HostOrIp);
 
  private:
 };

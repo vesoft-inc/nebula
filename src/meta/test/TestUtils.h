@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_TEST_TESTUTILS_H_
@@ -36,7 +35,7 @@ namespace nebula {
 namespace meta {
 
 using mock::MockCluster;
-using nebula::meta::cpp2::PropertyType;
+using nebula::cpp2::PropertyType;
 
 using ZoneInfo = std::unordered_map<std::string, std::vector<HostAddr>>;
 using GroupInfo = std::unordered_map<std::string, std::vector<std::string>>;
@@ -47,7 +46,7 @@ auto metaPool = &metaTestPool;
 class TestUtils {
  public:
   static cpp2::ColumnDef columnDef(int32_t index,
-                                   cpp2::PropertyType type,
+                                   PropertyType type,
                                    Value defaultValue = Value(),
                                    bool isNull = true,
                                    int16_t typeLen = 0) {
@@ -109,19 +108,17 @@ class TestUtils {
     std::vector<kvstore::KV> data;
     int32_t id = 10;
     for (auto iter = zoneInfo.begin(); iter != zoneInfo.end(); iter++) {
-      data.emplace_back(MetaServiceUtils::indexZoneKey(iter->first),
+      data.emplace_back(MetaKeyUtils::indexZoneKey(iter->first),
                         std::string(reinterpret_cast<const char*>(&id), sizeof(ZoneID)));
-      data.emplace_back(MetaServiceUtils::zoneKey(iter->first),
-                        MetaServiceUtils::zoneVal(iter->second));
+      data.emplace_back(MetaKeyUtils::zoneKey(iter->first), MetaKeyUtils::zoneVal(iter->second));
       id += 1;
     }
 
     id = 100;
     for (auto iter = groupInfo.begin(); iter != groupInfo.end(); iter++) {
-      data.emplace_back(MetaServiceUtils::indexGroupKey(iter->first),
+      data.emplace_back(MetaKeyUtils::indexGroupKey(iter->first),
                         std::string(reinterpret_cast<const char*>(&id), sizeof(GroupID)));
-      data.emplace_back(MetaServiceUtils::groupKey(iter->first),
-                        MetaServiceUtils::groupVal(iter->second));
+      data.emplace_back(MetaKeyUtils::groupKey(iter->first), MetaKeyUtils::groupVal(iter->second));
       id += 1;
     }
 
@@ -137,7 +134,7 @@ class TestUtils {
                                   const std::string& zoneName,
                                   HostAddr host,
                                   bool isAdd) {
-    auto zoneKey = MetaServiceUtils::zoneKey(zoneName);
+    auto zoneKey = MetaKeyUtils::zoneKey(zoneName);
     std::string zoneValue;
     auto retCode = kv->get(kDefaultSpaceId, kDefaultPartId, zoneKey, &zoneValue);
     if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -145,7 +142,7 @@ class TestUtils {
       return false;
     }
 
-    auto hosts = MetaServiceUtils::parseZoneHosts(std::move(zoneValue));
+    auto hosts = MetaKeyUtils::parseZoneHosts(std::move(zoneValue));
     auto iter = std::find(hosts.begin(), hosts.end(), host);
     if (isAdd) {
       if (iter != hosts.end()) {
@@ -162,7 +159,7 @@ class TestUtils {
     }
 
     std::vector<kvstore::KV> data;
-    data.emplace_back(zoneKey, MetaServiceUtils::zoneVal(std::move(hosts)));
+    data.emplace_back(zoneKey, MetaKeyUtils::zoneVal(std::move(hosts)));
 
     bool ret = false;
     folly::Baton<true, std::atomic> baton;
@@ -178,7 +175,7 @@ class TestUtils {
                                    const std::string& groupName,
                                    const std::string& zoneName,
                                    bool isAdd) {
-    auto groupKey = MetaServiceUtils::groupKey(groupName);
+    auto groupKey = MetaKeyUtils::groupKey(groupName);
     std::string groupValue;
     auto retCode = kv->get(kDefaultSpaceId, kDefaultPartId, groupKey, &groupValue);
     if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -186,7 +183,7 @@ class TestUtils {
       return false;
     }
 
-    auto zoneNames = MetaServiceUtils::parseZoneNames(std::move(groupValue));
+    auto zoneNames = MetaKeyUtils::parseZoneNames(std::move(groupValue));
     auto iter = std::find(zoneNames.begin(), zoneNames.end(), zoneName);
     if (isAdd) {
       if (iter != zoneNames.end()) {
@@ -203,7 +200,7 @@ class TestUtils {
     }
 
     std::vector<kvstore::KV> data;
-    data.emplace_back(std::move(groupKey), MetaServiceUtils::groupVal(zoneNames));
+    data.emplace_back(std::move(groupKey), MetaKeyUtils::groupVal(zoneNames));
 
     folly::Baton<true, std::atomic> baton;
     kv->asyncMultiPut(0, 0, std::move(data), [&](nebula::cpp2::ErrorCode code) {
@@ -224,11 +221,11 @@ class TestUtils {
     properties.set_space_name("test_space");
     properties.set_partition_num(partitionNum);
     properties.set_replica_factor(replica);
-    auto spaceVal = MetaServiceUtils::spaceVal(properties);
+    auto spaceVal = MetaKeyUtils::spaceVal(properties);
     std::vector<nebula::kvstore::KV> data;
-    data.emplace_back(MetaServiceUtils::indexSpaceKey("test_space"),
+    data.emplace_back(MetaKeyUtils::indexSpaceKey("test_space"),
                       std::string(reinterpret_cast<const char*>(&id), sizeof(GraphSpaceID)));
-    data.emplace_back(MetaServiceUtils::spaceKey(id), MetaServiceUtils::spaceVal(properties));
+    data.emplace_back(MetaKeyUtils::spaceKey(id), MetaKeyUtils::spaceVal(properties));
 
     std::vector<HostAddr> allHosts;
     for (int i = 0; i < totalHost; i++) {
@@ -241,7 +238,7 @@ class TestUtils {
       for (int32_t i = 0; i < replica; i++, idx++) {
         hosts.emplace_back(allHosts[idx % totalHost]);
       }
-      data.emplace_back(MetaServiceUtils::partKey(id, partId), MetaServiceUtils::partVal(hosts));
+      data.emplace_back(MetaKeyUtils::partKey(id, partId), MetaKeyUtils::partVal(hosts));
     }
     folly::Baton<true, std::atomic> baton;
     kv->asyncMultiPut(0, 0, std::move(data), [&](nebula::cpp2::ErrorCode code) {
@@ -278,9 +275,9 @@ class TestUtils {
       }
       auto tagName = folly::stringPrintf("tag_%d", tagId);
       auto tagIdVal = std::string(reinterpret_cast<const char*>(&tagId), sizeof(tagId));
-      tags.emplace_back(MetaServiceUtils::indexTagKey(spaceId, tagName), tagIdVal);
-      tags.emplace_back(MetaServiceUtils::schemaTagKey(spaceId, tagId, ver++),
-                        MetaServiceUtils::schemaVal(tagName, srcsch));
+      tags.emplace_back(MetaKeyUtils::indexTagKey(spaceId, tagName), tagIdVal);
+      tags.emplace_back(MetaKeyUtils::schemaTagKey(spaceId, tagId, ver++),
+                        MetaKeyUtils::schemaVal(tagName, srcsch));
     }
     folly::Baton<true, std::atomic> baton;
     kv->asyncMultiPut(0, 0, std::move(tags), [&](nebula::cpp2::ErrorCode code) {
@@ -307,9 +304,9 @@ class TestUtils {
     item.set_fields(std::move(columns));
 
     std::vector<nebula::kvstore::KV> data;
-    data.emplace_back(MetaServiceUtils::indexIndexKey(space, indexName),
+    data.emplace_back(MetaKeyUtils::indexIndexKey(space, indexName),
                       std::string(reinterpret_cast<const char*>(&indexID), sizeof(IndexID)));
-    data.emplace_back(MetaServiceUtils::indexKey(space, indexID), MetaServiceUtils::indexVal(item));
+    data.emplace_back(MetaKeyUtils::indexKey(space, indexID), MetaKeyUtils::indexVal(item));
     folly::Baton<true, std::atomic> baton;
     kv->asyncMultiPut(0, 0, std::move(data), [&](nebula::cpp2::ErrorCode code) {
       ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
@@ -335,9 +332,9 @@ class TestUtils {
     item.set_fields(std::move(columns));
 
     std::vector<nebula::kvstore::KV> data;
-    data.emplace_back(MetaServiceUtils::indexIndexKey(space, indexName),
+    data.emplace_back(MetaKeyUtils::indexIndexKey(space, indexName),
                       std::string(reinterpret_cast<const char*>(&indexID), sizeof(IndexID)));
-    data.emplace_back(MetaServiceUtils::indexKey(space, indexID), MetaServiceUtils::indexVal(item));
+    data.emplace_back(MetaKeyUtils::indexKey(space, indexID), MetaKeyUtils::indexVal(item));
     folly::Baton<true, std::atomic> baton;
     kv->asyncMultiPut(0, 0, std::move(data), [&](nebula::cpp2::ErrorCode code) {
       ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
@@ -373,9 +370,9 @@ class TestUtils {
       }
       auto edgeName = folly::stringPrintf("edge_%d", edgeType);
       auto edgeTypeVal = std::string(reinterpret_cast<const char*>(&edgeType), sizeof(edgeType));
-      edges.emplace_back(MetaServiceUtils::indexEdgeKey(spaceId, edgeName), edgeTypeVal);
-      edges.emplace_back(MetaServiceUtils::schemaEdgeKey(spaceId, edgeType, ver++),
-                         MetaServiceUtils::schemaVal(edgeName, srcsch));
+      edges.emplace_back(MetaKeyUtils::indexEdgeKey(spaceId, edgeName), edgeTypeVal);
+      edges.emplace_back(MetaKeyUtils::schemaEdgeKey(spaceId, edgeType, ver++),
+                         MetaKeyUtils::schemaVal(edgeName, srcsch));
     }
 
     folly::Baton<true, std::atomic> baton;

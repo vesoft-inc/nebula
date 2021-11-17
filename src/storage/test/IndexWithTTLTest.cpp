@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -67,9 +66,9 @@ void createSchema(meta::SchemaManager* schemaMan,
                   bool isEdge = false) {
   auto* sm = reinterpret_cast<mock::AdHocSchemaManager*>(schemaMan);
   std::shared_ptr<meta::NebulaSchemaProvider> schema(new meta::NebulaSchemaProvider(0));
-  schema->addField("c1", meta::cpp2::PropertyType::INT64, 0, false);
+  schema->addField("c1", nebula::cpp2::PropertyType::INT64, 0, false);
   schema->addField(
-      "c2", meta::cpp2::PropertyType::INT64, 0, false, ConstantExpression::make(pool, 0L));
+      "c2", nebula::cpp2::PropertyType::INT64, 0, false, ConstantExpression::make(pool, 0L));
   meta::cpp2::SchemaProp prop;
   prop.set_ttl_col("c2");
   prop.set_ttl_duration(duration);
@@ -90,7 +89,7 @@ void createIndex(meta::IndexManager* indexMan,
   std::vector<nebula::meta::cpp2::ColumnDef> cols;
   meta::cpp2::ColumnDef col;
   col.name = "c1";
-  col.type.set_type(meta::cpp2::PropertyType::INT64);
+  col.type.set_type(nebula::cpp2::PropertyType::INT64);
   cols.emplace_back(std::move(col));
   if (isEdge) {
     im->addEdgeIndex(1, schemaId, indexId, std::move(cols));

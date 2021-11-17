@@ -1,7 +1,6 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 nebula_add_library(
     meta_service_handler OBJECT
@@ -45,15 +44,12 @@ nebula_add_library(
     processors/kv/ScanProcessor.cpp
     processors/admin/HBProcessor.cpp
     processors/user/AuthenticationProcessor.cpp
-    processors/admin/BalanceProcessor.cpp
     processors/admin/CreateSnapshotProcessor.cpp
     processors/admin/DropSnapshotProcessor.cpp
     processors/admin/ListSnapshotsProcessor.cpp
-    processors/admin/Balancer.cpp
-    processors/admin/BalancePlan.cpp
-    processors/admin/BalanceTask.cpp
+        processors/job/BalancePlan.cpp
+        processors/job/BalanceTask.cpp
     processors/admin/AdminClient.cpp
-    processors/admin/LeaderBalanceProcessor.cpp
     processors/admin/SnapShot.cpp
     processors/admin/CreateBackupProcessor.cpp
     processors/admin/RestoreProcessor.cpp
@@ -132,6 +128,7 @@ set(meta_test_deps
     $<TARGET_OBJECTS:wal_obj>
     $<TARGET_OBJECTS:disk_man_obj>
     $<TARGET_OBJECTS:keyutils_obj>
+    $<TARGET_OBJECTS:meta_keyutils_obj>
     $<TARGET_OBJECTS:meta_client_obj>
     $<TARGET_OBJECTS:file_based_cluster_id_man_obj>
     $<TARGET_OBJECTS:ws_obj>
@@ -162,6 +159,7 @@ set(meta_test_deps
     $<TARGET_OBJECTS:ft_es_storage_adapter_obj>
     $<TARGET_OBJECTS:version_obj>
     $<TARGET_OBJECTS:ssl_obj>
+    $<TARGET_OBJECTS:geo_index_obj>
 )
 
 nebula_add_subdirectory(http)

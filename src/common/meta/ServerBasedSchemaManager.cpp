@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/meta/ServerBasedSchemaManager.h"
@@ -27,7 +26,7 @@ StatusOr<int32_t> ServerBasedSchemaManager::getSpaceVidLen(GraphSpaceID space) {
   return metaClient_->getSpaceVidLen(space);
 }
 
-StatusOr<cpp2::PropertyType> ServerBasedSchemaManager::getSpaceVidType(GraphSpaceID space) {
+StatusOr<nebula::cpp2::PropertyType> ServerBasedSchemaManager::getSpaceVidType(GraphSpaceID space) {
   CHECK(metaClient_);
   return metaClient_->getSpaceVidType(space);
 }

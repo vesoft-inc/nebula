@@ -1,13 +1,20 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Go Yield Vertex And Edge Sentence
 
   Background:
     Given a graph with space named "nba"
 
   Scenario: one step
+    When executing query:
+      """
+      GO FROM "Tim Duncan" OVER like YIELD edge as e, properties(edge) as props, concat(src(edge), " like ", dst(edge), " @ ", properties($$).name, " # ", properties($^).age) as result
+      """
+    Then the result should be, in any order, with relax comparison:
+      | e                                                       | props          | result                                               |
+      | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}] | {likeness: 95} | "Tim Duncan like Manu Ginobili @ Manu Ginobili # 42" |
+      | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]   | {likeness: 95} | "Tim Duncan like Tony Parker @ Tony Parker # 42"     |
     When executing query:
       """
       GO FROM "Tim Duncan" OVER serve Yield src(edge) as src, dst(edge) as dst, type(edge) as type, edge as e
@@ -1409,6 +1416,23 @@ Feature: Go Yield Vertex And Edge Sentence
       | "James Harden"      | ("James Harden" :player{age: 29, name: "James Harden"})           | "like" |
       | "James Harden"      | ("James Harden" :player{age: 29, name: "James Harden"})           | "like" |
       | "Paul George"       | ("Paul George" :player{age: 28, name: "Paul George"})             | "like" |
+    When executing query:
+      """
+      GO 1 to 3 steps FROM "Tim Duncan" OVER like YIELD edge as e, properties(edge) as props, concat(src(edge), " like ", dst(edge), " @ ", properties($$).name, " # ", properties($^).age)  as result
+      """
+    Then the result should be, in any order, with relax comparison:
+      | e                                                            | props          | result                                                        |
+      | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]      | {likeness: 95} | "Tim Duncan like Manu Ginobili @ Manu Ginobili # 42"          |
+      | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]        | {likeness: 95} | "Tim Duncan like Tony Parker @ Tony Parker # 42"              |
+      | [:like "Manu Ginobili"->"Tim Duncan" @0 {likeness: 90}]      | {likeness: 90} | "Manu Ginobili like Tim Duncan @ Tim Duncan # 41"             |
+      | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}] | {likeness: 90} | "Tony Parker like LaMarcus Aldridge @ LaMarcus Aldridge # 36" |
+      | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]     | {likeness: 95} | "Tony Parker like Manu Ginobili @ Manu Ginobili # 36"         |
+      | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        | {likeness: 95} | "Tony Parker like Tim Duncan @ Tim Duncan # 36"               |
+      | [:like "LaMarcus Aldridge"->"Tim Duncan" @0 {likeness: 75}]  | {likeness: 75} | "LaMarcus Aldridge like Tim Duncan @ Tim Duncan # 33"         |
+      | [:like "LaMarcus Aldridge"->"Tony Parker" @0 {likeness: 75}] | {likeness: 75} | "LaMarcus Aldridge like Tony Parker @ Tony Parker # 33"       |
+      | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]      | {likeness: 95} | "Tim Duncan like Manu Ginobili @ Manu Ginobili # 42"          |
+      | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]        | {likeness: 95} | "Tim Duncan like Tony Parker @ Tony Parker # 42"              |
+      | [:like "Manu Ginobili"->"Tim Duncan" @0 {likeness: 90}]      | {likeness: 90} | "Manu Ginobili like Tim Duncan @ Tim Duncan # 41"             |
 
   Scenario: error message
     When executing query:
@@ -1709,28 +1733,28 @@ Feature: Go Yield Vertex And Edge Sentence
   Scenario: go step sample
     When executing query:
       """
-      GO FROM "Tim Duncan" OVER like SAMPLE [10,10];
+      GO FROM "Tim Duncan" OVER like YIELD like._dst SAMPLE [10,10];
       """
     Then a SemanticError should be raised at runtime:
     When executing query:
       """
-      GO FROM "Tim Duncan" OVER like SAMPLE ["10"];
+      GO FROM "Tim Duncan" OVER like YIELD like._dst SAMPLE ["10"];
       """
     Then a SemanticError should be raised at runtime:
     When executing query:
       """
-      GO FROM "Tim Duncan" OVER like SAMPLE [a];
+      GO FROM "Tim Duncan" OVER like YIELD like._dst SAMPLE [a];
       """
     Then a SemanticError should be raised at runtime:
     When executing query:
       """
-      GO FROM "Tim Duncan" OVER like SAMPLE [1];
+      GO FROM "Tim Duncan" OVER like YIELD like._dst  SAMPLE [1];
       """
     Then the result should be, in any order, with relax comparison:
       | like._dst |
     When executing query:
       """
-      GO 3 STEPS FROM "Tim Duncan" OVER like SAMPLE [1, 3, 2];
+      GO 3 STEPS FROM "Tim Duncan" OVER like YIELD like._dst SAMPLE [1, 3, 2];
       """
     Then the result should be, in any order, with relax comparison:
       | like._dst |
@@ -1739,13 +1763,13 @@ Feature: Go Yield Vertex And Edge Sentence
   Scenario: go step filter & step sample
     When executing query:
       """
-      GO FROM "Tim Duncan" OVER like WHERE [like._dst == "Tony Parker"]  SAMPLE [1];
+      GO FROM "Tim Duncan" OVER like WHERE [like._dst == "Tony Parker"] YIELD like._dst SAMPLE [1];
       """
     Then the result should be, in any order, with relax comparison:
       | like._dst |
     When executing query:
       """
-      GO 3 STEPS FROM "Tim Duncan" OVER like WHERE [like._dst == "Tony Parker", $$.player.age>20, $$.player.age>22] SAMPLE [1, 2, 2];
+      GO 3 STEPS FROM "Tim Duncan" OVER like WHERE [like._dst == "Tony Parker", $$.player.age>20, $$.player.age>22] YIELD like._dst SAMPLE [1, 2, 2];
       """
     Then the result should be, in any order, with relax comparison:
       | like._dst |

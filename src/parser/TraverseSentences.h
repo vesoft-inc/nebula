@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #ifndef PARSER_TRAVERSESENTENCES_H_
 #define PARSER_TRAVERSESENTENCES_H_
@@ -61,7 +60,7 @@ class GoSentence final : public Sentence {
 
 class LookupSentence final : public Sentence {
  public:
-  LookupSentence(std::string* from, WhereClause* where, YieldClause* yield, LimitClause* limit);
+  LookupSentence(std::string* from, WhereClause* where, YieldClause* yield);
 
   const std::string& from() const { return *from_; }
 
@@ -69,15 +68,12 @@ class LookupSentence final : public Sentence {
 
   const YieldClause* yieldClause() const { return yieldClause_.get(); }
 
-  const LimitClause* limitClause() const { return limitClause_.get(); }
-
   std::string toString() const override;
 
  private:
   std::unique_ptr<std::string> from_;
   std::unique_ptr<WhereClause> whereClause_;
   std::unique_ptr<YieldClause> yieldClause_;
-  std::unique_ptr<LimitClause> limitClause_;
 };
 
 class UseSentence final : public Sentence {

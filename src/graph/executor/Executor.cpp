@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/executor/Executor.h"
@@ -13,11 +12,10 @@
 
 #include "common/base/ObjectPool.h"
 #include "common/memory/MemoryUtils.h"
+#include "common/time/ScopedTimer.h"
 #include "graph/context/ExecutionContext.h"
 #include "graph/context/QueryContext.h"
 #include "graph/executor/ExecutionError.h"
-#include "graph/executor/admin/BalanceExecutor.h"
-#include "graph/executor/admin/BalanceLeadersExecutor.h"
 #include "graph/executor/admin/ChangePasswordExecutor.h"
 #include "graph/executor/admin/CharsetExecutor.h"
 #include "graph/executor/admin/ConfigExecutor.h"
@@ -33,10 +31,8 @@
 #include "graph/executor/admin/ListUsersExecutor.h"
 #include "graph/executor/admin/ListenerExecutor.h"
 #include "graph/executor/admin/PartExecutor.h"
-#include "graph/executor/admin/ResetBalanceExecutor.h"
 #include "graph/executor/admin/RevokeRoleExecutor.h"
 #include "graph/executor/admin/SessionExecutor.h"
-#include "graph/executor/admin/ShowBalanceExecutor.h"
 #include "graph/executor/admin/ShowHostsExecutor.h"
 #include "graph/executor/admin/ShowMetaLeaderExecutor.h"
 #include "graph/executor/admin/ShowQueriesExecutor.h"
@@ -46,7 +42,6 @@
 #include "graph/executor/admin/SignOutTSServiceExecutor.h"
 #include "graph/executor/admin/SnapshotExecutor.h"
 #include "graph/executor/admin/SpaceExecutor.h"
-#include "graph/executor/admin/StopBalanceExecutor.h"
 #include "graph/executor/admin/SubmitJobExecutor.h"
 #include "graph/executor/admin/SwitchSpaceExecutor.h"
 #include "graph/executor/admin/UpdateUserExecutor.h"
@@ -97,7 +92,6 @@
 #include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/service/GraphFlags.h"
-#include "graph/util/ScopedTimer.h"
 #include "interface/gen-cpp2/graph_types.h"
 
 using folly::stringPrintf;
@@ -389,21 +383,6 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     }
     case PlanNode::Kind::kListRoles: {
       return pool->add(new ListRolesExecutor(node, qctx));
-    }
-    case PlanNode::Kind::kBalanceLeaders: {
-      return pool->add(new BalanceLeadersExecutor(node, qctx));
-    }
-    case PlanNode::Kind::kBalance: {
-      return pool->add(new BalanceExecutor(node, qctx));
-    }
-    case PlanNode::Kind::kStopBalance: {
-      return pool->add(new StopBalanceExecutor(node, qctx));
-    }
-    case PlanNode::Kind::kResetBalance: {
-      return pool->add(new ResetBalanceExecutor(node, qctx));
-    }
-    case PlanNode::Kind::kShowBalance: {
-      return pool->add(new ShowBalanceExecutor(node, qctx));
     }
     case PlanNode::Kind::kShowConfigs: {
       return pool->add(new ShowConfigsExecutor(node, qctx));

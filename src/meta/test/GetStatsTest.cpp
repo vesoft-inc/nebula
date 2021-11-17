@@ -1,8 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2021.2022 License,
- * attached with Common Clause Condition 2023.2024, found in the LICENSES
- * directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <folly/synchronization/Baton.h>
@@ -29,7 +27,7 @@ using ::testing::Return;
 using ::testing::SetArgPointee;
 
 std::string toTempKey(int32_t space, int32_t jobId) {
-  std::string key = MetaServiceUtils::statsKey(space);
+  std::string key = MetaKeyUtils::statsKey(space);
   return key.append(reinterpret_cast<const char*>(&jobId), sizeof(int32_t));
 }
 
@@ -48,7 +46,7 @@ void copyData(kvstore::KVStore* kv,
 }
 
 void genTempData(int32_t spaceId, int jobId, kvstore::KVStore* kv) {
-  auto statsKey = MetaServiceUtils::statsKey(spaceId);
+  auto statsKey = MetaKeyUtils::statsKey(spaceId);
   auto tempKey = toTempKey(spaceId, jobId);
   copyData(kv, 0, 0, statsKey, tempKey);
 }
@@ -148,7 +146,7 @@ TEST_F(GetStatsTest, StatsJob) {
     ASSERT_NE(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
 
     // Directly find statis data in kvstore, statis data does not exist.
-    auto key = MetaServiceUtils::statsKey(spaceId);
+    auto key = MetaKeyUtils::statsKey(spaceId);
     std::string val;
     auto ret = kv_->get(kDefaultSpaceId, kDefaultPartId, key, &val);
     ASSERT_NE(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
@@ -163,14 +161,14 @@ TEST_F(GetStatsTest, StatsJob) {
   // Insert running status statis data in prepare function of runJobInternal.
   // Update statis data to finished or failed status in finish function of
   // runJobInternal.
-  auto result = jobMgr->runJobInternal(statisJob);
+  auto result = jobMgr->runJobInternal(statisJob, JobManager::JbOp::ADD);
   ASSERT_TRUE(result);
   // JobManager does not set the job finished status in RunJobInternal function.
   // But set statis data.
   statisJob.setStatus(cpp2::JobStatus::FINISHED);
   jobMgr->save(statisJob.jobKey(), statisJob.jobVal());
   auto jobId = statisJob.getJobId();
-  auto statsKey = MetaServiceUtils::statsKey(spaceId);
+  auto statsKey = MetaKeyUtils::statsKey(spaceId);
   auto tempKey = toTempKey(spaceId, jobId);
 
   copyData(kv_.get(), 0, 0, statsKey, tempKey);
@@ -201,12 +199,12 @@ TEST_F(GetStatsTest, StatsJob) {
     ASSERT_EQ(0, statsItem.get_space_edges());
 
     // Directly find statis data in kvstore, statis data exists.
-    auto key = MetaServiceUtils::statsKey(spaceId);
+    auto key = MetaKeyUtils::statsKey(spaceId);
     std::string val;
     auto ret = kv_->get(kDefaultSpaceId, kDefaultPartId, key, &val);
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
 
-    auto statsItem1 = MetaServiceUtils::parseStatsVal(val);
+    auto statsItem1 = MetaKeyUtils::parseStatsVal(val);
     ASSERT_EQ(cpp2::JobStatus::FINISHED, statsItem1.get_status());
     ASSERT_EQ(0, statsItem1.get_tag_vertices().size());
     ASSERT_EQ(0, statsItem1.get_edges().size());
@@ -246,12 +244,12 @@ TEST_F(GetStatsTest, StatsJob) {
     ASSERT_EQ(0, statsItem.get_space_edges());
 
     // Directly find statis data in kvstore, statis data exists.
-    auto key = MetaServiceUtils::statsKey(spaceId);
+    auto key = MetaKeyUtils::statsKey(spaceId);
     std::string val;
     auto ret = kv_->get(kDefaultSpaceId, kDefaultPartId, key, &val);
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
 
-    auto statsItem1 = MetaServiceUtils::parseStatsVal(val);
+    auto statsItem1 = MetaKeyUtils::parseStatsVal(val);
     ASSERT_EQ(cpp2::JobStatus::FINISHED, statsItem1.get_status());
     ASSERT_EQ(0, statsItem1.get_tag_vertices().size());
     ASSERT_EQ(0, statsItem1.get_edges().size());
@@ -266,7 +264,7 @@ TEST_F(GetStatsTest, StatsJob) {
 
   // Remove statis data.
   {
-    auto key = MetaServiceUtils::statsKey(spaceId);
+    auto key = MetaKeyUtils::statsKey(spaceId);
     folly::Baton<true, std::atomic> baton;
     auto retCode = nebula::cpp2::ErrorCode::SUCCEEDED;
     kv_->asyncRemove(kDefaultSpaceId, kDefaultPartId, key, [&](nebula::cpp2::ErrorCode code) {
@@ -297,10 +295,10 @@ TEST_F(GetStatsTest, StatsJob) {
   // Insert running status statis data in prepare function of runJobInternal.
   // Update statis data to finished or failed status in finish function of
   // runJobInternal.
-  auto result2 = jobMgr->runJobInternal(statisJob2);
+  auto result2 = jobMgr->runJobInternal(statisJob2, JobManager::JbOp::ADD);
 
   auto jobId2 = statisJob2.getJobId();
-  auto statsKey2 = MetaServiceUtils::statsKey(spaceId);
+  auto statsKey2 = MetaKeyUtils::statsKey(spaceId);
   auto tempKey2 = toTempKey(spaceId, jobId2);
 
   copyData(kv_.get(), 0, 0, statsKey2, tempKey2);
@@ -335,12 +333,12 @@ TEST_F(GetStatsTest, StatsJob) {
     ASSERT_EQ(0, statsItem.get_space_edges());
 
     // Directly find statis data in kvstore, statis data exists.
-    auto key = MetaServiceUtils::statsKey(spaceId);
+    auto key = MetaKeyUtils::statsKey(spaceId);
     std::string val;
     auto ret = kv_->get(kDefaultSpaceId, kDefaultPartId, key, &val);
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
 
-    auto statsItem1 = MetaServiceUtils::parseStatsVal(val);
+    auto statsItem1 = MetaKeyUtils::parseStatsVal(val);
     ASSERT_EQ(cpp2::JobStatus::FINISHED, statsItem1.get_status());
     ASSERT_EQ(0, statsItem1.get_tag_vertices().size());
     ASSERT_EQ(0, statsItem1.get_edges().size());

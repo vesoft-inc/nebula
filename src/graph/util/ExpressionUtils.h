@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef _UTIL_EXPRESSION_UTILS_H_
@@ -156,6 +155,9 @@ class ExpressionUtils {
 
   // var == value
   static Expression* equalCondition(ObjectPool* pool, const std::string& var, const Value& value);
+
+  // TODO(jie) Move it to a better place
+  static bool isGeoIndexAcceleratedPredicate(const Expression* expr);
 };
 
 }  // namespace graph

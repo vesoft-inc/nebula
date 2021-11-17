@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_JOBMANAGER_H_
@@ -57,6 +56,11 @@ class JobManager : public nebula::cpp::NonCopyable, public nebula::cpp::NonMovab
     STOPPED,
   };
 
+  enum class JbOp {
+    ADD,
+    RECOVER,
+  };
+
   bool init(nebula::kvstore::KVStore* store);
 
   void shutDown();
@@ -80,7 +84,9 @@ class JobManager : public nebula::cpp::NonCopyable, public nebula::cpp::NonMovab
   nebula::cpp2::ErrorCode stopJob(JobID iJob, const std::string& spaceName);
 
   // return error/recovered job num
-  ErrorOr<nebula::cpp2::ErrorCode, uint32_t> recoverJob(const std::string& spaceName);
+  ErrorOr<nebula::cpp2::ErrorCode, uint32_t> recoverJob(const std::string& spaceName,
+                                                        AdminClient* client,
+                                                        const std::vector<int32_t>& jobIds = {});
 
   /**
    * @brief persist job executed result, and do the cleanup
@@ -98,12 +104,14 @@ class JobManager : public nebula::cpp::NonCopyable, public nebula::cpp::NonMovab
   // Tries to extract an element from the front of the highPriorityQueue_,
   // if faild, then extract an element from lowPriorityQueue_.
   // If the element is obtained, return true, otherwise return false.
-  bool try_dequeue(JobID& jobId);
+  bool try_dequeue(std::pair<JbOp, JobID>& opJobId);
 
   // Enter different priority queues according to the command type
-  void enqueue(const JobID& jobId, const cpp2::AdminCmd& cmd);
+  void enqueue(const JbOp& op, const JobID& jobId, const cpp2::AdminCmd& cmd);
 
   ErrorOr<nebula::cpp2::ErrorCode, bool> checkIndexJobRuning();
+
+  nebula::cpp2::ErrorCode handleRemainingJobs();
 
  private:
   JobManager() = default;
@@ -111,7 +119,7 @@ class JobManager : public nebula::cpp::NonCopyable, public nebula::cpp::NonMovab
   void scheduleThread();
   void scheduleThreadOld();
 
-  bool runJobInternal(const JobDescription& jobDesc);
+  bool runJobInternal(const JobDescription& jobDesc, JbOp op);
   bool runJobInternalOld(const JobDescription& jobDesc);
 
   ErrorOr<nebula::cpp2::ErrorCode, GraphSpaceID> getSpaceId(const std::string& name);
@@ -134,12 +142,11 @@ class JobManager : public nebula::cpp::NonCopyable, public nebula::cpp::NonMovab
   // Todo(pandasheep)
   // When folly is upgraded, PriorityUMPSCQueueSet can be used
   // Use two queues to simulate priority queue, Divide by job cmd
-  std::unique_ptr<folly::UMPSCQueue<JobID, true>> lowPriorityQueue_;
-  std::unique_ptr<folly::UMPSCQueue<JobID, true>> highPriorityQueue_;
+  std::unique_ptr<folly::UMPSCQueue<std::pair<JbOp, JobID>, true>> lowPriorityQueue_;
+  std::unique_ptr<folly::UMPSCQueue<std::pair<JbOp, JobID>, true>> highPriorityQueue_;
 
   // The job in running or queue
   folly::ConcurrentHashMap<JobID, JobDescription> inFlightJobs_;
-
   std::thread bgThread_;
   std::mutex statusGuard_;
   JbmgrStatus status_{JbmgrStatus::NOT_START};

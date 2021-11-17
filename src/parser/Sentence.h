@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #ifndef PARSER_SENTENCE_H_
 #define PARSER_SENTENCE_H_
@@ -103,7 +102,6 @@ class Sentence {
     kGetConfig,
     kFetchVertices,
     kFetchEdges,
-    kBalance,
     kFindPath,
     kLimit,
     kGroupBy,

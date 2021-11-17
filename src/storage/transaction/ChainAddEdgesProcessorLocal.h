@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #pragma once
@@ -133,7 +132,8 @@ class ChainAddEdgesProcessorLocal : public BaseProcessor<cpp2::ExecResponse>,
   cpp2::AddEdgesRequest req_;
   std::unique_ptr<TransactionManager::LockGuard> lk_{nullptr};
   int retryLimit_{10};
-  TermID localTerm_{-1};
+  // need to restrict all the phase in the same term.
+  TermID restrictTerm_{-1};
   // set to true when prime insert succeed
   // in processLocal(), we check this to determine if need to do abort()
   bool primeInserted_{false};
@@ -148,7 +148,7 @@ class ChainAddEdgesProcessorLocal : public BaseProcessor<cpp2::ExecResponse>,
   // for debug, edge "100"->"101" will print like 2231303022->2231303122
   // which is hard to recognize. Transform to human readable format
   std::string readableEdgeDesc_;
-  ::nebula::meta::cpp2::PropertyType spaceVidType_{meta::cpp2::PropertyType::UNKNOWN};
+  nebula::cpp2::PropertyType spaceVidType_{nebula::cpp2::PropertyType::UNKNOWN};
 };
 
 }  // namespace storage

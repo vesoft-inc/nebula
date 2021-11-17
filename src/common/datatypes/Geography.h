@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #pragma once
@@ -32,6 +31,8 @@ enum class GeoShape : uint32_t {
   POLYGON = 3,
 };
 
+std::ostream& operator<<(std::ostream& os, const GeoShape& shape);
+
 // clang-format off
 /*
 static const std::unordered_map<GeoShape, S2Region> kShapeTypeToS2Region = {
@@ -58,8 +59,9 @@ struct Coordinate {
   }
   void __clear() { clear(); }
 
-  // TODO(jie) compare double correctly
-  bool operator==(const Coordinate& rhs) const { return x == rhs.x && y == rhs.y; }
+  bool operator==(const Coordinate& rhs) const {
+    return std::abs(x - rhs.x) < kEpsilon && std::abs(y - rhs.y) < kEpsilon;
+  }
   bool operator!=(const Coordinate& rhs) const { return !(*this == rhs); }
   bool operator<(const Coordinate& rhs) const {
     if (x != rhs.x) {
@@ -135,6 +137,10 @@ struct Geography {
                                      bool needNormalize = false,
                                      bool verifyValidity = false);
 
+  static StatusOr<Geography> fromWKB(const std::string& wkb,
+                                     bool needNormalize = false,
+                                     bool verifyValidity = false);
+
   Geography() {}
   Geography(const Point& v) : geo_(v) {}             // NOLINT
   Geography(Point&& v) : geo_(std::move(v)) {}       // NOLINT
@@ -155,6 +161,8 @@ struct Geography {
 
   void normalize();
   bool isValid() const;
+
+  Point centroid() const;
 
   std::string asWKT() const;
 

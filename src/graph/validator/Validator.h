@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_VALIDATOR_VALIDATOR_H_
@@ -109,8 +108,6 @@ class Validator {
   StatusOr<Value::Type> deduceExprType(const Expression* expr) const;
 
   Status deduceProps(const Expression* expr, ExpressionProps& exprProps);
-
-  bool evaluableExpr(const Expression* expr) const;
 
   static StatusOr<size_t> checkPropNonexistOrDuplicate(const ColsDef& cols,
                                                        folly::StringPiece prop,

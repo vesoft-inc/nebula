@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #pragma once
@@ -91,7 +90,7 @@ class ConsistUtil final {
 
   static int64_t getTimestamp(const std::string& val) noexcept;
 
-  static cpp2::AddEdgesRequest makeDirectAddReq(const cpp2::ChainAddEdgesRequest& req);
+  static cpp2::AddEdgesRequest toAddEdgesRequest(const cpp2::ChainAddEdgesRequest& req);
 
   static cpp2::EdgeKey reverseEdgeKey(const cpp2::EdgeKey& edgeKey);
 

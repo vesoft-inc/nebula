@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/geo/io/wkt/WKTWriter.h"
@@ -61,8 +60,9 @@ void WKTWriter::writeCoordinateList(std::string& wkt,
                                     const std::vector<Coordinate>& coordList) const {
   for (size_t i = 0; i < coordList.size(); ++i) {
     writeCoordinate(wkt, coordList[i]);
-    wkt.append(",");
+    wkt.append(", ");
   }
+  wkt.pop_back();
   wkt.pop_back();
 }
 
@@ -75,8 +75,9 @@ void WKTWriter::WKTWriter::writeCoordinateListList(
     wkt.append("(");
     writeCoordinateList(wkt, coordList);
     wkt.append(")");
-    wkt.append(",");
+    wkt.append(", ");
   }
+  wkt.pop_back();
   wkt.pop_back();
 }
 

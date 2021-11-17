@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -319,13 +318,13 @@ TEST(IndexTest, VerticesValueTest) {
     values.emplace_back(Value(date));
     // col_date_null
     values.emplace_back(nullValue);
-    auto index =
+    auto indexes =
         IndexKeyUtils::encodeValues(std::move(values), mock::MockData::mockTypicaIndexColumns());
 
     for (auto partId = 1; partId <= 6; partId++) {
       auto prefix = IndexKeyUtils::indexPrefix(partId, indexId);
-      auto indexKey = IndexKeyUtils::vertexIndexKey(
-          vIdLen, partId, indexId, convertVertexId(vIdLen, partId), std::move(index));
+      auto indexKey = IndexKeyUtils::vertexIndexKeys(
+          vIdLen, partId, indexId, convertVertexId(vIdLen, partId), std::move(indexes))[0];
       std::unique_ptr<kvstore::KVIterator> iter;
       auto ret = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
       EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);

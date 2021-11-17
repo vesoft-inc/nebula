@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/planner/plan/PlanNode.h"
@@ -187,16 +186,6 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "DropSnapshot";
     case Kind::kShowSnapshots:
       return "ShowSnapshots";
-    case Kind::kBalanceLeaders:
-      return "BalanceLeaders";
-    case Kind::kBalance:
-      return "Balance";
-    case Kind::kStopBalance:
-      return "StopBalance";
-    case Kind::kResetBalance:
-      return "ResetBalance";
-    case Kind::kShowBalance:
-      return "ShowBalance";
     case Kind::kSubmitJob:
       return "SubmitJob";
     case Kind::kLeftJoin:

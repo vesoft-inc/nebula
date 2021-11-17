@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <errno.h>
@@ -106,12 +105,12 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  // Get the IPv4 address the server will listen on
-  if (FLAGS_local_ip.empty()) {
-    LOG(ERROR) << "local_ip is empty, need to config it through config file";
+  // Validate the IPv4 address or hostname
+  status = NetworkUtils::validateHostOrIp(FLAGS_local_ip);
+  if (!status.ok()) {
+    LOG(ERROR) << status;
     return EXIT_FAILURE;
   }
-  // TODO: Check the ip is valid
   nebula::HostAddr localhost{FLAGS_local_ip, FLAGS_port};
 
   // Initialize the global timezone, it's only used for datetime type compute

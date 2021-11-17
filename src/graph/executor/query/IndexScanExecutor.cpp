@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/executor/query/IndexScanExecutor.h"
@@ -36,11 +35,12 @@ folly::Future<Status> IndexScanExecutor::indexScan() {
     return Status::Error("There is no index to use at runtime");
   }
 
+  GraphStorageClient::CommonRequestParam param(lookup->space(),
+                                               qctx()->rctx()->session()->id(),
+                                               qctx()->plan()->id(),
+                                               qctx()->plan()->isProfileEnabled());
   return storageClient
-      ->lookupIndex(lookup->space(),
-                    qctx()->rctx()->session()->id(),
-                    qctx()->plan()->id(),
-                    qctx()->plan()->isProfileEnabled(),
+      ->lookupIndex(param,
                     ictxs,
                     lookup->isEdge(),
                     lookup->schemaId(),

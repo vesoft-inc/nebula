@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_EXPRESSION_TEST_TESTBASE_H_
@@ -48,9 +47,12 @@
 #include "common/expression/test/ExpressionContextMock.h"
 #include "parser/GQLParser.h"
 
-nebula::ExpressionContextMock gExpCtxt;
-nebula::ObjectPool pool;
 namespace nebula {
+
+extern ExpressionContextMock gExpCtxt;
+extern ObjectPool pool;
+extern std::unordered_map<std::string, std::vector<Value>> args_;
+
 class ExpressionTest : public ::testing::Test {
  public:
   void SetUp() override {}
@@ -169,22 +171,6 @@ class ExpressionTest : public ::testing::Test {
     path.steps.emplace_back(std::move(step)); \
   } while (0)
 
-static std::unordered_map<std::string, std::vector<Value>> args_ = {
-    {"null", {}},
-    {"int", {4}},
-    {"float", {1.1}},
-    {"neg_int", {-1}},
-    {"neg_float", {-1.1}},
-    {"rand", {1, 10}},
-    {"one", {-1.2}},
-    {"two", {2, 4}},
-    {"pow", {2, 3}},
-    {"string", {"AbcDeFG"}},
-    {"trim", {" abc  "}},
-    {"substr", {"abcdefghi", 2, 4}},
-    {"side", {"abcdefghijklmnopq", 5}},
-    {"neg_side", {"abcdefghijklmnopq", -2}},
-    {"pad", {"abcdefghijkl", 16, "123"}},
-    {"udf_is_in", {4, 1, 2, 8, 4, 3, 1, 0}}};
 }  // namespace nebula
+
 #endif  // COMMON_EXPRESSION_TEST_TESTBASE_H_

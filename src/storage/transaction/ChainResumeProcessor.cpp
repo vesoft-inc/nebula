@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "storage/transaction/ChainResumeProcessor.h"
@@ -23,18 +22,23 @@ void ChainResumeProcessor::process() {
     auto edgeKey = std::string(it->first.c_str() + sizeof(GraphSpaceID),
                                it->first.size() - sizeof(GraphSpaceID));
     auto partId = NebulaKeyUtils::getPart(edgeKey);
-    VLOG(1) << "resume edge space=" << spaceId << ", part=" << partId
-            << ", hex=" << folly::hexlify(edgeKey);
     auto prefix = (it->second == ResumeType::RESUME_CHAIN) ? ConsistUtil::primeTable()
                                                            : ConsistUtil::doublePrimeTable();
     auto key = prefix + edgeKey;
     std::string val;
     auto rc = env_->kvstore_->get(spaceId, partId, key, &val);
+    VLOG(1) << "resume edge space=" << spaceId << ", part=" << partId
+            << ", hex = " << folly::hexlify(edgeKey)
+            << ", rc = " << apache::thrift::util::enumNameSafe(rc);
     if (rc == nebula::cpp2::ErrorCode::SUCCEEDED) {
       // do nothing
     } else if (rc == nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
-      // not leader any more, stop trying resume
-      env_->txnMan_->delPrime(spaceId, edgeKey);
+      VLOG(1) << "kvstore->get() leader changed";
+      auto getPart = env_->kvstore_->part(spaceId, partId);
+      if (nebula::ok(getPart) && !nebula::value(getPart)->isLeader()) {
+        // not leader any more, stop trying resume
+        env_->txnMan_->delPrime(spaceId, edgeKey);
+      }
       continue;
     } else {
       LOG(WARNING) << "kvstore->get() failed, " << apache::thrift::util::enumNameSafe(rc);

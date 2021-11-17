@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/executor/query/GetNeighborsExecutor.h"
@@ -11,9 +10,9 @@
 #include "clients/storage/GraphStorageClient.h"
 #include "common/datatypes/List.h"
 #include "common/datatypes/Vertex.h"
+#include "common/time/ScopedTimer.h"
 #include "graph/context/QueryContext.h"
 #include "graph/service/GraphFlags.h"
-#include "graph/util/ScopedTimer.h"
 
 using nebula::storage::GraphStorageClient;
 using nebula::storage::StorageRpcResponse;
@@ -43,11 +42,12 @@ folly::Future<Status> GetNeighborsExecutor::execute() {
   time::Duration getNbrTime;
   GraphStorageClient* storageClient = qctx_->getStorageClient();
   QueryExpressionContext qec(qctx()->ectx());
+  GraphStorageClient::CommonRequestParam param(gn_->space(),
+                                               qctx()->rctx()->session()->id(),
+                                               qctx()->plan()->id(),
+                                               qctx()->plan()->isProfileEnabled());
   return storageClient
-      ->getNeighbors(gn_->space(),
-                     qctx()->rctx()->session()->id(),
-                     qctx()->plan()->id(),
-                     qctx()->plan()->isProfileEnabled(),
+      ->getNeighbors(param,
                      std::move(reqDs.colNames),
                      std::move(reqDs.rows),
                      gn_->edgeTypes(),

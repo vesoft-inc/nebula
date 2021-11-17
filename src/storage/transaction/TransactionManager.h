@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #pragma once
@@ -89,6 +88,8 @@ class TransactionManager {
 
   // this is a callback register to Part::onElected
   void onLeaderElectedWrapper(const ::nebula::kvstore::Part::CallbackOptions& options);
+
+  void onLeaderLostWrapper(const ::nebula::kvstore::Part::CallbackOptions& options);
 
  protected:
   using PartUUID = std::pair<GraphSpaceID, PartitionID>;

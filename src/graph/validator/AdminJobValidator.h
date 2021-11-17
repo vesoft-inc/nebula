@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_VALIDATOR_ADMIN_JOB_VALIDATOR_H_
@@ -37,9 +36,10 @@ class AdminJobValidator final : public Validator {
           case meta::cpp2::AdminCmd::STATS:
           case meta::cpp2::AdminCmd::COMPACT:
           case meta::cpp2::AdminCmd::FLUSH:
+          case meta::cpp2::AdminCmd::DATA_BALANCE:
+          case meta::cpp2::AdminCmd::LEADER_BALANCE:
             return true;
           // TODO: Also space related, but not available in CreateJobExcutor now.
-          case meta::cpp2::AdminCmd::DATA_BALANCE:
           case meta::cpp2::AdminCmd::DOWNLOAD:
           case meta::cpp2::AdminCmd::INGEST:
           case meta::cpp2::AdminCmd::UNKNOWN:

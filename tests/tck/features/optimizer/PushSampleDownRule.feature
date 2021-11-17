@@ -1,7 +1,6 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Push Limit down rule
 
   Background:
@@ -10,7 +9,7 @@ Feature: Push Limit down rule
   Scenario: push limit down to GetNeighbors
     When profiling query:
       """
-      GO 1 STEPS FROM "James Harden" OVER like REVERSELY LIMIT [2]
+      GO 1 STEPS FROM "James Harden" OVER like REVERSELY YIELD like._dst LIMIT [2]
       """
     Then the result should be, in any order:
       | like._dst         |
@@ -24,7 +23,7 @@ Feature: Push Limit down rule
       | 0  | Start        |              |                |
     When profiling query:
       """
-      GO 2 STEPS FROM "James Harden" OVER like REVERSELY LIMIT [2, 2]
+      GO 2 STEPS FROM "James Harden" OVER like REVERSELY YIELD like._dst LIMIT [2, 2]
       """
     Then the result should be, in any order:
       | like._dst            |
@@ -104,7 +103,7 @@ Feature: Push Limit down rule
   Scenario: push sample down to GetNeighbors
     When profiling query:
       """
-      GO 1 STEPS FROM "James Harden" OVER like REVERSELY SAMPLE [2]
+      GO 1 STEPS FROM "James Harden" OVER like REVERSELY YIELD like._dst SAMPLE [2]
       """
     Then the result should be, in any order:
       | like._dst |
@@ -118,7 +117,7 @@ Feature: Push Limit down rule
       | 4  | Start        |              |                                  |
     When profiling query:
       """
-      GO 2 STEPS FROM "James Harden" OVER like REVERSELY SAMPLE [2, 2]
+      GO 2 STEPS FROM "James Harden" OVER like REVERSELY YIELD like._dst SAMPLE [2, 2]
       """
     Then the result should be, in any order:
       | like._dst |

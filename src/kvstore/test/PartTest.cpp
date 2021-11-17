@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -159,9 +158,11 @@ TEST(PartTest, PartCleanTest) {
     }
     IndexID indexId = 5;
     for (int i = 0; i < 10; i++) {
-      auto key =
-          IndexKeyUtils::vertexIndexKey(kDefaultVIdLen, partId, indexId, std::to_string(i), "123");
-      data.emplace_back(key, folly::stringPrintf("val%d", i));
+      auto keys = IndexKeyUtils::vertexIndexKeys(
+          kDefaultVIdLen, partId, indexId, std::to_string(i), {"123"});
+      for (auto& key : keys) {
+        data.emplace_back(key, folly::stringPrintf("val%d", i));
+      }
     }
 
     data.emplace_back(NebulaKeyUtils::systemCommitKey(partId), "123");
