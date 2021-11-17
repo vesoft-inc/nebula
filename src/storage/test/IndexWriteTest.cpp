@@ -91,7 +91,7 @@ TEST(IndexTest, SimpleVerticesTest) {
 
     LOG(INFO) << "Check insert data...";
     for (auto partId = 1; partId <= 6; partId++) {
-      auto prefix = NebulaKeyUtils::vertexPrefix(vIdLen, partId, convertVertexId(vIdLen, partId));
+      auto prefix = NebulaKeyUtils::tagPrefix(vIdLen, partId, convertVertexId(vIdLen, partId));
       auto retNum = verifyResultNum(1, partId, prefix, env->kvstore_);
       EXPECT_EQ(1, retNum);
     }
@@ -120,7 +120,7 @@ TEST(IndexTest, SimpleVerticesTest) {
 
     LOG(INFO) << "Check delete data...";
     for (auto partId = 1; partId <= 6; partId++) {
-      auto prefix = NebulaKeyUtils::vertexPrefix(vIdLen, partId, convertVertexId(vIdLen, partId));
+      auto prefix = NebulaKeyUtils::tagPrefix(vIdLen, partId, convertVertexId(vIdLen, partId));
       auto retNum = verifyResultNum(1, partId, prefix, env->kvstore_);
       EXPECT_EQ(0, retNum);
     }
@@ -286,7 +286,7 @@ TEST(IndexTest, VerticesValueTest) {
 
     LOG(INFO) << "Check insert data...";
     for (auto partId = 1; partId <= 6; partId++) {
-      auto prefix = NebulaKeyUtils::vertexPrefix(vIdLen, partId, convertVertexId(vIdLen, partId));
+      auto prefix = NebulaKeyUtils::tagPrefix(vIdLen, partId, convertVertexId(vIdLen, partId));
       auto retNum = verifyResultNum(1, partId, prefix, env->kvstore_);
       EXPECT_EQ(1, retNum);
     }
@@ -398,7 +398,7 @@ TEST(IndexTest, AlterTagIndexTest) {
 
     LOG(INFO) << "Check insert data...";
     for (auto partId = 1; partId <= 6; partId++) {
-      auto prefix = NebulaKeyUtils::vertexPrefix(vIdLen, partId, convertVertexId(vIdLen, partId));
+      auto prefix = NebulaKeyUtils::tagPrefix(vIdLen, partId, convertVertexId(vIdLen, partId));
       auto retNum = verifyResultNum(spaceId, partId, prefix, env->kvstore_);
       EXPECT_EQ(1, retNum);
     }
@@ -460,7 +460,7 @@ TEST(IndexTest, AlterTagIndexTest) {
 
     LOG(INFO) << "Check insert data...";
     for (auto partId = 1; partId <= 6; partId++) {
-      auto prefix = NebulaKeyUtils::vertexPrefix(vIdLen, partId, convertVertexId(vIdLen, partId));
+      auto prefix = NebulaKeyUtils::tagPrefix(vIdLen, partId, convertVertexId(vIdLen, partId));
       auto retNum = verifyResultNum(spaceId, partId, prefix, env->kvstore_);
       EXPECT_EQ(1, retNum);
     }
