@@ -436,6 +436,8 @@ class SequentialIter : public Iterator {
 
   // Notice: We only use this interface when return results to client.
   friend class DataCollectExecutor;
+  friend class AppendVerticesExecutor;
+  friend class TraverseExecutor;
   Row&& moveRow() { return std::move(*iter_); }
 
   void doReset(size_t pos) override;

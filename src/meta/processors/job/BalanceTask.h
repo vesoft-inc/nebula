@@ -34,14 +34,14 @@ class BalanceTask {
  public:
   BalanceTask() = default;
 
-  BalanceTask(BalanceID balanceId,
+  BalanceTask(JobID jobId,
               GraphSpaceID spaceId,
               PartitionID partId,
               const HostAddr& src,
               const HostAddr& dst,
               kvstore::KVStore* kv,
               AdminClient* client)
-      : balanceId_(balanceId),
+      : jobId_(jobId),
         spaceId_(spaceId),
         partId_(partId),
         src_(src),
@@ -52,6 +52,8 @@ class BalanceTask {
 
   const std::string& taskIdStr() const { return taskIdStr_; }
 
+  const std::string& taskCommandStr() const { return commandStr_; }
+
   void invoke();
 
   void rollback();
@@ -59,26 +61,27 @@ class BalanceTask {
   BalanceTaskResult result() const { return ret_; }
 
  private:
-  std::string buildTaskId() {
-    return folly::stringPrintf("[%ld, %d:%d, %s:%d->%s:%d]",
-                               balanceId_,
-                               spaceId_,
-                               partId_,
-                               src_.host.c_str(),
-                               src_.port,
-                               dst_.host.c_str(),
-                               dst_.port);
+  std::string buildTaskId() { return folly::stringPrintf("%d, %d:%d", jobId_, spaceId_, partId_); }
+
+  std::string buildCommand() {
+    return folly::stringPrintf(
+        "%s:%d->%s:%d", src_.host.c_str(), src_.port, dst_.host.c_str(), dst_.port);
   }
 
   bool saveInStore();
 
+  int64_t startTime() const { return startTimeMs_; }
+
+  int64_t endTime() const { return endTimeMs_; }
+
  private:
-  BalanceID balanceId_;
+  JobID jobId_;
   GraphSpaceID spaceId_;
   PartitionID partId_;
   HostAddr src_;
   HostAddr dst_;
   std::string taskIdStr_;
+  std::string commandStr_;
   kvstore::KVStore* kv_ = nullptr;
   AdminClient* client_ = nullptr;
   BalanceTaskStatus status_ = BalanceTaskStatus::START;
