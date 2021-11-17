@@ -50,20 +50,6 @@ set(OPTIMIZER_TEST_LIB
 
 nebula_add_test(
     NAME
-        index_bound_value_test
-    SOURCES
-        IndexBoundValueTest.cpp
-    OBJECTS
-        ${OPTIMIZER_TEST_LIB}
-    LIBRARIES
-        ${PROXYGEN_LIBRARIES}
-        ${THRIFT_LIBRARIES}
-        gtest
-        gtest_main
-)
-
-nebula_add_test(
-    NAME
         index_scan_rule_test
     SOURCES
         IndexScanRuleTest.cpp

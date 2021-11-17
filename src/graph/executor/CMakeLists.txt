@@ -51,11 +51,6 @@ nebula_add_library(
     admin/ListUsersExecutor.cpp
     admin/ListRolesExecutor.cpp
     admin/SubmitJobExecutor.cpp
-    admin/BalanceExecutor.cpp
-    admin/StopBalanceExecutor.cpp
-    admin/ResetBalanceExecutor.cpp
-    admin/BalanceLeadersExecutor.cpp
-    admin/ShowBalanceExecutor.cpp
     admin/ShowHostsExecutor.cpp
     admin/ShowMetaLeaderExecutor.cpp
     admin/SpaceExecutor.cpp

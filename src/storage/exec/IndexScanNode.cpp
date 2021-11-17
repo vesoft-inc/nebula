@@ -120,14 +120,14 @@ QualifiedStrategy::Result RangePath::qualified(const Map<std::string, Value>& ro
   }
   auto& hint = hints_.back();
   // TODO(hs.zhang): improve performance.Check include or not during build key.
-  if (hint.begin_value_ref().is_set()) {
+  if (hint.begin_value_ref().is_set() && !hint.get_begin_value().empty()) {
     bool ret = includeStart_ ? hint.get_begin_value() <= rowData.at(hint.get_column_name())
                              : hint.get_begin_value() < rowData.at(hint.get_column_name());
     if (!ret) {
       return QualifiedStrategy::INCOMPATIBLE;
     }
   }
-  if (hint.end_value_ref().is_set()) {
+  if (hint.end_value_ref().is_set() && !hint.get_end_value().empty()) {
     bool ret = includeEnd_ ? hint.get_end_value() >= rowData.at(hint.get_column_name())
                            : hint.get_end_value() > rowData.at(hint.get_column_name());
     if (!ret) {
@@ -159,13 +159,13 @@ void RangePath::buildKey() {
   auto [a, b] = encodeRange(hint, fieldIter->get_type(), index, commonIndexPrefix.size());
   // left will be `[a`,`(a`, or `[INF`
   std::string left =
-      hint.begin_value_ref().is_set()
+      (hint.begin_value_ref().is_set() && !hint.get_begin_value().empty())
           ? fmt::format(
                 "{}{}", hint.get_include_begin() ? '[' : '(', hint.get_begin_value().toString())
           : "[-INF";
   // left will be `b]`,`b)`, or `[INF`
   std::string right =
-      hint.end_value_ref().is_set()
+      (hint.end_value_ref().is_set() && !hint.get_end_value().empty())
           ? fmt::format("{}{}", hint.get_end_value().toString(), hint.get_include_end() ? ']' : ')')
           : "INF]";
   serializeString_ += fmt::format("{}={},{}", hint.get_column_name(), left, right);
@@ -174,7 +174,7 @@ void RangePath::buildKey() {
   // If `end_value` is not set, `b` will be empty. So `endKey_` should append '\xFF' until
   // endKey_.size() > `totalKeyLength_` to indicate positive infinity prefixed with
   // `commonIndexPrefix`
-  if (!hint.end_value_ref().is_set()) {
+  if (!hint.end_value_ref().is_set() || hint.get_end_value().empty()) {
     endKey_.append(totalKeyLength_ - endKey_.size() + 1, '\xFF');
   }
 }
@@ -186,14 +186,14 @@ std::tuple<std::string, std::string> RangePath::encodeRange(
     size_t offset) {
   std::string startKey, endKey;
   bool needCheckNullable = !nullable_.empty() && nullable_[colIndex];
-  if (hint.end_value_ref().is_set()) {
+  if (hint.end_value_ref().is_set() && !hint.get_end_value().empty()) {
     includeEnd_ = hint.get_include_end();
     auto tmp = encodeEndValue(hint.get_end_value(), colTypeDef, endKey, offset);
     if (memcmp(tmp.data(), std::string(tmp.size(), '\xFF').data(), tmp.size()) != 0) {
       needCheckNullable &= false;
     }
   }
-  if (hint.begin_value_ref().is_set()) {
+  if (hint.begin_value_ref().is_set() && !hint.get_begin_value().empty()) {
     includeStart_ = hint.get_include_begin();
     encodeBeginValue(hint.get_begin_value(), colTypeDef, startKey, offset);
   }
