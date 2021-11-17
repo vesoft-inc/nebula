@@ -105,11 +105,6 @@ class PlanNode {
     kShowEdgeIndexStatus,
     kInsertVertices,
     kInsertEdges,
-    kBalanceLeaders,
-    kBalance,
-    kStopBalance,
-    kResetBalance,
-    kShowBalance,
     kSubmitJob,
     kShowHosts,
 

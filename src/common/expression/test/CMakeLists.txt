@@ -9,11 +9,11 @@ set(expression_test_common_libs
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:stats_obj>
+    $<TARGET_OBJECTS:datatypes_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:thread_obj>
-    $<TARGET_OBJECTS:datatypes_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:function_manager_obj>
     $<TARGET_OBJECTS:wkt_wkb_io_obj>

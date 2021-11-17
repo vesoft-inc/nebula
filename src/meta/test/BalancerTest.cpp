@@ -9,7 +9,7 @@
 
 #include "common/base/Base.h"
 #include "common/fs/TempDir.h"
-#include "meta/processors/admin/Balancer.h"
+#include "meta/processors/job/BalanceJobExecutor.h"
 #include "meta/processors/parts/CreateSpaceProcessor.h"
 #include "meta/test/MockAdminClient.h"
 #include "meta/test/TestUtils.h"
@@ -32,6 +32,7 @@ using ::testing::Return;
 using ::testing::SetArgPointee;
 using ::testing::StrictMock;
 
+std::atomic<int32_t> testJobId = 1;
 TEST(BalanceTest, BalanceTaskTest) {
   fs::TempDir rootPath("/tmp/SimpleTest.XXXXXX");
   auto store = MockCluster::initMetaKV(rootPath.path());
@@ -55,7 +56,8 @@ TEST(BalanceTest, BalanceTaskTest) {
     EXPECT_CALL(client, removePart(0, 0, src)).Times(1);
 
     folly::Baton<true, std::atomic> b;
-    BalanceTask task(0, 0, 0, src, dst, kv, &client);
+    BalanceTask task(
+        testJobId.fetch_add(1, std::memory_order_relaxed), 0, 0, src, dst, kv, &client);
     task.onFinished_ = [&]() {
       LOG(INFO) << "Task finished!";
       EXPECT_EQ(BalanceTaskResult::SUCCEEDED, task.ret_);
@@ -73,7 +75,8 @@ TEST(BalanceTest, BalanceTaskTest) {
         .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("Transfer failed")))));
 
     folly::Baton<true, std::atomic> b;
-    BalanceTask task(0, 0, 0, src, dst, kv, &client);
+    BalanceTask task(
+        testJobId.fetch_add(1, std::memory_order_relaxed), 0, 0, src, dst, kv, &client);
     task.onFinished_ = []() { LOG(FATAL) << "We should not reach here!"; };
     task.onError_ = [&]() {
       LOG(INFO) << "Error happens!";
@@ -131,6 +134,13 @@ HostParts assignHostParts(kvstore::KVStore* kv, GraphSpaceID spaceId) {
   return hostPart;
 }
 
+void testRestBlancer() {
+  DataBalanceJobExecutor::plan_.reset(nullptr);
+  BalanceJobExecutor::lock_.unlock();
+  BalanceJobExecutor::running_ = false;
+  LeaderBalanceJobExecutor::inLeaderBalance_ = false;
+}
+
 TEST(BalanceTest, SimpleTestWithZone) {
   fs::TempDir rootPath("/tmp/SimpleTestWithZone.XXXXXX");
   auto store = MockCluster::initMetaKV(rootPath.path());
@@ -177,15 +187,18 @@ TEST(BalanceTest, SimpleTestWithZone) {
     int32_t totalParts = 12;
     std::vector<BalanceTask> tasks;
     NiceMock<MockAdminClient> client;
-    Balancer balancer(kv, &client);
+    JobDescription jd(
+        testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
+    DataBalanceJobExecutor balancer(jd, kv, &client, {});
     auto code = balancer.assembleZoneParts("group_0", hostParts);
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
-    balancer.balanceParts(0, 0, hostParts, totalParts, tasks, true);
+    balancer.balanceParts(0, hostParts, totalParts, tasks, true);
     for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
       EXPECT_EQ(3, it->second.size());
     }
     EXPECT_EQ(3, tasks.size());
   }
+  testRestBlancer();
 }
 
 TEST(BalanceTest, ExpansionZoneTest) {
@@ -225,9 +238,11 @@ TEST(BalanceTest, ExpansionZoneTest) {
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
   NiceMock<MockAdminClient> client;
-  Balancer balancer(kv, &client);
-  auto ret = balancer.balance();
-  ASSERT_EQ(nebula::cpp2::ErrorCode::E_BALANCED, error(ret));
+  JobDescription jd(
+      testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
+  DataBalanceJobExecutor balancer(jd, kv, &client, {});
+  auto ret = balancer.executeInternal(HostAddr(), {});
+  ASSERT_EQ(Status::OK(), ret.value());
   {
     std::vector<HostAddr> hosts;
     for (int i = 0; i < 4; i++) {
@@ -249,12 +264,13 @@ TEST(BalanceTest, ExpansionZoneTest) {
     ASSERT_TRUE(nebula::ok(result));
     std::vector<BalanceTask> tasks;
     hostParts.emplace(HostAddr("3", 3), std::vector<PartitionID>{});
-    balancer.balanceParts(0, 0, hostParts, totalParts, tasks, true);
+    balancer.balanceParts(0, hostParts, totalParts, tasks, true);
     for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
       EXPECT_EQ(3, it->second.size());
     }
     EXPECT_EQ(3, tasks.size());
   }
+  testRestBlancer();
 }
 
 TEST(BalanceTest, ExpansionHostIntoZoneTest) {
@@ -294,9 +310,11 @@ TEST(BalanceTest, ExpansionHostIntoZoneTest) {
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
   NiceMock<MockAdminClient> client;
-  Balancer balancer(kv, &client);
-  auto ret = balancer.balance();
-  ASSERT_EQ(nebula::cpp2::ErrorCode::E_BALANCED, error(ret));
+  JobDescription jd(
+      testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
+  DataBalanceJobExecutor balancer(jd, kv, &client, {});
+  auto ret = balancer.executeInternal(HostAddr(), {});
+  ASSERT_EQ(Status::OK(), ret.value());
   {
     std::vector<HostAddr> hosts;
     for (int i = 0; i < 6; i++) {
@@ -321,12 +339,13 @@ TEST(BalanceTest, ExpansionHostIntoZoneTest) {
     hostParts.emplace(HostAddr("4", 4), std::vector<PartitionID>{});
     hostParts.emplace(HostAddr("5", 5), std::vector<PartitionID>{});
 
-    balancer.balanceParts(0, 0, hostParts, totalParts, tasks, true);
+    balancer.balanceParts(0, hostParts, totalParts, tasks, true);
     for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
       EXPECT_EQ(2, it->second.size());
     }
     EXPECT_EQ(6, tasks.size());
   }
+  testRestBlancer();
 }
 
 TEST(BalanceTest, ShrinkZoneTest) {
@@ -369,11 +388,15 @@ TEST(BalanceTest, ShrinkZoneTest) {
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
   NiceMock<MockAdminClient> client;
-  Balancer balancer(kv, &client);
-  auto ret = balancer.balance();
-  ASSERT_EQ(nebula::cpp2::ErrorCode::E_BALANCED, error(ret));
-  ret = balancer.balance({{"3", 3}});
-  ASSERT_TRUE(ok(ret));
+  JobDescription jd(
+      testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
+  DataBalanceJobExecutor balancer(jd, kv, &client, {});
+  auto ret = balancer.executeInternal(HostAddr(), {});
+  ASSERT_EQ(Status::OK(), ret.value());
+  balancer.lostHosts_ = {{"3", 3}};
+  ret = balancer.executeInternal(HostAddr(), {});
+  ASSERT_EQ(Status::OK(), ret.value());
+  testRestBlancer();
 }
 
 TEST(BalanceTest, ShrinkHostFromZoneTest) {
@@ -415,9 +438,11 @@ TEST(BalanceTest, ShrinkHostFromZoneTest) {
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
   NiceMock<MockAdminClient> client;
-  Balancer balancer(kv, &client);
-  auto ret = balancer.balance();
-  ASSERT_EQ(nebula::cpp2::ErrorCode::E_BALANCED, error(ret));
+  JobDescription jd(0L, cpp2::AdminCmd::DATA_BALANCE, {});
+  DataBalanceJobExecutor balancer(jd, kv, &client, {});
+  auto ret = balancer.executeInternal(HostAddr(), {});
+  ASSERT_EQ(Status::OK(), ret.value());
+  testRestBlancer();
   showHostLoading(kv, 1);
 
   {
@@ -426,8 +451,9 @@ TEST(BalanceTest, ShrinkHostFromZoneTest) {
     GroupInfo groupInfo = {{"default_group", {"zone_0", "zone_1", "zone_2"}}};
     TestUtils::assembleGroupAndZone(kv, zoneInfo, groupInfo);
   }
-  ret = balancer.balance({{"3", 3}});
-  ASSERT_TRUE(ok(ret));
+  balancer.lostHosts_ = {{"3", 3}};
+  ret = balancer.executeInternal(HostAddr(), {});
+  ASSERT_EQ(Status::OK(), ret.value());
 }
 
 TEST(BalanceTest, BalanceWithComplexZoneTest) {
@@ -529,13 +555,14 @@ TEST(BalanceTest, BalanceWithComplexZoneTest) {
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
   NiceMock<MockAdminClient> client;
-  Balancer balancer(kv, &client);
-
+  JobDescription jd(
+      testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
+  DataBalanceJobExecutor balancer(jd, kv, &client, {});
   {
     int32_t totalParts = 18 * 3;
     std::vector<BalanceTask> tasks;
     auto hostParts = assignHostParts(kv, 1);
-    balancer.balanceParts(0, 1, hostParts, totalParts, tasks, true);
+    balancer.balanceParts(1, hostParts, totalParts, tasks, true);
   }
   {
     int32_t totalParts = 64 * 3;
@@ -543,7 +570,7 @@ TEST(BalanceTest, BalanceWithComplexZoneTest) {
     auto hostParts = assignHostParts(kv, 2);
     auto code = balancer.assembleZoneParts("group_0", hostParts);
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
-    balancer.balanceParts(0, 2, hostParts, totalParts, tasks, true);
+    balancer.balanceParts(2, hostParts, totalParts, tasks, true);
   }
   {
     auto dump = [](const HostParts& hostParts, const std::vector<BalanceTask>& tasks) {
@@ -580,7 +607,7 @@ TEST(BalanceTest, BalanceWithComplexZoneTest) {
     dump(hostParts, tasks);
     auto code = balancer.assembleZoneParts("group_1", hostParts);
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
-    balancer.balanceParts(0, 3, hostParts, totalParts, tasks, true);
+    balancer.balanceParts(3, hostParts, totalParts, tasks, true);
 
     LOG(INFO) << "=== new map ====";
     dump(hostParts, tasks);
@@ -626,8 +653,10 @@ TEST(BalanceTest, BalancePartsTest) {
     std::vector<BalanceTask> tasks;
     VLOG(1) << "=== original map ====";
     dump(hostParts, tasks);
-    Balancer balancer(kv, &client);
-    balancer.balanceParts(0, 0, hostParts, totalParts, tasks, false);
+    JobDescription jd(
+        testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
+    DataBalanceJobExecutor balancer(jd, kv, &client, {});
+    balancer.balanceParts(0, hostParts, totalParts, tasks, false);
     VLOG(1) << "=== new map ====";
     dump(hostParts, tasks);
     for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
@@ -645,8 +674,10 @@ TEST(BalanceTest, BalancePartsTest) {
     std::vector<BalanceTask> tasks;
     VLOG(1) << "=== original map ====";
     dump(hostParts, tasks);
-    Balancer balancer(kv, &client);
-    balancer.balanceParts(0, 0, hostParts, totalParts, tasks, false);
+    JobDescription jd(
+        testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
+    DataBalanceJobExecutor balancer(jd, kv, &client, {});
+    balancer.balanceParts(0, hostParts, totalParts, tasks, false);
     VLOG(1) << "=== new map ====";
     dump(hostParts, tasks);
     EXPECT_EQ(4, hostParts[HostAddr("0", 0)].size());
@@ -665,8 +696,10 @@ TEST(BalanceTest, BalancePartsTest) {
     std::vector<BalanceTask> tasks;
     VLOG(1) << "=== original map ====";
     dump(hostParts, tasks);
-    Balancer balancer(kv, &client);
-    balancer.balanceParts(0, 0, hostParts, totalParts, tasks, false);
+    JobDescription jd(
+        testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
+    DataBalanceJobExecutor balancer(jd, kv, &client, {});
+    balancer.balanceParts(0, hostParts, totalParts, tasks, false);
     VLOG(1) << "=== new map ====";
     dump(hostParts, tasks);
     EXPECT_EQ(4, hostParts[HostAddr("0", 0)].size());
@@ -690,8 +723,10 @@ TEST(BalanceTest, BalancePartsTest) {
     std::vector<BalanceTask> tasks;
     VLOG(1) << "=== original map ====";
     dump(hostParts, tasks);
-    Balancer balancer(kv, &client);
-    balancer.balanceParts(0, 0, hostParts, totalParts, tasks, false);
+    JobDescription jd(
+        testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
+    DataBalanceJobExecutor balancer(jd, kv, &client, {});
+    balancer.balanceParts(0, hostParts, totalParts, tasks, false);
     VLOG(1) << "=== new map ====";
     dump(hostParts, tasks);
     for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
@@ -713,8 +748,10 @@ TEST(BalanceTest, BalancePartsTest) {
     std::vector<BalanceTask> tasks;
     VLOG(1) << "=== original map ====";
     dump(hostParts, tasks);
-    Balancer balancer(kv, &client);
-    balancer.balanceParts(0, 0, hostParts, totalParts, tasks, false);
+    JobDescription jd(
+        testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
+    DataBalanceJobExecutor balancer(jd, kv, &client, {});
+    balancer.balanceParts(0, hostParts, totalParts, tasks, false);
     VLOG(1) << "=== new map ====";
     dump(hostParts, tasks);
     for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
@@ -728,7 +765,9 @@ TEST(BalanceTest, BalancePartsTest) {
 TEST(BalanceTest, DispatchTasksTest) {
   {
     FLAGS_task_concurrency = 10;
-    BalancePlan plan(0L, nullptr, nullptr);
+    JobDescription jd(
+        testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
+    BalancePlan plan(jd, nullptr, nullptr);
     for (int i = 0; i < 20; i++) {
       BalanceTask task(0,
                        0,
@@ -747,7 +786,9 @@ TEST(BalanceTest, DispatchTasksTest) {
   }
   {
     FLAGS_task_concurrency = 10;
-    BalancePlan plan(0L, nullptr, nullptr);
+    JobDescription jd(
+        testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
+    BalancePlan plan(jd, nullptr, nullptr);
     for (int i = 0; i < 5; i++) {
       BalanceTask task(0,
                        0,
@@ -766,7 +807,9 @@ TEST(BalanceTest, DispatchTasksTest) {
   }
   {
     FLAGS_task_concurrency = 20;
-    BalancePlan plan(0L, nullptr, nullptr);
+    JobDescription jd(
+        testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
+    BalancePlan plan(jd, nullptr, nullptr);
     for (int i = 0; i < 5; i++) {
       BalanceTask task(0,
                        0,
@@ -814,17 +857,24 @@ TEST(BalanceTest, BalancePlanTest) {
   {
     LOG(INFO) << "Test with all tasks succeeded, only one bucket!";
     NiceMock<MockAdminClient> client;
-    BalancePlan plan(0L, kv, &client);
+    JobDescription jd(
+        testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
+    BalancePlan plan(jd, kv, &client);
     TestUtils::registerHB(kv, hosts);
 
     for (int i = 0; i < 10; i++) {
-      BalanceTask task(
-          0, 0, 0, HostAddr(std::to_string(i), 0), HostAddr(std::to_string(i), 1), kv, &client);
+      BalanceTask task(plan.id(),
+                       0,
+                       0,
+                       HostAddr(std::to_string(i), 0),
+                       HostAddr(std::to_string(i), 1),
+                       kv,
+                       &client);
       plan.addTask(std::move(task));
     }
     folly::Baton<true, std::atomic> b;
     plan.onFinished_ = [&plan, &b]() {
-      ASSERT_EQ(BalanceStatus::SUCCEEDED, plan.status_);
+      ASSERT_EQ(meta::cpp2::JobStatus::FINISHED, plan.status());
       ASSERT_EQ(10, plan.finishedTaskNum_);
       b.post();
     };
@@ -838,17 +888,24 @@ TEST(BalanceTest, BalancePlanTest) {
   {
     LOG(INFO) << "Test with all tasks succeeded, 10 buckets!";
     NiceMock<MockAdminClient> client;
-    BalancePlan plan(0L, kv, &client);
+    JobDescription jd(
+        testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
+    BalancePlan plan(jd, kv, &client);
     TestUtils::registerHB(kv, hosts);
 
     for (int i = 0; i < 10; i++) {
-      BalanceTask task(
-          0, 0, i, HostAddr(std::to_string(i), 0), HostAddr(std::to_string(i), 1), kv, &client);
+      BalanceTask task(plan.id(),
+                       0,
+                       i,
+                       HostAddr(std::to_string(i), 0),
+                       HostAddr(std::to_string(i), 1),
+                       kv,
+                       &client);
       plan.addTask(std::move(task));
     }
     folly::Baton<true, std::atomic> b;
     plan.onFinished_ = [&plan, &b]() {
-      ASSERT_EQ(BalanceStatus::SUCCEEDED, plan.status_);
+      ASSERT_EQ(meta::cpp2::JobStatus::FINISHED, plan.status());
       ASSERT_EQ(10, plan.finishedTaskNum_);
       b.post();
     };
@@ -863,12 +920,19 @@ TEST(BalanceTest, BalancePlanTest) {
   }
   {
     LOG(INFO) << "Test with one task failed, 10 buckets";
-    BalancePlan plan(0L, kv, nullptr);
+    JobDescription jd(
+        testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
+    BalancePlan plan(jd, kv, nullptr);
     NiceMock<MockAdminClient> client1, client2;
     {
       for (int i = 0; i < 9; i++) {
-        BalanceTask task(
-            0, 0, i, HostAddr(std::to_string(i), 0), HostAddr(std::to_string(i), 1), kv, &client1);
+        BalanceTask task(plan.id(),
+                         0,
+                         i,
+                         HostAddr(std::to_string(i), 0),
+                         HostAddr(std::to_string(i), 1),
+                         kv,
+                         &client1);
         plan.addTask(std::move(task));
       }
     }
@@ -876,13 +940,13 @@ TEST(BalanceTest, BalancePlanTest) {
       EXPECT_CALL(client2, transLeader(_, _, _, _))
           .Times(1)
           .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("Transfer failed")))));
-      BalanceTask task(0, 0, 9, HostAddr("9", 0), HostAddr("9", 1), kv, &client2);
+      BalanceTask task(plan.id(), 0, 9, HostAddr("9", 0), HostAddr("9", 1), kv, &client2);
       plan.addTask(std::move(task));
     }
     TestUtils::registerHB(kv, hosts);
     folly::Baton<true, std::atomic> b;
     plan.onFinished_ = [&plan, &b]() {
-      ASSERT_EQ(BalanceStatus::FAILED, plan.status_);
+      ASSERT_EQ(meta::cpp2::JobStatus::FAILED, plan.status());
       ASSERT_EQ(10, plan.finishedTaskNum_);
       b.post();
     };
@@ -891,37 +955,31 @@ TEST(BalanceTest, BalancePlanTest) {
   }
 }
 
-int32_t verifyBalancePlan(kvstore::KVStore* kv, BalanceID balanceId, BalanceStatus balanceStatus) {
-  const auto& prefix = MetaKeyUtils::balancePlanPrefix();
-  std::unique_ptr<kvstore::KVIterator> iter;
-  auto retcode = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
+void verifyBalancePlan(kvstore::KVStore* kv, JobID jobId, meta::cpp2::JobStatus jobStatus) {
+  std::string key = JobDescription::makeJobKey(jobId);
+  std::string value;
+  auto retcode = kv->get(kDefaultSpaceId, kDefaultPartId, key, &value);
   EXPECT_EQ(retcode, nebula::cpp2::ErrorCode::SUCCEEDED);
-  int32_t num = 0;
-  while (iter->valid()) {
-    auto id = MetaKeyUtils::parseBalanceID(iter->key());
-    auto status = MetaKeyUtils::parseBalanceStatus(iter->val());
-    EXPECT_EQ(balanceId, id);
-    EXPECT_EQ(balanceStatus, status);
-    num++;
-    iter->next();
-  }
-  return num;
+  auto optJobRet = JobDescription::makeJobDescription(key, value);
+  EXPECT_TRUE(nebula::ok(optJobRet));
+  auto optJob = nebula::value(optJobRet);
+  EXPECT_EQ(jobStatus, optJob.getStatus());
 }
 
 void verifyBalanceTask(kvstore::KVStore* kv,
-                       BalanceID balanceId,
+                       JobID jobId,
                        BalanceTaskStatus status,
                        BalanceTaskResult result,
                        std::unordered_map<HostAddr, int32_t>& partCount,
                        int32_t exceptNumber = 0) {
-  const auto& prefix = MetaKeyUtils::balanceTaskPrefix(balanceId);
+  const auto& prefix = MetaKeyUtils::balanceTaskPrefix(jobId);
   std::unique_ptr<kvstore::KVIterator> iter;
   auto code = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
   ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
   int32_t num = 0;
   while (iter->valid()) {
     auto keyTuple = MetaKeyUtils::parseBalanceTaskKey(iter->key());
-    ASSERT_EQ(balanceId, std::get<0>(keyTuple));
+    ASSERT_EQ(jobId, std::get<0>(keyTuple));
     ASSERT_EQ(1, std::get<1>(keyTuple));
     partCount[std::get<3>(keyTuple)]--;
     partCount[std::get<4>(keyTuple)]++;
@@ -950,22 +1008,21 @@ TEST(BalanceTest, NormalTest) {
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
   NiceMock<MockAdminClient> client;
-  Balancer balancer(kv, &client);
-  auto ret = balancer.balance();
-  ASSERT_EQ(nebula::cpp2::ErrorCode::E_BALANCED, error(ret));
-
+  JobDescription jd(
+      testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
+  DataBalanceJobExecutor balancer(jd, kv, &client, {});
+  auto ret = balancer.executeInternal(HostAddr(), {});
+  ASSERT_EQ(Status::OK(), ret.value());
+  testRestBlancer();
   sleep(FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor + 1);
   LOG(INFO) << "Now, we lost host " << HostAddr("3", 3);
   TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"2", 2}});
-  ret = balancer.balance();
-  ASSERT_TRUE(ok(ret));
-  auto balanceId = value(ret);
+  ret = balancer.executeInternal(HostAddr(), {});
+  ASSERT_EQ(Status::OK(), ret.value());
   sleep(1);
-
   LOG(INFO) << "Rebalance finished!";
-  ASSERT_EQ(1, verifyBalancePlan(kv, balanceId, BalanceStatus::SUCCEEDED));
   verifyBalanceTask(
-      kv, balanceId, BalanceTaskStatus::END, BalanceTaskResult::SUCCEEDED, partCount, 6);
+      kv, balancer.jobId_, BalanceTaskStatus::END, BalanceTaskResult::SUCCEEDED, partCount, 6);
 }
 
 TEST(BalanceTest, SpecifyHostTest) {
@@ -980,19 +1037,20 @@ TEST(BalanceTest, SpecifyHostTest) {
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
   NiceMock<MockAdminClient> client;
-  Balancer balancer(kv, &client);
+  JobDescription jd(
+      testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
+  DataBalanceJobExecutor balancer(jd, kv, &client, {});
 
   sleep(1);
   LOG(INFO) << "Now, we remove host {3, 3}";
   TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}});
-  auto ret = balancer.balance({{"3", 3}});
-  ASSERT_TRUE(ok(ret));
-  auto balanceId = value(ret);
-  sleep(1);
+  balancer.lostHosts_ = {{"3", 3}};
+  auto ret = balancer.executeInternal(HostAddr(), {});
+  ASSERT_EQ(Status::OK(), ret.value());
+  testRestBlancer();
   LOG(INFO) << "Rebalance finished!";
-  ASSERT_EQ(1, verifyBalancePlan(kv, balanceId, BalanceStatus::SUCCEEDED));
   verifyBalanceTask(
-      kv, balanceId, BalanceTaskStatus::END, BalanceTaskResult::SUCCEEDED, partCount, 6);
+      kv, balancer.jobId_, BalanceTaskStatus::END, BalanceTaskResult::SUCCEEDED, partCount, 6);
 }
 
 TEST(BalanceTest, SpecifyMultiHostTest) {
@@ -1010,30 +1068,35 @@ TEST(BalanceTest, SpecifyMultiHostTest) {
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
   NiceMock<MockAdminClient> client;
-  Balancer balancer(kv, &client);
+  JobDescription jd(
+      testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
+  DataBalanceJobExecutor balancer(jd, kv, &client, {});
 
   sleep(FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor + 1);
   LOG(INFO) << "Now, we want to remove host {2, 2}/{3, 3}";
   // If {"2", 2} and {"3", 3} are both dead, minority hosts for some part are
   // alive, it would lead to a fail
   TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"4", 4}, {"5", 5}});
-  auto ret = balancer.balance({{"2", 2}, {"3", 3}});
-  ASSERT_FALSE(ok(ret));
-  EXPECT_EQ(nebula::cpp2::ErrorCode::E_NO_VALID_HOST, error(ret));
+  balancer.lostHosts_ = {{"2", 2}, {"3", 3}};
+  auto ret = balancer.executeInternal(HostAddr(), {});
+  ASSERT_EQ(apache::thrift::util::enumNameSafe(nebula::cpp2::ErrorCode::E_NO_VALID_HOST),
+            ret.value().message());
   // If {"2", 2} is dead, {"3", 3} still alive, each part has majority hosts
   // alive
+  testRestBlancer();
   TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"3", 3}, {"4", 4}, {"5", 5}});
-  ret = balancer.balance({{"2", 2}, {"3", 3}});
-  ASSERT_TRUE(ok(ret));
-  auto balanceId = value(ret);
+  balancer.lostHosts_ = {{"2", 2}, {"3", 3}};
+  ret = balancer.executeInternal(HostAddr(), {});
+  ASSERT_EQ(Status::OK(), ret.value());
+  testRestBlancer();
   sleep(1);
   LOG(INFO) << "Rebalance finished!";
-  ASSERT_EQ(1, verifyBalancePlan(kv, balanceId, BalanceStatus::SUCCEEDED));
 
   // In theory, there should be only 12 tasks, but in some environment, 13 tasks
   // is generated. A partition is moved more than once from A -> B -> C, actually
   // A -> C is enough.
-  verifyBalanceTask(kv, balanceId, BalanceTaskStatus::END, BalanceTaskResult::SUCCEEDED, partCount);
+  verifyBalanceTask(
+      kv, balancer.jobId_, BalanceTaskStatus::END, BalanceTaskResult::SUCCEEDED, partCount);
   ASSERT_EQ(9, partCount[HostAddr("0", 0)]);
   ASSERT_EQ(9, partCount[HostAddr("1", 1)]);
   ASSERT_EQ(0, partCount[HostAddr("2", 2)]);
@@ -1053,7 +1116,9 @@ TEST(BalanceTest, MockReplaceMachineTest) {
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
   NiceMock<MockAdminClient> client;
-  Balancer balancer(kv, &client);
+  JobDescription jd(
+      testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
+  DataBalanceJobExecutor balancer(jd, kv, &client, {});
 
   // add a new machine
   TestUtils::createSomeHosts(kv, {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}});
@@ -1062,16 +1127,14 @@ TEST(BalanceTest, MockReplaceMachineTest) {
   sleep(FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor + 1);
   // {2, 2} should be offline now
   TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"3", 3}});
-  auto ret = balancer.balance();
-  ASSERT_TRUE(ok(ret));
-  auto balanceId = value(ret);
+  auto ret = balancer.executeInternal(HostAddr(), {});
+  ASSERT_EQ(Status::OK(), ret.value());
+  testRestBlancer();
   sleep(1);
   LOG(INFO) << "Rebalance finished!";
-  ASSERT_EQ(1, verifyBalancePlan(kv, balanceId, BalanceStatus::SUCCEEDED));
-
   std::unordered_map<HostAddr, int32_t> partCount;
   verifyBalanceTask(
-      kv, balanceId, BalanceTaskStatus::END, BalanceTaskResult::SUCCEEDED, partCount, 12);
+      kv, balancer.jobId_, BalanceTaskStatus::END, BalanceTaskResult::SUCCEEDED, partCount, 12);
 }
 
 TEST(BalanceTest, SingleReplicaTest) {
@@ -1089,20 +1152,23 @@ TEST(BalanceTest, SingleReplicaTest) {
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
   NiceMock<MockAdminClient> client;
-  Balancer balancer(kv, &client);
+  JobDescription jd(
+      testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
+  DataBalanceJobExecutor balancer(jd, kv, &client, {});
 
   sleep(1);
   LOG(INFO) << "Now, we want to remove host {2, 2} and {3, 3}";
   TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}, {"4", 4}, {"5", 5}});
-  auto ret = balancer.balance({{"2", 2}, {"3", 3}});
-  ASSERT_TRUE(ok(ret));
-  auto balanceId = value(ret);
+
+  balancer.lostHosts_ = {{"2", 2}, {"3", 3}};
+  auto ret = balancer.executeInternal(HostAddr(), {});
+  ASSERT_EQ(Status::OK(), ret.value());
+  testRestBlancer();
   sleep(1);
   LOG(INFO) << "Rebalance finished!";
-  ASSERT_EQ(1, verifyBalancePlan(kv, balanceId, BalanceStatus::SUCCEEDED));
 
   verifyBalanceTask(
-      kv, balanceId, BalanceTaskStatus::END, BalanceTaskResult::SUCCEEDED, partCount, 4);
+      kv, balancer.jobId_, BalanceTaskStatus::END, BalanceTaskResult::SUCCEEDED, partCount, 4);
   ASSERT_EQ(3, partCount[HostAddr("0", 0)]);
   ASSERT_EQ(3, partCount[HostAddr("1", 1)]);
   ASSERT_EQ(0, partCount[HostAddr("2", 2)]);
@@ -1137,28 +1203,32 @@ TEST(BalanceTest, TryToRecoveryTest) {
       .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))))
       .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))));
 
-  Balancer balancer(kv, &client);
-  auto ret = balancer.balance();
-  CHECK(ok(ret));
-  auto balanceId = value(ret);
+  JobDescription jd(
+      testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
+  DataBalanceJobExecutor balancer(jd, kv, &client, {});
+  auto ret = balancer.executeInternal(HostAddr(), {});
+  ASSERT_EQ(Status::OK(), ret.value());
+  testRestBlancer();
   sleep(1);
-
-  ASSERT_EQ(1, verifyBalancePlan(kv, balanceId, BalanceStatus::FAILED));
   std::unordered_map<HostAddr, int32_t> partCount;
-  verifyBalanceTask(
-      kv, balanceId, BalanceTaskStatus::CATCH_UP_DATA, BalanceTaskResult::FAILED, partCount, 6);
+  verifyBalanceTask(kv,
+                    balancer.jobId_,
+                    BalanceTaskStatus::CATCH_UP_DATA,
+                    BalanceTaskResult::FAILED,
+                    partCount,
+                    6);
 
   sleep(FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor + 1);
   LOG(INFO) << "Now let's try to recovery it. Since all host would be regarded "
                "as offline, "
             << "so all task will be invalid";
-  ret = balancer.balance();
-  CHECK(ok(ret));
-  balanceId = value(ret);
+  balancer.recovery();
+  ret = balancer.executeInternal(HostAddr(), {});
+  ASSERT_EQ(Status::OK(), ret.value());
+  testRestBlancer();
   sleep(1);
-  ASSERT_EQ(1, verifyBalancePlan(kv, balanceId, BalanceStatus::SUCCEEDED));
   verifyBalanceTask(
-      kv, balanceId, BalanceTaskStatus::START, BalanceTaskResult::INVALID, partCount, 6);
+      kv, balancer.jobId_, BalanceTaskStatus::START, BalanceTaskResult::INVALID, partCount, 6);
 }
 
 TEST(BalanceTest, RecoveryTest) {
@@ -1187,28 +1257,30 @@ TEST(BalanceTest, RecoveryTest) {
   sleep(FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor + 1);
   LOG(INFO) << "Now, we lost host " << HostAddr("3", 3);
   TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"2", 2}});
-  Balancer balancer(kv, &client);
-  auto ret = balancer.balance();
-  ASSERT_TRUE(ok(ret));
-  auto balanceId = value(ret);
+  JobDescription jd(
+      testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
+  DataBalanceJobExecutor balancer(jd, kv, &client, {});
+  auto ret = balancer.executeInternal(HostAddr(), {});
+  ASSERT_EQ(Status::OK(), ret.value());
+  testRestBlancer();
   sleep(1);
-
-  ASSERT_EQ(1, verifyBalancePlan(kv, balanceId, BalanceStatus::FAILED));
   std::unordered_map<HostAddr, int32_t> partCount;
-  verifyBalanceTask(
-      kv, balanceId, BalanceTaskStatus::CATCH_UP_DATA, BalanceTaskResult::FAILED, partCount, 6);
+  verifyBalanceTask(kv,
+                    balancer.jobId_,
+                    BalanceTaskStatus::CATCH_UP_DATA,
+                    BalanceTaskResult::FAILED,
+                    partCount,
+                    6);
 
   // register hb again to prevent from regarding src as offline
   TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"2", 2}});
   LOG(INFO) << "Now let's try to recovery it.";
-  ret = balancer.balance();
-  ASSERT_TRUE(ok(ret));
-  balanceId = value(ret);
+  balancer.recovery();
+  ret = balancer.executeInternal(HostAddr(), {});
+  ASSERT_EQ(Status::OK(), ret.value());
   sleep(1);
-
-  ASSERT_EQ(1, verifyBalancePlan(kv, balanceId, BalanceStatus::SUCCEEDED));
   verifyBalanceTask(
-      kv, balanceId, BalanceTaskStatus::END, BalanceTaskResult::SUCCEEDED, partCount, 6);
+      kv, balancer.jobId_, BalanceTaskStatus::END, BalanceTaskResult::SUCCEEDED, partCount, 6);
 }
 
 TEST(BalanceTest, StopPlanTest) {
@@ -1234,24 +1306,22 @@ TEST(BalanceTest, StopPlanTest) {
       .WillOnce(
           Return(ByMove(folly::makeFuture<Status>(Status::OK()).delayed(std::chrono::seconds(3)))));
 
-  Balancer balancer(kv, &delayClient);
-  auto ret = balancer.balance();
-  CHECK(ok(ret));
-  auto balanceId = value(ret);
-
+  JobDescription jd(
+      testJobId.fetch_add(1, std::memory_order_relaxed), cpp2::AdminCmd::DATA_BALANCE, {});
+  DataBalanceJobExecutor balancer(jd, kv, &delayClient, {});
+  auto ret = balancer.executeInternal(HostAddr(), {});
+  ASSERT_EQ(Status::OK(), ret.value());
   sleep(1);
   LOG(INFO) << "Rebalance should still in progress";
-  ASSERT_EQ(1, verifyBalancePlan(kv, balanceId, BalanceStatus::IN_PROGRESS));
 
   TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"2", 2}});
   auto stopRet = balancer.stop();
-  CHECK(nebula::ok(stopRet));
-  ASSERT_EQ(nebula::value(stopRet), balanceId);
+  EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, stopRet);
 
   // wait until the only IN_PROGRESS task finished;
   sleep(3);
   {
-    const auto& prefix = MetaKeyUtils::balanceTaskPrefix(balanceId);
+    const auto& prefix = MetaKeyUtils::balanceTaskPrefix(balancer.jobId_);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto retcode = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     ASSERT_EQ(retcode, nebula::cpp2::ErrorCode::SUCCEEDED);
@@ -1283,66 +1353,12 @@ TEST(BalanceTest, StopPlanTest) {
   TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"2", 2}});
   NiceMock<MockAdminClient> normalClient;
 
-  balancer.client_ = &normalClient;
-  ret = balancer.balance();
-  CHECK(ok(ret));
-  ASSERT_NE(value(ret), balanceId);
+  balancer.adminClient_ = &normalClient;
+  testRestBlancer();
+  ret = balancer.executeInternal(HostAddr(), {});
+  ASSERT_EQ(Status::OK(), ret.value());
+  testRestBlancer();
   sleep(1);
-}
-
-TEST(BalanceTest, CleanLastInvalidBalancePlanTest) {
-  FLAGS_task_concurrency = 1;
-  fs::TempDir rootPath("/tmp/CleanLastInvalidBalancePlanTest.XXXXXX");
-  auto store = MockCluster::initMetaKV(rootPath.path());
-  auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
-  FLAGS_heartbeat_interval_secs = 1;
-  TestUtils::createSomeHosts(kv);
-  TestUtils::assembleSpace(kv, 1, 8, 3, 4);
-
-  DefaultValue<folly::Future<Status>>::SetFactory(
-      [] { return folly::Future<Status>(Status::OK()); });
-  NiceMock<MockAdminClient> client;
-
-  // concurrency = 1, we could only block first task
-  EXPECT_CALL(client, waitingForCatchUpData(_, _, _))
-      .Times(AtLeast(12))
-      .WillOnce(Return(ByMove(folly::Future<Status>(Status::Error("catch up failed")))));
-
-  sleep(FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor + 1);
-  TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"2", 2}});
-  Balancer balancer(kv, &client);
-  auto ret = balancer.balance();
-  CHECK(ok(ret));
-  auto balanceId = value(ret);
-
-  // wait until the plan finished, no running plan for now, only one task has
-  // been executed, so the task will be failed, try to clean the invalid plan
-  sleep(3);
-  TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"2", 2}});
-  auto cleanRet = balancer.cleanLastInValidPlan();
-  CHECK(ok(cleanRet));
-  ASSERT_EQ(value(cleanRet), balanceId);
-
-  {
-    const auto& prefix = MetaKeyUtils::balancePlanPrefix();
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto retcode = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-    ASSERT_EQ(retcode, nebula::cpp2::ErrorCode::SUCCEEDED);
-    int num = 0;
-    while (iter->valid()) {
-      num++;
-      iter->next();
-    }
-    ASSERT_EQ(0, num);
-  }
-
-  // start a new balance plan
-  TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"2", 2}});
-  ret = balancer.balance();
-  CHECK(ok(ret));
-  ASSERT_NE(balanceId, value(ret));
-  sleep(1);
-  ASSERT_EQ(1, verifyBalancePlan(kv, value(ret), BalanceStatus::SUCCEEDED));
 }
 
 void verifyLeaderBalancePlan(HostLeaderMap& hostLeaderMap,
@@ -1382,7 +1398,8 @@ TEST(BalanceTest, SimpleLeaderBalancePlanTest) {
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
   NiceMock<MockAdminClient> client;
-  Balancer balancer(kv, &client);
+  LeaderBalanceJobExecutor balancer(
+      testJobId.fetch_add(1, std::memory_order_relaxed), kv, &client, {});
   {
     HostLeaderMap hostLeaderMap;
     hostLeaderMap[HostAddr("0", 0)][1] = {1, 2, 3, 4, 5};
@@ -1459,7 +1476,8 @@ TEST(BalanceTest, IntersectHostsLeaderBalancePlanTest) {
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
   NiceMock<MockAdminClient> client;
-  Balancer balancer(kv, &client);
+  LeaderBalanceJobExecutor balancer(
+      testJobId.fetch_add(1, std::memory_order_relaxed), kv, &client, {});
 
   {
     HostLeaderMap hostLeaderMap;
@@ -1562,7 +1580,8 @@ TEST(BalanceTest, ManyHostsLeaderBalancePlanTest) {
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
   NiceMock<MockAdminClient> client;
-  Balancer balancer(kv, &client);
+  LeaderBalanceJobExecutor balancer(
+      testJobId.fetch_add(1, std::memory_order_relaxed), kv, &client, {});
 
   // check several times if they are balanced
   for (int count = 0; count < 1; count++) {
@@ -1604,9 +1623,10 @@ TEST(BalanceTest, LeaderBalanceTest) {
   EXPECT_CALL(client, getLeaderDist(_))
       .WillOnce(DoAll(SetArgPointee<0>(dist), Return(ByMove(folly::Future<Status>(Status::OK())))));
 
-  Balancer balancer(kv, &client);
-  auto ret = balancer.leaderBalance();
-  ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
+  LeaderBalanceJobExecutor balancer(
+      testJobId.fetch_add(1, std::memory_order_relaxed), kv, &client, {});
+  auto ret = balancer.executeInternal(HostAddr(), {});
+  ASSERT_EQ(Status::Error("partiton failed to transfer leader"), ret.value());
 }
 
 TEST(BalanceTest, LeaderBalanceWithZoneTest) {
@@ -1649,8 +1669,8 @@ TEST(BalanceTest, LeaderBalanceWithZoneTest) {
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
   NiceMock<MockAdminClient> client;
-  Balancer balancer(kv, &client);
-
+  LeaderBalanceJobExecutor balancer(
+      testJobId.fetch_add(1, std::memory_order_relaxed), kv, &client, {});
   {
     HostLeaderMap hostLeaderMap;
     hostLeaderMap[HostAddr("0", 0)][1] = {1, 3, 5, 7};
@@ -1727,7 +1747,8 @@ TEST(BalanceTest, LeaderBalanceWithLargerZoneTest) {
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
   NiceMock<MockAdminClient> client;
-  Balancer balancer(kv, &client);
+  LeaderBalanceJobExecutor balancer(
+      testJobId.fetch_add(1, std::memory_order_relaxed), kv, &client, {});
   {
     HostLeaderMap hostLeaderMap;
     hostLeaderMap[HostAddr("0", 0)][1] = {1, 5, 8};
@@ -1844,7 +1865,8 @@ TEST(BalanceTest, LeaderBalanceWithComplexZoneTest) {
   DefaultValue<folly::Future<Status>>::SetFactory(
       [] { return folly::Future<Status>(Status::OK()); });
   NiceMock<MockAdminClient> client;
-  Balancer balancer(kv, &client);
+  LeaderBalanceJobExecutor balancer(
+      testJobId.fetch_add(1, std::memory_order_relaxed), kv, &client, {});
 
   {
     HostLeaderMap hostLeaderMap;

@@ -2985,6 +2985,36 @@ admin_job_sentence
         auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::RECOVER);
         $$ = sentence;
     }
+    | KW_RECOVER KW_JOB integer_list {
+        auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::RECOVER);
+        std::vector<int32_t>*intVec=$3;
+        for(int32_t i = 0; i<intVec->size(); i++){
+          sentence->addPara(std::to_string(intVec->at(i)));
+        }
+        delete intVec;
+        $$ = sentence;
+        }
+    | KW_SUBMIT KW_JOB KW_BALANCE KW_LEADER {
+         auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
+                                              meta::cpp2::AdminCmd::LEADER_BALANCE);
+         $$ = sentence;
+        }
+    | KW_SUBMIT KW_JOB KW_BALANCE KW_DATA {
+         auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
+                                              meta::cpp2::AdminCmd::DATA_BALANCE);
+         $$ = sentence;
+    }
+    | KW_SUBMIT KW_JOB KW_BALANCE KW_DATA KW_REMOVE host_list {
+         auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
+                                              meta::cpp2::AdminCmd::DATA_BALANCE);
+         HostList* hl = $6;
+         std::vector<HostAddr> has = hl->hosts();
+         for (HostAddr& ha: has) {
+            sentence->addPara(ha.toString());
+         }
+         delete hl;
+         $$ = sentence;
+    }
     ;
 
 job_concurrency
@@ -3405,22 +3435,30 @@ integer_list
 
 balance_sentence
     : KW_BALANCE KW_LEADER {
-        $$ = new BalanceSentence(BalanceSentence::SubType::kLeader);
+        auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
+                                             meta::cpp2::AdminCmd::LEADER_BALANCE);
+        $$ = sentence;
     }
     | KW_BALANCE KW_DATA {
-        $$ = new BalanceSentence(BalanceSentence::SubType::kData);
+        auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
+                                             meta::cpp2::AdminCmd::DATA_BALANCE);
+        $$ = sentence;
     }
     | KW_BALANCE KW_DATA legal_integer {
-        $$ = new BalanceSentence($3);
-    }
-    | KW_BALANCE KW_DATA KW_STOP {
-        $$ = new BalanceSentence(BalanceSentence::SubType::kDataStop);
-    }
-    | KW_BALANCE KW_DATA KW_RESET KW_PLAN {
-        $$ = new BalanceSentence(BalanceSentence::SubType::kDataReset);
+        auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::SHOW);
+        sentence->addPara(std::to_string($3));
+        $$ = sentence;
     }
     | KW_BALANCE KW_DATA KW_REMOVE host_list {
-        $$ = new BalanceSentence(BalanceSentence::SubType::kData, $4);
+        auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
+                                             meta::cpp2::AdminCmd::DATA_BALANCE);
+        HostList* hl = $4;
+        std::vector<HostAddr> has = hl->hosts();
+        for (HostAddr& ha: has) {
+            sentence->addPara(ha.toString());
+        }
+        delete hl;
+        $$ = sentence;
     }
     ;
 
