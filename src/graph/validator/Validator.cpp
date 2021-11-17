@@ -15,7 +15,6 @@
 #include "graph/validator/AdminJobValidator.h"
 #include "graph/validator/AdminValidator.h"
 #include "graph/validator/AssignmentValidator.h"
-#include "graph/validator/BalanceValidator.h"
 #include "graph/validator/DownloadValidator.h"
 #include "graph/validator/ExplainValidator.h"
 #include "graph/validator/FetchEdgesValidator.h"
@@ -132,8 +131,6 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
       return std::make_unique<RevokeRoleValidator>(sentence, context);
     case Sentence::Kind::kShowRoles:
       return std::make_unique<ShowRolesInSpaceValidator>(sentence, context);
-    case Sentence::Kind::kBalance:
-      return std::make_unique<BalanceValidator>(sentence, context);
     case Sentence::Kind::kAdminJob:
     case Sentence::Kind::kAdminShowJobs:
       return std::make_unique<AdminJobValidator>(sentence, context);
