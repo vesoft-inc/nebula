@@ -10,13 +10,15 @@
 
 #include "kvstore/KVStore.h"
 #include "meta/processors/Common.h"
-#include "meta/processors/admin/BalanceTask.h"
+#include "meta/processors/job/BalanceTask.h"
+#include "meta/processors/job/JobDescription.h"
 
 namespace nebula {
 namespace meta {
 
 class BalancePlan {
   friend class Balancer;
+  friend class DataBalanceJobExecutor;
   FRIEND_TEST(BalanceTest, BalancePlanTest);
   FRIEND_TEST(BalanceTest, NormalTest);
   FRIEND_TEST(BalanceTest, SpecifyHostTest);
@@ -29,16 +31,15 @@ class BalancePlan {
   FRIEND_TEST(BalanceTest, StopPlanTest);
 
  public:
-  BalancePlan(BalanceID id, kvstore::KVStore* kv, AdminClient* client)
-      : id_(id), kv_(kv), client_(client) {}
+  BalancePlan(JobDescription jobDescription, kvstore::KVStore* kv, AdminClient* client)
+      : jobDescription_(jobDescription), kv_(kv), client_(client) {}
 
   BalancePlan(const BalancePlan& plan)
-      : id_(plan.id_),
+      : jobDescription_(plan.jobDescription_),
         kv_(plan.kv_),
         client_(plan.client_),
         tasks_(plan.tasks_),
-        finishedTaskNum_(plan.finishedTaskNum_),
-        status_(plan.status_) {}
+        finishedTaskNum_(plan.finishedTaskNum_) {}
 
   void addTask(BalanceTask task) { tasks_.emplace_back(std::move(task)); }
 
@@ -53,11 +54,13 @@ class BalancePlan {
    * */
   void rollback() {}
 
-  BalanceStatus status() { return status_; }
+  meta::cpp2::JobStatus status() { return jobDescription_.getStatus(); }
+
+  void setStatus(meta::cpp2::JobStatus status) { jobDescription_.setStatus(status); }
 
   nebula::cpp2::ErrorCode saveInStore(bool onlyPlan = false);
 
-  BalanceID id() const { return id_; }
+  JobID id() const { return jobDescription_.getJobId(); }
 
   const std::vector<BalanceTask>& tasks() const { return tasks_; }
 
@@ -68,20 +71,25 @@ class BalancePlan {
     stopped_ = true;
   }
 
- private:
   nebula::cpp2::ErrorCode recovery(bool resume = true);
 
   void dispatchTasks();
 
+  static ErrorOr<nebula::cpp2::ErrorCode, std::vector<BalanceTask>> getBalanceTasks(
+      JobID jobId, kvstore::KVStore* kv, AdminClient* client, bool resume = true);
+
+  static ErrorOr<nebula::cpp2::ErrorCode, std::vector<cpp2::BalanceTask>> show(JobID jobId,
+                                                                               kvstore::KVStore* kv,
+                                                                               AdminClient* client);
+
  private:
-  BalanceID id_ = 0;
+  JobDescription jobDescription_;
   kvstore::KVStore* kv_ = nullptr;
   AdminClient* client_ = nullptr;
   std::vector<BalanceTask> tasks_;
   std::mutex lock_;
   size_t finishedTaskNum_ = 0;
   std::function<void()> onFinished_;
-  BalanceStatus status_ = BalanceStatus::NOT_START;
   bool stopped_ = false;
 
   // List of task index in tasks_;
