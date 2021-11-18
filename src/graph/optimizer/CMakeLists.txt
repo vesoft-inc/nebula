@@ -26,6 +26,7 @@ nebula_add_library(
     rule/PushFilterDownAggregateRule.cpp
     rule/PushFilterDownProjectRule.cpp
     rule/PushFilterDownLeftJoinRule.cpp
+    rule/PushFilterDownScanVerticesRule.cpp
     rule/OptimizeEdgeIndexScanByFilterRule.cpp
     rule/OptimizeTagIndexScanByFilterRule.cpp
     rule/UnionAllIndexScanBaseRule.cpp
