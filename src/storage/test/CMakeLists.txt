@@ -18,6 +18,7 @@ set(storage_test_deps
     $<TARGET_OBJECTS:disk_man_obj>
     $<TARGET_OBJECTS:keyutils_obj>
     $<TARGET_OBJECTS:meta_keyutils_obj>
+    $<TARGET_OBJECTS:log_str_list_iterator_obj>
     $<TARGET_OBJECTS:codec_obj>
     $<TARGET_OBJECTS:ws_obj>
     $<TARGET_OBJECTS:ws_common_obj>

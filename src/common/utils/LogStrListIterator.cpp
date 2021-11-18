@@ -3,13 +3,12 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include "kvstore/raftex/LogStrListIterator.h"
+#include "common/utils/LogStrListIterator.h"
 
 #include "common/base/Base.h"
 #include "common/thrift/ThriftTypes.h"
 
 namespace nebula {
-namespace raftex {
 
 LogStrListIterator::LogStrListIterator(LogID firstLogId,
                                        TermID term,
@@ -45,5 +44,4 @@ folly::StringPiece LogStrListIterator::logMsg() const {
   return logEntries_.at(idx_).get_log_str();
 }
 
-}  // namespace raftex
 }  // namespace nebula
