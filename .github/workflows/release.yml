@@ -24,8 +24,12 @@ jobs:
       - uses: ./.github/actions/tagname-action
         id: tag
       - run: |
-          echo "${{ secrets.OSS_UTIL_CONFIG }}" >> $HOME/.ossutilconfig
-          ossutil64 cp -rf oss://nebula-graph/rc/${{ steps.tag.outputs.tagnum }} oss://nebula-graph/package/
+          ossutil64 cp -rf \
+            -i ${{ secrets.OSS_ID }} \
+            -k ${{ secrets.OSS_SECRET }} \
+            -e ${{ secrets.OSS_ENDPOINT }} \
+            oss://nebula-graph/rc/${{ steps.tag.outputs.tagnum }} \
+            oss://nebula-graph/package/${{ steps.tag.outputs.tagnum }}
 
   docker_build:
     name: docker-build
