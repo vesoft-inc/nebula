@@ -180,7 +180,7 @@ Status Configuration::fetchAsIntArray(const char *key, std::vector<int64_t> &val
     try {
       val.emplace_back(entry.asInt());
     } catch (const std::exception &ex) {
-      // Avoid format sercure by literal
+      // Avoid format secure by literal
       return Status::Error("%s", ex.what());
     }
   }
@@ -201,7 +201,7 @@ Status Configuration::fetchAsDoubleArray(const char *key, std::vector<double> &v
     try {
       val.emplace_back(entry.asDouble());
     } catch (const std::exception &ex) {
-      // Avoid format sercure by literal
+      // Avoid format secure by literal
       return Status::Error("%s", ex.what());
     }
   }
@@ -222,7 +222,7 @@ Status Configuration::fetchAsBoolArray(const char *key, std::vector<bool> &val) 
     try {
       val.emplace_back(entry.asBool());
     } catch (const std::exception &ex) {
-      // Avoid format sercure by literal
+      // Avoid format secure by literal
       return Status::Error("%s", ex.what());
     }
   }
@@ -243,7 +243,7 @@ Status Configuration::fetchAsStringArray(const char *key, std::vector<std::strin
     try {
       val.emplace_back(entry.asString());
     } catch (const std::exception &ex) {
-      // Avoid format sercure by literal
+      // Avoid format secure by literal
       return Status::Error("%s", ex.what());
     }
   }
@@ -256,7 +256,7 @@ Status Configuration::forEachKey(std::function<void(const std::string &)> proces
     try {
       processor(key.asString());
     } catch (const std::exception &ex) {
-      // Avoid format sercure by literal
+      // Avoid format secure by literal
       return Status::Error("%s", ex.what());
     }
   }
@@ -270,7 +270,7 @@ Status Configuration::forEachItem(
     try {
       processor(item.first.asString(), item.second);
     } catch (const std::exception &ex) {
-      // Avoid format sercure by literal
+      // Avoid format secure by literal
       return Status::Error("%s", ex.what());
     }
   }

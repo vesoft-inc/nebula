@@ -15,9 +15,9 @@ IndexVertexScanNode::IndexVertexScanNode(const IndexVertexScanNode& node)
 
 IndexVertexScanNode::IndexVertexScanNode(RuntimeContext* context,
                                          IndexID indexId,
-                                         const std::vector<cpp2::IndexColumnHint>& clolumnHint,
+                                         const std::vector<cpp2::IndexColumnHint>& columnHint,
                                          ::nebula::kvstore::KVStore* kvstore)
-    : IndexScanNode(context, "IndexVertexScanNode", indexId, clolumnHint, kvstore) {
+    : IndexScanNode(context, "IndexVertexScanNode", indexId, columnHint, kvstore) {
   getIndex = std::function([this](std::shared_ptr<IndexItem>& index) {
     auto env = this->context_->env();
     auto indexMgr = env->indexMan_;
@@ -53,10 +53,10 @@ IndexVertexScanNode::IndexVertexScanNode(RuntimeContext* context,
 
 nebula::cpp2::ErrorCode IndexVertexScanNode::getBaseData(folly::StringPiece key,
                                                          std::pair<std::string, std::string>& kv) {
-  kv.first = NebulaKeyUtils::vertexKey(context_->vIdLen(),
-                                       partId_,
-                                       key.subpiece(key.size() - context_->vIdLen()).toString(),
-                                       context_->tagId_);
+  kv.first = NebulaKeyUtils::tagKey(context_->vIdLen(),
+                                    partId_,
+                                    key.subpiece(key.size() - context_->vIdLen()).toString(),
+                                    context_->tagId_);
   return kvstore_->get(context_->spaceId(), partId_, kv.first, &kv.second);
 }
 

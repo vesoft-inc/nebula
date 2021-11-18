@@ -21,7 +21,7 @@ folly::Future<Status> ShowStatsExecutor::execute() {
   return qctx()->getMetaClient()->getStats(spaceId).via(runner()).thenValue(
       [this, spaceId](StatusOr<meta::cpp2::StatsItem> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "SpaceId: " << spaceId << ", Show staus failed: " << resp.status();
+          LOG(ERROR) << "SpaceId: " << spaceId << ", Show status failed: " << resp.status();
           return resp.status();
         }
         auto statsItem = std::move(resp).value();

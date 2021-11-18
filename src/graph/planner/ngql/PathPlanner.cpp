@@ -409,7 +409,7 @@ PlanNode* PathPlanner::buildVertexPlan(PlanNode* dep, const std::string& input) 
   idArgs->addArgument(ColumnExpression::make(pool, 1));
   auto* src = FunctionCallExpression::make(pool, "id", idArgs);
   // get all vertexprop
-  auto vertexProp = SchemaUtil::getAllVertexProp(qctx, pathCtx_->space, true);
+  auto vertexProp = SchemaUtil::getAllVertexProp(qctx, pathCtx_->space.id, true);
   auto* getVertices = GetVertices::make(
       qctx, unwind, pathCtx_->space.id, src, std::move(vertexProp).value(), {}, true);
 

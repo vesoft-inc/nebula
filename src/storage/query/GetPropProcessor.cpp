@@ -259,7 +259,7 @@ nebula::cpp2::ErrorCode GetPropProcessor::checkAndBuildContexts(const cpp2::GetP
 }
 
 nebula::cpp2::ErrorCode GetPropProcessor::buildTagContext(const cpp2::GetPropRequest& req) {
-  // req.vertex_props_ref().has_value() checked in methon checkRequest
+  // req.vertex_props_ref().has_value() checked in method checkRequest
   auto returnProps =
       (*req.vertex_props_ref()).empty() ? buildAllTagProps() : *req.vertex_props_ref();
   auto ret = handleVertexProps(returnProps);
@@ -272,7 +272,7 @@ nebula::cpp2::ErrorCode GetPropProcessor::buildTagContext(const cpp2::GetPropReq
 }
 
 nebula::cpp2::ErrorCode GetPropProcessor::buildEdgeContext(const cpp2::GetPropRequest& req) {
-  // req.edge_props_ref().has_value() checked in methon checkRequest
+  // req.edge_props_ref().has_value() checked in method checkRequest
   auto returnProps = (*req.edge_props_ref()).empty() ? buildAllEdgeProps(cpp2::EdgeDirection::BOTH)
                                                      : *req.edge_props_ref();
   auto ret = handleEdgeProps(returnProps);

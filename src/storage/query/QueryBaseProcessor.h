@@ -96,7 +96,7 @@ struct PropContext {
 
 struct TagContext {
   std::vector<std::pair<TagID, std::vector<PropContext>>> propContexts_;
-  // indicates whether TagID is in propContxts_
+  // indicates whether TagID is in propContexts_
   std::unordered_map<TagID, size_t> indexMap_;
   // tagId -> tagName
   std::unordered_map<TagID, std::string> tagNames_;
@@ -110,7 +110,7 @@ struct TagContext {
 struct EdgeContext {
   // propContexts_, indexMap_, edgeNames_ will contain both +/- edges
   std::vector<std::pair<EdgeType, std::vector<PropContext>>> propContexts_;
-  // indicates whether EdgeType is in propContxts_
+  // indicates whether EdgeType is in propContexts_
   std::unordered_map<EdgeType, size_t> indexMap_;
   // EdgeType -> edgeName
   std::unordered_map<EdgeType, std::string> edgeNames_;

@@ -228,6 +228,7 @@ enum AdminCmd {
     DATA_BALANCE             = 6,
     DOWNLOAD                 = 7,
     INGEST                   = 8,
+    LEADER_BALANCE           = 9,
     UNKNOWN                  = 99,
 } (cpp.enum_strict)
 
@@ -703,15 +704,6 @@ struct ChangePasswordReq {
     3: binary old_encoded_pwd,
 }
 
-struct BalanceReq {
-    1: optional common.GraphSpaceID     space_id,
-    // Specify the balance id to check the status of the related balance plan
-    2: optional i64                     id,
-    3: optional list<common.HostAddr>   host_del,
-    4: optional bool                    stop,
-    5: optional bool                    reset,
-}
-
 enum TaskResult {
     SUCCEEDED  = 0x00,
     FAILED = 0x01,
@@ -722,18 +714,10 @@ enum TaskResult {
 
 struct BalanceTask {
     1: binary id,
-    2: TaskResult result,
-}
-
-struct BalanceResp {
-    1: common.ErrorCode code,
-    2: i64              id,
-    // Valid if code equals E_LEADER_CHANGED.
-    3: common.HostAddr  leader,
-    4: list<BalanceTask> tasks,
-}
-
-struct LeaderBalanceReq {
+    2: binary command,
+    3: TaskResult result,
+    4: i64 start_time,
+    5: i64 stop_time,
 }
 
 enum ConfigModule {
@@ -1222,8 +1206,6 @@ service MetaService {
     ExecResp changePassword(1: ChangePasswordReq req);
 
     HBResp           heartBeat(1: HBReq req);
-    BalanceResp      balance(1: BalanceReq req);
-    ExecResp         leaderBalance(1: LeaderBalanceReq req);
 
     ExecResp regConfig(1: RegConfigReq req);
     GetConfigResp getConfig(1: GetConfigReq req);

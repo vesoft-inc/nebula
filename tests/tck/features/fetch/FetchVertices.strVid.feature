@@ -272,7 +272,7 @@ Feature: Fetch String Vertices
       | "Tony Parker" | 36         | EMPTY     | EMPTY         | EMPTY               |
       | "Tim Duncan"  | 42         | EMPTY     | "Tim Duncan"  | "psychology"        |
 
-  Scenario: fetch from varibles
+  Scenario: fetch from variables
     When executing query:
       """
       $var = GO FROM 'Boris Diaw' over like YIELD like._dst as id; FETCH PROP ON player $var.id YIELD player.name, player.age
@@ -331,11 +331,11 @@ Feature: Fetch String Vertices
       FETCH PROP ON player "Tim Duncan", "Yao Ming" YIELD vertex as node | go from id($-.node) over like yield like._dst
       """
     Then the result should be, in any order:
-      | like._dst         |
-      | "Shaquile O'Neal" |
-      | "Tracy McGrady"   |
-      | "Manu Ginobili"   |
-      | "Tony Parker"     |
+      | like._dst          |
+      | "Shaquille O'Neal" |
+      | "Tracy McGrady"    |
+      | "Manu Ginobili"    |
+      | "Tony Parker"      |
     When executing query:
       """
       FETCH PROP ON player "Tim Duncan" yield player.name as id | go from $-.id over like yield like._dst
@@ -349,11 +349,11 @@ Feature: Fetch String Vertices
       $var = FETCH PROP ON player "Tim Duncan", "Yao Ming"; go from id($var.vertices_) over like yield like._dst
       """
     Then the result should be, in any order:
-      | like._dst         |
-      | "Manu Ginobili"   |
-      | "Tony Parker"     |
-      | "Shaquile O'Neal" |
-      | "Tracy McGrady"   |
+      | like._dst          |
+      | "Manu Ginobili"    |
+      | "Tony Parker"      |
+      | "Shaquille O'Neal" |
+      | "Tracy McGrady"    |
     When executing query:
       """
       FETCH PROP ON player 'Tony Parker' YIELD player.name as Name |
@@ -441,7 +441,7 @@ Feature: Fetch String Vertices
       FETCH PROP ON * "Tim Duncan", "Boris Diaw" YIELD player.not_exist_prop
       """
     Then a SemanticError should be raised at runtime:
-    # only constant list or single colume of data is allowed in piped FETCH clause
+    # only constant list or single column of data is allowed in piped FETCH clause
     When executing query:
       """
       GO FROM 'Boris Diaw' over like YIELD like._src as src, like._dst as dst | FETCH PROP ON player $-.src, $-.dst;
@@ -522,8 +522,8 @@ Feature: Fetch String Vertices
       | "Tim Duncan" | "Tim Duncan" | {age: 42, name: "Tim Duncan"} |
     When executing query:
       """
-      FETCH PROP ON * 'Tim Duncan' YIELD  id(vertex), keys(vertex) as keys, tags(vertex) as tagss, properties(vertex) as props
+      FETCH PROP ON * 'Tim Duncan' YIELD  id(vertex), keys(vertex) as keys, tags(vertex) as tags_, properties(vertex) as props
       """
     Then the result should be, in any order:
-      | id(VERTEX)   | keys                          | tagss                  | props                                                   |
+      | id(VERTEX)   | keys                          | tags_                  | props                                                   |
       | "Tim Duncan" | ["age", "name", "speciality"] | ["bachelor", "player"] | {age: 42, name: "Tim Duncan", speciality: "psychology"} |

@@ -41,7 +41,7 @@ class StringUnorderedMap {
 
   /******************************************
    *
-   * Assignmets
+   * Assignments
    *
    *****************************************/
   StringUnorderedMap& operator=(const StringUnorderedMap& other);

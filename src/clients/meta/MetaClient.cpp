@@ -134,7 +134,7 @@ void MetaClient::heartBeatThreadFunc() {
     return;
   }
 
-  // if MetaServer has some changes, refesh the localCache_
+  // if MetaServer has some changes, refresh the localCache_
   loadData();
   loadCfg();
 }
@@ -799,7 +799,7 @@ Status MetaClient::handleResponse(const RESP& resp) {
     case nebula::cpp2::ErrorCode::E_CONFLICT:
       return Status::Error("Conflict!");
     case nebula::cpp2::ErrorCode::E_INVALID_PARM:
-      return Status::Error("Invalid parm!");
+      return Status::Error("Invalid param!");
     case nebula::cpp2::ErrorCode::E_WRONGCLUSTER:
       return Status::Error("Wrong cluster!");
     case nebula::cpp2::ErrorCode::E_STORE_FAILURE:
@@ -814,8 +814,8 @@ Status MetaClient::handleResponse(const RESP& resp) {
       return Status::Error("No running balance plan!");
     case nebula::cpp2::ErrorCode::E_NO_VALID_HOST:
       return Status::Error("No valid host hold the partition!");
-    case nebula::cpp2::ErrorCode::E_CORRUPTTED_BALANCE_PLAN:
-      return Status::Error("No corrupted blance plan!");
+    case nebula::cpp2::ErrorCode::E_CORRUPTED_BALANCE_PLAN:
+      return Status::Error("No corrupted balance plan!");
     case nebula::cpp2::ErrorCode::E_INVALID_PASSWORD:
       return Status::Error("Invalid password!");
     case nebula::cpp2::ErrorCode::E_IMPROPER_ROLE:
@@ -2424,7 +2424,7 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
       [](auto client, auto request) { return client->future_heartBeat(request); },
       [this](cpp2::HBResp&& resp) -> bool {
         if (options_.role_ == cpp2::HostRole::STORAGE && options_.clusterId_.load() == 0) {
-          LOG(INFO) << "Persisit the cluster Id from metad " << resp.get_cluster_id();
+          LOG(INFO) << "Persist the cluster Id from metad " << resp.get_cluster_id();
           if (FileBasedClusterIdMan::persistInFile(resp.get_cluster_id(), FLAGS_cluster_id_path)) {
             options_.clusterId_.store(resp.get_cluster_id());
           } else {
@@ -2575,57 +2575,6 @@ folly::Future<StatusOr<std::vector<cpp2::RoleItem>>> MetaClient::getUserRoles(st
       std::move(req),
       [](auto client, auto request) { return client->future_getUserRoles(request); },
       [](cpp2::ListRolesResp&& resp) -> decltype(auto) { return std::move(resp).get_roles(); },
-      std::move(promise));
-  return future;
-}
-
-folly::Future<StatusOr<int64_t>> MetaClient::balance(std::vector<HostAddr> hostDel,
-                                                     bool isStop,
-                                                     bool isReset) {
-  cpp2::BalanceReq req;
-  if (!hostDel.empty()) {
-    req.set_host_del(std::move(hostDel));
-  }
-  if (isStop) {
-    req.set_stop(isStop);
-  }
-  if (isReset) {
-    req.set_reset(isReset);
-  }
-
-  folly::Promise<StatusOr<int64_t>> promise;
-  auto future = promise.getFuture();
-  getResponse(
-      std::move(req),
-      [](auto client, auto request) { return client->future_balance(request); },
-      [](cpp2::BalanceResp&& resp) -> int64_t { return resp.get_id(); },
-      std::move(promise));
-  return future;
-}
-
-folly::Future<StatusOr<std::vector<cpp2::BalanceTask>>> MetaClient::showBalance(int64_t balanceId) {
-  cpp2::BalanceReq req;
-  req.set_id(balanceId);
-  folly::Promise<StatusOr<std::vector<cpp2::BalanceTask>>> promise;
-  auto future = promise.getFuture();
-  getResponse(
-      std::move(req),
-      [](auto client, auto request) { return client->future_balance(request); },
-      [](cpp2::BalanceResp&& resp) -> std::vector<cpp2::BalanceTask> { return resp.get_tasks(); },
-      std::move(promise));
-  return future;
-}
-
-folly::Future<StatusOr<bool>> MetaClient::balanceLeader() {
-  cpp2::LeaderBalanceReq req;
-  folly::Promise<StatusOr<bool>> promise;
-  auto future = promise.getFuture();
-  getResponse(
-      std::move(req),
-      [](auto client, auto request) { return client->future_leaderBalance(request); },
-      [](cpp2::ExecResp&& resp) -> bool {
-        return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
-      },
       std::move(promise));
   return future;
 }

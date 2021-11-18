@@ -63,7 +63,7 @@ TEST(Configuration, Basic) {
   }
   {
     bool val;
-    status = conf.fetchAsBool("nonexist", val);
+    status = conf.fetchAsBool("nonexistent", val);
     ASSERT_FALSE(status.ok()) << status.toString();
   }
 }

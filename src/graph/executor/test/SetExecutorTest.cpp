@@ -157,7 +157,7 @@ TEST_F(SetExecutorTest, TestUnionAll) {
   }
 }
 
-TEST_F(SetExecutorTest, TestGetNeighobrsIterator) {
+TEST_F(SetExecutorTest, TestGetNeighborsIterator) {
   auto left = StartNode::make(qctx_.get());
   auto right = StartNode::make(qctx_.get());
   auto unionNode = Union::make(qctx_.get(), left, right);

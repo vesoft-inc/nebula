@@ -81,12 +81,12 @@ Feature: Geo base
       """
       CREATE EDGE test_2(geo geography DEFAULT ST_GeogFromText("LINESTRING(0 1, 2xxxx"));
       """
-    Then a ExecutionError should be raised at runtime: Invalid parm!
+    Then a ExecutionError should be raised at runtime: Invalid param!
     When executing query:
       """
       CREATE TAG test_3(geo geography(point) DEFAULT ST_GeogFromText("LineString(0 1, 2 3)"));
       """
-    Then a ExecutionError should be raised at runtime: Invalid parm!
+    Then a ExecutionError should be raised at runtime: Invalid param!
     When executing query:
       """
       CREATE TAG test_3(geo geography(linestring) DEFAULT ST_GeogFromText("LineString(0 1, 2 3)"));
@@ -349,7 +349,7 @@ Feature: Geo base
       INSERT EDGE any_shape_edge(geo) VALUES "108"->"408":(ST_GeogFromText("POLYGON((-20 -20, -20 20, 20 20, 20 -20, -20 -20), (1.0 1.0, 2.0 2.0, 0.0 2.0, 1.0 1.0))"));
       """
     Then the execution should be successful
-    # Lookup on geo index agagin
+    # Lookup on geo index again
     When executing query:
       """
       LOOKUP ON any_shape YIELD ST_ASText(any_shape.geo);

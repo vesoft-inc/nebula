@@ -109,7 +109,7 @@ class Balancer {
   /**
    * TODO(heng): rollback some balance plan.
    */
-  Status rollback(BalanceID id) { return Status::Error("unplemented, %ld", id); }
+  Status rollback(BalanceID id) { return Status::Error("unimplemented, %ld", id); }
 
   /**
    * TODO(heng): Execute balance plan from outside.
@@ -216,7 +216,7 @@ class Balancer {
                                                                 LeaderBalancePlan& plan,
                                                                 bool useDeviation = true);
 
-  void simplifyLeaderBalnacePlan(GraphSpaceID spaceId, LeaderBalancePlan& plan);
+  void simplifyLeaderBalancePlan(GraphSpaceID spaceId, LeaderBalancePlan& plan);
 
   int32_t acquireLeaders(HostParts& allHostParts,
                          HostParts& leaderHostParts,
