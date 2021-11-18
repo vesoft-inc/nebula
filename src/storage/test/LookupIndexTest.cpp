@@ -64,7 +64,7 @@ TEST_P(LookupIndexTest, LookupIndexTestV1) {
     RowWriterV1 writer(schemaV1.get());
     writer << true << 1L << 1.1F << 1.1F << "row1";
     writer.encode();
-    auto key = NebulaKeyUtils::vertexKey(vIdLen.value(), 1, vId1, 3);
+    auto key = NebulaKeyUtils::tagKey(vIdLen.value(), 1, vId1, 3);
     keyValues.emplace_back(std::move(key), writer.encode());
 
     // setup V2 row
@@ -85,7 +85,7 @@ TEST_P(LookupIndexTest, LookupIndexTestV1) {
     writer2.setValue("col_date", date);
     writer2.setValue("col_datetime", dt);
     writer2.finish();
-    key = NebulaKeyUtils::vertexKey(vIdLen.value(), 1, vId2, 3);
+    key = NebulaKeyUtils::tagKey(vIdLen.value(), 1, vId2, 3);
     keyValues.emplace_back(std::move(key), writer2.moveEncodedStr());
 
     // setup index key

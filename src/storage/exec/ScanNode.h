@@ -43,7 +43,7 @@ class ScanVertexPropNode : public QueryNode<Cursor> {
     }
 
     std::string start;
-    std::string prefix = NebulaKeyUtils::vertexPrefix(partId);
+    std::string prefix = NebulaKeyUtils::tagPrefix(partId);
     if (cursor.empty()) {
       start = prefix;
     } else {

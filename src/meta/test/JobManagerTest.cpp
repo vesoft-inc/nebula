@@ -57,9 +57,9 @@ class JobManagerTest : public ::testing::Test {
 
   void TearDown() override {
     auto cleanUnboundQueue = [](auto& q) {
-      int32_t jobId = 0;
+      std::pair<JobManager::JbOp, JobID> pair;
       while (!q.empty()) {
-        q.dequeue(jobId);
+        q.dequeue(pair);
       }
     };
     cleanUnboundQueue(*jobMgr->lowPriorityQueue_);
@@ -89,7 +89,7 @@ TEST_F(JobManagerTest, AddRebuildTagIndexJob) {
   JobDescription job(11, cpp2::AdminCmd::REBUILD_TAG_INDEX, paras);
   auto rc = jobMgr->addJob(job, adminClient_.get());
   ASSERT_EQ(rc, nebula::cpp2::ErrorCode::SUCCEEDED);
-  auto result = jobMgr->runJobInternal(job);
+  auto result = jobMgr->runJobInternal(job, JobManager::JbOp::ADD);
   ASSERT_TRUE(result);
 }
 
@@ -101,7 +101,7 @@ TEST_F(JobManagerTest, AddRebuildEdgeIndexJob) {
   JobDescription job(11, cpp2::AdminCmd::REBUILD_EDGE_INDEX, paras);
   auto rc = jobMgr->addJob(job, adminClient_.get());
   ASSERT_EQ(rc, nebula::cpp2::ErrorCode::SUCCEEDED);
-  auto result = jobMgr->runJobInternal(job);
+  auto result = jobMgr->runJobInternal(job, JobManager::JbOp::ADD);
   ASSERT_TRUE(result);
 }
 
@@ -113,7 +113,7 @@ TEST_F(JobManagerTest, StatsJob) {
   JobDescription job(12, cpp2::AdminCmd::STATS, paras);
   auto rc = jobMgr->addJob(job, adminClient_.get());
   ASSERT_EQ(rc, nebula::cpp2::ErrorCode::SUCCEEDED);
-  auto result = jobMgr->runJobInternal(job);
+  auto result = jobMgr->runJobInternal(job, JobManager::JbOp::ADD);
   ASSERT_TRUE(result);
   // Function runJobInternal does not set the finished status of the job
   job.setStatus(cpp2::JobStatus::FINISHED);
@@ -144,18 +144,18 @@ TEST_F(JobManagerTest, JobPriority) {
 
   ASSERT_EQ(2, jobMgr->jobSize());
 
-  JobID jobId = 0;
-  auto result = jobMgr->try_dequeue(jobId);
+  std::pair<JobManager::JbOp, JobID> opJobId;
+  auto result = jobMgr->try_dequeue(opJobId);
   ASSERT_TRUE(result);
-  ASSERT_EQ(14, jobId);
+  ASSERT_EQ(14, opJobId.second);
   ASSERT_EQ(1, jobMgr->jobSize());
 
-  result = jobMgr->try_dequeue(jobId);
+  result = jobMgr->try_dequeue(opJobId);
   ASSERT_TRUE(result);
-  ASSERT_EQ(13, jobId);
+  ASSERT_EQ(13, opJobId.second);
   ASSERT_EQ(0, jobMgr->jobSize());
 
-  result = jobMgr->try_dequeue(jobId);
+  result = jobMgr->try_dequeue(opJobId);
   ASSERT_FALSE(result);
 
   jobMgr->status_ = JobManager::JbmgrStatus::IDLE;
@@ -196,18 +196,18 @@ TEST_F(JobManagerTest, JobDeduplication) {
   }
 
   ASSERT_EQ(2, jobMgr->jobSize());
-  JobID jobId = 0;
-  auto result = jobMgr->try_dequeue(jobId);
+  std::pair<JobManager::JbOp, JobID> opJobId;
+  auto result = jobMgr->try_dequeue(opJobId);
   ASSERT_TRUE(result);
-  ASSERT_EQ(16, jobId);
+  ASSERT_EQ(16, opJobId.second);
   ASSERT_EQ(1, jobMgr->jobSize());
 
-  result = jobMgr->try_dequeue(jobId);
+  result = jobMgr->try_dequeue(opJobId);
   ASSERT_TRUE(result);
-  ASSERT_EQ(15, jobId);
+  ASSERT_EQ(15, opJobId.second);
   ASSERT_EQ(0, jobMgr->jobSize());
 
-  result = jobMgr->try_dequeue(jobId);
+  result = jobMgr->try_dequeue(opJobId);
   ASSERT_FALSE(result);
   jobMgr->status_ = JobManager::JbmgrStatus::IDLE;
 }
@@ -396,7 +396,7 @@ TEST_F(JobManagerTest, recoverJob) {
     jobMgr->save(jd.jobKey(), jd.jobVal());
   }
 
-  auto nJobRecovered = jobMgr->recoverJob(spaceName);
+  auto nJobRecovered = jobMgr->recoverJob(spaceName, nullptr);
   ASSERT_EQ(nebula::value(nJobRecovered), 1);
 }
 

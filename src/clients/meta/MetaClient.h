@@ -391,15 +391,6 @@ class MetaClient {
 
   folly::Future<StatusOr<std::vector<cpp2::RoleItem>>> getUserRoles(std::string account);
 
-  // Operations for admin
-  folly::Future<StatusOr<int64_t>> balance(std::vector<HostAddr> hostDel,
-                                           bool isStop,
-                                           bool isReset);
-
-  folly::Future<StatusOr<std::vector<cpp2::BalanceTask>>> showBalance(int64_t balanceId);
-
-  folly::Future<StatusOr<bool>> balanceLeader();
-
   // Operations for config
   folly::Future<StatusOr<bool>> regConfig(const std::vector<cpp2::ConfigItem>& items);
 
