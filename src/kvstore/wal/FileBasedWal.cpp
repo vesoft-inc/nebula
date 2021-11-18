@@ -353,7 +353,6 @@ void FileBasedWal::rollbackInFile(WalFileInfoPtr info, LogID logId) {
   }
   lastLogId_ = logId;
   lastLogTerm_ = term;
-  LOG(INFO) << idStr_ << "Rollback to log " << logId;
 
   CHECK_GT(pos, 0) << "This wal should have been deleted";
   if (pos < FileUtils::fileSize(path)) {
@@ -610,6 +609,8 @@ bool FileBasedWal::rollbackToLog(LogID id) {
       VLOG(1) << "Roll back to log " << id << ", the last WAL file is now \""
               << walFiles_.rbegin()->second->path() << "\"";
       rollbackInFile(walFiles_.rbegin()->second, id);
+      CHECK_EQ(lastLogId_, id);
+      CHECK_EQ(walFiles_.rbegin()->second->lastId(), id);
     }
   }
 
@@ -631,7 +632,7 @@ bool FileBasedWal::reset() {
   std::vector<std::string> files = FileUtils::listAllFilesInDir(dir_.c_str(), false, "*.wal");
   for (auto& fn : files) {
     auto absFn = FileUtils::joinPath(dir_, fn);
-    LOG(INFO) << "Removing " << absFn;
+    VLOG(1) << "Removing " << absFn;
     unlink(absFn.c_str());
   }
   lastLogId_ = firstLogId_ = 0;
@@ -712,6 +713,15 @@ size_t FileBasedWal::accessAllWalInfo(std::function<bool(WalFileInfoPtr info)> f
   }
 
   return count;
+}
+
+TermID FileBasedWal::getLogTerm(LogID id) {
+  TermID term = -1;
+  auto iter = iterator(id, id);
+  if (iter->valid()) {
+    term = iter->logTerm();
+  }
+  return term;
 }
 
 }  // namespace wal

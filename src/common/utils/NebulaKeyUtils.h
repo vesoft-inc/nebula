@@ -11,7 +11,7 @@
 namespace nebula {
 
 /**
- * VertexKeyUtils:
+ * TagKeyUtils:
  * type(1) + partId(3) + vertexId(*) + tagId(4)
  *
  * EdgeKeyUtils:
@@ -55,7 +55,7 @@ class NebulaKeyUtils final {
   /**
    * Generate vertex key for kv store
    * */
-  static std::string vertexKey(
+  static std::string tagKey(
       size_t vIdLen, PartitionID partId, const VertexID& vId, TagID tagId, char pad = '\0');
 
   static std::string edgeKey(size_t vIdLen,
@@ -75,14 +75,11 @@ class NebulaKeyUtils final {
   /**
    * Prefix for vertex
    * */
-  static std::string vertexPrefix(size_t vIdLen,
-                                  PartitionID partId,
-                                  const VertexID& vId,
-                                  TagID tagId);
+  static std::string tagPrefix(size_t vIdLen, PartitionID partId, const VertexID& vId, TagID tagId);
 
-  static std::string vertexPrefix(size_t vIdLen, PartitionID partId, const VertexID& vId);
+  static std::string tagPrefix(size_t vIdLen, PartitionID partId, const VertexID& vId);
 
-  static std::string vertexPrefix(PartitionID partId);
+  static std::string tagPrefix(PartitionID partId);
 
   /**
    * Prefix for edge
@@ -111,26 +108,26 @@ class NebulaKeyUtils final {
     return readInt<PartitionID>(rawKey.data(), sizeof(PartitionID)) >> 8;
   }
 
-  static bool isVertex(size_t vIdLen, const folly::StringPiece& rawKey) {
-    if (rawKey.size() != kVertexLen + vIdLen) {
+  static bool isTag(size_t vIdLen, const folly::StringPiece& rawKey) {
+    if (rawKey.size() != kTagLen + vIdLen) {
       return false;
     }
     constexpr int32_t len = static_cast<int32_t>(sizeof(NebulaKeyType));
     auto type = readInt<uint32_t>(rawKey.data(), len) & kTypeMask;
-    return static_cast<NebulaKeyType>(type) == NebulaKeyType::kVertex;
+    return static_cast<NebulaKeyType>(type) == NebulaKeyType::kTag_;
   }
 
   static VertexIDSlice getVertexId(size_t vIdLen, const folly::StringPiece& rawKey) {
-    if (rawKey.size() != kVertexLen + vIdLen) {
-      dumpBadKey(rawKey, kVertexLen + vIdLen, vIdLen);
+    if (rawKey.size() != kTagLen + vIdLen) {
+      dumpBadKey(rawKey, kTagLen + vIdLen, vIdLen);
     }
     auto offset = sizeof(PartitionID);
     return rawKey.subpiece(offset, vIdLen);
   }
 
   static TagID getTagId(size_t vIdLen, const folly::StringPiece& rawKey) {
-    if (rawKey.size() != kVertexLen + vIdLen) {
-      dumpBadKey(rawKey, kVertexLen + vIdLen, vIdLen);
+    if (rawKey.size() != kTagLen + vIdLen) {
+      dumpBadKey(rawKey, kTagLen + vIdLen, vIdLen);
     }
     auto offset = sizeof(PartitionID) + vIdLen;
     return readInt<TagID>(rawKey.data() + offset, sizeof(TagID));

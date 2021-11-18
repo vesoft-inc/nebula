@@ -53,10 +53,10 @@ IndexVertexScanNode::IndexVertexScanNode(RuntimeContext* context,
 
 nebula::cpp2::ErrorCode IndexVertexScanNode::getBaseData(folly::StringPiece key,
                                                          std::pair<std::string, std::string>& kv) {
-  kv.first = NebulaKeyUtils::vertexKey(context_->vIdLen(),
-                                       partId_,
-                                       key.subpiece(key.size() - context_->vIdLen()).toString(),
-                                       context_->tagId_);
+  kv.first = NebulaKeyUtils::tagKey(context_->vIdLen(),
+                                    partId_,
+                                    key.subpiece(key.size() - context_->vIdLen()).toString(),
+                                    context_->tagId_);
   return kvstore_->get(context_->spaceId(), partId_, kv.first, &kv.second);
 }
 

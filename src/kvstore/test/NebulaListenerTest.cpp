@@ -510,7 +510,7 @@ TEST_P(ListenerAdvanceTest, ListenerResetBySnapshotTest) {
     for (int32_t i = 0; i < 10; i++) {
       std::vector<KV> data;
       for (int32_t j = 0; j < 1000; j++) {
-        auto vKey = NebulaKeyUtils::vertexKey(8, partId, folly::to<std::string>(i * 1000 + j), 5);
+        auto vKey = NebulaKeyUtils::tagKey(8, partId, folly::to<std::string>(i * 1000 + j), 5);
         data.emplace_back(std::move(vKey), folly::stringPrintf("val_%d_%d", partId, i * 1000 + j));
       }
       auto leader = findLeader(partId);
@@ -585,7 +585,7 @@ TEST_P(ListenerSnapshotTest, SnapshotRateLimitTest) {
     for (int32_t i = 0; i < 10; i++) {
       std::vector<KV> data;
       for (int32_t j = 0; j < 1000; j++) {
-        auto vKey = NebulaKeyUtils::vertexKey(8, partId, folly::to<std::string>(i * 1000 + j), 5);
+        auto vKey = NebulaKeyUtils::tagKey(8, partId, folly::to<std::string>(i * 1000 + j), 5);
         data.emplace_back(std::move(vKey), std::string(24, 'X'));
       }
       auto leader = findLeader(partId);

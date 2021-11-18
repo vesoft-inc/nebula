@@ -96,7 +96,7 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
   auto partitionNum = partitionNumRet.value();
   LOG(INFO) << "Start stats task";
   CHECK_NOTNULL(env_->kvstore_);
-  auto vertexPrefix = NebulaKeyUtils::vertexPrefix(part);
+  auto vertexPrefix = NebulaKeyUtils::tagPrefix(part);
   std::unique_ptr<kvstore::KVIterator> vertexIter;
   auto edgePrefix = NebulaKeyUtils::edgePrefix(part);
   std::unique_ptr<kvstore::KVIterator> edgeIter;
