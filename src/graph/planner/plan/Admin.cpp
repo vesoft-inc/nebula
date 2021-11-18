@@ -156,18 +156,6 @@ std::unique_ptr<PlanNodeDescription> SubmitJob::explain() const {
   return desc;
 }
 
-std::unique_ptr<PlanNodeDescription> Balance::explain() const {
-  auto desc = SingleDependencyNode::explain();
-  addDescription("deleteHosts", folly::toJson(util::toJson(deleteHosts_)), desc.get());
-  return desc;
-}
-
-std::unique_ptr<PlanNodeDescription> ShowBalance::explain() const {
-  auto desc = SingleDependencyNode::explain();
-  addDescription("balanceId", util::toJson(id_), desc.get());
-  return desc;
-}
-
 std::unique_ptr<PlanNodeDescription> ShowQueries::explain() const {
   auto desc = SingleDependencyNode::explain();
   addDescription("isAll", util::toJson(isAll()), desc.get());

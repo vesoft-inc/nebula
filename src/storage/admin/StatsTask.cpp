@@ -94,9 +94,9 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
   }
 
   auto partitionNum = partitionNumRet.value();
-  LOG(INFO) << "Start statis task";
+  LOG(INFO) << "Start stats task";
   CHECK_NOTNULL(env_->kvstore_);
-  auto vertexPrefix = NebulaKeyUtils::vertexPrefix(part);
+  auto vertexPrefix = NebulaKeyUtils::tagPrefix(part);
   std::unique_ptr<kvstore::KVIterator> vertexIter;
   auto edgePrefix = NebulaKeyUtils::edgePrefix(part);
   std::unique_ptr<kvstore::KVIterator> edgeIter;
@@ -131,7 +131,7 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
 
   VertexID lastVertexId = "";
 
-  // Only statis valid vetex data, no multi version
+  // Only stats valid vertex data, no multi version
   // For example
   // Vid  tagId
   // 1     1
@@ -161,7 +161,7 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
     vertexIter->next();
   }
 
-  // Only statis valid edge data, no multi version
+  // Only stats valid edge data, no multi version
   // For example
   // src edgetype rank dst
   // 1    1       1    2
@@ -223,8 +223,8 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
 
   statsItem.set_space_vertices(spaceVertices);
   statsItem.set_space_edges(spaceEdges);
-  using Correlativiyties = std::vector<nebula::meta::cpp2::Correlativity>;
-  Correlativiyties positiveCorrelativity;
+  using Correlativities = std::vector<nebula::meta::cpp2::Correlativity>;
+  Correlativities positiveCorrelativity;
   for (const auto& entry : positiveRelevancy) {
     nebula::meta::cpp2::Correlativity partProportion;
     partProportion.set_part_id(entry.first);
@@ -233,7 +233,7 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
     positiveCorrelativity.emplace_back(std::move(partProportion));
   }
 
-  Correlativiyties negativeCorrelativity;
+  Correlativities negativeCorrelativity;
   for (const auto& entry : negativeRelevancy) {
     nebula::meta::cpp2::Correlativity partProportion;
     partProportion.set_part_id(entry.first);
@@ -252,13 +252,13 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
       negativeCorrelativity.end(),
       [&](const auto& l, const auto& r) { return *l.proportion_ref() < *r.proportion_ref(); });
 
-  std::unordered_map<PartitionID, Correlativiyties> positivePartCorrelativiyties;
-  positivePartCorrelativiyties[part] = positiveCorrelativity;
-  statsItem.set_positive_part_correlativity(std::move(positivePartCorrelativiyties));
+  std::unordered_map<PartitionID, Correlativities> positivePartCorrelativities;
+  positivePartCorrelativities[part] = positiveCorrelativity;
+  statsItem.set_positive_part_correlativity(std::move(positivePartCorrelativities));
 
-  std::unordered_map<PartitionID, Correlativiyties> negativePartCorrelativiyties;
-  negativePartCorrelativiyties[part] = negativeCorrelativity;
-  statsItem.set_negative_part_correlativity(std::move(negativePartCorrelativiyties));
+  std::unordered_map<PartitionID, Correlativities> negativePartCorrelativities;
+  negativePartCorrelativities[part] = negativeCorrelativity;
+  statsItem.set_negative_part_correlativity(std::move(negativePartCorrelativities));
 
   statistics_.emplace(part, std::move(statsItem));
   LOG(INFO) << "Stats task finished";

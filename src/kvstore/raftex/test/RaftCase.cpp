@@ -38,7 +38,7 @@ TEST_F(ThreeRaftTest, LeaderCrashReboot) {
   size_t idx = leader_->index();
   killOneCopy(services_, copies_, leader_, idx);
 
-  // Wait untill all copies agree on the same leader_
+  // Wait until all copies agree on the same leader_
   waitUntilLeaderElected(copies_, leader_);
   // Check all hosts agree on the same leader_
   checkLeadership(copies_, leader_);
@@ -112,7 +112,7 @@ TEST_F(ThreeRaftTest, LeaderCrashRebootWithLogs) {
   killOneCopy(services_, copies_, leader_, leader_->index());
 
   LOG(INFO) << "=====> Wait until leader of term 2 elected";
-  // Wait untill all copies agree on the same leader_
+  // Wait until all copies agree on the same leader_
   waitUntilLeaderElected(copies_, leader_);
   auto leader2 = leader_;
   ASSERT_NE(leader1, leader2);

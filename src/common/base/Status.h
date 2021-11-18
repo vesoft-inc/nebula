@@ -136,7 +136,7 @@ class Status final {
 
   // If some kind of error really needs to be distinguished with others using a
   // specific code, other than a general code and specific msg, you could add a
-  // new code below, e.g. kSomeError, and add the cooresponding
+  // new code below, e.g. kSomeError, and add the corresponding
   // STATUS_GENERATOR(SomeError)
   enum Code : uint16_t {
     // OK

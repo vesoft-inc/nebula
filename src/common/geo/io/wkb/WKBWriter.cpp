@@ -33,7 +33,7 @@ std::string WKBWriter::write(const Geography& geog, ByteOrder byteOrder) {
     }
     default:
       LOG(FATAL)
-          << "Geomtry shapes other than Point/LineString/Polygon are not currently supported";
+          << "Geometry shapes other than Point/LineString/Polygon are not currently supported";
       return "";
   }
 }

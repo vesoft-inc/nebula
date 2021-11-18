@@ -413,6 +413,7 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
                         Value::Type::FLOAT},
                        Value::Type::LIST),
      }},
+    {"is_edge", {TypeSignature({Value::Type::EDGE}, Value::Type::BOOL)}},
 };
 
 // static
@@ -805,7 +806,7 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    // return the mathmatical constant PI
+    // return the mathematical constant PI
     auto &attr = functions_["pi"];
     attr.minArity_ = 0;
     attr.maxArity_ = 0;
@@ -1643,7 +1644,7 @@ FunctionManager::FunctionManager() {
   }
   {
     auto &attr = functions_["date"];
-    // 0 for corrent time
+    // 0 for current time
     // 1 for string or map
     attr.minArity_ = 0;
     attr.maxArity_ = 1;
@@ -1715,7 +1716,7 @@ FunctionManager::FunctionManager() {
   }
   {
     auto &attr = functions_["datetime"];
-    // 0 for corrent time
+    // 0 for current time
     // 1 for string or map
     attr.minArity_ = 0;
     attr.maxArity_ = 1;
@@ -1938,6 +1939,41 @@ FunctionManager::FunctionManager() {
         case Value::Type::EDGE: {
           const auto &edge = args[0].get().getEdge();
           return edge.type > 0 ? edge.dst : edge.src;
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
+    };
+  }
+  {
+    auto &attr = functions_["none_direct_dst"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      switch (args[0].get().type()) {
+        case Value::Type::NULLVALUE: {
+          return Value::kNullValue;
+        }
+        case Value::Type::EDGE: {
+          const auto &edge = args[0].get().getEdge();
+          return edge.dst;
+        }
+        case Value::Type::VERTEX: {
+          const auto &v = args[0].get().getVertex();
+          return v.vid;
+        }
+        case Value::Type::LIST: {
+          const auto &listVal = args[0].get().getList();
+          auto &lastVal = listVal.values.back();
+          if (lastVal.isEdge()) {
+            return lastVal.getEdge().dst;
+          } else if (lastVal.isVertex()) {
+            return lastVal.getVertex().vid;
+          } else {
+            return Value::kNullBadType;
+          }
         }
         default: {
           return Value::kNullBadType;
@@ -2635,6 +2671,13 @@ FunctionManager::FunctionManager() {
       }
       return List(vals);
     };
+  }
+  {
+    auto &attr = functions_["is_edge"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isPure_ = true;
+    attr.body_ = [](const auto &args) -> Value { return args[0].get().isEdge(); };
   }
 }  // NOLINT
 

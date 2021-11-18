@@ -161,7 +161,7 @@ TEST(FileUtils, removeDirRecursively) {
   fd = mkstemp(fileTemp);
   ASSERT_EQ(close(fd), 0);
 
-  // Recursively removal shold succeed
+  // Recursively removal should succeed
   EXPECT_TRUE(FileUtils::remove(dirTemp, true));
 
   // Verify the directory is gone

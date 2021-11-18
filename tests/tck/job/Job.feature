@@ -179,7 +179,7 @@ Feature: Submit job space requirements
       """
     Then an ExecutionError should be raised at runtime:Job not in chosen space!
 
-  # This is skipped becuase it is hard to simulate the situation
+  # This is skipped because it is hard to simulate the situation
   # When executing query:
   # """
   # RECOVER JOB;

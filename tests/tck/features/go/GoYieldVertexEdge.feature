@@ -426,7 +426,7 @@ Feature: Go Yield Vertex And Edge Sentence
       | {likeness: 90}                     | "like"  |
     When executing query:
       """
-      GO FROM "Shaquile O\'Neal" OVER serve, like YIELD dst(edge) as dst
+      GO FROM "Shaquille O\'Neal" OVER serve, like YIELD dst(edge) as dst
       """
     Then the result should be, in any order, with relax comparison:
       | dst            |
@@ -706,7 +706,7 @@ Feature: Go Yield Vertex And Edge Sentence
       | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"}) | [:like "LaMarcus Aldridge"->"Tim Duncan" @0 {likeness: 75}] |
       | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})         | [:like "Manu Ginobili"->"Tim Duncan" @0 {likeness: 90}]     |
       | ("Marco Belinelli" :player{age: 32, name: "Marco Belinelli"})     | [:like "Marco Belinelli"->"Tim Duncan" @0 {likeness: 55}]   |
-      | ("Shaquile O'Neal" :player{age: 47, name: "Shaquile O'Neal"})     | [:like "Shaquile O'Neal"->"Tim Duncan" @0 {likeness: 80}]   |
+      | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})   | [:like "Shaquille O'Neal"->"Tim Duncan" @0 {likeness: 80}]  |
       | ("Tiago Splitter" :player{age: 34, name: "Tiago Splitter"})       | [:like "Tiago Splitter"->"Tim Duncan" @0 {likeness: 80}]    |
       | ("Tony Parker" :player{age: 36, name: "Tony Parker"})             | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]       |
     When executing query:
@@ -722,7 +722,7 @@ Feature: Go Yield Vertex And Edge Sentence
       | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"}) | [:like "LaMarcus Aldridge"->"Tim Duncan" @0 {likeness: 75}] | "LaMarcus Aldridge" | "Tim Duncan" |
       | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})         | [:like "Manu Ginobili"->"Tim Duncan" @0 {likeness: 90}]     | "Manu Ginobili"     | "Tim Duncan" |
       | ("Marco Belinelli" :player{age: 32, name: "Marco Belinelli"})     | [:like "Marco Belinelli"->"Tim Duncan" @0 {likeness: 55}]   | "Marco Belinelli"   | "Tim Duncan" |
-      | ("Shaquile O'Neal" :player{age: 47, name: "Shaquile O'Neal"})     | [:like "Shaquile O'Neal"->"Tim Duncan" @0 {likeness: 80}]   | "Shaquile O'Neal"   | "Tim Duncan" |
+      | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})   | [:like "Shaquille O'Neal"->"Tim Duncan" @0 {likeness: 80}]  | "Shaquille O'Neal"  | "Tim Duncan" |
       | ("Tiago Splitter" :player{age: 34, name: "Tiago Splitter"})       | [:like "Tiago Splitter"->"Tim Duncan" @0 {likeness: 80}]    | "Tiago Splitter"    | "Tim Duncan" |
       | ("Tony Parker" :player{age: 36, name: "Tony Parker"})             | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]       | "Tony Parker"       | "Tim Duncan" |
     When executing query:
@@ -887,7 +887,7 @@ Feature: Go Yield Vertex And Edge Sentence
       | ("Heat" :team{name: "Heat"})           | ("Dwyane Wade" :player{age: 37, name: "Dwyane Wade"})             |
       | ("Heat" :team{name: "Heat"})           | ("LeBron James" :player{age: 34, name: "LeBron James"})           |
       | ("Heat" :team{name: "Heat"})           | ("Ray Allen" :player{age: 43, name: "Ray Allen"})                 |
-      | ("Heat" :team{name: "Heat"})           | ("Shaquile O'Neal" :player{age: 47, name: "Shaquile O'Neal"})     |
+      | ("Heat" :team{name: "Heat"})           | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})   |
       | ("Heat" :team{name: "Heat"})           | ("Dwyane Wade" :player{age: 37, name: "Dwyane Wade"})             |
       | ("Lakers" :team{name: "Lakers"})       | ("Dwight Howard" :player{age: 33, name: "Dwight Howard"})         |
       | ("Lakers" :team{name: "Lakers"})       | ("JaVale McGee" :player{age: 31, name: "JaVale McGee"})           |
@@ -895,7 +895,7 @@ Feature: Go Yield Vertex And Edge Sentence
       | ("Lakers" :team{name: "Lakers"})       | ("LeBron James" :player{age: 34, name: "LeBron James"})           |
       | ("Lakers" :team{name: "Lakers"})       | ("Paul Gasol" :player{age: 38, name: "Paul Gasol"})               |
       | ("Lakers" :team{name: "Lakers"})       | ("Rajon Rondo" :player{age: 33, name: "Rajon Rondo"})             |
-      | ("Lakers" :team{name: "Lakers"})       | ("Shaquile O'Neal" :player{age: 47, name: "Shaquile O'Neal"})     |
+      | ("Lakers" :team{name: "Lakers"})       | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})   |
       | ("Lakers" :team{name: "Lakers"})       | ("Steve Nash" :player{age: 45, name: "Steve Nash"})               |
       | ("Cavaliers" :team{name: "Cavaliers"}) | ("Danny Green" :player{age: 31, name: "Danny Green"})             |
       | ("Cavaliers" :team{name: "Cavaliers"}) | ("Danny Green" :player{age: 31, name: "Danny Green"})             |
@@ -905,8 +905,8 @@ Feature: Go Yield Vertex And Edge Sentence
       | ("Cavaliers" :team{name: "Cavaliers"}) | ("Kyrie Irving" :player{age: 26, name: "Kyrie Irving"})           |
       | ("Cavaliers" :team{name: "Cavaliers"}) | ("LeBron James" :player{age: 34, name: "LeBron James"})           |
       | ("Cavaliers" :team{name: "Cavaliers"}) | ("LeBron James" :player{age: 34, name: "LeBron James"})           |
-      | ("Cavaliers" :team{name: "Cavaliers"}) | ("Shaquile O'Neal" :player{age: 47, name: "Shaquile O'Neal"})     |
-      | ("Cavaliers" :team{name: "Cavaliers"}) | ("Shaquile O'Neal" :player{age: 47, name: "Shaquile O'Neal"})     |
+      | ("Cavaliers" :team{name: "Cavaliers"}) | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})   |
+      | ("Cavaliers" :team{name: "Cavaliers"}) | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})   |
       | ("Cavaliers" :team{name: "Cavaliers"}) | ("LeBron James" :player{age: 34, name: "LeBron James"})           |
       | ("Cavaliers" :team{name: "Cavaliers"}) | ("LeBron James" :player{age: 34, name: "LeBron James"})           |
     When executing query:
@@ -916,23 +916,23 @@ Feature: Go Yield Vertex And Edge Sentence
       YIELD distinct edge as e
       """
     Then the result should be, in any order, with relax comparison:
-      | e                                                                             |
-      | [:serve "Amar'e Stoudemire"->"Heat" @0 {end_year: 2016, start_year: 2015}]    |
-      | [:serve "Dwyane Wade"->"Heat" @0 {end_year: 2016, start_year: 2003}]          |
-      | [:serve "Shaquile O'Neal"->"Cavaliers" @0 {end_year: 2010, start_year: 2009}] |
-      | [:serve "Ray Allen"->"Heat" @0 {end_year: 2014, start_year: 2012}]            |
-      | [:serve "Shaquile O'Neal"->"Heat" @0 {end_year: 2008, start_year: 2004}]      |
-      | [:serve "Dwyane Wade"->"Heat" @1 {end_year: 2019, start_year: 2018}]          |
-      | [:serve "Dwight Howard"->"Lakers" @0 {end_year: 2013, start_year: 2012}]      |
-      | [:serve "JaVale McGee"->"Lakers" @0 {end_year: 2019, start_year: 2018}]       |
-      | [:serve "Kobe Bryant"->"Lakers" @0 {end_year: 2016, start_year: 1996}]        |
-      | [:serve "Kyrie Irving"->"Cavaliers" @0 {end_year: 2017, start_year: 2011}]    |
-      | [:serve "Paul Gasol"->"Lakers" @0 {end_year: 2014, start_year: 2008}]         |
-      | [:serve "Rajon Rondo"->"Lakers" @0 {end_year: 2019, start_year: 2018}]        |
-      | [:serve "Shaquile O'Neal"->"Lakers" @0 {end_year: 2004, start_year: 1996}]    |
-      | [:serve "Steve Nash"->"Lakers" @0 {end_year: 2015, start_year: 2012}]         |
-      | [:serve "Danny Green"->"Cavaliers" @0 {end_year: 2010, start_year: 2009}]     |
-      | [:serve "Dwyane Wade"->"Cavaliers" @0 {end_year: 2018, start_year: 2017}]     |
+      | e                                                                              |
+      | [:serve "Amar'e Stoudemire"->"Heat" @0 {end_year: 2016, start_year: 2015}]     |
+      | [:serve "Dwyane Wade"->"Heat" @0 {end_year: 2016, start_year: 2003}]           |
+      | [:serve "Shaquille O'Neal"->"Cavaliers" @0 {end_year: 2010, start_year: 2009}] |
+      | [:serve "Ray Allen"->"Heat" @0 {end_year: 2014, start_year: 2012}]             |
+      | [:serve "Shaquille O'Neal"->"Heat" @0 {end_year: 2008, start_year: 2004}]      |
+      | [:serve "Dwyane Wade"->"Heat" @1 {end_year: 2019, start_year: 2018}]           |
+      | [:serve "Dwight Howard"->"Lakers" @0 {end_year: 2013, start_year: 2012}]       |
+      | [:serve "JaVale McGee"->"Lakers" @0 {end_year: 2019, start_year: 2018}]        |
+      | [:serve "Kobe Bryant"->"Lakers" @0 {end_year: 2016, start_year: 1996}]         |
+      | [:serve "Kyrie Irving"->"Cavaliers" @0 {end_year: 2017, start_year: 2011}]     |
+      | [:serve "Paul Gasol"->"Lakers" @0 {end_year: 2014, start_year: 2008}]          |
+      | [:serve "Rajon Rondo"->"Lakers" @0 {end_year: 2019, start_year: 2018}]         |
+      | [:serve "Shaquille O'Neal"->"Lakers" @0 {end_year: 2004, start_year: 1996}]    |
+      | [:serve "Steve Nash"->"Lakers" @0 {end_year: 2015, start_year: 2012}]          |
+      | [:serve "Danny Green"->"Cavaliers" @0 {end_year: 2010, start_year: 2009}]      |
+      | [:serve "Dwyane Wade"->"Cavaliers" @0 {end_year: 2018, start_year: 2017}]      |
     When executing query:
       """
       GO FROM 'Manu Ginobili' OVER like REVERSELY YIELD src(edge) AS id |
@@ -966,7 +966,7 @@ Feature: Go Yield Vertex And Edge Sentence
       | [:like "LaMarcus Aldridge"->"Tim Duncan" @0 {likeness: 75}] |
       | [:like "Manu Ginobili"->"Tim Duncan" @0 {likeness: 90}]     |
       | [:like "Marco Belinelli"->"Tim Duncan" @0 {likeness: 55}]   |
-      | [:like "Shaquile O'Neal"->"Tim Duncan" @0 {likeness: 80}]   |
+      | [:like "Shaquille O'Neal"->"Tim Duncan" @0 {likeness: 80}]  |
       | [:like "Tiago Splitter"->"Tim Duncan" @0 {likeness: 80}]    |
       | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]       |
       | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]     |
@@ -994,7 +994,7 @@ Feature: Go Yield Vertex And Edge Sentence
       | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"}) |
       | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})         |
       | ("Marco Belinelli" :player{age: 32, name: "Marco Belinelli"})     |
-      | ("Shaquile O'Neal" :player{age: 47, name: "Shaquile O'Neal"})     |
+      | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})   |
       | ("Tiago Splitter" :player{age: 34, name: "Tiago Splitter"})       |
       | ("Tony Parker" :player{age: 36, name: "Tony Parker"})             |
       | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})         |
@@ -1024,7 +1024,7 @@ Feature: Go Yield Vertex And Edge Sentence
       | [:like "LaMarcus Aldridge"->"Tim Duncan" @0 {likeness: 75}]                         |
       | [:like "Manu Ginobili"->"Tim Duncan" @0 {likeness: 90}]                             |
       | [:like "Marco Belinelli"->"Tim Duncan" @0 {likeness: 55}]                           |
-      | [:like "Shaquile O'Neal"->"Tim Duncan" @0 {likeness: 80}]                           |
+      | [:like "Shaquille O'Neal"->"Tim Duncan" @0 {likeness: 80}]                          |
       | [:like "Tiago Splitter"->"Tim Duncan" @0 {likeness: 80}]                            |
       | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]                               |
       | [:teammate "Manu Ginobili"->"Tim Duncan" @0 {end_year: 2016, start_year: 2002}]     |
@@ -1212,7 +1212,7 @@ Feature: Go Yield Vertex And Edge Sentence
       | "Danny Green"       |
       | "Aron Baynes"       |
       | "Tiago Splitter"    |
-      | "Shaquile O'Neal"   |
+      | "Shaquille O'Neal"  |
       | "Rudy Gay"          |
       | "Damian Lillard"    |
     When executing query:
@@ -1236,7 +1236,7 @@ Feature: Go Yield Vertex And Edge Sentence
       | [:like "LaMarcus Aldridge"->"Tim Duncan" @0 {likeness: 75}]     |
       | [:like "Manu Ginobili"->"Tim Duncan" @0 {likeness: 90}]         |
       | [:like "Marco Belinelli"->"Tim Duncan" @0 {likeness: 55}]       |
-      | [:like "Shaquile O'Neal"->"Tim Duncan" @0 {likeness: 80}]       |
+      | [:like "Shaquille O'Neal"->"Tim Duncan" @0 {likeness: 80}]      |
       | [:like "Tiago Splitter"->"Tim Duncan" @0 {likeness: 80}]        |
       | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]           |
       | [:like "Danny Green"->"Marco Belinelli" @0 {likeness: 83}]      |
@@ -1257,7 +1257,7 @@ Feature: Go Yield Vertex And Edge Sentence
       | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"}) |
       | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})         |
       | ("Marco Belinelli" :player{age: 32, name: "Marco Belinelli"})     |
-      | ("Shaquile O'Neal" :player{age: 47, name: "Shaquile O'Neal"})     |
+      | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})   |
       | ("Tiago Splitter" :player{age: 34, name: "Tiago Splitter"})       |
     When executing query:
       """
@@ -1333,7 +1333,7 @@ Feature: Go Yield Vertex And Edge Sentence
       | "LaMarcus Aldridge" | "Tim Duncan"        |
       | "Manu Ginobili"     | "Tim Duncan"        |
       | "Dejounte Murray"   | "LeBron James"      |
-      | "Shaquile O'Neal"   | "Tim Duncan"        |
+      | "Shaquille O'Neal"  | "Tim Duncan"        |
       | "Tiago Splitter"    | "Tim Duncan"        |
       | "Dejounte Murray"   | "Kyle Anderson"     |
       | "Tim Duncan"        | "Manu Ginobili"     |

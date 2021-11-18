@@ -79,7 +79,7 @@ class FoldConstantExprVisitor final : public ExprVisitor {
   Expression *fold(Expression *expr);
 
  private:
-  // Obejct pool used to manage expressions generated during visiting
+  // Object pool used to manage expressions generated during visiting
   ObjectPool *pool_;
   bool canBeFolded_{false};
   Status status_;

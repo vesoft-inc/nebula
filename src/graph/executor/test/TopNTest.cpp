@@ -17,7 +17,7 @@ namespace graph {
 
 class TopNTest : public QueryTestBase {};
 
-#define TOPN_RESUTL_CHECK(input_name, outputName, multi, factors, offset, count, expected) \
+#define TOPN_RESULT_CHECK(input_name, outputName, multi, factors, offset, count, expected) \
   do {                                                                                     \
     qctx_->symTable()->newVariable(outputName);                                            \
     auto start = StartNode::make(qctx_.get());                                             \
@@ -57,7 +57,7 @@ TEST_F(TopNTest, topnOneColAsc) {
   expected.emplace_back(Row({20}));
   std::vector<std::pair<size_t, OrderFactor::OrderType>> factors;
   factors.emplace_back(std::make_pair(2, OrderFactor::OrderType::ASCEND));
-  TOPN_RESUTL_CHECK("input_sequential", "topn_one_col_asc", false, factors, 0, 4, expected);
+  TOPN_RESULT_CHECK("input_sequential", "topn_one_col_asc", false, factors, 0, 4, expected);
 }
 
 TEST_F(TopNTest, topnOneColDes) {
@@ -68,7 +68,7 @@ TEST_F(TopNTest, topnOneColDes) {
   expected.emplace_back(Row({18}));
   std::vector<std::pair<size_t, OrderFactor::OrderType>> factors;
   factors.emplace_back(std::make_pair(2, OrderFactor::OrderType::DESCEND));
-  TOPN_RESUTL_CHECK("input_sequential", "topn_one_col_des", false, factors, 2, 9, expected);
+  TOPN_RESULT_CHECK("input_sequential", "topn_one_col_des", false, factors, 2, 9, expected);
 }
 
 TEST_F(TopNTest, topnTwoColsAscAsc) {
@@ -79,7 +79,7 @@ TEST_F(TopNTest, topnTwoColsAscAsc) {
   std::vector<std::pair<size_t, OrderFactor::OrderType>> factors;
   factors.emplace_back(std::make_pair(2, OrderFactor::OrderType::ASCEND));
   factors.emplace_back(std::make_pair(4, OrderFactor::OrderType::ASCEND));
-  TOPN_RESUTL_CHECK("input_sequential", "topn_two_cols_asc_asc", true, factors, 2, 3, expected);
+  TOPN_RESULT_CHECK("input_sequential", "topn_two_cols_asc_asc", true, factors, 2, 3, expected);
 }
 
 TEST_F(TopNTest, topnTwoColsAscDes) {
@@ -89,7 +89,7 @@ TEST_F(TopNTest, topnTwoColsAscDes) {
   std::vector<std::pair<size_t, OrderFactor::OrderType>> factors;
   factors.emplace_back(std::make_pair(2, OrderFactor::OrderType::ASCEND));
   factors.emplace_back(std::make_pair(4, OrderFactor::OrderType::DESCEND));
-  TOPN_RESUTL_CHECK("input_sequential", "topn_two_cols_asc_des", true, factors, 0, 2, expected);
+  TOPN_RESULT_CHECK("input_sequential", "topn_two_cols_asc_des", true, factors, 0, 2, expected);
 }
 
 TEST_F(TopNTest, topnTwoColDesDes) {
@@ -97,7 +97,7 @@ TEST_F(TopNTest, topnTwoColDesDes) {
   std::vector<std::pair<size_t, OrderFactor::OrderType>> factors;
   factors.emplace_back(std::make_pair(2, OrderFactor::OrderType::DESCEND));
   factors.emplace_back(std::make_pair(4, OrderFactor::OrderType::DESCEND));
-  TOPN_RESUTL_CHECK("input_sequential", "topn_two_cols_des_des", true, factors, 10, 5, expected);
+  TOPN_RESULT_CHECK("input_sequential", "topn_two_cols_des_des", true, factors, 10, 5, expected);
 }
 
 TEST_F(TopNTest, topnTwoColDesAsc) {
@@ -110,7 +110,7 @@ TEST_F(TopNTest, topnTwoColDesAsc) {
   std::vector<std::pair<size_t, OrderFactor::OrderType>> factors;
   factors.emplace_back(std::make_pair(2, OrderFactor::OrderType::DESCEND));
   factors.emplace_back(std::make_pair(4, OrderFactor::OrderType::ASCEND));
-  TOPN_RESUTL_CHECK("input_sequential", "topn_two_cols_des_asc", true, factors, 1, 9, expected);
+  TOPN_RESULT_CHECK("input_sequential", "topn_two_cols_des_asc", true, factors, 1, 9, expected);
 }
 }  // namespace graph
 }  // namespace nebula

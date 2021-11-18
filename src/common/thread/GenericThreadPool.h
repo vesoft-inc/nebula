@@ -44,7 +44,7 @@ class GenericThreadPool final : public nebula::cpp::NonCopyable, public nebula::
   bool start(size_t nrThreads, const std::string &name = "");
 
   /**
-   * Asynchronouly to notify the workers to stop handling further new tasks.
+   * Asynchronously to notify the workers to stop handling further new tasks.
    */
   bool stop();
 

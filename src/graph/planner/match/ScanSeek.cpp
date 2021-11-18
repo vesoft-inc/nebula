@@ -59,16 +59,19 @@ StatusOr<SubPlan> ScanSeek::transformNode(NodeContext *nodeCtx) {
   auto anyLabel = nodeCtx->scanInfo.anyLabel;
 
   auto vProps = std::make_unique<std::vector<storage::cpp2::VertexProp>>();
-  for (const auto &tag : nodeCtx->scanInfo.schemaIds) {
+  std::vector<std::string> colNames{kVid};
+  for (std::size_t i = 0; i < nodeCtx->scanInfo.schemaIds.size(); ++i) {
     storage::cpp2::VertexProp vProp;
     std::vector<std::string> props{kTag};
-    vProp.set_tag(tag);
+    vProp.set_tag(nodeCtx->scanInfo.schemaIds[i]);
     vProp.set_props(std::move(props));
     vProps->emplace_back(std::move(vProp));
+    colNames.emplace_back(nodeCtx->scanInfo.schemaNames[i] + "." + kTag);
   }
 
   auto *scanVertices =
       ScanVertices::make(qctx, nullptr, matchClauseCtx->space.id, std::move(vProps));
+  scanVertices->setColNames(std::move(colNames));
   plan.root = scanVertices;
   plan.tail = scanVertices;
 
