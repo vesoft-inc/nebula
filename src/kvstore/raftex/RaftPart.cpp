@@ -719,6 +719,7 @@ void RaftPart::appendLogsInternal(AppendLogsIterator iter, TermID termId) {
     if (!wal_->appendLogs(iter)) {
       LOG_EVERY_N(WARNING, 100) << idStr_ << "Failed to write into WAL";
       res = AppendLogResult::E_WAL_FAILURE;
+      wal_->rollbackToLog(lastLogId_);
       break;
     }
     lastId = wal_->lastLogId();
@@ -754,6 +755,7 @@ void RaftPart::replicateLogs(folly::EventBase* eb,
     std::lock_guard<std::mutex> g(raftLock_);
     res = canAppendLogs(currTerm);
     if (res != AppendLogResult::SUCCEEDED) {
+      wal_->rollbackToLog(lastLogId_);
       break;
     }
     hosts = hosts_;
@@ -943,6 +945,7 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
     // Not enough hosts accepted the log, re-try
     LOG_EVERY_N(WARNING, 100) << idStr_ << "Only " << numSucceeded
                               << " hosts succeeded, Need to try again";
+    usleep(1000);
     replicateLogs(eb, std::move(iter), currTerm, lastLogId, committedId, prevLogTerm, prevLogId);
   }
 }
