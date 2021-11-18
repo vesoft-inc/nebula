@@ -1110,7 +1110,7 @@ int32_t LeaderBalanceJobExecutor::acquireLeaders(HostParts& allHostParts,
                                                  const HostAddr& target,
                                                  LeaderBalancePlan& plan,
                                                  GraphSpaceID spaceId) {
-  // host will loop for the partition which is not leader, and try to acuire the
+  // host will loop for the partition which is not leader, and try to acquire the
   // leader
   int32_t taskCount = 0;
   std::vector<PartitionID> diff;
