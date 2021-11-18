@@ -945,7 +945,7 @@ folly::Future<Status> LeaderBalanceJobExecutor::executeInternal(HostAddr&& addre
                    << "Space: " << spaceId;
         continue;
       }
-      simplifyLeaderBalnacePlan(spaceId, plan);
+      simplifyLeaderBalancePlan(spaceId, plan);
       for (const auto& task : plan) {
         futures.emplace_back(adminClient_->transLeader(std::get<0>(task),
                                                        std::get<1>(task),
@@ -1213,7 +1213,7 @@ int32_t LeaderBalanceJobExecutor::giveupLeaders(HostParts& leaderParts,
   return taskCount;
 }
 
-void LeaderBalanceJobExecutor::simplifyLeaderBalnacePlan(GraphSpaceID spaceId,
+void LeaderBalanceJobExecutor::simplifyLeaderBalancePlan(GraphSpaceID spaceId,
                                                          LeaderBalancePlan& plan) {
   std::unordered_map<PartitionID, LeaderBalancePlan> buckets;
   for (auto& task : plan) {

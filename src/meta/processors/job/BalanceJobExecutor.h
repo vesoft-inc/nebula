@@ -221,7 +221,7 @@ class LeaderBalanceJobExecutor : public BalanceJobExecutor {
                         LeaderBalancePlan& plan,
                         GraphSpaceID spaceId);
 
-  void simplifyLeaderBalnacePlan(GraphSpaceID spaceId, LeaderBalancePlan& plan);
+  void simplifyLeaderBalancePlan(GraphSpaceID spaceId, LeaderBalancePlan& plan);
 
  private:
   static std::atomic_bool inLeaderBalance_;
