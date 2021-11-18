@@ -30,7 +30,7 @@ struct PropStat {
 // some stat of all valid edges of a vertex. It could be used in ScanVertex or
 // ScanEdge later. The stat is collected during we iterate over edges via
 // `next`, so if you want to get the final result, be sure to call
-// `calculateStat` and then retrieve the reuslt
+// `calculateStat` and then retrieve the result
 template <typename T>
 class AggregateNode : public IterateNode<T> {
  public:

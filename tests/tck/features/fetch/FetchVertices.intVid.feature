@@ -330,7 +330,7 @@ Feature: Fetch Int Vid Vertices
       GO FROM hash('Boris Diaw') over like YIELD like._dst as id, like._dst as id | FETCH PROP ON player $-.id YIELD player.name, player.age
       """
     Then a SemanticError should be raised at runtime:
-    # only constant list or single colume of data is allowed in piped FETCH clause
+    # only constant list or single column of data is allowed in piped FETCH clause
     When executing query:
       """
       GO FROM 'Boris Diaw' over like YIELD like._src as src, like._dst as dst | FETCH PROP ON player $-.src, $-.dst YIELD vertex as node;
@@ -411,8 +411,8 @@ Feature: Fetch Int Vid Vertices
       | "Tim Duncan" | "Tim Duncan" | {age: 42, name: "Tim Duncan"} |
     When executing query:
       """
-      FETCH PROP ON * hash('Tim Duncan') YIELD  id(vertex), keys(vertex) as keys, tags(vertex) as tagss, properties(vertex) as props
+      FETCH PROP ON * hash('Tim Duncan') YIELD  id(vertex), keys(vertex) as keys, tags(vertex) as tags_, properties(vertex) as props
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
-      | id(VERTEX)   | keys                          | tagss                  | props                                                   |
+      | id(VERTEX)   | keys                          | tags_                  | props                                                   |
       | "Tim Duncan" | ["age", "name", "speciality"] | ["bachelor", "player"] | {age: 42, name: "Tim Duncan", speciality: "psychology"} |

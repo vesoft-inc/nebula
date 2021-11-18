@@ -212,7 +212,7 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
 
   bool needToCleanWal();
 
-  // leader + follwers
+  // leader + followers
   std::vector<HostAddr> peers() const;
 
   std::set<HostAddr> listeners() const;
@@ -303,7 +303,7 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
  private:
   // A list of <idx, resp>
   // idx  -- the index of the peer
-  // resp -- coresponding response of peer[index]
+  // resp -- corresponding response of peer[index]
   using ElectionResponses = std::vector<std::pair<size_t, cpp2::AskForVoteResponse>>;
   using AppendLogResponses = std::vector<std::pair<size_t, cpp2::AppendLogResponse>>;
   using HeartbeatResponses = std::vector<std::pair<size_t, cpp2::HeartbeatResponse>>;

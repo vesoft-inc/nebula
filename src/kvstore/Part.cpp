@@ -201,9 +201,9 @@ void Part::onLeaderReady(TermID term) {
   }
 }
 
-void Part::registerOnLeaderReady(LeaderChagneCB cb) { leaderReadyCB_.emplace_back(std::move(cb)); }
+void Part::registerOnLeaderReady(LeaderChangeCB cb) { leaderReadyCB_.emplace_back(std::move(cb)); }
 
-void Part::registerOnLeaderLost(LeaderChagneCB cb) { leaderLostCB_.emplace_back(std::move(cb)); }
+void Part::registerOnLeaderLost(LeaderChangeCB cb) { leaderLostCB_.emplace_back(std::move(cb)); }
 
 void Part::onDiscoverNewLeader(HostAddr nLeader) {
   LOG(INFO) << idStr_ << "Find the new leader " << nLeader;

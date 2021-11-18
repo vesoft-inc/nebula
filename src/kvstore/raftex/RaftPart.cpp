@@ -663,7 +663,7 @@ folly::Future<AppendLogResult> RaftPart::appendLogAsync(ClusterID source,
   }
 
   if (!checkAppendLogResult(res)) {
-    // Mosy likely failed because the parttion is not leader
+    // Mosy likely failed because the partition is not leader
     LOG_EVERY_N(WARNING, 1000) << idStr_ << "Cannot append logs, clean the buffer";
     return res;
   }
@@ -699,7 +699,7 @@ void RaftPart::appendLogsInternal(AppendLogsIterator iter, TermID termId) {
     VLOG(2) << idStr_ << "Ready to append logs from id " << iter.logId() << " (Current term is "
             << currTerm << ")";
   } else {
-    LOG(ERROR) << idStr_ << "Only happend when Atomic op failed";
+    LOG(ERROR) << idStr_ << "Only happened when Atomic op failed";
     replicatingLogs_ = false;
     return;
   }
@@ -1071,9 +1071,9 @@ folly::Future<bool> RaftPart::leaderElection() {
     // and need the snapshot from B. Meanwhile C begin the election,
     // C will be Candidate, but because C is in WAITING_SNAPSHOT,
     // so prepareElectionRequest will return false and go on the election.
-    // Becasue C is in Candidate, so it will reject the snapshot request from B.
+    // Because C is in Candidate, so it will reject the snapshot request from B.
     // Infinite loop begins.
-    // So we neeed to go back to the follower state to avoid the case.
+    // So we need to go back to the follower state to avoid the case.
     std::lock_guard<std::mutex> g(raftLock_);
     role_ = Role::FOLLOWER;
     inElection_ = false;
@@ -1190,7 +1190,7 @@ void RaftPart::statusPolling(int64_t startTime) {
       VLOG(2) << idStr_ << "Stop the election";
     } else {
       // No leader has been elected, need to continue
-      // (After sleeping a random period betwen [500ms, 2s])
+      // (After sleeping a random period between [500ms, 2s])
       VLOG(2) << idStr_ << "Wait for a while and continue the leader election";
       delay = (folly::Random::rand32(1500) + 500) * weight_;
     }
@@ -1239,7 +1239,7 @@ bool RaftPart::needToCleanWal() {
 
 void RaftPart::processAskForVoteRequest(const cpp2::AskForVoteRequest& req,
                                         cpp2::AskForVoteResponse& resp) {
-  LOG(INFO) << idStr_ << "Recieved a VOTING request"
+  LOG(INFO) << idStr_ << "Received a VOTING request"
             << ": space = " << req.get_space() << ", partition = " << req.get_part()
             << ", candidateAddr = " << req.get_candidate_addr() << ":" << req.get_candidate_port()
             << ", term = " << req.get_term() << ", lastLogId = " << req.get_last_log_id()
@@ -1539,7 +1539,7 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
     } else if (code == nebula::cpp2::ErrorCode::E_WRITE_STALLED) {
       VLOG(1) << idStr_ << "Follower delay committing log " << committedLogId_ + 1 << " to "
               << lastLogIdCanCommit;
-      // Even if log is not applied to state machine, still regard as succeded:
+      // Even if log is not applied to state machine, still regard as succeeded:
       // 1. As a follower, upcoming request will try to commit them
       // 2. If it is elected as leader later, it will try to commit them as well
       resp.set_committed_log_id(committedLogId_);
@@ -1574,7 +1574,7 @@ cpp2::ErrorCode RaftPart::verifyLeader(const REQ& req) {
                            << ". The local term is " << term_ << ". The remote term is not newer";
     return cpp2::ErrorCode::E_TERM_OUT_OF_DATE;
   } else if (req.get_current_term() > term_) {
-    // Leader stickness, no matter the term in Request is larger or not.
+    // Leader stickiness, no matter the term in Request is larger or not.
     // TODO(heng) Maybe we should reconsider the logic
     if (leader_ != HostAddr("", 0) && leader_ != candidate &&
         lastMsgRecvDur_.elapsedInMSec() < FLAGS_raft_heartbeat_interval_secs * 1000) {

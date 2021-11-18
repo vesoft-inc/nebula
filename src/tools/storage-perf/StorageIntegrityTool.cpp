@@ -13,7 +13,7 @@
 DEFINE_string(meta_server_addrs, "", "meta server address");
 DEFINE_int32(io_threads, 10, "client io threads");
 
-DEFINE_int32(partition_num, 1024, "partititon for space");
+DEFINE_int32(partition_num, 1024, "partition for space");
 DEFINE_string(space_name, "test_space", "the space name");
 DEFINE_string(tag_name, "test_tag", "the tag name");
 DEFINE_string(prop_name, "test_prop", "the property name");
@@ -33,7 +33,7 @@ namespace storage {
  *
  * There are some gflags we need to pay attention:
  * 1. The space's replica must be 1, because we don't have retry in
- * StorageClient, we will update it after we suppport preheat. The tag must have
+ * StorageClient, we will update it after we support preheat. The tag must have
  * only one int property, which is prop_name.
  * 2. If the space and tag doesn't exists, it will try to create one, maybe you
  * need to set heartbeat_interval_secs to make sure the storage service has load

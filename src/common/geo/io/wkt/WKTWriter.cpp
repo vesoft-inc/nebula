@@ -45,7 +45,7 @@ std::string WKTWriter::write(const Geography& geog) const {
     }
     default:
       LOG(ERROR)
-          << "Geomtry shapes other than Point/LineString/Polygon are not currently supported";
+          << "Geometry shapes other than Point/LineString/Polygon are not currently supported";
       return "";
   }
 }

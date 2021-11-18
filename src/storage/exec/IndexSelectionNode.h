@@ -59,7 +59,7 @@ class IndexSelectionNode : public IndexNode {
   }
   Expression *expr_;
   Map<std::string, size_t> colPos_;
-  // TODO(hs.zhang): `ExprContext` could be moved out later if we unify the valcano in go/lookup
+  // TODO(hs.zhang): `ExprContext` could be moved out later if we unify the volcano in go/lookup
   class ExprContext : public ExpressionContext {
    public:
     explicit ExprContext(const Map<std::string, size_t> &colPos) : colPos_(colPos) {}

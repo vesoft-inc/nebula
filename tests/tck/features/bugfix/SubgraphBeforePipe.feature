@@ -23,7 +23,7 @@ Feature: Test get subgraph before pipe
       | [:like "LaMarcus Aldridge"->"Tim Duncan"@0]     |
       | [:like "Manu Ginobili"->"Tim Duncan"@0]         |
       | [:like "Marco Belinelli"->"Tim Duncan"@0]       |
-      | [:like "Shaquile O\'Neal"->"Tim Duncan"@0]      |
+      | [:like "Shaquille O\'Neal"->"Tim Duncan"@0]     |
       | [:like "Tiago Splitter"->"Tim Duncan"@0]        |
       | [:like "Tony Parker"->"Tim Duncan"@0]           |
       | [:like "Tim Duncan"->"Manu Ginobili"@0]         |
@@ -53,7 +53,7 @@ Feature: Test get subgraph before pipe
       | [:like "LaMarcus Aldridge"->"Tim Duncan"@0]     |
       | [:like "Manu Ginobili"->"Tim Duncan"@0]         |
       | [:like "Marco Belinelli"->"Tim Duncan"@0]       |
-      | [:like "Shaquile O\'Neal"->"Tim Duncan"@0]      |
+      | [:like "Shaquille O\'Neal"->"Tim Duncan"@0]     |
       | [:like "Tiago Splitter"->"Tim Duncan"@0]        |
       | [:like "Tony Parker"->"Tim Duncan"@0]           |
       | [:like "Tim Duncan"->"Manu Ginobili"@0]         |
@@ -89,12 +89,12 @@ Feature: Test get subgraph before pipe
       | [:teammate "Tony Parker"->"Tim Duncan"@0]       | ("Manu Ginobili")     | [:like "Marco Belinelli"->"Danny Green"@0]       |
       | [:like "Aron Baynes"->"Tim Duncan"@0]           | ("Aron Baynes")       | [:like "Danny Green"->"LeBron James"@0]          |
       | [:like "Boris Diaw"->"Tim Duncan"@0]            | ("Boris Diaw")        | [:like "Danny Green"->"Marco Belinelli"@0]       |
-      | [:like "Danny Green"->"Tim Duncan"@0]           | ("Shaquile O\'Neal")  | [:serve "Danny Green"->"Cavaliers"@0]            |
+      | [:like "Danny Green"->"Tim Duncan"@0]           | ("Shaquille O\'Neal") | [:serve "Danny Green"->"Cavaliers"@0]            |
       | [:like "Dejounte Murray"->"Tim Duncan"@0]       | ("Tony Parker")       | [:serve "Danny Green"->"Raptors"@0]              |
       | [:like "LaMarcus Aldridge"->"Tim Duncan"@0]     | ("Spurs")             | [:serve "Danny Green"->"Spurs"@0]                |
       | [:like "Manu Ginobili"->"Tim Duncan"@0]         | ("Dejounte Murray")   | [:teammate "Tony Parker"->"Manu Ginobili"@0]     |
       | [:like "Marco Belinelli"->"Tim Duncan"@0]       | ("LaMarcus Aldridge") | [:like "Dejounte Murray"->"Manu Ginobili"@0]     |
-      | [:like "Shaquile O\'Neal"->"Tim Duncan"@0]      | ("Marco Belinelli")   | [:like "Tiago Splitter"->"Manu Ginobili"@0]      |
+      | [:like "Shaquille O\'Neal"->"Tim Duncan"@0]     | ("Marco Belinelli")   | [:like "Tiago Splitter"->"Manu Ginobili"@0]      |
       | [:like "Tiago Splitter"->"Tim Duncan"@0]        | ("Tiago Splitter")    | [:like "Tony Parker"->"Manu Ginobili"@0]         |
       | [:like "Tony Parker"->"Tim Duncan"@0]           |                       | [:serve "Manu Ginobili"->"Spurs"@0]              |
       | [:like "Tim Duncan"->"Manu Ginobili"@0]         |                       | [:teammate "Manu Ginobili"->"Tony Parker"@0]     |
@@ -107,14 +107,14 @@ Feature: Test get subgraph before pipe
       |                                                 |                       | [:serve "Boris Diaw"->"Jazz"@0]                  |
       |                                                 |                       | [:serve "Boris Diaw"->"Spurs"@0]                 |
       |                                                 |                       | [:serve "Boris Diaw"->"Suns"@0]                  |
-      |                                                 |                       | [:like "Yao Ming"->"Shaquile O\'Neal"@0]         |
-      |                                                 |                       | [:like "Shaquile O\'Neal"->"JaVale McGee"@0]     |
-      |                                                 |                       | [:serve "Shaquile O\'Neal"->"Cavaliers"@0]       |
-      |                                                 |                       | [:serve "Shaquile O\'Neal"->"Celtics"@0]         |
-      |                                                 |                       | [:serve "Shaquile O\'Neal"->"Heat"@0]            |
-      |                                                 |                       | [:serve "Shaquile O\'Neal"->"Lakers"@0]          |
-      |                                                 |                       | [:serve "Shaquile O\'Neal"->"Magic"@0]           |
-      |                                                 |                       | [:serve "Shaquile O\'Neal"->"Suns"@0]            |
+      |                                                 |                       | [:like "Yao Ming"->"Shaquille O\'Neal"@0]        |
+      |                                                 |                       | [:like "Shaquille O\'Neal"->"JaVale McGee"@0]    |
+      |                                                 |                       | [:serve "Shaquille O\'Neal"->"Cavaliers"@0]      |
+      |                                                 |                       | [:serve "Shaquille O\'Neal"->"Celtics"@0]        |
+      |                                                 |                       | [:serve "Shaquille O\'Neal"->"Heat"@0]           |
+      |                                                 |                       | [:serve "Shaquille O\'Neal"->"Lakers"@0]         |
+      |                                                 |                       | [:serve "Shaquille O\'Neal"->"Magic"@0]          |
+      |                                                 |                       | [:serve "Shaquille O\'Neal"->"Suns"@0]           |
       |                                                 |                       | [:like "Dejounte Murray"->"Tony Parker"@0]       |
       |                                                 |                       | [:like "LaMarcus Aldridge"->"Tony Parker"@0]     |
       |                                                 |                       | [:like "Marco Belinelli"->"Tony Parker"@0]       |
@@ -199,7 +199,7 @@ Feature: Test get subgraph before pipe
       | [:like "LaMarcus Aldridge"->"Tim Duncan"@0]     |
       | [:like "Manu Ginobili"->"Tim Duncan"@0]         |
       | [:like "Marco Belinelli"->"Tim Duncan"@0]       |
-      | [:like "Shaquile O\'Neal"->"Tim Duncan"@0]      |
+      | [:like "Shaquille O\'Neal"->"Tim Duncan"@0]     |
       | [:like "Tiago Splitter"->"Tim Duncan"@0]        |
       | [:like "Tony Parker"->"Tim Duncan"@0]           |
       | [:like "Tim Duncan"->"Manu Ginobili"@0]         |
@@ -229,7 +229,7 @@ Feature: Test get subgraph before pipe
       | [:like "LaMarcus Aldridge"->"Tim Duncan"@0]     |
       | [:like "Manu Ginobili"->"Tim Duncan"@0]         |
       | [:like "Marco Belinelli"->"Tim Duncan"@0]       |
-      | [:like "Shaquile O\'Neal"->"Tim Duncan"@0]      |
+      | [:like "Shaquille O\'Neal"->"Tim Duncan"@0]     |
       | [:like "Tiago Splitter"->"Tim Duncan"@0]        |
       | [:like "Tony Parker"->"Tim Duncan"@0]           |
       | [:like "Tim Duncan"->"Manu Ginobili"@0]         |
@@ -254,12 +254,12 @@ Feature: Test get subgraph before pipe
       | [:teammate "Tony Parker"->"Tim Duncan"@0]       | ("Manu Ginobili")     | [:like "Marco Belinelli"->"Danny Green"@0]       |
       | [:like "Aron Baynes"->"Tim Duncan"@0]           | ("Aron Baynes")       | [:like "Danny Green"->"LeBron James"@0]          |
       | [:like "Boris Diaw"->"Tim Duncan"@0]            | ("Boris Diaw")        | [:like "Danny Green"->"Marco Belinelli"@0]       |
-      | [:like "Danny Green"->"Tim Duncan"@0]           | ("Shaquile O\'Neal")  | [:serve "Danny Green"->"Cavaliers"@0]            |
+      | [:like "Danny Green"->"Tim Duncan"@0]           | ("Shaquille O\'Neal") | [:serve "Danny Green"->"Cavaliers"@0]            |
       | [:like "Dejounte Murray"->"Tim Duncan"@0]       | ("Tony Parker")       | [:serve "Danny Green"->"Raptors"@0]              |
       | [:like "LaMarcus Aldridge"->"Tim Duncan"@0]     | ("Spurs")             | [:serve "Danny Green"->"Spurs"@0]                |
       | [:like "Manu Ginobili"->"Tim Duncan"@0]         | ("Dejounte Murray")   | [:teammate "Tony Parker"->"Manu Ginobili"@0]     |
       | [:like "Marco Belinelli"->"Tim Duncan"@0]       | ("LaMarcus Aldridge") | [:like "Dejounte Murray"->"Manu Ginobili"@0]     |
-      | [:like "Shaquile O\'Neal"->"Tim Duncan"@0]      | ("Marco Belinelli")   | [:like "Tiago Splitter"->"Manu Ginobili"@0]      |
+      | [:like "Shaquille O\'Neal"->"Tim Duncan"@0]     | ("Marco Belinelli")   | [:like "Tiago Splitter"->"Manu Ginobili"@0]      |
       | [:like "Tiago Splitter"->"Tim Duncan"@0]        | ("Tiago Splitter")    | [:like "Tony Parker"->"Manu Ginobili"@0]         |
       | [:like "Tony Parker"->"Tim Duncan"@0]           |                       | [:serve "Manu Ginobili"->"Spurs"@0]              |
       | [:like "Tim Duncan"->"Manu Ginobili"@0]         |                       | [:teammate "Manu Ginobili"->"Tony Parker"@0]     |
@@ -272,14 +272,14 @@ Feature: Test get subgraph before pipe
       |                                                 |                       | [:serve "Boris Diaw"->"Jazz"@0]                  |
       |                                                 |                       | [:serve "Boris Diaw"->"Spurs"@0]                 |
       |                                                 |                       | [:serve "Boris Diaw"->"Suns"@0]                  |
-      |                                                 |                       | [:like "Yao Ming"->"Shaquile O\'Neal"@0]         |
-      |                                                 |                       | [:like "Shaquile O\'Neal"->"JaVale McGee"@0]     |
-      |                                                 |                       | [:serve "Shaquile O\'Neal"->"Cavaliers"@0]       |
-      |                                                 |                       | [:serve "Shaquile O\'Neal"->"Celtics"@0]         |
-      |                                                 |                       | [:serve "Shaquile O\'Neal"->"Heat"@0]            |
-      |                                                 |                       | [:serve "Shaquile O\'Neal"->"Lakers"@0]          |
-      |                                                 |                       | [:serve "Shaquile O\'Neal"->"Magic"@0]           |
-      |                                                 |                       | [:serve "Shaquile O\'Neal"->"Suns"@0]            |
+      |                                                 |                       | [:like "Yao Ming"->"Shaquille O\'Neal"@0]        |
+      |                                                 |                       | [:like "Shaquille O\'Neal"->"JaVale McGee"@0]    |
+      |                                                 |                       | [:serve "Shaquille O\'Neal"->"Cavaliers"@0]      |
+      |                                                 |                       | [:serve "Shaquille O\'Neal"->"Celtics"@0]        |
+      |                                                 |                       | [:serve "Shaquille O\'Neal"->"Heat"@0]           |
+      |                                                 |                       | [:serve "Shaquille O\'Neal"->"Lakers"@0]         |
+      |                                                 |                       | [:serve "Shaquille O\'Neal"->"Magic"@0]          |
+      |                                                 |                       | [:serve "Shaquille O\'Neal"->"Suns"@0]           |
       |                                                 |                       | [:like "Dejounte Murray"->"Tony Parker"@0]       |
       |                                                 |                       | [:like "LaMarcus Aldridge"->"Tony Parker"@0]     |
       |                                                 |                       | [:like "Marco Belinelli"->"Tony Parker"@0]       |

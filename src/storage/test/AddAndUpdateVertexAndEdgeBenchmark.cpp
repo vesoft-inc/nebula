@@ -231,22 +231,22 @@ void setUp(storage::StorageEnv* ev) {
 
   // v2 data
   if (!mockVertexData(ev, parts, spaceVidLen, true)) {
-    LOG(ERROR) << "Mock data faild";
+    LOG(ERROR) << "Mock data failed";
     return;
   }
   // v1 data
   if (!mockVertexData(ev, parts, spaceVidLen, false)) {
-    LOG(ERROR) << "Mock data faild";
+    LOG(ERROR) << "Mock data failed";
     return;
   }
   // v2 data
   if (!mockEdgeData(ev, parts, spaceVidLen, true)) {
-    LOG(ERROR) << "Mock data faild";
+    LOG(ERROR) << "Mock data failed";
     return;
   }
   // v1 data
   if (!mockEdgeData(ev, parts, spaceVidLen, false)) {
-    LOG(ERROR) << "Mock data faild";
+    LOG(ERROR) << "Mock data failed";
     return;
   }
 }
@@ -438,7 +438,7 @@ void insertVertex(int32_t iters) {
     processor->process(req);
     auto resp = std::move(f).get();
     if (!resp.result.failed_parts.empty()) {
-      LOG(ERROR) << "Add faild";
+      LOG(ERROR) << "Add failed";
       return;
     }
   }
@@ -455,7 +455,7 @@ void insertEdge(int32_t iters) {
     processor->process(req);
     auto resp = std::move(f).get();
     if (!resp.result.failed_parts.empty()) {
-      LOG(ERROR) << "Add faild";
+      LOG(ERROR) << "Add failed";
       return;
     }
   }
@@ -473,7 +473,7 @@ void updateVertex(int32_t iters, bool isVersion2) {
     processor->process(req);
     auto resp = std::move(f).get();
     if (!resp.result.failed_parts.empty()) {
-      LOG(ERROR) << "update faild";
+      LOG(ERROR) << "update failed";
       return;
     }
   }
@@ -491,7 +491,7 @@ void updateEdge(int32_t iters, bool isVersion2) {
     auto resp = std::move(f).get();
 
     if (!resp.result.failed_parts.empty()) {
-      LOG(ERROR) << "update faild";
+      LOG(ERROR) << "update failed";
       return;
     }
   }
