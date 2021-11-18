@@ -45,7 +45,7 @@ std::shared_ptr<const meta::SchemaProviderIf> HBaseStore::getSchema(GraphSpaceID
                                                                     SchemaVer version) {
   std::shared_ptr<const meta::SchemaProviderIf> schema;
   folly::StringPiece rawKey = key;
-  if (NebulaKeyUtils::isVertex(key)) {
+  if (NebulaKeyUtils::isTag(key)) {
     TagID tagId = NebulaKeyUtils::getTagId(rawKey);
     if (version == -1) {
       version = schemaMan_->getLatestTagSchemaVersion(spaceId, tagId).value();
