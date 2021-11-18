@@ -844,7 +844,7 @@ std::string RowWriterV2::processOutOfSpace() noexcept {
   // Now let's process all strings
   for (size_t i = 0; i < schema_->getNumFields(); i++) {
     auto field = schema_->field(i);
-    if (field->type() != PropertyType::STRING) {
+    if (field->type() != PropertyType::STRING && field->type() != PropertyType::GEOGRAPHY) {
       continue;
     }
 
