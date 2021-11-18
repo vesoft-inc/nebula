@@ -299,7 +299,7 @@ TEST_F(StatsTaskTest, StatsTagAndEdgeData) {
       VertexID lastDstVertexId = "";
       EdgeRanking lastRank = 0;
 
-      auto prefix = NebulaKeyUtils::vertexPrefix(part);
+      auto prefix = NebulaKeyUtils::tagPrefix(part);
       std::unique_ptr<kvstore::KVIterator> iter;
       auto ret = env_->kvstore_->prefix(spaceId, part, prefix, &iter);
       if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {

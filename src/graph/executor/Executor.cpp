@@ -65,6 +65,7 @@
 #include "graph/executor/mutate/InsertExecutor.h"
 #include "graph/executor/mutate/UpdateExecutor.h"
 #include "graph/executor/query/AggregateExecutor.h"
+#include "graph/executor/query/AppendVerticesExecutor.h"
 #include "graph/executor/query/AssignExecutor.h"
 #include "graph/executor/query/DataCollectExecutor.h"
 #include "graph/executor/query/DedupExecutor.h"
@@ -82,6 +83,7 @@
 #include "graph/executor/query/SampleExecutor.h"
 #include "graph/executor/query/SortExecutor.h"
 #include "graph/executor/query/TopNExecutor.h"
+#include "graph/executor/query/TraverseExecutor.h"
 #include "graph/executor/query/UnionAllVersionVarExecutor.h"
 #include "graph/executor/query/UnionExecutor.h"
 #include "graph/executor/query/UnwindExecutor.h"
@@ -507,6 +509,12 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     case PlanNode::Kind::kKillQuery: {
       return pool->add(new KillQueryExecutor(node, qctx));
     }
+    case PlanNode::Kind::kTraverse: {
+      return pool->add(new TraverseExecutor(node, qctx));
+    }
+    case PlanNode::Kind::kAppendVertices: {
+      return pool->add(new AppendVerticesExecutor(node, qctx));
+    }
     case PlanNode::Kind::kUnknown: {
       LOG(FATAL) << "Unknown plan node kind " << static_cast<int32_t>(node->kind());
       break;
@@ -583,7 +591,7 @@ void Executor::drop() {
         // Make sure drop happened-after count decrement
         CHECK_EQ(inputVar->userCount.load(std::memory_order_acquire), 0);
         ectx_->dropResult(inputVar->name);
-        VLOG(1) << "Drop variable " << node()->outputVar();
+        VLOG(1) << node()->kind() << " Drop variable " << inputVar->name;
       }
     }
   }

@@ -413,6 +413,7 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
                         Value::Type::FLOAT},
                        Value::Type::LIST),
      }},
+    {"is_edge", {TypeSignature({Value::Type::EDGE}, Value::Type::BOOL)}},
 };
 
 // static
@@ -1946,6 +1947,41 @@ FunctionManager::FunctionManager() {
     };
   }
   {
+    auto &attr = functions_["none_direct_dst"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      switch (args[0].get().type()) {
+        case Value::Type::NULLVALUE: {
+          return Value::kNullValue;
+        }
+        case Value::Type::EDGE: {
+          const auto &edge = args[0].get().getEdge();
+          return edge.dst;
+        }
+        case Value::Type::VERTEX: {
+          const auto &v = args[0].get().getVertex();
+          return v.vid;
+        }
+        case Value::Type::LIST: {
+          const auto &listVal = args[0].get().getList();
+          auto &lastVal = listVal.values.back();
+          if (lastVal.isEdge()) {
+            return lastVal.getEdge().dst;
+          } else if (lastVal.isVertex()) {
+            return lastVal.getVertex().vid;
+          } else {
+            return Value::kNullBadType;
+          }
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
+    };
+  }
+  {
     auto &attr = functions_["rank"];
     attr.minArity_ = 1;
     attr.maxArity_ = 1;
@@ -2635,6 +2671,13 @@ FunctionManager::FunctionManager() {
       }
       return List(vals);
     };
+  }
+  {
+    auto &attr = functions_["is_edge"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isPure_ = true;
+    attr.body_ = [](const auto &args) -> Value { return args[0].get().isEdge(); };
   }
 }  // NOLINT
 

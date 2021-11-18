@@ -322,9 +322,9 @@ bool SchemaUtil::isValidVid(const Value &value) {
 }
 
 StatusOr<std::unique_ptr<std::vector<storage::cpp2::VertexProp>>> SchemaUtil::getAllVertexProp(
-    QueryContext *qctx, const SpaceInfo &space, bool withProp) {
+    QueryContext *qctx, GraphSpaceID spaceId, bool withProp) {
   // Get all tags in the space
-  const auto allTagsResult = qctx->schemaMng()->getAllLatestVerTagSchema(space.id);
+  const auto allTagsResult = qctx->schemaMng()->getAllLatestVerTagSchema(spaceId);
   NG_RETURN_IF_ERROR(allTagsResult);
   // allTags: std::unordered_map<TagID, std::shared_ptr<const
   // meta::NebulaSchemaProvider>>
