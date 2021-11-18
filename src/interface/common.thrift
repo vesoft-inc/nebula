@@ -35,6 +35,7 @@ cpp_include "common/datatypes/GeographyOps-inl.h"
 
 const binary (cpp.type = "char const *") version = "2.6.0"
 
+typedef i64 (cpp.type = "nebula::ClusterID") ClusterID
 typedef i32 (cpp.type = "nebula::GraphSpaceID") GraphSpaceID
 typedef i32 (cpp.type = "nebula::PartitionID") PartitionID
 typedef i32 (cpp.type = "nebula::TagID") TagID
@@ -251,6 +252,11 @@ struct CheckpointInfo {
     2: binary                path,
 }
 
+// used for raft and drainer
+struct LogEntry {
+    1: ClusterID cluster;
+    2: binary log_str;
+}
 
 // These are all data types supported in the graph properties
 enum PropertyType {
