@@ -131,7 +131,7 @@ bool mockVertexData(storage::StorageEnv* ev, int32_t totalParts, int32_t vidLen,
   std::atomic<size_t> count(1);
   std::vector<kvstore::KV> data;
 
-  auto key = NebulaKeyUtils::vertexKey(vidLen, pId, vertex.vId_, vertex.tId_);
+  auto key = NebulaKeyUtils::tagKey(vidLen, pId, vertex.vId_, vertex.tId_);
   auto schema = ev->schemaMan_->getTagSchema(spaceId, vertex.tId_);
   if (!schema) {
     LOG(ERROR) << "Invalid tagId " << vertex.tId_;

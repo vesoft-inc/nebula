@@ -45,7 +45,7 @@ class QueryTestUtils {
     for (const auto& vertex : vertices) {
       PartitionID partId = (hash(vertex.vId_) % totalParts) + 1;
       TagID tagId = vertex.tId_;
-      auto key = NebulaKeyUtils::vertexKey(spaceVidLen, partId, vertex.vId_, tagId);
+      auto key = NebulaKeyUtils::tagKey(spaceVidLen, partId, vertex.vId_, tagId);
       auto schema = env->schemaMan_->getTagSchema(spaceId, tagId);
       if (!schema) {
         LOG(ERROR) << "Invalid tagId " << tagId;

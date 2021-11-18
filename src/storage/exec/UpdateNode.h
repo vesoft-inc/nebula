@@ -269,7 +269,7 @@ class UpdateTagNode : public UpdateNode<VertexID> {
       expCtx_->setTagProp(tagName_, p.first, p.second);
     }
 
-    key_ = NebulaKeyUtils::vertexKey(context_->vIdLen(), partId, vId, tagId_);
+    key_ = NebulaKeyUtils::tagKey(context_->vIdLen(), partId, vId, tagId_);
     rowWriter_ = std::make_unique<RowWriterV2>(schema_);
 
     return nebula::cpp2::ErrorCode::SUCCEEDED;

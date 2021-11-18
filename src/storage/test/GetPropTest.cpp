@@ -668,7 +668,7 @@ TEST(QueryVertexPropsTest, PrefixBloomFilterTest) {
   for (const auto& vId : vertices) {
     PartitionID partId = (hash(vId) % totalParts) + 1;
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto prefix = NebulaKeyUtils::vertexPrefix(vIdLen, partId, vId, player);
+    auto prefix = NebulaKeyUtils::tagPrefix(vIdLen, partId, vId, player);
     auto code = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
     ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
   }

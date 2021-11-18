@@ -28,7 +28,7 @@ class MatchEdgeTypeList final {
 
 class MatchStepRange final {
  public:
-  explicit MatchStepRange(int64_t min, int64_t max = std::numeric_limits<int64_t>::max()) {
+  explicit MatchStepRange(size_t min = 0, size_t max = std::numeric_limits<size_t>::max()) {
     min_ = min;
     max_ = max;
   }
@@ -37,9 +37,11 @@ class MatchStepRange final {
 
   auto max() const { return max_; }
 
+  std::string toString() const;
+
  private:
-  int64_t min_{1};
-  int64_t max_{1};
+  size_t min_{1};
+  size_t max_{1};
 };
 
 class MatchEdgeProp final {

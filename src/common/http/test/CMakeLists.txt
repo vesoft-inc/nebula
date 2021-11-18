@@ -17,6 +17,8 @@ nebula_add_test(
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:version_obj>
+        $<TARGET_OBJECTS:datatypes_obj>
+        $<TARGET_OBJECTS:wkt_wkb_io_obj>
     LIBRARIES
         ${PROXYGEN_LIBRARIES}
         gtest

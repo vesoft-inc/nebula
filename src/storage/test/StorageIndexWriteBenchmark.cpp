@@ -176,7 +176,7 @@ void initEnv(IndexENV type,
 }
 
 void verifyDataCount(storage::StorageEnv* env, int32_t expected) {
-  auto prefix = NebulaKeyUtils::vertexPrefix(1);
+  auto prefix = NebulaKeyUtils::tagPrefix(1);
   std::unique_ptr<kvstore::KVIterator> iter;
   auto status = env->kvstore_->prefix(spaceId, 1, prefix, &iter);
   DCHECK(nebula::cpp2::ErrorCode::SUCCEEDED == status);

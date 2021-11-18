@@ -15,8 +15,10 @@ nebula_add_test(
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:fs_obj>
         $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:datatypes_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:version_obj>
+        $<TARGET_OBJECTS:wkt_wkb_io_obj>
     LIBRARIES
         ${PROXYGEN_LIBRARIES}
         gtest
@@ -36,8 +38,10 @@ nebula_add_test(
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:fs_obj>
         $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:datatypes_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:version_obj>
+        $<TARGET_OBJECTS:wkt_wkb_io_obj>
     LIBRARIES
         ${PROXYGEN_LIBRARIES}
         gtest
@@ -57,8 +61,10 @@ nebula_add_test(
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:fs_obj>
         $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:datatypes_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:version_obj>
+        $<TARGET_OBJECTS:wkt_wkb_io_obj>
     LIBRARIES
         ${PROXYGEN_LIBRARIES}
         gtest
@@ -74,11 +80,13 @@ nebula_add_test(
         $<TARGET_OBJECTS:ws_obj>
         $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:datatypes_obj>
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:fs_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:version_obj>
+        $<TARGET_OBJECTS:wkt_wkb_io_obj>
     LIBRARIES
         ${PROXYGEN_LIBRARIES}
         gtest

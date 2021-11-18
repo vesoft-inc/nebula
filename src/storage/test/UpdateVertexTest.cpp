@@ -58,7 +58,7 @@ static bool mockVertexData(storage::StorageEnv* env, int32_t totalParts, int32_t
     data.clear();
     for (const auto& vertex : part.second) {
       TagID tagId = vertex.tId_;
-      auto key = NebulaKeyUtils::vertexKey(spaceVidLen, part.first, vertex.vId_, tagId);
+      auto key = NebulaKeyUtils::tagKey(spaceVidLen, part.first, vertex.vId_, tagId);
       auto schema = env->schemaMan_->getTagSchema(spaceId, tagId);
       if (!schema) {
         LOG(ERROR) << "Invalid tagId " << tagId;
@@ -184,7 +184,7 @@ TEST(UpdateVertexTest, No_Filter_Test) {
   EXPECT_EQ(1, (*resp.props_ref()).rows[0].values[5].getInt());
 
   // get player from kvstore directly
-  auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);
+  auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen, partId, vertexId, tagId);
   std::unique_ptr<kvstore::KVIterator> iter;
   auto ret = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
   ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
@@ -303,7 +303,7 @@ TEST(UpdateVertexTest, Filter_Yield_Test2) {
 
   // get player from kvstore directly
   // Because no update, the value is old
-  auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);
+  auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen, partId, vertexId, tagId);
   std::unique_ptr<kvstore::KVIterator> iter;
   auto ret = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
   EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
@@ -406,7 +406,7 @@ TEST(UpdateVertexTest, Insertable_Test) {
   EXPECT_EQ(1, (*resp.props_ref()).rows[0].values[5].getInt());
 
   // get player from kvstore directly
-  auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);
+  auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen, partId, vertexId, tagId);
   std::unique_ptr<kvstore::KVIterator> iter;
   auto ret = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
   EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
@@ -487,7 +487,7 @@ TEST(UpdateVertexTest, Invalid_Update_Prop_Test) {
 
   // get player from kvstore directly
   // Because no update, the value is old
-  auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);
+  auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen, partId, vertexId, tagId);
   std::unique_ptr<kvstore::KVIterator> iter;
   auto ret = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
   EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
@@ -587,7 +587,7 @@ TEST(UpdateVertexTest, Invalid_Filter_Test) {
 
   // get player from kvstore directly
   // Because no update, the value is old
-  auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);
+  auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen, partId, vertexId, tagId);
   std::unique_ptr<kvstore::KVIterator> iter;
   auto ret = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
   EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
@@ -704,7 +704,7 @@ TEST(UpdateVertexTest, Insertable_Filter_Value_Test) {
   EXPECT_EQ(1, (*resp.props_ref()).rows[0].values[5].getInt());
 
   // get player from kvstore directly
-  auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);
+  auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen, partId, vertexId, tagId);
   std::unique_ptr<kvstore::KVIterator> iter;
   auto ret = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
   EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
@@ -737,7 +737,7 @@ TEST(UpdateVertexTest, CorruptDataTest) {
 
   auto partId = std::hash<std::string>()("Lonzo Ball") % parts + 1;
   VertexID vertexId("Lonzo Ball");
-  auto key = NebulaKeyUtils::vertexKey(spaceVidLen, partId, vertexId, 1);
+  auto key = NebulaKeyUtils::tagKey(spaceVidLen, partId, vertexId, 1);
   std::vector<kvstore::KV> data;
   data.emplace_back(std::make_pair(key, ""));
   folly::Baton<> baton;
@@ -954,7 +954,7 @@ TEST(UpdateVertexTest, TTL_Insert_No_Exist_Test) {
   EXPECT_EQ(1, (*resp.props_ref()).rows[0].values[5].getInt());
 
   // get player from kvstore directly
-  auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);
+  auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen, partId, vertexId, tagId);
   std::unique_ptr<kvstore::KVIterator> iter;
   auto ret = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
   EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
@@ -1075,7 +1075,7 @@ TEST(UpdateVertexTest, TTL_Insert_Test) {
   // Get player from kvstore directly, ttl expired data can be readded
   // First record is inserted record data
   // Second record is expired ttl data
-  auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);
+  auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen, partId, vertexId, tagId);
   std::unique_ptr<kvstore::KVIterator> iter;
   auto ret = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
   EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
@@ -1256,7 +1256,7 @@ TEST(UpdateVertexTest, Insertable_In_Set_Test) {
   EXPECT_EQ(1, (*resp.props_ref()).rows[0].values[4].getInt());
 
   // get player from kvstore directly
-  auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);
+  auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen, partId, vertexId, tagId);
   std::unique_ptr<kvstore::KVIterator> iter;
   auto ret = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
   EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
@@ -1328,7 +1328,7 @@ TEST(UpdateVertexTest, Update_Multi_tag_Test) {
   EXPECT_EQ(1, (*resp.result_ref()).failed_parts.size());
 
   // get player from kvstore directly
-  auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);
+  auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen, partId, vertexId, tagId);
   std::unique_ptr<kvstore::KVIterator> iter;
   auto ret = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
   ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
@@ -1398,7 +1398,7 @@ TEST(UpdateVertexTest, Upsert_Multi_tag_Test) {
   EXPECT_EQ(1, (*resp.result_ref()).failed_parts.size());
 
   // get player from kvstore directly
-  auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);
+  auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen, partId, vertexId, tagId);
   std::unique_ptr<kvstore::KVIterator> iter;
   auto ret = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
   ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
@@ -1467,7 +1467,7 @@ TEST(UpdateVertexTest, Upsert_Field_Type_And_Value_Match_Test) {
   EXPECT_EQ(1, (*resp.result_ref()).failed_parts.size());
 
   // get player from kvstore directly
-  auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vertexId, tagId);
+  auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen, partId, vertexId, tagId);
   std::unique_ptr<kvstore::KVIterator> iter;
   auto ret = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
   ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);

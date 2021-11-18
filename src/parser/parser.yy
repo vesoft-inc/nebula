@@ -1687,16 +1687,36 @@ match_step_range
         $$ = new MatchStepRange(1);
     }
     | STAR legal_integer {
-        $$ = new MatchStepRange($2, $2);
+        if ($2 < 0) {
+            throw nebula::GraphParser::syntax_error(@2, "Expected an unsigned integer.");
+        }
+        auto step = static_cast<size_t>($2);
+        $$ = new MatchStepRange(step, step);
     }
     | STAR DOT_DOT legal_integer {
-        $$ = new MatchStepRange(1, $3);
+        if ($3 < 0) {
+            throw nebula::GraphParser::syntax_error(@3, "Expected an unsigned integer.");
+        }
+        auto step = static_cast<size_t>($3);
+        $$ = new MatchStepRange(1, step);
     }
     | STAR legal_integer DOT_DOT {
-        $$ = new MatchStepRange($2);
+        if ($2 < 0) {
+            throw nebula::GraphParser::syntax_error(@2, "Expected an unsigned integer.");
+        }
+        auto step = static_cast<size_t>($2);
+        $$ = new MatchStepRange(step);
     }
     | STAR legal_integer DOT_DOT legal_integer {
-        $$ = new MatchStepRange($2, $4);
+        if ($2 < 0) {
+            throw nebula::GraphParser::syntax_error(@2, "Expected an unsigned integer.");
+        }
+        auto min = static_cast<size_t>($2);
+        if ($4 < 0) {
+            throw nebula::GraphParser::syntax_error(@4, "Expected an unsigned integer.");
+        }
+        auto max = static_cast<size_t>($4);
+        $$ = new MatchStepRange(min, max);
     }
     ;
 
@@ -2985,6 +3005,36 @@ admin_job_sentence
         auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::RECOVER);
         $$ = sentence;
     }
+    | KW_RECOVER KW_JOB integer_list {
+        auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::RECOVER);
+        std::vector<int32_t>*intVec=$3;
+        for(int32_t i = 0; i<intVec->size(); i++){
+          sentence->addPara(std::to_string(intVec->at(i)));
+        }
+        delete intVec;
+        $$ = sentence;
+        }
+    | KW_SUBMIT KW_JOB KW_BALANCE KW_LEADER {
+         auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
+                                              meta::cpp2::AdminCmd::LEADER_BALANCE);
+         $$ = sentence;
+        }
+    | KW_SUBMIT KW_JOB KW_BALANCE KW_DATA {
+         auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
+                                              meta::cpp2::AdminCmd::DATA_BALANCE);
+         $$ = sentence;
+    }
+    | KW_SUBMIT KW_JOB KW_BALANCE KW_DATA KW_REMOVE host_list {
+         auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
+                                              meta::cpp2::AdminCmd::DATA_BALANCE);
+         HostList* hl = $6;
+         std::vector<HostAddr> has = hl->hosts();
+         for (HostAddr& ha: has) {
+            sentence->addPara(ha.toString());
+         }
+         delete hl;
+         $$ = sentence;
+    }
     ;
 
 job_concurrency
@@ -3405,22 +3455,30 @@ integer_list
 
 balance_sentence
     : KW_BALANCE KW_LEADER {
-        $$ = new BalanceSentence(BalanceSentence::SubType::kLeader);
+        auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
+                                             meta::cpp2::AdminCmd::LEADER_BALANCE);
+        $$ = sentence;
     }
     | KW_BALANCE KW_DATA {
-        $$ = new BalanceSentence(BalanceSentence::SubType::kData);
+        auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
+                                             meta::cpp2::AdminCmd::DATA_BALANCE);
+        $$ = sentence;
     }
     | KW_BALANCE KW_DATA legal_integer {
-        $$ = new BalanceSentence($3);
-    }
-    | KW_BALANCE KW_DATA KW_STOP {
-        $$ = new BalanceSentence(BalanceSentence::SubType::kDataStop);
-    }
-    | KW_BALANCE KW_DATA KW_RESET KW_PLAN {
-        $$ = new BalanceSentence(BalanceSentence::SubType::kDataReset);
+        auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::SHOW);
+        sentence->addPara(std::to_string($3));
+        $$ = sentence;
     }
     | KW_BALANCE KW_DATA KW_REMOVE host_list {
-        $$ = new BalanceSentence(BalanceSentence::SubType::kData, $4);
+        auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
+                                             meta::cpp2::AdminCmd::DATA_BALANCE);
+        HostList* hl = $4;
+        std::vector<HostAddr> has = hl->hosts();
+        for (HostAddr& ha: has) {
+            sentence->addPara(ha.toString());
+        }
+        delete hl;
+        $$ = sentence;
     }
     ;
 

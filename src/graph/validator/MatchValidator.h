@@ -59,10 +59,6 @@ class MatchValidator final : public Validator {
   Status includeExisting(const CypherClauseContextBase *cypherClauseCtx,
                          YieldColumns *columns) const;
 
-  StatusOr<Expression *> makeSubFilter(const std::string &alias,
-                                       const MapExpression *map,
-                                       const std::string &label = "") const;
-
   static Expression *andConnect(ObjectPool *pool, Expression *left, Expression *right);
 
   template <typename T>
@@ -92,6 +88,11 @@ class MatchValidator final : public Validator {
                     const std::unordered_map<std::string, AliasType> *aliasesUsed) const;
 
   Status buildOutputs(const YieldColumns *yields);
+
+  StatusOr<Expression *> makeEdgeSubFilter(const MapExpression *map) const;
+
+  StatusOr<Expression *> makeNodeSubFilter(const MapExpression *map,
+                                           const std::string &label) const;
 
  private:
   std::unique_ptr<MatchAstContext> matchCtx_;

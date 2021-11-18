@@ -44,7 +44,7 @@ void ESListener::init() {
 bool ESListener::apply(const std::vector<KV>& data) {
   std::vector<nebula::plugin::DocItem> docItems;
   for (const auto& kv : data) {
-    if (!nebula::NebulaKeyUtils::isVertex(vIdLen_, kv.first) &&
+    if (!nebula::NebulaKeyUtils::isTag(vIdLen_, kv.first) &&
         !nebula::NebulaKeyUtils::isEdge(vIdLen_, kv.first)) {
       continue;
     }

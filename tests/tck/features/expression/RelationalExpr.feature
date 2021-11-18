@@ -227,12 +227,9 @@ Feature: RelationalExpression
       | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"}) |
       | ("Steve Nash" :player{age: 45, name: "Steve Nash"})             |
     And the execution plan should be:
-      | id | name        | dependencies | operator info                                      |
-      | 10 | Project     | 13           |                                                    |
-      | 13 | Filter      | 7            |                                                    |
-      | 7  | Project     | 6            |                                                    |
-      | 6  | Project     | 5            |                                                    |
-      | 5  | Filter      | 13           |                                                    |
-      | 15 | GetVertices | 11           |                                                    |
-      | 11 | IndexScan   | 0            | {"indexCtx": {"columnHints":{"scanType":"RANGE"}}} |
-      | 0  | Start       |              |                                                    |
+      | id | name           | dependencies | operator info                                      |
+      | 9  | Project        | 8            |                                                    |
+      | 8  | Filter         | 2            |                                                    |
+      | 2  | AppendVertices | 6            |                                                    |
+      | 6  | IndexScan      | 0            | {"indexCtx": {"columnHints":{"scanType":"RANGE"}}} |
+      | 0  | Start          |              |                                                    |

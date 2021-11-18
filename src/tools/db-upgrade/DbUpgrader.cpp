@@ -269,7 +269,7 @@ void UpgraderSpace::runPartV1() {
         auto strVid = std::string(reinterpret_cast<const char*>(&vId), sizeof(vId));
         auto newTagSchema = it->second.back().get();
         // Generate 2.0 key
-        auto newKey = NebulaKeyUtils::vertexKey(spaceVidLen_, partId, strVid, tagId);
+        auto newKey = NebulaKeyUtils::tagKey(spaceVidLen_, partId, strVid, tagId);
         auto val = iter->val();
         auto reader = RowReaderWrapper::getTagPropReader(schemaMan_, spaceId_, tagId, val);
         if (!reader) {
@@ -482,7 +482,7 @@ void UpgraderSpace::runPartV2() {
 
         auto newTagSchema = it->second.back().get();
         // Generate 2.0 key
-        auto newKey = NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vId, tagId);
+        auto newKey = NebulaKeyUtils::tagKey(spaceVidLen_, partId, vId, tagId);
         auto val = iter->val();
         auto reader = RowReaderWrapper::getTagPropReader(schemaMan_, spaceId_, tagId, val);
         if (!reader) {

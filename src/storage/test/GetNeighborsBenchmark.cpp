@@ -250,7 +250,7 @@ void prefix(int32_t iters,
       {
         // read tags
         std::unique_ptr<nebula::kvstore::KVIterator> iter;
-        auto prefix = nebula::NebulaKeyUtils::vertexPrefix(vIdLen, partId, vId, player);
+        auto prefix = nebula::NebulaKeyUtils::tagKey(vIdLen, partId, vId, player);
         auto code = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
         ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
         CHECK(iter->valid());
