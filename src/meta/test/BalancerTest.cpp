@@ -134,7 +134,7 @@ HostParts assignHostParts(kvstore::KVStore* kv, GraphSpaceID spaceId) {
   return hostPart;
 }
 
-void testRestBlancer() {
+void testRestBalancer() {
   DataBalanceJobExecutor::plan_.reset(nullptr);
   BalanceJobExecutor::lock_.unlock();
   BalanceJobExecutor::running_ = false;
@@ -198,7 +198,7 @@ TEST(BalanceTest, SimpleTestWithZone) {
     }
     EXPECT_EQ(3, tasks.size());
   }
-  testRestBlancer();
+  testRestBalancer();
 }
 
 TEST(BalanceTest, ExpansionZoneTest) {
@@ -270,7 +270,7 @@ TEST(BalanceTest, ExpansionZoneTest) {
     }
     EXPECT_EQ(3, tasks.size());
   }
-  testRestBlancer();
+  testRestBalancer();
 }
 
 TEST(BalanceTest, ExpansionHostIntoZoneTest) {
@@ -345,7 +345,7 @@ TEST(BalanceTest, ExpansionHostIntoZoneTest) {
     }
     EXPECT_EQ(6, tasks.size());
   }
-  testRestBlancer();
+  testRestBalancer();
 }
 
 TEST(BalanceTest, ShrinkZoneTest) {
@@ -396,7 +396,7 @@ TEST(BalanceTest, ShrinkZoneTest) {
   balancer.lostHosts_ = {{"3", 3}};
   ret = balancer.executeInternal(HostAddr(), {});
   ASSERT_EQ(Status::OK(), ret.value());
-  testRestBlancer();
+  testRestBalancer();
 }
 
 TEST(BalanceTest, ShrinkHostFromZoneTest) {
@@ -442,7 +442,7 @@ TEST(BalanceTest, ShrinkHostFromZoneTest) {
   DataBalanceJobExecutor balancer(jd, kv, &client, {});
   auto ret = balancer.executeInternal(HostAddr(), {});
   ASSERT_EQ(Status::OK(), ret.value());
-  testRestBlancer();
+  testRestBalancer();
   showHostLoading(kv, 1);
 
   {
@@ -1013,7 +1013,7 @@ TEST(BalanceTest, NormalTest) {
   DataBalanceJobExecutor balancer(jd, kv, &client, {});
   auto ret = balancer.executeInternal(HostAddr(), {});
   ASSERT_EQ(Status::OK(), ret.value());
-  testRestBlancer();
+  testRestBalancer();
   sleep(FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor + 1);
   LOG(INFO) << "Now, we lost host " << HostAddr("3", 3);
   TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"2", 2}});
@@ -1047,7 +1047,7 @@ TEST(BalanceTest, SpecifyHostTest) {
   balancer.lostHosts_ = {{"3", 3}};
   auto ret = balancer.executeInternal(HostAddr(), {});
   ASSERT_EQ(Status::OK(), ret.value());
-  testRestBlancer();
+  testRestBalancer();
   LOG(INFO) << "Rebalance finished!";
   verifyBalanceTask(
       kv, balancer.jobId_, BalanceTaskStatus::END, BalanceTaskResult::SUCCEEDED, partCount, 6);
@@ -1083,12 +1083,12 @@ TEST(BalanceTest, SpecifyMultiHostTest) {
             ret.value().message());
   // If {"2", 2} is dead, {"3", 3} still alive, each part has majority hosts
   // alive
-  testRestBlancer();
+  testRestBalancer();
   TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"3", 3}, {"4", 4}, {"5", 5}});
   balancer.lostHosts_ = {{"2", 2}, {"3", 3}};
   ret = balancer.executeInternal(HostAddr(), {});
   ASSERT_EQ(Status::OK(), ret.value());
-  testRestBlancer();
+  testRestBalancer();
   sleep(1);
   LOG(INFO) << "Rebalance finished!";
 
@@ -1129,7 +1129,7 @@ TEST(BalanceTest, MockReplaceMachineTest) {
   TestUtils::registerHB(kv, {{"0", 0}, {"1", 1}, {"3", 3}});
   auto ret = balancer.executeInternal(HostAddr(), {});
   ASSERT_EQ(Status::OK(), ret.value());
-  testRestBlancer();
+  testRestBalancer();
   sleep(1);
   LOG(INFO) << "Rebalance finished!";
   std::unordered_map<HostAddr, int32_t> partCount;
@@ -1163,7 +1163,7 @@ TEST(BalanceTest, SingleReplicaTest) {
   balancer.lostHosts_ = {{"2", 2}, {"3", 3}};
   auto ret = balancer.executeInternal(HostAddr(), {});
   ASSERT_EQ(Status::OK(), ret.value());
-  testRestBlancer();
+  testRestBalancer();
   sleep(1);
   LOG(INFO) << "Rebalance finished!";
 
@@ -1208,7 +1208,7 @@ TEST(BalanceTest, TryToRecoveryTest) {
   DataBalanceJobExecutor balancer(jd, kv, &client, {});
   auto ret = balancer.executeInternal(HostAddr(), {});
   ASSERT_EQ(Status::OK(), ret.value());
-  testRestBlancer();
+  testRestBalancer();
   sleep(1);
   std::unordered_map<HostAddr, int32_t> partCount;
   verifyBalanceTask(kv,
@@ -1225,7 +1225,7 @@ TEST(BalanceTest, TryToRecoveryTest) {
   balancer.recovery();
   ret = balancer.executeInternal(HostAddr(), {});
   ASSERT_EQ(Status::OK(), ret.value());
-  testRestBlancer();
+  testRestBalancer();
   sleep(1);
   verifyBalanceTask(
       kv, balancer.jobId_, BalanceTaskStatus::START, BalanceTaskResult::INVALID, partCount, 6);
@@ -1262,7 +1262,7 @@ TEST(BalanceTest, RecoveryTest) {
   DataBalanceJobExecutor balancer(jd, kv, &client, {});
   auto ret = balancer.executeInternal(HostAddr(), {});
   ASSERT_EQ(Status::OK(), ret.value());
-  testRestBlancer();
+  testRestBalancer();
   sleep(1);
   std::unordered_map<HostAddr, int32_t> partCount;
   verifyBalanceTask(kv,
@@ -1354,10 +1354,10 @@ TEST(BalanceTest, StopPlanTest) {
   NiceMock<MockAdminClient> normalClient;
 
   balancer.adminClient_ = &normalClient;
-  testRestBlancer();
+  testRestBalancer();
   ret = balancer.executeInternal(HostAddr(), {});
   ASSERT_EQ(Status::OK(), ret.value());
-  testRestBlancer();
+  testRestBalancer();
   sleep(1);
 }
 
