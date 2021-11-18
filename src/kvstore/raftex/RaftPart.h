@@ -344,14 +344,20 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   void cleanupSnapshot();
 
   // The method sends out AskForVote request
-  // It return true if a leader is elected, otherwise returns false
-  bool leaderElection();
+  // Return true if a leader is elected (the leader could be self or others),
+  // otherwise returns false
+  folly::Future<bool> leaderElection();
 
   // The method will fill up the request object and return TRUE
   // if the election should continue. Otherwise the method will
   // return FALSE
   bool prepareElectionRequest(cpp2::AskForVoteRequest& req,
                               std::vector<std::shared_ptr<Host>>& hosts);
+
+  // return true if elected as the leader, else return false
+  bool handleElectionResponses(const ElectionResponses& resps,
+                               const std::vector<std::shared_ptr<Host>>& hosts,
+                               TermID proposedTerm);
 
   // The method returns the partition's role after the election
   Role processElectionResponses(const ElectionResponses& results,
