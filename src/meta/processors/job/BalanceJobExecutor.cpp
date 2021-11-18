@@ -969,10 +969,10 @@ folly::Future<Status> LeaderBalanceJobExecutor::executeInternal(HostAddr&& addre
 
     inLeaderBalance_ = false;
     if (failed != 0) {
-      LOG(ERROR) << failed << " partiton failed to transfer leader";
+      LOG(ERROR) << failed << " partition failed to transfer leader";
     }
     onFinished_(false);
-    return Status::Error("partiton failed to transfer leader");
+    return Status::Error("partition failed to transfer leader");
   }
   onFinished_(true);
   return Status::OK();

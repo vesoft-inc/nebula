@@ -1626,7 +1626,7 @@ TEST(BalanceTest, LeaderBalanceTest) {
   LeaderBalanceJobExecutor balancer(
       testJobId.fetch_add(1, std::memory_order_relaxed), kv, &client, {});
   auto ret = balancer.executeInternal(HostAddr(), {});
-  ASSERT_EQ(Status::Error("partiton failed to transfer leader"), ret.value());
+  ASSERT_EQ(Status::Error("partition failed to transfer leader"), ret.value());
 }
 
 TEST(BalanceTest, LeaderBalanceWithZoneTest) {
