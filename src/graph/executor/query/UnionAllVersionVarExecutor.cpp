@@ -14,7 +14,7 @@ namespace graph {
 folly::Future<Status> UnionAllVersionVarExecutor::execute() {
   SCOPED_TIMER(&execTime_);
   auto* UnionAllVersionVarNode = asNode<UnionAllVersionVar>(node());
-  // Retrive all versions of inputVar
+  // Retrieve all versions of inputVar
   auto& results = ectx_->getHistory(UnionAllVersionVarNode->inputVar());
   DCHECK_GT(results.size(), 0);
   // List of iterators to be unioned

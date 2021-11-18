@@ -468,10 +468,10 @@ std::string ChainAddEdgesProcessorLocal::makeReadableEdge(const cpp2::AddEdgesRe
  *
  * storage will insert datetime() as default value on both
  * in/out edge, but they will calculate independent
- * which lead to inconsistance
+ * which lead to inconsistency
  *
- * that's why we need to replace the inconsistance prone value
- * at the monment the request comes
+ * that's why we need to replace the inconsistency prone value
+ * at the moment the request comes
  * */
 void ChainAddEdgesProcessorLocal::replaceNullWithDefaultValue(cpp2::AddEdgesRequest& req) {
   auto& edgesOfPart = *req.parts_ref();

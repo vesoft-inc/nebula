@@ -60,7 +60,7 @@ class StorageRpcResponse final {
     ++failedReqs_;
   }
 
-  // A value between [0, 100], representing a precentage
+  // A value between [0, 100], representing a percentage
   int32_t completeness() const {
     std::lock_guard<std::mutex> g(*lock_);
     DCHECK_NE(totalReqsSent_, 0);

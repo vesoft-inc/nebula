@@ -68,7 +68,7 @@ class MemoryLockGuard {
   }
 
   // this will manual set the lock to unlocked state
-  // which mean will not release all locks automaticly
+  // which mean will not release all locks automatically
   // please make sure you really know the side effect
   void forceLock() { locked_ = true; }
 

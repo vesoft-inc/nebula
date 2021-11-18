@@ -87,7 +87,7 @@ class TransLeaderProcessor : public BaseProcessor<cpp2::AdminExecResp> {
               onFinished();
               return;
             } else if (leader != HostAddr("", 0)) {
-              LOG(INFO) << "I am choosen as leader of space " << spaceId << " part " << partId
+              LOG(INFO) << "I am chosen as leader of space " << spaceId << " part " << partId
                         << " again!";
               pushResultCode(nebula::cpp2::ErrorCode::E_TRANSFER_LEADER_FAILED, partId);
               onFinished();

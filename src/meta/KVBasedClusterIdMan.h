@@ -51,7 +51,7 @@ class ClusterIdMan {
       ::close(fd);
       return false;
     }
-    LOG(INFO) << "Persiste clusterId " << clusterId << " succeeded!";
+    LOG(INFO) << "Persist clusterId " << clusterId << " succeeded!";
     ::close(fd);
     return true;
   }

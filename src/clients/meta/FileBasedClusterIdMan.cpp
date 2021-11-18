@@ -31,7 +31,7 @@ bool FileBasedClusterIdMan::persistInFile(ClusterID clusterId, const std::string
     ::close(fd);
     return false;
   }
-  LOG(INFO) << "Persiste clusterId " << clusterId << " succeeded!";
+  LOG(INFO) << "Persist clusterId " << clusterId << " succeeded!";
   ::close(fd);
   return true;
 }

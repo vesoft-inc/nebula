@@ -170,7 +170,7 @@ ErrorOr<nebula::cpp2::ErrorCode, int32_t> BaseProcessor<RESP>::autoIncrementId()
 }
 
 template <typename RESP>
-ErrorOr<nebula::cpp2::ErrorCode, int32_t> BaseProcessor<RESP>::getAvailableGolbalId() {
+ErrorOr<nebula::cpp2::ErrorCode, int32_t> BaseProcessor<RESP>::getAvailableGlobalId() {
   // A read lock has been added before call
   static const std::string kIdKey = "__id__";
   int32_t id;
@@ -206,7 +206,7 @@ ErrorOr<nebula::cpp2::ErrorCode, int32_t> BaseProcessor<RESP>::autoIncrementIdIn
     // In order to be compatible with the existing old schema, and simple to implement,
     // when the local_id record does not exist in space, directly use the smallest
     // id available globally.
-    auto globalIdRet = getAvailableGolbalId();
+    auto globalIdRet = getAvailableGlobalId();
     if (!nebula::ok(globalIdRet)) {
       return nebula::error(globalIdRet);
     }

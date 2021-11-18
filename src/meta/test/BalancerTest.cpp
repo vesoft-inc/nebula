@@ -1093,7 +1093,7 @@ TEST(BalanceTest, SpecifyMultiHostTest) {
   LOG(INFO) << "Rebalance finished!";
 
   // In theory, there should be only 12 tasks, but in some environment, 13 tasks
-  // is generated. A parition is moved more than once from A -> B -> C, actually
+  // is generated. A partition is moved more than once from A -> B -> C, actually
   // A -> C is enough.
   verifyBalanceTask(
       kv, balancer.jobId_, BalanceTaskStatus::END, BalanceTaskResult::SUCCEEDED, partCount);
@@ -1583,7 +1583,7 @@ TEST(BalanceTest, ManyHostsLeaderBalancePlanTest) {
   LeaderBalanceJobExecutor balancer(
       testJobId.fetch_add(1, std::memory_order_relaxed), kv, &client, {});
 
-  // chcek several times if they are balanced
+  // check several times if they are balanced
   for (int count = 0; count < 1; count++) {
     HostLeaderMap hostLeaderMap;
     // all part will random choose a leader
