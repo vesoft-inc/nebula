@@ -17,10 +17,10 @@
 #include "common/thread/NamedThread.h"
 #include "common/thrift/ThriftClientManager.h"
 #include "common/time/WallClock.h"
+#include "common/utils/LogStrListIterator.h"
 #include "interface/gen-cpp2/RaftexServiceAsyncClient.h"
 #include "kvstore/LogEncoder.h"
 #include "kvstore/raftex/Host.h"
-#include "kvstore/raftex/LogStrListIterator.h"
 #include "kvstore/wal/FileBasedWal.h"
 
 DEFINE_uint32(raft_heartbeat_interval_secs, 5, "Seconds between each heartbeat");
@@ -1505,7 +1505,7 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
     }
 
     // Append new logs
-    std::vector<cpp2::LogEntry> logEntries = std::vector<cpp2::LogEntry>(
+    std::vector<nebula::cpp2::LogEntry> logEntries = std::vector<nebula::cpp2::LogEntry>(
         std::make_move_iterator(req.get_log_str_list().begin() + diffIndex),
         std::make_move_iterator(req.get_log_str_list().end()));
     LogStrListIterator iter(firstId, req.get_log_term(), std::move(logEntries));
