@@ -61,7 +61,7 @@ class SchemaUtil final {
   // Fetch all tags in the space and retrieve props from tags
   // only take _tag when withProp is false
   static StatusOr<std::unique_ptr<std::vector<VertexProp>>> getAllVertexProp(QueryContext* qctx,
-                                                                             const SpaceInfo& space,
+                                                                             GraphSpaceID spaceId,
                                                                              bool withProp);
 
   // retrieve prop from specific edgetypes

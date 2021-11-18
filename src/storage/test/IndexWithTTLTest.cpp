@@ -164,7 +164,7 @@ TEST(IndexWithTTLTest, AddVerticesIndexWithTTL) {
 
   LOG(INFO) << "Check insert data...";
   for (auto partId = 1; partId <= 6; partId++) {
-    auto prefix = NebulaKeyUtils::vertexPrefix(partId);
+    auto prefix = NebulaKeyUtils::tagPrefix(partId);
     auto retNum = verifyResultNum(1, partId, prefix, env->kvstore_);
     EXPECT_EQ(1, retNum);
   }
@@ -184,7 +184,7 @@ TEST(IndexWithTTLTest, AddVerticesIndexWithTTL) {
 
   LOG(INFO) << "Check data after compaction ...";
   for (auto partId = 1; partId <= 6; partId++) {
-    auto prefix = NebulaKeyUtils::vertexPrefix(partId);
+    auto prefix = NebulaKeyUtils::tagPrefix(partId);
     auto retNum = verifyResultNum(1, partId, prefix, env->kvstore_);
     EXPECT_EQ(0, retNum);
   }
@@ -258,7 +258,7 @@ TEST(IndexWithTTLTest, UpdateVerticesIndexWithTTL) {
 
   LOG(INFO) << "Check insert data...";
   for (auto partId = 1; partId <= 6; partId++) {
-    auto prefix = NebulaKeyUtils::vertexPrefix(partId);
+    auto prefix = NebulaKeyUtils::tagPrefix(partId);
     auto retNum = verifyResultNum(1, partId, prefix, env->kvstore_);
     EXPECT_EQ(1, retNum);
   }
@@ -302,7 +302,7 @@ TEST(IndexWithTTLTest, UpdateVerticesIndexWithTTL) {
 
   LOG(INFO) << "Check data after update ...";
   for (auto partId = 1; partId <= 6; partId++) {
-    auto prefix = NebulaKeyUtils::vertexPrefix(partId);
+    auto prefix = NebulaKeyUtils::tagPrefix(partId);
     auto retNum = verifyResultNum(1, partId, prefix, env->kvstore_);
     EXPECT_EQ(1, retNum);
   }
@@ -405,7 +405,7 @@ TEST(IndexWithTTLTest, RebuildTagIndexWithTTL) {
 
   LOG(INFO) << "Check insert data...";
   for (auto partId = 1; partId <= 6; partId++) {
-    auto prefix = NebulaKeyUtils::vertexPrefix(partId);
+    auto prefix = NebulaKeyUtils::tagPrefix(partId);
     auto retNum = verifyResultNum(1, partId, prefix, env->kvstore_);
     EXPECT_EQ(1, retNum);
   }
@@ -448,7 +448,7 @@ TEST(IndexWithTTLTest, RebuildTagIndexWithTTL) {
 
   LOG(INFO) << "Check data after rebuild ...";
   for (auto partId = 1; partId <= 6; partId++) {
-    auto prefix = NebulaKeyUtils::vertexPrefix(partId);
+    auto prefix = NebulaKeyUtils::tagPrefix(partId);
     auto retNum = verifyResultNum(1, partId, prefix, env->kvstore_);
     EXPECT_EQ(1, retNum);
   }
@@ -543,7 +543,7 @@ TEST(IndexWithTTLTest, RebuildTagIndexWithTTLExpired) {
 
   LOG(INFO) << "Check insert data...";
   for (auto partId = 1; partId <= 6; partId++) {
-    auto prefix = NebulaKeyUtils::vertexPrefix(partId);
+    auto prefix = NebulaKeyUtils::tagPrefix(partId);
     auto retNum = verifyResultNum(1, partId, prefix, env->kvstore_);
     EXPECT_EQ(1, retNum);
   }
@@ -588,7 +588,7 @@ TEST(IndexWithTTLTest, RebuildTagIndexWithTTLExpired) {
 
   LOG(INFO) << "Check data after rebuild ...";
   for (auto partId = 1; partId <= 6; partId++) {
-    auto prefix = NebulaKeyUtils::vertexPrefix(partId);
+    auto prefix = NebulaKeyUtils::tagPrefix(partId);
     auto retNum = verifyResultNum(1, partId, prefix, env->kvstore_);
     EXPECT_EQ(1, retNum);
   }

@@ -37,7 +37,7 @@ class StorageCompactionFilter final : public kvstore::KVFilter {
       return false;
     }
 
-    if (NebulaKeyUtils::isVertex(vIdLen_, key)) {
+    if (NebulaKeyUtils::isTag(vIdLen_, key)) {
       return !vertexValid(spaceId, key, val);
     } else if (NebulaKeyUtils::isEdge(vIdLen_, key)) {
       return !edgeValid(spaceId, key, val);
