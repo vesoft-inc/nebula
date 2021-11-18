@@ -988,7 +988,7 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> LeaderBalanceJobExecutor::buildLeaderBala
   PartAllocation peersMap;
   HostParts leaderHostParts;
   size_t leaderParts = 0;
-  // store peers of all paritions in peerMap
+  // store peers of all partitions in peerMap
   folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
   const auto& prefix = MetaKeyUtils::partPrefix(spaceId);
   std::unique_ptr<kvstore::KVIterator> iter;
