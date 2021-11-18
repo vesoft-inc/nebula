@@ -36,7 +36,7 @@ void forString(StringLock* lock, int64_t spaceId) noexcept {
   size_t vIdLen = 32;
   for (int32_t j = 0; j < FLAGS_num_batch; j++) {
     toLock.emplace_back(folly::to<std::string>(spaceId) +
-                        NebulaKeyUtils::vertexKey(vIdLen, j, folly::to<std::string>(j), j));
+                        NebulaKeyUtils::tagKey(vIdLen, j, folly::to<std::string>(j), j));
   }
   nebula::MemoryLockGuard<std::string> lg(lock, std::move(toLock));
 }

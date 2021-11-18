@@ -45,7 +45,7 @@ class QueryTestUtils {
     for (const auto& vertex : vertices) {
       PartitionID partId = (hash(vertex.vId_) % totalParts) + 1;
       TagID tagId = vertex.tId_;
-      auto key = NebulaKeyUtils::vertexKey(spaceVidLen, partId, vertex.vId_, tagId);
+      auto key = NebulaKeyUtils::tagKey(spaceVidLen, partId, vertex.vId_, tagId);
       auto schema = env->schemaMan_->getTagSchema(spaceId, tagId);
       if (!schema) {
         LOG(ERROR) << "Invalid tagId " << tagId;
@@ -779,7 +779,7 @@ class QueryTestUtils {
       if (cols.size() < 2) {
         LOG(FATAL) << "Invalid column name";
       }
-      // cols[1] is the tagName, which can be transfromed to entryId
+      // cols[1] is the tagName, which can be transformed to entryId
       auto entryId = folly::to<int32_t>(cols[1]);
       auto props = findExpectProps(entryId, tags, edges);
       switch (entryId) {
@@ -877,7 +877,7 @@ class QueryTestUtils {
                           return teammate.player1_ == player2 && teammate.player2_ == player1;
                         });
     if (iter == mock::MockData::teammates_.end()) {
-      LOG(FATAL) << "Can't find speicied teammate";
+      LOG(FATAL) << "Can't find specified teammate";
     }
     return *iter;
   }

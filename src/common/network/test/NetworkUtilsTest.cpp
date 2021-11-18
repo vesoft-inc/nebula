@@ -34,7 +34,7 @@ TEST(NetworkUtils, getIPv4FromDevice) {
     ASSERT_EQ("0.0.0.0", result.value());
   }
   {
-    auto result = NetworkUtils::getIPv4FromDevice("non-existence");
+    auto result = NetworkUtils::getIPv4FromDevice("nonexistent");
     ASSERT_FALSE(result.ok()) << result.status();
   }
 }

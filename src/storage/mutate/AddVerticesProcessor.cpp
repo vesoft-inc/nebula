@@ -90,7 +90,7 @@ void AddVerticesProcessor::doProcess(const cpp2::AddVerticesRequest& req) {
           break;
         }
 
-        auto key = NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vid, tagId);
+        auto key = NebulaKeyUtils::tagKey(spaceVidLen_, partId, vid, tagId);
         if (ifNotExists_) {
           if (!visited.emplace(key).second) {
             continue;
@@ -142,7 +142,7 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
     dummyLock.reserve(vertices.size());
     auto code = nebula::cpp2::ErrorCode::SUCCEEDED;
 
-    // cache vertexKey
+    // cache tagKey
     std::unordered_set<std::string> visited;
     visited.reserve(vertices.size());
     for (auto& vertex : vertices) {
@@ -176,7 +176,7 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
           break;
         }
 
-        auto key = NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vid, tagId);
+        auto key = NebulaKeyUtils::tagKey(spaceVidLen_, partId, vid, tagId);
         if (ifNotExists_ && !visited.emplace(key).second) {
           continue;
         }
@@ -307,7 +307,7 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
 
 ErrorOr<nebula::cpp2::ErrorCode, std::string> AddVerticesProcessor::findOldValue(
     PartitionID partId, const VertexID& vId, TagID tagId) {
-  auto key = NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vId, tagId);
+  auto key = NebulaKeyUtils::tagKey(spaceVidLen_, partId, vId, tagId);
   std::string val;
   auto ret = env_->kvstore_->get(spaceId_, partId, key, &val);
   if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {

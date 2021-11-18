@@ -37,7 +37,7 @@ static Status validateColumns(const std::vector<ColumnSpecification *> &columnSp
         column.set_nullable(property->nullable());
       } else if (property->isDefaultValue()) {
         if (!ExpressionUtils::isEvaluableExpr(property->defaultValue())) {
-          return Status::SemanticError("Wrong default value experssion `%s'",
+          return Status::SemanticError("Wrong default value expression `%s'",
                                        property->defaultValue()->toString().c_str());
         }
         auto *defaultValueExpr = property->defaultValue();

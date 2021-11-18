@@ -13,7 +13,7 @@ namespace graph {
 folly::Future<Status> KillQueryExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
-  // TODO: permision check
+  // TODO: permission check
 
   QueriesMap toBeVerifiedQueries;
   QueriesMap killQueries;

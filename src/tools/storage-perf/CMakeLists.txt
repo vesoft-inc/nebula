@@ -14,6 +14,7 @@ set(perf_test_deps
     $<TARGET_OBJECTS:codec_obj>
     $<TARGET_OBJECTS:keyutils_obj>
     $<TARGET_OBJECTS:meta_keyutils_obj>
+    $<TARGET_OBJECTS:log_str_list_iterator_obj>
     $<TARGET_OBJECTS:internal_storage_client_obj>
     $<TARGET_OBJECTS:graph_storage_client_obj>
     $<TARGET_OBJECTS:storage_client_base_obj>
