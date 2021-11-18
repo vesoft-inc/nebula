@@ -34,4 +34,4 @@ class LogStrListIterator final : public LogIterator {
 
 }  // namespace nebula
 
-#endif // COMMON_UTILS_LOGSTRLISTITERATOR_H_
+#endif  // COMMON_UTILS_LOGSTRLISTITERATOR_H_
