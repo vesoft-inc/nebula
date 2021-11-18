@@ -226,7 +226,7 @@ void FileBasedWal::scanAllWalFiles() {
 
   if (!walFiles_.empty()) {
     auto it = walFiles_.rbegin();
-    // Try to scan last wal, if it is invalid or empty, scan the privous one
+    // Try to scan last wal, if it is invalid or empty, scan the previous one
     scanLastWal(it->second, it->second->firstId());
     if (it->second->lastId() <= 0) {
       unlink(it->second->path());
@@ -413,7 +413,7 @@ void FileBasedWal::scanLastWal(WalFileInfoPtr info, LogID firstId) {
     }
 
     if (head != foot) {
-      LOG(ERROR) << "Message size doen't match: " << head << " != " << foot;
+      LOG(ERROR) << "Message size doesn't match: " << head << " != " << foot;
       break;
     }
 
@@ -645,7 +645,7 @@ void FileBasedWal::cleanWAL() {
     return;
   }
   auto now = time::WallClock::fastNowInSec();
-  // In theory we only need to keep the latest wal file because it is beging
+  // In theory we only need to keep the latest wal file because it is being
   // written now. However, sometimes will trigger raft snapshot even only a
   // small amount of logs is missing, especially when we reboot all storage, so
   // se keep one more wal.

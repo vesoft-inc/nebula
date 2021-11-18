@@ -188,7 +188,7 @@ TEST(ConfigManTest, ConfigProcessorTest) {
     updated.set_name("nested");
     updated.set_type(cpp2::ConfigType::NESTED);
     updated.set_mode(cpp2::ConfigMode::MUTABLE);
-    // update from consle as format of update list
+    // update from console as format of update list
     updated.set_value("max_background_jobs=8,level0_file_num_compaction_trigger=10");
 
     cpp2::SetConfigReq req;

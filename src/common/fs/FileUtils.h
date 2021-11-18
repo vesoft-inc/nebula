@@ -50,7 +50,7 @@ class FileUtils final {
 
   // Tell if stdin attached to a TTY
   static bool isStdinTTY();
-  // Tell if stdout atached to a TTY
+  // Tell if stdout attached to a TTY
   static bool isStdoutTTY();
   // Tell if stderr attached to a TTY
   static bool isStderrTTY();

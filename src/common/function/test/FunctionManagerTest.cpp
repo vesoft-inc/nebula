@@ -32,7 +32,7 @@ class FunctionManagerTest : public ::testing::Test {
     auto result = FunctionManager::get(expr, args.size());
     if (!result.ok()) {
       return ::testing::AssertionFailure()
-             << "Can't get fuction " << expr << " with " << args.size() << " parameters.";
+             << "Can't get function " << expr << " with " << args.size() << " parameters.";
     }
     auto res = result.value()(argsRef);
     if (res.type() != expect.type()) {
@@ -53,7 +53,7 @@ class FunctionManagerTest : public ::testing::Test {
     auto result = FunctionManager::get(expr, args.size());
     if (!result.ok()) {
       return ::testing::AssertionFailure()
-             << "Can't get fuction " << expr << " with " << args.size() << " parameters.";
+             << "Can't get function " << expr << " with " << args.size() << " parameters.";
     }
     auto res = result.value()(argsRef);
     if (res.type() != expectType) {
@@ -68,7 +68,7 @@ class FunctionManagerTest : public ::testing::Test {
     auto result = FunctionManager::get(expr, args.size());
     if (!result.ok()) {
       return ::testing::AssertionFailure()
-             << "Can't get fuction " << expr << " with " << args.size() << " parameters.";
+             << "Can't get function " << expr << " with " << args.size() << " parameters.";
     }
     return ::testing::AssertionSuccess();
   }
@@ -1489,7 +1489,7 @@ TEST_F(FunctionManagerTest, returnType) {
   }
 }
 
-TEST_F(FunctionManagerTest, SchemaReleated) {
+TEST_F(FunctionManagerTest, SchemaRelated) {
   Vertex vertex;
   Edge edge;
 

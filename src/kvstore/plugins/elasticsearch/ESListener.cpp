@@ -74,7 +74,7 @@ bool ESListener::persist(LogID lastId, TermID lastTerm, LogID lastApplyLogId) {
 
 std::pair<LogID, TermID> ESListener::lastCommittedLogId() {
   if (access(lastApplyLogFile_->c_str(), 0) != 0) {
-    VLOG(3) << "Invalid or non-existent file : " << *lastApplyLogFile_;
+    VLOG(3) << "Invalid or nonexistent file : " << *lastApplyLogFile_;
     return {0, 0};
   }
   int32_t fd = open(lastApplyLogFile_->c_str(), O_RDONLY);
@@ -97,7 +97,7 @@ std::pair<LogID, TermID> ESListener::lastCommittedLogId() {
 
 LogID ESListener::lastApplyLogId() {
   if (access(lastApplyLogFile_->c_str(), 0) != 0) {
-    VLOG(3) << "Invalid or non-existent file : " << *lastApplyLogFile_;
+    VLOG(3) << "Invalid or nonexistent file : " << *lastApplyLogFile_;
     return 0;
   }
   int32_t fd = open(lastApplyLogFile_->c_str(), O_RDONLY);

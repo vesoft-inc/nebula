@@ -96,7 +96,7 @@ Feature: Update int vid of vertex and edge
       """
       UPDATE VERTEX 101
       SET course.credits = $^.course.credits + 1
-      WHEN $^.course.name == "notexist" AND $^.course.credits > 2
+      WHEN $^.course.name == "nonexistent" AND $^.course.credits > 2
       YIELD $^.course.name AS Name, $^.course.credits AS Credits
       """
     Then the result should be, in any order:

@@ -86,7 +86,7 @@ class ChainAddEdgesProcessorLocal : public BaseProcessor<cpp2::ExecResponse>,
   /**
    * @brief   a normal AddEdgeRequest may contain multi edges
    *          even though they will fail or succeed as a batch in this time
-   *          some of them may by overwrite by othere request
+   *          some of them may by overwrite by other request
    *          so when resume each edge
    */
   cpp2::AddEdgesRequest makeSingleEdgeRequest(PartitionID partId, const cpp2::NewEdge& edge);
@@ -114,10 +114,10 @@ class ChainAddEdgesProcessorLocal : public BaseProcessor<cpp2::ExecResponse>,
    *
    * storage will insert datetime() as default value on both
    * in/out edge, but they will calculate independent
-   * which lead to inconsistance
+   * which lead to inconsistency
    *
-   * that why we need to replace the inconsistance prone value
-   * at the monment the request comes
+   * that why we need to replace the inconsistency prone value
+   * at the moment the request comes
    * */
   void replaceNullWithDefaultValue(cpp2::AddEdgesRequest& req);
 

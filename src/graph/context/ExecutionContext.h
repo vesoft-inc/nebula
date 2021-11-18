@@ -61,7 +61,7 @@ class ExecutionContext {
 
   void dropResult(const std::string& name);
 
-  // Only keep the last several versoins of the Value
+  // Only keep the last several versions of the Value
   void truncHistory(const std::string& name, size_t numVersionsToKeep);
 
   bool exist(const std::string& name) const { return valueMap_.find(name) != valueMap_.end(); }

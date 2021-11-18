@@ -673,7 +673,7 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesPropFailed) {
 }
 
 TEST_F(FetchVerticesValidatorTest, FetchVerticesInputFailed) {
-  // mismatched varirable
+  // mismatched variable
   ASSERT_FALSE(
       validate("$a = FETCH PROP ON person \"1\" YIELD person.name AS name;"
                "FETCH PROP ON person $b.name YIELD vertex as node"));
@@ -681,7 +681,7 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesInputFailed) {
       validate("$a = FETCH PROP ON * \"1\" YIELD person.name AS name;"
                "FETCH PROP * person $b.name YIELD vertex as node"));
 
-  // mismatched varirable property
+  // mismatched variable property
   ASSERT_FALSE(
       validate("$a = FETCH PROP ON person \"1\" YIELD person.name AS name;"
                "FETCH PROP ON person $a.not_exist_property YIELD vertex as node"));

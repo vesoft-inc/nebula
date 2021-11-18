@@ -16,7 +16,7 @@ DECLARE_bool(skip_wait_in_rate_limiter);
 namespace nebula {
 namespace kvstore {
 
-// A simple wrapper for foly::TokenBucket, it would limit the speed to rate_ * buckets_.size().
+// A simple wrapper for folly::TokenBucket, it would limit the speed to rate_ * buckets_.size().
 // For now, there are two major cases: snapshot (both for balance or catch up) and rebuild index.
 class RateLimiter {
  public:
@@ -27,15 +27,15 @@ class RateLimiter {
     bucket_.reset(new folly::DynamicTokenBucket(static_cast<double>(now + waitInSec)));
   }
 
-  // Caller must make sure the **the parition has been add, and won't be removed during consume.**
-  // Snaphot and rebuild index follow this principle by design.
+  // Caller must make sure the **the partition has been add, and won't be removed during consume.**
+  // Snapshot and rebuild index follow this principle by design.
   void consume(double toConsume, double rate, double burstSize) {
     if (toConsume > burstSize) {
       // consumeWithBorrowAndWait do nothing when toConsume > burstSize_, we sleep 1s instead
       std::this_thread::sleep_for(std::chrono::seconds(1));
     } else {
-      // If there are enouth tokens, consume and return immediately.
-      // If not, cosume anyway, but sleep enough time before return.
+      // If there are enough tokens, consume and return immediately.
+      // If not, consume anyway, but sleep enough time before return.
       auto now = time::WallClock::fastNowInSec();
       bucket_->consumeWithBorrowAndWait(toConsume, rate, burstSize, static_cast<double>(now));
     }

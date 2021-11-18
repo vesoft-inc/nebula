@@ -21,7 +21,7 @@ class FetchVerticesValidator final : public Validator {
  private:
   Status validateImpl() override;
 
-  Status validateTag(const NameLabelList* nameLables);
+  Status validateTag(const NameLabelList* nameLabels);
 
   Status validateYield(YieldClause* yield);
 

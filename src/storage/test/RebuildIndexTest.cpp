@@ -75,7 +75,7 @@ TEST_F(RebuildIndexTest, RebuildTagIndexCheckALLData) {
   parameter.set_space_id(1);
   std::vector<PartitionID> parts = {1, 2, 3, 4, 5, 6};
   parameter.set_parts(parts);
-  parameter.set_task_specfic_paras({"4", "5"});
+  parameter.set_task_specific_paras({"4", "5"});
 
   cpp2::AddAdminTaskRequest request;
   request.set_cmd(meta::cpp2::AdminCmd::REBUILD_TAG_INDEX);
@@ -162,7 +162,7 @@ TEST_F(RebuildIndexTest, RebuildEdgeIndexCheckALLData) {
   parameter.set_space_id(1);
   std::vector<PartitionID> parts = {1, 2, 3, 4, 5, 6};
   parameter.set_parts(parts);
-  parameter.set_task_specfic_paras({"103", "104"});
+  parameter.set_task_specific_paras({"103", "104"});
 
   cpp2::AddAdminTaskRequest request;
   request.set_cmd(meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX);
@@ -259,7 +259,7 @@ TEST_F(RebuildIndexTest, RebuildTagIndexWithDelete) {
   parameter.set_space_id(1);
   std::vector<PartitionID> parts = {1, 2, 3, 4, 5, 6};
   parameter.set_parts(std::move(parts));
-  parameter.set_task_specfic_paras({"4", "5"});
+  parameter.set_task_specific_paras({"4", "5"});
 
   cpp2::AddAdminTaskRequest request;
   request.set_cmd(meta::cpp2::AdminCmd::REBUILD_TAG_INDEX);
@@ -320,7 +320,7 @@ TEST_F(RebuildIndexTest, RebuildTagIndexWithAppend) {
   parameter.set_space_id(1);
   std::vector<PartitionID> parts = {1, 2, 3, 4, 5, 6};
   parameter.set_parts(std::move(parts));
-  parameter.set_task_specfic_paras({"4", "5"});
+  parameter.set_task_specific_paras({"4", "5"});
 
   cpp2::AddAdminTaskRequest request;
   request.set_cmd(meta::cpp2::AdminCmd::REBUILD_TAG_INDEX);
@@ -370,7 +370,7 @@ TEST_F(RebuildIndexTest, RebuildTagIndex) {
   request.set_cmd(meta::cpp2::AdminCmd::REBUILD_TAG_INDEX);
   request.set_job_id(++gJobId);
   request.set_task_id(13);
-  parameter.set_task_specfic_paras({"4", "5"});
+  parameter.set_task_specific_paras({"4", "5"});
   request.set_para(std::move(parameter));
 
   auto callback = [](nebula::cpp2::ErrorCode, nebula::meta::cpp2::StatsItem&) {};
@@ -420,7 +420,7 @@ TEST_F(RebuildIndexTest, RebuildEdgeIndexWithDelete) {
   parameter.set_space_id(1);
   std::vector<PartitionID> parts = {1, 2, 3, 4, 5, 6};
   parameter.set_parts(std::move(parts));
-  parameter.set_task_specfic_paras({"103", "104"});
+  parameter.set_task_specific_paras({"103", "104"});
 
   cpp2::AddAdminTaskRequest request;
   request.set_cmd(meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX);
@@ -482,7 +482,7 @@ TEST_F(RebuildIndexTest, RebuildEdgeIndexWithAppend) {
   parameter.set_space_id(1);
   std::vector<PartitionID> parts = {1, 2, 3, 4, 5, 6};
   parameter.set_parts(std::move(parts));
-  parameter.set_task_specfic_paras({"103", "104"});
+  parameter.set_task_specific_paras({"103", "104"});
 
   cpp2::AddAdminTaskRequest request;
   request.set_cmd(meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX);
@@ -526,7 +526,7 @@ TEST_F(RebuildIndexTest, RebuildEdgeIndex) {
   parameter.set_space_id(1);
   std::vector<PartitionID> parts = {1, 2, 3, 4, 5, 6};
   parameter.set_parts(std::move(parts));
-  parameter.set_task_specfic_paras({"103", "104"});
+  parameter.set_task_specific_paras({"103", "104"});
 
   cpp2::AddAdminTaskRequest request;
   request.set_cmd(meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX);

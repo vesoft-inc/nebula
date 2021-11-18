@@ -94,10 +94,10 @@ Feature: Integer Vid Shortest Path
       """
     Then the result should be, in any order, with relax comparison:
       | path                                                                                                                      |
-      | <("Yao Ming")-[:like]->("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:like]->("Manu Ginobili")>                            |
-      | <("Yao Ming")-[:like]->("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:teammate]->("Manu Ginobili")>                        |
+      | <("Yao Ming")-[:like]->("Shaquille O'Neal")-[:like]->("Tim Duncan")-[:like]->("Manu Ginobili")>                           |
+      | <("Yao Ming")-[:like]->("Shaquille O'Neal")-[:like]->("Tim Duncan")-[:teammate]->("Manu Ginobili")>                       |
       | <("Yao Ming")-[:like]->("Tracy McGrady")-[:serve]->("Spurs")>                                                             |
-      | <("Yao Ming")-[:like]->("Shaquile O'Neal")-[:serve]->("Lakers")>                                                          |
+      | <("Yao Ming")-[:like]->("Shaquille O'Neal")-[:serve]->("Lakers")>                                                         |
       | <("Tony Parker")-[:like]->("Tim Duncan")-[:teammate]->("Danny Green")-[:like]->("LeBron James")-[:serve]->("Lakers")>     |
       | <("Tony Parker")-[:teammate]->("Tim Duncan")-[:teammate]->("Danny Green")-[:like]->("LeBron James")-[:serve]->("Lakers")> |
       | <("Tony Parker")-[:like]->("Manu Ginobili")>                                                                              |
@@ -110,23 +110,23 @@ Feature: Integer Vid Shortest Path
       FIND SHORTEST PATH FROM hash("Tony Parker"), hash("Yao Ming") TO hash("Manu Ginobili"), hash("Spurs"), hash("Lakers") OVER * UPTO 3 STEPS
       """
     Then the result should be, in any order, with relax comparison:
-      | path                                                                                               |
-      | <("Yao Ming")-[:like]->("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:like]->("Manu Ginobili")>     |
-      | <("Yao Ming")-[:like]->("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:teammate]->("Manu Ginobili")> |
-      | <("Yao Ming")-[:like]->("Tracy McGrady")-[:serve]->("Spurs")>                                      |
-      | <("Yao Ming")-[:like]->("Shaquile O'Neal")-[:serve]->("Lakers")>                                   |
-      | <("Tony Parker")-[:like]->("Manu Ginobili")>                                                       |
-      | <("Tony Parker")-[:teammate]->("Manu Ginobili")>                                                   |
-      | <("Tony Parker")-[:serve]->("Spurs")>                                                              |
+      | path                                                                                                |
+      | <("Yao Ming")-[:like]->("Shaquille O'Neal")-[:like]->("Tim Duncan")-[:like]->("Manu Ginobili")>     |
+      | <("Yao Ming")-[:like]->("Shaquille O'Neal")-[:like]->("Tim Duncan")-[:teammate]->("Manu Ginobili")> |
+      | <("Yao Ming")-[:like]->("Tracy McGrady")-[:serve]->("Spurs")>                                       |
+      | <("Yao Ming")-[:like]->("Shaquille O'Neal")-[:serve]->("Lakers")>                                   |
+      | <("Tony Parker")-[:like]->("Manu Ginobili")>                                                        |
+      | <("Tony Parker")-[:teammate]->("Manu Ginobili")>                                                    |
+      | <("Tony Parker")-[:serve]->("Spurs")>                                                               |
     When executing query:
       """
       FIND SHORTEST PATH FROM hash("Yao Ming") TO hash("Tim Duncan"), hash("Spurs"), hash("Lakers") OVER * UPTO 2 STEPS
       """
     Then the result should be, in any order, with relax comparison:
-      | path                                                                |
-      | <("Yao Ming")-[:like]->("Shaquile O'Neal")-[:like]->("Tim Duncan")> |
-      | <("Yao Ming")-[:like]->("Tracy McGrady")-[:serve]->("Spurs")>       |
-      | <("Yao Ming")-[:like]->("Shaquile O'Neal")-[:serve]->("Lakers")>    |
+      | path                                                                 |
+      | <("Yao Ming")-[:like]->("Shaquille O'Neal")-[:like]->("Tim Duncan")> |
+      | <("Yao Ming")-[:like]->("Tracy McGrady")-[:serve]->("Spurs")>        |
+      | <("Yao Ming")-[:like]->("Shaquille O'Neal")-[:serve]->("Lakers")>    |
 
   Scenario: Integer Vid [5] MultiPair Shortest Path
     When executing query:
@@ -136,7 +136,7 @@ Feature: Integer Vid Shortest Path
     Then the result should be, in any order, with relax comparison:
       | path                                                                                          |
       | <("Yao Ming")-[:like]->("Tracy McGrady")-[:serve]->("Spurs")>                                 |
-      | <("Yao Ming")-[:like]->("Shaquile O'Neal")-[:serve]->("Lakers")>                              |
+      | <("Yao Ming")-[:like]->("Shaquille O'Neal")-[:serve]->("Lakers")>                             |
       | <("Marco Belinelli")-[:like]->("Danny Green")-[:like]->("LeBron James")-[:serve]->("Lakers")> |
       | <("Marco Belinelli")-[:serve]->("Spurs")>                                                     |
       | <("Marco Belinelli")-[:serve@1]->("Spurs")>                                                   |
@@ -169,42 +169,42 @@ Feature: Integer Vid Shortest Path
       FIND SHORTEST PATH FROM hash("Yao Ming")  TO hash("Tony Parker"), hash("Tracy McGrady") OVER like,serve UPTO 5 STEPS
       """
     Then the result should be, in any order, with relax comparison:
-      | path                                                                                         |
-      | <("Yao Ming")-[:like]->("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:like]->("Tony Parker")> |
-      | <("Yao Ming")-[:like]->("Tracy McGrady")>                                                    |
+      | path                                                                                          |
+      | <("Yao Ming")-[:like]->("Shaquille O'Neal")-[:like]->("Tim Duncan")-[:like]->("Tony Parker")> |
+      | <("Yao Ming")-[:like]->("Tracy McGrady")>                                                     |
 
   Scenario: Integer Vid [9] MultiPair Shortest Path
     When executing query:
       """
-      FIND SHORTEST PATH FROM hash("Shaquile O\'Neal") TO hash("Manu Ginobili"), hash("Spurs"), hash("Lakers") OVER * UPTO 5 STEPS
+      FIND SHORTEST PATH FROM hash("Shaquille O\'Neal") TO hash("Manu Ginobili"), hash("Spurs"), hash("Lakers") OVER * UPTO 5 STEPS
       """
     Then the result should be, in any order, with relax comparison:
-      | path                                                                         |
-      | <("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:serve]->("Spurs")>            |
-      | <("Shaquile O'Neal")-[:serve]->("Lakers")>                                   |
-      | <("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:like]->("Manu Ginobili")>     |
-      | <("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:teammate]->("Manu Ginobili")> |
+      | path                                                                          |
+      | <("Shaquille O'Neal")-[:like]->("Tim Duncan")-[:serve]->("Spurs")>            |
+      | <("Shaquille O'Neal")-[:serve]->("Lakers")>                                   |
+      | <("Shaquille O'Neal")-[:like]->("Tim Duncan")-[:like]->("Manu Ginobili")>     |
+      | <("Shaquille O'Neal")-[:like]->("Tim Duncan")-[:teammate]->("Manu Ginobili")> |
 
   Scenario: Integer Vid [10] MultiPair Shortest Path
     When executing query:
       """
-      FIND SHORTEST PATH FROM hash("Shaquile O\'Neal"), hash("Nobody") TO hash("Manu Ginobili"), hash("Spurs"), hash("Lakers") OVER * UPTO 5 STEPS
+      FIND SHORTEST PATH FROM hash("Shaquille O\'Neal"), hash("Nobody") TO hash("Manu Ginobili"), hash("Spurs"), hash("Lakers") OVER * UPTO 5 STEPS
       """
     Then the result should be, in any order, with relax comparison:
-      | path                                                                         |
-      | <("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:serve]->("Spurs")>            |
-      | <("Shaquile O'Neal")-[:serve]->("Lakers")>                                   |
-      | <("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:like]->("Manu Ginobili")>     |
-      | <("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:teammate]->("Manu Ginobili")> |
+      | path                                                                          |
+      | <("Shaquille O'Neal")-[:like]->("Tim Duncan")-[:serve]->("Spurs")>            |
+      | <("Shaquille O'Neal")-[:serve]->("Lakers")>                                   |
+      | <("Shaquille O'Neal")-[:like]->("Tim Duncan")-[:like]->("Manu Ginobili")>     |
+      | <("Shaquille O'Neal")-[:like]->("Tim Duncan")-[:teammate]->("Manu Ginobili")> |
 
   Scenario: Integer Vid [11] MultiPair Shortest Path
     When executing query:
       """
-      FIND SHORTEST PATH FROM hash("Shaquile O\'Neal") TO hash("Manu Ginobili"), hash("Spurs"), hash("Lakers") OVER like UPTO 5 STEPS
+      FIND SHORTEST PATH FROM hash("Shaquille O\'Neal") TO hash("Manu Ginobili"), hash("Spurs"), hash("Lakers") OVER like UPTO 5 STEPS
       """
     Then the result should be, in any order, with relax comparison:
-      | path                                                                     |
-      | <("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:like]->("Manu Ginobili")> |
+      | path                                                                      |
+      | <("Shaquille O'Neal")-[:like]->("Tim Duncan")-[:like]->("Manu Ginobili")> |
 
   Scenario: Integer Vid [12] MultiPair Shortest Path
     When executing query:
@@ -232,30 +232,30 @@ Feature: Integer Vid Shortest Path
       | FIND SHORTEST PATH FROM $-.src TO $-.dst OVER like, serve UPTO 5 STEPS
       """
     Then the result should be, in any order, with relax comparison:
-      | path                                                                                         |
-      | <("Yao Ming")-[:like]->("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:like]->("Tony Parker")> |
+      | path                                                                                          |
+      | <("Yao Ming")-[:like]->("Shaquille O'Neal")-[:like]->("Tim Duncan")-[:like]->("Tony Parker")> |
 
   Scenario: Integer Vid [2] MultiPair Shortest Path Run Time input
     When executing query:
       """
-      YIELD hash("Shaquile O\'Neal") AS src
+      YIELD hash("Shaquille O\'Neal") AS src
       | FIND SHORTEST PATH FROM $-.src TO hash("Manu Ginobili") OVER * UPTO 5 STEPS
       """
     Then the result should be, in any order, with relax comparison:
-      | path                                                                         |
-      | <("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:like]->("Manu Ginobili")>     |
-      | <("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:teammate]->("Manu Ginobili")> |
+      | path                                                                          |
+      | <("Shaquille O'Neal")-[:like]->("Tim Duncan")-[:like]->("Manu Ginobili")>     |
+      | <("Shaquille O'Neal")-[:like]->("Tim Duncan")-[:teammate]->("Manu Ginobili")> |
 
   Scenario: Integer Vid [3] MultiPair Shortest Path Run Time input
     When executing query:
       """
       YIELD hash("Manu Ginobili") AS dst
-      | FIND SHORTEST PATH FROM hash("Shaquile O\'Neal") TO $-.dst OVER * UPTO 5 STEPS
+      | FIND SHORTEST PATH FROM hash("Shaquille O\'Neal") TO $-.dst OVER * UPTO 5 STEPS
       """
     Then the result should be, in any order, with relax comparison:
-      | path                                                                         |
-      | <("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:like]->("Manu Ginobili")>     |
-      | <("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:teammate]->("Manu Ginobili")> |
+      | path                                                                          |
+      | <("Shaquille O'Neal")-[:like]->("Tim Duncan")-[:like]->("Manu Ginobili")>     |
+      | <("Shaquille O'Neal")-[:like]->("Tim Duncan")-[:teammate]->("Manu Ginobili")> |
 
   Scenario: Integer Vid [4] MultiPair Shortest Path Run Time input
     When executing query:
@@ -266,7 +266,7 @@ Feature: Integer Vid Shortest Path
     Then the result should be, in any order, with relax comparison:
       | path                                                                                              |
       | <("Tracy McGrady")-[:like]->("Rudy Gay")-[:like]->("LaMarcus Aldridge")-[:like]->("Tony Parker")> |
-      | <("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:like]->("Tony Parker")>                            |
+      | <("Shaquille O'Neal")-[:like]->("Tim Duncan")-[:like]->("Tony Parker")>                           |
 
   Scenario: Integer Vid [5] MultiPair Shortest Path Run Time input
     When executing query:
@@ -277,7 +277,7 @@ Feature: Integer Vid Shortest Path
     Then the result should be, in any order, with relax comparison:
       | path                                                                                              |
       | <("Tracy McGrady")-[:like]->("Rudy Gay")-[:like]->("LaMarcus Aldridge")-[:like]->("Tony Parker")> |
-      | <("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:like]->("Tony Parker")>                            |
+      | <("Shaquille O'Neal")-[:like]->("Tim Duncan")-[:like]->("Tony Parker")>                           |
 
   Scenario: Integer Vid [6] MultiPair Shortest Path Run Time input
     When executing query:
@@ -324,13 +324,13 @@ Feature: Integer Vid Shortest Path
   Scenario: Integer Vid [2] Shortest Path With Limit
     When executing query:
       """
-      FIND SHORTEST PATH FROM hash("Shaquile O\'Neal"), hash("Nobody") TO hash("Manu Ginobili"), hash("Spurs"), hash("Lakers") OVER * UPTO 5 STEPS
+      FIND SHORTEST PATH FROM hash("Shaquille O\'Neal"), hash("Nobody") TO hash("Manu Ginobili"), hash("Spurs"), hash("Lakers") OVER * UPTO 5 STEPS
       | ORDER BY $-.path | LIMIT 2
       """
     Then the result should be, in any order, with relax comparison:
-      | path                                                                     |
-      | <("Shaquile O'Neal")-[:serve]->("Lakers")>                               |
-      | <("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:like]->("Manu Ginobili")> |
+      | path                                                                      |
+      | <("Shaquille O'Neal")-[:serve]->("Lakers")>                               |
+      | <("Shaquille O'Neal")-[:like]->("Tim Duncan")-[:like]->("Manu Ginobili")> |
 
   Scenario: Integer Vid [3] Shortest Path With Limit
     When executing query:
@@ -413,13 +413,13 @@ Feature: Integer Vid Shortest Path
       FIND SHORTEST PATH FROM hash("Tony Parker"), hash("Yao Ming") TO hash("Manu Ginobili"), hash("Spurs"), hash("Lakers") OVER * BIDIRECT UPTO 2 STEPS
       """
     Then the result should be, in any order, with relax comparison:
-      | path                                                             |
-      | <("Yao Ming")-[:like]->("Tracy McGrady")-[:serve]->("Spurs")>    |
-      | <("Yao Ming")-[:like]->("Shaquile O'Neal")-[:serve]->("Lakers")> |
-      | <("Tony Parker")-[:serve]->("Spurs")>                            |
-      | <("Tony Parker")<-[:teammate]-("Manu Ginobili")>                 |
-      | <("Tony Parker")-[:like]->("Manu Ginobili")>                     |
-      | <("Tony Parker")-[:teammate]->("Manu Ginobili")>                 |
+      | path                                                              |
+      | <("Yao Ming")-[:like]->("Tracy McGrady")-[:serve]->("Spurs")>     |
+      | <("Yao Ming")-[:like]->("Shaquille O'Neal")-[:serve]->("Lakers")> |
+      | <("Tony Parker")-[:serve]->("Spurs")>                             |
+      | <("Tony Parker")<-[:teammate]-("Manu Ginobili")>                  |
+      | <("Tony Parker")-[:like]->("Manu Ginobili")>                      |
+      | <("Tony Parker")-[:teammate]->("Manu Ginobili")>                  |
 
   Scenario: Integer Vid [3] Shortest Path BIDIRECT
     When executing query:
@@ -427,25 +427,25 @@ Feature: Integer Vid Shortest Path
       FIND SHORTEST PATH FROM hash("Tony Parker"), hash("Yao Ming") TO hash("Manu Ginobili"), hash("Spurs"), hash("Lakers") OVER * BIDIRECT UPTO 3 STEPS
       """
     Then the result should be, in any order, with relax comparison:
-      | path                                                                                               |
-      | <("Yao Ming")-[:like]->("Tracy McGrady")-[:serve]->("Spurs")<-[:serve]-("Manu Ginobili")>          |
-      | <("Yao Ming")-[:like]->("Shaquile O'Neal")-[:like]->("Tim Duncan")<-[:like]-("Manu Ginobili")>     |
-      | <("Yao Ming")-[:like]->("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:like]->("Manu Ginobili")>     |
-      | <("Yao Ming")-[:like]->("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:teammate]->("Manu Ginobili")> |
-      | <("Yao Ming")-[:like]->("Shaquile O'Neal")-[:like]->("Tim Duncan")<-[:teammate]-("Manu Ginobili")> |
-      | <("Yao Ming")-[:like]->("Shaquile O'Neal")-[:serve]->("Lakers")>                                   |
-      | <("Yao Ming")-[:like]->("Tracy McGrady")-[:serve]->("Spurs")>                                      |
-      | <("Tony Parker")<-[:like]-("Tim Duncan")<-[:like]-("Shaquile O'Neal")-[:serve]->("Lakers")>        |
-      | <("Tony Parker")<-[:teammate]-("Tim Duncan")<-[:like]-("Shaquile O'Neal")-[:serve]->("Lakers")>    |
-      | <("Tony Parker")-[:like]->("Tim Duncan")<-[:like]-("Shaquile O'Neal")-[:serve]->("Lakers")>        |
-      | <("Tony Parker")-[:teammate]->("Tim Duncan")<-[:like]-("Shaquile O'Neal")-[:serve]->("Lakers")>    |
-      | <("Tony Parker")<-[:like]-("Dejounte Murray")-[:like]->("LeBron James")-[:serve]->("Lakers")>      |
-      | <("Tony Parker")-[:serve]->("Spurs")<-[:serve]-("Paul Gasol")-[:serve]->("Lakers")>                |
-      | <("Tony Parker")-[:serve]->("Hornets")<-[:serve]-("Dwight Howard")-[:serve]->("Lakers")>           |
-      | <("Tony Parker")-[:serve]->("Spurs")>                                                              |
-      | <("Tony Parker")<-[:teammate]-("Manu Ginobili")>                                                   |
-      | <("Tony Parker")-[:like]->("Manu Ginobili")>                                                       |
-      | <("Tony Parker")-[:teammate]->("Manu Ginobili")>                                                   |
+      | path                                                                                                |
+      | <("Yao Ming")-[:like]->("Tracy McGrady")-[:serve]->("Spurs")<-[:serve]-("Manu Ginobili")>           |
+      | <("Yao Ming")-[:like]->("Shaquille O'Neal")-[:like]->("Tim Duncan")<-[:like]-("Manu Ginobili")>     |
+      | <("Yao Ming")-[:like]->("Shaquille O'Neal")-[:like]->("Tim Duncan")-[:like]->("Manu Ginobili")>     |
+      | <("Yao Ming")-[:like]->("Shaquille O'Neal")-[:like]->("Tim Duncan")-[:teammate]->("Manu Ginobili")> |
+      | <("Yao Ming")-[:like]->("Shaquille O'Neal")-[:like]->("Tim Duncan")<-[:teammate]-("Manu Ginobili")> |
+      | <("Yao Ming")-[:like]->("Shaquille O'Neal")-[:serve]->("Lakers")>                                   |
+      | <("Yao Ming")-[:like]->("Tracy McGrady")-[:serve]->("Spurs")>                                       |
+      | <("Tony Parker")<-[:like]-("Tim Duncan")<-[:like]-("Shaquille O'Neal")-[:serve]->("Lakers")>        |
+      | <("Tony Parker")<-[:teammate]-("Tim Duncan")<-[:like]-("Shaquille O'Neal")-[:serve]->("Lakers")>    |
+      | <("Tony Parker")-[:like]->("Tim Duncan")<-[:like]-("Shaquille O'Neal")-[:serve]->("Lakers")>        |
+      | <("Tony Parker")-[:teammate]->("Tim Duncan")<-[:like]-("Shaquille O'Neal")-[:serve]->("Lakers")>    |
+      | <("Tony Parker")<-[:like]-("Dejounte Murray")-[:like]->("LeBron James")-[:serve]->("Lakers")>       |
+      | <("Tony Parker")-[:serve]->("Spurs")<-[:serve]-("Paul Gasol")-[:serve]->("Lakers")>                 |
+      | <("Tony Parker")-[:serve]->("Hornets")<-[:serve]-("Dwight Howard")-[:serve]->("Lakers")>            |
+      | <("Tony Parker")-[:serve]->("Spurs")>                                                               |
+      | <("Tony Parker")<-[:teammate]-("Manu Ginobili")>                                                    |
+      | <("Tony Parker")-[:like]->("Manu Ginobili")>                                                        |
+      | <("Tony Parker")-[:teammate]->("Manu Ginobili")>                                                    |
 
   Scenario: Integer Vid Shortest Path With PROP
     When executing query:
@@ -467,13 +467,13 @@ Feature: Integer Vid Shortest Path
       FIND SHORTEST PATH WITH PROP FROM hash("Tony Parker"), hash("Yao Ming") TO hash("Manu Ginobili"), hash("Spurs"), hash("Lakers") OVER * BIDIRECT UPTO 2 STEPS
       """
     Then the result should be, in any order, with relax comparison:
-      | path                                                                                                                                                                                                                      |
-      | <("Yao Ming" : player{age: 38, name: "Yao Ming"})-[:like@0 {likeness: 90}]->("Shaquile O'Neal": player{age: 47, name: "Shaquile O'Neal"})-[:serve@0 {end_year: 2004,start_year: 1996}]->("Lakers": team{name: "Lakers"})> |
-      | <("Yao Ming" : player{age: 38, name: "Yao Ming"})-[:like@0 {likeness: 90}]->("Tracy McGrady": player{age: 39, name: "Tracy McGrady"})-[:serve@0 {end_year: 2013, start_year: 2013}]->("Spurs": team{name: "Spurs"})>      |
-      | <("Tony Parker" :player{age: 36, name: "Tony Parker"})-[:serve@0 {end_year: 2018, start_year: 1999}]->("Spurs" :team{name: "Spurs"})>                                                                                     |
-      | <("Tony Parker" :player{age: 36, name: "Tony Parker"})<-[:teammate@0 {end_year: 2016, start_year: 2002}]-("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})>                                                       |
-      | <("Tony Parker" :player{age: 36, name: "Tony Parker"})-[:like@0 {likeness: 95}]->("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})>                                                                               |
-      | <("Tony Parker" :player{age: 36, name: "Tony Parker"})-[:teammate@0 {end_year: 2018, start_year: 2002}]->("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})>                                                       |
+      | path                                                                                                                                                                                                                        |
+      | <("Yao Ming" : player{age: 38, name: "Yao Ming"})-[:like@0 {likeness: 90}]->("Shaquille O'Neal": player{age: 47, name: "Shaquille O'Neal"})-[:serve@0 {end_year: 2004,start_year: 1996}]->("Lakers": team{name: "Lakers"})> |
+      | <("Yao Ming" : player{age: 38, name: "Yao Ming"})-[:like@0 {likeness: 90}]->("Tracy McGrady": player{age: 39, name: "Tracy McGrady"})-[:serve@0 {end_year: 2013, start_year: 2013}]->("Spurs": team{name: "Spurs"})>        |
+      | <("Tony Parker" :player{age: 36, name: "Tony Parker"})-[:serve@0 {end_year: 2018, start_year: 1999}]->("Spurs" :team{name: "Spurs"})>                                                                                       |
+      | <("Tony Parker" :player{age: 36, name: "Tony Parker"})<-[:teammate@0 {end_year: 2016, start_year: 2002}]-("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})>                                                         |
+      | <("Tony Parker" :player{age: 36, name: "Tony Parker"})-[:like@0 {likeness: 95}]->("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})>                                                                                 |
+      | <("Tony Parker" :player{age: 36, name: "Tony Parker"})-[:teammate@0 {end_year: 2018, start_year: 2002}]->("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})>                                                         |
 
   Scenario: Integer Vid Shortest Path With Filter
     When executing query:
@@ -481,12 +481,12 @@ Feature: Integer Vid Shortest Path
       FIND SHORTEST PATH WITH PROP FROM hash("Tony Parker"), hash("Yao Ming") TO hash("Manu Ginobili"), hash("Spurs"), hash("Lakers") OVER * BIDIRECT WHERE like.likeness == 90 OR like.likeness is empty UPTO 2 STEPS
       """
     Then the result should be, in any order, with relax comparison:
-      | path                                                                                                                                                                                                                       |
-      | <("Yao Ming" : player{age: 38, name: "Yao Ming"})-[:like@0 {likeness: 90}]->("Shaquile O'Neal" :player {age: 47,name: "Shaquile O'Neal"})-[:serve@0 {end_year: 2004, start_year: 1996}]->("Lakers": team{name: "Lakers"})> |
-      | <("Yao Ming" : player{age: 38, name: "Yao Ming"})-[:like@0 {likeness: 90}]->("Tracy McGrady": player{age: 39,name: "Tracy McGrady"})-[:serve@0 {end_year: 2013, start_year: 2013}]->("Spurs": team{name: "Spurs"})>        |
-      | <("Tony Parker" :player{age: 36, name: "Tony Parker"})-[:serve@0 {end_year: 2018, start_year: 1999}]->("Spurs" :team{name: "Spurs"})>                                                                                      |
-      | <("Tony Parker" :player{age: 36, name: "Tony Parker"})<-[:teammate@0 {end_year: 2016, start_year: 2002}]-("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})>                                                        |
-      | <("Tony Parker" :player{age: 36, name: "Tony Parker"})-[:teammate@0 {end_year: 2018, start_year: 2002}]->("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})>                                                        |
+      | path                                                                                                                                                                                                                         |
+      | <("Yao Ming" : player{age: 38, name: "Yao Ming"})-[:like@0 {likeness: 90}]->("Shaquille O'Neal" :player {age: 47,name: "Shaquille O'Neal"})-[:serve@0 {end_year: 2004, start_year: 1996}]->("Lakers": team{name: "Lakers"})> |
+      | <("Yao Ming" : player{age: 38, name: "Yao Ming"})-[:like@0 {likeness: 90}]->("Tracy McGrady": player{age: 39,name: "Tracy McGrady"})-[:serve@0 {end_year: 2013, start_year: 2013}]->("Spurs": team{name: "Spurs"})>          |
+      | <("Tony Parker" :player{age: 36, name: "Tony Parker"})-[:serve@0 {end_year: 2018, start_year: 1999}]->("Spurs" :team{name: "Spurs"})>                                                                                        |
+      | <("Tony Parker" :player{age: 36, name: "Tony Parker"})<-[:teammate@0 {end_year: 2016, start_year: 2002}]-("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})>                                                          |
+      | <("Tony Parker" :player{age: 36, name: "Tony Parker"})-[:teammate@0 {end_year: 2018, start_year: 2002}]->("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})>                                                          |
     When executing query:
       """
       FIND SHORTEST PATH WITH PROP FROM hash("Tony Parker"), hash("Yao Ming") TO hash("Manu Ginobili"), hash("Spurs"), hash("Lakers") OVER * REVERSELY WHERE like.likeness > 70
@@ -502,7 +502,7 @@ Feature: Integer Vid Shortest Path
     Then the result should be, in any order, with relax comparison:
       | path                                                                                                                                                                                                                                                                                                              |
       | <("Tracy McGrady" :player{age: 39, name: "Tracy McGrady"})-[:like@0 {likeness: 90}]->("Rudy Gay" :player{age: 32, name: "Rudy Gay"})-[:like@0 {likeness: 70}]->("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})-[:like@0 {likeness: 75}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})> |
-      | <("Shaquile O'Neal" :player{age: 47, name: "Shaquile O'Neal"})-[:like@0 {likeness: 80}]->("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:like@0 {likeness: 95}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})>                             |
+      | <("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})-[:like@0 {likeness: 80}]->("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:like@0 {likeness: 95}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})>                           |
     When executing query:
       """
       FIND SHORTEST PATH WITH PROP FROM hash("Tony Parker"), hash("Yao Ming") TO hash("Manu Ginobili"), hash("Spurs"), hash("Lakers") OVER * BIDIRECT WHERE teammate.start_year is not EMPTY OR like.likeness > 90 UPTO 3 STEPS
