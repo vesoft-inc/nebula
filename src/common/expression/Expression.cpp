@@ -560,7 +560,7 @@ std::ostream& operator<<(std::ostream& os, Expression::Kind kind) {
       os << "Equal";
       break;
     case Expression::Kind::kRelNE:
-      os << "NotEuqal";
+      os << "NotEqual";
       break;
     case Expression::Kind::kRelLT:
       os << "LessThan";

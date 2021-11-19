@@ -47,8 +47,8 @@ nebula_add_library(
     processors/admin/CreateSnapshotProcessor.cpp
     processors/admin/DropSnapshotProcessor.cpp
     processors/admin/ListSnapshotsProcessor.cpp
-        processors/job/BalancePlan.cpp
-        processors/job/BalanceTask.cpp
+    processors/job/BalancePlan.cpp
+    processors/job/BalanceTask.cpp
     processors/admin/AdminClient.cpp
     processors/admin/SnapShot.cpp
     processors/admin/CreateBackupProcessor.cpp
@@ -129,6 +129,7 @@ set(meta_test_deps
     $<TARGET_OBJECTS:disk_man_obj>
     $<TARGET_OBJECTS:keyutils_obj>
     $<TARGET_OBJECTS:meta_keyutils_obj>
+    $<TARGET_OBJECTS:log_str_list_iterator_obj>
     $<TARGET_OBJECTS:meta_client_obj>
     $<TARGET_OBJECTS:file_based_cluster_id_man_obj>
     $<TARGET_OBJECTS:ws_obj>

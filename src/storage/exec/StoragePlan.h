@@ -14,11 +14,11 @@ namespace nebula {
 namespace storage {
 
 /*
-Origined from folly::FutureDAG, not thread-safe.
+Originated from folly::FutureDAG, not thread-safe.
 
 The StoragePlan contains a set of RelNode, all you need to do is define a
 RelNode, add it to plan by calling addNode, which will return the index of the
-RelNode in this plan. The denpendencies between different nodes is defined by
+RelNode in this plan. The dependencies between different nodes is defined by
 calling addDependency in RelNode.
 
 To run the plan, call the go method, you could get the final result.

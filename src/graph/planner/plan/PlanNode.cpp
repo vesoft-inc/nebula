@@ -32,7 +32,7 @@ PlanNode::PlanNode(QueryContext* qctx, Kind kind) : qctx_(qctx), kind_(kind) {
 const char* PlanNode::toString(PlanNode::Kind kind) {
   switch (kind) {
     case Kind::kUnknown:
-      return "Unkonwn";
+      return "Unknown";
     case Kind::kStart:
       return "Start";
     case Kind::kGetNeighbors:
@@ -276,7 +276,6 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "Download";
     case Kind::kIngest:
       return "Ingest";
-    // no default so the compiler will warning when lack
     case Kind::kShowSessions:
       return "ShowSessions";
     case Kind::kUpdateSession:
@@ -285,6 +284,10 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "ShowQueries";
     case Kind::kKillQuery:
       return "KillQuery";
+    case Kind::kTraverse:
+      return "Traverse";
+    case Kind::kAppendVertices:
+      return "AppendVertices";
       // no default so the compiler will warning when lack
   }
   LOG(FATAL) << "Impossible kind plan node " << static_cast<int>(kind);

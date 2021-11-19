@@ -164,7 +164,7 @@ TEST(IndexWithTTLTest, AddVerticesIndexWithTTL) {
 
   LOG(INFO) << "Check insert data...";
   for (auto partId = 1; partId <= 6; partId++) {
-    auto prefix = NebulaKeyUtils::vertexPrefix(partId);
+    auto prefix = NebulaKeyUtils::tagPrefix(partId);
     auto retNum = verifyResultNum(1, partId, prefix, env->kvstore_);
     EXPECT_EQ(1, retNum);
   }
@@ -184,7 +184,7 @@ TEST(IndexWithTTLTest, AddVerticesIndexWithTTL) {
 
   LOG(INFO) << "Check data after compaction ...";
   for (auto partId = 1; partId <= 6; partId++) {
-    auto prefix = NebulaKeyUtils::vertexPrefix(partId);
+    auto prefix = NebulaKeyUtils::tagPrefix(partId);
     auto retNum = verifyResultNum(1, partId, prefix, env->kvstore_);
     EXPECT_EQ(0, retNum);
   }
@@ -258,7 +258,7 @@ TEST(IndexWithTTLTest, UpdateVerticesIndexWithTTL) {
 
   LOG(INFO) << "Check insert data...";
   for (auto partId = 1; partId <= 6; partId++) {
-    auto prefix = NebulaKeyUtils::vertexPrefix(partId);
+    auto prefix = NebulaKeyUtils::tagPrefix(partId);
     auto retNum = verifyResultNum(1, partId, prefix, env->kvstore_);
     EXPECT_EQ(1, retNum);
   }
@@ -302,7 +302,7 @@ TEST(IndexWithTTLTest, UpdateVerticesIndexWithTTL) {
 
   LOG(INFO) << "Check data after update ...";
   for (auto partId = 1; partId <= 6; partId++) {
-    auto prefix = NebulaKeyUtils::vertexPrefix(partId);
+    auto prefix = NebulaKeyUtils::tagPrefix(partId);
     auto retNum = verifyResultNum(1, partId, prefix, env->kvstore_);
     EXPECT_EQ(1, retNum);
   }
@@ -405,7 +405,7 @@ TEST(IndexWithTTLTest, RebuildTagIndexWithTTL) {
 
   LOG(INFO) << "Check insert data...";
   for (auto partId = 1; partId <= 6; partId++) {
-    auto prefix = NebulaKeyUtils::vertexPrefix(partId);
+    auto prefix = NebulaKeyUtils::tagPrefix(partId);
     auto retNum = verifyResultNum(1, partId, prefix, env->kvstore_);
     EXPECT_EQ(1, retNum);
   }
@@ -425,7 +425,7 @@ TEST(IndexWithTTLTest, RebuildTagIndexWithTTL) {
   parameter.set_space_id(1);
   std::vector<PartitionID> parts = {1, 2, 3, 4, 5, 6};
   parameter.set_parts(parts);
-  parameter.set_task_specfic_paras({"2021002"});
+  parameter.set_task_specific_paras({"2021002"});
 
   cpp2::AddAdminTaskRequest request;
   request.set_cmd(meta::cpp2::AdminCmd::REBUILD_TAG_INDEX);
@@ -448,7 +448,7 @@ TEST(IndexWithTTLTest, RebuildTagIndexWithTTL) {
 
   LOG(INFO) << "Check data after rebuild ...";
   for (auto partId = 1; partId <= 6; partId++) {
-    auto prefix = NebulaKeyUtils::vertexPrefix(partId);
+    auto prefix = NebulaKeyUtils::tagPrefix(partId);
     auto retNum = verifyResultNum(1, partId, prefix, env->kvstore_);
     EXPECT_EQ(1, retNum);
   }
@@ -494,7 +494,7 @@ TEST(IndexWithTTLTest, RebuildEdgeIndexWithTTL) {
   parameter.set_space_id(1);
   std::vector<PartitionID> parts = {1, 2, 3, 4, 5, 6};
   parameter.set_parts(parts);
-  parameter.set_task_specfic_paras({"2021002"});
+  parameter.set_task_specific_paras({"2021002"});
 
   cpp2::AddAdminTaskRequest request;
   request.set_cmd(meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX);
@@ -543,7 +543,7 @@ TEST(IndexWithTTLTest, RebuildTagIndexWithTTLExpired) {
 
   LOG(INFO) << "Check insert data...";
   for (auto partId = 1; partId <= 6; partId++) {
-    auto prefix = NebulaKeyUtils::vertexPrefix(partId);
+    auto prefix = NebulaKeyUtils::tagPrefix(partId);
     auto retNum = verifyResultNum(1, partId, prefix, env->kvstore_);
     EXPECT_EQ(1, retNum);
   }
@@ -565,7 +565,7 @@ TEST(IndexWithTTLTest, RebuildTagIndexWithTTLExpired) {
   parameter.set_space_id(1);
   std::vector<PartitionID> parts = {1, 2, 3, 4, 5, 6};
   parameter.set_parts(parts);
-  parameter.set_task_specfic_paras({"2021002"});
+  parameter.set_task_specific_paras({"2021002"});
 
   cpp2::AddAdminTaskRequest request;
   request.set_cmd(meta::cpp2::AdminCmd::REBUILD_TAG_INDEX);
@@ -588,7 +588,7 @@ TEST(IndexWithTTLTest, RebuildTagIndexWithTTLExpired) {
 
   LOG(INFO) << "Check data after rebuild ...";
   for (auto partId = 1; partId <= 6; partId++) {
-    auto prefix = NebulaKeyUtils::vertexPrefix(partId);
+    auto prefix = NebulaKeyUtils::tagPrefix(partId);
     auto retNum = verifyResultNum(1, partId, prefix, env->kvstore_);
     EXPECT_EQ(1, retNum);
   }
@@ -636,7 +636,7 @@ TEST(IndexWithTTLTest, RebuildEdgeIndexWithTTLExpired) {
   parameter.set_space_id(1);
   std::vector<PartitionID> parts = {1, 2, 3, 4, 5, 6};
   parameter.set_parts(parts);
-  parameter.set_task_specfic_paras({"2021002"});
+  parameter.set_task_specific_paras({"2021002"});
 
   cpp2::AddAdminTaskRequest request;
   request.set_cmd(meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX);

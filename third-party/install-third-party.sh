@@ -37,7 +37,7 @@ this_gcc_version=$($cxx_cmd -dumpfullversion -dumpversion)
 this_abi_version=$($this_dir/cxx-compiler-abi-version.sh)
 
 hash wget &>/dev/null || {
-    echo "'wget' not fould, please install it first" 1>&2
+    echo "'wget' not found, please install it first" 1>&2
     exit 1
 }
 

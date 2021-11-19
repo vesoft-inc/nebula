@@ -3,15 +3,14 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#ifndef RAFTEX_LOGSTRLISTITERATOR_H_
-#define RAFTEX_LOGSTRLISTITERATOR_H_
+#ifndef COMMON_UTILS_LOGSTRLISTITERATOR_H_
+#define COMMON_UTILS_LOGSTRLISTITERATOR_H_
 
 #include "common/base/Base.h"
 #include "common/utils/LogIterator.h"
-#include "interface/gen-cpp2/raftex_types.h"
+#include "interface/gen-cpp2/common_types.h"
 
 namespace nebula {
-namespace raftex {
 
 class LogStrListIterator final : public LogIterator {
  public:
@@ -33,7 +32,6 @@ class LogStrListIterator final : public LogIterator {
   std::vector<cpp2::LogEntry> logEntries_;
 };
 
-}  // namespace raftex
 }  // namespace nebula
 
-#endif  // RAFTEX_LOGSTRLISTITERATOR_H_
+#endif  // COMMON_UTILS_LOGSTRLISTITERATOR_H_

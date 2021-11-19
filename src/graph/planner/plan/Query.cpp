@@ -601,5 +601,52 @@ void UnionAllVersionVar::cloneMembers(const UnionAllVersionVar& f) {
   SingleInputNode::cloneMembers(f);
 }
 
+Traverse* Traverse::clone() const {
+  auto newGN = Traverse::make(qctx_, nullptr, space_);
+  newGN->cloneMembers(*this);
+  return newGN;
+}
+
+void Traverse::cloneMembers(const Traverse& g) {
+  GetNeighbors::cloneMembers(g);
+
+  setStepRange(g.range_);
+  setVertexFilter(g.vFilter_->clone());
+  setEdgeFilter(g.eFilter_->clone());
+}
+
+std::unique_ptr<PlanNodeDescription> Traverse::explain() const {
+  auto desc = GetNeighbors::explain();
+  if (range_ != nullptr) {
+    addDescription("steps", range_->toString(), desc.get());
+  }
+  if (vFilter_ != nullptr) {
+    addDescription("vertex filter", vFilter_->toString(), desc.get());
+  }
+  if (eFilter_ != nullptr) {
+    addDescription("edge filter", eFilter_->toString(), desc.get());
+  }
+  return desc;
+}
+
+AppendVertices* AppendVertices::clone() const {
+  auto newAV = AppendVertices::make(qctx_, nullptr, space_);
+  newAV->cloneMembers(*this);
+  return newAV;
+}
+
+void AppendVertices::cloneMembers(const AppendVertices& a) {
+  GetVertices::cloneMembers(a);
+
+  setVertexFilter(a.vFilter_->clone());
+}
+
+std::unique_ptr<PlanNodeDescription> AppendVertices::explain() const {
+  auto desc = GetVertices::explain();
+  if (vFilter_ != nullptr) {
+    addDescription("vertex filter", vFilter_->toString(), desc.get());
+  }
+  return desc;
+}
 }  // namespace graph
 }  // namespace nebula

@@ -25,7 +25,7 @@ void GetEdgeProcessor::process(const cpp2::GetEdgeReq& req) {
   auto edgeType = nebula::value(edgeTypeRet);
 
   std::string schemaValue;
-  // Get the lastest version
+  // Get the latest version
   if (ver < 0) {
     auto edgePrefix = MetaKeyUtils::schemaEdgePrefix(spaceId, edgeType);
     auto ret = doPrefix(edgePrefix);

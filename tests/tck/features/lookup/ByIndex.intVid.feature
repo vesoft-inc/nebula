@@ -244,12 +244,12 @@ Feature: Lookup by index itself in integer vid
       | 'Grant Hill'            | 'Magic'         | 0       |
       | 'Grant Hill'            | 'Suns'          | 0       |
       | 'Grant Hill'            | 'Clippers'      | 0       |
-      | "Shaquile O'Neal"       | 'Magic'         | 0       |
-      | "Shaquile O'Neal"       | 'Lakers'        | 0       |
-      | "Shaquile O'Neal"       | 'Heat'          | 0       |
-      | "Shaquile O'Neal"       | 'Suns'          | 0       |
-      | "Shaquile O'Neal"       | 'Cavaliers'     | 0       |
-      | "Shaquile O'Neal"       | 'Celtics'       | 0       |
+      | "Shaquille O'Neal"      | 'Magic'         | 0       |
+      | "Shaquille O'Neal"      | 'Lakers'        | 0       |
+      | "Shaquille O'Neal"      | 'Heat'          | 0       |
+      | "Shaquille O'Neal"      | 'Suns'          | 0       |
+      | "Shaquille O'Neal"      | 'Cavaliers'     | 0       |
+      | "Shaquille O'Neal"      | 'Celtics'       | 0       |
       | 'JaVale McGee'          | 'Wizards'       | 0       |
       | 'JaVale McGee'          | 'Nuggets'       | 0       |
       | 'JaVale McGee'          | 'Mavericks'     | 0       |
@@ -402,12 +402,12 @@ Feature: Lookup by index itself in integer vid
       | 'Grant Hill'            | 'Magic'         | 0       | 2000      |
       | 'Grant Hill'            | 'Suns'          | 0       | 2007      |
       | 'Grant Hill'            | 'Clippers'      | 0       | 2012      |
-      | "Shaquile O'Neal"       | 'Magic'         | 0       | 1992      |
-      | "Shaquile O'Neal"       | 'Lakers'        | 0       | 1996      |
-      | "Shaquile O'Neal"       | 'Heat'          | 0       | 2004      |
-      | "Shaquile O'Neal"       | 'Suns'          | 0       | 2008      |
-      | "Shaquile O'Neal"       | 'Cavaliers'     | 0       | 2009      |
-      | "Shaquile O'Neal"       | 'Celtics'       | 0       | 2010      |
+      | "Shaquille O'Neal"      | 'Magic'         | 0       | 1992      |
+      | "Shaquille O'Neal"      | 'Lakers'        | 0       | 1996      |
+      | "Shaquille O'Neal"      | 'Heat'          | 0       | 2004      |
+      | "Shaquille O'Neal"      | 'Suns'          | 0       | 2008      |
+      | "Shaquille O'Neal"      | 'Cavaliers'     | 0       | 2009      |
+      | "Shaquille O'Neal"      | 'Celtics'       | 0       | 2010      |
       | 'JaVale McGee'          | 'Wizards'       | 0       | 2008      |
       | 'JaVale McGee'          | 'Nuggets'       | 0       | 2012      |
       | 'JaVale McGee'          | 'Mavericks'     | 0       | 2015      |
@@ -458,59 +458,59 @@ Feature: Lookup by index itself in integer vid
       LOOKUP ON player WHERE player.age > 40 YIELD player.age AS Age
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID          | Age |
-      | "Grant Hill"      | 46  |
-      | "Jason Kidd"      | 45  |
-      | "Manu Ginobili"   | 41  |
-      | "Ray Allen"       | 43  |
-      | "Shaquile O'Neal" | 47  |
-      | "Steve Nash"      | 45  |
-      | "Tim Duncan"      | 42  |
-      | "Vince Carter"    | 42  |
+      | VertexID           | Age |
+      | "Grant Hill"       | 46  |
+      | "Jason Kidd"       | 45  |
+      | "Manu Ginobili"    | 41  |
+      | "Ray Allen"        | 43  |
+      | "Shaquille O'Neal" | 47  |
+      | "Steve Nash"       | 45  |
+      | "Tim Duncan"       | 42  |
+      | "Vince Carter"     | 42  |
     When executing query:
       """
       LOOKUP ON player WHERE player.age >= 40.0 YIELD player.age AS Age
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID          | Age |
-      | "Grant Hill"      | 46  |
-      | "Jason Kidd"      | 45  |
-      | "Manu Ginobili"   | 41  |
-      | "Ray Allen"       | 43  |
-      | "Shaquile O'Neal" | 47  |
-      | "Steve Nash"      | 45  |
-      | "Tim Duncan"      | 42  |
-      | "Vince Carter"    | 42  |
-      | "Dirk Nowitzki"   | 40  |
-      | "Kobe Bryant"     | 40  |
+      | VertexID           | Age |
+      | "Grant Hill"       | 46  |
+      | "Jason Kidd"       | 45  |
+      | "Manu Ginobili"    | 41  |
+      | "Ray Allen"        | 43  |
+      | "Shaquille O'Neal" | 47  |
+      | "Steve Nash"       | 45  |
+      | "Tim Duncan"       | 42  |
+      | "Vince Carter"     | 42  |
+      | "Dirk Nowitzki"    | 40  |
+      | "Kobe Bryant"      | 40  |
     When executing query:
       """
       LOOKUP ON player WHERE player.age > 40.5 YIELD player.age AS Age
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID          | Age |
-      | "Grant Hill"      | 46  |
-      | "Jason Kidd"      | 45  |
-      | "Manu Ginobili"   | 41  |
-      | "Ray Allen"       | 43  |
-      | "Shaquile O'Neal" | 47  |
-      | "Steve Nash"      | 45  |
-      | "Tim Duncan"      | 42  |
-      | "Vince Carter"    | 42  |
+      | VertexID           | Age |
+      | "Grant Hill"       | 46  |
+      | "Jason Kidd"       | 45  |
+      | "Manu Ginobili"    | 41  |
+      | "Ray Allen"        | 43  |
+      | "Shaquille O'Neal" | 47  |
+      | "Steve Nash"       | 45  |
+      | "Tim Duncan"       | 42  |
+      | "Vince Carter"     | 42  |
     When executing query:
       """
       LOOKUP ON player WHERE player.age >= 40.5 YIELD player.age AS Age
       """
     Then the result should be, in any order, and the columns 0 should be hashed:
-      | VertexID          | Age |
-      | "Grant Hill"      | 46  |
-      | "Jason Kidd"      | 45  |
-      | "Manu Ginobili"   | 41  |
-      | "Ray Allen"       | 43  |
-      | "Shaquile O'Neal" | 47  |
-      | "Steve Nash"      | 45  |
-      | "Tim Duncan"      | 42  |
-      | "Vince Carter"    | 42  |
+      | VertexID           | Age |
+      | "Grant Hill"       | 46  |
+      | "Jason Kidd"       | 45  |
+      | "Manu Ginobili"    | 41  |
+      | "Ray Allen"        | 43  |
+      | "Shaquille O'Neal" | 47  |
+      | "Steve Nash"       | 45  |
+      | "Tim Duncan"       | 42  |
+      | "Vince Carter"     | 42  |
     When executing query:
       """
       LOOKUP ON player WHERE player.age < 40
