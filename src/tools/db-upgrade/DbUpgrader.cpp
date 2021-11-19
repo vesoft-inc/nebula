@@ -269,7 +269,7 @@ void UpgraderSpace::runPartV1() {
         auto strVid = std::string(reinterpret_cast<const char*>(&vId), sizeof(vId));
         auto newTagSchema = it->second.back().get();
         // Generate 2.0 key
-        auto newKey = NebulaKeyUtils::vertexKey(spaceVidLen_, partId, strVid, tagId);
+        auto newKey = NebulaKeyUtils::tagKey(spaceVidLen_, partId, strVid, tagId);
         auto val = iter->val();
         auto reader = RowReaderWrapper::getTagPropReader(schemaMan_, spaceId_, tagId, val);
         if (!reader) {
@@ -372,7 +372,7 @@ void UpgraderSpace::doProcessV1() {
 
   // Parallel process part
   auto partConcurrency = std::min(static_cast<size_t>(FLAGS_max_concurrent_parts), parts_.size());
-  LOG(INFO) << "Max concurrenct parts: " << partConcurrency;
+  LOG(INFO) << "Max concurrent parts: " << partConcurrency;
 
   unFinishedPart_ = parts_.size();
 
@@ -482,7 +482,7 @@ void UpgraderSpace::runPartV2() {
 
         auto newTagSchema = it->second.back().get();
         // Generate 2.0 key
-        auto newKey = NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vId, tagId);
+        auto newKey = NebulaKeyUtils::tagKey(spaceVidLen_, partId, vId, tagId);
         auto val = iter->val();
         auto reader = RowReaderWrapper::getTagPropReader(schemaMan_, spaceId_, tagId, val);
         if (!reader) {
@@ -581,7 +581,7 @@ void UpgraderSpace::doProcessV2() {
 
   // Parallel process part
   auto partConcurrency = std::min(static_cast<size_t>(FLAGS_max_concurrent_parts), parts_.size());
-  LOG(INFO) << "Max concurrenct parts: " << partConcurrency;
+  LOG(INFO) << "Max concurrent parts: " << partConcurrency;
   unFinishedPart_ = parts_.size();
 
   LOG(INFO) << "Start to handle vertex/edge/index of parts data in space id " << spaceId_;
@@ -1073,7 +1073,7 @@ void DbUpgrader::run() {
   // Parallel process space
   auto spaceConcurrency =
       std::min(static_cast<size_t>(FLAGS_max_concurrent_spaces), upgraderSpaces.size());
-  LOG(INFO) << "Max concurrenct spaces: " << spaceConcurrency;
+  LOG(INFO) << "Max concurrent spaces: " << spaceConcurrency;
 
   for (size_t i = 0; i < spaceConcurrency; ++i) {
     pool_->add(std::bind(&DbUpgrader::doSpace, this));

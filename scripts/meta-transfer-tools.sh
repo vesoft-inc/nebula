@@ -16,7 +16,7 @@ Usage="this tool is a simple wrapper to scp to copy local folder of metad to ano
         1. -f (from) local metad dir \n \
         2. -t (to) remote destination \n \
         3. -u (update) any configs need to be changed \n \
-            different configs should be seperated by ':' \n \
+            different configs should be separated by ':' \n \
             each config has to be the form of "local_ip=172.0.0.1" \n \
         \n \
     for example \n \

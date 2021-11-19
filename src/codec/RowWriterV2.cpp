@@ -57,7 +57,7 @@ RowWriterV2::RowWriterV2(const meta::SchemaProviderIf* schema)
       header = 0x0E;  // 0x08 | 0x06, six bytes for the schema version
       headerLen_ = 7;
     } else if (ver < 0x00FFFFFFFFFFFFFF) {
-      header = 0x0F;  // 0x08 | 0x07, severn bytes for the schema version
+      header = 0x0F;  // 0x08 | 0x07, seven bytes for the schema version
       headerLen_ = 8;
     } else {
       LOG(FATAL) << "Schema version too big";
@@ -844,7 +844,7 @@ std::string RowWriterV2::processOutOfSpace() noexcept {
   // Now let's process all strings
   for (size_t i = 0; i < schema_->getNumFields(); i++) {
     auto field = schema_->field(i);
-    if (field->type() != PropertyType::STRING) {
+    if (field->type() != PropertyType::STRING && field->type() != PropertyType::GEOGRAPHY) {
       continue;
     }
 

@@ -26,9 +26,9 @@ SnapshotManager::SnapshotManager() {
       std::make_shared<folly::NamedThreadFactory>("snapshot-ioexecutor")));
 }
 
-folly::Future<Status> SnapshotManager::sendSnapshot(std::shared_ptr<RaftPart> part,
-                                                    const HostAddr& dst) {
-  folly::Promise<Status> p;
+folly::Future<StatusOr<std::pair<LogID, TermID>>> SnapshotManager::sendSnapshot(
+    std::shared_ptr<RaftPart> part, const HostAddr& dst) {
+  folly::Promise<StatusOr<std::pair<LogID, TermID>>> p;
   auto fut = p.getFuture();
   executor_->add([this, p = std::move(p), part, dst]() mutable {
     auto spaceId = part->spaceId_;
@@ -40,7 +40,7 @@ folly::Future<Status> SnapshotManager::sendSnapshot(std::shared_ptr<RaftPart> pa
     auto commitLogIdAndTerm = part->lastCommittedLogId();
     const auto& localhost = part->address();
     std::vector<folly::Future<raftex::cpp2::SendSnapshotResponse>> results;
-    LOG(INFO) << part->idStr_ << "Begin to send the snapshot"
+    LOG(INFO) << part->idStr_ << "Begin to send the snapshot to the host " << dst
               << ", commitLogId = " << commitLogIdAndTerm.first
               << ", commitLogTerm = " << commitLogIdAndTerm.second;
     accessAllRowsInSnapshot(
@@ -77,7 +77,7 @@ folly::Future<Status> SnapshotManager::sendSnapshot(std::shared_ptr<RaftPart> pa
                 if (status == SnapshotStatus::DONE) {
                   LOG(INFO) << part->idStr_ << "Finished, totalCount " << totalCount
                             << ", totalSize " << totalSize;
-                  p.setValue(Status::OK());
+                  p.setValue(commitLogIdAndTerm);
                 }
                 return true;
               } else {
@@ -90,6 +90,7 @@ folly::Future<Status> SnapshotManager::sendSnapshot(std::shared_ptr<RaftPart> pa
             } catch (const std::exception& e) {
               LOG(ERROR) << part->idStr_ << "Send snapshot failed, exception " << e.what()
                          << ", retry " << retry << " times";
+              sleep(1);
               continue;
             }
           }

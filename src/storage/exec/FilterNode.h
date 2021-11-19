@@ -22,7 +22,7 @@ data, but not both.
 
 As for GetNeighbors, it will have filter that involves both tag and edge
 expression. In that case, FilterNode has a upstream of HashJoinNode, which will
-keep popping out edge data. All tage data has been put into ExpressionContext
+keep popping out edge data. All tag data has been put into ExpressionContext
 before FilterNode is doExecuted. By that means, it can check the filter of tag +
 edge.
 */

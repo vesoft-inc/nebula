@@ -191,7 +191,7 @@ void Listener::doApply() {
         case OP_BATCH_WRITE: {
           auto batch = decodeBatchValue(log);
           for (auto& op : batch) {
-            // OP_BATCH_PUT and OP_BATCH_REMOVE_RANGE is igored
+            // OP_BATCH_PUT and OP_BATCH_REMOVE_RANGE is ignored
             if (op.first == BatchLogType::OP_BATCH_PUT) {
               data.emplace_back(op.second.first, op.second.second);
             }

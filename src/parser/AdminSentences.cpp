@@ -152,36 +152,6 @@ std::string GetConfigSentence::toString() const {
   return std::string("GET CONFIGS ") + configItem_->toString();
 }
 
-std::string BalanceSentence::toString() const {
-  switch (subType_) {
-    case SubType::kUnknown:
-      return "Unknown";
-    case SubType::kLeader:
-      return "BALANCE LEADER";
-    case SubType::kData: {
-      if (hostDel_ == nullptr) {
-        return "BALANCE DATA";
-      } else {
-        std::stringstream ss;
-        ss << "BALANCE DATA REMOVE ";
-        ss << hostDel_->toString();
-        return ss.str();
-      }
-    }
-    case SubType::kDataStop:
-      return "BALANCE DATA STOP";
-    case SubType::kDataReset:
-      return "BALANCE DATA RESET PLAN";
-    case SubType::kShowBalancePlan: {
-      std::stringstream ss;
-      ss << "BALANCE DATA " << balanceId_;
-      return ss.str();
-    }
-  }
-  DLOG(FATAL) << "Type illegal";
-  return "Unknown";
-}
-
 std::string HostList::toString() const {
   std::string buf;
   buf.reserve(256);
@@ -263,6 +233,18 @@ std::string AdminJobSentence::toString() const {
         case meta::cpp2::AdminCmd::INGEST:
           return "INGEST";
         case meta::cpp2::AdminCmd::DATA_BALANCE:
+          if (paras_.empty()) {
+            return "SUBMIT JOB BALANCE DATA";
+          } else {
+            std::string str = "SUBMIT JOB BALANCE DATA REMOVE";
+            for (size_t i = 0; i < paras_.size(); i++) {
+              auto &s = paras_[i];
+              str += i == 0 ? " " + s : ", " + s;
+            }
+            return str;
+          }
+        case meta::cpp2::AdminCmd::LEADER_BALANCE:
+          return "SUBMIT JOB BALANCE LEADER";
         case meta::cpp2::AdminCmd::UNKNOWN:
           return folly::stringPrintf("Unsupported AdminCmd: %s",
                                      apache::thrift::util::enumNameSafe(cmd_).c_str());
@@ -277,7 +259,15 @@ std::string AdminJobSentence::toString() const {
       CHECK_EQ(paras_.size(), 1U);
       return folly::stringPrintf("STOP JOB %s", paras_[0].c_str());
     case meta::cpp2::AdminJobOp::RECOVER:
-      return "RECOVER JOB";
+      if (paras_.empty()) {
+        return "RECOVER JOB";
+      } else {
+        std::string str = "RECOVER JOB";
+        for (size_t i = 0; i < paras_.size(); i++) {
+          str += i == 0 ? " " + paras_[i] : ", " + paras_[i];
+        }
+        return str;
+      }
   }
   LOG(FATAL) << "Unknown job operation " << static_cast<uint8_t>(op_);
 }

@@ -112,7 +112,7 @@ class UpgraderSpace {
   void runPartV2();
 
  public:
-  // Souce data path
+  // Source data path
   std::string srcPath_;
   // Destination data path
   std::string dstPath_;
@@ -192,7 +192,7 @@ class DbUpgrader {
   meta::MetaClient* metaClient_;
   meta::ServerBasedSchemaManager* schemaMan_;
   meta::IndexManager* indexMan_;
-  // Souce data path
+  // Source data path
   std::string srcPath_;
 
   // Destination data path

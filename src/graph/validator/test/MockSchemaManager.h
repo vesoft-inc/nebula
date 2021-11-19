@@ -76,7 +76,7 @@ class MockSchemaManager final : public nebula::meta::SchemaManager {
     return allVerTagSchemas;
   }
 
-  // Returns all latest version of schesmas of all tags in the given space
+  // Returns all latest version of schemas of all tags in the given space
   StatusOr<meta::TagSchema> getAllLatestVerTagSchema(GraphSpaceID space) override {
     meta::TagSchema allLatestVerTagSchemas;
     const auto& tagSchemas = tagSchemas_[space];

@@ -92,7 +92,7 @@ TEST_F(YieldValidatorTest, Logic) {
 #endif
 }
 
-TEST_F(YieldValidatorTest, FuncitonCall) {
+TEST_F(YieldValidatorTest, FunctionCall) {
 #if 0
     {
         // TODO not support udf_is_in

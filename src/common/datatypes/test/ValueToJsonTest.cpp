@@ -52,20 +52,20 @@ TEST(ValueToJson, vertex) {
                                         tag2,
                                     }}));
   {
-    dynamic expectedVeretxJson = dynamic::object("tagName.prop", 2)("tagName1.prop1", 2)(
+    dynamic expectedVertexJson = dynamic::object("tagName.prop", 2)("tagName1.prop1", 2)(
         "tagName1.prop2", nullptr)("tagName1.prop3", "123");
-    ASSERT_EQ(expectedVeretxJson, vertexStrVid.toJson());
+    ASSERT_EQ(expectedVertexJson, vertexStrVid.toJson());
 
-    dynamic expectedVeretxMetaJson = dynamic::object("id", "Vid")("type", "vertex");
-    ASSERT_EQ(expectedVeretxMetaJson, vertexStrVid.getMetaData());
+    dynamic expectedVertexMetaJson = dynamic::object("id", "Vid")("type", "vertex");
+    ASSERT_EQ(expectedVertexMetaJson, vertexStrVid.getMetaData());
   }
   {
-    dynamic expectedVeretxJson = dynamic::object("tagName.prop", 2)("tagName1.prop1", 2)(
+    dynamic expectedVertexJson = dynamic::object("tagName.prop", 2)("tagName1.prop1", 2)(
         "tagName1.prop2", nullptr)("tagName1.prop3", "123");
-    ASSERT_EQ(expectedVeretxJson, vertexIntVid.toJson());
+    ASSERT_EQ(expectedVertexJson, vertexIntVid.toJson());
 
-    dynamic expectedVeretxMetaJson = dynamic::object("id", 001)("type", "vertex");
-    ASSERT_EQ(expectedVeretxMetaJson, vertexIntVid.getMetaData());
+    dynamic expectedVertexMetaJson = dynamic::object("id", 001)("type", "vertex");
+    ASSERT_EQ(expectedVertexMetaJson, vertexIntVid.getMetaData());
   }
 }
 
@@ -159,7 +159,7 @@ TEST(ValueToJson, Set) {
                         DateTime(2021, 12, 21, 13, 30, 15, 0)}));  // datetime
   dynamic expectedSetJsonObj = dynamic::array(
       2, 2.33, true, "str", "2021-12-21", "13:30:15.000000Z", "2021-12-21T13:30:15.0Z");
-  // The underlying data strcuture is unordered_set, so sort before the comparison
+  // The underlying data structure is unordered_set, so sort before the comparison
   auto actualJson = set.toJson();
   std::sort(actualJson.begin(), actualJson.end());
   std::sort(expectedSetJsonObj.begin(), expectedSetJsonObj.end());
@@ -246,7 +246,7 @@ TEST(ValueToJson, DecodeEncode) {
       // time
       Value(Time{1, 2, 3, 4}),
 
-      // datatime
+      // datetime
       Value(DateTime{1, 2, 3, 4, 5, 6, 7}),
 
       // vertex

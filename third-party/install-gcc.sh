@@ -35,7 +35,7 @@ this_distro=$(lsb_release -si)
 this_libc_version=$(ldd --version | head -1 | cut -d ')' -f 2 | cut -d ' ' -f 2)
 
 hash wget &>/dev/null || {
-    echo "'wget' not fould, please install it first" 1>&2
+    echo "'wget' not found, please install it first" 1>&2
     exit 1
 }
 

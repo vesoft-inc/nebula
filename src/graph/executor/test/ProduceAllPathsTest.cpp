@@ -198,7 +198,7 @@ class ProduceAllPathsTest : public testing::Test {
           ds3.rows.emplace_back(std::move(row));
         }
       }
-      thridStepResult_ = std::move(ds3);
+      thirdStepResult_ = std::move(ds3);
 
       {
         DataSet ds;
@@ -221,7 +221,7 @@ class ProduceAllPathsTest : public testing::Test {
   std::unique_ptr<QueryContext> qctx_;
   DataSet firstStepResult_;
   DataSet secondStepResult_;
-  DataSet thridStepResult_;
+  DataSet thirdStepResult_;
 };
 
 TEST_F(ProduceAllPathsTest, AllPath) {
@@ -408,7 +408,7 @@ TEST_F(ProduceAllPathsTest, AllPath) {
   {
     ResultBuilder builder;
     List datasets;
-    datasets.values.emplace_back(std::move(thridStepResult_));
+    datasets.values.emplace_back(std::move(thirdStepResult_));
     builder.value(std::move(datasets)).iter(Iterator::Kind::kGetNeighbors);
     qctx_->ectx()->setResult("input", builder.build());
 

@@ -75,7 +75,7 @@ VALUES
         "Dirk Nowitzki": ("Dirk Nowitzki", 40),
         "Paul George": ("Paul George", 28),
         "Grant Hill": ("Grant Hill", 46),
-        "Shaquile O'Neal": ("Shaquile O'Neal", 47),
+        "Shaquille O'Neal": ("Shaquille O'Neal", 47),
         "JaVale McGee": ("JaVale McGee", 31),
         "Dwight Howard": ("Dwight Howard", 33);
 
@@ -256,12 +256,12 @@ VALUES
         "Grant Hill" -> "Magic": (2000, 2007),
         "Grant Hill" -> "Suns": (2007, 2012),
         "Grant Hill" -> "Clippers": (2012, 2013),
-        "Shaquile O'Neal" -> "Magic": (1992, 1996),
-        "Shaquile O'Neal" -> "Lakers": (1996, 2004),
-        "Shaquile O'Neal" -> "Heat": (2004, 2008),
-        "Shaquile O'Neal" -> "Suns": (2008, 2009),
-        "Shaquile O'Neal" -> "Cavaliers": (2009, 2010),
-        "Shaquile O'Neal" -> "Celtics": (2010, 2011),
+        "Shaquille O'Neal" -> "Magic": (1992, 1996),
+        "Shaquille O'Neal" -> "Lakers": (1996, 2004),
+        "Shaquille O'Neal" -> "Heat": (2004, 2008),
+        "Shaquille O'Neal" -> "Suns": (2008, 2009),
+        "Shaquille O'Neal" -> "Cavaliers": (2009, 2010),
+        "Shaquille O'Neal" -> "Celtics": (2010, 2011),
         "JaVale McGee" -> "Wizards": (2008, 2012),
         "JaVale McGee" -> "Nuggets": (2012, 2015),
         "JaVale McGee" -> "Mavericks": (2015, 2016),
@@ -331,7 +331,7 @@ VALUES
         "Joel Embiid" -> "Ben Simmons": (80),
         "Damian Lillard" -> "LaMarcus Aldridge": (80),
         "Yao Ming" -> "Tracy McGrady": (90),
-        "Yao Ming" -> "Shaquile O'Neal": (90),
+        "Yao Ming" -> "Shaquille O'Neal": (90),
         "Dejounte Murray" -> "Tim Duncan": (99),
         "Dejounte Murray" -> "Tony Parker": (99),
         "Dejounte Murray" -> "Manu Ginobili": (99),
@@ -357,8 +357,8 @@ VALUES
         "Dirk Nowitzki" -> "Dwyane Wade": (10),
         "Paul George" -> "Russell Westbrook": (95),
         "Grant Hill" -> "Tracy McGrady": (90),
-        "Shaquile O'Neal" -> "JaVale McGee": (100),
-        "Shaquile O'Neal" -> "Tim Duncan": (80);
+        "Shaquille O'Neal" -> "JaVale McGee": (100),
+        "Shaquille O'Neal" -> "Tim Duncan": (80);
 
 INSERT
         EDGE teammate(start_year, end_year)

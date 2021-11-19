@@ -139,7 +139,7 @@ using UserRolesMap = std::unordered_map<std::string, std::vector<cpp2::RoleItem>
 // get user password by account
 using UserPasswordMap = std::unordered_map<std::string, std::string>;
 
-// config cahce, get config via module and name
+// config cache, get config via module and name
 using MetaConfigMap =
     std::unordered_map<std::pair<cpp2::ConfigModule, std::string>, cpp2::ConfigItem>;
 
@@ -186,7 +186,7 @@ struct MetaClientOptions {
 
   // Current host address
   HostAddr localHost_{"", 0};
-  // Current cluster Id, it is requried by storaged only.
+  // Current cluster Id, it is required by storaged only.
   std::atomic<ClusterID> clusterId_{0};
   // If current client being used in storaged.
   bool inStoraged_ = false;
@@ -391,15 +391,6 @@ class MetaClient {
 
   folly::Future<StatusOr<std::vector<cpp2::RoleItem>>> getUserRoles(std::string account);
 
-  // Operations for admin
-  folly::Future<StatusOr<int64_t>> balance(std::vector<HostAddr> hostDel,
-                                           bool isStop,
-                                           bool isReset);
-
-  folly::Future<StatusOr<std::vector<cpp2::BalanceTask>>> showBalance(int64_t balanceId);
-
-  folly::Future<StatusOr<bool>> balanceLeader();
-
   // Operations for config
   folly::Future<StatusOr<bool>> regConfig(const std::vector<cpp2::ConfigItem>& items);
 
@@ -419,7 +410,7 @@ class MetaClient {
 
   folly::Future<StatusOr<std::vector<cpp2::Snapshot>>> listSnapshots();
 
-  // Opeartions for listener.
+  // Operations for listener.
 
   folly::Future<StatusOr<bool>> addListener(GraphSpaceID spaceId,
                                             cpp2::ListenerType type,
@@ -451,7 +442,7 @@ class MetaClient {
 
   StatusOr<std::vector<cpp2::FTClient>> getFTClientsFromCache();
 
-  // Opeartions for fulltext index.
+  // Operations for fulltext index.
 
   folly::Future<StatusOr<bool>> createFTIndex(const std::string& name, const cpp2::FTIndex& index);
 
@@ -486,7 +477,7 @@ class MetaClient {
   folly::Future<StatusOr<cpp2::ExecResp>> killQuery(
       std::unordered_map<SessionID, std::unordered_set<ExecutionPlanID>> killQueries);
 
-  // Opeartions for cache.
+  // Operations for cache.
   StatusOr<GraphSpaceID> getSpaceIdByNameFromCache(const std::string& name);
 
   StatusOr<std::string> getSpaceNameByIdFromCache(GraphSpaceID spaceId);
@@ -513,7 +504,7 @@ class MetaClient {
   StatusOr<std::string> getEdgeNameByTypeFromCache(const GraphSpaceID& space,
                                                    const EdgeType edgeType);
 
-  // get all lastest version edge
+  // get all latest version edge
   StatusOr<std::vector<std::string>> getAllEdgeFromCache(const GraphSpaceID& space);
 
   PartsMap getPartsMapFromCache(const HostAddr& host);

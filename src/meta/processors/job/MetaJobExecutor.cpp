@@ -13,6 +13,7 @@
 #include "meta/common/MetaCommon.h"
 #include "meta/processors/Common.h"
 #include "meta/processors/admin/AdminClient.h"
+#include "meta/processors/job/BalanceJobExecutor.h"
 #include "meta/processors/job/CompactJobExecutor.h"
 #include "meta/processors/job/FlushJobExecutor.h"
 #include "meta/processors/job/RebuildEdgeJobExecutor.h"
@@ -33,6 +34,12 @@ std::unique_ptr<MetaJobExecutor> MetaJobExecutorFactory::createMetaJobExecutor(
   switch (jd.getCmd()) {
     case cpp2::AdminCmd::COMPACT:
       ret.reset(new CompactJobExecutor(jd.getJobId(), store, client, jd.getParas()));
+      break;
+    case cpp2::AdminCmd::DATA_BALANCE:
+      ret.reset(new DataBalanceJobExecutor(jd, store, client, jd.getParas()));
+      break;
+    case cpp2::AdminCmd::LEADER_BALANCE:
+      ret.reset(new LeaderBalanceJobExecutor(jd.getJobId(), store, client, jd.getParas()));
       break;
     case cpp2::AdminCmd::FLUSH:
       ret.reset(new FlushJobExecutor(jd.getJobId(), store, client, jd.getParas()));
@@ -77,7 +84,7 @@ ErrOrHosts MetaJobExecutor::getTargetHost(GraphSpaceID spaceId) {
     return retCode;
   }
 
-  // use vector instead of set because this can convient for next step
+  // use vector instead of set because this can convenient for next step
   std::unordered_map<HostAddr, std::vector<PartitionID>> hostAndPart;
   std::vector<std::pair<HostAddr, std::vector<PartitionID>>> hosts;
   while (iter->valid()) {
@@ -179,6 +186,10 @@ nebula::cpp2::ErrorCode MetaJobExecutor::execute() {
       addressesRet = getListenerHost(space_, cpp2::ListenerType::ELASTICSEARCH);
       break;
     }
+    case TargetHosts::NONE: {
+      addressesRet = {{HostAddr(), {}}};
+      break;
+    }
     case TargetHosts::DEFAULT: {
       addressesRet = getTargetHost(space_);
       break;
@@ -194,32 +205,34 @@ nebula::cpp2::ErrorCode MetaJobExecutor::execute() {
   auto addresses = nebula::value(addressesRet);
 
   // write all tasks first.
-  for (auto i = 0U; i != addresses.size(); ++i) {
-    TaskDescription task(jobId_, i, addresses[i].first);
-    std::vector<kvstore::KV> data{{task.taskKey(), task.taskVal()}};
-    folly::Baton<true, std::atomic> baton;
-    auto rc = nebula::cpp2::ErrorCode::SUCCEEDED;
-    kvstore_->asyncMultiPut(
-        kDefaultSpaceId, kDefaultPartId, std::move(data), [&](nebula::cpp2::ErrorCode code) {
-          rc = code;
-          baton.post();
-        });
-    baton.wait();
-    if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(INFO) << "write to kv store failed, error: " << apache::thrift::util::enumNameSafe(rc);
-      return rc;
+  if (toHost_ != TargetHosts::NONE) {
+    for (auto i = 0U; i != addresses.size(); ++i) {
+      TaskDescription task(jobId_, i, addresses[i].first);
+      std::vector<kvstore::KV> data{{task.taskKey(), task.taskVal()}};
+      folly::Baton<true, std::atomic> baton;
+      auto rc = nebula::cpp2::ErrorCode::SUCCEEDED;
+      kvstore_->asyncMultiPut(
+          kDefaultSpaceId, kDefaultPartId, std::move(data), [&](nebula::cpp2::ErrorCode code) {
+            rc = code;
+            baton.post();
+          });
+      baton.wait();
+      if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
+        LOG(INFO) << "write to kv store failed, error: " << apache::thrift::util::enumNameSafe(rc);
+        return rc;
+      }
     }
   }
 
-  std::vector<folly::SemiFuture<Status>> futs;
+  std::vector<folly::SemiFuture<Status>> futures;
   for (auto& address : addresses) {
     // transform to the admin host
     auto h = Utils::getAdminAddrFromStoreAddr(address.first);
-    futs.emplace_back(executeInternal(std::move(h), std::move(address.second)));
+    futures.emplace_back(executeInternal(std::move(h), std::move(address.second)));
   }
 
   auto rc = nebula::cpp2::ErrorCode::SUCCEEDED;
-  auto tries = folly::collectAll(std::move(futs)).get();
+  auto tries = folly::collectAll(std::move(futures)).get();
   for (auto& t : tries) {
     if (t.hasException()) {
       LOG(ERROR) << t.exception().what();
