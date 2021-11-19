@@ -45,14 +45,11 @@ static Expression* genVertexFilter(const NodeInfo& node) { return node.filter; }
 
 static Expression* genEdgeFilter(const EdgeInfo& edge) { return edge.filter; }
 
-static std::unique_ptr<std::vector<VertexProp>> genVertexProps(const NodeInfo& node,
-                                                               QueryContext* qctx,
-                                                               GraphSpaceID spaceId) {
-  // TODO
+static StatusOr<std::unique_ptr<std::vector<VertexProp>>> genVertexProps(const NodeInfo& node,
+                                                                         QueryContext* qctx,
+                                                                         GraphSpaceID spaceId) {
   UNUSED(node);
-  UNUSED(qctx);
-  UNUSED(spaceId);
-  return std::make_unique<std::vector<VertexProp>>();
+  return SchemaUtil::getAllVertexProp(qctx, spaceId, true);
 }
 
 static std::unique_ptr<std::vector<storage::cpp2::EdgeProp>> genEdgeProps(const EdgeInfo& edge,
@@ -239,7 +236,9 @@ Status MatchClausePlanner::leftExpandFromNode(const std::vector<NodeInfo>& nodeI
     auto& edge = edgeInfos[i - 1];
     auto traverse = Traverse::make(qctx, subplan.root, spaceId);
     traverse->setSrc(nextTraverseStart);
-    traverse->setVertexProps(genVertexProps(node, qctx, spaceId));
+    auto vertexProps = genVertexProps(node, qctx, spaceId);
+    NG_RETURN_IF_ERROR(vertexProps);
+    traverse->setVertexProps(std::move(vertexProps).value());
     traverse->setEdgeProps(genEdgeProps(edge, reversely, qctx, spaceId));
     traverse->setVertexFilter(genVertexFilter(node));
     traverse->setEdgeFilter(genEdgeFilter(edge));
@@ -283,7 +282,9 @@ Status MatchClausePlanner::rightExpandFromNode(const std::vector<NodeInfo>& node
     auto& edge = edgeInfos[i];
     auto traverse = Traverse::make(qctx, subplan.root, spaceId);
     traverse->setSrc(nextTraverseStart);
-    traverse->setVertexProps(genVertexProps(node, qctx, spaceId));
+    auto vertexProps = genVertexProps(node, qctx, spaceId);
+    NG_RETURN_IF_ERROR(vertexProps);
+    traverse->setVertexProps(std::move(vertexProps).value());
     traverse->setEdgeProps(genEdgeProps(edge, reversely, qctx, spaceId));
     traverse->setVertexFilter(genVertexFilter(node));
     traverse->setEdgeFilter(genEdgeFilter(edge));
