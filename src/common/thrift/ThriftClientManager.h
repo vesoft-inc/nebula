@@ -25,9 +25,7 @@ class ThriftClientManager final {
 
   ~ThriftClientManager() { VLOG(3) << "~ThriftClientManager"; }
 
-  explicit ThriftClientManager(bool enableSSL = false) : enableSSL_(enableSSL) {
-    VLOG(3) << "ThriftClientManager";
-  }
+  explicit ThriftClientManager(bool enableSSL = false);
 
  private:
   using ClientMap =

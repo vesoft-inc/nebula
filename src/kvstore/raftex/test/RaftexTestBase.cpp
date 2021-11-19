@@ -165,6 +165,8 @@ void setupRaft(int32_t numCopies,
     if (!services.back()->start()) return;
     uint16_t port = services.back()->getServerPort();
     allHosts.emplace_back(ipStr, port);
+    LOG(INFO) << "[Raft Test: Setting up] started service on "
+              << ipStr << ":" << port;
   }
 
   if (isLearner.empty()) {
@@ -200,6 +202,8 @@ void setupRaft(int32_t numCopies,
 
   // Wait until all copies agree on the same leader
   waitUntilLeaderElected(copies, leader, isLearner);
+  LOG(INFO) << "[Raft Test: Setting up] " << leader->address()
+            << " has been elected as the leader for Term " << leader->termId();
 }
 
 void finishRaft(std::vector<std::shared_ptr<RaftexService>>& services,

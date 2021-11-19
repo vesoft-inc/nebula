@@ -32,7 +32,7 @@ Host::Host(const HostAddr& addr, std::shared_ptr<RaftPart> part, bool isLearner)
       addr_(addr),
       isLearner_(isLearner),
       idStr_(folly::stringPrintf(
-          "%s[Host: %s:%d] ", part_->idStr_.c_str(), addr_.host.c_str(), addr_.port)),
+          "%s -> [Host: %s:%d] ", part_->idStr_.c_str(), addr_.host.c_str(), addr_.port)),
       cachingPromise_(folly::SharedPromise<cpp2::AppendLogResponse>()) {}
 
 void Host::waitForStop() {
@@ -347,14 +347,14 @@ folly::Future<cpp2::AppendLogResponse> Host::sendAppendLogRequest(
     }
   }
 
-  LOG_IF(INFO, FLAGS_trace_raft) << idStr_ << "Sending appendLog: space " << req->get_space()
-                                 << ", part " << req->get_part() << ", current term "
-                                 << req->get_current_term() << ", last_log_id "
-                                 << req->get_last_log_id() << ", committed_id "
-                                 << req->get_committed_log_id() << ", last_log_term_sent "
-                                 << req->get_last_log_term_sent() << ", last_log_id_sent "
-                                 << req->get_last_log_id_sent() << ", logs in request "
-                                 << req->get_log_str_list().size();
+  LOG_IF(INFO, FLAGS_trace_raft) << idStr_ << "Sending appendLog: space=" << req->get_space()
+                                 << ", part=" << req->get_part()
+                                 << ", current_term=" << req->get_current_term()
+                                 << ", last_log_id=" << req->get_last_log_id()
+                                 << ", committed_id=" << req->get_committed_log_id()
+                                 << ", last_log_term_sent=" << req->get_last_log_term_sent()
+                                 << ", last_log_id_sent=" << req->get_last_log_id_sent()
+                                 << ", # logs in request is " << req->get_log_str_list().size();
   // Get client connection
   auto client = part_->clientMan_->client(addr_, eb, false, FLAGS_raft_rpc_timeout_ms);
   return client->future_appendLog(*req);
@@ -410,13 +410,13 @@ folly::Future<cpp2::HeartbeatResponse> Host::sendHeartbeatRequest(
     }
   }
 
-  LOG_IF(INFO, FLAGS_trace_raft) << idStr_ << "Sending heartbeat: space " << req->get_space()
-                                 << ", part " << req->get_part() << ", current term "
-                                 << req->get_current_term() << ", last_log_id "
-                                 << req->get_last_log_id() << ", committed_id "
-                                 << req->get_committed_log_id() << ", last_log_term_sent "
-                                 << req->get_last_log_term_sent() << ", last_log_id_sent "
-                                 << req->get_last_log_id_sent();
+  LOG_IF(INFO, FLAGS_trace_raft) << idStr_ << "Sending heartbeat: space=" << req->get_space()
+                                 << ", part=" << req->get_part()
+                                 << ", current_term=" << req->get_current_term()
+                                 << ", last_log_id=" << req->get_last_log_id()
+                                 << ", committed_id=" << req->get_committed_log_id()
+                                 << ", last_log_term_sent=" << req->get_last_log_term_sent()
+                                 << ", last_log_id_sent=" << req->get_last_log_id_sent();
   // Get client connection
   auto client = part_->clientMan_->client(addr_, eb, false, FLAGS_raft_rpc_timeout_ms);
   return client->future_heartbeat(*req);

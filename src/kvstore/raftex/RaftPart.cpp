@@ -724,7 +724,7 @@ void RaftPart::appendLogsInternal(AppendLogsIterator iter, TermID termId) {
     }
     lastId = wal_->lastLogId();
     if (tracker.slow()) {
-      tracker.output(idStr_, folly::stringPrintf("Write WAL, total %ld", lastId - prevLogId + 1));
+      tracker.output(idStr_, folly::stringPrintf("Write WAL, total %ld", lastId - prevLogId));
     }
     VLOG(2) << idStr_ << "Succeeded writing logs [" << iter.firstLogId() << ", " << lastId
             << "] to WAL";
@@ -808,7 +808,7 @@ void RaftPart::replicateLogs(folly::EventBase* eb,
         CHECK(!result.hasException());
         if (tracker.slow()) {
           tracker.output(self->idStr_,
-                         folly::stringPrintf("Total send logs: %ld", lastLogId - prevLogId + 1));
+                         folly::stringPrintf("Total send logs: %ld", lastLogId - prevLogId));
         }
         self->processAppendLogResponses(*result,
                                         eb,
@@ -887,8 +887,8 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
         tracker.output(idStr_,
                        folly::stringPrintf("Total commit: %ld", committedLogId_ - committedId));
       }
-      VLOG(2) << idStr_ << "Leader succeeded in committing the logs " << committedId + 1 << " to "
-              << lastLogId;
+      VLOG(2) << idStr_ << "Leader succeeded in committing the logs from " << committedId + 1
+              << " to " << lastLogId;
     }
 
     // Step 4: Fulfill the promise
@@ -943,8 +943,7 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
     this->appendLogsInternal(std::move(iter), currTerm);
   } else {
     // Not enough hosts accepted the log, re-try
-    LOG_EVERY_N(WARNING, 100) << idStr_ << "Only " << numSucceeded
-                              << " hosts succeeded, Need to try again";
+    VLOG(3) << idStr_ << "Only " << numSucceeded << " hosts succeeded, Need to try again";
     usleep(1000);
     replicateLogs(eb, std::move(iter), currTerm, lastLogId, committedId, prevLogTerm, prevLogId);
   }
@@ -1051,6 +1050,8 @@ bool RaftPart::processElectionResponses(const RaftPart::ElectionResponses& resul
                    << ", isPreVote = " << isPreVote;
     }
   }
+  VLOG(2) << idStr_ << "Received " << results.size()
+          << " responses and " << numSucceeded << " peers voted for me";
 
   CHECK(role_ == Role::CANDIDATE);
 
@@ -1645,10 +1646,10 @@ void RaftPart::processHeartbeatRequest(const cpp2::HeartbeatRequest& req,
                                  << ", committedLogId = " << req.get_committed_log_id()
                                  << ", lastLogIdSent = " << req.get_last_log_id_sent()
                                  << ", lastLogTermSent = " << req.get_last_log_term_sent()
-                                 << ", local lastLogId = " << lastLogId_
-                                 << ", local lastLogTerm = " << lastLogTerm_
-                                 << ", local committedLogId = " << committedLogId_
-                                 << ", local current term = " << term_;
+                                 << ", [local] lastLogId = " << lastLogId_
+                                 << ", [local] lastLogTerm = " << lastLogTerm_
+                                 << ", [local] committedLogId = " << committedLogId_
+                                 << ", [local] current term = " << term_;
   std::lock_guard<std::mutex> g(raftLock_);
 
   resp.current_term_ref() = term_;
@@ -1757,6 +1758,7 @@ void RaftPart::sendHeartbeat() {
       std::string log = "";
       appendLogAsync(clusterId_, LogType::NORMAL, std::move(log));
     });
+    return;
   }
 
   using namespace folly;  // NOLINT since the fancy overload of | operator

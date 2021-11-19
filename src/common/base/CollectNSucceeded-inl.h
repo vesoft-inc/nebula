@@ -50,8 +50,12 @@ folly::Future<SucceededResultList<FutureIter>> collectNSucceeded(FutureIter firs
         if (!t.hasException()) {
           if (ctx->eval(index, t.value())) {
             ++ctx->nSucceeded;
+            // We will not return the results from learners
+            ctx->results.emplace_back(index, std::move(t.value()));
           }
-          ctx->results.emplace_back(index, std::move(t.value()));
+        } else {
+          // Got exception
+          DLOG(ERROR) << "Exception receided: " << t.exception().what().toStdString();
         }
         if ((++ctx->numCompleted) == ctx->nTotal || ctx->nSucceeded == n) {
           // Done

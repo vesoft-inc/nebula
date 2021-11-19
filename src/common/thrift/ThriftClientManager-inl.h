@@ -8,15 +8,32 @@
 #include <folly/io/async/AsyncSSLSocket.h>
 #include <folly/io/async/AsyncSocket.h>
 #include <folly/system/ThreadName.h>
-#include <thrift/lib/cpp2/async/RocketClientChannel.h>
+#include <thrift/lib/cpp2/Flags.h>
+#include <thrift/lib/cpp2/async/HeaderClientChannel.h>
 
 #include "common/network/NetworkUtils.h"
 #include "common/ssl/SSLConfig.h"
 
 DECLARE_int32(conn_timeout_ms);
+DECLARE_bool(use_rocket_client);
+
+THRIFT_FLAG_DECLARE_bool(raw_client_rocket_upgrade_enabled_v2);
+
 
 namespace nebula {
 namespace thrift {
+
+template <class ClientType>
+ThriftClientManager<ClientType>::ThriftClientManager(bool enableSSL)
+    : enableSSL_(enableSSL) {
+  if (FLAGS_use_rocket_client) {
+    THRIFT_FLAG_SET_MOCK(raw_client_rocket_upgrade_enabled_v2, true);
+  } else {
+    THRIFT_FLAG_SET_MOCK(raw_client_rocket_upgrade_enabled_v2, false);
+  }
+  VLOG(3) << "ThriftClientManager";
+}
+
 
 template <class ClientType>
 std::shared_ptr<ClientType> ThriftClientManager<ClientType>::client(const HostAddr& host,
@@ -26,31 +43,25 @@ std::shared_ptr<ClientType> ThriftClientManager<ClientType>::client(const HostAd
   if (evb == nullptr) {
     evb = folly::EventBaseManager::get()->getEventBase();
   }
+
   // Get client from client manager if it is ok.
   auto it = clientMap_->find(std::make_pair(host, evb));
   if (it != clientMap_->end()) {
-    do {
-      auto channel = dynamic_cast<apache::thrift::RocketClientChannel*>(it->second->getChannel());
-      if (channel == nullptr || !channel->good()) {
-        // Remove bad connection to create a new one.
-        clientMap_->erase(it);
-        VLOG(2) << "Invalid Channel: " << channel << " for host: " << host;
-        break;
-      }
-      auto transport = dynamic_cast<folly::AsyncSocket*>(channel->getTransport());
-      if (transport == nullptr || transport->hangup()) {
-        clientMap_->erase(it);
-        VLOG(2) << "Transport is closed by peers " << transport << " for host: " << host;
-        break;
-      }
-      VLOG(2) << "Getting a client to " << host;
+    auto channel = dynamic_cast<apache::thrift::RocketClientChannel*>(it->second->getChannel());
+    if (channel == nullptr || !channel->good()) {
+      // Remove bad connection to create a new one.
+      clientMap_->erase(it);
+      VLOG(2) << "Invalid Channel: " << channel << " for host: " << host;
+    } else {
+      VLOG(3) << "Found a client to the host " << host;
       return it->second;
-    } while (false);
+    }
   }
 
   // Need to create a new client and insert it to client map.
-  VLOG(2) << "There is no existing client to " << host << ", trying to create one";
-  static thread_local int connectionCount = 0;
+  VLOG(3) << "Cound NOT find an existing client to the host " << host
+          << ", trying to create one";
+
   /*
    * TODO(liuyu): folly said 'resolve' may take second to finish
    *              if this really happen, we will add a cache here.
@@ -60,17 +71,19 @@ std::shared_ptr<ClientType> ThriftClientManager<ClientType>::client(const HostAd
     try {
       folly::SocketAddress socketAddr(resolved.host, resolved.port, true);
       std::ostringstream oss;
-      oss << "resolve " << resolved << " as ";
+      oss << "resolved " << resolved << " as ";
       resolved.host = socketAddr.getAddressStr();
       oss << resolved;
       LOG(INFO) << oss.str();
     } catch (const std::exception& e) {
       // if we resolve failed, just return a connection, we will retry later
-      LOG(ERROR) << e.what();
+      LOG(WARNING) << "Failed to resolve the host address " << host
+                   << ": " << e.what();
     }
   }
 
-  VLOG(2) << "Connecting to " << host << " for " << ++connectionCount << " times";
+  static thread_local int connectionCount = 0;
+  VLOG(3) << "Connecting to the host " << host << " for " << ++connectionCount << " times";
   folly::AsyncTransport::UniquePtr socket;
   evb->runImmediatelyOrRunInEventBaseThreadAndWait([this, &socket, evb, resolved]() {
     if (enableSSL_) {
@@ -82,18 +95,26 @@ std::shared_ptr<ClientType> ThriftClientManager<ClientType>::client(const HostAd
           new folly::AsyncSocket(evb, resolved.host, resolved.port, FLAGS_conn_timeout_ms));
     }
   });
-  auto clientChannel = apache::thrift::RocketClientChannel::newChannel(std::move(socket));
+
+  apache::thrift::HeaderClientChannel::Options channelOptions;
+  if (compatibility) {
+    channelOptions.setProtocolId(apache::thrift::protocol::T_BINARY_PROTOCOL);
+    channelOptions.setClientType(THRIFT_UNFRAMED_DEPRECATED);
+  }
+
+  auto clientChannel = apache::thrift::HeaderClientChannel::newChannel(
+      std::move(socket),
+      std::move(channelOptions));
   if (timeout > 0) {
     clientChannel->setTimeout(timeout);
   }
-  if (compatibility) {
-    clientChannel->setProtocolId(apache::thrift::protocol::T_BINARY_PROTOCOL);
-//    clientChannel->setClientType(THRIFT_UNFRAMED_DEPRECATED);
-  }
+
   std::shared_ptr<ClientType> client(
       new ClientType(std::move(clientChannel)),
       [evb](auto* p) { evb->runImmediatelyOrRunInEventBaseThreadAndWait([p] { delete p; }); });
   clientMap_->emplace(std::make_pair(host, evb), client);
+
+  VLOG(3) << "Created a new client to the host " << host;
   return client;
 }
 
