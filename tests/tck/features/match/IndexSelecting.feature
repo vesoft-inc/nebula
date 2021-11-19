@@ -52,15 +52,11 @@ Feature: Index selecting for match statement
       | name       |
       | "Yao Ming" |
     And the execution plan should be:
-      | id | name        | dependencies | operator info                                       |
-      | 9  | Project     | 8            |                                                     |
-      | 8  | Filter      | 7            |                                                     |
-      | 7  | Project     | 6            |                                                     |
-      | 6  | Project     | 5            |                                                     |
-      | 5  | Filter      | 14           |                                                     |
-      | 14 | GetVertices | 10           |                                                     |
-      | 10 | IndexScan   | 0            | {"indexCtx": {"columnHints":{"scanType":"PREFIX"}}} |
-      | 0  | Start       |              |                                                     |
+      | id | name           | dependencies | operator info                                       |
+      | 6  | Project        | 2            |                                                     |
+      | 2  | AppendVertices | 5            |                                                     |
+      | 5  | IndexScan      | 0            | {"indexCtx": {"columnHints":{"scanType":"PREFIX"}}} |
+      | 0  | Start          |              |                                                     |
     # Range Index
     When profiling query:
       """
@@ -71,15 +67,12 @@ Feature: Index selecting for match statement
       | "Yao Ming"   |
       | "Tim Duncan" |
     And the execution plan should be:
-      | id | name        | dependencies | operator info                                      |
-      | 10 | Project     | 13           |                                                    |
-      | 13 | Filter      | 7            |                                                    |
-      | 7  | Project     | 6            |                                                    |
-      | 6  | Project     | 5            |                                                    |
-      | 5  | Filter      | 16           |                                                    |
-      | 16 | GetVertices | 11           |                                                    |
-      | 11 | IndexScan   | 0            | {"indexCtx": {"columnHints":{"scanType":"RANGE"}}} |
-      | 0  | Start       |              |                                                    |
+      | id | name           | dependencies | operator info                                      |
+      | 9  | Project        | 7            |                                                    |
+      | 7  | Filter         | 2            |                                                    |
+      | 2  | AppendVertices | 6            |                                                    |
+      | 6  | IndexScan      | 0            | {"indexCtx": {"columnHints":{"scanType":"RANGE"}}} |
+      | 0  | Start          |              |                                                    |
     # Degeneration to FullScan Index
     When executing query:
       """
@@ -97,13 +90,10 @@ Feature: Index selecting for match statement
       | name         |
       | "Tim Duncan" |
     And the execution plan should be:
-      | id | name        | dependencies | operator info                                       |
-      | 10 | Project     | 13           |                                                     |
-      | 13 | Filter      | 7            |                                                     |
-      | 7  | Project     | 6            |                                                     |
-      | 6  | Project     | 5            |                                                     |
-      | 5  | Filter      | 16           |                                                     |
-      | 16 | GetVertices | 11           |                                                     |
-      | 11 | IndexScan   | 0            | {"indexCtx": {"columnHints":{"scanType":"PREFIX"}}} |
-      | 0  | Start       |              |                                                     |
+      | id | name           | dependencies | operator info                                       |
+      | 9  | Project        | 7            |                                                     |
+      | 7  | Filter         | 2            |                                                     |
+      | 2  | AppendVertices | 6            |                                                     |
+      | 6  | IndexScan      | 0            | {"indexCtx": {"columnHints":{"scanType":"PREFIX"}}} |
+      | 0  | Start          |              |                                                     |
     Then drop the used space
