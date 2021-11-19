@@ -21,7 +21,7 @@ void mockData(kvstore::KVStore* kv) {
     std::vector<kvstore::KV> data;
     for (int32_t vertexId = partId * 10; vertexId < (partId + 1) * 10; vertexId++) {
       for (int32_t tagId = 3001; tagId < 3010; tagId++) {
-        auto key = NebulaKeyUtils::vertexKey(partId, vertexId, tagId, 0);
+        auto key = NebulaKeyUtils::tagKey(partId, vertexId, tagId, 0);
         auto val = TestUtils::setupEncode(3, 6);
         data.emplace_back(std::move(key), std::move(val));
       }

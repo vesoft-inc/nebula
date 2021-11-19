@@ -197,7 +197,7 @@ getEdgeProp(ger_edge_prop_int)                              51.88ns   19.27M
 getEdgeProp(ger_edge_prop_string)                           88.41ns   11.31M
 ============================================================================
 
-The latest(2020/07/13) vesion of the implementation of expressions,
+The latest(2020/07/13) version of the implementation of expressions,
 which return Value for getting edge props and src props in ExpressionContext.
 ============================================================================
 ExpressionBenchmark.cpprelative                           time/iter  iters/s

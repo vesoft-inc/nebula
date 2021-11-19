@@ -27,7 +27,7 @@ static const std::unordered_map<std::string, std::pair<std::string, bool>> syste
     {"ft_service", {"__ft_service__", false}},
     {"sessions", {"__sessions__", true}}};
 
-// SystemInfo will always be backuped
+// SystemInfo will always be backed up
 static const std::unordered_map<std::string, std::pair<std::string, bool>> systemInfoMaps{
     {"autoIncrementId", {"__id__", true}}, {"lastUpdateTime", {"__last_update_time__", true}}};
 
@@ -206,7 +206,7 @@ std::vector<HostAddr> MetaKeyUtils::parsePartVal(folly::StringPiece val, int par
   return parsePartValV2(val);
 }
 
-// partion val is ip(int) + port(int)
+// partition val is ip(int) + port(int)
 std::vector<HostAddr> MetaKeyUtils::parsePartValV1(folly::StringPiece val) {
   std::vector<HostAddr> hosts;
   static const size_t unitSize = sizeof(int32_t) * 2;
@@ -889,13 +889,13 @@ std::string MetaKeyUtils::balanceTaskKey(
 }
 
 std::string MetaKeyUtils::balanceTaskVal(BalanceTaskStatus status,
-                                         BalanceTaskResult retult,
+                                         BalanceTaskResult result,
                                          int64_t startTime,
                                          int64_t endTime) {
   std::string val;
   val.reserve(32);
   val.append(reinterpret_cast<const char*>(&status), sizeof(BalanceTaskStatus))
-      .append(reinterpret_cast<const char*>(&retult), sizeof(BalanceTaskResult))
+      .append(reinterpret_cast<const char*>(&result), sizeof(BalanceTaskResult))
       .append(reinterpret_cast<const char*>(&startTime), sizeof(int64_t))
       .append(reinterpret_cast<const char*>(&endTime), sizeof(int64_t));
   return val;

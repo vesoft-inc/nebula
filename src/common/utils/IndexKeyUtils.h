@@ -457,7 +457,7 @@ class IndexKeyUtils final {
   }
 
   static VertexIDSlice getIndexVertexID(size_t vIdLen, const folly::StringPiece& rawKey) {
-    CHECK_GE(rawKey.size(), kVertexIndexLen + vIdLen);
+    CHECK_GE(rawKey.size(), kTagIndexLen + vIdLen);
     auto offset = rawKey.size() - vIdLen;
     return rawKey.subpiece(offset, vIdLen);
   }

@@ -11,7 +11,7 @@
 
 namespace nebula {
 
-TEST(Time, secondsTimeCovertion) {
+TEST(Time, secondsTimeConversion) {
   // DateTime
   {
     std::vector<DateTime> values;

@@ -26,7 +26,7 @@ class IndexVertexScanNode final : public IndexScanNode {
   IndexVertexScanNode(const IndexVertexScanNode& node);
   IndexVertexScanNode(RuntimeContext* context,
                       IndexID indexId,
-                      const std::vector<cpp2::IndexColumnHint>& clolumnHint,
+                      const std::vector<cpp2::IndexColumnHint>& columnHint,
                       ::nebula::kvstore::KVStore* kvstore);
   ::nebula::cpp2::ErrorCode init(InitContext& ctx) override;
   std::unique_ptr<IndexNode> copy() override;

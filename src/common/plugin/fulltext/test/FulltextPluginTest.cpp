@@ -100,18 +100,18 @@ TEST(FulltextPluginTest, ESBulkTest) {
       "charset=utf-8\" -XPOST \"http://127.0.0.1:9200/_bulk\"";
   ASSERT_EQ(expected, header);
 
-  std::vector<folly::dynamic> bodys;
+  std::vector<folly::dynamic> bodies;
   for (const auto& item : items) {
     folly::dynamic meta =
         folly::dynamic::object("_id", DocIDTraits::docId(item))("_index", item.index);
     folly::dynamic data = folly::dynamic::object("value", DocIDTraits::val(item.val))(
         "column_id", DocIDTraits::column(item.column));
-    bodys.emplace_back(folly::dynamic::object("index", std::move(meta)));
-    bodys.emplace_back(std::move(data));
+    bodies.emplace_back(folly::dynamic::object("index", std::move(meta)));
+    bodies.emplace_back(std::move(data));
   }
 
   auto body = ESStorageAdapter().bulkBody(items);
-  verifyBodyStr(body, std::move(bodys));
+  verifyBodyStr(body, std::move(bodies));
 }
 
 TEST(FulltextPluginTest, ESPutToTest) {
@@ -216,13 +216,13 @@ TEST(FulltextPluginTest, ESResultTest) {
   //            "root_cause": [
   //            {
   //                "type": "parsing_exception",
-  //                    "reason": "Unknown key for a VALUE_STRING in [_soure].",
+  //                    "reason": "Unknown key for a VALUE_STRING in [_source].",
   //                    "line": 1,
   //                    "col": 128
   //            }
   //            ],
   //            "type": "parsing_exception",
-  //                "reason": "Unknown key for a VALUE_STRING in [_soure].",
+  //                "reason": "Unknown key for a VALUE_STRING in [_source].",
   //                "line": 1,
   //                "col": 128
   //        },
@@ -231,9 +231,9 @@ TEST(FulltextPluginTest, ESResultTest) {
   {
     std::string json =
         R"({"error": {"root_cause": [{"type": "parsing_exception","reason":
-                           "Unknown key for a VALUE_STRING in [_soure].","line": 1,"col": 128}],
+                           "Unknown key for a VALUE_STRING in [_source].","line": 1,"col": 128}],
                            "type": "parsing_exception","reason": "Unknown key for a VALUE_STRING
-                           in [_soure].","line": 1,"col": 128},"status": 400})";
+                           in [_source].","line": 1,"col": 128},"status": 400})";
     HostAddr localHost_{"127.0.0.1", 9200};
     HttpClient hc(localHost_);
     std::vector<std::string> rows;

@@ -82,7 +82,7 @@
   X(E_BALANCED, -2024)                                                        \
   X(E_NO_RUNNING_BALANCE_PLAN, -2025)                                         \
   X(E_NO_VALID_HOST, -2026)                                                   \
-  X(E_CORRUPTTED_BALANCE_PLAN, -2027)                                         \
+  X(E_CORRUPTED_BALANCE_PLAN, -2027)                                          \
   X(E_NO_INVALID_BALANCE_PLAN, -2028)                                         \
                                                                               \
   /* Authentication Failure */                                                \

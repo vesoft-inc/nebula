@@ -82,7 +82,7 @@ TEST_F(JobManagerTest, addJob) {
 }
 
 TEST_F(JobManagerTest, AddRebuildTagIndexJob) {
-  // For preventting job schedule in JobManager
+  // For preventing job schedule in JobManager
   jobMgr->status_ = JobManager::JbmgrStatus::STOPPED;
 
   std::vector<std::string> paras{"tag_index_name", "test_space"};
@@ -94,7 +94,7 @@ TEST_F(JobManagerTest, AddRebuildTagIndexJob) {
 }
 
 TEST_F(JobManagerTest, AddRebuildEdgeIndexJob) {
-  // For preventting job schedule in JobManager
+  // For preventing job schedule in JobManager
   jobMgr->status_ = JobManager::JbmgrStatus::STOPPED;
 
   std::vector<std::string> paras{"edge_index_name", "test_space"};
@@ -106,7 +106,7 @@ TEST_F(JobManagerTest, AddRebuildEdgeIndexJob) {
 }
 
 TEST_F(JobManagerTest, StatsJob) {
-  // For preventting job schedule in JobManager
+  // For preventing job schedule in JobManager
   jobMgr->status_ = JobManager::JbmgrStatus::STOPPED;
 
   std::vector<std::string> paras{"test_space"};
@@ -127,7 +127,7 @@ TEST_F(JobManagerTest, StatsJob) {
 }
 
 TEST_F(JobManagerTest, JobPriority) {
-  // For preventting job schedule in JobManager
+  // For preventing job schedule in JobManager
   jobMgr->status_ = JobManager::JbmgrStatus::STOPPED;
 
   ASSERT_EQ(0, jobMgr->jobSize());
@@ -162,7 +162,7 @@ TEST_F(JobManagerTest, JobPriority) {
 }
 
 TEST_F(JobManagerTest, JobDeduplication) {
-  // For preventting job schedule in JobManager
+  // For preventing job schedule in JobManager
   jobMgr->status_ = JobManager::JbmgrStatus::STOPPED;
 
   ASSERT_EQ(0, jobMgr->jobSize());

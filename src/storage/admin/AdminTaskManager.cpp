@@ -19,7 +19,7 @@ namespace nebula {
 namespace storage {
 
 bool AdminTaskManager::init() {
-  LOG(INFO) << "max concurrenct subtasks: " << FLAGS_max_concurrent_subtasks;
+  LOG(INFO) << "max concurrent subtasks: " << FLAGS_max_concurrent_subtasks;
   auto threadFactory = std::make_shared<folly::NamedThreadFactory>("TaskManager");
   pool_ = std::make_unique<ThreadPool>(FLAGS_max_concurrent_subtasks, threadFactory);
   bgThread_ = std::make_unique<thread::GenericWorker>();

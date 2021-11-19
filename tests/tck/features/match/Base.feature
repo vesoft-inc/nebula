@@ -204,12 +204,12 @@ Feature: Basic match
       MATCH (v:player)-[e:like]-(v2) where v.age == 38 RETURN *
       """
     Then the result should be, in any order, with relax comparison:
-      | v                                                   | e                                                       | v2                                                            |
-      | ("Paul Gasol" :player{age: 38, name: "Paul Gasol"}) | [:like "Marc Gasol"->"Paul Gasol" @0 {likeness: 99}]    | ("Marc Gasol" :player{age: 34, name: "Marc Gasol"})           |
-      | ("Paul Gasol" :player{age: 38, name: "Paul Gasol"}) | [:like "Paul Gasol"->"Kobe Bryant" @0 {likeness: 90}]   | ("Kobe Bryant" :player{age: 40, name: "Kobe Bryant"})         |
-      | ("Paul Gasol" :player{age: 38, name: "Paul Gasol"}) | [:like "Paul Gasol"->"Marc Gasol" @0 {likeness: 99}]    | ("Marc Gasol" :player{age: 34, name: "Marc Gasol"})           |
-      | ("Yao Ming" :player{age: 38, name: "Yao Ming"})     | [:like "Yao Ming"->"Shaquile O'Neal" @0 {likeness: 90}] | ("Shaquile O'Neal" :player{age: 47, name: "Shaquile O'Neal"}) |
-      | ("Yao Ming" :player{age: 38, name: "Yao Ming"})     | [:like "Yao Ming"->"Tracy McGrady" @0 {likeness: 90}]   | ("Tracy McGrady" :player{age: 39, name: "Tracy McGrady"})     |
+      | v                                                   | e                                                        | v2                                                              |
+      | ("Paul Gasol" :player{age: 38, name: "Paul Gasol"}) | [:like "Marc Gasol"->"Paul Gasol" @0 {likeness: 99}]     | ("Marc Gasol" :player{age: 34, name: "Marc Gasol"})             |
+      | ("Paul Gasol" :player{age: 38, name: "Paul Gasol"}) | [:like "Paul Gasol"->"Kobe Bryant" @0 {likeness: 90}]    | ("Kobe Bryant" :player{age: 40, name: "Kobe Bryant"})           |
+      | ("Paul Gasol" :player{age: 38, name: "Paul Gasol"}) | [:like "Paul Gasol"->"Marc Gasol" @0 {likeness: 99}]     | ("Marc Gasol" :player{age: 34, name: "Marc Gasol"})             |
+      | ("Yao Ming" :player{age: 38, name: "Yao Ming"})     | [:like "Yao Ming"->"Shaquille O'Neal" @0 {likeness: 90}] | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"}) |
+      | ("Yao Ming" :player{age: 38, name: "Yao Ming"})     | [:like "Yao Ming"->"Tracy McGrady" @0 {likeness: 90}]    | ("Tracy McGrady" :player{age: 39, name: "Tracy McGrady"})       |
     When executing query:
       """
       MATCH (v:player)-[e:like]->(v2) where id(v) == "Tim Duncan" RETURN DISTINCT properties(e) as props, e
@@ -254,7 +254,7 @@ Feature: Basic match
       | "Tony Parker" | "Spurs"   | "David West"      |
       | "Tony Parker" | "Spurs"   | "Dejounte Murray" |
 
-  Scenario: Uistinct
+  Scenario: Distinct
     When executing query:
       """
       MATCH (:player{name:'Dwyane Wade'}) -[:like]-> () -[:like]-> (v3)
