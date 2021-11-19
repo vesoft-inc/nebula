@@ -97,13 +97,13 @@ Feature: Match GroupBy
               SKIP 10 LIMIT 6;
       """
     Then the result should be, in order, with relax comparison:
-      | id                | count | sum  | max | min | age  | lb                     |
-      | "Ray Allen"       | 1     | 43.0 | 43  | 43  | 44.0 | ["player"]             |
-      | "Shaquile O'Neal" | 1     | 47.0 | 47  | 47  | 48.0 | ["player"]             |
-      | "Steve Nash"      | 1     | 45.0 | 45  | 45  | 46.0 | ["player"]             |
-      | "Tim Duncan"      | 1     | 42.0 | 42  | 42  | 43.0 | ["bachelor", "player"] |
-      | "Tony Parker"     | 1     | 36.0 | 36  | 36  | 37.0 | ["player"]             |
-      | "Tracy McGrady"   | 1     | 39.0 | 39  | 39  | 40.0 | ["player"]             |
+      | id                 | count | sum  | max | min | age  | lb                     |
+      | "Ray Allen"        | 1     | 43.0 | 43  | 43  | 44.0 | ["player"]             |
+      | "Shaquille O'Neal" | 1     | 47.0 | 47  | 47  | 48.0 | ["player"]             |
+      | "Steve Nash"       | 1     | 45.0 | 45  | 45  | 46.0 | ["player"]             |
+      | "Tim Duncan"       | 1     | 42.0 | 42  | 42  | 43.0 | ["bachelor", "player"] |
+      | "Tony Parker"      | 1     | 36.0 | 36  | 36  | 37.0 | ["player"]             |
+      | "Tracy McGrady"    | 1     | 39.0 | 39  | 39  | 40.0 | ["player"]             |
 
   Scenario: [5] Match GroupBy
     When executing query:
@@ -121,16 +121,16 @@ Feature: Match GroupBy
               SKIP 10 LIMIT 20;
       """
     Then the result should be, in order, with relax comparison:
-      | id                | count | sum   | max | min | age  | lb                     |
-      | "Shaquile O'Neal" | 1     | 47.0  | 31  | 47  | 48.0 | ["player"]             |
-      | "Shaquile O'Neal" | 1     | 47.0  | 42  | 47  | 48.0 | ["bachelor", "player"] |
-      | "Steve Nash"      | 4     | 180.0 | 45  | 45  | 46.0 | ["player"]             |
-      | "Tim Duncan"      | 2     | 84.0  | 41  | 42  | 43.0 | ["player"]             |
-      | "Tony Parker"     | 1     | 36.0  | 42  | 36  | 37.0 | ["bachelor", "player"] |
-      | "Tony Parker"     | 2     | 72.0  | 41  | 36  | 37.0 | ["player"]             |
-      | "Tracy McGrady"   | 3     | 117.0 | 46  | 39  | 40.0 | ["player"]             |
-      | "Vince Carter"    | 2     | 84.0  | 45  | 42  | 43.0 | ["player"]             |
-      | "Yao Ming"        | 2     | 76.0  | 47  | 38  | 39.0 | ["player"]             |
+      | id                 | count | sum   | max | min | age  | lb                     |
+      | "Shaquille O'Neal" | 1     | 47.0  | 31  | 47  | 48.0 | ["player"]             |
+      | "Shaquille O'Neal" | 1     | 47.0  | 42  | 47  | 48.0 | ["bachelor", "player"] |
+      | "Steve Nash"       | 4     | 180.0 | 45  | 45  | 46.0 | ["player"]             |
+      | "Tim Duncan"       | 2     | 84.0  | 41  | 42  | 43.0 | ["player"]             |
+      | "Tony Parker"      | 1     | 36.0  | 42  | 36  | 37.0 | ["bachelor", "player"] |
+      | "Tony Parker"      | 2     | 72.0  | 41  | 36  | 37.0 | ["player"]             |
+      | "Tracy McGrady"    | 3     | 117.0 | 46  | 39  | 40.0 | ["player"]             |
+      | "Vince Carter"     | 2     | 84.0  | 45  | 42  | 43.0 | ["player"]             |
+      | "Yao Ming"         | 2     | 76.0  | 47  | 38  | 39.0 | ["player"]             |
 
   Scenario: [6] Match GroupBy
     When executing query:

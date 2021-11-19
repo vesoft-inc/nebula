@@ -440,7 +440,7 @@ Value RowReaderV1::getVid(int64_t index) const noexcept {
 
 /************************************************************
  *
- *  Low -level functions to read from the bytes
+ *  Low-level functions to read from the bytes
  *
  ***********************************************************/
 int32_t RowReaderV1::readInteger(int64_t offset, int64_t& v) const noexcept {

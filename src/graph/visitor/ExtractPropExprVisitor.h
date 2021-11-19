@@ -2,8 +2,8 @@
  *
  * This source code is licensed under Apache 2.0 License.
  */
-#ifndef GRAPH_VISITOR_EXTRACTPROPEXPRVISITON_H_
-#define GRAPH_VISITOR_EXTRACTPROPEXPRVISITON_H_
+#ifndef GRAPH_VISITOR_EXTRACTPROPEXPRVISITOR_H_
+#define GRAPH_VISITOR_EXTRACTPROPEXPRVISITOR_H_
 
 #include "graph/context/ValidateContext.h"
 #include "graph/visitor/ExprVisitorImpl.h"
@@ -74,4 +74,4 @@ class ExtractPropExprVisitor final : public ExprVisitorImpl {
 }  // namespace graph
 }  // namespace nebula
 
-#endif  // GRAPH_VISITOR_EXTRACTPROPEXPRVISITON_H_
+#endif  // GRAPH_VISITOR_EXTRACTPROPEXPRVISITOR_H_

@@ -289,11 +289,11 @@ ErrorOr<cpp2::ErrorCode, std::shared_ptr<cpp2::AppendLogRequest>> Host::prepareA
     req->set_last_log_id_sent(lastLogIdSent_);
     req->set_log_term(term);
 
-    std::vector<cpp2::LogEntry> logs;
+    std::vector<nebula::cpp2::LogEntry> logs;
     for (size_t cnt = 0;
          it->valid() && it->logTerm() == term && cnt < FLAGS_max_appendlog_batch_size;
          ++(*it), ++cnt) {
-      cpp2::LogEntry le;
+      nebula::cpp2::LogEntry le;
       le.set_cluster(it->logSource());
       le.set_log_str(it->logMsg().toString());
       logs.emplace_back(std::move(le));

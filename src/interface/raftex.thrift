@@ -5,7 +5,7 @@
 
 namespace cpp nebula.raftex
 
-cpp_include "common/thrift/ThriftTypes.h"
+include "common.thrift"
 
 enum ErrorCode {
     SUCCEEDED = 0;
@@ -59,12 +59,6 @@ struct AskForVoteResponse {
 }
 
 
-struct LogEntry {
-    1: ClusterID cluster;
-    2: binary log_str;
-}
-
-
 /*
   AppendLogRequest serves two purposes:
 
@@ -100,7 +94,7 @@ struct AppendLogRequest {
     // which specified by log_term
     //
     10: TermID log_term;
-    11: list<LogEntry> log_str_list;
+    11: list<common.LogEntry> log_str_list;
 }
 
 

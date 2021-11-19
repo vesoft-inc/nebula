@@ -175,7 +175,7 @@ TEST(BalanceIntegrationTest, BalanceTest) {
         newMetaClient.get(), dataPath.c_str(), localIp, storagePort, true);
     LOG(INFO) << "Start a new storage server on " << storageAddr;
   }
-  LOG(INFO) << "Let's stop the last storage servcie " << storagePorts.back();
+  LOG(INFO) << "Let's stop the last storage service " << storagePorts.back();
   {
     metaClients.back()->stop();
     serverContexts.back().reset();
@@ -203,7 +203,7 @@ TEST(BalanceIntegrationTest, BalanceTest) {
     int num = 0;
     std::string lastKey = "";
     while (iter->valid()) {
-      // filter the multipule versions for data.
+      // filter the multiple versions for data.
       auto key = NebulaKeyUtils::keyWithNoVersion(iter->key());
       if (lastKey == key) {
         iter->next();

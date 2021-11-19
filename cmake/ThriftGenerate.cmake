@@ -32,7 +32,7 @@ endmacro()
 #   @output_path - The directory where the thrift file lives
 #
 # Output:
-#  file-cpp2-target     - A custom target to add a dependenct
+#  file-cpp2-target     - A custom target to add a dependency
 #  ${file-cpp2-HEADERS} - The generated Header Files.
 #  ${file-cpp2-SOURCES} - The generated Source Files.
 #

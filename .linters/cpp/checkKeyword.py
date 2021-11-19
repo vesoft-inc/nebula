@@ -8,7 +8,7 @@ import os
 import re
 import sys
 
-PASER_FILE_PATH = 'src/parser/parser.yy'
+PARSER_FILE_PATH = 'src/parser/parser.yy'
 SCANNER_FILE_PATH = 'src/parser/scanner.lex'
 
 reserved_key_words = [
@@ -139,7 +139,7 @@ if __name__ == '__main__':
 
     if len(keywords) == 0:
         exit(0)
-    unreserved_key_words = get_unreserved_keyword(PASER_FILE_PATH)
+    unreserved_key_words = get_unreserved_keyword(PARSER_FILE_PATH)
     new_key_words = [word for word in keywords if word not in reserved_key_words]
     if len(new_key_words) == 0:
         exit(0)

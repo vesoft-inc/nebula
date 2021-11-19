@@ -50,7 +50,7 @@ nebula::cpp2::ErrorCode StatsJobExecutor::prepare() {
   }
   space_ = nebula::value(spaceRet);
 
-  // Set the status of the statis job to running
+  // Set the status of the stats job to running
   cpp2::StatsItem statsItem;
   statsItem.set_status(cpp2::JobStatus::RUNNING);
   auto statsKey = MetaKeyUtils::statsKey(space_);
@@ -158,7 +158,7 @@ nebula::cpp2::ErrorCode StatsJobExecutor::finish(bool exeSuccessed) {
   std::string val;
   auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, tempKey, &val);
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Can't find the statis data, spaceId : " << space_;
+    LOG(ERROR) << "Can't find the stats data, spaceId : " << space_;
     return ret;
   }
   auto statsItem = MetaKeyUtils::parseStatsVal(val);
@@ -170,7 +170,7 @@ nebula::cpp2::ErrorCode StatsJobExecutor::finish(bool exeSuccessed) {
   auto statsVal = MetaKeyUtils::statsVal(statsItem);
   auto retCode = save(statsKey, statsVal);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Sace statis data failed, error " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(ERROR) << "Sace stats data failed, error " << apache::thrift::util::enumNameSafe(retCode);
     return retCode;
   }
   return doRemove(tempKey);
@@ -196,13 +196,13 @@ nebula::cpp2::ErrorCode StatsJobExecutor::stop() {
 
   auto tries = folly::collectAll(std::move(futures)).get();
   if (std::any_of(tries.begin(), tries.end(), [](auto& t) { return t.hasException(); })) {
-    LOG(ERROR) << "statis job stop() RPC failure.";
+    LOG(ERROR) << "stats job stop() RPC failure.";
     return nebula::cpp2::ErrorCode::E_BALANCER_FAILURE;
   }
 
   for (const auto& t : tries) {
     if (!t.value().ok()) {
-      LOG(ERROR) << "Stop statis job Failed";
+      LOG(ERROR) << "Stop stats job Failed";
       return nebula::cpp2::ErrorCode::E_BALANCER_FAILURE;
     }
   }
