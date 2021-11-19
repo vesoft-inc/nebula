@@ -48,6 +48,7 @@ static Expression* genEdgeFilter(const EdgeInfo& edge) { return edge.filter; }
 static StatusOr<std::unique_ptr<std::vector<VertexProp>>> genVertexProps(const NodeInfo& node,
                                                                          QueryContext* qctx,
                                                                          GraphSpaceID spaceId) {
+  // TODO
   UNUSED(node);
   return SchemaUtil::getAllVertexProp(qctx, spaceId, true);
 }
