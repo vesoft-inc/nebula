@@ -95,13 +95,11 @@ std::shared_ptr<ClientType> ThriftClientManager<ClientType>::client(const HostAd
           new folly::AsyncSocket(evb, resolved.host, resolved.port, FLAGS_conn_timeout_ms));
     }
   });
-  auto clientChannel = apache::thrift::RocketClientChannel::newChannel(std::move(socket));
-  if (timeout > 0) {
-    clientChannel->setTimeout(timeout);
-  }
+
+  apache::thrift::HeaderClientChannel::Options channelOptions;
   if (compatibility) {
-    clientChannel->setProtocolId(apache::thrift::protocol::T_BINARY_PROTOCOL);
-//    clientChannel->setClientType(THRIFT_UNFRAMED_DEPRECATED);
+    channelOptions.setProtocolId(apache::thrift::protocol::T_BINARY_PROTOCOL);
+    channelOptions.setClientType(THRIFT_UNFRAMED_DEPRECATED);
   }
 
   auto clientChannel = apache::thrift::HeaderClientChannel::newChannel(
