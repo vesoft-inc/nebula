@@ -157,6 +157,21 @@ class InsertVerticesSentence final : public Sentence {
   std::unique_ptr<VertexRowList> rows_;
 };
 
+class InsertVerticesOnlySentence final : public Sentence {
+ public:
+  explicit InsertVerticesOnlySentence(VertexIDList *vidList, bool ifNotExists)
+      : Sentence(Kind::kInsertVerticesOnly),
+        vertices_(new VerticesClause(vidList)),
+        ifNotExists_(ifNotExists) {}
+  std::string toString() const override;
+  const VerticesClause *vertices() const { return vertices_.get(); }
+  bool ifNotExists() const { return ifNotExists_; }
+
+ private:
+  std::unique_ptr<VerticesClause> vertices_;
+  bool ifNotExists_{false};
+};
+
 class EdgeRowItem final {
  public:
   EdgeRowItem(Expression *srcid, Expression *dstid, ValueList *values) {

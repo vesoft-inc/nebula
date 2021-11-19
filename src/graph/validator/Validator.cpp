@@ -113,6 +113,8 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
       return std::make_unique<ShowCreateEdgeValidator>(sentence, context);
     case Sentence::Kind::kInsertVertices:
       return std::make_unique<InsertVerticesValidator>(sentence, context);
+    case Sentence::Kind::kInsertVerticesOnly:
+      return std::make_unique<InsertVerticesOnlyValidator>(sentence, context);
     case Sentence::Kind::kInsertEdges:
       return std::make_unique<InsertEdgesValidator>(sentence, context);
     case Sentence::Kind::kCreateUser:

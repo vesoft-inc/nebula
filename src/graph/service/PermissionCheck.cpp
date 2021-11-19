@@ -105,6 +105,7 @@ Status PermissionCheck::permissionCheck(ClientSession *session,
       return Status::OK();
     }
     case Sentence::Kind::kInsertVertices:
+    case Sentence::Kind::kInsertVerticesOnly:
     case Sentence::Kind::kUpdateVertex:
     case Sentence::Kind::kInsertEdges:
     case Sentence::Kind::kUpdateEdge:

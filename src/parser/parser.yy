@@ -2785,6 +2785,9 @@ insert_vertex_sentence
     : KW_INSERT KW_VERTEX opt_if_not_exists vertex_tag_list KW_VALUES vertex_row_list {
         $$ = new InsertVerticesSentence($4, $6, $3);
     }
+    | KW_INSERT KW_VERTEX opt_if_not_exists KW_VALUES vid_list {
+        $$ = new InsertVerticesOnlySentence($5, $3);
+    }
     ;
 
 vertex_tag_list

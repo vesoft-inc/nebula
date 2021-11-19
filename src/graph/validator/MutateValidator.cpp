@@ -133,6 +133,36 @@ Status InsertVerticesValidator::prepareVertices() {
   return Status::OK();
 }
 
+Status InsertVerticesOnlyValidator::validateImpl() {
+  spaceId_ = vctx_->whichSpace().id;
+  NG_RETURN_IF_ERROR(prepareVertices());
+  return Status::OK();
+}
+
+Status InsertVerticesOnlyValidator::prepareVertices() {
+  auto sentence = static_cast<InsertVerticesOnlySentence *>(sentence_);
+  ifNotExists_ = sentence->ifNotExists();
+  auto vidList = sentence->vertices()->vidList();
+  vertices_.reserve(vidList.size());
+  for (auto vid : vidList) {
+    auto idStatus = SchemaUtil::toVertexID(vid, vidType_);
+    NG_RETURN_IF_ERROR(idStatus);
+    auto vertexID = std::move(idStatus).value();
+    storage::cpp2::NewVertex vertex;
+    vertex.set_id(vertexID);
+    vertices_.emplace_back(std::move(vertex));
+  }
+  return Status::OK();
+}
+
+Status InsertVerticesOnlyValidator::toPlan() {
+  auto node =
+      InsertVertices::make(qctx_, nullptr, spaceId_, std::move(vertices_), {}, ifNotExists_);
+  root_ = node;
+  tail_ = node;
+  return Status::OK();
+}
+
 Status InsertEdgesValidator::validateImpl() {
   spaceId_ = vctx_->whichSpace().id;
   NG_RETURN_IF_ERROR(check());

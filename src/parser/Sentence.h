@@ -52,6 +52,7 @@ class Sentence {
     kDropTag,
     kDropEdge,
     kInsertVertices,
+    kInsertVerticesOnly,
     kUpdateVertex,
     kInsertEdges,
     kUpdateEdge,
