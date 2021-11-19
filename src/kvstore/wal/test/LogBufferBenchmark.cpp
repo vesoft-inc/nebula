@@ -33,7 +33,7 @@ void prepareData(std::shared_ptr<AtomicLogBuffer> logBuffer, int32_t len, size_t
 }
 
 /*************************
- * Begining of benchmarks
+ * Beginning of benchmarks
  ************************/
 
 void runInMemoryLogBufferWriteTest(size_t iters, int32_t len) {
@@ -379,7 +379,7 @@ int main(int argc, char** argv) {
 }
 /*
 Intel(R) Xeon(R) CPU E5-2690 v2 @ 3.00GHz
--O2  kMaxLenght=64    write test
+-O2  kMaxLength=64    write test
 ============================================================================
 LogBufferBenchmark.cpprelative                            time/iter  iters/s
 ============================================================================

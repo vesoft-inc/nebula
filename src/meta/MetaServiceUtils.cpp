@@ -234,7 +234,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>> MetaServiceUtils::bac
     if (result != nebula::cpp2::ErrorCode::SUCCEEDED) {
       return result;
     }
-    LOG(INFO) << table.first << " table backup successed";
+    LOG(INFO) << table.first << " table backup succeeded";
   }
 
   if (spaceNames == nullptr) {
@@ -248,7 +248,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>> MetaServiceUtils::bac
       if (result != nebula::cpp2::ErrorCode::SUCCEEDED) {
         return result;
       }
-      LOG(INFO) << table.first << " table backup successed";
+      LOG(INFO) << table.first << " table backup succeeded";
     }
   }
 
@@ -262,7 +262,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>> MetaServiceUtils::bac
     if (result != nebula::cpp2::ErrorCode::SUCCEEDED) {
       return result;
     }
-    LOG(INFO) << table.first << " table backup successed";
+    LOG(INFO) << table.first << " table backup succeeded";
   }
 
   // The mapping of space name and space id needs to be handled separately.

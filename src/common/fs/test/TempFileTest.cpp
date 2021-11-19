@@ -12,7 +12,7 @@ namespace nebula {
 namespace fs {
 
 TEST(TempFile, Basic) {
-  // auto deletiong
+  // auto deletion
   {
     const char *path = "/tmp/tmp.XXXXXX";
     std::string actual_path;

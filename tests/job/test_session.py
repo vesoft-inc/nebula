@@ -152,7 +152,7 @@ class TestSession(NebulaTestSuite):
 
         resp = conn1.execute(session_id, 'CREATE SPACE IF NOT EXISTS aSpace(partition_num=1, vid_type=FIXED_STRING(8));USE aSpace;')
         self.check_resp_succeeded(ResultSet(resp, 0))
-        # time::WallClock::fastNowInMicroSec() is not syncronous in different process,
+        # time::WallClock::fastNowInMicroSec() is not synchronous in different process,
         # so we sleep 3 seconds here and charge session
         time.sleep(3)
         resp = conn1.execute(session_id, 'USE aSpace;')

@@ -152,7 +152,7 @@ void randomTest(SchemaWriter* schema,
 }
 
 /*************************
- * Begining of Tests
+ * Beginning of Tests
  ************************/
 TEST(RowReader, SequentialShort) { sequentialTest(&schemaShort, dataShortV1, dataShortV2); }
 
@@ -166,7 +166,7 @@ TEST(RowReader, RandomLong) { randomTest(&schemaLong, dataLongV1, dataLongV2, lo
  ************************/
 
 /*************************
- * Begining of benchmarks
+ * Beginning of benchmarks
  ************************/
 BENCHMARK(seq_read_short_v1, iters) { sequentialRead(&schemaShort, dataShortV1, iters); }
 BENCHMARK_RELATIVE(seq_read_short_v2, iters) { sequentialRead(&schemaShort, dataShortV2, iters); }

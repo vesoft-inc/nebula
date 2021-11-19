@@ -41,7 +41,7 @@ class ValidatorTestBase : public ::testing::Test {
     schemaMng_ = CHECK_NOTNULL(MockSchemaManager::makeUnique());
     indexMng_ = CHECK_NOTNULL(MockIndexManager::makeUnique());
     pool_ = std::make_unique<ObjectPool>();
-    PlannersRegister::registPlanners();
+    PlannersRegister::registerPlanners();
   }
 
   StatusOr<QueryContext*> validate(const std::string& query) {

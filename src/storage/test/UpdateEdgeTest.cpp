@@ -377,7 +377,7 @@ TEST(UpdateEdgeTest, Filter_Yield_Test) {
   auto* srcExp2 = EdgePropertyExpression::make(pool, "101", "endYear");
   auto* priExp2 = ConstantExpression::make(pool, 2017L);
   auto* right = RelationalExpression::makeEQ(pool, srcExp2, priExp2);
-  // left AND right is ture
+  // left AND right is true
   auto logExp = LogicalExpression::makeAnd(pool, left, right);
   req.set_condition(Expression::encode(*logExp));
 
@@ -748,7 +748,7 @@ TEST(UpdateEdgeTest, Invalid_Filter_Test) {
   auto* srcExp2 = EdgePropertyExpression::make(pool, "101", "birth");
   auto* priExp2 = ConstantExpression::make(pool, 1990L);
   auto* right = RelationalExpression::makeEQ(pool, srcExp2, priExp2);
-  // left AND right is ture
+  // left AND right is true
   auto logExp = LogicalExpression::makeAnd(pool, left, right);
   req.set_condition(Expression::encode(*logExp));
 
@@ -1542,7 +1542,7 @@ TEST(UpdateEdgeTest, Yield_Key_Test) {
   EXPECT_EQ("trade", val.getStr());
 }
 
-// Update faild, yield edge is illegal
+// Update failed, yield edge is illegal
 TEST(UpdateEdgeTest, Yield_Illegal_Key_Test) {
   fs::TempDir rootPath("/tmp/UpdateEdgeTest.XXXXXX");
   mock::MockCluster cluster;
@@ -1649,7 +1649,7 @@ TEST(UpdateEdgeTest, Yield_Illegal_Key_Test) {
   EXPECT_EQ("zzzzz", val.getStr());
 }
 
-// Upsert, insert faild
+// Upsert, insert failed
 // teamCareer filed has not default value and not nullable, not in set clause
 TEST(UpdateEdgeTest, Insertable_No_Default_Test) {
   fs::TempDir rootPath("/tmp/UpdateEdgeTest.XXXXXX");

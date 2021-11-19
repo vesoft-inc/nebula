@@ -33,7 +33,7 @@ void checkResult(StorageRpcResponse<storage::cpp2::KVGetResponse>& resp, size_t 
 TEST(KVClientTest, SimpleTest) {
   GraphSpaceID spaceId = 1;
   fs::TempDir metaPath("/tmp/KVTest.meta.XXXXXX");
-  fs::TempDir stoagePath("/tmp/KVTest.stoage.XXXXXX");
+  fs::TempDir storagePath("/tmp/KVTest.storage.XXXXXX");
   mock::MockCluster cluster;
   std::string storageName{"127.0.0.1"};
   auto storagePort = network::NetworkUtils::getAvailablePort();
@@ -44,7 +44,7 @@ TEST(KVClientTest, SimpleTest) {
   options.localHost_ = storageAddr;
   options.role_ = meta::cpp2::HostRole::STORAGE;
   cluster.initMetaClient(options);
-  cluster.startStorage(storageAddr, stoagePath.path(), true);
+  cluster.startStorage(storageAddr, storagePath.path(), true);
 
   auto client = cluster.initGeneralStorageClient();
   // kv interface test

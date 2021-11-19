@@ -199,13 +199,38 @@ Status IndexScanRule::appendIQCtx(const IndexItem& index, IndexQueryCtx& iqctx) 
     }                                                                          \
   } while (0)
 
+inline bool verifyType(const Value& val) {
+  switch (val.type()) {
+    case Value::Type::__EMPTY__:
+    case Value::Type::NULLVALUE:
+    case Value::Type::VERTEX:
+    case Value::Type::EDGE:
+    case Value::Type::LIST:
+    case Value::Type::SET:
+    case Value::Type::MAP:
+    case Value::Type::DATASET:
+    case Value::Type::GEOGRAPHY:  // TODO(jie)
+    case Value::Type::PATH: {
+      DLOG(FATAL) << "Not supported value type " << val.type() << "for index.";
+      return false;
+    } break;
+    default: {
+      return true;
+    }
+  }
+}
 Status IndexScanRule::appendColHint(std::vector<IndexColumnHint>& hints,
                                     const FilterItems& items,
                                     const meta::cpp2::ColumnDef& col) const {
+  // CHECK(false);
   IndexColumnHint hint;
-  Value begin, end;
+  std::pair<Value, bool> begin, end;
   bool isRangeScan = true;
   for (const auto& item : items.items) {
+    if (!verifyType(item.value_)) {
+      return Status::SemanticError(
+          fmt::format("Not supported value type {} for index.", item.value_.type()));
+    }
     if (item.relOP_ == Expression::Kind::kRelEQ) {
       // check the items, don't allow where c1 == 1 and c1 == 2 and c1 > 3....
       // If EQ item appears, only one element is allowed
@@ -213,32 +238,62 @@ Status IndexScanRule::appendColHint(std::vector<IndexColumnHint>& hints,
         return Status::SemanticError();
       }
       isRangeScan = false;
-      begin = OptimizerUtils::normalizeValue(col, item.value_);
+      begin = {item.value_, true};
       break;
     }
-    // because only type for bool is true/false, which can not satisify [start,
+    // because only type for bool is true/false, which can not satisfy [start,
     // end)
     if (col.get_type().get_type() == nebula::cpp2::PropertyType::BOOL) {
       return Status::SemanticError("Range scan for bool type is illegal");
     }
-    NG_RETURN_IF_ERROR(OptimizerUtils::boundValue(item.relOP_, item.value_, col, begin, end));
+    if (item.value_.type() != graph::SchemaUtil::propTypeToValueType(col.type.type)) {
+      return Status::SemanticError("Data type error of field : %s", col.get_name().c_str());
+    }
+    bool include = false;
+    switch (item.relOP_) {
+      case Expression::Kind::kRelLE:
+        include = true;
+        [[fallthrough]];
+      case Expression::Kind::kRelLT: {
+        if (end.first.empty()) {
+          end.first = item.value_;
+          end.second = include;
+        } else {
+          auto tmp = std::make_pair(item.value_, include);
+          OptimizerUtils::compareAndSwapBound(end, tmp);
+        }
+      } break;
+      case Expression::Kind::kRelGE:
+        include = true;
+        [[fallthrough]];
+      case Expression::Kind::kRelGT: {
+        if (begin.first.empty()) {
+          begin.first = item.value_;
+          begin.second = include;
+        } else {
+          auto tmp = std::make_pair(item.value_, include);
+          OptimizerUtils::compareAndSwapBound(tmp, begin);
+        }
+      } break;
+      default:
+        return Status::Error("Invalid expression kind.");
+    }
   }
 
   if (isRangeScan) {
-    if (begin.empty()) {
-      begin = OptimizerUtils::boundValue(col, BVO::MIN, Value());
-      CHECK_BOUND_VALUE(begin, col.get_name());
+    if (!begin.first.empty()) {
+      hint.set_begin_value(begin.first);
+      hint.set_include_begin(begin.second);
     }
-    if (end.empty()) {
-      end = OptimizerUtils::boundValue(col, BVO::MAX, Value());
-      CHECK_BOUND_VALUE(end, col.get_name());
+    if (!end.first.empty()) {
+      hint.set_end_value(end.first);
+      hint.set_include_end(end.second);
     }
     hint.set_scan_type(storage::cpp2::ScanType::RANGE);
-    hint.set_end_value(std::move(end));
   } else {
+    hint.set_begin_value(begin.first);
     hint.set_scan_type(storage::cpp2::ScanType::PREFIX);
   }
-  hint.set_begin_value(std::move(begin));
   hint.set_column_name(col.get_name());
   hints.emplace_back(std::move(hint));
   return Status::OK();

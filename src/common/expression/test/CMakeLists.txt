@@ -9,11 +9,11 @@ set(expression_test_common_libs
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:stats_obj>
+    $<TARGET_OBJECTS:datatypes_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:thread_obj>
-    $<TARGET_OBJECTS:datatypes_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:function_manager_obj>
     $<TARGET_OBJECTS:wkt_wkb_io_obj>
@@ -49,13 +49,34 @@ set(expression_test_common_libs
 nebula_add_library(
     expr_ctx_mock_obj OBJECT
     ExpressionContextMock.cpp
-    )
+    TestBase.cpp
+)
 
 nebula_add_test(
     NAME
         expression_test
     SOURCES
         ExpressionTest.cpp
+        EncodeDecodeTest.cpp
+        AggregateExpressionTest.cpp
+        ArithmeticExpressionTest.cpp
+        AttributeExpressionTest.cpp
+        CaseExpressionTest.cpp
+        ColumnExpressionTest.cpp
+        ConstantExpressionTest.cpp
+        ContainerExpressionTest.cpp
+        FunctionCallExpressionTest.cpp
+        LabelExpressionTest.cpp
+        ListComprehensionExpressionTest.cpp
+        LogicalExpressionTest.cpp
+        RelationalExpressionTest.cpp
+        PathBuildExpressionTest.cpp
+        PropertyExpressionTest.cpp
+        PredicateExpressionTest.cpp
+        ReduceExpressionTest.cpp
+        SubscriptExpressionTest.cpp
+        TypeCastingExpressionTest.cpp
+        VersionedVariableExpressionTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:expression_obj>
         $<TARGET_OBJECTS:datatypes_obj>
@@ -140,425 +161,4 @@ nebula_add_executable(
         follybenchmark
         boost_regex
         ${THRIFT_LIBRARIES}
-)
-
-
-nebula_add_test(
-    NAME expression_encode_decode_test
-    SOURCES EncodeDecodeTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:expression_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:expr_ctx_mock_obj>
-        $<TARGET_OBJECTS:function_manager_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
-        $<TARGET_OBJECTS:agg_function_manager_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:time_utils_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        ${expression_test_common_libs}
-    LIBRARIES
-        gtest
-        ${THRIFT_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
-)
-
-nebula_add_test(
-    NAME aggregate_expression_test
-    SOURCES AggregateExpressionTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:expression_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:expr_ctx_mock_obj>
-        $<TARGET_OBJECTS:function_manager_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
-        $<TARGET_OBJECTS:agg_function_manager_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:time_utils_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        ${expression_test_common_libs}
-    LIBRARIES
-        gtest
-        ${THRIFT_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
-)
-
-nebula_add_test(
-    NAME arithmetic_expression_test
-    SOURCES ArithmeticExpressionTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:expression_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:expr_ctx_mock_obj>
-        $<TARGET_OBJECTS:function_manager_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
-        $<TARGET_OBJECTS:agg_function_manager_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:time_utils_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        ${expression_test_common_libs}
-    LIBRARIES
-        gtest
-        ${THRIFT_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
-)
-
-nebula_add_test(
-    NAME attribute_expression_test
-    SOURCES AttributeExpressionTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:expression_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:expr_ctx_mock_obj>
-        $<TARGET_OBJECTS:function_manager_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
-        $<TARGET_OBJECTS:agg_function_manager_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:time_utils_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        ${expression_test_common_libs}
-    LIBRARIES
-        gtest
-        ${THRIFT_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
-)
-
-nebula_add_test(
-    NAME case_expression_test
-    SOURCES CaseExpressionTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:expression_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:expr_ctx_mock_obj>
-        $<TARGET_OBJECTS:function_manager_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
-        $<TARGET_OBJECTS:agg_function_manager_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:time_utils_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        ${expression_test_common_libs}
-    LIBRARIES
-        gtest
-        ${THRIFT_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
-)
-
-nebula_add_test(
-    NAME column_expression_test
-    SOURCES ColumnExpressionTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:expression_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:expr_ctx_mock_obj>
-        $<TARGET_OBJECTS:function_manager_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
-        $<TARGET_OBJECTS:agg_function_manager_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:time_utils_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        ${expression_test_common_libs}
-    LIBRARIES
-        gtest
-        ${THRIFT_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
-)
-
-nebula_add_test(
-    NAME constant_expression_test
-    SOURCES ConstantExpressionTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:expression_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:expr_ctx_mock_obj>
-        $<TARGET_OBJECTS:function_manager_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
-        $<TARGET_OBJECTS:agg_function_manager_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:time_utils_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        ${expression_test_common_libs}
-    LIBRARIES
-        gtest
-        ${THRIFT_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
-)
-
-nebula_add_test(
-    NAME container_expression_test
-    SOURCES ContainerExpressionTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:expression_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:expr_ctx_mock_obj>
-        $<TARGET_OBJECTS:function_manager_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
-        $<TARGET_OBJECTS:agg_function_manager_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:time_utils_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        ${expression_test_common_libs}
-    LIBRARIES
-        gtest
-        ${THRIFT_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
-)
-
-nebula_add_test(
-    NAME function_call_expression_test
-    SOURCES FunctionCallExpressionTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:expression_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:expr_ctx_mock_obj>
-        $<TARGET_OBJECTS:function_manager_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
-        $<TARGET_OBJECTS:agg_function_manager_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:time_utils_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        ${expression_test_common_libs}
-    LIBRARIES
-        gtest
-        ${THRIFT_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
-)
-
-nebula_add_test(
-    NAME label_expression_test
-    SOURCES LabelExpressionTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:expression_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:expr_ctx_mock_obj>
-        $<TARGET_OBJECTS:function_manager_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
-        $<TARGET_OBJECTS:agg_function_manager_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:time_utils_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        ${expression_test_common_libs}
-    LIBRARIES
-        gtest
-        ${THRIFT_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
-)
-
-nebula_add_test(
-    NAME list_comprehension_expression_test
-    SOURCES ListComprehensionExpressionTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:expression_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:expr_ctx_mock_obj>
-        $<TARGET_OBJECTS:function_manager_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
-        $<TARGET_OBJECTS:agg_function_manager_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:time_utils_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        ${expression_test_common_libs}
-    LIBRARIES
-        gtest
-        ${THRIFT_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
-)
-
-nebula_add_test(
-    NAME logical_expression_test
-    SOURCES LogicalExpressionTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:expression_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:expr_ctx_mock_obj>
-        $<TARGET_OBJECTS:function_manager_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
-        $<TARGET_OBJECTS:agg_function_manager_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:time_utils_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        ${expression_test_common_libs}
-    LIBRARIES
-        gtest
-        ${THRIFT_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
-)
-
-nebula_add_test(
-    NAME relational_expression_test
-    SOURCES RelationalExpressionTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:expression_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:expr_ctx_mock_obj>
-        $<TARGET_OBJECTS:function_manager_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
-        $<TARGET_OBJECTS:agg_function_manager_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:time_utils_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        ${expression_test_common_libs}
-    LIBRARIES
-        gtest
-        ${THRIFT_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
-)
-
-nebula_add_test(
-    NAME path_build_expression_test
-    SOURCES PathBuildExpressionTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:expression_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:expr_ctx_mock_obj>
-        $<TARGET_OBJECTS:function_manager_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
-        $<TARGET_OBJECTS:agg_function_manager_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:time_utils_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        ${expression_test_common_libs}
-    LIBRARIES
-        gtest
-        ${THRIFT_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
-)
-
-nebula_add_test(
-    NAME property_expression_test
-    SOURCES PropertyExpressionTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:expression_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:expr_ctx_mock_obj>
-        $<TARGET_OBJECTS:function_manager_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
-        $<TARGET_OBJECTS:agg_function_manager_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:time_utils_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        ${expression_test_common_libs}
-    LIBRARIES
-        gtest
-        ${THRIFT_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
-)
-
-nebula_add_test(
-    NAME predicate_expression_test
-    SOURCES PredicateExpressionTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:expression_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:expr_ctx_mock_obj>
-        $<TARGET_OBJECTS:function_manager_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
-        $<TARGET_OBJECTS:agg_function_manager_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:time_utils_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        ${expression_test_common_libs}
-    LIBRARIES
-        gtest
-        ${THRIFT_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
-)
-
-nebula_add_test(
-    NAME reduce_expression_test
-    SOURCES ReduceExpressionTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:expression_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:expr_ctx_mock_obj>
-        $<TARGET_OBJECTS:function_manager_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
-        $<TARGET_OBJECTS:agg_function_manager_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:time_utils_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        ${expression_test_common_libs}
-    LIBRARIES
-        gtest
-        ${THRIFT_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
-)
-
-nebula_add_test(
-    NAME subscript_expression_test
-    SOURCES SubscriptExpressionTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:expression_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:expr_ctx_mock_obj>
-        $<TARGET_OBJECTS:function_manager_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
-        $<TARGET_OBJECTS:agg_function_manager_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:time_utils_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        ${expression_test_common_libs}
-    LIBRARIES
-        gtest
-        ${THRIFT_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
-)
-
-nebula_add_test(
-    NAME type_casting_expression_test
-    SOURCES TypeCastingExpressionTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:expression_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:expr_ctx_mock_obj>
-        $<TARGET_OBJECTS:function_manager_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
-        $<TARGET_OBJECTS:agg_function_manager_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:time_utils_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        ${expression_test_common_libs}
-    LIBRARIES
-        gtest
-        ${THRIFT_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
-)
-
-nebula_add_test(
-    NAME versioned_variable_expression_test
-    SOURCES VersionedVariableExpressionTest.cpp
-    OBJECTS
-        $<TARGET_OBJECTS:base_obj>
-        $<TARGET_OBJECTS:expression_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:expr_ctx_mock_obj>
-        $<TARGET_OBJECTS:function_manager_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
-        $<TARGET_OBJECTS:agg_function_manager_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:time_utils_obj>
-        $<TARGET_OBJECTS:fs_obj>
-        ${expression_test_common_libs}
-    LIBRARIES
-        gtest
-        ${THRIFT_LIBRARIES}
-        ${PROXYGEN_LIBRARIES}
 )

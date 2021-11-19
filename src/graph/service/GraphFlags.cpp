@@ -68,6 +68,6 @@ DEFINE_bool(enable_experimental_feature, false, "Whether to enable experimental 
 DEFINE_bool(enable_client_white_list, true, "Turn on/off the client white list.");
 DEFINE_string(client_white_list,
               nebula::getOriginVersion() + ":2.5.0:2.5.1:2.6.0",
-              "A white list for different client versions, seperate with colon.");
+              "A white list for different client versions, separate with colon.");
 
 DEFINE_int32(num_rows_to_check_memory, 1024, "number rows to check memory");

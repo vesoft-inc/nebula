@@ -27,8 +27,8 @@ WalFileIterator::WalFileIterator(std::shared_ptr<FileBasedWal> wal, LogID startI
   }
 
   if (startId < wal_->firstLogId()) {
-    LOG(ERROR) << wal_->idStr_ << "The given log id " << startId
-               << " is out of the range, the wal firstLogId is " << wal_->firstLogId();
+    VLOG(1) << wal_->idStr_ << "The given log id " << startId
+            << " is out of the range, the wal firstLogId is " << wal_->firstLogId();
     currId_ = lastId_ + 1;
     return;
   }

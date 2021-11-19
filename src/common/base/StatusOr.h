@@ -63,7 +63,7 @@ class StatusOr final {
   // `StatusOr<T>' contains neither a Status nor a value
   // in the default-constructed case.
   // From the semantics aspect, it must have been associated with
-  // a Status or value eventualy before being used.
+  // a Status or value eventually before being used.
   StatusOr() { state_ = kVoid; }
 
   // Destruct the `Status' or value if it's holding one.
@@ -172,7 +172,7 @@ class StatusOr final {
     return *this;
   }
 
-  // Move assigment operator from a rvalue of `StatusOr<U>'
+  // Move assignment operator from a rvalue of `StatusOr<U>'
   template <typename U, typename = std::enable_if_t<is_initializable_v<U>>>
   StatusOr &operator=(StatusOr<U> &&rhs) noexcept {
     reset();
@@ -190,7 +190,7 @@ class StatusOr final {
     return *this;
   }
 
-  // Move assigment operator from a rvalue of any compatible type with `T'
+  // Move assignment operator from a rvalue of any compatible type with `T'
   template <typename U, typename = std::enable_if_t<is_initializable_v<U>>>
   StatusOr &operator=(U &&value) noexcept {
     destruct();
@@ -236,7 +236,7 @@ class StatusOr final {
   }
 
   // Return the non-const lvalue reference to the associated value
-  // `ok()' is DCHECKed
+  // `ok()' is DCHECK'd
   T &value() & {
     DCHECK(ok());
     return variant_.value_;

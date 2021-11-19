@@ -336,7 +336,7 @@ Feature: Lookup tag index full scan
       | "Ricky Rubio"           | 28         |
       | "Rudy Gay"              | 32         |
       | "Russell Westbrook"     | 30         |
-      | "Shaquile O'Neal"       | 47         |
+      | "Shaquille O'Neal"      | 47         |
       | "Stephen Curry"         | 31         |
       | "Steve Nash"            | 45         |
       | "Tiago Splitter"        | 34         |

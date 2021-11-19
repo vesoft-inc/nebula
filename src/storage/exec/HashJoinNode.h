@@ -15,7 +15,7 @@
 namespace nebula {
 namespace storage {
 
-// HashJoinNode has input of serveral TagNode and EdgeNode, the EdgeNode is
+// HashJoinNode has input of several TagNode and EdgeNode, the EdgeNode is
 // several SingleEdgeNode of different edge types all edges of a vertex. The
 // output would be the result of tag, it is a List, each cell save a list of
 // property values, if tag not found, it will be a empty value. Also it will

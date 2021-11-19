@@ -14,7 +14,7 @@ Feature: Lookup with output in integer vid
       | 'Kobe Bryant'   |
       | 'Dirk Nowitzki' |
 
-  Scenario: [1] tag ouput with yield rename
+  Scenario: [1] tag output with yield rename
     When executing query:
       """
       LOOKUP ON player WHERE player.age == 40 YIELD player.name AS name |
@@ -36,7 +36,7 @@ Feature: Lookup with output in integer vid
       | 'Kobe Bryant'   |
       | 'Dirk Nowitzki' |
 
-  Scenario: [1] tag ouput with yield rename by var
+  Scenario: [1] tag output with yield rename by var
     When executing query:
       """
       $a = LOOKUP ON player WHERE player.age == 40 YIELD player.name AS name;

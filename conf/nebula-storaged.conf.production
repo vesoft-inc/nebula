@@ -102,7 +102,7 @@
 --enable_rocksdb_whole_key_filtering=false
 
 ############### misc ####################
---snapshot_part_rate_limit=8388608
+--snapshot_part_rate_limit=10485760
 --snapshot_batch_size=1048576
 --rebuild_index_part_rate_limit=4194304
 --rebuild_index_batch_size=1048576

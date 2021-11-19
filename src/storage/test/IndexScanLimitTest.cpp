@@ -118,9 +118,9 @@ class IndexScanLimitTest : public ::testing::Test {
         std::string val = vid % 2 == 0 ? val1 : val2;
         auto vertex = folly::to<std::string>(vid);
         auto edgeKey = NebulaKeyUtils::edgeKey(vertexLen, pId, vertex, edgeType, 0, vertex);
-        auto vertexKey = NebulaKeyUtils::vertexKey(vertexLen, pId, vertex, tagId);
+        auto tagKey = NebulaKeyUtils::tagKey(vertexLen, pId, vertex, tagId);
         data.emplace_back(std::move(edgeKey), val);
-        data.emplace_back(std::move(vertexKey), std::move(val));
+        data.emplace_back(std::move(tagKey), std::move(val));
         if (indexMan_ != nullptr) {
           if (indexMan_->getTagIndex(spaceId, tagIndex).ok()) {
             auto vertexIndexKeys =
