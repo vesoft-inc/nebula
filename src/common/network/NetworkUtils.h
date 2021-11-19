@@ -24,7 +24,7 @@ class NetworkUtils final {
   static StatusOr<std::string> getIPv4FromDevice(const std::string& device);
   // List out all Ipv4 addresses, including the loopback one.
   static StatusOr<std::vector<std::string>> listIPv4s();
-  // List out all network devices and its cooresponding Ipv4 address.
+  // List out all network devices and its corresponding Ipv4 address.
   static StatusOr<std::unordered_map<std::string, std::string>> listDeviceAndIPv4s();
 
   // Get the local dynamic port range [low, high], only works for IPv4

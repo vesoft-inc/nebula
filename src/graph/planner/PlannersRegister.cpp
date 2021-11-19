@@ -23,13 +23,13 @@
 namespace nebula {
 namespace graph {
 
-void PlannersRegister::registPlanners() {
-  registDDL();
-  registSequential();
-  registMatch();
+void PlannersRegister::registerPlanners() {
+  registerDDL();
+  registerSequential();
+  registerMatch();
 }
 
-void PlannersRegister::registDDL() {
+void PlannersRegister::registerDDL() {
   {
     auto& planners = Planner::plannersMap()[Sentence::Kind::kAlterTag];
     planners.emplace_back(&AlterTagPlanner::match, &AlterTagPlanner::make);
@@ -48,7 +48,7 @@ void PlannersRegister::registDDL() {
   }
 }
 
-void PlannersRegister::registSequential() {
+void PlannersRegister::registerSequential() {
   {
     auto& planners = Planner::plannersMap()[Sentence::Kind::kSequential];
     planners.emplace_back(&SequentialPlanner::match, &SequentialPlanner::make);
@@ -79,7 +79,7 @@ void PlannersRegister::registSequential() {
   }
 }
 
-void PlannersRegister::registMatch() {
+void PlannersRegister::registerMatch() {
   auto& planners = Planner::plannersMap()[Sentence::Kind::kMatch];
 
   planners.emplace_back(&MatchPlanner::match, &MatchPlanner::make);

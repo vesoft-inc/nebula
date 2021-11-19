@@ -181,7 +181,7 @@ class NebulaKeyUtilsV1 final {
   }
 
   static folly::StringPiece keyWithNoVersion(const folly::StringPiece& rawKey) {
-    // TODO(heng) We should change the method if varint data version supportted.
+    // TODO(heng) We should change the method if varint data version supported.
     return rawKey.subpiece(0, rawKey.size() - sizeof(int64_t));
   }
 

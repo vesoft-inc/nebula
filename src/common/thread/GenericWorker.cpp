@@ -142,10 +142,10 @@ void GenericWorker::onNotify() {
     }
   }
   {
-    decltype(purgingingTimers_) newcomings;
+    decltype(purgingTimers_) newcomings;
     {
       std::lock_guard<std::mutex> guard(lock_);
-      newcomings.swap(purgingingTimers_);
+      newcomings.swap(purgingTimers_);
     }
     for (auto id : newcomings) {
       purgeTimerInternal(id);
@@ -164,7 +164,7 @@ GenericWorker::Timer::~Timer() {
 void GenericWorker::purgeTimerTask(uint64_t id) {
   {
     std::lock_guard<std::mutex> guard(lock_);
-    purgingingTimers_.emplace_back(id);
+    purgingTimers_.emplace_back(id);
   }
   notify();
 }

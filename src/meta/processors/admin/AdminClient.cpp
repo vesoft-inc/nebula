@@ -710,7 +710,7 @@ folly::Future<Status> AdminClient::addTask(cpp2::AdminCmd cmd,
   if (targetHost.empty()) {
     auto activeHostsRet = ActiveHostsMan::getActiveAdminHosts(kv_);
     if (!nebula::ok(activeHostsRet)) {
-      pro.setValue(Status::Error("Get actice hosts failed"));
+      pro.setValue(Status::Error("Get active hosts failed"));
       return f;
     } else {
       hosts = nebula::value(activeHostsRet);
@@ -728,7 +728,7 @@ folly::Future<Status> AdminClient::addTask(cpp2::AdminCmd cmd,
   storage::cpp2::TaskPara para;
   para.set_space_id(spaceId);
   para.set_parts(std::move(parts));
-  para.set_task_specfic_paras(taskSpecficParas);
+  para.set_task_specific_paras(taskSpecficParas);
   req.set_para(std::move(para));
 
   std::function<void(storage::cpp2::AdminExecResp && resp)> respGen =
@@ -759,7 +759,7 @@ folly::Future<Status> AdminClient::stopTask(const std::vector<HostAddr>& target,
   if (target.empty()) {
     auto activeHostsRet = ActiveHostsMan::getActiveAdminHosts(kv_);
     if (!nebula::ok(activeHostsRet)) {
-      pro.setValue(Status::Error("Get actice hosts failed"));
+      pro.setValue(Status::Error("Get active hosts failed"));
       return f;
     } else {
       hosts = nebula::value(activeHostsRet);

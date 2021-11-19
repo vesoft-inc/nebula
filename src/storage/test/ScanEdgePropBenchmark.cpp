@@ -195,7 +195,7 @@ TEST_P(ScanEdgePropBench, ProcessEdgeProps) {
       ASSERT_TRUE(code.ok());
       result.mutableList().values.emplace_back(std::move(list));
     }
-    LOG(WARNING) << "ProcessEdgeProps reader reset with vector schmeas: process " << edgeRowCount
+    LOG(WARNING) << "ProcessEdgeProps reader reset with vector schemas: process " << edgeRowCount
                  << " edges takes " << watch.elapsed().count() << " us.";
   }
   {
@@ -245,7 +245,7 @@ TEST_P(ScanEdgePropBench, ProcessEdgeProps) {
       result.mutableList().values.emplace_back(std::move(list));
     }
     LOG(WARNING) << "ProcessEdgeProps only RowReaderV2 reset with vector "
-                    "schmeas: process "
+                    "schemas: process "
                  << edgeRowCount << " edges takes " << watch.elapsed().count() << " us.";
   }
 }

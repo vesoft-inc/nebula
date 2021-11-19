@@ -2019,7 +2019,7 @@ TEST(MetaClientTest, Config) {
     configs = std::move(resp).value();
     EXPECT_EQ(configs[0].get_value(), Value(3));
   }
-  // Just avoid memory leak error of clang asan. to waitting asynchronous thread
+  // Just avoid memory leak error of clang asan. to waiting asynchronous thread
   // done.
   sleep(FLAGS_heartbeat_interval_secs * 5);
 }

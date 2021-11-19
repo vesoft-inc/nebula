@@ -159,7 +159,7 @@ class ConcurrentLRUCache final {
 /**
     It is copied from boost::compute::detail::LRU.
     The differences:
-    1. Add methed evict(const K& key);
+    1. Add method evict(const K& key);
     2. Instead std::map with std::unordered_map
     3. Update the code style.
     4. Add stats

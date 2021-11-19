@@ -39,7 +39,7 @@ class StatsJobExecutor : public MetaJobExecutor {
 
  private:
   // Stats job writes an additional data.
-  // The additional data is written when the statis job passes the check
+  // The additional data is written when the stats job passes the check
   // function. Update this additional data when job finishes.
   nebula::cpp2::ErrorCode save(const std::string& key, const std::string& val);
 

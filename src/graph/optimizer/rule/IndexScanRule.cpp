@@ -241,7 +241,7 @@ Status IndexScanRule::appendColHint(std::vector<IndexColumnHint>& hints,
       begin = {item.value_, true};
       break;
     }
-    // because only type for bool is true/false, which can not satisify [start,
+    // because only type for bool is true/false, which can not satisfy [start,
     // end)
     if (col.get_type().get_type() == nebula::cpp2::PropertyType::BOOL) {
       return Status::SemanticError("Range scan for bool type is illegal");

@@ -17,7 +17,7 @@ namespace nebula {
 namespace graph {
 class LimitTest : public QueryTestBase {};
 
-#define LIMIT_RESUTL_CHECK(outputName, offset, count, expected)                             \
+#define LIMIT_RESULT_CHECK(outputName, offset, count, expected)                             \
   do {                                                                                      \
     qctx_->symTable()->newVariable(outputName);                                             \
     auto start = StartNode::make(qctx_.get());                                              \
@@ -45,7 +45,7 @@ TEST_F(LimitTest, SequentialInRange1) {
   DataSet expected({"name", "start"});
   expected.emplace_back(Row({Value("Joy"), Value(2009)}));
   expected.emplace_back(Row({Value("Tom"), Value(2008)}));
-  LIMIT_RESUTL_CHECK("limit_in_sequential1", 1, 2, expected);
+  LIMIT_RESULT_CHECK("limit_in_sequential1", 1, 2, expected);
 }
 
 TEST_F(LimitTest, SequentialInRange2) {
@@ -54,7 +54,7 @@ TEST_F(LimitTest, SequentialInRange2) {
   expected.emplace_back(Row({Value("Joy"), Value(2009)}));
   expected.emplace_back(Row({Value("Tom"), Value(2008)}));
   expected.emplace_back(Row({Value("Kate"), Value(2009)}));
-  LIMIT_RESUTL_CHECK("limit_in_sequential2", 0, 4, expected);
+  LIMIT_RESULT_CHECK("limit_in_sequential2", 0, 4, expected);
 }
 
 TEST_F(LimitTest, SequentialOutRange1) {
@@ -65,12 +65,12 @@ TEST_F(LimitTest, SequentialOutRange1) {
   expected.emplace_back(Row({Value("Kate"), Value(2009)}));
   expected.emplace_back(Row({Value("Ann"), Value(2010)}));
   expected.emplace_back(Row({Value("Lily"), Value(2009)}));
-  LIMIT_RESUTL_CHECK("limit_out_sequential1", 0, 7, expected);
+  LIMIT_RESULT_CHECK("limit_out_sequential1", 0, 7, expected);
 }
 
 TEST_F(LimitTest, getNeighborOutRange2) {
   DataSet expected({"name", "start"});
-  LIMIT_RESUTL_CHECK("limit_out_sequential2", 6, 2, expected);
+  LIMIT_RESULT_CHECK("limit_out_sequential2", 6, 2, expected);
 }
 }  // namespace graph
 }  // namespace nebula
