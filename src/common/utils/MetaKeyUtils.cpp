@@ -877,15 +877,15 @@ std::string MetaKeyUtils::idKey() { return kIdKey; }
 
 std::string MetaKeyUtils::balanceTaskKey(
     JobID jobId, GraphSpaceID spaceId, PartitionID partId, HostAddr src, HostAddr dst) {
-  std::string str;
-  str.reserve(64);
-  str.append(reinterpret_cast<const char*>(kBalanceTaskTable.data()), kBalanceTaskTable.size())
+  std::string key;
+  key.reserve(64);
+  key.append(reinterpret_cast<const char*>(kBalanceTaskTable.data()), kBalanceTaskTable.size())
       .append(reinterpret_cast<const char*>(&jobId), sizeof(JobID))
       .append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID))
       .append(reinterpret_cast<const char*>(&partId), sizeof(PartitionID))
       .append(serializeHostAddr(src))
       .append(serializeHostAddr(dst));
-  return str;
+  return key;
 }
 
 std::string MetaKeyUtils::balanceTaskVal(BalanceTaskStatus status,
