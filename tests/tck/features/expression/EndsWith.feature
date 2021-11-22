@@ -60,9 +60,7 @@ Feature: Ends With Expression
       """
       YIELD 123 ENDS WITH 3
       """
-    Then the result should be, in any order:
-      | (123 ENDS WITH 3) |
-      | BAD_TYPE          |
+    Then a SemanticError should be raised at runtime: Type error `(123 ENDS WITH 3)'
 
   Scenario: yield not ends with
     When executing query:
@@ -118,9 +116,7 @@ Feature: Ends With Expression
       """
       YIELD 123 NOT ENDS WITH 3
       """
-    Then the result should be, in any order:
-      | (123 NOT ENDS WITH 3) |
-      | BAD_TYPE              |
+    Then a SemanticError should be raised at runtime: Type error `(123 NOT ENDS WITH 3)'
 
   Scenario: ends with go
     When executing query:
