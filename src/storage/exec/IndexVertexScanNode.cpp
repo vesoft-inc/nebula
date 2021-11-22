@@ -15,9 +15,9 @@ IndexVertexScanNode::IndexVertexScanNode(const IndexVertexScanNode& node)
 
 IndexVertexScanNode::IndexVertexScanNode(RuntimeContext* context,
                                          IndexID indexId,
-                                         const std::vector<cpp2::IndexColumnHint>& clolumnHint,
+                                         const std::vector<cpp2::IndexColumnHint>& columnHint,
                                          ::nebula::kvstore::KVStore* kvstore)
-    : IndexScanNode(context, "IndexVertexScanNode", indexId, clolumnHint, kvstore) {
+    : IndexScanNode(context, "IndexVertexScanNode", indexId, columnHint, kvstore) {
   getIndex = std::function([this](std::shared_ptr<IndexItem>& index) {
     auto env = this->context_->env();
     auto indexMgr = env->indexMan_;
@@ -96,11 +96,16 @@ Map<std::string, Value> IndexVertexScanNode::decodeFromBase(const std::string& k
         values[col] = Value(context_->tagId_);
       } break;
       case QueryUtils::ReturnColType::kOther: {
-        auto retVal = QueryUtils::readValue(reader.get(), col, tag_.back()->field(col));
-        if (!retVal.ok()) {
-          LOG(FATAL) << "Bad value for field" << col;
+        auto field = tag_.back()->field(col);
+        if (field == nullptr) {
+          values[col] = Value::kNullUnknownProp;
+        } else {
+          auto retVal = QueryUtils::readValue(reader.get(), col, field);
+          if (!retVal.ok()) {
+            LOG(FATAL) << "Bad value for field" << col;
+          }
+          values[col] = std::move(retVal.value());
         }
-        values[col] = std::move(retVal.value());
       } break;
       default:
         LOG(FATAL) << "Unexpect column name:" << col;

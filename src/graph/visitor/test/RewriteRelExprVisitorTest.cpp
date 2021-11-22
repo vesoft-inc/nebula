@@ -35,7 +35,7 @@ TEST_F(RewriteRelExprVisitorTest, TestArithmeticalExpr) {
     auto expected = ltExpr(laExpr("v", "age"), minusExpr(constantExpr(40), constantExpr(-1)));
     ASSERT_EQ(*res, *expected) << res->toString() << " vs. " << expected->toString();
   }
-  // (label1 + label2 < 40)  =>  (label1 + label2 < 40) Unchaged
+  // (label1 + label2 < 40)  =>  (label1 + label2 < 40) Unchanged
   // TODO: replace list with set in object pool and avoid copy
   {
     auto expr = ltExpr(addExpr(laExpr("v", "age"), laExpr("v2", "age2")), constantExpr(40));

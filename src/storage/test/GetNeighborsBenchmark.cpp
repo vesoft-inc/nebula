@@ -348,7 +348,7 @@ BENCHMARK_RELATIVE(OneVertexFiveProperty, iters) {
 BENCHMARK_RELATIVE(OneVertexOnePropertyOnlyEdgeNode, iters) {
   goEdgeNode(iters, {"Tim Duncan"}, {"name"}, {"teamName"});
 }
-BENCHMARK_RELATIVE(OneVertexOneProperyOnlyKV, iters) {
+BENCHMARK_RELATIVE(OneVertexOnePropertyOnlyKV, iters) {
   prefix(iters, {"Tim Duncan"}, {"name"}, {"teamName"});
 }
 
@@ -456,7 +456,7 @@ BENCHMARK_RELATIVE(TenVertexOnePropertyOnlyEdgeNode, iters) {
              {"name"},
              {"teamName"});
 }
-BENCHMARK_RELATIVE(TenVertexOneProperyOnlyKV, iters) {
+BENCHMARK_RELATIVE(TenVertexOnePropertyOnlyKV, iters) {
   prefix(iters,
          {"Tim Duncan",
           "Kobe Bryant",
@@ -504,7 +504,7 @@ OneVertexOnlyId                                  119.10%   374.96us    2.67K
 OneVertexThreeProperty                            59.50%   750.53us    1.33K
 OneVertexFiveProperty                             46.25%   965.55us    1.04K
 OneVertexOnePropertyOnlyEdgeNode                 113.92%   392.01us    2.55K
-OneVertexOneProperyOnlyKV                        113.08%   394.93us    2.53K
+OneVertexOnePropertyOnlyKV                       113.08%   394.93us    2.53K
 ----------------------------------------------------------------------------
 NoFilter                                                   444.84us    2.25K
 OneFilterNonePass                                106.16%   419.01us    2.39K
@@ -521,6 +521,6 @@ TenVertexOnlyId                                  119.68%     3.68ms   271.76
 TenVertexThreeProperty                            59.25%     7.43ms   134.53
 TenVertexFiveProperty                             45.67%     9.64ms   103.69
 TenVertexOnePropertyOnlyEdgeNode                 109.45%     4.02ms   248.53
-TenVertexOneProperyOnlyKV                        109.23%     4.03ms   248.03
+TenVertexOnePropertyOnlyKV                       109.23%     4.03ms   248.03
 ============================================================================
 */

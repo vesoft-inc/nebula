@@ -153,14 +153,14 @@ class VisitorTestBase : public ::testing::Test {
   }
 
   CaseExpression *caseExpr(Expression *cond,
-                           Expression *defaltResult,
+                           Expression *defaultResult,
                            Expression *when,
                            Expression *then) {
     auto caseList = CaseList::make(pool);
     caseList->add(when, then);
     auto expr = CaseExpression::make(pool, caseList);
     expr->setCondition(cond);
-    expr->setDefault(defaltResult);
+    expr->setDefault(defaultResult);
     return expr;
   }
 

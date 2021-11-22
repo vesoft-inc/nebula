@@ -34,7 +34,7 @@ class InMemoryBufferList : public std::enable_shared_from_this<InMemoryBufferLis
           firstIdInBuffer_ = buffer->firstLogId();
         }
         if (firstIdInBuffer_ <= currId_) {
-          // Go no futher
+          // Go no further
           currIdx_ = currId_ - firstIdInBuffer_;
           nextFirstId_ = getFirstIdInNextBuffer();
           return false;

@@ -70,7 +70,7 @@ TEST(StorageHttpStatsHandlerTest, GetStatsTest) {
     const std::string expect = "rocksdb.bytes.read=0\n";
     ASSERT_STREQ(expect.c_str(), resp.value().c_str());
   }
-  // Get multipple stats
+  // Get multiple stats
   {
     auto url = "/rocksdb_stats?stats=rocksdb.bytes.read,rocksdb.block.cache.add";
     auto request =

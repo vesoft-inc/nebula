@@ -32,7 +32,7 @@ folly::Future<Status> DropSnapshotExecutor::execute() {
   auto *dsNode = asNode<DropSnapshot>(node());
   return qctx()
       ->getMetaClient()
-      ->dropSnapshot(dsNode->getShapshotName())
+      ->dropSnapshot(dsNode->getSnapshotName())
       .via(runner())
       .thenValue([](StatusOr<bool> resp) {
         if (!resp.ok()) {

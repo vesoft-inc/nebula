@@ -35,8 +35,8 @@ class DiskManager {
 
   // Canonical path which contains the specified space and part, e.g.
   // "/DataPath/nebula/spaceId". As for one storage instance, at most one path
-  // should contain a parition. Note that there isn't a separate dir for a
-  // parititon (except wal), so we return space dir
+  // should contain a partition. Note that there isn't a separate dir for a
+  // partition (except wal), so we return space dir
   StatusOr<std::string> path(GraphSpaceID spaceId, PartitionID partId);
 
   // pre-condition: path is the space path, so it must end with /nebula/spaceId

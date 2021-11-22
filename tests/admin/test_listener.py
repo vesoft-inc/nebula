@@ -22,7 +22,7 @@ class TestListener(NebulaTestSuite):
         resp = self.client.execute('ADD LISTENER ELASTICSEARCH {}:{}'.format(storage_ip, storage_port))
         self.check_resp_failed(resp)
 
-        # Add non-existen host
+        # Add nonexistent host
         resp = self.client.execute('ADD LISTENER ELASTICSEARCH 127.0.0.1:8899')
         self.check_resp_succeeded(resp)
 

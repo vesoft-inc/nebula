@@ -105,7 +105,7 @@ TEST_F(RewriteUnaryNotExprVisitorTest, TestMultipleUnaryNotContainerExpr) {
 
 TEST_F(RewriteUnaryNotExprVisitorTest, TestRelExpr) {
   // (5 == 10)  =>  (5 == 10)
-  // no change should be made to the orginal expression
+  // no change should be made to the original expression
   {
     auto original = eqExpr(constantExpr(5), constantExpr(10));
     auto res = ExpressionUtils::reduceUnaryNotExpr(original);

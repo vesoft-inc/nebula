@@ -84,7 +84,7 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
   }
   JobManager* jobMgr = JobManager::getInstance();
 
-  auto result = jobMgr->checkIndexJobRuning();
+  auto result = jobMgr->checkIndexJobRunning();
   if (!nebula::ok(result)) {
     LOG(ERROR) << "get Index status failed, not allowed to create backup.";
     handleErrorCode(nebula::error(result));

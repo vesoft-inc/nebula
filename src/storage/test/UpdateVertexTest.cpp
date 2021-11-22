@@ -234,7 +234,7 @@ TEST(UpdateVertexTest, Filter_Yield_Test2) {
   auto* srcExp2 = SourcePropertyExpression::make(pool, "1", "endYear");
   auto* priExp2 = ConstantExpression::make(pool, 2017L);
   auto* right = RelationalExpression::makeEQ(pool, srcExp2, priExp2);
-  // left AND right is ture
+  // left AND right is true
   auto logExp = LogicalExpression::makeAnd(pool, left, right);
   req.set_condition(Expression::encode(*logExp));
 
@@ -537,7 +537,7 @@ TEST(UpdateVertexTest, Invalid_Filter_Test) {
   auto* srcExp2 = SourcePropertyExpression::make(pool, "1", "birth");
   auto* priExp2 = ConstantExpression::make(pool, 1990L);
   auto* right = RelationalExpression::makeEQ(pool, srcExp2, priExp2);
-  // left AND right is ture
+  // left AND right is true
   auto logExp = LogicalExpression::makeAnd(pool, left, right);
   req.set_condition(Expression::encode(*logExp));
 
@@ -1072,7 +1072,7 @@ TEST(UpdateVertexTest, TTL_Insert_Test) {
   EXPECT_EQ("Tim Duncan", (*resp.props_ref()).rows[0].values[4].getStr());
   EXPECT_EQ(1, (*resp.props_ref()).rows[0].values[5].getInt());
 
-  // Get player from kvstore directly, ttl expired data can be readed
+  // Get player from kvstore directly, ttl expired data can be readded
   // First record is inserted record data
   // Second record is expired ttl data
   auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen, partId, vertexId, tagId);
@@ -1112,9 +1112,9 @@ TEST(UpdateVertexTest, TTL_Insert_Test) {
   EXPECT_EQ(1, count);
 }
 
-// upsert, insert faild
+// upsert, insert failed
 // age filed has not default value and not nullable, not in set clause
-TEST(UpdateVertexTest, Insertable_No_Defalut_Test) {
+TEST(UpdateVertexTest, Insertable_No_Default_Test) {
   fs::TempDir rootPath("/tmp/UpdateVertexTest.XXXXXX");
   mock::MockCluster cluster;
   cluster.initStorageKV(rootPath.path());
