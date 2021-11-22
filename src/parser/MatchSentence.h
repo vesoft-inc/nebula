@@ -165,6 +165,8 @@ class MatchNode final {
 
   const MapExpression* props() const { return props_; }
 
+  MapExpression* props() { return props_; }
+
   std::string toString() const;
 
  private:
