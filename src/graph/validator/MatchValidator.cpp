@@ -551,12 +551,9 @@ StatusOr<Expression *> MatchValidator::makeNodeSubFilter(const MapExpression *ma
   auto *pool = qctx_->objPool();
   // Node has tag without property
   if (!label.empty() && map == nullptr) {
-    auto *left = ConstantExpression::make(pool, label);
-
-    auto *args = ArgumentList::make(pool);
-    args->addArgument(VertexExpression::make(pool));
-    auto *right = FunctionCallExpression::make(pool, "tags", args);
-    Expression *root = RelationalExpression::makeIn(pool, left, right);
+    // label._tag IS NOT EMPTY
+    auto *tagExpr = TagPropertyExpression::make(pool, label, kTag);
+    auto *root = UnaryExpression::makeIsNotEmpty(pool, tagExpr);
 
     return root;
   }
