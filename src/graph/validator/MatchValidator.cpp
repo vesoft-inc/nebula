@@ -45,7 +45,10 @@ Status MatchValidator::validateImpl() {
 
         auto matchClauseCtx = getContext<MatchClauseContext>();
         matchClauseCtx->aliasesUsed = aliasesUsed;
-        NG_RETURN_IF_ERROR(validatePath(matchClause->path(), *matchClauseCtx));
+        if (matchClause->path()->pathSize() > 1) {
+          return Status::SemanticError("Multi paths not supported.");
+        }
+        NG_RETURN_IF_ERROR(validatePath(matchClause->path()->path(0) /* TODO */, *matchClauseCtx));
         if (matchClause->where() != nullptr) {
           auto whereClauseCtx = getContext<WhereClauseContext>();
           whereClauseCtx->aliasesUsed = &matchClauseCtx->aliasesGenerated;
