@@ -157,6 +157,7 @@ class ScanVertexPropNode : public QueryNode<Cursor> {
           (filter_ == nullptr || vTrue(filter_->eval(*expCtx_)))) {
         resultDataSet_->rows.emplace_back(std::move(row));
       }
+      expCtx_->clear();
       for (auto& tagNode : tagNodes_) {
         tagNode->clear();
       }
@@ -300,6 +301,7 @@ class ScanEdgePropNode : public QueryNode<Cursor> {
         (filter_ == nullptr || vTrue(filter_->eval(*expCtx_)))) {
       resultDataSet_->rows.emplace_back(std::move(row));
     }
+    expCtx_->clear();
     for (auto& edgeNode : edgeNodes_) {
       edgeNode->clear();
     }
