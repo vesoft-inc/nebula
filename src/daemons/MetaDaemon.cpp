@@ -328,7 +328,7 @@ int main(int argc, char* argv[]) {
   }
 
   auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(gKVStore.get(), gClusterId);
-  LOG(INFO) << "The meta deamon start on " << localhost;
+  LOG(INFO) << "The meta daemon start on " << localhost;
   try {
     gServer = std::make_unique<apache::thrift::ThriftServer>();
     gServer->setPort(FLAGS_port);

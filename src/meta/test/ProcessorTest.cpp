@@ -897,7 +897,7 @@ TEST(ProcessorTest, CreateTagTest) {
 
     cpp2::CreateTagReq req;
     req.set_space_id(1);
-    req.set_tag_name("tag_type_mismatche");
+    req.set_tag_name("tag_type_mismatch");
     req.set_schema(std::move(schemaWithDefault));
     auto* processor = CreateTagProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -921,7 +921,7 @@ TEST(ProcessorTest, CreateTagTest) {
 
     cpp2::CreateTagReq req;
     req.set_space_id(1);
-    req.set_tag_name("tag_value_mismatche");
+    req.set_tag_name("tag_value_mismatch");
     req.set_schema(std::move(schemaWithDefault));
     auto* processor = CreateTagProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -1088,7 +1088,7 @@ TEST(ProcessorTest, CreateEdgeTest) {
 
     cpp2::CreateEdgeReq req;
     req.set_space_id(1);
-    req.set_edge_name("edge_with_defaule");
+    req.set_edge_name("edge_with_default");
     req.set_schema(std::move(schemaWithDefault));
     auto* processor = CreateEdgeProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -1105,7 +1105,7 @@ TEST(ProcessorTest, CreateEdgeTest) {
 
     cpp2::CreateEdgeReq req;
     req.set_space_id(1);
-    req.set_edge_name("edge_type_mismatche");
+    req.set_edge_name("edge_type_mismatch");
     req.set_schema(std::move(schemaWithDefault));
     auto* processor = CreateEdgeProcessor::instance(kv.get());
     auto f = processor->getFuture();

@@ -16,7 +16,7 @@ bool NebulaKeyUtilsV2::isValidVidLen(size_t vIdLen, VertexID srcVId, VertexID ds
 }
 
 // static
-std::string NebulaKeyUtilsV2::vertexKey(
+std::string NebulaKeyUtilsV2::tagKey(
     size_t vIdLen, PartitionID partId, VertexID vId, TagID tagId, TagVersion tv) {
   CHECK_GE(vIdLen, vId.size());
   tagId &= kTagMaskSet;

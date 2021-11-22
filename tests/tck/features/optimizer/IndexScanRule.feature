@@ -6,7 +6,7 @@ Feature: Match index selection
   Background:
     Given a graph with space named "nba"
 
-  Scenario: and filter embeding
+  Scenario: and filter embedding
     When profiling query:
       """
       MATCH (v:player)
@@ -66,7 +66,7 @@ Feature: Match index selection
       | 6  | IndexScan      | 0            | {"indexCtx": {"columnHints":{"scanType":"RANGE","column":"age","beginValue":"30","endValue":"40","includeBegin":"false","includeEnd":"true"}}} |
       | 0  | Start          |              |                                                                                                                                                |
 
-  Scenario: or filter embeding
+  Scenario: or filter embedding
     When profiling query:
       """
       MATCH (v:player)
@@ -89,7 +89,7 @@ Feature: Match index selection
       | ("Vince Carter" :player{age: 42, name: "Vince Carter"})                                                     |
       | ("Ray Allen" :player{age: 43, name: "Ray Allen"})                                                           |
       | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
-      | ("Shaquile O'Neal" :player{age: 47, name: "Shaquile O'Neal"})                                               |
+      | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})                                             |
     And the execution plan should be:
       | id | name           | dependencies | operator info |
       | 6  | Project        | 2            |               |
@@ -110,7 +110,7 @@ Feature: Match index selection
       | v                                                                 | n                                                                                                           |
       | ("Tracy McGrady" :player{age: 39, name: "Tracy McGrady"})         | ("Grant Hill" :player{age: 46, name: "Grant Hill"})                                                         |
       | ("Amar'e Stoudemire" :player{age: 36, name: "Amar'e Stoudemire"}) | ("Steve Nash" :player{age: 45, name: "Steve Nash"})                                                         |
-      | ("Yao Ming" :player{age: 38, name: "Yao Ming"})                   | ("Shaquile O'Neal" :player{age: 47, name: "Shaquile O'Neal"})                                               |
+      | ("Yao Ming" :player{age: 38, name: "Yao Ming"})                   | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})                                             |
       | ("Aron Baynes" :player{age: 32, name: "Aron Baynes"})             | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
     And the execution plan should be:
       | id | name           | dependencies | operator info |

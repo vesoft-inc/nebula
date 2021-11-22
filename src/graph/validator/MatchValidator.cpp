@@ -554,12 +554,9 @@ StatusOr<Expression *> MatchValidator::makeNodeSubFilter(const MapExpression *ma
   auto *pool = qctx_->objPool();
   // Node has tag without property
   if (!label.empty() && map == nullptr) {
-    auto *left = ConstantExpression::make(pool, label);
-
-    auto *args = ArgumentList::make(pool);
-    args->addArgument(VertexExpression::make(pool));
-    auto *right = FunctionCallExpression::make(pool, "tags", args);
-    Expression *root = RelationalExpression::makeIn(pool, left, right);
+    // label._tag IS NOT EMPTY
+    auto *tagExpr = TagPropertyExpression::make(pool, label, kTag);
+    auto *root = UnaryExpression::makeIsNotEmpty(pool, tagExpr);
 
     return root;
   }
@@ -721,8 +718,8 @@ Status MatchValidator::validateGroup(YieldClauseContext &yieldCtx) const {
         yieldCtx.aggOutputColumnNames_.emplace_back(agg->toString());
       }
       if (!aggs.empty()) {
-        auto *rewritedExpr = ExpressionUtils::rewriteAgg2VarProp(colExpr);
-        yieldCtx.projCols_->addColumn(new YieldColumn(rewritedExpr, colOldName));
+        auto *rewrittenExpr = ExpressionUtils::rewriteAgg2VarProp(colExpr);
+        yieldCtx.projCols_->addColumn(new YieldColumn(rewrittenExpr, colOldName));
         yieldCtx.projOutputColumnNames_.emplace_back(colOldName);
         continue;
       }
