@@ -61,20 +61,30 @@ std::string Path::encodeValue(const Value& value,
                               std::string& key) {
   std::string val;
   bool isNull = false;
-  if (colDef.get_type() == ::nebula::cpp2::PropertyType::GEOGRAPHY) {
-    CHECK_EQ(value.type(), Value::Type::STRING);
-    val = value.getStr();
-  } else if (value.type() == Value::Type::STRING) {
-    val = IndexKeyUtils::encodeValue(value, *colDef.get_type_length());
-    if (val.back() != '\0') {
-      strategySet_.insert(QualifiedStrategy::constant<QualifiedStrategy::UNCERTAIN>());
+  switch (colDef.get_type()) {
+    case ::nebula::cpp2::PropertyType::STRING:
+    case ::nebula::cpp2::PropertyType::FIXED_STRING: {
+      if (value.type() == Value::Type::NULLVALUE) {
+        val = IndexKeyUtils::encodeNullValue(Value::Type::STRING, colDef.get_type_length());
+        isNull = true;
+      } else {
+        val = IndexKeyUtils::encodeValue(value, *colDef.get_type_length());
+        if (val.back() != '\0') {
+          strategySet_.insert(QualifiedStrategy::constant<QualifiedStrategy::UNCERTAIN>());
+        }
+      }
+      break;
     }
-  } else if (value.type() == Value::Type::NULLVALUE) {
-    auto vtype = IndexKeyUtils::toValueType(colDef.get_type());
-    val = IndexKeyUtils::encodeNullValue(vtype, colDef.get_type_length());
-    isNull = true;
-  } else {
-    val = IndexKeyUtils::encodeValue(value);
+    default: {
+      if (value.type() == Value::Type::NULLVALUE) {
+        auto vType = IndexKeyUtils::toValueType(colDef.get_type());
+        val = IndexKeyUtils::encodeNullValue(vType, colDef.get_type_length());
+        isNull = true;
+      } else {
+        val = IndexKeyUtils::encodeValue(value);
+      }
+      break;
+    }
   }
   // If the current colDef can be null, then it is necessary to additionally determine whether the
   // corresponding value under a nullable is null when parsing the key (the encoding of the maximum
