@@ -1350,6 +1350,8 @@ class AppendVertices final : public GetVertices {
 
   Expression* vFilter() const { return vFilter_; }
 
+  void setVFilter(Expression* filter) { vFilter_ = filter; }
+
   void setVertexFilter(Expression* vFilter) { vFilter_ = vFilter; }
 
  private:
