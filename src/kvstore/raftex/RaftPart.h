@@ -196,6 +196,8 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
    * Methods to process incoming raft requests
    *
    ****************************************************/
+  void getState(cpp2::GetStateResponse& resp);
+
   // Process the incoming leader election request
   void processAskForVoteRequest(const cpp2::AskForVoteRequest& req, cpp2::AskForVoteResponse& resp);
 

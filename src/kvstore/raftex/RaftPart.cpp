@@ -998,10 +998,23 @@ bool RaftPart::prepareElectionRequest(cpp2::AskForVoteRequest& req,
   return true;
 }
 
+void RaftPart::getState(cpp2::GetStateResponse& resp) {
+  std::lock_guard<std::mutex> g(raftLock_);
+  resp.set_term(term_);
+  resp.set_role(nebula::raftex::cpp2::Role(role_));
+  resp.set_is_leader(role_ == Role::LEADER);
+  resp.set_error_code(cpp2::ErrorCode::SUCCEEDED);
+  resp.set_committed_log_id(committedLogId_);
+  resp.set_last_log_id(lastLogId_);
+  resp.set_last_log_term(lastLogTerm_);
+  resp.set_status(nebula::raftex::cpp2::Status(status_));
+}
+
 typename RaftPart::Role RaftPart::processElectionResponses(
     const RaftPart::ElectionResponses& results,
     std::vector<std::shared_ptr<Host>> hosts,
     TermID proposedTerm) {
+
   std::lock_guard<std::mutex> g(raftLock_);
 
   if (UNLIKELY(status_ == Status::STOPPED)) {
