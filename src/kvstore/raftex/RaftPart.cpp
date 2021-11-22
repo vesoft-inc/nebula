@@ -1014,7 +1014,6 @@ typename RaftPart::Role RaftPart::processElectionResponses(
     const RaftPart::ElectionResponses& results,
     std::vector<std::shared_ptr<Host>> hosts,
     TermID proposedTerm) {
-
   std::lock_guard<std::mutex> g(raftLock_);
 
   if (UNLIKELY(status_ == Status::STOPPED)) {
