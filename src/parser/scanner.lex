@@ -233,6 +233,8 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "INTO"                      { return TokenType::KW_INTO; }
 "LISTENER"                  { return TokenType::KW_LISTENER; }
 "ELASTICSEARCH"             { return TokenType::KW_ELASTICSEARCH; }
+"HTTP"                      { return TokenType::KW_HTTP; }
+"HTTPS"                      { return TokenType::KW_HTTPS; }
 "FULLTEXT"                  { return TokenType::KW_FULLTEXT; }
 "AUTO"                      { return TokenType::KW_AUTO; }
 "FUZZY"                     { return TokenType::KW_FUZZY; }

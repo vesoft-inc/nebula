@@ -194,7 +194,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %token KW_UNWIND KW_SKIP KW_OPTIONAL
 %token KW_CASE KW_THEN KW_ELSE KW_END
 %token KW_GROUP KW_ZONE KW_GROUPS KW_ZONES KW_INTO
-%token KW_LISTENER KW_ELASTICSEARCH KW_FULLTEXT
+%token KW_LISTENER KW_ELASTICSEARCH KW_FULLTEXT KW_HTTPS KW_HTTP
 %token KW_AUTO KW_FUZZY KW_PREFIX KW_REGEXP KW_WILDCARD
 %token KW_TEXT KW_SEARCH KW_CLIENTS KW_SIGN KW_SERVICE KW_TEXT_SEARCH
 %token KW_ANY KW_SINGLE KW_NONE
@@ -532,6 +532,8 @@ unreserved_keyword
     | KW_POINT              { $$ = new std::string("point"); }
     | KW_LINESTRING         { $$ = new std::string("linestring"); }
     | KW_POLYGON            { $$ = new std::string("polygon"); }
+    | KW_HTTP               { $$ = new std::string("http"); }
+    | KW_HTTPS              { $$ = new std::string("https"); }
     ;
 
 expression
@@ -1807,6 +1809,18 @@ text_search_client_item
         $$->set_host(*$2);
         delete $2;
     }
+    | L_PAREN host_item COMMA KW_HTTP R_PAREN {
+        $$ = new nebula::meta::cpp2::FTClient();
+        $$->set_host(*$2);
+        $$->set_conn_type("http");
+        delete $2;
+    }
+    | L_PAREN host_item COMMA KW_HTTPS R_PAREN {
+        $$ = new nebula::meta::cpp2::FTClient();
+        $$->set_host(*$2);
+        $$->set_conn_type("https");
+        delete $2;
+    }
     | L_PAREN host_item COMMA STRING COMMA STRING R_PAREN {
         $$ = new nebula::meta::cpp2::FTClient();
         $$->set_host(*$2);
@@ -1815,6 +1829,26 @@ text_search_client_item
         delete $2;
         delete $4;
         delete $6;
+    }
+    | L_PAREN host_item COMMA KW_HTTP COMMA STRING COMMA STRING R_PAREN {
+        $$ = new nebula::meta::cpp2::FTClient();
+        $$->set_host(*$2);
+        $$->set_user(*$6);
+        $$->set_pwd(*$8);
+        $$->set_conn_type("http");
+        delete $2;
+        delete $6;
+        delete $8;
+    }
+    | L_PAREN host_item COMMA KW_HTTPS COMMA STRING COMMA STRING R_PAREN {
+        $$ = new nebula::meta::cpp2::FTClient();
+        $$->set_host(*$2);
+        $$->set_user(*$6);
+        $$->set_pwd(*$8);
+        $$->set_conn_type("https");
+        delete $2;
+        delete $6;
+        delete $8;
     }
     ;
 
