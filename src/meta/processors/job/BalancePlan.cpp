@@ -68,7 +68,9 @@ void BalancePlan::invoke() {
         if (finished) {
           CHECK_EQ(j, this->buckets_[i].size() - 1);
           saveInStore(true);
-          onFinished_();
+          onFinished_(stopped ? meta::cpp2::JobStatus::STOPPED
+                              : (failed_ ? meta::cpp2::JobStatus::FAILED
+                                         : meta::cpp2::JobStatus::FINISHED));
         } else if (j + 1 < this->buckets_[i].size()) {
           auto& task = this->tasks_[this->buckets_[i][j + 1]];
           if (stopped) {
@@ -83,6 +85,7 @@ void BalancePlan::invoke() {
         {
           std::lock_guard<std::mutex> lg(lock_);
           finishedTaskNum_++;
+          failed_ = true;
           VLOG(1) << "Balance " << id() << " has completed " << finishedTaskNum_ << " task";
           setStatus(meta::cpp2::JobStatus::FAILED);
           if (finishedTaskNum_ == tasks_.size()) {
@@ -93,7 +96,7 @@ void BalancePlan::invoke() {
         }
         if (finished) {
           CHECK_EQ(j, this->buckets_[i].size() - 1);
-          onFinished_();
+          onFinished_(stopped ? meta::cpp2::JobStatus::STOPPED : meta::cpp2::JobStatus::FAILED);
         } else if (j + 1 < this->buckets_[i].size()) {
           auto& task = this->tasks_[this->buckets_[i][j + 1]];
           if (tasks_[taskIndex].spaceId_ == task.spaceId_ &&
@@ -121,7 +124,6 @@ void BalancePlan::invoke() {
 nebula::cpp2::ErrorCode BalancePlan::saveInStore(bool onlyPlan) {
   CHECK_NOTNULL(kv_);
   std::vector<kvstore::KV> data;
-  data.emplace_back(jobDescription_.jobKey(), jobDescription_.jobVal());
   if (!onlyPlan) {
     for (auto& task : tasks_) {
       data.emplace_back(MetaKeyUtils::balanceTaskKey(
@@ -149,7 +151,7 @@ nebula::cpp2::ErrorCode BalancePlan::saveInStore(bool onlyPlan) {
 
 ErrorOr<nebula::cpp2::ErrorCode, std::vector<cpp2::BalanceTask>> BalancePlan::show(
     JobID jobId, kvstore::KVStore* kv, AdminClient* client) {
-  auto ret = getBalanceTasks(jobId, kv, client, true);
+  auto ret = getBalanceTasks(jobId, kv, client, false);
   if (!ok(ret)) {
     return error(ret);
   }
@@ -178,6 +180,10 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<cpp2::BalanceTask>> BalancePlan::sh
     thriftTasks.emplace_back(std::move(t));
   }
   return thriftTasks;
+}
+
+void BalancePlan::setFinishCallBack(std::function<void(meta::cpp2::JobStatus)> func) {
+  onFinished_ = func;
 }
 
 ErrorOr<nebula::cpp2::ErrorCode, std::vector<BalanceTask>> BalancePlan::getBalanceTasks(
@@ -213,7 +219,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<BalanceTask>> BalancePlan::getBalan
       task.endTimeMs_ = std::get<3>(tup);
       if (resume && task.ret_ != BalanceTaskResult::SUCCEEDED) {
         // Resume the failed task, skip the in-progress and invalid tasks
-        if (task.ret_ == BalanceTaskResult::FAILED) {
+        if (task.ret_ == BalanceTaskResult::FAILED || task.ret_ == BalanceTaskResult::INVALID) {
           task.ret_ = BalanceTaskResult::IN_PROGRESS;
         }
         task.status_ = BalanceTaskStatus::START;
@@ -229,6 +235,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<BalanceTask>> BalancePlan::getBalan
             task.ret_ = BalanceTaskResult::INVALID;
           }
         }
+        task.endTimeMs_ = 0;
       }
     }
     tasks.emplace_back(std::move(task));

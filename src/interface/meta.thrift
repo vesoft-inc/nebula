@@ -235,6 +235,7 @@ enum AdminCmd {
     DOWNLOAD                 = 7,
     INGEST                   = 8,
     LEADER_BALANCE           = 9,
+    ZONE_BALANCE             = 10,
     UNKNOWN                  = 99,
 } (cpp.enum_strict)
 

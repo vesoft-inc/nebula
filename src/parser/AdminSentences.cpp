@@ -271,6 +271,17 @@ std::string AdminJobSentence::toString() const {
             }
             return str;
           }
+        case meta::cpp2::AdminCmd::ZONE_BALANCE:
+          if (paras_.empty()) {
+            return "SUBMIT JOB BALANCE ZONE";
+          } else {
+            std::string str = "SUBMIT JOB BALANCE ZONE REMOVE";
+            for (size_t i = 0; i < paras_.size(); i++) {
+              auto &s = paras_[i];
+              str += i == 0 ? " " + s : ", " + s;
+            }
+            return str;
+          }
         case meta::cpp2::AdminCmd::LEADER_BALANCE:
           return "SUBMIT JOB BALANCE LEADER";
         case meta::cpp2::AdminCmd::UNKNOWN:

@@ -191,7 +191,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %token KW_USER KW_USERS KW_ACCOUNT
 %token KW_PASSWORD KW_CHANGE KW_ROLE KW_ROLES
 %token KW_GOD KW_ADMIN KW_DBA KW_GUEST KW_GRANT KW_REVOKE KW_ON
-%token KW_OUT KW_BOTH KW_SUBGRAPH
+%token KW_OUT KW_BOTH KW_SUBGRAPH KW_ACROSS
 %token KW_EXPLAIN KW_PROFILE KW_FORMAT
 %token KW_CONTAINS
 %token KW_STARTS KW_ENDS
@@ -3281,20 +3281,36 @@ admin_job_sentence
                                               meta::cpp2::AdminCmd::LEADER_BALANCE);
          $$ = sentence;
         }
-    | KW_SUBMIT KW_JOB KW_BALANCE KW_DATA {
+    | KW_SUBMIT KW_JOB KW_BALANCE KW_IN KW_ZONE {
          auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
                                               meta::cpp2::AdminCmd::DATA_BALANCE);
          $$ = sentence;
     }
-    | KW_SUBMIT KW_JOB KW_BALANCE KW_DATA KW_REMOVE host_list {
+    | KW_SUBMIT KW_JOB KW_BALANCE KW_IN KW_ZONE KW_REMOVE host_list {
          auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
                                               meta::cpp2::AdminCmd::DATA_BALANCE);
-         HostList* hl = $6;
+         HostList* hl = $7;
          std::vector<HostAddr> has = hl->hosts();
          for (HostAddr& ha: has) {
             sentence->addPara(ha.toString());
          }
          delete hl;
+         $$ = sentence;
+    }
+    | KW_SUBMIT KW_JOB KW_BALANCE KW_ACROSS KW_ZONE {
+         auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
+                                              meta::cpp2::AdminCmd::ZONE_BALANCE);
+         $$ = sentence;
+    }
+    | KW_SUBMIT KW_JOB KW_BALANCE KW_ACROSS KW_ZONE KW_REMOVE zone_name_list {
+         auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
+                                              meta::cpp2::AdminCmd::ZONE_BALANCE);
+         ZoneNameList* nl = $7;
+         std::vector<std::string> names = nl->zoneNames();
+         for (std::string& name: names) {
+           sentence->addPara(name);
+         }
+         delete nl;
          $$ = sentence;
     }
     ;

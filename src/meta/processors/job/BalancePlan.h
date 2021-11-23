@@ -94,6 +94,8 @@ class BalancePlan {
                                                                                kvstore::KVStore* kv,
                                                                                AdminClient* client);
 
+  void setFinishCallBack(std::function<void(meta::cpp2::JobStatus)> func);
+
  private:
   JobDescription jobDescription_;
   kvstore::KVStore* kv_ = nullptr;
@@ -101,8 +103,9 @@ class BalancePlan {
   std::vector<BalanceTask> tasks_;
   std::mutex lock_;
   size_t finishedTaskNum_ = 0;
-  std::function<void()> onFinished_;
+  std::function<void(meta::cpp2::JobStatus)> onFinished_;
   bool stopped_ = false;
+  bool failed_ = false;
 
   // List of task index in tasks_;
   using Bucket = std::vector<int32_t>;

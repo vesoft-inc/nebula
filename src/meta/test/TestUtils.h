@@ -208,6 +208,62 @@ class TestUtils {
     baton.wait();
   }
 
+  static void assembleSpaceWithZone(kvstore::KVStore* kv,
+                                    GraphSpaceID id,
+                                    int32_t partitionNum,
+                                    int32_t replica,
+                                    int32_t zoneNum,
+                                    int32_t totalHost) {
+    cpp2::SpaceDesc properties;
+    properties.set_space_name("test_space");
+    properties.set_partition_num(partitionNum);
+    properties.set_replica_factor(replica);
+    auto spaceVal = MetaKeyUtils::spaceVal(properties);
+    std::vector<nebula::kvstore::KV> data;
+    data.emplace_back(MetaKeyUtils::indexSpaceKey("test_space"),
+                      std::string(reinterpret_cast<const char*>(&id), sizeof(GraphSpaceID)));
+    std::vector<std::pair<std::string, std::vector<HostAddr>>> zones;
+    std::vector<std::string> zoneNames;
+    std::map<std::string, int32_t> zonePartNum;
+    for (int32_t i = 0; i < zoneNum; i++) {
+      zones.push_back({std::to_string(i + 1), {}});
+      zonePartNum[std::to_string(i + 1)] = 0;
+      zoneNames.push_back(std::to_string(i + 1));
+    }
+    properties.set_zone_names(zoneNames);
+    data.emplace_back(MetaKeyUtils::spaceKey(id), MetaKeyUtils::spaceVal(properties));
+    std::vector<HostAddr> allHosts;
+    for (int32_t i = 0; i < totalHost; i++) {
+      zones[i % zoneNum].second.emplace_back("127.0.0.1", i + 1);
+      allHosts.emplace_back("127.0.0.1", i + 1);
+      data.emplace_back(nebula::MetaKeyUtils::machineKey("127.0.0.1", i + 1), "");
+      data.emplace_back(nebula::MetaKeyUtils::hostKey("127.0.0.1", i + 1),
+                        HostInfo::encodeV2(HostInfo(
+                            time::WallClock::fastNowInMilliSec(), cpp2::HostRole::STORAGE, "")));
+    }
+    for (auto& p : zones) {
+      data.emplace_back(MetaKeyUtils::zoneKey(p.first), MetaKeyUtils::zoneVal(p.second));
+    }
+    for (auto partId = 1; partId <= partitionNum; partId++) {
+      std::vector<HostAddr> hosts;
+      size_t idx = partId;
+      for (int32_t i = 0; i < replica; i++, idx++) {
+        std::string zoneName = zones[idx % zoneNum].first;
+        std::vector<HostAddr>& zoneHosts = zones[idx % zoneNum].second;
+        int32_t hostIndex = zonePartNum[zoneName] % zoneHosts.size();
+        hosts.push_back(zoneHosts[hostIndex]);
+        zonePartNum[zoneName]++;
+      }
+      data.emplace_back(MetaKeyUtils::partKey(id, partId), MetaKeyUtils::partVal(hosts));
+    }
+    folly::Baton<true, std::atomic> baton;
+    kv->asyncMultiPut(0, 0, std::move(data), [&](nebula::cpp2::ErrorCode code) {
+      ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
+      baton.post();
+    });
+    baton.wait();
+  }
+
   static void mockTag(kvstore::KVStore* kv,
                       int32_t tagNum,
                       SchemaVer version = 0,

@@ -68,11 +68,16 @@ nebula_add_library(
     processors/job/AdminJobProcessor.cpp
     processors/job/ReportTaskProcessor.cpp
     processors/job/JobUtils.cpp
+    processors/job/StorageJobExecutor.cpp
+    processors/job/JobExecutor.cpp
     processors/job/MetaJobExecutor.cpp
     processors/job/SimpleConcurrentJobExecutor.cpp
     processors/job/CompactJobExecutor.cpp
     processors/job/FlushJobExecutor.cpp
     processors/job/BalanceJobExecutor.cpp
+    processors/job/ZoneBalanceJobExecutor.cpp
+    processors/job/DataBalanceJobExecutor.cpp
+    processors/job/LeaderBalanceJobExecutor.cpp
     processors/job/RebuildJobExecutor.cpp
     processors/job/RebuildTagJobExecutor.cpp
     processors/job/RebuildEdgeJobExecutor.cpp
