@@ -5,9 +5,6 @@
 
 #include "graph/validator/GetSubgraphValidator.h"
 
-#include <memory>
-
-#include "graph/context/QueryExpressionContext.h"
 #include "graph/planner/plan/Logic.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/util/ValidateUtil.h"

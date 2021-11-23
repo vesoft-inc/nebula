@@ -6,8 +6,6 @@
 #ifndef GRAPH_OPTIMIZER_RULE_OPTIMIZETAGINDEXSCANBYFILTERRULE_H_
 #define GRAPH_OPTIMIZER_RULE_OPTIMIZETAGINDEXSCANBYFILTERRULE_H_
 
-#include <memory>
-
 #include "graph/optimizer/OptRule.h"
 
 namespace nebula {
