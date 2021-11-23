@@ -5,24 +5,12 @@
 
 #include "graph/optimizer/rule/OptimizeEdgeIndexScanByFilterRule.h"
 
-#include <algorithm>
-#include <memory>
-#include <vector>
-
-#include "common/base/Base.h"
-#include "common/base/Status.h"
-#include "common/expression/Expression.h"
-#include "common/expression/LogicalExpression.h"
-#include "common/expression/PropertyExpression.h"
-#include "common/expression/RelationalExpression.h"
 #include "graph/context/QueryContext.h"
 #include "graph/optimizer/OptContext.h"
 #include "graph/optimizer/OptGroup.h"
 #include "graph/optimizer/OptimizerUtils.h"
 #include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Scan.h"
-#include "interface/gen-cpp2/meta_types.h"
-#include "interface/gen-cpp2/storage_types.h"
 
 using nebula::Expression;
 using nebula::graph::EdgeIndexFullScan;

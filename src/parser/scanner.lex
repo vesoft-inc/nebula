@@ -73,6 +73,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "WHEN"                      { return TokenType::KW_WHEN; }
 "DELETE"                    { return TokenType::KW_DELETE; }
 "FIND"                      { return TokenType::KW_FIND; }
+"PATH"                      { return TokenType::KW_PATH; }
 "LOOKUP"                    { return TokenType::KW_LOOKUP; }
 "ALTER"                     { return TokenType::KW_ALTER; }
 "STEPS"                     { return TokenType::KW_STEPS; }
@@ -205,7 +206,6 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "STORAGE"                   { return TokenType::KW_STORAGE; }
 "SHORTEST"                  { return TokenType::KW_SHORTEST; }
 "NOLOOP"                    { return TokenType::KW_NOLOOP; }
-"PATH"                      { return TokenType::KW_PATH; }
 "OUT"                       { return TokenType::KW_OUT; }
 "BOTH"                      { return TokenType::KW_BOTH; }
 "SUBGRAPH"                  { return TokenType::KW_SUBGRAPH; }
