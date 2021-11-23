@@ -218,8 +218,8 @@ Feature: Integer Vid All Path
       WHERE (like.likeness >= 80 and like.likeness <= 90) OR (teammate.start_year is not EMPTY and teammate.start_year > 2001) UPTO 3 STEPS YIELD path as p
       """
     Then the result should be, in any order, with relax comparison:
-      | p                                                                                                                                                                                                                                                                                |
-      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})<-[:like@0 {likeness: 80}]-("Shaquille O'Neal" :player{age: 47, name: "Shaquile O'Neal"})<-[:like@0 {likeness: 90}]-("Yao Ming" :player{age: 38, name: "Yao Ming"})> |
+      | p                                                                                                                                                                                                                                                                                 |
+      | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})<-[:like@0 {likeness: 80}]-("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})<-[:like@0 {likeness: 90}]-("Yao Ming" :player{age: 38, name: "Yao Ming"})> |
     When executing query:
       """
       FIND ALL PATH WITH PROP FROM hash("Tony Parker") TO hash("Yao Ming") OVER * BIDIRECT

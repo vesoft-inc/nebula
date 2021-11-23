@@ -324,13 +324,13 @@ Feature: Shortest Path
   Scenario: [2] Shortest Path With Limit
     When executing query:
       """
-      FIND SHORTEST PATH FROM "Shaquile O\'Neal", "Nobody" TO "Manu Ginobili", "Spurs", "Lakers" OVER * UPTO 5 STEPS YIELD path as p |
+      FIND SHORTEST PATH FROM "Shaquille O\'Neal", "Nobody" TO "Manu Ginobili", "Spurs", "Lakers" OVER * UPTO 5 STEPS YIELD path as p |
       ORDER BY $-.p | LIMIT 2
       """
     Then the result should be, in any order, with relax comparison:
-      | p                                                                        |
-      | <("Shaquile O'Neal")-[:serve]->("Lakers")>                               |
-      | <("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:like]->("Manu Ginobili")> |
+      | p                                                                         |
+      | <("Shaquille O'Neal")-[:serve]->("Lakers")>                               |
+      | <("Shaquille O'Neal")-[:like]->("Tim Duncan")-[:like]->("Manu Ginobili")> |
 
   Scenario: [3] Shortest Path With Limit
     When executing query:
@@ -516,17 +516,17 @@ Feature: Shortest Path
   Scenario: Shortest Path YIELD path
     When executing query:
       """
-      FIND SHORTEST PATH FROM "Shaquile O\'Neal", "Nobody" TO "Manu Ginobili", "Spurs", "Lakers" OVER * UPTO 5 STEPS YIELD path as p
+      FIND SHORTEST PATH FROM "Shaquille O\'Neal", "Nobody" TO "Manu Ginobili", "Spurs", "Lakers" OVER * UPTO 5 STEPS YIELD path as p
       """
     Then the result should be, in any order, with relax comparison:
-      | p                                                                            |
-      | <("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:serve]->("Spurs")>            |
-      | <("Shaquile O'Neal")-[:serve]->("Lakers")>                                   |
-      | <("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:like]->("Manu Ginobili")>     |
-      | <("Shaquile O'Neal")-[:like]->("Tim Duncan")-[:teammate]->("Manu Ginobili")> |
+      | p                                                                             |
+      | <("Shaquille O'Neal")-[:like]->("Tim Duncan")-[:serve]->("Spurs")>            |
+      | <("Shaquille O'Neal")-[:serve]->("Lakers")>                                   |
+      | <("Shaquille O'Neal")-[:like]->("Tim Duncan")-[:like]->("Manu Ginobili")>     |
+      | <("Shaquille O'Neal")-[:like]->("Tim Duncan")-[:teammate]->("Manu Ginobili")> |
     When executing query:
       """
-      FIND SHORTEST PATH FROM "Shaquile O\'Neal", "Nobody" TO "Manu Ginobili", "Spurs", "Lakers" OVER * UPTO 5 STEPS YIELD path as p |
+      FIND SHORTEST PATH FROM "Shaquille O\'Neal", "Nobody" TO "Manu Ginobili", "Spurs", "Lakers" OVER * UPTO 5 STEPS YIELD path as p |
       YIELD length($-.p) as length
       """
     Then the result should be, in any order, with relax comparison:
