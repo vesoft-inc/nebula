@@ -67,8 +67,9 @@ class RelNode {
   }
 
   void addDependency(RelNode<T>* dep) {
-    dependencies_.emplace_back(dep);
-    dep->hasDependents_ = true;
+    dependencies_.emplace_back(
+        dep);  // Need to rename. Edge depends on HashJoin. Why edge is the depency of hashjoin
+    dep->isRoot_ = false;
   }
 
   RelNode() = default;
@@ -81,7 +82,7 @@ class RelNode {
 
   std::string name_ = "RelNode";
   std::vector<RelNode<T>*> dependencies_;
-  bool hasDependents_ = false;
+  bool isRoot_ = true;
   time::Duration duration_{true};
 };
 

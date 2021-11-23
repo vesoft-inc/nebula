@@ -36,11 +36,11 @@ template <typename T>
 class StoragePlan {
  public:
   nebula::cpp2::ErrorCode go(PartitionID partId, const T& input) {
-    // find all leaf nodes, and a dummy output node depends on all leaf node.
+    // find all root nodes, and a dummy output node depends on all root nodes.
     if (firstLoop_) {
       auto output = std::make_unique<RelNode<T>>();
       for (const auto& node : nodes_) {
-        if (!node->hasDependents_) {
+        if (node->isRoot_) {
           // add dependency of output node
           output->addDependency(node.get());
         }
@@ -54,11 +54,11 @@ class StoragePlan {
   }
 
   nebula::cpp2::ErrorCode go(PartitionID partId) {
-    // find all leaf nodes, and a dummy output node depends on all leaf node.
+    // find all root nodes, and a dummy output node depends on all root nodes.
     if (firstLoop_) {
       auto output = std::make_unique<RelNode<T>>();
       for (const auto& node : nodes_) {
-        if (!node->hasDependents_) {
+        if (node->isRoot_) {
           // add dependency of output node
           output->addDependency(node.get());
         }
