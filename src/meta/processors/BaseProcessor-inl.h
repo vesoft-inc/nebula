@@ -548,7 +548,7 @@ nebula::cpp2::ErrorCode BaseProcessor<RESP>::ftIndexCheck(
 template <typename RESP>
 bool BaseProcessor<RESP>::checkIndexExist(const std::vector<cpp2::IndexFieldDef>& fields,
                                           const cpp2::IndexItem& item) {
-  auto itemFields = item.get_fields();
+  const auto& itemFields = item.get_fields();
   if (fields.size() != itemFields.size()) {
     return false;
   }
