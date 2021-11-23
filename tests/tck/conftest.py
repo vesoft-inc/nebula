@@ -213,6 +213,12 @@ def executing_query(query, graph_spaces, session, request):
     ngql = combine_query(query)
     exec_query(request, ngql, session, graph_spaces)
 
+@when(parse("executing query with user {username} with password {password}:\n{query}"))
+def executing_query(username, password, conn_pool_to_first_graph_service, query, graph_spaces, request):
+    sess = conn_pool_to_first_graph_service.get_session(username, password)
+    ngql = combine_query(query)
+    exec_query(request, ngql, sess, graph_spaces)
+    sess.release()
 
 @when(parse("profiling query:\n{query}"))
 def profiling_query(query, graph_spaces, session, request):
@@ -496,15 +502,13 @@ def check_plan(plan, graph_spaces):
 
 
 @when(parse("executing query via graph {index:d}:\n{query}"))
-def executing_query(query, index, graph_spaces, session_from_first_conn_pool, session_from_second_conn_pool, session_from_third_conn_pool,request):
-    assert index < 3, "There exists only 0,1,2 graph: {}".format(index)
+def executing_query(query, index, graph_spaces, session_from_first_conn_pool, session_from_second_conn_pool, request):
+    assert index < 2, "There exists only 0,1 graph: {}".format(index)
     ngql = combine_query(query)
     if index == 0:
         exec_query(request, ngql, session_from_first_conn_pool, graph_spaces)
-    if index == 1:
-        exec_query(request, ngql, session_from_second_conn_pool, graph_spaces)
     else:
-        exec_query(request, ngql, session_from_third_conn_pool, graph_spaces)
+        exec_query(request, ngql, session_from_second_conn_pool, graph_spaces)
 
 
 @then(parse("the result should be, the first {n:d} records in order, and register {column_name} as a list named {key}:\n{result}"))

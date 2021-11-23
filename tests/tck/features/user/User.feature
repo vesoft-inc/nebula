@@ -343,14 +343,14 @@ Feature: User & privilege Test
       DESC USER user_not_exist
       """
     Then a ExecutionError should be raised at runtime:
-    When executing query via graph 2:
+    When executing query with user user1 with password pwd1:
       """
       DESC USER user1
       """
     Then the result should be, in any order, with relax comparison:
       | role    | space              |
       | "ADMIN" | "user_tmp_space_4" |
-    When executing query via graph 2:
+    When executing query with user user1 with password pwd1:
       """
       DESC USER user2
       """
@@ -360,7 +360,7 @@ Feature: User & privilege Test
       GRANT ROLE GUEST ON user_tmp_space_4 TO user1
       """
     Then the execution should be successful
-    When executing query via graph 2:
+    When executing query with user user1 with password pwd1:
       """
       DESC USER root
       """

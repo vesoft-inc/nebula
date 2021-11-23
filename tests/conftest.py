@@ -109,17 +109,6 @@ def conn_pool_to_second_graph_service(pytestconfig):
     yield pool
     pool.close()
 
-
-@pytest.fixture(scope="session")
-def conn_pool_to_third_graph_service(pytestconfig):
-    addr = pytestconfig.getoption("address")
-    host_addr = ["localhost", get_ports()[1]]
-    assert len(host_addr) == 2
-    pool = get_conn_pool(host_addr[0], host_addr[1])
-    yield pool
-    pool.close()
-
-
 @pytest.fixture(scope="session")
 def conn_pool(conn_pool_to_first_graph_service):
     return conn_pool_to_first_graph_service
@@ -137,14 +126,6 @@ def session_from_second_conn_pool(conn_pool_to_second_graph_service, pytestconfi
     user = pytestconfig.getoption("user")
     password = pytestconfig.getoption("password")
     sess = conn_pool_to_second_graph_service.get_session(user, password)
-    yield sess
-    sess.release()
-
-@pytest.fixture(scope="class")
-def session_from_third_conn_pool(conn_pool_to_third_graph_service, pytestconfig):
-    user = "user1"
-    password = "pwd1"
-    sess = conn_pool_to_third_graph_service.get_session(user, password)
     yield sess
     sess.release()
 
