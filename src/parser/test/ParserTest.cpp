@@ -2610,6 +2610,41 @@ TEST_F(ParserTest, Match) {
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
+  {
+    std::string query =
+        "MATCH (a)-[b]-(c) "
+        "WITH a,b,c "
+        "RETURN a,b,c";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query =
+        "MATCH (a)-[b]-(c) "
+        "MATCH (c)-[d]-(e) "
+        "RETURN a,b,c,d,e";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query =
+        "MATCH (a)-[b]-(c) "
+        "WITH a,b,c "
+        "MATCH (c)-[d]-(e) "
+        "RETURN a,b,c,d,e";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "MATCH (a),(b),(c) RETURN a,b,c";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "MATCH (a)-[b]-(c), (c)-[d]-(e) RETURN a,b,c,d,e";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
 }
 
 TEST_F(ParserTest, MatchErrorCheck) {
