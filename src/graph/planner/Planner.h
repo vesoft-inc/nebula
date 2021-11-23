@@ -10,6 +10,7 @@
 
 #include "common/base/Base.h"
 #include "graph/context/ast/AstContext.h"
+#include "graph/planner/plan/ExecutionPlan.h"
 #include "graph/planner/plan/PlanNode.h"
 
 namespace nebula {
@@ -22,12 +23,6 @@ extern const char* kRanking;
 extern const char* kVertexID;
 extern const char* kVertices;
 extern const char* kEdges;
-
-struct SubPlan {
-  // root and tail of a subplan.
-  PlanNode* root{nullptr};
-  PlanNode* tail{nullptr};
-};
 
 std::ostream& operator<<(std::ostream& os, const SubPlan& subplan);
 

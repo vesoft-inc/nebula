@@ -5,8 +5,6 @@
 
 #include "graph/optimizer/rule/GeoPredicateIndexScanBaseRule.h"
 
-#include "common/expression/Expression.h"
-#include "common/expression/LogicalExpression.h"
 #include "common/geo/GeoIndex.h"
 #include "graph/optimizer/OptContext.h"
 #include "graph/optimizer/OptGroup.h"
@@ -16,7 +14,6 @@
 #include "graph/planner/plan/Query.h"
 #include "graph/planner/plan/Scan.h"
 #include "graph/util/ExpressionUtils.h"
-#include "interface/gen-cpp2/storage_types.h"
 
 using nebula::graph::Filter;
 using nebula::graph::IndexScan;
