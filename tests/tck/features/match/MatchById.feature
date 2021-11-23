@@ -97,11 +97,11 @@ Feature: Match By Id
       """
       MATCH (v1) -[r]-> (v2)
       WHERE id(v1) == "LeBron James"
-      RETURN type(r) AS Type, v2.name AS Name
+      RETURN type(r) AS Type, v2.team.name AS Name
       """
     Then the result should be, in any order, with relax comparison:
       | Type    | Name        |
-      | 'like'  | 'Ray Allen' |
+      | 'like'  | NULL        |
       | 'serve' | 'Cavaliers' |
       | 'serve' | 'Heat'      |
       | 'serve' | 'Cavaliers' |
@@ -110,11 +110,11 @@ Feature: Match By Id
       """
       MATCH (v1) -[r:serve|:like]-> (v2)
       WHERE id(v1) == "LeBron James"
-      RETURN type(r) AS Type, v2.name AS Name
+      RETURN type(r) AS Type, v2.team.name AS Name
       """
     Then the result should be, in any order, with relax comparison:
       | Type    | Name        |
-      | 'like'  | 'Ray Allen' |
+      | 'like'  | NULL        |
       | 'serve' | 'Cavaliers' |
       | 'serve' | 'Heat'      |
       | 'serve' | 'Cavaliers' |
@@ -123,7 +123,7 @@ Feature: Match By Id
       """
       MATCH (v1) -[r:serve]-> (v2)
       WHERE id(v1) == "LeBron James"
-      RETURN type(r) AS Type, v2.name AS Name
+      RETURN type(r) AS Type, v2.team.name AS Name
       """
     Then the result should be, in any order, with relax comparison:
       | Type    | Name        |
@@ -135,7 +135,7 @@ Feature: Match By Id
       """
       MATCH (v1) -[r:serve]-> (v2 {name: "Cavaliers"})
       WHERE id(v1) == "LeBron James"
-      RETURN type(r) AS Type, v2.name AS Name
+      RETURN type(r) AS Type, v2.team.name AS Name
       """
     Then the result should be, in any order, with relax comparison:
       | Type    | Name        |
@@ -145,7 +145,7 @@ Feature: Match By Id
       """
       MATCH (v1) -[:like]-> (v2)
       WHERE id(v1) == "Danny Green"
-      RETURN v1.name AS Name, v2.name AS Friend
+      RETURN v1.player.name AS Name, v2.player.name AS Friend
       """
     Then the result should be, in any order, with relax comparison:
       | Name          | Friend            |
@@ -156,7 +156,7 @@ Feature: Match By Id
       """
       MATCH (v1) <-[:like]- (v2)
       WHERE id(v1) == "Danny Green"
-      RETURN v1.name AS Name, v2.name AS Friend
+      RETURN v1.player.name AS Name, v2.player.name AS Friend
       """
     Then the result should be, in any order, with relax comparison:
       | Name          | Friend            |
@@ -166,7 +166,7 @@ Feature: Match By Id
       """
       MATCH (v1) <-[:like]-> (v2)
       WHERE id(v1) == "Danny Green"
-      RETURN v1.name AS Name, v2.name AS Friend
+      RETURN v1.player.name AS Name, v2.player.name AS Friend
       """
     Then the result should be, in any order, with relax comparison:
       | Name          | Friend            |
@@ -179,7 +179,7 @@ Feature: Match By Id
       """
       MATCH (v1) -[:like]- (v2)
       WHERE id(v1) == "Danny Green"
-      RETURN v1.name AS Name, v2.name AS Friend
+      RETURN v1.player.name AS Name, v2.player.name AS Friend
       """
     Then the result should be, in any order, with relax comparison:
       | Name          | Friend            |
@@ -194,7 +194,7 @@ Feature: Match By Id
       """
       MATCH (v1) -[:like]-> (v2) -[:like]-> (v3)
       WHERE id(v1) == "Tim Duncan"
-      RETURN v1.name AS Player, v2.name AS Friend, v3.name AS FoF
+      RETURN v1.player.name AS Player, v2.player.name AS Friend, v3.player.name AS FoF
       """
     Then the result should be, in any order, with relax comparison:
       | Player       | Friend          | FoF                 |
@@ -208,7 +208,7 @@ Feature: Match By Id
       """
       MATCH (v1) -[:like]-> () -[:like]-> (v3)
       WHERE id(v1) == 'Dwyane Wade'
-      RETURN v3.name AS Name
+      RETURN v3.player.name AS Name
       """
     Then the result should be, in any order, with relax comparison:
       | Name              |
@@ -223,7 +223,7 @@ Feature: Match By Id
       """
       MATCH (v1) -[:like]-> () -[:like]-> (v3)
       WHERE id(v1) == 'Dwyane Wade'
-      RETURN DISTINCT v3.name AS Name
+      RETURN DISTINCT v3.player.name AS Name
       """
     Then the result should be, in any order, with relax comparison:
       | Name              |
@@ -238,7 +238,7 @@ Feature: Match By Id
       """
       MATCH (v1) -[:like]-> (v)
       WHERE id(v1) == 'Dejounte Murray'
-      RETURN v.name AS Name, v.age AS Age
+      RETURN v.player.name AS Name, v.player.age AS Age
       ORDER BY Age DESC, Name ASC
       """
     Then the result should be, in any order, with relax comparison:
@@ -258,7 +258,7 @@ Feature: Match By Id
       """
       MATCH (v1) -[:like]-> (v)
       WHERE id(v1) == 'Dejounte Murray'
-      RETURN v.name AS Name, v.age AS Age
+      RETURN v.player.name AS Name, v.player.age AS Age
       ORDER BY Age DESC, Name ASC
       LIMIT 3
       """
@@ -271,7 +271,7 @@ Feature: Match By Id
       """
       MATCH (v1) -[:like]-> (v)
       WHERE id(v1) == 'Dejounte Murray'
-      RETURN v.name AS Name, v.age AS Age
+      RETURN v.player.name AS Name, v.player.age AS Age
       ORDER BY Age DESC, Name ASC
       SKIP 3
       """
@@ -289,7 +289,7 @@ Feature: Match By Id
       """
       MATCH (v1) -[:like]-> (v)
       WHERE id(v1) == 'Dejounte Murray'
-      RETURN v.name AS Name, v.age AS Age
+      RETURN v.player.name AS Name, v.player.age AS Age
       ORDER BY Age DESC, Name ASC
       SKIP 3
       LIMIT 3
@@ -303,7 +303,7 @@ Feature: Match By Id
       """
       MATCH (v1) -[:like]-> (v)
       WHERE id(v1) == 'Dejounte Murray'
-      RETURN v.name AS Name, v.age AS Age
+      RETURN v.player.name AS Name, v.player.age AS Age
       ORDER BY Age DESC, Name ASC
       SKIP 11
       LIMIT 3
@@ -314,7 +314,7 @@ Feature: Match By Id
       """
       MATCH (v1) -[:like]-> (v)
       WHERE id(v1) == 'Dejounte Murray'
-      RETURN v.name AS Name, v.age AS Age
+      RETURN v.player.name AS Name, v.player.age AS Age
       ORDER BY Age DESC, Name ASC
       LIMIT 0
       """
@@ -324,8 +324,8 @@ Feature: Match By Id
       """
       MATCH (v1) -[:like]-> (v)
       WHERE id(v1) == 'Dejounte Murray'
-      RETURN v.name AS Name, v.age AS Age
-      ORDER BY v.age DESC, v.name ASC
+      RETURN v.player.name AS Name, v.player.age AS Age
+      ORDER BY v.player.age DESC, v.player.name ASC
       LIMIT 0
       """
     Then a SemanticError should be raised at runtime: Only column name can be used as sort item
@@ -344,19 +344,19 @@ Feature: Match By Id
       """
       MATCH p = (n)-[:like]->(m)
       WHERE id(n) == "LeBron James"
-      RETURN p, n.name, m.name
+      RETURN p, n.player.name, m.player.name
       """
     Then the result should be, in any order, with relax comparison:
-      | p                                         | n.name         | m.name      |
-      | <("LeBron James")-[:like]->("Ray Allen")> | "LeBron James" | "Ray Allen" |
+      | p                                         | n.player.name  | m.player.name |
+      | <("LeBron James")-[:like]->("Ray Allen")> | "LeBron James" | "Ray Allen"   |
     When executing query:
       """
       MATCH p = (n)<-[:like]-(m)
       WHERE id(n) == "LeBron James"
-      RETURN p, n.name, m.name
+      RETURN p, n.player.name, m.player.name
       """
     Then the result should be, in any order, with relax comparison:
-      | p                                               | n.name         | m.name            |
+      | p                                               | n.player.name  | m.player.name     |
       | <("LeBron James")<-[:like]-("Carmelo Anthony")> | "LeBron James" | "Carmelo Anthony" |
       | <("LeBron James")<-[:like]-("Chris Paul")>      | "LeBron James" | "Chris Paul"      |
       | <("LeBron James")<-[:like]-("Danny Green")>     | "LeBron James" | "Danny Green"     |
@@ -367,10 +367,10 @@ Feature: Match By Id
       """
       MATCH p = (n)-[:like]-(m)
       WHERE id(n) == "LeBron James"
-      RETURN p, n.name, m.name
+      RETURN p, n.player.name, m.player.name
       """
     Then the result should be, in any order, with relax comparison:
-      | p                                               | n.name         | m.name            |
+      | p                                               | n.player.name  | m.player.name     |
       | <("LeBron James")<-[:like]-("Carmelo Anthony")> | "LeBron James" | "Carmelo Anthony" |
       | <("LeBron James")<-[:like]-("Chris Paul")>      | "LeBron James" | "Chris Paul"      |
       | <("LeBron James")<-[:like]-("Danny Green")>     | "LeBron James" | "Danny Green"     |
@@ -382,11 +382,11 @@ Feature: Match By Id
       """
       MATCH p = (n)-[:like]->(m)-[:like]->(k)
       WHERE id(n) == "LeBron James"
-      RETURN p, n.name, m.name, k.name
+      RETURN p, n.player.name, m.player.name, k.player.name
       """
     Then the result should be, in any order, with relax comparison:
-      | p                                                                  | n.name         | m.name      | k.name        |
-      | <("LeBron James")-[:like]->("Ray Allen")-[:like]->("Rajon Rondo")> | "LeBron James" | "Ray Allen" | "Rajon Rondo" |
+      | p                                                                  | n.player.name  | m.player.name | k.player.name |
+      | <("LeBron James")-[:like]->("Ray Allen")-[:like]->("Rajon Rondo")> | "LeBron James" | "Ray Allen"   | "Rajon Rondo" |
     When executing query:
       """
       MATCH p = (n)-[:like]->()-[:like]->()

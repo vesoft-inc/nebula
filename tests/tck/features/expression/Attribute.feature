@@ -65,18 +65,18 @@ Feature: Attribute
       | UNKNOWN_PROP |
     When executing query:
       """
-      MATCH (v) WHERE id(v) == 'Tim Duncan' RETURN v.name
+      MATCH (v) WHERE id(v) == 'Tim Duncan' RETURN v.player.name
       """
     Then the result should be, in any order:
-      | v.name       |
-      | "Tim Duncan" |
+      | v.player.name |
+      | "Tim Duncan"  |
     When executing query:
       """
-      MATCH (v) WHERE id(v) == 'Tim Duncan' RETURN v.Name
+      MATCH (v) WHERE id(v) == 'Tim Duncan' RETURN v.player.Name
       """
     Then the result should be, in any order:
-      | v.Name       |
-      | UNKNOWN_PROP |
+      | v.player.Name |
+      | NULL          |
     When executing query:
       """
       MATCH (v)-[e:like]->() WHERE id(v) == 'Tim Duncan' RETURN e.likeness
@@ -125,11 +125,11 @@ Feature: Attribute
       | UNKNOWN_PROP    |
     When executing query:
       """
-      MATCH (v) WHERE id(v) == 'Tim Duncan' RETURN v.not_exists_attr
+      MATCH (v) WHERE id(v) == 'Tim Duncan' RETURN v.player.not_exists_attr
       """
     Then the result should be, in any order:
-      | v.not_exists_attr |
-      | UNKNOWN_PROP      |
+      | v.player.not_exists_attr |
+      | NULL                     |
     When executing query:
       """
       MATCH (v)-[e:like]->() WHERE id(v) == 'Tim Duncan' RETURN e.not_exists_attr
@@ -150,3 +150,8 @@ Feature: Attribute
       MATCH (v) WHERE id(v) == 'Tim Duncan' RETURN v.name.not_exists_attr
       """
     Then a ExecutionError should be raised at runtime: TagName `name'  is nonexistent
+    When executing query:
+      """
+      MATCH (v) WHERE id(v) == 'Tim Duncan' RETURN v.player.name.test
+      """
+    Then a SemanticError should be raised at runtime: `v.player.name.ab', expected type with attribute like Date, Time, DateTime, Map, Vertex or Edge but was STRING: v.player.name

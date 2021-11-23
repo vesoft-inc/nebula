@@ -400,7 +400,9 @@ Expression* Expression::decode(ObjectPool* pool, Expression::Decoder& decoder) {
       return exp;
     }
     case Expression::Kind::kVarProperty: {
-      LOG(FATAL) << "Should not decode variable property expression";
+      // LOG(FATAL) << "Should not decode variable property expression";
+      exp = VariablePropertyExpression::make(pool);
+      exp->resetFrom(decoder);
       return exp;
     }
     case Expression::Kind::kDstProperty: {

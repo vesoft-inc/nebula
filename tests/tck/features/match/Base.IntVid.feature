@@ -16,14 +16,14 @@ Feature: Basic match
       | ("Yao Ming") |
     When executing query:
       """
-      MATCH (v:player) WHERE v.name == "Yao Ming" RETURN v.age AS Age
+      MATCH (v:player) WHERE v.player.name == "Yao Ming" RETURN v.player.age AS Age
       """
     Then the result should be, in any order:
       | Age |
       | 38  |
     When executing query:
       """
-      MATCH (v:player {age: 29}) return v.name AS Name
+      MATCH (v:player {age: 29}) return v.player.name AS Name
       """
     Then the result should be, in any order:
       | Name               |
@@ -33,7 +33,7 @@ Feature: Basic match
       | 'Dejounte Murray'  |
     When executing query:
       """
-      MATCH (v:player {age: 29}) WHERE v.name STARTS WITH "J" return v.name AS Name
+      MATCH (v:player {age: 29}) WHERE v.player.name STARTS WITH "J" return v.player.name AS Name
       """
     Then the result should be, in any order:
       | Name               |
@@ -41,7 +41,7 @@ Feature: Basic match
       | 'Jonathon Simmons' |
     When executing query:
       """
-      MATCH (v:player) WHERE v.age >= 38 AND v.age < 45 return v.name AS Name, v.age AS Age
+      MATCH (v:player) WHERE v.player.age >= 38 AND v.player.age < 45 return v.player.name AS Name, v.player.age AS Age
       """
     Then the result should be, in any order:
       | Name            | Age |
@@ -57,30 +57,30 @@ Feature: Basic match
       | 'Tracy McGrady' | 39  |
     When executing query:
       """
-      MATCH (v:player) where v.age > 9223372036854775807+1  return v
+      MATCH (v:player) where v.player.age > 9223372036854775807+1  return v
       """
     Then a SemanticError should be raised at runtime: result of (9223372036854775807+1) cannot be represented as an integer
     When executing query:
       """
-      MATCH (v:player) where v.age > -9223372036854775808-1  return v
+      MATCH (v:player) where v.player.age > -9223372036854775808-1  return v
       """
     Then a SemanticError should be raised at runtime: result of (-9223372036854775808-1) cannot be represented as an integer
 
   Scenario: Une step
     When executing query:
       """
-      MATCH (v1:player{name: "LeBron James"}) -[r]-> (v2) RETURN type(r) AS Type, v2.name AS Name
+      MATCH (v1:player{name: "LeBron James"}) -[r]-> (v2) RETURN type(r) AS Type, v2.team.name AS Name
       """
     Then the result should be, in any order:
       | Type    | Name        |
-      | "like"  | "Ray Allen" |
+      | "like"  | NULL        |
       | "serve" | "Cavaliers" |
       | "serve" | "Heat"      |
       | "serve" | "Lakers"    |
       | "serve" | "Cavaliers" |
     When executing query:
       """
-      MATCH (v1:player{name: "LeBron James"}) -[r:serve|:like]-> (v2) RETURN type(r) AS Type, v2.name AS Name
+      MATCH (v1:player{name: "LeBron James"}) -[r:serve|:like]-> (v2) RETURN type(r) AS Type, v2.team.name AS Name
       """
     Then the result should be, in any order:
       | Type    | Name        |
@@ -88,11 +88,11 @@ Feature: Basic match
       | "serve" | "Heat"      |
       | "serve" | "Lakers"    |
       | "serve" | "Cavaliers" |
-      | "like"  | "Ray Allen" |
+      | "like"  | NULL        |
     When executing query:
       """
       MATCH (v1:player{name: "LeBron James"}) -[r:serve]-> (v2)
-      RETURN type(r) AS Type, v2.name AS Name
+      RETURN type(r) AS Type, v2.team.name AS Name
       """
     Then the result should be, in any order:
       | Type    | Name        |
@@ -103,7 +103,7 @@ Feature: Basic match
     When executing query:
       """
       MATCH (v1:player{name: "LeBron James"}) -[r:serve]-> (v2 {name: "Cavaliers"})
-      RETURN type(r) AS Type, v2.name AS Name
+      RETURN type(r) AS Type, v2.team.name AS Name
       """
     Then the result should be, in any order:
       | Type    | Name        |
@@ -121,7 +121,7 @@ Feature: Basic match
     When executing query:
       """
       MATCH (v1:player{name: "Danny Green"}) -[:like]-> (v2)
-      RETURN v1.name AS Name, v2.name AS Friend
+      RETURN v1.player.name AS Name, v2.player.name AS Friend
       """
     Then the result should be, in any order:
       | Name          | Friend            |
@@ -131,7 +131,7 @@ Feature: Basic match
     When executing query:
       """
       MATCH (v1:player{name: "Danny Green"}) <-[:like]- (v2)
-      RETURN v1.name AS Name, v2.name AS Friend
+      RETURN v1.player.name AS Name, v2.player.name AS Friend
       """
     Then the result should be, in any order:
       | Name          | Friend            |
@@ -140,7 +140,7 @@ Feature: Basic match
     When executing query:
       """
       MATCH (v1:player{name: "Danny Green"}) <-[:like]-> (v2)
-      RETURN v1.name AS Name, v2.name AS Friend
+      RETURN v1.player.name AS Name, v2.player.name AS Friend
       """
     Then the result should be, in any order:
       | Name          | Friend            |
@@ -152,7 +152,7 @@ Feature: Basic match
     When executing query:
       """
       MATCH (v1:player{name: "Danny Green"}) -[:like]- (v2)
-      RETURN v1.name AS Name, v2.name AS Friend
+      RETURN v1.player.name AS Name, v2.player.name AS Friend
       """
     Then the result should be, in any order:
       | Name          | Friend            |
@@ -166,7 +166,7 @@ Feature: Basic match
     When executing query:
       """
       MATCH (v1:player{age: 28}) -[:like]-> (v2) -[:like]-> (v3)
-      RETURN v1.name AS Player, v2.name AS Friend, v3.name AS FoF
+      RETURN v1.player.name AS Player, v2.player.name AS Friend, v3.player.name AS FoF
       """
     Then the result should be, in any order:
       | Player           | Friend              | FoF            |
@@ -179,9 +179,9 @@ Feature: Basic match
       MATCH (v1:player{name: 'Tony Parker'}) -[r1:serve]-> (v2) <-[r2:serve]- (v3)
       WHERE r1.start_year <= r2.end_year AND
             r1.end_year >= r2.start_year AND
-            v1.name <> v3.name AND
-            v3.name STARTS WITH 'D'
-      RETURN v1.name AS Player, v2.name AS Team, v3.name AS Teammate
+            v1.player.name <> v3.player.name AND
+            v3.player.name STARTS WITH 'D'
+      RETURN v1.player.name AS Player, v2.team.name AS Team, v3.player.name AS Teammate
       """
     Then the result should be, in any order:
       | Player        | Team      | Teammate          |
@@ -194,7 +194,7 @@ Feature: Basic match
     When executing query:
       """
       MATCH (:player{name:'Dwyane Wade'}) -[:like]-> () -[:like]-> (v3)
-      RETURN v3.name AS Name
+      RETURN v3.player.name AS Name
       """
     Then the result should be, in any order:
       | Name              |
@@ -208,7 +208,7 @@ Feature: Basic match
     When executing query:
       """
       MATCH (:player{name:'Dwyane Wade'}) -[:like]-> () -[:like]-> (v3)
-      RETURN DISTINCT v3.name AS Name
+      RETURN DISTINCT v3.player.name AS Name
       """
     Then the result should be, in any order:
       | Name              |
@@ -222,7 +222,7 @@ Feature: Basic match
     When executing query:
       """
       MATCH (:player{name:'Dejounte Murray'}) -[:like]-> (v)
-      RETURN v.name AS Name, v.age AS Age
+      RETURN v.player.name AS Name, v.player.age AS Age
       ORDER BY Age DESC, Name ASC
       """
     Then the result should be, in any order:
@@ -241,7 +241,7 @@ Feature: Basic match
     When executing query:
       """
       MATCH (:player{name:'Dejounte Murray'}) -[:like]-> (v)
-      RETURN v.name AS Name, v.age AS Age
+      RETURN v.player.name AS Name, v.player.age AS Age
       ORDER BY Age DESC, Name ASC
       LIMIT 3
       """
@@ -253,7 +253,7 @@ Feature: Basic match
     When executing query:
       """
       MATCH (:player{name:'Dejounte Murray'}) -[:like]-> (v)
-      RETURN v.name AS Name, v.age AS Age
+      RETURN v.player.name AS Name, v.player.age AS Age
       ORDER BY Age DESC, Name ASC
       SKIP 3
       """
@@ -270,7 +270,7 @@ Feature: Basic match
     When executing query:
       """
       MATCH (:player{name:'Dejounte Murray'}) -[:like]-> (v)
-      RETURN v.name AS Name, v.age AS Age
+      RETURN v.player.name AS Name, v.player.age AS Age
       ORDER BY Age DESC, Name ASC
       SKIP 3
       LIMIT 3
@@ -283,7 +283,7 @@ Feature: Basic match
     When executing query:
       """
       MATCH (:player{name:'Dejounte Murray'}) -[:like]-> (v)
-      RETURN v.name AS Name, v.age AS Age
+      RETURN v.player.name AS Name, v.player.age AS Age
       ORDER BY Age DESC, Name ASC
       SKIP 11
       LIMIT 3
@@ -293,7 +293,7 @@ Feature: Basic match
     When executing query:
       """
       MATCH (:player{name:'Dejounte Murray'}) -[:like]-> (v)
-      RETURN v.name AS Name, v.age AS Age
+      RETURN v.player.name AS Name, v.player.age AS Age
       ORDER BY Age DESC, Name ASC
       LIMIT 0
       """
@@ -304,7 +304,7 @@ Feature: Basic match
     When executing query:
       """
       MATCH (:player{name:'Dejounte Murray'}) -[:like]-> (v)
-      RETURN v.name AS Name, v.age AS Age
+      RETURN v.player.name AS Name, v.player.age AS Age
       ORDER BY v.age DESC, v.name ASC
       """
     Then a SemanticError should be raised at runtime: Only column name can be used as sort item
@@ -319,17 +319,17 @@ Feature: Basic match
       | <("Tony Parker")> | ("Tony Parker") |
     When executing query:
       """
-      MATCH p = (n:player{name:"LeBron James"})-[:like]->(m) return p, n.name, m.name
+      MATCH p = (n:player{name:"LeBron James"})-[:like]->(m) return p, n.player.name, m.player.name
       """
     Then the result should be, in any order, with relax comparison:
-      | p                                           | n.name         | m.name      |
-      | <("LeBron James")-[:like@0]->("Ray Allen")> | "LeBron James" | "Ray Allen" |
+      | p                                           | n.player.name  | m.player.name |
+      | <("LeBron James")-[:like@0]->("Ray Allen")> | "LeBron James" | "Ray Allen"   |
     When executing query:
       """
-      MATCH p = (n:player{name:"LeBron James"})<-[:like]-(m) return p, n.name, m.name
+      MATCH p = (n:player{name:"LeBron James"})<-[:like]-(m) return p, n.player.name, m.player.name
       """
     Then the result should be, in any order, with relax comparison:
-      | p                                                 | n.name         | m.name            |
+      | p                                                 | n.player.name  | m.player.name     |
       | <("LeBron James")<-[:like@0]-("Carmelo Anthony")> | "LeBron James" | "Carmelo Anthony" |
       | <("LeBron James")<-[:like@0]-("Chris Paul")>      | "LeBron James" | "Chris Paul"      |
       | <("LeBron James")<-[:like@0]-("Danny Green")>     | "LeBron James" | "Danny Green"     |
@@ -338,10 +338,10 @@ Feature: Basic match
       | <("LeBron James")<-[:like@0]-("Kyrie Irving")>    | "LeBron James" | "Kyrie Irving"    |
     When executing query:
       """
-      MATCH p = (n:player{name:"LeBron James"})-[:like]-(m) return p, n.name, m.name
+      MATCH p = (n:player{name:"LeBron James"})-[:like]-(m) return p, n.player.name, m.player.name
       """
     Then the result should be, in any order, with relax comparison:
-      | p                                                 | n.name         | m.name            |
+      | p                                                 | n.player.name  | m.player.name     |
       | <("LeBron James")<-[:like@0]-("Carmelo Anthony")> | "LeBron James" | "Carmelo Anthony" |
       | <("LeBron James")<-[:like@0]-("Chris Paul")>      | "LeBron James" | "Chris Paul"      |
       | <("LeBron James")<-[:like@0]-("Danny Green")>     | "LeBron James" | "Danny Green"     |
@@ -351,11 +351,11 @@ Feature: Basic match
       | <("LeBron James")-[:like@0]->("Ray Allen")>       | "LeBron James" | "Ray Allen"       |
     When executing query:
       """
-      MATCH p = (n:player{name:"LeBron James"})-[:like]->(m)-[:like]->(k) return p, n.name, m.name, k.name
+      MATCH p = (n:player{name:"LeBron James"})-[:like]->(m)-[:like]->(k) return p, n.player.name, m.player.name, k.player.name
       """
     Then the result should be, in any order, with relax comparison:
-      | p                                                                      | n.name         | m.name      | k.name        |
-      | <("LeBron James")-[:like@0]->("Ray Allen")-[:like@0]->("Rajon Rondo")> | "LeBron James" | "Ray Allen" | "Rajon Rondo" |
+      | p                                                                      | n.player.name  | m.player.name | k.player.name |
+      | <("LeBron James")-[:like@0]->("Ray Allen")-[:like@0]->("Rajon Rondo")> | "LeBron James" | "Ray Allen"   | "Rajon Rondo" |
     When executing query:
       """
       MATCH p=(:player{name:"LeBron James"})-[:like]->()-[:like]->() RETURN *
@@ -376,7 +376,7 @@ Feature: Basic match
       | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        | true             |
     When executing query:
       """
-      MATCH (:player{name:"Tony Parker"})-[r]->(m) where exists(m.likeness) return r, exists({a:12}.a)
+      MATCH (:player{name:"Tony Parker"})-[r]->(m) where exists(m.team.likeness) return r, exists({a:12}.a)
       """
     Then the result should be, in any order, with relax comparison:
       | r | exists({a:12}.a) |
@@ -403,7 +403,7 @@ Feature: Basic match
       | r |
     When executing query:
       """
-      match (:player{name:"Tony Parker"})-[r]->(m) where exists(m.age) return r
+      match (:player{name:"Tony Parker"})-[r]->(m) where exists(m.player.age) return r
       """
     Then the result should be, in any order, with relax comparison:
       | r                                                                                    |

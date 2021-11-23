@@ -110,18 +110,18 @@ Feature: Same Tag Propname
       | "s_wang"       | ("wang" :player{age: 22, height: 192.0, name: "p_wang"} :student{age: 22, name: "s_wang", score: 82.0}) |
     When executing query:
       """
-      match (v:player)-[e:like]->(d) where v.player.age > 19 return e, v.student.name, v.player.name, v.name
+      match (v:player)-[e:like]->(d) where v.player.age > 19 return e, v.student.name, v.player.name
       """
     Then the result should be, in any order:
-      | e                                         | v.student.name | v.player.name | v.name   |
-      | [:like "li"->"sun" @0 {likeness: 99}]     | "s_li"         | "p_li"        | "p_li"   |
-      | [:like "li"->"qian" @0 {likeness: 89}]    | "s_li"         | "p_li"        | "p_li"   |
-      | [:like "zhao"->"li" @0 {likeness: 99}]    | "s_zhao"       | "p_zhao"      | "p_zhao" |
-      | [:like "zhao"->"qian" @0 {likeness: 100}] | "s_zhao"       | "p_zhao"      | "p_zhao" |
-      | [:like "zhao"->"sun" @0 {likeness: 29}]   | "s_zhao"       | "p_zhao"      | "p_zhao" |
-      | [:like "zhao"->"wang" @0 {likeness: 89}]  | "s_zhao"       | "p_zhao"      | "p_zhao" |
-      | [:like "wang"->"li" @0 {likeness: 74}]    | "s_wang"       | "p_wang"      | "p_wang" |
-      | [:like "wang"->"zhang" @0 {likeness: 91}] | "s_wang"       | "p_wang"      | "p_wang" |
+      | e                                         | v.student.name | v.player.name |
+      | [:like "li"->"sun" @0 {likeness: 99}]     | "s_li"         | "p_li"        |
+      | [:like "li"->"qian" @0 {likeness: 89}]    | "s_li"         | "p_li"        |
+      | [:like "zhao"->"li" @0 {likeness: 99}]    | "s_zhao"       | "p_zhao"      |
+      | [:like "zhao"->"qian" @0 {likeness: 100}] | "s_zhao"       | "p_zhao"      |
+      | [:like "zhao"->"sun" @0 {likeness: 29}]   | "s_zhao"       | "p_zhao"      |
+      | [:like "zhao"->"wang" @0 {likeness: 89}]  | "s_zhao"       | "p_zhao"      |
+      | [:like "wang"->"li" @0 {likeness: 74}]    | "s_wang"       | "p_wang"      |
+      | [:like "wang"->"zhang" @0 {likeness: 91}] | "s_wang"       | "p_wang"      |
     When executing query:
       """
       match (v:player)-[e:like]->(d) where e.likeness  > 85 return e, v.student.name, v.player.name

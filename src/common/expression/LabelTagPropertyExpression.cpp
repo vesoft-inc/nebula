@@ -21,7 +21,7 @@ const Value& LabelTagPropertyExpression::eval(ExpressionContext& ctx) {
       }
     }
   }
-  return Value::kNullUnknownProp;
+  return Value::kNullValue;
 }
 
 std::string LabelTagPropertyExpression::toString() const {

@@ -469,6 +469,7 @@ Status MatchValidator::validateWith(const WithClause *with,
   }
   if (with->returnItems()->columns()) {
     for (auto *column : with->returnItems()->columns()->columns()) {
+      column->setExpr(ExpressionUtils::rewriteAttr2LabelTagProp(column->expr()));
       columns->addColumn(column->clone().release());
     }
   }
@@ -480,7 +481,6 @@ Status MatchValidator::validateWith(const WithClause *with,
   for (auto *col : withClauseCtx.yield->yieldColumns->columns()) {
     auto labelExprs = ExpressionUtils::collectAll(col->expr(), {Expression::Kind::kLabel});
     for (auto *labelExpr : labelExprs) {
-      DCHECK_EQ(labelExpr->kind(), Expression::Kind::kLabel);
       auto label = static_cast<const LabelExpression *>(labelExpr)->name();
       if (!withClauseCtx.yield->aliasesAvailable.count(label)) {
         return Status::SemanticError("Alias `%s` not defined", label.c_str());
@@ -836,6 +836,10 @@ Status MatchValidator::checkAlias(
       auto name = static_cast<const LabelAttributeExpression *>(refExpr)->left()->name();
       auto res = getAliasType(aliasesUsed, name);
       NG_RETURN_IF_ERROR(res);
+      if (res.value() == AliasType::kNode) {
+        return Status::SemanticError(
+            "To get the property of the vertex, use the format `var.tag.prop'");
+      }
       return Status::OK();
     }
     case Expression::Kind::kEdgeSrc: {

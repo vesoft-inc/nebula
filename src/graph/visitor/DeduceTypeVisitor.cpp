@@ -352,27 +352,11 @@ void DeduceTypeVisitor::visit(SubscriptExpression *expr) {
   type_ = Value::Type::__EMPTY__;
 }
 
+// in order to be consistent with the behavior in the opencypher, the schema is not checked
 void DeduceTypeVisitor::visit(LabelTagPropertyExpression *expr) {
-  const auto &tag = expr->tag();
-  auto tagId = qctx_->schemaMng()->toTagID(space_, tag);
-  if (!tagId.ok()) {
-    status_ = tagId.status();
-    return;
-  }
-  auto schema = qctx_->schemaMng()->getTagSchema(space_, tagId.value());
-  if (!schema) {
-    status_ =
-        Status::SemanticError("`%s', not found tag `%s'.", expr->toString().c_str(), tag.c_str());
-    return;
-  }
-  const auto &prop = expr->prop();
-  auto *field = schema->field(prop);
-  if (field == nullptr) {
-    status_ = Status::SemanticError(
-        "`%s', not found the property `%s'.", expr->toString().c_str(), prop.c_str());
-    return;
-  }
-  type_ = SchemaUtil::propTypeToValueType(field->type());
+  UNUSED(expr);
+  type_ = Value::Type::__EMPTY__;
+  return;
 }
 
 void DeduceTypeVisitor::visit(AttributeExpression *expr) {
@@ -465,6 +449,7 @@ void DeduceTypeVisitor::visit(FunctionCallExpression *expr) {
     if (!ok()) return;
     argsTypeList.push_back(type_);
   }
+
   auto funName = expr->name();
   if (funName == "id" || funName == "src" || funName == "dst") {
     type_ = vidType_;
@@ -640,6 +625,10 @@ void DeduceTypeVisitor::visit(CaseExpression *expr) {
 }
 
 void DeduceTypeVisitor::visit(PredicateExpression *expr) {
+  if (expr->name() == "exists") {
+    type_ = Value::Type::BOOL;
+    return;
+  }
   if (expr->hasFilter()) {
     expr->filter()->accept(this);
     if (!ok()) {

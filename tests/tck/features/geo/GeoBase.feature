@@ -324,7 +324,7 @@ Feature: Geo base
     # Match with geo index
     When executing query:
       """
-      MATCH (v:any_shape) RETURN ST_ASText(v.geo);
+      MATCH (v:any_shape) RETURN ST_ASText(v.any_shape.geo);
       """
     Then the result should be, in any order:
       | ST_ASText(v.geo)                |
