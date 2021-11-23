@@ -9,6 +9,10 @@
 #include "codec/RowWriterV2.h"
 #include "codec/test/RowWriterV1.h"
 #include "common/base/Base.h"
+#include "common/expression/ConstantExpression.h"
+#include "common/expression/LogicalExpression.h"
+#include "common/expression/PropertyExpression.h"
+#include "common/expression/RelationalExpression.h"
 #include "common/fs/TempDir.h"
 #include "common/utils/IndexKeyUtils.h"
 #include "interface/gen-cpp2/common_types.h"
@@ -60,7 +64,7 @@ TEST_P(LookupIndexTest, LookupIndexTestV1) {
     RowWriterV1 writer(schemaV1.get());
     writer << true << 1L << 1.1F << 1.1F << "row1";
     writer.encode();
-    auto key = NebulaKeyUtils::vertexKey(vIdLen.value(), 1, vId1, 3);
+    auto key = NebulaKeyUtils::tagKey(vIdLen.value(), 1, vId1, 3);
     keyValues.emplace_back(std::move(key), writer.encode());
 
     // setup V2 row
@@ -81,7 +85,7 @@ TEST_P(LookupIndexTest, LookupIndexTestV1) {
     writer2.setValue("col_date", date);
     writer2.setValue("col_datetime", dt);
     writer2.finish();
-    key = NebulaKeyUtils::vertexKey(vIdLen.value(), 1, vId2, 3);
+    key = NebulaKeyUtils::tagKey(vIdLen.value(), 1, vId2, 3);
     keyValues.emplace_back(std::move(key), writer2.moveEncodedStr());
 
     // setup index key
@@ -2100,7 +2104,7 @@ TEST_P(LookupIndexTest, NullablePropertyTest) {
   req.set_parts({1, 2, 3, 4, 5, 6});
   req.set_return_columns({kVid});
 
-  // bool range scan will be forbiden in query engine, so only test preix for
+  // bool range scan will be forbidden in query engine, so only test prefix for
   // bool
   {
     LOG(INFO) << "lookup on tag where tag.col_bool == true";

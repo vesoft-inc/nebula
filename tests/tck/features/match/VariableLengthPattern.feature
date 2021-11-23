@@ -257,7 +257,7 @@ Feature: Variable length Pattern match (m to n)
       | [[:like "Tim Duncan"->"Manu Ginobili"]]     |
       | [[:like "Tim Duncan"->"Tony Parker"]]       |
       | [[:like "Tim Duncan"<-"Dejounte Murray"]]   |
-      | [[:like "Tim Duncan"<-"Shaquile O'Neal"]]   |
+      | [[:like "Tim Duncan"<-"Shaquille O'Neal"]]  |
       | [[:like "Tim Duncan"<-"Marco Belinelli"]]   |
       | [[:like "Tim Duncan"<-"Boris Diaw"]]        |
       | [[:like "Tim Duncan"<-"Manu Ginobili"]]     |
@@ -278,7 +278,7 @@ Feature: Variable length Pattern match (m to n)
       | [[:like "Tim Duncan"->"Manu Ginobili"]]     |
       | [[:like "Tim Duncan"->"Tony Parker"]]       |
       | [[:like "Tim Duncan"<-"Dejounte Murray"]]   |
-      | [[:like "Tim Duncan"<-"Shaquile O'Neal"]]   |
+      | [[:like "Tim Duncan"<-"Shaquille O'Neal"]]  |
       | [[:like "Tim Duncan"<-"Marco Belinelli"]]   |
       | [[:like "Tim Duncan"<-"Boris Diaw"]]        |
       | [[:like "Tim Duncan"<-"Manu Ginobili"]]     |

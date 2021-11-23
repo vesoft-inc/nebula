@@ -91,7 +91,7 @@ TEST(LogAppend, MultiThreadAppend) {
           if (fut.isReady() && fut.value() == AppendLogResult::E_BUFFER_OVERFLOW) {
             LOG(FATAL) << "Should not reach here";
           } else if (j == numLogs) {
-            // Only wait on the last log messaage
+            // Only wait on the last log message
             ASSERT_EQ(AppendLogResult::SUCCEEDED, std::move(fut).get());
           }
           break;

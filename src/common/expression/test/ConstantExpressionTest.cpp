@@ -16,8 +16,8 @@ TEST_F(ExpressionTest, Constant) {
     EXPECT_EQ(eval, 1);
   }
   {
-    auto doubl = ConstantExpression::make(&pool, 1.0);
-    auto eval = Expression::eval(doubl, gExpCtxt);
+    auto double_ = ConstantExpression::make(&pool, 1.0);
+    auto eval = Expression::eval(double_, gExpCtxt);
     EXPECT_EQ(eval.type(), Value::Type::FLOAT);
     EXPECT_EQ(eval, 1.0);
   }
@@ -103,11 +103,3 @@ TEST_F(ExpressionTest, Constant) {
 }
 
 }  // namespace nebula
-
-int main(int argc, char **argv) {
-  testing::InitGoogleTest(&argc, argv);
-  folly::init(&argc, &argv, true);
-  google::SetStderrLogging(google::INFO);
-
-  return RUN_ALL_TESTS();
-}

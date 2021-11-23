@@ -19,7 +19,7 @@
  *  1. Create a RequestContext, with statement, session, etc.
  *  2. Obtain a Future from the context, which is to be returned back to the
  * Thrift framework.
- *  3. Prepare the Response when the request is complished.
+ *  3. Prepare the Response when the request is completed.
  *  4. Call `finish' to send the response to the client.
  */
 

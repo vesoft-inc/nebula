@@ -337,7 +337,7 @@ void FoldConstantExprVisitor::visitBinaryExpr(BinaryExpression *expr) {
 }
 
 Expression *FoldConstantExprVisitor::fold(Expression *expr) {
-  // Container expresison should remain the same type after being folded
+  // Container expression should remain the same type after being folded
   if (expr->isContainerExpr()) {
     return expr;
   }
@@ -346,17 +346,25 @@ Expression *FoldConstantExprVisitor::fold(Expression *expr) {
   auto value = expr->eval(ctx(nullptr));
   if (value.type() == Value::Type::NULLVALUE) {
     switch (value.getNull()) {
-      case NullType::DIV_BY_ZERO:
+      case NullType::DIV_BY_ZERO: {
         canBeFolded_ = false;
-        status_ = Status::Error("/ by zero");
+        status_ = Status::SemanticError("Divide by 0");
         break;
-      case NullType::ERR_OVERFLOW:
+      }
+      case NullType::ERR_OVERFLOW: {
         canBeFolded_ = false;
-        status_ = Status::Error("result of %s cannot be represented as an integer",
-                                expr->toString().c_str());
+        status_ = Status::SemanticError("result of %s cannot be represented as an integer",
+                                        expr->toString().c_str());
         break;
-      default:
+      }
+      case NullType::BAD_TYPE: {
+        canBeFolded_ = false;
+        status_ = Status::SemanticError("Type error `%s'", expr->toString().c_str());
         break;
+      }
+      default: {
+        break;
+      }
     }
   } else {
     status_ = Status::OK();

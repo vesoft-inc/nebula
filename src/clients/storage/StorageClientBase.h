@@ -60,7 +60,7 @@ class StorageRpcResponse final {
     ++failedReqs_;
   }
 
-  // A value between [0, 100], representing a precentage
+  // A value between [0, 100], representing a percentage
   int32_t completeness() const {
     std::lock_guard<std::mutex> g(*lock_);
     DCHECK_NE(totalReqsSent_, 0);
@@ -141,11 +141,9 @@ class StorageClientBase {
             class RemoteFunc,
             class Response = typename std::result_of<RemoteFunc(ClientType* client,
                                                                 const Request&)>::type::value_type>
-  folly::Future<StatusOr<Response>> getResponse(
-      folly::EventBase* evb,
-      std::pair<HostAddr, Request>&& request,
-      RemoteFunc&& remoteFunc,
-      folly::Promise<StatusOr<Response>> pro = folly::Promise<StatusOr<Response>>());
+  folly::Future<StatusOr<Response>> getResponse(folly::EventBase* evb,
+                                                std::pair<HostAddr, Request>&& request,
+                                                RemoteFunc&& remoteFunc);
 
   template <class Request,
             class RemoteFunc,
@@ -154,7 +152,7 @@ class StorageClientBase {
   void getResponseImpl(folly::EventBase* evb,
                        std::pair<HostAddr, Request> request,
                        RemoteFunc remoteFunc,
-                       folly::Promise<StatusOr<Response>> pro);
+                       std::shared_ptr<folly::Promise<StatusOr<Response>>> pro);
 
   // Cluster given ids into the host they belong to
   // The method returns a map
@@ -165,6 +163,9 @@ class StorageClientBase {
       HostAddr,
       std::unordered_map<PartitionID, std::vector<typename Container::value_type>>>>
   clusterIdsToHosts(GraphSpaceID spaceId, const Container& ids, GetIdFunc f) const;
+
+  StatusOr<std::unordered_map<HostAddr, std::unordered_map<PartitionID, cpp2::ScanCursor>>>
+  getHostPartsWithCursor(GraphSpaceID spaceId) const;
 
   virtual StatusOr<meta::PartHosts> getPartHosts(GraphSpaceID spaceId, PartitionID partId) const {
     CHECK(metaClient_ != nullptr);
@@ -205,14 +206,6 @@ class StorageClientBase {
   }
 
   std::vector<PartitionID> getReqPartsId(const cpp2::GetUUIDReq& req) const {
-    return {req.get_part_id()};
-  }
-
-  std::vector<PartitionID> getReqPartsId(const cpp2::ScanEdgeRequest& req) const {
-    return {req.get_part_id()};
-  }
-
-  std::vector<PartitionID> getReqPartsId(const cpp2::ScanVertexRequest& req) const {
     return {req.get_part_id()};
   }
 

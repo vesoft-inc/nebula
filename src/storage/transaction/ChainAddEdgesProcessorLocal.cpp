@@ -172,18 +172,25 @@ folly::SemiFuture<Code> ChainAddEdgesProcessorLocal::forwardToDelegateProcessor(
   };
   auto futProc = proc->getFuture();
   auto [pro, fut] = folly::makePromiseContract<Code>();
-  std::move(futProc).thenValue([&, p = std::move(pro)](auto&& resp) mutable {
-    auto rc = extractRpcError(resp);
-    if (rc == Code::SUCCEEDED) {
-      if (FLAGS_trace_toss) {
-        for (auto& k : kvErased_) {
-          VLOG(1) << uuid_ << " erase prime " << folly::hexlify(k);
-        }
-      }
+  std::move(futProc).thenTry([&, p = std::move(pro)](auto&& t) mutable {
+    auto rc = Code::SUCCEEDED;
+    if (t.hasException()) {
+      LOG(INFO) << "catch ex: " << t.exception().what();
+      rc = Code::E_UNKNOWN;
     } else {
-      VLOG(1) << uuid_
-              << " forwardToDelegateProcessor(), code = " << apache::thrift::util::enumNameSafe(rc);
-      addUnfinishedEdge(ResumeType::RESUME_CHAIN);
+      auto& resp = t.value();
+      rc = extractRpcError(resp);
+      if (rc == Code::SUCCEEDED) {
+        if (FLAGS_trace_toss) {
+          for (auto& k : kvErased_) {
+            VLOG(1) << uuid_ << " erase prime " << folly::hexlify(k);
+          }
+        }
+      } else {
+        VLOG(1) << uuid_ << " forwardToDelegateProcessor(), code = "
+                << apache::thrift::util::enumNameSafe(rc);
+        addUnfinishedEdge(ResumeType::RESUME_CHAIN);
+      }
     }
     p.setValue(rc);
   });
@@ -461,10 +468,10 @@ std::string ChainAddEdgesProcessorLocal::makeReadableEdge(const cpp2::AddEdgesRe
  *
  * storage will insert datetime() as default value on both
  * in/out edge, but they will calculate independent
- * which lead to inconsistance
+ * which lead to inconsistency
  *
- * that's why we need to replace the inconsistance prone value
- * at the monment the request comes
+ * that's why we need to replace the inconsistency prone value
+ * at the moment the request comes
  * */
 void ChainAddEdgesProcessorLocal::replaceNullWithDefaultValue(cpp2::AddEdgesRequest& req) {
   auto& edgesOfPart = *req.parts_ref();

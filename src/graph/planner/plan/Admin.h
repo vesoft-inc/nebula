@@ -313,7 +313,7 @@ class DropSnapshot final : public SingleDependencyNode {
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
-  const std::string& getShapshotName() const { return snapshotName_; }
+  const std::string& getSnapshotName() const { return snapshotName_; }
 
  private:
   explicit DropSnapshot(QueryContext* qctx, PlanNode* input, std::string snapshotName)
@@ -731,73 +731,6 @@ class SubmitJob final : public SingleDependencyNode {
   meta::cpp2::AdminJobOp op_;
   meta::cpp2::AdminCmd cmd_;
   const std::vector<std::string> params_;
-};
-
-class BalanceLeaders final : public SingleDependencyNode {
- public:
-  static BalanceLeaders* make(QueryContext* qctx, PlanNode* dep) {
-    return qctx->objPool()->add(new BalanceLeaders(qctx, dep));
-  }
-
- private:
-  explicit BalanceLeaders(QueryContext* qctx, PlanNode* dep)
-      : SingleDependencyNode(qctx, Kind::kBalanceLeaders, dep) {}
-};
-
-class Balance final : public SingleDependencyNode {
- public:
-  static Balance* make(QueryContext* qctx, PlanNode* dep, std::vector<HostAddr> deleteHosts) {
-    return qctx->objPool()->add(new Balance(qctx, dep, std::move(deleteHosts)));
-  }
-
-  std::unique_ptr<PlanNodeDescription> explain() const override;
-
-  const std::vector<HostAddr>& deleteHosts() const { return deleteHosts_; }
-
- private:
-  Balance(QueryContext* qctx, PlanNode* dep, std::vector<HostAddr> deleteHosts)
-      : SingleDependencyNode(qctx, Kind::kBalance, dep), deleteHosts_(std::move(deleteHosts)) {}
-
-  std::vector<HostAddr> deleteHosts_;
-};
-
-class StopBalance final : public SingleDependencyNode {
- public:
-  static StopBalance* make(QueryContext* qctx, PlanNode* dep) {
-    return qctx->objPool()->add(new StopBalance(qctx, dep));
-  }
-
- private:
-  explicit StopBalance(QueryContext* qctx, PlanNode* dep)
-      : SingleDependencyNode(qctx, Kind::kStopBalance, dep) {}
-};
-
-class ResetBalance final : public SingleDependencyNode {
- public:
-  static ResetBalance* make(QueryContext* qctx, PlanNode* dep) {
-    return qctx->objPool()->add(new ResetBalance(qctx, dep));
-  }
-
- private:
-  explicit ResetBalance(QueryContext* qctx, PlanNode* dep)
-      : SingleDependencyNode(qctx, Kind::kResetBalance, dep) {}
-};
-
-class ShowBalance final : public SingleDependencyNode {
- public:
-  static ShowBalance* make(QueryContext* qctx, PlanNode* dep, int64_t jobId) {
-    return qctx->objPool()->add(new ShowBalance(qctx, dep, jobId));
-  }
-
-  std::unique_ptr<PlanNodeDescription> explain() const override;
-
-  int64_t jobId() const { return jobId_; }
-
- private:
-  ShowBalance(QueryContext* qctx, PlanNode* dep, int64_t jobId)
-      : SingleDependencyNode(qctx, Kind::kShowBalance, dep), jobId_(jobId) {}
-
-  int64_t jobId_;
 };
 
 class ShowCharset final : public SingleDependencyNode {

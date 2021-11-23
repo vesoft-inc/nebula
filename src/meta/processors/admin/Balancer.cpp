@@ -863,7 +863,7 @@ nebula::cpp2::ErrorCode Balancer::leaderBalance() {
                    << "Space: " << spaceId;
         continue;
       }
-      simplifyLeaderBalnacePlan(spaceId, plan);
+      simplifyLeaderBalancePlan(spaceId, plan);
       for (const auto& task : plan) {
         futures.emplace_back(client_->transLeader(std::get<0>(task),
                                                   std::get<1>(task),
@@ -887,7 +887,7 @@ nebula::cpp2::ErrorCode Balancer::leaderBalance() {
 
     inLeaderBalance_ = false;
     if (failed != 0) {
-      LOG(ERROR) << failed << " partiton failed to transfer leader";
+      LOG(ERROR) << failed << " partition failed to transfer leader";
     }
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
@@ -904,7 +904,7 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> Balancer::buildLeaderBalancePlan(
   PartAllocation peersMap;
   HostParts leaderHostParts;
   size_t leaderParts = 0;
-  // store peers of all paritions in peerMap
+  // store peers of all partitions in peerMap
   folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
   const auto& prefix = MetaKeyUtils::partPrefix(spaceId);
   std::unique_ptr<kvstore::KVIterator> iter;
@@ -1026,7 +1026,7 @@ int32_t Balancer::acquireLeaders(HostParts& allHostParts,
                                  const HostAddr& target,
                                  LeaderBalancePlan& plan,
                                  GraphSpaceID spaceId) {
-  // host will loop for the partition which is not leader, and try to acuire the
+  // host will loop for the partition which is not leader, and try to acquire the
   // leader
   int32_t taskCount = 0;
   std::vector<PartitionID> diff;
@@ -1129,7 +1129,7 @@ int32_t Balancer::giveupLeaders(HostParts& leaderParts,
   return taskCount;
 }
 
-void Balancer::simplifyLeaderBalnacePlan(GraphSpaceID spaceId, LeaderBalancePlan& plan) {
+void Balancer::simplifyLeaderBalancePlan(GraphSpaceID spaceId, LeaderBalancePlan& plan) {
   // Within a leader balance plan, a partition may be moved several times, but
   // actually we only need to transfer the leadership of a partition from the
   // first host to the last host, and ignore the intermediate ones

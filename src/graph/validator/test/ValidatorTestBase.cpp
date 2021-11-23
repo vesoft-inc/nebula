@@ -195,7 +195,7 @@ Status ValidatorTestBase::EqSelf(const PlanNode *l, const PlanNode *r) {
 //   V
 //   E
 // this will traversal sub-tree [D->E] twice but not matter the Equal result
-// TODO(shylock) maybe need check the toplogy of `Select` and `Loop`
+// TODO(shylock) maybe need check the topology of `Select` and `Loop`
 /*static*/ Status ValidatorTestBase::Eq(const PlanNode *l, const PlanNode *r) {
   auto result = EqSelf(l, r);
   if (!result.ok()) {

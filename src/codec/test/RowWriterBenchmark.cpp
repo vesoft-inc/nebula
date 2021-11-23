@@ -64,7 +64,7 @@ void writeDataV2(SchemaWriter* schema, int32_t iters) {
 }
 
 /*************************
- * Begining of benchmarks
+ * Beginning of benchmarks
  ************************/
 BENCHMARK(WriteShortRowV1, iters) { writeDataV1(&schemaShort, iters); }
 

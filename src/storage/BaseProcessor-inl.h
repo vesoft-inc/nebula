@@ -166,21 +166,21 @@ StatusOr<std::string> BaseProcessor<RESP>::encodeRowVal(const meta::NebulaSchema
     for (size_t i = 0; i < propNames.size(); i++) {
       wRet = rowWrite.setValue(propNames[i], props[i]);
       if (wRet != WriteResult::SUCCEEDED) {
-        return Status::Error("Add field faild");
+        return Status::Error("Add field failed");
       }
     }
   } else {
     for (size_t i = 0; i < props.size(); i++) {
       wRet = rowWrite.setValue(i, props[i]);
       if (wRet != WriteResult::SUCCEEDED) {
-        return Status::Error("Add field faild");
+        return Status::Error("Add field failed");
       }
     }
   }
 
   wRet = rowWrite.finish();
   if (wRet != WriteResult::SUCCEEDED) {
-    return Status::Error("Add field faild");
+    return Status::Error("Add field failed");
   }
 
   return std::move(rowWrite).moveEncodedStr();

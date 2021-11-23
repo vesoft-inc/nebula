@@ -559,36 +559,68 @@ StorageRpcRespFuture<cpp2::GetNeighborsResponse> GraphStorageClient::lookupAndTr
       });
 }
 
-folly::Future<StatusOr<cpp2::ScanEdgeResponse>> GraphStorageClient::scanEdge(
-    cpp2::ScanEdgeRequest req, folly::EventBase* evb) {
-  std::pair<HostAddr, cpp2::ScanEdgeRequest> request;
-  auto host = this->getLeader(req.get_space_id(), req.get_part_id());
-  if (!host.ok()) {
-    return folly::makeFuture<StatusOr<cpp2::ScanEdgeResponse>>(host.status());
+StorageRpcRespFuture<cpp2::ScanEdgeResponse> GraphStorageClient::scanEdge(
+    const CommonRequestParam& param,
+    const cpp2::EdgeProp& edgeProp,
+    int64_t limit,
+    const Expression* filter) {
+  std::unordered_map<HostAddr, cpp2::ScanEdgeRequest> requests;
+  auto status = getHostPartsWithCursor(param.space);
+  if (!status.ok()) {
+    return folly::makeFuture<StorageRpcResponse<cpp2::ScanEdgeResponse>>(
+        std::runtime_error(status.status().toString()));
   }
-  request.first = std::move(host).value();
-  request.second = std::move(req);
+  auto& clusters = status.value();
+  for (const auto& c : clusters) {
+    auto& host = c.first;
+    auto& req = requests[host];
+    req.set_space_id(param.space);
+    req.set_parts(std::move(c.second));
+    req.set_return_columns(edgeProp);
+    req.set_limit(limit);
+    if (filter != nullptr) {
+      req.set_filter(filter->encode());
+    }
+    req.set_common(param.toReqCommon());
+  }
 
-  return getResponse(evb,
-                     std::move(request),
-                     [](cpp2::GraphStorageServiceAsyncClient* client,
-                        const cpp2::ScanEdgeRequest& r) { return client->future_scanEdge(r); });
+  return collectResponse(param.evb,
+                         std::move(requests),
+                         [](cpp2::GraphStorageServiceAsyncClient* client,
+                            const cpp2::ScanEdgeRequest& r) { return client->future_scanEdge(r); });
 }
 
-folly::Future<StatusOr<cpp2::ScanVertexResponse>> GraphStorageClient::scanVertex(
-    cpp2::ScanVertexRequest req, folly::EventBase* evb) {
-  std::pair<HostAddr, cpp2::ScanVertexRequest> request;
-  auto host = this->getLeader(req.get_space_id(), req.get_part_id());
-  if (!host.ok()) {
-    return folly::makeFuture<StatusOr<cpp2::ScanVertexResponse>>(host.status());
+StorageRpcRespFuture<cpp2::ScanVertexResponse> GraphStorageClient::scanVertex(
+    const CommonRequestParam& param,
+    const std::vector<cpp2::VertexProp>& vertexProp,
+    int64_t limit,
+    const Expression* filter) {
+  std::unordered_map<HostAddr, cpp2::ScanVertexRequest> requests;
+  auto status = getHostPartsWithCursor(param.space);
+  if (!status.ok()) {
+    return folly::makeFuture<StorageRpcResponse<cpp2::ScanVertexResponse>>(
+        std::runtime_error(status.status().toString()));
   }
-  request.first = std::move(host).value();
-  request.second = std::move(req);
+  auto& clusters = status.value();
+  for (const auto& c : clusters) {
+    auto& host = c.first;
+    auto& req = requests[host];
+    req.set_space_id(param.space);
+    req.set_parts(std::move(c.second));
+    req.set_return_columns(vertexProp);
+    req.set_limit(limit);
+    if (filter != nullptr) {
+      req.set_filter(filter->encode());
+    }
+    req.set_common(param.toReqCommon());
+  }
 
-  return getResponse(evb,
-                     std::move(request),
-                     [](cpp2::GraphStorageServiceAsyncClient* client,
-                        const cpp2::ScanVertexRequest& r) { return client->future_scanVertex(r); });
+  return collectResponse(
+      param.evb,
+      std::move(requests),
+      [](cpp2::GraphStorageServiceAsyncClient* client, const cpp2::ScanVertexRequest& r) {
+        return client->future_scanVertex(r);
+      });
 }
 
 StatusOr<std::function<const VertexID&(const Row&)>> GraphStorageClient::getIdFromRow(
@@ -603,7 +635,7 @@ StatusOr<std::function<const VertexID&(const Row&)>> GraphStorageClient::getIdFr
   if (vidType == PropertyType::INT64) {
     if (isEdgeProps) {
       cb = [](const Row& r) -> const VertexID& {
-        // The first column has to be the src, the thrid column has to be the
+        // The first column has to be the src, the third column has to be the
         // dst
         DCHECK_EQ(Value::Type::INT, r.values[0].type());
         DCHECK_EQ(Value::Type::INT, r.values[3].type());

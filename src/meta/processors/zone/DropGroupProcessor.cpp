@@ -24,7 +24,7 @@ void DropGroupProcessor::process(const cpp2::DropGroupReq& req) {
     return;
   }
 
-  // If any space rely on this group, it should not be droped.
+  // If any space rely on this group, it should not be dropped.
   auto retCode = checkSpaceDependency(groupName);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
     handleErrorCode(retCode);

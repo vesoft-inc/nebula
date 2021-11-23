@@ -46,9 +46,7 @@ Feature: Starts With Expression
       """
       YIELD 123 STARTS WITH 1
       """
-    Then the result should be, in any order:
-      | (123 STARTS WITH 1) |
-      | BAD_TYPE            |
+    Then a SemanticError should be raised at runtime: Type error `(123 STARTS WITH 1)'
 
   Scenario: yield not starts with
     When executing query:
@@ -90,9 +88,7 @@ Feature: Starts With Expression
       """
       YIELD 123 NOT STARTS WITH 1
       """
-    Then the result should be, in any order:
-      | (123 NOT STARTS WITH 1) |
-      | BAD_TYPE                |
+    Then a SemanticError should be raised at runtime: Type error `(123 NOT STARTS WITH 1)'
 
   Scenario: starts with go
     When executing query:
