@@ -139,6 +139,21 @@ nebula_add_test(
 
 nebula_add_test(
     NAME
+        topo_listener_test
+    SOURCES
+        TopoListenerTest.cpp
+    OBJECTS
+        ${KVSTORE_TEST_LIBS}
+    LIBRARIES
+        ${THRIFT_LIBRARIES}
+        ${ROCKSDB_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
         disk_man_test
     SOURCES
         DiskManagerTest.cpp

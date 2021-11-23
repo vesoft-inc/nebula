@@ -13,6 +13,7 @@ nebula_add_library(
     NebulaSnapshotManager.cpp
     RateLimiter.cpp
     plugins/elasticsearch/ESListener.cpp
+    plugins/topology/TopoListener.cpp
 )
 
 nebula_add_library(

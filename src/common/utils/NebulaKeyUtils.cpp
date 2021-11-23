@@ -323,4 +323,24 @@ std::string NebulaKeyUtils::dataVersionValue() {
   return "3.0";
 }
 
+std::string NebulaKeyUtils::updatePartIdTagKey(PartitionID newPartId, const std::string& rawKey) {
+  int32_t item = (newPartId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kTag_);
+
+  std::string key;
+  key.reserve(rawKey.size());
+  key.append(reinterpret_cast<const char*>(&item), sizeof(int32_t))
+      .append(rawKey.data() + sizeof(int32_t), rawKey.size() - sizeof(int32_t));
+  return key;
+}
+
+std::string NebulaKeyUtils::updatePartIdEdgeKey(PartitionID newPartId, const std::string& rawKey) {
+  int32_t item = (newPartId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyType::kEdge);
+
+  std::string key;
+  key.reserve(rawKey.size());
+  key.append(reinterpret_cast<const char*>(&item), sizeof(int32_t))
+      .append(rawKey.data() + sizeof(int32_t), rawKey.size() - sizeof(int32_t));
+  return key;
+}
+
 }  // namespace nebula

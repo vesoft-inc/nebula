@@ -214,6 +214,9 @@ std::string AddListenerSentence::toString() const {
     case meta::cpp2::ListenerType::ELASTICSEARCH:
       buf += "ELASTICSEARCH ";
       break;
+    case meta::cpp2::ListenerType::GRAPH_TOPOLOGY:
+      buf += "GRAPH_TOPOLOGY ";
+      break;
     case meta::cpp2::ListenerType::UNKNOWN:
       LOG(FATAL) << "Unknown listener type.";
       break;
@@ -229,6 +232,9 @@ std::string RemoveListenerSentence::toString() const {
   switch (type_) {
     case meta::cpp2::ListenerType::ELASTICSEARCH:
       buf += "ELASTICSEARCH ";
+      break;
+    case meta::cpp2::ListenerType::GRAPH_TOPOLOGY:
+      buf += "GRAPH_TOPOLOGY ";
       break;
     case meta::cpp2::ListenerType::UNKNOWN:
       DLOG(FATAL) << "Unknown listener type.";

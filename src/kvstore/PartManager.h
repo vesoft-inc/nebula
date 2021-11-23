@@ -27,9 +27,8 @@ class Handler {
    * @brief Add a space
    *
    * @param spaceId
-   * @param isListener Whether the space is listener
    */
-  virtual void addSpace(GraphSpaceID spaceId, bool isListener = false) = 0;
+  virtual void addSpace(GraphSpaceID spaceId) = 0;
 
   /**
    * @brief Add a partition
@@ -59,9 +58,8 @@ class Handler {
    * @brief Remove a space
    *
    * @param spaceId
-   * @param isListener Whether the space is listener
    */
-  virtual void removeSpace(GraphSpaceID spaceId, bool isListener = false) = 0;
+  virtual void removeSpace(GraphSpaceID spaceId) = 0;
 
   /**
    * @brief clear space data, but not remove the data dirs.
@@ -79,29 +77,48 @@ class Handler {
    */
   virtual void removePart(GraphSpaceID spaceId, PartitionID partId, bool needLock = true) = 0;
 
+
   /**
-   * @brief Add a partition as listener
+   * @brief Add a space to listener
+   *
+   * @param spaceId
+   * @param partId
+   * @param type Listener type
+   */
+  virtual void addListenerSpace(GraphSpaceID spaceId, meta::cpp2::ListenerType type) = 0;
+
+  /**
+   * @brief Remove a space from listener
+   *
+   * @param spaceId
+   * @param partId
+   * @param type Listener type
+   */
+  virtual void removeListenerSpace(GraphSpaceID spaceId, meta::cpp2::ListenerType type) = 0;
+
+  /**
+   * @brief Add a partition to listener
    *
    * @param spaceId
    * @param partId
    * @param type Listener type
    * @param peers Raft peers of listener
    */
-  virtual void addListener(GraphSpaceID spaceId,
-                           PartitionID partId,
-                           meta::cpp2::ListenerType type,
-                           const std::vector<HostAddr>& peers) = 0;
+  virtual void addListenerPart(GraphSpaceID spaceId,
+                               PartitionID partId,
+                               meta::cpp2::ListenerType type,
+                               const std::vector<HostAddr>& peers) = 0;
 
   /**
-   * @brief Remove a listener partition
+   * @brief Remove a partition from listener
    *
    * @param spaceId
    * @param partId
    * @param type Listener type
    */
-  virtual void removeListener(GraphSpaceID spaceId,
-                              PartitionID partId,
-                              meta::cpp2::ListenerType type) = 0;
+  virtual void removeListenerPart(GraphSpaceID spaceId,
+                                  PartitionID partId,
+                                  meta::cpp2::ListenerType type) = 0;
 
   /**
    * @brief Check if the partition's listener state has changed, add/remove if necessary
@@ -225,6 +242,7 @@ class MemPartManager final : public PartManager {
   FRIEND_TEST(NebulaStoreTest, RemoveInvalidSpaceTest);
   FRIEND_TEST(NebulaStoreTest, BackupRestoreTest);
   friend class ListenerBasicTest;
+  friend class TopoListenerTest;
 
  public:
   MemPartManager() = default;
@@ -426,9 +444,8 @@ class MetaServerBasedPartManager : public PartManager, public meta::MetaChangedL
    * @brief Found a new space, call handler's method
    *
    * @param spaceId
-   * @param isListener Whether the space is a listener
    */
-  void onSpaceAdded(GraphSpaceID spaceId, bool isListener) override;
+  void onSpaceAdded(GraphSpaceID spaceId) override;
 
   /**
    * @brief Found a removed space, call handler's method
@@ -436,7 +453,7 @@ class MetaServerBasedPartManager : public PartManager, public meta::MetaChangedL
    * @param spaceId
    * @param isListener Whether the space is a listener
    */
-  void onSpaceRemoved(GraphSpaceID spaceId, bool isListener) override;
+  void onSpaceRemoved(GraphSpaceID spaceId) override;
 
   /**
    * @brief Found space option updated, call handler's methos
@@ -485,26 +502,44 @@ class MetaServerBasedPartManager : public PartManager, public meta::MetaChangedL
   void fetchDiskParts(SpaceDiskPartsMap& diskParts) override;
 
   /**
-   * @brief Found a new listener, call handler's method
+   * @brief Found a new space of listener, call handler's method
+   *
+   * @param spaceId
+   * @param type Listener type
+   */
+  void onListenerSpaceAdded(GraphSpaceID spaceId, meta::cpp2::ListenerType type) override;
+
+  /**
+   * @brief Found a removed space of listener, call handler's method
+   *
+   * @param spaceId
+   * @param type Listener type
+   */
+  void onListenerSpaceRemoved(GraphSpaceID spaceId, meta::cpp2::ListenerType type) override;
+
+  /**
+   * @brief Found a new partition of listener, call handler's method
    *
    * @param spaceId
    * @param partId
-   * @param listenerHosts Listener's peer
+   * @param type Listener type
+   * @param peers The peers of the partition
    */
-  void onListenerAdded(GraphSpaceID spaceId,
-                       PartitionID partId,
-                       const meta::ListenerHosts& listenerHosts) override;
+  void onListenerPartAdded(GraphSpaceID spaceId,
+                           PartitionID partId,
+                           meta::cpp2::ListenerType type,
+                           const std::vector<HostAddr>& peers) override;
 
   /**
-   * @brief Found a removed listener, call handler's method
+   * @brief Found a removed partition of listener, call handler's method
    *
    * @param spaceId
    * @param partId
    * @param type Listener type
    */
-  void onListenerRemoved(GraphSpaceID spaceId,
-                         PartitionID partId,
-                         meta::cpp2::ListenerType type) override;
+  void onListenerPartRemoved(GraphSpaceID spaceId,
+                             PartitionID partId,
+                             meta::cpp2::ListenerType type) override;
 
   /**
    * @brief Check if a parition has remote listeners, add or remove if necessary

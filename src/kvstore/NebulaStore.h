@@ -18,7 +18,6 @@
 #include "kvstore/KVEngine.h"
 #include "kvstore/KVStore.h"
 #include "kvstore/Listener.h"
-#include "kvstore/ListenerFactory.h"
 #include "kvstore/Part.h"
 #include "kvstore/PartManager.h"
 #include "kvstore/raftex/RaftexService.h"
@@ -41,6 +40,7 @@ struct SpacePartInfo {
 
 struct SpaceListenerInfo {
   std::unordered_map<PartitionID, ListenerMap> listeners_;
+  std::unique_ptr<KVEngine> engine_;
 };
 
 /**
@@ -57,6 +57,7 @@ class NebulaStore : public KVStore, public Handler {
   FRIEND_TEST(NebulaStoreTest, ThreeCopiesCheckpointTest);
   FRIEND_TEST(NebulaStoreTest, RemoveInvalidSpaceTest);
   friend class ListenerBasicTest;
+  friend class TopoListenerTest;
 
  public:
   /**
@@ -544,9 +545,8 @@ class NebulaStore : public KVStore, public Handler {
    * @brief Add a space, called from part manager
    *
    * @param spaceId
-   * @param isListener Whether the space is listener
    */
-  void addSpace(GraphSpaceID spaceId, bool isListener = false) override;
+  void addSpace(GraphSpaceID spaceId) override;
 
   /**
    * @brief Add a partition, called from part manager
@@ -567,7 +567,7 @@ class NebulaStore : public KVStore, public Handler {
    * @param spaceId
    * @param isListener Whether the space is listener
    */
-  void removeSpace(GraphSpaceID spaceId, bool isListener) override;
+  void removeSpace(GraphSpaceID spaceId) override;
 
   /**
    * @brief clear space data, but not remove the data dirs.
@@ -623,6 +623,22 @@ class NebulaStore : public KVStore, public Handler {
                                            const std::vector<std::string>& files) override;
 
   /**
+   * @brief Add a space as listener
+   *
+   * @param spaceId
+   * @param type Listener type
+   */
+  void addListenerSpace(GraphSpaceID spaceId, meta::cpp2::ListenerType type) override;
+
+  /**
+   * @brief Remove a listener space
+   *
+   * @param spaceId
+   * @param type Listener type
+   */
+  void removeListenerSpace(GraphSpaceID spaceId, meta::cpp2::ListenerType type) override;
+
+  /**
    * @brief Add a partition as listener
    *
    * @param spaceId
@@ -630,10 +646,10 @@ class NebulaStore : public KVStore, public Handler {
    * @param type Listener type
    * @param peers Raft peers of listener
    */
-  void addListener(GraphSpaceID spaceId,
-                   PartitionID partId,
-                   meta::cpp2::ListenerType type,
-                   const std::vector<HostAddr>& peers) override;
+  void addListenerPart(GraphSpaceID spaceId,
+                       PartitionID partId,
+                       meta::cpp2::ListenerType type,
+                       const std::vector<HostAddr>& peers) override;
 
   /**
    * @brief Remove a listener partition
@@ -642,9 +658,9 @@ class NebulaStore : public KVStore, public Handler {
    * @param partId
    * @param type Listener type
    */
-  void removeListener(GraphSpaceID spaceId,
-                      PartitionID partId,
-                      meta::cpp2::ListenerType type) override;
+  void removeListenerPart(GraphSpaceID spaceId,
+                          PartitionID partId,
+                          meta::cpp2::ListenerType type) override;
 
   /**
    * @brief Check if the partition's listener state has changed, add/remove if necessary
