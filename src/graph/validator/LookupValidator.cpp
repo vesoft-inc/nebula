@@ -469,7 +469,7 @@ StatusOr<Expression*> LookupValidator::checkConstExpr(Expression* expr,
 
   // Check prop type
   if (v.type() != SchemaUtil::propTypeToValueType(type)) {
-    // allow diffrent types in the IN expression, such as "abc" IN ["abc"]
+    // allow different types in the IN expression, such as "abc" IN ["abc"]
     if (!expr->isContainerExpr()) {
       return Status::SemanticError("Column type error : %s", prop.c_str());
     }

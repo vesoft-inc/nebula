@@ -61,7 +61,7 @@ class CounterId final {
  * This is a utility class to keep track the service's statistic information.
  *
  * It contains a bunch of counters. Each counter has a unique name and three
- * levels of time ranges, which are 1 minute, 10 minues, and 1 hour. Each
+ * levels of time ranges, which are 1 minute, 10 minutes, and 1 hour. Each
  * counter also associates with one or multiple statistic types. The supported
  * statistic types are SUM, COUNT, AVG, RATE, MIN, MAX and percentiles. Among
  * those, MIN, MAX and Percentile are only supported for Histogram counters.

@@ -9,7 +9,7 @@
 #include "common/base/Base.h"
 #include "common/time/WallClock.h"
 
-DECLARE_int64(slow_op_threshhold_ms);
+DECLARE_int64(slow_op_threshold_ms);
 
 namespace nebula {
 
@@ -19,12 +19,12 @@ class SlowOpTracker {
 
   ~SlowOpTracker() = default;
 
-  bool slow(int64_t threshhold = 0) {
+  bool slow(int64_t threshold = 0) {
     dur_ = time::WallClock::fastNowInMilliSec() - startMs_;
     if (dur_ < 0) {
       dur_ = 0;
     }
-    return threshhold > 0 ? dur_ > threshhold : dur_ > FLAGS_slow_op_threshhold_ms;
+    return threshold > 0 ? dur_ > threshold : dur_ > FLAGS_slow_op_threshold_ms;
   }
 
   void output(const std::string& prefix, const std::string& msg) {

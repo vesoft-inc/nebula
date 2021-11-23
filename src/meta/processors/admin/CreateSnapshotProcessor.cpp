@@ -16,7 +16,7 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq&) {
   // check the index rebuild. not allowed to create snapshot when index
   // rebuilding.
   JobManager* jobMgr = JobManager::getInstance();
-  auto result = jobMgr->checkIndexJobRuning();
+  auto result = jobMgr->checkIndexJobRunning();
   if (!nebula::ok(result)) {
     handleErrorCode(nebula::error(result));
     onFinished();

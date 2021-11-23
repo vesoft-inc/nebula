@@ -196,7 +196,7 @@ Feature: Delete int vid of vertex
     Then the result should be, in any order:
       | player.name | player.age |
 
-  Scenario: delete int vertex by pipe successed
+  Scenario: delete int vertex by pipe succeeded
     Given load "nba_int_vid" csv data to a new space
     # test delete with pipe wrong vid type
     When executing query:
