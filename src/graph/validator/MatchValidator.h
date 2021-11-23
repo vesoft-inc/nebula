@@ -25,7 +25,7 @@ class MatchValidator final : public Validator {
 
   AstContext *getAstContext() override;
 
-  Status validatePath(const MatchPath *path, MatchClauseContext &matchClauseCtx) const;
+  Status validatePath(const MatchPath *path, MatchClauseContext &matchClauseCtx);
 
   Status validateFilter(const Expression *filter, WhereClauseContext &whereClauseCtx) const;
 
@@ -68,13 +68,13 @@ class MatchValidator final : public Validator {
 
   Status buildNodeInfo(const MatchPath *path,
                        std::vector<NodeInfo> &edgeInfos,
-                       std::unordered_map<std::string, AliasType> &aliases) const;
+                       std::unordered_map<std::string, AliasType> &aliases);
 
   Status buildEdgeInfo(const MatchPath *path,
                        std::vector<EdgeInfo> &nodeInfos,
-                       std::unordered_map<std::string, AliasType> &aliases) const;
+                       std::unordered_map<std::string, AliasType> &aliases);
 
-  Status buildPathExpr(const MatchPath *path, MatchClauseContext &matchClauseCtx) const;
+  Status buildPathExpr(const MatchPath *path, MatchClauseContext &matchClauseCtx);
 
   Status combineAliases(std::unordered_map<std::string, AliasType> &curAliases,
                         const std::unordered_map<std::string, AliasType> &lastAliases) const;
@@ -89,10 +89,9 @@ class MatchValidator final : public Validator {
 
   Status buildOutputs(const YieldColumns *yields);
 
-  StatusOr<Expression *> makeEdgeSubFilter(const MapExpression *map) const;
+  StatusOr<Expression *> makeEdgeSubFilter(MapExpression *map) const;
 
-  StatusOr<Expression *> makeNodeSubFilter(const MapExpression *map,
-                                           const std::string &label) const;
+  StatusOr<Expression *> makeNodeSubFilter(MapExpression *map, const std::string &label) const;
 
  private:
   std::unique_ptr<MatchAstContext> matchCtx_;
