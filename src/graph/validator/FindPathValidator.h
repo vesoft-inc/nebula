@@ -23,6 +23,8 @@ class FindPathValidator final : public Validator {
 
   Status validateWhere(WhereClause* where);
 
+  Status validateYield(YieldClause* yield);
+
  private:
   std::unique_ptr<PathContext> pathCtx_;
 };

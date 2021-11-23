@@ -5,21 +5,9 @@
 
 #include "graph/optimizer/OptimizerUtils.h"
 
-#include <algorithm>
-#include <iterator>
-#include <memory>
-#include <unordered_set>
-
 #include "common/base/Status.h"
 #include "common/datatypes/Value.h"
-#include "common/expression/ConstantExpression.h"
-#include "common/expression/Expression.h"
-#include "common/expression/LogicalExpression.h"
-#include "common/expression/PropertyExpression.h"
-#include "common/expression/RelationalExpression.h"
 #include "graph/planner/plan/Query.h"
-#include "interface/gen-cpp2/meta_types.h"
-#include "interface/gen-cpp2/storage_types.h"
 
 using nebula::meta::cpp2::ColumnDef;
 using nebula::meta::cpp2::IndexItem;
