@@ -40,6 +40,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:datatypes_obj>
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:meta_thrift_obj>
+        $<TARGET_OBJECTS:meta_stream_thrift_obj>
         $<TARGET_OBJECTS:meta_obj>
         $<TARGET_OBJECTS:graph_thrift_obj>
         $<TARGET_OBJECTS:charset_obj>

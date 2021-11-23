@@ -129,7 +129,7 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClientBase<ClientType>::c
     evb = ioThreadPool_->getEventBase();
     // Invoke the remote method
     folly::via(evb, [this, evb, context, host, spaceId, res]() mutable {
-      auto client = clientsMan_->client(host, evb, false, FLAGS_storage_client_timeout_ms);
+      auto client = clientsMan_->client(host, evb, FLAGS_storage_client_timeout_ms);
       // Result is a pair of <Request&, bool>
       auto start = time::WallClock::fastNowInMicroSec();
       context
@@ -239,7 +239,7 @@ void StorageClientBase<ClientType>::getResponseImpl(
       evb,
       [evb, request = std::move(request), remoteFunc = std::move(remoteFunc), pro, this]() mutable {
         auto host = request.first;
-        auto client = clientsMan_->client(host, evb, false, FLAGS_storage_client_timeout_ms);
+        auto client = clientsMan_->client(host, evb, FLAGS_storage_client_timeout_ms);
         auto spaceId = request.second.get_space_id();
         auto partsId = getReqPartsId(request.second);
         LOG(INFO) << "Send request to storage " << host;

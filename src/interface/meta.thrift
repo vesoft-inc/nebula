@@ -1,4 +1,5 @@
-/* Copyright (c) 2018 vesoft inc. All rights reserved.
+/* vim: ft=proto
+ * Copyright (c) 2018 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License.
  */
@@ -44,7 +45,7 @@ enum AlterSchemaOp {
 enum RoleType {
     GOD    = 0x01,
     ADMIN  = 0x02,
-	DBA	   = 0x03,
+	  DBA	   = 0x03,
     USER   = 0x04,
     GUEST  = 0x05,
 } (cpp.enum_strict)
@@ -141,20 +142,28 @@ struct EdgeItem {
     4: Schema           schema,
 }
 
+enum IndexStatusEnum {
+    NORMAL      = 0x00,
+    OUT_OF_SYNC = 0x01,
+    REBUILDING  = 0x02,
+} (cpp.enum_strict, cpp.enum_type = "int8_t")
+
 struct IndexItem {
-    1: common.IndexID      index_id,
-    2: binary              index_name,
-    3: common.SchemaID     schema_id
-    4: binary              schema_name,
-    5: list<ColumnDef>     fields,
-    6: optional binary     comment,
+    1: common.IndexID     index_id,
+    2: binary             index_name,
+    3: common.SchemaID    schema_id
+    4: binary             schema_name,
+    // IndexStatusEnum
+    5: byte               status = IndexStatusEnum.NORMAL,
+    6: list<ColumnDef>    fields,
+    7: optional binary    comment,
 }
 
 enum HostStatus {
-    ONLINE  = 0x00,
-    OFFLINE = 0x01,
-    UNKNOWN = 0x02,
-} (cpp.enum_strict)
+    ALIVE          = 0x00,
+    UNRESPONSIVE   = 0x01,
+    OUT_OF_SERVICE = 0x02,
+} (cpp.enum_strict, cpp.enum_type = "int8_t")
 
 enum SnapshotStatus {
     VALID    = 0x00,
@@ -800,7 +809,8 @@ struct ListIndexStatusReq {
 
 struct IndexStatus {
     1: binary   name,
-    2: binary   status,
+    // IndexStatusEnum
+    2: byte     status,
 }
 
 struct ListIndexStatusResp {
@@ -1040,7 +1050,8 @@ struct UpdateSessionsReq {
 struct UpdateSessionsResp {
     1: common.ErrorCode     code,
     2: common.HostAddr      leader,
-    3: map<common.SessionID, map<common.ExecutionPlanID, QueryDesc> (cpp.template = "std::unordered_map")>
+    3: map<common.SessionID,
+           map<common.ExecutionPlanID, QueryDesc> (cpp.template = "std::unordered_map")>
         (cpp.template = "std::unordered_map") killed_queries,
 }
 
@@ -1068,7 +1079,8 @@ struct RemoveSessionReq {
 }
 
 struct KillQueryReq {
-    1: map<common.SessionID, set<common.ExecutionPlanID> (cpp.template = "std::unordered_set")>
+    1: map<common.SessionID,
+           set<common.ExecutionPlanID> (cpp.template = "std::unordered_set")>
         (cpp.template = "std::unordered_map") kill_queries,
 }
 
@@ -1107,6 +1119,7 @@ struct VerifyClientVersionResp {
 struct VerifyClientVersionReq {
     1: required binary version = common.version;
 }
+
 
 service MetaService {
     ExecResp createSpace(1: CreateSpaceReq req);
@@ -1210,5 +1223,5 @@ service MetaService {
     ListClusterInfoResp listCluster(1: ListClusterInfoReq req);
     GetMetaDirInfoResp getMetaDirInfo(1: GetMetaDirInfoReq req);
 
-    VerifyClientVersionResp verifyClientVersion(1: VerifyClientVersionReq req)
+    VerifyClientVersionResp verifyClientVersion(1: VerifyClientVersionReq req);
 }

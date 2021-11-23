@@ -37,7 +37,7 @@ void ListClusterInfoProcessor::process(const cpp2::ListClusterInfoReq& req) {
     auto host = MetaKeyUtils::parseHostKey(iter->key());
     HostInfo info = HostInfo::decode(iter->val());
 
-    if (info.role_ != cpp2::HostRole::STORAGE) {
+    if (info.getRole() != cpp2::HostRole::STORAGE) {
       iter->next();
       continue;
     }

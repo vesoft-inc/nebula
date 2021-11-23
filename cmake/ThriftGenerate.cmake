@@ -27,9 +27,11 @@ endmacro()
 # thrift_generate
 # This is used to codegen thrift files using the thrift compiler
 # Params:
-#   @file_name - The name of tge thrift file
+#   @file_name - The name of the thrift file
 #   @services  - A list of services that are declared in the thrift file
 #   @output_path - The directory where the thrift file lives
+#   @include_prefix - cpp include prefix before gen-cpp2/
+#   @cpp_only - Only generate cpp files from the thrift file
 #
 # Output:
 #  file-cpp2-target     - A custom target to add a dependency
@@ -44,7 +46,7 @@ endmacro()
 # This will prevent cmake from complaining about missing source files
 #
 
-macro(thrift_generate file_name services file_path output_path include_prefix)
+macro(thrift_generate file_name services file_path output_path include_prefix cpp_only)
 set("${file_name}-cpp2-HEADERS"
   ${output_path}/gen-cpp2/${file_name}_constants.h
   ${output_path}/gen-cpp2/${file_name}_data.h
@@ -77,28 +79,15 @@ foreach(service ${services})
   )
 endforeach()
 
+# Generate all cpp files
 add_custom_command(
   OUTPUT ${${file_name}-cpp2-HEADERS} ${${file_name}-cpp2-SOURCES}
   COMMAND ${THRIFT1}
     --strict "--allow-neg-enum-vals"
     --gen "mstch_cpp2:include_prefix=${include_prefix},stack_arguments"
-    --gen "py"
-    --gen "js:node:"
-    --gen "csharp"
-    --gen "java:hashcode"
-    --gen "go:thrift_import=github.com/facebook/fbthrift/thrift/lib/go/thrift,package_prefix=github.com/vesoft-inc/nebula-go/v2/,use_context"
     -o "." "${file_path}/${file_name}.thrift"
-  COMMAND
-    mkdir -p "./gen-rust/${file_name}"
-    && ${THRIFT1}
-      --strict "--allow-neg-enum-vals"
-      --gen "mstch_rust"
-      -o "gen-rust/${file_name}"
-      "${file_path}/${file_name}.thrift"
-    && ( mv ./gen-rust/${file_name}/gen-rust/lib.rs ./gen-rust/${file_name} )
-    && ( rm -r ./gen-rust/${file_name}/gen-rust/ )
   DEPENDS "${file_path}/${file_name}.thrift"
-  COMMENT "Generating thrift files for ${file_name}"
+  COMMENT "Generating cpp files for ${file_name}"
 )
 
 bypass_source_check(${${file_name}-cpp2-SOURCES})
@@ -122,6 +111,32 @@ set_target_properties(
 target_compile_options(${file_name}_thrift_obj PRIVATE "-Wno-pedantic")
 target_compile_options(${file_name}_thrift_obj PRIVATE "-Wno-extra")
 
+# Generate files for all other languages
+if(NOT ${cpp_only})
+  add_custom_command(
+    TARGET ${file_name}_thrift_generator PRE_BUILD
+    COMMAND ${THRIFT1}
+      --strict "--allow-neg-enum-vals"
+      --gen "py"
+      --gen "js:node:"
+      --gen "csharp"
+      --gen "java:hashcode"
+      --gen "go:thrift_import=github.com/facebook/fbthrift/thrift/lib/go/thrift,package_prefix=github.com/vesoft-inc/nebula-go/v2/,use_context"
+      -o "." "${file_path}/${file_name}.thrift"
+    COMMAND
+      mkdir -p "./gen-rust/${file_name}"
+      && ${THRIFT1}
+        --strict "--allow-neg-enum-vals"
+        --gen "mstch_rust"
+        -o "gen-rust/${file_name}"
+        "${file_path}/${file_name}.thrift"
+      && ( mv ./gen-rust/${file_name}/gen-rust/lib.rs ./gen-rust/${file_name} )
+      && ( rm -r ./gen-rust/${file_name}/gen-rust/ )
+    DEPENDS "${file_path}/${file_name}.thrift"
+    COMMENT "Generating thrift files for ${file_name}"
+  )
+endif()
+
 if(NOT "${file_name}" STREQUAL "common")
     add_dependencies(
         ${file_name}_thrift_obj
@@ -135,4 +150,12 @@ if("${file_name}" STREQUAL "storage")
         meta_thrift_generator
     )
 endif()
+
+if("${file_name}" STREQUAL "meta_stream")
+    add_dependencies(
+        ${file_name}_thrift_obj
+        meta_thrift_generator
+    )
+endif()
+
 endmacro()

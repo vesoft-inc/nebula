@@ -15,30 +15,14 @@
 #include "common/ssl/SSLConfig.h"
 
 DECLARE_int32(conn_timeout_ms);
-DECLARE_bool(use_rocket_client);
-
-THRIFT_FLAG_DECLARE_bool(raw_client_rocket_upgrade_enabled_v2);
-
 
 namespace nebula {
 namespace thrift {
-
-template <class ClientType>
-ThriftClientManager<ClientType>::ThriftClientManager(bool enableSSL)
-    : enableSSL_(enableSSL) {
-  if (FLAGS_use_rocket_client) {
-    THRIFT_FLAG_SET_MOCK(raw_client_rocket_upgrade_enabled_v2, true);
-  } else {
-    THRIFT_FLAG_SET_MOCK(raw_client_rocket_upgrade_enabled_v2, false);
-  }
-  VLOG(3) << "ThriftClientManager";
-}
 
 
 template <class ClientType>
 std::shared_ptr<ClientType> ThriftClientManager<ClientType>::client(const HostAddr& host,
                                                                     folly::EventBase* evb,
-                                                                    bool compatibility,
                                                                     uint32_t timeout) {
   if (evb == nullptr) {
     evb = folly::EventBaseManager::get()->getEventBase();
@@ -96,15 +80,7 @@ std::shared_ptr<ClientType> ThriftClientManager<ClientType>::client(const HostAd
     }
   });
 
-  apache::thrift::HeaderClientChannel::Options channelOptions;
-  if (compatibility) {
-    channelOptions.setProtocolId(apache::thrift::protocol::T_BINARY_PROTOCOL);
-    channelOptions.setClientType(THRIFT_UNFRAMED_DEPRECATED);
-  }
-
-  auto clientChannel = apache::thrift::HeaderClientChannel::newChannel(
-      std::move(socket),
-      std::move(channelOptions));
+  auto clientChannel = apache::thrift::RocketClientChannel::newChannel(std::move(socket));
   if (timeout > 0) {
     clientChannel->setTimeout(timeout);
   }

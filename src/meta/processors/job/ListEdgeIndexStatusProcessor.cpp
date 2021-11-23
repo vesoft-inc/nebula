@@ -69,7 +69,18 @@ void ListEdgeIndexStatusProcessor::process(const cpp2::ListIndexStatusReq& req) 
   for (auto& kv : tmp) {
     cpp2::IndexStatus status;
     status.name_ref() = std::move(kv.first);
-    status.status_ref() = apache::thrift::util::enumNameSafe(kv.second);
+    switch (kv.second) {
+      case cpp2::JobStatus::FINISHED:
+        status.status_ref() = static_cast<int8_t>(cpp2::IndexStatusEnum::NORMAL);
+        break;
+      case cpp2::JobStatus::QUEUE:
+      case cpp2::JobStatus::RUNNING:
+        status.status_ref() = static_cast<int8_t>(cpp2::IndexStatusEnum::REBUILDING);
+        break;
+      default:
+        status.status_ref() = static_cast<int8_t>(cpp2::IndexStatusEnum::OUT_OF_SYNC);
+        break;
+    }
     statuses.emplace_back(std::move(status));
   }
   resp_.statuses_ref() = std::move(statuses);

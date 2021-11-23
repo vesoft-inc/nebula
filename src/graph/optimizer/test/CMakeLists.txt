@@ -13,6 +13,7 @@ set(OPTIMIZER_TEST_LIB
     $<TARGET_OBJECTS:agg_function_manager_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:meta_thrift_obj>
+    $<TARGET_OBJECTS:meta_stream_thrift_obj>
     $<TARGET_OBJECTS:meta_client_obj>
     $<TARGET_OBJECTS:meta_obj>
     $<TARGET_OBJECTS:storage_thrift_obj>

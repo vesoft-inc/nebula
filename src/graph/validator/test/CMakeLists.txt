@@ -37,6 +37,7 @@ set(VALIDATOR_TEST_LIBS
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:memory_obj>
     $<TARGET_OBJECTS:meta_thrift_obj>
+    $<TARGET_OBJECTS:meta_stream_thrift_obj>
     $<TARGET_OBJECTS:meta_obj>
     $<TARGET_OBJECTS:graph_thrift_obj>
     $<TARGET_OBJECTS:charset_obj>

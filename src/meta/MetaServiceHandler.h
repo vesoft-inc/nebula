@@ -11,6 +11,7 @@
 #include "kvstore/KVStore.h"
 #include "meta/processors/admin/AdminClient.h"
 #include "meta/processors/admin/HBProcessor.h"
+#include "meta/MetaCache.h"
 
 namespace nebula {
 namespace meta {
@@ -18,11 +19,17 @@ namespace meta {
 class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
  public:
   explicit MetaServiceHandler(kvstore::KVStore* kv, ClusterID clusterId = 0)
-      : kvstore_(kv), clusterId_(clusterId) {
+      : kvstore_(kv)
+      , clusterId_(clusterId)
+      , cache_(kv) {
     adminClient_ = std::make_unique<AdminClient>(kvstore_);
 
     // Initialize counters
     kHBCounters.init();
+  }
+
+  MetaCache* getCache() {
+    return &cache_;
   }
 
   /**
@@ -231,6 +238,8 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
   kvstore::KVStore* kvstore_ = nullptr;
   ClusterID clusterId_{0};
   std::unique_ptr<AdminClient> adminClient_;
+
+  MetaCache cache_;
 };
 
 }  // namespace meta

@@ -23,28 +23,31 @@ TEST(ActiveHostsManTest, EncodeDecodeHostInfoV2) {
   std::string strGitInfoSHA = gitInfoSha();
   {
     HostInfo hostInfo(now, role, strGitInfoSHA);
-    auto encodeHostInfo = HostInfo::encodeV2(hostInfo);
+    auto encodeHostInfo = HostInfo::encode(hostInfo);
 
     auto decodeHostInfo = HostInfo::decode(encodeHostInfo);
-    ASSERT_EQ(hostInfo.lastHBTimeInMilliSec_, decodeHostInfo.lastHBTimeInMilliSec_);
-    ASSERT_EQ(hostInfo.role_, decodeHostInfo.role_);
-    ASSERT_EQ(hostInfo.gitInfoSha_, decodeHostInfo.gitInfoSha_);
+    ASSERT_EQ(hostInfo.getLastHBTimeInMilliSec(),
+              decodeHostInfo.getLastHBTimeInMilliSec());
+    ASSERT_EQ(hostInfo.getRole(), decodeHostInfo.getRole());
+    ASSERT_EQ(hostInfo.getGitSha(), decodeHostInfo.getGitSha());
   }
   {
     HostInfo hostInfo(now);
-    auto encodeHostInfo = HostInfo::encodeV2(hostInfo);
+    auto encodeHostInfo = HostInfo::encode(hostInfo);
 
     auto decodeHostInfo = HostInfo::decode(encodeHostInfo);
-    ASSERT_EQ(hostInfo.lastHBTimeInMilliSec_, decodeHostInfo.lastHBTimeInMilliSec_);
-    ASSERT_EQ(hostInfo.role_, decodeHostInfo.role_);
-    ASSERT_EQ(hostInfo.gitInfoSha_, decodeHostInfo.gitInfoSha_);
+    ASSERT_EQ(hostInfo.getLastHBTimeInMilliSec(),
+              decodeHostInfo.getLastHBTimeInMilliSec());
+    ASSERT_EQ(hostInfo.getRole(), decodeHostInfo.getRole());
+    ASSERT_EQ(hostInfo.getGitSha(), decodeHostInfo.getGitSha());
   }
   {
     HostInfo hostInfo(now, role, strGitInfoSHA);
-    auto encodeHostInfo = HostInfo::encodeV2(hostInfo);
+    auto encodeHostInfo = HostInfo::encode(hostInfo);
 
     auto decodeHostInfo = HostInfo::decode(encodeHostInfo);
-    ASSERT_EQ(hostInfo.lastHBTimeInMilliSec_, decodeHostInfo.lastHBTimeInMilliSec_);
+    ASSERT_EQ(hostInfo.getLastHBTimeInMilliSec(),
+              decodeHostInfo.getLastHBTimeInMilliSec());
   }
 }
 

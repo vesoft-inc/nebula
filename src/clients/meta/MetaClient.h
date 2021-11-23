@@ -327,7 +327,8 @@ class MetaClient {
 
   folly::Future<StatusOr<bool>> rebuildTagIndex(GraphSpaceID spaceID, std::string name);
 
-  folly::Future<StatusOr<std::vector<cpp2::IndexStatus>>> listTagIndexStatus(GraphSpaceID spaceId);
+  folly::Future<StatusOr<std::vector<cpp2::IndexStatus>>>
+      listTagIndexStatus(GraphSpaceID spaceId);
 
   folly::Future<StatusOr<IndexID>> createEdgeIndex(GraphSpaceID spaceID,
                                                    std::string indexName,
@@ -347,7 +348,8 @@ class MetaClient {
 
   folly::Future<StatusOr<bool>> rebuildEdgeIndex(GraphSpaceID spaceId, std::string name);
 
-  folly::Future<StatusOr<std::vector<cpp2::IndexStatus>>> listEdgeIndexStatus(GraphSpaceID spaceId);
+  folly::Future<StatusOr<std::vector<cpp2::IndexStatus>>>
+      listEdgeIndexStatus(GraphSpaceID spaceId);
 
   // Operations for custom kv
   folly::Future<StatusOr<bool>> multiPut(std::string segment,

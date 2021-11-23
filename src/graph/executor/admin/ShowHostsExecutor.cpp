@@ -37,9 +37,11 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
     int64_t totalLeader = 0;
 
     for (const auto &host : hostVec) {
-      nebula::Row r({host.get_hostAddr().host,
-                     host.get_hostAddr().port,
-                     apache::thrift::util::enumNameSafe(host.get_status())});
+      nebula::Row r({
+          host.get_hostAddr().host,
+          host.get_hostAddr().port,
+          apache::thrift::util::enumNameSafe(static_cast<meta::cpp2::HostStatus>(host.get_status()))
+      });
       int64_t leaderCount = 0;
       for (const auto &spaceEntry : host.get_leader_parts()) {
         leaderCount += spaceEntry.second.size();

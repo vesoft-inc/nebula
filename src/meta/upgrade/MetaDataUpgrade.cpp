@@ -26,10 +26,55 @@ DECLARE_uint32(string_index_limit);
 namespace nebula {
 namespace meta {
 
+Status MetaDataUpgrade::put(const folly::StringPiece &key, const folly::StringPiece &val) {
+  std::vector<kvstore::KV> data;
+  data.emplace_back(key.str(), val.str());
+  folly::Baton<true, std::atomic> baton;
+  auto ret = nebula::cpp2::ErrorCode::SUCCEEDED;
+  kv_->asyncMultiPut(kDefaultSpaceId,
+                     kDefaultPartId,
+                     std::move(data),
+                     [&ret, &baton](nebula::cpp2::ErrorCode code) {
+                       if (nebula::cpp2::ErrorCode::SUCCEEDED != code) {
+                         ret = code;
+                         LOG(INFO) << "Put data error on meta server";
+                       }
+                       baton.post();
+                     });
+  baton.wait();
+  if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    return Status::Error("Put data failed");
+  }
+  return Status::OK();
+}
+
+
+Status MetaDataUpgrade::remove(const folly::StringPiece &key) {
+  std::vector<std::string> keys{key.str()};
+  folly::Baton<true, std::atomic> baton;
+  auto ret = nebula::cpp2::ErrorCode::SUCCEEDED;
+  kv_->asyncMultiRemove(kDefaultSpaceId,
+                        kDefaultPartId,
+                        std::move(keys),
+                        [&ret, &baton](nebula::cpp2::ErrorCode code) {
+                          if (nebula::cpp2::ErrorCode::SUCCEEDED != code) {
+                            ret = code;
+                            LOG(INFO) << "Remove data error on meta server";
+                          }
+                          baton.post();
+                        });
+  baton.wait();
+  if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    return Status::Error("Remove data failed");
+  }
+  return Status::OK();
+}
+
+
 Status MetaDataUpgrade::rewriteHosts(const folly::StringPiece &key, const folly::StringPiece &val) {
   auto host = meta::v1::MetaServiceUtilsV1::parseHostKey(key);
   auto info = HostInfo::decodeV1(val);
-  auto newVal = HostInfo::encodeV2(info);
+  auto newVal = HostInfo::encode(info);
   auto newKey =
       MetaKeyUtils::hostKeyV2(network::NetworkUtils::intToIPv4(host.get_ip()), host.get_port());
   NG_LOG_AND_RETURN_IF_ERROR(put(newKey, newVal));
@@ -283,9 +328,9 @@ void MetaDataUpgrade::printHost(const folly::StringPiece &key, const folly::Stri
   auto info = HostInfo::decodeV1(val);
   LOG(INFO) << "Host ip: " << network::NetworkUtils::intToIPv4(host.get_ip());
   LOG(INFO) << "Host port: " << host.get_port();
-  LOG(INFO) << "Host info: lastHBTimeInMilliSec: " << info.lastHBTimeInMilliSec_;
-  LOG(INFO) << "Host info: role_: " << apache::thrift::util::enumNameSafe(info.role_);
-  LOG(INFO) << "Host info: gitInfoSha_: " << info.gitInfoSha_;
+  LOG(INFO) << "Host info: lastHBTimeInMilliSec: " << info.getLastHBTimeInMilliSec();
+  LOG(INFO) << "Host info: role_: " << apache::thrift::util::enumNameSafe(info.getRole());
+  LOG(INFO) << "Host info: gitInfoSha_: " << info.getGitSha();
 }
 
 void MetaDataUpgrade::printSpaces(const folly::StringPiece &val) {

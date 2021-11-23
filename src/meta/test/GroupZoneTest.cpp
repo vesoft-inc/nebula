@@ -40,7 +40,7 @@ TEST(GroupAndZoneTest, GroupAndZoneTest) {
     for (auto i = 0; i < 13; i++) {
       ASSERT_EQ(std::to_string(i), (*resp.hosts_ref())[i].get_hostAddr().host);
       ASSERT_EQ(i, (*resp.hosts_ref())[i].get_hostAddr().port);
-      ASSERT_EQ(cpp2::HostStatus::ONLINE, (*resp.hosts_ref())[i].get_status());
+      ASSERT_EQ(cpp2::HostStatus::ALIVE, (*resp.hosts_ref())[i].get_status());
     }
   }
   // Add Zone
@@ -329,7 +329,7 @@ TEST(GroupAndZoneTest, DropHostAndZoneTest) {
     for (auto i = 0; i < 1; i++) {
       ASSERT_EQ(std::to_string(i), (*resp.hosts_ref())[i].get_hostAddr().host);
       ASSERT_EQ(i, (*resp.hosts_ref())[i].get_hostAddr().port);
-      ASSERT_EQ(cpp2::HostStatus::ONLINE, (*resp.hosts_ref())[i].get_status());
+      ASSERT_EQ(cpp2::HostStatus::ALIVE, (*resp.hosts_ref())[i].get_status());
     }
   }
 

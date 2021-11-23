@@ -88,7 +88,7 @@ nebula::cpp2::ErrorCode ListHostsProcessor::allMetaHostsStatus() {
     item.hostAddr_ref() = std::move(host);
     item.role_ref() = cpp2::HostRole::META;
     item.git_info_sha_ref() = gitInfoSha();
-    item.status_ref() = cpp2::HostStatus::ONLINE;
+    item.status_ref() = cpp2::HostStatus::ALIVE;
     item.version_ref() = getOriginVersion();
     hostItems_.emplace_back(item);
   }
@@ -114,7 +114,7 @@ nebula::cpp2::ErrorCode ListHostsProcessor::allHostsWithStatus(cpp2::HostRole ro
   std::vector<std::string> removeHostsKey;
   for (auto iter = nebula::value(ret).get(); iter->valid(); iter->next()) {
     HostInfo info = HostInfo::decode(iter->val());
-    if (info.role_ != role) {
+    if (info.getRole() != role) {
       continue;
     }
 
@@ -122,19 +122,19 @@ nebula::cpp2::ErrorCode ListHostsProcessor::allHostsWithStatus(cpp2::HostRole ro
     auto host = MetaKeyUtils::parseHostKey(iter->key());
     item.hostAddr_ref() = std::move(host);
 
-    item.role_ref() = info.role_;
-    item.git_info_sha_ref() = info.gitInfoSha_;
-    if (info.version_.has_value()) {
-      item.version_ref() = info.version_.value();
+    item.role_ref() = info.getRole();
+    item.git_info_sha_ref() = info.getGitSha();
+    if (!info.getExecVer().empty()) {
+      item.version_ref() = info.getExecVer();
     }
-    if (now - info.lastHBTimeInMilliSec_ < FLAGS_removed_threshold_sec * 1000) {
+    if (now - info.getLastHBTimeInMilliSec() < FLAGS_removed_threshold_sec * 1000) {
       // If meta didn't receive heartbeat with 2 periods, regard hosts as
       // offline. Same as ActiveHostsMan::getActiveHosts
-      if (now - info.lastHBTimeInMilliSec_ <
+      if (now - info.getLastHBTimeInMilliSec() <
           FLAGS_heartbeat_interval_secs * FLAGS_expired_time_factor * 1000) {
-        item.status_ref() = cpp2::HostStatus::ONLINE;
+        item.status_ref() = cpp2::HostStatus::ALIVE;
       } else {
-        item.status_ref() = cpp2::HostStatus::OFFLINE;
+        item.status_ref() = cpp2::HostStatus::UNRESPONSIVE;
       }
       hostItems_.emplace_back(item);
     } else {

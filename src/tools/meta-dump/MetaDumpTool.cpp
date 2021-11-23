@@ -79,8 +79,9 @@ class MetaDumper {
         auto val = folly::StringPiece(iter->value().data(), iter->value().size());
         auto host = MetaKeyUtils::parseHostKey(key);
         auto info = HostInfo::decode(val);
-        auto role = apache::thrift::util::enumNameSafe(info.role_);
-        auto time = time::TimeConversion::unixSecondsToDateTime(info.lastHBTimeInMilliSec_ / 1000);
+        auto role = apache::thrift::util::enumNameSafe(info.getRole());
+        auto time = time::TimeConversion::unixSecondsToDateTime(
+            info.getLastHBTimeInMilliSec() / 1000);
         LOG(INFO) << folly::sformat(
             "host addr: {}, role: {}, last hb time: {}", host.toString(), role, time.toString());
         iter->Next();

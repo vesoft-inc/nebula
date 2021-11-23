@@ -11,13 +11,34 @@ set(THRIFT_TEMPLATES ${Fbthrift_INCLUDE_DIR}/thrift/templates)
 include(ThriftGenerate)
 
 # Target object name : common_thrift_obj
-thrift_generate("common" "" ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} "interface")
+thrift_generate(
+    "common"
+    ""
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR}
+    "interface"
+    FALSE
+)
 
 # Target object name : graph_thrift_obj
-thrift_generate("graph" "GraphService" ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} "interface")
+thrift_generate(
+    "graph"
+    "GraphService"
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR}
+    "interface"
+    FALSE
+)
 
 # Target object name : raftex_thrift_obj
-thrift_generate("raftex" "RaftexService" ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} "interface")
+thrift_generate(
+    "raftex"
+    "RaftexService"
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR}
+    "interface"
+    FALSE
+)
 
 # Target object name : storage_thrift_obj
 thrift_generate(
@@ -26,10 +47,28 @@ thrift_generate(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}
     "interface"
+    FALSE
 )
 
 # Target object name : meta_thrift_obj
-thrift_generate("meta" "MetaService" ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR} "interface")
+thrift_generate(
+    "meta"
+    "MetaService"
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR}
+    "interface"
+    FALSE
+)
+
+# Target object name : meta_stream_thrift_obj
+thrift_generate(
+    "meta_stream"
+    "MetaStreamService"
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_BINARY_DIR}
+    "interface"
+    TRUE
+)
 
 add_custom_target(
     clean-interface

@@ -1882,7 +1882,7 @@ TEST(MetaClientTest, ListenerTest) {
       l.type_ref() = cpp2::ListenerType::ELASTICSEARCH;
       l.host_ref() = listenerHosts[i % 4];
       l.part_id_ref() = i + 1;
-      l.status_ref() = cpp2::HostStatus::ONLINE;
+      l.status_ref() = cpp2::HostStatus::ALIVE;
       expected.emplace_back(std::move(l));
     }
     ASSERT_EQ(expected, listeners);

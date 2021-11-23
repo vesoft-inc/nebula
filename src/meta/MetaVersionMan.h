@@ -13,10 +13,11 @@
 namespace nebula {
 namespace meta {
 
-enum class MetaVersion {
+enum class MetaVersion : int32_t {
   UNKNOWN = 0,
   V1 = 1,
   V2 = 2,
+  V3 = 3,
 };
 
 /**

@@ -65,7 +65,7 @@ folly::Future<cpp2::AskForVoteResponse> Host::askForVote(const cpp2::AskForVoteR
       return resp;
     }
   }
-  auto client = part_->clientMan_->client(addr_, eb, false, FLAGS_raft_rpc_timeout_ms);
+  auto client = part_->clientMan_->client(addr_, eb, FLAGS_raft_rpc_timeout_ms);
   return client->future_askForVote(req);
 }
 
@@ -356,7 +356,7 @@ folly::Future<cpp2::AppendLogResponse> Host::sendAppendLogRequest(
                                  << ", last_log_id_sent=" << req->get_last_log_id_sent()
                                  << ", # logs in request is " << req->get_log_str_list().size();
   // Get client connection
-  auto client = part_->clientMan_->client(addr_, eb, false, FLAGS_raft_rpc_timeout_ms);
+  auto client = part_->clientMan_->client(addr_, eb, FLAGS_raft_rpc_timeout_ms);
   return client->future_appendLog(*req);
 }
 
@@ -418,7 +418,7 @@ folly::Future<cpp2::HeartbeatResponse> Host::sendHeartbeatRequest(
                                  << ", last_log_term_sent=" << req->get_last_log_term_sent()
                                  << ", last_log_id_sent=" << req->get_last_log_id_sent();
   // Get client connection
-  auto client = part_->clientMan_->client(addr_, eb, false, FLAGS_raft_rpc_timeout_ms);
+  auto client = part_->clientMan_->client(addr_, eb, FLAGS_raft_rpc_timeout_ms);
   return client->future_heartbeat(*req);
 }
 

@@ -128,9 +128,9 @@ void ListListenerProcessor::process(const cpp2::ListListenerReq& req) {
     listener.part_id_ref() = MetaKeyUtils::parseListenerPart(iter->key());
     if (std::find(activeHosts.begin(), activeHosts.end(), *listener.host_ref()) !=
         activeHosts.end()) {
-      listener.status_ref() = cpp2::HostStatus::ONLINE;
+      listener.status_ref() = cpp2::HostStatus::ALIVE;
     } else {
-      listener.status_ref() = cpp2::HostStatus::OFFLINE;
+      listener.status_ref() = cpp2::HostStatus::UNRESPONSIVE;
     }
     listeners.emplace_back(std::move(listener));
     iter->next();

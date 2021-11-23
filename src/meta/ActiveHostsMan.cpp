@@ -65,7 +65,7 @@ nebula::cpp2::ErrorCode ActiveHostsMan::updateHostInfo(kvstore::KVStore* kv,
   if (!data.empty()) {
     hasUpdate = true;
   }
-  data.emplace_back(MetaKeyUtils::hostKey(hostAddr.host, hostAddr.port), HostInfo::encodeV2(info));
+  data.emplace_back(MetaKeyUtils::hostKey(hostAddr.host, hostAddr.port), HostInfo::encode(info));
 
   folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
   folly::Baton<true, std::atomic> baton;
@@ -103,8 +103,8 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> ActiveHostsMan::getActiv
   while (iter->valid()) {
     auto host = MetaKeyUtils::parseHostKey(iter->key());
     HostInfo info = HostInfo::decode(iter->val());
-    if (info.role_ == role) {
-      if (now - info.lastHBTimeInMilliSec_ < threshold) {
+    if (info.getRole() == role) {
+      if (now - info.getLastHBTimeInMilliSec() < threshold) {
         hosts.emplace_back(host.host, host.port);
       }
     }
@@ -138,7 +138,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> ActiveHostsMan::getActiv
     }
 
     auto info = nebula::value(infoRet);
-    if (now - info.lastHBTimeInMilliSec_ < threshold) {
+    if (now - info.getLastHBTimeInMilliSec() < threshold) {
       activeHosts.emplace_back(host.host, host.port);
     }
   }

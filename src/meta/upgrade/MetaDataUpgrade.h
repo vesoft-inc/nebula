@@ -45,48 +45,9 @@ class MetaDataUpgrade final {
   void printJobDesc(const folly::StringPiece &key, const folly::StringPiece &val);
 
  private:
-  Status put(const folly::StringPiece &key, const folly::StringPiece &val) {
-    std::vector<kvstore::KV> data;
-    data.emplace_back(key.str(), val.str());
-    folly::Baton<true, std::atomic> baton;
-    auto ret = nebula::cpp2::ErrorCode::SUCCEEDED;
-    kv_->asyncMultiPut(kDefaultSpaceId,
-                       kDefaultPartId,
-                       std::move(data),
-                       [&ret, &baton](nebula::cpp2::ErrorCode code) {
-                         if (nebula::cpp2::ErrorCode::SUCCEEDED != code) {
-                           ret = code;
-                           LOG(INFO) << "Put data error on meta server";
-                         }
-                         baton.post();
-                       });
-    baton.wait();
-    if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      return Status::Error("Put data failed");
-    }
-    return Status::OK();
-  }
+  Status put(const folly::StringPiece &key, const folly::StringPiece &val);
 
-  Status remove(const folly::StringPiece &key) {
-    std::vector<std::string> keys{key.str()};
-    folly::Baton<true, std::atomic> baton;
-    auto ret = nebula::cpp2::ErrorCode::SUCCEEDED;
-    kv_->asyncMultiRemove(kDefaultSpaceId,
-                          kDefaultPartId,
-                          std::move(keys),
-                          [&ret, &baton](nebula::cpp2::ErrorCode code) {
-                            if (nebula::cpp2::ErrorCode::SUCCEEDED != code) {
-                              ret = code;
-                              LOG(INFO) << "Remove data error on meta server";
-                            }
-                            baton.post();
-                          });
-    baton.wait();
-    if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      return Status::Error("Remove data failed");
-    }
-    return Status::OK();
-  }
+  Status remove(const folly::StringPiece &key);
 
   Status convertToNewColumns(const std::vector<meta::v1::cpp2::ColumnDef> &oldCols,
                              std::vector<cpp2::ColumnDef> &newCols);

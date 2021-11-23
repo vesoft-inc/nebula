@@ -5,8 +5,11 @@
 nebula_add_library(
     meta_service_handler OBJECT
     MetaServiceHandler.cpp
+    MetaStreamService.cpp
     MetaServiceUtils.cpp
     ActiveHostsMan.cpp
+    MetaCache.cpp
+    PubManager.cpp
     processors/parts/ListHostsProcessor.cpp
     processors/parts/ListPartsProcessor.cpp
     processors/parts/CreateSpaceProcessor.cpp
@@ -133,6 +136,7 @@ set(meta_test_deps
     $<TARGET_OBJECTS:raftex_thrift_obj>
     $<TARGET_OBJECTS:storage_thrift_obj>
     $<TARGET_OBJECTS:meta_thrift_obj>
+    $<TARGET_OBJECTS:meta_stream_thrift_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:process_obj>

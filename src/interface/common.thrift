@@ -4,7 +4,6 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-
 namespace cpp nebula
 namespace java com.vesoft.nebula
 namespace go nebula

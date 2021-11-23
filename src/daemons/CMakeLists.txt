@@ -10,6 +10,7 @@ set(common_deps
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:storage_thrift_obj>
     $<TARGET_OBJECTS:meta_thrift_obj>
+    $<TARGET_OBJECTS:meta_stream_thrift_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:ws_obj>
     $<TARGET_OBJECTS:ws_common_obj>

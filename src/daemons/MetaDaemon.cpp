@@ -21,6 +21,7 @@
 #include "meta/ActiveHostsMan.h"
 #include "meta/KVBasedClusterIdMan.h"
 #include "meta/MetaServiceHandler.h"
+#include "meta/MetaStreamService.h"
 #include "meta/MetaVersionMan.h"
 #include "meta/RootUserMan.h"
 #include "meta/http/MetaHttpDownloadHandler.h"
@@ -40,6 +41,7 @@ using nebula::web::PathParams;
 
 DEFINE_string(local_ip, "", "Local ip specified for NetworkUtils::getLocalIP");
 DEFINE_int32(port, 45500, "Meta daemon listening port");
+DEFINE_int32(stream_port, 45501, "Meta daemon streaming port");
 DEFINE_bool(reuse_port, true, "Whether to turn on the SO_REUSEPORT option");
 DEFINE_string(data_path, "", "Root data path");
 DEFINE_string(meta_server_addrs,
@@ -47,23 +49,25 @@ DEFINE_string(meta_server_addrs,
               "It is a list of IPs split by comma, used in cluster deployment"
               "the ips number is equal to the replica number."
               "If empty, it means it's a single node");
-// DEFINE_string(local_ip, "", "Local ip specified for
-// NetworkUtils::getLocalIP");
 DEFINE_int32(num_io_threads, 16, "Number of IO threads");
 DEFINE_int32(meta_http_thread_num, 3, "Number of meta daemon's http thread");
 DEFINE_int32(num_worker_threads, 32, "Number of workers");
 DEFINE_string(pid_file, "pids/nebula-metad.pid", "File to hold the process id");
 DEFINE_bool(daemonize, true, "Whether run as a daemon process");
 
+
 static std::unique_ptr<apache::thrift::ThriftServer> gServer;
+static std::unique_ptr<apache::thrift::ThriftServer> gStreamServer;
 static std::unique_ptr<nebula::kvstore::KVStore> gKVStore;
 
-static void signalHandler(int sig);
-static Status setupSignalHandler();
+nebula::ClusterID gClusterId = 0;
+
+
 extern Status setupLogging();
 #if defined(__x86_64__)
 extern Status setupBreakpad();
 #endif
+
 
 namespace nebula {
 namespace meta {
@@ -71,7 +75,6 @@ const std::string kClusterIdKey = "__meta_cluster_id_key__";  // NOLINT
 }  // namespace meta
 }  // namespace nebula
 
-nebula::ClusterID gClusterId = 0;
 
 std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> peers,
                                                  nebula::HostAddr localhost) {
@@ -165,6 +168,7 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
   return kvstore;
 }
 
+
 Status initWebService(nebula::WebService* svc,
                       nebula::kvstore::KVStore* kvstore,
                       nebula::hdfs::HdfsCommandHelper* helper,
@@ -189,6 +193,46 @@ Status initWebService(nebula::WebService* svc,
   return svc->start();
 }
 
+
+void signalHandler(int sig) {
+  switch (sig) {
+    case SIGINT:
+    case SIGTERM:
+      FLOG_INFO("Signal %d(%s) received, stopping this server", sig, ::strsignal(sig));
+      if (gStreamServer) {
+        gStreamServer->stop();
+      }
+      if (gServer) {
+        gServer->stop();
+      }
+
+      {
+        auto gJobMgr = nebula::meta::JobManager::getInstance();
+        if (gJobMgr) {
+          gJobMgr->shutDown();
+        }
+      }
+      if (gKVStore) {
+        gKVStore->stop();
+        gKVStore.reset();
+      }
+      break;
+    default:
+      FLOG_ERROR("Signal %d(%s) received but ignored", sig, ::strsignal(sig));
+  }
+}
+
+
+Status setupSignalHandler() {
+  return nebula::SignalHandler::install(
+      {SIGINT, SIGTERM},
+      [](nebula::SignalHandler::GeneralSignalInfo* info) { signalHandler(info->sig()); });
+}
+
+
+/****************
+ * main()
+ ****************/
 int main(int argc, char* argv[]) {
   google::SetVersionString(nebula::versionString());
   // Detect if the server has already been started
@@ -327,8 +371,33 @@ int main(int argc, char* argv[]) {
     return EXIT_FAILURE;
   }
 
+  int result = EXIT_SUCCESS;
   auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(gKVStore.get(), gClusterId);
-  LOG(INFO) << "The meta daemon start on " << localhost;
+
+  // Start the MetaStreamService in a separate thread so it will not block this thread
+  auto streamSvc = std::make_shared<nebula::meta::MetaStreamService>(handler->getCache());
+  std::thread streamThread([streamSvc] {
+    try {
+      gStreamServer = std::make_unique<apache::thrift::ThriftServer>();
+      gStreamServer->setPort(FLAGS_stream_port);
+      // No idle timeout on client connection
+      gStreamServer->setIdleTimeout(std::chrono::seconds(0));
+      gStreamServer->setInterface(std::move(streamSvc));
+      if (FLAGS_enable_meta_ssl) {
+        gStreamServer->setSSLConfig(nebula::sslContextConfig());
+      }
+
+      LOG(INFO) << "Starting the Meta service on port " << FLAGS_stream_port;
+      // Will block until the server shuts down
+      gStreamServer->serve();
+      LOG(INFO) << "The Meta Stream service stopped";
+    } catch (const std::exception& e) {
+      LOG(ERROR) << "Caught exception when starting the stream server: " << e.what();
+    }
+  });
+
+  // Start the MetaService and block until the service is stopped
+  LOG(INFO) << "The Meta service starting on " << localhost;
   try {
     gServer = std::make_unique<apache::thrift::ThriftServer>();
     gServer->setPort(FLAGS_port);
@@ -337,42 +406,15 @@ int main(int argc, char* argv[]) {
     if (FLAGS_enable_ssl || FLAGS_enable_meta_ssl) {
       gServer->setSSLConfig(nebula::sslContextConfig());
     }
-    gServer->serve();  // Will wait until the server shuts down
+    gServer->serve();  // Will block until the server shuts down
+    LOG(INFO) << "The Meta service stopped";
   } catch (const std::exception& e) {
     LOG(ERROR) << "Exception thrown: " << e.what();
-    return EXIT_FAILURE;
+    result = EXIT_FAILURE;
   }
 
-  LOG(INFO) << "The meta Daemon stopped";
-  return EXIT_SUCCESS;
-}
+  gStreamServer->stop();
+  streamThread.join();
 
-Status setupSignalHandler() {
-  return nebula::SignalHandler::install(
-      {SIGINT, SIGTERM},
-      [](nebula::SignalHandler::GeneralSignalInfo* info) { signalHandler(info->sig()); });
-}
-
-void signalHandler(int sig) {
-  switch (sig) {
-    case SIGINT:
-    case SIGTERM:
-      FLOG_INFO("Signal %d(%s) received, stopping this server", sig, ::strsignal(sig));
-      if (gServer) {
-        gServer->stop();
-      }
-      {
-        auto gJobMgr = nebula::meta::JobManager::getInstance();
-        if (gJobMgr) {
-          gJobMgr->shutDown();
-        }
-      }
-      if (gKVStore) {
-        gKVStore->stop();
-        gKVStore.reset();
-      }
-      break;
-    default:
-      FLOG_ERROR("Signal %d(%s) received but ignored", sig, ::strsignal(sig));
-  }
+  return result;
 }
