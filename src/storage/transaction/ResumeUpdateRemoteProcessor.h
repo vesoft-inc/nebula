@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #pragma once
@@ -13,7 +12,7 @@ namespace storage {
 
 /**
  * @brief
- *  if the TxnManager backgroud resume thread found a prime key
+ *  if the TxnManager background resume thread found a prime key
  *  it will create this processor to resume the complete update process
  */
 class ResumeUpdateRemoteProcessor : public ChainUpdateEdgeProcessorLocal {

@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "storage/admin/AdminTaskManager.h"
@@ -20,7 +19,7 @@ namespace nebula {
 namespace storage {
 
 bool AdminTaskManager::init() {
-  LOG(INFO) << "max concurrenct subtasks: " << FLAGS_max_concurrent_subtasks;
+  LOG(INFO) << "max concurrent subtasks: " << FLAGS_max_concurrent_subtasks;
   auto threadFactory = std::make_shared<folly::NamedThreadFactory>("TaskManager");
   pool_ = std::make_unique<ThreadPool>(FLAGS_max_concurrent_subtasks, threadFactory);
   bgThread_ = std::make_unique<thread::GenericWorker>();

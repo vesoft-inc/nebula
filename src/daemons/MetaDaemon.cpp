@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <folly/ssl/Init.h>
@@ -16,12 +15,12 @@
 #include "common/ssl/SSLConfig.h"
 #include "common/thread/GenericThreadPool.h"
 #include "common/time/TimezoneInfo.h"
+#include "common/utils/MetaKeyUtils.h"
 #include "kvstore/NebulaStore.h"
 #include "kvstore/PartManager.h"
 #include "meta/ActiveHostsMan.h"
 #include "meta/KVBasedClusterIdMan.h"
 #include "meta/MetaServiceHandler.h"
-#include "meta/MetaServiceUtils.h"
 #include "meta/MetaVersionMan.h"
 #include "meta/RootUserMan.h"
 #include "meta/http/MetaHttpDownloadHandler.h"
@@ -78,7 +77,7 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
                                                  nebula::HostAddr localhost) {
   auto partMan = std::make_unique<nebula::kvstore::MemPartManager>();
   // The meta server has only one space (0), one part (0)
-  partMan->addPart(nebula::meta::kDefaultSpaceId, nebula::meta::kDefaultPartId, std::move(peers));
+  partMan->addPart(nebula::kDefaultSpaceId, nebula::kDefaultPartId, std::move(peers));
   // folly IOThreadPoolExecutor
   auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_num_io_threads);
   std::shared_ptr<apache::thrift::concurrency::ThreadManager> threadManager(
@@ -99,7 +98,7 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
   LOG(INFO) << "Waiting for the leader elected...";
   nebula::HostAddr leader;
   while (true) {
-    auto ret = kvstore->partLeader(nebula::meta::kDefaultSpaceId, nebula::meta::kDefaultPartId);
+    auto ret = kvstore->partLeader(nebula::kDefaultSpaceId, nebula::kDefaultPartId);
     if (!nebula::ok(ret)) {
       LOG(ERROR) << "Nebula store init failed";
       return nullptr;
@@ -297,7 +296,7 @@ int main(int argc, char* argv[]) {
     /**
      *  Only leader part needed.
      */
-    auto ret = gKVStore->partLeader(nebula::meta::kDefaultSpaceId, nebula::meta::kDefaultPartId);
+    auto ret = gKVStore->partLeader(nebula::kDefaultSpaceId, nebula::kDefaultPartId);
     if (!nebula::ok(ret)) {
       LOG(ERROR) << "Part leader get failed";
       return EXIT_FAILURE;
@@ -329,7 +328,7 @@ int main(int argc, char* argv[]) {
   }
 
   auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(gKVStore.get(), gClusterId);
-  LOG(INFO) << "The meta deamon start on " << localhost;
+  LOG(INFO) << "The meta daemon start on " << localhost;
   try {
     gServer = std::make_unique<apache::thrift::ThriftServer>();
     gServer->setPort(FLAGS_port);

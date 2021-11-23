@@ -1,13 +1,13 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "clients/storage/GraphStorageClient.h"
 
 #include "common/base/Base.h"
 
+using nebula::cpp2::PropertyType;
 using nebula::storage::cpp2::ExecResponse;
 using nebula::storage::cpp2::GetNeighborsResponse;
 using nebula::storage::cpp2::GetPropResponse;
@@ -559,36 +559,68 @@ StorageRpcRespFuture<cpp2::GetNeighborsResponse> GraphStorageClient::lookupAndTr
       });
 }
 
-folly::Future<StatusOr<cpp2::ScanEdgeResponse>> GraphStorageClient::scanEdge(
-    cpp2::ScanEdgeRequest req, folly::EventBase* evb) {
-  std::pair<HostAddr, cpp2::ScanEdgeRequest> request;
-  auto host = this->getLeader(req.get_space_id(), req.get_part_id());
-  if (!host.ok()) {
-    return folly::makeFuture<StatusOr<cpp2::ScanEdgeResponse>>(host.status());
+StorageRpcRespFuture<cpp2::ScanEdgeResponse> GraphStorageClient::scanEdge(
+    const CommonRequestParam& param,
+    const cpp2::EdgeProp& edgeProp,
+    int64_t limit,
+    const Expression* filter) {
+  std::unordered_map<HostAddr, cpp2::ScanEdgeRequest> requests;
+  auto status = getHostPartsWithCursor(param.space);
+  if (!status.ok()) {
+    return folly::makeFuture<StorageRpcResponse<cpp2::ScanEdgeResponse>>(
+        std::runtime_error(status.status().toString()));
   }
-  request.first = std::move(host).value();
-  request.second = std::move(req);
+  auto& clusters = status.value();
+  for (const auto& c : clusters) {
+    auto& host = c.first;
+    auto& req = requests[host];
+    req.set_space_id(param.space);
+    req.set_parts(std::move(c.second));
+    req.set_return_columns(edgeProp);
+    req.set_limit(limit);
+    if (filter != nullptr) {
+      req.set_filter(filter->encode());
+    }
+    req.set_common(param.toReqCommon());
+  }
 
-  return getResponse(evb,
-                     std::move(request),
-                     [](cpp2::GraphStorageServiceAsyncClient* client,
-                        const cpp2::ScanEdgeRequest& r) { return client->future_scanEdge(r); });
+  return collectResponse(param.evb,
+                         std::move(requests),
+                         [](cpp2::GraphStorageServiceAsyncClient* client,
+                            const cpp2::ScanEdgeRequest& r) { return client->future_scanEdge(r); });
 }
 
-folly::Future<StatusOr<cpp2::ScanVertexResponse>> GraphStorageClient::scanVertex(
-    cpp2::ScanVertexRequest req, folly::EventBase* evb) {
-  std::pair<HostAddr, cpp2::ScanVertexRequest> request;
-  auto host = this->getLeader(req.get_space_id(), req.get_part_id());
-  if (!host.ok()) {
-    return folly::makeFuture<StatusOr<cpp2::ScanVertexResponse>>(host.status());
+StorageRpcRespFuture<cpp2::ScanVertexResponse> GraphStorageClient::scanVertex(
+    const CommonRequestParam& param,
+    const std::vector<cpp2::VertexProp>& vertexProp,
+    int64_t limit,
+    const Expression* filter) {
+  std::unordered_map<HostAddr, cpp2::ScanVertexRequest> requests;
+  auto status = getHostPartsWithCursor(param.space);
+  if (!status.ok()) {
+    return folly::makeFuture<StorageRpcResponse<cpp2::ScanVertexResponse>>(
+        std::runtime_error(status.status().toString()));
   }
-  request.first = std::move(host).value();
-  request.second = std::move(req);
+  auto& clusters = status.value();
+  for (const auto& c : clusters) {
+    auto& host = c.first;
+    auto& req = requests[host];
+    req.set_space_id(param.space);
+    req.set_parts(std::move(c.second));
+    req.set_return_columns(vertexProp);
+    req.set_limit(limit);
+    if (filter != nullptr) {
+      req.set_filter(filter->encode());
+    }
+    req.set_common(param.toReqCommon());
+  }
 
-  return getResponse(evb,
-                     std::move(request),
-                     [](cpp2::GraphStorageServiceAsyncClient* client,
-                        const cpp2::ScanVertexRequest& r) { return client->future_scanVertex(r); });
+  return collectResponse(
+      param.evb,
+      std::move(requests),
+      [](cpp2::GraphStorageServiceAsyncClient* client, const cpp2::ScanVertexRequest& r) {
+        return client->future_scanVertex(r);
+      });
 }
 
 StatusOr<std::function<const VertexID&(const Row&)>> GraphStorageClient::getIdFromRow(
@@ -600,10 +632,10 @@ StatusOr<std::function<const VertexID&(const Row&)>> GraphStorageClient::getIdFr
   auto vidType = std::move(vidTypeStatus).value();
 
   std::function<const VertexID&(const Row&)> cb;
-  if (vidType == meta::cpp2::PropertyType::INT64) {
+  if (vidType == PropertyType::INT64) {
     if (isEdgeProps) {
       cb = [](const Row& r) -> const VertexID& {
-        // The first column has to be the src, the thrid column has to be the
+        // The first column has to be the src, the third column has to be the
         // dst
         DCHECK_EQ(Value::Type::INT, r.values[0].type());
         DCHECK_EQ(Value::Type::INT, r.values[3].type());
@@ -624,7 +656,7 @@ StatusOr<std::function<const VertexID&(const Row&)>> GraphStorageClient::getIdFr
         return mutableR.values[0].getStr();
       };
     }
-  } else if (vidType == meta::cpp2::PropertyType::FIXED_STRING) {
+  } else if (vidType == PropertyType::FIXED_STRING) {
     cb = [](const Row& r) -> const VertexID& {
       // The first column has to be the vid
       DCHECK_EQ(Value::Type::STRING, r.values[0].type());
@@ -646,14 +678,14 @@ GraphStorageClient::getIdFromNewVertex(GraphSpaceID space) const {
   auto vidType = std::move(vidTypeStatus).value();
 
   std::function<const VertexID&(const cpp2::NewVertex&)> cb;
-  if (vidType == meta::cpp2::PropertyType::INT64) {
+  if (vidType == PropertyType::INT64) {
     cb = [](const cpp2::NewVertex& v) -> const VertexID& {
       DCHECK_EQ(Value::Type::INT, v.get_id().type());
       auto& mutableV = const_cast<cpp2::NewVertex&>(v);
       mutableV.set_id(Value(std::string(reinterpret_cast<const char*>(&v.get_id().getInt()), 8)));
       return mutableV.get_id().getStr();
     };
-  } else if (vidType == meta::cpp2::PropertyType::FIXED_STRING) {
+  } else if (vidType == PropertyType::FIXED_STRING) {
     cb = [](const cpp2::NewVertex& v) -> const VertexID& {
       DCHECK_EQ(Value::Type::STRING, v.get_id().type());
       return v.get_id().getStr();
@@ -673,7 +705,7 @@ StatusOr<std::function<const VertexID&(const cpp2::NewEdge&)>> GraphStorageClien
   auto vidType = std::move(vidTypeStatus).value();
 
   std::function<const VertexID&(const cpp2::NewEdge&)> cb;
-  if (vidType == meta::cpp2::PropertyType::INT64) {
+  if (vidType == PropertyType::INT64) {
     cb = [](const cpp2::NewEdge& e) -> const VertexID& {
       DCHECK_EQ(Value::Type::INT, e.get_key().get_src().type());
       DCHECK_EQ(Value::Type::INT, e.get_key().get_dst().type());
@@ -688,7 +720,7 @@ StatusOr<std::function<const VertexID&(const cpp2::NewEdge&)>> GraphStorageClien
               std::string(reinterpret_cast<const char*>(&e.get_key().get_dst().getInt()), 8)));
       return mutableE.get_key().get_src().getStr();
     };
-  } else if (vidType == meta::cpp2::PropertyType::FIXED_STRING) {
+  } else if (vidType == PropertyType::FIXED_STRING) {
     cb = [](const cpp2::NewEdge& e) -> const VertexID& {
       DCHECK_EQ(Value::Type::STRING, e.get_key().get_src().type());
       DCHECK_EQ(Value::Type::STRING, e.get_key().get_dst().type());
@@ -709,7 +741,7 @@ StatusOr<std::function<const VertexID&(const cpp2::EdgeKey&)>> GraphStorageClien
   auto vidType = std::move(vidTypeStatus).value();
 
   std::function<const VertexID&(const cpp2::EdgeKey&)> cb;
-  if (vidType == meta::cpp2::PropertyType::INT64) {
+  if (vidType == PropertyType::INT64) {
     cb = [](const cpp2::EdgeKey& eKey) -> const VertexID& {
       DCHECK_EQ(Value::Type::INT, eKey.get_src().type());
       DCHECK_EQ(Value::Type::INT, eKey.get_dst().type());
@@ -720,7 +752,7 @@ StatusOr<std::function<const VertexID&(const cpp2::EdgeKey&)>> GraphStorageClien
           Value(std::string(reinterpret_cast<const char*>(&eKey.get_dst().getInt()), 8)));
       return mutableEK.get_src().getStr();
     };
-  } else if (vidType == meta::cpp2::PropertyType::FIXED_STRING) {
+  } else if (vidType == PropertyType::FIXED_STRING) {
     cb = [](const cpp2::EdgeKey& eKey) -> const VertexID& {
       DCHECK_EQ(Value::Type::STRING, eKey.get_src().type());
       DCHECK_EQ(Value::Type::STRING, eKey.get_dst().type());
@@ -741,14 +773,14 @@ StatusOr<std::function<const VertexID&(const Value&)>> GraphStorageClient::getId
   auto vidType = std::move(vidTypeStatus).value();
 
   std::function<const VertexID&(const Value&)> cb;
-  if (vidType == meta::cpp2::PropertyType::INT64) {
+  if (vidType == PropertyType::INT64) {
     cb = [](const Value& v) -> const VertexID& {
       DCHECK_EQ(Value::Type::INT, v.type());
       auto& mutableV = const_cast<Value&>(v);
       mutableV = Value(std::string(reinterpret_cast<const char*>(&v.getInt()), 8));
       return mutableV.getStr();
     };
-  } else if (vidType == meta::cpp2::PropertyType::FIXED_STRING) {
+  } else if (vidType == PropertyType::FIXED_STRING) {
     cb = [](const Value& v) -> const VertexID& {
       DCHECK_EQ(Value::Type::STRING, v.type());
       return v.getStr();
@@ -768,7 +800,7 @@ StatusOr<std::function<const VertexID&(const cpp2::DelTags&)>> GraphStorageClien
   auto vidType = std::move(vidTypeStatus).value();
 
   std::function<const VertexID&(const cpp2::DelTags&)> cb;
-  if (vidType == meta::cpp2::PropertyType::INT64) {
+  if (vidType == PropertyType::INT64) {
     cb = [](const cpp2::DelTags& delTags) -> const VertexID& {
       const auto& vId = delTags.get_id();
       DCHECK_EQ(Value::Type::INT, vId.type());
@@ -776,7 +808,7 @@ StatusOr<std::function<const VertexID&(const cpp2::DelTags&)>> GraphStorageClien
       mutableV = Value(std::string(reinterpret_cast<const char*>(&vId.getInt()), 8));
       return mutableV.getStr();
     };
-  } else if (vidType == meta::cpp2::PropertyType::FIXED_STRING) {
+  } else if (vidType == PropertyType::FIXED_STRING) {
     cb = [](const cpp2::DelTags& delTags) -> const VertexID& {
       const auto& vId = delTags.get_id();
       DCHECK_EQ(Value::Type::STRING, vId.type());

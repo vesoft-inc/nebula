@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/admin/Balancer.h"
@@ -12,9 +11,9 @@
 #include <cstdlib>
 
 #include "common/network/NetworkUtils.h"
+#include "common/utils/MetaKeyUtils.h"
 #include "kvstore/NebulaStore.h"
 #include "meta/ActiveHostsMan.h"
-#include "meta/MetaServiceUtils.h"
 #include "meta/common/MetaCommon.h"
 #include "meta/processors/Common.h"
 
@@ -92,7 +91,7 @@ ErrorOr<nebula::cpp2::ErrorCode, BalanceID> Balancer::cleanLastInValidPlan() {
   if (running_) {
     return nebula::cpp2::ErrorCode::E_BALANCER_RUNNING;
   }
-  const auto& prefix = MetaServiceUtils::balancePlanPrefix();
+  const auto& prefix = MetaKeyUtils::balancePlanPrefix();
   std::unique_ptr<kvstore::KVIterator> iter;
   auto retCode = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -101,9 +100,9 @@ ErrorOr<nebula::cpp2::ErrorCode, BalanceID> Balancer::cleanLastInValidPlan() {
   }
   // There should be at most one invalid plan, and it must be the latest one
   if (iter->valid()) {
-    auto status = MetaServiceUtils::parseBalanceStatus(iter->val());
+    auto status = MetaKeyUtils::parseBalanceStatus(iter->val());
     if (status == BalanceStatus::FAILED) {
-      auto balanceId = MetaServiceUtils::parseBalanceID(iter->key());
+      auto balanceId = MetaKeyUtils::parseBalanceID(iter->key());
       folly::Baton<true, std::atomic> baton;
       auto result = nebula::cpp2::ErrorCode::SUCCEEDED;
       // Only remove the plan will be enough
@@ -134,7 +133,7 @@ nebula::cpp2::ErrorCode Balancer::recovery() {
       // if not leader.
       return nebula::cpp2::ErrorCode::E_LEADER_CHANGED;
     }
-    const auto& prefix = MetaServiceUtils::balancePlanPrefix();
+    const auto& prefix = MetaKeyUtils::balancePlanPrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
     auto retCode = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -145,9 +144,9 @@ nebula::cpp2::ErrorCode Balancer::recovery() {
     // The balance plan is stored with balance id desc order, there should be at
     // most one failed or in_progress plan, and it must be the latest one
     if (iter->valid()) {
-      auto status = MetaServiceUtils::parseBalanceStatus(iter->val());
+      auto status = MetaKeyUtils::parseBalanceStatus(iter->val());
       if (status == BalanceStatus::IN_PROGRESS || status == BalanceStatus::FAILED) {
-        auto balanceId = MetaServiceUtils::parseBalanceID(iter->key());
+        auto balanceId = MetaKeyUtils::parseBalanceID(iter->key());
         corruptedPlans.emplace_back(balanceId);
       }
     }
@@ -184,7 +183,7 @@ nebula::cpp2::ErrorCode Balancer::getAllSpaces(
     std::vector<std::tuple<GraphSpaceID, int32_t, bool>>& spaces) {
   // Get all spaces
   folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
-  const auto& prefix = MetaServiceUtils::spacePrefix();
+  const auto& prefix = MetaKeyUtils::spacePrefix();
   std::unique_ptr<kvstore::KVIterator> iter;
   auto retCode = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -193,8 +192,8 @@ nebula::cpp2::ErrorCode Balancer::getAllSpaces(
   }
 
   while (iter->valid()) {
-    auto spaceId = MetaServiceUtils::spaceId(iter->key());
-    auto properties = MetaServiceUtils::parseSpace(iter->val());
+    auto spaceId = MetaKeyUtils::spaceId(iter->key());
+    auto properties = MetaKeyUtils::parseSpace(iter->val());
     bool zoned = properties.group_name_ref().has_value();
     spaces.emplace_back(spaceId, *properties.replica_factor_ref(), zoned);
     iter->next();
@@ -563,7 +562,7 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> Balancer::getHostParts(GraphSpaceID space
                                                               HostParts& hostParts,
                                                               int32_t& totalParts) {
   folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
-  const auto& prefix = MetaServiceUtils::partPrefix(spaceId);
+  const auto& prefix = MetaKeyUtils::partPrefix(spaceId);
   std::unique_ptr<kvstore::KVIterator> iter;
   auto retCode = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -576,7 +575,7 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> Balancer::getHostParts(GraphSpaceID space
     auto key = iter->key();
     PartitionID partId;
     memcpy(&partId, key.data() + prefix.size(), sizeof(PartitionID));
-    auto partHosts = MetaServiceUtils::parsePartVal(iter->val());
+    auto partHosts = MetaKeyUtils::parsePartVal(iter->val());
     for (auto& ph : partHosts) {
       hostParts[ph].emplace_back(partId);
     }
@@ -585,7 +584,7 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> Balancer::getHostParts(GraphSpaceID space
   }
 
   LOG(INFO) << "Host size: " << hostParts.size();
-  auto key = MetaServiceUtils::spaceKey(spaceId);
+  auto key = MetaKeyUtils::spaceKey(spaceId);
   std::string value;
   retCode = kv_->get(kDefaultSpaceId, kDefaultPartId, key, &value);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -594,7 +593,7 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> Balancer::getHostParts(GraphSpaceID space
     return retCode;
   }
 
-  auto properties = MetaServiceUtils::parseSpace(value);
+  auto properties = MetaKeyUtils::parseSpace(value);
   if (totalParts != properties.get_partition_num()) {
     LOG(ERROR) << "Partition number not equals";
     LOG(ERROR) << totalParts << " : " << properties.get_partition_num();
@@ -605,7 +604,7 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> Balancer::getHostParts(GraphSpaceID space
   LOG(INFO) << "Replica " << replica;
   if (dependentOnGroup && properties.group_name_ref().has_value()) {
     auto groupName = *properties.group_name_ref();
-    auto groupKey = MetaServiceUtils::groupKey(groupName);
+    auto groupKey = MetaKeyUtils::groupKey(groupName);
     std::string groupValue;
     retCode = kv_->get(kDefaultSpaceId, kDefaultPartId, groupKey, &groupValue);
     if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -614,7 +613,7 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> Balancer::getHostParts(GraphSpaceID space
       return retCode;
     }
 
-    int32_t zoneSize = MetaServiceUtils::parseZoneNames(std::move(groupValue)).size();
+    int32_t zoneSize = MetaKeyUtils::parseZoneNames(std::move(groupValue)).size();
     LOG(INFO) << "Zone Size " << zoneSize;
     innerBalance_ = (replica == zoneSize);
 
@@ -653,7 +652,7 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> Balancer::getHostParts(GraphSpaceID space
 nebula::cpp2::ErrorCode Balancer::assembleZoneParts(const std::string& groupName,
                                                     HostParts& hostParts) {
   LOG(INFO) << "Balancer assembleZoneParts";
-  auto groupKey = MetaServiceUtils::groupKey(groupName);
+  auto groupKey = MetaKeyUtils::groupKey(groupName);
   std::string groupValue;
   auto retCode = kv_->get(kDefaultSpaceId, kDefaultPartId, groupKey, &groupValue);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -664,10 +663,10 @@ nebula::cpp2::ErrorCode Balancer::assembleZoneParts(const std::string& groupName
 
   // zoneHosts use to record this host belong to zone's hosts
   std::unordered_map<std::pair<HostAddr, std::string>, std::vector<HostAddr>> zoneHosts;
-  auto zoneNames = MetaServiceUtils::parseZoneNames(std::move(groupValue));
+  auto zoneNames = MetaKeyUtils::parseZoneNames(std::move(groupValue));
   for (auto zoneName : zoneNames) {
     LOG(INFO) << "Zone Name: " << zoneName;
-    auto zoneKey = MetaServiceUtils::zoneKey(zoneName);
+    auto zoneKey = MetaKeyUtils::zoneKey(zoneName);
     std::string zoneValue;
     retCode = kv_->get(kDefaultSpaceId, kDefaultPartId, zoneKey, &zoneValue);
     if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -676,7 +675,7 @@ nebula::cpp2::ErrorCode Balancer::assembleZoneParts(const std::string& groupName
       return retCode;
     }
 
-    auto hosts = MetaServiceUtils::parseZoneHosts(std::move(zoneValue));
+    auto hosts = MetaKeyUtils::parseZoneHosts(std::move(zoneValue));
     for (const auto& host : hosts) {
       LOG(INFO) << "Host for zone " << host;
       auto pair = std::pair<HostAddr, std::string>(std::move(host), zoneName);
@@ -864,7 +863,7 @@ nebula::cpp2::ErrorCode Balancer::leaderBalance() {
                    << "Space: " << spaceId;
         continue;
       }
-      simplifyLeaderBalnacePlan(spaceId, plan);
+      simplifyLeaderBalancePlan(spaceId, plan);
       for (const auto& task : plan) {
         futures.emplace_back(client_->transLeader(std::get<0>(task),
                                                   std::get<1>(task),
@@ -888,7 +887,7 @@ nebula::cpp2::ErrorCode Balancer::leaderBalance() {
 
     inLeaderBalance_ = false;
     if (failed != 0) {
-      LOG(ERROR) << failed << " partiton failed to transfer leader";
+      LOG(ERROR) << failed << " partition failed to transfer leader";
     }
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
@@ -905,9 +904,9 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> Balancer::buildLeaderBalancePlan(
   PartAllocation peersMap;
   HostParts leaderHostParts;
   size_t leaderParts = 0;
-  // store peers of all paritions in peerMap
+  // store peers of all partitions in peerMap
   folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
-  const auto& prefix = MetaServiceUtils::partPrefix(spaceId);
+  const auto& prefix = MetaKeyUtils::partPrefix(spaceId);
   std::unique_ptr<kvstore::KVIterator> iter;
   auto retCode = kv_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -919,7 +918,7 @@ ErrorOr<nebula::cpp2::ErrorCode, bool> Balancer::buildLeaderBalancePlan(
     auto key = iter->key();
     PartitionID partId;
     memcpy(&partId, key.data() + prefix.size(), sizeof(PartitionID));
-    auto peers = MetaServiceUtils::parsePartVal(iter->val());
+    auto peers = MetaKeyUtils::parsePartVal(iter->val());
     peersMap[partId] = std::move(peers);
     ++leaderParts;
     iter->next();
@@ -1027,7 +1026,7 @@ int32_t Balancer::acquireLeaders(HostParts& allHostParts,
                                  const HostAddr& target,
                                  LeaderBalancePlan& plan,
                                  GraphSpaceID spaceId) {
-  // host will loop for the partition which is not leader, and try to acuire the
+  // host will loop for the partition which is not leader, and try to acquire the
   // leader
   int32_t taskCount = 0;
   std::vector<PartitionID> diff;
@@ -1130,7 +1129,7 @@ int32_t Balancer::giveupLeaders(HostParts& leaderParts,
   return taskCount;
 }
 
-void Balancer::simplifyLeaderBalnacePlan(GraphSpaceID spaceId, LeaderBalancePlan& plan) {
+void Balancer::simplifyLeaderBalancePlan(GraphSpaceID spaceId, LeaderBalancePlan& plan) {
   // Within a leader balance plan, a partition may be moved several times, but
   // actually we only need to transfer the leadership of a partition from the
   // first host to the last host, and ignore the intermediate ones
@@ -1149,7 +1148,7 @@ void Balancer::simplifyLeaderBalnacePlan(GraphSpaceID spaceId, LeaderBalancePlan
 
 nebula::cpp2::ErrorCode Balancer::collectZoneParts(const std::string& groupName,
                                                    HostParts& hostParts) {
-  auto groupKey = MetaServiceUtils::groupKey(groupName);
+  auto groupKey = MetaKeyUtils::groupKey(groupName);
   std::string groupValue;
   auto retCode = kv_->get(kDefaultSpaceId, kDefaultPartId, groupKey, &groupValue);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -1160,9 +1159,9 @@ nebula::cpp2::ErrorCode Balancer::collectZoneParts(const std::string& groupName,
 
   // zoneHosts use to record this host belong to zone's hosts
   std::unordered_map<std::pair<HostAddr, std::string>, std::vector<HostAddr>> zoneHosts;
-  auto zoneNames = MetaServiceUtils::parseZoneNames(std::move(groupValue));
+  auto zoneNames = MetaKeyUtils::parseZoneNames(std::move(groupValue));
   for (auto zoneName : zoneNames) {
-    auto zoneKey = MetaServiceUtils::zoneKey(zoneName);
+    auto zoneKey = MetaKeyUtils::zoneKey(zoneName);
     std::string zoneValue;
     retCode = kv_->get(kDefaultSpaceId, kDefaultPartId, zoneKey, &zoneValue);
     if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -1171,7 +1170,7 @@ nebula::cpp2::ErrorCode Balancer::collectZoneParts(const std::string& groupName,
       return retCode;
     }
 
-    auto hosts = MetaServiceUtils::parseZoneHosts(std::move(zoneValue));
+    auto hosts = MetaKeyUtils::parseZoneHosts(std::move(zoneValue));
     for (const auto& host : hosts) {
       auto pair = std::pair<HostAddr, std::string>(std::move(host), zoneName);
       auto& hs = zoneHosts[std::move(pair)];

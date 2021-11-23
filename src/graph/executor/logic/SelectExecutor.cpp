@@ -1,15 +1,14 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/executor/logic/SelectExecutor.h"
 
+#include "common/time/ScopedTimer.h"
 #include "graph/context/QueryExpressionContext.h"
 #include "graph/planner/plan/Logic.h"
 #include "graph/planner/plan/Query.h"
-#include "graph/util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {

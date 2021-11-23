@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_ADMIN_ADMINTASK_H_
@@ -86,9 +85,9 @@ class AdminTask {
 
   virtual int getTaskId() { return ctx_.taskId_; }
 
-  virtual void setConcurrentReq(int concurrenctReq) {
-    if (concurrenctReq > 0) {
-      ctx_.concurrentReq_ = concurrenctReq;
+  virtual void setConcurrentReq(int concurrentReq) {
+    if (concurrentReq > 0) {
+      ctx_.concurrentReq_ = concurrentReq;
     }
   }
 

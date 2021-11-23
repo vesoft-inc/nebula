@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -16,8 +15,8 @@
 #include "common/meta/GflagsManager.h"
 #include "common/meta/ServerBasedSchemaManager.h"
 #include "common/network/NetworkUtils.h"
+#include "common/utils/MetaKeyUtils.h"
 #include "interface/gen-cpp2/common_constants.h"
-#include "meta/MetaServiceUtils.h"
 #include "meta/test/TestUtils.h"
 #include "mock/MockCluster.h"
 
@@ -29,8 +28,8 @@ DECLARE_string(client_white_list);
 namespace nebula {
 namespace meta {
 
-using cpp2::PropertyType;
 using nebula::Value;
+using nebula::cpp2::PropertyType;
 
 TEST(MetaClientTest, InterfacesTest) {
   FLAGS_heartbeat_interval_secs = 1;
@@ -2020,7 +2019,7 @@ TEST(MetaClientTest, Config) {
     configs = std::move(resp).value();
     EXPECT_EQ(configs[0].get_value(), Value(3));
   }
-  // Just avoid memory leak error of clang asan. to waitting asynchronous thread
+  // Just avoid memory leak error of clang asan. to waiting asynchronous thread
   // done.
   sleep(FLAGS_heartbeat_interval_secs * 5);
 }

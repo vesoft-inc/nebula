@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/validator/LookupValidator.h"
@@ -44,7 +43,6 @@ Status LookupValidator::validateImpl() {
   NG_RETURN_IF_ERROR(validateFrom());
   NG_RETURN_IF_ERROR(validateFilter());
   NG_RETURN_IF_ERROR(validateYield());
-  NG_RETURN_IF_ERROR(validateLimit());
   return Status::OK();
 }
 
@@ -106,7 +104,7 @@ Status LookupValidator::validateYieldEdge() {
   auto yieldExpr = lookupCtx_->yieldExpr;
   for (auto col : yield->columns()) {
     if (ExpressionUtils::hasAny(col->expr(),
-                                {Expression::Kind::kPathBuild, Expression::Kind::kVertex})) {
+                                {Expression::Kind::kAggregate, Expression::Kind::kVertex})) {
       return Status::SemanticError("illegal yield clauses `%s'", col->toString().c_str());
     }
     if (ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kEdge})) {
@@ -136,7 +134,7 @@ Status LookupValidator::validateYieldTag() {
   auto yieldExpr = lookupCtx_->yieldExpr;
   for (auto col : yield->columns()) {
     if (ExpressionUtils::hasAny(col->expr(),
-                                {Expression::Kind::kPathBuild, Expression::Kind::kEdge})) {
+                                {Expression::Kind::kAggregate, Expression::Kind::kEdge})) {
       return Status::SemanticError("illegal yield clauses `%s'", col->toString().c_str());
     }
     if (ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kVertex})) {
@@ -225,20 +223,10 @@ Status LookupValidator::validateFilter() {
     auto ret = checkFilter(filter);
     NG_RETURN_IF_ERROR(ret);
     lookupCtx_->filter = std::move(ret).value();
+    // Make sure the type of the rewritted filter expr is right
+    NG_RETURN_IF_ERROR(deduceExprType(lookupCtx_->filter));
   }
   NG_RETURN_IF_ERROR(deduceProps(lookupCtx_->filter, exprProps_));
-  return Status::OK();
-}
-
-Status LookupValidator::validateLimit() {
-  auto* limitClause = sentence()->limitClause();
-  if (limitClause == nullptr) {
-    return Status::OK();
-  }
-  if (limitClause->limit() < 0) {
-    return Status::SemanticError("Invalid negative limit number %ld.", limitClause->limit());
-  }
-  lookupCtx_->limit = limitClause->limit();
   return Status::OK();
 }
 
@@ -453,7 +441,7 @@ StatusOr<Expression*> LookupValidator::checkConstExpr(Expression* expr,
   auto schema = lookupCtx_->isEdge ? schemaMgr->getEdgeSchema(spaceId(), schemaId())
                                    : schemaMgr->getTagSchema(spaceId(), schemaId());
   auto type = schema->getFieldType(prop);
-  if (type == meta::cpp2::PropertyType::UNKNOWN) {
+  if (type == nebula::cpp2::PropertyType::UNKNOWN) {
     return Status::SemanticError("Invalid column: %s", prop.c_str());
   }
   QueryExpressionContext dummy(nullptr);
@@ -481,7 +469,7 @@ StatusOr<Expression*> LookupValidator::checkConstExpr(Expression* expr,
 
   // Check prop type
   if (v.type() != SchemaUtil::propTypeToValueType(type)) {
-    // allow diffrent types in the IN expression, such as "abc" IN ["abc"]
+    // allow different types in the IN expression, such as "abc" IN ["abc"]
     if (!expr->isContainerExpr()) {
       return Status::SemanticError("Column type error : %s", prop.c_str());
     }

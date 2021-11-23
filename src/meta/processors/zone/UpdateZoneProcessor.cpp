@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/zone/UpdateZoneProcessor.h"
@@ -24,7 +23,7 @@ void AddHostIntoZoneProcessor::process(const cpp2::AddHostIntoZoneReq& req) {
     return;
   }
 
-  auto zoneKey = MetaServiceUtils::zoneKey(zoneName);
+  auto zoneKey = MetaKeyUtils::zoneKey(zoneName);
   auto zoneValueRet = doGet(std::move(zoneKey));
   if (!nebula::ok(zoneValueRet)) {
     auto retCode = nebula::error(zoneValueRet);
@@ -38,10 +37,10 @@ void AddHostIntoZoneProcessor::process(const cpp2::AddHostIntoZoneReq& req) {
     return;
   }
 
-  auto hosts = MetaServiceUtils::parseZoneHosts(std::move(nebula::value(zoneValueRet)));
+  auto hosts = MetaKeyUtils::parseZoneHosts(std::move(nebula::value(zoneValueRet)));
   auto host = req.get_node();
   // check this host not exist in all zones
-  const auto& prefix = MetaServiceUtils::zonePrefix();
+  const auto& prefix = MetaKeyUtils::zonePrefix();
   auto iterRet = doPrefix(prefix);
   if (!nebula::ok(iterRet)) {
     auto retCode = nebula::error(iterRet);
@@ -53,8 +52,8 @@ void AddHostIntoZoneProcessor::process(const cpp2::AddHostIntoZoneReq& req) {
 
   auto iter = nebula::value(iterRet).get();
   while (iter->valid()) {
-    auto name = MetaServiceUtils::parseZoneName(iter->key());
-    auto zoneHosts = MetaServiceUtils::parseZoneHosts(iter->val());
+    auto name = MetaKeyUtils::parseZoneName(iter->key());
+    auto zoneHosts = MetaKeyUtils::parseZoneHosts(iter->val());
     auto hostIter = std::find(zoneHosts.begin(), zoneHosts.end(), host);
     if (hostIter != zoneHosts.end()) {
       LOG(ERROR) << "Host overlap found in zone " << name;
@@ -85,7 +84,7 @@ void AddHostIntoZoneProcessor::process(const cpp2::AddHostIntoZoneReq& req) {
 
   hosts.emplace_back(host);
   std::vector<kvstore::KV> data;
-  data.emplace_back(std::move(zoneKey), MetaServiceUtils::zoneVal(std::move(hosts)));
+  data.emplace_back(std::move(zoneKey), MetaKeyUtils::zoneVal(std::move(hosts)));
   LOG(INFO) << "Add Host " << host << " Into Zone " << zoneName;
   doSyncPutAndUpdate(std::move(data));
 }
@@ -103,7 +102,7 @@ void DropHostFromZoneProcessor::process(const cpp2::DropHostFromZoneReq& req) {
     return;
   }
 
-  auto zoneKey = MetaServiceUtils::zoneKey(zoneName);
+  auto zoneKey = MetaKeyUtils::zoneKey(zoneName);
   auto zoneValueRet = doGet(std::move(zoneKey));
   if (!nebula::ok(zoneValueRet)) {
     auto retCode = nebula::error(zoneValueRet);
@@ -117,12 +116,12 @@ void DropHostFromZoneProcessor::process(const cpp2::DropHostFromZoneReq& req) {
     return;
   }
 
-  const auto& spacePrefix = MetaServiceUtils::spacePrefix();
+  const auto& spacePrefix = MetaKeyUtils::spacePrefix();
   auto spaceIterRet = doPrefix(spacePrefix);
   auto spaceIter = nebula::value(spaceIterRet).get();
   while (spaceIter->valid()) {
-    auto spaceId = MetaServiceUtils::spaceId(spaceIter->key());
-    auto spaceKey = MetaServiceUtils::spaceKey(spaceId);
+    auto spaceId = MetaKeyUtils::spaceId(spaceIter->key());
+    auto spaceKey = MetaKeyUtils::spaceKey(spaceId);
     auto ret = doGet(spaceKey);
     if (!nebula::ok(ret)) {
       auto retCode = nebula::error(ret);
@@ -133,17 +132,17 @@ void DropHostFromZoneProcessor::process(const cpp2::DropHostFromZoneReq& req) {
       return;
     }
 
-    auto properties = MetaServiceUtils::parseSpace(nebula::value(ret));
+    auto properties = MetaKeyUtils::parseSpace(nebula::value(ret));
     if (!properties.group_name_ref().has_value()) {
       spaceIter->next();
       continue;
     }
 
-    const auto& partPrefix = MetaServiceUtils::partPrefix(spaceId);
+    const auto& partPrefix = MetaKeyUtils::partPrefix(spaceId);
     auto partIterRet = doPrefix(partPrefix);
     auto partIter = nebula::value(partIterRet).get();
     while (partIter->valid()) {
-      auto partHosts = MetaServiceUtils::parsePartVal(partIter->val());
+      auto partHosts = MetaKeyUtils::parsePartVal(partIter->val());
       for (auto& h : partHosts) {
         if (h == req.get_node()) {
           LOG(ERROR) << h << " is related with partition";
@@ -157,7 +156,7 @@ void DropHostFromZoneProcessor::process(const cpp2::DropHostFromZoneReq& req) {
     spaceIter->next();
   }
 
-  auto hosts = MetaServiceUtils::parseZoneHosts(std::move(nebula::value(zoneValueRet)));
+  auto hosts = MetaKeyUtils::parseZoneHosts(std::move(nebula::value(zoneValueRet)));
   auto host = req.get_node();
   auto iter = std::find(hosts.begin(), hosts.end(), host);
   if (iter == hosts.end()) {
@@ -169,7 +168,7 @@ void DropHostFromZoneProcessor::process(const cpp2::DropHostFromZoneReq& req) {
 
   hosts.erase(iter);
   std::vector<kvstore::KV> data;
-  data.emplace_back(std::move(zoneKey), MetaServiceUtils::zoneVal(std::move(hosts)));
+  data.emplace_back(std::move(zoneKey), MetaKeyUtils::zoneVal(std::move(hosts)));
   LOG(INFO) << "Drop Host " << host << " From Zone " << zoneName;
   doSyncPutAndUpdate(std::move(data));
 }

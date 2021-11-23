@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <folly/stop_watch.h>
@@ -196,7 +195,7 @@ TEST_P(ScanEdgePropBench, ProcessEdgeProps) {
       ASSERT_TRUE(code.ok());
       result.mutableList().values.emplace_back(std::move(list));
     }
-    LOG(WARNING) << "ProcessEdgeProps reader reset with vector schmeas: process " << edgeRowCount
+    LOG(WARNING) << "ProcessEdgeProps reader reset with vector schemas: process " << edgeRowCount
                  << " edges takes " << watch.elapsed().count() << " us.";
   }
   {
@@ -246,7 +245,7 @@ TEST_P(ScanEdgePropBench, ProcessEdgeProps) {
       result.mutableList().values.emplace_back(std::move(list));
     }
     LOG(WARNING) << "ProcessEdgeProps only RowReaderV2 reset with vector "
-                    "schmeas: process "
+                    "schemas: process "
                  << edgeRowCount << " edges takes " << watch.elapsed().count() << " us.";
   }
 }

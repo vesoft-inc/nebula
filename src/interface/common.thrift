@@ -1,8 +1,7 @@
 /* vim: ft=proto
  * Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 
@@ -36,6 +35,7 @@ cpp_include "common/datatypes/GeographyOps-inl.h"
 
 const binary (cpp.type = "char const *") version = "2.6.0"
 
+typedef i64 (cpp.type = "nebula::ClusterID") ClusterID
 typedef i32 (cpp.type = "nebula::GraphSpaceID") GraphSpaceID
 typedef i32 (cpp.type = "nebula::PartitionID") PartitionID
 typedef i32 (cpp.type = "nebula::TagID") TagID
@@ -252,6 +252,40 @@ struct CheckpointInfo {
     2: binary                path,
 }
 
+// used for raft and drainer
+struct LogEntry {
+    1: ClusterID cluster;
+    2: binary log_str;
+}
+
+// These are all data types supported in the graph properties
+enum PropertyType {
+    UNKNOWN = 0,
+
+    // Simple types
+    BOOL = 1,
+    INT64 = 2,          // This is the same as INT in v1
+    VID = 3,            // Deprecated, only supported by v1
+    FLOAT = 4,
+    DOUBLE = 5,
+    STRING = 6,
+    // String with fixed length. If the string content is shorter
+    // than the given length, '\0' will be padded to the end
+    FIXED_STRING = 7,   // New in v2
+    INT8 = 8,           // New in v2
+    INT16 = 9,          // New in v2
+    INT32 = 10,         // New in v2
+
+    // Date time
+    TIMESTAMP = 21,
+    DATE = 24,
+    DATETIME = 25,
+    TIME = 26,
+
+    // Geo spatial
+    GEOGRAPHY = 31,
+} (cpp.enum_strict)
+
 /*
  * ErrorCode for graphd, metad, storaged,raftd
  * -1xxx for graphd
@@ -327,7 +361,7 @@ enum ErrorCode {
     E_BALANCED                        = -2024,
     E_NO_RUNNING_BALANCE_PLAN         = -2025,
     E_NO_VALID_HOST                   = -2026,
-    E_CORRUPTTED_BALANCE_PLAN         = -2027,
+    E_CORRUPTED_BALANCE_PLAN          = -2027,
     E_NO_INVALID_BALANCE_PLAN         = -2028,
 
 

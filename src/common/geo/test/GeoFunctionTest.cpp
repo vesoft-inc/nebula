@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -1096,6 +1095,16 @@ TEST(isValid, lineString) {
     bool b = line.isValid();
     EXPECT_EQ(false, b);
   }
+  {
+    auto line = Geography::fromWKT("LINESTRING(1.0 1.0, 181.0 2.0)").value();
+    bool b = line.isValid();
+    EXPECT_EQ(false, b);
+  }
+  {
+    auto line = Geography::fromWKT("LINESTRING(1.0 1.0, 1.0 90.001)").value();
+    bool b = line.isValid();
+    EXPECT_EQ(false, b);
+  }
 }
 
 TEST(isValid, polygon) {
@@ -1153,6 +1162,17 @@ TEST(isValid, polygon) {
   //   bool b = polygon.isValid();
   //   EXPECT_EQ(false, b);  // Expect false, got true
   // }
+  {
+    auto polygon =
+        Geography::fromWKT("POLYGON((1.0 1.0, -180.0001 2.0, 0.0 2.0, 1.0 1.0))").value();
+    bool b = polygon.isValid();
+    EXPECT_EQ(false, b);
+  }
+  {
+    auto polygon = Geography::fromWKT("POLYGON((1.0 1.0, 2.0 2.0, 0.0 -90.001, 1.0 1.0))").value();
+    bool b = polygon.isValid();
+    EXPECT_EQ(false, b);
+  }
 }
 
 }  // namespace geo

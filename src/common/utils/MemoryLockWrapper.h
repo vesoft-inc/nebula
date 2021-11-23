@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #pragma once
@@ -69,7 +68,7 @@ class MemoryLockGuard {
   }
 
   // this will manual set the lock to unlocked state
-  // which mean will not release all locks automaticly
+  // which mean will not release all locks automatically
   // please make sure you really know the side effect
   void forceLock() { locked_ = true; }
 

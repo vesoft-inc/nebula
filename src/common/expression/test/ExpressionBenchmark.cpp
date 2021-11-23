@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <folly/Benchmark.h>
@@ -198,7 +197,7 @@ getEdgeProp(ger_edge_prop_int)                              51.88ns   19.27M
 getEdgeProp(ger_edge_prop_string)                           88.41ns   11.31M
 ============================================================================
 
-The latest(2020/07/13) vesion of the implementation of expressions,
+The latest(2020/07/13) version of the implementation of expressions,
 which return Value for getting edge props and src props in ExpressionContext.
 ============================================================================
 ExpressionBenchmark.cpprelative                           time/iter  iters/s

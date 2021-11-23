@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/validator/GoValidator.h"
@@ -115,27 +114,13 @@ Status GoValidator::validateTruncate(TruncateClause* truncate) {
 }
 
 Status GoValidator::validateYield(YieldClause* yield) {
+  if (yield == nullptr) {
+    return Status::SemanticError("Missing yield clause.");
+  }
   goCtx_->distinct = yield->isDistinct();
-  const auto& over = goCtx_->over;
-  auto* pool = qctx_->objPool();
   auto& exprProps = goCtx_->exprProps;
 
-  auto cols = yield->columns();
-  if (cols.empty() && over.isOverAll) {
-    DCHECK(!over.allEdges.empty());
-    auto* newCols = pool->add(new YieldColumns());
-    for (const auto& e : over.allEdges) {
-      auto* col = new YieldColumn(EdgeDstIdExpression::make(pool, e));
-      newCols->addColumn(col);
-      outputs_.emplace_back(col->name(), vidType_);
-      NG_RETURN_IF_ERROR(deduceProps(col->expr(), exprProps));
-    }
-    goCtx_->yieldExpr = newCols;
-    goCtx_->colNames = getOutColNames();
-    return Status::OK();
-  }
-
-  for (auto col : cols) {
+  for (auto col : yield->columns()) {
     if (ExpressionUtils::hasAny(col->expr(),
                                 {Expression::Kind::kAggregate, Expression::Kind::kPathBuild})) {
       return Status::SemanticError("`%s' is not support in go sentence.", col->toString().c_str());
@@ -169,6 +154,7 @@ Status GoValidator::validateYield(YieldClause* yield) {
     NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps));
   }
 
+  const auto& over = goCtx_->over;
   for (const auto& e : exprProps.edgeProps()) {
     auto found = std::find(over.edgeTypes.begin(), over.edgeTypes.end(), e.first);
     if (found == over.edgeTypes.end()) {

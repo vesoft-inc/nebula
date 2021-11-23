@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/service/QueryEngine.h"
@@ -33,7 +32,7 @@ Status QueryEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor
   storage_ = std::make_unique<storage::GraphStorageClient>(ioExecutor, metaClient_);
   charsetInfo_ = CharsetInfo::instance();
 
-  PlannersRegister::registPlanners();
+  PlannersRegister::registerPlanners();
 
   std::vector<const opt::RuleSet*> rulesets{&opt::RuleSet::DefaultRules()};
   if (FLAGS_enable_optimizer) {
@@ -71,7 +70,8 @@ Status QueryEngine::setupMemoryMonitorThread() {
   // Just to test whether to get the right memory info
   NG_RETURN_IF_ERROR(updateMemoryWatermark());
 
-  memoryMonitorThread_->addRepeatTask(FLAGS_check_memory_interval_in_secs, updateMemoryWatermark);
+  auto ms = FLAGS_check_memory_interval_in_secs * 1000;
+  memoryMonitorThread_->addRepeatTask(ms, updateMemoryWatermark);
 
   return Status::OK();
 }

@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <folly/Benchmark.h>
@@ -18,7 +17,7 @@ using nebula::RowReaderWrapper;
 using nebula::RowWriterV1;
 using nebula::RowWriterV2;
 using nebula::SchemaWriter;
-using nebula::meta::cpp2::PropertyType;
+using nebula::cpp2::PropertyType;
 
 SchemaWriter schemaShort;
 SchemaWriter schemaLong;
@@ -153,7 +152,7 @@ void randomTest(SchemaWriter* schema,
 }
 
 /*************************
- * Begining of Tests
+ * Beginning of Tests
  ************************/
 TEST(RowReader, SequentialShort) { sequentialTest(&schemaShort, dataShortV1, dataShortV2); }
 
@@ -167,7 +166,7 @@ TEST(RowReader, RandomLong) { randomTest(&schemaLong, dataLongV1, dataLongV2, lo
  ************************/
 
 /*************************
- * Begining of benchmarks
+ * Beginning of benchmarks
  ************************/
 BENCHMARK(seq_read_short_v1, iters) { sequentialRead(&schemaShort, dataShortV1, iters); }
 BENCHMARK_RELATIVE(seq_read_short_v2, iters) { sequentialRead(&schemaShort, dataShortV2, iters); }

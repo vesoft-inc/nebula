@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_GRAPH_RESPONSE_H
@@ -83,7 +82,7 @@
   X(E_BALANCED, -2024)                                                        \
   X(E_NO_RUNNING_BALANCE_PLAN, -2025)                                         \
   X(E_NO_VALID_HOST, -2026)                                                   \
-  X(E_CORRUPTTED_BALANCE_PLAN, -2027)                                         \
+  X(E_CORRUPTED_BALANCE_PLAN, -2027)                                          \
   X(E_NO_INVALID_BALANCE_PLAN, -2028)                                         \
                                                                               \
   /* Authentication Failure */                                                \

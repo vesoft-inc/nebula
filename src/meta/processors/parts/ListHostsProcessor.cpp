@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/parts/ListHostsProcessor.h"
@@ -69,7 +68,7 @@ void ListHostsProcessor::process(const cpp2::ListHostsReq& req) {
  * now(2020-04-29), assume all metad have same gitInfoSHA
  * this will change if some day
  * meta.thrift support interface like getHostStatus()
- * which return a bunch of host infomation
+ * which return a bunch of host information
  * it's not necessary add this interface only for gitInfoSHA
  * */
 nebula::cpp2::ErrorCode ListHostsProcessor::allMetaHostsStatus() {
@@ -80,7 +79,7 @@ nebula::cpp2::ErrorCode ListHostsProcessor::allMetaHostsStatus() {
     return retCode;
   }
   auto metaPeers = nebula::value(errOrPart)->peers();
-  // transform raft port to servre port
+  // transform raft port to severe port
   for (auto& metaHost : metaPeers) {
     metaHost = Utils::getStoreAddrFromRaftAddr(metaHost);
   }
@@ -100,7 +99,7 @@ nebula::cpp2::ErrorCode ListHostsProcessor::allHostsWithStatus(cpp2::HostRole ro
   if (role == cpp2::HostRole::META) {
     return allMetaHostsStatus();
   }
-  const auto& hostPrefix = MetaServiceUtils::hostPrefix();
+  const auto& hostPrefix = MetaKeyUtils::hostPrefix();
   auto ret = doPrefix(hostPrefix);
   if (!nebula::ok(ret)) {
     auto retCode = nebula::error(ret);
@@ -120,7 +119,7 @@ nebula::cpp2::ErrorCode ListHostsProcessor::allHostsWithStatus(cpp2::HostRole ro
     }
 
     cpp2::HostItem item;
-    auto host = MetaServiceUtils::parseHostKey(iter->key());
+    auto host = MetaKeyUtils::parseHostKey(iter->key());
     item.set_hostAddr(std::move(host));
 
     item.set_role(info.role_);
@@ -161,7 +160,7 @@ nebula::cpp2::ErrorCode ListHostsProcessor::fillLeaders() {
   }
   auto activeHosts = nebula::value(activeHostsRet);
 
-  const auto& prefix = MetaServiceUtils::leaderPrefix();
+  const auto& prefix = MetaKeyUtils::leaderPrefix();
   auto iterRet = doPrefix(prefix);
   if (!nebula::ok(iterRet)) {
     retCode = nebula::error(iterRet);
@@ -181,7 +180,7 @@ nebula::cpp2::ErrorCode ListHostsProcessor::fillLeaders() {
   nebula::cpp2::ErrorCode code;
   std::vector<std::string> removeLeadersKey;
   for (; iter->valid(); iter->next()) {
-    auto spaceIdAndPartId = MetaServiceUtils::parseLeaderKeyV3(iter->key());
+    auto spaceIdAndPartId = MetaKeyUtils::parseLeaderKeyV3(iter->key());
     VLOG(1) << "show hosts: space = " << spaceIdAndPartId.first
             << ", part = " << spaceIdAndPartId.second;
     // If the space in the leader key don't exist, remove leader key
@@ -192,7 +191,7 @@ nebula::cpp2::ErrorCode ListHostsProcessor::fillLeaders() {
       continue;
     }
 
-    std::tie(host, term, code) = MetaServiceUtils::parseLeaderValV3(iter->val());
+    std::tie(host, term, code) = MetaKeyUtils::parseLeaderValV3(iter->val());
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
       continue;
     }
@@ -226,7 +225,7 @@ nebula::cpp2::ErrorCode ListHostsProcessor::fillAllParts() {
     // get space name by space id
     const auto& spaceName = spaceIdNameMap_[spaceId];
 
-    const auto& partPrefix = MetaServiceUtils::partPrefix(spaceId);
+    const auto& partPrefix = MetaKeyUtils::partPrefix(spaceId);
     auto iterPartRet = doPrefix(partPrefix);
     if (!nebula::ok(iterPartRet)) {
       auto retCode = nebula::error(iterPartRet);
@@ -238,8 +237,8 @@ nebula::cpp2::ErrorCode ListHostsProcessor::fillAllParts() {
     auto partIter = nebula::value(iterPartRet).get();
     std::unordered_map<HostAddr, std::vector<PartitionID>> hostParts;
     while (partIter->valid()) {
-      PartitionID partId = MetaServiceUtils::parsePartKeyPartId(partIter->key());
-      auto partHosts = MetaServiceUtils::parsePartVal(partIter->val());
+      PartitionID partId = MetaKeyUtils::parsePartKeyPartId(partIter->key());
+      auto partHosts = MetaKeyUtils::parsePartVal(partIter->val());
       for (auto& host : partHosts) {
         hostParts[host].emplace_back(partId);
       }
@@ -296,7 +295,7 @@ void ListHostsProcessor::removeInvalidLeaders(std::vector<std::string>&& removeL
 
 nebula::cpp2::ErrorCode ListHostsProcessor::getSpaceIdNameMap() {
   // Get all spaces
-  const auto& spacePrefix = MetaServiceUtils::spacePrefix();
+  const auto& spacePrefix = MetaKeyUtils::spacePrefix();
   auto iterRet = doPrefix(spacePrefix);
   if (!nebula::ok(iterRet)) {
     auto retCode = nebula::error(iterRet);
@@ -309,9 +308,9 @@ nebula::cpp2::ErrorCode ListHostsProcessor::getSpaceIdNameMap() {
 
   auto iter = nebula::value(iterRet).get();
   while (iter->valid()) {
-    auto spaceId = MetaServiceUtils::spaceId(iter->key());
+    auto spaceId = MetaKeyUtils::spaceId(iter->key());
     spaceIds_.emplace_back(spaceId);
-    spaceIdNameMap_.emplace(spaceId, MetaServiceUtils::spaceName(iter->val()));
+    spaceIdNameMap_.emplace(spaceId, MetaKeyUtils::spaceName(iter->val()));
     iter->next();
   }
   return nebula::cpp2::ErrorCode::SUCCEEDED;

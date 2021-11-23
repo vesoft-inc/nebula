@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/validator/test/ValidatorTestBase.h"
@@ -202,13 +201,13 @@ TEST_F(MutateValidatorTest, UpdateEdgeTest) {
     auto cmd = "UPDATE EDGE ON study \"Tom\"->\"Lily\" SET count = 1";
     ASSERT_FALSE(checkResult(cmd, {}));
   }
-  // Wrong expr "$^.peson.age"
+  // Wrong expr "$^.person_.age"
   {
     auto cmd =
         "UPDATE EDGE \"Tom\"->\"Lily\" OF like "
         "SET end = like.end + 1 "
-        "WHEN $^.peson.age >= 18 "
-        "YIELD $^.peson.age AS age, like.end AS end";
+        "WHEN $^.person_.age >= 18 "
+        "YIELD $^.person_.age AS age, like.end AS end";
     ASSERT_FALSE(checkResult(cmd, {}));
   }
   // 1.0 syntax succeed

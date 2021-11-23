@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_SERVICE_QUERYENGINE_H_
@@ -39,7 +38,7 @@ class QueryEngine final : public cpp::NonCopyable, public cpp::NonMovable {
   using RequestContextPtr = std::unique_ptr<RequestContext<ExecutionResponse>>;
   void execute(RequestContextPtr rctx);
 
-  const meta::MetaClient* metaClient() const { return metaClient_; }
+  meta::MetaClient* metaClient() { return metaClient_; }
 
  private:
   Status setupMemoryMonitorThread();

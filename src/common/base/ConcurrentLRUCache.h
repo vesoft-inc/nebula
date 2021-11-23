@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_BASE_CONCURRENTLRUCACHE_H_
@@ -160,7 +159,7 @@ class ConcurrentLRUCache final {
 /**
     It is copied from boost::compute::detail::LRU.
     The differences:
-    1. Add methed evict(const K& key);
+    1. Add method evict(const K& key);
     2. Instead std::map with std::unordered_map
     3. Update the code style.
     4. Add stats

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "kvstore/plugins/elasticsearch/ESListener.h"
@@ -46,7 +45,7 @@ void ESListener::init() {
 bool ESListener::apply(const std::vector<KV>& data) {
   std::vector<nebula::plugin::DocItem> docItems;
   for (const auto& kv : data) {
-    if (!nebula::NebulaKeyUtils::isVertex(vIdLen_, kv.first) &&
+    if (!nebula::NebulaKeyUtils::isTag(vIdLen_, kv.first) &&
         !nebula::NebulaKeyUtils::isEdge(vIdLen_, kv.first)) {
       continue;
     }
@@ -76,7 +75,7 @@ bool ESListener::persist(LogID lastId, TermID lastTerm, LogID lastApplyLogId) {
 
 std::pair<LogID, TermID> ESListener::lastCommittedLogId() {
   if (access(lastApplyLogFile_->c_str(), 0) != 0) {
-    VLOG(3) << "Invalid or non-existent file : " << *lastApplyLogFile_;
+    VLOG(3) << "Invalid or nonexistent file : " << *lastApplyLogFile_;
     return {0, 0};
   }
   int32_t fd = open(lastApplyLogFile_->c_str(), O_RDONLY);
@@ -99,7 +98,7 @@ std::pair<LogID, TermID> ESListener::lastCommittedLogId() {
 
 LogID ESListener::lastApplyLogId() {
   if (access(lastApplyLogFile_->c_str(), 0) != 0) {
-    VLOG(3) << "Invalid or non-existent file : " << *lastApplyLogFile_;
+    VLOG(3) << "Invalid or nonexistent file : " << *lastApplyLogFile_;
     return 0;
   }
   int32_t fd = open(lastApplyLogFile_->c_str(), O_RDONLY);

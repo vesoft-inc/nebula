@@ -1,7 +1,6 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Push Limit down rule
 
   Background:
@@ -10,7 +9,7 @@ Feature: Push Limit down rule
   Scenario: push limit down to GetNeighbors
     When profiling query:
       """
-      GO 1 STEPS FROM "James Harden" OVER like REVERSELY |
+      GO 1 STEPS FROM "James Harden" OVER like REVERSELY YIELD like._dst |
       Limit 2
       """
     Then the result should be, in any order:

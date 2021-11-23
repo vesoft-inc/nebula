@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_VISITOR_FOLDCONSTANTEXPRVISITOR_H_
@@ -80,7 +79,7 @@ class FoldConstantExprVisitor final : public ExprVisitor {
   Expression *fold(Expression *expr);
 
  private:
-  // Obejct pool used to manage expressions generated during visiting
+  // Object pool used to manage expressions generated during visiting
   ObjectPool *pool_;
   bool canBeFolded_{false};
   Status status_;

@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/schema/DropTagProcessor.h"
@@ -18,7 +17,7 @@ void DropTagProcessor::process(const cpp2::DropTagReq& req) {
   auto tagName = req.get_tag_name();
 
   TagID tagId;
-  auto indexKey = MetaServiceUtils::indexTagKey(spaceId, tagName);
+  auto indexKey = MetaKeyUtils::indexTagKey(spaceId, tagName);
   auto iRet = doGet(indexKey);
   if (nebula::ok(iRet)) {
     tagId = *reinterpret_cast<const TagID*>(nebula::value(iRet).c_str());
@@ -85,7 +84,7 @@ void DropTagProcessor::process(const cpp2::DropTagReq& req) {
 ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>> DropTagProcessor::getTagKeys(
     GraphSpaceID id, TagID tagId) {
   std::vector<std::string> keys;
-  auto key = MetaServiceUtils::schemaTagPrefix(id, tagId);
+  auto key = MetaKeyUtils::schemaTagPrefix(id, tagId);
   auto iterRet = doPrefix(key);
   if (!nebula::ok(iterRet)) {
     LOG(ERROR) << "Tag schema prefix failed, tag id " << tagId;

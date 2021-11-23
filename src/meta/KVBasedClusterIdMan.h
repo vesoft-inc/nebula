@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_CLUSTERIDMAN_H_
@@ -52,7 +51,7 @@ class ClusterIdMan {
       ::close(fd);
       return false;
     }
-    LOG(INFO) << "Persiste clusterId " << clusterId << " succeeded!";
+    LOG(INFO) << "Persist clusterId " << clusterId << " succeeded!";
     ::close(fd);
     return true;
   }

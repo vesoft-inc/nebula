@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef CODEC_ROWWRITERV2_H_
@@ -36,7 +35,7 @@ enum class WriteResult {
   Version 1:
                  v v v 0 0 b b b
     In version 1, the middle two bits are always zeros. The left three bits
-    indicats the number of bytes used for the schema version, while the right
+    indicates the number of bytes used for the schema version, while the right
     three bits indicates the number of bytes used for the block offsets
 
   Version 2:
@@ -145,7 +144,7 @@ class RowWriterV2 {
   const meta::SchemaProviderIf* schema_;
   std::string buf_;
   std::vector<bool> isSet_;
-  // Ther number of bytes ocupied by header and the schema version
+  // The number of bytes occupied by header and the schema version
   size_t headerLen_;
   size_t numNullBytes_;
   size_t approxStrLen_;

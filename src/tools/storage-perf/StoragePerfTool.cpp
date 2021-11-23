@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <folly/TokenBucket.h>
@@ -81,7 +80,7 @@ class Perf {
       nebula::meta::cpp2::Schema schema;
       nebula::meta::cpp2::ColumnDef column;
       column.name = "col_1";
-      column.type.set_type(meta::cpp2::PropertyType::STRING);
+      column.type.set_type(nebula::cpp2::PropertyType::STRING);
       (*schema.columns_ref()).emplace_back(std::move(column));
       auto ret = mClient_->createTagSchema(spaceId_, FLAGS_tag_name, schema).get();
       if (!ret.ok()) {
@@ -109,7 +108,7 @@ class Perf {
       nebula::meta::cpp2::Schema schema;
       nebula::meta::cpp2::ColumnDef column;
       column.name = "col_1";
-      column.type.set_type(meta::cpp2::PropertyType::STRING);
+      column.type.set_type(nebula::cpp2::PropertyType::STRING);
       (*schema.columns_ref()).emplace_back(std::move(column));
       auto ret = mClient_->createEdgeSchema(spaceId_, FLAGS_edge_name, schema).get();
       if (!ret.ok()) {
@@ -314,7 +313,7 @@ class Perf {
             if (!resps.succeeded()) {
               LOG(ERROR) << "Request failed!";
             } else {
-              VLOG(3) << "request successed!";
+              VLOG(3) << "request succeeded!";
             }
             this->finishedRequests_++;
             auto now = time::WallClock::fastNowInMicroSec();
@@ -343,7 +342,7 @@ class Perf {
                            << apache::thrift::util::enumNameSafe(entry.second);
               }
             } else {
-              VLOG(1) << "request successed!";
+              VLOG(1) << "request succeeded!";
             }
             this->finishedRequests_++;
             auto now = time::WallClock::fastNowInMicroSec();
@@ -369,7 +368,7 @@ class Perf {
             if (!resps.succeeded()) {
               LOG(ERROR) << "Request failed!";
             } else {
-              VLOG(3) << "request successed!";
+              VLOG(3) << "request succeeded!";
             }
             this->finishedRequests_++;
             auto now = time::WallClock::fastNowInMicroSec();
@@ -402,7 +401,7 @@ class Perf {
           if (!resps.succeeded()) {
             LOG(ERROR) << "Request failed!";
           } else {
-            VLOG(3) << "request successed!";
+            VLOG(3) << "request succeeded!";
           }
           this->finishedRequests_++;
           auto now = time::WallClock::fastNowInMicroSec();
@@ -427,7 +426,7 @@ class Perf {
           if (!resps.succeeded()) {
             LOG(ERROR) << "Request failed!";
           } else {
-            VLOG(3) << "request successed!";
+            VLOG(3) << "request succeeded!";
           }
           this->finishedRequests_++;
           auto now = time::WallClock::fastNowInMicroSec();

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #include <gtest/gtest.h>
 
@@ -669,7 +668,7 @@ TEST(QueryVertexPropsTest, PrefixBloomFilterTest) {
   for (const auto& vId : vertices) {
     PartitionID partId = (hash(vId) % totalParts) + 1;
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto prefix = NebulaKeyUtils::vertexPrefix(vIdLen, partId, vId, player);
+    auto prefix = NebulaKeyUtils::tagPrefix(vIdLen, partId, vId, player);
     auto code = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
     ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);
   }

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "FunctionManager.h"
@@ -56,7 +55,9 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
       TypeSignature({Value::Type::FLOAT}, Value::Type::FLOAT)}},
     {"round",
      {TypeSignature({Value::Type::INT}, Value::Type::FLOAT),
-      TypeSignature({Value::Type::FLOAT}, Value::Type::FLOAT)}},
+      TypeSignature({Value::Type::INT, Value::Type::INT}, Value::Type::FLOAT),
+      TypeSignature({Value::Type::FLOAT}, Value::Type::FLOAT),
+      TypeSignature({Value::Type::FLOAT, Value::Type::INT}, Value::Type::FLOAT)}},
     {"sqrt",
      {TypeSignature({Value::Type::INT}, Value::Type::FLOAT),
       TypeSignature({Value::Type::FLOAT}, Value::Type::FLOAT)}},
@@ -368,11 +369,16 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
      {
          TypeSignature({Value::Type::GEOGRAPHY, Value::Type::GEOGRAPHY, Value::Type::FLOAT},
                        Value::Type::BOOL),
+         TypeSignature({Value::Type::GEOGRAPHY, Value::Type::GEOGRAPHY, Value::Type::INT},
+                       Value::Type::BOOL),
          TypeSignature({Value::Type::GEOGRAPHY,
                         Value::Type::GEOGRAPHY,
                         Value::Type::FLOAT,
                         Value::Type::BOOL},
                        Value::Type::BOOL),
+         TypeSignature(
+             {Value::Type::GEOGRAPHY, Value::Type::GEOGRAPHY, Value::Type::INT, Value::Type::BOOL},
+             Value::Type::BOOL),
      }},
     // geo measures
     {"st_distance",
@@ -407,6 +413,7 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
                         Value::Type::FLOAT},
                        Value::Type::LIST),
      }},
+    {"is_edge", {TypeSignature({Value::Type::EDGE}, Value::Type::BOOL)}},
 };
 
 // static
@@ -535,17 +542,23 @@ FunctionManager::FunctionManager() {
     // to nearest integral (as a floating-point value)
     auto &attr = functions_["round"];
     attr.minArity_ = 1;
-    attr.maxArity_ = 1;
+    attr.maxArity_ = 2;
     attr.isPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       switch (args[0].get().type()) {
         case Value::Type::NULLVALUE: {
           return Value::kNullValue;
         }
-        case Value::Type::INT: {
-          return std::round(args[0].get().getInt());
-        }
+        case Value::Type::INT:
         case Value::Type::FLOAT: {
+          if (args.size() == 2) {
+            if (args[1].get().type() == Value::Type::INT) {
+              auto decimal = args[1].get().getInt();
+              return std::round(args[0].get().getFloat() * pow(10, decimal)) / pow(10, decimal);
+            } else {
+              return Value::kNullBadType;
+            }
+          }
           return std::round(args[0].get().getFloat());
         }
         default: {
@@ -793,7 +806,7 @@ FunctionManager::FunctionManager() {
     };
   }
   {
-    // return the mathmatical constant PI
+    // return the mathematical constant PI
     auto &attr = functions_["pi"];
     attr.minArity_ = 0;
     attr.maxArity_ = 0;
@@ -1631,7 +1644,7 @@ FunctionManager::FunctionManager() {
   }
   {
     auto &attr = functions_["date"];
-    // 0 for corrent time
+    // 0 for current time
     // 1 for string or map
     attr.minArity_ = 0;
     attr.maxArity_ = 1;
@@ -1703,7 +1716,7 @@ FunctionManager::FunctionManager() {
   }
   {
     auto &attr = functions_["datetime"];
-    // 0 for corrent time
+    // 0 for current time
     // 1 for string or map
     attr.minArity_ = 0;
     attr.maxArity_ = 1;
@@ -1926,6 +1939,41 @@ FunctionManager::FunctionManager() {
         case Value::Type::EDGE: {
           const auto &edge = args[0].get().getEdge();
           return edge.type > 0 ? edge.dst : edge.src;
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
+    };
+  }
+  {
+    auto &attr = functions_["none_direct_dst"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isPure_ = true;
+    attr.body_ = [](const auto &args) -> Value {
+      switch (args[0].get().type()) {
+        case Value::Type::NULLVALUE: {
+          return Value::kNullValue;
+        }
+        case Value::Type::EDGE: {
+          const auto &edge = args[0].get().getEdge();
+          return edge.dst;
+        }
+        case Value::Type::VERTEX: {
+          const auto &v = args[0].get().getVertex();
+          return v.vid;
+        }
+        case Value::Type::LIST: {
+          const auto &listVal = args[0].get().getList();
+          auto &lastVal = listVal.values.back();
+          if (lastVal.isEdge()) {
+            return lastVal.getEdge().dst;
+          } else if (lastVal.isVertex()) {
+            return lastVal.getVertex().vid;
+          } else {
+            return Value::kNullBadType;
+          }
         }
         default: {
           return Value::kNullBadType;
@@ -2497,7 +2545,7 @@ FunctionManager::FunctionManager() {
     attr.isPure_ = true;
     attr.body_ = [](const auto &args) -> Value {
       if (!args[0].get().isGeography() || !args[1].get().isGeography() ||
-          !args[2].get().isFloat()) {
+          !args[2].get().isNumeric()) {
         return Value::kNullBadType;
       }
       bool exclusive = false;
@@ -2507,10 +2555,11 @@ FunctionManager::FunctionManager() {
         }
         exclusive = args[3].get().getBool();
       }
-      return geo::GeoFunction::dWithin(args[0].get().getGeography(),
-                                       args[1].get().getGeography(),
-                                       args[2].get().getFloat(),
-                                       exclusive);
+      return geo::GeoFunction::dWithin(
+          args[0].get().getGeography(),
+          args[1].get().getGeography(),
+          args[2].get().isFloat() ? args[2].get().getFloat() : args[2].get().getInt(),
+          exclusive);
     };
   }
   // geo measures
@@ -2622,6 +2671,13 @@ FunctionManager::FunctionManager() {
       }
       return List(vals);
     };
+  }
+  {
+    auto &attr = functions_["is_edge"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 1;
+    attr.isPure_ = true;
+    attr.body_ = [](const auto &args) -> Value { return args[0].get().isEdge(); };
   }
 }  // NOLINT
 

@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -82,7 +81,7 @@ TEST_F(WKBTest, TestWKB) {
     LineString v(std::vector<Coordinate>{Coordinate(26.4, 78.9), Coordinate(138.725, 91.0)});
     auto result = read(v);
     ASSERT_TRUE(result.ok()) << result.status();
-    EXPECT_EQ(true, v.isValid());
+    EXPECT_EQ(false, v.isValid());
   }
   {
     LineString v(std::vector<Coordinate>{Coordinate(0, 1), Coordinate(2, 3), Coordinate(0, 1)});

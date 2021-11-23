@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_QUERY_QUERYBASEPROCESSOR_H_
@@ -97,7 +96,7 @@ struct PropContext {
 
 struct TagContext {
   std::vector<std::pair<TagID, std::vector<PropContext>>> propContexts_;
-  // indicates whether TagID is in propContxts_
+  // indicates whether TagID is in propContexts_
   std::unordered_map<TagID, size_t> indexMap_;
   // tagId -> tagName
   std::unordered_map<TagID, std::string> tagNames_;
@@ -111,7 +110,7 @@ struct TagContext {
 struct EdgeContext {
   // propContexts_, indexMap_, edgeNames_ will contain both +/- edges
   std::vector<std::pair<EdgeType, std::vector<PropContext>>> propContexts_;
-  // indicates whether EdgeType is in propContxts_
+  // indicates whether EdgeType is in propContexts_
   std::unordered_map<EdgeType, size_t> indexMap_;
   // EdgeType -> edgeName
   std::unordered_map<EdgeType, std::string> edgeNames_;

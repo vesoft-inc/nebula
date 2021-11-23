@@ -1,8 +1,7 @@
 
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/planner/plan/Admin.h"
@@ -154,18 +153,6 @@ std::unique_ptr<PlanNodeDescription> SubmitJob::explain() const {
   addDescription("operation", apache::thrift::util::enumNameSafe(op_), desc.get());
   addDescription("command", apache::thrift::util::enumNameSafe(cmd_), desc.get());
   addDescription("parameters", folly::toJson(util::toJson(params_)), desc.get());
-  return desc;
-}
-
-std::unique_ptr<PlanNodeDescription> Balance::explain() const {
-  auto desc = SingleDependencyNode::explain();
-  addDescription("deleteHosts", folly::toJson(util::toJson(deleteHosts_)), desc.get());
-  return desc;
-}
-
-std::unique_ptr<PlanNodeDescription> ShowBalance::explain() const {
-  auto desc = SingleDependencyNode::explain();
-  addDescription("balanceId", util::toJson(id_), desc.get());
   return desc;
 }
 

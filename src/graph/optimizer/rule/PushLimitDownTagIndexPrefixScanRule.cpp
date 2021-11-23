@@ -1,22 +1,14 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/optimizer/rule/PushLimitDownTagIndexPrefixScanRule.h"
 
-#include "common/expression/BinaryExpression.h"
-#include "common/expression/ConstantExpression.h"
-#include "common/expression/Expression.h"
-#include "common/expression/FunctionCallExpression.h"
-#include "common/expression/LogicalExpression.h"
-#include "common/expression/UnaryExpression.h"
 #include "graph/optimizer/OptContext.h"
 #include "graph/optimizer/OptGroup.h"
 #include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Scan.h"
-#include "graph/visitor/ExtractFilterExprVisitor.h"
 
 using nebula::graph::Limit;
 using nebula::graph::PlanNode;

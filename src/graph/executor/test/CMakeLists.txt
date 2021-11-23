@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 SET(EXEC_QUERY_TEST_OBJS
     $<TARGET_OBJECTS:expression_obj>
@@ -42,6 +41,7 @@ SET(EXEC_QUERY_TEST_OBJS
     $<TARGET_OBJECTS:parser_obj>
     $<TARGET_OBJECTS:validator_obj>
     $<TARGET_OBJECTS:planner_obj>
+    $<TARGET_OBJECTS:plan_obj>
     $<TARGET_OBJECTS:scheduler_obj>
     $<TARGET_OBJECTS:executor_obj>
     $<TARGET_OBJECTS:util_obj>

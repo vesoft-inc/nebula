@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_PLANNER_PLANNERREGISTER_H_
@@ -15,12 +14,12 @@ class PlannersRegister final {
   PlannersRegister() = delete;
   ~PlannersRegister() = delete;
 
-  static void registPlanners();
+  static void registerPlanners();
 
  private:
-  static void registDDL();
-  static void registSequential();
-  static void registMatch();
+  static void registerDDL();
+  static void registerSequential();
+  static void registerMatch();
 };
 
 }  // namespace graph

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #pragma once
@@ -31,6 +30,8 @@ enum class GeoShape : uint32_t {
   LINESTRING = 2,
   POLYGON = 3,
 };
+
+std::ostream& operator<<(std::ostream& os, const GeoShape& shape);
 
 // clang-format off
 /*

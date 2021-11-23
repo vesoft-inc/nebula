@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/config/ListConfigsProcessor.h"
@@ -12,7 +11,7 @@ namespace meta {
 void ListConfigsProcessor::process(const cpp2::ListConfigsReq& req) {
   folly::SharedMutex::ReadHolder rHolder(LockUtils::configLock());
 
-  const auto& prefix = MetaServiceUtils::configKeyPrefix(req.get_module());
+  const auto& prefix = MetaKeyUtils::configKeyPrefix(req.get_module());
   auto iterRet = doPrefix(prefix);
   if (!nebula::ok(iterRet)) {
     auto retCode = nebula::error(iterRet);
@@ -27,8 +26,8 @@ void ListConfigsProcessor::process(const cpp2::ListConfigsReq& req) {
   while (iter->valid()) {
     auto key = iter->key();
     auto value = iter->val();
-    auto item = MetaServiceUtils::parseConfigValue(value);
-    auto configName = MetaServiceUtils::parseConfigKey(key);
+    auto item = MetaKeyUtils::parseConfigValue(value);
+    auto configName = MetaKeyUtils::parseConfigKey(key);
     item.set_module(configName.first);
     item.set_name(configName.second);
     items.emplace_back(std::move(item));

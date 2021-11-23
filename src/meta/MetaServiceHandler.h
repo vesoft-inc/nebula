@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_METASERVICEHANDLER_H_
@@ -154,10 +153,6 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
    * HeartBeat
    * */
   folly::Future<cpp2::HBResp> future_heartBeat(const cpp2::HBReq& req) override;
-
-  folly::Future<cpp2::BalanceResp> future_balance(const cpp2::BalanceReq& req) override;
-
-  folly::Future<cpp2::ExecResp> future_leaderBalance(const cpp2::LeaderBalanceReq& req) override;
 
   folly::Future<cpp2::ExecResp> future_regConfig(const cpp2::RegConfigReq& req) override;
 

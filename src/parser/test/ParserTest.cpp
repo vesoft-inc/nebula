@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -1370,20 +1369,6 @@ TEST_F(ParserTest, Lookup) {
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
-  {
-    std::string query =
-        "LOOKUP ON transfer WHERE transfer.amount > 1000 YIELD transfer.amount,"
-        " transfer.test LIMIT 1";
-    auto result = parse(query);
-    EXPECT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query =
-        "LOOKUP ON transfer WHERE transfer.amount > 1000 YIELD transfer.amount,"
-        " transfer.test LIMIT -1";
-    auto result = parse(query);
-    EXPECT_FALSE(result.ok());
-  }
 }
 
 TEST_F(ParserTest, subgraph) {
@@ -1674,7 +1659,7 @@ TEST_F(ParserTest, UnreservedKeywords) {
     std::string query =
         "CREATE TAG tag1(space string, spaces string, "
         "email string, password string, roles string, uuid int, "
-        "path string, variables string, leader string, data string)";
+        "paths string, variables string, leader string, data string)";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -1973,22 +1958,12 @@ TEST_F(ParserTest, BalanceOperation) {
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "BALANCE DATA STOP";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
     std::string query = "BALANCE DATA REMOVE 192.168.0.1:50000,192.168.0.1:50001";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
     std::string query = "BALANCE DATA REMOVE 192.168.0.1:50000,\"localhost\":50001";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "BALANCE DATA RESET PLAN";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -2531,7 +2506,7 @@ TEST_F(ParserTest, Match) {
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "MATCH p = (a) -[m:like*..2]- (b) RETURN p as Path";
+    std::string query = "MATCH p = (a) -[m:like*..2]- (b) RETURN p as PathA";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -2632,6 +2607,41 @@ TEST_F(ParserTest, Match) {
   }
   {
     std::string query = "UNWIND a AS b MATCH (c) MATCH (d) WITH e MATCH (f) RETURN b,c,d";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query =
+        "MATCH (a)-[b]-(c) "
+        "WITH a,b,c "
+        "RETURN a,b,c";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query =
+        "MATCH (a)-[b]-(c) "
+        "MATCH (c)-[d]-(e) "
+        "RETURN a,b,c,d,e";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query =
+        "MATCH (a)-[b]-(c) "
+        "WITH a,b,c "
+        "MATCH (c)-[d]-(e) "
+        "RETURN a,b,c,d,e";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "MATCH (a),(b),(c) RETURN a,b,c";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "MATCH (a)-[b]-(c), (c)-[d]-(e) RETURN a,b,c,d,e";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -3038,16 +3048,24 @@ TEST_F(ParserTest, JobTest) {
   checkTest("SUBMIT JOB FLUSH 111", "SUBMIT JOB FLUSH 111");
   checkTest("SUBMIT JOB STATS", "SUBMIT JOB STATS");
   checkTest("SUBMIT JOB STATS 111", "SUBMIT JOB STATS 111");
+  checkTest("SUBMIT JOB BALANCE DATA", "SUBMIT JOB BALANCE DATA");
+  checkTest(
+      "SUBMIT JOB BALANCE DATA REMOVE 192.168.0.1:50000, 192.168.0.1:50001, 192.168.0.1:50002",
+      "SUBMIT JOB BALANCE DATA REMOVE \"192.168.0.1\":50000, \"192.168.0.1\":50001, "
+      "\"192.168.0.1\":50002");
+  checkTest("SUBMIT JOB BALANCE LEADER", "SUBMIT JOB BALANCE LEADER");
   checkTest("SHOW JOBS", "SHOW JOBS");
   checkTest("SHOW JOB 111", "SHOW JOB 111");
   checkTest("STOP JOB 111", "STOP JOB 111");
   checkTest("RECOVER JOB", "RECOVER JOB");
+  checkTest("RECOVER JOB 111, 222, 333", "RECOVER JOB 111, 222, 333");
   checkTest("REBUILD TAG INDEX name_index", "REBUILD TAG INDEX name_index");
   checkTest("REBUILD EDGE INDEX name_index", "REBUILD EDGE INDEX name_index");
   checkTest("REBUILD TAG INDEX", "REBUILD TAG INDEX ");
   checkTest("REBUILD EDGE INDEX", "REBUILD EDGE INDEX ");
   checkTest("REBUILD TAG INDEX name_index, age_index", "REBUILD TAG INDEX name_index,age_index");
   checkTest("REBUILD EDGE INDEX name_index, age_index", "REBUILD EDGE INDEX name_index,age_index");
+  checkTest("SUBMIT JOB COMPACT", "SUBMIT JOB COMPACT");
 }
 
 TEST_F(ParserTest, ShowAndKillQueryTest) {

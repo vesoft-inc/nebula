@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <folly/synchronization/Baton.h>
@@ -69,13 +68,13 @@ TEST(ActiveHostsManTest, NormalTest) {
   ASSERT_EQ(3, nebula::value(hostsRet).size());
 
   {
-    const auto& prefix = MetaServiceUtils::hostPrefix();
+    const auto& prefix = MetaKeyUtils::hostPrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
     int i = 0;
     while (iter->valid()) {
-      auto host = MetaServiceUtils::parseHostKey(iter->key());
+      auto host = MetaKeyUtils::parseHostKey(iter->key());
       HostInfo info = HostInfo::decode(iter->val());
       ASSERT_EQ(HostAddr("0", i), HostAddr(host.host, host.port));
       if (i != 0) {
@@ -148,14 +147,14 @@ TEST(ActiveHostsManTest, LeaderTest) {
   nebula::cpp2::ErrorCode code;
   std::map<SpaceAndPart, HostAndTerm> results;
   {
-    const auto& prefix = MetaServiceUtils::leaderPrefix();
+    const auto& prefix = MetaKeyUtils::leaderPrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kv->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, ret);
     int i = 0;
     while (iter->valid()) {
-      auto spaceAndPart = MetaServiceUtils::parseLeaderKeyV3(iter->key());
-      std::tie(host, term, code) = MetaServiceUtils::parseLeaderValV3(iter->val());
+      auto spaceAndPart = MetaKeyUtils::parseLeaderKeyV3(iter->key());
+      std::tie(host, term, code) = MetaKeyUtils::parseLeaderValV3(iter->val());
       if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
         LOG(INFO) << "error: " << apache::thrift::util::enumNameSafe(code);
         continue;
@@ -194,7 +193,7 @@ TEST(LastUpdateTimeManTest, NormalTest) {
 
   LastUpdateTimeMan::update(kv.get(), now - 100);
   {
-    auto key = MetaServiceUtils::lastUpdateTimeKey();
+    auto key = MetaKeyUtils::lastUpdateTimeKey();
     std::string val;
     auto ret = kv->get(kDefaultSpaceId, kDefaultPartId, key, &val);
     ASSERT_EQ(ret, nebula::cpp2::ErrorCode::SUCCEEDED);
