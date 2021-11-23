@@ -5,8 +5,6 @@
 
 #include "graph/optimizer/rule/IndexScanRule.h"
 
-#include <vector>
-
 #include "common/expression/LabelAttributeExpression.h"
 #include "graph/optimizer/OptContext.h"
 #include "graph/optimizer/OptGroup.h"
