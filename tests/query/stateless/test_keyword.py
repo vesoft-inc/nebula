@@ -124,7 +124,7 @@ class TestReservedKeyword(NebulaTestSuite):
         resp = self.execute(cmd)
         self.check_resp_succeeded(resp)
 
-        cmd = 'create tag x23 (path string)'
+        cmd = 'create tag x23 (paths string)'
         resp = self.execute(cmd)
         self.check_resp_succeeded(resp)
 
@@ -280,7 +280,7 @@ class TestReservedKeyword(NebulaTestSuite):
         resp = self.execute(cmd)
         self.check_resp_succeeded(resp)
 
-        cmd = 'create tag x233 (PATH string)'
+        cmd = 'create tag x233 (PATHS string)'
         resp = self.execute(cmd)
         self.check_resp_succeeded(resp)
 
