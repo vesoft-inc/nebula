@@ -54,7 +54,7 @@ jobs:
           endpoint: ${{ secrets.OSS_ENDPOINT }}
           bucket: nebula-graph
           asset-path: pkg-build/cpack_output
-          target-path: package/v2-nightly/${{ steps.vars.outputs.subdir }}
+          target-path: package/nightly/${{ steps.vars.outputs.subdir }}
 
   docker:
     name: build docker image

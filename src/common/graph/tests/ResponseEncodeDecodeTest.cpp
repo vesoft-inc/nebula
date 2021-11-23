@@ -15,7 +15,7 @@ namespace nebula {
 
 using serializer = apache::thrift::CompactSerializer;
 
-TEST(ResponseEncodDecodeTest, Basic) {
+TEST(ResponseEncodeDecodeTest, Basic) {
   // auth response
   {
     std::vector<AuthResponse> resps;
@@ -88,7 +88,7 @@ TEST(ResponseEncodDecodeTest, Basic) {
   }
 }
 
-TEST(ResponseEncodDecodeTest, ToJson) {
+TEST(ResponseEncodeDecodeTest, ToJson) {
   // plan description
   {
     std::vector<PlanDescription> pds;

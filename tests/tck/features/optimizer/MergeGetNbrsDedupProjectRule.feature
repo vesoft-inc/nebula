@@ -1,6 +1,8 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
 # This source code is licensed under Apache 2.0 License.
+# This optimization rule is not neccessary now
+@skip
 Feature: merge get neighbors, dedup and project rule
 
   Background:

@@ -28,6 +28,9 @@ class Wal {
   // Return the term to receive the last log
   virtual TermID lastLogTerm() const = 0;
 
+  // Return the term of specified logId, if not exist, return -1
+  virtual TermID getLogTerm(LogID id) = 0;
+
   // Append one log message to the WAL
   virtual bool appendLog(LogID id, TermID term, ClusterID cluster, std::string msg) = 0;
 

@@ -68,9 +68,9 @@ class ValidateContext final {
     return find->second;
   }
 
-  void addIndex(const std::string& indexName) { indexs_.emplace(indexName); }
+  void addIndex(const std::string& indexName) { indexes_.emplace(indexName); }
 
-  bool hasIndex(const std::string& indexName) { return indexs_.find(indexName) != indexs_.end(); }
+  bool hasIndex(const std::string& indexName) { return indexes_.find(indexName) != indexes_.end(); }
 
  private:
   // spaces_ is the trace of space switch
@@ -83,7 +83,7 @@ class ValidateContext final {
       std::unordered_map<std::string, std::shared_ptr<const meta::NebulaSchemaProvider>>;
   Schemas schemas_;
   std::unordered_set<std::string> createSpaces_;
-  std::unordered_set<std::string> indexs_;
+  std::unordered_set<std::string> indexes_;
 };
 }  // namespace graph
 }  // namespace nebula

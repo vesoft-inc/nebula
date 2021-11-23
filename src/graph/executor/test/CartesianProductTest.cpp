@@ -106,7 +106,7 @@ TEST_F(CartesianProductTest, twoVars) {
   checkResult(expected, cp->outputVar());
 }
 
-TEST_F(CartesianProductTest, thressVars) {
+TEST_F(CartesianProductTest, threeVars) {
   auto* cp = CartesianProduct::make(qctx_.get(), nullptr);
   cp->addVar("ds1");
   cp->addVar("ds2");

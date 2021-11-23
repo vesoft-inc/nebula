@@ -190,7 +190,7 @@ Feature: Basic match
       | "Tony Parker" | "Spurs"   | "David West"      |
       | "Tony Parker" | "Spurs"   | "Dejounte Murray" |
 
-  Scenario: Uistinct
+  Scenario: Distinct
     When executing query:
       """
       MATCH (:player{name:'Dwyane Wade'}) -[:like]-> () -[:like]-> (v3)

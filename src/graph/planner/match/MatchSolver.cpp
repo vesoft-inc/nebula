@@ -143,7 +143,7 @@ Expression* MatchSolver::makeIndexFilter(const std::string& label,
     auto* right = binary->right();
     const LabelAttributeExpression* la = nullptr;
     const ConstantExpression* constant = nullptr;
-    // TODO(aiee) extract the logic that apllies to both match and lookup
+    // TODO(aiee) extract the logic that applies to both match and lookup
     if (left->kind() == Expression::Kind::kLabelAttribute &&
         right->kind() == Expression::Kind::kConstant) {
       la = static_cast<const LabelAttributeExpression*>(left);
@@ -276,7 +276,7 @@ Status MatchSolver::appendFetchVertexPlan(const Expression* nodeFilter,
   extractAndDedupVidColumn(qctx, initialExpr, plan.root, inputVar, plan);
   auto srcExpr = InputPropertyExpression::make(pool, kVid);
   // [Get vertices]
-  auto props = SchemaUtil::getAllVertexProp(qctx, space, true);
+  auto props = SchemaUtil::getAllVertexProp(qctx, space.id, true);
   NG_RETURN_IF_ERROR(props);
   auto gv = GetVertices::make(qctx, plan.root, space.id, srcExpr, std::move(props).value(), {});
 

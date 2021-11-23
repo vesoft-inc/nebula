@@ -162,7 +162,7 @@ class BaseProcessor {
   /**
    * Get the current available global id
    **/
-  ErrorOr<nebula::cpp2::ErrorCode, int32_t> getAvailableGolbalId();
+  ErrorOr<nebula::cpp2::ErrorCode, int32_t> getAvailableGlobalId();
 
   /**
    * Get one auto-increment Id in spaceId.

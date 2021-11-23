@@ -30,7 +30,7 @@ size_t ExecutionContext::numVersions(const std::string& name) const {
   return it->second.size();
 }
 
-// Only keep the last several versoins of the Value
+// Only keep the last several versions of the Value
 void ExecutionContext::truncHistory(const std::string& name, size_t numVersionsToKeep) {
   auto it = valueMap_.find(name);
   if (it != valueMap_.end()) {

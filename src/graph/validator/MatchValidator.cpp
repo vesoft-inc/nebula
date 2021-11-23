@@ -138,10 +138,10 @@ Status MatchValidator::buildPathExpr(const MatchPath *path,
   auto *pool = qctx_->objPool();
   auto pathBuild = PathBuildExpression::make(pool);
   for (size_t i = 0; i < edgeInfos.size(); ++i) {
-    pathBuild->add(VariablePropertyExpression::make(pool, "", nodeInfos[i].alias));
-    pathBuild->add(VariablePropertyExpression::make(pool, "", edgeInfos[i].alias));
+    pathBuild->add(InputPropertyExpression::make(pool, nodeInfos[i].alias));
+    pathBuild->add(InputPropertyExpression::make(pool, edgeInfos[i].alias));
   }
-  pathBuild->add(VariablePropertyExpression::make(pool, "", nodeInfos.back().alias));
+  pathBuild->add(InputPropertyExpression::make(pool, nodeInfos.back().alias));
   matchClauseCtx.pathBuild = std::move(pathBuild);
   return Status::OK();
 }
@@ -182,13 +182,13 @@ Status MatchValidator::buildNodeInfo(const MatchPath *path,
     }
     Expression *filter = nullptr;
     if (props != nullptr) {
-      auto result = makeSubFilter(alias, props);
+      auto result = makeNodeSubFilter(props, "*");
       NG_RETURN_IF_ERROR(result);
       filter = result.value();
     } else if (node->labels() != nullptr && !node->labels()->labels().empty()) {
       const auto &labels = node->labels()->labels();
       for (const auto &label : labels) {
-        auto result = makeSubFilter(alias, label->props(), *label->label());
+        auto result = makeNodeSubFilter(label->props(), *label->label());
         NG_RETURN_IF_ERROR(result);
         filter = andConnect(pool, filter, result.value());
       }
@@ -250,7 +250,7 @@ Status MatchValidator::buildEdgeInfo(const MatchPath *path,
     }
     Expression *filter = nullptr;
     if (props != nullptr) {
-      auto result = makeSubFilter(alias, props);
+      auto result = makeEdgeSubFilter(props);
       NG_RETURN_IF_ERROR(result);
       filter = result.value();
     }
@@ -424,13 +424,8 @@ Status MatchValidator::validateStepRange(const MatchStepRange *range) const {
     return Status::SemanticError(
         "Max hop must be greater equal than min hop: %ld vs. %ld", max, min);
   }
-  if (max == std::numeric_limits<int64_t>::max()) {
+  if (max == std::numeric_limits<size_t>::max()) {
     return Status::SemanticError("Cannot set maximum hop for variable length relationships");
-  }
-  if (min < 0) {
-    return Status::SemanticError(
-        "Cannot set negative steps minumum hop for variable length "
-        "relationships");
   }
   return Status::OK();
 }
@@ -526,16 +521,40 @@ Status MatchValidator::validateUnwind(const UnwindClause *unwindClause,
   return Status::OK();
 }
 
-StatusOr<Expression *> MatchValidator::makeSubFilter(const std::string &alias,
-                                                     const MapExpression *map,
-                                                     const std::string &label) const {
+StatusOr<Expression *> MatchValidator::makeEdgeSubFilter(const MapExpression *map) const {
+  auto *pool = qctx_->objPool();
+  DCHECK(map != nullptr);
+  auto &items = map->items();
+  DCHECK(!items.empty());
+
+  if (!ExpressionUtils::isEvaluableExpr(items[0].second)) {
+    return Status::SemanticError("Props must be constant: `%s'",
+                                 items[0].second->toString().c_str());
+  }
+  Expression *root = RelationalExpression::makeEQ(
+      pool, EdgePropertyExpression::make(pool, "*", items[0].first), items[0].second->clone());
+  for (auto i = 1u; i < items.size(); i++) {
+    if (!ExpressionUtils::isEvaluableExpr(items[i].second)) {
+      return Status::SemanticError("Props must be constant: `%s'",
+                                   items[i].second->toString().c_str());
+    }
+    auto *left = root;
+    auto *right = RelationalExpression::makeEQ(
+        pool, EdgePropertyExpression::make(pool, "*", items[i].first), items[i].second->clone());
+    root = LogicalExpression::makeAnd(pool, left, right);
+  }
+  return root;
+}
+
+StatusOr<Expression *> MatchValidator::makeNodeSubFilter(const MapExpression *map,
+                                                         const std::string &label) const {
   auto *pool = qctx_->objPool();
   // Node has tag without property
   if (!label.empty() && map == nullptr) {
     auto *left = ConstantExpression::make(pool, label);
 
     auto *args = ArgumentList::make(pool);
-    args->addArgument(LabelExpression::make(pool, alias));
+    args->addArgument(VertexExpression::make(pool));
     auto *right = FunctionCallExpression::make(pool, "tags", args);
     Expression *root = RelationalExpression::makeIn(pool, left, right);
 
@@ -546,28 +565,20 @@ StatusOr<Expression *> MatchValidator::makeSubFilter(const std::string &alias,
   auto &items = map->items();
   DCHECK(!items.empty());
 
-  // TODO(dutor) Check if evaluable and evaluate
-  if (items[0].second->kind() != Expression::Kind::kConstant) {
+  if (!ExpressionUtils::isEvaluableExpr(items[0].second)) {
     return Status::SemanticError("Props must be constant: `%s'",
                                  items[0].second->toString().c_str());
   }
   Expression *root = RelationalExpression::makeEQ(
-      pool,
-      LabelAttributeExpression::make(
-          pool, LabelExpression::make(pool, alias), ConstantExpression::make(pool, items[0].first)),
-      items[0].second->clone());
+      pool, TagPropertyExpression::make(pool, label, items[0].first), items[0].second->clone());
   for (auto i = 1u; i < items.size(); i++) {
-    if (items[i].second->kind() != Expression::Kind::kConstant) {
+    if (!ExpressionUtils::isEvaluableExpr(items[i].second)) {
       return Status::SemanticError("Props must be constant: `%s'",
                                    items[i].second->toString().c_str());
     }
     auto *left = root;
     auto *right = RelationalExpression::makeEQ(
-        pool,
-        LabelAttributeExpression::make(pool,
-                                       LabelExpression::make(pool, alias),
-                                       ConstantExpression::make(pool, items[i].first)),
-        items[i].second->clone());
+        pool, TagPropertyExpression::make(pool, label, items[i].first), items[i].second->clone());
     root = LogicalExpression::makeAnd(pool, left, right);
   }
   return root;
@@ -707,8 +718,8 @@ Status MatchValidator::validateGroup(YieldClauseContext &yieldCtx) const {
         yieldCtx.aggOutputColumnNames_.emplace_back(agg->toString());
       }
       if (!aggs.empty()) {
-        auto *rewritedExpr = ExpressionUtils::rewriteAgg2VarProp(colExpr);
-        yieldCtx.projCols_->addColumn(new YieldColumn(rewritedExpr, colOldName));
+        auto *rewrittenExpr = ExpressionUtils::rewriteAgg2VarProp(colExpr);
+        yieldCtx.projCols_->addColumn(new YieldColumn(rewrittenExpr, colOldName));
         yieldCtx.projOutputColumnNames_.emplace_back(colOldName);
         continue;
       }

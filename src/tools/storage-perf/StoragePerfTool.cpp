@@ -313,7 +313,7 @@ class Perf {
             if (!resps.succeeded()) {
               LOG(ERROR) << "Request failed!";
             } else {
-              VLOG(3) << "request successed!";
+              VLOG(3) << "request succeeded!";
             }
             this->finishedRequests_++;
             auto now = time::WallClock::fastNowInMicroSec();
@@ -342,7 +342,7 @@ class Perf {
                            << apache::thrift::util::enumNameSafe(entry.second);
               }
             } else {
-              VLOG(1) << "request successed!";
+              VLOG(1) << "request succeeded!";
             }
             this->finishedRequests_++;
             auto now = time::WallClock::fastNowInMicroSec();
@@ -368,7 +368,7 @@ class Perf {
             if (!resps.succeeded()) {
               LOG(ERROR) << "Request failed!";
             } else {
-              VLOG(3) << "request successed!";
+              VLOG(3) << "request succeeded!";
             }
             this->finishedRequests_++;
             auto now = time::WallClock::fastNowInMicroSec();
@@ -401,7 +401,7 @@ class Perf {
           if (!resps.succeeded()) {
             LOG(ERROR) << "Request failed!";
           } else {
-            VLOG(3) << "request successed!";
+            VLOG(3) << "request succeeded!";
           }
           this->finishedRequests_++;
           auto now = time::WallClock::fastNowInMicroSec();
@@ -426,7 +426,7 @@ class Perf {
           if (!resps.succeeded()) {
             LOG(ERROR) << "Request failed!";
           } else {
-            VLOG(3) << "request successed!";
+            VLOG(3) << "request succeeded!";
           }
           this->finishedRequests_++;
           auto now = time::WallClock::fastNowInMicroSec();

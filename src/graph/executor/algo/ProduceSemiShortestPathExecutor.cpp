@@ -214,7 +214,7 @@ folly::Future<Status> ProduceSemiShortestPathExecutor::execute() {
           CostPaths costPaths(weight, {std::move(path)});
           currentCostPathMap[dst].emplace(src, std::move(costPaths));
         } else {
-          // same (src, dst), diffrent edge type or rank
+          // same (src, dst), different edge type or rank
           auto currentCost = currentCostPathMap[dst][src].cost_;
           if (weight == currentCost) {
             currentCostPathMap[dst][src].paths_.emplace_back(std::move(path));

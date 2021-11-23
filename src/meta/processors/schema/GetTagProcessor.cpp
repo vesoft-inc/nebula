@@ -25,7 +25,7 @@ void GetTagProcessor::process(const cpp2::GetTagReq& req) {
   auto tagId = nebula::value(tagIdRet);
 
   std::string schemaValue;
-  // Get the lastest version
+  // Get the latest version
   if (ver < 0) {
     auto tagPrefix = MetaKeyUtils::schemaTagPrefix(spaceId, tagId);
     auto ret = doPrefix(tagPrefix);
