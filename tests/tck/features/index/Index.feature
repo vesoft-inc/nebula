@@ -943,3 +943,46 @@ Feature: IndexTest_Vid_String
     Then the result should be, in any order:
       | Tag Index Name     | Create Tag Index                                               |
       | "player_age_index" | "CREATE TAG INDEX `player_age_index` ON `player` (\n `age`\n)" |
+
+  Scenario: IndexTest existence check
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 9                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(30) |
+      | charset        | utf8             |
+      | collate        | utf8_bin         |
+    And having executed:
+      """
+      create tag recinfo(name string,tm bool,id int);
+      insert vertex recinfo(name,tm,id) values "r1":("czp",true,1);
+      create tag index recinfo_index on recinfo();
+      create tag index recinfo_name_index on recinfo(name(8));
+      create tag index recinfo_multi_index on recinfo(name(8),tm,id);
+      """
+    When executing query:
+      """
+      drop tag index recinfo_name_index
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      create tag index recinfo_name_index on recinfo(name(8));
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      create tag index recinfo_index on recinfo();
+      """
+    Then a ExecutionError should be raised at runtime: Existed!
+    When executing query:
+      """
+      drop tag index recinfo_index
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      create tag index recinfo_index on recinfo();
+      """
+    Then the execution should be successful
+    Then drop the used space
