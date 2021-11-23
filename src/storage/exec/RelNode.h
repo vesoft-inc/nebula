@@ -67,8 +67,7 @@ class RelNode {
   }
 
   void addDependency(RelNode<T>* dep) {
-    dependencies_.emplace_back(
-        dep);  // Need to rename. Edge depends on HashJoin. Why edge is the depency of hashjoin
+    dependencies_.emplace_back(dep);
     dep->isRoot_ = false;
   }
 
