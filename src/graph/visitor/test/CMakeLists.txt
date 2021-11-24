@@ -18,6 +18,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:util_obj>
         $<TARGET_OBJECTS:validator_obj>
         $<TARGET_OBJECTS:expr_visitor_obj>
+        $<TARGET_OBJECTS:plan_obj>
         $<TARGET_OBJECTS:planner_obj>
         $<TARGET_OBJECTS:graph_session_obj>
         $<TARGET_OBJECTS:graph_flags_obj>

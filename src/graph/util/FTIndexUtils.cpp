@@ -42,6 +42,7 @@ StatusOr<std::vector<nebula::plugin::HttpClient>> FTIndexUtils::getTSClients(
       hc.user = *c.user_ref();
       hc.password = *c.pwd_ref();
     }
+    hc.connType = c.conn_type_ref().has_value() ? *c.get_conn_type() : "http";
     tsClients.emplace_back(std::move(hc));
   }
   return tsClients;

@@ -6,10 +6,6 @@
 #ifndef GRAPH_OPTIMIZER_OPTGROUP_H_
 #define GRAPH_OPTIMIZER_OPTGROUP_H_
 
-#include <algorithm>
-#include <list>
-#include <vector>
-
 #include "common/base/Status.h"
 
 namespace nebula {

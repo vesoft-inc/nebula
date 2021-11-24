@@ -35,12 +35,10 @@ set(expression_test_common_libs
     $<TARGET_OBJECTS:version_obj>
     $<TARGET_OBJECTS:graph_session_obj>
     $<TARGET_OBJECTS:graph_flags_obj>
-    $<TARGET_OBJECTS:graph_auth_obj>
     $<TARGET_OBJECTS:util_obj>
     $<TARGET_OBJECTS:expr_visitor_obj>
     $<TARGET_OBJECTS:graph_context_obj>
-    $<TARGET_OBJECTS:planner_obj>
-    $<TARGET_OBJECTS:validator_obj>
+    $<TARGET_OBJECTS:plan_obj>
     $<TARGET_OBJECTS:idgenerator_obj>
     $<TARGET_OBJECTS:graph_obj>
     $<TARGET_OBJECTS:ssl_obj>
@@ -79,16 +77,7 @@ nebula_add_test(
         TypeCastingExpressionTest.cpp
         VersionedVariableExpressionTest.cpp
     OBJECTS
-        $<TARGET_OBJECTS:expression_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:expr_ctx_mock_obj>
-        $<TARGET_OBJECTS:function_manager_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
-        $<TARGET_OBJECTS:agg_function_manager_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:time_utils_obj>
-        $<TARGET_OBJECTS:fs_obj>
         ${expression_test_common_libs}
     LIBRARIES
         gtest
@@ -102,17 +91,7 @@ nebula_add_executable(
     SOURCES
         ExpressionBenchmark.cpp
     OBJECTS
-        $<TARGET_OBJECTS:expression_obj>
-        $<TARGET_OBJECTS:datatypes_obj>
-        $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:expr_ctx_mock_obj>
-        $<TARGET_OBJECTS:function_manager_obj>
-        $<TARGET_OBJECTS:wkt_wkb_io_obj>
-        $<TARGET_OBJECTS:agg_function_manager_obj>
-        $<TARGET_OBJECTS:time_obj>
-        $<TARGET_OBJECTS:time_utils_obj>
-        $<TARGET_OBJECTS:datetime_parser_obj>
-        $<TARGET_OBJECTS:fs_obj>
         ${expression_test_common_libs}
     LIBRARIES
         follybenchmark

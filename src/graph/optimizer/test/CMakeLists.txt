@@ -40,6 +40,7 @@ set(OPTIMIZER_TEST_LIB
     $<TARGET_OBJECTS:graph_flags_obj>
     $<TARGET_OBJECTS:util_obj>
     $<TARGET_OBJECTS:planner_obj>
+    $<TARGET_OBJECTS:plan_obj>
     $<TARGET_OBJECTS:parser_obj>
     $<TARGET_OBJECTS:graph_context_obj>
     $<TARGET_OBJECTS:validator_obj>
