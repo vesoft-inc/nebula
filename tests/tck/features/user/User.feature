@@ -342,7 +342,8 @@ Feature: User & privilege Test
       """
       DESC USER user_not_exist
       """
-    Then a ExecutionError should be raised at runtime:
+    Then the result should be, in any order, with relax comparison:
+      | role | space |
     When executing query with user user1 with password pwd1:
       """
       DESC USER user1

@@ -23,30 +23,29 @@ folly::Future<Status> DescribeUserExecutor::describeUser() {
   auto* duNode = asNode<DescribeUser>(node());
   return qctx()
       ->getMetaClient()
-      ->describeUser(*duNode->username())
+      ->getUserRoles(*duNode->username())
       .via(runner())
-      .thenValue([this](StatusOr<meta::cpp2::UserDescItem>&& resp) {
+      .thenValue([this](StatusOr<std::vector<meta::cpp2::RoleItem>>&& resp) {
         SCOPED_TIMER(&execTime_);
         if (!resp.ok()) {
           return std::move(resp).status();
         }
 
         DataSet v({"role", "space"});
-        auto user = std::move(resp).value();
-        auto spaceRoleMap = user.get_space_role_map();
-        std::vector<std::string> rolesInSpacesStrVector;
-        for (auto& item : spaceRoleMap) {
-          auto spaceNameResult = qctx_->schemaMng()->toGraphSpaceName(item.first);
-          if (!spaceNameResult.ok()) {
-            if (item.first == 0) {
-              v.emplace_back(nebula::Row({apache::thrift::util::enumNameSafe(item.second), ""}));
+        auto roleItemList = std::move(resp).value();
+        for (auto& item : roleItemList) {
+          if (item.get_space_id() == 0) {
+            v.emplace_back(
+                nebula::Row({apache::thrift::util::enumNameSafe(item.get_role_type()), ""}));
+          } else {
+            auto spaceNameResult = qctx_->schemaMng()->toGraphSpaceName(item.get_space_id());
+            if (spaceNameResult.ok()) {
+              v.emplace_back(nebula::Row({apache::thrift::util::enumNameSafe(item.get_role_type()),
+                                          spaceNameResult.value()}));
             } else {
-              LOG(ERROR) << " Space name of " << item.first << " no found";
+              LOG(ERROR) << " Space name of " << item.get_space_id() << " no found";
               return Status::Error("Space not found");
             }
-          } else {
-            v.emplace_back(nebula::Row(
-                {apache::thrift::util::enumNameSafe(item.second), spaceNameResult.value()}));
           }
         }
         return finish(

@@ -2534,19 +2534,6 @@ folly::Future<StatusOr<std::unordered_map<std::string, std::string>>> MetaClient
   return future;
 }
 
-folly::Future<StatusOr<cpp2::UserDescItem>> MetaClient::describeUser(std::string account) {
-  cpp2::DescribeUserReq req;
-  req.set_account(account);
-  folly::Promise<StatusOr<cpp2::UserDescItem>> promise;
-  auto future = promise.getFuture();
-  getResponse(
-      std::move(req),
-      [](auto client, auto request) { return client->future_describeUser(request); },
-      [](cpp2::DescribeUserResp&& resp) -> decltype(auto) { return std::move(resp.get_user()); },
-      std::move(promise));
-  return future;
-}
-
 folly::Future<StatusOr<std::vector<cpp2::RoleItem>>> MetaClient::listRoles(GraphSpaceID space) {
   cpp2::ListRolesReq req;
   req.set_space_id(std::move(space));
