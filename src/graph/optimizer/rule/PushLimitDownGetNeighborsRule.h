@@ -5,8 +5,6 @@
 
 #pragma once
 
-#include <memory>
-
 #include "graph/optimizer/OptRule.h"
 
 namespace nebula {

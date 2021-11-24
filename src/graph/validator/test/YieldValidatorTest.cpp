@@ -223,7 +223,7 @@ TEST_F(YieldValidatorTest, TypeCastTest) {
   {
     std::string query = "YIELD (PATH)true";
     auto result = checkResult(query);
-    EXPECT_EQ(std::string(result.message()), "SyntaxError: syntax error near `true'");
+    EXPECT_EQ(std::string(result.message()), "SyntaxError: syntax error near `PATH'");
   }
   {
     std::string query = "YIELD (NOEXIST)true";
