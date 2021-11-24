@@ -15,8 +15,13 @@ struct PlanDescription;
 struct PlanNodeDescription;
 
 namespace graph {
-
 class PlanNode;
+
+struct SubPlan {
+  // root and tail of a subplan.
+  PlanNode* root{nullptr};
+  PlanNode* tail{nullptr};
+};
 
 class ExecutionPlan final {
  public:

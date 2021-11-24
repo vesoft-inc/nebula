@@ -36,9 +36,8 @@ Feature: Collapse Project Rule
       | 0  | Start          |              |               |
     When profiling query:
       """
-      LOOKUP ON player
-      WHERE player.name=='Tim Duncan'
-      | YIELD $-.VertexID AS vid
+      LOOKUP ON player WHERE player.name=='Tim Duncan' YIELD id(vertex) as id
+      | YIELD $-.id AS vid
       """
     Then the result should be, in any order:
       | vid          |
