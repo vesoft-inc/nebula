@@ -54,10 +54,12 @@ Feature: Test lookup on edge index
         lookup_edge_1
       WHERE
         <where_condition>
+      YIELD
+        src(edge) as src, dst(edge) as dst, rank(edge) as rank
       """
     Then the result should be, in any order:
-      | SrcVID | DstVID | Ranking |
-      | '200'  | '201'  | 0       |
+      | src   | dst   | rank |
+      | '200' | '201' | 0    |
     When executing query:
       """
       LOOKUP ON
@@ -70,8 +72,8 @@ Feature: Test lookup on edge index
         lookup_edge_1.col3
       """
     Then the result should be, in any order:
-      | SrcVID | DstVID | Ranking | col1 | col2 | lookup_edge_1.col3 |
-      | '200'  | '201'  | 0       | 201  | 201  | 201                |
+      | col1 | col2 | lookup_edge_1.col3 |
+      | 201  | 201  | 201                |
     Then drop the used space
 
   Scenario Outline: [edge] different condition and yield test for int vid
@@ -101,10 +103,12 @@ Feature: Test lookup on edge index
         lookup_edge_1
       WHERE
         <where_condition>
+      YIELD
+        src(edge) as src, dst(edge) as dst, rank(edge) as rank
       """
     Then the result should be, in any order:
-      | SrcVID | DstVID | Ranking |
-      | 200    | 201    | 0       |
+      | src | dst | rank |
+      | 200 | 201 | 0    |
     When executing query:
       """
       LOOKUP ON
@@ -117,8 +121,8 @@ Feature: Test lookup on edge index
         lookup_edge_1.col3
       """
     Then the result should be, in any order:
-      | SrcVID | DstVID | Ranking | col1 | col2 | lookup_edge_1.col3 |
-      | 200    | 201    | 0       | 201  | 201  | 201                |
+      | col1 | col2 | lookup_edge_1.col3 |
+      | 201  | 201  | 201                |
     Then drop the used space
 
 # TODO(yee): Test bool expression

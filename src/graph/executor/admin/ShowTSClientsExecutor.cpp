@@ -25,9 +25,12 @@ folly::Future<Status> ShowTSClientsExecutor::showTSClients() {
       return resp.status();
     }
     auto value = std::move(resp).value();
-    DataSet v({"Host", "Port"});
+    DataSet v({"Host", "Port", "Connection type"});
     for (const auto &client : value) {
-      nebula::Row r({client.host.host, client.host.port});
+      nebula::Row r;
+      r.values.emplace_back(client.host.host);
+      r.values.emplace_back(client.host.port);
+      r.values.emplace_back(client.conn_type_ref().has_value() ? *client.get_conn_type() : "http");
       v.emplace_back(std::move(r));
     }
     return finish(std::move(v));
