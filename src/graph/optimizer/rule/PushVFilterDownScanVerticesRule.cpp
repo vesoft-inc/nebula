@@ -5,11 +5,9 @@
 
 #include "graph/optimizer/rule/PushVFilterDownScanVerticesRule.h"
 
-#include "common/expression/BinaryExpression.h"
-#include "common/expression/ConstantExpression.h"
 #include "common/expression/Expression.h"
-#include "common/expression/FunctionCallExpression.h"
 #include "common/expression/LogicalExpression.h"
+#include "common/expression/PropertyExpression.h"
 #include "common/expression/UnaryExpression.h"
 #include "graph/optimizer/OptContext.h"
 #include "graph/optimizer/OptGroup.h"

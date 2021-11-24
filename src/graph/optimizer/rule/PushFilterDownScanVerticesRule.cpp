@@ -5,12 +5,8 @@
 
 #include "graph/optimizer/rule/PushFilterDownScanVerticesRule.h"
 
-#include "common/expression/BinaryExpression.h"
-#include "common/expression/ConstantExpression.h"
 #include "common/expression/Expression.h"
-#include "common/expression/FunctionCallExpression.h"
 #include "common/expression/LogicalExpression.h"
-#include "common/expression/UnaryExpression.h"
 #include "graph/optimizer/OptContext.h"
 #include "graph/optimizer/OptGroup.h"
 #include "graph/planner/plan/PlanNode.h"
@@ -38,17 +34,6 @@ const Pattern &PushFilterDownScanVerticesRule::pattern() const {
       Pattern::create(PlanNode::Kind::kFilter, {Pattern::create(PlanNode::Kind::kScanVertices)});
   return pattern;
 }
-
-// bool PushFilterDownScanVerticesRule::match(OptContext *ctx, const MatchedResult &matched) const {
-// if (!OptRule::match(ctx, matched)) {
-// return false;
-// }
-// auto sv = static_cast<const ScanVertices *>(matched.planNode({0, 0}));
-// auto vertexProps = sv->props();
-// // if fetching props of edge in ScanVertices, let it go and do more checks in
-// // transform. otherwise skip this rule.
-// return vertexProps != nullptr && !vertexProps->empty();
-// }
 
 StatusOr<OptRule::TransformResult> PushFilterDownScanVerticesRule::transform(
     OptContext *ctx, const MatchedResult &matched) const {
