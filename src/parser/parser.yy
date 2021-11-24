@@ -120,7 +120,6 @@ static constexpr size_t kCommentLengthLimit = 256;
     nebula::GroupClause                    *group_clause;
     nebula::HostList                       *host_list;
     nebula::HostAddr                       *host_item;
-    nebula::ZoneNameList                   *zone_name_list;
     std::vector<int32_t>                   *integer_list;
     nebula::InBoundClause                  *in_bound_clause;
     nebula::OutBoundClause                 *out_bound_clause;
@@ -333,7 +332,6 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <colspec> column_spec
 %type <colspeclist> column_spec_list
 %type <column_name_list> column_name_list
-%type <zone_name_list> zone_name_list
 
 %type <role_type_clause> role_type_clause
 %type <acl_item_clause> acl_item_clause
@@ -354,8 +352,6 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <sentence> drop_tag_index_sentence drop_edge_index_sentence drop_fulltext_index_sentence
 %type <sentence> describe_tag_index_sentence describe_edge_index_sentence
 %type <sentence> rebuild_tag_index_sentence rebuild_edge_index_sentence rebuild_fulltext_index_sentence
-%type <sentence> add_group_sentence drop_group_sentence desc_group_sentence
-%type <sentence> add_zone_into_group_sentence drop_zone_from_group_sentence
 %type <sentence> add_zone_sentence drop_zone_sentence desc_zone_sentence
 %type <sentence> add_host_into_zone_sentence drop_host_from_zone_sentence
 %type <sentence> create_snapshot_sentence drop_snapshot_sentence
@@ -2639,38 +2635,6 @@ rebuild_fulltext_index_sentence
                                   meta::cpp2::AdminCmd::REBUILD_FULLTEXT_INDEX);
     }
 
-add_group_sentence
-    : KW_ADD KW_GROUP name_label zone_name_list {
-        $$ = new AddGroupSentence($3, $4);
-    }
-    ;
-
-drop_group_sentence
-    : KW_DROP KW_GROUP name_label {
-        $$ = new DropGroupSentence($3);
-    }
-    ;
-
-desc_group_sentence
-    : KW_DESCRIBE KW_GROUP name_label {
-        $$ = new DescribeGroupSentence($3);
-    }
-    | KW_DESC KW_GROUP name_label {
-        $$ = new DescribeGroupSentence($3);
-    }
-    ;
-
-add_zone_into_group_sentence
-    : KW_ADD KW_ZONE name_label KW_INTO KW_GROUP name_label {
-        $$ = new AddZoneIntoGroupSentence($3, $6);
-    }
-    ;
-
-drop_zone_from_group_sentence
-    : KW_DROP KW_ZONE name_label KW_FROM KW_GROUP name_label {
-        $$ = new DropZoneFromGroupSentence($3, $6);
-    }
-    ;
 
 add_zone_sentence
     : KW_ADD KW_ZONE name_label host_list {
@@ -3195,9 +3159,6 @@ show_sentence
     | KW_SHOW KW_COLLATION {
         $$ = new ShowCollationSentence();
     }
-    | KW_SHOW KW_GROUPS {
-        $$ = new ListGroupsSentence();
-    }
     | KW_SHOW KW_ZONES {
         $$ = new ListZonesSentence();
     }
@@ -3263,17 +3224,6 @@ show_config_item
     }
     | config_module_enum {
         $$ = new ConfigRowItem($1);
-    }
-    ;
-
-zone_name_list
-    : name_label {
-        $$ = new ZoneNameList();
-        $$->addZone($1);
-    }
-    | zone_name_list COMMA name_label {
-        $$ = $1;
-        $$->addZone($3);
     }
     ;
 
@@ -3635,11 +3585,6 @@ maintain_sentence
     | rebuild_tag_index_sentence { $$ = $1; }
     | rebuild_edge_index_sentence { $$ = $1; }
     | rebuild_fulltext_index_sentence { $$ = $1; }
-    | add_group_sentence { $$ = $1; }
-    | drop_group_sentence { $$ = $1; }
-    | desc_group_sentence { $$ = $1; }
-    | add_zone_into_group_sentence { $$ = $1; }
-    | drop_zone_from_group_sentence { $$ = $1; }
     | add_zone_sentence { $$ = $1; }
     | drop_zone_sentence { $$ = $1; }
     | desc_zone_sentence { $$ = $1; }
