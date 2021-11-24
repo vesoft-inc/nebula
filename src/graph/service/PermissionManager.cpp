@@ -118,9 +118,8 @@ Status PermissionManager::canReadUser(ClientSession *session, const std::string 
   if (!FLAGS_enable_authorize) {
     return Status::OK();
   }
-  // Cloud auth user cannot create user
   if (FLAGS_auth_type == "cloud") {
-    return Status::PermissionError("Cloud authenticate user can't write user.");
+    return Status::PermissionError("Cloud authenticate user can't read user.");
   }
   if (session->isGod()) {
     return Status::OK();
