@@ -13,9 +13,9 @@ namespace meta {
 
 class UUID {
  public:
-  string getId() {
+  boost::uuids::uuid getId() {
     boost::uuids::uuid uuid = boost::uuids::random_generator()();
-    const string uuid_str = boost::uuids::to_string(uuid);
+    return uuid;
   }
 };
 

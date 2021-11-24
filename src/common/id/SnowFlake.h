@@ -26,7 +26,7 @@ class SnowFlake : public IdGenerator {
     }
   }
 
-  int64_t getId() override {
+  int64_t getId() {
     // lock
 
     int64_t timestamp = getTimestamp();
@@ -49,7 +49,7 @@ class SnowFlake : public IdGenerator {
     lastTimestamp_ = timestamp;
     return (timestamp - start_stmp_) << timestamp_left | datacenterId_ << datacenter_left |
            machineId_ << machine_left | sequence_;
-  };
+  }
 
  private:
   meta::MetaClient meta_client;
