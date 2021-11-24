@@ -1444,9 +1444,16 @@ yield_column
         delete $3;
     }
     | expression {
+        if (graph::ExpressionUtils::checkVarExprIfExist($1)) {
+            throw nebula::GraphParser::syntax_error(@1, "Direct output of variable is prohibited");
+        }
         $$ = new YieldColumn($1);
     }
     | expression KW_AS name_label {
+        if (graph::ExpressionUtils::checkVarExprIfExist($1)) {
+            delete $3;
+            throw nebula::GraphParser::syntax_error(@1, "Direct output of variable is prohibited");
+        }
         $$ = new YieldColumn($1, *$3);
         delete $3;
     }
