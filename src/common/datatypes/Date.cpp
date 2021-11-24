@@ -281,7 +281,6 @@ void DateTime::addDuration(const Duration& duration) {
   field = 0;
 
   tmp = day + carry;
-  DLOG(ERROR) << "DEBUG POINT: day tmp " << tmp;
   carry = 0;
   if (tmp > 0) {
     int8_t dom = dayOfMonth(year, month);
