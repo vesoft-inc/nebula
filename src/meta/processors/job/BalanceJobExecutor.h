@@ -59,8 +59,6 @@ class BalanceJobExecutor : public MetaJobExecutor {
 
   nebula::cpp2::ErrorCode assembleZoneParts(const std::string& groupName, HostParts& hostParts);
 
-  nebula::cpp2::ErrorCode collectZoneParts(const std::string& groupName, HostParts& hostParts);
-
   nebula::cpp2::ErrorCode save(const std::string& k, const std::string& v);
 
  protected:

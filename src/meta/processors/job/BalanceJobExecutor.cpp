@@ -755,64 +755,6 @@ ErrorOr<nebula::cpp2::ErrorCode, HostAddr> DataBalanceJobExecutor::hostWithMinim
   return nebula::cpp2::ErrorCode::E_NO_HOSTS;
 }
 
-nebula::cpp2::ErrorCode BalanceJobExecutor::collectZoneParts(const std::string& groupName,
-                                                             HostParts& hostParts) {
-  auto groupKey = MetaKeyUtils::groupKey(groupName);
-  std::string groupValue;
-  auto retCode = kvstore_->get(kDefaultSpaceId, kDefaultPartId, groupKey, &groupValue);
-  if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Get group " << groupName
-               << " failed, error: " << apache::thrift::util::enumNameSafe(retCode);
-    return retCode;
-  }
-
-  // zoneHosts use to record this host belong to zone's hosts
-  std::unordered_map<std::pair<HostAddr, std::string>, std::vector<HostAddr>> zoneHosts;
-  auto zoneNames = MetaKeyUtils::parseZoneNames(std::move(groupValue));
-  for (auto zoneName : zoneNames) {
-    auto zoneKey = MetaKeyUtils::zoneKey(zoneName);
-    std::string zoneValue;
-    retCode = kvstore_->get(kDefaultSpaceId, kDefaultPartId, zoneKey, &zoneValue);
-    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(ERROR) << "Get zone " << zoneName
-                 << " failed, error: " << apache::thrift::util::enumNameSafe(retCode);
-      return retCode;
-    }
-
-    auto hosts = MetaKeyUtils::parseZoneHosts(std::move(zoneValue));
-    for (const auto& host : hosts) {
-      auto pair = std::pair<HostAddr, std::string>(std::move(host), zoneName);
-      auto& hs = zoneHosts[std::move(pair)];
-      hs.insert(hs.end(), hosts.begin(), hosts.end());
-    }
-  }
-
-  for (auto it = hostParts.begin(); it != hostParts.end(); it++) {
-    auto host = it->first;
-    auto zoneIter =
-        std::find_if(zoneHosts.begin(), zoneHosts.end(), [host](const auto& pair) -> bool {
-          return host == pair.first.first;
-        });
-
-    if (zoneIter == zoneHosts.end()) {
-      LOG(INFO) << it->first << " have lost";
-      continue;
-    }
-
-    auto& hosts = zoneIter->second;
-    auto name = zoneIter->first.second;
-    for (auto hostIter = hosts.begin(); hostIter != hosts.end(); hostIter++) {
-      auto partIter = hostParts.find(*hostIter);
-      if (partIter == hostParts.end()) {
-        zoneParts_[it->first] = ZoneNameAndParts(name, std::vector<PartitionID>());
-      } else {
-        zoneParts_[it->first] = ZoneNameAndParts(name, partIter->second);
-      }
-    }
-  }
-  return nebula::cpp2::ErrorCode::SUCCEEDED;
-}
-
 bool DataBalanceJobExecutor::checkZoneLegal(const HostAddr& source, const HostAddr& target) {
   VLOG(3) << "Check " << source << " : " << target;
   auto sourceIter = std::find_if(zoneParts_.begin(), zoneParts_.end(), [&source](const auto& pair) {
