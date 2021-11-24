@@ -10,6 +10,8 @@
 
 #include <string>
 
+#include "common/datatypes/Duration.h"
+
 namespace nebula {
 
 // In nebula only store UTC time, and the interpretation of time value based on
@@ -17,6 +19,21 @@ namespace nebula {
 
 extern const int64_t kDaysSoFar[];
 extern const int64_t kLeapDaysSoFar[];
+
+// https://en.wikipedia.org/wiki/Leap_year#Leap_day
+static inline bool isLeapYear(int16_t year) {
+  if (year % 4 != 0) {
+    return false;
+  } else if (year % 100 != 0) {
+    return true;
+  } else if (year % 400 != 0) {
+    return false;
+  } else {
+    return true;
+  }
+}
+
+int8_t dayOfMonth(int16_t year, int8_t month);
 
 struct Date {
   int16_t year;  // Any integer
@@ -61,6 +78,9 @@ struct Date {
 
   Date operator+(int64_t days) const;
   Date operator-(int64_t days) const;
+
+  void addDuration(const Duration& duration);
+  void subDuration(const Duration& duration);
 
   std::string toString() const;
   folly::dynamic toJson() const { return toString(); }
@@ -113,6 +133,9 @@ struct Time {
     }
     return false;
   }
+
+  void addDuration(const Duration& duration);
+  void subDuration(const Duration& duration);
 
   std::string toString() const;
   // 'Z' representing UTC timezone
@@ -205,6 +228,9 @@ struct DateTime {
     }
     return false;
   }
+
+  void addDuration(const Duration& duration);
+  void subDuration(const Duration& duration);
 
   std::string toString() const;
   // 'Z' representing UTC timezone

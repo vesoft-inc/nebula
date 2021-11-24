@@ -73,6 +73,9 @@ std::size_t hash<nebula::Value>::operator()(const nebula::Value& v) const noexce
     case nebula::Value::Type::SET: {
       return hash<nebula::Set>()(v.getSet());
     }
+    case nebula::Value::Type::DURATION: {
+      return hash<nebula::Duration>()(v.getDuration());
+    }
     case nebula::Value::Type::DATASET: {
       LOG(FATAL) << "Hash for DATASET has not been implemented";
     }
@@ -171,6 +174,10 @@ Value::Value(Value&& rhs) noexcept : type_(Value::Type::__EMPTY__) {
       setGG(std::move(rhs.value_.ggVal));
       break;
     }
+    case Type::DURATION: {
+      setDU(std::move(rhs.value_.duVal));
+      break;
+    }
     default: {
       assert(false);
       break;
@@ -249,6 +256,10 @@ Value::Value(const Value& rhs) : type_(Value::Type::__EMPTY__) {
     }
     case Type::GEOGRAPHY: {
       setGG(rhs.value_.ggVal);
+      break;
+    }
+    case Type::DURATION: {
+      setDU(rhs.value_.duVal);
       break;
     }
     default: {
@@ -348,6 +359,10 @@ Value::Value(const Geography& v) { setGG(std::make_unique<Geography>(v)); }
 
 Value::Value(Geography&& v) { setGG(std::make_unique<Geography>(std::move(v))); }
 
+Value::Value(const Duration& v) { setDU(std::make_unique<Duration>(v)); }
+
+Value::Value(Duration&& v) { setDU(std::make_unique<Duration>(std::move(v))); }
+
 const std::string& Value::typeName() const {
   static const std::unordered_map<Type, std::string> typeNames = {
       {Type::__EMPTY__, "__EMPTY__"},
@@ -367,6 +382,7 @@ const std::string& Value::typeName() const {
       {Type::SET, "set"},
       {Type::DATASET, "dataset"},
       {Type::GEOGRAPHY, "geography"},
+      {Type::DURATION, "duration"},
   };
 
   static const std::unordered_map<NullType, std::string> nullTypes = {
@@ -630,6 +646,21 @@ void Value::setGeography(std::unique_ptr<Geography>&& v) {
   setGG(std::move(v));
 }
 
+void Value::setDuration(const Duration& v) {
+  clear();
+  setDU(v);
+}
+
+void Value::setDuration(Duration&& v) {
+  clear();
+  setDU(std::move(v));
+}
+
+void Value::setDuration(std::unique_ptr<Duration>&& v) {
+  clear();
+  setDU(std::move(v));
+}
+
 const NullType& Value::getNull() const {
   CHECK_EQ(type_, Type::NULLVALUE);
   return value_.nVal;
@@ -750,6 +781,16 @@ const Geography* Value::getGeographyPtr() const {
   return value_.ggVal.get();
 }
 
+const Duration& Value::getDuration() const {
+  CHECK_EQ(type_, Type::DURATION);
+  return *value_.duVal;
+}
+
+const Duration* Value::getDurationPtr() const {
+  CHECK_EQ(type_, Type::DURATION);
+  return value_.duVal.get();
+}
+
 NullType& Value::mutableNull() {
   CHECK_EQ(type_, Type::NULLVALUE);
   return value_.nVal;
@@ -828,6 +869,11 @@ DataSet& Value::mutableDataSet() {
 Geography& Value::mutableGeography() {
   CHECK_EQ(type_, Type::GEOGRAPHY);
   return *(value_.ggVal);
+}
+
+Duration& Value::mutableDuration() {
+  CHECK_EQ(type_, Type::DURATION);
+  return *value_.duVal;
 }
 
 NullType Value::moveNull() {
@@ -942,6 +988,13 @@ Geography Value::moveGeography() {
   return v;
 }
 
+Duration Value::moveDuration() {
+  CHECK_EQ(type_, Type::DURATION);
+  Duration v = std::move(*value_.duVal);
+  clear();
+  return v;
+}
+
 void Value::clear() {
   switch (type_) {
     case Type::__EMPTY__: {
@@ -1009,6 +1062,10 @@ void Value::clear() {
     }
     case Type::GEOGRAPHY: {
       destruct(value_.ggVal);
+      break;
+    }
+    case Type::DURATION: {
+      destruct(value_.duVal);
       break;
     }
   }
@@ -1086,6 +1143,10 @@ Value& Value::operator=(Value&& rhs) noexcept {
     }
     case Type::GEOGRAPHY: {
       setGG(std::move(rhs.value_.ggVal));
+      break;
+    }
+    case Type::DURATION: {
+      setDU(std::move(rhs.value_.duVal));
       break;
     }
     default: {
@@ -1168,6 +1229,10 @@ Value& Value::operator=(const Value& rhs) {
     }
     case Type::GEOGRAPHY: {
       setGG(rhs.value_.ggVal);
+      break;
+    }
+    case Type::DURATION: {
+      setDU(rhs.value_.duVal);
       break;
     }
     default: {
@@ -1429,6 +1494,26 @@ void Value::setGG(Geography&& v) {
   new (std::addressof(value_.ggVal)) std::unique_ptr<Geography>(new Geography(std::move(v)));
 }
 
+void Value::setDU(const std::unique_ptr<Duration>& v) {
+  type_ = Type::DURATION;
+  new (std::addressof(value_.duVal)) std::unique_ptr<Duration>(new Duration(*v));
+}
+
+void Value::setDU(std::unique_ptr<Duration>&& v) {
+  type_ = Type::DURATION;
+  new (std::addressof(value_.duVal)) std::unique_ptr<Duration>(std::move(v));
+}
+
+void Value::setDU(const Duration& v) {
+  type_ = Type::DURATION;
+  new (std::addressof(value_.duVal)) std::unique_ptr<Duration>(new Duration(v));
+}
+
+void Value::setDU(Duration&& v) {
+  type_ = Type::DURATION;
+  new (std::addressof(value_.duVal)) std::unique_ptr<Duration>(new Duration(std::move(v)));
+}
+
 // Convert Nebula::Value to a value compatible with Json standard
 // DATE, TIME, DATETIME will be converted to strings in UTC
 // VERTEX, EDGES, PATH will be converted to objects
@@ -1492,6 +1577,9 @@ folly::dynamic Value::toJson() const {
     case Value::Type::GEOGRAPHY: {
       return getGeography().toJson();
     }
+    case Value::Type::DURATION: {
+      return getDuration().toJson();
+    }
       // no default so the compiler will warning when lack
   }
 
@@ -1521,6 +1609,7 @@ folly::dynamic Value::getMetaData() const {
     case Value::Type::MAP: {
       return getMap().getMetaData();
     }
+    case Value::Type::DURATION:
     case Value::Type::DATE:
     case Value::Type::TIME:
     case Value::Type::DATETIME: {
@@ -1612,6 +1701,9 @@ std::string Value::toString() const {
     }
     case Value::Type::GEOGRAPHY: {
       return getGeography().toString();
+    }
+    case Value::Type::DURATION: {
+      return getDuration().toString();
     }
       // no default so the compiler will warning when lack
   }
@@ -1807,6 +1899,9 @@ Value Value::lessThan(const Value& v) const {
     case Value::Type::GEOGRAPHY: {
       return getGeography() < v.getGeography();
     }
+    case Value::Type::DURATION: {
+      return getDuration() < v.getDuration();
+    }
     case Value::Type::NULLVALUE:
     case Value::Type::__EMPTY__: {
       return kNullBadType;
@@ -1897,6 +1992,9 @@ Value Value::equal(const Value& v) const {
     case Value::Type::GEOGRAPHY: {
       return getGeography() == v.getGeography();
     }
+    case Value::Type::DURATION: {
+      return getDuration() == v.getDuration();
+    }
     case Value::Type::NULLVALUE:
     case Value::Type::__EMPTY__: {
       return false;
@@ -1980,6 +2078,10 @@ std::ostream& operator<<(std::ostream& os, const Value::Type& type) {
     }
     case Value::Type::GEOGRAPHY: {
       os << "GEOGRAPHY";
+      break;
+    }
+    case Value::Type::DURATION: {
+      os << "DURATION";
       break;
     }
     default: {
@@ -2114,6 +2216,11 @@ Value operator+(const Value& lhs, const Value& rhs) {
           ret.values.insert(ret.values.begin(), lhs);
           return ret;
         }
+        case Value::Type::DURATION: {
+          Date d = lhs.getDate();
+          d.addDuration(rhs.getDuration());
+          return d;
+        }
         default: {
           return Value::kNullBadType;
         }
@@ -2129,6 +2236,11 @@ Value operator+(const Value& lhs, const Value& rhs) {
           ret.values.insert(ret.values.begin(), lhs);
           return ret;
         }
+        case Value::Type::DURATION: {
+          Time t = lhs.getTime();
+          t.addDuration(rhs.getDuration());
+          return t;
+        }
         default: {
           return Value::kNullBadType;
         }
@@ -2143,6 +2255,11 @@ Value operator+(const Value& lhs, const Value& rhs) {
           auto ret = rhs.getList();
           ret.values.insert(ret.values.begin(), lhs);
           return ret;
+        }
+        case Value::Type::DURATION: {
+          DateTime dt = lhs.getDateTime();
+          dt.addDuration(rhs.getDuration());
+          return dt;
         }
         default: {
           return Value::kNullBadType;
@@ -2164,6 +2281,7 @@ Value operator+(const Value& lhs, const Value& rhs) {
         case Value::Type::DATE:
         case Value::Type::TIME:
         case Value::Type::DATETIME:
+        case Value::Type::DURATION:
         case Value::Type::VERTEX:
         case Value::Type::EDGE:
         case Value::Type::PATH:
@@ -2248,6 +2366,16 @@ Value operator+(const Value& lhs, const Value& rhs) {
         }
       }
     }
+    case Value::Type::DURATION: {
+      switch (rhs.type()) {
+        case Value::Type::DURATION: {
+          return lhs.getDuration() + rhs.getDuration();
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
+    }
     default: {
       return Value::kNullBadType;
     }
@@ -2302,6 +2430,45 @@ Value operator-(const Value& lhs, const Value& rhs) {
         }
         case Value::Type::DATE: {
           return lhs.getDate().toInt() - rhs.getDate().toInt();
+        }
+        case Value::Type::DURATION: {
+          Date d = lhs.getDate();
+          d.subDuration(rhs.getDuration());
+          return d;
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
+    }
+    case Value::Type::TIME: {
+      switch (rhs.type()) {
+        case Value::Type::DURATION: {
+          Time t = lhs.getTime();
+          t.subDuration(rhs.getDuration());
+          return t;
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
+    }
+    case Value::Type::DATETIME: {
+      switch (rhs.type()) {
+        case Value::Type::DURATION: {
+          DateTime dt = lhs.getDateTime();
+          dt.subDuration(rhs.getDuration());
+          return dt;
+        }
+        default: {
+          return Value::kNullBadType;
+        }
+      }
+    }
+    case Value::Type::DURATION: {
+      switch (rhs.type()) {
+        case Value::Type::DURATION: {
+          return lhs.getDuration() - rhs.getDuration();
         }
         default: {
           return Value::kNullBadType;
@@ -2509,6 +2676,10 @@ Value operator-(const Value& rhs) {
       auto val = -rhs.getFloat();
       return val;
     }
+    case Value::Type::DURATION: {
+      auto val = -rhs.getDuration();
+      return val;
+    }
     default: {
       return Value::kNullBadType;
     }
@@ -2601,6 +2772,9 @@ bool operator<(const Value& lhs, const Value& rhs) {
     case Value::Type::GEOGRAPHY: {
       return lhs.getGeography() < rhs.getGeography();
     }
+    case Value::Type::DURATION: {
+      return lhs.getDuration() < rhs.getDuration();
+    }
     case Value::Type::NULLVALUE:
     case Value::Type::__EMPTY__: {
       return false;
@@ -2687,6 +2861,9 @@ bool operator==(const Value& lhs, const Value& rhs) {
     }
     case Value::Type::GEOGRAPHY: {
       return lhs.getGeography() == rhs.getGeography();
+    }
+    case Value::Type::DURATION: {
+      return lhs.getDuration() == rhs.getDuration();
     }
     case Value::Type::NULLVALUE:
     case Value::Type::__EMPTY__: {

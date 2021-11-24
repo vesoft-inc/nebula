@@ -5,9 +5,11 @@
 
 #pragma once
 
-#include <unordered_map>
+#include <folly/dynamic.h>
 
-#include "common/time/TimeConversion.h"
+#include <sstream>
+
+#include "common/time/Constants.h"
 
 namespace nebula {
 
@@ -15,29 +17,91 @@ namespace nebula {
 // The base between months and days is not fixed, so we store years and months
 // separately.
 struct Duration {
-  // years + months
-  int64_t months;
   // day + hours + minutes + seconds + microseconds
   int64_t seconds;
-  int64_t microseconds;
+  int32_t microseconds;
+  // years + months
+  int32_t months;
+
+  Duration() : seconds(0), microseconds(0), months(0) {}
+  Duration(int32_t m, int64_t s, int32_t us) : seconds(s), microseconds(us), months(m) {}
 
   int64_t years() const { return months / 12; }
 
   int64_t monthsInYear() const { return months % 12; }
 
-  int64_t days() const { return seconds / time::TimeConversion::kSecondsOfDay; }
+  int64_t days() const { return seconds / time::kSecondsOfDay; }
 
-  int64_t hours() const {
-    return seconds % time::TimeConversion::kSecondsOfDay / time::TimeConversion::kSecondsOfHour;
-  }
+  int64_t hours() const { return seconds % time::kSecondsOfDay / time::kSecondsOfHour; }
 
-  int64_t minutes() const {
-    return seconds % time::TimeConversion::kSecondsOfHour / time::TimeConversion::kSecondsOfMinute;
-  }
+  int64_t minutes() const { return seconds % time::kSecondsOfHour / time::kSecondsOfMinute; }
 
-  int64_t secondsInMinute() const { return seconds % time::TimeConversion::kSecondsOfMinute; }
+  int64_t secondsInMinute() const { return seconds % time::kSecondsOfMinute; }
 
   int64_t microsecondsInSecond() const { return microseconds; }
+
+  Duration operator-() const { return Duration(-months, -seconds, -microseconds); }
+
+  Duration operator+(const Duration& rhs) const {
+    return Duration(months + rhs.months, seconds + rhs.seconds, microseconds + rhs.microseconds);
+  }
+
+  Duration operator-(const Duration& rhs) const {
+    return Duration(months - rhs.months, seconds - rhs.seconds, microseconds - rhs.microseconds);
+  }
+
+  Duration& addYears(int32_t y) {
+    months += y * 12;
+    return *this;
+  }
+
+  Duration& addMonths(int32_t m) {
+    months += m;
+    return *this;
+  }
+
+  Duration& addDays(int64_t d) {
+    seconds += d * time::kSecondsOfDay;
+    return *this;
+  }
+
+  Duration& addHours(int64_t h) {
+    seconds += h * time::kSecondsOfHour;
+    return *this;
+  }
+
+  Duration& addMinutes(int64_t minutes) {
+    seconds += minutes * time::kSecondsOfMinute;
+    return *this;
+  }
+
+  Duration& addSeconds(int64_t s) {
+    seconds += s;
+    return *this;
+  }
+
+  Duration& addMicroseconds(int32_t us) {
+    microseconds += us;
+    return *this;
+  }
+
+  bool operator<(const Duration& rhs) const {
+    if (months < rhs.months) {
+      return true;
+    } else if (months > rhs.months) {
+      return false;
+    }
+    if (seconds < rhs.seconds) {
+      return true;
+    } else if (seconds > rhs.seconds) {
+      return false;
+    }
+    return microseconds < rhs.microseconds;
+  }
+
+  bool operator==(const Duration& rhs) const {
+    return months == rhs.months && seconds == rhs.seconds && microseconds == rhs.microseconds;
+  }
 
   std::string toString() const {
     std::stringstream ss;
@@ -45,6 +109,8 @@ struct Duration {
        << "T" << seconds << "S";
     return ss.str();
   }
+
+  folly::dynamic toJson() const { return toString(); }
 };
 
 }  // namespace nebula

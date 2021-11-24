@@ -25,6 +25,7 @@ cpp_include "common/datatypes/DataSetOps-inl.h"
 cpp_include "common/datatypes/KeyValueOps-inl.h"
 cpp_include "common/datatypes/HostAddrOps-inl.h"
 cpp_include "common/datatypes/GeographyOps-inl.h"
+cpp_include "common/datatypes/DurationOps-inl.h"
 
 /*
  *
@@ -224,6 +225,12 @@ struct KeyValue {
     1: binary key,
     2: binary value,
 } (cpp.type = "nebula::KeyValue")
+
+struct Duration {
+    1: i64 seconds;
+    2: i32 microseconds;
+    3: i32 months;
+} (cpp.type = "nebula::Duration")
 
 struct LogInfo {
     1: LogID  log_id;
