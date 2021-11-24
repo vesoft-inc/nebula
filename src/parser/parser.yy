@@ -128,6 +128,7 @@ static constexpr size_t kCommentLengthLimit = 256;
     ExpressionList                         *expression_list;
     MapItemList                            *map_item_list;
     MatchPath                              *match_path;
+    MatchPathList                          *match_path_list;
     MatchNode                              *match_node;
     MatchNodeLabel                         *match_node_label;
     MatchNodeLabelList                     *match_node_label_list;
@@ -193,7 +194,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %token KW_UNWIND KW_SKIP KW_OPTIONAL
 %token KW_CASE KW_THEN KW_ELSE KW_END
 %token KW_GROUP KW_ZONE KW_GROUPS KW_ZONES KW_INTO
-%token KW_LISTENER KW_ELASTICSEARCH KW_FULLTEXT
+%token KW_LISTENER KW_ELASTICSEARCH KW_FULLTEXT KW_HTTPS KW_HTTP
 %token KW_AUTO KW_FUZZY KW_PREFIX KW_REGEXP KW_WILDCARD
 %token KW_TEXT KW_SEARCH KW_CLIENTS KW_SIGN KW_SERVICE KW_TEXT_SEARCH
 %token KW_ANY KW_SINGLE KW_NONE
@@ -301,6 +302,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 
 %type <match_path> match_path_pattern
 %type <match_path> match_path
+%type <match_path_list> match_path_list
 %type <match_node> match_node
 %type <match_node_label> match_node_label
 %type <match_node_label_list> match_node_label_list
@@ -494,7 +496,6 @@ unreserved_keyword
     | KW_BOTH               { $$ = new std::string("both"); }
     | KW_OUT                { $$ = new std::string("out"); }
     | KW_SUBGRAPH           { $$ = new std::string("subgraph"); }
-    | KW_PATH               { $$ = new std::string("path"); }
     | KW_THEN               { $$ = new std::string("then"); }
     | KW_ELSE               { $$ = new std::string("else"); }
     | KW_END                { $$ = new std::string("end"); }
@@ -531,6 +532,8 @@ unreserved_keyword
     | KW_POINT              { $$ = new std::string("point"); }
     | KW_LINESTRING         { $$ = new std::string("linestring"); }
     | KW_POLYGON            { $$ = new std::string("polygon"); }
+    | KW_HTTP               { $$ = new std::string("http"); }
+    | KW_HTTPS              { $$ = new std::string("https"); }
     ;
 
 expression
@@ -1436,6 +1439,14 @@ yield_column
         $$ = new YieldColumn(LabelExpression::make(qctx->objPool(), "EDGES"), *$3);
         delete $3;
     }
+    | KW_PATH {
+        $$ = nullptr;
+        throw nebula::GraphParser::syntax_error(@1, "please add alias when using `path'.");
+    }
+    | KW_PATH KW_AS name_label {
+        $$ = new YieldColumn(LabelExpression::make(qctx->objPool(), "PATH"), *$3);
+        delete $3;
+    }
     | expression {
         $$ = new YieldColumn($1);
     }
@@ -1503,7 +1514,7 @@ with_clause
     ;
 
 match_clause
-    : KW_MATCH match_path where_clause {
+    : KW_MATCH match_path_list where_clause {
         if ($3 && graph::ExpressionUtils::findAny($3->filter(),{Expression::Kind::kAggregate})) {
             delete($2);
             delete($3);
@@ -1512,7 +1523,7 @@ match_clause
             $$ = new MatchClause($2, $3, false/*optional*/);
         }
     }
-    | KW_OPTIONAL KW_MATCH match_path where_clause {
+    | KW_OPTIONAL KW_MATCH match_path_list where_clause {
         if ($4 && graph::ExpressionUtils::findAny($4->filter(),{Expression::Kind::kAggregate})) {
             delete($3);
             delete($4);
@@ -1596,6 +1607,15 @@ match_path
         $$->setAlias($1);
     }
     ;
+
+match_path_list
+    : match_path {
+      $$ = new MatchPathList($1);
+    }
+    | match_path_list COMMA match_path {
+      $$ = $1;
+      $$->add($3);
+    }
 
 match_node
     : L_PAREN match_alias R_PAREN {
@@ -1789,6 +1809,18 @@ text_search_client_item
         $$->set_host(*$2);
         delete $2;
     }
+    | L_PAREN host_item COMMA KW_HTTP R_PAREN {
+        $$ = new nebula::meta::cpp2::FTClient();
+        $$->set_host(*$2);
+        $$->set_conn_type("http");
+        delete $2;
+    }
+    | L_PAREN host_item COMMA KW_HTTPS R_PAREN {
+        $$ = new nebula::meta::cpp2::FTClient();
+        $$->set_host(*$2);
+        $$->set_conn_type("https");
+        delete $2;
+    }
     | L_PAREN host_item COMMA STRING COMMA STRING R_PAREN {
         $$ = new nebula::meta::cpp2::FTClient();
         $$->set_host(*$2);
@@ -1797,6 +1829,26 @@ text_search_client_item
         delete $2;
         delete $4;
         delete $6;
+    }
+    | L_PAREN host_item COMMA KW_HTTP COMMA STRING COMMA STRING R_PAREN {
+        $$ = new nebula::meta::cpp2::FTClient();
+        $$->set_host(*$2);
+        $$->set_user(*$6);
+        $$->set_pwd(*$8);
+        $$->set_conn_type("http");
+        delete $2;
+        delete $6;
+        delete $8;
+    }
+    | L_PAREN host_item COMMA KW_HTTPS COMMA STRING COMMA STRING R_PAREN {
+        $$ = new nebula::meta::cpp2::FTClient();
+        $$->set_host(*$2);
+        $$->set_user(*$6);
+        $$->set_pwd(*$8);
+        $$->set_conn_type("https");
+        delete $2;
+        delete $6;
+        delete $8;
     }
     ;
 
@@ -2066,31 +2118,34 @@ fetch_sentence
     ;
 
 find_path_sentence
-    : KW_FIND KW_ALL KW_PATH opt_with_properties from_clause to_clause over_clause where_clause find_path_upto_clause {
+    : KW_FIND KW_ALL KW_PATH opt_with_properties from_clause to_clause over_clause where_clause find_path_upto_clause yield_clause {
         auto *s = new FindPathSentence(false, $4, false);
         s->setFrom($5);
         s->setTo($6);
         s->setOver($7);
         s->setWhere($8);
         s->setStep($9);
+        s->setYield($10);
         $$ = s;
     }
-    | KW_FIND KW_SHORTEST KW_PATH opt_with_properties from_clause to_clause over_clause where_clause find_path_upto_clause {
+    | KW_FIND KW_SHORTEST KW_PATH opt_with_properties from_clause to_clause over_clause where_clause find_path_upto_clause yield_clause {
         auto *s = new FindPathSentence(true, $4, false);
         s->setFrom($5);
         s->setTo($6);
         s->setOver($7);
         s->setWhere($8);
         s->setStep($9);
+        s->setYield($10);
         $$ = s;
     }
-    | KW_FIND KW_NOLOOP KW_PATH opt_with_properties from_clause to_clause over_clause where_clause find_path_upto_clause {
+    | KW_FIND KW_NOLOOP KW_PATH opt_with_properties from_clause to_clause over_clause where_clause find_path_upto_clause yield_clause {
         auto *s = new FindPathSentence(false, $4, true);
         s->setFrom($5);
         s->setTo($6);
         s->setOver($7);
         s->setWhere($8);
         s->setStep($9);
+        s->setYield($10);
         $$ = s;
     }
     ;

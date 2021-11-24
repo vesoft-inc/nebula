@@ -119,14 +119,14 @@ Feature: Unwind clause
   Scenario: unwind match with
     When executing query:
       """
-      MATCH path=(x:player{name: "Tim Duncan"})-[:like*..2]->(y)
-      UNWIND nodes(path) as n
-      WITH path, size(collect(distinct n)) AS testLength
-      WHERE testLength == length(path) + 1
-      RETURN path
+      MATCH p = (x:player{name: "Tim Duncan"})-[:like*..2]->(y)
+      UNWIND nodes(p) as n
+      WITH p, size(collect(distinct n)) AS testLength
+      WHERE testLength == length(p) + 1
+      RETURN p
       """
     Then the result should be, in any order:
-      | path                                                                                                                                                                                                                                                                                      |
+      | p                                                                                                                                                                                                                                                                                         |
       | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:like@0 {likeness: 95}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})>                                                                                             |
       | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:like@0 {likeness: 95}]->("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})>                                                                                         |
       | <("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"})-[:like@0 {likeness: 95}]->("Tony Parker" :player{age: 36, name: "Tony Parker"})-[:like@0 {likeness: 95}]->("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})>         |

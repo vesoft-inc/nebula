@@ -97,12 +97,12 @@ Feature: Basic match
       """
       MATCH (v:player) where v.age > 9223372036854775807+1  return v
       """
-    Then a ExecutionError should be raised at runtime: result of (9223372036854775807+1) cannot be represented as an integer
+    Then a SemanticError should be raised at runtime: result of (9223372036854775807+1) cannot be represented as an integer
     When executing query:
       """
       MATCH (v:player) where v.age > -9223372036854775808-1  return v
       """
-    Then a ExecutionError should be raised at runtime: result of (-9223372036854775808-1) cannot be represented as an integer
+    Then a SemanticError should be raised at runtime: result of (-9223372036854775808-1) cannot be represented as an integer
 
   Scenario: One step
     When executing query:
@@ -517,6 +517,67 @@ Feature: Basic match
       | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}]                         |
       | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]                             |
       | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]                                |
+
+  Scenario: filter evaluable
+    When executing query:
+      """
+      match (v:player{age: -1}) return v
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v                                      |
+      | ("Null1" :player{age: -1, name: NULL}) |
+    When executing query:
+      """
+      match (v:player{age: +20}) return v
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v                                                     |
+      | ("Luka Doncic" :player{age: 20, name: "Luka Doncic"}) |
+    When executing query:
+      """
+      match (v:player{age: 1+19}) return v
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v                                                     |
+      | ("Luka Doncic" :player{age: 20, name: "Luka Doncic"}) |
+    When executing query:
+      """
+      match (v:player)-[e:like{likeness:-1}]->()  return e
+      """
+    Then the result should be, in any order, with relax comparison:
+      | e                                                       |
+      | [:like "Blake Griffin"->"Chris Paul" @0 {likeness: -1}] |
+      | [:like "Rajon Rondo"->"Ray Allen" @0 {likeness: -1}]    |
+    When executing query:
+      """
+      match (v:player)-[e:like{likeness:40+50+5}]->()  return e
+      """
+    Then the result should be, in any order, with relax comparison:
+      | e                                                            |
+      | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]      |
+      | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]        |
+      | [:like "Paul George"->"Russell Westbrook" @0 {likeness: 95}] |
+      | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]     |
+      | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]        |
+    When executing query:
+      """
+      match (v:player)-[e:like{likeness:4*20+5}]->()  return e
+      """
+    Then the result should be, in any order, with relax comparison:
+      | e                                                    |
+      | [:like "Jason Kidd"->"Dirk Nowitzki"@0{likeness:85}] |
+      | [:like "Steve Nash"->"Jason Kidd"@0{likeness:85}]    |
+    When executing query:
+      """
+      match (v:player)-[e:like{likeness:"99"}]->()  return e
+      """
+    Then the result should be, in any order, with relax comparison:
+      | e |
+    When executing query:
+      """
+      match (v:player{age:"24"-1})  return v
+      """
+    Then a SemanticError should be raised at runtime: Type error `("24"-1)'
 
   Scenario: No return
     When executing query:
