@@ -119,11 +119,16 @@ Map<std::string, Value> IndexEdgeScanNode::decodeFromBase(const std::string& key
         values[col] = Value(NebulaKeyUtils::getRank(context_->vIdLen(), key));
       } break;
       case QueryUtils::ReturnColType::kOther: {
-        auto retVal = QueryUtils::readValue(reader.get(), col, edge_.back()->field(col));
-        if (!retVal.ok()) {
-          LOG(FATAL) << "Bad value for field" << col;
+        auto field = edge_.back()->field(col);
+        if (field == nullptr) {
+          values[col] = Value::kNullUnknownProp;
+        } else {
+          auto retVal = QueryUtils::readValue(reader.get(), col, field);
+          if (!retVal.ok()) {
+            LOG(FATAL) << "Bad value for field" << col;
+          }
+          values[col] = std::move(retVal.value());
         }
-        values[col] = std::move(retVal.value());
       } break;
       default:
         LOG(FATAL) << "Unexpect column name:" << col;

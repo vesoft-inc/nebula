@@ -303,6 +303,13 @@ std::string SignInTextServiceSentence::toString() const {
     buf += client.get_host().host;
     buf += ":";
     buf += std::to_string(client.get_host().port);
+    if (client.conn_type_ref().has_value()) {
+      std::string connType = *client.get_conn_type();
+      auto toupper = [](auto c) { return ::toupper(c); };
+      std::transform(connType.begin(), connType.end(), connType.begin(), toupper);
+      buf += ", ";
+      buf += connType;
+    }
     if (client.user_ref().has_value() && !(*client.user_ref()).empty()) {
       buf += ", \"";
       buf += *client.get_user();
@@ -314,10 +321,10 @@ std::string SignInTextServiceSentence::toString() const {
       buf += "\"";
     }
     buf += ")";
-    buf += ",";
+    buf += ", ";
   }
   if (!buf.empty()) {
-    buf.resize(buf.size() - 1);
+    buf.resize(buf.size() - 2);
   }
   return buf;
 }

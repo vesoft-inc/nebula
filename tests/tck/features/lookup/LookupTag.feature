@@ -54,10 +54,12 @@ Feature: Test lookup on tag index
         lookup_tag_1
       WHERE
         <where_condition>
+      YIELD
+        id(vertex) as id
       """
     Then the result should be, in any order:
-      | VertexID |
-      | '201'    |
+      | id    |
+      | '201' |
     When executing query:
       """
       LOOKUP ON
@@ -70,8 +72,8 @@ Feature: Test lookup on tag index
         lookup_tag_1.col3
       """
     Then the result should be, in any order:
-      | VertexID | lookup_tag_1.col1 | lookup_tag_1.col2 | lookup_tag_1.col3 |
-      | '201'    | 201               | 201               | 201               |
+      | lookup_tag_1.col1 | lookup_tag_1.col2 | lookup_tag_1.col3 |
+      | 201               | 201               | 201               |
     Then drop the used space
 
   Scenario Outline: [tag] different condition and yield test for int vid
@@ -102,10 +104,12 @@ Feature: Test lookup on tag index
         lookup_tag_1
       WHERE
         <where_condition>
+      YIELD
+        id(vertex) as id
       """
     Then the result should be, in any order:
-      | VertexID |
-      | 201      |
+      | id  |
+      | 201 |
     When executing query:
       """
       LOOKUP ON
@@ -118,8 +122,8 @@ Feature: Test lookup on tag index
         lookup_tag_1.col3
       """
     Then the result should be, in any order:
-      | VertexID | lookup_tag_1.col1 | lookup_tag_1.col2 | lookup_tag_1.col3 |
-      | 201      | 201               | 201               | 201               |
+      | lookup_tag_1.col1 | lookup_tag_1.col2 | lookup_tag_1.col3 |
+      | 201               | 201               | 201               |
     Then drop the used space
 
 # TODO(yee): Test bool expression

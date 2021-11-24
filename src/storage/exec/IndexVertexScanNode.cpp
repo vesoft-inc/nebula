@@ -96,11 +96,16 @@ Map<std::string, Value> IndexVertexScanNode::decodeFromBase(const std::string& k
         values[col] = Value(context_->tagId_);
       } break;
       case QueryUtils::ReturnColType::kOther: {
-        auto retVal = QueryUtils::readValue(reader.get(), col, tag_.back()->field(col));
-        if (!retVal.ok()) {
-          LOG(FATAL) << "Bad value for field" << col;
+        auto field = tag_.back()->field(col);
+        if (field == nullptr) {
+          values[col] = Value::kNullUnknownProp;
+        } else {
+          auto retVal = QueryUtils::readValue(reader.get(), col, field);
+          if (!retVal.ok()) {
+            LOG(FATAL) << "Bad value for field" << col;
+          }
+          values[col] = std::move(retVal.value());
         }
-        values[col] = std::move(retVal.value());
       } break;
       default:
         LOG(FATAL) << "Unexpect column name:" << col;
