@@ -548,22 +548,17 @@ nebula::cpp2::ErrorCode BaseProcessor<RESP>::ftIndexCheck(
 template <typename RESP>
 bool BaseProcessor<RESP>::checkIndexExist(const std::vector<cpp2::IndexFieldDef>& fields,
                                           const cpp2::IndexItem& item) {
-  if (fields.size() == 0) {
-    LOG(ERROR) << "Index " << item.get_index_name() << " has existed";
-    return true;
+  const auto& itemFields = item.get_fields();
+  if (fields.size() != itemFields.size()) {
+    return false;
   }
-
   for (size_t i = 0; i < fields.size(); i++) {
-    if (fields[i].get_name() != item.get_fields()[i].get_name()) {
-      break;
-    }
-
-    if (i == fields.size() - 1) {
-      LOG(ERROR) << "Index " << item.get_index_name() << " has existed";
-      return true;
+    if (fields[i].get_name() != itemFields[i].get_name()) {
+      return false;
     }
   }
-  return false;
+  LOG(ERROR) << "Index " << item.get_index_name() << " has existed";
+  return true;
 }
 
 template <typename RESP>
