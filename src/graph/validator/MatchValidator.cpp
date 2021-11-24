@@ -732,8 +732,8 @@ Status MatchValidator::validateGroup(YieldClauseContext &yieldCtx) const {
         yieldCtx.aggOutputColumnNames_.emplace_back(agg->toString());
       }
       if (!aggs.empty()) {
-        auto *rewrittenExpr = ExpressionUtils::rewriteAgg2VarProp(colExpr);
-        yieldCtx.projCols_->addColumn(new YieldColumn(rewrittenExpr, colOldName));
+        auto *rewritedExpr = ExpressionUtils::rewriteAgg2VarProp(colExpr->clone());
+        yieldCtx.projCols_->addColumn(new YieldColumn(rewritedExpr, colOldName));
         yieldCtx.projOutputColumnNames_.emplace_back(colOldName);
         continue;
       }
