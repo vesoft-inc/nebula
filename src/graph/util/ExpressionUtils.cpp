@@ -63,6 +63,16 @@ std::vector<const Expression *> ExpressionUtils::collectAll(
   return std::move(visitor).results();
 }
 
+bool ExpressionUtils::checkVarExprIfExist(const Expression *expr) {
+  auto vars = ExpressionUtils::collectAll(expr, {Expression::Kind::kVar});
+  for (auto *var : vars) {
+    if (!static_cast<const VariableExpression *>(var)->isInner()) {
+      return true;
+    }
+  }
+  return false;
+}
+
 std::vector<const Expression *> ExpressionUtils::findAllStorage(const Expression *expr) {
   return collectAll(expr,
                     {Expression::Kind::kTagProperty,
