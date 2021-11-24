@@ -19,7 +19,7 @@ class FilterTest : public QueryTestBase {
   void SetUp() override { QueryTestBase::SetUp(); }
 };
 
-#define FILTER_RESUTL_CHECK(inputName, outputName, sentence, expected)                             \
+#define FILTER_RESULT_CHECK(inputName, outputName, sentence, expected)                             \
   do {                                                                                             \
     qctx_->symTable()->newVariable(outputName);                                                    \
     auto yieldSentence = getYieldSentence(sentence, qctx_.get());                                  \
@@ -44,10 +44,10 @@ class FilterTest : public QueryTestBase {
                                                                                                    \
     auto proExe = std::make_unique<ProjectExecutor>(project, qctx_.get());                         \
     EXPECT_TRUE(proExe->execute().get().ok());                                                     \
-    auto& proSesult = qctx_->ectx()->getResult(project->outputVar());                              \
+    auto& proResult = qctx_->ectx()->getResult(project->outputVar());                              \
                                                                                                    \
-    EXPECT_EQ(proSesult.value().getDataSet(), expected);                                           \
-    EXPECT_EQ(proSesult.state(), Result::State::kSuccess);                                         \
+    EXPECT_EQ(proResult.value().getDataSet(), expected);                                           \
+    EXPECT_EQ(proResult.state(), Result::State::kSuccess);                                         \
   } while (false)
 
 TEST_F(FilterTest, TestGetNeighbors_src_dst) {
@@ -55,7 +55,7 @@ TEST_F(FilterTest, TestGetNeighbors_src_dst) {
   expected.emplace_back(Row({Value("Ann")}));
   expected.emplace_back(Row({Value("Ann")}));
   expected.emplace_back(Row({Value("Tom")}));
-  FILTER_RESUTL_CHECK("input_neighbor",
+  FILTER_RESULT_CHECK("input_neighbor",
                       "filter_getNeighbor",
                       "YIELD $^.person.name AS name WHERE study.start_year >= 2010",
                       expected);
@@ -65,7 +65,7 @@ TEST_F(FilterTest, TestSequential) {
   DataSet expected({"name"});
   expected.emplace_back(Row({Value("Ann")}));
   expected.emplace_back(Row({Value("Ann")}));
-  FILTER_RESUTL_CHECK("input_sequential",
+  FILTER_RESULT_CHECK("input_sequential",
                       "filter_sequential",
                       "YIELD $-.v_name AS name WHERE $-.e_start_year >= 2010",
                       expected);
@@ -73,13 +73,13 @@ TEST_F(FilterTest, TestSequential) {
 
 TEST_F(FilterTest, TestNullValue) {
   DataSet expected({"name"});
-  FILTER_RESUTL_CHECK(
+  FILTER_RESULT_CHECK(
       "input_sequential", "filter_sequential", "YIELD $-.v_name AS name WHERE NULL", expected);
 }
 
 TEST_F(FilterTest, TestEmpty) {
   DataSet expected({"name"});
-  FILTER_RESUTL_CHECK("empty",
+  FILTER_RESULT_CHECK("empty",
                       "filter_empty",
                       "YIELD $^.person.name AS name WHERE study.start_year >= 2010",
                       expected);

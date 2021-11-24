@@ -12,7 +12,7 @@ namespace nebula {
 namespace meta {
 
 /**
- * Remove some rows in custorm kv operations.
+ * Remove some rows in custom kv operations.
  * */
 class RemoveProcessor : public BaseProcessor<cpp2::ExecResp> {
  public:

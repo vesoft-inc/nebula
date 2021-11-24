@@ -170,7 +170,7 @@ ErrorOr<nebula::cpp2::ErrorCode, int32_t> BaseProcessor<RESP>::autoIncrementId()
 }
 
 template <typename RESP>
-ErrorOr<nebula::cpp2::ErrorCode, int32_t> BaseProcessor<RESP>::getAvailableGolbalId() {
+ErrorOr<nebula::cpp2::ErrorCode, int32_t> BaseProcessor<RESP>::getAvailableGlobalId() {
   // A read lock has been added before call
   static const std::string kIdKey = "__id__";
   int32_t id;
@@ -206,7 +206,7 @@ ErrorOr<nebula::cpp2::ErrorCode, int32_t> BaseProcessor<RESP>::autoIncrementIdIn
     // In order to be compatible with the existing old schema, and simple to implement,
     // when the local_id record does not exist in space, directly use the smallest
     // id available globally.
-    auto globalIdRet = getAvailableGolbalId();
+    auto globalIdRet = getAvailableGlobalId();
     if (!nebula::ok(globalIdRet)) {
       return nebula::error(globalIdRet);
     }
@@ -548,22 +548,17 @@ nebula::cpp2::ErrorCode BaseProcessor<RESP>::ftIndexCheck(
 template <typename RESP>
 bool BaseProcessor<RESP>::checkIndexExist(const std::vector<cpp2::IndexFieldDef>& fields,
                                           const cpp2::IndexItem& item) {
-  if (fields.size() == 0) {
-    LOG(ERROR) << "Index " << item.get_index_name() << " has existed";
-    return true;
+  const auto& itemFields = item.get_fields();
+  if (fields.size() != itemFields.size()) {
+    return false;
   }
-
   for (size_t i = 0; i < fields.size(); i++) {
-    if (fields[i].get_name() != item.get_fields()[i].get_name()) {
-      break;
-    }
-
-    if (i == fields.size() - 1) {
-      LOG(ERROR) << "Index " << item.get_index_name() << " has existed";
-      return true;
+    if (fields[i].get_name() != itemFields[i].get_name()) {
+      return false;
     }
   }
-  return false;
+  LOG(ERROR) << "Index " << item.get_index_name() << " has existed";
+  return true;
 }
 
 template <typename RESP>

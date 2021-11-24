@@ -20,7 +20,7 @@ folly::Future<Status> ProduceAllPathsExecutor::execute() {
   Interims interims;
 
   if (!iter->isGetNeighborsIter()) {
-    return Status::Error("Only accept GetNeighbotsIter.");
+    return Status::Error("Only accept GetNeighborsIter.");
   }
   VLOG(1) << "Edge size: " << iter->size();
   for (; iter->valid(); iter->next()) {

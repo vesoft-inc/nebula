@@ -31,6 +31,7 @@ void ESListener::init() {
       hc.user = *c.user_ref();
       hc.password = *c.pwd_ref();
     }
+    hc.connType = c.conn_type_ref().has_value() ? *c.get_conn_type() : "http";
     esClients_.emplace_back(std::move(hc));
   }
 
@@ -44,7 +45,7 @@ void ESListener::init() {
 bool ESListener::apply(const std::vector<KV>& data) {
   std::vector<nebula::plugin::DocItem> docItems;
   for (const auto& kv : data) {
-    if (!nebula::NebulaKeyUtils::isVertex(vIdLen_, kv.first) &&
+    if (!nebula::NebulaKeyUtils::isTag(vIdLen_, kv.first) &&
         !nebula::NebulaKeyUtils::isEdge(vIdLen_, kv.first)) {
       continue;
     }
@@ -74,7 +75,7 @@ bool ESListener::persist(LogID lastId, TermID lastTerm, LogID lastApplyLogId) {
 
 std::pair<LogID, TermID> ESListener::lastCommittedLogId() {
   if (access(lastApplyLogFile_->c_str(), 0) != 0) {
-    VLOG(3) << "Invalid or non-existent file : " << *lastApplyLogFile_;
+    VLOG(3) << "Invalid or nonexistent file : " << *lastApplyLogFile_;
     return {0, 0};
   }
   int32_t fd = open(lastApplyLogFile_->c_str(), O_RDONLY);
@@ -97,7 +98,7 @@ std::pair<LogID, TermID> ESListener::lastCommittedLogId() {
 
 LogID ESListener::lastApplyLogId() {
   if (access(lastApplyLogFile_->c_str(), 0) != 0) {
-    VLOG(3) << "Invalid or non-existent file : " << *lastApplyLogFile_;
+    VLOG(3) << "Invalid or nonexistent file : " << *lastApplyLogFile_;
     return 0;
   }
   int32_t fd = open(lastApplyLogFile_->c_str(), O_RDONLY);

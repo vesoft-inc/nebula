@@ -268,7 +268,7 @@ class MetaKeyUtils final {
       JobID jobId, GraphSpaceID spaceId, PartitionID partId, HostAddr src, HostAddr dst);
 
   static std::string balanceTaskVal(BalanceTaskStatus status,
-                                    BalanceTaskResult retult,
+                                    BalanceTaskResult result,
                                     int64_t startTime,
                                     int64_t endTime);
 

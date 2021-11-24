@@ -5,8 +5,6 @@
 
 #include "graph/optimizer/rule/IndexScanRule.h"
 
-#include <vector>
-
 #include "common/expression/LabelAttributeExpression.h"
 #include "graph/optimizer/OptContext.h"
 #include "graph/optimizer/OptGroup.h"
@@ -66,7 +64,10 @@ StatusOr<OptRule::TransformResult> IndexScanRule::transform(OptContext* ctx,
     FilterItems items;
     ScanKind kind;
     NG_RETURN_IF_ERROR(analyzeExpression(filter, &items, &kind, isEdge(groupNode)));
-    NG_RETURN_IF_ERROR(createIndexQueryCtx(iqctx, kind, items, qctx, groupNode));
+    auto status = createIndexQueryCtx(iqctx, kind, items, qctx, groupNode);
+    if (!status.ok()) {
+      NG_RETURN_IF_ERROR(createIndexQueryCtx(iqctx, qctx, groupNode));
+    }
   }
 
   const auto* oldIN = groupNode->node();
@@ -241,7 +242,7 @@ Status IndexScanRule::appendColHint(std::vector<IndexColumnHint>& hints,
       begin = {item.value_, true};
       break;
     }
-    // because only type for bool is true/false, which can not satisify [start,
+    // because only type for bool is true/false, which can not satisfy [start,
     // end)
     if (col.get_type().get_type() == nebula::cpp2::PropertyType::BOOL) {
       return Status::SemanticError("Range scan for bool type is illegal");
@@ -481,19 +482,14 @@ std::vector<IndexItem> IndexScanRule::findValidIndex(graph::QueryContext* qctx,
   std::vector<IndexItem> validIndexes;
   // Find indexes for match all fields by where condition.
   for (const auto& index : indexes) {
-    bool allColsHint = true;
     const auto& fields = index->get_fields();
     for (const auto& item : items.items) {
       auto it = std::find_if(fields.begin(), fields.end(), [item](const auto& field) {
         return field.get_name() == item.col_;
       });
-      if (it == fields.end()) {
-        allColsHint = false;
-        break;
+      if (it != fields.end()) {
+        validIndexes.emplace_back(index);
       }
-    }
-    if (allColsHint) {
-      validIndexes.emplace_back(index);
     }
   }
   // If the first field of the index does not match any condition, the index is

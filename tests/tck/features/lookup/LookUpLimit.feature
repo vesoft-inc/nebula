@@ -9,10 +9,10 @@ Feature: Push Limit down IndexScan Rule
   Scenario: push limit down to IndexScan
     When profiling query:
       """
-      LOOKUP ON player | Limit 2 | ORDER BY $-.VertexID
+      LOOKUP ON player YIELD id(vertex) as id | Limit 2 | ORDER BY $-.id
       """
     Then the result should be, in any order:
-      | VertexID      |
+      | id            |
       | /[a-zA-Z ']+/ |
       | /[a-zA-Z ']+/ |
     And the execution plan should be:
@@ -25,12 +25,12 @@ Feature: Push Limit down IndexScan Rule
       | 0  | Start            |              |                |
     When profiling query:
       """
-      LOOKUP ON like | Limit 2 | ORDER BY $-.SrcVID
+      LOOKUP ON like YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank | Limit 2 | ORDER BY $-.src
       """
     Then the result should be, in any order:
-      | SrcVID        | DstVID        | Ranking |
-      | /[a-zA-Z ']+/ | /[a-zA-Z ']+/ | /\d+/   |
-      | /[a-zA-Z ']+/ | /[a-zA-Z ']+/ | /\d+/   |
+      | src           | dst           | rank  |
+      | /[a-zA-Z ']+/ | /[a-zA-Z ']+/ | /\d+/ |
+      | /[a-zA-Z ']+/ | /[a-zA-Z ']+/ | /\d+/ |
     And the execution plan should be:
       | id | name              | dependencies | operator info  |
       | 4  | DataCollect       | 5            |                |
@@ -41,10 +41,10 @@ Feature: Push Limit down IndexScan Rule
       | 0  | Start             |              |                |
     When profiling query:
       """
-      LOOKUP ON player WHERE player.age == 33 | Limit 2 | ORDER BY $-.VertexID
+      LOOKUP ON player WHERE player.age == 33 YIELD id(vertex) as id | Limit 2 | ORDER BY $-.id
       """
     Then the result should be, in any order:
-      | VertexID      |
+      | id            |
       | /[a-zA-Z ']+/ |
       | /[a-zA-Z ']+/ |
     And the execution plan should be:
@@ -57,12 +57,12 @@ Feature: Push Limit down IndexScan Rule
       | 0  | Start              |              |                |
     When profiling query:
       """
-      LOOKUP ON like WHERE like.likeness == 90 | Limit 2 | ORDER BY $-.SrcVID
+      LOOKUP ON like WHERE like.likeness == 90 YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank | Limit 2 | ORDER BY $-.src
       """
     Then the result should be, in any order:
-      | SrcVID        | DstVID        | Ranking |
-      | /[a-zA-Z ']+/ | /[a-zA-Z ']+/ | /\d+/   |
-      | /[a-zA-Z ']+/ | /[a-zA-Z ']+/ | /\d+/   |
+      | src           | dst           | rank  |
+      | /[a-zA-Z ']+/ | /[a-zA-Z ']+/ | /\d+/ |
+      | /[a-zA-Z ']+/ | /[a-zA-Z ']+/ | /\d+/ |
     And the execution plan should be:
       | id | name                | dependencies | operator info  |
       | 4  | DataCollect         | 5            |                |
@@ -75,10 +75,10 @@ Feature: Push Limit down IndexScan Rule
   Scenario: push limit down to IndexScan with limit
     When profiling query:
       """
-      LOOKUP ON player | LIMIT 3 | ORDER BY $-.VertexID
+      LOOKUP ON player YIELD id(vertex) as id | LIMIT 3 | ORDER BY $-.id
       """
     Then the result should be, in any order:
-      | VertexID      |
+      | id            |
       | /[a-zA-Z ']+/ |
       | /[a-zA-Z ']+/ |
       | /[a-zA-Z ']+/ |
@@ -92,13 +92,13 @@ Feature: Push Limit down IndexScan Rule
       | 9  | Start            |              |                |
     When profiling query:
       """
-      LOOKUP ON like | LIMIT 3 | ORDER BY $-.SrcVID
+      LOOKUP ON like YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank | LIMIT 3 | ORDER BY $-.src
       """
     Then the result should be, in any order:
-      | SrcVID        | DstVID        | Ranking |
-      | /[a-zA-Z ']+/ | /[a-zA-Z ']+/ | /\d+/   |
-      | /[a-zA-Z ']+/ | /[a-zA-Z ']+/ | /\d+/   |
-      | /[a-zA-Z ']+/ | /[a-zA-Z ']+/ | /\d+/   |
+      | src           | dst           | rank  |
+      | /[a-zA-Z ']+/ | /[a-zA-Z ']+/ | /\d+/ |
+      | /[a-zA-Z ']+/ | /[a-zA-Z ']+/ | /\d+/ |
+      | /[a-zA-Z ']+/ | /[a-zA-Z ']+/ | /\d+/ |
     And the execution plan should be:
       | id | name              | dependencies | operator info  |
       | 3  | DataCollect       | 4            |                |
@@ -109,10 +109,10 @@ Feature: Push Limit down IndexScan Rule
       | 9  | Start             |              |                |
     When profiling query:
       """
-      LOOKUP ON player WHERE player.age == 33 | LIMIT 3 | ORDER BY $-.VertexID
+      LOOKUP ON player WHERE player.age == 33 YIELD id(vertex) as id | LIMIT 3 | ORDER BY $-.id
       """
     Then the result should be, in any order:
-      | VertexID      |
+      | id            |
       | /[a-zA-Z ']+/ |
       | /[a-zA-Z ']+/ |
       | /[a-zA-Z ']+/ |
@@ -126,13 +126,13 @@ Feature: Push Limit down IndexScan Rule
       | 9  | Start              |              |                |
     When profiling query:
       """
-      LOOKUP ON like WHERE like.likeness == 90 | LIMIT 3 | ORDER BY $-.SrcVID
+      LOOKUP ON like WHERE like.likeness == 90 YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank | LIMIT 3 | ORDER BY $-.src
       """
     Then the result should be, in any order:
-      | SrcVID        | DstVID        | Ranking |
-      | /[a-zA-Z ']+/ | /[a-zA-Z ']+/ | /\d+/   |
-      | /[a-zA-Z ']+/ | /[a-zA-Z ']+/ | /\d+/   |
-      | /[a-zA-Z ']+/ | /[a-zA-Z ']+/ | /\d+/   |
+      | src           | dst           | rank  |
+      | /[a-zA-Z ']+/ | /[a-zA-Z ']+/ | /\d+/ |
+      | /[a-zA-Z ']+/ | /[a-zA-Z ']+/ | /\d+/ |
+      | /[a-zA-Z ']+/ | /[a-zA-Z ']+/ | /\d+/ |
     And the execution plan should be:
       | id | name                | dependencies | operator info  |
       | 3  | DataCollect         | 4            |                |

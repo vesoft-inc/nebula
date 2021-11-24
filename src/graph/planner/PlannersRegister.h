@@ -14,12 +14,12 @@ class PlannersRegister final {
   PlannersRegister() = delete;
   ~PlannersRegister() = delete;
 
-  static void registPlanners();
+  static void registerPlanners();
 
  private:
-  static void registDDL();
-  static void registSequential();
-  static void registMatch();
+  static void registerDDL();
+  static void registerSequential();
+  static void registerMatch();
 };
 
 }  // namespace graph
