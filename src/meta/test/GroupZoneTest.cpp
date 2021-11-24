@@ -275,28 +275,6 @@ TEST(GroupAndZoneTest, GroupAndZoneTest) {
   auto resp = std::move(f).get();
   ASSERT_EQ(nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND, resp.get_code());
 }
-// Drop host from zone
-{
-  cpp2::DropHostFromZoneReq req;
-  req.set_zone_name("zone_0");
-  HostAddr node{"12", 12};
-  req.set_node(std::move(node));
-  auto* processor = DropHostFromZoneProcessor::instance(kv.get());
-  auto f = processor->getFuture();
-  processor->process(req);
-  auto resp = std::move(f).get();
-  ASSERT_EQ(nebula::cpp2::ErrorCode::E_CONFLICT, resp.get_code());
-}
-{
-  cpp2::DropSpaceReq req;
-  req.set_space_name("space");
-  req.set_if_exists(false);
-  auto* processor = DropSpaceProcessor::instance(kv.get());
-  auto f = processor->getFuture();
-  processor->process(req);
-  auto resp = std::move(f).get();
-  ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-}
 {
   cpp2::DropHostFromZoneReq req;
   req.set_zone_name("zone_0");

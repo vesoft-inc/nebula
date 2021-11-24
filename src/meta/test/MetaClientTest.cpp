@@ -410,45 +410,6 @@ TEST(MetaClientTest, SpaceWithGroupTest) {
   ret = client->createSpace(spaceDesc, true).get();
   ASSERT_TRUE(ret.ok()) << ret.status();
 }
-// Create Space on group_0, replica factor is equal with zone size
-{
-  meta::cpp2::SpaceDesc spaceDesc;
-  spaceDesc.set_space_name("space_on_group_0_3");
-  spaceDesc.set_partition_num(9);
-  spaceDesc.set_replica_factor(3);
-  spaceDesc.set_group_name("group_0");
-  auto ret = client->createSpace(spaceDesc).get();
-  ASSERT_TRUE(ret.ok()) << ret.status();
-
-  ret = client->createSpace(spaceDesc, true).get();
-  ASSERT_TRUE(ret.ok()) << ret.status();
-}
-// Create Space on group_0, replica factor is less than zone size
-{
-  meta::cpp2::SpaceDesc spaceDesc;
-  spaceDesc.set_space_name("space_on_group_0_1");
-  spaceDesc.set_partition_num(9);
-  spaceDesc.set_replica_factor(1);
-  spaceDesc.set_group_name("group_0");
-  auto ret = client->createSpace(spaceDesc).get();
-  ASSERT_TRUE(ret.ok()) << ret.status();
-
-  ret = client->createSpace(spaceDesc, true).get();
-  ASSERT_TRUE(ret.ok()) << ret.status();
-}
-// Create Space on a group which is not exist
-{
-  meta::cpp2::SpaceDesc spaceDesc;
-  spaceDesc.set_space_name("space_on_group_not_exist");
-  spaceDesc.set_partition_num(9);
-  spaceDesc.set_replica_factor(4);
-  spaceDesc.set_group_name("group_not_exist");
-  auto ret = client->createSpace(spaceDesc).get();
-  ASSERT_FALSE(ret.ok()) << ret.status();
-
-  ret = client->createSpace(spaceDesc, true).get();
-  ASSERT_FALSE(ret.ok()) << ret.status();
-}
 }  // namespace nebula
 
 TEST(MetaClientTest, TagTest) {
