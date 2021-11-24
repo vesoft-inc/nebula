@@ -41,6 +41,7 @@ SET(EXEC_QUERY_TEST_OBJS
     $<TARGET_OBJECTS:parser_obj>
     $<TARGET_OBJECTS:validator_obj>
     $<TARGET_OBJECTS:planner_obj>
+    $<TARGET_OBJECTS:plan_obj>
     $<TARGET_OBJECTS:scheduler_obj>
     $<TARGET_OBJECTS:executor_obj>
     $<TARGET_OBJECTS:util_obj>

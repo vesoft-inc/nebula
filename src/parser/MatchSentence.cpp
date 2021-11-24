@@ -20,7 +20,7 @@ std::string MatchClause::toString() const {
   }
 
   buf += "MATCH ";
-  buf += path_->toString();
+  buf += pathList_->toString();
   if (where_ != nullptr) {
     buf += " ";
     buf += where_->toString();
@@ -224,13 +224,28 @@ std::string MatchSentence::toString() const {
   std::string buf;
   buf.reserve(256);
 
-  for (auto &clause : clauses_) {
+  for (auto& clause : clauses_) {
     buf += clause->toString();
     buf += " ";
   }
 
   buf += return_->toString();
 
+  return buf;
+}
+
+MatchPathList::MatchPathList(MatchPath* path) { pathList_.emplace_back(path); }
+
+void MatchPathList::add(MatchPath* path) { pathList_.emplace_back(path); }
+
+std::string MatchPathList::toString() const {
+  std::string buf;
+  buf.reserve(256);
+  std::vector<std::string> pathList;
+  std::transform(pathList_.begin(), pathList_.end(), std::back_inserter(pathList), [](auto& path) {
+    return path->toString();
+  });
+  folly::join(",", pathList.begin(), pathList.end(), buf);
   return buf;
 }
 

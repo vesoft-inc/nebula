@@ -560,15 +560,15 @@ Feature: IndexTest_Vid_String
       LOOKUP ON tag_1 WHERE tag_1.col5 == 5 YIELD tag_1.col5, tag_1.col1
       """
     Then the result should be, in any order:
-      | VertexID | tag_1.col5 | tag_1.col1 |
-      | "100"    | 5          | true       |
+      | tag_1.col5 | tag_1.col1 |
+      | 5          | true       |
     When executing query:
       """
       LOOKUP ON tag_1 WHERE tag_1.col5 == 5 YIELD tag_1.col1, tag_1.col5
       """
     Then the result should be, in any order:
-      | VertexID | tag_1.col1 | tag_1.col5 |
-      | "100"    | true       | 5          |
+      | tag_1.col1 | tag_1.col5 |
+      | true       | 5          |
     Then drop the used space
 
   Scenario: IndexTest RebuildTagIndexStatusInfo
@@ -740,20 +740,20 @@ Feature: IndexTest_Vid_String
       | "rebuild_tag_space_all_tag_indexes" | "FINISHED"   |
     When executing query:
       """
-      LOOKUP ON id_tag WHERE id_tag.id == 100
+      LOOKUP ON id_tag WHERE id_tag.id == 100 YIELD id(vertex) as id
       """
     Then the result should be, in any order:
-      | VertexID |
-      | "100"    |
-      | "200"    |
+      | id    |
+      | "100" |
+      | "200" |
     When executing query:
       """
-      LOOKUP ON name_tag WHERE name_tag.name == "100"
+      LOOKUP ON name_tag WHERE name_tag.name == "100" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
-      | VertexID |
-      | "300"    |
-      | "400"    |
+      | id    |
+      | "300" |
+      | "400" |
     Then drop the used space
 
   Scenario: IndexTest rebuild all tag indexes by multi input
@@ -795,26 +795,26 @@ Feature: IndexTest_Vid_String
       | "id_tag_index,name_tag_index" | "FINISHED"   |
     When executing query:
       """
-      LOOKUP ON id_tag WHERE id_tag.id == 100
+      LOOKUP ON id_tag WHERE id_tag.id == 100 YIELD id(vertex) as id
       """
     Then the result should be, in any order:
-      | VertexID |
-      | "100"    |
-      | "200"    |
+      | id    |
+      | "100" |
+      | "200" |
     When executing query:
       """
-      LOOKUP ON name_tag WHERE name_tag.name == "100"
+      LOOKUP ON name_tag WHERE name_tag.name == "100" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
-      | VertexID |
-      | "300"    |
-      | "400"    |
+      | id    |
+      | "300" |
+      | "400" |
     When executing query:
       """
-      LOOKUP ON age_tag WHERE age_tag.age == 8
+      LOOKUP ON age_tag WHERE age_tag.age == 8 YIELD id(vertex) as id
       """
     Then the result should be, in any order:
-      | VertexID |
+      | id |
     Then drop the used space
 
   Scenario: IndexTest rebuild all edge indexes by empty input
@@ -854,18 +854,18 @@ Feature: IndexTest_Vid_String
       | "rebuild_edge_space_all_edge_indexes" | "FINISHED"   |
     When executing query:
       """
-      LOOKUP ON id_edge WHERE id_edge.id == 100
+      LOOKUP ON id_edge WHERE id_edge.id == 100 YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank
       """
     Then the result should be, in any order:
-      | SrcVID | DstVID | Ranking |
-      | "100"  | "200"  | 0       |
+      | src   | dst   | rank |
+      | "100" | "200" | 0    |
     When executing query:
       """
-      LOOKUP ON name_edge WHERE name_edge.name == "100"
+      LOOKUP ON name_edge WHERE name_edge.name == "100" YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank
       """
     Then the result should be, in any order:
-      | SrcVID | DstVID | Ranking |
-      | "300"  | "400"  | 0       |
+      | src   | dst   | rank |
+      | "300" | "400" | 0    |
     Then drop the used space
 
   Scenario: IndexTest rebuild all edge indexes by multi input
@@ -907,24 +907,24 @@ Feature: IndexTest_Vid_String
       | "id_edge_index,name_edge_index" | "FINISHED"   |
     When executing query:
       """
-      LOOKUP ON id_edge WHERE id_edge.id == 100
+      LOOKUP ON id_edge WHERE id_edge.id == 100 YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank
       """
     Then the result should be, in any order:
-      | SrcVID | DstVID | Ranking |
-      | "100"  | "200"  | 0       |
+      | src   | dst   | rank |
+      | "100" | "200" | 0    |
     When executing query:
       """
-      LOOKUP ON name_edge WHERE name_edge.name == "100"
+      LOOKUP ON name_edge WHERE name_edge.name == "100" YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank
       """
     Then the result should be, in any order:
-      | SrcVID | DstVID | Ranking |
-      | "300"  | "400"  | 0       |
+      | src   | dst   | rank |
+      | "300" | "400" | 0    |
     When executing query:
       """
-      LOOKUP ON age_edge WHERE age_edge.age == 8
+      LOOKUP ON age_edge WHERE age_edge.age == 8 YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank
       """
     Then the result should be, in any order:
-      | SrcVID | DstVID | Ranking |
+      | src | dst | rank |
     Then drop the used space
 
   Scenario: show create tag index
@@ -943,3 +943,46 @@ Feature: IndexTest_Vid_String
     Then the result should be, in any order:
       | Tag Index Name     | Create Tag Index                                               |
       | "player_age_index" | "CREATE TAG INDEX `player_age_index` ON `player` (\n `age`\n)" |
+
+  Scenario: IndexTest existence check
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 9                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(30) |
+      | charset        | utf8             |
+      | collate        | utf8_bin         |
+    And having executed:
+      """
+      create tag recinfo(name string,tm bool,id int);
+      insert vertex recinfo(name,tm,id) values "r1":("czp",true,1);
+      create tag index recinfo_index on recinfo();
+      create tag index recinfo_name_index on recinfo(name(8));
+      create tag index recinfo_multi_index on recinfo(name(8),tm,id);
+      """
+    When executing query:
+      """
+      drop tag index recinfo_name_index
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      create tag index recinfo_name_index on recinfo(name(8));
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      create tag index recinfo_index on recinfo();
+      """
+    Then a ExecutionError should be raised at runtime: Existed!
+    When executing query:
+      """
+      drop tag index recinfo_index
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      create tag index recinfo_index on recinfo();
+      """
+    Then the execution should be successful
+    Then drop the used space

@@ -181,35 +181,38 @@ std::string GroupBySentence::toString() const {
 std::string FindPathSentence::toString() const {
   std::string buf;
   buf.reserve(256);
-  buf += "FIND ";
+  buf += "FIND";
   if (noLoop_) {
-    buf += "NOLOOP PATH ";
+    buf += " NOLOOP PATH";
   } else if (isShortest_) {
-    buf += "SHORTEST PATH ";
+    buf += " SHORTEST PATH";
   } else {
-    buf += "ALL PATH ";
+    buf += " ALL PATH";
   }
 
   if (from_ != nullptr) {
-    buf += from_->toString();
     buf += " ";
+    buf += from_->toString();
   }
   if (to_ != nullptr) {
-    buf += to_->toString();
     buf += " ";
+    buf += to_->toString();
   }
   if (over_ != nullptr) {
-    buf += over_->toString();
     buf += " ";
+    buf += over_->toString();
   }
   if (where_ != nullptr) {
-    buf += where_->toString();
     buf += " ";
+    buf += where_->toString();
   }
   if (step_ != nullptr) {
-    buf += "UPTO ";
+    buf += " UPTO ";
     buf += step_->toString();
+  }
+  if (yield_ != nullptr) {
     buf += " ";
+    buf += yield_->toString();
   }
   return buf;
 }
