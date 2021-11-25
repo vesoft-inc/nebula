@@ -437,6 +437,71 @@ TEST(ScanVertexTest, MultipleTagsTest) {
   }
 }
 
+TEST(ScanVertexTest, FilterTest) {
+  fs::TempDir rootPath("/tmp/ScanVertexTest.XXXXXX");
+  mock::MockCluster cluster;
+  cluster.initStorageKV(rootPath.path());
+  auto* env = cluster.storageEnv_.get();
+  auto totalParts = cluster.getTotalParts();
+  ASSERT_EQ(true, QueryTestUtils::mockVertexData(env, totalParts));
+  ASSERT_EQ(true, QueryTestUtils::mockEdgeData(env, totalParts));
+
+  TagID player = 1;
+  TagID team = 2;
+  ObjectPool pool;
+
+  {
+    LOG(INFO) << "Scan one tag with some properties in one batch";
+    //    size_t totalRowCount = 0;
+    auto playerTag =
+        std::make_pair(player, std::vector<std::string>{kVid, kTag, "name", "age", "avgScore"});
+    auto teamTag = std::make_pair(team, std::vector<std::string>{kTag, "name"});
+    auto req = buildRequest({1}, {""}, {playerTag, teamTag});
+    Expression* filter = TagPropertyExpression::make(&pool, "1", "name");
+    filter =
+        RelationalExpression::makeEQ(&pool, filter, ConstantExpression::make(&pool, "Kobe Bryant"));
+    req.set_filter(filter->encode());
+    auto* processor = ScanVertexProcessor::instance(env, nullptr);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+
+    ASSERT_EQ(0, resp.result.failed_parts.size());
+    nebula::DataSet expect(
+        {"_vid", "1._vid", "1._tag", "1.name", "1.age", "1.avgScore", "2._tag", "2.name"});
+    expect.emplace_back(List(
+        {"Kobe Bryant", "Kobe Bryant", 1, "Kobe Bryant", 41, 25, Value::kEmpty, Value::kEmpty}));
+    EXPECT_EQ(expect, *resp.vertex_data_ref());
+  }
+  {
+    LOG(INFO) << "Scan one tag with some properties in one batch";
+    //    size_t totalRowCount = 0;
+    auto playerTag =
+        std::make_pair(player, std::vector<std::string>{kVid, kTag, "name", "age", "avgScore"});
+    auto teamTag = std::make_pair(team, std::vector<std::string>{kTag, "name"});
+    auto req = buildRequest({1}, {""}, {playerTag, teamTag});
+    Expression* filter = TagPropertyExpression::make(&pool, "1", "name");
+    filter =
+        RelationalExpression::makeEQ(&pool, filter, ConstantExpression::make(&pool, "Kobe Bryant"));
+    filter = LogicalExpression::makeAnd(
+        &pool,
+        filter,
+        UnaryExpression::makeIsEmpty(&pool, TagPropertyExpression::make(&pool, "2", "name")));
+    req.set_filter(filter->encode());
+    auto* processor = ScanVertexProcessor::instance(env, nullptr);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+
+    ASSERT_EQ(0, resp.result.failed_parts.size());
+    nebula::DataSet expect(
+        {"_vid", "1._vid", "1._tag", "1.name", "1.age", "1.avgScore", "2._tag", "2.name"});
+    expect.emplace_back(List(
+        {"Kobe Bryant", "Kobe Bryant", 1, "Kobe Bryant", 41, 25, Value::kEmpty, Value::kEmpty}));
+    EXPECT_EQ(expect, *resp.vertex_data_ref());
+  }
+}
+
 }  // namespace storage
 }  // namespace nebula
 
