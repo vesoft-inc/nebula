@@ -469,7 +469,7 @@ TEST(ScanVertexTest, FilterTest) {
         {"_vid", "1._vid", "1._tag", "1.name", "1.age", "1.avgScore", "2._tag", "2.name"});
     expect.emplace_back(List(
         {"Kobe Bryant", "Kobe Bryant", 1, "Kobe Bryant", 41, 25, Value::kEmpty, Value::kEmpty}));
-    EXPECT_EQ(expect, *resp.vertex_data_ref());
+    EXPECT_EQ(expect, *resp.props_ref());
   }
   {
     LOG(INFO) << "Scan one tag with some properties in one batch";
@@ -496,7 +496,7 @@ TEST(ScanVertexTest, FilterTest) {
         {"_vid", "1._vid", "1._tag", "1.name", "1.age", "1.avgScore", "2._tag", "2.name"});
     expect.emplace_back(List(
         {"Kobe Bryant", "Kobe Bryant", 1, "Kobe Bryant", 41, 25, Value::kEmpty, Value::kEmpty}));
-    EXPECT_EQ(expect, *resp.vertex_data_ref());
+    EXPECT_EQ(expect, *resp.props_ref());
   }
 }
 

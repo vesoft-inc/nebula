@@ -58,6 +58,14 @@ bool PushVFilterDownScanVerticesRule::match(OptContext *ctx, const MatchedResult
   if (appendVertices->vFilter() == nullptr) {
     return false;
   }
+  auto tagPropExprs = graph::ExpressionUtils::collectAll(appendVertices->vFilter(),
+                                                         {Expression::Kind::kTagProperty});
+  for (const auto &tagPropExpr : tagPropExprs) {
+    auto tagProp = static_cast<const PropertyExpression *>(tagPropExpr);
+    if (tagProp->sym() == "*") {
+      return false;
+    }
+  }
   return true;
 }
 

@@ -312,7 +312,7 @@ TEST(ScanEdgeTest, FilterTest) {
     auto edge = std::make_pair(
         serve,
         std::vector<std::string>{kSrc, kType, kRank, kDst, "teamName", "startYear", "endYear"});
-    auto req = buildRequest({1}, {""}, edge, limit);
+    auto req = buildRequest({1}, {""}, {edge}, limit);
     Expression* filter = EdgePropertyExpression::make(&pool, "101", kSrc);
     filter = RelationalExpression::makeEQ(
         &pool, filter, ConstantExpression::make(&pool, "Damian Lillard"));
@@ -333,7 +333,7 @@ TEST(ScanEdgeTest, FilterTest) {
                       "101.endYear"});
     expected.emplace_back(
         List({"Damian Lillard", 101, 2012, "Trail Blazers", "Trail Blazers", 2012, 2020}));
-    EXPECT_EQ(*resp.edge_data_ref(), expected);
+    EXPECT_EQ(*resp.props_ref(), expected);
   }
 }
 
