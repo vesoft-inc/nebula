@@ -40,7 +40,7 @@ jobs:
         run: |
           git diff -U0 --no-color ${{ github.event.pull_request.base.sha }} HEAD | /usr/share/clang/clang-format-10/clang-format-diff.py -p1 | tee /tmp/.clang-format-diff
           [ -s /tmp/.clang-format-diff ] && exit 1 || true
-      - uses: OneContainer/gherkin-feature-format@master
+      - uses: OneContainer/gherkin-feature-format@main
         with:
           path: tests/tck
 

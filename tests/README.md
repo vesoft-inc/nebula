@@ -9,12 +9,12 @@ First of all, change directory to the root of `nebula-graph`, and build the whol
 
 ### Init environment
 
-Nebula Test framework depends on python3(>=3.7) and some thirdparty libraries, such as [nebula-python](https://github.com/vesoft-inc/nebula-python), [reformat-gherkin](https://github.com/OneContainer/reformat-gherkin), pytest, [pytest-bdd](https://pytest-bdd.readthedocs.io/en/latest/) and so on.
+Nebula Test framework depends on python3 and some thirdparty libraries, such as [nebula-python](https://github.com/vesoft-inc/nebula-python), pytest, [pytest-bdd](https://pytest-bdd.readthedocs.io/en/latest/) and so on.
 
 So you should install all these dependencies before running test cases by:
 
 ```shell
-$ make init-all
+$ make init
 ```
 
 ### Start nebula servers

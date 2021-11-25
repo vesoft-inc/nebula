@@ -2,7 +2,7 @@
 #
 # This source code is licensed under Apache 2.0 License.
 
-.PHONY: fmt check check-and-diff init init-all clean test tck fail up down
+.PHONY: fmt check check-and-diff init clean test tck fail up down
 
 PYPI_MIRROR = https://mirrors.aliyun.com/pypi/simple/
 # PYPI_MIRROR = http://pypi.mirrors.ustc.edu.cn/simple --trusted-host pypi.mirrors.ustc.edu.cn
@@ -21,7 +21,7 @@ CA_SIGNED ?= false
 CONTAINERIZED ?= false
 
 # commands
-gherkin_fmt = ~/.local/bin/reformat-gherkin
+gherkin_fmt = docker run --rm -v $(CURR_DIR):$(CURR_DIR) -w $(CURR_DIR) --user $(id -u):$(id -g) xl4times/reformat-gherkin
 run_test = PYTHONPATH=$$PYTHONPATH:$(CURR_DIR)/.. $(CURR_DIR)/nebula-test-run.py
 test_without_skip = python3 -m pytest -m "not skip"
 test_j = $(test_without_skip) -n$(J)
@@ -36,18 +36,7 @@ install-nebula-py: install-deps
 		&& pip3 install --user . -i $(PYPI_MIRROR)
 	rm -rf $(CURR_DIR)/nebula-python
 
-gherkin-fmt: install-deps
-	@if [ $(PY_VERSION) -lt 7 ]; then echo 'Python version must >= 3.7'; exit 1; fi
-	pip3 install --user poetry
-	git clone --branch master https://github.com/OneContainer/reformat-gherkin $(CURR_DIR)/reformat-gherkin
-	cd $(CURR_DIR)/reformat-gherkin && python3 -m poetry build
-	pip3 uninstall -y reformat-gherkin
-	pip3 install --user $(CURR_DIR)/reformat-gherkin/dist/reformat_gherkin*.whl
-	rm -rf $(CURR_DIR)/reformat-gherkin
-
 init: clean install-nebula-py
-
-init-all: init gherkin-fmt
 
 fmt:
 	@find $(CURR_DIR)/tck/ -type f -iname '*.feature' -print | xargs $(gherkin_fmt)
