@@ -953,9 +953,10 @@ TEST_F(QueryValidatorTest, GoInvalid) {
               "SemanticError: `VERTEX AS v' is not support in go sentence.");
   }
   {
-    std::string query = "GO FROM \"Tim\" OVER * YIELD path as p";
+    std::string query = "GO FROM \"Tim\" OVER * YIELD path";
     auto result = checkResult(query);
-    EXPECT_EQ(std::string(result.message()), "SemanticError: Invalid label identifiers: path");
+    EXPECT_EQ(std::string(result.message()),
+              "SyntaxError: please add alias when using `path'. near `path'");
   }
   {
     std::string query = "GO FROM \"Tim\" OVER * YIELD $$";
@@ -1015,7 +1016,7 @@ TEST_F(QueryValidatorTest, OrderBy) {
   }
 }
 
-TEST_F(QueryValidatorTest, OrderByAndLimt) {
+TEST_F(QueryValidatorTest, OrderByAndLimit) {
   {
     std::string query =
         "GO FROM \"Ann\" OVER like YIELD $^.person.age AS age"

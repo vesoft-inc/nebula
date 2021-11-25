@@ -15,7 +15,7 @@ DECLARE_uint32(snapshot_part_rate_limit);
 namespace nebula {
 namespace kvstore {
 
-TEST(RateLimter, ConsumeLessEqualThanBurst) {
+TEST(RateLimiter, ConsumeLessEqualThanBurst) {
   RateLimiter limiter;
   auto now = time::WallClock::fastNowInSec();
   int64_t count = 0;
@@ -27,7 +27,7 @@ TEST(RateLimter, ConsumeLessEqualThanBurst) {
   EXPECT_GE(time::WallClock::fastNowInSec() - now, 5);
 }
 
-TEST(RateLimter, ConsumeGreaterThanBurst) {
+TEST(RateLimiter, ConsumeGreaterThanBurst) {
   RateLimiter limiter;
   auto now = time::WallClock::fastNowInSec();
   int64_t count = 0;
@@ -40,7 +40,7 @@ TEST(RateLimter, ConsumeGreaterThanBurst) {
   EXPECT_GE(time::WallClock::fastNowInSec() - now, 5);
 }
 
-TEST(RateLimter, RateLessThanBurst) {
+TEST(RateLimiter, RateLessThanBurst) {
   RateLimiter limiter;
   auto now = time::WallClock::fastNowInSec();
   int64_t count = 0;

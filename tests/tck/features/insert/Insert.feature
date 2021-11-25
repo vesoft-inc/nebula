@@ -33,7 +33,7 @@ Feature: Insert string vid of vertex and edge
       INSERT VERTEX person(name, age) VALUES "Tom":("Tom", 22)
       """
     Then the execution should be successful
-    # insert vretex with default property names
+    # insert vertex with default property names
     When executing query:
       """
       INSERT VERTEX person VALUES "Tom":("Tom", 18);
@@ -520,14 +520,14 @@ Feature: Insert string vid of vertex and edge
       LOOKUP on course YIELD course.name, course.introduce
       """
     Then the result should be, in any order:
-      | VertexID  | course.name | course.introduce |
-      | 'English' | 'Engli'     | NULL             |
-      | 'Math'    | 'Math'      | NULL             |
+      | course.name | course.introduce |
+      | 'Engli'     | NULL             |
+      | 'Math'      | NULL             |
     When executing query:
       """
       LOOKUP ON student YIELD student.name, student.age
       """
     Then the result should be, in any order:
-      | VertexID | student.name | student.age |
-      | ''       | 'Tom'        | 12          |
+      | student.name | student.age |
+      | 'Tom'        | 12          |
     Then drop the used space

@@ -5,34 +5,32 @@
 
 namespace cpp nebula.raftex
 
-cpp_include "common/thrift/ThriftTypes.h"
+include "common.thrift"
 
 enum ErrorCode {
     SUCCEEDED = 0;
 
-    E_LOG_GAP = -1;
-    E_LOG_STALE = -2;
-    E_MISSING_COMMIT = -3;
-    E_WAITING_SNAPSHOT = -4;    // The follower is waiting a snapshot
+    E_UNKNOWN_PART = -1;
 
-    E_UNKNOWN_PART = -5;
-    E_TERM_OUT_OF_DATE = -6;
-    E_LAST_LOG_TERM_TOO_OLD = -7;
-    E_BAD_STATE = -8;
-    E_WRONG_LEADER = -9;
-    E_WAL_FAIL = -10;
-    E_NOT_READY = -11;
+    // Raft consensus errors
+    E_LOG_GAP = -2;
+    E_LOG_STALE = -3;
+    E_TERM_OUT_OF_DATE = -4;
+
+    // Raft state errors
+    E_WAITING_SNAPSHOT = -5;            // The follower is waiting a snapshot
+    E_BAD_STATE = -6;
+    E_WRONG_LEADER = -7;
+    E_NOT_READY = -8;
+    E_BAD_ROLE = -9,
 
     // Local errors
-    E_HOST_STOPPED = -12;
-    E_NOT_A_LEADER = -13;
-    E_HOST_DISCONNECTED = -14;
-    E_TOO_MANY_REQUESTS = -15;
-    E_PERSIST_SNAPSHOT_FAILED = -16;
-
-    E_BAD_ROLE = -17,
-
-    E_EXCEPTION = -20;          // An thrift internal exception was thrown
+    E_WAL_FAIL = -10;
+    E_HOST_STOPPED = -11;
+    E_TOO_MANY_REQUESTS = -12;
+    E_PERSIST_SNAPSHOT_FAILED = -13;
+    E_RPC_EXCEPTION = -14;              // An thrift internal exception was thrown
+    E_NO_WAL_FOUND = -15;
 }
 
 typedef i64 (cpp.type = "nebula::ClusterID") ClusterID
@@ -52,18 +50,13 @@ struct AskForVoteRequest {
     5: TermID       term;               // Proposed term
     6: LogID        last_log_id;        // The last received log id
     7: TermID       last_log_term;      // The term receiving the last log
+    8: bool         is_pre_vote;        // Is pre vote or not
 }
 
 
 // Response message for the vote call
 struct AskForVoteResponse {
     1: ErrorCode error_code;
-}
-
-
-struct LogEntry {
-    1: ClusterID cluster;
-    2: binary log_str;
 }
 
 
@@ -102,9 +95,7 @@ struct AppendLogRequest {
     // which specified by log_term
     //
     10: TermID log_term;
-    11: list<LogEntry> log_str_list;
-
-    12: bool sending_snapshot;
+    11: list<common.LogEntry> log_str_list;
 }
 
 

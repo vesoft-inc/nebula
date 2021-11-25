@@ -23,7 +23,6 @@
 #include "graph/executor/admin/DownloadExecutor.h"
 #include "graph/executor/admin/DropUserExecutor.h"
 #include "graph/executor/admin/GrantRoleExecutor.h"
-#include "graph/executor/admin/GroupExecutor.h"
 #include "graph/executor/admin/IngestExecutor.h"
 #include "graph/executor/admin/KillQueryExecutor.h"
 #include "graph/executor/admin/ListRolesExecutor.h"
@@ -430,24 +429,6 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     }
     case PlanNode::Kind::kSubgraph: {
       return pool->add(new SubgraphExecutor(node, qctx));
-    }
-    case PlanNode::Kind::kAddGroup: {
-      return pool->add(new AddGroupExecutor(node, qctx));
-    }
-    case PlanNode::Kind::kDropGroup: {
-      return pool->add(new DropGroupExecutor(node, qctx));
-    }
-    case PlanNode::Kind::kDescribeGroup: {
-      return pool->add(new DescribeGroupExecutor(node, qctx));
-    }
-    case PlanNode::Kind::kAddZoneIntoGroup: {
-      return pool->add(new AddZoneIntoGroupExecutor(node, qctx));
-    }
-    case PlanNode::Kind::kDropZoneFromGroup: {
-      return pool->add(new DropZoneFromGroupExecutor(node, qctx));
-    }
-    case PlanNode::Kind::kShowGroups: {
-      return pool->add(new ListGroupsExecutor(node, qctx));
     }
     case PlanNode::Kind::kAddZone: {
       return pool->add(new AddZoneExecutor(node, qctx));

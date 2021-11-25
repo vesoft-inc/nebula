@@ -45,7 +45,7 @@ folly::SemiFuture<Code> ResumeUpdateRemoteProcessor::processLocal(Code code) {
     forwardToDelegateProcessor();
     return code;
   } else {
-    // we can't decide if the double prime shoule be deleted.
+    // we can't decide if the double prime should be deleted.
     // so do nothing
   }
 

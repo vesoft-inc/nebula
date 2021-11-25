@@ -65,14 +65,14 @@ static void checkInvalidRequest(const std::string& url, const std::string& errMs
   ASSERT_EQ(0, request(url).find(errMsg));
 }
 
-TEST(StoragehHttpAdminHandlerTest, TestInvalidRequests) {
+TEST(StorageHttpAdminHandlerTest, TestInvalidRequests) {
   checkInvalidRequest("/admin", "Space should not be empty");
   checkInvalidRequest("/admin?space=xx", "Op should not be empty");
   checkInvalidRequest("/admin?space=xx&op=yy", "Can't find space xx");
   checkInvalidRequest("/admin?space=1&op=yy", "Unknown operation yy");
 }
 
-TEST(StoragehHttpAdminHandlerTest, TestSupportedOperations) {
+TEST(StorageHttpAdminHandlerTest, TestSupportedOperations) {
   ASSERT_EQ("ok", request("/admin?space=1&op=flush"));
   ASSERT_EQ("ok", request("/admin?space=1&op=compact"));
 }

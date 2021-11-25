@@ -85,9 +85,9 @@ class AdminTask {
 
   virtual int getTaskId() { return ctx_.taskId_; }
 
-  virtual void setConcurrentReq(int concurrenctReq) {
-    if (concurrenctReq > 0) {
-      ctx_.concurrentReq_ = concurrenctReq;
+  virtual void setConcurrentReq(int concurrentReq) {
+    if (concurrentReq > 0) {
+      ctx_.concurrentReq_ = concurrentReq;
     }
   }
 

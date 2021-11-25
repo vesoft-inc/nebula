@@ -24,7 +24,7 @@ void DropZoneProcessor::process(const cpp2::DropZoneReq& req) {
     return;
   }
 
-  // If zone belong to any group, it should not be droped.
+  // If zone belong to any group, it should not be dropped.
   auto retCode = checkGroupDependency(zoneName);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
     handleErrorCode(retCode);

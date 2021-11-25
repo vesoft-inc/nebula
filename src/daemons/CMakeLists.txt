@@ -42,6 +42,7 @@ set(storage_meta_deps
     $<TARGET_OBJECTS:disk_man_obj>
     $<TARGET_OBJECTS:keyutils_obj>
     $<TARGET_OBJECTS:meta_keyutils_obj>
+    $<TARGET_OBJECTS:log_str_list_iterator_obj>
     $<TARGET_OBJECTS:codec_obj>
     $<TARGET_OBJECTS:raftex_thrift_obj>
     $<TARGET_OBJECTS:hdfs_helper_obj>
@@ -117,6 +118,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:expr_visitor_obj>
         $<TARGET_OBJECTS:optimizer_obj>
         $<TARGET_OBJECTS:planner_obj>
+        $<TARGET_OBJECTS:plan_obj>
         $<TARGET_OBJECTS:executor_obj>
         $<TARGET_OBJECTS:scheduler_obj>
         $<TARGET_OBJECTS:idgenerator_obj>

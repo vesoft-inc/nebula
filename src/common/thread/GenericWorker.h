@@ -39,7 +39,7 @@ class GenericWorker final : public nebula::cpp::NonCopyable, public nebula::cpp:
   ~GenericWorker();
 
   /**
-   * To allocate resouces and launch the internal thread which executes
+   * To allocate resources and launch the internal thread which executes
    * the event loop to make this worker usable.
    *
    * Optionally, you could give the internal thread a specific name,
@@ -54,7 +54,7 @@ class GenericWorker final : public nebula::cpp::NonCopyable, public nebula::cpp:
   bool NG_MUST_USE_RESULT start(std::string name = "");
 
   /**
-   * Asynchronouly to notify the worker to stop handling further new tasks.
+   * Asynchronously to notify the worker to stop handling further new tasks.
    */
   bool stop();
 
@@ -160,7 +160,7 @@ class GenericWorker final : public nebula::cpp::NonCopyable, public nebula::cpp:
   std::vector<std::function<void()>> pendingTasks_;
   using TimerPtr = std::unique_ptr<Timer>;
   std::vector<TimerPtr> pendingTimers_;
-  std::vector<uint64_t> purgingingTimers_;
+  std::vector<uint64_t> purgingTimers_;
   std::unordered_map<uint64_t, TimerPtr> activeTimers_;
   std::unique_ptr<NamedThread> thread_;
 };

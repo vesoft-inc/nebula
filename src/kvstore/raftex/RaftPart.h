@@ -212,7 +212,7 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
 
   bool needToCleanWal();
 
-  // leader + follwers
+  // leader + followers
   std::vector<HostAddr> peers() const;
 
   std::set<HostAddr> listeners() const;
@@ -303,7 +303,7 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
  private:
   // A list of <idx, resp>
   // idx  -- the index of the peer
-  // resp -- coresponding response of peer[index]
+  // resp -- corresponding response of peer[index]
   using ElectionResponses = std::vector<std::pair<size_t, cpp2::AskForVoteResponse>>;
   using AppendLogResponses = std::vector<std::pair<size_t, cpp2::AppendLogResponse>>;
   using HeartbeatResponses = std::vector<std::pair<size_t, cpp2::HeartbeatResponse>>;
@@ -344,19 +344,27 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   void cleanupSnapshot();
 
   // The method sends out AskForVote request
-  // It return true if a leader is elected, otherwise returns false
-  bool leaderElection();
+  // Return true if I have been granted majority votes on proposedTerm, no matter isPreVote or not
+  folly::Future<bool> leaderElection(bool isPreVote);
 
   // The method will fill up the request object and return TRUE
   // if the election should continue. Otherwise the method will
   // return FALSE
   bool prepareElectionRequest(cpp2::AskForVoteRequest& req,
-                              std::vector<std::shared_ptr<Host>>& hosts);
+                              std::vector<std::shared_ptr<Host>>& hosts,
+                              bool isPreVote);
 
-  // The method returns the partition's role after the election
-  Role processElectionResponses(const ElectionResponses& results,
+  // Return true if I have been granted majority votes on proposedTerm, no matter isPreVote or not
+  bool handleElectionResponses(const ElectionResponses& resps,
+                               const std::vector<std::shared_ptr<Host>>& hosts,
+                               TermID proposedTerm,
+                               bool isPreVote);
+
+  // Return true if I have been granted majority votes on proposedTerm, no matter isPreVote or not
+  bool processElectionResponses(const ElectionResponses& results,
                                 std::vector<std::shared_ptr<Host>> hosts,
-                                TermID proposedTerm);
+                                TermID proposedTerm,
+                                bool isPreVote);
 
   // Check whether new logs can be appended
   // Pre-condition: The caller needs to hold the raftLock_
@@ -507,27 +515,15 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   HostAddr leader_;
 
   // After voted for somebody, it will not be empty anymore.
-  // And it will be reset to empty after current election finished.
   HostAddr votedAddr_;
 
   // The current term id
   // the term id proposed by that candidate
   TermID term_{0};
-  // During normal operation, proposedTerm_ is equal to term_,
-  // when the partition becomes a candidate, proposedTerm_ will be
-  // bumped up by 1 every time when sending out the AskForVote
-  // Request
 
-  // If voted for somebody, the proposeTerm will be reset to the candidate
-  // propose term. So we could use it to prevent revote if someone else ask for
-  // vote for current proposedTerm.
-
-  // TODO(heng) We should persist it on the disk in the future
-  // Otherwise, after restart the whole cluster, maybe the stale
-  // leader still has the unsend log with larger term, and after other
-  // replicas elected the new leader, the stale one will not join in the
-  // Raft group any more.
-  TermID proposedTerm_{0};
+  // Once we have voted some one in formal election, we will set votedTerm_ and votedAddr_.
+  // To prevent we have voted more than once in a same term
+  TermID votedTerm_{0};
 
   // The id and term of the last-sent log
   LogID lastLogId_{0};
@@ -575,8 +571,6 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
 
   // Used to bypass the stale command
   int64_t startTimeMs_ = 0;
-
-  std::atomic<uint64_t> weight_;
 
   std::atomic<bool> blocking_{false};
 };

@@ -150,12 +150,12 @@ Feature: Match seek by edge
       | "Grant Hill"            | "Magic"         |
       | "Grant Hill"            | "Suns"          |
       | "Grant Hill"            | "Clippers"      |
-      | "Shaquile O'Neal"       | "Magic"         |
-      | "Shaquile O'Neal"       | "Lakers"        |
-      | "Shaquile O'Neal"       | "Heat"          |
-      | "Shaquile O'Neal"       | "Suns"          |
-      | "Shaquile O'Neal"       | "Cavaliers"     |
-      | "Shaquile O'Neal"       | "Celtics"       |
+      | "Shaquille O'Neal"      | "Magic"         |
+      | "Shaquille O'Neal"      | "Lakers"        |
+      | "Shaquille O'Neal"      | "Heat"          |
+      | "Shaquille O'Neal"      | "Suns"          |
+      | "Shaquille O'Neal"      | "Cavaliers"     |
+      | "Shaquille O'Neal"      | "Celtics"       |
       | "JaVale McGee"          | "Wizards"       |
       | "JaVale McGee"          | "Nuggets"       |
       | "JaVale McGee"          | "Mavericks"     |
@@ -309,12 +309,12 @@ Feature: Match seek by edge
       | "Grant Hill"            | "Magic"         |
       | "Grant Hill"            | "Suns"          |
       | "Grant Hill"            | "Clippers"      |
-      | "Shaquile O'Neal"       | "Magic"         |
-      | "Shaquile O'Neal"       | "Lakers"        |
-      | "Shaquile O'Neal"       | "Heat"          |
-      | "Shaquile O'Neal"       | "Suns"          |
-      | "Shaquile O'Neal"       | "Cavaliers"     |
-      | "Shaquile O'Neal"       | "Celtics"       |
+      | "Shaquille O'Neal"      | "Magic"         |
+      | "Shaquille O'Neal"      | "Lakers"        |
+      | "Shaquille O'Neal"      | "Heat"          |
+      | "Shaquille O'Neal"      | "Suns"          |
+      | "Shaquille O'Neal"      | "Cavaliers"     |
+      | "Shaquille O'Neal"      | "Celtics"       |
       | "JaVale McGee"          | "Wizards"       |
       | "JaVale McGee"          | "Nuggets"       |
       | "JaVale McGee"          | "Mavericks"     |
@@ -468,12 +468,12 @@ Feature: Match seek by edge
       | "Magic"                 | "Grant Hill"            |
       | "Clippers"              | "Grant Hill"            |
       | "Pistons"               | "Grant Hill"            |
-      | "Celtics"               | "Shaquile O'Neal"       |
-      | "Cavaliers"             | "Shaquile O'Neal"       |
-      | "Lakers"                | "Shaquile O'Neal"       |
-      | "Magic"                 | "Shaquile O'Neal"       |
-      | "Suns"                  | "Shaquile O'Neal"       |
-      | "Heat"                  | "Shaquile O'Neal"       |
+      | "Celtics"               | "Shaquille O'Neal"      |
+      | "Cavaliers"             | "Shaquille O'Neal"      |
+      | "Lakers"                | "Shaquille O'Neal"      |
+      | "Magic"                 | "Shaquille O'Neal"      |
+      | "Suns"                  | "Shaquille O'Neal"      |
+      | "Heat"                  | "Shaquille O'Neal"      |
       | "Warriors"              | "JaVale McGee"          |
       | "Mavericks"             | "JaVale McGee"          |
       | "Wizards"               | "JaVale McGee"          |
@@ -519,7 +519,7 @@ Feature: Match seek by edge
       | "LeBron James"          | "Lakers"                |
       | "JaVale McGee"          | "Lakers"                |
       | "Dwight Howard"         | "Lakers"                |
-      | "Shaquile O'Neal"       | "Lakers"                |
+      | "Shaquille O'Neal"      | "Lakers"                |
       | "Paul Gasol"            | "Lakers"                |
       | "Ricky Rubio"           | "Jazz"                  |
       | "Boris Diaw"            | "Jazz"                  |
@@ -547,7 +547,7 @@ Feature: Match seek by edge
       | "Dwight Howard"         | "Magic"                 |
       | "Tracy McGrady"         | "Magic"                 |
       | "Vince Carter"          | "Magic"                 |
-      | "Shaquile O'Neal"       | "Magic"                 |
+      | "Shaquille O'Neal"      | "Magic"                 |
       | "Carmelo Anthony"       | "Rockets"               |
       | "Tracy McGrady"         | "Rockets"               |
       | "Dwight Howard"         | "Rockets"               |
@@ -585,7 +585,7 @@ Feature: Match seek by edge
       | "Ray Allen"             | "Heat"                  |
       | "Amar'e Stoudemire"     | "Heat"                  |
       | "Dwyane Wade"           | "Heat"                  |
-      | "Shaquile O'Neal"       | "Heat"                  |
+      | "Shaquille O'Neal"      | "Heat"                  |
       | "Marc Gasol"            | "Grizzlies"             |
       | "Kyle Anderson"         | "Grizzlies"             |
       | "Vince Carter"          | "Grizzlies"             |
@@ -601,7 +601,7 @@ Feature: Match seek by edge
       | "Grant Hill"            | "Suns"                  |
       | "Vince Carter"          | "Suns"                  |
       | "Amar'e Stoudemire"     | "Suns"                  |
-      | "Shaquile O'Neal"       | "Suns"                  |
+      | "Shaquille O'Neal"      | "Suns"                  |
       | "Jason Kidd"            | "Suns"                  |
       | "Boris Diaw"            | "Suns"                  |
       | "David West"            | "Hornets"               |
@@ -616,13 +616,13 @@ Feature: Match seek by edge
       | "Dwyane Wade"           | "Cavaliers"             |
       | "Kyrie Irving"          | "Cavaliers"             |
       | "Danny Green"           | "Cavaliers"             |
-      | "Shaquile O'Neal"       | "Cavaliers"             |
+      | "Shaquille O'Neal"      | "Cavaliers"             |
       | "Marco Belinelli"       | "Kings"                 |
       | "Rajon Rondo"           | "Kings"                 |
       | "Rudy Gay"              | "Kings"                 |
       | "Vince Carter"          | "Kings"                 |
       | "Aron Baynes"           | "Celtics"               |
-      | "Shaquile O'Neal"       | "Celtics"               |
+      | "Shaquille O'Neal"      | "Celtics"               |
       | "Kyrie Irving"          | "Celtics"               |
       | "Rajon Rondo"           | "Celtics"               |
       | "Ray Allen"             | "Celtics"               |
@@ -786,12 +786,12 @@ Feature: Match seek by edge
       | "Yao Ming"           | "Tracy McGrady"      | "Magic"         |
       | "Yao Ming"           | "Tracy McGrady"      | "Rockets"       |
       | "Yao Ming"           | "Tracy McGrady"      | "Raptors"       |
-      | "Yao Ming"           | "Shaquile O'Neal"    | "Suns"          |
-      | "Yao Ming"           | "Shaquile O'Neal"    | "Celtics"       |
-      | "Yao Ming"           | "Shaquile O'Neal"    | "Heat"          |
-      | "Yao Ming"           | "Shaquile O'Neal"    | "Magic"         |
-      | "Yao Ming"           | "Shaquile O'Neal"    | "Cavaliers"     |
-      | "Yao Ming"           | "Shaquile O'Neal"    | "Lakers"        |
+      | "Yao Ming"           | "Shaquille O'Neal"   | "Suns"          |
+      | "Yao Ming"           | "Shaquille O'Neal"   | "Celtics"       |
+      | "Yao Ming"           | "Shaquille O'Neal"   | "Heat"          |
+      | "Yao Ming"           | "Shaquille O'Neal"   | "Magic"         |
+      | "Yao Ming"           | "Shaquille O'Neal"   | "Cavaliers"     |
+      | "Yao Ming"           | "Shaquille O'Neal"   | "Lakers"        |
       | "Dejounte Murray"    | "Chris Paul"         | "Hornets"       |
       | "Dejounte Murray"    | "Chris Paul"         | "Clippers"      |
       | "Dejounte Murray"    | "Chris Paul"         | "Rockets"       |
@@ -867,12 +867,12 @@ Feature: Match seek by edge
       | "Grant Hill"         | "Tracy McGrady"      | "Magic"         |
       | "Grant Hill"         | "Tracy McGrady"      | "Rockets"       |
       | "Grant Hill"         | "Tracy McGrady"      | "Raptors"       |
-      | "Shaquile O'Neal"    | "Tim Duncan"         | "Spurs"         |
-      | "Shaquile O'Neal"    | "JaVale McGee"       | "Lakers"        |
-      | "Shaquile O'Neal"    | "JaVale McGee"       | "Warriors"      |
-      | "Shaquile O'Neal"    | "JaVale McGee"       | "Wizards"       |
-      | "Shaquile O'Neal"    | "JaVale McGee"       | "Nuggets"       |
-      | "Shaquile O'Neal"    | "JaVale McGee"       | "Mavericks"     |
+      | "Shaquille O'Neal"   | "Tim Duncan"         | "Spurs"         |
+      | "Shaquille O'Neal"   | "JaVale McGee"       | "Lakers"        |
+      | "Shaquille O'Neal"   | "JaVale McGee"       | "Warriors"      |
+      | "Shaquille O'Neal"   | "JaVale McGee"       | "Wizards"       |
+      | "Shaquille O'Neal"   | "JaVale McGee"       | "Nuggets"       |
+      | "Shaquille O'Neal"   | "JaVale McGee"       | "Mavericks"     |
 
   Scenario Outline: Seek by edge with range
     When executing query:
@@ -1037,8 +1037,8 @@ Feature: Match seek by edge
       | "Grant Hill"         | "Kobe Bryant"        |
       | "Grant Hill"         | "Grant Hill"         |
       | "Grant Hill"         | "Rudy Gay"           |
-      | "Shaquile O'Neal"    | "Tony Parker"        |
-      | "Shaquile O'Neal"    | "Manu Ginobili"      |
+      | "Shaquille O'Neal"   | "Tony Parker"        |
+      | "Shaquille O'Neal"   | "Manu Ginobili"      |
     When executing query:
       """
       match (p1)-[:like*1..2]->(p2) return p1.name, p2.name
@@ -1196,7 +1196,7 @@ Feature: Match seek by edge
       | "Damian Lillard"     | "LaMarcus Aldridge"  |
       | "Damian Lillard"     | "Tony Parker"        |
       | "Damian Lillard"     | "Tim Duncan"         |
-      | "Yao Ming"           | "Shaquile O'Neal"    |
+      | "Yao Ming"           | "Shaquille O'Neal"   |
       | "Yao Ming"           | "JaVale McGee"       |
       | "Yao Ming"           | "Tim Duncan"         |
       | "Yao Ming"           | "Tracy McGrady"      |
@@ -1280,10 +1280,10 @@ Feature: Match seek by edge
       | "Grant Hill"         | "Kobe Bryant"        |
       | "Grant Hill"         | "Grant Hill"         |
       | "Grant Hill"         | "Rudy Gay"           |
-      | "Shaquile O'Neal"    | "JaVale McGee"       |
-      | "Shaquile O'Neal"    | "Tim Duncan"         |
-      | "Shaquile O'Neal"    | "Tony Parker"        |
-      | "Shaquile O'Neal"    | "Manu Ginobili"      |
+      | "Shaquille O'Neal"   | "JaVale McGee"       |
+      | "Shaquille O'Neal"   | "Tim Duncan"         |
+      | "Shaquille O'Neal"   | "Tony Parker"        |
+      | "Shaquille O'Neal"   | "Manu Ginobili"      |
     When executing query:
       """
       match (p1)-[:serve*2]->(p2) return p1.name, p2.name
@@ -1447,7 +1447,7 @@ Feature: Match seek by edge
       | "Dwyane Wade"        | "Chris Paul"         |
       | "Dwyane Wade"        | "Dwyane Wade"        |
       | "Dwyane Wade"        | "LeBron James"       |
-      | "Yao Ming"           | "Shaquile O'Neal"    |
+      | "Yao Ming"           | "Shaquille O'Neal"   |
       | "Yao Ming"           | "Tracy McGrady"      |
       | "Yao Ming"           | "Kobe Bryant"        |
       | "Yao Ming"           | "Grant Hill"         |

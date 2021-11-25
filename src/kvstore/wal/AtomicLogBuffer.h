@@ -230,7 +230,7 @@ class AtomicLogBuffer : public std::enable_shared_from_this<AtomicLogBuffer> {
     if (size_ + recSize > capacity_) {
       auto* tail = tail_.load(std::memory_order_relaxed);
       // todo(doodle): there is a potential problem is that: since Node::isFull
-      // is judeged by log count, we can only add new node when previous node
+      // is judged by log count, we can only add new node when previous node
       // has enough logs. So when tail is equal to head, we need to wait tail is
       // full, after head moves forward, at then tail can be marked as deleted.
       // So the log buffer would takes up more memory than its capacity. Since

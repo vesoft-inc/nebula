@@ -213,7 +213,7 @@ nebula::cpp2::ErrorCode RocksEngine::range(const std::string& start,
 nebula::cpp2::ErrorCode RocksEngine::prefix(const std::string& prefix,
                                             std::unique_ptr<KVIterator>* storageIter) {
   // In fact, we don't need to check prefix.size() >= extractorLen_, which is caller's duty to make
-  // sure the prefix bloom filter exists. But this is quite error-proning, so we do a check here.
+  // sure the prefix bloom filter exists. But this is quite error-prone, so we do a check here.
   if (FLAGS_enable_rocksdb_prefix_filtering && prefix.size() >= extractorLen_) {
     return prefixWithExtractor(prefix, storageIter);
   } else {
@@ -517,7 +517,7 @@ void RocksEngine::openBackupEngine(GraphSpaceID spaceId) {
     } else if (!status.ok()) {
       LOG(FATAL) << status.ToString();
     }
-    LOG(INFO) << "restore from latest backup succesfully"
+    LOG(INFO) << "restore from latest backup successfully"
               << ", backup path " << backupPath_ << ", wal path " << walDir << ", data path "
               << dataPath;
   }
