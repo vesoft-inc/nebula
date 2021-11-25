@@ -148,6 +148,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "ListUserRoles";
     case Kind::kListUsers:
       return "ListUsers";
+    case Kind::kDescribeUser:
+      return "DescribeUser";
     case Kind::kListRoles:
       return "ListRoles";
     case Kind::kShowCreateSpace:

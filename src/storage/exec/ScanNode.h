@@ -13,6 +13,8 @@ namespace storage {
 
 using Cursor = std::string;
 
+inline bool vTrue(const Value& v) { return v.isBool() && v.getBool(); }
+
 // Node to scan vertices of one partition
 class ScanVertexPropNode : public QueryNode<Cursor> {
  public:
@@ -23,13 +25,17 @@ class ScanVertexPropNode : public QueryNode<Cursor> {
                               bool enableReadFollower,
                               int64_t limit,
                               std::unordered_map<PartitionID, cpp2::ScanCursor>* cursors,
-                              nebula::DataSet* resultDataSet)
+                              nebula::DataSet* resultDataSet,
+                              StorageExpressionContext* expCtx = nullptr,
+                              Expression* filter = nullptr)
       : context_(context),
         tagNodes_(std::move(tagNodes)),
         enableReadFollower_(enableReadFollower),
         limit_(limit),
         cursors_(cursors),
-        resultDataSet_(resultDataSet) {
+        resultDataSet_(resultDataSet),
+        expCtx_(expCtx),
+        filter_(filter) {
     name_ = "ScanVertexPropNode";
     for (std::size_t i = 0; i < tagNodes_.size(); ++i) {
       tagNodesIndex_.emplace(tagNodes_[i]->tagId(), i);
@@ -110,20 +116,36 @@ class ScanVertexPropNode : public QueryNode<Cursor> {
         })) {
       for (auto& tagNode : tagNodes_) {
         ret = tagNode->collectTagPropsIfValid(
-            [&row](const std::vector<PropContext>* props) -> nebula::cpp2::ErrorCode {
+            [&row, tagNode = tagNode.get(), this](
+                const std::vector<PropContext>* props) -> nebula::cpp2::ErrorCode {
               for (const auto& prop : *props) {
                 if (prop.returned_) {
                   row.emplace_back(Value());
                 }
+                if (prop.filtered_ && expCtx_ != nullptr) {
+                  expCtx_->setTagProp(tagNode->getTagName(), prop.name_, Value());
+                }
               }
               return nebula::cpp2::ErrorCode::SUCCEEDED;
             },
-            [&row, vIdLen, isIntId](
+            [&row, vIdLen, isIntId, tagNode = tagNode.get(), this](
                 folly::StringPiece key,
                 RowReader* reader,
                 const std::vector<PropContext>* props) -> nebula::cpp2::ErrorCode {
-              if (!QueryUtils::collectVertexProps(key, vIdLen, isIntId, reader, props, row).ok()) {
-                return nebula::cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND;
+              for (const auto& prop : *props) {
+                if (prop.returned_ || (prop.filtered_ && expCtx_ != nullptr)) {
+                  auto value = QueryUtils::readVertexProp(key, vIdLen, isIntId, reader, prop);
+                  if (!value.ok()) {
+                    return nebula::cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND;
+                  }
+                  if (prop.filtered_ && expCtx_ != nullptr) {
+                    expCtx_->setTagProp(tagNode->getTagName(), prop.name_, value.value());
+                  }
+                  if (prop.returned_) {
+                    VLOG(2) << "Collect prop " << prop.name_;
+                    row.emplace_back(std::move(value).value());
+                  }
+                }
               }
               return nebula::cpp2::ErrorCode::SUCCEEDED;
             });
@@ -131,9 +153,11 @@ class ScanVertexPropNode : public QueryNode<Cursor> {
           break;
         }
       }
-      if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
+      if (ret == nebula::cpp2::ErrorCode::SUCCEEDED &&
+          (filter_ == nullptr || vTrue(filter_->eval(*expCtx_)))) {
         resultDataSet_->rows.emplace_back(std::move(row));
       }
+      expCtx_->clear();
       for (auto& tagNode : tagNodes_) {
         tagNode->clear();
       }
@@ -149,6 +173,8 @@ class ScanVertexPropNode : public QueryNode<Cursor> {
   // cursors for next scan
   std::unordered_map<PartitionID, cpp2::ScanCursor>* cursors_;
   nebula::DataSet* resultDataSet_;
+  StorageExpressionContext* expCtx_{nullptr};
+  Expression* filter_{nullptr};
 };
 
 // Node to scan edge of one partition
@@ -161,13 +187,17 @@ class ScanEdgePropNode : public QueryNode<Cursor> {
                    bool enableReadFollower,
                    int64_t limit,
                    std::unordered_map<PartitionID, cpp2::ScanCursor>* cursors,
-                   nebula::DataSet* resultDataSet)
+                   nebula::DataSet* resultDataSet,
+                   StorageExpressionContext* expCtx = nullptr,
+                   Expression* filter = nullptr)
       : context_(context),
         edgeNodes_(std::move(edgeNodes)),
         enableReadFollower_(enableReadFollower),
         limit_(limit),
         cursors_(cursors),
-        resultDataSet_(resultDataSet) {
+        resultDataSet_(resultDataSet),
+        expCtx_(expCtx),
+        filter_(filter) {
     QueryNode::name_ = "ScanEdgePropNode";
     for (std::size_t i = 0; i < edgeNodes_.size(); ++i) {
       edgeNodesIndex_.emplace(edgeNodes_[i]->edgeType(), i);
@@ -230,20 +260,36 @@ class ScanEdgePropNode : public QueryNode<Cursor> {
     nebula::cpp2::ErrorCode ret = nebula::cpp2::ErrorCode::SUCCEEDED;
     for (auto& edgeNode : edgeNodes_) {
       ret = edgeNode->collectEdgePropsIfValid(
-          [&row](const std::vector<PropContext>* props) -> nebula::cpp2::ErrorCode {
+          [&row, edgeNode = edgeNode.get(), this](
+              const std::vector<PropContext>* props) -> nebula::cpp2::ErrorCode {
             for (const auto& prop : *props) {
               if (prop.returned_) {
                 row.emplace_back(Value());
               }
+              if (prop.filtered_ && expCtx_ != nullptr) {
+                expCtx_->setEdgeProp(edgeNode->getEdgeName(), prop.name_, Value());
+              }
             }
             return nebula::cpp2::ErrorCode::SUCCEEDED;
           },
-          [&row, vIdLen, isIntId](
+          [&row, vIdLen, isIntId, edgeNode = edgeNode.get(), this](
               folly::StringPiece key,
               RowReader* reader,
               const std::vector<PropContext>* props) -> nebula::cpp2::ErrorCode {
-            if (!QueryUtils::collectEdgeProps(key, vIdLen, isIntId, reader, props, row).ok()) {
-              return nebula::cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
+            for (const auto& prop : *props) {
+              if (prop.returned_ || (prop.filtered_ && expCtx_ != nullptr)) {
+                auto value = QueryUtils::readEdgeProp(key, vIdLen, isIntId, reader, prop);
+                if (!value.ok()) {
+                  return nebula::cpp2::ErrorCode::E_EDGE_PROP_NOT_FOUND;
+                }
+                if (prop.filtered_ && expCtx_ != nullptr) {
+                  expCtx_->setEdgeProp(edgeNode->getEdgeName(), prop.name_, value.value());
+                }
+                if (prop.returned_) {
+                  VLOG(2) << "Collect prop " << prop.name_;
+                  row.emplace_back(std::move(value).value());
+                }
+              }
             }
             return nebula::cpp2::ErrorCode::SUCCEEDED;
           });
@@ -251,9 +297,11 @@ class ScanEdgePropNode : public QueryNode<Cursor> {
         break;
       }
     }
-    if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
+    if (ret == nebula::cpp2::ErrorCode::SUCCEEDED &&
+        (filter_ == nullptr || vTrue(filter_->eval(*expCtx_)))) {
       resultDataSet_->rows.emplace_back(std::move(row));
     }
+    expCtx_->clear();
     for (auto& edgeNode : edgeNodes_) {
       edgeNode->clear();
     }
@@ -268,6 +316,8 @@ class ScanEdgePropNode : public QueryNode<Cursor> {
   // cursors for next scan
   std::unordered_map<PartitionID, cpp2::ScanCursor>* cursors_;
   nebula::DataSet* resultDataSet_;
+  StorageExpressionContext* expCtx_{nullptr};
+  Expression* filter_{nullptr};
 };
 
 }  // namespace storage

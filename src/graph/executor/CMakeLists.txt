@@ -51,6 +51,7 @@ nebula_add_library(
     admin/ChangePasswordExecutor.cpp
     admin/ListUserRolesExecutor.cpp
     admin/ListUsersExecutor.cpp
+    admin/DescribeUserExecutor.cpp
     admin/ListRolesExecutor.cpp
     admin/SubmitJobExecutor.cpp
     admin/ShowHostsExecutor.cpp
