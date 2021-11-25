@@ -154,7 +154,8 @@ class QueryBaseProcessor : public BaseProcessor<RESP> {
   // build edgeContexts_ according to return props
   nebula::cpp2::ErrorCode handleEdgeProps(std::vector<cpp2::EdgeProp>& edgeProps);
 
-  nebula::cpp2::ErrorCode buildFilter(const REQ& req);
+  nebula::cpp2::ErrorCode buildFilter(
+      const REQ& req, std::function<const std::string*(const REQ& req)>&& getFilter);
   nebula::cpp2::ErrorCode buildYields(const REQ& req);
 
   // build ttl info map

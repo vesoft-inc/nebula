@@ -294,6 +294,49 @@ TEST(ScanEdgeTest, LimitTest) {
   }
 }
 
+TEST(ScanEdgeTest, FilterTest) {
+  fs::TempDir rootPath("/tmp/ScanVertexTest.XXXXXX");
+  mock::MockCluster cluster;
+  cluster.initStorageKV(rootPath.path());
+  auto* env = cluster.storageEnv_.get();
+  auto totalParts = cluster.getTotalParts();
+  ASSERT_EQ(true, QueryTestUtils::mockVertexData(env, totalParts));
+  ASSERT_EQ(true, QueryTestUtils::mockEdgeData(env, totalParts));
+
+  EdgeType serve = 101;
+  ObjectPool pool;
+
+  {
+    LOG(INFO) << "Scan one edge with some properties in one batch";
+    constexpr std::size_t limit = 3;
+    auto edge = std::make_pair(
+        serve,
+        std::vector<std::string>{kSrc, kType, kRank, kDst, "teamName", "startYear", "endYear"});
+    auto req = buildRequest({1}, {""}, edge, limit);
+    Expression* filter = EdgePropertyExpression::make(&pool, "101", kSrc);
+    filter = RelationalExpression::makeEQ(
+        &pool, filter, ConstantExpression::make(&pool, "Damian Lillard"));
+    req.set_filter(filter->encode());
+    auto* processor = ScanEdgeProcessor::instance(env, nullptr);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+
+    ASSERT_EQ(0, resp.result.failed_parts.size());
+
+    DataSet expected({"101._src",
+                      "101._type",
+                      "101._rank",
+                      "101._dst",
+                      "101.teamName",
+                      "101.startYear",
+                      "101.endYear"});
+    expected.emplace_back(
+        List({"Damian Lillard", 101, 2012, "Trail Blazers", "Trail Blazers", 2012, 2020}));
+    EXPECT_EQ(*resp.edge_data_ref(), expected);
+  }
+}
+
 }  // namespace storage
 }  // namespace nebula
 
