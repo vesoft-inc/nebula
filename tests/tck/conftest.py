@@ -213,6 +213,12 @@ def executing_query(query, graph_spaces, session, request):
     ngql = combine_query(query)
     exec_query(request, ngql, session, graph_spaces)
 
+@when(parse("executing query with user {username} with password {password}:\n{query}"))
+def executing_query(username, password, conn_pool_to_first_graph_service, query, graph_spaces, request):
+    sess = conn_pool_to_first_graph_service.get_session(username, password)
+    ngql = combine_query(query)
+    exec_query(request, ngql, sess, graph_spaces)
+    sess.release()
 
 @when(parse("profiling query:\n{query}"))
 def profiling_query(query, graph_spaces, session, request):
