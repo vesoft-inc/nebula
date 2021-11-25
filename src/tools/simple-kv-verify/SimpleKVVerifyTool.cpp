@@ -7,7 +7,7 @@
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
 #include "clients/meta/MetaClient.h"
-#include "clients/storage/GraphStorageClient.h"
+#include "clients/storage/StorageClient.h"
 #include "common/base/Base.h"
 #include "common/datatypes/KeyValue.h"
 #include "common/meta/SchemaManager.h"
@@ -53,7 +53,7 @@ class SimpleKVVerifyTool {
     spaceId_ = spaceResult.value();
     LOG(INFO) << "Space ID: " << spaceId_;
 
-    storageClient_ = std::make_unique<storage::GraphStorageClient>(ioExecutor, metaClient_.get());
+    storageClient_ = std::make_unique<storage::StorageClient>(ioExecutor, metaClient_.get());
     return EXIT_SUCCESS;
   }
 
@@ -129,7 +129,7 @@ class SimpleKVVerifyTool {
   }
 
  private:
-  std::unique_ptr<nebula::storage::GraphStorageClient> storageClient_;
+  std::unique_ptr<nebula::storage::StorageClient> storageClient_;
   std::unique_ptr<nebula::meta::MetaClient> metaClient_;
   nebula::GraphSpaceID spaceId_;
 };

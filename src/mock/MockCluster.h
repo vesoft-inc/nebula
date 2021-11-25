@@ -12,7 +12,7 @@
 #include <thrift/lib/cpp/concurrency/ThreadManager.h>
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 
-#include "clients/storage/GraphStorageClient.h"
+#include "clients/storage/StorageClient.h"
 #include "common/base/Base.h"
 #include "common/base/ObjectPool.h"
 #include "kvstore/KVStore.h"
@@ -55,7 +55,7 @@ class MockCluster {
    * Init a storage client connect to graphStorageServer
    * The meta server, and meta client must started first
    * */
-  storage::GraphStorageClient* initGraphStorageClient();
+  storage::StorageClient* initGraphStorageClient();
 
   std::unique_ptr<meta::SchemaManager> memSchemaMan(SchemaVer schemaVerCount = 1,
                                                     GraphSpaceID spaceId = 1,
@@ -113,7 +113,7 @@ class MockCluster {
  public:
   std::unique_ptr<RpcServer> metaServer_{nullptr};
   std::unique_ptr<meta::MetaClient> metaClient_{nullptr};
-  std::unique_ptr<storage::GraphStorageClient> storageClient_{nullptr};
+  std::unique_ptr<storage::StorageClient> storageClient_{nullptr};
   std::unique_ptr<kvstore::NebulaStore> metaKV_{nullptr};
 
   std::unique_ptr<RpcServer> storageAdminServer_{nullptr};

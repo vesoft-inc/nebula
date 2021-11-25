@@ -3,8 +3,7 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#ifndef CLIENTS_STORAGE_GRAPHSTORAGECLIENT_H_
-#define CLIENTS_STORAGE_GRAPHSTORAGECLIENT_H_
+#pragma once
 
 #include <gtest/gtest_prod.h>
 
@@ -23,7 +22,7 @@ using StorageRpcRespFuture = folly::SemiFuture<StorageRpcResponse<T>>;
  *
  * The class is NOT reentrant
  */
-class GraphStorageClient : public StorageClientBase<cpp2::GraphStorageServiceAsyncClient> {
+class StorageClient : public StorageClientBase<cpp2::GraphStorageServiceAsyncClient> {
   FRIEND_TEST(StorageClientTest, LeaderChangeTest);
 
  public:
@@ -45,10 +44,10 @@ class GraphStorageClient : public StorageClientBase<cpp2::GraphStorageServiceAsy
     cpp2::RequestCommon toReqCommon() const;
   };
 
-  GraphStorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
-                     meta::MetaClient* metaClient)
+  StorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
+                meta::MetaClient* metaClient)
       : StorageClientBase<cpp2::GraphStorageServiceAsyncClient>(ioThreadPool, metaClient) {}
-  virtual ~GraphStorageClient() {}
+  virtual ~StorageClient() {}
 
   StorageRpcRespFuture<cpp2::GetNeighborsResponse> getNeighbors(
       const CommonRequestParam& param,
@@ -175,5 +174,3 @@ class GraphStorageClient : public StorageClientBase<cpp2::GraphStorageServiceAsy
 
 }  // namespace storage
 }  // namespace nebula
-
-#endif  // CLIENTS_STORAGE_GRAPHSTORAGECLIENT_H_

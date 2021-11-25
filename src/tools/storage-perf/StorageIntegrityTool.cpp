@@ -5,7 +5,7 @@
 
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
-#include "clients/storage/GraphStorageClient.h"
+#include "clients/storage/StorageClient.h"
 #include "codec/RowReader.h"
 #include "common/base/Base.h"
 #include "common/time/Duration.h"
@@ -79,7 +79,7 @@ class IntegrityTest {
       spaceId_ = spaceResult.value();
     }
 
-    client_ = std::make_unique<GraphStorageClient>(threadPool_, mClient_.get());
+    client_ = std::make_unique<StorageClient>(threadPool_, mClient_.get());
     return true;
   }
 
@@ -190,7 +190,7 @@ class IntegrityTest {
   }
 
  private:
-  std::unique_ptr<GraphStorageClient> client_;
+  std::unique_ptr<StorageClient> client_;
   std::unique_ptr<meta::MetaClient> mClient_;
   std::shared_ptr<folly::IOThreadPoolExecutor> threadPool_;
   GraphSpaceID spaceId_;

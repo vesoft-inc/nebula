@@ -284,9 +284,9 @@ meta::MetaClient* MockCluster::initMetaClient(meta::MetaClientOptions options) {
   return metaClient_.get();
 }
 
-storage::GraphStorageClient* MockCluster::initGraphStorageClient() {
+storage::StorageClient* MockCluster::initGraphStorageClient() {
   auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
-  storageClient_ = std::make_unique<storage::GraphStorageClient>(threadPool, metaClient_.get());
+  storageClient_ = std::make_unique<storage::StorageClient>(threadPool, metaClient_.get());
   return storageClient_.get();
 }
 
