@@ -11,8 +11,8 @@ enum Role {
     LEADER      = 1, // the leader
     FOLLOWER    = 2; // following a leader
     CANDIDATE   = 3; // Has sent AskForVote request
-    LEARNER     = 4; // It is the same with FOLLOWER,
-                     // except it does not participate in leader election
+    LEARNER     = 4; // same with FOLLOWER, except that it does
+                     // not vote in leader election
 }
 
 enum Status {
