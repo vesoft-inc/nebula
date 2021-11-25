@@ -40,13 +40,9 @@ jobs:
         run: |
           git diff -U0 --no-color ${{ github.event.pull_request.base.sha }} HEAD | /usr/share/clang/clang-format-10/clang-format-diff.py -p1 | tee /tmp/.clang-format-diff
           [ -s /tmp/.clang-format-diff ] && exit 1 || true
-      - uses: actions/setup-python@v2
+      - uses: OneContainer/gherkin-feature-format@master
         with:
-          python-version: 3.7
-      - name: Prepare Gherkin exec environ
-        run: make init-all -C tests
-      - name: Check Gherkin feature format
-        run: make check-and-diff -C tests
+          path: tests/tck
 
   build:
     name: build
