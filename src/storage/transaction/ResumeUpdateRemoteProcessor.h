@@ -12,7 +12,7 @@ namespace storage {
 
 /**
  * @brief
- *  if the TxnManager backgroud resume thread found a prime key
+ *  if the TxnManager background resume thread found a prime key
  *  it will create this processor to resume the complete update process
  */
 class ResumeUpdateRemoteProcessor : public ChainUpdateEdgeProcessorLocal {

@@ -36,39 +36,6 @@ class TestZone(NebulaTestSuite):
         resp = self.client.execute('SHOW ZONES')
         self.check_resp_succeeded(resp)
 
-        # Add Group
-        resp = self.client.execute('ADD GROUP group_0 zone_0')
-        self.check_resp_succeeded(resp)
-
-        resp = self.client.execute('ADD GROUP default zone_0')
-        self.check_resp_failed(resp)
-
-        # Get Group
-        resp = self.client.execute('DESC GROUP group_0')
-        self.check_resp_succeeded(resp)
-
-        resp = self.client.execute('DESCRIBE GROUP group_0')
-        self.check_resp_succeeded(resp)
-
-        # Get Group which is not exist
-        resp = self.client.execute('DESC GROUP group_not_exist')
-        self.check_resp_failed(resp)
-
-        resp = self.client.execute('DESCRIBE GROUP group_not_exist')
-        self.check_resp_failed(resp)
-
-        # SHOW Groups
-        resp = self.client.execute('SHOW GROUPS')
-        self.check_resp_succeeded(resp)
-
-        # Drop Group
-        resp = self.client.execute('DROP GROUP group_0')
-        self.check_resp_succeeded(resp)
-
-        # Drop Group which is not exist
-        resp = self.client.execute('DROP GROUP group_0')
-        self.check_resp_failed(resp)
-
         # Drop Zone
         resp = self.client.execute('DROP ZONE zone_0')
         self.check_resp_succeeded(resp)

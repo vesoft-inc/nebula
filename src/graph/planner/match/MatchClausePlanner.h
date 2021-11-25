@@ -59,23 +59,14 @@ class MatchClausePlanner final : public CypherClausePlanner {
                         size_t startIndex,
                         SubPlan& subplan);
 
-  Status projectColumnsBySymbols(MatchClauseContext* matchClauseCtx,
-                                 size_t startIndex,
-                                 SubPlan& plan);
+  Status projectColumnsBySymbols(MatchClauseContext* matchClauseCtx, SubPlan& plan);
 
   YieldColumn* buildVertexColumn(MatchClauseContext* matchClauseCtx,
-                                 const std::string& colName,
                                  const std::string& alias) const;
 
-  YieldColumn* buildEdgeColumn(MatchClauseContext* matchClauseCtx,
-                               const std::string& colName,
-                               EdgeInfo& edge) const;
+  YieldColumn* buildEdgeColumn(MatchClauseContext* matchClauseCtx, EdgeInfo& edge) const;
 
-  YieldColumn* buildPathColumn(MatchClauseContext* matchClauseCtx,
-                               const std::string& alias,
-                               size_t startIndex,
-                               const std::vector<std::string> colNames,
-                               size_t nodeInfoSize) const;
+  YieldColumn* buildPathColumn(MatchClauseContext* matchClauseCtx, const std::string& alias) const;
 
   Status appendFilterPlan(MatchClauseContext* matchClauseCtx, SubPlan& subplan);
 

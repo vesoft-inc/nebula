@@ -30,8 +30,8 @@ void GetStatsProcessor::process(const cpp2::GetStatsReq& req) {
     return;
   }
   auto statsItem = MetaKeyUtils::parseStatsVal(val);
-  auto statisJobStatus = statsItem.get_status();
-  if (statisJobStatus != cpp2::JobStatus::FINISHED) {
+  auto statsJobStatus = statsItem.get_status();
+  if (statsJobStatus != cpp2::JobStatus::FINISHED) {
     LOG(ERROR) << "SpaceId " << spaceId
                << " stats job is running or failed, please execute `show jobs' firstly.";
     handleErrorCode(nebula::cpp2::ErrorCode::E_JOB_NOT_FINISHED);

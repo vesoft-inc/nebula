@@ -55,7 +55,7 @@ void DeleteTagsProcessor::process(const cpp2::DeleteTagsRequest& req) {
       for (const auto& entry : delTags) {
         const auto& vId = entry.get_id().getStr();
         for (const auto& tagId : entry.get_tags()) {
-          auto key = NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vId, tagId);
+          auto key = NebulaKeyUtils::tagKey(spaceVidLen_, partId, vId, tagId);
           keys.emplace_back(std::move(key));
         }
       }
@@ -94,7 +94,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> DeleteTagsProcessor::deleteTags(
   for (const auto& entry : delTags) {
     const auto& vId = entry.get_id().getStr();
     for (const auto& tagId : entry.get_tags()) {
-      auto key = NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vId, tagId);
+      auto key = NebulaKeyUtils::tagKey(spaceVidLen_, partId, vId, tagId);
       auto tup = std::make_tuple(spaceId_, partId, tagId, vId);
       // ignore if there are duplicate delete
       if (std::find(lockedKeys.begin(), lockedKeys.end(), tup) != lockedKeys.end()) {

@@ -627,7 +627,7 @@ TEST(Value, TypeCast) {
   Value vNull(NullType::__NULL__);
   Value vIntMin(std::numeric_limits<int64_t>::min());
   Value vIntMax(std::numeric_limits<int64_t>::max());
-  Value vFloatMin(std::numeric_limits<double_t>::lowest());  // non-negtive
+  Value vFloatMin(std::numeric_limits<double_t>::lowest());  // non-negative
   Value vFloatMax(std::numeric_limits<double_t>::max());
 
   {
@@ -720,7 +720,7 @@ TEST(Value, TypeCast) {
     EXPECT_EQ(Value::Type::FLOAT, vf.type());
     EXPECT_EQ(vf.getFloat(), std::numeric_limits<double_t>::max());
 
-    // Invlaid string
+    // Invalid string
     vf = Value("12abc").toFloat();
     EXPECT_EQ(Value::kNullValue, vf);
 
@@ -788,7 +788,7 @@ TEST(Value, TypeCast) {
     vi = Value("-9223372036854775809").toInt();
     EXPECT_EQ(Value::kNullOverflow, vi);
 
-    // Invlaid string
+    // Invalid string
     vi = Value("12abc").toInt();
     EXPECT_EQ(Value::kNullValue, vi);
 
@@ -1071,7 +1071,7 @@ TEST(Value, DecodeEncode) {
       // time
       Value(Time{1, 2, 3, 4}),
 
-      // datatime
+      // datetime
       Value(DateTime{1, 2, 3, 4, 5, 6, 7}),
 
       // vertex

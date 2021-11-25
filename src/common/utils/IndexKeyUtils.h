@@ -143,7 +143,7 @@ class IndexKeyUtils final {
         return "";
       }
       default:
-        LOG(ERROR) << "Unsupported default value type";
+        LOG(FATAL) << "Unsupported default value type";
     }
     return "";
   }
@@ -457,7 +457,7 @@ class IndexKeyUtils final {
   }
 
   static VertexIDSlice getIndexVertexID(size_t vIdLen, const folly::StringPiece& rawKey) {
-    CHECK_GE(rawKey.size(), kVertexIndexLen + vIdLen);
+    CHECK_GE(rawKey.size(), kTagIndexLen + vIdLen);
     auto offset = rawKey.size() - vIdLen;
     return rawKey.subpiece(offset, vIdLen);
   }

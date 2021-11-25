@@ -28,7 +28,7 @@ class MatchEdgeTypeList final {
 
 class MatchStepRange final {
  public:
-  explicit MatchStepRange(int64_t min, int64_t max = std::numeric_limits<int64_t>::max()) {
+  explicit MatchStepRange(size_t min = 0, size_t max = std::numeric_limits<size_t>::max()) {
     min_ = min;
     max_ = max;
   }
@@ -37,9 +37,11 @@ class MatchStepRange final {
 
   auto max() const { return max_; }
 
+  std::string toString() const;
+
  private:
-  int64_t min_{1};
-  int64_t max_{1};
+  size_t min_{1};
+  size_t max_{1};
 };
 
 class MatchEdgeProp final {
@@ -163,6 +165,8 @@ class MatchNode final {
 
   const MapExpression* props() const { return props_; }
 
+  MapExpression* props() { return props_; }
+
   std::string toString() const;
 
  private:
@@ -200,6 +204,22 @@ class MatchPath final {
   std::unique_ptr<std::string> alias_;
   std::vector<std::unique_ptr<MatchNode>> nodes_;
   std::vector<std::unique_ptr<MatchEdge>> edges_;
+};
+
+class MatchPathList final {
+ public:
+  explicit MatchPathList(MatchPath* path);
+
+  void add(MatchPath* path);
+
+  size_t pathSize() const { return pathList_.size(); }
+
+  const MatchPath* path(size_t i) const { return pathList_[i].get(); }
+
+  std::string toString() const;
+
+ private:
+  std::vector<std::unique_ptr<MatchPath>> pathList_;
 };
 
 class MatchReturnItems final {
@@ -284,15 +304,16 @@ class ReadingClause {
 
 class MatchClause final : public ReadingClause {
  public:
-  MatchClause(MatchPath* path, WhereClause* where, bool optional) : ReadingClause(Kind::kMatch) {
-    path_.reset(path);
+  MatchClause(MatchPathList* pathList, WhereClause* where, bool optional)
+      : ReadingClause(Kind::kMatch) {
+    pathList_.reset(pathList);
     where_.reset(where);
     isOptional_ = optional;
   }
 
-  MatchPath* path() { return path_.get(); }
+  MatchPathList* pathList() { return pathList_.get(); }
 
-  const MatchPath* path() const { return path_.get(); }
+  const MatchPathList* path() const { return pathList_.get(); }
 
   WhereClause* where() { return where_.get(); }
 
@@ -304,7 +325,7 @@ class MatchClause final : public ReadingClause {
 
  private:
   bool isOptional_{false};
-  std::unique_ptr<MatchPath> path_;
+  std::unique_ptr<MatchPathList> pathList_;
   std::unique_ptr<WhereClause> where_;
 };
 

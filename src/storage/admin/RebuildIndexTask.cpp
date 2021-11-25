@@ -19,8 +19,8 @@ RebuildIndexTask::RebuildIndexTask(StorageEnv* env, TaskContext&& ctx)
   // Rebuild index rate is limited to FLAGS_rebuild_index_part_rate_limit * SubTaskConcurrency. As
   // for default configuration in a 3 replica cluster, send rate is 512Kb for a partition. From a
   // global perspective, the leaders are distributed evenly, so both send and recv traffic will be
-  // 1Mb (512 * 2 peers). Muliplied by the subtasks concurrency, the total send/recv traffic will be
-  // 10Mb, which is non-trival.
+  // 1Mb (512 * 2 peers). Multiplied by the subtasks concurrency, the total send/recv traffic will
+  // be 10Mb, which is non-trival.
   LOG(INFO) << "Rebuild index task is rate limited to " << FLAGS_rebuild_index_part_rate_limit
             << " for each subtask by default";
 }
@@ -31,8 +31,8 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>> RebuildIndexTask::ge
   auto parts = *ctx_.parameters_.parts_ref();
 
   IndexItems items;
-  if (!ctx_.parameters_.task_specfic_paras_ref().has_value() ||
-      (*ctx_.parameters_.task_specfic_paras_ref()).empty()) {
+  if (!ctx_.parameters_.task_specific_paras_ref().has_value() ||
+      (*ctx_.parameters_.task_specific_paras_ref()).empty()) {
     auto itemsRet = getIndexes(space_);
     if (!itemsRet.ok()) {
       LOG(ERROR) << "Indexes not found";
@@ -41,7 +41,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>> RebuildIndexTask::ge
 
     items = std::move(itemsRet).value();
   } else {
-    for (const auto& index : *ctx_.parameters_.task_specfic_paras_ref()) {
+    for (const auto& index : *ctx_.parameters_.task_specific_paras_ref()) {
       auto indexID = folly::to<IndexID>(index);
       auto indexRet = getIndex(space_, indexID);
       if (!indexRet.ok()) {
@@ -78,7 +78,7 @@ nebula::cpp2::ErrorCode RebuildIndexTask::invoke(GraphSpaceID space,
                                                  PartitionID part,
                                                  const IndexItems& items) {
   auto rateLimiter = std::make_unique<kvstore::RateLimiter>();
-  // TaskMananger will make sure that there won't be cocurrent invoke of a given part
+  // TaskManager will make sure that there won't be cocurrent invoke of a given part
   auto result = removeLegacyLogs(space, part);
   if (result != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << "Remove legacy logs at part: " << part << " failed";

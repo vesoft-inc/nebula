@@ -953,9 +953,10 @@ TEST_F(QueryValidatorTest, GoInvalid) {
               "SemanticError: `VERTEX AS v' is not support in go sentence.");
   }
   {
-    std::string query = "GO FROM \"Tim\" OVER * YIELD path as p";
+    std::string query = "GO FROM \"Tim\" OVER * YIELD path";
     auto result = checkResult(query);
-    EXPECT_EQ(std::string(result.message()), "SemanticError: Invalid label identifiers: path");
+    EXPECT_EQ(std::string(result.message()),
+              "SyntaxError: please add alias when using `path'. near `path'");
   }
   {
     std::string query = "GO FROM \"Tim\" OVER * YIELD $$";
@@ -1015,7 +1016,7 @@ TEST_F(QueryValidatorTest, OrderBy) {
   }
 }
 
-TEST_F(QueryValidatorTest, OrderByAndLimt) {
+TEST_F(QueryValidatorTest, OrderByAndLimit) {
   {
     std::string query =
         "GO FROM \"Ann\" OVER like YIELD $^.person.age AS age"
@@ -1177,19 +1178,9 @@ TEST_F(QueryValidatorTest, TestMatch) {
         "RETURN type(r) AS Type, v2.name AS Name";
     std::vector<PlanNode::Kind> expected = {
         PK::kProject,
-        PK::kFilter,
         PK::kProject,
-        PK::kInnerJoin,
-        PK::kProject,
-        PK::kGetVertices,
-        PK::kDedup,
-        PK::kProject,
-        PK::kFilter,
-        PK::kProject,
-        PK::kFilter,
-        PK::kGetNeighbors,
-        PK::kDedup,
-        PK::kProject,
+        PK::kAppendVertices,
+        PK::kTraverse,
         PK::kIndexScan,
         PK::kStart,
     };
@@ -1200,11 +1191,15 @@ TEST_F(QueryValidatorTest, TestMatch) {
         "MATCH (:person{name:'Dwyane Wade'}) -[:like]-> () -[:like]-> (v3) "
         "RETURN DISTINCT v3.name AS Name";
     std::vector<PlanNode::Kind> expected = {
-        PK::kDataCollect, PK::kDedup,   PK::kProject,     PK::kFilter,       PK::kProject,
-        PK::kInnerJoin,   PK::kProject, PK::kGetVertices, PK::kDedup,        PK::kProject,
-        PK::kInnerJoin,   PK::kFilter,  PK::kProject,     PK::kGetNeighbors, PK::kDedup,
-        PK::kProject,     PK::kFilter,  PK::kProject,     PK::kFilter,       PK::kGetNeighbors,
-        PK::kDedup,       PK::kProject, PK::kIndexScan,   PK::kStart,
+        PK::kDataCollect,
+        PK::kDedup,
+        PK::kProject,
+        PK::kProject,
+        PK::kAppendVertices,
+        PK::kTraverse,
+        PK::kTraverse,
+        PK::kIndexScan,
+        PK::kStart,
     };
     EXPECT_TRUE(checkResult(query, expected));
   }
@@ -1216,18 +1211,10 @@ TEST_F(QueryValidatorTest, TestMatch) {
     std::vector<PlanNode::Kind> expected = {
         PK::kProject,
         PK::kFilter,
-        PK::kFilter,
         PK::kProject,
-        PK::kInnerJoin,
-        PK::kProject,
-        PK::kGetVertices,
+        PK::kAppendVertices,
+        PK::kTraverse,
         PK::kDedup,
-        PK::kProject,
-        PK::kFilter,
-        PK::kProject,
-        PK::kGetNeighbors,
-        PK::kDedup,
-        PK::kProject,
         PK::kPassThrough,
         PK::kStart,
     };
@@ -1238,53 +1225,25 @@ TEST_F(QueryValidatorTest, TestMatch) {
         "MATCH (v1)-[e:serve*2..3{start_year: 2000}]-(v2) "
         "WHERE id(v1) == \"LeBron James\""
         "RETURN v1, v2";
-    std::vector<PlanNode::Kind> expected = {PK::kProject,
-                                            PK::kFilter,
-                                            PK::kFilter,
-                                            PK::kProject,
-                                            PK::kInnerJoin,
-                                            PK::kProject,
-                                            PK::kGetVertices,
-                                            PK::kDedup,
-                                            PK::kProject,
-                                            PK::kFilter,
-                                            PK::kUnionAllVersionVar,
-                                            PK::kLoop,
-                                            PK::kProject,
-                                            PK::kFilter,
-                                            PK::kFilter,
-                                            PK::kProject,
-                                            PK::kGetNeighbors,
-                                            PK::kInnerJoin,
-                                            PK::kDedup,
-                                            PK::kProject,
-                                            PK::kProject,
-                                            PK::kFilter,
-                                            PK::kPassThrough,
-                                            PK::kGetNeighbors,
-                                            PK::kStart,
-                                            PK::kDedup,
-                                            PK::kProject,
-                                            PK::kStart};
+    std::vector<PlanNode::Kind> expected = {
+        PK::kProject,
+        PK::kFilter,
+        PK::kProject,
+        PK::kAppendVertices,
+        PK::kTraverse,
+        PK::kDedup,
+        PK::kPassThrough,
+        PK::kStart,
+    };
     EXPECT_TRUE(checkResult(query, expected));
   }
   {
     std::string query = "MATCH p = (n)-[]-(m:person{name:\"LeBron James\"}) RETURN p";
     std::vector<PlanNode::Kind> expected = {
         PK::kProject,
-        PK::kFilter,
         PK::kProject,
-        PK::kInnerJoin,
-        PK::kProject,
-        PK::kGetVertices,
-        PK::kDedup,
-        PK::kProject,
-        PK::kFilter,
-        PK::kProject,
-        PK::kFilter,
-        PK::kGetNeighbors,
-        PK::kDedup,
-        PK::kProject,
+        PK::kAppendVertices,
+        PK::kTraverse,
         PK::kIndexScan,
         PK::kStart,
     };

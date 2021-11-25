@@ -16,8 +16,6 @@
 #include "graph/context/ExecutionContext.h"
 #include "graph/context/QueryContext.h"
 #include "graph/executor/ExecutionError.h"
-#include "graph/executor/admin/BalanceExecutor.h"
-#include "graph/executor/admin/BalanceLeadersExecutor.h"
 #include "graph/executor/admin/ChangePasswordExecutor.h"
 #include "graph/executor/admin/CharsetExecutor.h"
 #include "graph/executor/admin/ConfigExecutor.h"
@@ -25,7 +23,6 @@
 #include "graph/executor/admin/DownloadExecutor.h"
 #include "graph/executor/admin/DropUserExecutor.h"
 #include "graph/executor/admin/GrantRoleExecutor.h"
-#include "graph/executor/admin/GroupExecutor.h"
 #include "graph/executor/admin/IngestExecutor.h"
 #include "graph/executor/admin/KillQueryExecutor.h"
 #include "graph/executor/admin/ListRolesExecutor.h"
@@ -33,10 +30,8 @@
 #include "graph/executor/admin/ListUsersExecutor.h"
 #include "graph/executor/admin/ListenerExecutor.h"
 #include "graph/executor/admin/PartExecutor.h"
-#include "graph/executor/admin/ResetBalanceExecutor.h"
 #include "graph/executor/admin/RevokeRoleExecutor.h"
 #include "graph/executor/admin/SessionExecutor.h"
-#include "graph/executor/admin/ShowBalanceExecutor.h"
 #include "graph/executor/admin/ShowHostsExecutor.h"
 #include "graph/executor/admin/ShowMetaLeaderExecutor.h"
 #include "graph/executor/admin/ShowQueriesExecutor.h"
@@ -46,7 +41,6 @@
 #include "graph/executor/admin/SignOutTSServiceExecutor.h"
 #include "graph/executor/admin/SnapshotExecutor.h"
 #include "graph/executor/admin/SpaceExecutor.h"
-#include "graph/executor/admin/StopBalanceExecutor.h"
 #include "graph/executor/admin/SubmitJobExecutor.h"
 #include "graph/executor/admin/SwitchSpaceExecutor.h"
 #include "graph/executor/admin/UpdateUserExecutor.h"
@@ -70,6 +64,7 @@
 #include "graph/executor/mutate/InsertExecutor.h"
 #include "graph/executor/mutate/UpdateExecutor.h"
 #include "graph/executor/query/AggregateExecutor.h"
+#include "graph/executor/query/AppendVerticesExecutor.h"
 #include "graph/executor/query/AssignExecutor.h"
 #include "graph/executor/query/DataCollectExecutor.h"
 #include "graph/executor/query/DedupExecutor.h"
@@ -87,6 +82,7 @@
 #include "graph/executor/query/SampleExecutor.h"
 #include "graph/executor/query/SortExecutor.h"
 #include "graph/executor/query/TopNExecutor.h"
+#include "graph/executor/query/TraverseExecutor.h"
 #include "graph/executor/query/UnionAllVersionVarExecutor.h"
 #include "graph/executor/query/UnionExecutor.h"
 #include "graph/executor/query/UnwindExecutor.h"
@@ -389,21 +385,6 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     case PlanNode::Kind::kListRoles: {
       return pool->add(new ListRolesExecutor(node, qctx));
     }
-    case PlanNode::Kind::kBalanceLeaders: {
-      return pool->add(new BalanceLeadersExecutor(node, qctx));
-    }
-    case PlanNode::Kind::kBalance: {
-      return pool->add(new BalanceExecutor(node, qctx));
-    }
-    case PlanNode::Kind::kStopBalance: {
-      return pool->add(new StopBalanceExecutor(node, qctx));
-    }
-    case PlanNode::Kind::kResetBalance: {
-      return pool->add(new ResetBalanceExecutor(node, qctx));
-    }
-    case PlanNode::Kind::kShowBalance: {
-      return pool->add(new ShowBalanceExecutor(node, qctx));
-    }
     case PlanNode::Kind::kShowConfigs: {
       return pool->add(new ShowConfigsExecutor(node, qctx));
     }
@@ -448,24 +429,6 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     }
     case PlanNode::Kind::kSubgraph: {
       return pool->add(new SubgraphExecutor(node, qctx));
-    }
-    case PlanNode::Kind::kAddGroup: {
-      return pool->add(new AddGroupExecutor(node, qctx));
-    }
-    case PlanNode::Kind::kDropGroup: {
-      return pool->add(new DropGroupExecutor(node, qctx));
-    }
-    case PlanNode::Kind::kDescribeGroup: {
-      return pool->add(new DescribeGroupExecutor(node, qctx));
-    }
-    case PlanNode::Kind::kAddZoneIntoGroup: {
-      return pool->add(new AddZoneIntoGroupExecutor(node, qctx));
-    }
-    case PlanNode::Kind::kDropZoneFromGroup: {
-      return pool->add(new DropZoneFromGroupExecutor(node, qctx));
-    }
-    case PlanNode::Kind::kShowGroups: {
-      return pool->add(new ListGroupsExecutor(node, qctx));
     }
     case PlanNode::Kind::kAddZone: {
       return pool->add(new AddZoneExecutor(node, qctx));
@@ -526,6 +489,12 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     }
     case PlanNode::Kind::kKillQuery: {
       return pool->add(new KillQueryExecutor(node, qctx));
+    }
+    case PlanNode::Kind::kTraverse: {
+      return pool->add(new TraverseExecutor(node, qctx));
+    }
+    case PlanNode::Kind::kAppendVertices: {
+      return pool->add(new AppendVerticesExecutor(node, qctx));
     }
     case PlanNode::Kind::kUnknown: {
       LOG(FATAL) << "Unknown plan node kind " << static_cast<int32_t>(node->kind());
@@ -603,7 +572,7 @@ void Executor::drop() {
         // Make sure drop happened-after count decrement
         CHECK_EQ(inputVar->userCount.load(std::memory_order_acquire), 0);
         ectx_->dropResult(inputVar->name);
-        VLOG(1) << "Drop variable " << node()->outputVar();
+        VLOG(1) << node()->kind() << " Drop variable " << inputVar->name;
       }
     }
   }

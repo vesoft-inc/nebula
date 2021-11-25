@@ -109,7 +109,7 @@ def compare_value(real, expect):
         esrc, edst = eedge.src, eedge.dst
         if eedge.type < 0:
             esrc, edst = edst, esrc
-        # ignore props comparation
+        # ignore props comparison
         return rsrc == esrc and rdst == edst \
             and redge.ranking == eedge.ranking \
             and redge.name == eedge.name

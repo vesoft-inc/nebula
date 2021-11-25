@@ -107,10 +107,10 @@ TEST(Scanner, Basic) {
     };                                                               \
     GraphScanner lexer;                                              \
     lexer.setReadBuffer(input);                                      \
-    nebula::GraphParser::semantic_type dumyyylval;                   \
-    nebula::GraphParser::location_type dumyyyloc;                    \
+    nebula::GraphParser::semantic_type dummyyylval;                  \
+    nebula::GraphParser::location_type dummyyyloc;                   \
     try {                                                            \
-      auto token = lexer.yylex(&dumyyylval, &dumyyyloc);             \
+      auto token = lexer.yylex(&dummyyylval, &dummyyyloc);           \
       if (token != 0) {                                              \
         return AssertionFailure() << "Lexical error should've "      \
                                   << "happened for `" << STR << "'"; \
@@ -181,8 +181,8 @@ TEST(Scanner, Basic) {
       CHECK_SEMANTIC_TYPE("match", TokenType::KW_MATCH),
       CHECK_SEMANTIC_TYPE("INSERT", TokenType::KW_INSERT),
       CHECK_SEMANTIC_TYPE("insert", TokenType::KW_INSERT),
-      CHECK_SEMANTIC_TYPE("VALUE", TokenType::KW_VALUES),
-      CHECK_SEMANTIC_TYPE("value", TokenType::KW_VALUES),
+      CHECK_SEMANTIC_TYPE("VALUE", TokenType::KW_VALUE),
+      CHECK_SEMANTIC_TYPE("value", TokenType::KW_VALUE),
       CHECK_SEMANTIC_TYPE("VALUES", TokenType::KW_VALUES),
       CHECK_SEMANTIC_TYPE("values", TokenType::KW_VALUES),
       CHECK_SEMANTIC_TYPE("YIELD", TokenType::KW_YIELD),

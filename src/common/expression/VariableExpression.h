@@ -92,11 +92,11 @@ class VersionedVariableExpression final : public Expression {
       : Expression(pool, Kind::kVersionedVar), var_(var), version_(version) {}
 
   void writeTo(Encoder&) const override {
-    LOG(FATAL) << "VersionedVairableExpression not support to encode.";
+    LOG(FATAL) << "VersionedVariableExpression not support to encode.";
   }
 
   void resetFrom(Decoder&) override {
-    LOG(FATAL) << "VersionedVairableExpression not support to decode.";
+    LOG(FATAL) << "VersionedVariableExpression not support to decode.";
   }
 
  private:

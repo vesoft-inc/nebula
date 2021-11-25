@@ -29,7 +29,7 @@ Feature: Pipe or use variable to store the match results
       | 42  | false | "Tim Duncan" | "LaMarcus Aldridge" |
       | 42  | false | "Tim Duncan" | "Manu Ginobili"     |
       | 42  | false | "Tim Duncan" | "Marco Belinelli"   |
-      | 42  | false | "Tim Duncan" | "Shaquile O'Neal"   |
+      | 42  | false | "Tim Duncan" | "Shaquille O'Neal"  |
       | 42  | false | "Tim Duncan" | "Tiago Splitter"    |
       | 42  | true  | "Tim Duncan" | "Tony Parker"       |
 
@@ -56,7 +56,7 @@ Feature: Pipe or use variable to store the match results
       | 42  | false | "Tim Duncan" | "LaMarcus Aldridge" |
       | 42  | false | "Tim Duncan" | "Manu Ginobili"     |
       | 42  | false | "Tim Duncan" | "Marco Belinelli"   |
-      | 42  | false | "Tim Duncan" | "Shaquile O'Neal"   |
+      | 42  | false | "Tim Duncan" | "Shaquille O'Neal"  |
       | 42  | false | "Tim Duncan" | "Tiago Splitter"    |
       | 42  | true  | "Tim Duncan" | "Tony Parker"       |
 

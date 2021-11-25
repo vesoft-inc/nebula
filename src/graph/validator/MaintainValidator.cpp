@@ -37,7 +37,7 @@ static Status validateColumns(const std::vector<ColumnSpecification *> &columnSp
         column.set_nullable(property->nullable());
       } else if (property->isDefaultValue()) {
         if (!ExpressionUtils::isEvaluableExpr(property->defaultValue())) {
-          return Status::SemanticError("Wrong default value experssion `%s'",
+          return Status::SemanticError("Wrong default value expression `%s'",
                                        property->defaultValue()->toString().c_str());
         }
         auto *defaultValueExpr = property->defaultValue();
@@ -455,74 +455,6 @@ Status ShowEdgeIndexStatusValidator::validateImpl() { return Status::OK(); }
 
 Status ShowEdgeIndexStatusValidator::toPlan() {
   auto *doNode = ShowEdgeIndexStatus::make(qctx_, nullptr);
-  root_ = doNode;
-  tail_ = root_;
-  return Status::OK();
-}
-
-Status AddGroupValidator::validateImpl() {
-  auto sentence = static_cast<AddGroupSentence *>(sentence_);
-  if (*sentence->groupName() == "default") {
-    return Status::SemanticError("Group default conflict");
-  }
-  return Status::OK();
-}
-
-Status AddGroupValidator::toPlan() {
-  auto sentence = static_cast<AddGroupSentence *>(sentence_);
-  auto *doNode =
-      AddGroup::make(qctx_, nullptr, *sentence->groupName(), sentence->zoneNames()->zoneNames());
-  root_ = doNode;
-  tail_ = root_;
-  return Status::OK();
-}
-
-Status DropGroupValidator::validateImpl() { return Status::OK(); }
-
-Status DropGroupValidator::toPlan() {
-  auto sentence = static_cast<DropGroupSentence *>(sentence_);
-  auto *doNode = DropGroup::make(qctx_, nullptr, *sentence->groupName());
-  root_ = doNode;
-  tail_ = root_;
-  return Status::OK();
-}
-
-Status DescribeGroupValidator::validateImpl() { return Status::OK(); }
-
-Status DescribeGroupValidator::toPlan() {
-  auto sentence = static_cast<DescribeGroupSentence *>(sentence_);
-  auto *doNode = DescribeGroup::make(qctx_, nullptr, *sentence->groupName());
-  root_ = doNode;
-  tail_ = root_;
-  return Status::OK();
-}
-
-Status ListGroupsValidator::validateImpl() { return Status::OK(); }
-
-Status ListGroupsValidator::toPlan() {
-  auto *doNode = ListGroups::make(qctx_, nullptr);
-  root_ = doNode;
-  tail_ = root_;
-  return Status::OK();
-}
-
-Status AddZoneIntoGroupValidator::validateImpl() { return Status::OK(); }
-
-Status AddZoneIntoGroupValidator::toPlan() {
-  auto sentence = static_cast<AddZoneIntoGroupSentence *>(sentence_);
-  auto *doNode =
-      AddZoneIntoGroup::make(qctx_, nullptr, *sentence->groupName(), *sentence->zoneName());
-  root_ = doNode;
-  tail_ = root_;
-  return Status::OK();
-}
-
-Status DropZoneFromGroupValidator::validateImpl() { return Status::OK(); }
-
-Status DropZoneFromGroupValidator::toPlan() {
-  auto sentence = static_cast<DropZoneFromGroupSentence *>(sentence_);
-  auto *doNode =
-      DropZoneFromGroup::make(qctx_, nullptr, *sentence->groupName(), *sentence->zoneName());
   root_ = doNode;
   tail_ = root_;
   return Status::OK();

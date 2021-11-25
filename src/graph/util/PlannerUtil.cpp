@@ -9,7 +9,6 @@
 #include "common/expression/ColumnExpression.h"
 #include "graph/context/QueryContext.h"
 #include "graph/context/ast/QueryAstContext.h"
-#include "graph/planner/Planner.h"
 #include "graph/planner/plan/Query.h"
 
 namespace nebula {

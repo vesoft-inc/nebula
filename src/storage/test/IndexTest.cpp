@@ -152,7 +152,7 @@ class IndexScanTest : public ::testing::Test {
       std::vector<std::shared_ptr<IndexItem>> indices) {
     std::vector<std::map<std::string, std::string>> ret(indices.size() + 1);
     for (size_t i = 0; i < rows.size(); i++) {
-      auto key = NebulaKeyUtils::vertexKey(8, 0, std::to_string(i), tagId);
+      auto key = NebulaKeyUtils::tagKey(8, 0, std::to_string(i), tagId);
       RowWriterV2 writer(schema.get());
       for (size_t j = 0; j < rows[i].size(); j++) {
         writer.setValue(j, rows[i][j]);
