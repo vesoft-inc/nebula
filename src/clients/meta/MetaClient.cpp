@@ -2414,6 +2414,21 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
     } else {
       req.set_leader_partIds(std::move(leaderIds));
     }
+
+    kvstore::SpaceDiskPartsMap diskParts;
+    if (listener_ != nullptr) {
+      listener_->fetchDiskParts(diskParts);
+      if (diskParts_ != diskParts) {
+        {
+          folly::RWSpinLock::WriteHolder holder(&diskPartsLock_);
+          diskParts_.clear();
+          diskParts_ = diskParts;
+        }
+        req.set_disk_parts(diskParts);
+      }
+    } else {
+      req.set_disk_parts(diskParts);
+    }
   }
 
   folly::Promise<StatusOr<bool>> promise;
