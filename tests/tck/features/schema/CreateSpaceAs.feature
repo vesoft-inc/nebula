@@ -96,8 +96,8 @@ Feature: Create space as another space
       show create edge e1;
       """
     Then the result should be, in any order:
-      | Edge | Create Edge |
-      | "e1" | 'CREATE EDGE `e1` (\n `col1` int64 NULL\n) ttl_duration = 0, ttl_col = ""'|
+      | Edge | Create Edge                                                                |
+      | "e1" | 'CREATE EDGE `e1` (\n `col1` int64 NULL\n) ttl_duration = 0, ttl_col = ""' |
     When executing query:
       """
       show tag indexes;
