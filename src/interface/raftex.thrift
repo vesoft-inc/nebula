@@ -50,6 +50,7 @@ struct AskForVoteRequest {
     5: TermID       term;               // Proposed term
     6: LogID        last_log_id;        // The last received log id
     7: TermID       last_log_term;      // The term receiving the last log
+    8: bool         is_pre_vote;        // Is pre vote or not
 }
 
 
