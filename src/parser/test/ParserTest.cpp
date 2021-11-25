@@ -2711,11 +2711,6 @@ TEST_F(ParserTest, MatchListSubscriptRange) {
 
 TEST_F(ParserTest, Zone) {
   {
-    std::string query = "SHOW GROUPS";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
     std::string query = "SHOW ZONES";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
@@ -2747,36 +2742,6 @@ TEST_F(ParserTest, Zone) {
   }
   {
     std::string query = "DROP ZONE zone_0";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "ADD GROUP group_0 zone_0,zone_1,zone_2";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "ADD ZONE zone_3 INTO GROUP group_0";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "DROP ZONE zone_3 FROM GROUP group_0";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "DESC GROUP group_0";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "DESCRIBE GROUP group_0";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "DROP GROUP group_0";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }

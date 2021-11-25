@@ -64,7 +64,6 @@ nebula_add_library(
     admin/DownloadExecutor.cpp
     admin/IngestExecutor.cpp
     admin/ConfigExecutor.cpp
-    admin/GroupExecutor.cpp
     admin/ZoneExecutor.cpp
     admin/ShowTSClientsExecutor.cpp
     admin/SignInTSServiceExecutor.cpp
