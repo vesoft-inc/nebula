@@ -1,7 +1,6 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Submit job space requirements
 
   Scenario: submit job require space
@@ -180,9 +179,18 @@ Feature: Submit job space requirements
       """
     Then an ExecutionError should be raised at runtime:Job not in chosen space!
 
-# This is skipped becuase it is hard to simulate the situation
-# When executing query:
-# """
-# RECOVER JOB;
-# """
-# Then the result should be successful
+  # This is skipped because it is hard to simulate the situation
+  # When executing query:
+  # """
+  # RECOVER JOB;
+  # """
+  # Then the result should be successful
+  Scenario: rebuild index after use, fix #2806
+    When executing query:
+      """
+      USE nba;
+      REBUILD TAG INDEX;
+      """
+    Then the result should be, in any order:
+      | New Job Id |
+      | /\d+/      |

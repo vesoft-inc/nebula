@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/executor/Executor.h"
@@ -11,13 +10,12 @@
 
 #include <atomic>
 
-#include "common/base/Memory.h"
 #include "common/base/ObjectPool.h"
+#include "common/memory/MemoryUtils.h"
+#include "common/time/ScopedTimer.h"
 #include "graph/context/ExecutionContext.h"
 #include "graph/context/QueryContext.h"
 #include "graph/executor/ExecutionError.h"
-#include "graph/executor/admin/BalanceExecutor.h"
-#include "graph/executor/admin/BalanceLeadersExecutor.h"
 #include "graph/executor/admin/ChangePasswordExecutor.h"
 #include "graph/executor/admin/CharsetExecutor.h"
 #include "graph/executor/admin/ConfigExecutor.h"
@@ -33,10 +31,8 @@
 #include "graph/executor/admin/ListUsersExecutor.h"
 #include "graph/executor/admin/ListenerExecutor.h"
 #include "graph/executor/admin/PartExecutor.h"
-#include "graph/executor/admin/ResetBalanceExecutor.h"
 #include "graph/executor/admin/RevokeRoleExecutor.h"
 #include "graph/executor/admin/SessionExecutor.h"
-#include "graph/executor/admin/ShowBalanceExecutor.h"
 #include "graph/executor/admin/ShowHostsExecutor.h"
 #include "graph/executor/admin/ShowMetaLeaderExecutor.h"
 #include "graph/executor/admin/ShowQueriesExecutor.h"
@@ -46,7 +42,6 @@
 #include "graph/executor/admin/SignOutTSServiceExecutor.h"
 #include "graph/executor/admin/SnapshotExecutor.h"
 #include "graph/executor/admin/SpaceExecutor.h"
-#include "graph/executor/admin/StopBalanceExecutor.h"
 #include "graph/executor/admin/SubmitJobExecutor.h"
 #include "graph/executor/admin/SwitchSpaceExecutor.h"
 #include "graph/executor/admin/UpdateUserExecutor.h"
@@ -70,6 +65,7 @@
 #include "graph/executor/mutate/InsertExecutor.h"
 #include "graph/executor/mutate/UpdateExecutor.h"
 #include "graph/executor/query/AggregateExecutor.h"
+#include "graph/executor/query/AppendVerticesExecutor.h"
 #include "graph/executor/query/AssignExecutor.h"
 #include "graph/executor/query/DataCollectExecutor.h"
 #include "graph/executor/query/DedupExecutor.h"
@@ -84,8 +80,10 @@
 #include "graph/executor/query/LimitExecutor.h"
 #include "graph/executor/query/MinusExecutor.h"
 #include "graph/executor/query/ProjectExecutor.h"
+#include "graph/executor/query/SampleExecutor.h"
 #include "graph/executor/query/SortExecutor.h"
 #include "graph/executor/query/TopNExecutor.h"
+#include "graph/executor/query/TraverseExecutor.h"
 #include "graph/executor/query/UnionAllVersionVarExecutor.h"
 #include "graph/executor/query/UnionExecutor.h"
 #include "graph/executor/query/UnwindExecutor.h"
@@ -96,12 +94,12 @@
 #include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/service/GraphFlags.h"
-#include "graph/util/ScopedTimer.h"
 #include "interface/gen-cpp2/graph_types.h"
 
 using folly::stringPrintf;
 
 DEFINE_bool(enable_lifetime_optimize, true, "Does enable the lifetime optimize.");
+DECLARE_double(system_memory_high_watermark_ratio);
 
 namespace nebula {
 namespace graph {
@@ -178,6 +176,9 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     case PlanNode::Kind::kLimit: {
       return pool->add(new LimitExecutor(node, qctx));
     }
+    case PlanNode::Kind::kSample: {
+      return pool->add(new SampleExecutor(node, qctx));
+    }
     case PlanNode::Kind::kProject: {
       return pool->add(new ProjectExecutor(node, qctx));
     }
@@ -225,6 +226,9 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     }
     case PlanNode::Kind::kCreateSpace: {
       return pool->add(new CreateSpaceExecutor(node, qctx));
+    }
+    case PlanNode::Kind::kCreateSpaceAs: {
+      return pool->add(new CreateSpaceAsExecutor(node, qctx));
     }
     case PlanNode::Kind::kDescSpace: {
       return pool->add(new DescSpaceExecutor(node, qctx));
@@ -382,21 +386,6 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     case PlanNode::Kind::kListRoles: {
       return pool->add(new ListRolesExecutor(node, qctx));
     }
-    case PlanNode::Kind::kBalanceLeaders: {
-      return pool->add(new BalanceLeadersExecutor(node, qctx));
-    }
-    case PlanNode::Kind::kBalance: {
-      return pool->add(new BalanceExecutor(node, qctx));
-    }
-    case PlanNode::Kind::kStopBalance: {
-      return pool->add(new StopBalanceExecutor(node, qctx));
-    }
-    case PlanNode::Kind::kResetBalance: {
-      return pool->add(new ResetBalanceExecutor(node, qctx));
-    }
-    case PlanNode::Kind::kShowBalance: {
-      return pool->add(new ShowBalanceExecutor(node, qctx));
-    }
     case PlanNode::Kind::kShowConfigs: {
       return pool->add(new ShowConfigsExecutor(node, qctx));
     }
@@ -520,6 +509,12 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     case PlanNode::Kind::kKillQuery: {
       return pool->add(new KillQueryExecutor(node, qctx));
     }
+    case PlanNode::Kind::kTraverse: {
+      return pool->add(new TraverseExecutor(node, qctx));
+    }
+    case PlanNode::Kind::kAppendVertices: {
+      return pool->add(new AppendVerticesExecutor(node, qctx));
+    }
     case PlanNode::Kind::kUnknown: {
       LOG(FATAL) << "Unknown plan node kind " << static_cast<int32_t>(node->kind());
       break;
@@ -550,17 +545,9 @@ Status Executor::open() {
             << "ep: " << qctx()->plan()->id() << "query: " << qctx()->rctx()->query();
     return Status::Error("Execution had been killed");
   }
-  auto status = MemInfo::make();
-  NG_RETURN_IF_ERROR(status);
-  auto mem = std::move(status).value();
-  if (node_->isQueryNode() && mem->hitsHighWatermark(FLAGS_system_memory_high_watermark_ratio)) {
-    return Status::Error(
-        "Used memory(%ldKB) hits the high watermark(%lf) of total system "
-        "memory(%ldKB).",
-        mem->usedInKB(),
-        FLAGS_system_memory_high_watermark_ratio,
-        mem->totalInKB());
-  }
+
+  NG_RETURN_IF_ERROR(checkMemoryWatermark());
+
   numRows_ = 0;
   execTime_ = 0;
   totalDuration_.reset();
@@ -580,6 +567,14 @@ Status Executor::close() {
   return Status::OK();
 }
 
+Status Executor::checkMemoryWatermark() {
+  if (node_->isQueryNode() && MemoryUtils::kHitMemoryHighWatermark.load()) {
+    return Status::Error("Used memory hits the high watermark(%lf) of total system memory.",
+                         FLAGS_system_memory_high_watermark_ratio);
+  }
+  return Status::OK();
+}
+
 folly::Future<Status> Executor::start(Status status) const {
   return folly::makeFuture(std::move(status)).via(runner());
 }
@@ -596,7 +591,7 @@ void Executor::drop() {
         // Make sure drop happened-after count decrement
         CHECK_EQ(inputVar->userCount.load(std::memory_order_acquire), 0);
         ectx_->dropResult(inputVar->name);
-        VLOG(1) << "Drop variable " << node()->outputVar();
+        VLOG(1) << node()->kind() << " Drop variable " << inputVar->name;
       }
     }
   }
@@ -606,6 +601,7 @@ Status Executor::finish(Result &&result) {
   if (!FLAGS_enable_lifetime_optimize ||
       node()->outputVarPtr()->userCount.load(std::memory_order_relaxed) != 0) {
     numRows_ = result.size();
+    result.checkMemory(node()->isQueryNode());
     ectx_->setResult(node()->outputVar(), std::move(result));
   } else {
     VLOG(1) << "Drop variable " << node()->outputVar();

@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef WEBSERVICE_WEBSERVICE_H_
@@ -33,7 +32,7 @@ class WebService final {
   explicit WebService(const std::string& name = "");
   ~WebService();
 
-  MUST_USE_RESULT web::Router& router() {
+  NG_MUST_USE_RESULT web::Router& router() {
     CHECK(!started_) << "Don't add routes after starting web server!";
     return *router_;
   }
@@ -42,7 +41,7 @@ class WebService final {
   // Two ports would be bound, one for HTTP, another one for HTTP2.
   // If FLAGS_ws_http_port or FLAGS_ws_h2_port is zero, an ephemeral port
   // would be assigned and set back to the gflag, respectively.
-  MUST_USE_RESULT Status start();
+  NG_MUST_USE_RESULT Status start();
 
   // Check whether web service is started
   bool started() const { return started_; }

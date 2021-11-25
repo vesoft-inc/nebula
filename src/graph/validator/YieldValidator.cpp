@@ -1,17 +1,14 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/validator/YieldValidator.h"
 
-#include "common/expression/Expression.h"
 #include "graph/context/QueryContext.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/util/ExpressionUtils.h"
 #include "graph/util/ValidateUtil.h"
-#include "parser/Clauses.h"
 #include "parser/TraverseSentences.h"
 
 namespace nebula {

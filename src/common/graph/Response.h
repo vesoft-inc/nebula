@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_GRAPH_RESPONSE_H
@@ -83,7 +82,7 @@
   X(E_BALANCED, -2024)                                                        \
   X(E_NO_RUNNING_BALANCE_PLAN, -2025)                                         \
   X(E_NO_VALID_HOST, -2026)                                                   \
-  X(E_CORRUPTTED_BALANCE_PLAN, -2027)                                         \
+  X(E_CORRUPTED_BALANCE_PLAN, -2027)                                          \
   X(E_NO_INVALID_BALANCE_PLAN, -2028)                                         \
                                                                               \
   /* Authentication Failure */                                                \
@@ -175,6 +174,9 @@
   X(E_INVALID_TASK_PARA, -3051)                                               \
   X(E_USER_CANCEL, -3052)                                                     \
   X(E_TASK_EXECUTION_FAILED, -3053)                                           \
+                                                                              \
+  X(E_PLAN_IS_KILLED, -3060)                                                  \
+  X(E_CLIENT_SERVER_INCOMPATIBLE, -3061)                                      \
                                                                               \
   X(E_UNKNOWN, -8000)
 
@@ -473,59 +475,78 @@ struct ExecutionResponse {
   std::unique_ptr<PlanDescription> planDesc{nullptr};
   std::unique_ptr<std::string> comment{nullptr};
 
-  // Return the response as a json string
-  // format
+  // Return the response as a JSON string
+  // only errorCode and latencyInUs are required fields, the rest are optional
+  // if the dataset contains a value of TIME or DATETIME, it will be returned in UTC.
+  //
+  // JSON struct:
+  // {
   //   "results": [
   //     {
   //       "columns": [],
   //       "data": [
-  //           {
-  //               "row": [ row-data ],
-  //               "meta": [ metadata ]
-  //           },
+  //         {
+  //           "row": [
+  //             "row-data"
+  //           ],
+  //           "meta": [
+  //             "metadata"
+  //           ]
+  //         }
   //       ],
-  //       "latencyInUs" : 0,
+  //       "latencyInUs": 0,
   //       "spaceName": "",
   //       "planDesc ": {
-  //         "planNodeDescs": [ {
-  //           "name" : "",
-  //           "id" : 0,
-  //           "outputVar" : "",
-  //           "description" : {"key" : ""},
-  //           "profiles" : [{
-  //             "rows" : 1,
-  //             "execDurationInUs" : 0,
-  //             "totalDurationInUs" : 0,
-  //             "otherStats" : {}, // map
-  //           }],
-  //           "branchInfo" : {
-  //             "isDoBranch" : false,
-  //             "conditionNodeId" : -1,
-  //           },
-  //           "dependencies" : [] // vector of ints
+  //         "planNodeDescs": [
+  //           {
+  //             "name": "",
+  //             "id": 0,
+  //             "outputVar": "",
+  //             "description": {
+  //               "key": ""
+  //             },
+  //             "profiles": [
+  //               {
+  //                 "rows": 1,
+  //                 "execDurationInUs": 0,
+  //                 "totalDurationInUs": 0,
+  //                 "otherStats": {}
+  //               }
+  //             ],
+  //             "branchInfo": {
+  //               "isDoBranch": false,
+  //               "conditionNodeId": -1
+  //             },
+  //             "dependencies": []
   //           }
   //         ],
-  //         "nodeIndexMap" : {},
-  //         "format" : "",
-  //         "optimize_time_in_us" : 0,
+  //         "nodeIndexMap": {},
+  //         "format": "",
+  //         "optimize_time_in_us": 0
   //       },
-  //       "comment ": "",
-  //       "errors" : "" // errorMsg
+  //       "comment ": ""
+  //     }
+  //   ],
+  //   "errors": [
+  //     {
+  //       "code": 0,
+  //       "message": ""
   //     }
   //   ]
   // }
+
   folly::dynamic toJson() const {
     folly::dynamic respJsonObj = folly::dynamic::object();
     folly::dynamic resultBody = folly::dynamic::object();
 
     // required fields
     folly::dynamic errorsBody = folly::dynamic::object();
-    errorsBody.insert("errorCode", getErrorCode(errorCode));
+    errorsBody.insert("code", static_cast<int>(errorCode));
     resultBody.insert("latencyInUs", latencyInUs);
 
     // optional fields
     if (errorMsg) {
-      errorsBody.insert("errorMsg", *errorMsg);
+      errorsBody.insert("message", *errorMsg);
     }
     resultBody.insert("errors", errorsBody);
 
@@ -546,6 +567,7 @@ struct ExecutionResponse {
     auto resultArray = folly::dynamic::array();
     resultArray.push_back(resultBody);
     respJsonObj.insert("results", resultArray);
+    respJsonObj.insert("errors", folly::dynamic::array(errorsBody));
 
     return respJsonObj;
   }

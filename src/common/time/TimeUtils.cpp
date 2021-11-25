@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/time/TimeUtils.h"
@@ -66,7 +65,7 @@ constexpr int64_t kMaxTimestamp = std::numeric_limits<int64_t>::max() / 10000000
       }
       dt.microsec += kv.second.getInt();
     } else {
-      return Status::Error("Invlaid parameter `%s'.", kv.first.c_str());
+      return Status::Error("Invalid parameter `%s'.", kv.first.c_str());
     }
   }
   auto result = validateDate(dt);
@@ -99,7 +98,7 @@ constexpr int64_t kMaxTimestamp = std::numeric_limits<int64_t>::max() / 10000000
       }
       d.day = kv.second.getInt();
     } else {
-      return Status::Error("Invlaid parameter `%s'.", kv.first.c_str());
+      return Status::Error("Invalid parameter `%s'.", kv.first.c_str());
     }
   }
   auto result = validateDate(d);
@@ -141,7 +140,7 @@ constexpr int64_t kMaxTimestamp = std::numeric_limits<int64_t>::max() / 10000000
       }
       t.microsec += kv.second.getInt();
     } else {
-      return Status::Error("Invlaid parameter `%s'.", kv.first.c_str());
+      return Status::Error("Invalid parameter `%s'.", kv.first.c_str());
     }
   }
   return t;

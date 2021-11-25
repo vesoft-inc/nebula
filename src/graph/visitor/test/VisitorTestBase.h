@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef _VISITOR_TEST_VISITOR_TEST_BASE_H_
@@ -154,14 +153,14 @@ class VisitorTestBase : public ::testing::Test {
   }
 
   CaseExpression *caseExpr(Expression *cond,
-                           Expression *defaltResult,
+                           Expression *defaultResult,
                            Expression *when,
                            Expression *then) {
     auto caseList = CaseList::make(pool);
     caseList->add(when, then);
     auto expr = CaseExpression::make(pool, caseList);
     expr->setCondition(cond);
-    expr->setDefault(defaltResult);
+    expr->setDefault(defaultResult);
     return expr;
   }
 

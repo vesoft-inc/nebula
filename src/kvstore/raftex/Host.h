@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef RAFTEX_HOST_H_
@@ -10,6 +9,7 @@
 #include <folly/futures/Future.h>
 
 #include "common/base/Base.h"
+#include "common/base/ErrorOr.h"
 #include "common/thrift/ThriftClientManager.h"
 #include "interface/gen-cpp2/RaftexServiceAsyncClient.h"
 #include "interface/gen-cpp2/raftex_types.h"
@@ -32,18 +32,6 @@ class Host final : public std::enable_shared_from_this<Host> {
   ~Host() { LOG(INFO) << idStr_ << " The host has been destroyed!"; }
 
   const char* idStr() const { return idStr_.c_str(); }
-
-  // This will be called when the shard lost its leadership
-  void pause() {
-    std::lock_guard<std::mutex> g(lock_);
-    paused_ = true;
-  }
-
-  // This will be called when the shard becomes the leader
-  void resume() {
-    std::lock_guard<std::mutex> g(lock_);
-    paused_ = false;
-  }
 
   void stop() {
     std::lock_guard<std::mutex> g(lock_);
@@ -100,11 +88,13 @@ class Host final : public std::enable_shared_from_this<Host> {
   folly::Future<cpp2::HeartbeatResponse> sendHeartbeatRequest(
       folly::EventBase* eb, std::shared_ptr<cpp2::HeartbeatRequest> req);
 
-  std::shared_ptr<cpp2::AppendLogRequest> prepareAppendLogRequest();
+  ErrorOr<cpp2::ErrorCode, std::shared_ptr<cpp2::AppendLogRequest>> prepareAppendLogRequest();
 
   bool noRequest() const;
 
   void setResponse(const cpp2::AppendLogResponse& r);
+
+  std::shared_ptr<cpp2::AppendLogRequest> getPendingReqIfAny(std::shared_ptr<Host> self);
 
  private:
   // <term, logId, committedLogId>
@@ -117,10 +107,13 @@ class Host final : public std::enable_shared_from_this<Host> {
 
   mutable std::mutex lock_;
 
-  bool paused_{false};
   bool stopped_{false};
 
+  // whether there is a batch of logs for target host in on going
   bool requestOnGoing_{false};
+  // whether there is a snapshot for target host in on going
+  bool sendingSnapshot_{false};
+
   std::condition_variable noMoreRequestCV_;
   folly::SharedPromise<cpp2::AppendLogResponse> promise_;
   folly::SharedPromise<cpp2::AppendLogResponse> cachingPromise_;
@@ -136,7 +129,6 @@ class Host final : public std::enable_shared_from_this<Host> {
   TermID lastLogTermSent_{0};
 
   LogID committedLogId_{0};
-  std::atomic_bool sendingSnapshot_{false};
 
   // CommittedLogId of follower
   LogID followerCommittedLogId_{0};

@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_METASERVICEHANDLER_H_
@@ -30,6 +29,8 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
    * Parts distribution related operations.
    * */
   folly::Future<cpp2::ExecResp> future_createSpace(const cpp2::CreateSpaceReq& req) override;
+
+  folly::Future<cpp2::ExecResp> future_createSpaceAs(const cpp2::CreateSpaceAsReq& req) override;
 
   folly::Future<cpp2::ExecResp> future_dropSpace(const cpp2::DropSpaceReq& req) override;
 
@@ -153,10 +154,6 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
    * */
   folly::Future<cpp2::HBResp> future_heartBeat(const cpp2::HBReq& req) override;
 
-  folly::Future<cpp2::BalanceResp> future_balance(const cpp2::BalanceReq& req) override;
-
-  folly::Future<cpp2::ExecResp> future_leaderBalance(const cpp2::LeaderBalanceReq& req) override;
-
   folly::Future<cpp2::ExecResp> future_regConfig(const cpp2::RegConfigReq& req) override;
 
   folly::Future<cpp2::GetConfigResp> future_getConfig(const cpp2::GetConfigReq& req) override;
@@ -240,6 +237,9 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
   folly::Future<cpp2::ExecResp> future_removeSession(const cpp2::RemoveSessionReq& req) override;
 
   folly::Future<cpp2::ExecResp> future_killQuery(const cpp2::KillQueryReq& req) override;
+
+  folly::Future<cpp2::VerifyClientVersionResp> future_verifyClientVersion(
+      const cpp2::VerifyClientVersionReq& req) override;
 
  private:
   kvstore::KVStore* kvstore_ = nullptr;

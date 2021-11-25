@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef CLIENTS_STORAGE_GRAPHSTORAGECLIENT_H_
@@ -16,6 +15,9 @@
 namespace nebula {
 namespace storage {
 
+template <typename T>
+using StorageRpcRespFuture = folly::SemiFuture<StorageRpcResponse<T>>;
+
 /**
  * A wrapper class for GraphStorageServiceAsyncClient thrift API
  *
@@ -24,18 +26,32 @@ namespace storage {
 class GraphStorageClient : public StorageClientBase<cpp2::GraphStorageServiceAsyncClient> {
   FRIEND_TEST(StorageClientTest, LeaderChangeTest);
 
-  using Parent = StorageClientBase<cpp2::GraphStorageServiceAsyncClient>;
-
  public:
+  struct CommonRequestParam {
+    GraphSpaceID space;
+    SessionID session;
+    ExecutionPlanID plan;
+    bool profile{false};
+    bool useExperimentalFeature{false};
+    folly::EventBase* evb{nullptr};
+
+    CommonRequestParam(GraphSpaceID space_,
+                       SessionID sess,
+                       ExecutionPlanID plan_,
+                       bool profile_ = false,
+                       bool experimental = false,
+                       folly::EventBase* evb_ = nullptr);
+
+    cpp2::RequestCommon toReqCommon() const;
+  };
+
   GraphStorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
                      meta::MetaClient* metaClient)
-      : Parent(ioThreadPool, metaClient) {}
+      : StorageClientBase<cpp2::GraphStorageServiceAsyncClient>(ioThreadPool, metaClient) {}
   virtual ~GraphStorageClient() {}
 
-  folly::SemiFuture<StorageRpcResponse<cpp2::GetNeighborsResponse>> getNeighbors(
-      GraphSpaceID space,
-      SessionID session,
-      ExecutionPlanID plan,
+  StorageRpcRespFuture<cpp2::GetNeighborsResponse> getNeighbors(
+      const CommonRequestParam& param,
       std::vector<std::string> colNames,
       // The first column has to be the VertexID
       const std::vector<Row>& vertices,
@@ -49,13 +65,10 @@ class GraphStorageClient : public StorageClientBase<cpp2::GraphStorageServiceAsy
       bool random = false,
       const std::vector<cpp2::OrderBy>& orderBy = std::vector<cpp2::OrderBy>(),
       int64_t limit = std::numeric_limits<int64_t>::max(),
-      const Expression* filter = nullptr,
-      folly::EventBase* evb = nullptr);
+      const Expression* filter = nullptr);
 
-  folly::SemiFuture<StorageRpcResponse<cpp2::GetPropResponse>> getProps(
-      GraphSpaceID space,
-      SessionID session,
-      ExecutionPlanID plan,
+  StorageRpcRespFuture<cpp2::GetPropResponse> getProps(
+      const CommonRequestParam& param,
       const DataSet& input,
       const std::vector<cpp2::VertexProp>* vertexProps,
       const std::vector<cpp2::EdgeProp>* edgeProps,
@@ -63,99 +76,70 @@ class GraphStorageClient : public StorageClientBase<cpp2::GraphStorageServiceAsy
       bool dedup = false,
       const std::vector<cpp2::OrderBy>& orderBy = std::vector<cpp2::OrderBy>(),
       int64_t limit = std::numeric_limits<int64_t>::max(),
-      const Expression* filter = nullptr,
-      folly::EventBase* evb = nullptr);
+      const Expression* filter = nullptr);
 
-  folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> addVertices(
-      GraphSpaceID space,
-      SessionID session,
-      ExecutionPlanID plan,
+  StorageRpcRespFuture<cpp2::ExecResponse> addVertices(
+      const CommonRequestParam& param,
       std::vector<cpp2::NewVertex> vertices,
       std::unordered_map<TagID, std::vector<std::string>> propNames,
-      bool ifNotExists,
-      folly::EventBase* evb = nullptr);
+      bool ifNotExists);
 
-  folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> addEdges(
-      GraphSpaceID space,
-      SessionID session,
-      ExecutionPlanID plan,
-      std::vector<cpp2::NewEdge> edges,
-      std::vector<std::string> propNames,
-      bool ifNotExists,
-      folly::EventBase* evb = nullptr,
-      bool useToss = false);
+  StorageRpcRespFuture<cpp2::ExecResponse> addEdges(const CommonRequestParam& param,
+                                                    std::vector<cpp2::NewEdge> edges,
+                                                    std::vector<std::string> propNames,
+                                                    bool ifNotExists);
 
-  folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> deleteEdges(
-      GraphSpaceID space,
-      SessionID session,
-      ExecutionPlanID plan,
-      std::vector<storage::cpp2::EdgeKey> edges,
-      folly::EventBase* evb = nullptr);
+  StorageRpcRespFuture<cpp2::ExecResponse> deleteEdges(const CommonRequestParam& param,
+                                                       std::vector<storage::cpp2::EdgeKey> edges);
 
-  folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> deleteVertices(
-      GraphSpaceID space,
-      SessionID session,
-      ExecutionPlanID plan,
-      std::vector<Value> ids,
-      folly::EventBase* evb = nullptr);
+  StorageRpcRespFuture<cpp2::ExecResponse> deleteVertices(const CommonRequestParam& param,
+                                                          std::vector<Value> ids);
 
-  folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> deleteTags(
-      GraphSpaceID space,
-      SessionID session,
-      ExecutionPlanID plan,
-      std::vector<cpp2::DelTags> delTags,
-      folly::EventBase* evb = nullptr);
+  StorageRpcRespFuture<cpp2::ExecResponse> deleteTags(const CommonRequestParam& param,
+                                                      std::vector<cpp2::DelTags> delTags);
 
   folly::Future<StatusOr<storage::cpp2::UpdateResponse>> updateVertex(
-      GraphSpaceID space,
-      SessionID session,
-      ExecutionPlanID plan,
+      const CommonRequestParam& param,
       Value vertexId,
       TagID tagId,
       std::vector<cpp2::UpdatedProp> updatedProps,
       bool insertable,
       std::vector<std::string> returnProps,
-      std::string condition,
-      folly::EventBase* evb = nullptr);
+      std::string condition);
 
   folly::Future<StatusOr<storage::cpp2::UpdateResponse>> updateEdge(
-      GraphSpaceID space,
-      SessionID session,
-      ExecutionPlanID plan,
+      const CommonRequestParam& param,
       storage::cpp2::EdgeKey edgeKey,
       std::vector<cpp2::UpdatedProp> updatedProps,
       bool insertable,
       std::vector<std::string> returnProps,
-      std::string condition,
-      folly::EventBase* evb = nullptr);
+      std::string condition);
 
   folly::Future<StatusOr<cpp2::GetUUIDResp>> getUUID(GraphSpaceID space,
                                                      const std::string& name,
                                                      folly::EventBase* evb = nullptr);
 
-  folly::SemiFuture<StorageRpcResponse<cpp2::LookupIndexResp>> lookupIndex(
-      GraphSpaceID space,
-      SessionID session,
-      ExecutionPlanID plan,
+  StorageRpcRespFuture<cpp2::LookupIndexResp> lookupIndex(
+      const CommonRequestParam& param,
       const std::vector<storage::cpp2::IndexQueryContext>& contexts,
       bool isEdge,
       int32_t tagOrEdge,
       const std::vector<std::string>& returnCols,
-      folly::EventBase* evb = nullptr);
+      int64_t limit);
 
-  folly::SemiFuture<StorageRpcResponse<cpp2::GetNeighborsResponse>> lookupAndTraverse(
-      GraphSpaceID space,
-      SessionID session,
-      ExecutionPlanID plan,
-      cpp2::IndexSpec indexSpec,
-      cpp2::TraverseSpec traverseSpec,
-      folly::EventBase* evb = nullptr);
+  StorageRpcRespFuture<cpp2::GetNeighborsResponse> lookupAndTraverse(
+      const CommonRequestParam& param, cpp2::IndexSpec indexSpec, cpp2::TraverseSpec traverseSpec);
 
-  folly::Future<StatusOr<cpp2::ScanEdgeResponse>> scanEdge(cpp2::ScanEdgeRequest req,
-                                                           folly::EventBase* evb = nullptr);
+  StorageRpcRespFuture<cpp2::ScanEdgeResponse> scanEdge(const CommonRequestParam& param,
+                                                        const cpp2::EdgeProp& vertexProp,
+                                                        int64_t limit,
+                                                        const Expression* filter);
 
-  folly::Future<StatusOr<cpp2::ScanVertexResponse>> scanVertex(cpp2::ScanVertexRequest req,
-                                                               folly::EventBase* evb = nullptr);
+  StorageRpcRespFuture<cpp2::ScanVertexResponse> scanVertex(
+      const CommonRequestParam& param,
+      const std::vector<cpp2::VertexProp>& vertexProp,
+      int64_t limit,
+      const Expression* filter);
 
  private:
   StatusOr<std::function<const VertexID&(const Row&)>> getIdFromRow(GraphSpaceID space,
@@ -174,8 +158,6 @@ class GraphStorageClient : public StorageClientBase<cpp2::GraphStorageServiceAsy
 
   StatusOr<std::function<const VertexID&(const cpp2::DelTags&)>> getIdFromDelTags(
       GraphSpaceID space) const;
-
-  cpp2::RequestCommon makeRequestCommon(SessionID sessionId, ExecutionPlanID planId);
 };
 
 }  // namespace storage

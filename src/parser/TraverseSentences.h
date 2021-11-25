@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #ifndef PARSER_TRAVERSESENTENCES_H_
 #define PARSER_TRAVERSESENTENCES_H_
@@ -289,7 +288,7 @@ class FetchEdgesSentence final : public Sentence {
 
   YieldClause* yieldClause() const { return yieldClause_.get(); }
 
-  const std::string* edge() const { return edge_->front(); }
+  const std::string& edgeName() const { return *edge_->front(); }
 
   std::size_t edgeSize() const { return edge_->size(); }
 
@@ -321,6 +320,8 @@ class FindPathSentence final : public Sentence {
 
   void setWhere(WhereClause* clause) { where_.reset(clause); }
 
+  void setYield(YieldClause* yield) { yield_.reset(yield); }
+
   FromClause* from() const { return from_.get(); }
 
   ToClause* to() const { return to_.get(); }
@@ -330,6 +331,8 @@ class FindPathSentence final : public Sentence {
   StepClause* step() const { return step_.get(); }
 
   WhereClause* where() const { return where_.get(); }
+
+  YieldClause* yield() const { return yield_.get(); }
 
   bool isShortest() const { return isShortest_; }
 
@@ -348,6 +351,7 @@ class FindPathSentence final : public Sentence {
   std::unique_ptr<OverClause> over_;
   std::unique_ptr<StepClause> step_;
   std::unique_ptr<WhereClause> where_;
+  std::unique_ptr<YieldClause> yield_;
 };
 
 class LimitSentence final : public Sentence {

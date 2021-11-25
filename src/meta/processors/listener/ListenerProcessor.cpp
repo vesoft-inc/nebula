@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/listener/ListenerProcessor.h"
@@ -35,7 +34,7 @@ void AddListenerProcessor::process(const cpp2::AddListenerReq& req) {
   // TODO : (sky) if type is elasticsearch, need check text search service.
   folly::SharedMutex::WriteHolder wHolder(LockUtils::listenerLock());
   folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
-  const auto& prefix = MetaServiceUtils::partPrefix(space);
+  const auto& prefix = MetaKeyUtils::partPrefix(space);
   auto iterRet = doPrefix(prefix);
   if (!nebula::ok(iterRet)) {
     auto retCode = nebula::error(iterRet);
@@ -48,13 +47,13 @@ void AddListenerProcessor::process(const cpp2::AddListenerReq& req) {
   std::vector<PartitionID> parts;
   auto iter = nebula::value(iterRet).get();
   while (iter->valid()) {
-    parts.emplace_back(MetaServiceUtils::parsePartKeyPartId(iter->key()));
+    parts.emplace_back(MetaKeyUtils::parsePartKeyPartId(iter->key()));
     iter->next();
   }
   std::vector<kvstore::KV> data;
   for (size_t i = 0; i < parts.size(); i++) {
-    data.emplace_back(MetaServiceUtils::listenerKey(space, parts[i], type),
-                      MetaServiceUtils::serializeHostAddr(hosts[i % hosts.size()]));
+    data.emplace_back(MetaKeyUtils::listenerKey(space, parts[i], type),
+                      MetaKeyUtils::serializeHostAddr(hosts[i % hosts.size()]));
   }
   doSyncPutAndUpdate(std::move(data));
 }
@@ -77,7 +76,7 @@ void RemoveListenerProcessor::process(const cpp2::RemoveListenerReq& req) {
 
   folly::SharedMutex::WriteHolder wHolder(LockUtils::listenerLock());
   std::vector<std::string> keys;
-  const auto& prefix = MetaServiceUtils::listenerPrefix(space, type);
+  const auto& prefix = MetaKeyUtils::listenerPrefix(space, type);
   auto iterRet = doPrefix(prefix);
   if (!nebula::ok(iterRet)) {
     auto retCode = nebula::error(iterRet);
@@ -99,7 +98,7 @@ void ListListenerProcessor::process(const cpp2::ListListenerReq& req) {
   auto space = req.get_space_id();
   CHECK_SPACE_ID_AND_RETURN(space);
   folly::SharedMutex::ReadHolder rHolder(LockUtils::listenerLock());
-  const auto& prefix = MetaServiceUtils::listenerPrefix(space);
+  const auto& prefix = MetaKeyUtils::listenerPrefix(space);
   auto iterRet = doPrefix(prefix);
   if (!nebula::ok(iterRet)) {
     auto retCode = nebula::error(iterRet);
@@ -124,9 +123,9 @@ void ListListenerProcessor::process(const cpp2::ListListenerReq& req) {
   auto iter = nebula::value(iterRet).get();
   while (iter->valid()) {
     cpp2::ListenerInfo listener;
-    listener.set_type(MetaServiceUtils::parseListenerType(iter->key()));
-    listener.set_host(MetaServiceUtils::deserializeHostAddr(iter->val()));
-    listener.set_part_id(MetaServiceUtils::parseListenerPart(iter->key()));
+    listener.set_type(MetaKeyUtils::parseListenerType(iter->key()));
+    listener.set_host(MetaKeyUtils::deserializeHostAddr(iter->val()));
+    listener.set_part_id(MetaKeyUtils::parseListenerPart(iter->key()));
     if (std::find(activeHosts.begin(), activeHosts.end(), *listener.host_ref()) !=
         activeHosts.end()) {
       listener.set_status(cpp2::HostStatus::ONLINE);

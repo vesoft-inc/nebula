@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef MOCK_MOCKCLUSTER_H_
@@ -24,6 +23,7 @@
 #include "storage/BaseProcessor.h"
 #include "storage/GraphStorageServiceHandler.h"
 #include "storage/StorageAdminServiceHandler.h"
+#include "storage/transaction/TransactionManager.h"
 
 namespace nebula {
 namespace mock {
@@ -135,6 +135,7 @@ class MockCluster {
   std::unique_ptr<kvstore::NebulaStore> esListener_{nullptr};
   std::unique_ptr<meta::SchemaManager> lSchemaMan_;
   std::unique_ptr<meta::MetaClient> lMetaClient_{nullptr};
+  std::unique_ptr<storage::TransactionManager> txnMan_{nullptr};
 
   ObjectPool pool_;
 };

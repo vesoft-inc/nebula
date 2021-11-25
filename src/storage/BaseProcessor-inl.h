@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #pragma once
@@ -59,7 +58,7 @@ void BaseProcessor<RESP>::handleAsync(GraphSpaceID spaceId,
 
 template <typename RESP>
 meta::cpp2::ColumnDef BaseProcessor<RESP>::columnDef(std::string name,
-                                                     meta::cpp2::PropertyType type) {
+                                                     nebula::cpp2::PropertyType type) {
   nebula::meta::cpp2::ColumnDef column;
   column.set_name(std::move(name));
   column.set_type(type);
@@ -167,21 +166,21 @@ StatusOr<std::string> BaseProcessor<RESP>::encodeRowVal(const meta::NebulaSchema
     for (size_t i = 0; i < propNames.size(); i++) {
       wRet = rowWrite.setValue(propNames[i], props[i]);
       if (wRet != WriteResult::SUCCEEDED) {
-        return Status::Error("Add field faild");
+        return Status::Error("Add field failed");
       }
     }
   } else {
     for (size_t i = 0; i < props.size(); i++) {
       wRet = rowWrite.setValue(i, props[i]);
       if (wRet != WriteResult::SUCCEEDED) {
-        return Status::Error("Add field faild");
+        return Status::Error("Add field failed");
       }
     }
   }
 
   wRet = rowWrite.finish();
   if (wRet != WriteResult::SUCCEEDED) {
-    return Status::Error("Add field faild");
+    return Status::Error("Add field failed");
   }
 
   return std::move(rowWrite).moveEncodedStr();

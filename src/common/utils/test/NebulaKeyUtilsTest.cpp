@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -17,18 +16,18 @@ class KeyUtilsTestBase : public ::testing::Test {
 
   ~KeyUtilsTestBase() = default;
 
-  void verifyVertex(PartitionID partId, VertexID vId, TagID tagId, size_t actualSize) {
-    auto vertexKey = NebulaKeyUtils::vertexKey(vIdLen_, partId, vId, tagId);
-    ASSERT_EQ(vertexKey.size(), kVertexLen + vIdLen_);
-    ASSERT_EQ(vertexKey.substr(0, sizeof(PartitionID) + vIdLen_ + sizeof(TagID)),
-              NebulaKeyUtils::vertexPrefix(vIdLen_, partId, vId, tagId));
-    ASSERT_EQ(vertexKey.substr(0, sizeof(PartitionID) + vIdLen_),
-              NebulaKeyUtils::vertexPrefix(vIdLen_, partId, vId));
-    ASSERT_TRUE(NebulaKeyUtils::isVertex(vIdLen_, vertexKey));
-    ASSERT_FALSE(NebulaKeyUtils::isEdge(vIdLen_, vertexKey));
-    ASSERT_EQ(partId, NebulaKeyUtils::getPart(vertexKey));
-    ASSERT_EQ(tagId, NebulaKeyUtils::getTagId(vIdLen_, vertexKey));
-    ASSERT_EQ(vId, NebulaKeyUtils::getVertexId(vIdLen_, vertexKey).subpiece(0, actualSize));
+  void verifyTag(PartitionID partId, VertexID vId, TagID tagId, size_t actualSize) {
+    auto tagKey = NebulaKeyUtils::tagKey(vIdLen_, partId, vId, tagId);
+    ASSERT_EQ(tagKey.size(), kTagLen + vIdLen_);
+    ASSERT_EQ(tagKey.substr(0, sizeof(PartitionID) + vIdLen_ + sizeof(TagID)),
+              NebulaKeyUtils::tagPrefix(vIdLen_, partId, vId, tagId));
+    ASSERT_EQ(tagKey.substr(0, sizeof(PartitionID) + vIdLen_),
+              NebulaKeyUtils::tagPrefix(vIdLen_, partId, vId));
+    ASSERT_TRUE(NebulaKeyUtils::isTag(vIdLen_, tagKey));
+    ASSERT_FALSE(NebulaKeyUtils::isEdge(vIdLen_, tagKey));
+    ASSERT_EQ(partId, NebulaKeyUtils::getPart(tagKey));
+    ASSERT_EQ(tagId, NebulaKeyUtils::getTagId(vIdLen_, tagKey));
+    ASSERT_EQ(vId, NebulaKeyUtils::getVertexId(vIdLen_, tagKey).subpiece(0, actualSize));
   }
 
   void verifyEdge(PartitionID partId,
@@ -48,7 +47,7 @@ class KeyUtilsTestBase : public ::testing::Test {
                   0, sizeof(PartitionID) + (vIdLen_ << 1) + sizeof(EdgeType) + sizeof(EdgeRanking)),
               NebulaKeyUtils::edgePrefix(vIdLen_, partId, srcId, type, rank, dstId));
     ASSERT_TRUE(NebulaKeyUtils::isEdge(vIdLen_, edgeKey));
-    ASSERT_FALSE(NebulaKeyUtils::isVertex(vIdLen_, edgeKey));
+    ASSERT_FALSE(NebulaKeyUtils::isTag(vIdLen_, edgeKey));
     ASSERT_EQ(partId, NebulaKeyUtils::getPart(edgeKey));
     ASSERT_EQ(srcId, NebulaKeyUtils::getSrcId(vIdLen_, edgeKey).subpiece(0, actualSize));
     ASSERT_EQ(dstId, NebulaKeyUtils::getDstId(vIdLen_, edgeKey).subpiece(0, actualSize));
@@ -86,7 +85,7 @@ TEST_F(V1Test, SimpleTest) {
   VertexID vId = getStringId(1001L);
   TagID tagId = 2020;
   TagVersion tagVersion = folly::Random::rand64();
-  verifyVertex(partId, vId, tagId, tagVersion);
+  verifyTag(partId, vId, tagId, tagVersion);
 
   VertexID srcId = getStringId(1001L), dstId = getStringId(2001L);
   EdgeType type = 1010;
@@ -99,7 +98,7 @@ TEST_F(V1Test, NegativeEdgeTypeTest) {
   PartitionID partId = 123;
   VertexID vId = getStringId(1001L);
   TagID tagId = 2020;
-  verifyVertex(partId, vId, tagId, sizeof(int64_t));
+  verifyTag(partId, vId, tagId, sizeof(int64_t));
 
   VertexID srcId = getStringId(1001L), dstId = getStringId(2001L);
   EdgeType type = -1010;
@@ -112,7 +111,7 @@ TEST_F(V2ShortTest, SimpleTest) {
   PartitionID partId = 123;
   VertexID vId = "0123456789";
   TagID tagId = 2020;
-  verifyVertex(partId, vId, tagId, 10);
+  verifyTag(partId, vId, tagId, 10);
 
   VertexID srcId = "0123456789", dstId = "9876543210";
   EdgeType type = 1010;
@@ -125,7 +124,7 @@ TEST_F(V2ShortTest, NegativeEdgeTypeTest) {
   PartitionID partId = 123;
   VertexID vId = "0123456789";
   TagID tagId = 2020;
-  verifyVertex(partId, vId, tagId, 10);
+  verifyTag(partId, vId, tagId, 10);
 
   VertexID srcId = "0123456789", dstId = "9876543210";
   EdgeType type = -1010;
@@ -138,7 +137,7 @@ TEST_F(V2LongTest, SimpleTest) {
   PartitionID partId = 123;
   VertexID vId = "0123456789";
   TagID tagId = 2020;
-  verifyVertex(partId, vId, tagId, 10);
+  verifyTag(partId, vId, tagId, 10);
 
   VertexID srcId = "0123456789", dstId = "9876543210";
   EdgeType type = 1010;
@@ -151,7 +150,7 @@ TEST_F(V2LongTest, NegativeEdgeTypeTest) {
   PartitionID partId = 123;
   VertexID vId = "0123456789";
   TagID tagId = 2020;
-  verifyVertex(partId, vId, tagId, 10);
+  verifyTag(partId, vId, tagId, 10);
 
   VertexID srcId = "0123456789", dstId = "9876543210";
   EdgeType type = -1010;

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_EXECUTOR_STORAGEACCESSEXECUTOR_H_
@@ -133,19 +132,17 @@ class StorageAccessExecutor : public Executor {
     auto &hostLatency = resp.hostLatency();
     for (size_t i = 0; i < hostLatency.size(); ++i) {
       auto &info = hostLatency[i];
-      auto &response = resp.responses()[i];
-      stats.emplace(folly::stringPrintf("%s exec/total", std::get<0>(info).toString().c_str()),
-                    folly::stringPrintf("%d(us)/%d(us)", std::get<1>(info), std::get<2>(info)));
-      if (response.result_ref()->latency_detail_us_ref().has_value()) {
-        std::string storageDetail = "{";
-        for (auto iter : (*response.result_ref()->latency_detail_us_ref())) {
-          storageDetail += folly::stringPrintf("%s:%d(us),", iter.first.data(), iter.second);
-        }
-        storageDetail += "}";
-        stats.emplace("storage_detail", storageDetail);
+      stats.emplace(folly::sformat("{} exec/total", std::get<0>(info).toString()),
+                    folly::sformat("{}(us)/{}(us)", std::get<1>(info), std::get<2>(info)));
+      auto detail = getStorageDetail(resp.responses()[i].result_ref()->latency_detail_us_ref());
+      if (!detail.empty()) {
+        stats.emplace("storage_detail", detail);
       }
     }
   }
+
+  std::string getStorageDetail(
+      apache::thrift::optional_field_ref<const std::map<std::string, int32_t> &> ref) const;
 
   bool isIntVidType(const SpaceInfo &space) const;
 

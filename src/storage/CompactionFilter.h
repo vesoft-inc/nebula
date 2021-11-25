@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_COMPACTIONFILTER_H_
@@ -38,7 +37,7 @@ class StorageCompactionFilter final : public kvstore::KVFilter {
       return false;
     }
 
-    if (NebulaKeyUtils::isVertex(vIdLen_, key)) {
+    if (NebulaKeyUtils::isTag(vIdLen_, key)) {
       return !vertexValid(spaceId, key, val);
     } else if (NebulaKeyUtils::isEdge(vIdLen_, key)) {
       return !edgeValid(spaceId, key, val);

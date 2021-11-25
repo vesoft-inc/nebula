@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_VISITOR_DEDUCETYPEVISITOR_H_
@@ -93,8 +92,8 @@ class DeduceTypeVisitor final : public ExprVisitor {
     return type == Value::Type::NULLVALUE || type == Value::Type::__EMPTY__;
   }
 
-  const QueryContext *qctx_;
-  const ValidateContext *vctx_;
+  const QueryContext *qctx_{nullptr};
+  const ValidateContext *vctx_{nullptr};
   const ColsDef &inputs_;
   GraphSpaceID space_;
   Status status_;

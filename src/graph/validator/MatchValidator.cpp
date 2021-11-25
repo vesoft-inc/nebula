@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/validator/MatchValidator.h"
@@ -47,7 +46,10 @@ Status MatchValidator::validateImpl() {
 
         auto matchClauseCtx = getContext<MatchClauseContext>();
         matchClauseCtx->aliasesUsed = aliasesUsed;
-        NG_RETURN_IF_ERROR(validatePath(matchClause->path(), *matchClauseCtx));
+        if (matchClause->path()->pathSize() > 1) {
+          return Status::SemanticError("Multi paths not supported.");
+        }
+        NG_RETURN_IF_ERROR(validatePath(matchClause->path()->path(0) /* TODO */, *matchClauseCtx));
         if (matchClause->where() != nullptr) {
           auto whereClauseCtx = getContext<WhereClauseContext>();
           whereClauseCtx->aliasesUsed = &matchClauseCtx->aliasesGenerated;
@@ -129,8 +131,7 @@ Status MatchValidator::validateImpl() {
   return Status::OK();
 }
 
-Status MatchValidator::validatePath(const MatchPath *path,
-                                    MatchClauseContext &matchClauseCtx) const {
+Status MatchValidator::validatePath(const MatchPath *path, MatchClauseContext &matchClauseCtx) {
   NG_RETURN_IF_ERROR(
       buildNodeInfo(path, matchClauseCtx.nodeInfos, matchClauseCtx.aliasesGenerated));
   NG_RETURN_IF_ERROR(
@@ -139,8 +140,7 @@ Status MatchValidator::validatePath(const MatchPath *path,
   return Status::OK();
 }
 
-Status MatchValidator::buildPathExpr(const MatchPath *path,
-                                     MatchClauseContext &matchClauseCtx) const {
+Status MatchValidator::buildPathExpr(const MatchPath *path, MatchClauseContext &matchClauseCtx) {
   auto *pathAlias = path->alias();
   if (pathAlias == nullptr) {
     return Status::OK();
@@ -155,17 +155,17 @@ Status MatchValidator::buildPathExpr(const MatchPath *path,
   auto *pool = qctx_->objPool();
   auto pathBuild = PathBuildExpression::make(pool);
   for (size_t i = 0; i < edgeInfos.size(); ++i) {
-    pathBuild->add(VariablePropertyExpression::make(pool, "", nodeInfos[i].alias));
-    pathBuild->add(VariablePropertyExpression::make(pool, "", edgeInfos[i].alias));
+    pathBuild->add(InputPropertyExpression::make(pool, nodeInfos[i].alias));
+    pathBuild->add(InputPropertyExpression::make(pool, edgeInfos[i].alias));
   }
-  pathBuild->add(VariablePropertyExpression::make(pool, "", nodeInfos.back().alias));
+  pathBuild->add(InputPropertyExpression::make(pool, nodeInfos.back().alias));
   matchClauseCtx.pathBuild = std::move(pathBuild);
   return Status::OK();
 }
 
 Status MatchValidator::buildNodeInfo(const MatchPath *path,
                                      std::vector<NodeInfo> &nodeInfos,
-                                     std::unordered_map<std::string, AliasType> &aliases) const {
+                                     std::unordered_map<std::string, AliasType> &aliases) {
   auto *sm = qctx_->schemaMng();
   auto steps = path->steps();
   auto *pool = qctx_->objPool();
@@ -185,7 +185,7 @@ Status MatchValidator::buildNodeInfo(const MatchPath *path,
             return Status::SemanticError("`%s': Unknown tag", label->label()->c_str());
           }
           nodeInfos[i].tids.emplace_back(tid.value());
-          nodeInfos[i].labels.emplace_back(label->label());
+          nodeInfos[i].labels.emplace_back(*label->label());
           nodeInfos[i].labelProps.emplace_back(label->props());
         }
       }
@@ -199,13 +199,13 @@ Status MatchValidator::buildNodeInfo(const MatchPath *path,
     }
     Expression *filter = nullptr;
     if (props != nullptr) {
-      auto result = makeSubFilter(alias, props);
+      auto result = makeNodeSubFilter(const_cast<MapExpression *>(props), "*");
       NG_RETURN_IF_ERROR(result);
       filter = result.value();
     } else if (node->labels() != nullptr && !node->labels()->labels().empty()) {
       const auto &labels = node->labels()->labels();
       for (const auto &label : labels) {
-        auto result = makeSubFilter(alias, label->props(), *label->label());
+        auto result = makeNodeSubFilter(label->props(), *label->label());
         NG_RETURN_IF_ERROR(result);
         filter = andConnect(pool, filter, result.value());
       }
@@ -221,7 +221,7 @@ Status MatchValidator::buildNodeInfo(const MatchPath *path,
 
 Status MatchValidator::buildEdgeInfo(const MatchPath *path,
                                      std::vector<EdgeInfo> &edgeInfos,
-                                     std::unordered_map<std::string, AliasType> &aliases) const {
+                                     std::unordered_map<std::string, AliasType> &aliases) {
   auto *sm = qctx_->schemaMng();
   auto steps = path->steps();
   edgeInfos.resize(steps);
@@ -240,7 +240,7 @@ Status MatchValidator::buildEdgeInfo(const MatchPath *path,
           return Status::SemanticError("`%s': Unknown edge type", type->c_str());
         }
         edgeInfos[i].edgeTypes.emplace_back(etype.value());
-        edgeInfos[i].types.emplace_back(type.get());
+        edgeInfos[i].types.emplace_back(*type);
       }
     } else {
       const auto allEdgesResult = matchCtx_->qctx->schemaMng()->getAllVerEdgeSchema(space_.id);
@@ -248,8 +248,9 @@ Status MatchValidator::buildEdgeInfo(const MatchPath *path,
       const auto allEdges = std::move(allEdgesResult).value();
       for (const auto &edgeSchema : allEdges) {
         edgeInfos[i].edgeTypes.emplace_back(edgeSchema.first);
-        // TODO:
-        // edgeInfos[i].types.emplace_back(*type);
+        auto typeName = matchCtx_->qctx->schemaMng()->toEdgeName(space_.id, edgeSchema.first);
+        NG_RETURN_IF_ERROR(typeName);
+        edgeInfos[i].types.emplace_back(typeName.value());
       }
     }
     auto *stepRange = edge->range();
@@ -266,7 +267,7 @@ Status MatchValidator::buildEdgeInfo(const MatchPath *path,
     }
     Expression *filter = nullptr;
     if (props != nullptr) {
-      auto result = makeSubFilter(alias, props);
+      auto result = makeEdgeSubFilter(const_cast<MapExpression *>(props));
       NG_RETURN_IF_ERROR(result);
       filter = result.value();
     }
@@ -440,13 +441,8 @@ Status MatchValidator::validateStepRange(const MatchStepRange *range) const {
     return Status::SemanticError(
         "Max hop must be greater equal than min hop: %ld vs. %ld", max, min);
   }
-  if (max == std::numeric_limits<int64_t>::max()) {
+  if (max == std::numeric_limits<size_t>::max()) {
     return Status::SemanticError("Cannot set maximum hop for variable length relationships");
-  }
-  if (min < 0) {
-    return Status::SemanticError(
-        "Cannot set negative steps minumum hop for variable length "
-        "relationships");
   }
   return Status::OK();
 }
@@ -542,18 +538,47 @@ Status MatchValidator::validateUnwind(const UnwindClause *unwindClause,
   return Status::OK();
 }
 
-StatusOr<Expression *> MatchValidator::makeSubFilter(const std::string &alias,
-                                                     const MapExpression *map,
-                                                     const std::string &label) const {
+StatusOr<Expression *> MatchValidator::makeEdgeSubFilter(MapExpression *map) const {
+  auto *pool = qctx_->objPool();
+  DCHECK(map != nullptr);
+  auto &items = map->items();
+  DCHECK(!items.empty());
+
+  auto foldStatus = ExpressionUtils::foldConstantExpr(items[0].second);
+  NG_RETURN_IF_ERROR(foldStatus);
+  auto foldExpr = foldStatus.value();
+  if (!ExpressionUtils::isEvaluableExpr(foldExpr)) {
+    return Status::SemanticError("Props must be evaluable: `%s'",
+                                 items[0].second->toString().c_str());
+  }
+  map->setItem(0, std::make_pair(items[0].first, foldExpr));
+  Expression *root = RelationalExpression::makeEQ(
+      pool, EdgePropertyExpression::make(pool, "*", items[0].first), foldExpr);
+  for (auto i = 1u; i < items.size(); i++) {
+    foldStatus = ExpressionUtils::foldConstantExpr(items[i].second);
+    NG_RETURN_IF_ERROR(foldStatus);
+    foldExpr = foldStatus.value();
+    if (!ExpressionUtils::isEvaluableExpr(foldExpr)) {
+      return Status::SemanticError("Props must be evaluable: `%s'",
+                                   items[i].second->toString().c_str());
+    }
+    map->setItem(0, std::make_pair(items[i].first, foldExpr));
+    auto *left = root;
+    auto *right = RelationalExpression::makeEQ(
+        pool, EdgePropertyExpression::make(pool, "*", items[i].first), foldExpr);
+    root = LogicalExpression::makeAnd(pool, left, right);
+  }
+  return root;
+}
+
+StatusOr<Expression *> MatchValidator::makeNodeSubFilter(MapExpression *map,
+                                                         const std::string &label) const {
   auto *pool = qctx_->objPool();
   // Node has tag without property
   if (!label.empty() && map == nullptr) {
-    auto *left = ConstantExpression::make(pool, label);
-
-    auto *args = ArgumentList::make(pool);
-    args->addArgument(LabelExpression::make(pool, alias));
-    auto *right = FunctionCallExpression::make(pool, "tags", args);
-    Expression *root = RelationalExpression::makeIn(pool, left, right);
+    // label._tag IS NOT EMPTY
+    auto *tagExpr = TagPropertyExpression::make(pool, label, kTag);
+    auto *root = UnaryExpression::makeIsNotEmpty(pool, tagExpr);
 
     return root;
   }
@@ -562,28 +587,28 @@ StatusOr<Expression *> MatchValidator::makeSubFilter(const std::string &alias,
   auto &items = map->items();
   DCHECK(!items.empty());
 
-  // TODO(dutor) Check if evaluable and evaluate
-  if (items[0].second->kind() != Expression::Kind::kConstant) {
-    return Status::SemanticError("Props must be constant: `%s'",
+  auto foldStatus = ExpressionUtils::foldConstantExpr(items[0].second);
+  NG_RETURN_IF_ERROR(foldStatus);
+  auto foldExpr = foldStatus.value();
+  if (!ExpressionUtils::isEvaluableExpr(foldExpr)) {
+    return Status::SemanticError("Props must be evaluable: `%s'",
                                  items[0].second->toString().c_str());
   }
+  map->setItem(0, std::make_pair(items[0].first, foldExpr));
   Expression *root = RelationalExpression::makeEQ(
-      pool,
-      LabelAttributeExpression::make(
-          pool, LabelExpression::make(pool, alias), ConstantExpression::make(pool, items[0].first)),
-      items[0].second->clone());
+      pool, TagPropertyExpression::make(pool, label, items[0].first), foldExpr);
   for (auto i = 1u; i < items.size(); i++) {
-    if (items[i].second->kind() != Expression::Kind::kConstant) {
-      return Status::SemanticError("Props must be constant: `%s'",
+    foldStatus = ExpressionUtils::foldConstantExpr(items[i].second);
+    NG_RETURN_IF_ERROR(foldStatus);
+    foldExpr = foldStatus.value();
+    if (!ExpressionUtils::isEvaluableExpr(foldExpr)) {
+      return Status::SemanticError("Props must be evaluable: `%s'",
                                    items[i].second->toString().c_str());
     }
+    map->setItem(i, std::make_pair(items[i].first, foldExpr));
     auto *left = root;
     auto *right = RelationalExpression::makeEQ(
-        pool,
-        LabelAttributeExpression::make(pool,
-                                       LabelExpression::make(pool, alias),
-                                       ConstantExpression::make(pool, items[i].first)),
-        items[i].second->clone());
+        pool, TagPropertyExpression::make(pool, label, items[i].first), foldExpr);
     root = LogicalExpression::makeAnd(pool, left, right);
   }
   return root;
@@ -633,7 +658,7 @@ Status MatchValidator::validatePagination(const Expression *skipExpr,
   int64_t skip = 0;
   int64_t limit = std::numeric_limits<int64_t>::max();
   if (skipExpr != nullptr) {
-    if (!evaluableExpr(skipExpr)) {
+    if (!ExpressionUtils::isEvaluableExpr(skipExpr)) {
       return Status::SemanticError("SKIP should be instantly evaluable");
     }
     QueryExpressionContext ctx;
@@ -648,7 +673,7 @@ Status MatchValidator::validatePagination(const Expression *skipExpr,
   }
 
   if (limitExpr != nullptr) {
-    if (!evaluableExpr(limitExpr)) {
+    if (!ExpressionUtils::isEvaluableExpr(limitExpr)) {
       return Status::SemanticError("SKIP should be instantly evaluable");
     }
     QueryExpressionContext ctx;
@@ -723,7 +748,7 @@ Status MatchValidator::validateGroup(YieldClauseContext &yieldCtx) const {
         yieldCtx.aggOutputColumnNames_.emplace_back(agg->toString());
       }
       if (!aggs.empty()) {
-        auto *rewritedExpr = ExpressionUtils::rewriteAgg2VarProp(colExpr);
+        auto *rewritedExpr = ExpressionUtils::rewriteAgg2VarProp(colExpr->clone());
         yieldCtx.projCols_->addColumn(new YieldColumn(rewritedExpr, colOldName));
         yieldCtx.projOutputColumnNames_.emplace_back(colOldName);
         continue;

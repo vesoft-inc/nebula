@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef WAL_FILEBASEDWAL_H_
@@ -72,6 +71,9 @@ class FileBasedWal final : public Wal, public std::enable_shared_from_this<FileB
 
   // Return the term when the the last log is received
   TermID lastLogTerm() const override { return lastLogTerm_; }
+
+  // Return the term of specified logId, if not exist，return -1
+  TermID getLogTerm(LogID id) override;
 
   // Append one log messages to the WAL
   // This method **IS NOT** thread-safe

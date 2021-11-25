@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/thread/GenericWorker.h"
@@ -143,10 +142,10 @@ void GenericWorker::onNotify() {
     }
   }
   {
-    decltype(purgingingTimers_) newcomings;
+    decltype(purgingTimers_) newcomings;
     {
       std::lock_guard<std::mutex> guard(lock_);
-      newcomings.swap(purgingingTimers_);
+      newcomings.swap(purgingTimers_);
     }
     for (auto id : newcomings) {
       purgeTimerInternal(id);
@@ -165,7 +164,7 @@ GenericWorker::Timer::~Timer() {
 void GenericWorker::purgeTimerTask(uint64_t id) {
   {
     std::lock_guard<std::mutex> guard(lock_);
-    purgingingTimers_.emplace_back(id);
+    purgingTimers_.emplace_back(id);
   }
   notify();
 }

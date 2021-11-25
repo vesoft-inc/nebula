@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_KVJOBDESCRIPTION_H_
@@ -92,7 +91,7 @@ class JobDescription {
    * will set start time if newStatus is running
    * will set stop time if newStatus is finished / failed / stopped
    * */
-  bool setStatus(Status newStatus);
+  bool setStatus(Status newStatus, bool force = false);
 
   /*
    * get a existed job from kvstore, return folly::none if there isn't

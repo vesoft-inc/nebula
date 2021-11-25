@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -30,7 +29,7 @@ TEST_F(FilterTransformTest, TestCalculationOverflow) {
     auto expr =
         ltExpr(minusExpr(laExpr("v", "age"), constantExpr(1)), constantExpr(9223372036854775807));
     auto res = ExpressionUtils::filterTransform(expr);
-    auto expected = Status::Error(
+    auto expected = Status::SemanticError(
         "result of (9223372036854775807+1) cannot be represented as an "
         "integer");
     ASSERT(!res.status().ok());
@@ -40,7 +39,7 @@ TEST_F(FilterTransformTest, TestCalculationOverflow) {
   {
     auto expr = ltExpr(addExpr(laExpr("v", "age"), constantExpr(1)), constantExpr(INT64_MIN));
     auto res = ExpressionUtils::filterTransform(expr);
-    auto expected = Status::Error(
+    auto expected = Status::SemanticError(
         "result of (-9223372036854775808-1) cannot be represented as an "
         "integer");
     ASSERT(!res.status().ok());
@@ -51,7 +50,7 @@ TEST_F(FilterTransformTest, TestCalculationOverflow) {
     auto expr = ltExpr(minusExpr(laExpr("v", "age"), constantExpr(1)),
                        addExpr(constantExpr(9223372036854775807), constantExpr(1)));
     auto res = ExpressionUtils::filterTransform(expr);
-    auto expected = Status::Error(
+    auto expected = Status::SemanticError(
         "result of (9223372036854775807+1) cannot be represented as an "
         "integer");
     ASSERT(!res.status().ok());
@@ -62,7 +61,7 @@ TEST_F(FilterTransformTest, TestCalculationOverflow) {
     auto expr = ltExpr(addExpr(laExpr("v", "age"), constantExpr(1)),
                        minusExpr(constantExpr(INT64_MIN), constantExpr(1)));
     auto res = ExpressionUtils::filterTransform(expr);
-    auto expected = Status::Error(
+    auto expected = Status::SemanticError(
         "result of (-9223372036854775808-1) cannot be represented as an "
         "integer");
     ASSERT(!res.status().ok());
@@ -73,7 +72,7 @@ TEST_F(FilterTransformTest, TestCalculationOverflow) {
     auto expr = notExpr(notExpr(notExpr(ltExpr(minusExpr(laExpr("v", "age"), constantExpr(1)),
                                                constantExpr(9223372036854775807)))));
     auto res = ExpressionUtils::filterTransform(expr);
-    auto expected = Status::Error(
+    auto expected = Status::SemanticError(
         "result of (9223372036854775807+1) cannot be represented as an "
         "integer");
     ASSERT(!res.status().ok());
@@ -84,7 +83,7 @@ TEST_F(FilterTransformTest, TestCalculationOverflow) {
     auto expr = notExpr(notExpr(
         notExpr(ltExpr(addExpr(laExpr("v", "age"), constantExpr(1)), constantExpr(INT64_MIN)))));
     auto res = ExpressionUtils::filterTransform(expr);
-    auto expected = Status::Error(
+    auto expected = Status::SemanticError(
         "result of (-9223372036854775808-1) cannot be represented as an "
         "integer");
     ASSERT(!res.status().ok());

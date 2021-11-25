@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_EXECUTOR_ADMIN_SPACESEXECUTOR_H_
@@ -16,6 +15,14 @@ class CreateSpaceExecutor final : public Executor {
  public:
   CreateSpaceExecutor(const PlanNode *node, QueryContext *qctx)
       : Executor("CreateSpaceExecutor", node, qctx) {}
+
+  folly::Future<Status> execute() override;
+};
+
+class CreateSpaceAsExecutor final : public Executor {
+ public:
+  CreateSpaceAsExecutor(const PlanNode *node, QueryContext *qctx)
+      : Executor("CreateSpaceAsExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;
 };

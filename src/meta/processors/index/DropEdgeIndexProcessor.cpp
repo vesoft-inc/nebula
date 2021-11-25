@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/index/DropEdgeIndexProcessor.h"
@@ -37,8 +36,8 @@ void DropEdgeIndexProcessor::process(const cpp2::DropEdgeIndexReq& req) {
   auto edgeIndexID = nebula::value(edgeIndexIDRet);
 
   std::vector<std::string> keys;
-  keys.emplace_back(MetaServiceUtils::indexIndexKey(spaceID, indexName));
-  keys.emplace_back(MetaServiceUtils::indexKey(spaceID, edgeIndexID));
+  keys.emplace_back(MetaKeyUtils::indexIndexKey(spaceID, indexName));
+  keys.emplace_back(MetaKeyUtils::indexKey(spaceID, edgeIndexID));
 
   LOG(INFO) << "Drop Edge Index " << indexName;
   resp_.set_id(to(edgeIndexID, EntryType::INDEX));

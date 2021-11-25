@@ -1,22 +1,20 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/MetaServiceHandler.h"
 
-#include "meta/MetaServiceUtils.h"
-#include "meta/processors/admin/BalanceProcessor.h"
+#include "common/utils/MetaKeyUtils.h"
 #include "meta/processors/admin/CreateBackupProcessor.h"
 #include "meta/processors/admin/CreateSnapshotProcessor.h"
 #include "meta/processors/admin/DropSnapshotProcessor.h"
 #include "meta/processors/admin/GetMetaDirInfoProcessor.h"
 #include "meta/processors/admin/HBProcessor.h"
-#include "meta/processors/admin/LeaderBalanceProcessor.h"
 #include "meta/processors/admin/ListClusterInfoProcessor.h"
 #include "meta/processors/admin/ListSnapshotsProcessor.h"
 #include "meta/processors/admin/RestoreProcessor.h"
+#include "meta/processors/admin/VerifyClientVersionProcessor.h"
 #include "meta/processors/config/GetConfigProcessor.h"
 #include "meta/processors/config/ListConfigsProcessor.h"
 #include "meta/processors/config/RegConfigProcessor.h"
@@ -43,6 +41,7 @@
 #include "meta/processors/kv/RemoveRangeProcessor.h"
 #include "meta/processors/kv/ScanProcessor.h"
 #include "meta/processors/listener/ListenerProcessor.h"
+#include "meta/processors/parts/CreateSpaceAsProcessor.h"
 #include "meta/processors/parts/CreateSpaceProcessor.h"
 #include "meta/processors/parts/DropSpaceProcessor.h"
 #include "meta/processors/parts/GetPartsAllocProcessor.h"
@@ -84,6 +83,12 @@ namespace meta {
 folly::Future<cpp2::ExecResp> MetaServiceHandler::future_createSpace(
     const cpp2::CreateSpaceReq& req) {
   auto* processor = CreateSpaceProcessor::instance(kvstore_);
+  RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp> MetaServiceHandler::future_createSpaceAs(
+    const cpp2::CreateSpaceAsReq& req) {
+  auto* processor = CreateSpaceAsProcessor::instance(kvstore_);
   RETURN_FUTURE(processor);
 }
 
@@ -371,17 +376,6 @@ folly::Future<cpp2::ListRolesResp> MetaServiceHandler::future_getUserRoles(
   RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::BalanceResp> MetaServiceHandler::future_balance(const cpp2::BalanceReq& req) {
-  auto* processor = BalanceProcessor::instance(kvstore_);
-  RETURN_FUTURE(processor);
-}
-
-folly::Future<cpp2::ExecResp> MetaServiceHandler::future_leaderBalance(
-    const cpp2::LeaderBalanceReq& req) {
-  auto* processor = LeaderBalanceProcessor::instance(kvstore_);
-  RETURN_FUTURE(processor);
-}
-
 folly::Future<cpp2::ExecResp> MetaServiceHandler::future_regConfig(const cpp2::RegConfigReq& req) {
   auto* processor = RegConfigProcessor::instance(kvstore_);
   RETURN_FUTURE(processor);
@@ -570,6 +564,12 @@ folly::Future<cpp2::ExecResp> MetaServiceHandler::future_removeSession(
 
 folly::Future<cpp2::ExecResp> MetaServiceHandler::future_killQuery(const cpp2::KillQueryReq& req) {
   auto* processor = KillQueryProcessor::instance(kvstore_);
+  RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::VerifyClientVersionResp> MetaServiceHandler::future_verifyClientVersion(
+    const cpp2::VerifyClientVersionReq& req) {
+  auto* processor = VerifyClientVersionProcessor::instance(kvstore_);
   RETURN_FUTURE(processor);
 }
 }  // namespace meta

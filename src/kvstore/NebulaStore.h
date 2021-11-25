@@ -1,13 +1,13 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef KVSTORE_NEBULASTORE_H_
 #define KVSTORE_NEBULASTORE_H_
 
 #include <folly/RWSpinLock.h>
+#include <folly/concurrency/ConcurrentHashMap.h>
 #include <gtest/gtest_prod.h>
 
 #include "common/base/Base.h"
@@ -277,6 +277,11 @@ class NebulaStore : public KVStore, public Handler {
 
   ErrorOr<nebula::cpp2::ErrorCode, std::string> getProperty(GraphSpaceID spaceId,
                                                             const std::string& property) override;
+  void registerOnNewPartAdded(const std::string& funcName,
+                              std::function<void(std::shared_ptr<Part>&)> func,
+                              std::vector<std::pair<GraphSpaceID, PartitionID>>& existParts);
+
+  void unregisterOnNewPartAdded(const std::string& funcName) { onNewPartAdded_.erase(funcName); }
 
  private:
   void loadPartFromDataPath();
@@ -334,6 +339,8 @@ class NebulaStore : public KVStore, public Handler {
   std::shared_ptr<raftex::SnapshotManager> snapshot_;
   std::shared_ptr<thrift::ThriftClientManager<raftex::cpp2::RaftexServiceAsyncClient>> clientMan_;
   std::shared_ptr<DiskManager> diskMan_;
+  folly::ConcurrentHashMap<std::string, std::function<void(std::shared_ptr<Part>&)>>
+      onNewPartAdded_;
 };
 
 }  // namespace kvstore

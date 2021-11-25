@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef KVSTORE_KVENGINE_H_
@@ -71,6 +70,8 @@ class KVEngine {
   virtual nebula::cpp2::ErrorCode rangeWithPrefix(const std::string& start,
                                                   const std::string& prefix,
                                                   std::unique_ptr<KVIterator>* iter) = 0;
+
+  virtual nebula::cpp2::ErrorCode scan(std::unique_ptr<KVIterator>* storageIter) = 0;
 
   // Write a single record
   virtual nebula::cpp2::ErrorCode put(std::string key, std::string value) = 0;

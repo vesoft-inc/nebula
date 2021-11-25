@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #include "graph/validator/MutateValidator.h"
 
@@ -89,7 +88,7 @@ Status InsertVerticesValidator::prepareVertices() {
     if (propSize_ != row->values().size()) {
       return Status::SemanticError("Column count doesn't match value count.");
     }
-    if (!evaluableExpr(row->id())) {
+    if (!ExpressionUtils::isEvaluableExpr(row->id())) {
       LOG(ERROR) << "Wrong vid expression `" << row->id()->toString() << "\"";
       return Status::SemanticError("Wrong vid expression `%s'", row->id()->toString().c_str());
     }
@@ -99,7 +98,7 @@ Status InsertVerticesValidator::prepareVertices() {
 
     // check value expr
     for (auto &value : row->values()) {
-      if (!evaluableExpr(value)) {
+      if (!ExpressionUtils::isEvaluableExpr(value)) {
         LOG(ERROR) << "Insert wrong value: `" << value->toString() << "'.";
         return Status::SemanticError("Insert wrong value: `%s'.", value->toString().c_str());
       }
@@ -191,10 +190,7 @@ Status InsertEdgesValidator::check() {
 }
 
 Status InsertEdgesValidator::prepareEdges() {
-  using IsoLevel = meta::cpp2::IsolationLevel;
-  auto isoLevel = space_.spaceDesc.isolation_level_ref().value_or(IsoLevel::DEFAULT);
-  auto useToss = isoLevel == IsoLevel::TOSS;
-  auto size = useToss ? rows_.size() : rows_.size() * 2;
+  auto size = FLAGS_enable_experimental_feature ? rows_.size() : rows_.size() * 2;
   edges_.reserve(size);
 
   size_t fieldNum = schema_->getNumFields();
@@ -206,13 +202,13 @@ Status InsertEdgesValidator::prepareEdges() {
     if (propNames_.size() != row->values().size()) {
       return Status::SemanticError("Column count doesn't match value count.");
     }
-    if (!evaluableExpr(row->srcid())) {
+    if (!ExpressionUtils::isEvaluableExpr(row->srcid())) {
       LOG(ERROR) << "Wrong src vid expression `" << row->srcid()->toString() << "\"";
       return Status::SemanticError("Wrong src vid expression `%s'",
                                    row->srcid()->toString().c_str());
     }
 
-    if (!evaluableExpr(row->dstid())) {
+    if (!ExpressionUtils::isEvaluableExpr(row->dstid())) {
       LOG(ERROR) << "Wrong dst vid expression `" << row->dstid()->toString() << "\"";
       return Status::SemanticError("Wrong dst vid expression `%s'",
                                    row->dstid()->toString().c_str());
@@ -229,7 +225,7 @@ Status InsertEdgesValidator::prepareEdges() {
 
     // check value expr
     for (auto &value : row->values()) {
-      if (!evaluableExpr(value)) {
+      if (!ExpressionUtils::isEvaluableExpr(value)) {
         LOG(ERROR) << "Insert wrong value: `" << value->toString() << "'.";
         return Status::SemanticError("Insert wrong value: `%s'.", value->toString().c_str());
       }
@@ -276,7 +272,7 @@ Status InsertEdgesValidator::prepareEdges() {
     edge.set_key(key);
     edge.set_props(std::move(entirePropValues));
     edges_.emplace_back(edge);
-    if (!useToss) {
+    if (!FLAGS_enable_experimental_feature) {
       // inbound
       key.set_src(dstId);
       key.set_dst(srcId);
@@ -792,10 +788,7 @@ Status UpdateEdgeValidator::toPlan() {
                                    {},
                                    condition_,
                                    {});
-  using IsoLevel = meta::cpp2::IsolationLevel;
-  auto isoLevel = space_.spaceDesc.isolation_level_ref().value_or(IsoLevel::DEFAULT);
-  auto useToss = isoLevel == IsoLevel::TOSS;
-  if (useToss) {
+  if (FLAGS_enable_experimental_feature) {
     root_ = outNode;
     tail_ = root_;
   } else {

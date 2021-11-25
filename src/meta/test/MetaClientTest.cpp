@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -16,18 +15,21 @@
 #include "common/meta/GflagsManager.h"
 #include "common/meta/ServerBasedSchemaManager.h"
 #include "common/network/NetworkUtils.h"
-#include "meta/MetaServiceUtils.h"
+#include "common/utils/MetaKeyUtils.h"
+#include "interface/gen-cpp2/common_constants.h"
 #include "meta/test/TestUtils.h"
 #include "mock/MockCluster.h"
 
 DECLARE_int32(heartbeat_interval_secs);
 DECLARE_string(rocksdb_db_options);
+DECLARE_bool(enable_client_white_list);
+DECLARE_string(client_white_list);
 
 namespace nebula {
 namespace meta {
 
-using cpp2::PropertyType;
 using nebula::Value;
+using nebula::cpp2::PropertyType;
 
 TEST(MetaClientTest, InterfacesTest) {
   FLAGS_heartbeat_interval_secs = 1;
@@ -2017,7 +2019,7 @@ TEST(MetaClientTest, Config) {
     configs = std::move(resp).value();
     EXPECT_EQ(configs[0].get_value(), Value(3));
   }
-  // Just avoid memory leak error of clang asan. to waitting asynchronous thread
+  // Just avoid memory leak error of clang asan. to waiting asynchronous thread
   // done.
   sleep(FLAGS_heartbeat_interval_secs * 5);
 }
@@ -2078,6 +2080,40 @@ TEST(MetaClientTest, ListenerTest) {
     auto listeners = listRet.value();
     ASSERT_EQ(0, listeners.size());
   }
+}
+
+TEST(MetaClientTest, VerifyClientTest) {
+  FLAGS_heartbeat_interval_secs = 1;
+  fs::TempDir rootPath("/tmp/VerifyClientTest.XXXXXX");
+
+  mock::MockCluster cluster;
+  cluster.startMeta(rootPath.path());
+  cluster.initMetaClient();
+  auto* client = cluster.metaClient_.get();
+
+  FLAGS_enable_client_white_list = true;
+  {
+    FLAGS_client_white_list = nebula::cpp2::common_constants::version();
+    auto status = client->verifyVersion();
+    EXPECT_TRUE(status.ok());
+  }
+  {
+    FLAGS_client_white_list = "";
+    auto status = client->verifyVersion();
+    EXPECT_FALSE(status.ok());
+  }
+  {
+    FLAGS_client_white_list = "1.0.0:1.2.0:";
+    auto status = client->verifyVersion();
+    EXPECT_FALSE(status.ok());
+  }
+  {
+    FLAGS_enable_client_white_list = false;
+    FLAGS_client_white_list = "1.0.0:1.2.0:";
+    auto status = client->verifyVersion();
+    EXPECT_TRUE(status.ok());
+  }
+  FLAGS_enable_client_white_list = false;
 }
 
 TEST(MetaClientTest, RocksdbOptionsTest) {

@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/util/ExpressionUtils.h"
@@ -170,6 +169,130 @@ Expression *ExpressionUtils::rewriteAgg2VarProp(const Expression *expr) {
   return RewriteVisitor::transform(expr, std::move(matcher), std::move(rewriter));
 }
 
+// Rewrite the IN expr to a relEQ expr if the right operand has only 1 element.
+// Rewrite the IN expr to an OR expr if the right operand has more than 1 element.
+Expression *ExpressionUtils::rewriteInExpr(const Expression *expr) {
+  DCHECK(expr->kind() == Expression::Kind::kRelIn);
+  auto pool = expr->getObjPool();
+  auto inExpr = static_cast<RelationalExpression *>(expr->clone());
+  auto containerOperands = getContainerExprOperands(inExpr->right());
+
+  auto operandSize = containerOperands.size();
+  // container has only 1 element, no need to transform to logical expression
+  if (operandSize == 1) {
+    return RelationalExpression::makeEQ(pool, inExpr->left(), containerOperands[0]);
+  }
+
+  std::vector<Expression *> orExprOperands;
+  orExprOperands.reserve(operandSize);
+  // A in [B, C, D]  =>  (A == B) or (A == C) or (A == D)
+  for (auto *operand : containerOperands) {
+    orExprOperands.emplace_back(RelationalExpression::makeEQ(pool, inExpr->left(), operand));
+  }
+  auto orExpr = LogicalExpression::makeOr(pool);
+  orExpr->setOperands(orExprOperands);
+
+  return orExpr;
+}
+
+Expression *ExpressionUtils::rewriteLogicalAndToLogicalOr(const Expression *expr) {
+  DCHECK(expr->kind() == Expression::Kind::kLogicalAnd);
+  auto pool = expr->getObjPool();
+  auto logicalAndExpr = static_cast<LogicalExpression *>(expr->clone());
+  auto logicalAndExprSize = (logicalAndExpr->operands()).size();
+
+  // Extract all OR expr
+  auto orExprList = collectAll(logicalAndExpr, {Expression::Kind::kLogicalOr});
+  auto orExprListSize = orExprList.size();
+
+  // Extract all non-OR expr
+  std::vector<Expression *> nonOrExprList;
+  bool isAllRelOr = logicalAndExprSize == orExprListSize;
+
+  // If logical expression has operand that is not an OR expr, add into nonOrExprList
+  if (!isAllRelOr) {
+    nonOrExprList.reserve(logicalAndExprSize - orExprListSize);
+    for (const auto &operand : logicalAndExpr->operands()) {
+      if (operand->kind() != Expression::Kind::kLogicalOr) {
+        nonOrExprList.emplace_back(std::move(operand));
+      }
+    }
+  }
+
+  DCHECK_GT(orExprListSize, 0);
+  std::vector<std::vector<Expression *>> orExprOperands{{}};
+  orExprOperands.reserve(orExprListSize);
+
+  // Merge the elements of vec2 into each subVec of vec1
+  // [[A], [B]] and [C, D]  =>  [[A, C], [A, D], [B, C], [B,D]]
+  auto mergeVecs = [](std::vector<std::vector<Expression *>> &vec1,
+                      const std::vector<Expression *> vec2) {
+    std::vector<std::vector<Expression *>> res;
+    for (auto &ele1 : vec1) {
+      for (const auto &ele2 : vec2) {
+        auto tempSubVec = ele1;
+        tempSubVec.emplace_back(std::move(ele2));
+        res.emplace_back(std::move(tempSubVec));
+      }
+    }
+    return res;
+  };
+
+  // Iterate all OR exprs and construct the operand list
+  for (auto curExpr : orExprList) {
+    auto curLogicalOrExpr = static_cast<LogicalExpression *>(const_cast<Expression *>(curExpr));
+    auto curOrOperands = curLogicalOrExpr->operands();
+
+    orExprOperands = mergeVecs(orExprOperands, curOrOperands);
+  }
+
+  // orExprOperands is a 2D vector where each sub-vector is the operands of AND expression.
+  // [[A, C], [A, D], [B, C], [B,D]]  =>  (A and C) or (A and D) or (B and C) or (B and D)
+  std::vector<Expression *> andExprList;
+  andExprList.reserve(orExprOperands.size());
+  for (auto &operand : orExprOperands) {
+    auto andExpr = LogicalExpression::makeAnd(pool);
+    // if nonOrExprList is not empty, append it to operand
+    if (!isAllRelOr) {
+      operand.insert(operand.end(), nonOrExprList.begin(), nonOrExprList.end());
+    }
+    andExpr->setOperands(operand);
+    andExprList.emplace_back(std::move(andExpr));
+  }
+
+  auto orExpr = LogicalExpression::makeOr(pool);
+  orExpr->setOperands(andExprList);
+  return orExpr;
+}
+
+std::vector<Expression *> ExpressionUtils::getContainerExprOperands(const Expression *expr) {
+  DCHECK(expr->isContainerExpr());
+  auto pool = expr->getObjPool();
+  auto containerExpr = expr->clone();
+
+  std::vector<Expression *> containerOperands;
+  switch (containerExpr->kind()) {
+    case Expression::Kind::kList:
+      containerOperands = static_cast<ListExpression *>(containerExpr)->get();
+      break;
+    case Expression::Kind::kSet: {
+      containerOperands = static_cast<SetExpression *>(containerExpr)->get();
+      break;
+    }
+    case Expression::Kind::kMap: {
+      auto mapItems = static_cast<MapExpression *>(containerExpr)->get();
+      // iterate map and add key into containerOperands
+      for (auto &item : mapItems) {
+        containerOperands.emplace_back(ConstantExpression::make(pool, std::move(item.first)));
+      }
+      break;
+    }
+    default:
+      LOG(FATAL) << "Invalid expression type " << containerExpr->kind();
+  }
+  return containerOperands;
+}
+
 StatusOr<Expression *> ExpressionUtils::foldConstantExpr(const Expression *expr) {
   ObjectPool *objPool = expr->getObjPool();
   auto newExpr = expr->clone();
@@ -231,7 +354,7 @@ Expression *ExpressionUtils::reduceUnaryNotExpr(const Expression *expr) {
 
 Expression *ExpressionUtils::rewriteRelExpr(const Expression *expr) {
   ObjectPool *pool = expr->getObjPool();
-  // Match relational expressions containing at least one airthmetic expr
+  // Match relational expressions containing at least one arithmetic expr
   auto matcher = [](const Expression *e) -> bool {
     if (e->isRelExpr()) {
       auto relExpr = static_cast<const RelationalExpression *>(e);
@@ -298,7 +421,7 @@ Expression *ExpressionUtils::rewriteRelExpr(const Expression *expr) {
 Expression *ExpressionUtils::rewriteRelExprHelper(const Expression *expr,
                                                   Expression *&relRightOperandExpr) {
   ObjectPool *pool = expr->getObjPool();
-  // TODO: Support rewrite mul/div expressoion after fixing overflow
+  // TODO: Support rewrite mul/div expression after fixing overflow
   auto matcher = [](const Expression *e) -> bool {
     if (!e->isArithmeticExpr() || e->kind() == Expression::Kind::kMultiply ||
         e->kind() == Expression::Kind::kDivision)
@@ -333,7 +456,7 @@ Expression *ExpressionUtils::rewriteRelExprHelper(const Expression *expr,
     case Expression::Kind::kMinus:
       relRightOperandExpr = ArithmeticExpression::makeMinus(pool, lexpr, rexpr);
       break;
-    // Unsupported arithm kind
+    // Unsupported arithmetic kind
     // case Expression::Kind::kMultiply:
     // case Expression::Kind::kDivision:
     default:
@@ -775,5 +898,32 @@ Expression *ExpressionUtils::equalCondition(ObjectPool *pool,
   return RelationalExpression::makeEQ(
       pool, VariableExpression::make(pool, var), ConstantExpression::make(pool, value));
 }
+
+bool ExpressionUtils::isGeoIndexAcceleratedPredicate(const Expression *expr) {
+  static std::unordered_set<std::string> geoIndexAcceleratedPredicates{
+      "st_intersects", "st_covers", "st_coveredby", "st_dwithin"};
+
+  if (expr->isRelExpr()) {
+    auto *relExpr = static_cast<const RelationalExpression *>(expr);
+    auto isSt_Distance = [](const Expression *e) {
+      if (e->kind() == Expression::Kind::kFunctionCall) {
+        auto *funcExpr = static_cast<const FunctionCallExpression *>(e);
+        return boost::algorithm::iequals(funcExpr->name(), "st_distance");
+      }
+      return false;
+    };
+    return isSt_Distance(relExpr->left()) || isSt_Distance(relExpr->right());
+  } else if (expr->kind() == Expression::Kind::kFunctionCall) {
+    auto *funcExpr = static_cast<const FunctionCallExpression *>(expr);
+    std::string funcName = funcExpr->name();
+    folly::toLowerAscii(funcName);
+    if (geoIndexAcceleratedPredicates.count(funcName) != 0) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 }  // namespace graph
 }  // namespace nebula

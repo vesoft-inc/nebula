@@ -60,6 +60,7 @@ static constexpr size_t kCommentLengthLimit = 256;
     int64_t                                 intval;
     double                                  doubleval;
     std::string                            *strval;
+    nebula::meta::cpp2::GeoShape            geo_shape;
     nebula::meta::cpp2::ColumnTypeDef      *type;
     nebula::Expression                     *expr;
     nebula::Sentence                       *sentence;
@@ -127,6 +128,7 @@ static constexpr size_t kCommentLengthLimit = 256;
     ExpressionList                         *expression_list;
     MapItemList                            *map_item_list;
     MatchPath                              *match_path;
+    MatchPathList                          *match_path_list;
     MatchNode                              *match_node;
     MatchNodeLabel                         *match_node_label;
     MatchNodeLabelList                     *match_node_label_list;
@@ -154,14 +156,14 @@ static constexpr size_t kCommentLengthLimit = 256;
 // Expression related memory will be managed by object pool
 %destructor {} <expr> <argument_list> <case_list> <expression_list> <map_item_list>
 %destructor {} <text_search_argument> <base_text_search_argument> <fuzzy_text_search_argument>
-%destructor {} <boolval> <intval> <doubleval> <type> <config_module> <integer_list> <list_host_type>
+%destructor {} <boolval> <intval> <doubleval> <type> <config_module> <integer_list> <list_host_type> <geo_shape>
 %destructor { delete $$; } <*>
 
 /* keywords */
 %token KW_BOOL KW_INT8 KW_INT16 KW_INT32 KW_INT64 KW_INT KW_FLOAT KW_DOUBLE
 %token KW_STRING KW_FIXED_STRING KW_TIMESTAMP KW_DATE KW_TIME KW_DATETIME
 %token KW_GO KW_AS KW_TO KW_USE KW_SET KW_FROM KW_WHERE KW_ALTER
-%token KW_MATCH KW_INSERT KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX KW_VERTICES
+%token KW_MATCH KW_INSERT KW_VALUE KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX KW_VERTICES
 %token KW_EDGE KW_EDGES KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND
 %token KW_TAG KW_TAGS KW_UNION KW_INTERSECT KW_MINUS
 %token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOST KW_HOSTS KW_PART KW_PARTS KW_ADD
@@ -192,13 +194,14 @@ static constexpr size_t kCommentLengthLimit = 256;
 %token KW_UNWIND KW_SKIP KW_OPTIONAL
 %token KW_CASE KW_THEN KW_ELSE KW_END
 %token KW_GROUP KW_ZONE KW_GROUPS KW_ZONES KW_INTO
-%token KW_LISTENER KW_ELASTICSEARCH KW_FULLTEXT
+%token KW_LISTENER KW_ELASTICSEARCH KW_FULLTEXT KW_HTTPS KW_HTTP
 %token KW_AUTO KW_FUZZY KW_PREFIX KW_REGEXP KW_WILDCARD
 %token KW_TEXT KW_SEARCH KW_CLIENTS KW_SIGN KW_SERVICE KW_TEXT_SEARCH
 %token KW_ANY KW_SINGLE KW_NONE
 %token KW_REDUCE
 %token KW_SESSIONS KW_SESSION
 %token KW_KILL KW_QUERY KW_QUERIES KW_TOP
+%token KW_GEOGRAPHY KW_POINT KW_LINESTRING KW_POLYGON
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -241,6 +244,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <expr> constant_expression
 %type <expr> query_unique_identifier_value
 %type <argument_list> argument_list opt_argument_list
+%type <geo_shape> geo_shape_type
 %type <type> type_spec
 %type <step_clause> step_clause
 %type <from_clause> from_clause
@@ -298,6 +302,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 
 %type <match_path> match_path_pattern
 %type <match_path> match_path
+%type <match_path_list> match_path_list
 %type <match_node> match_node
 %type <match_node_label> match_node_label
 %type <match_node_label_list> match_node_label_list
@@ -384,7 +389,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 
 %type <boolval> opt_if_not_exists
 %type <boolval> opt_if_exists
-%type <boolval> opt_with_properites
+%type <boolval> opt_with_properties
 
 %left QM COLON
 %left KW_OR KW_XOR
@@ -430,6 +435,7 @@ legal_integer
  */
 unreserved_keyword
     : KW_SPACE              { $$ = new std::string("space"); }
+    | KW_VALUE              { $$ = new std::string("value"); }
     | KW_VALUES             { $$ = new std::string("values"); }
     | KW_HOST               { $$ = new std::string("host"); }
     | KW_HOSTS              { $$ = new std::string("hosts"); }
@@ -490,7 +496,6 @@ unreserved_keyword
     | KW_BOTH               { $$ = new std::string("both"); }
     | KW_OUT                { $$ = new std::string("out"); }
     | KW_SUBGRAPH           { $$ = new std::string("subgraph"); }
-    | KW_PATH               { $$ = new std::string("path"); }
     | KW_THEN               { $$ = new std::string("then"); }
     | KW_ELSE               { $$ = new std::string("else"); }
     | KW_END                { $$ = new std::string("end"); }
@@ -524,6 +529,11 @@ unreserved_keyword
     | KW_QUERY              { $$ = new std::string("query"); }
     | KW_KILL               { $$ = new std::string("kill"); }
     | KW_TOP                { $$ = new std::string("top"); }
+    | KW_POINT              { $$ = new std::string("point"); }
+    | KW_LINESTRING         { $$ = new std::string("linestring"); }
+    | KW_POLYGON            { $$ = new std::string("polygon"); }
+    | KW_HTTP               { $$ = new std::string("http"); }
+    | KW_HTTPS              { $$ = new std::string("https"); }
     ;
 
 expression
@@ -848,10 +858,11 @@ predicate_name
 predicate_expression
     : predicate_name L_PAREN expression KW_IN expression KW_WHERE expression R_PAREN {
         if ($3->kind() != Expression::Kind::kLabel) {
+            delete $1;
             throw nebula::GraphParser::syntax_error(@3, "The loop variable must be a label in predicate functions");
         }
-        auto &innerVar = static_cast<const LabelExpression *>($3)->name();
-        auto *expr = PredicateExpression::make(qctx->objPool(), *$1, innerVar, $5, $7);
+        std::string innerVar = static_cast<const LabelExpression *>($3)->name();
+        auto *expr = PredicateExpression::make(qctx->objPool(), *$1, innerVar, $5, $7);  // TODO(jie) Use std::unique_ptr<std::string>
         nebula::graph::ParserUtil::rewritePred(qctx, expr, innerVar);
         $$ = expr;
         delete $1;
@@ -859,7 +870,7 @@ predicate_expression
     | KW_EXISTS L_PAREN expression R_PAREN {
         if ($3->kind() != Expression::Kind::kLabelAttribute && $3->kind() != Expression::Kind::kAttribute &&
             $3->kind() != Expression::Kind::kSubscript) {
-            throw nebula::GraphParser::syntax_error(@3, "The exists only accept LabelAttribe, Attribute and Subscript");
+            throw nebula::GraphParser::syntax_error(@3, "The exists only accept LabelAttribute, Attribute and Subscript");
         }
         $$ = PredicateExpression::make(qctx->objPool(), "exists", "", $3, nullptr);
     }
@@ -1053,6 +1064,16 @@ argument_list
         Expression* arg = VertexExpression::make(qctx->objPool());
         $$->addArgument(arg);
     }
+    | SRC_REF {
+        $$ = ArgumentList::make(qctx->objPool());
+        Expression* arg = VertexExpression::make(qctx->objPool(), "$^");
+        $$->addArgument(arg);
+    }
+    | DST_REF {
+        $$ = ArgumentList::make(qctx->objPool());
+        Expression* arg = VertexExpression::make(qctx->objPool(), "$$");
+        $$->addArgument(arg);
+    }
     | KW_EDGE {
         $$ = ArgumentList::make(qctx->objPool());
         Expression *arg = EdgeExpression::make(qctx->objPool());
@@ -1072,66 +1093,88 @@ argument_list
     }
     ;
 
+geo_shape_type
+    : KW_POINT {
+        $$ = meta::cpp2::GeoShape::POINT;
+    }
+    | KW_LINESTRING {
+        $$ = meta::cpp2::GeoShape::LINESTRING;
+    }
+    | KW_POLYGON {
+        $$ = meta::cpp2::GeoShape::POLYGON;
+    }
+    ;
+
 type_spec
     : KW_BOOL {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::BOOL);
+        $$->set_type(nebula::cpp2::PropertyType::BOOL);
     }
     | KW_INT8 {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::INT8);
+        $$->set_type(nebula::cpp2::PropertyType::INT8);
     }
     | KW_INT16 {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::INT16);
+        $$->set_type(nebula::cpp2::PropertyType::INT16);
     }
     | KW_INT32 {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::INT32);
+        $$->set_type(nebula::cpp2::PropertyType::INT32);
     }
     | KW_INT64 {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::INT64);
+        $$->set_type(nebula::cpp2::PropertyType::INT64);
     }
     | KW_INT {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::INT64);
+        $$->set_type(nebula::cpp2::PropertyType::INT64);
     }
     | KW_FLOAT {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::FLOAT);
+        $$->set_type(nebula::cpp2::PropertyType::FLOAT);
     }
     | KW_DOUBLE {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::DOUBLE);
+        $$->set_type(nebula::cpp2::PropertyType::DOUBLE);
     }
     | KW_STRING {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::STRING);
+        $$->set_type(nebula::cpp2::PropertyType::STRING);
     }
     | KW_FIXED_STRING L_PAREN INTEGER R_PAREN {
         if ($3 > std::numeric_limits<int16_t>::max()) {
             throw nebula::GraphParser::syntax_error(@3, "Out of range:");
         }
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::FIXED_STRING);
+        $$->set_type(nebula::cpp2::PropertyType::FIXED_STRING);
         $$->set_type_length($3);
     }
     | KW_TIMESTAMP {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::TIMESTAMP);
+        $$->set_type(nebula::cpp2::PropertyType::TIMESTAMP);
     }
     | KW_DATE {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::DATE);
+        $$->set_type(nebula::cpp2::PropertyType::DATE);
     }
     | KW_TIME {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::TIME);
+        $$->set_type(nebula::cpp2::PropertyType::TIME);
     }
     | KW_DATETIME {
         $$ = new meta::cpp2::ColumnTypeDef();
-        $$->set_type(meta::cpp2::PropertyType::DATETIME);
+        $$->set_type(nebula::cpp2::PropertyType::DATETIME);
+    }
+    | KW_GEOGRAPHY {
+        $$ = new meta::cpp2::ColumnTypeDef();
+        $$->set_type(nebula::cpp2::PropertyType::GEOGRAPHY);
+        $$->set_geo_shape(meta::cpp2::GeoShape::ANY);
+    }
+    | KW_GEOGRAPHY L_PAREN geo_shape_type R_PAREN {
+        $$ = new meta::cpp2::ColumnTypeDef();
+        $$->set_type(nebula::cpp2::PropertyType::GEOGRAPHY);
+        $$->set_geo_shape($3);
     }
     ;
 
@@ -1205,17 +1248,6 @@ truncate_clause
 go_sentence
     : KW_GO step_clause from_clause over_clause where_clause yield_clause truncate_clause {
         auto go = new GoSentence($2, $3, $4, $5, $7);
-        if ($6 == nullptr) {
-            auto *cols = new YieldColumns();
-            if (!$4->isOverAll()) {
-                for (auto e : $4->edges()) {
-                    auto *expr  = EdgeDstIdExpression::make(qctx->objPool(), *e->edge());
-                    auto *col   = new YieldColumn(expr);
-                    cols->addColumn(col);
-                }
-            }
-            $6 = new YieldClause(cols);
-        }
         go->setYieldClause($6);
         $$ = go;
     }
@@ -1361,15 +1393,31 @@ yield_columns
 yield_column
     : KW_VERTEX {
         $$ = nullptr;
-        throw nebula::GraphParser::syntax_error(@1, "please add alias when using vertex.");
+        throw nebula::GraphParser::syntax_error(@1, "please add alias when using `vertex'.");
     }
     | KW_VERTEX KW_AS name_label {
         $$ = new YieldColumn(VertexExpression::make(qctx->objPool()), *$3);
         delete $3;
     }
+    | SRC_REF {
+        $$ = nullptr;
+        throw nebula::GraphParser::syntax_error(@1, "please add alias when using `$^'.");
+    }
+    | SRC_REF KW_AS name_label {
+        $$ = new YieldColumn(VertexExpression::make(qctx->objPool(), "$^"), *$3);
+        delete $3;
+    }
+    | DST_REF {
+        $$ = nullptr;
+        throw nebula::GraphParser::syntax_error(@1, "please add alias when using `$$'.");
+    }
+    | DST_REF KW_AS name_label {
+        $$ = new YieldColumn(VertexExpression::make(qctx->objPool(), "$$"), *$3);
+        delete $3;
+    }
     | KW_VERTICES {
         $$ = nullptr;
-        throw nebula::GraphParser::syntax_error(@1, "please add alias when using vertices.");
+        throw nebula::GraphParser::syntax_error(@1, "please add alias when using `vertices'.");
     }
     | KW_VERTICES KW_AS name_label {
         $$ = new YieldColumn(LabelExpression::make(qctx->objPool(), "VERTICES"), *$3);
@@ -1377,7 +1425,7 @@ yield_column
     }
     | KW_EDGE {
         $$ = nullptr;
-        throw nebula::GraphParser::syntax_error(@1, "please add alias when using edge.");
+        throw nebula::GraphParser::syntax_error(@1, "please add alias when using `edge'.");
     }
     | KW_EDGE KW_AS name_label {
         $$ = new YieldColumn(EdgeExpression::make(qctx->objPool()), *$3);
@@ -1385,10 +1433,18 @@ yield_column
     }
     | KW_EDGES {
         $$ = nullptr;
-        throw nebula::GraphParser::syntax_error(@1, "please add alias when using edges.");
+        throw nebula::GraphParser::syntax_error(@1, "please add alias when using `edges'.");
     }
     | KW_EDGES KW_AS name_label {
         $$ = new YieldColumn(LabelExpression::make(qctx->objPool(), "EDGES"), *$3);
+        delete $3;
+    }
+    | KW_PATH {
+        $$ = nullptr;
+        throw nebula::GraphParser::syntax_error(@1, "please add alias when using `path'.");
+    }
+    | KW_PATH KW_AS name_label {
+        $$ = new YieldColumn(LabelExpression::make(qctx->objPool(), "PATH"), *$3);
         delete $3;
     }
     | expression {
@@ -1458,16 +1514,16 @@ with_clause
     ;
 
 match_clause
-    : KW_MATCH match_path where_clause {
+    : KW_MATCH match_path_list where_clause {
         if ($3 && graph::ExpressionUtils::findAny($3->filter(),{Expression::Kind::kAggregate})) {
             delete($2);
             delete($3);
             throw nebula::GraphParser::syntax_error(@3, "Invalid use of aggregating function in this context.");
         } else {
-            $$ = new MatchClause($2, $3, false/*optinal*/);
+            $$ = new MatchClause($2, $3, false/*optional*/);
         }
     }
-    | KW_OPTIONAL KW_MATCH match_path where_clause {
+    | KW_OPTIONAL KW_MATCH match_path_list where_clause {
         if ($4 && graph::ExpressionUtils::findAny($4->filter(),{Expression::Kind::kAggregate})) {
             delete($3);
             delete($4);
@@ -1551,6 +1607,15 @@ match_path
         $$->setAlias($1);
     }
     ;
+
+match_path_list
+    : match_path {
+      $$ = new MatchPathList($1);
+    }
+    | match_path_list COMMA match_path {
+      $$ = $1;
+      $$->add($3);
+    }
 
 match_node
     : L_PAREN match_alias R_PAREN {
@@ -1642,16 +1707,36 @@ match_step_range
         $$ = new MatchStepRange(1);
     }
     | STAR legal_integer {
-        $$ = new MatchStepRange($2, $2);
+        if ($2 < 0) {
+            throw nebula::GraphParser::syntax_error(@2, "Expected an unsigned integer.");
+        }
+        auto step = static_cast<size_t>($2);
+        $$ = new MatchStepRange(step, step);
     }
     | STAR DOT_DOT legal_integer {
-        $$ = new MatchStepRange(1, $3);
+        if ($3 < 0) {
+            throw nebula::GraphParser::syntax_error(@3, "Expected an unsigned integer.");
+        }
+        auto step = static_cast<size_t>($3);
+        $$ = new MatchStepRange(1, step);
     }
     | STAR legal_integer DOT_DOT {
-        $$ = new MatchStepRange($2);
+        if ($2 < 0) {
+            throw nebula::GraphParser::syntax_error(@2, "Expected an unsigned integer.");
+        }
+        auto step = static_cast<size_t>($2);
+        $$ = new MatchStepRange(step);
     }
     | STAR legal_integer DOT_DOT legal_integer {
-        $$ = new MatchStepRange($2, $4);
+        if ($2 < 0) {
+            throw nebula::GraphParser::syntax_error(@2, "Expected an unsigned integer.");
+        }
+        auto min = static_cast<size_t>($2);
+        if ($4 < 0) {
+            throw nebula::GraphParser::syntax_error(@4, "Expected an unsigned integer.");
+        }
+        auto max = static_cast<size_t>($4);
+        $$ = new MatchStepRange(min, max);
     }
     ;
 
@@ -1724,6 +1809,18 @@ text_search_client_item
         $$->set_host(*$2);
         delete $2;
     }
+    | L_PAREN host_item COMMA KW_HTTP R_PAREN {
+        $$ = new nebula::meta::cpp2::FTClient();
+        $$->set_host(*$2);
+        $$->set_conn_type("http");
+        delete $2;
+    }
+    | L_PAREN host_item COMMA KW_HTTPS R_PAREN {
+        $$ = new nebula::meta::cpp2::FTClient();
+        $$->set_host(*$2);
+        $$->set_conn_type("https");
+        delete $2;
+    }
     | L_PAREN host_item COMMA STRING COMMA STRING R_PAREN {
         $$ = new nebula::meta::cpp2::FTClient();
         $$->set_host(*$2);
@@ -1732,6 +1829,26 @@ text_search_client_item
         delete $2;
         delete $4;
         delete $6;
+    }
+    | L_PAREN host_item COMMA KW_HTTP COMMA STRING COMMA STRING R_PAREN {
+        $$ = new nebula::meta::cpp2::FTClient();
+        $$->set_host(*$2);
+        $$->set_user(*$6);
+        $$->set_pwd(*$8);
+        $$->set_conn_type("http");
+        delete $2;
+        delete $6;
+        delete $8;
+    }
+    | L_PAREN host_item COMMA KW_HTTPS COMMA STRING COMMA STRING R_PAREN {
+        $$ = new nebula::meta::cpp2::FTClient();
+        $$->set_host(*$2);
+        $$->set_user(*$6);
+        $$->set_pwd(*$8);
+        $$->set_conn_type("https");
+        delete $2;
+        delete $6;
+        delete $8;
     }
     ;
 
@@ -1877,7 +1994,7 @@ text_search_expression
     }
     ;
 
-    // TODO : unfiy the text_search_expression into expression in the future
+    // TODO : unify the text_search_expression into expression in the future
     // The current version only support independent text_search_expression for lookup_sentence
 lookup_where_clause
     : %empty { $$ = nullptr; }
@@ -2001,36 +2118,39 @@ fetch_sentence
     ;
 
 find_path_sentence
-    : KW_FIND KW_ALL KW_PATH opt_with_properites from_clause to_clause over_clause where_clause find_path_upto_clause {
+    : KW_FIND KW_ALL KW_PATH opt_with_properties from_clause to_clause over_clause where_clause find_path_upto_clause yield_clause {
         auto *s = new FindPathSentence(false, $4, false);
         s->setFrom($5);
         s->setTo($6);
         s->setOver($7);
         s->setWhere($8);
         s->setStep($9);
+        s->setYield($10);
         $$ = s;
     }
-    | KW_FIND KW_SHORTEST KW_PATH opt_with_properites from_clause to_clause over_clause where_clause find_path_upto_clause {
+    | KW_FIND KW_SHORTEST KW_PATH opt_with_properties from_clause to_clause over_clause where_clause find_path_upto_clause yield_clause {
         auto *s = new FindPathSentence(true, $4, false);
         s->setFrom($5);
         s->setTo($6);
         s->setOver($7);
         s->setWhere($8);
         s->setStep($9);
+        s->setYield($10);
         $$ = s;
     }
-    | KW_FIND KW_NOLOOP KW_PATH opt_with_properites from_clause to_clause over_clause where_clause find_path_upto_clause {
+    | KW_FIND KW_NOLOOP KW_PATH opt_with_properties from_clause to_clause over_clause where_clause find_path_upto_clause yield_clause {
         auto *s = new FindPathSentence(false, $4, true);
         s->setFrom($5);
         s->setTo($6);
         s->setOver($7);
         s->setWhere($8);
         s->setStep($9);
+        s->setYield($10);
         $$ = s;
     }
     ;
 
-opt_with_properites
+opt_with_properties
     : %empty { $$ = false; }
     | KW_WITH KW_PROP { $$ = true; }
     ;
@@ -2088,7 +2208,7 @@ both_in_out_clause
     | KW_BOTH over_edges { $$ = new BothInOutClause($2, BoundClause::BOTH); }
 
 get_subgraph_sentence
-    : KW_GET KW_SUBGRAPH opt_with_properites step_clause from_clause in_bound_clause out_bound_clause both_in_out_clause yield_clause {
+    : KW_GET KW_SUBGRAPH opt_with_properties step_clause from_clause in_bound_clause out_bound_clause both_in_out_clause yield_clause {
         $$ = new GetSubgraphSentence($3, $4, $5, $6, $7, $8, $9);
     }
 
@@ -2278,11 +2398,11 @@ column_spec_list
 
 column_spec
     : name_label type_spec {
-        $$ = new ColumnSpecification($1, $2->type, new ColumnProperties(), $2->type_length_ref().value_or(0));
+        $$ = new ColumnSpecification($1, $2->type, new ColumnProperties(), $2->type_length_ref().value_or(0), $2->geo_shape_ref().value_or(meta::cpp2::GeoShape::ANY));
         delete $2;
     }
     | name_label type_spec column_properties {
-        $$ = new ColumnSpecification($1, $2->type, $3, $2->type_length_ref().value_or(0));
+        $$ = new ColumnSpecification($1, $2->type, $3, $2->type_length_ref().value_or(0), $2->geo_shape_ref().value_or(meta::cpp2::GeoShape::ANY));
         delete $2;
     }
     ;
@@ -2511,8 +2631,9 @@ rebuild_fulltext_index_sentence
         $$ = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
                                   meta::cpp2::AdminCmd::REBUILD_FULLTEXT_INDEX);
     }
+
 add_group_sentence
-    : KW_ADD KW_GROUP name_label zone_name_list{
+    : KW_ADD KW_GROUP name_label zone_name_list {
         $$ = new AddGroupSentence($3, $4);
     }
     ;
@@ -2939,6 +3060,36 @@ admin_job_sentence
         auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::RECOVER);
         $$ = sentence;
     }
+    | KW_RECOVER KW_JOB integer_list {
+        auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::RECOVER);
+        std::vector<int32_t>*intVec=$3;
+        for(int32_t i = 0; i<intVec->size(); i++){
+          sentence->addPara(std::to_string(intVec->at(i)));
+        }
+        delete intVec;
+        $$ = sentence;
+        }
+    | KW_SUBMIT KW_JOB KW_BALANCE KW_LEADER {
+         auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
+                                              meta::cpp2::AdminCmd::LEADER_BALANCE);
+         $$ = sentence;
+        }
+    | KW_SUBMIT KW_JOB KW_BALANCE KW_DATA {
+         auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
+                                              meta::cpp2::AdminCmd::DATA_BALANCE);
+         $$ = sentence;
+    }
+    | KW_SUBMIT KW_JOB KW_BALANCE KW_DATA KW_REMOVE host_list {
+         auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
+                                              meta::cpp2::AdminCmd::DATA_BALANCE);
+         HostList* hl = $6;
+         std::vector<HostAddr> has = hl->hosts();
+         for (HostAddr& ha: has) {
+            sentence->addPara(ha.toString());
+         }
+         delete hl;
+         $$ = sentence;
+    }
     ;
 
 job_concurrency
@@ -3164,6 +3315,10 @@ create_space_sentence
         sentence->setComment($10);
         $$ = sentence;
     }
+    | KW_CREATE KW_SPACE opt_if_not_exists name_label KW_AS name_label {
+        auto sentence = new CreateSpaceAsSentence($6, $4, $3);
+        $$ = sentence;
+    }
     ;
 
 describe_space_sentence
@@ -3355,22 +3510,30 @@ integer_list
 
 balance_sentence
     : KW_BALANCE KW_LEADER {
-        $$ = new BalanceSentence(BalanceSentence::SubType::kLeader);
+        auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
+                                             meta::cpp2::AdminCmd::LEADER_BALANCE);
+        $$ = sentence;
     }
     | KW_BALANCE KW_DATA {
-        $$ = new BalanceSentence(BalanceSentence::SubType::kData);
+        auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
+                                             meta::cpp2::AdminCmd::DATA_BALANCE);
+        $$ = sentence;
     }
     | KW_BALANCE KW_DATA legal_integer {
-        $$ = new BalanceSentence($3);
-    }
-    | KW_BALANCE KW_DATA KW_STOP {
-        $$ = new BalanceSentence(BalanceSentence::SubType::kDataStop);
-    }
-    | KW_BALANCE KW_DATA KW_RESET KW_PLAN {
-        $$ = new BalanceSentence(BalanceSentence::SubType::kDataReset);
+        auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::SHOW);
+        sentence->addPara(std::to_string($3));
+        $$ = sentence;
     }
     | KW_BALANCE KW_DATA KW_REMOVE host_list {
-        $$ = new BalanceSentence(BalanceSentence::SubType::kData, $4);
+        auto sentence = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
+                                             meta::cpp2::AdminCmd::DATA_BALANCE);
+        HostList* hl = $4;
+        std::vector<HostAddr> has = hl->hosts();
+        for (HostAddr& ha: has) {
+            sentence->addPara(ha.toString());
+        }
+        delete hl;
+        $$ = sentence;
     }
     ;
 

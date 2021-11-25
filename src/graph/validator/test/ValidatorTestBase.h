@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef _VALIDATOR_TEST_VALIDATOR_TEST_BASE_H_
@@ -42,7 +41,7 @@ class ValidatorTestBase : public ::testing::Test {
     schemaMng_ = CHECK_NOTNULL(MockSchemaManager::makeUnique());
     indexMng_ = CHECK_NOTNULL(MockIndexManager::makeUnique());
     pool_ = std::make_unique<ObjectPool>();
-    PlannersRegister::registPlanners();
+    PlannersRegister::registerPlanners();
   }
 
   StatusOr<QueryContext*> validate(const std::string& query) {

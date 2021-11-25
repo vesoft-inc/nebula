@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "tools/db-dump/DbDumper.h"
@@ -14,10 +13,10 @@ DEFINE_string(space_name, "", "The space name.");
 DEFINE_string(db_path, "./", "Path to rocksdb.");
 DEFINE_string(meta_server, "127.0.0.1:45500", "Meta servers' address.");
 DEFINE_string(mode, "scan", "Dump mode, scan | stat");
-DEFINE_string(parts, "", "A list of partition id seperated by comma.");
-DEFINE_string(vids, "", "A list of vertex ids seperated by comma.");
-DEFINE_string(tags, "", "A list of tag name seperated by comma.");
-DEFINE_string(edges, "", "A list of edge name seperated by comma.");
+DEFINE_string(parts, "", "A list of partition id separated by comma.");
+DEFINE_string(vids, "", "A list of vertex ids separated by comma.");
+DEFINE_string(tags, "", "A list of tag name separated by comma.");
+DEFINE_string(edges, "", "A list of edge name separated by comma.");
 DEFINE_int64(limit, 1000, "Limit to output.");
 
 namespace nebula {
@@ -99,7 +98,7 @@ Status DbDumper::initParams() {
   std::vector<std::string> tags, edges;
   try {
     folly::splitTo<PartitionID>(',', FLAGS_parts, std::inserter(parts_, parts_.begin()), true);
-    if (spaceVidType_ == meta::cpp2::PropertyType::INT64) {
+    if (spaceVidType_ == nebula::cpp2::PropertyType::INT64) {
       std::vector<int64_t> intVids;
       folly::splitTo<int64_t>(',', FLAGS_vids, std::inserter(intVids, intVids.begin()), true);
       for (auto vid : intVids) {
@@ -111,7 +110,7 @@ Status DbDumper::initParams() {
     folly::splitTo<std::string>(',', FLAGS_tags, std::inserter(tags, tags.begin()), true);
     folly::splitTo<std::string>(',', FLAGS_edges, std::inserter(edges, edges.begin()), true);
   } catch (const std::exception& e) {
-    return Status::Error("Parse parts/vetexIds/tags/edges error: %s", e.what());
+    return Status::Error("Parse parts/vertexIds/tags/edges error: %s", e.what());
   }
 
   for (auto& tagName : tags) {
@@ -130,7 +129,7 @@ Status DbDumper::initParams() {
   }
 
   if (FLAGS_mode.compare("scan") != 0 && FLAGS_mode.compare("stat") != 0) {
-    return Status::Error("Unkown mode '%s'.", FLAGS_mode.c_str());
+    return Status::Error("Unknown mode '%s'.", FLAGS_mode.c_str());
   }
   return Status::OK();
 }
@@ -220,7 +219,7 @@ void DbDumper::run() {
           continue;
         }
         auto partId = metaClient_->partId(partNum_, vid);
-        auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen_, partId, vid);
+        auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen_, partId, vid);
         seek(prefix);
       }
       break;
@@ -247,7 +246,7 @@ void DbDumper::run() {
         }
         auto partId = metaClient_->partId(partNum_, vid);
         for (auto tagId : tagIds_) {
-          auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen_, partId, vid, tagId);
+          auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen_, partId, vid, tagId);
           seek(prefix);
         }
       }
@@ -272,7 +271,7 @@ void DbDumper::run() {
         }
         auto partId = metaClient_->partId(partNum_, vid);
         for (auto tagId : tagIds_) {
-          auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen_, partId, vid, tagId);
+          auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen_, partId, vid, tagId);
           seek(prefix);
         }
       }
@@ -281,7 +280,7 @@ void DbDumper::run() {
     case 0b1000: {
       // specified part, seek with prefix and print them all
       for (auto partId : parts_) {
-        auto vertexPrefix = NebulaKeyUtils::vertexPrefix(partId);
+        auto vertexPrefix = NebulaKeyUtils::tagPrefix(partId);
         seek(vertexPrefix);
         auto edgePrefix = NebulaKeyUtils::edgePrefix(partId);
         seek(edgePrefix);
@@ -303,7 +302,7 @@ void DbDumper::run() {
       beforePrintVertex_.emplace_back(printIfTagFound);
       beforePrintEdge_.emplace_back(noPrint);
       for (auto partId : parts_) {
-        auto prefix = NebulaKeyUtils::vertexPrefix(partId);
+        auto prefix = NebulaKeyUtils::tagPrefix(partId);
         seek(prefix);
       }
       break;
@@ -322,7 +321,7 @@ void DbDumper::run() {
       beforePrintVertex_.emplace_back(printIfTagFound);
       beforePrintEdge_.emplace_back(noPrint);
       for (auto partId : parts_) {
-        auto prefix = NebulaKeyUtils::vertexPrefix(partId);
+        auto prefix = NebulaKeyUtils::tagPrefix(partId);
         seek(prefix);
       }
       break;
@@ -334,7 +333,7 @@ void DbDumper::run() {
           if (!isValidVidLen(vid)) {
             continue;
           }
-          auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen_, partId, vid);
+          auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen_, partId, vid);
           seek(prefix);
         }
       }
@@ -363,7 +362,7 @@ void DbDumper::run() {
             continue;
           }
           for (auto tagId : tagIds_) {
-            auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen_, partId, vid, tagId);
+            auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen_, partId, vid, tagId);
             seek(prefix);
           }
         }
@@ -390,7 +389,7 @@ void DbDumper::run() {
             continue;
           }
           for (auto tagId : tagIds_) {
-            auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen_, partId, vid, tagId);
+            auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen_, partId, vid, tagId);
             seek(prefix);
           }
         }
@@ -441,7 +440,7 @@ void DbDumper::iterates(kvstore::RocksPrefixIter* it) {
     auto key = it->key();
     auto value = it->val();
 
-    if (NebulaKeyUtils::isVertex(spaceVidLen_, key)) {
+    if (NebulaKeyUtils::isTag(spaceVidLen_, key)) {
       // filter the data
       bool isFiltered = false;
       for (auto& cb : beforePrintVertex_) {
@@ -576,7 +575,7 @@ std::string DbDumper::getEdgeName(const EdgeType edgeType) {
 }
 
 Value DbDumper::getVertexId(const folly::StringPiece& vidStr) {
-  if (spaceVidType_ == meta::cpp2::PropertyType::INT64) {
+  if (spaceVidType_ == nebula::cpp2::PropertyType::INT64) {
     int64_t val;
     memcpy(reinterpret_cast<void*>(&val), vidStr.begin(), sizeof(int64_t));
     return val;

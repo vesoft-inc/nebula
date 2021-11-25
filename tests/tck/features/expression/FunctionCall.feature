@@ -1,7 +1,6 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Function Call Expression
 
   Background:
@@ -64,8 +63,8 @@ Feature: Function Call Expression
       RETURN  concat(a.name,c.name)
       """
     Then the result should be, in any order:
-      | concat(a.name,c.name)   |
-      | "Shaquile O'NealLakers" |
+      | concat(a.name,c.name)    |
+      | "Shaquille O'NealLakers" |
     When executing query:
       """
       MATCH (a:player)-[b:serve]-(c:team{name: "Lakers"})
@@ -73,8 +72,8 @@ Feature: Function Call Expression
       RETURN  concat(a.name, "hello")
       """
     Then the result should be, in any order:
-      | concat(a.name,"hello") |
-      | "Shaquile O'Nealhello" |
+      | concat(a.name,"hello")  |
+      | "Shaquille O'Nealhello" |
 
   Scenario: concat_ws
     When executing query:
@@ -92,8 +91,8 @@ Feature: Function Call Expression
       RETURN concat_ws("@",a.name, "hello", b.likeness, c.name) as result
       """
     Then the result should be, in any order:
-      | result                         |
-      | "Shaquile O'Neal@hello@Lakers" |
+      | result                          |
+      | "Shaquille O'Neal@hello@Lakers" |
     When executing query:
       """
       MATCH (a:player)-[b:serve]-(c:team{name: "Lakers"})
@@ -101,8 +100,8 @@ Feature: Function Call Expression
       RETURN concat_ws("@",a.name, NULL, "hello", b.likeness, c.name) as result
       """
     Then the result should be, in any order:
-      | result                         |
-      | "Shaquile O'Neal@hello@Lakers" |
+      | result                          |
+      | "Shaquille O'Neal@hello@Lakers" |
     When executing query:
       """
       MATCH (a:player)-[b:serve]-(c:team{name: "Lakers"})
@@ -121,6 +120,50 @@ Feature: Function Call Expression
     Then the result should be, in any order:
       | result |
       | NULL   |
+
+  Scenario: round
+    When executing query:
+      """
+      YIELD round(3.1415926, 9) as result
+      """
+    Then the result should be, in any order:
+      | result    |
+      | 3.1415926 |
+    When executing query:
+      """
+      YIELD round(3.1415926, 2) as result
+      """
+    Then the result should be, in any order:
+      | result |
+      | 3.14   |
+    When executing query:
+      """
+      YIELD round(3.1415926, 3) as result
+      """
+    Then the result should be, in any order:
+      | result |
+      | 3.142  |
+    When executing query:
+      """
+      YIELD round(3.14159265359, 0) as result
+      """
+    Then the result should be, in any order:
+      | result |
+      | 3.0    |
+    When executing query:
+      """
+      YIELD round(35543.14159265359, -3) as result
+      """
+    Then the result should be, in any order:
+      | result  |
+      | 36000.0 |
+    When executing query:
+      """
+      YIELD round(35543.14159265359, -5) as result
+      """
+    Then the result should be, in any order:
+      | result |
+      | 0.0    |
 
   Scenario: error check
     When executing query:

@@ -1,7 +1,6 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Starts With Expression
 
   Background:
@@ -47,9 +46,7 @@ Feature: Starts With Expression
       """
       YIELD 123 STARTS WITH 1
       """
-    Then the result should be, in any order:
-      | (123 STARTS WITH 1) |
-      | BAD_TYPE            |
+    Then a SemanticError should be raised at runtime: Type error `(123 STARTS WITH 1)'
 
   Scenario: yield not starts with
     When executing query:
@@ -91,9 +88,7 @@ Feature: Starts With Expression
       """
       YIELD 123 NOT STARTS WITH 1
       """
-    Then the result should be, in any order:
-      | (123 NOT STARTS WITH 1) |
-      | BAD_TYPE                |
+    Then a SemanticError should be raised at runtime: Type error `(123 NOT STARTS WITH 1)'
 
   Scenario: starts with go
     When executing query:

@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/config/GetConfigProcessor.h"
@@ -44,7 +43,7 @@ void GetConfigProcessor::process(const cpp2::GetConfigReq& req) {
 nebula::cpp2::ErrorCode GetConfigProcessor::getOneConfig(const cpp2::ConfigModule& module,
                                                          const std::string& name,
                                                          std::vector<cpp2::ConfigItem>& items) {
-  std::string configKey = MetaServiceUtils::configKey(module, name);
+  std::string configKey = MetaKeyUtils::configKey(module, name);
   auto ret = doGet(configKey);
   if (!nebula::ok(ret)) {
     auto retCode = nebula::error(ret);
@@ -56,7 +55,7 @@ nebula::cpp2::ErrorCode GetConfigProcessor::getOneConfig(const cpp2::ConfigModul
     return retCode;
   }
 
-  cpp2::ConfigItem item = MetaServiceUtils::parseConfigValue(nebula::value(ret));
+  cpp2::ConfigItem item = MetaKeyUtils::parseConfigValue(nebula::value(ret));
   item.set_module(module);
   item.set_name(name);
   items.emplace_back(std::move(item));

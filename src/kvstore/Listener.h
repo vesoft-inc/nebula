@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef KVSTORE_LISTENER_H_
@@ -133,6 +132,8 @@ class Listener : public raftex::RaftPart {
   void onLostLeadership(TermID) override { LOG(FATAL) << "Should not reach here"; }
 
   void onElected(TermID) override { LOG(FATAL) << "Should not reach here"; }
+
+  void onLeaderReady(TermID) override { LOG(FATAL) << "Should not reach here"; }
 
   void onDiscoverNewLeader(HostAddr nLeader) override {
     LOG(INFO) << idStr_ << "Find the new leader " << nLeader;

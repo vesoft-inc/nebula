@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Variable length Pattern match int vid (0 step)
 
   Background:
@@ -42,7 +41,7 @@ Feature: Variable length Pattern match int vid (0 step)
       | [[:like "LaMarcus Aldridge"->"Tim Duncan" @0 {likeness: 75}]] |
       | [[:like "Manu Ginobili"->"Tim Duncan" @0 {likeness: 90}]]     |
       | [[:like "Marco Belinelli"->"Tim Duncan" @0 {likeness: 55}]]   |
-      | [[:like "Shaquile O'Neal"->"Tim Duncan" @0 {likeness: 80}]]   |
+      | [[:like "Shaquille O'Neal"->"Tim Duncan" @0 {likeness: 80}]]  |
       | [[:like "Tiago Splitter"->"Tim Duncan" @0 {likeness: 80}]]    |
       | [[:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]]       |
       | [[:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]]     |
@@ -119,7 +118,7 @@ Feature: Variable length Pattern match int vid (0 step)
       | [[:like "Tracy McGrady"->"Rudy Gay" @0 {likeness: 90}], [:like "Grant Hill"->"Tracy McGrady" @0 {likeness: 90}]]       | ("Grant Hill" :player{age: 46, name: "Grant Hill"})                                                         |
       | [[:like "Tracy McGrady"->"Rudy Gay" @0 {likeness: 90}], [:like "Vince Carter"->"Tracy McGrady" @0 {likeness: 90}]]     | ("Vince Carter" :player{age: 42, name: "Vince Carter"})                                                     |
       | [[:like "Manu Ginobili"->"Tim Duncan" @0 {likeness: 90}], [:like "Tiago Splitter"->"Manu Ginobili" @0 {likeness: 90}]] | ("Tiago Splitter" :player{age: 34, name: "Tiago Splitter"})                                                 |
-      | [[:like "Yao Ming"->"Tracy McGrady" @0 {likeness: 90}], [:like "Yao Ming"->"Shaquile O'Neal" @0 {likeness: 90}]]       | ("Shaquile O'Neal" :player{age: 47, name: "Shaquile O'Neal"})                                               |
+      | [[:like "Yao Ming"->"Tracy McGrady" @0 {likeness: 90}], [:like "Yao Ming"->"Shaquille O'Neal" @0 {likeness: 90}]]      | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})                                             |
       | [[:like "Tracy McGrady"->"Grant Hill" @0 {likeness: 90}], [:like "Grant Hill"->"Tracy McGrady" @0 {likeness: 90}]]     | ("Tracy McGrady" :player{age: 39, name: "Tracy McGrady"})                                                   |
       | [[:like "Tracy McGrady"->"Rudy Gay" @0 {likeness: 90}], [:like "Yao Ming"->"Tracy McGrady" @0 {likeness: 90}]]         | ("Yao Ming" :player{age: 38, name: "Yao Ming"})                                                             |
       | [[:like "Tiago Splitter"->"Manu Ginobili" @0 {likeness: 90}], [:like "Manu Ginobili"->"Tim Duncan" @0 {likeness: 90}]] | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
@@ -272,14 +271,14 @@ Feature: Variable length Pattern match int vid (0 step)
       | ("Marco Belinelli" :player{age: 32, name: "Marco Belinelli"})                                               | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
       | ("Marco Belinelli" :player{age: 32, name: "Marco Belinelli"})                                               | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
       | ("Marco Belinelli" :player{age: 32, name: "Marco Belinelli"})                                               | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
-      | ("Shaquile O'Neal" :player{age: 47, name: "Shaquile O'Neal"})                                               | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
-      | ("Shaquile O'Neal" :player{age: 47, name: "Shaquile O'Neal"})                                               | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
-      | ("Shaquile O'Neal" :player{age: 47, name: "Shaquile O'Neal"})                                               | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
-      | ("Shaquile O'Neal" :player{age: 47, name: "Shaquile O'Neal"})                                               | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
-      | ("Shaquile O'Neal" :player{age: 47, name: "Shaquile O'Neal"})                                               | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
-      | ("Shaquile O'Neal" :player{age: 47, name: "Shaquile O'Neal"})                                               | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
-      | ("Shaquile O'Neal" :player{age: 47, name: "Shaquile O'Neal"})                                               | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
-      | ("Shaquile O'Neal" :player{age: 47, name: "Shaquile O'Neal"})                                               | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+      | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})                                             | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+      | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})                                             | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+      | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})                                             | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+      | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})                                             | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+      | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})                                             | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+      | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})                                             | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+      | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})                                             | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+      | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})                                             | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
       | ("Tiago Splitter" :player{age: 34, name: "Tiago Splitter"})                                                 | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
       | ("Tiago Splitter" :player{age: 34, name: "Tiago Splitter"})                                                 | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
       | ("Tiago Splitter" :player{age: 34, name: "Tiago Splitter"})                                                 | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |

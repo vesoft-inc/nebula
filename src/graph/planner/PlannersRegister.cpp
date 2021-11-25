@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/planner/PlannersRegister.h"
@@ -13,21 +12,43 @@
 #include "graph/planner/match/PropIndexSeek.h"
 #include "graph/planner/match/StartVidFinder.h"
 #include "graph/planner/match/VertexIdSeek.h"
+#include "graph/planner/ngql/FetchEdgesPlanner.h"
 #include "graph/planner/ngql/FetchVerticesPlanner.h"
 #include "graph/planner/ngql/GoPlanner.h"
 #include "graph/planner/ngql/LookupPlanner.h"
+#include "graph/planner/ngql/MaintainPlanner.h"
 #include "graph/planner/ngql/PathPlanner.h"
 #include "graph/planner/ngql/SubgraphPlanner.h"
 
 namespace nebula {
 namespace graph {
 
-void PlannersRegister::registPlanners() {
-  registSequential();
-  registMatch();
+void PlannersRegister::registerPlanners() {
+  registerDDL();
+  registerSequential();
+  registerMatch();
 }
 
-void PlannersRegister::registSequential() {
+void PlannersRegister::registerDDL() {
+  {
+    auto& planners = Planner::plannersMap()[Sentence::Kind::kAlterTag];
+    planners.emplace_back(&AlterTagPlanner::match, &AlterTagPlanner::make);
+  }
+  {
+    auto& planners = Planner::plannersMap()[Sentence::Kind::kAlterEdge];
+    planners.emplace_back(&AlterEdgePlanner::match, &AlterEdgePlanner::make);
+  }
+  {
+    auto& planners = Planner::plannersMap()[Sentence::Kind::kCreateTag];
+    planners.emplace_back(&CreateTagPlanner::match, &CreateTagPlanner::make);
+  }
+  {
+    auto& planners = Planner::plannersMap()[Sentence::Kind::kCreateEdge];
+    planners.emplace_back(&CreateEdgePlanner::match, &CreateEdgePlanner::make);
+  }
+}
+
+void PlannersRegister::registerSequential() {
   {
     auto& planners = Planner::plannersMap()[Sentence::Kind::kSequential];
     planners.emplace_back(&SequentialPlanner::match, &SequentialPlanner::make);
@@ -52,9 +73,13 @@ void PlannersRegister::registSequential() {
     auto& planners = Planner::plannersMap()[Sentence::Kind::kFetchVertices];
     planners.emplace_back(&FetchVerticesPlanner::match, &FetchVerticesPlanner::make);
   }
+  {
+    auto& planners = Planner::plannersMap()[Sentence::Kind::kFetchEdges];
+    planners.emplace_back(&FetchEdgesPlanner::match, &FetchEdgesPlanner::make);
+  }
 }
 
-void PlannersRegister::registMatch() {
+void PlannersRegister::registerMatch() {
   auto& planners = Planner::plannersMap()[Sentence::Kind::kMatch];
 
   planners.emplace_back(&MatchPlanner::match, &MatchPlanner::make);

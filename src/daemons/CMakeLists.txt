@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 set(common_deps
     $<TARGET_OBJECTS:meta_obj>
@@ -23,13 +22,17 @@ set(common_deps
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:conf_obj>
     $<TARGET_OBJECTS:datatypes_obj>
+    $<TARGET_OBJECTS:wkt_wkb_io_obj>
     $<TARGET_OBJECTS:base_obj>
+    $<TARGET_OBJECTS:memory_obj>
     $<TARGET_OBJECTS:expression_obj>
     $<TARGET_OBJECTS:function_manager_obj>
+    $<TARGET_OBJECTS:wkt_wkb_io_obj>
     $<TARGET_OBJECTS:agg_function_manager_obj>
     $<TARGET_OBJECTS:time_utils_obj>
     $<TARGET_OBJECTS:version_obj>
     $<TARGET_OBJECTS:ssl_obj>
+    $<TARGET_OBJECTS:geo_index_obj>
 )
 
 set(storage_meta_deps
@@ -38,10 +41,14 @@ set(storage_meta_deps
     $<TARGET_OBJECTS:wal_obj>
     $<TARGET_OBJECTS:disk_man_obj>
     $<TARGET_OBJECTS:keyutils_obj>
+    $<TARGET_OBJECTS:meta_keyutils_obj>
+    $<TARGET_OBJECTS:log_str_list_iterator_obj>
     $<TARGET_OBJECTS:codec_obj>
     $<TARGET_OBJECTS:raftex_thrift_obj>
     $<TARGET_OBJECTS:hdfs_helper_obj>
     $<TARGET_OBJECTS:ft_es_storage_adapter_obj>
+    $<TARGET_OBJECTS:storage_thrift_obj>
+    $<TARGET_OBJECTS:geo_index_obj>
 )
 
 nebula_add_executable(
@@ -50,6 +57,7 @@ nebula_add_executable(
     SOURCES
         StorageDaemon.cpp
         SetupLogging.cpp
+        SetupBreakpad.cpp
     OBJECTS
         $<TARGET_OBJECTS:storage_server>
         $<TARGET_OBJECTS:internal_storage_service_handler>
@@ -76,6 +84,7 @@ nebula_add_executable(
     SOURCES
         MetaDaemon.cpp
         SetupLogging.cpp
+        SetupBreakpad.cpp
     OBJECTS
         $<TARGET_OBJECTS:meta_service_handler>
         $<TARGET_OBJECTS:meta_http_handler>
@@ -97,6 +106,7 @@ nebula_add_executable(
     SOURCES
         GraphDaemon.cpp
         SetupLogging.cpp
+        SetupBreakpad.cpp
     OBJECTS
         $<TARGET_OBJECTS:stats_def_obj>
         $<TARGET_OBJECTS:util_obj>
@@ -108,11 +118,11 @@ nebula_add_executable(
         $<TARGET_OBJECTS:expr_visitor_obj>
         $<TARGET_OBJECTS:optimizer_obj>
         $<TARGET_OBJECTS:planner_obj>
+        $<TARGET_OBJECTS:plan_obj>
         $<TARGET_OBJECTS:executor_obj>
         $<TARGET_OBJECTS:scheduler_obj>
         $<TARGET_OBJECTS:idgenerator_obj>
         $<TARGET_OBJECTS:graph_context_obj>
-        $<TARGET_OBJECTS:optimizer_obj>
         $<TARGET_OBJECTS:graph_flags_obj>
         $<TARGET_OBJECTS:graph_auth_obj>
         $<TARGET_OBJECTS:graph_thrift_obj>
@@ -122,6 +132,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:charset_obj>
         $<TARGET_OBJECTS:graph_obj>
         $<TARGET_OBJECTS:ft_es_graph_adapter_obj>
+        $<TARGET_OBJECTS:storage_thrift_obj>
         ${common_deps}
     LIBRARIES
         ${PROXYGEN_LIBRARIES}

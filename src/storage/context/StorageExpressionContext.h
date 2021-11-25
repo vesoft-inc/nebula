@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_CONTEXT_STORAGEEXPRESSIONCONTEXT_H_
@@ -98,7 +97,10 @@ class StorageExpressionContext final : public ExpressionContext {
     valueMap_[name].emplace_back(std::move(val));
   }
 
-  Value getVertex() const override { LOG(FATAL) << "Unimplemented"; }
+  Value getVertex(const std::string& name = "") const override {
+    UNUSED(name);
+    LOG(FATAL) << "Unimplemented";
+  }
 
   Value getEdge() const override { LOG(FATAL) << "Unimplemented"; }
 

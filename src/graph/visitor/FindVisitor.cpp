@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #include "graph/visitor/FindVisitor.h"
 namespace nebula {
@@ -121,6 +120,15 @@ void FindVisitor::visit(ListComprehensionExpression* expr) {
   }
 }
 
+void FindVisitor::visit(LogicalExpression* expr) {
+  findInCurrentExpr(expr);
+  if (!needFindAll_ && !foundExprs_.empty()) return;
+  for (const auto& operand : expr->operands()) {
+    operand->accept(this);
+    if (!needFindAll_ && !foundExprs_.empty()) return;
+  }
+}
+
 void FindVisitor::visit(ConstantExpression* expr) { findInCurrentExpr(expr); }
 
 void FindVisitor::visit(EdgePropertyExpression* expr) { findInCurrentExpr(expr); }
@@ -164,6 +172,15 @@ void FindVisitor::visit(VertexExpression* expr) { findInCurrentExpr(expr); }
 void FindVisitor::visit(EdgeExpression* expr) { findInCurrentExpr(expr); }
 
 void FindVisitor::visit(ColumnExpression* expr) { findInCurrentExpr(expr); }
+
+void FindVisitor::visit(PathBuildExpression* expr) {
+  findInCurrentExpr(expr);
+  if (!needFindAll_ && !foundExprs_.empty()) return;
+  for (const auto& item : expr->items()) {
+    item->accept(this);
+    if (!needFindAll_ && !foundExprs_.empty()) return;
+  }
+}
 
 void FindVisitor::visit(SubscriptRangeExpression* expr) {
   findInCurrentExpr(expr);

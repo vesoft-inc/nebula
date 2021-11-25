@@ -3,13 +3,13 @@ nebula_add_test(
     SOURCES
         ExpressionUtilsTest.cpp
         IdGeneratorTest.cpp
-        ScopedTimerTest.cpp
     OBJECTS
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:concurrent_obj>
         $<TARGET_OBJECTS:datatypes_obj>
         $<TARGET_OBJECTS:expression_obj>
         $<TARGET_OBJECTS:function_manager_obj>
+        $<TARGET_OBJECTS:wkt_wkb_io_obj>
         $<TARGET_OBJECTS:agg_function_manager_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:meta_thrift_obj>
@@ -39,10 +39,11 @@ nebula_add_test(
         $<TARGET_OBJECTS:graph_auth_obj>
         $<TARGET_OBJECTS:graph_flags_obj>
         $<TARGET_OBJECTS:util_obj>
-        $<TARGET_OBJECTS:planner_obj>
+        $<TARGET_OBJECTS:plan_obj>
         $<TARGET_OBJECTS:parser_obj>
         $<TARGET_OBJECTS:graph_context_obj>
-        $<TARGET_OBJECTS:validator_obj>
+        $<TARGET_OBJECTS:memory_obj>
+        $<TARGET_OBJECTS:version_obj>
     LIBRARIES
         gtest
         gtest_main

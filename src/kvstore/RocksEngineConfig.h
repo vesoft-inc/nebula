@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef KVSTORE_ROCKSENGINECONFIG_H_
@@ -62,6 +61,10 @@ DECLARE_int32(rocksdb_compact_target_level);
 DECLARE_string(rocksdb_wal_dir);
 DECLARE_string(rocksdb_backup_dir);
 DECLARE_int32(rocksdb_backup_interval_secs);
+
+// rocksdb key value separation options
+DECLARE_bool(rocksdb_enable_kv_separation);
+DECLARE_uint64(rocksdb_kv_separation_threshold);
 
 namespace nebula {
 namespace kvstore {

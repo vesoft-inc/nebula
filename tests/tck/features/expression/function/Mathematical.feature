@@ -1,7 +1,6 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Mathematical function Expression
 
   Scenario: bit functions
@@ -23,6 +22,4 @@ Feature: Mathematical function Expression
       """
       return [bit_and(5,true),bit_or(2,1.3),bit_xor("5",1)] as error_test
       """
-    Then the result should be, in any order:
-      | error_test                     |
-      | [BAD_TYPE, BAD_TYPE, BAD_TYPE] |
+    Then a SemanticError should be raised at runtime: Type error `bit_and(5,true)'

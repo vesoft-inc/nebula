@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #include "graph/planner/ngql/PathPlanner.h"
 
@@ -272,7 +271,7 @@ SubPlan PathPlanner::singlePairPlan(PlanNode* dep) {
   auto* dc = DataCollect::make(qctx, DataCollect::DCKind::kBFSShortest);
   dc->setInputVars({conjunct->outputVar()});
   dc->addDep(loop);
-  dc->setColNames({"path"});
+  dc->setColNames(pathCtx_->colNames);
 
   SubPlan subPlan;
   subPlan.root = dc;
@@ -322,7 +321,7 @@ SubPlan PathPlanner::allPairPlan(PlanNode* dep) {
   auto* dc = DataCollect::make(qctx, DataCollect::DCKind::kAllPaths);
   dc->addDep(loop);
   dc->setInputVars({conjunct->outputVar()});
-  dc->setColNames({"path"});
+  dc->setColNames(pathCtx_->colNames);
 
   SubPlan subPlan;
   subPlan.root = dc;
@@ -375,7 +374,7 @@ SubPlan PathPlanner::multiPairPlan(PlanNode* dep) {
   auto* dc = DataCollect::make(qctx, DataCollect::DCKind::kMultiplePairShortest);
   dc->addDep(loop);
   dc->setInputVars({conjunct->outputVar()});
-  dc->setColNames({"path"});
+  dc->setColNames(pathCtx_->colNames);
 
   SubPlan subPlan;
   subPlan.root = dc;
@@ -410,7 +409,7 @@ PlanNode* PathPlanner::buildVertexPlan(PlanNode* dep, const std::string& input) 
   idArgs->addArgument(ColumnExpression::make(pool, 1));
   auto* src = FunctionCallExpression::make(pool, "id", idArgs);
   // get all vertexprop
-  auto vertexProp = SchemaUtil::getAllVertexProp(qctx, pathCtx_->space, true);
+  auto vertexProp = SchemaUtil::getAllVertexProp(qctx, pathCtx_->space.id, true);
   auto* getVertices = GetVertices::make(
       qctx, unwind, pathCtx_->space.id, src, std::move(vertexProp).value(), {}, true);
 
@@ -504,18 +503,20 @@ PlanNode* PathPlanner::buildPathProp(PlanNode* dep) {
   dc->addDep(vertexPlan);
   dc->addDep(edgePlan);
   dc->setInputVars({vertexPlan->outputVar(), edgePlan->outputVar(), dep->outputVar()});
-  dc->setColNames({"path"});
+  dc->setColNames(std::move(pathCtx_->colNames));
   return dc;
 }
 
 StatusOr<SubPlan> PathPlanner::transform(AstContext* astCtx) {
   pathCtx_ = static_cast<PathContext*>(astCtx);
+  auto qctx = pathCtx_->qctx;
+  auto& from = pathCtx_->from;
+  auto& to = pathCtx_->to;
+  buildStart(from, pathCtx_->fromVidsVar, false);
+  buildStart(to, pathCtx_->toVidsVar, true);
 
-  buildStart(pathCtx_->from, pathCtx_->fromVidsVar, false);
-  buildStart(pathCtx_->to, pathCtx_->toVidsVar, true);
-
-  auto* startNode = StartNode::make(pathCtx_->qctx);
-  auto* pt = PassThroughNode::make(pathCtx_->qctx, startNode);
+  auto* startNode = StartNode::make(qctx);
+  auto* pt = PassThroughNode::make(qctx, startNode);
 
   SubPlan subPlan;
   do {
@@ -523,7 +524,7 @@ StatusOr<SubPlan> PathPlanner::transform(AstContext* astCtx) {
       subPlan = allPairPlan(pt);
       break;
     }
-    if (pathCtx_->from.vids.size() == 1 && pathCtx_->to.vids.size() == 1) {
+    if (from.vids.size() == 1 && to.vids.size() == 1) {
       subPlan = singlePairPlan(pt);
       break;
     }

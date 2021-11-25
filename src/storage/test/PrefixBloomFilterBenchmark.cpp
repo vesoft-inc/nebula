@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <folly/Benchmark.h>
@@ -29,7 +28,7 @@ void mockData(StorageEnv* env, int32_t partCount) {
          vertexId < (partId + 1) * FLAGS_vertex_per_part;
          vertexId++) {
       for (TagID tagId = 3001; tagId < 3010; tagId++) {
-        auto key = NebulaKeyUtils::vertexKey(vIdLen, partId, std::to_string(vertexId), tagId);
+        auto key = NebulaKeyUtils::tagKey(vIdLen, partId, std::to_string(vertexId), tagId);
         auto val = folly::stringPrintf("%d_%d", vertexId, tagId);
         data.emplace_back(std::move(key), std::move(val));
       }
@@ -54,7 +53,7 @@ void testPrefixSeek(StorageEnv* env, int32_t partCount, int32_t iters) {
       for (int32_t vertexId = partId * FLAGS_vertex_per_part;
            vertexId < (partId + 1) * FLAGS_vertex_per_part;
            vertexId++) {
-        auto prefix = NebulaKeyUtils::vertexPrefix(vIdLen, partId, std::to_string(vertexId));
+        auto prefix = NebulaKeyUtils::tagPrefix(vIdLen, partId, std::to_string(vertexId));
         std::unique_ptr<kvstore::KVIterator> iter;
         auto code = env->kvstore_->prefix(spaceId, partId, prefix, &iter);
         ASSERT_EQ(code, nebula::cpp2::ErrorCode::SUCCEEDED);

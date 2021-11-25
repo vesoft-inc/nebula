@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #include <gtest/gtest.h>
 
@@ -37,6 +36,7 @@
 #include "meta/processors/zone/ListGroupsProcessor.h"
 #include "meta/processors/zone/ListZonesProcessor.h"
 #include "meta/processors/zone/UpdateGroupProcessor.h"
+#include "meta/processors/zone/UpdateZoneProcessor.h"
 #include "meta/test/TestUtils.h"
 
 DECLARE_int32(expired_threshold_sec);
@@ -46,7 +46,7 @@ DECLARE_uint32(expired_time_factor);
 namespace nebula {
 namespace meta {
 
-using cpp2::PropertyType;
+using nebula::cpp2::PropertyType;
 
 TEST(ProcessorTest, ListHostsTest) {
   fs::TempDir rootPath("/tmp/ListHostsTest.XXXXXX");
@@ -342,7 +342,7 @@ TEST(ProcessorTest, SpaceTest) {
     ASSERT_EQ(8, resp.get_item().get_properties().get_partition_num());
     ASSERT_EQ(3, resp.get_item().get_properties().get_replica_factor());
     ASSERT_EQ(8, *resp.get_item().get_properties().get_vid_type().get_type_length());
-    ASSERT_EQ(cpp2::PropertyType::FIXED_STRING,
+    ASSERT_EQ(PropertyType::FIXED_STRING,
               resp.get_item().get_properties().get_vid_type().get_type());
     ASSERT_EQ("utf8", resp.get_item().get_properties().get_charset_name());
     ASSERT_EQ("utf8_bin", resp.get_item().get_properties().get_collate_name());
@@ -471,7 +471,7 @@ TEST(ProcessorTest, SpaceWithGroupTest) {
   fs::TempDir rootPath("/tmp/SpaceWithGroupTest.XXXXXX");
   std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
   std::vector<HostAddr> addresses;
-  for (int32_t i = 0; i < 10; i++) {
+  for (int32_t i = 0; i <= 10; i++) {
     addresses.emplace_back(std::to_string(i), i);
   }
   TestUtils::createSomeHosts(kv.get(), std::move(addresses));
@@ -707,6 +707,56 @@ TEST(ProcessorTest, SpaceWithGroupTest) {
   auto resp = std::move(f).get();
   ASSERT_EQ(nebula::cpp2::ErrorCode::E_GROUP_NOT_FOUND, resp.get_code());
 }
+// Create space on empty zone
+{
+  {
+    std::vector<HostAddr> nodes = {HostAddr("10", 10)};
+    cpp2::AddZoneReq req;
+    req.set_zone_name("zone_5");
+    req.set_nodes(std::move(nodes));
+    auto* processor = AddZoneProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
+  {
+    cpp2::AddGroupReq req;
+    req.set_group_name("group_2");
+    std::vector<std::string> zones = {"zone_5"};
+    req.set_zone_names(std::move(zones));
+    auto* processor = AddGroupProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
+  {
+    cpp2::DropHostFromZoneReq req;
+    req.set_zone_name("zone_5");
+    HostAddr node{"10", 10};
+    req.set_node(std::move(node));
+    auto* processor = DropHostFromZoneProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
+  {
+    cpp2::SpaceDesc properties;
+    properties.set_space_name("space_on_empty_hosts");
+    properties.set_partition_num(1);
+    properties.set_replica_factor(1);
+    properties.set_group_name("group_2");
+    cpp2::CreateSpaceReq req;
+    req.set_properties(std::move(properties));
+    auto* processor = CreateSpaceProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_INVALID_PARM, resp.get_code());
+  }
+}
 }  // namespace nebula
 
 TEST(ProcessorTest, CreateTagTest) {
@@ -847,7 +897,7 @@ TEST(ProcessorTest, CreateTagTest) {
 
     cpp2::CreateTagReq req;
     req.set_space_id(1);
-    req.set_tag_name("tag_type_mismatche");
+    req.set_tag_name("tag_type_mismatch");
     req.set_schema(std::move(schemaWithDefault));
     auto* processor = CreateTagProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -871,7 +921,7 @@ TEST(ProcessorTest, CreateTagTest) {
 
     cpp2::CreateTagReq req;
     req.set_space_id(1);
-    req.set_tag_name("tag_value_mismatche");
+    req.set_tag_name("tag_value_mismatch");
     req.set_schema(std::move(schemaWithDefault));
     auto* processor = CreateTagProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -1038,7 +1088,7 @@ TEST(ProcessorTest, CreateEdgeTest) {
 
     cpp2::CreateEdgeReq req;
     req.set_space_id(1);
-    req.set_edge_name("edge_with_defaule");
+    req.set_edge_name("edge_with_default");
     req.set_schema(std::move(schemaWithDefault));
     auto* processor = CreateEdgeProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -1055,7 +1105,7 @@ TEST(ProcessorTest, CreateEdgeTest) {
 
     cpp2::CreateEdgeReq req;
     req.set_space_id(1);
-    req.set_edge_name("edge_type_mismatche");
+    req.set_edge_name("edge_type_mismatch");
     req.set_schema(std::move(schemaWithDefault));
     auto* processor = CreateEdgeProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -1431,10 +1481,8 @@ TEST(ProcessorTest, DropTagTest) {
   {
     std::string tagVal;
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto ret = kv.get()->get(kDefaultSpaceId,
-                             kDefaultPartId,
-                             std::move(MetaServiceUtils::indexTagKey(1, "tag_0")),
-                             &tagVal);
+    auto ret = kv.get()->get(
+        kDefaultSpaceId, kDefaultPartId, std::move(MetaKeyUtils::indexTagKey(1, "tag_0")), &tagVal);
     ASSERT_EQ(nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND, ret);
     std::string tagPrefix = "__tags__";
     ret = kv.get()->prefix(kDefaultSpaceId, kDefaultPartId, tagPrefix, &iter);
@@ -1522,7 +1570,7 @@ TEST(ProcessorTest, DropEdgeTest) {
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = kv.get()->get(kDefaultSpaceId,
                              kDefaultPartId,
-                             std::move(MetaServiceUtils::indexEdgeKey(1, "edge_0")),
+                             std::move(MetaKeyUtils::indexEdgeKey(1, "edge_0")),
                              &edgeVal);
     ASSERT_EQ(nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND, ret);
     std::string edgePrefix = "__edges__";
@@ -2740,7 +2788,7 @@ TEST(ProcessorTest, TagIdAndEdgeTypeInSpaceRangeTest) {
     // check tag and edge count
     int count = 0;
 
-    auto tagprefix = MetaServiceUtils::schemaTagsPrefix(1);
+    auto tagprefix = MetaKeyUtils::schemaTagsPrefix(1);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto retCode = kv->prefix(kDefaultSpaceId, kDefaultPartId, tagprefix, &iter);
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, retCode);
@@ -2750,7 +2798,7 @@ TEST(ProcessorTest, TagIdAndEdgeTypeInSpaceRangeTest) {
     }
     ASSERT_EQ(10, count);
 
-    auto edgeprefix = MetaServiceUtils::schemaEdgesPrefix(1);
+    auto edgeprefix = MetaKeyUtils::schemaEdgesPrefix(1);
     retCode = kv->prefix(kDefaultSpaceId, kDefaultPartId, edgeprefix, &iter);
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, retCode);
     while (iter->valid()) {

@@ -1,7 +1,6 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Pipe or use variable to store the match results
 
   Background:
@@ -30,7 +29,7 @@ Feature: Pipe or use variable to store the match results
       | 42  | false | "Tim Duncan" | "LaMarcus Aldridge" |
       | 42  | false | "Tim Duncan" | "Manu Ginobili"     |
       | 42  | false | "Tim Duncan" | "Marco Belinelli"   |
-      | 42  | false | "Tim Duncan" | "Shaquile O'Neal"   |
+      | 42  | false | "Tim Duncan" | "Shaquille O'Neal"  |
       | 42  | false | "Tim Duncan" | "Tiago Splitter"    |
       | 42  | true  | "Tim Duncan" | "Tony Parker"       |
 
@@ -57,7 +56,7 @@ Feature: Pipe or use variable to store the match results
       | 42  | false | "Tim Duncan" | "LaMarcus Aldridge" |
       | 42  | false | "Tim Duncan" | "Manu Ginobili"     |
       | 42  | false | "Tim Duncan" | "Marco Belinelli"   |
-      | 42  | false | "Tim Duncan" | "Shaquile O'Neal"   |
+      | 42  | false | "Tim Duncan" | "Shaquille O'Neal"  |
       | 42  | false | "Tim Duncan" | "Tiago Splitter"    |
       | 42  | true  | "Tim Duncan" | "Tony Parker"       |
 

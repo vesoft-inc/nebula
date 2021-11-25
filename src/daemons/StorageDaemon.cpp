@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <folly/ssl/Init.h>
@@ -40,11 +39,15 @@ using nebula::operator<<;
 using nebula::HostAddr;
 using nebula::ProcessUtils;
 using nebula::Status;
+using nebula::StatusOr;
 using nebula::network::NetworkUtils;
 
 static void signalHandler(int sig);
 static Status setupSignalHandler();
 extern Status setupLogging();
+#if defined(__x86_64__)
+extern Status setupBreakpad();
+#endif
 
 std::unique_ptr<nebula::storage::StorageServer> gStorageServer;
 
@@ -61,6 +64,14 @@ int main(int argc, char *argv[]) {
     LOG(ERROR) << status;
     return EXIT_FAILURE;
   }
+
+#if defined(__x86_64__)
+  status = setupBreakpad();
+  if (!status.ok()) {
+    LOG(ERROR) << status;
+    return EXIT_FAILURE;
+  }
+#endif
 
   auto pidPath = FLAGS_pid_file;
   status = ProcessUtils::isPidAvailable(pidPath);
@@ -99,10 +110,19 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
-  auto hostName =
-      FLAGS_local_ip != "" ? FLAGS_local_ip : nebula::network::NetworkUtils::getHostname();
-  HostAddr host(hostName, FLAGS_port);
-  LOG(INFO) << "host = " << host;
+  std::string hostName;
+  if (FLAGS_local_ip.empty()) {
+    hostName = nebula::network::NetworkUtils::getHostname();
+  } else {
+    status = NetworkUtils::validateHostOrIp(FLAGS_local_ip);
+    if (!status.ok()) {
+      LOG(ERROR) << status;
+      return EXIT_FAILURE;
+    }
+    hostName = FLAGS_local_ip;
+  }
+  nebula::HostAddr localhost{hostName, FLAGS_port};
+  LOG(INFO) << "localhost = " << localhost;
   auto metaAddrsRet = nebula::network::NetworkUtils::toHosts(FLAGS_meta_server_addrs);
   if (!metaAddrsRet.ok() || metaAddrsRet.value().empty()) {
     LOG(ERROR) << "Can't get metaServer address, status:" << metaAddrsRet.status()
@@ -136,7 +156,7 @@ int main(int argc, char *argv[]) {
   }
 
   gStorageServer = std::make_unique<nebula::storage::StorageServer>(
-      host, metaAddrsRet.value(), paths, FLAGS_wal_path, FLAGS_listener_path);
+      localhost, metaAddrsRet.value(), paths, FLAGS_wal_path, FLAGS_listener_path);
   if (!gStorageServer->start()) {
     LOG(ERROR) << "Storage server start failed";
     gStorageServer->stop();

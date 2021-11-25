@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #pragma once
@@ -12,12 +11,12 @@ template <typename T>
 typename std::enable_if<std::is_integral<T>::value, RowWriterV1&>::type RowWriterV1::operator<<(
     T v) noexcept {
   switch (schema_->getFieldType(colNum_)) {
-    case meta::cpp2::PropertyType::INT64:
-    case meta::cpp2::PropertyType::TIMESTAMP: {
+    case nebula::cpp2::PropertyType::INT64:
+    case nebula::cpp2::PropertyType::TIMESTAMP: {
       writeInt(v);
       break;
     }
-    case meta::cpp2::PropertyType::VID: {
+    case nebula::cpp2::PropertyType::VID: {
       cord_ << (uint64_t)v;
       break;
     }

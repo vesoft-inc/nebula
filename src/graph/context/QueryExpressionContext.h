@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_CONTEXT_QUERYEXPRESSIONCONTEXT_H_
@@ -47,7 +46,7 @@ class QueryExpressionContext final : public ExpressionContext {
   Value getColumn(int32_t index) const override;
 
   // Get Vertex
-  Value getVertex() const override;
+  Value getVertex(const std::string& name = "") const override;
 
   // Get Edge
   Value getEdge() const override;

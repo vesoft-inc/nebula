@@ -1,7 +1,6 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Schema Comment
 
   Scenario Outline: Space Comment
@@ -225,6 +224,6 @@ Feature: Schema Comment
       | "test_comment_edge_index" | 'CREATE EDGE INDEX `test_comment_edge_index` ON `test_comment_edge` (\n `name`(8)\n) comment = "The edge index of person name."' |
 
     Examples:
-      | tag_of_person_comment           | tag_of_person_comment_modified           | edge_of_person_comment            | edge_of_person_comment_modified           |
-      | "The tag of person infomation." | "The tag of person infomation modified." | "The edge of person information." | "The edge of person infomation modified." |
-      | "个人信息标签。"                | "修改过的个人信息标签。"                 | "个人信息边。"                    | "修改过的个人信息边。"                    |
+      | tag_of_person_comment            | tag_of_person_comment_modified            | edge_of_person_comment            | edge_of_person_comment_modified            |
+      | "The tag of person information." | "The tag of person information modified." | "The edge of person information." | "The edge of person information modified." |
+      | "个人信息标签。"                 | "修改过的个人信息标签。"                  | "个人信息边。"                    | "修改过的个人信息边。"                     |

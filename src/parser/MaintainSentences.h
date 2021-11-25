@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #ifndef PARSER_MAINTAINSENTENCES_H_
 #define PARSER_MAINTAINSENTENCES_H_
@@ -18,7 +17,7 @@
 
 namespace nebula {
 
-std::ostream &operator<<(std::ostream &os, meta::cpp2::PropertyType type);
+std::ostream &operator<<(std::ostream &os, nebula::cpp2::PropertyType type);
 
 class ColumnProperty final {
  public:
@@ -82,16 +81,23 @@ class ColumnProperties final {
 class ColumnSpecification final {
  public:
   ColumnSpecification(std::string *name,
-                      meta::cpp2::PropertyType type,
-                      ColumnProperties *properties,
-                      int16_t typeLen = 0)
-      : name_(name), type_(type), properties_(DCHECK_NOTNULL(properties)), typeLen_(typeLen) {}
+                      nebula::cpp2::PropertyType type,
+                      ColumnProperties *properties = nullptr,
+                      int16_t typeLen = 0,
+                      meta::cpp2::GeoShape geoShape = meta::cpp2::GeoShape::ANY)
+      : name_(name),
+        type_(type),
+        properties_(DCHECK_NOTNULL(properties)),
+        typeLen_(typeLen),
+        geoShape_(geoShape) {}
 
-  meta::cpp2::PropertyType type() const { return type_; }
+  nebula::cpp2::PropertyType type() const { return type_; }
 
   const std::string *name() const { return name_.get(); }
 
   int16_t typeLen() const { return typeLen_; }
+
+  meta::cpp2::GeoShape geoShape() const { return geoShape_; }
 
   auto &properties() const { return properties_; }
 
@@ -99,9 +105,10 @@ class ColumnSpecification final {
 
  private:
   std::unique_ptr<std::string> name_;
-  meta::cpp2::PropertyType type_;
-  std::unique_ptr<ColumnProperties> properties_{nullptr};
-  int16_t typeLen_{0};
+  nebula::cpp2::PropertyType type_;
+  std::unique_ptr<ColumnProperties> properties_;
+  int16_t typeLen_;
+  meta::cpp2::GeoShape geoShape_;
 };
 
 class ColumnSpecificationList final {

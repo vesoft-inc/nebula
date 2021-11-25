@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/admin/RestoreProcessor.h"
@@ -17,7 +16,7 @@ nebula::cpp2::ErrorCode RestoreProcessor::replaceHostInPartition(const HostAddr&
                                                                  bool direct) {
   folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
   auto retCode = nebula::cpp2::ErrorCode::SUCCEEDED;
-  const auto& spacePrefix = MetaServiceUtils::spacePrefix();
+  const auto& spacePrefix = MetaKeyUtils::spacePrefix();
   auto iterRet = doPrefix(spacePrefix);
   if (!nebula::ok(iterRet)) {
     retCode = nebula::error(iterRet);
@@ -28,7 +27,7 @@ nebula::cpp2::ErrorCode RestoreProcessor::replaceHostInPartition(const HostAddr&
 
   std::vector<GraphSpaceID> allSpaceId;
   while (iter->valid()) {
-    auto spaceId = MetaServiceUtils::spaceId(iter->key());
+    auto spaceId = MetaKeyUtils::spaceId(iter->key());
     allSpaceId.emplace_back(spaceId);
     iter->next();
   }
@@ -37,7 +36,7 @@ nebula::cpp2::ErrorCode RestoreProcessor::replaceHostInPartition(const HostAddr&
   std::vector<nebula::kvstore::KV> data;
 
   for (const auto& spaceId : allSpaceId) {
-    const auto& partPrefix = MetaServiceUtils::partPrefix(spaceId);
+    const auto& partPrefix = MetaKeyUtils::partPrefix(spaceId);
     auto iterPartRet = doPrefix(partPrefix);
     if (!nebula::ok(iterPartRet)) {
       retCode = nebula::error(iterPartRet);
@@ -48,7 +47,7 @@ nebula::cpp2::ErrorCode RestoreProcessor::replaceHostInPartition(const HostAddr&
 
     while (iter->valid()) {
       bool needUpdate = false;
-      auto partHosts = MetaServiceUtils::parsePartVal(iter->val());
+      auto partHosts = MetaKeyUtils::parsePartVal(iter->val());
       for (auto& host : partHosts) {
         if (host == ipv4From) {
           needUpdate = true;
@@ -56,7 +55,7 @@ nebula::cpp2::ErrorCode RestoreProcessor::replaceHostInPartition(const HostAddr&
         }
       }
       if (needUpdate) {
-        data.emplace_back(iter->key(), MetaServiceUtils::partVal(partHosts));
+        data.emplace_back(iter->key(), MetaKeyUtils::partVal(partHosts));
       }
       iter->next();
     }
@@ -87,7 +86,7 @@ nebula::cpp2::ErrorCode RestoreProcessor::replaceHostInZone(const HostAddr& ipv4
                                                             bool direct) {
   folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
   auto retCode = nebula::cpp2::ErrorCode::SUCCEEDED;
-  const auto& zonePrefix = MetaServiceUtils::zonePrefix();
+  const auto& zonePrefix = MetaKeyUtils::zonePrefix();
   auto iterRet = doPrefix(zonePrefix);
   if (!nebula::ok(iterRet)) {
     retCode = nebula::error(iterRet);
@@ -99,8 +98,8 @@ nebula::cpp2::ErrorCode RestoreProcessor::replaceHostInZone(const HostAddr& ipv4
 
   while (iter->valid()) {
     bool needUpdate = false;
-    auto zoneName = MetaServiceUtils::parseZoneName(iter->key());
-    auto hosts = MetaServiceUtils::parseZoneHosts(iter->val());
+    auto zoneName = MetaKeyUtils::parseZoneName(iter->key());
+    auto hosts = MetaKeyUtils::parseZoneHosts(iter->val());
     std::vector<HostAddr> DesHosts;
     for (auto& host : hosts) {
       if (host == ipv4From) {
@@ -109,7 +108,7 @@ nebula::cpp2::ErrorCode RestoreProcessor::replaceHostInZone(const HostAddr& ipv4
       }
     }
     if (needUpdate) {
-      data.emplace_back(iter->key(), MetaServiceUtils::zoneVal(hosts));
+      data.emplace_back(iter->key(), MetaKeyUtils::zoneVal(hosts));
     }
     iter->next();
   }

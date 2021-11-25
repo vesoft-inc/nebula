@@ -1,13 +1,11 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_VALIDATOR_MATCHVALIDATOR_H_
 #define GRAPH_VALIDATOR_MATCHVALIDATOR_H_
 
-#include "common/base/Base.h"
 #include "graph/context/ast/CypherAstContext.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/util/AnonVarGenerator.h"
@@ -28,7 +26,7 @@ class MatchValidator final : public Validator {
 
   AstContext *getAstContext() override;
 
-  Status validatePath(const MatchPath *path, MatchClauseContext &matchClauseCtx) const;
+  Status validatePath(const MatchPath *path, MatchClauseContext &matchClauseCtx);
 
   Status validateFilter(const Expression *filter, WhereClauseContext &whereClauseCtx) const;
 
@@ -62,10 +60,6 @@ class MatchValidator final : public Validator {
   Status includeExisting(const CypherClauseContextBase *cypherClauseCtx,
                          YieldColumns *columns) const;
 
-  StatusOr<Expression *> makeSubFilter(const std::string &alias,
-                                       const MapExpression *map,
-                                       const std::string &label = "") const;
-
   static Expression *andConnect(ObjectPool *pool, Expression *left, Expression *right);
 
   template <typename T>
@@ -75,13 +69,13 @@ class MatchValidator final : public Validator {
 
   Status buildNodeInfo(const MatchPath *path,
                        std::vector<NodeInfo> &edgeInfos,
-                       std::unordered_map<std::string, AliasType> &aliases) const;
+                       std::unordered_map<std::string, AliasType> &aliases);
 
   Status buildEdgeInfo(const MatchPath *path,
                        std::vector<EdgeInfo> &nodeInfos,
-                       std::unordered_map<std::string, AliasType> &aliases) const;
+                       std::unordered_map<std::string, AliasType> &aliases);
 
-  Status buildPathExpr(const MatchPath *path, MatchClauseContext &matchClauseCtx) const;
+  Status buildPathExpr(const MatchPath *path, MatchClauseContext &matchClauseCtx);
 
   Status combineAliases(std::unordered_map<std::string, AliasType> &curAliases,
                         const std::unordered_map<std::string, AliasType> &lastAliases) const;
@@ -99,6 +93,10 @@ class MatchValidator final : public Validator {
   Status deduceCypherProps(const Expression *expr,
                            CypherProps &exprProps,
                            const std::unordered_map<std::string, AliasType> &aliases);
+
+  StatusOr<Expression *> makeEdgeSubFilter(MapExpression *map) const;
+
+  StatusOr<Expression *> makeNodeSubFilter(MapExpression *map, const std::string &label) const;
 
  private:
   std::unique_ptr<MatchAstContext> matchCtx_;

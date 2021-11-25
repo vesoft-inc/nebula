@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_DATATYPES_VALUE_H_
@@ -32,6 +31,7 @@ struct Map;
 struct List;
 struct Set;
 struct DataSet;
+struct Geography;
 
 enum class NullType {
   __NULL__ = 0,
@@ -76,6 +76,7 @@ struct Value {
     MAP = 1UL << 12,
     SET = 1UL << 13,
     DATASET = 1UL << 14,
+    GEOGRAPHY = 1UL << 15,
     NULLVALUE = 1UL << 63,
   };
 
@@ -127,6 +128,8 @@ struct Value {
   Value(Set&& v);                        // NOLINT
   Value(const DataSet& v);               // NOLINT
   Value(DataSet&& v);                    // NOLINT
+  Value(const Geography& v);             // NOLINT
+  Value(Geography&& v);                  // NOLINT
   ~Value() { clear(); }
 
   Type type() const noexcept { return type_; }
@@ -159,6 +162,7 @@ struct Value {
   bool isMap() const { return type_ == Type::MAP; }
   bool isSet() const { return type_ == Type::SET; }
   bool isDataSet() const { return type_ == Type::DATASET; }
+  bool isGeography() const { return type_ == Type::GEOGRAPHY; }
 
   void clear();
 
@@ -211,6 +215,9 @@ struct Value {
   void setDataSet(const DataSet& v);
   void setDataSet(DataSet&& v);
   void setDataSet(std::unique_ptr<DataSet>&& v);
+  void setGeography(const Geography& v);
+  void setGeography(Geography&& v);
+  void setGeography(std::unique_ptr<Geography>&& v);
 
   const NullType& getNull() const;
   const bool& getBool() const;
@@ -234,6 +241,8 @@ struct Value {
   const Set* getSetPtr() const;
   const DataSet& getDataSet() const;
   const DataSet* getDataSetPtr() const;
+  const Geography& getGeography() const;
+  const Geography* getGeographyPtr() const;
 
   NullType moveNull();
   bool moveBool();
@@ -250,6 +259,7 @@ struct Value {
   Map moveMap();
   Set moveSet();
   DataSet moveDataSet();
+  Geography moveGeography();
 
   NullType& mutableNull();
   bool& mutableBool();
@@ -266,6 +276,7 @@ struct Value {
   Map& mutableMap();
   Set& mutableSet();
   DataSet& mutableDataSet();
+  Geography& mutableGeography();
 
   static const Value& null() noexcept { return kNullValue; }
 
@@ -301,6 +312,7 @@ struct Value {
     std::unique_ptr<Map> mVal;
     std::unique_ptr<Set> uVal;
     std::unique_ptr<DataSet> gVal;
+    std::unique_ptr<Geography> ggVal;
 
     Storage() {}
     ~Storage() {}
@@ -372,6 +384,11 @@ struct Value {
   void setG(std::unique_ptr<DataSet>&& v);
   void setG(const DataSet& v);
   void setG(DataSet&& v);
+  // Geography value
+  void setGG(const std::unique_ptr<Geography>& v);
+  void setGG(std::unique_ptr<Geography>&& v);
+  void setGG(const Geography& v);
+  void setGG(Geography&& v);
 };
 
 static_assert(sizeof(Value) == 16UL, "The size of Value should be 16UL");

@@ -1,7 +1,6 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 import re
 import json
@@ -183,16 +182,16 @@ class PlanDiffer:
     def _validate_expect(self, rows, column_names):
         # Check expected plan column
         if self.ID not in column_names:
-            self._err_msg = "Plan node id column is missing in expectde plan"
+            self._err_msg = "Plan node id column is missing in expected plan"
             return False
         if self.NAME not in column_names:
-            self._err_msg = "Plan node name column is missing in expectde plan"
+            self._err_msg = "Plan node name column is missing in expected plan"
             return False
         if self.DEPENDS not in column_names:
-            self._err_msg = "Plan node dependencies column is missing in expectde plan"
+            self._err_msg = "Plan node dependencies column is missing in expected plan"
             return False
         if self.OP_INFO not in column_names:
-            self._err_msg = "Plan node operator info column is missing in expectde plan"
+            self._err_msg = "Plan node operator info column is missing in expected plan"
             return False
         
         id_idx_dict = {}
@@ -200,7 +199,7 @@ class PlanDiffer:
         for i in range(len(rows)):
             node_id = rows[i][0]
             if not node_id:
-                self._err_msg = "Plan node id is missing in expectde plan"
+                self._err_msg = "Plan node id is missing in expected plan"
                 return False
             id_idx_dict[int(node_id)] = i
 

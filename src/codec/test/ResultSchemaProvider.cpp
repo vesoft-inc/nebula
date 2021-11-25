@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "codec/test/ResultSchemaProvider.h"
@@ -9,8 +8,8 @@
 namespace nebula {
 
 using folly::hash::SpookyHashV2;
-using meta::cpp2::PropertyType;
 using meta::cpp2::Schema;
+using nebula::cpp2::PropertyType;
 
 /***********************************
  *
@@ -18,19 +17,21 @@ using meta::cpp2::Schema;
  *
  **********************************/
 ResultSchemaProvider::ResultSchemaField::ResultSchemaField(std::string name,
-                                                           meta::cpp2::PropertyType type,
+                                                           PropertyType type,
                                                            int16_t size,
                                                            bool nullable,
                                                            int32_t offset,
                                                            size_t nullFlagPos,
-                                                           Expression* defaultValue)
+                                                           Expression* defaultValue,
+                                                           meta::cpp2::GeoShape geoShape)
     : name_(std::move(name)),
       type_(type),
       size_(size),
       nullable_(nullable),
       offset_(offset),
       nullFlagPos_(nullFlagPos),
-      defaultValue_(defaultValue) {}
+      defaultValue_(defaultValue),
+      geoShape_(geoShape) {}
 
 const char* ResultSchemaProvider::ResultSchemaField::name() const { return name_.c_str(); }
 
@@ -49,6 +50,8 @@ size_t ResultSchemaProvider::ResultSchemaField::size() const { return size_; }
 size_t ResultSchemaProvider::ResultSchemaField::offset() const { return offset_; }
 
 size_t ResultSchemaProvider::ResultSchemaField::nullFlagPos() const { return nullFlagPos_; }
+
+meta::cpp2::GeoShape ResultSchemaProvider::ResultSchemaField::geoShape() const { return geoShape_; }
 
 /***********************************
  *

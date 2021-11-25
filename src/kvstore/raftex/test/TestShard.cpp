@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "kvstore/raftex/test/TestShard.h"
@@ -161,6 +160,8 @@ void TestShard::onElected(TermID term) {
     becomeLeaderCB_(idx_, idStr(), term);
   }
 }
+
+void TestShard::onLeaderReady(TermID term) { UNUSED(term); }
 
 nebula::cpp2::ErrorCode TestShard::commitLogs(std::unique_ptr<LogIterator> iter, bool) {
   LogID firstId = -1;

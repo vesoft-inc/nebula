@@ -1,14 +1,12 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_VALIDATOR_ADMINVALIDATOR_H_
 #define GRAPH_VALIDATOR_ADMINVALIDATOR_H_
 
 #include "clients/meta/MetaClient.h"
-#include "common/base/Base.h"
 #include "common/plugin/fulltext/elasticsearch/ESGraphAdapter.h"
 #include "graph/validator/Validator.h"
 #include "parser/AdminSentences.h"
@@ -32,6 +30,22 @@ class CreateSpaceValidator final : public Validator {
  private:
   meta::cpp2::SpaceDesc spaceDesc_;
   bool ifNotExist_;
+};
+
+class CreateSpaceAsValidator final : public Validator {
+ public:
+  CreateSpaceAsValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
+    setNoSpaceRequired();
+  }
+
+ private:
+  Status validateImpl() override;
+
+  Status toPlan() override;
+
+ private:
+  std::string oldSpaceName_;
+  std::string newSpaceName_;
 };
 
 class DescSpaceValidator final : public Validator {

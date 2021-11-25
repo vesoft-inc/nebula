@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_TEST_QUERYTESTUTILS_H_
@@ -46,7 +45,7 @@ class QueryTestUtils {
     for (const auto& vertex : vertices) {
       PartitionID partId = (hash(vertex.vId_) % totalParts) + 1;
       TagID tagId = vertex.tId_;
-      auto key = NebulaKeyUtils::vertexKey(spaceVidLen, partId, vertex.vId_, tagId);
+      auto key = NebulaKeyUtils::tagKey(spaceVidLen, partId, vertex.vId_, tagId);
       auto schema = env->schemaMan_->getTagSchema(spaceId, tagId);
       if (!schema) {
         LOG(ERROR) << "Invalid tagId " << tagId;
@@ -260,9 +259,12 @@ class QueryTestUtils {
         row.append(IndexKeyUtils::encodeValue(v));
       }
     }
-    auto index = IndexKeyUtils::vertexIndexKey(spaceVidLen, partId, indexId, vId, std::move(row));
+    auto indexes =
+        IndexKeyUtils::vertexIndexKeys(spaceVidLen, partId, indexId, vId, {std::move(row)});
     auto val = FLAGS_mock_ttl_col ? IndexKeyUtils::indexVal(time::WallClock::fastNowInSec()) : "";
-    data.emplace_back(std::move(index), std::move(val));
+    for (auto& index : indexes) {
+      data.emplace_back(std::move(index), std::move(val));
+    }
   }
 
   static void encodeEdgeIndex(size_t spaceVidLen,
@@ -283,10 +285,12 @@ class QueryTestUtils {
         row.append(IndexKeyUtils::encodeValue(v));
       }
     }
-    auto index = IndexKeyUtils::edgeIndexKey(
-        spaceVidLen, partId, indexId, srcId, rank, dstId, std::move(row));
+    auto indexes = IndexKeyUtils::edgeIndexKeys(
+        spaceVidLen, partId, indexId, srcId, rank, dstId, {std::move(row)});
     auto val = FLAGS_mock_ttl_col ? IndexKeyUtils::indexVal(time::WallClock::fastNowInSec()) : "";
-    data.emplace_back(std::move(index), std::move(val));
+    for (auto& index : indexes) {
+      data.emplace_back(std::move(index), val);
+    }
   }
 
   static cpp2::GetNeighborsRequest buildRequest(
@@ -775,7 +779,7 @@ class QueryTestUtils {
       if (cols.size() < 2) {
         LOG(FATAL) << "Invalid column name";
       }
-      // cols[1] is the tagName, which can be transfromed to entryId
+      // cols[1] is the tagName, which can be transformed to entryId
       auto entryId = folly::to<int32_t>(cols[1]);
       auto props = findExpectProps(entryId, tags, edges);
       switch (entryId) {
@@ -873,7 +877,7 @@ class QueryTestUtils {
                           return teammate.player1_ == player2 && teammate.player2_ == player1;
                         });
     if (iter == mock::MockData::teammates_.end()) {
-      LOG(FATAL) << "Can't find speicied teammate";
+      LOG(FATAL) << "Can't find specified teammate";
     }
     return *iter;
   }

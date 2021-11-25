@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "kvstore/NebulaSnapshotManager.h"
@@ -11,7 +10,7 @@
 #include "kvstore/RateLimiter.h"
 
 DEFINE_uint32(snapshot_part_rate_limit,
-              1024 * 1024 * 8,
+              1024 * 1024 * 10,
               "max bytes of pulling snapshot for each partition in one second");
 DEFINE_uint32(snapshot_batch_size, 1024 * 512, "batch size for snapshot, in bytes");
 
@@ -22,7 +21,7 @@ const int32_t kReserveNum = 1024 * 4;
 
 NebulaSnapshotManager::NebulaSnapshotManager(NebulaStore* kv) : store_(kv) {
   // Snapshot rate is limited to FLAGS_snapshot_worker_threads * FLAGS_snapshot_part_rate_limit.
-  // So by default, the total send rate is limited to 4 * 8Mb = 32Mb.
+  // So by default, the total send rate is limited to 4 * 10Mb = 40Mb.
   LOG(INFO) << "Send snapshot is rate limited to " << FLAGS_snapshot_part_rate_limit
             << " for each part by default";
 }
