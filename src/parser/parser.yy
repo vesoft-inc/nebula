@@ -358,7 +358,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <sentence> add_listener_sentence remove_listener_sentence list_listener_sentence
 
 %type <sentence> admin_job_sentence
-%type <sentence> create_user_sentence alter_user_sentence drop_user_sentence change_password_sentence
+%type <sentence> create_user_sentence alter_user_sentence drop_user_sentence change_password_sentence describe_user_sentence
 %type <sentence> show_queries_sentence kill_query_sentence
 %type <sentence> show_sentence
 
@@ -2436,6 +2436,15 @@ column_property
     }
     ;
 
+describe_user_sentence
+    : KW_DESCRIBE KW_USER name_label {
+        $$ = new DescribeUserSentence($3);
+    }
+    | KW_DESC KW_USER name_label {
+        $$ = new DescribeUserSentence($3);
+    }
+    ;
+
 describe_tag_sentence
     : KW_DESCRIBE KW_TAG name_label {
         $$ = new DescribeTagSentence($3);
@@ -2685,6 +2694,7 @@ traverse_sentence
     | delete_edge_sentence { $$ = $1; }
     | show_queries_sentence { $$ = $1; }
     | kill_query_sentence { $$ = $1; }
+    | describe_user_sentence { $$ = $1; }
     ;
 
 piped_sentence
