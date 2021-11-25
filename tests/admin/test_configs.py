@@ -36,6 +36,10 @@ class TestConfigs(NebulaTestSuite):
         resp = self.client.execute('UPDATE CONFIGS storage:v={}'.format(3))
         self.check_resp_succeeded(resp)
 
+        # update flag to an invalid value, expected to fail
+        resp = self.client.execute('UPDATE CONFIGS graph:session_idle_timeout_secs={}'.format(999999))
+        self.check_resp_failed(resp)
+
         # get
         resp = self.client.execute('GET CONFIGS meta:v')
         self.check_resp_failed(resp)
@@ -66,7 +70,7 @@ class TestConfigs(NebulaTestSuite):
             ['GRAPH', 'accept_partial_success', 'bool', 'MUTABLE', False],
             ['GRAPH', 'system_memory_high_watermark_ratio', 'float', 'MUTABLE', 0.95],
             ['GRAPH', 'num_rows_to_check_memory', 'int', 'MUTABLE', 4],
-            ['GRAPH', 'session_idle_timeout_secs', 'int', 'MUTABLE', 0],
+            ['GRAPH', 'session_idle_timeout_secs', 'int', 'MUTABLE', 28800],
             ['GRAPH', 'session_reclaim_interval_secs', 'int', 'MUTABLE', 2],
             ['GRAPH', 'max_allowed_connections', 'int', 'MUTABLE', 9223372036854775807],
             ['GRAPH', 'disable_octal_escape_char', 'bool', 'MUTABLE', False],
@@ -101,7 +105,7 @@ class TestConfigs(NebulaTestSuite):
                                    max_write_buffer_number="4"}
                                    ''')
         self.check_resp_succeeded(resp)
-
+        
         # get result
         resp = self.client.execute('GET CONFIGS storage:rocksdb_column_family_options')
         self.check_resp_succeeded(resp)
