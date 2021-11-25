@@ -13,14 +13,14 @@ enum Role {
     CANDIDATE   = 3; // Has sent AskForVote request
     LEARNER     = 4; // same with FOLLOWER, except that it does
                      // not vote in leader election
-}
+} (cpp.enum_strict)
 
 enum Status {
     STARTING            = 0; // The part is starting, not ready for service
     RUNNING             = 1; // The part is running
     STOPPED             = 2; // The part has been stopped
     WAITING_SNAPSHOT    = 3; // Waiting for the snapshot.
-}
+} (cpp.enum_strict)
 
 enum ErrorCode {
     SUCCEEDED = 0;
