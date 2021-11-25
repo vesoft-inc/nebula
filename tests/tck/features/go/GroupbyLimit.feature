@@ -22,7 +22,7 @@ Feature: Groupby & limit Sentence
       """
       GO FROM "Marco Belinelli" OVER serve YIELD $$.team.name AS name | GROUP BY $-.start_year YIELD COUNT($var)
       """
-    Then a SemanticError should be raised at runtime:
+    Then a SyntaxError should be raised at runtime:
 
   Scenario: Syntax test4
     When executing query:

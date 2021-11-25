@@ -190,20 +190,6 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
   folly::Future<cpp2::ExecResp> future_dropHostFromZone(
       const cpp2::DropHostFromZoneReq& req) override;
 
-  folly::Future<cpp2::ExecResp> future_addGroup(const cpp2::AddGroupReq& req) override;
-
-  folly::Future<cpp2::ExecResp> future_dropGroup(const cpp2::DropGroupReq& req) override;
-
-  folly::Future<cpp2::GetGroupResp> future_getGroup(const cpp2::GetGroupReq& req) override;
-
-  folly::Future<cpp2::ListGroupsResp> future_listGroups(const cpp2::ListGroupsReq& req) override;
-
-  folly::Future<cpp2::ExecResp> future_addZoneIntoGroup(
-      const cpp2::AddZoneIntoGroupReq& req) override;
-
-  folly::Future<cpp2::ExecResp> future_dropZoneFromGroup(
-      const cpp2::DropZoneFromGroupReq& req) override;
-
   // listener
   folly::Future<cpp2::ExecResp> future_addListener(const cpp2::AddListenerReq& req) override;
 
