@@ -49,7 +49,7 @@ void Listener::start(std::vector<HostAddr>&& peers, bool) {
 
   lastLogId_ = wal_->lastLogId();
   lastLogTerm_ = wal_->lastLogTerm();
-  term_ = proposedTerm_ = lastLogTerm_;
+  term_ = lastLogTerm_;
 
   // Set the quorum number
   quorum_ = (peers.size() + 1) / 2;
@@ -273,10 +273,9 @@ void Listener::resetListener() {
   reset();
   VLOG(1) << folly::sformat(
       "The listener has been reset : leaderCommitId={},"
-      "proposedTerm={}, lastLogTerm={}, term={},"
+      "lastLogTerm={}, term={},"
       "lastApplyLogId={}",
       leaderCommitId_,
-      proposedTerm_,
       lastLogTerm_,
       term_,
       lastApplyLogId_);

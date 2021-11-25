@@ -23,10 +23,10 @@ Feature: Delete string vid of tag
       | "Tim Duncan"  | "psychology"        |
     When executing query:
       """
-      LOOKUP ON player WHERE player.name == "Tim Duncan"
+      LOOKUP ON player WHERE player.name == "Tim Duncan" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
-      | VertexID     |
+      | id           |
       | "Tim Duncan" |
     # delete one tag
     When executing query:
@@ -50,10 +50,10 @@ Feature: Delete string vid of tag
       | "Tim Duncan"  | "psychology"        |
     When executing query:
       """
-      LOOKUP ON player WHERE player.name == "Tim Duncan"
+      LOOKUP ON player WHERE player.name == "Tim Duncan" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
-      | VertexID |
+      | id |
     Then drop the used space
 
   Scenario: delete string vid one vertex multiple tag
@@ -76,10 +76,10 @@ Feature: Delete string vid of tag
       | "Tim Duncan"  | "psychology"        |
     When executing query:
       """
-      LOOKUP ON player WHERE player.name == "Tim Duncan"
+      LOOKUP ON player WHERE player.name == "Tim Duncan" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
-      | VertexID     |
+      | id           |
       | "Tim Duncan" |
     # delete one tag
     When executing query:
@@ -102,10 +102,10 @@ Feature: Delete string vid of tag
       | bachelor.name | bachelor.speciality |
     When executing query:
       """
-      LOOKUP ON player WHERE player.name == "Tim Duncan"
+      LOOKUP ON player WHERE player.name == "Tim Duncan" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
-      | VertexID |
+      | id |
     Then drop the used space
 
   Scenario: delete string vid one vertex all tag
@@ -128,10 +128,10 @@ Feature: Delete string vid of tag
       | "Tim Duncan"  | "psychology"        |
     When executing query:
       """
-      LOOKUP ON player WHERE player.name == "Tim Duncan"
+      LOOKUP ON player WHERE player.name == "Tim Duncan" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
-      | VertexID     |
+      | id           |
       | "Tim Duncan" |
     # delete one tag
     When executing query:
@@ -154,10 +154,10 @@ Feature: Delete string vid of tag
       | bachelor.name | bachelor.speciality |
     When executing query:
       """
-      LOOKUP ON player WHERE player.name == "Tim Duncan"
+      LOOKUP ON player WHERE player.name == "Tim Duncan" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
-      | VertexID |
+      | id |
     Then drop the used space
 
   Scenario: delete string vid multiple vertex one tag
@@ -180,17 +180,17 @@ Feature: Delete string vid of tag
       | "Tony Parker" | 36         |
     When executing query:
       """
-      LOOKUP ON player WHERE player.name == "Tim Duncan"
+      LOOKUP ON player WHERE player.name == "Tim Duncan" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
-      | VertexID     |
+      | id           |
       | "Tim Duncan" |
     When executing query:
       """
-      LOOKUP ON player WHERE player.name == "Tony Parker"
+      LOOKUP ON player WHERE player.name == "Tony Parker" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
-      | VertexID      |
+      | id            |
       | "Tony Parker" |
     # delete one tag
     When executing query:
@@ -213,16 +213,16 @@ Feature: Delete string vid of tag
       | player.name | player.age |
     When executing query:
       """
-      LOOKUP ON player WHERE player.name == "Tim Duncan"
+      LOOKUP ON player WHERE player.name == "Tim Duncan" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
-      | VertexID |
+      | id |
     When executing query:
       """
-      LOOKUP ON player WHERE player.name == "Tony Parker"
+      LOOKUP ON player WHERE player.name == "Tony Parker" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
-      | VertexID |
+      | id |
     Then drop the used space
 
   Scenario: delete string vid from pipe

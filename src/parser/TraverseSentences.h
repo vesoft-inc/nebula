@@ -320,6 +320,8 @@ class FindPathSentence final : public Sentence {
 
   void setWhere(WhereClause* clause) { where_.reset(clause); }
 
+  void setYield(YieldClause* yield) { yield_.reset(yield); }
+
   FromClause* from() const { return from_.get(); }
 
   ToClause* to() const { return to_.get(); }
@@ -329,6 +331,8 @@ class FindPathSentence final : public Sentence {
   StepClause* step() const { return step_.get(); }
 
   WhereClause* where() const { return where_.get(); }
+
+  YieldClause* yield() const { return yield_.get(); }
 
   bool isShortest() const { return isShortest_; }
 
@@ -347,6 +351,7 @@ class FindPathSentence final : public Sentence {
   std::unique_ptr<OverClause> over_;
   std::unique_ptr<StepClause> step_;
   std::unique_ptr<WhereClause> where_;
+  std::unique_ptr<YieldClause> yield_;
 };
 
 class LimitSentence final : public Sentence {
