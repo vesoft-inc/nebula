@@ -4,6 +4,7 @@
  */
 
 #include "graph/optimizer/rule/TopNRule.h"
+
 #include "graph/optimizer/OptContext.h"
 #include "graph/optimizer/OptGroup.h"
 #include "graph/planner/plan/PlanNode.h"

@@ -696,7 +696,11 @@ AppendVertices* AppendVertices::clone() const {
 void AppendVertices::cloneMembers(const AppendVertices& a) {
   GetVertices::cloneMembers(a);
 
-  setVertexFilter(a.vFilter_->clone());
+  if (a.vFilter_ != nullptr) {
+    setVertexFilter(a.vFilter_->clone());
+  } else {
+    setVertexFilter(nullptr);
+  }
 }
 
 std::unique_ptr<PlanNodeDescription> AppendVertices::explain() const {

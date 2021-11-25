@@ -47,12 +47,15 @@ bool PushVFilterDownScanVerticesRule::match(OptContext *ctx, const MatchedResult
   auto appendVerticesGroupNode = matched.node;
   auto appendVertices = static_cast<const AppendVertices *>(appendVerticesGroupNode->node());
   auto *src = appendVertices->src();
-  if (src->kind() != Expression::Kind::kInputProperty ||
+  if (src->kind() != Expression::Kind::kInputProperty &&
       src->kind() != Expression::Kind::kVarProperty) {
     return false;
   }
   auto *propExpr = static_cast<const PropertyExpression *>(src);
   if (propExpr->prop() != kVid) {
+    return false;
+  }
+  if (appendVertices->vFilter() == nullptr) {
     return false;
   }
   return true;
