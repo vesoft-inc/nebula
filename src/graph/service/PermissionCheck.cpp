@@ -55,12 +55,6 @@ Status PermissionCheck::permissionCheck(ClientSession *session,
     case Sentence::Kind::kDropSpace:
     case Sentence::Kind::kCreateSnapshot:
     case Sentence::Kind::kDropSnapshot:
-    case Sentence::Kind::kAddGroup:
-    case Sentence::Kind::kDropGroup:
-    case Sentence::Kind::kDescribeGroup:
-    case Sentence::Kind::kListGroups:
-    case Sentence::Kind::kAddZoneIntoGroup:
-    case Sentence::Kind::kDropZoneFromGroup:
     case Sentence::Kind::kAddZone:
     case Sentence::Kind::kDropZone:
     case Sentence::Kind::kDescribeZone:
@@ -183,6 +177,7 @@ Status PermissionCheck::permissionCheck(ClientSession *session,
     case Sentence::Kind::kShowRoles: {
       return PermissionManager::canReadSpace(session, targetSpace);
     }
+    case Sentence::Kind::kDescribeUser:
     case Sentence::Kind::kShowUsers:
     case Sentence::Kind::kShowSnapshots:
     case Sentence::Kind::kShowTSClients:

@@ -85,11 +85,6 @@ nebula_add_library(
     processors/zone/GetZoneProcessor.cpp
     processors/zone/ListZonesProcessor.cpp
     processors/zone/UpdateZoneProcessor.cpp
-    processors/zone/AddGroupProcessor.cpp
-    processors/zone/DropGroupProcessor.cpp
-    processors/zone/GetGroupProcessor.cpp
-    processors/zone/ListGroupsProcessor.cpp
-    processors/zone/UpdateGroupProcessor.cpp
     processors/listener/ListenerProcessor.cpp
     processors/session/SessionManagerProcessor.cpp
 )

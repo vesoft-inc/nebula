@@ -64,6 +64,13 @@ nebula::cpp2::ErrorCode ScanEdgeProcessor::checkAndBuildContexts(const cpp2::Sca
   std::vector<cpp2::EdgeProp> returnProps = {*req.return_columns_ref()};
   ret = handleEdgeProps(returnProps);
   buildEdgeColName(returnProps);
+  ret = buildFilter(req, [](const cpp2::ScanEdgeRequest& r) -> const std::string* {
+    if (r.filter_ref().has_value()) {
+      return r.get_filter();
+    } else {
+      return nullptr;
+    }
+  });
   return ret;
 }
 
@@ -85,7 +92,8 @@ void ScanEdgeProcessor::onProcessFinished() {
 StoragePlan<Cursor> ScanEdgeProcessor::buildPlan(
     RuntimeContext* context,
     nebula::DataSet* result,
-    std::unordered_map<PartitionID, cpp2::ScanCursor>* cursors) {
+    std::unordered_map<PartitionID, cpp2::ScanCursor>* cursors,
+    StorageExpressionContext* expCtx) {
   StoragePlan<Cursor> plan;
   std::vector<std::unique_ptr<FetchEdgeNode>> edges;
   for (const auto& ec : edgeContext_.propContexts_) {
@@ -93,7 +101,7 @@ StoragePlan<Cursor> ScanEdgeProcessor::buildPlan(
         std::make_unique<FetchEdgeNode>(context, &edgeContext_, ec.first, &ec.second));
   }
   auto output = std::make_unique<ScanEdgePropNode>(
-      context, std::move(edges), enableReadFollower_, limit_, cursors, result);
+      context, std::move(edges), enableReadFollower_, limit_, cursors, result, expCtx, filter_);
 
   plan.addNode(std::move(output));
   return plan;
@@ -104,10 +112,11 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> ScanEdgeProcessor
     nebula::DataSet* result,
     std::unordered_map<PartitionID, cpp2::ScanCursor>* cursors,
     PartitionID partId,
-    Cursor cursor) {
+    Cursor cursor,
+    StorageExpressionContext* expCtx) {
   return folly::via(executor_,
-                    [this, context, result, cursors, partId, input = std::move(cursor)]() {
-                      auto plan = buildPlan(context, result, cursors);
+                    [this, context, result, cursors, partId, input = std::move(cursor), expCtx]() {
+                      auto plan = buildPlan(context, result, cursors, expCtx);
 
                       auto ret = plan.go(partId, input);
                       if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -119,8 +128,9 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> ScanEdgeProcessor
 
 void ScanEdgeProcessor::runInSingleThread(const cpp2::ScanEdgeRequest& req) {
   contexts_.emplace_back(RuntimeContext(planContext_.get()));
+  expCtxs_.emplace_back(StorageExpressionContext(spaceVidLen_, isIntId_));
   std::unordered_set<PartitionID> failedParts;
-  auto plan = buildPlan(&contexts_.front(), &resultDataSet_, &cursors_);
+  auto plan = buildPlan(&contexts_.front(), &resultDataSet_, &cursors_, &expCtxs_.front());
   for (const auto& partEntry : req.get_parts()) {
     auto partId = partEntry.first;
     auto cursor = partEntry.second;
@@ -142,6 +152,7 @@ void ScanEdgeProcessor::runInMultipleThread(const cpp2::ScanEdgeRequest& req) {
     nebula::DataSet result = resultDataSet_;
     results_.emplace_back(std::move(result));
     contexts_.emplace_back(RuntimeContext(planContext_.get()));
+    expCtxs_.emplace_back(StorageExpressionContext(spaceVidLen_, isIntId_));
   }
   size_t i = 0;
   std::vector<folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>>> futures;
@@ -150,7 +161,8 @@ void ScanEdgeProcessor::runInMultipleThread(const cpp2::ScanEdgeRequest& req) {
                                        &results_[i],
                                        &cursorsOfPart_[i],
                                        partId,
-                                       cursor.get_has_next() ? *cursor.get_next_cursor() : ""));
+                                       cursor.get_has_next() ? *cursor.get_next_cursor() : "",
+                                       &expCtxs_[i]));
     i++;
   }
 

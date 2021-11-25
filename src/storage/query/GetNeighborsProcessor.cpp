@@ -284,7 +284,13 @@ nebula::cpp2::ErrorCode GetNeighborsProcessor::checkAndBuildContexts(
   if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
     return code;
   }
-  code = buildFilter(req);
+  code = buildFilter(req, [](const cpp2::GetNeighborsRequest& r) -> const std::string* {
+    if (r.get_traverse_spec().filter_ref().has_value()) {
+      return r.get_traverse_spec().get_filter();
+    } else {
+      return nullptr;
+    }
+  });
   if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
     return code;
   }

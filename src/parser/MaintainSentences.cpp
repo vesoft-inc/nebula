@@ -358,16 +358,6 @@ std::string ShowCreateEdgeIndexSentence::toString() const {
   return folly::stringPrintf("SHOW CREATE EDGE INDEX %s", indexName_.get()->c_str());
 }
 
-std::string AddGroupSentence::toString() const {
-  std::string buf;
-  buf.reserve(64);
-  buf += "ADD GROUP ";
-  buf += *groupName_;
-  buf += " ";
-  buf += zoneNames_->toString();
-  return buf;
-}
-
 std::string AddZoneSentence::toString() const {
   std::string buf;
   buf.reserve(128);
@@ -377,30 +367,15 @@ std::string AddZoneSentence::toString() const {
   return buf;
 }
 
-std::string DropGroupSentence::toString() const {
-  return folly::stringPrintf("DROP GROUP %s", groupName_.get()->c_str());
-}
-
 std::string DropZoneSentence::toString() const {
   return folly::stringPrintf("DROP ZONE %s", zoneName_.get()->c_str());
-}
-
-std::string DescribeGroupSentence::toString() const {
-  return folly::stringPrintf("DESCRIBE GROUP %s", groupName_.get()->c_str());
 }
 
 std::string DescribeZoneSentence::toString() const {
   return folly::stringPrintf("DESCRIBE ZONE %s", zoneName_.get()->c_str());
 }
 
-std::string ListGroupsSentence::toString() const { return folly::stringPrintf("SHOW GROUPS"); }
-
 std::string ListZonesSentence::toString() const { return folly::stringPrintf("SHOW ZONES"); }
-
-std::string AddZoneIntoGroupSentence::toString() const {
-  return folly::stringPrintf(
-      "Add Zone %s Into Group %s", zoneName_.get()->c_str(), groupName_.get()->c_str());
-}
 
 std::string AddHostIntoZoneSentence::toString() const {
   std::string buf;
@@ -410,11 +385,6 @@ std::string AddHostIntoZoneSentence::toString() const {
   buf += " INTO ZONE ";
   buf += *zoneName_;
   return buf;
-}
-
-std::string DropZoneFromGroupSentence::toString() const {
-  return folly::stringPrintf(
-      "Drop Zone %s From Group %s", zoneName_.get()->c_str(), groupName_.get()->c_str());
 }
 
 std::string DropHostFromZoneSentence::toString() const {
