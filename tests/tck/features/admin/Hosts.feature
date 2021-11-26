@@ -17,21 +17,21 @@ Feature: Admin hosts
       """
     Then the result should contain:
       | Host  | Port  | Status   | Role    | Git Info Sha  | Version |
-      | /\w+/ | /\d+/ | "ONLINE" | "GRAPH" | /[0-9a-f]{7}/ | EMPTY   |
+      | /\w+/ | /\d+/ | "ONLINE" | "GRAPH" | /[0-9a-f]{7}/ | /.*/    |
     When executing query:
       """
       SHOW HOSTS META;
       """
     Then the result should contain:
       | Host  | Port  | Status   | Role   | Git Info Sha  | Version |
-      | /\w+/ | /\d+/ | "ONLINE" | "META" | /[0-9a-f]{7}/ | EMPTY   |
+      | /\w+/ | /\d+/ | "ONLINE" | "META" | /[0-9a-f]{7}/ | /.*/    |
     When executing query:
       """
       SHOW HOSTS STORAGE;
       """
     Then the result should contain:
       | Host  | Port  | Status   | Role      | Git Info Sha  | Version |
-      | /\w+/ | /\d+/ | "ONLINE" | "STORAGE" | /[0-9a-f]{7}/ | EMPTY   |
+      | /\w+/ | /\d+/ | "ONLINE" | "STORAGE" | /[0-9a-f]{7}/ | /.*/    |
 
   Scenario: Create space
     When executing query:
