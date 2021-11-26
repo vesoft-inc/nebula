@@ -157,6 +157,31 @@ TEST(RocksEngineConfigTest, CompressionConfigTest) {
   }
 }
 
+TEST(RocksEngineConfigTest, KeyValueSeparationTest) {
+  FLAGS_rocksdb_enable_kv_separation = true;
+  FLAGS_rocksdb_kv_separation_threshold = 10;
+  rocksdb::Options options;
+  auto status = initRocksdbOptions(options, 1);
+  ASSERT_TRUE(status.ok()) << status.ToString();
+
+  rocksdb::DB* db = nullptr;
+  SCOPE_EXIT { delete db; };
+  options.create_if_missing = true;
+  fs::TempDir rootPath("/tmp/RocksDBCompressionConfigTest.XXXXXX");
+  status = rocksdb::DB::Open(options, rootPath.path(), &db);
+  ASSERT_TRUE(status.ok()) << status.ToString();
+
+  std::string key = "test";
+  std::string value = "This is a test value with value size greater than 10";
+  status = db->Put(rocksdb::WriteOptions(), key, value);
+  ASSERT_TRUE(status.ok()) << status.ToString();
+
+  std::string read_value;
+  status = db->Get(rocksdb::ReadOptions(), key, &read_value);
+  ASSERT_TRUE(status.ok()) << status.ToString();
+  ASSERT_EQ(value, read_value);
+}
+
 }  // namespace kvstore
 }  // namespace nebula
 
