@@ -7,7 +7,7 @@
 
 #include <sstream>
 
-#include "clients/storage/GraphStorageClient.h"
+#include "clients/storage/StorageClient.h"
 #include "common/datatypes/List.h"
 #include "common/datatypes/Vertex.h"
 #include "common/time/ScopedTimer.h"
@@ -15,7 +15,7 @@
 #include "graph/service/GraphFlags.h"
 #include "graph/util/SchemaUtil.h"
 
-using nebula::storage::GraphStorageClient;
+using nebula::storage::StorageClient;
 using nebula::storage::StorageRpcResponse;
 using nebula::storage::cpp2::GetNeighborsResponse;
 
@@ -85,12 +85,12 @@ folly::Future<Status> TraverseExecutor::traverse() {
 void TraverseExecutor::getNeighbors() {
   currentStep_++;
   time::Duration getNbrTime;
-  GraphStorageClient* storageClient = qctx_->getStorageClient();
+  StorageClient* storageClient = qctx_->getStorageClient();
   bool finalStep = isFinalStep();
-  GraphStorageClient::CommonRequestParam param(traverse_->space(),
-                                               qctx()->rctx()->session()->id(),
-                                               qctx()->plan()->id(),
-                                               qctx()->plan()->isProfileEnabled());
+  StorageClient::CommonRequestParam param(traverse_->space(),
+                                          qctx()->rctx()->session()->id(),
+                                          qctx()->plan()->id(),
+                                          qctx()->plan()->isProfileEnabled());
   storageClient
       ->getNeighbors(param,
                      reqDs_.colNames,

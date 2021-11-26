@@ -49,11 +49,6 @@ nebula_add_library(
     exec/IndexScanNode.cpp
     exec/IndexSelectionNode.cpp
     exec/IndexVertexScanNode.cpp
-)
-
-nebula_add_library(
-    general_storage_service_handler OBJECT
-    GeneralStorageServiceHandler.cpp
     kv/PutProcessor.cpp
     kv/GetProcessor.cpp
     kv/RemoveProcessor.cpp
