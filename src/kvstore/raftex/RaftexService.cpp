@@ -116,7 +116,8 @@ std::shared_ptr<folly::Executor> RaftexService::getThreadManager() {
 }
 
 void RaftexService::stop() {
-  if (status_.load() != STATUS_RUNNING) {
+  int expected = STATUS_RUNNING;
+  if (!status_.compare_exchange_strong(expected, STATUS_NOT_RUNNING)) {
     return;
   }
 
