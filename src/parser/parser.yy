@@ -363,7 +363,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <sentence> rebuild_tag_index_sentence rebuild_edge_index_sentence rebuild_fulltext_index_sentence
 %type <sentence> add_hosts_sentence drop_hosts_sentence
 %type <sentence> drop_zone_sentence desc_zone_sentence
-%type <sentence> merge_zone_sentence split_zone_sentence rename_zone_sentence
+%type <sentence> merge_zone_sentence /*split_zone_sentence*/ rename_zone_sentence
 %type <sentence> create_snapshot_sentence drop_snapshot_sentence
 %type <sentence> add_listener_sentence remove_listener_sentence list_listener_sentence
 
@@ -2826,11 +2826,11 @@ drop_zone_sentence
     }
     ;
 
-split_zone_sentence
-    : KW_SPLIT KW_ZONE name_label KW_FROM zone_name_list {
-        $$ = new SplitZoneSentence($3, $5);
-    }
-    ;
+// split_zone_sentence
+//     : KW_SPLIT KW_ZONE name_label KW_FROM zone_name_list {
+//         $$ = new SplitZoneSentence($3, $5);
+//     }
+//     ;
 
 rename_zone_sentence
     : KW_RENAME KW_ZONE STRING KW_TO STRING {
@@ -3817,7 +3817,7 @@ maintain_sentence
     | drop_hosts_sentence { $$ = $1; }
     | merge_zone_sentence { $$ = $1; }
     | drop_zone_sentence { $$ = $1; }
-    | split_zone_sentence { $$ = $1; }
+    // | split_zone_sentence { $$ = $1; }
     | rename_zone_sentence { $$ = $1; }
     | desc_zone_sentence { $$ = $1; }
     | show_sentence { $$ = $1; }
