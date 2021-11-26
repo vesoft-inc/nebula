@@ -18,8 +18,8 @@ TEST_F(LookupValidatorTest, InputOutput) {
   // pipe
   {
     const std::string query =
-        "LOOKUP ON person where person.age == 35 | "
-        "FETCH PROP ON person $-.VertexID YIELD vertex as node";
+        "LOOKUP ON person where person.age == 35 YIELD id(vertex) as id | "
+        "FETCH PROP ON person $-.id YIELD vertex as node";
     EXPECT_TRUE(checkResult(query,
                             {
                                 PlanNode::Kind::kProject,
@@ -48,8 +48,8 @@ TEST_F(LookupValidatorTest, InputOutput) {
   // variable
   {
     const std::string query =
-        "$a = LOOKUP ON person where person.age == 35; "
-        "FETCH PROP ON person $a.VertexID YIELD vertex as node";
+        "$a = LOOKUP ON person where person.age == 35 YIELD id(vertex) as id; "
+        "FETCH PROP ON person $a.id YIELD vertex as node";
     EXPECT_TRUE(checkResult(query,
                             {
                                 PlanNode::Kind::kProject,
@@ -63,8 +63,7 @@ TEST_F(LookupValidatorTest, InputOutput) {
   // var with yield
   {
     const std::string query =
-        "$a = LOOKUP ON person where person.age == 35 YIELD person.name AS "
-        "name;"
+        "$a = LOOKUP ON person where person.age == 35 YIELD person.name AS name;"
         "FETCH PROP ON person $a.name YIELD vertex as node";
     EXPECT_TRUE(checkResult(query,
                             {
@@ -79,7 +78,10 @@ TEST_F(LookupValidatorTest, InputOutput) {
 }
 
 TEST_F(LookupValidatorTest, InvalidYieldExpression) {
-  // TODO(shylock)
+  {
+    const std::string query = "LOOKUP ON person where person.age > 20;";
+    EXPECT_FALSE(checkResult(query, {}));
+  }
   {
     const std::string query =
         "LOOKUP ON person where person.age == 35 YIELD person.age + 1 AS age;";
@@ -95,40 +97,49 @@ TEST_F(LookupValidatorTest, InvalidYieldExpression) {
 
 TEST_F(LookupValidatorTest, InvalidFilterExpression) {
   {
-    const std::string query = "LOOKUP ON person where person.age == person.name;";
+    const std::string query =
+        "LOOKUP ON person where person.age == person.name YIELD vertex as node;";
     EXPECT_FALSE(checkResult(query, {}));
   }
   {
-    const std::string query = "LOOKUP ON person where person.age > person.name;";
+    const std::string query =
+        "LOOKUP ON person where person.age > person.name YIELD vertex as node;";
     EXPECT_FALSE(checkResult(query, {}));
   }
   {
-    const std::string query = "LOOKUP ON person where person.age != person.name;";
+    const std::string query =
+        "LOOKUP ON person where person.age != person.name YIELD vertex as node;";
     EXPECT_FALSE(checkResult(query, {}));
   }
   {
-    const std::string query = "LOOKUP ON person where person.age + 1 > 5;";
+    const std::string query = "LOOKUP ON person where person.age + 1 > 5 YIELD person.age;";
     EXPECT_FALSE(checkResult(query, {}));
   }
   {
-    const std::string query = "LOOKUP ON person where person.age > person.name + 5;";
+    const std::string query =
+        "LOOKUP ON person where person.age > person.name + 5 YIELD id(vertex);";
     EXPECT_FALSE(checkResult(query, {}));
   }
   {
-    const std::string query = "LOOKUP ON person where  1 + 5 < person.age;";
+    const std::string query = "LOOKUP ON person where  1 + 5 < person.age YIELD vertex as node;";
     EXPECT_TRUE(checkResult(query, {}));
   }
   {
-    const std::string query = "LOOKUP ON person where person.age > 1 + 5;";
+    const std::string query = "LOOKUP ON person where person.age > 1 + 5 YIELD vertex as node;";
     EXPECT_TRUE(checkResult(query, {}));
   }
   {
-    const std::string query = "LOOKUP ON person where person.age > abs(-5);";
+    const std::string query = "LOOKUP ON person where person.age > abs(-5) YIELD id(vertex);";
     EXPECT_TRUE(checkResult(query, {}));
   }
 }
 
 TEST_F(LookupValidatorTest, wrongYield) {
+  {
+    std::string query = "LOOKUP ON person";
+    auto result = checkResult(query);
+    EXPECT_EQ(std::string(result.message()), "SemanticError: Missing yield clause.");
+  }
   {
     std::string query = "LOOKUP ON person YIELD vertex";
     auto result = checkResult(query);

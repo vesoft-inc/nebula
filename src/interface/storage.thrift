@@ -630,18 +630,37 @@ struct TaskPara {
     3: optional list<binary>                task_specific_paras
 }
 
-struct AddAdminTaskRequest {
-    // rebuild index / flush / compact / stats
-    1: meta.AdminCmd                        cmd
-    2: i32                                  job_id
-    3: i32                                  task_id
-    4: TaskPara                             para
-    5: optional i32                         concurrency
+//////////////////////////////////////////////////////////
+//
+//  Requests, responses for the kv interfaces
+//
+//////////////////////////////////////////////////////////
+struct KVGetRequest {
+    1: common.GraphSpaceID space_id,
+    2: map<common.PartitionID, list<binary>>(
+        cpp.template = "std::unordered_map") parts,
+    // When return_partly is true and some of the keys not found, will return the keys
+    // which exist
+    3: bool return_partly
 }
 
-struct StopAdminTaskRequest {
-    1: i32                                  job_id
-    2: i32                                  task_id
+struct KVGetResponse {
+    1: required ResponseCommon result,
+    2: map<binary, binary>(cpp.template = "std::unordered_map") key_values,
+}
+
+struct KVPutRequest {
+    1: common.GraphSpaceID space_id,
+    // part -> key/value
+    2: map<common.PartitionID, list<common.KeyValue>>(
+        cpp.template = "std::unordered_map") parts,
+}
+
+struct KVRemoveRequest {
+    1: common.GraphSpaceID space_id,
+    // part -> key
+    2: map<common.PartitionID, list<binary>>(
+        cpp.template = "std::unordered_map") parts,
 }
 
 service GraphStorageService {
@@ -672,6 +691,10 @@ service GraphStorageService {
 
     UpdateResponse chainUpdateEdge(1: UpdateEdgeRequest req);
     ExecResponse chainAddEdges(1: AddEdgesRequest req);
+
+    KVGetResponse   get(1: KVGetRequest req);
+    ExecResponse    put(1: KVPutRequest req);
+    ExecResponse    remove(1: KVRemoveRequest req);
 }
 
 
@@ -790,6 +813,20 @@ struct ListClusterInfoResp {
 struct ListClusterInfoReq {
 }
 
+struct AddAdminTaskRequest {
+    // rebuild index / flush / compact / statis
+    1: meta.AdminCmd                        cmd
+    2: i32                                  job_id
+    3: i32                                  task_id
+    4: TaskPara                             para
+    5: optional i32                         concurrency
+}
+
+struct StopAdminTaskRequest {
+    1: i32                                  job_id
+    2: i32                                  task_id
+}
+
 service StorageAdminService {
     // Interfaces for admin operations
     AdminExecResp transLeader(1: TransLeaderReq req);
@@ -819,50 +856,6 @@ service StorageAdminService {
     ListClusterInfoResp listClusterInfo(1: ListClusterInfoReq req);
 }
 
-
-//////////////////////////////////////////////////////////
-//
-//  Requests, responses for the GeneralStorageService
-//
-//////////////////////////////////////////////////////////
-struct KVGetRequest {
-    1: common.GraphSpaceID space_id,
-    2: map<common.PartitionID, list<binary>>(
-        cpp.template = "std::unordered_map") parts,
-    // When return_partly is true and some of the keys not found, will return the keys
-    // which exist
-    3: bool return_partly
-}
-
-
-struct KVGetResponse {
-    1: required ResponseCommon result,
-    2: map<binary, binary>(cpp.template = "std::unordered_map") key_values,
-}
-
-
-struct KVPutRequest {
-    1: common.GraphSpaceID space_id,
-    // part -> key/value
-    2: map<common.PartitionID, list<common.KeyValue>>(
-        cpp.template = "std::unordered_map") parts,
-}
-
-
-struct KVRemoveRequest {
-    1: common.GraphSpaceID space_id,
-    // part -> key
-    2: map<common.PartitionID, list<binary>>(
-        cpp.template = "std::unordered_map") parts,
-}
-
-
-service GeneralStorageService {
-    // Interfaces for key-value storage
-    KVGetResponse   get(1: KVGetRequest req);
-    ExecResponse    put(1: KVPutRequest req);
-    ExecResponse    remove(1: KVRemoveRequest req);
-}
 
 //////////////////////////////////////////////////////////
 //

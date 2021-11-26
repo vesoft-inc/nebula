@@ -6,8 +6,6 @@
 #ifndef GRAPH_OPTIMIZER_OPTIMIZER_H_
 #define GRAPH_OPTIMIZER_OPTIMIZER_H_
 
-#include <memory>
-
 #include "common/base/Base.h"
 #include "common/base/StatusOr.h"
 

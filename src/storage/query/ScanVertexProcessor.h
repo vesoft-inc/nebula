@@ -40,14 +40,16 @@ class ScanVertexProcessor
 
   StoragePlan<Cursor> buildPlan(RuntimeContext* context,
                                 nebula::DataSet* result,
-                                std::unordered_map<PartitionID, cpp2::ScanCursor>* cursors);
+                                std::unordered_map<PartitionID, cpp2::ScanCursor>* cursors,
+                                StorageExpressionContext* expCtx);
 
   folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> runInExecutor(
       RuntimeContext* context,
       nebula::DataSet* result,
       std::unordered_map<PartitionID, cpp2::ScanCursor>* cursors,
       PartitionID partId,
-      Cursor cursor);
+      Cursor cursor,
+      StorageExpressionContext* expCtx);
 
   void runInSingleThread(const cpp2::ScanVertexRequest& req);
 
@@ -57,6 +59,7 @@ class ScanVertexProcessor
 
  private:
   std::vector<RuntimeContext> contexts_;
+  std::vector<StorageExpressionContext> expCtxs_;
   std::vector<nebula::DataSet> results_;
   std::vector<std::unordered_map<PartitionID, cpp2::ScanCursor>> cursorsOfPart_;
 
