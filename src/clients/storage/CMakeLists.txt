@@ -3,14 +3,8 @@
 # This source code is licensed under Apache 2.0 License.
 
 nebula_add_library(
-    graph_storage_client_obj OBJECT
-    GraphStorageClient.cpp
-)
-
-
-nebula_add_library(
-    general_storage_client_obj OBJECT
-    GeneralStorageClient.cpp
+    storage_client_obj OBJECT
+    StorageClient.cpp
 )
 
 
