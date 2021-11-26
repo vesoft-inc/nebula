@@ -171,6 +171,16 @@ std::shared_ptr<RaftPart> RaftexService::findPart(GraphSpaceID spaceId, Partitio
   return it->second;
 }
 
+void RaftexService::getState(cpp2::GetStateResponse& resp, const cpp2::GetStateRequest& req) {
+  auto part = findPart(req.get_space(), req.get_part());
+  if (part != nullptr) {
+    part->getState(resp);
+  } else {
+    resp.set_term(-1);
+    resp.set_error_code(cpp2::ErrorCode::E_UNKNOWN_PART);
+  }
+}
+
 void RaftexService::askForVote(cpp2::AskForVoteResponse& resp, const cpp2::AskForVoteRequest& req) {
   auto part = findPart(req.get_space(), req.get_part());
   if (!part) {
