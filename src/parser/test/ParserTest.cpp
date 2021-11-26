@@ -1659,7 +1659,7 @@ TEST_F(ParserTest, UnreservedKeywords) {
     std::string query =
         "CREATE TAG tag1(space string, spaces string, "
         "email string, password string, roles string, uuid int, "
-        "path string, variables string, leader string, data string)";
+        "paths string, variables string, leader string, data string)";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -2506,7 +2506,7 @@ TEST_F(ParserTest, Match) {
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "MATCH p = (a) -[m:like*..2]- (b) RETURN p as Path";
+    std::string query = "MATCH p = (a) -[m:like*..2]- (b) RETURN p as PathA";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -2711,11 +2711,6 @@ TEST_F(ParserTest, MatchListSubscriptRange) {
 
 TEST_F(ParserTest, Zone) {
   {
-    std::string query = "SHOW GROUPS";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
     std::string query = "SHOW ZONES";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
@@ -2747,36 +2742,6 @@ TEST_F(ParserTest, Zone) {
   }
   {
     std::string query = "DROP ZONE zone_0";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "ADD GROUP group_0 zone_0,zone_1,zone_2";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "ADD ZONE zone_3 INTO GROUP group_0";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "DROP ZONE zone_3 FROM GROUP group_0";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "DESC GROUP group_0";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "DESCRIBE GROUP group_0";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "DROP GROUP group_0";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -2945,11 +2910,36 @@ TEST_F(ParserTest, FullTextServiceTest) {
     std::string query = "SIGN IN TEXT SERVICE (127.0.0.1:9200)";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), query);
+  }
+  {
+    std::string query = "SIGN IN TEXT SERVICE (127.0.0.1:9200, HTTP)";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), query);
+  }
+  {
+    std::string query = "SIGN IN TEXT SERVICE (127.0.0.1:9200, HTTPS)";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), query);
+  }
+  {
+    std::string query = "SIGN IN TEXT SERVICE (127.0.0.1:9200, HTTPS, \"user\")";
+    auto result = parse(query);
+    ASSERT_FALSE(result.ok());
   }
   {
     std::string query = "SIGN IN TEXT SERVICE (127.0.0.1:9200), (127.0.0.1:9300)";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), query);
+  }
+  {
+    std::string query = "SIGN IN TEXT SERVICE (127.0.0.1:9200, HTTPS), (127.0.0.1:9300)";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), query);
   }
   {
     std::string query = "SIGN IN TEXT SERVICE (127.0.0.1:9200, \"user\", \"password\")";
@@ -2957,11 +2947,32 @@ TEST_F(ParserTest, FullTextServiceTest) {
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
+    std::string query = "SIGN IN TEXT SERVICE (127.0.0.1:9200, HTTP, \"user\", \"password\")";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), query);
+  }
+  {
+    std::string query = "SIGN IN TEXT SERVICE (127.0.0.1:9200, HTTPS, \"user\", \"password\")";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), query);
+  }
+  {
     std::string query =
         "SIGN IN TEXT SERVICE (127.0.0.1:9200, \"user\", \"password\"), "
         "(127.0.0.1:9200, \"user\", \"password\")";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), query);
+  }
+  {
+    std::string query =
+        "SIGN IN TEXT SERVICE (127.0.0.1:9200, HTTP, \"user\", \"password\"), "
+        "(127.0.0.1:9200, HTTPS, \"user\", \"password\")";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), query);
   }
   {
     std::string query = "SIGN OUT TEXT SERVICE";
