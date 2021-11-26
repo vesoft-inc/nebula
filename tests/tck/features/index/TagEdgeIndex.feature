@@ -13,17 +13,17 @@ Feature: tag and edge index tests from pytest
       CREATE TAG tag_1(col1 string, col2 int, col3 double, col4 timestamp);
       CREATE EDGE edge_1(col1 string, col2 int, col3 double, col4 timestamp);
       INSERT VERTEX
-      tag_1(col1, col2, col3, col4)
+        tag_1(col1, col2, col3, col4)
       VALUES
-      '101':('Tom', 18, 35.4, `timestamp`('2010-09-01T08:00:00')),
-      '102':('Jerry', 22, 38.4, `timestamp`('2011-09-01T08:00:00')),
-      '103':('Bob', 19, 36.4, `timestamp`('2010-09-01T12:00:00'));
+        '101':('Tom', 18, 35.4, `timestamp`('2010-09-01T08:00:00')),
+        '102':('Jerry', 22, 38.4, `timestamp`('2011-09-01T08:00:00')),
+        '103':('Bob', 19, 36.4, `timestamp`('2010-09-01T12:00:00'));
       INSERT EDGE
-      edge_1(col1, col2, col3, col4)
+        edge_1(col1, col2, col3, col4)
       VALUES
-      '101'->'102':('Red', 81, 45.3, `timestamp`('2010-09-01T08:00:00')),
-      '102'->'103':('Yellow', 22, 423.8, `timestamp`('2011-09-01T08:00:00')),
-      '103'->'101':('Blue', 91, 43.1, `timestamp`('2010-09-01T12:00:00'));
+        '101'->'102':('Red', 81, 45.3, `timestamp`('2010-09-01T08:00:00')),
+        '102'->'103':('Yellow', 22, 423.8, `timestamp`('2011-09-01T08:00:00')),
+        '103'->'101':('Blue', 91, 43.1, `timestamp`('2010-09-01T12:00:00'));
       """
 
   Scenario: test tag index from pytest
@@ -170,8 +170,8 @@ Feature: tag and edge index tests from pytest
     When executing query:
       """
       CREATE TAG INDEX `multi_tag_index` ON `tag_1` (
-      `col2`,
-      `col3`
+       `col2`,
+       `col3`
       )
       """
     Then the execution should be successful
@@ -190,8 +190,8 @@ Feature: tag and edge index tests from pytest
     When executing query:
       """
       CREATE TAG INDEX `disorder_tag_index` ON `tag_1` (
-      `col3`,
-      `col2`
+       `col3`,
+       `col2`
       )
       """
     Then the execution should be successful
@@ -414,8 +414,8 @@ Feature: tag and edge index tests from pytest
     When executing query:
       """
       CREATE EDGE INDEX `multi_edge_index` ON `edge_1` (
-      `col2`,
-      `col3`
+       `col2`,
+       `col3`
       )
       """
     Then the execution should be successful
@@ -435,8 +435,8 @@ Feature: tag and edge index tests from pytest
     When executing query:
       """
       CREATE EDGE INDEX `disorder_edge_index` ON `edge_1` (
-      `col3`,
-      `col2`
+       `col3`,
+       `col2`
       )
       """
     Then the execution should be successful
