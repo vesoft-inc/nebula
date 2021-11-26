@@ -58,8 +58,7 @@ void AddHostsIntoZoneProcessor::process(const cpp2::AddHostsIntoZoneReq& req) {
   if (isNew) {
     // If you are creating a new zone, should make sure the zone not existed.
     if (nebula::ok(zoneValueRet)) {
-      LOG(ERROR) << "Zone " << zoneName
-                 << " have existed error: " << apache::thrift::util::enumNameSafe(code);
+      LOG(ERROR) << "Zone " << zoneName << " have existed";
       handleErrorCode(nebula::cpp2::ErrorCode::E_EXISTED);
       onFinished();
       return;

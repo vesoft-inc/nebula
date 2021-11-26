@@ -310,8 +310,17 @@ TEST(ProcessorTest, HashTest) {
 TEST(ProcessorTest, SpaceTest) {
   fs::TempDir rootPath("/tmp/SpaceTest.XXXXXX");
   auto kv = MockCluster::initMetaKV(rootPath.path());
-  auto hostsNum = TestUtils::createSomeHosts(kv.get());
-
+  {
+    cpp2::AddHostsReq req;
+    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
+    req.set_hosts(std::move(hosts));
+    auto* processor = AddHostsProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
+  int32_t hostsNum = 4;
   {
     cpp2::SpaceDesc properties;
     properties.set_space_name("default_space");
@@ -467,8 +476,16 @@ TEST(ProcessorTest, SpaceTest) {
 TEST(ProcessorTest, CreateTagTest) {
   fs::TempDir rootPath("/tmp/CreateTagTest.XXXXXX");
   auto kv = MockCluster::initMetaKV(rootPath.path());
-  TestUtils::createSomeHosts(kv.get());
-
+  {
+    cpp2::AddHostsReq req;
+    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
+    req.set_hosts(std::move(hosts));
+    auto* processor = AddHostsProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
   {
     cpp2::SpaceDesc properties;
     properties.set_space_name("first_space");
@@ -662,8 +679,16 @@ TEST(ProcessorTest, CreateTagTest) {
 TEST(ProcessorTest, CreateEdgeTest) {
   fs::TempDir rootPath("/tmp/CreateEdgeTest.XXXXXX");
   auto kv = MockCluster::initMetaKV(rootPath.path());
-  TestUtils::createSomeHosts(kv.get());
-
+  {
+    cpp2::AddHostsReq req;
+    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
+    req.set_hosts(std::move(hosts));
+    auto* processor = AddHostsProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
   {
     cpp2::SpaceDesc properties;
     properties.set_space_name("default_space");
@@ -846,8 +871,16 @@ TEST(ProcessorTest, CreateEdgeTest) {
 TEST(ProcessorTest, KVOperationTest) {
   fs::TempDir rootPath("/tmp/KVOperationTest.XXXXXX");
   auto kv = MockCluster::initMetaKV(rootPath.path());
-  TestUtils::createSomeHosts(kv.get());
-
+  {
+    cpp2::AddHostsReq req;
+    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
+    req.set_hosts(std::move(hosts));
+    auto* processor = AddHostsProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
   {
     cpp2::SpaceDesc properties;
     properties.set_space_name("default_space");
@@ -2239,8 +2272,16 @@ TEST(ProcessorTest, AlterEdgeTest) {
 TEST(ProcessorTest, SameNameTagsTest) {
   fs::TempDir rootPath("/tmp/SameNameTagsTest.XXXXXX");
   auto kv = MockCluster::initMetaKV(rootPath.path());
-  TestUtils::createSomeHosts(kv.get());
-
+  {
+    cpp2::AddHostsReq req;
+    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
+    req.set_hosts(std::move(hosts));
+    auto* processor = AddHostsProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
   {
     cpp2::SpaceDesc properties;
     properties.set_space_name("default_space");
@@ -2479,8 +2520,16 @@ TEST(ProcessorTest, SessionManagerTest) {
 TEST(ProcessorTest, TagIdAndEdgeTypeInSpaceRangeTest) {
   fs::TempDir rootPath("/tmp/TagIdAndEdgeTypeInSpaceRangeTest.XXXXXX");
   auto kv = MockCluster::initMetaKV(rootPath.path());
-  TestUtils::createSomeHosts(kv.get());
-
+  {
+    cpp2::AddHostsReq req;
+    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
+    req.set_hosts(std::move(hosts));
+    auto* processor = AddHostsProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
   // mock one space and ten tag, ten edge
   {
     // space Id is 1

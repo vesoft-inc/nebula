@@ -186,6 +186,10 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
 
   folly::Future<cpp2::GetZoneResp> future_getZone(const cpp2::GetZoneReq& req) override;
 
+  folly::Future<cpp2::ExecResp> future_mergeZone(const cpp2::MergeZoneReq& req) override;
+
+  folly::Future<cpp2::ExecResp> future_splitZone(const cpp2::SplitZoneReq& req) override;
+
   folly::Future<cpp2::ListZonesResp> future_listZones(const cpp2::ListZonesReq& req) override;
 
   folly::Future<cpp2::ExecResp> future_addHostsIntoZone(
@@ -210,6 +214,7 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
 
   folly::Future<cpp2::GetMetaDirInfoResp> future_getMetaDirInfo(
       const cpp2::GetMetaDirInfoReq& req) override;
+
   folly::Future<cpp2::CreateSessionResp> future_createSession(
       const cpp2::CreateSessionReq& req) override;
 

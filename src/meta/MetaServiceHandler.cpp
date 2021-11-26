@@ -67,7 +67,9 @@
 #include "meta/processors/zone/DropZoneProcessor.h"
 #include "meta/processors/zone/GetZoneProcessor.h"
 #include "meta/processors/zone/ListZonesProcessor.h"
+#include "meta/processors/zone/MergeZoneProcessor.h"
 #include "meta/processors/zone/RenameZoneProcessor.h"
+#include "meta/processors/zone/SplitZoneProcessor.h"
 
 #define RETURN_FUTURE(processor)   \
   auto f = processor->getFuture(); \
@@ -442,6 +444,16 @@ folly::Future<cpp2::ExecResp> MetaServiceHandler::future_renameZone(
 
 folly::Future<cpp2::GetZoneResp> MetaServiceHandler::future_getZone(const cpp2::GetZoneReq& req) {
   auto* processor = GetZoneProcessor::instance(kvstore_);
+  RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp> MetaServiceHandler::future_mergeZone(const cpp2::MergeZoneReq& req) {
+  auto* processor = MergeZoneProcessor::instance(kvstore_);
+  RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResp> MetaServiceHandler::future_splitZone(const cpp2::SplitZoneReq& req) {
+  auto* processor = SplitZoneProcessor::instance(kvstore_);
   RETURN_FUTURE(processor);
 }
 

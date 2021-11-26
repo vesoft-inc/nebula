@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/zone/AddHostsProcessor.h"
@@ -32,7 +31,7 @@ void AddHostsProcessor::process(const cpp2::AddHostsReq& req) {
   }
 
   std::vector<kvstore::KV> data;
-  nebula::cpp2::ErrorCode code;
+  nebula::cpp2::ErrorCode code = nebula::cpp2::ErrorCode::SUCCEEDED;
   for (auto& host : hosts) {
     // Ensure that the node is not registered.
     auto machineKey = MetaKeyUtils::machineKey(host.host, host.port);

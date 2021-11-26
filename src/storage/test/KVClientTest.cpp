@@ -41,20 +41,18 @@ TEST(KVClientTest, SimpleTest) {
   HostAddr storageAddr{storageName, storagePort};
 
   cluster.startMeta(metaPath.path());
-  folly::Baton<true, std::atomic> baton;
-  auto* kv = cluster.metaKV_.get();
-  std::vector<kvstore::KV> machines;
-  machines.emplace_back(nebula::MetaKeyUtils::machineKey(storageName, storagePort), "");
-  kv->asyncMultiPut(
-      kDefaultSpaceId, kDefaultPartId, std::move(machines), [&](auto) { baton.post(); });
-  baton.wait();
-
   meta::MetaClientOptions options;
   options.localHost_ = storageAddr;
-  options.role_ = meta::cpp2::HostRole::STORAGE;
   cluster.initMetaClient(options);
-  cluster.startStorage(storageAddr, storagePath.path());
+  auto* metaClient = cluster.metaClient_.get();
+  {
+    LOG(INFO) << "registed " << storageAddr;
+    std::vector<HostAddr> hosts = {storageAddr};
+    auto result = metaClient->addHosts(std::move(hosts)).get();
+    EXPECT_TRUE(result.ok());
+  }
 
+  cluster.startStorage(storageAddr, storagePath.path());
   auto client = cluster.initGraphStorageClient();
   // kv interface test
   {

@@ -86,6 +86,7 @@ class TestUtils {
     // Record machine information
     std::vector<kvstore::KV> machines;
     for (auto& host : hosts) {
+      VLOG(3) << "Registe machine: " << host;
       machines.emplace_back(nebula::MetaKeyUtils::machineKey(host.host, host.port), "");
     }
     folly::Baton<true, std::atomic> baton;

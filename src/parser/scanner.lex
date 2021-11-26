@@ -269,7 +269,6 @@ CHINESE_LABEL               ({U2}{U}|{U3}{U}{U}|{U4}{U}{U}{U})+
 "LINESTRING"                { return TokenType::KW_LINESTRING; }
 "POLYGON"                   { return TokenType::KW_POLYGON; }
 "MERGE"                     { return TokenType::KW_MERGE; }
-"SPLIT"                     { return TokenType::KW_SPLIT; }
 "RENAME"                    { return TokenType::KW_RENAME; }
 
 "TRUE"                      { yylval->boolval = true; return TokenType::BOOL; }

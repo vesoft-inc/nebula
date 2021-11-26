@@ -17,6 +17,7 @@
 #include "common/network/NetworkUtils.h"
 #include "common/utils/MetaKeyUtils.h"
 #include "interface/gen-cpp2/common_constants.h"
+#include "meta/processors/zone/AddHostsProcessor.h"
 #include "meta/test/TestUtils.h"
 #include "mock/MockCluster.h"
 
@@ -39,11 +40,14 @@ TEST(MetaClientTest, InterfacesTest) {
   cluster.startMeta(rootPath.path());
   auto options = meta::MetaClientOptions();
   cluster.initMetaClient();
-  auto* kv = cluster.metaKV_.get();
   auto* client = cluster.metaClient_.get();
 
   GraphSpaceID spaceId = 0;
-  TestUtils::createSomeHosts(kv);
+  {
+    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
+    auto result = client->addHosts(std::move(hosts)).get();
+    EXPECT_TRUE(result.ok());
+  }
   {
     // Test createSpace, listSpaces, getPartsAlloc.
     {
@@ -348,10 +352,12 @@ TEST(MetaClientTest, TagTest) {
   mock::MockCluster cluster;
   cluster.startMeta(rootPath.path());
   cluster.initMetaClient();
-  auto* kv = cluster.metaKV_.get();
   auto* client = cluster.metaClient_.get();
-
-  TestUtils::createSomeHosts(kv);
+  {
+    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
+    auto result = client->addHosts(std::move(hosts)).get();
+    EXPECT_TRUE(result.ok());
+  }
   meta::cpp2::SpaceDesc spaceDesc;
   spaceDesc.set_space_name("default");
   spaceDesc.set_partition_num(9);
@@ -581,10 +587,12 @@ TEST(MetaClientTest, EdgeTest) {
   mock::MockCluster cluster;
   cluster.startMeta(rootPath.path());
   cluster.initMetaClient();
-  auto* kv = cluster.metaKV_.get();
   auto* client = cluster.metaClient_.get();
-
-  TestUtils::createSomeHosts(kv);
+  {
+    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
+    auto result = client->addHosts(std::move(hosts)).get();
+    EXPECT_TRUE(result.ok());
+  }
   meta::cpp2::SpaceDesc spaceDesc;
   spaceDesc.set_space_name("default_space");
   spaceDesc.set_partition_num(9);
@@ -688,10 +696,13 @@ TEST(MetaClientTest, TagIndexTest) {
   mock::MockCluster cluster;
   cluster.startMeta(rootPath.path());
   cluster.initMetaClient();
-  auto* kv = cluster.metaKV_.get();
   auto* client = cluster.metaClient_.get();
+  {
+    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
+    auto result = client->addHosts(std::move(hosts)).get();
+    EXPECT_TRUE(result.ok());
+  }
 
-  TestUtils::createSomeHosts(kv);
   meta::cpp2::SpaceDesc spaceDesc;
   spaceDesc.set_space_name("default_space");
   spaceDesc.set_partition_num(8);
@@ -864,10 +875,13 @@ TEST(MetaClientTest, EdgeIndexTest) {
   mock::MockCluster cluster;
   cluster.startMeta(rootPath.path());
   cluster.initMetaClient();
-  auto* kv = cluster.metaKV_.get();
   auto* client = cluster.metaClient_.get();
+  {
+    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
+    auto result = client->addHosts(std::move(hosts)).get();
+    EXPECT_TRUE(result.ok());
+  }
 
-  TestUtils::createSomeHosts(kv);
   meta::cpp2::SpaceDesc spaceDesc;
   spaceDesc.set_space_name("default_space");
   spaceDesc.set_partition_num(8);
@@ -1173,11 +1187,23 @@ TEST(MetaClientTest, DiffTest) {
   mock::MockCluster cluster;
   cluster.startMeta(rootPath.path());
   auto* kv = cluster.metaKV_.get();
-  cluster.initMetaClient();
-  auto* client = cluster.metaClient_.get();
   std::vector<HostAddr> hosts = {{"0", 0}};
-  TestUtils::createSomeHosts(kv, std::move(hosts));
+  {
+    cpp2::AddHostsReq req;
+    req.set_hosts(hosts);
+    auto* processor = AddHostsProcessor::instance(kv);
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
 
+  meta::MetaClientOptions options;
+  options.localHost_ = {"0", 0};
+  options.role_ = meta::cpp2::HostRole::STORAGE;
+  options.clusterId_ = 10;
+  cluster.initMetaClient(options);
+  auto* client = cluster.metaClient_.get();
   auto listener = std::make_unique<TestListener>();
   client->registerListener(listener.get());
   {
@@ -1192,6 +1218,7 @@ TEST(MetaClientTest, DiffTest) {
       ASSERT_EQ(hosts[i], hostAddr);
     }
   }
+  sleep(FLAGS_heartbeat_interval_secs + 1);
   {
     // Test Create Space and List Spaces
     meta::cpp2::SpaceDesc spaceDesc;
@@ -1233,8 +1260,6 @@ TEST(MetaClientTest, ListenerDiffTest) {
   cluster.startMeta(rootPath.path());
   cluster.initMetaClient();
   auto* kv = cluster.metaKV_.get();
-  std::vector<HostAddr> hosts = {{"0", 0}};
-  TestUtils::createSomeHosts(kv, std::move(hosts));
   auto* console = cluster.metaClient_.get();
   auto testListener = std::make_unique<TestListener>();
   console->registerListener(testListener.get());
@@ -1247,6 +1272,11 @@ TEST(MetaClientTest, ListenerDiffTest) {
   auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
   auto metaAddrs = {HostAddr(cluster.localIP(), cluster.metaServer_->port_)};
   auto client = std::make_unique<meta::MetaClient>(threadPool, metaAddrs, options);
+  {
+    std::vector<HostAddr> hosts = {{"0", 0}};
+    auto result = client->addHosts(std::move(hosts)).get();
+    EXPECT_TRUE(result.ok());
+  }
   client->waitForMetadReady();
 
   auto listener = std::make_unique<TestListener>();
@@ -1654,9 +1684,13 @@ TEST(MetaClientTest, ListenerTest) {
   auto threadPool = std::make_shared<folly::IOThreadPoolExecutor>(1);
   auto localhosts = std::vector<HostAddr>{HostAddr(localIp, localMetaPort)};
   auto client = std::make_shared<MetaClient>(threadPool, localhosts);
+  {
+    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
+    auto result = client->addHosts(std::move(hosts)).get();
+    EXPECT_TRUE(result.ok());
+  }
   client->waitForMetadReady();
 
-  TestUtils::createSomeHosts(kv);
   meta::cpp2::SpaceDesc spaceDesc;
   spaceDesc.set_space_name("default");
   spaceDesc.set_partition_num(9);
@@ -1732,79 +1766,11 @@ TEST(MetaClientTest, VerifyClientTest) {
   }
   FLAGS_enable_client_white_list = false;
 }
-
-TEST(MetaClientTest, RocksdbOptionsTest) {
-  FLAGS_heartbeat_interval_secs = 1;
-  fs::TempDir rootPath("/tmp/RocksdbOptionsTest.XXXXXX");
-
-  mock::MockCluster cluster;
-  cluster.startMeta(rootPath.path(), HostAddr("127.0.0.1", 0));
-  auto* kv = cluster.metaKV_.get();
-  TestUtils::createSomeHosts(kv, {{"0", 0}});
-
-  MetaClientOptions options;
-  // Now the `--local_config' option only affect if initialize the configuration
-  // from meta not affect `show/update/get configs'
-  options.skipConfig_ = false;
-
-  cluster.initMetaClient(std::move(options));
-  auto* client = cluster.metaClient_.get();
-
-  auto listener = std::make_unique<TestListener>();
-  auto module = cpp2::ConfigModule::STORAGE;
-  auto mode = meta::cpp2::ConfigMode::MUTABLE;
-
-  client->registerListener(listener.get());
-  client->gflagsModule_ = module;
-
-  // mock some rocksdb gflags to meta
-  {
-    auto name = "rocksdb_db_options";
-    std::vector<cpp2::ConfigItem> configItems;
-    FLAGS_rocksdb_db_options =
-        R"({"disable_auto_compactions":"false","write_buffer_size":"1048576"})";
-    Map map;
-    map.kvs.emplace("disable_auto_compactions", "false");
-    map.kvs.emplace("write_buffer_size", "1048576");
-    configItems.emplace_back(initConfigItem(module, name, mode, Value(map)));
-    client->regConfig(configItems);
-  }
-  {
-    std::vector<HostAddr> hosts = {{"0", 0}};
-    TestUtils::registerHB(cluster.metaKV_.get(), hosts);
-    meta::cpp2::SpaceDesc spaceDesc;
-    spaceDesc.set_space_name("default_space");
-    spaceDesc.set_partition_num(9);
-    spaceDesc.set_replica_factor(1);
-    client->createSpace(spaceDesc).get();
-    sleep(FLAGS_heartbeat_interval_secs + 1);
-  }
-  {
-    std::string name = "rocksdb_db_options";
-    Map map;
-    map.kvs.emplace("disable_auto_compactions", "true");
-    map.kvs.emplace("level0_file_num_compaction_trigger", "4");
-
-    // update config
-    auto setRet = client->setConfig(module, name, Value(map)).get();
-    ASSERT_TRUE(setRet.ok());
-
-    // get from meta server
-    auto getRet = client->getConfig(module, name).get();
-    ASSERT_TRUE(getRet.ok());
-    auto item = getRet.value().front();
-
-    sleep(FLAGS_heartbeat_interval_secs + 1);
-    ASSERT_EQ(listener->options["disable_auto_compactions"], "\"true\"");
-    ASSERT_EQ(listener->options["level0_file_num_compaction_trigger"], "\"4\"");
-  }
-}
-
 TEST(MetaClientTest, HostsTest) {
   FLAGS_heartbeat_interval_secs = 1;
   fs::TempDir rootPath("/tmp/HostsTest.XXXXXX");
   mock::MockCluster cluster;
-  cluster.startMeta(rootPath.path(), HostAddr("127.0.0.1", 0));
+  cluster.startMeta(rootPath.path());
   cluster.initMetaClient();
   auto* client = cluster.metaClient_.get();
   {
@@ -1870,6 +1836,11 @@ TEST(MetaClientTest, AddHostsIntoNewZoneTest) {
   cluster.startMeta(rootPath.path(), HostAddr("127.0.0.1", 0));
   cluster.initMetaClient();
   auto* client = cluster.metaClient_.get();
+  {
+    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
+    auto result = client->addHosts(std::move(hosts)).get();
+    EXPECT_TRUE(result.ok());
+  }
   {
     // Add host into zone with duplicate hosts
     std::vector<HostAddr> hosts = {{"127.0.0.1", 8988}, {"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
@@ -2251,6 +2222,79 @@ TEST(MetaClientTest, RenameZoneTest) {
     ASSERT_EQ("zone_0", zones[0]);
     ASSERT_EQ("z_1", zones[1]);
     ASSERT_EQ("zone_2", zones[2]);
+  }
+}
+
+TEST(MetaClientTest, RocksdbOptionsTest) {
+  FLAGS_heartbeat_interval_secs = 1;
+  fs::TempDir rootPath("/tmp/RocksdbOptionsTest.XXXXXX");
+
+  mock::MockCluster cluster;
+  cluster.startMeta(rootPath.path());
+  // auto* kv = cluster.metaKV_.get();
+  // TestUtils::createSomeHosts(kv, {{"0", 0}});
+
+  MetaClientOptions options;
+  // Now the `--local_config' option only affect if initialize the configuration
+  // from meta not affect `show/update/get configs'
+  options.skipConfig_ = false;
+
+  cluster.initMetaClient(std::move(options));
+  auto* client = cluster.metaClient_.get();
+  {
+    // Add single host
+    std::vector<HostAddr> hosts = {{"0", 0}};
+    auto result = client->addHosts(std::move(hosts)).get();
+    EXPECT_TRUE(result.ok());
+  }
+
+  auto listener = std::make_unique<TestListener>();
+  auto module = cpp2::ConfigModule::STORAGE;
+  auto mode = meta::cpp2::ConfigMode::MUTABLE;
+
+  client->registerListener(listener.get());
+  client->gflagsModule_ = module;
+
+  // mock some rocksdb gflags to meta
+  {
+    auto name = "rocksdb_db_options";
+    std::vector<cpp2::ConfigItem> configItems;
+    FLAGS_rocksdb_db_options =
+        R"({"disable_auto_compactions":"false","write_buffer_size":"1048576"})";
+    Map map;
+    map.kvs.emplace("disable_auto_compactions", "false");
+    map.kvs.emplace("write_buffer_size", "1048576");
+    configItems.emplace_back(initConfigItem(module, name, mode, Value(map)));
+    client->regConfig(configItems);
+  }
+  {
+    std::vector<HostAddr> hosts = {{"0", 0}};
+    TestUtils::registerHB(cluster.metaKV_.get(), hosts);
+    meta::cpp2::SpaceDesc spaceDesc;
+    spaceDesc.set_space_name("default_space");
+    spaceDesc.set_partition_num(9);
+    spaceDesc.set_replica_factor(1);
+    client->createSpace(spaceDesc).get();
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+  }
+  {
+    std::string name = "rocksdb_db_options";
+    Map map;
+    map.kvs.emplace("disable_auto_compactions", "true");
+    map.kvs.emplace("level0_file_num_compaction_trigger", "4");
+
+    // update config
+    auto setRet = client->setConfig(module, name, Value(map)).get();
+    ASSERT_TRUE(setRet.ok());
+
+    // get from meta server
+    auto getRet = client->getConfig(module, name).get();
+    ASSERT_TRUE(getRet.ok());
+    auto item = getRet.value().front();
+
+    sleep(FLAGS_heartbeat_interval_secs + 1);
+    ASSERT_EQ(listener->options["disable_auto_compactions"], "\"true\"");
+    ASSERT_EQ(listener->options["level0_file_num_compaction_trigger"], "\"4\"");
   }
 }
 
