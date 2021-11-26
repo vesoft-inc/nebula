@@ -5,6 +5,8 @@
 
 #include "meta/processors/admin/VerifyClientVersionProcessor.h"
 
+#include "meta/KVBasedClusterIdMan.h"
+#include "meta/MetaVersionMan.h"
 #include "version/Version.h"
 
 DEFINE_bool(enable_client_white_list, true, "Turn on/off the client white list.");
@@ -25,6 +27,12 @@ void VerifyClientVersionProcessor::process(const cpp2::VerifyClientVersionReq& r
         req.get_version().c_str(),
         FLAGS_client_white_list.c_str()));
   } else {
+    auto host = req.get_host();
+    auto versionKey = MetaKeyUtils::versionKey(host);
+    auto versionVal = MetaKeyUtils::versionVal(req.get_version().c_str());
+    std::vector<kvstore::KV> versionData;
+    versionData.emplace_back(std::move(versionKey), std::move(versionVal));
+    doSyncPut(versionData);
     resp_.set_code(nebula::cpp2::ErrorCode::SUCCEEDED);
   }
   onFinished();

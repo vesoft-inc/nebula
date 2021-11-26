@@ -122,6 +122,12 @@ class MetaKeyUtils final {
 
   static HostAddr parseHostKeyV2(folly::StringPiece key);
 
+  static std::string versionKey(const HostAddr& h);
+
+  static std::string versionVal(const std::string& version);
+
+  static std::string parseVersion(folly::StringPiece val);
+
   static std::string leaderKey(std::string ip, Port port);
 
   static std::string leaderKeyV2(std::string addr, Port port);

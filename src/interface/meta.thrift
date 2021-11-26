@@ -561,8 +561,6 @@ struct HBReq {
     4: optional map<common.GraphSpaceID, list<LeaderInfo>>
         (cpp.template = "std::unordered_map") leader_partIds;
     5: binary     git_info_sha,
-    // version of binary
-    6: optional binary version,
 }
 
 struct IndexFieldDef {
@@ -1106,6 +1104,7 @@ struct VerifyClientVersionResp {
 
 struct VerifyClientVersionReq {
     1: required binary version = common.version;
+    3: common.HostAddr host;
 }
 
 service MetaService {
