@@ -10,7 +10,7 @@
 #include "graph/planner/plan/Mutate.h"
 #include "graph/service/GraphFlags.h"
 
-using nebula::storage::GraphStorageClient;
+using nebula::storage::StorageClient;
 
 namespace nebula {
 namespace graph {
@@ -23,7 +23,7 @@ folly::Future<Status> InsertVerticesExecutor::insertVertices() {
   auto *ivNode = asNode<InsertVertices>(node());
   time::Duration addVertTime;
   auto plan = qctx()->plan();
-  GraphStorageClient::CommonRequestParam param(
+  StorageClient::CommonRequestParam param(
       ivNode->getSpace(), qctx()->rctx()->session()->id(), plan->id(), plan->isProfileEnabled());
   return qctx()
       ->getStorageClient()
@@ -47,7 +47,7 @@ folly::Future<Status> InsertEdgesExecutor::insertEdges() {
   auto *ieNode = asNode<InsertEdges>(node());
   time::Duration addEdgeTime;
   auto plan = qctx()->plan();
-  GraphStorageClient::CommonRequestParam param(
+  StorageClient::CommonRequestParam param(
       ieNode->getSpace(), qctx()->rctx()->session()->id(), plan->id(), plan->isProfileEnabled());
   param.useExperimentalFeature = FLAGS_enable_experimental_feature;
   return qctx()

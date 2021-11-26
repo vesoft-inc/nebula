@@ -96,10 +96,8 @@ Feature: tag and edge index tests from pytest
       SHOW TAG INDEX STATUS
       """
     Then the result should contain:
-      | Name                 | Index Status |
-      | 'single_tag_index'   | 'FINISHED'   |
-      | 'multi_tag_index'    | 'FINISHED'   |
-      | 'disorder_tag_index' | 'FINISHED'   |
+      | Name                                                  | Index Status |
+      | 'single_tag_index,multi_tag_index,disorder_tag_index' | 'FINISHED'   |
     When executing query:
       """
       LOOKUP ON tag_1 WHERE tag_1.col2 == 18 YIELD tag_1.col1
@@ -333,10 +331,8 @@ Feature: tag and edge index tests from pytest
       SHOW EDGE INDEX STATUS
       """
     Then the result should contain:
-      | Name                  | Index Status |
-      | 'single_edge_index'   | 'FINISHED'   |
-      | 'multi_edge_index'    | 'FINISHED'   |
-      | 'disorder_edge_index' | 'FINISHED'   |
+      | Name                                                     | Index Status |
+      | 'single_edge_index,multi_edge_index,disorder_edge_index' | 'FINISHED'   |
     # Lookup
     When executing query:
       """
