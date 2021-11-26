@@ -40,7 +40,7 @@ class StoragePlan {
     if (firstLoop_) {
       auto output = std::make_unique<RelNode<T>>();
       for (const auto& node : nodes_) {
-        if (node->isRoot_) {
+        if (!node->isDependent_) {
           // add dependency of output node
           output->addDependency(node.get());
         }
@@ -58,7 +58,7 @@ class StoragePlan {
     if (firstLoop_) {
       auto output = std::make_unique<RelNode<T>>();
       for (const auto& node : nodes_) {
-        if (node->isRoot_) {
+        if (node->isDependent_) {
           // add dependency of output node
           output->addDependency(node.get());
         }
