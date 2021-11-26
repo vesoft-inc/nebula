@@ -36,7 +36,7 @@ template <typename T>
 class StoragePlan {
  public:
   nebula::cpp2::ErrorCode go(PartitionID partId, const T& input) {
-    // find all nodes without dependents, and a dummy output node depends on all these nodes.
+    // find all nodes without dependents, and a dummy output node depends on all those nodes.
     if (firstLoop_) {
       auto output = std::make_unique<RelNode<T>>();
       for (const auto& node : nodes_) {
@@ -54,7 +54,7 @@ class StoragePlan {
   }
 
   nebula::cpp2::ErrorCode go(PartitionID partId) {
-    // find all nodes without dependents, and a dummy output node depends on all these nodes.
+    // find all nodes without dependents, and a dummy output node depends on all those nodes.
     if (firstLoop_) {
       auto output = std::make_unique<RelNode<T>>();
       for (const auto& node : nodes_) {
