@@ -17,6 +17,8 @@ import fcntl
 from pathlib import Path
 from contextlib import closing
 
+from tests.common.constants import TMP_DIR
+
 NEBULA_START_COMMAND_FORMAT = "bin/nebula-{} --flagfile conf/nebula-{}.conf {}"
 
 
@@ -31,7 +33,6 @@ class NebulaProcess(object):
         self.params = params
         self.host = '127.0.0.1'
         self.pid = None
-        pass
 
     def update_param(self, params):
         self.params.update(params)
@@ -130,7 +131,7 @@ class NebulaService(object):
         self.ca_signed = ca_signed
         self.debug_log = debug_log
         self.ports_per_process = 4
-        self.lock_file = os.path.join(self.build_dir, "cluster_port.lock")
+        self.lock_file = os.path.join(TMP_DIR, "cluster_port.lock")
         self.delimiter = "\n"
         self._make_params(**kwargs)
         self.init_process()
