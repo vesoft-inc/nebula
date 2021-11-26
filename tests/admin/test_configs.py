@@ -37,6 +37,8 @@ class TestConfigs(NebulaTestSuite):
         self.check_resp_succeeded(resp)
 
         # update flag to an invalid value, expected to fail
+        resp = self.client.execute('UPDATE CONFIGS graph:session_idle_timeout_secs={}'.format(0))
+        self.check_resp_failed(resp)
         resp = self.client.execute('UPDATE CONFIGS graph:session_idle_timeout_secs={}'.format(999999))
         self.check_resp_failed(resp)
 
