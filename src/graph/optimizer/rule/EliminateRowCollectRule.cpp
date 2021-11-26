@@ -53,12 +53,6 @@ StatusOr<OptRule::TransformResult> EliminateRowCollectRule::transform(
   newProj->setOutputVar(dataCollect->outputVar());
   auto newProjGroupNode = OptGroupNode::create(octx, newProj, dataCollectGroupNode->group());
 
-  // auto newEdgeIndexFullScan = static_cast<EdgeIndexFullScan *>(indexScan->clone());
-  // newEdgeIndexFullScan->setLimit(limitRows);
-  // auto newEdgeIndexFullScanGroup = OptGroup::create(octx);
-  // auto newEdgeIndexFullScanGroupNode =
-  // newEdgeIndexFullScanGroup->makeGroupNode(newEdgeIndexFullScan);
-
   for (auto dep : projGroupNode->dependencies()) {
     newProjGroupNode->dependsOn(dep);
   }

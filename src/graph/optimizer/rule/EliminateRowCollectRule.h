@@ -10,16 +10,6 @@
 namespace nebula {
 namespace opt {
 
-/**
- * Combines two [[Project]] nodes into one
- * Required conditions:
- *  1. Match the pattern
- *  2. Expressions between nodes cannot be referenced more than once
- * Benefits:
- *  1. reduce the copy of memory between nodes
- *  2. reduces expression overhead in some cases(similar to column pruning)
- */
-
 class EliminateRowCollectRule final : public OptRule {
  public:
   const Pattern &pattern() const override;
