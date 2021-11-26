@@ -29,7 +29,7 @@ Status QueryEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor
   metaClient_ = metaClient;
   schemaManager_ = meta::ServerBasedSchemaManager::create(metaClient_);
   indexManager_ = meta::ServerBasedIndexManager::create(metaClient_);
-  storage_ = std::make_unique<storage::GraphStorageClient>(ioExecutor, metaClient_);
+  storage_ = std::make_unique<storage::StorageClient>(ioExecutor, metaClient_);
   charsetInfo_ = CharsetInfo::instance();
 
   PlannersRegister::registerPlanners();

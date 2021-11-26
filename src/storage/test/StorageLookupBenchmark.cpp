@@ -5,7 +5,7 @@
 
 #include <folly/Benchmark.h>
 
-#include "clients/storage/GraphStorageClient.h"
+#include "clients/storage/StorageClient.h"
 #include "codec/RowWriter.h"
 #include "common/base/Base.h"
 #include "common/fs/FileUtils.h"
