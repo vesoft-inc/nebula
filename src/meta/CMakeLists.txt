@@ -44,15 +44,12 @@ nebula_add_library(
     processors/kv/ScanProcessor.cpp
     processors/admin/HBProcessor.cpp
     processors/user/AuthenticationProcessor.cpp
-    processors/admin/BalanceProcessor.cpp
     processors/admin/CreateSnapshotProcessor.cpp
     processors/admin/DropSnapshotProcessor.cpp
     processors/admin/ListSnapshotsProcessor.cpp
-    processors/admin/Balancer.cpp
-    processors/admin/BalancePlan.cpp
-    processors/admin/BalanceTask.cpp
+    processors/job/BalancePlan.cpp
+    processors/job/BalanceTask.cpp
     processors/admin/AdminClient.cpp
-    processors/admin/LeaderBalanceProcessor.cpp
     processors/admin/SnapShot.cpp
     processors/admin/CreateBackupProcessor.cpp
     processors/admin/RestoreProcessor.cpp
@@ -88,11 +85,6 @@ nebula_add_library(
     processors/zone/GetZoneProcessor.cpp
     processors/zone/ListZonesProcessor.cpp
     processors/zone/UpdateZoneProcessor.cpp
-    processors/zone/AddGroupProcessor.cpp
-    processors/zone/DropGroupProcessor.cpp
-    processors/zone/GetGroupProcessor.cpp
-    processors/zone/ListGroupsProcessor.cpp
-    processors/zone/UpdateGroupProcessor.cpp
     processors/listener/ListenerProcessor.cpp
     processors/session/SessionManagerProcessor.cpp
 )
@@ -118,11 +110,10 @@ set(meta_test_deps
     $<TARGET_OBJECTS:meta_version_man_obj>
     $<TARGET_OBJECTS:meta_v1_thrift_obj>
     $<TARGET_OBJECTS:meta_data_upgrade_obj>
-    $<TARGET_OBJECTS:general_storage_service_handler>
     $<TARGET_OBJECTS:storage_admin_service_handler>
     $<TARGET_OBJECTS:graph_storage_service_handler>
     $<TARGET_OBJECTS:storage_transaction_executor>
-    $<TARGET_OBJECTS:graph_storage_client_obj>
+    $<TARGET_OBJECTS:storage_client_obj>
     $<TARGET_OBJECTS:storage_client_base_obj>
     $<TARGET_OBJECTS:internal_storage_client_obj>
     $<TARGET_OBJECTS:storage_common_obj>
@@ -132,6 +123,7 @@ set(meta_test_deps
     $<TARGET_OBJECTS:disk_man_obj>
     $<TARGET_OBJECTS:keyutils_obj>
     $<TARGET_OBJECTS:meta_keyutils_obj>
+    $<TARGET_OBJECTS:log_str_list_iterator_obj>
     $<TARGET_OBJECTS:meta_client_obj>
     $<TARGET_OBJECTS:file_based_cluster_id_man_obj>
     $<TARGET_OBJECTS:ws_obj>

@@ -136,6 +136,12 @@ std::unique_ptr<PlanNodeDescription> ChangePassword::explain() const {
   return desc;
 }
 
+std::unique_ptr<PlanNodeDescription> DescribeUser::explain() const {
+  auto desc = SingleDependencyNode::explain();
+  addDescription("username", *username_, desc.get());
+  return desc;
+}
+
 std::unique_ptr<PlanNodeDescription> ListUserRoles::explain() const {
   auto desc = SingleDependencyNode::explain();
   addDescription("username", *username_, desc.get());
@@ -153,18 +159,6 @@ std::unique_ptr<PlanNodeDescription> SubmitJob::explain() const {
   addDescription("operation", apache::thrift::util::enumNameSafe(op_), desc.get());
   addDescription("command", apache::thrift::util::enumNameSafe(cmd_), desc.get());
   addDescription("parameters", folly::toJson(util::toJson(params_)), desc.get());
-  return desc;
-}
-
-std::unique_ptr<PlanNodeDescription> Balance::explain() const {
-  auto desc = SingleDependencyNode::explain();
-  addDescription("deleteHosts", folly::toJson(util::toJson(deleteHosts_)), desc.get());
-  return desc;
-}
-
-std::unique_ptr<PlanNodeDescription> ShowBalance::explain() const {
-  auto desc = SingleDependencyNode::explain();
-  addDescription("balanceId", util::toJson(id_), desc.get());
   return desc;
 }
 

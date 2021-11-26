@@ -5,34 +5,47 @@
 
 namespace cpp nebula.raftex
 
-cpp_include "common/thrift/ThriftTypes.h"
+include "common.thrift"
+
+enum Role {
+    LEADER      = 1, // the leader
+    FOLLOWER    = 2; // following a leader
+    CANDIDATE   = 3; // Has sent AskForVote request
+    LEARNER     = 4; // same with FOLLOWER, except that it does
+                     // not vote in leader election
+} (cpp.enum_strict)
+
+enum Status {
+    STARTING            = 0; // The part is starting, not ready for service
+    RUNNING             = 1; // The part is running
+    STOPPED             = 2; // The part has been stopped
+    WAITING_SNAPSHOT    = 3; // Waiting for the snapshot.
+} (cpp.enum_strict)
 
 enum ErrorCode {
     SUCCEEDED = 0;
 
-    E_LOG_GAP = -1;
-    E_LOG_STALE = -2;
-    E_MISSING_COMMIT = -3;
-    E_WAITING_SNAPSHOT = -4;    // The follower is waiting a snapshot
+    E_UNKNOWN_PART = -1;
 
-    E_UNKNOWN_PART = -5;
-    E_TERM_OUT_OF_DATE = -6;
-    E_LAST_LOG_TERM_TOO_OLD = -7;
-    E_BAD_STATE = -8;
-    E_WRONG_LEADER = -9;
-    E_WAL_FAIL = -10;
-    E_NOT_READY = -11;
+    // Raft consensus errors
+    E_LOG_GAP = -2;
+    E_LOG_STALE = -3;
+    E_TERM_OUT_OF_DATE = -4;
+
+    // Raft state errors
+    E_WAITING_SNAPSHOT = -5;            // The follower is waiting a snapshot
+    E_BAD_STATE = -6;
+    E_WRONG_LEADER = -7;
+    E_NOT_READY = -8;
+    E_BAD_ROLE = -9,
 
     // Local errors
-    E_HOST_STOPPED = -12;
-    E_NOT_A_LEADER = -13;
-    E_HOST_DISCONNECTED = -14;
-    E_TOO_MANY_REQUESTS = -15;
-    E_PERSIST_SNAPSHOT_FAILED = -16;
-
-    E_BAD_ROLE = -17,
-
-    E_EXCEPTION = -20;          // An thrift internal exception was thrown
+    E_WAL_FAIL = -10;
+    E_HOST_STOPPED = -11;
+    E_TOO_MANY_REQUESTS = -12;
+    E_PERSIST_SNAPSHOT_FAILED = -13;
+    E_RPC_EXCEPTION = -14;              // An thrift internal exception was thrown
+    E_NO_WAL_FOUND = -15;
 }
 
 typedef i64 (cpp.type = "nebula::ClusterID") ClusterID
@@ -52,18 +65,13 @@ struct AskForVoteRequest {
     5: TermID       term;               // Proposed term
     6: LogID        last_log_id;        // The last received log id
     7: TermID       last_log_term;      // The term receiving the last log
+    8: bool         is_pre_vote;        // Is pre vote or not
 }
 
 
 // Response message for the vote call
 struct AskForVoteResponse {
     1: ErrorCode error_code;
-}
-
-
-struct LogEntry {
-    1: ClusterID cluster;
-    2: binary log_str;
 }
 
 
@@ -102,9 +110,7 @@ struct AppendLogRequest {
     // which specified by log_term
     //
     10: TermID log_term;
-    11: list<LogEntry> log_str_list;
-
-    12: bool sending_snapshot;
+    11: list<common.LogEntry> log_str_list;
 }
 
 
@@ -164,9 +170,26 @@ struct SendSnapshotResponse {
     1: ErrorCode    error_code;
 }
 
+struct GetStateRequest {
+    1: GraphSpaceID space;              // Graphspace ID
+    2: PartitionID  part;               // Partition ID
+}
+
+struct GetStateResponse {
+    1: ErrorCode    error_code;
+    2: Role         role;
+    3: TermID       term;
+    4: bool         is_leader;
+    5: LogID        committed_log_id;
+    6: LogID        last_log_id;
+    7: TermID       last_log_term;
+    8: Status       status;
+}
+
 service RaftexService {
     AskForVoteResponse askForVote(1: AskForVoteRequest req);
     AppendLogResponse appendLog(1: AppendLogRequest req);
     SendSnapshotResponse sendSnapshot(1: SendSnapshotRequest req);
     HeartbeatResponse heartbeat(1: HeartbeatRequest req) (thread = 'eb');
+    GetStateResponse getState(1: GetStateRequest req);
 }

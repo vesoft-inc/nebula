@@ -227,7 +227,7 @@ class ListenerBasicTest : public ::testing::TestWithParam<std::tuple<int32_t, in
       dummy->start(std::move(raftPeers));
       listeners_[index]->spaceListeners_[spaceId_]->listeners_[partId].emplace(
           meta::cpp2::ListenerType::UNKNOWN, dummy);
-      dummys_.emplace(partId, dummy);
+      dummies_.emplace(partId, dummy);
     }
   }
 
@@ -287,9 +287,9 @@ class ListenerBasicTest : public ::testing::TestWithParam<std::tuple<int32_t, in
   std::vector<HostAddr> listenerHosts_;
   std::vector<std::unique_ptr<NebulaStore>> stores_;
   std::vector<std::unique_ptr<NebulaStore>> listeners_;
-  // dummys_ is a copy of Listener in listeners_, for convience to check
+  // dummies_ is a copy of Listener in listeners_, for convenience to check
   // consensus
-  std::unordered_map<PartitionID, std::shared_ptr<DummyListener>> dummys_;
+  std::unordered_map<PartitionID, std::shared_ptr<DummyListener>> dummies_;
 };
 
 class ListenerAdvanceTest : public ListenerBasicTest {
@@ -338,7 +338,7 @@ TEST_P(ListenerBasicTest, SimpleTest) {
 
   LOG(INFO) << "Check listener's data";
   for (int32_t partId = 1; partId <= partCount_; partId++) {
-    auto dummy = dummys_[partId];
+    auto dummy = dummies_[partId];
     const auto& data = dummy->data();
     CHECK_EQ(100, data.size());
     for (int32_t i = 0; i < static_cast<int32_t>(data.size()); i++) {
@@ -367,7 +367,7 @@ TEST_P(ListenerBasicTest, TransLeaderTest) {
     baton.wait();
   }
 
-  LOG(INFO) << "Trasfer all part leader to first replica";
+  LOG(INFO) << "Transfer all part leader to first replica";
   auto targetAddr = NebulaStore::getRaftAddr(peers_[0]);
   for (int32_t partId = 1; partId <= partCount_; partId++) {
     folly::Baton<true, std::atomic> baton;
@@ -408,7 +408,7 @@ TEST_P(ListenerBasicTest, TransLeaderTest) {
 
   LOG(INFO) << "Check listener's data";
   for (int32_t partId = 1; partId <= partCount_; partId++) {
-    auto dummy = dummys_[partId];
+    auto dummy = dummies_[partId];
     const auto& data = dummy->data();
     CHECK_EQ(200, data.size());
     for (int32_t i = 0; i < static_cast<int32_t>(data.size()); i++) {
@@ -433,7 +433,7 @@ TEST_P(ListenerBasicTest, CommitSnapshotTest) {
       size += kvStr.size();
       rows.emplace_back(kvStr);
     }
-    auto dummy = dummys_[partId];
+    auto dummy = dummies_[partId];
     auto ret = dummy->commitSnapshot(rows, 100, 1, true);
     CHECK_EQ(ret.first, 100);
     CHECK_EQ(ret.second, size);
@@ -441,7 +441,7 @@ TEST_P(ListenerBasicTest, CommitSnapshotTest) {
 
   LOG(INFO) << "Check listener's data";
   for (int32_t partId = 1; partId <= partCount_; partId++) {
-    auto dummy = dummys_[partId];
+    auto dummy = dummies_[partId];
     const auto& data = dummy->data();
     CHECK_EQ(100, data.size());
     for (int32_t i = 0; i < static_cast<int32_t>(data.size()); i++) {
@@ -477,29 +477,29 @@ TEST_P(ListenerBasicTest, ListenerResetByWalTest) {
   sleep(FLAGS_raft_heartbeat_interval_secs + 3);
 
   for (int32_t partId = 1; partId <= partCount_; partId++) {
-    auto dummy = dummys_[partId];
+    auto dummy = dummies_[partId];
     const auto& data = dummy->data();
     CHECK_EQ(100000, data.size());
   }
 
   for (int32_t partId = 1; partId <= partCount_; partId++) {
-    dummys_[partId]->resetListener();
-    CHECK_EQ(0, dummys_[partId]->data().size());
-    CHECK_EQ(0, dummys_[partId]->getApplyId());
+    dummies_[partId]->resetListener();
+    CHECK_EQ(0, dummies_[partId]->data().size());
+    CHECK_EQ(0, dummies_[partId]->getApplyId());
   }
 
   sleep(FLAGS_raft_heartbeat_interval_secs + 3);
 
   for (int32_t partId = 1; partId <= partCount_; partId++) {
     while (true) {
-      if (dummys_[partId]->pursueLeaderDone()) {
+      if (dummies_[partId]->pursueLeaderDone()) {
         break;
       }
     }
   }
 
   for (int32_t partId = 1; partId <= partCount_; partId++) {
-    auto dummy = dummys_[partId];
+    auto dummy = dummies_[partId];
     const auto& data = dummy->data();
     CHECK_EQ(100000, data.size());
   }
@@ -510,7 +510,7 @@ TEST_P(ListenerAdvanceTest, ListenerResetBySnapshotTest) {
     for (int32_t i = 0; i < 10; i++) {
       std::vector<KV> data;
       for (int32_t j = 0; j < 1000; j++) {
-        auto vKey = NebulaKeyUtils::vertexKey(8, partId, folly::to<std::string>(i * 1000 + j), 5);
+        auto vKey = NebulaKeyUtils::tagKey(8, partId, folly::to<std::string>(i * 1000 + j), 5);
         data.emplace_back(std::move(vKey), folly::stringPrintf("val_%d_%d", partId, i * 1000 + j));
       }
       auto leader = findLeader(partId);
@@ -529,7 +529,7 @@ TEST_P(ListenerAdvanceTest, ListenerResetBySnapshotTest) {
   sleep(2 * FLAGS_raft_heartbeat_interval_secs);
 
   for (int32_t partId = 1; partId <= partCount_; partId++) {
-    auto dummy = dummys_[partId];
+    auto dummy = dummies_[partId];
     const auto& data = dummy->data();
     CHECK_EQ(10000, data.size());
   }
@@ -550,9 +550,9 @@ TEST_P(ListenerAdvanceTest, ListenerResetBySnapshotTest) {
   }
 
   for (int32_t partId = 1; partId <= partCount_; partId++) {
-    dummys_[partId]->resetListener();
-    CHECK_EQ(0, dummys_[partId]->getApplyId());
-    auto termAndId = dummys_[partId]->committedId();
+    dummies_[partId]->resetListener();
+    CHECK_EQ(0, dummies_[partId]->getApplyId());
+    auto termAndId = dummies_[partId]->committedId();
     CHECK_EQ(0, termAndId.first);
     CHECK_EQ(0, termAndId.second);
   }
@@ -563,10 +563,10 @@ TEST_P(ListenerAdvanceTest, ListenerResetBySnapshotTest) {
   for (int32_t partId = 1; partId <= partCount_; partId++) {
     auto retry = 0;
     while (retry++ < 6) {
-      auto result = dummys_[partId]->committedSnapshot();
+      auto result = dummies_[partId]->committedSnapshot();
       if (result.first >= 10000) {
         partResult.emplace_back(true);
-        ASSERT_EQ(10000, dummys_[partId]->data().size());
+        ASSERT_EQ(10000, dummies_[partId]->data().size());
         break;
       }
       usleep(1000);
@@ -579,12 +579,13 @@ TEST_P(ListenerAdvanceTest, ListenerResetBySnapshotTest) {
 TEST_P(ListenerSnapshotTest, SnapshotRateLimitTest) {
   for (int32_t partId = 1; partId <= partCount_; partId++) {
     // Write 10000 kvs in a part, key size is sizeof(partId) + vId + tagId = 4 + 8 + 4 = 16,
-    // value size is 24, so total size of a kv is 40. The snapshot size of a parition will be around
-    // 400Kb, and the rate limit is set to 40Kb, so snapshot will be sent at least 10 seconds.
+    // value size is 24, so total size of a kv is 40. The snapshot size of a partition will be
+    // around 400Kb, and the rate limit is set to 40Kb, so snapshot will be sent at least 10
+    // seconds.
     for (int32_t i = 0; i < 10; i++) {
       std::vector<KV> data;
       for (int32_t j = 0; j < 1000; j++) {
-        auto vKey = NebulaKeyUtils::vertexKey(8, partId, folly::to<std::string>(i * 1000 + j), 5);
+        auto vKey = NebulaKeyUtils::tagKey(8, partId, folly::to<std::string>(i * 1000 + j), 5);
         data.emplace_back(std::move(vKey), std::string(24, 'X'));
       }
       auto leader = findLeader(partId);
@@ -603,7 +604,7 @@ TEST_P(ListenerSnapshotTest, SnapshotRateLimitTest) {
   sleep(2 * FLAGS_raft_heartbeat_interval_secs);
 
   for (int32_t partId = 1; partId <= partCount_; partId++) {
-    auto dummy = dummys_[partId];
+    auto dummy = dummies_[partId];
     const auto& data = dummy->data();
     CHECK_EQ(10000, data.size());
   }
@@ -624,27 +625,27 @@ TEST_P(ListenerSnapshotTest, SnapshotRateLimitTest) {
   }
 
   for (int32_t partId = 1; partId <= partCount_; partId++) {
-    dummys_[partId]->resetListener();
-    CHECK_EQ(0, dummys_[partId]->getApplyId());
-    auto termAndId = dummys_[partId]->committedId();
+    dummies_[partId]->resetListener();
+    CHECK_EQ(0, dummies_[partId]->getApplyId());
+    auto termAndId = dummies_[partId]->committedId();
     CHECK_EQ(0, termAndId.first);
     CHECK_EQ(0, termAndId.second);
   }
 
   // listener will try to pull snapshot for now. Since we have limit the snapshot send rate to 40Kb
   // in 1 second and batch size will be 10Kb, it would take at least 10 second to finish. Besides,
-  // there be at least 40 batchs
+  // there be at least 40 batches
   auto startTime = time::WallClock::fastNowInSec();
 
   while (true) {
     std::vector<bool> partResult;
     for (int32_t partId = 1; partId <= partCount_; partId++) {
-      auto result = dummys_[partId]->committedSnapshot();
+      auto result = dummies_[partId]->committedSnapshot();
       if (result.first >= 10000) {
         partResult.emplace_back(true);
-        ASSERT_EQ(10000, dummys_[partId]->data().size());
+        ASSERT_EQ(10000, dummies_[partId]->data().size());
         ASSERT_GE(time::WallClock::fastNowInSec() - startTime, 10);
-        ASSERT_GE(dummys_[partId]->snapshotBatchCount(), 40);
+        ASSERT_GE(dummies_[partId]->snapshotBatchCount(), 40);
       }
     }
     if (static_cast<int32_t>(partResult.size()) == partCount_) {

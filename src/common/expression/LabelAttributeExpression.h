@@ -67,11 +67,11 @@ class LabelAttributeExpression final : public Expression {
   }
 
   void writeTo(Encoder&) const override {
-    LOG(FATAL) << "LabelAttributeExpression not supporte to encode.";
+    LOG(FATAL) << "LabelAttributeExpression not supported to encode.";
   }
 
   void resetFrom(Decoder&) override {
-    LOG(FATAL) << "LabelAttributeExpression not supporte to decode.";
+    LOG(FATAL) << "LabelAttributeExpression not supported to decode.";
   }
 
  private:

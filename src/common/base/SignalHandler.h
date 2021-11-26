@@ -12,7 +12,7 @@
 #include "common/base/Status.h"
 
 /**
- * SignalHandler is a singleton to do the basic signal hanling,
+ * SignalHandler is a singleton to do the basic signal handling,
  * mainly used in a daemon executable.
  *
  * By default, it ignores SIGPIPE and SIGHUP as we usually do.
@@ -32,7 +32,7 @@ class SignalHandler final {
 
   /**
    * To install one or several signals to handle.
-   * Upon any signal arrives, the cooresponding handler would be invoked,
+   * Upon any signal arrives, the corresponding handler would be invoked,
    * with an argument holding the informations about the signal and the sender.
    * The handler typically prints out the info and do some other things,
    * e.g. stop the process on SIGTERM.

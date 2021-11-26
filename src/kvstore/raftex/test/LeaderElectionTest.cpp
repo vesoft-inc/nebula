@@ -110,7 +110,7 @@ TEST(LeaderElection, LeaderCrash) {
   services[idx]->addPartition(copies.back());
   copies.back()->start(getPeers(allHosts, allHosts[idx]));
 
-  // Wait untill all copies agree on the same leader
+  // Wait until all copies agree on the same leader
   waitUntilLeaderElected(copies, leader);
 
   // Check all hosts agree on the same leader

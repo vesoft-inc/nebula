@@ -60,7 +60,7 @@ Feature: UnaryExpression
       | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
       | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       |
       | ("Steve Nash" :player{age: 45, name: "Steve Nash"})                                                         |
-      | ("Shaquile O'Neal" :player{age: 47, name: "Shaquile O'Neal"})                                               |
+      | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})                                             |
       | ("Ray Allen" :player{age: 43, name: "Ray Allen"})                                                           |
       | ("Boris Diaw" :player{age: 36, name: "Boris Diaw"})                                                         |
       | ("Paul Gasol" :player{age: 38, name: "Paul Gasol"})                                                         |
@@ -93,14 +93,11 @@ Feature: UnaryExpression
       | ("Steve Nash" :player{age: 45, name: "Steve Nash"})                                                         |
       | ("Grant Hill" :player{age: 46, name: "Grant Hill"})                                                         |
       | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
-      | ("Shaquile O'Neal" :player{age: 47, name: "Shaquile O'Neal"})                                               |
+      | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})                                             |
     And the execution plan should be:
-      | id | name        | dependencies | operator info                                      |
-      | 10 | Project     | 12           |                                                    |
-      | 12 | Filter      | 7            |                                                    |
-      | 7  | Project     | 6            |                                                    |
-      | 6  | Project     | 5            |                                                    |
-      | 5  | Filter      | 14           |                                                    |
-      | 14 | GetVertices | 11           |                                                    |
-      | 11 | IndexScan   | 0            | {"indexCtx": {"columnHints":{"scanType":"RANGE"}}} |
-      | 0  | Start       |              |                                                    |
+      | id | name           | dependencies | operator info |
+      | 9  | Project        | 8            |               |
+      | 8  | Filter         | 2            |               |
+      | 2  | AppendVertices | 6            |               |
+      | 6  | IndexScan      | 0            |               |
+      | 0  | Start          |              |               |

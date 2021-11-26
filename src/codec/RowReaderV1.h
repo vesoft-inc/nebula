@@ -41,7 +41,7 @@ class RowReaderV1 : public RowReader {
  private:
   int32_t headerLen_ = 0;
   int32_t numBytesForOffset_ = 0;
-  // Block offet value is composed by two integers. The first one is
+  // Block offset value is composed by two integers. The first one is
   // the block offset, the second one is the largest index being visited
   // in the block. This index is zero-based
   mutable std::vector<std::pair<int64_t, uint8_t>> blockOffsets_;
@@ -53,7 +53,7 @@ class RowReaderV1 : public RowReader {
  private:
   RowReaderV1() = default;
 
-  // Process the row header infomation
+  // Process the row header information
   // Returns false when the row data is invalid
   bool processHeader(folly::StringPiece row);
 
@@ -71,7 +71,7 @@ class RowReaderV1 : public RowReader {
   int64_t skipToNext(int64_t index, int64_t offset) const noexcept;
 
   // Skip to the {index}Th field
-  // The method retuns the offset of the field
+  // The method returns the offset of the field
   // It returns a negative number when the data corrupts
   int64_t skipToField(int64_t index) const noexcept;
 

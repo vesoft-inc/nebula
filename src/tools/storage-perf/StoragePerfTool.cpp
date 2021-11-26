@@ -8,7 +8,7 @@
 #include <folly/stats/TimeseriesHistogram.h>
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
-#include "clients/storage/GraphStorageClient.h"
+#include "clients/storage/StorageClient.h"
 #include "common/base/Base.h"
 #include "common/thread/GenericWorker.h"
 #include "common/time/Duration.h"
@@ -130,7 +130,7 @@ class Perf {
       edgeProps_.emplace_back(edgeSchema->getFieldName(i));
     }
 
-    graphStorageClient_ = std::make_unique<GraphStorageClient>(threadPool_, mClient_.get());
+    storageClient_ = std::make_unique<StorageClient>(threadPool_, mClient_.get());
     time::Duration duration;
 
     std::vector<std::thread> threads;
@@ -297,8 +297,8 @@ class Perf {
     for (auto i = 0; i < tokens; i++) {
       auto start = time::WallClock::fastNowInMicroSec();
 
-      GraphStorageClient::CommonRequestParam param(spaceId_, 0, 0, false);
-      graphStorageClient_
+      StorageClient::CommonRequestParam param(spaceId_, 0, 0, false);
+      storageClient_
           ->getNeighbors(param,
                          colNames,
                          vertices,
@@ -313,7 +313,7 @@ class Perf {
             if (!resps.succeeded()) {
               LOG(ERROR) << "Request failed!";
             } else {
-              VLOG(3) << "request successed!";
+              VLOG(3) << "request succeeded!";
             }
             this->finishedRequests_++;
             auto now = time::WallClock::fastNowInMicroSec();
@@ -332,8 +332,8 @@ class Perf {
     auto tokens = tokenBucket_.consumeOrDrain(FLAGS_concurrency, FLAGS_qps, FLAGS_concurrency);
     for (auto i = 0; i < tokens; i++) {
       auto start = time::WallClock::fastNowInMicroSec();
-      GraphStorageClient::CommonRequestParam param(spaceId_, 0, 0);
-      graphStorageClient_->addVertices(param, genVertices(), tagProps_, true)
+      StorageClient::CommonRequestParam param(spaceId_, 0, 0);
+      storageClient_->addVertices(param, genVertices(), tagProps_, true)
           .via(evb)
           .thenValue([this, start](auto&& resps) {
             if (!resps.succeeded()) {
@@ -342,7 +342,7 @@ class Perf {
                            << apache::thrift::util::enumNameSafe(entry.second);
               }
             } else {
-              VLOG(1) << "request successed!";
+              VLOG(1) << "request succeeded!";
             }
             this->finishedRequests_++;
             auto now = time::WallClock::fastNowInMicroSec();
@@ -361,14 +361,14 @@ class Perf {
     auto tokens = tokenBucket_.consumeOrDrain(FLAGS_concurrency, FLAGS_qps, FLAGS_concurrency);
     for (auto i = 0; i < tokens; i++) {
       auto start = time::WallClock::fastNowInMicroSec();
-      GraphStorageClient::CommonRequestParam param(spaceId_, 0, 0);
-      graphStorageClient_->addEdges(param, genEdges(), edgeProps_, true)
+      StorageClient::CommonRequestParam param(spaceId_, 0, 0);
+      storageClient_->addEdges(param, genEdges(), edgeProps_, true)
           .via(evb)
           .thenValue([this, start](auto&& resps) {
             if (!resps.succeeded()) {
               LOG(ERROR) << "Request failed!";
             } else {
-              VLOG(3) << "request successed!";
+              VLOG(3) << "request succeeded!";
             }
             this->finishedRequests_++;
             auto now = time::WallClock::fastNowInMicroSec();
@@ -394,14 +394,14 @@ class Perf {
     input.emplace_back(std::move(row));
     auto vProps = vertexProps();
     auto start = time::WallClock::fastNowInMicroSec();
-    GraphStorageClient::CommonRequestParam param(spaceId_, 0, 0);
-    graphStorageClient_->getProps(param, std::move(input), &vProps, nullptr, nullptr)
+    StorageClient::CommonRequestParam param(spaceId_, 0, 0);
+    storageClient_->getProps(param, std::move(input), &vProps, nullptr, nullptr)
         .via(evb)
         .thenValue([this, start](auto&& resps) {
           if (!resps.succeeded()) {
             LOG(ERROR) << "Request failed!";
           } else {
-            VLOG(3) << "request successed!";
+            VLOG(3) << "request succeeded!";
           }
           this->finishedRequests_++;
           auto now = time::WallClock::fastNowInMicroSec();
@@ -419,14 +419,14 @@ class Perf {
     input.emplace_back(std::move(row));
     auto eProps = edgeProps();
     auto start = time::WallClock::fastNowInMicroSec();
-    GraphStorageClient::CommonRequestParam param(spaceId_, 0, 0);
-    graphStorageClient_->getProps(param, std::move(input), nullptr, &eProps, nullptr)
+    StorageClient::CommonRequestParam param(spaceId_, 0, 0);
+    storageClient_->getProps(param, std::move(input), nullptr, &eProps, nullptr)
         .via(evb)
         .thenValue([this, start](auto&& resps) {
           if (!resps.succeeded()) {
             LOG(ERROR) << "Request failed!";
           } else {
-            VLOG(3) << "request successed!";
+            VLOG(3) << "request succeeded!";
           }
           this->finishedRequests_++;
           auto now = time::WallClock::fastNowInMicroSec();
@@ -438,7 +438,7 @@ class Perf {
 
  private:
   std::atomic_long finishedRequests_{0};
-  std::unique_ptr<GraphStorageClient> graphStorageClient_;
+  std::unique_ptr<StorageClient> storageClient_;
   std::unique_ptr<meta::MetaClient> mClient_;
   std::shared_ptr<folly::IOThreadPoolExecutor> threadPool_;
   GraphSpaceID spaceId_;

@@ -19,7 +19,7 @@ Feature: Map1 - Static value access
 
   @uncompatible
   Scenario: [2] Fail when performing property access on a non-map
-    # openCyter return : TypeError should be raised at runtime: PropertyAccessOnNonMap
+    # openCypher return : TypeError should be raised at runtime: PropertyAccessOnNonMap
     When executing query:
       """
       WITH [{num: 0}, 1] AS list

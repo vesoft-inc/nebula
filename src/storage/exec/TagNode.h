@@ -50,16 +50,22 @@ class TagNode final : public IterateNode<VertexID> {
 
     VLOG(1) << "partId " << partId << ", vId " << vId << ", tagId " << tagId_ << ", prop size "
             << props_->size();
-    key_ = NebulaKeyUtils::vertexKey(context_->vIdLen(), partId, vId, tagId_);
+    key_ = NebulaKeyUtils::tagKey(context_->vIdLen(), partId, vId, tagId_);
     ret = context_->env()->kvstore_->get(context_->spaceId(), partId, key_, &value_);
     if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
-      resetReader();
-      return nebula::cpp2::ErrorCode::SUCCEEDED;
+      return doExecute(key_, value_);
     } else if (ret == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
       // regard key not found as succeed as well, upper node will handle it
       return nebula::cpp2::ErrorCode::SUCCEEDED;
     }
     return ret;
+  }
+
+  nebula::cpp2::ErrorCode doExecute(const std::string& key, const std::string& value) {
+    key_ = key;
+    value_ = value;
+    resetReader();
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
   nebula::cpp2::ErrorCode collectTagPropsIfValid(NullHandler nullHandler,
@@ -83,7 +89,16 @@ class TagNode final : public IterateNode<VertexID> {
 
   RowReader* reader() const override { return reader_.get(); }
 
-  const std::string& getTagName() { return tagName_; }
+  const std::string& getTagName() const { return tagName_; }
+
+  TagID tagId() const { return tagId_; }
+
+  void clear() {
+    valid_ = false;
+    key_.clear();
+    value_.clear();
+    reader_.reset();
+  }
 
  private:
   void resetReader() {

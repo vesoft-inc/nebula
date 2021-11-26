@@ -31,9 +31,7 @@ class VertexIdSeek final : public StartVidFinder {
 
   StatusOr<SubPlan> transformEdge(EdgeContext* edgeCtx) override;
 
-  std::pair<std::string, Expression*> listToAnnoVarVid(QueryContext* qctx, const List& list);
-
-  std::pair<std::string, Expression*> constToAnnoVarVid(QueryContext* qctx, const Value& v);
+  std::string listToAnnoVarVid(QueryContext* qctx, const List& list);
 
  private:
   VertexIdSeek() = default;

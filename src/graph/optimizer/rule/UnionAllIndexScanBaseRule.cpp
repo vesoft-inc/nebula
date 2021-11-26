@@ -5,8 +5,6 @@
 
 #include "graph/optimizer/rule/UnionAllIndexScanBaseRule.h"
 
-#include "common/expression/Expression.h"
-#include "common/expression/LogicalExpression.h"
 #include "graph/optimizer/OptContext.h"
 #include "graph/optimizer/OptGroup.h"
 #include "graph/optimizer/OptRule.h"
@@ -15,7 +13,6 @@
 #include "graph/planner/plan/Query.h"
 #include "graph/planner/plan/Scan.h"
 #include "graph/util/ExpressionUtils.h"
-#include "interface/gen-cpp2/storage_types.h"
 
 using nebula::graph::Filter;
 using nebula::graph::IndexScan;

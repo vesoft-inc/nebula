@@ -92,8 +92,8 @@ Feature: With clause
       RETURN collect(names)
       """
     Then the result should be, in any order, with relax comparison:
-      | collect(names)                                                                   |
-      | ["Tony Parker", "Tiago Splitter", "Spurs", "Shaquile O'Neal", "Marco Belinelli"] |
+      | collect(names)                                                                    |
+      | ["Tony Parker", "Tiago Splitter", "Spurs", "Shaquille O'Neal", "Marco Belinelli"] |
     When profiling query:
       """
       MATCH (v:player)
@@ -105,7 +105,7 @@ Feature: With clause
       """
     Then the result should be, in order, with relax comparison:
       | v                                                                                                           | age |
-      | ("Shaquile O'Neal" :player{age: 47, name: "Shaquile O'Neal"})                                               | 47  |
+      | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})                                             | 47  |
       | ("Grant Hill" :player{age: 46, name: "Grant Hill"})                                                         | 46  |
       | ("Jason Kidd" :player{age: 45, name: "Jason Kidd"})                                                         | 45  |
       | ("Steve Nash" :player{age: 45, name: "Steve Nash"})                                                         | 45  |
@@ -126,18 +126,15 @@ Feature: With clause
       | ("Carmelo Anthony" :player{age: 34, name: "Carmelo Anthony"})                                               | 34  |
       | ("LeBron James" :player{age: 34, name: "LeBron James"})                                                     | 34  |
     And the execution plan should be:
-      | id | name        | dependencies | operator info         |
-      | 13 | Project     | 12           |                       |
-      | 12 | Filter      | 17           | {"isStable": "true"}  |
-      | 17 | TopN        | 9            |                       |
-      | 9  | Project     | 8            |                       |
-      | 8  | Filter      | 7            | {"isStable": "false"} |
-      | 7  | Project     | 6            |                       |
-      | 6  | Project     | 5            |                       |
-      | 5  | Filter      | 16           | {"isStable": "false"} |
-      | 16 | GetVertices | 1            |                       |
-      | 1  | IndexScan   | 0            |                       |
-      | 0  | Start       |              |                       |
+      | id | name           | dependencies | operator info |
+      | 8  | Project        | 7            |               |
+      | 7  | Filter         | 11           |               |
+      | 11 | TopN           | 4            |               |
+      | 4  | Project        | 3            |               |
+      | 3  | Project        | 2            |               |
+      | 2  | AppendVertices | 1            |               |
+      | 1  | IndexScan      | 0            |               |
+      | 0  | Start          |              |               |
     When executing query:
       """
       MATCH (v:player)-[:like]->(v2)

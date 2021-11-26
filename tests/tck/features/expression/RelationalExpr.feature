@@ -153,7 +153,7 @@ Feature: RelationalExpression
       | "Rajon Rondo"       | 33  |
       | "Ray Allen"         | 43  |
       | "Rudy Gay"          | 32  |
-      | "Shaquile O'Neal"   | 47  |
+      | "Shaquille O'Neal"  | 47  |
       | "Steve Nash"        | 45  |
       | "Tiago Splitter"    | 34  |
       | "Tim Duncan"        | 42  |
@@ -196,7 +196,7 @@ Feature: RelationalExpression
       | "Rajon Rondo"       | 33  |
       | "Ray Allen"         | 43  |
       | "Rudy Gay"          | 32  |
-      | "Shaquile O'Neal"   | 47  |
+      | "Shaquille O'Neal"  | 47  |
       | "Steve Nash"        | 45  |
       | "Tiago Splitter"    | 34  |
       | "Tim Duncan"        | 42  |
@@ -221,18 +221,15 @@ Feature: RelationalExpression
       MATCH (v:player) WHERE v.age - 5 >= 40 RETURN v
       """
     Then the result should be, in any order:
-      | v                                                             |
-      | ("Jason Kidd" :player{age: 45, name: "Jason Kidd"})           |
-      | ("Grant Hill" :player{age: 46, name: "Grant Hill"})           |
-      | ("Shaquile O'Neal" :player{age: 47, name: "Shaquile O'Neal"}) |
-      | ("Steve Nash" :player{age: 45, name: "Steve Nash"})           |
+      | v                                                               |
+      | ("Jason Kidd" :player{age: 45, name: "Jason Kidd"})             |
+      | ("Grant Hill" :player{age: 46, name: "Grant Hill"})             |
+      | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"}) |
+      | ("Steve Nash" :player{age: 45, name: "Steve Nash"})             |
     And the execution plan should be:
-      | id | name        | dependencies | operator info                                      |
-      | 10 | Project     | 13           |                                                    |
-      | 13 | Filter      | 7            |                                                    |
-      | 7  | Project     | 6            |                                                    |
-      | 6  | Project     | 5            |                                                    |
-      | 5  | Filter      | 13           |                                                    |
-      | 15 | GetVertices | 11           |                                                    |
-      | 11 | IndexScan   | 0            | {"indexCtx": {"columnHints":{"scanType":"RANGE"}}} |
-      | 0  | Start       |              |                                                    |
+      | id | name           | dependencies | operator info                                      |
+      | 9  | Project        | 8            |                                                    |
+      | 8  | Filter         | 2            |                                                    |
+      | 2  | AppendVertices | 6            |                                                    |
+      | 6  | IndexScan      | 0            | {"indexCtx": {"columnHints":{"scanType":"RANGE"}}} |
+      | 0  | Start          |              |                                                    |

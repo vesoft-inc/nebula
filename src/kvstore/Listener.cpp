@@ -49,7 +49,7 @@ void Listener::start(std::vector<HostAddr>&& peers, bool) {
 
   lastLogId_ = wal_->lastLogId();
   lastLogTerm_ = wal_->lastLogTerm();
-  term_ = proposedTerm_ = lastLogTerm_;
+  term_ = lastLogTerm_;
 
   // Set the quorum number
   quorum_ = (peers.size() + 1) / 2;
@@ -191,7 +191,7 @@ void Listener::doApply() {
         case OP_BATCH_WRITE: {
           auto batch = decodeBatchValue(log);
           for (auto& op : batch) {
-            // OP_BATCH_PUT and OP_BATCH_REMOVE_RANGE is igored
+            // OP_BATCH_PUT and OP_BATCH_REMOVE_RANGE is ignored
             if (op.first == BatchLogType::OP_BATCH_PUT) {
               data.emplace_back(op.second.first, op.second.second);
             }
@@ -273,10 +273,9 @@ void Listener::resetListener() {
   reset();
   VLOG(1) << folly::sformat(
       "The listener has been reset : leaderCommitId={},"
-      "proposedTerm={}, lastLogTerm={}, term={},"
+      "lastLogTerm={}, term={},"
       "lastApplyLogId={}",
       leaderCommitId_,
-      proposedTerm_,
       lastLogTerm_,
       term_,
       lastApplyLogId_);
