@@ -5,8 +5,6 @@
 
 #include "meta/processors/admin/VerifyClientVersionProcessor.h"
 
-#include "meta/KVBasedClusterIdMan.h"
-#include "meta/MetaVersionMan.h"
 #include "version/Version.h"
 
 DEFINE_bool(enable_client_white_list, true, "Turn on/off the client white list.");
