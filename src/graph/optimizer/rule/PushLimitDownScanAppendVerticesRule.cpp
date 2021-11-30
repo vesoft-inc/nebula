@@ -42,6 +42,15 @@ bool PushLimitDownScanAppendVerticesRule::match(OptContext *ctx,
     return false;
   }
   auto av = static_cast<const AppendVertices *>(matched.planNode({0, 0}));
+  auto *src = av->src();
+  if (src->kind() != Expression::Kind::kInputProperty &&
+      src->kind() != Expression::Kind::kVarProperty) {
+    return false;
+  }
+  auto *propExpr = static_cast<const PropertyExpression *>(src);
+  if (propExpr->prop() != kVid) {
+    return false;
+  }
   auto *filter = av->filter();
   auto *vFilter = av->vFilter();
   // Limit can't push over filter operation
@@ -84,7 +93,6 @@ StatusOr<OptRule::TransformResult> PushLimitDownScanAppendVerticesRule::transfor
   TransformResult result;
   result.eraseAll = true;
   result.newGroupNodes.emplace_back(newLimitGroupNode);
-  //  result.newGroupNodes.emplace_back(newAppendVerticesGroupNode);
   return result;
 }
 
