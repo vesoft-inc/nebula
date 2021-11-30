@@ -213,12 +213,12 @@ TEST_F(YieldValidatorTest, TypeCastTest) {
   {
     std::string query = "YIELD (MAP)(\"12\")";
     auto result = checkResult(query);
-    EXPECT_EQ(std::string(result.message()), "SyntaxError: syntax error near `(\"12\")'");
+    EXPECT_EQ(std::string(result.message()), "SyntaxError: syntax error near `)(\"12\")'");
   }
   {
     std::string query = "YIELD (SET)12";
     auto result = checkResult(query);
-    EXPECT_EQ(std::string(result.message()), "SyntaxError: syntax error near `SET'");
+    EXPECT_EQ(std::string(result.message()), "SyntaxError: syntax error near `)12'");
   }
   {
     std::string query = "YIELD (PATH)true";

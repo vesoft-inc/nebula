@@ -10,21 +10,21 @@ Feature: Map1 - Static value access
   Scenario: [1] Statically access field of a map resulting from an expression
     When executing query:
       """
-      WITH [{num: 0}, 1] AS list
-      RETURN (list[0]).num
+      WITH [{num: 0}, 1] AS l
+      RETURN (l[0]).num
       """
     Then the result should be, in any order:
-      | list[0].num |
-      | 0           |
+      | l[0].num |
+      | 0        |
 
   @uncompatible
   Scenario: [2] Fail when performing property access on a non-map
     # openCypher return : TypeError should be raised at runtime: PropertyAccessOnNonMap
     When executing query:
       """
-      WITH [{num: 0}, 1] AS list
-      RETURN (list[1]).num
+      WITH [{num: 0}, 1] AS l
+      RETURN (l[1]).num
       """
     Then the result should be, in any order:
-      | list[1].num |
-      | BAD_TYPE    |
+      | l[1].num |
+      | BAD_TYPE |
