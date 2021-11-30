@@ -103,8 +103,8 @@ class NebulaService(object):
         metad_num=1,
         storaged_num=1,
         graphd_num=1,
-        ca_signed='false',
-        debug_log='true',
+        ca_signed=False,
+        debug_log=True,
         **kwargs,
     ):
         assert graphd_num > 0 and metad_num > 0 and storaged_num > 0
