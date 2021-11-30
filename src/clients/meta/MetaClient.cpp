@@ -266,7 +266,7 @@ bool MetaClient::loadData() {
   }
 
   auto hostsRet = listHosts().get();
-  if (!ret.ok()) {
+  if (!hostsRet.ok()) {
     LOG(ERROR) << "List hosts failed, status:" << hostsRet.status();
     return false;
   }
@@ -3112,102 +3112,6 @@ folly::Future<StatusOr<std::vector<cpp2::Zone>>> MetaClient::listZones() {
       std::move(req),
       [](auto client, auto request) { return client->future_listZones(request); },
       [](cpp2::ListZonesResp&& resp) -> decltype(auto) { return resp.get_zones(); },
-      std::move(promise));
-  return future;
-}
-
-folly::Future<StatusOr<bool>> MetaClient::addGroup(std::string groupName,
-                                                   std::vector<std::string> zoneNames) {
-  cpp2::AddGroupReq req;
-  req.set_group_name(std::move(groupName));
-  req.set_zone_names(std::move(zoneNames));
-
-  folly::Promise<StatusOr<bool>> promise;
-  auto future = promise.getFuture();
-  getResponse(
-      std::move(req),
-      [](auto client, auto request) { return client->future_addGroup(request); },
-      [](cpp2::ExecResp&& resp) -> bool {
-        return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
-      },
-      std::move(promise));
-  return future;
-}
-
-folly::Future<StatusOr<bool>> MetaClient::dropGroup(std::string groupName) {
-  cpp2::DropGroupReq req;
-  req.set_group_name(std::move(groupName));
-
-  folly::Promise<StatusOr<bool>> promise;
-  auto future = promise.getFuture();
-  getResponse(
-      std::move(req),
-      [](auto client, auto request) { return client->future_dropGroup(request); },
-      [](cpp2::ExecResp&& resp) -> bool {
-        return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
-      },
-      std::move(promise));
-  return future;
-}
-
-folly::Future<StatusOr<bool>> MetaClient::addZoneIntoGroup(std::string zoneName,
-                                                           std::string groupName) {
-  cpp2::AddZoneIntoGroupReq req;
-  req.set_zone_name(zoneName);
-  req.set_group_name(groupName);
-
-  folly::Promise<StatusOr<bool>> promise;
-  auto future = promise.getFuture();
-  getResponse(
-      std::move(req),
-      [](auto client, auto request) { return client->future_addZoneIntoGroup(request); },
-      [](cpp2::ExecResp&& resp) -> bool {
-        return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
-      },
-      std::move(promise));
-  return future;
-}
-
-folly::Future<StatusOr<bool>> MetaClient::dropZoneFromGroup(std::string zoneName,
-                                                            std::string groupName) {
-  cpp2::DropZoneFromGroupReq req;
-  req.set_zone_name(zoneName);
-  req.set_group_name(groupName);
-
-  folly::Promise<StatusOr<bool>> promise;
-  auto future = promise.getFuture();
-  getResponse(
-      std::move(req),
-      [](auto client, auto request) { return client->future_dropZoneFromGroup(request); },
-      [](cpp2::ExecResp&& resp) -> bool {
-        return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
-      },
-      std::move(promise));
-  return future;
-}
-
-folly::Future<StatusOr<std::vector<std::string>>> MetaClient::getGroup(std::string groupName) {
-  cpp2::GetGroupReq req;
-  req.set_group_name(std::move(groupName));
-
-  folly::Promise<StatusOr<std::vector<std::string>>> promise;
-  auto future = promise.getFuture();
-  getResponse(
-      std::move(req),
-      [](auto client, auto request) { return client->future_getGroup(request); },
-      [](cpp2::GetGroupResp&& resp) -> decltype(auto) { return resp.get_zone_names(); },
-      std::move(promise));
-  return future;
-}
-
-folly::Future<StatusOr<std::vector<cpp2::Group>>> MetaClient::listGroups() {
-  cpp2::ListGroupsReq req;
-  folly::Promise<StatusOr<std::vector<cpp2::Group>>> promise;
-  auto future = promise.getFuture();
-  getResponse(
-      std::move(req),
-      [](auto client, auto request) { return client->future_listGroups(request); },
-      [](cpp2::ListGroupsResp&& resp) -> decltype(auto) { return resp.get_groups(); },
       std::move(promise));
   return future;
 }

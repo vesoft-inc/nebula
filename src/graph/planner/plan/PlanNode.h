@@ -121,6 +121,7 @@ class PlanNode {
     kListUserRoles,
     kListUsers,
     kListRoles,
+    kDescribeUser,
 
     // Snapshot
     kCreateSnapshot,
@@ -145,13 +146,7 @@ class PlanNode {
     kShowMetaLeader,
 
     // zone related
-    kShowGroups,
     kShowZones,
-    kAddGroup,
-    kDropGroup,
-    kDescribeGroup,
-    kAddZoneIntoGroup,
-    kDropZoneFromGroup,
     kAddZone,
     kDropZone,
     kDescribeZone,

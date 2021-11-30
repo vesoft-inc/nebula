@@ -10,7 +10,7 @@
 #include "graph/planner/plan/Query.h"
 #include "graph/util/SchemaUtil.h"
 
-using nebula::storage::GraphStorageClient;
+using nebula::storage::StorageClient;
 using nebula::storage::StorageRpcResponse;
 using nebula::storage::cpp2::GetPropResponse;
 
@@ -49,7 +49,7 @@ DataSet GetEdgesExecutor::buildRequestDataSet(const GetEdges *ge) {
 
 folly::Future<Status> GetEdgesExecutor::getEdges() {
   SCOPED_TIMER(&execTime_);
-  GraphStorageClient *client = qctx()->getStorageClient();
+  StorageClient *client = qctx()->getStorageClient();
   auto *ge = asNode<GetEdges>(node());
   if (ge->src() == nullptr || ge->type() == nullptr || ge->ranking() == nullptr ||
       ge->dst() == nullptr) {
@@ -65,10 +65,10 @@ folly::Future<Status> GetEdgesExecutor::getEdges() {
   }
 
   time::Duration getPropsTime;
-  GraphStorageClient::CommonRequestParam param(ge->space(),
-                                               qctx()->rctx()->session()->id(),
-                                               qctx()->plan()->id(),
-                                               qctx()->plan()->isProfileEnabled());
+  StorageClient::CommonRequestParam param(ge->space(),
+                                          qctx()->rctx()->session()->id(),
+                                          qctx()->plan()->id(),
+                                          qctx()->plan()->isProfileEnabled());
   return DCHECK_NOTNULL(client)
       ->getProps(param,
                  std::move(edges),

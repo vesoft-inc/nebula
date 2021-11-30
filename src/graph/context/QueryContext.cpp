@@ -11,7 +11,7 @@ namespace graph {
 QueryContext::QueryContext(RequestContextPtr rctx,
                            meta::SchemaManager* sm,
                            meta::IndexManager* im,
-                           storage::GraphStorageClient* storage,
+                           storage::StorageClient* storage,
                            meta::MetaClient* metaClient,
                            CharsetInfo* charsetInfo)
     : rctx_(std::move(rctx)),
