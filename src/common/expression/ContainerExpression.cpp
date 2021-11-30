@@ -12,9 +12,8 @@
 
 namespace nebula {
 
+// TODO(jie): toString of list should add `LIST` prefix
 std::string ListExpression::toString() const {
-  // list *expression* is not allowed to be empty
-  DCHECK(!items_.empty());
   std::string buf;
   buf.reserve(256);
 
@@ -23,7 +22,11 @@ std::string ListExpression::toString() const {
     buf += expr->toString();
     buf += ",";
   }
-  buf.back() = ']';
+  if (items_.empty()) {
+    buf += "]";
+  } else {
+    buf.back() = ']';
+  }
 
   return buf;
 }
@@ -78,9 +81,8 @@ void ListExpression::resetFrom(Decoder &decoder) {
 
 void ListExpression::accept(ExprVisitor *visitor) { visitor->visit(this); }
 
+// TODO(jie): toString of set should add `SET` prefix
 std::string SetExpression::toString() const {
-  // set *expression* is not allowed to be empty
-  DCHECK(!items_.empty());
   std::string buf;
   buf.reserve(256);
 
@@ -89,7 +91,11 @@ std::string SetExpression::toString() const {
     buf += expr->toString();
     buf += ",";
   }
-  buf.back() = '}';
+  if (items_.empty()) {
+    buf += "}";
+  } else {
+    buf.back() = '}';
+  }
 
   return buf;
 }
@@ -144,9 +150,8 @@ void SetExpression::resetFrom(Decoder &decoder) {
 
 void SetExpression::accept(ExprVisitor *visitor) { visitor->visit(this); }
 
+// TODO(jie): toString of map should add `MAP` prefix
 std::string MapExpression::toString() const {
-  // map *expression* is not allowed to be empty
-  DCHECK(!items_.empty());
   std::string buf;
   buf.reserve(256);
 
@@ -157,7 +162,11 @@ std::string MapExpression::toString() const {
     buf += kv.second->toString();
     buf += ",";
   }
-  buf.back() = '}';
+  if (items_.empty()) {
+    buf += "}";
+  } else {
+    buf.back() = '}';
+  }
 
   return buf;
 }

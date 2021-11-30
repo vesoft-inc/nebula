@@ -60,6 +60,8 @@ CHINESE_LABEL               ({U2}{U}|{U3}{U}{U}|{U4}{U}{U}{U})+
 "XOR"                       { return TokenType::KW_XOR; }
 "USE"                       { return TokenType::KW_USE; }
 "SET"                       { return TokenType::KW_SET; }
+"LIST"                      { return TokenType::KW_LIST; }
+"MAP"                       { return TokenType::KW_MAP; }
 "FROM"                      { return TokenType::KW_FROM; }
 "WHERE"                     { return TokenType::KW_WHERE; }
 "MATCH"                     { return TokenType::KW_MATCH; }
@@ -265,7 +267,6 @@ CHINESE_LABEL               ({U2}{U}|{U3}{U}{U}|{U4}{U}{U}{U})+
 "POINT"                     { return TokenType::KW_POINT; }
 "LINESTRING"                { return TokenType::KW_LINESTRING; }
 "POLYGON"                   { return TokenType::KW_POLYGON; }
-
 "TRUE"                      { yylval->boolval = true; return TokenType::BOOL; }
 "FALSE"                     { yylval->boolval = false; return TokenType::BOOL; }
 
