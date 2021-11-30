@@ -97,6 +97,20 @@ class RevokeRoleValidator final : public Validator {
   Status toPlan() override;
 };
 
+class DescribeUserValidator final : public Validator {
+ public:
+  DescribeUserValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
+    setNoSpaceRequired();
+  }
+
+ private:
+  Status validateImpl() override;
+
+  Status checkPermission() override;
+
+  Status toPlan() override;
+};
+
 class ShowRolesInSpaceValidator final : public Validator {
  public:
   ShowRolesInSpaceValidator(Sentence* sentence, QueryContext* context)

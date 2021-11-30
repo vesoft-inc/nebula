@@ -196,6 +196,8 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
    * Methods to process incoming raft requests
    *
    ****************************************************/
+  void getState(cpp2::GetStateResponse& resp);
+
   // Process the incoming leader election request
   void processAskForVoteRequest(const cpp2::AskForVoteRequest& req, cpp2::AskForVoteResponse& resp);
 
@@ -236,20 +238,8 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
            std::shared_ptr<thrift::ThriftClientManager<cpp2::RaftexServiceAsyncClient>> clientMan,
            std::shared_ptr<kvstore::DiskManager> diskMan);
 
-  enum class Status {
-    STARTING = 0,     // The part is starting, not ready for service
-    RUNNING,          // The part is running
-    STOPPED,          // The part has been stopped
-    WAITING_SNAPSHOT  // Waiting for the snapshot.
-  };
-
-  enum class Role {
-    LEADER = 1,  // the leader
-    FOLLOWER,    // following a leader
-    CANDIDATE,   // Has sent AskForVote request
-    LEARNER      // It is the same with FOLLOWER,
-                 // except it does not participate in leader election
-  };
+  using Status = cpp2::Status;
+  using Role = cpp2::Role;
 
   const char* idStr() const { return idStr_.c_str(); }
 

@@ -201,6 +201,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %token KW_SESSIONS KW_SESSION
 %token KW_KILL KW_QUERY KW_QUERIES KW_TOP
 %token KW_GEOGRAPHY KW_POINT KW_LINESTRING KW_POLYGON
+%token KW_LIST KW_MAP
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -293,8 +294,8 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <in_bound_clause> in_bound_clause
 %type <out_bound_clause> out_bound_clause
 %type <both_in_out_clause> both_in_out_clause
-%type <expression_list> expression_list
-%type <map_item_list> map_item_list
+%type <expression_list> expression_list opt_expression_list
+%type <map_item_list> map_item_list opt_map_item_list
 %type <case_list> when_then_list
 %type <expr> case_condition
 %type <expr> case_default
@@ -358,7 +359,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <sentence> add_listener_sentence remove_listener_sentence list_listener_sentence
 
 %type <sentence> admin_job_sentence
-%type <sentence> create_user_sentence alter_user_sentence drop_user_sentence change_password_sentence
+%type <sentence> create_user_sentence alter_user_sentence drop_user_sentence change_password_sentence describe_user_sentence
 %type <sentence> show_queries_sentence kill_query_sentence
 %type <sentence> show_sentence
 
@@ -1191,11 +1192,26 @@ list_expression
     : L_BRACKET expression_list R_BRACKET {
         $$ = ListExpression::make(qctx->objPool(), $2);
     }
+    | KW_LIST L_BRACKET opt_expression_list R_BRACKET {
+        $$ = ListExpression::make(qctx->objPool(), $3);
+    }
     ;
 
 set_expression
     : L_BRACE expression_list R_BRACE {
         $$ = SetExpression::make(qctx->objPool(), $2);
+    }
+    | KW_SET L_BRACE opt_expression_list R_BRACE {
+        $$ = SetExpression::make(qctx->objPool(), $3);
+    }
+    ;
+
+opt_expression_list
+    : %empty {
+        $$ = ExpressionList::make(qctx->objPool());
+    }
+    | expression_list {
+        $$ = $1;
     }
     ;
 
@@ -1213,6 +1229,18 @@ expression_list
 map_expression
     : L_BRACE map_item_list R_BRACE {
         $$ = MapExpression::make(qctx->objPool(), $2);
+    }
+    | KW_MAP L_BRACE opt_map_item_list R_BRACE {
+        $$ = MapExpression::make(qctx->objPool(), $3);
+    }
+    ;
+
+opt_map_item_list
+    : %empty {
+        $$ = MapItemList::make(qctx->objPool());
+    }
+    | map_item_list {
+        $$ = $1;
     }
     ;
 
@@ -2436,6 +2464,15 @@ column_property
     }
     ;
 
+describe_user_sentence
+    : KW_DESCRIBE KW_USER name_label {
+        $$ = new DescribeUserSentence($3);
+    }
+    | KW_DESC KW_USER name_label {
+        $$ = new DescribeUserSentence($3);
+    }
+    ;
+
 describe_tag_sentence
     : KW_DESCRIBE KW_TAG name_label {
         $$ = new DescribeTagSentence($3);
@@ -2685,6 +2722,7 @@ traverse_sentence
     | delete_edge_sentence { $$ = $1; }
     | show_queries_sentence { $$ = $1; }
     | kill_query_sentence { $$ = $1; }
+    | describe_user_sentence { $$ = $1; }
     ;
 
 piped_sentence

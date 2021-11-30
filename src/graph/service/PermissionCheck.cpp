@@ -177,6 +177,7 @@ Status PermissionCheck::permissionCheck(ClientSession *session,
     case Sentence::Kind::kShowRoles: {
       return PermissionManager::canReadSpace(session, targetSpace);
     }
+    case Sentence::Kind::kDescribeUser:
     case Sentence::Kind::kShowUsers:
     case Sentence::Kind::kShowSnapshots:
     case Sentence::Kind::kShowTSClients:

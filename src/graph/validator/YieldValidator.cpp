@@ -146,17 +146,19 @@ Status YieldValidator::validateYieldAndBuildOutputs(const YieldClause *clause) {
   return Status::OK();
 }
 
-Status YieldValidator::validateWhere(const WhereClause *clause) {
-  Expression *filter = nullptr;
-  if (clause != nullptr) {
-    filter = clause->filter();
+Status YieldValidator::validateWhere(const WhereClause *where) {
+  if (where == nullptr) {
+    return Status::OK();
   }
-  if (filter != nullptr) {
-    NG_RETURN_IF_ERROR(deduceProps(filter, exprProps_));
-    auto foldRes = ExpressionUtils::foldConstantExpr(filter);
-    NG_RETURN_IF_ERROR(foldRes);
-    filterCondition_ = foldRes.value();
+  auto filter = where->filter();
+  if (graph::ExpressionUtils::findAny(filter, {Expression::Kind::kAggregate})) {
+    return Status::SemanticError("`%s', not support aggregate function in where sentence.",
+                                 filter->toString().c_str());
   }
+  NG_RETURN_IF_ERROR(deduceProps(filter, exprProps_));
+  auto foldRes = ExpressionUtils::foldConstantExpr(filter);
+  NG_RETURN_IF_ERROR(foldRes);
+  filterCondition_ = foldRes.value();
   return Status::OK();
 }
 
