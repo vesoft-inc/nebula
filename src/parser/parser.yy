@@ -212,7 +212,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %token <boolval> BOOL
 %token <intval> INTEGER
 %token <doubleval> DOUBLE
-%token <strval> STRING VARIABLE LABEL IPV4
+%token <strval> STRING VARIABLE LABEL IPV4 CHINESE_LABEL
 
 %type <strval> name_label unreserved_keyword predicate_name
 %type <expr> expression
@@ -405,6 +405,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 
 name_label
     : LABEL { $$ = $1; }
+    | CHINESE_LABEL { $$ = $1; }
     | unreserved_keyword { $$ = $1; }
     ;
 
