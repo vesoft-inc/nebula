@@ -48,6 +48,7 @@ void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
     return;
   }
   indexes_ = std::move(iRet).value();
+  ignoreExistedIndex_ = req.get_ignore_existed_index();
 
   CHECK_NOTNULL(env_->kvstore_);
 
@@ -220,19 +221,21 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
       if (*edgeKey.edge_type_ref() > 0) {
         RowReaderWrapper nReader;
         RowReaderWrapper oReader;
-        auto obsIdx = findOldValue(partId, key);
-        if (nebula::ok(obsIdx)) {
-          // already exists in kvstore
-          if (ifNotExists_ && !nebula::value(obsIdx).empty()) {
-            continue;
+        if (!ignoreExistedIndex_) {
+          auto obsIdx = findOldValue(partId, key);
+          if (nebula::ok(obsIdx)) {
+            // already exists in kvstore
+            if (ifNotExists_ && !nebula::value(obsIdx).empty()) {
+              continue;
+            }
+            if (!nebula::value(obsIdx).empty()) {
+              oReader = RowReaderWrapper::getEdgePropReader(
+                  env_->schemaMan_, spaceId_, *edgeKey.edge_type_ref(), nebula::value(obsIdx));
+            }
+          } else {
+            code = nebula::error(obsIdx);
+            break;
           }
-          if (!nebula::value(obsIdx).empty()) {
-            oReader = RowReaderWrapper::getEdgePropReader(
-                env_->schemaMan_, spaceId_, *edgeKey.edge_type_ref(), nebula::value(obsIdx));
-          }
-        } else {
-          code = nebula::error(obsIdx);
-          break;
         }
         if (!retEnc.value().empty()) {
           nReader = RowReaderWrapper::getEdgePropReader(
@@ -358,7 +361,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> AddEdgesProcessor::addEdges(
         /*
          * step 1 , Delete old version index if exists.
          */
-        if (val.empty()) {
+        if (!ignoreExistedIndex_ && val.empty()) {
           auto obsIdx = findOldValue(partId, e.first);
           if (!nebula::ok(obsIdx)) {
             return nebula::error(obsIdx);
