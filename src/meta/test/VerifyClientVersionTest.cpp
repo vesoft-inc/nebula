@@ -19,15 +19,13 @@ TEST(VerifyClientVersionTest, VersionTest) {
   fs::TempDir rootPath("/tmp/VersionTest.XXXXXX");
   std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
   {
-    for (auto i = 0; i < 5; i++) {
-      auto req = cpp2::VerifyClientVersionReq();
-      req.set_version("1.0.1");
-      auto* processor = VerifyClientVersionProcessor::instance(kv.get());
-      auto f = processor->getFuture();
-      processor->process(req);
-      auto resp = std::move(f).get();
-      ASSERT_EQ(nebula::cpp2::ErrorCode::E_CLIENT_SERVER_INCOMPATIBLE, resp.get_code());
-    }
+    auto req = cpp2::VerifyClientVersionReq();
+    req.set_version("1.0.1");
+    auto* processor = VerifyClientVersionProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_CLIENT_SERVER_INCOMPATIBLE, resp.get_code());
   }
   {
     for (auto i = 0; i < 5; i++) {
