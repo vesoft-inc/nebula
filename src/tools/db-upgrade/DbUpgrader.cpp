@@ -1195,6 +1195,7 @@ void DbUpgrader::doSpace() {
       upgraderSpaceIter->doProcessV2();
     }
 
+    /*
     auto ret = upgraderSpaceIter->copyWal();
     if (!ret) {
       LOG(ERROR) << "Copy space id " << upgraderSpaceIter->entry_ << " wal file failed";
@@ -1205,6 +1206,7 @@ void DbUpgrader::doSpace() {
     if (FLAGS_compactions) {
       upgraderSpaceIter->doCompaction();
     }
+    */
 
     auto unFinishedSpace = --unFinishedSpace_;
     if (unFinishedSpace == 0) {
