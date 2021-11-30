@@ -23,7 +23,7 @@ DECLARE_string(src_db_path);
 DECLARE_string(dst_db_path);
 DECLARE_string(upgrade_meta_server);
 DECLARE_uint32(write_batch_num);
-DECLARE_uint32(upgrade_version);
+DECLARE_uint32(raw_data_version);
 DECLARE_bool(compactions);
 DECLARE_uint32(max_concurrent_parts);
 DECLARE_uint32(max_concurrent_spaces);
@@ -107,6 +107,9 @@ class UpgraderSpace {
                            const meta::SchemaProviderIf* oldSchema,
                            std::string& name,
                            Value& val);
+
+  std::string getCurrentPartSstFile(PartitionID partId);
+
   void runPartV1();
 
   void runPartV2();

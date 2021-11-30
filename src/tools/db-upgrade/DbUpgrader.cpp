@@ -22,10 +22,15 @@ DEFINE_string(dst_db_path,
               "multi paths should be split by comma");
 DEFINE_string(upgrade_meta_server, "127.0.0.1:45500", "Meta servers' address.");
 DEFINE_uint32(write_batch_num, 100, "The size of the batch written to rocksdb");
-DEFINE_uint32(upgrade_version,
+DEFINE_uint32(raw_data_version,
               0,
-              "When the value is 1, upgrade the data from 1.x to 2.0 GA. "
-              "When the value is 2, upgrade the data from 2.0 RC to 2.0 GA.");
+              "When the value is 1, upgrade the data from 1.x to 2.6. "
+              "When the value is 2, upgrade the data from 2.0 RC to 2.6.");
+DEFINE_string(partIds,
+              "",
+              "Specify all partIds to be processed, separated by commas."
+              "If it is empty, scan partd according to the directory.");
+
 DEFINE_bool(compactions,
             true,
             "When the upgrade of the space is completed, "
@@ -82,10 +87,44 @@ Status UpgraderSpace::initSpace(const std::string& sId) {
   // Use readonly rocksdb
   readEngine_.reset(new nebula::kvstore::RocksEngine(
       spaceId_, spaceVidLen_, srcPath_, "", nullptr, nullptr, true));
-  writeEngine_.reset(new nebula::kvstore::RocksEngine(spaceId_, spaceVidLen_, dstPath_));
+  if (FLAGS_partIds.empty()) {
+    writeEngine_.reset(new nebula::kvstore::RocksEngine(spaceId_, spaceVidLen_, dstPath_));
+  }
 
   parts_.clear();
-  parts_ = readEngine_->allParts();
+
+  if (FLAGS_partIds.empty()) {
+    // find the specified partIds
+    parts_ = readEngine_->allParts();
+  } else {
+    std::vector<std::string> parts;
+    std::vector<PartitionID> partsAll;
+    folly::split(",", FLAGS_partIds, parts, true);
+    for (auto& part : parts) {
+      PartitionID partId;
+      try {
+        partId = folly::to<PartitionID>(part);
+      } catch (const std::exception& ex) {
+        LOG(ERROR) << "Cannot convert part id " << part;
+        return Status::Error("Cannot convert part id %s", part.c_str());
+      }
+      partsAll.emplace_back(partId);
+    }
+
+    // to check in rocksdb
+    for (auto part : partpartsAlls) {
+      auto partKey = NebulaKeyUtilsV1::systemPartKey(part);
+      std::string val;
+      auto ret = readEngine_->get(partKey, &val);
+      if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+        continue;
+      } else {
+        parts_.emplace_back(part);
+        LOG(INFO) << "Find part from rocksdb, part id " << part;
+      }
+    }
+  }
+
   LOG(INFO) << "Src data path: " << srcPath_ << " space id " << spaceId_ << " has " << parts_.size()
             << " parts";
 
@@ -205,10 +244,39 @@ bool UpgraderSpace::isValidVidLen(VertexID srcVId, VertexID dstVId) {
   return true;
 }
 
+std::string UpgraderSpace::getCurrentPartSstFile(PartitionID partId) {
+  auto newPartPath = folly::stringPrintf(
+      "%s/nebula/%s/%d/%ld.sst", dstPath_.c_str(), entry_.c_str(), partId, std::time(0));
+  auto parent = newPartPath.substr(0, newPartPath.rfind('/'));
+  if (!FileUtils::exist(parent)) {
+    if (!FileUtils::makeDir(parent)) {
+      LOG(ERROR) << "Make dir " << parent << " failed";
+      return "";
+    }
+  }
+  return newPartPath;
+}
+
 void UpgraderSpace::runPartV1() {
   std::chrono::milliseconds take_dura{10};
   if (auto pId = partQueue_.try_take_for(take_dura)) {
     PartitionID partId = *pId;
+
+    auto newPartPath = getCurrentPartSstFile(partId);
+    if (newPartPath.empty()) {
+      return;
+    }
+
+    rocksdb::Options options;
+    options.file_checksum_gen_factory = rocksdb::GetFileChecksumGenCrc32cFactory();
+    rocksdb::SstFileWriter sstFileWriter(rocksdb::EnvOptions(), options);
+    auto s = sstFileWriter.Open(newPartPath);
+    if (!s.ok()) {
+      LOG(ERROR) << "Open sst file writer failed, path: " << newPartPath
+                 << ", error: " << s.ToString();
+      return;
+    }
+
     // Handle vertex and edge, if there is an index, generate index data
     LOG(INFO) << "Start to handle vertex/edge/index data in space id " << spaceId_ << " part id "
               << partId;
@@ -332,10 +400,42 @@ void UpgraderSpace::runPartV1() {
 
       if (data.size() >= FLAGS_write_batch_num) {
         VLOG(2) << "Send record total rows " << data.size();
+        /*
         auto code = writeEngine_->multiPut(data);
         if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
           LOG(FATAL) << "Write multi put in space id " << spaceId_ << " part id " << partId
                      << " failed.";
+        }
+        */
+        for (auto& elem : data) {
+          s = sstFileWriter.Put(elem.first, elem.second);
+          if (!s.ok()) {
+            LOG(FATAL) << "Write sst file writer failed, path: " << newPartPath
+                       << ", error: " << s.ToString();
+            return;
+          }
+        }
+
+        if (sstFileWriter.FileSize() >= 2147483648) {
+          s = sstFileWriter.Finish();
+          if (!s.ok()) {
+            LOG(FATAL) << "Failure to insert data to ,  " << newPartPath
+                       << ", error: " << s.ToString();
+          }
+          newPartPath = getCurrentPartSstFile(partId);
+          if (newPartPath.empty()) {
+            return;
+          }
+
+          rocksdb::Options options;
+          options.file_checksum_gen_factory = rocksdb::GetFileChecksumGenCrc32cFactory();
+          sstFileWriter(rocksdb::EnvOptions(), options);
+          auto s = sstFileWriter.Open(newPartPath);
+          if (!s.ok()) {
+            LOG(ERROR) << "Open sst file writer failed, path: " << newPartPath
+                       << ", error: " << s.ToString();
+            return;
+          }
         }
         data.clear();
       }
@@ -343,10 +443,40 @@ void UpgraderSpace::runPartV1() {
       iter->next();
     }
 
+    /*
     auto code = writeEngine_->multiPut(data);
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
       LOG(FATAL) << "Write multi put in space id " << spaceId_ << " part id " << partId
                  << " failed.";
+    }
+    */
+
+    // handle system data
+    {
+      LOG(INFO) << "Start to handle system data in space id " << spaceId_;
+      auto sysKey = NebulaKeyUtils::systemPartKey(partId);
+      data.emplace_back(std::move(sysKey), "");
+
+      auto commitKey = NebulaKeyUtilsV1::systemCommitKey(partId);
+      std::string val;
+      auto ret = readEngine_->get(commitKey, &val);
+      if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+        LOG(ERROR) << "Get part commit key failed, part id " << partId;
+        return;
+      }
+      auto newCommitKey = NebulaKeyUtils::systemCommitKey(partId);
+      data.emplace_back(std::move(newCommitKey), val);
+      for (auto& elem : data) {
+        s = sstFileWriter.Put(elem.first, elem.second);
+        if (!s.ok()) {
+          LOG(FATAL) << "Write sst file writer failed, path: " << newPartPath
+                     << ", error: " << s.ToString();
+        }
+      }
+      s = sstFileWriter.Finish();
+      if (!s.ok()) {
+        LOG(FATAL) << "Failure to insert data to ,  " << newPartPath << ", error: " << s.ToString();
+      }
     }
     data.clear();
     LOG(INFO) << "Handle vertex/edge/index data in space id " << spaceId_ << " part id " << partId
@@ -383,40 +513,7 @@ void UpgraderSpace::doProcessV1() {
     sleep(10);
   }
 
-  // handle system data
-  {
-    LOG(INFO) << "Start to handle system data in space id " << spaceId_;
-    auto prefix = NebulaKeyUtilsV1::systemPrefix();
-    std::unique_ptr<kvstore::KVIterator> iter;
-    auto retCode = readEngine_->prefix(prefix, &iter);
-    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(ERROR) << "Space id " << spaceId_ << " get system data failed";
-      LOG(ERROR) << "Handle system data in space id " << spaceId_ << " failed";
-      return;
-    }
-    std::vector<kvstore::KV> data;
-    while (iter && iter->valid()) {
-      auto key = iter->key();
-      auto val = iter->val();
-      data.emplace_back(std::move(key), std::move(val));
-      if (data.size() >= FLAGS_write_batch_num) {
-        VLOG(2) << "Send system data total rows " << data.size();
-        auto code = writeEngine_->multiPut(data);
-        if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-          LOG(FATAL) << "Write multi put in space id " << spaceId_ << " failed.";
-        }
-        data.clear();
-      }
-      iter->next();
-    }
-
-    auto code = writeEngine_->multiPut(data);
-    if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(FATAL) << "Write multi put in space id " << spaceId_ << " failed.";
-    }
-    LOG(INFO) << "Handle system data in space id " << spaceId_ << " success";
-    LOG(INFO) << "Handle data in space id " << spaceId_ << " success";
-  }
+  LOG(INFO) << "Handle data in space id " << spaceId_ << " success";
 }
 
 void UpgraderSpace::runPartV2() {
@@ -1092,7 +1189,7 @@ void DbUpgrader::doSpace() {
     LOG(INFO) << "Upgrade from path " << upgraderSpaceIter->srcPath_ << " space id "
               << upgraderSpaceIter->entry_ << " to path " << upgraderSpaceIter->dstPath_
               << " begin";
-    if (FLAGS_upgrade_version == 1) {
+    if (FLAGS_raw_data_version == 1) {
       upgraderSpaceIter->doProcessV1();
     } else {
       upgraderSpaceIter->doProcessV2();

@@ -10,11 +10,11 @@
 void printHelp() {
   fprintf(
       stderr,
-      R"(  ./db_upgrade --src_db_path=<path to rocksdb> --dst_db_path=<path to rocksdb> --upgrade_meta_server=<ip:port,...> --upgrade_version=<1|2>
+      R"(  ./db_upgrade --src_db_path=<path to rocksdb> --dst_db_path=<path to rocksdb> --upgrade_meta_server=<ip:port,...> --raw_data_version=<1|2>
 
 desc:
         This tool is used to upgrade data from nebula 1.x or the previous versions of nebula 2.0 RC
-        to nebula 2.0 GA version.
+        to nebula 2.6 version.
 
 required:
        --src_db_path=<path to rocksdb>
@@ -39,11 +39,15 @@ required:
          A list of meta severs' ip:port seperated by comma.
          Default: 127.0.0.1:45500
 
-       --upgrade_version=<1|2>
+       --raw_data_version=<1|2>
          This tool can only upgrade 1.x data or 2.0 RC data.
-         When the value is 1, upgrade the data from 1.x to 2.0 GA.
-         When the value is 2, upgrade the data from 2.0 RC to 2.0 GA.
+         When the value is 1, upgrade the data from 1.x to 2.6.
+         When the value is 2, upgrade the data from 2.0 RC to 2.6.
          Default: 0
+
+       --partIds
+         Specify all partIds to be processed, separated by commas
+
 
  optional:
        --write_batch_num=<N>
@@ -70,7 +74,8 @@ void printParams() {
   std::cout << "source data path: " << FLAGS_src_db_path << "\n";
   std::cout << "destination data path: " << FLAGS_dst_db_path << "\n";
   std::cout << "The size of the batch written: " << FLAGS_write_batch_num << "\n";
-  std::cout << "upgrade data from version: " << FLAGS_upgrade_version << "\n";
+  std::cout << "raw data from version: " << FLAGS_raw_data_version << "\n";
+  std::cout << "specify all partIds to be processed: " << FLAGS_partIds << "\n ";
   std::cout << "whether to compact all data: " << (FLAGS_compactions == true ? "true" : "false")
             << "\n";
   std::cout << "maximum number of concurrent parts allowed:" << FLAGS_max_concurrent_parts << "\n";
@@ -164,9 +169,9 @@ int main(int argc, char* argv[]) {
   CHECK_NOTNULL(schemaMan);
   CHECK_NOTNULL(indexMan);
 
-  if (FLAGS_upgrade_version != 1 && FLAGS_upgrade_version != 2) {
-    LOG(ERROR) << "Flag upgrade_version : " << FLAGS_upgrade_version
-               << " illegal, upgrade_version can only be 1 or 2";
+  if (FLAGS_raw_data_version != 1 && FLAGS_raw_data_version != 2) {
+    LOG(ERROR) << "Flag raw_data_version : " << FLAGS_raw_data_version
+               << " illegal, raw_data_version can only be 1 or 2";
     return EXIT_FAILURE;
   }
   LOG(INFO) << "Prepare phase end";

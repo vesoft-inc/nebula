@@ -17,6 +17,11 @@ enum class NebulaKeyTypeV1 : uint32_t {
   kSystem = 0x00000004,
 };
 
+enum class NebulaSystemKeyTypeV1 : uint32_t {
+  kSystemCommit = 0x00000001,
+  kSystemPart = 0x00000002,
+};
+
 /**
  * This class supply some utils for transition between Vertex/Edge and key in
  * kvstore.
@@ -116,6 +121,10 @@ class NebulaKeyUtilsV1 final {
     auto type = readInt<uint32_t>(position, len);
     return static_cast<uint32_t>(NebulaSystemKeyType::kSystemPart) == type;
   }
+
+  static std::string systemPartKey(PartitionID partId);
+
+  static std::string systemCommitKey(PartitionID partId);
 
   static VertexID getSrcId(const folly::StringPiece& rawKey) {
     CHECK_EQ(rawKey.size(), kEdgeLen);
