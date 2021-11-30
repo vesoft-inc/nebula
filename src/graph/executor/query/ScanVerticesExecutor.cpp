@@ -22,6 +22,9 @@ folly::Future<Status> ScanVerticesExecutor::scanVertices() {
   SCOPED_TIMER(&execTime_);
 
   auto *sv = asNode<ScanVertices>(node());
+  if (sv->limit() < 0) {
+    return Status::Error("Scan vertices must specify limit number.");
+  }
   GraphStorageClient *storageClient = qctx()->getStorageClient();
 
   time::Duration scanVertexTime;

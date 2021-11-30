@@ -23,6 +23,9 @@ folly::Future<Status> ScanEdgesExecutor::scanEdges() {
   SCOPED_TIMER(&execTime_);
   GraphStorageClient *client = qctx()->getStorageClient();
   auto *se = asNode<ScanEdges>(node());
+  if (se->limit() < 0) {
+    return Status::Error("Scan edges must specify limit number.");
+  }
 
   time::Duration scanEdgesTime;
   GraphStorageClient::CommonRequestParam param(se->space(),
