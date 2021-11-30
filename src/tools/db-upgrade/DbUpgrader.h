@@ -15,6 +15,7 @@
 #include "codec/RowWriterV2.h"
 #include "common/base/Base.h"
 #include "common/base/Status.h"
+#include "common/fs/FileUtils.h"
 #include "common/meta/ServerBasedIndexManager.h"
 #include "common/meta/ServerBasedSchemaManager.h"
 #include "kvstore/RocksEngine.h"
@@ -24,9 +25,12 @@ DECLARE_string(dst_db_path);
 DECLARE_string(upgrade_meta_server);
 DECLARE_uint32(write_batch_num);
 DECLARE_uint32(raw_data_version);
+DECLARE_string(partIds);
 DECLARE_bool(compactions);
 DECLARE_uint32(max_concurrent_parts);
 DECLARE_uint32(max_concurrent_spaces);
+
+using nebula::fs::FileUtils;
 
 namespace nebula {
 namespace storage {

@@ -5,6 +5,8 @@
 
 #include "tools/db-upgrade/DbUpgrader.h"
 
+#include <rocksdb/sst_file_writer.h>
+
 #include "common/datatypes/Value.h"
 #include "common/fs/FileUtils.h"
 #include "common/utils/IndexKeyUtils.h"
@@ -112,12 +114,13 @@ Status UpgraderSpace::initSpace(const std::string& sId) {
     }
 
     // to check in rocksdb
-    for (auto part : partpartsAlls) {
+    for (auto part : partsAll) {
       auto partKey = NebulaKeyUtilsV1::systemPartKey(part);
       std::string val;
       auto ret = readEngine_->get(partKey, &val);
       if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-        continue;
+        LOG(ERROR) << "Cannot find part system key, part id " << part;
+        return Status::Error("Cannot find part system key, part id %d", part);
       } else {
         parts_.emplace_back(part);
         LOG(INFO) << "Find part from rocksdb, part id " << part;
@@ -427,10 +430,7 @@ void UpgraderSpace::runPartV1() {
             return;
           }
 
-          rocksdb::Options options;
-          options.file_checksum_gen_factory = rocksdb::GetFileChecksumGenCrc32cFactory();
-          sstFileWriter(rocksdb::EnvOptions(), options);
-          auto s = sstFileWriter.Open(newPartPath);
+          s = sstFileWriter.Open(newPartPath);
           if (!s.ok()) {
             LOG(ERROR) << "Open sst file writer failed, path: " << newPartPath
                        << ", error: " << s.ToString();
@@ -1152,9 +1152,9 @@ void DbUpgrader::run() {
     // When the init space fails, ignore to upgrade this space
     auto ret = it->init(metaClient_, schemaMan_, indexMan_, srcPath_, dstPath_, entry);
     if (!ret.ok()) {
-      LOG(WARNING) << "Upgrade from path " << srcPath_ << " space id " << entry << " to path "
-                   << dstPath_ << " init failed";
-      LOG(WARNING) << "Ignore upgrade " << srcPath_ << " space id " << entry;
+      LOG(FATAL) << "Upgrade from path " << srcPath_ << " space id " << entry << " to path "
+                 << dstPath_ << " init failed";
+      LOG(FATAL) << "Ignore upgrade " << srcPath_ << " space id " << entry;
     } else {
       upgraderSpaces.emplace_back(std::move(it));
     }
