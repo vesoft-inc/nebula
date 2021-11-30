@@ -47,6 +47,8 @@ class NebulaKeyUtilsV1 final {
 
   static std::string systemPrefix();
 
+  static std::string systemPrefix(PartitionID partId);
+
   static std::string prefix(PartitionID partId);
 
   static std::string snapshotPrefix(PartitionID partId);

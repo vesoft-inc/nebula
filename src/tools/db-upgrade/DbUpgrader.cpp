@@ -119,8 +119,7 @@ Status UpgraderSpace::initSpace(const std::string& sId) {
       std::string val;
       auto ret = readEngine_->get(partKey, &val);
       if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-        LOG(ERROR) << "Cannot find part system key, part id " << part;
-        return Status::Error("Cannot find part system key, part id %d", part);
+        continue;
       } else {
         parts_.emplace_back(part);
         LOG(INFO) << "Find part from rocksdb, part id " << part;
@@ -280,12 +279,67 @@ void UpgraderSpace::runPartV1() {
       return;
     }
 
+    std::vector<kvstore::KV> data;
+    // handle system data
+    LOG(INFO) << "Start to handle system data in space id " << spaceId_ << " part " << partId;
+    const auto& sysPre = NebulaKeyUtilsV1::systemPrefix(partId);
+    std::unique_ptr<kvstore::KVIterator> sysIter;
+    auto retCode = readEngine_->prefix(sysPre, &sysIter);
+    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      LOG(ERROR) << "Space id " << spaceId_ << " part " << partId << " no found!";
+      return;
+    }
+    while (sysIter && sysIter->valid()) {
+      auto key = sysIter->key();
+      if (NebulaKeyUtilsV1::isSystemCommit(key)) {
+        auto newCommitKey = NebulaKeyUtils::systemCommitKey(partId);
+        data.emplace_back(newCommitKey, sysIter->val());
+      } else if (NebulaKeyUtilsV1::isSystemPart(key)) {
+        auto sysKey = NebulaKeyUtils::systemPartKey(partId);
+        data.emplace_back(sysKey, "");
+      } else {
+        LOG(ERROR) << "Space id " << spaceId_ << " part " << partId << " doProcessV1 data!";
+        return;
+      }
+      sysIter->next();
+    }
+
+    if (data.empty()) {
+      LOG(FATAL) << "system data is empty in space id " << spaceId_ << " part id " << partId;
+    }
+
+    for (auto& elem : data) {
+      s = sstFileWriter.Put(elem.first, elem.second);
+      if (!s.ok()) {
+        LOG(FATAL) << "Write sst file writer failed, path: " << newPartPath
+                   << ", error: " << s.ToString();
+      }
+    }
+    s = sstFileWriter.Finish();
+    if (!s.ok()) {
+      LOG(FATAL) << "Failure to insert data to ,  " << newPartPath << ", error: " << s.ToString();
+    }
+    LOG(INFO) << "Handle system data in space id " << spaceId_ << " part " << partId << newPartPath;
+    newPartPath = getCurrentPartSstFile(partId);
+    if (newPartPath.empty()) {
+      return;
+    }
+
+    s = sstFileWriter.Open(newPartPath);
+    if (!s.ok()) {
+      LOG(ERROR) << "Open sst file writer failed, path: " << newPartPath
+                 << ", error: " << s.ToString();
+      return;
+    }
+    LOG(INFO) << "Handle system data finish in space id " << spaceId_ << " part id " << partId;
+    data.clear();
+
     // Handle vertex and edge, if there is an index, generate index data
     LOG(INFO) << "Start to handle vertex/edge/index data in space id " << spaceId_ << " part id "
               << partId;
     const auto& prefix = NebulaKeyUtilsV1::prefix(partId);
     std::unique_ptr<kvstore::KVIterator> iter;
-    auto retCode = readEngine_->prefix(prefix, &iter);
+    retCode = readEngine_->prefix(prefix, &iter);
     if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
       LOG(ERROR) << "Space id " << spaceId_ << " part " << partId << " no found!";
       LOG(ERROR) << "Handle vertex/edge/index data in space id " << spaceId_ << " part id "
@@ -302,7 +356,6 @@ void UpgraderSpace::runPartV1() {
       return;
     }
 
-    std::vector<kvstore::KV> data;
     TagID lastTagId = 0;
     int64_t lastVertexId = 0;
 
@@ -451,33 +504,19 @@ void UpgraderSpace::runPartV1() {
     }
     */
 
-    // handle system data
-    {
-      LOG(INFO) << "Start to handle system data in space id " << spaceId_;
-      auto sysKey = NebulaKeyUtils::systemPartKey(partId);
-      data.emplace_back(std::move(sysKey), "");
-
-      auto commitKey = NebulaKeyUtilsV1::systemCommitKey(partId);
-      std::string val;
-      auto ret = readEngine_->get(commitKey, &val);
-      if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-        LOG(ERROR) << "Get part commit key failed, part id " << partId;
-        return;
-      }
-      auto newCommitKey = NebulaKeyUtils::systemCommitKey(partId);
-      data.emplace_back(std::move(newCommitKey), val);
-      for (auto& elem : data) {
-        s = sstFileWriter.Put(elem.first, elem.second);
-        if (!s.ok()) {
-          LOG(FATAL) << "Write sst file writer failed, path: " << newPartPath
-                     << ", error: " << s.ToString();
-        }
-      }
-      s = sstFileWriter.Finish();
+    for (auto& elem : data) {
+      s = sstFileWriter.Put(elem.first, elem.second);
       if (!s.ok()) {
-        LOG(FATAL) << "Failure to insert data to ,  " << newPartPath << ", error: " << s.ToString();
+        LOG(FATAL) << "Write sst file writer failed, path: " << newPartPath
+                   << ", error: " << s.ToString();
       }
     }
+    s = sstFileWriter.Finish();
+    if (!s.ok()) {
+      LOG(FATAL) << "Failure to insert data to ,  " << newPartPath << ", error: " << s.ToString();
+    }
+    LOG(INFO) << "Handle vertex/edge/index data finished in space id " << spaceId_ << " part id "
+              << partId << newPartPath;
     data.clear();
     LOG(INFO) << "Handle vertex/edge/index data in space id " << spaceId_ << " part id " << partId
               << " finished";
@@ -731,6 +770,8 @@ void UpgraderSpace::encodeVertexValue(PartitionID partId,
                                       VertexID& strVid,
                                       TagID tagId,
                                       std::vector<kvstore::KV>& data) {
+  UNUSED(partId);
+  UNUSED(strVid);
   // Get all returned field name
   auto& fieldNames = tagFieldName_[tagId];
 
@@ -742,6 +783,7 @@ void UpgraderSpace::encodeVertexValue(PartitionID partId,
   data.emplace_back(std::move(newkey), ret);
 
   // encode v2 index value
+  /*
   auto it = tagIndexes_.find(tagId);
   if (it != tagIndexes_.end()) {
     // Use new RowReader
@@ -758,6 +800,7 @@ void UpgraderSpace::encodeVertexValue(PartitionID partId,
       }
     }
   }
+  */
 }
 
 // If the field types are inconsistent, can be converted
@@ -999,6 +1042,11 @@ void UpgraderSpace::encodeEdgeValue(PartitionID partId,
                                     EdgeRanking rank,
                                     VertexID& dstId,
                                     std::vector<kvstore::KV>& data) {
+  UNUSED(partId);
+  UNUSED(svId);
+  UNUSED(type);
+  UNUSED(rank);
+  UNUSED(dstId);
   // Get all returned field name
   auto& fieldNames = edgeFieldName_[std::abs(type)];
 
@@ -1008,6 +1056,7 @@ void UpgraderSpace::encodeEdgeValue(PartitionID partId,
   }
   data.emplace_back(std::move(newkey), ret);
 
+  /*
   if (type <= 0) {
     return;
   }
@@ -1029,6 +1078,7 @@ void UpgraderSpace::encodeEdgeValue(PartitionID partId,
       }
     }
   }
+  */
 }
 
 std::vector<std::string> UpgraderSpace::indexEdgeKeys(

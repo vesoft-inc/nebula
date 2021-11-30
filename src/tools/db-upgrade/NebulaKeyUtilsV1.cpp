@@ -107,6 +107,15 @@ std::string NebulaKeyUtilsV1::systemPrefix() {
 }
 
 // static
+std::string NebulaKeyUtilsV1::systemPrefix(PartitionID partId) {
+  uint32_t item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyTypeV1::kSystem);
+  std::string key;
+  key.reserve(sizeof(PartitionID));
+  key.append(reinterpret_cast<const char*>(&item), sizeof(PartitionID));
+  return key;
+}
+
+// static
 std::string NebulaKeyUtilsV1::systemPartKey(PartitionID partId) {
   uint32_t item = (partId << kPartitionOffset) | static_cast<uint32_t>(NebulaKeyTypeV1::kSystem);
   uint32_t type = static_cast<uint32_t>(NebulaSystemKeyTypeV1::kSystemPart);
