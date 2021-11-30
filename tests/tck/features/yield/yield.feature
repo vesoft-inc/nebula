@@ -467,6 +467,16 @@ Feature: Yield Sentence
       """
     Then the result should be, in any order, with relax comparison:
       | name |
+    When executing query:
+      """
+      GO FROM "Tim Duncan" OVER like YIELD like._dst as id, $$ as dst | YIELD $-.dst where count($-.id) > 2
+      """
+    Then a SemanticError should be raised at runtime: `(count($-.id)>2)', not support aggregate function in where sentence.
+    When executing query:
+      """
+      $var = go from "Tim Duncan" over like yield like._dst as id, $$ as dst; yield $var.dst where count($var.id) > 2
+      """
+    Then a SemanticError should be raised at runtime: `(count($var.id)>2)', not support aggregate function in where sentence.
 
   Scenario: DuplicateColumn
     When executing query:

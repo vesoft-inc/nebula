@@ -9,7 +9,7 @@
 #include "graph/context/QueryContext.h"
 #include "graph/util/SchemaUtil.h"
 
-using nebula::storage::GraphStorageClient;
+using nebula::storage::StorageClient;
 using nebula::storage::StorageRpcResponse;
 using nebula::storage::cpp2::ScanResponse;
 
@@ -25,13 +25,13 @@ folly::Future<Status> ScanVerticesExecutor::scanVertices() {
   if (sv->limit() < 0) {
     return Status::Error("Scan vertices must specify limit number.");
   }
-  GraphStorageClient *storageClient = qctx()->getStorageClient();
+  StorageClient *storageClient = qctx()->getStorageClient();
 
   time::Duration scanVertexTime;
-  GraphStorageClient::CommonRequestParam param(sv->space(),
-                                               qctx()->rctx()->session()->id(),
-                                               qctx()->plan()->id(),
-                                               qctx()->plan()->isProfileEnabled());
+  StorageClient::CommonRequestParam param(sv->space(),
+                                          qctx()->rctx()->session()->id(),
+                                          qctx()->plan()->id(),
+                                          qctx()->plan()->isProfileEnabled());
   return DCHECK_NOTNULL(storageClient)
       ->scanVertex(param, *DCHECK_NOTNULL(sv->props()), sv->limit(), sv->filter())
       .via(runner())

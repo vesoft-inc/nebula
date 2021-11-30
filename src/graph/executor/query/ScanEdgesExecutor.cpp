@@ -10,7 +10,7 @@
 #include "graph/planner/plan/Query.h"
 #include "graph/util/SchemaUtil.h"
 
-using nebula::storage::GraphStorageClient;
+using nebula::storage::StorageClient;
 using nebula::storage::StorageRpcResponse;
 using nebula::storage::cpp2::ScanResponse;
 
@@ -21,17 +21,17 @@ folly::Future<Status> ScanEdgesExecutor::execute() { return scanEdges(); }
 
 folly::Future<Status> ScanEdgesExecutor::scanEdges() {
   SCOPED_TIMER(&execTime_);
-  GraphStorageClient *client = qctx()->getStorageClient();
+  StorageClient *client = qctx()->getStorageClient();
   auto *se = asNode<ScanEdges>(node());
   if (se->limit() < 0) {
     return Status::Error("Scan edges must specify limit number.");
   }
 
   time::Duration scanEdgesTime;
-  GraphStorageClient::CommonRequestParam param(se->space(),
-                                               qctx()->rctx()->session()->id(),
-                                               qctx()->plan()->id(),
-                                               qctx()->plan()->isProfileEnabled());
+  StorageClient::CommonRequestParam param(se->space(),
+                                          qctx()->rctx()->session()->id(),
+                                          qctx()->plan()->id(),
+                                          qctx()->plan()->isProfileEnabled());
   return DCHECK_NOTNULL(client)
       ->scanEdge(param, *DCHECK_NOTNULL(se->props()), se->limit(), se->filter())
       .via(runner())
