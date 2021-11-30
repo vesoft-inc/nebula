@@ -1,4 +1,4 @@
-/* Copyright (c) 2018 vesoft inc. All rights reserved.
+/* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License.
  */
@@ -21,6 +21,17 @@ TEST(VerifyClientVersionTest, VersionTest) {
   {
     for (auto i = 0; i < 5; i++) {
       auto req = cpp2::VerifyClientVersionReq();
+      req.set_version("1.0.1");
+      auto* processor = VerifyClientVersionProcessor::instance(kv.get());
+      auto f = processor->getFuture();
+      processor->process(req);
+      auto resp = std::move(f).get();
+      ASSERT_EQ(nebula::cpp2::ErrorCode::E_CLIENT_SERVER_INCOMPATIBLE, resp.get_code());
+    }
+  }
+  {
+    for (auto i = 0; i < 5; i++) {
+      auto req = cpp2::VerifyClientVersionReq();
       req.set_host(HostAddr(std::to_string(i), i));
       auto* processor = VerifyClientVersionProcessor::instance(kv.get());
       auto f = processor->getFuture();
@@ -32,7 +43,7 @@ TEST(VerifyClientVersionTest, VersionTest) {
   {
     const ClusterID kClusterId = 10;
     for (auto i = 0; i < 5; i++) {
-      cpp2::HBReq req;
+      auto req = cpp2::HBReq();
       req.set_role(cpp2::HostRole::GRAPH);
       req.set_host(HostAddr(std::to_string(i), i));
       req.set_cluster_id(kClusterId);
