@@ -2693,7 +2693,7 @@ TEST_F(ParserTest, MatchMultipleTags) {
 
 TEST_F(ParserTest, MatchListSubscriptRange) {
   {
-    std::string query = "WITH [0, 1, 2] AS list RETURN list[0..] AS l";
+    std::string query = "WITH [0, 1, 2] AS l RETURN l[0..] AS l2";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
