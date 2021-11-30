@@ -25,7 +25,8 @@ void ScanEdgeProcessor::process(const cpp2::ScanEdgeRequest& req) {
 void ScanEdgeProcessor::doProcess(const cpp2::ScanEdgeRequest& req) {
   spaceId_ = req.get_space_id();
   enableReadFollower_ = req.get_enable_read_from_follower();
-  limit_ = req.get_limit();
+  // Negative means no limit
+  limit_ = req.get_limit() < 0 ? std::numeric_limits<int64_t>::max() : req.get_limit();
 
   auto retCode = getSpaceVidLen(spaceId_);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {

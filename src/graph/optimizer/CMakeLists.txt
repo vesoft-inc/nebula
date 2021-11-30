@@ -48,6 +48,7 @@ nebula_add_library(
     rule/PushLimitDownEdgeIndexRangeScanRule.cpp
     rule/PushLimitDownProjectRule.cpp
     rule/PushLimitDownScanAppendVerticesRule.cpp
+    rule/GetEdgesTransformRule.cpp
 )
 
 nebula_add_subdirectory(test)
