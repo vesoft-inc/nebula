@@ -91,6 +91,18 @@ struct Date {
   void fromInt(int64_t days);
 };
 
+inline Date operator+(const Date& l, const Duration& r) {
+  Date d = l;
+  d.addDuration(r);
+  return d;
+}
+
+inline Date operator-(const Date& l, const Duration& r) {
+  Date d = l;
+  d.subDuration(r);
+  return d;
+}
+
 inline std::ostream& operator<<(std::ostream& os, const Date& d) {
   os << d.toString();
   return os;
@@ -145,6 +157,18 @@ struct Time {
 inline std::ostream& operator<<(std::ostream& os, const Time& d) {
   os << d.toString();
   return os;
+}
+
+inline Time operator+(const Time& l, const Duration& r) {
+  Time t = l;
+  t.addDuration(r);
+  return t;
+}
+
+inline Time operator-(const Time& l, const Duration& r) {
+  Time t = l;
+  t.subDuration(r);
+  return t;
 }
 
 struct DateTime {
@@ -240,6 +264,18 @@ struct DateTime {
 inline std::ostream& operator<<(std::ostream& os, const DateTime& d) {
   os << d.toString();
   return os;
+}
+
+inline DateTime operator+(const DateTime& l, const Duration& r) {
+  DateTime dt = l;
+  dt.addDuration(r);
+  return dt;
+}
+
+inline DateTime operator-(const DateTime& l, const Duration& r) {
+  DateTime dt = l;
+  dt.subDuration(r);
+  return dt;
 }
 
 }  // namespace nebula

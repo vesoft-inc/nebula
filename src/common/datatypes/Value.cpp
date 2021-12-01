@@ -2217,9 +2217,7 @@ Value operator+(const Value& lhs, const Value& rhs) {
           return ret;
         }
         case Value::Type::DURATION: {
-          Date d = lhs.getDate();
-          d.addDuration(rhs.getDuration());
-          return d;
+          return lhs.getDate() + rhs.getDuration();
         }
         default: {
           return Value::kNullBadType;
@@ -2237,9 +2235,7 @@ Value operator+(const Value& lhs, const Value& rhs) {
           return ret;
         }
         case Value::Type::DURATION: {
-          Time t = lhs.getTime();
-          t.addDuration(rhs.getDuration());
-          return t;
+          return lhs.getTime() + rhs.getDuration();
         }
         default: {
           return Value::kNullBadType;
@@ -2257,9 +2253,7 @@ Value operator+(const Value& lhs, const Value& rhs) {
           return ret;
         }
         case Value::Type::DURATION: {
-          DateTime dt = lhs.getDateTime();
-          dt.addDuration(rhs.getDuration());
-          return dt;
+          return lhs.getDateTime() + rhs.getDuration();
         }
         default: {
           return Value::kNullBadType;
@@ -2432,9 +2426,7 @@ Value operator-(const Value& lhs, const Value& rhs) {
           return lhs.getDate().toInt() - rhs.getDate().toInt();
         }
         case Value::Type::DURATION: {
-          Date d = lhs.getDate();
-          d.subDuration(rhs.getDuration());
-          return d;
+          return lhs.getDate() - rhs.getDuration();
         }
         default: {
           return Value::kNullBadType;
@@ -2444,9 +2436,7 @@ Value operator-(const Value& lhs, const Value& rhs) {
     case Value::Type::TIME: {
       switch (rhs.type()) {
         case Value::Type::DURATION: {
-          Time t = lhs.getTime();
-          t.subDuration(rhs.getDuration());
-          return t;
+          return lhs.getTime() - rhs.getDuration();
         }
         default: {
           return Value::kNullBadType;
@@ -2456,9 +2446,7 @@ Value operator-(const Value& lhs, const Value& rhs) {
     case Value::Type::DATETIME: {
       switch (rhs.type()) {
         case Value::Type::DURATION: {
-          DateTime dt = lhs.getDateTime();
-          dt.subDuration(rhs.getDuration());
-          return dt;
+          return lhs.getDateTime() - rhs.getDuration();
         }
         default: {
           return Value::kNullBadType;
