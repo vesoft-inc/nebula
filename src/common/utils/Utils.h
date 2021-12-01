@@ -50,7 +50,26 @@ class Utils final {
     return HostAddr(adminAddr.host, adminAddr.port - 2);
   }
 
-  static std::string getMacAddr();
+  static std::string getMacAddr() {
+    char line[500];       // Read with fgets().
+    char ipAddress[100];  // Obviously more space than necessary, just illustrating here.
+    int hwType;
+    int flags;
+    char macAddress[100];
+    char mask[100];
+    char device[100];
+
+    FILE* fp = fopen("/proc/net/arp", "r");
+    fgets(line, sizeof(line), fp);  // Skip the first line (column headers).
+    while (fgets(line, sizeof(line), fp)) {
+      // Read the data.
+      sscanf(line, "%s 0x%x 0x%x %s %s %s\n", ipAddress, &hwType, &flags, macAddress, mask, device);
+
+      // Do stuff with it.
+    }
+
+    fclose(fp);
+  }
 };
 }  // namespace nebula
 #endif  // COMMON_UTILS_UTILS_H_

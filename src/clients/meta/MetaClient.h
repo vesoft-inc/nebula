@@ -717,6 +717,8 @@ class MetaClient {
 
   Status verifyVersion();
 
+  HostAddr getLocalHost() { return localHost_; }
+
  private:
   std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
   std::shared_ptr<thrift::ThriftClientManager<cpp2::MetaServiceAsyncClient>> clientsMan_;
