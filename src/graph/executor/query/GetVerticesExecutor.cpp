@@ -9,7 +9,7 @@
 #include "graph/context/QueryContext.h"
 #include "graph/util/SchemaUtil.h"
 
-using nebula::storage::GraphStorageClient;
+using nebula::storage::StorageClient;
 using nebula::storage::StorageRpcResponse;
 using nebula::storage::cpp2::GetPropResponse;
 
@@ -22,7 +22,7 @@ folly::Future<Status> GetVerticesExecutor::getVertices() {
   SCOPED_TIMER(&execTime_);
 
   auto *gv = asNode<GetVertices>(node());
-  GraphStorageClient *storageClient = qctx()->getStorageClient();
+  StorageClient *storageClient = qctx()->getStorageClient();
 
   DataSet vertices = buildRequestDataSet(gv);
   if (vertices.rows.empty()) {
@@ -32,10 +32,10 @@ folly::Future<Status> GetVerticesExecutor::getVertices() {
   }
 
   time::Duration getPropsTime;
-  GraphStorageClient::CommonRequestParam param(gv->space(),
-                                               qctx()->rctx()->session()->id(),
-                                               qctx()->plan()->id(),
-                                               qctx()->plan()->isProfileEnabled());
+  StorageClient::CommonRequestParam param(gv->space(),
+                                          qctx()->rctx()->session()->id(),
+                                          qctx()->plan()->id(),
+                                          qctx()->plan()->isProfileEnabled());
   return DCHECK_NOTNULL(storageClient)
       ->getProps(param,
                  std::move(vertices),

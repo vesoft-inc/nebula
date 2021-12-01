@@ -38,6 +38,8 @@ class RaftexService : public cpp2::RaftexServiceSvIf {
 
   void askForVote(cpp2::AskForVoteResponse& resp, const cpp2::AskForVoteRequest& req) override;
 
+  void getState(cpp2::GetStateResponse& resp, const cpp2::GetStateRequest& req) override;
+
   void appendLog(cpp2::AppendLogResponse& resp, const cpp2::AppendLogRequest& req) override;
 
   void sendSnapshot(cpp2::SendSnapshotResponse& resp,

@@ -14,8 +14,8 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <chrono>
 
-#include "clients/storage/GraphStorageClient.h"
 #include "clients/storage/InternalStorageClient.h"
+#include "clients/storage/StorageClient.h"
 #include "codec/RowWriterV2.h"
 #include "common/base/Base.h"
 #include "common/expression/ConstantExpression.h"
