@@ -89,9 +89,8 @@ Status UpgraderSpace::initSpace(const std::string& sId) {
   // Use readonly rocksdb
   readEngine_.reset(new nebula::kvstore::RocksEngine(
       spaceId_, spaceVidLen_, srcPath_, "", nullptr, nullptr, true));
-  if (FLAGS_partIds.empty()) {
-    writeEngine_.reset(new nebula::kvstore::RocksEngine(spaceId_, spaceVidLen_, dstPath_));
-  }
+  // Write part system data
+  writeEngine_.reset(new nebula::kvstore::RocksEngine(spaceId_, spaceVidLen_, dstPath_));
 
   parts_.clear();
 
@@ -248,7 +247,7 @@ bool UpgraderSpace::isValidVidLen(VertexID srcVId, VertexID dstVId) {
 
 std::string UpgraderSpace::getCurrentPartSstFile(PartitionID partId) {
   auto newPartPath = folly::stringPrintf(
-      "%s/nebula/%s/%d/%ld.sst", dstPath_.c_str(), entry_.c_str(), partId, std::time(0));
+      "%s/nebula/%s/download/%d/%ld.sst", dstPath_.c_str(), entry_.c_str(), partId, std::time(0));
   auto parent = newPartPath.substr(0, newPartPath.rfind('/'));
   if (!FileUtils::exist(parent)) {
     if (!FileUtils::makeDir(parent)) {
@@ -280,76 +279,23 @@ void UpgraderSpace::runPartV1() {
     }
 
     std::vector<kvstore::KV> data;
-    // handle system data
-    LOG(INFO) << "Start to handle system data in space id " << spaceId_ << " part " << partId;
-    const auto& sysPre = NebulaKeyUtilsV1::systemPrefix(partId);
-    std::unique_ptr<kvstore::KVIterator> sysIter;
-    auto retCode = readEngine_->prefix(sysPre, &sysIter);
-    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(ERROR) << "Space id " << spaceId_ << " part " << partId << " no found!";
-      return;
-    }
-    while (sysIter && sysIter->valid()) {
-      auto key = sysIter->key();
-      if (NebulaKeyUtilsV1::isSystemCommit(key)) {
-        auto newCommitKey = NebulaKeyUtils::systemCommitKey(partId);
-        data.emplace_back(newCommitKey, sysIter->val());
-      } else if (NebulaKeyUtilsV1::isSystemPart(key)) {
-        auto sysKey = NebulaKeyUtils::systemPartKey(partId);
-        data.emplace_back(sysKey, "");
-      } else {
-        LOG(ERROR) << "Space id " << spaceId_ << " part " << partId << " doProcessV1 data!";
-        return;
-      }
-      sysIter->next();
-    }
-
-    if (data.empty()) {
-      LOG(FATAL) << "system data is empty in space id " << spaceId_ << " part id " << partId;
-    }
-
-    for (auto& elem : data) {
-      s = sstFileWriter.Put(elem.first, elem.second);
-      if (!s.ok()) {
-        LOG(FATAL) << "Write sst file writer failed, path: " << newPartPath
-                   << ", error: " << s.ToString();
-      }
-    }
-    s = sstFileWriter.Finish();
-    if (!s.ok()) {
-      LOG(FATAL) << "Failure to insert data to ,  " << newPartPath << ", error: " << s.ToString();
-    }
-    LOG(INFO) << "Handle system data in space id " << spaceId_ << " part " << partId << newPartPath;
-    newPartPath = getCurrentPartSstFile(partId);
-    if (newPartPath.empty()) {
-      return;
-    }
-
-    s = sstFileWriter.Open(newPartPath);
-    if (!s.ok()) {
-      LOG(ERROR) << "Open sst file writer failed, path: " << newPartPath
-                 << ", error: " << s.ToString();
-      return;
-    }
-    LOG(INFO) << "Handle system data finish in space id " << spaceId_ << " part id " << partId;
-    data.clear();
 
     // Handle vertex and edge, if there is an index, generate index data
-    LOG(INFO) << "Start to handle vertex/edge/index data in space id " << spaceId_ << " part id "
+    LOG(INFO) << "Start to handle vertex/edge data in space id " << spaceId_ << " part id "
               << partId;
     const auto& prefix = NebulaKeyUtilsV1::prefix(partId);
     std::unique_ptr<kvstore::KVIterator> iter;
-    retCode = readEngine_->prefix(prefix, &iter);
+    auto retCode = readEngine_->prefix(prefix, &iter);
     if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
       LOG(ERROR) << "Space id " << spaceId_ << " part " << partId << " no found!";
-      LOG(ERROR) << "Handle vertex/edge/index data in space id " << spaceId_ << " part id "
-                 << partId << " failed";
+      LOG(ERROR) << "Handle vertex/edge data in space id " << spaceId_ << " part id " << partId
+                 << " failed";
 
       auto unFinishedPart = --unFinishedPart_;
       if (unFinishedPart == 0) {
         // all parts has finished
-        LOG(INFO) << "Handle last part: " << partId << " vertex/edge/index data in space id "
-                  << spaceId_ << " finished";
+        LOG(INFO) << "Handle last part: " << partId << " vertex/edge data in space id " << spaceId_
+                  << " finished";
       } else {
         pool_->add(std::bind(&UpgraderSpace::runPartV1, this));
       }
@@ -550,6 +496,43 @@ void UpgraderSpace::doProcessV1() {
 
   while (unFinishedPart_ != 0) {
     sleep(10);
+  }
+
+  // handle system data
+  {
+    LOG(INFO) << "Start to handle system data in space id " << spaceId_;
+    auto prefix = NebulaKeyUtilsV1::systemPrefix();
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto retCode = readEngine_->prefix(prefix, &iter);
+    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      LOG(ERROR) << "Space id " << spaceId_ << " get system data failed";
+      LOG(ERROR) << "Handle system data in space id " << spaceId_ << " failed";
+      return;
+    }
+    std::vector<kvstore::KV> data;
+    while (iter && iter->valid()) {
+      auto key = iter->key();
+      auto val = iter->val();
+      auto partId = NebulaKeyUtilsV1::getPart(key);
+      if (NebulaKeyUtilsV1::isSystemCommit(key)) {
+        auto newCommitKey = NebulaKeyUtils::systemCommitKey(partId);
+        data.emplace_back(std::move(newCommitKey), val);
+      } else if (NebulaKeyUtilsV1::isSystemPart(key)) {
+        auto sysKey = NebulaKeyUtils::systemPartKey(partId);
+        data.emplace_back(sysKey, val);
+      } else {
+        LOG(FATAL) << "Space id " << spaceId_ << " part " << partId << " doProcessV1 data!";
+        return;
+      }
+      iter->next();
+    }
+
+    auto code = writeEngine_->multiPut(data);
+    if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      LOG(FATAL) << "Write multi put system data in space id " << spaceId_ << " failed.";
+    }
+    LOG(INFO) << "Handle system data in space id " << spaceId_ << " success";
+    LOG(INFO) << "Handle data in space id " << spaceId_ << " success";
   }
 
   LOG(INFO) << "Handle data in space id " << spaceId_ << " success";
