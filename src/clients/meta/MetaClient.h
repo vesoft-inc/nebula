@@ -732,7 +732,7 @@ class MetaClient {
   std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
   std::shared_ptr<thrift::ThriftClientManager<cpp2::MetaServiceAsyncClient>> clientsMan_;
 
-  // heartbeat is a single thread, maybe leaderIdsLock_ and diskPartsLock_ is unuseful?
+  // heartbeat is a single thread, maybe leaderIdsLock_ and diskPartsLock_ is useless?
   // leaderIdsLock_ is used to protect leaderIds_
   std::unordered_map<GraphSpaceID, std::vector<cpp2::LeaderInfo>> leaderIds_;
   folly::RWSpinLock leaderIdsLock_;
