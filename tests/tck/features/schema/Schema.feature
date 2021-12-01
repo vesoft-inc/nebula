@@ -772,7 +772,7 @@ Feature: Insert string vid of vertex and edge
     # chinese tag and chinese prop
     When executing query:
       """
-      CREATE TAG 队伍(名字 string);
+      CREATE TAG `队伍`(`名字` string);
       """
     Then the execution should be successful
     # show chinese tags
@@ -786,13 +786,13 @@ Feature: Insert string vid of vertex and edge
     # alter chinese tag
     When executing query:
       """
-      ALTER TAG 队伍 ADD (类别 string);
+      ALTER TAG `队伍` ADD (`类别` string);
       """
     Then the execution should be successful
     # desc chinese tag
     When executing query:
       """
-      DESCRIBE TAG 队伍
+      DESCRIBE TAG `队伍`
       """
     Then the result should be, in any order:
       | Field  | Type     | Null  | Default | Comment |
@@ -801,7 +801,7 @@ Feature: Insert string vid of vertex and edge
     # chinese edge and chinese prop
     When executing query:
       """
-      CREATE EDGE 服役();
+      CREATE EDGE `服役`();
       """
     Then the execution should be successful
     # show chinese edge
@@ -815,13 +815,13 @@ Feature: Insert string vid of vertex and edge
     # alter chinese edge
     When executing query:
       """
-      ALTER EDGE 服役 ADD (时间 timestamp);
+      ALTER EDGE `服役` ADD (`时间` timestamp);
       """
     Then the execution should be successful
     # desc chinese edge
     When executing query:
       """
-      DESCRIBE EDGE 服役
+      DESCRIBE EDGE `服役`
       """
     Then the result should be, in any order:
       | Field  | Type        | Null  | Default | Comment |

@@ -470,8 +470,8 @@ CHINESE_LABEL               ({U2}{U}|{U3}{U}{U}|{U4}{U}{U}{U})+
                                 // Must match /* */
                                 throw GraphParser::syntax_error(*yylloc, "unterminated comment");
                             }
-{CHINESE_LABEL}             {
-                                yylval->strval = new std::string(yytext, yyleng);
+\`{CHINESE_LABEL}\`         {
+                                yylval->strval = new std::string(yytext + 1, yyleng - 2);
                                 if (yylval->strval->size() > MAX_STRING) {
                                     auto error = "Out of range of the LABEL length, "
                                                   "the  max length of LABEL is " +
