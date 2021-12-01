@@ -11,6 +11,7 @@
 #include "clients/meta/MetaClient.h"
 #include "common/base/Base.h"
 #include "common/meta/Common.h"
+#include "kvstore/DiskManager.h"
 
 namespace nebula {
 namespace kvstore {
@@ -34,9 +35,6 @@ class Handler {
 
   virtual void removePart(GraphSpaceID spaceId, PartitionID partId) = 0;
 
-  virtual int32_t allLeader(
-      std::unordered_map<GraphSpaceID, std::vector<meta::cpp2::LeaderInfo>>& leaderIds) = 0;
-
   virtual void addListener(GraphSpaceID spaceId,
                            PartitionID partId,
                            meta::cpp2::ListenerType type,
@@ -49,6 +47,12 @@ class Handler {
   virtual void checkRemoteListeners(GraphSpaceID spaceId,
                                     PartitionID partId,
                                     const std::vector<HostAddr>& remoteListeners) = 0;
+
+  // get infos from handler(nebula store) to listener(meta_client -> meta)
+  virtual int32_t allLeader(
+      std::unordered_map<GraphSpaceID, std::vector<meta::cpp2::LeaderInfo>>& leaderIds) = 0;
+
+  virtual void fetchDiskParts(SpaceDiskPartsMap& diskParts) = 0;
 };
 
 /**
@@ -209,6 +213,8 @@ class MetaServerBasedPartManager : public PartManager, public meta::MetaChangedL
 
   void fetchLeaderInfo(
       std::unordered_map<GraphSpaceID, std::vector<meta::cpp2::LeaderInfo>>& leaderParts) override;
+
+  void fetchDiskParts(SpaceDiskPartsMap& diskParts) override;
 
   void onListenerAdded(GraphSpaceID spaceId,
                        PartitionID partId,
