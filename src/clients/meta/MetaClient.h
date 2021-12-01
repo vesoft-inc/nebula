@@ -609,18 +609,6 @@ class MetaClient {
 
   folly::Future<StatusOr<std::vector<cpp2::Zone>>> listZones();
 
-  folly::Future<StatusOr<bool>> addGroup(std::string groupName, std::vector<std::string> zoneNames);
-
-  folly::Future<StatusOr<bool>> dropGroup(std::string groupName);
-
-  folly::Future<StatusOr<bool>> addZoneIntoGroup(std::string zoneName, std::string groupName);
-
-  folly::Future<StatusOr<bool>> dropZoneFromGroup(std::string zoneName, std::string groupName);
-
-  folly::Future<StatusOr<std::vector<std::string>>> getGroup(std::string groupName);
-
-  folly::Future<StatusOr<std::vector<cpp2::Group>>> listGroups();
-
   Status refreshCache();
 
   folly::Future<StatusOr<cpp2::StatsItem>> getStats(GraphSpaceID spaceId);

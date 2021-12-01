@@ -27,6 +27,10 @@ std::string ShowPartsSentence::toString() const { return std::string("SHOW PARTS
 
 std::string ShowUsersSentence::toString() const { return std::string("SHOW USERS"); }
 
+std::string DescribeUserSentence::toString() const {
+  return folly::stringPrintf("DESCRIBE USER %s", account_.get()->c_str());
+}
+
 std::string ShowRolesSentence::toString() const {
   return folly::stringPrintf("SHOW ROLES IN %s", name_.get()->c_str());
 }

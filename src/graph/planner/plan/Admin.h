@@ -653,6 +653,23 @@ class ListUsers final : public SingleDependencyNode {
       : SingleDependencyNode(qctx, Kind::kListUsers, dep) {}
 };
 
+class DescribeUser final : public SingleDependencyNode {
+ public:
+  static DescribeUser* make(QueryContext* qctx, PlanNode* dep, const std::string* username) {
+    return qctx->objPool()->add(new DescribeUser(qctx, dep, username));
+  }
+
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
+  const std::string* username() const { return username_; }
+
+ private:
+  explicit DescribeUser(QueryContext* qctx, PlanNode* dep, const std::string* username)
+      : SingleDependencyNode(qctx, Kind::kDescribeUser, dep), username_(username) {}
+
+  const std::string* username_;
+};
+
 class ListRoles final : public SingleDependencyNode {
  public:
   static ListRoles* make(QueryContext* qctx, PlanNode* dep, GraphSpaceID space) {
@@ -753,82 +770,6 @@ class ShowCollation final : public SingleDependencyNode {
  private:
   ShowCollation(QueryContext* qctx, PlanNode* input)
       : SingleDependencyNode(qctx, Kind::kShowCollation, input) {}
-};
-
-class AddGroup final : public SingleDependencyNode {
- public:
-  static AddGroup* make(QueryContext* qctx,
-                        PlanNode* input,
-                        std::string groupName,
-                        std::vector<std::string> zoneNames) {
-    return qctx->objPool()->add(
-        new AddGroup(qctx, input, std::move(groupName), std::move(zoneNames)));
-  }
-
-  const std::string& groupName() const { return groupName_; }
-
-  const std::vector<std::string>& zoneNames() const { return zoneNames_; }
-
- private:
-  AddGroup(QueryContext* qctx,
-           PlanNode* input,
-           std::string groupName,
-           std::vector<std::string> zoneNames)
-      : SingleDependencyNode(qctx, Kind::kAddGroup, input) {
-    groupName_ = std::move(groupName);
-    zoneNames_ = std::move(zoneNames);
-  }
-
- private:
-  std::string groupName_;
-  std::vector<std::string> zoneNames_;
-};
-
-class DropGroup final : public SingleDependencyNode {
- public:
-  static DropGroup* make(QueryContext* qctx, PlanNode* input, std::string groupName) {
-    return qctx->objPool()->add(new DropGroup(qctx, input, std::move(groupName)));
-  }
-
-  const std::string& groupName() const { return groupName_; }
-
- private:
-  DropGroup(QueryContext* qctx, PlanNode* input, std::string groupName)
-      : SingleDependencyNode(qctx, Kind::kDropGroup, input) {
-    groupName_ = std::move(groupName);
-  }
-
- private:
-  std::string groupName_;
-};
-
-class DescribeGroup final : public SingleDependencyNode {
- public:
-  static DescribeGroup* make(QueryContext* qctx, PlanNode* input, std::string groupName) {
-    return qctx->objPool()->add(new DescribeGroup(qctx, input, std::move(groupName)));
-  }
-
-  const std::string& groupName() const { return groupName_; }
-
- private:
-  DescribeGroup(QueryContext* qctx, PlanNode* input, std::string groupName)
-      : SingleDependencyNode(qctx, Kind::kDescribeGroup, input) {
-    groupName_ = std::move(groupName);
-  }
-
- private:
-  std::string groupName_;
-};
-
-class ListGroups final : public SingleDependencyNode {
- public:
-  static ListGroups* make(QueryContext* qctx, PlanNode* input) {
-    return qctx->objPool()->add(new ListGroups(qctx, input));
-  }
-
- private:
-  ListGroups(QueryContext* qctx, PlanNode* input)
-      : SingleDependencyNode(qctx, Kind::kShowGroups, input) {}
 };
 
 class AddHostIntoZone final : public SingleDependencyNode {
@@ -979,72 +920,6 @@ class ListZones final : public SingleDependencyNode {
  private:
   ListZones(QueryContext* qctx, PlanNode* input)
       : SingleDependencyNode(qctx, Kind::kShowZones, input) {}
-};
-
-class AddZoneIntoGroup final : public SingleDependencyNode {
- public:
-  static AddZoneIntoGroup* make(QueryContext* qctx,
-                                PlanNode* input,
-                                std::string groupName,
-                                std::string zoneName) {
-    return qctx->objPool()->add(
-        new AddZoneIntoGroup(qctx, input, std::move(zoneName), std::move(groupName)));
-  }
-
-  const std::string& zoneName() const { return zoneName_; }
-
-  const std::string& groupName() const { return groupName_; }
-
- private:
-  AddZoneIntoGroup(QueryContext* qctx, PlanNode* input, std::string zoneName, std::string groupName)
-      : SingleDependencyNode(qctx, Kind::kAddZoneIntoGroup, input) {
-    zoneName_ = std::move(zoneName);
-    groupName_ = std::move(groupName);
-  }
-
- private:
-  std::string zoneName_;
-  std::string groupName_;
-};
-
-class DropZoneFromGroup final : public SingleDependencyNode {
- public:
-  static DropZoneFromGroup* make(QueryContext* qctx,
-                                 PlanNode* input,
-                                 std::string groupName,
-                                 std::string zoneName) {
-    return qctx->objPool()->add(
-        new DropZoneFromGroup(qctx, input, std::move(zoneName), std::move(groupName)));
-  }
-
-  const std::string& zoneName() const { return zoneName_; }
-
-  const std::string& groupName() const { return groupName_; }
-
- private:
-  DropZoneFromGroup(QueryContext* qctx,
-                    PlanNode* input,
-                    std::string zoneName,
-                    std::string groupName)
-      : SingleDependencyNode(qctx, Kind::kDropZoneFromGroup, input) {
-    zoneName_ = std::move(zoneName);
-    groupName_ = std::move(groupName);
-  }
-
- private:
-  std::string zoneName_;
-  std::string groupName_;
-};
-
-class ShowGroups final : public SingleDependencyNode {
- public:
-  static ShowGroups* make(QueryContext* qctx, PlanNode* input) {
-    return qctx->objPool()->add(new ShowGroups(qctx, input));
-  }
-
- private:
-  ShowGroups(QueryContext* qctx, PlanNode* input)
-      : SingleDependencyNode(qctx, Kind::kShowGroups, input) {}
 };
 
 class ShowZones final : public SingleDependencyNode {

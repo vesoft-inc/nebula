@@ -8,7 +8,7 @@
 
 #include <vector>
 
-#include "clients/storage/GraphStorageClient.h"
+#include "clients/storage/StorageClient.h"
 #include "common/base/StatusOr.h"
 #include "common/datatypes/Value.h"
 #include "common/datatypes/Vertex.h"
