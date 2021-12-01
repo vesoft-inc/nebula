@@ -273,7 +273,7 @@ Status MatchValidator::validateFilter(const Expression *filter,
   auto transformRes = ExpressionUtils::filterTransform(filter);
   NG_RETURN_IF_ERROR(transformRes);
   // rewrite Attribute to LabelTagProperty
-  whereClauseCtx.filter = ExpressionUtils::rewriteAttr2LabelTagProp(transformRes.value());
+  whereClauseCtx.filter = transformRes.value();
 
   auto typeStatus = deduceExprType(whereClauseCtx.filter);
   NG_RETURN_IF_ERROR(typeStatus);
@@ -383,7 +383,7 @@ Status MatchValidator::validateReturn(MatchReturn *ret,
           ExpressionUtils::hasAny(column->expr(), {Expression::Kind::kAggregate})) {
         retClauseCtx.yield->hasAgg_ = true;
       }
-      column->setExpr(ExpressionUtils::rewriteAttr2LabelTagProp(column->expr()));
+      // column->setExpr(ExpressionUtils::rewriteAttr2LabelTagProp(column->expr()));
       exprs.push_back(column->expr());
       columns->addColumn(column->clone().release());
     }
@@ -426,6 +426,7 @@ Status MatchValidator::validateAliases(
   static const std::unordered_set<Expression::Kind> kinds = {Expression::Kind::kLabel,
                                                              Expression::Kind::kLabelAttribute,
                                                              Expression::Kind::kLabelTagProperty,
+                                                             Expression::Kind::kAttribute,
                                                              // primitive props
                                                              Expression::Kind::kEdgeSrc,
                                                              Expression::Kind::kEdgeDst,
@@ -822,13 +823,25 @@ Status MatchValidator::checkAlias(
       NG_RETURN_IF_ERROR(res);
       return Status::OK();
     }
-    case Expression::Kind::kLabelTagProperty: {
-      auto labelExpr = static_cast<const LabelTagPropertyExpression *>(refExpr)->label();
-      auto name = static_cast<const VariablePropertyExpression *>(labelExpr)->prop();
-      auto res = getAliasType(aliasesUsed, name);
-      NG_RETURN_IF_ERROR(res);
-      if (res.value() != AliasType::kNode) {
-        return Status::SemanticError("The type of `%s' must be tag", name.c_str());
+      //    case Expression::Kind::kLabelTagProperty: {
+      //  auto labelExpr = static_cast<const LabelTagPropertyExpression *>(refExpr)->label();
+      //  auto name = static_cast<const VariablePropertyExpression *>(labelExpr)->prop();
+      //  auto res = getAliasType(aliasesUsed, name);
+      //  NG_RETURN_IF_ERROR(res);
+      //  if (res.value() != AliasType::kNode) {
+      //  return Status::SemanticError("The type of `%s' must be tag", name.c_str());
+      //  }
+      //  return Status::OK();
+    //  }
+    case Expression::Kind::kAttribute: {
+      auto leftExpr = static_cast<const AttributeExpression *>(refExpr)->left();
+      if (leftExpr->kind() == Expression::Kind::kLabelAttribute) {
+        auto name = static_cast<const LabelAttributeExpression *>(leftExpr)->left()->name();
+        auto res = getAliasType(aliasesUsed, name);
+        NG_RETURN_IF_ERROR(res);
+        if (res.value() != AliasType::kNode) {
+          return Status::SemanticError("The type of `%s' should be tag", name.c_str());
+        }
       }
       return Status::OK();
     }
@@ -838,7 +851,8 @@ Status MatchValidator::checkAlias(
       NG_RETURN_IF_ERROR(res);
       if (res.value() == AliasType::kNode) {
         return Status::SemanticError(
-            "To get the property of the vertex, use the format `var.tag.prop'");
+            "To get the property of the vertex in `%s', should use the format `var.tag.prop'",
+            refExpr->toString().c_str());
       }
       return Status::OK();
     }

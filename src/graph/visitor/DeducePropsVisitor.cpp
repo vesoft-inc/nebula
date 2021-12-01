@@ -139,12 +139,12 @@ void DeducePropsVisitor::visit(TagPropertyExpression *expr) {
 }
 
 void DeducePropsVisitor::visit(LabelTagPropertyExpression *expr) {
-  auto status = qctx_->schemaMng()->toTagID(space_, expr->tag());
+  auto status = qctx_->schemaMng()->toTagID(space_, expr->sym());
   if (!status.ok()) {
     status_ = std::move(status).status();
     return;
   }
-  exprProps_->insertTagNameIds(expr->tag(), status.value());
+  exprProps_->insertTagNameIds(expr->sym(), status.value());
   exprProps_->insertTagProp(status.value(), expr->prop());
 }
 

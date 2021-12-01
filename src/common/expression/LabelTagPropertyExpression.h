@@ -15,6 +15,7 @@
  */
 namespace nebula {
 
+/*
 class LabelTagPropertyExpression final : public Expression {
  public:
   LabelTagPropertyExpression& operator=(const LabelTagPropertyExpression& rhs) = delete;
@@ -60,5 +61,5 @@ class LabelTagPropertyExpression final : public Expression {
   std::string tag_;
   std::string prop_;
 };
-
+*/
 }  // namespace nebula

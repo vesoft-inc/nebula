@@ -21,6 +21,7 @@ bool ExpressionUtils::isPropertyExpr(const Expression *expr) {
   auto kind = expr->kind();
 
   return std::unordered_set<Expression::Kind>{Expression::Kind::kTagProperty,
+                                              Expression::Kind::kLabelTagProperty,
                                               Expression::Kind::kEdgeProperty,
                                               Expression::Kind::kInputProperty,
                                               Expression::Kind::kVarProperty,
@@ -78,6 +79,7 @@ bool ExpressionUtils::checkVarExprIfExist(const Expression *expr, const QueryCon
 std::vector<const Expression *> ExpressionUtils::findAllStorage(const Expression *expr) {
   return collectAll(expr,
                     {Expression::Kind::kTagProperty,
+                     Expression::Kind::kLabelTagProperty,
                      Expression::Kind::kEdgeProperty,
                      Expression::Kind::kDstProperty,
                      Expression::Kind::kSrcProperty,
@@ -100,6 +102,7 @@ bool ExpressionUtils::isConstExpr(const Expression *expr) {
                   Expression::Kind::kVar,
                   Expression::Kind::kVersionedVar,
                   Expression::Kind::kLabelAttribute,
+                  Expression::Kind::kLabelTagProperty,
                   Expression::Kind::kTagProperty,
                   Expression::Kind::kEdgeProperty,
                   Expression::Kind::kDstProperty,

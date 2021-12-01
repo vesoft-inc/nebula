@@ -15,7 +15,6 @@ nebula_add_library(
     FunctionCallExpression.cpp
     AggregateExpression.cpp
     PropertyExpression.cpp
-    LabelTagPropertyExpression.cpp
     UUIDExpression.cpp
     VariableExpression.cpp
     ContainerExpression.cpp

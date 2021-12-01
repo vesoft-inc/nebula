@@ -521,7 +521,7 @@ std::vector<IndexItem> IndexScanRule::findValidIndex(graph::QueryContext* qctx,
         return item.col_ == fields[0].get_name();
       });
       if (it == items.items.end()) {
-        validIndexes.erase(index);
+        index = validIndexes.erase(index);
       } else {
         index++;
       }

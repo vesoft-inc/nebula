@@ -7,7 +7,7 @@
 #include "common/expression/ExprVisitor.h"
 
 namespace nebula {
-
+/*
 const Value& LabelTagPropertyExpression::eval(ExpressionContext& ctx) {
   const auto& var = label_->eval(ctx);
   if (var.type() != Value::Type::VERTEX) {
@@ -51,5 +51,5 @@ void LabelTagPropertyExpression::resetFrom(Decoder& decoder) {
 }
 
 void LabelTagPropertyExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
-
+*/
 }  // namespace nebula
