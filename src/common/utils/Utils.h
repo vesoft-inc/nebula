@@ -49,6 +49,8 @@ class Utils final {
     }
     return HostAddr(adminAddr.host, adminAddr.port - 2);
   }
+
+  static std::string getMacAddr();
 };
 }  // namespace nebula
 #endif  // COMMON_UTILS_UTILS_H_
