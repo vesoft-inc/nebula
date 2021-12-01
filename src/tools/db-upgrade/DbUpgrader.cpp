@@ -387,7 +387,7 @@ void UpgraderSpace::runPartV1() {
         auto reader =
             RowReaderWrapper::getEdgePropReader(schemaMan_, spaceId_, std::abs(edgetype), val);
         if (!reader) {
-          LOG(ERROR) << "Can't get edge reader of " << edgetype;
+          LC << "Can't get edge reader of " << edgetype;
           iter->next();
           continue;
         }
@@ -410,6 +410,15 @@ void UpgraderSpace::runPartV1() {
         }
         */
         for (auto& elem : data) {
+          if (isVertex(spaceVidLen_, elem.first)) {
+            LOG(INFO) << " vertexId " << getVertexId(spaceVidLen_, elem.first) << " tagId "
+                      << getTagId(spaceVidLen_, elem.first);
+          } else {
+            LOG(INFO) << " srcId  " << getSrcId(spaceVidLen_, elem.first) << " dstId "
+                      << getDstId(spaceVidLen_, elem.first) << " edgeType "
+                      << getEdgeType(spaceVidLen_, elem.first) << " rank "
+                      << getRank(spaceVidLen_, elem.first);
+          }
           s = sstFileWriter.Put(elem.first, elem.second);
           if (!s.ok()) {
             LOG(FATAL) << "Write sst file writer failed, path: " << newPartPath
@@ -451,6 +460,15 @@ void UpgraderSpace::runPartV1() {
     */
 
     for (auto& elem : data) {
+      if (isVertex(spaceVidLen_, elem.first)) {
+        LOG(INFO) << " vertexId " << getVertexId(spaceVidLen_, elem.first) << " tagId "
+                  << getTagId(spaceVidLen_, elem.first);
+      } else {
+        LOG(INFO) << " srcId  " << getSrcId(spaceVidLen_, elem.first) << " dstId "
+                  << getDstId(spaceVidLen_, elem.first) << " edgeType "
+                  << getEdgeType(spaceVidLen_, elem.first) << " rank "
+                  << getRank(spaceVidLen_, elem.first);
+      }
       s = sstFileWriter.Put(elem.first, elem.second);
       if (!s.ok()) {
         LOG(FATAL) << "Write sst file writer failed, path: " << newPartPath
@@ -532,9 +550,7 @@ void UpgraderSpace::doProcessV1() {
       LOG(FATAL) << "Write multi put system data in space id " << spaceId_ << " failed.";
     }
     LOG(INFO) << "Handle system data in space id " << spaceId_ << " success";
-    LOG(INFO) << "Handle data in space id " << spaceId_ << " success";
   }
-
   LOG(INFO) << "Handle data in space id " << spaceId_ << " success";
 }
 
@@ -1187,7 +1203,6 @@ void DbUpgrader::run() {
     if (!ret.ok()) {
       LOG(FATAL) << "Upgrade from path " << srcPath_ << " space id " << entry << " to path "
                  << dstPath_ << " init failed";
-      LOG(FATAL) << "Ignore upgrade " << srcPath_ << " space id " << entry;
     } else {
       upgraderSpaces.emplace_back(std::move(it));
     }
