@@ -631,6 +631,8 @@ class MetaClient {
 
   int64_t HeartbeatTime() { return heartbeatTime_; }
 
+  const std::string& getLocalIp() { return localHost_.host; }
+
  protected:
   // Return true if load succeeded.
   bool loadData();
@@ -716,8 +718,6 @@ class MetaClient {
   ListenersMap doGetListenersMap(const HostAddr& host, const LocalCache& localCache);
 
   Status verifyVersion();
-
-  HostAddr getLocalHost() { return localHost_; }
 
  private:
   std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;

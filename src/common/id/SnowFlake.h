@@ -17,9 +17,9 @@ class SnowFlake {
 
   // TODO: return value may be bool?
   void init() {
-    HostAddr host = metaClient_.getLocalHost();
+    const std::string& ip = metaClient_->getLocalIp();
 
-    auto result = metaClient_->getWorkerId(nebula::Utils::getMacAddr());
+    auto result = metaClient_->getWorkerId(nebula::Utils::getMacAddr(ip));
     if (!result.ok()) {
       LOG(FATAL) << "Failed to get worker id: " << result.status();
     }
