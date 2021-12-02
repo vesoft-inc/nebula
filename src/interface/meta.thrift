@@ -1104,7 +1104,7 @@ struct VerifyClientVersionResp {
 
 struct VerifyClientVersionReq {
     1: required binary version = common.version;
-    3: common.HostAddr host;
+    2: common.HostAddr host;
 }
 
 service MetaService {
