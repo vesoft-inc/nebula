@@ -429,7 +429,13 @@ void UpgraderSpace::runPartV1() {
         }
         */
         if (!tagOpen) {
-          newTagPartPath = getCurrentPartSstFile(partId, true);
+          auto newTagPartPathTmp = getCurrentPartSstFile(partId, true);
+          if (newTagPartPathTmp == newTagPartPath) {
+            sleep(2);
+            newTagPartPath = getCurrentPartSstFile(partId, true);
+          } else {
+            newTagPartPath = newTagPartPathTmp;
+          }
           if (newTagPartPath.empty()) {
             LOG(FATAL) << "Gen tag path failed, path " << newTagPartPath;
           }
@@ -461,14 +467,12 @@ void UpgraderSpace::runPartV1() {
           }
         }
 
-        if (tagsstFileWriter.FileSize() >= 2147483648) {
-          auto s = tagsstFileWriter.Finish();
-          if (!s.ok()) {
-            LOG(FATAL) << "Failure to insert data to ,  " << newTagPartPath
-                       << ", error: " << s.ToString();
-          }
-          tagOpen = false;
+        auto s = tagsstFileWriter.Finish();
+        if (!s.ok()) {
+          LOG(FATAL) << "Failure to insert data to ,  " << newTagPartPath
+                     << ", error: " << s.ToString();
         }
+        tagOpen = false;
         tagData.clear();
       }
 
@@ -483,7 +487,13 @@ void UpgraderSpace::runPartV1() {
         }
         */
         if (!edgeOpen) {
-          newEdgePartPath = getCurrentPartSstFile(partId, false);
+          auto newEdgePartPathTmp = getCurrentPartSstFile(partId, false);
+          if (newEdgePartPathTmp == newEdgePartPath) {
+            sleep(2);
+            newEdgePartPath = getCurrentPartSstFile(partId, false);
+          } else {
+            newEdgePartPath = newEdgePartPathTmp;
+          }
           if (newEdgePartPath.empty()) {
             LOG(FATAL) << "Gen edge path failed, path " << newEdgePartPath;
           }
@@ -518,14 +528,12 @@ void UpgraderSpace::runPartV1() {
           }
         }
 
-        if (edgesstFileWriter.FileSize() >= 2147483648) {
-          auto s = edgesstFileWriter.Finish();
-          if (!s.ok()) {
-            LOG(FATAL) << "Failure to insert data to ,  " << newEdgePartPath
-                       << ", error: " << s.ToString();
-          }
-          edgeOpen = false;
+        auto s = edgesstFileWriter.Finish();
+        if (!s.ok()) {
+          LOG(FATAL) << "Failure to insert data to ,  " << newEdgePartPath
+                     << ", error: " << s.ToString();
         }
+        edgeOpen = false;
         edgeData.clear();
       }
 
@@ -544,7 +552,13 @@ void UpgraderSpace::runPartV1() {
     if (tagData.size() > 0) {
       VLOG(2) << "Send record total rows " << tagData.size();
       if (!tagOpen) {
-        newTagPartPath = getCurrentPartSstFile(partId, true);
+        auto newTagPartPathTmp = getCurrentPartSstFile(partId, true);
+        if (newTagPartPathTmp == newTagPartPath) {
+          sleep(2);
+          newTagPartPath = getCurrentPartSstFile(partId, true);
+        } else {
+          newTagPartPath = newTagPartPathTmp;
+        }
         if (newTagPartPath.empty()) {
           LOG(FATAL) << "Gen tag path failed, path " << newTagPartPath;
         }
@@ -587,7 +601,13 @@ void UpgraderSpace::runPartV1() {
     if (edgeData.size() > 0) {
       VLOG(2) << "Send record total rows " << edgeData.size();
       if (!edgeOpen) {
-        newEdgePartPath = getCurrentPartSstFile(partId, false);
+        auto newEdgePartPathTmp = getCurrentPartSstFile(partId, false);
+        if (newEdgePartPathTmp == newEdgePartPath) {
+          sleep(2);
+          newEdgePartPath = getCurrentPartSstFile(partId, false);
+        } else {
+          newEdgePartPath = newEdgePartPathTmp;
+        }
         if (newEdgePartPath.empty()) {
           LOG(FATAL) << "Gen edge path failed, path " << newEdgePartPath;
         }
