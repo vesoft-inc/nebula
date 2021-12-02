@@ -7,8 +7,6 @@
 #ifndef COMMON_UTILS_UTILS_H_
 #define COMMON_UTILS_UTILS_H_
 
-#include <string>
-
 #include "common/base/Base.h"
 #include "common/datatypes/HostAddr.h"
 

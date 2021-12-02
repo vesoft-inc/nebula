@@ -1,4 +1,4 @@
-/* Copyright (c) 2019 vesoft inc. All rights reserved.
+/* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
@@ -24,7 +24,7 @@ class SnowFlake {
       LOG(FATAL) << "Failed to get worker id: " << result.status();
     }
     int32_t workerId = result.value().get_workerid();
-    if (workerId < 0 || workerId > max_machine_id_) {
+    if (workerId < 0 || workerId > maxMachineId_) {
       LOG(FATAL) << "workerId should be in [0, 1023]";
     }
   }
@@ -41,7 +41,7 @@ class SnowFlake {
 
     // if it is the same time, then the microsecond sequence
     if (lastTimestamp_ == timestamp) {
-      sequence_ = (sequence_ + 1) & max_sequence_id_;
+      sequence_ = (sequence_ + 1) & maxSequenceId_;
       // if the microsecond sequence overflow
       if (sequence_ == 0) {
         // block to the next millisecond, get the new timestamp
@@ -51,7 +51,7 @@ class SnowFlake {
       sequence_ = 0;
     }
     lastTimestamp_ = timestamp;
-    return (timestamp - start_stmp_) << timestamp_left | workerId_ << machine_left | sequence_;
+    return (timestamp - startStmp_) << timestampLeft | workerId_ << machineLeft | sequence_;
   }
 
  private:
@@ -78,15 +78,15 @@ class SnowFlake {
   }
 
   // start
-  static constexpr int64_t start_stmp_ = 1480166465631;
-  static constexpr int64_t sequence_bit_ = 12;
-  static constexpr int64_t worker_bit_ = 10;
+  static constexpr int64_t startStmp_ = 1480166465631;
+  static constexpr int64_t sequenceBit_ = 12;
+  static constexpr int64_t workerBit_ = 10;
 
-  static constexpr int64_t max_machine_id_ = (1 << worker_bit_) - 1;
-  static constexpr int64_t max_sequence_id_ = (1 << sequence_bit_) - 1;
+  static constexpr int64_t maxMachineId_ = (1 << workerBit_) - 1;
+  static constexpr int64_t maxSequenceId_ = (1 << sequenceBit_) - 1;
 
-  static constexpr int64_t machine_left = sequence_bit_;
-  static constexpr int64_t timestamp_left = sequence_bit_ + worker_bit_;
+  static constexpr int64_t machineLeft = sequenceBit_;
+  static constexpr int64_t timestampLeft = sequenceBit_ + workerBit_;
 };  // namespace meta
 
 }  // namespace meta

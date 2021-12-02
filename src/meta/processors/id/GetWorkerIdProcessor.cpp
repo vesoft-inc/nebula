@@ -13,31 +13,30 @@ void GetWorkerIdProcessor::process(const cpp2::GetWorkerIdReq& req) {
   const string& mac_address = req.get_mac_address();
   auto result = doGet(mac_address);
   if (nebula::ok(result)) {
-    string worker_id_str = std::move(nebula::value(result));
-    int32_t worker_id_int32 = std::stoi(worker_id_str);
+    string workerIdStr = std::move(nebula::value(result));
+    int32_t workerIdInt32 = std::stoi(workerIdStr);
 
     handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
-    resp_.set_workerid(std::move(worker_id_int32));
+    resp_.set_workerid(std::move(workerIdInt32));
     return;
   }
 
   auto new_result = doGet(id_key);
   if (!nebula::ok(new_result)) {
     LOG(ERROR) << "Get id_key worker id failed";
-    handleErrorCode(nebula::cpp2::ErrorCode::E_GET_WORKER_ID_FAILED);
+    // TODO handleErrorCode(nebula::cpp2::ErrorCode::E_GET_WORKER_ID_FAILED);
     return;
   }
-
   std::lock_guard<std::mutex> lck(lock_);
 
-  string worker_id_str = std::move(nebula::value(new_result));
-  int32_t worker_id_int32 = std::stoi(worker_id_str);
+  string workerIdStr = std::move(nebula::value(new_result));
+  int32_t workerIdInt32 = std::stoi(workerIdStr);
 
-  int32_t new_worker_id = worker_id_int32 + 1;
-  doPut(std::vector<kvstore::KV>{{id_key, std::to_string(new_worker_id)}});
+  int32_t newWorkerId = workerIdInt32 + 1;
+  doPut(std::vector<kvstore::KV>{{id_key, std::to_string(newWorkerId)}});
 
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
-  resp_.set_workerid(std::move(worker_id_int32));
+  resp_.set_workerid(std::move(workerIdInt32));
 }
 
 }  // namespace meta

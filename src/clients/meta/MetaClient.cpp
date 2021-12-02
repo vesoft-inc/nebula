@@ -3488,18 +3488,16 @@ folly::Future<StatusOr<cpp2::ExecResp>> MetaClient::killQuery(
   return future;
 }
 
-folly::Future<StatusOr<cpp2::GetWorkerIdResp>> MetaClient::getWorkerId(
-    const std::string& mac_addr) {
+folly::Future<StatusOr<cpp2::GetWorkerIdResp>> MetaClient::getWorkerId(const std::string& macAddr) {
   auto req = cpp2::GetWorkerIdReq();
-  req.set_mac_address(mac_addr);
+  req.set_mac_address(macAddr);
   folly::Promise<StatusOr<cpp2::GetWorkerIdResp>> promise;
   auto future = promise.getFuture();
   getResponse(
       std::move(req),
       [](auto client, auto request) { return client->future_getWorkerId(request); },
-      [](cpp2::GetWorkerIdResp&& resp) { return std::move(resp); },
+      [](cpp2::GetWorkerIdResp&& resp) -> decltype(auto) { return std::move(resp); },
       std::move(promise));
-
   return future;
 }
 
@@ -3614,6 +3612,5 @@ Status MetaClient::verifyVersion() {
   }
   return Status::OK();
 }
-
 }  // namespace meta
 }  // namespace nebula

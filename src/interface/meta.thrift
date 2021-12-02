@@ -488,7 +488,8 @@ struct GetWorkerIdReq {
 
 struct GetWorkerIdResp {
     1: common.ErrorCode code,
-    2: i32 workerid,
+    2: common.HostAddr  leader,
+    3: i32              workerid,
 }
 
 struct MultiPutReq {

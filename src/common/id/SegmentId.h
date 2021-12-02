@@ -1,4 +1,4 @@
-/* Copyright (c) 2019 vesoft inc. All rights reserved.
+/* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License,
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
@@ -14,21 +14,21 @@ namespace meta {
 class SegmentId {
  public:
   int64_t getId() {
-    if (cur_ < segment_start_ + (step >> 1) - 1) {
+    if (cur_ < segmentStart_ + (step >> 1) - 1) {
       cur_ += 1;
-    } else if (cur_ < segment_start_ + step - 1) {
-      if (segment_start_ == next_segment_start_) {
+    } else if (cur_ < segmentStart_ + step - 1) {
+      if (segmentStart_ == nextSegmentStart_) {
         fetchSegment();
       }
       cur_ += 1;
     } else {
-      if (segment_start_ >= next_segment_start_) {
+      if (segmentStart_ >= nextSegmentStart_) {
         // handle
         // 这里要注意
-        next_segment_start_ = client_.getSegment();
+        nextSegmentStart_ = client_.getSegment();
       }
-      segment_start_ = next_segment_start_;
-      cur_ = segment_start_;
+      segmentStart_ = nextSegmentStart_;
+      cur_ = segmentStart_;
     }
 
     return cur_;
@@ -37,12 +37,12 @@ class SegmentId {
  private:
   // wip: async
   void fetchSegment() {
-    int64_t new_segment = client_.getSegment();
-    // when get id fast or fetchSegment() slow, we use all id in segment but next_segment_start_
+    int64_t newSegment = client_.getSegment();
+    // when get id fast or fetchSegment() slow, we use all id in segment but nextSegmentStart_
     // isn't updated. In this case, we will getSegment() directly. In case this function update
     // after getSegment(), adding che here.
-    if (segment_start_ == next_segment_start_) {
-      next_segment_start_ = new_segment;
+    if (segmentStart_ == nextSegmentStart_) {
+      nextSegmentStart_ = newSegment;
     }
   }
 
@@ -50,8 +50,8 @@ class SegmentId {
 
   int64_t cur_;
 
-  int64_t segment_start_;
-  int64_t next_segment_start_;
+  int64_t segmentStart_;
+  int64_t nextSegmentStart_;
 
   int64_t step;
 };
