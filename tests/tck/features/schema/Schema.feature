@@ -769,6 +769,12 @@ Feature: Insert string vid of vertex and edge
       ALTER EDGE edge_not_null_default1 CHANGE (name FIXED_STRING(10) DEFAULT 10)
       """
     Then a ExecutionError should be raised at runtime: Invalid param!
+    # chinese tag without quote mark
+    When executing query:
+      """
+      CREATE TAG 队伍(名字 string);
+      """
+    Then a SyntaxError should be raised at runtime:
     # chinese tag and chinese prop
     When executing query:
       """
