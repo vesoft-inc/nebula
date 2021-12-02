@@ -66,6 +66,10 @@ JobManager::~JobManager() { shutDown(); }
 nebula::cpp2::ErrorCode JobManager::handleRemainingJobs() {
   std::unique_ptr<kvstore::KVIterator> iter;
   auto retCode = kvStore_->prefix(kDefaultSpaceId, kDefaultPartId, JobUtil::jobPrefix(), &iter);
+  if (retCode == nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
+    LOG(INFO) << "Not leader, skip reading remaining jobs";
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  }
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << "Can't find jobs, error: " << apache::thrift::util::enumNameSafe(retCode);
     return retCode;

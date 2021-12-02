@@ -10,7 +10,7 @@
 namespace nebula {
 namespace storage {
 
-using StorageClient = storage::GraphStorageClient;
+using StorageClient = storage::StorageClient;
 
 template <typename Response>
 class StorageResponseReader {
