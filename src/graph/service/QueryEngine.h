@@ -9,7 +9,7 @@
 #include <folly/executors/IOThreadPoolExecutor.h>
 
 #include "clients/meta/MetaClient.h"
-#include "clients/storage/GraphStorageClient.h"
+#include "clients/storage/StorageClient.h"
 #include "common/charset/Charset.h"
 #include "common/cpp/helpers.h"
 #include "common/meta/IndexManager.h"
@@ -45,7 +45,7 @@ class QueryEngine final : public cpp::NonCopyable, public cpp::NonMovable {
 
   std::unique_ptr<meta::SchemaManager> schemaManager_;
   std::unique_ptr<meta::IndexManager> indexManager_;
-  std::unique_ptr<storage::GraphStorageClient> storage_;
+  std::unique_ptr<storage::StorageClient> storage_;
   std::unique_ptr<opt::Optimizer> optimizer_;
   std::unique_ptr<thread::GenericWorker> memoryMonitorThread_;
   meta::MetaClient* metaClient_{nullptr};

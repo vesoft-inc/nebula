@@ -15,8 +15,6 @@
 #include "kvstore/CompactionFilter.h"
 #include "storage/CommonUtils.h"
 
-DEFINE_bool(storage_kv_mode, false, "True for kv mode");
-
 namespace nebula {
 namespace storage {
 
@@ -32,11 +30,6 @@ class StorageCompactionFilter final : public kvstore::KVFilter {
   bool filter(GraphSpaceID spaceId,
               const folly::StringPiece& key,
               const folly::StringPiece& val) const override {
-    if (FLAGS_storage_kv_mode) {
-      // in kv mode, we don't delete any data
-      return false;
-    }
-
     if (NebulaKeyUtils::isTag(vIdLen_, key)) {
       return !tagValid(spaceId, key, val);
     } else if (NebulaKeyUtils::isEdge(vIdLen_, key)) {

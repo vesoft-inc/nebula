@@ -7,6 +7,21 @@ namespace cpp nebula.raftex
 
 include "common.thrift"
 
+enum Role {
+    LEADER      = 1, // the leader
+    FOLLOWER    = 2; // following a leader
+    CANDIDATE   = 3; // Has sent AskForVote request
+    LEARNER     = 4; // same with FOLLOWER, except that it does
+                     // not vote in leader election
+} (cpp.enum_strict)
+
+enum Status {
+    STARTING            = 0; // The part is starting, not ready for service
+    RUNNING             = 1; // The part is running
+    STOPPED             = 2; // The part has been stopped
+    WAITING_SNAPSHOT    = 3; // Waiting for the snapshot.
+} (cpp.enum_strict)
+
 enum ErrorCode {
     SUCCEEDED = 0;
 
@@ -50,6 +65,7 @@ struct AskForVoteRequest {
     5: TermID       term;               // Proposed term
     6: LogID        last_log_id;        // The last received log id
     7: TermID       last_log_term;      // The term receiving the last log
+    8: bool         is_pre_vote;        // Is pre vote or not
 }
 
 
@@ -154,9 +170,26 @@ struct SendSnapshotResponse {
     1: ErrorCode    error_code;
 }
 
+struct GetStateRequest {
+    1: GraphSpaceID space;              // Graphspace ID
+    2: PartitionID  part;               // Partition ID
+}
+
+struct GetStateResponse {
+    1: ErrorCode    error_code;
+    2: Role         role;
+    3: TermID       term;
+    4: bool         is_leader;
+    5: LogID        committed_log_id;
+    6: LogID        last_log_id;
+    7: TermID       last_log_term;
+    8: Status       status;
+}
+
 service RaftexService {
     AskForVoteResponse askForVote(1: AskForVoteRequest req);
     AppendLogResponse appendLog(1: AppendLogRequest req);
     SendSnapshotResponse sendSnapshot(1: SendSnapshotRequest req);
     HeartbeatResponse heartbeat(1: HeartbeatRequest req) (thread = 'eb');
+    GetStateResponse getState(1: GetStateRequest req);
 }

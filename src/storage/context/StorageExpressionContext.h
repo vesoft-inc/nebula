@@ -147,7 +147,7 @@ class StorageExpressionContext final : public ExpressionContext {
   size_t vIdLen_;
   bool isIntId_;
 
-  RowReader* reader_;
+  RowReader* reader_{nullptr};
   std::string key_;
   // tag or edge name
   std::string name_;

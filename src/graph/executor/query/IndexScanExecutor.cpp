@@ -11,7 +11,7 @@
 #include "graph/planner/plan/PlanNode.h"
 #include "graph/service/GraphFlags.h"
 
-using nebula::storage::GraphStorageClient;
+using nebula::storage::StorageClient;
 using nebula::storage::StorageRpcResponse;
 using nebula::storage::cpp2::LookupIndexResp;
 
@@ -21,7 +21,7 @@ namespace graph {
 folly::Future<Status> IndexScanExecutor::execute() { return indexScan(); }
 
 folly::Future<Status> IndexScanExecutor::indexScan() {
-  GraphStorageClient *storageClient = qctx_->getStorageClient();
+  StorageClient *storageClient = qctx_->getStorageClient();
   auto *lookup = asNode<IndexScan>(node());
   if (lookup->isEmptyResultSet()) {
     DataSet dataSet({"dummy"});
@@ -35,10 +35,10 @@ folly::Future<Status> IndexScanExecutor::indexScan() {
     return Status::Error("There is no index to use at runtime");
   }
 
-  GraphStorageClient::CommonRequestParam param(lookup->space(),
-                                               qctx()->rctx()->session()->id(),
-                                               qctx()->plan()->id(),
-                                               qctx()->plan()->isProfileEnabled());
+  StorageClient::CommonRequestParam param(lookup->space(),
+                                          qctx()->rctx()->session()->id(),
+                                          qctx()->plan()->id(),
+                                          qctx()->plan()->isProfileEnabled());
   return storageClient
       ->lookupIndex(param,
                     ictxs,
