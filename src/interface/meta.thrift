@@ -554,6 +554,10 @@ struct LeaderInfo {
     2: i64                term
 }
 
+struct PartitionList {
+    1: list<common.PartitionID> part_list;
+}
+
 struct HBReq {
     1: HostRole   role,
     2: common.HostAddr host,
@@ -563,6 +567,9 @@ struct HBReq {
     5: binary     git_info_sha,
     // version of binary
     6: optional binary version,
+    7: optional map<common.GraphSpaceID, map<binary, PartitionList>
+        (cpp.template = "std::unordered_map")>
+        (cpp.template = "std::unordered_map") disk_parts;
 }
 
 struct IndexFieldDef {
@@ -851,49 +858,6 @@ struct ListZonesResp {
     1: common.ErrorCode code,
     2: common.HostAddr  leader,
     3: list<Zone>       zones,
-}
-
-struct AddGroupReq {
-    1: binary        group_name,
-    2: list<binary>  zone_names,
-}
-
-struct DropGroupReq {
-    1: binary                 group_name,
-}
-
-struct AddZoneIntoGroupReq {
-    1: binary  zone_name,
-    2: binary  group_name,
-}
-
-struct DropZoneFromGroupReq {
-    1: binary  zone_name,
-    2: binary  group_name,
-}
-
-struct GetGroupReq {
-    1: binary                 group_name,
-}
-
-struct GetGroupResp {
-    1: common.ErrorCode      code,
-    2: common.HostAddr       leader,
-    3: list<binary>          zone_names,
-}
-
-struct ListGroupsReq {
-}
-
-struct Group {
-    1: binary                 group_name,
-    2: list<binary>           zone_names,
-}
-
-struct ListGroupsResp {
-    1: common.ErrorCode code,
-    2: common.HostAddr  leader,
-    3: list<Group>      groups,
 }
 
 enum ListenerType {
@@ -1225,13 +1189,6 @@ service MetaService {
     ExecResp       dropHostFromZone(1: DropHostFromZoneReq req);
     GetZoneResp    getZone(1: GetZoneReq req);
     ListZonesResp  listZones(1: ListZonesReq req);
-
-    ExecResp       addGroup(1: AddGroupReq req);
-    ExecResp       dropGroup(1: DropGroupReq req);
-    ExecResp       addZoneIntoGroup(1: AddZoneIntoGroupReq req);
-    ExecResp       dropZoneFromGroup(1: DropZoneFromGroupReq req);
-    GetGroupResp   getGroup(1: GetGroupReq req);
-    ListGroupsResp listGroups(1: ListGroupsReq req);
 
     CreateBackupResp createBackup(1: CreateBackupReq req);
     ExecResp       restoreMeta(1: RestoreMetaReq req);

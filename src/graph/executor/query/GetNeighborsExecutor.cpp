@@ -7,14 +7,14 @@
 
 #include <sstream>
 
-#include "clients/storage/GraphStorageClient.h"
+#include "clients/storage/StorageClient.h"
 #include "common/datatypes/List.h"
 #include "common/datatypes/Vertex.h"
 #include "common/time/ScopedTimer.h"
 #include "graph/context/QueryContext.h"
 #include "graph/service/GraphFlags.h"
 
-using nebula::storage::GraphStorageClient;
+using nebula::storage::StorageClient;
 using nebula::storage::StorageRpcResponse;
 using nebula::storage::cpp2::GetNeighborsResponse;
 
@@ -40,12 +40,12 @@ folly::Future<Status> GetNeighborsExecutor::execute() {
   }
 
   time::Duration getNbrTime;
-  GraphStorageClient* storageClient = qctx_->getStorageClient();
+  StorageClient* storageClient = qctx_->getStorageClient();
   QueryExpressionContext qec(qctx()->ectx());
-  GraphStorageClient::CommonRequestParam param(gn_->space(),
-                                               qctx()->rctx()->session()->id(),
-                                               qctx()->plan()->id(),
-                                               qctx()->plan()->isProfileEnabled());
+  StorageClient::CommonRequestParam param(gn_->space(),
+                                          qctx()->rctx()->session()->id(),
+                                          qctx()->plan()->id(),
+                                          qctx()->plan()->isProfileEnabled());
   return storageClient
       ->getNeighbors(param,
                      std::move(reqDs.colNames),

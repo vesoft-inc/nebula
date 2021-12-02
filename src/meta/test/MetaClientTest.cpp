@@ -397,22 +397,6 @@ TEST(MetaClientTest, SpaceWithGroupTest) {
   ASSERT_TRUE(result.ok());
   ASSERT_EQ(5, result.value().size());
 }
-// Add Group
-{
-  std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2"};
-  auto result = client->addGroup("group_0", std::move(zones)).get();
-  ASSERT_TRUE(result.ok());
-}
-{
-  std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2", "zone_3", "zone_4"};
-  auto result = client->addGroup("group_1", std::move(zones)).get();
-  ASSERT_TRUE(result.ok());
-}
-{
-  auto result = client->listGroups().get();
-  ASSERT_TRUE(result.ok());
-  ASSERT_EQ(2, result.value().size());
-}
 }  // namespace meta
 // Create Space without Group
 {
@@ -425,79 +409,6 @@ TEST(MetaClientTest, SpaceWithGroupTest) {
 
   ret = client->createSpace(spaceDesc, true).get();
   ASSERT_TRUE(ret.ok()) << ret.status();
-}
-// Create Space on group_0, replica factor is equal with zone size
-{
-  meta::cpp2::SpaceDesc spaceDesc;
-  spaceDesc.set_space_name("space_on_group_0_3");
-  spaceDesc.set_partition_num(9);
-  spaceDesc.set_replica_factor(3);
-  spaceDesc.set_group_name("group_0");
-  auto ret = client->createSpace(spaceDesc).get();
-  ASSERT_TRUE(ret.ok()) << ret.status();
-
-  ret = client->createSpace(spaceDesc, true).get();
-  ASSERT_TRUE(ret.ok()) << ret.status();
-}
-// Drop Group should failed
-{
-  auto result = client->dropGroup("group_0").get();
-  ASSERT_FALSE(result.ok());
-}
-// Create Space on group_0, replica factor is less than zone size
-{
-  meta::cpp2::SpaceDesc spaceDesc;
-  spaceDesc.set_space_name("space_on_group_0_1");
-  spaceDesc.set_partition_num(9);
-  spaceDesc.set_replica_factor(1);
-  spaceDesc.set_group_name("group_0");
-  auto ret = client->createSpace(spaceDesc).get();
-  ASSERT_TRUE(ret.ok()) << ret.status();
-
-  ret = client->createSpace(spaceDesc, true).get();
-  ASSERT_TRUE(ret.ok()) << ret.status();
-}
-// Create Space on group_0, replica factor is larger than zone size
-{
-  meta::cpp2::SpaceDesc spaceDesc;
-  spaceDesc.set_space_name("space_on_group_0_4");
-  spaceDesc.set_partition_num(9);
-  spaceDesc.set_replica_factor(4);
-  spaceDesc.set_group_name("group_0");
-  auto ret = client->createSpace(spaceDesc).get();
-  ASSERT_FALSE(ret.ok()) << ret.status();
-
-  ret = client->createSpace(spaceDesc, true).get();
-  ASSERT_FALSE(ret.ok()) << ret.status();
-}
-{
-  auto result = client->addZoneIntoGroup("zone_3", "group_0").get();
-  ASSERT_TRUE(result.ok());
-}
-{
-  meta::cpp2::SpaceDesc spaceDesc;
-  spaceDesc.set_space_name("space_on_group_0_4");
-  spaceDesc.set_partition_num(9);
-  spaceDesc.set_replica_factor(4);
-  spaceDesc.set_group_name("group_0");
-  auto ret = client->createSpace(spaceDesc).get();
-  ASSERT_TRUE(ret.ok()) << ret.status();
-
-  ret = client->createSpace(spaceDesc, true).get();
-  ASSERT_TRUE(ret.ok()) << ret.status();
-}
-// Create Space on a group which is not exist
-{
-  meta::cpp2::SpaceDesc spaceDesc;
-  spaceDesc.set_space_name("space_on_group_not_exist");
-  spaceDesc.set_partition_num(9);
-  spaceDesc.set_replica_factor(4);
-  spaceDesc.set_group_name("group_not_exist");
-  auto ret = client->createSpace(spaceDesc).get();
-  ASSERT_FALSE(ret.ok()) << ret.status();
-
-  ret = client->createSpace(spaceDesc, true).get();
-  ASSERT_FALSE(ret.ok()) << ret.status();
 }
 }  // namespace nebula
 
@@ -1317,100 +1228,6 @@ TEST(MetaClientTest, GroupAndZoneTest) {
     auto result = client->dropHostFromZone(node, "zone_0").get();
     ASSERT_FALSE(result.ok());
   }
-  // Add Group
-  {
-    std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2"};
-    auto result = client->addGroup("group_0", std::move(zones)).get();
-    ASSERT_TRUE(result.ok());
-  }
-  // Add Group with empty zone name list
-  {
-    std::vector<std::string> zones = {};
-    auto result = client->addGroup("group_0", std::move(zones)).get();
-    ASSERT_FALSE(result.ok());
-  }
-  // Add Group with duplicate zone name
-  {
-    std::vector<std::string> zones = {"zone_0", "zone_0", "zone_2"};
-    auto result = client->addGroup("group_0", std::move(zones)).get();
-    ASSERT_FALSE(result.ok());
-  }
-  // Add Group already existed
-  {
-    std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2"};
-    auto result = client->addGroup("group_0", std::move(zones)).get();
-    ASSERT_FALSE(result.ok());
-  }
-  {
-    std::vector<std::string> zones = {"zone_1", "zone_2"};
-    auto result = client->addGroup("group_1", std::move(zones)).get();
-    ASSERT_TRUE(result.ok());
-  }
-  // Get Group
-  {
-    auto result = client->getGroup("group_0").get();
-    ASSERT_TRUE(result.ok());
-  }
-  // Get Group which is not exist
-  {
-    auto result = client->getGroup("group_not_exist").get();
-    ASSERT_FALSE(result.ok());
-  }
-  // List Groups
-  {
-    auto result = client->listGroups().get();
-    ASSERT_TRUE(result.ok());
-  }
-  {
-    std::vector<HostAddr> nodes = {{"9", 9}, {"10", 10}, {"11", 11}};
-    auto result = client->addZone("zone_3", nodes).get();
-    ASSERT_TRUE(result.ok());
-  }
-  // Add zone into group
-  {
-    auto result = client->addZoneIntoGroup("zone_3", "group_0").get();
-    ASSERT_TRUE(result.ok());
-  }
-  // Add zone into group which group not exist
-  {
-    auto result = client->addZoneIntoGroup("zone_0", "group_not_exist").get();
-    ASSERT_FALSE(result.ok());
-  }
-  // Add zone into group which zone already exist
-  {
-    auto result = client->addZoneIntoGroup("zone_0", "group_0").get();
-    ASSERT_FALSE(result.ok());
-  }
-  // Add zone into group which zone not exist
-  {
-    auto result = client->addZoneIntoGroup("zone_not_exist", "group_0").get();
-    ASSERT_FALSE(result.ok());
-  }
-  // Drop zone from group
-  {
-    auto result = client->dropZoneFromGroup("zone_3", "group_0").get();
-    ASSERT_TRUE(result.ok());
-  }
-  // Drop zone from group which group not exist
-  {
-    auto result = client->dropZoneFromGroup("zone_0", "group_not_exist").get();
-    ASSERT_FALSE(result.ok());
-  }
-  // Drop zone from group which zone not exist
-  {
-    auto result = client->dropZoneFromGroup("zone_not_exist", "group_0").get();
-    ASSERT_FALSE(result.ok());
-  }
-  // Drop Group
-  {
-    auto result = client->dropGroup("group_0").get();
-    ASSERT_TRUE(result.ok());
-  }
-  // Drop Group which is not exist
-  {
-    auto result = client->dropGroup("group_0").get();
-    ASSERT_FALSE(result.ok());
-  }
   // Drop Zone
   {
     auto result = client->dropZone("zone_0").get();
@@ -1542,6 +1359,11 @@ class TestListener : public MetaChangedListener {
     UNUSED(spaceId);
     UNUSED(partId);
     UNUSED(remoteListeners);
+  }
+
+  void fetchDiskParts(kvstore::SpaceDiskPartsMap& diskParts) override {
+    UNUSED(diskParts);
+    LOG(INFO) << "Fetch Disk Paths";
   }
 
   int32_t spaceNum = 0;

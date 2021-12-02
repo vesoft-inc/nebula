@@ -113,6 +113,25 @@ Status PermissionManager::canWriteUser(ClientSession *session) {
   }
 }
 
+// static
+Status PermissionManager::canReadUser(ClientSession *session, const std::string &targetUser) {
+  if (!FLAGS_enable_authorize) {
+    return Status::OK();
+  }
+  if (FLAGS_auth_type == "cloud") {
+    return Status::PermissionError("Cloud authenticate user can't read user.");
+  }
+  if (session->isGod()) {
+    return Status::OK();
+  }
+
+  if (session->user() == targetUser) {
+    return Status::OK();
+  }
+
+  return Status::PermissionError("No permission to read user `%s'.", targetUser.c_str());
+}
+
 Status PermissionManager::canWriteRole(ClientSession *session,
                                        meta::cpp2::RoleType targetRole,
                                        GraphSpaceID spaceId,

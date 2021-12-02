@@ -21,6 +21,7 @@ from tests.common.plan_differ import PlanDiffer
 from tests.common.configs import DATA_DIR
 from tests.common.types import SpaceDesc
 from tests.common.utils import (
+    get_conn_pool,
     create_space,
     load_csv_data,
     space_generator,
@@ -28,6 +29,7 @@ from tests.common.utils import (
     response,
     resp_ok,
 )
+from tests.common.nebula_service import NebulaService
 from tests.tck.utils.table import dataset, table
 from tests.tck.utils.nbv import murmurhash2
 
@@ -208,11 +210,100 @@ def exec_query(request, ngql, session, graph_spaces, need_try: bool = False):
     graph_spaces['ngql'] = ngql
 
 
+@given(
+    parse(
+        'a nebulacluster with {graphd_num} graphd and {metad_num} metad and {storaged_num} storaged'
+    )
+)
+def given_nebulacluster(
+    request,
+    graphd_num,
+    metad_num,
+    storaged_num,
+    class_fixture_variables,
+    pytestconfig,
+):
+    given_nebulacluster_with_param(
+        request,
+        None,
+        graphd_num,
+        metad_num,
+        storaged_num,
+        class_fixture_variables,
+        pytestconfig,
+    )
+
+
+@given(
+    parse(
+        'a nebulacluster with {graphd_num} graphd and {metad_num} metad and {storaged_num} storaged:\n{params}'
+    )
+)
+def given_nebulacluster_with_param(
+    request,
+    params,
+    graphd_num,
+    metad_num,
+    storaged_num,
+    class_fixture_variables,
+    pytestconfig,
+):
+    grpahd_param, metad_param, storaged_param = {}, {}, {}
+    if params is not None:
+        for param in params.splitlines():
+            module, config = param.strip().split(":")
+            assert module.lower() in ["graphd", "storaged", "metad"]
+            key, value = config.strip().split("=")
+            if module.lower() == "graphd":
+                grpahd_param[key] = value
+            elif module.lower() == "storaged":
+                storaged_param[key] = value
+            else:
+                metad_param[key] = value
+
+    user = pytestconfig.getoption("user")
+    password = pytestconfig.getoption("password")
+    build_dir = pytestconfig.getoption("build_dir")
+    src_dir = pytestconfig.getoption("src_dir")
+    nebula_svc = NebulaService(
+        build_dir,
+        src_dir,
+        int(metad_num),
+        int(storaged_num),
+        int(graphd_num),
+    )
+    for process in nebula_svc.graphd_processes:
+        process.update_param(grpahd_param)
+    for process in nebula_svc.storaged_processes:
+        process.update_param(storaged_param)
+    for process in nebula_svc.metad_processes:
+        process.update_param(metad_param)
+    work_dir = os.path.join(
+        build_dir,
+        "C" + space_generator() + time.strftime('%Y-%m-%dT%H-%M-%S', time.localtime()),
+    )
+    nebula_svc.install(work_dir)
+    nebula_svc.start()
+    graph_ip = nebula_svc.graphd_processes[0].host
+    graph_port = nebula_svc.graphd_processes[0].tcp_port
+    pool = get_conn_pool(graph_ip, graph_port)
+    sess = pool.get_session(user, password)
+    class_fixture_variables["session"] = sess
+    class_fixture_variables["cluster"] = nebula_svc
+    class_fixture_variables["pool"] = pool
+
+
 @when(parse("executing query:\n{query}"))
 def executing_query(query, graph_spaces, session, request):
     ngql = combine_query(query)
     exec_query(request, ngql, session, graph_spaces)
 
+@when(parse("executing query with user {username} with password {password}:\n{query}"))
+def executing_query(username, password, conn_pool_to_first_graph_service, query, graph_spaces, request):
+    sess = conn_pool_to_first_graph_service.get_session(username, password)
+    ngql = combine_query(query)
+    exec_query(request, ngql, sess, graph_spaces)
+    sess.release()
 
 @when(parse("profiling query:\n{query}"))
 def profiling_query(query, graph_spaces, session, request):
@@ -226,6 +317,7 @@ def try_to_execute_query(query, graph_spaces, session, request):
     for stmt in ngql.split(';'):
         exec_query(request, stmt, session, graph_spaces, True)
 
+
 @when(parse("clone a new space according to current space"))
 def clone_space(graph_spaces, session, request):
     space_desc = graph_spaces["space_desc"]
@@ -233,11 +325,12 @@ def clone_space(graph_spaces, session, request):
     new_space = "EmptyGraph_" + space_generator()
     space_desc._name = new_space
     resp_ok(session, space_desc.drop_stmt(), True)
-    ngql = "create space " + new_space + " as " + current_space;
+    ngql = "create space " + new_space + " as " + current_space
     exec_query(request, ngql, session, graph_spaces)
     resp_ok(session, space_desc.use_stmt(), True)
     graph_spaces["space_desc"] = space_desc
     graph_spaces["drop_space"] = True
+
 
 @given("wait all indexes ready")
 @when("wait all indexes ready")
@@ -284,7 +377,6 @@ def parse_list(s: str):
     return [int(num) for num in s.split(',')]
 
 
-
 def hash_columns(ds, hashed_columns):
     if len(hashed_columns) == 0:
         return ds
@@ -298,14 +390,14 @@ def hash_columns(ds, hashed_columns):
 
 
 def cmp_dataset(
-        request,
-        graph_spaces,
-        result,
-        order: bool,
-        strict: bool,
-        contains=CmpType.EQUAL,
-        first_n_records=-1,
-        hashed_columns=[],
+    request,
+    graph_spaces,
+    result,
+    order: bool,
+    strict: bool,
+    contains=CmpType.EQUAL,
+    first_n_records=-1,
+    hashed_columns=[],
 ):
     rs = graph_spaces['result_set']
     ngql = graph_spaces['ngql']
@@ -317,12 +409,14 @@ def cmp_dataset(
         graph_spaces.get("variables", {}),
     )
     ds = hash_columns(ds, hashed_columns)
-    dscmp = DataSetComparator(strict=strict,
-                              order=order,
-                              contains=contains,
-                              first_n_records=first_n_records,
-                              decode_type=rs._decode_type,
-                              vid_fn=vid_fn)
+    dscmp = DataSetComparator(
+        strict=strict,
+        order=order,
+        contains=contains,
+        first_n_records=first_n_records,
+        decode_type=rs._decode_type,
+        vid_fn=vid_fn,
+    )
 
     def dsp(ds):
         printer = DataSetPrinter(rs._decode_type, vid_fn=vid_fn)
@@ -338,7 +432,9 @@ def cmp_dataset(
         return f'{i}: |' + ss + '|'
 
     if rs._data_set_wrapper is None:
-        assert not ds.column_names and not ds.rows, f"Expected result must be empty table: ||"
+        assert (
+            not ds.column_names and not ds.rows
+        ), f"Expected result must be empty table: ||"
 
     rds = rs._data_set_wrapper._data_set
     res, i = dscmp(rds, ds)
@@ -373,9 +469,20 @@ def result_should_be_in_order(request, result, graph_spaces):
     cmp_dataset(request, graph_spaces, result, order=True, strict=True)
 
 
-@then(parse("the result should be, in order, and the columns {hashed_columns} should be hashed:\n{result}"))
+@then(
+    parse(
+        "the result should be, in order, and the columns {hashed_columns} should be hashed:\n{result}"
+    )
+)
 def result_should_be_in_order_and_hash(request, result, graph_spaces, hashed_columns):
-    cmp_dataset(request, graph_spaces, result, order=True, strict=True, hashed_columns=parse_list(hashed_columns))
+    cmp_dataset(
+        request,
+        graph_spaces,
+        result,
+        order=True,
+        strict=True,
+        hashed_columns=parse_list(hashed_columns),
+    )
 
 
 @then(parse("the result should be, in order, with relax comparison:\n{result}"))
@@ -383,9 +490,22 @@ def result_should_be_in_order_relax_cmp(request, result, graph_spaces):
     cmp_dataset(request, graph_spaces, result, order=True, strict=False)
 
 
-@then(parse("the result should be, in order, with relax comparison, and the columns {hashed_columns} should be hashed:\n{result}"))
-def result_should_be_in_order_relax_cmp_and_hash(request, result, graph_spaces, hashed_columns):
-    cmp_dataset(request, graph_spaces, result, order=True, strict=False, hashed_columns=parse_list(hashed_columns))
+@then(
+    parse(
+        "the result should be, in order, with relax comparison, and the columns {hashed_columns} should be hashed:\n{result}"
+    )
+)
+def result_should_be_in_order_relax_cmp_and_hash(
+    request, result, graph_spaces, hashed_columns
+):
+    cmp_dataset(
+        request,
+        graph_spaces,
+        result,
+        order=True,
+        strict=False,
+        hashed_columns=parse_list(hashed_columns),
+    )
 
 
 @then(parse("the result should be, in any order:\n{result}"))
@@ -393,9 +513,20 @@ def result_should_be(request, result, graph_spaces):
     cmp_dataset(request, graph_spaces, result, order=False, strict=True)
 
 
-@then(parse("the result should be, in any order, and the columns {hashed_columns} should be hashed:\n{result}"))
+@then(
+    parse(
+        "the result should be, in any order, and the columns {hashed_columns} should be hashed:\n{result}"
+    )
+)
 def result_should_be_and_hash(request, result, graph_spaces, hashed_columns):
-    cmp_dataset(request, graph_spaces, result, order=False, strict=True, hashed_columns=parse_list(hashed_columns))
+    cmp_dataset(
+        request,
+        graph_spaces,
+        result,
+        order=False,
+        strict=True,
+        hashed_columns=parse_list(hashed_columns),
+    )
 
 
 @then(parse("the result should be, in any order, with relax comparison:\n{result}"))
@@ -403,40 +534,61 @@ def result_should_be_relax_cmp(request, result, graph_spaces):
     cmp_dataset(request, graph_spaces, result, order=False, strict=False)
 
 
-@then(parse("the result should be, in any order, with relax comparison, and the columns {hashed_columns} should be hashed:\n{result}"))
+@then(
+    parse(
+        "the result should be, in any order, with relax comparison, and the columns {hashed_columns} should be hashed:\n{result}"
+    )
+)
 def result_should_be_relax_cmp_and_hash(request, result, graph_spaces, hashed_columns):
-    cmp_dataset(request, graph_spaces, result, order=False, strict=False, hashed_columns=parse_list(hashed_columns))
+    cmp_dataset(
+        request,
+        graph_spaces,
+        result,
+        order=False,
+        strict=False,
+        hashed_columns=parse_list(hashed_columns),
+    )
 
 
 @then(parse("the result should contain:\n{result}"))
 def result_should_contain(request, result, graph_spaces):
-    cmp_dataset(request,
-                graph_spaces,
-                result,
-                order=False,
-                strict=True,
-                contains=CmpType.CONTAINS)
+    cmp_dataset(
+        request,
+        graph_spaces,
+        result,
+        order=False,
+        strict=True,
+        contains=CmpType.CONTAINS,
+    )
 
 
 @then(parse("the result should not contain:\n{result}"))
 def result_should_not_contain(request, result, graph_spaces):
-    cmp_dataset(request,
-                graph_spaces,
-                result,
-                order=False,
-                strict=True,
-                contains=CmpType.NOT_CONTAINS)
+    cmp_dataset(
+        request,
+        graph_spaces,
+        result,
+        order=False,
+        strict=True,
+        contains=CmpType.NOT_CONTAINS,
+    )
 
 
-@then(parse("the result should contain, and the columns {hashed_columns} should be hashed:\n{result}"))
+@then(
+    parse(
+        "the result should contain, and the columns {hashed_columns} should be hashed:\n{result}"
+    )
+)
 def result_should_contain_and_hash(request, result, graph_spaces, hashed_columns):
-    cmp_dataset(request,
-                graph_spaces,
-                result,
-                order=False,
-                strict=True,
-                contains=True,
-                hashed_columns=parse_list(hashed_columns))
+    cmp_dataset(
+        request,
+        graph_spaces,
+        result,
+        order=False,
+        strict=True,
+        contains=True,
+        hashed_columns=parse_list(hashed_columns),
+    )
 
 
 @then("no side effects")
@@ -451,7 +603,11 @@ def execution_should_be_succ(graph_spaces):
     check_resp(rs, stmt)
 
 
-@then(rparse(r"(?P<unit>a|an) (?P<err_type>\w+) should be raised at (?P<time>runtime|compile time)(?P<sym>:|.)(?P<msg>.*)"))
+@then(
+    rparse(
+        r"(?P<unit>a|an) (?P<err_type>\w+) should be raised at (?P<time>runtime|compile time)(?P<sym>:|.)(?P<msg>.*)"
+    )
+)
 def raised_type_error(unit, err_type, time, sym, msg, graph_spaces):
     res = graph_spaces["result_set"]
     ngql = graph_spaces['ngql']
@@ -465,7 +621,9 @@ def raised_type_error(unit, err_type, time, sym, msg, graph_spaces):
     else:
         expect_msg = "{}: {}".format(err_type, msg)
     m = res_msg.startswith(expect_msg)
-    assert m, f'Could not find "{expect_msg}" in "{res_msg}" when execute query: "{ngql}"'
+    assert (
+        m
+    ), f'Could not find "{expect_msg}" in "{res_msg}" when execute query: "{ngql}"'
 
 
 @then("drop the used space")
@@ -487,16 +645,21 @@ def check_plan(plan, graph_spaces):
     idx = column_names.index('dependencies')
     rows = expect.get("rows", [])
     for i, row in enumerate(rows):
-        row[idx] = [
-            int(cell.strip()) for cell in row[idx].split(",") if len(cell) > 0
-        ]
+        row[idx] = [int(cell.strip()) for cell in row[idx].split(",") if len(cell) > 0]
         rows[i] = row
     differ = PlanDiffer(resp.plan_desc(), expect)
     assert differ.diff(), differ.err_msg()
 
 
 @when(parse("executing query via graph {index:d}:\n{query}"))
-def executing_query(query, index, graph_spaces, session_from_first_conn_pool, session_from_second_conn_pool, request):
+def executing_query(
+    query,
+    index,
+    graph_spaces,
+    session_from_first_conn_pool,
+    session_from_second_conn_pool,
+    request,
+):
     assert index < 2, "There exists only 0,1 graph: {}".format(index)
     ngql = combine_query(query)
     if index == 0:
@@ -505,10 +668,24 @@ def executing_query(query, index, graph_spaces, session_from_first_conn_pool, se
         exec_query(request, ngql, session_from_second_conn_pool, graph_spaces)
 
 
-@then(parse("the result should be, the first {n:d} records in order, and register {column_name} as a list named {key}:\n{result}"))
-def result_should_be_in_order_and_register_key(n, column_name, key, request, result, graph_spaces):
+@then(
+    parse(
+        "the result should be, the first {n:d} records in order, and register {column_name} as a list named {key}:\n{result}"
+    )
+)
+def result_should_be_in_order_and_register_key(
+    n, column_name, key, request, result, graph_spaces
+):
     assert n > 0, f"The records number should be an positive integer: {n}"
-    result_ds = cmp_dataset(request, graph_spaces, result, order=True, strict=True, contains=CmpType.CONTAINS, first_n_records=n)
+    result_ds = cmp_dataset(
+        request,
+        graph_spaces,
+        result,
+        order=True,
+        strict=True,
+        contains=CmpType.CONTAINS,
+        first_n_records=n,
+    )
     register_result_key(request.node.name, result_ds, column_name, key)
 
 
@@ -518,47 +695,66 @@ def register_result_key(test_name, result_ds, column_name, key):
     col_index = result_ds.column_names.index(column_name.encode())
     val = [row.values[col_index] for row in result_ds.rows]
     register_lock.acquire()
-    register_dict[test_name + key] = val;
+    register_dict[test_name + key] = val
     register_lock.release()
 
 
-@when(parse("executing query, fill replace holders with element index of {indices} in {keys}:\n{query}"))
+@when(
+    parse(
+        "executing query, fill replace holders with element index of {indices} in {keys}:\n{query}"
+    )
+)
 def executing_query_with_params(query, indices, keys, graph_spaces, session, request):
-    indices_list=[int(v) for v in indices.split(",")]
-    key_list=[request.node.name+key for key in keys.split(",")]
-    assert len(indices_list) == len(key_list), f"Length not match for keys and indices: {keys} <=> {indices}"
+    indices_list = [int(v) for v in indices.split(",")]
+    key_list = [request.node.name + key for key in keys.split(",")]
+    assert len(indices_list) == len(
+        key_list
+    ), f"Length not match for keys and indices: {keys} <=> {indices}"
     vals = []
     register_lock.acquire()
-    for (key, index) in zip (key_list, indices_list):
+    for (key, index) in zip(key_list, indices_list):
         vals.append(ValueWrapper(register_dict[key][index]))
     register_lock.release()
     ngql = combine_query(query).format(*vals)
     exec_query(request, ngql, session, graph_spaces)
 
+
 @given(parse("nothing"))
 def nothing():
     pass
 
+
 @when(parse("connecting the servers with a compatible client version"))
-def connecting_servers_with_a_compatible_client_version(establish_a_rare_connection, graph_spaces):
+def connecting_servers_with_a_compatible_client_version(
+    establish_a_rare_connection, graph_spaces
+):
     conn = establish_a_rare_connection
     graph_spaces["resp"] = conn.verifyClientVersion(VerifyClientVersionReq())
     conn._iprot.trans.close()
 
+
 @then(parse("the connection should be established"))
 def check_client_compatible(graph_spaces):
     resp = graph_spaces["resp"]
-    assert resp.error_code == ErrorCode.SUCCEEDED, f'The client was rejected by server: {resp}'
+    assert (
+        resp.error_code == ErrorCode.SUCCEEDED
+    ), f'The client was rejected by server: {resp}'
+
 
 @when(parse("connecting the servers with a client version of {version}"))
-def connecting_servers_with_a_compatible_client_version(version, establish_a_rare_connection, graph_spaces):
+def connecting_servers_with_a_compatible_client_version(
+    version, establish_a_rare_connection, graph_spaces
+):
     conn = establish_a_rare_connection
     req = VerifyClientVersionReq()
     req.version = version
     graph_spaces["resp"] = conn.verifyClientVersion(req)
     conn._iprot.trans.close()
 
+
 @then(parse("the connection should be rejected"))
 def check_client_compatible(graph_spaces):
     resp = graph_spaces["resp"]
-    assert resp.error_code == ErrorCode.E_CLIENT_SERVER_INCOMPATIBLE, f'The client was not rejected by server: {resp}'
+    assert (
+        resp.error_code == ErrorCode.E_CLIENT_SERVER_INCOMPATIBLE
+    ), f'The client was not rejected by server: {resp}'

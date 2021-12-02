@@ -85,11 +85,6 @@ nebula_add_library(
     processors/zone/GetZoneProcessor.cpp
     processors/zone/ListZonesProcessor.cpp
     processors/zone/UpdateZoneProcessor.cpp
-    processors/zone/AddGroupProcessor.cpp
-    processors/zone/DropGroupProcessor.cpp
-    processors/zone/GetGroupProcessor.cpp
-    processors/zone/ListGroupsProcessor.cpp
-    processors/zone/UpdateGroupProcessor.cpp
     processors/listener/ListenerProcessor.cpp
     processors/session/SessionManagerProcessor.cpp
 )
@@ -115,11 +110,10 @@ set(meta_test_deps
     $<TARGET_OBJECTS:meta_version_man_obj>
     $<TARGET_OBJECTS:meta_v1_thrift_obj>
     $<TARGET_OBJECTS:meta_data_upgrade_obj>
-    $<TARGET_OBJECTS:general_storage_service_handler>
     $<TARGET_OBJECTS:storage_admin_service_handler>
     $<TARGET_OBJECTS:graph_storage_service_handler>
     $<TARGET_OBJECTS:storage_transaction_executor>
-    $<TARGET_OBJECTS:graph_storage_client_obj>
+    $<TARGET_OBJECTS:storage_client_obj>
     $<TARGET_OBJECTS:storage_client_base_obj>
     $<TARGET_OBJECTS:internal_storage_client_obj>
     $<TARGET_OBJECTS:storage_common_obj>
