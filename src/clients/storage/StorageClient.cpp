@@ -635,10 +635,10 @@ folly::SemiFuture<StorageRpcResponse<cpp2::KVGetResponse>> StorageClient::get(
     req.return_partly_ref() = returnPartly;
   }
 
-  return collectResponse(evb,
-                         std::move(requests),
-                         [](cpp2::GraphStorageServiceAsyncClient* client,
-                            const cpp2::KVGetRequest& r) { return client->future_get(r); });
+  return collectResponse(
+      evb, std::move(requests), [](ThriftClientType* client, const cpp2::KVGetRequest& r) {
+        return client->future_get(r);
+      });
 }
 
 folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::put(
@@ -660,10 +660,10 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::put(
     req.parts_ref() = std::move(c.second);
   }
 
-  return collectResponse(evb,
-                         std::move(requests),
-                         [](cpp2::GraphStorageServiceAsyncClient* client,
-                            const cpp2::KVPutRequest& r) { return client->future_put(r); });
+  return collectResponse(
+      evb, std::move(requests), [](ThriftClientType* client, const cpp2::KVPutRequest& r) {
+        return client->future_put(r);
+      });
 }
 
 folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::remove(
@@ -685,10 +685,10 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::remove(
     req.parts_ref() = std::move(c.second);
   }
 
-  return collectResponse(evb,
-                         std::move(requests),
-                         [](cpp2::GraphStorageServiceAsyncClient* client,
-                            const cpp2::KVRemoveRequest& r) { return client->future_remove(r); });
+  return collectResponse(
+      evb, std::move(requests), [](ThriftClientType* client, const cpp2::KVRemoveRequest& r) {
+        return client->future_remove(r);
+      });
 }
 
 StatusOr<std::function<const VertexID&(const Row&)>> StorageClient::getIdFromRow(

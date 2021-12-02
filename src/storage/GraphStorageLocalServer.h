@@ -61,6 +61,12 @@ class GraphStorageLocalServer final : public nebula::cpp::NonCopyable,
       const ::nebula::storage::cpp2::ScanVertexRequest& request);
   folly::Future<::nebula::storage::cpp2::ScanEdgeResponse> future_scanEdge(
       const ::nebula::storage::cpp2::ScanEdgeRequest& request);
+  folly::Future<::nebula::storage::cpp2::KVGetResponse> future_get(
+      const ::nebula::storage::cpp2::KVGetRequest& request);
+  folly::Future<::nebula::storage::cpp2::ExecResponse> future_put(
+      const ::nebula::storage::cpp2::KVPutRequest& request);
+  folly::Future<::nebula::storage::cpp2::ExecResponse> future_remove(
+      const ::nebula::storage::cpp2::KVRemoveRequest& request);
 
  private:
   GraphStorageLocalServer() = default;

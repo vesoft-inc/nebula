@@ -142,4 +142,23 @@ folly::Future<::nebula::storage::cpp2::ScanEdgeResponse> GraphStorageLocalServer
   return folly::via(threadManager_.get(),
                     [this, &request]() { return handler_->future_scanEdge(request); });
 }
+
+folly::Future<::nebula::storage::cpp2::KVGetResponse> GraphStorageLocalServer::future_get(
+    const ::nebula::storage::cpp2::KVGetRequest& request) {
+  return folly::via(threadManager_.get(),
+                    [this, &request]() { return handler_->future_get(request); });
+}
+
+folly::Future<::nebula::storage::cpp2::ExecResponse> GraphStorageLocalServer::future_put(
+    const ::nebula::storage::cpp2::KVPutRequest& request) {
+  return folly::via(threadManager_.get(),
+                    [this, &request]() { return handler_->future_put(request); });
+}
+
+folly::Future<::nebula::storage::cpp2::ExecResponse> GraphStorageLocalServer::future_remove(
+    const ::nebula::storage::cpp2::KVRemoveRequest& request) {
+  return folly::via(threadManager_.get(),
+                    [this, &request]() { return handler_->future_remove(request); });
+}
+
 }  // namespace nebula::storage
