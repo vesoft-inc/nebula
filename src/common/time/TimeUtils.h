@@ -16,6 +16,7 @@
 #include "common/base/Status.h"
 #include "common/base/StatusOr.h"
 #include "common/datatypes/Date.h"
+#include "common/datatypes/Duration.h"
 #include "common/datatypes/Map.h"
 #include "common/fs/FileUtils.h"
 #include "common/time/TimeConversion.h"
@@ -225,6 +226,8 @@ class TimeUtils {
   }
 
   static StatusOr<Value> toTimestamp(const Value &val);
+
+  static StatusOr<Duration> durationFromMap(const Map &m);
 
  private:
   struct UnixTime {

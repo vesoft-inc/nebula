@@ -55,8 +55,18 @@ struct Duration {
     return *this;
   }
 
+  Duration& addQuarters(int32_t q) {
+    months += q * 3;
+    return *this;
+  }
+
   Duration& addMonths(int32_t m) {
     months += m;
+    return *this;
+  }
+
+  Duration& addWeeks(int32_t w) {
+    seconds += (w * 7 * time::kSecondsOfDay);
     return *this;
   }
 
@@ -77,6 +87,12 @@ struct Duration {
 
   Duration& addSeconds(int64_t s) {
     seconds += s;
+    return *this;
+  }
+
+  Duration& addMilliseconds(int64_t ms) {
+    seconds += ms / 1000;
+    microseconds += ((ms % 1000) * 1000);
     return *this;
   }
 
