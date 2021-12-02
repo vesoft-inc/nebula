@@ -410,18 +410,24 @@ void UpgraderSpace::runPartV1() {
         }
         */
         for (auto& elem : data) {
-          if (isVertex(spaceVidLen_, elem.first)) {
-            LOG(INFO) << " vertexId " << getVertexId(spaceVidLen_, elem.first) << " tagId "
-                      << getTagId(spaceVidLen_, elem.first);
+          if (NebulaKeyUtils::isVertex(spaceVidLen_, elem.first)) {
+            VLOG(2) << "PartId " << partId << " vertexId "
+                    << *reinterpret_cast<const int64_t*>(
+                           NebulaKeyUtils::getVertexId(spaceVidLen_, elem.first).data())
+                    << " tagId " << NebulaKeyUtils::getTagId(spaceVidLen_, elem.first);
           } else {
-            LOG(INFO) << " srcId  " << getSrcId(spaceVidLen_, elem.first) << " dstId "
-                      << getDstId(spaceVidLen_, elem.first) << " edgeType "
-                      << getEdgeType(spaceVidLen_, elem.first) << " rank "
-                      << getRank(spaceVidLen_, elem.first);
+            VLOG(2) << "PartId " << partId << " srcId "
+                    << *reinterpret_cast<const int64_t*>(
+                           NebulaKeyUtils::getSrcId(spaceVidLen_, elem.first).data())
+                    << " edgeType " << NebulaKeyUtils::getEdgeType(spaceVidLen_, elem.first)
+                    << " rank " << NebulaKeyUtils::getRank(spaceVidLen_, elem.first) << " dstId "
+                    << *reinterpret_cast<const int64_t*>(
+                           NebulaKeyUtils::getDstId(spaceVidLen_, elem.first).data());
           }
           s = sstFileWriter.Put(elem.first, elem.second);
           if (!s.ok()) {
-            LOG(FATAL) << "Write sst file writer failed, path: " << newPartPath
+            LOG(FATAL) << "PartId " << partId
+                       << " write sst file writer failed, path: " << newPartPath
                        << ", error: " << s.ToString();
             return;
           }
@@ -460,18 +466,23 @@ void UpgraderSpace::runPartV1() {
     */
 
     for (auto& elem : data) {
-      if (isVertex(spaceVidLen_, elem.first)) {
-        LOG(INFO) << " vertexId " << getVertexId(spaceVidLen_, elem.first) << " tagId "
-                  << getTagId(spaceVidLen_, elem.first);
+      if (NebulaKeyUtils::isVertex(spaceVidLen_, elem.first)) {
+        VLOG(2) << "PartId " << partId << " vertexId "
+                << *reinterpret_cast<const int64_t*>(
+                       NebulaKeyUtils::getVertexId(spaceVidLen_, elem.first).data())
+                << " tagId " << NebulaKeyUtils::getTagId(spaceVidLen_, elem.first);
       } else {
-        LOG(INFO) << " srcId  " << getSrcId(spaceVidLen_, elem.first) << " dstId "
-                  << getDstId(spaceVidLen_, elem.first) << " edgeType "
-                  << getEdgeType(spaceVidLen_, elem.first) << " rank "
-                  << getRank(spaceVidLen_, elem.first);
+        VLOG(2) << "PartId " << partId << " srcId "
+                << *reinterpret_cast<const int64_t*>(
+                       NebulaKeyUtils::getSrcId(spaceVidLen_, elem.first).data())
+                << " edgeType " << NebulaKeyUtils::getEdgeType(spaceVidLen_, elem.first) << " rank "
+                << NebulaKeyUtils::getRank(spaceVidLen_, elem.first) << " dstId "
+                << *reinterpret_cast<const int64_t*>(
+                       NebulaKeyUtils::getDstId(spaceVidLen_, elem.first).data());
       }
       s = sstFileWriter.Put(elem.first, elem.second);
       if (!s.ok()) {
-        LOG(FATAL) << "Write sst file writer failed, path: " << newPartPath
+        LOG(FATAL) << "PartId " << partId << " write sst file writer failed, path: " << newPartPath
                    << ", error: " << s.ToString();
       }
     }
