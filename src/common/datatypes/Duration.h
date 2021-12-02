@@ -101,19 +101,8 @@ struct Duration {
     return *this;
   }
 
-  bool operator<(const Duration& rhs) const {
-    if (months < rhs.months) {
-      return true;
-    } else if (months > rhs.months) {
-      return false;
-    }
-    if (seconds < rhs.seconds) {
-      return true;
-    } else if (seconds > rhs.seconds) {
-      return false;
-    }
-    return microseconds < rhs.microseconds;
-  }
+  // can't compare
+  bool operator<(const Duration& rhs) const = delete;
 
   bool operator==(const Duration& rhs) const {
     return months == rhs.months && seconds == rhs.seconds && microseconds == rhs.microseconds;

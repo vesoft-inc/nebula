@@ -980,22 +980,14 @@ TEST(Value, Comparison) {
   {
     Value lhs{Duration(1, 2, 4)};
     Value rhs{Duration(1, 2, 3)};
-    EXPECT_TRUE(lhs > rhs);
-    EXPECT_TRUE(lhs >= rhs);
-    EXPECT_FALSE(lhs == rhs);
-    EXPECT_TRUE(lhs != rhs);
-    EXPECT_FALSE(lhs < rhs);
-    EXPECT_FALSE(lhs <= rhs);
+    EXPECT_TRUE(lhs.lessThan(rhs).isNull());
+    EXPECT_FALSE(lhs.equal(rhs).getBool());
   }
   {
     Value lhs{Duration(1, 2, 3)};
     Value rhs{Duration(1, 2, 3)};
-    EXPECT_FALSE(lhs > rhs);
-    EXPECT_TRUE(lhs >= rhs);
-    EXPECT_TRUE(lhs == rhs);
-    EXPECT_FALSE(lhs != rhs);
-    EXPECT_FALSE(lhs < rhs);
-    EXPECT_TRUE(lhs <= rhs);
+    EXPECT_TRUE(lhs.lessThan(rhs).isNull());
+    EXPECT_TRUE(lhs.equal(rhs).getBool());
   }
 }
 
