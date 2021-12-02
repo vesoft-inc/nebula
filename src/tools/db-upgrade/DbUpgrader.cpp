@@ -245,9 +245,21 @@ bool UpgraderSpace::isValidVidLen(VertexID srcVId, VertexID dstVId) {
   return true;
 }
 
-std::string UpgraderSpace::getCurrentPartSstFile(PartitionID partId) {
-  auto newPartPath = folly::stringPrintf(
-      "%s/nebula/%s/download/%d/%ld.sst", dstPath_.c_str(), entry_.c_str(), partId, std::time(0));
+std::string UpgraderSpace::getCurrentPartSstFile(PartitionID partId, bool isTag) {
+  std::string newPartPath;
+  if (isTag) {
+    newPartPath = folly::stringPrintf("%s/nebula/%s/download/%d/%ldt.sst",
+                                      dstPath_.c_str(),
+                                      entry_.c_str(),
+                                      partId,
+                                      std::time(0));
+  } else {
+    newPartPath = folly::stringPrintf("%s/nebula/%s/download/%d/%lde.sst",
+                                      dstPath_.c_str(),
+                                      entry_.c_str(),
+                                      partId,
+                                      std::time(0));
+  }
   auto parent = newPartPath.substr(0, newPartPath.rfind('/'));
   if (!FileUtils::exist(parent)) {
     if (!FileUtils::makeDir(parent)) {
@@ -263,22 +275,21 @@ void UpgraderSpace::runPartV1() {
   if (auto pId = partQueue_.try_take_for(take_dura)) {
     PartitionID partId = *pId;
 
-    auto newPartPath = getCurrentPartSstFile(partId);
-    if (newPartPath.empty()) {
-      return;
-    }
+    std::string newTagPartPath;
+    std::string newEdgePartPath;
 
-    rocksdb::Options options;
-    options.file_checksum_gen_factory = rocksdb::GetFileChecksumGenCrc32cFactory();
-    rocksdb::SstFileWriter sstFileWriter(rocksdb::EnvOptions(), options);
-    auto s = sstFileWriter.Open(newPartPath);
-    if (!s.ok()) {
-      LOG(ERROR) << "Open sst file writer failed, path: " << newPartPath
-                 << ", error: " << s.ToString();
-      return;
-    }
+    rocksdb::Options tagOptions;
+    tagOptions.file_checksum_gen_factory = rocksdb::GetFileChecksumGenCrc32cFactory();
+    rocksdb::SstFileWriter tagsstFileWriter(rocksdb::EnvOptions(), tagOptions);
+    bool tagOpen = false;
 
-    std::vector<kvstore::KV> data;
+    rocksdb::Options edgeOptions;
+    edgeOptions.file_checksum_gen_factory = rocksdb::GetFileChecksumGenCrc32cFactory();
+    rocksdb::SstFileWriter edgesstFileWriter(rocksdb::EnvOptions(), edgeOptions);
+    bool edgeOpen = false;
+
+    std::vector<kvstore::KV> tagData;
+    std::vector<kvstore::KV> edgeData;
 
     // Handle vertex and edge, if there is an index, generate index data
     LOG(INFO) << "Start to handle vertex/edge data in space id " << spaceId_ << " part id "
@@ -346,7 +357,7 @@ void UpgraderSpace::runPartV1() {
           continue;
         }
         // Generate 2.0 value and index records
-        encodeVertexValue(partId, reader.get(), newTagSchema, newKey, strVid, tagId, data);
+        encodeVertexValue(partId, reader.get(), newTagSchema, newKey, strVid, tagId, tagData);
 
         lastTagId = tagId;
         lastVertexId = vId;
@@ -387,21 +398,29 @@ void UpgraderSpace::runPartV1() {
         auto reader =
             RowReaderWrapper::getEdgePropReader(schemaMan_, spaceId_, std::abs(edgetype), val);
         if (!reader) {
-          LC << "Can't get edge reader of " << edgetype;
+          LOG(ERROR) << "Can't get edge reader of " << edgetype;
           iter->next();
           continue;
         }
         // Generate 2.0 value and index records
-        encodeEdgeValue(
-            partId, reader.get(), newEdgeSchema, newKey, strsvId, edgetype, ranking, strdvId, data);
+        encodeEdgeValue(partId,
+                        reader.get(),
+                        newEdgeSchema,
+                        newKey,
+                        strsvId,
+                        edgetype,
+                        ranking,
+                        strdvId,
+                        edgeData);
         lastSrcVertexId = svId;
         lastEdgeType = edgetype;
         lastRank = ranking;
         lastDstVertexId = dvId;
       }
 
-      if (data.size() >= FLAGS_write_batch_num) {
-        VLOG(2) << "Send record total rows " << data.size();
+      // tag data
+      if (tagData.size() >= FLAGS_write_batch_num) {
+        VLOG(2) << "Send record total rows " << tagData.size();
         /*
         auto code = writeEngine_->multiPut(data);
         if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -409,49 +428,95 @@ void UpgraderSpace::runPartV1() {
                      << " failed.";
         }
         */
-        for (auto& elem : data) {
-          if (NebulaKeyUtils::isVertex(spaceVidLen_, elem.first)) {
-            VLOG(2) << "PartId " << partId << " vertexId "
-                    << *reinterpret_cast<const int64_t*>(
-                           NebulaKeyUtils::getVertexId(spaceVidLen_, elem.first).data())
-                    << " tagId " << NebulaKeyUtils::getTagId(spaceVidLen_, elem.first);
-          } else {
-            VLOG(2) << "PartId " << partId << " srcId "
-                    << *reinterpret_cast<const int64_t*>(
-                           NebulaKeyUtils::getSrcId(spaceVidLen_, elem.first).data())
-                    << " edgeType " << NebulaKeyUtils::getEdgeType(spaceVidLen_, elem.first)
-                    << " rank " << NebulaKeyUtils::getRank(spaceVidLen_, elem.first) << " dstId "
-                    << *reinterpret_cast<const int64_t*>(
-                           NebulaKeyUtils::getDstId(spaceVidLen_, elem.first).data());
+        if (!tagOpen) {
+          newTagPartPath = getCurrentPartSstFile(partId, true);
+          if (newTagPartPath.empty()) {
+            LOG(FATAL) << "Gen tag path failed, path " << newTagPartPath;
           }
-          s = sstFileWriter.Put(elem.first, elem.second);
+
+          auto s = tagsstFileWriter.Open(newTagPartPath);
+          if (!s.ok()) {
+            LOG(FATAL) << "Open sst file writer failed, path: " << newTagPartPath
+                       << ", error: " << s.ToString();
+          }
+          tagOpen = true;
+        }
+
+        for (auto& elem : tagData) {
+          VLOG(2) << "PartId " << partId << " vertexId "
+                  << *reinterpret_cast<const int64_t*>(
+                         NebulaKeyUtils::getVertexId(spaceVidLen_, elem.first).data())
+                  << " tagId " << NebulaKeyUtils::getTagId(spaceVidLen_, elem.first);
+
+          auto s = tagsstFileWriter.Put(elem.first, elem.second);
           if (!s.ok()) {
             LOG(FATAL) << "PartId " << partId
-                       << " write sst file writer failed, path: " << newPartPath
+                       << " write sst file writer failed, path: " << newTagPartPath
                        << ", error: " << s.ToString();
-            return;
           }
         }
 
-        if (sstFileWriter.FileSize() >= 2147483648) {
-          s = sstFileWriter.Finish();
+        if (tagsstFileWriter.FileSize() >= 2147483648) {
+          auto s = tagsstFileWriter.Finish();
           if (!s.ok()) {
-            LOG(FATAL) << "Failure to insert data to ,  " << newPartPath
+            LOG(FATAL) << "Failure to insert data to ,  " << newTagPartPath
                        << ", error: " << s.ToString();
           }
-          newPartPath = getCurrentPartSstFile(partId);
-          if (newPartPath.empty()) {
-            return;
+          tagOpen = false;
+        }
+        tagData.clear();
+      }
+
+      // edge data
+      if (edgeData.size() >= FLAGS_write_batch_num) {
+        VLOG(2) << "Send record total rows " << edgeData.size();
+        /*
+        auto code = writeEngine_->multiPut(data);
+        if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+          LOG(FATAL) << "Write multi put in space id " << spaceId_ << " part id " << partId
+                     << " failed.";
+        }
+        */
+        if (!edgeOpen) {
+          newEdgePartPath = getCurrentPartSstFile(partId, false);
+          if (newEdgePartPath.empty()) {
+            LOG(FATAL) << "Gen edge path failed, path " << newEdgePartPath;
           }
 
-          s = sstFileWriter.Open(newPartPath);
+          auto s = edgesstFileWriter.Open(newEdgePartPath);
           if (!s.ok()) {
-            LOG(ERROR) << "Open sst file writer failed, path: " << newPartPath
+            LOG(FATAL) << "Open sst file writer failed, path: " << newEdgePartPath
                        << ", error: " << s.ToString();
-            return;
+          }
+          edgeOpen = true;
+        }
+
+        for (auto& elem : edgeData) {
+          VLOG(2) << "PartId " << partId << " srcId "
+                  << *reinterpret_cast<const int64_t*>(
+                         NebulaKeyUtils::getSrcId(spaceVidLen_, elem.first).data())
+                  << " edgeType " << NebulaKeyUtils::getEdgeType(spaceVidLen_, elem.first)
+                  << " rank " << NebulaKeyUtils::getRank(spaceVidLen_, elem.first) << " dstId "
+                  << *reinterpret_cast<const int64_t*>(
+                         NebulaKeyUtils::getDstId(spaceVidLen_, elem.first).data());
+
+          auto s = edgesstFileWriter.Put(elem.first, elem.second);
+          if (!s.ok()) {
+            LOG(FATAL) << "PartId " << partId
+                       << " write sst file writer failed, path: " << newEdgePartPath
+                       << ", error: " << s.ToString();
           }
         }
-        data.clear();
+
+        if (edgesstFileWriter.FileSize() >= 2147483648) {
+          auto s = edgesstFileWriter.Finish();
+          if (!s.ok()) {
+            LOG(FATAL) << "Failure to insert data to ,  " << newEdgePartPath
+                       << ", error: " << s.ToString();
+          }
+          edgeOpen = false;
+        }
+        edgeData.clear();
       }
 
       iter->next();
@@ -465,13 +530,63 @@ void UpgraderSpace::runPartV1() {
     }
     */
 
-    for (auto& elem : data) {
-      if (NebulaKeyUtils::isVertex(spaceVidLen_, elem.first)) {
+    // tag data
+    if (tagData.size() > 0) {
+      VLOG(2) << "Send record total rows " << tagData.size();
+      if (!tagOpen) {
+        newTagPartPath = getCurrentPartSstFile(partId, true);
+        if (newTagPartPath.empty()) {
+          LOG(FATAL) << "Gen tag path failed, path " << newTagPartPath;
+        }
+
+        auto s = tagsstFileWriter.Open(newTagPartPath);
+        if (!s.ok()) {
+          LOG(FATAL) << "Open sst file writer failed, path: " << newTagPartPath
+                     << ", error: " << s.ToString();
+        }
+        tagOpen = true;
+      }
+
+      for (auto& elem : tagData) {
         VLOG(2) << "PartId " << partId << " vertexId "
                 << *reinterpret_cast<const int64_t*>(
                        NebulaKeyUtils::getVertexId(spaceVidLen_, elem.first).data())
                 << " tagId " << NebulaKeyUtils::getTagId(spaceVidLen_, elem.first);
-      } else {
+
+        auto s = tagsstFileWriter.Put(elem.first, elem.second);
+        if (!s.ok()) {
+          LOG(FATAL) << "PartId " << partId
+                     << " write sst file writer failed, path: " << newTagPartPath
+                     << ", error: " << s.ToString();
+        }
+      }
+      auto s = tagsstFileWriter.Finish();
+      if (!s.ok()) {
+        LOG(FATAL) << "Failure to insert data to ,  " << newTagPartPath
+                   << ", error: " << s.ToString();
+      }
+      tagOpen = false;
+      tagData.clear();
+    }
+
+    // edge data
+    if (edgeData.size() > 0) {
+      VLOG(2) << "Send record total rows " << edgeData.size();
+      if (!edgeOpen) {
+        newEdgePartPath = getCurrentPartSstFile(partId, false);
+        if (newEdgePartPath.empty()) {
+          LOG(FATAL) << "Gen edge path failed, path " << newEdgePartPath;
+        }
+
+        auto s = edgesstFileWriter.Open(newEdgePartPath);
+        if (!s.ok()) {
+          LOG(FATAL) << "Open sst file writer failed, path: " << newEdgePartPath
+                     << ", error: " << s.ToString();
+        }
+        edgeOpen = true;
+      }
+
+      for (auto& elem : edgeData) {
         VLOG(2) << "PartId " << partId << " srcId "
                 << *reinterpret_cast<const int64_t*>(
                        NebulaKeyUtils::getSrcId(spaceVidLen_, elem.first).data())
@@ -479,20 +594,24 @@ void UpgraderSpace::runPartV1() {
                 << NebulaKeyUtils::getRank(spaceVidLen_, elem.first) << " dstId "
                 << *reinterpret_cast<const int64_t*>(
                        NebulaKeyUtils::getDstId(spaceVidLen_, elem.first).data());
+
+        auto s = edgesstFileWriter.Put(elem.first, elem.second);
+        if (!s.ok()) {
+          LOG(FATAL) << "PartId " << partId
+                     << " write sst file writer failed, path: " << newEdgePartPath
+                     << ", error: " << s.ToString();
+        }
       }
-      s = sstFileWriter.Put(elem.first, elem.second);
+
+      auto s = edgesstFileWriter.Finish();
       if (!s.ok()) {
-        LOG(FATAL) << "PartId " << partId << " write sst file writer failed, path: " << newPartPath
+        LOG(FATAL) << "Failure to insert data to ,  " << newEdgePartPath
                    << ", error: " << s.ToString();
       }
+      edgeOpen = false;
+      edgeData.clear();
     }
-    s = sstFileWriter.Finish();
-    if (!s.ok()) {
-      LOG(FATAL) << "Failure to insert data to ,  " << newPartPath << ", error: " << s.ToString();
-    }
-    LOG(INFO) << "Handle vertex/edge/index data finished in space id " << spaceId_ << " part id "
-              << partId << newPartPath;
-    data.clear();
+
     LOG(INFO) << "Handle vertex/edge/index data in space id " << spaceId_ << " part id " << partId
               << " finished";
 

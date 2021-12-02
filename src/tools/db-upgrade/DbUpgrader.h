@@ -112,7 +112,7 @@ class UpgraderSpace {
                            std::string& name,
                            Value& val);
 
-  std::string getCurrentPartSstFile(PartitionID partId);
+  std::string getCurrentPartSstFile(PartitionID partId, bool isTag);
 
   void runPartV1();
 
