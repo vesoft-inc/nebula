@@ -3488,6 +3488,21 @@ folly::Future<StatusOr<cpp2::ExecResp>> MetaClient::killQuery(
   return future;
 }
 
+folly::Future<StatusOr<cpp2::GetWorkerIdResp>> MetaClient::getWorkerId(
+    const std::string& mac_addr) {
+  auto req = cpp2::GetWorkerIdReq();
+  req.set_mac_address(mac_addr);
+  folly::Promise<StatusOr<cpp2::GetWorkerIdResp>> promise;
+  auto future = promise.getFuture();
+  getResponse(
+      std::move(req),
+      [](auto client, auto request) { return client->future_getWorkerId(request); },
+      [](cpp2::GetWorkerIdResp&& resp) { return std::move(resp); },
+      std::move(promise));
+
+  return future;
+}
+
 folly::Future<StatusOr<bool>> MetaClient::download(const std::string& hdfsHost,
                                                    int32_t hdfsPort,
                                                    const std::string& hdfsPath,
@@ -3598,30 +3613,6 @@ Status MetaClient::verifyVersion() {
     return Status::Error("Client verified failed: %s", resp.get_error_msg()->c_str());
   }
   return Status::OK();
-}
-
-StatusOr<int32_t> MetaClient::getWorkerId(const std::string& mac_addr) {
-  auto req = cpp2::GetWorkerIdReq();
-  req.set_mac_address(mac_addr);
-  folly::Promise<StatusOr<cpp2::GetWorkerIdResp>> promise;
-  auto future = promise.getFuture();
-  getResponse(
-      std::move(req),
-      [](auto client, auto request) { return client->future_getWorkerId(request); },
-      [](cpp2::GetWorkerIdResp&& resp) { return std::move(resp); },
-      std::move(promise));
-
-  auto respStatus = std::move(future).get();
-  if (!respStatus.ok()) {
-    return respStatus.status();
-  }
-
-  auto resp = std::move(respStatus).value();
-  // if (resp.get_code() != nebula::cpp2::ErrorCode::SUCCEEDED) {
-  //   return Status::Error("Client verified failed: %s", resp.get_error_msg()->c_str());
-  // }
-
-  return resp.get_workerid();
 }
 
 }  // namespace meta

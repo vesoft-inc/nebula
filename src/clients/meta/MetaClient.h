@@ -550,8 +550,6 @@ class MetaClient {
 
   Status checkEdgeIndexed(GraphSpaceID space, IndexID indexID);
 
-  StatusOr<int32_t> getWorkerId(const std::string& mac_addr);
-
   const std::vector<HostAddr>& getAddresses();
 
   folly::Future<StatusOr<std::string>> getTagDefaultValue(GraphSpaceID spaceId,
@@ -625,7 +623,7 @@ class MetaClient {
 
   folly::Future<StatusOr<bool>> ingest(GraphSpaceID spaceId);
 
-  folly::Future<StatusOr<int32_t>> getWorkerId(const std::string& mac_addr);
+  folly::Future<StatusOr<cpp2::GetWorkerIdResp>> getWorkerId(const std::string& mac_addr);
 
   HostAddr getMetaLeader() { return leader_; }
 

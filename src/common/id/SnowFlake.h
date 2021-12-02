@@ -19,11 +19,11 @@ class SnowFlake {
   void init() {
     const std::string& ip = metaClient_->getLocalIp();
 
-    auto result = metaClient_->getWorkerId(nebula::Utils::getMacAddr(ip));
+    auto result = metaClient_->getWorkerId(nebula::Utils::getMacAddr(ip)).get();
     if (!result.ok()) {
       LOG(FATAL) << "Failed to get worker id: " << result.status();
     }
-    int32_t workerId = result.value();
+    int32_t workerId = result.value().get_workerid();
     if (workerId < 0 || workerId > max_machine_id_) {
       LOG(FATAL) << "workerId should be in [0, 1023]";
     }
@@ -35,7 +35,7 @@ class SnowFlake {
     int64_t timestamp = getTimestamp();
     if (timestamp < lastTimestamp_) {
       // TODO
-      // Clock back
+      LOG(FATAL) << "Clock back";
       return sequence_;
     }
 

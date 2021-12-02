@@ -28,7 +28,8 @@ void GetWorkerIdProcessor::process(const cpp2::GetWorkerIdReq& req) {
     return;
   }
 
-  // 加锁
+  std::lock_guard<std::mutex> lck(lock_);
+
   string worker_id_str = std::move(nebula::value(new_result));
   int32_t worker_id_int32 = std::stoi(worker_id_str);
 

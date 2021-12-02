@@ -55,17 +55,12 @@ class Utils final {
   static std::string getMacAddr(const std::string& ip) {
     char line[512];       // Read with fgets().
     char ipAddress[128];  // Obviously more space than necessary, just illustrating here.
-    int hwType;
-    int flags;
     char macAddress[128];
-    char mask[128];
-    char device[128];
 
     FILE* fp = fopen("/proc/net/arp", "r");
     fgets(line, sizeof(line), fp);  // Skip the first line (column headers).
     while (fgets(line, sizeof(line), fp)) {
-      // Read the data.
-      sscanf(line, "%s 0x%x 0x%x %s %s %s\n", ipAddress, &hwType, &flags, macAddress, mask, device);
+      sscanf(line, "%s 0x%*x 0x%*x %s %*s %*s\n", ipAddress, macAddress);
       if (strcmp(ipAddress, ip.c_str()) == 0) {
         fclose(fp);
         std::string mac = macAddress;
