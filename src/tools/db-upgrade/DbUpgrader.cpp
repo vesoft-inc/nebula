@@ -23,7 +23,7 @@ DEFINE_string(dst_db_path,
               "Destination data path(data_path in storage 2.0 conf), "
               "multi paths should be split by comma");
 DEFINE_string(upgrade_meta_server, "127.0.0.1:45500", "Meta servers' address.");
-DEFINE_uint32(write_batch_num, 100, "The size of the batch written to rocksdb");
+DEFINE_uint32(write_batch_num, 100000, "The size of the batch written to rocksdb");
 DEFINE_uint32(raw_data_version,
               0,
               "When the value is 1, upgrade the data from 1.x to 2.6. "
@@ -442,6 +442,11 @@ void UpgraderSpace::runPartV1() {
           tagOpen = true;
         }
 
+        // sort by key
+        std::sort(tagData.begin(), tagData.end(), [](const auto& a, const auto& b) {
+          return a.first < b.first;
+        });
+
         for (auto& elem : tagData) {
           VLOG(2) << "PartId " << partId << " vertexId "
                   << *reinterpret_cast<const int64_t*>(
@@ -490,6 +495,11 @@ void UpgraderSpace::runPartV1() {
           }
           edgeOpen = true;
         }
+
+        // sort by key
+        std::sort(edgeData.begin(), edgeData.end(), [](const auto& a, const auto& b) {
+          return a.first < b.first;
+        });
 
         for (auto& elem : edgeData) {
           VLOG(2) << "PartId " << partId << " srcId "
@@ -547,6 +557,10 @@ void UpgraderSpace::runPartV1() {
         tagOpen = true;
       }
 
+      // sort by key
+      std::sort(tagData.begin(), tagData.end(), [](const auto& a, const auto& b) {
+        return a.first < b.first;
+      });
       for (auto& elem : tagData) {
         VLOG(2) << "PartId " << partId << " vertexId "
                 << *reinterpret_cast<const int64_t*>(
@@ -585,6 +599,11 @@ void UpgraderSpace::runPartV1() {
         }
         edgeOpen = true;
       }
+
+      // sort by key
+      std::sort(edgeData.begin(), edgeData.end(), [](const auto& a, const auto& b) {
+        return a.first < b.first;
+      });
 
       for (auto& elem : edgeData) {
         VLOG(2) << "PartId " << partId << " srcId "
