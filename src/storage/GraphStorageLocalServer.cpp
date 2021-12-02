@@ -9,6 +9,17 @@
 
 #include "common/base/Base.h"
 
+#define LOCAL_RETURN_FUTURE(threadManager, respType, callFunc)   \
+  auto promise = new folly::Promise<respType>();                 \
+  auto f = promise->getFuture();                                 \
+  threadManager->add([&] {                                       \
+    handler_->callFunc(request).thenValue([&](respType&& resp) { \
+      promise->setValue(resp);                                   \
+      delete promise;                                            \
+    });                                                          \
+  });                                                            \
+  return f;
+
 namespace nebula::storage {
 
 std::mutex mutex_;
@@ -43,122 +54,99 @@ void GraphStorageLocalServer::stop() {
   serving_ = false;
 }
 
-folly::Future<::nebula::storage::cpp2::GetNeighborsResponse>
-GraphStorageLocalServer::future_getNeighbors(
-    const ::nebula::storage::cpp2::GetNeighborsRequest& request) {
-  return folly::via(threadManager_.get(),
-                    [this, &request]() { return handler_->future_getNeighbors(request); });
+folly::Future<cpp2::GetNeighborsResponse> GraphStorageLocalServer::future_getNeighbors(
+    const cpp2::GetNeighborsRequest& request) {
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::GetNeighborsResponse, future_getNeighbors);
 }
 
-folly::Future<::nebula::storage::cpp2::ExecResponse> GraphStorageLocalServer::future_addVertices(
-    const ::nebula::storage::cpp2::AddVerticesRequest& request) {
-  return folly::via(threadManager_.get(),
-                    [this, &request]() { return handler_->future_addVertices(request); });
+folly::Future<cpp2::ExecResponse> GraphStorageLocalServer::future_addVertices(
+    const cpp2::AddVerticesRequest& request) {
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::ExecResponse, future_addVertices);
 }
 
-folly::Future<::nebula::storage::cpp2::ExecResponse> GraphStorageLocalServer::future_chainAddEdges(
-    const ::nebula::storage::cpp2::AddEdgesRequest& request) {
-  return folly::via(threadManager_.get(),
-                    [this, &request]() { return handler_->future_chainAddEdges(request); });
+folly::Future<cpp2::ExecResponse> GraphStorageLocalServer::future_chainAddEdges(
+    const cpp2::AddEdgesRequest& request) {
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::ExecResponse, future_chainAddEdges);
 }
 
-folly::Future<::nebula::storage::cpp2::ExecResponse> GraphStorageLocalServer::future_addEdges(
-    const ::nebula::storage::cpp2::AddEdgesRequest& request) {
-  return folly::via(threadManager_.get(),
-                    [this, &request]() { return handler_->future_addEdges(request); });
+folly::Future<cpp2::ExecResponse> GraphStorageLocalServer::future_addEdges(
+    const cpp2::AddEdgesRequest& request) {
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::ExecResponse, future_addEdges);
 }
 
-folly::Future<::nebula::storage::cpp2::GetPropResponse> GraphStorageLocalServer::future_getProps(
-    const ::nebula::storage::cpp2::GetPropRequest& request) {
-  return folly::via(threadManager_.get(),
-                    [this, &request]() { return handler_->future_getProps(request); });
+folly::Future<cpp2::GetPropResponse> GraphStorageLocalServer::future_getProps(
+    const cpp2::GetPropRequest& request) {
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::GetPropResponse, future_getProps);
 }
 
-folly::Future<::nebula::storage::cpp2::ExecResponse> GraphStorageLocalServer::future_deleteEdges(
-    const ::nebula::storage::cpp2::DeleteEdgesRequest& request) {
-  return folly::via(threadManager_.get(),
-                    [this, &request]() { return handler_->future_deleteEdges(request); });
+folly::Future<cpp2::ExecResponse> GraphStorageLocalServer::future_deleteEdges(
+    const cpp2::DeleteEdgesRequest& request) {
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::ExecResponse, future_deleteEdges);
 }
 
-folly::Future<::nebula::storage::cpp2::ExecResponse> GraphStorageLocalServer::future_deleteVertices(
-    const ::nebula::storage::cpp2::DeleteVerticesRequest& request) {
-  return folly::via(threadManager_.get(),
-                    [this, &request]() { return handler_->future_deleteVertices(request); });
+folly::Future<cpp2::ExecResponse> GraphStorageLocalServer::future_deleteVertices(
+    const cpp2::DeleteVerticesRequest& request) {
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::ExecResponse, future_deleteVertices);
 }
 
-folly::Future<::nebula::storage::cpp2::ExecResponse> GraphStorageLocalServer::future_deleteTags(
-    const ::nebula::storage::cpp2::DeleteTagsRequest& request) {
-  return folly::via(threadManager_.get(),
-                    [this, &request]() { return handler_->future_deleteTags(request); });
+folly::Future<cpp2::ExecResponse> GraphStorageLocalServer::future_deleteTags(
+    const cpp2::DeleteTagsRequest& request) {
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::ExecResponse, future_deleteTags);
 }
 
-folly::Future<::nebula::storage::cpp2::UpdateResponse> GraphStorageLocalServer::future_updateVertex(
-    const ::nebula::storage::cpp2::UpdateVertexRequest& request) {
-  return folly::via(threadManager_.get(),
-                    [this, &request]() { return handler_->future_updateVertex(request); });
+folly::Future<cpp2::UpdateResponse> GraphStorageLocalServer::future_updateVertex(
+    const cpp2::UpdateVertexRequest& request) {
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::UpdateResponse, future_updateVertex);
 }
 
-folly::Future<::nebula::storage::cpp2::UpdateResponse>
-GraphStorageLocalServer::future_chainUpdateEdge(
-    const ::nebula::storage::cpp2::UpdateEdgeRequest& request) {
-  return folly::via(threadManager_.get(),
-                    [this, &request]() { return handler_->future_chainUpdateEdge(request); });
+folly::Future<cpp2::UpdateResponse> GraphStorageLocalServer::future_chainUpdateEdge(
+    const cpp2::UpdateEdgeRequest& request) {
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::UpdateResponse, future_chainUpdateEdge);
 }
 
-folly::Future<::nebula::storage::cpp2::UpdateResponse> GraphStorageLocalServer::future_updateEdge(
-    const ::nebula::storage::cpp2::UpdateEdgeRequest& request) {
-  return folly::via(threadManager_.get(),
-                    [this, &request]() { return handler_->future_updateEdge(request); });
+folly::Future<cpp2::UpdateResponse> GraphStorageLocalServer::future_updateEdge(
+    const cpp2::UpdateEdgeRequest& request) {
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::UpdateResponse, future_updateEdge);
 }
 
-folly::Future<::nebula::storage::cpp2::GetUUIDResp> GraphStorageLocalServer::future_getUUID(
-    const ::nebula::storage::cpp2::GetUUIDReq& request) {
-  return folly::via(threadManager_.get(),
-                    [this, &request]() { return handler_->future_getUUID(request); });
+folly::Future<cpp2::GetUUIDResp> GraphStorageLocalServer::future_getUUID(
+    const cpp2::GetUUIDReq& request) {
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::GetUUIDResp, future_getUUID);
 }
 
-folly::Future<::nebula::storage::cpp2::LookupIndexResp> GraphStorageLocalServer::future_lookupIndex(
-    const ::nebula::storage::cpp2::LookupIndexRequest& request) {
-  return folly::via(threadManager_.get(),
-                    [this, &request]() { return handler_->future_lookupIndex(request); });
+folly::Future<cpp2::LookupIndexResp> GraphStorageLocalServer::future_lookupIndex(
+    const cpp2::LookupIndexRequest& request) {
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::LookupIndexResp, future_lookupIndex);
 }
 
-folly::Future<::nebula::storage::cpp2::GetNeighborsResponse>
-GraphStorageLocalServer::future_lookupAndTraverse(
-    const ::nebula::storage::cpp2::LookupAndTraverseRequest& request) {
-  return folly::via(threadManager_.get(),
-                    [this, &request]() { return handler_->future_lookupAndTraverse(request); });
+folly::Future<cpp2::GetNeighborsResponse> GraphStorageLocalServer::future_lookupAndTraverse(
+    const cpp2::LookupAndTraverseRequest& request) {
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::GetNeighborsResponse, future_lookupAndTraverse);
 }
 
-folly::Future<::nebula::storage::cpp2::ScanVertexResponse>
-GraphStorageLocalServer::future_scanVertex(
-    const ::nebula::storage::cpp2::ScanVertexRequest& request) {
-  return folly::via(threadManager_.get(),
-                    [this, &request]() { return handler_->future_scanVertex(request); });
+folly::Future<cpp2::ScanVertexResponse> GraphStorageLocalServer::future_scanVertex(
+    const cpp2::ScanVertexRequest& request) {
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::ScanVertexResponse, future_scanVertex);
 }
 
-folly::Future<::nebula::storage::cpp2::ScanEdgeResponse> GraphStorageLocalServer::future_scanEdge(
-    const ::nebula::storage::cpp2::ScanEdgeRequest& request) {
-  return folly::via(threadManager_.get(),
-                    [this, &request]() { return handler_->future_scanEdge(request); });
+folly::Future<cpp2::ScanEdgeResponse> GraphStorageLocalServer::future_scanEdge(
+    const cpp2::ScanEdgeRequest& request) {
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::ScanEdgeResponse, future_scanEdge);
 }
 
-folly::Future<::nebula::storage::cpp2::KVGetResponse> GraphStorageLocalServer::future_get(
-    const ::nebula::storage::cpp2::KVGetRequest& request) {
-  return folly::via(threadManager_.get(),
-                    [this, &request]() { return handler_->future_get(request); });
+folly::Future<cpp2::KVGetResponse> GraphStorageLocalServer::future_get(
+    const cpp2::KVGetRequest& request) {
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::KVGetResponse, future_get);
 }
 
-folly::Future<::nebula::storage::cpp2::ExecResponse> GraphStorageLocalServer::future_put(
-    const ::nebula::storage::cpp2::KVPutRequest& request) {
-  return folly::via(threadManager_.get(),
-                    [this, &request]() { return handler_->future_put(request); });
+folly::Future<cpp2::ExecResponse> GraphStorageLocalServer::future_put(
+    const cpp2::KVPutRequest& request) {
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::ExecResponse, future_put);
 }
 
-folly::Future<::nebula::storage::cpp2::ExecResponse> GraphStorageLocalServer::future_remove(
-    const ::nebula::storage::cpp2::KVRemoveRequest& request) {
-  return folly::via(threadManager_.get(),
-                    [this, &request]() { return handler_->future_remove(request); });
+folly::Future<cpp2::ExecResponse> GraphStorageLocalServer::future_remove(
+    const cpp2::KVRemoveRequest& request) {
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::ExecResponse, future_remove);
 }
 
 }  // namespace nebula::storage
