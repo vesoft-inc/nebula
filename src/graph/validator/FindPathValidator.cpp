@@ -7,6 +7,7 @@
 
 #include "graph/planner/plan/Algo.h"
 #include "graph/planner/plan/Logic.h"
+#include "graph/util/ExpressionUtils.h"
 #include "graph/util/ValidateUtil.h"
 
 namespace nebula {
