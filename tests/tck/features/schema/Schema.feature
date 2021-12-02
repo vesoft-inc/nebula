@@ -772,7 +772,7 @@ Feature: Insert string vid of vertex and edge
     # chinese tag without quote mark
     When executing query:
       """
-      CREATE TAG 队伍(名字 string);
+      CREATE TAG 队伍( 名字 string);
       """
     Then a SyntaxError should be raised at runtime:
     # chinese tag and chinese prop
