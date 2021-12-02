@@ -242,7 +242,6 @@ void StorageClientBase<ClientType>::getResponseImpl(
         auto client = clientsMan_->client(host, evb, false, FLAGS_storage_client_timeout_ms);
         auto spaceId = request.second.get_space_id();
         auto partsId = getReqPartsId(request.second);
-        LOG(INFO) << "Send request to storage " << host;
         remoteFunc(client.get(), request.second)
             .via(evb)
             .thenValue([spaceId, pro, this](Response&& resp) mutable {
