@@ -1361,6 +1361,11 @@ class TestListener : public MetaChangedListener {
     UNUSED(remoteListeners);
   }
 
+  void fetchDiskParts(kvstore::SpaceDiskPartsMap& diskParts) override {
+    UNUSED(diskParts);
+    LOG(INFO) << "Fetch Disk Paths";
+  }
+
   int32_t spaceNum = 0;
   int32_t partNum = 0;
   int32_t partChanged = 0;

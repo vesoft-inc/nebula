@@ -52,7 +52,8 @@ static const std::unordered_map<
                  {"balance_task", {"__balance_task__", nullptr}},
                  {"balance_plan", {"__balance_plan__", nullptr}},
                  {"ft_index", {"__ft_index__", nullptr}},
-                 {"local_id", {"__local_id__", MetaKeyUtils::parseLocalIdSpace}}};
+                 {"local_id", {"__local_id__", MetaKeyUtils::parseLocalIdSpace}},
+                 {"disk_parts", {"__disk_parts__", MetaKeyUtils::parseDiskPartsSpace}}};
 
 // clang-format off
 static const std::string kSpacesTable         = tableMaps.at("spaces").first;         // NOLINT
@@ -73,6 +74,7 @@ static const std::string kLeaderTermsTable    = tableMaps.at("leader_terms").fir
 static const std::string kGroupsTable         = systemTableMaps.at("groups").first;           // NOLINT
 static const std::string kZonesTable          = systemTableMaps.at("zones").first;            // NOLINT
 static const std::string kListenerTable       = tableMaps.at("listener").first;         // NOLINT
+static const std::string kDiskPartsTable      = tableMaps.at("disk_parts").first;       // NOLINT
 
 // Used to record the number of vertices and edges in the space
 // The number of vertices of each tag in the space
@@ -1170,6 +1172,50 @@ std::string MetaKeyUtils::localIdKey(GraphSpaceID spaceId) {
 GraphSpaceID MetaKeyUtils::parseLocalIdSpace(folly::StringPiece rawData) {
   auto offset = kLocalIdTable.size();
   return *reinterpret_cast<const GraphSpaceID*>(rawData.data() + offset);
+}
+
+GraphSpaceID MetaKeyUtils::parseDiskPartsSpace(folly::StringPiece rawData) {
+  auto offset = kDiskPartsTable.size();
+  return *reinterpret_cast<const GraphSpaceID*>(rawData.data() + offset);
+}
+
+std::string MetaKeyUtils::diskPartsPrefix() { return kDiskPartsTable; }
+
+std::string MetaKeyUtils::diskPartsPrefix(HostAddr addr) {
+  std::string key;
+  std::string hostStr = serializeHostAddr(addr);
+  key.reserve(kDiskPartsTable.size() + hostStr.size());
+  key.append(kDiskPartsTable.data(), kDiskPartsTable.size()).append(hostStr.data(), hostStr.size());
+  return key;
+}
+
+std::string MetaKeyUtils::diskPartsPrefix(HostAddr addr, GraphSpaceID spaceId) {
+  std::string key;
+  std::string prefix = diskPartsPrefix(addr);
+  key.reserve(prefix.size() + sizeof(GraphSpaceID));
+  key.append(prefix.data(), prefix.size())
+      .append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
+  return key;
+}
+
+std::string MetaKeyUtils::diskPartsKey(HostAddr addr, GraphSpaceID spaceId, std::string path) {
+  std::string key;
+  std::string prefix = diskPartsPrefix(addr, spaceId);
+  key.reserve(prefix.size() + path.size());
+  key.append(prefix.data(), prefix.size()).append(path.data(), path.size());
+  return key;
+}
+
+std::string MetaKeyUtils::diskPartsVal(const meta::cpp2::PartitionList& partList) {
+  std::string val;
+  apache::thrift::CompactSerializer::serialize(partList, &val);
+  return val;
+}
+
+meta::cpp2::PartitionList MetaKeyUtils::parseDiskPartsVal(const folly::StringPiece& rawData) {
+  meta::cpp2::PartitionList partList;
+  apache::thrift::CompactSerializer::deserialize(rawData, partList);
+  return partList;
 }
 
 }  // namespace nebula
