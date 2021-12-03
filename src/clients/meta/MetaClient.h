@@ -625,6 +625,8 @@ class MetaClient {
 
   folly::Future<StatusOr<cpp2::GetWorkerIdResp>> getWorkerId(const std::string& mac_addr);
 
+  folly::Future<StatusOr<cpp2::GetSegmentIdResp>> getSegmentId();
+
   HostAddr getMetaLeader() { return leader_; }
 
   int64_t HeartbeatTime() { return heartbeatTime_; }

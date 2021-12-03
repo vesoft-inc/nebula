@@ -3501,6 +3501,18 @@ folly::Future<StatusOr<cpp2::GetWorkerIdResp>> MetaClient::getWorkerId(const std
   return future;
 }
 
+folly::Future<StatusOr<cpp2::GetSegmentIdResp>> MetaClient::getSegmentId() {
+  auto req = cpp2::GetSegmentIdReq();
+  folly::Promise<StatusOr<cpp2::GetSegmentIdResp>> promise;
+  auto future = promise.getFuture();
+  getResponse(
+      std::move(req),
+      [](auto client, auto request) { return client->future_getSegmentId(request); },
+      [](cpp2::GetSegmentIdResp&& resp) -> decltype(auto) { return std::move(resp); },
+      std::move(promise));
+  return future;
+}
+
 folly::Future<StatusOr<bool>> MetaClient::download(const std::string& hdfsHost,
                                                    int32_t hdfsPort,
                                                    const std::string& hdfsPath,

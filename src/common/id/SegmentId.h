@@ -25,7 +25,7 @@ class SegmentId {
       if (segmentStart_ >= nextSegmentStart_) {
         // handle
         // 这里要注意
-        nextSegmentStart_ = client_.getSegment();
+        nextSegmentStart_ = client_.getSegmentId();
       }
       segmentStart_ = nextSegmentStart_;
       cur_ = segmentStart_;
@@ -37,10 +37,10 @@ class SegmentId {
  private:
   // wip: async
   void fetchSegment() {
-    int64_t newSegment = client_.getSegment();
+    int64_t newSegment = client_.getSegmentId();
     // when get id fast or fetchSegment() slow, we use all id in segment but nextSegmentStart_
-    // isn't updated. In this case, we will getSegment() directly. In case this function update
-    // after getSegment(), adding che here.
+    // isn't updated. In this case, we will getSegmentId() directly. In case this function update
+    // after getSegmentId(), adding che here.
     if (segmentStart_ == nextSegmentStart_) {
       nextSegmentStart_ = newSegment;
     }

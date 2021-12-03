@@ -594,5 +594,11 @@ folly::Future<cpp2::GetWorkerIdResp> MetaServiceHandler::future_getWorkerId(
   RETURN_FUTURE(processor);
 }
 
+folly::Future<cpp2::GetSegmentIdResp> MetaServiceHandler::future_getSegmentId(
+    const cpp2::GetSegmentIdReq& req) {
+  auto* processor = GetSegmentIdProcessor::instance(kvstore_);
+  RETURN_FUTURE(processor);
+}
+
 }  // namespace meta
 }  // namespace nebula

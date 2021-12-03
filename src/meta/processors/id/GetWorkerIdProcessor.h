@@ -25,11 +25,11 @@ class GetWorkerIdProcessor : public BaseProcessor<cpp2::GetWorkerIdResp> {
 
   explicit GetWorkerIdProcessor(kvstore::KVStore* kvstore)
       : BaseProcessor<cpp2::GetWorkerIdResp>(kvstore) {
-    std::vector<kvstore::KV> data = {{id_key, "0"}};
+    std::vector<kvstore::KV> data = {{idKey, "0"}};
     doPut(data);
   }
 
-  inline static const string id_key = "snowflake_worker_id";
+  inline static const string idKey = "snowflake_worker_id";
 };
 
 }  // namespace meta

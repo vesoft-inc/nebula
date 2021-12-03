@@ -21,19 +21,19 @@ void GetWorkerIdProcessor::process(const cpp2::GetWorkerIdReq& req) {
     return;
   }
 
-  auto new_result = doGet(id_key);
-  if (!nebula::ok(new_result)) {
-    LOG(ERROR) << "Get id_key worker id failed";
+  auto newResult = doGet(idKey);
+  if (!nebula::ok(newResult)) {
+    LOG(ERROR) << "Get idKey worker id failed";
     // TODO handleErrorCode(nebula::cpp2::ErrorCode::E_GET_WORKER_ID_FAILED);
     return;
   }
   std::lock_guard<std::mutex> lck(lock_);
 
-  string workerIdStr = std::move(nebula::value(new_result));
+  string workerIdStr = std::move(nebula::value(newResult));
   int32_t workerIdInt32 = std::stoi(workerIdStr);
 
   int32_t newWorkerId = workerIdInt32 + 1;
-  doPut(std::vector<kvstore::KV>{{id_key, std::to_string(newWorkerId)}});
+  doPut(std::vector<kvstore::KV>{{idKey, std::to_string(newWorkerId)}});
 
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
   resp_.set_workerid(std::move(workerIdInt32));

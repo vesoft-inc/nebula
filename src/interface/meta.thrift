@@ -481,7 +481,7 @@ struct GetPartsAllocResp {
     4: optional map<common.PartitionID, i64>(cpp.template = "std::unordered_map") terms,
 }
 
-// get workerid and datacenterid for snowflake
+// get workerid for snowflake
 struct GetWorkerIdReq {
     1: binary mac_address, 
 }
@@ -490,6 +490,15 @@ struct GetWorkerIdResp {
     1: common.ErrorCode code,
     2: common.HostAddr  leader,
     3: i32              workerid,
+}
+
+struct GetSegmentIdReq {}
+
+struct GetSegmentIdResp {
+    1: common.ErrorCode code,
+    2: common.HostAddr  leader,
+    3: i64              start_id,
+    4: i64              length,
 }
 
 struct MultiPutReq {
@@ -1204,6 +1213,7 @@ service MetaService {
     ListPartsResp listParts(1: ListPartsReq req);
 
     GetWorkerIdResp getWorkerId(1: GetWorkerIdReq req);
+    GetSegmentIdResp getSegmentId(1: GetSegmentIdReq req);
 
     ExecResp multiPut(1: MultiPutReq req);
     GetResp get(1: GetReq req);

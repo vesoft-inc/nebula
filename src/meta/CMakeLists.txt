@@ -27,7 +27,8 @@ nebula_add_library(
     processors/schema/ListEdgesProcessor.cpp
     processors/schema/DropEdgeProcessor.cpp
     processors/schema/SchemaUtil.cpp
-    processors/id/GetWorkerIdProcessor.cpp  
+    processors/id/GetWorkerIdProcessor.cpp
+    processors/id/GetSegmentIdProcessor.cpp
     processors/index/CreateTagIndexProcessor.cpp
     processors/index/DropTagIndexProcessor.cpp
     processors/index/GetTagIndexProcessor.cpp
