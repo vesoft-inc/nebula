@@ -5,7 +5,12 @@
 
 #include <gtest/gtest.h>
 
+#include <cstdint>
+
 #include "common/base/Base.h"
+#include "common/datatypes/DataSet.h"
+#include "common/datatypes/Geography.h"
+#include "common/geo/GeoIndex.h"
 #include "common/utils/IndexKeyUtils.h"
 
 namespace nebula {
@@ -96,6 +101,18 @@ bool evalDateTime(nebula::DateTime val) {
   return val == res.getDateTime();
 }
 
+std::vector<uint64_t> evalGeography(nebula::Geography val) {
+  geo::RegionCoverParams rc(0, 30, 8);
+  auto vals = IndexKeyUtils::encodeGeography(val, rc);
+  std::vector<uint64_t> got;
+  for (auto& str : vals) {
+    auto res = IndexKeyUtils::decodeGeography(str);
+    got.emplace_back(res);
+  }
+  // Return the actual cellIds
+  return got;
+}
+
 TEST(IndexKeyUtilsTest, encodeValue) {
   EXPECT_TRUE(evalInt64(1));
   EXPECT_TRUE(evalInt64(0));
@@ -133,6 +150,63 @@ TEST(IndexKeyUtilsTest, encodeValue) {
   dt.sec = 22;
   dt.microsec = 1111;
   EXPECT_TRUE(evalDateTime(dt));
+}
+
+TEST(IndexKeyUtilsTest, encodeGeography) {
+  // The expected result comes from BigQuery
+  auto toUint64Vector = [](std::vector<int64_t> expect) {
+    auto asUint64 = [](int64_t i) -> uint64_t {
+      const char* c = reinterpret_cast<const char*>(&i);
+      uint64_t u = *reinterpret_cast<const uint64_t*>(c);
+      return u;
+    };
+
+    std::vector<uint64_t> transformedExpect;
+    transformedExpect.reserve(expect.size());
+    for (int64_t i : expect) {
+      transformedExpect.push_back(asUint64(i));
+    }
+    return transformedExpect;
+  };
+
+  auto pt = Geography::fromWKT("POINT(108.1 32.5)").value();
+  EXPECT_EQ(toUint64Vector({3929814733111767011}), evalGeography(pt));
+
+  auto ls = Geography::fromWKT("LINESTRING(68.9 48.9,76.1 35.5,125.7 28.2)").value();
+  EXPECT_EQ(toUint64Vector({3765009288481734656,
+                            3818771009033469952,
+                            3909124476557590528,
+                            3928264774973915136,
+                            4017210867614482432,
+                            4053239664633446400,
+                            4089268461652410368,
+                            4773815605012725760}),
+            evalGeography(ls));
+
+  auto pg1 =
+      Geography::fromWKT("POLYGON((102.5 33.5, 110.6 36.9,113.6 30.4,102.7 27.3,102.5 33.5))")
+          .value();
+  EXPECT_EQ(toUint64Vector({3759379788947521536,
+                            3879094614979772416,
+                            3915809507254468608,
+                            3917005775905488896,
+                            3922635275439702016,
+                            3931642474694443008,
+                            3949656873203924992,
+                            3958664072458665984}),
+            evalGeography(pg1));
+
+  auto pg2 =
+      Geography::fromWKT("POLYGON((72.2 54.6,134.6 54.6,134.6 18.2,72.2 18.2,72.2 54.6))").value();
+  EXPECT_EQ(toUint64Vector({3746994889972252672,
+                            4107282860161892352,
+                            4183844053827190784,
+                            4192851253081931776,
+                            4305441243766194176,
+                            4827858800541171712,
+                            6701356245527298048,
+                            6845471433603153920}),
+            evalGeography(pg2));
 }
 
 TEST(IndexKeyUtilsTest, encodeDouble) {
@@ -225,7 +299,9 @@ TEST(IndexKeyUtilsTest, nullableValue) {
       cols.emplace_back(nullCol(folly::stringPrintf("col%ld", j), PropertyType::BOOL));
     }
     // TODO(jie) Add index key tests for geography
-    auto raws = IndexKeyUtils::encodeValues(std::move(values), std::move(cols));
+    auto indexItem = std::make_unique<meta::cpp2::IndexItem>();
+    indexItem->set_fields(cols);
+    auto raws = IndexKeyUtils::encodeValues(std::move(values), indexItem.get());
     u_short s = 0xfc00; /* the binary is '11111100 00000000'*/
     std::string expected;
     expected.append(reinterpret_cast<const char*>(&s), sizeof(u_short));
@@ -240,7 +316,9 @@ TEST(IndexKeyUtilsTest, nullableValue) {
     for (int64_t j = 1; j <= 2; j++) {
       cols.emplace_back(nullCol(folly::stringPrintf("col%ld", j), PropertyType::BOOL));
     }
-    auto raws = IndexKeyUtils::encodeValues(std::move(values), std::move(cols));
+    auto indexItem = std::make_unique<meta::cpp2::IndexItem>();
+    indexItem->set_fields(cols);
+    auto raws = IndexKeyUtils::encodeValues(std::move(values), indexItem.get());
     u_short s = 0x4000; /* the binary is '01000000 00000000'*/
     std::string expected;
     expected.append(reinterpret_cast<const char*>(&s), sizeof(u_short));
@@ -255,7 +333,9 @@ TEST(IndexKeyUtilsTest, nullableValue) {
     for (int64_t j = 1; j <= 2; j++) {
       cols.emplace_back(nullCol(folly::stringPrintf("col%ld", j), PropertyType::BOOL));
     }
-    auto raws = IndexKeyUtils::encodeValues(std::move(values), std::move(cols));
+    auto indexItem = std::make_unique<meta::cpp2::IndexItem>();
+    indexItem->set_fields(cols);
+    auto raws = IndexKeyUtils::encodeValues(std::move(values), indexItem.get());
     u_short s = 0x0000; /* the binary is '01000000 00000000'*/
     std::string expected;
     expected.append(reinterpret_cast<const char*>(&s), sizeof(u_short));
@@ -269,8 +349,9 @@ TEST(IndexKeyUtilsTest, nullableValue) {
       values.emplace_back(Value(NullType::__NULL__));
       cols.emplace_back(nullCol(folly::stringPrintf("col%ld", i), PropertyType::INT64));
     }
-
-    auto raws = IndexKeyUtils::encodeValues(std::move(values), std::move(cols));
+    auto indexItem = std::make_unique<meta::cpp2::IndexItem>();
+    indexItem->set_fields(cols);
+    auto raws = IndexKeyUtils::encodeValues(std::move(values), indexItem.get());
     u_short s = 0xfff0; /* the binary is '11111111 11110000'*/
     std::string expected;
     expected.append(reinterpret_cast<const char*>(&s), sizeof(u_short));
@@ -308,7 +389,9 @@ TEST(IndexKeyUtilsTest, nullableValue) {
         cols.emplace_back(nullCol(folly::stringPrintf("col_%ld_%ld", i, j), types[j]));
       }
     }
-    auto raws = IndexKeyUtils::encodeValues(std::move(values), cols);
+    auto indexItem = std::make_unique<meta::cpp2::IndexItem>();
+    indexItem->set_fields(cols);
+    auto raws = IndexKeyUtils::encodeValues(std::move(values), indexItem.get());
     u_short s = 0xaaa0; /* the binary is '10101010 10100000'*/
     std::string expected;
     expected.append(reinterpret_cast<const char*>(&s), sizeof(u_short));
@@ -322,7 +405,9 @@ TEST(IndexKeyUtilsTest, nullableValue) {
       values.emplace_back(Value(NullType::__NULL__));
       cols.emplace_back(nullCol(folly::stringPrintf("col%ld", i), PropertyType::BOOL));
     }
-    auto raws = IndexKeyUtils::encodeValues(std::move(values), std::move(cols));
+    auto indexItem = std::make_unique<meta::cpp2::IndexItem>();
+    indexItem->set_fields(cols);
+    auto raws = IndexKeyUtils::encodeValues(std::move(values), indexItem.get());
     u_short s = 0xff80; /* the binary is '11111111 10000000'*/
     std::string expected;
     expected.append(reinterpret_cast<const char*>(&s), sizeof(u_short));
@@ -418,9 +503,11 @@ TEST(IndexKeyUtilsTest, getValueFromIndexKeyTest) {
     };
     auto expected = vertices;
 
+    auto indexItem = std::make_unique<meta::cpp2::IndexItem>();
+    indexItem->set_fields(cols);
     std::vector<std::string> indexKeys;
     for (auto& row : vertices) {
-      auto values = IndexKeyUtils::encodeValues(std::move(row.second), cols);
+      auto values = IndexKeyUtils::encodeValues(std::move(row.second), indexItem.get());
       ASSERT_EQ(indexValueSize, values[0].size());
       auto keys =
           IndexKeyUtils::vertexIndexKeys(vIdLen, partId, indexId, row.first, std::move(values));
@@ -440,9 +527,11 @@ TEST(IndexKeyUtilsTest, getValueFromIndexKeyTest) {
     };
     auto expected = edges;
 
+    auto indexItem = std::make_unique<meta::cpp2::IndexItem>();
+    indexItem->set_fields(cols);
     std::vector<std::string> indexKeys;
     for (auto& row : edges) {
-      auto values = IndexKeyUtils::encodeValues(std::move(row.second), cols);
+      auto values = IndexKeyUtils::encodeValues(std::move(row.second), indexItem.get());
       ASSERT_EQ(indexValueSize, values[0].size());
 
       auto keys = IndexKeyUtils::edgeIndexKeys(
@@ -476,9 +565,11 @@ TEST(IndexKeyUtilsTest, getValueFromIndexKeyTest) {
         {"9", {null, null, null, null, null, null}}};
     auto expected = vertices;
 
+    auto indexItem = std::make_unique<meta::cpp2::IndexItem>();
+    indexItem->set_fields(cols);
     std::vector<std::string> indexKeys;
     for (auto& row : vertices) {
-      auto values = IndexKeyUtils::encodeValues(std::move(row.second), cols);
+      auto values = IndexKeyUtils::encodeValues(std::move(row.second), indexItem.get());
       ASSERT_EQ(indexValueSize, values[0].size());
       auto keys =
           IndexKeyUtils::vertexIndexKeys(vIdLen, partId, indexId, row.first, std::move(values));
@@ -503,9 +594,11 @@ TEST(IndexKeyUtilsTest, getValueFromIndexKeyTest) {
         {"9", {null, null, null, null, null, null}}};
     auto expected = edges;
 
+    auto indexItem = std::make_unique<meta::cpp2::IndexItem>();
+    indexItem->set_fields(cols);
     std::vector<std::string> indexKeys;
     for (auto& row : edges) {
-      auto values = IndexKeyUtils::encodeValues(std::move(row.second), cols);
+      auto values = IndexKeyUtils::encodeValues(std::move(row.second), indexItem.get());
       ASSERT_EQ(indexValueSize, values[0].size());
       auto keys = IndexKeyUtils::edgeIndexKeys(
           vIdLen, partId, indexId, row.first, 0, row.first, std::move(values));

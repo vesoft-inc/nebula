@@ -23,7 +23,7 @@ folly::Future<Status> CreateTagIndexExecutor::execute() {
                        ctiNode->getSchemaName(),
                        ctiNode->getFields(),
                        ctiNode->getIfNotExists(),
-                       ctiNode->getComment())
+                       ctiNode->getIndexParams())
       .via(runner())
       .thenValue([ctiNode, spaceId](StatusOr<IndexID> resp) {
         if (!resp.ok()) {

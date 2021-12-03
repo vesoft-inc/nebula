@@ -490,13 +490,73 @@ class IndexFieldList final {
   std::vector<std::unique_ptr<meta::cpp2::IndexFieldDef>> fields_;
 };
 
+class IndexParamItem final {
+ public:
+  enum ParamType : uint8_t { COMMENT, S2_MAX_LEVEL, S2_MAX_CELLS };
+
+  IndexParamItem(ParamType op, Value val) {
+    paramType_ = op;
+    paramValue_ = val;
+  }
+
+  ParamType getParamType() { return paramType_; }
+
+  StatusOr<std::string> getComment() {
+    if (paramType_ == COMMENT) {
+      return paramValue_.getStr();
+    } else {
+      return Status::Error("Not exists comment.");
+    }
+  }
+
+  StatusOr<int> getS2MaxLevel() {
+    if (paramType_ == S2_MAX_LEVEL) {
+      return paramValue_.getInt();
+    } else {
+      return Status::Error("Not exists s2_max_level.");
+    }
+  }
+
+  StatusOr<int> getS2MaxCells() {
+    if (paramType_ == S2_MAX_CELLS) {
+      return paramValue_.getInt();
+    } else {
+      return Status::Error("Not exists s2_max_cells.");
+    }
+  }
+
+  std::string toString() const;
+
+ private:
+  ParamType paramType_;
+  Value paramValue_;
+};
+
+class IndexParamList final {
+ public:
+  void add(IndexParamItem *item) { items_.emplace_back(item); }
+
+  std::vector<IndexParamItem *> getParams() const {
+    std::vector<IndexParamItem *> result;
+    result.resize(items_.size());
+    auto get = [](auto &ptr) { return ptr.get(); };
+    std::transform(items_.begin(), items_.end(), result.begin(), get);
+    return result;
+  }
+
+  std::string toString() const;
+
+ private:
+  std::vector<std::unique_ptr<IndexParamItem>> items_;
+};
+
 class CreateTagIndexSentence final : public CreateSentence {
  public:
   CreateTagIndexSentence(std::string *indexName,
                          std::string *tagName,
                          IndexFieldList *fields,
                          bool ifNotExists,
-                         std::string *comment)
+                         IndexParamList *indexParams)
       : CreateSentence(ifNotExists) {
     indexName_.reset(indexName);
     tagName_.reset(tagName);
@@ -505,7 +565,7 @@ class CreateTagIndexSentence final : public CreateSentence {
     } else {
       fields_.reset(fields);
     }
-    comment_.reset(comment);
+    indexParams_.reset(indexParams);
     kind_ = Kind::kCreateTagIndex;
   }
 
@@ -524,13 +584,13 @@ class CreateTagIndexSentence final : public CreateSentence {
     return result;
   }
 
-  const std::string *comment() const { return comment_.get(); }
+  IndexParamList *getIndexParamList() const { return indexParams_.get(); }
 
  private:
   std::unique_ptr<std::string> indexName_;
   std::unique_ptr<std::string> tagName_;
   std::unique_ptr<IndexFieldList> fields_;
-  std::unique_ptr<std::string> comment_;
+  std::unique_ptr<IndexParamList> indexParams_;
 };
 
 class CreateEdgeIndexSentence final : public CreateSentence {
@@ -539,7 +599,7 @@ class CreateEdgeIndexSentence final : public CreateSentence {
                           std::string *edgeName,
                           IndexFieldList *fields,
                           bool ifNotExists,
-                          std::string *comment)
+                          IndexParamList *indexParams)
       : CreateSentence(ifNotExists) {
     indexName_.reset(indexName);
     edgeName_.reset(edgeName);
@@ -548,7 +608,7 @@ class CreateEdgeIndexSentence final : public CreateSentence {
     } else {
       fields_.reset(fields);
     }
-    comment_.reset(comment);
+    indexParams_.reset(indexParams);
     kind_ = Kind::kCreateEdgeIndex;
   }
 
@@ -567,13 +627,13 @@ class CreateEdgeIndexSentence final : public CreateSentence {
     return result;
   }
 
-  const std::string *comment() const { return comment_.get(); }
+  IndexParamList *getIndexParamList() const { return indexParams_.get(); }
 
  private:
   std::unique_ptr<std::string> indexName_;
   std::unique_ptr<std::string> edgeName_;
   std::unique_ptr<IndexFieldList> fields_;
-  std::unique_ptr<std::string> comment_;
+  std::unique_ptr<IndexParamList> indexParams_;
 };
 
 class DescribeTagIndexSentence final : public Sentence {

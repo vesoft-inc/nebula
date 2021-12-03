@@ -52,6 +52,7 @@ std::unique_ptr<PlanNodeDescription> CreateIndexNode::explain() const {
   }
   addDescription("fields", folly::toJson(util::toJson(fields)), desc.get());
   addDescription("ifNotExists", folly::to<std::string>(ifNotExists_), desc.get());
+  addDescription("indexParams", folly::toJson(util::toJson(indexParams_)), desc.get());
   return desc;
 }
 

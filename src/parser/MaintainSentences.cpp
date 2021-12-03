@@ -232,6 +232,33 @@ std::string DropEdgeSentence::toString() const {
   return folly::stringPrintf("DROP EDGE %s", name_.get()->c_str());
 }
 
+std::string IndexParamItem::toString() const {
+  switch (paramType_) {
+    case COMMENT:
+      return folly::stringPrintf("comment = \"%s\"", paramValue_.getStr().c_str());
+    case S2_MAX_LEVEL:
+      return folly::stringPrintf("s2_max_level = %ld", paramValue_.getInt());
+    case S2_MAX_CELLS:
+      return folly::stringPrintf("s2_max_cells = \"%ld\"", paramValue_.getInt());
+  }
+  DLOG(FATAL) << "Index param type illegal";
+  return "Unknown";
+}
+
+std::string IndexParamList::toString() const {
+  std::string buf;
+  buf.reserve(256);
+  for (auto& item : items_) {
+    buf += " ";
+    buf += item->toString();
+    buf += ",";
+  }
+  if (!buf.empty()) {
+    buf.resize(buf.size() - 1);
+  }
+  return buf;
+}
+
 std::string CreateTagIndexSentence::toString() const {
   std::string buf;
   buf.reserve(256);
@@ -255,9 +282,8 @@ std::string CreateTagIndexSentence::toString() const {
   folly::join(", ", fieldDefs, fields);
   buf += fields;
   buf += ")";
-  if (comment_ != nullptr) {
-    buf += "COMMENT = ";
-    buf += *comment_;
+  if (indexParams_ != nullptr) {
+    buf += indexParams_->toString();
   }
   return buf;
 }
@@ -285,9 +311,8 @@ std::string CreateEdgeIndexSentence::toString() const {
   folly::join(", ", fieldDefs, fields);
   buf += fields;
   buf += ")";
-  if (comment_ != nullptr) {
-    buf += "COMMENT = ";
-    buf += *comment_;
+  if (indexParams_ != nullptr) {
+    buf += indexParams_->toString();
   }
   return buf;
 }

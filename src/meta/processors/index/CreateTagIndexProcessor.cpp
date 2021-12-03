@@ -188,8 +188,15 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
   item.set_schema_id(schemaID);
   item.set_schema_name(tagName);
   item.set_fields(std::move(columns));
-  if (req.comment_ref().has_value()) {
-    item.set_comment(*req.comment_ref());
+  auto& indexParams = req.get_index_params();
+  if (indexParams.comment_ref().has_value()) {
+    item.set_comment(indexParams.comment_ref().value());
+  }
+  if (indexParams.s2_max_level_ref().has_value()) {
+    item.set_s2_max_level(indexParams.s2_max_level_ref().value());
+  }
+  if (indexParams.s2_max_cells_ref().has_value()) {
+    item.set_s2_max_cells(indexParams.s2_max_cells_ref().value());
   }
 
   data.emplace_back(MetaKeyUtils::indexIndexKey(space, indexName),

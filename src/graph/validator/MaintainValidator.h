@@ -9,6 +9,7 @@
 #include "clients/meta/MetaClient.h"
 #include "graph/context/ast/QueryAstContext.h"
 #include "graph/validator/Validator.h"
+#include "interface/gen-cpp2/meta_types.h"
 #include "parser/AdminSentences.h"
 
 namespace nebula {
@@ -158,6 +159,7 @@ class CreateTagIndexValidator final : public Validator {
   std::string index_;
   std::vector<meta::cpp2::IndexFieldDef> fields_;
   bool ifNotExist_;
+  meta::cpp2::IndexParams indexParams_;
 };
 
 class CreateEdgeIndexValidator final : public Validator {
@@ -174,6 +176,7 @@ class CreateEdgeIndexValidator final : public Validator {
   std::string index_;
   std::vector<meta::cpp2::IndexFieldDef> fields_;
   bool ifNotExist_;
+  meta::cpp2::IndexParams indexParams_;
 };
 
 class DropTagIndexValidator final : public Validator {

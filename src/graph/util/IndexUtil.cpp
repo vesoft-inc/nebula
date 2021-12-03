@@ -5,6 +5,8 @@
 
 #include "graph/util/IndexUtil.h"
 
+#include <string>
+
 namespace nebula {
 namespace graph {
 
@@ -16,6 +18,35 @@ Status IndexUtil::validateColumns(const std::vector<std::string> &fields) {
 
   if (fields.empty()) {
     return Status::Error("Column is empty");
+  }
+
+  return Status::OK();
+}
+
+// static
+Status IndexUtil::validateIndexParams(const std::vector<IndexParamItem *> &params,
+                                      meta::cpp2::IndexParams &indexParams) {
+  for (auto *param : params) {
+    switch (param->getParamType()) {
+      case IndexParamItem::COMMENT: {
+        auto ret = param->getComment();
+        NG_RETURN_IF_ERROR(ret);
+        indexParams.set_comment(std::move(ret).value());
+        break;
+      }
+      case IndexParamItem::S2_MAX_LEVEL: {
+        auto ret2 = param->getS2MaxLevel();
+        NG_RETURN_IF_ERROR(ret2);
+        indexParams.set_s2_max_level(std::move(ret2).value());
+        break;
+      }
+      case IndexParamItem::S2_MAX_CELLS: {
+        auto ret3 = param->getS2MaxCells();
+        NG_RETURN_IF_ERROR(ret3);
+        indexParams.set_s2_max_cells(std::move(ret3).value());
+        break;
+      }
+    }
   }
 
   return Status::OK();
@@ -63,8 +94,18 @@ StatusOr<DataSet> IndexUtil::toShowCreateIndex(bool isTagIndex,
   }
   createStr += ")";
   if (indexItem.comment_ref().has_value()) {
-    createStr += " comment = \"";
-    createStr += *indexItem.get_comment();
+    createStr += ", comment = \"";
+    createStr += *indexItem.comment_ref();
+    createStr += "\"";
+  }
+  if (indexItem.s2_max_level_ref().has_value()) {
+    createStr += ", s2_max_level = \"";
+    createStr += std::to_string(*indexItem.s2_max_level_ref());
+    createStr += "\"";
+  }
+  if (indexItem.s2_max_cells_ref().has_value()) {
+    createStr += ", s2_max_cells = \"";
+    createStr += std::to_string(*indexItem.s2_max_cells_ref());
     createStr += "\"";
   }
   row.emplace_back(std::move(createStr));

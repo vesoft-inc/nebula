@@ -295,6 +295,10 @@ Status CreateTagIndexValidator::validateImpl() {
   fields_ = sentence->fields();
   ifNotExist_ = sentence->isIfNotExist();
   // TODO(darion) Save the index
+  auto *indexParamList = sentence->getIndexParamList();
+  if (indexParamList) {
+    NG_RETURN_IF_ERROR(IndexUtil::validateIndexParams(indexParamList->getParams(), indexParams_));
+  }
   return Status::OK();
 }
 
@@ -306,7 +310,7 @@ Status CreateTagIndexValidator::toPlan() {
                                       *sentence->indexName(),
                                       sentence->fields(),
                                       sentence->isIfNotExist(),
-                                      sentence->comment());
+                                      indexParams_);
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
@@ -319,6 +323,10 @@ Status CreateEdgeIndexValidator::validateImpl() {
   fields_ = sentence->fields();
   ifNotExist_ = sentence->isIfNotExist();
   // TODO(darion) Save the index
+  auto *indexParamList = sentence->getIndexParamList();
+  if (indexParamList) {
+    NG_RETURN_IF_ERROR(IndexUtil::validateIndexParams(indexParamList->getParams(), indexParams_));
+  }
   return Status::OK();
 }
 
@@ -330,7 +338,7 @@ Status CreateEdgeIndexValidator::toPlan() {
                                        *sentence->indexName(),
                                        sentence->fields(),
                                        sentence->isIfNotExist(),
-                                       sentence->comment());
+                                       indexParams_);
   root_ = doNode;
   tail_ = root_;
   return Status::OK();

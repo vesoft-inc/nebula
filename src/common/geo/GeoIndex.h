@@ -52,7 +52,9 @@ struct ScanRange {
 
   explicit ScanRange(uint64_t v) : rangeMin(v), isRangeScan(false) {}
 
-  nebula::storage::cpp2::IndexColumnHint toIndexColumnHint();
+  bool operator==(const ScanRange& rhs) const;
+
+  nebula::storage::cpp2::IndexColumnHint toIndexColumnHint() const;
 };
 
 class GeoIndex {
@@ -82,6 +84,7 @@ class GeoIndex {
 
  private:
   RegionCoverParams rcParams_;
+  // pointsOnly_ indicates whether the indexed column only has points.
   // For the column Geography(Point), we don't need to build ancestor cells
   bool pointsOnly_{false};
 };
