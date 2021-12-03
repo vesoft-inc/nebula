@@ -15,6 +15,7 @@
 #include "codec/RowWriterV2.h"
 #include "common/base/Base.h"
 #include "common/base/Status.h"
+#include "common/fs/FileUtils.h"
 #include "common/meta/ServerBasedIndexManager.h"
 #include "common/meta/ServerBasedSchemaManager.h"
 #include "kvstore/RocksEngine.h"
@@ -23,10 +24,13 @@ DECLARE_string(src_db_path);
 DECLARE_string(dst_db_path);
 DECLARE_string(upgrade_meta_server);
 DECLARE_uint32(write_batch_num);
-DECLARE_uint32(upgrade_version);
+DECLARE_uint32(raw_data_version);
+DECLARE_string(partIds);
 DECLARE_bool(compactions);
 DECLARE_uint32(max_concurrent_parts);
 DECLARE_uint32(max_concurrent_spaces);
+
+using nebula::fs::FileUtils;
 
 namespace nebula {
 namespace storage {
@@ -107,9 +111,17 @@ class UpgraderSpace {
                            const meta::SchemaProviderIf* oldSchema,
                            std::string& name,
                            Value& val);
+
+  std::string getCurrentPartSstFile(PartitionID partId, bool isTag);
+
   void runPartV1();
 
   void runPartV2();
+
+  void writeSstFile(std::vector<kvstore::KV>& data,
+                    std::string& newPartPath,
+                    PartitionID partId,
+                    bool isTag);
 
  public:
   // Souce data path
