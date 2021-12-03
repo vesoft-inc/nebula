@@ -19,7 +19,6 @@
 #include "common/expression/FunctionCallExpression.h"
 #include "common/expression/LabelAttributeExpression.h"
 #include "common/expression/LabelExpression.h"
-#include "common/expression/LabelTagPropertyExpression.h"
 #include "common/expression/ListComprehensionExpression.h"
 #include "common/expression/LogicalExpression.h"
 #include "common/expression/PathBuildExpression.h"
@@ -400,7 +399,6 @@ Expression* Expression::decode(ObjectPool* pool, Expression::Decoder& decoder) {
       return exp;
     }
     case Expression::Kind::kVarProperty: {
-      // LOG(FATAL) << "Should not decode variable property expression";
       exp = VariablePropertyExpression::make(pool);
       exp->resetFrom(decoder);
       return exp;

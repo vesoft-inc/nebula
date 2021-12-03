@@ -203,10 +203,12 @@ Feature: Same Tag Propname
       """
       match (v:player) where v.student.height > 190 return v
       """
-    Then a SemanticError should be raised at runtime: `v.student.height', not found the property `height'
+    Then the result should be, in any order:
+      | v |
     When executing query:
       """
       match (v:player) where v.abc.height > 190 return v.player.name
       """
-    Then a ExecutionError should be raised at runtime: TagName `abc'  is nonexistent
+    Then the result should be, in any order:
+      | v.player.name |
     Then drop the used space

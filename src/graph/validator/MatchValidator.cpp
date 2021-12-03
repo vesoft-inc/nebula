@@ -273,7 +273,7 @@ Status MatchValidator::validateFilter(const Expression *filter,
   auto transformRes = ExpressionUtils::filterTransform(filter);
   NG_RETURN_IF_ERROR(transformRes);
   // rewrite Attribute to LabelTagProperty
-  whereClauseCtx.filter = transformRes.value();
+  whereClauseCtx.filter = ExpressionUtils::rewriteAttr2LabelTagProp(transformRes.value());
 
   auto typeStatus = deduceExprType(whereClauseCtx.filter);
   NG_RETURN_IF_ERROR(typeStatus);
@@ -383,7 +383,7 @@ Status MatchValidator::validateReturn(MatchReturn *ret,
           ExpressionUtils::hasAny(column->expr(), {Expression::Kind::kAggregate})) {
         retClauseCtx.yield->hasAgg_ = true;
       }
-      // column->setExpr(ExpressionUtils::rewriteAttr2LabelTagProp(column->expr()));
+      column->setExpr(ExpressionUtils::rewriteAttr2LabelTagProp(column->expr()));
       exprs.push_back(column->expr());
       columns->addColumn(column->clone().release());
     }
@@ -426,7 +426,6 @@ Status MatchValidator::validateAliases(
   static const std::unordered_set<Expression::Kind> kinds = {Expression::Kind::kLabel,
                                                              Expression::Kind::kLabelAttribute,
                                                              Expression::Kind::kLabelTagProperty,
-                                                             Expression::Kind::kAttribute,
                                                              // primitive props
                                                              Expression::Kind::kEdgeSrc,
                                                              Expression::Kind::kEdgeDst,
@@ -481,11 +480,13 @@ Status MatchValidator::validateWith(const WithClause *with,
   exprs.reserve(withClauseCtx.yield->yieldColumns->size());
   for (auto *col : withClauseCtx.yield->yieldColumns->columns()) {
     auto labelExprs = ExpressionUtils::collectAll(col->expr(), {Expression::Kind::kLabel});
+    auto aliasType = AliasType::kDefault;
     for (auto *labelExpr : labelExprs) {
       auto label = static_cast<const LabelExpression *>(labelExpr)->name();
       if (!withClauseCtx.yield->aliasesAvailable.count(label)) {
         return Status::SemanticError("Alias `%s` not defined", label.c_str());
       }
+      aliasType = withClauseCtx.yield->aliasesUsed->at(label);
     }
     if (col->alias().empty()) {
       if (col->expr()->kind() == Expression::Kind::kLabel) {
@@ -502,7 +503,7 @@ Status MatchValidator::validateWith(const WithClause *with,
         return Status::SemanticError("`%s': Redefined alias", col->alias().c_str());
       }
     } else {
-      if (!withClauseCtx.aliasesGenerated.emplace(col->alias(), AliasType::kDefault).second) {
+      if (!withClauseCtx.aliasesGenerated.emplace(col->alias(), aliasType).second) {
         return Status::SemanticError("`%s': Redefined alias", col->alias().c_str());
       }
     }
@@ -823,25 +824,13 @@ Status MatchValidator::checkAlias(
       NG_RETURN_IF_ERROR(res);
       return Status::OK();
     }
-      //    case Expression::Kind::kLabelTagProperty: {
-      //  auto labelExpr = static_cast<const LabelTagPropertyExpression *>(refExpr)->label();
-      //  auto name = static_cast<const VariablePropertyExpression *>(labelExpr)->prop();
-      //  auto res = getAliasType(aliasesUsed, name);
-      //  NG_RETURN_IF_ERROR(res);
-      //  if (res.value() != AliasType::kNode) {
-      //  return Status::SemanticError("The type of `%s' must be tag", name.c_str());
-      //  }
-      //  return Status::OK();
-    //  }
-    case Expression::Kind::kAttribute: {
-      auto leftExpr = static_cast<const AttributeExpression *>(refExpr)->left();
-      if (leftExpr->kind() == Expression::Kind::kLabelAttribute) {
-        auto name = static_cast<const LabelAttributeExpression *>(leftExpr)->left()->name();
-        auto res = getAliasType(aliasesUsed, name);
-        NG_RETURN_IF_ERROR(res);
-        if (res.value() != AliasType::kNode) {
-          return Status::SemanticError("The type of `%s' should be tag", name.c_str());
-        }
+    case Expression::Kind::kLabelTagProperty: {
+      auto labelExpr = static_cast<const LabelTagPropertyExpression *>(refExpr)->label();
+      auto name = static_cast<const VariablePropertyExpression *>(labelExpr)->prop();
+      auto res = getAliasType(aliasesUsed, name);
+      NG_RETURN_IF_ERROR(res);
+      if (res.value() != AliasType::kNode) {
+        return Status::SemanticError("The type of `%s' should be tag", name.c_str());
       }
       return Status::OK();
     }

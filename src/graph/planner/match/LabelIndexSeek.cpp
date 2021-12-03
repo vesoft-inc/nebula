@@ -91,11 +91,11 @@ StatusOr<SubPlan> LabelIndexSeek::transformNode(NodeContext* nodeCtx) {
     const auto& nodeAlias = nodeCtx->info->alias;
 
     if (filter->kind() == Expression::Kind::kLogicalOr) {
-      auto labelExprs = ExpressionUtils::collectAll(filter, {Expression::Kind::kLabel});
+      auto exprs = ExpressionUtils::collectAll(filter, {Expression::Kind::kLabelTagProperty});
       bool labelMatched = true;
-      for (auto* labelExpr : labelExprs) {
-        DCHECK_EQ(labelExpr->kind(), Expression::Kind::kLabel);
-        if (static_cast<const LabelExpression*>(labelExpr)->name() != nodeAlias) {
+      for (auto* expr : exprs) {
+        auto tagPropExpr = static_cast<const LabelTagPropertyExpression*>(expr);
+        if (static_cast<const PropertyExpression*>(tagPropExpr->label())->prop() != nodeAlias) {
           labelMatched = false;
           break;
         }
@@ -117,9 +117,8 @@ StatusOr<SubPlan> LabelIndexSeek::transformNode(NodeContext* nodeCtx) {
           }
         }
         if (canBeEmbedded2IndexScan) {
-          auto* srcFilter = ExpressionUtils::rewriteAttr2LabelTagProp(flattenFilter);
           storage::cpp2::IndexQueryContext ctx;
-          ctx.filter_ref() = Expression::encode(*srcFilter);
+          ctx.filter_ref() = Expression::encode(*flattenFilter);
           scan->setIndexQueryContext({ctx});
           whereCtx.reset();
         }

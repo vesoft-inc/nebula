@@ -78,8 +78,7 @@ Expression* MatchSolver::doRewrite(QueryContext* qctx,
     auto alias = aliases.find(labelExpr->name());
     DCHECK(alias != aliases.end());
   }
-  auto res = ExpressionUtils::rewriteAttr2LabelTagProp(expr);
-  return rewriteLabel2VarProp(qctx, res);
+  return rewriteLabel2VarProp(qctx, expr);
 }
 
 Expression* MatchSolver::makeIndexFilter(const std::string& label,
@@ -162,27 +161,23 @@ Expression* MatchSolver::makeIndexFilter(const std::string& label,
       }
       propName = la->right()->value().getStr();
     } else {
-      const AttributeExpression* la = nullptr;
-      if (left->kind() == Expression::Kind::kAttribute &&
+      const LabelTagPropertyExpression* la = nullptr;
+      if (left->kind() == Expression::Kind::kLabelTagProperty &&
           right->kind() == Expression::Kind::kConstant) {
-        la = static_cast<const AttributeExpression*>(left);
+        la = static_cast<const LabelTagPropertyExpression*>(left);
         constant = static_cast<const ConstantExpression*>(right);
-      } else if (right->kind() == Expression::Kind::kAttribute &&
+      } else if (right->kind() == Expression::Kind::kLabelTagProperty &&
                  left->kind() == Expression::Kind::kConstant) {
-        la = static_cast<const AttributeExpression*>(right);
+        la = static_cast<const LabelTagPropertyExpression*>(right);
         constant = static_cast<const ConstantExpression*>(left);
       } else {
         continue;
       }
-      if (la->left()->kind() != Expression::Kind::kLabelAttribute) {
+      if (static_cast<const PropertyExpression*>(la->label())->prop() != alias ||
+          la->sym() != label) {
         continue;
       }
-      auto labelAttExpr = static_cast<const LabelAttributeExpression*>(la->left());
-      if (labelAttExpr->left()->name() != alias ||
-          labelAttExpr->right()->value().getStr() != label) {
-        continue;
-      }
-      propName = static_cast<const ConstantExpression*>(la->right())->value().getStr();
+      propName = la->prop();
     }
 
     auto* tpExpr =

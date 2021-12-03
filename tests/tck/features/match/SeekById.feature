@@ -147,6 +147,29 @@ Feature: Match seek by id
     Then the result should be, in any order:
       | Name           |
       | 'James Harden' |
+    When executing query:
+      """
+      MATCH (v)
+      WHERE id(v) IN ['James Harden', 'Jonathon Simmons', 'Klay Thompson', 'Dejounte Murray']
+            OR v.player.age == 23
+      RETURN v.player.name AS Name
+      """
+    Then the result should be, in any order:
+      | Name               |
+      | 'James Harden'     |
+      | 'Jonathon Simmons' |
+      | 'Klay Thompson'    |
+      | 'Dejounte Murray'  |
+    When executing query:
+      """
+      MATCH (v)
+      WHERE id(v) == 'James Harden'
+            OR v.player.age == 23
+      RETURN v.player.name AS Name
+      """
+    Then the result should be, in any order:
+      | Name           |
+      | 'James Harden' |
 
   Scenario: complicate logical
     When executing query:

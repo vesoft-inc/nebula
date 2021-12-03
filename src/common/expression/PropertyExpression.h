@@ -149,6 +149,8 @@ class LabelTagPropertyExpression final : public PropertyExpression {
 
   const Expression* label() const { return label_; }
 
+  Expression* label() { return label_; }
+
  private:
   LabelTagPropertyExpression(ObjectPool* pool,
                              Expression* label = nullptr,
