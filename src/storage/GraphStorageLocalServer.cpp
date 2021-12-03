@@ -14,7 +14,7 @@
   auto f = promise->getFuture();                                 \
   threadManager->add([&] {                                       \
     handler_->callFunc(request).thenValue([&](respType&& resp) { \
-      promise->setValue(resp);                                   \
+      promise->setValue(std::move(resp));                        \
       delete promise;                                            \
     });                                                          \
   });                                                            \
