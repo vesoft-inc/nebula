@@ -219,6 +219,7 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
         break;
       }
       if (*edgeKey.edge_type_ref() > 0) {
+        std::string oldVal;
         RowReaderWrapper nReader;
         RowReaderWrapper oReader;
         if (!ignoreExistedIndex_) {
@@ -229,8 +230,9 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
               continue;
             }
             if (!nebula::value(obsIdx).empty()) {
+              oldVal = std::move(value(obsIdx));
               oReader = RowReaderWrapper::getEdgePropReader(
-                  env_->schemaMan_, spaceId_, *edgeKey.edge_type_ref(), nebula::value(obsIdx));
+                  env_->schemaMan_, spaceId_, *edgeKey.edge_type_ref(), oldVal);
             }
           } else {
             code = nebula::error(obsIdx);

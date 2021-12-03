@@ -190,6 +190,7 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
 
         RowReaderWrapper nReader;
         RowReaderWrapper oReader;
+        std::string oldVal;
         if (!ignoreExistedIndex_) {
           auto obsIdx = findOldValue(partId, vid, tagId);
           if (nebula::ok(obsIdx)) {
@@ -197,8 +198,9 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
               continue;
             }
             if (!nebula::value(obsIdx).empty()) {
-              oReader = RowReaderWrapper::getTagPropReader(
-                  env_->schemaMan_, spaceId_, tagId, nebula::value(obsIdx));
+              oldVal = std::move(value(obsIdx));
+              oReader =
+                  RowReaderWrapper::getTagPropReader(env_->schemaMan_, spaceId_, tagId, oldVal);
             }
           } else {
             code = nebula::error(obsIdx);
