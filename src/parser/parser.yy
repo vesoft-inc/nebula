@@ -531,7 +531,6 @@ unreserved_keyword
     | KW_POLYGON            { $$ = new std::string("polygon"); }
     | KW_HTTP               { $$ = new std::string("http"); }
     | KW_HTTPS              { $$ = new std::string("https"); }
-    | KW_DURATION           { $$ = new std::string("duration"); }
     ;
 
 expression
@@ -1021,25 +1020,53 @@ function_call_expression
         }
     }
     | KW_TIMESTAMP L_PAREN opt_argument_list R_PAREN {
-        $$ = FunctionCallExpression::make(qctx->objPool(), "timestamp", $3);
+        if (FunctionManager::find("timestamp", $3->numArgs()).ok()) {
+            $$ = FunctionCallExpression::make(qctx->objPool(), "timestamp", $3);
+        } else {
+            throw nebula::GraphParser::syntax_error(@1, "Unknown function ");
+        }
     }
     | KW_DATE L_PAREN opt_argument_list R_PAREN {
-        $$ = FunctionCallExpression::make(qctx->objPool(), "date", $3);
+        if (FunctionManager::find("date", $3->numArgs()).ok()) {
+            $$ = FunctionCallExpression::make(qctx->objPool(), "date", $3);
+        } else {
+            throw nebula::GraphParser::syntax_error(@1, "Unknown function ");
+        }
     }
     | KW_TIME L_PAREN opt_argument_list R_PAREN {
-        $$ = FunctionCallExpression::make(qctx->objPool(), "time", $3);
+        if (FunctionManager::find("time", $3->numArgs()).ok()) {
+            $$ = FunctionCallExpression::make(qctx->objPool(), "time", $3);
+        } else {
+            throw nebula::GraphParser::syntax_error(@1, "Unknown function ");
+        }
     }
     | KW_DATETIME L_PAREN opt_argument_list R_PAREN {
-        $$ = FunctionCallExpression::make(qctx->objPool(), "datetime", $3);
+        if (FunctionManager::find("datetime", $3->numArgs()).ok()) {
+            $$ = FunctionCallExpression::make(qctx->objPool(), "datetime", $3);
+        } else {
+            throw nebula::GraphParser::syntax_error(@1, "Unknown function ");
+        }
     }
     | KW_TAGS L_PAREN opt_argument_list R_PAREN {
-        $$ = FunctionCallExpression::make(qctx->objPool(), "tags", $3);
+        if (FunctionManager::find("tags", $3->numArgs()).ok()) {
+            $$ = FunctionCallExpression::make(qctx->objPool(), "tags", $3);
+        } else {
+            throw nebula::GraphParser::syntax_error(@1, "Unknown function ");
+        }
     }
     | KW_SIGN L_PAREN opt_argument_list R_PAREN {
-        $$ = FunctionCallExpression::make(qctx->objPool(), "sign", $3);
+        if (FunctionManager::find("sign", $3->numArgs()).ok()) {
+            $$ = FunctionCallExpression::make(qctx->objPool(), "sign", $3);
+        } else {
+            throw nebula::GraphParser::syntax_error(@1, "Unknown function ");
+        }
     }
     | KW_DURATION L_PAREN opt_argument_list R_PAREN {
-        $$ = FunctionCallExpression::make(qctx->objPool(), "duration", $3);
+        if (FunctionManager::find("duration", $3->numArgs()).ok()) {
+            $$ = FunctionCallExpression::make(qctx->objPool(), "duration", $3);
+        } else {
+            throw nebula::GraphParser::syntax_error(@1, "Unknown function ");
+        }
     }
     ;
 
@@ -1176,6 +1203,10 @@ type_spec
         $$ = new meta::cpp2::ColumnTypeDef();
         $$->set_type(nebula::cpp2::PropertyType::GEOGRAPHY);
         $$->set_geo_shape($3);
+    }
+    | KW_DURATION {
+        $$ = new meta::cpp2::ColumnTypeDef();
+        $$->set_type(nebula::cpp2::PropertyType::DURATION);
     }
     ;
 

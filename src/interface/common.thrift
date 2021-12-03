@@ -285,6 +285,7 @@ enum PropertyType {
 
     // Date time
     TIMESTAMP = 21,
+    DURATION = 23,
     DATE = 24,
     DATETIME = 25,
     TIME = 26,
