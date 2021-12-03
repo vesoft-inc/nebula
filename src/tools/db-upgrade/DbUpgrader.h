@@ -118,6 +118,11 @@ class UpgraderSpace {
 
   void runPartV2();
 
+  void writeSstFile(std::vector<kvstore::KV>& data,
+                    std::string& newPartPath,
+                    PartitionID partId,
+                    bool isTag);
+
  public:
   // Souce data path
   std::string srcPath_;

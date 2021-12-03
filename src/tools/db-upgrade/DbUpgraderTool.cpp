@@ -247,7 +247,8 @@ int main(int argc, char* argv[]) {
         LOG(INFO) << "Find part id " << partId << " system data.";
         partsAll.erase(partId);
       } else {
-        LOG(FATAL) << "Space id " << spaceId << " part " << partId << " illegal data!";
+        LOG(ERROR) << "Space id " << spaceId << " part " << partId << " illegal data!";
+        return EXIT_FAILURE;
       }
       iter->next();
     }
@@ -257,7 +258,8 @@ int main(int argc, char* argv[]) {
     for (auto part : partsAll) {
       partstr += folly::stringPrintf("%d ", part);
     }
-    LOG(FATAL) << "There are some part " << partstr << "not found";
+    LOG(ERROR) << "There are some part " << partstr << "not found";
+    return EXIT_FAILURE;
   }
   LOG(INFO) << "All parts has found, part id " << FLAGS_partIds;
   LOG(INFO) << "================== Prepare phase end ==================";
