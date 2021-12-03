@@ -27,6 +27,7 @@
 #include "interface/gen-cpp2/MetaServiceAsyncClient.h"
 #include "interface/gen-cpp2/common_types.h"
 #include "interface/gen-cpp2/meta_types.h"
+#include "kvstore/DiskManager.h"
 
 DECLARE_int32(meta_client_retry_times);
 DECLARE_int32(heartbeat_interval_secs);
@@ -162,6 +163,7 @@ class MetaChangedListener {
   virtual void onPartUpdated(const PartHosts& partHosts) = 0;
   virtual void fetchLeaderInfo(
       std::unordered_map<GraphSpaceID, std::vector<cpp2::LeaderInfo>>& leaders) = 0;
+  virtual void fetchDiskParts(kvstore::SpaceDiskPartsMap& diskParts) = 0;
   virtual void onListenerAdded(GraphSpaceID spaceId,
                                PartitionID partId,
                                const ListenerHosts& listenerHosts) = 0;
@@ -718,9 +720,14 @@ class MetaClient {
   std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
   std::shared_ptr<thrift::ThriftClientManager<cpp2::MetaServiceAsyncClient>> clientsMan_;
 
+  // heartbeat is a single thread, maybe leaderIdsLock_ and diskPartsLock_ is useless?
   // leaderIdsLock_ is used to protect leaderIds_
   std::unordered_map<GraphSpaceID, std::vector<cpp2::LeaderInfo>> leaderIds_;
   folly::RWSpinLock leaderIdsLock_;
+  // diskPartsLock_ is used to protect diskParts_;
+  kvstore::SpaceDiskPartsMap diskParts_;
+  folly::RWSpinLock diskPartsLock_;
+
   std::atomic<int64_t> localDataLastUpdateTime_{-1};
   std::atomic<int64_t> localCfgLastUpdateTime_{-1};
   std::atomic<int64_t> metadLastUpdateTime_{0};

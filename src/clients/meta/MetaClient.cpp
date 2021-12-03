@@ -266,7 +266,7 @@ bool MetaClient::loadData() {
   }
 
   auto hostsRet = listHosts().get();
-  if (!ret.ok()) {
+  if (!hostsRet.ok()) {
     LOG(ERROR) << "List hosts failed, status:" << hostsRet.status();
     return false;
   }
@@ -2413,6 +2413,21 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
       req.set_leader_partIds(std::move(leaderIds));
     } else {
       req.set_leader_partIds(std::move(leaderIds));
+    }
+
+    kvstore::SpaceDiskPartsMap diskParts;
+    if (listener_ != nullptr) {
+      listener_->fetchDiskParts(diskParts);
+      if (diskParts_ != diskParts) {
+        {
+          folly::RWSpinLock::WriteHolder holder(&diskPartsLock_);
+          diskParts_.clear();
+          diskParts_ = diskParts;
+        }
+        req.set_disk_parts(diskParts);
+      }
+    } else {
+      req.set_disk_parts(diskParts);
     }
   }
 

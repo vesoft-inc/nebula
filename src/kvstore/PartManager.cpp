@@ -190,6 +190,14 @@ void MetaServerBasedPartManager::fetchLeaderInfo(
   }
 }
 
+void MetaServerBasedPartManager::fetchDiskParts(SpaceDiskPartsMap& diskParts) {
+  if (handler_ != nullptr) {
+    handler_->fetchDiskParts(diskParts);
+  } else {
+    VLOG(1) << "handler_ is nullptr!";
+  }
+}
+
 meta::ListenersMap MetaServerBasedPartManager::listeners(const HostAddr& host) {
   auto ret = client_->getListenersByHostFromCache(host);
   if (ret.ok()) {
