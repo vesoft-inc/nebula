@@ -9,15 +9,13 @@
 
 #include "common/base/Base.h"
 
-#define LOCAL_RETURN_FUTURE(threadManager, respType, callFunc)   \
-  auto promise = new folly::Promise<respType>();                 \
-  auto f = promise->getFuture();                                 \
-  threadManager->add([&] {                                       \
-    handler_->callFunc(request).thenValue([&](respType&& resp) { \
-      promise->setValue(std::move(resp));                        \
-      delete promise;                                            \
-    });                                                          \
-  });                                                            \
+#define LOCAL_RETURN_FUTURE(threadManager, respType, callFunc)         \
+  auto promise = std::make_shared<folly::Promise<respType>>();         \
+  auto f = promise->getFuture();                                       \
+  threadManager->add([&, promise] {                                    \
+    handler_->callFunc(request).thenValue(                             \
+        [&](respType&& resp) { promise->setValue(std::move(resp)); }); \
+  });                                                                  \
   return f;
 
 namespace nebula::storage {
