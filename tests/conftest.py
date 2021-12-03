@@ -7,6 +7,7 @@
 import json
 import os
 import pytest
+import logging
 
 from tests.common.configs import all_configs
 from tests.common.types import SpaceDesc
@@ -63,6 +64,16 @@ def pytest_addoption(parser):
                      default=NEBULA_HOME,
                      help="Nebula Graph workspace")
 
+
+def pytest_bdd_step_error(request, feature, scenario, step, step_func, step_func_args):
+    logging.info("=== more error information ===")
+    logging.info("feature is {}".format(feature.filename))
+    logging.info("step line number is {}".format(step.line_number))
+    logging.info("step name is {}".format(step.name))
+    if step_func_args.get("graph_spaces") is not None:
+        graph_spaces = step_func_args.get("graph_spaces")
+        if graph_spaces.get("space_desc") is not None:
+            logging.info("error space is {}".format(graph_spaces.get("space_desc")))
 
 
 def pytest_configure(config):

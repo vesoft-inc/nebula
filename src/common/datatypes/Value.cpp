@@ -1900,7 +1900,9 @@ Value Value::lessThan(const Value& v) const {
       return getGeography() < v.getGeography();
     }
     case Value::Type::DURATION: {
-      return getDuration() < v.getDuration();
+      // Duration can't compare,
+      // e.g. What is the result of `duration('P1M') < duration('P30D')`?
+      return kNullBadType;
     }
     case Value::Type::NULLVALUE:
     case Value::Type::__EMPTY__: {
@@ -2761,7 +2763,8 @@ bool operator<(const Value& lhs, const Value& rhs) {
       return lhs.getGeography() < rhs.getGeography();
     }
     case Value::Type::DURATION: {
-      return lhs.getDuration() < rhs.getDuration();
+      DLOG(FATAL) << "Duration is not comparable.";
+      return false;
     }
     case Value::Type::NULLVALUE:
     case Value::Type::__EMPTY__: {
