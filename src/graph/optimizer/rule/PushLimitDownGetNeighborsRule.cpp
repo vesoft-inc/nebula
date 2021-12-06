@@ -9,6 +9,7 @@
 #include "graph/optimizer/OptGroup.h"
 #include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Query.h"
+#include "graph/util/ExpressionUtils.h"
 
 using nebula::graph::GetNeighbors;
 using nebula::graph::Limit;
