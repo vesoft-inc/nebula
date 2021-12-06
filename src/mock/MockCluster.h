@@ -41,9 +41,7 @@ class MockCluster {
 
   void startMeta(const std::string& rootPath, HostAddr addr = HostAddr("127.0.0.1", 0));
 
-  void startStorage(HostAddr addr,
-                    const std::string& rootPath,
-                    SchemaVer schemaVerCount = 1);
+  void startStorage(HostAddr addr, const std::string& rootPath, SchemaVer schemaVerCount = 1);
 
   /**
    * Init a meta client connect to current meta server.
