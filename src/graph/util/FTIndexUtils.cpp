@@ -6,6 +6,7 @@
 #include "graph/util/FTIndexUtils.h"
 
 #include "common/expression/Expression.h"
+#include "graph/util/ExpressionUtils.h"
 
 DECLARE_uint32(ft_request_retry_times);
 
