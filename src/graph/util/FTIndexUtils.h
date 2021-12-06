@@ -9,7 +9,6 @@
 #include "clients/meta/MetaClient.h"
 #include "common/base/StatusOr.h"
 #include "common/plugin/fulltext/elasticsearch/ESGraphAdapter.h"
-#include "graph/util/ExpressionUtils.h"
 #include "graph/util/SchemaUtil.h"
 #include "parser/MaintainSentences.h"
 

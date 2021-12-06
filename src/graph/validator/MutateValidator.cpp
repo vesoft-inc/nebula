@@ -7,6 +7,7 @@
 #include "common/expression/LabelAttributeExpression.h"
 #include "graph/planner/plan/Mutate.h"
 #include "graph/planner/plan/Query.h"
+#include "graph/util/ExpressionUtils.h"
 #include "graph/util/SchemaUtil.h"
 #include "graph/visitor/RewriteSymExprVisitor.h"
 
