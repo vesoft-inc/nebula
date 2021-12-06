@@ -174,8 +174,8 @@ Feature: With clause
       RETURN avg, max
       """
     Then the result should be, in any order, with relax comparison:
-      | avg               | max |
-      | 78.28571428571429 | 99  |
+      | avg  | max |
+      | 90.0 | 90  |
 
   @skip
   Scenario: with match return
