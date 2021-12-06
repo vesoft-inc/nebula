@@ -5,7 +5,18 @@
 
 #include "parser/Clauses.h"
 
+#include "graph/util/ExpressionUtils.h"
+
 namespace nebula {
+
+bool YieldColumns::hasAgg() const {
+  for (auto &col : columns_) {
+    if (graph::ExpressionUtils::findAny(col->expr(), {Expression::Kind::kAggregate})) {
+      return true;
+    }
+  }
+  return false;
+}
 
 std::string StepClause::toString() const {
   std::string buf;
