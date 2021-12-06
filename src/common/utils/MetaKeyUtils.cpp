@@ -1152,9 +1152,30 @@ GraphSpaceID MetaKeyUtils::parseLocalIdSpace(folly::StringPiece rawData) {
   return *reinterpret_cast<const GraphSpaceID*>(rawData.data() + offset);
 }
 
-GraphSpaceID MetaKeyUtils::parseDiskPartsSpace(folly::StringPiece rawData) {
+HostAddr MetaKeyUtils::parseDiskPartsHost(const folly::StringPiece& rawData) {
   auto offset = kDiskPartsTable.size();
-  return *reinterpret_cast<const GraphSpaceID*>(rawData.data() + offset);
+  size_t len = *reinterpret_cast<const size_t*>(rawData.begin() + offset);
+  std::string hostStr;
+  hostStr.reserve(sizeof(size_t) + len + sizeof(Port));
+  hostStr.append(rawData.begin() + offset, sizeof(size_t) + len + sizeof(Port));
+  return deserializeHostAddr(hostStr);
+}
+
+GraphSpaceID MetaKeyUtils::parseDiskPartsSpace(const folly::StringPiece& rawData) {
+  auto offset = kDiskPartsTable.size();
+  size_t len = *reinterpret_cast<const size_t*>(rawData.begin() + offset);
+  offset += sizeof(size_t) + len + sizeof(Port);
+  return *reinterpret_cast<const GraphSpaceID*>(rawData.begin() + offset);
+}
+
+std::string MetaKeyUtils::parseDiskPartsPath(const folly::StringPiece& rawData) {
+  auto offset = kDiskPartsTable.size();
+  size_t len = *reinterpret_cast<const size_t*>(rawData.begin() + offset);
+  offset += sizeof(size_t) + len + sizeof(Port) + sizeof(GraphSpaceID);
+  std::string path;
+  path.reserve(rawData.size() - offset);
+  path.append(rawData.begin() + offset, rawData.size() - offset);
+  return path;
 }
 
 std::string MetaKeyUtils::diskPartsPrefix() { return kDiskPartsTable; }
@@ -1176,7 +1197,9 @@ std::string MetaKeyUtils::diskPartsPrefix(HostAddr addr, GraphSpaceID spaceId) {
   return key;
 }
 
-std::string MetaKeyUtils::diskPartsKey(HostAddr addr, GraphSpaceID spaceId, std::string path) {
+std::string MetaKeyUtils::diskPartsKey(HostAddr addr,
+                                       GraphSpaceID spaceId,
+                                       const std::string& path) {
   std::string key;
   std::string prefix = diskPartsPrefix(addr, spaceId);
   key.reserve(prefix.size() + path.size());

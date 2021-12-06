@@ -376,7 +376,11 @@ class MetaKeyUtils final {
 
   static std::unordered_map<std::string, std::pair<std::string, bool>> getSystemTableMaps();
 
-  static GraphSpaceID parseDiskPartsSpace(folly::StringPiece rawData);
+  static GraphSpaceID parseDiskPartsSpace(const folly::StringPiece& rawData);
+
+  static HostAddr parseDiskPartsHost(const folly::StringPiece& rawData);
+
+  static std::string parseDiskPartsPath(const folly::StringPiece& rawData);
 
   static std::string diskPartsPrefix();
 
@@ -384,7 +388,7 @@ class MetaKeyUtils final {
 
   static std::string diskPartsPrefix(HostAddr addr, GraphSpaceID spaceId);
 
-  static std::string diskPartsKey(HostAddr addr, GraphSpaceID spaceId, std::string path);
+  static std::string diskPartsKey(HostAddr addr, GraphSpaceID spaceId, const std::string& path);
 
   static std::string diskPartsVal(const meta::cpp2::PartitionList& partList);
 
