@@ -5,6 +5,7 @@ nebula_add_executable(
         DbUpgraderTool.cpp
         NebulaKeyUtilsV1.cpp
         NebulaKeyUtilsV2.cpp
+        NebulaKeyUtilsV3.cpp
         DbUpgrader.cpp
     OBJECTS
         $<TARGET_OBJECTS:meta_service_handler>

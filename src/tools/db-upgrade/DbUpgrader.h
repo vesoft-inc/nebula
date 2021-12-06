@@ -55,6 +55,9 @@ class UpgraderSpace {
   // Processing v2 Rc data upgrade to v2 Ga
   void doProcessV2();
 
+  // Processing v2 Ga data upgrade to v3
+  void doProcessV3();
+
   // Perform manual compact
   void doCompaction();
 
@@ -110,6 +113,8 @@ class UpgraderSpace {
   void runPartV1();
 
   void runPartV2();
+
+  void runPartV3();
 
  public:
   // Source data path

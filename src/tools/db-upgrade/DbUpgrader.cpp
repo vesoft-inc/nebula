@@ -11,6 +11,7 @@
 #include "common/utils/NebulaKeyUtils.h"
 #include "tools/db-upgrade/NebulaKeyUtilsV1.h"
 #include "tools/db-upgrade/NebulaKeyUtilsV2.h"
+#include "tools/db-upgrade/NebulaKeyUtilsV3.h"
 
 DEFINE_string(src_db_path,
               "",
@@ -882,6 +883,78 @@ std::string UpgraderSpace::encodeRowVal(const RowReader* reader,
   return std::move(rowWrite).moveEncodedStr();
 }
 
+void UpgraderSpace::runPartV3() {
+  std::chrono::milliseconds take_dura{10};
+  if (auto pId = partQueue_.try_take_for(take_dura)) {
+    PartitionID partId = *pId;
+    // Handle vertex and edge, if there is an index, generate index data
+    LOG(INFO) << "Start to handle vertex/edge/index data in space id " << spaceId_ << " part id "
+              << partId;
+    auto prefix = NebulaKeyUtilsV3::partTagPrefix(partId);
+    std::unique_ptr<kvstore::KVIterator> iter;
+    auto retCode = readEngine_->prefix(prefix, &iter);
+    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      LOG(ERROR) << "Space id " << spaceId_ << " part " << partId << " no found!";
+      LOG(ERROR) << "Handle vertex/edge/index data in space id " << spaceId_ << " part id "
+                 << partId << " failed";
+
+      auto unFinishedPart = --unFinishedPart_;
+      if (unFinishedPart == 0) {
+        // all parts has finished
+        LOG(INFO) << "Handle last part: " << partId << " vertex/edge/index data in space id "
+                  << spaceId_ << " finished";
+      } else {
+        pool_->add(std::bind(&UpgraderSpace::runPartV3, this));
+      }
+      return;
+    }
+    std::vector<kvstore::KV> data;
+    std::string lastVertexKey = "";
+    while (iter && iter->valid()) {
+      auto vertex = NebulaKeyUtilsV3::getVertexKey(iter->key());
+      if (vertex == lastVertexKey) {
+        continue;
+      }
+      data.emplace_back(vertex, "");
+      lastVertexKey = vertex;
+    }
+    auto code = writeEngine_->multiPut(data);
+    if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      LOG(FATAL) << "Write multi put in space id " << spaceId_ << " part id " << partId
+                 << " failed.";
+    }
+    data.clear();
+    LOG(INFO) << "Handle vertex/edge/index data in space id " << spaceId_ << " part id " << partId
+              << " succeed";
+
+    auto unFinishedPart = --unFinishedPart_;
+    if (unFinishedPart == 0) {
+      // all parts has finished
+      LOG(INFO) << "Handle last part: " << partId << " vertex/edge/index data in space id "
+                << spaceId_ << " finished.";
+    } else {
+      pool_->add(std::bind(&UpgraderSpace::runPartV3, this));
+    }
+  } else {
+    LOG(INFO) << "Handle vertex/edge/index of parts data in space id " << spaceId_ << " finished";
+  }
+}
+void UpgraderSpace::doProcessV3() {
+  LOG(INFO) << "Start to handle data in space id " << spaceId_;
+  // Parallel process part
+  auto partConcurrency = std::min(static_cast<size_t>(FLAGS_max_concurrent_parts), parts_.size());
+  LOG(INFO) << "Max concurrent parts: " << partConcurrency;
+  unFinishedPart_ = parts_.size();
+
+  LOG(INFO) << "Start to handle vertex/edge/index of parts data in space id " << spaceId_;
+  for (size_t i = 0; i < partConcurrency; ++i) {
+    pool_->add(std::bind(&UpgraderSpace::runPartV3, this));
+  }
+
+  while (unFinishedPart_ != 0) {
+    sleep(10);
+  }
+}
 std::vector<std::string> UpgraderSpace::indexVertexKeys(
     PartitionID partId,
     VertexID& vId,
@@ -1096,8 +1169,10 @@ void DbUpgrader::doSpace() {
               << " begin";
     if (FLAGS_upgrade_version == 1) {
       upgraderSpaceIter->doProcessV1();
-    } else {
+    } else if (FLAGS_upgrade_version == 2) {
       upgraderSpaceIter->doProcessV2();
+    } else {
+      upgraderSpaceIter->doProcessV3();
     }
 
     auto ret = upgraderSpaceIter->copyWal();
