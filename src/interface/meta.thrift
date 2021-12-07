@@ -565,9 +565,7 @@ struct HBReq {
     4: optional map<common.GraphSpaceID, list<LeaderInfo>>
         (cpp.template = "std::unordered_map") leader_partIds;
     5: binary     git_info_sha,
-    // version of binary
-    6: optional binary version,
-    7: optional map<common.GraphSpaceID, map<binary, PartitionList>
+    6: optional map<common.GraphSpaceID, map<binary, PartitionList>
         (cpp.template = "std::unordered_map")>
         (cpp.template = "std::unordered_map") disk_parts;
 }
@@ -1113,6 +1111,7 @@ struct VerifyClientVersionResp {
 
 struct VerifyClientVersionReq {
     1: required binary version = common.version;
+    2: common.HostAddr host;
 }
 
 service MetaService {
