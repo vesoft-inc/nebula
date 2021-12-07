@@ -1153,36 +1153,29 @@ GraphSpaceID MetaKeyUtils::parseLocalIdSpace(folly::StringPiece rawData) {
 }
 
 /**
- * diskPartsKey = kDiskPartsTable + serializeHostAddr(HostAddr) + SpaceId + diskPath
- * kDiskPartsTable = "__disk_parts__"
- * HostAddr : see serializeHostAddr(), HostAddr = len(host.ip) + host.ip + host.port
- * SpaceId: int32_t
- * diskPath: string like "/data/storage/1/nebula/part_1"
+ * diskPartsKey = kDiskPartsTable + len(serialized(hostAddr)) + serialized(hostAddr) + path
  */
 
 HostAddr MetaKeyUtils::parseDiskPartsHost(const folly::StringPiece& rawData) {
   auto offset = kDiskPartsTable.size();
-  size_t hostIpLen = *reinterpret_cast<const size_t*>(rawData.begin() + offset);
-  std::string hostAddrStr;
-  hostAddrStr.reserve(sizeof(size_t) + hostIpLen + sizeof(Port));
-  hostAddrStr.append(rawData.begin() + offset, sizeof(size_t) + hostIpLen + sizeof(Port));
+  auto hostAddrLen = *reinterpret_cast<const size_t*>(rawData.begin() + offset);
+  offset += sizeof(size_t);
+  std::string hostAddrStr(rawData.data() + offset, hostAddrLen);
   return deserializeHostAddr(hostAddrStr);
 }
 
 GraphSpaceID MetaKeyUtils::parseDiskPartsSpace(const folly::StringPiece& rawData) {
   auto offset = kDiskPartsTable.size();
-  size_t hostIpLen = *reinterpret_cast<const size_t*>(rawData.begin() + offset);
-  offset += sizeof(size_t) + hostIpLen + sizeof(Port);
+  size_t hostAddrLen = *reinterpret_cast<const size_t*>(rawData.begin() + offset);
+  offset += sizeof(size_t) + hostAddrLen;
   return *reinterpret_cast<const GraphSpaceID*>(rawData.begin() + offset);
 }
 
 std::string MetaKeyUtils::parseDiskPartsPath(const folly::StringPiece& rawData) {
   auto offset = kDiskPartsTable.size();
-  size_t hostIpLen = *reinterpret_cast<const size_t*>(rawData.begin() + offset);
-  offset += sizeof(size_t) + hostIpLen + sizeof(Port) + sizeof(GraphSpaceID);
-  std::string path;
-  path.reserve(rawData.size() - offset);
-  path.append(rawData.begin() + offset, rawData.size() - offset);
+  size_t hostAddrLen = *reinterpret_cast<const size_t*>(rawData.begin() + offset);
+  offset += sizeof(size_t) + hostAddrLen + sizeof(GraphSpaceID);
+  std::string path(rawData.begin() + offset, rawData.size() - offset);
   return path;
 }
 
@@ -1191,8 +1184,11 @@ std::string MetaKeyUtils::diskPartsPrefix() { return kDiskPartsTable; }
 std::string MetaKeyUtils::diskPartsPrefix(HostAddr addr) {
   std::string key;
   std::string hostStr = serializeHostAddr(addr);
-  key.reserve(kDiskPartsTable.size() + hostStr.size());
-  key.append(kDiskPartsTable.data(), kDiskPartsTable.size()).append(hostStr.data(), hostStr.size());
+  size_t hostAddrLen = hostStr.size();
+  key.reserve(kDiskPartsTable.size() + sizeof(size_t) + hostStr.size());
+  key.append(kDiskPartsTable.data(), kDiskPartsTable.size())
+      .append(reinterpret_cast<const char*>(&hostAddrLen), sizeof(size_t))
+      .append(hostStr.data(), hostStr.size());
   return key;
 }
 
