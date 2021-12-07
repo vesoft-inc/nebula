@@ -1312,8 +1312,8 @@ void RaftPart::processAskForVoteRequest(const cpp2::AskForVoteRequest& req,
 
   auto oldRole = role_;
   auto oldTerm = term_;
-  // req.get_term() >= term_, we won't update term in prevote
-  if (!req.get_is_pre_vote()) {
+  if (!req.get_is_pre_vote() && req.get_term() > term_) {
+    // req.get_term() > term_, we won't update term in prevote
     term_ = req.get_term();
     role_ = Role::FOLLOWER;
     leader_ = HostAddr("", 0);
@@ -1376,6 +1376,10 @@ void RaftPart::processAskForVoteRequest(const cpp2::AskForVoteRequest& req,
   if (oldRole == Role::LEADER) {
     bgWorkers_->addTask([self = shared_from_this(), oldTerm] { self->onLostLeadership(oldTerm); });
   }
+  // not a pre-vote, req.term() >= term_, all check passed, convert to follower
+  term_ = req.get_term();
+  role_ = Role::FOLLOWER;
+  leader_ = HostAddr("", 0);
   votedAddr_ = candidate;
   votedTerm_ = req.get_term();
   resp.set_error_code(cpp2::ErrorCode::SUCCEEDED);
