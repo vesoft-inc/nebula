@@ -9,6 +9,8 @@ namespace nebula {
 namespace meta {
 
 void RenameZoneProcessor::process(const cpp2::RenameZoneReq& req) {
+  folly::SharedMutex::WriteHolder zHolder(LockUtils::zoneLock());
+
   auto originalZoneName = req.get_original_zone_name();
   auto originalZoneKey = MetaKeyUtils::zoneKey(originalZoneName);
   auto originalZoneValueRet = doGet(std::move(originalZoneKey));

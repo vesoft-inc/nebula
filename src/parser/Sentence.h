@@ -205,7 +205,9 @@ class ZoneNameList final {
   std::string toString() const {
     std::string buf;
     for (const auto &zone : zones_) {
+      buf += "\"";
       buf += *zone;
+      buf += "\"";
       buf += ",";
     }
     if (!zones_.empty()) {

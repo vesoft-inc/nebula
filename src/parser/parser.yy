@@ -2686,10 +2686,10 @@ add_hosts_sentence
     : KW_ADD KW_HOSTS host_list {
         $$ = new AddHostsSentence($3);
     }
-    | KW_ADD KW_HOSTS host_list KW_INTO KW_ZONE name_label {
+    | KW_ADD KW_HOSTS host_list KW_INTO KW_ZONE STRING {
         $$ = new AddHostsIntoZoneSentence($3, $6, false);
     }
-    | KW_ADD KW_HOSTS host_list KW_INTO KW_NEW KW_ZONE name_label {
+    | KW_ADD KW_HOSTS host_list KW_INTO KW_NEW KW_ZONE STRING {
         $$ = new AddHostsIntoZoneSentence($3, $7, true);
     }
     ;
@@ -2702,13 +2702,13 @@ drop_hosts_sentence
 
 
 merge_zone_sentence
-    : KW_MERGE KW_ZONE zone_name_list KW_INTO name_label {
+    : KW_MERGE KW_ZONE zone_name_list KW_INTO STRING {
         $$ = new MergeZoneSentence($3, $5);
     }
     ;
 
 drop_zone_sentence
-    : KW_DROP KW_ZONE name_label {
+    : KW_DROP KW_ZONE STRING {
         $$ = new DropZoneSentence($3);
     }
     ;
@@ -2720,16 +2720,16 @@ drop_zone_sentence
 //     ;
 
 rename_zone_sentence
-    : KW_RENAME KW_ZONE name_label KW_TO name_label {
+    : KW_RENAME KW_ZONE STRING KW_TO STRING {
         $$ = new RenameZoneSentence($3, $5);
     }
     ;
 
 desc_zone_sentence
-    : KW_DESCRIBE KW_ZONE name_label {
+    : KW_DESCRIBE KW_ZONE STRING {
         $$ = new DescribeZoneSentence($3);
     }
-    | KW_DESC KW_ZONE name_label {
+    | KW_DESC KW_ZONE STRING {
         $$ = new DescribeZoneSentence($3);
     }
     ;
@@ -3307,11 +3307,11 @@ show_config_item
     ;
 
 zone_name_list
-    : name_label {
+    : STRING {
         $$ = new ZoneNameList();
         $$->addZone($1);
     }
-    | zone_name_list COMMA name_label {
+    | zone_name_list COMMA STRING {
         $$ = $1;
         $$->addZone($3);
     }

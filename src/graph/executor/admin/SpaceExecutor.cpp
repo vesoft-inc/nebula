@@ -220,14 +220,12 @@ folly::Future<Status> ShowCreateSpaceExecutor::execute() {
         auto fmt = properties.comment_ref().has_value()
                        ? "CREATE SPACE `%s` (partition_num = %d, replica_factor = %d, "
                          "charset = %s, collate = %s, vid_type = %s, atomic_edge = %s"
-                         ")%s"
+                         ") ON %s"
                          " comment = '%s'"
                        : "CREATE SPACE `%s` (partition_num = %d, replica_factor = %d, "
                          "charset = %s, collate = %s, vid_type = %s, atomic_edge = %s"
-                         ")%s";
-        auto zoneNames = !properties.get_zone_names().empty()
-                             ? " ON " + folly::join(",", properties.get_zone_names())
-                             : "";
+                         ") ON %s";
+        auto zoneNames = folly::join(",", properties.get_zone_names());
         if (properties.comment_ref().has_value()) {
           row.values.emplace_back(
               folly::stringPrintf(fmt,

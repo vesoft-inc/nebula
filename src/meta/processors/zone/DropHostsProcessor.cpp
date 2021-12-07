@@ -9,6 +9,8 @@ namespace nebula {
 namespace meta {
 
 void DropHostsProcessor::process(const cpp2::DropHostsReq& req) {
+  folly::SharedMutex::WriteHolder zHolder(LockUtils::zoneLock());
+  folly::SharedMutex::WriteHolder mHolder(LockUtils::machineLock());
   auto hosts = req.get_hosts();
   if (std::unique(hosts.begin(), hosts.end()) != hosts.end()) {
     LOG(ERROR) << "Hosts have duplicated element";
@@ -25,6 +27,7 @@ void DropHostsProcessor::process(const cpp2::DropHostsReq& req) {
   }
 
   std::vector<std::string> data;
+  std::vector<kvstore::KV> rewriteData;
   // Check that partition is not held on the host
   const auto& spacePrefix = MetaKeyUtils::spacePrefix();
   auto spaceIterRet = doPrefix(spacePrefix);
@@ -77,19 +80,47 @@ void DropHostsProcessor::process(const cpp2::DropHostsReq& req) {
 
   auto iter = nebula::value(iterRet).get();
   while (iter->valid()) {
+    auto zoneKey = iter->key();
     auto hs = MetaKeyUtils::parseZoneHosts(iter->val());
+    // Delete all hosts in the zone
     if (std::all_of(hs.begin(), hs.end(), [&hosts](auto& h) {
           return std::find(hosts.begin(), hosts.end(), h) != hosts.end();
         })) {
-      auto zoneName = MetaKeyUtils::parseZoneName(iter->key());
+      auto zoneName = MetaKeyUtils::parseZoneName(zoneKey);
       LOG(INFO) << "Drop zone " << zoneName;
-      code = checkRelatedSpace(zoneName);
-      if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      auto result = checkRelatedSpaceAndCollect(zoneName);
+      if (!nebula::ok(result)) {
+        LOG(ERROR) << "Check related space failed";
+        code = nebula::error(result);
         break;
       }
-      data.emplace_back(iter->key());
+
+      const auto& rewrites = nebula::value(result);
+      rewriteData.insert(rewriteData.end(), rewrites.begin(), rewrites.end());
+      data.emplace_back(zoneKey);
+    } else {
+      // Delete some hosts in the zone
+      for (auto& h : hosts) {
+        auto it = std::find(hs.begin(), hs.end(), h);
+        if (it != hs.end()) {
+          hs.erase(it);
+        }
+      }
+
+      auto zoneValue = MetaKeyUtils::zoneVal(hs);
+      LOG(INFO) << "Zone Value: " << zoneValue;
+      rewriteData.emplace_back(std::move(zoneKey), std::move(zoneValue));
+    }
+    if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      break;
     }
     iter->next();
+  }
+
+  if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    handleErrorCode(code);
+    onFinished();
+    return;
   }
 
   // Detach the machine from cluster
@@ -111,10 +142,21 @@ void DropHostsProcessor::process(const cpp2::DropHostsReq& req) {
   }
 
   resp_.set_code(nebula::cpp2::ErrorCode::SUCCEEDED);
-  doMultiRemove(std::move(data));
+  folly::Baton<true, std::atomic> baton;
+  kvstore_->asyncMultiRemove(kDefaultSpaceId,
+                             kDefaultPartId,
+                             std::move(data),
+                             [this, &baton](nebula::cpp2::ErrorCode result) {
+                               this->handleErrorCode(result);
+                               baton.post();
+                             });
+  baton.wait();
+  doSyncPutAndUpdate(std::move(rewriteData));
 }
 
-nebula::cpp2::ErrorCode DropHostsProcessor::checkRelatedSpace(const std::string& zoneName) {
+ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>>
+DropHostsProcessor::checkRelatedSpaceAndCollect(const std::string& zoneName) {
+  std::vector<kvstore::KV> data;
   const auto& prefix = MetaKeyUtils::spacePrefix();
   auto ret = doPrefix(prefix);
   if (!nebula::ok(ret)) {
@@ -137,19 +179,15 @@ nebula::cpp2::ErrorCode DropHostsProcessor::checkRelatedSpace(const std::string&
       } else {
         zones.erase(it);
         properties.set_zone_names(zones);
-        rewriteSpaceProperties(iter->key().data(), properties);
+
+        auto spaceKey = iter->key().data();
+        auto spaceVal = MetaKeyUtils::spaceVal(properties);
+        data.emplace_back(std::move(spaceKey), std::move(spaceVal));
       }
     }
     iter->next();
   }
-  return nebula::cpp2::ErrorCode::SUCCEEDED;
-}
-
-void DropHostsProcessor::rewriteSpaceProperties(const std::string& spaceKey,
-                                                const meta::cpp2::SpaceDesc& properties) {
-  auto spaceVal = MetaKeyUtils::spaceVal(properties);
-  std::vector<kvstore::KV> data = {{spaceKey, spaceVal}};
-  doSyncPutAndUpdate(std::move(data));
+  return data;
 }
 
 }  // namespace meta

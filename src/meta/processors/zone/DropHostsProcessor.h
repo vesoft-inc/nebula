@@ -22,9 +22,8 @@ class DropHostsProcessor : public BaseProcessor<cpp2::ExecResp> {
  private:
   explicit DropHostsProcessor(kvstore::KVStore* kvstore) : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 
-  nebula::cpp2::ErrorCode checkRelatedSpace(const std::string& zoneName);
-
-  void rewriteSpaceProperties(const std::string& spaceKey, const meta::cpp2::SpaceDesc& properties);
+  ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> checkRelatedSpaceAndCollect(
+      const std::string& zoneName);
 };
 
 }  // namespace meta
