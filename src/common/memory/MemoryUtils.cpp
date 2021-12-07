@@ -33,7 +33,8 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
   double available = 0.0, total = 0.0;
   if (FLAGS_containerized) {
     bool cgroupsv2 = FileUtils::exist("/sys/fs/cgroup/cgroup.controllers");
-    std::string statPath = cgroupsv2 ? "/sys/fs/cgroup/memory.stat" : "/sys/fs/cgroup/memory/memory.stat";
+    std::string statPath =
+        cgroupsv2 ? "/sys/fs/cgroup/memory.stat" : "/sys/fs/cgroup/memory/memory.stat";
     FileUtils::FileLineIterator iter(statPath, &reTotalCache);
     uint64_t cacheSize = 0;
     for (; iter.valid(); ++iter) {
@@ -41,12 +42,14 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
       cacheSize += std::stoul(sm[2].str(), NULL);
     }
 
-    std::string limitPath = cgroupsv2 ? "/sys/fs/cgroup/memory.max" : "/sys/fs/cgroup/memory/memory.limit_in_bytes";
+    std::string limitPath =
+        cgroupsv2 ? "/sys/fs/cgroup/memory.max" : "/sys/fs/cgroup/memory/memory.limit_in_bytes";
     auto limitStatus = MemoryUtils::readSysContents(limitPath);
     NG_RETURN_IF_ERROR(limitStatus);
     uint64_t limitInBytes = std::move(limitStatus).value();
 
-    std::string usagePath = cgroupsv2 ? "/sys/fs/cgroup/memory.current" : "/sys/fs/cgroup/memory/memory.usage_in_bytes";
+    std::string usagePath =
+        cgroupsv2 ? "/sys/fs/cgroup/memory.current" : "/sys/fs/cgroup/memory/memory.usage_in_bytes";
     auto usageStatus = MemoryUtils::readSysContents(usagePath);
     NG_RETURN_IF_ERROR(usageStatus);
     uint64_t usageInBytes = std::move(usageStatus).value();
