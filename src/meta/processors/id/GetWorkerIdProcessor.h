@@ -21,8 +21,6 @@ class GetWorkerIdProcessor : public BaseProcessor<cpp2::GetWorkerIdResp> {
   void process(const cpp2::GetWorkerIdReq& req);
 
  private:
-  mutable std::mutex lock_;
-
   explicit GetWorkerIdProcessor(kvstore::KVStore* kvstore)
       : BaseProcessor<cpp2::GetWorkerIdResp>(kvstore) {
     std::vector<kvstore::KV> data = {{idKey, "0"}};

@@ -3488,9 +3488,9 @@ folly::Future<StatusOr<cpp2::ExecResp>> MetaClient::killQuery(
   return future;
 }
 
-folly::Future<StatusOr<cpp2::GetWorkerIdResp>> MetaClient::getWorkerId(const std::string& macAddr) {
+folly::Future<StatusOr<cpp2::GetWorkerIdResp>> MetaClient::getWorkerId(const std::string& ipAddr) {
   auto req = cpp2::GetWorkerIdReq();
-  req.set_mac_address(macAddr);
+  req.set_ip_address(ipAddr);
   folly::Promise<StatusOr<cpp2::GetWorkerIdResp>> promise;
   auto future = promise.getFuture();
   getResponse(

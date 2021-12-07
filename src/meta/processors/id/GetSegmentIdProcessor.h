@@ -20,8 +20,6 @@ class GetSegmentIdProcessor : public BaseProcessor<cpp2::GetSegmentIdResp> {
   void process(const cpp2::GetSegmentIdReq& req);
 
  private:
-  mutable std::mutex lock_;
-
   explicit GetSegmentIdProcessor(kvstore::KVStore* kvstore)
       : BaseProcessor<cpp2::GetSegmentIdResp>(kvstore) {}
 

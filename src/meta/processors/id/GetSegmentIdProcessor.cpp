@@ -16,12 +16,11 @@ void GetSegmentIdProcessor::process(const cpp2::GetSegmentIdReq& req) {
     LOG(ERROR) << "Get step or current id failed during get segment id";
   }
 
-  std::lock_guard<std::mutex> lck(lock_);
+  folly::SharedMutex::WriteHolder wHolder(LockUtils::segmentIdLock());
 
-  string step = std::move(nebula::value(stepResult));
-  string curId = std::move(nebula::value(curIdResult));
-  int64_t stepInt = std::stoi(step);
-  int64_t curIdInt = std::stoi(curId);
+  int64_t stepInt = std::stoi(std::move(nebula::value(stepResult)));
+  int64_t curIdInt = std::stoi(std::move(nebula::value(curIdResult)));
+
   doPut(std::vector<kvstore::KV>{{idKey, std::to_string(curIdInt + 1)}});
 
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);

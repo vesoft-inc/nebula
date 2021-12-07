@@ -38,6 +38,8 @@ class LockUtils {
   GENERATE_LOCK(zone);
   GENERATE_LOCK(listener);
   GENERATE_LOCK(session);
+  GENERATE_LOCK(segmentId);
+  GENERATE_LOCK(workId);
 
 #undef GENERATE_LOCK
 };

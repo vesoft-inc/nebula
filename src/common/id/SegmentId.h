@@ -36,13 +36,17 @@ class SegmentId {
 
  private:
   // wip: async
-  void fetchSegment() {
-    int64_t newSegment = client_.getSegmentId();
+  void asyncFetchSegment() {
+    std::move auto result = client_.getSegmentId().get();
     // when get id fast or fetchSegment() slow, we use all id in segment but nextSegmentStart_
     // isn't updated. In this case, we will getSegmentId() directly. In case this function update
     // after getSegmentId(), adding che here.
-    if (segmentStart_ == nextSegmentStart_) {
-      nextSegmentStart_ = newSegment;
+    if (result.ok()) {
+      if (segmentStart_ == nextSegmentStart_) {
+        nextSegmentStart_ = result.value();
+      }
+    } else {
+      LOG(ERROR) << "Failed to fetch segment id: " << result.status();
     }
   }
 

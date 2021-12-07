@@ -4,30 +4,14 @@
  * attached with Common Clause Condition 1.0, found in the LICENSES directory.
  */
 
-#include "clients/meta/MetaClient.h"
 #include "common/base/Base.h"
-#include "common/utils/Utils.h"
 
 namespace nebula {
 namespace meta {
 
 class SnowFlake {
  public:
-  explicit SnowFlake(MetaClient* metaClient) : metaClient_(metaClient) {}
-
-  // TODO: return value may be bool?
-  void init() {
-    const std::string& ip = metaClient_->getLocalIp();
-
-    auto result = metaClient_->getWorkerId(nebula::Utils::getMacAddr(ip)).get();
-    if (!result.ok()) {
-      LOG(FATAL) << "Failed to get worker id: " << result.status();
-    }
-    int32_t workerId = result.value().get_workerid();
-    if (workerId < 0 || workerId > maxMachineId_) {
-      LOG(FATAL) << "workerId should be in [0, 1023]";
-    }
-  }
+  explicit SnowFlake(int64_t workerId) : workerId_(workerId) {}
 
   int64_t getId() {
     std::lock_guard<std::mutex> guard(lock_);
@@ -36,19 +20,19 @@ class SnowFlake {
     if (timestamp < lastTimestamp_) {
       // TODO
       LOG(FATAL) << "Clock back";
-      return sequence_;
+      return sequence_.load();
     }
 
     // if it is the same time, then the microsecond sequence
     if (lastTimestamp_ == timestamp) {
-      sequence_ = (sequence_ + 1) & maxSequenceId_;
+      sequence_.store((sequence_.load() + 1) & maxSequenceId_);
       // if the microsecond sequence overflow
-      if (sequence_ == 0) {
+      if (sequence_.load() == 0) {
         // block to the next millisecond, get the new timestamp
         timestamp = nextTimestamp_();
       }
     } else {
-      sequence_ = 0;
+      sequence_.store(0);
     }
     lastTimestamp_ = timestamp;
     return (timestamp - startStmp_) << timestampLeft | workerId_ << machineLeft | sequence_;
@@ -57,11 +41,9 @@ class SnowFlake {
  private:
   mutable std::mutex lock_;
 
-  meta::MetaClient* metaClient_;
-
-  int64_t workerId_;            // 10 bits
-  int64_t lastTimestamp_ = -1;  // 41 bits
-  int64_t sequence_ = 0;        // 12 bits
+  const int64_t workerId_;            // 10 bits
+  int64_t lastTimestamp_ = -1;        // 41 bits
+  std::atomic_int64_t sequence_ = 0;  // 12 bits
 
   int64_t getTimestamp() {
     return std::chrono::duration_cast<std::chrono::milliseconds>(

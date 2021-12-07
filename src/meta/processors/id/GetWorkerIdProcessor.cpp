@@ -10,8 +10,8 @@ namespace nebula {
 namespace meta {
 
 void GetWorkerIdProcessor::process(const cpp2::GetWorkerIdReq& req) {
-  const string& mac_address = req.get_mac_address();
-  auto result = doGet(mac_address);
+  const string& ipAddr = req.get_ip_address();
+  auto result = doGet(ipAddr);
   if (nebula::ok(result)) {
     string workerIdStr = std::move(nebula::value(result));
     int32_t workerIdInt32 = std::stoi(workerIdStr);
@@ -27,7 +27,7 @@ void GetWorkerIdProcessor::process(const cpp2::GetWorkerIdReq& req) {
     // TODO handleErrorCode(nebula::cpp2::ErrorCode::E_GET_WORKER_ID_FAILED);
     return;
   }
-  std::lock_guard<std::mutex> lck(lock_);
+  folly::SharedMutex::WriteHolder wHolder(LockUtils::workIdLock());
 
   string workerIdStr = std::move(nebula::value(newResult));
   int32_t workerIdInt32 = std::stoi(workerIdStr);

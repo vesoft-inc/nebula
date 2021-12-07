@@ -483,7 +483,7 @@ struct GetPartsAllocResp {
 
 // get workerid for snowflake
 struct GetWorkerIdReq {
-    1: binary mac_address, 
+    1: binary ip_address, 
 }
 
 struct GetWorkerIdResp {

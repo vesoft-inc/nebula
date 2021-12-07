@@ -49,27 +49,6 @@ class Utils final {
     }
     return HostAddr(adminAddr.host, adminAddr.port - 2);
   }
-
-  static std::string getMacAddr(const std::string& ip) {
-    char line[512];       // Read with fgets().
-    char ipAddress[128];  // Obviously more space than necessary, just illustrating here.
-    char macAddress[128];
-
-    FILE* fp = fopen("/proc/net/arp", "r");
-    fgets(line, sizeof(line), fp);  // Skip the first line (column headers).
-    while (fgets(line, sizeof(line), fp)) {
-      sscanf(line, "%s 0x%*x 0x%*x %s %*s %*s\n", ipAddress, macAddress);
-      if (strcmp(ipAddress, ip.c_str()) == 0) {
-        fclose(fp);
-        std::string mac = macAddress;
-        return mac;
-      }
-    }
-
-    fclose(fp);
-    LOG(ERROR) << "Can't find mac address for ip: " << ip;
-    return "";
-  }
 };
 }  // namespace nebula
 #endif  // COMMON_UTILS_UTILS_H_
