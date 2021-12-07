@@ -1152,26 +1152,34 @@ GraphSpaceID MetaKeyUtils::parseLocalIdSpace(folly::StringPiece rawData) {
   return *reinterpret_cast<const GraphSpaceID*>(rawData.data() + offset);
 }
 
+/**
+ * diskPartsKey = kDiskPartsTable + serializeHostAddr(HostAddr) + SpaceId + diskPath
+ * kDiskPartsTable = "__disk_parts__"
+ * HostAddr : see serializeHostAddr(), HostAddr = len(host.ip) + host.ip + host.port
+ * SpaceId: int32_t
+ * diskPath: string like "/data/storage/1/nebula/part_1"
+ */
+
 HostAddr MetaKeyUtils::parseDiskPartsHost(const folly::StringPiece& rawData) {
   auto offset = kDiskPartsTable.size();
-  size_t len = *reinterpret_cast<const size_t*>(rawData.begin() + offset);
-  std::string hostStr;
-  hostStr.reserve(sizeof(size_t) + len + sizeof(Port));
-  hostStr.append(rawData.begin() + offset, sizeof(size_t) + len + sizeof(Port));
-  return deserializeHostAddr(hostStr);
+  size_t hostIpLen = *reinterpret_cast<const size_t*>(rawData.begin() + offset);
+  std::string hostAddrStr;
+  hostAddrStr.reserve(sizeof(size_t) + hostIpLen + sizeof(Port));
+  hostAddrStr.append(rawData.begin() + offset, sizeof(size_t) + hostIpLen + sizeof(Port));
+  return deserializeHostAddr(hostAddrStr);
 }
 
 GraphSpaceID MetaKeyUtils::parseDiskPartsSpace(const folly::StringPiece& rawData) {
   auto offset = kDiskPartsTable.size();
-  size_t len = *reinterpret_cast<const size_t*>(rawData.begin() + offset);
-  offset += sizeof(size_t) + len + sizeof(Port);
+  size_t hostIpLen = *reinterpret_cast<const size_t*>(rawData.begin() + offset);
+  offset += sizeof(size_t) + hostIpLen + sizeof(Port);
   return *reinterpret_cast<const GraphSpaceID*>(rawData.begin() + offset);
 }
 
 std::string MetaKeyUtils::parseDiskPartsPath(const folly::StringPiece& rawData) {
   auto offset = kDiskPartsTable.size();
-  size_t len = *reinterpret_cast<const size_t*>(rawData.begin() + offset);
-  offset += sizeof(size_t) + len + sizeof(Port) + sizeof(GraphSpaceID);
+  size_t hostIpLen = *reinterpret_cast<const size_t*>(rawData.begin() + offset);
+  offset += sizeof(size_t) + hostIpLen + sizeof(Port) + sizeof(GraphSpaceID);
   std::string path;
   path.reserve(rawData.size() - offset);
   path.append(rawData.begin() + offset, rawData.size() - offset);
