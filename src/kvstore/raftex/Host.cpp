@@ -161,10 +161,9 @@ void Host::appendLogsInternal(folly::EventBase* eb, std::shared_ptr<cpp2::Append
         LOG_IF(INFO, FLAGS_trace_raft)
             << self->idStr_ << "AppendLogResponse "
             << "code " << apache::thrift::util::enumNameSafe(resp.get_error_code()) << ", currTerm "
-            << resp.get_current_term() << ", lastLogId " << resp.get_last_log_id()
-            << ", lastLogTerm " << resp.get_last_log_term() << ", commitLogId "
-            << resp.get_committed_log_id() << ", lastLogIdSent_ " << self->lastLogIdSent_
-            << ", lastLogTermSent_ " << self->lastLogTermSent_;
+            << resp.get_current_term() << ", lastLogTerm " << resp.get_last_matched_log_term()
+            << ", commitLogId " << resp.get_committed_log_id() << ", lastLogIdSent_ "
+            << self->lastLogIdSent_ << ", lastLogTermSent_ " << self->lastLogTermSent_;
         switch (resp.get_error_code()) {
           case cpp2::ErrorCode::SUCCEEDED:
           case cpp2::ErrorCode::E_LOG_GAP:
@@ -182,8 +181,8 @@ void Host::appendLogsInternal(folly::EventBase* eb, std::shared_ptr<cpp2::Append
                 return;
               }
               // Host is working
-              self->lastLogIdSent_ = resp.get_last_log_id();
-              self->lastLogTermSent_ = resp.get_last_log_term();
+              self->lastLogIdSent_ = resp.get_last_matched_log_id();
+              self->lastLogTermSent_ = resp.get_last_matched_log_term();
               self->followerCommittedLogId_ = resp.get_committed_log_id();
               if (self->lastLogIdSent_ < self->logIdToSend_) {
                 // More to send
@@ -198,7 +197,7 @@ void Host::appendLogsInternal(folly::EventBase* eb, std::shared_ptr<cpp2::Append
                   return;
                 }
               } else {
-                // resp.get_last_log_id() >= self->logIdToSend_
+                // resp.get_last_matched_log_id() >= self->logIdToSend_
                 // All logs up to logIdToSend_ has been sent, fulfill the promise
                 self->promise_.setValue(resp);
                 // Check if there are any pending request:
@@ -237,8 +236,7 @@ void Host::appendLogsInternal(folly::EventBase* eb, std::shared_ptr<cpp2::Append
                        LOG_IF(INFO, FLAGS_trace_raft)
                            << self->idStr_ << "append log time out"
                            << ", space " << req->get_space() << ", part " << req->get_part()
-                           << ", current term " << req->get_current_term() << ", last_log_id "
-                           << req->get_last_log_id() << ", committed_id "
+                           << ", current term " << req->get_current_term() << ", committed_id "
                            << req->get_committed_log_id() << ", last_log_term_sent "
                            << req->get_last_log_term_sent() << ", last_log_id_sent "
                            << req->get_last_log_id_sent() << ", set lastLogIdSent_ to logIdToSend_ "
@@ -267,36 +265,36 @@ ErrorOr<cpp2::ErrorCode, std::shared_ptr<cpp2::AppendLogRequest>> Host::prepareA
   CHECK(!lock_.try_lock());
   VLOG(2) << idStr_ << "Prepare AppendLogs request from Log " << lastLogIdSent_ + 1 << " to "
           << logIdToSend_;
-  if (lastLogIdSent_ + 1 > part_->wal()->lastLogId()) {
-    LOG_IF(INFO, FLAGS_trace_raft)
-        << idStr_ << "My lastLogId in wal is " << part_->wal()->lastLogId()
-        << ", but you are seeking " << lastLogIdSent_ + 1
-        << ", so i have nothing to send, logIdToSend_ = " << logIdToSend_;
-    return cpp2::ErrorCode::E_NO_WAL_FOUND;
-  }
+  // Assersion: lastLogIdSent_ < logIdToSend_
   auto it = part_->wal()->iterator(lastLogIdSent_ + 1, logIdToSend_);
   if (it->valid()) {
-    auto term = it->logTerm();
     auto req = std::make_shared<cpp2::AppendLogRequest>();
     req->space_ref() = part_->spaceId();
     req->part_ref() = part_->partitionId();
     req->current_term_ref() = logTermToSend_;
-    req->last_log_id_ref() = logIdToSend_;
+    req->committed_log_id_ref() = committedLogId_;
     req->leader_addr_ref() = part_->address().host;
     req->leader_port_ref() = part_->address().port;
-    req->committed_log_id_ref() = committedLogId_;
     req->last_log_term_sent_ref() = lastLogTermSent_;
     req->last_log_id_sent_ref() = lastLogIdSent_;
-    req->log_term_ref() = term;
 
-    std::vector<nebula::cpp2::LogEntry> logs;
-    for (size_t cnt = 0;
-         it->valid() && it->logTerm() == term && cnt < FLAGS_max_appendlog_batch_size;
-         ++(*it), ++cnt) {
-      nebula::cpp2::LogEntry le;
-      le.cluster_ref() = it->logSource();
-      le.log_str_ref() = it->logMsg().toString();
-      logs.emplace_back(std::move(le));
+    std::vector<cpp2::RaftLogEntry> logs;
+    // doodle: we can't make sure log term is the same one
+    for (size_t cnt = 0; it->valid() && cnt < FLAGS_max_appendlog_batch_size; ++(*it), ++cnt) {
+      cpp2::RaftLogEntry entry;
+      entry.cluster_ref() = it->logSource();
+      entry.log_str_ref() = it->logMsg().toString();
+      entry.log_term_ref() = it->logTerm();
+      logs.emplace_back(std::move(entry));
+    }
+    // the last log entry's id is (lastLogIdSent_ + cnt), when iterator is invalid and last log
+    // entry's id is not logIdToSend_, which means the log has been rollbacked
+    if (!it->valid() && (lastLogIdSent_ + static_cast<int64_t>(logs.size()) != logIdToSend_)) {
+      LOG_IF(INFO, FLAGS_trace_raft)
+          << idStr_ << "My lastLogId in wal is " << part_->wal()->lastLogId()
+          << ", but you are seeking " << lastLogIdSent_ + 1
+          << ", so i have nothing to send, logIdToSend_ = " << logIdToSend_;
+      return cpp2::ErrorCode::E_NO_WAL_FOUND;
     }
     req->log_str_list_ref() = std::move(logs);
     return req;
@@ -349,8 +347,7 @@ folly::Future<cpp2::AppendLogResponse> Host::sendAppendLogRequest(
 
   LOG_IF(INFO, FLAGS_trace_raft) << idStr_ << "Sending appendLog: space " << req->get_space()
                                  << ", part " << req->get_part() << ", current term "
-                                 << req->get_current_term() << ", last_log_id "
-                                 << req->get_last_log_id() << ", committed_id "
+                                 << req->get_current_term() << ", committed_id "
                                  << req->get_committed_log_id() << ", last_log_term_sent "
                                  << req->get_last_log_term_sent() << ", last_log_id_sent "
                                  << req->get_last_log_id_sent() << ", logs in request "
@@ -362,7 +359,6 @@ folly::Future<cpp2::AppendLogResponse> Host::sendAppendLogRequest(
 
 folly::Future<cpp2::HeartbeatResponse> Host::sendHeartbeat(folly::EventBase* eb,
                                                            TermID term,
-                                                           LogID latestLogId,
                                                            LogID commitLogId,
                                                            TermID lastLogTerm,
                                                            LogID lastLogId) {
@@ -370,7 +366,6 @@ folly::Future<cpp2::HeartbeatResponse> Host::sendHeartbeat(folly::EventBase* eb,
   req->space_ref() = part_->spaceId();
   req->part_ref() = part_->partitionId();
   req->current_term_ref() = term;
-  req->last_log_id_ref() = latestLogId;
   req->committed_log_id_ref() = commitLogId;
   req->leader_addr_ref() = part_->address().host;
   req->leader_port_ref() = part_->address().port;
@@ -412,8 +407,7 @@ folly::Future<cpp2::HeartbeatResponse> Host::sendHeartbeatRequest(
 
   LOG_IF(INFO, FLAGS_trace_raft) << idStr_ << "Sending heartbeat: space " << req->get_space()
                                  << ", part " << req->get_part() << ", current term "
-                                 << req->get_current_term() << ", last_log_id "
-                                 << req->get_last_log_id() << ", committed_id "
+                                 << req->get_current_term() << ", committed_id "
                                  << req->get_committed_log_id() << ", last_log_term_sent "
                                  << req->get_last_log_term_sent() << ", last_log_id_sent "
                                  << req->get_last_log_id_sent();

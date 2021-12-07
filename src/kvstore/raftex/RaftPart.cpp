@@ -1418,12 +1418,10 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
                                  << ", leaderIp = " << req.get_leader_addr()
                                  << ", leaderPort = " << req.get_leader_port()
                                  << ", current_term = " << req.get_current_term()
-                                 << ", lastLogId = " << req.get_last_log_id()
                                  << ", committedLogId = " << req.get_committed_log_id()
                                  << ", lastLogIdSent = " << req.get_last_log_id_sent()
                                  << ", lastLogTermSent = " << req.get_last_log_term_sent()
                                  << ", num_logs = " << req.get_log_str_list().size()
-                                 << ", logTerm = " << req.get_log_term()
                                  << ", local lastLogId = " << lastLogId_
                                  << ", local lastLogTerm = " << lastLogTerm_
                                  << ", local committedLogId = " << committedLogId_
@@ -1435,8 +1433,8 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
   resp.leader_addr_ref() = leader_.host;
   resp.leader_port_ref() = leader_.port;
   resp.committed_log_id_ref() = committedLogId_;
-  resp.last_log_id_ref() = lastLogId_ < committedLogId_ ? committedLogId_ : lastLogId_;
-  resp.last_log_term_ref() = lastLogTerm_;
+  resp.last_matched_log_id_ref() = lastLogId_ < committedLogId_ ? committedLogId_ : lastLogId_;
+  resp.last_matched_log_term_ref() = lastLogTerm_;
 
   // Check status
   if (UNLIKELY(status_ == Status::STOPPED)) {
@@ -1466,6 +1464,7 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
   // Reset the timeout timer
   lastMsgRecvDur_.reset();
 
+  /*
   if (req.get_last_log_id_sent() < committedLogId_ && req.get_last_log_term_sent() <= term_) {
     LOG(INFO) << idStr_ << "Stale log! The log " << req.get_last_log_id_sent() << ", term "
               << req.get_last_log_term_sent() << " i had committed yet. My committedLogId is "
@@ -1480,8 +1479,8 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
               << " candidate and cleanup my data";
     reset();
     resp.committed_log_id_ref() = committedLogId_;
-    resp.last_log_id_ref() = lastLogId_;
-    resp.last_log_term_ref() = lastLogTerm_;
+    resp.last_matched_log_id_ref() = lastLogId_;
+    resp.last_matched_log_term_ref() = lastLogTerm_;
     return;
   }
 
@@ -1505,8 +1504,8 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
                 << committedLogId_;
       TermID committedLogTerm = wal_->getLogTerm(committedLogId_);
       if (committedLogTerm > 0) {
-        resp.last_log_id_ref() = committedLogId_;
-        resp.last_log_term_ref() = committedLogTerm;
+        resp.last_matched_log_id() = committedLogId_;
+        resp.last_matched_log_term() = committedLogTerm;
       }
       resp.error_code_ref() = cpp2::ErrorCode::E_LOG_GAP;
       return;
@@ -1536,8 +1535,8 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
       // stale log
       if (diffIndex == numLogs) {
         // All logs have been received before
-        resp.last_log_id_ref() = firstId + numLogs - 1;
-        resp.last_log_term_ref() = req.get_log_term();
+        resp.last_matched_log_id_ref() = firstId + numLogs - 1;
+        resp.last_matched_log_term_ref() = req.get_log_term();
         // nothing to append, goto commit
         break;
       }
@@ -1564,6 +1563,7 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
     }
 
     // Append new logs
+    // doodle: LogEntry need to contain term
     std::vector<nebula::cpp2::LogEntry> logEntries = std::vector<nebula::cpp2::LogEntry>(
         std::make_move_iterator(req.get_log_str_list().begin() + diffIndex),
         std::make_move_iterator(req.get_log_str_list().end()));
@@ -1574,8 +1574,8 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
       }
       lastLogId_ = wal_->lastLogId();
       lastLogTerm_ = wal_->lastLogTerm();
-      resp.last_log_id_ref() = lastLogId_;
-      resp.last_log_term_ref() = lastLogTerm_;
+      resp.last_matched_log_id_ref() = lastLogId_;
+      resp.last_matched_log_term_ref() = lastLogTerm_;
     } else {
       resp.error_code_ref() = cpp2::ErrorCode::E_WAL_FAIL;
       return;
@@ -1612,6 +1612,7 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
   } else {
     resp.error_code_ref() = cpp2::ErrorCode::SUCCEEDED;
   }
+  */
 
   // Reset the timeout timer again in case wal and commit takes longer time than
   // expected
@@ -1689,7 +1690,6 @@ void RaftPart::processHeartbeatRequest(const cpp2::HeartbeatRequest& req,
                                  << ", leaderIp = " << req.get_leader_addr()
                                  << ", leaderPort = " << req.get_leader_port()
                                  << ", current_term = " << req.get_current_term()
-                                 << ", lastLogId = " << req.get_last_log_id()
                                  << ", committedLogId = " << req.get_committed_log_id()
                                  << ", lastLogIdSent = " << req.get_last_log_id_sent()
                                  << ", lastLogTermSent = " << req.get_last_log_term_sent()
@@ -1811,7 +1811,6 @@ void RaftPart::sendHeartbeat() {
   using namespace folly;  // NOLINT since the fancy overload of | operator
   VLOG(2) << idStr_ << "Send heartbeat";
   TermID currTerm = 0;
-  LogID latestLogId = 0;
   LogID commitLogId = 0;
   TermID prevLogTerm = 0;
   LogID prevLogId = 0;
@@ -1820,7 +1819,6 @@ void RaftPart::sendHeartbeat() {
   {
     std::lock_guard<std::mutex> g(raftLock_);
     currTerm = term_;
-    latestLogId = wal_->lastLogId();
     commitLogId = committedLogId_;
     prevLogTerm = lastLogTerm_;
     prevLogId = lastLogId_;
@@ -1833,14 +1831,13 @@ void RaftPart::sendHeartbeat() {
                         gen::map([self = shared_from_this(),
                                   eb,
                                   currTerm,
-                                  latestLogId,
                                   commitLogId,
                                   prevLogId,
                                   prevLogTerm](std::shared_ptr<Host> hostPtr) {
                           VLOG(2) << self->idStr_ << "Send heartbeat to " << hostPtr->idStr();
                           return via(eb, [=]() -> Future<cpp2::HeartbeatResponse> {
                             return hostPtr->sendHeartbeat(
-                                eb, currTerm, latestLogId, commitLogId, prevLogTerm, prevLogId);
+                                eb, currTerm, commitLogId, prevLogTerm, prevLogId);
                           });
                         }) |
                         gen::as<std::vector>(),

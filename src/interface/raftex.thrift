@@ -74,45 +74,25 @@ struct AskForVoteResponse {
     1: ErrorCode error_code;
 }
 
-
-/*
-  AppendLogRequest serves two purposes:
-
-  1) Send a log message to followers and listeners
-  2) Or, when log_id == 0 and len(log_str) == 0, it serves as a heartbeat
-*/
-struct AppendLogRequest {
-    //
-    // Fields 1 - 9 are common for both log appendent and heartbeat
-    //
-    // last_log_term_sent and last_log_id_sent are the term and log id
-    // for the last log being sent
-    //
-    1: GraphSpaceID space;              // Graphspace ID
-    2: PartitionID  part;               // Partition ID
-    3: TermID       current_term;       // Current term
-    4: LogID        last_log_id;        // Last received log id
-    5: LogID        committed_log_id;   // Last committed Log ID
-    6: string       leader_addr;        // The leader's address
-    7: Port         leader_port;        // The leader's Port
-    8: TermID       last_log_term_sent;
-    9: LogID        last_log_id_sent;
-
-    // [deprecated]: heartbeat is moved to a separate interface
-    //
-    // Fields 10 to 11 are used for LogAppend.
-    //
-    //
-    // In the case of LogAppend, the id of the first log is the
-    //      last_log_id_sent + 1
-    //
-    // All logs in the log_str_list must belong to the same term,
-    // which specified by log_term
-    //
-    10: TermID log_term;
-    11: list<common.LogEntry> log_str_list;
+// Log entries being sent to follower, logId is not included, it could be calculated by
+// last_log_id_sent and offset in log_str_list in AppendLogRequest
+struct RaftLogEntry {
+    1: ClusterID cluster;
+    2: binary    log_str;
+    3: TermID    log_term;
 }
 
+struct AppendLogRequest {
+    1: GraphSpaceID        space;               // Graphspace ID
+    2: PartitionID         part;                // Partition ID
+    3: TermID              current_term;        // Current term
+    4: LogID               committed_log_id;    // Last committed Log ID
+    5: string              leader_addr;         // The leader's address
+    6: Port                leader_port;         // The leader's Port
+    7: TermID              last_log_term_sent;  // Term of log entry preceding log_str_list
+    8: LogID               last_log_id_sent;    // Id of log entry preceding log_str_list
+    9: list<RaftLogEntry>  log_str_list;        // First log id in log_str_list is last_log_id_sent + 1
+}
 
 struct AppendLogResponse {
     1: ErrorCode    error_code;
@@ -120,8 +100,8 @@ struct AppendLogResponse {
     3: string       leader_addr;
     4: Port         leader_port;
     5: LogID        committed_log_id;
-    6: LogID        last_log_id;
-    7: TermID       last_log_term;
+    6: LogID        last_matched_log_id;
+    7: TermID       last_matched_log_term;
 }
 
 struct SendSnapshotRequest {
@@ -134,21 +114,14 @@ struct SendSnapshotRequest {
     7: Port         leader_port;
     8: list<binary> rows;
     9: i64          total_size;
-    10: i64          total_count;
-    11: bool         done;
+    10: i64         total_count;
+    11: bool        done;
 }
 
 struct HeartbeatRequest {
-    //
-    // Fields 1 - 9 are common for both log appendent and heartbeat
-    //
-    // last_log_term_sent and last_log_id_sent are the term and log id
-    // for the last log being sent
-    //
     1: GraphSpaceID space;              // Graphspace ID
     2: PartitionID  part;               // Partition ID
     3: TermID       current_term;       // Current term
-    4: LogID        last_log_id;        // Last received log id
     5: LogID        committed_log_id;   // Last committed Log ID
     6: string       leader_addr;        // The leader's address
     7: Port         leader_port;        // The leader's Port

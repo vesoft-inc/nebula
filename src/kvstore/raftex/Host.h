@@ -79,7 +79,6 @@ class Host final : public std::enable_shared_from_this<Host> {
 
   folly::Future<cpp2::HeartbeatResponse> sendHeartbeat(folly::EventBase* eb,
                                                        TermID term,
-                                                       LogID latestLogId,
                                                        LogID commitLogId,
                                                        TermID lastLogTerm,
                                                        LogID lastLogId);
