@@ -173,13 +173,31 @@ void DeducePropsVisitor::visit(VersionedVariableExpression *expr) { reportError(
 
 void DeducePropsVisitor::visit(LabelExpression *expr) { reportError(expr); }
 
-void DeducePropsVisitor::visit(AttributeExpression *expr) { UNUSED(expr); }
-
 void DeducePropsVisitor::visit(LabelAttributeExpression *expr) { reportError(expr); }
 
 void DeducePropsVisitor::visit(ConstantExpression *expr) { UNUSED(expr); }
 
-void DeducePropsVisitor::visit(VertexExpression *expr) { UNUSED(expr); }
+void DeducePropsVisitor::visit(VertexExpression *expr) {
+  const auto &colName = expr->name();
+  auto tagStatus = qctx_->schemaMng()->getAllLatestVerTagSchema(space_);
+  if (!tagStatus.ok()) {
+    status_ = std::move(tagStatus).status();
+    return;
+  }
+  for (const auto &tag : tagStatus.value()) {
+    auto tagID = tag.first;
+    const auto &tagSchema = tag.second;
+    if (colName == "$^") {
+      for (size_t i = 0; i < tagSchema->getNumFields(); ++i) {
+        exprProps_->insertSrcTagProp(tagID, tagSchema->getFieldName(i));
+      }
+    } else if (colName == "$$") {
+      for (size_t i = 0; i < tagSchema->getNumFields(); ++i) {
+        exprProps_->insertDstTagProp(tagID, tagSchema->getFieldName(i));
+      }
+    }
+  }
+}
 
 void DeducePropsVisitor::visit(EdgeExpression *expr) { UNUSED(expr); }
 

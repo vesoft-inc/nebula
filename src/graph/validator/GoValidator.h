@@ -32,11 +32,9 @@ class GoValidator final : public Validator {
 
   Status buildColumns();
 
-  void extractPropExprs(const Expression* expr);
+  void extractPropExprs(const Expression* expr, std::unordered_set<std::string>& uniqueCols);
 
   Expression* rewrite2VarProp(const Expression* expr);
-
-  Status extractVertexProp(ExpressionProps& exprProps, bool isSrc);
 
   Status extractEdgeProp(ExpressionProps& exprProps);
 

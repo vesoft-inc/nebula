@@ -93,7 +93,6 @@ class DeducePropsVisitor : public ExprVisitorImpl {
   void visit(VariableExpression* expr) override;
   void visit(VersionedVariableExpression* expr) override;
   void visit(LabelExpression* expr) override;
-  void visit(AttributeExpression* expr) override;
   void visit(LabelAttributeExpression* expr) override;
   void visit(ConstantExpression* expr) override;
   void visit(VertexExpression* expr) override;
