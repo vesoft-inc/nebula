@@ -201,6 +201,17 @@ TEST(MetaKeyUtilsTest, ZoneTest) {
   ASSERT_EQ(nodes, MetaKeyUtils::parseZoneHosts(zoneValue));
 }
 
+TEST(MetaKeyUtilsTest, DiskPathsTest) {
+  HostAddr addr{"192.168.0.1", 1234};
+  GraphSpaceID spaceId = 1;
+  std::string path = "/data/storage/test_part1";
+
+  auto diskPartsKey = MetaKeyUtils::diskPartsKey(addr, spaceId, path);
+  ASSERT_EQ(addr, MetaKeyUtils::parseDiskPartsHost(diskPartsKey));
+  ASSERT_EQ(spaceId, MetaKeyUtils::parseDiskPartsSpace(diskPartsKey));
+  ASSERT_EQ(path, MetaKeyUtils::parseDiskPartsPath(diskPartsKey));
+}
+
 }  // namespace nebula
 
 int main(int argc, char** argv) {
