@@ -356,7 +356,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <query_unique_identifier> query_unique_identifier
 
 %type <sentence> maintain_sentence
-%type <sentence> create_space_sentence describe_space_sentence drop_space_sentence
+%type <sentence> create_space_sentence describe_space_sentence drop_space_sentence alter_space_sentence
 %type <sentence> create_tag_sentence create_edge_sentence
 %type <sentence> alter_tag_sentence alter_edge_sentence
 %type <sentence> drop_tag_sentence drop_edge_sentence
@@ -3495,6 +3495,18 @@ zone_name_list
     }
     ;
 
+alter_space_sentence
+    : KW_ALTER KW_SPACE name_label KW_ADD KW_ZONE name_label_list {
+        auto sentence = new AlterSpaceSentence($3, meta::cpp2::AlterSpaceOp::ADD_ZONE);
+        NameLabelList* nl = $6;
+        std::vector<const std::string *> vec = nl->labels();
+        for(const std::string *para:vec) {
+            sentence->addPara(*para);
+        }
+        delete nl;
+        $$ = sentence;
+    }
+
 create_space_sentence
     : KW_CREATE KW_SPACE opt_if_not_exists name_label {
         auto sentence = new CreateSpaceSentence($4, $3);
@@ -3833,6 +3845,7 @@ mutate_sentence
 maintain_sentence
     : create_space_sentence { $$ = $1; }
     | describe_space_sentence { $$ = $1; }
+    | alter_space_sentence { $$ = $1; }
     | drop_space_sentence { $$ = $1; }
     | create_tag_sentence { $$ = $1; }
     | create_edge_sentence { $$ = $1; }

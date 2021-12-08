@@ -48,6 +48,18 @@ class CreateSpaceAsValidator final : public Validator {
   std::string newSpaceName_;
 };
 
+class AlterSpaceValidator final : public Validator {
+ public:
+  AlterSpaceValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
+    noSpaceRequired_ = true;
+  }
+
+ private:
+  Status validateImpl() override;
+
+  Status toPlan() override;
+};
+
 class DescSpaceValidator final : public Validator {
  public:
   DescSpaceValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {

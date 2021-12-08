@@ -174,6 +174,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "DropEdge";
     case Kind::kShowSpaces:
       return "ShowSpaces";
+    case Kind::kAlterSpace:
+      return "AlterSpaces";
     case Kind::kShowTags:
       return "ShowTags";
     case Kind::kShowEdges:

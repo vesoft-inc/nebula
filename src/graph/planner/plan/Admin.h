@@ -216,6 +216,38 @@ class DropSpace final : public SingleDependencyNode {
   bool ifExists_;
 };
 
+class AlterSpace final : public SingleDependencyNode {
+ public:
+  static AlterSpace* make(QueryContext* qctx,
+                          PlanNode* input,
+                          const std::string& spaceName,
+                          meta::cpp2::AlterSpaceOp op,
+                          const std::vector<std::string>& paras) {
+    return qctx->objPool()->add(new AlterSpace(qctx, input, spaceName, op, paras));
+  }
+  const std::string& getSpaceName() const { return spaceName_; }
+
+  meta::cpp2::AlterSpaceOp getAlterSpaceOp() const { return op_; }
+
+  const std::vector<std::string>& getParas() const { return paras_; }
+
+ private:
+  AlterSpace(QueryContext* qctx,
+             PlanNode* input,
+             const std::string& spaceName,
+             meta::cpp2::AlterSpaceOp op,
+             const std::vector<std::string>& paras)
+      : SingleDependencyNode(qctx, Kind::kAlterSpace, input),
+        spaceName_(spaceName),
+        op_(op),
+        paras_(paras) {}
+
+ private:
+  std::string spaceName_;
+  meta::cpp2::AlterSpaceOp op_;
+  std::vector<std::string> paras_;
+};
+
 class DescSpace final : public SingleDependencyNode {
  public:
   static DescSpace* make(QueryContext* qctx, PlanNode* input, std::string spaceName) {

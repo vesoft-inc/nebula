@@ -163,9 +163,18 @@ Status CreateSpaceAsValidator::toPlan() {
   return Status::OK();
 }
 
-Status DescSpaceValidator::validateImpl() {
+Status AlterSpaceValidator::validateImpl() { return Status::OK(); }
+
+Status AlterSpaceValidator::toPlan() {
+  auto sentence = static_cast<AlterSpaceSentence *>(sentence_);
+  auto *doNode = AlterSpace::make(
+      qctx_, nullptr, sentence->spaceName(), sentence->alterSpaceOp(), sentence->paras());
+  root_ = doNode;
+  tail_ = root_;
   return Status::OK();
 }
+
+Status DescSpaceValidator::validateImpl() { return Status::OK(); }
 
 Status DescSpaceValidator::toPlan() {
   auto sentence = static_cast<DescribeSpaceSentence *>(sentence_);
