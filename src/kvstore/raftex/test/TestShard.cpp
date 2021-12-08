@@ -236,10 +236,11 @@ std::pair<int64_t, int64_t> TestShard::commitSnapshot(const std::vector<std::str
   return std::make_pair(count, size);
 }
 
-void TestShard::cleanup() {
+nebula::cpp2::ErrorCode TestShard::cleanup() {
   folly::RWSpinLock::WriteHolder wh(&lock_);
   data_.clear();
   lastCommittedLogId_ = 0;
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 size_t TestShard::getNumLogs() const {

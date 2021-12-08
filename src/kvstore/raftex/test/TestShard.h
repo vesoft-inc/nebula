@@ -121,7 +121,7 @@ class TestShard : public RaftPart {
                                              TermID committedLogTerm,
                                              bool finished) override;
 
-  void cleanup() override;
+  nebula::cpp2::ErrorCode cleanup() override;
 
   size_t getNumLogs() const;
   bool getLogMsg(size_t index, folly::StringPiece& msg);

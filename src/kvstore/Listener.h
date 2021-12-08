@@ -85,7 +85,7 @@ using RaftClient = thrift::ThriftClientManager<raftex::cpp2::RaftexServiceAsyncC
  *
  *   // extra cleanup work, will be invoked when listener is about to be removed,
  *   // or raft is reset
- *   virtual void cleanup() = 0
+ *   nebula::cpp2::ErrorCode cleanup() = 0
  */
 class Listener : public raftex::RaftPart {
  public:
@@ -111,11 +111,12 @@ class Listener : public raftex::RaftPart {
     return lastApplyLogId_;
   }
 
-  void cleanup() override {
+  nebula::cpp2::ErrorCode cleanup() override {
     CHECK(!raftLock_.try_lock());
     leaderCommitId_ = 0;
     lastApplyLogId_ = 0;
     persist(0, 0, lastApplyLogId_);
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
   void resetListener();

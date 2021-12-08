@@ -470,51 +470,53 @@ bool Part::preProcessLog(LogID logId, TermID termId, ClusterID clusterId, const 
   return true;
 }
 
-void Part::cleanup() {
-  // doodle
+nebula::cpp2::ErrorCode Part::cleanup() {
   LOG(INFO) << idStr_ << "Clean rocksdb part data";
+  auto batch = engine_->startBatchWrite();
   // Remove the vertex, edge, index, systemCommitKey, operation data under the part
   const auto& vertexPre = NebulaKeyUtils::tagPrefix(partId_);
-  auto ret = engine_->removeRange(NebulaKeyUtils::firstKey(vertexPre, vIdLen_),
-                                  NebulaKeyUtils::lastKey(vertexPre, vIdLen_));
+  auto ret = batch->removeRange(NebulaKeyUtils::firstKey(vertexPre, vIdLen_),
+                                NebulaKeyUtils::lastKey(vertexPre, vIdLen_));
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << idStr_ << "Remove the part vertex data failed, error "
                << static_cast<int32_t>(ret);
-    return;
+    return ret;
   }
 
   const auto& edgePre = NebulaKeyUtils::edgePrefix(partId_);
-  ret = engine_->removeRange(NebulaKeyUtils::firstKey(edgePre, vIdLen_),
-                             NebulaKeyUtils::lastKey(edgePre, vIdLen_));
+  ret = batch->removeRange(NebulaKeyUtils::firstKey(edgePre, vIdLen_),
+                           NebulaKeyUtils::lastKey(edgePre, vIdLen_));
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << idStr_ << "Remove the part edge data failed, error" << static_cast<int32_t>(ret);
-    return;
+    return ret;
   }
 
   const auto& indexPre = IndexKeyUtils::indexPrefix(partId_);
-  ret = engine_->removeRange(NebulaKeyUtils::firstKey(indexPre, sizeof(IndexID)),
-                             NebulaKeyUtils::lastKey(indexPre, sizeof(IndexID)));
+  ret = batch->removeRange(NebulaKeyUtils::firstKey(indexPre, sizeof(IndexID)),
+                           NebulaKeyUtils::lastKey(indexPre, sizeof(IndexID)));
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << idStr_ << "Remove the part index data failed, error "
                << static_cast<int32_t>(ret);
-    return;
+    return ret;
   }
 
   const auto& operationPre = OperationKeyUtils::operationPrefix(partId_);
-  ret = engine_->removeRange(NebulaKeyUtils::firstKey(operationPre, sizeof(int64_t)),
-                             NebulaKeyUtils::lastKey(operationPre, sizeof(int64_t)));
+  ret = batch->removeRange(NebulaKeyUtils::firstKey(operationPre, sizeof(int64_t)),
+                           NebulaKeyUtils::lastKey(operationPre, sizeof(int64_t)));
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << idStr_ << "Remove the part operation data failed, error "
                << static_cast<int32_t>(ret);
-    return;
+    return ret;
   }
 
-  ret = engine_->remove(NebulaKeyUtils::systemCommitKey(partId_));
+  ret = batch->remove(NebulaKeyUtils::systemCommitKey(partId_));
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << idStr_ << "Remove the part system commit data failed, error "
                << static_cast<int32_t>(ret);
+    return ret;
   }
-  return;
+  return engine_->commitBatchWrite(
+      std::move(batch), FLAGS_rocksdb_disable_wal, FLAGS_rocksdb_wal_sync, true);
 }
 
 // TODO(pandasheep) unify raft errorcode

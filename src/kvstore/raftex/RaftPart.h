@@ -305,7 +305,7 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
                                                      bool finished) = 0;
 
   // Clean up extra data about the part, usually related to state machine
-  virtual void cleanup() = 0;
+  virtual nebula::cpp2::ErrorCode cleanup() = 0;
 
   void addPeer(const HostAddr& peer);
 

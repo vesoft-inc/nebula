@@ -113,7 +113,7 @@ class Part : public raftex::RaftPart {
                                        LogID committedLogId,
                                        TermID committedLogTerm);
 
-  void cleanup() override;
+  nebula::cpp2::ErrorCode cleanup() override;
 
   nebula::cpp2::ErrorCode toResultCode(raftex::AppendLogResult res);
 
