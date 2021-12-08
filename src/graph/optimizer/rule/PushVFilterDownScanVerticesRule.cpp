@@ -89,7 +89,7 @@ StatusOr<OptRule::TransformResult> PushVFilterDownScanVerticesRule::transform(
   auto remainedExpr = std::move(visitor).remainedExpr();
   OptGroupNode *newAppendVerticesGroupNode = nullptr;
   auto newAppendVertices = appendVertices->clone();
-  newAppendVertices->setVFilter(remainedExpr);
+  newAppendVertices->setVertexFilter(remainedExpr);
   newAppendVertices->setOutputVar(appendVertices->outputVar());
   newAppendVertices->setInputVar(appendVertices->inputVar());
   newAppendVerticesGroupNode =
