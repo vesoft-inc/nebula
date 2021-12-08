@@ -24,8 +24,8 @@ namespace geo {
 
 struct RegionCoverParams {
   // TODO(jie): Find the best default params
-  int minCellLevel_ = 4;
-  int maxCellLevel_ = 23;  // About 1m
+  int minCellLevel_ = 0;
+  int maxCellLevel_ = 30;  // About 1m
   int maxCellNum_ = 8;
 
   RegionCoverParams() = default;

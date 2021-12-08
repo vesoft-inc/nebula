@@ -3,6 +3,7 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
+#include <folly/String.h>
 #include <gtest/gtest.h>
 #include <s2/base/integral_types.h>
 
@@ -15,6 +16,7 @@
 #include "common/expression/ConstantExpression.h"
 #include "common/expression/PropertyExpression.h"
 #include "common/expression/RelationalExpression.h"
+#include "common/geo/GeoIndex.h"
 #include "common/utils/IndexKeyUtils.h"
 #include "common/utils/NebulaKeyUtils.h"
 #include "kvstore/KVEngine.h"
@@ -171,11 +173,12 @@ class IndexScanTest : public ::testing::Test {
         for (auto& indexKey : indexKeys) {
           CHECK(ret[j + 1].insert({indexKey, ""}).second);
         }
-        if (index->get_index_name() == "geo") {
-          LOG(INFO) << "encodeTag fro geography";
+        if (indexKeys.size() > 1) {
+          LOG(INFO) << "***********";
           for (auto& indexKey : indexKeys) {
-            LOG(INFO) << indexKey;
+            LOG(INFO) << folly::hexlify(indexKey);
           }
+          LOG(INFO) << "***********";
         }
       }
     }
@@ -1747,24 +1750,26 @@ TEST_F(IndexScanTest, Geography) {
   auto rows = R"(
     geography
     POINT(108.1 32.5)
+    POINT(103.8 32.3)
     LINESTRING(68.9 48.9,76.1 35.5,125.7 28.2)
-    POLYGON((102.5 33.5, 110.6 36.9,113.6 30.4,102.7 27.3,102.5 33.5))
-    POLYGON((72.2 54.6,134.6 54.6,134.6 18.2,72.2 18.2,72.2 54.6))
+    POLYGON((91.2 38.6,99.7 41.9,111.2 38.9,115.6 33.2,109.5 29.0,105.8 24.1,102.9 30.5,93.0 28.1,95.4 32.8,86.1 33.6,85.3 38.8,91.2 38.6))
+    POLYGON((88.9 42.2,92.5 39.5,104.2 39.6,115.5 36.5,114.4 24.4,98.9 20.3,109.5 31.3,91.4 25.6,95.4 33.1,88.9 42.2))
   )"_row;
-  /* Format: WKT:CellIDs. The expected result comes from BigQuery
-  POINT(108.1 32.5): [3929814733111767011]
-  LINESTRING(68.9 48.9,76.1 35.5,125.7 28.2): [3765009288481734656, 3818771009033469952,
-    3909124476557590528, 3928264774973915136, 4017210867614482432, 4053239664633446400,
-    4089268461652410368, 4773815605012725760]
-  POLYGON((102.5 33.5, 110.6 36.9,113.6 30.4,102.7 27.3,102.5 33.5)): [3759379788947521536,
-    3879094614979772416, 3915809507254468608, 3917005775905488896, 3922635275439702016,
-    3931642474694443008, 3949656873203924992, 3958664072458665984]
-  POLYGON((72.2 54.6,134.6 54.6,134.6 18.2,72.2 18.2,72.2 54.6)): [3819052484010180608,
-    3963167672086036480, 4107282860161892352, 4773815605012725760]
-        [3746994889972252672, 4107282860161892352, 4183844053827190784, 4192851253081931776,
-     4305441243766194176, 4827858800541171712, 6701356245527298048, 6845471433603153920]
+  /* Format: WKT:[CellID...]. The expected result comes from BigQuery.
+  POINT(108.1 32.5): [0x368981adc0392fe3]
+  POINT(103.8 32.3): [0x36f0b347378c3683]
+  LINESTRING(68.9 48.9,76.1 35.5,125.7 28.2):
+    [0x3440000000000000,0x34ff000000000000,0x3640000000000000,0x3684000000000000,
+     0x37c0000000000000,0x3840000000000000,0x38c0000000000000,0x4240000000000000]
+  POLYGON((91.2 38.6,99.7 41.9,111.2 38.9,115.6 33.2,109.5 29.0,
+           105.8 24.1,102.9 30.5,93.0 28.1,95.4 32.8,86.1 33.6,85.3 38.8,91.2 38.6)):
+    [0x342b000000000000,0x35d0000000000000,0x3700000000000000,0x3830000000000000,
+     0x39d0000000000000]
+  POLYGON((88.9 42.2,92.5 39.5,104.2 39.6,115.5 36.5,114.4 24.4,98.9 20.3,
+           109.5 31.3,91.4 25.6,95.4 33.1,88.9 42.2)):
+    [0x30d4000000000000,0x3130000000000000,0x341c000000000000,0x3430000000000000,
+     0x35d4000000000000,0x35dc000000000000,0x3700000000000000,0x381c000000000000]
   */
-
   auto schema = R"(
     geo   | geography | | false
   )"_schema;
@@ -1777,12 +1782,11 @@ TEST_F(IndexScanTest, Geography) {
   for (auto& iter : kv) {
     for (auto& item : iter) {
       kvstore->put(item.first, item.second);
+      LOG(INFO) << folly::hexlify(item.first) << ":" << item.second;
     }
   }
-  auto check = [&](std::shared_ptr<IndexItem> index,
-                   const std::vector<ColumnHint>& columnHints,
-                   const std::vector<Row>& expect,
-                   const std::string& case_) {
+  auto actual = [&](std::shared_ptr<IndexItem> index,
+                    const std::vector<ColumnHint>& columnHints) -> auto {
     auto context = makeContext(1, 0);
     auto scanNode =
         std::make_unique<IndexVertexScanNode>(context.get(), 0, columnHints, kvstore.get());
@@ -1803,7 +1807,7 @@ TEST_F(IndexScanTest, Geography) {
       }
       result.emplace_back(std::move(res).row());
     }
-    EXPECT_EQ(result, expect) << "Fail at case " << case_;
+    return result;
   };
   auto expect = [](auto... vidList) {
     std::vector<Row> ret;
@@ -1825,29 +1829,46 @@ TEST_F(IndexScanTest, Geography) {
   };
   // For the Geography type, there are only two cases: prefix and [x, y].
   /* Case 1: Prefix */
+  // Explicitly specify the index column hints
   {
-    std::vector<ColumnHint> columnHints = {
-        makeColumnHint("geo", encodeCellId(3929814733111767011))};
-    check(indices[0], columnHints, expect(0), "case1.1");
-    columnHints = {makeColumnHint("geo", encodeCellId(4773815605012725760))};
-    check(indices[1], columnHints, expect(1, 3), "case1.2");
-    columnHints = {makeColumnHint("geo", encodeCellId(3931642474694443008))};
-    check(indices[1], columnHints, expect(2), "case1.3");
+    std::vector<ColumnHint> columnHints;
+    columnHints = {makeColumnHint("geo", encodeCellId(0x368981adc0392fe3))};
+    EXPECT_EQ(expect(0), actual(indices[0], columnHints));
+    columnHints = {makeColumnHint("geo", encodeCellId(0x36f0b347378c3683))};
+    EXPECT_EQ(expect(1), actual(indices[0], columnHints));
+    columnHints = {makeColumnHint("geo", encodeCellId(0x381c000000000000))};
+    EXPECT_EQ(expect(4), actual(indices[0], columnHints));
+    columnHints = {makeColumnHint("geo", encodeCellId(0x3440000000000000))};
+    EXPECT_EQ(expect(2), actual(indices[0], columnHints));
+    columnHints = {makeColumnHint("geo", encodeCellId(0x4240000000000000))};
+    EXPECT_EQ(expect(2), actual(indices[0], columnHints));
+    columnHints = {makeColumnHint("geo", encodeCellId(0x342b000000000000))};
+    EXPECT_EQ(expect(3), actual(indices[0], columnHints));
+    columnHints = {makeColumnHint("geo", encodeCellId(0x3700000000000000))};
+    EXPECT_EQ(expect(3, 4), actual(indices[0], columnHints));
   }
-  /* Case 2: [x, y] */
+  // Let GeoIndex generates the index column hints
+  {
+      // TODO(jie)
+  } /* Case 2: [x, y] */
+  // Explicitly specify the index column hints
   {
     auto hint = [&encodeCellId](const char* name, int64_t begin, int64_t end) {
       return std::vector<ColumnHint>{
           makeColumnHint<true, true>(name, encodeCellId(begin), encodeCellId(end))};
     };
-    auto columnHint = hint("geo", 3759379788947521536, 4773815605012725760);
-    check(indices[0], columnHint, expect(0, 1, 2, 3), "case2.1");
-    columnHint = hint("geo", 3759379788947521536, 3765009288481734656);
-    check(indices[0], columnHint, expect(2, 1), "case2.2");
-    columnHint = hint("geo", 3928264774973915136, 3928264774973915136);
-    check(indices[1], columnHint, expect(1), "case2.3");
-    columnHint = hint("geo", 3929814733111767011, 3958664072458665984);
-    check(indices[1], columnHint, expect(0, 2), "case2.4");
+    auto columnHint = hint("geo", 0x36f0b347378c3683, 0x36f0b347378c3683);
+    EXPECT_EQ(expect(1), actual(indices[0], columnHint));
+    columnHint = hint("geo", 0x35d0000000000000, 0x35dfffffffffffff);
+    EXPECT_EQ(expect(3, 4), actual(indices[0], columnHint));
+    columnHint = hint("geo", 0x3600000000000000, 0x38ffffffffffffff);
+    EXPECT_EQ(expect(2, 0, 1, 3, 4), actual(indices[0], columnHint));
+    columnHint = hint("geo", 0x36f0b00000000000, 0x3700000000000000);
+    EXPECT_EQ(expect(1, 3, 4), actual(indices[0], columnHint));
+  }
+  // Let GeoIndex generates the index column hints
+  {
+    // TODO(jie)
   }
 }
 

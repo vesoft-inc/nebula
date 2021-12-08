@@ -2706,7 +2706,7 @@ index_param_item
     }
     | KW_S2_MAX_LEVEL ASSIGN legal_integer {
         if ($3 < 0 || $3 > 30) {
-            throw nebula::GraphParser::syntax_error(@3, "s2_max_level' value must be between 0 and 30 inclusive");
+            throw nebula::GraphParser::syntax_error(@3, "'s2_max_level' value must be between 0 and 30 inclusive");
         }
         $$ = new IndexParamItem(IndexParamItem::S2_MAX_LEVEL, $3);
     }

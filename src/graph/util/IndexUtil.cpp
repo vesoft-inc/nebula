@@ -93,21 +93,21 @@ StatusOr<DataSet> IndexUtil::toShowCreateIndex(bool isTagIndex,
     createStr += "\n";
   }
   createStr += ")";
+  std::vector<std::string> indexParams;
   if (indexItem.comment_ref().has_value()) {
-    createStr += ", comment = \"";
-    createStr += *indexItem.comment_ref();
-    createStr += "\"";
+    indexParams.emplace_back("comment = \"" + *indexItem.comment_ref() + "\"");
   }
   if (indexItem.s2_max_level_ref().has_value()) {
-    createStr += ", s2_max_level = \"";
-    createStr += std::to_string(*indexItem.s2_max_level_ref());
-    createStr += "\"";
+    indexParams.emplace_back("s2_max_level = " + std::to_string(*indexItem.s2_max_level_ref()));
   }
   if (indexItem.s2_max_cells_ref().has_value()) {
-    createStr += ", s2_max_cells = \"";
-    createStr += std::to_string(*indexItem.s2_max_cells_ref());
-    createStr += "\"";
+    indexParams.emplace_back("s2_max_cells = " + std::to_string(*indexItem.s2_max_cells_ref()));
   }
+  if (!indexParams.empty()) {
+    createStr += " ";
+    createStr += folly::join(", ", indexParams);
+  }
+
   row.emplace_back(std::move(createStr));
   dataSet.rows.emplace_back(std::move(row));
   return dataSet;

@@ -220,7 +220,7 @@ Feature: Geo base
     # Create index on geo column
     When executing query:
       """
-      CREATE TAG INDEX any_shape_geo_index ON any_shape(geo);
+      CREATE TAG INDEX any_shape_geo_index ON any_shape(geo) s2_max_level=30, s2_max_cells=8;
       """
     Then the execution should be successful
     When executing query:
@@ -244,6 +244,14 @@ Feature: Geo base
       """
     Then the execution should be successful
     And wait 3 seconds
+    # Show create tag index
+    When executing query:
+      """
+      SHOW CREATE TAG INDEX any_shape_geo_index;
+      """
+    Then the result should be, in any order:
+      | Tag Index Name        | Create Tag Index                                                                                         |
+      | "any_shape_geo_index" | "CREATE TAG INDEX `any_shape_geo_index` ON `any_shape` (\n `geo`\n) s2_max_level = 30, s2_max_cells = 8" |
     # Rebuild the geo index
     When submit a job:
       """

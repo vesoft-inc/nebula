@@ -318,6 +318,10 @@ class IndexKeyUtils final {
     for (auto cellId : cellIds) {
       bufs.emplace_back(encodeUint64(cellId));
     }
+    LOG(INFO) << gg.asWKT();
+    for (auto& buf : bufs) {
+      LOG(INFO) << folly::hexlify(buf);
+    }
     return bufs;
   }
 
