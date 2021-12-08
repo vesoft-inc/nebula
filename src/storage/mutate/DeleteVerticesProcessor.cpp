@@ -61,7 +61,7 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
           code = nebula::cpp2::ErrorCode::E_INVALID_VID;
           break;
         }
-
+        keys.emplace_back(NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vid.getStr()));
         auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen_, partId, vid.getStr());
         std::unique_ptr<kvstore::KVIterator> iter;
         code = env_->kvstore_->prefix(spaceId_, partId, prefix, &iter);
@@ -112,6 +112,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> DeleteVerticesProcessor::deleteVer
   target.reserve(vertices.size());
   std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
   for (auto& vertex : vertices) {
+    batchHolder->remove(NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vertex.getStr()));
     auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen_, partId, vertex.getStr());
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = env_->kvstore_->prefix(spaceId_, partId, prefix, &iter);
