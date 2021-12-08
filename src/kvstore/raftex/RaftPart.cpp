@@ -22,11 +22,8 @@
 #include "interface/gen-cpp2/RaftexServiceAsyncClient.h"
 #include "kvstore/LogEncoder.h"
 #include "kvstore/raftex/Host.h"
-<<<<<<< HEAD
-#include "kvstore/stats/KVStats.h"
-=======
 #include "kvstore/raftex/RaftLogIterator.h"
->>>>>>> 2f3443e20 (processAppendLogRequest almost done)
+#include "kvstore/stats/KVStats.h"
 #include "kvstore/wal/FileBasedWal.h"
 
 DEFINE_uint32(raft_heartbeat_interval_secs, 5, "Seconds between each heartbeat");
@@ -290,18 +287,20 @@ void RaftPart::start(std::vector<HostAddr>&& peers, bool asLearner) {
 
   auto logIdAndTerm = lastCommittedLogId();
   committedLogId_ = logIdAndTerm.first;
+  committedLogTerm_ = logIdAndTerm.second;
 
   if (lastLogId_ < committedLogId_) {
     LOG(INFO) << idStr_ << "Reset lastLogId " << lastLogId_ << " to be the committedLogId "
               << committedLogId_;
     lastLogId_ = committedLogId_;
-    lastLogTerm_ = logIdAndTerm.second;
+    lastLogTerm_ = committedLogTerm_;
     wal_->reset();
   }
   LOG(INFO) << idStr_ << "There are " << peers.size() << " peer hosts, and total "
             << peers.size() + 1 << " copies. The quorum is " << quorum_ + 1 << ", as learner "
             << asLearner << ", lastLogId " << lastLogId_ << ", lastLogTerm " << lastLogTerm_
-            << ", committedLogId " << committedLogId_ << ", term " << term_;
+            << ", committedLogId " << committedLogId_ << ", committedLogTerm " << committedLogTerm_
+            << ", term " << term_;
 
   // Start all peer hosts
   for (auto& addr : peers) {
@@ -893,10 +892,13 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
       auto walIt = wal_->iterator(committedId + 1, lastLogId);
       SlowOpTracker tracker;
       // Step 3: Commit the batch
-      if (commitLogs(std::move(walIt), true) == nebula::cpp2::ErrorCode::SUCCEEDED) {
+      auto [code, lastCommitId, lastCommitTerm] = commitLogs(std::move(walIt), true);
+      if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
         stats::StatsManager::addValue(kCommitLogLatencyUs, execTime_);
         std::lock_guard<std::mutex> g(raftLock_);
-        committedLogId_ = lastLogId;
+        CHECK_EQ(lastLogId, lastCommitId);
+        committedLogId_ = lastCommitId;
+        committedLogTerm_ = lastCommitTerm;
         firstLogId = lastLogId_ + 1;
         lastMsgAcceptedCostMs_ = lastMsgSentDur_.elapsedInMSec();
         lastMsgAcceptedTime_ = time::WallClock::fastNowInMilliSec();
@@ -1437,9 +1439,9 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
   resp.leader_addr_ref() = leader_.host;
   resp.leader_port_ref() = leader_.port;
   resp.committed_log_id_ref() = committedLogId_;
-  // doodle: mark
-  resp.last_matched_log_id_ref() = lastLogId_ < committedLogId_ ? committedLogId_ : lastLogId_;
-  resp.last_matched_log_term_ref() = lastLogTerm_;
+  // by default we ask leader send logs after committedLogId_
+  resp.last_matched_log_id_ref() = committedLogId_;
+  resp.last_matched_log_term_ref() = committedLogTerm_;
 
   // Check status
   if (UNLIKELY(status_ == Status::STOPPED)) {
@@ -1494,9 +1496,8 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
           wal_->lastLogId() < req.get_last_log_id_sent() ||
           wal_->getLogTerm(req.get_last_log_id_sent()) != req.get_last_log_term_sent()) {
         resp.last_matched_log_id_ref() = committedLogId_;
-        // doodle
-        // resp.last_matched_log_term_ref() = committedLogTerm_;
-        resp.error_code_ref() = cpp2::ErrorCode::E_LOG_GAP;
+        resp.last_matched_log_term() = committedLogTerm_;
+        resp.error_code() = cpp2::ErrorCode::E_LOG_GAP;
         // lastMatchedLogId is committedLogId_
         return;
       }
@@ -1550,12 +1551,15 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
   LogID lastLogIdCanCommit = std::min(lastMatchedLogId, req.get_committed_log_id());
   CHECK_LE(lastLogIdCanCommit, wal_->lastLogId());
   if (lastLogIdCanCommit > committedLogId_) {
-    auto code = commitLogs(wal_->iterator(committedLogId_ + 1, lastLogIdCanCommit), false);
+    auto walIt = wal_->iterator(committedLogId_ + 1, lastLogIdCanCommit);
+    auto [code, lastCommitId, lastCommitTerm] = commitLogs(std::move(walIt), false);
     if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
       stats::StatsManager::addValue(kCommitLogLatencyUs, execTime_);
       VLOG(1) << idStr_ << "Follower succeeded committing log " << committedLogId_ + 1 << " to "
               << lastLogIdCanCommit;
-      committedLogId_ = lastLogIdCanCommit;
+      CHECK_EQ(lastLogIdCanCommit, lastCommitId);
+      committedLogId_ = lastCommitId;
+      committedLogTerm_ = lastCommitTerm;
       resp.committed_log_id_ref() = lastLogIdCanCommit;
       resp.error_code_ref() = cpp2::ErrorCode::SUCCEEDED;
     } else if (code == nebula::cpp2::ErrorCode::E_WRITE_STALLED) {
@@ -1658,11 +1662,14 @@ void RaftPart::processHeartbeatRequest(const cpp2::HeartbeatRequest& req,
                                  << ", local current term = " << term_;
   std::lock_guard<std::mutex> g(raftLock_);
 
+  // As for heartbeat, last_log_id and last_log_term is not checked by leader, follower only verify
+  // whether leader is legal, just return lastLogId_ and lastLogTerm_ in resp. And we don't do any
+  // log appending
   resp.current_term_ref() = term_;
   resp.leader_addr_ref() = leader_.host;
   resp.leader_port_ref() = leader_.port;
   resp.committed_log_id_ref() = committedLogId_;
-  resp.last_log_id_ref() = lastLogId_ < committedLogId_ ? committedLogId_ : lastLogId_;
+  resp.last_log_id_ref() = lastLogId_;
   resp.last_log_term_ref() = lastLogTerm_;
 
   // Check status
@@ -1743,15 +1750,17 @@ void RaftPart::processSendSnapshotRequest(const cpp2::SendSnapshotRequest& req,
   }
   if (req.get_done()) {
     committedLogId_ = req.get_committed_log_id();
+    committedLogTerm_ = req.get_committed_log_term();
     lastLogId_ = committedLogId_;
-    lastLogTerm_ = req.get_committed_log_term();
+    lastLogTerm_ = committedLogTerm_;
     term_ = lastLogTerm_;
     // there should be no wal after state converts to WAITING_SNAPSHOT, the RaftPart has been reset
     DCHECK_EQ(wal_->firstLogId(), 0);
     DCHECK_EQ(wal_->lastLogId(), 0);
     status_ = Status::RUNNING;
     LOG(INFO) << idStr_ << "Receive all snapshot, committedLogId_ " << committedLogId_
-              << ", lastLodId " << lastLogId_ << ", lastLogTermId " << lastLogTerm_;
+              << ", committedLogTerm_ " << committedLogTerm_ << ", lastLodId " << lastLogId_
+              << ", lastLogTermId " << lastLogTerm_;
   }
   resp.error_code_ref() = cpp2::ErrorCode::SUCCEEDED;
   return;
@@ -1877,7 +1886,7 @@ void RaftPart::reset() {
   wal_->reset();
   cleanup();
   lastLogId_ = committedLogId_ = 0;
-  lastLogTerm_ = 0;
+  lastLogTerm_ = committedLogTerm_ = 0;
   lastTotalCount_ = 0;
   lastTotalSize_ = 0;
 }

@@ -286,9 +286,12 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   // Check if we can accept candidate's message
   virtual cpp2::ErrorCode checkPeer(const HostAddr& candidate);
 
-  // The inherited classes need to implement this method to commit
-  // a batch of log messages
-  virtual nebula::cpp2::ErrorCode commitLogs(std::unique_ptr<LogIterator> iter, bool wait) = 0;
+  // The inherited classes need to implement this method to commit a batch of log messages.
+  // Return {error code, last commit log id, last commit log term}.
+  // When no logs applied to state machine or error occurs when calling commitLogs,
+  // kNoCommitLogId and kNoCommitLogTerm are returned.
+  virtual std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> commitLogs(
+      std::unique_ptr<LogIterator> iter, bool wait) = 0;
 
   virtual bool preProcessLog(LogID logId,
                              TermID termId,
@@ -533,11 +536,17 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   // To prevent we have voted more than once in a same term
   TermID votedTerm_{0};
 
-  // The id and term of the last-sent log
+  // As for leader lastLogId_ is the log id which has been replicated to majority peers.
+  // As for follower lastLogId_ is only a latest log id from current leader or any leader of
+  // previous term. Not all logs before lastLogId_ could be applied for follower.
   LogID lastLogId_{0};
   TermID lastLogTerm_{0};
-  // The id for the last globally committed log (from the leader)
+
+  // The last id and term when logs has been applied to state machine
   LogID committedLogId_{0};
+  TermID committedLogTerm_{0};
+  static constexpr LogID kNoCommitLogId{-1};
+  static constexpr TermID kNoCommitLogTerm{-1};
 
   // To record how long ago when the last leader message received
   time::Duration lastMsgRecvDur_;

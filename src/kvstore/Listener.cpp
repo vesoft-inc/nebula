@@ -56,12 +56,13 @@ void Listener::start(std::vector<HostAddr>&& peers, bool) {
 
   auto logIdAndTerm = lastCommittedLogId();
   committedLogId_ = logIdAndTerm.first;
+  committedLogTerm_ = logIdAndTerm.second;
 
   if (lastLogId_ < committedLogId_) {
     LOG(INFO) << idStr_ << "Reset lastLogId " << lastLogId_ << " to be the committedLogId "
               << committedLogId_;
     lastLogId_ = committedLogId_;
-    lastLogTerm_ = term_;
+    lastLogTerm_ = committedLogTerm_;
     wal_->reset();
   }
 
@@ -122,16 +123,19 @@ bool Listener::preProcessLog(LogID logId,
   return true;
 }
 
-cpp2::ErrorCode Listener::commitLogs(std::unique_ptr<LogIterator> iter, bool) {
-  LogID lastId = -1;
+std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Listener::commitLogs(
+    std::unique_ptr<LogIterator> iter, bool) {
+  LogID lastId = kNoCommitLogId;
+  TermID lastTerm = kNoCommitLogTerm;
   while (iter->valid()) {
     lastId = iter->logId();
+    lastTerm = iter->logTerm();
     ++(*iter);
   }
   if (lastId > 0) {
     leaderCommitId_ = lastId;
   }
-  return cpp2::ErrorCode::SUCCEEDED;
+  return {cpp2::ErrorCode::SUCCEEDED, lastId, lastTerm};
 }
 
 void Listener::doApply() {

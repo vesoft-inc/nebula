@@ -165,15 +165,14 @@ void TestShard::onLeaderReady(TermID term) {
   UNUSED(term);
 }
 
-nebula::cpp2::ErrorCode TestShard::commitLogs(std::unique_ptr<LogIterator> iter, bool) {
-  LogID firstId = -1;
-  LogID lastId = -1;
+std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> TestShard::commitLogs(
+    std::unique_ptr<LogIterator> iter, bool) {
+  LogID lastId = kNoCommitLogId;
+  TermID lastTerm = kNoCommitLogTerm;
   int32_t commitLogsNum = 0;
   while (iter->valid()) {
-    if (firstId < 0) {
-      firstId = iter->logId();
-    }
     lastId = iter->logId();
+    lastTerm = iter->logTerm();
     auto log = iter->logMsg();
     if (!log.empty()) {
       switch (static_cast<CommandType>(log[0])) {
@@ -204,14 +203,15 @@ nebula::cpp2::ErrorCode TestShard::commitLogs(std::unique_ptr<LogIterator> iter,
     }
     ++(*iter);
   }
-  VLOG(2) << "TestShard: " << idStr_ << "Committed log " << firstId << " to " << lastId;
+  VLOG(2) << "TestShard: " << idStr_ << "Committed log "
+          << " up to " << lastId;
   if (lastId > -1) {
     lastCommittedLogId_ = lastId;
   }
   if (commitLogsNum > 0) {
     commitTimes_++;
   }
-  return nebula::cpp2::ErrorCode::SUCCEEDED;
+  return {nebula::cpp2::ErrorCode::SUCCEEDED, lastId, lastTerm};
 }
 
 std::pair<int64_t, int64_t> TestShard::commitSnapshot(const std::vector<std::string>& data,

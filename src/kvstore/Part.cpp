@@ -219,11 +219,12 @@ void Part::onDiscoverNewLeader(HostAddr nLeader) {
   }
 }
 
-cpp2::ErrorCode Part::commitLogs(std::unique_ptr<LogIterator> iter, bool wait) {
+std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Part::commitLogs(
+    std::unique_ptr<LogIterator> iter, bool wait) {
   SCOPED_TIMER(&execTime_);
   auto batch = engine_->startBatchWrite();
-  LogID lastId = -1;
-  TermID lastTerm = -1;
+  LogID lastId = kNoCommitLogId;
+  TermID lastTerm = kNoCommitLogTerm;
   while (iter->valid()) {
     lastId = iter->logId();
     lastTerm = iter->logTerm();
@@ -242,7 +243,7 @@ cpp2::ErrorCode Part::commitLogs(std::unique_ptr<LogIterator> iter, bool wait) {
         auto code = batch->put(pieces[0], pieces[1]);
         if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
           LOG(ERROR) << idStr_ << "Failed to call WriteBatch::put()";
-          return code;
+          return {code, kNoCommitLogId, kNoCommitLogTerm};
         }
         break;
       }
@@ -256,7 +257,7 @@ cpp2::ErrorCode Part::commitLogs(std::unique_ptr<LogIterator> iter, bool wait) {
           auto code = batch->put(kvs[i], kvs[i + 1]);
           if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
             LOG(ERROR) << idStr_ << "Failed to call WriteBatch::put()";
-            return code;
+            return {code, kNoCommitLogId, kNoCommitLogTerm};
           }
         }
         break;
@@ -266,7 +267,7 @@ cpp2::ErrorCode Part::commitLogs(std::unique_ptr<LogIterator> iter, bool wait) {
         auto code = batch->remove(key);
         if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
           LOG(ERROR) << idStr_ << "Failed to call WriteBatch::remove()";
-          return code;
+          return {code, kNoCommitLogId, kNoCommitLogTerm};
         }
         break;
       }
@@ -276,7 +277,7 @@ cpp2::ErrorCode Part::commitLogs(std::unique_ptr<LogIterator> iter, bool wait) {
           auto code = batch->remove(k);
           if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
             LOG(ERROR) << idStr_ << "Failed to call WriteBatch::remove()";
-            return code;
+            return {code, kNoCommitLogId, kNoCommitLogTerm};
           }
         }
         break;
@@ -287,7 +288,7 @@ cpp2::ErrorCode Part::commitLogs(std::unique_ptr<LogIterator> iter, bool wait) {
         auto code = batch->removeRange(range[0], range[1]);
         if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
           LOG(ERROR) << idStr_ << "Failed to call WriteBatch::removeRange()";
-          return code;
+          return {code, kNoCommitLogId, kNoCommitLogTerm};
         }
         break;
       }
@@ -306,7 +307,7 @@ cpp2::ErrorCode Part::commitLogs(std::unique_ptr<LogIterator> iter, bool wait) {
           }
           if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
             LOG(ERROR) << idStr_ << "Failed to call WriteBatch";
-            return code;
+            return {code, kNoCommitLogId, kNoCommitLogTerm};
           }
         }
         break;
@@ -351,11 +352,17 @@ cpp2::ErrorCode Part::commitLogs(std::unique_ptr<LogIterator> iter, bool wait) {
     auto code = putCommitMsg(batch.get(), lastId, lastTerm);
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
       LOG(ERROR) << idStr_ << "Commit msg failed";
-      return code;
+      return {code, kNoCommitLogId, kNoCommitLogTerm};
     }
   }
-  return engine_->commitBatchWrite(
+
+  auto code = engine_->commitBatchWrite(
       std::move(batch), FLAGS_rocksdb_disable_wal, FLAGS_rocksdb_wal_sync, wait);
+  if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
+    return {code, lastId, lastTerm};
+  } else {
+    return {code, kNoCommitLogId, kNoCommitLogTerm};
+  }
 }
 
 std::pair<int64_t, int64_t> Part::commitSnapshot(const std::vector<std::string>& rows,
@@ -464,6 +471,7 @@ bool Part::preProcessLog(LogID logId, TermID termId, ClusterID clusterId, const 
 }
 
 void Part::cleanup() {
+  // doodle
   LOG(INFO) << idStr_ << "Clean rocksdb part data";
   // Remove the vertex, edge, index, systemCommitKey, operation data under the part
   const auto& vertexPre = NebulaKeyUtils::tagPrefix(partId_);

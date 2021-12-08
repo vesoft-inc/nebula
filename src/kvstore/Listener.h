@@ -51,7 +51,8 @@ using RaftClient = thrift::ThriftClientManager<raftex::cpp2::RaftexServiceAsyncC
  *
  *   // For listener, we just return true directly. Another background thread trigger the actual
  *   // apply work, and do it in worker thread, and update lastApplyLogId_
- *   cpp2::Errorcode commitLogs(std::unique_ptr<LogIterator> iter, bool)
+ *   std::tuple<nebula::cpp2::ErrorCode, LogID, TermID>
+ *   commitLogs(std::unique_ptr<LogIterator> iter, bool)
  *
  *   // For most of the listeners, just return true is enough. However, if listener need to be
  *   // aware of membership change, some log type of wal need to be pre-processed, could do it
@@ -158,7 +159,8 @@ class Listener : public raftex::RaftPart {
 
   // For listener, we just return true directly. Another background thread trigger the actual
   // apply work, and do it in worker thread, and update lastApplyLogId_
-  cpp2::ErrorCode commitLogs(std::unique_ptr<LogIterator>, bool) override;
+  std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> commitLogs(std::unique_ptr<LogIterator>,
+                                                                bool) override;
 
   // For most of the listeners, just return true is enough. However, if listener need to be aware
   // of membership change, some log type of wal need to be pre-processed, could do it here.

@@ -78,7 +78,8 @@ class TestShard : public RaftPart {
   void onLeaderReady(TermID term) override;
   void onDiscoverNewLeader(HostAddr) override {}
 
-  nebula::cpp2::ErrorCode commitLogs(std::unique_ptr<LogIterator> iter, bool wait) override;
+  std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> commitLogs(std::unique_ptr<LogIterator> iter,
+                                                                bool wait) override;
 
   bool preProcessLog(LogID, TermID, ClusterID, const std::string& log) override {
     if (!log.empty()) {
