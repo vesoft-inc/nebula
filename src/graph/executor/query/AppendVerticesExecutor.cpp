@@ -5,7 +5,7 @@
 
 #include "graph/executor/query/AppendVerticesExecutor.h"
 
-using nebula::storage::GraphStorageClient;
+using nebula::storage::StorageClient;
 using nebula::storage::StorageRpcResponse;
 using nebula::storage::cpp2::GetPropResponse;
 
@@ -25,17 +25,17 @@ folly::Future<Status> AppendVerticesExecutor::appendVertices() {
   SCOPED_TIMER(&execTime_);
 
   auto *av = asNode<AppendVertices>(node());
-  GraphStorageClient *storageClient = qctx()->getStorageClient();
+  StorageClient *storageClient = qctx()->getStorageClient();
 
   DataSet vertices = buildRequestDataSet(av);
   if (vertices.rows.empty()) {
     return finish(ResultBuilder().value(Value(DataSet(av->colNames()))).build());
   }
 
-  GraphStorageClient::CommonRequestParam param(av->space(),
-                                               qctx()->rctx()->session()->id(),
-                                               qctx()->plan()->id(),
-                                               qctx()->plan()->isProfileEnabled());
+  StorageClient::CommonRequestParam param(av->space(),
+                                          qctx()->rctx()->session()->id(),
+                                          qctx()->plan()->id(),
+                                          qctx()->plan()->isProfileEnabled());
   time::Duration getPropsTime;
   return DCHECK_NOTNULL(storageClient)
       ->getProps(param,

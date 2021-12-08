@@ -272,6 +272,8 @@ class NebulaStore : public KVStore, public Handler {
                             PartitionID partId,
                             const std::vector<HostAddr>& remoteListeners) override;
 
+  void fetchDiskParts(SpaceDiskPartsMap& diskParts) override;
+
   nebula::cpp2::ErrorCode multiPutWithoutReplicator(GraphSpaceID spaceId,
                                                     std::vector<KV> keyValues) override;
 

@@ -280,3 +280,89 @@ Feature: User & privilege Test
       DROP SPACE user_tmp_space_3;
       """
     Then the execution should be successful
+
+  Scenario: Describe User
+    When executing query:
+      """
+      CREATE SPACE IF NOT EXISTS user_tmp_space_4(partition_num=1, replica_factor=1, vid_type=FIXED_STRING(8))
+      """
+    Then the execution should be successful
+    And wait 10 seconds
+    When executing query:
+      """
+      CREATE USER IF NOT EXISTS user1 WITH PASSWORD "pwd1"
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      GRANT ROLE ADMIN ON user_tmp_space_4 TO user1
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      CREATE USER IF NOT EXISTS user2 WITH PASSWORD "pwd2"
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      GRANT ROLE ADMIN ON user_tmp_space_4 TO user2
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      SHOW USERS
+      """
+    Then the result should contain:
+      | Account |
+      | "root"  |
+      | "user1" |
+      | "user2" |
+    When executing query:
+      """
+      DESC USER root
+      """
+    Then the result should be, in any order, with relax comparison:
+      | role  | space |
+      | "GOD" | ""    |
+    When executing query:
+      """
+      DESC USER user1
+      """
+    Then the result should be, in any order, with relax comparison:
+      | role    | space              |
+      | "ADMIN" | "user_tmp_space_4" |
+    When executing query:
+      """
+      DESC USER user1 | YIELD $-.space as sp
+      """
+    Then the result should be, in any order, with relax comparison:
+      | sp                 |
+      | "user_tmp_space_4" |
+    When executing query:
+      """
+      DESC USER user_not_exist
+      """
+    Then the result should be, in any order, with relax comparison:
+      | role | space |
+    When executing query with user user1 with password pwd1:
+      """
+      DESC USER user1
+      """
+    Then the result should be, in any order, with relax comparison:
+      | role    | space              |
+      | "ADMIN" | "user_tmp_space_4" |
+    When executing query with user user1 with password pwd1:
+      """
+      DESC USER user2
+      """
+    Then a PermissionError should be raised at runtime:
+    When executing query:
+      """
+      GRANT ROLE GUEST ON user_tmp_space_4 TO user1
+      """
+    Then the execution should be successful
+    When executing query with user user1 with password pwd1:
+      """
+      DESC USER root
+      """
+    Then a PermissionError should be raised at runtime:

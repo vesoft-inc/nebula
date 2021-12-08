@@ -136,6 +136,12 @@ std::unique_ptr<PlanNodeDescription> ChangePassword::explain() const {
   return desc;
 }
 
+std::unique_ptr<PlanNodeDescription> DescribeUser::explain() const {
+  auto desc = SingleDependencyNode::explain();
+  addDescription("username", *username_, desc.get());
+  return desc;
+}
+
 std::unique_ptr<PlanNodeDescription> ListUserRoles::explain() const {
   auto desc = SingleDependencyNode::explain();
   addDescription("username", *username_, desc.get());

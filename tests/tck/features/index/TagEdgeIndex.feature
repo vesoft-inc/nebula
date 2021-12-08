@@ -96,10 +96,8 @@ Feature: tag and edge index tests from pytest
       SHOW TAG INDEX STATUS
       """
     Then the result should contain:
-      | Name                 | Index Status |
-      | 'single_tag_index'   | 'FINISHED'   |
-      | 'multi_tag_index'    | 'FINISHED'   |
-      | 'disorder_tag_index' | 'FINISHED'   |
+      | Name                                                  | Index Status |
+      | 'single_tag_index,multi_tag_index,disorder_tag_index' | 'FINISHED'   |
     When executing query:
       """
       LOOKUP ON tag_1 WHERE tag_1.col2 == 18 YIELD tag_1.col1
@@ -164,6 +162,12 @@ Feature: tag and edge index tests from pytest
     Then the result should be, in any order:
       | Tag Index Name    | Create Tag Index                                                        |
       | 'multi_tag_index' | 'CREATE TAG INDEX `multi_tag_index` ON `tag_1` (\n `col2`,\n `col3`\n)' |
+    # Check if check tag/edge type before drop index
+    When executing query:
+      """
+      DROP EDGE INDEX multi_tag_index
+      """
+    Then an ExecutionError should be raised at runtime.
     When executing query:
       """
       DROP TAG INDEX multi_tag_index
@@ -333,10 +337,8 @@ Feature: tag and edge index tests from pytest
       SHOW EDGE INDEX STATUS
       """
     Then the result should contain:
-      | Name                  | Index Status |
-      | 'single_edge_index'   | 'FINISHED'   |
-      | 'multi_edge_index'    | 'FINISHED'   |
-      | 'disorder_edge_index' | 'FINISHED'   |
+      | Name                                                     | Index Status |
+      | 'single_edge_index,multi_edge_index,disorder_edge_index' | 'FINISHED'   |
     # Lookup
     When executing query:
       """
@@ -409,6 +411,12 @@ Feature: tag and edge index tests from pytest
     Then the result should be, in any order:
       | Edge Index Name    | Create Edge Index                                                          |
       | 'multi_edge_index' | 'CREATE EDGE INDEX `multi_edge_index` ON `edge_1` (\n `col2`,\n `col3`\n)' |
+    # Check if check tag/edge type before drop index
+    When executing query:
+      """
+      DROP TAG INDEX multi_edge_index
+      """
+    Then an ExecutionError should be raised at runtime.
     # Check if show create edge index works well
     When executing query:
       """

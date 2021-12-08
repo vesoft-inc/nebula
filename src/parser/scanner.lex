@@ -43,7 +43,11 @@ HEX                         ([0-9a-fA-F])
 OCT                         ([0-7])
 IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 
-
+U                           [\x80-\xbf]
+U2                          [\xc2-\xdf]
+U3                          [\xe0-\xef]
+U4                          [\xf0-\xf4]
+CHINESE_LABEL               ({U2}{U}|{U3}{U}{U}|{U4}{U}{U}{U})+
 
 %%
 
@@ -56,6 +60,8 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "XOR"                       { return TokenType::KW_XOR; }
 "USE"                       { return TokenType::KW_USE; }
 "SET"                       { return TokenType::KW_SET; }
+"LIST"                      { return TokenType::KW_LIST; }
+"MAP"                       { return TokenType::KW_MAP; }
 "FROM"                      { return TokenType::KW_FROM; }
 "WHERE"                     { return TokenType::KW_WHERE; }
 "MATCH"                     { return TokenType::KW_MATCH; }
@@ -261,7 +267,6 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "POINT"                     { return TokenType::KW_POINT; }
 "LINESTRING"                { return TokenType::KW_LINESTRING; }
 "POLYGON"                   { return TokenType::KW_POLYGON; }
-
 "TRUE"                      { yylval->boolval = true; return TokenType::BOOL; }
 "FALSE"                     { yylval->boolval = false; return TokenType::BOOL; }
 
@@ -465,6 +470,17 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 <COMMENT><<EOF>>            {
                                 // Must match /* */
                                 throw GraphParser::syntax_error(*yylloc, "unterminated comment");
+                            }
+\`{CHINESE_LABEL}\`         {
+                                yylval->strval = new std::string(yytext + 1, yyleng - 2);
+                                if (yylval->strval->size() > MAX_STRING) {
+                                    auto error = "Out of range of the LABEL length, "
+                                                  "the  max length of LABEL is " +
+                                                  std::to_string(MAX_STRING) + ":";
+                                    delete yylval->strval;
+                                    throw GraphParser::syntax_error(*yylloc, error);
+                                }
+                                return TokenType::CHINESE_LABEL;
                             }
 .                           {
                                 /**

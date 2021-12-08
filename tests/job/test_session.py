@@ -127,7 +127,7 @@ class TestSession(NebulaTestSuite):
             time.sleep(3)
         resp = self.execute('SHOW SESSION {}'.format(session_id))
         self.check_resp_failed(resp, ttypes.ErrorCode.E_EXECUTION_ERROR)
-        resp = self.execute('UPDATE CONFIGS graph:session_idle_timeout_secs = 0')
+        resp = self.execute('UPDATE CONFIGS graph:session_idle_timeout_secs = 28800')
         self.check_resp_succeeded(resp)
         time.sleep(3)
 

@@ -56,6 +56,14 @@ class EvaluableExprVisitor : public ExprVisitorImpl {
 
   void visit(SubscriptRangeExpression *) override { isEvaluable_ = false; }
 
+  void visitBinaryExpr(BinaryExpression *expr) override {
+    expr->left()->accept(this);
+    // Evaluable sub-expression should be obscured by the non-evaluable sub-expression.
+    if (isEvaluable_) {
+      expr->right()->accept(this);
+    }
+  }
+
   bool isEvaluable_{true};
 };
 

@@ -266,7 +266,7 @@ bool MetaClient::loadData() {
   }
 
   auto hostsRet = listHosts().get();
-  if (!ret.ok()) {
+  if (!hostsRet.ok()) {
     LOG(ERROR) << "List hosts failed, status:" << hostsRet.status();
     return false;
   }
@@ -2394,7 +2394,6 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
   req.set_host(options_.localHost_);
   req.set_role(options_.role_);
   req.set_git_info_sha(options_.gitInfoSHA_);
-  req.set_version(getOriginVersion());
   if (options_.role_ == cpp2::HostRole::STORAGE) {
     if (options_.clusterId_.load() == 0) {
       options_.clusterId_ = FileBasedClusterIdMan::getClusterIdFromFile(FLAGS_cluster_id_path);
@@ -2413,6 +2412,21 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
       req.set_leader_partIds(std::move(leaderIds));
     } else {
       req.set_leader_partIds(std::move(leaderIds));
+    }
+
+    kvstore::SpaceDiskPartsMap diskParts;
+    if (listener_ != nullptr) {
+      listener_->fetchDiskParts(diskParts);
+      if (diskParts_ != diskParts) {
+        {
+          folly::RWSpinLock::WriteHolder holder(&diskPartsLock_);
+          diskParts_.clear();
+          diskParts_ = diskParts;
+        }
+        req.set_disk_parts(diskParts);
+      }
+    } else {
+      req.set_disk_parts(diskParts);
     }
   }
 
@@ -3490,6 +3504,7 @@ bool MetaClient::checkIsPlanKilled(SessionID sessionId, ExecutionPlanID planId) 
 
 Status MetaClient::verifyVersion() {
   auto req = cpp2::VerifyClientVersionReq();
+  req.set_host(options_.localHost_);
   folly::Promise<StatusOr<cpp2::VerifyClientVersionResp>> promise;
   auto future = promise.getFuture();
   getResponse(

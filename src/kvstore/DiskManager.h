@@ -15,11 +15,14 @@
 #include "common/base/StatusOr.h"
 #include "common/thread/GenericWorker.h"
 #include "common/thrift/ThriftTypes.h"
+#include "interface/gen-cpp2/meta_types.h"
 
 namespace nebula {
 namespace kvstore {
 
 using PartDiskMap = std::unordered_map<std::string, std::set<PartitionID>>;
+using SpaceDiskPartsMap =
+    std::unordered_map<GraphSpaceID, std::unordered_map<std::string, meta::cpp2::PartitionList>>;
 
 class DiskManager {
   FRIEND_TEST(DiskManagerTest, AvailableTest);
@@ -51,6 +54,9 @@ class DiskManager {
 
   // Given a space, return data path and all partition in the path
   StatusOr<PartDiskMap> partDist(GraphSpaceID spaceId);
+
+  // Get all space data path and all partition in the path
+  void getDiskParts(SpaceDiskPartsMap& diskParts);
 
  private:
   // refresh free bytes of data path periodically
