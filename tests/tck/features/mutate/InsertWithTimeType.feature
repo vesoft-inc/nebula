@@ -203,7 +203,7 @@ Feature: Insert with time-dependent types
       | '2018-03-04' | '22:01:00.000000' | '2018-03-04T22:30:40.000000' |
     When executing query:
       """
-      DELETE VERTEX "test";
+      DELETE VERTEX "test" WITH EDGE;
       DELETE EDGE edge_date "test_src"->"test_dst";
       """
     Then the execution should be successful

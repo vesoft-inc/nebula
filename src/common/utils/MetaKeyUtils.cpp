@@ -20,6 +20,7 @@ namespace nebula {
 static const std::unordered_map<std::string, std::pair<std::string, bool>> systemTableMaps = {
     {"users", {"__users__", true}},
     {"hosts", {"__hosts__", false}},
+    {"versions", {"__versions__", false}},
     {"snapshots", {"__snapshots__", false}},
     {"configs", {"__configs__", true}},
     {"groups", {"__groups__", true}},
@@ -58,6 +59,7 @@ static const std::unordered_map<
 static const std::string kSpacesTable         = tableMaps.at("spaces").first;         // NOLINT
 static const std::string kPartsTable          = tableMaps.at("parts").first;          // NOLINT
 static const std::string kHostsTable          = systemTableMaps.at("hosts").first;          // NOLINT
+static const std::string kVersionsTable       = systemTableMaps.at("versions").first; // NOLINT
 static const std::string kTagsTable           = tableMaps.at("tags").first;           // NOLINT
 static const std::string kEdgesTable          = tableMaps.at("edges").first;          // NOLINT
 static const std::string kIndexesTable        = tableMaps.at("indexes").first;        // NOLINT
@@ -267,6 +269,26 @@ HostAddr MetaKeyUtils::parseHostKeyV1(folly::StringPiece key) {
 HostAddr MetaKeyUtils::parseHostKeyV2(folly::StringPiece key) {
   key.advance(kHostsTable.size());
   return MetaKeyUtils::deserializeHostAddr(key);
+}
+
+std::string MetaKeyUtils::versionKey(const HostAddr& h) {
+  std::string key;
+  key.append(kVersionsTable.data(), kVersionsTable.size())
+      .append(MetaKeyUtils::serializeHostAddr(h));
+  return key;
+}
+
+std::string MetaKeyUtils::versionVal(const std::string& version) {
+  std::string val;
+  auto versionLen = version.size();
+  val.reserve(sizeof(int64_t) + versionLen);
+  val.append(reinterpret_cast<const char*>(&version), sizeof(int64_t)).append(version);
+  return val;
+}
+
+std::string MetaKeyUtils::parseVersion(folly::StringPiece val) {
+  auto len = *reinterpret_cast<const size_t*>(val.data());
+  return val.subpiece(sizeof(size_t), len).str();
 }
 
 std::string MetaKeyUtils::leaderKey(std::string addr, Port port) {
