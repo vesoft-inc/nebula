@@ -13,6 +13,7 @@
 #include "graph/optimizer/OptGroup.h"
 #include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Query.h"
+#include "graph/util/ExpressionUtils.h"
 #include "graph/visitor/ExtractFilterExprVisitor.h"
 
 using nebula::Expression;
