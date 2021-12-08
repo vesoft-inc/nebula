@@ -11,6 +11,7 @@
 #include "graph/optimizer/OptimizerUtils.h"
 #include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Scan.h"
+#include "graph/util/ExpressionUtils.h"
 
 using nebula::Expression;
 using nebula::graph::EdgeIndexFullScan;
