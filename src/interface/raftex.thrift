@@ -46,6 +46,7 @@ enum ErrorCode {
     E_PERSIST_SNAPSHOT_FAILED = -13;
     E_RPC_EXCEPTION = -14;              // An thrift internal exception was thrown
     E_NO_WAL_FOUND = -15;
+    E_APPLY_FAIL = -16;
 }
 
 typedef i64 (cpp.type = "nebula::ClusterID") ClusterID

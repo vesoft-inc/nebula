@@ -17,7 +17,7 @@ DEFINE_uint32(max_appendlog_batch_size,
               128,
               "The max number of logs in each appendLog request batch");
 DEFINE_uint32(max_outstanding_requests, 1024, "The max number of outstanding appendLog requests");
-DEFINE_int32(raft_rpc_timeout_ms, 500, "rpc timeout for raft client");
+DEFINE_int32(raft_rpc_timeout_ms, 1000, "rpc timeout for raft client");
 
 DECLARE_bool(trace_raft);
 DECLARE_uint32(raft_heartbeat_interval_secs);
@@ -265,7 +265,20 @@ ErrorOr<cpp2::ErrorCode, std::shared_ptr<cpp2::AppendLogRequest>> Host::prepareA
   CHECK(!lock_.try_lock());
   VLOG(2) << idStr_ << "Prepare AppendLogs request from Log " << lastLogIdSent_ + 1 << " to "
           << logIdToSend_;
-  // Assersion: lastLogIdSent_ < logIdToSend_
+
+  // We need to use lastLogIdSent_ + 1 to check whether need to send snapshot
+  if (UNLIKELY(lastLogIdSent_ + 1 < part_->wal()->firstLogId())) {
+    return startSendSnapshot();
+  }
+
+  if (lastLogIdSent_ + 1 > part_->wal()->lastLogId()) {
+    LOG_IF(INFO, FLAGS_trace_raft)
+        << idStr_ << "My lastLogId in wal is " << part_->wal()->lastLogId()
+        << ", but you are seeking " << lastLogIdSent_ + 1
+        << ", so i have nothing to send, logIdToSend_ = " << logIdToSend_;
+    return cpp2::ErrorCode::E_NO_WAL_FOUND;
+  }
+
   auto it = part_->wal()->iterator(lastLogIdSent_ + 1, logIdToSend_);
   if (it->valid()) {
     auto req = std::make_shared<cpp2::AppendLogRequest>();
@@ -279,7 +292,6 @@ ErrorOr<cpp2::ErrorCode, std::shared_ptr<cpp2::AppendLogRequest>> Host::prepareA
     req->last_log_id_sent_ref() = lastLogIdSent_;
 
     std::vector<cpp2::RaftLogEntry> logs;
-    // doodle: we can't make sure log term is the same one
     for (size_t cnt = 0; it->valid() && cnt < FLAGS_max_appendlog_batch_size; ++(*it), ++cnt) {
       cpp2::RaftLogEntry entry;
       entry.cluster_ref() = it->logSource();
@@ -291,43 +303,46 @@ ErrorOr<cpp2::ErrorCode, std::shared_ptr<cpp2::AppendLogRequest>> Host::prepareA
     // entry's id is not logIdToSend_, which means the log has been rollbacked
     if (!it->valid() && (lastLogIdSent_ + static_cast<int64_t>(logs.size()) != logIdToSend_)) {
       LOG_IF(INFO, FLAGS_trace_raft)
-          << idStr_ << "My lastLogId in wal is " << part_->wal()->lastLogId()
-          << ", but you are seeking " << lastLogIdSent_ + 1
-          << ", so i have nothing to send, logIdToSend_ = " << logIdToSend_;
+          << idStr_ << "Can't find log in wal, logIdToSend_ = " << logIdToSend_;
       return cpp2::ErrorCode::E_NO_WAL_FOUND;
     }
     req->log_str_list_ref() = std::move(logs);
     return req;
   } else {
-    if (!sendingSnapshot_) {
-      LOG(INFO) << idStr_ << "Can't find log " << lastLogIdSent_ + 1 << " in wal, send the snapshot"
-                << ", logIdToSend = " << logIdToSend_
-                << ", firstLogId in wal = " << part_->wal()->firstLogId()
-                << ", lastLogId in wal = " << part_->wal()->lastLogId();
-      sendingSnapshot_ = true;
-      part_->snapshot_->sendSnapshot(part_, addr_)
-          .thenValue([self = shared_from_this()](auto&& status) {
-            std::lock_guard<std::mutex> g(self->lock_);
-            if (status.ok()) {
-              auto commitLogIdAndTerm = status.value();
-              self->lastLogIdSent_ = commitLogIdAndTerm.first;
-              self->lastLogTermSent_ = commitLogIdAndTerm.second;
-              self->followerCommittedLogId_ = commitLogIdAndTerm.first;
-              LOG(INFO) << self->idStr_ << "Send snapshot succeeded!"
-                        << " commitLogId = " << commitLogIdAndTerm.first
-                        << " commitLogTerm = " << commitLogIdAndTerm.second;
-            } else {
-              LOG(INFO) << self->idStr_ << "Send snapshot failed!";
-              // TODO(heng): we should tell the follower i am failed.
-            }
-            self->sendingSnapshot_ = false;
-            self->noMoreRequestCV_.notify_all();
-          });
-    } else {
-      LOG_EVERY_N(INFO, 100) << idStr_ << "The snapshot req is in queue, please wait for a moment";
-    }
-    return cpp2::ErrorCode::E_WAITING_SNAPSHOT;
+    return cpp2::ErrorCode::E_NO_WAL_FOUND;
   }
+}
+
+cpp2::ErrorCode Host::startSendSnapshot() {
+  CHECK(!lock_.try_lock());
+  if (!sendingSnapshot_) {
+    LOG(INFO) << idStr_ << "Can't find log " << lastLogIdSent_ + 1 << " in wal, send the snapshot"
+              << ", logIdToSend = " << logIdToSend_
+              << ", firstLogId in wal = " << part_->wal()->firstLogId()
+              << ", lastLogId in wal = " << part_->wal()->lastLogId();
+    sendingSnapshot_ = true;
+    part_->snapshot_->sendSnapshot(part_, addr_)
+        .thenValue([self = shared_from_this()](auto&& status) {
+          std::lock_guard<std::mutex> g(self->lock_);
+          if (status.ok()) {
+            auto commitLogIdAndTerm = status.value();
+            self->lastLogIdSent_ = commitLogIdAndTerm.first;
+            self->lastLogTermSent_ = commitLogIdAndTerm.second;
+            self->followerCommittedLogId_ = commitLogIdAndTerm.first;
+            LOG(INFO) << self->idStr_ << "Send snapshot succeeded!"
+                      << " commitLogId = " << commitLogIdAndTerm.first
+                      << " commitLogTerm = " << commitLogIdAndTerm.second;
+          } else {
+            LOG(INFO) << self->idStr_ << "Send snapshot failed!";
+            // TODO(heng): we should tell the follower i am failed.
+          }
+          self->sendingSnapshot_ = false;
+          self->noMoreRequestCV_.notify_all();
+        });
+  } else {
+    LOG_EVERY_N(INFO, 100) << idStr_ << "The snapshot req is in queue, please wait for a moment";
+  }
+  return cpp2::ErrorCode::E_WAITING_SNAPSHOT;
 }
 
 folly::Future<cpp2::AppendLogResponse> Host::sendAppendLogRequest(

@@ -22,7 +22,11 @@
 #include "interface/gen-cpp2/RaftexServiceAsyncClient.h"
 #include "kvstore/LogEncoder.h"
 #include "kvstore/raftex/Host.h"
+<<<<<<< HEAD
 #include "kvstore/stats/KVStats.h"
+=======
+#include "kvstore/raftex/RaftLogIterator.h"
+>>>>>>> 2f3443e20 (processAppendLogRequest almost done)
 #include "kvstore/wal/FileBasedWal.h"
 
 DEFINE_uint32(raft_heartbeat_interval_secs, 5, "Seconds between each heartbeat");
@@ -1433,6 +1437,7 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
   resp.leader_addr_ref() = leader_.host;
   resp.leader_port_ref() = leader_.port;
   resp.committed_log_id_ref() = committedLogId_;
+  // doodle: mark
   resp.last_matched_log_id_ref() = lastLogId_ < committedLogId_ ? committedLogId_ : lastLogId_;
   resp.last_matched_log_term_ref() = lastLogTerm_;
 
@@ -1464,116 +1469,78 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
   // Reset the timeout timer
   lastMsgRecvDur_.reset();
 
-  /*
-  if (req.get_last_log_id_sent() < committedLogId_ && req.get_last_log_term_sent() <= term_) {
-    LOG(INFO) << idStr_ << "Stale log! The log " << req.get_last_log_id_sent() << ", term "
-              << req.get_last_log_term_sent() << " i had committed yet. My committedLogId is "
-              << committedLogId_ << ", term is " << term_;
-    resp.error_code_ref() = cpp2::ErrorCode::E_LOG_STALE;
-    return;
-  } else if (req.get_last_log_id_sent() < committedLogId_) {
-    LOG(INFO) << idStr_ << "What?? How it happens! The log id is " << req.get_last_log_id_sent()
-              << ", the log term is " << req.get_last_log_term_sent()
-              << ", but my committedLogId is " << committedLogId_ << ", my term is " << term_
-              << ", to make the cluster stable i will follow the high term"
-              << " candidate and cleanup my data";
-    reset();
-    resp.committed_log_id_ref() = committedLogId_;
-    resp.last_matched_log_id_ref() = lastLogId_;
-    resp.last_matched_log_term_ref() = lastLogTerm_;
-    return;
-  }
-
-  // req.get_last_log_id_sent() >= committedLogId_
-  if (req.get_last_log_id_sent() == lastLogId_ && req.get_last_log_term_sent() == lastLogTerm_) {
-    // nothing to do
-    // just append log later
-  } else if (req.get_last_log_id_sent() > lastLogId_) {
-    // There is a gap
-    LOG(INFO) << idStr_ << "Local is missing logs from id " << lastLogId_ << ". Need to catch up";
-    resp.error_code_ref() = cpp2::ErrorCode::E_LOG_GAP;
-    return;
-  } else {
-    // check the last log term is matched or not
-    int reqLastLogTerm = wal_->getLogTerm(req.get_last_log_id_sent());
-    if (req.get_last_log_term_sent() != reqLastLogTerm) {
-      LOG(INFO) << idStr_ << "The local log term is " << reqLastLogTerm
-                << ", which is different from the leader's prevLogTerm "
-                << req.get_last_log_term_sent() << ", the prevLogId is "
-                << req.get_last_log_id_sent() << ". So ask leader to send logs from committedLogId "
-                << committedLogId_;
-      TermID committedLogTerm = wal_->getLogTerm(committedLogId_);
-      if (committedLogTerm > 0) {
-        resp.last_matched_log_id() = committedLogId_;
-        resp.last_matched_log_term() = committedLogTerm;
-      }
-      resp.error_code_ref() = cpp2::ErrorCode::E_LOG_GAP;
-      return;
-    }
-  }
-
-  // request get_last_log_term_sent == wal[get_last_log_id_sent].log_term
-  size_t numLogs = req.get_log_str_list().size();
-  LogID firstId = req.get_last_log_id_sent() + 1;
-
-  size_t diffIndex = 0;
+  // `lastMatchedLogId` is the last log id of which leader's and follower's log are matched
+  // (which means log term of same log id are the same)
+  // The relationships are as follows:
+  // myself.committedLogId_ <= lastMatchedLogId <= lastLogId_
+  LogID lastMatchedLogId = committedLogId_;
   do {
-    // find the first id/term not match, rollback until it, and append the remaining wal
-    if (!(req.get_last_log_id_sent() == lastLogId_ &&
-          req.get_last_log_term_sent() == lastLogTerm_)) {
-      // check the diff index in log, find the first log which term is not same as term in request
-      {
-        std::unique_ptr<LogIterator> it = wal_->iterator(firstId, firstId + numLogs - 1);
-        for (size_t i = 0; i < numLogs && it->valid(); i++, ++(*it), diffIndex++) {
-          int logTerm = it->logTerm();
-          if (req.get_log_term() != logTerm) {
-            break;
-          }
-        }
-      }
-
-      // stale log
-      if (diffIndex == numLogs) {
-        // All logs have been received before
-        resp.last_matched_log_id_ref() = firstId + numLogs - 1;
-        resp.last_matched_log_term_ref() = req.get_log_term();
-        // nothing to append, goto commit
-        break;
-      }
-
-      // rollback the wal
-      if (wal_->rollbackToLog(firstId + diffIndex - 1)) {
-        lastLogId_ = wal_->lastLogId();
-        lastLogTerm_ = wal_->lastLogTerm();
-        LOG(INFO) << idStr_ << "Rollback succeeded! lastLogId is " << lastLogId_
-                  << ", logLogTerm is " << lastLogTerm_ << ", committedLogId is " << committedLogId_
-                  << ", logs in request " << numLogs << ", remaining logs after rollback "
-                  << numLogs - diffIndex;
-      } else {
-        LOG(ERROR) << idStr_ << "Rollback fail! lastLogId is" << lastLogId_ << ", logLogTerm is "
-                   << lastLogTerm_ << ", committedLogId is " << committedLogId_
-                   << ", rollback id is " << firstId + diffIndex - 1;
-        resp.error_code_ref() = cpp2::ErrorCode::E_WAL_FAIL;
+    size_t diffIndex = 0;
+    size_t numLogs = req.get_log_str_list().size();
+    LogID firstId = req.get_last_log_id_sent() + 1;
+    if (req.get_last_log_id_sent() == lastLogId_ && req.get_last_log_term_sent() == lastLogTerm_) {
+      // happy path: logs are matched, just append log
+    } else {
+      // We ask leader to send logs from committedLogId_ if one of the following occurs:
+      // 1. Some of log entry in current request has been committed
+      // 2. I don't have the log of req.last_log_id_sent
+      // 3. My log term on req.last_log_id_sent is not same as req.last_log_term_sent
+      // todo(doodle): One of the most common case whn req.get_last_log_id_sent() < committedLogId_
+      // is that leader side timeout, and retry with same request, but follower has received it.
+      // There are two choise: ask leader to send logs after committedLogId_ or just do nothing.
+      if (req.get_last_log_id_sent() < committedLogId_ ||
+          wal_->lastLogId() < req.get_last_log_id_sent() ||
+          wal_->getLogTerm(req.get_last_log_id_sent()) != req.get_last_log_term_sent()) {
+        resp.last_matched_log_id_ref() = committedLogId_;
+        // doodle
+        // resp.last_matched_log_term_ref() = committedLogTerm_;
+        resp.error_code_ref() = cpp2::ErrorCode::E_LOG_GAP;
+        // lastMatchedLogId is committedLogId_
         return;
       }
 
-      // update msg
+      // wal_->logTerm(req.get_last_log_id_sent()) == req.get_last_log_term()
+      // Try to find the diff point by comparing each log entry's term of same id between local wal
+      // and log entry in request
+      LogID lastId = req.get_last_log_id_sent() + numLogs;
+      TermID lastTerm = (numLogs == 0) ? req.get_last_log_term_sent()
+                                       : req.get_log_str_list().back().get_log_term();
+      auto localWalIt = wal_->iterator(firstId, lastId);
+      for (size_t i = 0; i < numLogs && localWalIt->valid(); ++i, ++(*localWalIt), ++diffIndex) {
+        if (localWalIt->logTerm() != req.get_log_str_list()[i].get_log_term()) {
+          break;
+        }
+      }
+      if (diffIndex == numLogs) {
+        // all logs are the same, ask leader to send logs after lastId
+        lastMatchedLogId = lastId;
+        resp.last_matched_log_id_ref() = lastId;
+        resp.last_matched_log_term_ref() = lastTerm;
+        break;
+      }
+
+      // Found a difference at log of (firstId + diffIndex), all logs from (firstId + diffIndex)
+      // could be truncated
+      wal_->rollbackToLog(firstId + diffIndex - 1);
+      lastLogId_ = wal_->lastLogId();
+      lastLogTerm_ = wal_->lastLogTerm();
       firstId = firstId + diffIndex;
       numLogs = numLogs - diffIndex;
     }
 
-    // Append new logs
-    // doodle: LogEntry need to contain term
-    std::vector<nebula::cpp2::LogEntry> logEntries = std::vector<nebula::cpp2::LogEntry>(
+    // happy path or a difference is found: append remaing logs
+    auto logEntries = std::vector<cpp2::RaftLogEntry>(
         std::make_move_iterator(req.get_log_str_list().begin() + diffIndex),
         std::make_move_iterator(req.get_log_str_list().end()));
-    LogStrListIterator iter(firstId, req.get_log_term(), std::move(logEntries));
-    if (wal_->appendLogs(iter)) {
+    RaftLogIterator logIter(firstId, std::move(logEntries));
+    if (wal_->appendLogs(logIter)) {
       if (numLogs != 0) {
-        CHECK_EQ(firstId + numLogs - 1, wal_->lastLogId()) << "First Id is " << firstId;
+        CHECK_EQ(firstId + numLogs - 1, wal_->lastLogId())
+            << "firstId: " << firstId << " numLogs: " << numLogs;
       }
       lastLogId_ = wal_->lastLogId();
       lastLogTerm_ = wal_->lastLogTerm();
+      lastMatchedLogId = lastLogId_;
       resp.last_matched_log_id_ref() = lastLogId_;
       resp.last_matched_log_term_ref() = lastLogTerm_;
     } else {
@@ -1582,12 +1549,10 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
     }
   } while (false);
 
-  LogID lastLogIdCanCommit = std::min(lastLogId_, req.get_committed_log_id());
+  // If follower found a point where log matches leader's log (lastMatchedLogId), if leader's
+  // committed_log_id is greater than lastMatchedLogId, we can commit logs before lastMatchedLogId
+  LogID lastLogIdCanCommit = std::min(lastMatchedLogId, req.get_committed_log_id());
   if (lastLogIdCanCommit > committedLogId_) {
-    // Commit some logs
-    // We can only commit logs from firstId to min(lastLogId_, leader's commit
-    // log id), follower can't always commit to leader's commit id because of
-    // lack of log
     auto code = commitLogs(wal_->iterator(committedLogId_ + 1, lastLogIdCanCommit), false);
     if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
       stats::StatsManager::addValue(kCommitLogLatencyUs, execTime_);
@@ -1607,12 +1572,12 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
     } else {
       LOG(ERROR) << idStr_ << "Failed to commit log " << committedLogId_ + 1 << " to "
                  << req.get_committed_log_id();
+      resp.committed_log_id_ref() = committedLogId_;
       resp.error_code_ref() = cpp2::ErrorCode::E_WAL_FAIL;
     }
   } else {
     resp.error_code_ref() = cpp2::ErrorCode::SUCCEEDED;
   }
-  */
 
   // Reset the timeout timer again in case wal and commit takes longer time than
   // expected
@@ -1638,21 +1603,18 @@ cpp2::ErrorCode RaftPart::verifyLeader(const REQ& req) {
     // found new leader with higher term
   } else {
     // req.get_current_term() == term_
-    do {
-      if (UNLIKELY(role_ == Role::LEADER)) {
+    if (UNLIKELY(leader_ == HostAddr("", 0))) {
+      // I don't know who is the leader, will accept it as new leader
+    } else {
+      // I know who is leader
+      if (LIKELY(leader_ == peer)) {
+        // Same leader
+        return cpp2::ErrorCode::SUCCEEDED;
+      } else {
         LOG(ERROR) << idStr_ << "Split brain happens, will follow the new leader " << peer
                    << " on term " << req.get_current_term();
-        break;
-      } else {
-        if (LIKELY(leader_ == peer)) {
-          // Same leader
-          return cpp2::ErrorCode::SUCCEEDED;
-        } else if (UNLIKELY(leader_ == HostAddr("", 0))) {
-          // I don't know who is the leader, will accept it as new leader
-          break;
-        }
       }
-    } while (false);
+    }
   }
 
   // Update my state.

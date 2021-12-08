@@ -100,6 +100,8 @@ class Host final : public std::enable_shared_from_this<Host> {
 
   ErrorOr<cpp2::ErrorCode, std::shared_ptr<cpp2::AppendLogRequest>> prepareAppendLogRequest();
 
+  cpp2::ErrorCode startSendSnapshot();
+
   bool noRequest() const;
 
   void setResponse(const cpp2::AppendLogResponse& r);
