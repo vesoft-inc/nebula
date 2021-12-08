@@ -13,6 +13,7 @@
 #include "meta/processors/kv/RemoveProcessor.h"
 #include "meta/processors/kv/RemoveRangeProcessor.h"
 #include "meta/processors/kv/ScanProcessor.h"
+#include "meta/processors/parts/AlterSpaceProcessor.h"
 #include "meta/processors/parts/CreateSpaceProcessor.h"
 #include "meta/processors/parts/DropSpaceProcessor.h"
 #include "meta/processors/parts/GetPartsAllocProcessor.h"
@@ -3637,6 +3638,68 @@ TEST(ProcessorTest, RenameZoneTest) {
     ASSERT_EQ("zone_0", zones[0]);
     ASSERT_EQ("z_1", zones[1]);
     ASSERT_EQ("zone_2", zones[2]);
+  }
+}
+
+TEST(ProcessorTest, AlterSpaceTest) {
+  fs::TempDir rootPath("/tmp/RenameZoneTest.XXXXXX");
+  auto store = MockCluster::initMetaKV(rootPath.path());
+  auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());
+  TestUtils::assembleSpaceWithZone(kv, 1, 8, 1, 8, 8);
+  TestUtils::assembleZone(kv,
+                          {{"9", {HostAddr("127.0.0.1", 9)}},
+                           {"10", {HostAddr("127.0.0.1", 10)}},
+                           {"11", {HostAddr("127.0.0.1", 11)}}});
+  {
+    AlterSpaceProcessor* processor = AlterSpaceProcessor::instance(kv);
+    meta::cpp2::AlterSpaceReq req;
+    req.set_space_name("test_space");
+    req.set_op(meta::cpp2::AlterSpaceOp::ADD_ZONE);
+    req.set_paras({"12"});
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_ZONE_NOT_FOUND, resp.get_code());
+  }
+  {
+    AlterSpaceProcessor* processor = AlterSpaceProcessor::instance(kv);
+    meta::cpp2::AlterSpaceReq req;
+    req.set_space_name("aaa");
+    req.set_op(meta::cpp2::AlterSpaceOp::ADD_ZONE);
+    req.set_paras({"9"});
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND, resp.get_code());
+  }
+  {
+    AlterSpaceProcessor* processor = AlterSpaceProcessor::instance(kv);
+    meta::cpp2::AlterSpaceReq req;
+    req.set_space_name("test_space");
+    req.set_op(meta::cpp2::AlterSpaceOp::ADD_ZONE);
+    req.set_paras({"8"});
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_CONFLICT, resp.get_code());
+  }
+  {
+    AlterSpaceProcessor* processor = AlterSpaceProcessor::instance(kv);
+    meta::cpp2::AlterSpaceReq req;
+    req.set_space_name("test_space");
+    req.set_op(meta::cpp2::AlterSpaceOp::ADD_ZONE);
+    req.set_paras({"9", "10", "11"});
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+    std::string spaceKey = MetaKeyUtils::spaceKey(1);
+    std::string spaceVal;
+    kv->get(kDefaultSpaceId, kDefaultPartId, spaceKey, &spaceVal);
+    meta::cpp2::SpaceDesc properties = MetaKeyUtils::parseSpace(spaceVal);
+    const std::vector<std::string>& zones = properties.get_zone_names();
+    const std::vector<std::string>& res = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"};
+    ASSERT_EQ(res, zones);
   }
 }
 

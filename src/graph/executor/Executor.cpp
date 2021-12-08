@@ -519,6 +519,9 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     case PlanNode::Kind::kAppendVertices: {
       return pool->add(new AppendVerticesExecutor(node, qctx));
     }
+    case PlanNode::Kind::kAlterSpace: {
+      return pool->add(new AlterSpaceExecutor(node, qctx));
+    }
     case PlanNode::Kind::kUnknown: {
       LOG(FATAL) << "Unknown plan node kind " << static_cast<int32_t>(node->kind());
       break;
