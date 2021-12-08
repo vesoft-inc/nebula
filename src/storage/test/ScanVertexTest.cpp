@@ -28,8 +28,9 @@ cpp2::ScanVertexRequest buildRequest(
   CHECK_EQ(partIds.size(), cursors.size());
   std::unordered_map<PartitionID, cpp2::ScanCursor> parts;
   for (std::size_t i = 0; i < partIds.size(); ++i) {
-    c.set_has_next(!cursors[i].empty());
-    c.set_next_cursor(cursors[i]);
+    if (!cursors[i].empty()) {
+      c.set_next_cursor(cursors[i]);
+    }
     parts.emplace(partIds[i], c);
   }
   req.set_parts(std::move(parts));
@@ -184,7 +185,7 @@ TEST(ScanVertexTest, CursorTest) {
         ASSERT_EQ(0, resp.result.failed_parts.size());
         checkResponse(
             *resp.vertex_data_ref(), tag, tag.second.size() + 1 /* kVid */, totalRowCount);
-        hasNext = resp.get_cursors().at(partId).get_has_next();
+        hasNext = resp.get_cursors().at(partId).next_cursor_ref().has_value();
         if (hasNext) {
           CHECK(resp.get_cursors().at(partId).next_cursor_ref());
           cursor = *resp.get_cursors().at(partId).next_cursor_ref();
@@ -211,7 +212,7 @@ TEST(ScanVertexTest, CursorTest) {
         ASSERT_EQ(0, resp.result.failed_parts.size());
         checkResponse(
             *resp.vertex_data_ref(), tag, tag.second.size() + 1 /* kVid */, totalRowCount);
-        hasNext = resp.get_cursors().at(partId).get_has_next();
+        hasNext = resp.get_cursors().at(partId).next_cursor_ref().has_value();
         if (hasNext) {
           CHECK(resp.get_cursors().at(partId).next_cursor_ref());
           cursor = *resp.get_cursors().at(partId).next_cursor_ref();
