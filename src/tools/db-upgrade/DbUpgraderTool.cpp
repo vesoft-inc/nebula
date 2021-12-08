@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/base/Base.h"
@@ -37,7 +36,7 @@ required:
          src_db_path and dst_db_path must be different.
 
        --upgrade_meta_server=<ip:port,...>
-         A list of meta severs' ip:port seperated by comma.
+         A list of meta severs' ip:port separated by comma.
          Default: 127.0.0.1:45500
 
        --upgrade_version=<1|2>
@@ -173,7 +172,7 @@ int main(int argc, char* argv[]) {
   LOG(INFO) << "Prepare phase end";
 
   // Upgrade data
-  LOG(INFO) << "Upgrade phase bengin";
+  LOG(INFO) << "Upgrade phase begin";
 
   // The data path in storage conf is generally one, not too many.
   // So there is no need to control the number of threads here.

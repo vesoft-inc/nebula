@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef _UTIL_EXPRESSION_UTILS_H_
@@ -44,6 +43,8 @@ class ExpressionUtils {
 
   static std::vector<const Expression*> collectAll(
       const Expression* self, const std::unordered_set<Expression::Kind>& expected);
+
+  static bool checkVarExprIfExist(const Expression* expr);
 
   static std::vector<const Expression*> findAllStorage(const Expression* expr);
 

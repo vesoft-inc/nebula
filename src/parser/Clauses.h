@@ -1,14 +1,12 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #ifndef PARSER_CLAUSES_H_
 #define PARSER_CLAUSES_H_
 
 #include "common/base/Base.h"
 #include "common/expression/Expression.h"
-#include "graph/util/ExpressionUtils.h"
 #include "interface/gen-cpp2/storage_types.h"
 
 namespace nebula {
@@ -276,14 +274,7 @@ class YieldColumns final {
 
   YieldColumn *back() { return columns_.back().get(); }
 
-  bool hasAgg() const {
-    for (auto &col : columns_) {
-      if (graph::ExpressionUtils::findAny(col->expr(), {Expression::Kind::kAggregate})) {
-        return true;
-      }
-    }
-    return false;
-  }
+  bool hasAgg() const;
 
  private:
   std::vector<std::unique_ptr<YieldColumn>> columns_;

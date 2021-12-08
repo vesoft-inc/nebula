@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_PLANNER_PLAN_QUERY_H_
@@ -21,7 +20,7 @@
 namespace nebula {
 namespace graph {
 /**
- * Now we hava four kind of exploration nodes:
+ * Now we have four kind of exploration nodes:
  *  GetNeighbors,
  *  GetVertices,
  *  GetEdges,
@@ -36,11 +35,7 @@ class Explore : public SingleInputNode {
   bool dedup() const { return dedup_; }
 
   // Get the constant limit value
-  int64_t limit() const {
-    QueryExpressionContext ctx;
-    DCHECK(ExpressionUtils::isEvaluableExpr(limit_));
-    return DCHECK_NOTNULL(limit_)->eval(ctx).getInt();
-  }
+  int64_t limit() const;
 
   // Get the limit value in runtime
   int64_t limit(QueryExpressionContext& ctx) const {
@@ -121,10 +116,10 @@ using Direction = nebula::storage::cpp2::EdgeDirection;
 /**
  * Get neighbors' property
  */
-class GetNeighbors final : public Explore {
+class GetNeighbors : public Explore {
  public:
   static GetNeighbors* make(QueryContext* qctx, PlanNode* input, GraphSpaceID space) {
-    return qctx->objPool()->add(new GetNeighbors(qctx, input, space));
+    return qctx->objPool()->add(new GetNeighbors(qctx, Kind::kGetNeighbors, input, space));
   }
 
   static GetNeighbors* make(QueryContext* qctx,
@@ -199,15 +194,15 @@ class GetNeighbors final : public Explore {
   PlanNode* clone() const override;
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
- private:
-  GetNeighbors(QueryContext* qctx, PlanNode* input, GraphSpaceID space)
-      : Explore(qctx, Kind::kGetNeighbors, input, space) {
+ protected:
+  GetNeighbors(QueryContext* qctx, Kind kind, PlanNode* input, GraphSpaceID space)
+      : Explore(qctx, kind, input, space) {
     setLimit(-1);
   }
 
- private:
   void cloneMembers(const GetNeighbors&);
 
+ private:
   Expression* src_{nullptr};
   std::vector<EdgeType> edgeTypes_;
   storage::cpp2::EdgeDirection edgeDirection_{Direction::OUT_EDGE};
@@ -221,7 +216,7 @@ class GetNeighbors final : public Explore {
 /**
  * Get property with given vertex keys.
  */
-class GetVertices final : public Explore {
+class GetVertices : public Explore {
  public:
   static GetVertices* make(QueryContext* qctx,
                            PlanNode* input,
@@ -234,6 +229,7 @@ class GetVertices final : public Explore {
                            int64_t limit = std::numeric_limits<int64_t>::max(),
                            Expression* filter = nullptr) {
     return qctx->objPool()->add(new GetVertices(qctx,
+                                                Kind::kGetVertices,
                                                 input,
                                                 space,
                                                 src,
@@ -260,8 +256,9 @@ class GetVertices final : public Explore {
   PlanNode* clone() const override;
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
- private:
+ protected:
   GetVertices(QueryContext* qctx,
+              Kind kind,
               PlanNode* input,
               GraphSpaceID space,
               Expression* src,
@@ -271,7 +268,7 @@ class GetVertices final : public Explore {
               std::vector<storage::cpp2::OrderBy> orderBy,
               int64_t limit,
               Expression* filter)
-      : Explore(qctx, Kind::kGetVertices, input, space, dedup, limit, filter, std::move(orderBy)),
+      : Explore(qctx, kind, input, space, dedup, limit, filter, std::move(orderBy)),
         src_(src),
         props_(std::move(props)),
         exprs_(std::move(exprs)) {}
@@ -681,17 +678,7 @@ class Limit final : public SingleInputNode {
   int64_t offset() const { return offset_; }
 
   // Get constant count value
-  int64_t count() const {
-    if (count_ == nullptr) {
-      return -1;
-    }
-    DCHECK(ExpressionUtils::isEvaluableExpr(count_));
-    QueryExpressionContext ctx;
-    auto s = count_->eval(ctx).getInt();
-    DCHECK_GE(s, 0);
-    return s;
-  }
-
+  int64_t count() const;
   // Get count in runtime
   int64_t count(QueryExpressionContext& ctx) const {
     if (count_ == nullptr) {
@@ -800,13 +787,7 @@ class Sample final : public SingleInputNode {
   }
 
   // Get constant count
-  int64_t count() const {
-    DCHECK(ExpressionUtils::isEvaluableExpr(count_));
-    QueryExpressionContext qec;
-    auto count = count_->eval(qec).getInt();
-    DCHECK_GE(count, 0);
-    return count;
-  }
+  int64_t count() const;
 
   // Get Runtime count
   int64_t count(QueryExpressionContext& qec) const {
@@ -1147,6 +1128,110 @@ class UnionAllVersionVar final : public SingleInputNode {
   void cloneMembers(const UnionAllVersionVar&);
 };
 
+class Traverse final : public GetNeighbors {
+ public:
+  using VertexProps = std::unique_ptr<std::vector<storage::cpp2::VertexProp>>;
+  using EdgeProps = std::unique_ptr<std::vector<storage::cpp2::EdgeProp>>;
+  using StatProps = std::unique_ptr<std::vector<storage::cpp2::StatProp>>;
+  using Exprs = std::unique_ptr<std::vector<storage::cpp2::Expr>>;
+
+  static Traverse* make(QueryContext* qctx, PlanNode* input, GraphSpaceID space) {
+    return qctx->objPool()->add(new Traverse(qctx, input, space));
+  }
+
+  static Traverse* make(QueryContext* qctx,
+                        PlanNode* input,
+                        GraphSpaceID space,
+                        Expression* src,
+                        std::vector<EdgeType> edgeTypes,
+                        storage::cpp2::EdgeDirection edgeDirection,
+                        VertexProps&& vertexProps,
+                        EdgeProps&& edgeProps,
+                        StatProps&& statProps,
+                        Exprs&& exprs,
+                        bool dedup = false,
+                        bool random = false,
+                        std::vector<storage::cpp2::OrderBy> orderBy = {},
+                        int64_t limit = -1,
+                        Expression* filter = nullptr) {
+    auto traverse = make(qctx, input, space);
+    traverse->setSrc(src);
+    traverse->setEdgeTypes(std::move(edgeTypes));
+    traverse->setEdgeDirection(edgeDirection);
+    traverse->setVertexProps(std::move(vertexProps));
+    traverse->setEdgeProps(std::move(edgeProps));
+    traverse->setExprs(std::move(exprs));
+    traverse->setStatProps(std::move(statProps));
+    traverse->setRandom(random);
+    traverse->setDedup(dedup);
+    traverse->setOrderBy(std::move(orderBy));
+    traverse->setLimit(limit);
+    traverse->setFilter(std::move(filter));
+    return traverse;
+  }
+
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
+  Traverse* clone() const override;
+
+  MatchStepRange* stepRange() const { return range_; }
+
+  Expression* vFilter() const { return vFilter_; }
+
+  Expression* eFilter() const { return eFilter_; }
+
+  void setStepRange(MatchStepRange* range) { range_ = range; }
+
+  void setVertexFilter(Expression* vFilter) { vFilter_ = vFilter; }
+
+  void setEdgeFilter(Expression* eFilter) { eFilter_ = eFilter; }
+
+ private:
+  Traverse(QueryContext* qctx, PlanNode* input, GraphSpaceID space)
+      : GetNeighbors(qctx, Kind::kTraverse, input, space) {
+    setLimit(-1);
+  }
+
+ private:
+  void cloneMembers(const Traverse& g);
+
+  MatchStepRange* range_{nullptr};
+  Expression* vFilter_{nullptr};
+  Expression* eFilter_{nullptr};
+};
+
+class AppendVertices final : public GetVertices {
+ public:
+  static AppendVertices* make(QueryContext* qctx, PlanNode* input, GraphSpaceID space) {
+    return qctx->objPool()->add(new AppendVertices(qctx, input, space));
+  }
+
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
+  AppendVertices* clone() const override;
+
+  Expression* vFilter() const { return vFilter_; }
+
+  void setVertexFilter(Expression* vFilter) { vFilter_ = vFilter; }
+
+ private:
+  AppendVertices(QueryContext* qctx, PlanNode* input, GraphSpaceID space)
+      : GetVertices(qctx,
+                    Kind::kAppendVertices,
+                    input,
+                    space,
+                    nullptr,
+                    nullptr,
+                    nullptr,
+                    false,
+                    {},
+                    0,
+                    nullptr) {}
+
+  void cloneMembers(const AppendVertices& a);
+
+  Expression* vFilter_;
+};
 }  // namespace graph
 }  // namespace nebula
 #endif  // GRAPH_PLANNER_PLAN_QUERY_H_

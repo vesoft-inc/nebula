@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef TOOLS_DBUPGRADE_DBUPGRADER_H_
@@ -113,7 +112,7 @@ class UpgraderSpace {
   void runPartV2();
 
  public:
-  // Souce data path
+  // Source data path
   std::string srcPath_;
   // Destination data path
   std::string dstPath_;
@@ -193,7 +192,7 @@ class DbUpgrader {
   meta::MetaClient* metaClient_;
   meta::ServerBasedSchemaManager* schemaMan_;
   meta::IndexManager* indexMan_;
-  // Souce data path
+  // Source data path
   std::string srcPath_;
 
   // Destination data path

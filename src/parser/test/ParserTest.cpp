@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -1660,7 +1659,7 @@ TEST_F(ParserTest, UnreservedKeywords) {
     std::string query =
         "CREATE TAG tag1(space string, spaces string, "
         "email string, password string, roles string, uuid int, "
-        "path string, variables string, leader string, data string)";
+        "paths string, variables string, leader string, data string)";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -1959,22 +1958,12 @@ TEST_F(ParserTest, BalanceOperation) {
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "BALANCE DATA STOP";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
     std::string query = "BALANCE DATA REMOVE 192.168.0.1:50000,192.168.0.1:50001";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
     std::string query = "BALANCE DATA REMOVE 192.168.0.1:50000,\"localhost\":50001";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "BALANCE DATA RESET PLAN";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -2517,7 +2506,7 @@ TEST_F(ParserTest, Match) {
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "MATCH p = (a) -[m:like*..2]- (b) RETURN p as Path";
+    std::string query = "MATCH p = (a) -[m:like*..2]- (b) RETURN p as PathA";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -2621,6 +2610,41 @@ TEST_F(ParserTest, Match) {
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
+  {
+    std::string query =
+        "MATCH (a)-[b]-(c) "
+        "WITH a,b,c "
+        "RETURN a,b,c";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query =
+        "MATCH (a)-[b]-(c) "
+        "MATCH (c)-[d]-(e) "
+        "RETURN a,b,c,d,e";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query =
+        "MATCH (a)-[b]-(c) "
+        "WITH a,b,c "
+        "MATCH (c)-[d]-(e) "
+        "RETURN a,b,c,d,e";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "MATCH (a),(b),(c) RETURN a,b,c";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "MATCH (a)-[b]-(c), (c)-[d]-(e) RETURN a,b,c,d,e";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
 }
 
 TEST_F(ParserTest, MatchErrorCheck) {
@@ -2669,7 +2693,7 @@ TEST_F(ParserTest, MatchMultipleTags) {
 
 TEST_F(ParserTest, MatchListSubscriptRange) {
   {
-    std::string query = "WITH [0, 1, 2] AS list RETURN list[0..] AS l";
+    std::string query = "WITH [0, 1, 2] AS l RETURN l[0..] AS l2";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -2686,11 +2710,6 @@ TEST_F(ParserTest, MatchListSubscriptRange) {
 }
 
 TEST_F(ParserTest, Zone) {
-  {
-    std::string query = "SHOW GROUPS";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
   {
     std::string query = "SHOW ZONES";
     auto result = parse(query);
@@ -2723,36 +2742,6 @@ TEST_F(ParserTest, Zone) {
   }
   {
     std::string query = "DROP ZONE zone_0";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "ADD GROUP group_0 zone_0,zone_1,zone_2";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "ADD ZONE zone_3 INTO GROUP group_0";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "DROP ZONE zone_3 FROM GROUP group_0";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "DESC GROUP group_0";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "DESCRIBE GROUP group_0";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "DROP GROUP group_0";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -2921,11 +2910,36 @@ TEST_F(ParserTest, FullTextServiceTest) {
     std::string query = "SIGN IN TEXT SERVICE (127.0.0.1:9200)";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), query);
+  }
+  {
+    std::string query = "SIGN IN TEXT SERVICE (127.0.0.1:9200, HTTP)";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), query);
+  }
+  {
+    std::string query = "SIGN IN TEXT SERVICE (127.0.0.1:9200, HTTPS)";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), query);
+  }
+  {
+    std::string query = "SIGN IN TEXT SERVICE (127.0.0.1:9200, HTTPS, \"user\")";
+    auto result = parse(query);
+    ASSERT_FALSE(result.ok());
   }
   {
     std::string query = "SIGN IN TEXT SERVICE (127.0.0.1:9200), (127.0.0.1:9300)";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), query);
+  }
+  {
+    std::string query = "SIGN IN TEXT SERVICE (127.0.0.1:9200, HTTPS), (127.0.0.1:9300)";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), query);
   }
   {
     std::string query = "SIGN IN TEXT SERVICE (127.0.0.1:9200, \"user\", \"password\")";
@@ -2933,11 +2947,32 @@ TEST_F(ParserTest, FullTextServiceTest) {
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
+    std::string query = "SIGN IN TEXT SERVICE (127.0.0.1:9200, HTTP, \"user\", \"password\")";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), query);
+  }
+  {
+    std::string query = "SIGN IN TEXT SERVICE (127.0.0.1:9200, HTTPS, \"user\", \"password\")";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), query);
+  }
+  {
     std::string query =
         "SIGN IN TEXT SERVICE (127.0.0.1:9200, \"user\", \"password\"), "
         "(127.0.0.1:9200, \"user\", \"password\")";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), query);
+  }
+  {
+    std::string query =
+        "SIGN IN TEXT SERVICE (127.0.0.1:9200, HTTP, \"user\", \"password\"), "
+        "(127.0.0.1:9200, HTTPS, \"user\", \"password\")";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), query);
   }
   {
     std::string query = "SIGN OUT TEXT SERVICE";
@@ -2978,16 +3013,24 @@ TEST_F(ParserTest, JobTest) {
   checkTest("SUBMIT JOB FLUSH 111", "SUBMIT JOB FLUSH 111");
   checkTest("SUBMIT JOB STATS", "SUBMIT JOB STATS");
   checkTest("SUBMIT JOB STATS 111", "SUBMIT JOB STATS 111");
+  checkTest("SUBMIT JOB BALANCE DATA", "SUBMIT JOB BALANCE DATA");
+  checkTest(
+      "SUBMIT JOB BALANCE DATA REMOVE 192.168.0.1:50000, 192.168.0.1:50001, 192.168.0.1:50002",
+      "SUBMIT JOB BALANCE DATA REMOVE \"192.168.0.1\":50000, \"192.168.0.1\":50001, "
+      "\"192.168.0.1\":50002");
+  checkTest("SUBMIT JOB BALANCE LEADER", "SUBMIT JOB BALANCE LEADER");
   checkTest("SHOW JOBS", "SHOW JOBS");
   checkTest("SHOW JOB 111", "SHOW JOB 111");
   checkTest("STOP JOB 111", "STOP JOB 111");
   checkTest("RECOVER JOB", "RECOVER JOB");
+  checkTest("RECOVER JOB 111, 222, 333", "RECOVER JOB 111, 222, 333");
   checkTest("REBUILD TAG INDEX name_index", "REBUILD TAG INDEX name_index");
   checkTest("REBUILD EDGE INDEX name_index", "REBUILD EDGE INDEX name_index");
   checkTest("REBUILD TAG INDEX", "REBUILD TAG INDEX ");
   checkTest("REBUILD EDGE INDEX", "REBUILD EDGE INDEX ");
   checkTest("REBUILD TAG INDEX name_index, age_index", "REBUILD TAG INDEX name_index,age_index");
   checkTest("REBUILD EDGE INDEX name_index, age_index", "REBUILD EDGE INDEX name_index,age_index");
+  checkTest("SUBMIT JOB COMPACT", "SUBMIT JOB COMPACT");
 }
 
 TEST_F(ParserTest, ShowAndKillQueryTest) {

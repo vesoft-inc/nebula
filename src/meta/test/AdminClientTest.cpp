@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <folly/executors/CPUThreadPoolExecutor.h>
@@ -12,7 +11,6 @@
 #include "common/fs/TempDir.h"
 #include "common/utils/Utils.h"
 #include "interface/gen-cpp2/StorageAdminService.h"
-#include "meta/processors/admin/Balancer.h"
 #include "meta/test/TestUtils.h"
 
 #define RETURN_OK(req)                                       \

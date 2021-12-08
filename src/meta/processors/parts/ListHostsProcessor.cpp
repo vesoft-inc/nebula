@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/parts/ListHostsProcessor.h"
@@ -69,7 +68,7 @@ void ListHostsProcessor::process(const cpp2::ListHostsReq& req) {
  * now(2020-04-29), assume all metad have same gitInfoSHA
  * this will change if some day
  * meta.thrift support interface like getHostStatus()
- * which return a bunch of host infomation
+ * which return a bunch of host information
  * it's not necessary add this interface only for gitInfoSHA
  * */
 nebula::cpp2::ErrorCode ListHostsProcessor::allMetaHostsStatus() {
@@ -80,7 +79,7 @@ nebula::cpp2::ErrorCode ListHostsProcessor::allMetaHostsStatus() {
     return retCode;
   }
   auto metaPeers = nebula::value(errOrPart)->peers();
-  // transform raft port to servre port
+  // transform raft port to severe port
   for (auto& metaHost : metaPeers) {
     metaHost = Utils::getStoreAddrFromRaftAddr(metaHost);
   }
@@ -125,9 +124,14 @@ nebula::cpp2::ErrorCode ListHostsProcessor::allHostsWithStatus(cpp2::HostRole ro
 
     item.set_role(info.role_);
     item.set_git_info_sha(info.gitInfoSha_);
-    if (info.version_.has_value()) {
-      item.set_version(info.version_.value());
+
+    auto versionKey = MetaKeyUtils::versionKey(item.get_hostAddr());
+    auto versionRet = doGet(versionKey);
+    if (nebula::ok(versionRet)) {
+      auto versionVal = MetaKeyUtils::parseVersion(value(versionRet));
+      item.set_version(versionVal);
     }
+
     if (now - info.lastHBTimeInMilliSec_ < FLAGS_removed_threshold_sec * 1000) {
       // If meta didn't receive heartbeat with 2 periods, regard hosts as
       // offline. Same as ActiveHostsMan::getActiveHosts

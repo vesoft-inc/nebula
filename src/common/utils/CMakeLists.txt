@@ -12,5 +12,10 @@ nebula_add_library(
     MetaKeyUtils.cpp
 )
 
+nebula_add_library(
+    log_str_list_iterator_obj OBJECT
+    LogStrListIterator.cpp
+)
+
 
 nebula_add_subdirectory(test)

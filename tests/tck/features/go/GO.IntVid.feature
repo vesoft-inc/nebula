@@ -1,7 +1,6 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: IntegerVid Go  Sentence
 
   Background:
@@ -377,7 +376,7 @@ Feature: IntegerVid Go  Sentence
       | EMPTY            | 90            |
     When executing query:
       """
-      GO FROM hash("Shaquile O\'Neal") OVER serve, like YIELD serve._dst, like._dst
+      GO FROM hash("Shaquille O\'Neal") OVER serve, like YIELD serve._dst, like._dst
       """
     Then the result should be, in any order, with relax comparison, and the columns 0,1 should be hashed:
       | serve._dst  | like._dst      |
@@ -727,7 +726,7 @@ Feature: IntegerVid Go  Sentence
       | "Boris Diaw"        |
       | "Tiago Splitter"    |
       | "Dejounte Murray"   |
-      | "Shaquile O'Neal"   |
+      | "Shaquille O'Neal"  |
     When executing query:
       """
       GO FROM hash('Tim Duncan') OVER like REVERSELY YIELD $$.player.name
@@ -743,7 +742,7 @@ Feature: IntegerVid Go  Sentence
       | "Boris Diaw"        |
       | "Tiago Splitter"    |
       | "Dejounte Murray"   |
-      | "Shaquile O'Neal"   |
+      | "Shaquille O'Neal"  |
     When executing query:
       """
       GO FROM hash('Tim Duncan') OVER like REVERSELY WHERE $$.player.age < 35 YIELD $$.player.name
@@ -771,7 +770,7 @@ Feature: IntegerVid Go  Sentence
       | "Boris Diaw"        |
       | "Tiago Splitter"    |
       | "Dejounte Murray"   |
-      | "Shaquile O'Neal"   |
+      | "Shaquille O'Neal"  |
       | EMPTY               |
       | EMPTY               |
 
@@ -860,15 +859,15 @@ Feature: IntegerVid Go  Sentence
       | "Cavaliers"  | "Kyrie Irving"      |
       | "Cavaliers"  | "LeBron James"      |
       | "Cavaliers"  | "LeBron James"      |
-      | "Cavaliers"  | "Shaquile O'Neal"   |
-      | "Cavaliers"  | "Shaquile O'Neal"   |
+      | "Cavaliers"  | "Shaquille O'Neal"  |
+      | "Cavaliers"  | "Shaquille O'Neal"  |
       | "Cavaliers"  | "LeBron James"      |
       | "Cavaliers"  | "LeBron James"      |
       | "Heat"       | "Amar'e Stoudemire" |
       | "Heat"       | "Dwyane Wade"       |
       | "Heat"       | "LeBron James"      |
       | "Heat"       | "Ray Allen"         |
-      | "Heat"       | "Shaquile O'Neal"   |
+      | "Heat"       | "Shaquille O'Neal"  |
       | "Heat"       | "Dwyane Wade"       |
       | "Lakers"     | "Dwight Howard"     |
       | "Lakers"     | "JaVale McGee"      |
@@ -876,7 +875,7 @@ Feature: IntegerVid Go  Sentence
       | "Lakers"     | "LeBron James"      |
       | "Lakers"     | "Paul Gasol"        |
       | "Lakers"     | "Rajon Rondo"       |
-      | "Lakers"     | "Shaquile O'Neal"   |
+      | "Lakers"     | "Shaquille O'Neal"  |
       | "Lakers"     | "Steve Nash"        |
     When executing query:
       """
@@ -892,19 +891,19 @@ Feature: IntegerVid Go  Sentence
       | "Cavaliers"  | "Dwyane Wade"       |
       | "Cavaliers"  | "Kyrie Irving"      |
       | "Cavaliers"  | "Kyrie Irving"      |
-      | "Cavaliers"  | "Shaquile O'Neal"   |
-      | "Cavaliers"  | "Shaquile O'Neal"   |
+      | "Cavaliers"  | "Shaquille O'Neal"  |
+      | "Cavaliers"  | "Shaquille O'Neal"  |
       | "Heat"       | "Amar'e Stoudemire" |
       | "Heat"       | "Dwyane Wade"       |
       | "Heat"       | "Ray Allen"         |
-      | "Heat"       | "Shaquile O'Neal"   |
+      | "Heat"       | "Shaquille O'Neal"  |
       | "Heat"       | "Dwyane Wade"       |
       | "Lakers"     | "Dwight Howard"     |
       | "Lakers"     | "JaVale McGee"      |
       | "Lakers"     | "Kobe Bryant"       |
       | "Lakers"     | "Paul Gasol"        |
       | "Lakers"     | "Rajon Rondo"       |
-      | "Lakers"     | "Shaquile O'Neal"   |
+      | "Lakers"     | "Shaquille O'Neal"  |
       | "Lakers"     | "Steve Nash"        |
     When executing query:
       """
@@ -946,7 +945,7 @@ Feature: IntegerVid Go  Sentence
       | "Boris Diaw"        |
       | "Tiago Splitter"    |
       | "Dejounte Murray"   |
-      | "Shaquile O'Neal"   |
+      | "Shaquille O'Neal"  |
     When executing query:
       """
       GO FROM hash('Tim Duncan') OVER serve, like bidirect YIELD serve._dst, like._dst
@@ -965,7 +964,7 @@ Feature: IntegerVid Go  Sentence
       | EMPTY      | "Boris Diaw"        |
       | EMPTY      | "Tiago Splitter"    |
       | EMPTY      | "Dejounte Murray"   |
-      | EMPTY      | "Shaquile O'Neal"   |
+      | EMPTY      | "Shaquille O'Neal"  |
     When executing query:
       """
       GO FROM hash('Tim Duncan') OVER serve bidirect YIELD $$.team.name
@@ -990,7 +989,7 @@ Feature: IntegerVid Go  Sentence
       | "Boris Diaw"        |
       | "Tiago Splitter"    |
       | "Dejounte Murray"   |
-      | "Shaquile O'Neal"   |
+      | "Shaquille O'Neal"  |
     When executing query:
       """
       GO FROM hash('Tim Duncan') OVER like bidirect WHERE like.likeness > 90
@@ -1022,7 +1021,7 @@ Feature: IntegerVid Go  Sentence
       | "Tim Duncan"   | EMPTY      | EMPTY        | "Boris Diaw"        | "Boris Diaw"        |
       | "Tim Duncan"   | EMPTY      | EMPTY        | "Tiago Splitter"    | "Tiago Splitter"    |
       | "Tim Duncan"   | EMPTY      | EMPTY        | "Dejounte Murray"   | "Dejounte Murray"   |
-      | "Tim Duncan"   | EMPTY      | EMPTY        | "Shaquile O'Neal"   | "Shaquile O'Neal"   |
+      | "Tim Duncan"   | EMPTY      | EMPTY        | "Shaquille O'Neal"  | "Shaquille O'Neal"  |
       | "Tim Duncan"   | EMPTY      | EMPTY        | EMPTY               | "Tony Parker"       |
       | "Tim Duncan"   | EMPTY      | EMPTY        | EMPTY               | "Manu Ginobili"     |
       | "Tim Duncan"   | EMPTY      | EMPTY        | EMPTY               | "Danny Green"       |
@@ -1047,7 +1046,7 @@ Feature: IntegerVid Go  Sentence
       | "Boris Diaw"        | EMPTY      | EMPTY               |
       | "Tiago Splitter"    | EMPTY      | EMPTY               |
       | "Dejounte Murray"   | EMPTY      | EMPTY               |
-      | "Shaquile O'Neal"   | EMPTY      | EMPTY               |
+      | "Shaquille O'Neal"  | EMPTY      | EMPTY               |
       | EMPTY               | EMPTY      | "Tony Parker"       |
       | EMPTY               | EMPTY      | "Manu Ginobili"     |
       | EMPTY               | EMPTY      | "LaMarcus Aldridge" |
@@ -1209,7 +1208,7 @@ Feature: IntegerVid Go  Sentence
       | "Danny Green"       |
       | "Aron Baynes"       |
       | "Tiago Splitter"    |
-      | "Shaquile O'Neal"   |
+      | "Shaquille O'Neal"  |
       | "Rudy Gay"          |
       | "Damian Lillard"    |
     When executing query:
@@ -1228,7 +1227,7 @@ Feature: IntegerVid Go  Sentence
       | "Danny Green"       |
       | "Aron Baynes"       |
       | "Tiago Splitter"    |
-      | "Shaquile O'Neal"   |
+      | "Shaquille O'Neal"  |
       | "Rudy Gay"          |
       | "Damian Lillard"    |
     When executing query:
@@ -1246,7 +1245,7 @@ Feature: IntegerVid Go  Sentence
       | "Danny Green"       |
       | "Aron Baynes"       |
       | "Tiago Splitter"    |
-      | "Shaquile O'Neal"   |
+      | "Shaquille O'Neal"  |
       | "Rudy Gay"          |
       | "Damian Lillard"    |
     When executing query:
@@ -1313,7 +1312,7 @@ Feature: IntegerVid Go  Sentence
       | "Danny Green"       |
       | "Aron Baynes"       |
       | "Tiago Splitter"    |
-      | "Shaquile O'Neal"   |
+      | "Shaquille O'Neal"  |
       | "Rudy Gay"          |
       | "Damian Lillard"    |
       | "LeBron James"      |
@@ -1338,7 +1337,7 @@ Feature: IntegerVid Go  Sentence
       | "Danny Green"       |
       | "Aron Baynes"       |
       | "Tiago Splitter"    |
-      | "Shaquile O'Neal"   |
+      | "Shaquille O'Neal"  |
       | "Rudy Gay"          |
       | "Damian Lillard"    |
       | "LeBron James"      |
@@ -1714,6 +1713,100 @@ Feature: IntegerVid Go  Sentence
       """
     Then the result should be, in any order:
       | serve._dst |
+
+  Scenario: go step limit
+    When executing query:
+      """
+      GO FROM hash("Tim Duncan") OVER like YIELD like._dst LIMIT [10,10];
+      """
+    Then a SemanticError should be raised at runtime:
+    When executing query:
+      """
+      GO FROM hash("Tim Duncan") OVER like YIELD like._dst LIMIT ["10"];
+      """
+    Then a SemanticError should be raised at runtime:
+    When executing query:
+      """
+      GO FROM hash("Tim Duncan") OVER like YIELD like._dst LIMIT [a];
+      """
+    Then a SemanticError should be raised at runtime:
+    When executing query:
+      """
+      GO FROM hash("Tim Duncan") OVER like YIELD like._dst LIMIT [1];
+      """
+    Then the result should be, in any order, with relax comparison:
+      | like._dst  |
+      | /[+-]?\d+/ |
+    When executing query:
+      """
+      GO 3 STEPS FROM hash("Tim Duncan") OVER like YIELD like._dst LIMIT [1, 2, 2];
+      """
+    Then the result should be, in any order, with relax comparison:
+      | like._dst  |
+      | /[+-]?\d+/ |
+      | /[+-]?\d+/ |
+
+  @skip
+  Scenario: go step filter & step limit
+    When executing query:
+      """
+      GO FROM hash("Tim Duncan") OVER like WHERE [like._dst == "Tony Parker"]  LIMIT [1];
+      """
+    Then the result should be, in any order, with relax comparison:
+      | like._dst |
+    When executing query:
+      """
+      GO 3 STEPS FROM hash("Tim Duncan") OVER like WHERE [like._dst == "Tony Parker", $$.player.age>20, $$.player.age>22] LIMIT [1, 2, 2];
+      """
+    Then the result should be, in any order, with relax comparison:
+      | like._dst |
+
+  Scenario: go step sample
+    When executing query:
+      """
+      GO FROM hash("Tim Duncan") OVER like YIELD like._dst SAMPLE [10,10];
+      """
+    Then a SemanticError should be raised at runtime:
+    When executing query:
+      """
+      GO FROM hash("Tim Duncan") OVER like YIELD like._dst SAMPLE ["10"];
+      """
+    Then a SemanticError should be raised at runtime:
+    When executing query:
+      """
+      GO FROM hash("Tim Duncan") OVER like YIELD like._dst SAMPLE [a];
+      """
+    Then a SemanticError should be raised at runtime:
+    When executing query:
+      """
+      GO FROM hash("Tim Duncan") OVER like YIELD like._dst SAMPLE [1];
+      """
+    Then the result should be, in any order, with relax comparison:
+      | like._dst  |
+      | /[+-]?\d+/ |
+    When executing query:
+      """
+      GO 3 STEPS FROM hash("Tim Duncan") OVER like YIELD like._dst SAMPLE [1, 3, 2];
+      """
+    Then the result should be, in any order, with relax comparison:
+      | like._dst  |
+      | /[+-]?\d+/ |
+      | /[+-]?\d+/ |
+
+  @skip
+  Scenario: go step filter & step sample
+    When executing query:
+      """
+      GO FROM hash("Tim Duncan") OVER like WHERE [like._dst == "Tony Parker"]  SAMPLE [1];
+      """
+    Then the result should be, in any order, with relax comparison:
+      | like._dst |
+    When executing query:
+      """
+      GO 3 STEPS FROM hash("Tim Duncan") OVER like WHERE [like._dst == "Tony Parker", $$.player.age>20, $$.player.age>22] SAMPLE [1, 2, 2];
+      """
+    Then the result should be, in any order, with relax comparison:
+      | like._dst |
 
   Scenario: go from vertices looked up by index
     When executing query:

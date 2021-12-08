@@ -1,7 +1,6 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Case Expression
 
   Background:
@@ -154,9 +153,9 @@ Feature: Case Expression
       RETURN v.name, v.age
       """
     Then the result should be, in any order:
-      | v.name            | v.age |
-      | "Shaquile O'Neal" | 47    |
-      | "Grant Hill"      | 46    |
+      | v.name             | v.age |
+      | "Shaquille O'Neal" | 47    |
+      | "Grant Hill"       | 46    |
     When executing query:
       """
       MATCH (v:player)
@@ -164,11 +163,11 @@ Feature: Case Expression
       RETURN CASE WHEN v.age > 46 THEN v.name WHEN v.age > 45 THEN v.age ELSE "nothing" END AS r
       """
     Then the result should be, in any order:
-      | r                 |
-      | "nothing"         |
-      | 46                |
-      | "Shaquile O'Neal" |
-      | "nothing"         |
+      | r                  |
+      | "nothing"          |
+      | 46                 |
+      | "Shaquille O'Neal" |
+      | "nothing"          |
 
   Scenario: mixed use of generic case and conditional case
     When executing query:

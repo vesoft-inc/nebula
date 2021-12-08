@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_KEY_UTILS_H_
@@ -122,6 +121,12 @@ class MetaKeyUtils final {
   static HostAddr parseHostKeyV1(folly::StringPiece key);
 
   static HostAddr parseHostKeyV2(folly::StringPiece key);
+
+  static std::string versionKey(const HostAddr& h);
+
+  static std::string versionVal(const std::string& version);
+
+  static std::string parseVersion(folly::StringPiece val);
 
   static std::string leaderKey(std::string ip, Port port);
 
@@ -266,24 +271,14 @@ class MetaKeyUtils final {
   static HostAddr deserializeHostAddr(folly::StringPiece str);
 
   static std::string balanceTaskKey(
-      BalanceID balanceId, GraphSpaceID spaceId, PartitionID partId, HostAddr src, HostAddr dst);
+      JobID jobId, GraphSpaceID spaceId, PartitionID partId, HostAddr src, HostAddr dst);
 
   static std::string balanceTaskVal(BalanceTaskStatus status,
-                                    BalanceTaskResult retult,
+                                    BalanceTaskResult result,
                                     int64_t startTime,
                                     int64_t endTime);
 
-  static std::string balanceTaskPrefix(BalanceID balanceId);
-
-  static std::string balancePlanKey(BalanceID id);
-
-  static std::string balancePlanVal(BalanceStatus status);
-
-  static std::string balancePlanPrefix();
-
-  static BalanceID parseBalanceID(const folly::StringPiece& rawKey);
-
-  static BalanceStatus parseBalanceStatus(const folly::StringPiece& rawVal);
+  static std::string balanceTaskPrefix(JobID jobId);
 
   static std::tuple<BalanceID, GraphSpaceID, PartitionID, HostAddr, HostAddr> parseBalanceTaskKey(
       const folly::StringPiece& rawKey);
@@ -386,6 +381,20 @@ class MetaKeyUtils final {
   static std::unordered_map<std::string, std::pair<std::string, bool>> getSystemInfoMaps();
 
   static std::unordered_map<std::string, std::pair<std::string, bool>> getSystemTableMaps();
+
+  static GraphSpaceID parseDiskPartsSpace(folly::StringPiece rawData);
+
+  static std::string diskPartsPrefix();
+
+  static std::string diskPartsPrefix(HostAddr addr);
+
+  static std::string diskPartsPrefix(HostAddr addr, GraphSpaceID spaceId);
+
+  static std::string diskPartsKey(HostAddr addr, GraphSpaceID spaceId, std::string path);
+
+  static std::string diskPartsVal(const meta::cpp2::PartitionList& partList);
+
+  static meta::cpp2::PartitionList parseDiskPartsVal(const folly::StringPiece& rawData);
 };
 
 }  // namespace nebula

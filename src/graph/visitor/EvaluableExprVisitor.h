@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_VISITOR_EVALUABLEEXPRVISITOR_H_
@@ -56,6 +55,14 @@ class EvaluableExprVisitor : public ExprVisitorImpl {
   void visit(ColumnExpression *) override { isEvaluable_ = false; }
 
   void visit(SubscriptRangeExpression *) override { isEvaluable_ = false; }
+
+  void visitBinaryExpr(BinaryExpression *expr) override {
+    expr->left()->accept(this);
+    // Evaluable sub-expression should be obscured by the non-evaluable sub-expression.
+    if (isEvaluable_) {
+      expr->right()->accept(this);
+    }
+  }
 
   bool isEvaluable_{true};
 };

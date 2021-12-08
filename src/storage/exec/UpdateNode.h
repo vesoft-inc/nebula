@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_EXEC_UPDATENODE_H_
@@ -270,7 +269,7 @@ class UpdateTagNode : public UpdateNode<VertexID> {
       expCtx_->setTagProp(tagName_, p.first, p.second);
     }
 
-    key_ = NebulaKeyUtils::vertexKey(context_->vIdLen(), partId, vId, tagId_);
+    key_ = NebulaKeyUtils::tagKey(context_->vIdLen(), partId, vId, tagId_);
     rowWriter_ = std::make_unique<RowWriterV2>(schema_);
 
     return nebula::cpp2::ErrorCode::SUCCEEDED;
@@ -332,7 +331,7 @@ class UpdateTagNode : public UpdateNode<VertexID> {
     for (auto& e : props_) {
       auto wRet = rowWriter_->setValue(e.first, e.second);
       if (wRet != WriteResult::SUCCEEDED) {
-        LOG(ERROR) << "Add field faild ";
+        LOG(ERROR) << "Add field failed ";
         return folly::none;
       }
     }
@@ -341,7 +340,7 @@ class UpdateTagNode : public UpdateNode<VertexID> {
 
     auto wRet = rowWriter_->finish();
     if (wRet != WriteResult::SUCCEEDED) {
-      LOG(ERROR) << "Add field faild ";
+      LOG(ERROR) << "Add field failed ";
       return folly::none;
     }
 
@@ -656,7 +655,7 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
     for (auto& e : props_) {
       auto wRet = rowWriter_->setValue(e.first, e.second);
       if (wRet != WriteResult::SUCCEEDED) {
-        VLOG(1) << "Add field faild ";
+        VLOG(1) << "Add field failed ";
         return folly::none;
       }
     }
@@ -665,7 +664,7 @@ class UpdateEdgeNode : public UpdateNode<cpp2::EdgeKey> {
 
     auto wRet = rowWriter_->finish();
     if (wRet != WriteResult::SUCCEEDED) {
-      VLOG(1) << "Add field faild ";
+      VLOG(1) << "Add field failed ";
       return folly::none;
     }
 

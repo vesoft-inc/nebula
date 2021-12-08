@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "storage/mutate/DeleteVerticesProcessor.h"
@@ -63,7 +62,7 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
           break;
         }
 
-        auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen_, partId, vid.getStr());
+        auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen_, partId, vid.getStr());
         std::unique_ptr<kvstore::KVIterator> iter;
         code = env_->kvstore_->prefix(spaceId_, partId, prefix, &iter);
         if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -113,7 +112,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> DeleteVerticesProcessor::deleteVer
   target.reserve(vertices.size());
   std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
   for (auto& vertex : vertices) {
-    auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen_, partId, vertex.getStr());
+    auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen_, partId, vertex.getStr());
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = env_->kvstore_->prefix(spaceId_, partId, prefix, &iter);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {

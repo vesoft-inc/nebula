@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 namespace cpp nebula.meta
@@ -69,40 +68,12 @@ enum GeoShape {
 } (cpp.enum_strict)
 
 
-// These are all data types supported in the graph properties
-enum PropertyType {
-    UNKNOWN = 0,
-
-    // Simple types
-    BOOL = 1,
-    INT64 = 2,          // This is the same as INT in v1
-    VID = 3,            // Deprecated, only supported by v1
-    FLOAT = 4,
-    DOUBLE = 5,
-    STRING = 6,
-    // String with fixed length. If the string content is shorteri
-    // than the given length, '\0' will be padded to the end
-    FIXED_STRING = 7,   // New in v2
-    INT8 = 8,           // New in v2
-    INT16 = 9,          // New in v2
-    INT32 = 10,         // New in v2
-
-    // Date time
-    TIMESTAMP = 21,
-    DATE = 24,
-    DATETIME = 25,
-    TIME = 26,
-
-    // Geo spatial
-    GEOGRAPHY = 31,
-} (cpp.enum_strict)
-
 struct ColumnTypeDef {
-    1: required PropertyType    type,
+    1: required common.PropertyType    type,
     // type_length is valid for fixed_string type
-    2: optional i16             type_length = 0,
+    2: optional i16                    type_length = 0,
     // geo_shape is valid for geography type
-    3: optional GeoShape        geo_shape,
+    3: optional GeoShape               geo_shape,
 }
 
 struct ColumnDef {
@@ -140,7 +111,7 @@ struct SpaceDesc {
     3: i32                      replica_factor = 0,
     4: binary                   charset_name,
     5: binary                   collate_name,
-    6: ColumnTypeDef            vid_type = {"type": PropertyType.FIXED_STRING, "type_length": 8},
+    6: ColumnTypeDef            vid_type = {"type": common.PropertyType.FIXED_STRING, "type_length": 8},
     7: optional binary          group_name,
     8: optional IsolationLevel  isolation_level,
     9: optional binary          comment,
@@ -257,6 +228,7 @@ enum AdminCmd {
     DATA_BALANCE             = 6,
     DOWNLOAD                 = 7,
     INGEST                   = 8,
+    LEADER_BALANCE           = 9,
     UNKNOWN                  = 99,
 } (cpp.enum_strict)
 
@@ -582,6 +554,10 @@ struct LeaderInfo {
     2: i64                term
 }
 
+struct PartitionList {
+    1: list<common.PartitionID> part_list;
+}
+
 struct HBReq {
     1: HostRole   role,
     2: common.HostAddr host,
@@ -589,8 +565,9 @@ struct HBReq {
     4: optional map<common.GraphSpaceID, list<LeaderInfo>>
         (cpp.template = "std::unordered_map") leader_partIds;
     5: binary     git_info_sha,
-    // version of binary
-    6: optional binary version,
+    6: optional map<common.GraphSpaceID, map<binary, PartitionList>
+        (cpp.template = "std::unordered_map")>
+        (cpp.template = "std::unordered_map") disk_parts;
 }
 
 struct IndexFieldDef {
@@ -732,15 +709,6 @@ struct ChangePasswordReq {
     3: binary old_encoded_pwd,
 }
 
-struct BalanceReq {
-    1: optional common.GraphSpaceID     space_id,
-    // Specify the balance id to check the status of the related balance plan
-    2: optional i64                     id,
-    3: optional list<common.HostAddr>   host_del,
-    4: optional bool                    stop,
-    5: optional bool                    reset,
-}
-
 enum TaskResult {
     SUCCEEDED  = 0x00,
     FAILED = 0x01,
@@ -751,18 +719,10 @@ enum TaskResult {
 
 struct BalanceTask {
     1: binary id,
-    2: TaskResult result,
-}
-
-struct BalanceResp {
-    1: common.ErrorCode code,
-    2: i64              id,
-    // Valid if code equals E_LEADER_CHANGED.
-    3: common.HostAddr  leader,
-    4: list<BalanceTask> tasks,
-}
-
-struct LeaderBalanceReq {
+    2: binary command,
+    3: TaskResult result,
+    4: i64 start_time,
+    5: i64 stop_time,
 }
 
 enum ConfigModule {
@@ -898,49 +858,6 @@ struct ListZonesResp {
     3: list<Zone>       zones,
 }
 
-struct AddGroupReq {
-    1: binary        group_name,
-    2: list<binary>  zone_names,
-}
-
-struct DropGroupReq {
-    1: binary                 group_name,
-}
-
-struct AddZoneIntoGroupReq {
-    1: binary  zone_name,
-    2: binary  group_name,
-}
-
-struct DropZoneFromGroupReq {
-    1: binary  zone_name,
-    2: binary  group_name,
-}
-
-struct GetGroupReq {
-    1: binary                 group_name,
-}
-
-struct GetGroupResp {
-    1: common.ErrorCode      code,
-    2: common.HostAddr       leader,
-    3: list<binary>          zone_names,
-}
-
-struct ListGroupsReq {
-}
-
-struct Group {
-    1: binary                 group_name,
-    2: list<binary>           zone_names,
-}
-
-struct ListGroupsResp {
-    1: common.ErrorCode code,
-    2: common.HostAddr  leader,
-    3: list<Group>      groups,
-}
-
 enum ListenerType {
     UNKNOWN       = 0x00,
     ELASTICSEARCH = 0x01,
@@ -1036,6 +953,7 @@ struct FTClient {
     1: required common.HostAddr    host,
     2: optional binary             user,
     3: optional binary             pwd,
+    4: optional binary             conn_type,
 }
 
 struct SignInFTServiceReq {
@@ -1193,6 +1111,7 @@ struct VerifyClientVersionResp {
 
 struct VerifyClientVersionReq {
     1: required binary version = common.version;
+    2: common.HostAddr host;
 }
 
 service MetaService {
@@ -1251,8 +1170,6 @@ service MetaService {
     ExecResp changePassword(1: ChangePasswordReq req);
 
     HBResp           heartBeat(1: HBReq req);
-    BalanceResp      balance(1: BalanceReq req);
-    ExecResp         leaderBalance(1: LeaderBalanceReq req);
 
     ExecResp regConfig(1: RegConfigReq req);
     GetConfigResp getConfig(1: GetConfigReq req);
@@ -1271,13 +1188,6 @@ service MetaService {
     ExecResp       dropHostFromZone(1: DropHostFromZoneReq req);
     GetZoneResp    getZone(1: GetZoneReq req);
     ListZonesResp  listZones(1: ListZonesReq req);
-
-    ExecResp       addGroup(1: AddGroupReq req);
-    ExecResp       dropGroup(1: DropGroupReq req);
-    ExecResp       addZoneIntoGroup(1: AddZoneIntoGroupReq req);
-    ExecResp       dropZoneFromGroup(1: DropZoneFromGroupReq req);
-    GetGroupResp   getGroup(1: GetGroupReq req);
-    ListGroupsResp listGroups(1: ListGroupsReq req);
 
     CreateBackupResp createBackup(1: CreateBackupReq req);
     ExecResp       restoreMeta(1: RestoreMetaReq req);

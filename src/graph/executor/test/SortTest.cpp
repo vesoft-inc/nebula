@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -18,7 +17,7 @@ namespace graph {
 
 class SortTest : public QueryTestBase {};
 
-#define SORT_RESUTL_CHECK(input_name, outputName, multi, factors, expected)           \
+#define SORT_RESULT_CHECK(input_name, outputName, multi, factors, expected)           \
   do {                                                                                \
     qctx_->symTable()->newVariable(outputName);                                       \
     auto start = StartNode::make(qctx_.get());                                        \
@@ -60,7 +59,7 @@ TEST_F(SortTest, sortOneColAsc) {
   expected.emplace_back(Row({Value::kNullValue}));
   std::vector<std::pair<size_t, OrderFactor::OrderType>> factors;
   factors.emplace_back(std::make_pair(2, OrderFactor::OrderType::ASCEND));
-  SORT_RESUTL_CHECK("input_sequential", "sort_one_col_asc", false, factors, expected);
+  SORT_RESULT_CHECK("input_sequential", "sort_one_col_asc", false, factors, expected);
 }
 
 TEST_F(SortTest, sortOneColDes) {
@@ -73,7 +72,7 @@ TEST_F(SortTest, sortOneColDes) {
   expected.emplace_back(Row({18}));
   std::vector<std::pair<size_t, OrderFactor::OrderType>> factors;
   factors.emplace_back(std::make_pair(2, OrderFactor::OrderType::DESCEND));
-  SORT_RESUTL_CHECK("input_sequential", "sort_one_col_des", false, factors, expected);
+  SORT_RESULT_CHECK("input_sequential", "sort_one_col_des", false, factors, expected);
 }
 
 TEST_F(SortTest, sortTwoColsAscAsc) {
@@ -87,7 +86,7 @@ TEST_F(SortTest, sortTwoColsAscAsc) {
   std::vector<std::pair<size_t, OrderFactor::OrderType>> factors;
   factors.emplace_back(std::make_pair(2, OrderFactor::OrderType::ASCEND));
   factors.emplace_back(std::make_pair(4, OrderFactor::OrderType::ASCEND));
-  SORT_RESUTL_CHECK("input_sequential", "sort_two_cols_asc_asc", true, factors, expected);
+  SORT_RESULT_CHECK("input_sequential", "sort_two_cols_asc_asc", true, factors, expected);
 }
 
 TEST_F(SortTest, sortTwoColsAscDes) {
@@ -101,7 +100,7 @@ TEST_F(SortTest, sortTwoColsAscDes) {
   std::vector<std::pair<size_t, OrderFactor::OrderType>> factors;
   factors.emplace_back(std::make_pair(2, OrderFactor::OrderType::ASCEND));
   factors.emplace_back(std::make_pair(4, OrderFactor::OrderType::DESCEND));
-  SORT_RESUTL_CHECK("input_sequential", "sort_two_cols_asc_des", true, factors, expected);
+  SORT_RESULT_CHECK("input_sequential", "sort_two_cols_asc_des", true, factors, expected);
 }
 
 TEST_F(SortTest, sortTwoColDesDes) {
@@ -115,7 +114,7 @@ TEST_F(SortTest, sortTwoColDesDes) {
   std::vector<std::pair<size_t, OrderFactor::OrderType>> factors;
   factors.emplace_back(std::make_pair(2, OrderFactor::OrderType::DESCEND));
   factors.emplace_back(std::make_pair(4, OrderFactor::OrderType::DESCEND));
-  SORT_RESUTL_CHECK("input_sequential", "sort_two_cols_des_des", true, factors, expected);
+  SORT_RESULT_CHECK("input_sequential", "sort_two_cols_des_des", true, factors, expected);
 }
 
 TEST_F(SortTest, sortTwoColDesDes_union) {
@@ -129,7 +128,7 @@ TEST_F(SortTest, sortTwoColDesDes_union) {
   std::vector<std::pair<size_t, OrderFactor::OrderType>> factors;
   factors.emplace_back(std::make_pair(2, OrderFactor::OrderType::DESCEND));
   factors.emplace_back(std::make_pair(4, OrderFactor::OrderType::DESCEND));
-  SORT_RESUTL_CHECK("union_sequential", "union_sort_two_cols_des_des", true, factors, expected);
+  SORT_RESULT_CHECK("union_sequential", "union_sort_two_cols_des_des", true, factors, expected);
 }
 }  // namespace graph
 }  // namespace nebula

@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Update int vid of vertex and edge
 
   Scenario: update and upsert test
@@ -97,7 +96,7 @@ Feature: Update int vid of vertex and edge
       """
       UPDATE VERTEX 101
       SET course.credits = $^.course.credits + 1
-      WHEN $^.course.name == "notexist" AND $^.course.credits > 2
+      WHEN $^.course.name == "nonexistent" AND $^.course.credits > 2
       YIELD $^.course.name AS Name, $^.course.credits AS Credits
       """
     Then the result should be, in any order:

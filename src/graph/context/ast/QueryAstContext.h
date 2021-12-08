@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_CONTEXT_AST_QUERYASTCONTEXT_H_
@@ -44,6 +43,7 @@ struct PathContext final : AstContext {
   StepClause steps;
   Over over;
   Expression* filter{nullptr};
+  std::vector<std::string> colNames;
 
   /*
    * find path from A to B OR find path from $-.src to $-.dst

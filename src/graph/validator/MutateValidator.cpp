@@ -1,13 +1,13 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #include "graph/validator/MutateValidator.h"
 
 #include "common/expression/LabelAttributeExpression.h"
 #include "graph/planner/plan/Mutate.h"
 #include "graph/planner/plan/Query.h"
+#include "graph/util/ExpressionUtils.h"
 #include "graph/util/SchemaUtil.h"
 #include "graph/visitor/RewriteSymExprVisitor.h"
 
@@ -307,15 +307,17 @@ Status DeleteVerticesValidator::validateImpl() {
       vertices_.emplace_back(std::move(idStatus).value());
     }
   }
-
-  auto ret = qctx_->schemaMng()->getAllEdge(spaceId_);
-  NG_RETURN_IF_ERROR(ret);
-  edgeNames_ = std::move(ret).value();
-  for (auto &name : edgeNames_) {
-    auto edgeStatus = qctx_->schemaMng()->toEdgeType(spaceId_, name);
-    NG_RETURN_IF_ERROR(edgeStatus);
-    auto edgeType = edgeStatus.value();
-    edgeTypes_.emplace_back(edgeType);
+  withEdge_ = sentence->withEdge();
+  if (withEdge_) {
+    auto ret = qctx_->schemaMng()->getAllEdge(spaceId_);
+    NG_RETURN_IF_ERROR(ret);
+    edgeNames_ = std::move(ret).value();
+    for (auto &name : edgeNames_) {
+      auto edgeStatus = qctx_->schemaMng()->toEdgeType(spaceId_, name);
+      NG_RETURN_IF_ERROR(edgeStatus);
+      auto edgeType = edgeStatus.value();
+      edgeTypes_.emplace_back(edgeType);
+    }
   }
   return Status::OK();
 }
@@ -348,68 +350,71 @@ Status DeleteVerticesValidator::toPlan() {
 
   auto *dedupVid = Dedup::make(qctx_, nullptr);
   dedupVid->setInputVar(vidVar);
+  DeleteVertices *dvNode = nullptr;
+  if (withEdge_) {
+    std::vector<storage::cpp2::EdgeProp> edgeProps;
+    // make edgeRefs and edgeProp
+    auto index = 0u;
+    DCHECK(edgeTypes_.size() == edgeNames_.size());
+    auto *pool = qctx_->objPool();
+    for (auto &name : edgeNames_) {
+      auto *edgeKeyRef = new EdgeKeyRef(EdgeSrcIdExpression::make(pool, name),
+                                        EdgeDstIdExpression::make(pool, name),
+                                        EdgeRankExpression::make(pool, name));
+      edgeKeyRef->setType(EdgeTypeExpression::make(pool, name));
+      qctx_->objPool()->add(edgeKeyRef);
+      edgeKeyRefs_.emplace_back(edgeKeyRef);
 
-  std::vector<storage::cpp2::EdgeProp> edgeProps;
-  // make edgeRefs and edgeProp
-  auto index = 0u;
-  DCHECK(edgeTypes_.size() == edgeNames_.size());
-  auto *pool = qctx_->objPool();
-  for (auto &name : edgeNames_) {
-    auto *edgeKeyRef = new EdgeKeyRef(EdgeSrcIdExpression::make(pool, name),
-                                      EdgeDstIdExpression::make(pool, name),
-                                      EdgeRankExpression::make(pool, name));
-    edgeKeyRef->setType(EdgeTypeExpression::make(pool, name));
-    qctx_->objPool()->add(edgeKeyRef);
-    edgeKeyRefs_.emplace_back(edgeKeyRef);
+      storage::cpp2::EdgeProp edgeProp;
+      edgeProp.set_type(edgeTypes_[index]);
+      edgeProp.props_ref().value().emplace_back(kSrc);
+      edgeProp.props_ref().value().emplace_back(kDst);
+      edgeProp.props_ref().value().emplace_back(kType);
+      edgeProp.props_ref().value().emplace_back(kRank);
+      edgeProps.emplace_back(edgeProp);
 
-    storage::cpp2::EdgeProp edgeProp;
-    edgeProp.set_type(edgeTypes_[index]);
-    edgeProp.props_ref().value().emplace_back(kSrc);
-    edgeProp.props_ref().value().emplace_back(kDst);
-    edgeProp.props_ref().value().emplace_back(kType);
-    edgeProp.props_ref().value().emplace_back(kRank);
-    edgeProps.emplace_back(edgeProp);
+      edgeProp.set_type(-edgeTypes_[index]);
+      edgeProps.emplace_back(std::move(edgeProp));
+      index++;
+    }
 
-    edgeProp.set_type(-edgeTypes_[index]);
-    edgeProps.emplace_back(std::move(edgeProp));
-    index++;
+    auto vertexPropsPtr = std::make_unique<std::vector<storage::cpp2::VertexProp>>();
+    auto edgePropsPtr = std::make_unique<std::vector<storage::cpp2::EdgeProp>>(edgeProps);
+    auto statPropsPtr = std::make_unique<std::vector<storage::cpp2::StatProp>>();
+    auto exprPtr = std::make_unique<std::vector<storage::cpp2::Expr>>();
+    auto *getNeighbors = GetNeighbors::make(qctx_,
+                                            dedupVid,
+                                            spaceId_,
+                                            vidRef_,
+                                            edgeTypes_,
+                                            storage::cpp2::EdgeDirection::BOTH,
+                                            nullptr,
+                                            std::move(edgePropsPtr),
+                                            std::move(statPropsPtr),
+                                            std::move(exprPtr));
+
+    auto *yieldColumns = pool->makeAndAdd<YieldColumns>();
+    yieldColumns->addColumn(new YieldColumn(EdgeSrcIdExpression::make(pool, "*"), kSrc));
+    yieldColumns->addColumn(new YieldColumn(EdgeTypeExpression::make(pool, "*"), kType));
+    yieldColumns->addColumn(new YieldColumn(EdgeRankExpression::make(pool, "*"), kRank));
+    yieldColumns->addColumn(new YieldColumn(EdgeDstIdExpression::make(pool, "*"), kDst));
+    auto *edgeKey = Project::make(qctx_, getNeighbors, yieldColumns);
+
+    auto *dedupEdgeKey = Dedup::make(qctx_, edgeKey);
+
+    // create deleteEdges node
+    auto *edgeKeyRef = pool->makeAndAdd<EdgeKeyRef>(InputPropertyExpression::make(pool, kSrc),
+                                                    InputPropertyExpression::make(pool, kDst),
+                                                    InputPropertyExpression::make(pool, kRank),
+                                                    true);
+    edgeKeyRef->setType(InputPropertyExpression::make(pool, kType));
+    auto *deNode = DeleteEdges::make(qctx_, dedupEdgeKey, spaceId_, edgeKeyRef);
+
+    dvNode = DeleteVertices::make(qctx_, deNode, spaceId_, vidRef_);
+    dvNode->setInputVar(dedupVid->outputVar());
+  } else {
+    dvNode = DeleteVertices::make(qctx_, dedupVid, spaceId_, vidRef_);
   }
-
-  auto vertexPropsPtr = std::make_unique<std::vector<storage::cpp2::VertexProp>>();
-  auto edgePropsPtr = std::make_unique<std::vector<storage::cpp2::EdgeProp>>(edgeProps);
-  auto statPropsPtr = std::make_unique<std::vector<storage::cpp2::StatProp>>();
-  auto exprPtr = std::make_unique<std::vector<storage::cpp2::Expr>>();
-  auto *getNeighbors = GetNeighbors::make(qctx_,
-                                          dedupVid,
-                                          spaceId_,
-                                          vidRef_,
-                                          edgeTypes_,
-                                          storage::cpp2::EdgeDirection::BOTH,
-                                          nullptr,
-                                          std::move(edgePropsPtr),
-                                          std::move(statPropsPtr),
-                                          std::move(exprPtr));
-
-  auto *yieldColumns = pool->makeAndAdd<YieldColumns>();
-  yieldColumns->addColumn(new YieldColumn(EdgeSrcIdExpression::make(pool, "*"), kSrc));
-  yieldColumns->addColumn(new YieldColumn(EdgeTypeExpression::make(pool, "*"), kType));
-  yieldColumns->addColumn(new YieldColumn(EdgeRankExpression::make(pool, "*"), kRank));
-  yieldColumns->addColumn(new YieldColumn(EdgeDstIdExpression::make(pool, "*"), kDst));
-  auto *edgeKey = Project::make(qctx_, getNeighbors, yieldColumns);
-
-  auto *dedupEdgeKey = Dedup::make(qctx_, edgeKey);
-
-  // create deleteEdges node
-  auto *edgeKeyRef = pool->makeAndAdd<EdgeKeyRef>(InputPropertyExpression::make(pool, kSrc),
-                                                  InputPropertyExpression::make(pool, kDst),
-                                                  InputPropertyExpression::make(pool, kRank),
-                                                  true);
-  edgeKeyRef->setType(InputPropertyExpression::make(pool, kType));
-  auto *deNode = DeleteEdges::make(qctx_, dedupEdgeKey, spaceId_, edgeKeyRef);
-
-  auto *dvNode = DeleteVertices::make(qctx_, deNode, spaceId_, vidRef_);
-
-  dvNode->setInputVar(dedupVid->outputVar());
   root_ = dvNode;
   tail_ = dedupVid;
   return Status::OK();
@@ -418,7 +423,6 @@ Status DeleteVerticesValidator::toPlan() {
 Status DeleteTagsValidator::validateImpl() {
   auto sentence = static_cast<DeleteTagsSentence *>(sentence_);
   spaceId_ = vctx_->whichSpace().id;
-
   if (sentence->vertices()->isRef()) {
     vidRef_ = sentence->vertices()->ref();
     auto type = deduceExprType(vidRef_);

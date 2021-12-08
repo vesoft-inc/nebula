@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -16,7 +15,7 @@ namespace nebula {
 
 using serializer = apache::thrift::CompactSerializer;
 
-TEST(ResponseEncodDecodeTest, Basic) {
+TEST(ResponseEncodeDecodeTest, Basic) {
   // auth response
   {
     std::vector<AuthResponse> resps;
@@ -89,7 +88,7 @@ TEST(ResponseEncodDecodeTest, Basic) {
   }
 }
 
-TEST(ResponseEncodDecodeTest, ToJson) {
+TEST(ResponseEncodeDecodeTest, ToJson) {
   // plan description
   {
     std::vector<PlanDescription> pds;

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_DATATYPES_DATE_H_
@@ -13,7 +12,7 @@
 
 namespace nebula {
 
-// In nebula only store UTC time, and the interpretion of time value based on
+// In nebula only store UTC time, and the interpretation of time value based on
 // the timezone configuration in current system.
 
 extern const int64_t kDaysSoFar[];

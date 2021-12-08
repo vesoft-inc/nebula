@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/parts/DropSpaceProcessor.h"
@@ -95,11 +94,11 @@ void DropSpaceProcessor::process(const cpp2::DropSpaceReq& req) {
     lstIter->next();
   }
 
-  // 5. Delete related statis data
-  auto statiskey = MetaKeyUtils::statsKey(spaceId);
-  deleteKeys.emplace_back(statiskey);
+  // 5. Delete related stats data
+  auto statskey = MetaKeyUtils::statsKey(spaceId);
+  deleteKeys.emplace_back(statskey);
 
-  // 6. Delte related fulltext index meta data
+  // 6. Delete related fulltext index meta data
   auto ftPrefix = MetaKeyUtils::fulltextIndexPrefix();
   auto ftRet = doPrefix(ftPrefix);
   if (!nebula::ok(ftRet)) {

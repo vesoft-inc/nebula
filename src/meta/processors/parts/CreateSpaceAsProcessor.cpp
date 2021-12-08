@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/parts/CreateSpaceAsProcessor.h"
@@ -183,7 +182,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> CreateSpaceAsProcesso
     auto edgeType = MetaKeyUtils::parseEdgeType(iter->key());
     auto edgeNameLen = *reinterpret_cast<const int32_t *>(val.data());
     auto edgeName = val.subpiece(sizeof(int32_t), edgeNameLen).str();
-    data.emplace_back(MetaKeyUtils::indexTagKey(newSpaceId, edgeName),
+    data.emplace_back(MetaKeyUtils::indexEdgeKey(newSpaceId, edgeName),
                       std::string(reinterpret_cast<const char *>(&edgeType), sizeof(edgeType)));
 
     auto ver = MetaKeyUtils::parseEdgeVersion(iter->key());

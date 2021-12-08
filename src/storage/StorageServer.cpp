@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "storage/StorageServer.h"
@@ -39,6 +38,7 @@ DEFINE_int32(num_io_threads, 16, "Number of IO threads");
 DEFINE_int32(num_worker_threads, 32, "Number of workers");
 DEFINE_int32(storage_http_thread_num, 3, "Number of storage daemon's http thread");
 DEFINE_bool(local_config, false, "meta client will not retrieve latest configuration from meta");
+DEFINE_bool(storage_kv_mode, false, "True for kv mode");
 
 namespace nebula {
 namespace storage {
@@ -63,8 +63,10 @@ std::unique_ptr<kvstore::KVStore> StorageServer::getStoreInstance() {
   options.listenerPath_ = listenerPath_;
   options.partMan_ =
       std::make_unique<kvstore::MetaServerBasedPartManager>(localHost_, metaClient_.get());
-  options.cffBuilder_ =
-      std::make_unique<StorageCompactionFilterFactoryBuilder>(schemaMan_.get(), indexMan_.get());
+  if (!FLAGS_storage_kv_mode) {
+    options.cffBuilder_ =
+        std::make_unique<StorageCompactionFilterFactoryBuilder>(schemaMan_.get(), indexMan_.get());
+  }
   options.schemaMan_ = schemaMan_.get();
   if (FLAGS_store_type == "nebula") {
     auto nbStore = std::make_unique<kvstore::NebulaStore>(

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_VALIDATOR_VALIDATOR_H_
@@ -74,7 +73,7 @@ class Validator {
 
   void setNoSpaceRequired() { noSpaceRequired_ = true; }
 
-  // Whether require choosen space
+  // Whether require chosen space
   bool noSpaceRequired() const { return noSpaceRequired_; }
 
   const Sentence* sentence() const { return sentence_; }

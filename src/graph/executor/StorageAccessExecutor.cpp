@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/executor/StorageAccessExecutor.h"
@@ -67,7 +66,7 @@ DataSet buildRequestDataSet(const SpaceInfo &space,
 }  // namespace internal
 
 bool StorageAccessExecutor::isIntVidType(const SpaceInfo &space) const {
-  return (*space.spaceDesc.vid_type_ref()).type == meta::cpp2::PropertyType::INT64;
+  return (*space.spaceDesc.vid_type_ref()).type == nebula::cpp2::PropertyType::INT64;
 }
 
 DataSet StorageAccessExecutor::buildRequestDataSetByVidType(Iterator *iter,

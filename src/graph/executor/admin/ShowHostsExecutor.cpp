@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/executor/admin/ShowHostsExecutor.h"
@@ -22,7 +21,7 @@ folly::Future<Status> ShowHostsExecutor::execute() {
 
 folly::Future<Status> ShowHostsExecutor::showHosts() {
   static constexpr char kNoPartition[] = "No valid partition";
-  static constexpr char kPartitionDelimeter[] = ", ";
+  static constexpr char kPartitionDelimiter[] = ", ";
 
   auto *shNode = asNode<ShowHosts>(node());
   auto makeTraditionalResult = [&](const std::vector<meta::cpp2::HostItem> &hostVec) -> DataSet {
@@ -57,7 +56,7 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
         leaderPartsCount[l.first] += l.second.size();
         leaders << l.first << ":" << l.second.size();
         if (i < lPartsCount.size() - 1) {
-          leaders << kPartitionDelimeter;
+          leaders << kPartitionDelimiter;
         }
         ++i;
       }
@@ -72,7 +71,7 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
         allPartsCount[p.first] += p.second.size();
         parts << p.first << ":" << p.second.size();
         if (i < aPartsCount.size() - 1) {
-          parts << kPartitionDelimeter;
+          parts << kPartitionDelimiter;
         }
         ++i;
       }
@@ -96,7 +95,7 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
       for (const auto &spaceEntry : leaderPartsCount) {
         leaders << spaceEntry.first << ":" << spaceEntry.second;
         if (i < leaderPartsCount.size() - 1) {
-          leaders << kPartitionDelimeter;
+          leaders << kPartitionDelimiter;
         }
         ++i;
       }
@@ -104,7 +103,7 @@ folly::Future<Status> ShowHostsExecutor::showHosts() {
       for (const auto &spaceEntry : allPartsCount) {
         parts << spaceEntry.first << ":" << spaceEntry.second;
         if (i < allPartsCount.size() - 1) {
-          parts << kPartitionDelimeter;
+          parts << kPartitionDelimiter;
         }
         ++i;
       }

@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #include <gtest/gtest.h>
 
@@ -29,7 +28,7 @@
 namespace nebula {
 namespace meta {
 
-using cpp2::PropertyType;
+using nebula::cpp2::PropertyType;
 
 TEST(IndexProcessorTest, AlterEdgeWithTTLTest) {
   fs::TempDir rootPath("/tmp/AlterEdgeWithTTLTest.XXXXXX");
@@ -214,20 +213,6 @@ TEST(IndexProcessorTest, TagIndexTest) {
     processor->process(req);
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-  }
-  {
-    // Allow to create tag index on no fields
-    cpp2::CreateTagIndexReq req;
-    req.set_space_id(1);
-    req.set_tag_name("tag_0");
-    std::vector<cpp2::IndexFieldDef> fields{};
-    req.set_fields(std::move(fields));
-    req.set_index_name("no_field_index");
-    auto* processor = CreateTagIndexProcessor::instance(kv.get());
-    auto f = processor->getFuture();
-    processor->process(req);
-    auto resp = std::move(f).get();
-    ASSERT_NE(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
   }
   {
     cpp2::CreateTagIndexReq req;
@@ -591,20 +576,6 @@ TEST(IndexProcessorTest, EdgeIndexTest) {
     processor->process(req);
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-  }
-  {
-    // Allow to create edge index on no fields
-    cpp2::CreateEdgeIndexReq req;
-    req.set_space_id(1);
-    req.set_edge_name("edge_0");
-    std::vector<cpp2::IndexFieldDef> fields{};
-    req.set_fields(std::move(fields));
-    req.set_index_name("no_field_index");
-    auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
-    auto f = processor->getFuture();
-    processor->process(req);
-    auto resp = std::move(f).get();
-    ASSERT_NE(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
   }
   {
     cpp2::CreateEdgeIndexReq req;
@@ -1564,7 +1535,7 @@ void mockSchemas(kvstore::KVStore* kv) {
   {
     cpp2::ColumnDef col;
     col.set_name("col_fixed_string_1");
-    col.type.set_type(meta::cpp2::PropertyType::FIXED_STRING);
+    col.type.set_type(PropertyType::FIXED_STRING);
     col.type.set_type_length(MAX_INDEX_TYPE_LENGTH);
     (*srcsch.columns_ref()).emplace_back(std::move(col));
   }
@@ -1572,7 +1543,7 @@ void mockSchemas(kvstore::KVStore* kv) {
   {
     cpp2::ColumnDef col;
     col.set_name("col_fixed_string_2");
-    col.type.set_type(meta::cpp2::PropertyType::FIXED_STRING);
+    col.type.set_type(PropertyType::FIXED_STRING);
     col.type.set_type_length(257);
     (*srcsch.columns_ref()).emplace_back(std::move(col));
   }

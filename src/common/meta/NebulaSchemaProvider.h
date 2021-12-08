@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_META_NEBULASCHEMAPROVIDER_H_
@@ -23,7 +22,7 @@ class NebulaSchemaProvider : public SchemaProviderIf {
   class SchemaField final : public SchemaProviderIf::Field {
    public:
     SchemaField(std::string name,
-                cpp2::PropertyType type,
+                nebula::cpp2::PropertyType type,
                 bool nullable,
                 bool hasDefault,
                 Expression* defaultValue,
@@ -43,7 +42,7 @@ class NebulaSchemaProvider : public SchemaProviderIf {
 
     const char* name() const override { return name_.c_str(); }
 
-    cpp2::PropertyType type() const override { return type_; }
+    nebula::cpp2::PropertyType type() const override { return type_; }
 
     bool nullable() const override { return nullable_; }
 
@@ -64,7 +63,7 @@ class NebulaSchemaProvider : public SchemaProviderIf {
 
    private:
     std::string name_;
-    cpp2::PropertyType type_;
+    nebula::cpp2::PropertyType type_;
     bool nullable_;
     bool hasDefault_;
     Expression* defaultValue_;
@@ -88,20 +87,20 @@ class NebulaSchemaProvider : public SchemaProviderIf {
   int64_t getFieldIndex(const std::string& name) const override;
   const char* getFieldName(int64_t index) const override;
 
-  cpp2::PropertyType getFieldType(int64_t index) const override;
-  cpp2::PropertyType getFieldType(const std::string& name) const override;
+  nebula::cpp2::PropertyType getFieldType(int64_t index) const override;
+  nebula::cpp2::PropertyType getFieldType(const std::string& name) const override;
 
   const SchemaProviderIf::Field* field(int64_t index) const override;
   const SchemaProviderIf::Field* field(const std::string& name) const override;
 
   void addField(folly::StringPiece name,
-                cpp2::PropertyType type,
+                nebula::cpp2::PropertyType type,
                 size_t fixedStrLen = 0,
                 bool nullable = false,
                 Expression* defaultValue = nullptr,
                 cpp2::GeoShape geoShape = cpp2::GeoShape::ANY);
 
-  static std::size_t fieldSize(cpp2::PropertyType type, std::size_t fixedStrLimit);
+  static std::size_t fieldSize(nebula::cpp2::PropertyType type, std::size_t fixedStrLimit);
 
   void setProp(cpp2::SchemaProp schemaProp);
 

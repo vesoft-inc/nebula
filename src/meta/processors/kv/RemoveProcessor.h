@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_REMOVEPROCESSOR_H_
@@ -13,7 +12,7 @@ namespace nebula {
 namespace meta {
 
 /**
- * Remove some rows in custorm kv operations.
+ * Remove some rows in custom kv operations.
  * */
 class RemoveProcessor : public BaseProcessor<cpp2::ExecResp> {
  public:

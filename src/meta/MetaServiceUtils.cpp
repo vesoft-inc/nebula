@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/MetaServiceUtils.h"
@@ -118,7 +117,8 @@ nebula::cpp2::ErrorCode MetaServiceUtils::alterSchemaProp(std::vector<cpp2::Colu
       if (col.get_name() == ttlCol) {
         auto colType = col.get_type().get_type();
         // Only integer and timestamp columns can be used as ttl_col
-        if (colType != cpp2::PropertyType::INT64 && colType != cpp2::PropertyType::TIMESTAMP) {
+        if (colType != nebula::cpp2::PropertyType::INT64 &&
+            colType != nebula::cpp2::PropertyType::TIMESTAMP) {
           LOG(ERROR) << "TTL column type illegal";
           return nebula::cpp2::ErrorCode::E_UNSUPPORTED;
         }
@@ -234,7 +234,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>> MetaServiceUtils::bac
     if (result != nebula::cpp2::ErrorCode::SUCCEEDED) {
       return result;
     }
-    LOG(INFO) << table.first << " table backup successed";
+    LOG(INFO) << table.first << " table backup succeeded";
   }
 
   if (spaceNames == nullptr) {
@@ -248,7 +248,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>> MetaServiceUtils::bac
       if (result != nebula::cpp2::ErrorCode::SUCCEEDED) {
         return result;
       }
-      LOG(INFO) << table.first << " table backup successed";
+      LOG(INFO) << table.first << " table backup succeeded";
     }
   }
 
@@ -262,7 +262,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>> MetaServiceUtils::bac
     if (result != nebula::cpp2::ErrorCode::SUCCEEDED) {
       return result;
     }
-    LOG(INFO) << table.first << " table backup successed";
+    LOG(INFO) << table.first << " table backup succeeded";
   }
 
   // The mapping of space name and space id needs to be handled separately.

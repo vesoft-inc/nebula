@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/planner/plan/PlanNode.h"
@@ -33,7 +32,7 @@ PlanNode::PlanNode(QueryContext* qctx, Kind kind) : qctx_(qctx), kind_(kind) {
 const char* PlanNode::toString(PlanNode::Kind kind) {
   switch (kind) {
     case Kind::kUnknown:
-      return "Unkonwn";
+      return "Unknown";
     case Kind::kStart:
       return "Start";
     case Kind::kGetNeighbors:
@@ -149,6 +148,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "ListUserRoles";
     case Kind::kListUsers:
       return "ListUsers";
+    case Kind::kDescribeUser:
+      return "DescribeUser";
     case Kind::kListRoles:
       return "ListRoles";
     case Kind::kShowCreateSpace:
@@ -187,16 +188,6 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "DropSnapshot";
     case Kind::kShowSnapshots:
       return "ShowSnapshots";
-    case Kind::kBalanceLeaders:
-      return "BalanceLeaders";
-    case Kind::kBalance:
-      return "Balance";
-    case Kind::kStopBalance:
-      return "StopBalance";
-    case Kind::kResetBalance:
-      return "ResetBalance";
-    case Kind::kShowBalance:
-      return "ShowBalance";
     case Kind::kSubmitJob:
       return "SubmitJob";
     case Kind::kLeftJoin:
@@ -242,28 +233,16 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
     case Kind::kSubgraph:
       return "Subgraph";
     // Group and Zone
-    case Kind::kAddGroup:
-      return "AddGroup";
-    case Kind::kDropGroup:
-      return "DropGroup";
     case Kind::kAddZone:
       return "AddZone";
     case Kind::kDropZone:
       return "DropZone";
-    case Kind::kDescribeGroup:
-      return "DescribeGroup";
-    case Kind::kAddZoneIntoGroup:
-      return "AddZoneIntoGroup";
-    case Kind::kDropZoneFromGroup:
-      return "DropZoneFromGroup";
     case Kind::kDescribeZone:
       return "DescribeZone";
     case Kind::kAddHostIntoZone:
       return "AddHostIntoZone";
     case Kind::kDropHostFromZone:
       return "DropHostFromZone";
-    case Kind::kShowGroups:
-      return "ShowGroups";
     case Kind::kShowZones:
       return "ShowZones";
     case Kind::kAddListener:
@@ -287,7 +266,6 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "Download";
     case Kind::kIngest:
       return "Ingest";
-    // no default so the compiler will warning when lack
     case Kind::kShowSessions:
       return "ShowSessions";
     case Kind::kUpdateSession:
@@ -296,6 +274,10 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "ShowQueries";
     case Kind::kKillQuery:
       return "KillQuery";
+    case Kind::kTraverse:
+      return "Traverse";
+    case Kind::kAppendVertices:
+      return "AppendVertices";
       // no default so the compiler will warning when lack
   }
   LOG(FATAL) << "Impossible kind plan node " << static_cast<int>(kind);

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/context/QueryContext.h"
@@ -12,7 +11,7 @@ namespace graph {
 QueryContext::QueryContext(RequestContextPtr rctx,
                            meta::SchemaManager* sm,
                            meta::IndexManager* im,
-                           storage::GraphStorageClient* storage,
+                           storage::StorageClient* storage,
                            meta::MetaClient* metaClient,
                            CharsetInfo* charsetInfo)
     : rctx_(std::move(rctx)),

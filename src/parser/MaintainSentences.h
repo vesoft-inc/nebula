@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #ifndef PARSER_MAINTAINSENTENCES_H_
 #define PARSER_MAINTAINSENTENCES_H_
@@ -18,7 +17,7 @@
 
 namespace nebula {
 
-std::ostream &operator<<(std::ostream &os, meta::cpp2::PropertyType type);
+std::ostream &operator<<(std::ostream &os, nebula::cpp2::PropertyType type);
 
 class ColumnProperty final {
  public:
@@ -82,7 +81,7 @@ class ColumnProperties final {
 class ColumnSpecification final {
  public:
   ColumnSpecification(std::string *name,
-                      meta::cpp2::PropertyType type,
+                      nebula::cpp2::PropertyType type,
                       ColumnProperties *properties = nullptr,
                       int16_t typeLen = 0,
                       meta::cpp2::GeoShape geoShape = meta::cpp2::GeoShape::ANY)
@@ -92,7 +91,7 @@ class ColumnSpecification final {
         typeLen_(typeLen),
         geoShape_(geoShape) {}
 
-  meta::cpp2::PropertyType type() const { return type_; }
+  nebula::cpp2::PropertyType type() const { return type_; }
 
   const std::string *name() const { return name_.get(); }
 
@@ -106,7 +105,7 @@ class ColumnSpecification final {
 
  private:
   std::unique_ptr<std::string> name_;
-  meta::cpp2::PropertyType type_;
+  nebula::cpp2::PropertyType type_;
   std::unique_ptr<ColumnProperties> properties_;
   int16_t typeLen_;
   meta::cpp2::GeoShape geoShape_;
@@ -785,25 +784,6 @@ class ZoneNameList final {
   std::vector<std::unique_ptr<std::string>> zones_;
 };
 
-class AddGroupSentence : public Sentence {
- public:
-  explicit AddGroupSentence(std::string *groupName, ZoneNameList *zoneNames) {
-    groupName_.reset(groupName);
-    zoneNames_.reset(zoneNames);
-    kind_ = Kind::kAddGroup;
-  }
-
-  std::string toString() const override;
-
-  const std::string *groupName() const { return groupName_.get(); }
-
-  const ZoneNameList *zoneNames() const { return zoneNames_.get(); }
-
- private:
-  std::unique_ptr<std::string> groupName_;
-  std::unique_ptr<ZoneNameList> zoneNames_;
-};
-
 class AddZoneSentence : public Sentence {
  public:
   explicit AddZoneSentence(std::string *zoneName, HostList *hosts) {
@@ -823,21 +803,6 @@ class AddZoneSentence : public Sentence {
   std::unique_ptr<HostList> hosts_;
 };
 
-class DropGroupSentence : public Sentence {
- public:
-  explicit DropGroupSentence(std::string *groupName) {
-    groupName_.reset(groupName);
-    kind_ = Kind::kDropGroup;
-  }
-
-  std::string toString() const override;
-
-  const std::string *groupName() const { return groupName_.get(); }
-
- private:
-  std::unique_ptr<std::string> groupName_;
-};
-
 class DropZoneSentence : public Sentence {
  public:
   explicit DropZoneSentence(std::string *zoneName) {
@@ -851,21 +816,6 @@ class DropZoneSentence : public Sentence {
 
  private:
   std::unique_ptr<std::string> zoneName_;
-};
-
-class DescribeGroupSentence : public Sentence {
- public:
-  explicit DescribeGroupSentence(std::string *groupName) {
-    groupName_.reset(groupName);
-    kind_ = Kind::kDescribeGroup;
-  }
-
-  std::string toString() const override;
-
-  const std::string *groupName() const { return groupName_.get(); }
-
- private:
-  std::unique_ptr<std::string> groupName_;
 };
 
 class DescribeZoneSentence : public Sentence {
@@ -883,37 +833,11 @@ class DescribeZoneSentence : public Sentence {
   std::unique_ptr<std::string> zoneName_;
 };
 
-class ListGroupsSentence : public Sentence {
- public:
-  ListGroupsSentence() { kind_ = Kind::kListGroups; }
-
-  std::string toString() const override;
-};
-
 class ListZonesSentence : public Sentence {
  public:
   ListZonesSentence() { kind_ = Kind::kListZones; }
 
   std::string toString() const override;
-};
-
-class AddZoneIntoGroupSentence : public Sentence {
- public:
-  AddZoneIntoGroupSentence(std::string *zoneName, std::string *groupName) {
-    zoneName_.reset(zoneName);
-    groupName_.reset(groupName);
-    kind_ = Kind::kAddZoneIntoGroup;
-  }
-
-  const std::string *zoneName() const { return zoneName_.get(); }
-
-  const std::string *groupName() const { return groupName_.get(); }
-
-  std::string toString() const override;
-
- private:
-  std::unique_ptr<std::string> zoneName_;
-  std::unique_ptr<std::string> groupName_;
 };
 
 class AddHostIntoZoneSentence : public Sentence {
@@ -933,25 +857,6 @@ class AddHostIntoZoneSentence : public Sentence {
  private:
   std::unique_ptr<std::string> zoneName_;
   std::unique_ptr<HostAddr> address_;
-};
-
-class DropZoneFromGroupSentence : public Sentence {
- public:
-  DropZoneFromGroupSentence(std::string *zoneName, std::string *groupName) {
-    zoneName_.reset(zoneName);
-    groupName_.reset(groupName);
-    kind_ = Kind::kDropZoneFromGroup;
-  }
-
-  const std::string *zoneName() const { return zoneName_.get(); }
-
-  const std::string *groupName() const { return groupName_.get(); }
-
-  std::string toString() const override;
-
- private:
-  std::unique_ptr<std::string> zoneName_;
-  std::unique_ptr<std::string> groupName_;
 };
 
 class DropHostFromZoneSentence : public Sentence {

@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <folly/String.h>
@@ -92,7 +91,7 @@ TEST(LogAppend, MultiThreadAppend) {
           if (fut.isReady() && fut.value() == AppendLogResult::E_BUFFER_OVERFLOW) {
             LOG(FATAL) << "Should not reach here";
           } else if (j == numLogs) {
-            // Only wait on the last log messaage
+            // Only wait on the last log message
             ASSERT_EQ(AppendLogResult::SUCCEEDED, std::move(fut).get());
           }
           break;

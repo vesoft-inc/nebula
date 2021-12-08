@@ -1,7 +1,6 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Collapse Project Rule
 
   Background:
@@ -29,20 +28,16 @@ Feature: Collapse Project Rule
       | 4    |
       | 3    |
     And the execution plan should be:
-      | id | name        | dependencies | operator info |
-      | 16 | Project     | 14           |               |
-      | 14 | Filter      | 7            |               |
-      | 7  | Project     | 6            |               |
-      | 6  | Project     | 5            |               |
-      | 5  | Filter      | 18           |               |
-      | 18 | GetVertices | 12           |               |
-      | 12 | IndexScan   | 0            |               |
-      | 0  | Start       |              |               |
+      | id | name           | dependencies | operator info |
+      | 12 | Project        | 10           |               |
+      | 10 | Filter         | 2            |               |
+      | 2  | AppendVertices | 7            |               |
+      | 7  | IndexScan      | 0            |               |
+      | 0  | Start          |              |               |
     When profiling query:
       """
-      LOOKUP ON player
-      WHERE player.name=='Tim Duncan'
-      | YIELD $-.VertexID AS vid
+      LOOKUP ON player WHERE player.name=='Tim Duncan' YIELD id(vertex) as id
+      | YIELD $-.id AS vid
       """
     Then the result should be, in any order:
       | vid          |

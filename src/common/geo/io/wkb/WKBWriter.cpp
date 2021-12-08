@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/geo/io/wkb/WKBWriter.h"
@@ -34,7 +33,7 @@ std::string WKBWriter::write(const Geography& geog, ByteOrder byteOrder) {
     }
     default:
       LOG(FATAL)
-          << "Geomtry shapes other than Point/LineString/Polygon are not currently supported";
+          << "Geometry shapes other than Point/LineString/Polygon are not currently supported";
       return "";
   }
 }

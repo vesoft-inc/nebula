@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <folly/IPAddressV4.h>
@@ -163,19 +162,19 @@ TEST(MetaKeyUtilsTest, TagTest) {
   for (auto i = 1; i <= 3; i++) {
     meta::cpp2::ColumnDef column;
     column.set_name(folly::stringPrintf("col_%d", i));
-    column.type.set_type(meta::cpp2::PropertyType::INT64);
+    column.type.set_type(nebula::cpp2::PropertyType::INT64);
     cols.emplace_back(std::move(column));
   }
   for (auto i = 4; i <= 6; i++) {
     meta::cpp2::ColumnDef column;
     column.set_name(folly::stringPrintf("col_%d", i));
-    column.type.set_type(meta::cpp2::PropertyType::FLOAT);
+    column.type.set_type(nebula::cpp2::PropertyType::FLOAT);
     cols.emplace_back(std::move(column));
   }
   for (auto i = 7; i < 10; i++) {
     meta::cpp2::ColumnDef column;
     column.set_name(folly::stringPrintf("col_%d", i));
-    column.type.set_type(meta::cpp2::PropertyType::STRING);
+    column.type.set_type(nebula::cpp2::PropertyType::STRING);
     cols.emplace_back(std::move(column));
   }
   schema.set_columns(std::move(cols));

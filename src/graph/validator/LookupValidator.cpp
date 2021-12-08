@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/validator/LookupValidator.h"
@@ -105,7 +104,7 @@ Status LookupValidator::validateYieldEdge() {
   auto yieldExpr = lookupCtx_->yieldExpr;
   for (auto col : yield->columns()) {
     if (ExpressionUtils::hasAny(col->expr(),
-                                {Expression::Kind::kPathBuild, Expression::Kind::kVertex})) {
+                                {Expression::Kind::kAggregate, Expression::Kind::kVertex})) {
       return Status::SemanticError("illegal yield clauses `%s'", col->toString().c_str());
     }
     if (ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kEdge})) {
@@ -135,7 +134,7 @@ Status LookupValidator::validateYieldTag() {
   auto yieldExpr = lookupCtx_->yieldExpr;
   for (auto col : yield->columns()) {
     if (ExpressionUtils::hasAny(col->expr(),
-                                {Expression::Kind::kPathBuild, Expression::Kind::kEdge})) {
+                                {Expression::Kind::kAggregate, Expression::Kind::kEdge})) {
       return Status::SemanticError("illegal yield clauses `%s'", col->toString().c_str());
     }
     if (ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kVertex})) {
@@ -161,36 +160,21 @@ Status LookupValidator::validateYieldTag() {
 }
 
 Status LookupValidator::validateYield() {
-  auto pool = qctx_->objPool();
-  auto* newCols = pool->add(new YieldColumns());
-  lookupCtx_->yieldExpr = newCols;
-  if (lookupCtx_->isEdge) {
-    idxReturnCols_.emplace_back(kSrc);
-    idxReturnCols_.emplace_back(kDst);
-    idxReturnCols_.emplace_back(kRank);
-    idxReturnCols_.emplace_back(kType);
-    outputs_.emplace_back(kSrcVID, vidType_);
-    outputs_.emplace_back(kDstVID, vidType_);
-    outputs_.emplace_back(kRanking, Value::Type::INT);
-    newCols->addColumn(new YieldColumn(ColumnExpression::make(pool, 0), kSrcVID));
-    newCols->addColumn(new YieldColumn(ColumnExpression::make(pool, 1), kDstVID));
-    newCols->addColumn(new YieldColumn(ColumnExpression::make(pool, 2), kRanking));
-  } else {
-    idxReturnCols_.emplace_back(kVid);
-    outputs_.emplace_back(kVertexID, vidType_);
-    newCols->addColumn(new YieldColumn(ColumnExpression::make(pool, 0), kVertexID));
-  }
-
   auto yieldClause = sentence()->yieldClause();
   if (yieldClause == nullptr) {
-    extractExprProps();
-    return Status::OK();
+    return Status::SemanticError("Missing yield clause.");
   }
   lookupCtx_->dedup = yieldClause->isDistinct();
+  lookupCtx_->yieldExpr = qctx_->objPool()->add(new YieldColumns());
 
   if (lookupCtx_->isEdge) {
+    idxReturnCols_.emplace_back(nebula::kSrc);
+    idxReturnCols_.emplace_back(nebula::kDst);
+    idxReturnCols_.emplace_back(nebula::kRank);
+    idxReturnCols_.emplace_back(nebula::kType);
     NG_RETURN_IF_ERROR(validateYieldEdge());
   } else {
+    idxReturnCols_.emplace_back(nebula::kVid);
     NG_RETURN_IF_ERROR(validateYieldTag());
   }
   if (exprProps_.hasInputVarProperty()) {
@@ -442,7 +426,7 @@ StatusOr<Expression*> LookupValidator::checkConstExpr(Expression* expr,
   auto schema = lookupCtx_->isEdge ? schemaMgr->getEdgeSchema(spaceId(), schemaId())
                                    : schemaMgr->getTagSchema(spaceId(), schemaId());
   auto type = schema->getFieldType(prop);
-  if (type == meta::cpp2::PropertyType::UNKNOWN) {
+  if (type == nebula::cpp2::PropertyType::UNKNOWN) {
     return Status::SemanticError("Invalid column: %s", prop.c_str());
   }
   QueryExpressionContext dummy(nullptr);
@@ -470,7 +454,7 @@ StatusOr<Expression*> LookupValidator::checkConstExpr(Expression* expr,
 
   // Check prop type
   if (v.type() != SchemaUtil::propTypeToValueType(type)) {
-    // allow diffrent types in the IN expression, such as "abc" IN ["abc"]
+    // allow different types in the IN expression, such as "abc" IN ["abc"]
     if (!expr->isContainerExpr()) {
       return Status::SemanticError("Column type error : %s", prop.c_str());
     }

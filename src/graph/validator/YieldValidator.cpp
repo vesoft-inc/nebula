@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/validator/YieldValidator.h"
@@ -147,17 +146,19 @@ Status YieldValidator::validateYieldAndBuildOutputs(const YieldClause *clause) {
   return Status::OK();
 }
 
-Status YieldValidator::validateWhere(const WhereClause *clause) {
-  Expression *filter = nullptr;
-  if (clause != nullptr) {
-    filter = clause->filter();
+Status YieldValidator::validateWhere(const WhereClause *where) {
+  if (where == nullptr) {
+    return Status::OK();
   }
-  if (filter != nullptr) {
-    NG_RETURN_IF_ERROR(deduceProps(filter, exprProps_));
-    auto foldRes = ExpressionUtils::foldConstantExpr(filter);
-    NG_RETURN_IF_ERROR(foldRes);
-    filterCondition_ = foldRes.value();
+  auto filter = where->filter();
+  if (graph::ExpressionUtils::findAny(filter, {Expression::Kind::kAggregate})) {
+    return Status::SemanticError("`%s', not support aggregate function in where sentence.",
+                                 filter->toString().c_str());
   }
+  NG_RETURN_IF_ERROR(deduceProps(filter, exprProps_));
+  auto foldRes = ExpressionUtils::foldConstantExpr(filter);
+  NG_RETURN_IF_ERROR(foldRes);
+  filterCondition_ = foldRes.value();
   return Status::OK();
 }
 

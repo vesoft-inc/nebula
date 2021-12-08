@@ -1,19 +1,16 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/MetaServiceHandler.h"
 
 #include "common/utils/MetaKeyUtils.h"
-#include "meta/processors/admin/BalanceProcessor.h"
 #include "meta/processors/admin/CreateBackupProcessor.h"
 #include "meta/processors/admin/CreateSnapshotProcessor.h"
 #include "meta/processors/admin/DropSnapshotProcessor.h"
 #include "meta/processors/admin/GetMetaDirInfoProcessor.h"
 #include "meta/processors/admin/HBProcessor.h"
-#include "meta/processors/admin/LeaderBalanceProcessor.h"
 #include "meta/processors/admin/ListClusterInfoProcessor.h"
 #include "meta/processors/admin/ListSnapshotsProcessor.h"
 #include "meta/processors/admin/RestoreProcessor.h"
@@ -64,15 +61,10 @@
 #include "meta/processors/schema/ListTagsProcessor.h"
 #include "meta/processors/session/SessionManagerProcessor.h"
 #include "meta/processors/user/AuthenticationProcessor.h"
-#include "meta/processors/zone/AddGroupProcessor.h"
 #include "meta/processors/zone/AddZoneProcessor.h"
-#include "meta/processors/zone/DropGroupProcessor.h"
 #include "meta/processors/zone/DropZoneProcessor.h"
-#include "meta/processors/zone/GetGroupProcessor.h"
 #include "meta/processors/zone/GetZoneProcessor.h"
-#include "meta/processors/zone/ListGroupsProcessor.h"
 #include "meta/processors/zone/ListZonesProcessor.h"
-#include "meta/processors/zone/UpdateGroupProcessor.h"
 #include "meta/processors/zone/UpdateZoneProcessor.h"
 
 #define RETURN_FUTURE(processor)   \
@@ -379,17 +371,6 @@ folly::Future<cpp2::ListRolesResp> MetaServiceHandler::future_getUserRoles(
   RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::BalanceResp> MetaServiceHandler::future_balance(const cpp2::BalanceReq& req) {
-  auto* processor = BalanceProcessor::instance(kvstore_);
-  RETURN_FUTURE(processor);
-}
-
-folly::Future<cpp2::ExecResp> MetaServiceHandler::future_leaderBalance(
-    const cpp2::LeaderBalanceReq& req) {
-  auto* processor = LeaderBalanceProcessor::instance(kvstore_);
-  RETURN_FUTURE(processor);
-}
-
 folly::Future<cpp2::ExecResp> MetaServiceHandler::future_regConfig(const cpp2::RegConfigReq& req) {
   auto* processor = RegConfigProcessor::instance(kvstore_);
   RETURN_FUTURE(processor);
@@ -466,40 +447,6 @@ folly::Future<cpp2::ExecResp> MetaServiceHandler::future_addHostIntoZone(
 folly::Future<cpp2::ExecResp> MetaServiceHandler::future_dropHostFromZone(
     const cpp2::DropHostFromZoneReq& req) {
   auto* processor = DropHostFromZoneProcessor::instance(kvstore_);
-  RETURN_FUTURE(processor);
-}
-
-folly::Future<cpp2::ExecResp> MetaServiceHandler::future_addGroup(const cpp2::AddGroupReq& req) {
-  auto* processor = AddGroupProcessor::instance(kvstore_);
-  RETURN_FUTURE(processor);
-}
-
-folly::Future<cpp2::ExecResp> MetaServiceHandler::future_dropGroup(const cpp2::DropGroupReq& req) {
-  auto* processor = DropGroupProcessor::instance(kvstore_);
-  RETURN_FUTURE(processor);
-}
-
-folly::Future<cpp2::GetGroupResp> MetaServiceHandler::future_getGroup(
-    const cpp2::GetGroupReq& req) {
-  auto* processor = GetGroupProcessor::instance(kvstore_);
-  RETURN_FUTURE(processor);
-}
-
-folly::Future<cpp2::ListGroupsResp> MetaServiceHandler::future_listGroups(
-    const cpp2::ListGroupsReq& req) {
-  auto* processor = ListGroupsProcessor::instance(kvstore_);
-  RETURN_FUTURE(processor);
-}
-
-folly::Future<cpp2::ExecResp> MetaServiceHandler::future_addZoneIntoGroup(
-    const cpp2::AddZoneIntoGroupReq& req) {
-  auto* processor = AddZoneIntoGroupProcessor::instance(kvstore_);
-  RETURN_FUTURE(processor);
-}
-
-folly::Future<cpp2::ExecResp> MetaServiceHandler::future_dropZoneFromGroup(
-    const cpp2::DropZoneFromGroupReq& req) {
-  auto* processor = DropZoneFromGroupProcessor::instance(kvstore_);
   RETURN_FUTURE(processor);
 }
 

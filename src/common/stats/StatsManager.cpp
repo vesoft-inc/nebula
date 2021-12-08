@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/stats/StatsManager.h"
@@ -164,12 +163,12 @@ void StatsManager::addValue(const CounterId& id, VT value) {
 
 // static
 bool StatsManager::strToPct(folly::StringPiece part, double& pct) {
-  static const int32_t dividors[] = {1, 1, 10, 100, 1000, 10000};
+  static const int32_t divisors[] = {1, 1, 10, 100, 1000, 10000};
   try {
     size_t len = part.size() - 1;
     if (len > 0 && len <= 6) {
       auto digits = folly::StringPiece(&(part[1]), len);
-      pct = folly::to<double>(digits) / dividors[len - 1];
+      pct = folly::to<double>(digits) / divisors[len - 1];
       return true;
     } else {
       LOG(ERROR) << "Precision " << part.toString() << " is too long";

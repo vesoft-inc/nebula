@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -107,7 +106,7 @@ TEST_F(CartesianProductTest, twoVars) {
   checkResult(expected, cp->outputVar());
 }
 
-TEST_F(CartesianProductTest, thressVars) {
+TEST_F(CartesianProductTest, threeVars) {
   auto* cp = CartesianProduct::make(qctx_.get(), nullptr);
   cp->addVar("ds1");
   cp->addVar("ds2");

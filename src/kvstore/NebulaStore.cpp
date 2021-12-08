@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "kvstore/NebulaStore.h"
@@ -23,7 +22,7 @@ DEFINE_int32(custom_filter_interval_secs,
              "interval to trigger custom compaction, < 0 means always do "
              "default minor compaction");
 DEFINE_int32(num_workers, 4, "Number of worker threads");
-DEFINE_int32(clean_wal_interval_secs, 600, "inerval to trigger clean expired wal");
+DEFINE_int32(clean_wal_interval_secs, 600, "interval to trigger clean expired wal");
 DEFINE_bool(auto_remove_invalid_space, false, "whether remove data of invalid space when restart");
 
 DECLARE_bool(rocksdb_disable_wal);
@@ -36,7 +35,6 @@ namespace kvstore {
 NebulaStore::~NebulaStore() {
   LOG(INFO) << "Cut off the relationship with meta client";
   options_.partMan_.reset();
-  LOG(INFO) << "Stop the raft service...";
   raftService_->stop();
   LOG(INFO) << "Waiting for the raft service stop...";
   raftService_->waitUntilStop();
@@ -217,6 +215,9 @@ void NebulaStore::loadRemoteListenerFromPartManager() {
 }
 
 void NebulaStore::stop() {
+  LOG(INFO) << "Stop the raft service...";
+  raftService_->stop();
+
   for (const auto& space : spaces_) {
     for (const auto& engine : space.second->engines_) {
       engine->stop();
@@ -538,6 +539,10 @@ void NebulaStore::checkRemoteListeners(GraphSpaceID spaceId,
   }
 }
 
+void NebulaStore::fetchDiskParts(SpaceDiskPartsMap& diskParts) {
+  diskMan_->getDiskParts(diskParts);
+}
+
 void NebulaStore::updateSpaceOption(GraphSpaceID spaceId,
                                     const std::unordered_map<std::string, std::string>& options,
                                     bool isDbOption) {
@@ -559,7 +564,7 @@ void NebulaStore::removeSpaceDir(const std::string& dir) {
     LOG(INFO) << "Try to remove space directory: " << dir;
     boost::filesystem::remove_all(dir);
   } catch (const boost::filesystem::filesystem_error& e) {
-    LOG(ERROR) << "Exception caught while remove directory, please delelte it by manual: "
+    LOG(ERROR) << "Exception caught while remove directory, please delete it by manual: "
                << e.what();
   }
 }

@@ -1,7 +1,6 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Ends With Expression
 
   Background:
@@ -61,9 +60,7 @@ Feature: Ends With Expression
       """
       YIELD 123 ENDS WITH 3
       """
-    Then the result should be, in any order:
-      | (123 ENDS WITH 3) |
-      | BAD_TYPE          |
+    Then a SemanticError should be raised at runtime: Type error `(123 ENDS WITH 3)'
 
   Scenario: yield not ends with
     When executing query:
@@ -119,9 +116,7 @@ Feature: Ends With Expression
       """
       YIELD 123 NOT ENDS WITH 3
       """
-    Then the result should be, in any order:
-      | (123 NOT ENDS WITH 3) |
-      | BAD_TYPE              |
+    Then a SemanticError should be raised at runtime: Type error `(123 NOT ENDS WITH 3)'
 
   Scenario: ends with go
     When executing query:

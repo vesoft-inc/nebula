@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #include <gtest/gtest.h>
 
@@ -31,12 +30,8 @@
 #include "meta/processors/schema/ListEdgesProcessor.h"
 #include "meta/processors/schema/ListTagsProcessor.h"
 #include "meta/processors/session/SessionManagerProcessor.h"
-#include "meta/processors/zone/AddGroupProcessor.h"
 #include "meta/processors/zone/AddZoneProcessor.h"
-#include "meta/processors/zone/DropGroupProcessor.h"
-#include "meta/processors/zone/ListGroupsProcessor.h"
 #include "meta/processors/zone/ListZonesProcessor.h"
-#include "meta/processors/zone/UpdateGroupProcessor.h"
 #include "meta/processors/zone/UpdateZoneProcessor.h"
 #include "meta/test/TestUtils.h"
 
@@ -47,7 +42,7 @@ DECLARE_uint32(expired_time_factor);
 namespace nebula {
 namespace meta {
 
-using cpp2::PropertyType;
+using nebula::cpp2::PropertyType;
 
 TEST(ProcessorTest, ListHostsTest) {
   fs::TempDir rootPath("/tmp/ListHostsTest.XXXXXX");
@@ -343,7 +338,7 @@ TEST(ProcessorTest, SpaceTest) {
     ASSERT_EQ(8, resp.get_item().get_properties().get_partition_num());
     ASSERT_EQ(3, resp.get_item().get_properties().get_replica_factor());
     ASSERT_EQ(8, *resp.get_item().get_properties().get_vid_type().get_type_length());
-    ASSERT_EQ(cpp2::PropertyType::FIXED_STRING,
+    ASSERT_EQ(PropertyType::FIXED_STRING,
               resp.get_item().get_properties().get_vid_type().get_type());
     ASSERT_EQ("utf8", resp.get_item().get_properties().get_charset_name());
     ASSERT_EQ("utf8_bin", resp.get_item().get_properties().get_collate_name());
@@ -467,298 +462,6 @@ TEST(ProcessorTest, SpaceTest) {
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, dresp.get_code());
   }
 }
-
-TEST(ProcessorTest, SpaceWithGroupTest) {
-  fs::TempDir rootPath("/tmp/SpaceWithGroupTest.XXXXXX");
-  std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
-  std::vector<HostAddr> addresses;
-  for (int32_t i = 0; i <= 10; i++) {
-    addresses.emplace_back(std::to_string(i), i);
-  }
-  TestUtils::createSomeHosts(kv.get(), std::move(addresses));
-
-  // Add Zones
-  {{std::vector<HostAddr> nodes;
-  for (int32_t i = 0; i < 2; i++) {
-    nodes.emplace_back(std::to_string(i), i);
-  }
-  cpp2::AddZoneReq req;
-  req.set_zone_name("zone_0");
-  req.set_nodes(std::move(nodes));
-  auto* processor = AddZoneProcessor::instance(kv.get());
-  auto f = processor->getFuture();
-  processor->process(req);
-  auto resp = std::move(f).get();
-  ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-}
-{
-  std::vector<HostAddr> nodes;
-  for (int32_t i = 2; i < 4; i++) {
-    nodes.emplace_back(std::to_string(i), i);
-  }
-  cpp2::AddZoneReq req;
-  req.set_zone_name("zone_1");
-  req.set_nodes(std::move(nodes));
-  auto* processor = AddZoneProcessor::instance(kv.get());
-  auto f = processor->getFuture();
-  processor->process(req);
-  auto resp = std::move(f).get();
-  ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-}
-{
-  std::vector<HostAddr> nodes;
-  for (int32_t i = 4; i < 6; i++) {
-    nodes.emplace_back(std::to_string(i), i);
-  }
-  cpp2::AddZoneReq req;
-  req.set_zone_name("zone_2");
-  req.set_nodes(std::move(nodes));
-  auto* processor = AddZoneProcessor::instance(kv.get());
-  auto f = processor->getFuture();
-  processor->process(req);
-  auto resp = std::move(f).get();
-  ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-}
-{
-  std::vector<HostAddr> nodes;
-  for (int32_t i = 6; i < 8; i++) {
-    nodes.emplace_back(std::to_string(i), i);
-  }
-  cpp2::AddZoneReq req;
-  req.set_zone_name("zone_3");
-  req.set_nodes(std::move(nodes));
-  auto* processor = AddZoneProcessor::instance(kv.get());
-  auto f = processor->getFuture();
-  processor->process(req);
-  auto resp = std::move(f).get();
-  ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-}
-{
-  std::vector<HostAddr> nodes;
-  for (int32_t i = 8; i < 10; i++) {
-    nodes.emplace_back(std::to_string(i), i);
-  }
-  cpp2::AddZoneReq req;
-  req.set_zone_name("zone_4");
-  req.set_nodes(std::move(nodes));
-  auto* processor = AddZoneProcessor::instance(kv.get());
-  auto f = processor->getFuture();
-  processor->process(req);
-  auto resp = std::move(f).get();
-  ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-}
-}  // namespace meta
-// List Zones
-{
-  cpp2::ListZonesReq req;
-  auto* processor = ListZonesProcessor::instance(kv.get());
-  auto f = processor->getFuture();
-  processor->process(req);
-  auto resp = std::move(f).get();
-  ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-  ASSERT_EQ(5, resp.get_zones().size());
-  ASSERT_EQ("zone_0", resp.get_zones()[0].get_zone_name());
-  ASSERT_EQ("zone_1", resp.get_zones()[1].get_zone_name());
-  ASSERT_EQ("zone_2", resp.get_zones()[2].get_zone_name());
-  ASSERT_EQ("zone_3", resp.get_zones()[3].get_zone_name());
-  ASSERT_EQ("zone_4", resp.get_zones()[4].get_zone_name());
-}
-
-// Add Group
-{
-  cpp2::AddGroupReq req;
-  req.set_group_name("group_0");
-  std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2"};
-  req.set_zone_names(std::move(zones));
-  auto* processor = AddGroupProcessor::instance(kv.get());
-  auto f = processor->getFuture();
-  processor->process(req);
-  auto resp = std::move(f).get();
-  ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-}
-{
-  cpp2::AddGroupReq req;
-  req.set_group_name("group_1");
-  std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2", "zone_3", "zone_4"};
-  req.set_zone_names(std::move(zones));
-  auto* processor = AddGroupProcessor::instance(kv.get());
-  auto f = processor->getFuture();
-  processor->process(req);
-  auto resp = std::move(f).get();
-  ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-}
-// List Groups
-{
-  cpp2::ListGroupsReq req;
-  auto* processor = ListGroupsProcessor::instance(kv.get());
-  auto f = processor->getFuture();
-  processor->process(req);
-  auto resp = std::move(f).get();
-  ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-  ASSERT_EQ(2, resp.get_groups().size());
-  ASSERT_EQ("group_0", resp.get_groups()[0].get_group_name());
-  ASSERT_EQ("group_1", resp.get_groups()[1].get_group_name());
-}
-
-// Create Space without Group
-{
-  cpp2::SpaceDesc properties;
-  properties.set_space_name("default_space");
-  properties.set_partition_num(9);
-  properties.set_replica_factor(3);
-  cpp2::CreateSpaceReq req;
-  req.set_properties(std::move(properties));
-  auto* processor = CreateSpaceProcessor::instance(kv.get());
-  auto f = processor->getFuture();
-  processor->process(req);
-  auto resp = std::move(f).get();
-  ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-}
-// Create Space on group_0, replica factor is equal with zone size
-{
-  cpp2::SpaceDesc properties;
-  properties.set_space_name("space_on_group_0_3");
-  properties.set_partition_num(9);
-  properties.set_replica_factor(3);
-  properties.set_group_name("group_0");
-  cpp2::CreateSpaceReq req;
-  req.set_properties(std::move(properties));
-  auto* processor = CreateSpaceProcessor::instance(kv.get());
-  auto f = processor->getFuture();
-  processor->process(req);
-  auto resp = std::move(f).get();
-  ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-}
-// Drop Group should failed
-{
-  cpp2::DropGroupReq req;
-  req.set_group_name("group_0");
-  auto* processor = DropGroupProcessor::instance(kv.get());
-  auto f = processor->getFuture();
-  processor->process(req);
-  auto resp = std::move(f).get();
-  ASSERT_EQ(nebula::cpp2::ErrorCode::E_NOT_DROP, resp.get_code());
-}
-// Create Space on group_0, replica factor is less than zone size
-{
-  cpp2::SpaceDesc properties;
-  properties.set_space_name("space_on_group_0_1");
-  properties.set_partition_num(9);
-  properties.set_replica_factor(1);
-  properties.set_group_name("group_0");
-  cpp2::CreateSpaceReq req;
-  req.set_properties(std::move(properties));
-  auto* processor = CreateSpaceProcessor::instance(kv.get());
-  auto f = processor->getFuture();
-  processor->process(req);
-  auto resp = std::move(f).get();
-  ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-}
-// Create Space on group_0, replica factor is larger than zone size
-{
-  cpp2::SpaceDesc properties;
-  properties.set_space_name("space_on_group_0_4");
-  properties.set_partition_num(9);
-  properties.set_replica_factor(4);
-  properties.set_group_name("group_0");
-  cpp2::CreateSpaceReq req;
-  req.set_properties(std::move(properties));
-  auto* processor = CreateSpaceProcessor::instance(kv.get());
-  auto f = processor->getFuture();
-  processor->process(req);
-  auto resp = std::move(f).get();
-  ASSERT_EQ(nebula::cpp2::ErrorCode::E_INVALID_PARM, resp.get_code());
-}
-{
-  cpp2::AddZoneIntoGroupReq req;
-  req.set_group_name("group_0");
-  req.set_zone_name("zone_3");
-  auto* processor = AddZoneIntoGroupProcessor::instance(kv.get());
-  auto f = processor->getFuture();
-  processor->process(req);
-  auto resp = std::move(f).get();
-  ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-}
-{
-  cpp2::SpaceDesc properties;
-  properties.set_space_name("space_on_group_0_4");
-  properties.set_partition_num(9);
-  properties.set_replica_factor(4);
-  properties.set_group_name("group_0");
-  cpp2::CreateSpaceReq req;
-  req.set_properties(std::move(properties));
-  auto* processor = CreateSpaceProcessor::instance(kv.get());
-  auto f = processor->getFuture();
-  processor->process(req);
-  auto resp = std::move(f).get();
-  ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-}
-// Create Space on a group which is not exist
-{
-  cpp2::SpaceDesc properties;
-  properties.set_space_name("space_on_group_not_exist");
-  properties.set_partition_num(9);
-  properties.set_replica_factor(4);
-  properties.set_group_name("group_not_exist");
-  cpp2::CreateSpaceReq req;
-  req.set_properties(std::move(properties));
-  auto* processor = CreateSpaceProcessor::instance(kv.get());
-  auto f = processor->getFuture();
-  processor->process(req);
-  auto resp = std::move(f).get();
-  ASSERT_EQ(nebula::cpp2::ErrorCode::E_GROUP_NOT_FOUND, resp.get_code());
-}
-// Create space on empty zone
-{
-  {
-    std::vector<HostAddr> nodes = {HostAddr("10", 10)};
-    cpp2::AddZoneReq req;
-    req.set_zone_name("zone_5");
-    req.set_nodes(std::move(nodes));
-    auto* processor = AddZoneProcessor::instance(kv.get());
-    auto f = processor->getFuture();
-    processor->process(req);
-    auto resp = std::move(f).get();
-    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-  }
-  {
-    cpp2::AddGroupReq req;
-    req.set_group_name("group_2");
-    std::vector<std::string> zones = {"zone_5"};
-    req.set_zone_names(std::move(zones));
-    auto* processor = AddGroupProcessor::instance(kv.get());
-    auto f = processor->getFuture();
-    processor->process(req);
-    auto resp = std::move(f).get();
-    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-  }
-  {
-    cpp2::DropHostFromZoneReq req;
-    req.set_zone_name("zone_5");
-    HostAddr node{"10", 10};
-    req.set_node(std::move(node));
-    auto* processor = DropHostFromZoneProcessor::instance(kv.get());
-    auto f = processor->getFuture();
-    processor->process(req);
-    auto resp = std::move(f).get();
-    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-  }
-  {
-    cpp2::SpaceDesc properties;
-    properties.set_space_name("space_on_empty_hosts");
-    properties.set_partition_num(1);
-    properties.set_replica_factor(1);
-    properties.set_group_name("group_2");
-    cpp2::CreateSpaceReq req;
-    req.set_properties(std::move(properties));
-    auto* processor = CreateSpaceProcessor::instance(kv.get());
-    auto f = processor->getFuture();
-    processor->process(req);
-    auto resp = std::move(f).get();
-    ASSERT_EQ(nebula::cpp2::ErrorCode::E_INVALID_PARM, resp.get_code());
-  }
-}
-}  // namespace nebula
 
 TEST(ProcessorTest, CreateTagTest) {
   fs::TempDir rootPath("/tmp/CreateTagTest.XXXXXX");
@@ -898,7 +601,7 @@ TEST(ProcessorTest, CreateTagTest) {
 
     cpp2::CreateTagReq req;
     req.set_space_id(1);
-    req.set_tag_name("tag_type_mismatche");
+    req.set_tag_name("tag_type_mismatch");
     req.set_schema(std::move(schemaWithDefault));
     auto* processor = CreateTagProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -922,7 +625,7 @@ TEST(ProcessorTest, CreateTagTest) {
 
     cpp2::CreateTagReq req;
     req.set_space_id(1);
-    req.set_tag_name("tag_value_mismatche");
+    req.set_tag_name("tag_value_mismatch");
     req.set_schema(std::move(schemaWithDefault));
     auto* processor = CreateTagProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -1089,7 +792,7 @@ TEST(ProcessorTest, CreateEdgeTest) {
 
     cpp2::CreateEdgeReq req;
     req.set_space_id(1);
-    req.set_edge_name("edge_with_defaule");
+    req.set_edge_name("edge_with_default");
     req.set_schema(std::move(schemaWithDefault));
     auto* processor = CreateEdgeProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -1106,7 +809,7 @@ TEST(ProcessorTest, CreateEdgeTest) {
 
     cpp2::CreateEdgeReq req;
     req.set_space_id(1);
-    req.set_edge_name("edge_type_mismatche");
+    req.set_edge_name("edge_type_mismatch");
     req.set_schema(std::move(schemaWithDefault));
     auto* processor = CreateEdgeProcessor::instance(kv.get());
     auto f = processor->getFuture();

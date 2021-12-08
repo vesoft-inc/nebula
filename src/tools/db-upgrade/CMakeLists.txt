@@ -24,6 +24,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:codec_obj>
         $<TARGET_OBJECTS:keyutils_obj>
         $<TARGET_OBJECTS:meta_keyutils_obj>
+        $<TARGET_OBJECTS:log_str_list_iterator_obj>
         $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:storage_thrift_obj>

@@ -1,13 +1,10 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/optimizer/rule/GeoPredicateIndexScanBaseRule.h"
 
-#include "common/expression/Expression.h"
-#include "common/expression/LogicalExpression.h"
 #include "common/geo/GeoIndex.h"
 #include "graph/optimizer/OptContext.h"
 #include "graph/optimizer/OptGroup.h"
@@ -17,7 +14,6 @@
 #include "graph/planner/plan/Query.h"
 #include "graph/planner/plan/Scan.h"
 #include "graph/util/ExpressionUtils.h"
-#include "interface/gen-cpp2/storage_types.h"
 
 using nebula::graph::Filter;
 using nebula::graph::IndexScan;
@@ -123,7 +119,7 @@ StatusOr<TransformResult> GeoPredicateIndexScanBaseRule::transform(
   auto scanNode = IndexScan::make(ctx->qctx(), nullptr);
   OptimizerUtils::copyIndexScanData(scan, scanNode);
   scanNode->setIndexQueryContext(std::move(idxCtxs));
-  // TODO(jie): geo predicate's caculation is a little heavy,
+  // TODO(jie): geo predicate's calculation is a little heavy,
   // which is not suitable to push down to the storage
   scanNode->setOutputVar(filter->outputVar());
   scanNode->setColNames(filter->colNames());

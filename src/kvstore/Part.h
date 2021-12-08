@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef KVSTORE_PART_H_
@@ -116,18 +115,18 @@ class Part : public raftex::RaftPart {
     TermID term;
   };
 
-  using LeaderChagneCB = std::function<void(const CallbackOptions& opt)>;
-  void registerOnLeaderReady(LeaderChagneCB cb);
+  using LeaderChangeCB = std::function<void(const CallbackOptions& opt)>;
+  void registerOnLeaderReady(LeaderChangeCB cb);
 
-  void registerOnLeaderLost(LeaderChagneCB cb);
+  void registerOnLeaderLost(LeaderChangeCB cb);
 
  protected:
   GraphSpaceID spaceId_;
   PartitionID partId_;
   std::string walPath_;
   NewLeaderCallback newLeaderCb_ = nullptr;
-  std::vector<LeaderChagneCB> leaderReadyCB_;
-  std::vector<LeaderChagneCB> leaderLostCB_;
+  std::vector<LeaderChangeCB> leaderReadyCB_;
+  std::vector<LeaderChangeCB> leaderLostCB_;
 
  private:
   KVEngine* engine_ = nullptr;

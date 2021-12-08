@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Insert int vid of vertex and edge
 
   Background: Prepare space
@@ -31,7 +30,7 @@ Feature: Insert int vid of vertex and edge
 
   Scenario: insert vertex and edge test
     Given wait 3 seconds
-    # insert vretex with default property names
+    # insert vertex with default property names
     When try to execute query:
       """
       INSERT VERTEX person VALUES hash("Tom"):("Tom", 18);

@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: NULL related operations
 
   Scenario: NULL comparison
@@ -25,11 +24,11 @@ Feature: NULL related operations
       | NULL   | NULL   | NULL   | NULL   | NULL   |
     When executing query:
       """
-      RETURN cbrt(NULL) AS value1, hypot(NULL, NULL) AS value2, pow(NULL, NULL) AS value3, exp(NULL) AS value4, exp2(NULL) AS value5
+      RETURN cbrt(NULL) AS value1, exp(NULL) AS value4, exp2(NULL) AS value5
       """
     Then the result should be, in any order:
-      | value1 | value2   | value3   | value4 | value5 |
-      | NULL   | BAD_TYPE | BAD_TYPE | NULL   | NULL   |
+      | value1 | value4 | value5 |
+      | NULL   | NULL   | NULL   |
     When executing query:
       """
       RETURN log(NULL) AS value1, log2(NULL) AS value2, log10(NULL) AS value3, sin(NULL) AS value4, asin(NULL) AS value5
@@ -39,18 +38,18 @@ Feature: NULL related operations
       | NULL   | NULL   | NULL   | NULL   | NULL   |
     When executing query:
       """
-      RETURN cos(NULL) AS value1, acos(NULL) AS value2, tan(NULL) AS value3, atan(NULL) AS value4, rand32(NULL) AS value5
+      RETURN cos(NULL) AS value1, acos(NULL) AS value2, tan(NULL) AS value3, atan(NULL) AS value4
       """
     Then the result should be, in any order:
-      | value1 | value2 | value3 | value4 | value5   |
-      | NULL   | NULL   | NULL   | NULL   | BAD_TYPE |
+      | value1 | value2 | value3 | value4 |
+      | NULL   | NULL   | NULL   | NULL   |
     When executing query:
       """
-      RETURN collect(NULL) AS value1, avg(NULL) AS value2, count(NULL) AS value3, max(NULL) AS value4, rand64(NULL,NULL) AS value5
+      RETURN collect(NULL) AS value1, avg(NULL) AS value2, count(NULL) AS value3, max(NULL) AS value4
       """
     Then the result should be, in any order:
-      | value1 | value2 | value3 | value4 | value5   |
-      | []     | NULL   | 0      | NULL   | BAD_TYPE |
+      | value1 | value2 | value3 | value4 |
+      | []     | NULL   | 0      | NULL   |
     When executing query:
       """
       RETURN min(NULL) AS value1, std(NULL) AS value2, sum(NULL) AS value3, bit_and(NULL) AS value4, bit_or(NULL,NULL) AS value5
@@ -60,8 +59,8 @@ Feature: NULL related operations
       | NULL   | NULL   | 0      | NULL   | NULL   |
     When executing query:
       """
-      RETURN bit_xor(NULL) AS value1, size(NULL) AS value2, range(NULL,NULL) AS value3, sign(NULL) AS value4, radians(NULL) AS value5
+      RETURN bit_xor(NULL) AS value1, size(NULL) AS value2, sign(NULL) AS value4, radians(NULL) AS value5
       """
     Then the result should be, in any order:
-      | value1 | value2 | value3   | value4 | value5 |
-      | NULL   | NULL   | BAD_TYPE | NULL   | NULL   |
+      | value1 | value2 | value4 | value5 |
+      | NULL   | NULL   | NULL   | NULL   |

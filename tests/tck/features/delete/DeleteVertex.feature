@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Delete string vid of vertex
 
   Scenario: delete string vertex
@@ -45,7 +44,7 @@ Feature: Delete string vid of vertex
     # delete one vertex
     When executing query:
       """
-      DELETE VERTEX "Tony Parker";
+      DELETE VERTEX "Tony Parker" WITH EDGE;
       """
     Then the execution should be successful
     # after delete to check value by fetch
@@ -90,7 +89,7 @@ Feature: Delete string vid of vertex
     # delete multi vertexes
     When executing query:
       """
-      DELETE VERTEX "LeBron James", "Dwyane Wade", "Carmelo Anthony";
+      DELETE VERTEX "LeBron James", "Dwyane Wade", "Carmelo Anthony" WITH EDGE;
       """
     Then the execution should be successful
     # after delete multi vertexes to check value by go
@@ -137,7 +136,7 @@ Feature: Delete string vid of vertex
     # delete hash id vertex
     When executing query:
       """
-      DELETE VERTEX "Grant Hill"
+      DELETE VERTEX "Grant Hill" WITH EDGE
       """
     Then the execution should be successful
     # after delete hash id vertex to check value by go
@@ -166,14 +165,14 @@ Feature: Delete string vid of vertex
     # delete not existed vertex
     When executing query:
       """
-      DELETE VERTEX "Non-existing Vertex"
+      DELETE VERTEX "Non-existing Vertex" WITH EDGE
       """
     Then the execution should be successful
     # delete a vertex without edges
     When executing query:
       """
       INSERT VERTEX player(name, age) VALUES "A Loner": ("A Loner", 0);
-      DELETE VERTEX "A Loner";
+      DELETE VERTEX "A Loner" WITH EDGE;
       """
     Then the execution should be successful
     # check delete a vertex without edges
@@ -186,7 +185,7 @@ Feature: Delete string vid of vertex
     # delete with no edge
     When executing query:
       """
-      DELETE VERTEX "Nobody"
+      DELETE VERTEX "Nobody" WITH EDGE
       """
     Then the execution should be successful
     # check delete with no edge
@@ -203,7 +202,7 @@ Feature: Delete string vid of vertex
     # test delete with pipe wrong vid type
     When executing query:
       """
-      GO FROM "Boris Diaw" OVER like YIELD like._type as id | DELETE VERTEX $-.id
+      GO FROM "Boris Diaw" OVER like YIELD like._type as id | DELETE VERTEX $-.id WITH EDGE
       """
     Then a SemanticError should be raised at runtime:
     # delete with pipe, get result by go
@@ -234,7 +233,7 @@ Feature: Delete string vid of vertex
       | "Manu Ginobili" |
     When executing query:
       """
-      GO FROM "Boris Diaw" OVER like YIELD like._dst as id | DELETE VERTEX $-.id
+      GO FROM "Boris Diaw" OVER like YIELD like._dst as id | DELETE VERTEX $-.id WITH EDGE
       """
     Then the execution should be successful
     When executing query:
@@ -282,7 +281,7 @@ Feature: Delete string vid of vertex
       | "Russell Westbrook" |
     When executing query:
       """
-      $var = GO FROM "Russell Westbrook" OVER like YIELD like._dst as id; DELETE VERTEX $var.id
+      $var = GO FROM "Russell Westbrook" OVER like YIELD like._dst as id; DELETE VERTEX $var.id WITH EDGE
       """
     Then the execution should be successful
     When executing query:

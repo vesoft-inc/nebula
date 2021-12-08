@@ -6,15 +6,15 @@ Feature: Lookup with output
   Scenario: [1] tag output
     When executing query:
       """
-      LOOKUP ON player WHERE player.age == 40 |
-      FETCH PROP ON player $-.VertexID YIELD player.name
+      LOOKUP ON player WHERE player.age == 40 YIELD id(vertex) as id |
+      FETCH PROP ON player $-.id YIELD player.name
       """
     Then the result should be, in any order:
       | player.name     |
       | 'Kobe Bryant'   |
       | 'Dirk Nowitzki' |
 
-  Scenario: [1] tag ouput with yield rename
+  Scenario: [1] tag output with yield rename
     When executing query:
       """
       LOOKUP ON player WHERE player.age == 40 YIELD player.name AS name |
@@ -28,15 +28,15 @@ Feature: Lookup with output
   Scenario: [1] tag output by var
     When executing query:
       """
-      $a = LOOKUP ON player WHERE player.age == 40;
-      FETCH PROP ON player $a.VertexID YIELD player.name
+      $a = LOOKUP ON player WHERE player.age == 40 YIELD id(vertex) as id;
+      FETCH PROP ON player $a.id YIELD player.name
       """
     Then the result should be, in any order:
       | player.name     |
       | 'Kobe Bryant'   |
       | 'Dirk Nowitzki' |
 
-  Scenario: [1] tag ouput with yield rename by var
+  Scenario: [1] tag output with yield rename by var
     When executing query:
       """
       $a = LOOKUP ON player WHERE player.age == 40 YIELD player.name AS name;
@@ -51,8 +51,8 @@ Feature: Lookup with output
     When executing query:
       """
       LOOKUP ON serve WHERE serve.start_year == 2008 and serve.end_year == 2019
-      YIELD serve.start_year |
-      FETCH PROP ON serve $-.SrcVID->$-.DstVID YIELD serve.start_year
+      YIELD serve.start_year, src(edge) as src, dst(edge) as dst |
+      FETCH PROP ON serve $-.src->$-.dst YIELD serve.start_year
       """
     Then the result should be, in any order:
       | serve.start_year |
@@ -63,8 +63,8 @@ Feature: Lookup with output
     When executing query:
       """
       LOOKUP ON serve WHERE serve.start_year == 2008 and serve.end_year == 2019
-      YIELD serve.start_year AS startYear |
-      FETCH PROP ON serve $-.SrcVID->$-.DstVID YIELD serve.start_year AS startYear
+      YIELD serve.start_year AS startYear, src(edge) as src, dst(edge) as dst |
+      FETCH PROP ON serve $-.src->$-.dst YIELD serve.start_year AS startYear
       """
     Then the result should be, in any order:
       | startYear |
@@ -75,8 +75,8 @@ Feature: Lookup with output
     When executing query:
       """
       $a = LOOKUP ON serve WHERE serve.start_year == 2008 and serve.end_year == 2019
-      YIELD serve.start_year;
-      FETCH PROP ON serve $a.SrcVID->$a.DstVID YIELD serve.start_year
+      YIELD serve.start_year, src(edge) as src, dst(edge) as dst;
+      FETCH PROP ON serve $a.src->$a.dst YIELD serve.start_year
       """
     Then the result should be, in any order:
       | serve.start_year |
@@ -87,8 +87,8 @@ Feature: Lookup with output
     When executing query:
       """
       $a = LOOKUP ON serve WHERE serve.start_year == 2008 and serve.end_year == 2019
-      YIELD serve.start_year AS startYear;
-      FETCH PROP ON serve $a.SrcVID->$a.DstVID YIELD serve.start_year AS startYear
+      YIELD serve.start_year AS startYear, src(edge) as src, dst(edge) as dst;
+      FETCH PROP ON serve $a.src->$a.dst YIELD serve.start_year AS startYear
       """
     Then the result should be, in any order:
       | startYear |

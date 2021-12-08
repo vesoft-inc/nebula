@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/upgrade/MetaDataUpgrade.h"
@@ -58,7 +57,7 @@ Status MetaDataUpgrade::rewriteSpaces(const folly::StringPiece &key,
   spaceDesc.set_charset_name(oldProps.get_charset_name());
   spaceDesc.set_collate_name(oldProps.get_collate_name());
   (*spaceDesc.vid_type_ref()).set_type_length(8);
-  (*spaceDesc.vid_type_ref()).set_type(cpp2::PropertyType::INT64);
+  (*spaceDesc.vid_type_ref()).set_type(nebula::cpp2::PropertyType::INT64);
   NG_LOG_AND_RETURN_IF_ERROR(put(key, MetaKeyUtils::spaceVal(spaceDesc)));
   return Status::OK();
 }
@@ -215,7 +214,7 @@ Status MetaDataUpgrade::convertToNewColumns(const std::vector<meta::v1::cpp2::Co
   for (auto &colDef : oldCols) {
     cpp2::ColumnDef columnDef;
     columnDef.set_name(colDef.get_name());
-    columnDef.type.set_type(static_cast<cpp2::PropertyType>(colDef.get_type().get_type()));
+    columnDef.type.set_type(static_cast<nebula::cpp2::PropertyType>(colDef.get_type().get_type()));
     if (colDef.default_value_ref().has_value()) {
       std::string encodeStr;
       switch (colDef.get_type().get_type()) {
@@ -262,11 +261,12 @@ Status MetaDataUpgrade::convertToNewIndexColumns(
     columnDef.set_name(colDef.get_name());
     if (colDef.get_type().get_type() == meta::v1::cpp2::SupportedType::STRING) {
       cpp2::ColumnTypeDef type;
-      type.set_type(cpp2::PropertyType::FIXED_STRING);
+      type.set_type(nebula::cpp2::PropertyType::FIXED_STRING);
       type.set_type_length(FLAGS_string_index_limit);
       columnDef.set_type(std::move(type));
     } else {
-      columnDef.type.set_type(static_cast<cpp2::PropertyType>(colDef.get_type().get_type()));
+      columnDef.type.set_type(
+          static_cast<nebula::cpp2::PropertyType>(colDef.get_type().get_type()));
     }
     DCHECK(!colDef.default_value_ref().has_value());
     if (FLAGS_null_type) {

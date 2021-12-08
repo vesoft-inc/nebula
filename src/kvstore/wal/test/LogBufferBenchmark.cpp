@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <folly/Benchmark.h>
@@ -34,7 +33,7 @@ void prepareData(std::shared_ptr<AtomicLogBuffer> logBuffer, int32_t len, size_t
 }
 
 /*************************
- * Begining of benchmarks
+ * Beginning of benchmarks
  ************************/
 
 void runInMemoryLogBufferWriteTest(size_t iters, int32_t len) {
@@ -380,7 +379,7 @@ int main(int argc, char** argv) {
 }
 /*
 Intel(R) Xeon(R) CPU E5-2690 v2 @ 3.00GHz
--O2  kMaxLenght=64    write test
+-O2  kMaxLength=64    write test
 ============================================================================
 LogBufferBenchmark.cpprelative                            time/iter  iters/s
 ============================================================================

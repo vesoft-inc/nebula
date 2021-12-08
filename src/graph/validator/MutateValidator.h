@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_VALIDATOR_MUTATEVALIDATOR_H_
@@ -84,6 +83,7 @@ class DeleteVerticesValidator final : public Validator {
   std::vector<EdgeType> edgeTypes_;
   std::vector<std::string> edgeNames_;
   std::vector<EdgeKeyRef*> edgeKeyRefs_;
+  bool withEdge_{true};
 };
 
 class DeleteTagsValidator final : public Validator {

@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Test match used in pipe
 
   Background:
@@ -26,7 +25,7 @@ Feature: Test match used in pipe
       | ("Tim Duncan") | ("Manu Ginobili")     |
       | ("Tim Duncan") | ("Manu Ginobili")     |
       | ("Tim Duncan") | ("Marco Belinelli")   |
-      | ("Tim Duncan") | ("Shaquile O'Neal")   |
+      | ("Tim Duncan") | ("Shaquille O'Neal")  |
       | ("Tim Duncan") | ("Spurs")             |
       | ("Tim Duncan") | ("Tiago Splitter")    |
       | ("Tim Duncan") | ("Tony Parker")       |
@@ -42,7 +41,7 @@ Feature: Test match used in pipe
     Then the result should be, in any order, with relax comparison:
       | $-.n           | $-.m                  | count(*) |
       | ("Tim Duncan") | ("Spurs")             | 1        |
-      | ("Tim Duncan") | ("Shaquile O'Neal")   | 1        |
+      | ("Tim Duncan") | ("Shaquille O'Neal")  | 1        |
       | ("Tim Duncan") | ("Tiago Splitter")    | 1        |
       | ("Tim Duncan") | ("Marco Belinelli")   | 1        |
       | ("Tim Duncan") | ("Dejounte Murray")   | 1        |

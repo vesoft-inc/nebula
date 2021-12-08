@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/validator/ACLValidator.h"
@@ -130,6 +129,31 @@ Status RevokeRoleValidator::toPlan() {
   return genSingleNodePlan<RevokeRole>(sentence->getAccount(),
                                        sentence->getAclItemClause()->getSpaceName(),
                                        sentence->getAclItemClause()->getRoleType());
+}
+
+// describe user
+Status DescribeUserValidator::validateImpl() {
+  auto sentence = static_cast<DescribeUserSentence *>(sentence_);
+  if (sentence->account()->size() > kUsernameMaxLength) {
+    return Status::SemanticError("Username exceed maximum length %ld characters.",
+                                 kUsernameMaxLength);
+  }
+  if (!inputs_.empty()) {
+    return Status::SemanticError("Show queries sentence do not support input");
+  }
+  outputs_.emplace_back("role", Value::Type::STRING);
+  outputs_.emplace_back("space", Value::Type::STRING);
+  return Status::OK();
+}
+
+Status DescribeUserValidator::checkPermission() {
+  auto sentence = static_cast<DescribeUserSentence *>(sentence_);
+  return PermissionManager::canReadUser(qctx_->rctx()->session(), *sentence->account());
+}
+
+Status DescribeUserValidator::toPlan() {
+  auto sentence = static_cast<DescribeUserSentence *>(sentence_);
+  return genSingleNodePlan<DescribeUser>(sentence->account());
 }
 
 // show roles in space

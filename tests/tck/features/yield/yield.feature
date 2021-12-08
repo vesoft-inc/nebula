@@ -330,42 +330,42 @@ Feature: Yield Sentence
       """
       YIELD 9223372036854775807+1
       """
-    Then a ExecutionError should be raised at runtime: result of (9223372036854775807+1) cannot be represented as an integer
+    Then a SemanticError should be raised at runtime: result of (9223372036854775807+1) cannot be represented as an integer
     When executing query:
       """
       YIELD -9223372036854775807-2
       """
-    Then a ExecutionError should be raised at runtime: result of (-9223372036854775807-2) cannot be represented as an integer
+    Then a SemanticError should be raised at runtime: result of (-9223372036854775807-2) cannot be represented as an integer
     When executing query:
       """
       YIELD -9223372036854775807+-2
       """
-    Then a ExecutionError should be raised at runtime: result of (-9223372036854775807+-2) cannot be represented as an integer
+    Then a SemanticError should be raised at runtime: result of (-9223372036854775807+-2) cannot be represented as an integer
     When executing query:
       """
       YIELD 9223372036854775807*2
       """
-    Then a ExecutionError should be raised at runtime: result of (9223372036854775807*2) cannot be represented as an integer
+    Then a SemanticError should be raised at runtime: result of (9223372036854775807*2) cannot be represented as an integer
     When executing query:
       """
       YIELD -9223372036854775807*-2
       """
-    Then a ExecutionError should be raised at runtime: result of (-9223372036854775807*-2) cannot be represented as an integer
+    Then a SemanticError should be raised at runtime: result of (-9223372036854775807*-2) cannot be represented as an integer
     When executing query:
       """
       YIELD 9223372036854775807*-2
       """
-    Then a ExecutionError should be raised at runtime: result of (9223372036854775807*-2) cannot be represented as an integer
+    Then a SemanticError should be raised at runtime: result of (9223372036854775807*-2) cannot be represented as an integer
     When executing query:
       """
       YIELD 1/0
       """
-    Then a ExecutionError should be raised at runtime: / by zero
+    Then a SemanticError should be raised at runtime: Divide by 0
     When executing query:
       """
       YIELD 2%0
       """
-    Then a ExecutionError should be raised at runtime: / by zero
+    Then a SemanticError should be raised at runtime: Divide by 0
     When executing query:
       """
       YIELD -9223372036854775808
@@ -377,7 +377,7 @@ Feature: Yield Sentence
       """
       YIELD --9223372036854775808
       """
-    Then a ExecutionError should be raised at runtime: result of -(-9223372036854775808) cannot be represented as an integer
+    Then a SemanticError should be raised at runtime: result of -(-9223372036854775808) cannot be represented as an integer
     When executing query:
       """
       YIELD -9223372036854775809
@@ -467,6 +467,16 @@ Feature: Yield Sentence
       """
     Then the result should be, in any order, with relax comparison:
       | name |
+    When executing query:
+      """
+      GO FROM "Tim Duncan" OVER like YIELD like._dst as id, $$ as dst | YIELD $-.dst where count($-.id) > 2
+      """
+    Then a SemanticError should be raised at runtime: `(count($-.id)>2)', not support aggregate function in where sentence.
+    When executing query:
+      """
+      $var = go from "Tim Duncan" over like yield like._dst as id, $$ as dst; yield $var.dst where count($var.id) > 2
+      """
+    Then a SemanticError should be raised at runtime: `(count($var.id)>2)', not support aggregate function in where sentence.
 
   Scenario: DuplicateColumn
     When executing query:

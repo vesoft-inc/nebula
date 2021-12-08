@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_METASERVICEHANDLER_H_
@@ -155,10 +154,6 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
    * */
   folly::Future<cpp2::HBResp> future_heartBeat(const cpp2::HBReq& req) override;
 
-  folly::Future<cpp2::BalanceResp> future_balance(const cpp2::BalanceReq& req) override;
-
-  folly::Future<cpp2::ExecResp> future_leaderBalance(const cpp2::LeaderBalanceReq& req) override;
-
   folly::Future<cpp2::ExecResp> future_regConfig(const cpp2::RegConfigReq& req) override;
 
   folly::Future<cpp2::GetConfigResp> future_getConfig(const cpp2::GetConfigReq& req) override;
@@ -194,20 +189,6 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
 
   folly::Future<cpp2::ExecResp> future_dropHostFromZone(
       const cpp2::DropHostFromZoneReq& req) override;
-
-  folly::Future<cpp2::ExecResp> future_addGroup(const cpp2::AddGroupReq& req) override;
-
-  folly::Future<cpp2::ExecResp> future_dropGroup(const cpp2::DropGroupReq& req) override;
-
-  folly::Future<cpp2::GetGroupResp> future_getGroup(const cpp2::GetGroupReq& req) override;
-
-  folly::Future<cpp2::ListGroupsResp> future_listGroups(const cpp2::ListGroupsReq& req) override;
-
-  folly::Future<cpp2::ExecResp> future_addZoneIntoGroup(
-      const cpp2::AddZoneIntoGroupReq& req) override;
-
-  folly::Future<cpp2::ExecResp> future_dropZoneFromGroup(
-      const cpp2::DropZoneFromGroupReq& req) override;
 
   // listener
   folly::Future<cpp2::ExecResp> future_addListener(const cpp2::AddListenerReq& req) override;

@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #ifndef PARSER_ADMINSENTENCES_H_
 #define PARSER_ADMINSENTENCES_H_
@@ -79,6 +78,21 @@ class ShowUsersSentence : public Sentence {
  public:
   ShowUsersSentence() { kind_ = Kind::kShowUsers; }
   std::string toString() const override;
+};
+
+class DescribeUserSentence : public Sentence {
+ public:
+  explicit DescribeUserSentence(std::string* account) {
+    account_.reset(account);
+    kind_ = Kind::kDescribeUser;
+  }
+
+  std::string toString() const override;
+
+  const std::string* account() const { return account_.get(); }
+
+ private:
+  std::unique_ptr<std::string> account_;
 };
 
 class ShowRolesSentence : public Sentence {
@@ -198,7 +212,7 @@ class SpaceOptItem final {
     } else {
       LOG(ERROR) << "vid type illegal.";
       static meta::cpp2::ColumnTypeDef unknownTypeDef;
-      unknownTypeDef.set_type(meta::cpp2::PropertyType::UNKNOWN);
+      unknownTypeDef.set_type(nebula::cpp2::PropertyType::UNKNOWN);
       return unknownTypeDef;
     }
   }
@@ -216,7 +230,7 @@ class SpaceOptItem final {
     if (isString()) {
       return asString();
     } else {
-      LOG(ERROR) << "collate value illage.";
+      LOG(ERROR) << "collate value illegal.";
       return "";
     }
   }
@@ -225,7 +239,7 @@ class SpaceOptItem final {
     if (isString()) {
       return asString();
     } else {
-      LOG(ERROR) << "group name value illage.";
+      LOG(ERROR) << "group name value illegal.";
       return "";
     }
   }
@@ -443,49 +457,6 @@ class GetConfigSentence final : public ConfigBaseSentence {
   std::string toString() const override;
 };
 
-class BalanceSentence final : public Sentence {
- public:
-  enum class SubType : uint32_t {
-    kUnknown,
-    kLeader,
-    kData,
-    kDataStop,
-    kDataReset,
-    kShowBalancePlan,
-  };
-
-  // TODO: add more subtype for balance
-  explicit BalanceSentence(SubType subType) {
-    kind_ = Kind::kBalance;
-    subType_ = std::move(subType);
-  }
-
-  explicit BalanceSentence(int64_t id) {
-    kind_ = Kind::kBalance;
-    subType_ = SubType::kShowBalancePlan;
-    balanceId_ = id;
-  }
-
-  BalanceSentence(SubType subType, HostList* hostDel) {
-    kind_ = Kind::kBalance;
-    subType_ = std::move(subType);
-    hostDel_.reset(hostDel);
-  }
-
-  std::string toString() const override;
-
-  SubType subType() const { return subType_; }
-
-  int64_t balanceId() const { return balanceId_; }
-
-  HostList* hostDel() const { return hostDel_.get(); }
-
- private:
-  SubType subType_{SubType::kUnknown};
-  int64_t balanceId_{0};
-  std::unique_ptr<HostList> hostDel_;
-};
-
 class CreateSnapshotSentence final : public Sentence {
  public:
   CreateSnapshotSentence() { kind_ = Kind::kCreateSnapshot; }
@@ -635,10 +606,10 @@ class ShowSessionsSentence final : public Sentence {
   explicit ShowSessionsSentence(SessionID sessionId) {
     kind_ = Kind::kShowSessions;
     sessionId_ = sessionId;
-    setSeesionId_ = true;
+    setSessionId_ = true;
   }
 
-  bool isSetSessionID() const { return setSeesionId_; }
+  bool isSetSessionID() const { return setSessionId_; }
 
   SessionID getSessionID() const { return sessionId_; }
 
@@ -646,7 +617,7 @@ class ShowSessionsSentence final : public Sentence {
 
  private:
   SessionID sessionId_{0};
-  bool setSeesionId_{false};
+  bool setSessionId_{false};
 };
 
 class ShowQueriesSentence final : public Sentence {

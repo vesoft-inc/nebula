@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "storage/admin/RebuildTagIndexTask.h"
@@ -53,7 +52,7 @@ nebula::cpp2::ErrorCode RebuildTagIndexTask::buildIndexGlobal(GraphSpaceID space
 
   auto vidSize = vidSizeRet.value();
   std::unique_ptr<kvstore::KVIterator> iter;
-  auto prefix = NebulaKeyUtils::vertexPrefix(part);
+  auto prefix = NebulaKeyUtils::tagPrefix(part);
   auto ret = env_->kvstore_->prefix(space, part, prefix, &iter);
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << "Processing Part " << part << " Failed";

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/zone/DropZoneProcessor.h"
@@ -25,7 +24,7 @@ void DropZoneProcessor::process(const cpp2::DropZoneReq& req) {
     return;
   }
 
-  // If zone belong to any group, it should not be droped.
+  // If zone belong to any group, it should not be dropped.
   auto retCode = checkGroupDependency(zoneName);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
     handleErrorCode(retCode);

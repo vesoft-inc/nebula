@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/schema/GetTagProcessor.h"
@@ -26,7 +25,7 @@ void GetTagProcessor::process(const cpp2::GetTagReq& req) {
   auto tagId = nebula::value(tagIdRet);
 
   std::string schemaValue;
-  // Get the lastest version
+  // Get the latest version
   if (ver < 0) {
     auto tagPrefix = MetaKeyUtils::schemaTagPrefix(spaceId, tagId);
     auto ret = doPrefix(tagPrefix);

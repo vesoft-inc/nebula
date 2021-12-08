@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/admin/CreateBackupProcessor.h"
@@ -85,7 +84,7 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
   }
   JobManager* jobMgr = JobManager::getInstance();
 
-  auto result = jobMgr->checkIndexJobRuning();
+  auto result = jobMgr->checkIndexJobRunning();
   if (!nebula::ok(result)) {
     LOG(ERROR) << "get Index status failed, not allowed to create backup.";
     handleErrorCode(nebula::error(result));

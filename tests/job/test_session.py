@@ -2,8 +2,7 @@
 #
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 import re
 import sys
@@ -128,7 +127,7 @@ class TestSession(NebulaTestSuite):
             time.sleep(3)
         resp = self.execute('SHOW SESSION {}'.format(session_id))
         self.check_resp_failed(resp, ttypes.ErrorCode.E_EXECUTION_ERROR)
-        resp = self.execute('UPDATE CONFIGS graph:session_idle_timeout_secs = 0')
+        resp = self.execute('UPDATE CONFIGS graph:session_idle_timeout_secs = 28800')
         self.check_resp_succeeded(resp)
         time.sleep(3)
 
@@ -153,7 +152,7 @@ class TestSession(NebulaTestSuite):
 
         resp = conn1.execute(session_id, 'CREATE SPACE IF NOT EXISTS aSpace(partition_num=1, vid_type=FIXED_STRING(8));USE aSpace;')
         self.check_resp_succeeded(ResultSet(resp, 0))
-        # time::WallClock::fastNowInMicroSec() is not syncronous in different process,
+        # time::WallClock::fastNowInMicroSec() is not synchronous in different process,
         # so we sleep 3 seconds here and charge session
         time.sleep(3)
         resp = conn1.execute(session_id, 'USE aSpace;')

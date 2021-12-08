@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/util/ExpressionUtils.h"
@@ -62,6 +61,16 @@ std::vector<const Expression *> ExpressionUtils::collectAll(
   FindVisitor visitor(finder, true);
   const_cast<Expression *>(self)->accept(&visitor);
   return std::move(visitor).results();
+}
+
+bool ExpressionUtils::checkVarExprIfExist(const Expression *expr) {
+  auto vars = ExpressionUtils::collectAll(expr, {Expression::Kind::kVar});
+  for (auto *var : vars) {
+    if (!static_cast<const VariableExpression *>(var)->isInner()) {
+      return true;
+    }
+  }
+  return false;
 }
 
 std::vector<const Expression *> ExpressionUtils::findAllStorage(const Expression *expr) {
@@ -355,7 +364,7 @@ Expression *ExpressionUtils::reduceUnaryNotExpr(const Expression *expr) {
 
 Expression *ExpressionUtils::rewriteRelExpr(const Expression *expr) {
   ObjectPool *pool = expr->getObjPool();
-  // Match relational expressions containing at least one airthmetic expr
+  // Match relational expressions containing at least one arithmetic expr
   auto matcher = [](const Expression *e) -> bool {
     if (e->isRelExpr()) {
       auto relExpr = static_cast<const RelationalExpression *>(e);
@@ -422,7 +431,7 @@ Expression *ExpressionUtils::rewriteRelExpr(const Expression *expr) {
 Expression *ExpressionUtils::rewriteRelExprHelper(const Expression *expr,
                                                   Expression *&relRightOperandExpr) {
   ObjectPool *pool = expr->getObjPool();
-  // TODO: Support rewrite mul/div expressoion after fixing overflow
+  // TODO: Support rewrite mul/div expression after fixing overflow
   auto matcher = [](const Expression *e) -> bool {
     if (!e->isArithmeticExpr() || e->kind() == Expression::Kind::kMultiply ||
         e->kind() == Expression::Kind::kDivision)
@@ -457,7 +466,7 @@ Expression *ExpressionUtils::rewriteRelExprHelper(const Expression *expr,
     case Expression::Kind::kMinus:
       relRightOperandExpr = ArithmeticExpression::makeMinus(pool, lexpr, rexpr);
       break;
-    // Unsupported arithm kind
+    // Unsupported arithmetic kind
     // case Expression::Kind::kMultiply:
     // case Expression::Kind::kDivision:
     default:

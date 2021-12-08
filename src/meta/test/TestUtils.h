@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_TEST_TESTUTILS_H_
@@ -36,7 +35,7 @@ namespace nebula {
 namespace meta {
 
 using mock::MockCluster;
-using nebula::meta::cpp2::PropertyType;
+using nebula::cpp2::PropertyType;
 
 using ZoneInfo = std::unordered_map<std::string, std::vector<HostAddr>>;
 using GroupInfo = std::unordered_map<std::string, std::vector<std::string>>;
@@ -47,7 +46,7 @@ auto metaPool = &metaTestPool;
 class TestUtils {
  public:
   static cpp2::ColumnDef columnDef(int32_t index,
-                                   cpp2::PropertyType type,
+                                   PropertyType type,
                                    Value defaultValue = Value(),
                                    bool isNull = true,
                                    int16_t typeLen = 0) {

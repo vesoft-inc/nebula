@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_PLANNER_PLAN_EXECUTIONPLAN_H_
@@ -16,8 +15,13 @@ struct PlanDescription;
 struct PlanNodeDescription;
 
 namespace graph {
-
 class PlanNode;
+
+struct SubPlan {
+  // root and tail of a subplan.
+  PlanNode* root{nullptr};
+  PlanNode* tail{nullptr};
+};
 
 class ExecutionPlan final {
  public:
