@@ -77,7 +77,7 @@ uint32_t Cpp2Ops<::nebula::ExecutionResponse>::write(Protocol* proto,
   xfer += proto->writeFieldEnd();
   xfer += proto->writeFieldBegin("latency_in_us", apache::thrift::protocol::T_I64, 2);
   xfer += ::apache::thrift::detail::pm::protocol_methods<::apache::thrift::type_class::integral,
-                                                         int32_t>::write(*proto, obj->latencyInUs);
+                                                         int64_t>::write(*proto, obj->latencyInUs);
   xfer += proto->writeFieldEnd();
   if (obj->data != nullptr) {
     xfer += proto->writeFieldBegin("data", apache::thrift::protocol::T_STRUCT, 3);
@@ -278,7 +278,7 @@ uint32_t Cpp2Ops<::nebula::ExecutionResponse>::serializedSize(
       ::nebula::ErrorCode>::serializedSize<false>(*proto, obj->errorCode);
   xfer += proto->serializedFieldSize("latency_in_us", apache::thrift::protocol::T_I64, 2);
   xfer += ::apache::thrift::detail::pm::
-      protocol_methods<::apache::thrift::type_class::integral, int32_t>::serializedSize<false>(
+      protocol_methods<::apache::thrift::type_class::integral, int64_t>::serializedSize<false>(
           *proto, obj->latencyInUs);
   if (obj->data != nullptr) {
     xfer += proto->serializedFieldSize("data", apache::thrift::protocol::T_STRUCT, 3);
@@ -316,7 +316,7 @@ uint32_t Cpp2Ops<::nebula::ExecutionResponse>::serializedSizeZC(
       ::nebula::ErrorCode>::serializedSize<false>(*proto, obj->errorCode);
   xfer += proto->serializedFieldSize("latency_in_us", apache::thrift::protocol::T_I64, 2);
   xfer += ::apache::thrift::detail::pm::
-      protocol_methods<::apache::thrift::type_class::integral, int32_t>::serializedSize<false>(
+      protocol_methods<::apache::thrift::type_class::integral, int64_t>::serializedSize<false>(
           *proto, obj->latencyInUs);
   if (obj->data != nullptr) {
     xfer += proto->serializedFieldSize("data", apache::thrift::protocol::T_STRUCT, 3);
