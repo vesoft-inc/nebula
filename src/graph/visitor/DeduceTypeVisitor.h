@@ -92,6 +92,16 @@ class DeduceTypeVisitor final : public ExprVisitor {
     return type == Value::Type::NULLVALUE || type == Value::Type::__EMPTY__;
   }
 
+  inline void checkDepth() {
+    if (++depth > MAX_DEPTH) {
+      status_ = Status::SemanticError(
+          "The above expression is not a valid expression, "
+          "because its depth exceeds the maximum depth");
+    }
+  }
+
+  inline void recoverDepth() { --depth; }
+
   const QueryContext *qctx_{nullptr};
   const ValidateContext *vctx_{nullptr};
   const ColsDef &inputs_;

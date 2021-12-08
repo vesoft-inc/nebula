@@ -94,16 +94,6 @@ static const std::unordered_map<Value::Type, Value> kConstantValues = {
   }                                                                  \
   type_ = detectVal.type()
 
-#define CHECK_DEPTH(depth)                                 \
-  if (++depth > MAX_DEPTH) {                               \
-    status_ = Status::SemanticError(                       \
-        "The above expression is not a valid expression, " \
-        "because its depth exceeds the maximum depth");    \
-    return;                                                \
-  }
-
-#define RECOVER_DEPTH(depth) --depth
-
 DeduceTypeVisitor::DeduceTypeVisitor(QueryContext *qctx,
                                      ValidateContext *vctx,
                                      const ColsDef &inputs,
@@ -126,7 +116,10 @@ void DeduceTypeVisitor::visit(ConstantExpression *expr) {
 }
 
 void DeduceTypeVisitor::visit(UnaryExpression *expr) {
-  CHECK_DEPTH(depth);
+  checkDepth();
+  if (!status_.ok()) {
+    return;
+  }
   expr->operand()->accept(this);
   if (!ok()) return;
   switch (expr->kind()) {
@@ -185,11 +178,14 @@ void DeduceTypeVisitor::visit(UnaryExpression *expr) {
       break;
     }
   }
-  RECOVER_DEPTH(depth);
+  recoverDepth();
 }
 
 void DeduceTypeVisitor::visit(TypeCastingExpression *expr) {
-  CHECK_DEPTH(depth);
+  checkDepth();
+  if (!status_.ok()) {
+    return;
+  }
   expr->operand()->accept(this);
   if (!ok()) return;
 
@@ -221,13 +217,16 @@ void DeduceTypeVisitor::visit(TypeCastingExpression *expr) {
   }
   type_ = val.type();
   status_ = Status::OK();
-  RECOVER_DEPTH(depth);
+  recoverDepth();
 }
 
 void DeduceTypeVisitor::visit(LabelExpression *) { type_ = Value::Type::__EMPTY__; }
 
 void DeduceTypeVisitor::visit(ArithmeticExpression *expr) {
-  CHECK_DEPTH(depth);
+  checkDepth();
+  if (!status_.ok()) {
+    return;
+  }
   switch (expr->kind()) {
     case Expression::Kind::kAdd: {
       DETECT_BIEXPR_TYPE(+);
@@ -254,11 +253,14 @@ void DeduceTypeVisitor::visit(ArithmeticExpression *expr) {
       break;
     }
   }
-  RECOVER_DEPTH(depth);
+  recoverDepth();
 }
 
 void DeduceTypeVisitor::visit(RelationalExpression *expr) {
-  CHECK_DEPTH(depth);
+  checkDepth();
+  if (!status_.ok()) {
+    return;
+  }
   expr->left()->accept(this);
   if (!ok()) return;
   expr->right()->accept(this);
@@ -276,11 +278,14 @@ void DeduceTypeVisitor::visit(RelationalExpression *expr) {
   }
 
   type_ = Value::Type::BOOL;
-  RECOVER_DEPTH(depth);
+  recoverDepth();
 }
 
 void DeduceTypeVisitor::visit(SubscriptExpression *expr) {
-  CHECK_DEPTH(depth);
+  checkDepth();
+  if (!status_.ok()) {
+    return;
+  }
   expr->left()->accept(this);
   if (!ok()) return;
   auto leftType = type_;
@@ -336,11 +341,14 @@ void DeduceTypeVisitor::visit(SubscriptExpression *expr) {
 
   // Will not deduce the actual type of the value in list.
   type_ = Value::Type::__EMPTY__;
-  RECOVER_DEPTH(depth);
+  recoverDepth();
 }
 
 void DeduceTypeVisitor::visit(AttributeExpression *expr) {
-  CHECK_DEPTH(depth);
+  checkDepth();
+  if (!status_.ok()) {
+    return;
+  }
   expr->left()->accept(this);
   if (!ok()) return;
   switch (type_) {
@@ -377,11 +385,14 @@ void DeduceTypeVisitor::visit(AttributeExpression *expr) {
 
   // Will not deduce the actual type of the attribute.
   type_ = Value::Type::__EMPTY__;
-  RECOVER_DEPTH(depth);
+  recoverDepth();
 }
 
 void DeduceTypeVisitor::visit(LogicalExpression *expr) {
-  CHECK_DEPTH(depth);
+  checkDepth();
+  if (!status_.ok()) {
+    return;
+  }
   switch (expr->kind()) {
     case Expression::Kind::kLogicalAnd: {
       DETECT_NARYEXPR_TYPE(&&);
@@ -397,11 +408,14 @@ void DeduceTypeVisitor::visit(LogicalExpression *expr) {
       break;
     }
   }
-  RECOVER_DEPTH(depth);
+  recoverDepth();
 }
 
 void DeduceTypeVisitor::visit(LabelAttributeExpression *expr) {
-  CHECK_DEPTH(depth);
+  checkDepth();
+  if (!status_.ok()) {
+    return;
+  }
   const_cast<LabelExpression *>(expr->left())->accept(this);
   if (!ok()) return;
   if (type_ != Value::Type::STRING && !isSuperiorType(type_)) {
@@ -424,11 +438,14 @@ void DeduceTypeVisitor::visit(LabelAttributeExpression *expr) {
 
   // Will not deduce the actual type of the attribute.
   type_ = Value::Type::__EMPTY__;
-  RECOVER_DEPTH(depth);
+  recoverDepth();
 }
 
 void DeduceTypeVisitor::visit(FunctionCallExpression *expr) {
-  CHECK_DEPTH(depth);
+  checkDepth();
+  if (!status_.ok()) {
+    return;
+  }
   std::vector<Value::Type> argsTypeList;
   argsTypeList.reserve(expr->args()->numArgs());
   for (auto &arg : expr->args()->args()) {
@@ -449,15 +466,18 @@ void DeduceTypeVisitor::visit(FunctionCallExpression *expr) {
     return;
   }
   type_ = result.value();
-  RECOVER_DEPTH(depth);
+  recoverDepth();
 }
 
 void DeduceTypeVisitor::visit(AggregateExpression *expr) {
-  CHECK_DEPTH(depth);
+  checkDepth();
+  if (!status_.ok()) {
+    return;
+  }
   expr->arg()->accept(this);
   if (!ok()) return;
   type_ = Value::Type::__EMPTY__;
-  RECOVER_DEPTH(depth);
+  recoverDepth();
 }
 
 void DeduceTypeVisitor::visit(UUIDExpression *) { type_ = Value::Type::STRING; }
@@ -554,7 +574,10 @@ void DeduceTypeVisitor::visit(EdgeExpression *) { type_ = Value::Type::EDGE; }
 void DeduceTypeVisitor::visit(ColumnExpression *) { type_ = Value::Type::__EMPTY__; }
 
 void DeduceTypeVisitor::visit(CaseExpression *expr) {
-  CHECK_DEPTH(depth);
+  checkDepth();
+  if (!status_.ok()) {
+    return;
+  }
   if (expr->hasCondition()) {
     expr->condition()->accept(this);
     if (!ok()) return;
@@ -584,11 +607,14 @@ void DeduceTypeVisitor::visit(CaseExpression *expr) {
   } else {
     type_ = Value::Type::__EMPTY__;
   }
-  RECOVER_DEPTH(depth);
+  recoverDepth();
 }
 
 void DeduceTypeVisitor::visit(PredicateExpression *expr) {
-  CHECK_DEPTH(depth);
+  checkDepth();
+  if (!status_.ok()) {
+    return;
+  }
   if (expr->hasFilter()) {
     expr->filter()->accept(this);
     if (!ok()) {
@@ -609,11 +635,14 @@ void DeduceTypeVisitor::visit(PredicateExpression *expr) {
   }
 
   type_ = Value::Type::BOOL;
-  RECOVER_DEPTH(depth);
+  recoverDepth();
 }
 
 void DeduceTypeVisitor::visit(ListComprehensionExpression *expr) {
-  CHECK_DEPTH(depth);
+  checkDepth();
+  if (!status_.ok()) {
+    return;
+  }
   if (expr->hasFilter()) {
     expr->filter()->accept(this);
     if (!ok()) {
@@ -644,11 +673,14 @@ void DeduceTypeVisitor::visit(ListComprehensionExpression *expr) {
   }
 
   type_ = Value::Type::LIST;
-  RECOVER_DEPTH(depth);
+  recoverDepth();
 }
 
 void DeduceTypeVisitor::visit(ReduceExpression *expr) {
-  CHECK_DEPTH(depth);
+  checkDepth();
+  if (!status_.ok()) {
+    return;
+  }
   expr->initial()->accept(this);
   if (!ok()) return;
   expr->mapping()->accept(this);
@@ -670,11 +702,14 @@ void DeduceTypeVisitor::visit(ReduceExpression *expr) {
 
   // Will not deduce the actual value type returned by reduce expression.
   type_ = Value::Type::__EMPTY__;
-  RECOVER_DEPTH(depth);
+  recoverDepth();
 }
 
 void DeduceTypeVisitor::visit(SubscriptRangeExpression *expr) {
-  CHECK_DEPTH(depth);
+  checkDepth();
+  if (!status_.ok()) {
+    return;
+  }
   expr->list()->accept(this);
   if (!ok()) {
     return;
@@ -710,7 +745,7 @@ void DeduceTypeVisitor::visit(SubscriptRangeExpression *expr) {
     }
   }
   type_ = Value::Type::LIST;
-  RECOVER_DEPTH(depth);
+  recoverDepth();
 }
 
 void DeduceTypeVisitor::visitVertexPropertyExpr(PropertyExpression *expr) {
