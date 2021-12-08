@@ -305,13 +305,38 @@ bool StorageServer::start() {
       internalStorageSvcStatus_.load() != STATUS_RUNNING) {
     return false;
   }
+  {
+    std::lock_guard<std::mutex> lkStop(muStop_);
+    if (serverStatus_ != STATUS_UNINITIALIZED) {
+      // stop() called during start()
+      return false;
+    }
+    serverStatus_ = STATUS_RUNNING;
+  }
   return true;
 }
 
 void StorageServer::waitUntilStop() {
+  {
+    std::unique_lock<std::mutex> lkStop(muStop_);
+    while (serverStatus_ == STATUS_RUNNING) {
+      cvStop_.wait(lkStop);
+    }
+  }
+
+  this->stop();
+
   adminThread_->join();
   storageThread_->join();
   internalStorageThread_->join();
+}
+
+void StorageServer::notifyStop() {
+  std::unique_lock<std::mutex> lkStop(muStop_);
+  if (serverStatus_ == STATUS_RUNNING) {
+    serverStatus_ = STATUS_STOPPED;
+    cvStop_.notify_one();
+  }
 }
 
 void StorageServer::stop() {
