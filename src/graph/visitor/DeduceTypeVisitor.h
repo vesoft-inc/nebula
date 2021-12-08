@@ -99,6 +99,8 @@ class DeduceTypeVisitor final : public ExprVisitor {
   Status status_;
   Value::Type type_;
   Value::Type vidType_;
+  int32_t depth = 0;
+  const int32_t MAX_DEPTH = 816;
 };
 
 }  // namespace graph
