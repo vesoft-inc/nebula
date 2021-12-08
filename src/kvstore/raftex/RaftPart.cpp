@@ -1478,6 +1478,7 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
     size_t diffIndex = 0;
     size_t numLogs = req.get_log_str_list().size();
     LogID firstId = req.get_last_log_id_sent() + 1;
+    LogID lastId = req.get_last_log_id_sent() + numLogs;
     if (req.get_last_log_id_sent() == lastLogId_ && req.get_last_log_term_sent() == lastLogTerm_) {
       // happy path: logs are matched, just append log
     } else {
@@ -1485,9 +1486,10 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
       // 1. Some of log entry in current request has been committed
       // 2. I don't have the log of req.last_log_id_sent
       // 3. My log term on req.last_log_id_sent is not same as req.last_log_term_sent
-      // todo(doodle): One of the most common case whn req.get_last_log_id_sent() < committedLogId_
-      // is that leader side timeout, and retry with same request, but follower has received it.
-      // There are two choise: ask leader to send logs after committedLogId_ or just do nothing.
+      // todo(doodle): One of the most common case when req.get_last_log_id_sent() < committedLogId_
+      // is that leader timeout, and retry with same request, but follower has received it
+      // previously in fact. There are two choise: ask leader to send logs after committedLogId_ or
+      // just do nothing.
       if (req.get_last_log_id_sent() < committedLogId_ ||
           wal_->lastLogId() < req.get_last_log_id_sent() ||
           wal_->getLogTerm(req.get_last_log_id_sent()) != req.get_last_log_term_sent()) {
@@ -1502,7 +1504,6 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
       // wal_->logTerm(req.get_last_log_id_sent()) == req.get_last_log_term()
       // Try to find the diff point by comparing each log entry's term of same id between local wal
       // and log entry in request
-      LogID lastId = req.get_last_log_id_sent() + numLogs;
       TermID lastTerm = (numLogs == 0) ? req.get_last_log_term_sent()
                                        : req.get_log_str_list().back().get_log_term();
       auto localWalIt = wal_->iterator(firstId, lastId);
@@ -1522,8 +1523,6 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
       // Found a difference at log of (firstId + diffIndex), all logs from (firstId + diffIndex)
       // could be truncated
       wal_->rollbackToLog(firstId + diffIndex - 1);
-      lastLogId_ = wal_->lastLogId();
-      lastLogTerm_ = wal_->lastLogTerm();
       firstId = firstId + diffIndex;
       numLogs = numLogs - diffIndex;
     }
@@ -1534,10 +1533,7 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
         std::make_move_iterator(req.get_log_str_list().end()));
     RaftLogIterator logIter(firstId, std::move(logEntries));
     if (wal_->appendLogs(logIter)) {
-      if (numLogs != 0) {
-        CHECK_EQ(firstId + numLogs - 1, wal_->lastLogId())
-            << "firstId: " << firstId << " numLogs: " << numLogs;
-      }
+      CHECK_EQ(lastId, wal_->lastLogId());
       lastLogId_ = wal_->lastLogId();
       lastLogTerm_ = wal_->lastLogTerm();
       lastMatchedLogId = lastLogId_;
@@ -1552,6 +1548,7 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
   // If follower found a point where log matches leader's log (lastMatchedLogId), if leader's
   // committed_log_id is greater than lastMatchedLogId, we can commit logs before lastMatchedLogId
   LogID lastLogIdCanCommit = std::min(lastMatchedLogId, req.get_committed_log_id());
+  CHECK_LE(lastLogIdCanCommit, wal_->lastLogId());
   if (lastLogIdCanCommit > committedLogId_) {
     auto code = commitLogs(wal_->iterator(committedLogId_ + 1, lastLogIdCanCommit), false);
     if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
