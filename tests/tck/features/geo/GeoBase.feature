@@ -676,7 +676,7 @@ Feature: Geo base
     # Delete vertex with index
     When executing query:
       """
-      DELETE VERTEX "101";
+      DELETE VERTEX "101" WITH EDGE;
       """
     Then the execution should be successful
     When executing query:

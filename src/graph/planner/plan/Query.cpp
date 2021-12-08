@@ -10,6 +10,7 @@
 #include <folly/json.h>
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
+#include "graph/util/ExpressionUtils.h"
 #include "graph/util/ToJson.h"
 
 using folly::stringPrintf;
@@ -17,6 +18,11 @@ using folly::stringPrintf;
 namespace nebula {
 namespace graph {
 
+int64_t Explore::limit() const {
+  QueryExpressionContext ctx;
+  DCHECK(ExpressionUtils::isEvaluableExpr(limit_));
+  return DCHECK_NOTNULL(limit_)->eval(ctx).getInt();
+}
 std::unique_ptr<PlanNodeDescription> Explore::explain() const {
   auto desc = SingleInputNode::explain();
   addDescription("space", folly::to<std::string>(space_), desc.get());
@@ -376,6 +382,17 @@ void Sort::cloneMembers(const Sort& p) {
   factors_ = std::move(factors);
 }
 
+// Get constant count value
+int64_t Limit::count() const {
+  if (count_ == nullptr) {
+    return -1;
+  }
+  DCHECK(ExpressionUtils::isEvaluableExpr(count_));
+  QueryExpressionContext ctx;
+  auto s = count_->eval(ctx).getInt();
+  DCHECK_GE(s, 0);
+  return s;
+}
 std::unique_ptr<PlanNodeDescription> Limit::explain() const {
   auto desc = SingleInputNode::explain();
   addDescription("offset", folly::to<std::string>(offset_), desc.get());
@@ -420,6 +437,15 @@ void TopN::cloneMembers(const TopN& l) {
   factors_ = std::move(factors);
   offset_ = l.offset_;
   count_ = l.count_;
+}
+
+// Get constant count
+int64_t Sample::count() const {
+  DCHECK(ExpressionUtils::isEvaluableExpr(count_));
+  QueryExpressionContext qec;
+  auto count = count_->eval(qec).getInt();
+  DCHECK_GE(count, 0);
+  return count;
 }
 
 std::unique_ptr<PlanNodeDescription> Sample::explain() const {

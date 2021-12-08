@@ -35,11 +35,7 @@ class Explore : public SingleInputNode {
   bool dedup() const { return dedup_; }
 
   // Get the constant limit value
-  int64_t limit() const {
-    QueryExpressionContext ctx;
-    DCHECK(ExpressionUtils::isEvaluableExpr(limit_));
-    return DCHECK_NOTNULL(limit_)->eval(ctx).getInt();
-  }
+  int64_t limit() const;
 
   // Get the limit value in runtime
   int64_t limit(QueryExpressionContext& ctx) const {
@@ -800,17 +796,7 @@ class Limit final : public SingleInputNode {
   int64_t offset() const { return offset_; }
 
   // Get constant count value
-  int64_t count() const {
-    if (count_ == nullptr) {
-      return -1;
-    }
-    DCHECK(ExpressionUtils::isEvaluableExpr(count_));
-    QueryExpressionContext ctx;
-    auto s = count_->eval(ctx).getInt();
-    DCHECK_GE(s, 0);
-    return s;
-  }
-
+  int64_t count() const;
   // Get count in runtime
   int64_t count(QueryExpressionContext& ctx) const {
     if (count_ == nullptr) {
@@ -919,13 +905,7 @@ class Sample final : public SingleInputNode {
   }
 
   // Get constant count
-  int64_t count() const {
-    DCHECK(ExpressionUtils::isEvaluableExpr(count_));
-    QueryExpressionContext qec;
-    auto count = count_->eval(qec).getInt();
-    DCHECK_GE(count, 0);
-    return count;
-  }
+  int64_t count() const;
 
   // Get Runtime count
   int64_t count(QueryExpressionContext& qec) const {
