@@ -10,6 +10,7 @@
 #include "graph/planner/match/LabelIndexSeek.h"
 #include "graph/planner/match/MatchPlanner.h"
 #include "graph/planner/match/PropIndexSeek.h"
+#include "graph/planner/match/ScanSeek.h"
 #include "graph/planner/match/StartVidFinder.h"
 #include "graph/planner/match/VertexIdSeek.h"
 #include "graph/planner/ngql/FetchEdgesPlanner.h"
@@ -97,6 +98,11 @@ void PlannersRegister::registerMatch() {
   // MATCH(n: tag) RETURN n
   // MATCH(s)-[:edge]->(e) RETURN e
   startVidFinders.emplace_back(&LabelIndexSeek::make);
+
+  // Scan the start vertex directly
+  // Now we hard code the order of match rules before CBO,
+  // put scan rule at the last for we assume it's most inefficient
+  startVidFinders.emplace_back(&ScanSeek::make);
 }
 
 }  // namespace graph
