@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
 # This source code is licensed under Apache 2.0 License.
-@jmq
 Feature: Basic match
 
   Background:
@@ -631,3 +630,31 @@ Feature: Basic match
       MATCH (p)-[:serve*0..3]->(t) RETURN p
       """
     Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
+
+  Scenario: can't get property of vertex
+    When executing query:
+      """
+      MATCH (v:player{name:"Tim Duncan"}) return v.name
+      """
+    Then a SemanticError should be raised at runtime: To get the property of the vertex in `v.name', should use the format `var.tag.prop' When executing query:
+      """
+      MATCH (v:player)-[]->(b) WHERE v.age > 30 return v.player.name
+      """
+    Then a SemanticError should be raised at runtime: To get the property of the vertex in `v.age', should use the format `var.tag.prop'
+    When executing query:
+      """
+      MATCH (v:player)-[:like]->(b) WHERE v.player.age > 30 return v.player.name, b.age
+      """
+    Then a SemanticError should be raised at runtime: To get the property of the vertex in `b.age', should use the format `var.tag.prop'
+    When executing query:
+      """
+      MATCH (:player{name:"Tony Parker"})-[r]->(m) where exists(m.age) return r
+      """
+    Then a SemanticError should be raised at runtime: To get the property of the vertex in `m.age', should use the format `var.tag.prop'
+    When executing query:
+      """
+      MATCH (v :player{name:"Tim Duncan"})-[]-(v2)-[]-(v3)
+      WITH v3.name as names
+      RETURN count(names)
+      """
+    Then a SemanticError should be raised at runtime: To get the property of the vertex in `v3.name', should use the format `var.tag.prop'
