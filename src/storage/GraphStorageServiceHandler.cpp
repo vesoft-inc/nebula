@@ -135,13 +135,13 @@ folly::Future<cpp2::LookupIndexResp> GraphStorageServiceHandler::future_lookupIn
   RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::ScanVertexResponse> GraphStorageServiceHandler::future_scanVertex(
+folly::Future<cpp2::ScanResponse> GraphStorageServiceHandler::future_scanVertex(
     const cpp2::ScanVertexRequest& req) {
   auto* processor = ScanVertexProcessor::instance(env_, &kScanVertexCounters, readerPool_.get());
   RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::ScanEdgeResponse> GraphStorageServiceHandler::future_scanEdge(
+folly::Future<cpp2::ScanResponse> GraphStorageServiceHandler::future_scanEdge(
     const cpp2::ScanEdgeRequest& req) {
   auto* processor = ScanEdgeProcessor::instance(env_, &kScanEdgeCounters, readerPool_.get());
   RETURN_FUTURE(processor);

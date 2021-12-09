@@ -539,6 +539,10 @@ void NebulaStore::checkRemoteListeners(GraphSpaceID spaceId,
   }
 }
 
+void NebulaStore::fetchDiskParts(SpaceDiskPartsMap& diskParts) {
+  diskMan_->getDiskParts(diskParts);
+}
+
 void NebulaStore::updateSpaceOption(GraphSpaceID spaceId,
                                     const std::unordered_map<std::string, std::string>& options,
                                     bool isDbOption) {

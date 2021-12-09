@@ -554,6 +554,10 @@ struct LeaderInfo {
     2: i64                term
 }
 
+struct PartitionList {
+    1: list<common.PartitionID> part_list;
+}
+
 struct HBReq {
     1: HostRole   role,
     2: common.HostAddr host,
@@ -561,8 +565,9 @@ struct HBReq {
     4: optional map<common.GraphSpaceID, list<LeaderInfo>>
         (cpp.template = "std::unordered_map") leader_partIds;
     5: binary     git_info_sha,
-    // version of binary
-    6: optional binary version,
+    6: optional map<common.GraphSpaceID, map<binary, PartitionList>
+        (cpp.template = "std::unordered_map")>
+        (cpp.template = "std::unordered_map") disk_parts;
 }
 
 struct IndexFieldDef {
@@ -1106,6 +1111,7 @@ struct VerifyClientVersionResp {
 
 struct VerifyClientVersionReq {
     1: required binary version = common.version;
+    2: common.HostAddr host;
 }
 
 service MetaService {
