@@ -36,7 +36,6 @@ IS_NOT_NULL                 (IS{blanks}NOT{blanks}NULL)
 IS_EMPTY                    (IS{blanks}EMPTY)
 IS_NOT_EMPTY                (IS{blanks}NOT{blanks}EMPTY)
 
-LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
 EXP                         ([eE][-+]?[0-9]+)
 HEX                         ([0-9a-fA-F])
@@ -50,7 +49,7 @@ U4                          [\xf0-\xf4]
 CHINESE                     {U2}{U}|{U3}{U}{U}|{U4}{U}{U}{U}
 CN_EN                       {CHINESE}|[a-zA-Z]
 CN_EN_NUM                   {CHINESE}|[_a-zA-Z0-9]
-UTF8_LABEL                  {CN_EN}{CN_EN_NUM}+
+LABEL                       {CN_EN}{CN_EN_NUM}*      
 
 %%
 
@@ -473,17 +472,6 @@ UTF8_LABEL                  {CN_EN}{CN_EN_NUM}+
 <COMMENT><<EOF>>            {
                                 // Must match /* */
                                 throw GraphParser::syntax_error(*yylloc, "unterminated comment");
-                            }
-\`{UTF8_LABEL}\`            {
-                                yylval->strval = new std::string(yytext + 1, yyleng - 2);
-                                if (yylval->strval->size() > MAX_STRING) {
-                                    auto error = "Out of range of the LABEL length, "
-                                                  "the  max length of LABEL is " +
-                                                  std::to_string(MAX_STRING) + ":";
-                                    delete yylval->strval;
-                                    throw GraphParser::syntax_error(*yylloc, error);
-                                }
-                                return TokenType::UTF8_LABEL;
                             }
 .                           {
                                 /**
