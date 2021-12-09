@@ -772,9 +772,9 @@ Feature: Insert string vid of vertex and edge
     # chinese tag without quote mark
     When executing query:
       """
-      CREATE TAG 队伍( 名字 string);
+      CREATE TAG 队伍withoutQuote( 名字 string);
       """
-    Then a SyntaxError should be raised at runtime:
+    Then the execution should be successful
     # chinese tag and chinese prop
     When executing query:
       """
@@ -834,13 +834,13 @@ Feature: Insert string vid of vertex and edge
       | "时间" | "timestamp" | "YES" | EMPTY   | EMPTY   |
     When executing query:
       """
-      CREATE TAG `队伍s2`(`名s字ss1` string);
+      CREATE TAG `队伍 s2；`(`名s字ss1` string);
       """
     Then the execution should be successful
     # desc cn-en mixed tag
     When executing query:
       """
-      DESCRIBE TAG `队伍s2`
+      DESCRIBE TAG `队伍 s2；`
       """
     Then the result should be, in any order:
       | Field      | Type     | Null  | Default | Comment |
