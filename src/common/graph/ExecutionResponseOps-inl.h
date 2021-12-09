@@ -34,10 +34,10 @@ struct TccStructTraits<::nebula::ExecutionResponse> {
     if (false) {
     } else if (_fname == "error_code") {
       fid = 1;
-      _ftype = apache::thrift::protocol::T_I64;
+      _ftype = apache::thrift::protocol::T_I32;
     } else if (_fname == "latency_in_us") {
       fid = 2;
-      _ftype = apache::thrift::protocol::T_I32;
+      _ftype = apache::thrift::protocol::T_I64;
     } else if (_fname == "data") {
       fid = 3;
       _ftype = apache::thrift::protocol::T_STRUCT;
