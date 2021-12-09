@@ -173,13 +173,6 @@ class IndexScanTest : public ::testing::Test {
         for (auto& indexKey : indexKeys) {
           CHECK(ret[j + 1].insert({indexKey, ""}).second);
         }
-        if (indexKeys.size() > 1) {
-          LOG(INFO) << "***********";
-          for (auto& indexKey : indexKeys) {
-            LOG(INFO) << folly::hexlify(indexKey);
-          }
-          LOG(INFO) << "***********";
-        }
       }
     }
     return ret;
@@ -1782,7 +1775,6 @@ TEST_F(IndexScanTest, Geography) {
   for (auto& iter : kv) {
     for (auto& item : iter) {
       kvstore->put(item.first, item.second);
-      LOG(INFO) << folly::hexlify(item.first) << ":" << item.second;
     }
   }
   auto actual = [&](std::shared_ptr<IndexItem> index,
