@@ -47,7 +47,10 @@ U                           [\x80-\xbf]
 U2                          [\xc2-\xdf]
 U3                          [\xe0-\xef]
 U4                          [\xf0-\xf4]
-CHINESE_LABEL               ({U2}{U}|{U3}{U}{U}|{U4}{U}{U}{U})+
+CHINESE                     {U2}{U}|{U3}{U}{U}|{U4}{U}{U}{U}
+CN_EN                       {CHINESE}|[a-zA-Z]
+CN_EN_NUM                   {CHINESE}|[_a-zA-Z0-9]
+UTF8_LABEL                  {CN_EN}{CN_EN_NUM}+
 
 %%
 
@@ -471,7 +474,7 @@ CHINESE_LABEL               ({U2}{U}|{U3}{U}{U}|{U4}{U}{U}{U})+
                                 // Must match /* */
                                 throw GraphParser::syntax_error(*yylloc, "unterminated comment");
                             }
-\`{CHINESE_LABEL}\`         {
+\`{UTF8_LABEL}\`            {
                                 yylval->strval = new std::string(yytext + 1, yyleng - 2);
                                 if (yylval->strval->size() > MAX_STRING) {
                                     auto error = "Out of range of the LABEL length, "
@@ -480,7 +483,7 @@ CHINESE_LABEL               ({U2}{U}|{U3}{U}{U}|{U4}{U}{U}{U})+
                                     delete yylval->strval;
                                     throw GraphParser::syntax_error(*yylloc, error);
                                 }
-                                return TokenType::CHINESE_LABEL;
+                                return TokenType::UTF8_LABEL;
                             }
 .                           {
                                 /**

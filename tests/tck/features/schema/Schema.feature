@@ -834,6 +834,19 @@ Feature: Insert string vid of vertex and edge
       | "时间" | "timestamp" | "YES" | EMPTY   | EMPTY   |
     When executing query:
       """
+      CREATE TAG `队伍s2`(`名s字ss1` string);
+      """
+    Then the execution should be successful
+    # desc cn-en mixed tag
+    When executing query:
+      """
+      DESCRIBE TAG `队伍s2`
+      """
+    Then the result should be, in any order:
+      | Field      | Type     | Null  | Default | Comment |
+      | "名s字ss1" | "string" | "YES" | EMPTY   | EMPTY   |
+    When executing query:
+      """
       DROP SPACE issue2009;
       """
     Then the execution should be successful
