@@ -47,8 +47,14 @@ class SegmentsConnector final {
                                             const PlanNode* left,
                                             const PlanNode* right);
 
+  /**
+   * left->right
+   */
   static void addDependency(const PlanNode* left, const PlanNode* right);
 
+  /*
+   * left->right
+   */
   static void addInput(const PlanNode* left, const PlanNode* right, bool copyColNames = false);
 };
 }  // namespace graph

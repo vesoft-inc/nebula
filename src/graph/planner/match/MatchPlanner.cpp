@@ -22,73 +22,79 @@ StatusOr<SubPlan> MatchPlanner::transform(AstContext* astCtx) {
   if (astCtx->sentence->kind() != Sentence::Kind::kMatch) {
     return Status::Error("Only MATCH is accepted for match planner.");
   }
-  auto* matchCtx = static_cast<MatchAstContext*>(astCtx);
-
-  std::vector<SubPlan> subplans;
-  for (auto& clauseCtx : matchCtx->clauses) {
-    switch (clauseCtx->kind) {
-      case CypherClauseKind::kMatch: {
-        auto subplan = std::make_unique<MatchClausePlanner>()->transform(clauseCtx.get());
-        NG_RETURN_IF_ERROR(subplan);
-        subplans.emplace_back(std::move(subplan).value());
-        break;
-      }
-      case CypherClauseKind::kUnwind: {
-        auto subplan = std::make_unique<UnwindClausePlanner>()->transform(clauseCtx.get());
-        NG_RETURN_IF_ERROR(subplan);
-        auto& unwind = subplan.value().root;
-        std::vector<std::string> inputCols;
-        if (!subplans.empty()) {
-          auto input = subplans.back().root;
-          auto cols = input->colNames();
-          for (auto col : cols) {
-            inputCols.emplace_back(col);
+  auto* cypherCtx = static_cast<CypherContext*>(astCtx);
+  std::vector<SubPlan> queryPartPlans;
+  for (auto& queryPart : cypherCtx->queryParts) {
+    SubPlan queryPartPlan;
+    for (auto& match : queryPart.matchs) {
+      auto matchPlan = genPlan(match.get());
+      NG_RETURN_IF_ERROR(matchPlan);
+      if (queryPartPlan.root == nullptr) {
+        queryPartPlan = std::move(matchPlan).value();
+      } else {
+        std::unordered_set<std::string> intersectedAliases;
+        for (auto& alias : match->aliasesGenerated) {
+          if (match->aliasesAvailable->find(alias.first) != match->aliasesAvailable->end()) {
+            intersectedAliases.emplace(alias.first);
           }
         }
-        inputCols.emplace_back(unwind->colNames().front());
-        unwind->setColNames(inputCols);
-        subplans.emplace_back(std::move(subplan).value());
-        break;
-      }
-      case CypherClauseKind::kWith: {
-        auto subplan = std::make_unique<WithClausePlanner>()->transform(clauseCtx.get());
-        NG_RETURN_IF_ERROR(subplan);
-        subplans.emplace_back(std::move(subplan).value());
-        break;
-      }
-      case CypherClauseKind::kReturn: {
-        auto subplan = std::make_unique<ReturnClausePlanner>()->transform(clauseCtx.get());
-        NG_RETURN_IF_ERROR(subplan);
-        subplans.emplace_back(std::move(subplan).value());
-        break;
-      }
-      default: {
-        return Status::Error("Unsupported clause.");
+
+        if (!intersectedAliases.empty()) {
+          if (match->isOptional) {
+            // TODO: LeftJoin on intersects
+          } else {
+            // TODO: InnerJoin on intersects
+          }
+        } else {
+          // TODO: CartesianProduct
+        }
       }
     }
+
+    auto boundaryPlan = genPlan(queryPart.boundary.get());
+    NG_RETURN_IF_ERROR(boundaryPlan);
+    SegmentsConnector::addInput(boundaryPlan.value().tail, queryPartPlan.root);
+    queryPartPlan.root = boundaryPlan.value().root;
+    queryPartPlans.emplace_back(std::move(queryPartPlan));
   }
 
-  auto finalPlan = connectSegments(astCtx, subplans, matchCtx->clauses);
+  auto finalPlan = connectQueryParts(queryPartPlans);
   NG_RETURN_IF_ERROR(finalPlan);
   return std::move(finalPlan).value();
 }
 
-StatusOr<SubPlan> MatchPlanner::connectSegments(
-    AstContext* astCtx,
-    std::vector<SubPlan>& subplans,
-    std::vector<std::unique_ptr<CypherClauseContextBase>>& clauses) {
+StatusOr<SubPlan> MatchPlanner::genPlan(CypherClauseContextBase* clauseCtx) {
+  switch (clauseCtx->kind) {
+    case CypherClauseKind::kMatch: {
+      return std::make_unique<MatchClausePlanner>()->transform(clauseCtx);
+    }
+    case CypherClauseKind::kUnwind: {
+      return std::make_unique<UnwindClausePlanner>()->transform(clauseCtx);
+    }
+    case CypherClauseKind::kWith: {
+      return std::make_unique<WithClausePlanner>()->transform(clauseCtx);
+    }
+    case CypherClauseKind::kReturn: {
+      return std::make_unique<ReturnClausePlanner>()->transform(clauseCtx);
+    }
+    default: {
+      return Status::Error("Unsupported clause.");
+    }
+  }
+  return Status::OK();
+}
+
+StatusOr<SubPlan> MatchPlanner::connectQueryParts(std::vector<SubPlan>& subplans) {
   DCHECK(!subplans.empty());
-  subplans.front().tail->setInputVar(astCtx->qctx->vctx()->anonVarGen()->getVar());
+  // subplans.front().tail->setInputVar(astCtx->qctx->vctx()->anonVarGen()->getVar());
   if (subplans.size() == 1) {
     return subplans.front();
   }
 
   SubPlan finalPlan = subplans.front();
-  for (size_t i = 0; i < subplans.size() - 1; ++i) {
-    auto interimPlan = SegmentsConnector::connectSegments(
-        clauses[i + 1].get(), clauses[i].get(), subplans[i + 1], finalPlan);
-    NG_RETURN_IF_ERROR(interimPlan);
-    finalPlan = std::move(interimPlan).value();
+  for (size_t i = 1; i < subplans.size(); ++i) {
+    SegmentsConnector::addInput(subplans[i].tail, finalPlan.root);
+    finalPlan.root = subplans[i].root;
   }
 
   return finalPlan;

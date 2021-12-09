@@ -25,20 +25,20 @@ StatusOr<SubPlan> YieldClausePlanner::transform(CypherClauseContextBase* clauseC
 void YieldClausePlanner::rewriteYieldColumns(const YieldClauseContext* yctx,
                                              const YieldColumns* yields,
                                              YieldColumns* newYields) {
-  auto* aliasesUsed = yctx->aliasesUsed;
+  auto* aliasesAvailable = yctx->aliasesAvailable;
   for (auto* col : yields->columns()) {
     newYields->addColumn(
-        new YieldColumn(MatchSolver::doRewrite(yctx->qctx, *aliasesUsed, col->expr())));
+        new YieldColumn(MatchSolver::doRewrite(yctx->qctx, *aliasesAvailable, col->expr())));
   }
 }
 
 void YieldClausePlanner::rewriteGroupExprs(const YieldClauseContext* yctx,
                                            const std::vector<Expression*>* exprs,
                                            std::vector<Expression*>* newExprs) {
-  auto* aliasesUsed = yctx->aliasesUsed;
+  auto* aliasesAvailable = yctx->aliasesAvailable;
 
   for (auto* expr : *exprs) {
-    auto* newExpr = MatchSolver::doRewrite(yctx->qctx, *aliasesUsed, expr);
+    auto* newExpr = MatchSolver::doRewrite(yctx->qctx, *aliasesAvailable, expr);
     newExprs->emplace_back(newExpr);
   }
 }
