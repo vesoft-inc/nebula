@@ -60,6 +60,7 @@ class LookupValidator final : public Validator {
   std::vector<nebula::plugin::HttpClient> tsClients_;
   ExpressionProps exprProps_;
   std::vector<std::string> idxReturnCols_;
+  std::vector<int32_t> schemaIds_;
 };
 
 }  // namespace graph

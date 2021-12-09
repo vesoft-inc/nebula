@@ -358,8 +358,12 @@ StatusOr<Value::Type> Validator::deduceExprType(const Expression* expr) const {
   return visitor.type();
 }
 
-Status Validator::deduceProps(const Expression* expr, ExpressionProps& exprProps) {
-  DeducePropsVisitor visitor(qctx_, space_.id, &exprProps, &userDefinedVarNameList_);
+Status Validator::deduceProps(const Expression* expr,
+                              ExpressionProps& exprProps,
+                              std::vector<TagID>* tagIds,
+                              std::vector<EdgeType>* edgeTypes) {
+  DeducePropsVisitor visitor(
+      qctx_, space_.id, &exprProps, &userDefinedVarNameList_, tagIds, edgeTypes);
   const_cast<Expression*>(expr)->accept(&visitor);
   return std::move(visitor).status();
 }

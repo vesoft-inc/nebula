@@ -36,8 +36,6 @@ class GoValidator final : public Validator {
 
   Expression* rewrite2VarProp(const Expression* expr);
 
-  Status extractEdgeProp(ExpressionProps& exprProps);
-
  private:
   std::unique_ptr<GoContext> goCtx_;
 

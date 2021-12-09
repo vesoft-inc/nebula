@@ -15,9 +15,6 @@
 namespace nebula {
 namespace graph {
 
-// static const char* SRC_VERTEX = "$^";
-// static const char* DST_VERTEX = "$$";
-
 Status GoValidator::validateImpl() {
   auto* goSentence = static_cast<GoSentence*>(sentence_);
   goCtx_ = getContext<GoContext>();
@@ -89,7 +86,7 @@ Status GoValidator::validateWhere(WhereClause* where) {
     return Status::SemanticError(ss.str());
   }
 
-  NG_RETURN_IF_ERROR(deduceProps(filter, goCtx_->exprProps));
+  NG_RETURN_IF_ERROR(deduceProps(filter, goCtx_->exprProps, nullptr, &goCtx_->over.edgeTypes));
   goCtx_->filter = filter;
   return Status::OK();
 }
@@ -140,7 +137,8 @@ Status GoValidator::validateYield(YieldClause* yield) {
     }
 
     auto vertexExpr = ExpressionUtils::findAny(col->expr(), {Expression::Kind::kVertex});
-    if (static_cast<const VertexExpression*>(vertexExpr)->name() == "VERTEX") {
+    if (vertexExpr != nullptr &&
+        static_cast<const VertexExpression*>(vertexExpr)->name() == "VERTEX") {
       return Status::SemanticError("`%s' is not support in go sentence.", col->toString().c_str());
     }
 
@@ -148,15 +146,11 @@ Status GoValidator::validateYield(YieldClause* yield) {
     NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(col->expr()));
 
     auto* colExpr = col->expr();
-    if (ExpressionUtils::hasAny(colExpr, {Expression::Kind::kEdge})) {
-      extractEdgeProp(exprProps);
-    }
-
     auto typeStatus = deduceExprType(colExpr);
     NG_RETURN_IF_ERROR(typeStatus);
     auto type = typeStatus.value();
     outputs_.emplace_back(col->name(), type);
-    NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps));
+    NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps, nullptr, &goCtx_->over.edgeTypes));
   }
 
   const auto& over = goCtx_->over;
@@ -168,21 +162,6 @@ Status GoValidator::validateYield(YieldClause* yield) {
   }
   goCtx_->yieldExpr = yield->yields();
   goCtx_->colNames = getOutColNames();
-  return Status::OK();
-}
-
-Status GoValidator::extractEdgeProp(ExpressionProps& exprProps) {
-  const auto& edgeTypes = goCtx_->over.edgeTypes;
-  for (const auto& edgeType : edgeTypes) {
-    const auto& edgeSchema = qctx_->schemaMng()->getEdgeSchema(space_.id, std::abs(edgeType));
-    exprProps.insertEdgeProp(edgeType, kType);
-    exprProps.insertEdgeProp(edgeType, kSrc);
-    exprProps.insertEdgeProp(edgeType, kDst);
-    exprProps.insertEdgeProp(edgeType, kRank);
-    for (size_t i = 0; i < edgeSchema->getNumFields(); ++i) {
-      exprProps.insertEdgeProp(edgeType, edgeSchema->getFieldName(i));
-    }
-  }
   return Status::OK();
 }
 

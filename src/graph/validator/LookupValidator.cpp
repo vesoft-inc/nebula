@@ -53,6 +53,7 @@ Status LookupValidator::validateFrom() {
   NG_RETURN_IF_ERROR(ret);
   lookupCtx_->isEdge = ret.value().first;
   lookupCtx_->schemaId = ret.value().second;
+  schemaIds_.emplace_back(ret.value().second);
   return Status::OK();
 }
 
@@ -124,7 +125,7 @@ Status LookupValidator::validateYieldEdge() {
     NG_RETURN_IF_ERROR(typeStatus);
     outputs_.emplace_back(col->name(), typeStatus.value());
     yieldExpr->addColumn(col->clone().release());
-    NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps_));
+    NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps_, nullptr, &schemaIds_));
   }
   return Status::OK();
 }
@@ -154,7 +155,7 @@ Status LookupValidator::validateYieldTag() {
     NG_RETURN_IF_ERROR(typeStatus);
     outputs_.emplace_back(col->name(), typeStatus.value());
     yieldExpr->addColumn(col->clone().release());
-    NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps_));
+    NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps_, &schemaIds_));
   }
   return Status::OK();
 }
@@ -211,7 +212,11 @@ Status LookupValidator::validateFilter() {
     // Make sure the type of the rewritted filter expr is right
     NG_RETURN_IF_ERROR(deduceExprType(lookupCtx_->filter));
   }
-  NG_RETURN_IF_ERROR(deduceProps(lookupCtx_->filter, exprProps_));
+  if (lookupCtx_->isEdge) {
+    NG_RETURN_IF_ERROR(deduceProps(lookupCtx_->filter, exprProps_, nullptr, &schemaIds_));
+  } else {
+    NG_RETURN_IF_ERROR(deduceProps(lookupCtx_->filter, exprProps_, &schemaIds_));
+  }
   return Status::OK();
 }
 
