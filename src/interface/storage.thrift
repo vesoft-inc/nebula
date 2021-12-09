@@ -39,7 +39,7 @@ struct ResponseCommon {
     // Only contains the partition that returns error
     1: required list<PartitionResult>   failed_parts,
     // Query latency from storage service
-    2: required i32                     latency_in_us,
+    2: required i64                     latency_in_us,
     3: optional map<string,i32>         latency_detail_us,
 }
 
