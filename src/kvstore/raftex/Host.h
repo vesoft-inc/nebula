@@ -38,6 +38,18 @@ class Host final : public std::enable_shared_from_this<Host> {
     return idStr_.c_str();
   }
 
+  // This will be called when the shard lost its leadership
+  void pause() {
+    std::lock_guard<std::mutex> g(lock_);
+    paused_ = true;
+  }
+
+  // This will be called when the shard becomes the leader
+  void resume() {
+    std::lock_guard<std::mutex> g(lock_);
+    paused_ = false;
+  }
+
   void stop() {
     std::lock_guard<std::mutex> g(lock_);
     stopped_ = true;
@@ -88,7 +100,7 @@ class Host final : public std::enable_shared_from_this<Host> {
   }
 
  private:
-  cpp2::ErrorCode checkStatus() const;
+  cpp2::ErrorCode canAppendLog() const;
 
   folly::Future<cpp2::AppendLogResponse> sendAppendLogRequest(
       folly::EventBase* eb, std::shared_ptr<cpp2::AppendLogRequest> req);
@@ -119,6 +131,7 @@ class Host final : public std::enable_shared_from_this<Host> {
 
   mutable std::mutex lock_;
 
+  bool paused_{false};
   bool stopped_{false};
 
   // whether there is a batch of logs for target host in on going

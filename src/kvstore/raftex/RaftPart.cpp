@@ -431,6 +431,9 @@ void RaftPart::commitTransLeader(const HostAddr& target) {
           lastMsgRecvDur_.reset();
           role_ = Role::FOLLOWER;
           leader_ = HostAddr("", 0);
+          for (auto& host : hosts_) {
+            host->pause();
+          }
           LOG(INFO) << idStr_ << "Give up my leadership!";
         }
       } else {
@@ -741,7 +744,8 @@ void RaftPart::appendLogsInternal(AppendLogsIterator iter, TermID termId) {
     if (!wal_->appendLogs(iter)) {
       LOG_EVERY_N(WARNING, 100) << idStr_ << "Failed to write into WAL";
       res = AppendLogResult::E_WAL_FAILURE;
-      wal_->rollbackToLog(lastLogId_);
+      lastLogId_ = wal_->lastLogId();
+      lastLogTerm_ = wal_->lastLogTerm();
       break;
     }
     lastId = wal_->lastLogId();
@@ -777,7 +781,8 @@ void RaftPart::replicateLogs(folly::EventBase* eb,
     std::lock_guard<std::mutex> g(raftLock_);
     res = canAppendLogs(currTerm);
     if (res != AppendLogResult::SUCCEEDED) {
-      wal_->rollbackToLog(lastLogId_);
+      lastLogId_ = wal_->lastLogId();
+      lastLogTerm_ = wal_->lastLogTerm();
       break;
     }
     hosts = hosts_;
@@ -874,7 +879,8 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
       std::lock_guard<std::mutex> g(raftLock_);
       res = canAppendLogs(currTerm);
       if (res != AppendLogResult::SUCCEEDED) {
-        wal_->rollbackToLog(lastLogId_);
+        lastLogId_ = wal_->lastLogId();
+        lastLogTerm_ = wal_->lastLogTerm();
         break;
       }
       lastLogId_ = lastLogId;
@@ -1212,6 +1218,7 @@ bool RaftPart::handleElectionResponses(const ElectionResponses& resps,
     // reset host can't be executed with raftLock_, otherwise it may encounter deadlock
     for (auto& host : hosts) {
       host->reset();
+      host->resume();
     }
     sendHeartbeat();
   }
@@ -1393,10 +1400,16 @@ void RaftPart::processAskForVoteRequest(const cpp2::AskForVoteRequest& req,
 
   // not a pre-vote, need to rollback wal if necessary
   // role_ and term_ has been set above
-  if (oldRole == Role::LEADER && wal_->lastLogId() > lastLogId_) {
-    LOG(INFO) << idStr_ << "There are some logs up to " << wal_->lastLogId()
-              << " i did not commit when i was leader, rollback to " << lastLogId_;
-    wal_->rollbackToLog(lastLogId_);
+  if (oldRole == Role::LEADER) {
+    if (wal_->lastLogId() > lastLogId_) {
+      LOG(INFO) << idStr_ << "There are some logs up to " << wal_->lastLogId()
+                << " update lastLogId_ " << lastLogId_ << " to wal's";
+      lastLogId_ = wal_->lastLogId();
+      lastLogTerm_ = wal_->lastLogTerm();
+    }
+    for (auto& host : hosts_) {
+      host->pause();
+    }
   }
   if (oldRole == Role::LEADER) {
     bgWorkers_->addTask([self = shared_from_this(), oldTerm] { self->onLostLeadership(oldTerm); });
@@ -1632,10 +1645,16 @@ cpp2::ErrorCode RaftPart::verifyLeader(const REQ& req) {
   term_ = req.get_current_term();
   isBlindFollower_ = false;
   // Before accept the logs from the new leader, check the logs locally.
-  if (wal_->lastLogId() > lastLogId_) {
-    LOG(INFO) << idStr_ << "There is one log " << wal_->lastLogId()
-              << " i did not commit when i was leader, rollback to " << lastLogId_;
-    wal_->rollbackToLog(lastLogId_);
+  if (oldRole == Role::LEADER) {
+    if (wal_->lastLogId() > lastLogId_) {
+      LOG(INFO) << idStr_ << "There are some logs up to " << wal_->lastLogId()
+                << " update lastLogId_ " << lastLogId_ << " to wal's";
+      lastLogId_ = wal_->lastLogId();
+      lastLogTerm_ = wal_->lastLogTerm();
+    }
+    for (auto& host : hosts_) {
+      host->pause();
+    }
   }
   if (oldRole == Role::LEADER) {
     // Need to invoke onLostLeadership callback

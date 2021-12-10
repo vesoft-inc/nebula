@@ -43,13 +43,17 @@ void Host::waitForStop() {
   LOG(INFO) << idStr_ << "The host has been stopped!";
 }
 
-cpp2::ErrorCode Host::checkStatus() const {
+cpp2::ErrorCode Host::canAppendLog() const {
   CHECK(!lock_.try_lock());
   if (stopped_) {
     VLOG(2) << idStr_ << "The host is stopped, just return";
     return cpp2::ErrorCode::E_HOST_STOPPED;
   }
 
+  if (paused_) {
+    VLOG(2) << idStr_ << "The host is paused, due to losing leadership";
+    return cpp2::ErrorCode::E_HOST_PAUSED;
+  }
   return cpp2::ErrorCode::SUCCEEDED;
 }
 
@@ -57,11 +61,10 @@ folly::Future<cpp2::AskForVoteResponse> Host::askForVote(const cpp2::AskForVoteR
                                                          folly::EventBase* eb) {
   {
     std::lock_guard<std::mutex> g(lock_);
-    auto res = checkStatus();
-    if (res != cpp2::ErrorCode::SUCCEEDED) {
+    if (stopped_) {
       VLOG(2) << idStr_ << "The Host is not in a proper status, do not send";
       cpp2::AskForVoteResponse resp;
-      resp.error_code_ref() = res;
+      resp.error_code_ref() = cpp2::ErrorCode::E_HOST_STOPPED;
       return resp;
     }
   }
@@ -82,7 +85,7 @@ folly::Future<cpp2::AppendLogResponse> Host::appendLogs(folly::EventBase* eb,
   {
     std::lock_guard<std::mutex> g(lock_);
 
-    auto res = checkStatus();
+    auto res = canAppendLog();
 
     if (UNLIKELY(sendingSnapshot_)) {
       LOG_EVERY_N(INFO, 500) << idStr_ << "The target host is waiting for a snapshot";
@@ -173,7 +176,7 @@ void Host::appendLogsInternal(folly::EventBase* eb, std::shared_ptr<cpp2::Append
             std::shared_ptr<cpp2::AppendLogRequest> newReq;
             {
               std::lock_guard<std::mutex> g(self->lock_);
-              auto res = self->checkStatus();
+              auto res = self->canAppendLog();
               if (res != cpp2::ErrorCode::SUCCEEDED) {
                 cpp2::AppendLogResponse r;
                 r.error_code_ref() = res;
@@ -351,7 +354,7 @@ folly::Future<cpp2::AppendLogResponse> Host::sendAppendLogRequest(
 
   {
     std::lock_guard<std::mutex> g(lock_);
-    auto res = checkStatus();
+    auto res = canAppendLog();
     if (res != cpp2::ErrorCode::SUCCEEDED) {
       LOG(WARNING) << idStr_ << "The Host is not in a proper status, do not send";
       cpp2::AppendLogResponse resp;
@@ -411,7 +414,7 @@ folly::Future<cpp2::HeartbeatResponse> Host::sendHeartbeatRequest(
 
   {
     std::lock_guard<std::mutex> g(lock_);
-    auto res = checkStatus();
+    auto res = canAppendLog();
     if (res != cpp2::ErrorCode::SUCCEEDED) {
       LOG(WARNING) << idStr_ << "The Host is not in a proper status, do not send";
       cpp2::HeartbeatResponse resp;
