@@ -78,6 +78,7 @@ class Expression {
     kEdge,
 
     kUUID,
+    kSFID,
 
     kVar,
     kVersionedVar,

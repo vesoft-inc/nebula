@@ -9,7 +9,7 @@
 namespace nebula {
 namespace meta {
 
-void GetSegmentIdProcessor::process(const cpp2::GetSegmentIdReq& req) {
+void GetSegmentIdProcessor::process(MAYBE_UNUSED const cpp2::GetSegmentIdReq& req) {
   auto stepResult = doGet(stepKey);
   auto curIdResult = doGet(idKey);
   if (!nebula::ok(stepResult) || !nebula::ok(curIdResult)) {

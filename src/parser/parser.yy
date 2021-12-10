@@ -171,7 +171,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %token KW_COMMENT
 %token KW_DROP KW_REMOVE KW_SPACES KW_INGEST KW_INDEX KW_INDEXES
 %token KW_IF KW_NOT KW_EXISTS KW_WITH
-%token KW_BY KW_DOWNLOAD KW_HDFS KW_UUID KW_CONFIGS KW_FORCE
+%token KW_BY KW_DOWNLOAD KW_HDFS KW_UUID KW_SFID KW_CONFIGS KW_FORCE
 %token KW_GET KW_DECLARE KW_GRAPH KW_META KW_STORAGE
 %token KW_TTL KW_TTL_DURATION KW_TTL_COL KW_DATA KW_STOP
 %token KW_FETCH KW_PROP KW_UPDATE KW_UPSERT KW_WHEN
@@ -227,6 +227,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <expr> vid
 %type <expr> function_call_expression
 %type <expr> uuid_expression
+%type <expr> sfid_expression
 %type <expr> list_expression
 %type <expr> set_expression
 %type <expr> map_expression
@@ -450,6 +451,7 @@ unreserved_keyword
     | KW_DATA               { $$ = new std::string("data"); }
     | KW_LEADER             { $$ = new std::string("leader"); }
     | KW_UUID               { $$ = new std::string("uuid"); }
+    | KW_SFID               { $$ = new std::string("sfid"); }
     | KW_JOB                { $$ = new std::string("job"); }
     | KW_JOBS               { $$ = new std::string("jobs"); }
     | KW_BIDIRECT           { $$ = new std::string("bidirect"); }
@@ -1045,6 +1047,13 @@ uuid_expression
     }
     ;
 
+sfid_expression
+    : KW_SFID L_PAREN R_PAREN {
+        SFIDExpression::init(qctx);
+        $$ = SFIDExpression::make(qctx->objPool(), qctx);
+    }
+    ;
+
 opt_argument_list
     : %empty {
         $$ = ArgumentList::make(qctx->objPool());
@@ -1287,6 +1296,9 @@ vid
         $$ = $1;
     }
     | uuid_expression {
+        $$ = $1;
+    }
+    | sfid_expression {
         $$ = $1;
     }
     | STRING {

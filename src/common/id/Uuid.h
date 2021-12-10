@@ -9,7 +9,6 @@
 #include <boost/uuid/uuid_io.hpp>          // streaming operators etc
 
 namespace nebula {
-namespace meta {
 
 class UUID {
  public:
@@ -19,5 +18,4 @@ class UUID {
   }
 };
 
-}  // namespace meta
 }  // namespace nebula

@@ -17,6 +17,7 @@ nebula_add_library(
     AggregateExpression.cpp
     PropertyExpression.cpp
     UUIDExpression.cpp
+    SFIDExpression.cpp
     VariableExpression.cpp
     ContainerExpression.cpp
     SubscriptExpression.cpp

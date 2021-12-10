@@ -26,6 +26,7 @@
 #include "common/expression/PropertyExpression.h"
 #include "common/expression/ReduceExpression.h"
 #include "common/expression/RelationalExpression.h"
+#include "common/expression/SFIDExpression.h"
 #include "common/expression/SubscriptExpression.h"
 #include "common/expression/TypeCastingExpression.h"
 #include "common/expression/UUIDExpression.h"
@@ -54,6 +55,7 @@ class ExprVisitor {
   virtual void visit(FunctionCallExpression *expr) = 0;
   virtual void visit(AggregateExpression *expr) = 0;
   virtual void visit(UUIDExpression *expr) = 0;
+  virtual void visit(SFIDExpression *expr) = 0;
   // variable expression
   virtual void visit(VariableExpression *expr) = 0;
   virtual void visit(VersionedVariableExpression *expr) = 0;

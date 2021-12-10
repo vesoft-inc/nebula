@@ -183,6 +183,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "REDUCE"                    { return TokenType::KW_REDUCE; }
 "LEADER"                    { return TokenType::KW_LEADER; }
 "UUID"                      { return TokenType::KW_UUID; }
+"SFID"                      { return TokenType::KW_SFID; }
 "DATA"                      { return TokenType::KW_DATA; }
 "SNAPSHOT"                  { return TokenType::KW_SNAPSHOT; }
 "SNAPSHOTS"                 { return TokenType::KW_SNAPSHOTS; }

@@ -27,6 +27,7 @@
 #include "common/expression/PropertyExpression.h"
 #include "common/expression/ReduceExpression.h"
 #include "common/expression/RelationalExpression.h"
+#include "common/expression/SFIDExpression.h"
 #include "common/expression/SubscriptExpression.h"
 #include "common/expression/TypeCastingExpression.h"
 #include "common/expression/UUIDExpression.h"
