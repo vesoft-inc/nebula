@@ -55,6 +55,10 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "EdgeIndexRangeScan";
     case Kind::kEdgeIndexPrefixScan:
       return "EdgeIndexPrefixScan";
+    case Kind::kScanVertices:
+      return "ScanVertices";
+    case Kind::kScanEdges:
+      return "ScanEdges";
     case Kind::kFilter:
       return "Filter";
     case Kind::kUnion:
