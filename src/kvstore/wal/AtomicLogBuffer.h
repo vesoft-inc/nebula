@@ -54,10 +54,12 @@ struct Node {
   }
 
   Record* rec(int32_t index) {
+    if (UNLIKELY(index >= kMaxLength)) {
+      return nullptr;
+    }
     CHECK_GE(index, 0);
     auto pos = pos_.load(std::memory_order_acquire);
     CHECK_LE(index, pos);
-    CHECK(index != kMaxLength);
     return &(*records_)[index];
   }
 
@@ -176,8 +178,11 @@ class AtomicLogBuffer : public std::enable_shared_from_this<AtomicLogBuffer> {
       currNode_ = logBuffer_->seek(logId);
       if (currNode_ != nullptr) {
         currIndex_ = logId - currNode_->firstLogId_;
+        // Since reader is only a snapshot, a possible case is that logId > currNode->firstLogId_,
+        // however, the logId we search may not in currNode. (e.g. currNode_ is the latest node,
+        // but currIndex_ >= kMaxLength). In this case, currRec_ will be an invalid one.
         currRec_ = currNode_->rec(currIndex_);
-        valid_ = true;
+        valid_ = (currRec_ != nullptr);
       } else {
         valid_ = false;
       }
