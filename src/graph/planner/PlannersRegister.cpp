@@ -90,6 +90,9 @@ void PlannersRegister::registerMatch() {
   // MATCH(n) WHERE id(n) = value RETURN n
   startVidFinders.emplace_back(&VertexIdSeek::make);
 
+  // TODO: Support argument
+  // MATCH (n)-[]-(l), (l)-[]-(m) return n,l,m
+
   // MATCH(n:Tag{prop:value}) RETURN n
   // MATCH(n:Tag) WHERE n.prop = value RETURN n
   startVidFinders.emplace_back(&PropIndexSeek::make);
