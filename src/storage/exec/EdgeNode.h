@@ -85,7 +85,24 @@ class FetchEdgeNode final : public EdgeNode<cpp2::EdgeKey> {
     name_ = "FetchEdgeNode";
   }
 
-  bool valid() const override { return valid_; }
+  bool valid() const override {
+    if (!valid_) {
+      return false;
+    }
+    if (exp_ == nullptr) {
+      return true;
+    }
+
+    expCtx_->resetSchema(edgeName_, schemas_->back().get(), true);
+    expCtx_->reset(this->reader(), this->key().str());
+    auto result = exp_->eval(*expCtx_);
+    auto ret = result.toBool();
+    // NULL is always false
+    if (ret.isBool() && ret.getBool()) {
+      return true;
+    }
+    return false;
+  }
 
   void next() override { valid_ = false; }
 

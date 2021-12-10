@@ -34,9 +34,13 @@ class GetPropProcessor : public QueryBaseProcessor<cpp2::GetPropRequest, cpp2::G
       : QueryBaseProcessor<cpp2::GetPropRequest, cpp2::GetPropResponse>(env, counters, executor) {}
 
  private:
-  StoragePlan<VertexID> buildTagPlan(RuntimeContext* context, nebula::DataSet* result);
+  StoragePlan<VertexID> buildTagPlan(RuntimeContext* context,
+                                     StorageExpressionContext* expCtx,
+                                     nebula::DataSet* result);
 
-  StoragePlan<cpp2::EdgeKey> buildEdgePlan(RuntimeContext* context, nebula::DataSet* result);
+  StoragePlan<cpp2::EdgeKey> buildEdgePlan(RuntimeContext* context,
+                                           StorageExpressionContext* expCtx,
+                                           nebula::DataSet* result);
 
   void onProcessFinished() override;
 
@@ -49,7 +53,6 @@ class GetPropProcessor : public QueryBaseProcessor<cpp2::GetPropRequest, cpp2::G
   nebula::cpp2::ErrorCode buildEdgeContext(const cpp2::GetPropRequest& req);
 
   void buildTagColName(const std::vector<cpp2::VertexProp>& tagProps);
-
   void buildEdgeColName(const std::vector<cpp2::EdgeProp>& edgeProps);
 
   void runInSingleThread(const cpp2::GetPropRequest& req);
@@ -57,12 +60,14 @@ class GetPropProcessor : public QueryBaseProcessor<cpp2::GetPropRequest, cpp2::G
 
   folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> runInExecutor(
       RuntimeContext* context,
+      StorageExpressionContext* expCtx,
       nebula::DataSet* result,
       PartitionID partId,
       const std::vector<nebula::Row>& rows);
 
  private:
   std::vector<RuntimeContext> contexts_;
+  std::vector<StorageExpressionContext> expCtxs_;
   std::vector<nebula::DataSet> results_;
   bool isEdge_ = false;  // true for edge, false for tag
 };

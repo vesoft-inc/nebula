@@ -13,6 +13,9 @@
 namespace nebula {
 namespace storage {
 
+ObjectPool objPool;
+auto pool = &objPool;
+
 cpp2::GetPropRequest buildVertexRequest(
     int32_t totalParts,
     const std::vector<VertexID>& vertices,
@@ -701,6 +704,97 @@ TEST(QueryVertexPropsTest, PrefixBloomFilterTest) {
 
   FLAGS_enable_rocksdb_statistics = false;
   FLAGS_enable_rocksdb_prefix_filtering = false;
+}
+
+TEST(GetPropTest, FilterTest) {
+  fs::TempDir rootPath("/tmp/GetPropTest.XXXXXX");
+  mock::MockCluster cluster;
+  cluster.initStorageKV(rootPath.path());
+  auto* env = cluster.storageEnv_.get();
+  auto totalParts = cluster.getTotalParts();
+  ASSERT_EQ(true, QueryTestUtils::mockVertexData(env, totalParts));
+  ASSERT_EQ(true, QueryTestUtils::mockEdgeData(env, totalParts));
+
+  TagID player = 1;
+  // TagID team = 2;
+  EdgeType serve = 101;
+
+  {
+    LOG(INFO) << "GetTagPropFilter";
+    std::vector<VertexID> vertices = {"Tim Duncan", "Tony Parker"};
+    std::vector<std::pair<TagID, std::vector<std::string>>> tags;
+    tags.emplace_back(player, std::vector<std::string>{"name", "age", "avgScore"});
+    auto req = buildVertexRequest(totalParts, vertices, tags);
+
+    {
+      // where player.age > 40
+      const auto& exp = *RelationalExpression::makeGT(
+          pool,
+          TagPropertyExpression::make(pool, std::to_string(player), "age"),
+          ConstantExpression::make(pool, Value(40)));
+      req.set_filter(Expression::encode(exp));
+    }
+
+    auto* processor = GetPropProcessor::instance(env, nullptr, nullptr);
+    auto fut = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(fut).get();
+
+    ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+    nebula::DataSet expected;
+    expected.colNames = {kVid, "1.name", "1.age", "1.avgScore"};
+    {
+      nebula::Row row({"Tim Duncan", "Tim Duncan", 44, 19.0});
+      expected.rows.emplace_back(std::move(row));
+    }
+    ASSERT_EQ(expected, *resp.props_ref());
+  }
+  {
+    LOG(INFO) << "GetEdgePropFilter";
+    std::vector<cpp2::EdgeKey> edgeKeys;
+    {
+      cpp2::EdgeKey edgeKey;
+      edgeKey.set_src("Tim Duncan");
+      edgeKey.set_edge_type(101);
+      edgeKey.set_ranking(1997);
+      edgeKey.set_dst("Spurs");
+      edgeKeys.emplace_back(std::move(edgeKey));
+    }
+    {
+      cpp2::EdgeKey edgeKey;
+      edgeKey.set_src("Tony Parker");
+      edgeKey.set_edge_type(101);
+      edgeKey.set_ranking(2001);
+      edgeKey.set_dst("Spurs");
+      edgeKeys.emplace_back(std::move(edgeKey));
+    }
+    std::vector<std::pair<TagID, std::vector<std::string>>> edges;
+    edges.emplace_back(serve, std::vector<std::string>{"teamName", "startYear", "endYear"});
+    auto req = buildEdgeRequest(totalParts, edgeKeys, edges);
+
+    {
+      // where serve.startYear > 2000
+      const auto& exp = *RelationalExpression::makeGT(
+          pool,
+          EdgePropertyExpression::make(pool, folly::to<std::string>(serve), "startYear"),
+          ConstantExpression::make(pool, Value(2000)));
+      req.set_filter(Expression::encode(exp));
+    }
+
+    auto* processor = GetPropProcessor::instance(env, nullptr, nullptr);
+    auto fut = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(fut).get();
+
+    ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
+    nebula::DataSet expected;
+    expected.colNames = {"101.teamName", "101.startYear", "101.endYear"};
+    {
+      nebula::Row row({"Spurs", 2001, 2018});
+      expected.rows.emplace_back(std::move(row));
+    }
+    ASSERT_EQ(expected, *resp.props_ref());
+  }
 }
 
 }  // namespace storage

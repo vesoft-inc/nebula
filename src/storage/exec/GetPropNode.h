@@ -104,6 +104,12 @@ class GetEdgePropNode : public QueryNode<cpp2::EdgeKey> {
       return ret;
     }
 
+    if (!std::any_of(edgeNodes_.begin(), edgeNodes_.end(), [](const auto& edgeNode) {
+          return edgeNode->valid();
+        })) {
+      return nebula::cpp2::ErrorCode::SUCCEEDED;
+    }
+
     List row;
     auto vIdLen = context_->vIdLen();
     auto isIntId = context_->isIntId();

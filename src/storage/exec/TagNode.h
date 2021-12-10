@@ -65,6 +65,18 @@ class TagNode final : public IterateNode<VertexID> {
     key_ = key;
     value_ = value;
     resetReader();
+    if (expCtx_ != nullptr) {
+      for (const auto& prop : *props_) {
+        auto prop_value = QueryUtils::readVertexProp(
+            key_, context_->vIdLen(), context_->isIntId(), reader(), prop);
+        if (!prop_value.ok()) {
+          return nebula::cpp2::ErrorCode::E_TAG_PROP_NOT_FOUND;
+        }
+        if (prop.filtered_) {
+          expCtx_->setTagProp(getTagName(), prop.name_, prop_value.value());
+        }
+      }
+    }
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
@@ -76,7 +88,23 @@ class TagNode final : public IterateNode<VertexID> {
     return valueHandler(key_, reader_.get(), props_);
   }
 
-  bool valid() const override { return valid_; }
+  bool valid() const override {
+    if (!valid_) {
+      return false;
+    }
+    if (exp_ == nullptr) {
+      return true;
+    }
+
+    expCtx_->resetSchema(this->tagName_, context_->tagSchema_, false);
+    auto result = exp_->eval(*expCtx_);
+    auto ret = result.toBool();
+    // NULL is always false
+    if (ret.isBool() && ret.getBool()) {
+      return true;
+    }
+    return false;
+  }
 
   void next() override {
     // tag only has one valid record, so stop iterate

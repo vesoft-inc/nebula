@@ -52,9 +52,10 @@ void GetPropProcessor::doProcess(const cpp2::GetPropRequest& req) {
 
 void GetPropProcessor::runInSingleThread(const cpp2::GetPropRequest& req) {
   contexts_.emplace_back(RuntimeContext(planContext_.get()));
+  expCtxs_.emplace_back(StorageExpressionContext(spaceVidLen_, isIntId_));
   std::unordered_set<PartitionID> failedParts;
   if (!isEdge_) {
-    auto plan = buildTagPlan(&contexts_.front(), &resultDataSet_);
+    auto plan = buildTagPlan(&contexts_.front(), &expCtxs_.front(), &resultDataSet_);
     for (const auto& partEntry : req.get_parts()) {
       auto partId = partEntry.first;
       for (const auto& row : partEntry.second) {
@@ -68,6 +69,7 @@ void GetPropProcessor::runInSingleThread(const cpp2::GetPropRequest& req) {
           return;
         }
 
+        expCtxs_.front().clear();
         auto ret = plan.go(partId, vId);
         if (ret != nebula::cpp2::ErrorCode::SUCCEEDED &&
             failedParts.find(partId) == failedParts.end()) {
@@ -77,7 +79,7 @@ void GetPropProcessor::runInSingleThread(const cpp2::GetPropRequest& req) {
       }
     }
   } else {
-    auto plan = buildEdgePlan(&contexts_.front(), &resultDataSet_);
+    auto plan = buildEdgePlan(&contexts_.front(), &expCtxs_.front(), &resultDataSet_);
     for (const auto& partEntry : req.get_parts()) {
       auto partId = partEntry.first;
       for (const auto& row : partEntry.second) {
@@ -115,11 +117,12 @@ void GetPropProcessor::runInMultipleThread(const cpp2::GetPropRequest& req) {
     nebula::DataSet result = resultDataSet_;
     results_.emplace_back(std::move(result));
     contexts_.emplace_back(RuntimeContext(planContext_.get()));
+    expCtxs_.emplace_back(StorageExpressionContext(spaceVidLen_, isIntId_));
   }
   size_t i = 0;
   std::vector<folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>>> futures;
   for (const auto& [partId, rows] : req.get_parts()) {
-    futures.emplace_back(runInExecutor(&contexts_[i], &results_[i], partId, rows));
+    futures.emplace_back(runInExecutor(&contexts_[i], &expCtxs_[i], &results_[i], partId, rows));
     i++;
   }
 
@@ -142,12 +145,14 @@ void GetPropProcessor::runInMultipleThread(const cpp2::GetPropRequest& req) {
 
 folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetPropProcessor::runInExecutor(
     RuntimeContext* context,
+    StorageExpressionContext* expCtx,
     nebula::DataSet* result,
     PartitionID partId,
     const std::vector<nebula::Row>& rows) {
-  return folly::via(executor_, [this, context, result, partId, input = std::move(rows)]() {
+  return folly::via(executor_, [this, context, expCtx, result, partId, input = std::move(rows)]() {
     if (!isEdge_) {
-      auto plan = buildTagPlan(context, result);
+      expCtx->clear();
+      auto plan = buildTagPlan(context, expCtx, result);
       for (const auto& row : input) {
         auto vId = row.values[0].getStr();
 
@@ -164,7 +169,7 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetPropProcessor:
       }
       return std::make_pair(nebula::cpp2::ErrorCode::SUCCEEDED, partId);
     } else {
-      auto plan = buildEdgePlan(context, result);
+      auto plan = buildEdgePlan(context, expCtx, result);
       for (const auto& row : input) {
         cpp2::EdgeKey edgeKey;
         edgeKey.set_src(row.values[0].getStr());
@@ -191,11 +196,14 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetPropProcessor:
 }
 
 StoragePlan<VertexID> GetPropProcessor::buildTagPlan(RuntimeContext* context,
+                                                     StorageExpressionContext* expCtx,
                                                      nebula::DataSet* result) {
   StoragePlan<VertexID> plan;
   std::vector<TagNode*> tags;
   for (const auto& tc : tagContext_.propContexts_) {
-    auto tag = std::make_unique<TagNode>(context, &tagContext_, tc.first, &tc.second);
+    auto filter = filter_ == nullptr ? nullptr : filter_->clone();
+    auto tag =
+        std::make_unique<TagNode>(context, &tagContext_, tc.first, &tc.second, expCtx, filter);
     tags.emplace_back(tag.get());
     plan.addNode(std::move(tag));
   }
@@ -208,11 +216,14 @@ StoragePlan<VertexID> GetPropProcessor::buildTagPlan(RuntimeContext* context,
 }
 
 StoragePlan<cpp2::EdgeKey> GetPropProcessor::buildEdgePlan(RuntimeContext* context,
+                                                           StorageExpressionContext* expCtx,
                                                            nebula::DataSet* result) {
   StoragePlan<cpp2::EdgeKey> plan;
   std::vector<EdgeNode<cpp2::EdgeKey>*> edges;
   for (const auto& ec : edgeContext_.propContexts_) {
-    auto edge = std::make_unique<FetchEdgeNode>(context, &edgeContext_, ec.first, &ec.second);
+    auto filter = filter_ == nullptr ? nullptr : filter_->clone();
+    auto edge = std::make_unique<FetchEdgeNode>(
+        context, &edgeContext_, ec.first, &ec.second, expCtx, filter);
     edges.emplace_back(edge.get());
     plan.addNode(std::move(edge));
   }
@@ -243,18 +254,43 @@ nebula::cpp2::ErrorCode GetPropProcessor::checkAndBuildContexts(const cpp2::GetP
   if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
     return code;
   }
+
   if (!isEdge_) {
     code = getSpaceVertexSchema();
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
       return code;
     }
-    return buildTagContext(req);
+
+    code = buildTagContext(req);
+    if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      return code;
+    }
+
+    return buildFilter(req, [](const cpp2::GetPropRequest& r) -> const std::string* {
+      if (r.filter_ref().has_value()) {
+        return r.get_filter();
+      } else {
+        return nullptr;
+      }
+    });
   } else {
     code = getSpaceEdgeSchema();
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
       return code;
     }
-    return buildEdgeContext(req);
+
+    code = buildEdgeContext(req);
+    if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      return code;
+    }
+
+    return buildFilter(req, [](const cpp2::GetPropRequest& r) -> const std::string* {
+      if (r.filter_ref().has_value()) {
+        return r.get_filter();
+      } else {
+        return nullptr;
+      }
+    });
   }
 }
 
