@@ -2829,10 +2829,10 @@ add_hosts_sentence
     : KW_ADD KW_HOSTS host_list {
         $$ = new AddHostsSentence($3);
     }
-    | KW_ADD KW_HOSTS host_list KW_INTO KW_ZONE STRING {
+    | KW_ADD KW_HOSTS host_list KW_INTO KW_ZONE name_label {
         $$ = new AddHostsIntoZoneSentence($3, $6, false);
     }
-    | KW_ADD KW_HOSTS host_list KW_INTO KW_NEW KW_ZONE STRING {
+    | KW_ADD KW_HOSTS host_list KW_INTO KW_NEW KW_ZONE name_label {
         $$ = new AddHostsIntoZoneSentence($3, $7, true);
     }
     ;
@@ -2845,17 +2845,18 @@ drop_hosts_sentence
 
 
 merge_zone_sentence
-    : KW_MERGE KW_ZONE zone_name_list KW_INTO STRING {
+    : KW_MERGE KW_ZONE zone_name_list KW_INTO name_label {
         $$ = new MergeZoneSentence($3, $5);
     }
     ;
 
 drop_zone_sentence
-    : KW_DROP KW_ZONE STRING {
+    : KW_DROP KW_ZONE name_label {
         $$ = new DropZoneSentence($3);
     }
     ;
 
+<<<<<<< HEAD
 zone_item
     : STRING L_PAREN host_list R_PAREN {
         $$ = new nebula::ZoneItem($1, $3);
@@ -2876,20 +2877,25 @@ zone_item_list
 divide_zone_sentence
     : KW_DIVIDE KW_ZONE STRING KW_INTO zone_item_list {
         $$ = new DivideZoneSentence($3, $5);
+=======
+split_zone_sentence
+    : KW_SPLIT KW_ZONE name_label KW_INTO name_label host_list name_label host_list {
+        $$ = new SplitZoneSentence($3, $5, $6, $7, $8);
+>>>>>>> fix
     }
     ;
 
 rename_zone_sentence
-    : KW_RENAME KW_ZONE STRING KW_TO STRING {
+    : KW_RENAME KW_ZONE name_label KW_TO name_label {
         $$ = new RenameZoneSentence($3, $5);
     }
     ;
 
 desc_zone_sentence
-    : KW_DESCRIBE KW_ZONE STRING {
+    : KW_DESCRIBE KW_ZONE name_label {
         $$ = new DescribeZoneSentence($3);
     }
-    | KW_DESC KW_ZONE STRING {
+    | KW_DESC KW_ZONE name_label {
         $$ = new DescribeZoneSentence($3);
     }
     ;
@@ -3908,7 +3914,11 @@ maintain_sentence
     | drop_hosts_sentence { $$ = $1; }
     | merge_zone_sentence { $$ = $1; }
     | drop_zone_sentence { $$ = $1; }
+<<<<<<< HEAD
     | divide_zone_sentence { $$ = $1; }
+=======
+    | split_zone_sentence { $$ = $1; }
+>>>>>>> fix
     | rename_zone_sentence { $$ = $1; }
     | desc_zone_sentence { $$ = $1; }
     | show_sentence { $$ = $1; }

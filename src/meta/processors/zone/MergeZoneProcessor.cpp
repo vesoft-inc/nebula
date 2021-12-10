@@ -11,12 +11,9 @@ namespace nebula {
 namespace meta {
 
 void MergeZoneProcessor::process(const cpp2::MergeZoneReq& req) {
-<<<<<<< HEAD
   folly::SharedMutex::WriteHolder zHolder(LockUtils::zoneLock());
   folly::SharedMutex::WriteHolder sHolder(LockUtils::spaceLock());
 
-=======
->>>>>>> support zone operations
   auto zones = req.get_zones();
 
   // Confirm that the parameter is not empty.
@@ -150,11 +147,11 @@ void MergeZoneProcessor::process(const cpp2::MergeZoneReq& req) {
     auto id = MetaKeyUtils::spaceId(iter->key());
     auto properties = MetaKeyUtils::parseSpace(iter->val());
     auto spaceZones = properties.get_zone_names();
-
     bool replacement = false;
     for (auto& zone : zones) {
       auto it = std::find(spaceZones.begin(), spaceZones.end(), zone);
       if (it != spaceZones.end()) {
+        LOG(INFO) << "REMOVE ZONE " << zone;
         replacement = true;
         spaceZones.erase(it);
       }
