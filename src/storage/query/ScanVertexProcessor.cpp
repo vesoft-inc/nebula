@@ -5,6 +5,8 @@
 
 #include "storage/query/ScanVertexProcessor.h"
 
+#include <limits>
+
 #include "common/utils/NebulaKeyUtils.h"
 #include "storage/StorageFlags.h"
 #include "storage/exec/QueryUtils.h"
@@ -24,7 +26,8 @@ void ScanVertexProcessor::process(const cpp2::ScanVertexRequest& req) {
 
 void ScanVertexProcessor::doProcess(const cpp2::ScanVertexRequest& req) {
   spaceId_ = req.get_space_id();
-  limit_ = req.get_limit();
+  // negative limit number means no limit
+  limit_ = req.get_limit() < 0 ? std::numeric_limits<int64_t>::max() : req.get_limit();
   enableReadFollower_ = req.get_enable_read_from_follower();
 
   auto retCode = getSpaceVidLen(spaceId_);
@@ -87,7 +90,7 @@ void ScanVertexProcessor::buildTagColName(const std::vector<cpp2::VertexProp>& t
 }
 
 void ScanVertexProcessor::onProcessFinished() {
-  resp_.set_vertex_data(std::move(resultDataSet_));
+  resp_.set_props(std::move(resultDataSet_));
   resp_.set_cursors(std::move(cursors_));
 }
 
