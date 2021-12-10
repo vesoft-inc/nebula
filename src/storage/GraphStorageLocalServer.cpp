@@ -122,14 +122,14 @@ folly::Future<cpp2::GetNeighborsResponse> GraphStorageLocalServer::future_lookup
   LOCAL_RETURN_FUTURE(threadManager_, cpp2::GetNeighborsResponse, future_lookupAndTraverse);
 }
 
-folly::Future<cpp2::ScanVertexResponse> GraphStorageLocalServer::future_scanVertex(
+folly::Future<cpp2::ScanResponse> GraphStorageLocalServer::future_scanVertex(
     const cpp2::ScanVertexRequest& request) {
-  LOCAL_RETURN_FUTURE(threadManager_, cpp2::ScanVertexResponse, future_scanVertex);
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::ScanResponse, future_scanVertex);
 }
 
-folly::Future<cpp2::ScanEdgeResponse> GraphStorageLocalServer::future_scanEdge(
+folly::Future<cpp2::ScanResponse> GraphStorageLocalServer::future_scanEdge(
     const cpp2::ScanEdgeRequest& request) {
-  LOCAL_RETURN_FUTURE(threadManager_, cpp2::ScanEdgeResponse, future_scanEdge);
+  LOCAL_RETURN_FUTURE(threadManager_, cpp2::ScanResponse, future_scanEdge);
 }
 
 folly::Future<cpp2::KVGetResponse> GraphStorageLocalServer::future_get(

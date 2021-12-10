@@ -29,44 +29,29 @@ class GraphStorageLocalServer final : public nebula::cpp::NonCopyable,
   void serve();
 
  public:
-  folly::Future<::nebula::storage::cpp2::GetNeighborsResponse> future_getNeighbors(
-      const ::nebula::storage::cpp2::GetNeighborsRequest& request);
-  folly::Future<::nebula::storage::cpp2::ExecResponse> future_addVertices(
-      const ::nebula::storage::cpp2::AddVerticesRequest& request);
-  folly::Future<::nebula::storage::cpp2::ExecResponse> future_chainAddEdges(
-      const ::nebula::storage::cpp2::AddEdgesRequest& request);
-  folly::Future<::nebula::storage::cpp2::ExecResponse> future_addEdges(
-      const ::nebula::storage::cpp2::AddEdgesRequest& request);
-  folly::Future<::nebula::storage::cpp2::GetPropResponse> future_getProps(
-      const ::nebula::storage::cpp2::GetPropRequest& request);
-  folly::Future<::nebula::storage::cpp2::ExecResponse> future_deleteEdges(
-      const ::nebula::storage::cpp2::DeleteEdgesRequest& request);
-  folly::Future<::nebula::storage::cpp2::ExecResponse> future_deleteVertices(
-      const ::nebula::storage::cpp2::DeleteVerticesRequest& request);
-  folly::Future<::nebula::storage::cpp2::ExecResponse> future_deleteTags(
-      const ::nebula::storage::cpp2::DeleteTagsRequest& request);
-  folly::Future<::nebula::storage::cpp2::UpdateResponse> future_updateVertex(
-      const ::nebula::storage::cpp2::UpdateVertexRequest& request);
-  folly::Future<::nebula::storage::cpp2::UpdateResponse> future_chainUpdateEdge(
-      const ::nebula::storage::cpp2::UpdateEdgeRequest& request);
-  folly::Future<::nebula::storage::cpp2::UpdateResponse> future_updateEdge(
-      const ::nebula::storage::cpp2::UpdateEdgeRequest& request);
-  folly::Future<::nebula::storage::cpp2::GetUUIDResp> future_getUUID(
-      const ::nebula::storage::cpp2::GetUUIDReq& request);
-  folly::Future<::nebula::storage::cpp2::LookupIndexResp> future_lookupIndex(
-      const ::nebula::storage::cpp2::LookupIndexRequest& request);
-  folly::Future<::nebula::storage::cpp2::GetNeighborsResponse> future_lookupAndTraverse(
-      const ::nebula::storage::cpp2::LookupAndTraverseRequest& request);
-  folly::Future<::nebula::storage::cpp2::ScanVertexResponse> future_scanVertex(
-      const ::nebula::storage::cpp2::ScanVertexRequest& request);
-  folly::Future<::nebula::storage::cpp2::ScanEdgeResponse> future_scanEdge(
-      const ::nebula::storage::cpp2::ScanEdgeRequest& request);
-  folly::Future<::nebula::storage::cpp2::KVGetResponse> future_get(
-      const ::nebula::storage::cpp2::KVGetRequest& request);
-  folly::Future<::nebula::storage::cpp2::ExecResponse> future_put(
-      const ::nebula::storage::cpp2::KVPutRequest& request);
-  folly::Future<::nebula::storage::cpp2::ExecResponse> future_remove(
-      const ::nebula::storage::cpp2::KVRemoveRequest& request);
+  folly::Future<cpp2::GetNeighborsResponse> future_getNeighbors(
+      const cpp2::GetNeighborsRequest& request);
+  folly::Future<cpp2::ExecResponse> future_addVertices(const cpp2::AddVerticesRequest& request);
+  folly::Future<cpp2::ExecResponse> future_chainAddEdges(const cpp2::AddEdgesRequest& request);
+  folly::Future<cpp2::ExecResponse> future_addEdges(const cpp2::AddEdgesRequest& request);
+  folly::Future<cpp2::GetPropResponse> future_getProps(const cpp2::GetPropRequest& request);
+  folly::Future<cpp2::ExecResponse> future_deleteEdges(const cpp2::DeleteEdgesRequest& request);
+  folly::Future<cpp2::ExecResponse> future_deleteVertices(
+      const cpp2::DeleteVerticesRequest& request);
+  folly::Future<cpp2::ExecResponse> future_deleteTags(const cpp2::DeleteTagsRequest& request);
+  folly::Future<cpp2::UpdateResponse> future_updateVertex(const cpp2::UpdateVertexRequest& request);
+  folly::Future<cpp2::UpdateResponse> future_chainUpdateEdge(
+      const cpp2::UpdateEdgeRequest& request);
+  folly::Future<cpp2::UpdateResponse> future_updateEdge(const cpp2::UpdateEdgeRequest& request);
+  folly::Future<cpp2::GetUUIDResp> future_getUUID(const cpp2::GetUUIDReq& request);
+  folly::Future<cpp2::LookupIndexResp> future_lookupIndex(const cpp2::LookupIndexRequest& request);
+  folly::Future<cpp2::GetNeighborsResponse> future_lookupAndTraverse(
+      const cpp2::LookupAndTraverseRequest& request);
+  folly::Future<cpp2::ScanResponse> future_scanVertex(const cpp2::ScanVertexRequest& request);
+  folly::Future<cpp2::ScanResponse> future_scanEdge(const cpp2::ScanEdgeRequest& request);
+  folly::Future<cpp2::KVGetResponse> future_get(const cpp2::KVGetRequest& request);
+  folly::Future<cpp2::ExecResponse> future_put(const cpp2::KVPutRequest& request);
+  folly::Future<cpp2::ExecResponse> future_remove(const cpp2::KVRemoveRequest& request);
 
  private:
   GraphStorageLocalServer() = default;
