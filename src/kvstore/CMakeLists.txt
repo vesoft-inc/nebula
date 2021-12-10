@@ -19,8 +19,12 @@ nebula_add_library(
 
 nebula_add_subdirectory(raftex)
 nebula_add_subdirectory(wal)
+<<<<<<< HEAD
 nebula_add_subdirectory(stats)
 nebula_add_subdirectory(test)
+=======
+#nebula_add_subdirectory(test)
+>>>>>>> support zone operations
 
 #nebula_add_subdirectory(plugins)
 

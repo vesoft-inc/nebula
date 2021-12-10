@@ -11,9 +11,12 @@ namespace nebula {
 namespace meta {
 
 void MergeZoneProcessor::process(const cpp2::MergeZoneReq& req) {
+<<<<<<< HEAD
   folly::SharedMutex::WriteHolder zHolder(LockUtils::zoneLock());
   folly::SharedMutex::WriteHolder sHolder(LockUtils::spaceLock());
 
+=======
+>>>>>>> support zone operations
   auto zones = req.get_zones();
 
   // Confirm that the parameter is not empty.

@@ -20,7 +20,11 @@ folly::Future<Status> MergeZoneExecutor::execute() {
       .via(runner())
       .thenValue([](StatusOr<bool> resp) {
         if (!resp.ok()) {
+<<<<<<< HEAD
           LOG(ERROR) << "Merge Zone Failed :" << resp.status();
+=======
+          LOG(ERROR) << "Rename Zone Failed :" << resp.status();
+>>>>>>> support zone operations
           return resp.status();
         }
         return Status::OK();
