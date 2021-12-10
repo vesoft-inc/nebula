@@ -258,7 +258,7 @@ class QualifiedStrategy {
     q.func_ = [suffixSet = Set<std::string>(),
                suffixLength = dedupSuffixLength](const folly::StringPiece& key) mutable -> Result {
       std::string suffix = key.subpiece(key.size() - suffixLength, suffixLength).toString();
-      auto [iter, result] = suffixSet.insert(std::move(suffix));
+      auto result = suffixSet.insert(std::move(suffix)).second;
       return result ? Result::COMPATIBLE : Result::INCOMPATIBLE;
     };
     return q;
