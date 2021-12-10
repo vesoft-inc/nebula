@@ -13,11 +13,21 @@ DECLARE_int32(slow_query_threshold_us);
 
 namespace nebula {
 
+// query related
 extern stats::CounterId kNumQueries;
+extern stats::CounterId kNumActiveQueries;
 extern stats::CounterId kNumSlowQueries;
 extern stats::CounterId kNumQueryErrors;
+extern stats::CounterId kNumQueryErrosLeaderChanges;
+extern stats::CounterId kNumSentences;
 extern stats::CounterId kQueryLatencyUs;
 extern stats::CounterId kSlowQueryLatencyUs;
+
+// session related
+extern stats::CounterId kNumOpenedSessions;
+extern stats::CounterId kNumAuthFailedSessions;
+extern stats::CounterId kNumAuthFailedSessionsBadUserNamePassword;
+extern stats::CounterId kNumAuthFailedSessionsOutOfMaxAllowed;
 
 void initCounters();
 

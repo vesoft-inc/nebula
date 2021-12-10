@@ -8,6 +8,7 @@
 #include "clients/storage/StorageClient.h"
 #include "common/base/Base.h"
 #include "common/encryption/MD5Utils.h"
+#include "common/stats/StatsManager.h"
 #include "common/time/Duration.h"
 #include "common/time/TimezoneInfo.h"
 #include "graph/service/CloudAuthenticator.h"
@@ -69,6 +70,8 @@ folly::Future<AuthResponse> GraphService::future_authenticate(const std::string&
     ctx->resp().errorCode = ErrorCode::E_BAD_USERNAME_PASSWORD;
     ctx->resp().errorMsg.reset(new std::string("Bad username/password"));
     ctx->finish();
+    stats::StatsManager::addValue(kNumAuthFailedSessions);
+    stats::StatsManager::addValue(kNumAuthFailedSessionsBadUserNamePassword);
     return future;
   }
 
@@ -76,6 +79,8 @@ folly::Future<AuthResponse> GraphService::future_authenticate(const std::string&
     ctx->resp().errorCode = ErrorCode::E_TOO_MANY_CONNECTIONS;
     ctx->resp().errorMsg.reset(new std::string("Too many connections in the cluster"));
     ctx->finish();
+    stats::StatsManager::addValue(kNumAuthFailedSessions);
+    stats::StatsManager::addValue(kNumAuthFailedSessionsOutOfMaxAllowed);
     return future;
   }
 
@@ -96,6 +101,7 @@ folly::Future<AuthResponse> GraphService::future_authenticate(const std::string&
       ctx->resp().errorMsg.reset(new std::string("Get session for sessionId is nullptr"));
       return ctx->finish();
     }
+    stats::StatsManager::addValue(kNumOpenedSessions);
     ctx->setSession(sessionPtr);
     ctx->resp().sessionId.reset(new int64_t(ctx->session()->id()));
     ctx->resp().timeZoneOffsetSeconds.reset(
@@ -124,6 +130,7 @@ folly::Future<ExecutionResponse> GraphService::future_executeWithParameter(
   ctx->setSessionMgr(sessionManager_.get());
   auto future = ctx->future();
   stats::StatsManager::addValue(kNumQueries);
+  stats::StatsManager::addValue(kNumActiveQueries);
   // When the sessionId is 0, it means the clients to ping the connection is ok
   if (sessionId == 0) {
     ctx->resp().errorCode = ErrorCode::E_SESSION_INVALID;
@@ -190,6 +197,7 @@ folly::Future<ExecutionResponse> GraphService::future_execute(int64_t sessionId,
     }
     ctx->setSession(std::move(sessionPtr));
     queryEngine_->execute(std::move(ctx));
+    stats::StatsManager::decValue(kNumActiveQueries);
   };
   sessionManager_->findSession(sessionId, getThreadManager()).thenValue(std::move(cb));
   return future;

@@ -114,6 +114,7 @@ class StatsManager final {
       folly::StringPiece counterName, VT bucketSize, VT min, VT max, std::string stats);
 
   static void addValue(const CounterId& id, VT value = 1);
+  static void decValue(const CounterId& id, VT value = 1);
 
   // The parameter counter here must be a qualified counter name, which includes
   // all three parts (counter name, method/percentile, and time range). Here are

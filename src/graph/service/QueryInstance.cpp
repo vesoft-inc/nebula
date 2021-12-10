@@ -6,6 +6,7 @@
 #include "graph/service/QueryInstance.h"
 
 #include "common/base/Base.h"
+#include "common/stats/StatsManager.h"
 #include "common/time/ScopedTimer.h"
 #include "graph/executor/ExecutionError.h"
 #include "graph/executor/Executor.h"
@@ -18,6 +19,8 @@
 #include "graph/util/AstUtils.h"
 #include "graph/validator/Validator.h"
 #include "parser/ExplainSentence.h"
+#include "parser/Sentence.h"
+#include "parser/SequentialSentences.h"
 
 using nebula::opt::Optimizer;
 using nebula::opt::OptRule;
@@ -65,6 +68,12 @@ Status QueryInstance::validateAndOptimize() {
   auto result = GQLParser(qctx()).parse(rctx->query());
   NG_RETURN_IF_ERROR(result);
   sentence_ = std::move(result).value();
+  if (sentence_->kind() == Sentence::Kind::kSequential) {
+    size_t num = static_cast<const SequentialSentences *>(sentence_.get())->numSentences();
+    stats::StatsManager::addValue(kNumSentences, num);
+  } else {
+    stats::StatsManager::addValue(kNumSentences);
+  }
 
   NG_RETURN_IF_ERROR(Validator::validate(sentence_.get(), qctx()));
   NG_RETURN_IF_ERROR(findBestPlan());
@@ -123,6 +132,8 @@ void QueryInstance::onError(Status status) {
     case Status::Code::kPermissionError:
       rctx->resp().errorCode = ErrorCode::E_BAD_PERMISSION;
       break;
+    case Status::Code::kLeaderChanged:
+      stats::StatsManager::addValue(kNumQueryErrosLeaderChanges);
     case Status::Code::kBalanced:
     case Status::Code::kEdgeNotFound:
     case Status::Code::kError:
@@ -131,7 +142,6 @@ void QueryInstance::onError(Status status) {
     case Status::Code::kInserted:
     case Status::Code::kKeyNotFound:
     case Status::Code::kPartialSuccess:
-    case Status::Code::kLeaderChanged:
     case Status::Code::kNoSuchFile:
     case Status::Code::kNotSupported:
     case Status::Code::kPartNotFound:
