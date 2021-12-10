@@ -36,4 +36,4 @@ nebula_add_library(
     MatchSentence.cpp
 )
 
-nebula_add_subdirectory(test)
+#nebula_add_subdirectory(test)

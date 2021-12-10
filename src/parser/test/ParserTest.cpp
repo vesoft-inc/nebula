@@ -2833,6 +2833,20 @@ TEST_F(ParserTest, Zone) {
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
+    std::string query = "ADD HOSTS 127.0.0.1:8989 INTO NEW ZONE zone_0";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "ADD HOSTS 127.0.0.1:8988,127.0.0.1:8989 INTO NEW ZONE zone_0";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "DESC ZONE zone_0";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
   {
     std::string query = "DESC ZONE \"zone_0\"";
     auto result = parse(query);

@@ -11,6 +11,8 @@
 namespace nebula {
 namespace meta {
 
+using HostParts = std::unordered_map<HostAddr, std::vector<PartitionID>>;
+
 class MergeZoneProcessor : public BaseProcessor<cpp2::ExecResp> {
  public:
   static MergeZoneProcessor* instance(kvstore::KVStore* kvstore) {
@@ -21,6 +23,8 @@ class MergeZoneProcessor : public BaseProcessor<cpp2::ExecResp> {
 
  private:
   explicit MergeZoneProcessor(kvstore::KVStore* kvstore) : BaseProcessor<cpp2::ExecResp>(kvstore) {}
+
+  ErrorOr<nebula::cpp2::ErrorCode, HostParts> assembleHostParts(GraphSpaceID spaceId);
 };
 
 }  // namespace meta

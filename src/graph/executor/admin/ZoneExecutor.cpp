@@ -13,7 +13,18 @@ namespace graph {
 
 folly::Future<Status> MergeZoneExecutor::execute() {
   SCOPED_TIMER(&execTime_);
-  return Status::OK();
+  auto *mzNode = asNode<MergeZone>(node());
+  return qctx()
+      ->getMetaClient()
+      ->mergeZone(mzNode->zones(), mzNode->zoneName())
+      .via(runner())
+      .thenValue([](StatusOr<bool> resp) {
+        if (!resp.ok()) {
+          LOG(ERROR) << "Rename Zone Failed :" << resp.status();
+          return resp.status();
+        }
+        return Status::OK();
+      });
 }
 
 folly::Future<Status> RenameZoneExecutor::execute() {
