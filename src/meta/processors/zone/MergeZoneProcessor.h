@@ -25,6 +25,8 @@ class MergeZoneProcessor : public BaseProcessor<cpp2::ExecResp> {
   explicit MergeZoneProcessor(kvstore::KVStore* kvstore) : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 
   ErrorOr<nebula::cpp2::ErrorCode, HostParts> assembleHostParts(GraphSpaceID spaceId);
+
+  nebula::cpp2::ErrorCode updateSpaceProperties();
 };
 
 }  // namespace meta

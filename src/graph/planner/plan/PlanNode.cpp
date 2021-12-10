@@ -247,8 +247,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "RenameZone";
     case Kind::kDropZone:
       return "DropZone";
-    case Kind::kSplitZone:
-      return "SplitZone";
+    case Kind::kDivideZone:
+      return "DivideZone";
     case Kind::kDescribeZone:
       return "DescribeZone";
     case Kind::kAddHostsIntoZone:

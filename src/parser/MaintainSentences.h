@@ -978,7 +978,7 @@ class DropHostsSentence : public Sentence {
 
 class MergeZoneSentence : public Sentence {
  public:
-  explicit MergeZoneSentence(ZoneNameList *zoneNames, std::string *zoneName) {
+  MergeZoneSentence(ZoneNameList *zoneNames, std::string *zoneName) {
     zoneName_.reset(zoneName);
     zoneNames_.reset(zoneNames);
     kind_ = Kind::kMergeZone;
@@ -1016,12 +1016,19 @@ class DropZoneSentence : public Sentence {
   std::unique_ptr<std::string> zoneName_;
 };
 
-class SplitZoneSentence : public Sentence {
+class DivideZoneSentence : public Sentence {
  public:
-  explicit SplitZoneSentence(std::string *zoneName, ZoneNameList *zoneNames) {
+  DivideZoneSentence(std::string *zoneName,
+                     std::string *oneZoneName,
+                     HostList *oneHosts,
+                     std::string *anotherZoneName,
+                     HostList *anotherHosts) {
     zoneName_.reset(zoneName);
-    zoneNames_.reset(zoneNames);
-    kind_ = Kind::kSplitZone;
+    oneZoneName_.reset(oneZoneName);
+    oneHosts_.reset(oneHosts);
+    anotherZoneName_.reset(anotherZoneName);
+    anotherHosts_.reset(anotherHosts);
+    kind_ = Kind::kDivideZone;
   }
 
   std::string toString() const override;
@@ -1030,18 +1037,25 @@ class SplitZoneSentence : public Sentence {
     return zoneName_.get();
   }
 
-  const ZoneNameList *zoneNames() const {
-    return zoneNames_.get();
-  }
+  const std::string *oneZoneName() const { return oneZoneName_.get(); }
+
+  const HostList *oneHosts() const { return oneHosts_.get(); }
+
+  const std::string *anotherZoneName() const { return anotherZoneName_.get(); }
+
+  const HostList *anotherHosts() const { return anotherHosts_.get(); }
 
  private:
   std::unique_ptr<std::string> zoneName_;
-  std::unique_ptr<ZoneNameList> zoneNames_;
+  std::unique_ptr<std::string> oneZoneName_;
+  std::unique_ptr<HostList> oneHosts_;
+  std::unique_ptr<std::string> anotherZoneName_;
+  std::unique_ptr<HostList> anotherHosts_;
 };
 
 class RenameZoneSentence : public Sentence {
  public:
-  explicit RenameZoneSentence(std::string *originalZoneName, std::string *zoneName) {
+  RenameZoneSentence(std::string *originalZoneName, std::string *zoneName) {
     originalZoneName_.reset(originalZoneName);
     zoneName_.reset(zoneName);
     kind_ = Kind::kRenameZone;

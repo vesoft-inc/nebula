@@ -25,7 +25,7 @@ class DropZoneProcessor : public BaseProcessor<cpp2::ExecResp> {
   nebula::cpp2::ErrorCode checkSpaceReplicaZone();
 
   // Check whether the node holds zones on each space
-  nebula::cpp2::ErrorCode checkHostHostPartition(const HostAddr& host);
+  nebula::cpp2::ErrorCode checkHostPartition(const HostAddr& address);
 };
 
 }  // namespace meta

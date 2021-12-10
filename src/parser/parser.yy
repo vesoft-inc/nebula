@@ -206,7 +206,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %token KW_KILL KW_QUERY KW_QUERIES KW_TOP
 %token KW_GEOGRAPHY KW_POINT KW_LINESTRING KW_POLYGON
 %token KW_LIST KW_MAP
-%token KW_MERGE KW_SPLIT KW_RENAME
+%token KW_MERGE KW_DIVIDE KW_RENAME
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -363,7 +363,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <sentence> rebuild_tag_index_sentence rebuild_edge_index_sentence rebuild_fulltext_index_sentence
 %type <sentence> add_hosts_sentence drop_hosts_sentence
 %type <sentence> drop_zone_sentence desc_zone_sentence
-%type <sentence> merge_zone_sentence /*split_zone_sentence*/ rename_zone_sentence
+%type <sentence> merge_zone_sentence split_zone_sentence rename_zone_sentence
 %type <sentence> create_snapshot_sentence drop_snapshot_sentence
 %type <sentence> add_listener_sentence remove_listener_sentence list_listener_sentence
 
@@ -546,7 +546,7 @@ unreserved_keyword
     | KW_HTTP               { $$ = new std::string("http"); }
     | KW_HTTPS              { $$ = new std::string("https"); }
     | KW_MERGE              { $$ = new std::string("merge"); }
-    | KW_SPLIT              { $$ = new std::string("split"); }
+    | KW_DIVIDE           { $$ = new std::string("division"); }
     | KW_RENAME             { $$ = new std::string("rename"); }
     ;
 
@@ -2799,10 +2799,10 @@ add_hosts_sentence
     : KW_ADD KW_HOSTS host_list {
         $$ = new AddHostsSentence($3);
     }
-    | KW_ADD KW_HOSTS host_list KW_INTO KW_ZONE STRING {
+    | KW_ADD KW_HOSTS host_list KW_INTO KW_ZONE name_label {
         $$ = new AddHostsIntoZoneSentence($3, $6, false);
     }
-    | KW_ADD KW_HOSTS host_list KW_INTO KW_NEW KW_ZONE STRING {
+    | KW_ADD KW_HOSTS host_list KW_INTO KW_NEW KW_ZONE name_label {
         $$ = new AddHostsIntoZoneSentence($3, $7, true);
     }
     ;
@@ -2815,34 +2815,34 @@ drop_hosts_sentence
 
 
 merge_zone_sentence
-    : KW_MERGE KW_ZONE zone_name_list KW_INTO STRING {
+    : KW_MERGE KW_ZONE zone_name_list KW_INTO name_label {
         $$ = new MergeZoneSentence($3, $5);
     }
     ;
 
 drop_zone_sentence
-    : KW_DROP KW_ZONE STRING {
+    : KW_DROP KW_ZONE name_label {
         $$ = new DropZoneSentence($3);
     }
     ;
 
-// split_zone_sentence
-//     : KW_SPLIT KW_ZONE name_label KW_FROM zone_name_list {
-//         $$ = new SplitZoneSentence($3, $5);
-//     }
-//     ;
+split_zone_sentence
+    : KW_DIVIDE KW_ZONE name_label KW_INTO name_label host_list name_label host_list {
+        $$ = new DivideZoneSentence($3, $5, $6, $7, $8);
+    }
+    ;
 
 rename_zone_sentence
-    : KW_RENAME KW_ZONE STRING KW_TO STRING {
+    : KW_RENAME KW_ZONE name_label KW_TO name_label {
         $$ = new RenameZoneSentence($3, $5);
     }
     ;
 
 desc_zone_sentence
-    : KW_DESCRIBE KW_ZONE STRING {
+    : KW_DESCRIBE KW_ZONE name_label {
         $$ = new DescribeZoneSentence($3);
     }
-    | KW_DESC KW_ZONE STRING {
+    | KW_DESC KW_ZONE name_label {
         $$ = new DescribeZoneSentence($3);
     }
     ;
@@ -3817,7 +3817,7 @@ maintain_sentence
     | drop_hosts_sentence { $$ = $1; }
     | merge_zone_sentence { $$ = $1; }
     | drop_zone_sentence { $$ = $1; }
-    // | split_zone_sentence { $$ = $1; }
+    | split_zone_sentence { $$ = $1; }
     | rename_zone_sentence { $$ = $1; }
     | desc_zone_sentence { $$ = $1; }
     | show_sentence { $$ = $1; }

@@ -233,7 +233,7 @@ folly::Future<Status> ShowCreateSpaceExecutor::execute() {
         auto fmt = properties.comment_ref().has_value()
                        ? "CREATE SPACE `%s` (partition_num = %d, replica_factor = %d, "
                          "charset = %s, collate = %s, vid_type = %s, atomic_edge = %s"
-                         ")%s"
+                         ") ON %s"
                          " comment = '%s'"
                        : "CREATE SPACE `%s` (partition_num = %d, replica_factor = %d, "
                          "charset = %s, collate = %s, vid_type = %s, atomic_edge = %s"

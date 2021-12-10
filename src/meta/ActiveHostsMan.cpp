@@ -130,7 +130,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> ActiveHostsMan::getActiv
   std::unordered_set<HostAddr> machines;
   while (machineIter->valid()) {
     auto machine = MetaKeyUtils::parseMachineKey(machineIter->key());
-    machines.emplace_back(std::move(machine));
+    machines.emplace(std::move(machine));
     machineIter->next();
   }
 

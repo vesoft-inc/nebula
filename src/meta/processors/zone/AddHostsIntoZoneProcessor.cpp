@@ -97,6 +97,12 @@ void AddHostsIntoZoneProcessor::process(const cpp2::AddHostsIntoZoneReq& req) {
 
   zoneHosts.insert(zoneHosts.end(), hosts.begin(), hosts.end());
   data.emplace_back(std::move(zoneKey), MetaKeyUtils::zoneVal(std::move(zoneHosts)));
+
+  HostInfo info(0, cpp2::HostRole::STORAGE, "");
+  for (auto& host : hosts) {
+    data.emplace_back(MetaKeyUtils::hostKey(host.host, host.port), HostInfo::encodeV2(info));
+  }
+
   LOG(INFO) << "Add Hosts Into Zone " << zoneName;
   doSyncPutAndUpdate(std::move(data));
 }

@@ -103,8 +103,7 @@ void MergeZoneProcessor::process(const cpp2::MergeZoneReq& req) {
       for (auto& host : hosts) {
         auto hp = hostParts.find(host);
         if (hp == hostParts.end()) {
-          LOG(ERROR) << "Host "
-                     << " not found";
+          LOG(ERROR) << "Host " << host << " not found";
           code = nebula::cpp2::ErrorCode::E_NO_HOSTS;
           break;
         }
@@ -119,20 +118,12 @@ void MergeZoneProcessor::process(const cpp2::MergeZoneReq& req) {
           }
         }
 
-        if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-          break;
-        }
+        CHECK_CODE_AND_BREAK();
         totalParts.insert(totalParts.end(), parts.begin(), parts.end());
       }
-
-      if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-        break;
-      }
+      CHECK_CODE_AND_BREAK();
     }
-
-    if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      break;
-    }
+    CHECK_CODE_AND_BREAK();
     iter->next();
   }  // space
 
@@ -151,11 +142,11 @@ void MergeZoneProcessor::process(const cpp2::MergeZoneReq& req) {
     auto spaceKey = iter->key();
     auto properties = MetaKeyUtils::parseSpace(iter->val());
     auto spaceZones = properties.get_zone_names();
-
     bool replacement = false;
     for (auto& zone : zones) {
       auto it = std::find(spaceZones.begin(), spaceZones.end(), zone);
       if (it != spaceZones.end()) {
+        LOG(INFO) << "REMOVE ZONE " << zone;
         replacement = true;
         spaceZones.erase(it);
       }
@@ -163,6 +154,7 @@ void MergeZoneProcessor::process(const cpp2::MergeZoneReq& req) {
 
     if (replacement) {
       spaceZones.emplace_back(zoneName);
+      properties.set_zone_names(std::move(spaceZones));
       auto spaceVal = MetaKeyUtils::spaceVal(properties);
       data.emplace_back(std::move(spaceKey), std::move(spaceVal));
     }
@@ -184,6 +176,7 @@ void MergeZoneProcessor::process(const cpp2::MergeZoneReq& req) {
   LOG(INFO) << "Remove original zones size " << zones.size();
   std::vector<std::string> zoneKeys;
   for (auto& zone : zones) {
+    LOG(INFO) << "Remove Zone " << zone;
     zoneKeys.emplace_back(MetaKeyUtils::zoneKey(zone));
   }
   folly::Baton<true, std::atomic> baton;
@@ -211,11 +204,21 @@ void MergeZoneProcessor::process(const cpp2::MergeZoneReq& req) {
 
 ErrorOr<nebula::cpp2::ErrorCode, HostParts> MergeZoneProcessor::assembleHostParts(
     GraphSpaceID spaceId) {
+  std::unordered_map<HostAddr, std::vector<PartitionID>> hostParts;
+  auto activeHostsRet = ActiveHostsMan::getActiveHosts(kvstore_);
+  if (!nebula::ok(activeHostsRet)) {
+    LOG(ERROR) << "Get active hosts failed";
+    return nebula::error(activeHostsRet);
+  }
+
+  auto activeHosts = nebula::value(activeHostsRet);
+  for (auto& host : activeHosts) {
+    hostParts[host] = std::vector<PartitionID>();
+  }
+
   std::unique_ptr<kvstore::KVIterator> iter;
   const auto& prefix = MetaKeyUtils::partPrefix(spaceId);
-  std::unordered_map<HostAddr, std::vector<PartitionID>> hostParts;
   auto code = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
-
   if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << "Access kvstore failed, spaceId " << spaceId << " "
                << apache::thrift::util::enumNameSafe(code);
@@ -232,7 +235,6 @@ ErrorOr<nebula::cpp2::ErrorCode, HostParts> MergeZoneProcessor::assembleHostPart
     }
     iter->next();
   }
-
   return hostParts;
 }
 

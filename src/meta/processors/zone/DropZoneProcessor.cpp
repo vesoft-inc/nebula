@@ -11,11 +11,12 @@ namespace meta {
 void DropZoneProcessor::process(const cpp2::DropZoneReq& req) {
   folly::SharedMutex::WriteHolder wHolder(LockUtils::zoneLock());
   auto zoneName = req.get_zone_name();
-  auto zoneIdRet = getZoneId(zoneName);
-  if (!nebula::ok(zoneIdRet)) {
-    auto code = nebula::error(zoneIdRet);
+  auto zoneKey = MetaKeyUtils::zoneKey(zoneName);
+  auto zoneValueRet = doGet(std::move(zoneKey));
+  if (!nebula::ok(zoneValueRet)) {
+    auto code = nebula::error(zoneValueRet);
     LOG(ERROR) << "Drop Zone Failed, error: " << apache::thrift::util::enumNameSafe(code);
-    handleErrorCode(code);
+    handleErrorCode(nebula::cpp2::ErrorCode::E_ZONE_NOT_FOUND);
     onFinished();
     return;
   }
@@ -27,24 +28,33 @@ void DropZoneProcessor::process(const cpp2::DropZoneReq& req) {
     return;
   }
   std::vector<std::string> keys;
-  keys.emplace_back(MetaKeyUtils::indexZoneKey(zoneName));
   keys.emplace_back(MetaKeyUtils::zoneKey(zoneName));
   LOG(INFO) << "Drop Zone " << zoneName;
 
   // Drop zone associated hosts
-  auto zoneKey = MetaKeyUtils::zoneKey(zoneName);
-  auto zoneValueRet = doGet(std::move(zoneKey));
-  if (!nebula::ok(zoneValueRet)) {
-    LOG(ERROR) << "Get zone " << zoneName << " failed";
-    handleErrorCode(nebula::cpp2::ErrorCode::E_ZONE_NOT_FOUND);
+  auto hosts = MetaKeyUtils::parseZoneHosts(std::move(nebula::value(zoneValueRet)));
+
+  // Check Host contain partition
+  for (auto& host : hosts) {
+    code = checkHostPartition(host);
+  }
+
+  if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    handleErrorCode(code);
     onFinished();
     return;
   }
 
-  auto hosts = MetaKeyUtils::parseZoneHosts(std::move(nebula::value(zoneValueRet)));
   // Drop Hosts
   for (auto& host : hosts) {
-    code = checkHostHostPartition(host);
+    auto machineKey = MetaKeyUtils::machineKey(host.host, host.port);
+    auto ret = machineExist(machineKey);
+    if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      LOG(ERROR) << "The host " << host << " not existed!";
+      code = nebula::cpp2::ErrorCode::E_NO_HOSTS;
+      break;
+    }
+    keys.emplace_back(std::move(machineKey));
   }
   doSyncMultiRemoveAndUpdate(std::move(keys));
 }
@@ -76,9 +86,46 @@ nebula::cpp2::ErrorCode DropZoneProcessor::checkSpaceReplicaZone() {
   return code;
 }
 
-nebula::cpp2::ErrorCode DropZoneProcessor::checkHostHostPartition(const HostAddr& host) {
-  UNUSED(host);
-  return nebula::cpp2::ErrorCode::SUCCEEDED;
+nebula::cpp2::ErrorCode DropZoneProcessor::checkHostPartition(const HostAddr& address) {
+  const auto& spacePrefix = MetaKeyUtils::spacePrefix();
+  auto spaceIterRet = doPrefix(spacePrefix);
+  if (!nebula::ok(spaceIterRet)) {
+    auto result = nebula::error(spaceIterRet);
+    LOG(ERROR) << "Get Spaces Failed, error " << apache::thrift::util::enumNameSafe(result);
+    return result;
+  }
+
+  nebula::cpp2::ErrorCode code = nebula::cpp2::ErrorCode::SUCCEEDED;
+  auto spaceIter = nebula::value(spaceIterRet).get();
+  while (spaceIter->valid()) {
+    auto spaceId = MetaKeyUtils::spaceId(spaceIter->key());
+    const auto& partPrefix = MetaKeyUtils::partPrefix(spaceId);
+    auto partIterRet = doPrefix(partPrefix);
+    if (!nebula::ok(partIterRet)) {
+      code = nebula::error(partIterRet);
+      LOG(ERROR) << "List part failed in list hosts,  error: "
+                 << apache::thrift::util::enumNameSafe(code);
+      return code;
+    }
+    auto& partIter = nebula::value(partIterRet);
+    while (partIter->valid()) {
+      auto hosts = MetaKeyUtils::parsePartVal(partIter->val());
+      for (auto& host : hosts) {
+        if (host == address) {
+          LOG(ERROR) << "Host " << address << " have partition on it";
+          code = nebula::cpp2::ErrorCode::E_CONFLICT;
+          break;
+        }
+      }
+
+      CHECK_CODE_AND_BREAK();
+      partIter->next();
+    }
+
+    CHECK_CODE_AND_BREAK();
+    spaceIter->next();
+  }
+  return code;
 }
 
 }  // namespace meta

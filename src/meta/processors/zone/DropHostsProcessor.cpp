@@ -80,7 +80,6 @@ void DropHostsProcessor::process(const cpp2::DropHostsReq& req) {
 
   auto iter = nebula::value(iterRet).get();
   while (iter->valid()) {
-<<<<<<< HEAD
     auto zoneKey = iter->key();
     auto hs = MetaKeyUtils::parseZoneHosts(iter->val());
     // Delete all hosts in the zone
@@ -112,9 +111,7 @@ void DropHostsProcessor::process(const cpp2::DropHostsReq& req) {
       LOG(INFO) << "Zone Value: " << zoneValue;
       rewriteData.emplace_back(std::move(zoneKey), std::move(zoneValue));
     }
-    if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      break;
-    }
+    CHECK_CODE_AND_BREAK();
     iter->next();
   }
 
@@ -129,7 +126,7 @@ void DropHostsProcessor::process(const cpp2::DropHostsReq& req) {
     auto machineKey = MetaKeyUtils::machineKey(host.host, host.port);
     auto ret = machineExist(machineKey);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(ERROR) << "The host " << HostAddr(host.host, host.port) << " not existed!";
+      LOG(ERROR) << "The host " << host << " not existed!";
       code = nebula::cpp2::ErrorCode::E_NO_HOSTS;
       break;
     }

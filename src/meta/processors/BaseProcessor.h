@@ -38,6 +38,11 @@ using SignType = storage::cpp2::EngineSignType;
     return;                                             \
   }
 
+#define CHECK_CODE_AND_BREAK()                      \
+  if (code != nebula::cpp2::ErrorCode::SUCCEEDED) { \
+    break;                                          \
+  }
+
 /**
  * Check segment is consist of numbers and letters and should not empty.
  * */

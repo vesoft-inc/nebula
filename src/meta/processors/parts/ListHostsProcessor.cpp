@@ -163,8 +163,8 @@ nebula::cpp2::ErrorCode ListHostsProcessor::fillLeaders() {
   if (!nebula::ok(activeHostsRet)) {
     return nebula::error(activeHostsRet);
   }
-  auto activeHosts = nebula::value(activeHostsRet);
 
+  auto activeHosts = nebula::value(activeHostsRet);
   const auto& prefix = MetaKeyUtils::leaderPrefix();
   auto iterRet = doPrefix(prefix);
   if (!nebula::ok(iterRet)) {

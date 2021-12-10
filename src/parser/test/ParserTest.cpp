@@ -2807,33 +2807,27 @@ TEST_F(ParserTest, Zone) {
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "SHOW ZONES";
+    std::string query = "ADD HOSTS 127.0.0.1:8989 INTO ZONE zone_0";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "ADD HOSTS 127.0.0.1:8989 INTO ZONE \"zone_0\"";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "ADD HOSTS 127.0.0.1:8989 INTO ZONE \"default_zone_127.0.0.1_8988\"";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "ADD HOSTS 127.0.0.1:8988,127.0.0.1:8989 INTO ZONE \"zone_0\"";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query =
-        "ADD HOSTS 127.0.0.1:8988,127.0.0.1:8989 INTO ZONE"
-        " \"default_zone_127.0.0.1_8988\"";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
     std::string query = "ADD HOSTS 127.0.0.1:8989 INTO NEW ZONE zone_0";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "ADD HOSTS 127.0.0.1:8989 INTO ZONE default_zone_127.0.0.1_8988";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "ADD HOSTS 127.0.0.1:8989 INTO NEW ZONE default_zone_127.0.0.1_8988";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "ADD HOSTS 127.0.0.1:8988,127.0.0.1:8989 INTO ZONE zone_0";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -2843,63 +2837,46 @@ TEST_F(ParserTest, Zone) {
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
+    std::string query =
+        "ADD HOSTS 127.0.0.1:8988,127.0.0.1:8989 INTO ZONE"
+        " default_zone_127.0.0.1_8988";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query =
+        "ADD HOSTS 127.0.0.1:8988,127.0.0.1:8989 INTO NEW ZONE"
+        " default_zone_127.0.0.1_8988";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "DESC ZONE default_zone_127.0.0.1_8988";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
     std::string query = "DESC ZONE zone_0";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "DESC ZONE \"zone_0\"";
+    std::string query = "DESCRIBE ZONE zone_0";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "DESCRIBE ZONE \"zone_0\"";
+    std::string query = "DESCRIBE ZONE default_zone_127.0.0.1_8988";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "DROP ZONE \"zone_0\"";
+    std::string query = "DROP ZONE zone_0";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "MERGE ZONE \"zone_1\",\"zone_2\" INTO \"zone\"";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "MERGE ZONE \"zone_1\",\"zone_2\" INTO \"zone_1\"";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query =
-        "MERGE ZONE \"default_zone_127.0.0.1_8988\",\"default_zone_127.0.0.1_8989\""
-        "INTO \"zone_1\"";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query =
-        "MERGE ZONE \"default_zone_127.0.0.1_8988\",\"default_zone_127.0.0.1_8989\""
-        "INTO \"default_zone_127.0.0.1_8989\"";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-
-  {
-    std::string query = "RENAME ZONE \"default_zone_127.0.0.1_8989\" TO \"new_name\"";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-
-  {
-    std::string query = "RENAME ZONE \"old_name\" TO \"new_name\"";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "RENAME ZONE \"default_zone_127.0.0.1_8989\" TO \"new_name\"";
+    std::string query = "DROP ZONE default_zone_127.0.0.1_8988";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -2914,7 +2891,43 @@ TEST_F(ParserTest, Zone) {
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
+    std::string query =
+        "MERGE ZONE default_zone_127.0.0.1_8988,default_zone_127.0.0.1_8989"
+        "INTO zone_1";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query =
+        "MERGE ZONE default_zone_127.0.0.1_8988,default_zone_127.0.0.1_8989"
+        "INTO default_zone_127.0.0.1_8989";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "RENAME ZONE default_zone_127.0.0.1_8989 TO new_name";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
     std::string query = "RENAME ZONE old_name TO new_name";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "RENAME ZONE default_zone_127.0.0.1_8989 TO new_name";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "DIVIDE ZONE zone_0 INTO z_1 127.0.0.1:8988 z_2 127.0.0.1:8989";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query =
+        "DIVIDE ZONE zone_0 INTO z_1 127.0.0.1:8986,127.0.0.1:8987"
+        " z_2 127.0.0.1:8988,127.0.0.1:8989";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }

@@ -35,10 +35,10 @@ class DropZoneExecutor final : public Executor {
   folly::Future<Status> execute() override;
 };
 
-class SplitZoneExecutor final : public Executor {
+class DivideZoneExecutor final : public Executor {
  public:
-  SplitZoneExecutor(const PlanNode *node, QueryContext *qctx)
-      : Executor("SplitZoneExecutor", node, qctx) {}
+  DivideZoneExecutor(const PlanNode *node, QueryContext *qctx)
+      : Executor("DivideZoneExecutor", node, qctx) {}
 
   folly::Future<Status> execute() override;
 };

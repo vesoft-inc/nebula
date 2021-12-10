@@ -612,11 +612,11 @@ class MetaClient {
 
   folly::Future<StatusOr<bool>> mergeZone(std::vector<std::string> zones, std::string zoneName);
 
-  folly::Future<StatusOr<bool>> splitZone(std::string zoneName,
-                                          std::string oneZoneName,
-                                          std::vector<HostAddr> oneZoneHosts,
-                                          std::string anotherZoneName,
-                                          std::vector<HostAddr> anotherZoneHosts);
+  folly::Future<StatusOr<bool>> divideZone(std::string zoneName,
+                                           std::string oneZoneName,
+                                           std::vector<HostAddr> oneZoneHosts,
+                                           std::string anotherZoneName,
+                                           std::vector<HostAddr> anotherZoneHosts);
 
   folly::Future<StatusOr<bool>> renameZone(std::string originalZoneName, std::string zoneName);
 

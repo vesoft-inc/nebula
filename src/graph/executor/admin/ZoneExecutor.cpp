@@ -20,7 +20,7 @@ folly::Future<Status> MergeZoneExecutor::execute() {
       .via(runner())
       .thenValue([](StatusOr<bool> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "Rename Zone Failed :" << resp.status();
+          LOG(ERROR) << "Merge Zone Failed :" << resp.status();
           return resp.status();
         }
         return Status::OK();
@@ -59,9 +59,24 @@ folly::Future<Status> DropZoneExecutor::execute() {
       });
 }
 
-folly::Future<Status> SplitZoneExecutor::execute() {
+folly::Future<Status> DivideZoneExecutor::execute() {
   SCOPED_TIMER(&execTime_);
-  return Status::OK();
+  auto *szNode = asNode<DivideZone>(node());
+  return qctx()
+      ->getMetaClient()
+      ->divideZone(szNode->zoneName(),
+                   szNode->oneZoneName(),
+                   szNode->oneHosts(),
+                   szNode->anotherZoneName(),
+                   szNode->anotherHosts())
+      .via(runner())
+      .thenValue([](StatusOr<bool> resp) {
+        if (!resp.ok()) {
+          LOG(ERROR) << "Split Zone Failed :" << resp.status();
+          return resp.status();
+        }
+        return Status::OK();
+      });
 }
 
 folly::Future<Status> DescribeZoneExecutor::execute() {

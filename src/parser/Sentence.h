@@ -117,7 +117,7 @@ class Sentence {
     kMergeZone,
     kRenameZone,
     kDropZone,
-    kSplitZone,
+    kDivideZone,
     kDescribeZone,
     kListZones,
     kAddHostsIntoZone,

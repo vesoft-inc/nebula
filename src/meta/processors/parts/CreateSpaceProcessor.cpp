@@ -243,21 +243,6 @@ void CreateSpaceProcessor::process(const cpp2::CreateSpaceReq& req) {
       break;
     }
 
-    auto pickedZones = std::move(pickedZonesRet).value();
-    auto partHostsRet = pickHostsWithZone(pickedZones, zoneHosts);
-    if (!partHostsRet.ok()) {
-      LOG(ERROR) << "Pick hosts with zone failed.";
-      code = nebula::cpp2::ErrorCode::E_INVALID_PARM;
-      break;
-    }
-
-    auto partHosts = std::move(partHostsRet).value();
-    if (partHosts.empty()) {
-      LOG(ERROR) << "Pick hosts is empty.";
-      code = nebula::cpp2::ErrorCode::E_INVALID_PARM;
-      break;
-    }
-
     std::stringstream ss;
     for (const auto& host : partHosts) {
       ss << host << ", ";

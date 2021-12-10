@@ -3124,12 +3124,12 @@ folly::Future<StatusOr<bool>> MetaClient::mergeZone(std::vector<std::string> zon
   return future;
 }
 
-folly::Future<StatusOr<bool>> MetaClient::splitZone(std::string zoneName,
-                                                    std::string oneZoneName,
-                                                    std::vector<HostAddr> oneZoneHosts,
-                                                    std::string anotherZoneName,
-                                                    std::vector<HostAddr> anotherZoneHosts) {
-  cpp2::SplitZoneReq req;
+folly::Future<StatusOr<bool>> MetaClient::divideZone(std::string zoneName,
+                                                     std::string oneZoneName,
+                                                     std::vector<HostAddr> oneZoneHosts,
+                                                     std::string anotherZoneName,
+                                                     std::vector<HostAddr> anotherZoneHosts) {
+  cpp2::DivideZoneReq req;
   req.zone_name_ref() = std::move(zoneName);
   req.one_zone_name_ref() = std::move(oneZoneName);
   req.one_zone_hosts_ref() = std::move(oneZoneHosts);
@@ -3139,7 +3139,7 @@ folly::Future<StatusOr<bool>> MetaClient::splitZone(std::string zoneName,
   auto future = promise.getFuture();
   getResponse(
       std::move(req),
-      [](auto client, auto request) { return client->future_splitZone(request); },
+      [](auto client, auto request) { return client->future_divideZone(request); },
       [](cpp2::ExecResp&& resp) -> bool {
         return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
       },

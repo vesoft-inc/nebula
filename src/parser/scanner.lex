@@ -284,6 +284,7 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 "DURATION"                  { return TokenType::KW_DURATION; }
 "MERGE"                     { return TokenType::KW_MERGE; }
 "RENAME"                    { return TokenType::KW_RENAME; }
+"KW_DIVIDE"                 { return TokenType::KW_DIVIDE; }
 
 "TRUE"                      { yylval->boolval = true; return TokenType::BOOL; }
 "FALSE"                     { yylval->boolval = false; return TokenType::BOOL; }

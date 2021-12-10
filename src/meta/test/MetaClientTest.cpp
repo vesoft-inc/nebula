@@ -343,6 +343,7 @@ TEST(MetaClientTest, InterfacesTest) {
     ASSERT_TRUE(ret1.ok()) << ret1.status();
     ASSERT_EQ(0, ret1.value().size());
   }
+  cluster.stop();
 }
 
 TEST(MetaClientTest, TagTest) {
@@ -578,6 +579,7 @@ TEST(MetaClientTest, TagTest) {
     auto result = client->createTagSchema(spaceId, "test_tag_min_int32", std::move(schema)).get();
     ASSERT_TRUE(result.ok());
   }
+  cluster.stop();
 }
 
 TEST(MetaClientTest, EdgeTest) {
@@ -687,6 +689,7 @@ TEST(MetaClientTest, EdgeTest) {
     auto result = client->getEdgeSchema(space, "test_edge", version).get();
     ASSERT_FALSE(result.ok());
   }
+  cluster.stop();
 }
 
 TEST(MetaClientTest, TagIndexTest) {
@@ -866,6 +869,7 @@ TEST(MetaClientTest, TagIndexTest) {
     auto result = client->dropTagIndex(space, "tag_single_field_index").get();
     ASSERT_FALSE(result.ok());
   }
+  cluster.stop();
 }
 
 TEST(MetaClientTest, EdgeIndexTest) {
@@ -1044,6 +1048,7 @@ TEST(MetaClientTest, EdgeIndexTest) {
     auto result = client->dropEdgeIndex(space, "edge_single_field_index").get();
     ASSERT_FALSE(result.ok());
   }
+  cluster.stop();
 }
 
 TEST(MetaClientTest, FTServiceTest) {
@@ -1092,6 +1097,7 @@ TEST(MetaClientTest, FTServiceTest) {
     ASSERT_TRUE(result.ok());
     ASSERT_TRUE(result.value().empty());
   }
+  cluster.stop();
 }
 
 class TestListener : public MetaChangedListener {
@@ -1250,6 +1256,7 @@ TEST(MetaClientTest, DiffTest) {
   sleep(FLAGS_heartbeat_interval_secs + 1);
   ASSERT_EQ(1, listener->spaceNum);
   ASSERT_EQ(9, listener->partNum);
+  cluster.stop();
 }
 
 TEST(MetaClientTest, ListenerDiffTest) {
@@ -1352,6 +1359,7 @@ TEST(MetaClientTest, ListenerDiffTest) {
     ASSERT_EQ(0, listener->listenerPartNum);
   }
   client->unRegisterListener();
+  cluster.stop();
 }
 
 TEST(MetaClientTest, HeartbeatTest) {
@@ -1390,6 +1398,7 @@ TEST(MetaClientTest, HeartbeatTest) {
   ASSERT_TRUE(nebula::ok(hostsRet));
   ASSERT_EQ(1, nebula::value(hostsRet).size());
   client->unRegisterListener();
+  cluster.stop();
 }
 
 class TestMetaService : public cpp2::MetaServiceSvIf {
@@ -1673,6 +1682,7 @@ TEST(MetaClientTest, Config) {
   // Just avoid memory leak error of clang asan. to waiting asynchronous thread
   // done.
   sleep(FLAGS_heartbeat_interval_secs * 5);
+  cluster.stop();
 }
 
 TEST(MetaClientTest, ListenerTest) {
@@ -1680,7 +1690,7 @@ TEST(MetaClientTest, ListenerTest) {
   fs::TempDir rootPath("/tmp/MetaClientListenerTest.XXXXXX");
 
   mock::MockCluster cluster;
-  cluster.startMeta(rootPath.path(), HostAddr("127.0.0.1", 0));
+  cluster.startMeta(rootPath.path());
   uint32_t localMetaPort = cluster.metaServer_->port_;
   auto* kv = cluster.metaKV_.get();
   auto localIp = cluster.localIP();
@@ -1735,6 +1745,7 @@ TEST(MetaClientTest, ListenerTest) {
     auto listeners = listRet.value();
     ASSERT_EQ(0, listeners.size());
   }
+  cluster.stop();
 }
 
 TEST(MetaClientTest, VerifyClientTest) {
@@ -1769,6 +1780,7 @@ TEST(MetaClientTest, VerifyClientTest) {
     EXPECT_TRUE(status.ok());
   }
   FLAGS_enable_client_white_list = false;
+  cluster.stop();
 }
 
 TEST(MetaClientTest, HostsTest) {
@@ -1832,13 +1844,14 @@ TEST(MetaClientTest, HostsTest) {
     auto result = client->dropHosts(std::move(hosts)).get();
     EXPECT_FALSE(result.ok());
   }
+  cluster.stop();
 }
 
 TEST(MetaClientTest, AddHostsIntoNewZoneTest) {
   FLAGS_heartbeat_interval_secs = 1;
   fs::TempDir rootPath("/tmp/AddHostsIntoNewZoneTest.XXXXXX");
   mock::MockCluster cluster;
-  cluster.startMeta(rootPath.path(), HostAddr("127.0.0.1", 0));
+  cluster.startMeta(rootPath.path());
   cluster.initMetaClient();
   auto* client = cluster.metaClient_.get();
   {
@@ -1876,13 +1889,14 @@ TEST(MetaClientTest, AddHostsIntoNewZoneTest) {
     auto result = client->addHostsIntoZone(std::move(hosts), "zone_1", true).get();
     EXPECT_FALSE(result.ok());
   }
+  cluster.stop();
 }
 
 TEST(MetaClientTest, AddHostsIntoZoneTest) {
   FLAGS_heartbeat_interval_secs = 1;
   fs::TempDir rootPath("/tmp/AddHostsIntoZoneTest.XXXXXX");
   mock::MockCluster cluster;
-  cluster.startMeta(rootPath.path(), HostAddr("127.0.0.1", 0));
+  cluster.startMeta(rootPath.path());
   cluster.initMetaClient();
   auto* client = cluster.metaClient_.get();
   {
@@ -1955,545 +1969,14 @@ TEST(MetaClientTest, AddHostsIntoZoneTest) {
     auto result = client->dropHosts(std::move(hosts)).get();
     EXPECT_TRUE(result.ok());
   }
+  cluster.stop();
 }
 
 TEST(MetaClientTest, DropHostsTest) {
   FLAGS_heartbeat_interval_secs = 1;
   fs::TempDir rootPath("/tmp/DropHostsTest.XXXXXX");
   mock::MockCluster cluster;
-  cluster.startMeta(rootPath.path(), HostAddr("127.0.0.1", 0));
-  cluster.initMetaClient();
-  auto* client = cluster.metaClient_.get();
-  auto* kv = cluster.metaKV_.get();
-  {
-    std::vector<HostAddr> hosts = {{"127.0.0.1", 8987}, {"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
-    auto result = client->addHosts(std::move(hosts)).get();
-    EXPECT_TRUE(result.ok());
-  }
-  TestUtils::registerHB(kv, {{"127.0.0.1", 8987}, {"127.0.0.1", 8988}, {"127.0.0.1", 8989}});
-  {
-    auto result = client->listZones().get();
-    ASSERT_TRUE(result.ok());
-    auto zones = result.value();
-    ASSERT_EQ(3, zones.size());
-    ASSERT_EQ("default_zone_127.0.0.1_8987", zones[0].get_zone_name());
-    ASSERT_EQ("default_zone_127.0.0.1_8988", zones[1].get_zone_name());
-    ASSERT_EQ("default_zone_127.0.0.1_8989", zones[2].get_zone_name());
-  }
-  {
-    // Create Space on cluster, the replica number same with the zone size.
-    meta::cpp2::SpaceDesc properties;
-    properties.space_name_ref() = "default_space_0";
-    properties.partition_num_ref() = 9;
-    properties.replica_factor_ref() = 3;
-    properties.charset_name_ref() = "utf8";
-    properties.collate_name_ref() = "utf8_bin";
-    auto ret = client->createSpace(properties).get();
-    ASSERT_TRUE(ret.ok()) << ret.status();
-    ASSERT_EQ(1, ret.value());
-  }
-  {
-    // Create Space on cluster, the replica number less than the zone size.
-    cpp2::SpaceDesc properties;
-    properties.space_name_ref() = "default_space_1";
-    properties.partition_num_ref() = 9;
-    properties.replica_factor_ref() = 1;
-    properties.charset_name_ref() = "utf8";
-    properties.collate_name_ref() = "utf8_bin";
-    auto ret = client->createSpace(properties).get();
-    ASSERT_TRUE(ret.ok()) << ret.status();
-    ASSERT_EQ(2, ret.value());
-  }
-  {
-    // Create Space on cluster, the replica number greater than the zone size.
-    cpp2::SpaceDesc properties;
-    properties.space_name_ref() = "default_space_2";
-    properties.partition_num_ref() = 9;
-    properties.replica_factor_ref() = 6;
-    properties.charset_name_ref() = "utf8";
-    properties.collate_name_ref() = "utf8_bin";
-    auto ret = client->createSpace(properties).get();
-    ASSERT_FALSE(ret.ok()) << ret.status();
-  }
-  {
-    std::vector<HostAddr> hosts = {{"127.0.0.1", 8976}, {"127.0.0.1", 8977}};
-    auto result = client->addHostsIntoZone(std::move(hosts), "zone_0", true).get();
-    EXPECT_TRUE(result.ok());
-  }
-  {
-    std::vector<HostAddr> hosts = {{"127.0.0.1", 8978}};
-    auto result = client->addHostsIntoZone(std::move(hosts), "zone_1", true).get();
-    EXPECT_TRUE(result.ok());
-  }
-  {
-    std::vector<HostAddr> hosts = {{"127.0.0.1", 8979}};
-    auto result = client->addHostsIntoZone(std::move(hosts), "zone_2", true).get();
-    EXPECT_TRUE(result.ok());
-  }
-  TestUtils::registerHB(
-      kv, {{"127.0.0.1", 8976}, {"127.0.0.1", 8977}, {"127.0.0.1", 8978}, {"127.0.0.1", 8979}});
-  {
-    auto result = client->listZones().get();
-    ASSERT_TRUE(result.ok());
-    auto zones = result.value();
-    ASSERT_EQ(6, zones.size());
-    ASSERT_EQ("default_zone_127.0.0.1_8987", zones[0].get_zone_name());
-    ASSERT_EQ("default_zone_127.0.0.1_8988", zones[1].get_zone_name());
-    ASSERT_EQ("default_zone_127.0.0.1_8989", zones[2].get_zone_name());
-    ASSERT_EQ("zone_0", zones[3].get_zone_name());
-    ASSERT_EQ("zone_1", zones[4].get_zone_name());
-    ASSERT_EQ("zone_2", zones[5].get_zone_name());
-  }
-  {
-    // Create Space on cluster, the replica number greater than the zone size.
-    cpp2::SpaceDesc properties;
-    properties.space_name_ref() = "default_space_on_zone_3";
-    properties.partition_num_ref() = 9;
-    properties.replica_factor_ref() = 3;
-    properties.charset_name_ref() = "utf8";
-    properties.collate_name_ref() = "utf8_bin";
-    std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2"};
-    properties.zone_names_ref() = std::move(zones);
-    auto ret = client->createSpace(properties).get();
-    ASSERT_TRUE(ret.ok()) << ret.status();
-    ASSERT_EQ(4, ret.value());
-  }
-  {
-    // Create Space on cluster, the replica number less than the zone size
-    cpp2::SpaceDesc properties;
-    properties.space_name_ref() = "default_space_on_zone_1";
-    properties.partition_num_ref() = 9;
-    properties.replica_factor_ref() = 1;
-    properties.charset_name_ref() = "utf8";
-    properties.collate_name_ref() = "utf8_bin";
-    std::vector<std::string> zones = {"zone_0"};
-    properties.zone_names_ref() = std::move(zones);
-    auto ret = client->createSpace(properties).get();
-    ASSERT_TRUE(ret.ok()) << ret.status();
-    ASSERT_EQ(5, ret.value());
-  }
-  {
-    // Create Space on cluster, the replica number greater than the zone size
-    cpp2::SpaceDesc properties;
-    properties.space_name_ref() = "default_space_on_zone_6";
-    properties.partition_num_ref() = 9;
-    properties.replica_factor_ref() = 6;
-    properties.charset_name_ref() = "utf8";
-    properties.collate_name_ref() = "utf8_bin";
-    std::vector<std::string> zones = {"zone_0"};
-    properties.zone_names_ref() = std::move(zones);
-    auto ret = client->createSpace(properties).get();
-    ASSERT_FALSE(ret.ok()) << ret.status();
-  }
-  {
-    // Drop hosts which hold partition.
-    std::vector<HostAddr> hosts = {{"127.0.0.1", 8987}};
-    auto result = client->dropHosts(std::move(hosts)).get();
-    EXPECT_FALSE(result.ok());
-  }
-  {
-    // Drop hosts which hold partition.
-    std::vector<HostAddr> hosts = {{"127.0.0.1", 8977}};
-    auto result = client->dropHosts(std::move(hosts)).get();
-    EXPECT_FALSE(result.ok());
-  }
-  {
-    auto ret = client->dropSpace("default_space_on_zone_1").get();
-    ASSERT_TRUE(ret.ok());
-  }
-  {
-    auto ret = client->dropSpace("default_space_on_zone_3").get();
-    ASSERT_TRUE(ret.ok());
-  }
-  {
-    auto ret = client->dropSpace("default_space_0").get();
-    ASSERT_TRUE(ret.ok());
-  }
-  {
-    auto ret = client->dropSpace("default_space_1").get();
-    ASSERT_TRUE(ret.ok());
-  }
-  {
-    std::vector<HostAddr> hosts = {{"127.0.0.1", 8987}};
-    auto result = client->dropHosts(std::move(hosts)).get();
-    EXPECT_TRUE(result.ok());
-  }
-  {
-    std::vector<HostAddr> hosts = {{"127.0.0.1", 8976}};
-    auto result = client->dropHosts(std::move(hosts)).get();
-    EXPECT_TRUE(result.ok());
-  }
-  {
-    std::vector<HostAddr> hosts = {{"127.0.0.1", 8978}};
-    auto result = client->dropHosts(std::move(hosts)).get();
-    EXPECT_TRUE(result.ok());
-  }
-  {
-    auto result = client->listZones().get();
-    ASSERT_TRUE(result.ok());
-    auto zones = result.value();
-    ASSERT_EQ(4, zones.size());
-    ASSERT_EQ("default_zone_127.0.0.1_8988", zones[0].get_zone_name());
-    ASSERT_EQ("default_zone_127.0.0.1_8989", zones[1].get_zone_name());
-    ASSERT_EQ("zone_0", zones[2].get_zone_name());
-    ASSERT_EQ("zone_2", zones[3].get_zone_name());
-  }
-}
-
-TEST(MetaClientTest, RenameZoneTest) {
-  FLAGS_heartbeat_interval_secs = 1;
-  fs::TempDir rootPath("/tmp/RenameZoneTest.XXXXXX");
-  mock::MockCluster cluster;
-  cluster.startMeta(rootPath.path(), HostAddr("127.0.0.1", 0));
-  cluster.initMetaClient();
-  auto* client = cluster.metaClient_.get();
-  auto* kv = cluster.metaKV_.get();
-  {
-    std::vector<HostAddr> hosts = {{"127.0.0.1", 8987}};
-    auto result = client->addHostsIntoZone(std::move(hosts), "zone_0", true).get();
-    EXPECT_TRUE(result.ok());
-  }
-  {
-    std::vector<HostAddr> hosts = {{"127.0.0.1", 8988}};
-    auto result = client->addHostsIntoZone(std::move(hosts), "zone_1", true).get();
-    EXPECT_TRUE(result.ok());
-  }
-  {
-    std::vector<HostAddr> hosts = {{"127.0.0.1", 8989}};
-    auto result = client->addHostsIntoZone(std::move(hosts), "zone_2", true).get();
-    EXPECT_TRUE(result.ok());
-  }
-  TestUtils::registerHB(kv, {{"127.0.0.1", 8987}, {"127.0.0.1", 8988}, {"127.0.0.1", 8989}});
-  {
-    auto result = client->listZones().get();
-    ASSERT_TRUE(result.ok());
-    auto zones = result.value();
-    ASSERT_EQ(3, zones.size());
-    ASSERT_EQ("zone_0", zones[0].get_zone_name());
-    ASSERT_EQ("zone_1", zones[1].get_zone_name());
-    ASSERT_EQ("zone_2", zones[2].get_zone_name());
-  }
-  {
-    cpp2::SpaceDesc properties;
-    properties.space_name_ref() = "default";
-    properties.partition_num_ref() = 9;
-    properties.replica_factor_ref() = 3;
-    properties.charset_name_ref() = "utf8";
-    properties.collate_name_ref() = "utf8_bin";
-    std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2"};
-    properties.zone_names_ref() = std::move(zones);
-    auto ret = client->createSpace(properties).get();
-    ASSERT_TRUE(ret.ok()) << ret.status();
-    ASSERT_EQ(1, ret.value());
-  }
-  {
-    auto ret = client->getSpace("default").get();
-    ASSERT_TRUE(ret.ok()) << ret.status();
-    auto spaceDesc = ret.value().get_properties();
-    ASSERT_EQ("default", spaceDesc.get_space_name());
-    ASSERT_EQ(9, spaceDesc.get_partition_num());
-    ASSERT_EQ(3, spaceDesc.get_replica_factor());
-    ASSERT_EQ("utf8", spaceDesc.get_charset_name());
-    ASSERT_EQ("utf8_bin", spaceDesc.get_collate_name());
-    auto zones = spaceDesc.get_zone_names();
-    ASSERT_EQ(3, zones.size());
-    ASSERT_EQ("zone_0", zones[0]);
-    ASSERT_EQ("zone_1", zones[1]);
-    ASSERT_EQ("zone_2", zones[2]);
-  }
-  {
-    auto result = client->renameZone("zone_not_exist", "new_zone_name").get();
-    EXPECT_FALSE(result.ok());
-  }
-  {
-    auto result = client->renameZone("zone_0", "zone_1").get();
-    EXPECT_FALSE(result.ok());
-  }
-  {
-    auto result = client->renameZone("zone_1", "z_1").get();
-    EXPECT_TRUE(result.ok());
-  }
-  {
-    auto ret = client->getSpace("default").get();
-    ASSERT_TRUE(ret.ok()) << ret.status();
-    auto spaceDesc = ret.value().get_properties();
-    ASSERT_EQ("default", spaceDesc.get_space_name());
-    ASSERT_EQ(9, spaceDesc.get_partition_num());
-    ASSERT_EQ(3, spaceDesc.get_replica_factor());
-    ASSERT_EQ("utf8", spaceDesc.get_charset_name());
-    ASSERT_EQ("utf8_bin", spaceDesc.get_collate_name());
-    auto zones = spaceDesc.get_zone_names();
-    ASSERT_EQ(3, zones.size());
-    ASSERT_EQ("zone_0", zones[0]);
-    ASSERT_EQ("z_1", zones[1]);
-    ASSERT_EQ("zone_2", zones[2]);
-  }
-}
-
-TEST(MetaClientTest, RocksdbOptionsTest) {
-  FLAGS_heartbeat_interval_secs = 1;
-  fs::TempDir rootPath("/tmp/RocksdbOptionsTest.XXXXXX");
-
-  mock::MockCluster cluster;
   cluster.startMeta(rootPath.path());
-  // auto* kv = cluster.metaKV_.get();
-  // TestUtils::createSomeHosts(kv, {{"0", 0}});
-
-  MetaClientOptions options;
-  // Now the `--local_config' option only affect if initialize the configuration
-  // from meta not affect `show/update/get configs'
-  options.skipConfig_ = false;
-
-  cluster.initMetaClient(std::move(options));
-  auto* client = cluster.metaClient_.get();
-  {
-    // Add single host
-    std::vector<HostAddr> hosts = {{"0", 0}};
-    auto result = client->addHosts(std::move(hosts)).get();
-    EXPECT_TRUE(result.ok());
-  }
-
-  auto listener = std::make_unique<TestListener>();
-  auto module = cpp2::ConfigModule::STORAGE;
-  auto mode = meta::cpp2::ConfigMode::MUTABLE;
-
-  client->registerListener(listener.get());
-  client->gflagsModule_ = module;
-
-  // mock some rocksdb gflags to meta
-  {
-    auto name = "rocksdb_db_options";
-    std::vector<cpp2::ConfigItem> configItems;
-    FLAGS_rocksdb_db_options =
-        R"({"disable_auto_compactions":"false","write_buffer_size":"1048576"})";
-    Map map;
-    map.kvs.emplace("disable_auto_compactions", "false");
-    map.kvs.emplace("write_buffer_size", "1048576");
-    configItems.emplace_back(initConfigItem(module, name, mode, Value(map)));
-    client->regConfig(configItems);
-  }
-  {
-    std::vector<HostAddr> hosts = {{"0", 0}};
-    TestUtils::registerHB(cluster.metaKV_.get(), hosts);
-    meta::cpp2::SpaceDesc spaceDesc;
-    spaceDesc.space_name_ref() = "default_space";
-    spaceDesc.partition_num_ref() = 9;
-    spaceDesc.replica_factor_ref() = 1;
-    client->createSpace(spaceDesc).get();
-    sleep(FLAGS_heartbeat_interval_secs + 1);
-  }
-  {
-    std::string name = "rocksdb_db_options";
-    Map map;
-    map.kvs.emplace("disable_auto_compactions", "true");
-    map.kvs.emplace("level0_file_num_compaction_trigger", "4");
-
-    // update config
-    auto setRet = client->setConfig(module, name, Value(map)).get();
-    ASSERT_TRUE(setRet.ok());
-
-    // get from meta server
-    auto getRet = client->getConfig(module, name).get();
-    ASSERT_TRUE(getRet.ok());
-    auto item = getRet.value().front();
-
-    sleep(FLAGS_heartbeat_interval_secs + 1);
-    ASSERT_EQ(listener->options["disable_auto_compactions"], "\"true\"");
-    ASSERT_EQ(listener->options["level0_file_num_compaction_trigger"], "\"4\"");
-  }
-}
-
-TEST(MetaClientTest, HostsTest) {
-  FLAGS_heartbeat_interval_secs = 1;
-  fs::TempDir rootPath("/tmp/HostsTest.XXXXXX");
-  mock::MockCluster cluster;
-  cluster.startMeta(rootPath.path());
-  cluster.initMetaClient();
-  auto* client = cluster.metaClient_.get();
-  {
-    // Add single host
-    std::vector<HostAddr> hosts = {{"127.0.0.1", 8989}};
-    auto result = client->addHosts(std::move(hosts)).get();
-    EXPECT_TRUE(result.ok());
-  }
-  {
-    // Add multi host
-    std::vector<HostAddr> hosts = {{"127.0.0.1", 8987}, {"127.0.0.1", 8988}};
-    auto result = client->addHosts(std::move(hosts)).get();
-    EXPECT_TRUE(result.ok());
-  }
-  {
-    // Add duplicated hosts
-    std::vector<HostAddr> hosts = {{"127.0.0.1", 8986}, {"127.0.0.1", 8986}};
-    auto result = client->addHosts(std::move(hosts)).get();
-    EXPECT_FALSE(result.ok());
-  }
-  {
-    // Add empty hosts
-    std::vector<HostAddr> hosts = {};
-    auto result = client->addHosts(std::move(hosts)).get();
-    EXPECT_FALSE(result.ok());
-  }
-  {
-    // Add hosts which is existed
-    std::vector<HostAddr> hosts = {{"127.0.0.1", 8988}};
-    auto result = client->addHosts(std::move(hosts)).get();
-    EXPECT_FALSE(result.ok());
-  }
-  {
-    // Add hosts which is existed
-    std::vector<HostAddr> hosts = {{"127.0.0.1", 8986}, {"127.0.0.1", 8988}};
-    auto result = client->addHosts(std::move(hosts)).get();
-    EXPECT_FALSE(result.ok());
-  }
-  {
-    // Show the zones created by add hosts
-    auto result = client->listZones().get();
-    ASSERT_TRUE(result.ok());
-    ASSERT_EQ(3, result.value().size());
-  }
-  {
-    // Drop hosts with duplicate element
-    std::vector<HostAddr> hosts = {{"127.0.0.1", 8987}, {"127.0.0.1", 8987}};
-    auto result = client->dropHosts(std::move(hosts)).get();
-    EXPECT_FALSE(result.ok());
-  }
-  {
-    // Drop hosts which is empty
-    std::vector<HostAddr> hosts = {};
-    auto result = client->dropHosts(std::move(hosts)).get();
-    EXPECT_FALSE(result.ok());
-  }
-}
-
-TEST(MetaClientTest, AddHostsIntoNewZoneTest) {
-  FLAGS_heartbeat_interval_secs = 1;
-  fs::TempDir rootPath("/tmp/AddHostsIntoNewZoneTest.XXXXXX");
-  mock::MockCluster cluster;
-  cluster.startMeta(rootPath.path(), HostAddr("127.0.0.1", 0));
-  cluster.initMetaClient();
-  auto* client = cluster.metaClient_.get();
-  {
-    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
-    auto result = client->addHosts(std::move(hosts)).get();
-    EXPECT_TRUE(result.ok());
-  }
-  {
-    // Add host into zone with duplicate hosts
-    std::vector<HostAddr> hosts = {{"127.0.0.1", 8988}, {"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
-    auto result = client->addHostsIntoZone(std::move(hosts), "zone_0", true).get();
-    EXPECT_FALSE(result.ok());
-  }
-  {
-    // Add host into new zone with empty hosts.
-    std::vector<HostAddr> hosts = {};
-    auto result = client->addHostsIntoZone(std::move(hosts), "zone_0", true).get();
-    EXPECT_FALSE(result.ok());
-  }
-  {
-    // Add host into new zone.
-    std::vector<HostAddr> hosts = {{"127.0.0.1", 8987}, {"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
-    auto result = client->addHostsIntoZone(std::move(hosts), "zone_0", true).get();
-    EXPECT_TRUE(result.ok());
-  }
-  {
-    // Add host into new zone with zone name conflict.
-    std::vector<HostAddr> hosts = {{"127.0.0.1", 8977}, {"127.0.0.1", 8978}, {"127.0.0.1", 8979}};
-    auto result = client->addHostsIntoZone(std::move(hosts), "zone_0", true).get();
-    EXPECT_FALSE(result.ok());
-  }
-  {
-    // the hosts have exist in another zones.
-    std::vector<HostAddr> hosts = {{"127.0.0.1", 8977}, {"127.0.0.1", 8978}, {"127.0.0.1", 8989}};
-    auto result = client->addHostsIntoZone(std::move(hosts), "zone_1", true).get();
-    EXPECT_FALSE(result.ok());
-  }
-}
-
-TEST(MetaClientTest, AddHostsIntoZoneTest) {
-  FLAGS_heartbeat_interval_secs = 1;
-  fs::TempDir rootPath("/tmp/AddHostsIntoZoneTest.XXXXXX");
-  mock::MockCluster cluster;
-  cluster.startMeta(rootPath.path(), HostAddr("127.0.0.1", 0));
-  cluster.initMetaClient();
-  auto* client = cluster.metaClient_.get();
-  {
-    // Add host into zone with duplicate hosts
-    std::vector<HostAddr> hosts = {{"127.0.0.1", 8988}, {"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
-    auto result = client->addHostsIntoZone(std::move(hosts), "zone_0", false).get();
-    EXPECT_FALSE(result.ok());
-  }
-  {
-    // Add host into zone with empty hosts
-    std::vector<HostAddr> hosts;
-    auto result = client->addHostsIntoZone(std::move(hosts), "zone_0", false).get();
-    EXPECT_FALSE(result.ok());
-  }
-  {
-    // Add host into zone which zone is not exist.
-    std::vector<HostAddr> hosts = {{"127.0.0.1", 8987}, {"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
-    auto result = client->addHostsIntoZone(std::move(hosts), "zone_not_existed", false).get();
-    EXPECT_FALSE(result.ok());
-  }
-  {
-    // Add host into zone.
-    std::vector<HostAddr> hosts = {{"127.0.0.1", 8987}, {"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
-    auto result = client->addHostsIntoZone(std::move(hosts), "zone_0", true).get();
-    EXPECT_TRUE(result.ok());
-  }
-  {
-    // Add host into zone with zone name conflict.
-    std::vector<HostAddr> hosts = {{"127.0.0.1", 8977}, {"127.0.0.1", 8978}, {"127.0.0.1", 8979}};
-    auto result = client->addHostsIntoZone(std::move(hosts), "zone_0", true).get();
-    EXPECT_FALSE(result.ok());
-  }
-  {
-    // Add existed hosts
-    std::vector<HostAddr> hosts = {{"127.0.0.1", 8988}};
-    auto result = client->addHostsIntoZone(std::move(hosts), "zone_0", true).get();
-    EXPECT_FALSE(result.ok());
-  }
-  {
-    std::vector<HostAddr> hosts = {{"127.0.0.1", 8977}, {"127.0.0.1", 8978}, {"127.0.0.1", 8979}};
-    auto result = client->addHostsIntoZone(std::move(hosts), "zone_1", true).get();
-    EXPECT_TRUE(result.ok());
-  }
-  {
-    // Add existed hosts.
-    std::vector<HostAddr> hosts = {{"127.0.0.1", 8988}};
-    auto result = client->addHosts(std::move(hosts)).get();
-    EXPECT_FALSE(result.ok());
-  }
-  {
-    std::vector<HostAddr> hosts = {{"127.0.0.1", 8976}, {"127.0.0.1", 8988}};
-    auto result = client->addHostsIntoZone(std::move(hosts), "zone_1", false).get();
-    EXPECT_FALSE(result.ok());
-  }
-  {
-    // Drop hosts which is empty.
-    std::vector<HostAddr> hosts = {};
-    auto result = client->dropHosts(std::move(hosts)).get();
-    EXPECT_FALSE(result.ok());
-  }
-  {
-    // Drop hosts which have duplicate element.
-    std::vector<HostAddr> hosts = {{"127.0.0.1", 8988}, {"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
-    auto result = client->dropHosts(std::move(hosts)).get();
-    EXPECT_FALSE(result.ok());
-  }
-  {
-    // Drop hosts.
-    std::vector<HostAddr> hosts = {{"127.0.0.1", 8987}, {"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
-    auto result = client->dropHosts(std::move(hosts)).get();
-    EXPECT_TRUE(result.ok());
-  }
-}
-
-TEST(MetaClientTest, DropHostsTest) {
-  FLAGS_heartbeat_interval_secs = 1;
-  fs::TempDir rootPath("/tmp/DropHostsTest.XXXXXX");
-  mock::MockCluster cluster;
-  cluster.startMeta(rootPath.path(), HostAddr("127.0.0.1", 0));
   cluster.initMetaClient();
   auto* client = cluster.metaClient_.get();
   auto* kv = cluster.metaKV_.get();
@@ -2670,13 +2153,14 @@ TEST(MetaClientTest, DropHostsTest) {
     ASSERT_EQ("zone_0", zones[2].get_zone_name());
     ASSERT_EQ("zone_2", zones[3].get_zone_name());
   }
+  cluster.stop();
 }
 
 TEST(MetaClientTest, RenameZoneTest) {
   FLAGS_heartbeat_interval_secs = 1;
   fs::TempDir rootPath("/tmp/RenameZoneTest.XXXXXX");
   mock::MockCluster cluster;
-  cluster.startMeta(rootPath.path(), HostAddr("127.0.0.1", 0));
+  cluster.startMeta(rootPath.path());
   cluster.initMetaClient();
   auto* client = cluster.metaClient_.get();
   auto* kv = cluster.metaKV_.get();
@@ -2760,33 +2244,166 @@ TEST(MetaClientTest, RenameZoneTest) {
     ASSERT_EQ("z_1", zones[1]);
     ASSERT_EQ("zone_2", zones[2]);
   }
+  cluster.stop();
 }
 
 TEST(MetaClientTest, MergeZoneTest) {
   FLAGS_heartbeat_interval_secs = 1;
   fs::TempDir rootPath("/tmp/MergeZoneTest.XXXXXX");
   mock::MockCluster cluster;
-  cluster.startMeta(rootPath.path(), HostAddr("127.0.0.1", 0));
+  cluster.startMeta(rootPath.path());
   cluster.initMetaClient();
   auto* client = cluster.metaClient_.get();
   auto* kv = cluster.metaKV_.get();
   {
-    std::vector<HostAddr> hosts = {{"127.0.0.1", 8987}, {"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
+    std::vector<HostAddr> hosts = {
+        {"127.0.0.1", 8986}, {"127.0.0.1", 8987}, {"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
     auto result = client->addHosts(std::move(hosts)).get();
     EXPECT_TRUE(result.ok());
   }
-  TestUtils::registerHB(kv, {{"127.0.0.1", 8987}, {"127.0.0.1", 8988}, {"127.0.0.1", 8989}});
+  TestUtils::registerHB(
+      kv, {{"127.0.0.1", 8986}, {"127.0.0.1", 8987}, {"127.0.0.1", 8988}, {"127.0.0.1", 8989}});
   {
+    auto result = client->listZones().get();
+    ASSERT_TRUE(result.ok());
+    auto zones = result.value();
+    ASSERT_EQ(4, zones.size());
+    ASSERT_EQ("default_zone_127.0.0.1_8986", zones[0].get_zone_name());
+    ASSERT_EQ("default_zone_127.0.0.1_8987", zones[1].get_zone_name());
+    ASSERT_EQ("default_zone_127.0.0.1_8988", zones[2].get_zone_name());
+    ASSERT_EQ("default_zone_127.0.0.1_8989", zones[3].get_zone_name());
+  }
+  {
+    // Merge zones is empty
     auto result = client->mergeZone({}, "new_zone").get();
+    EXPECT_FALSE(result.ok());
+  }
+  {
+    // Merge only zone
+    auto result = client->mergeZone({"zone_0"}, "new_zone").get();
+    EXPECT_FALSE(result.ok());
+  }
+  {
+    // Merge zones have duplicate
+    auto result = client->mergeZone({"zone_0", "zone_0"}, "new_zone").get();
+    EXPECT_FALSE(result.ok());
+  }
+  {
+    // Merge zones not exist
+    auto result = client->mergeZone({"zone_0", "zone_not_exist"}, "new_zone").get();
+    EXPECT_FALSE(result.ok());
+  }
+  {
+    // Merge zones not exist
+    auto result = client->mergeZone({"zone_not_exist_0", "zone_not_exist_1"}, "new_zone").get();
+    EXPECT_FALSE(result.ok());
+  }
+  {
+    auto result = client
+                      ->mergeZone({"default_zone_127.0.0.1_8986",
+                                   "default_zone_127.0.0.1_8987",
+                                   "default_zone_127.0.0.1_8988"},
+                                  "zone_1")
+                      .get();
     EXPECT_TRUE(result.ok());
   }
+  {
+    auto result = client->mergeZone({"default_zone_127.0.0.1_8989", "zone_1"}, "zone_1").get();
+    EXPECT_TRUE(result.ok());
+  }
+  {
+    auto result = client->listZones().get();
+    ASSERT_TRUE(result.ok());
+    auto zones = result.value();
+    ASSERT_EQ(1, zones.size());
+    ASSERT_EQ("zone_1", zones[0].get_zone_name());
+  }
+  {
+    std::vector<HostAddr> hosts = {{"127.0.0.1", 8976}, {"127.0.0.1", 8977}, {"127.0.0.1", 8978}};
+    auto result = client->addHosts(std::move(hosts)).get();
+    EXPECT_TRUE(result.ok());
+  }
+  TestUtils::registerHB(kv, {{"127.0.0.1", 8976}, {"127.0.0.1", 8977}, {"127.0.0.1", 8978}});
+  // Merge zone with space test
+  {
+    cpp2::SpaceDesc properties;
+    properties.set_space_name("default_space");
+    properties.set_partition_num(9);
+    properties.set_replica_factor(3);
+    properties.set_charset_name("utf8");
+    properties.set_collate_name("utf8_bin");
+    std::vector<std::string> zones = {"default_zone_127.0.0.1_8976",
+                                      "default_zone_127.0.0.1_8977",
+                                      "default_zone_127.0.0.1_8978"};
+    properties.set_zone_names(std::move(zones));
+    auto ret = client->createSpace(properties).get();
+    ASSERT_TRUE(ret.ok()) << ret.status();
+    ASSERT_EQ(1, ret.value());
+  }
+  {
+    // zone size should be greater than part size
+    auto result =
+        client->mergeZone({"default_zone_127.0.0.1_8976", "default_zone_127.0.0.1_8977"}, "zone")
+            .get();
+    EXPECT_FALSE(result.ok());
+  }
+  {
+    auto result = client->dropSpace("default_space").get();
+    EXPECT_TRUE(result.ok());
+  }
+  {
+    cpp2::SpaceDesc properties;
+    properties.set_space_name("default_space");
+    properties.set_partition_num(9);
+    properties.set_replica_factor(1);
+    properties.set_charset_name("utf8");
+    properties.set_collate_name("utf8_bin");
+    std::vector<std::string> zones = {"default_zone_127.0.0.1_8976",
+                                      "default_zone_127.0.0.1_8977",
+                                      "default_zone_127.0.0.1_8978"};
+    properties.set_zone_names(std::move(zones));
+    auto ret = client->createSpace(properties).get();
+    ASSERT_TRUE(ret.ok()) << ret.status();
+    ASSERT_EQ(2, ret.value());
+  }
+  {
+    auto result =
+        client->mergeZone({"default_zone_127.0.0.1_8976", "default_zone_127.0.0.1_8977"}, "z_1")
+            .get();
+    EXPECT_TRUE(result.ok());
+  }
+  {
+    auto result = client->mergeZone({"default_zone_127.0.0.1_8978", "z_1"}, "z_1").get();
+    EXPECT_TRUE(result.ok());
+  }
+  {
+    auto result = client->getSpace("default_space").get();
+    auto properties = result.value().get_properties();
+    ASSERT_EQ("default_space", properties.get_space_name());
+    ASSERT_EQ(9, properties.get_partition_num());
+    ASSERT_EQ(1, properties.get_replica_factor());
+    ASSERT_EQ("utf8", properties.get_charset_name());
+    ASSERT_EQ("utf8_bin", properties.get_collate_name());
+    auto zones = properties.get_zone_names();
+    ASSERT_EQ(1, zones.size());
+    ASSERT_EQ("z_1", zones[0]);
+  }
+  {
+    auto result = client->listZones().get();
+    ASSERT_TRUE(result.ok());
+    auto zones = result.value();
+    ASSERT_EQ(2, zones.size());
+    ASSERT_EQ("z_1", zones[0].get_zone_name());
+    ASSERT_EQ("zone_1", zones[1].get_zone_name());
+  }
+  cluster.stop();
 }
 
-TEST(MetaClientTest, SplitZoneTest) {
+TEST(MetaClientTest, DivideZoneTest) {
   FLAGS_heartbeat_interval_secs = 1;
-  fs::TempDir rootPath("/tmp/SplitZoneTest.XXXXXX");
+  fs::TempDir rootPath("/tmp/DivideZoneTest.XXXXXX");
   mock::MockCluster cluster;
-  cluster.startMeta(rootPath.path(), HostAddr("127.0.0.1", 0));
+  cluster.startMeta(rootPath.path());
   cluster.initMetaClient();
   auto* client = cluster.metaClient_.get();
   auto* kv = cluster.metaKV_.get();
@@ -2808,68 +2425,68 @@ TEST(MetaClientTest, SplitZoneTest) {
   {
     // Split zone which not exist
     auto result = client
-                      ->splitZone("zone_not_exist",
-                                  "one_zone",
-                                  {{"127.0.0.1", 8986}, {"127.0.0.1", 8987}},
-                                  "another_zone",
-                                  {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}})
+                      ->divideZone("zone_not_exist",
+                                   "one_zone",
+                                   {{"127.0.0.1", 8986}, {"127.0.0.1", 8987}},
+                                   "another_zone",
+                                   {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}})
                       .get();
     EXPECT_FALSE(result.ok());
   }
   {
     // Split zone with empty hosts
     auto result = client
-                      ->splitZone("default_zone",
-                                  "one_zone",
-                                  {},
-                                  "another_zone",
-                                  {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}})
+                      ->divideZone("default_zone",
+                                   "one_zone",
+                                   {},
+                                   "another_zone",
+                                   {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}})
                       .get();
     EXPECT_FALSE(result.ok());
   }
   {
     // Split zone with empty hosts
     auto result = client
-                      ->splitZone("default_zone",
-                                  "one_zone",
-                                  {{"127.0.0.1", 8986}, {"127.0.0.1", 8987}},
-                                  "another_zone",
-                                  {})
+                      ->divideZone("default_zone",
+                                   "one_zone",
+                                   {{"127.0.0.1", 8986}, {"127.0.0.1", 8987}},
+                                   "another_zone",
+                                   {})
                       .get();
     EXPECT_FALSE(result.ok());
   }
   {
     // Split zone and the sum is not all
     auto result = client
-                      ->splitZone("default_zone",
-                                  "one_zone",
-                                  {{"127.0.0.1", 8986}},
-                                  "another_zone",
-                                  {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}})
+                      ->divideZone("default_zone",
+                                   "one_zone",
+                                   {{"127.0.0.1", 8986}},
+                                   "another_zone",
+                                   {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}})
                       .get();
     EXPECT_FALSE(result.ok());
   }
   {
     // Split zone and the hosts is more than the total
     auto result = client
-                      ->splitZone("default_zone",
-                                  "one_zone",
-                                  {{"127.0.0.1", 8986}, {"127.0.0.1", 8987}, {"127.0.0.1", 8985}},
-                                  "another_zone",
-                                  {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}})
+                      ->divideZone("default_zone",
+                                   "one_zone",
+                                   {{"127.0.0.1", 8986}, {"127.0.0.1", 8987}, {"127.0.0.1", 8985}},
+                                   "another_zone",
+                                   {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}})
                       .get();
     EXPECT_FALSE(result.ok());
   }
   {
     // Split empty zone successfully
     auto result = client
-                      ->splitZone("default_zone",
-                                  "one_zone",
-                                  {{{"127.0.0.1", 8986}, {"127.0.0.1", 8987}}},
-                                  "another_zone",
-                                  {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}})
+                      ->divideZone("default_zone",
+                                   "one_zone",
+                                   {{{"127.0.0.1", 8986}, {"127.0.0.1", 8987}}},
+                                   "another_zone",
+                                   {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}})
                       .get();
-    EXPECT_FALSE(result.ok());
+    EXPECT_TRUE(result.ok());
   }
   {
     auto result = client->listZones().get();
@@ -2885,6 +2502,8 @@ TEST(MetaClientTest, SplitZoneTest) {
     auto result = client->addHostsIntoZone(std::move(hosts), "default_zone", true).get();
     EXPECT_TRUE(result.ok());
   }
+  TestUtils::registerHB(
+      kv, {{"127.0.0.1", 8976}, {"127.0.0.1", 8977}, {"127.0.0.1", 8978}, {"127.0.0.1", 8979}});
   {
     auto result = client->listZones().get();
     ASSERT_TRUE(result.ok());
@@ -2906,14 +2525,51 @@ TEST(MetaClientTest, SplitZoneTest) {
     ASSERT_EQ(1, ret.value());
   }
   {
+    auto ret = client->getSpace("default_space").get();
+    ASSERT_TRUE(ret.ok()) << ret.status();
+    auto spaceDesc = ret.value().get_properties();
+    ASSERT_EQ("default_space", spaceDesc.get_space_name());
+    ASSERT_EQ(9, spaceDesc.get_partition_num());
+    ASSERT_EQ(3, spaceDesc.get_replica_factor());
+    ASSERT_EQ("utf8", spaceDesc.get_charset_name());
+    ASSERT_EQ("utf8_bin", spaceDesc.get_collate_name());
+    auto zones = spaceDesc.get_zone_names();
+    ASSERT_EQ(3, zones.size());
+    ASSERT_EQ("another_zone", zones[0]);
+    ASSERT_EQ("default_zone", zones[1]);
+    ASSERT_EQ("one_zone", zones[2]);
+  }
+  {
+    // Zone name conflict
     auto result = client
-                      ->splitZone("default_zone",
-                                  "one_zone",
-                                  {{"127.0.0.1", 8976}, {"127.0.0.1", 8977}},
-                                  "another_zone",
-                                  {{"127.0.0.1", 8978}, {"127.0.0.1", 8979}})
+                      ->divideZone("default_zone",
+                                   "one_zone",
+                                   {{"127.0.0.1", 8976}, {"127.0.0.1", 8977}},
+                                   "another_zone_1",
+                                   {{"127.0.0.1", 8978}, {"127.0.0.1", 8979}})
                       .get();
     EXPECT_FALSE(result.ok());
+  }
+  {
+    // Zone name conflict
+    auto result = client
+                      ->divideZone("default_zone",
+                                   "one_zone_1",
+                                   {{"127.0.0.1", 8976}, {"127.0.0.1", 8977}},
+                                   "another_zone",
+                                   {{"127.0.0.1", 8978}, {"127.0.0.1", 8979}})
+                      .get();
+    EXPECT_FALSE(result.ok());
+  }
+  {
+    auto result = client
+                      ->divideZone("default_zone",
+                                   "one_zone_1",
+                                   {{"127.0.0.1", 8976}, {"127.0.0.1", 8977}},
+                                   "another_zone_1",
+                                   {{"127.0.0.1", 8978}, {"127.0.0.1", 8979}})
+                      .get();
+    EXPECT_TRUE(result.ok());
   }
   {
     auto result = client->listZones().get();
@@ -2925,37 +2581,52 @@ TEST(MetaClientTest, SplitZoneTest) {
     ASSERT_EQ("one_zone", zones[2].get_zone_name());
     ASSERT_EQ("one_zone_1", zones[3].get_zone_name());
   }
+  {
+    auto ret = client->getSpace("default_space").get();
+    ASSERT_TRUE(ret.ok()) << ret.status();
+    auto spaceDesc = ret.value().get_properties();
+    ASSERT_EQ("default_space", spaceDesc.get_space_name());
+    ASSERT_EQ(9, spaceDesc.get_partition_num());
+    ASSERT_EQ(3, spaceDesc.get_replica_factor());
+    ASSERT_EQ("utf8", spaceDesc.get_charset_name());
+    ASSERT_EQ("utf8_bin", spaceDesc.get_collate_name());
+    auto zones = spaceDesc.get_zone_names();
+    ASSERT_EQ(4, zones.size());
+    ASSERT_EQ("another_zone", zones[0]);
+    ASSERT_EQ("one_zone", zones[1]);
+    ASSERT_EQ("one_zone_1", zones[2]);
+    ASSERT_EQ("another_zone_1", zones[3]);
+  }
+  cluster.stop();
 }
 
 TEST(MetaClientTest, DropZoneTest) {
   FLAGS_heartbeat_interval_secs = 1;
   fs::TempDir rootPath("/tmp/DropZoneTest.XXXXXX");
   mock::MockCluster cluster;
-  cluster.startMeta(rootPath.path(), HostAddr("127.0.0.1", 0));
+  cluster.startMeta(rootPath.path());
   cluster.initMetaClient();
   auto* client = cluster.metaClient_.get();
   auto* kv = cluster.metaKV_.get();
-  UNUSED(kv);
-  UNUSED(client);
   {
     // Add single host
     std::vector<HostAddr> hosts = {{"127.0.0.1", 8986}};
-    auto result = client->addHosts(std::move(hosts)).get();
+    auto result = client->addHostsIntoZone(std::move(hosts), "zone_0", true).get();
     EXPECT_TRUE(result.ok());
   }
   {
     std::vector<HostAddr> hosts = {{"127.0.0.1", 8987}};
-    auto result = client->addHosts(std::move(hosts)).get();
+    auto result = client->addHostsIntoZone(std::move(hosts), "zone_1", true).get();
     EXPECT_TRUE(result.ok());
   }
   {
     std::vector<HostAddr> hosts = {{"127.0.0.1", 8988}};
-    auto result = client->addHosts(std::move(hosts)).get();
+    auto result = client->addHostsIntoZone(std::move(hosts), "zone_2", true).get();
     EXPECT_TRUE(result.ok());
   }
   {
     std::vector<HostAddr> hosts = {{"127.0.0.1", 8989}};
-    auto result = client->addHosts(std::move(hosts)).get();
+    auto result = client->addHostsIntoZone(std::move(hosts), "zone_3", true).get();
     EXPECT_TRUE(result.ok());
   }
   TestUtils::registerHB(
@@ -2965,11 +2636,58 @@ TEST(MetaClientTest, DropZoneTest) {
     ASSERT_TRUE(result.ok());
     auto zones = result.value();
     ASSERT_EQ(4, zones.size());
-    ASSERT_EQ("default_zone_127.0.0.1_8986", zones[0].get_zone_name());
-    ASSERT_EQ("default_zone_127.0.0.1_8987", zones[1].get_zone_name());
-    ASSERT_EQ("default_zone_127.0.0.1_8988", zones[2].get_zone_name());
-    ASSERT_EQ("default_zone_127.0.0.1_8989", zones[3].get_zone_name());
+    ASSERT_EQ("zone_0", zones[0].get_zone_name());
+    ASSERT_EQ("zone_1", zones[1].get_zone_name());
+    ASSERT_EQ("zone_2", zones[2].get_zone_name());
+    ASSERT_EQ("zone_3", zones[3].get_zone_name());
   }
+  {
+    auto result = client->dropZone("zone_not_exist").get();
+    ASSERT_FALSE(result.ok());
+  }
+  {
+    auto result = client->dropZone("zone_0").get();
+    ASSERT_TRUE(result.ok());
+  }
+  {
+    auto result = client->dropZone("zone_0").get();
+    ASSERT_FALSE(result.ok());
+  }
+  {
+    cpp2::SpaceDesc properties;
+    properties.set_space_name("default_space");
+    properties.set_partition_num(9);
+    properties.set_replica_factor(3);
+    properties.set_charset_name("utf8");
+    properties.set_collate_name("utf8_bin");
+    auto ret = client->createSpace(properties).get();
+    ASSERT_TRUE(ret.ok()) << ret.status();
+    ASSERT_EQ(1, ret.value());
+  }
+  {
+    auto result = client->dropZone("zone_1").get();
+    ASSERT_FALSE(result.ok());
+  }
+  {
+    auto result = client->dropSpace("default_space").get();
+    ASSERT_TRUE(result.ok());
+  }
+  {
+    cpp2::SpaceDesc properties;
+    properties.set_space_name("default_space");
+    properties.set_partition_num(9);
+    properties.set_replica_factor(3);
+    properties.set_charset_name("utf8");
+    properties.set_collate_name("utf8_bin");
+    auto ret = client->createSpace(properties).get();
+    ASSERT_TRUE(ret.ok()) << ret.status();
+    ASSERT_EQ(2, ret.value());
+  }
+  {
+    auto result = client->dropZone("zone_1").get();
+    ASSERT_FALSE(result.ok());
+  }
+  cluster.stop();
 }
 
 TEST(MetaClientTest, RocksdbOptionsTest) {
@@ -3043,6 +2761,7 @@ TEST(MetaClientTest, RocksdbOptionsTest) {
     ASSERT_EQ(listener->options["disable_auto_compactions"], "\"true\"");
     ASSERT_EQ(listener->options["level0_file_num_compaction_trigger"], "\"4\"");
   }
+  cluster.stop();
 }
 
 }  // namespace meta

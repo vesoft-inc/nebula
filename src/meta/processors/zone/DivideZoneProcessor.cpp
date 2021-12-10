@@ -3,12 +3,12 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include "meta/processors/zone/SplitZoneProcessor.h"
+#include "meta/processors/zone/DivideZoneProcessor.h"
 
 namespace nebula {
 namespace meta {
 
-void SplitZoneProcessor::process(const cpp2::SplitZoneReq& req) {
+void DivideZoneProcessor::process(const cpp2::DivideZoneReq& req) {
   auto zoneName = req.get_zone_name();
   auto zoneKey = MetaKeyUtils::zoneKey(zoneName);
   auto zoneValueRet = doGet(std::move(zoneKey));
@@ -21,7 +21,23 @@ void SplitZoneProcessor::process(const cpp2::SplitZoneReq& req) {
   }
 
   auto oneZoneName = req.get_one_zone_name();
+  auto oneZoneValueRet = doGet(MetaKeyUtils::zoneKey(oneZoneName));
+  if (nebula::ok(oneZoneValueRet)) {
+    LOG(ERROR) << "Zone " << oneZoneName << " have existed";
+    handleErrorCode(nebula::cpp2::ErrorCode::E_EXISTED);
+    onFinished();
+    return;
+  }
+
   auto anotherZoneName = req.get_another_zone_name();
+  auto anotherZoneValueRet = doGet(MetaKeyUtils::zoneKey(anotherZoneName));
+  if (nebula::ok(anotherZoneValueRet)) {
+    LOG(ERROR) << "Zone " << anotherZoneName << " have existed";
+    handleErrorCode(nebula::cpp2::ErrorCode::E_EXISTED);
+    onFinished();
+    return;
+  }
+
   auto oneZoneHosts = req.get_one_zone_hosts();
   // Confirm that there are no duplicates in the parameters.
   if (std::unique(oneZoneHosts.begin(), oneZoneHosts.end()) != oneZoneHosts.end()) {
@@ -117,6 +133,13 @@ void SplitZoneProcessor::process(const cpp2::SplitZoneReq& req) {
   }
 
   std::vector<kvstore::KV> data;
+  code = updateSpacesZone(data, zoneName, oneZoneName, anotherZoneName);
+  if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    handleErrorCode(code);
+    onFinished();
+    return;
+  }
+
   auto oneZoneKey = MetaKeyUtils::zoneKey(std::move(oneZoneName));
   auto oneZoneVal = MetaKeyUtils::zoneVal(std::move(oneZoneHosts));
   data.emplace_back(std::move(oneZoneKey), std::move(oneZoneVal));
@@ -125,6 +148,38 @@ void SplitZoneProcessor::process(const cpp2::SplitZoneReq& req) {
   auto anotherZoneVal = MetaKeyUtils::zoneVal(std::move(anotherZoneHosts));
   data.emplace_back(std::move(anotherZoneKey), std::move(anotherZoneVal));
   doSyncPutAndUpdate(std::move(data));
+}
+
+nebula::cpp2::ErrorCode DivideZoneProcessor::updateSpacesZone(std::vector<kvstore::KV>& data,
+                                                              const std::string& originalZoneName,
+                                                              const std::string& oneZoneName,
+                                                              const std::string& anotherZoneName) {
+  const auto& prefix = MetaKeyUtils::spacePrefix();
+  auto ret = doPrefix(prefix);
+
+  if (!nebula::ok(ret)) {
+    LOG(ERROR) << "List spaces failed";
+    return nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND;
+  }
+
+  auto iter = nebula::value(ret).get();
+  while (iter->valid()) {
+    auto spaceKey = iter->key();
+    auto properties = MetaKeyUtils::parseSpace(iter->val());
+    auto zones = properties.get_zone_names();
+
+    auto it = std::find(zones.begin(), zones.end(), originalZoneName);
+    if (it != zones.end()) {
+      zones.erase(it);
+      zones.emplace_back(oneZoneName);
+      zones.emplace_back(anotherZoneName);
+      properties.set_zone_names(zones);
+      auto spaceVal = MetaKeyUtils::spaceVal(properties);
+      data.emplace_back(spaceKey, std::move(spaceVal));
+    }
+    iter->next();
+  }
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
 }  // namespace meta
