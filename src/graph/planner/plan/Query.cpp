@@ -754,5 +754,67 @@ std::unique_ptr<PlanNodeDescription> AppendVertices::explain() const {
   }
   return desc;
 }
+
+std::unique_ptr<PlanNodeDescription> BiJoin::explain() const {
+  auto desc = BinaryInputNode::explain();
+  addDescription("hashKeys", folly::toJson(util::toJson(hashKeys_)), desc.get());
+  addDescription("probeKeys", folly::toJson(util::toJson(probeKeys_)), desc.get());
+  return desc;
+}
+
+void BiJoin::cloneMembers(const BiJoin& j) {
+  BinaryInputNode::cloneMembers(j);
+
+  std::vector<Expression*> hKeys;
+  for (auto* item : j.hashKeys()) {
+    hKeys.emplace_back(item->clone());
+  }
+  hashKeys_ = std::move(hKeys);
+
+  std::vector<Expression*> pKeys;
+  for (auto* item : j.probeKeys()) {
+    pKeys.emplace_back(item->clone());
+  }
+  probeKeys_ = std::move(pKeys);
+}
+
+BiJoin::BiJoin(QueryContext* qctx,
+               Kind kind,
+               PlanNode* left,
+               PlanNode* right,
+               std::vector<Expression*> hashKeys,
+               std::vector<Expression*> probeKeys)
+    : BinaryInputNode(qctx, kind, left, right),
+      hashKeys_(std::move(hashKeys)),
+      probeKeys_(std::move(probeKeys)) {}
+
+std::unique_ptr<PlanNodeDescription> BiLeftJoin::explain() const {
+  auto desc = BiJoin::explain();
+  addDescription("kind", "LeftJoin", desc.get());
+  return desc;
+}
+
+PlanNode* BiLeftJoin::clone() const {
+  auto* newLeftJoin = BiLeftJoin::make(qctx_, nullptr, nullptr);
+  newLeftJoin->cloneMembers(*this);
+  return newLeftJoin;
+}
+
+void BiLeftJoin::cloneMembers(const BiLeftJoin& l) { BiJoin::cloneMembers(l); }
+
+std::unique_ptr<PlanNodeDescription> BiInnerJoin::explain() const {
+  auto desc = BiJoin::explain();
+  addDescription("kind", "InnerJoin", desc.get());
+  return desc;
+}
+
+PlanNode* BiInnerJoin::clone() const {
+  auto* newInnerJoin = BiInnerJoin::make(qctx_, nullptr, nullptr);
+  newInnerJoin->cloneMembers(*this);
+  return newInnerJoin;
+}
+
+void BiInnerJoin::cloneMembers(const BiInnerJoin& l) { BiJoin::cloneMembers(l); }
+
 }  // namespace graph
 }  // namespace nebula

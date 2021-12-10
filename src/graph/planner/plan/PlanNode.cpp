@@ -288,6 +288,12 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "Traverse";
     case Kind::kAppendVertices:
       return "AppendVertices";
+    case Kind::kBiLeftJoin:
+      return "BiLeftJoin";
+    case Kind::kBiInnerJoin:
+      return "BiInnerJoin";
+    case Kind::kBiCartesianProduct:
+      return "BiCartesianProduct";
       // no default so the compiler will warning when lack
   }
   LOG(FATAL) << "Impossible kind plan node " << static_cast<int>(kind);

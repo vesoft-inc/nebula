@@ -10,6 +10,7 @@
 #include "graph/planner/match/SegmentsConnector.h"
 #include "graph/planner/match/StartVidFinder.h"
 #include "graph/planner/match/WhereClausePlanner.h"
+#include "graph/planner/plan/Algo.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/util/ExpressionUtils.h"
 #include "graph/util/SchemaUtil.h"
@@ -139,9 +140,25 @@ StatusOr<SubPlan> MatchClausePlanner::transform(CypherClauseContextBase* clauseC
       matchClausePlan = subplan;
     } else {
       if (intersectedAliases.empty()) {
-        // TODO: CartesianProduct
+        matchClausePlan.root =
+            BiCartesianProduct::make(matchClauseCtx->qctx, matchClausePlan.root, subplan.root);
       } else {
-        // TODO: InnerJoin
+        // TODO: Actually a natural join would be much easy use.
+        auto innerJoin =
+            BiInnerJoin::make(matchClauseCtx->qctx, matchClausePlan.root, subplan.root);
+        std::vector<Expression*> hashKeys;
+        std::vector<Expression*> probeKeys;
+        auto pool = matchClauseCtx->qctx->objPool();
+        for (auto& alias : intersectedAliases) {
+          auto* args = ArgumentList::make(pool);
+          args->addArgument(InputPropertyExpression::make(pool, alias));
+          auto* expr = FunctionCallExpression::make(pool, "id", args);
+          hashKeys.emplace_back(expr);
+          probeKeys.emplace_back(expr->clone());
+        }
+        innerJoin->setHashKeys(std::move(hashKeys));
+        innerJoin->setProbeKeys(std::move(probeKeys));
+        matchClausePlan.root = innerJoin;
       }
     }
   }

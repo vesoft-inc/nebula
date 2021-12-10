@@ -69,5 +69,8 @@ std::vector<std::string> CartesianProduct::inputVars() const {
   return varNames;
 }
 
+std::unique_ptr<PlanNodeDescription> BiCartesianProduct::explain() const {
+  return BinaryInputNode::explain();
+}
 }  // namespace graph
 }  // namespace nebula

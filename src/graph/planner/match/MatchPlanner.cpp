@@ -11,6 +11,8 @@
 #include "graph/planner/match/SegmentsConnector.h"
 #include "graph/planner/match/UnwindClausePlanner.h"
 #include "graph/planner/match/WithClausePlanner.h"
+#include "graph/planner/plan/Algo.h"
+#include "graph/planner/plan/Query.h"
 
 namespace nebula {
 namespace graph {
@@ -27,10 +29,11 @@ StatusOr<SubPlan> MatchPlanner::transform(AstContext* astCtx) {
   for (auto& queryPart : cypherCtx->queryParts) {
     SubPlan queryPartPlan;
     for (auto& match : queryPart.matchs) {
-      auto matchPlan = genPlan(match.get());
-      NG_RETURN_IF_ERROR(matchPlan);
+      auto matchPlanStatus = genPlan(match.get());
+      NG_RETURN_IF_ERROR(matchPlanStatus);
+      auto matchPlan = std::move(matchPlanStatus).value();
       if (queryPartPlan.root == nullptr) {
-        queryPartPlan = std::move(matchPlan).value();
+        queryPartPlan = matchPlan;
       } else {
         std::unordered_set<std::string> intersectedAliases;
         for (auto& alias : match->aliasesGenerated) {
@@ -40,13 +43,30 @@ StatusOr<SubPlan> MatchPlanner::transform(AstContext* astCtx) {
         }
 
         if (!intersectedAliases.empty()) {
+          std::vector<Expression*> hashKeys;
+          std::vector<Expression*> probeKeys;
+          auto pool = match->qctx->objPool();
+          for (auto& alias : intersectedAliases) {
+            auto* args = ArgumentList::make(pool);
+            args->addArgument(InputPropertyExpression::make(pool, alias));
+            auto* expr = FunctionCallExpression::make(pool, "id", args);
+            hashKeys.emplace_back(expr);
+            probeKeys.emplace_back(expr->clone());
+          }
           if (match->isOptional) {
-            // TODO: LeftJoin on intersects
+            auto leftJoin = BiLeftJoin::make(match->qctx, queryPartPlan.root, matchPlan.root);
+            leftJoin->setHashKeys(std::move(hashKeys));
+            leftJoin->setProbeKeys(std::move(probeKeys));
+            queryPartPlan.root = leftJoin;
           } else {
-            // TODO: InnerJoin on intersects
+            auto innerJoin = BiInnerJoin::make(match->qctx, queryPartPlan.root, matchPlan.root);
+            innerJoin->setHashKeys(std::move(hashKeys));
+            innerJoin->setProbeKeys(std::move(probeKeys));
+            queryPartPlan.root = innerJoin;
           }
         } else {
-          // TODO: CartesianProduct
+          queryPartPlan.root =
+              BiCartesianProduct::make(match->qctx, queryPartPlan.root, matchPlan.root);
         }
       }
     }

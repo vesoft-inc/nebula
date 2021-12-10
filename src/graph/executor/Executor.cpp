@@ -524,6 +524,11 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     case PlanNode::Kind::kAppendVertices: {
       return pool->add(new AppendVerticesExecutor(node, qctx));
     }
+    case PlanNode::Kind::kBiLeftJoin:
+    case PlanNode::Kind::kBiInnerJoin:
+    case PlanNode::Kind::kBiCartesianProduct: {
+      // TODO:
+    }
     case PlanNode::Kind::kUnknown: {
       LOG(FATAL) << "Unknown plan node kind " << static_cast<int32_t>(node->kind());
       break;
