@@ -36,6 +36,7 @@
 #include "graph/validator/SetValidator.h"
 #include "graph/validator/UseValidator.h"
 #include "graph/validator/YieldValidator.h"
+#include "graph/visitor/CheckDepthVisitor.h"
 #include "graph/visitor/DeduceTypeVisitor.h"
 #include "graph/visitor/EvaluableExprVisitor.h"
 #include "parser/Sentence.h"
@@ -350,6 +351,12 @@ StatusOr<Value::Type> Validator::deduceExprType(const Expression* expr) const {
     return std::move(visitor).status();
   }
   return visitor.type();
+}
+
+Status Validator::checkExprDepth(const Expression* expr) const {
+  CheckDepthVisitor visitor;
+  const_cast<Expression*>(expr)->accept(&visitor);
+  return std::move(visitor).status();
 }
 
 Status Validator::deduceProps(const Expression* expr, ExpressionProps& exprProps) {

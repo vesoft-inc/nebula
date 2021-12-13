@@ -14,6 +14,7 @@ nebula_add_library(
     RewriteVisitor.cpp
     FindVisitor.cpp
     VidExtractVisitor.cpp
+    CheckDepthVisitor.cpp
 )
 
 nebula_add_subdirectory(test)

@@ -46,6 +46,7 @@ Status FindPathValidator::validateWhere(WhereClause* where) {
   }
   where->setFilter(ExpressionUtils::rewriteLabelAttr2EdgeProp(expr));
   auto filter = where->filter();
+  NG_RETURN_IF_ERROR(checkExprDepth(filter));
 
   auto typeStatus = deduceExprType(filter);
   NG_RETURN_IF_ERROR(typeStatus);

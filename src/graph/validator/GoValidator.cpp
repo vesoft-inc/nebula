@@ -65,6 +65,7 @@ Status GoValidator::validateWhere(WhereClause* where) {
   NG_RETURN_IF_ERROR(foldRes);
 
   auto filter = foldRes.value();
+  NG_RETURN_IF_ERROR(checkExprDepth(filter));
   auto typeStatus = deduceExprType(filter);
   NG_RETURN_IF_ERROR(typeStatus);
   auto type = typeStatus.value();
@@ -141,6 +142,7 @@ Status GoValidator::validateYield(YieldClause* yield) {
 
     col->setExpr(ExpressionUtils::rewriteLabelAttr2EdgeProp(col->expr()));
     NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(col->expr()));
+    NG_RETURN_IF_ERROR(checkExprDepth(col->expr()));
 
     auto* colExpr = col->expr();
     if (ExpressionUtils::hasAny(colExpr, {Expression::Kind::kEdge})) {

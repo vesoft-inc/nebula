@@ -270,6 +270,7 @@ Status MatchValidator::validateFilter(const Expression *filter,
   auto transformRes = ExpressionUtils::filterTransform(filter);
   NG_RETURN_IF_ERROR(transformRes);
   whereClauseCtx.filter = transformRes.value();
+  NG_RETURN_IF_ERROR(checkExprDepth(whereClauseCtx.filter));
 
   auto typeStatus = deduceExprType(whereClauseCtx.filter);
   NG_RETURN_IF_ERROR(typeStatus);
@@ -899,6 +900,7 @@ Status MatchValidator::checkAlias(
 Status MatchValidator::buildOutputs(const YieldColumns *yields) {
   for (auto *col : yields->columns()) {
     auto colName = col->name();
+    NG_RETURN_IF_ERROR(checkExprDepth(col->expr()));
     auto typeStatus = deduceExprType(col->expr());
     NG_RETURN_IF_ERROR(typeStatus);
     auto type = typeStatus.value();

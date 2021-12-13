@@ -613,6 +613,7 @@ Status UpdateValidator::getCondition() {
     if (symExpr != nullptr) {
       filter = symExpr;
     }
+    NG_RETURN_IF_ERROR(checkExprDepth(filter));
     auto typeStatus = deduceExprType(filter);
     NG_RETURN_IF_ERROR(typeStatus);
     auto type = typeStatus.value();

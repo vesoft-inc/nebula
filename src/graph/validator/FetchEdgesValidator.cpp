@@ -176,6 +176,7 @@ Status FetchEdgesValidator::validateYield(const YieldClause *yield) {
     }
     col->setExpr(ExpressionUtils::rewriteLabelAttr2EdgeProp(col->expr()));
     NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(col->expr()));
+    NG_RETURN_IF_ERROR(checkExprDepth(col->expr()));
 
     auto colExpr = col->expr();
     auto typeStatus = deduceExprType(colExpr);

@@ -107,6 +107,8 @@ class Validator {
 
   StatusOr<Value::Type> deduceExprType(const Expression* expr) const;
 
+  Status checkExprDepth(const Expression* expr) const;
+
   Status deduceProps(const Expression* expr, ExpressionProps& exprProps);
 
   static StatusOr<size_t> checkPropNonexistOrDuplicate(const ColsDef& cols,
