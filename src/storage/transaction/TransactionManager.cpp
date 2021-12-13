@@ -98,6 +98,7 @@ bool TransactionManager::start() {
 }
 
 void TransactionManager::stop() {
+  exec_->stop();
   resumeThread_->stop();
   resumeThread_->wait();
 }
