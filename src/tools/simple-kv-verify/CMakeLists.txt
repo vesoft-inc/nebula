@@ -52,6 +52,7 @@ nebula_add_executable(
         $<TARGET_OBJECTS:version_obj>
         $<TARGET_OBJECTS:ssl_obj>
         $<TARGET_OBJECTS:geo_index_obj>
+        $<TARGET_OBJECTS:datetime_parser_obj>
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
