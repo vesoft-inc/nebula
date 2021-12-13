@@ -14,6 +14,7 @@
 
 #include "common/base/Base.h"
 #include "common/base/ErrorOr.h"
+#include "common/stats/StatsManager.h"
 #include "interface/gen-cpp2/meta_types.h"
 #include "kvstore/NebulaStore.h"
 #include "meta/processors/job/JobDescription.h"
@@ -23,6 +24,7 @@
 
 namespace nebula {
 namespace meta {
+extern stats::CounterId kNumRunningJobs;
 
 class JobManager : public nebula::cpp::NonCopyable, public nebula::cpp::NonMovable {
   friend class JobManagerTest;

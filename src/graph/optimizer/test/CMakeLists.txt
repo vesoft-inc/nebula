@@ -48,6 +48,8 @@ set(OPTIMIZER_TEST_LIB
     $<TARGET_OBJECTS:ssl_obj>
     $<TARGET_OBJECTS:memory_obj>
     $<TARGET_OBJECTS:geo_index_obj>
+    $<TARGET_OBJECTS:stats_obj>
+    $<TARGET_OBJECTS:stats_def_obj>
 )
 
 nebula_add_test(

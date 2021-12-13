@@ -183,8 +183,8 @@ void GraphSessionManager::reclaimExpiredSessions() {
       LOG(ERROR) << "Remove session `" << iter->first << "' failed: " << resp.status();
     }
     iter = activeSessions_.erase(iter);
-    // stats::StatsManager::decValue(kNumActiveSessions);
-    // stats::StatsManager::addValue(kNumReclaimedExpiredSessions);
+    stats::StatsManager::decValue(kNumActiveSessions);
+    stats::StatsManager::addValue(kNumReclaimedExpiredSessions);
     // TODO: Disconnect the connection of the session
   }
 }

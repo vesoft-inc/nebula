@@ -45,6 +45,8 @@ nebula_add_test(
         $<TARGET_OBJECTS:graph_context_obj>
         $<TARGET_OBJECTS:memory_obj>
         $<TARGET_OBJECTS:version_obj>
+        $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:stats_def_obj>
     LIBRARIES
         gtest
         gtest_main

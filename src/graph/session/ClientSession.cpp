@@ -77,7 +77,7 @@ void ClientSession::markQueryKilled(nebula::ExecutionPlanID epId) {
     return;
   }
   context->second->markKilled();
-  // stats::StatsManager::addValue(kNumKilledQueries);
+  stats::StatsManager::addValue(kNumKilledQueries);
   VLOG(1) << "Mark query killed in local cache, epId: " << epId;
 
   auto query = session_.queries_ref()->find(epId);
@@ -94,7 +94,7 @@ void ClientSession::markAllQueryKilled() {
     context.second->markKilled();
     session_.queries_ref()->clear();
   }
-  // stats::StatsManager::addValue(kNumKilledQueries, contexts_.size());
+  stats::StatsManager::addValue(kNumKilledQueries, contexts_.size());
 }
 }  // namespace graph
 }  // namespace nebula

@@ -9,6 +9,7 @@ set(PARSER_TEST_LIBS
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:stats_obj>
+    $<TARGET_OBJECTS:stats_def_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:thrift_obj>

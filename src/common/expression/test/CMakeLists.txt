@@ -9,7 +9,7 @@ set(expression_test_common_libs
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:stats_obj>
-		$<TARGET_OBJECTS:stats_def_obj>
+    $<TARGET_OBJECTS:stats_def_obj>
     $<TARGET_OBJECTS:datatypes_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:datetime_parser_obj>

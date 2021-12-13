@@ -45,7 +45,7 @@ stats::CounterId kNumReclaimedExpiredSessions;
 
 void initCounters() {
   kNumQueries = stats::StatsManager::registerStats("num_queries", "rate, sum");
-  kNumActiveQueries = stats::StatsManager::registerStats("num_active_queries", "rate, sum");
+  kNumActiveQueries = stats::StatsManager::registerStats("num_active_queries", "sum");
   kNumSlowQueries = stats::StatsManager::registerStats("num_slow_queries", "rate, sum");
   kNumSentences = stats::StatsManager::registerStats("num_sentences", "rate, sum");
   kNumQueryErrors = stats::StatsManager::registerStats("num_query_errors", "rate, sum");
@@ -79,7 +79,7 @@ void initCounters() {
       "num_auth_failed_sessions_bad_username_password", "rate, sum");
   kNumAuthFailedSessionsOutOfMaxAllowed = stats::StatsManager::registerStats(
       "num_auth_failed_sessions_out_of_max_allowed", "rate, sum");
-  kNumActiveSessions = stats::StatsManager::registerStats("num_active_sessions", "rate, sum");
+  kNumActiveSessions = stats::StatsManager::registerStats("num_active_sessions", "sum");
   kNumReclaimedExpiredSessions =
       stats::StatsManager::registerStats("num_reclaimed_expired_sessions", "rate, sum");
 }

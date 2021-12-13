@@ -12,6 +12,7 @@
 #include <boost/stacktrace.hpp>
 
 #include "common/http/HttpClient.h"
+#include "common/stats/StatsManager.h"
 #include "common/time/WallClock.h"
 #include "common/utils/MetaKeyUtils.h"
 #include "interface/gen-cpp2/common_types.h"
@@ -33,6 +34,7 @@ using nebula::kvstore::KVIterator;
 
 namespace nebula {
 namespace meta {
+stats::CounterId kNumRunningJobs = stats::StatsManager::registerStats("num_running_jobs", "sum");
 
 JobManager* JobManager::getInstance() {
   static JobManager inst;
