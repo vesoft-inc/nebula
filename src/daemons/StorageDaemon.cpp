@@ -187,7 +187,7 @@ void signalHandler(int sig) {
     case SIGTERM:
       FLOG_INFO("Signal %d(%s) received, stopping this server", sig, ::strsignal(sig));
       if (gStorageServer) {
-        gStorageServer->stop();
+        gStorageServer->notifyStop();
       }
       break;
     default:
