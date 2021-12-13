@@ -11,6 +11,7 @@
 #include "graph/planner/match/StartVidFinder.h"
 #include "graph/planner/match/WhereClausePlanner.h"
 #include "graph/planner/plan/Algo.h"
+#include "graph/planner/plan/Logic.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/util/ExpressionUtils.h"
 #include "graph/util/SchemaUtil.h"
@@ -127,7 +128,7 @@ StatusOr<SubPlan> MatchClausePlanner::transform(CypherClauseContextBase* clauseC
     std::unordered_set<std::string> intersectedAliases;
     std::for_each(
         nodeInfos.begin(), nodeInfos.end(), [&intersectedAliases, &nodeAliases](auto& info) {
-          if (nodeAliases.find(info.alias) == nodeAliases.end()) {
+          if (nodeAliases.find(info.alias) != nodeAliases.end()) {
             intersectedAliases.emplace(info.alias);
           }
         });
@@ -222,6 +223,10 @@ Status MatchClausePlanner::findStarts(std::vector<NodeInfo>& nodeInfos,
     return Status::SemanticError("Can't solve the start vids from the sentence: %s",
                                  matchClauseCtx->sentence->toString().c_str());
   }
+
+  auto start = StartNode::make(matchClauseCtx->qctx);
+  matchClausePlan.tail->setDep(0, start);
+  matchClausePlan.tail = start;
 
   return Status::OK();
 }

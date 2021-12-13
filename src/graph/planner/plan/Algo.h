@@ -178,12 +178,7 @@ class BiCartesianProduct final : public BinaryInputNode {
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
  private:
-  BiCartesianProduct(QueryContext* qctx, PlanNode* left, PlanNode* right)
-      : BinaryInputNode(qctx, Kind::kBiCartesianProduct, left, right) {
-    auto colNames = left->colNames();
-    colNames.insert(colNames.end(), right->colNames().begin(), right->colNames().end());
-    setColNames(colNames);
-  }
+  BiCartesianProduct(QueryContext* qctx, PlanNode* left, PlanNode* right);
 };
 }  // namespace graph
 }  // namespace nebula

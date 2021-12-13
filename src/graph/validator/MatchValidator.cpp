@@ -38,10 +38,7 @@ Status MatchValidator::validateImpl() {
         auto *matchClause = static_cast<MatchClause *>(clauses[i].get());
 
         auto matchClauseCtx = getContext<MatchClauseContext>();
-        if (matchClause->isOptional()) {
-          matchClauseCtx->isOptional = true;
-          return Status::SemanticError("OPTIONAL MATCH not supported");
-        }
+        matchClauseCtx->isOptional = matchClause->isOptional();
 
         matchClauseCtx->aliasesAvailable = aliasesAvailable;
         for (size_t j = 0; j < matchClause->path()->pathSize(); ++j) {
@@ -54,11 +51,12 @@ Status MatchValidator::validateImpl() {
           matchClauseCtx->where = std::move(whereClauseCtx);
         }
 
-        if (aliasesAvailable) {
-          // TODO: The aliases could be duplicated in diffrent match clause,
-          // It seems we could delete this check.
-          NG_RETURN_IF_ERROR(combineAliases(matchClauseCtx->aliasesGenerated, *aliasesAvailable));
-        }
+        // if (aliasesAvailable) {
+        // The aliases could be duplicated in diffrent match clause,
+        // It seems we could delete this check.
+        // NG_RETURN_IF_ERROR(combineAliases(matchClauseCtx->aliasesGenerated,
+        // *aliasesAvailable));
+        // }
         cypherCtx_->queryParts.back().aliasesGenerated.merge(matchClauseCtx->aliasesGenerated);
         aliasesAvailable = &cypherCtx_->queryParts.back().aliasesGenerated;
 

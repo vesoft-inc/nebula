@@ -786,7 +786,12 @@ BiJoin::BiJoin(QueryContext* qctx,
                std::vector<Expression*> probeKeys)
     : BinaryInputNode(qctx, kind, left, right),
       hashKeys_(std::move(hashKeys)),
-      probeKeys_(std::move(probeKeys)) {}
+      probeKeys_(std::move(probeKeys)) {
+  auto lColNames = left->colNames();
+  auto rColNames = right->colNames();
+  lColNames.insert(lColNames.end(), rColNames.begin(), rColNames.end());
+  setColNames(lColNames);
+}
 
 std::unique_ptr<PlanNodeDescription> BiLeftJoin::explain() const {
   auto desc = BiJoin::explain();
