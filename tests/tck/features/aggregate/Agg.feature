@@ -691,12 +691,12 @@ Feature: Basic Aggregate and GroupBy
       """
       GO FROM "Tim Duncan" OVER like YIELD count(*)
       """
-    Then a SemanticError should be raised at runtime: `count(*)' is not support in go sentence.
+    Then a SyntaxError should be raised at runtime: Invalid use of aggregating function in yield clause. near `count(*)'
     When executing query:
       """
       GO FROM "Tim Duncan" OVER like where COUNT(*) > 2 YIELD like._dst
       """
-    Then a SemanticError should be raised at runtime: `(COUNT(*)>2)', not support aggregate function in where sentence.
+    Then a SyntaxError should be raised at runtime: Invalid use of aggregating function in yield clause. near `count(*) > 2'
     When executing query:
       """
       GO FROM "Marco Belinelli" OVER serve
@@ -767,7 +767,7 @@ Feature: Basic Aggregate and GroupBy
          YIELD $$.team.name AS name,
                COUNT(serve._dst) AS id
       """
-    Then a SemanticError should be raised at runtime: `COUNT(serve._dst) AS id' is not support in go sentence.
+    Then a SyntaxError should be raised at runtime: Invalid use of aggregating function in yield clause. near `COUNT(serve._dst) AS id'
     When executing query:
       """
       MATCH (v:player)
