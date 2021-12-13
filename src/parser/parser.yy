@@ -365,7 +365,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 
 %type <sentence> mutate_sentence
 %type <sentence> insert_vertex_sentence insert_edge_sentence
-%type <sentence> delete_vertex_sentence delete_edge_sentence delete_tag_sentence
+%type <sentence> delete_vertex_sentence delete_edge_sentence delete_tag_sentence delete_vertex_with_edge_sentence
 %type <sentence> update_vertex_sentence update_edge_sentence
 %type <sentence> download_sentence ingest_sentence
 
@@ -2970,11 +2970,24 @@ update_edge_sentence
 
 delete_vertex_sentence
     : KW_DELETE KW_VERTEX vid_list {
-        auto sentence = new DeleteVerticesSentence($3);
+        auto sentence = new DeleteVerticesSentence($3, false);
         $$ = sentence;
     }
     | KW_DELETE KW_VERTEX vid_ref_expression {
-        auto sentence = new DeleteVerticesSentence($3);
+        auto sentence = new DeleteVerticesSentence($3, false);
+        $$ = sentence;
+    }
+    | KW_DELETE KW_VERTEX delete_vertex_with_edge_sentence {
+        $$ = $3;
+    }
+    ;
+delete_vertex_with_edge_sentence
+    : vid_list KW_WITH KW_EDGE {
+        auto sentence = new DeleteVerticesSentence($1, true);
+        $$ = sentence;
+    }
+    | vid_ref_expression KW_WITH KW_EDGE {
+        auto sentence = new DeleteVerticesSentence($1, true);
         $$ = sentence;
     }
     ;
