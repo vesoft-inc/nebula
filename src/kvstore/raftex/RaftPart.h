@@ -550,7 +550,7 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
 
   // To record how long ago when the last leader message received
   time::Duration lastMsgRecvDur_;
-  // To record how long ago when the last log message or heartbeat was sent
+  // To record how long ago when the last log message was sent
   time::Duration lastMsgSentDur_;
   // To record when the last message was accepted by majority peers
   uint64_t lastMsgAcceptedTime_{0};

@@ -74,6 +74,7 @@ struct AskForVoteRequest {
 // Response message for the vote call
 struct AskForVoteResponse {
     1: ErrorCode error_code;
+    2: TermID    current_term;
 }
 
 // Log entries being sent to follower, logId is not included, it could be calculated by
