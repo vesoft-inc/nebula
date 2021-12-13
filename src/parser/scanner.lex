@@ -37,7 +37,6 @@ IS_NOT_NULL                 (IS{blanks}NOT{blanks}NULL)
 IS_EMPTY                    (IS{blanks}EMPTY)
 IS_NOT_EMPTY                (IS{blanks}NOT{blanks}EMPTY)
 
-LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
 EXP                         ([eE][-+]?[0-9]+)
 HEX                         ([0-9a-fA-F])
@@ -46,9 +45,18 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 
 U                           [\x80-\xbf]
 U2                          [\xc2-\xdf]
-U3                          [\xe0-\xef]
+U3                          [\xe0-\xee]
 U4                          [\xf0-\xf4]
-CHINESE_LABEL               ({U2}{U}|{U3}{U}{U}|{U4}{U}{U}{U})+
+CHINESE                     {U2}{U}|{U3}{U}{U}|{U4}{U}{U}{U}
+CN_EN                       {CHINESE}|[a-zA-Z]
+CN_EN_NUM                   {CHINESE}|[_a-zA-Z0-9]
+LABEL                       {CN_EN}{CN_EN_NUM}*
+
+U3_FULL_WIDTH               [\xe0-\xef]
+CHINESE_FULL_WIDTH          {U2}{U}|{U3_FULL_WIDTH}{U}{U}|{U4}{U}{U}{U}
+CN_EN_FULL_WIDTH            {CHINESE_FULL_WIDTH}|[a-zA-Z]
+CN_EN_NUM_FULL_WIDTH        {CHINESE_FULL_WIDTH}|[_a-zA-Z0-9 ]
+LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 
 %%
 
@@ -479,7 +487,7 @@ CHINESE_LABEL               ({U2}{U}|{U3}{U}{U}|{U4}{U}{U}{U})+
                                 // Must match /* */
                                 throw GraphParser::syntax_error(*yylloc, "unterminated comment");
                             }
-\`{CHINESE_LABEL}\`         {
+\`{LABEL_FULL_WIDTH}\`      {
                                 yylval->strval = new std::string(yytext + 1, yyleng - 2);
                                 if (yylval->strval->size() > MAX_STRING) {
                                     auto error = "Out of range of the LABEL length, "
@@ -488,7 +496,7 @@ CHINESE_LABEL               ({U2}{U}|{U3}{U}{U}|{U4}{U}{U}{U})+
                                     delete yylval->strval;
                                     throw GraphParser::syntax_error(*yylloc, error);
                                 }
-                                return TokenType::CHINESE_LABEL;
+                                return TokenType::LABEL;
                             }
 .                           {
                                 /**
