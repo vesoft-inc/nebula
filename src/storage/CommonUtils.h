@@ -241,6 +241,10 @@ struct RuntimeContext {
   // used for update
   bool insert_ = false;
 
+  // some times, one line is filter out but still return (has edge)
+  // and some time, this line is just removed from thre return result
+  bool filterInvalidResultOut = false;
+
   ResultStatus resultStat_{ResultStatus::NORMAL};
 };
 
