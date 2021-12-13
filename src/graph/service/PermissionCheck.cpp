@@ -26,6 +26,7 @@ namespace graph {
  *             kInsertVertex, kUpdateVertex, kInsertEdge,
  *             kUpdateEdge, kDeleteVertex, kDeleteEdges
  * Special operation : kShow, kChangePassword
+ * UDF :       kCreateFunction, kAlterFunction, kDropFunction
  */
 
 // static
@@ -83,6 +84,9 @@ Status PermissionCheck::permissionCheck(ClientSession *session,
     case Sentence::Kind::kAlterEdge:
     case Sentence::Kind::kDropTag:
     case Sentence::Kind::kDropEdge:
+    case Sentence::Kind::kCreateFunction:
+    case Sentence::Kind::kAlterFunction:
+    case Sentence::Kind::kDropFunction:
     case Sentence::Kind::kCreateTagIndex:
     case Sentence::Kind::kCreateEdgeIndex:
     case Sentence::Kind::kCreateFTIndex:

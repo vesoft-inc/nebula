@@ -105,6 +105,7 @@ static constexpr size_t kCommentLengthLimit = 256;
     nebula::AlterSchemaOptItem             *alter_schema_opt_item;
     nebula::RoleTypeClause                 *role_type_clause;
     nebula::AclItemClause                  *acl_item_clause;
+    nebula::FunctionSource                 *function_source;
     nebula::SchemaPropList                 *create_schema_prop_list;
     nebula::SchemaPropItem                 *create_schema_prop_item;
     nebula::SchemaPropList                 *alter_schema_prop_list;
@@ -201,6 +202,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %token KW_SESSIONS KW_SESSION
 %token KW_KILL KW_QUERY KW_QUERIES KW_TOP
 %token KW_GEOGRAPHY KW_POINT KW_LINESTRING KW_POLYGON
+%token KW_FUNCTION
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -213,6 +215,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %token <intval> INTEGER
 %token <doubleval> DOUBLE
 %token <strval> STRING VARIABLE LABEL IPV4
+%token <strval> HTTP_URL WASM_BASE64
 
 %type <strval> name_label unreserved_keyword predicate_name
 %type <expr> expression
@@ -358,6 +361,10 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <sentence> add_host_into_zone_sentence drop_host_from_zone_sentence
 %type <sentence> create_snapshot_sentence drop_snapshot_sentence
 %type <sentence> add_listener_sentence remove_listener_sentence list_listener_sentence
+
+%type <sentence> create_function_sentence
+%type <function_source> create_function_from_vendor
+%type <sentence> drop_function_sentence
 
 %type <sentence> admin_job_sentence
 %type <sentence> create_user_sentence alter_user_sentence drop_user_sentence change_password_sentence
@@ -2195,6 +2202,27 @@ create_schema_prop_item
     }
     ;
 
+create_function_from_vendor
+    : HTTP_URL {
+        $$ = new FunctionSource(std::string("HTTP"), *$1);
+    }
+    | WASM_BASE64 {
+        $$ = new FunctionSource(std::string("WASM"), *$1);
+    }
+    ;
+
+create_function_sentence
+    : KW_CREATE KW_FUNCTION opt_if_not_exists name_label KW_FROM create_function_from_vendor {
+        $$ = new CreateFunctionSentence($4, $6, $3);
+    }
+    ;
+
+drop_function_sentence
+    : KW_DROP KW_FUNCTION opt_if_exists name_label {
+        $$ = new DropFunctionSentence($4, $3);
+    }
+    ;
+
 create_tag_sentence
     : KW_CREATE KW_TAG opt_if_not_exists name_label L_PAREN R_PAREN opt_create_schema_prop_list {
         if ($7 == nullptr) {
@@ -3508,10 +3536,12 @@ maintain_sentence
     | drop_space_sentence { $$ = $1; }
     | create_tag_sentence { $$ = $1; }
     | create_edge_sentence { $$ = $1; }
+    | create_function_sentence { $$ = $1; }
     | alter_tag_sentence { $$ = $1; }
     | alter_edge_sentence { $$ = $1; }
     | describe_tag_sentence { $$ = $1; }
     | describe_edge_sentence { $$ = $1; }
+    | drop_function_sentence { $$ = $1; }
     | drop_tag_sentence { $$ = $1; }
     | drop_edge_sentence { $$ = $1; }
     | create_tag_index_sentence { $$ = $1; }

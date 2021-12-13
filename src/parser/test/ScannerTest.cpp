@@ -500,6 +500,8 @@ TEST(Scanner, Basic) {
       CHECK_SEMANTIC_TYPE("TOP", TokenType::KW_TOP),
       CHECK_SEMANTIC_TYPE("Top", TokenType::KW_TOP),
       CHECK_SEMANTIC_TYPE("top", TokenType::KW_TOP),
+      CHECK_SEMANTIC_TYPE("FUNCTION", TokenType::KW_FUNCTION),
+      CHECK_SEMANTIC_TYPE("function", TokenType::KW_FUNCTION),
 
       CHECK_SEMANTIC_TYPE("_type", TokenType::TYPE_PROP),
       CHECK_SEMANTIC_TYPE("_id", TokenType::ID_PROP),
@@ -566,6 +568,9 @@ TEST(Scanner, Basic) {
       CHECK_SEMANTIC_VALUE("\"\\\\\\\\\110 \"", TokenType::STRING, "\\\\H "),
 
       CHECK_SEMANTIC_VALUE("\"己所不欲，勿施于人\"", TokenType::STRING, "己所不欲，勿施于人"),
+
+      CHECK_SEMANTIC_VALUE("http://nebula-graph.io", TokenType::HTTP_URL, "http://nebula-graph.io"),
+      CHECK_SEMANTIC_VALUE("wasm://d2FzbQo=", TokenType::WASM_BASE64, "wasm://d2FzbQo="),
   };
 #undef CHECK_SEMANTIC_TYPE
 #undef CHECK_SEMANTIC_VALUE

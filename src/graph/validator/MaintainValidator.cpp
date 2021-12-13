@@ -139,6 +139,11 @@ static Status checkColName(const std::vector<ColumnSpecification *> specs) {
   return Status::OK();
 }
 
+Status CreateFunctionValidator::validateImpl() {
+  // TODO(TripleZ): add create function logic
+  return Status::OK();
+}
+
 Status CreateTagValidator::validateImpl() {
   createCtx_ = getContext<CreateSchemaContext>();
   auto sentence = static_cast<CreateTagSentence *>(sentence_);
@@ -266,6 +271,13 @@ Status ShowCreateEdgeValidator::toPlan() {
   auto *doNode = ShowCreateEdge::make(qctx_, nullptr, *sentence->name());
   root_ = doNode;
   tail_ = root_;
+  return Status::OK();
+}
+
+Status DropFunctionValidator::validateImpl() { return Status::OK(); }
+
+Status DropFunctionValidator::toPlan() {
+  // TODO(TripleZ): add drop function logic
   return Status::OK();
 }
 
