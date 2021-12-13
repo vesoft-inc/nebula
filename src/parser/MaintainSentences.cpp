@@ -101,6 +101,7 @@ std::string CreateFunctionSentence::toString() const {
   buf += "`";
   buf += *name_;
   buf += "` ";
+  buf += "FROM ";
   buf += funcSource_->toString();
   return buf;
 }

@@ -85,7 +85,7 @@ Status PermissionCheck::permissionCheck(ClientSession *session,
     case Sentence::Kind::kDropTag:
     case Sentence::Kind::kDropEdge:
     case Sentence::Kind::kCreateFunction:
-    case Sentence::Kind::kAlterFunction:
+    // case Sentence::Kind::kAlterFunction:
     case Sentence::Kind::kDropFunction:
     case Sentence::Kind::kCreateTagIndex:
     case Sentence::Kind::kCreateEdgeIndex:

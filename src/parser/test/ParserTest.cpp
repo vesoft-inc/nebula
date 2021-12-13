@@ -399,34 +399,30 @@ TEST_F(ParserTest, TagOperation) {
 
 TEST_F(ParserTest, FunctionOperation) {
   {
-    std::string query = "CREATE FUNCTION `f1 FROM wasm://d2FzbQo=";
+    std::string query = "CREATE FUNCTION f1 FROM wasm://d2FzbQo=";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
-  // {
-  //   std::string query =
-  //       "CREATE FUNCTION f1 FROM http://nebula-graph.io/remote/f1";
-  //   auto result = parse(query);
-  //   ASSERT_TRUE(result.ok()) << result.status();
-  // }
-  // {
-  //   std::string query =
-  //       "CREATE FUNCTION IF NOT EXISTS f1 FROM wasm://d2FzbQo=";
-  //   auto result = parse(query);
-  //   ASSERT_TRUE(result.ok()) << result.status();
-  // }
-  // {
-  //   std::string query =
-  //       "CREATE FUNCTION IF NOT EXISTS f1 FROM http://nebula-graph.io/remote/f1";
-  //   auto result = parse(query);
-  //   ASSERT_TRUE(result.ok()) << result.status();
-  // }
-  // {
-  //   std::string query =
-  //       "DROP FUNCTION f1";
-  //   auto result = parse(query);
-  //   ASSERT_TRUE(result.ok()) << result.status();
-  // }
+  {
+    std::string query = "CREATE FUNCTION f1 FROM http://nebula-graph.io/remote/f1";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "CREATE FUNCTION IF NOT EXISTS f1 FROM wasm://d2FzbQo=";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "CREATE FUNCTION IF NOT EXISTS f1 FROM http://nebula-graph.io/remote/f1";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "DROP FUNCTION f1";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
 }
 
 TEST_F(ParserTest, EdgeOperation) {

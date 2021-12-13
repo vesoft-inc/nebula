@@ -40,7 +40,7 @@ class Sentence {
     kCreateTag,
     kAlterTag,
     kCreateFunction,
-    kAlterFunction,
+    // kAlterFunction,
     kDropFunction,
     kCreateEdge,
     kAlterEdge,
