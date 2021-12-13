@@ -14,7 +14,7 @@ DECLARE_bool(enable_space_level_metrics);
 
 namespace nebula {
 
-// query related
+// Query
 extern stats::CounterId kNumQueries;
 extern stats::CounterId kNumActiveQueries;
 extern stats::CounterId kNumSlowQueries;
@@ -23,12 +23,27 @@ extern stats::CounterId kNumQueryErrosLeaderChanges;
 extern stats::CounterId kNumSentences;
 extern stats::CounterId kQueryLatencyUs;
 extern stats::CounterId kSlowQueryLatencyUs;
+extern stats::CounterId kNumKilledQueries;
 
-// session related
+extern stats::CounterId kOptimizerLatencyUs;
+
+// Executor
+extern stats::CounterId kNumAggregateExecutors;
+extern stats::CounterId kNumSortExecutors;
+extern stats::CounterId kNumIndexScanExecutors;
+extern stats::CounterId kNumOomExecutors;
+
+// Server client traffic
+extern stats::CounterId kReceivedBytes;
+extern stats::CounterId kSentBytes;
+
+// Session
 extern stats::CounterId kNumOpenedSessions;
 extern stats::CounterId kNumAuthFailedSessions;
 extern stats::CounterId kNumAuthFailedSessionsBadUserNamePassword;
 extern stats::CounterId kNumAuthFailedSessionsOutOfMaxAllowed;
+extern stats::CounterId kNumActiveSessions;
+extern stats::CounterId kNumReclaimedExpiredSessions;
 
 void initCounters();
 

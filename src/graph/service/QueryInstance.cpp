@@ -77,6 +77,7 @@ Status QueryInstance::validateAndOptimize() {
 
   NG_RETURN_IF_ERROR(Validator::validate(sentence_.get(), qctx()));
   NG_RETURN_IF_ERROR(findBestPlan());
+  stats::StatsManager::addValue(kOptimizerLatencyUs, *(qctx_->plan()->optimizeTimeInUs()));
 
   return Status::OK();
 }
@@ -103,6 +104,7 @@ void QueryInstance::onFinish() {
   rctx->resp().latencyInUs = latency;
   addSlowQueryStats(latency, spaceName);
   rctx->finish();
+  stats::StatsManager::addValue(kSentBytes, rctx->resp().data->size());
 
   rctx->session()->deleteQuery(qctx_.get());
   // The `QueryInstance' is the root node holding all resources during the

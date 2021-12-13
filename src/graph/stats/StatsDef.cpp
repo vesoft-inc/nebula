@@ -24,11 +24,24 @@ stats::CounterId kNumQueryErrosLeaderChanges;
 stats::CounterId kNumSentences;
 stats::CounterId kQueryLatencyUs;
 stats::CounterId kSlowQueryLatencyUs;
+stats::CounterId kNumKilledQueries;
+
+stats::CounterId kOptimizerLatencyUs;
+
+stats::CounterId kNumAggregateExecutors;
+stats::CounterId kNumSortExecutors;
+stats::CounterId kNumIndexScanExecutors;
+stats::CounterId kNumOomExecutors;
+
+stats::CounterId kReceivedBytes;
+stats::CounterId kSentBytes;
 
 stats::CounterId kNumOpenedSessions;
 stats::CounterId kNumAuthFailedSessions;
 stats::CounterId kNumAuthFailedSessionsBadUserNamePassword;
 stats::CounterId kNumAuthFailedSessionsOutOfMaxAllowed;
+stats::CounterId kNumActiveSessions;
+stats::CounterId kNumReclaimedExpiredSessions;
 
 void initCounters() {
   kNumQueries = stats::StatsManager::registerStats("num_queries", "rate, sum");
@@ -42,6 +55,22 @@ void initCounters() {
       "query_latency_us", 1000, 0, 2000, "avg, p75, p95, p99, p999");
   kSlowQueryLatencyUs = stats::StatsManager::registerHisto(
       "slow_query_latency_us", 1000, 0, 2000, "avg, p75, p95, p99, p999");
+  kNumKilledQueries = stats::StatsManager::registerStats("num_killed_queries", "rate, sum");
+
+  kOptimizerLatencyUs = stats::StatsManager::registerHisto(
+      "optimizer_latency_us", 1000, 0, 2000, "avg, p75, p95, p99, p999");
+
+  kReceivedBytes = stats::StatsManager::registerHisto(
+      "received_bytes", 1000, 1, 4194304, "avg, p75, p95, p99, p999");  // 1 Byte ~ 4194304 Bytes
+  kSentBytes = stats::StatsManager::registerHisto(
+      "sent_bytes", 1000, 1, 4294967296, "avg, p75, p95, p99, p999");  // 1 Byte ~ 4 GiB
+
+  kNumAggregateExecutors =
+      stats::StatsManager::registerStats("num_aggregate_executors", "rate, sum");
+  kNumSortExecutors = stats::StatsManager::registerStats("num_sort_executors", "rate, sum");
+  kNumIndexScanExecutors =
+      stats::StatsManager::registerStats("num_indexscan_executors", "rate, sum");
+  kNumOomExecutors = stats::StatsManager::registerStats("num_oom_executors", "rate, sum");
 
   kNumOpenedSessions = stats::StatsManager::registerStats("num_opened_sessions", "rate, sum");
   kNumAuthFailedSessions =
@@ -50,6 +79,9 @@ void initCounters() {
       "num_auth_failed_sessions_bad_username_password", "rate, sum");
   kNumAuthFailedSessionsOutOfMaxAllowed = stats::StatsManager::registerStats(
       "num_auth_failed_sessions_out_of_max_allowed", "rate, sum");
+  kNumActiveSessions = stats::StatsManager::registerStats("num_active_sessions", "rate, sum");
+  kNumReclaimedExpiredSessions =
+      stats::StatsManager::registerStats("num_reclaimed_expired_sessions", "rate, sum");
 }
 
 }  // namespace nebula

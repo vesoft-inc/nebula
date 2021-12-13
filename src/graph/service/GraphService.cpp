@@ -102,6 +102,7 @@ folly::Future<AuthResponse> GraphService::future_authenticate(const std::string&
       return ctx->finish();
     }
     stats::StatsManager::addValue(kNumOpenedSessions);
+    stats::StatsManager::addValue(kNumActiveSessions);
     ctx->setSession(sessionPtr);
     ctx->resp().sessionId.reset(new int64_t(ctx->session()->id()));
     ctx->resp().timeZoneOffsetSeconds.reset(
@@ -118,6 +119,7 @@ folly::Future<AuthResponse> GraphService::future_authenticate(const std::string&
 void GraphService::signout(int64_t sessionId) {
   VLOG(2) << "Sign out session " << sessionId;
   sessionManager_->removeSession(sessionId);
+  stats::StatsManager::decValue(kNumActiveSessions);
 }
 
 folly::Future<ExecutionResponse> GraphService::future_executeWithParameter(
@@ -171,6 +173,7 @@ folly::Future<ExecutionResponse> GraphService::future_execute(int64_t sessionId,
   ctx->setSessionMgr(sessionManager_.get());
   auto future = ctx->future();
   stats::StatsManager::addValue(kNumQueries);
+  stats::StatsManager::addValue(kNumActiveQueries);
   // When the sessionId is 0, it means the clients to ping the connection is ok
   if (sessionId == 0) {
     ctx->resp().errorCode = ErrorCode::E_SESSION_INVALID;

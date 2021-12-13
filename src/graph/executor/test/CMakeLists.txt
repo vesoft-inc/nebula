@@ -54,6 +54,7 @@ SET(EXEC_QUERY_TEST_OBJS
     $<TARGET_OBJECTS:graph_obj>
     $<TARGET_OBJECTS:ssl_obj>
     $<TARGET_OBJECTS:version_obj>
+    $<TARGET_OBJECTS:stats_def_obj>
 )
 
 SET(EXEC_QUERY_TEST_LIBS
