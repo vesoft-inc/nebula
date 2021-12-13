@@ -65,7 +65,7 @@ class TagNode final : public IterateNode<VertexID> {
     key_ = key;
     value_ = value;
     resetReader();
-    if (expCtx_ != nullptr) {
+    if (expCtx_ != nullptr && valid_) {
       for (const auto& prop : *props_) {
         auto prop_value = QueryUtils::readVertexProp(
             key_, context_->vIdLen(), context_->isIntId(), reader(), prop);
