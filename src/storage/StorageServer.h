@@ -39,6 +39,9 @@ class StorageServer final {
 
   void stop();
 
+  // used for signal handler to set an internal stop flag
+  void notifyStop();
+
   void waitUntilStop();
 
  private:
@@ -88,6 +91,10 @@ class StorageServer final {
   std::unique_ptr<TransactionManager> txnMan_{nullptr};
   // used for communicate between one storaged to another
   std::unique_ptr<InternalStorageClient> interClient_;
+
+  ServiceStatus serverStatus_{STATUS_UNINITIALIZED};
+  std::mutex muStop_;
+  std::condition_variable cvStop_;
 };
 
 }  // namespace storage

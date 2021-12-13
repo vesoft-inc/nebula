@@ -164,6 +164,19 @@ struct DateTime {
     sec = 0;
     microsec = 0;
   }
+  explicit DateTime(const Date& date, const Time& time) {
+    year = date.year;
+    month = date.month;
+    day = date.day;
+    hour = time.hour;
+    minute = time.minute;
+    sec = time.sec;
+    microsec = time.microsec;
+  }
+
+  Date date() const { return Date(year, month, day); }
+
+  Time time() const { return Time(hour, minute, sec, microsec); }
 
   void clear() {
     year = 0;
