@@ -20,6 +20,7 @@ namespace nebula {
 static const std::unordered_map<std::string, std::pair<std::string, bool>> systemTableMaps = {
     {"users", {"__users__", true}},
     {"hosts", {"__hosts__", false}},
+    {"versions", {"__versions__", false}},
     {"snapshots", {"__snapshots__", false}},
     {"configs", {"__configs__", true}},
     {"groups", {"__groups__", true}},
@@ -58,6 +59,7 @@ static const std::unordered_map<
 static const std::string kSpacesTable         = tableMaps.at("spaces").first;         // NOLINT
 static const std::string kPartsTable          = tableMaps.at("parts").first;          // NOLINT
 static const std::string kHostsTable          = systemTableMaps.at("hosts").first;          // NOLINT
+static const std::string kVersionsTable       = systemTableMaps.at("versions").first; // NOLINT
 static const std::string kTagsTable           = tableMaps.at("tags").first;           // NOLINT
 static const std::string kEdgesTable          = tableMaps.at("edges").first;          // NOLINT
 static const std::string kIndexesTable        = tableMaps.at("indexes").first;        // NOLINT
@@ -267,6 +269,26 @@ HostAddr MetaKeyUtils::parseHostKeyV1(folly::StringPiece key) {
 HostAddr MetaKeyUtils::parseHostKeyV2(folly::StringPiece key) {
   key.advance(kHostsTable.size());
   return MetaKeyUtils::deserializeHostAddr(key);
+}
+
+std::string MetaKeyUtils::versionKey(const HostAddr& h) {
+  std::string key;
+  key.append(kVersionsTable.data(), kVersionsTable.size())
+      .append(MetaKeyUtils::serializeHostAddr(h));
+  return key;
+}
+
+std::string MetaKeyUtils::versionVal(const std::string& version) {
+  std::string val;
+  auto versionLen = version.size();
+  val.reserve(sizeof(int64_t) + versionLen);
+  val.append(reinterpret_cast<const char*>(&version), sizeof(int64_t)).append(version);
+  return val;
+}
+
+std::string MetaKeyUtils::parseVersion(folly::StringPiece val) {
+  auto len = *reinterpret_cast<const size_t*>(val.data());
+  return val.subpiece(sizeof(size_t), len).str();
 }
 
 std::string MetaKeyUtils::leaderKey(std::string addr, Port port) {
@@ -1152,9 +1174,31 @@ GraphSpaceID MetaKeyUtils::parseLocalIdSpace(folly::StringPiece rawData) {
   return *reinterpret_cast<const GraphSpaceID*>(rawData.data() + offset);
 }
 
-GraphSpaceID MetaKeyUtils::parseDiskPartsSpace(folly::StringPiece rawData) {
+/**
+ * diskPartsKey = kDiskPartsTable + len(serialized(hostAddr)) + serialized(hostAddr) + path
+ */
+
+HostAddr MetaKeyUtils::parseDiskPartsHost(const folly::StringPiece& rawData) {
   auto offset = kDiskPartsTable.size();
-  return *reinterpret_cast<const GraphSpaceID*>(rawData.data() + offset);
+  auto hostAddrLen = *reinterpret_cast<const size_t*>(rawData.begin() + offset);
+  offset += sizeof(size_t);
+  std::string hostAddrStr(rawData.data() + offset, hostAddrLen);
+  return deserializeHostAddr(hostAddrStr);
+}
+
+GraphSpaceID MetaKeyUtils::parseDiskPartsSpace(const folly::StringPiece& rawData) {
+  auto offset = kDiskPartsTable.size();
+  size_t hostAddrLen = *reinterpret_cast<const size_t*>(rawData.begin() + offset);
+  offset += sizeof(size_t) + hostAddrLen;
+  return *reinterpret_cast<const GraphSpaceID*>(rawData.begin() + offset);
+}
+
+std::string MetaKeyUtils::parseDiskPartsPath(const folly::StringPiece& rawData) {
+  auto offset = kDiskPartsTable.size();
+  size_t hostAddrLen = *reinterpret_cast<const size_t*>(rawData.begin() + offset);
+  offset += sizeof(size_t) + hostAddrLen + sizeof(GraphSpaceID);
+  std::string path(rawData.begin() + offset, rawData.size() - offset);
+  return path;
 }
 
 std::string MetaKeyUtils::diskPartsPrefix() { return kDiskPartsTable; }
@@ -1162,8 +1206,11 @@ std::string MetaKeyUtils::diskPartsPrefix() { return kDiskPartsTable; }
 std::string MetaKeyUtils::diskPartsPrefix(HostAddr addr) {
   std::string key;
   std::string hostStr = serializeHostAddr(addr);
-  key.reserve(kDiskPartsTable.size() + hostStr.size());
-  key.append(kDiskPartsTable.data(), kDiskPartsTable.size()).append(hostStr.data(), hostStr.size());
+  size_t hostAddrLen = hostStr.size();
+  key.reserve(kDiskPartsTable.size() + sizeof(size_t) + hostStr.size());
+  key.append(kDiskPartsTable.data(), kDiskPartsTable.size())
+      .append(reinterpret_cast<const char*>(&hostAddrLen), sizeof(size_t))
+      .append(hostStr.data(), hostStr.size());
   return key;
 }
 
@@ -1176,7 +1223,9 @@ std::string MetaKeyUtils::diskPartsPrefix(HostAddr addr, GraphSpaceID spaceId) {
   return key;
 }
 
-std::string MetaKeyUtils::diskPartsKey(HostAddr addr, GraphSpaceID spaceId, std::string path) {
+std::string MetaKeyUtils::diskPartsKey(HostAddr addr,
+                                       GraphSpaceID spaceId,
+                                       const std::string& path) {
   std::string key;
   std::string prefix = diskPartsPrefix(addr, spaceId);
   key.reserve(prefix.size() + path.size());

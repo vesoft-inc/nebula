@@ -122,6 +122,12 @@ class MetaKeyUtils final {
 
   static HostAddr parseHostKeyV2(folly::StringPiece key);
 
+  static std::string versionKey(const HostAddr& h);
+
+  static std::string versionVal(const std::string& version);
+
+  static std::string parseVersion(folly::StringPiece val);
+
   static std::string leaderKey(std::string ip, Port port);
 
   static std::string leaderKeyV2(std::string addr, Port port);
@@ -376,7 +382,11 @@ class MetaKeyUtils final {
 
   static std::unordered_map<std::string, std::pair<std::string, bool>> getSystemTableMaps();
 
-  static GraphSpaceID parseDiskPartsSpace(folly::StringPiece rawData);
+  static GraphSpaceID parseDiskPartsSpace(const folly::StringPiece& rawData);
+
+  static HostAddr parseDiskPartsHost(const folly::StringPiece& rawData);
+
+  static std::string parseDiskPartsPath(const folly::StringPiece& rawData);
 
   static std::string diskPartsPrefix();
 
@@ -384,7 +394,7 @@ class MetaKeyUtils final {
 
   static std::string diskPartsPrefix(HostAddr addr, GraphSpaceID spaceId);
 
-  static std::string diskPartsKey(HostAddr addr, GraphSpaceID spaceId, std::string path);
+  static std::string diskPartsKey(HostAddr addr, GraphSpaceID spaceId, const std::string& path);
 
   static std::string diskPartsVal(const meta::cpp2::PartitionList& partList);
 
