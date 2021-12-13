@@ -141,6 +141,15 @@ static Status checkColName(const std::vector<ColumnSpecification *> specs) {
 
 Status CreateFunctionValidator::validateImpl() {
   // TODO(TripleZ): add create function logic
+  auto sentence = static_cast<CreateFunctionSentence *>(sentence_);
+  auto name = *sentence->name();
+  auto functionSource = *sentence->getFunctionSource();
+  auto funcType = functionSource.getType();
+  auto funcSource = functionSource.getSource();
+
+  std::cout << " => create function: name(" + name + "), type(" +
+      funcType + "), source(" + funcSource + ")" << std::endl;
+
   return Status::OK();
 }
 
@@ -278,6 +287,10 @@ Status DropFunctionValidator::validateImpl() { return Status::OK(); }
 
 Status DropFunctionValidator::toPlan() {
   // TODO(TripleZ): add drop function logic
+  auto sentence = static_cast<DropFunctionSentence *>(sentence_);
+  auto name = *sentence->name();
+  std::cout << " => drop function: name(" + name + ")" << std::endl;
+
   return Status::OK();
 }
 

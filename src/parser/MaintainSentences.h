@@ -139,6 +139,14 @@ class FunctionSource final {
     return source_;
   }
 
+  std::string getType() const {
+    return type_;
+  }
+
+  std::string getSource() const {
+    return source_;
+  }
+
  private:
   std::string type_;
   std::string source_;
