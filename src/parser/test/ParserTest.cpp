@@ -3224,4 +3224,17 @@ TEST_F(ParserTest, DetectMemoryLeakTest) {
   }
 }
 
+TEST_F(ParserTest, TestNameLabel) {
+  {
+    std::string query = "CREATE TAG person127.0.0.1(name STRING);";
+    auto result = parse(query);
+    ASSERT_FALSE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "CREATE TAG `person127.0.0.1`(name STRING);";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+}
+
 }  // namespace nebula

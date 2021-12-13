@@ -240,10 +240,11 @@ class NebulaService(object):
                 self.work_dir + '/conf/{}.conf'.format(item),
             )
 
-        # gflags.json
         resources_dir = self.work_dir + '/share/resources/'
         os.makedirs(resources_dir)
 
+        # timezone file
+        shutil.copy(self.build_dir + '/../resources/date_time_zonespec.csv', resources_dir)
         shutil.copy(self.build_dir + '/../resources/gflags.json', resources_dir)
         # cert files
         shutil.copy(self.src_dir + '/tests/cert/test.ca.key', resources_dir)
