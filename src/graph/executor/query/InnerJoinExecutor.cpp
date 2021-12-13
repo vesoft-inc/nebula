@@ -14,8 +14,9 @@ namespace nebula {
 namespace graph {
 folly::Future<Status> InnerJoinExecutor::execute() {
   SCOPED_TIMER(&execTime_);
+  auto* joinNode = asNode<Join>(node());
   NG_RETURN_IF_ERROR(checkInputDataSets());
-  return join();
+  return join(joinNode->hashKeys(), joinNode->probeKeys(), joinNode->colNames());
 }
 
 Status InnerJoinExecutor::close() {
@@ -23,17 +24,16 @@ Status InnerJoinExecutor::close() {
   return Executor::close();
 }
 
-folly::Future<Status> InnerJoinExecutor::join() {
-  auto* join = asNode<Join>(node());
+folly::Future<Status> InnerJoinExecutor::join(const std::vector<Expression*>& hashKeys,
+                                              const std::vector<Expression*>& probeKeys,
+                                              const std::vector<std::string>& colNames) {
   auto bucketSize = lhsIter_->size() > rhsIter_->size() ? rhsIter_->size() : lhsIter_->size();
 
-  auto& hashKeys = join->hashKeys();
-  auto& probeKeys = join->probeKeys();
   DCHECK_EQ(hashKeys.size(), probeKeys.size());
   DataSet result;
 
   if (lhsIter_->empty() || rhsIter_->empty()) {
-    result.colNames = join->colNames();
+    result.colNames = colNames;
     return finish(ResultBuilder().value(Value(std::move(result))).build());
   }
 
@@ -52,15 +52,15 @@ folly::Future<Status> InnerJoinExecutor::join() {
     std::unordered_map<List, std::vector<const Row*>> hashTable;
     hashTable.reserve(bucketSize);
     if (lhsIter_->size() < rhsIter_->size()) {
-      buildHashTable(join->hashKeys(), lhsIter_.get(), hashTable);
-      result = probe(join->probeKeys(), rhsIter_.get(), hashTable);
+      buildHashTable(hashKeys, lhsIter_.get(), hashTable);
+      result = probe(probeKeys, rhsIter_.get(), hashTable);
     } else {
       exchange_ = true;
-      buildHashTable(join->probeKeys(), rhsIter_.get(), hashTable);
-      result = probe(join->hashKeys(), lhsIter_.get(), hashTable);
+      buildHashTable(probeKeys, rhsIter_.get(), hashTable);
+      result = probe(hashKeys, lhsIter_.get(), hashTable);
     }
   }
-  result.colNames = join->colNames();
+  result.colNames = colNames;
   return finish(ResultBuilder().value(Value(std::move(result))).build());
 }
 
@@ -123,6 +123,18 @@ void InnerJoinExecutor::buildNewRow(const std::unordered_map<T, std::vector<cons
     }
     ds.rows.emplace_back(std::move(newRow));
   }
+}
+
+BiInnerJoinExecutor::BiInnerJoinExecutor(const PlanNode* node, QueryContext* qctx)
+    : InnerJoinExecutor(node, qctx) {
+  name_ = "BiInnerJoinExecutor";
+}
+
+folly::Future<Status> BiInnerJoinExecutor::execute() {
+  SCOPED_TIMER(&execTime_);
+  auto* joinNode = asNode<BiJoin>(node());
+  NG_RETURN_IF_ERROR(checkBiInputDataSets());
+  return join(joinNode->hashKeys(), joinNode->probeKeys(), joinNode->colNames());
 }
 }  // namespace graph
 }  // namespace nebula
