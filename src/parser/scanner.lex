@@ -21,6 +21,7 @@ static constexpr size_t MAX_STRING = 4096;
 
 %x DQ_STR
 %x SQ_STR
+%x LB_STR
 %x COMMENT
 
 blanks                      ([ \t\n]+)
@@ -327,17 +328,19 @@ CHINESE_LABEL               ({U2}{U}|{U3}{U}{U}|{U4}{U}{U}{U})+
                                 }
                                 return TokenType::LABEL;
                             }
-\`{LABEL}\`                 {
-                                yylval->strval = new std::string(yytext + 1, yyleng - 2);
+\`                         { BEGIN(LB_STR); sbufPos_ = 0; }
+<LB_STR>\`                 {
+                                yylval->strval = new std::string(sbuf(), sbufPos_);
+                                BEGIN(INITIAL);
                                 if (yylval->strval->size() > MAX_STRING) {
                                     auto error = "Out of range of the LABEL length, "
-                                                  "the  max length of LABEL is " +
-                                                  std::to_string(MAX_STRING) + ":";
+                                                 "the  max length of LABEL is " +
+                                    std::to_string(MAX_STRING) + ":";
                                     delete yylval->strval;
                                     throw GraphParser::syntax_error(*yylloc, error);
                                 }
                                 return TokenType::LABEL;
-                            }
+                           }
 {IP_OCTET}(\.{IP_OCTET}){3} {
                                 yylval->strval = new std::string(yytext, yyleng);
                                 return TokenType::IPV4;
@@ -382,11 +385,11 @@ CHINESE_LABEL               ({U2}{U}|{U3}{U}{U}|{U4}{U}{U}{U})+
                                 BEGIN(INITIAL);
                                 return TokenType::STRING;
                             }
-<DQ_STR,SQ_STR><<EOF>>      {
+<DQ_STR,SQ_STR,LB_STR><<EOF>>      {
                                 // Must match '' or ""
                                 throw GraphParser::syntax_error(*yylloc, "Unterminated string: ");
                             }
-<DQ_STR,SQ_STR>\n           { yyterminate(); }
+<DQ_STR,SQ_STR,LB_STR>\n           { yyterminate(); }
 <DQ_STR>[^\\\n\"]+          {
                                 makeSpaceForString(yyleng);
                                 ::strncpy(sbuf() + sbufPos_, yytext, yyleng);
@@ -397,7 +400,12 @@ CHINESE_LABEL               ({U2}{U}|{U3}{U}{U}|{U4}{U}{U}{U})+
                                 ::strncpy(sbuf() + sbufPos_, yytext, yyleng);
                                 sbufPos_ += yyleng;
                             }
-<DQ_STR,SQ_STR>\\{OCT}{1,3} {
+<LB_STR>[^\\\n\`]+          {
+                                makeSpaceForString(yyleng);
+                                ::strncpy(sbuf() + sbufPos_, yytext, yyleng);
+                                sbufPos_ += yyleng;
+                            }
+<DQ_STR,SQ_STR,LB_STR>\\{OCT}{1,3} {
                                 if (FLAGS_disable_octal_escape_char) {
                                     makeSpaceForString(yyleng);
                                     ::strncpy(sbuf() + sbufPos_, yytext, yyleng);
@@ -412,7 +420,7 @@ CHINESE_LABEL               ({U2}{U}|{U3}{U}{U}|{U4}{U}{U}{U})+
                                     sbuf()[sbufPos_++] = val;
                                 }
                             }
-<DQ_STR,SQ_STR>\\{DEC}+ {
+<DQ_STR,SQ_STR,LB_STR>\\{DEC}+ {
                                 if (FLAGS_disable_octal_escape_char) {
                                     makeSpaceForString(yyleng);
                                     ::strncpy(sbuf() + sbufPos_, yytext, yyleng);
@@ -421,37 +429,37 @@ CHINESE_LABEL               ({U2}{U}|{U3}{U}{U}|{U4}{U}{U}{U})+
                                     yyterminate();
                                 }
                             }
-<DQ_STR,SQ_STR>\\[uUxX]{HEX}{4} {
+<DQ_STR,SQ_STR,LB_STR>\\[uUxX]{HEX}{4} {
                                 auto encoded = folly::codePointToUtf8(std::strtoul(yytext+2, nullptr, 16));
                                 makeSpaceForString(encoded.size());
                                 ::strncpy(sbuf() + sbufPos_, encoded.data(), encoded.size());
                                 sbufPos_ += encoded.size();
                             }
-<DQ_STR,SQ_STR>\\n          {
+<DQ_STR,SQ_STR,LB_STR>\\n          {
                                 makeSpaceForString(1);
                                 sbuf()[sbufPos_++] = '\n';
                             }
-<DQ_STR,SQ_STR>\\t          {
+<DQ_STR,SQ_STR,LB_STR>\\t          {
                                 makeSpaceForString(1);
                                 sbuf()[sbufPos_++] = '\t';
                             }
-<DQ_STR,SQ_STR>\\r          {
+<DQ_STR,SQ_STR,LB_STR>\\r          {
                                 makeSpaceForString(1);
                                 sbuf()[sbufPos_++] = '\r';
                             }
-<DQ_STR,SQ_STR>\\b          {
+<DQ_STR,SQ_STR,LB_STR>\\b          {
                                 makeSpaceForString(1);
                                 sbuf()[sbufPos_++] = '\b';
                             }
-<DQ_STR,SQ_STR>\\f          {
+<DQ_STR,SQ_STR,LB_STR>\\f          {
                                 makeSpaceForString(1);
                                 sbuf()[sbufPos_++] = '\f';
                             }
-<DQ_STR,SQ_STR>\\(.|\n)     {
+<DQ_STR,SQ_STR,LB_STR>\\(.|\n)     {
                                 makeSpaceForString(1);
                                 sbuf()[sbufPos_++] = yytext[1];
                             }
-<DQ_STR,SQ_STR>\\           {
+<DQ_STR,SQ_STR,LB_STR>\\           {
                                 // This rule should have never been matched,
                                 // but without this, it somehow triggers the `nodefault' warning of flex.
                                 yyterminate();
