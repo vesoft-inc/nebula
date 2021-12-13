@@ -78,7 +78,7 @@ struct WhereClauseContext final : CypherClauseContextBase {
   WhereClauseContext() : CypherClauseContextBase(CypherClauseKind::kWhere) {}
 
   Expression* filter{nullptr};
-  std::unordered_map<std::string, AliasType>* aliasesAvailable{nullptr};
+  std::unordered_map<std::string, AliasType> aliasesAvailable;
 };
 
 struct OrderByClauseContext final : CypherClauseContextBase {
@@ -99,7 +99,7 @@ struct YieldClauseContext final : CypherClauseContextBase {
 
   bool distinct{false};
   const YieldColumns* yieldColumns{nullptr};
-  std::unordered_map<std::string, AliasType>* aliasesAvailable{nullptr};
+  std::unordered_map<std::string, AliasType> aliasesAvailable;
 
   bool hasAgg_{false};
   bool needGenProject_{false};
@@ -140,7 +140,7 @@ struct MatchClauseContext final : CypherClauseContextBase {
   bool isOptional{false};
   std::vector<Path> paths;
   std::unique_ptr<WhereClauseContext> where;
-  std::unordered_map<std::string, AliasType>* aliasesAvailable{nullptr};
+  std::unordered_map<std::string, AliasType> aliasesAvailable;
   std::unordered_map<std::string, AliasType> aliasesGenerated;
 };
 
@@ -150,7 +150,7 @@ struct UnwindClauseContext final : CypherClauseContextBase {
   Expression* unwindExpr{nullptr};
   std::string alias;
 
-  std::unordered_map<std::string, AliasType>* aliasesAvailable{nullptr};
+  std::unordered_map<std::string, AliasType> aliasesAvailable;
   std::unordered_map<std::string, AliasType> aliasesGenerated;
 };
 
@@ -162,7 +162,7 @@ struct QueryPart final {
   std::vector<std::unique_ptr<MatchClauseContext>> matchs;
   // A with/unwind/return
   std::unique_ptr<CypherClauseContextBase> boundary;
-  std::unordered_map<std::string, AliasType>* aliasesAvailable{nullptr};
+  std::unordered_map<std::string, AliasType> aliasesAvailable;
   std::unordered_map<std::string, AliasType> aliasesGenerated;
 };
 

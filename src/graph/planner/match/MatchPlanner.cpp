@@ -12,6 +12,7 @@
 #include "graph/planner/match/UnwindClausePlanner.h"
 #include "graph/planner/match/WithClausePlanner.h"
 #include "graph/planner/plan/Algo.h"
+#include "graph/planner/plan/Logic.h"
 #include "graph/planner/plan/Query.h"
 
 namespace nebula {
@@ -35,9 +36,12 @@ StatusOr<SubPlan> MatchPlanner::transform(AstContext* astCtx) {
       if (queryPartPlan.root == nullptr) {
         queryPartPlan = matchPlan;
       } else {
+        auto start = StartNode::make(match->qctx);
+        matchPlan.tail->setDep(0, start);
+        matchPlan.tail = start;
         std::unordered_set<std::string> intersectedAliases;
         for (auto& alias : match->aliasesGenerated) {
-          if (match->aliasesAvailable->find(alias.first) != match->aliasesAvailable->end()) {
+          if (match->aliasesAvailable.find(alias.first) != match->aliasesAvailable.end()) {
             intersectedAliases.emplace(alias.first);
           }
         }

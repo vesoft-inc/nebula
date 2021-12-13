@@ -113,15 +113,22 @@ StatusOr<SubPlan> MatchClausePlanner::transform(CypherClauseContextBase* clauseC
   SubPlan matchClausePlan;
   std::unordered_set<std::string> nodeAliases;
   // TODO: Maybe it is better to rebuild the graph and find all connected components.
-  for (auto iter = matchClauseCtx->paths.begin(); iter < matchClauseCtx->paths.end(); ++iter) {
+  auto& pathInfos = matchClauseCtx->paths;
+  for (auto iter = pathInfos.begin(); iter < pathInfos.end(); ++iter) {
     auto& nodeInfos = iter->nodeInfos;
     auto& edgeInfos = iter->edgeInfos;
     SubPlan subplan;
     size_t startIndex = 0;
     bool startFromEdge = false;
 
-    NG_RETURN_IF_ERROR(findStarts(
-        nodeInfos, edgeInfos, matchClauseCtx, nodeAliases, startFromEdge, startIndex, subplan));
+    NG_RETURN_IF_ERROR(findStarts(nodeInfos,
+                                  edgeInfos,
+                                  matchClauseCtx,
+                                  nodeAliases,
+                                  startFromEdge,
+                                  startIndex,
+                                  iter > pathInfos.begin(),
+                                  subplan));
     NG_RETURN_IF_ERROR(
         expand(nodeInfos, edgeInfos, matchClauseCtx, startFromEdge, startIndex, subplan));
 
@@ -174,6 +181,7 @@ Status MatchClausePlanner::findStarts(std::vector<NodeInfo>& nodeInfos,
                                       std::unordered_set<std::string> nodeAliases,
                                       bool& startFromEdge,
                                       size_t& startIndex,
+                                      bool needAStartNode,
                                       SubPlan& matchClausePlan) {
   UNUSED(nodeAliases);
   auto& startVidFinders = StartVidFinder::finders();
@@ -224,9 +232,11 @@ Status MatchClausePlanner::findStarts(std::vector<NodeInfo>& nodeInfos,
                                  matchClauseCtx->sentence->toString().c_str());
   }
 
-  auto start = StartNode::make(matchClauseCtx->qctx);
-  matchClausePlan.tail->setDep(0, start);
-  matchClausePlan.tail = start;
+  if (needAStartNode) {
+    auto start = StartNode::make(matchClauseCtx->qctx);
+    matchClausePlan.tail->setDep(0, start);
+    matchClausePlan.tail = start;
+  }
 
   return Status::OK();
 }

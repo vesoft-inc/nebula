@@ -30,16 +30,16 @@ class MatchValidator final : public Validator {
   Status validateFilter(const Expression *filter, WhereClauseContext &whereClauseCtx) const;
 
   Status validateReturn(MatchReturn *ret,
-                        const std::unordered_map<std::string, AliasType> *aliasesAvailable,
+                        const std::unordered_map<std::string, AliasType> &aliasesAvailable,
                         ReturnClauseContext &retClauseCtx) const;
 
   Status validateAliases(const std::vector<const Expression *> &exprs,
-                         const std::unordered_map<std::string, AliasType> *aliases) const;
+                         const std::unordered_map<std::string, AliasType> &aliases) const;
 
   Status validateStepRange(const MatchStepRange *range) const;
 
   Status validateWith(const WithClause *with,
-                      const std::unordered_map<std::string, AliasType> *aliasesAvailable,
+                      const std::unordered_map<std::string, AliasType> &aliasesAvailable,
                       WithClauseContext &withClauseCtx) const;
 
   Status validateUnwind(const UnwindClause *unwind, UnwindClauseContext &unwindClauseCtx) const;
@@ -82,11 +82,11 @@ class MatchValidator final : public Validator {
   Status combineYieldColumns(YieldColumns *yieldColumns, YieldColumns *prevYieldColumns) const;
 
   StatusOr<AliasType> getAliasType(
-      const std::unordered_map<std::string, AliasType> *aliasesAvailable,
+      const std::unordered_map<std::string, AliasType> &aliasesAvailable,
       const std::string &name) const;
 
   Status checkAlias(const Expression *refExpr,
-                    const std::unordered_map<std::string, AliasType> *aliasesAvailable) const;
+                    const std::unordered_map<std::string, AliasType> &aliasesAvailable) const;
 
   Status buildOutputs(const YieldColumns *yields);
 

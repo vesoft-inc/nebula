@@ -24,7 +24,7 @@ Status MatchValidator::validateImpl() {
   auto *sentence = static_cast<MatchSentence *>(sentence_);
   auto &clauses = sentence->clauses();
 
-  std::unordered_map<std::string, AliasType> *aliasesAvailable = nullptr;
+  std::unordered_map<std::string, AliasType> aliasesAvailable;
   YieldColumns *prevYieldColumns = nullptr;
   auto retClauseCtx = getContext<ReturnClauseContext>();
   auto retYieldCtx = getContext<YieldClauseContext>();
@@ -46,7 +46,7 @@ Status MatchValidator::validateImpl() {
         }
         if (matchClause->where() != nullptr) {
           auto whereClauseCtx = getContext<WhereClauseContext>();
-          whereClauseCtx->aliasesAvailable = &matchClauseCtx->aliasesGenerated;
+          whereClauseCtx->aliasesAvailable = matchClauseCtx->aliasesGenerated;
           NG_RETURN_IF_ERROR(validateFilter(matchClause->where()->filter(), *whereClauseCtx));
           matchClauseCtx->where = std::move(whereClauseCtx);
         }
@@ -57,8 +57,11 @@ Status MatchValidator::validateImpl() {
         // NG_RETURN_IF_ERROR(combineAliases(matchClauseCtx->aliasesGenerated,
         // *aliasesAvailable));
         // }
-        cypherCtx_->queryParts.back().aliasesGenerated.merge(matchClauseCtx->aliasesGenerated);
-        aliasesAvailable = &cypherCtx_->queryParts.back().aliasesGenerated;
+
+        // Copy the aliases without delete the origins.
+        auto aliasesTmp = matchClauseCtx->aliasesGenerated;
+        cypherCtx_->queryParts.back().aliasesGenerated.merge(aliasesTmp);
+        aliasesAvailable = cypherCtx_->queryParts.back().aliasesGenerated;
 
         cypherCtx_->queryParts.back().matchs.emplace_back(std::move(matchClauseCtx));
 
@@ -85,19 +88,15 @@ Status MatchValidator::validateImpl() {
         auto withYieldCtx = getContext<YieldClauseContext>();
         withClauseCtx->yield = std::move(withYieldCtx);
         withClauseCtx->yield->aliasesAvailable = aliasesAvailable;
-        NG_RETURN_IF_ERROR(validateWith(withClause,
-                                        cypherCtx_->queryParts.empty()
-                                            ? nullptr
-                                            : &cypherCtx_->queryParts.back().aliasesGenerated,
-                                        *withClauseCtx));
+        NG_RETURN_IF_ERROR(validateWith(withClause, aliasesAvailable, *withClauseCtx));
         if (withClause->where() != nullptr) {
           auto whereClauseCtx = getContext<WhereClauseContext>();
-          whereClauseCtx->aliasesAvailable = &withClauseCtx->aliasesGenerated;
+          whereClauseCtx->aliasesAvailable = withClauseCtx->aliasesGenerated;
           NG_RETURN_IF_ERROR(validateFilter(withClause->where()->filter(), *whereClauseCtx));
           withClauseCtx->where = std::move(whereClauseCtx);
         }
 
-        aliasesAvailable = &withClauseCtx->aliasesGenerated;
+        aliasesAvailable = withClauseCtx->aliasesGenerated;
         prevYieldColumns = const_cast<YieldColumns *>(withClauseCtx->yield->yieldColumns);
 
         cypherCtx_->queryParts.back().boundary = std::move(withClauseCtx);
@@ -109,10 +108,7 @@ Status MatchValidator::validateImpl() {
   }
 
   retClauseCtx->yield->aliasesAvailable = aliasesAvailable;
-  NG_RETURN_IF_ERROR(validateReturn(
-      sentence->ret(),
-      cypherCtx_->queryParts.empty() ? nullptr : &cypherCtx_->queryParts.back().aliasesGenerated,
-      *retClauseCtx));
+  NG_RETURN_IF_ERROR(validateReturn(sentence->ret(), aliasesAvailable, *retClauseCtx));
 
   NG_RETURN_IF_ERROR(buildOutputs(retClauseCtx->yield->yieldColumns));
   cypherCtx_->queryParts.back().boundary = std::move(retClauseCtx);
@@ -313,11 +309,11 @@ Status MatchValidator::includeExisting(
 
 Status MatchValidator::validateReturn(
     MatchReturn *ret,
-    const std::unordered_map<std::string, AliasType> *aliasesAvailable,
+    const std::unordered_map<std::string, AliasType> &aliasesAvailable,
     ReturnClauseContext &retClauseCtx) const {
   YieldColumns *columns = saveObject(new YieldColumns());
-  if (ret->returnItems()->includeExisting() && aliasesAvailable != nullptr) {
-    auto status = includeExisting(*aliasesAvailable, columns);
+  if (ret->returnItems()->includeExisting() && !aliasesAvailable.empty()) {
+    auto status = includeExisting(aliasesAvailable, columns);
     if (!status.ok()) {
       return status;
     }
@@ -370,7 +366,7 @@ Status MatchValidator::validateReturn(
 
 Status MatchValidator::validateAliases(
     const std::vector<const Expression *> &exprs,
-    const std::unordered_map<std::string, AliasType> *aliasesAvailable) const {
+    const std::unordered_map<std::string, AliasType> &aliasesAvailable) const {
   static const std::unordered_set<Expression::Kind> kinds = {Expression::Kind::kLabel,
                                                              Expression::Kind::kLabelAttribute,
                                                              // primitive props
@@ -406,11 +402,11 @@ Status MatchValidator::validateStepRange(const MatchStepRange *range) const {
 
 Status MatchValidator::validateWith(
     const WithClause *with,
-    const std::unordered_map<std::string, AliasType> *aliasesAvailable,
+    const std::unordered_map<std::string, AliasType> &aliasesAvailable,
     WithClauseContext &withClauseCtx) const {
   YieldColumns *columns = saveObject(new YieldColumns());
-  if (with->returnItems()->includeExisting() && aliasesAvailable != nullptr) {
-    auto status = includeExisting(*aliasesAvailable, columns);
+  if (with->returnItems()->includeExisting() && !aliasesAvailable.empty()) {
+    auto status = includeExisting(aliasesAvailable, columns);
     if (!status.ok()) {
       return status;
     }
@@ -430,8 +426,7 @@ Status MatchValidator::validateWith(
     for (auto *labelExpr : labelExprs) {
       DCHECK_EQ(labelExpr->kind(), Expression::Kind::kLabel);
       auto label = static_cast<const LabelExpression *>(labelExpr)->name();
-      if (!withClauseCtx.yield->aliasesAvailable ||
-          !withClauseCtx.yield->aliasesAvailable->count(label)) {
+      if (!withClauseCtx.yield->aliasesAvailable.count(label)) {
         return Status::SemanticError("Variable `%s` not defined", label.c_str());
       }
     }
@@ -487,14 +482,14 @@ Status MatchValidator::validateUnwind(const UnwindClause *unwindClause,
   for (auto *labelExpr : labelExprs) {
     DCHECK_EQ(labelExpr->kind(), Expression::Kind::kLabel);
     auto label = static_cast<const LabelExpression *>(labelExpr)->name();
-    if (!unwindCtx.aliasesAvailable || !unwindCtx.aliasesAvailable->count(label)) {
+    if (!unwindCtx.aliasesAvailable.count(label)) {
       return Status::SemanticError("Variable `%s` not defined", label.c_str());
     }
   }
   unwindCtx.aliasesGenerated.emplace(unwindCtx.alias, AliasType::kDefault);
-  if (!unwindCtx.aliasesAvailable) {
-    unwindCtx.aliasesAvailable = &unwindCtx.aliasesGenerated;
-  } else if (!unwindCtx.aliasesAvailable->emplace(unwindCtx.alias, AliasType::kDefault).second) {
+  if (!unwindCtx.aliasesAvailable.empty()) {
+    unwindCtx.aliasesAvailable = unwindCtx.aliasesGenerated;
+  } else if (!unwindCtx.aliasesAvailable.emplace(unwindCtx.alias, AliasType::kDefault).second) {
     return Status::SemanticError("Variable `%s` already declared", unwindCtx.alias.c_str());
   }
 
@@ -755,10 +750,10 @@ Status MatchValidator::validateYield(YieldClauseContext &yieldCtx) const {
 }
 
 StatusOr<AliasType> MatchValidator::getAliasType(
-    const std::unordered_map<std::string, AliasType> *aliasesAvailable,
+    const std::unordered_map<std::string, AliasType> &aliasesAvailable,
     const std::string &name) const {
-  auto iter = aliasesAvailable->find(name);
-  if (iter == aliasesAvailable->end()) {
+  auto iter = aliasesAvailable.find(name);
+  if (iter == aliasesAvailable.end()) {
     return Status::SemanticError("Alias used but not defined: `%s'", name.c_str());
   }
   return iter->second;
@@ -766,7 +761,7 @@ StatusOr<AliasType> MatchValidator::getAliasType(
 
 Status MatchValidator::checkAlias(
     const Expression *refExpr,
-    const std::unordered_map<std::string, AliasType> *aliasesAvailable) const {
+    const std::unordered_map<std::string, AliasType> &aliasesAvailable) const {
   auto kind = refExpr->kind();
   AliasType aliasType = AliasType::kDefault;
 
