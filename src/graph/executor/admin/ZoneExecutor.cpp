@@ -11,16 +11,21 @@
 namespace nebula {
 namespace graph {
 
-folly::Future<Status> AddZoneExecutor::execute() {
+folly::Future<Status> MergeZoneExecutor::execute() {
   SCOPED_TIMER(&execTime_);
-  auto *azNode = asNode<AddZone>(node());
+  return Status::OK();
+}
+
+folly::Future<Status> RenameZoneExecutor::execute() {
+  SCOPED_TIMER(&execTime_);
+  auto *rzNode = asNode<RenameZone>(node());
   return qctx()
       ->getMetaClient()
-      ->addZone(azNode->zoneName(), azNode->addresses())
+      ->renameZone(rzNode->originalZoneName(), rzNode->zoneName())
       .via(runner())
       .thenValue([](StatusOr<bool> resp) {
         if (!resp.ok()) {
-          LOG(ERROR) << "Add Zone Failed :" << resp.status();
+          LOG(ERROR) << "Rename Zone Failed :" << resp.status();
           return resp.status();
         }
         return Status::OK();
@@ -41,6 +46,11 @@ folly::Future<Status> DropZoneExecutor::execute() {
         }
         return Status::OK();
       });
+}
+
+folly::Future<Status> SplitZoneExecutor::execute() {
+  SCOPED_TIMER(&execTime_);
+  return Status::OK();
 }
 
 folly::Future<Status> DescribeZoneExecutor::execute() {
@@ -70,32 +80,16 @@ folly::Future<Status> DescribeZoneExecutor::execute() {
       });
 }
 
-folly::Future<Status> AddHostIntoZoneExecutor::execute() {
+folly::Future<Status> AddHostsIntoZoneExecutor::execute() {
   SCOPED_TIMER(&execTime_);
-  auto *ahNode = asNode<AddHostIntoZone>(node());
+  auto *ahNode = asNode<AddHostsIntoZone>(node());
   return qctx()
       ->getMetaClient()
-      ->addHostIntoZone(ahNode->address(), ahNode->zoneName())
+      ->addHostsIntoZone(ahNode->address(), ahNode->zoneName(), ahNode->isNew())
       .via(runner())
       .thenValue([](StatusOr<bool> resp) {
         if (!resp.ok()) {
           LOG(ERROR) << "Add Host Into Zone Failed: " << resp.status();
-          return resp.status();
-        }
-        return Status::OK();
-      });
-}
-
-folly::Future<Status> DropHostFromZoneExecutor::execute() {
-  SCOPED_TIMER(&execTime_);
-  auto *dhNode = asNode<DropHostFromZone>(node());
-  return qctx()
-      ->getMetaClient()
-      ->dropHostFromZone(dhNode->address(), dhNode->zoneName())
-      .via(runner())
-      .thenValue([](StatusOr<bool> resp) {
-        if (!resp.ok()) {
-          LOG(ERROR) << "Drop Host From Zone Failed: " << resp.status();
           return resp.status();
         }
         return Status::OK();

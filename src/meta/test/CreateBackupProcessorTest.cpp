@@ -87,6 +87,14 @@ TEST(ProcessorTest, CreateBackupTest) {
 
   fs::TempDir rootPath("/tmp/create_backup_test.XXXXXX");
   std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
+
+  std::vector<kvstore::KV> machines;
+  machines.emplace_back(nebula::MetaKeyUtils::machineKey(localIp, rpcServer->port_), "");
+
+  folly::Baton<true, std::atomic> b;
+  kv->asyncMultiPut(kDefaultSpaceId, kDefaultPartId, std::move(machines), [&](auto) { b.post(); });
+  b.wait();
+
   auto now = time::WallClock::fastNowInMilliSec();
   HostAddr host(localIp, rpcServer->port_);
   ActiveHostsMan::updateHostInfo(kv.get(), host, HostInfo(now, meta::cpp2::HostRole::STORAGE, ""));

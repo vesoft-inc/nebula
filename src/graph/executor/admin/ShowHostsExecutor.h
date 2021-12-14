@@ -25,4 +25,4 @@ class ShowHostsExecutor final : public Executor {
 }  // namespace graph
 }  // namespace nebula
 
-#endif
+#endif  // GRAPH_EXECUTOR_ADMIN_SHOW_HOSTS_EXECUTOR_H_

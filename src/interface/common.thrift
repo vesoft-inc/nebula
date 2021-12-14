@@ -311,7 +311,7 @@ enum ErrorCode {
     E_TAG_PROP_NOT_FOUND              = -10,
     E_ROLE_NOT_FOUND                  = -11,
     E_CONFIG_NOT_FOUND                = -12,
-    E_GROUP_NOT_FOUND                 = -13,
+    E_MACHINE_NOT_FOUND               = -13,
     E_ZONE_NOT_FOUND                  = -14,
     E_LISTENER_NOT_FOUND              = -15,
     E_PART_NOT_FOUND                  = -16,

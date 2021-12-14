@@ -246,6 +246,7 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 "ZONE"                      { return TokenType::KW_ZONE; }
 "ZONES"                     { return TokenType::KW_ZONES; }
 "INTO"                      { return TokenType::KW_INTO; }
+"NEW"                       { return TokenType::KW_NEW; }
 "LISTENER"                  { return TokenType::KW_LISTENER; }
 "ELASTICSEARCH"             { return TokenType::KW_ELASTICSEARCH; }
 "HTTP"                      { return TokenType::KW_HTTP; }
@@ -276,6 +277,9 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 "POINT"                     { return TokenType::KW_POINT; }
 "LINESTRING"                { return TokenType::KW_LINESTRING; }
 "POLYGON"                   { return TokenType::KW_POLYGON; }
+"MERGE"                     { return TokenType::KW_MERGE; }
+"RENAME"                    { return TokenType::KW_RENAME; }
+
 "TRUE"                      { yylval->boolval = true; return TokenType::BOOL; }
 "FALSE"                     { yylval->boolval = false; return TokenType::BOOL; }
 
