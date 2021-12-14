@@ -111,7 +111,8 @@ StatusOr<SubPlan> MatchClausePlanner::transform(CypherClauseContextBase* clauseC
 
   auto* matchClauseCtx = static_cast<MatchClauseContext*>(clauseCtx);
   SubPlan matchClausePlan;
-  std::unordered_set<std::string> nodeAliases;
+  // All nodes ever seen in current match clause
+  std::unordered_set<std::string> nodeAliasesSeen;
   // TODO: Maybe it is better to rebuild the graph and find all connected components.
   auto& pathInfos = matchClauseCtx->paths;
   for (auto iter = pathInfos.begin(); iter < pathInfos.end(); ++iter) {
@@ -124,7 +125,7 @@ StatusOr<SubPlan> MatchClausePlanner::transform(CypherClauseContextBase* clauseC
     NG_RETURN_IF_ERROR(findStarts(nodeInfos,
                                   edgeInfos,
                                   matchClauseCtx,
-                                  nodeAliases,
+                                  nodeAliasesSeen,
                                   startFromEdge,
                                   startIndex,
                                   iter > pathInfos.begin(),
@@ -134,14 +135,14 @@ StatusOr<SubPlan> MatchClausePlanner::transform(CypherClauseContextBase* clauseC
 
     std::unordered_set<std::string> intersectedAliases;
     std::for_each(
-        nodeInfos.begin(), nodeInfos.end(), [&intersectedAliases, &nodeAliases](auto& info) {
-          if (nodeAliases.find(info.alias) != nodeAliases.end()) {
+        nodeInfos.begin(), nodeInfos.end(), [&intersectedAliases, &nodeAliasesSeen](auto& info) {
+          if (nodeAliasesSeen.find(info.alias) != nodeAliasesSeen.end()) {
             intersectedAliases.emplace(info.alias);
           }
         });
-    std::for_each(nodeInfos.begin(), nodeInfos.end(), [&nodeAliases](auto& info) {
+    std::for_each(nodeInfos.begin(), nodeInfos.end(), [&nodeAliasesSeen](auto& info) {
       if (!info.anonymous) {
-        nodeAliases.emplace(info.alias);
+        nodeAliasesSeen.emplace(info.alias);
       }
     });
     if (matchClausePlan.root == nullptr) {
@@ -178,18 +179,28 @@ StatusOr<SubPlan> MatchClausePlanner::transform(CypherClauseContextBase* clauseC
 Status MatchClausePlanner::findStarts(std::vector<NodeInfo>& nodeInfos,
                                       std::vector<EdgeInfo>& edgeInfos,
                                       MatchClauseContext* matchClauseCtx,
-                                      std::unordered_set<std::string> nodeAliases,
+                                      std::unordered_set<std::string> nodeAliasesSeen,
                                       bool& startFromEdge,
                                       size_t& startIndex,
                                       bool needAStartNode,
                                       SubPlan& matchClausePlan) {
-  UNUSED(nodeAliases);
   auto& startVidFinders = StartVidFinder::finders();
   bool foundStart = false;
+  std::unordered_set<std::string> allNodeAliasesAvailable;
+  allNodeAliasesAvailable.merge(nodeAliasesSeen);
+  std::for_each(matchClauseCtx->aliasesAvailable.begin(),
+                matchClauseCtx->aliasesAvailable.end(),
+                [&allNodeAliasesAvailable](auto& kv) {
+                  if (kv.second == AliasType::kNode) {
+                    allNodeAliasesAvailable.emplace(kv.first);
+                  }
+                });
+
   // Find the start plan node
   for (auto& finder : startVidFinders) {
     for (size_t i = 0; i < nodeInfos.size() && !foundStart; ++i) {
       auto nodeCtx = NodeContext(matchClauseCtx, &nodeInfos[i]);
+      nodeCtx.nodeAliasesAvailable = &allNodeAliasesAvailable;
       auto nodeFinder = finder();
       if (nodeFinder->match(&nodeCtx)) {
         auto plan = nodeFinder->transform(&nodeCtx);

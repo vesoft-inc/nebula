@@ -180,10 +180,7 @@ Status MatchValidator::buildNodeInfo(const MatchPath *path,
       anonymous = true;
       alias = vctx_->anonVarGen()->getVar();
     } else {
-      // TODO: This is legal in cypher.
-      if (!aliases.emplace(alias, AliasType::kNode).second) {
-        return Status::SemanticError("`%s': Redefined alias", alias.c_str());
-      }
+      aliases.emplace(alias, AliasType::kNode);
     }
     Expression *filter = nullptr;
     if (props != nullptr) {

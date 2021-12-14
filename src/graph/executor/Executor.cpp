@@ -533,6 +533,9 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     case PlanNode::Kind::kBiCartesianProduct: {
       return pool->add(new BiCartesianProductExecutor(node, qctx));
     }
+    case PlanNode::Kind::kArgument: {
+      // TODO:
+    }
     case PlanNode::Kind::kUnknown: {
       LOG(FATAL) << "Unknown plan node kind " << static_cast<int32_t>(node->kind());
       break;

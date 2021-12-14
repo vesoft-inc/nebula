@@ -182,6 +182,7 @@ struct NodeContext final : PatternContext {
       : PatternContext(PatternKind::kNode, m), info(i) {}
 
   NodeInfo* info{nullptr};
+  std::unordered_set<std::string>* nodeAliasesAvailable;
 
   // Output fields
   ScanInfo scanInfo;

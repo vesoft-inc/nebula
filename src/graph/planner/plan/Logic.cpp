@@ -69,5 +69,12 @@ std::unique_ptr<PlanNodeDescription> Select::explain() const {
   return desc;
 }
 
+PlanNode* Argument::clone() const {
+  auto* newArg = Argument::make(qctx_, nullptr, alias_);
+  newArg->cloneMembers(*this);
+  return newArg;
+}
+
+void Argument::cloneMembers(const Argument& arg) { SingleInputNode::cloneMembers(arg); }
 }  // namespace graph
 }  // namespace nebula

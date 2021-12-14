@@ -294,6 +294,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "BiInnerJoin";
     case Kind::kBiCartesianProduct:
       return "BiCartesianProduct";
+    case Kind::kArgument:
+      return "Argument";
       // no default so the compiler will warning when lack
   }
   LOG(FATAL) << "Impossible kind plan node " << static_cast<int>(kind);

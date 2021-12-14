@@ -140,6 +140,31 @@ class PassThroughNode final : public SingleInputNode {
 
   void cloneMembers(const PassThroughNode&);
 };
+
+/**
+ * This operator is used for getting a named alias from another executed operator.
+ */
+class Argument final : public SingleInputNode {
+ public:
+  static Argument* make(QueryContext* qctx, PlanNode* input, std::string alias) {
+    return qctx->objPool()->add(new Argument(qctx, input, alias));
+  }
+
+  PlanNode* clone() const override;
+
+  const std::string& getAlias() const { return alias_; }
+
+ private:
+  Argument(QueryContext* qctx, PlanNode* input, std::string alias)
+      : SingleInputNode(qctx, Kind::kArgument, input) {
+    alias_ = alias;
+  }
+
+  void cloneMembers(const Argument&);
+
+ private:
+  std::string alias_;
+};
 }  // namespace graph
 }  // namespace nebula
 

@@ -36,6 +36,8 @@ StatusOr<SubPlan> MatchPlanner::transform(AstContext* astCtx) {
       if (queryPartPlan.root == nullptr) {
         queryPartPlan = matchPlan;
       } else {
+        // Add a start node except the first match
+        // which will be added by the sequential planner
         auto start = StartNode::make(match->qctx);
         matchPlan.tail->setDep(0, start);
         matchPlan.tail = start;
