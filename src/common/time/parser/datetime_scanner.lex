@@ -1,6 +1,6 @@
 %option c++
 %option yyclass="DatetimeScanner"
-%option nodefault noyywrap
+%option noyywrap
 %option never-interactive
 %option yylineno
 %option case-sensitive
