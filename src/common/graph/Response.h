@@ -468,7 +468,7 @@ struct ExecutionResponse {
   }
 
   ErrorCode errorCode{ErrorCode::SUCCEEDED};
-  int32_t latencyInUs{0};
+  int64_t latencyInUs{0};
   std::unique_ptr<nebula::DataSet> data{nullptr};
   std::unique_ptr<std::string> spaceName{nullptr};
   std::unique_ptr<std::string> errorMsg{nullptr};

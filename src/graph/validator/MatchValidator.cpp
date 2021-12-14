@@ -504,6 +504,10 @@ Status MatchValidator::validateUnwind(const UnwindClause *unwindClause,
   }
   unwindCtx.alias = unwindClause->alias();
   unwindCtx.unwindExpr = unwindClause->expr()->clone();
+  if (ExpressionUtils::hasAny(unwindCtx.unwindExpr, {Expression::Kind::kAggregate})) {
+    return Status::SemanticError("Can't use aggregating expressions in unwind clause, `%s'",
+                                 unwindCtx.unwindExpr->toString().c_str());
+  }
 
   auto labelExprs = ExpressionUtils::collectAll(unwindCtx.unwindExpr, {Expression::Kind::kLabel});
   for (auto *labelExpr : labelExprs) {
