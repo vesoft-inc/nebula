@@ -36,7 +36,6 @@ namespace time {
   }
   if (!FLAGS_timezone_name.empty()) {
     if (FLAGS_timezone_name.front() == ':') {
-      NG_RETURN_IF_ERROR(Timezone::init());
       return globalTimezone.loadFromDb(
           std::string(FLAGS_timezone_name.begin() + 1, FLAGS_timezone_name.end()));
     } else {
