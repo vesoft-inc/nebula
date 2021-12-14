@@ -92,6 +92,18 @@ std::unique_ptr<PlanNodeDescription> DropNode::explain() const {
   return desc;
 }
 
+std::unique_ptr<PlanNodeDescription> AddHosts::explain() const {
+  auto desc = SingleDependencyNode::explain();
+  addDescription("hosts", folly::toJson(util::toJson(hosts_)), desc.get());
+  return desc;
+}
+
+std::unique_ptr<PlanNodeDescription> DropHosts::explain() const {
+  auto desc = SingleDependencyNode::explain();
+  addDescription("hosts", folly::toJson(util::toJson(hosts_)), desc.get());
+  return desc;
+}
+
 std::unique_ptr<PlanNodeDescription> CreateUser::explain() const {
   auto desc = CreateNode::explain();
   addDescription("username", *username_, desc.get());

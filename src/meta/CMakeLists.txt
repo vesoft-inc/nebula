@@ -80,11 +80,15 @@ nebula_add_library(
     processors/job/GetStatsProcessor.cpp
     processors/job/ListTagIndexStatusProcessor.cpp
     processors/job/ListEdgeIndexStatusProcessor.cpp
-    processors/zone/AddZoneProcessor.cpp
+    processors/zone/AddHostsProcessor.cpp
+    processors/zone/AddHostsIntoZoneProcessor.cpp
+    processors/zone/DropHostsProcessor.cpp
     processors/zone/DropZoneProcessor.cpp
+    processors/zone/RenameZoneProcessor.cpp
     processors/zone/GetZoneProcessor.cpp
+    processors/zone/MergeZoneProcessor.cpp
+    processors/zone/SplitZoneProcessor.cpp
     processors/zone/ListZonesProcessor.cpp
-    processors/zone/UpdateZoneProcessor.cpp
     processors/listener/ListenerProcessor.cpp
     processors/session/SessionManagerProcessor.cpp
 )
@@ -150,6 +154,7 @@ set(meta_test_deps
     $<TARGET_OBJECTS:wkt_wkb_io_obj>
     $<TARGET_OBJECTS:agg_function_manager_obj>
     $<TARGET_OBJECTS:time_utils_obj>
+    $<TARGET_OBJECTS:datetime_parser_obj>
     $<TARGET_OBJECTS:encryption_obj>
     $<TARGET_OBJECTS:ft_es_storage_adapter_obj>
     $<TARGET_OBJECTS:version_obj>
