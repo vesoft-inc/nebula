@@ -139,6 +139,19 @@ set(PROXYGEN_LIBRARIES
 )
 
 set(ROCKSDB_LIBRARIES ${Rocksdb_LIBRARY})
+# wasmtime
+
+
+set(WASMTIME_LOCAL_PATH "${CMAKE_SOURCE_DIR}/wasmtime-c-api")
+set(WASMTIME_INCLUDE_DIR ${WASMTIME_LOCAL_PATH}/include)
+set(WASMTIME_LIBRARY ${WASMTIME_LOCAL_PATH}/lib)
+set(WASMTIME_LIBRARYS libwasmtime.a libwasmtime.so stdc++ pthread dl)
+print_config(WASMTIME_LOCAL_PATH)
+print_config(WASMTIME_INCLUDE_DIR)
+print_config(WASMTIME_LIBRARY)
+print_config(WASMTIME_LIBRARYS)
+
+
 
 # All compression libraries
 set(COMPRESSION_LIBRARIES bz2 snappy zstd z lz4)
