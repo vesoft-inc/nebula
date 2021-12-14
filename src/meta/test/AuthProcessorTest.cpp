@@ -10,6 +10,7 @@
 #include "meta/processors/parts/CreateSpaceProcessor.h"
 #include "meta/processors/parts/DropSpaceProcessor.h"
 #include "meta/processors/user/AuthenticationProcessor.h"
+#include "meta/processors/zone/AddHostsProcessor.h"
 #include "meta/test/TestUtils.h"
 
 namespace nebula {
@@ -161,7 +162,16 @@ TEST(AuthProcessorTest, DropUserTest) {
 TEST(AuthProcessorTest, GrantRevokeTest) {
   fs::TempDir rootPath("/tmp/GrantRevokeTest.XXXXXX");
   std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
-  TestUtils::createSomeHosts(kv.get());
+  {
+    cpp2::AddHostsReq req;
+    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
+    req.set_hosts(std::move(hosts));
+    auto* processor = AddHostsProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
   GraphSpaceID space1, space2;
   // create space1
   {

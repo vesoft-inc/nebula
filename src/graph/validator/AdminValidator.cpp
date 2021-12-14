@@ -20,8 +20,8 @@ Status CreateSpaceValidator::validateImpl() {
   ifNotExist_ = sentence->isIfNotExist();
   auto status = Status::OK();
   spaceDesc_.set_space_name(std::move(*(sentence->spaceName())));
-  if (sentence->groupName()) {
-    spaceDesc_.set_group_name(std::move(*(sentence->groupName())));
+  if (sentence->zoneNames()) {
+    spaceDesc_.set_zone_names(sentence->zoneNames()->zoneNames());
   }
   StatusOr<std::string> retStatusOr;
   std::string result;
@@ -101,10 +101,6 @@ Status CreateSpaceValidator::validateImpl() {
   // check comment
   if (sentence->comment() != nullptr) {
     spaceDesc_.set_comment(*sentence->comment());
-  }
-
-  if (sentence->groupName() != nullptr && *sentence->groupName() == "default") {
-    return Status::SemanticError("Group default conflict");
   }
 
   // if charset and collate are not specified, set default value
@@ -291,6 +287,46 @@ Status ShowListenerValidator::validateImpl() { return Status::OK(); }
 Status ShowListenerValidator::toPlan() {
   auto *doNode = ShowListener::make(qctx_, nullptr);
   root_ = doNode;
+  tail_ = root_;
+  return Status::OK();
+}
+
+Status AddHostsValidator::validateImpl() { return Status::OK(); }
+
+Status AddHostsValidator::toPlan() {
+  auto sentence = static_cast<AddHostsSentence *>(sentence_);
+  auto hosts = sentence->hosts()->hosts();
+  if (hosts.empty()) {
+    return Status::SemanticError("Host is empty");
+  }
+
+  auto it = std::unique(hosts.begin(), hosts.end());
+  if (it != hosts.end()) {
+    return Status::SemanticError("Host have duplicated");
+  }
+
+  auto *addHost = AddHosts::make(qctx_, nullptr, hosts);
+  root_ = addHost;
+  tail_ = root_;
+  return Status::OK();
+}
+
+Status DropHostsValidator::validateImpl() { return Status::OK(); }
+
+Status DropHostsValidator::toPlan() {
+  auto sentence = static_cast<DropHostsSentence *>(sentence_);
+  auto hosts = sentence->hosts()->hosts();
+  if (hosts.empty()) {
+    return Status::SemanticError("Host is empty");
+  }
+
+  auto it = std::unique(hosts.begin(), hosts.end());
+  if (it != hosts.end()) {
+    return Status::SemanticError("Host have duplicated");
+  }
+
+  auto *dropHost = DropHosts::make(qctx_, nullptr, hosts);
+  root_ = dropHost;
   tail_ = root_;
   return Status::OK();
 }

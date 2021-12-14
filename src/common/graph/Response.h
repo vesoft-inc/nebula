@@ -35,7 +35,7 @@
   X(E_TAG_PROP_NOT_FOUND, -10)                                                \
   X(E_ROLE_NOT_FOUND, -11)                                                    \
   X(E_CONFIG_NOT_FOUND, -12)                                                  \
-  X(E_GROUP_NOT_FOUND, -13)                                                   \
+  X(E_MACHINE_NOT_FOUND, -13)                                                 \
   X(E_ZONE_NOT_FOUND, -14)                                                    \
   X(E_LISTENER_NOT_FOUND, -15)                                                \
   X(E_PART_NOT_FOUND, -16)                                                    \

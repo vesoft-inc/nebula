@@ -10,6 +10,7 @@
 #include "common/datatypes/KeyValue.h"
 #include "common/fs/TempDir.h"
 #include "common/network/NetworkUtils.h"
+#include "common/utils/MetaKeyUtils.h"
 #include "meta/test/TestUtils.h"
 #include "storage/test/TestUtils.h"
 
@@ -42,10 +43,16 @@ TEST(KVClientTest, SimpleTest) {
   cluster.startMeta(metaPath.path());
   meta::MetaClientOptions options;
   options.localHost_ = storageAddr;
-  options.role_ = meta::cpp2::HostRole::STORAGE;
   cluster.initMetaClient(options);
-  cluster.startStorage(storageAddr, storagePath.path());
+  auto* metaClient = cluster.metaClient_.get();
+  {
+    LOG(INFO) << "registed " << storageAddr;
+    std::vector<HostAddr> hosts = {storageAddr};
+    auto result = metaClient->addHosts(std::move(hosts)).get();
+    EXPECT_TRUE(result.ok());
+  }
 
+  cluster.startStorage(storageAddr, storagePath.path());
   auto client = cluster.initGraphStorageClient();
   // kv interface test
   {
