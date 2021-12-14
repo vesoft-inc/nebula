@@ -16,11 +16,14 @@
 #include "graph/context/ExecutionContext.h"
 #include "graph/context/QueryContext.h"
 #include "graph/executor/ExecutionError.h"
+#include "graph/executor/admin/AddHostsExecutor.h"
 #include "graph/executor/admin/ChangePasswordExecutor.h"
 #include "graph/executor/admin/CharsetExecutor.h"
 #include "graph/executor/admin/ConfigExecutor.h"
 #include "graph/executor/admin/CreateUserExecutor.h"
+#include "graph/executor/admin/DescribeUserExecutor.h"
 #include "graph/executor/admin/DownloadExecutor.h"
+#include "graph/executor/admin/DropHostsExecutor.h"
 #include "graph/executor/admin/DropUserExecutor.h"
 #include "graph/executor/admin/GrantRoleExecutor.h"
 #include "graph/executor/admin/IngestExecutor.h"
@@ -80,6 +83,8 @@
 #include "graph/executor/query/MinusExecutor.h"
 #include "graph/executor/query/ProjectExecutor.h"
 #include "graph/executor/query/SampleExecutor.h"
+#include "graph/executor/query/ScanEdgesExecutor.h"
+#include "graph/executor/query/ScanVerticesExecutor.h"
 #include "graph/executor/query/SortExecutor.h"
 #include "graph/executor/query/TopNExecutor.h"
 #include "graph/executor/query/TraverseExecutor.h"
@@ -168,6 +173,12 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     }
     case PlanNode::Kind::kGetVertices: {
       return pool->add(new GetVerticesExecutor(node, qctx));
+    }
+    case PlanNode::Kind::kScanEdges: {
+      return pool->add(new ScanEdgesExecutor(node, qctx));
+    }
+    case PlanNode::Kind::kScanVertices: {
+      return pool->add(new ScanVerticesExecutor(node, qctx));
     }
     case PlanNode::Kind::kGetNeighbors: {
       return pool->add(new GetNeighborsExecutor(node, qctx));
@@ -385,6 +396,9 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     case PlanNode::Kind::kListRoles: {
       return pool->add(new ListRolesExecutor(node, qctx));
     }
+    case PlanNode::Kind::kDescribeUser: {
+      return pool->add(new DescribeUserExecutor(node, qctx));
+    }
     case PlanNode::Kind::kShowConfigs: {
       return pool->add(new ShowConfigsExecutor(node, qctx));
     }
@@ -430,20 +444,29 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
     case PlanNode::Kind::kSubgraph: {
       return pool->add(new SubgraphExecutor(node, qctx));
     }
-    case PlanNode::Kind::kAddZone: {
-      return pool->add(new AddZoneExecutor(node, qctx));
+    case PlanNode::Kind::kAddHosts: {
+      return pool->add(new AddHostsExecutor(node, qctx));
+    }
+    case PlanNode::Kind::kDropHosts: {
+      return pool->add(new DropHostsExecutor(node, qctx));
+    }
+    case PlanNode::Kind::kMergeZone: {
+      return pool->add(new MergeZoneExecutor(node, qctx));
+    }
+    case PlanNode::Kind::kRenameZone: {
+      return pool->add(new RenameZoneExecutor(node, qctx));
     }
     case PlanNode::Kind::kDropZone: {
       return pool->add(new DropZoneExecutor(node, qctx));
     }
+    case PlanNode::Kind::kSplitZone: {
+      return pool->add(new SplitZoneExecutor(node, qctx));
+    }
     case PlanNode::Kind::kDescribeZone: {
       return pool->add(new DescribeZoneExecutor(node, qctx));
     }
-    case PlanNode::Kind::kAddHostIntoZone: {
-      return pool->add(new AddHostIntoZoneExecutor(node, qctx));
-    }
-    case PlanNode::Kind::kDropHostFromZone: {
-      return pool->add(new DropHostFromZoneExecutor(node, qctx));
+    case PlanNode::Kind::kAddHostsIntoZone: {
+      return pool->add(new AddHostsIntoZoneExecutor(node, qctx));
     }
     case PlanNode::Kind::kShowZones: {
       return pool->add(new ListZonesExecutor(node, qctx));

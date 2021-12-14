@@ -55,12 +55,17 @@ class GraphStorageServiceHandler final : public cpp2::GraphStorageServiceSvIf {
 
   folly::Future<cpp2::ExecResponse> future_chainAddEdges(const cpp2::AddEdgesRequest& req) override;
 
-  folly::Future<cpp2::ScanVertexResponse> future_scanVertex(
-      const cpp2::ScanVertexRequest& req) override;
+  folly::Future<cpp2::ScanResponse> future_scanVertex(const cpp2::ScanVertexRequest& req) override;
 
-  folly::Future<cpp2::ScanEdgeResponse> future_scanEdge(const cpp2::ScanEdgeRequest& req) override;
+  folly::Future<cpp2::ScanResponse> future_scanEdge(const cpp2::ScanEdgeRequest& req) override;
 
   folly::Future<cpp2::GetUUIDResp> future_getUUID(const cpp2::GetUUIDReq& req) override;
+
+  folly::Future<cpp2::ExecResponse> future_put(const cpp2::KVPutRequest& req) override;
+
+  folly::Future<cpp2::KVGetResponse> future_get(const cpp2::KVGetRequest& req) override;
+
+  folly::Future<cpp2::ExecResponse> future_remove(const cpp2::KVRemoveRequest& req) override;
 
  private:
   StorageEnv* env_{nullptr};

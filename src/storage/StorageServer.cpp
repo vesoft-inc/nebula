@@ -38,6 +38,7 @@ DEFINE_int32(num_io_threads, 16, "Number of IO threads");
 DEFINE_int32(num_worker_threads, 32, "Number of workers");
 DEFINE_int32(storage_http_thread_num, 3, "Number of storage daemon's http thread");
 DEFINE_bool(local_config, false, "meta client will not retrieve latest configuration from meta");
+DEFINE_bool(storage_kv_mode, false, "True for kv mode");
 
 namespace nebula {
 namespace storage {
@@ -62,8 +63,10 @@ std::unique_ptr<kvstore::KVStore> StorageServer::getStoreInstance() {
   options.listenerPath_ = listenerPath_;
   options.partMan_ =
       std::make_unique<kvstore::MetaServerBasedPartManager>(localHost_, metaClient_.get());
-  options.cffBuilder_ =
-      std::make_unique<StorageCompactionFilterFactoryBuilder>(schemaMan_.get(), indexMan_.get());
+  if (!FLAGS_storage_kv_mode) {
+    options.cffBuilder_ =
+        std::make_unique<StorageCompactionFilterFactoryBuilder>(schemaMan_.get(), indexMan_.get());
+  }
   options.schemaMan_ = schemaMan_.get();
   if (FLAGS_store_type == "nebula") {
     auto nbStore = std::make_unique<kvstore::NebulaStore>(
@@ -302,13 +305,38 @@ bool StorageServer::start() {
       internalStorageSvcStatus_.load() != STATUS_RUNNING) {
     return false;
   }
+  {
+    std::lock_guard<std::mutex> lkStop(muStop_);
+    if (serverStatus_ != STATUS_UNINITIALIZED) {
+      // stop() called during start()
+      return false;
+    }
+    serverStatus_ = STATUS_RUNNING;
+  }
   return true;
 }
 
 void StorageServer::waitUntilStop() {
+  {
+    std::unique_lock<std::mutex> lkStop(muStop_);
+    while (serverStatus_ == STATUS_RUNNING) {
+      cvStop_.wait(lkStop);
+    }
+  }
+
+  this->stop();
+
   adminThread_->join();
   storageThread_->join();
   internalStorageThread_->join();
+}
+
+void StorageServer::notifyStop() {
+  std::unique_lock<std::mutex> lkStop(muStop_);
+  if (serverStatus_ == STATUS_RUNNING) {
+    serverStatus_ = STATUS_STOPPED;
+    cvStop_.notify_one();
+  }
 }
 
 void StorageServer::stop() {

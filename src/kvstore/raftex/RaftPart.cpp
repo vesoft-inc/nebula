@@ -273,7 +273,7 @@ void RaftPart::start(std::vector<HostAddr>&& peers, bool asLearner) {
     LOG(INFO) << idStr_ << "Reset lastLogId " << lastLogId_ << " to be the committedLogId "
               << committedLogId_;
     lastLogId_ = committedLogId_;
-    lastLogTerm_ = term_;
+    lastLogTerm_ = logIdAndTerm.second;
     wal_->reset();
   }
   LOG(INFO) << idStr_ << "There are " << peers.size() << " peer hosts, and total "
@@ -293,6 +293,7 @@ void RaftPart::start(std::vector<HostAddr>&& peers, bool asLearner) {
   if (asLearner) {
     role_ = Role::LEARNER;
   }
+  leader_ = HostAddr("", 0);
   startTimeMs_ = time::WallClock::fastNowInMilliSec();
   // Set up a leader election task
   size_t delayMS = 100 + folly::Random::rand32(900);
@@ -852,6 +853,7 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
       std::lock_guard<std::mutex> g(raftLock_);
       res = canAppendLogs(currTerm);
       if (res != AppendLogResult::SUCCEEDED) {
+        wal_->rollbackToLog(lastLogId_);
         break;
       }
       lastLogId_ = lastLogId;
@@ -996,6 +998,9 @@ bool RaftPart::prepareElectionRequest(cpp2::AskForVoteRequest& req,
     req.set_term(term_ + 1);
   } else {
     req.set_term(++term_);
+    // vote for myself
+    votedAddr_ = addr_;
+    votedTerm_ = term_;
   }
   req.set_last_log_id(lastLogId_);
   req.set_last_log_term(lastLogTerm_);
@@ -1003,6 +1008,18 @@ bool RaftPart::prepareElectionRequest(cpp2::AskForVoteRequest& req,
   hosts = followers();
 
   return true;
+}
+
+void RaftPart::getState(cpp2::GetStateResponse& resp) {
+  std::lock_guard<std::mutex> g(raftLock_);
+  resp.set_term(term_);
+  resp.set_role(role_);
+  resp.set_is_leader(role_ == Role::LEADER);
+  resp.set_error_code(cpp2::ErrorCode::SUCCEEDED);
+  resp.set_committed_log_id(committedLogId_);
+  resp.set_last_log_id(lastLogId_);
+  resp.set_last_log_term(lastLogTerm_);
+  resp.set_status(status_);
 }
 
 bool RaftPart::processElectionResponses(const RaftPart::ElectionResponses& results,
@@ -1061,6 +1078,7 @@ bool RaftPart::processElectionResponses(const RaftPart::ElectionResponses& resul
       LOG(INFO) << idStr_ << "Partition is elected as the new leader for term " << proposedTerm;
       term_ = proposedTerm;
       role_ = Role::LEADER;
+      leader_ = addr_;
       isBlindFollower_ = false;
     }
     return true;
@@ -1094,6 +1112,7 @@ folly::Future<bool> RaftPart::leaderElection(bool isPreVote) {
     // So we need to go back to the follower state to avoid the case.
     std::lock_guard<std::mutex> g(raftLock_);
     role_ = Role::FOLLOWER;
+    leader_ = HostAddr("", 0);
     inElection_ = false;
     return false;
   }
@@ -1291,10 +1310,13 @@ void RaftPart::processAskForVoteRequest(const cpp2::AskForVoteRequest& req,
     return;
   }
 
+  auto oldRole = role_;
   auto oldTerm = term_;
-  // req.get_term() >= term_, we won't update term in prevote
-  if (!req.get_is_pre_vote()) {
+  if (!req.get_is_pre_vote() && req.get_term() > term_) {
+    // req.get_term() > term_, we won't update term in prevote
     term_ = req.get_term();
+    role_ = Role::FOLLOWER;
+    leader_ = HostAddr("", 0);
   }
 
   // Check the last term to receive a log
@@ -1333,29 +1355,34 @@ void RaftPart::processAskForVoteRequest(const cpp2::AskForVoteRequest& req,
     resp.set_error_code(cpp2::ErrorCode::E_TERM_OUT_OF_DATE);
     return;
   }
+
+  // Ok, no reason to refuse, we will vote for the candidate
+  LOG(INFO) << idStr_ << "The partition will vote for the candidate " << candidate
+            << ", isPreVote = " << req.get_is_pre_vote();
+
   if (req.get_is_pre_vote()) {
     // return succeed if it is prevote, do not change any state
     resp.set_error_code(cpp2::ErrorCode::SUCCEEDED);
     return;
   }
 
-  // Ok, no reason to refuse, we will vote for the candidate
-  LOG(INFO) << idStr_ << "The partition will vote for the candidate " << candidate
-            << ", isPreVote = " << req.get_is_pre_vote();
-
-  // Before change role from leader to follower, check the logs locally.
-  if (role_ == Role::LEADER && wal_->lastLogId() > lastLogId_) {
+  // not a pre-vote, need to rollback wal if necessary
+  // role_ and term_ has been set above
+  if (oldRole == Role::LEADER && wal_->lastLogId() > lastLogId_) {
     LOG(INFO) << idStr_ << "There are some logs up to " << wal_->lastLogId()
               << " i did not commit when i was leader, rollback to " << lastLogId_;
     wal_->rollbackToLog(lastLogId_);
   }
-  if (role_ == Role::LEADER) {
+  if (oldRole == Role::LEADER) {
     bgWorkers_->addTask([self = shared_from_this(), oldTerm] { self->onLostLeadership(oldTerm); });
   }
+  // not a pre-vote, req.term() >= term_, all check passed, convert to follower
+  term_ = req.get_term();
   role_ = Role::FOLLOWER;
+  leader_ = HostAddr("", 0);
   votedAddr_ = candidate;
   votedTerm_ = req.get_term();
-  leader_ = HostAddr("", 0);
+  resp.set_error_code(cpp2::ErrorCode::SUCCEEDED);
 
   // Reset the last message time
   lastMsgRecvDur_.reset();

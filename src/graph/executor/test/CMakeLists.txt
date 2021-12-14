@@ -8,7 +8,7 @@ SET(EXEC_QUERY_TEST_OBJS
     $<TARGET_OBJECTS:process_obj>
     $<TARGET_OBJECTS:graph_thrift_obj>
     $<TARGET_OBJECTS:storage_client_base_obj>
-    $<TARGET_OBJECTS:graph_storage_client_obj>
+    $<TARGET_OBJECTS:storage_client_obj>
     $<TARGET_OBJECTS:storage_thrift_obj>
     $<TARGET_OBJECTS:meta_client_obj>
     $<TARGET_OBJECTS:stats_obj>
@@ -33,6 +33,7 @@ SET(EXEC_QUERY_TEST_OBJS
     $<TARGET_OBJECTS:encryption_obj>
     $<TARGET_OBJECTS:http_client_obj>
     $<TARGET_OBJECTS:time_utils_obj>
+    $<TARGET_OBJECTS:datetime_parser_obj>
     $<TARGET_OBJECTS:ft_es_graph_adapter_obj>
     $<TARGET_OBJECTS:ws_common_obj>
     $<TARGET_OBJECTS:version_obj>

@@ -20,6 +20,8 @@ namespace nebula {
 static const std::unordered_map<std::string, std::pair<std::string, bool>> systemTableMaps = {
     {"users", {"__users__", true}},
     {"hosts", {"__hosts__", false}},
+    {"versions", {"__versions__", false}},
+    {"machines", {"__machines__", false}},
     {"snapshots", {"__snapshots__", false}},
     {"configs", {"__configs__", true}},
     {"groups", {"__groups__", true}},
@@ -51,12 +53,15 @@ static const std::unordered_map<
                  {"balance_task", {"__balance_task__", nullptr}},
                  {"balance_plan", {"__balance_plan__", nullptr}},
                  {"ft_index", {"__ft_index__", nullptr}},
-                 {"local_id", {"__local_id__", MetaKeyUtils::parseLocalIdSpace}}};
+                 {"local_id", {"__local_id__", MetaKeyUtils::parseLocalIdSpace}},
+                 {"disk_parts", {"__disk_parts__", MetaKeyUtils::parseDiskPartsSpace}}};
 
 // clang-format off
 static const std::string kSpacesTable         = tableMaps.at("spaces").first;         // NOLINT
 static const std::string kPartsTable          = tableMaps.at("parts").first;          // NOLINT
-static const std::string kHostsTable          = systemTableMaps.at("hosts").first;          // NOLINT
+static const std::string kVersionsTable       = systemTableMaps.at("versions").first; // NOLINT
+static const std::string kHostsTable          = systemTableMaps.at("hosts").first;    // NOLINT
+static const std::string kMachinesTable       = systemTableMaps.at("machines").first; // NOLINT
 static const std::string kTagsTable           = tableMaps.at("tags").first;           // NOLINT
 static const std::string kEdgesTable          = tableMaps.at("edges").first;          // NOLINT
 static const std::string kIndexesTable        = tableMaps.at("indexes").first;        // NOLINT
@@ -71,6 +76,7 @@ static const std::string kLeaderTermsTable    = tableMaps.at("leader_terms").fir
 static const std::string kGroupsTable         = systemTableMaps.at("groups").first;           // NOLINT
 static const std::string kZonesTable          = systemTableMaps.at("zones").first;            // NOLINT
 static const std::string kListenerTable       = tableMaps.at("listener").first;         // NOLINT
+static const std::string kDiskPartsTable      = tableMaps.at("disk_parts").first;       // NOLINT
 
 // Used to record the number of vertices and edges in the space
 // The number of vertices of each tag in the space
@@ -235,6 +241,21 @@ std::vector<HostAddr> MetaKeyUtils::parsePartValV2(folly::StringPiece val) {
   return ret;
 }
 
+std::string MetaKeyUtils::machineKey(std::string addr, Port port) {
+  std::string key;
+  HostAddr h(addr, port);
+  key.append(kMachinesTable.data(), kMachinesTable.size())
+      .append(MetaKeyUtils::serializeHostAddr(h));
+  return key;
+}
+
+const std::string& MetaKeyUtils::machinePrefix() { return kMachinesTable; }
+
+HostAddr MetaKeyUtils::parseMachineKey(folly::StringPiece key) {
+  key.advance(kMachinesTable.size());
+  return MetaKeyUtils::deserializeHostAddr(key);
+}
+
 std::string MetaKeyUtils::hostKey(std::string addr, Port port) { return hostKeyV2(addr, port); }
 
 std::string MetaKeyUtils::hostKeyV2(std::string addr, Port port) {
@@ -265,6 +286,26 @@ HostAddr MetaKeyUtils::parseHostKeyV1(folly::StringPiece key) {
 HostAddr MetaKeyUtils::parseHostKeyV2(folly::StringPiece key) {
   key.advance(kHostsTable.size());
   return MetaKeyUtils::deserializeHostAddr(key);
+}
+
+std::string MetaKeyUtils::versionKey(const HostAddr& h) {
+  std::string key;
+  key.append(kVersionsTable.data(), kVersionsTable.size())
+      .append(MetaKeyUtils::serializeHostAddr(h));
+  return key;
+}
+
+std::string MetaKeyUtils::versionVal(const std::string& version) {
+  std::string val;
+  auto versionLen = version.size();
+  val.reserve(sizeof(int64_t) + versionLen);
+  val.append(reinterpret_cast<const char*>(&version), sizeof(int64_t)).append(version);
+  return val;
+}
+
+std::string MetaKeyUtils::parseVersion(folly::StringPiece val) {
+  auto len = *reinterpret_cast<const size_t*>(val.data());
+  return val.subpiece(sizeof(size_t), len).str();
 }
 
 std::string MetaKeyUtils::leaderKey(std::string addr, Port port) {
@@ -937,29 +978,6 @@ MetaKeyUtils::parseBalanceTaskVal(const folly::StringPiece& rawVal) {
   return std::make_tuple(status, ret, start, end);
 }
 
-std::string MetaKeyUtils::groupKey(const std::string& group) {
-  std::string key;
-  key.reserve(kGroupsTable.size() + group.size());
-  key.append(kGroupsTable.data(), kGroupsTable.size()).append(group);
-  return key;
-}
-
-std::string MetaKeyUtils::groupVal(const std::vector<std::string>& zones) {
-  return folly::join(",", zones);
-}
-
-const std::string& MetaKeyUtils::groupPrefix() { return kGroupsTable; }
-
-std::string MetaKeyUtils::parseGroupName(folly::StringPiece rawData) {
-  return rawData.subpiece(kGroupsTable.size(), rawData.size()).toString();
-}
-
-std::vector<std::string> MetaKeyUtils::parseZoneNames(folly::StringPiece rawData) {
-  std::vector<std::string> zones;
-  folly::split(',', rawData.str(), zones);
-  return zones;
-}
-
 std::string MetaKeyUtils::zoneKey(const std::string& zone) {
   std::string key;
   key.reserve(kZonesTable.size() + zone.size());
@@ -1148,6 +1166,77 @@ std::string MetaKeyUtils::localIdKey(GraphSpaceID spaceId) {
 GraphSpaceID MetaKeyUtils::parseLocalIdSpace(folly::StringPiece rawData) {
   auto offset = kLocalIdTable.size();
   return *reinterpret_cast<const GraphSpaceID*>(rawData.data() + offset);
+}
+
+/**
+ * diskPartsKey = kDiskPartsTable + len(serialized(hostAddr)) + serialized(hostAddr) + path
+ */
+
+HostAddr MetaKeyUtils::parseDiskPartsHost(const folly::StringPiece& rawData) {
+  auto offset = kDiskPartsTable.size();
+  auto hostAddrLen = *reinterpret_cast<const size_t*>(rawData.begin() + offset);
+  offset += sizeof(size_t);
+  std::string hostAddrStr(rawData.data() + offset, hostAddrLen);
+  return deserializeHostAddr(hostAddrStr);
+}
+
+GraphSpaceID MetaKeyUtils::parseDiskPartsSpace(const folly::StringPiece& rawData) {
+  auto offset = kDiskPartsTable.size();
+  size_t hostAddrLen = *reinterpret_cast<const size_t*>(rawData.begin() + offset);
+  offset += sizeof(size_t) + hostAddrLen;
+  return *reinterpret_cast<const GraphSpaceID*>(rawData.begin() + offset);
+}
+
+std::string MetaKeyUtils::parseDiskPartsPath(const folly::StringPiece& rawData) {
+  auto offset = kDiskPartsTable.size();
+  size_t hostAddrLen = *reinterpret_cast<const size_t*>(rawData.begin() + offset);
+  offset += sizeof(size_t) + hostAddrLen + sizeof(GraphSpaceID);
+  std::string path(rawData.begin() + offset, rawData.size() - offset);
+  return path;
+}
+
+std::string MetaKeyUtils::diskPartsPrefix() { return kDiskPartsTable; }
+
+std::string MetaKeyUtils::diskPartsPrefix(HostAddr addr) {
+  std::string key;
+  std::string hostStr = serializeHostAddr(addr);
+  size_t hostAddrLen = hostStr.size();
+  key.reserve(kDiskPartsTable.size() + sizeof(size_t) + hostStr.size());
+  key.append(kDiskPartsTable.data(), kDiskPartsTable.size())
+      .append(reinterpret_cast<const char*>(&hostAddrLen), sizeof(size_t))
+      .append(hostStr.data(), hostStr.size());
+  return key;
+}
+
+std::string MetaKeyUtils::diskPartsPrefix(HostAddr addr, GraphSpaceID spaceId) {
+  std::string key;
+  std::string prefix = diskPartsPrefix(addr);
+  key.reserve(prefix.size() + sizeof(GraphSpaceID));
+  key.append(prefix.data(), prefix.size())
+      .append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
+  return key;
+}
+
+std::string MetaKeyUtils::diskPartsKey(HostAddr addr,
+                                       GraphSpaceID spaceId,
+                                       const std::string& path) {
+  std::string key;
+  std::string prefix = diskPartsPrefix(addr, spaceId);
+  key.reserve(prefix.size() + path.size());
+  key.append(prefix.data(), prefix.size()).append(path.data(), path.size());
+  return key;
+}
+
+std::string MetaKeyUtils::diskPartsVal(const meta::cpp2::PartitionList& partList) {
+  std::string val;
+  apache::thrift::CompactSerializer::serialize(partList, &val);
+  return val;
+}
+
+meta::cpp2::PartitionList MetaKeyUtils::parseDiskPartsVal(const folly::StringPiece& rawData) {
+  meta::cpp2::PartitionList partList;
+  apache::thrift::CompactSerializer::deserialize(rawData, partList);
+  return partList;
 }
 
 }  // namespace nebula

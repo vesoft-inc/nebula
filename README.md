@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://nebula-graph.io/img/nav-nebula-logo.png"/>
+  <img src="https://nebula-website-cn.oss-cn-hangzhou.aliyuncs.com/nebula-website/images/nebulagraph-logo.png"/>
   <br> English | <a href="README-CN.md">中文</a>
   <br>A distributed, scalable, lightning-fast graph database<br>
 </p>
@@ -58,7 +58,7 @@ Please note that you need to install **Nebula Graph**, either by [installing sou
 ## Getting help
 In case you encounter any problems playing around **Nebula Graph**, please reach out for help:
 * [FAQ](https://docs.nebula-graph.io/2.0/2.quick-start/0.FAQ/)
-* [Forum](https://discuss.nebula-graph.io/)
+* [Discussions](https://github.com/vesoft-inc/nebula/discussions)
 
 ## Documentation
 

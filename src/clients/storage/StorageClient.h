@@ -3,8 +3,7 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#ifndef CLIENTS_STORAGE_GRAPHSTORAGECLIENT_H_
-#define CLIENTS_STORAGE_GRAPHSTORAGECLIENT_H_
+#pragma once
 
 #include <gtest/gtest_prod.h>
 
@@ -23,7 +22,7 @@ using StorageRpcRespFuture = folly::SemiFuture<StorageRpcResponse<T>>;
  *
  * The class is NOT reentrant
  */
-class GraphStorageClient : public StorageClientBase<cpp2::GraphStorageServiceAsyncClient> {
+class StorageClient : public StorageClientBase<cpp2::GraphStorageServiceAsyncClient> {
   FRIEND_TEST(StorageClientTest, LeaderChangeTest);
 
  public:
@@ -45,10 +44,10 @@ class GraphStorageClient : public StorageClientBase<cpp2::GraphStorageServiceAsy
     cpp2::RequestCommon toReqCommon() const;
   };
 
-  GraphStorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
-                     meta::MetaClient* metaClient)
+  StorageClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool,
+                meta::MetaClient* metaClient)
       : StorageClientBase<cpp2::GraphStorageServiceAsyncClient>(ioThreadPool, metaClient) {}
-  virtual ~GraphStorageClient() {}
+  virtual ~StorageClient() {}
 
   StorageRpcRespFuture<cpp2::GetNeighborsResponse> getNeighbors(
       const CommonRequestParam& param,
@@ -130,16 +129,29 @@ class GraphStorageClient : public StorageClientBase<cpp2::GraphStorageServiceAsy
   StorageRpcRespFuture<cpp2::GetNeighborsResponse> lookupAndTraverse(
       const CommonRequestParam& param, cpp2::IndexSpec indexSpec, cpp2::TraverseSpec traverseSpec);
 
-  StorageRpcRespFuture<cpp2::ScanEdgeResponse> scanEdge(const CommonRequestParam& param,
-                                                        const cpp2::EdgeProp& vertexProp,
-                                                        int64_t limit,
-                                                        const Expression* filter);
+  StorageRpcRespFuture<cpp2::ScanResponse> scanEdge(const CommonRequestParam& param,
+                                                    const std::vector<cpp2::EdgeProp>& vertexProp,
+                                                    int64_t limit,
+                                                    const Expression* filter);
 
-  StorageRpcRespFuture<cpp2::ScanVertexResponse> scanVertex(
+  StorageRpcRespFuture<cpp2::ScanResponse> scanVertex(
       const CommonRequestParam& param,
       const std::vector<cpp2::VertexProp>& vertexProp,
       int64_t limit,
       const Expression* filter);
+
+  folly::SemiFuture<StorageRpcResponse<cpp2::KVGetResponse>> get(GraphSpaceID space,
+                                                                 std::vector<std::string>&& keys,
+                                                                 bool returnPartly = false,
+                                                                 folly::EventBase* evb = nullptr);
+
+  folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> put(GraphSpaceID space,
+                                                                std::vector<KeyValue> kvs,
+                                                                folly::EventBase* evb = nullptr);
+
+  folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> remove(GraphSpaceID space,
+                                                                   std::vector<std::string> keys,
+                                                                   folly::EventBase* evb = nullptr);
 
  private:
   StatusOr<std::function<const VertexID&(const Row&)>> getIdFromRow(GraphSpaceID space,
@@ -162,5 +174,3 @@ class GraphStorageClient : public StorageClientBase<cpp2::GraphStorageServiceAsy
 
 }  // namespace storage
 }  // namespace nebula
-
-#endif  // CLIENTS_STORAGE_GRAPHSTORAGECLIENT_H_

@@ -17,21 +17,21 @@ Feature: Admin hosts
       """
     Then the result should contain:
       | Host  | Port  | Status   | Role    | Git Info Sha  | Version |
-      | /\w+/ | /\d+/ | "ONLINE" | "GRAPH" | /[0-9a-f]{7}/ | EMPTY   |
+      | /\w+/ | /\d+/ | "ONLINE" | "GRAPH" | /[0-9a-f]{7}/ | /.*/    |
     When executing query:
       """
       SHOW HOSTS META;
       """
     Then the result should contain:
       | Host  | Port  | Status   | Role   | Git Info Sha  | Version |
-      | /\w+/ | /\d+/ | "ONLINE" | "META" | /[0-9a-f]{7}/ | EMPTY   |
+      | /\w+/ | /\d+/ | "ONLINE" | "META" | /[0-9a-f]{7}/ | /.*/    |
     When executing query:
       """
       SHOW HOSTS STORAGE;
       """
     Then the result should contain:
       | Host  | Port  | Status   | Role      | Git Info Sha  | Version |
-      | /\w+/ | /\d+/ | "ONLINE" | "STORAGE" | /[0-9a-f]{7}/ | EMPTY   |
+      | /\w+/ | /\d+/ | "ONLINE" | "STORAGE" | /[0-9a-f]{7}/ | /.*/    |
 
   Scenario: Create space
     When executing query:
@@ -46,12 +46,12 @@ Feature: Admin hosts
     Then a SemanticError should be raised at runtime: space vid_type must be specified explicitly
     When executing query:
       """
-      CREATE SPACE space_without_vid_type(partition_num=9, replica_factor=3) on group_0;
+      CREATE SPACE space_without_vid_type(partition_num=9, replica_factor=3) on "default_zone";
       """
     Then a SemanticError should be raised at runtime: space vid_type must be specified explicitly
     When executing query:
       """
-      CREATE SPACE space_without_vid_type on group_0;
+      CREATE SPACE space_without_vid_type on "default_zone";
       """
     Then a SemanticError should be raised at runtime: space vid_type must be specified explicitly
     When executing query:

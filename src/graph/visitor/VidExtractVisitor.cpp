@@ -5,6 +5,8 @@
 
 #include "graph/visitor/VidExtractVisitor.h"
 
+#include "graph/util/ExpressionUtils.h"
+
 namespace nebula {
 namespace graph {
 

@@ -20,6 +20,8 @@ reserved_key_words = [
     'KW_XOR',
     'KW_USE',
     'KW_SET',
+    'KW_LIST',
+    'KW_MAP',
     'KW_FROM',
     'KW_WHERE',
     'KW_MATCH',
@@ -109,6 +111,10 @@ reserved_key_words = [
     'KW_EXPLAIN',
     'KW_UNWIND',
     'KW_CASE',
+    'KW_HOSTS',
+    'KW_ZONE',
+    'KW_ZONES',
+    'KW_RENAME',
 ]
 
 

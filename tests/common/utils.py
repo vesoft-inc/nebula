@@ -249,13 +249,11 @@ def step_to_string(step):
 
 
 def path_to_string(path):
-    return vertex_to_string(path.src) \
-        + ''.join(map(step_to_string, path.steps))
+    return vertex_to_string(path.src) + ''.join(map(step_to_string, path.steps))
 
 
 def dataset_to_string(dataset):
-    column_names = ','.join(
-        map(lambda x: x.decode('utf-8'), dataset.column_names))
+    column_names = ','.join(map(lambda x: x.decode('utf-8'), dataset.column_names))
     rows = '\n'.join(map(row_to_string, dataset.rows))
     return '\n'.join([column_names, rows])
 

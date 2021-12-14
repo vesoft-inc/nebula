@@ -110,6 +110,12 @@ class MetaKeyUtils final {
 
   static std::vector<HostAddr> parsePartValV2(folly::StringPiece val);
 
+  static std::string machineKey(std::string ip, Port port);
+
+  static const std::string& machinePrefix();
+
+  static HostAddr parseMachineKey(folly::StringPiece key);
+
   static std::string hostKey(std::string ip, Port port);
 
   static std::string hostKeyV2(std::string addr, Port port);
@@ -121,6 +127,12 @@ class MetaKeyUtils final {
   static HostAddr parseHostKeyV1(folly::StringPiece key);
 
   static HostAddr parseHostKeyV2(folly::StringPiece key);
+
+  static std::string versionKey(const HostAddr& h);
+
+  static std::string versionVal(const std::string& version);
+
+  static std::string parseVersion(folly::StringPiece val);
 
   static std::string leaderKey(std::string ip, Port port);
 
@@ -280,16 +292,6 @@ class MetaKeyUtils final {
   static std::tuple<BalanceTaskStatus, BalanceTaskResult, int64_t, int64_t> parseBalanceTaskVal(
       const folly::StringPiece& rawVal);
 
-  static std::string groupKey(const std::string& group);
-
-  static std::string groupVal(const std::vector<std::string>& zones);
-
-  static const std::string& groupPrefix();
-
-  static std::string parseGroupName(folly::StringPiece rawData);
-
-  static std::vector<std::string> parseZoneNames(folly::StringPiece rawData);
-
   static std::string zoneKey(const std::string& zone);
 
   static std::string zoneVal(const std::vector<HostAddr>& hosts);
@@ -375,6 +377,24 @@ class MetaKeyUtils final {
   static std::unordered_map<std::string, std::pair<std::string, bool>> getSystemInfoMaps();
 
   static std::unordered_map<std::string, std::pair<std::string, bool>> getSystemTableMaps();
+
+  static GraphSpaceID parseDiskPartsSpace(const folly::StringPiece& rawData);
+
+  static HostAddr parseDiskPartsHost(const folly::StringPiece& rawData);
+
+  static std::string parseDiskPartsPath(const folly::StringPiece& rawData);
+
+  static std::string diskPartsPrefix();
+
+  static std::string diskPartsPrefix(HostAddr addr);
+
+  static std::string diskPartsPrefix(HostAddr addr, GraphSpaceID spaceId);
+
+  static std::string diskPartsKey(HostAddr addr, GraphSpaceID spaceId, const std::string& path);
+
+  static std::string diskPartsVal(const meta::cpp2::PartitionList& partList);
+
+  static meta::cpp2::PartitionList parseDiskPartsVal(const folly::StringPiece& rawData);
 };
 
 }  // namespace nebula
