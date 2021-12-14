@@ -1,10 +1,9 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
+/* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License.
  */
 
-#ifndef GRAPH_VISITOR_CHECKDEPTHVISITOR_H_
-#define GRAPH_VISITOR_CHECKDEPTHVISITOR_H_
+#pragma once
 
 #include "common/base/Status.h"
 #include "common/datatypes/Value.h"
@@ -95,5 +94,3 @@ class CheckDepthVisitor final : public ExprVisitor {
 
 }  // namespace graph
 }  // namespace nebula
-
-#endif  // GRAPH_VISITOR_CHECKDEPTHVISITOR_H_
