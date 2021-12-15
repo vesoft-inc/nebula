@@ -59,7 +59,7 @@ Feature: Index selecting for match statement
       | 0  | Start          |              |                                                     |
     When profiling query:
       """
-      MATCH (v:player) WHERE v.name == "Tim Duncan" and v.name < "Zom" RETURN v.name AS name
+      MATCH (v:player) WHERE v.player.name == "Tim Duncan" and v.player.name < "Zom" RETURN v.player.name AS name
       """
     Then the result should be, in any order, with relax comparison:
       | name         |
@@ -73,7 +73,7 @@ Feature: Index selecting for match statement
       | 0  | Start          |              |                                                     |
     When profiling query:
       """
-      MATCH (v:player) WHERE v.name=="Tim Duncan" and v.age>4 and v.name>"A" RETURN v.name AS name
+      MATCH (v:player) WHERE v.player.name=="Tim Duncan" and v.player.age>4 and v.player.name>"A" RETURN v.player.name AS name
       """
     Then the result should be, in any order, with relax comparison:
       | name         |
@@ -87,7 +87,7 @@ Feature: Index selecting for match statement
       | 0  | Start          |              |                                                     |
     When profiling query:
       """
-      MATCH (v:player{name:"Tim Duncan"}) WHERE v.name < "Zom" RETURN v.name AS name
+      MATCH (v:player{name:"Tim Duncan"}) WHERE v.player.name < "Zom" RETURN v.player.name AS name
       """
     Then the result should be, in any order, with relax comparison:
       | name         |
