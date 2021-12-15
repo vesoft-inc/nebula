@@ -717,8 +717,17 @@ class ShowSessionsSentence final : public Sentence {
     setSessionId_ = true;
   }
 
+  explicit ShowSessionsSentence(bool isLocalCommand) {
+    kind_ = Kind::kShowSessions;
+    isLocalCommand_ = isLocalCommand;
+  }
+
   bool isSetSessionID() const {
     return setSessionId_;
+  }
+
+  bool isLocalCommand() const {
+    return isLocalCommand_;
   }
 
   SessionID getSessionID() const {
@@ -730,6 +739,7 @@ class ShowSessionsSentence final : public Sentence {
  private:
   SessionID sessionId_{0};
   bool setSessionId_{false};
+  bool isLocalCommand_{false};
 };
 
 class ShowQueriesSentence final : public Sentence {
