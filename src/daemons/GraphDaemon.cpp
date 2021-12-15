@@ -113,6 +113,13 @@ int main(int argc, char *argv[]) {
   }
   nebula::HostAddr localhost{FLAGS_local_ip, FLAGS_port};
 
+  // load the time zone data
+  status = nebula::time::Timezone::init();
+  if (!status.ok()) {
+    LOG(ERROR) << status;
+    return EXIT_FAILURE;
+  }
+
   // Initialize the global timezone, it's only used for datetime type compute
   // won't affect the process timezone.
   status = nebula::time::Timezone::initializeGlobalTimezone();

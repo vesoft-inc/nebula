@@ -769,6 +769,82 @@ Feature: Insert string vid of vertex and edge
       ALTER EDGE edge_not_null_default1 CHANGE (name FIXED_STRING(10) DEFAULT 10)
       """
     Then a ExecutionError should be raised at runtime: Invalid param!
+    # chinese tag without quote mark
+    When executing query:
+      """
+      CREATE TAG 队伍withoutQuote( 名字 string);
+      """
+    Then the execution should be successful
+    # chinese tag and chinese prop
+    When executing query:
+      """
+      CREATE TAG `队伍`(`名字` string);
+      """
+    Then the execution should be successful
+    # show chinese tags
+    When executing query:
+      """
+      SHOW TAGS
+      """
+    Then the result should contain:
+      | Name   |
+      | "队伍" |
+    # alter chinese tag
+    When executing query:
+      """
+      ALTER TAG `队伍` ADD (`类别` string);
+      """
+    Then the execution should be successful
+    # desc chinese tag
+    When executing query:
+      """
+      DESCRIBE TAG `队伍`
+      """
+    Then the result should be, in any order:
+      | Field  | Type     | Null  | Default | Comment |
+      | "名字" | "string" | "YES" | EMPTY   | EMPTY   |
+      | "类别" | "string" | "YES" | EMPTY   | EMPTY   |
+    # chinese edge and chinese prop
+    When executing query:
+      """
+      CREATE EDGE `服役`();
+      """
+    Then the execution should be successful
+    # show chinese edge
+    When executing query:
+      """
+      SHOW EDGES;
+      """
+    Then the result should contain:
+      | Name   |
+      | "服役" |
+    # alter chinese edge
+    When executing query:
+      """
+      ALTER EDGE `服役` ADD (`时间` timestamp);
+      """
+    Then the execution should be successful
+    # desc chinese edge
+    When executing query:
+      """
+      DESCRIBE EDGE `服役`
+      """
+    Then the result should be, in any order:
+      | Field  | Type        | Null  | Default | Comment |
+      | "时间" | "timestamp" | "YES" | EMPTY   | EMPTY   |
+    When executing query:
+      """
+      CREATE TAG `队伍 s2；`(`名s字ss1` string);
+      """
+    Then the execution should be successful
+    # desc cn-en mixed tag
+    When executing query:
+      """
+      DESCRIBE TAG `队伍 s2；`
+      """
+    Then the result should be, in any order:
+      | Field      | Type     | Null  | Default | Comment |
+      | "名s字ss1" | "string" | "YES" | EMPTY   | EMPTY   |
     When executing query:
       """
       DROP SPACE issue2009;

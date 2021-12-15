@@ -91,9 +91,9 @@ std::string CreateSpaceSentence::toString() const {
     buf += spaceOpts_->toString();
     buf += ")";
   }
-  if (groupName_ != nullptr) {
+  if (zoneNames_ != nullptr) {
     buf += " ON ";
-    buf += *groupName_;
+    buf += zoneNames_->toString();
   }
   if (comment_ != nullptr) {
     buf += " comment = \"";

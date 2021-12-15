@@ -7,6 +7,7 @@
 
 #include "common/base/Base.h"
 #include "common/fs/TempDir.h"
+#include "common/utils/MetaKeyUtils.h"
 #include "meta/processors/admin/HBProcessor.h"
 #include "meta/test/TestUtils.h"
 
@@ -16,6 +17,17 @@ namespace meta {
 TEST(HBProcessorTest, HBTest) {
   fs::TempDir rootPath("/tmp/HBTest.XXXXXX");
   std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
+
+  std::vector<kvstore::KV> machines;
+  for (auto i = 0; i < 5; i++) {
+    machines.emplace_back(nebula::MetaKeyUtils::machineKey(std::to_string(i), i), "");
+  }
+
+  folly::Baton<true, std::atomic> baton;
+  kv->asyncMultiPut(
+      kDefaultSpaceId, kDefaultPartId, std::move(machines), [&](auto) { baton.post(); });
+  baton.wait();
+
   const ClusterID kClusterId = 10;
   {
     for (auto i = 0; i < 5; i++) {
@@ -48,7 +60,7 @@ TEST(HBProcessorTest, HBTest) {
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
-    ASSERT_EQ(nebula::cpp2::ErrorCode::E_WRONGCLUSTER, resp.get_code());
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_MACHINE_NOT_FOUND, resp.get_code());
   }
 }
 

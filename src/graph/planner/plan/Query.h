@@ -35,11 +35,7 @@ class Explore : public SingleInputNode {
   bool dedup() const { return dedup_; }
 
   // Get the constant limit value
-  int64_t limit() const {
-    QueryExpressionContext ctx;
-    DCHECK(ExpressionUtils::isEvaluableExpr(limit_));
-    return DCHECK_NOTNULL(limit_)->eval(ctx).getInt();
-  }
+  int64_t limit() const;
 
   // Get the limit value in runtime
   int64_t limit(QueryExpressionContext& ctx) const {
@@ -469,6 +465,124 @@ class IndexScan : public Explore {
 };
 
 /**
+ * Scan vertices
+ */
+class ScanVertices final : public Explore {
+ public:
+  static ScanVertices* make(QueryContext* qctx,
+                            PlanNode* input,
+                            GraphSpaceID space,
+                            std::unique_ptr<std::vector<VertexProp>>&& props = nullptr,
+                            std::unique_ptr<std::vector<Expr>>&& exprs = nullptr,
+                            bool dedup = false,
+                            std::vector<storage::cpp2::OrderBy> orderBy = {},
+                            int64_t limit = -1,
+                            Expression* filter = nullptr) {
+    return qctx->objPool()->add(new ScanVertices(qctx,
+                                                 input,
+                                                 space,
+                                                 std::move(props),
+                                                 std::move(exprs),
+                                                 dedup,
+                                                 std::move(orderBy),
+                                                 limit,
+                                                 filter));
+  }
+
+  const std::vector<VertexProp>* props() const { return props_.get(); }
+
+  const std::vector<Expr>* exprs() const { return exprs_.get(); }
+
+  void setVertexProps(std::unique_ptr<std::vector<VertexProp>> props) { props_ = std::move(props); }
+
+  void setExprs(std::unique_ptr<std::vector<Expr>> exprs) { exprs_ = std::move(exprs); }
+
+  PlanNode* clone() const override;
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
+ private:
+  ScanVertices(QueryContext* qctx,
+               PlanNode* input,
+               GraphSpaceID space,
+               std::unique_ptr<std::vector<VertexProp>>&& props,
+               std::unique_ptr<std::vector<Expr>>&& exprs,
+               bool dedup,
+               std::vector<storage::cpp2::OrderBy> orderBy,
+               int64_t limit,
+               Expression* filter)
+      : Explore(qctx, Kind::kScanVertices, input, space, dedup, limit, filter, std::move(orderBy)),
+        props_(std::move(props)),
+        exprs_(std::move(exprs)) {}
+
+  void cloneMembers(const ScanVertices&);
+
+ private:
+  // props of the vertex
+  std::unique_ptr<std::vector<VertexProp>> props_;
+  // expression to get
+  std::unique_ptr<std::vector<Expr>> exprs_;
+};
+
+/**
+ * Scan edges
+ */
+class ScanEdges final : public Explore {
+ public:
+  static ScanEdges* make(QueryContext* qctx,
+                         PlanNode* input,
+                         GraphSpaceID space,
+                         std::unique_ptr<std::vector<EdgeProp>>&& props = nullptr,
+                         std::unique_ptr<std::vector<Expr>>&& exprs = nullptr,
+                         bool dedup = false,
+                         int64_t limit = -1,
+                         std::vector<storage::cpp2::OrderBy> orderBy = {},
+                         Expression* filter = nullptr) {
+    return qctx->objPool()->add(new ScanEdges(qctx,
+                                              input,
+                                              space,
+                                              std::move(props),
+                                              std::move(exprs),
+                                              dedup,
+                                              limit,
+                                              std::move(orderBy),
+                                              filter));
+  }
+
+  const std::vector<EdgeProp>* props() const { return props_.get(); }
+
+  const std::vector<Expr>* exprs() const { return exprs_.get(); }
+
+  void setEdgeProps(std::unique_ptr<std::vector<EdgeProp>> props) { props_ = std::move(props); }
+
+  void setExprs(std::unique_ptr<std::vector<Expr>> exprs) { exprs_ = std::move(exprs); }
+
+  PlanNode* clone() const override;
+  std::unique_ptr<PlanNodeDescription> explain() const override;
+
+ private:
+  ScanEdges(QueryContext* qctx,
+            PlanNode* input,
+            GraphSpaceID space,
+            std::unique_ptr<std::vector<EdgeProp>>&& props,
+            std::unique_ptr<std::vector<Expr>>&& exprs,
+            bool dedup,
+            int64_t limit,
+            std::vector<storage::cpp2::OrderBy> orderBy,
+            Expression* filter)
+      : Explore(qctx, Kind::kScanEdges, input, space, dedup, limit, filter, std::move(orderBy)),
+        props_(std::move(props)),
+        exprs_(std::move(exprs)) {}
+
+  void cloneMembers(const ScanEdges&);
+
+ private:
+  // props of edge to get
+  std::unique_ptr<std::vector<EdgeProp>> props_;
+  // expression to show
+  std::unique_ptr<std::vector<Expr>> exprs_;
+};
+
+/**
  * A Filter node helps filt some records with condition.
  */
 class Filter final : public SingleInputNode {
@@ -682,17 +796,7 @@ class Limit final : public SingleInputNode {
   int64_t offset() const { return offset_; }
 
   // Get constant count value
-  int64_t count() const {
-    if (count_ == nullptr) {
-      return -1;
-    }
-    DCHECK(ExpressionUtils::isEvaluableExpr(count_));
-    QueryExpressionContext ctx;
-    auto s = count_->eval(ctx).getInt();
-    DCHECK_GE(s, 0);
-    return s;
-  }
-
+  int64_t count() const;
   // Get count in runtime
   int64_t count(QueryExpressionContext& ctx) const {
     if (count_ == nullptr) {
@@ -801,13 +905,7 @@ class Sample final : public SingleInputNode {
   }
 
   // Get constant count
-  int64_t count() const {
-    DCHECK(ExpressionUtils::isEvaluableExpr(count_));
-    QueryExpressionContext qec;
-    auto count = count_->eval(qec).getInt();
-    DCHECK_GE(count, 0);
-    return count;
-  }
+  int64_t count() const;
 
   // Get Runtime count
   int64_t count(QueryExpressionContext& qec) const {
