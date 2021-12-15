@@ -194,10 +194,13 @@ void DeducePropsVisitor::visit(VertexExpression *expr) {
     for (const auto &tag : tagStatus.value()) {
       tagIds.emplace_back(tag.first);
     }
-    tagIds_ = &tagIds;
+  } else {
+    for (const auto &tagID : *tagIds_) {
+      tagIds.emplace_back(tagID);
+    }
   }
   const auto &colName = expr->name();
-  for (const auto &tagID : *tagIds_) {
+  for (const auto &tagID : tagIds) {
     const auto &tagSchema = qctx_->schemaMng()->getTagSchema(space_, tagID);
     if (colName == "$^") {
       exprProps_->insertSrcTagProp(tagID, nebula::kTag);
