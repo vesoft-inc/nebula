@@ -19,7 +19,7 @@ extern stats::CounterId kNumQueries;
 extern stats::CounterId kNumActiveQueries;
 extern stats::CounterId kNumSlowQueries;
 extern stats::CounterId kNumQueryErrors;
-extern stats::CounterId kNumQueryErrosLeaderChanges;
+extern stats::CounterId kNumQueryErrorsLeaderChanges;
 extern stats::CounterId kNumSentences;
 extern stats::CounterId kQueryLatencyUs;
 extern stats::CounterId kSlowQueryLatencyUs;

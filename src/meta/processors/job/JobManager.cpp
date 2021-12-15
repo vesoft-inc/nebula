@@ -34,7 +34,7 @@ using nebula::kvstore::KVIterator;
 
 namespace nebula {
 namespace meta {
-stats::CounterId kNumRunningJobs = stats::StatsManager::registerStats("num_running_jobs", "sum");
+stats::CounterId kNumRunningJobs;
 
 JobManager* JobManager::getInstance() {
   static JobManager inst;

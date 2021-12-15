@@ -16,6 +16,7 @@ namespace nebula {
 namespace storage {
 
 extern ProcessorCounters kAddVerticesCounters;
+extern stats::CounterId kNumVerticesInserted;
 
 class AddVerticesProcessor : public BaseProcessor<cpp2::ExecResponse> {
  public:

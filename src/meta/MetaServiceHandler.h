@@ -11,6 +11,8 @@
 #include "kvstore/KVStore.h"
 #include "meta/processors/admin/AdminClient.h"
 #include "meta/processors/admin/HBProcessor.h"
+#include "meta/processors/job/AdminJobProcessor.h"
+#include "meta/processors/job/JobManager.h"
 
 namespace nebula {
 namespace meta {
@@ -23,6 +25,8 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
 
     // Initialize counters
     kHBCounters.init();
+    kNumActiveJobs = stats::StatsManager::registerStats("num_active_jobs", "sum");
+    kNumRunningJobs = stats::StatsManager::registerStats("num_running_jobs", "sum");
   }
 
   /**

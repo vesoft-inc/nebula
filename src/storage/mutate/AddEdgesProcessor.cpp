@@ -8,6 +8,7 @@
 #include <algorithm>
 
 #include "codec/RowWriterV2.h"
+#include "common/stats/StatsManager.h"
 #include "common/time/WallClock.h"
 #include "common/utils/IndexKeyUtils.h"
 #include "common/utils/NebulaKeyUtils.h"
@@ -17,6 +18,7 @@ namespace nebula {
 namespace storage {
 
 ProcessorCounters kAddEdgesCounters;
+stats::CounterId kNumEdgesInserted;
 
 void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
   spaceId_ = req.get_space_id();
@@ -141,6 +143,7 @@ void AddEdgesProcessor::doProcess(const cpp2::AddEdgesRequest& req) {
             });
       } else {
         doPut(spaceId_, partId, std::move(data));
+        stats::StatsManager::addValue(kNumEdgesInserted, data.size());
       }
     }
   }
@@ -302,6 +305,7 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
         break;
       }
       batchHolder->put(std::move(key), std::move(retEnc.value()));
+      stats::StatsManager::addValue(kNumEdgesInserted);
     }
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
       env_->edgesML_->unlockBatch(dummyLock);

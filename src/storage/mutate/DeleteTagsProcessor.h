@@ -15,6 +15,7 @@ namespace nebula {
 namespace storage {
 
 extern ProcessorCounters kDelTagsCounters;
+extern stats::CounterId kNumTagsDeleted;
 
 class DeleteTagsProcessor : public BaseProcessor<cpp2::ExecResponse> {
  public:

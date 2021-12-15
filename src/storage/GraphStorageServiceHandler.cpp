@@ -63,6 +63,12 @@ GraphStorageServiceHandler::GraphStorageServiceHandler(StorageEnv* env) : env_(e
   kPutCounters.init("kv_put");
   kGetCounters.init("kv_get");
   kRemoveCounters.init("kv_remove");
+
+  kNumVerticesInserted = stats::StatsManager::registerStats("num_vertices_inserted", "rate, sum");
+  kNumEdgesInserted = stats::StatsManager::registerStats("num_edges_inserted", "rate, sum");
+  kNumEdgesDeleted = stats::StatsManager::registerStats("num_edges_deleted", "rate, sum");
+  kNumTagsDeleted = stats::StatsManager::registerStats("num_tags_deleted", "rate, sum");
+  kNumVerticesDeleted = stats::StatsManager::registerStats("num_vertices_deleted", "rate, sum");
 }
 
 // Vertice section

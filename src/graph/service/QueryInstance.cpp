@@ -135,7 +135,8 @@ void QueryInstance::onError(Status status) {
       rctx->resp().errorCode = ErrorCode::E_BAD_PERMISSION;
       break;
     case Status::Code::kLeaderChanged:
-      stats::StatsManager::addValue(kNumQueryErrosLeaderChanges);
+      stats::StatsManager::addValue(kNumQueryErrorsLeaderChanges);
+      [[fallthrough]];
     case Status::Code::kBalanced:
     case Status::Code::kEdgeNotFound:
     case Status::Code::kError:

@@ -20,7 +20,7 @@ stats::CounterId kNumQueries;
 stats::CounterId kNumActiveQueries;
 stats::CounterId kNumSlowQueries;
 stats::CounterId kNumQueryErrors;
-stats::CounterId kNumQueryErrosLeaderChanges;
+stats::CounterId kNumQueryErrorsLeaderChanges;
 stats::CounterId kNumSentences;
 stats::CounterId kQueryLatencyUs;
 stats::CounterId kSlowQueryLatencyUs;
@@ -49,7 +49,7 @@ void initCounters() {
   kNumSlowQueries = stats::StatsManager::registerStats("num_slow_queries", "rate, sum");
   kNumSentences = stats::StatsManager::registerStats("num_sentences", "rate, sum");
   kNumQueryErrors = stats::StatsManager::registerStats("num_query_errors", "rate, sum");
-  kNumQueryErrosLeaderChanges =
+  kNumQueryErrorsLeaderChanges =
       stats::StatsManager::registerStats("num_query_errors_leader_changes", "rate, sum");
   kQueryLatencyUs = stats::StatsManager::registerHisto(
       "query_latency_us", 1000, 0, 2000, "avg, p75, p95, p99, p999");
