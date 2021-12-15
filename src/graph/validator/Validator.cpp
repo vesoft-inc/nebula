@@ -353,13 +353,12 @@ StatusOr<Value::Type> Validator::deduceExprType(const Expression* expr) const {
   return visitor.type();
 }
 
-Status Validator::checkExprDepth(const Expression* expr) const {
-  CheckDepthVisitor visitor;
-  const_cast<Expression*>(expr)->accept(&visitor);
-  return std::move(visitor).status();
-}
-
 Status Validator::deduceProps(const Expression* expr, ExpressionProps& exprProps) {
+  CheckDepthVisitor check_depth_visitor;
+  const_cast<Expression*>(expr)->accept(&check_depth_visitor);
+  if (!check_depth_visitor.ok()) {
+    return std::move(check_depth_visitor).status();
+  }
   DeducePropsVisitor visitor(qctx_, space_.id, &exprProps, &userDefinedVarNameList_);
   const_cast<Expression*>(expr)->accept(&visitor);
   return std::move(visitor).status();

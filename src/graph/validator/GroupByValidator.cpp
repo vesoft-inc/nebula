@@ -108,7 +108,6 @@ Status GroupByValidator::validateGroup(const GroupClause* groupClause) {
       return Status::SemanticError("Group `%s' invalid", col->expr()->toString().c_str());
     }
 
-    NG_RETURN_IF_ERROR(checkExprDepth(col->expr()));
     NG_RETURN_IF_ERROR(deduceExprType(col->expr()));
     NG_RETURN_IF_ERROR(deduceProps(col->expr(), exprProps_));
 
@@ -146,7 +145,6 @@ Status GroupByValidator::groupClauseSemanticCheck() {
   // deduce group items and build outputs_
   DCHECK_EQ(aggOutputColNames_.size(), groupItems_.size());
   for (auto i = 0u; i < groupItems_.size(); ++i) {
-    NG_RETURN_IF_ERROR(checkExprDepth(groupItems_[i]));
     auto type = deduceExprType(groupItems_[i]);
     NG_RETURN_IF_ERROR(type);
     outputs_.emplace_back(aggOutputColNames_[i], std::move(type).value());

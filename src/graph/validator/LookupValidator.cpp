@@ -118,7 +118,6 @@ Status LookupValidator::validateYieldEdge() {
     }
     col->setExpr(ExpressionUtils::rewriteLabelAttr2EdgeProp(col->expr()));
     NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(col->expr()));
-    NG_RETURN_IF_ERROR(checkExprDepth(col->expr()));
 
     auto colExpr = col->expr();
     auto typeStatus = deduceExprType(colExpr);
@@ -149,7 +148,6 @@ Status LookupValidator::validateYieldTag() {
     }
     col->setExpr(ExpressionUtils::rewriteLabelAttr2TagProp(col->expr()));
     NG_RETURN_IF_ERROR(ValidateUtil::invalidLabelIdentifiers(col->expr()));
-    NG_RETURN_IF_ERROR(checkExprDepth(col->expr()));
 
     auto colExpr = col->expr();
     auto typeStatus = deduceExprType(colExpr);
@@ -211,7 +209,6 @@ Status LookupValidator::validateFilter() {
     NG_RETURN_IF_ERROR(ret);
     lookupCtx_->filter = std::move(ret).value();
     // Make sure the type of the rewritted filter expr is right
-    NG_RETURN_IF_ERROR(checkExprDepth(lookupCtx_->filter));
     NG_RETURN_IF_ERROR(deduceExprType(lookupCtx_->filter));
   }
   NG_RETURN_IF_ERROR(deduceProps(lookupCtx_->filter, exprProps_));
