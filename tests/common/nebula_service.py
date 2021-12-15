@@ -18,6 +18,8 @@ from pathlib import Path
 from contextlib import closing
 
 from tests.common.constants import TMP_DIR
+from nebula2.gclient.net import ConnectionPool
+from nebula2.Config import Config
 
 NEBULA_START_COMMAND_FORMAT = "bin/nebula-{} --flagfile conf/nebula-{}.conf {}"
 
@@ -128,6 +130,8 @@ class NebulaService(object):
         self.all_processes = []
         self.all_ports = []
         self.metad_param, self.storaged_param, self.graphd_param = {}, {}, {}
+        self.storaged_port = 0
+        self.graphd_port = 0
         self.ca_signed = ca_signed
         self.debug_log = debug_log
         self.ports_per_process = 4
@@ -161,6 +165,8 @@ class NebulaService(object):
             )
             self.storaged_processes.append(storaged)
             index += self.ports_per_process
+            if suffix_index == 0:
+                self.storaged_port = self.all_ports[0]
 
         for suffix_index in range(self.graphd_num):
             graphd = NebulaProcess(
@@ -171,6 +177,8 @@ class NebulaService(object):
             )
             self.graphd_processes.append(graphd)
             index += self.ports_per_process
+            if suffix_index == 0:
+                self.graphd_port = self.all_ports[0]
 
         self.all_processes = (
             self.metad_processes + self.storaged_processes + self.graphd_processes
@@ -232,10 +240,11 @@ class NebulaService(object):
                 self.work_dir + '/conf/{}.conf'.format(item),
             )
 
-        # gflags.json
         resources_dir = self.work_dir + '/share/resources/'
         os.makedirs(resources_dir)
 
+        # timezone file
+        shutil.copy(self.build_dir + '/../resources/date_time_zonespec.csv', resources_dir)
         shutil.copy(self.build_dir + '/../resources/gflags.json', resources_dir)
         # cert files
         shutil.copy(self.src_dir + '/tests/cert/test.ca.key', resources_dir)
@@ -348,6 +357,23 @@ class NebulaService(object):
         start_time = time.time()
         for p in self.all_processes:
             p.start()
+
+        time.sleep(3)
+        config = Config()
+        config.max_connection_pool_size = 20
+        config.timeout = 60000
+        # init connection pool
+        client_pool = ConnectionPool()
+        # assert client_pool.init([("127.0.0.1", int(self.graphd_port))], config)
+        assert client_pool.init([("127.0.0.1", self.graphd_processes[0].tcp_port)], config)
+
+        cmd = "ADD HOSTS 127.0.0.1:" + str(self.storaged_processes[0].tcp_port) + " INTO NEW ZONE \"default_zone\""
+        print(cmd)
+
+        # get session from the pool
+        client = client_pool.get_session('root', 'nebula')
+        resp = client.execute(cmd)
+        client.release()
 
         # wait nebula start
         server_ports = [p.tcp_port for p in self.all_processes]

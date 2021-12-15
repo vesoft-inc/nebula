@@ -7,7 +7,6 @@
 
 #include "common/base/Base.h"
 #include "common/expression/Expression.h"
-#include "graph/util/ExpressionUtils.h"
 #include "interface/gen-cpp2/storage_types.h"
 
 namespace nebula {
@@ -275,14 +274,7 @@ class YieldColumns final {
 
   YieldColumn *back() { return columns_.back().get(); }
 
-  bool hasAgg() const {
-    for (auto &col : columns_) {
-      if (graph::ExpressionUtils::findAny(col->expr(), {Expression::Kind::kAggregate})) {
-        return true;
-      }
-    }
-    return false;
-  }
+  bool hasAgg() const;
 
  private:
   std::vector<std::unique_ptr<YieldColumn>> columns_;

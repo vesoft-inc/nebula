@@ -755,6 +755,34 @@ Feature: Go Sentence
     Then a SemanticError should be raised at runtime: `$a.id', not exist variable `a'
     When executing query:
       """
+      $A = GO FROM 'Tim Duncan' OVER like YIELD like._dst AS dst;
+       $B = GO FROM $A.dst OVER like YIELD like._dst AS dst;
+        GO FROM $A.dst over like YIELD like._dst AS dst, $B.dst
+      """
+    Then a SemanticError should be raised at runtime: A variable must be referred in FROM before used in WHERE or YIELD
+    When executing query:
+      """
+      $A = GO FROM 'Tim Duncan' OVER like YIELD like._dst AS dst;
+       $B = GO FROM $A.dst OVER like YIELD like._dst AS dst;
+        GO FROM $A.dst over like WHERE $B.dst > "A" YIELD like._dst AS dst
+      """
+    Then a SemanticError should be raised at runtime: A variable must be referred in FROM before used in WHERE or YIELD
+    When executing query:
+      """
+      $A = GO FROM 'Tim Duncan' OVER like YIELD like._dst AS dst;
+       $B = GO FROM $A.dst OVER like YIELD like._dst AS dst;
+        GO FROM $A.dst over like YIELD like._dst AS dst, $B.dst, $A.dst
+      """
+    Then a SemanticError should be raised at runtime: Multiple variable property is not supported in WHERE or YIELD
+    When executing query:
+      """
+      $A = GO FROM 'Tim Duncan' OVER like YIELD like._dst AS dst;
+       $B = GO FROM $A.dst OVER like YIELD like._dst AS dst;
+        GO FROM $A.dst over like WHERE $A.dst > "A" and $B.dst > "B" YIELD like._dst
+      """
+    Then a SemanticError should be raised at runtime: Multiple variable property is not supported in WHERE or YIELD
+    When executing query:
+      """
       RETURN $rA IF $rA IS NOT NULL;
       """
     Then a SemanticError should be raised at runtime: `$a.id', not exist variable `a'
@@ -1771,35 +1799,37 @@ Feature: Go Sentence
     Then the result should be, in any order:
       | serve._dst |
 
-  @skip
   Scenario: go step limit
     When executing query:
       """
-      GO FROM "Tim Duncan" OVER like LIMIT [10,10] YIELD like._dst;
+      GO FROM "Tim Duncan" OVER like YIELD like._dst LIMIT [10,10];
       """
     Then a SemanticError should be raised at runtime:
     When executing query:
       """
-      GO FROM "Tim Duncan" OVER like LIMIT ["10"] YIELD like._dst;
+      GO FROM "Tim Duncan" OVER like YIELD like._dst LIMIT ["10"];
       """
     Then a SemanticError should be raised at runtime:
     When executing query:
       """
-      GO FROM "Tim Duncan" OVER like LIMIT [a] YIELD like._dst;
+      GO FROM "Tim Duncan" OVER like YIELD like._dst LIMIT [a];
       """
     Then a SemanticError should be raised at runtime:
     When executing query:
       """
-      GO FROM "Tim Duncan" OVER like LIMIT [1] YIELD like._dst;
+      GO FROM "Tim Duncan" OVER like YIELD like._dst LIMIT [1];
       """
     Then the result should be, in any order, with relax comparison:
       | like._dst |
+      | /[\s\w]+/ |
     When executing query:
       """
-      GO 3 STEPS FROM "Tim Duncan" OVER like LIMIT [1, 2, 2] YIELD like._dst;
+      GO 3 STEPS FROM "Tim Duncan" OVER like YIELD like._dst LIMIT [1, 2, 2];
       """
     Then the result should be, in any order, with relax comparison:
       | like._dst |
+      | /[\s\w]+/ |
+      | /[\s\w]+/ |
 
   @skip
   Scenario: go step filter & step limit
@@ -1812,6 +1842,53 @@ Feature: Go Sentence
     When executing query:
       """
       GO 3 STEPS FROM "Tim Duncan" OVER like WHERE [like._dst == "Tony Parker", $$.player.age>20, $$.player.age>22] LIMIT [1, 2, 2];
+      """
+    Then the result should be, in any order, with relax comparison:
+      | like._dst |
+
+  Scenario: go step sample
+    When executing query:
+      """
+      GO FROM "Tim Duncan" OVER like YIELD like._dst SAMPLE [10,10];
+      """
+    Then a SemanticError should be raised at runtime:
+    When executing query:
+      """
+      GO FROM "Tim Duncan" OVER like YIELD like._dst SAMPLE ["10"];
+      """
+    Then a SemanticError should be raised at runtime:
+    When executing query:
+      """
+      GO FROM "Tim Duncan" OVER like YIELD like._dst SAMPLE [a];
+      """
+    Then a SemanticError should be raised at runtime:
+    When executing query:
+      """
+      GO FROM "Tim Duncan" OVER like YIELD like._dst SAMPLE [1];
+      """
+    Then the result should be, in any order, with relax comparison:
+      | like._dst |
+      | /[\s\w]+/ |
+    When executing query:
+      """
+      GO 3 STEPS FROM "Tim Duncan" OVER like YIELD like._dst SAMPLE [1, 3, 2];
+      """
+    Then the result should be, in any order, with relax comparison:
+      | like._dst |
+      | /[\s\w]+/ |
+      | /[\s\w]+/ |
+
+  @skip
+  Scenario: go step filter & step sample
+    When executing query:
+      """
+      GO FROM "Tim Duncan" OVER like WHERE [like._dst == "Tony Parker"]  SAMPLE [1];
+      """
+    Then the result should be, in any order, with relax comparison:
+      | like._dst |
+    When executing query:
+      """
+      GO 3 STEPS FROM "Tim Duncan" OVER like WHERE [like._dst == "Tony Parker", $$.player.age>20, $$.player.age>22] SAMPLE [1, 2, 2];
       """
     Then the result should be, in any order, with relax comparison:
       | like._dst |
