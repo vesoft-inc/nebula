@@ -9,6 +9,7 @@
 #include "common/fs/FileUtils.h"
 #include "common/utils/IndexKeyUtils.h"
 #include "common/utils/NebulaKeyUtils.h"
+#include "rocksdb/sst_file_writer.h"
 #include "tools/db-upgrade/NebulaKeyUtilsV1.h"
 #include "tools/db-upgrade/NebulaKeyUtilsV2.h"
 #include "tools/db-upgrade/NebulaKeyUtilsV3.h"
@@ -908,6 +909,29 @@ void UpgraderSpace::runPartV3() {
       }
       return;
     }
+    auto write_sst = [&, this](const std::vector<kvstore::KV>& data) {
+      ::rocksdb::Options option;
+      option.create_if_missing = true;
+      option.compression = ::rocksdb::CompressionType::kNoCompression;
+      ::rocksdb::SstFileWriter sst_file_writer(::rocksdb::EnvOptions(), option);
+      std::string file = ::fmt::format(
+          ".nebula_upgrade.space-{}.part-{}.{}.sst", spaceId_, partId, std::time(nullptr));
+      ::rocksdb::Status s = sst_file_writer.Open(file);
+      if (!s.ok()) {
+        LOG(FATAL) << "Faild upgrade V3 of space " << spaceId_ << ", part " << partId << ":"
+                   << s.code();
+      }
+      for (auto item : data) {
+        sst_file_writer.Put(item.first, item.second);
+      }
+      s = sst_file_writer.Finish();
+      if (!s.ok()) {
+        LOG(FATAL) << "Faild upgrade V3 of space " << spaceId_ << ", part " << partId << ":"
+                   << s.code();
+      }
+      std::lock_guard<std::mutex> lck(this->ingest_sst_file_mut_);
+      ingest_sst_file_.push_back(file);
+    };
     std::vector<kvstore::KV> data;
     std::string lastVertexKey = "";
     while (iter && iter->valid()) {
@@ -917,13 +941,15 @@ void UpgraderSpace::runPartV3() {
       }
       data.emplace_back(vertex, "");
       lastVertexKey = vertex;
+      if (data.size() >= 100000) {
+        write_sst(data);
+        data.clear();
+      }
     }
-    auto code = writeEngine_->multiPut(data);
-    if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(FATAL) << "Write multi put in space id " << spaceId_ << " part id " << partId
-                 << " failed.";
+    if (!data.empty()) {
+      write_sst(data);
+      data.clear();
     }
-    data.clear();
     LOG(INFO) << "Handle vertex/edge/index data in space id " << spaceId_ << " part id " << partId
               << " succeed";
 
@@ -953,6 +979,10 @@ void UpgraderSpace::doProcessV3() {
 
   while (unFinishedPart_ != 0) {
     sleep(10);
+  }
+  auto code = readEngine_->ingest(ingest_sst_file_, true);
+  if (code != ::nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(FATAL) << "Faild upgrade V3 when ingest sst file:" << static_cast<int>(code);
   }
 }
 std::vector<std::string> UpgraderSpace::indexVertexKeys(

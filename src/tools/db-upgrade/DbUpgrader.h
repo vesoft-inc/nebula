@@ -164,6 +164,9 @@ class UpgraderSpace {
   folly::UnboundedBlockingQueue<PartitionID> partQueue_;
 
   std::atomic<size_t> unFinishedPart_;
+
+  std::mutex ingest_sst_file_mut_;
+  std::vector<std::string> ingest_sst_file_;
 };
 
 // Upgrade one data path in storage conf
