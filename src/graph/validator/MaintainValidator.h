@@ -14,6 +14,15 @@
 
 namespace nebula {
 namespace graph {
+class CreateFunctionValidator final : public Validator {
+ public:
+  CreateFunctionValidator(Sentence* sentence, QueryContext* context)
+      : Validator(sentence, context) {}
+
+ private:
+  Status validateImpl() override;
+};
+
 class CreateTagValidator final : public Validator {
  public:
   CreateTagValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {}
@@ -117,6 +126,16 @@ class ShowTagsValidator final : public Validator {
 class ShowEdgesValidator final : public Validator {
  public:
   ShowEdgesValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {}
+
+ private:
+  Status validateImpl() override;
+
+  Status toPlan() override;
+};
+
+class DropFunctionValidator final : public Validator {
+ public:
+  DropFunctionValidator(Sentence *sentence, QueryContext* context) : Validator(sentence, context) {}
 
  private:
   Status validateImpl() override;

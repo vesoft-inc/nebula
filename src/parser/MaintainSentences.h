@@ -130,6 +130,28 @@ class ColumnSpecificationList final {
   std::vector<std::unique_ptr<ColumnSpecification>> columns_;
 };
 
+class FunctionSource final {
+ public:
+  FunctionSource() = default;
+  FunctionSource(std::string type, std::string source): type_(type), source_(source) {}
+
+  std::string toString() const {
+    return source_;
+  }
+
+  std::string getType() const {
+    return type_;
+  }
+
+  std::string getSource() const {
+    return source_;
+  }
+
+ private:
+  std::string type_;
+  std::string source_;
+};
+
 class ColumnNameList final {
  public:
   ColumnNameList() = default;
@@ -288,6 +310,28 @@ class CreateTagSentence final : public CreateSentence {
   std::unique_ptr<SchemaPropList> schemaProps_;
 };
 
+class CreateFunctionSentence final : public CreateSentence {
+ public:
+  CreateFunctionSentence(std::string *name,
+                          FunctionSource *funcSource,
+                          bool ifNotExists)
+      : CreateSentence(ifNotExists) {
+    name_.reset(name);
+    funcSource_.reset(funcSource);
+    kind_ = Kind::kCreateFunction;
+  }
+
+  std::string toString() const override;
+
+  const std::string *name() const { return name_.get(); }
+
+  FunctionSource* getFunctionSource() const { return funcSource_.get(); }
+
+ private:
+  std::unique_ptr<std::string> name_;
+  std::unique_ptr<FunctionSource> funcSource_;
+};
+
 class CreateEdgeSentence final : public CreateSentence {
  public:
   CreateEdgeSentence(std::string *name,
@@ -430,6 +474,21 @@ class DescribeEdgeSentence final : public Sentence {
   explicit DescribeEdgeSentence(std::string *name) {
     name_.reset(name);
     kind_ = Kind::kDescribeEdge;
+  }
+
+  std::string toString() const override;
+
+  const std::string *name() const { return name_.get(); }
+
+ private:
+  std::unique_ptr<std::string> name_;
+};
+
+class DropFunctionSentence final : public DropSentence {
+ public:
+  explicit DropFunctionSentence(std::string *name, bool ifExists) : DropSentence(ifExists) {
+    name_.reset(name);
+    kind_ = Kind::kDropFunction;
   }
 
   std::string toString() const override;

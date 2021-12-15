@@ -91,6 +91,21 @@ std::string ColumnSpecificationList::toString() const {
   return buf;
 }
 
+std::string CreateFunctionSentence::toString() const {
+  std::string buf;
+  buf.reserve(256);
+  buf += "CREATE FUNCTION ";
+  if (isIfNotExist()) {
+    buf += "IF NOT EXISTS ";
+  }
+  buf += "`";
+  buf += *name_;
+  buf += "` ";
+  buf += "FROM ";
+  buf += funcSource_->toString();
+  return buf;
+}
+
 std::string CreateTagSentence::toString() const {
   std::string buf;
   buf.reserve(256);
@@ -222,6 +237,10 @@ std::string DescribeTagSentence::toString() const {
 
 std::string DescribeEdgeSentence::toString() const {
   return folly::stringPrintf("DESCRIBE EDGE %s", name_.get()->c_str());
+}
+
+std::string DropFunctionSentence::toString() const {
+  return folly::stringPrintf("DROP FUNCTION %s", name_.get()->c_str());
 }
 
 std::string DropTagSentence::toString() const {

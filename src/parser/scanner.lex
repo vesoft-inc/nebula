@@ -45,6 +45,10 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 
 
 
+HTTP_URL                    (http:\/\/[a-zA-Z0-9\(\)@:%._\-\+~#=?&\/]+)
+WASM_BASE64                 (wasm:\/\/[A-Za-z0-9+\/=]+)
+/* WASM_BASE64                 (wasm:\/\/(?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{2}==|[A-Za-z0-9+\/]{3}=)) */
+
 %%
 
  /* Reserved keyword */
@@ -97,6 +101,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "DATE"                      { return TokenType::KW_DATE; }
 "TIME"                      { return TokenType::KW_TIME; }
 "DATETIME"                  { return TokenType::KW_DATETIME; }
+"FUNCTION"                  { return TokenType::KW_FUNCTION; }
 "TAG"                       { return TokenType::KW_TAG; }
 "TAGS"                      { return TokenType::KW_TAGS; }
 "UNION"                     { return TokenType::KW_UNION; }
@@ -330,6 +335,14 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                                     throw GraphParser::syntax_error(*yylloc, error);
                                 }
                                 return TokenType::LABEL;
+                            }
+{HTTP_URL}                  {
+                                yylval->strval = new std::string(yytext, yyleng);
+                                return TokenType::HTTP_URL;
+                            }
+{WASM_BASE64}               {
+                                yylval->strval = new std::string(yytext, yyleng);
+                                return TokenType::WASM_BASE64;
                             }
 {IP_OCTET}(\.{IP_OCTET}){3} {
                                 yylval->strval = new std::string(yytext, yyleng);
