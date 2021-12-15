@@ -561,9 +561,8 @@ struct LookupAndTraverseRequest {
  */
 
 struct ScanCursor {
-    3: bool                                 has_next,
     // next start key of scan, only valid when has_next is true
-    4: optional binary                      next_cursor,
+    1: optional binary                      next_cursor,
 }
 
 struct ScanVertexRequest {
