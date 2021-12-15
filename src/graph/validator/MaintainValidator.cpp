@@ -460,11 +460,23 @@ Status ShowEdgeIndexStatusValidator::toPlan() {
   return Status::OK();
 }
 
-Status AddZoneValidator::validateImpl() { return Status::OK(); }
+Status MergeZoneValidator::validateImpl() { return Status::OK(); }
 
-Status AddZoneValidator::toPlan() {
-  auto sentence = static_cast<AddZoneSentence *>(sentence_);
-  auto *doNode = AddZone::make(qctx_, nullptr, *sentence->zoneName(), sentence->hosts()->hosts());
+Status MergeZoneValidator::toPlan() {
+  auto sentence = static_cast<MergeZoneSentence *>(sentence_);
+  auto *doNode =
+      MergeZone::make(qctx_, nullptr, *sentence->zoneName(), sentence->zoneNames()->zoneNames());
+  root_ = doNode;
+  tail_ = root_;
+  return Status::OK();
+}
+
+Status RenameZoneValidator::validateImpl() { return Status::OK(); }
+
+Status RenameZoneValidator::toPlan() {
+  auto sentence = static_cast<RenameZoneSentence *>(sentence_);
+  auto *doNode =
+      RenameZone::make(qctx_, nullptr, *sentence->originalZoneName(), *sentence->zoneName());
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
@@ -475,6 +487,17 @@ Status DropZoneValidator::validateImpl() { return Status::OK(); }
 Status DropZoneValidator::toPlan() {
   auto sentence = static_cast<DropZoneSentence *>(sentence_);
   auto *doNode = DropZone::make(qctx_, nullptr, *sentence->zoneName());
+  root_ = doNode;
+  tail_ = root_;
+  return Status::OK();
+}
+
+Status SplitZoneValidator::validateImpl() { return Status::OK(); }
+
+Status SplitZoneValidator::toPlan() {
+  auto sentence = static_cast<SplitZoneSentence *>(sentence_);
+  auto *doNode =
+      SplitZone::make(qctx_, nullptr, *sentence->zoneName(), sentence->zoneNames()->zoneNames());
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
@@ -499,22 +522,12 @@ Status ListZonesValidator::toPlan() {
   return Status::OK();
 }
 
-Status AddHostIntoZoneValidator::validateImpl() { return Status::OK(); }
+Status AddHostsIntoZoneValidator::validateImpl() { return Status::OK(); }
 
-Status AddHostIntoZoneValidator::toPlan() {
-  auto sentence = static_cast<AddHostIntoZoneSentence *>(sentence_);
-  auto *doNode = AddHostIntoZone::make(qctx_, nullptr, *sentence->zoneName(), *sentence->address());
-  root_ = doNode;
-  tail_ = root_;
-  return Status::OK();
-}
-
-Status DropHostFromZoneValidator::validateImpl() { return Status::OK(); }
-
-Status DropHostFromZoneValidator::toPlan() {
-  auto sentence = static_cast<DropHostFromZoneSentence *>(sentence_);
-  auto *doNode =
-      DropHostFromZone::make(qctx_, nullptr, *sentence->zoneName(), *sentence->address());
+Status AddHostsIntoZoneValidator::toPlan() {
+  auto sentence = static_cast<AddHostsIntoZoneSentence *>(sentence_);
+  auto *doNode = AddHostsIntoZone::make(
+      qctx_, nullptr, *sentence->zoneName(), sentence->address()->hosts(), sentence->isNew());
   root_ = doNode;
   tail_ = root_;
   return Status::OK();

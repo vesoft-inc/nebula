@@ -43,8 +43,8 @@ Status GoValidator::validateImpl() {
     }
     auto varPropsMap = exprProps.varProps();
     std::vector<std::string> keys;
-    for (const auto& [k, v] : varPropsMap) {
-      keys.emplace_back(k);
+    for (const auto& elem : varPropsMap) {
+      keys.emplace_back(elem.first);
     }
     if (keys.size() > 1) {
       return Status::SemanticError("Multiple variable property is not supported in WHERE or YIELD");
