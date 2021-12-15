@@ -2,11 +2,12 @@
 // Created by arcosx on 12/14/21.
 //
 #include <gtest/gtest.h>
-#include "graph/wasm/WasmFunction.h"
+#include "common/function/WasmFunctionManager.h"
+
 namespace nebula {
 namespace graph {
 TEST(WasmFunctionTest, gen) {
-  WasmFunction wasmFunction;
+  WasmFunctionManager wasmFunction;
   auto WatStr = "(module\n"
       "  (func $gcd (param i32 i32) (result i32)\n"
       "    (local i32)\n"

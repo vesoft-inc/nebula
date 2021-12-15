@@ -13,4 +13,20 @@ nebula_add_library(
     AggFunctionManager.cpp
 )
 
+#about wasm .....
+nebula_add_executable(
+        NAME TestWasm
+        SOURCES TestWasm.cpp
+        OBJECTS $<TARGET_OBJECTS:base_obj>
+        LIBRARIES ${WASMTIME_LIBRARYS}
+)
+
+nebula_add_library(
+        wasm_function_obj OBJECT
+        WasmFunctionManager.cpp
+)
+
+target_link_libraries(wasm_function_obj ${WASMTIME_LIBRARYS})
+
+
 nebula_add_subdirectory(test)
