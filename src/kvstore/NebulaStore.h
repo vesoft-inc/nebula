@@ -285,6 +285,12 @@ class NebulaStore : public KVStore, public Handler {
 
   void unregisterOnNewPartAdded(const std::string& funcName) { onNewPartAdded_.erase(funcName); }
 
+  void registerBeforeRemoveSpace(std::function<void(GraphSpaceID)> func) {
+    beforeRemoveSpace_ = func;
+  }
+
+  void unregisterBeforeRemoveSpace() { beforeRemoveSpace_ = nullptr; }
+
  private:
   void loadPartFromDataPath();
 
@@ -343,6 +349,7 @@ class NebulaStore : public KVStore, public Handler {
   std::shared_ptr<DiskManager> diskMan_;
   folly::ConcurrentHashMap<std::string, std::function<void(std::shared_ptr<Part>&)>>
       onNewPartAdded_;
+  std::function<void(GraphSpaceID)> beforeRemoveSpace_{nullptr};
 };
 
 }  // namespace kvstore
