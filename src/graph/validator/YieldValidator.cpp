@@ -65,7 +65,7 @@ Status YieldValidator::makeOutputColumn(YieldColumn *column) {
   DCHECK(colExpr != nullptr);
 
   auto expr = colExpr->clone();
-  NG_RETURN_IF_ERROR(deduceProps(expr, exprProps_, {}, {}));
+  NG_RETURN_IF_ERROR(deduceProps(expr, exprProps_));
 
   auto status = deduceExprType(expr);
   NG_RETURN_IF_ERROR(status);

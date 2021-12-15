@@ -41,7 +41,7 @@ Status LookupValidator::validateImpl() {
   lookupCtx_ = getContext<LookupContext>();
 
   NG_RETURN_IF_ERROR(validateFrom());
-  NG_RETURN_IF_ERROR(validateFilter());
+  NG_RETURN_IF_ERROR(validateWhere());
   NG_RETURN_IF_ERROR(validateYield());
   return Status::OK();
 }
@@ -54,19 +54,6 @@ Status LookupValidator::validateFrom() {
   lookupCtx_->isEdge = ret.value().first;
   lookupCtx_->schemaId = ret.value().second;
   schemaIds_.emplace_back(ret.value().second);
-  return Status::OK();
-}
-
-Status LookupValidator::extractSchemaProp() {
-  shared_ptr<const NebulaSchemaProvider> schema;
-  NG_RETURN_IF_ERROR(getSchemaProvider(&schema));
-  for (std::size_t i = 0; i < schema->getNumFields(); ++i) {
-    const auto& propName = schema->getFieldName(i);
-    auto iter = std::find(idxReturnCols_.begin(), idxReturnCols_.end(), propName);
-    if (iter == idxReturnCols_.end()) {
-      idxReturnCols_.emplace_back(propName);
-    }
-  }
   return Status::OK();
 }
 
@@ -108,9 +95,6 @@ Status LookupValidator::validateYieldEdge() {
                                 {Expression::Kind::kAggregate, Expression::Kind::kVertex})) {
       return Status::SemanticError("illegal yield clauses `%s'", col->toString().c_str());
     }
-    if (ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kEdge})) {
-      NG_RETURN_IF_ERROR(extractSchemaProp());
-    }
     if (col->expr()->kind() == Expression::Kind::kLabelAttribute) {
       const auto& schemaName = static_cast<LabelAttributeExpression*>(col->expr())->left()->name();
       if (schemaName != sentence()->from()) {
@@ -137,9 +121,6 @@ Status LookupValidator::validateYieldTag() {
     if (ExpressionUtils::hasAny(col->expr(),
                                 {Expression::Kind::kAggregate, Expression::Kind::kEdge})) {
       return Status::SemanticError("illegal yield clauses `%s'", col->toString().c_str());
-    }
-    if (ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kVertex})) {
-      NG_RETURN_IF_ERROR(extractSchemaProp());
     }
     if (col->expr()->kind() == Expression::Kind::kLabelAttribute) {
       const auto& schemaName = static_cast<LabelAttributeExpression*>(col->expr())->left()->name();
@@ -188,7 +169,7 @@ Status LookupValidator::validateYield() {
   return Status::OK();
 }
 
-Status LookupValidator::validateFilter() {
+Status LookupValidator::validateWhere() {
   auto whereClause = sentence()->whereClause();
   if (whereClause == nullptr) {
     return Status::OK();
