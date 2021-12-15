@@ -266,7 +266,7 @@ bool MetaClient::loadData() {
   }
 
   auto hostsRet = listHosts().get();
-  if (!ret.ok()) {
+  if (!hostsRet.ok()) {
     LOG(ERROR) << "List hosts failed, status:" << hostsRet.status();
     return false;
   }
@@ -780,8 +780,8 @@ Status MetaClient::handleResponse(const RESP& resp) {
       return Status::Error("Part not existed!");
     case nebula::cpp2::ErrorCode::E_USER_NOT_FOUND:
       return Status::Error("User not existed!");
-    case nebula::cpp2::ErrorCode::E_GROUP_NOT_FOUND:
-      return Status::Error("Group not existed!");
+    case nebula::cpp2::ErrorCode::E_MACHINE_NOT_FOUND:
+      return Status::Error("Machine not existed!");
     case nebula::cpp2::ErrorCode::E_ZONE_NOT_FOUND:
       return Status::Error("Zone not existed!");
     case nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND:
@@ -2394,7 +2394,6 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
   req.set_host(options_.localHost_);
   req.set_role(options_.role_);
   req.set_git_info_sha(options_.gitInfoSHA_);
-  req.set_version(getOriginVersion());
   if (options_.role_ == cpp2::HostRole::STORAGE) {
     if (options_.clusterId_.load() == 0) {
       options_.clusterId_ = FileBasedClusterIdMan::getClusterIdFromFile(FLAGS_cluster_id_path);
@@ -2413,6 +2412,21 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
       req.set_leader_partIds(std::move(leaderIds));
     } else {
       req.set_leader_partIds(std::move(leaderIds));
+    }
+
+    kvstore::SpaceDiskPartsMap diskParts;
+    if (listener_ != nullptr) {
+      listener_->fetchDiskParts(diskParts);
+      if (diskParts_ != diskParts) {
+        {
+          folly::RWSpinLock::WriteHolder holder(&diskPartsLock_);
+          diskParts_.clear();
+          diskParts_ = diskParts;
+        }
+        req.set_disk_parts(diskParts);
+      }
+    } else {
+      req.set_disk_parts(diskParts);
     }
   }
 
@@ -3022,17 +3036,65 @@ void MetaClient::loadLeader(const std::vector<cpp2::HostItem>& hostItems,
   }
 }
 
-folly::Future<StatusOr<bool>> MetaClient::addZone(std::string zoneName,
-                                                  std::vector<HostAddr> nodes) {
-  cpp2::AddZoneReq req;
-  req.set_zone_name(std::move(zoneName));
-  req.set_nodes(std::move(nodes));
+folly::Future<StatusOr<bool>> MetaClient::addHosts(std::vector<HostAddr> hosts) {
+  cpp2::AddHostsReq req;
+  req.set_hosts(std::move(hosts));
 
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
   getResponse(
       std::move(req),
-      [](auto client, auto request) { return client->future_addZone(request); },
+      [](auto client, auto request) { return client->future_addHosts(request); },
+      [](cpp2::ExecResp&& resp) -> bool {
+        return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
+      },
+      std::move(promise));
+  return future;
+}
+
+folly::Future<StatusOr<bool>> MetaClient::dropHosts(std::vector<HostAddr> hosts) {
+  cpp2::DropHostsReq req;
+  req.set_hosts(std::move(hosts));
+
+  folly::Promise<StatusOr<bool>> promise;
+  auto future = promise.getFuture();
+  getResponse(
+      std::move(req),
+      [](auto client, auto request) { return client->future_dropHosts(request); },
+      [](cpp2::ExecResp&& resp) -> bool {
+        return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
+      },
+      std::move(promise));
+  return future;
+}
+
+folly::Future<StatusOr<bool>> MetaClient::mergeZone(std::vector<std::string> zones,
+                                                    std::string zoneName) {
+  cpp2::MergeZoneReq req;
+  req.set_zone_name(zoneName);
+  req.set_zones(zones);
+  folly::Promise<StatusOr<bool>> promise;
+  auto future = promise.getFuture();
+  getResponse(
+      std::move(req),
+      [](auto client, auto request) { return client->future_mergeZone(request); },
+      [](cpp2::ExecResp&& resp) -> bool {
+        return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
+      },
+      std::move(promise));
+  return future;
+}
+
+folly::Future<StatusOr<bool>> MetaClient::renameZone(std::string originalZoneName,
+                                                     std::string zoneName) {
+  cpp2::RenameZoneReq req;
+  req.set_original_zone_name(originalZoneName);
+  req.set_zone_name(zoneName);
+  folly::Promise<StatusOr<bool>> promise;
+  auto future = promise.getFuture();
+  getResponse(
+      std::move(req),
+      [](auto client, auto request) { return client->future_renameZone(request); },
       [](cpp2::ExecResp&& resp) -> bool {
         return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
       },
@@ -3056,16 +3118,15 @@ folly::Future<StatusOr<bool>> MetaClient::dropZone(std::string zoneName) {
   return future;
 }
 
-folly::Future<StatusOr<bool>> MetaClient::addHostIntoZone(HostAddr node, std::string zoneName) {
-  cpp2::AddHostIntoZoneReq req;
-  req.set_node(node);
+folly::Future<StatusOr<bool>> MetaClient::splitZone(
+    std::string zoneName, std::unordered_map<std::string, std::vector<HostAddr>>) {
+  cpp2::SplitZoneReq req;
   req.set_zone_name(zoneName);
-
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
   getResponse(
       std::move(req),
-      [](auto client, auto request) { return client->future_addHostIntoZone(request); },
+      [](auto client, auto request) { return client->future_splitZone(request); },
       [](cpp2::ExecResp&& resp) -> bool {
         return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
       },
@@ -3073,16 +3134,19 @@ folly::Future<StatusOr<bool>> MetaClient::addHostIntoZone(HostAddr node, std::st
   return future;
 }
 
-folly::Future<StatusOr<bool>> MetaClient::dropHostFromZone(HostAddr node, std::string zoneName) {
-  cpp2::DropHostFromZoneReq req;
-  req.set_node(node);
+folly::Future<StatusOr<bool>> MetaClient::addHostsIntoZone(std::vector<HostAddr> hosts,
+                                                           std::string zoneName,
+                                                           bool isNew) {
+  cpp2::AddHostsIntoZoneReq req;
+  req.set_hosts(hosts);
   req.set_zone_name(zoneName);
+  req.set_is_new(isNew);
 
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
   getResponse(
       std::move(req),
-      [](auto client, auto request) { return client->future_dropHostFromZone(request); },
+      [](auto client, auto request) { return client->future_addHostsIntoZone(request); },
       [](cpp2::ExecResp&& resp) -> bool {
         return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
       },
@@ -3490,6 +3554,7 @@ bool MetaClient::checkIsPlanKilled(SessionID sessionId, ExecutionPlanID planId) 
 
 Status MetaClient::verifyVersion() {
   auto req = cpp2::VerifyClientVersionReq();
+  req.set_host(options_.localHost_);
   folly::Promise<StatusOr<cpp2::VerifyClientVersionResp>> promise;
   auto future = promise.getFuture();
   getResponse(

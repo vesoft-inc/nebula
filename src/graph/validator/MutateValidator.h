@@ -83,6 +83,7 @@ class DeleteVerticesValidator final : public Validator {
   std::vector<EdgeType> edgeTypes_;
   std::vector<std::string> edgeNames_;
   std::vector<EdgeKeyRef*> edgeKeyRefs_;
+  bool withEdge_{true};
 };
 
 class DeleteTagsValidator final : public Validator {

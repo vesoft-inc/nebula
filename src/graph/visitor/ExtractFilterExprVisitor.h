@@ -20,6 +20,24 @@ class ExtractFilterExprVisitor final : public ExprVisitorImpl {
 
   Expression *remainedExpr() { return remainedExpr_; }
 
+  static ExtractFilterExprVisitor makePushGetNeighbors(ObjectPool *pool) {
+    ExtractFilterExprVisitor visitor(pool);
+    visitor.pushType_ = PushType::kGetNeighbors;
+    return visitor;
+  }
+
+  static ExtractFilterExprVisitor makePushGetVertices(ObjectPool *pool) {
+    ExtractFilterExprVisitor visitor(pool);
+    visitor.pushType_ = PushType::kGetVertices;
+    return visitor;
+  }
+
+  static ExtractFilterExprVisitor makePushGetEdges(ObjectPool *pool) {
+    ExtractFilterExprVisitor visitor(pool);
+    visitor.pushType_ = PushType::kGetEdges;
+    return visitor;
+  }
+
  private:
   using ExprVisitorImpl::visit;
 
@@ -45,9 +63,16 @@ class ExtractFilterExprVisitor final : public ExprVisitorImpl {
   void visit(SubscriptRangeExpression *) override;
 
  private:
+  enum class PushType {
+    kGetNeighbors,
+    kGetVertices,  // Get/Append/Scan Vertices
+    kGetEdges,     // Get/Append/Scan Edges
+  };
+
   ObjectPool *pool_;
   bool canBePushed_{true};
   Expression *remainedExpr_{nullptr};
+  PushType pushType_{PushType::kGetNeighbors};
 };
 
 }  // namespace graph

@@ -34,6 +34,8 @@ nebula_add_library(
     query/InnerJoinExecutor.cpp
     query/IndexScanExecutor.cpp
     query/AssignExecutor.cpp
+    query/ScanVerticesExecutor.cpp
+    query/ScanEdgesExecutor.cpp
     query/TraverseExecutor.cpp
     query/AppendVerticesExecutor.cpp
     algo/ConjunctPathExecutor.cpp
@@ -42,6 +44,8 @@ nebula_add_library(
     algo/ProduceAllPathsExecutor.cpp
     algo/CartesianProductExecutor.cpp
     algo/SubgraphExecutor.cpp
+    admin/AddHostsExecutor.cpp
+    admin/DropHostsExecutor.cpp
     admin/SwitchSpaceExecutor.cpp
     admin/CreateUserExecutor.cpp
     admin/DropUserExecutor.cpp

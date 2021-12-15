@@ -29,10 +29,18 @@ void HBProcessor::onFinished() {
 void HBProcessor::process(const cpp2::HBReq& req) {
   HostAddr host((*req.host_ref()).host, (*req.host_ref()).port);
   nebula::cpp2::ErrorCode ret;
-
+  auto role = req.get_role();
   LOG(INFO) << "Receive heartbeat from " << host
-            << ", role = " << apache::thrift::util::enumNameSafe(req.get_role());
-  if (req.get_role() == cpp2::HostRole::STORAGE) {
+            << ", role = " << apache::thrift::util::enumNameSafe(role);
+
+  if (role == cpp2::HostRole::STORAGE) {
+    if (!ActiveHostsMan::machineRegisted(kvstore_, host)) {
+      LOG(ERROR) << "Machine " << host << " is not registed";
+      handleErrorCode(nebula::cpp2::ErrorCode::E_MACHINE_NOT_FOUND);
+      onFinished();
+      return;
+    }
+
     ClusterID peerClusterId = req.get_cluster_id();
     if (peerClusterId == 0) {
       LOG(INFO) << "Set clusterId for new host " << host << "!";
@@ -43,12 +51,30 @@ void HBProcessor::process(const cpp2::HBReq& req) {
       onFinished();
       return;
     }
+
+    if (req.disk_parts_ref().has_value()) {
+      for (const auto& [spaceId, partDiskMap] : *req.get_disk_parts()) {
+        for (const auto& [path, partList] : partDiskMap) {
+          auto partListVal = MetaKeyUtils::diskPartsVal(partList);
+          std::string key = MetaKeyUtils::diskPartsKey(host, spaceId, path);
+          std::vector<kvstore::KV> data;
+          data.emplace_back(key, partListVal);
+          // doPut() not work, will trigger the asan: use heap memory which is free
+          folly::Baton<true, std::atomic> baton;
+          kvstore_->asyncMultiPut(kDefaultSpaceId,
+                                  kDefaultPartId,
+                                  std::move(data),
+                                  [this, &baton](nebula::cpp2::ErrorCode code) {
+                                    this->handleErrorCode(code);
+                                    baton.post();
+                                  });
+          baton.wait();
+        }
+      }
+    }
   }
 
-  HostInfo info(time::WallClock::fastNowInMilliSec(), req.get_role(), req.get_git_info_sha());
-  if (req.version_ref().has_value()) {
-    info.version_ = *req.version_ref();
-  }
+  HostInfo info(time::WallClock::fastNowInMilliSec(), role, req.get_git_info_sha());
   if (req.leader_partIds_ref().has_value()) {
     ret = ActiveHostsMan::updateHostInfo(kvstore_, host, info, &*req.leader_partIds_ref());
   } else {

@@ -27,6 +27,7 @@
 #include "interface/gen-cpp2/MetaServiceAsyncClient.h"
 #include "interface/gen-cpp2/common_types.h"
 #include "interface/gen-cpp2/meta_types.h"
+#include "kvstore/DiskManager.h"
 
 DECLARE_int32(meta_client_retry_times);
 DECLARE_int32(heartbeat_interval_secs);
@@ -162,6 +163,7 @@ class MetaChangedListener {
   virtual void onPartUpdated(const PartHosts& partHosts) = 0;
   virtual void fetchLeaderInfo(
       std::unordered_map<GraphSpaceID, std::vector<cpp2::LeaderInfo>>& leaders) = 0;
+  virtual void fetchDiskParts(kvstore::SpaceDiskPartsMap& diskParts) = 0;
   virtual void onListenerAdded(GraphSpaceID spaceId,
                                PartitionID partId,
                                const ListenerHosts& listenerHosts) = 0;
@@ -595,13 +597,22 @@ class MetaClient {
 
   StatusOr<LeaderInfo> getLeaderInfo();
 
-  folly::Future<StatusOr<bool>> addZone(std::string zoneName, std::vector<HostAddr> nodes);
+  folly::Future<StatusOr<bool>> addHosts(std::vector<HostAddr> hosts);
+
+  folly::Future<StatusOr<bool>> dropHosts(std::vector<HostAddr> hosts);
+
+  folly::Future<StatusOr<bool>> mergeZone(std::vector<std::string> zones, std::string zoneName);
+
+  folly::Future<StatusOr<bool>> renameZone(std::string originalZoneName, std::string zoneName);
 
   folly::Future<StatusOr<bool>> dropZone(std::string zoneName);
 
-  folly::Future<StatusOr<bool>> addHostIntoZone(HostAddr node, std::string zoneName);
+  folly::Future<StatusOr<bool>> splitZone(
+      std::string zoneName, std::unordered_map<std::string, std::vector<HostAddr>> zones);
 
-  folly::Future<StatusOr<bool>> dropHostFromZone(HostAddr node, std::string zoneName);
+  folly::Future<StatusOr<bool>> addHostsIntoZone(std::vector<HostAddr> hosts,
+                                                 std::string zoneName,
+                                                 bool isNew);
 
   folly::Future<StatusOr<std::vector<HostAddr>>> getZone(std::string zoneName);
 
@@ -718,9 +729,14 @@ class MetaClient {
   std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
   std::shared_ptr<thrift::ThriftClientManager<cpp2::MetaServiceAsyncClient>> clientsMan_;
 
+  // heartbeat is a single thread, maybe leaderIdsLock_ and diskPartsLock_ is useless?
   // leaderIdsLock_ is used to protect leaderIds_
   std::unordered_map<GraphSpaceID, std::vector<cpp2::LeaderInfo>> leaderIds_;
   folly::RWSpinLock leaderIdsLock_;
+  // diskPartsLock_ is used to protect diskParts_;
+  kvstore::SpaceDiskPartsMap diskParts_;
+  folly::RWSpinLock diskPartsLock_;
+
   std::atomic<int64_t> localDataLastUpdateTime_{-1};
   std::atomic<int64_t> localCfgLastUpdateTime_{-1};
   std::atomic<int64_t> metadLastUpdateTime_{0};
