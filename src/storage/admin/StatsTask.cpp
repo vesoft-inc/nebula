@@ -73,6 +73,11 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
                                               PartitionID part,
                                               std::unordered_map<TagID, std::string> tags,
                                               std::unordered_map<EdgeType, std::string> edges) {
+  if (UNLIKELY(canceled_)) {
+    LOG(ERROR) << "Stats task is canceled";
+    return nebula::cpp2::ErrorCode::E_USER_CANCEL;
+  }
+
   auto vIdLenRet = env_->schemaMan_->getSpaceVidLen(spaceId);
   if (!vIdLenRet.ok()) {
     LOG(ERROR) << "Get space vid length failed";
@@ -140,6 +145,11 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
   // 2     5
   // 3     1
   while (vertexIter && vertexIter->valid()) {
+    if (UNLIKELY(canceled_)) {
+      LOG(ERROR) << "Stats task is canceled";
+      return nebula::cpp2::ErrorCode::E_USER_CANCEL;
+    }
+
     auto key = vertexIter->key();
     auto vId = NebulaKeyUtils::getVertexId(vIdLen, key).str();
     auto tagId = NebulaKeyUtils::getTagId(vIdLen, key);
@@ -168,6 +178,11 @@ nebula::cpp2::ErrorCode StatsTask::genSubTask(GraphSpaceID spaceId,
   // 2    2       1    3  (invalid data, for example, edge data without edge
   // schema) 2    3       1    4 2    3       1    5
   while (edgeIter && edgeIter->valid()) {
+    if (UNLIKELY(canceled_)) {
+      LOG(ERROR) << "Stats task is canceled";
+      return nebula::cpp2::ErrorCode::E_USER_CANCEL;
+    }
+
     auto key = edgeIter->key();
 
     auto edgeType = NebulaKeyUtils::getEdgeType(vIdLen, key);
