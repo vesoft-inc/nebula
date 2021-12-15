@@ -34,8 +34,8 @@ extern stats::CounterId kNumIndexScanExecutors;
 extern stats::CounterId kNumOomExecutors;
 
 // Server client traffic
-extern stats::CounterId kReceivedBytes;
-extern stats::CounterId kSentBytes;
+// extern stats::CounterId kReceivedBytes;
+// extern stats::CounterId kSentBytes;
 
 // Session
 extern stats::CounterId kNumOpenedSessions;

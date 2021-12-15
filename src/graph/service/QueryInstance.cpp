@@ -104,7 +104,6 @@ void QueryInstance::onFinish() {
   rctx->resp().latencyInUs = latency;
   addSlowQueryStats(latency, spaceName);
   rctx->finish();
-  stats::StatsManager::addValue(kSentBytes, rctx->resp().data->size());
 
   rctx->session()->deleteQuery(qctx_.get());
   // The `QueryInstance' is the root node holding all resources during the

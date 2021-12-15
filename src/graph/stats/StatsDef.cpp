@@ -33,9 +33,6 @@ stats::CounterId kNumSortExecutors;
 stats::CounterId kNumIndexScanExecutors;
 stats::CounterId kNumOomExecutors;
 
-stats::CounterId kReceivedBytes;
-stats::CounterId kSentBytes;
-
 stats::CounterId kNumOpenedSessions;
 stats::CounterId kNumAuthFailedSessions;
 stats::CounterId kNumAuthFailedSessionsBadUserNamePassword;
@@ -59,11 +56,6 @@ void initCounters() {
 
   kOptimizerLatencyUs = stats::StatsManager::registerHisto(
       "optimizer_latency_us", 1000, 0, 2000, "avg, p75, p95, p99, p999");
-
-  kReceivedBytes = stats::StatsManager::registerHisto(
-      "received_bytes", 1000, 1, 4194304, "avg, p75, p95, p99, p999");  // 1 Byte ~ 4194304 Bytes
-  kSentBytes = stats::StatsManager::registerHisto(
-      "sent_bytes", 1000, 1, 4294967296, "avg, p75, p95, p99, p999");  // 1 Byte ~ 4 GiB
 
   kNumAggregateExecutors =
       stats::StatsManager::registerStats("num_aggregate_executors", "rate, sum");
