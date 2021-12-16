@@ -3,8 +3,12 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
+#include <folly/FileUtil.h>
+#include <folly/json.h>
+
 #include "common/base/Base.h"
 #include "common/thrift/ThriftTypes.h"
+#include "common/utils/NebulaKeyUtils.h"
 #include "kvstore/RocksEngineConfig.h"
 #include "tools/db-upgrade/DbUpgrader.h"
 #include "tools/db-upgrade/NebulaKeyUtilsV1.h"
@@ -50,11 +54,14 @@ required:
        --partIds
          Specify all partIds to be processed, separated by comma.
 
+       --auto_gen_part_schema=<true|false>
+         Whether to generate only part schema
+         Default: true
 
  optional:
        --write_batch_num=<N>
          The size of the batch written to rocksdb.
-         Default: 100
+         Default: 100000
 
        --compactions=<true|false>
          When the data upgrade finished, whether to compact all data.
@@ -67,27 +74,132 @@ required:
        --max_concurrent_spaces<N>
          Maximum number of concurrent spaces allowed.
          Default: 5
+
+       --dst_part_file=<file to dataPath and parts>
+         File name of datapaht and part distribution
+         Default: ""
 )");
 }
 
 void printParams() {
   std::cout << "=========================== PARAMS ============================\n";
-  std::cout << "meta server: " << FLAGS_upgrade_meta_server << "\n";
-  std::cout << "source data path: " << FLAGS_src_db_path << "\n";
-  std::cout << "destination data path: " << FLAGS_dst_db_path << "\n";
+  std::cout << "Meta server: " << FLAGS_upgrade_meta_server << "\n";
+  std::cout << "Source data path: " << FLAGS_src_db_path << "\n";
+  std::cout << "Destination data path: " << FLAGS_dst_db_path << "\n";
   std::cout << "The size of the batch written: " << FLAGS_write_batch_num << "\n";
-  std::cout << "raw data from version: " << FLAGS_raw_data_version << "\n";
-  std::cout << "specify all partIds to be processed: " << FLAGS_partIds << "\n ";
+  std::cout << "Raw data from version: " << FLAGS_raw_data_version << "\n";
+  std::cout << "Specify all partIds to be processed: " << FLAGS_partIds << "\n ";
   std::cout << "whether to compact all data: " << (FLAGS_compactions == true ? "true" : "false")
             << "\n";
-  std::cout << "maximum number of concurrent parts allowed:" << FLAGS_max_concurrent_parts << "\n";
-  std::cout << "maximum number of concurrent spaces allowed: " << FLAGS_max_concurrent_spaces
+  std::cout << "Maximum number of concurrent parts allowed:" << FLAGS_max_concurrent_parts << "\n";
+  std::cout << "Maximum number of concurrent spaces allowed: " << FLAGS_max_concurrent_spaces
             << "\n";
+  std::cout << "whether to auto_gen_part_schema: "
+            << (FLAGS_auto_gen_part_schema == true ? "true" : "false") << "\n";
+  std::cout << "File name of datapaht and part distribution is " << FLAGS_dst_part_file << "\n";
+
   std::cout << "=========================== PARAMS ============================\n\n";
 }
 
 using nebula::GraphSpaceID;
 using nebula::PartitionID;
+
+bool upgradeOneDataPathPartSchem(nebula::meta::MetaClient* metaClient,
+                                 GraphSpaceID spaceId,
+                                 const std::string& path,
+                                 std::vector<PartitionID> partIds) {
+  if (!nebula::fs::FileUtils::exist(path)) {
+    LOG(ERROR) << "Data path " << path << " not exists!";
+    return false;
+  }
+
+  auto spaceVidLenRet = metaClient->getSpaceVidLen(spaceId);
+  if (!spaceVidLenRet.ok()) {
+    LOG(ERROR) << "Get space vid len failed, space id " << spaceId;
+    return false;
+  }
+  auto spaceVidLen = spaceVidLenRet.value();
+  std::unique_ptr<nebula::kvstore::RocksEngine> writeEngine(
+      new nebula::kvstore::RocksEngine(spaceId, spaceVidLen, path));
+  std::vector<nebula::kvstore::KV> data;
+  for (auto& part : partIds) {
+    auto key = nebula::NebulaKeyUtils::systemPartKey(part);
+    data.emplace_back(std::move(key), "");
+  }
+  auto code = writeEngine->multiPut(data);
+  if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(FATAL) << "Write multi part system data in space id " << spaceId << " dataPath " << path
+               << " failed.";
+  }
+  return true;
+}
+
+// case:  bin/db_upgrader --auto_gen_part_schema=false  --upgrade_meta_server=xxx
+// --dst_part_file=/xxxxxx.json
+/*
+The dst_part_file file is a json format file, the content of the file is as follows:
+{
+    "space_id": 1,
+
+    "instances": [
+        {
+            "data_path": "/home/dataPath1",
+            "parts": [1, 2]
+        },
+        {
+            "data_path": "/home/dataPath2",
+            "parts": [3, 4]
+        },
+        {
+            "data_path": "/home/dataPath3",
+            "parts": [5, 6]
+        }
+    ]
+}
+*/
+void upgradePartSchem(nebula::meta::MetaClient* metaClient, const std::string& filename) {
+  std::string jsonStr;
+  if (access(filename.c_str(), F_OK) != 0) {
+    LOG(ERROR) << "File not exists " << filename;
+    return;
+  }
+
+  if (!folly::readFile(filename.c_str(), jsonStr)) {
+    LOG(ERROR) << "Parse file " << filename << " failed!";
+    return;
+  }
+  auto jsonObj = folly::parseJson(jsonStr);
+  LOG(INFO) << folly::toPrettyJson(jsonObj);
+  GraphSpaceID spaceId = jsonObj.at("space_id").asInt();
+  auto instances = jsonObj.at("instances");
+  CHECK(instances.isArray());
+  auto it = instances.begin();
+
+  std::unordered_map<std::string, std::vector<PartitionID>> dataPathToParts;
+  while (it != instances.end()) {
+    CHECK(it->isObject());
+    auto dataPath = it->at("data_path").asString();
+    auto partIds = it->at("parts");
+    std::vector<PartitionID> pathParts;
+    for (auto& partstr : partIds) {
+      auto part = partstr.asInt();
+      pathParts.push_back(part);
+    }
+    dataPathToParts.emplace(dataPath, pathParts);
+    it++;
+  }
+  // upgrade
+  for (auto& elem : dataPathToParts) {
+    auto ret = upgradeOneDataPathPartSchem(metaClient, spaceId, elem.first, elem.second);
+    if (!ret) {
+      LOG(ERROR) << "Generate part schema failed, in space  " << spaceId << " dataPath "
+                 << elem.first;
+      return;
+    }
+  }
+  LOG(INFO) << "Generate part schema success";
+  return;
+}
 
 int main(int argc, char* argv[]) {
   // When begin to upgrade the data, close compaction
@@ -121,6 +233,32 @@ int main(int argc, char* argv[]) {
 
   // Handle arguments
   LOG(INFO) << "================== Prepare phase begin ==================";
+  auto addrs = nebula::network::NetworkUtils::toHosts(FLAGS_upgrade_meta_server);
+  if (!addrs.ok()) {
+    LOG(ERROR) << "Get meta host address failed " << FLAGS_upgrade_meta_server;
+    return EXIT_FAILURE;
+  }
+
+  auto ioExecutor = std::make_shared<folly::IOThreadPoolExecutor>(1);
+  nebula::meta::MetaClientOptions options;
+  options.skipConfig_ = true;
+  auto metaClient =
+      std::make_unique<nebula::meta::MetaClient>(ioExecutor, std::move(addrs.value()), options);
+  CHECK_NOTNULL(metaClient);
+  if (!metaClient->waitForMetadReady(1)) {
+    LOG(ERROR) << "Meta is not ready: " << FLAGS_upgrade_meta_server;
+    return EXIT_FAILURE;
+  }
+
+  if (!FLAGS_auto_gen_part_schema) {
+    if (FLAGS_dst_part_file.empty()) {
+      LOG(ERROR) << "auto_gen_part_schema is false, and dst_part_file should not be empty.";
+      return EXIT_FAILURE;
+    }
+    upgradePartSchem(metaClient.get(), FLAGS_dst_part_file);
+    return 0;
+  }
+
   if (FLAGS_src_db_path.empty() || FLAGS_dst_db_path.empty()) {
     LOG(ERROR) << "Source data path or destination data path should be not empty.";
     return EXIT_FAILURE;
@@ -149,23 +287,6 @@ int main(int argc, char* argv[]) {
   if (srcPaths.size() != dstPaths.size()) {
     LOG(ERROR) << "The size of source data paths is not equal the "
                << "size of destination data paths.";
-    return EXIT_FAILURE;
-  }
-
-  auto addrs = nebula::network::NetworkUtils::toHosts(FLAGS_upgrade_meta_server);
-  if (!addrs.ok()) {
-    LOG(ERROR) << "Get meta host address failed " << FLAGS_upgrade_meta_server;
-    return EXIT_FAILURE;
-  }
-
-  auto ioExecutor = std::make_shared<folly::IOThreadPoolExecutor>(1);
-  nebula::meta::MetaClientOptions options;
-  options.skipConfig_ = true;
-  auto metaClient =
-      std::make_unique<nebula::meta::MetaClient>(ioExecutor, std::move(addrs.value()), options);
-  CHECK_NOTNULL(metaClient);
-  if (!metaClient->waitForMetadReady(1)) {
-    LOG(ERROR) << "Meta is not ready: " << FLAGS_upgrade_meta_server;
     return EXIT_FAILURE;
   }
 

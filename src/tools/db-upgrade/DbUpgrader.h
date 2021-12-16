@@ -29,6 +29,8 @@ DECLARE_string(partIds);
 DECLARE_bool(compactions);
 DECLARE_uint32(max_concurrent_parts);
 DECLARE_uint32(max_concurrent_spaces);
+DECLARE_bool(auto_gen_part_schema);
+DECLARE_string(dst_part_file);
 
 using nebula::fs::FileUtils;
 

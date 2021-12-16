@@ -40,6 +40,13 @@ DEFINE_bool(compactions,
 DEFINE_uint32(max_concurrent_parts, 10, "The parts could be processed simultaneously");
 DEFINE_uint32(max_concurrent_spaces, 5, "The spaces could be processed simultaneously");
 
+DEFINE_bool(auto_gen_part_schema,
+            true,
+            "When true, only the part schema information is generated based on the dst_part_file "
+            "parameter");
+
+DEFINE_string(dst_part_file, "", "File name of datapaht and part distribution");
+
 namespace nebula {
 namespace storage {
 
@@ -504,6 +511,37 @@ void UpgraderSpace::runPartV1() {
     LOG(INFO) << "Handle vertex/edge/index data in space id " << spaceId_ << " part id " << partId
               << " finished";
 
+    // =================================================
+    if (!FLAGS_auto_gen_part_schema) {
+      // Handle parat commit system data
+      LOG(INFO) << "Start to handle part commit system data in space id " << spaceId_ << " part id "
+                << partId;
+      auto partCommitKey = NebulaKeyUtilsV1::systemCommitKey(partId);
+      std::string val;
+      auto partRetCode = readEngine_->get(partCommitKey, &val);
+      if (partRetCode != nebula::cpp2::ErrorCode::SUCCEEDED &&
+          partRetCode != nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
+        LOG(ERROR) << "Handle part system commit data in space id " << spaceId_ << " part id "
+                   << partId << " failed";
+        auto unFinishedPart = --unFinishedPart_;
+        if (unFinishedPart == 0) {
+          // all parts has finished
+          LOG(INFO) << "Handle last part: " << partId << " system commit data in space id "
+                    << spaceId_ << " finished";
+        } else {
+          pool_->add(std::bind(&UpgraderSpace::runPartV1, this));
+        }
+        return;
+      } else if (partRetCode == nebula::cpp2::ErrorCode::SUCCEEDED) {
+        auto newPartCommitKey = NebulaKeyUtils::systemCommitKey(partId);
+        std::vector<kvstore::KV> partData;
+        partData.emplace_back(std::move(newPartCommitKey), val);
+        writeSstFile(partData, newTagPartPath, partId, true);
+      }
+      LOG(INFO) << "Finish to handle part commit system data in space id " << spaceId_
+                << " part id " << partId;
+    }
+
     auto unFinishedPart = --unFinishedPart_;
     if (unFinishedPart == 0) {
       // all parts has finished
@@ -535,8 +573,8 @@ void UpgraderSpace::doProcessV1() {
     sleep(10);
   }
 
-  // handle system data
-  {
+  if (FLAGS_auto_gen_part_schema) {
+    // handle system data
     LOG(INFO) << "Start to handle system data in space id " << spaceId_;
     auto prefix = NebulaKeyUtilsV1::systemPrefix();
     std::unique_ptr<kvstore::KVIterator> iter;
