@@ -413,6 +413,16 @@ class QueryTestUtils {
     EXPECT_EQ(expectRows, actualRows);
   }
 
+  static void checkStatResponse(const cpp2::LookupIndexResp& resp,
+                                const std::vector<std::string>& expectCols,
+                                const Row& expectRow) {
+    auto columns = (*resp.stat_data_ref()).colNames;
+    EXPECT_EQ(expectCols, columns);
+    auto actualRows = (*resp.stat_data_ref()).rows;
+    EXPECT_EQ(1, actualRows.size());
+    EXPECT_EQ(actualRows[0], expectRow);
+  }
+
   static void checkColNames(
       const nebula::DataSet& dataSet,
       const std::vector<std::pair<TagID, std::vector<std::string>>>& tags,
