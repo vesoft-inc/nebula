@@ -122,14 +122,8 @@ StatusOr<SubPlan> MatchClausePlanner::transform(CypherClauseContextBase* clauseC
     size_t startIndex = 0;
     bool startFromEdge = false;
 
-    NG_RETURN_IF_ERROR(findStarts(nodeInfos,
-                                  edgeInfos,
-                                  matchClauseCtx,
-                                  nodeAliasesSeen,
-                                  startFromEdge,
-                                  startIndex,
-                                  iter > pathInfos.begin(),
-                                  subplan));
+    NG_RETURN_IF_ERROR(findStarts(
+        nodeInfos, edgeInfos, matchClauseCtx, nodeAliasesSeen, startFromEdge, startIndex, subplan));
     NG_RETURN_IF_ERROR(
         expand(nodeInfos, edgeInfos, matchClauseCtx, startFromEdge, startIndex, subplan));
 
@@ -182,7 +176,6 @@ Status MatchClausePlanner::findStarts(std::vector<NodeInfo>& nodeInfos,
                                       std::unordered_set<std::string> nodeAliasesSeen,
                                       bool& startFromEdge,
                                       size_t& startIndex,
-                                      bool needAStartNode,
                                       SubPlan& matchClausePlan) {
   auto& startVidFinders = StartVidFinder::finders();
   bool foundStart = false;
@@ -243,7 +236,7 @@ Status MatchClausePlanner::findStarts(std::vector<NodeInfo>& nodeInfos,
                                  matchClauseCtx->sentence->toString().c_str());
   }
 
-  if (needAStartNode) {
+  if (matchClausePlan.tail->isSingleInput()) {
     auto start = StartNode::make(matchClauseCtx->qctx);
     matchClausePlan.tail->setDep(0, start);
     matchClausePlan.tail = start;

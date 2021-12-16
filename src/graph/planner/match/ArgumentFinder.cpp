@@ -22,7 +22,7 @@ bool ArgumentFinder::matchEdge(EdgeContext* nodeCtx) {
 StatusOr<SubPlan> ArgumentFinder::transformNode(NodeContext* nodeCtx) {
   SubPlan subplan;
   auto alias = nodeCtx->info->alias;
-  auto argNode = Argument::make(nodeCtx->matchClauseCtx->qctx, nullptr, alias);
+  auto argNode = Argument::make(nodeCtx->matchClauseCtx->qctx, alias);
   argNode->setColNames({alias});
   auto aliasGeneratedBy = nodeCtx->matchClauseCtx->qctx->symTable()->getAliasGeneratedBy(alias);
   NG_RETURN_IF_ERROR(aliasGeneratedBy);

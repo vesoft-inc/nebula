@@ -69,12 +69,24 @@ std::unique_ptr<PlanNodeDescription> Select::explain() const {
   return desc;
 }
 
+Argument::Argument(QueryContext* qctx, std::string alias) : PlanNode(qctx, Kind::kArgument) {
+  alias_ = alias;
+  // An argument is a kind of leaf node, it has no dependencies but read a variable.
+  inputVars_.emplace_back(nullptr);
+}
+
 PlanNode* Argument::clone() const {
-  auto* newArg = Argument::make(qctx_, nullptr, alias_);
+  auto* newArg = Argument::make(qctx_, alias_);
   newArg->cloneMembers(*this);
   return newArg;
 }
 
-void Argument::cloneMembers(const Argument& arg) { SingleInputNode::cloneMembers(arg); }
+void Argument::cloneMembers(const Argument& arg) { PlanNode::cloneMembers(arg); }
+
+std::unique_ptr<PlanNodeDescription> Argument::explain() const {
+  auto desc = PlanNode::explain();
+  addDescription("inputVar", inputVar(), desc.get());
+  return desc;
+}
 }  // namespace graph
 }  // namespace nebula

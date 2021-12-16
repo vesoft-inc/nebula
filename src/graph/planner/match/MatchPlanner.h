@@ -24,6 +24,10 @@ class MatchPlanner final : public Planner {
  private:
   StatusOr<SubPlan> genPlan(CypherClauseContextBase* clauseCtx);
 
+  void connectMatch(const MatchClauseContext* match,
+                    const SubPlan& matchPlan,
+                    SubPlan& queryPartPlan);
+
   StatusOr<SubPlan> connectQueryParts(std::vector<SubPlan>& subplans);
 };
 }  // namespace graph

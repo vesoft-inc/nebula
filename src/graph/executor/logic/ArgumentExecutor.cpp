@@ -22,10 +22,17 @@ folly::Future<Status> ArgumentExecutor::execute() {
   DataSet ds;
   ds.colNames = argNode->colNames();
   ds.rows.reserve(iter->size());
+  std::unordered_set<Value> unique;
   for (; iter->valid(); iter->next()) {
-    Row row;
-    row.values.emplace_back(iter->getColumn(alias));
-    ds.rows.emplace_back(std::move(row));
+    auto val = iter->getColumn(alias);
+    if (!val.isVertex()) {
+      continue;
+    }
+    if (unique.emplace(val.getVertex().vid).second) {
+      Row row;
+      row.values.emplace_back(std::move(val));
+      ds.rows.emplace_back(std::move(row));
+    }
   }
   return finish(ResultBuilder().value(Value(std::move(ds))).build());
 }

@@ -26,7 +26,6 @@ class MatchClausePlanner final : public CypherClausePlanner {
                     std::unordered_set<std::string> nodeAliases,
                     bool& startFromEdge,
                     size_t& startIndex,
-                    bool needAStartNode,
                     SubPlan& matchClausePlan);
 
   Status expand(const std::vector<NodeInfo>& nodeInfos,

@@ -105,6 +105,10 @@ void AsyncMsgNotifyBasedScheduler::scheduleExecutor(
       runLoop(std::move(futures), loop, runner, std::move(promises));
       break;
     }
+    case PlanNode::Kind::kArgument: {
+      runExecutor(std::move(futures), exe, runner, std::move(promises));
+      break;
+    }
     default: {
       if (exe->depends().empty()) {
         runLeafExecutor(exe, runner, std::move(promises));

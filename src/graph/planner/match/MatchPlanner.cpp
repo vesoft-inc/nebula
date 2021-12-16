@@ -36,44 +36,7 @@ StatusOr<SubPlan> MatchPlanner::transform(AstContext* astCtx) {
       if (queryPartPlan.root == nullptr) {
         queryPartPlan = matchPlan;
       } else {
-        // Add a start node except the first match
-        // which will be added by the sequential planner
-        auto start = StartNode::make(match->qctx);
-        matchPlan.tail->setDep(0, start);
-        matchPlan.tail = start;
-        std::unordered_set<std::string> intersectedAliases;
-        for (auto& alias : match->aliasesGenerated) {
-          if (match->aliasesAvailable.find(alias.first) != match->aliasesAvailable.end()) {
-            intersectedAliases.emplace(alias.first);
-          }
-        }
-
-        if (!intersectedAliases.empty()) {
-          std::vector<Expression*> hashKeys;
-          std::vector<Expression*> probeKeys;
-          auto pool = match->qctx->objPool();
-          for (auto& alias : intersectedAliases) {
-            auto* args = ArgumentList::make(pool);
-            args->addArgument(InputPropertyExpression::make(pool, alias));
-            auto* expr = FunctionCallExpression::make(pool, "id", args);
-            hashKeys.emplace_back(expr);
-            probeKeys.emplace_back(expr->clone());
-          }
-          if (match->isOptional) {
-            auto leftJoin = BiLeftJoin::make(match->qctx, queryPartPlan.root, matchPlan.root);
-            leftJoin->setHashKeys(std::move(hashKeys));
-            leftJoin->setProbeKeys(std::move(probeKeys));
-            queryPartPlan.root = leftJoin;
-          } else {
-            auto innerJoin = BiInnerJoin::make(match->qctx, queryPartPlan.root, matchPlan.root);
-            innerJoin->setHashKeys(std::move(hashKeys));
-            innerJoin->setProbeKeys(std::move(probeKeys));
-            queryPartPlan.root = innerJoin;
-          }
-        } else {
-          queryPartPlan.root =
-              BiCartesianProduct::make(match->qctx, queryPartPlan.root, matchPlan.root);
-        }
+        connectMatch(match.get(), matchPlan, queryPartPlan);
       }
     }
 
@@ -108,6 +71,43 @@ StatusOr<SubPlan> MatchPlanner::genPlan(CypherClauseContextBase* clauseCtx) {
     }
   }
   return Status::OK();
+}
+
+void MatchPlanner::connectMatch(const MatchClauseContext* match,
+                                const SubPlan& matchPlan,
+                                SubPlan& queryPartPlan) {
+  std::unordered_set<std::string> intersectedAliases;
+  for (auto& alias : match->aliasesGenerated) {
+    if (match->aliasesAvailable.find(alias.first) != match->aliasesAvailable.end()) {
+      intersectedAliases.emplace(alias.first);
+    }
+  }
+
+  if (!intersectedAliases.empty()) {
+    std::vector<Expression*> hashKeys;
+    std::vector<Expression*> probeKeys;
+    auto pool = match->qctx->objPool();
+    for (auto& alias : intersectedAliases) {
+      auto* args = ArgumentList::make(pool);
+      args->addArgument(InputPropertyExpression::make(pool, alias));
+      auto* expr = FunctionCallExpression::make(pool, "id", args);
+      hashKeys.emplace_back(expr);
+      probeKeys.emplace_back(expr->clone());
+    }
+    if (match->isOptional) {
+      auto leftJoin = BiLeftJoin::make(match->qctx, queryPartPlan.root, matchPlan.root);
+      leftJoin->setHashKeys(std::move(hashKeys));
+      leftJoin->setProbeKeys(std::move(probeKeys));
+      queryPartPlan.root = leftJoin;
+    } else {
+      auto innerJoin = BiInnerJoin::make(match->qctx, queryPartPlan.root, matchPlan.root);
+      innerJoin->setHashKeys(std::move(hashKeys));
+      innerJoin->setProbeKeys(std::move(probeKeys));
+      queryPartPlan.root = innerJoin;
+    }
+  } else {
+    queryPartPlan.root = BiCartesianProduct::make(match->qctx, queryPartPlan.root, matchPlan.root);
+  }
 }
 
 StatusOr<SubPlan> MatchPlanner::connectQueryParts(std::vector<SubPlan>& subplans) {
