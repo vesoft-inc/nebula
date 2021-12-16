@@ -3282,10 +3282,10 @@ job_concurrency
     ;
 
 show_queries_sentence
-    : KW_SHOW KW_QUERIES {
+    : KW_SHOW KW_LOCAL KW_QUERIES {
         $$ = new ShowQueriesSentence();
     }
-    | KW_SHOW KW_ALL KW_QUERIES {
+    | KW_SHOW KW_QUERIES {
         $$ = new ShowQueriesSentence(true);
     }
     ;
