@@ -24,6 +24,9 @@ StatusOr<SubPlan> ArgumentFinder::transformNode(NodeContext* nodeCtx) {
   auto alias = nodeCtx->info->alias;
   auto argNode = Argument::make(nodeCtx->matchClauseCtx->qctx, nullptr, alias);
   argNode->setColNames({alias});
+  auto aliasGeneratedBy = nodeCtx->matchClauseCtx->qctx->symTable()->getAliasGeneratedBy(alias);
+  NG_RETURN_IF_ERROR(aliasGeneratedBy);
+  argNode->setInputVar(aliasGeneratedBy.value());
   subplan.root = argNode;
   subplan.tail = argNode;
 

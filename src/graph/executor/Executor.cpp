@@ -55,6 +55,7 @@
 #include "graph/executor/algo/ProduceAllPathsExecutor.h"
 #include "graph/executor/algo/ProduceSemiShortestPathExecutor.h"
 #include "graph/executor/algo/SubgraphExecutor.h"
+#include "graph/executor/logic/ArgumentExecutor.h"
 #include "graph/executor/logic/LoopExecutor.h"
 #include "graph/executor/logic/PassThroughExecutor.h"
 #include "graph/executor/logic/SelectExecutor.h"
@@ -534,7 +535,7 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
       return pool->add(new BiCartesianProductExecutor(node, qctx));
     }
     case PlanNode::Kind::kArgument: {
-      // TODO:
+      return pool->add(new ArgumentExecutor(node, qctx));
     }
     case PlanNode::Kind::kUnknown: {
       LOG(FATAL) << "Unknown plan node kind " << static_cast<int32_t>(node->kind());

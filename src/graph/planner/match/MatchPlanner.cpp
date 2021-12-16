@@ -117,6 +117,7 @@ StatusOr<SubPlan> MatchPlanner::connectQueryParts(std::vector<SubPlan>& subplans
     return subplans.front();
   }
 
+  // TODO: CartesianProduct or InnerJoin
   SubPlan finalPlan = subplans.front();
   for (size_t i = 1; i < subplans.size(); ++i) {
     SegmentsConnector::addInput(subplans[i].tail, finalPlan.root);
