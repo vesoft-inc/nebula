@@ -13,6 +13,7 @@
 #include "common/time/TimezoneInfo.h"
 #include "storage/StorageServer.h"
 #include "version/Version.h"
+#include "daemons/SetupLogging.h"
 
 DEFINE_string(local_ip, "", "IP address which is used to identify this server");
 DEFINE_string(data_path,
@@ -44,7 +45,6 @@ using nebula::network::NetworkUtils;
 
 static void signalHandler(int sig);
 static Status setupSignalHandler();
-extern Status setupLogging();
 #if defined(__x86_64__)
 extern Status setupBreakpad();
 #endif
@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, false);
 
   // Setup logging
-  auto status = setupLogging();
+  auto status = setupLogging(argv[0]);
   if (!status.ok()) {
     LOG(ERROR) << status;
     return EXIT_FAILURE;

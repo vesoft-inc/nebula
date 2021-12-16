@@ -30,6 +30,7 @@
 #include "version/Version.h"
 #include "webservice/Router.h"
 #include "webservice/WebService.h"
+#include "daemons/SetupLogging.h"
 
 using nebula::operator<<;
 using nebula::ProcessUtils;
@@ -60,7 +61,6 @@ static std::unique_ptr<nebula::kvstore::KVStore> gKVStore;
 
 static void signalHandler(int sig);
 static Status setupSignalHandler();
-extern Status setupLogging();
 #if defined(__x86_64__)
 extern Status setupBreakpad();
 #endif
@@ -197,7 +197,7 @@ int main(int argc, char* argv[]) {
   gflags::ParseCommandLineFlags(&argc, &argv, false);
 
   // Setup logging
-  auto status = setupLogging();
+  auto status = setupLogging(argv[0]);
   if (!status.ok()) {
     LOG(ERROR) << status;
     return EXIT_FAILURE;
