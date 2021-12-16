@@ -5,7 +5,6 @@
 
 #include "graph/executor/admin/SessionExecutor.h"
 
-#include "common/session/SessionManager.h"
 #include "graph/context/QueryContext.h"
 #include "graph/planner/plan/Admin.h"
 #include "interface/gen-cpp2/common_types.h"

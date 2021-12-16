@@ -1074,33 +1074,6 @@ struct Session {
     10: map<common.ExecutionPlanID, QueryDesc>(cpp.template = "std::unordered_map") queries;
 }
 
-struct SessionContext {
-    // 1) The authorization identifier.
-    1: common.SessionID session_id,
-    // 2) The principal identified by the authorization identifier.
-    2: binary user_name,
-    // 3) The time zone identifier.
-    3: i32 timezone,
-    // 4) The session schema that is a GQL-schema.
-    
-    // 5) The session graph that is a graph.
-    5: binary space_name,
-    // 6) The session parameters that constitute a context parameter dictionary.
-    6: map<binary, common.Value>(cpp.template = "std::unordered_map") param_dict,
-    // 7) The session parameter flags that constitute a dictionary that associates
-    // each session parameter with its parameter flag.
-    // Flag controlling whether a session parameter may be overridden by another
-    // request parameter with the same name or modified by a later
-    // GQL-request in the same GQL-session
-    7: map<binary, common.Value>(cpp.template = "std::unordered_map") param_falgs,
-    // 8) The current transaction that is an optional GQL-transaction.
-    // (TODO) transaction is unimplemented
-    // 9) The request context that is an optional GQL-request context.
-    // (TODO) This part is currently conflicts with the implementation of RequestCommon
-    // 10) The termination flag that is a Boolean value.
-    8: bool is_terminated = false;
-}
-
 struct CreateSessionReq {
     1: binary               user,
     2: common.HostAddr      graph_addr,
