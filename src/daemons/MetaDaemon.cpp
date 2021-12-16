@@ -59,6 +59,7 @@ static std::unique_ptr<apache::thrift::ThriftServer> gServer;
 static std::unique_ptr<nebula::kvstore::KVStore> gKVStore;
 
 static void signalHandler(int sig);
+static void waitForStop();
 static Status setupSignalHandler();
 extern Status setupLogging();
 #if defined(__x86_64__)
@@ -338,6 +339,7 @@ int main(int argc, char* argv[]) {
       gServer->setSSLConfig(nebula::sslContextConfig());
     }
     gServer->serve();  // Will wait until the server shuts down
+    waitForStop();
   } catch (const std::exception& e) {
     LOG(ERROR) << "Exception thrown: " << e.what();
     return EXIT_FAILURE;
@@ -361,18 +363,20 @@ void signalHandler(int sig) {
       if (gServer) {
         gServer->stop();
       }
-      {
-        auto gJobMgr = nebula::meta::JobManager::getInstance();
-        if (gJobMgr) {
-          gJobMgr->shutDown();
-        }
-      }
-      if (gKVStore) {
-        gKVStore->stop();
-        gKVStore.reset();
-      }
       break;
     default:
       FLOG_ERROR("Signal %d(%s) received but ignored", sig, ::strsignal(sig));
+  }
+}
+
+void waitForStop() {
+  auto jobMan = nebula::meta::JobManager::getInstance();
+  if (jobMan) {
+    jobMan->shutDown();
+  }
+
+  if (gKVStore) {
+    gKVStore->stop();
+    gKVStore.reset();
   }
 }
