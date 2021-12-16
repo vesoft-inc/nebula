@@ -3554,6 +3554,7 @@ bool MetaClient::checkIsPlanKilled(SessionID sessionId, ExecutionPlanID planId) 
 
 Status MetaClient::verifyVersion() {
   auto req = cpp2::VerifyClientVersionReq();
+  req.set_build_version(getOriginVersion());
   req.set_host(options_.localHost_);
   folly::Promise<StatusOr<cpp2::VerifyClientVersionResp>> promise;
   auto future = promise.getFuture();
