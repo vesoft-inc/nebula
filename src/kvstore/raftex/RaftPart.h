@@ -224,6 +224,8 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   // Reset the part, clean up all data and WALs.
   void reset();
 
+  uint64_t execTime() const { return execTime_; }
+
  protected:
   // Protected constructor to prevent from instantiating directly
   RaftPart(ClusterID clusterId,
@@ -563,6 +565,9 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   int64_t startTimeMs_ = 0;
 
   std::atomic<bool> blocking_{false};
+
+  // For stats info
+  uint64_t execTime_{0};
 };
 
 }  // namespace raftex

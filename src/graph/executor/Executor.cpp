@@ -99,7 +99,7 @@
 #include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/service/GraphFlags.h"
-#include "graph/stats/StatsDef.h"
+#include "graph/stats/GraphStats.h"
 #include "interface/gen-cpp2/graph_types.h"
 
 using folly::stringPrintf;

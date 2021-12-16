@@ -13,12 +13,12 @@
 #include "common/utils/IndexKeyUtils.h"
 #include "common/utils/NebulaKeyUtils.h"
 #include "common/utils/OperationKeyUtils.h"
+#include "storage/stats/StorageStats.h"
 
 namespace nebula {
 namespace storage {
 
 ProcessorCounters kAddEdgesCounters;
-stats::CounterId kNumEdgesInserted;
 
 void AddEdgesProcessor::process(const cpp2::AddEdgesRequest& req) {
   spaceId_ = req.get_space_id();

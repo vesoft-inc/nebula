@@ -8,6 +8,7 @@
 #include <folly/ScopeGuard.h>
 
 #include "common/base/Base.h"
+#include "common/base/ErrorOr.h"
 #include "common/ssl/SSLConfig.h"
 #include "kvstore/raftex/RaftPart.h"
 

@@ -3,8 +3,7 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#ifndef GRAPH_STATS_STATSDEF_H_
-#define GRAPH_STATS_STATSDEF_H_
+#pragma once
 
 #include "common/base/Base.h"
 #include "common/stats/StatsManager.h"
@@ -45,7 +44,6 @@ extern stats::CounterId kNumAuthFailedSessionsOutOfMaxAllowed;
 extern stats::CounterId kNumActiveSessions;
 extern stats::CounterId kNumReclaimedExpiredSessions;
 
-void initCounters();
+void initGraphStats();
 
 }  // namespace nebula
-#endif  // GRAPH_STATS_STATSDEF_H_

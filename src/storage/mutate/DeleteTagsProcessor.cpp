@@ -10,12 +10,12 @@
 #include "common/utils/NebulaKeyUtils.h"
 #include "common/utils/OperationKeyUtils.h"
 #include "storage/StorageFlags.h"
+#include "storage/stats/StorageStats.h"
 
 namespace nebula {
 namespace storage {
 
 ProcessorCounters kDelTagsCounters;
-stats::CounterId kNumTagsDeleted;
 
 void DeleteTagsProcessor::process(const cpp2::DeleteTagsRequest& req) {
   spaceId_ = req.get_space_id();

@@ -15,7 +15,7 @@
 #include "graph/planner/plan/PlanNode.h"
 #include "graph/scheduler/AsyncMsgNotifyBasedScheduler.h"
 #include "graph/scheduler/Scheduler.h"
-#include "graph/stats/StatsDef.h"
+#include "graph/stats/GraphStats.h"
 #include "graph/util/AstUtils.h"
 #include "graph/validator/Validator.h"
 #include "parser/ExplainSentence.h"

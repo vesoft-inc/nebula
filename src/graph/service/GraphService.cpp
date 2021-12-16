@@ -15,7 +15,7 @@
 #include "graph/service/GraphFlags.h"
 #include "graph/service/PasswordAuthenticator.h"
 #include "graph/service/RequestContext.h"
-#include "graph/stats/StatsDef.h"
+#include "graph/stats/GraphStats.h"
 #include "version/Version.h"
 
 namespace nebula {

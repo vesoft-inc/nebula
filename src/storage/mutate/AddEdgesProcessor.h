@@ -16,7 +16,6 @@ namespace nebula {
 namespace storage {
 
 extern ProcessorCounters kAddEdgesCounters;
-extern stats::CounterId kNumEdgesInserted;
 
 class AddEdgesProcessor : public BaseProcessor<cpp2::ExecResponse> {
   friend class TransactionManager;

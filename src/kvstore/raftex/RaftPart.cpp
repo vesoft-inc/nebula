@@ -14,6 +14,7 @@
 #include "common/base/CollectNSucceeded.h"
 #include "common/base/SlowOpTracker.h"
 #include "common/network/NetworkUtils.h"
+#include "common/stats/StatsManager.h"
 #include "common/thread/NamedThread.h"
 #include "common/thrift/ThriftClientManager.h"
 #include "common/time/WallClock.h"
@@ -21,6 +22,7 @@
 #include "interface/gen-cpp2/RaftexServiceAsyncClient.h"
 #include "kvstore/LogEncoder.h"
 #include "kvstore/raftex/Host.h"
+#include "kvstore/stats/KVStats.h"
 #include "kvstore/wal/FileBasedWal.h"
 
 DEFINE_uint32(raft_heartbeat_interval_secs, 5, "Seconds between each heartbeat");
@@ -872,6 +874,7 @@ void RaftPart::processAppendLogResponses(const AppendLogResponses& resps,
       SlowOpTracker tracker;
       // Step 3: Commit the batch
       if (commitLogs(std::move(walIt), true) == nebula::cpp2::ErrorCode::SUCCEEDED) {
+        stats::StatsManager::addValue(kCommitLogLatencyUs, execTime_);
         std::lock_guard<std::mutex> g(raftLock_);
         committedLogId_ = lastLogId;
         firstLogId = lastLogId_ + 1;
@@ -1387,6 +1390,7 @@ void RaftPart::processAskForVoteRequest(const cpp2::AskForVoteRequest& req,
   // Reset the last message time
   lastMsgRecvDur_.reset();
   isBlindFollower_ = false;
+  stats::StatsManager::addValue(kNumRaftVotes);
   return;
 }
 
@@ -1570,6 +1574,7 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
     // lack of log
     auto code = commitLogs(wal_->iterator(committedLogId_ + 1, lastLogIdCanCommit), false);
     if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
+      stats::StatsManager::addValue(kCommitLogLatencyUs, execTime_);
       VLOG(1) << idStr_ << "Follower succeeded committing log " << committedLogId_ + 1 << " to "
               << lastLogIdCanCommit;
       committedLogId_ = lastLogIdCanCommit;
@@ -1751,6 +1756,7 @@ void RaftPart::processSendSnapshotRequest(const cpp2::SendSnapshotRequest& req,
   // TODO(heng): Maybe we should save them into one sst firstly?
   auto ret = commitSnapshot(
       req.get_rows(), req.get_committed_log_id(), req.get_committed_log_term(), req.get_done());
+  stats::StatsManager::addValue(kCommitSnapshotLatencyUs, execTime_);
   lastTotalCount_ += ret.first;
   lastTotalSize_ += ret.second;
   if (lastTotalCount_ != req.get_total_count() || lastTotalSize_ != req.get_total_size()) {

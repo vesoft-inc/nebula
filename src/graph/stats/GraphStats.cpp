@@ -3,10 +3,11 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
-#include "graph/stats/StatsDef.h"
+#include "graph/stats/GraphStats.h"
 
+#include "clients/meta/stats/MetaClientStats.h"
+#include "clients/storage/stats/StorageClientStats.h"
 #include "common/base/Base.h"
-#include "common/stats/StatsManager.h"
 
 DEFINE_int32(slow_query_threshold_us,
              200000,
@@ -40,7 +41,7 @@ stats::CounterId kNumAuthFailedSessionsOutOfMaxAllowed;
 stats::CounterId kNumActiveSessions;
 stats::CounterId kNumReclaimedExpiredSessions;
 
-void initCounters() {
+void initGraphStats() {
   kNumQueries = stats::StatsManager::registerStats("num_queries", "rate, sum");
   kNumActiveQueries = stats::StatsManager::registerStats("num_active_queries", "sum");
   kNumSlowQueries = stats::StatsManager::registerStats("num_slow_queries", "rate, sum");
@@ -74,6 +75,9 @@ void initCounters() {
   kNumActiveSessions = stats::StatsManager::registerStats("num_active_sessions", "sum");
   kNumReclaimedExpiredSessions =
       stats::StatsManager::registerStats("num_reclaimed_expired_sessions", "rate, sum");
+
+  initMetaClientStats();
+  initStorageClientStats();
 }
 
 }  // namespace nebula

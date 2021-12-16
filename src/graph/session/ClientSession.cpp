@@ -8,7 +8,7 @@
 #include "common/stats/StatsManager.h"
 #include "common/time/WallClock.h"
 #include "graph/context/QueryContext.h"
-#include "graph/stats/StatsDef.h"
+#include "graph/stats/GraphStats.h"
 
 namespace nebula {
 namespace graph {
