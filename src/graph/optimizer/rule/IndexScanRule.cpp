@@ -233,11 +233,6 @@ Status IndexScanRule::appendColHint(std::vector<IndexColumnHint>& hints,
           fmt::format("Not supported value type {} for index.", item.value_.type()));
     }
     if (item.relOP_ == Expression::Kind::kRelEQ) {
-      // check the items, don't allow where c1 == 1 and c1 == 2 and c1 > 3....
-      // If EQ item appears, only one element is allowed
-      if (items.items.size() > 1) {
-        return Status::SemanticError();
-      }
       isRangeScan = false;
       begin = {item.value_, true};
       break;

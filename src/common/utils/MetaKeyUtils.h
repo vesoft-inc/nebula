@@ -110,6 +110,12 @@ class MetaKeyUtils final {
 
   static std::vector<HostAddr> parsePartValV2(folly::StringPiece val);
 
+  static std::string machineKey(std::string ip, Port port);
+
+  static const std::string& machinePrefix();
+
+  static HostAddr parseMachineKey(folly::StringPiece key);
+
   static std::string hostKey(std::string ip, Port port);
 
   static std::string hostKeyV2(std::string addr, Port port);
@@ -285,16 +291,6 @@ class MetaKeyUtils final {
 
   static std::tuple<BalanceTaskStatus, BalanceTaskResult, int64_t, int64_t> parseBalanceTaskVal(
       const folly::StringPiece& rawVal);
-
-  static std::string groupKey(const std::string& group);
-
-  static std::string groupVal(const std::vector<std::string>& zones);
-
-  static const std::string& groupPrefix();
-
-  static std::string parseGroupName(folly::StringPiece rawData);
-
-  static std::vector<std::string> parseZoneNames(folly::StringPiece rawData);
 
   static std::string zoneKey(const std::string& zone);
 

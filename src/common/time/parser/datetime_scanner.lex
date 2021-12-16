@@ -59,7 +59,7 @@ R_BRACKET                   "]"
                           return TokenType::TIME_ZONE_NAME;
                         }
 
-.                       {
+\n|.                    {
                           /**
                             * Any other unmatched byte sequences will get us here,
                             * including the non-ascii ones, which are negative

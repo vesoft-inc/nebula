@@ -27,9 +27,9 @@ nebula::cpp2::ErrorCode RebuildEdgeIndexTask::buildIndexGlobal(GraphSpaceID spac
                                                                PartitionID part,
                                                                const IndexItems& items,
                                                                kvstore::RateLimiter* rateLimiter) {
-  if (canceled_) {
+  if (UNLIKELY(canceled_)) {
     LOG(ERROR) << "Rebuild Edge Index is Canceled";
-    return nebula::cpp2::ErrorCode::SUCCEEDED;
+    return nebula::cpp2::ErrorCode::E_USER_CANCEL;
   }
 
   auto vidSizeRet = env_->schemaMan_->getSpaceVidLen(space);
@@ -64,9 +64,9 @@ nebula::cpp2::ErrorCode RebuildEdgeIndexTask::buildIndexGlobal(GraphSpaceID spac
   RowReaderWrapper reader;
   size_t batchSize = 0;
   while (iter && iter->valid()) {
-    if (canceled_) {
+    if (UNLIKELY(canceled_)) {
       LOG(ERROR) << "Rebuild Edge Index is Canceled";
-      return nebula::cpp2::ErrorCode::SUCCEEDED;
+      return nebula::cpp2::ErrorCode::E_USER_CANCEL;
     }
 
     if (batchSize >= FLAGS_rebuild_index_batch_size) {
