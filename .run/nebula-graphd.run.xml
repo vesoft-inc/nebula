@@ -1,0 +1,7 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="nebula-graphd" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="--flagfile $PROJECT_DIR$/conf/nebula-graphd-debug.conf" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="nebula-graphd" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="nebula-graphd">
+    <method v="2">
+      <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+    </method>
+  </configuration>
+</component>

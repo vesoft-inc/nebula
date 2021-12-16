@@ -2,11 +2,12 @@
 // Created by arcosx on 12/14/21.
 //
 #include <gtest/gtest.h>
-#include "graph/wasm/WasmFunction.h"
+#include "common/function/WasmFunctionManager.h"
+
 namespace nebula {
 namespace graph {
 TEST(WasmFunctionTest, gen) {
-  WasmFunction wasmFunction;
+  WasmFunctionManager wasmFunctionManager;
   auto WatStr = "(module\n"
       "  (func $gcd (param i32 i32) (result i32)\n"
       "    (local i32)\n"
@@ -34,6 +35,10 @@ TEST(WasmFunctionTest, gen) {
       "  )\n"
       "  (export \"main\" (func $gcd))\n"
       ")";
-  wasmFunction.runWat(WatStr);
+  wasmFunctionManager.runWat(WatStr);
+
+  auto wasmRuntime =  wasmFunctionManager.createInstanceAndFunction(WatStr,"main");
+  auto result =  wasmFunctionManager.run(wasmRuntime,{6, 27});
+  std::cout << result[0] << "\n";
 }  // namespace graph
 }}
