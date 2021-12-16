@@ -39,7 +39,7 @@ struct ResponseCommon {
     // Only contains the partition that returns error
     1: required list<PartitionResult>   failed_parts,
     // Query latency from storage service
-    2: required i32                     latency_in_us,
+    2: required i64                     latency_in_us,
     3: optional map<string,i32>         latency_detail_us,
 }
 
@@ -564,9 +564,8 @@ struct LookupAndTraverseRequest {
  */
 
 struct ScanCursor {
-    3: bool                                 has_next,
     // next start key of scan, only valid when has_next is true
-    4: optional binary                      next_cursor,
+    1: optional binary                      next_cursor,
 }
 
 struct ScanVertexRequest {
@@ -588,21 +587,11 @@ struct ScanVertexRequest {
     10: optional RequestCommon              common,
 }
 
-struct ScanVertexResponse {
-    1: required ResponseCommon              result,
-    // The data will return as a dataset. The format is as follows:
-    // Each column represents one property. the column name is in the form of "tag_name.prop_alias"
-    // in the same order which specified in VertexProp in request.
-    2: common.DataSet                       vertex_data,
-    3: map<common.PartitionID, ScanCursor> (cpp.template = "std::unordered_map")
-                                            cursors;
-}
-
 struct ScanEdgeRequest {
     1: common.GraphSpaceID                  space_id,
     2: map<common.PartitionID, ScanCursor> (cpp.template = "std::unordered_map")
                                             parts,
-    3: EdgeProp                             return_columns,
+    3: list<EdgeProp>                       return_columns,
     // max row count of edge in this response
     4: i64                                  limit,
     // only return data in time range [start_time, end_time)
@@ -617,12 +606,13 @@ struct ScanEdgeRequest {
     10: optional RequestCommon              common,
 }
 
-struct ScanEdgeResponse {
+struct ScanResponse {
     1: required ResponseCommon              result,
     // The data will return as a dataset. The format is as follows:
-    // Each column represents one property. the column name is in the form of "edge_name.prop_alias"
-    // in the same order which specified in EdgeProp in requests.
-    2: common.DataSet                       edge_data,
+    // Each column represents one property. the column name is in the form of "edge/tag_name.prop_alias"
+    // in the same order which specified in VertexProp/EdgeProp in request
+    // Should keep same with result of GetProps
+    2: optional common.DataSet              props,
     3: map<common.PartitionID, ScanCursor> (cpp.template = "std::unordered_map")
                                             cursors;
 }
@@ -682,8 +672,8 @@ service GraphStorageService {
     UpdateResponse updateVertex(1: UpdateVertexRequest req);
     UpdateResponse updateEdge(1: UpdateEdgeRequest req);
 
-    ScanVertexResponse scanVertex(1: ScanVertexRequest req)
-    ScanEdgeResponse scanEdge(1: ScanEdgeRequest req)
+    ScanResponse scanVertex(1: ScanVertexRequest req)
+    ScanResponse scanEdge(1: ScanEdgeRequest req)
 
     GetUUIDResp getUUID(1: GetUUIDReq req);
 

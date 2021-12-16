@@ -419,18 +419,22 @@ class UpdateEdgeSentence final : public UpdateBaseSentence {
 
 class DeleteVerticesSentence final : public Sentence {
  public:
-  explicit DeleteVerticesSentence(VertexIDList *vidList)
-      : Sentence(Kind::kDeleteVertices), vertices_(new VerticesClause(vidList)) {}
+  DeleteVerticesSentence(VertexIDList *vidList, bool withEdge)
+      : Sentence(Kind::kDeleteVertices),
+        vertices_(new VerticesClause(vidList)),
+        withEdge_(withEdge) {}
 
-  explicit DeleteVerticesSentence(Expression *ref)
-      : Sentence(Kind::kDeleteVertices), vertices_(new VerticesClause(ref)) {}
+  DeleteVerticesSentence(Expression *ref, bool withEdge)
+      : Sentence(Kind::kDeleteVertices), vertices_(new VerticesClause(ref)), withEdge_(withEdge) {}
 
   const VerticesClause *vertices() const { return vertices_.get(); }
 
   std::string toString() const override;
+  bool withEdge() const { return withEdge_; }
 
  private:
   std::unique_ptr<VerticesClause> vertices_;
+  bool withEdge_{true};
 };
 
 class DeleteTagsSentence final : public Sentence {

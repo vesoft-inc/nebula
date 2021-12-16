@@ -356,7 +356,6 @@ StorageClientBase<ClientType>::getHostPartsWithCursor(GraphSpaceID spaceId) cons
 
   // TODO support cursor
   cpp2::ScanCursor c;
-  c.set_has_next(false);
   auto parts = status.value();
   for (auto partId = 1; partId <= parts; partId++) {
     auto leader = getLeader(spaceId, partId);

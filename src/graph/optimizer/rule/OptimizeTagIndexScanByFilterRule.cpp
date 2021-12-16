@@ -12,6 +12,7 @@
 #include "graph/optimizer/rule/IndexScanRule.h"
 #include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Scan.h"
+#include "graph/util/ExpressionUtils.h"
 
 using nebula::graph::Filter;
 using nebula::graph::OptimizerUtils;

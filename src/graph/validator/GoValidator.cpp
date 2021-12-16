@@ -36,9 +36,23 @@ Status GoValidator::validateImpl() {
     return Status::SemanticError("$- must be referred in FROM before used in WHERE or YIELD");
   }
 
-  if (!exprProps.varProps().empty() && goCtx_->from.fromType != kVariable) {
-    return Status::SemanticError(
-        "A variable must be referred in FROM before used in WHERE or YIELD");
+  if (!exprProps.varProps().empty()) {
+    if (goCtx_->from.fromType != kVariable) {
+      return Status::SemanticError(
+          "A variable must be referred in FROM before used in WHERE or YIELD");
+    }
+    auto varPropsMap = exprProps.varProps();
+    std::vector<std::string> keys;
+    for (const auto& elem : varPropsMap) {
+      keys.emplace_back(elem.first);
+    }
+    if (keys.size() > 1) {
+      return Status::SemanticError("Multiple variable property is not supported in WHERE or YIELD");
+    }
+    if (keys.front() != goCtx_->from.userDefinedVarName) {
+      return Status::SemanticError(
+          "A variable must be referred in FROM before used in WHERE or YIELD");
+    }
   }
 
   if ((!exprProps.inputProps().empty() && !exprProps.varProps().empty()) ||
