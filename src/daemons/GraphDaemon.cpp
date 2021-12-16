@@ -21,6 +21,7 @@
 #include "graph/stats/StatsDef.h"
 #include "version/Version.h"
 #include "webservice/WebService.h"
+#include "daemons/SetupLogging.h"
 
 using nebula::ProcessUtils;
 using nebula::Status;
@@ -33,7 +34,6 @@ static std::unique_ptr<apache::thrift::ThriftServer> gServer;
 
 static void signalHandler(int sig);
 static Status setupSignalHandler();
-extern Status setupLogging();
 static void printHelp(const char *prog);
 static void setupThreadManager();
 #if defined(__x86_64__)
@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Setup logging
-  auto status = setupLogging();
+  auto status = setupLogging(argv[0]);
   if (!status.ok()) {
     LOG(ERROR) << status;
     return EXIT_FAILURE;
