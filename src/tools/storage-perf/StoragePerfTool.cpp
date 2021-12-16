@@ -333,7 +333,7 @@ class Perf {
     for (auto i = 0; i < tokens; i++) {
       auto start = time::WallClock::fastNowInMicroSec();
       StorageClient::CommonRequestParam param(spaceId_, 0, 0);
-      storageClient_->addVertices(param, genVertices(), tagProps_, true)
+      storageClient_->addVertices(param, genVertices(), tagProps_, true, false)
           .via(evb)
           .thenValue([this, start](auto&& resps) {
             if (!resps.succeeded()) {
@@ -362,7 +362,7 @@ class Perf {
     for (auto i = 0; i < tokens; i++) {
       auto start = time::WallClock::fastNowInMicroSec();
       StorageClient::CommonRequestParam param(spaceId_, 0, 0);
-      storageClient_->addEdges(param, genEdges(), edgeProps_, true)
+      storageClient_->addEdges(param, genEdges(), edgeProps_, true, false)
           .via(evb)
           .thenValue([this, start](auto&& resps) {
             if (!resps.succeeded()) {
