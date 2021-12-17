@@ -17,10 +17,10 @@ using HostParts = std::unordered_map<HostAddr, std::vector<PartitionID>>;
 using LeaderBalancePlan = std::vector<std::tuple<GraphSpaceID, PartitionID, HostAddr, HostAddr>>;
 
 struct Host {
-  explicit Host(const HostAddr& ha) : ha_(ha) {}
+  explicit Host(const HostAddr& ha) : host_(ha) {}
   Host() = default;
 
-  HostAddr ha_;
+  HostAddr host_;
   std::set<PartitionID> parts_;
 };
 struct Zone {
@@ -35,12 +35,13 @@ struct Zone {
   int32_t partNum_;
 };
 struct SpaceInfo {
-  nebula::cpp2::ErrorCode getInfo(GraphSpaceID spaceId, kvstore::KVStore* kvstore);
+  nebula::cpp2::ErrorCode loadInfo(GraphSpaceID spaceId, kvstore::KVStore* kvstore);
   bool hasHost(const HostAddr& ha);
 
   std::string name_;
   GraphSpaceID spaceId_;
   int32_t replica_;
+  // zone_name -> zone
   std::map<std::string, Zone> zones_;
 };
 

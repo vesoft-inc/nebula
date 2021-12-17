@@ -1,4 +1,4 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
+/* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License.
  */
@@ -35,18 +35,18 @@ folly::Future<Status> DataBalanceJobExecutor::executeInternal() {
 Status DataBalanceJobExecutor::buildBalancePlan() {
   std::map<std::string, std::vector<Host*>> lostZoneHost;
   std::map<std::string, std::vector<Host*>> activeSortedHost;
-  for (auto& p : spaceInfo_.zones_) {
-    for (auto& ph : p.second.hosts_) {
-      activeSortedHost[p.first].push_back(&ph.second);
+  for (auto& zoneMapEntry : spaceInfo_.zones_) {
+    for (auto& hostMapEntry : zoneMapEntry.second.hosts_) {
+      activeSortedHost[zoneMapEntry.first].push_back(&hostMapEntry.second);
     }
   }
-  for (HostAddr ha : lostHosts_) {
-    if (!spaceInfo_.hasHost(ha)) {
+  for (HostAddr host : lostHosts_) {
+    if (!spaceInfo_.hasHost(host)) {
       return Status::Error(
-          "Host %s does not belong to space %d", ha.toString().c_str(), spaceInfo_.spaceId_);
+          "Host %s does not belong to space %d", host.toString().c_str(), spaceInfo_.spaceId_);
     }
     for (auto& zoneMapEntry : spaceInfo_.zones_) {
-      auto it = zoneMapEntry.second.hosts_.find(ha);
+      auto it = zoneMapEntry.second.hosts_.find(host);
       if (it != zoneMapEntry.second.hosts_.end()) {
         lostZoneHost[zoneMapEntry.first].push_back(&it->second);
         std::vector<Host*>& hvec = activeSortedHost[zoneMapEntry.first];
@@ -62,14 +62,20 @@ Status DataBalanceJobExecutor::buildBalancePlan() {
     });
   }
   plan_.reset(new BalancePlan(jobDescription_, kvstore_, adminClient_));
-  for (auto& p : lostZoneHost) {
-    std::vector<Host*>& hvec = activeSortedHost[p.first];
-    for (Host* h : p.second) {
-      for (PartitionID partId : h->parts_) {
+  // move parts of lost hosts to active hosts in the same zone
+  for (auto& zoneHostEntry : lostZoneHost) {
+    std::vector<Host*>& hvec = activeSortedHost[zoneHostEntry.first];
+    for (Host* host : zoneHostEntry.second) {
+      for (PartitionID partId : host->parts_) {
         Host* dstHost = hvec.front();
         dstHost->parts_.insert(partId);
-        plan_->addTask(BalanceTask(
-            jobId_, spaceInfo_.spaceId_, partId, h->ha_, dstHost->ha_, kvstore_, adminClient_));
+        plan_->addTask(BalanceTask(jobId_,
+                                   spaceInfo_.spaceId_,
+                                   partId,
+                                   host->host_,
+                                   dstHost->host_,
+                                   kvstore_,
+                                   adminClient_));
         for (size_t i = 0; i < hvec.size() - 1; i++) {
           if (hvec[i]->parts_.size() > hvec[i + 1]->parts_.size()) {
             std::swap(hvec[i], hvec[i + 1]);
@@ -78,15 +84,20 @@ Status DataBalanceJobExecutor::buildBalancePlan() {
           }
         }
       }
-      h->parts_.clear();
+      host->parts_.clear();
     }
   }
   lostZoneHost.clear();
+  // rebalance for hosts in a zone
   auto balanceHostVec = [this](std::vector<Host*>& hostVec) -> std::vector<BalanceTask> {
     size_t totalPartNum = 0;
     size_t avgPartNum = 0;
     for (Host* h : hostVec) {
       totalPartNum += h->parts_.size();
+    }
+    if (hostVec.size() == 0) {
+      LOG(ERROR) << "rebalance error: zone has no host";
+      return {};
     }
     avgPartNum = totalPartNum / hostVec.size();
     size_t remainder = totalPartNum - avgPartNum * hostVec.size();
@@ -101,9 +112,9 @@ Status DataBalanceJobExecutor::buildBalancePlan() {
         break;
       }
     }
-    for (size_t i = 0; i < hostVec.size(); i++) {
+    for (size_t i = leftEnd; i < hostVec.size(); i++) {
+      rightBegin = i;
       if (avgPartNum < hostVec[i]->parts_.size()) {
-        rightBegin = i;
         break;
       }
     }
@@ -124,8 +135,8 @@ Status DataBalanceJobExecutor::buildBalancePlan() {
       tasks.emplace_back(jobId_,
                          spaceInfo_.spaceId_,
                          partId,
-                         srcHost->ha_,
-                         hostVec[leftBegin]->ha_,
+                         srcHost->host_,
+                         hostVec[leftBegin]->host_,
                          kvstore_,
                          adminClient_);
       size_t leftIndex = leftBegin;
@@ -145,8 +156,8 @@ Status DataBalanceJobExecutor::buildBalancePlan() {
     }
     return tasks;
   };
-  for (auto& p : activeSortedHost) {
-    std::vector<Host*>& hvec = p.second;
+  for (auto& pair : activeSortedHost) {
+    std::vector<Host*>& hvec = pair.second;
     std::vector<BalanceTask> tasks = balanceHostVec(hvec);
     for (BalanceTask& task : tasks) {
       plan_->addTask(std::move(task));
@@ -175,7 +186,7 @@ nebula::cpp2::ErrorCode DataBalanceJobExecutor::prepare() {
     return nebula::error(spaceRet);
   }
   GraphSpaceID spaceId = nebula::value(spaceRet);
-  nebula::cpp2::ErrorCode rc = spaceInfo_.getInfo(spaceId, kvstore_);
+  nebula::cpp2::ErrorCode rc = spaceInfo_.loadInfo(spaceId, kvstore_);
   if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
     return rc;
   }

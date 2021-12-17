@@ -1,4 +1,4 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
+/* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License.
  */
@@ -60,7 +60,7 @@ class LeaderBalanceJobExecutor : public MetaJobExecutor {
                         LeaderBalancePlan& plan,
                         GraphSpaceID spaceId);
 
-  void simplifyLeaderBalnacePlan(GraphSpaceID spaceId, LeaderBalancePlan& plan);
+  void simplifyLeaderBalancePlan(GraphSpaceID spaceId, LeaderBalancePlan& plan);
 
   nebula::cpp2::ErrorCode getAllSpaces(
       std::vector<std::tuple<GraphSpaceID, int32_t, bool>>& spaces);
@@ -91,4 +91,4 @@ class LeaderBalanceJobExecutor : public MetaJobExecutor {
 }  // namespace meta
 }  // namespace nebula
 
-#endif  // META_BALANCEJOBEXECUTOR_H_
+#endif  // META_LEADERBALANCEJOBEXECUTOR_H_

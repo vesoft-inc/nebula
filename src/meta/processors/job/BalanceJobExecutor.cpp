@@ -88,11 +88,16 @@ nebula::cpp2::ErrorCode BalanceJobExecutor::save(const std::string& k, const std
   return rc;
 }
 
-nebula::cpp2::ErrorCode SpaceInfo::getInfo(GraphSpaceID spaceId, kvstore::KVStore* kvstore) {
+nebula::cpp2::ErrorCode SpaceInfo::loadInfo(GraphSpaceID spaceId, kvstore::KVStore* kvstore) {
   spaceId_ = spaceId;
   std::string spaceKey = MetaKeyUtils::spaceKey(spaceId);
   std::string spaceVal;
-  kvstore->get(kDefaultSpaceId, kDefaultPartId, spaceKey, &spaceVal);
+  auto rc = kvstore->get(kDefaultSpaceId, kDefaultPartId, spaceKey, &spaceVal);
+  if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(ERROR) << "Get space info " << spaceId
+               << " failed, error: " << apache::thrift::util::enumNameSafe(rc);
+    return rc;
+  }
   meta::cpp2::SpaceDesc properties = MetaKeyUtils::parseSpace(spaceVal);
   name_ = properties.get_space_name();
   replica_ = properties.get_replica_factor();

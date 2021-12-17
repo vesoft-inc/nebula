@@ -8,6 +8,7 @@
 namespace nebula {
 namespace meta {
 void AlterSpaceProcessor::process(const cpp2::AlterSpaceReq& req) {
+  folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
   const std::vector<std::string>& zones = req.get_paras();
   const std::string& spaceName = req.get_space_name();
   cpp2::AlterSpaceOp op = req.get_op();
@@ -45,13 +46,11 @@ nebula::cpp2::ErrorCode AlterSpaceProcessor::addZones(const std::string& spaceNa
   }
   meta::cpp2::SpaceDesc properties = MetaKeyUtils::parseSpace(spaceVal);
   const std::vector<std::string>& curZones = properties.get_zone_names();
-  std::set<std::string> zm;
-  for (const std::string& z : curZones) {
-    zm.insert(z);
-  }
+  std::set<std::string> zm(curZones.begin(), curZones.end());
+  std::set<std::string> distinctZones(zones.begin(), zones.end());
   std::vector<std::string> newZones = curZones;
-  newZones.reserve(curZones.size() + zones.size());
-  for (const std::string& z : zones) {
+  newZones.reserve(curZones.size() + distinctZones.size());
+  for (const std::string& z : distinctZones) {
     std::string zoneKey = MetaKeyUtils::zoneKey(z);
     std::string zoneVal;
     nebula::cpp2::ErrorCode zoneRet =

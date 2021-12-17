@@ -1,4 +1,4 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
+/* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License.
  */
@@ -21,7 +21,7 @@ nebula::cpp2::ErrorCode ZoneBalanceJobExecutor::prepare() {
     return nebula::error(spaceRet);
   }
   GraphSpaceID spaceId = nebula::value(spaceRet);
-  nebula::cpp2::ErrorCode rc = spaceInfo_.getInfo(spaceId, kvstore_);
+  nebula::cpp2::ErrorCode rc = spaceInfo_.loadInfo(spaceId, kvstore_);
   if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
     return rc;
   }
@@ -70,8 +70,8 @@ nebula::cpp2::ErrorCode ZoneBalanceJobExecutor::updateMeta() {
   for (std::string& zn : lostZones_) {
     spaceInfo_.zones_.erase(zn);
   }
-  for (auto& p : spaceInfo_.zones_) {
-    zones.push_back(p.first);
+  for (auto& zoneMapEntry : spaceInfo_.zones_) {
+    zones.emplace_back(zoneMapEntry.first);
   }
   properties.set_zone_names(std::move(zones));
   std::vector<kvstore::KV> data;
@@ -146,7 +146,7 @@ Status ZoneBalanceJobExecutor::buildBalancePlan() {
     std::vector<Host*>& sortedHosts = sortedZoneHosts[zone->zoneName_];
     sortedHosts.front()->parts_.emplace(partId);
     zone->partNum_++;
-    HostAddr ha = sortedHosts.front()->ha_;
+    HostAddr ha = sortedHosts.front()->host_;
     for (size_t i = 0; i < sortedHosts.size() - 1; i++) {
       if (sortedHosts[i]->parts_.size() >= sortedHosts[i + 1]->parts_.size()) {
         std::swap(sortedHosts[i], sortedHosts[i + 1]);
@@ -177,6 +177,7 @@ Status ZoneBalanceJobExecutor::buildBalancePlan() {
     return ha;
   };
 
+  // move parts of lost zones to active zones
   for (auto& zoneMapEntry : lostZones) {
     Zone* zone = zoneMapEntry.second;
     for (auto& hostMapEntry : zone->hosts_) {
@@ -190,10 +191,15 @@ Status ZoneBalanceJobExecutor::buildBalancePlan() {
     zone->calPartNum();
   }
 
+  // all parts of lost zones have moved to active zones, then rebalance the active zones
   int32_t totalPartNum = 0;
   int32_t avgPartNum = 0;
   for (auto& z : sortedActiveZones) {
     totalPartNum += z->partNum_;
+  }
+  if (sortedActiveZones.size() == 0) {
+    LOG(ERROR) << "rebalance error: no active zones";
+    return {};
   }
   avgPartNum = totalPartNum / sortedActiveZones.size();
   int32_t remainder = totalPartNum - avgPartNum * sortedActiveZones.size();
@@ -241,7 +247,7 @@ Status ZoneBalanceJobExecutor::buildBalancePlan() {
             tasks.emplace_back(jobId_,
                                spaceInfo_.spaceId_,
                                partId,
-                               sortedHosts[hostIndex]->ha_,
+                               sortedHosts[hostIndex]->host_,
                                dst,
                                kvstore_,
                                adminClient_);
@@ -255,7 +261,7 @@ Status ZoneBalanceJobExecutor::buildBalancePlan() {
                 break;
               }
             }
-            // if the zone's part reach the avgPartNum,is can't recieve parts any more
+            // if the zone's part reach the avgPartNum,it can't recieve parts any more
             if (newLeftIndex == leftEnd - 1 &&
                 sortedActiveZones[newLeftIndex]->partNum_ >= avgPartNum) {
               leftEnd--;

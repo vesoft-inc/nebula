@@ -23,20 +23,13 @@ void BalancePlan::dispatchTasks() {
   for (auto& task : tasks_) {
     partTasks[std::make_pair(task.spaceId_, task.partId_)].emplace_back(index++);
   }
-  buckets_.resize(std::min(partTasks.size(), (size_t)FLAGS_task_concurrency));
+  buckets_.resize(partTasks.size());
+  int32_t bucketIndex = 0;
   for (auto it = partTasks.begin(); it != partTasks.end(); it++) {
-    size_t minNum = tasks_.size();
-    int32_t i = 0, minIndex = 0;
-    for (auto& bucket : buckets_) {
-      if (bucket.size() < minNum) {
-        minNum = bucket.size();
-        minIndex = i;
-      }
-      i++;
-    }
     for (auto taskIndex : it->second) {
-      buckets_[minIndex].emplace_back(taskIndex);
+      buckets_[bucketIndex].emplace_back(taskIndex);
     }
+    bucketIndex++;
   }
 }
 
@@ -66,20 +59,32 @@ void BalancePlan::invoke() {
           stopped = stopped_;
         }
         if (finished) {
-          CHECK_EQ(j, this->buckets_[i].size() - 1);
-          saveInStore(true);
+          CHECK_EQ(j, buckets_[i].size() - 1);
+          saveInStore();
           onFinished_(stopped ? meta::cpp2::JobStatus::STOPPED
                               : (failed_ ? meta::cpp2::JobStatus::FAILED
                                          : meta::cpp2::JobStatus::FINISHED));
-        } else if (j + 1 < this->buckets_[i].size()) {
-          auto& task = this->tasks_[this->buckets_[i][j + 1]];
+        } else if (j + 1 < buckets_[i].size()) {
+          auto& task = tasks_[buckets_[i][j + 1]];
           if (stopped) {
             task.ret_ = BalanceTaskResult::INVALID;
           }
           task.invoke();
+        } else {
+          size_t index = curIndex_.fetch_add(1, std::memory_order_relaxed);
+          if (index < buckets_.size()) {
+            Bucket& bucket = buckets_[index];
+            if (!bucket.empty()) {
+              auto& task = tasks_[bucket[0]];
+              if (stopped) {
+                task.ret_ = BalanceTaskResult::INVALID;
+              }
+              task.invoke();
+            }
+          }
         }
       };  // onFinished
-      tasks_[taskIndex].onError_ = [this, i, j, taskIndex]() {
+      tasks_[taskIndex].onError_ = [this, i, j]() {
         bool finished = false;
         bool stopped = false;
         {
@@ -95,42 +100,49 @@ void BalancePlan::invoke() {
           stopped = stopped_;
         }
         if (finished) {
-          CHECK_EQ(j, this->buckets_[i].size() - 1);
+          CHECK_EQ(j, buckets_[i].size() - 1);
           onFinished_(stopped ? meta::cpp2::JobStatus::STOPPED : meta::cpp2::JobStatus::FAILED);
-        } else if (j + 1 < this->buckets_[i].size()) {
-          auto& task = this->tasks_[this->buckets_[i][j + 1]];
-          if (tasks_[taskIndex].spaceId_ == task.spaceId_ &&
-              tasks_[taskIndex].partId_ == task.partId_) {
-            LOG(INFO) << "Skip the task for the same partId " << task.partId_;
-            task.ret_ = BalanceTaskResult::FAILED;
-          }
-          if (stopped) {
-            task.ret_ = BalanceTaskResult::INVALID;
-          }
+        } else if (j + 1 < buckets_[i].size()) {
+          auto& task = tasks_[buckets_[i][j + 1]];
+          LOG(INFO) << "Skip the task for the same partId " << task.partId_;
+          task.ret_ = BalanceTaskResult::FAILED;
           task.invoke();
+        } else {
+          size_t index = curIndex_.fetch_add(1, std::memory_order_relaxed);
+          if (index < buckets_.size()) {
+            Bucket& bucket = buckets_[index];
+            if (!bucket.empty()) {
+              auto& task = tasks_[bucket[0]];
+              if (stopped) {
+                task.ret_ = BalanceTaskResult::INVALID;
+              }
+              task.invoke();
+            }
+          }
         }
       };  // onError
     }     // for (auto j = 0; j < buckets_[i].size(); j++)
   }       // for (auto i = 0; i < buckets_.size(); i++)
 
-  saveInStore(true);
-  for (auto& bucket : buckets_) {
-    if (!bucket.empty()) {
-      tasks_[bucket[0]].invoke();
+  saveInStore();
+  uint32 bucketSize = buckets_.size();
+  int32_t concurrency = std::min(FLAGS_task_concurrency, bucketSize);
+  curIndex_.store(concurrency, std::memory_order_relaxed);
+  for (int32_t i = 0; i < concurrency; i++) {
+    if (!buckets_[i].empty()) {
+      tasks_[buckets_[i][0]].invoke();
     }
   }
 }
 
-nebula::cpp2::ErrorCode BalancePlan::saveInStore(bool onlyPlan) {
+nebula::cpp2::ErrorCode BalancePlan::saveInStore() {
   CHECK_NOTNULL(kv_);
   std::vector<kvstore::KV> data;
-  if (!onlyPlan) {
-    for (auto& task : tasks_) {
-      data.emplace_back(MetaKeyUtils::balanceTaskKey(
-                            task.jobId_, task.spaceId_, task.partId_, task.src_, task.dst_),
-                        MetaKeyUtils::balanceTaskVal(
-                            task.status_, task.ret_, task.startTimeMs_, task.endTimeMs_));
-    }
+  for (auto& task : tasks_) {
+    data.emplace_back(
+        MetaKeyUtils::balanceTaskKey(
+            task.jobId_, task.spaceId_, task.partId_, task.src_, task.dst_),
+        MetaKeyUtils::balanceTaskVal(task.status_, task.ret_, task.startTimeMs_, task.endTimeMs_));
   }
   folly::Baton<true, std::atomic> baton;
   auto ret = nebula::cpp2::ErrorCode::SUCCEEDED;

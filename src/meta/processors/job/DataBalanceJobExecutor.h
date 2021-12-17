@@ -1,4 +1,4 @@
-/* Copyright (c) 2020 vesoft inc. All rights reserved.
+/* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
  * This source code is licensed under Apache 2.0 License.
  */
@@ -39,4 +39,4 @@ class DataBalanceJobExecutor : public BalanceJobExecutor {
 }  // namespace meta
 }  // namespace nebula
 
-#endif  // META_BALANCEJOBEXECUTOR_H_
+#endif  // META_DATABALANCEJOBEXECUTOR_H_

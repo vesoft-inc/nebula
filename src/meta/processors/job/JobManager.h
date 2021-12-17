@@ -141,7 +141,7 @@ class JobManager : public nebula::cpp::NonCopyable, public nebula::cpp::NonMovab
 
   nebula::cpp2::ErrorCode saveTaskStatus(TaskDescription& td, const cpp2::ReportTaskReq& req);
 
-  void compareChangeStatus(JbmgrStatus expected, JbmgrStatus despire);
+  void compareChangeStatus(JbmgrStatus expected, JbmgrStatus desired);
 
  private:
   // Todo(pandasheep)

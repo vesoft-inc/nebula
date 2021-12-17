@@ -166,7 +166,7 @@ nebula::cpp2::ErrorCode StorageJobExecutor::execute() {
         });
     baton.wait();
     if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(INFO) << "write to kv store failed, error: " << apache::thrift::util::enumNameSafe(rc);
+      LOG(ERROR) << "write to kv store failed, error: " << apache::thrift::util::enumNameSafe(rc);
       return rc;
     }
   }

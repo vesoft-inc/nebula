@@ -312,9 +312,9 @@ nebula::cpp2::ErrorCode JobManager::saveTaskStatus(TaskDescription& td,
   return jobExec->saveSpecialTaskStatus(req);
 }
 
-void JobManager::compareChangeStatus(JbmgrStatus expected, JbmgrStatus despire) {
+void JobManager::compareChangeStatus(JbmgrStatus expected, JbmgrStatus desired) {
   JbmgrStatus ex = expected;
-  status_.compare_exchange_strong(ex, despire, std::memory_order_acq_rel);
+  status_.compare_exchange_strong(ex, desired, std::memory_order_acq_rel);
 }
 
 /**

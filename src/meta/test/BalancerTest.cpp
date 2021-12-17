@@ -111,7 +111,7 @@ SpaceInfo createSpaceInfo(
       for (const auto& p : h.second) {
         host.parts_.insert(p);
       }
-      zone.hosts_.emplace(host.ha_, host);
+      zone.hosts_.emplace(host.host_, host);
     }
     spaceInfo.zones_.emplace(zone.zoneName_, zone);
   }
@@ -694,7 +694,7 @@ TEST(BalanceTest, NormalZoneTest) {
   NiceMock<MockAdminClient> client;
   JobDescription jd = makeJobDescription(kv, cpp2::AdminCmd::ZONE_BALANCE);
   ZoneBalanceJobExecutor balancer(jd, kv, &client, {});
-  balancer.spaceInfo_.getInfo(1, kv);
+  balancer.spaceInfo_.loadInfo(1, kv);
   auto ret = balancer.executeInternal();
   EXPECT_EQ(Status::Balanced(), ret.value());
   balancer.finish();
@@ -725,7 +725,7 @@ TEST(BalanceTest, NormalDataTest) {
   NiceMock<MockAdminClient> client;
   JobDescription jd = makeJobDescription(kv, cpp2::AdminCmd::DATA_BALANCE);
   DataBalanceJobExecutor balancer(jd, kv, &client, {});
-  balancer.spaceInfo_.getInfo(1, kv);
+  balancer.spaceInfo_.loadInfo(1, kv);
   auto ret = balancer.executeInternal();
   EXPECT_EQ(Status::Balanced(), ret.value());
   balancer.finish();
@@ -761,7 +761,7 @@ TEST(BalanceTest, RecoveryTest) {
 
   JobDescription jd = makeJobDescription(kv, cpp2::AdminCmd::DATA_BALANCE);
   DataBalanceJobExecutor balancer(jd, kv, &client, {});
-  balancer.spaceInfo_.getInfo(1, kv);
+  balancer.spaceInfo_.loadInfo(1, kv);
   balancer.lostHosts_ = {{"127.0.0.1", 1}, {"127.0.0.1", 8}};
   folly::Baton<true, std::atomic> baton;
   balancer.setFinishCallBack([&](meta::cpp2::JobStatus) {
@@ -823,7 +823,7 @@ TEST(BalanceTest, StopPlanTest) {
   FLAGS_task_concurrency = 8;
   JobDescription jd = makeJobDescription(kv, cpp2::AdminCmd::DATA_BALANCE);
   ZoneBalanceJobExecutor balancer(jd, kv, &delayClient, {});
-  balancer.spaceInfo_.getInfo(1, kv);
+  balancer.spaceInfo_.loadInfo(1, kv);
   balancer.lostZones_ = {"4", "5"};
   folly::Baton<true, std::atomic> baton;
   balancer.setFinishCallBack([&](meta::cpp2::JobStatus) {
