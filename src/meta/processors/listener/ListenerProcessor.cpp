@@ -32,8 +32,9 @@ void AddListenerProcessor::process(const cpp2::AddListenerReq& req) {
   }
 
   // TODO : (sky) if type is elasticsearch, need check text search service.
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::listenerLock());
-  folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
+  folly::SharedMutex::WriteHolder lHolder(LockUtils::listenerLock());
+  folly::SharedMutex::WriteHolder mHolder(LockUtils::machineLock());
+  folly::SharedMutex::ReadHolder sHolder(LockUtils::spaceLock());
   const auto& prefix = MetaKeyUtils::partPrefix(space);
   auto iterRet = doPrefix(prefix);
   if (!nebula::ok(iterRet)) {
@@ -55,6 +56,23 @@ void AddListenerProcessor::process(const cpp2::AddListenerReq& req) {
     data.emplace_back(MetaKeyUtils::listenerKey(space, parts[i], type),
                       MetaKeyUtils::serializeHostAddr(hosts[i % hosts.size()]));
   }
+
+  nebula::cpp2::ErrorCode code = nebula::cpp2::ErrorCode::SUCCEEDED;
+  for (auto& host : hosts) {
+    auto machineKey = MetaKeyUtils::machineKey(host.host, host.port);
+    if (machineExist(machineKey) == nebula::cpp2::ErrorCode::SUCCEEDED) {
+      LOG(ERROR) << "The host " << host << " have existed!";
+      code = nebula::cpp2::ErrorCode::E_EXISTED;
+      break;
+    }
+    data.emplace_back(machineKey, "");
+  }
+
+  if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    handleErrorCode(code);
+    onFinished();
+    return;
+  }
   doSyncPutAndUpdate(std::move(data));
 }
 
@@ -74,7 +92,8 @@ void RemoveListenerProcessor::process(const cpp2::RemoveListenerReq& req) {
     return;
   }
 
-  folly::SharedMutex::WriteHolder wHolder(LockUtils::listenerLock());
+  folly::SharedMutex::WriteHolder lHolder(LockUtils::listenerLock());
+  folly::SharedMutex::WriteHolder mHolder(LockUtils::machineLock());
   std::vector<std::string> keys;
   const auto& prefix = MetaKeyUtils::listenerPrefix(space, type);
   auto iterRet = doPrefix(prefix);
@@ -87,9 +106,25 @@ void RemoveListenerProcessor::process(const cpp2::RemoveListenerReq& req) {
   }
 
   auto iter = nebula::value(iterRet).get();
+  nebula::cpp2::ErrorCode code = nebula::cpp2::ErrorCode::SUCCEEDED;
   while (iter->valid()) {
+    auto host = MetaKeyUtils::deserializeHostAddr(iter->val());
+    auto machineKey = MetaKeyUtils::machineKey(host.host, host.port);
+    if (machineExist(machineKey) != nebula::cpp2::ErrorCode::SUCCEEDED) {
+      LOG(ERROR) << "The host " << HostAddr(host.host, host.port) << " not existed!";
+      code = nebula::cpp2::ErrorCode::E_NO_HOSTS;
+      break;
+    }
+
     keys.emplace_back(iter->key());
+    keys.emplace_back(std::move(machineKey));
     iter->next();
+  }
+
+  if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    handleErrorCode(code);
+    onFinished();
+    return;
   }
   doSyncMultiRemoveAndUpdate(std::move(keys));
 }

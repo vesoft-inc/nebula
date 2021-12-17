@@ -127,7 +127,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> ActiveHostsMan::getActiv
     auto host = MetaKeyUtils::parseHostKey(iter->key());
     HostInfo info = HostInfo::decode(iter->val());
 
-    if (info.role_ == cpp2::HostRole::STORAGE &&
+    if ((info.role_ == cpp2::HostRole::STORAGE || info.role_ == cpp2::HostRole::LISTENER) &&
         std::find(machines.begin(), machines.end(), host) == machines.end()) {
       retCode = nebula::cpp2::ErrorCode::E_MACHINE_NOT_FOUND;
       LOG(ERROR) << "Machine not found " << host;
