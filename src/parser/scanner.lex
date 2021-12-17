@@ -45,9 +45,10 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 
 
 
-HTTP_URL                    (http:\/\/[a-zA-Z0-9\(\)@:%._\-\+~#=?&\/]+)
-WASM_BASE64                 (wasm:\/\/[A-Za-z0-9+\/=]+)
-/* WASM_BASE64                 (wasm:\/\/(?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{2}==|[A-Za-z0-9+\/]{3}=)) */
+HTTP_URL                    ((?:http|HTTP):\/\/[a-zA-Z0-9\(\)@:%._\-\+~#=?&\/]+)
+/* WASM_BASE64                 ((wasm|WASM):\/\/[A-Za-z0-9+\/=]+) */
+/* A more valid base64 regex, no match the empty string */
+WASM_BASE64                 ((?:wasm|WASM):\/\/(?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{2}==|[A-Za-z0-9+\/]{3}=|[A-Za-z0-9+\/]{4}))
 
 %%
 
