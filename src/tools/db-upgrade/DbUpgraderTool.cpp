@@ -392,7 +392,7 @@ int main(int argc, char* argv[]) {
   LOG(INFO) << "================== Prepare phase end ==================";
 
   // Upgrade data
-  LOG(INFO) << "================== Upgrade phase bengi ==================";
+  LOG(INFO) << "================== Upgrade phase bengin ==================";
 
   // The data path in storage conf is generally one, not too many.
   // So there is no need to control the number of threads here.
