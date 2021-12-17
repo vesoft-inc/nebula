@@ -78,6 +78,10 @@ required:
        --dst_part_file=<file to dataPath and parts>
          File name of datapaht and part distribution
          Default: ""
+
+       --gen_data=<true|false>
+         When auto_gen_part_schema is false, it is used to identify whether to generate data or schema
+         Default: true
 )");
 }
 
@@ -97,6 +101,8 @@ void printParams() {
   std::cout << "whether to auto_gen_part_schema: "
             << (FLAGS_auto_gen_part_schema == true ? "true" : "false") << "\n";
   std::cout << "File name of datapaht and part distribution is " << FLAGS_dst_part_file << "\n";
+  std::cout << "whether to gen data or part schema: "
+            << (FLAGS_compactions == true ? "true" : "false") << "\n";
 
   std::cout << "=========================== PARAMS ============================\n\n";
 }
@@ -250,7 +256,7 @@ int main(int argc, char* argv[]) {
     return EXIT_FAILURE;
   }
 
-  if (!FLAGS_auto_gen_part_schema) {
+  if (!FLAGS_auto_gen_part_schema && !FLAGS_gen_data) {
     if (FLAGS_dst_part_file.empty()) {
       LOG(ERROR) << "auto_gen_part_schema is false, and dst_part_file should not be empty.";
       return EXIT_FAILURE;

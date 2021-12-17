@@ -47,6 +47,11 @@ DEFINE_bool(auto_gen_part_schema,
 
 DEFINE_string(dst_part_file, "", "File name of datapaht and part distribution");
 
+DEFINE_bool(gen_data,
+            true,
+            "When auto_gen_part_schema is false, it is used to identify whether to generate data "
+            "or schema");
+
 namespace nebula {
 namespace storage {
 

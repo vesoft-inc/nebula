@@ -31,6 +31,7 @@ DECLARE_uint32(max_concurrent_parts);
 DECLARE_uint32(max_concurrent_spaces);
 DECLARE_bool(auto_gen_part_schema);
 DECLARE_string(dst_part_file);
+DECLARE_bool(gen_data);
 
 using nebula::fs::FileUtils;
 
