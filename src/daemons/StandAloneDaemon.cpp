@@ -181,7 +181,9 @@ int main(int argc, char *argv[]) {
   bool metaReady = false;
   int32_t metaRet = EXIT_FAILURE;
   std ::unique_ptr<std::thread> metaThread = std::make_unique<std::thread>([&] {
-    SCOPE_EXIT { stopAllDaemon(); };
+    SCOPE_EXIT {
+      stopAllDaemon();
+    };
     nebula::HostAddr metaLocalhost{FLAGS_local_ip, FLAGS_meta_port};
     LOG(INFO) << "metalocalhost = " << metaLocalhost;
     auto peersRet = nebula::network::NetworkUtils::toHosts(FLAGS_meta_server_addrs);
@@ -272,7 +274,9 @@ int main(int argc, char *argv[]) {
   // start graph server
   int32_t graphRet = EXIT_FAILURE;
   std ::unique_ptr<std::thread> graphThread = std::make_unique<std::thread>([&] {
-    SCOPE_EXIT { stopAllDaemon(); };
+    SCOPE_EXIT {
+      stopAllDaemon();
+    };
     nebula::HostAddr localhost{FLAGS_local_ip, FLAGS_port};
     LOG(INFO) << "Starting Graph HTTP Service";
     auto webSvc = std::make_unique<nebula::WebService>();
@@ -338,7 +342,9 @@ int main(int argc, char *argv[]) {
 
   int32_t storageRet = EXIT_FAILURE;
   std ::unique_ptr<std::thread> storageThread = std::make_unique<std::thread>([&] {
-    SCOPE_EXIT { stopAllDaemon(); };
+    SCOPE_EXIT {
+      stopAllDaemon();
+    };
     HostAddr host(FLAGS_local_ip, FLAGS_storage_port);
     LOG(INFO) << "host = " << host;
     auto metaAddrsRet = nebula::network::NetworkUtils::toHosts(FLAGS_meta_server_addrs);
@@ -423,7 +429,9 @@ void signalHandler(int sig) {
   }
 }
 
-void printHelp(const char *prog) { fprintf(stderr, "%s --flagfile <config_file>\n", prog); }
+void printHelp(const char *prog) {
+  fprintf(stderr, "%s --flagfile <config_file>\n", prog);
+}
 
 void setupThreadManager() {
   int numThreads =

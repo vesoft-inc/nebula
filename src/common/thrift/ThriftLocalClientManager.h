@@ -26,7 +26,9 @@ class LocalClientManager final {
     return ClientType::getInstance();
   }
 
-  ~LocalClientManager() { VLOG(3) << "~LocalClientManager"; }
+  ~LocalClientManager() {
+    VLOG(3) << "~LocalClientManager";
+  }
 
   explicit LocalClientManager(bool enableSSL = false) {
     UNUSED(enableSSL);
