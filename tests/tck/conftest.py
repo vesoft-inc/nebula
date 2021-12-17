@@ -339,7 +339,7 @@ def given_nebulacluster_with_param(
     class_fixture_variables["cluster"] = nebula_svc
     class_fixture_variables["pool"] = pool
 
-@when(parse("login {graph} with {user} and {password}"))
+@when(parse('login "{graph}" with "{user}" and "{password}"'))
 def when_login_graphd(graph, user, password, class_fixture_variables, pytestconfig):
     index = parse_service_index(graph)
     assert index is not None, "Invalid graph name, name is {}".format(graph)
