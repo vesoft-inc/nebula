@@ -817,6 +817,11 @@ TEST_F(FunctionManagerTest, time) {
 
 TEST_F(FunctionManagerTest, returnType) {
   {
+    auto result = FunctionManager::getReturnType("wasm", {Value::Type::LIST});
+    ASSERT_TRUE(result.ok());
+    EXPECT_EQ(result.value(), Value::Type::LIST);
+  }
+  {
     auto result = FunctionManager::getReturnType("abs", {Value::Type::INT});
     ASSERT_TRUE(result.ok());
     EXPECT_EQ(result.value(), Value::Type::INT);

@@ -67,6 +67,8 @@ include_directories(AFTER ${CMAKE_SOURCE_DIR}/src)
 include_directories(AFTER ${CMAKE_CURRENT_BINARY_DIR}/src)
 include_directories(${WASMTIME_INCLUDE_DIR})
 link_directories(${WASMTIME_LIBRARY})
+include_directories(${WASMEDGE_INCLUDE_DIR})
+link_directories(${WASMEDGE_LIBRARY})
 
 # For simplicity, we make all ordinary libraries depend on the compile-time generated files,
 # including the precompiled header, a.k.a Base.h.gch, and thrift headers.

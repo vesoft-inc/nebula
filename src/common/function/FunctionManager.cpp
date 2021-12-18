@@ -25,6 +25,7 @@
 #include "common/thrift/ThriftTypes.h"
 #include "common/time/TimeUtils.h"
 #include "common/time/WallClock.h"
+#include "common/function/WasmFunctionManager.h"
 
 namespace nebula {
 
@@ -411,6 +412,16 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
                         Value::Type::FLOAT},
                        Value::Type::LIST),
      }},
+    {"wasm", // wasm function,params([Function Name]  [Function Params])
+     {       // return LIST
+         TypeSignature({Value::Type::STRING, Value::Type::LIST},
+                       Value::Type::LIST),
+     }},
+    {"create_wasm", // wasm function,params([Function Name]  [Function Handler] [Function Content(TODO://base64)])
+     {       //  return BOOL
+         TypeSignature({Value::Type::STRING, Value::Type::STRING,Value::Type::STRING},
+                       Value::Type::BOOL),
+     }},
 };
 
 // static
@@ -425,7 +436,7 @@ StatusOr<Value::Type> FunctionManager::getReturnType(const std::string &funcName
   if (iter == typeSignature_.end()) {
     return Status::Error("Function `%s' not defined", funcName.c_str());
   }
-
+  //Hackathon Note: Query the wasm function list
   for (const auto &args : iter->second) {
     if (argsType == args.argsType_) {
       return args.returnType_;
@@ -445,6 +456,75 @@ StatusOr<Value::Type> FunctionManager::getReturnType(const std::string &funcName
 }
 
 FunctionManager::FunctionManager() {
+  {
+    auto &attr = functions_["create_wasm"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 3;
+    attr.isPure_ = false;
+    // begin wasm call
+    attr.body_ = [](const auto &args) -> Value {
+      if (!args[0].get().isStr()) {
+        return Value::kNullBadType;
+      }
+      if (!args[1].get().isStr()) {
+        return Value::kNullBadType;
+      }
+      if (!args[2].get().isStr()) {
+        return Value::kNullBadType;
+      }
+      auto wasmFunctionName = args[0].get().getStr();
+      auto wasmFunctionHandler = args[1].get().getStr();
+//      auto watStr = args[2].get().getStr();
+
+      auto watStr = "(module\n"
+          "  (func $gcd (param i32 i32) (result i32)\n"
+          "    (local i32)\n"
+          "    block  ;; label = @1\n"
+          "      block  ;; label = @2\n"
+          "        local.get 0\n"
+          "        br_if 0 (;@2;)\n"
+          "        local.get 1\n"
+          "        local.set 2\n"
+          "        br 1 (;@1;)\n"
+          "      end\n"
+          "      loop  ;; label = @2\n"
+          "        local.get 1\n"
+          "        local.get 0\n"
+          "        local.tee 2\n"
+          "        i32.rem_u\n"
+          "        local.set 0\n"
+          "        local.get 2\n"
+          "        local.set 1\n"
+          "        local.get 0\n"
+          "        br_if 0 (;@2;)\n"
+          "      end\n"
+          "    end\n"
+          "    local.get 2\n"
+          "  )\n"
+          "  (export \"main\" (func $gcd))\n"
+          ")";
+      WasmFunctionManager&  wasmFunctionManager = WasmFunctionManager::getInstance();
+      wasmFunctionManager.RegisterFunction(wasmFunctionName,wasmFunctionHandler,watStr);
+      return true;
+    };
+  }
+  {
+    auto &attr = functions_["wasm"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 999;
+    attr.isPure_ = false;
+    // begin wasm call
+    attr.body_ = [](const auto &args) -> Value {
+      if (!args[0].get().isStr()) {
+        return Value::kNullBadType;
+      }
+      auto wasmFunctionName = args[0].get().getStr();
+      auto &params = args[1].get().getList();
+      WasmFunctionManager&  wasmFunctionManager = WasmFunctionManager::getInstance();
+      auto wasmRuntimeResult =  wasmFunctionManager.runWithHandle(wasmFunctionName,params);
+      return wasmRuntimeResult;
+    };
+  }
   {
     // absolute value
     auto &attr = functions_["abs"];
@@ -2638,6 +2718,7 @@ StatusOr<FunctionManager::Function> FunctionManager::get(const std::string &func
 }
 
 // static
+// HackathonNote: parse.yy call this to find function name
 Status FunctionManager::find(const std::string &func, const size_t arity) {
   auto result = instance().getInternal(func, arity);
   NG_RETURN_IF_ERROR(result);
