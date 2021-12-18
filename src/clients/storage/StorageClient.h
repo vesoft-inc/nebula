@@ -81,12 +81,14 @@ class StorageClient : public StorageClientBase<cpp2::GraphStorageServiceAsyncCli
       const CommonRequestParam& param,
       std::vector<cpp2::NewVertex> vertices,
       std::unordered_map<TagID, std::vector<std::string>> propNames,
-      bool ifNotExists);
+      bool ifNotExists,
+      bool ignoreExistedIndex);
 
   StorageRpcRespFuture<cpp2::ExecResponse> addEdges(const CommonRequestParam& param,
                                                     std::vector<cpp2::NewEdge> edges,
                                                     std::vector<std::string> propNames,
-                                                    bool ifNotExists);
+                                                    bool ifNotExists,
+                                                    bool ignoreExistedIndex);
 
   StorageRpcRespFuture<cpp2::ExecResponse> deleteEdges(const CommonRequestParam& param,
                                                        std::vector<storage::cpp2::EdgeKey> edges);

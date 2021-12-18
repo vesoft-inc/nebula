@@ -20,7 +20,8 @@ TEST(VerifyClientVersionTest, VersionTest) {
   std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
   {
     auto req = cpp2::VerifyClientVersionReq();
-    req.set_version("1.0.1");
+    req.set_client_version("1.0.1");
+    req.set_build_version("1.0.1-nightly");
     auto* processor = VerifyClientVersionProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
