@@ -34,13 +34,19 @@ QueryInstance::QueryInstance(std::unique_ptr<QueryContext> qctx, Optimizer *opti
 }
 
 void QueryInstance::execute() {
-  Status status = validateAndOptimize();
+  Status status = validateAndOptimize();  // run parser->validator->planner
   if (!status.ok()) {
     onError(std::move(status));
     return;
   }
 
   if (!explainOrContinue()) {
+    onFinish();  // EXPLAIN queries end here
+    return;
+  }
+
+  // Add create/drop function queries executor in here
+  if (!functionOrContinue()) {
     onFinish();
     return;
   }
@@ -62,12 +68,12 @@ void QueryInstance::execute() {
 Status QueryInstance::validateAndOptimize() {
   auto *rctx = qctx()->rctx();
   VLOG(1) << "Parsing query: " << rctx->query();
-  auto result = GQLParser(qctx()).parse(rctx->query());
+  auto result = GQLParser(qctx()).parse(rctx->query());  // run parser
   NG_RETURN_IF_ERROR(result);
   sentence_ = std::move(result).value();
 
-  NG_RETURN_IF_ERROR(Validator::validate(sentence_.get(), qctx()));
-  NG_RETURN_IF_ERROR(findBestPlan());
+  NG_RETURN_IF_ERROR(Validator::validate(sentence_.get(), qctx()));  // run validator
+  NG_RETURN_IF_ERROR(findBestPlan());  // run planner
 
   return Status::OK();
 }
@@ -80,6 +86,20 @@ bool QueryInstance::explainOrContinue() {
   resp.planDesc = std::make_unique<PlanDescription>();
   DCHECK_NOTNULL(qctx_->plan())->describe(resp.planDesc.get());
   return static_cast<const ExplainSentence *>(sentence_.get())->isProfile();
+}
+
+bool QueryInstance::functionOrContinue() {
+  if (sentence_->kind() == Sentence::Kind::kCreateFunction) {
+    // TODO: set create function response
+    return false;
+  }
+
+  if (sentence_->kind() == Sentence::Kind::kCreateFunction) {
+    // TODO: set drop function response
+    return false;
+  }
+
+  return true;
 }
 
 void QueryInstance::onFinish() {

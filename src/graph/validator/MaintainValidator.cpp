@@ -141,15 +141,32 @@ static Status checkColName(const std::vector<ColumnSpecification *> specs) {
 
 Status CreateFunctionValidator::validateImpl() {
   // TODO(TripleZ): add create function logic
+  createCtx_ = getContext<CreateSchemaContext>();
   auto sentence = static_cast<CreateFunctionSentence *>(sentence_);
+  createCtx_->ifNotExist = sentence->isIfNotExist();
+
+  // exmaple: get create function params
   auto name = *sentence->name();
-  auto functionSource = *sentence->getFunctionSource();
-  auto funcType = functionSource.getType();
-  auto funcSource = functionSource.getSource();
+  // auto functionParams = sentence->functionParams();
+  // auto returnType = sentence->returnType();
+  // auto functionSource = *sentence->getFunctionSource();
+  // auto funcType = functionSource.getType();
+  // auto funcSource = functionSource.getSource();
 
-  std::cout << " => create function: name(" + name + "), type(" +
-      funcType + "), source(" + funcSource + ")" << std::endl;
 
+  // meta::cpp2::Schema schema;
+  // Save the schema in validateContext
+  // auto pool = qctx_->objPool();
+  // auto schemaPro = SchemaUtil::generateSchemaProvider(pool, 0, schema);
+  // vctx_->addSchema(name, schemaPro);
+  // createCtx_->name = std::move(name);
+  // createCtx_->schema = std::move(schema);
+
+  return Status::OK();
+}
+
+Status CreateFunctionValidator::toPlan() {
+  // TODO: add create function
   return Status::OK();
 }
 

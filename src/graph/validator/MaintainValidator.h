@@ -19,8 +19,14 @@ class CreateFunctionValidator final : public Validator {
   CreateFunctionValidator(Sentence* sentence, QueryContext* context)
       : Validator(sentence, context) {}
 
+  AstContext* getAstContext() override { return createCtx_.get(); }
+
  private:
   Status validateImpl() override;
+
+  Status toPlan() override;
+
+  std::unique_ptr<CreateSchemaContext> createCtx_;
 };
 
 class CreateTagValidator final : public Validator {
