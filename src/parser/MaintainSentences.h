@@ -130,6 +130,44 @@ class ColumnSpecificationList final {
   std::vector<std::unique_ptr<ColumnSpecification>> columns_;
 };
 
+class FunctionParam final {
+ public:
+  FunctionParam(std::string *name,
+                meta::cpp2::PropertyType type)
+      : name_(name),
+        type_(type) {}
+
+  meta::cpp2::PropertyType type() const { return type_; }
+
+  const std::string *name() const { return name_.get(); }
+
+  std::string toString() const;
+
+ private:
+  std::unique_ptr<std::string> name_;
+  meta::cpp2::PropertyType type_;
+};
+
+class FunctionParamList final {
+ public:
+  FunctionParamList() = default;
+
+  void addParam(FunctionParam *param) { params_.emplace_back(param); }
+
+  std::vector<FunctionParam *> functionParams() const {
+    std::vector<FunctionParam *> result;
+    result.resize(params_.size());
+    auto get = [](auto &ptr) { return ptr.get(); };
+    std::transform(params_.begin(), params_.end(), result.begin(), get);
+    return result;
+  }
+
+  std::string toString() const;
+
+ private:
+  std::vector<std::unique_ptr<FunctionParam>> params_;
+};
+
 class FunctionSource final {
  public:
   FunctionSource() = default;
@@ -312,11 +350,15 @@ class CreateTagSentence final : public CreateSentence {
 
 class CreateFunctionSentence final : public CreateSentence {
  public:
-  CreateFunctionSentence(std::string *name,
-                          FunctionSource *funcSource,
+  CreateFunctionSentence(std::string *name,                 // function name
+                          FunctionParamList *params,        // function params
+                          meta::cpp2::PropertyType rtn_type,   // function return type
+                          FunctionSource *funcSource,       // function logic
                           bool ifNotExists)
       : CreateSentence(ifNotExists) {
     name_.reset(name);
+    params_.reset(params);
+    rtn_type_ = rtn_type;
     funcSource_.reset(funcSource);
     kind_ = Kind::kCreateFunction;
   }
@@ -325,11 +367,17 @@ class CreateFunctionSentence final : public CreateSentence {
 
   const std::string *name() const { return name_.get(); }
 
+  std::vector<FunctionParam *> functionParams() const { return params_->functionParams(); }
+
+  meta::cpp2::PropertyType returnType() const { return rtn_type_; }
+
   FunctionSource* getFunctionSource() const { return funcSource_.get(); }
 
  private:
   std::unique_ptr<std::string> name_;
+  std::unique_ptr<FunctionParamList> params_;
   std::unique_ptr<FunctionSource> funcSource_;
+  meta::cpp2::PropertyType rtn_type_;
 };
 
 class CreateEdgeSentence final : public CreateSentence {

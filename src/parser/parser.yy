@@ -106,6 +106,8 @@ static constexpr size_t kCommentLengthLimit = 256;
     nebula::RoleTypeClause                 *role_type_clause;
     nebula::AclItemClause                  *acl_item_clause;
     nebula::FunctionSource                 *function_source;
+    nebula::FunctionParam                  *function_param;
+    nebula::FunctionParamList              *function_param_list;
     nebula::SchemaPropList                 *create_schema_prop_list;
     nebula::SchemaPropItem                 *create_schema_prop_item;
     nebula::SchemaPropList                 *alter_schema_prop_list;
@@ -362,8 +364,11 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <sentence> create_snapshot_sentence drop_snapshot_sentence
 %type <sentence> add_listener_sentence remove_listener_sentence list_listener_sentence
 
+/* definitions for UDF */
 %type <sentence> create_function_sentence
 %type <function_source> create_function_from_vendor
+%type <function_param> function_param
+%type <function_param_list> function_param_list
 %type <sentence> drop_function_sentence
 
 %type <sentence> admin_job_sentence
@@ -2202,6 +2207,23 @@ create_schema_prop_item
     }
     ;
 
+function_param
+    : name_label type_spec {
+        $$ = new FunctionParam($1, $2->type);
+    }
+    ;
+
+function_param_list
+    : function_param {
+        $$ = new FunctionParamList();
+        $$->addParam($1);
+    }
+    | function_param_list COMMA function_param {
+        $$ = $1;
+        $$->addParam($3);
+    }
+    ;
+
 create_function_from_vendor
     : HTTP_URL {
         $$ = new FunctionSource(std::string("HTTP"), *$1);
@@ -2212,8 +2234,11 @@ create_function_from_vendor
     ;
 
 create_function_sentence
-    : KW_CREATE KW_FUNCTION opt_if_not_exists name_label KW_FROM create_function_from_vendor {
-        $$ = new CreateFunctionSentence($4, $6, $3);
+    : KW_CREATE KW_FUNCTION opt_if_not_exists name_label L_PAREN R_PAREN KW_RETURN type_spec KW_FROM create_function_from_vendor {
+        $$ = new CreateFunctionSentence($4, new FunctionParamList(), $8->type, $10, $3);
+    }
+    | KW_CREATE KW_FUNCTION opt_if_not_exists name_label L_PAREN function_param_list R_PAREN KW_RETURN type_spec KW_FROM create_function_from_vendor {
+        $$ = new CreateFunctionSentence($4, $6, $9->type, $11, $3);
     }
     ;
 

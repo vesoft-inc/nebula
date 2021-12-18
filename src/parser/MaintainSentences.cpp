@@ -91,6 +91,38 @@ std::string ColumnSpecificationList::toString() const {
   return buf;
 }
 
+std::string FunctionParam::toString() const {
+  std::string buf;
+  buf.reserve(128);
+  buf += "`";
+  buf += *name_;
+  buf += "` ";
+  // if (meta::cpp2::PropertyType::FIXED_STRING == type_) {
+  //   buf += "FIXED_STRING(";
+  //   buf += std::to_string(typeLen_);
+  //   buf += ")";
+  // } else {
+    buf += apache::thrift::util::enumNameSafe(type_);
+  // }
+  // buf += " ";
+  // buf += properties_->toString();
+  return buf;
+}
+
+std::string FunctionParamList::toString() const {
+  std::string buf;
+  buf.reserve(128);
+  const auto& funcParams = functionParams();
+  for (auto& funcParam : funcParams) {
+    buf += funcParam->toString();
+    buf += ",";
+  }
+  if (!funcParams.empty()) {
+    buf.resize(buf.size() - 1);
+  }
+  return buf;
+}
+
 std::string CreateFunctionSentence::toString() const {
   std::string buf;
   buf.reserve(256);
@@ -100,8 +132,12 @@ std::string CreateFunctionSentence::toString() const {
   }
   buf += "`";
   buf += *name_;
-  buf += "` ";
-  buf += "FROM ";
+  buf += "` (";
+  buf += params_->toString();
+  buf += ") RETURN ";
+  // TODO(TripleZ): support FIXED_STRING and GEO related types
+  buf += apache::thrift::util::enumNameSafe(rtn_type_);
+  buf += " FROM ";
   buf += funcSource_->toString();
   return buf;
 }
