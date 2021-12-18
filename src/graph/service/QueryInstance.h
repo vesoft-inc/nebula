@@ -57,6 +57,7 @@ class QueryInstance final : public cpp::NonCopyable, public cpp::NonMovable {
   std::unique_ptr<QueryContext> qctx_;
   std::unique_ptr<Scheduler> scheduler_;
   opt::Optimizer* optimizer_{nullptr};
+  bool  functionOrContinue();
 };
 
 }  // namespace graph

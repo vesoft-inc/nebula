@@ -146,12 +146,21 @@ set(WASMTIME_LOCAL_PATH "${CMAKE_SOURCE_DIR}/wasmtime-c-api")
 set(WASMTIME_INCLUDE_DIR ${WASMTIME_LOCAL_PATH}/include)
 set(WASMTIME_LIBRARY ${WASMTIME_LOCAL_PATH}/lib)
 set(WASMTIME_LIBRARYS libwasmtime.a libwasmtime.so stdc++ pthread dl)
+
+set(WASMEDGE_LOCAL_PATH ${CMAKE_SOURCE_DIR}/wasmedge)
+set(WASMEDGE_INCLUDE_DIR ${WASMEDGE_LOCAL_PATH}/include)
+set(WASMEDGE_LIBRARY ${WASMEDGE_LOCAL_PATH}/lib)
+set(WASMEDGE_LIBRARYS libwasmedge_c.so)
+
 print_config(WASMTIME_LOCAL_PATH)
 print_config(WASMTIME_INCLUDE_DIR)
 print_config(WASMTIME_LIBRARY)
 print_config(WASMTIME_LIBRARYS)
 
-
+print_config(WASMEDGE_LOCAL_PATH)
+print_config(WASMEDGE_INCLUDE_DIR)
+print_config(WASMEDGE_LIBRARY)
+print_config(WASMEDGE_LIBRARYS)
 
 # All compression libraries
 set(COMPRESSION_LIBRARIES bz2 snappy zstd z lz4)

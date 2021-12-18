@@ -7,7 +7,6 @@
 namespace nebula {
 namespace graph {
 TEST(WasmFunctionTest, gen) {
-  WasmFunctionManager wasmFunctionManager;
   auto WatStr = "(module\n"
       "  (func $gcd (param i32 i32) (result i32)\n"
       "    (local i32)\n"
@@ -35,10 +34,9 @@ TEST(WasmFunctionTest, gen) {
       "  )\n"
       "  (export \"main\" (func $gcd))\n"
       ")";
-  wasmFunctionManager.runWat(WatStr);
 
-  auto wasmRuntime =  wasmFunctionManager.createInstanceAndFunction(WatStr,"main");
-  auto result =  wasmFunctionManager.run(wasmRuntime,{6, 27});
+  auto wasmRuntime =  WasmFunctionManager::createInstanceAndFunction(WatStr,"main");
+  auto result =  WasmFunctionManager::run(wasmRuntime,{6, 27});
   std::cout << result[0] << "\n";
 }  // namespace graph
 }}
