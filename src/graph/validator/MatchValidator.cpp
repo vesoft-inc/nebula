@@ -436,9 +436,19 @@ Status MatchValidator::validateWith(
         return Status::SemanticError("Expression in WITH must be aliased (use AS)");
       }
     }
-    if (!withClauseCtx.aliasesGenerated.emplace(col->alias(), AliasType::kDefault).second) {
-      return Status::SemanticError("`%s': Redefined alias", col->alias().c_str());
+    if (col->expr()->kind() == Expression::Kind::kLabel) {
+      auto label = static_cast<const LabelExpression *>(col->expr())->name();
+      auto found = withClauseCtx.yield->aliasesAvailable.find(label);
+      DCHECK(found != withClauseCtx.yield->aliasesAvailable.end());
+      if (!withClauseCtx.aliasesGenerated.emplace(col->alias(), found->second).second) {
+        return Status::SemanticError("`%s': Redefined alias", col->alias().c_str());
+      }
+    } else {
+      if (!withClauseCtx.aliasesGenerated.emplace(col->alias(), AliasType::kDefault).second) {
+        return Status::SemanticError("`%s': Redefined alias", col->alias().c_str());
+      }
     }
+
     if (!withClauseCtx.yield->hasAgg_ &&
         ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kAggregate})) {
       withClauseCtx.yield->hasAgg_ = true;
@@ -880,5 +890,6 @@ Status MatchValidator::buildOutputs(const YieldColumns *yields) {
   }
   return Status::OK();
 }
+
 }  // namespace graph
 }  // namespace nebula
