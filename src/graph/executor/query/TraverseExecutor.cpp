@@ -234,8 +234,11 @@ Status TraverseExecutor::buildInterimPath(GetNeighborsIter* iter) {
       if (uniqueDst.emplace(dst).second) {
         reqDs.rows.emplace_back(Row({std::move(dst)}));
       }
-      auto path = prevPath;
       if (currentStep_ == 1) {
+        Row path;
+        if (traverse_->trackPrevPath()) {
+          path = prevPath;
+        }
         path.values.emplace_back(srcV);
         List neighbors;
         neighbors.values.emplace_back(e);
@@ -243,6 +246,7 @@ Status TraverseExecutor::buildInterimPath(GetNeighborsIter* iter) {
         buildPath(current, dst, std::move(path));
         ++count;
       } else {
+        auto path = prevPath;
         auto& eList = path.values.back().mutableList().values;
         eList.emplace_back(srcV);
         eList.emplace_back(e);

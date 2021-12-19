@@ -1474,6 +1474,10 @@ class Traverse final : public GetNeighbors {
     return eFilter_;
   }
 
+  bool trackPrevPath() const {
+    return trackPrevPath_;
+  }
+
   void setStepRange(MatchStepRange* range) {
     range_ = range;
   }
@@ -1484,6 +1488,10 @@ class Traverse final : public GetNeighbors {
 
   void setEdgeFilter(Expression* eFilter) {
     eFilter_ = eFilter;
+  }
+
+  void setTrackPrevPath(bool track = true) {
+    trackPrevPath_ = track;
   }
 
  private:
@@ -1498,6 +1506,7 @@ class Traverse final : public GetNeighbors {
   MatchStepRange* range_{nullptr};
   Expression* vFilter_{nullptr};
   Expression* eFilter_{nullptr};
+  bool trackPrevPath_{true};
 };
 
 class AppendVertices final : public GetVertices {
@@ -1514,8 +1523,16 @@ class AppendVertices final : public GetVertices {
     return vFilter_;
   }
 
+  bool trackPrevPath() const {
+    return trackPrevPath_;
+  }
+
   void setVertexFilter(Expression* vFilter) {
     vFilter_ = vFilter;
+  }
+
+  void setTrackPrevPath(bool track = true) {
+    trackPrevPath_ = track;
   }
 
  private:
@@ -1535,17 +1552,27 @@ class AppendVertices final : public GetVertices {
   void cloneMembers(const AppendVertices& a);
 
   Expression* vFilter_;
+
+  bool trackPrevPath_{true};
 };
 
 class BiJoin : public BinaryInputNode {
  public:
-  const std::vector<Expression*>& hashKeys() const { return hashKeys_; }
+  const std::vector<Expression*>& hashKeys() const {
+    return hashKeys_;
+  }
 
-  const std::vector<Expression*>& probeKeys() const { return probeKeys_; }
+  const std::vector<Expression*>& probeKeys() const {
+    return probeKeys_;
+  }
 
-  void setHashKeys(std::vector<Expression*> newHashKeys) { hashKeys_ = newHashKeys; }
+  void setHashKeys(std::vector<Expression*> newHashKeys) {
+    hashKeys_ = newHashKeys;
+  }
 
-  void setProbeKeys(std::vector<Expression*> newProbeKeys) { probeKeys_ = newProbeKeys; }
+  void setProbeKeys(std::vector<Expression*> newProbeKeys) {
+    probeKeys_ = newProbeKeys;
+  }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 

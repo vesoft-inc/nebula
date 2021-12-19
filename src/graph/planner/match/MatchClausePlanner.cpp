@@ -23,16 +23,24 @@ namespace nebula {
 namespace graph {
 static std::vector<std::string> genTraverseColNames(const std::vector<std::string>& inputCols,
                                                     const NodeInfo& node,
-                                                    const EdgeInfo& edge) {
-  auto cols = inputCols;
+                                                    const EdgeInfo& edge,
+                                                    bool trackPrev) {
+  std::vector<std::string> cols;
+  if (trackPrev) {
+    cols = inputCols;
+  }
   cols.emplace_back(node.alias);
   cols.emplace_back(edge.alias);
   return cols;
 }
 
 static std::vector<std::string> genAppendVColNames(const std::vector<std::string>& inputCols,
-                                                   const NodeInfo& node) {
-  auto cols = inputCols;
+                                                   const NodeInfo& node,
+                                                   bool trackPrev) {
+  std::vector<std::string> cols;
+  if (trackPrev) {
+    cols = inputCols;
+  }
   cols.emplace_back(node.alias);
   return cols;
 }
@@ -314,9 +322,11 @@ Status MatchClausePlanner::leftExpandFromNode(const std::vector<NodeInfo>& nodeI
     traverse->setVertexFilter(genVertexFilter(node));
     traverse->setEdgeFilter(genEdgeFilter(edge));
     traverse->setEdgeDirection(edge.direction);
-    traverse->setColNames(genTraverseColNames(subplan.root->colNames(), node, edge));
+    traverse->setColNames(
+        genTraverseColNames(subplan.root->colNames(), node, edge, i != startIndex));
     traverse->setStepRange(edge.range);
     traverse->setDedup();
+    traverse->setTrackPrevPath(i != startIndex);
     subplan.root = traverse;
     nextTraverseStart = genNextTraverseStart(qctx->objPool(), edge);
     inputVar = traverse->outputVar();
@@ -330,8 +340,9 @@ Status MatchClausePlanner::leftExpandFromNode(const std::vector<NodeInfo>& nodeI
   appendV->setVertexProps(std::move(vertexProps).value());
   appendV->setSrc(nextTraverseStart);
   appendV->setVertexFilter(genVertexFilter(node));
-  appendV->setColNames(genAppendVColNames(subplan.root->colNames(), node));
+  appendV->setColNames(genAppendVColNames(subplan.root->colNames(), node, !edgeInfos.empty()));
   appendV->setDedup();
+  appendV->setTrackPrevPath(!edgeInfos.empty());
   subplan.root = appendV;
 
   VLOG(1) << subplan;
@@ -360,9 +371,11 @@ Status MatchClausePlanner::rightExpandFromNode(const std::vector<NodeInfo>& node
     traverse->setVertexFilter(genVertexFilter(node));
     traverse->setEdgeFilter(genEdgeFilter(edge));
     traverse->setEdgeDirection(edge.direction);
-    traverse->setColNames(genTraverseColNames(subplan.root->colNames(), node, edge));
+    traverse->setColNames(
+        genTraverseColNames(subplan.root->colNames(), node, edge, i != startIndex));
     traverse->setStepRange(edge.range);
     traverse->setDedup();
+    traverse->setTrackPrevPath(i != startIndex);
     subplan.root = traverse;
     nextTraverseStart = genNextTraverseStart(qctx->objPool(), edge);
     inputVar = traverse->outputVar();
@@ -376,8 +389,9 @@ Status MatchClausePlanner::rightExpandFromNode(const std::vector<NodeInfo>& node
   appendV->setVertexProps(std::move(vertexProps).value());
   appendV->setSrc(nextTraverseStart);
   appendV->setVertexFilter(genVertexFilter(node));
-  appendV->setColNames(genAppendVColNames(subplan.root->colNames(), node));
+  appendV->setColNames(genAppendVColNames(subplan.root->colNames(), node, !edgeInfos.empty()));
   appendV->setDedup();
+  appendV->setTrackPrevPath(!edgeInfos.empty());
   subplan.root = appendV;
 
   VLOG(1) << subplan;
