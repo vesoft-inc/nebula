@@ -32,7 +32,7 @@ std::string readFile(const std::string name) {
 //  std::cout << "gcd(6, 27) = " << results[0].i32() << "\n";
 //}
 
-WasmRuntime WasmFunctionManager::createInstanceAndFunction(const std::string &watString,
+WasmtimeRunInstance WasmFunctionManager::createInstanceAndFunction(const std::string &watString,
                                                            const std::string functionHandler) {
   auto module = wasmtime::Module::compile(*engine, watString).unwrap();
   auto instance = wasmtime::Instance::create(store, module, {}).unwrap();
@@ -40,10 +40,10 @@ WasmRuntime WasmFunctionManager::createInstanceAndFunction(const std::string &wa
   auto function_obj = instance.get(store, functionHandler);
 
   wasmtime::Func *func = std::get_if<wasmtime::Func>(&*function_obj);
-  return WasmRuntime(*func, instance);
+  return WasmtimeRunInstance(*func, instance);
 }
 
-nebula::List WasmFunctionManager::runWithHandle(std::string functionName, nebula::List args) {
+nebula::List WasmFunctionManager::runWithNebulaDataHandle(std::string functionName, nebula::List args) {
 
   if(modules.find(functionName) == modules.end()){
     // return not found!
@@ -51,7 +51,7 @@ nebula::List WasmFunctionManager::runWithHandle(std::string functionName, nebula
     Error.emplace_back("Not Found Function");
     return nebula::List(Error);
   }
-  auto value = modules.at(functionName);
+  auto module = modules.at(functionName);
   // prepostcess
   auto values = args.values;
   std::vector<int> functionArgs;
@@ -60,7 +60,7 @@ nebula::List WasmFunctionManager::runWithHandle(std::string functionName, nebula
     functionArgs.push_back(val.getInt());
   }
   // run
-  auto functionResult = WasmFunctionManager::run(value, functionArgs);
+  auto functionResult = WasmFunctionManager::run(module, functionArgs);
 
   // postprocess
   std::vector<nebula::Value> tmpProcess;
@@ -69,7 +69,17 @@ nebula::List WasmFunctionManager::runWithHandle(std::string functionName, nebula
   }
   return nebula::List(tmpProcess);
 }
-std::vector<int> WasmFunctionManager::run(const WasmRuntime &wasmRuntime, std::vector<int> args) {
+
+std::vector<int> WasmFunctionManager::run(std::string functionName, std::vector<int> args) {
+  if(modules.find(functionName) == modules.end()){
+    return std::vector<int>();
+  }
+  auto module = modules.at(functionName);
+  // run
+  return WasmFunctionManager::run(module, args);
+
+}
+std::vector<int> WasmFunctionManager::run(const WasmtimeRunInstance &wasmRuntime, std::vector<int> args) {
   // the args which wasm run
 
   std::vector<wasmtime::Val> argv;
@@ -88,10 +98,16 @@ std::vector<int> WasmFunctionManager::run(const WasmRuntime &wasmRuntime, std::v
   return result;
 }
 
-bool WasmFunctionManager::RegisterFunction(std::string functionName,std::string functionHandler,const std::string &watString) {
+bool WasmFunctionManager::RegisterFunction(std::string functionName,std::string functionHandler,const std::string &watBase64String) {
   // default functionHandler = "main"
+  auto watString = myBase64Decode(watBase64String);
   auto wasmRuntime =  createInstanceAndFunction(watString,functionHandler);
   modules.emplace(functionName,wasmRuntime);
+  return true;
+}
+
+bool  WasmFunctionManager::DeleteFunction(std::string functionName) {
+  modules.erase(functionName);
   return true;
 }
 
