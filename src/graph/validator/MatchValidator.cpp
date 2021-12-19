@@ -77,6 +77,7 @@ Status MatchValidator::validateImpl() {
 
         cypherCtx_->queryParts.back().boundary = std::move(unwindClauseCtx);
         cypherCtx_->queryParts.emplace_back();
+        cypherCtx_->queryParts.back().aliasesAvailable = aliasesAvailable;
 
         // TODO: delete prevYieldColumns
         UNUSED(prevYieldColumns);
@@ -101,6 +102,7 @@ Status MatchValidator::validateImpl() {
 
         cypherCtx_->queryParts.back().boundary = std::move(withClauseCtx);
         cypherCtx_->queryParts.emplace_back();
+        cypherCtx_->queryParts.back().aliasesAvailable = aliasesAvailable;
 
         break;
       }
@@ -424,7 +426,7 @@ Status MatchValidator::validateWith(
       DCHECK_EQ(labelExpr->kind(), Expression::Kind::kLabel);
       auto label = static_cast<const LabelExpression *>(labelExpr)->name();
       if (!withClauseCtx.yield->aliasesAvailable.count(label)) {
-        return Status::SemanticError("Variable `%s` not defined", label.c_str());
+        return Status::SemanticError("Alias `%s` not defined", label.c_str());
       }
     }
     if (col->alias().empty()) {

@@ -26,30 +26,25 @@ StatusOr<SubPlan> MatchPlanner::transform(AstContext* astCtx) {
     return Status::Error("Only MATCH is accepted for match planner.");
   }
   auto* cypherCtx = static_cast<CypherContext*>(astCtx);
-  std::vector<SubPlan> queryPartPlans;
+  SubPlan queryPlan;
   for (auto& queryPart : cypherCtx->queryParts) {
     SubPlan queryPartPlan;
     for (auto& match : queryPart.matchs) {
       auto matchPlanStatus = genPlan(match.get());
       NG_RETURN_IF_ERROR(matchPlanStatus);
       auto matchPlan = std::move(matchPlanStatus).value();
-      if (queryPartPlan.root == nullptr) {
-        queryPartPlan = matchPlan;
-      } else {
-        connectMatch(match.get(), matchPlan, queryPartPlan);
-      }
+      connectMatch(match.get(), matchPlan, queryPartPlan);
     }
+
+    connectQueryParts(queryPart, queryPartPlan, cypherCtx->qctx, queryPlan);
 
     auto boundaryPlan = genPlan(queryPart.boundary.get());
     NG_RETURN_IF_ERROR(boundaryPlan);
-    SegmentsConnector::addInput(boundaryPlan.value().tail, queryPartPlan.root);
-    queryPartPlan.root = boundaryPlan.value().root;
-    queryPartPlans.emplace_back(std::move(queryPartPlan));
+    SegmentsConnector::addInput(boundaryPlan.value().tail, queryPlan.root);
+    queryPlan.root = boundaryPlan.value().root;
   }
 
-  auto finalPlan = connectQueryParts(queryPartPlans);
-  NG_RETURN_IF_ERROR(finalPlan);
-  return std::move(finalPlan).value();
+  return queryPlan;
 }
 
 StatusOr<SubPlan> MatchPlanner::genPlan(CypherClauseContextBase* clauseCtx) {
@@ -76,6 +71,10 @@ StatusOr<SubPlan> MatchPlanner::genPlan(CypherClauseContextBase* clauseCtx) {
 void MatchPlanner::connectMatch(const MatchClauseContext* match,
                                 const SubPlan& matchPlan,
                                 SubPlan& queryPartPlan) {
+  if (queryPartPlan.root == nullptr) {
+    queryPartPlan = matchPlan;
+    return;
+  }
   std::unordered_set<std::string> intersectedAliases;
   for (auto& alias : match->aliasesGenerated) {
     if (match->aliasesAvailable.find(alias.first) != match->aliasesAvailable.end()) {
@@ -110,21 +109,40 @@ void MatchPlanner::connectMatch(const MatchClauseContext* match,
   }
 }
 
-StatusOr<SubPlan> MatchPlanner::connectQueryParts(std::vector<SubPlan>& subplans) {
-  DCHECK(!subplans.empty());
-  // subplans.front().tail->setInputVar(astCtx->qctx->vctx()->anonVarGen()->getVar());
-  if (subplans.size() == 1) {
-    return subplans.front();
+void MatchPlanner::connectQueryParts(const QueryPart& queryPart,
+                                     const SubPlan& partPlan,
+                                     QueryContext* qctx,
+                                     SubPlan& queryPlan) {
+  if (queryPlan.root == nullptr) {
+    queryPlan = partPlan;
+    return;
+  }
+  auto& aliasesAvailable = queryPart.aliasesAvailable;
+  std::unordered_set<std::string> intersectedAliases;
+  for (auto& alias : queryPart.aliasesGenerated) {
+    if (aliasesAvailable.find(alias.first) != aliasesAvailable.end()) {
+      intersectedAliases.insert(alias.first);
+    }
   }
 
-  // TODO: CartesianProduct or InnerJoin
-  SubPlan finalPlan = subplans.front();
-  for (size_t i = 1; i < subplans.size(); ++i) {
-    SegmentsConnector::addInput(subplans[i].tail, finalPlan.root);
-    finalPlan.root = subplans[i].root;
+  if (!intersectedAliases.empty()) {
+    std::vector<Expression*> hashKeys;
+    std::vector<Expression*> probeKeys;
+    auto pool = qctx->objPool();
+    for (auto& alias : intersectedAliases) {
+      auto* args = ArgumentList::make(pool);
+      args->addArgument(InputPropertyExpression::make(pool, alias));
+      auto* expr = FunctionCallExpression::make(pool, "id", args);
+      hashKeys.emplace_back(expr);
+      probeKeys.emplace_back(expr->clone());
+    }
+    auto innerJoin = BiInnerJoin::make(qctx, queryPlan.root, partPlan.root);
+    innerJoin->setHashKeys(std::move(hashKeys));
+    innerJoin->setProbeKeys(std::move(probeKeys));
+    queryPlan.root = innerJoin;
+  } else {
+    queryPlan.root = BiCartesianProduct::make(qctx, queryPlan.root, partPlan.root);
   }
-
-  return finalPlan;
 }
 }  // namespace graph
 }  // namespace nebula
