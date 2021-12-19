@@ -56,6 +56,7 @@ class CreateFunction final : public CreateSchemaNode {
   CreateFunction(QueryContext* qctx,
             PlanNode* input,
             std::string functionName,
+            meta::cpp2::Schema schema,
             bool ifNotExists)
       : CreateSchemaNode(
             qctx, input, Kind::kCreateFunction,

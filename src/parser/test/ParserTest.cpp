@@ -413,6 +413,20 @@ TEST_F(ParserTest, FunctionOperation) {
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
+    std::string query =
+        "CREATE FUNCTION f1() "
+        "RETURN INT32 FROM wat://d2FzbQo=";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query =
+        "CREATE FUNCTION f1(x INT32, y INT32) "
+        "RETURN INT32 FROM WAT://d2FzbQo=";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
     // long base64 string
     std::string query =
         "CREATE FUNCTION f1() "
@@ -433,7 +447,7 @@ TEST_F(ParserTest, FunctionOperation) {
   {
     std::string query =
         "CREATE FUNCTION f1() "
-        "RETURN FLOAT FROM http://nebula-graph.io/remote/f1";
+        "RETURN FLOAT FROM path://http://nebula-graph.io/remote/f1";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -446,8 +460,15 @@ TEST_F(ParserTest, FunctionOperation) {
   }
   {
     std::string query =
+        "CREATE FUNCTION IF NOT EXISTS f1(x DOUBLE, y DOUBLE) "
+        "RETURN DOUBLE FROM wat://d2FzbQo=";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query =
         "CREATE FUNCTION IF NOT EXISTS f1(x INT32, y INT32) "
-        "RETURN BOOL FROM http://nebula-graph.io/remote/f1";
+        "RETURN BOOL FROM path://http://nebula-graph.io/remote/f1";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }

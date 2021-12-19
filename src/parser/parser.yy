@@ -217,7 +217,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %token <intval> INTEGER
 %token <doubleval> DOUBLE
 %token <strval> STRING VARIABLE LABEL IPV4
-%token <strval> HTTP_URL WASM_BASE64
+%token <strval> FUNC_PATH_SOURCE WASM_BASE64 WAT_BASE64
 
 %type <strval> name_label unreserved_keyword predicate_name
 %type <expr> expression
@@ -2225,11 +2225,14 @@ function_param_list
     ;
 
 create_function_from_vendor
-    : HTTP_URL {
-        $$ = new FunctionSource(std::string("HTTP"), *$1);
-    }
-    | WASM_BASE64 {
+    : WASM_BASE64 {
         $$ = new FunctionSource(std::string("WASM"), *$1);
+    }
+    | WAT_BASE64 {
+        $$ = new FunctionSource(std::string("WAT"), *$1);
+    }
+    | FUNC_PATH_SOURCE {
+        $$ = new FunctionSource(std::string("PATH"), *$1);
     }
     ;
 

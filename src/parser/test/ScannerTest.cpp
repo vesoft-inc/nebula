@@ -569,10 +569,14 @@ TEST(Scanner, Basic) {
 
       CHECK_SEMANTIC_VALUE("\"己所不欲，勿施于人\"", TokenType::STRING, "己所不欲，勿施于人"),
 
-      CHECK_SEMANTIC_VALUE("http://nebula-graph.io", TokenType::HTTP_URL, "http://nebula-graph.io"),
-      CHECK_SEMANTIC_VALUE("HTTP://nebula-graph.io", TokenType::HTTP_URL, "HTTP://nebula-graph.io"),
+      CHECK_SEMANTIC_VALUE("path://http://nebula-graph.io", TokenType::FUNC_PATH_SOURCE,
+          "path://http://nebula-graph.io"),
+      CHECK_SEMANTIC_VALUE("PATH://HTTP://nebula-graph.io", TokenType::FUNC_PATH_SOURCE,
+          "PATH://HTTP://nebula-graph.io"),
       CHECK_SEMANTIC_VALUE("wasm://d2FzbQo=", TokenType::WASM_BASE64, "wasm://d2FzbQo="),
       CHECK_SEMANTIC_VALUE("WASM://d2FzbQo=", TokenType::WASM_BASE64, "WASM://d2FzbQo="),
+      CHECK_SEMANTIC_VALUE("wat://d2FzbQo=", TokenType::WAT_BASE64, "wat://d2FzbQo="),
+      CHECK_SEMANTIC_VALUE("WAT://d2FzbQo=", TokenType::WAT_BASE64, "WAT://d2FzbQo="),
   };
 #undef CHECK_SEMANTIC_TYPE
 #undef CHECK_SEMANTIC_VALUE
