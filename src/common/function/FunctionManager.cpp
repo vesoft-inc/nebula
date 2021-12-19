@@ -422,6 +422,11 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
          TypeSignature({Value::Type::STRING, Value::Type::STRING,Value::Type::STRING},
                        Value::Type::BOOL),
      }},
+    {"delete_wasm", // wasm function,params([Function Name]  [Function Handler] [Function Content(TODO://base64)])
+     {       //  return BOOL
+         TypeSignature({Value::Type::STRING},
+                       Value::Type::BOOL),
+     }},
 };
 
 // static
@@ -474,37 +479,25 @@ FunctionManager::FunctionManager() {
       }
       auto wasmFunctionName = args[0].get().getStr();
       auto wasmFunctionHandler = args[1].get().getStr();
-//      auto watStr = args[2].get().getStr();
-
-      auto watStr = "(module\n"
-          "  (func $gcd (param i32 i32) (result i32)\n"
-          "    (local i32)\n"
-          "    block  ;; label = @1\n"
-          "      block  ;; label = @2\n"
-          "        local.get 0\n"
-          "        br_if 0 (;@2;)\n"
-          "        local.get 1\n"
-          "        local.set 2\n"
-          "        br 1 (;@1;)\n"
-          "      end\n"
-          "      loop  ;; label = @2\n"
-          "        local.get 1\n"
-          "        local.get 0\n"
-          "        local.tee 2\n"
-          "        i32.rem_u\n"
-          "        local.set 0\n"
-          "        local.get 2\n"
-          "        local.set 1\n"
-          "        local.get 0\n"
-          "        br_if 0 (;@2;)\n"
-          "      end\n"
-          "    end\n"
-          "    local.get 2\n"
-          "  )\n"
-          "  (export \"main\" (func $gcd))\n"
-          ")";
+      auto watStr = args[2].get().getStr();
       WasmFunctionManager&  wasmFunctionManager = WasmFunctionManager::getInstance();
       wasmFunctionManager.RegisterFunction(wasmFunctionName,wasmFunctionHandler,watStr);
+      return true;
+    };
+  }
+  {
+    auto &attr = functions_["delete_wasm"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 2;
+    attr.isPure_ = false;
+    // begin wasm call
+    attr.body_ = [](const auto &args) -> Value {
+      if (!args[0].get().isStr()) {
+        return Value::kNullBadType;
+      }
+      auto wasmFunctionName = args[0].get().getStr();
+      WasmFunctionManager&  wasmFunctionManager = WasmFunctionManager::getInstance();
+      wasmFunctionManager.DeleteFunction(wasmFunctionName);
       return true;
     };
   }
@@ -521,7 +514,8 @@ FunctionManager::FunctionManager() {
       auto wasmFunctionName = args[0].get().getStr();
       auto &params = args[1].get().getList();
       WasmFunctionManager&  wasmFunctionManager = WasmFunctionManager::getInstance();
-      auto wasmRuntimeResult =  wasmFunctionManager.runWithHandle(wasmFunctionName,params);
+      auto wasmRuntimeResult =
+          wasmFunctionManager.runWithNebulaDataHandle(wasmFunctionName, params);
       return wasmRuntimeResult;
     };
   }
