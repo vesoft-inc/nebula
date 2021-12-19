@@ -153,9 +153,13 @@ Executor *Executor::makeExecutor(QueryContext *qctx, const PlanNode *node) {
   auto pool = qctx->objPool();
   switch (node->kind()) {
     // Hackathon Note: Last step run....
-    case PlanNode::Kind::kCreateFunction:{
+    case PlanNode::Kind::kCreateFunction: {
       return pool->add(new StartExecutor(node, qctx));
     }
+    case PlanNode::Kind::kDropFunction: {
+      return pool->add(new StartExecutor(node, qctx));
+    }
+    //
     case PlanNode::Kind::kPassThrough: {
       return pool->add(new PassThroughExecutor(node, qctx));
     }

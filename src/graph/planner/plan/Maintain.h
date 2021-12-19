@@ -292,6 +292,17 @@ class DropSchemaNode : public SingleDependencyNode {
   bool ifExists_;
 };
 
+class DropFunction final : public DropSchemaNode {
+ public:
+  static DropFunction* make(QueryContext* qctx, PlanNode* input, std::string name, bool ifExists) {
+    return qctx->objPool()->add(new DropFunction(qctx, input, std::move(name), ifExists));
+  }
+
+ private:
+  DropFunction(QueryContext* qctx, PlanNode* input, std::string name, bool ifExists)
+      : DropSchemaNode(qctx, Kind::kDropFunction, input, std::move(name), ifExists) {}
+};
+
 class DropTag final : public DropSchemaNode {
  public:
   static DropTag* make(QueryContext* qctx, PlanNode* input, std::string name, bool ifExists) {

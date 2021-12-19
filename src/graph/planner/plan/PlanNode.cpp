@@ -168,6 +168,8 @@ const char* PlanNode::toString(PlanNode::Kind kind) {
       return "DropTag";
     case Kind::kDropEdge:
       return "DropEdge";
+    case Kind::kDropFunction:
+      return "DropFunction";
     case Kind::kShowSpaces:
       return "ShowSpaces";
     case Kind::kShowTags:
