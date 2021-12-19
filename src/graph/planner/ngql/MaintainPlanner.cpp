@@ -11,6 +11,18 @@
 namespace nebula {
 namespace graph {
 
+StatusOr<SubPlan> CreateFunctionPlanner::transform(AstContext* astCtx) {
+  // FIXME: maybe not use CreateSchemaContext?
+  auto createCtx = static_cast<CreateSchemaContext*>(astCtx);
+  SubPlan plan;
+  plan.root = plan.tail = CreateFunction::make(createCtx->qctx,
+                                          nullptr,
+                                          std::move(createCtx->name),
+                                          std::move(createCtx->schema),
+                                          createCtx->ifNotExist);
+  return plan;
+}
+
 StatusOr<SubPlan> CreateTagPlanner::transform(AstContext* astCtx) {
   auto createCtx = static_cast<CreateSchemaContext*>(astCtx);
   SubPlan plan;

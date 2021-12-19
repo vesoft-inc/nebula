@@ -154,21 +154,22 @@ Status CreateFunctionValidator::validateImpl() {
   // auto funcSource = functionSource.getSource();
 
 
-  // meta::cpp2::Schema schema;
+  // FIXME(TripleZ): schema should not be needed in create function
+  meta::cpp2::Schema schema;
   // Save the schema in validateContext
-  // auto pool = qctx_->objPool();
-  // auto schemaPro = SchemaUtil::generateSchemaProvider(pool, 0, schema);
-  // vctx_->addSchema(name, schemaPro);
-  // createCtx_->name = std::move(name);
-  // createCtx_->schema = std::move(schema);
+  auto pool = qctx_->objPool();
+  auto schemaPro = SchemaUtil::generateSchemaProvider(pool, 0, schema);
+  vctx_->addSchema(name, schemaPro);
+  createCtx_->name = std::move(name);
+  createCtx_->schema = std::move(schema);
 
   return Status::OK();
 }
 
-Status CreateFunctionValidator::toPlan() {
-  // TODO: add create function
-  return Status::OK();
-}
+// Status CreateFunctionValidator::toPlan() {
+//   // TODO: create function plan
+//   return Status::OK();
+// }
 
 Status CreateTagValidator::validateImpl() {
   createCtx_ = getContext<CreateSchemaContext>();

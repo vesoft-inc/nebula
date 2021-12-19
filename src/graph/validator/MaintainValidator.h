@@ -24,7 +24,7 @@ class CreateFunctionValidator final : public Validator {
  private:
   Status validateImpl() override;
 
-  Status toPlan() override;
+  // Status toPlan() override;
 
   std::unique_ptr<CreateSchemaContext> createCtx_;
 };

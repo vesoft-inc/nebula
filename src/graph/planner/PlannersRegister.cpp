@@ -46,6 +46,10 @@ void PlannersRegister::registDDL() {
     auto& planners = Planner::plannersMap()[Sentence::Kind::kCreateEdge];
     planners.emplace_back(&CreateEdgePlanner::match, &CreateEdgePlanner::make);
   }
+  {
+    auto& planners = Planner::plannersMap()[Sentence::Kind::kCreateFunction];
+    planners.emplace_back(&CreateFunctionPlanner::match, &CreateFunctionPlanner::make);
+  }
 }
 
 void PlannersRegister::registSequential() {

@@ -94,7 +94,7 @@ bool QueryInstance::functionOrContinue() {
     return false;
   }
 
-  if (sentence_->kind() == Sentence::Kind::kCreateFunction) {
+  if (sentence_->kind() == Sentence::Kind::kDropFunction) {
     // TODO: set drop function response
     return false;
   }

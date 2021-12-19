@@ -41,6 +41,28 @@ class CreateSchemaNode : public SingleDependencyNode {
   bool ifNotExists_;
 };
 
+class CreateFunction final : public CreateSchemaNode {
+ public:
+  static CreateFunction* make(QueryContext* qctx,
+                         PlanNode* input,
+                         std::string functionName,
+                         meta::cpp2::Schema schema,
+                         bool ifNotExists) {
+    return qctx->objPool()->add(
+        new CreateFunction(qctx, input, std::move(functionName), std::move(schema), ifNotExists));
+  }
+
+ private:
+  CreateFunction(QueryContext* qctx,
+            PlanNode* input,
+            std::string functionName,
+            bool ifNotExists)
+      : CreateSchemaNode(
+            qctx, input, Kind::kCreateFunction,
+            std::move(functionName), std::move(schema), ifNotExists) {}
+};
+
+
 class CreateTag final : public CreateSchemaNode {
  public:
   static CreateTag* make(QueryContext* qctx,
