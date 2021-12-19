@@ -13,6 +13,17 @@ namespace graph {
 
 struct AstContext;
 
+class CreateFunctionPlanner final : public Planner {
+ public:
+  static std::unique_ptr<CreateFunctionPlanner> make() {
+    return std::unique_ptr<CreateFunctionPlanner>(new CreateFunctionPlanner());
+  }
+  static bool match(AstContext* astCtx) {
+    return astCtx->sentence->kind() == Sentence::Kind::kCreateFunction;
+  }
+  StatusOr<SubPlan> transform(AstContext* astCtx) override;
+};
+
 class CreateTagPlanner final : public Planner {
  public:
   static std::unique_ptr<CreateTagPlanner> make() {

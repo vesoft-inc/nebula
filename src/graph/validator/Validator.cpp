@@ -287,6 +287,7 @@ Status Validator::validate(Sentence* sentence, QueryContext* qctx) {
   }
 
   auto validator = makeValidator(sentence, qctx);
+  // validateImpl -> checkDuplicateColName -> checkPermission -> toPlan
   NG_RETURN_IF_ERROR(validator->validate());
 
   auto root = validator->root();

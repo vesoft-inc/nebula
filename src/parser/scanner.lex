@@ -44,11 +44,10 @@ OCT                         ([0-7])
 IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 
 
-
-HTTP_URL                    ((?:http|HTTP):\/\/[a-zA-Z0-9\(\)@:%._\-\+~#=?&\/]+)
-/* WASM_BASE64                 ((wasm|WASM):\/\/[A-Za-z0-9+\/=]+) */
-/* A more valid base64 regex, no match the empty string */
-WASM_BASE64                 ((?:wasm|WASM):\/\/(?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{2}==|[A-Za-z0-9+\/]{3}=|[A-Za-z0-9+\/]{4}))
+FUNC_PATH_SOURCE            ((?:path|PATH):\/\/[\x00-\x7F]+)
+FUNC_WASM_SOURCE            ((?:wasm|WASM):\/\/(?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{2}==|[A-Za-z0-9+\/]{3}=|[A-Za-z0-9+\/]{4}))
+FUNC_WAT_SOURCE             ((?:wat|WAT):\/\/(?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{2}==|[A-Za-z0-9+\/]{3}=|[A-Za-z0-9+\/]{4}))
+/* BASE64                      ((?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0-9+\/]{2}==|[A-Za-z0-9+\/]{3}=|[A-Za-z0-9+\/]{4})) */
 
 %%
 
@@ -337,13 +336,17 @@ WASM_BASE64                 ((?:wasm|WASM):\/\/(?:[A-Za-z0-9+\/]{4})*(?:[A-Za-z0
                                 }
                                 return TokenType::LABEL;
                             }
-{HTTP_URL}                  {
+{FUNC_PATH_SOURCE}          {
                                 yylval->strval = new std::string(yytext, yyleng);
-                                return TokenType::HTTP_URL;
+                                return TokenType::FUNC_PATH_SOURCE;
                             }
-{WASM_BASE64}               {
+{FUNC_WASM_SOURCE}          {
                                 yylval->strval = new std::string(yytext, yyleng);
                                 return TokenType::WASM_BASE64;
+                            }
+{FUNC_WAT_SOURCE}           {
+                                yylval->strval = new std::string(yytext, yyleng);
+                                return TokenType::WAT_BASE64;
                             }
 {IP_OCTET}(\.{IP_OCTET}){3} {
                                 yylval->strval = new std::string(yytext, yyleng);
