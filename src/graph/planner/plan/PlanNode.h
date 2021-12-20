@@ -90,6 +90,7 @@ class PlanNode {
 
     // UDF related
     kCreateFunction,
+    kDropFunction,
 
     // index related
     kCreateTagIndex,
