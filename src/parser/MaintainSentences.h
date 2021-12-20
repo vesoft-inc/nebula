@@ -754,53 +754,53 @@ class ShowCreateEdgeIndexSentence : public Sentence {
   std::unique_ptr<std::string> indexName_;
 };
 
-class ZoneNameList final {
+class AddHostsSentence : public Sentence {
  public:
-  ZoneNameList() = default;
-
-  void addZone(std::string *zone) { zones_.emplace_back(zone); }
-
-  std::vector<std::string> zoneNames() const {
-    std::vector<std::string> result;
-    result.resize(zones_.size());
-    auto get = [](auto &ptr) { return *ptr.get(); };
-    std::transform(zones_.begin(), zones_.end(), result.begin(), get);
-    return result;
+  explicit AddHostsSentence(HostList *hosts) {
+    hosts_.reset(hosts);
+    kind_ = Kind::kAddHosts;
   }
 
-  std::string toString() const {
-    std::string buf;
-    for (const auto &zone : zones_) {
-      buf += *zone;
-      buf += ",";
-    }
-    if (!zones_.empty()) {
-      buf.pop_back();
-    }
-    return buf;
-  }
+  const HostList *hosts() const { return hosts_.get(); }
+
+  std::string toString() const override;
 
  private:
-  std::vector<std::unique_ptr<std::string>> zones_;
+  std::unique_ptr<HostList> hosts_;
 };
 
-class AddZoneSentence : public Sentence {
+class DropHostsSentence : public Sentence {
  public:
-  explicit AddZoneSentence(std::string *zoneName, HostList *hosts) {
-    zoneName_.reset(zoneName);
+  explicit DropHostsSentence(HostList *hosts) {
     hosts_.reset(hosts);
-    kind_ = Kind::kAddZone;
+    kind_ = Kind::kDropHosts;
+  }
+
+  const HostList *hosts() const { return hosts_.get(); }
+
+  std::string toString() const override;
+
+ private:
+  std::unique_ptr<HostList> hosts_;
+};
+
+class MergeZoneSentence : public Sentence {
+ public:
+  explicit MergeZoneSentence(ZoneNameList *zoneNames, std::string *zoneName) {
+    zoneName_.reset(zoneName);
+    zoneNames_.reset(zoneNames);
+    kind_ = Kind::kMergeZone;
   }
 
   std::string toString() const override;
 
   const std::string *zoneName() const { return zoneName_.get(); }
 
-  const HostList *hosts() const { return hosts_.get(); }
+  const ZoneNameList *zoneNames() const { return zoneNames_.get(); }
 
  private:
   std::unique_ptr<std::string> zoneName_;
-  std::unique_ptr<HostList> hosts_;
+  std::unique_ptr<ZoneNameList> zoneNames_;
 };
 
 class DropZoneSentence : public Sentence {
@@ -815,6 +815,44 @@ class DropZoneSentence : public Sentence {
   const std::string *zoneName() const { return zoneName_.get(); }
 
  private:
+  std::unique_ptr<std::string> zoneName_;
+};
+
+class SplitZoneSentence : public Sentence {
+ public:
+  explicit SplitZoneSentence(std::string *zoneName, ZoneNameList *zoneNames) {
+    zoneName_.reset(zoneName);
+    zoneNames_.reset(zoneNames);
+    kind_ = Kind::kSplitZone;
+  }
+
+  std::string toString() const override;
+
+  const std::string *zoneName() const { return zoneName_.get(); }
+
+  const ZoneNameList *zoneNames() const { return zoneNames_.get(); }
+
+ private:
+  std::unique_ptr<std::string> zoneName_;
+  std::unique_ptr<ZoneNameList> zoneNames_;
+};
+
+class RenameZoneSentence : public Sentence {
+ public:
+  explicit RenameZoneSentence(std::string *originalZoneName, std::string *zoneName) {
+    originalZoneName_.reset(originalZoneName);
+    zoneName_.reset(zoneName);
+    kind_ = Kind::kRenameZone;
+  }
+
+  std::string toString() const override;
+
+  const std::string *originalZoneName() const { return originalZoneName_.get(); }
+
+  const std::string *zoneName() const { return zoneName_.get(); }
+
+ private:
+  std::unique_ptr<std::string> originalZoneName_;
   std::unique_ptr<std::string> zoneName_;
 };
 
@@ -840,42 +878,27 @@ class ListZonesSentence : public Sentence {
   std::string toString() const override;
 };
 
-class AddHostIntoZoneSentence : public Sentence {
+class AddHostsIntoZoneSentence : public Sentence {
  public:
-  explicit AddHostIntoZoneSentence(HostAddr *address, std::string *zoneName) {
+  AddHostsIntoZoneSentence(HostList *address, std::string *zoneName, bool isNew) {
     address_.reset(address);
     zoneName_.reset(zoneName);
-    kind_ = Kind::kAddHostIntoZone;
+    isNew_ = isNew;
+    kind_ = Kind::kAddHostsIntoZone;
   }
 
   const std::string *zoneName() const { return zoneName_.get(); }
 
-  const HostAddr *address() const { return address_.get(); }
+  const HostList *address() const { return address_.get(); }
+
+  bool isNew() const { return isNew_; }
 
   std::string toString() const override;
 
  private:
   std::unique_ptr<std::string> zoneName_;
-  std::unique_ptr<HostAddr> address_;
-};
-
-class DropHostFromZoneSentence : public Sentence {
- public:
-  explicit DropHostFromZoneSentence(HostAddr *address, std::string *zoneName) {
-    address_.reset(address);
-    zoneName_.reset(zoneName);
-    kind_ = Kind::kDropHostFromZone;
-  }
-
-  const std::string *zoneName() const { return zoneName_.get(); }
-
-  const HostAddr *address() const { return address_.get(); }
-
-  std::string toString() const override;
-
- private:
-  std::unique_ptr<std::string> zoneName_;
-  std::unique_ptr<HostAddr> address_;
+  std::unique_ptr<HostList> address_;
+  bool isNew_;
 };
 
 #ifndef FULLTEXT_INDEX_NAME_PREFIX

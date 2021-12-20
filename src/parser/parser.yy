@@ -120,6 +120,7 @@ static constexpr size_t kCommentLengthLimit = 256;
     nebula::GroupClause                    *group_clause;
     nebula::HostList                       *host_list;
     nebula::HostAddr                       *host_item;
+    nebula::ZoneNameList                   *zone_name_list;
     std::vector<int32_t>                   *integer_list;
     nebula::InBoundClause                  *in_bound_clause;
     nebula::OutBoundClause                 *out_bound_clause;
@@ -160,9 +161,9 @@ static constexpr size_t kCommentLengthLimit = 256;
 
 /* keywords */
 %token KW_BOOL KW_INT8 KW_INT16 KW_INT32 KW_INT64 KW_INT KW_FLOAT KW_DOUBLE
-%token KW_STRING KW_FIXED_STRING KW_TIMESTAMP KW_DATE KW_TIME KW_DATETIME
+%token KW_STRING KW_FIXED_STRING KW_TIMESTAMP KW_DATE KW_TIME KW_DATETIME KW_DURATION
 %token KW_GO KW_AS KW_TO KW_USE KW_SET KW_FROM KW_WHERE KW_ALTER
-%token KW_MATCH KW_INSERT KW_VALUE KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX KW_VERTICES
+%token KW_MATCH KW_INSERT KW_VALUE KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX KW_VERTICES KW_IGNORE_EXISTED_INDEX
 %token KW_EDGE KW_EDGES KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND
 %token KW_TAG KW_TAGS KW_UNION KW_INTERSECT KW_MINUS
 %token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOST KW_HOSTS KW_PART KW_PARTS KW_ADD
@@ -192,7 +193,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %token KW_STARTS KW_ENDS
 %token KW_UNWIND KW_SKIP KW_OPTIONAL
 %token KW_CASE KW_THEN KW_ELSE KW_END
-%token KW_GROUP KW_ZONE KW_GROUPS KW_ZONES KW_INTO
+%token KW_GROUP KW_ZONE KW_GROUPS KW_ZONES KW_INTO KW_NEW
 %token KW_LISTENER KW_ELASTICSEARCH KW_FULLTEXT KW_HTTPS KW_HTTP
 %token KW_AUTO KW_FUZZY KW_PREFIX KW_REGEXP KW_WILDCARD
 %token KW_TEXT KW_SEARCH KW_CLIENTS KW_SIGN KW_SERVICE KW_TEXT_SEARCH
@@ -202,6 +203,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %token KW_KILL KW_QUERY KW_QUERIES KW_TOP
 %token KW_GEOGRAPHY KW_POINT KW_LINESTRING KW_POLYGON
 %token KW_LIST KW_MAP
+%token KW_MERGE KW_SPLIT KW_RENAME
 
 /* symbols */
 %token L_PAREN R_PAREN L_BRACKET R_BRACKET L_BRACE R_BRACE COMMA
@@ -213,7 +215,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %token <boolval> BOOL
 %token <intval> INTEGER
 %token <doubleval> DOUBLE
-%token <strval> STRING VARIABLE LABEL IPV4 CHINESE_LABEL
+%token <strval> STRING VARIABLE LABEL IPV4
 
 %type <strval> name_label unreserved_keyword predicate_name
 %type <expr> expression
@@ -333,6 +335,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <colspec> column_spec
 %type <colspeclist> column_spec_list
 %type <column_name_list> column_name_list
+%type <zone_name_list> zone_name_list
 
 %type <role_type_clause> role_type_clause
 %type <acl_item_clause> acl_item_clause
@@ -353,8 +356,9 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <sentence> drop_tag_index_sentence drop_edge_index_sentence drop_fulltext_index_sentence
 %type <sentence> describe_tag_index_sentence describe_edge_index_sentence
 %type <sentence> rebuild_tag_index_sentence rebuild_edge_index_sentence rebuild_fulltext_index_sentence
-%type <sentence> add_zone_sentence drop_zone_sentence desc_zone_sentence
-%type <sentence> add_host_into_zone_sentence drop_host_from_zone_sentence
+%type <sentence> add_hosts_sentence drop_hosts_sentence
+%type <sentence> drop_zone_sentence desc_zone_sentence
+%type <sentence> merge_zone_sentence /*split_zone_sentence*/ rename_zone_sentence
 %type <sentence> create_snapshot_sentence drop_snapshot_sentence
 %type <sentence> add_listener_sentence remove_listener_sentence list_listener_sentence
 
@@ -387,6 +391,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <boolval> opt_if_not_exists
 %type <boolval> opt_if_exists
 %type <boolval> opt_with_properties
+%type <boolval> opt_ignore_existed_index
 
 %left QM COLON
 %left KW_OR KW_XOR
@@ -406,7 +411,6 @@ static constexpr size_t kCommentLengthLimit = 256;
 
 name_label
     : LABEL { $$ = $1; }
-    | CHINESE_LABEL { $$ = $1; }
     | unreserved_keyword { $$ = $1; }
     ;
 
@@ -498,6 +502,7 @@ unreserved_keyword
     | KW_ELSE               { $$ = new std::string("else"); }
     | KW_END                { $$ = new std::string("end"); }
     | KW_INTO               { $$ = new std::string("into"); }
+    | KW_NEW                { $$ = new std::string("new"); }
     | KW_GROUPS             { $$ = new std::string("groups"); }
     | KW_ZONE               { $$ = new std::string("zone"); }
     | KW_ZONES              { $$ = new std::string("zones"); }
@@ -532,6 +537,9 @@ unreserved_keyword
     | KW_POLYGON            { $$ = new std::string("polygon"); }
     | KW_HTTP               { $$ = new std::string("http"); }
     | KW_HTTPS              { $$ = new std::string("https"); }
+    | KW_MERGE              { $$ = new std::string("merge"); }
+    | KW_SPLIT              { $$ = new std::string("split"); }
+    | KW_RENAME             { $$ = new std::string("rename"); }
     ;
 
 expression
@@ -1021,22 +1029,53 @@ function_call_expression
         }
     }
     | KW_TIMESTAMP L_PAREN opt_argument_list R_PAREN {
-        $$ = FunctionCallExpression::make(qctx->objPool(), "timestamp", $3);
+        if (FunctionManager::find("timestamp", $3->numArgs()).ok()) {
+            $$ = FunctionCallExpression::make(qctx->objPool(), "timestamp", $3);
+        } else {
+            throw nebula::GraphParser::syntax_error(@1, "Unknown function ");
+        }
     }
     | KW_DATE L_PAREN opt_argument_list R_PAREN {
-        $$ = FunctionCallExpression::make(qctx->objPool(), "date", $3);
+        if (FunctionManager::find("date", $3->numArgs()).ok()) {
+            $$ = FunctionCallExpression::make(qctx->objPool(), "date", $3);
+        } else {
+            throw nebula::GraphParser::syntax_error(@1, "Unknown function ");
+        }
     }
     | KW_TIME L_PAREN opt_argument_list R_PAREN {
-        $$ = FunctionCallExpression::make(qctx->objPool(), "time", $3);
+        if (FunctionManager::find("time", $3->numArgs()).ok()) {
+            $$ = FunctionCallExpression::make(qctx->objPool(), "time", $3);
+        } else {
+            throw nebula::GraphParser::syntax_error(@1, "Unknown function ");
+        }
     }
     | KW_DATETIME L_PAREN opt_argument_list R_PAREN {
-        $$ = FunctionCallExpression::make(qctx->objPool(), "datetime", $3);
+        if (FunctionManager::find("datetime", $3->numArgs()).ok()) {
+            $$ = FunctionCallExpression::make(qctx->objPool(), "datetime", $3);
+        } else {
+            throw nebula::GraphParser::syntax_error(@1, "Unknown function ");
+        }
     }
     | KW_TAGS L_PAREN opt_argument_list R_PAREN {
-        $$ = FunctionCallExpression::make(qctx->objPool(), "tags", $3);
+        if (FunctionManager::find("tags", $3->numArgs()).ok()) {
+            $$ = FunctionCallExpression::make(qctx->objPool(), "tags", $3);
+        } else {
+            throw nebula::GraphParser::syntax_error(@1, "Unknown function ");
+        }
     }
     | KW_SIGN L_PAREN opt_argument_list R_PAREN {
-        $$ = FunctionCallExpression::make(qctx->objPool(), "sign", $3);
+        if (FunctionManager::find("sign", $3->numArgs()).ok()) {
+            $$ = FunctionCallExpression::make(qctx->objPool(), "sign", $3);
+        } else {
+            throw nebula::GraphParser::syntax_error(@1, "Unknown function ");
+        }
+    }
+    | KW_DURATION L_PAREN opt_argument_list R_PAREN {
+        if (FunctionManager::find("duration", $3->numArgs()).ok()) {
+            $$ = FunctionCallExpression::make(qctx->objPool(), "duration", $3);
+        } else {
+            throw nebula::GraphParser::syntax_error(@1, "Unknown function ");
+        }
     }
     ;
 
@@ -1173,6 +1212,10 @@ type_spec
         $$ = new meta::cpp2::ColumnTypeDef();
         $$->set_type(nebula::cpp2::PropertyType::GEOGRAPHY);
         $$->set_geo_shape($3);
+    }
+    | KW_DURATION {
+        $$ = new meta::cpp2::ColumnTypeDef();
+        $$->set_type(nebula::cpp2::PropertyType::DURATION);
     }
     ;
 
@@ -2267,6 +2310,11 @@ opt_create_schema_prop_list
     }
     ;
 
+opt_ignore_existed_index
+    : %empty { $$=false; }
+    | KW_IGNORE_EXISTED_INDEX { $$=true; }
+    ;
+
 create_schema_prop_list
     : create_schema_prop_item {
         $$ = new SchemaPropList();
@@ -2672,38 +2720,57 @@ rebuild_fulltext_index_sentence
         $$ = new AdminJobSentence(meta::cpp2::AdminJobOp::ADD,
                                   meta::cpp2::AdminCmd::REBUILD_FULLTEXT_INDEX);
     }
+    ;
+
+add_hosts_sentence
+    : KW_ADD KW_HOSTS host_list {
+        $$ = new AddHostsSentence($3);
+    }
+    | KW_ADD KW_HOSTS host_list KW_INTO KW_ZONE STRING {
+        $$ = new AddHostsIntoZoneSentence($3, $6, false);
+    }
+    | KW_ADD KW_HOSTS host_list KW_INTO KW_NEW KW_ZONE STRING {
+        $$ = new AddHostsIntoZoneSentence($3, $7, true);
+    }
+    ;
+
+drop_hosts_sentence
+    : KW_DROP KW_HOSTS host_list {
+        $$ = new DropHostsSentence($3);
+    }
+    ;
 
 
-add_zone_sentence
-    : KW_ADD KW_ZONE name_label host_list {
-        $$ = new AddZoneSentence($3, $4);
+merge_zone_sentence
+    : KW_MERGE KW_ZONE zone_name_list KW_INTO STRING {
+        $$ = new MergeZoneSentence($3, $5);
     }
     ;
 
 drop_zone_sentence
-    : KW_DROP KW_ZONE name_label {
+    : KW_DROP KW_ZONE STRING {
         $$ = new DropZoneSentence($3);
     }
     ;
 
+// split_zone_sentence
+//     : KW_SPLIT KW_ZONE name_label KW_FROM zone_name_list {
+//         $$ = new SplitZoneSentence($3, $5);
+//     }
+//     ;
+
+rename_zone_sentence
+    : KW_RENAME KW_ZONE STRING KW_TO STRING {
+        $$ = new RenameZoneSentence($3, $5);
+    }
+    ;
+
 desc_zone_sentence
-    : KW_DESCRIBE KW_ZONE name_label {
+    : KW_DESCRIBE KW_ZONE STRING {
         $$ = new DescribeZoneSentence($3);
     }
-    | KW_DESC KW_ZONE name_label {
+    | KW_DESC KW_ZONE STRING {
         $$ = new DescribeZoneSentence($3);
-    }
-    ;
-
-add_host_into_zone_sentence
-    : KW_ADD KW_HOST host_item KW_INTO KW_ZONE name_label {
-        $$ = new AddHostIntoZoneSentence($3, $6);
-    }
-    ;
-
-drop_host_from_zone_sentence
-    : KW_DROP KW_HOST host_item KW_FROM KW_ZONE name_label {
-        $$ = new DropHostFromZoneSentence($3, $6);
     }
     ;
 
@@ -2756,8 +2823,8 @@ assignment_sentence
     ;
 
 insert_vertex_sentence
-    : KW_INSERT KW_VERTEX opt_if_not_exists vertex_tag_list KW_VALUES vertex_row_list {
-        $$ = new InsertVerticesSentence($4, $6, $3);
+    : KW_INSERT KW_VERTEX opt_if_not_exists opt_ignore_existed_index vertex_tag_list KW_VALUES vertex_row_list {
+        $$ = new InsertVerticesSentence($5, $7, $3, $4);
     }
     ;
 
@@ -2834,19 +2901,19 @@ value_list
     ;
 
 insert_edge_sentence
-    : KW_INSERT KW_EDGE opt_if_not_exists name_label KW_VALUES edge_row_list {
-        auto sentence = new InsertEdgesSentence($4, $6, $3);
+    : KW_INSERT KW_EDGE opt_if_not_exists opt_ignore_existed_index name_label KW_VALUES edge_row_list {
+        auto sentence = new InsertEdgesSentence($5, $7, $3, $4);
         sentence->setDefaultPropNames();
         $$ = sentence;
     }
-    | KW_INSERT KW_EDGE opt_if_not_exists name_label L_PAREN R_PAREN KW_VALUES edge_row_list {
-        auto sentence = new InsertEdgesSentence($4, $8, $3);
+    | KW_INSERT KW_EDGE opt_if_not_exists opt_ignore_existed_index name_label L_PAREN R_PAREN KW_VALUES edge_row_list {
+        auto sentence = new InsertEdgesSentence($5, $9, $3, $4);
         sentence->setProps(new PropertyList());
         $$ = sentence;
     }
-    | KW_INSERT KW_EDGE opt_if_not_exists name_label L_PAREN prop_list R_PAREN KW_VALUES edge_row_list {
-        auto sentence = new InsertEdgesSentence($4, $9, $3);
-        sentence->setProps($6);
+    | KW_INSERT KW_EDGE opt_if_not_exists opt_ignore_existed_index name_label L_PAREN prop_list R_PAREN KW_VALUES edge_row_list {
+        auto sentence = new InsertEdgesSentence($5, $10, $3, $4);
+        sentence->setProps($7);
         $$ = sentence;
     }
     ;
@@ -3279,6 +3346,17 @@ show_config_item
     }
     ;
 
+zone_name_list
+    : STRING {
+        $$ = new ZoneNameList();
+        $$->addZone($1);
+    }
+    | zone_name_list COMMA STRING {
+        $$ = $1;
+        $$->addZone($3);
+    }
+    ;
+
 create_space_sentence
     : KW_CREATE KW_SPACE opt_if_not_exists name_label {
         auto sentence = new CreateSpaceSentence($4, $3);
@@ -3289,14 +3367,14 @@ create_space_sentence
         sentence->setComment($5);
         $$ = sentence;
     }
-    | KW_CREATE KW_SPACE opt_if_not_exists name_label KW_ON name_label {
+    | KW_CREATE KW_SPACE opt_if_not_exists name_label KW_ON zone_name_list {
         auto sentence = new CreateSpaceSentence($4, $3);
-        sentence->setGroupName($6);
+        sentence->setZoneNames($6);
         $$ = sentence;
     }
-    | KW_CREATE KW_SPACE opt_if_not_exists name_label KW_ON name_label comment_prop_assignment {
+    | KW_CREATE KW_SPACE opt_if_not_exists name_label KW_ON zone_name_list comment_prop_assignment {
         auto sentence = new CreateSpaceSentence($4, $3);
-        sentence->setGroupName($6);
+        sentence->setZoneNames($6);
         sentence->setComment($7);
         $$ = sentence;
     }
@@ -3311,15 +3389,15 @@ create_space_sentence
         sentence->setComment($8);
         $$ = sentence;
     }
-    | KW_CREATE KW_SPACE opt_if_not_exists name_label L_PAREN space_opt_list R_PAREN KW_ON name_label {
+    | KW_CREATE KW_SPACE opt_if_not_exists name_label L_PAREN space_opt_list R_PAREN KW_ON zone_name_list {
         auto sentence = new CreateSpaceSentence($4, $3);
-        sentence->setGroupName($9);
+        sentence->setZoneNames($9);
         sentence->setOpts($6);
         $$ = sentence;
     }
-    | KW_CREATE KW_SPACE opt_if_not_exists name_label L_PAREN space_opt_list R_PAREN KW_ON name_label comment_prop_assignment {
+    | KW_CREATE KW_SPACE opt_if_not_exists name_label L_PAREN space_opt_list R_PAREN KW_ON zone_name_list comment_prop_assignment {
         auto sentence = new CreateSpaceSentence($4, $3);
-        sentence->setGroupName($9);
+        sentence->setZoneNames($9);
         sentence->setOpts($6);
         sentence->setComment($10);
         $$ = sentence;
@@ -3637,11 +3715,13 @@ maintain_sentence
     | rebuild_tag_index_sentence { $$ = $1; }
     | rebuild_edge_index_sentence { $$ = $1; }
     | rebuild_fulltext_index_sentence { $$ = $1; }
-    | add_zone_sentence { $$ = $1; }
+    | add_hosts_sentence { $$ = $1; }
+    | drop_hosts_sentence { $$ = $1; }
+    | merge_zone_sentence { $$ = $1; }
     | drop_zone_sentence { $$ = $1; }
+    // | split_zone_sentence { $$ = $1; }
+    | rename_zone_sentence { $$ = $1; }
     | desc_zone_sentence { $$ = $1; }
-    | add_host_into_zone_sentence { $$ = $1; }
-    | drop_host_from_zone_sentence { $$ = $1; }
     | show_sentence { $$ = $1; }
     | create_user_sentence { $$ = $1; }
     | alter_user_sentence { $$ = $1; }

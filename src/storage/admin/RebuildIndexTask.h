@@ -36,7 +36,11 @@ class RebuildIndexTask : public AdminTask {
                                                    const IndexItems& items,
                                                    kvstore::RateLimiter* rateLimiter) = 0;
 
-  void cancel() override { canceled_ = true; }
+  void cancel() override {
+    canceled_ = true;
+    auto suc = nebula::cpp2::ErrorCode::SUCCEEDED;
+    rc_.compare_exchange_strong(suc, nebula::cpp2::ErrorCode::E_USER_CANCEL);
+  }
 
   nebula::cpp2::ErrorCode buildIndexOnOperations(GraphSpaceID space,
                                                  PartitionID part,
@@ -59,7 +63,6 @@ class RebuildIndexTask : public AdminTask {
   nebula::cpp2::ErrorCode invoke(GraphSpaceID space, PartitionID part, const IndexItems& items);
 
  protected:
-  std::atomic<bool> canceled_{false};
   GraphSpaceID space_;
 };
 

@@ -68,6 +68,8 @@ class SchemaManager {
 
   virtual StatusOr<std::vector<std::string>> getAllEdge(GraphSpaceID space) = 0;
 
+  StatusOr<std::unordered_map<TagID, std::string>> getAllTags(GraphSpaceID space);
+
   // get all version of all tag schema
   virtual StatusOr<TagSchemas> getAllVerTagSchema(GraphSpaceID space) = 0;
 

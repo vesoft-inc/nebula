@@ -18,7 +18,7 @@ enum class NebulaKeyType : uint32_t {
   kSystem = 0x00000004,
   kOperation = 0x00000005,
   kKeyValue = 0x00000006,
-  // kVertex = 0x00000007,
+  kVertex = 0x00000007,
 };
 
 enum class NebulaSystemKeyType : uint32_t {
@@ -41,10 +41,10 @@ static typename std::enable_if<std::is_integral<T>::value, T>::type readInt(cons
   return *reinterpret_cast<const T*>(data);
 }
 
-// size of vertex key except vertexId
+// size of tag key except vertexId
 static constexpr int32_t kTagLen = sizeof(PartitionID) + sizeof(TagID);
 
-// size of vertex key except srcId and dstId
+// size of tag key except srcId and dstId
 static constexpr int32_t kEdgeLen =
     sizeof(PartitionID) + sizeof(EdgeType) + sizeof(EdgeRanking) + sizeof(EdgeVerPlaceHolder);
 

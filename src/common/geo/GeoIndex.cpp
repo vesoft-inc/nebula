@@ -38,6 +38,8 @@ nebula::storage::cpp2::IndexColumnHint ScanRange::toIndexColumnHint() {
     // Encode uint64_t as string in advance
     hint.set_begin_value(IndexKeyUtils::encodeUint64(rangeMin));
     hint.set_end_value(IndexKeyUtils::encodeUint64(rangeMax));
+    hint.set_include_begin(true);
+    hint.set_include_end(true);
   } else {
     hint.set_scan_type(nebula::storage::cpp2::ScanType::PREFIX);
     hint.set_begin_value(IndexKeyUtils::encodeUint64(rangeMin));

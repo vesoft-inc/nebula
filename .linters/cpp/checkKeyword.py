@@ -112,6 +112,10 @@ reserved_key_words = [
     'KW_UNWIND',
     'KW_CASE',
     'KW_GEOGRAPHY',
+    'KW_HOSTS',
+    'KW_ZONE',
+    'KW_ZONES',
+    'KW_RENAME',
 ]
 
 

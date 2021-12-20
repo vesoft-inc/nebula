@@ -9,6 +9,7 @@
 
 #include "common/fs/FileUtils.h"
 #include "common/time/TimezoneInfo.h"
+#include "common/time/parser/DatetimeReader.h"
 
 namespace nebula {
 namespace time {
@@ -168,6 +169,58 @@ StatusOr<Value> TimeUtils::toTimestamp(const Value &val) {
     return Status::Error("Incorrect timestamp value: `%s'", val.toString().c_str());
   }
   return timestamp;
+}
+
+/*static*/ StatusOr<Duration> TimeUtils::durationFromMap(const Map &m) {
+  Duration d;
+  for (const auto &kv : m.kvs) {
+    if (!kv.second.isInt()) {
+      return Status::Error("Invalid value type.");
+    }
+    if (kv.first == "years") {
+      d.addYears(kv.second.getInt());
+    } else if (kv.first == "quarters") {
+      d.addQuarters(kv.second.getInt());
+    } else if (kv.first == "months") {
+      d.addMonths(kv.second.getInt());
+    } else if (kv.first == "weeks") {
+      d.addWeeks(kv.second.getInt());
+    } else if (kv.first == "days") {
+      d.addDays(kv.second.getInt());
+    } else if (kv.first == "hours") {
+      d.addHours(kv.second.getInt());
+    } else if (kv.first == "minutes") {
+      d.addMinutes(kv.second.getInt());
+    } else if (kv.first == "seconds") {
+      d.addSeconds(kv.second.getInt());
+    } else if (kv.first == "milliseconds") {
+      d.addMilliseconds(kv.second.getInt());
+    } else if (kv.first == "microseconds") {
+      d.addMicroseconds(kv.second.getInt());
+    } else {
+      return Status::Error("Unkown field %s.", kv.first.c_str());
+    }
+  }
+  return d;
+}
+
+/*static*/ StatusOr<DateTime> TimeUtils::parseDateTime(const std::string &str) {
+  auto p = DatetimeReader::makeDateTimeReader();
+  auto result = p.readDatetime(str);
+  NG_RETURN_IF_ERROR(result);
+  return result.value();
+}
+
+/*static*/ StatusOr<Date> TimeUtils::parseDate(const std::string &str) {
+  auto p = DatetimeReader::makeDateReader();
+  auto result = p.readDate(str);
+  NG_RETURN_IF_ERROR(result);
+  return result.value();
+}
+
+/*static*/ StatusOr<Time> TimeUtils::parseTime(const std::string &str) {
+  auto p = DatetimeReader::makeTimeReader();
+  return p.readTime(str);
 }
 
 }  // namespace time

@@ -16,7 +16,7 @@ Feature: delete vertex without edge
       CREATE TAG t(id int);
       CREATE EDGE e();
       """
-    And wait 4 seconds
+    And wait 6 seconds
     When executing query:
       """
       INSERT VERTEX t(id) VALUES 1:(1),2:(2),3:(3);
@@ -73,7 +73,7 @@ Feature: delete vertex without edge
       CREATE TAG t(id int);
       CREATE EDGE e();
       """
-    And wait 4 seconds
+    And wait 6 seconds
     When executing query:
       """
       INSERT VERTEX t(id) VALUES 1:(1),2:(2),3:(2);

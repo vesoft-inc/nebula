@@ -23,6 +23,7 @@
 #include "meta/processors/schema/CreateTagProcessor.h"
 #include "meta/processors/schema/DropEdgeProcessor.h"
 #include "meta/processors/schema/DropTagProcessor.h"
+#include "meta/processors/zone/AddHostsProcessor.h"
 #include "meta/test/TestUtils.h"
 
 namespace nebula {
@@ -2036,8 +2037,16 @@ TEST(IndexProcessorTest, AlterWithFTIndexTest) {
 TEST(ProcessorTest, IndexIdInSpaceRangeTest) {
   fs::TempDir rootPath("/tmp/IndexIdInSpaceRangeTest.XXXXXX");
   auto kv = MockCluster::initMetaKV(rootPath.path());
-  TestUtils::createSomeHosts(kv.get());
-
+  {
+    cpp2::AddHostsReq req;
+    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
+    req.set_hosts(std::move(hosts));
+    auto* processor = AddHostsProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
   // mock one space and ten tag, ten edge
   {
     // space Id is 1

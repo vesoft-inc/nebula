@@ -68,7 +68,7 @@ class RelNode {
 
   void addDependency(RelNode<T>* dep) {
     dependencies_.emplace_back(dep);
-    dep->hasDependents_ = true;
+    dep->isDependent_ = true;
   }
 
   RelNode() = default;
@@ -81,7 +81,7 @@ class RelNode {
 
   std::string name_ = "RelNode";
   std::vector<RelNode<T>*> dependencies_;
-  bool hasDependents_ = false;
+  bool isDependent_ = false;
   time::Duration duration_{true};
 };
 
