@@ -14,9 +14,10 @@ include(CheckCXXCompilerFlag)
 
 add_compile_options(-Wall)
 add_compile_options(-Wextra)
-add_compile_options(-Wpedantic)
+# Hackathon: for wasmedge close this
+#add_compile_options(-Wpedantic)
 add_compile_options(-Wunused-parameter)
-# for wasmtime compile close this
+# Hackathon: for wasmtime compile close this
 #add_compile_options(-Wshadow)
 add_compile_options(-Wnon-virtual-dtor)
 add_compile_options(-Woverloaded-virtual)

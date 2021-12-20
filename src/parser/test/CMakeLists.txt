@@ -50,14 +50,14 @@ nebula_add_test(
     NAME parser_test
     SOURCES ParserTest.cpp
     OBJECTS ${PARSER_TEST_LIBS}
-    LIBRARIES gtest gtest_main ${THRIFT_LIBRARIES} ${PROXYGEN_LIBRARIES} ${WASMTIME_LIBRARYS}
+    LIBRARIES gtest gtest_main ${THRIFT_LIBRARIES} ${PROXYGEN_LIBRARIES} ${WASMTIME_LIBRARYS} ${WASMEDGE_LIBRARYS}
 )
 
 nebula_add_test(
     NAME scanner_test
     SOURCES ScannerTest.cpp
     OBJECTS ${PARSER_TEST_LIBS}
-    LIBRARIES gtest gtest_main ${THRIFT_LIBRARIES} ${PROXYGEN_LIBRARIES} ${WASMTIME_LIBRARYS}
+    LIBRARIES gtest gtest_main ${THRIFT_LIBRARIES} ${PROXYGEN_LIBRARIES} ${WASMTIME_LIBRARYS} ${WASMEDGE_LIBRARYS}
 )
 
 nebula_add_executable(

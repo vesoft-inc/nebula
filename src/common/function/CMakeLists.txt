@@ -20,15 +20,18 @@ nebula_add_executable(
         NAME TestWasm
         SOURCES TestWasm.cpp
         OBJECTS $<TARGET_OBJECTS:base_obj>
-        LIBRARIES ${WASMTIME_LIBRARYS}
+        LIBRARIES
+            ${WASMTIME_LIBRARYS}
+            ${WASMEDGE_LIBRARYS}
 )
 
 nebula_add_library(
         wasm_function_obj OBJECT
         WasmFunctionManager.cpp
+        HTTPRequest.hpp
 )
 
-target_link_libraries(wasm_function_obj ${WASMTIME_LIBRARYS})
+target_link_libraries(wasm_function_obj ${WASMTIME_LIBRARYS} ${WASMEDGE_LIBRARYS})
 
 
 nebula_add_subdirectory(test)
