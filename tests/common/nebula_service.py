@@ -244,7 +244,9 @@ class NebulaService(object):
         os.makedirs(resources_dir)
 
         # timezone file
-        shutil.copy(self.build_dir + '/../resources/date_time_zonespec.csv', resources_dir)
+        shutil.copy(
+            self.build_dir + '/../resources/date_time_zonespec.csv', resources_dir
+        )
         shutil.copy(self.build_dir + '/../resources/gflags.json', resources_dir)
         # cert files
         shutil.copy(self.src_dir + '/tests/cert/test.ca.key', resources_dir)
@@ -364,15 +366,35 @@ class NebulaService(object):
         config.timeout = 60000
         # init connection pool
         client_pool = ConnectionPool()
-        # assert client_pool.init([("127.0.0.1", int(self.graphd_port))], config)
-        assert client_pool.init([("127.0.0.1", self.graphd_processes[0].tcp_port)], config)
+        ok = False
+        # waiting for graph is ready, it may take at least 3 secords if running 3 metad.
+        for _ in range(10):
+            try:
+                ok = client_pool.init(
+                    [("127.0.0.1", self.graphd_processes[0].tcp_port)], config
+                )
+            except:
+                pass
+            if ok:
+                break
+            time.sleep(1)
 
-        cmd = "ADD HOSTS 127.0.0.1:" + str(self.storaged_processes[0].tcp_port) + " INTO NEW ZONE \"default_zone\""
-        print(cmd)
-
+        assert ok
         # get session from the pool
         client = client_pool.get_session('root', 'nebula')
+
+        hosts = ",".join(
+            [
+                "127.0.0.1:{}".format(str(storaged.tcp_port))
+                for storaged in self.storaged_processes
+            ]
+        )
+
+        cmd = "ADD HOSTS {} INTO NEW ZONE \"default_zone\"".format(hosts)
+        print(cmd)
         resp = client.execute(cmd)
+        assert resp.is_succeeded(), resp.error_msg()
+
         client.release()
 
         # wait nebula start

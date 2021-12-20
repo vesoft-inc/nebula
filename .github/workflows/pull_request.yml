@@ -171,6 +171,13 @@ jobs:
           make RM_DIR=false down
         working-directory: tests/
         timeout-minutes: 2
+      - name: Test distributed cluster
+        if: ${{ matrix.os == 'centos7' }}
+        run: |
+          make DISTRIBUTED=true CONTAINERIZED=true up
+          make RM_DIR=false DEBUG=false J=${{ steps.cmake.outputs.j }} tck
+          make RM_DIR=false down
+        working-directory: tests/
       - name: coverage
         if: ${{ matrix.compiler == 'gcc-9.2' && matrix.os == 'ubuntu2004' }}
         run: |
@@ -189,4 +196,4 @@ jobs:
         if: ${{ failure() }}
         with:
           name: ${{ matrix.os }}-${{ matrix.compiler }}-nebula-test-logs
-          path:  ./build/server_*/logs/
+          path:  ./build/server_*/logs*/

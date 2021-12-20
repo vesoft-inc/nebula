@@ -10,7 +10,13 @@ import os
 import shutil
 from tests.common.nebula_service import NebulaService
 from tests.common.utils import get_conn_pool, load_csv_data
-from tests.common.constants import NEBULA_HOME, TMP_DIR, NB_TMP_PATH, SPACE_TMP_PATH, BUILD_DIR
+from tests.common.constants import (
+    NEBULA_HOME,
+    TMP_DIR,
+    NB_TMP_PATH,
+    SPACE_TMP_PATH,
+    BUILD_DIR,
+)
 
 
 CURR_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -80,6 +86,12 @@ def init_parser():
         dest='containerized',
         default='false',
         help='run this process inside container',
+    ),
+    opt_parser.add_option(
+        '--distributed',
+        dest='distributed',
+        default='false',
+        help='Start a distributed nebula cluster',
     )
     return opt_parser
 
@@ -145,19 +157,34 @@ if __name__ == "__main__":
         parser = init_parser()
         (configs, opts) = parser.parse_args()
 
-        # Setup nebula graph service
-        nebula_svc = NebulaService(
-            configs.build_dir,
-            NEBULA_HOME,
-            graphd_num=2,
-            storaged_num=1,
-            debug_log=opt_is(configs.debug, "true"),
-            ca_signed=opt_is(configs.ca_signed, "true"),
-            enable_ssl=configs.enable_ssl,
-            enable_graph_ssl=configs.enable_graph_ssl,
-            enable_meta_ssl=configs.enable_meta_ssl,
-            containerized=configs.containerized,
-        )
+        if opt_is(configs.distributed, "true"):
+            nebula_svc = NebulaService(
+                configs.build_dir,
+                NEBULA_HOME,
+                graphd_num=2,
+                storaged_num=3,
+                metad_num=3,
+                debug_log=opt_is(configs.debug, "true"),
+                ca_signed=opt_is(configs.ca_signed, "true"),
+                enable_ssl=configs.enable_ssl,
+                enable_graph_ssl=configs.enable_graph_ssl,
+                enable_meta_ssl=configs.enable_meta_ssl,
+                containerized=configs.containerized,
+            )
+        else:
+            # Setup nebula graph service
+            nebula_svc = NebulaService(
+                configs.build_dir,
+                NEBULA_HOME,
+                graphd_num=2,
+                storaged_num=1,
+                debug_log=opt_is(configs.debug, "true"),
+                ca_signed=opt_is(configs.ca_signed, "true"),
+                enable_ssl=configs.enable_ssl,
+                enable_graph_ssl=configs.enable_graph_ssl,
+                enable_meta_ssl=configs.enable_meta_ssl,
+                containerized=configs.containerized,
+            )
 
         if opt_is(configs.cmd, "start"):
             start_nebula(nebula_svc, configs)

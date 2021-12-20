@@ -19,6 +19,7 @@ ENABLE_GRAPH_SSL ?= false
 ENABLE_META_SSL ?= false
 CA_SIGNED ?= false
 CONTAINERIZED ?= false
+DISTRIBUTED ?= false
 
 # commands
 gherkin_fmt = ~/.local/bin/reformat-gherkin
@@ -70,7 +71,8 @@ up: clean
 		--enable_graph_ssl=$(ENABLE_GRAPH_SSL) \
 		--enable_meta_ssl=$(ENABLE_META_SSL) \
 		--ca_signed=$(CA_SIGNED) \
-		--containerized=$(CONTAINERIZED)
+		--containerized=$(CONTAINERIZED) \
+		--distributed=$(DISTRIBUTED)
 
 down:
 	$(run_test) --cmd=stop --rm_dir=$(RM_DIR)
