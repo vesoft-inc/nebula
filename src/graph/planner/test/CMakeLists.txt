@@ -19,6 +19,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:meta_client_obj>
         $<TARGET_OBJECTS:stats_obj>
         $<TARGET_OBJECTS:graph_stats_obj>
+        $<TARGET_OBJECTS:metrics_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:meta_thrift_obj>
         $<TARGET_OBJECTS:common_thrift_obj>

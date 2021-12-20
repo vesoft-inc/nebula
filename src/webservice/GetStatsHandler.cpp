@@ -11,11 +11,13 @@
 #include <proxygen/lib/http/ProxygenErrorEnum.h>
 
 #include "common/base/Base.h"
+#include "common/metrics/Metric.h"
 #include "common/stats/StatsManager.h"
 #include "webservice/Common.h"
 
 namespace nebula {
 
+using nebula::metric::MetricRegistry;
 using nebula::stats::StatsManager;
 using proxygen::HTTPMessage;
 using proxygen::HTTPMethod;
@@ -95,7 +97,8 @@ folly::dynamic GetStatsHandler::getStats() const {
   auto stats = folly::dynamic::array();
   if (statNames_.empty()) {
     // Read all stats
-    StatsManager::readAllValue(stats);
+    // StatsManager::readAllValue(stats);
+    MetricRegistry::readAllValue(stats);
   } else {
     for (auto& sn : statNames_) {
       auto status = StatsManager::readValue(sn);

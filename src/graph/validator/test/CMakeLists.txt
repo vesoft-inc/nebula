@@ -29,6 +29,7 @@ set(VALIDATOR_TEST_LIBS
     $<TARGET_OBJECTS:graph_stats_obj>
     $<TARGET_OBJECTS:meta_client_stats_obj>
     $<TARGET_OBJECTS:storage_client_stats_obj>
+    $<TARGET_OBJECTS:metrics_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:graph_thrift_obj>

@@ -37,6 +37,7 @@ set(storage_test_deps
     $<TARGET_OBJECTS:network_obj>
     $<TARGET_OBJECTS:charset_obj>
     $<TARGET_OBJECTS:stats_obj>
+    $<TARGET_OBJECTS:metrics_obj>
     $<TARGET_OBJECTS:process_obj>
     $<TARGET_OBJECTS:conf_obj>
     $<TARGET_OBJECTS:datatypes_obj>

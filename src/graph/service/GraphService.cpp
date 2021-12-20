@@ -136,6 +136,7 @@ folly::Future<ExecutionResponse> GraphService::future_executeWithParameter(
   auto future = ctx->future();
   stats::StatsManager::addValue(kNumQueries);
   stats::StatsManager::addValue(kNumActiveQueries);
+  //metric::kNumQueries.withLabelValues({""}).addValue();
   // When the sessionId is 0, it means the clients to ping the connection is ok
   if (sessionId == 0) {
     ctx->resp().errorCode = ErrorCode::E_SESSION_INVALID;

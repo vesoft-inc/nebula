@@ -61,6 +61,7 @@ int main(int argc, char *argv[]) {
     folly::ssl::init();
   }
   nebula::initGraphStats();
+  //nebula::metric::initMetrics();
 
   if (FLAGS_flagfile.empty()) {
     printHelp(argv[0]);

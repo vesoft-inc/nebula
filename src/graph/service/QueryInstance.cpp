@@ -166,6 +166,8 @@ void QueryInstance::onError(Status status) {
   stats::StatsManager::addValue(
       stats::StatsManager::counterWithLabels(kNumQueryErrors, {{"space", spaceName}}));
   addSlowQueryStats(latency, spaceName);
+  metric::kNumQueryErrors.withLabelValues({""}).addValue();
+  addSlowQueryStats(latency);
   rctx->session()->deleteQuery(qctx_.get());
   rctx->finish();
   delete this;

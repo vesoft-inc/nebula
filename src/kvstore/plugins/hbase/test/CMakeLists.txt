@@ -17,6 +17,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:thread_obj>
         $<TARGET_OBJECTS:meta_client>
         $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:metrics_obj>
         $<TARGET_OBJECTS:datatypes_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:meta_thrift_obj>
@@ -48,6 +49,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:thread_obj>
         $<TARGET_OBJECTS:meta_client>
         $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:metrics_obj>
         $<TARGET_OBJECTS:datatypes_obj>
         $<TARGET_OBJECTS:time_obj>
         $<TARGET_OBJECTS:meta_thrift_obj>

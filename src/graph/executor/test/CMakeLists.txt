@@ -12,6 +12,7 @@ SET(EXEC_QUERY_TEST_OBJS
     $<TARGET_OBJECTS:storage_thrift_obj>
     $<TARGET_OBJECTS:meta_client_obj>
     $<TARGET_OBJECTS:stats_obj>
+    $<TARGET_OBJECTS:metrics_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:common_thrift_obj>

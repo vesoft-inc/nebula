@@ -142,6 +142,7 @@ set(meta_test_deps
     $<TARGET_OBJECTS:process_obj>
     $<TARGET_OBJECTS:meta_obj>
     $<TARGET_OBJECTS:stats_obj>
+    $<TARGET_OBJECTS:metrics_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:network_obj>

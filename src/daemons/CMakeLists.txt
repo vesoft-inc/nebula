@@ -15,6 +15,7 @@ set(common_deps
     $<TARGET_OBJECTS:ws_common_obj>
     $<TARGET_OBJECTS:process_obj>
     $<TARGET_OBJECTS:stats_obj>
+    $<TARGET_OBJECTS:metrics_obj>
     $<TARGET_OBJECTS:encryption_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:time_obj>
