@@ -2777,7 +2777,6 @@ desc_zone_sentence
 traverse_sentence
     : L_PAREN set_sentence R_PAREN { $$ = $2; }
     | go_sentence { $$ = $1; }
-    | match_sentence { $$ = $1; }
     | lookup_sentence { $$ = $1; }
     | group_by_sentence { $$ = $1; }
     | order_by_sentence { $$ = $1; }
@@ -3747,6 +3746,7 @@ sentence
     | set_sentence { $$ = $1; }
     | assignment_sentence { $$ = $1; }
     | mutate_sentence { $$ = $1; }
+    | match_sentence { $$ = $1; }
     ;
 
 seq_sentences
