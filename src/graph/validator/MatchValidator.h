@@ -30,7 +30,7 @@ class MatchValidator final : public Validator {
   Status validateFilter(const Expression *filter, WhereClauseContext &whereClauseCtx) const;
 
   Status validateReturn(MatchReturn *ret,
-                        const std::unordered_map<std::string, AliasType> &aliasesAvailable,
+                        const std::vector<QueryPart> &queryParts,
                         ReturnClauseContext &retClauseCtx) const;
 
   Status validateAliases(const std::vector<const Expression *> &exprs,
@@ -39,7 +39,7 @@ class MatchValidator final : public Validator {
   Status validateStepRange(const MatchStepRange *range) const;
 
   Status validateWith(const WithClause *with,
-                      const std::unordered_map<std::string, AliasType> &aliasesAvailable,
+                      const std::vector<QueryPart> &queryParts,
                       WithClauseContext &withClauseCtx) const;
 
   Status validateUnwind(const UnwindClause *unwind, UnwindClauseContext &unwindClauseCtx) const;
@@ -56,8 +56,8 @@ class MatchValidator final : public Validator {
 
   Status validateYield(YieldClauseContext &yieldCtx) const;
 
-  Status includeExisting(const std::unordered_map<std::string, AliasType> &aliasesAvailable,
-                         YieldColumns *columns) const;
+  Status buildColumnsForAllNamedAliases(const std::vector<QueryPart> &queryParts,
+                                        YieldColumns *columns) const;
 
   static Expression *andConnect(ObjectPool *pool, Expression *left, Expression *right);
 

@@ -25,7 +25,6 @@ Status MatchValidator::validateImpl() {
   auto &clauses = sentence->clauses();
 
   std::unordered_map<std::string, AliasType> aliasesAvailable;
-  YieldColumns *prevYieldColumns = nullptr;
   auto retClauseCtx = getContext<ReturnClauseContext>();
   auto retYieldCtx = getContext<YieldClauseContext>();
   retClauseCtx->yield = std::move(retYieldCtx);
@@ -51,18 +50,10 @@ Status MatchValidator::validateImpl() {
           matchClauseCtx->where = std::move(whereClauseCtx);
         }
 
-        // if (aliasesAvailable) {
-        // The aliases could be duplicated in diffrent match clause,
-        // It seems we could delete this check.
-        // NG_RETURN_IF_ERROR(combineAliases(matchClauseCtx->aliasesGenerated,
-        // *aliasesAvailable));
-        // }
-
         // Copy the aliases without delete the origins.
         auto aliasesTmp = matchClauseCtx->aliasesGenerated;
         cypherCtx_->queryParts.back().aliasesGenerated.merge(aliasesTmp);
         aliasesAvailable = cypherCtx_->queryParts.back().aliasesGenerated;
-
         cypherCtx_->queryParts.back().matchs.emplace_back(std::move(matchClauseCtx));
 
         break;
@@ -74,13 +65,10 @@ Status MatchValidator::validateImpl() {
         NG_RETURN_IF_ERROR(validateUnwind(unwindClause, *unwindClauseCtx));
 
         aliasesAvailable = unwindClauseCtx->aliasesAvailable;
-
         cypherCtx_->queryParts.back().boundary = std::move(unwindClauseCtx);
         cypherCtx_->queryParts.emplace_back();
         cypherCtx_->queryParts.back().aliasesAvailable = aliasesAvailable;
 
-        // TODO: delete prevYieldColumns
-        UNUSED(prevYieldColumns);
         break;
       }
       case ReadingClause::Kind::kWith: {
@@ -89,7 +77,7 @@ Status MatchValidator::validateImpl() {
         auto withYieldCtx = getContext<YieldClauseContext>();
         withClauseCtx->yield = std::move(withYieldCtx);
         withClauseCtx->yield->aliasesAvailable = aliasesAvailable;
-        NG_RETURN_IF_ERROR(validateWith(withClause, aliasesAvailable, *withClauseCtx));
+        NG_RETURN_IF_ERROR(validateWith(withClause, cypherCtx_->queryParts, *withClauseCtx));
         if (withClause->where() != nullptr) {
           auto whereClauseCtx = getContext<WhereClauseContext>();
           whereClauseCtx->aliasesAvailable = withClauseCtx->aliasesGenerated;
@@ -98,8 +86,6 @@ Status MatchValidator::validateImpl() {
         }
 
         aliasesAvailable = withClauseCtx->aliasesGenerated;
-        prevYieldColumns = const_cast<YieldColumns *>(withClauseCtx->yield->yieldColumns);
-
         cypherCtx_->queryParts.back().boundary = std::move(withClauseCtx);
         cypherCtx_->queryParts.emplace_back();
         cypherCtx_->queryParts.back().aliasesAvailable = aliasesAvailable;
@@ -110,7 +96,7 @@ Status MatchValidator::validateImpl() {
   }
 
   retClauseCtx->yield->aliasesAvailable = aliasesAvailable;
-  NG_RETURN_IF_ERROR(validateReturn(sentence->ret(), aliasesAvailable, *retClauseCtx));
+  NG_RETURN_IF_ERROR(validateReturn(sentence->ret(), cypherCtx_->queryParts, *retClauseCtx));
 
   NG_RETURN_IF_ERROR(buildOutputs(retClauseCtx->yield->yieldColumns));
   cypherCtx_->queryParts.back().boundary = std::move(retClauseCtx);
@@ -291,28 +277,77 @@ Status MatchValidator::validateFilter(const Expression *filter,
   return Status::OK();
 }
 
-Status MatchValidator::includeExisting(
-    const std::unordered_map<std::string, AliasType> &aliasesAvailable,
-    YieldColumns *columns) const {
+Status MatchValidator::buildColumnsForAllNamedAliases(const std::vector<QueryPart> &queryParts,
+                                                      YieldColumns *columns) const {
+  if (queryParts.empty()) {
+    return Status::Error("No alias declared.");
+  }
+
   auto *pool = qctx_->objPool();
   auto makeColumn = [&pool](const std::string &name) {
     auto *expr = LabelExpression::make(pool, name);
     return new YieldColumn(expr, name);
   };
-  for (auto &alias : aliasesAvailable) {
-    columns->addColumn(makeColumn(alias.first));
+  auto &currQueryPart = queryParts.back();
+  if (queryParts.size() > 1) {
+    auto &prevQueryPart = *(queryParts.end() - 2);
+    auto &boundary = prevQueryPart.boundary;
+    switch (boundary->kind) {
+      case CypherClauseKind::kUnwind: {
+        auto unwindCtx = static_cast<const UnwindClauseContext *>(boundary.get());
+        columns->addColumn(makeColumn(unwindCtx->alias));
+        break;
+      }
+      case CypherClauseKind::kWith: {
+        auto withCtx = static_cast<const WithClauseContext *>(boundary.get());
+        auto yieldColumns = withCtx->yield->yieldColumns;
+        if (yieldColumns == nullptr) {
+          break;
+        }
+        for (auto &col : yieldColumns->columns()) {
+          if (!col->alias().empty()) {
+            columns->addColumn(makeColumn(col->alias()));
+          }
+        }
+        break;
+      }
+      default: {
+        DCHECK(false) << "Could not be a return or match.";
+      }
+    }
+  }
+
+  for (auto &match : currQueryPart.matchs) {
+    for (auto &path : match->paths) {
+      for (size_t i = 0; i < path.edgeInfos.size(); ++i) {
+        if (!path.nodeInfos[i].anonymous) {
+          columns->addColumn(makeColumn(path.nodeInfos[i].alias));
+        }
+        if (!path.edgeInfos[i].anonymous) {
+          columns->addColumn(makeColumn(path.edgeInfos[i].alias));
+        }
+      }
+      if (!path.nodeInfos.back().anonymous) {
+        columns->addColumn(makeColumn(path.nodeInfos.back().alias));
+      }
+    }
+
+    for (auto &aliasPair : match->aliasesGenerated) {
+      if (aliasPair.second == AliasType::kPath) {
+        columns->addColumn(makeColumn(aliasPair.first));
+      }
+    }
   }
 
   return Status::OK();
 }
 
-Status MatchValidator::validateReturn(
-    MatchReturn *ret,
-    const std::unordered_map<std::string, AliasType> &aliasesAvailable,
-    ReturnClauseContext &retClauseCtx) const {
+Status MatchValidator::validateReturn(MatchReturn *ret,
+                                      const std::vector<QueryPart> &queryParts,
+                                      ReturnClauseContext &retClauseCtx) const {
   YieldColumns *columns = saveObject(new YieldColumns());
-  if (ret->returnItems()->includeExisting() && !aliasesAvailable.empty()) {
-    auto status = includeExisting(aliasesAvailable, columns);
+  if (ret->returnItems()->allNamedAliases() && !queryParts.empty()) {
+    auto status = buildColumnsForAllNamedAliases(queryParts, columns);
     if (!status.ok()) {
       return status;
     }
@@ -399,13 +434,12 @@ Status MatchValidator::validateStepRange(const MatchStepRange *range) const {
   return Status::OK();
 }
 
-Status MatchValidator::validateWith(
-    const WithClause *with,
-    const std::unordered_map<std::string, AliasType> &aliasesAvailable,
-    WithClauseContext &withClauseCtx) const {
+Status MatchValidator::validateWith(const WithClause *with,
+                                    const std::vector<QueryPart> &queryParts,
+                                    WithClauseContext &withClauseCtx) const {
   YieldColumns *columns = saveObject(new YieldColumns());
-  if (with->returnItems()->includeExisting() && !aliasesAvailable.empty()) {
-    auto status = includeExisting(aliasesAvailable, columns);
+  if (with->returnItems()->allNamedAliases() && !queryParts.empty()) {
+    auto status = buildColumnsForAllNamedAliases(queryParts, columns);
     if (!status.ok()) {
       return status;
     }
@@ -600,20 +634,6 @@ Status MatchValidator::combineAliases(
     if (!curAliases.emplace(aliasPair).second) {
       return Status::SemanticError("`%s': Redefined alias", aliasPair.first.c_str());
     }
-  }
-
-  return Status::OK();
-}
-
-Status MatchValidator::combineYieldColumns(YieldColumns *yieldColumns,
-                                           YieldColumns *prevYieldColumns) const {
-  auto *pool = qctx_->objPool();
-  const auto &prevColumns = prevYieldColumns->columns();
-  for (auto &column : prevColumns) {
-    DCHECK(!column->alias().empty());
-    auto *newColumn = new YieldColumn(VariablePropertyExpression::make(pool, "", column->alias()),
-                                      column->alias());
-    yieldColumns->addColumn(newColumn);
   }
 
   return Status::OK();
