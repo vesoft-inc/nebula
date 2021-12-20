@@ -155,3 +155,17 @@ Feature: Match seek by scan
       LIMIT 3
       """
     Then a ExecutionError should be raised at runtime: Scan vertices must specify limit number.
+    When executing query:
+      """
+      MATCH ()-[e:is_teacher]-()
+      RETURN type(e) AS Type, e.start_year AS StartYear, e.end_year AS EndYear
+      LIMIT 3
+      """
+    Then a ExecutionError should be raised at runtime: Scan vertices must specify limit number.
+    When executing query:
+      """
+      MATCH ()-[e]-()
+      RETURN type(e) AS Type, e.start_year AS StartYear, e.end_year AS EndYear
+      LIMIT 3
+      """
+    Then a ExecutionError should be raised at runtime: Scan vertices must specify limit number.
