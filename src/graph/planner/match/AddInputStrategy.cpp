@@ -15,6 +15,11 @@ PlanNode* AddInputStrategy::connect(const PlanNode* left, const PlanNode* right)
   siLeft->setInputVar(right->outputVar());
   if (copyColNames_) {
     siLeft->setColNames(right->colNames());
+  } else if (siLeft->kind() == PlanNode::Kind::kUnwind) {
+    // An unwind bypass all aliases, so merge the columns here
+    auto colNames = right->colNames();
+    colNames.insert(colNames.end(), siLeft->colNames().begin(), siLeft->colNames().end());
+    siLeft->setColNames(std::move(colNames));
   }
   return nullptr;
 }

@@ -28,10 +28,10 @@ class MatchPlanner final : public Planner {
                     const SubPlan& matchPlan,
                     SubPlan& queryPartPlan);
 
-  void connectQueryParts(const QueryPart& queryPart,
-                         const SubPlan& partPlan,
-                         QueryContext* qctx,
-                         SubPlan& queryPlan);
+  Status connectQueryParts(const QueryPart& queryPart,
+                           const SubPlan& partPlan,
+                           QueryContext* qctx,
+                           SubPlan& queryPlan);
 };
 }  // namespace graph
 }  // namespace nebula

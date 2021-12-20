@@ -64,7 +64,9 @@ Status MatchValidator::validateImpl() {
         unwindClauseCtx->aliasesAvailable = aliasesAvailable;
         NG_RETURN_IF_ERROR(validateUnwind(unwindClause, *unwindClauseCtx));
 
-        aliasesAvailable = unwindClauseCtx->aliasesAvailable;
+        // An unwind bypass all available aliases.
+        aliasesAvailable.insert(unwindClauseCtx->aliasesGenerated.begin(),
+                                unwindClauseCtx->aliasesGenerated.end());
         cypherCtx_->queryParts.back().boundary = std::move(unwindClauseCtx);
         cypherCtx_->queryParts.emplace_back();
         cypherCtx_->queryParts.back().aliasesAvailable = aliasesAvailable;
@@ -530,9 +532,7 @@ Status MatchValidator::validateUnwind(const UnwindClause *unwindClause,
     }
   }
   unwindCtx.aliasesGenerated.emplace(unwindCtx.alias, AliasType::kDefault);
-  if (!unwindCtx.aliasesAvailable.empty()) {
-    unwindCtx.aliasesAvailable = unwindCtx.aliasesGenerated;
-  } else if (!unwindCtx.aliasesAvailable.emplace(unwindCtx.alias, AliasType::kDefault).second) {
+  if (unwindCtx.aliasesAvailable.count(unwindCtx.alias) > 0) {
     return Status::SemanticError("Variable `%s` already declared", unwindCtx.alias.c_str());
   }
 

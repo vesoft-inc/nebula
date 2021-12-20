@@ -36,12 +36,7 @@ StatusOr<SubPlan> MatchPlanner::transform(AstContext* astCtx) {
       connectMatch(match.get(), matchPlan, queryPartPlan);
     }
 
-    connectQueryParts(queryPart, queryPartPlan, cypherCtx->qctx, queryPlan);
-
-    auto boundaryPlan = genPlan(queryPart.boundary.get());
-    NG_RETURN_IF_ERROR(boundaryPlan);
-    SegmentsConnector::addInput(boundaryPlan.value().tail, queryPlan.root);
-    queryPlan.root = boundaryPlan.value().root;
+    NG_RETURN_IF_ERROR(connectQueryParts(queryPart, queryPartPlan, cypherCtx->qctx, queryPlan));
   }
 
   return queryPlan;
@@ -109,18 +104,32 @@ void MatchPlanner::connectMatch(const MatchClauseContext* match,
   }
 }
 
-void MatchPlanner::connectQueryParts(const QueryPart& queryPart,
-                                     const SubPlan& partPlan,
-                                     QueryContext* qctx,
-                                     SubPlan& queryPlan) {
+Status MatchPlanner::connectQueryParts(const QueryPart& queryPart,
+                                       const SubPlan& partPlan,
+                                       QueryContext* qctx,
+                                       SubPlan& queryPlan) {
+  auto boundaryPlan = genPlan(queryPart.boundary.get());
+  NG_RETURN_IF_ERROR(boundaryPlan);
+  // If this is the first query part, there will be no CartesianProduct or Join
   if (queryPlan.root == nullptr) {
-    queryPlan = partPlan;
-    return;
+    auto subplan = std::move(boundaryPlan).value();
+    if (partPlan.root != nullptr) {
+      SegmentsConnector::addInput(subplan.tail, partPlan.root);
+      subplan.tail = partPlan.tail;
+    }
+    queryPlan = subplan;
+    return Status::OK();
   }
-  // There might only a with/unwind/return in a query part
+
+  // Otherwise, there might only a with/unwind/return in a query part
   if (partPlan.root == nullptr) {
-    return;
+    auto subplan = std::move(boundaryPlan).value();
+    SegmentsConnector::addInput(subplan.tail, queryPlan.root);
+    subplan.tail = queryPlan.tail;
+    queryPlan = subplan;
+    return Status::OK();
   }
+
   auto& aliasesAvailable = queryPart.aliasesAvailable;
   std::unordered_set<std::string> intersectedAliases;
   for (auto& alias : queryPart.aliasesGenerated) {
@@ -147,6 +156,11 @@ void MatchPlanner::connectQueryParts(const QueryPart& queryPart,
   } else {
     queryPlan.root = BiCartesianProduct::make(qctx, queryPlan.root, partPlan.root);
   }
+
+  SegmentsConnector::addInput(boundaryPlan.value().tail, queryPlan.root);
+  queryPlan.root = boundaryPlan.value().root;
+
+  return Status::OK();
 }
 }  // namespace graph
 }  // namespace nebula
