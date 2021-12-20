@@ -166,7 +166,9 @@ class InsertVerticesSentence final : public Sentence {
 
 class InsertVerticesOnlySentence final : public Sentence {
  public:
-  explicit InsertVerticesOnlySentence(VertexIDList *vidList, bool ifNotExists)
+  explicit InsertVerticesOnlySentence(VertexIDList *vidList,
+                                      bool ifNotExists,
+                                      bool /*ignore exist index*/)
       : Sentence(Kind::kInsertVerticesOnly),
         vertices_(new VerticesClause(vidList)),
         ifNotExists_(ifNotExists) {}

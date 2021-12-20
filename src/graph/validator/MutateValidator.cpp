@@ -163,7 +163,7 @@ Status InsertVerticesOnlyValidator::prepareVertices() {
 
 Status InsertVerticesOnlyValidator::toPlan() {
   auto node =
-      InsertVertices::make(qctx_, nullptr, spaceId_, std::move(vertices_), {}, ifNotExists_);
+      InsertVertices::make(qctx_, nullptr, spaceId_, std::move(vertices_), {}, ifNotExists_, false);
   root_ = node;
   tail_ = node;
   return Status::OK();
