@@ -343,7 +343,8 @@ struct AddVerticesRequest {
         (cpp.template = "std::unordered_map")   prop_names,
     // if true, when (vertexID,tagID) already exists, do nothing
     4: bool                                     if_not_exists,
-    5: optional RequestCommon                   common,
+    5: bool                                     ignore_existed_index = false,
+    6: optional RequestCommon                   common,
 }
 
 struct AddEdgesRequest {
@@ -356,7 +357,9 @@ struct AddEdgesRequest {
     3: list<binary>                             prop_names,
     // if true, when edge already exists, do nothing
     4: bool                                     if_not_exists,
-    5: optional RequestCommon                   common,
+    // If true, existed index won't be removed
+    5: bool                                     ignore_existed_index = false,
+    6: optional RequestCommon                   common,
 }
 
 /*
@@ -561,9 +564,8 @@ struct LookupAndTraverseRequest {
  */
 
 struct ScanCursor {
-    3: bool                                 has_next,
     // next start key of scan, only valid when has_next is true
-    4: optional binary                      next_cursor,
+    1: optional binary                      next_cursor,
 }
 
 struct ScanVertexRequest {
