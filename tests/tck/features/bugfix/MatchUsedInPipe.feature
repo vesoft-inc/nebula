@@ -82,6 +82,56 @@ Feature: Test match used in pipe
   Scenario: Set op after match
     When executing query:
       """
-      MATCH (n:player{name:"Tim Duncan"}) RETURN n UNION MATCH (n:player{name:"Tony Parker"}) RETURN n
+      MATCH (n:player{name:"Tim Duncan"}) RETURN n
+      UNION
+      MATCH (n:player{name:"Tony Parker"}) RETURN n
       """
-    Then a SyntaxError should be raised at runtime: syntax error near `UNION'
+    Then the result should be, in any order, with relax comparison:
+      | n               |
+      | ("Tim Duncan")  |
+      | ("Tony Parker") |
+    When executing query:
+      """
+      MATCH (n:player{name:"Tim Duncan"}) RETURN n
+      UNION ALL
+      MATCH (n:player)-[e:like]->() WHERE e.likeness>90 RETURN n
+      """
+    Then the result should be, in any order, with relax comparison:
+      | n                                                                                                           |
+      | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+      | ("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})                                               |
+      | ("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})                                               |
+      | ("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})                                               |
+      | ("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})                                               |
+      | ("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})                                               |
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       |
+      | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+      | ("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})                                               |
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       |
+      | ("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})                                               |
+      | ("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})                                               |
+      | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})                                             |
+      | ("LeBron James" :player{age: 34, name: "LeBron James"})                                                     |
+      | ("Paul George" :player{age: 28, name: "Paul George"})                                                       |
+      | ("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})                                               |
+      | ("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})                                               |
+      | ("Marc Gasol" :player{age: 34, name: "Marc Gasol"})                                                         |
+      | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+      | ("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})                                               |
+      | ("Paul Gasol" :player{age: 38, name: "Paul Gasol"})                                                         |
+    When executing query:
+      """
+      MATCH (n:player{name:"Tim Duncan"}) RETURN n
+      UNION DISTINCT
+      MATCH (n:player)-[e:like]->() WHERE e.likeness>90 RETURN n
+      """
+    Then the result should be, in any order, with relax comparison:
+      | n                                                                                                           |
+      | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+      | ("Dejounte Murray" :player{age: 29, name: "Dejounte Murray"})                                               |
+      | ("Tony Parker" :player{age: 36, name: "Tony Parker"})                                                       |
+      | ("Shaquille O'Neal" :player{age: 47, name: "Shaquille O'Neal"})                                             |
+      | ("LeBron James" :player{age: 34, name: "LeBron James"})                                                     |
+      | ("Paul George" :player{age: 28, name: "Paul George"})                                                       |
+      | ("Marc Gasol" :player{age: 34, name: "Marc Gasol"})                                                         |
+      | ("Paul Gasol" :player{age: 38, name: "Paul Gasol"})                                                         |
