@@ -23,6 +23,7 @@ Status GoValidator::validateImpl() {
   NG_RETURN_IF_ERROR(ValidateUtil::validateStep(goSentence->stepClause(), goCtx_->steps));
   NG_RETURN_IF_ERROR(validateStarts(goSentence->fromClause(), goCtx_->from));
   NG_RETURN_IF_ERROR(ValidateUtil::validateOver(qctx_, goSentence->overClause(), goCtx_->over));
+  NG_RETURN_IF_ERROR(extractTagIds());
   NG_RETURN_IF_ERROR(validateWhere(goSentence->whereClause()));
   NG_RETURN_IF_ERROR(validateYield(goSentence->yieldClause()));
   NG_RETURN_IF_ERROR(validateTruncate(goSentence->truncateClause()));
@@ -86,7 +87,7 @@ Status GoValidator::validateWhere(WhereClause* where) {
     return Status::SemanticError(ss.str());
   }
 
-  NG_RETURN_IF_ERROR(deduceProps(filter, goCtx_->exprProps, nullptr, &goCtx_->over.edgeTypes));
+  NG_RETURN_IF_ERROR(deduceProps(filter, goCtx_->exprProps, &tagIds_, &goCtx_->over.edgeTypes));
   goCtx_->filter = filter;
   return Status::OK();
 }
@@ -150,7 +151,7 @@ Status GoValidator::validateYield(YieldClause* yield) {
     NG_RETURN_IF_ERROR(typeStatus);
     auto type = typeStatus.value();
     outputs_.emplace_back(col->name(), type);
-    NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps, nullptr, &goCtx_->over.edgeTypes));
+    NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps, &tagIds_, &goCtx_->over.edgeTypes));
   }
 
   const auto& over = goCtx_->over;
@@ -162,6 +163,15 @@ Status GoValidator::validateYield(YieldClause* yield) {
   }
   goCtx_->yieldExpr = yield->yields();
   goCtx_->colNames = getOutColNames();
+  return Status::OK();
+}
+
+Status GoValidator::extractTagIds() {
+  auto tagStatus = qctx_->schemaMng()->getAllLatestVerTagSchema(space_.id);
+  NG_RETURN_IF_ERROR(tagStatus);
+  for (const auto& tag : tagStatus.value()) {
+    tagIds_.emplace_back(tag.first);
+  }
   return Status::OK();
 }
 

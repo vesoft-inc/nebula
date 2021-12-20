@@ -184,23 +184,12 @@ void DeducePropsVisitor::visit(ConstantExpression *expr) { UNUSED(expr); }
 void DeducePropsVisitor::visit(ColumnExpression *expr) { UNUSED(expr); }
 
 void DeducePropsVisitor::visit(VertexExpression *expr) {
-  std::vector<TagID> tagIds;
   if (tagIds_ == nullptr) {
-    auto tagStatus = qctx_->schemaMng()->getAllLatestVerTagSchema(space_);
-    if (!tagStatus.ok()) {
-      status_ = std::move(tagStatus).status();
-      return;
-    }
-    for (const auto &tag : tagStatus.value()) {
-      tagIds.emplace_back(tag.first);
-    }
-  } else {
-    for (const auto &tagID : *tagIds_) {
-      tagIds.emplace_back(tagID);
-    }
+    UNUSED(expr);
+    return;
   }
   const auto &colName = expr->name();
-  for (const auto &tagID : tagIds) {
+  for (const auto &tagID : *tagIds_) {
     const auto &tagSchema = qctx_->schemaMng()->getTagSchema(space_, tagID);
     if (colName == "$^") {
       exprProps_->insertSrcTagProp(tagID, nebula::kTag);
