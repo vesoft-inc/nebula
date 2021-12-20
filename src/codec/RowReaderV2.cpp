@@ -176,6 +176,17 @@ Value RowReaderV2::getValueByIndex(const int64_t index) const noexcept {
       dt.microsec = microsec;
       return dt;
     }
+    case PropertyType::DURATION: {
+      Duration d;
+      memcpy(reinterpret_cast<void*>(&d.seconds), &data_[offset], sizeof(int64_t));
+      memcpy(reinterpret_cast<void*>(&d.microseconds),
+             &data_[offset + sizeof(int64_t)],
+             sizeof(int32_t));
+      memcpy(reinterpret_cast<void*>(&d.months),
+             &data_[offset + sizeof(int64_t) + sizeof(int32_t)],
+             sizeof(int32_t));
+      return d;
+    }
     case PropertyType::GEOGRAPHY: {
       int32_t strOffset;
       int32_t strLen;
