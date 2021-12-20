@@ -278,6 +278,7 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 "POINT"                     { return TokenType::KW_POINT; }
 "LINESTRING"                { return TokenType::KW_LINESTRING; }
 "POLYGON"                   { return TokenType::KW_POLYGON; }
+"DURATION"                  { return TokenType::KW_DURATION; }
 "MERGE"                     { return TokenType::KW_MERGE; }
 "RENAME"                    { return TokenType::KW_RENAME; }
 
