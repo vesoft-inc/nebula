@@ -2451,7 +2451,8 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
         metaServerVersion_ = resp.get_meta_version();
         return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
       },
-      std::move(promise));
+      std::move(promise),
+      true);
   return future;
 }
 
