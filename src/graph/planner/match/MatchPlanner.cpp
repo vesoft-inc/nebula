@@ -117,6 +117,10 @@ void MatchPlanner::connectQueryParts(const QueryPart& queryPart,
     queryPlan = partPlan;
     return;
   }
+  // There might only a with/unwind/return in a query part
+  if (partPlan.root == nullptr) {
+    return;
+  }
   auto& aliasesAvailable = queryPart.aliasesAvailable;
   std::unordered_set<std::string> intersectedAliases;
   for (auto& alias : queryPart.aliasesGenerated) {
