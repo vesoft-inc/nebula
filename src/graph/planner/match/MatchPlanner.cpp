@@ -118,6 +118,9 @@ Status MatchPlanner::connectQueryParts(const QueryPart& queryPart,
       subplan.tail = partPlan.tail;
     }
     queryPlan = subplan;
+    if (queryPlan.tail->isSingleInput()) {
+      queryPlan.tail->setInputVar(qctx->vctx()->anonVarGen()->getVar());
+    }
     return Status::OK();
   }
 
