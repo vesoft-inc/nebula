@@ -377,7 +377,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <sentence> go_sentence match_sentence lookup_sentence find_path_sentence get_subgraph_sentence
 %type <sentence> group_by_sentence order_by_sentence limit_sentence
 %type <sentence> fetch_sentence fetch_vertices_sentence fetch_edges_sentence
-%type <sentence> set_sentence piped_sentence assignment_sentence
+%type <sentence> set_sentence piped_sentence assignment_sentence match_sentences
 %type <sentence> yield_sentence use_sentence
 
 %type <sentence> grant_sentence revoke_sentence
@@ -2777,7 +2777,6 @@ desc_zone_sentence
 traverse_sentence
     : L_PAREN set_sentence R_PAREN { $$ = $2; }
     | go_sentence { $$ = $1; }
-    | match_sentence { $$ = $1; }
     | lookup_sentence { $$ = $1; }
     | group_by_sentence { $$ = $1; }
     | order_by_sentence { $$ = $1; }
@@ -2815,6 +2814,20 @@ set_sentence
     | set_sentence KW_INTERSECT piped_sentence { $$ = new SetSentence($1, SetSentence::INTERSECT, $3); }
     | set_sentence KW_MINUS piped_sentence { $$ = new SetSentence($1, SetSentence::MINUS, $3); }
     ;
+
+match_sentences
+    : match_sentence { $$ = $1; }
+    | match_sentences KW_UNION KW_ALL match_sentence { $$ = new SetSentence($1, SetSentence::UNION, $4); }
+    | match_sentences KW_UNION match_sentence {
+        auto *s = new SetSentence($1, SetSentence::UNION, $3);
+        s->setDistinct();
+        $$ = s;
+    }
+    | match_sentences KW_UNION KW_DISTINCT match_sentence {
+        auto *s = new SetSentence($1, SetSentence::UNION, $4);
+        s->setDistinct();
+        $$ = s;
+    }
 
 assignment_sentence
     : VARIABLE ASSIGN set_sentence {
@@ -3747,6 +3760,7 @@ sentence
     | set_sentence { $$ = $1; }
     | assignment_sentence { $$ = $1; }
     | mutate_sentence { $$ = $1; }
+    | match_sentences { $$ = $1; }
     ;
 
 seq_sentences

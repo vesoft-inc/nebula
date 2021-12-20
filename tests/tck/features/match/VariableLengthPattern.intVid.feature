@@ -125,11 +125,10 @@ Feature: Integer Vid Variable length Pattern match (m to n)
     When executing query:
       """
       MATCH (:player{name: "Tim Duncan"})-[e:like*2..3]-(v)
-      RETURN e |
-      YIELD COUNT(*)
+      RETURN COUNT(e)
       """
     Then the result should be, in any order:
-      | COUNT(*) |
+      | COUNT(e) |
       | 292      |
 
   Scenario: Integer Vid  single direction edge without properties
@@ -195,11 +194,10 @@ Feature: Integer Vid Variable length Pattern match (m to n)
     When executing query:
       """
       MATCH (:player{name:"Tim Duncan"})-[e:serve|like*2..3]-(v)
-      RETURN e |
-      YIELD COUNT(*)
+      RETURN COUNT(e)
       """
     Then the result should be, in any order:
-      | COUNT(*) |
+      | COUNT(e) |
       | 927      |
 
   Scenario: Integer Vid  multiple direction edge without properties
