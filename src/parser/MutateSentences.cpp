@@ -97,17 +97,6 @@ std::string InsertVerticesSentence::toString() const {
   return buf;
 }
 
-std::string InsertVerticesOnlySentence::toString() const {
-  std::string buf;
-  buf.reserve(256);
-  buf += "INSERT VERTEX ";
-  if (ifNotExists_) {
-    buf += "IF NOT EXISTS ";
-  }
-  buf += vertices_->toString();
-  return buf;
-}
-
 std::string EdgeRowItem::toString() const {
   std::string buf;
   buf.reserve(256);

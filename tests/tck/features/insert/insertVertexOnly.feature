@@ -18,7 +18,7 @@ Feature: insert vertex without tag
     And wait 6 seconds
     When executing query:
       """
-      INSERT VERTEX VALUES 1,2,3;
+      INSERT VERTEX VALUES 1:(),2:(),3:();
       INSERT EDGE e() VALUES 1->2:(),2->3:();
       """
     Then the execution should be successful

@@ -39,20 +39,6 @@ class InsertVerticesValidator final : public Validator {
   std::vector<storage::cpp2::NewVertex> vertices_;
 };
 
-class InsertVerticesOnlyValidator final : public Validator {
- public:
-  InsertVerticesOnlyValidator(Sentence* sentence, QueryContext* context)
-      : Validator(sentence, context) {}
-
- private:
-  Status validateImpl() override;
-  Status prepareVertices();
-  Status toPlan() override;
-  GraphSpaceID spaceId_{-1};
-  std::vector<storage::cpp2::NewVertex> vertices_;
-  bool ifNotExists_;
-};
-
 class InsertEdgesValidator final : public Validator {
  public:
   InsertEdgesValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {}
