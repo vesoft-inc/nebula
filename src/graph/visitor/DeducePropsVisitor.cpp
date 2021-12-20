@@ -177,8 +177,8 @@ void DeducePropsVisitor::visit(EdgeRankExpression *expr) {
   visitEdgePropExpr(expr);
 }
 
-void DeducePropsVisitor::visit(EdgeDstIdExpression *expr) {
-  visitEdgePropExpr(expr);
+void DeducePropsVisitor::visit(UUIDExpression *expr) {
+  UNUSED(expr);
 }
 
 void DeducePropsVisitor::visit(UUIDExpression *expr) {

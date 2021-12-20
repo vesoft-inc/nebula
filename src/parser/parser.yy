@@ -27,6 +27,7 @@
 #include "common/expression/ListComprehensionExpression.h"
 #include "common/expression/AggregateExpression.h"
 #include "common/function/FunctionManager.h"
+#include "common/id/SnowFlake.h"
 
 #include "common/expression/ReduceExpression.h"
 #include "graph/util/ParserUtil.h"
@@ -682,6 +683,9 @@ expression
     | reduce_expression {
         $$ = $1;
     }
+    | uuid_expression {
+        $$ = $1;
+    }
     ;
 
 constant_expression
@@ -1093,9 +1097,10 @@ function_call_expression
     ;
 
 uuid_expression
-    : KW_UUID L_PAREN STRING R_PAREN {
-        $$ = UUIDExpression::make(qctx->objPool(), *$3);
-        delete $3;
+    : KW_UUID L_PAREN R_PAREN {
+        // snowflake id init worker in current machine
+        SnowFlake::initWorkerId(qctx->getMetaClient());
+        $$ = UUIDExpression::make(qctx->objPool());
     }
     ;
 

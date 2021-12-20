@@ -20,6 +20,7 @@
 #include "meta/processors/config/ListConfigsProcessor.h"
 #include "meta/processors/config/RegConfigProcessor.h"
 #include "meta/processors/config/SetConfigProcessor.h"
+#include "meta/processors/id/GetWorkerIdProcessor.h"
 #include "meta/processors/index/CreateEdgeIndexProcessor.h"
 #include "meta/processors/index/CreateTagIndexProcessor.h"
 #include "meta/processors/index/DropEdgeIndexProcessor.h"
@@ -557,6 +558,12 @@ folly::Future<cpp2::ExecResp> MetaServiceHandler::future_killQuery(const cpp2::K
 folly::Future<cpp2::VerifyClientVersionResp> MetaServiceHandler::future_verifyClientVersion(
     const cpp2::VerifyClientVersionReq& req) {
   auto* processor = VerifyClientVersionProcessor::instance(kvstore_);
+  RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::GetWorkerIdResp> MetaServiceHandler::future_getWorkerId(
+    const cpp2::GetWorkerIdReq& req) {
+  auto* processor = GetWorkerIdProcessor::instance(kvstore_);
   RETURN_FUTURE(processor);
 }
 
