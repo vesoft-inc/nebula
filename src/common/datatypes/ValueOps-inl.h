@@ -18,6 +18,7 @@
 #include "common/datatypes/CommonCpp2Ops.h"
 #include "common/datatypes/DataSetOps-inl.h"
 #include "common/datatypes/DateOps-inl.h"
+#include "common/datatypes/DurationOps-inl.h"
 #include "common/datatypes/EdgeOps-inl.h"
 #include "common/datatypes/GeographyOps-inl.h"
 #include "common/datatypes/ListOps-inl.h"
@@ -84,6 +85,9 @@ struct TccStructTraits<nebula::Value> {
       _ftype = apache::thrift::protocol::T_STRUCT;
     } else if (_fname == "ggVal") {
       fid = 16;
+      _ftype = apache::thrift::protocol::T_STRUCT;
+    } else if (_fname == "duVal") {
+      fid = 17;
       _ftype = apache::thrift::protocol::T_STRUCT;
     }
   }
@@ -241,6 +245,18 @@ uint32_t Cpp2Ops<nebula::Value>::write(Protocol* proto, nebula::Value const* obj
         xfer += Cpp2Ops<nebula::Geography>::write(proto, obj->getGeographyPtr());
       } else {
         xfer += proto->writeStructBegin("Geography");
+        xfer += proto->writeStructEnd();
+        xfer += proto->writeFieldStop();
+      }
+      xfer += proto->writeFieldEnd();
+      break;
+    }
+    case nebula::Value::Type::DURATION: {
+      xfer += proto->writeFieldBegin("duVal", protocol::T_STRUCT, 17);
+      if (obj->getDurationPtr()) {
+        xfer += Cpp2Ops<nebula::Duration>::write(proto, obj->getDurationPtr());
+      } else {
+        xfer += proto->writeStructBegin("Duration");
         xfer += proto->writeStructEnd();
         xfer += proto->writeFieldStop();
       }
@@ -438,6 +454,17 @@ void Cpp2Ops<nebula::Value>::read(Protocol* proto, nebula::Value* obj) {
         }
         break;
       }
+      case 17: {
+        if (readState.fieldType == apache::thrift::protocol::T_STRUCT) {
+          obj->setDuration(nebula::Duration());
+          auto ptr = std::make_unique<nebula::Duration>();
+          Cpp2Ops<nebula::Duration>::read(proto, ptr.get());
+          obj->setDuration(std::move(ptr));
+        } else {
+          proto->skip(readState.fieldType);
+        }
+        break;
+      }
       default: {
         proto->skip(readState.fieldType);
         break;
@@ -582,6 +609,16 @@ uint32_t Cpp2Ops<nebula::Value>::serializedSize(Protocol const* proto, nebula::V
       }
       break;
     }
+    case nebula::Value::Type::DURATION: {
+      xfer += proto->serializedFieldSize("duVal", protocol::T_STRUCT, 17);
+      if (obj->getDurationPtr()) {
+        xfer += Cpp2Ops<nebula::Duration>::serializedSize(proto, obj->getDurationPtr());
+      } else {
+        xfer += proto->serializedStructSize("Duration");
+        xfer += proto->serializedSizeStop();
+      }
+      break;
+    }
     case nebula::Value::Type::__EMPTY__: {
       break;
     }
@@ -716,6 +753,16 @@ uint32_t Cpp2Ops<nebula::Value>::serializedSizeZC(Protocol const* proto, nebula:
         xfer += Cpp2Ops<nebula::Geography>::serializedSizeZC(proto, obj->getGeographyPtr());
       } else {
         xfer += proto->serializedStructSize("Geography");
+        xfer += proto->serializedSizeStop();
+      }
+      break;
+    }
+    case nebula::Value::Type::DURATION: {
+      xfer += proto->serializedFieldSize("duVal", protocol::T_STRUCT, 17);
+      if (obj->getDurationPtr()) {
+        xfer += Cpp2Ops<nebula::Duration>::serializedSizeZC(proto, obj->getDurationPtr());
+      } else {
+        xfer += proto->serializedStructSize("Duration");
         xfer += proto->serializedSizeStop();
       }
       break;

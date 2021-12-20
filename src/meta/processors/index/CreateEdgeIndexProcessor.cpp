@@ -126,6 +126,13 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
       return;
     }
     cpp2::ColumnDef col = *iter;
+    if (col.type.get_type() == nebula::cpp2::PropertyType::DURATION) {
+      LOG(ERROR) << "Field " << field.get_name() << " in Edge " << edgeName << " is duration."
+                 << "It can not be indexed.";
+      handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
+      onFinished();
+      return;
+    }
     if (col.type.get_type() == nebula::cpp2::PropertyType::FIXED_STRING) {
       if (*col.type.get_type_length() > MAX_INDEX_TYPE_LENGTH) {
         LOG(ERROR) << "Unsupport index type lengths greater than " << MAX_INDEX_TYPE_LENGTH << " : "

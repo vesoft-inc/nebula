@@ -43,6 +43,7 @@ const Geography geogPolygon = Polygon(
                                                                  Coordinate(-102.9, 37.6),
                                                                  Coordinate(-96.8, 37.5),
                                                                  Coordinate(-100.1, 41.4)}});
+const Duration du = Duration(1, 2, 3);
 
 TEST(RowWriterV2, NoDefaultValue) {
   SchemaWriter schema(12 /*Schema version*/);
@@ -68,6 +69,7 @@ TEST(RowWriterV2, NoDefaultValue) {
   schema.appendCol(
       "Col18", PropertyType::GEOGRAPHY, 0, false, nullptr, meta::cpp2::GeoShape::POLYGON);
   schema.appendCol("Col19", PropertyType::GEOGRAPHY, 0, true, nullptr, meta::cpp2::GeoShape::ANY);
+  schema.appendCol("Col20", PropertyType::DURATION);
 
   ASSERT_EQ(Value::Type::STRING, sVal.type());
   ASSERT_EQ(Value::Type::INT, iVal.type());
@@ -92,6 +94,7 @@ TEST(RowWriterV2, NoDefaultValue) {
   EXPECT_EQ(WriteResult::SUCCEEDED, writer1.set(16, geogLineString));
   EXPECT_EQ(WriteResult::SUCCEEDED, writer1.set(17, geogPolygon));
   // Purposely skip the col19
+  EXPECT_EQ(WriteResult::SUCCEEDED, writer1.set(19, du));
   ASSERT_EQ(WriteResult::SUCCEEDED, writer1.finish());
 
   RowWriterV2 writer2(&schema);
@@ -114,6 +117,7 @@ TEST(RowWriterV2, NoDefaultValue) {
   EXPECT_EQ(WriteResult::SUCCEEDED, writer2.set("Col17", geogLineString));
   EXPECT_EQ(WriteResult::SUCCEEDED, writer2.set("Col18", geogPolygon));
   // Purposely skip the col19
+  EXPECT_EQ(WriteResult::SUCCEEDED, writer2.set("Col20", du));
   ASSERT_EQ(WriteResult::SUCCEEDED, writer2.finish());
 
   std::string encoded1 = std::move(writer1).moveEncodedStr();
@@ -252,6 +256,13 @@ TEST(RowWriterV2, NoDefaultValue) {
   v1 = reader1->getValueByName("Col19");
   v2 = reader2->getValueByIndex(18);
   EXPECT_EQ(Value::Type::NULLVALUE, v1.type());
+  EXPECT_EQ(v1, v2);
+
+  // Col20
+  v1 = reader1->getValueByName("Col20");
+  v2 = reader2->getValueByIndex(19);
+  EXPECT_EQ(Value::Type::DURATION, v1.type());
+  EXPECT_EQ(du, v1.getDuration());
   EXPECT_EQ(v1, v2);
 }
 
