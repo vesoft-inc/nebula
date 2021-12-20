@@ -20,6 +20,7 @@ nebula_add_test(
         gtest
         gtest_main
         ${WASMTIME_LIBRARYS}
+        ${WASMEDGE_LIBRARYS}
 )
 
 nebula_add_test(
@@ -50,5 +51,6 @@ nebula_add_test(
         gtest
         gtest_main
         ${WASMTIME_LIBRARYS}
+        ${WASMEDGE_LIBRARYS}
 )
 

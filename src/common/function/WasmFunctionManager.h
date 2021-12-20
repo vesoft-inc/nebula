@@ -12,6 +12,10 @@
 #include <stdexcept>
 #include <cctype>
 #include <wasmtime.hh>
+#include <wasmedge/wasmedge.h>
+
+
+
 
 
 namespace nebula {
@@ -23,20 +27,50 @@ struct WasmtimeRunInstance {
       : func(func), instance(instance) {}
 };
 
+struct WasmEdgeRunInstance {
+  WasmEdge_String funcHandlerName;
+  std::vector<uint8_t> wasmBuffer;
+  WasmEdgeRunInstance(const WasmEdge_String &funcHandlerName,
+                      const std::vector<uint8_t> &wasmBuffer)
+      : funcHandlerName(funcHandlerName), wasmBuffer(wasmBuffer) {}
+};
+
+// include two runtime:
+// wasmtime: for wat (wat://)
+// WasmEdge: for wasm binary(wasm://) remote network or local path(path://)
 class WasmFunctionManager {
+
  private:
+  // the type map...
+  std::unordered_map<std::string,std::string > typeMap;
+  // wasmtime
   wasmtime::Engine *engine;
   wasmtime::Store *store;
-  /* data */
   std::unordered_map<std::string, WasmtimeRunInstance> modules;
+
+  // wasmedge
+  WasmEdge_ConfigureContext *ConfCxt;
+  WasmEdge_VMContext *VMCxt;
+  std::unordered_map<std::string ,WasmEdgeRunInstance> wasmModules;
+
   WasmFunctionManager() {
+
     engine = new wasmtime::Engine;
     store = new wasmtime::Store(*engine);
+    /* 创建配置上下文以及 WASI 支持。 */
+    /* 除非你需要使用 WASI，否则这步不是必须的。 */
+    ConfCxt = WasmEdge_ConfigureCreate();
+    WasmEdge_ConfigureAddHostRegistration(ConfCxt, WasmEdge_HostRegistration_Wasi);
+    /* 创建VM的时候可以提供空的配置。*/
+    VMCxt = WasmEdge_VMCreate(ConfCxt, NULL);
   }
 
   ~WasmFunctionManager() {
     delete (store);
     delete (engine);
+    /* 资源析构。 */
+    WasmEdge_VMDelete(VMCxt);
+    WasmEdge_ConfigureDelete(ConfCxt);
   }
   WasmFunctionManager(const WasmFunctionManager&);
   WasmFunctionManager& operator=(const WasmFunctionManager&);
@@ -55,13 +89,9 @@ class WasmFunctionManager {
       41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 64, 64, 64, 64, 64
   };
  public:
-//  static WasmFunctionManager& getInstance() {
-//    static WasmFunctionManager instance;
-//    return instance;
-//  }
-
-//  WasmFunctionManager(const WasmFunctionManager&)=delete;
-//  WasmFunctionManager& operator=(const WasmFunctionManager&)=delete;
+  static const std::string TYPE_WAT_MOUDLE;
+  static const  std::string TYPE_WASM_MOUDLE;
+  static const std::string TYPE_WASM_PATH;
 
   static WasmFunctionManager& getInstance()
   {
@@ -75,10 +105,11 @@ class WasmFunctionManager {
 
   WasmtimeRunInstance createInstanceAndFunction(const std::string &watString,
                                         const std::string functionHandler);
-  std::vector<int> run(const WasmtimeRunInstance &wasmRuntime, std::vector<int> args);
-  bool RegisterFunction(std::string functionName,
+  std::vector<int> run(const WasmtimeRunInstance &wasmTimeRunInstance, std::vector<int> args);
+  bool RegisterFunction(std::string moduleType,
+                        std::string functionName,
                         std::string functionHandler,
-                        const std::string &watBase64String);
+                        const std::string &base64OrOtherString);
   bool DeleteFunction(std::string functionName);
   List runWithNebulaDataHandle(std::string functionName, List args);
   std::vector<int> run(std::string functionName, std::vector<int> args);
@@ -145,6 +176,9 @@ class WasmFunctionManager {
     }
     return retval;
   }
+  std::vector<int> run(const WasmEdgeRunInstance &wasmEdgeRunInstance, std::vector<int> args);
+  std::vector<uint8_t >getHTTPString(const std::string &basicString);
+  std::string getFileString(const std::string &basicString);
 };
 }  // namespace nebula
 

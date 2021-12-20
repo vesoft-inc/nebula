@@ -133,6 +133,7 @@ nebula_add_executable(
         ${PROXYGEN_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${WASMTIME_LIBRARYS}
+        ${WASMEDGE_LIBRARYS}
         wangle
 )
 
