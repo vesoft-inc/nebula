@@ -146,7 +146,7 @@ Feature: Unwind clause
       WITH DISTINCT vid
       RETURN collect(vid) as vids
       """
-    Then a SemanticError should be raised at runtime: Can't use aggregating expressions in unwind clause, `(collect($-.src_id)+collect($-.dst_id))'
+    Then a SyntaxError should be raised at runtime: syntax error near `UNWIND'
     When executing query:
       """
       MATCH (a:player {name:"Tim Duncan"}) - [e:like] -> (b)
