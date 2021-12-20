@@ -308,6 +308,7 @@ TEST(AdminClientTest, SnapshotTest) {
   auto now = time::WallClock::fastNowInMilliSec();
   HostAddr host(localIp, rpcServer->port_);
   HostAddr storageHost = Utils::getStoreAddrFromAdminAddr(host);
+  TestUtils::createSomeHosts(kv.get(), {storageHost});
   ActiveHostsMan::updateHostInfo(
       kv.get(), storageHost, HostInfo(now, meta::cpp2::HostRole::STORAGE, ""));
   auto hostsRet = ActiveHostsMan::getActiveHosts(kv.get());

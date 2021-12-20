@@ -180,9 +180,14 @@ class BaseProcessor {
   nebula::cpp2::ErrorCode userExist(const std::string& account);
 
   /**
-   * Check host has been registered or not.
+   * Check machine has been registered or not.
    * */
-  nebula::cpp2::ErrorCode hostExist(const std::string& hostKey);
+  nebula::cpp2::ErrorCode machineExist(const std::string& machineKey);
+
+  /**
+   * Check hosts has been include by zone or not.
+   * */
+  nebula::cpp2::ErrorCode includeByZone(const std::vector<HostAddr>& hosts);
 
   /**
    * Return the spaceId for name.
@@ -240,8 +245,6 @@ class BaseProcessor {
                                                              int32_t tagOrEdge);
 
   bool checkIndexExist(const std::vector<cpp2::IndexFieldDef>& fields, const cpp2::IndexItem& item);
-
-  ErrorOr<nebula::cpp2::ErrorCode, GroupID> getGroupId(const std::string& groupName);
 
   ErrorOr<nebula::cpp2::ErrorCode, ZoneID> getZoneId(const std::string& zoneName);
 

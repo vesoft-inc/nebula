@@ -385,6 +385,10 @@ std::shared_ptr<Part> NebulaStore::newPart(GraphSpaceID spaceId,
 
 void NebulaStore::removeSpace(GraphSpaceID spaceId, bool isListener) {
   folly::RWSpinLock::WriteHolder wh(&lock_);
+  if (beforeRemoveSpace_) {
+    beforeRemoveSpace_(spaceId);
+  }
+
   if (!isListener) {
     auto spaceIt = this->spaces_.find(spaceId);
     if (spaceIt != this->spaces_.end()) {

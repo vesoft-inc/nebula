@@ -38,7 +38,6 @@ using mock::MockCluster;
 using nebula::cpp2::PropertyType;
 
 using ZoneInfo = std::unordered_map<std::string, std::vector<HostAddr>>;
-using GroupInfo = std::unordered_map<std::string, std::vector<std::string>>;
 
 ObjectPool metaTestPool;
 auto metaPool = &metaTestPool;
@@ -84,6 +83,17 @@ class TestUtils {
   static int32_t createSomeHosts(kvstore::KVStore* kv,
                                  std::vector<HostAddr> hosts = {
                                      {"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}}) {
+    // Record machine information
+    std::vector<kvstore::KV> machines;
+    for (auto& host : hosts) {
+      VLOG(3) << "Registe machine: " << host;
+      machines.emplace_back(nebula::MetaKeyUtils::machineKey(host.host, host.port), "");
+    }
+    folly::Baton<true, std::atomic> baton;
+    kv->asyncMultiPut(
+        kDefaultSpaceId, kDefaultPartId, std::move(machines), [&](auto) { baton.post(); });
+    baton.wait();
+
     std::vector<HostAddr> thriftHosts(hosts);
     registerHB(kv, hosts);
     {
@@ -102,23 +112,13 @@ class TestUtils {
     return hosts.size();
   }
 
-  static void assembleGroupAndZone(kvstore::KVStore* kv,
-                                   const ZoneInfo& zoneInfo,
-                                   const GroupInfo& groupInfo) {
+  static void assembleZone(kvstore::KVStore* kv, const ZoneInfo& zoneInfo) {
     std::vector<kvstore::KV> data;
     int32_t id = 10;
     for (auto iter = zoneInfo.begin(); iter != zoneInfo.end(); iter++) {
       data.emplace_back(MetaKeyUtils::indexZoneKey(iter->first),
                         std::string(reinterpret_cast<const char*>(&id), sizeof(ZoneID)));
       data.emplace_back(MetaKeyUtils::zoneKey(iter->first), MetaKeyUtils::zoneVal(iter->second));
-      id += 1;
-    }
-
-    id = 100;
-    for (auto iter = groupInfo.begin(); iter != groupInfo.end(); iter++) {
-      data.emplace_back(MetaKeyUtils::indexGroupKey(iter->first),
-                        std::string(reinterpret_cast<const char*>(&id), sizeof(GroupID)));
-      data.emplace_back(MetaKeyUtils::groupKey(iter->first), MetaKeyUtils::groupVal(iter->second));
       id += 1;
     }
 
@@ -169,46 +169,6 @@ class TestUtils {
     });
     baton.wait();
     return ret;
-  }
-
-  static bool modifyZoneAboutGroup(kvstore::KVStore* kv,
-                                   const std::string& groupName,
-                                   const std::string& zoneName,
-                                   bool isAdd) {
-    auto groupKey = MetaKeyUtils::groupKey(groupName);
-    std::string groupValue;
-    auto retCode = kv->get(kDefaultSpaceId, kDefaultPartId, groupKey, &groupValue);
-    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(ERROR) << "Get group " << groupName << " failed";
-      return false;
-    }
-
-    auto zoneNames = MetaKeyUtils::parseZoneNames(std::move(groupValue));
-    auto iter = std::find(zoneNames.begin(), zoneNames.end(), zoneName);
-    if (isAdd) {
-      if (iter != zoneNames.end()) {
-        LOG(ERROR) << "Zone " << zoneName << " have existed";
-        return false;
-      }
-      zoneNames.emplace_back(std::move(zoneName));
-    } else {
-      if (iter == zoneNames.end()) {
-        LOG(ERROR) << "Zone " << zoneName << " not existed";
-        return false;
-      }
-      zoneNames.erase(iter);
-    }
-
-    std::vector<kvstore::KV> data;
-    data.emplace_back(std::move(groupKey), MetaKeyUtils::groupVal(zoneNames));
-
-    folly::Baton<true, std::atomic> baton;
-    kv->asyncMultiPut(0, 0, std::move(data), [&](nebula::cpp2::ErrorCode code) {
-      ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
-      baton.post();
-    });
-    baton.wait();
-    return true;
   }
 
   static void assembleSpace(kvstore::KVStore* kv,

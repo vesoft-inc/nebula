@@ -47,6 +47,7 @@ class AddVerticesProcessor : public BaseProcessor<cpp2::ExecResponse> {
   GraphSpaceID spaceId_;
   std::vector<std::shared_ptr<nebula::meta::cpp2::IndexItem>> indexes_;
   bool ifNotExists_{false};
+  bool ignoreExistedIndex_{false};
 };
 
 }  // namespace storage

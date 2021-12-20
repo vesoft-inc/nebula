@@ -80,11 +80,15 @@ nebula_add_library(
     processors/job/GetStatsProcessor.cpp
     processors/job/ListTagIndexStatusProcessor.cpp
     processors/job/ListEdgeIndexStatusProcessor.cpp
-    processors/zone/AddZoneProcessor.cpp
+    processors/zone/AddHostsProcessor.cpp
+    processors/zone/AddHostsIntoZoneProcessor.cpp
+    processors/zone/DropHostsProcessor.cpp
     processors/zone/DropZoneProcessor.cpp
+    processors/zone/RenameZoneProcessor.cpp
     processors/zone/GetZoneProcessor.cpp
+    processors/zone/MergeZoneProcessor.cpp
+    processors/zone/SplitZoneProcessor.cpp
     processors/zone/ListZonesProcessor.cpp
-    processors/zone/UpdateZoneProcessor.cpp
     processors/listener/ListenerProcessor.cpp
     processors/session/SessionManagerProcessor.cpp
 )

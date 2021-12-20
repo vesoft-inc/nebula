@@ -502,3 +502,87 @@ Feature: Insert int vid of vertex and edge
     # |$$.person.name| $$.person.age| schoolmate.likeness|
     # |'Mack'        | 21           | 3                  |
     Then drop the used space
+
+  Scenario: int id ignore existed index
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 9   |
+      | replica_factor | 1   |
+      | vid_type       | int |
+    And having executed:
+      """
+      CREATE TAG person(id int);
+      CREATE TAG INDEX id_index ON person(id);
+      CREATE EDGE like(grade int);
+      CREATE EDGE INDEX grade_index ON like(grade);
+      """
+    And wait 6 seconds
+    # test insert vertex
+    When try to execute query:
+      """
+      INSERT VERTEX person(id) VALUES 100:(1), 200:(1)
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON person WHERE person.id == 1 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | 100 |
+      | 200 |
+    When try to execute query:
+      """
+      INSERT VERTEX IGNORE_EXISTED_INDEX person(id) VALUES 200:(2)
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON person WHERE person.id == 1 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | 100 |
+      | 200 |
+    When executing query:
+      """
+      LOOKUP ON person WHERE person.id == 2 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id  |
+      | 200 |
+    # test insert edge
+    When try to execute query:
+      """
+      INSERT EDGE like(grade) VALUES 100 -> 200:(666), 300 -> 400:(666);
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON like WHERE like.grade == 666 YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | 100 | 200 |
+      | 300 | 400 |
+    When try to execute query:
+      """
+      INSERT EDGE IGNORE_EXISTED_INDEX like(grade) VALUES 300 -> 400:(888)
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON like WHERE like.grade == 666 YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | 100 | 200 |
+      | 300 | 400 |
+    When executing query:
+      """
+      LOOKUP ON like WHERE like.grade == 888 YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src | dst |
+      | 300 | 400 |
+    Then drop the used space
