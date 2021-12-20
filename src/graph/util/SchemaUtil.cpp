@@ -302,6 +302,8 @@ Value::Type SchemaUtil::propTypeToValueType(nebula::cpp2::PropertyType propType)
       return Value::Type::DATETIME;
     case nebula::cpp2::PropertyType::GEOGRAPHY:
       return Value::Type::GEOGRAPHY;
+    case nebula::cpp2::PropertyType::DURATION:
+      return Value::Type::DURATION;
     case nebula::cpp2::PropertyType::UNKNOWN:
       return Value::Type::__EMPTY__;
   }

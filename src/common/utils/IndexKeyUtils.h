@@ -51,6 +51,8 @@ class IndexKeyUtils final {
         return Value::Type::DATETIME;
       case PropertyType::GEOGRAPHY:
         return Value::Type::GEOGRAPHY;
+      case PropertyType::DURATION:
+        return Value::Type::DURATION;
       case PropertyType::UNKNOWN:
         return Value::Type::__EMPTY__;
     }

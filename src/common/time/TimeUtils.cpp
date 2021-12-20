@@ -171,6 +171,39 @@ StatusOr<Value> TimeUtils::toTimestamp(const Value &val) {
   return timestamp;
 }
 
+/*static*/ StatusOr<Duration> TimeUtils::durationFromMap(const Map &m) {
+  Duration d;
+  for (const auto &kv : m.kvs) {
+    if (!kv.second.isInt()) {
+      return Status::Error("Invalid value type.");
+    }
+    if (kv.first == "years") {
+      d.addYears(kv.second.getInt());
+    } else if (kv.first == "quarters") {
+      d.addQuarters(kv.second.getInt());
+    } else if (kv.first == "months") {
+      d.addMonths(kv.second.getInt());
+    } else if (kv.first == "weeks") {
+      d.addWeeks(kv.second.getInt());
+    } else if (kv.first == "days") {
+      d.addDays(kv.second.getInt());
+    } else if (kv.first == "hours") {
+      d.addHours(kv.second.getInt());
+    } else if (kv.first == "minutes") {
+      d.addMinutes(kv.second.getInt());
+    } else if (kv.first == "seconds") {
+      d.addSeconds(kv.second.getInt());
+    } else if (kv.first == "milliseconds") {
+      d.addMilliseconds(kv.second.getInt());
+    } else if (kv.first == "microseconds") {
+      d.addMicroseconds(kv.second.getInt());
+    } else {
+      return Status::Error("Unkown field %s.", kv.first.c_str());
+    }
+  }
+  return d;
+}
+
 /*static*/ StatusOr<DateTime> TimeUtils::parseDateTime(const std::string &str) {
   auto p = DatetimeReader::makeDateTimeReader();
   auto result = p.readDatetime(str);
