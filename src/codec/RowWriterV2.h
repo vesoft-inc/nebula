@@ -188,6 +188,7 @@ class RowWriterV2 {
   WriteResult write(ssize_t index, const Date& v) noexcept;
   WriteResult write(ssize_t index, const Time& v) noexcept;
   WriteResult write(ssize_t index, const DateTime& v) noexcept;
+  WriteResult write(ssize_t index, const Duration& v) noexcept;
 
   WriteResult write(ssize_t index, const Geography& v) noexcept;
 };
