@@ -10,6 +10,7 @@
 #include "common/stats/StatsManager.h"
 
 DECLARE_int32(slow_query_threshold_us);
+DECLARE_bool(enable_space_level_metrics);
 
 namespace nebula {
 

@@ -101,7 +101,7 @@ void QueryInstance::onFinish() {
 
   auto latency = rctx->duration().elapsedInUSec();
   rctx->resp().latencyInUs = latency;
-  addSlowQueryStats(latency);
+  addSlowQueryStats(latency, spaceName);
   rctx->finish();
 
   rctx->session()->deleteQuery(qctx_.get());
@@ -161,17 +161,30 @@ void QueryInstance::onError(Status status) {
   auto latency = rctx->duration().elapsedInUSec();
   rctx->resp().latencyInUs = latency;
   stats::StatsManager::addValue(kNumQueryErrors);
-  addSlowQueryStats(latency);
+  stats::StatsManager::addValue(
+      stats::StatsManager::counterWithLabels(kNumQueryErrors, {{"space", spaceName}}));
+  addSlowQueryStats(latency, spaceName);
   rctx->session()->deleteQuery(qctx_.get());
   rctx->finish();
   delete this;
 }
 
-void QueryInstance::addSlowQueryStats(uint64_t latency) const {
+void QueryInstance::addSlowQueryStats(uint64_t latency, const std::string &spaceName) const {
   stats::StatsManager::addValue(kQueryLatencyUs, latency);
+  if (FLAGS_enable_space_level_metrics) {
+    stats::StatsManager::addValue(
+        stats::StatsManager::histoWithLabels(kQueryLatencyUs, {{"space", spaceName}}), latency);
+  }
   if (latency > static_cast<uint64_t>(FLAGS_slow_query_threshold_us)) {
     stats::StatsManager::addValue(kNumSlowQueries);
     stats::StatsManager::addValue(kSlowQueryLatencyUs, latency);
+    if (FLAGS_enable_space_level_metrics) {
+      stats::StatsManager::addValue(
+          stats::StatsManager::counterWithLabels(kNumSlowQueries, {{"space", spaceName}}));
+      stats::StatsManager::addValue(
+          stats::StatsManager::histoWithLabels(kSlowQueryLatencyUs, {{"space", spaceName}}),
+          latency);
+    }
   }
 }
 

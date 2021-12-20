@@ -12,6 +12,7 @@ DEFINE_int32(slow_query_threshold_us,
              200000,
              "Any query slower than this threshold value will be considered"
              " as a slow query");
+DEFINE_bool(enable_space_level_metrics, false, "Whether to enable space level metrircs");
 
 namespace nebula {
 

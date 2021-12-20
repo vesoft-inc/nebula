@@ -195,6 +195,9 @@ folly::Future<ExecutionResponse> GraphService::future_execute(int64_t sessionId,
           new std::string(folly::stringPrintf("SessionId[%ld] does not exist", sessionId)));
       return ctx->finish();
     }
+    stats::StatsManager::addValue(kNumQueries);
+    stats::StatsManager::addValue(
+        stats::StatsManager::counterWithLabels(kNumQueries, {{"space", sessionPtr->space().name}}));
     ctx->setSession(std::move(sessionPtr));
     queryEngine_->execute(std::move(ctx));
     stats::StatsManager::decValue(kNumActiveQueries);
