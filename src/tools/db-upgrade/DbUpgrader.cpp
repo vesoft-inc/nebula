@@ -86,7 +86,7 @@ Status UpgraderSpace::initSpace(const std::string& sId) {
 
   // Use readonly rocksdb
   readEngine_.reset(new nebula::kvstore::RocksEngine(
-      spaceId_, spaceVidLen_, srcPath_, "", nullptr, nullptr, true));
+      spaceId_, spaceVidLen_, srcPath_, "", nullptr, nullptr, false));
   writeEngine_.reset(new nebula::kvstore::RocksEngine(spaceId_, spaceVidLen_, dstPath_));
 
   parts_.clear();
@@ -985,6 +985,7 @@ void UpgraderSpace::doProcessV3() {
   if (code != ::nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(FATAL) << "Faild upgrade 2:3 when ingest sst file:" << static_cast<int>(code);
   }
+  readEngine_->put(NebulaKeyUtilsV3::dataVersionKey(), NebulaKeyUtilsV3::dataVersionValue());
 }
 std::vector<std::string> UpgraderSpace::indexVertexKeys(
     PartitionID partId,
