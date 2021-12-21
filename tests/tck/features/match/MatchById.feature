@@ -904,7 +904,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH (:player{name: "Tim Duncan"})-[e:like*2..3]-(v)
-      RETURN 1 | YIELD count(1)
+      RETURN count(1)
       """
     Then the result should be, in any order, with relax comparison:
       | count(1) |
@@ -912,7 +912,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH (:player{name:"Tim Duncan"})-[e:serve|like*2..3]-(v)
-      RETURN 1 | YIELD count(1)
+      RETURN count(1)
       """
     Then the result should be, in any order, with relax comparison:
       | count(1) |
@@ -934,8 +934,7 @@ Feature: Match By Id
       """
       MATCH (v1)-[:like]->(v2:player)-[:serve]->(v3)
       WHERE id(v2) == 'Tim Duncan'
-      RETURN v1, v3 |
-      YIELD COUNT(*)
+      RETURN COUNT(*)
       """
     Then the result should be, in any order, with relax comparison:
       | COUNT(*) |
@@ -944,8 +943,7 @@ Feature: Match By Id
       """
       MATCH (v1)-[:like]->(v2:player)-[:serve]->(v3)
       WHERE id(v3) == 'Spurs'
-      RETURN v1 |
-      YIELD COUNT(*)
+      RETURN COUNT(*)
       """
     Then the result should be, in any order, with relax comparison:
       | COUNT(*) |

@@ -724,6 +724,8 @@ void MetaClient::getResponse(Request req,
               } else if (resp.get_code() == nebula::cpp2::ErrorCode::E_CLIENT_SERVER_INCOMPATIBLE) {
                 pro.setValue(respGen(std::move(resp)));
                 return;
+              } else if (resp.get_code() == nebula::cpp2::ErrorCode::E_MACHINE_NOT_FOUND) {
+                updateLeader();
               }
               pro.setValue(this->handleResponse(resp));
             });  // then

@@ -96,6 +96,10 @@ class QueryContext {
 
   bool isKilled() const { return killed_.load(); }
 
+  bool existParameter(const std::string& param) const {
+    return ectx_->exist(param) && (ectx_->getValue(param).type() != Value::Type::DATASET);
+  }
+
  private:
   void init();
 

@@ -377,7 +377,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <sentence> go_sentence match_sentence lookup_sentence find_path_sentence get_subgraph_sentence
 %type <sentence> group_by_sentence order_by_sentence limit_sentence
 %type <sentence> fetch_sentence fetch_vertices_sentence fetch_edges_sentence
-%type <sentence> set_sentence piped_sentence assignment_sentence
+%type <sentence> set_sentence piped_sentence assignment_sentence match_sentences
 %type <sentence> yield_sentence use_sentence
 
 %type <sentence> grant_sentence revoke_sentence
@@ -947,7 +947,12 @@ vertex_prop_expression
 
 var_prop_expression
     : VARIABLE DOT name_label {
-        $$ = VariablePropertyExpression::make(qctx->objPool(), *$1, *$3);
+        if (!qctx->existParameter(*$1)) {
+            $$ = VariablePropertyExpression::make(qctx->objPool(), *$1, *$3);
+        } else {
+            $$ = AttributeExpression::make(qctx->objPool(),
+             VariableExpression::make(qctx->objPool(),*$1), ConstantExpression::make(qctx->objPool(),*$3));
+        }
         delete $1;
         delete $3;
     }
@@ -1306,6 +1311,9 @@ truncate_clause
         $$ = nullptr;
     }
     | KW_SAMPLE expression {
+        if(graph::ExpressionUtils::findAny($2, {Expression::Kind::kVar})) {
+            throw nebula::GraphParser::syntax_error(@2, "Parameter is not supported in sample clause");
+        }
         $$ = new TruncateClause($2, true);
     }
     | KW_LIMIT expression {
@@ -1336,6 +1344,9 @@ from_clause
         $$ = new FromClause($2);
     }
     | KW_FROM vid_ref_expression {
+        if(graph::ExpressionUtils::findAny($2,{Expression::Kind::kVar})) {
+            throw nebula::GraphParser::syntax_error(@2, "Parameter is not supported in from clause");
+        }
         $$ = new FromClause($2);
     }
     ;
@@ -1365,6 +1376,15 @@ vid
         $$ = ConstantExpression::make(qctx->objPool(), *$1);
         delete $1;
     }
+    | VARIABLE {
+        $$ = nullptr;
+        delete($1);
+        if (qctx->existParameter(*$1)) {
+            throw nebula::GraphParser::syntax_error(@1, "Parameter is not supported in vid");
+        } else {
+            throw nebula::GraphParser::syntax_error(@1, "Variable is not supported in vid");
+        } 
+    }
     ;
 
 unary_integer
@@ -1384,6 +1404,9 @@ vid_ref_expression
         $$ = $1;
     }
     | var_prop_expression {
+        if(graph::ExpressionUtils::findAny($1,{Expression::Kind::kVar})) {
+            throw nebula::GraphParser::syntax_error(@1, "Parameter is not supported in vid");
+        }
         $$ = $1;
     }
     ;
@@ -1516,13 +1539,13 @@ yield_column
         delete $3;
     }
     | expression {
-        if (graph::ExpressionUtils::checkVarExprIfExist($1)) {
+        if (graph::ExpressionUtils::checkVarExprIfExist($1, qctx)) {
             throw nebula::GraphParser::syntax_error(@1, "Direct output of variable is prohibited");
         }
         $$ = new YieldColumn($1);
     }
     | expression KW_AS name_label {
-        if (graph::ExpressionUtils::checkVarExprIfExist($1)) {
+        if (graph::ExpressionUtils::checkVarExprIfExist($1, qctx)) {
             delete $3;
             throw nebula::GraphParser::syntax_error(@1, "Direct output of variable is prohibited");
         }
@@ -2242,6 +2265,9 @@ to_clause
         $$ = new ToClause($2);
     }
     | KW_TO vid_ref_expression {
+        if(graph::ExpressionUtils::findAny($2,{Expression::Kind::kVar})) {
+            throw nebula::GraphParser::syntax_error(@2, "Parameter is not supported in to clause");
+        }
         $$ = new ToClause($2);
     }
     ;
@@ -2777,7 +2803,6 @@ desc_zone_sentence
 traverse_sentence
     : L_PAREN set_sentence R_PAREN { $$ = $2; }
     | go_sentence { $$ = $1; }
-    | match_sentence { $$ = $1; }
     | lookup_sentence { $$ = $1; }
     | group_by_sentence { $$ = $1; }
     | order_by_sentence { $$ = $1; }
@@ -2816,9 +2841,27 @@ set_sentence
     | set_sentence KW_MINUS piped_sentence { $$ = new SetSentence($1, SetSentence::MINUS, $3); }
     ;
 
+match_sentences
+    : match_sentence { $$ = $1; }
+    | match_sentences KW_UNION KW_ALL match_sentence { $$ = new SetSentence($1, SetSentence::UNION, $4); }
+    | match_sentences KW_UNION match_sentence {
+        auto *s = new SetSentence($1, SetSentence::UNION, $3);
+        s->setDistinct();
+        $$ = s;
+    }
+    | match_sentences KW_UNION KW_DISTINCT match_sentence {
+        auto *s = new SetSentence($1, SetSentence::UNION, $4);
+        s->setDistinct();
+        $$ = s;
+    }
+
 assignment_sentence
     : VARIABLE ASSIGN set_sentence {
-        $$ = new AssignmentSentence($1, $3);
+        if (qctx->existParameter(*$1)) {
+            throw nebula::GraphParser::syntax_error(@1, "Variable definition conflicts with a parameter");
+        } else {
+            $$ = new AssignmentSentence($1, $3);
+        }
     }
     ;
 
@@ -3750,6 +3793,7 @@ sentence
     | set_sentence { $$ = $1; }
     | assignment_sentence { $$ = $1; }
     | mutate_sentence { $$ = $1; }
+    | match_sentences { $$ = $1; }
     ;
 
 seq_sentences
