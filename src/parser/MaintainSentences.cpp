@@ -280,12 +280,18 @@ std::string CreateTagIndexSentence::toString() const {
   folly::join(", ", fieldDefs, fields);
   buf += fields;
   buf += ")";
-  if (comment_ != nullptr) {
-    buf += "COMMENT = ";
-    buf += *comment_;
-  }
+  std::string params;
   if (indexParams_ != nullptr) {
-    buf += indexParams_->toString();
+    params = indexParams_->toString();
+  }
+  if (!params.empty()) {
+    buf += "WITH (";
+    buf += params;
+    buf += ")";
+  }
+  if (comment_ != nullptr) {
+    buf += "COMMENT ";
+    buf += *comment_;
   }
   return buf;
 }
@@ -313,12 +319,18 @@ std::string CreateEdgeIndexSentence::toString() const {
   folly::join(", ", fieldDefs, fields);
   buf += fields;
   buf += ")";
-  if (comment_ != nullptr) {
-    buf += "COMMENT = ";
-    buf += *comment_;
-  }
+  std::string params;
   if (indexParams_ != nullptr) {
-    buf += indexParams_->toString();
+    params = indexParams_->toString();
+  }
+  if (!params.empty()) {
+    buf += "WITH (";
+    buf += params;
+    buf += ")";
+  }
+  if (comment_ != nullptr) {
+    buf += "COMMENT ";
+    buf += *comment_;
   }
   return buf;
 }

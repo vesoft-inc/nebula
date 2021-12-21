@@ -87,23 +87,29 @@ StatusOr<DataSet> IndexUtil::toShowCreateIndex(bool isTagIndex,
     createStr += "\n";
   }
   createStr += ")";
-  if (indexItem.comment_ref().has_value()) {
-    createStr += " comment = \"";
-    createStr += *indexItem.get_comment();
-    createStr += "\"";
-  }
-  const auto &indexParams = indexItem.get_index_params();
+
+  const auto *indexParams = indexItem.get_index_params();
   std::vector<std::string> params;
-  if (indexParams.s2_max_level_ref().has_value()) {
-    params.emplace_back("s2_max_level = " + std::to_string(*indexParams.s2_max_level_ref()));
-  }
-  if (indexParams.s2_max_cells_ref().has_value()) {
-    params.emplace_back("s2_max_cells = " + std::to_string(*indexParams.s2_max_cells_ref()));
+  if (indexParams) {
+    if (indexParams->s2_max_level_ref().has_value()) {
+      params.emplace_back("s2_max_level = " +
+                          std::to_string(indexParams->s2_max_level_ref().value()));
+    }
+    if (indexParams->s2_max_cells_ref().has_value()) {
+      params.emplace_back("s2_max_cells = " +
+                          std::to_string(indexParams->s2_max_cells_ref().value()));
+    }
   }
   if (!params.empty()) {
-    createStr += " WITH(";
+    createStr += " WITH (";
     createStr += folly::join(", ", params);
     createStr += ")";
+  }
+
+  if (indexItem.comment_ref().has_value()) {
+    createStr += " comment \"";
+    createStr += *indexItem.get_comment();
+    createStr += "\"";
   }
 
   row.emplace_back(std::move(createStr));

@@ -250,8 +250,8 @@ Feature: Geo base
       SHOW CREATE TAG INDEX any_shape_geo_index;
       """
     Then the result should be, in any order:
-      | Tag Index Name        | Create Tag Index                                                                                                                   |
-      | "any_shape_geo_index" | "CREATE TAG INDEX `any_shape_geo_index` ON `any_shape` (\n `geo`\n) WITH (s2_max_level = 30, s2_max_cells = 8) comment = \"test\"" |
+      | Tag Index Name        | Create Tag Index                                                                                                                 |
+      | "any_shape_geo_index" | "CREATE TAG INDEX `any_shape_geo_index` ON `any_shape` (\n `geo`\n) WITH (s2_max_level = 30, s2_max_cells = 8) comment \"test\"" |
     # Rebuild the geo index
     When submit a job:
       """

@@ -578,7 +578,7 @@ class CreateTagIndexSentence final : public CreateSentence {
     return result;
   }
 
-  IndexParamList *getIndexParamList() const { return indexParams_.get(); }
+  const IndexParamList *getIndexParamList() const { return indexParams_.get(); }
 
   const std::string *comment() const { return comment_.get(); }
 
@@ -626,7 +626,7 @@ class CreateEdgeIndexSentence final : public CreateSentence {
     return result;
   }
 
-  IndexParamList *getIndexParamList() const { return indexParams_.get(); }
+  const IndexParamList *getIndexParamList() const { return indexParams_.get(); }
 
   const std::string *comment() const { return comment_.get(); }
 

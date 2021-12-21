@@ -159,7 +159,7 @@ class CreateTagIndexValidator final : public Validator {
   std::string index_;
   std::vector<meta::cpp2::IndexFieldDef> fields_;
   bool ifNotExist_;
-  meta::cpp2::IndexParams indexParams_;
+  std::unique_ptr<meta::cpp2::IndexParams> indexParams_;
 };
 
 class CreateEdgeIndexValidator final : public Validator {
@@ -176,7 +176,7 @@ class CreateEdgeIndexValidator final : public Validator {
   std::string index_;
   std::vector<meta::cpp2::IndexFieldDef> fields_;
   bool ifNotExist_;
-  meta::cpp2::IndexParams indexParams_;
+  std::unique_ptr<meta::cpp2::IndexParams> indexParams_;
 };
 
 class DropTagIndexValidator final : public Validator {

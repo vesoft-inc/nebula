@@ -190,7 +190,9 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
   item.set_schema_id(schemaID);
   item.set_schema_name(edgeName);
   item.set_fields(std::move(columns));
-  item.set_index_params(*req.index_params_ref());
+  if (req.index_params_ref().has_value()) {
+    item.set_index_params(*req.index_params_ref());
+  }
   if (req.comment_ref().has_value()) {
     item.set_comment(*req.comment_ref());
   }
