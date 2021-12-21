@@ -416,7 +416,8 @@ bool OptimizerUtils::relExprHasIndex(
 }
 
 void OptimizerUtils::copyIndexScanData(const nebula::graph::IndexScan* from,
-                                       nebula::graph::IndexScan* to) {
+                                       nebula::graph::IndexScan* to,
+                                       QueryContext* qctx) {
   to->setEmptyResultSet(from->isEmptyResultSet());
   to->setSpace(from->space());
   to->setReturnCols(from->returnColumns());
@@ -424,7 +425,7 @@ void OptimizerUtils::copyIndexScanData(const nebula::graph::IndexScan* from,
   to->setSchemaId(from->schemaId());
   to->setDedup(from->dedup());
   to->setOrderBy(from->orderBy());
-  to->setLimit(from->limit());
+  to->setLimit(from->limit(qctx));
   to->setFilter(from->filter() == nullptr ? nullptr : from->filter()->clone());
 }
 

@@ -231,7 +231,7 @@ Feature: Go Yield Vertex And Edge Sentence
       """
       GO FROM $var OVER like YIELD edge as e
       """
-    Then a SyntaxError should be raised at runtime: syntax error near `OVER'
+    Then a SyntaxError should be raised at runtime: Variable is not supported in vid near `$var'
 
   Scenario: distinct map and set
     When executing query:
