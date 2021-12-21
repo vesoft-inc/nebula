@@ -220,7 +220,7 @@ void Listener::doApply() {
     }
 
     // apply to state machine
-    if (apply(data)) {
+    if (lastApplyId != -1 && apply(data)) {
       std::lock_guard<std::mutex> guard(raftLock_);
       lastApplyLogId_ = lastApplyId;
       persist(committedLogId_, term_, lastApplyLogId_);
