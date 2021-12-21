@@ -234,8 +234,6 @@ std::string DropEdgeSentence::toString() const {
 
 std::string IndexParamItem::toString() const {
   switch (paramType_) {
-    case COMMENT:
-      return folly::stringPrintf("comment = \"%s\"", paramValue_.getStr().c_str());
     case S2_MAX_LEVEL:
       return folly::stringPrintf("s2_max_level = %ld", paramValue_.getInt());
     case S2_MAX_CELLS:
@@ -282,6 +280,10 @@ std::string CreateTagIndexSentence::toString() const {
   folly::join(", ", fieldDefs, fields);
   buf += fields;
   buf += ")";
+  if (comment_ != nullptr) {
+    buf += "COMMENT = ";
+    buf += *comment_;
+  }
   if (indexParams_ != nullptr) {
     buf += indexParams_->toString();
   }
@@ -311,6 +313,10 @@ std::string CreateEdgeIndexSentence::toString() const {
   folly::join(", ", fieldDefs, fields);
   buf += fields;
   buf += ")";
+  if (comment_ != nullptr) {
+    buf += "COMMENT = ";
+    buf += *comment_;
+  }
   if (indexParams_ != nullptr) {
     buf += indexParams_->toString();
   }

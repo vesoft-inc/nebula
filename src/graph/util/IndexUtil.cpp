@@ -28,22 +28,16 @@ Status IndexUtil::validateIndexParams(const std::vector<IndexParamItem *> &param
                                       meta::cpp2::IndexParams &indexParams) {
   for (auto *param : params) {
     switch (param->getParamType()) {
-      case IndexParamItem::COMMENT: {
-        auto ret = param->getComment();
-        NG_RETURN_IF_ERROR(ret);
-        indexParams.set_comment(std::move(ret).value());
-        break;
-      }
       case IndexParamItem::S2_MAX_LEVEL: {
-        auto ret2 = param->getS2MaxLevel();
-        NG_RETURN_IF_ERROR(ret2);
-        indexParams.set_s2_max_level(std::move(ret2).value());
+        auto ret = param->getS2MaxLevel();
+        NG_RETURN_IF_ERROR(ret);
+        indexParams.set_s2_max_level(std::move(ret).value());
         break;
       }
       case IndexParamItem::S2_MAX_CELLS: {
-        auto ret3 = param->getS2MaxCells();
-        NG_RETURN_IF_ERROR(ret3);
-        indexParams.set_s2_max_cells(std::move(ret3).value());
+        auto ret2 = param->getS2MaxCells();
+        NG_RETURN_IF_ERROR(ret2);
+        indexParams.set_s2_max_cells(std::move(ret2).value());
         break;
       }
     }
@@ -69,7 +63,7 @@ StatusOr<DataSet> IndexUtil::toShowCreateIndex(bool isTagIndex,
   DataSet dataSet;
   std::string createStr;
   createStr.reserve(1024);
-  std::string schemaName = indexItem.get_schema_name();
+  const std::string &schemaName = indexItem.get_schema_name();
   if (isTagIndex) {
     dataSet.colNames = {"Tag Index Name", "Create Tag Index"};
     createStr = "CREATE TAG INDEX `" + indexName + "` ON `" + schemaName + "` (\n";
@@ -93,19 +87,23 @@ StatusOr<DataSet> IndexUtil::toShowCreateIndex(bool isTagIndex,
     createStr += "\n";
   }
   createStr += ")";
-  std::vector<std::string> indexParams;
   if (indexItem.comment_ref().has_value()) {
-    indexParams.emplace_back("comment = \"" + *indexItem.comment_ref() + "\"");
+    createStr += " comment = \"";
+    createStr += *indexItem.get_comment();
+    createStr += "\"";
   }
-  if (indexItem.s2_max_level_ref().has_value()) {
-    indexParams.emplace_back("s2_max_level = " + std::to_string(*indexItem.s2_max_level_ref()));
+  const auto &indexParams = indexItem.get_index_params();
+  std::vector<std::string> params;
+  if (indexParams.s2_max_level_ref().has_value()) {
+    params.emplace_back("s2_max_level = " + std::to_string(*indexParams.s2_max_level_ref()));
   }
-  if (indexItem.s2_max_cells_ref().has_value()) {
-    indexParams.emplace_back("s2_max_cells = " + std::to_string(*indexItem.s2_max_cells_ref()));
+  if (indexParams.s2_max_cells_ref().has_value()) {
+    params.emplace_back("s2_max_cells = " + std::to_string(*indexParams.s2_max_cells_ref()));
   }
-  if (!indexParams.empty()) {
-    createStr += " ";
-    createStr += folly::join(", ", indexParams);
+  if (!params.empty()) {
+    createStr += " WITH(";
+    createStr += folly::join(", ", params);
+    createStr += ")";
   }
 
   row.emplace_back(std::move(createStr));

@@ -317,7 +317,8 @@ class MetaClient {
       std::string tagName,
       std::vector<cpp2::IndexFieldDef> fields,
       bool ifNotExists = false,
-      meta::cpp2::IndexParams indexParams = cpp2::IndexParams{});
+      meta::cpp2::IndexParams indexParams = cpp2::IndexParams{},
+      const std::string* comment = nullptr);
 
   // Remove the define of tag index
   folly::Future<StatusOr<bool>> dropTagIndex(GraphSpaceID spaceId,
@@ -338,7 +339,8 @@ class MetaClient {
       std::string edgeName,
       std::vector<cpp2::IndexFieldDef> fields,
       bool ifNotExists = false,
-      cpp2::IndexParams indexParams = cpp2::IndexParams{});
+      cpp2::IndexParams indexParams = cpp2::IndexParams{},
+      const std::string* comment = nullptr);
 
   // Remove the definition of edge index
   folly::Future<StatusOr<bool>> dropEdgeIndex(GraphSpaceID spaceId,

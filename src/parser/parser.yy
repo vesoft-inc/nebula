@@ -281,7 +281,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <create_schema_prop_item> create_schema_prop_item
 %type <alter_schema_prop_list> alter_schema_prop_list
 %type <alter_schema_prop_item> alter_schema_prop_item
-%type <index_param_list> opt_index_param_list index_param_list
+%type <index_param_list> opt_with_index_param_list index_param_list
 %type <index_param_item> index_param_item
 %type <order_factor> order_factor
 %type <order_factors> order_factors
@@ -333,7 +333,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 
 %type <intval> legal_integer unary_integer rank port job_concurrency
 
-%type <strval>         comment_prop_assignment comment_prop
+%type <strval>         comment_prop_assignment comment_prop opt_comment_prop
 %type <col_property>   column_property
 %type <col_properties> column_properties
 %type <colspec> column_spec
@@ -2626,14 +2626,14 @@ opt_index_field_list
     ;
 
 create_tag_index_sentence
-    : KW_CREATE KW_TAG KW_INDEX opt_if_not_exists name_label KW_ON name_label L_PAREN opt_index_field_list R_PAREN opt_index_param_list {
-        $$ = new CreateTagIndexSentence($5, $7, $9, $4, $11);
+    : KW_CREATE KW_TAG KW_INDEX opt_if_not_exists name_label KW_ON name_label L_PAREN opt_index_field_list R_PAREN opt_with_index_param_list opt_comment_prop {
+        $$ = new CreateTagIndexSentence($5, $7, $9, $4, $11, $12);
     }
     ;
 
 create_edge_index_sentence
-    : KW_CREATE KW_EDGE KW_INDEX opt_if_not_exists name_label KW_ON name_label L_PAREN opt_index_field_list R_PAREN opt_index_param_list{
-        $$ = new CreateEdgeIndexSentence($5, $7, $9, $4, $11);
+    : KW_CREATE KW_EDGE KW_INDEX opt_if_not_exists name_label KW_ON name_label L_PAREN opt_index_field_list R_PAREN opt_with_index_param_list opt_comment_prop {
+        $$ = new CreateEdgeIndexSentence($5, $7, $9, $4, $11, $12);
     }
     ;
 
@@ -2680,12 +2680,21 @@ comment_prop
     }
     ;
 
-opt_index_param_list
+opt_comment_prop
     : %empty {
         $$ = nullptr;
     }
-    | index_param_list {
+    | comment_prop {
         $$ = $1;
+    }
+    ;
+
+opt_with_index_param_list
+    : %empty {
+        $$ = nullptr;
+    }
+    | KW_WITH L_PAREN index_param_list R_PAREN {
+        $$ = $3;
     }
     ;
 
@@ -2701,10 +2710,7 @@ index_param_list
     ;
 
 index_param_item
-    : comment_prop_assignment {
-        $$ = new IndexParamItem(IndexParamItem::COMMENT, *$1);
-    }
-    | KW_S2_MAX_LEVEL ASSIGN legal_integer {
+    : KW_S2_MAX_LEVEL ASSIGN legal_integer {
         if ($3 < 0 || $3 > 30) {
             throw nebula::GraphParser::syntax_error(@3, "'s2_max_level' value must be between 0 and 30 inclusive");
         }

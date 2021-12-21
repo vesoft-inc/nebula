@@ -311,7 +311,8 @@ Status CreateTagIndexValidator::toPlan() {
                                       *sentence->indexName(),
                                       sentence->fields(),
                                       sentence->isIfNotExist(),
-                                      indexParams_);
+                                      indexParams_,
+                                      sentence->comment());
   root_ = doNode;
   tail_ = root_;
   return Status::OK();
@@ -339,7 +340,8 @@ Status CreateEdgeIndexValidator::toPlan() {
                                        *sentence->indexName(),
                                        sentence->fields(),
                                        sentence->isIfNotExist(),
-                                       indexParams_);
+                                       indexParams_,
+                                       sentence->comment());
   root_ = doNode;
   tail_ = root_;
   return Status::OK();

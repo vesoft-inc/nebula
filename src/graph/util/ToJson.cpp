@@ -98,9 +98,6 @@ folly::dynamic toJson(const meta::cpp2::SchemaProp &prop) {
 
 folly::dynamic toJson(const meta::cpp2::IndexParams &params) {
   folly::dynamic object = folly::dynamic::object();
-  if (params.comment_ref().has_value()) {
-    object.insert("comment", *params.comment_ref());
-  }
   if (params.s2_max_level_ref().has_value()) {
     object.insert("s2_max_level", *params.s2_max_level_ref());
   }

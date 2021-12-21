@@ -56,11 +56,12 @@ std::vector<std::string> IndexKeyUtils::encodeValues(std::vector<Value>&& values
     if (!value.isNull()) {
       DCHECK(value.type() == Value::Type::GEOGRAPHY);
       geo::RegionCoverParams rc;
-      if (indexItem->get_s2_max_level()) {
-        rc.maxCellLevel_ = *indexItem->get_s2_max_level();
+      const auto& indexParams = indexItem->get_index_params();
+      if (indexParams.s2_max_level_ref().has_value()) {
+        rc.maxCellLevel_ = indexParams.s2_max_level_ref().value();
       }
-      if (indexItem->get_s2_max_cells()) {
-        rc.maxCellNum_ = *indexItem->get_s2_max_level();
+      if (indexParams.s2_max_cells_ref().has_value()) {
+        rc.maxCellNum_ = indexParams.s2_max_level_ref().value();
       }
       indexes = encodeGeography(value.getGeography(), rc);
     } else {

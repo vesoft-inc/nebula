@@ -89,11 +89,12 @@ StatusOr<TransformResult> GeoPredicateIndexScanBaseRule::transform(
                        geoColumnTypeDef.geo_shape_ref().value() == meta::cpp2::GeoShape::POINT;
 
   geo::RegionCoverParams rc;
-  if (indexItem->s2_max_level_ref().has_value()) {
-    rc.maxCellLevel_ = indexItem->s2_max_level_ref().value();
+  const auto& indexParams = indexItem->get_index_params();
+  if (indexParams.s2_max_level_ref().has_value()) {
+    rc.maxCellLevel_ = indexParams.s2_max_level_ref().value();
   }
-  if (indexItem->s2_max_cells_ref().has_value()) {
-    rc.maxCellNum_ = indexItem->s2_max_cells_ref().value();
+  if (indexParams.s2_max_cells_ref().has_value()) {
+    rc.maxCellNum_ = indexParams.s2_max_level_ref().value();
   }
   geo::GeoIndex geoIndex(rc, isPointColumn);
   std::vector<geo::ScanRange> scanRanges;
