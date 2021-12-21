@@ -163,7 +163,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %token KW_BOOL KW_INT8 KW_INT16 KW_INT32 KW_INT64 KW_INT KW_FLOAT KW_DOUBLE
 %token KW_STRING KW_FIXED_STRING KW_TIMESTAMP KW_DATE KW_TIME KW_DATETIME
 %token KW_GO KW_AS KW_TO KW_USE KW_SET KW_FROM KW_WHERE KW_ALTER
-%token KW_MATCH KW_INSERT KW_VALUE KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX KW_VERTICES
+%token KW_MATCH KW_INSERT KW_VALUE KW_VALUES KW_YIELD KW_RETURN KW_CREATE KW_VERTEX KW_VERTICES KW_IGNORE_EXISTED_INDEX
 %token KW_EDGE KW_EDGES KW_STEPS KW_OVER KW_UPTO KW_REVERSELY KW_SPACE KW_DELETE KW_FIND
 %token KW_TAG KW_TAGS KW_UNION KW_INTERSECT KW_MINUS
 %token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOST KW_HOSTS KW_PART KW_PARTS KW_ADD
@@ -391,6 +391,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <boolval> opt_if_not_exists
 %type <boolval> opt_if_exists
 %type <boolval> opt_with_properties
+%type <boolval> opt_ignore_existed_index
 
 %left QM COLON
 %left KW_OR KW_XOR
@@ -2274,6 +2275,11 @@ opt_create_schema_prop_list
     }
     ;
 
+opt_ignore_existed_index
+    : %empty { $$=false; }
+    | KW_IGNORE_EXISTED_INDEX { $$=true; }
+    ;
+
 create_schema_prop_list
     : create_schema_prop_item {
         $$ = new SchemaPropList();
@@ -2782,8 +2788,8 @@ assignment_sentence
     ;
 
 insert_vertex_sentence
-    : KW_INSERT KW_VERTEX opt_if_not_exists vertex_tag_list KW_VALUES vertex_row_list {
-        $$ = new InsertVerticesSentence($4, $6, $3);
+    : KW_INSERT KW_VERTEX opt_if_not_exists opt_ignore_existed_index vertex_tag_list KW_VALUES vertex_row_list {
+        $$ = new InsertVerticesSentence($5, $7, $3, $4);
     }
     ;
 
@@ -2860,19 +2866,19 @@ value_list
     ;
 
 insert_edge_sentence
-    : KW_INSERT KW_EDGE opt_if_not_exists name_label KW_VALUES edge_row_list {
-        auto sentence = new InsertEdgesSentence($4, $6, $3);
+    : KW_INSERT KW_EDGE opt_if_not_exists opt_ignore_existed_index name_label KW_VALUES edge_row_list {
+        auto sentence = new InsertEdgesSentence($5, $7, $3, $4);
         sentence->setDefaultPropNames();
         $$ = sentence;
     }
-    | KW_INSERT KW_EDGE opt_if_not_exists name_label L_PAREN R_PAREN KW_VALUES edge_row_list {
-        auto sentence = new InsertEdgesSentence($4, $8, $3);
+    | KW_INSERT KW_EDGE opt_if_not_exists opt_ignore_existed_index name_label L_PAREN R_PAREN KW_VALUES edge_row_list {
+        auto sentence = new InsertEdgesSentence($5, $9, $3, $4);
         sentence->setProps(new PropertyList());
         $$ = sentence;
     }
-    | KW_INSERT KW_EDGE opt_if_not_exists name_label L_PAREN prop_list R_PAREN KW_VALUES edge_row_list {
-        auto sentence = new InsertEdgesSentence($4, $9, $3);
-        sentence->setProps($6);
+    | KW_INSERT KW_EDGE opt_if_not_exists opt_ignore_existed_index name_label L_PAREN prop_list R_PAREN KW_VALUES edge_row_list {
+        auto sentence = new InsertEdgesSentence($5, $10, $3, $4);
+        sentence->setProps($7);
         $$ = sentence;
     }
     ;
