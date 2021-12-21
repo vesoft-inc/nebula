@@ -92,7 +92,7 @@ TagIndexScan* makeTagIndexScan(QueryContext* qctx, const TagIndexScan* scan, boo
     tagScan = TagIndexRangeScan::make(qctx, nullptr, scan->tagName());
   }
 
-  OptimizerUtils::copyIndexScanData(scan, tagScan);
+  OptimizerUtils::copyIndexScanData(scan, tagScan, qctx);
   return tagScan;
 }
 

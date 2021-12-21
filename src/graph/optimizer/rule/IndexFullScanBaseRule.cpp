@@ -66,7 +66,7 @@ StatusOr<TransformResult> IndexFullScanBaseRule::transform(OptContext* ctx,
   idxCtxs.emplace_back(std::move(ictx));
 
   auto scanNode = this->scan(ctx, scan);
-  OptimizerUtils::copyIndexScanData(scan, scanNode);
+  OptimizerUtils::copyIndexScanData(scan, scanNode, ctx->qctx());
   scanNode->setOutputVar(scan->outputVar());
   scanNode->setColNames(scan->colNames());
   scanNode->setIndexQueryContext(std::move(idxCtxs));

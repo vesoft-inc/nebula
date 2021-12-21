@@ -82,7 +82,7 @@ EdgeIndexScan* makeEdgeIndexScan(QueryContext* qctx, const EdgeIndexScan* scan, 
   } else {
     scanNode = EdgeIndexRangeScan::make(qctx, nullptr, scan->edgeType());
   }
-  OptimizerUtils::copyIndexScanData(scan, scanNode);
+  OptimizerUtils::copyIndexScanData(scan, scanNode, qctx);
   return scanNode;
 }
 
