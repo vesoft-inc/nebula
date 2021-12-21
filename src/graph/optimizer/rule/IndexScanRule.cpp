@@ -1,12 +1,9 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/optimizer/rule/IndexScanRule.h"
-
-#include <vector>
 
 #include "common/expression/LabelAttributeExpression.h"
 #include "graph/optimizer/OptContext.h"
@@ -67,7 +64,10 @@ StatusOr<OptRule::TransformResult> IndexScanRule::transform(OptContext* ctx,
     FilterItems items;
     ScanKind kind;
     NG_RETURN_IF_ERROR(analyzeExpression(filter, &items, &kind, isEdge(groupNode)));
-    NG_RETURN_IF_ERROR(createIndexQueryCtx(iqctx, kind, items, qctx, groupNode));
+    auto status = createIndexQueryCtx(iqctx, kind, items, qctx, groupNode);
+    if (!status.ok()) {
+      NG_RETURN_IF_ERROR(createIndexQueryCtx(iqctx, qctx, groupNode));
+    }
   }
 
   const auto* oldIN = groupNode->node();
@@ -200,46 +200,96 @@ Status IndexScanRule::appendIQCtx(const IndexItem& index, IndexQueryCtx& iqctx) 
     }                                                                          \
   } while (0)
 
+inline bool verifyType(const Value& val) {
+  switch (val.type()) {
+    case Value::Type::__EMPTY__:
+    case Value::Type::NULLVALUE:
+    case Value::Type::VERTEX:
+    case Value::Type::EDGE:
+    case Value::Type::LIST:
+    case Value::Type::SET:
+    case Value::Type::MAP:
+    case Value::Type::DATASET:
+    case Value::Type::GEOGRAPHY:  // TODO(jie)
+    case Value::Type::PATH: {
+      DLOG(FATAL) << "Not supported value type " << val.type() << "for index.";
+      return false;
+    } break;
+    default: {
+      return true;
+    }
+  }
+}
 Status IndexScanRule::appendColHint(std::vector<IndexColumnHint>& hints,
                                     const FilterItems& items,
                                     const meta::cpp2::ColumnDef& col) const {
+  // CHECK(false);
   IndexColumnHint hint;
-  Value begin, end;
+  std::pair<Value, bool> begin, end;
   bool isRangeScan = true;
   for (const auto& item : items.items) {
+    if (!verifyType(item.value_)) {
+      return Status::SemanticError(
+          fmt::format("Not supported value type {} for index.", item.value_.type()));
+    }
     if (item.relOP_ == Expression::Kind::kRelEQ) {
-      // check the items, don't allow where c1 == 1 and c1 == 2 and c1 > 3....
-      // If EQ item appears, only one element is allowed
-      if (items.items.size() > 1) {
-        return Status::SemanticError();
-      }
       isRangeScan = false;
-      begin = OptimizerUtils::normalizeValue(col, item.value_);
+      begin = {item.value_, true};
       break;
     }
-    // because only type for bool is true/false, which can not satisify [start,
+    // because only type for bool is true/false, which can not satisfy [start,
     // end)
-    if (col.get_type().get_type() == meta::cpp2::PropertyType::BOOL) {
+    if (col.get_type().get_type() == nebula::cpp2::PropertyType::BOOL) {
       return Status::SemanticError("Range scan for bool type is illegal");
     }
-    NG_RETURN_IF_ERROR(OptimizerUtils::boundValue(item.relOP_, item.value_, col, begin, end));
+    if (item.value_.type() != graph::SchemaUtil::propTypeToValueType(col.type.type)) {
+      return Status::SemanticError("Data type error of field : %s", col.get_name().c_str());
+    }
+    bool include = false;
+    switch (item.relOP_) {
+      case Expression::Kind::kRelLE:
+        include = true;
+        [[fallthrough]];
+      case Expression::Kind::kRelLT: {
+        if (end.first.empty()) {
+          end.first = item.value_;
+          end.second = include;
+        } else {
+          auto tmp = std::make_pair(item.value_, include);
+          OptimizerUtils::compareAndSwapBound(end, tmp);
+        }
+      } break;
+      case Expression::Kind::kRelGE:
+        include = true;
+        [[fallthrough]];
+      case Expression::Kind::kRelGT: {
+        if (begin.first.empty()) {
+          begin.first = item.value_;
+          begin.second = include;
+        } else {
+          auto tmp = std::make_pair(item.value_, include);
+          OptimizerUtils::compareAndSwapBound(tmp, begin);
+        }
+      } break;
+      default:
+        return Status::Error("Invalid expression kind.");
+    }
   }
 
   if (isRangeScan) {
-    if (begin.empty()) {
-      begin = OptimizerUtils::boundValue(col, BVO::MIN, Value());
-      CHECK_BOUND_VALUE(begin, col.get_name());
+    if (!begin.first.empty()) {
+      hint.set_begin_value(begin.first);
+      hint.set_include_begin(begin.second);
     }
-    if (end.empty()) {
-      end = OptimizerUtils::boundValue(col, BVO::MAX, Value());
-      CHECK_BOUND_VALUE(end, col.get_name());
+    if (!end.first.empty()) {
+      hint.set_end_value(end.first);
+      hint.set_include_end(end.second);
     }
     hint.set_scan_type(storage::cpp2::ScanType::RANGE);
-    hint.set_end_value(std::move(end));
   } else {
+    hint.set_begin_value(begin.first);
     hint.set_scan_type(storage::cpp2::ScanType::PREFIX);
   }
-  hint.set_begin_value(std::move(begin));
   hint.set_column_name(col.get_name());
   hints.emplace_back(std::move(hint));
   return Status::OK();
@@ -427,19 +477,14 @@ std::vector<IndexItem> IndexScanRule::findValidIndex(graph::QueryContext* qctx,
   std::vector<IndexItem> validIndexes;
   // Find indexes for match all fields by where condition.
   for (const auto& index : indexes) {
-    bool allColsHint = true;
     const auto& fields = index->get_fields();
     for (const auto& item : items.items) {
       auto it = std::find_if(fields.begin(), fields.end(), [item](const auto& field) {
         return field.get_name() == item.col_;
       });
-      if (it == fields.end()) {
-        allColsHint = false;
-        break;
+      if (it != fields.end()) {
+        validIndexes.emplace_back(index);
       }
-    }
-    if (allColsHint) {
-      validIndexes.emplace_back(index);
     }
   }
   // If the first field of the index does not match any condition, the index is

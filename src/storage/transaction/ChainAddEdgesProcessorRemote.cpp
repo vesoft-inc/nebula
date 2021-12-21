@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "storage/transaction/ChainAddEdgesProcessorRemote.h"
@@ -14,12 +13,16 @@ namespace nebula {
 namespace storage {
 
 void ChainAddEdgesProcessorRemote::process(const cpp2::ChainAddEdgesRequest& req) {
-  VLOG(1) << this << ConsistUtil::dumpParts(req.get_parts());
+  if (FLAGS_trace_toss) {
+    uuid_ = ConsistUtil::strUUID();
+  }
+  VLOG(1) << uuid_ << ConsistUtil::dumpParts(req.get_parts());
   auto partId = req.get_parts().begin()->first;
   auto code = nebula::cpp2::ErrorCode::SUCCEEDED;
   do {
     if (!checkTerm(req)) {
-      LOG(WARNING) << "invalid term, incoming part " << partId << ", term = " << req.get_term();
+      LOG(WARNING) << uuid_ << " invalid term, incoming part " << partId
+                   << ", term = " << req.get_term();
       code = nebula::cpp2::ErrorCode::E_OUTDATED_TERM;
       break;
     }
@@ -35,6 +38,13 @@ void ChainAddEdgesProcessorRemote::process(const cpp2::ChainAddEdgesRequest& req
   } while (0);
 
   if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
+    if (FLAGS_trace_toss) {
+      // need to do this after set spaceVidLen_
+      auto keys = getStrEdgeKeys(req);
+      for (auto& key : keys) {
+        LOG(INFO) << uuid_ << ", key = " << folly::hexlify(key);
+      }
+    }
     forwardRequest(req);
   } else {
     pushResultCode(code, partId);
@@ -53,13 +63,14 @@ void ChainAddEdgesProcessorRemote::forwardRequest(const cpp2::ChainAddEdgesReque
   proc->getFuture().thenValue([=](auto&& resp) {
     Code rc = Code::SUCCEEDED;
     for (auto& part : resp.get_result().get_failed_parts()) {
+      rc = part.code;
       handleErrorCode(part.code, spaceId, part.get_part_id());
     }
-    VLOG(1) << this << " " << apache::thrift::util::enumNameSafe(rc);
+    VLOG(1) << uuid_ << " " << apache::thrift::util::enumNameSafe(rc);
     this->result_ = resp.get_result();
     this->onFinished();
   });
-  proc->process(ConsistUtil::makeDirectAddReq(req));
+  proc->process(ConsistUtil::toAddEdgesRequest(req));
 }
 
 bool ChainAddEdgesProcessorRemote::checkVersion(const cpp2::ChainAddEdgesRequest& req) {

@@ -1,7 +1,6 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 #
 #
 # Copyright (c) 2015-2021 "Neo Technology,"
@@ -38,8 +37,8 @@ Feature: List2 - List Slicing
     Given any graph
     When executing query:
       """
-      WITH [1, 2, 3, 4, 5] AS list
-      RETURN list[1..3] AS r
+      WITH [1, 2, 3, 4, 5] AS l
+      RETURN l[1..3] AS r
       """
     Then the result should be, in any order:
       | r      |
@@ -50,8 +49,8 @@ Feature: List2 - List Slicing
     Given any graph
     When executing query:
       """
-      WITH [1, 2, 3] AS list
-      RETURN list[1..] AS r
+      WITH [1, 2, 3] AS l
+      RETURN l[1..] AS r
       """
     Then the result should be, in any order:
       | r      |
@@ -62,8 +61,8 @@ Feature: List2 - List Slicing
     Given any graph
     When executing query:
       """
-      WITH [1, 2, 3] AS list
-      RETURN list[..2] AS r
+      WITH [1, 2, 3] AS l
+      RETURN l[..2] AS r
       """
     Then the result should be, in any order:
       | r      |
@@ -74,8 +73,8 @@ Feature: List2 - List Slicing
     Given any graph
     When executing query:
       """
-      WITH [1, 2, 3] AS list
-      RETURN list[0..1] AS r
+      WITH [1, 2, 3] AS l
+      RETURN l[0..1] AS r
       """
     Then the result should be, in any order:
       | r   |
@@ -86,8 +85,8 @@ Feature: List2 - List Slicing
     Given any graph
     When executing query:
       """
-      WITH [1, 2, 3] AS list
-      RETURN list[0..0] AS r
+      WITH [1, 2, 3] AS l
+      RETURN l[0..0] AS r
       """
     Then the result should be, in any order:
       | r  |
@@ -98,8 +97,8 @@ Feature: List2 - List Slicing
     Given any graph
     When executing query:
       """
-      WITH [1, 2, 3] AS list
-      RETURN list[-3..-1] AS r
+      WITH [1, 2, 3] AS l
+      RETURN l[-3..-1] AS r
       """
     Then the result should be, in any order:
       | r      |
@@ -110,8 +109,8 @@ Feature: List2 - List Slicing
     Given any graph
     When executing query:
       """
-      WITH [1, 2, 3] AS list
-      RETURN list[3..1] AS r
+      WITH [1, 2, 3] AS l
+      RETURN l[3..1] AS r
       """
     Then the result should be, in any order:
       | r  |
@@ -122,8 +121,8 @@ Feature: List2 - List Slicing
     Given any graph
     When executing query:
       """
-      WITH [1, 2, 3] AS list
-      RETURN list[-5..5] AS r
+      WITH [1, 2, 3] AS l
+      RETURN l[-5..5] AS r
       """
     Then the result should be, in any order:
       | r         |
@@ -134,8 +133,8 @@ Feature: List2 - List Slicing
     Given any graph
     When executing query:
       """
-      WITH [1, 2, 3] AS list
-      RETURN list[<lower>..<upper>] AS r
+      WITH [1, 2, 3] AS l
+      RETURN l[<lower>..<upper>] AS r
       """
     Then the result should be, in any order:
       | r    |
@@ -158,8 +157,8 @@ Feature: List2 - List Slicing
       | to   | 3 |
     When executing query:
       """
-      WITH [1, 2, 3] AS list
-      RETURN list[$from..$to] AS r
+      WITH [1, 2, 3] AS l
+      RETURN l[$from..$to] AS r
       """
     Then the result should be, in any order:
       | r      |
@@ -174,8 +173,8 @@ Feature: List2 - List Slicing
       | to   | 1 |
     When executing query:
       """
-      WITH [1, 2, 3] AS list
-      RETURN list[$from..$to] AS r
+      WITH [1, 2, 3] AS l
+      RETURN l[$from..$to] AS r
       """
     Then the result should be, in any order:
       | r  |

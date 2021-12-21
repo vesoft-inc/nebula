@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -108,10 +107,10 @@ TEST(Scanner, Basic) {
     };                                                               \
     GraphScanner lexer;                                              \
     lexer.setReadBuffer(input);                                      \
-    nebula::GraphParser::semantic_type dumyyylval;                   \
-    nebula::GraphParser::location_type dumyyyloc;                    \
+    nebula::GraphParser::semantic_type dummyyylval;                  \
+    nebula::GraphParser::location_type dummyyyloc;                   \
     try {                                                            \
-      auto token = lexer.yylex(&dumyyylval, &dumyyyloc);             \
+      auto token = lexer.yylex(&dummyyylval, &dummyyyloc);           \
       if (token != 0) {                                              \
         return AssertionFailure() << "Lexical error should've "      \
                                   << "happened for `" << STR << "'"; \
@@ -182,8 +181,8 @@ TEST(Scanner, Basic) {
       CHECK_SEMANTIC_TYPE("match", TokenType::KW_MATCH),
       CHECK_SEMANTIC_TYPE("INSERT", TokenType::KW_INSERT),
       CHECK_SEMANTIC_TYPE("insert", TokenType::KW_INSERT),
-      CHECK_SEMANTIC_TYPE("VALUE", TokenType::KW_VALUES),
-      CHECK_SEMANTIC_TYPE("value", TokenType::KW_VALUES),
+      CHECK_SEMANTIC_TYPE("VALUE", TokenType::KW_VALUE),
+      CHECK_SEMANTIC_TYPE("value", TokenType::KW_VALUE),
       CHECK_SEMANTIC_TYPE("VALUES", TokenType::KW_VALUES),
       CHECK_SEMANTIC_TYPE("values", TokenType::KW_VALUES),
       CHECK_SEMANTIC_TYPE("YIELD", TokenType::KW_YIELD),
@@ -462,6 +461,9 @@ TEST(Scanner, Basic) {
       CHECK_SEMANTIC_TYPE("INTO", TokenType::KW_INTO),
       CHECK_SEMANTIC_TYPE("Into", TokenType::KW_INTO),
       CHECK_SEMANTIC_TYPE("into", TokenType::KW_INTO),
+      CHECK_SEMANTIC_TYPE("NEW", TokenType::KW_NEW),
+      CHECK_SEMANTIC_TYPE("New", TokenType::KW_NEW),
+      CHECK_SEMANTIC_TYPE("new", TokenType::KW_NEW),
       CHECK_SEMANTIC_TYPE("STATS", TokenType::KW_STATS),
       CHECK_SEMANTIC_TYPE("Stats", TokenType::KW_STATS),
       CHECK_SEMANTIC_TYPE("stats", TokenType::KW_STATS),
@@ -501,6 +503,12 @@ TEST(Scanner, Basic) {
       CHECK_SEMANTIC_TYPE("TOP", TokenType::KW_TOP),
       CHECK_SEMANTIC_TYPE("Top", TokenType::KW_TOP),
       CHECK_SEMANTIC_TYPE("top", TokenType::KW_TOP),
+      CHECK_SEMANTIC_TYPE("MERGE", TokenType::KW_MERGE),
+      CHECK_SEMANTIC_TYPE("Merge", TokenType::KW_MERGE),
+      CHECK_SEMANTIC_TYPE("Merge", TokenType::KW_MERGE),
+      CHECK_SEMANTIC_TYPE("RENAME", TokenType::KW_RENAME),
+      CHECK_SEMANTIC_TYPE("Rename", TokenType::KW_RENAME),
+      CHECK_SEMANTIC_TYPE("rename", TokenType::KW_RENAME),
 
       CHECK_SEMANTIC_TYPE("_type", TokenType::TYPE_PROP),
       CHECK_SEMANTIC_TYPE("_id", TokenType::ID_PROP),

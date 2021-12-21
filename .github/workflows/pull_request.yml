@@ -7,6 +7,10 @@ on:
       - master
       - 'v[0-9]+.*'
 
+concurrency:
+  group: ${{ github.head_ref }}
+  cancel-in-progress: true
+
 defaults:
   run:
     shell: bash
@@ -19,27 +23,35 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          fetch-depth: 2
+          ref: ${{ github.event.pull_request.base.sha }}
+      - uses: actions/checkout@v2
+        with:
+          clean: false
+      - name: Check License Header
+        uses: apache/skywalking-eyes@main
+      - name: Ensure clang-format-10 is available
+        run: |
+          command -v clang-format-10 > /dev/null || (apt-get update && apt-get install -y clang-format-10)
       - name: Cpplint
         run: |
           ln -snf $PWD/.linters/cpp/hooks/pre-commit.sh $PWD/.linters/cpp/pre-commit.sh
-          .linters/cpp/pre-commit.sh $(git --no-pager diff --diff-filter=d --name-only HEAD^ HEAD)
+          .linters/cpp/pre-commit.sh $(git --no-pager diff --diff-filter=d --name-only ${{ github.event.pull_request.base.sha }} HEAD)
       - name: Format check
         run: |
-          res=$(git diff -U0 --no-color HEAD^ | /usr/share/clang/clang-format-10/clang-format-diff.py -p1)
-          [[ ! -z "$res" ]] && exit 1 || true
+          git diff -U0 --no-color ${{ github.event.pull_request.base.sha }} HEAD | /usr/share/clang/clang-format-10/clang-format-diff.py -p1 | tee /tmp/.clang-format-diff
+          [ -s /tmp/.clang-format-diff ] && exit 1 || true
       - uses: actions/setup-python@v2
         with:
           python-version: 3.7
       - name: Prepare Gherkin exec environ
         run: make init-all -C tests
       - name: Check Gherkin feature format
-        run: make check -C tests
+        run: make check-and-diff -C tests
 
   build:
     name: build
     needs: lint
-    runs-on: self-hosted
+    runs-on: [self-hosted, nebula]
     strategy:
       fail-fast: false
       matrix:
@@ -85,7 +97,6 @@ jobs:
                   -DENABLE_TESTING=on \
                   -B build
               echo "::set-output name=j::10"
-              echo "::set-output name=t::$(nproc)"
               ;;
             ubuntu2004)
               # build with Debug type
@@ -97,7 +108,6 @@ jobs:
                   -DENABLE_COVERAGE=on \
                   -B build
               echo "::set-output name=j::10"
-              echo "::set-output name=t::6"
               ;;
             esac
             ;;
@@ -111,14 +121,12 @@ jobs:
                 -DENABLE_TESTING=on \
                 -B build
             echo "::set-output name=j::6"
-            echo "::set-output name=t::10"
             ;;
           esac
       - name: Make
         run: |
           ccache -z
-          cmake --build build/ -j $(nproc) --target nebula-metad nebula-storaged nebula-graphd
-          cmake --build build/ -j ${{ steps.cmake.outputs.t }}
+          cmake --build build/ -j $(nproc)
           ccache -s
       - name: CTest
         env:
@@ -167,7 +175,11 @@ jobs:
         if: ${{ matrix.compiler == 'gcc-9.2' && matrix.os == 'ubuntu2004' }}
         run: |
             ~/.local/bin/fastcov -d build -l -o fastcov.info -p --exclude /usr/include --exclude=/opt/vesoft --exclude scanner.lex
-            bash <(curl -s https://codecov.io/bash) -Z -f fastcov.info
+      - uses: codecov/codecov-action@v2
+        if: ${{ matrix.compiler == 'gcc-9.2' && matrix.os == 'ubuntu2004' }}
+        with:
+          files: fastcov.info
+          fail_ci_if_error: false
       - name: Sanitizer
         if: ${{ always() }}
         run: |

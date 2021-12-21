@@ -1,21 +1,16 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/validator/AdminValidator.h"
 
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
-#include "common/base/Base.h"
 #include "common/charset/Charset.h"
 #include "graph/planner/plan/Admin.h"
 #include "graph/planner/plan/Query.h"
 #include "graph/service/GraphFlags.h"
-#include "graph/util/ExpressionUtils.h"
-#include "graph/util/SchemaUtil.h"
-#include "interface/gen-cpp2/meta_types.h"
 #include "parser/MaintainSentences.h"
 
 namespace nebula {
@@ -25,8 +20,8 @@ Status CreateSpaceValidator::validateImpl() {
   ifNotExist_ = sentence->isIfNotExist();
   auto status = Status::OK();
   spaceDesc_.set_space_name(std::move(*(sentence->spaceName())));
-  if (sentence->groupName()) {
-    spaceDesc_.set_group_name(std::move(*(sentence->groupName())));
+  if (sentence->zoneNames()) {
+    spaceDesc_.set_zone_names(sentence->zoneNames()->zoneNames());
   }
   StatusOr<std::string> retStatusOr;
   std::string result;
@@ -53,8 +48,8 @@ Status CreateSpaceValidator::validateImpl() {
       }
       case SpaceOptItem::VID_TYPE: {
         auto typeDef = item->getVidType();
-        if (typeDef.type != meta::cpp2::PropertyType::INT64 &&
-            typeDef.type != meta::cpp2::PropertyType::FIXED_STRING) {
+        if (typeDef.type != nebula::cpp2::PropertyType::INT64 &&
+            typeDef.type != nebula::cpp2::PropertyType::FIXED_STRING) {
           std::stringstream ss;
           ss << "Only support FIXED_STRING or INT64 vid type, but was given "
              << apache::thrift::util::enumNameSafe(typeDef.type);
@@ -62,7 +57,7 @@ Status CreateSpaceValidator::validateImpl() {
         }
         spaceDesc_.vid_type_ref().value().set_type(typeDef.type);
 
-        if (typeDef.type == meta::cpp2::PropertyType::INT64) {
+        if (typeDef.type == nebula::cpp2::PropertyType::INT64) {
           spaceDesc_.vid_type_ref().value().set_type_length(8);
         } else {
           if (!typeDef.type_length_ref().has_value()) {
@@ -106,10 +101,6 @@ Status CreateSpaceValidator::validateImpl() {
   // check comment
   if (sentence->comment() != nullptr) {
     spaceDesc_.set_comment(*sentence->comment());
-  }
-
-  if (sentence->groupName() != nullptr && *sentence->groupName() == "default") {
-    return Status::SemanticError("Group default conflict");
   }
 
   // if charset and collate are not specified, set default value
@@ -296,6 +287,46 @@ Status ShowListenerValidator::validateImpl() { return Status::OK(); }
 Status ShowListenerValidator::toPlan() {
   auto *doNode = ShowListener::make(qctx_, nullptr);
   root_ = doNode;
+  tail_ = root_;
+  return Status::OK();
+}
+
+Status AddHostsValidator::validateImpl() { return Status::OK(); }
+
+Status AddHostsValidator::toPlan() {
+  auto sentence = static_cast<AddHostsSentence *>(sentence_);
+  auto hosts = sentence->hosts()->hosts();
+  if (hosts.empty()) {
+    return Status::SemanticError("Host is empty");
+  }
+
+  auto it = std::unique(hosts.begin(), hosts.end());
+  if (it != hosts.end()) {
+    return Status::SemanticError("Host have duplicated");
+  }
+
+  auto *addHost = AddHosts::make(qctx_, nullptr, hosts);
+  root_ = addHost;
+  tail_ = root_;
+  return Status::OK();
+}
+
+Status DropHostsValidator::validateImpl() { return Status::OK(); }
+
+Status DropHostsValidator::toPlan() {
+  auto sentence = static_cast<DropHostsSentence *>(sentence_);
+  auto hosts = sentence->hosts()->hosts();
+  if (hosts.empty()) {
+    return Status::SemanticError("Host is empty");
+  }
+
+  auto it = std::unique(hosts.begin(), hosts.end());
+  if (it != hosts.end()) {
+    return Status::SemanticError("Host have duplicated");
+  }
+
+  auto *dropHost = DropHosts::make(qctx_, nullptr, hosts);
+  root_ = dropHost;
   tail_ = root_;
   return Status::OK();
 }

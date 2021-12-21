@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_ADMIN_ADMINTASKMANAGER_H_
@@ -12,6 +11,7 @@
 #include <folly/executors/task_queue/UnboundedBlockingQueue.h>
 #include <gtest/gtest_prod.h>
 
+#include "clients/meta/MetaClient.h"
 #include "common/base/Base.h"
 #include "interface/gen-cpp2/storage_types.h"
 #include "kvstore/NebulaStore.h"
@@ -38,6 +38,12 @@ class AdminTaskManager {
     return &sAdminTaskManager;
   }
 
+  ~AdminTaskManager() {
+    if (metaClient_ != nullptr) {
+      metaClient_ = nullptr;
+    }
+  }
+
   // Caller must make sure JobId + TaskId is unique
   void addAsyncTask(std::shared_ptr<AdminTask> task);
 
@@ -45,6 +51,10 @@ class AdminTaskManager {
 
   nebula::cpp2::ErrorCode cancelJob(JobID jobId);
   nebula::cpp2::ErrorCode cancelTask(JobID jobId, TaskID taskId = -1);
+
+  void cancelTasks(GraphSpaceID spaceId);
+  int32_t runningTaskCnt(GraphSpaceID spaceId);
+  void waitCancelTasks(GraphSpaceID spaceId);
 
   bool init();
 
@@ -67,6 +77,9 @@ class AdminTaskManager {
                      TaskID taskId,
                      nebula::cpp2::ErrorCode rc,
                      const nebula::meta::cpp2::StatsItem& result);
+
+ protected:
+  meta::MetaClient* metaClient_{nullptr};
 
  private:
   void schedule();

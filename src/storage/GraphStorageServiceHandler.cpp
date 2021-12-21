@@ -1,12 +1,14 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "storage/GraphStorageServiceHandler.h"
 
 #include "storage/index/LookupProcessor.h"
+#include "storage/kv/GetProcessor.h"
+#include "storage/kv/PutProcessor.h"
+#include "storage/kv/RemoveProcessor.h"
 #include "storage/mutate/AddEdgesProcessor.h"
 #include "storage/mutate/AddVerticesProcessor.h"
 #include "storage/mutate/DeleteEdgesProcessor.h"
@@ -58,6 +60,9 @@ GraphStorageServiceHandler::GraphStorageServiceHandler(StorageEnv* env) : env_(e
   kLookupCounters.init("lookup");
   kScanVertexCounters.init("scan_vertex");
   kScanEdgeCounters.init("scan_edge");
+  kPutCounters.init("kv_put");
+  kGetCounters.init("kv_get");
+  kRemoveCounters.init("kv_remove");
 }
 
 // Vertice section
@@ -130,13 +135,13 @@ folly::Future<cpp2::LookupIndexResp> GraphStorageServiceHandler::future_lookupIn
   RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::ScanVertexResponse> GraphStorageServiceHandler::future_scanVertex(
+folly::Future<cpp2::ScanResponse> GraphStorageServiceHandler::future_scanVertex(
     const cpp2::ScanVertexRequest& req) {
   auto* processor = ScanVertexProcessor::instance(env_, &kScanVertexCounters, readerPool_.get());
   RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::ScanEdgeResponse> GraphStorageServiceHandler::future_scanEdge(
+folly::Future<cpp2::ScanResponse> GraphStorageServiceHandler::future_scanEdge(
     const cpp2::ScanEdgeRequest& req) {
   auto* processor = ScanEdgeProcessor::instance(env_, &kScanEdgeCounters, readerPool_.get());
   RETURN_FUTURE(processor);
@@ -152,6 +157,24 @@ folly::Future<cpp2::GetUUIDResp> GraphStorageServiceHandler::future_getUUID(
 folly::Future<cpp2::ExecResponse> GraphStorageServiceHandler::future_chainAddEdges(
     const cpp2::AddEdgesRequest& req) {
   auto* processor = ChainAddEdgesGroupProcessor::instance(env_);
+  RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResponse> GraphStorageServiceHandler::future_put(
+    const cpp2::KVPutRequest& req) {
+  auto* processor = PutProcessor::instance(env_);
+  RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::KVGetResponse> GraphStorageServiceHandler::future_get(
+    const cpp2::KVGetRequest& req) {
+  auto* processor = GetProcessor::instance(env_);
+  RETURN_FUTURE(processor);
+}
+
+folly::Future<cpp2::ExecResponse> GraphStorageServiceHandler::future_remove(
+    const cpp2::KVRemoveRequest& req) {
+  auto* processor = RemoveProcessor::instance(env_);
   RETURN_FUTURE(processor);
 }
 

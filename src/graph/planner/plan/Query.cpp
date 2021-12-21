@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/planner/plan/Query.h"
@@ -11,6 +10,7 @@
 #include <folly/json.h>
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
+#include "graph/util/ExpressionUtils.h"
 #include "graph/util/ToJson.h"
 
 using folly::stringPrintf;
@@ -18,6 +18,11 @@ using folly::stringPrintf;
 namespace nebula {
 namespace graph {
 
+int64_t Explore::limit() const {
+  QueryExpressionContext ctx;
+  DCHECK(ExpressionUtils::isEvaluableExpr(limit_));
+  return DCHECK_NOTNULL(limit_)->eval(ctx).getInt();
+}
 std::unique_ptr<PlanNodeDescription> Explore::explain() const {
   auto desc = SingleInputNode::explain();
   addDescription("space", folly::to<std::string>(space_), desc.get());
@@ -189,6 +194,64 @@ void IndexScan::cloneMembers(const IndexScan& g) {
   isEmptyResultSet_ = g.isEmptyResultSet();
 }
 
+std::unique_ptr<PlanNodeDescription> ScanVertices::explain() const {
+  auto desc = Explore::explain();
+  addDescription("props", props_ ? folly::toJson(util::toJson(*props_)) : "", desc.get());
+  addDescription("exprs", exprs_ ? folly::toJson(util::toJson(*exprs_)) : "", desc.get());
+  return desc;
+}
+
+PlanNode* ScanVertices::clone() const {
+  auto* newGV = ScanVertices::make(qctx_, nullptr, space_);
+  newGV->cloneMembers(*this);
+  return newGV;
+}
+
+void ScanVertices::cloneMembers(const ScanVertices& gv) {
+  Explore::cloneMembers(gv);
+
+  if (gv.props_) {
+    auto vertexProps = *gv.props_;
+    auto vertexPropsPtr = std::make_unique<decltype(vertexProps)>(std::move(vertexProps));
+    setVertexProps(std::move(vertexPropsPtr));
+  }
+
+  if (gv.exprs_) {
+    auto exprs = *gv.exprs_;
+    auto exprsPtr = std::make_unique<decltype(exprs)>(std::move(exprs));
+    setExprs(std::move(exprsPtr));
+  }
+}
+
+std::unique_ptr<PlanNodeDescription> ScanEdges::explain() const {
+  auto desc = Explore::explain();
+  addDescription("props", props_ ? folly::toJson(util::toJson(*props_)) : "", desc.get());
+  addDescription("exprs", exprs_ ? folly::toJson(util::toJson(*exprs_)) : "", desc.get());
+  return desc;
+}
+
+PlanNode* ScanEdges::clone() const {
+  auto* newGE = ScanEdges::make(qctx_, nullptr, space_);
+  newGE->cloneMembers(*this);
+  return newGE;
+}
+
+void ScanEdges::cloneMembers(const ScanEdges& ge) {
+  Explore::cloneMembers(ge);
+
+  if (ge.props_) {
+    auto edgeProps = *ge.props_;
+    auto edgePropsPtr = std::make_unique<decltype(edgeProps)>(std::move(edgeProps));
+    setEdgeProps(std::move(edgePropsPtr));
+  }
+
+  if (ge.exprs_) {
+    auto exprs = *ge.exprs_;
+    auto exprsPtr = std::make_unique<decltype(exprs)>(std::move(exprs));
+    setExprs(std::move(exprsPtr));
+  }
+}
+
 Filter::Filter(QueryContext* qctx, PlanNode* input, Expression* condition, bool needStableFilter)
     : SingleInputNode(qctx, Kind::kFilter, input) {
   condition_ = condition;
@@ -319,6 +382,17 @@ void Sort::cloneMembers(const Sort& p) {
   factors_ = std::move(factors);
 }
 
+// Get constant count value
+int64_t Limit::count() const {
+  if (count_ == nullptr) {
+    return -1;
+  }
+  DCHECK(ExpressionUtils::isEvaluableExpr(count_));
+  QueryExpressionContext ctx;
+  auto s = count_->eval(ctx).getInt();
+  DCHECK_GE(s, 0);
+  return s;
+}
 std::unique_ptr<PlanNodeDescription> Limit::explain() const {
   auto desc = SingleInputNode::explain();
   addDescription("offset", folly::to<std::string>(offset_), desc.get());
@@ -363,6 +437,15 @@ void TopN::cloneMembers(const TopN& l) {
   factors_ = std::move(factors);
   offset_ = l.offset_;
   count_ = l.count_;
+}
+
+// Get constant count
+int64_t Sample::count() const {
+  DCHECK(ExpressionUtils::isEvaluableExpr(count_));
+  QueryExpressionContext qec;
+  auto count = count_->eval(qec).getInt();
+  DCHECK_GE(count, 0);
+  return count;
 }
 
 std::unique_ptr<PlanNodeDescription> Sample::explain() const {
@@ -602,5 +685,56 @@ void UnionAllVersionVar::cloneMembers(const UnionAllVersionVar& f) {
   SingleInputNode::cloneMembers(f);
 }
 
+Traverse* Traverse::clone() const {
+  auto newGN = Traverse::make(qctx_, nullptr, space_);
+  newGN->cloneMembers(*this);
+  return newGN;
+}
+
+void Traverse::cloneMembers(const Traverse& g) {
+  GetNeighbors::cloneMembers(g);
+
+  setStepRange(g.range_);
+  setVertexFilter(g.vFilter_->clone());
+  setEdgeFilter(g.eFilter_->clone());
+}
+
+std::unique_ptr<PlanNodeDescription> Traverse::explain() const {
+  auto desc = GetNeighbors::explain();
+  if (range_ != nullptr) {
+    addDescription("steps", range_->toString(), desc.get());
+  }
+  if (vFilter_ != nullptr) {
+    addDescription("vertex filter", vFilter_->toString(), desc.get());
+  }
+  if (eFilter_ != nullptr) {
+    addDescription("edge filter", eFilter_->toString(), desc.get());
+  }
+  return desc;
+}
+
+AppendVertices* AppendVertices::clone() const {
+  auto newAV = AppendVertices::make(qctx_, nullptr, space_);
+  newAV->cloneMembers(*this);
+  return newAV;
+}
+
+void AppendVertices::cloneMembers(const AppendVertices& a) {
+  GetVertices::cloneMembers(a);
+
+  if (a.vFilter_ != nullptr) {
+    setVertexFilter(a.vFilter_->clone());
+  } else {
+    setVertexFilter(nullptr);
+  }
+}
+
+std::unique_ptr<PlanNodeDescription> AppendVertices::explain() const {
+  auto desc = GetVertices::explain();
+  if (vFilter_ != nullptr) {
+    addDescription("vertex filter", vFilter_->toString(), desc.get());
+  }
+  return desc;
+}
 }  // namespace graph
 }  // namespace nebula

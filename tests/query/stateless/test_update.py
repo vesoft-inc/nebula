@@ -2,8 +2,7 @@
 #
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 import time
 
@@ -129,7 +128,7 @@ class TestUpdate(NebulaTestSuite):
         self.check_resp_succeeded(resp)
         self.check_out_of_order_result(resp.rows, expect_result)
 
-        # success: oder update, use default value from start
+        # success: order update, use default value from start
         cmd = 'UPSERT VERTEX 202 SET person.name = "bb", person.age = $^.person.start + 8, ' \
               'person.start = 10;'
         resp = self.execute(cmd)
@@ -143,7 +142,7 @@ class TestUpdate(NebulaTestSuite):
         self.check_resp_succeeded(resp)
         self.check_out_of_order_result(resp.rows, expect_result)
 
-        # success: oder update, use the update value from start
+        # success: order update, use the update value from start
         cmd = 'UPSERT VERTEX 202 SET person.name = "bb", person.start = 10, ' \
               'person.age = $^.person.start + 8;'
         resp = self.execute(cmd)
@@ -250,7 +249,7 @@ class TestUpdate(NebulaTestSuite):
         self.check_resp_succeeded(resp)
         self.check_out_of_order_result(resp.rows, expect_result)
 
-        # success: oder update, use default value from start
+        # success: order update, use default value from start
         cmd = 'UPSERT EDGE 204->205 OF study SET name = "bb", start = study.end - 1000, ' \
               'end = 60000;'
         resp = self.execute(cmd)
@@ -264,7 +263,7 @@ class TestUpdate(NebulaTestSuite):
         self.check_resp_succeeded(resp)
         self.check_out_of_order_result(resp.rows, expect_result)
 
-        # success: oder update, use the update value from start
+        # success: order update, use the update value from start
         cmd = 'UPSERT EDGE 206->207 OF study SET end = 60000, start = study.end - 1000'
         resp = self.execute(cmd)
         self.check_resp_succeeded(resp)

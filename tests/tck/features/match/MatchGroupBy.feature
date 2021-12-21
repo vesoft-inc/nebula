@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Match GroupBy
 
   Background:
@@ -98,13 +97,13 @@ Feature: Match GroupBy
               SKIP 10 LIMIT 6;
       """
     Then the result should be, in order, with relax comparison:
-      | id                | count | sum  | max | min | age  | lb                     |
-      | "Ray Allen"       | 1     | 43.0 | 43  | 43  | 44.0 | ["player"]             |
-      | "Shaquile O'Neal" | 1     | 47.0 | 47  | 47  | 48.0 | ["player"]             |
-      | "Steve Nash"      | 1     | 45.0 | 45  | 45  | 46.0 | ["player"]             |
-      | "Tim Duncan"      | 1     | 42.0 | 42  | 42  | 43.0 | ["bachelor", "player"] |
-      | "Tony Parker"     | 1     | 36.0 | 36  | 36  | 37.0 | ["player"]             |
-      | "Tracy McGrady"   | 1     | 39.0 | 39  | 39  | 40.0 | ["player"]             |
+      | id                 | count | sum  | max | min | age  | lb                     |
+      | "Ray Allen"        | 1     | 43.0 | 43  | 43  | 44.0 | ["player"]             |
+      | "Shaquille O'Neal" | 1     | 47.0 | 47  | 47  | 48.0 | ["player"]             |
+      | "Steve Nash"       | 1     | 45.0 | 45  | 45  | 46.0 | ["player"]             |
+      | "Tim Duncan"       | 1     | 42.0 | 42  | 42  | 43.0 | ["bachelor", "player"] |
+      | "Tony Parker"      | 1     | 36.0 | 36  | 36  | 37.0 | ["player"]             |
+      | "Tracy McGrady"    | 1     | 39.0 | 39  | 39  | 40.0 | ["player"]             |
 
   Scenario: [5] Match GroupBy
     When executing query:
@@ -122,23 +121,23 @@ Feature: Match GroupBy
               SKIP 10 LIMIT 20;
       """
     Then the result should be, in order, with relax comparison:
-      | id                | count | sum   | max | min | age  | lb                     |
-      | "Shaquile O'Neal" | 1     | 47.0  | 31  | 47  | 48.0 | ["player"]             |
-      | "Shaquile O'Neal" | 1     | 47.0  | 42  | 47  | 48.0 | ["bachelor", "player"] |
-      | "Steve Nash"      | 4     | 180.0 | 45  | 45  | 46.0 | ["player"]             |
-      | "Tim Duncan"      | 2     | 84.0  | 41  | 42  | 43.0 | ["player"]             |
-      | "Tony Parker"     | 1     | 36.0  | 42  | 36  | 37.0 | ["bachelor", "player"] |
-      | "Tony Parker"     | 2     | 72.0  | 41  | 36  | 37.0 | ["player"]             |
-      | "Tracy McGrady"   | 3     | 117.0 | 46  | 39  | 40.0 | ["player"]             |
-      | "Vince Carter"    | 2     | 84.0  | 45  | 42  | 43.0 | ["player"]             |
-      | "Yao Ming"        | 2     | 76.0  | 47  | 38  | 39.0 | ["player"]             |
+      | id                 | count | sum   | max | min | age  | lb                     |
+      | "Shaquille O'Neal" | 1     | 47.0  | 31  | 47  | 48.0 | ["player"]             |
+      | "Shaquille O'Neal" | 1     | 47.0  | 42  | 47  | 48.0 | ["bachelor", "player"] |
+      | "Steve Nash"       | 4     | 180.0 | 45  | 45  | 46.0 | ["player"]             |
+      | "Tim Duncan"       | 2     | 84.0  | 41  | 42  | 43.0 | ["player"]             |
+      | "Tony Parker"      | 1     | 36.0  | 42  | 36  | 37.0 | ["bachelor", "player"] |
+      | "Tony Parker"      | 2     | 72.0  | 41  | 36  | 37.0 | ["player"]             |
+      | "Tracy McGrady"    | 3     | 117.0 | 46  | 39  | 40.0 | ["player"]             |
+      | "Vince Carter"     | 2     | 84.0  | 45  | 42  | 43.0 | ["player"]             |
+      | "Yao Ming"         | 2     | 76.0  | 47  | 38  | 39.0 | ["player"]             |
 
   Scenario: [6] Match GroupBy
     When executing query:
       """
       MATCH(n:player)-[:like*2]->(m)-[:serve]->()
         WHERE n.age > 35
-        RETURN DISTINCT id(n) AS id,
+        WITH DISTINCT id(n) AS id,
                         count(n) AS count,
                         sum(floor(n.age)) AS sum,
                         max(m.age) AS max,
@@ -146,7 +145,7 @@ Feature: Match GroupBy
                         avg(distinct n.age)+1 AS age,
                         labels(m) AS lb
               ORDER BY id, count, max, min
-        | YIELD count(*) AS count;
+        RETURN count(*) AS count;
       """
     Then the result should be, in order, with relax comparison:
       | count |
@@ -157,7 +156,7 @@ Feature: Match GroupBy
       """
       MATCH(n:player)-[:like*2]->(m)-[:serve]->()
         WHERE n.age > 35
-        RETURN DISTINCT id(n) AS id,
+        WITH DISTINCT id(n) AS id,
                         count(n) AS count,
                         sum(floor(n.age)) AS sum,
                         max(m.age) AS max,
@@ -165,7 +164,7 @@ Feature: Match GroupBy
                         avg(distinct n.age)+1 AS age,
                         labels(m) AS lb
               ORDER BY id, count, max, min
-        | YIELD DISTINCT $-.min AS min, (INT)count(*) AS count;
+        RETURN DISTINCT min, (INT)count(*) AS count;
       """
     Then the result should be, in any order, with relax comparison:
       | min | count |

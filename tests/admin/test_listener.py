@@ -2,8 +2,7 @@
 #
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 import time
 
@@ -23,7 +22,7 @@ class TestListener(NebulaTestSuite):
         resp = self.client.execute('ADD LISTENER ELASTICSEARCH {}:{}'.format(storage_ip, storage_port))
         self.check_resp_failed(resp)
 
-        # Add non-existen host
+        # Add nonexistent host
         resp = self.client.execute('ADD LISTENER ELASTICSEARCH 127.0.0.1:8899')
         self.check_resp_succeeded(resp)
 

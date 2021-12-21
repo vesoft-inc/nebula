@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_BASEPROCESSOR_H_
@@ -68,7 +67,7 @@ class BaseProcessor {
     if (!vIdType.ok()) {
       return nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND;
     }
-    isIntId_ = (vIdType.value() == meta::cpp2::PropertyType::INT64);
+    isIntId_ = (vIdType.value() == nebula::cpp2::PropertyType::INT64);
 
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
@@ -88,7 +87,7 @@ class BaseProcessor {
 
   nebula::cpp2::ErrorCode writeResultTo(WriteResult code, bool isEdge);
 
-  nebula::meta::cpp2::ColumnDef columnDef(std::string name, nebula::meta::cpp2::PropertyType type);
+  nebula::meta::cpp2::ColumnDef columnDef(std::string name, nebula::cpp2::PropertyType type);
 
   void pushResultCode(nebula::cpp2::ErrorCode code,
                       PartitionID partId,

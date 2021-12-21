@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef KVSTORE_PLUGINS_HBASE_HBASESTORE_H_
@@ -158,11 +157,11 @@ class HBaseStore : public KVStore {
                          KVCallback cb);
 
   void asyncAtomicOp(GraphSpaceID, PartitionID, raftex::AtomicOp, KVCallback) override {
-    LOG(FATAL) << "Not supportted yet!";
+    LOG(FATAL) << "Not supported yet!";
   }
 
   void asyncAtomicOp(GraphSpaceID, PartitionID, std::string&& multiValues, KVCallback) override {
-    LOG(FATAL) << "Not supportted yet!";
+    LOG(FATAL) << "Not supported yet!";
   }
 
   ResultCode ingest(GraphSpaceID spaceId) override;

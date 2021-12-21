@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Start From Any Node
 
   Background:
@@ -182,8 +181,7 @@ Feature: Start From Any Node
     When executing query:
       """
       MATCH p = (n)-[]-(m:player{name:"Kyle Anderson"})-[]-(l)-[]-(k)
-      RETURN p
-      | YIELD count(*) AS count
+      RETURN count(p) AS count
       """
     Then the result should be, in any order, with relax comparison:
       | count |
@@ -224,8 +222,7 @@ Feature: Start From Any Node
     When executing query:
       """
       MATCH p = (k)-[]-(n)-[]-(m:player{name:"Kobe Bryant"})-[]-(l)
-      RETURN p
-      | YIELD count(*) AS count
+      RETURN count(p) AS count
       """
     Then the result should be, in any order, with relax comparison:
       | count |
@@ -307,8 +304,7 @@ Feature: Start From Any Node
     When executing query:
       """
       MATCH p = ()-[]-(n)-[]-(m:player{name:"Kobe Bryant"})-[]-(l)-[]-(k)
-      RETURN p
-      | YIELD count(*) AS count
+      RETURN count(p) AS count
       """
     Then the result should be, in any order, with relax comparison:
       | count |
@@ -482,8 +478,7 @@ Feature: Start From Any Node
     When executing query:
       """
       MATCH (n)-[]-(m:player{name:"Kyle Anderson"})-[*1..2]-(l)
-      RETURN n,m,l
-      | YIELD count(*) AS count
+      RETURN count(*) AS count
       """
     Then the result should be, in any order, with relax comparison:
       | count |
@@ -493,8 +488,8 @@ Feature: Start From Any Node
     When executing query:
       """
       MATCH (n)-[*1..2]-(m:player{name:"Kyle Anderson"})-[*1..2]-(l)
-      RETURN n,m,l
-      | YIELD count(*) AS count
+      WITH n as a, m as b, l as c
+      RETURN count(*) AS count
       """
     Then the result should be, in any order, with relax comparison:
       | count |
@@ -502,8 +497,7 @@ Feature: Start From Any Node
     When executing query:
       """
       MATCH p = (n)-[*1..2]-(m:player{name:"Kyle Anderson"})-[]-(l)-[]-(k)
-      RETURN p
-      | YIELD count(*) AS count
+      RETURN count(p) AS count
       """
     Then the result should be, in any order, with relax comparison:
       | count |

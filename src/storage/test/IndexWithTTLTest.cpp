@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -67,9 +66,9 @@ void createSchema(meta::SchemaManager* schemaMan,
                   bool isEdge = false) {
   auto* sm = reinterpret_cast<mock::AdHocSchemaManager*>(schemaMan);
   std::shared_ptr<meta::NebulaSchemaProvider> schema(new meta::NebulaSchemaProvider(0));
-  schema->addField("c1", meta::cpp2::PropertyType::INT64, 0, false);
+  schema->addField("c1", nebula::cpp2::PropertyType::INT64, 0, false);
   schema->addField(
-      "c2", meta::cpp2::PropertyType::INT64, 0, false, ConstantExpression::make(pool, 0L));
+      "c2", nebula::cpp2::PropertyType::INT64, 0, false, ConstantExpression::make(pool, 0L));
   meta::cpp2::SchemaProp prop;
   prop.set_ttl_col("c2");
   prop.set_ttl_duration(duration);
@@ -90,7 +89,7 @@ void createIndex(meta::IndexManager* indexMan,
   std::vector<nebula::meta::cpp2::ColumnDef> cols;
   meta::cpp2::ColumnDef col;
   col.name = "c1";
-  col.type.set_type(meta::cpp2::PropertyType::INT64);
+  col.type.set_type(nebula::cpp2::PropertyType::INT64);
   cols.emplace_back(std::move(col));
   if (isEdge) {
     im->addEdgeIndex(1, schemaId, indexId, std::move(cols));
@@ -165,7 +164,7 @@ TEST(IndexWithTTLTest, AddVerticesIndexWithTTL) {
 
   LOG(INFO) << "Check insert data...";
   for (auto partId = 1; partId <= 6; partId++) {
-    auto prefix = NebulaKeyUtils::vertexPrefix(partId);
+    auto prefix = NebulaKeyUtils::tagPrefix(partId);
     auto retNum = verifyResultNum(1, partId, prefix, env->kvstore_);
     EXPECT_EQ(1, retNum);
   }
@@ -185,7 +184,7 @@ TEST(IndexWithTTLTest, AddVerticesIndexWithTTL) {
 
   LOG(INFO) << "Check data after compaction ...";
   for (auto partId = 1; partId <= 6; partId++) {
-    auto prefix = NebulaKeyUtils::vertexPrefix(partId);
+    auto prefix = NebulaKeyUtils::tagPrefix(partId);
     auto retNum = verifyResultNum(1, partId, prefix, env->kvstore_);
     EXPECT_EQ(0, retNum);
   }
@@ -259,7 +258,7 @@ TEST(IndexWithTTLTest, UpdateVerticesIndexWithTTL) {
 
   LOG(INFO) << "Check insert data...";
   for (auto partId = 1; partId <= 6; partId++) {
-    auto prefix = NebulaKeyUtils::vertexPrefix(partId);
+    auto prefix = NebulaKeyUtils::tagPrefix(partId);
     auto retNum = verifyResultNum(1, partId, prefix, env->kvstore_);
     EXPECT_EQ(1, retNum);
   }
@@ -303,7 +302,7 @@ TEST(IndexWithTTLTest, UpdateVerticesIndexWithTTL) {
 
   LOG(INFO) << "Check data after update ...";
   for (auto partId = 1; partId <= 6; partId++) {
-    auto prefix = NebulaKeyUtils::vertexPrefix(partId);
+    auto prefix = NebulaKeyUtils::tagPrefix(partId);
     auto retNum = verifyResultNum(1, partId, prefix, env->kvstore_);
     EXPECT_EQ(1, retNum);
   }
@@ -406,7 +405,7 @@ TEST(IndexWithTTLTest, RebuildTagIndexWithTTL) {
 
   LOG(INFO) << "Check insert data...";
   for (auto partId = 1; partId <= 6; partId++) {
-    auto prefix = NebulaKeyUtils::vertexPrefix(partId);
+    auto prefix = NebulaKeyUtils::tagPrefix(partId);
     auto retNum = verifyResultNum(1, partId, prefix, env->kvstore_);
     EXPECT_EQ(1, retNum);
   }
@@ -426,7 +425,7 @@ TEST(IndexWithTTLTest, RebuildTagIndexWithTTL) {
   parameter.set_space_id(1);
   std::vector<PartitionID> parts = {1, 2, 3, 4, 5, 6};
   parameter.set_parts(parts);
-  parameter.set_task_specfic_paras({"2021002"});
+  parameter.set_task_specific_paras({"2021002"});
 
   cpp2::AddAdminTaskRequest request;
   request.set_cmd(meta::cpp2::AdminCmd::REBUILD_TAG_INDEX);
@@ -449,7 +448,7 @@ TEST(IndexWithTTLTest, RebuildTagIndexWithTTL) {
 
   LOG(INFO) << "Check data after rebuild ...";
   for (auto partId = 1; partId <= 6; partId++) {
-    auto prefix = NebulaKeyUtils::vertexPrefix(partId);
+    auto prefix = NebulaKeyUtils::tagPrefix(partId);
     auto retNum = verifyResultNum(1, partId, prefix, env->kvstore_);
     EXPECT_EQ(1, retNum);
   }
@@ -495,7 +494,7 @@ TEST(IndexWithTTLTest, RebuildEdgeIndexWithTTL) {
   parameter.set_space_id(1);
   std::vector<PartitionID> parts = {1, 2, 3, 4, 5, 6};
   parameter.set_parts(parts);
-  parameter.set_task_specfic_paras({"2021002"});
+  parameter.set_task_specific_paras({"2021002"});
 
   cpp2::AddAdminTaskRequest request;
   request.set_cmd(meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX);
@@ -544,7 +543,7 @@ TEST(IndexWithTTLTest, RebuildTagIndexWithTTLExpired) {
 
   LOG(INFO) << "Check insert data...";
   for (auto partId = 1; partId <= 6; partId++) {
-    auto prefix = NebulaKeyUtils::vertexPrefix(partId);
+    auto prefix = NebulaKeyUtils::tagPrefix(partId);
     auto retNum = verifyResultNum(1, partId, prefix, env->kvstore_);
     EXPECT_EQ(1, retNum);
   }
@@ -566,7 +565,7 @@ TEST(IndexWithTTLTest, RebuildTagIndexWithTTLExpired) {
   parameter.set_space_id(1);
   std::vector<PartitionID> parts = {1, 2, 3, 4, 5, 6};
   parameter.set_parts(parts);
-  parameter.set_task_specfic_paras({"2021002"});
+  parameter.set_task_specific_paras({"2021002"});
 
   cpp2::AddAdminTaskRequest request;
   request.set_cmd(meta::cpp2::AdminCmd::REBUILD_TAG_INDEX);
@@ -589,7 +588,7 @@ TEST(IndexWithTTLTest, RebuildTagIndexWithTTLExpired) {
 
   LOG(INFO) << "Check data after rebuild ...";
   for (auto partId = 1; partId <= 6; partId++) {
-    auto prefix = NebulaKeyUtils::vertexPrefix(partId);
+    auto prefix = NebulaKeyUtils::tagPrefix(partId);
     auto retNum = verifyResultNum(1, partId, prefix, env->kvstore_);
     EXPECT_EQ(1, retNum);
   }
@@ -637,7 +636,7 @@ TEST(IndexWithTTLTest, RebuildEdgeIndexWithTTLExpired) {
   parameter.set_space_id(1);
   std::vector<PartitionID> parts = {1, 2, 3, 4, 5, 6};
   parameter.set_parts(parts);
-  parameter.set_task_specfic_paras({"2021002"});
+  parameter.set_task_specific_paras({"2021002"});
 
   cpp2::AddAdminTaskRequest request;
   request.set_cmd(meta::cpp2::AdminCmd::REBUILD_EDGE_INDEX);

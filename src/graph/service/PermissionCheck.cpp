@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/service/PermissionCheck.h"
@@ -56,19 +55,15 @@ Status PermissionCheck::permissionCheck(ClientSession *session,
     case Sentence::Kind::kDropSpace:
     case Sentence::Kind::kCreateSnapshot:
     case Sentence::Kind::kDropSnapshot:
-    case Sentence::Kind::kAddGroup:
-    case Sentence::Kind::kDropGroup:
-    case Sentence::Kind::kDescribeGroup:
-    case Sentence::Kind::kListGroups:
-    case Sentence::Kind::kAddZoneIntoGroup:
-    case Sentence::Kind::kDropZoneFromGroup:
-    case Sentence::Kind::kAddZone:
+    case Sentence::Kind::kAddHosts:
+    case Sentence::Kind::kDropHosts:
+    case Sentence::Kind::kMergeZone:
+    case Sentence::Kind::kRenameZone:
     case Sentence::Kind::kDropZone:
+    case Sentence::Kind::kSplitZone:
     case Sentence::Kind::kDescribeZone:
     case Sentence::Kind::kListZones:
-    case Sentence::Kind::kAddHostIntoZone:
-    case Sentence::Kind::kDropHostFromZone:
-    case Sentence::Kind::kBalance:
+    case Sentence::Kind::kAddHostsIntoZone:
     case Sentence::Kind::kShowConfigs:
     case Sentence::Kind::kSetConfig:
     case Sentence::Kind::kGetConfig:
@@ -185,6 +180,7 @@ Status PermissionCheck::permissionCheck(ClientSession *session,
     case Sentence::Kind::kShowRoles: {
       return PermissionManager::canReadSpace(session, targetSpace);
     }
+    case Sentence::Kind::kDescribeUser:
     case Sentence::Kind::kShowUsers:
     case Sentence::Kind::kShowSnapshots:
     case Sentence::Kind::kShowTSClients:

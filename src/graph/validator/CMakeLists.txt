@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 nebula_add_library(
     validator_obj OBJECT
@@ -14,7 +13,6 @@ nebula_add_library(
     UseValidator.cpp
     GetSubgraphValidator.cpp
     AdminValidator.cpp
-    BalanceValidator.cpp
     AdminJobValidator.cpp
     MaintainValidator.cpp
     MutateValidator.cpp

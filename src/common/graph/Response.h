@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_GRAPH_RESPONSE_H
@@ -36,7 +35,7 @@
   X(E_TAG_PROP_NOT_FOUND, -10)                                                \
   X(E_ROLE_NOT_FOUND, -11)                                                    \
   X(E_CONFIG_NOT_FOUND, -12)                                                  \
-  X(E_GROUP_NOT_FOUND, -13)                                                   \
+  X(E_MACHINE_NOT_FOUND, -13)                                                 \
   X(E_ZONE_NOT_FOUND, -14)                                                    \
   X(E_LISTENER_NOT_FOUND, -15)                                                \
   X(E_PART_NOT_FOUND, -16)                                                    \
@@ -83,7 +82,7 @@
   X(E_BALANCED, -2024)                                                        \
   X(E_NO_RUNNING_BALANCE_PLAN, -2025)                                         \
   X(E_NO_VALID_HOST, -2026)                                                   \
-  X(E_CORRUPTTED_BALANCE_PLAN, -2027)                                         \
+  X(E_CORRUPTED_BALANCE_PLAN, -2027)                                          \
   X(E_NO_INVALID_BALANCE_PLAN, -2028)                                         \
                                                                               \
   /* Authentication Failure */                                                \
@@ -469,7 +468,7 @@ struct ExecutionResponse {
   }
 
   ErrorCode errorCode{ErrorCode::SUCCEEDED};
-  int32_t latencyInUs{0};
+  int64_t latencyInUs{0};
   std::unique_ptr<nebula::DataSet> data{nullptr};
   std::unique_ptr<std::string> spaceName{nullptr};
   std::unique_ptr<std::string> errorMsg{nullptr};

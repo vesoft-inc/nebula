@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "ExtractFilterExprVisitor.h"
@@ -21,9 +20,31 @@ void ExtractFilterExprVisitor::visit(VariableExpression *expr) {
 
 void ExtractFilterExprVisitor::visit(VersionedVariableExpression *) { canBePushed_ = false; }
 
-void ExtractFilterExprVisitor::visit(TagPropertyExpression *) { canBePushed_ = false; }
+void ExtractFilterExprVisitor::visit(TagPropertyExpression *) {
+  switch (pushType_) {
+    case PushType::kGetNeighbors:
+      canBePushed_ = false;
+      break;
+    case PushType::kGetVertices:
+      canBePushed_ = true;
+      break;
+    case PushType::kGetEdges:
+      canBePushed_ = false;
+      break;
+  }
+}
 
-void ExtractFilterExprVisitor::visit(EdgePropertyExpression *) { canBePushed_ = true; }
+void ExtractFilterExprVisitor::visit(EdgePropertyExpression *) {
+  switch (pushType_) {
+    case PushType::kGetNeighbors:
+    case PushType::kGetEdges:
+      canBePushed_ = true;
+      break;
+    case PushType::kGetVertices:
+      canBePushed_ = false;
+      break;
+  }
+}
 
 void ExtractFilterExprVisitor::visit(InputPropertyExpression *) { canBePushed_ = false; }
 
@@ -31,15 +52,65 @@ void ExtractFilterExprVisitor::visit(VariablePropertyExpression *) { canBePushed
 
 void ExtractFilterExprVisitor::visit(DestPropertyExpression *) { canBePushed_ = false; }
 
-void ExtractFilterExprVisitor::visit(SourcePropertyExpression *) { canBePushed_ = true; }
+void ExtractFilterExprVisitor::visit(SourcePropertyExpression *) {
+  switch (pushType_) {
+    case PushType::kGetNeighbors:
+      canBePushed_ = true;
+      break;
+    case PushType::kGetVertices:
+    case PushType::kGetEdges:
+      canBePushed_ = false;
+      break;
+  }
+}
 
-void ExtractFilterExprVisitor::visit(EdgeSrcIdExpression *) { canBePushed_ = true; }
+void ExtractFilterExprVisitor::visit(EdgeSrcIdExpression *) {
+  switch (pushType_) {
+    case PushType::kGetNeighbors:
+    case PushType::kGetEdges:
+      canBePushed_ = true;
+      break;
+    case PushType::kGetVertices:
+      canBePushed_ = false;
+      break;
+  }
+}
 
-void ExtractFilterExprVisitor::visit(EdgeTypeExpression *) { canBePushed_ = true; }
+void ExtractFilterExprVisitor::visit(EdgeTypeExpression *) {
+  switch (pushType_) {
+    case PushType::kGetNeighbors:
+    case PushType::kGetEdges:
+      canBePushed_ = true;
+      break;
+    case PushType::kGetVertices:
+      canBePushed_ = false;
+      break;
+  }
+}
 
-void ExtractFilterExprVisitor::visit(EdgeRankExpression *) { canBePushed_ = true; }
+void ExtractFilterExprVisitor::visit(EdgeRankExpression *) {
+  switch (pushType_) {
+    case PushType::kGetNeighbors:
+    case PushType::kGetEdges:
+      canBePushed_ = true;
+      break;
+    case PushType::kGetVertices:
+      canBePushed_ = false;
+      break;
+  }
+}
 
-void ExtractFilterExprVisitor::visit(EdgeDstIdExpression *) { canBePushed_ = true; }
+void ExtractFilterExprVisitor::visit(EdgeDstIdExpression *) {
+  switch (pushType_) {
+    case PushType::kGetNeighbors:
+    case PushType::kGetEdges:
+      canBePushed_ = true;
+      break;
+    case PushType::kGetVertices:
+      canBePushed_ = false;
+      break;
+  }
+}
 
 void ExtractFilterExprVisitor::visit(VertexExpression *) { canBePushed_ = false; }
 

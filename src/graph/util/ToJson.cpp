@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/util/ToJson.h"
@@ -243,6 +242,10 @@ folly::dynamic toJson(const storage::cpp2::IndexColumnHint &hints) {
   obj.insert("beginValue", rtrim(begin));
   auto end = toJson(hints.get_end_value());
   obj.insert("endValue", rtrim(end));
+  auto includeBegin = toJson(hints.get_include_begin());
+  obj.insert("includeBegin", includeBegin);
+  auto includeEnd = toJson(hints.get_include_end());
+  obj.insert("includeEnd", includeEnd);
   return obj;
 }
 

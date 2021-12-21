@@ -1,8 +1,7 @@
 
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -106,7 +105,7 @@ TEST_F(RewriteUnaryNotExprVisitorTest, TestMultipleUnaryNotContainerExpr) {
 
 TEST_F(RewriteUnaryNotExprVisitorTest, TestRelExpr) {
   // (5 == 10)  =>  (5 == 10)
-  // no change should be made to the orginal expression
+  // no change should be made to the original expression
   {
     auto original = eqExpr(constantExpr(5), constantExpr(10));
     auto res = ExpressionUtils::reduceUnaryNotExpr(original);

@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 #
 
 set(OPTIMIZER_TEST_LIB
@@ -29,6 +28,7 @@ set(OPTIMIZER_TEST_LIB
     $<TARGET_OBJECTS:http_client_obj>
     $<TARGET_OBJECTS:process_obj>
     $<TARGET_OBJECTS:time_utils_obj>
+    $<TARGET_OBJECTS:datetime_parser_obj>
     $<TARGET_OBJECTS:graph_obj>
     $<TARGET_OBJECTS:ft_es_graph_adapter_obj>
     $<TARGET_OBJECTS:ws_common_obj>
@@ -40,26 +40,14 @@ set(OPTIMIZER_TEST_LIB
     $<TARGET_OBJECTS:graph_flags_obj>
     $<TARGET_OBJECTS:util_obj>
     $<TARGET_OBJECTS:planner_obj>
+    $<TARGET_OBJECTS:plan_obj>
     $<TARGET_OBJECTS:parser_obj>
     $<TARGET_OBJECTS:graph_context_obj>
     $<TARGET_OBJECTS:validator_obj>
     $<TARGET_OBJECTS:optimizer_obj>
     $<TARGET_OBJECTS:ssl_obj>
     $<TARGET_OBJECTS:memory_obj>
-)
-
-nebula_add_test(
-    NAME
-        index_bound_value_test
-    SOURCES
-        IndexBoundValueTest.cpp
-    OBJECTS
-        ${OPTIMIZER_TEST_LIB}
-    LIBRARIES
-        ${PROXYGEN_LIBRARIES}
-        ${THRIFT_LIBRARIES}
-        gtest
-        gtest_main
+    $<TARGET_OBJECTS:geo_index_obj>
 )
 
 nebula_add_test(

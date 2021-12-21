@@ -183,7 +183,7 @@ function _find_dump_syms_tool {
 function _strip_unnecessary_binaries {
     for bin in $(ls -1 -F ${build_dir}/bin/ | grep -v [/$] | sed -e '/nebula-metad/d;/nebula-graphd/d;/nebula-storaged/d'); do
         if ! (strip ${build_dir}/bin/${bin}); then
-            echo ">>> strip ${bin} faild: $?. <<<"
+            echo ">>> strip ${bin} failed: $?. <<<"
             exit 1
         fi
     done
@@ -203,7 +203,7 @@ function dump_syms {
 
     for bin in nebula-graphd nebula-storaged nebula-metad; do
         if ! (${dump_syms} ${build_dir}/bin/${bin} > ${syms_dir}/${bin}${ver}.sym); then
-            echo ">>> dump ${bin} symbols faild: $?. <<<"
+            echo ">>> dump ${bin} symbols failed: $?. <<<"
             exit 1
         fi
     done

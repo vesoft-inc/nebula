@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_CONTEXT_AST_QUERYASTCONTEXT_H_
@@ -44,6 +43,7 @@ struct PathContext final : AstContext {
   StepClause steps;
   Over over;
   Expression* filter{nullptr};
+  std::vector<std::string> colNames;
 
   /*
    * find path from A to B OR find path from $-.src to $-.dst
@@ -113,7 +113,6 @@ struct LookupContext final : public AstContext {
   bool dedup{false};
   bool isEmptyResultSet{false};
   int32_t schemaId{-1};
-  int64_t limit{-1};
   Expression* filter{nullptr};
   YieldColumns* yieldExpr{nullptr};
   std::vector<std::string> idxReturnCols;
@@ -155,6 +154,17 @@ struct FetchEdgesContext final : public AstContext {
   bool distinct{false};
   // store the result of the previous sentence
   std::string inputVarName;
+};
+
+struct AlterSchemaContext final : public AstContext {
+  std::vector<meta::cpp2::AlterSchemaItem> schemaItems;
+  meta::cpp2::SchemaProp schemaProps;
+};
+
+struct CreateSchemaContext final : public AstContext {
+  bool ifNotExist{false};
+  std::string name;
+  meta::cpp2::Schema schema;
 };
 
 }  // namespace graph

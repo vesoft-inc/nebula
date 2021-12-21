@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 import math
 import re
@@ -50,6 +49,7 @@ class DataSetComparator:
 
     def _whether_return(self, cmp: bool) -> bool:
         return ((self._contains == CmpType.EQUAL and not cmp)
+                or (self._contains == CmpType.CONTAINS and not cmp)
                 or (self._contains == CmpType.NOT_CONTAINS and cmp))
 
     def compare(self, resp: DataSet, expect: DataSet):

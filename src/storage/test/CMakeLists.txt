@@ -7,9 +7,8 @@ set(storage_test_deps
     $<TARGET_OBJECTS:storage_admin_service_handler>
     $<TARGET_OBJECTS:graph_storage_service_handler>
     $<TARGET_OBJECTS:storage_common_obj>
-    $<TARGET_OBJECTS:general_storage_service_handler>
     $<TARGET_OBJECTS:storage_transaction_executor>
-    $<TARGET_OBJECTS:graph_storage_client_obj>
+    $<TARGET_OBJECTS:storage_client_obj>
     $<TARGET_OBJECTS:storage_client_base_obj>
     $<TARGET_OBJECTS:internal_storage_client_obj>
     $<TARGET_OBJECTS:kvstore_obj>
@@ -17,6 +16,8 @@ set(storage_test_deps
     $<TARGET_OBJECTS:wal_obj>
     $<TARGET_OBJECTS:disk_man_obj>
     $<TARGET_OBJECTS:keyutils_obj>
+    $<TARGET_OBJECTS:meta_keyutils_obj>
+    $<TARGET_OBJECTS:log_str_list_iterator_obj>
     $<TARGET_OBJECTS:codec_obj>
     $<TARGET_OBJECTS:ws_obj>
     $<TARGET_OBJECTS:ws_common_obj>
@@ -45,10 +46,12 @@ set(storage_test_deps
     $<TARGET_OBJECTS:agg_function_manager_obj>
     $<TARGET_OBJECTS:expression_obj>
     $<TARGET_OBJECTS:time_utils_obj>
+    $<TARGET_OBJECTS:datetime_parser_obj>
     $<TARGET_OBJECTS:encryption_obj>
     $<TARGET_OBJECTS:ft_es_storage_adapter_obj>
     $<TARGET_OBJECTS:version_obj>
     $<TARGET_OBJECTS:ssl_obj>
+    $<TARGET_OBJECTS:geo_index_obj>
 )
 
 nebula_add_test(
@@ -83,7 +86,7 @@ nebula_add_test(
 
 nebula_add_test(
     NAME
-        statis_task_test
+        stats_task_test
     SOURCES
         StatsTaskTest.cpp
     OBJECTS
@@ -580,7 +583,6 @@ nebula_add_test(
     SOURCES
         KVClientTest.cpp
     OBJECTS
-        $<TARGET_OBJECTS:general_storage_client_obj>
         ${storage_test_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
@@ -703,6 +705,20 @@ nebula_add_test(
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
         wangle
+        gtest
+)
+
+nebula_add_test(
+    NAME
+        index_test
+    SOURCES
+        IndexTest.cpp
+    OBJECTS
+        ${storage_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
         gtest
 )
 

@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/http/MetaHttpReplaceHostHandler.h"
@@ -14,7 +13,7 @@
 #include "common/network/NetworkUtils.h"
 #include "common/process/ProcessUtils.h"
 #include "common/thread/GenericThreadPool.h"
-#include "meta/MetaServiceUtils.h"
+#include "common/utils/MetaKeyUtils.h"
 #include "meta/processors/Common.h"
 #include "webservice/Common.h"
 #include "webservice/WebService.h"
@@ -107,7 +106,7 @@ void MetaHttpReplaceHostHandler::onError(ProxygenError error) noexcept {
 
 bool MetaHttpReplaceHostHandler::replaceHost(std::string ipv4From, std::string ipv4To) {
   folly::SharedMutex::WriteHolder wHolder(LockUtils::spaceLock());
-  const auto& spacePrefix = MetaServiceUtils::spacePrefix();
+  const auto& spacePrefix = MetaKeyUtils::spacePrefix();
   std::unique_ptr<kvstore::KVIterator> iter;
   auto kvRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, spacePrefix, &iter);
   if (kvRet != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -118,7 +117,7 @@ bool MetaHttpReplaceHostHandler::replaceHost(std::string ipv4From, std::string i
 
   std::vector<GraphSpaceID> allSpaceId;
   while (iter->valid()) {
-    auto spaceId = MetaServiceUtils::spaceId(iter->key());
+    auto spaceId = MetaKeyUtils::spaceId(iter->key());
     allSpaceId.emplace_back(spaceId);
     iter->next();
   }
@@ -126,7 +125,7 @@ bool MetaHttpReplaceHostHandler::replaceHost(std::string ipv4From, std::string i
 
   std::vector<nebula::kvstore::KV> data;
   for (const auto& spaceId : allSpaceId) {
-    const auto& partPrefix = MetaServiceUtils::partPrefix(spaceId);
+    const auto& partPrefix = MetaKeyUtils::partPrefix(spaceId);
     kvRet = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, partPrefix, &iter);
     if (kvRet != nebula::cpp2::ErrorCode::SUCCEEDED) {
       errMsg_ = folly::stringPrintf("can't get partPrefix=%s", partPrefix.c_str());
@@ -136,7 +135,7 @@ bool MetaHttpReplaceHostHandler::replaceHost(std::string ipv4From, std::string i
 
     while (iter->valid()) {
       bool needUpdate = false;
-      auto partHosts = MetaServiceUtils::parsePartVal(iter->val());
+      auto partHosts = MetaKeyUtils::parsePartVal(iter->val());
       for (auto& host : partHosts) {
         if (host.host == ipv4From) {
           needUpdate = true;
@@ -144,7 +143,7 @@ bool MetaHttpReplaceHostHandler::replaceHost(std::string ipv4From, std::string i
         }
       }
       if (needUpdate) {
-        data.emplace_back(iter->key(), MetaServiceUtils::partVal(partHosts));
+        data.emplace_back(iter->key(), MetaKeyUtils::partVal(partHosts));
       }
       iter->next();
     }

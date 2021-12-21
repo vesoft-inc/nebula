@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_VISITOR_FINDVISITOR_H_
@@ -63,6 +62,7 @@ class FindVisitor final : public ExprVisitorImpl {
   void visit(LabelAttributeExpression* expr) override;
   void visit(VertexExpression* expr) override;
   void visit(EdgeExpression* expr) override;
+  void visit(PathBuildExpression* expr) override;
   void visit(ColumnExpression* expr) override;
   void visit(ListComprehensionExpression* expr) override;
   void visit(SubscriptRangeExpression* expr) override;

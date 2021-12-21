@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_PLANNER_PLAN_PLANNODE_H_
@@ -28,6 +27,9 @@ class PlanNode {
     kGetNeighbors,
     kGetVertices,
     kGetEdges,
+    kTraverse,
+    kAppendVertices,
+
     // ------------------
     // TODO(yee): refactor in logical plan
     kIndexScan,
@@ -37,6 +39,8 @@ class PlanNode {
     kEdgeIndexFullScan,
     kEdgeIndexPrefixScan,
     kEdgeIndexRangeScan,
+    kScanVertices,
+    kScanEdges,
     // ------------------
     kFilter,
     kUnion,
@@ -106,11 +110,6 @@ class PlanNode {
     kShowEdgeIndexStatus,
     kInsertVertices,
     kInsertEdges,
-    kBalanceLeaders,
-    kBalance,
-    kStopBalance,
-    kResetBalance,
-    kShowBalance,
     kSubmitJob,
     kShowHosts,
 
@@ -124,6 +123,7 @@ class PlanNode {
     kListUserRoles,
     kListUsers,
     kListRoles,
+    kDescribeUser,
 
     // Snapshot
     kCreateSnapshot,
@@ -148,18 +148,15 @@ class PlanNode {
     kShowMetaLeader,
 
     // zone related
-    kShowGroups,
     kShowZones,
-    kAddGroup,
-    kDropGroup,
-    kDescribeGroup,
-    kAddZoneIntoGroup,
-    kDropZoneFromGroup,
-    kAddZone,
+    kMergeZone,
+    kRenameZone,
     kDropZone,
+    kSplitZone,
+    kAddHosts,
+    kDropHosts,
     kDescribeZone,
-    kAddHostIntoZone,
-    kDropHostFromZone,
+    kAddHostsIntoZone,
 
     // listener related
     kAddListener,
@@ -280,7 +277,7 @@ std::ostream& operator<<(std::ostream& os, PlanNode::Kind kind);
 
 // Dependencies will cover the inputs, For example bi input require bi
 // dependencies as least, but single dependencies may don't need any inputs (I.E
-// admin plan node) Single dependecy without input It's useful for admin plan
+// admin plan node) Single dependency without input It's useful for admin plan
 // node
 class SingleDependencyNode : public PlanNode {
  public:

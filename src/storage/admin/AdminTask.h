@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_ADMIN_ADMINTASK_H_
@@ -78,6 +77,7 @@ class AdminTask {
               ctx_.jobId_,
               ctx_.taskId_,
               apache::thrift::util::enumNameSafe(rc).c_str());
+    running_ = false;
     nebula::meta::cpp2::StatsItem statsItem;
     ctx_.onFinish_(rc, statsItem);
   }
@@ -86,9 +86,11 @@ class AdminTask {
 
   virtual int getTaskId() { return ctx_.taskId_; }
 
-  virtual void setConcurrentReq(int concurrenctReq) {
-    if (concurrenctReq > 0) {
-      ctx_.concurrentReq_ = concurrenctReq;
+  virtual GraphSpaceID getSpaceId() { return ctx_.parameters_.get_space_id(); }
+
+  virtual void setConcurrentReq(int concurrentReq) {
+    if (concurrentReq > 0) {
+      ctx_.concurrentReq_ = concurrentReq;
     }
   }
 
@@ -103,20 +105,27 @@ class AdminTask {
 
   virtual void cancel() {
     FLOG_INFO("task(%d, %d) cancelled", ctx_.jobId_, ctx_.taskId_);
+    canceled_ = true;
     auto suc = nebula::cpp2::ErrorCode::SUCCEEDED;
     rc_.compare_exchange_strong(suc, nebula::cpp2::ErrorCode::E_USER_CANCEL);
   }
+
+  virtual bool isRunning() { return running_; }
+
+  virtual bool isCanceled() { return canceled_; }
 
   meta::cpp2::AdminCmd cmdType() { return ctx_.cmd_; }
 
  public:
   std::atomic<size_t> unFinishedSubTask_;
   SubTaskQueue subtasks_;
+  std::atomic<bool> running_{false};
 
  protected:
   StorageEnv* env_;
   TaskContext ctx_;
   std::atomic<nebula::cpp2::ErrorCode> rc_{nebula::cpp2::ErrorCode::SUCCEEDED};
+  std::atomic<bool> canceled_{false};
 };
 
 class AdminTaskFactory {

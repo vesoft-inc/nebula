@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/admin/CreateSnapshotProcessor.h"
@@ -17,7 +16,7 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq&) {
   // check the index rebuild. not allowed to create snapshot when index
   // rebuilding.
   JobManager* jobMgr = JobManager::getInstance();
-  auto result = jobMgr->checkIndexJobRuning();
+  auto result = jobMgr->checkIndexJobRunning();
   if (!nebula::ok(result)) {
     handleErrorCode(nebula::error(result));
     onFinished();
@@ -31,7 +30,7 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq&) {
     return;
   }
 
-  auto snapshot = folly::format("SNAPSHOT_{}", MetaServiceUtils::genTimestampStr()).str();
+  auto snapshot = folly::format("SNAPSHOT_{}", MetaKeyUtils::genTimestampStr()).str();
   folly::SharedMutex::WriteHolder wHolder(LockUtils::snapshotLock());
 
   auto activeHostsRet = ActiveHostsMan::getActiveHosts(kvstore_);
@@ -53,9 +52,9 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq&) {
   // CREATING.
   //          The purpose of this is to handle the failure of the checkpoint.
   std::vector<kvstore::KV> data;
-  data.emplace_back(MetaServiceUtils::snapshotKey(snapshot),
-                    MetaServiceUtils::snapshotVal(cpp2::SnapshotStatus::INVALID,
-                                                  NetworkUtils::toHostsStr(hosts)));
+  data.emplace_back(
+      MetaKeyUtils::snapshotKey(snapshot),
+      MetaKeyUtils::snapshotVal(cpp2::SnapshotStatus::INVALID, NetworkUtils::toHostsStr(hosts)));
 
   auto putRet = doSyncPut(std::move(data));
   if (putRet != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -105,8 +104,8 @@ void CreateSnapshotProcessor::process(const cpp2::CreateSnapshotReq&) {
 
   // step 6 : update snapshot status from INVALID to VALID.
   data.emplace_back(
-      MetaServiceUtils::snapshotKey(snapshot),
-      MetaServiceUtils::snapshotVal(cpp2::SnapshotStatus::VALID, NetworkUtils::toHostsStr(hosts)));
+      MetaKeyUtils::snapshotKey(snapshot),
+      MetaKeyUtils::snapshotVal(cpp2::SnapshotStatus::VALID, NetworkUtils::toHostsStr(hosts)));
 
   putRet = doSyncPut(std::move(data));
   if (putRet != nebula::cpp2::ErrorCode::SUCCEEDED) {

@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_ADMIN_ADMINPROCESSOR_H_
@@ -88,7 +87,7 @@ class TransLeaderProcessor : public BaseProcessor<cpp2::AdminExecResp> {
               onFinished();
               return;
             } else if (leader != HostAddr("", 0)) {
-              LOG(INFO) << "I am choosen as leader of space " << spaceId << " part " << partId
+              LOG(INFO) << "I am chosen as leader of space " << spaceId << " part " << partId
                         << " again!";
               pushResultCode(nebula::cpp2::ErrorCode::E_TRANSFER_LEADER_FAILED, partId);
               onFinished();

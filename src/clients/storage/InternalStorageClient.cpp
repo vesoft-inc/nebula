@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "clients/storage/InternalStorageClient.h"
@@ -95,7 +94,7 @@ void InternalStorageClient::chainAddEdges(cpp2::AddEdgesRequest& directReq,
   }
   HostAddr& leader = optLeader.value();
   leader.port += kInternalPortOffset;
-  VLOG(1) << "leader host: " << leader;
+  VLOG(2) << "leader host: " << leader;
 
   cpp2::ChainAddEdgesRequest chainReq = makeChainAddReq(directReq, termId, optVersion);
   auto resp = getResponse(

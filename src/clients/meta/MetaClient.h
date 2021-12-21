@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef CLIENTS_META_METACLIENT_H_
@@ -17,6 +16,7 @@
 #include <atomic>
 
 #include "common/base/Base.h"
+#include "common/base/ObjectPool.h"
 #include "common/base/Status.h"
 #include "common/base/StatusOr.h"
 #include "common/meta/Common.h"
@@ -27,6 +27,7 @@
 #include "interface/gen-cpp2/MetaServiceAsyncClient.h"
 #include "interface/gen-cpp2/common_types.h"
 #include "interface/gen-cpp2/meta_types.h"
+#include "kvstore/DiskManager.h"
 
 DECLARE_int32(meta_client_retry_times);
 DECLARE_int32(heartbeat_interval_secs);
@@ -75,14 +76,36 @@ struct SpaceInfoCache {
   cpp2::SpaceDesc spaceDesc_;
   PartsAlloc partsAlloc_;
   std::unordered_map<HostAddr, std::vector<PartitionID>> partsOnHost_;
+  std::vector<cpp2::TagItem> tagItemVec_;
   TagSchemas tagSchemas_;
+  std::vector<cpp2::EdgeItem> edgeItemVec_;
   EdgeSchemas edgeSchemas_;
+  std::vector<cpp2::IndexItem> tagIndexItemVec_;
   Indexes tagIndexes_;
+  std::vector<cpp2::IndexItem> edgeIndexItemVec_;
   Indexes edgeIndexes_;
   Listeners listeners_;
   // objPool used to decode when adding field
   ObjectPool pool_;
   std::unordered_map<PartitionID, TermID> termOfPartition_;
+
+  SpaceInfoCache() = default;
+  SpaceInfoCache(const SpaceInfoCache& info)
+      : spaceDesc_(info.spaceDesc_),
+        partsAlloc_(info.partsAlloc_),
+        partsOnHost_(info.partsOnHost_),
+        tagItemVec_(info.tagItemVec_),
+        tagSchemas_(info.tagSchemas_),
+        edgeItemVec_(info.edgeItemVec_),
+        edgeSchemas_(info.edgeSchemas_),
+        tagIndexItemVec_(info.tagIndexItemVec_),
+        tagIndexes_(info.tagIndexes_),
+        edgeIndexItemVec_(info.edgeIndexItemVec_),
+        edgeIndexes_(info.edgeIndexes_),
+        listeners_(info.listeners_),
+        termOfPartition_(info.termOfPartition_) {}
+
+  ~SpaceInfoCache() = default;
 };
 
 using LocalCache = std::unordered_map<GraphSpaceID, std::shared_ptr<SpaceInfoCache>>;
@@ -117,7 +140,7 @@ using UserRolesMap = std::unordered_map<std::string, std::vector<cpp2::RoleItem>
 // get user password by account
 using UserPasswordMap = std::unordered_map<std::string, std::string>;
 
-// config cahce, get config via module and name
+// config cache, get config via module and name
 using MetaConfigMap =
     std::unordered_map<std::pair<cpp2::ConfigModule, std::string>, cpp2::ConfigItem>;
 
@@ -140,6 +163,7 @@ class MetaChangedListener {
   virtual void onPartUpdated(const PartHosts& partHosts) = 0;
   virtual void fetchLeaderInfo(
       std::unordered_map<GraphSpaceID, std::vector<cpp2::LeaderInfo>>& leaders) = 0;
+  virtual void fetchDiskParts(kvstore::SpaceDiskPartsMap& diskParts) = 0;
   virtual void onListenerAdded(GraphSpaceID spaceId,
                                PartitionID partId,
                                const ListenerHosts& listenerHosts) = 0;
@@ -164,7 +188,7 @@ struct MetaClientOptions {
 
   // Current host address
   HostAddr localHost_{"", 0};
-  // Current cluster Id, it is requried by storaged only.
+  // Current cluster Id, it is required by storaged only.
   std::atomic<ClusterID> clusterId_{0};
   // If current client being used in storaged.
   bool inStoraged_ = false;
@@ -369,15 +393,6 @@ class MetaClient {
 
   folly::Future<StatusOr<std::vector<cpp2::RoleItem>>> getUserRoles(std::string account);
 
-  // Operations for admin
-  folly::Future<StatusOr<int64_t>> balance(std::vector<HostAddr> hostDel,
-                                           bool isStop,
-                                           bool isReset);
-
-  folly::Future<StatusOr<std::vector<cpp2::BalanceTask>>> showBalance(int64_t balanceId);
-
-  folly::Future<StatusOr<bool>> balanceLeader();
-
   // Operations for config
   folly::Future<StatusOr<bool>> regConfig(const std::vector<cpp2::ConfigItem>& items);
 
@@ -397,7 +412,7 @@ class MetaClient {
 
   folly::Future<StatusOr<std::vector<cpp2::Snapshot>>> listSnapshots();
 
-  // Opeartions for listener.
+  // Operations for listener.
 
   folly::Future<StatusOr<bool>> addListener(GraphSpaceID spaceId,
                                             cpp2::ListenerType type,
@@ -429,7 +444,7 @@ class MetaClient {
 
   StatusOr<std::vector<cpp2::FTClient>> getFTClientsFromCache();
 
-  // Opeartions for fulltext index.
+  // Operations for fulltext index.
 
   folly::Future<StatusOr<bool>> createFTIndex(const std::string& name, const cpp2::FTIndex& index);
 
@@ -464,14 +479,14 @@ class MetaClient {
   folly::Future<StatusOr<cpp2::ExecResp>> killQuery(
       std::unordered_map<SessionID, std::unordered_set<ExecutionPlanID>> killQueries);
 
-  // Opeartions for cache.
+  // Operations for cache.
   StatusOr<GraphSpaceID> getSpaceIdByNameFromCache(const std::string& name);
 
   StatusOr<std::string> getSpaceNameByIdFromCache(GraphSpaceID spaceId);
 
   StatusOr<int32_t> getSpaceVidLen(const GraphSpaceID& space);
 
-  StatusOr<cpp2::PropertyType> getSpaceVidType(const GraphSpaceID& space);
+  StatusOr<nebula::cpp2::PropertyType> getSpaceVidType(const GraphSpaceID& space);
 
   StatusOr<meta::cpp2::SpaceDesc> getSpaceDesc(const GraphSpaceID& space);
 
@@ -491,7 +506,7 @@ class MetaClient {
   StatusOr<std::string> getEdgeNameByTypeFromCache(const GraphSpaceID& space,
                                                    const EdgeType edgeType);
 
-  // get all lastest version edge
+  // get all latest version edge
   StatusOr<std::vector<std::string>> getAllEdgeFromCache(const GraphSpaceID& space);
 
   PartsMap getPartsMapFromCache(const HostAddr& host);
@@ -502,7 +517,7 @@ class MetaClient {
 
   Status checkSpaceExistInCache(const HostAddr& host, GraphSpaceID spaceId);
 
-  StatusOr<int32_t> partsNum(GraphSpaceID spaceId) const;
+  StatusOr<int32_t> partsNum(GraphSpaceID spaceId);
 
   PartitionID partId(int32_t numParts, VertexID id) const;
 
@@ -560,15 +575,15 @@ class MetaClient {
                                                            EdgeType edgeType,
                                                            const std::string& field);
 
-  std::vector<cpp2::RoleItem> getRolesByUserFromCache(const std::string& user) const;
+  std::vector<cpp2::RoleItem> getRolesByUserFromCache(const std::string& user);
 
-  bool authCheckFromCache(const std::string& account, const std::string& password) const;
+  bool authCheckFromCache(const std::string& account, const std::string& password);
 
-  StatusOr<TermID> getTermFromCache(GraphSpaceID spaceId, PartitionID) const;
+  StatusOr<TermID> getTermFromCache(GraphSpaceID spaceId, PartitionID);
 
-  bool checkShadowAccountFromCache(const std::string& account) const;
+  bool checkShadowAccountFromCache(const std::string& account);
 
-  StatusOr<std::vector<HostAddr>> getStorageHosts() const;
+  StatusOr<std::vector<HostAddr>> getStorageHosts();
 
   StatusOr<cpp2::Session> getSessionFromCache(const nebula::SessionID& session_id);
 
@@ -582,29 +597,26 @@ class MetaClient {
 
   StatusOr<LeaderInfo> getLeaderInfo();
 
-  folly::Future<StatusOr<bool>> addZone(std::string zoneName, std::vector<HostAddr> nodes);
+  folly::Future<StatusOr<bool>> addHosts(std::vector<HostAddr> hosts);
+
+  folly::Future<StatusOr<bool>> dropHosts(std::vector<HostAddr> hosts);
+
+  folly::Future<StatusOr<bool>> mergeZone(std::vector<std::string> zones, std::string zoneName);
+
+  folly::Future<StatusOr<bool>> renameZone(std::string originalZoneName, std::string zoneName);
 
   folly::Future<StatusOr<bool>> dropZone(std::string zoneName);
 
-  folly::Future<StatusOr<bool>> addHostIntoZone(HostAddr node, std::string zoneName);
+  folly::Future<StatusOr<bool>> splitZone(
+      std::string zoneName, std::unordered_map<std::string, std::vector<HostAddr>> zones);
 
-  folly::Future<StatusOr<bool>> dropHostFromZone(HostAddr node, std::string zoneName);
+  folly::Future<StatusOr<bool>> addHostsIntoZone(std::vector<HostAddr> hosts,
+                                                 std::string zoneName,
+                                                 bool isNew);
 
   folly::Future<StatusOr<std::vector<HostAddr>>> getZone(std::string zoneName);
 
   folly::Future<StatusOr<std::vector<cpp2::Zone>>> listZones();
-
-  folly::Future<StatusOr<bool>> addGroup(std::string groupName, std::vector<std::string> zoneNames);
-
-  folly::Future<StatusOr<bool>> dropGroup(std::string groupName);
-
-  folly::Future<StatusOr<bool>> addZoneIntoGroup(std::string zoneName, std::string groupName);
-
-  folly::Future<StatusOr<bool>> dropZoneFromGroup(std::string zoneName, std::string groupName);
-
-  folly::Future<StatusOr<std::vector<std::string>>> getGroup(std::string groupName);
-
-  folly::Future<StatusOr<std::vector<cpp2::Group>>> listGroups();
 
   Status refreshCache();
 
@@ -717,11 +729,18 @@ class MetaClient {
   std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
   std::shared_ptr<thrift::ThriftClientManager<cpp2::MetaServiceAsyncClient>> clientsMan_;
 
+  // heartbeat is a single thread, maybe leaderIdsLock_ and diskPartsLock_ is useless?
   // leaderIdsLock_ is used to protect leaderIds_
   std::unordered_map<GraphSpaceID, std::vector<cpp2::LeaderInfo>> leaderIds_;
   folly::RWSpinLock leaderIdsLock_;
-  int64_t localLastUpdateTime_{0};
-  int64_t metadLastUpdateTime_{0};
+  // diskPartsLock_ is used to protect diskParts_;
+  kvstore::SpaceDiskPartsMap diskParts_;
+  folly::RWSpinLock diskPartsLock_;
+
+  std::atomic<int64_t> localDataLastUpdateTime_{-1};
+  std::atomic<int64_t> localCfgLastUpdateTime_{-1};
+  std::atomic<int64_t> metadLastUpdateTime_{0};
+
   int64_t metaServerVersion_{-1};
   static constexpr int64_t EXPECT_META_VERSION = 2;
 
@@ -736,6 +755,31 @@ class MetaClient {
   HostAddr active_;
   HostAddr leader_;
   HostAddr localHost_;
+
+  struct ThreadLocalInfo {
+    int64_t localLastUpdateTime_{-2};
+    LocalCache localCache_;
+    SpaceNameIdMap spaceIndexByName_;
+    SpaceTagNameIdMap spaceTagIndexByName_;
+    SpaceEdgeNameTypeMap spaceEdgeIndexByName_;
+    SpaceEdgeTypeNameMap spaceEdgeIndexByType_;
+    SpaceTagIdNameMap spaceTagIndexById_;
+    SpaceNewestTagVerMap spaceNewestTagVerMap_;
+    SpaceNewestEdgeVerMap spaceNewestEdgeVerMap_;
+    SpaceAllEdgeMap spaceAllEdgeMap_;
+
+    UserRolesMap userRolesMap_;
+    std::vector<HostAddr> storageHosts_;
+    FTIndexMap fulltextIndexMap_;
+    UserPasswordMap userPasswordMap_;
+  };
+
+  const ThreadLocalInfo& getThreadLocalInfo();
+
+  void addSchemaField(NebulaSchemaProvider* schema, const cpp2::ColumnDef& col, ObjectPool* pool);
+
+  TagSchemas buildTagSchemas(std::vector<cpp2::TagItem> tagItemVec, ObjectPool* pool);
+  EdgeSchemas buildEdgeSchemas(std::vector<cpp2::EdgeItem> edgeItemVec, ObjectPool* pool);
 
   std::unique_ptr<thread::GenericWorker> bgThread_;
   SpaceNameIdMap spaceIndexByName_;

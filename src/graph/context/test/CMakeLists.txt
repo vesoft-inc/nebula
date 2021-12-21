@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 SET(CONTEXT_TEST_LIBS
     $<TARGET_OBJECTS:charset_obj>
@@ -27,6 +26,7 @@ SET(CONTEXT_TEST_LIBS
     $<TARGET_OBJECTS:http_client_obj>
     $<TARGET_OBJECTS:process_obj>
     $<TARGET_OBJECTS:time_utils_obj>
+    $<TARGET_OBJECTS:datetime_parser_obj>
     $<TARGET_OBJECTS:graph_obj>
     $<TARGET_OBJECTS:ft_es_graph_adapter_obj>
     $<TARGET_OBJECTS:ws_common_obj>
@@ -35,11 +35,10 @@ SET(CONTEXT_TEST_LIBS
     $<TARGET_OBJECTS:graph_context_obj>
     $<TARGET_OBJECTS:expr_visitor_obj>
     $<TARGET_OBJECTS:parser_obj>
-    $<TARGET_OBJECTS:validator_obj>
     $<TARGET_OBJECTS:graph_flags_obj>
     $<TARGET_OBJECTS:graph_auth_obj>
     $<TARGET_OBJECTS:graph_session_obj>
-    $<TARGET_OBJECTS:planner_obj>
+    $<TARGET_OBJECTS:plan_obj>
     $<TARGET_OBJECTS:idgenerator_obj>
     $<TARGET_OBJECTS:ssl_obj>
     $<TARGET_OBJECTS:memory_obj>

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/validator/Validator.h"
@@ -16,7 +15,6 @@
 #include "graph/validator/AdminJobValidator.h"
 #include "graph/validator/AdminValidator.h"
 #include "graph/validator/AssignmentValidator.h"
-#include "graph/validator/BalanceValidator.h"
 #include "graph/validator/DownloadValidator.h"
 #include "graph/validator/ExplainValidator.h"
 #include "graph/validator/FetchEdgesValidator.h"
@@ -38,7 +36,6 @@
 #include "graph/validator/SetValidator.h"
 #include "graph/validator/UseValidator.h"
 #include "graph/validator/YieldValidator.h"
-#include "graph/visitor/DeducePropsVisitor.h"
 #include "graph/visitor/DeduceTypeVisitor.h"
 #include "graph/visitor/EvaluableExprVisitor.h"
 #include "parser/Sentence.h"
@@ -134,8 +131,8 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
       return std::make_unique<RevokeRoleValidator>(sentence, context);
     case Sentence::Kind::kShowRoles:
       return std::make_unique<ShowRolesInSpaceValidator>(sentence, context);
-    case Sentence::Kind::kBalance:
-      return std::make_unique<BalanceValidator>(sentence, context);
+    case Sentence::Kind::kDescribeUser:
+      return std::make_unique<DescribeUserValidator>(sentence, context);
     case Sentence::Kind::kAdminJob:
     case Sentence::Kind::kAdminShowJobs:
       return std::make_unique<AdminJobValidator>(sentence, context);
@@ -159,6 +156,10 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
       return std::make_unique<UpdateVertexValidator>(sentence, context);
     case Sentence::Kind::kUpdateEdge:
       return std::make_unique<UpdateEdgeValidator>(sentence, context);
+    case Sentence::Kind::kAddHosts:
+      return std::make_unique<AddHostsValidator>(sentence, context);
+    case Sentence::Kind::kDropHosts:
+      return std::make_unique<DropHostsValidator>(sentence, context);
     case Sentence::Kind::kShowHosts:
       return std::make_unique<ShowHostsValidator>(sentence, context);
     case Sentence::Kind::kShowMetaLeader:
@@ -205,30 +206,20 @@ std::unique_ptr<Validator> Validator::makeValidator(Sentence* sentence, QueryCon
       return std::make_unique<DropEdgeIndexValidator>(sentence, context);
     case Sentence::Kind::kLookup:
       return std::make_unique<LookupValidator>(sentence, context);
-    case Sentence::Kind::kAddGroup:
-      return std::make_unique<AddGroupValidator>(sentence, context);
-    case Sentence::Kind::kDropGroup:
-      return std::make_unique<DropGroupValidator>(sentence, context);
-    case Sentence::Kind::kDescribeGroup:
-      return std::make_unique<DescribeGroupValidator>(sentence, context);
-    case Sentence::Kind::kListGroups:
-      return std::make_unique<ListGroupsValidator>(sentence, context);
-    case Sentence::Kind::kAddZoneIntoGroup:
-      return std::make_unique<AddZoneIntoGroupValidator>(sentence, context);
-    case Sentence::Kind::kDropZoneFromGroup:
-      return std::make_unique<DropZoneFromGroupValidator>(sentence, context);
-    case Sentence::Kind::kAddZone:
-      return std::make_unique<AddZoneValidator>(sentence, context);
+    case Sentence::Kind::kMergeZone:
+      return std::make_unique<MergeZoneValidator>(sentence, context);
+    case Sentence::Kind::kRenameZone:
+      return std::make_unique<RenameZoneValidator>(sentence, context);
     case Sentence::Kind::kDropZone:
       return std::make_unique<DropZoneValidator>(sentence, context);
+    case Sentence::Kind::kSplitZone:
+      return std::make_unique<SplitZoneValidator>(sentence, context);
     case Sentence::Kind::kDescribeZone:
       return std::make_unique<DescribeZoneValidator>(sentence, context);
     case Sentence::Kind::kListZones:
       return std::make_unique<ListZonesValidator>(sentence, context);
-    case Sentence::Kind::kAddHostIntoZone:
-      return std::make_unique<AddHostIntoZoneValidator>(sentence, context);
-    case Sentence::Kind::kDropHostFromZone:
-      return std::make_unique<DropHostFromZoneValidator>(sentence, context);
+    case Sentence::Kind::kAddHostsIntoZone:
+      return std::make_unique<AddHostsIntoZoneValidator>(sentence, context);
     case Sentence::Kind::kAddListener:
       return std::make_unique<AddListenerValidator>(sentence, context);
     case Sentence::Kind::kRemoveListener:
@@ -373,12 +364,6 @@ Status Validator::deduceProps(const Expression* expr, ExpressionProps& exprProps
   return std::move(visitor).status();
 }
 
-bool Validator::evaluableExpr(const Expression* expr) const {
-  EvaluableExprVisitor visitor;
-  const_cast<Expression*>(expr)->accept(&visitor);
-  return visitor.ok();
-}
-
 Status Validator::toPlan() {
   auto* astCtx = getAstContext();
   if (astCtx != nullptr) {
@@ -458,7 +443,7 @@ Status Validator::validateStarts(const VerticesClause* clause, Starts& starts) {
     auto vidList = clause->vidList();
     QueryExpressionContext ctx;
     for (auto* expr : vidList) {
-      if (!evaluableExpr(expr)) {
+      if (!ExpressionUtils::isEvaluableExpr(expr)) {
         return Status::SemanticError("`%s' is not an evaluable expression.",
                                      expr->toString().c_str());
       }

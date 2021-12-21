@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef MOCK_MOCKCLUSTER_H_
@@ -13,8 +12,7 @@
 #include <thrift/lib/cpp/concurrency/ThreadManager.h>
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 
-#include "clients/storage/GeneralStorageClient.h"
-#include "clients/storage/GraphStorageClient.h"
+#include "clients/storage/StorageClient.h"
 #include "common/base/Base.h"
 #include "common/base/ObjectPool.h"
 #include "kvstore/KVStore.h"
@@ -37,17 +35,13 @@ class MockCluster {
     stop();
     storageAdminServer_.reset();
     graphStorageServer_.reset();
-    generalStorageServer_.reset();
   }
 
   void startAll();
 
   void startMeta(const std::string& rootPath, HostAddr addr = HostAddr("127.0.0.1", 0));
 
-  void startStorage(HostAddr addr,
-                    const std::string& rootPath,
-                    bool isGeneralService = false,
-                    SchemaVer schemaVerCount = 1);
+  void startStorage(HostAddr addr, const std::string& rootPath, SchemaVer schemaVerCount = 1);
 
   /**
    * Init a meta client connect to current meta server.
@@ -59,9 +53,7 @@ class MockCluster {
    * Init a storage client connect to graphStorageServer
    * The meta server, and meta client must started first
    * */
-  storage::GraphStorageClient* initGraphStorageClient();
-
-  storage::GeneralStorageClient* initGeneralStorageClient();
+  storage::StorageClient* initGraphStorageClient();
 
   std::unique_ptr<meta::SchemaManager> memSchemaMan(SchemaVer schemaVerCount = 1,
                                                     GraphSpaceID spaceId = 1,
@@ -119,13 +111,11 @@ class MockCluster {
  public:
   std::unique_ptr<RpcServer> metaServer_{nullptr};
   std::unique_ptr<meta::MetaClient> metaClient_{nullptr};
-  std::unique_ptr<storage::GraphStorageClient> storageClient_{nullptr};
-  std::unique_ptr<storage::GeneralStorageClient> generalClient_{nullptr};
+  std::unique_ptr<storage::StorageClient> storageClient_{nullptr};
   std::unique_ptr<kvstore::NebulaStore> metaKV_{nullptr};
 
   std::unique_ptr<RpcServer> storageAdminServer_{nullptr};
   std::unique_ptr<RpcServer> graphStorageServer_{nullptr};
-  std::unique_ptr<RpcServer> generalStorageServer_{nullptr};
   std::unique_ptr<kvstore::NebulaStore> storageKV_{nullptr};
   std::unique_ptr<storage::StorageEnv> storageEnv_{nullptr};
 

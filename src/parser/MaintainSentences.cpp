@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "parser/MaintainSentences.h"
@@ -12,7 +11,7 @@
 
 namespace nebula {
 
-std::ostream& operator<<(std::ostream& os, meta::cpp2::PropertyType type) {
+std::ostream& operator<<(std::ostream& os, nebula::cpp2::PropertyType type) {
   os << apache::thrift::util::enumNameSafe(type);
   return os;
 }
@@ -66,7 +65,7 @@ std::string ColumnSpecification::toString() const {
   buf += "`";
   buf += *name_;
   buf += "` ";
-  if (meta::cpp2::PropertyType::FIXED_STRING == type_) {
+  if (nebula::cpp2::PropertyType::FIXED_STRING == type_) {
     buf += "FIXED_STRING(";
     buf += std::to_string(typeLen_);
     buf += ")";
@@ -359,72 +358,77 @@ std::string ShowCreateEdgeIndexSentence::toString() const {
   return folly::stringPrintf("SHOW CREATE EDGE INDEX %s", indexName_.get()->c_str());
 }
 
-std::string AddGroupSentence::toString() const {
+std::string AddHostsSentence::toString() const {
   std::string buf;
   buf.reserve(64);
-  buf += "ADD GROUP ";
-  buf += *groupName_;
-  buf += " ";
-  buf += zoneNames_->toString();
-  return buf;
-}
-
-std::string AddZoneSentence::toString() const {
-  std::string buf;
-  buf.reserve(128);
-  buf += "ADD ZONE ";
-  buf += *zoneName_;
+  buf += "ADD HOSTS ";
   buf += hosts_->toString();
   return buf;
 }
 
-std::string DropGroupSentence::toString() const {
-  return folly::stringPrintf("DROP GROUP %s", groupName_.get()->c_str());
-}
-
-std::string DropZoneSentence::toString() const {
-  return folly::stringPrintf("DROP ZONE %s", zoneName_.get()->c_str());
-}
-
-std::string DescribeGroupSentence::toString() const {
-  return folly::stringPrintf("DESCRIBE GROUP %s", groupName_.get()->c_str());
-}
-
-std::string DescribeZoneSentence::toString() const {
-  return folly::stringPrintf("DESCRIBE ZONE %s", zoneName_.get()->c_str());
-}
-
-std::string ListGroupsSentence::toString() const { return folly::stringPrintf("SHOW GROUPS"); }
-
-std::string ListZonesSentence::toString() const { return folly::stringPrintf("SHOW ZONES"); }
-
-std::string AddZoneIntoGroupSentence::toString() const {
-  return folly::stringPrintf(
-      "Add Zone %s Into Group %s", zoneName_.get()->c_str(), groupName_.get()->c_str());
-}
-
-std::string AddHostIntoZoneSentence::toString() const {
+std::string DropHostsSentence::toString() const {
   std::string buf;
+  buf += "DROP HOSTS ";
+  buf += hosts_->toString();
   buf.reserve(64);
-  buf += "ADD HOST ";
-  buf += address_->toString();
-  buf += " INTO ZONE ";
-  buf += *zoneName_;
   return buf;
 }
 
-std::string DropZoneFromGroupSentence::toString() const {
-  return folly::stringPrintf(
-      "Drop Zone %s From Group %s", zoneName_.get()->c_str(), groupName_.get()->c_str());
+std::string MergeZoneSentence::toString() const {
+  std::string buf;
+  buf.reserve(128);
+  buf += "MERGE ZONE ";
+  buf += zoneNames_->toString();
+  buf += " INTO \"";
+  buf += *zoneName_;
+  buf += "\"";
+  return buf;
 }
 
-std::string DropHostFromZoneSentence::toString() const {
+std::string DropZoneSentence::toString() const {
+  return folly::stringPrintf("DROP ZONE \"%s\"", zoneName_.get()->c_str());
+}
+
+std::string SplitZoneSentence::toString() const {
+  std::string buf;
+  buf.reserve(128);
+  buf += "SPLIT ZONE \"";
+  buf += *zoneName_;
+  buf += "\" INTO \"";
+  buf += zoneNames_->toString();
+  buf += "\"";
+  return buf;
+}
+
+std::string RenameZoneSentence::toString() const {
+  std::string buf;
+  buf.reserve(128);
+  buf += "RENAME ZONE \"";
+  buf += *originalZoneName_;
+  buf += "\" TO \"";
+  buf += *zoneName_;
+  buf += "\"";
+  return buf;
+}
+
+std::string DescribeZoneSentence::toString() const {
+  return folly::stringPrintf("DESCRIBE ZONE \"%s\"", zoneName_.get()->c_str());
+}
+
+std::string ListZonesSentence::toString() const { return folly::stringPrintf("SHOW ZONES"); }
+
+std::string AddHostsIntoZoneSentence::toString() const {
   std::string buf;
   buf.reserve(64);
-  buf += "DROP HOST ";
+  buf += "ADD HOSTS ";
   buf += address_->toString();
-  buf += " FROM ZONE ";
+  if (isNew_) {
+    buf += " INTO NEW ZONE \"";
+  } else {
+    buf += " INTO ZONE \"";
+  }
   buf += *zoneName_;
+  buf += "\"";
   return buf;
 }
 

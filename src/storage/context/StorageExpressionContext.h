@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_CONTEXT_STORAGEEXPRESSIONCONTEXT_H_
@@ -148,7 +147,7 @@ class StorageExpressionContext final : public ExpressionContext {
   size_t vIdLen_;
   bool isIntId_;
 
-  RowReader* reader_;
+  RowReader* reader_{nullptr};
   std::string key_;
   // tag or edge name
   std::string name_;

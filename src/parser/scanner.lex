@@ -21,6 +21,7 @@ static constexpr size_t MAX_STRING = 4096;
 
 %x DQ_STR
 %x SQ_STR
+%x LB_STR
 %x COMMENT
 
 blanks                      ([ \t\n]+)
@@ -36,14 +37,26 @@ IS_NOT_NULL                 (IS{blanks}NOT{blanks}NULL)
 IS_EMPTY                    (IS{blanks}EMPTY)
 IS_NOT_EMPTY                (IS{blanks}NOT{blanks}EMPTY)
 
-LABEL                       ([a-zA-Z][_a-zA-Z0-9]*)
 DEC                         ([0-9])
 EXP                         ([eE][-+]?[0-9]+)
 HEX                         ([0-9a-fA-F])
 OCT                         ([0-7])
 IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 
+U                           [\x80-\xbf]
+U2                          [\xc2-\xdf]
+U3                          [\xe0-\xee]
+U4                          [\xf0-\xf4]
+CHINESE                     {U2}{U}|{U3}{U}{U}|{U4}{U}{U}{U}
+CN_EN                       {CHINESE}|[a-zA-Z]
+CN_EN_NUM                   {CHINESE}|[_a-zA-Z0-9]
+LABEL                       {CN_EN}{CN_EN_NUM}*
 
+U3_FULL_WIDTH               [\xe0-\xef]
+CHINESE_FULL_WIDTH          {U2}{U}|{U3_FULL_WIDTH}{U}{U}|{U4}{U}{U}{U}
+CN_EN_FULL_WIDTH            {CHINESE_FULL_WIDTH}|[a-zA-Z]
+CN_EN_NUM_FULL_WIDTH        {CHINESE_FULL_WIDTH}|[_a-zA-Z0-9 ]
+LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 
 %%
 
@@ -56,6 +69,8 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "XOR"                       { return TokenType::KW_XOR; }
 "USE"                       { return TokenType::KW_USE; }
 "SET"                       { return TokenType::KW_SET; }
+"LIST"                      { return TokenType::KW_LIST; }
+"MAP"                       { return TokenType::KW_MAP; }
 "FROM"                      { return TokenType::KW_FROM; }
 "WHERE"                     { return TokenType::KW_WHERE; }
 "MATCH"                     { return TokenType::KW_MATCH; }
@@ -73,6 +88,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "WHEN"                      { return TokenType::KW_WHEN; }
 "DELETE"                    { return TokenType::KW_DELETE; }
 "FIND"                      { return TokenType::KW_FIND; }
+"PATH"                      { return TokenType::KW_PATH; }
 "LOOKUP"                    { return TokenType::KW_LOOKUP; }
 "ALTER"                     { return TokenType::KW_ALTER; }
 "STEPS"                     { return TokenType::KW_STEPS; }
@@ -112,6 +128,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "IF"                        { return TokenType::KW_IF; }
 "NOT"                       { return TokenType::KW_NOT; }
 "EXISTS"                    { return TokenType::KW_EXISTS; }
+"IGNORE_EXISTED_INDEX"      { return TokenType::KW_IGNORE_EXISTED_INDEX; }
 "WITH"                      { return TokenType::KW_WITH; }
 "CHANGE"                    { return TokenType::KW_CHANGE; }
 "GRANT"                     { return TokenType::KW_GRANT; }
@@ -157,7 +174,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "HOSTS"                     { return TokenType::KW_HOSTS; }
 "SPACE"                     { return TokenType::KW_SPACE; }
 "SPACES"                    { return TokenType::KW_SPACES; }
-"VALUE"                     { return TokenType::KW_VALUES; }
+"VALUE"                     { return TokenType::KW_VALUE; }
 "VALUES"                    { return TokenType::KW_VALUES; }
 "USER"                      { return TokenType::KW_USER; }
 "USERS"                     { return TokenType::KW_USERS; }
@@ -205,7 +222,6 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "STORAGE"                   { return TokenType::KW_STORAGE; }
 "SHORTEST"                  { return TokenType::KW_SHORTEST; }
 "NOLOOP"                    { return TokenType::KW_NOLOOP; }
-"PATH"                      { return TokenType::KW_PATH; }
 "OUT"                       { return TokenType::KW_OUT; }
 "BOTH"                      { return TokenType::KW_BOTH; }
 "SUBGRAPH"                  { return TokenType::KW_SUBGRAPH; }
@@ -231,8 +247,11 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "ZONE"                      { return TokenType::KW_ZONE; }
 "ZONES"                     { return TokenType::KW_ZONES; }
 "INTO"                      { return TokenType::KW_INTO; }
+"NEW"                       { return TokenType::KW_NEW; }
 "LISTENER"                  { return TokenType::KW_LISTENER; }
 "ELASTICSEARCH"             { return TokenType::KW_ELASTICSEARCH; }
+"HTTP"                      { return TokenType::KW_HTTP; }
+"HTTPS"                     { return TokenType::KW_HTTPS; }
 "FULLTEXT"                  { return TokenType::KW_FULLTEXT; }
 "AUTO"                      { return TokenType::KW_AUTO; }
 "FUZZY"                     { return TokenType::KW_FUZZY; }
@@ -259,6 +278,9 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 "POINT"                     { return TokenType::KW_POINT; }
 "LINESTRING"                { return TokenType::KW_LINESTRING; }
 "POLYGON"                   { return TokenType::KW_POLYGON; }
+"DURATION"                  { return TokenType::KW_DURATION; }
+"MERGE"                     { return TokenType::KW_MERGE; }
+"RENAME"                    { return TokenType::KW_RENAME; }
 
 "TRUE"                      { yylval->boolval = true; return TokenType::BOOL; }
 "FALSE"                     { yylval->boolval = false; return TokenType::BOOL; }
@@ -320,17 +342,19 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                                 }
                                 return TokenType::LABEL;
                             }
-\`{LABEL}\`                 {
-                                yylval->strval = new std::string(yytext + 1, yyleng - 2);
+\`                         { BEGIN(LB_STR); sbufPos_ = 0; }
+<LB_STR>\`                 {
+                                yylval->strval = new std::string(sbuf(), sbufPos_);
+                                BEGIN(INITIAL);
                                 if (yylval->strval->size() > MAX_STRING) {
                                     auto error = "Out of range of the LABEL length, "
-                                                  "the  max length of LABEL is " +
-                                                  std::to_string(MAX_STRING) + ":";
+                                                 "the  max length of LABEL is " +
+                                    std::to_string(MAX_STRING) + ":";
                                     delete yylval->strval;
                                     throw GraphParser::syntax_error(*yylloc, error);
                                 }
                                 return TokenType::LABEL;
-                            }
+                           }
 {IP_OCTET}(\.{IP_OCTET}){3} {
                                 yylval->strval = new std::string(yytext, yyleng);
                                 return TokenType::IPV4;
@@ -375,11 +399,11 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                                 BEGIN(INITIAL);
                                 return TokenType::STRING;
                             }
-<DQ_STR,SQ_STR><<EOF>>      {
+<DQ_STR,SQ_STR,LB_STR><<EOF>>      {
                                 // Must match '' or ""
                                 throw GraphParser::syntax_error(*yylloc, "Unterminated string: ");
                             }
-<DQ_STR,SQ_STR>\n           { yyterminate(); }
+<DQ_STR,SQ_STR,LB_STR>\n           { yyterminate(); }
 <DQ_STR>[^\\\n\"]+          {
                                 makeSpaceForString(yyleng);
                                 ::strncpy(sbuf() + sbufPos_, yytext, yyleng);
@@ -390,7 +414,12 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                                 ::strncpy(sbuf() + sbufPos_, yytext, yyleng);
                                 sbufPos_ += yyleng;
                             }
-<DQ_STR,SQ_STR>\\{OCT}{1,3} {
+<LB_STR>[^\\\n\`]+          {
+                                makeSpaceForString(yyleng);
+                                ::strncpy(sbuf() + sbufPos_, yytext, yyleng);
+                                sbufPos_ += yyleng;
+                            }
+<DQ_STR,SQ_STR,LB_STR>\\{OCT}{1,3} {
                                 if (FLAGS_disable_octal_escape_char) {
                                     makeSpaceForString(yyleng);
                                     ::strncpy(sbuf() + sbufPos_, yytext, yyleng);
@@ -405,7 +434,7 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                                     sbuf()[sbufPos_++] = val;
                                 }
                             }
-<DQ_STR,SQ_STR>\\{DEC}+ {
+<DQ_STR,SQ_STR,LB_STR>\\{DEC}+ {
                                 if (FLAGS_disable_octal_escape_char) {
                                     makeSpaceForString(yyleng);
                                     ::strncpy(sbuf() + sbufPos_, yytext, yyleng);
@@ -414,37 +443,37 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
                                     yyterminate();
                                 }
                             }
-<DQ_STR,SQ_STR>\\[uUxX]{HEX}{4} {
+<DQ_STR,SQ_STR,LB_STR>\\[uUxX]{HEX}{4} {
                                 auto encoded = folly::codePointToUtf8(std::strtoul(yytext+2, nullptr, 16));
                                 makeSpaceForString(encoded.size());
                                 ::strncpy(sbuf() + sbufPos_, encoded.data(), encoded.size());
                                 sbufPos_ += encoded.size();
                             }
-<DQ_STR,SQ_STR>\\n          {
+<DQ_STR,SQ_STR,LB_STR>\\n          {
                                 makeSpaceForString(1);
                                 sbuf()[sbufPos_++] = '\n';
                             }
-<DQ_STR,SQ_STR>\\t          {
+<DQ_STR,SQ_STR,LB_STR>\\t          {
                                 makeSpaceForString(1);
                                 sbuf()[sbufPos_++] = '\t';
                             }
-<DQ_STR,SQ_STR>\\r          {
+<DQ_STR,SQ_STR,LB_STR>\\r          {
                                 makeSpaceForString(1);
                                 sbuf()[sbufPos_++] = '\r';
                             }
-<DQ_STR,SQ_STR>\\b          {
+<DQ_STR,SQ_STR,LB_STR>\\b          {
                                 makeSpaceForString(1);
                                 sbuf()[sbufPos_++] = '\b';
                             }
-<DQ_STR,SQ_STR>\\f          {
+<DQ_STR,SQ_STR,LB_STR>\\f          {
                                 makeSpaceForString(1);
                                 sbuf()[sbufPos_++] = '\f';
                             }
-<DQ_STR,SQ_STR>\\(.|\n)     {
+<DQ_STR,SQ_STR,LB_STR>\\(.|\n)     {
                                 makeSpaceForString(1);
                                 sbuf()[sbufPos_++] = yytext[1];
                             }
-<DQ_STR,SQ_STR>\\           {
+<DQ_STR,SQ_STR,LB_STR>\\           {
                                 // This rule should have never been matched,
                                 // but without this, it somehow triggers the `nodefault' warning of flex.
                                 yyterminate();
@@ -463,6 +492,17 @@ IP_OCTET                    ([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])
 <COMMENT><<EOF>>            {
                                 // Must match /* */
                                 throw GraphParser::syntax_error(*yylloc, "unterminated comment");
+                            }
+\`{LABEL_FULL_WIDTH}\`      {
+                                yylval->strval = new std::string(yytext + 1, yyleng - 2);
+                                if (yylval->strval->size() > MAX_STRING) {
+                                    auto error = "Out of range of the LABEL length, "
+                                                  "the  max length of LABEL is " +
+                                                  std::to_string(MAX_STRING) + ":";
+                                    delete yylval->strval;
+                                    throw GraphParser::syntax_error(*yylloc, error);
+                                }
+                                return TokenType::LABEL;
                             }
 .                           {
                                 /**

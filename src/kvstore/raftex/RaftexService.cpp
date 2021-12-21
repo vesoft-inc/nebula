@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "kvstore/raftex/RaftexService.h"
@@ -117,7 +116,8 @@ std::shared_ptr<folly::Executor> RaftexService::getThreadManager() {
 }
 
 void RaftexService::stop() {
-  if (status_.load() != STATUS_RUNNING) {
+  int expected = STATUS_RUNNING;
+  if (!status_.compare_exchange_strong(expected, STATUS_NOT_RUNNING)) {
     return;
   }
 
@@ -170,6 +170,16 @@ std::shared_ptr<RaftPart> RaftexService::findPart(GraphSpaceID spaceId, Partitio
 
   // Otherwise, return the part pointer
   return it->second;
+}
+
+void RaftexService::getState(cpp2::GetStateResponse& resp, const cpp2::GetStateRequest& req) {
+  auto part = findPart(req.get_space(), req.get_part());
+  if (part != nullptr) {
+    part->getState(resp);
+  } else {
+    resp.set_term(-1);
+    resp.set_error_code(cpp2::ErrorCode::E_UNKNOWN_PART);
+  }
 }
 
 void RaftexService::askForVote(cpp2::AskForVoteResponse& resp, const cpp2::AskForVoteRequest& req) {

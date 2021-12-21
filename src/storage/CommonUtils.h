@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_COMMON_H_
@@ -201,6 +200,9 @@ struct RuntimeContext {
   ObjectPool* objPool() { return &planContext_->objPool_; }
 
   bool isPlanKilled() {
+    if (env() == nullptr) {
+      return false;
+    }
     return env()->metaClient_ &&
            env()->metaClient_->checkIsPlanKilled(planContext_->sessionId_, planContext_->planId_);
   }

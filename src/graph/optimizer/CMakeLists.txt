@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 nebula_add_library(
     optimizer_obj
@@ -27,11 +26,16 @@ nebula_add_library(
     rule/PushFilterDownAggregateRule.cpp
     rule/PushFilterDownProjectRule.cpp
     rule/PushFilterDownLeftJoinRule.cpp
+    rule/PushFilterDownScanVerticesRule.cpp
+    rule/PushVFilterDownScanVerticesRule.cpp
     rule/OptimizeEdgeIndexScanByFilterRule.cpp
     rule/OptimizeTagIndexScanByFilterRule.cpp
     rule/UnionAllIndexScanBaseRule.cpp
     rule/UnionAllTagIndexScanRule.cpp
     rule/UnionAllEdgeIndexScanRule.cpp
+    rule/GeoPredicateIndexScanBaseRule.cpp
+    rule/GeoPredicateTagIndexScanRule.cpp
+    rule/GeoPredicateEdgeIndexScanRule.cpp
     rule/IndexFullScanBaseRule.cpp
     rule/TagIndexFullScanRule.cpp
     rule/EdgeIndexFullScanRule.cpp
@@ -43,6 +47,9 @@ nebula_add_library(
     rule/PushLimitDownEdgeIndexPrefixScanRule.cpp
     rule/PushLimitDownEdgeIndexRangeScanRule.cpp
     rule/PushLimitDownProjectRule.cpp
+    rule/PushLimitDownScanAppendVerticesRule.cpp
+    rule/GetEdgesTransformRule.cpp
+    rule/PushLimitDownScanEdgesAppendVerticesRule.cpp
 )
 
 nebula_add_subdirectory(test)

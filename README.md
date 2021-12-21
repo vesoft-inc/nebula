@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://nebula-graph.io/img/nav-nebula-logo.png"/>
+  <img src="https://nebula-website-cn.oss-cn-hangzhou.aliyuncs.com/nebula-website/images/nebulagraph-logo.png"/>
   <br> English | <a href="README-CN.md">中文</a>
   <br>A distributed, scalable, lightning-fast graph database<br>
 </p>
@@ -58,7 +58,7 @@ Please note that you need to install **Nebula Graph**, either by [installing sou
 ## Getting help
 In case you encounter any problems playing around **Nebula Graph**, please reach out for help:
 * [FAQ](https://docs.nebula-graph.io/2.0/2.quick-start/0.FAQ/)
-* [Forum](https://discuss.nebula-graph.io/)
+* [Discussions](https://github.com/vesoft-inc/nebula/discussions)
 
 ## Documentation
 
@@ -77,8 +77,6 @@ Contributions are warmly welcomed and greatly appreciated. And here are a few wa
 ## Licensing
 
 **Nebula Graph** is under [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) license, so you can freely download, modify, and deploy the source code to meet your needs. You can also freely deploy **Nebula Graph** as a back-end service to support your SaaS deployment.
-
-In order to prevent cloud providers monetizing from the project without contributing back, we added [Commons Clause 1.0](https://commonsclause.com/) to the project. As mentioned above, we fully commit to the open source community. We would love to hear your thoughts on the licensing model and are willing to make it more suitable for the community.
 
 ## Contact
 

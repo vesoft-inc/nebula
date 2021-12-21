@@ -1,13 +1,11 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_VALIDATOR_ACLVALIDATOR_H_
 #define GRAPH_VALIDATOR_ACLVALIDATOR_H_
 
-#include "common/base/Base.h"
 #include "graph/validator/Validator.h"
 #include "parser/UserSentences.h"
 
@@ -95,6 +93,20 @@ class RevokeRoleValidator final : public Validator {
 
  private:
   Status validateImpl() override;
+
+  Status toPlan() override;
+};
+
+class DescribeUserValidator final : public Validator {
+ public:
+  DescribeUserValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
+    setNoSpaceRequired();
+  }
+
+ private:
+  Status validateImpl() override;
+
+  Status checkPermission() override;
 
   Status toPlan() override;
 };

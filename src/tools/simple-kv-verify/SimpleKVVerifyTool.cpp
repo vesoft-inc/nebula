@@ -1,13 +1,13 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <folly/executors/IOThreadPoolExecutor.h>
+#include <thrift/lib/cpp/util/EnumUtils.h>
 
 #include "clients/meta/MetaClient.h"
-#include "clients/storage/GeneralStorageClient.h"
+#include "clients/storage/StorageClient.h"
 #include "common/base/Base.h"
 #include "common/datatypes/KeyValue.h"
 #include "common/meta/SchemaManager.h"
@@ -53,8 +53,7 @@ class SimpleKVVerifyTool {
     spaceId_ = spaceResult.value();
     LOG(INFO) << "Space ID: " << spaceId_;
 
-    generalStorageClient_ =
-        std::make_unique<storage::GeneralStorageClient>(ioExecutor, metaClient_.get());
+    storageClient_ = std::make_unique<storage::StorageClient>(ioExecutor, metaClient_.get());
     return EXIT_SUCCESS;
   }
 
@@ -67,7 +66,7 @@ class SimpleKVVerifyTool {
       keyValues.emplace_back(std::make_pair(key, value));
     }
 
-    auto future = generalStorageClient_->put(spaceId_, std::move(keyValues));
+    auto future = storageClient_->put(spaceId_, std::move(keyValues));
     auto resp = std::move(future).get();
     if (!resp.succeeded()) {
       LOG(ERROR) << "Put Failed";
@@ -90,7 +89,7 @@ class SimpleKVVerifyTool {
       keys.emplace_back(pair.first);
     }
 
-    auto future = generalStorageClient_->get(spaceId_, std::move(keys));
+    auto future = storageClient_->get(spaceId_, std::move(keys));
     auto resp = std::move(future).get();
     if (!resp.succeeded()) {
       LOG(ERROR) << "Get Failed";
@@ -109,8 +108,9 @@ class SimpleKVVerifyTool {
       auto key = pair.first;
       bool found = false;
       for (const auto& result : resp.responses()) {
-        auto iter = result.key_values.find(key);
-        if (iter != result.key_values.end()) {
+        auto kvs = result.get_key_values();
+        auto iter = kvs.find(key);
+        if (iter != kvs.end()) {
           if (iter->second != pairs[key]) {
             LOG(ERROR) << "Check Fail: key = " << key << ", values: " << iter->second
                        << " != " << pairs[key];
@@ -129,7 +129,7 @@ class SimpleKVVerifyTool {
   }
 
  private:
-  std::unique_ptr<nebula::storage::GeneralStorageClient> generalStorageClient_;
+  std::unique_ptr<nebula::storage::StorageClient> storageClient_;
   std::unique_ptr<nebula::meta::MetaClient> metaClient_;
   nebula::GraphSpaceID spaceId_;
 };

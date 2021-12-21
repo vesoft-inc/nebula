@@ -1,7 +1,6 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Create space as another space
 
   Scenario: clone space
@@ -47,32 +46,32 @@ Feature: Create space as another space
     # query
     When executing query:
       """
-      fetch prop on t1 "1";
+      fetch prop on t1 "1" YIELD vertex as node;
       """
     Then the result should be, in any order:
-      | vertices_          |
+      | node               |
       | ("1" :t1{col1: 1}) |
     When executing query:
       """
-      lookup on t1 where t1.col1 == 1;
+      lookup on t1 where t1.col1 == 1 YIELD id(vertex) as id;
       """
     Then the result should be, in any order:
-      | VertexID |
-      | "1"      |
+      | id  |
+      | "1" |
     When executing query:
       """
-      fetch prop on e1 "1" -> "2";
+      fetch prop on e1 "1" -> "2" YIELD edge as e;
       """
     Then the result should be, in any order:
-      | edges_                      |
+      | e                           |
       | [:e1 "1"->"2" @0 {col1: 1}] |
     When executing query:
       """
-      lookup on e1 where e1.col1 == 1;
+      lookup on e1 where e1.col1 == 1 YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank;
       """
     Then the result should be, in any order:
-      | SrcVID | DstVID | Ranking |
-      | "1"    | "2"    | 0       |
+      | src | dst | rank |
+      | "1" | "2" | 0    |
     # clone space
     When clone a new space according to current space
     And wait 3 seconds
@@ -94,6 +93,13 @@ Feature: Create space as another space
       | "e1" |
     When executing query:
       """
+      show create edge e1;
+      """
+    Then the result should be, in any order:
+      | Edge | Create Edge                                                                |
+      | "e1" | 'CREATE EDGE `e1` (\n `col1` int64 NULL\n) ttl_duration = 0, ttl_col = ""' |
+    When executing query:
+      """
       show tag indexes;
       """
     Then the result should be, in any order:
@@ -109,16 +115,16 @@ Feature: Create space as another space
     # check no data in new space
     When executing query:
       """
-      fetch prop on t1 "1";
+      fetch prop on t1 "1" YIELD vertex as node;
       """
     Then the result should be, in any order:
-      | vertices_ |
+      | node |
     When executing query:
       """
-      fetch prop on e1 "1" -> "2";
+      fetch prop on e1 "1" -> "2" YIELD edge as e;
       """
     Then the result should be, in any order:
-      | edges_ |
+      | e |
     # write new data into cloned space
     When executing query:
       """
@@ -132,30 +138,30 @@ Feature: Create space as another space
     # query
     When executing query:
       """
-      fetch prop on t1 "1";
+      fetch prop on t1 "1" YIELD vertex as node;
       """
     Then the result should be, in any order:
-      | vertices_          |
+      | node               |
       | ("1" :t1{col1: 2}) |
     When executing query:
       """
-      lookup on t1 where t1.col1 == 2;
+      lookup on t1 where t1.col1 == 2 YIELD id(vertex) as id;
       """
     Then the result should be, in any order:
-      | VertexID |
-      | "1"      |
+      | id  |
+      | "1" |
     When executing query:
       """
-      fetch prop on e1 "1" -> "2";
+      fetch prop on e1 "1" -> "2" YIELD edge as e;
       """
     Then the result should be, in any order:
-      | edges_                      |
+      | e                           |
       | [:e1 "1"->"2" @0 {col1: 2}] |
     When executing query:
       """
-      lookup on e1 where e1.col1 == 2;
+      lookup on e1 where e1.col1 == 2 YIELD src(edge) as src, dst(edge) as dst, rank(edge) as rank;
       """
     Then the result should be, in any order:
-      | SrcVID | DstVID | Ranking |
-      | "1"    | "2"    | 0       |
+      | src | dst | rank |
+      | "1" | "2" | 0    |
     Then drop the used space

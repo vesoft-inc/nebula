@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_EXPRESSION_PROPERTYEXPRESSION_H_
@@ -17,7 +16,7 @@ constexpr char const kSrcRef[] = "$^";
 constexpr char const kDstRef[] = "$$";
 
 // Base abstract expression of getting properties.
-// An expresion of getting props is consisted with 3 parts:
+// An expression of getting props is consisted with 3 parts:
 // 1. reference, e.g. $-, $, $^, $$
 // 2. symbol, a symbol name, e.g. tag_name, edge_name, variable_name,
 // 3. property, property name.

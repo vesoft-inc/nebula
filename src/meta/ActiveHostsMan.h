@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_ACTIVEHOSTSMAN_H_
@@ -10,8 +9,8 @@
 #include <gtest/gtest_prod.h>
 
 #include "common/base/Base.h"
+#include "common/utils/MetaKeyUtils.h"
 #include "kvstore/KVStore.h"
-#include "meta/MetaServiceUtils.h"
 
 namespace nebula {
 namespace meta {
@@ -34,8 +33,6 @@ struct HostInfo {
   int64_t lastHBTimeInMilliSec_ = 0;
   cpp2::HostRole role_{cpp2::HostRole::UNKNOWN};
   std::string gitInfoSha_;
-  // version of binary
-  folly::Optional<std::string> version_;
 
   static HostInfo decode(const folly::StringPiece& data) {
     if (data.size() == sizeof(int64_t)) {
@@ -72,12 +69,6 @@ struct HostInfo {
     if (!info.gitInfoSha_.empty()) {
       encode.append(info.gitInfoSha_.data(), len);
     }
-
-    if (info.version_.has_value()) {
-      len = info.version_.value().size();
-      encode.append(reinterpret_cast<const char*>(&len), sizeof(std::size_t));
-      encode.append(info.version_.value().data(), len);
-    }
     return encode;
   }
 
@@ -105,20 +96,6 @@ struct HostInfo {
     }
 
     info.gitInfoSha_ = std::string(data.data() + offset, len);
-    offset += len;
-
-    if (offset == data.size()) {
-      return info;
-    }
-
-    len = *reinterpret_cast<const size_t*>(data.data() + offset);
-    offset += sizeof(size_t);
-
-    if (offset + len > data.size()) {
-      FLOG_FATAL("decode out of range, offset=%zu, actual=%zu", offset, data.size());
-    }
-
-    info.version_ = std::string(data.data() + offset, len);
     return info;
   }
 };
@@ -133,13 +110,15 @@ class ActiveHostsMan final {
                                                 const HostInfo& info,
                                                 const AllLeaders* leaderParts = nullptr);
 
+  static bool machineRegisted(kvstore::KVStore* kv, const HostAddr& hostAddr);
+
   static ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> getActiveHosts(
       kvstore::KVStore* kv, int32_t expiredTTL = 0, cpp2::HostRole role = cpp2::HostRole::STORAGE);
 
   static ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> getActiveHostsInZone(
       kvstore::KVStore* kv, const std::string& zoneName, int32_t expiredTTL = 0);
 
-  static ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> getActiveHostsWithGroup(
+  static ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> getActiveHostsWithZones(
       kvstore::KVStore* kv, GraphSpaceID spaceId, int32_t expiredTTL = 0);
 
   static ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> getActiveAdminHosts(

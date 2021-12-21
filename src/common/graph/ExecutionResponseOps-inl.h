@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_GRAPH_EXECUTIONRESPONSE_H_
@@ -38,7 +37,7 @@ struct TccStructTraits<::nebula::ExecutionResponse> {
       _ftype = apache::thrift::protocol::T_I32;
     } else if (_fname == "latency_in_us") {
       fid = 2;
-      _ftype = apache::thrift::protocol::T_I32;
+      _ftype = apache::thrift::protocol::T_I64;
     } else if (_fname == "data") {
       fid = 3;
       _ftype = apache::thrift::protocol::T_STRUCT;
@@ -76,9 +75,9 @@ uint32_t Cpp2Ops<::nebula::ExecutionResponse>::write(Protocol* proto,
                                                      ::nebula::ErrorCode>::write(*proto,
                                                                                  obj->errorCode);
   xfer += proto->writeFieldEnd();
-  xfer += proto->writeFieldBegin("latency_in_us", apache::thrift::protocol::T_I32, 2);
+  xfer += proto->writeFieldBegin("latency_in_us", apache::thrift::protocol::T_I64, 2);
   xfer += ::apache::thrift::detail::pm::protocol_methods<::apache::thrift::type_class::integral,
-                                                         int32_t>::write(*proto, obj->latencyInUs);
+                                                         int64_t>::write(*proto, obj->latencyInUs);
   xfer += proto->writeFieldEnd();
   if (obj->data != nullptr) {
     xfer += proto->writeFieldBegin("data", apache::thrift::protocol::T_STRUCT, 3);
@@ -135,7 +134,7 @@ _readField_error_code : {
   }
 _readField_latency_in_us : {
   ::apache::thrift::detail::pm::protocol_methods<::apache::thrift::type_class::integral,
-                                                 int32_t>::read(*proto, obj->latencyInUs);
+                                                 int64_t>::read(*proto, obj->latencyInUs);
   isset_latency_in_us = true;
 }
 
@@ -217,7 +216,7 @@ _loop:
       }
     }
     case 2: {
-      if (LIKELY(_readState.fieldType == apache::thrift::protocol::T_I32)) {
+      if (LIKELY(_readState.fieldType == apache::thrift::protocol::T_I64)) {
         goto _readField_latency_in_us;
       } else {
         goto _skip;
@@ -277,9 +276,9 @@ uint32_t Cpp2Ops<::nebula::ExecutionResponse>::serializedSize(
   xfer += ::apache::thrift::detail::pm::protocol_methods<
       ::apache::thrift::type_class::enumeration,
       ::nebula::ErrorCode>::serializedSize<false>(*proto, obj->errorCode);
-  xfer += proto->serializedFieldSize("latency_in_us", apache::thrift::protocol::T_I32, 2);
+  xfer += proto->serializedFieldSize("latency_in_us", apache::thrift::protocol::T_I64, 2);
   xfer += ::apache::thrift::detail::pm::
-      protocol_methods<::apache::thrift::type_class::integral, int32_t>::serializedSize<false>(
+      protocol_methods<::apache::thrift::type_class::integral, int64_t>::serializedSize<false>(
           *proto, obj->latencyInUs);
   if (obj->data != nullptr) {
     xfer += proto->serializedFieldSize("data", apache::thrift::protocol::T_STRUCT, 3);
@@ -315,9 +314,9 @@ uint32_t Cpp2Ops<::nebula::ExecutionResponse>::serializedSizeZC(
   xfer += ::apache::thrift::detail::pm::protocol_methods<
       ::apache::thrift::type_class::enumeration,
       ::nebula::ErrorCode>::serializedSize<false>(*proto, obj->errorCode);
-  xfer += proto->serializedFieldSize("latency_in_us", apache::thrift::protocol::T_I32, 2);
+  xfer += proto->serializedFieldSize("latency_in_us", apache::thrift::protocol::T_I64, 2);
   xfer += ::apache::thrift::detail::pm::
-      protocol_methods<::apache::thrift::type_class::integral, int32_t>::serializedSize<false>(
+      protocol_methods<::apache::thrift::type_class::integral, int64_t>::serializedSize<false>(
           *proto, obj->latencyInUs);
   if (obj->data != nullptr) {
     xfer += proto->serializedFieldSize("data", apache::thrift::protocol::T_STRUCT, 3);

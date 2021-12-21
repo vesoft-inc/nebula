@@ -1,14 +1,11 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #ifndef _VALIDATOR_LOOKUP_VALIDATOR_H_
 #define _VALIDATOR_LOOKUP_VALIDATOR_H_
 
-#include "common/base/Base.h"
 #include "common/plugin/fulltext/elasticsearch/ESGraphAdapter.h"
-#include "graph/planner/plan/Query.h"
 #include "graph/validator/Validator.h"
 
 namespace nebula {
@@ -35,16 +32,18 @@ class LookupValidator final : public Validator {
   Status validateFilter();
   Status validateYieldTag();
   Status validateYieldEdge();
-  Status validateLimit();
 
   StatusOr<Expression*> checkFilter(Expression* expr);
   Status checkRelExpr(RelationalExpression* expr);
+  Status checkGeoPredicate(const Expression* expr) const;
   StatusOr<std::string> checkTSExpr(Expression* expr);
   StatusOr<Expression*> checkConstExpr(Expression* expr,
                                        const std::string& prop,
                                        const Expression::Kind kind);
   StatusOr<Expression*> rewriteRelExpr(RelationalExpression* expr);
+  StatusOr<Expression*> rewriteGeoPredicate(Expression* expr);
   Expression* reverseRelKind(RelationalExpression* expr);
+  Expression* reverseGeoPredicate(Expression* expr);
 
   const LookupSentence* sentence() const;
   int32_t schemaId() const;

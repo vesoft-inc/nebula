@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_EXEC_EDGENODE_H_
@@ -27,7 +26,9 @@ class EdgeNode : public IterateNode<T> {
     return valueHandler(this->key(), this->reader(), props_);
   }
 
-  const std::string& getEdgeName() { return edgeName_; }
+  const std::string& getEdgeName() const { return edgeName_; }
+
+  EdgeType edgeType() const { return edgeType_; }
 
  protected:
   EdgeNode(RuntimeContext* context,
@@ -114,13 +115,26 @@ class FetchEdgeNode final : public EdgeNode<cpp2::EdgeKey> {
                                    (*edgeKey.dst_ref()).getStr());
     ret = context_->env()->kvstore_->get(context_->spaceId(), partId, key_, &val_);
     if (ret == nebula::cpp2::ErrorCode::SUCCEEDED) {
-      resetReader();
-      return nebula::cpp2::ErrorCode::SUCCEEDED;
+      return doExecute(key_, val_);
     } else if (ret == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
       // regard key not found as succeed as well, upper node will handle it
       return nebula::cpp2::ErrorCode::SUCCEEDED;
     }
     return ret;
+  }
+
+  nebula::cpp2::ErrorCode doExecute(const std::string& key, const std::string& value) {
+    key_ = key;
+    val_ = value;
+    resetReader();
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  }
+
+  void clear() {
+    valid_ = false;
+    key_.clear();
+    val_.clear();
+    reader_.reset();
   }
 
  private:

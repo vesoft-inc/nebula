@@ -3,15 +3,14 @@
 #
 # Copyright (c) 2019 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 import json
 import os
 import shutil
 from tests.common.nebula_service import NebulaService
 from tests.common.utils import get_conn_pool, load_csv_data
-from tests.common.constants import NEBULA_HOME, TMP_DIR, NB_TMP_PATH, SPACE_TMP_PATH
+from tests.common.constants import NEBULA_HOME, TMP_DIR, NB_TMP_PATH, SPACE_TMP_PATH, BUILD_DIR
 
 
 CURR_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -19,59 +18,69 @@ CURR_PATH = os.path.dirname(os.path.abspath(__file__))
 
 def init_parser():
     from optparse import OptionParser
+
     opt_parser = OptionParser()
-    opt_parser.add_option('--build_dir',
-                          dest='build_dir',
-                          default=os.path.join(NEBULA_HOME, 'build'),
-                          help='Build directory of nebula graph')
-    opt_parser.add_option('--rm_dir',
-                          dest='rm_dir',
-                          default='true',
-                          help='Whether to remove the test folder')
-    opt_parser.add_option('--user',
-                          dest='user',
-                          default='root',
-                          help='nebula graph user')
-    opt_parser.add_option('--password',
-                          dest='password',
-                          default='nebula',
-                          help='nebula graph password')
-    opt_parser.add_option('--cmd',
-                          dest='cmd',
-                          default='',
-                          help='start or stop command')
-    opt_parser.add_option('--multi_graphd',
-                          dest='multi_graphd',
-                          default='',
-                          help='Support multi graphds')
-    opt_parser.add_option('--address',
-                          dest='address',
-                          default='',
-                          help='Address of the Nebula')
-    opt_parser.add_option('--debug',
-                          dest='debug',
-                          default=True,
-                          help='Print verbose debug logs')
-    opt_parser.add_option('--enable_ssl',
-                          dest='enable_ssl',
-                          default='false',
-                          help='Whether enable SSL for cluster.')
-    opt_parser.add_option('--enable_graph_ssl',
-                          dest='enable_graph_ssl',
-                          default='false',
-                          help='Whether enable SSL for graph server.')
-    opt_parser.add_option('--enable_meta_ssl',
-                          dest='enable_meta_ssl',
-                          default='false',
-                          help='Whether enable SSL for meta server.')
-    opt_parser.add_option('--ca_signed',
-                          dest='ca_signed',
-                          default='false',
-                          help='Whether enable CA signed SSL/TLS mode.')
-    opt_parser.add_option('--containerized',
-                          dest='containerized',
-                          default='false',
-                          help='run this process inside container')
+    opt_parser.add_option(
+        '--build_dir',
+        dest='build_dir',
+        default=BUILD_DIR,
+        help='Build directory of nebula graph',
+    )
+    opt_parser.add_option(
+        '--rm_dir',
+        dest='rm_dir',
+        default='true',
+        help='Whether to remove the test folder',
+    )
+    opt_parser.add_option(
+        '--user', dest='user', default='root', help='nebula graph user'
+    )
+    opt_parser.add_option(
+        '--password', dest='password', default='nebula', help='nebula graph password'
+    )
+    opt_parser.add_option('--cmd', dest='cmd', default='', help='start or stop command')
+    opt_parser.add_option(
+        '--multi_graphd',
+        dest='multi_graphd',
+        default='false',
+        help='Support multi graphds',
+    )
+    opt_parser.add_option(
+        '--address', dest='address', default='', help='Address of the Nebula'
+    )
+    opt_parser.add_option(
+        '--debug', dest='debug', default=True, help='Print verbose debug logs'
+    )
+    opt_parser.add_option(
+        '--enable_ssl',
+        dest='enable_ssl',
+        default='false',
+        help='Whether enable SSL for cluster.',
+    )
+    opt_parser.add_option(
+        '--enable_graph_ssl',
+        dest='enable_graph_ssl',
+        default='false',
+        help='Whether enable SSL for graph server.',
+    )
+    opt_parser.add_option(
+        '--enable_meta_ssl',
+        dest='enable_meta_ssl',
+        default='false',
+        help='Whether enable SSL for meta server.',
+    )
+    opt_parser.add_option(
+        '--ca_signed',
+        dest='ca_signed',
+        default='false',
+        help='Whether enable CA signed SSL/TLS mode.',
+    )
+    opt_parser.add_option(
+        '--containerized',
+        dest='containerized',
+        default='false',
+        help='run this process inside container',
+    )
     return opt_parser
 
 
@@ -89,15 +98,7 @@ def start_nebula(nb, configs):
     else:
         nb.install()
         address = "localhost"
-        ports = nb.start(
-            debug_log=opt_is(configs.debug, "true"),
-            multi_graphd=configs.multi_graphd,
-            ca_signed=opt_is(configs.ca_signed, "true"),
-            enable_ssl=opt_is(configs.enable_ssl, "true"),
-            enable_graph_ssl=opt_is(configs.enable_graph_ssl, "true"),
-            enable_meta_ssl=opt_is(configs.enable_meta_ssl, "true"),
-            containerized=opt_is(configs.containerized, "true")
-        )
+        ports = nb.start()
 
     # Load csv data
     pool = get_conn_pool(address, ports[0])
@@ -118,11 +119,7 @@ def start_nebula(nb, configs):
         f.write(json.dumps(spaces))
 
     with open(NB_TMP_PATH, "w") as f:
-        data = {
-            "ip": "localhost",
-            "port": ports,
-            "work_dir": nb.work_dir
-        }
+        data = {"ip": "localhost", "port": ports, "work_dir": nb.work_dir}
         f.write(json.dumps(data))
     print('Start nebula successfully')
 
@@ -149,7 +146,18 @@ if __name__ == "__main__":
         (configs, opts) = parser.parse_args()
 
         # Setup nebula graph service
-        nebula_svc = NebulaService(configs.build_dir, NEBULA_HOME)
+        nebula_svc = NebulaService(
+            configs.build_dir,
+            NEBULA_HOME,
+            graphd_num=2,
+            storaged_num=1,
+            debug_log=opt_is(configs.debug, "true"),
+            ca_signed=opt_is(configs.ca_signed, "true"),
+            enable_ssl=configs.enable_ssl,
+            enable_graph_ssl=configs.enable_graph_ssl,
+            enable_meta_ssl=configs.enable_meta_ssl,
+            containerized=configs.containerized,
+        )
 
         if opt_is(configs.cmd, "start"):
             start_nebula(nebula_svc, configs)
@@ -160,4 +168,5 @@ if __name__ == "__main__":
     except Exception as x:
         print('\033[31m' + str(x) + '\033[0m')
         import traceback
+
         print(traceback.format_exc())

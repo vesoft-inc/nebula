@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/validator/MatchValidator.h"
@@ -17,14 +16,8 @@ TEST_F(MatchValidatorTest, SeekByTagIndex) {
   {
     std::string query = "MATCH (v:person) RETURN id(v) AS id;";
     std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kFilter,
                                             PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kProject,
-                                            // TODO this tag filter could remove in this case
-                                            PlanNode::Kind::kFilter,
-                                            PlanNode::Kind::kGetVertices,
-                                            PlanNode::Kind::kDedup,
-                                            PlanNode::Kind::kProject,
+                                            PlanNode::Kind::kAppendVertices,
                                             PlanNode::Kind::kIndexScan,
                                             PlanNode::Kind::kStart};
     EXPECT_TRUE(checkResult(query, expected));
@@ -33,14 +26,8 @@ TEST_F(MatchValidatorTest, SeekByTagIndex) {
   {
     std::string query = "MATCH (v:book) RETURN id(v) AS id;";
     std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kFilter,
                                             PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kProject,
-                                            // TODO this tag filter could remove in this case
-                                            PlanNode::Kind::kFilter,
-                                            PlanNode::Kind::kGetVertices,
-                                            PlanNode::Kind::kDedup,
-                                            PlanNode::Kind::kProject,
+                                            PlanNode::Kind::kAppendVertices,
                                             PlanNode::Kind::kIndexScan,
                                             PlanNode::Kind::kStart};
     EXPECT_TRUE(checkResult(query, expected));
@@ -49,20 +36,9 @@ TEST_F(MatchValidatorTest, SeekByTagIndex) {
   {
     std::string query = "MATCH (p:person)-[:like]->(b:book) RETURN b.name AS book;";
     std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kFilter,
                                             PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kInnerJoin,
-                                            PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kFilter,
-                                            PlanNode::Kind::kGetVertices,
-                                            PlanNode::Kind::kDedup,
-                                            PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kFilter,
-                                            PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kFilter,
-                                            PlanNode::Kind::kGetNeighbors,
-                                            PlanNode::Kind::kDedup,
-                                            PlanNode::Kind::kProject,
+                                            PlanNode::Kind::kAppendVertices,
+                                            PlanNode::Kind::kTraverse,
                                             PlanNode::Kind::kIndexScan,
                                             PlanNode::Kind::kStart};
     EXPECT_TRUE(checkResult(query, expected));
@@ -70,7 +46,13 @@ TEST_F(MatchValidatorTest, SeekByTagIndex) {
   // non index
   {
     std::string query = "MATCH (v:room) RETURN id(v) AS id;";
-    EXPECT_FALSE(validate(query));
+    std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kProject,
+                                            PlanNode::Kind::kProject,
+                                            PlanNode::Kind::kAppendVertices,
+                                            PlanNode::Kind::kFilter,
+                                            PlanNode::Kind::kScanVertices,
+                                            PlanNode::Kind::kStart};
+    EXPECT_TRUE(checkResult(query, expected));
   }
 }
 
@@ -79,18 +61,10 @@ TEST_F(MatchValidatorTest, SeekByEdgeIndex) {
   {
     std::string query = "MATCH (v1)-[:like]->(v2) RETURN id(v1), id(v2);";
     std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kFilter,
                                             PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kInnerJoin,
-                                            PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kGetVertices,
+                                            PlanNode::Kind::kAppendVertices,
+                                            PlanNode::Kind::kTraverse,
                                             PlanNode::Kind::kDedup,
-                                            PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kFilter,
-                                            PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kGetNeighbors,
-                                            PlanNode::Kind::kDedup,
-                                            PlanNode::Kind::kProject,
                                             PlanNode::Kind::kIndexScan,
                                             PlanNode::Kind::kStart};
     EXPECT_TRUE(checkResult(query, expected));
@@ -109,13 +83,8 @@ TEST_F(MatchValidatorTest, groupby) {
         "avg(distinct n.age) AS age,"
         "labels(n) AS lb;";
     std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kAggregate,
-                                            PlanNode::Kind::kFilter,
                                             PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kFilter,
-                                            PlanNode::Kind::kGetVertices,
-                                            PlanNode::Kind::kDedup,
-                                            PlanNode::Kind::kProject,
+                                            PlanNode::Kind::kAppendVertices,
                                             PlanNode::Kind::kIndexScan,
                                             PlanNode::Kind::kStart};
     EXPECT_TRUE(checkResult(query, expected));
@@ -132,13 +101,8 @@ TEST_F(MatchValidatorTest, groupby) {
         "labels(n) AS lb;";
     std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kProject,
                                             PlanNode::Kind::kAggregate,
-                                            PlanNode::Kind::kFilter,
                                             PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kFilter,
-                                            PlanNode::Kind::kGetVertices,
-                                            PlanNode::Kind::kDedup,
-                                            PlanNode::Kind::kProject,
+                                            PlanNode::Kind::kAppendVertices,
                                             PlanNode::Kind::kIndexScan,
                                             PlanNode::Kind::kStart};
     EXPECT_TRUE(checkResult(query, expected));
@@ -158,13 +122,8 @@ TEST_F(MatchValidatorTest, groupby) {
                                             PlanNode::Kind::kSort,
                                             PlanNode::Kind::kProject,
                                             PlanNode::Kind::kAggregate,
-                                            PlanNode::Kind::kFilter,
                                             PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kFilter,
-                                            PlanNode::Kind::kGetVertices,
-                                            PlanNode::Kind::kDedup,
-                                            PlanNode::Kind::kProject,
+                                            PlanNode::Kind::kAppendVertices,
                                             PlanNode::Kind::kIndexScan,
                                             PlanNode::Kind::kStart};
     EXPECT_TRUE(checkResult(query, expected));
@@ -186,13 +145,8 @@ TEST_F(MatchValidatorTest, groupby) {
                                             PlanNode::Kind::kSort,
                                             PlanNode::Kind::kProject,
                                             PlanNode::Kind::kAggregate,
-                                            PlanNode::Kind::kFilter,
                                             PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kFilter,
-                                            PlanNode::Kind::kGetVertices,
-                                            PlanNode::Kind::kDedup,
-                                            PlanNode::Kind::kProject,
+                                            PlanNode::Kind::kAppendVertices,
                                             PlanNode::Kind::kIndexScan,
                                             PlanNode::Kind::kStart};
     EXPECT_TRUE(checkResult(query, expected));
@@ -208,19 +162,9 @@ TEST_F(MatchValidatorTest, groupby) {
         "avg(distinct n.age) AS age,"
         "labels(m) AS lb;";
     std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kAggregate,
-                                            PlanNode::Kind::kFilter,
                                             PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kInnerJoin,
-                                            PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kGetVertices,
-                                            PlanNode::Kind::kDedup,
-                                            PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kFilter,
-                                            PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kFilter,
-                                            PlanNode::Kind::kGetNeighbors,
-                                            PlanNode::Kind::kDedup,
-                                            PlanNode::Kind::kProject,
+                                            PlanNode::Kind::kAppendVertices,
+                                            PlanNode::Kind::kTraverse,
                                             PlanNode::Kind::kIndexScan,
                                             PlanNode::Kind::kStart};
     EXPECT_TRUE(checkResult(query, expected));
@@ -237,19 +181,9 @@ TEST_F(MatchValidatorTest, groupby) {
         "labels(m) AS lb;";
     std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kProject,
                                             PlanNode::Kind::kAggregate,
-                                            PlanNode::Kind::kFilter,
                                             PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kInnerJoin,
-                                            PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kGetVertices,
-                                            PlanNode::Kind::kDedup,
-                                            PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kFilter,
-                                            PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kFilter,
-                                            PlanNode::Kind::kGetNeighbors,
-                                            PlanNode::Kind::kDedup,
-                                            PlanNode::Kind::kProject,
+                                            PlanNode::Kind::kAppendVertices,
+                                            PlanNode::Kind::kTraverse,
                                             PlanNode::Kind::kIndexScan,
                                             PlanNode::Kind::kStart};
     EXPECT_TRUE(checkResult(query, expected));
@@ -267,19 +201,9 @@ TEST_F(MatchValidatorTest, groupby) {
         "labels(m) AS lb ";
     std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kAggregate,
                                             PlanNode::Kind::kFilter,
-                                            PlanNode::Kind::kFilter,
                                             PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kInnerJoin,
-                                            PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kGetVertices,
-                                            PlanNode::Kind::kDedup,
-                                            PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kFilter,
-                                            PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kFilter,
-                                            PlanNode::Kind::kGetNeighbors,
-                                            PlanNode::Kind::kDedup,
-                                            PlanNode::Kind::kProject,
+                                            PlanNode::Kind::kAppendVertices,
+                                            PlanNode::Kind::kTraverse,
                                             PlanNode::Kind::kIndexScan,
                                             PlanNode::Kind::kStart};
     EXPECT_TRUE(checkResult(query, expected));
@@ -300,19 +224,9 @@ TEST_F(MatchValidatorTest, groupby) {
                                             PlanNode::Kind::kLimit,
                                             PlanNode::Kind::kAggregate,
                                             PlanNode::Kind::kFilter,
-                                            PlanNode::Kind::kFilter,
                                             PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kInnerJoin,
-                                            PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kGetVertices,
-                                            PlanNode::Kind::kDedup,
-                                            PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kFilter,
-                                            PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kFilter,
-                                            PlanNode::Kind::kGetNeighbors,
-                                            PlanNode::Kind::kDedup,
-                                            PlanNode::Kind::kProject,
+                                            PlanNode::Kind::kAppendVertices,
+                                            PlanNode::Kind::kTraverse,
                                             PlanNode::Kind::kIndexScan,
                                             PlanNode::Kind::kStart};
     EXPECT_TRUE(checkResult(query, expected));
@@ -332,19 +246,9 @@ TEST_F(MatchValidatorTest, groupby) {
                                             PlanNode::Kind::kDedup,
                                             PlanNode::Kind::kAggregate,
                                             PlanNode::Kind::kFilter,
-                                            PlanNode::Kind::kFilter,
                                             PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kInnerJoin,
-                                            PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kGetVertices,
-                                            PlanNode::Kind::kDedup,
-                                            PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kFilter,
-                                            PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kFilter,
-                                            PlanNode::Kind::kGetNeighbors,
-                                            PlanNode::Kind::kDedup,
-                                            PlanNode::Kind::kProject,
+                                            PlanNode::Kind::kAppendVertices,
+                                            PlanNode::Kind::kTraverse,
                                             PlanNode::Kind::kIndexScan,
                                             PlanNode::Kind::kStart};
     EXPECT_TRUE(checkResult(query, expected));
@@ -361,14 +265,16 @@ TEST_F(MatchValidatorTest, groupby) {
         "avg(distinct n.age)+1 AS age,"
         "labels(m) AS lb "
         "SKIP 10 LIMIT 20;";
-    std::vector<PlanNode::Kind> expected = {
-        PlanNode::Kind::kDataCollect,  PlanNode::Kind::kLimit,     PlanNode::Kind::kProject,
-        PlanNode::Kind::kAggregate,    PlanNode::Kind::kFilter,    PlanNode::Kind::kFilter,
-        PlanNode::Kind::kProject,      PlanNode::Kind::kInnerJoin, PlanNode::Kind::kProject,
-        PlanNode::Kind::kGetVertices,  PlanNode::Kind::kDedup,     PlanNode::Kind::kProject,
-        PlanNode::Kind::kFilter,       PlanNode::Kind::kProject,   PlanNode::Kind::kFilter,
-        PlanNode::Kind::kGetNeighbors, PlanNode::Kind::kDedup,     PlanNode::Kind::kProject,
-        PlanNode::Kind::kIndexScan,    PlanNode::Kind::kStart};
+    std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kDataCollect,
+                                            PlanNode::Kind::kLimit,
+                                            PlanNode::Kind::kProject,
+                                            PlanNode::Kind::kAggregate,
+                                            PlanNode::Kind::kFilter,
+                                            PlanNode::Kind::kProject,
+                                            PlanNode::Kind::kAppendVertices,
+                                            PlanNode::Kind::kTraverse,
+                                            PlanNode::Kind::kIndexScan,
+                                            PlanNode::Kind::kStart};
     EXPECT_TRUE(checkResult(query, expected));
   }
   {
@@ -384,15 +290,18 @@ TEST_F(MatchValidatorTest, groupby) {
         "labels(m) AS lb "
         "ORDER BY id "
         "SKIP 10 LIMIT 20;";
-    std::vector<PlanNode::Kind> expected = {
-        PlanNode::Kind::kDataCollect, PlanNode::Kind::kLimit,   PlanNode::Kind::kSort,
-        PlanNode::Kind::kDedup,       PlanNode::Kind::kProject, PlanNode::Kind::kAggregate,
-        PlanNode::Kind::kFilter,      PlanNode::Kind::kFilter,  PlanNode::Kind::kProject,
-        PlanNode::Kind::kInnerJoin,   PlanNode::Kind::kProject, PlanNode::Kind::kGetVertices,
-        PlanNode::Kind::kDedup,       PlanNode::Kind::kProject, PlanNode::Kind::kFilter,
-        PlanNode::Kind::kProject,     PlanNode::Kind::kFilter,  PlanNode::Kind::kGetNeighbors,
-        PlanNode::Kind::kDedup,       PlanNode::Kind::kProject, PlanNode::Kind::kIndexScan,
-        PlanNode::Kind::kStart};
+    std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kDataCollect,
+                                            PlanNode::Kind::kLimit,
+                                            PlanNode::Kind::kSort,
+                                            PlanNode::Kind::kDedup,
+                                            PlanNode::Kind::kProject,
+                                            PlanNode::Kind::kAggregate,
+                                            PlanNode::Kind::kFilter,
+                                            PlanNode::Kind::kProject,
+                                            PlanNode::Kind::kAppendVertices,
+                                            PlanNode::Kind::kTraverse,
+                                            PlanNode::Kind::kIndexScan,
+                                            PlanNode::Kind::kStart};
     EXPECT_TRUE(checkResult(query, expected));
   }
   {
@@ -408,14 +317,17 @@ TEST_F(MatchValidatorTest, groupby) {
         "labels(m) AS lb "
         "ORDER BY id "
         "SKIP 10 LIMIT 20;";
-    std::vector<PlanNode::Kind> expected = {
-        PlanNode::Kind::kDataCollect, PlanNode::Kind::kLimit,        PlanNode::Kind::kSort,
-        PlanNode::Kind::kDedup,       PlanNode::Kind::kAggregate,    PlanNode::Kind::kFilter,
-        PlanNode::Kind::kFilter,      PlanNode::Kind::kProject,      PlanNode::Kind::kInnerJoin,
-        PlanNode::Kind::kProject,     PlanNode::Kind::kGetVertices,  PlanNode::Kind::kDedup,
-        PlanNode::Kind::kProject,     PlanNode::Kind::kFilter,       PlanNode::Kind::kProject,
-        PlanNode::Kind::kFilter,      PlanNode::Kind::kGetNeighbors, PlanNode::Kind::kDedup,
-        PlanNode::Kind::kProject,     PlanNode::Kind::kIndexScan,    PlanNode::Kind::kStart};
+    std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kDataCollect,
+                                            PlanNode::Kind::kLimit,
+                                            PlanNode::Kind::kSort,
+                                            PlanNode::Kind::kDedup,
+                                            PlanNode::Kind::kAggregate,
+                                            PlanNode::Kind::kFilter,
+                                            PlanNode::Kind::kProject,
+                                            PlanNode::Kind::kAppendVertices,
+                                            PlanNode::Kind::kTraverse,
+                                            PlanNode::Kind::kIndexScan,
+                                            PlanNode::Kind::kStart};
     EXPECT_TRUE(checkResult(query, expected));
   }
   {
@@ -431,17 +343,19 @@ TEST_F(MatchValidatorTest, groupby) {
         "labels(m) AS lb "
         "ORDER BY id "
         "SKIP 10 LIMIT 20;";
-    std::vector<PlanNode::Kind> expected = {
-        PlanNode::Kind::kDataCollect, PlanNode::Kind::kLimit,   PlanNode::Kind::kSort,
-        PlanNode::Kind::kDedup,       PlanNode::Kind::kProject, PlanNode::Kind::kAggregate,
-        PlanNode::Kind::kFilter,      PlanNode::Kind::kFilter,  PlanNode::Kind::kProject,
-        PlanNode::Kind::kInnerJoin,   PlanNode::Kind::kProject, PlanNode::Kind::kGetVertices,
-        PlanNode::Kind::kDedup,       PlanNode::Kind::kProject, PlanNode::Kind::kInnerJoin,
-        PlanNode::Kind::kFilter,      PlanNode::Kind::kProject, PlanNode::Kind::kGetNeighbors,
-        PlanNode::Kind::kDedup,       PlanNode::Kind::kProject, PlanNode::Kind::kFilter,
-        PlanNode::Kind::kProject,     PlanNode::Kind::kFilter,  PlanNode::Kind::kGetNeighbors,
-        PlanNode::Kind::kDedup,       PlanNode::Kind::kProject, PlanNode::Kind::kIndexScan,
-        PlanNode::Kind::kStart};
+    std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kDataCollect,
+                                            PlanNode::Kind::kLimit,
+                                            PlanNode::Kind::kSort,
+                                            PlanNode::Kind::kDedup,
+                                            PlanNode::Kind::kProject,
+                                            PlanNode::Kind::kAggregate,
+                                            PlanNode::Kind::kFilter,
+                                            PlanNode::Kind::kProject,
+                                            PlanNode::Kind::kAppendVertices,
+                                            PlanNode::Kind::kTraverse,
+                                            PlanNode::Kind::kTraverse,
+                                            PlanNode::Kind::kIndexScan,
+                                            PlanNode::Kind::kStart};
     EXPECT_TRUE(checkResult(query, expected));
   }
 }
@@ -455,19 +369,9 @@ TEST_F(MatchValidatorTest, with) {
     std::vector<PlanNode::Kind> expected = {PlanNode::Kind::kProject,
                                             PlanNode::Kind::kProject,
                                             PlanNode::Kind::kAggregate,
-                                            PlanNode::Kind::kFilter,
                                             PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kInnerJoin,
-                                            PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kGetVertices,
-                                            PlanNode::Kind::kDedup,
-                                            PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kFilter,
-                                            PlanNode::Kind::kProject,
-                                            PlanNode::Kind::kFilter,
-                                            PlanNode::Kind::kGetNeighbors,
-                                            PlanNode::Kind::kDedup,
-                                            PlanNode::Kind::kProject,
+                                            PlanNode::Kind::kAppendVertices,
+                                            PlanNode::Kind::kTraverse,
                                             PlanNode::Kind::kIndexScan,
                                             PlanNode::Kind::kStart};
     EXPECT_TRUE(checkResult(query, expected));

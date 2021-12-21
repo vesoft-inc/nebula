@@ -1,19 +1,19 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/job/MetaJobExecutor.h"
 
 #include "common/network/NetworkUtils.h"
+#include "common/utils/MetaKeyUtils.h"
 #include "common/utils/Utils.h"
 #include "interface/gen-cpp2/common_types.h"
 #include "meta/ActiveHostsMan.h"
-#include "meta/MetaServiceUtils.h"
 #include "meta/common/MetaCommon.h"
 #include "meta/processors/Common.h"
 #include "meta/processors/admin/AdminClient.h"
+#include "meta/processors/job/BalanceJobExecutor.h"
 #include "meta/processors/job/CompactJobExecutor.h"
 #include "meta/processors/job/FlushJobExecutor.h"
 #include "meta/processors/job/RebuildEdgeJobExecutor.h"
@@ -34,6 +34,12 @@ std::unique_ptr<MetaJobExecutor> MetaJobExecutorFactory::createMetaJobExecutor(
   switch (jd.getCmd()) {
     case cpp2::AdminCmd::COMPACT:
       ret.reset(new CompactJobExecutor(jd.getJobId(), store, client, jd.getParas()));
+      break;
+    case cpp2::AdminCmd::DATA_BALANCE:
+      ret.reset(new DataBalanceJobExecutor(jd, store, client, jd.getParas()));
+      break;
+    case cpp2::AdminCmd::LEADER_BALANCE:
+      ret.reset(new LeaderBalanceJobExecutor(jd.getJobId(), store, client, jd.getParas()));
       break;
     case cpp2::AdminCmd::FLUSH:
       ret.reset(new FlushJobExecutor(jd.getJobId(), store, client, jd.getParas()));
@@ -58,7 +64,7 @@ std::unique_ptr<MetaJobExecutor> MetaJobExecutorFactory::createMetaJobExecutor(
 
 ErrorOr<nebula::cpp2::ErrorCode, GraphSpaceID> MetaJobExecutor::getSpaceIdFromName(
     const std::string& spaceName) {
-  auto indexKey = MetaServiceUtils::indexSpaceKey(spaceName);
+  auto indexKey = MetaKeyUtils::indexSpaceKey(spaceName);
   std::string val;
   auto retCode = kvstore_->get(kDefaultSpaceId, kDefaultPartId, indexKey, &val);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -71,19 +77,19 @@ ErrorOr<nebula::cpp2::ErrorCode, GraphSpaceID> MetaJobExecutor::getSpaceIdFromNa
 
 ErrOrHosts MetaJobExecutor::getTargetHost(GraphSpaceID spaceId) {
   std::unique_ptr<kvstore::KVIterator> iter;
-  const auto& partPrefix = MetaServiceUtils::partPrefix(spaceId);
+  const auto& partPrefix = MetaKeyUtils::partPrefix(spaceId);
   auto retCode = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, partPrefix, &iter);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << "Fetch Parts Failed, error: " << apache::thrift::util::enumNameSafe(retCode);
     return retCode;
   }
 
-  // use vector instead of set because this can convient for next step
+  // use vector instead of set because this can convenient for next step
   std::unordered_map<HostAddr, std::vector<PartitionID>> hostAndPart;
   std::vector<std::pair<HostAddr, std::vector<PartitionID>>> hosts;
   while (iter->valid()) {
-    auto part = MetaServiceUtils::parsePartKeyPartId(iter->key());
-    auto targets = MetaServiceUtils::parsePartVal(iter->val());
+    auto part = MetaKeyUtils::parsePartKeyPartId(iter->key());
+    auto targets = MetaKeyUtils::parsePartVal(iter->val());
     for (auto& target : targets) {
       hostAndPart[target].emplace_back(part);
     }
@@ -96,7 +102,7 @@ ErrOrHosts MetaJobExecutor::getTargetHost(GraphSpaceID spaceId) {
 }
 
 ErrOrHosts MetaJobExecutor::getLeaderHost(GraphSpaceID space) {
-  const auto& hostPrefix = MetaServiceUtils::leaderPrefix(space);
+  const auto& hostPrefix = MetaKeyUtils::leaderPrefix(space);
   std::unique_ptr<kvstore::KVIterator> leaderIter;
   auto retCode = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, hostPrefix, &leaderIter);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -109,9 +115,9 @@ ErrOrHosts MetaJobExecutor::getLeaderHost(GraphSpaceID space) {
   HostAddr host;
   nebula::cpp2::ErrorCode code;
   for (; leaderIter->valid(); leaderIter->next()) {
-    auto spaceAndPart = MetaServiceUtils::parseLeaderKeyV3(leaderIter->key());
+    auto spaceAndPart = MetaKeyUtils::parseLeaderKeyV3(leaderIter->key());
     auto partId = spaceAndPart.second;
-    std::tie(host, std::ignore, code) = MetaServiceUtils::parseLeaderValV3(leaderIter->val());
+    std::tie(host, std::ignore, code) = MetaKeyUtils::parseLeaderValV3(leaderIter->val());
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
       continue;
     }
@@ -127,7 +133,7 @@ ErrOrHosts MetaJobExecutor::getLeaderHost(GraphSpaceID space) {
 }
 
 ErrOrHosts MetaJobExecutor::getListenerHost(GraphSpaceID space, cpp2::ListenerType type) {
-  const auto& prefix = MetaServiceUtils::listenerPrefix(space, type);
+  const auto& prefix = MetaKeyUtils::listenerPrefix(space, type);
   std::unique_ptr<kvstore::KVIterator> iter;
   auto ret = kvstore_->prefix(kDefaultSpaceId, kDefaultPartId, prefix, &iter);
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -148,8 +154,8 @@ ErrOrHosts MetaJobExecutor::getListenerHost(GraphSpaceID space, cpp2::ListenerTy
   std::vector<std::pair<HostAddr, std::vector<PartitionID>>> hosts;
 
   while (iter->valid()) {
-    auto host = MetaServiceUtils::deserializeHostAddr(iter->val());
-    auto part = MetaServiceUtils::parseListenerPart(iter->key());
+    auto host = MetaKeyUtils::deserializeHostAddr(iter->val());
+    auto part = MetaKeyUtils::parseListenerPart(iter->key());
     if (std::find(activeHosts.begin(), activeHosts.end(), host) == activeHosts.end()) {
       LOG(ERROR) << "Invalid host : " << network::NetworkUtils::toHostsStr({host});
       return nebula::cpp2::ErrorCode::E_INVALID_HOST;
@@ -180,6 +186,10 @@ nebula::cpp2::ErrorCode MetaJobExecutor::execute() {
       addressesRet = getListenerHost(space_, cpp2::ListenerType::ELASTICSEARCH);
       break;
     }
+    case TargetHosts::NONE: {
+      addressesRet = {{HostAddr(), {}}};
+      break;
+    }
     case TargetHosts::DEFAULT: {
       addressesRet = getTargetHost(space_);
       break;
@@ -195,32 +205,34 @@ nebula::cpp2::ErrorCode MetaJobExecutor::execute() {
   auto addresses = nebula::value(addressesRet);
 
   // write all tasks first.
-  for (auto i = 0U; i != addresses.size(); ++i) {
-    TaskDescription task(jobId_, i, addresses[i].first);
-    std::vector<kvstore::KV> data{{task.taskKey(), task.taskVal()}};
-    folly::Baton<true, std::atomic> baton;
-    auto rc = nebula::cpp2::ErrorCode::SUCCEEDED;
-    kvstore_->asyncMultiPut(
-        kDefaultSpaceId, kDefaultPartId, std::move(data), [&](nebula::cpp2::ErrorCode code) {
-          rc = code;
-          baton.post();
-        });
-    baton.wait();
-    if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(INFO) << "write to kv store failed, error: " << apache::thrift::util::enumNameSafe(rc);
-      return rc;
+  if (toHost_ != TargetHosts::NONE) {
+    for (auto i = 0U; i != addresses.size(); ++i) {
+      TaskDescription task(jobId_, i, addresses[i].first);
+      std::vector<kvstore::KV> data{{task.taskKey(), task.taskVal()}};
+      folly::Baton<true, std::atomic> baton;
+      auto rc = nebula::cpp2::ErrorCode::SUCCEEDED;
+      kvstore_->asyncMultiPut(
+          kDefaultSpaceId, kDefaultPartId, std::move(data), [&](nebula::cpp2::ErrorCode code) {
+            rc = code;
+            baton.post();
+          });
+      baton.wait();
+      if (rc != nebula::cpp2::ErrorCode::SUCCEEDED) {
+        LOG(INFO) << "write to kv store failed, error: " << apache::thrift::util::enumNameSafe(rc);
+        return rc;
+      }
     }
   }
 
-  std::vector<folly::SemiFuture<Status>> futs;
+  std::vector<folly::SemiFuture<Status>> futures;
   for (auto& address : addresses) {
     // transform to the admin host
     auto h = Utils::getAdminAddrFromStoreAddr(address.first);
-    futs.emplace_back(executeInternal(std::move(h), std::move(address.second)));
+    futures.emplace_back(executeInternal(std::move(h), std::move(address.second)));
   }
 
   auto rc = nebula::cpp2::ErrorCode::SUCCEEDED;
-  auto tries = folly::collectAll(std::move(futs)).get();
+  auto tries = folly::collectAll(std::move(futures)).get();
   for (auto& t : tries) {
     if (t.hasException()) {
       LOG(ERROR) << t.exception().what();

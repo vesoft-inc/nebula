@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_BASEPROCESSOR_H_
@@ -16,6 +15,7 @@
 #include "common/charset/Charset.h"
 #include "common/network/NetworkUtils.h"
 #include "common/time/Duration.h"
+#include "common/utils/MetaKeyUtils.h"
 #include "interface/gen-cpp2/storage_types.h"
 #include "kvstore/KVStore.h"
 #include "meta/ActiveHostsMan.h"
@@ -27,7 +27,7 @@ namespace nebula {
 namespace meta {
 
 using nebula::network::NetworkUtils;
-using FieldType = std::pair<std::string, cpp2::PropertyType>;
+using FieldType = std::pair<std::string, nebula::cpp2::PropertyType>;
 using SignType = storage::cpp2::EngineSignType;
 
 #define CHECK_SPACE_ID_AND_RETURN(spaceID)              \
@@ -162,7 +162,7 @@ class BaseProcessor {
   /**
    * Get the current available global id
    **/
-  ErrorOr<nebula::cpp2::ErrorCode, int32_t> getAvailableGolbalId();
+  ErrorOr<nebula::cpp2::ErrorCode, int32_t> getAvailableGlobalId();
 
   /**
    * Get one auto-increment Id in spaceId.
@@ -180,9 +180,14 @@ class BaseProcessor {
   nebula::cpp2::ErrorCode userExist(const std::string& account);
 
   /**
-   * Check host has been registered or not.
+   * Check machine has been registered or not.
    * */
-  nebula::cpp2::ErrorCode hostExist(const std::string& hostKey);
+  nebula::cpp2::ErrorCode machineExist(const std::string& machineKey);
+
+  /**
+   * Check hosts has been include by zone or not.
+   * */
+  nebula::cpp2::ErrorCode includeByZone(const std::vector<HostAddr>& hosts);
 
   /**
    * Return the spaceId for name.
@@ -240,8 +245,6 @@ class BaseProcessor {
                                                              int32_t tagOrEdge);
 
   bool checkIndexExist(const std::vector<cpp2::IndexFieldDef>& fields, const cpp2::IndexItem& item);
-
-  ErrorOr<nebula::cpp2::ErrorCode, GroupID> getGroupId(const std::string& groupName);
 
   ErrorOr<nebula::cpp2::ErrorCode, ZoneID> getZoneId(const std::string& zoneName);
 

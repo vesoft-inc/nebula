@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "storage/admin/AdminTaskManager.h"
@@ -20,10 +19,15 @@ namespace nebula {
 namespace storage {
 
 bool AdminTaskManager::init() {
-  LOG(INFO) << "max concurrenct subtasks: " << FLAGS_max_concurrent_subtasks;
+  LOG(INFO) << "max concurrent subtasks: " << FLAGS_max_concurrent_subtasks;
   auto threadFactory = std::make_shared<folly::NamedThreadFactory>("TaskManager");
   pool_ = std::make_unique<ThreadPool>(FLAGS_max_concurrent_subtasks, threadFactory);
   bgThread_ = std::make_unique<thread::GenericWorker>();
+  if (env_ != nullptr) {
+    static_cast<::nebula::kvstore::NebulaStore*>(env_->kvstore_)
+        ->registerBeforeRemoveSpace(
+            [this](GraphSpaceID spaceId) { this->waitCancelTasks(spaceId); });
+  }
   if (!bgThread_->start()) {
     LOG(ERROR) << "background thread start failed";
     return false;
@@ -113,7 +117,12 @@ void AdminTaskManager::handleUnreportedTasks() {
                                       jobId,
                                       taskId,
                                       fut.value().status().toString());
-          ifAnyUnreported_ = true;
+          if (fut.value().status() == Status::Error("Space not existed!")) {
+            // space has been droped, remove the task status.
+            keys.emplace_back(key.data(), key.size());
+          } else {
+            ifAnyUnreported_ = true;
+          }
           continue;
         }
         rc = fut.value().value();
@@ -195,6 +204,9 @@ void AdminTaskManager::shutdown() {
   if (unreportedAdminThread_ != nullptr) {
     unreportedAdminThread_->join();
   }
+  if (env_) {
+    env_->adminStore_.reset();
+  }
   LOG(INFO) << "exit AdminTaskManager::shutdown()";
 }
 
@@ -247,6 +259,14 @@ void AdminTaskManager::schedule() {
     }
 
     auto task = it->second;
+    if (task->isCanceled()) {
+      LOG(INFO) << folly::sformat("job {} has been calceled", task->getJobId());
+      task->finish(nebula::cpp2::ErrorCode::E_USER_CANCEL);
+      tasks_.erase(handle);
+      continue;
+    }
+
+    task->running_ = true;
     auto errOrSubTasks = task->genSubTasks();
     if (!nebula::ok(errOrSubTasks)) {
       LOG(ERROR) << folly::sformat(
@@ -349,6 +369,38 @@ bool AdminTaskManager::isFinished(JobID jobID, TaskID taskID) {
     return true;
   }
   return iter->second->unFinishedSubTask_ == 0;
+}
+
+void AdminTaskManager::cancelTasks(GraphSpaceID spaceId) {
+  auto it = tasks_.begin();
+  while (it != tasks_.end()) {
+    if (it->second->getSpaceId() == spaceId) {
+      it->second->cancel();
+      removeTaskStatus(it->second->getJobId(), it->second->getTaskId());
+      FLOG_INFO("cancel task(%d, %d), spaceId: %d", it->first.first, it->first.second, spaceId);
+    }
+    ++it;
+  }
+}
+
+int32_t AdminTaskManager::runningTaskCnt(GraphSpaceID spaceId) {
+  int32_t jobCnt = 0;
+  for (const auto& task : tasks_) {
+    auto taskSpaceId = task.second->getSpaceId();
+    if (taskSpaceId == spaceId) {
+      if (task.second->isRunning()) {
+        jobCnt++;
+      }
+    }
+  }
+  return jobCnt;
+}
+
+void AdminTaskManager::waitCancelTasks(GraphSpaceID spaceId) {
+  cancelTasks(spaceId);
+  while (runningTaskCnt(spaceId) != 0) {
+    usleep(1000 * 100);
+  }
 }
 
 }  // namespace storage

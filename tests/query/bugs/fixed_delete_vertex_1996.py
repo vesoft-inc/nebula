@@ -2,8 +2,7 @@
 #
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 import time
 
@@ -28,7 +27,7 @@ class TestSimpleQuery(NebulaTestSuite):
         time.sleep(self.delay)
         resp = self.execute('INSERT VERTEX person(name, age) VALUES 101:("Tony Parker", 36)')
         self.check_resp_succeeded(resp)
-        resp = self.execute('DELETE VERTEX 101')
+        resp = self.execute('DELETE VERTEX 101 WITH EDGE')
         self.check_resp_succeeded(resp)
 
     @classmethod

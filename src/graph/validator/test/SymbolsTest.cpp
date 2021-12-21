@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/base/Base.h"
@@ -44,7 +43,7 @@ TEST_F(SymbolsTest, Variables) {
   {
     std::string query =
         "GO 1 STEPS FROM \"1\" OVER like YIELD like._dst AS "
-        "id | GO 2 STEPS FROM $-.id OVER like";
+        "id | GO 2 STEPS FROM $-.id OVER like YIELD like._dst";
     auto status = validate(query);
     EXPECT_TRUE(status.ok());
     auto qctx = std::move(status).value();

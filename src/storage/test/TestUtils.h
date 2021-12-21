@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_TEST_TESTUTILS_H_
@@ -42,7 +41,7 @@ void checkAddVerticesData(cpp2::AddVerticesRequest req,
 
       for (auto& newTag : newTagVec) {
         auto tagId = newTag.get_tag_id();
-        auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vid.getStr(), tagId);
+        auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen, partId, vid.getStr(), tagId);
         std::unique_ptr<kvstore::KVIterator> iter;
         EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
                   env->kvstore_->prefix(spaceId, partId, prefix, &iter));
@@ -153,7 +152,7 @@ void checkVerticesData(int32_t spaceVidLen,
     auto partId = part.first;
     auto deleteVidVec = part.second;
     for (auto& vid : deleteVidVec) {
-      auto prefix = NebulaKeyUtils::vertexPrefix(spaceVidLen, partId, vid.getStr());
+      auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen, partId, vid.getStr());
       std::unique_ptr<kvstore::KVIterator> iter;
       EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED,
                 env->kvstore_->prefix(spaceId, partId, prefix, &iter));

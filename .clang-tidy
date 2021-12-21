@@ -67,7 +67,7 @@ Checks: '-*,clang-diagnostic-*,clang-analyzer-*,-misc-unused-parameters,
   google-upgrade-googletest-case,
 
   modernize-avoid-bind,
-  modernize-concat-nested-namespaces,
+  -modernize-concat-nested-namespaces,
   modernize-deprecated-headers,
   modernize-deprecated-ios-base-aliases,
   modernize-loop-convert,

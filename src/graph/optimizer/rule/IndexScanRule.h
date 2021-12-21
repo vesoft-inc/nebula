@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #ifndef GRAPH_OPTIMIZER_INDEXSCANRULE_H_
 #define GRAPH_OPTIMIZER_INDEXSCANRULE_H_
@@ -16,7 +15,6 @@ namespace opt {
 using graph::QueryContext;
 using storage::cpp2::IndexColumnHint;
 using storage::cpp2::IndexQueryContext;
-using BVO = graph::OptimizerUtils::BoundValueOperator;
 using IndexItem = std::shared_ptr<meta::cpp2::IndexItem>;
 
 class OptContext;

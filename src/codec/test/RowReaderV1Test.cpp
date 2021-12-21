@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -32,7 +31,7 @@ TEST(RowReaderV1, headerInfo) {
   // Insert 33 fields into schema, so we will get 2 offsets
   SchemaWriter schema3(0x00FFFF01);
   for (int i = 0; i < 33; i++) {
-    schema3.appendCol(folly::stringPrintf("Column%02d", i), meta::cpp2::PropertyType::INT64);
+    schema3.appendCol(folly::stringPrintf("Column%02d", i), nebula::cpp2::PropertyType::INT64);
   }
 
   // With schema version and offsets
@@ -52,7 +51,7 @@ TEST(RowReaderV1, headerInfo) {
   // No schema version, with offsets
   SchemaWriter schema4;
   for (int i = 0; i < 33; i++) {
-    schema4.appendCol(folly::stringPrintf("Column%02d", i), meta::cpp2::PropertyType::INT64);
+    schema4.appendCol(folly::stringPrintf("Column%02d", i), nebula::cpp2::PropertyType::INT64);
   }
 
   char data4[] = {0x01, static_cast<char>(0xFF), 0x40, 0x08, static_cast<char>(0xF0)};
@@ -80,25 +79,25 @@ TEST(RowReaderV1, encodedData) {
 
   SchemaWriter schema;
   // Col 0: bool_col1 -- BOOL
-  schema.appendCol("bool_col1", meta::cpp2::PropertyType::BOOL);
+  schema.appendCol("bool_col1", nebula::cpp2::PropertyType::BOOL);
   // Col 1: str_col1 -- STRING
-  schema.appendCol(folly::stringPrintf("str_col1"), meta::cpp2::PropertyType::STRING);
+  schema.appendCol(folly::stringPrintf("str_col1"), nebula::cpp2::PropertyType::STRING);
   // Col 2: int_col1 -- INT
-  schema.appendCol(colName1, meta::cpp2::PropertyType::INT64);
+  schema.appendCol(colName1, nebula::cpp2::PropertyType::INT64);
   // Col 3: int_col2 -- INT
-  schema.appendCol(colName2, meta::cpp2::PropertyType::INT64);
+  schema.appendCol(colName2, nebula::cpp2::PropertyType::INT64);
   // Col 4: vid_col -- VID
-  schema.appendCol(folly::StringPiece(colName3), meta::cpp2::PropertyType::VID);
+  schema.appendCol(folly::StringPiece(colName3), nebula::cpp2::PropertyType::VID);
   // Col 5: str_col2 -- STRING
-  schema.appendCol("str_col2", meta::cpp2::PropertyType::STRING);
+  schema.appendCol("str_col2", nebula::cpp2::PropertyType::STRING);
   // Col 6: bool_col2 -- BOOL
-  schema.appendCol(std::string("bool_col2"), meta::cpp2::PropertyType::BOOL);
+  schema.appendCol(std::string("bool_col2"), nebula::cpp2::PropertyType::BOOL);
   // Col 7: float_col -- FLOAT
-  schema.appendCol(std::string("float_col"), meta::cpp2::PropertyType::FLOAT);
+  schema.appendCol(std::string("float_col"), nebula::cpp2::PropertyType::FLOAT);
   // Col 8: double_col -- DOUBLE
-  schema.appendCol(std::string("double_col"), meta::cpp2::PropertyType::DOUBLE);
+  schema.appendCol(std::string("double_col"), nebula::cpp2::PropertyType::DOUBLE);
   // Col 9: timestamp_col -- TIMESTAMP
-  schema.appendCol("timestamp_col", meta::cpp2::PropertyType::TIMESTAMP);
+  schema.appendCol("timestamp_col", nebula::cpp2::PropertyType::TIMESTAMP);
 
   std::string encoded;
   // Single byte header (Schema version is 0, no offset)
@@ -264,7 +263,7 @@ TEST(RowReaderV1, iterator) {
 
   SchemaWriter schema;
   for (int i = 0; i < 64; i++) {
-    schema.appendCol(folly::stringPrintf("Col%02d", i), meta::cpp2::PropertyType::INT64);
+    schema.appendCol(folly::stringPrintf("Col%02d", i), nebula::cpp2::PropertyType::INT64);
     encoded.append(1, i + 1);
   }
 

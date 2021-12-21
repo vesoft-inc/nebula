@@ -1,13 +1,12 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/job/StatsJobExecutor.h"
 
+#include "common/utils/MetaKeyUtils.h"
 #include "common/utils/Utils.h"
-#include "meta/MetaServiceUtils.h"
 #include "meta/common/MetaCommon.h"
 #include "meta/processors/Common.h"
 
@@ -51,11 +50,11 @@ nebula::cpp2::ErrorCode StatsJobExecutor::prepare() {
   }
   space_ = nebula::value(spaceRet);
 
-  // Set the status of the statis job to running
+  // Set the status of the stats job to running
   cpp2::StatsItem statsItem;
   statsItem.set_status(cpp2::JobStatus::RUNNING);
-  auto statsKey = MetaServiceUtils::statsKey(space_);
-  auto statsVal = MetaServiceUtils::statsVal(statsItem);
+  auto statsKey = MetaKeyUtils::statsKey(space_);
+  auto statsVal = MetaKeyUtils::statsVal(statsItem);
   return save(statsKey, statsVal);
 }
 
@@ -118,7 +117,7 @@ nebula::cpp2::ErrorCode StatsJobExecutor::saveSpecialTaskStatus(const cpp2::Repo
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
   cpp2::StatsItem statsItem;
-  auto statsKey = MetaServiceUtils::statsKey(space_);
+  auto statsKey = MetaKeyUtils::statsKey(space_);
   auto tempKey = toTempKey(req.get_job_id());
   std::string val;
   auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, tempKey, &val);
@@ -134,9 +133,9 @@ nebula::cpp2::ErrorCode StatsJobExecutor::saveSpecialTaskStatus(const cpp2::Repo
     return ret;
   }
 
-  statsItem = MetaServiceUtils::parseStatsVal(val);
+  statsItem = MetaKeyUtils::parseStatsVal(val);
   addStats(statsItem, *req.stats_ref());
-  auto statsVal = MetaServiceUtils::statsVal(statsItem);
+  auto statsVal = MetaKeyUtils::statsVal(statsItem);
   return save(tempKey, statsVal);
 }
 
@@ -149,29 +148,29 @@ nebula::cpp2::ErrorCode StatsJobExecutor::saveSpecialTaskStatus(const cpp2::Repo
  * @return std::string
  */
 std::string StatsJobExecutor::toTempKey(int32_t jobId) {
-  std::string key = MetaServiceUtils::statsKey(space_);
+  std::string key = MetaKeyUtils::statsKey(space_);
   return key.append(reinterpret_cast<const char*>(&jobId), sizeof(int32_t));
 }
 
 nebula::cpp2::ErrorCode StatsJobExecutor::finish(bool exeSuccessed) {
-  auto statsKey = MetaServiceUtils::statsKey(space_);
+  auto statsKey = MetaKeyUtils::statsKey(space_);
   auto tempKey = toTempKey(jobId_);
   std::string val;
   auto ret = kvstore_->get(kDefaultSpaceId, kDefaultPartId, tempKey, &val);
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Can't find the statis data, spaceId : " << space_;
+    LOG(ERROR) << "Can't find the stats data, spaceId : " << space_;
     return ret;
   }
-  auto statsItem = MetaServiceUtils::parseStatsVal(val);
+  auto statsItem = MetaKeyUtils::parseStatsVal(val);
   if (exeSuccessed) {
     statsItem.set_status(cpp2::JobStatus::FINISHED);
   } else {
     statsItem.set_status(cpp2::JobStatus::FAILED);
   }
-  auto statsVal = MetaServiceUtils::statsVal(statsItem);
+  auto statsVal = MetaKeyUtils::statsVal(statsItem);
   auto retCode = save(statsKey, statsVal);
   if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(ERROR) << "Sace statis data failed, error " << apache::thrift::util::enumNameSafe(retCode);
+    LOG(ERROR) << "Sace stats data failed, error " << apache::thrift::util::enumNameSafe(retCode);
     return retCode;
   }
   return doRemove(tempKey);
@@ -197,13 +196,13 @@ nebula::cpp2::ErrorCode StatsJobExecutor::stop() {
 
   auto tries = folly::collectAll(std::move(futures)).get();
   if (std::any_of(tries.begin(), tries.end(), [](auto& t) { return t.hasException(); })) {
-    LOG(ERROR) << "statis job stop() RPC failure.";
+    LOG(ERROR) << "stats job stop() RPC failure.";
     return nebula::cpp2::ErrorCode::E_BALANCER_FAILURE;
   }
 
   for (const auto& t : tries) {
     if (!t.value().ok()) {
-      LOG(ERROR) << "Stop statis job Failed";
+      LOG(ERROR) << "Stop stats job Failed";
       return nebula::cpp2::ErrorCode::E_BALANCER_FAILURE;
     }
   }
