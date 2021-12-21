@@ -36,13 +36,7 @@ WasmtimeRunInstance WasmFunctionManager::createInstanceAndFunction(
 
 nebula::List WasmFunctionManager::runWithNebulaDataHandle(std::string functionName,
                                                           nebula::List args) {
-  if (modules.find(functionName) == modules.end()) {
-    // return not found!
-    std::vector<nebula::Value> Error;
-    Error.emplace_back("Not Found Function");
-    return nebula::List(Error);
-  }
-  auto module = modules.at(functionName);
+
   // prepostcess
   auto values = args.values;
   std::vector<int> functionArgs;
@@ -51,7 +45,7 @@ nebula::List WasmFunctionManager::runWithNebulaDataHandle(std::string functionNa
     functionArgs.push_back(val.getInt());
   }
   // run
-  auto functionResult = WasmFunctionManager::run(module, functionArgs);
+  auto functionResult = WasmFunctionManager::run(functionName, functionArgs);
 
   // postprocess
   std::vector<nebula::Value> tmpProcess;
@@ -98,8 +92,7 @@ std::vector<int> WasmFunctionManager::run(const WasmtimeRunInstance &wasmTimeRun
 std::vector<int> WasmFunctionManager::run(const WasmEdgeRunInstance &wasmEdgeRunInstance,
                                           std::vector<int> args) {
   WasmEdge_Value Returns[1];
-  WasmEdge_Value Params[2] = {WasmEdge_ValueGenI32(23), WasmEdge_ValueGenI32(456)};
-
+  WasmEdge_Value Params[2] = {WasmEdge_ValueGenI32(args[0]), WasmEdge_ValueGenI32(args[1])};
   uint8_t buf[wasmEdgeRunInstance.wasmBuffer.size()];
   std::copy(wasmEdgeRunInstance.wasmBuffer.begin(), wasmEdgeRunInstance.wasmBuffer.end(), buf);
 
@@ -117,29 +110,37 @@ std::vector<int> WasmFunctionManager::run(const WasmEdgeRunInstance &wasmEdgeRun
 }
 
 // default wat functionHandler = "main"
-bool WasmFunctionManager::RegisterFunction(std::string moduleType,
+bool WasmFunctionManager::RegisterFunction(std::vector<WasmFunctionParamType> inParam,
+                                           WasmFunctionParamType outParam,
+                                           std::string moduleType,
                                            std::string functionName,
                                            std::string functionHandler,
                                            const std::string &base64OrOtherString) {
+  // for WAT
   if (moduleType == TYPE_WAT_MOUDLE) {
     auto watString = myBase64Decode(base64OrOtherString);
     auto wasmRuntime = createInstanceAndFunction(watString, functionHandler);
+    wasmRuntime.inParam = inParam;
+    wasmRuntime.outParam = outParam;
     modules.emplace(functionName, wasmRuntime);
     typeMap.emplace(functionName, TYPE_WAT_MOUDLE);
     return true;
   }
 
+  // for WASM-PATH
   std::string wasmString;
   WasmEdge_String functionHandlerName = WasmEdge_StringCreateByCString(functionHandler.data());
   if (moduleType == TYPE_WASM_PATH) {
     // still file to this map
     if (base64OrOtherString.rfind("http://", 0) == 0) {
       std::vector<uint8_t> bufVector = getHTTPString(base64OrOtherString);
-      if(bufVector.empty()){
+      if (bufVector.empty()) {
         return false;
       }
-
-      wasmModules.emplace(functionName, WasmEdgeRunInstance(functionHandlerName, bufVector));
+      auto wasmEdgeRunInstance = WasmEdgeRunInstance(functionHandlerName, bufVector);
+      wasmEdgeRunInstance.inParam = inParam;
+      wasmEdgeRunInstance.outParam = outParam;
+      wasmModules.emplace(functionName, wasmEdgeRunInstance);
       typeMap.emplace(functionName, TYPE_WASM_MOUDLE);
       return true;
     } else if (base64OrOtherString.rfind("file://", 0) == 0) {
@@ -148,7 +149,10 @@ bool WasmFunctionManager::RegisterFunction(std::string moduleType,
         return false;
       }
       std::vector<uint8_t> bufVector(wasmString.begin(), wasmString.end());
-      wasmModules.emplace(functionName, WasmEdgeRunInstance(functionHandlerName, bufVector));
+      auto wasmEdgeRunInstance = WasmEdgeRunInstance(functionHandlerName, bufVector);
+      wasmEdgeRunInstance.inParam = inParam;
+      wasmEdgeRunInstance.outParam = outParam;
+      wasmModules.emplace(functionName, wasmEdgeRunInstance);
       typeMap.emplace(functionName, TYPE_WASM_MOUDLE);
       return true;
     } else {
@@ -159,7 +163,10 @@ bool WasmFunctionManager::RegisterFunction(std::string moduleType,
   if (moduleType == TYPE_WASM_MOUDLE) {
     wasmString = myBase64Decode(base64OrOtherString);
     std::vector<uint8_t> bufVector(wasmString.begin(), wasmString.end());
-    wasmModules.emplace(functionName, WasmEdgeRunInstance(functionHandlerName, bufVector));
+    auto wasmEdgeRunInstance = WasmEdgeRunInstance(functionHandlerName, bufVector);
+    wasmEdgeRunInstance.inParam = inParam;
+    wasmEdgeRunInstance.outParam = outParam;
+    wasmModules.emplace(functionName, wasmEdgeRunInstance);
     typeMap.emplace(functionName, TYPE_WASM_MOUDLE);
     return true;
   }
@@ -168,7 +175,17 @@ bool WasmFunctionManager::RegisterFunction(std::string moduleType,
 }
 
 bool WasmFunctionManager::DeleteFunction(std::string functionName) {
-  modules.erase(functionName);
+  if (typeMap.find(functionName) == typeMap.end()) {
+    return true;
+  }
+
+  std::unordered_map<std::string, std::string>::const_iterator gotType = typeMap.find(functionName);
+  if (gotType->second == TYPE_WAT_MOUDLE) {
+    modules.erase(functionName);
+  }
+  if(gotType->second == TYPE_WASM_MOUDLE){
+    wasmModules.erase(functionName);
+  }
   return true;
 }
 

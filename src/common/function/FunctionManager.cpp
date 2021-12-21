@@ -480,8 +480,8 @@ FunctionManager::FunctionManager() {
       auto wasmFunctionName = args[0].get().getStr();
       auto wasmFunctionHandler = args[1].get().getStr();
       auto watStr = args[2].get().getStr();
-      WasmFunctionManager&  wasmFunctionManager = WasmFunctionManager::getInstance();
-      wasmFunctionManager.RegisterFunction(wasmFunctionName,wasmFunctionHandler,watStr);
+//      WasmFunctionManager&  wasmFunctionManager = WasmFunctionManager::getInstance();
+//      wasmFunctionManager.RegisterFunction(wasmFunctionName,wasmFunctionHandler,watStr);
       return true;
     };
   }
@@ -496,8 +496,8 @@ FunctionManager::FunctionManager() {
         return Value::kNullBadType;
       }
       auto wasmFunctionName = args[0].get().getStr();
-      WasmFunctionManager&  wasmFunctionManager = WasmFunctionManager::getInstance();
-      wasmFunctionManager.DeleteFunction(wasmFunctionName);
+//      WasmFunctionManager&  wasmFunctionManager = WasmFunctionManager::getInstance();
+//      wasmFunctionManager.DeleteFunction(wasmFunctionName);
       return true;
     };
   }

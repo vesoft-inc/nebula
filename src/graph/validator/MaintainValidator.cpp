@@ -8,6 +8,7 @@
 #include "common/base/Base.h"
 #include "common/charset/Charset.h"
 #include "common/expression/ConstantExpression.h"
+#include "common/function/WasmFunctionManager.h"
 #include "graph/planner/plan/Admin.h"
 #include "graph/planner/plan/Maintain.h"
 #include "graph/planner/plan/Query.h"
@@ -17,6 +18,7 @@
 #include "graph/util/IndexUtil.h"
 #include "graph/util/SchemaUtil.h"
 #include "parser/MaintainSentences.h"
+
 
 namespace nebula {
 namespace graph {
@@ -67,7 +69,6 @@ static StatusOr<std::vector<meta::cpp2::AlterSchemaItem>> validateSchemaOpts(
     auto opType = schemaOpt->toType();
     schemaItem.set_op(opType);
     meta::cpp2::Schema schema;
-
     if (opType == meta::cpp2::AlterSchemaOp::DROP) {
       const auto &colNames = schemaOpt->columnNames();
       for (auto &colName : colNames) {
@@ -139,20 +140,116 @@ static Status checkColName(const std::vector<ColumnSpecification *> specs) {
   return Status::OK();
 }
 
+void split(const std::string& s,
+           std::vector<std::string>& sv,
+           const char delim = ' ') {
+  sv.clear();
+  std::istringstream iss(s);
+  std::string temp;
+
+  while (std::getline(iss, temp, delim)) {
+    sv.emplace_back(std::move(temp));
+  }
+
+  return;
+}
+
 Status CreateFunctionValidator::validateImpl() {
   // TODO(TripleZ): add create function logic
   createCtx_ = getContext<CreateSchemaContext>();
   auto sentence = static_cast<CreateFunctionSentence *>(sentence_);
   createCtx_->ifNotExist = sentence->isIfNotExist();
 
-  // exmaple: get create function params
-  auto name = *sentence->name();
-  // auto functionParams = sentence->functionParams();
-  // auto returnType = sentence->returnType();
-  // auto functionSource = *sentence->getFunctionSource();
-  // auto funcType = functionSource.getType();
-  // auto funcSource = functionSource.getSource();
+  //  CREATE FUNCTION fx_main(x INT32, y INT32, z FLOAT) RETURN FIXED_STRING(10) FROM
+  //  wat://base64...;
 
+  // f1_main -> f1 = function name, main = function handler name;
+  std::string functionName = "";
+  std::string functionHandler = "";
+
+  auto name = *sentence->name();
+  std::vector<std::string> sv;
+  split(name, sv, '_');
+  if(sv.size() == 1){
+    functionName = name;
+  }else{
+    functionName = sv[0];
+    functionHandler = sv[1];
+  }
+  // [INT32,INT32,FLOAT]
+  auto functionParams = sentence->functionParams();
+  //  FIXED_STRING(10)
+  auto returnType = sentence->returnType();
+  auto functionSource = *sentence->getFunctionSource();
+  // wat
+  auto funcType = functionSource.getType();
+  // hehe
+  auto funcSource = functionSource.getSource();
+
+  std::vector<WasmFunctionParamType> inParam;
+  for (auto functionParam : functionParams) {
+    switch (functionParam->type()) {
+      case meta::cpp2::PropertyType::INT32:
+        inParam.push_back(WasmFunctionParamType::INT32);
+        break;
+      case meta::cpp2::PropertyType::INT64:
+        inParam.push_back(WasmFunctionParamType::INT64);
+        break;
+      case meta::cpp2::PropertyType::FLOAT:
+        inParam.push_back(WasmFunctionParamType::FLOAT);
+        break;
+      case meta::cpp2::PropertyType::STRING:
+        inParam.push_back(WasmFunctionParamType::STRING);
+        break;
+      default:
+        LOG(ERROR) << "Function Params Unknown type: ";
+        return Status::Error("Function Params Only Support INT32 INT64 FLOAT STRING");
+    }
+  }
+  WasmFunctionParamType outParam;
+  switch (returnType) {
+    case meta::cpp2::PropertyType::INT32:
+      outParam = WasmFunctionParamType::INT32;
+      break;
+    case meta::cpp2::PropertyType::INT64:
+      outParam = WasmFunctionParamType::INT64;
+      break;
+    case meta::cpp2::PropertyType::FLOAT:
+      outParam = WasmFunctionParamType::FLOAT;
+      break;
+    case meta::cpp2::PropertyType::STRING:
+      outParam = WasmFunctionParamType::STRING;
+      break;
+    case meta::cpp2::PropertyType::FIXED_STRING:
+      outParam = WasmFunctionParamType::LIST;
+      break;
+    default:
+      LOG(ERROR) << "Function Return Unknown type: ";
+      return Status::Error("Function Return Only Support INT32 INT64 FLOAT STRING");
+  }
+  WasmFunctionManager &wasmFunctionManager = WasmFunctionManager::getInstance();
+  if (funcType == "WAT") {
+    std::string prefix1 = "wat://";
+    std::string prefix2 = "WAT://";
+    std::string watBase64Str = funcSource.substr(prefix1.length());
+    watBase64Str = funcSource.substr(prefix2.length());
+    wasmFunctionManager.RegisterFunction(
+        inParam, outParam, WasmFunctionManager::TYPE_WAT_MOUDLE, functionName, functionHandler, watBase64Str);
+  } else if (funcType == "WASM") {
+    std::string prefix1 = "wasm://";
+    std::string prefix2 = "WASM://";
+    std::string wasmBase64Str = funcSource.substr(prefix1.length());
+    wasmBase64Str = funcSource.substr(prefix2.length());
+    wasmFunctionManager.RegisterFunction(
+        inParam, outParam, WasmFunctionManager::TYPE_WASM_MOUDLE, functionName, functionHandler, wasmBase64Str);
+
+  } else if (funcType == "PATH") {
+    std::string prefix1 = "path://";
+    std::string prefix2 = "PATH://";
+    std::string path = funcSource.substr(prefix1.length());
+    wasmFunctionManager.RegisterFunction(
+        inParam, outParam, WasmFunctionManager::TYPE_WASM_PATH, functionName, functionHandler, path);
+  }
 
   // FIXME(TripleZ): schema should not be needed in create function
   meta::cpp2::Schema schema;
