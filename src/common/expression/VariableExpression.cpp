@@ -14,7 +14,6 @@ const Value& VariableExpression::eval(ExpressionContext& ctx) { return ctx.getVa
 void VariableExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
 
 void VariableExpression::writeTo(Encoder& encoder) const {
-  DCHECK(isInner_);
   encoder << kind_;
   encoder << var_;
 }

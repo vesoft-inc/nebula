@@ -117,7 +117,7 @@ StatusOr<TransformResult> GeoPredicateIndexScanBaseRule::transform(
   }
 
   auto scanNode = IndexScan::make(ctx->qctx(), nullptr);
-  OptimizerUtils::copyIndexScanData(scan, scanNode);
+  OptimizerUtils::copyIndexScanData(scan, scanNode, ctx->qctx());
   scanNode->setIndexQueryContext(std::move(idxCtxs));
   // TODO(jie): geo predicate's calculation is a little heavy,
   // which is not suitable to push down to the storage

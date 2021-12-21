@@ -59,7 +59,7 @@ Status GroupByValidator::validateYield(const YieldClause* yieldClause) {
     if (colExpr->kind() == Expression::Kind::kAggregate) {
       auto* aggExpr = static_cast<AggregateExpression*>(colExpr);
       NG_RETURN_IF_ERROR(ExpressionUtils::checkAggExpr(aggExpr));
-    } else if (!ExpressionUtils::isEvaluableExpr(colExpr)) {
+    } else if (!ExpressionUtils::isEvaluableExpr(colExpr, qctx_)) {
       yieldCols_.emplace_back(colExpr);
     }
 
@@ -173,7 +173,7 @@ Status GroupByValidator::groupClauseSemanticCheck() {
       return false;
     };
     for (auto* expr : yieldCols_) {
-      if (ExpressionUtils::isEvaluableExpr(expr)) {
+      if (ExpressionUtils::isEvaluableExpr(expr, qctx_)) {
         continue;
       }
       FindVisitor visitor(finder);
