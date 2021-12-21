@@ -100,7 +100,7 @@ void LeftJoinExecutor::buildNewRow(const std::unordered_map<T, std::vector<const
     values.insert(values.end(),
                   std::make_move_iterator(lRow.values.begin()),
                   std::make_move_iterator(lRow.values.end()));
-    values.insert(values.end(), colSize_ - lRowSize, Value::kEmpty);
+    values.insert(values.end(), colSize_ - lRowSize, Value::kNullValue);
     ds.rows.emplace_back(std::move(newRow));
   } else {
     for (auto* row : range->second) {
