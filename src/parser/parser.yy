@@ -540,7 +540,6 @@ unreserved_keyword
     | KW_MERGE              { $$ = new std::string("merge"); }
     | KW_SPLIT              { $$ = new std::string("split"); }
     | KW_RENAME             { $$ = new std::string("rename"); }
-    | KW_IGNORE_EXISTED_INDEX { $$ = new std::string("ignore_existed_index"); }
     ;
 
 expression

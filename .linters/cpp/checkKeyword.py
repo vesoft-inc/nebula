@@ -116,6 +116,7 @@ reserved_key_words = [
     'KW_ZONES',
     'KW_RENAME',
     'KW_DURATION',
+    'KW_IGNORE_EXISTED_INDEX',
 ]
 
 
