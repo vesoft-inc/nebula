@@ -340,7 +340,11 @@ Status TraverseExecutor::handleZeroStep(const std::unordered_map<Value, Paths>& 
       return Status::Error("Can't find prev paths.");
     }
     const auto& paths = pathToSrcFound->second;
-    for (auto path : paths) {
+    for (auto& p : paths) {
+      Row path;
+      if (traverse_->trackPrevPath()) {
+        path = p;
+      }
       path.values.emplace_back(srcV);
       List neighbors;
       neighbors.values.emplace_back(srcV);
