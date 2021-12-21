@@ -724,6 +724,8 @@ void MetaClient::getResponse(Request req,
               } else if (resp.get_code() == nebula::cpp2::ErrorCode::E_CLIENT_SERVER_INCOMPATIBLE) {
                 pro.setValue(respGen(std::move(resp)));
                 return;
+              } else if (resp.get_code() == nebula::cpp2::ErrorCode::E_MACHINE_NOT_FOUND) {
+                updateLeader();
               }
               pro.setValue(this->handleResponse(resp));
             });  // then
@@ -2451,7 +2453,8 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
         metaServerVersion_ = resp.get_meta_version();
         return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
       },
-      std::move(promise));
+      std::move(promise),
+      true);
   return future;
 }
 
@@ -3554,6 +3557,7 @@ bool MetaClient::checkIsPlanKilled(SessionID sessionId, ExecutionPlanID planId) 
 
 Status MetaClient::verifyVersion() {
   auto req = cpp2::VerifyClientVersionReq();
+  req.set_build_version(getOriginVersion());
   req.set_host(options_.localHost_);
   folly::Promise<StatusOr<cpp2::VerifyClientVersionResp>> promise;
   auto future = promise.getFuture();

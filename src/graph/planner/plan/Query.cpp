@@ -18,11 +18,13 @@ using folly::stringPrintf;
 namespace nebula {
 namespace graph {
 
-int64_t Explore::limit() const {
-  QueryExpressionContext ctx;
-  DCHECK(ExpressionUtils::isEvaluableExpr(limit_));
-  return DCHECK_NOTNULL(limit_)->eval(ctx).getInt();
+int64_t Explore::limit(QueryContext* qctx) const {
+  DCHECK(ExpressionUtils::isEvaluableExpr(limit_, qctx));
+  return DCHECK_NOTNULL(limit_)
+      ->eval(QueryExpressionContext(qctx ? qctx->ectx() : nullptr)())
+      .getInt();
 }
+
 std::unique_ptr<PlanNodeDescription> Explore::explain() const {
   auto desc = SingleInputNode::explain();
   addDescription("space", folly::to<std::string>(space_), desc.get());
@@ -383,16 +385,16 @@ void Sort::cloneMembers(const Sort& p) {
 }
 
 // Get constant count value
-int64_t Limit::count() const {
+int64_t Limit::count(QueryContext* qctx) const {
   if (count_ == nullptr) {
     return -1;
   }
-  DCHECK(ExpressionUtils::isEvaluableExpr(count_));
-  QueryExpressionContext ctx;
-  auto s = count_->eval(ctx).getInt();
+  DCHECK(ExpressionUtils::isEvaluableExpr(count_, qctx));
+  auto s = count_->eval(QueryExpressionContext(qctx ? qctx->ectx() : nullptr)()).getInt();
   DCHECK_GE(s, 0);
   return s;
 }
+
 std::unique_ptr<PlanNodeDescription> Limit::explain() const {
   auto desc = SingleInputNode::explain();
   addDescription("offset", folly::to<std::string>(offset_), desc.get());

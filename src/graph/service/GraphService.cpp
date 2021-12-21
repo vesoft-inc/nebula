@@ -114,6 +114,48 @@ void GraphService::signout(int64_t sessionId) {
   sessionManager_->removeSession(sessionId);
 }
 
+folly::Future<ExecutionResponse> GraphService::future_executeWithParameter(
+    int64_t sessionId,
+    const std::string& query,
+    const std::unordered_map<std::string, Value>& parameterMap) {
+  auto ctx = std::make_unique<RequestContext<ExecutionResponse>>();
+  ctx->setQuery(query);
+  ctx->setRunner(getThreadManager());
+  ctx->setSessionMgr(sessionManager_.get());
+  auto future = ctx->future();
+  stats::StatsManager::addValue(kNumQueries);
+  // When the sessionId is 0, it means the clients to ping the connection is ok
+  if (sessionId == 0) {
+    ctx->resp().errorCode = ErrorCode::E_SESSION_INVALID;
+    ctx->resp().errorMsg = std::make_unique<std::string>("Invalid session id");
+    ctx->finish();
+    return future;
+  }
+  auto cb = [this, sessionId, ctx = std::move(ctx), parameterMap = std::move(parameterMap)](
+                StatusOr<std::shared_ptr<ClientSession>> ret) mutable {
+    if (!ret.ok()) {
+      LOG(ERROR) << "Get session for sessionId: " << sessionId << " failed: " << ret.status();
+      ctx->resp().errorCode = ErrorCode::E_SESSION_INVALID;
+      ctx->resp().errorMsg.reset(new std::string(folly::stringPrintf(
+          "Get sessionId[%ld] failed: %s", sessionId, ret.status().toString().c_str())));
+      return ctx->finish();
+    }
+    auto sessionPtr = std::move(ret).value();
+    if (sessionPtr == nullptr) {
+      LOG(ERROR) << "Get session for sessionId: " << sessionId << " is nullptr";
+      ctx->resp().errorCode = ErrorCode::E_SESSION_INVALID;
+      ctx->resp().errorMsg.reset(
+          new std::string(folly::stringPrintf("SessionId[%ld] does not exist", sessionId)));
+      return ctx->finish();
+    }
+    ctx->setSession(std::move(sessionPtr));
+    ctx->setParameterMap(parameterMap);
+    queryEngine_->execute(std::move(ctx));
+  };
+  sessionManager_->findSession(sessionId, getThreadManager()).thenValue(std::move(cb));
+  return future;
+}
+
 folly::Future<ExecutionResponse> GraphService::future_execute(int64_t sessionId,
                                                               const std::string& query) {
   auto ctx = std::make_unique<RequestContext<ExecutionResponse>>();
@@ -155,7 +197,15 @@ folly::Future<ExecutionResponse> GraphService::future_execute(int64_t sessionId,
 
 folly::Future<std::string> GraphService::future_executeJson(int64_t sessionId,
                                                             const std::string& query) {
-  return future_execute(sessionId, query).thenValue([](ExecutionResponse&& resp) {
+  return future_executeJsonWithParameter(
+      sessionId, query, std::unordered_map<std::string, Value>{});
+}
+
+folly::Future<std::string> GraphService::future_executeJsonWithParameter(
+    int64_t sessionId,
+    const std::string& query,
+    const std::unordered_map<std::string, Value>& parameterMap) {
+  return future_executeWithParameter(sessionId, query, parameterMap).thenValue([](auto&& resp) {
     return folly::toJson(resp.toJson());
   });
 }

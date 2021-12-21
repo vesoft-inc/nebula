@@ -39,11 +39,10 @@ StatusOr<OptRule::TransformResult> PushStepSampleDownGetNeighborsRule::transform
 
   const auto sample = static_cast<const Sample *>(sampleGroupNode->node());
   const auto gn = static_cast<const GetNeighbors *>(gnGroupNode->node());
-
   if (gn->limitExpr() != nullptr && graph::ExpressionUtils::isEvaluableExpr(gn->limitExpr()) &&
       graph::ExpressionUtils::isEvaluableExpr(sample->countExpr())) {
     int64_t limitRows = sample->count();
-    int64_t gnLimit = gn->limit();
+    int64_t gnLimit = gn->limit(octx->qctx());
     if (gnLimit >= 0 && limitRows >= gnLimit) {
       return TransformResult::noTransform();
     }
