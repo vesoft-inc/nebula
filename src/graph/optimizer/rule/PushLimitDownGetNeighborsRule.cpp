@@ -34,6 +34,7 @@ const Pattern &PushLimitDownGetNeighborsRule::pattern() const {
 
 StatusOr<OptRule::TransformResult> PushLimitDownGetNeighborsRule::transform(
     OptContext *octx, const MatchedResult &matched) const {
+  auto *qctx = octx->qctx();
   auto limitGroupNode = matched.node;
   auto gnGroupNode = matched.dependencies.front().node;
 
@@ -43,8 +44,8 @@ StatusOr<OptRule::TransformResult> PushLimitDownGetNeighborsRule::transform(
   if (!graph::ExpressionUtils::isEvaluableExpr(limit->countExpr())) {
     return TransformResult::noTransform();
   }
-  int64_t limitRows = limit->offset() + limit->count();
-  if (gn->limit() >= 0 && limitRows >= gn->limit()) {
+  int64_t limitRows = limit->offset() + limit->count(qctx);
+  if (gn->limit(qctx) >= 0 && limitRows >= gn->limit(qctx)) {
     return TransformResult::noTransform();
   }
 

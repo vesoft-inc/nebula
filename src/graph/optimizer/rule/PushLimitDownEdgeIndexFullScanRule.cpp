@@ -34,14 +34,15 @@ const Pattern &PushLimitDownEdgeIndexFullScanRule::pattern() const {
 
 StatusOr<OptRule::TransformResult> PushLimitDownEdgeIndexFullScanRule::transform(
     OptContext *octx, const MatchedResult &matched) const {
+  auto *qctx = octx->qctx();
   auto limitGroupNode = matched.node;
   auto indexScanGroupNode = matched.dependencies.front().node;
 
   const auto limit = static_cast<const Limit *>(limitGroupNode->node());
   const auto indexScan = static_cast<const EdgeIndexFullScan *>(indexScanGroupNode->node());
 
-  int64_t limitRows = limit->offset() + limit->count();
-  if (indexScan->limit() >= 0 && limitRows >= indexScan->limit()) {
+  int64_t limitRows = limit->offset() + limit->count(qctx);
+  if (indexScan->limit(qctx) >= 0 && limitRows >= indexScan->limit(qctx)) {
     return TransformResult::noTransform();
   }
 
