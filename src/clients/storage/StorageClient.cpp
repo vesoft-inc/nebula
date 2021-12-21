@@ -112,7 +112,8 @@ StorageRpcRespFuture<cpp2::ExecResponse> StorageClient::addVertices(
     const CommonRequestParam& param,
     std::vector<cpp2::NewVertex> vertices,
     std::unordered_map<TagID, std::vector<std::string>> propNames,
-    bool ifNotExists) {
+    bool ifNotExists,
+    bool ignoreExistedIndex) {
   auto cbStatus = getIdFromNewVertex(param.space);
   if (!cbStatus.ok()) {
     return folly::makeFuture<StorageRpcResponse<cpp2::ExecResponse>>(
@@ -133,6 +134,7 @@ StorageRpcRespFuture<cpp2::ExecResponse> StorageClient::addVertices(
     auto& req = requests[host];
     req.set_space_id(param.space);
     req.set_if_not_exists(ifNotExists);
+    req.set_ignore_existed_index(ignoreExistedIndex);
     req.set_parts(std::move(c.second));
     req.set_prop_names(propNames);
     req.set_common(common);
@@ -149,7 +151,8 @@ StorageRpcRespFuture<cpp2::ExecResponse> StorageClient::addVertices(
 StorageRpcRespFuture<cpp2::ExecResponse> StorageClient::addEdges(const CommonRequestParam& param,
                                                                  std::vector<cpp2::NewEdge> edges,
                                                                  std::vector<std::string> propNames,
-                                                                 bool ifNotExists) {
+                                                                 bool ifNotExists,
+                                                                 bool ignoreExistedIndex) {
   auto cbStatus = getIdFromNewEdge(param.space);
   if (!cbStatus.ok()) {
     return folly::makeFuture<StorageRpcResponse<cpp2::ExecResponse>>(
@@ -170,6 +173,7 @@ StorageRpcRespFuture<cpp2::ExecResponse> StorageClient::addEdges(const CommonReq
     auto& req = requests[host];
     req.set_space_id(param.space);
     req.set_if_not_exists(ifNotExists);
+    req.set_ignore_existed_index(ignoreExistedIndex);
     req.set_parts(std::move(c.second));
     req.set_prop_names(propNames);
     req.set_common(common);
@@ -558,15 +562,15 @@ StorageRpcRespFuture<cpp2::GetNeighborsResponse> StorageClient::lookupAndTravers
       });
 }
 
-StorageRpcRespFuture<cpp2::ScanEdgeResponse> StorageClient::scanEdge(
+StorageRpcRespFuture<cpp2::ScanResponse> StorageClient::scanEdge(
     const CommonRequestParam& param,
-    const cpp2::EdgeProp& edgeProp,
+    const std::vector<cpp2::EdgeProp>& edgeProp,
     int64_t limit,
     const Expression* filter) {
   std::unordered_map<HostAddr, cpp2::ScanEdgeRequest> requests;
   auto status = getHostPartsWithCursor(param.space);
   if (!status.ok()) {
-    return folly::makeFuture<StorageRpcResponse<cpp2::ScanEdgeResponse>>(
+    return folly::makeFuture<StorageRpcResponse<cpp2::ScanResponse>>(
         std::runtime_error(status.status().toString()));
   }
   auto& clusters = status.value();
@@ -589,7 +593,7 @@ StorageRpcRespFuture<cpp2::ScanEdgeResponse> StorageClient::scanEdge(
                             const cpp2::ScanEdgeRequest& r) { return client->future_scanEdge(r); });
 }
 
-StorageRpcRespFuture<cpp2::ScanVertexResponse> StorageClient::scanVertex(
+StorageRpcRespFuture<cpp2::ScanResponse> StorageClient::scanVertex(
     const CommonRequestParam& param,
     const std::vector<cpp2::VertexProp>& vertexProp,
     int64_t limit,
@@ -597,7 +601,7 @@ StorageRpcRespFuture<cpp2::ScanVertexResponse> StorageClient::scanVertex(
   std::unordered_map<HostAddr, cpp2::ScanVertexRequest> requests;
   auto status = getHostPartsWithCursor(param.space);
   if (!status.ok()) {
-    return folly::makeFuture<StorageRpcResponse<cpp2::ScanVertexResponse>>(
+    return folly::makeFuture<StorageRpcResponse<cpp2::ScanResponse>>(
         std::runtime_error(status.status().toString()));
   }
   auto& clusters = status.value();

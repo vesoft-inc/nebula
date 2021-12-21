@@ -25,6 +25,7 @@ cpp_include "common/datatypes/DataSetOps-inl.h"
 cpp_include "common/datatypes/KeyValueOps-inl.h"
 cpp_include "common/datatypes/HostAddrOps-inl.h"
 cpp_include "common/datatypes/GeographyOps-inl.h"
+cpp_include "common/datatypes/DurationOps-inl.h"
 
 /*
  *
@@ -225,6 +226,12 @@ struct KeyValue {
     2: binary value,
 } (cpp.type = "nebula::KeyValue")
 
+struct Duration {
+    1: i64 seconds;
+    2: i32 microseconds;
+    3: i32 months;
+} (cpp.type = "nebula::Duration")
+
 struct LogInfo {
     1: LogID  log_id;
     2: TermID term_id;
@@ -278,6 +285,7 @@ enum PropertyType {
 
     // Date time
     TIMESTAMP = 21,
+    DURATION = 23,
     DATE = 24,
     DATETIME = 25,
     TIME = 26,
@@ -311,7 +319,7 @@ enum ErrorCode {
     E_TAG_PROP_NOT_FOUND              = -10,
     E_ROLE_NOT_FOUND                  = -11,
     E_CONFIG_NOT_FOUND                = -12,
-    E_GROUP_NOT_FOUND                 = -13,
+    E_MACHINE_NOT_FOUND               = -13,
     E_ZONE_NOT_FOUND                  = -14,
     E_LISTENER_NOT_FOUND              = -15,
     E_PART_NOT_FOUND                  = -16,

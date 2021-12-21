@@ -47,6 +47,7 @@ void AddVerticesProcessor::process(const cpp2::AddVerticesRequest& req) {
     return;
   }
   indexes_ = std::move(iRet).value();
+  ignoreExistedIndex_ = req.get_ignore_existed_index();
 
   CHECK_NOTNULL(env_->kvstore_);
   if (indexes_.empty()) {
@@ -78,7 +79,7 @@ void AddVerticesProcessor::doProcess(const cpp2::AddVerticesRequest& req) {
         code = nebula::cpp2::ErrorCode::E_INVALID_VID;
         break;
       }
-
+      data.emplace_back(NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vid), "");
       for (auto& newTag : newTags) {
         auto tagId = newTag.get_tag_id();
         VLOG(3) << "PartitionID: " << partId << ", VertexID: " << vid << ", TagID: " << tagId;
@@ -155,7 +156,7 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
         code = nebula::cpp2::ErrorCode::E_INVALID_VID;
         break;
       }
-
+      batchHolder->put(NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vid), "");
       for (auto& newTag : newTags) {
         auto tagId = newTag.get_tag_id();
         auto l = std::make_tuple(spaceId_, partId, tagId, vid);
@@ -189,18 +190,22 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
 
         RowReaderWrapper nReader;
         RowReaderWrapper oReader;
-        auto obsIdx = findOldValue(partId, vid, tagId);
-        if (nebula::ok(obsIdx)) {
-          if (ifNotExists_ && !nebula::value(obsIdx).empty()) {
-            continue;
+        std::string oldVal;
+        if (!ignoreExistedIndex_) {
+          auto obsIdx = findOldValue(partId, vid, tagId);
+          if (nebula::ok(obsIdx)) {
+            if (ifNotExists_ && !nebula::value(obsIdx).empty()) {
+              continue;
+            }
+            if (!nebula::value(obsIdx).empty()) {
+              oldVal = std::move(value(obsIdx));
+              oReader =
+                  RowReaderWrapper::getTagPropReader(env_->schemaMan_, spaceId_, tagId, oldVal);
+            }
+          } else {
+            code = nebula::error(obsIdx);
+            break;
           }
-          if (!nebula::value(obsIdx).empty()) {
-            oReader = RowReaderWrapper::getTagPropReader(
-                env_->schemaMan_, spaceId_, tagId, nebula::value(obsIdx));
-          }
-        } else {
-          code = nebula::error(obsIdx);
-          break;
         }
 
         WriteResult wRet;

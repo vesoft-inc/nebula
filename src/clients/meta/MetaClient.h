@@ -597,13 +597,22 @@ class MetaClient {
 
   StatusOr<LeaderInfo> getLeaderInfo();
 
-  folly::Future<StatusOr<bool>> addZone(std::string zoneName, std::vector<HostAddr> nodes);
+  folly::Future<StatusOr<bool>> addHosts(std::vector<HostAddr> hosts);
+
+  folly::Future<StatusOr<bool>> dropHosts(std::vector<HostAddr> hosts);
+
+  folly::Future<StatusOr<bool>> mergeZone(std::vector<std::string> zones, std::string zoneName);
+
+  folly::Future<StatusOr<bool>> renameZone(std::string originalZoneName, std::string zoneName);
 
   folly::Future<StatusOr<bool>> dropZone(std::string zoneName);
 
-  folly::Future<StatusOr<bool>> addHostIntoZone(HostAddr node, std::string zoneName);
+  folly::Future<StatusOr<bool>> splitZone(
+      std::string zoneName, std::unordered_map<std::string, std::vector<HostAddr>> zones);
 
-  folly::Future<StatusOr<bool>> dropHostFromZone(HostAddr node, std::string zoneName);
+  folly::Future<StatusOr<bool>> addHostsIntoZone(std::vector<HostAddr> hosts,
+                                                 std::string zoneName,
+                                                 bool isNew);
 
   folly::Future<StatusOr<std::vector<HostAddr>>> getZone(std::string zoneName);
 

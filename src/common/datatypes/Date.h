@@ -10,6 +10,8 @@
 
 #include <string>
 
+#include "common/datatypes/Duration.h"
+
 namespace nebula {
 
 // In nebula only store UTC time, and the interpretation of time value based on
@@ -17,6 +19,21 @@ namespace nebula {
 
 extern const int64_t kDaysSoFar[];
 extern const int64_t kLeapDaysSoFar[];
+
+// https://en.wikipedia.org/wiki/Leap_year#Leap_day
+static inline bool isLeapYear(int16_t year) {
+  if (year % 4 != 0) {
+    return false;
+  } else if (year % 100 != 0) {
+    return true;
+  } else if (year % 400 != 0) {
+    return false;
+  } else {
+    return true;
+  }
+}
+
+int8_t dayOfMonth(int16_t year, int8_t month);
 
 struct Date {
   int16_t year;  // Any integer
@@ -62,6 +79,9 @@ struct Date {
   Date operator+(int64_t days) const;
   Date operator-(int64_t days) const;
 
+  void addDuration(const Duration& duration);
+  void subDuration(const Duration& duration);
+
   std::string toString() const;
   folly::dynamic toJson() const { return toString(); }
 
@@ -70,6 +90,18 @@ struct Date {
   // Convert the number of days since -32768/1/1 to the real date
   void fromInt(int64_t days);
 };
+
+inline Date operator+(const Date& l, const Duration& r) {
+  Date d = l;
+  d.addDuration(r);
+  return d;
+}
+
+inline Date operator-(const Date& l, const Duration& r) {
+  Date d = l;
+  d.subDuration(r);
+  return d;
+}
 
 inline std::ostream& operator<<(std::ostream& os, const Date& d) {
   os << d.toString();
@@ -114,6 +146,9 @@ struct Time {
     return false;
   }
 
+  void addDuration(const Duration& duration);
+  void subDuration(const Duration& duration);
+
   std::string toString() const;
   // 'Z' representing UTC timezone
   folly::dynamic toJson() const { return toString() + "Z"; }
@@ -122,6 +157,18 @@ struct Time {
 inline std::ostream& operator<<(std::ostream& os, const Time& d) {
   os << d.toString();
   return os;
+}
+
+inline Time operator+(const Time& l, const Duration& r) {
+  Time t = l;
+  t.addDuration(r);
+  return t;
+}
+
+inline Time operator-(const Time& l, const Duration& r) {
+  Time t = l;
+  t.subDuration(r);
+  return t;
 }
 
 struct DateTime {
@@ -164,6 +211,19 @@ struct DateTime {
     sec = 0;
     microsec = 0;
   }
+  explicit DateTime(const Date& date, const Time& time) {
+    year = date.year;
+    month = date.month;
+    day = date.day;
+    hour = time.hour;
+    minute = time.minute;
+    sec = time.sec;
+    microsec = time.microsec;
+  }
+
+  Date date() const { return Date(year, month, day); }
+
+  Time time() const { return Time(hour, minute, sec, microsec); }
 
   void clear() {
     year = 0;
@@ -206,6 +266,9 @@ struct DateTime {
     return false;
   }
 
+  void addDuration(const Duration& duration);
+  void subDuration(const Duration& duration);
+
   std::string toString() const;
   // 'Z' representing UTC timezone
   folly::dynamic toJson() const { return toString() + "Z"; }
@@ -214,6 +277,18 @@ struct DateTime {
 inline std::ostream& operator<<(std::ostream& os, const DateTime& d) {
   os << d.toString();
   return os;
+}
+
+inline DateTime operator+(const DateTime& l, const Duration& r) {
+  DateTime dt = l;
+  dt.addDuration(r);
+  return dt;
+}
+
+inline DateTime operator-(const DateTime& l, const Duration& r) {
+  DateTime dt = l;
+  dt.subDuration(r);
+  return dt;
 }
 
 }  // namespace nebula

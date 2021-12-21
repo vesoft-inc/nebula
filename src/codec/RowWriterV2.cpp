@@ -130,6 +130,9 @@ RowWriterV2::RowWriterV2(RowReader& reader) : RowWriterV2(reader.getSchema()) {
       case Value::Type::GEOGRAPHY:
         set(i, v.moveGeography());
         break;
+      case Value::Type::DURATION:
+        set(i, v.moveDuration());
+        break;
       default:
         LOG(FATAL) << "Invalid data: " << v << ", type: " << v.typeName();
     }
@@ -209,6 +212,8 @@ WriteResult RowWriterV2::setValue(ssize_t index, const Value& val) noexcept {
       return write(index, val.getDateTime());
     case Value::Type::GEOGRAPHY:
       return write(index, val.getGeography());
+    case Value::Type::DURATION:
+      return write(index, val.getDuration());
     default:
       return WriteResult::TYPE_MISMATCH;
   }
@@ -762,6 +767,29 @@ WriteResult RowWriterV2::write(ssize_t index, const DateTime& v) noexcept {
   return WriteResult::SUCCEEDED;
 }
 
+WriteResult RowWriterV2::write(ssize_t index, const Duration& v) noexcept {
+  auto field = schema_->field(index);
+  auto offset = headerLen_ + numNullBytes_ + field->offset();
+  switch (field->type()) {
+    case PropertyType::DURATION:
+      memcpy(&buf_[offset], reinterpret_cast<const void*>(&v.seconds), sizeof(int64_t));
+      memcpy(&buf_[offset + sizeof(int64_t)],
+             reinterpret_cast<const void*>(&v.microseconds),
+             sizeof(int32_t));
+      memcpy(&buf_[offset + sizeof(int64_t) + sizeof(int32_t)],
+             reinterpret_cast<const void*>(&v.months),
+             sizeof(int32_t));
+      break;
+    default:
+      return WriteResult::TYPE_MISMATCH;
+  }
+  if (field->nullable()) {
+    clearNullBit(field->nullFlagPos());
+  }
+  isSet_[index] = true;
+  return WriteResult::SUCCEEDED;
+}
+
 WriteResult RowWriterV2::write(ssize_t index, const Geography& v) noexcept {
   auto field = schema_->field(index);
   auto geoShape = field->geoShape();
@@ -814,6 +842,9 @@ WriteResult RowWriterV2::checkUnsetFields() noexcept {
             break;
           case Value::Type::GEOGRAPHY:
             r = write(i, defVal.getGeography());
+            break;
+          case Value::Type::DURATION:
+            r = write(i, defVal.getDuration());
             break;
           default:
             LOG(FATAL) << "Unsupported default value type: " << defVal.typeName()

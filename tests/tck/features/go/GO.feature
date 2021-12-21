@@ -216,7 +216,7 @@ Feature: Go Sentence
       """
       GO FROM $var OVER like YIELD like._dst
       """
-    Then a SyntaxError should be raised at runtime: syntax error near `OVER'
+    Then a SyntaxError should be raised at runtime: Variable is not supported in vid near `$var'
 
   Scenario: distinct
     When executing query:
@@ -753,6 +753,34 @@ Feature: Go Sentence
         RETURN $B IF $A IS NOT NULL
       """
     Then a SemanticError should be raised at runtime: `$a.id', not exist variable `a'
+    When executing query:
+      """
+      $A = GO FROM 'Tim Duncan' OVER like YIELD like._dst AS dst;
+       $B = GO FROM $A.dst OVER like YIELD like._dst AS dst;
+        GO FROM $A.dst over like YIELD like._dst AS dst, $B.dst
+      """
+    Then a SemanticError should be raised at runtime: A variable must be referred in FROM before used in WHERE or YIELD
+    When executing query:
+      """
+      $A = GO FROM 'Tim Duncan' OVER like YIELD like._dst AS dst;
+       $B = GO FROM $A.dst OVER like YIELD like._dst AS dst;
+        GO FROM $A.dst over like WHERE $B.dst > "A" YIELD like._dst AS dst
+      """
+    Then a SemanticError should be raised at runtime: A variable must be referred in FROM before used in WHERE or YIELD
+    When executing query:
+      """
+      $A = GO FROM 'Tim Duncan' OVER like YIELD like._dst AS dst;
+       $B = GO FROM $A.dst OVER like YIELD like._dst AS dst;
+        GO FROM $A.dst over like YIELD like._dst AS dst, $B.dst, $A.dst
+      """
+    Then a SemanticError should be raised at runtime: Multiple variable property is not supported in WHERE or YIELD
+    When executing query:
+      """
+      $A = GO FROM 'Tim Duncan' OVER like YIELD like._dst AS dst;
+       $B = GO FROM $A.dst OVER like YIELD like._dst AS dst;
+        GO FROM $A.dst over like WHERE $A.dst > "A" and $B.dst > "B" YIELD like._dst
+      """
+    Then a SemanticError should be raised at runtime: Multiple variable property is not supported in WHERE or YIELD
     When executing query:
       """
       RETURN $rA IF $rA IS NOT NULL;
