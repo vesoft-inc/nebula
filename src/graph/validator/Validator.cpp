@@ -447,7 +447,7 @@ Status Validator::validateStarts(const VerticesClause* clause, Starts& starts) {
     auto vidList = clause->vidList();
     QueryExpressionContext ctx;
     for (auto* expr : vidList) {
-      if (!ExpressionUtils::isEvaluableExpr(expr)) {
+      if (!ExpressionUtils::isEvaluableExpr(expr, qctx_)) {
         return Status::SemanticError("`%s' is not an evaluable expression.",
                                      expr->toString().c_str());
       }

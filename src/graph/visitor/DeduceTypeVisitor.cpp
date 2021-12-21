@@ -186,7 +186,7 @@ void DeduceTypeVisitor::visit(TypeCastingExpression *expr) {
     return;
   }
 
-  EvaluableExprVisitor visitor;
+  EvaluableExprVisitor visitor(qctx_);
   expr->operand()->accept(&visitor);
 
   if (!visitor.ok()) {
@@ -488,7 +488,7 @@ void DeduceTypeVisitor::visit(InputPropertyExpression *expr) {
 
 void DeduceTypeVisitor::visit(VariablePropertyExpression *expr) {
   const auto &var = expr->sym();
-  if (!vctx_->existVar(var)) {
+  if (!vctx_->existVar(var) && !qctx_->existParameter(var)) {
     status_ = Status::SemanticError(
         "`%s', not exist variable `%s'", expr->toString().c_str(), var.c_str());
     return;

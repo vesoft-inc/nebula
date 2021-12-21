@@ -17,6 +17,8 @@ namespace opt {
 TEST(IndexScanRuleTest, IQCtxTest) {
   auto* inst = std::move(IndexScanRule::kInstance).get();
   auto* instance = static_cast<IndexScanRule*>(inst);
+  auto objPoolPtr = std::make_unique<ObjectPool>();
+  auto* pool = objPoolPtr.get();
   {
     IndexItem index = std::make_unique<meta::cpp2::IndexItem>();
     IndexScanRule::FilterItems items;
@@ -141,13 +143,15 @@ TEST(IndexScanRuleTest, IQCtxTest) {
       items.addItem("col3", RelationalExpression::Kind::kRelGT, Value(3L));
       items.addItem("col4", RelationalExpression::Kind::kRelLT, Value(4L));
 
-      auto ret = instance->appendIQCtx(index, items, iqctx, "col4 < 4");
+      auto* expr = RelationalExpression::makeLT(
+          pool, ConstantExpression::make(pool, "col4"), ConstantExpression::make(pool, 4));
+      auto ret = instance->appendIQCtx(index, items, iqctx, expr);
       ASSERT_TRUE(ret.ok());
 
       ASSERT_EQ(1, iqctx.size());
       ASSERT_EQ(4, iqctx.begin()->get_column_hints().size());
       ASSERT_EQ(1, iqctx.begin()->get_index_id());
-      ASSERT_EQ("col4 < 4", iqctx.begin()->get_filter());
+      ASSERT_EQ("(\"col4\"<4)", Expression::decode(pool, iqctx.begin()->get_filter())->toString());
       const auto& colHints = iqctx.begin()->get_column_hints();
       {
         auto hint = colHints[0];

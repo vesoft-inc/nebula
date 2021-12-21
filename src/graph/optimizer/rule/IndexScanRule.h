@@ -101,7 +101,7 @@ class IndexScanRule final : public OptRule {
   Status appendIQCtx(const IndexItem& index,
                      const FilterItems& items,
                      std::vector<graph::IndexScan::IndexQueryContext>& iqctx,
-                     const std::string& filter = "") const;
+                     const Expression* filter = nullptr) const;
 
   Status appendIQCtx(const IndexItem& index,
                      std::vector<graph::IndexScan::IndexQueryContext>& iqctx) const;
@@ -120,12 +120,13 @@ class IndexScanRule final : public OptRule {
 
   Expression* filterExpr(const OptGroupNode* groupNode) const;
 
-  Status analyzeExpression(Expression* expr, FilterItems* items, ScanKind* kind, bool isEdge) const;
+  Status analyzeExpression(
+      Expression* expr, FilterItems* items, ScanKind* kind, bool isEdge, QueryContext* qctx) const;
 
   template <typename E,
             typename = std::enable_if_t<std::is_same<E, EdgePropertyExpression>::value ||
                                         std::is_same<E, TagPropertyExpression>::value>>
-  Status addFilterItem(RelationalExpression* expr, FilterItems* items) const;
+  Status addFilterItem(RelationalExpression* expr, FilterItems* items, QueryContext* qctx) const;
 
   IndexItem findOptimalIndex(graph::QueryContext* qctx,
                              const OptGroupNode* groupNode,

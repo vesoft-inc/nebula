@@ -45,7 +45,7 @@ folly::Future<Status> AppendVerticesExecutor::appendVertices() {
                  av->exprs(),
                  av->dedup(),
                  av->orderBy(),
-                 av->limit(),
+                 av->limit(qctx()),
                  av->filter())
       .via(runner())
       .ensure([this, getPropsTime]() {

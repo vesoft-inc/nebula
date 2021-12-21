@@ -20,6 +20,8 @@ from tests.common.csv_import import CSVImporter
 from tests.common.path_value import PathVal
 from tests.common.types import SpaceDesc
 
+# just for cypher parameter test
+params={}
 
 def utf8b(s: str):
     return bytes(s, encoding='utf-8')
@@ -344,8 +346,7 @@ def retry(times: int, predicate=lambda x: x and x.is_succeeded()):
 
 @retry(30)
 def try_execute(sess: Session, stmt: str):
-    return sess.execute(stmt)
-
+    return sess.execute_parameter(stmt, params)
 
 def return_if_not_leader_changed(resp) -> bool:
     if not resp:
@@ -359,8 +360,7 @@ def return_if_not_leader_changed(resp) -> bool:
 
 @retry(30, return_if_not_leader_changed)
 def process_leader_changed(sess: Session, stmt: str):
-    return sess.execute(stmt)
-
+    return sess.execute_parameter(stmt, params)
 
 def response(sess: Session, stmt: str, need_try: bool = False):
     try:
