@@ -375,11 +375,11 @@ Status IndexScanRule::analyzeExpression(
     case Expression::Kind::kRelNE: {
       auto* rExpr = static_cast<RelationalExpression*>(expr);
       if (isEdge) {
-        NG_RETURN_IF_ERROR(addFilterItem<EdgePropertyExpression>(rExpr, items));
+        NG_RETURN_IF_ERROR(addFilterItem<EdgePropertyExpression>(rExpr, items, qctx));
       } else if (ExpressionUtils::hasAny(rExpr, {Expression::Kind::kLabelTagProperty})) {
-        NG_RETURN_IF_ERROR(addFilterItem<LabelTagPropertyExpression>(rExpr, items));
+        NG_RETURN_IF_ERROR(addFilterItem<LabelTagPropertyExpression>(rExpr, items, qctx));
       } else {
-        NG_RETURN_IF_ERROR(addFilterItem<TagPropertyExpression>(rExpr, items));
+        NG_RETURN_IF_ERROR(addFilterItem<TagPropertyExpression>(rExpr, items, qctx));
       }
       if (kind->getKind() == ScanKind::Kind::kMultipleScan &&
           expr->kind() == Expression::Kind::kRelNE) {
