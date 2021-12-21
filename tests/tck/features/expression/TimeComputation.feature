@@ -15,6 +15,13 @@ Feature: Time computation
     Then the result should be, in any order:
       | sum   | diff   |
       | <sum> | <diff> |
+    When executing query:
+      """
+      RETURN date('1984-10-11') + duration(<map>) AS sum, date('1984-10-11') - duration(<map>) AS diff
+      """
+    Then the result should be, in any order:
+      | sum   | diff   |
+      | <sum> | <diff> |
 
     Examples:
       | map                                                                   | sum          | diff         |
@@ -29,6 +36,13 @@ Feature: Time computation
       """
       WITH time('12:31:14') as x, duration(<map>) as d
       RETURN x + d AS sum, x - d AS diff
+      """
+    Then the result should be, in any order:
+      | sum   | diff   |
+      | <sum> | <diff> |
+    When executing query:
+      """
+      RETURN time('12:31:14') + duration(<map>) AS sum, time('12:31:14') - duration(<map>) AS diff
       """
     Then the result should be, in any order:
       | sum   | diff   |
@@ -51,6 +65,14 @@ Feature: Time computation
     Then the result should be, in any order:
       | sum   | diff   |
       | <sum> | <diff> |
+    When executing query:
+      """
+      WITH  as x,  as d
+      RETURN datetime('1984-10-11T12:31:14') + duration(<map>) AS sum, datetime('1984-10-11T12:31:14') - duration(<map>) AS diff
+      """
+    Then the result should be, in any order:
+      | sum   | diff   |
+      | <sum> | <diff> |
 
     Examples:
       | map                                                                   | sum                          | diff                         |
@@ -65,6 +87,13 @@ Feature: Time computation
       """
       WITH datetime('1984-10-11T12:31:14') as x, duration(<map>) as d
       RETURN x + d AS sum, x - d AS diff
+      """
+    Then the result should be, in any order:
+      | sum   | diff   |
+      | <sum> | <diff> |
+    When executing query:
+      """
+      RETURN datetime('1984-10-11T12:31:14') + duration(<map>) AS sum, datetime('1984-10-11T12:31:14') - duration(<map>) AS diff
       """
     Then the result should be, in any order:
       | sum   | diff   |

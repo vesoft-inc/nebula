@@ -139,6 +139,7 @@ struct Value {
   Type type() const noexcept { return type_; }
 
   const std::string& typeName() const;
+  static const std::string toString(Type type);
 
   bool empty() const { return type_ == Type::__EMPTY__; }
   bool isNull() const { return type_ == Type::NULLVALUE; }
