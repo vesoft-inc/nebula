@@ -29,4 +29,12 @@ Feature: insert vertex without tag
     Then the result should be, in any order:
       | dst |
       | 3   |
+    When executing query:
+      """
+      FETCH PROP ON * 1,2 yield vertex AS v;
+      """
+    Then the result should be, in any order, with relax comparison:
+      | v     |
+      | (1) |
+      | (2) |
     Then drop the used space

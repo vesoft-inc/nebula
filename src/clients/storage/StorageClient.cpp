@@ -218,11 +218,12 @@ StorageRpcRespFuture<cpp2::GetPropResponse> StorageClient::getProps(
     req.set_space_id(param.space);
     req.set_parts(std::move(c.second));
     req.set_dedup(dedup);
-    if (vertexProps != nullptr) {
-      req.set_vertex_props(*vertexProps);
-    }
     if (edgeProps != nullptr) {
       req.set_edge_props(*edgeProps);
+    } else if (vertexProps != nullptr) {
+      req.set_vertex_props(*vertexProps);
+    } else {
+      req.set_vertex_props({});
     }
     if (expressions != nullptr) {
       req.set_expressions(*expressions);
