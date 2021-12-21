@@ -13,14 +13,24 @@
 #include <cctype>
 #include <wasmtime.hh>
 #include <wasmedge/wasmedge.h>
-
-
-
+#include <vector>
 
 
 namespace nebula {
 
+enum class WasmFunctionParamType {
+  INT32 = 1,
+  INT64 = 2,
+  FLOAT = 3,
+  STRING = 4,
+  LIST = 5,
+};
+
+
 struct WasmtimeRunInstance {
+  std::vector<WasmFunctionParamType> inParam;
+  WasmFunctionParamType outParam;
+
   wasmtime::Func func;
   wasmtime::Instance instance;
   WasmtimeRunInstance(const wasmtime::Func &func, const wasmtime::Instance &instance)
@@ -28,6 +38,9 @@ struct WasmtimeRunInstance {
 };
 
 struct WasmEdgeRunInstance {
+  std::vector<WasmFunctionParamType> inParam;
+  WasmFunctionParamType outParam;
+
   WasmEdge_String funcHandlerName;
   std::vector<uint8_t> wasmBuffer;
   WasmEdgeRunInstance(const WasmEdge_String &funcHandlerName,
@@ -99,17 +112,10 @@ class WasmFunctionManager {
     return instance;
   }
 
-  void runWatFile(const std::string &fileName) const;
-
-  void runWat(const std::string &watString) const;
-
   WasmtimeRunInstance createInstanceAndFunction(const std::string &watString,
                                         const std::string functionHandler);
   std::vector<int> run(const WasmtimeRunInstance &wasmTimeRunInstance, std::vector<int> args);
-  bool RegisterFunction(std::string moduleType,
-                        std::string functionName,
-                        std::string functionHandler,
-                        const std::string &base64OrOtherString);
+
   bool DeleteFunction(std::string functionName);
   List runWithNebulaDataHandle(std::string functionName, List args);
   std::vector<int> run(std::string functionName, std::vector<int> args);
@@ -179,6 +185,12 @@ class WasmFunctionManager {
   std::vector<int> run(const WasmEdgeRunInstance &wasmEdgeRunInstance, std::vector<int> args);
   std::vector<uint8_t >getHTTPString(const std::string &basicString);
   std::string getFileString(const std::string &basicString);
+  bool RegisterFunction(std::vector<WasmFunctionParamType> inParam,
+                        WasmFunctionParamType outParam,
+                        std::string moduleType,
+                        std::string functionName,
+                        std::string functionHandler,
+                        const std::string &base64OrOtherString);
 };
 }  // namespace nebula
 
