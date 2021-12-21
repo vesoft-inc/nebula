@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_ADMIN_STATSTASK_H_
@@ -28,7 +27,11 @@ class StatsTask : public AdminTask {
   void finish(nebula::cpp2::ErrorCode rc) override;
 
  protected:
-  void cancel() override { canceled_ = true; }
+  void cancel() override {
+    canceled_ = true;
+    auto suc = nebula::cpp2::ErrorCode::SUCCEEDED;
+    rc_.compare_exchange_strong(suc, nebula::cpp2::ErrorCode::E_USER_CANCEL);
+  }
 
   nebula::cpp2::ErrorCode genSubTask(GraphSpaceID space,
                                      PartitionID part,
@@ -39,7 +42,6 @@ class StatsTask : public AdminTask {
   nebula::cpp2::ErrorCode getSchemas(GraphSpaceID spaceId);
 
  protected:
-  std::atomic<bool> canceled_{false};
   GraphSpaceID spaceId_;
 
   // All tagIds and tagName of the spaceId

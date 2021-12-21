@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/validator/test/ValidatorTestBase.h"
@@ -46,16 +45,23 @@ TEST_F(MutateValidatorTest, InsertEdgeTest) {
   // vid use function call
   {
     auto cmd =
+        "INSERT EDGE like(start, end, likeness) VALUES lower(\"Lily\")->\"Tom\":(2010, "
+        "2020, 90);";
+    ASSERT_TRUE(checkResult(cmd, {PK::kInsertEdges, PK::kStart}));
+  }
+  // vid use function call
+  {
+    auto cmd =
         "INSERT EDGE like(start, end) VALUES lower(\"Lily\")->\"Tom\":(2010, "
         "2020);";
-    ASSERT_TRUE(checkResult(cmd, {PK::kInsertEdges, PK::kStart}));
+    ASSERT_FALSE(checkResult(cmd, {PK::kInsertEdges, PK::kStart}));
   }
 }
 
 TEST_F(MutateValidatorTest, DeleteVertexTest) {
   // succeed
   {
-    auto cmd = "DELETE VERTEX \"A\"";
+    auto cmd = "DELETE VERTEX \"A\" WITH EDGE";
     std::vector<PlanNode::Kind> expected = {
         PK::kDeleteVertices,
         PK::kDeleteEdges,
@@ -67,15 +73,35 @@ TEST_F(MutateValidatorTest, DeleteVertexTest) {
     };
     ASSERT_TRUE(checkResult(cmd, expected));
   }
+  {
+    auto cmd = "DELETE VERTEX \"A\"";
+    std::vector<PlanNode::Kind> expected = {
+        PK::kDeleteVertices,
+        PK::kDedup,
+        PK::kStart,
+    };
+    ASSERT_TRUE(checkResult(cmd, expected));
+  }
   // pipe
   {
-    auto cmd = "GO FROM \"C\" OVER like YIELD like._dst as dst | DELETE VERTEX $-.dst";
+    auto cmd = "GO FROM \"C\" OVER like YIELD like._dst as dst | DELETE VERTEX $-.dst WITH EDGE";
     std::vector<PlanNode::Kind> expected = {
         PK::kDeleteVertices,
         PK::kDeleteEdges,
         PK::kDedup,
         PK::kProject,
         PK::kGetNeighbors,
+        PK::kDedup,
+        PK::kProject,
+        PK::kGetNeighbors,
+        PK::kStart,
+    };
+    ASSERT_TRUE(checkResult(cmd, expected));
+  }
+  {
+    auto cmd = "GO FROM \"C\" OVER like YIELD like._dst as dst | DELETE VERTEX $-.dst";
+    std::vector<PlanNode::Kind> expected = {
+        PK::kDeleteVertices,
         PK::kDedup,
         PK::kProject,
         PK::kGetNeighbors,
@@ -85,7 +111,7 @@ TEST_F(MutateValidatorTest, DeleteVertexTest) {
   }
   // pipe wrong input
   {
-    auto cmd = "GO FROM \"C\" OVER E YIELD E._dst as dst | DELETE VERTEX $-.a";
+    auto cmd = "GO FROM \"C\" OVER E YIELD E._dst as dst | DELETE VERTEX $-.a WITH EDGE";
     ASSERT_FALSE(checkResult(cmd));
   }
 }
@@ -195,13 +221,13 @@ TEST_F(MutateValidatorTest, UpdateEdgeTest) {
     auto cmd = "UPDATE EDGE ON study \"Tom\"->\"Lily\" SET count = 1";
     ASSERT_FALSE(checkResult(cmd, {}));
   }
-  // Wrong expr "$^.peson.age"
+  // Wrong expr "$^.person_.age"
   {
     auto cmd =
         "UPDATE EDGE \"Tom\"->\"Lily\" OF like "
         "SET end = like.end + 1 "
-        "WHEN $^.peson.age >= 18 "
-        "YIELD $^.peson.age AS age, like.end AS end";
+        "WHEN $^.person_.age >= 18 "
+        "YIELD $^.person_.age AS age, like.end AS end";
     ASSERT_FALSE(checkResult(cmd, {}));
   }
   // 1.0 syntax succeed

@@ -1,13 +1,12 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/executor/query/UnionAllVersionVarExecutor.h"
 
+#include "common/time/ScopedTimer.h"
 #include "graph/planner/plan/Query.h"
-#include "graph/util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {
@@ -15,7 +14,7 @@ namespace graph {
 folly::Future<Status> UnionAllVersionVarExecutor::execute() {
   SCOPED_TIMER(&execTime_);
   auto* UnionAllVersionVarNode = asNode<UnionAllVersionVar>(node());
-  // Retrive all versions of inputVar
+  // Retrieve all versions of inputVar
   auto& results = ectx_->getHistory(UnionAllVersionVarNode->inputVar());
   DCHECK_GT(results.size(), 0);
   // List of iterators to be unioned

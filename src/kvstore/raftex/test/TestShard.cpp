@@ -1,12 +1,12 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "kvstore/raftex/test/TestShard.h"
 
 #include "common/base/Base.h"
+#include "common/ssl/SSLConfig.h"
 #include "kvstore/raftex/Host.h"
 #include "kvstore/raftex/RaftexService.h"
 #include "kvstore/wal/FileBasedWal.h"
@@ -118,7 +118,7 @@ HostAddr decodeRemovePeer(const folly::StringPiece& log) {
 
 std::shared_ptr<thrift::ThriftClientManager<cpp2::RaftexServiceAsyncClient>> getClientMan() {
   static std::shared_ptr<thrift::ThriftClientManager<cpp2::RaftexServiceAsyncClient>> clientMan(
-      new thrift::ThriftClientManager<cpp2::RaftexServiceAsyncClient>());
+      new thrift::ThriftClientManager<cpp2::RaftexServiceAsyncClient>(FLAGS_enable_ssl));
   return clientMan;
 }
 
@@ -160,6 +160,8 @@ void TestShard::onElected(TermID term) {
     becomeLeaderCB_(idx_, idStr(), term);
   }
 }
+
+void TestShard::onLeaderReady(TermID term) { UNUSED(term); }
 
 nebula::cpp2::ErrorCode TestShard::commitLogs(std::unique_ptr<LogIterator> iter, bool) {
   LogID firstId = -1;

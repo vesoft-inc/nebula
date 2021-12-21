@@ -1,7 +1,6 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Delete string vid of tag
 
   Scenario: delete string vid one vertex one tag
@@ -13,21 +12,21 @@ Feature: Delete string vid of tag
       FETCH PROP ON player "Tim Duncan" YIELD player.name, player.age
       """
     Then the result should be, in any order:
-      | VertexID     | player.name  | player.age |
-      | "Tim Duncan" | "Tim Duncan" | 42         |
+      | player.name  | player.age |
+      | "Tim Duncan" | 42         |
     When executing query:
       """
       FETCH PROP ON bachelor "Tim Duncan" YIELD bachelor.name, bachelor.speciality
       """
     Then the result should be, in any order:
-      | VertexID     | bachelor.name | bachelor.speciality |
-      | "Tim Duncan" | "Tim Duncan"  | "psychology"        |
+      | bachelor.name | bachelor.speciality |
+      | "Tim Duncan"  | "psychology"        |
     When executing query:
       """
-      LOOKUP ON player WHERE player.name == "Tim Duncan"
+      LOOKUP ON player WHERE player.name == "Tim Duncan" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
-      | VertexID     |
+      | id           |
       | "Tim Duncan" |
     # delete one tag
     When executing query:
@@ -41,20 +40,21 @@ Feature: Delete string vid of tag
       FETCH PROP ON player "Tim Duncan" YIELD player.name, player.age
       """
     Then the result should be, in any order:
-      | VertexID | player.name | player.age |
+      | player.name | player.age |
+      | EMPTY       | EMPTY      |
     When executing query:
       """
       FETCH PROP ON bachelor "Tim Duncan" YIELD bachelor.name, bachelor.speciality
       """
     Then the result should be, in any order:
-      | VertexID     | bachelor.name | bachelor.speciality |
-      | "Tim Duncan" | "Tim Duncan"  | "psychology"        |
+      | bachelor.name | bachelor.speciality |
+      | "Tim Duncan"  | "psychology"        |
     When executing query:
       """
-      LOOKUP ON player WHERE player.name == "Tim Duncan"
+      LOOKUP ON player WHERE player.name == "Tim Duncan" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
-      | VertexID |
+      | id |
     Then drop the used space
 
   Scenario: delete string vid one vertex multiple tag
@@ -66,21 +66,21 @@ Feature: Delete string vid of tag
       FETCH PROP ON player "Tim Duncan" YIELD player.name, player.age
       """
     Then the result should be, in any order:
-      | VertexID     | player.name  | player.age |
-      | "Tim Duncan" | "Tim Duncan" | 42         |
+      | player.name  | player.age |
+      | "Tim Duncan" | 42         |
     When executing query:
       """
       FETCH PROP ON bachelor "Tim Duncan" YIELD bachelor.name, bachelor.speciality
       """
     Then the result should be, in any order:
-      | VertexID     | bachelor.name | bachelor.speciality |
-      | "Tim Duncan" | "Tim Duncan"  | "psychology"        |
+      | bachelor.name | bachelor.speciality |
+      | "Tim Duncan"  | "psychology"        |
     When executing query:
       """
-      LOOKUP ON player WHERE player.name == "Tim Duncan"
+      LOOKUP ON player WHERE player.name == "Tim Duncan" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
-      | VertexID     |
+      | id           |
       | "Tim Duncan" |
     # delete one tag
     When executing query:
@@ -94,19 +94,21 @@ Feature: Delete string vid of tag
       FETCH PROP ON player "Tim Duncan" YIELD player.name, player.age
       """
     Then the result should be, in any order:
-      | VertexID | player.name | player.age |
+      | player.name | player.age |
+      | EMPTY       | EMPTY      |
     When executing query:
       """
       FETCH PROP ON bachelor "Tim Duncan" YIELD bachelor.name, bachelor.speciality
       """
     Then the result should be, in any order:
-      | VertexID | bachelor.name | bachelor.speciality |
+      | bachelor.name | bachelor.speciality |
+      | EMPTY         | EMPTY               |
     When executing query:
       """
-      LOOKUP ON player WHERE player.name == "Tim Duncan"
+      LOOKUP ON player WHERE player.name == "Tim Duncan" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
-      | VertexID |
+      | id |
     Then drop the used space
 
   Scenario: delete string vid one vertex all tag
@@ -118,21 +120,21 @@ Feature: Delete string vid of tag
       FETCH PROP ON player "Tim Duncan" YIELD player.name, player.age
       """
     Then the result should be, in any order:
-      | VertexID     | player.name  | player.age |
-      | "Tim Duncan" | "Tim Duncan" | 42         |
+      | player.name  | player.age |
+      | "Tim Duncan" | 42         |
     When executing query:
       """
       FETCH PROP ON bachelor "Tim Duncan" YIELD bachelor.name, bachelor.speciality
       """
     Then the result should be, in any order:
-      | VertexID     | bachelor.name | bachelor.speciality |
-      | "Tim Duncan" | "Tim Duncan"  | "psychology"        |
+      | bachelor.name | bachelor.speciality |
+      | "Tim Duncan"  | "psychology"        |
     When executing query:
       """
-      LOOKUP ON player WHERE player.name == "Tim Duncan"
+      LOOKUP ON player WHERE player.name == "Tim Duncan" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
-      | VertexID     |
+      | id           |
       | "Tim Duncan" |
     # delete one tag
     When executing query:
@@ -146,19 +148,21 @@ Feature: Delete string vid of tag
       FETCH PROP ON player "Tim Duncan" YIELD player.name, player.age
       """
     Then the result should be, in any order:
-      | VertexID | player.name | player.age |
+      | player.name | player.age |
+      | EMPTY       | EMPTY      |
     When executing query:
       """
       FETCH PROP ON bachelor "Tim Duncan" YIELD bachelor.name, bachelor.speciality
       """
     Then the result should be, in any order:
-      | VertexID | bachelor.name | bachelor.speciality |
+      | bachelor.name | bachelor.speciality |
+      | EMPTY         | EMPTY               |
     When executing query:
       """
-      LOOKUP ON player WHERE player.name == "Tim Duncan"
+      LOOKUP ON player WHERE player.name == "Tim Duncan" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
-      | VertexID |
+      | id |
     Then drop the used space
 
   Scenario: delete string vid multiple vertex one tag
@@ -170,28 +174,28 @@ Feature: Delete string vid of tag
       FETCH PROP ON player "Tim Duncan" YIELD player.name, player.age
       """
     Then the result should be, in any order:
-      | VertexID     | player.name  | player.age |
-      | "Tim Duncan" | "Tim Duncan" | 42         |
+      | player.name  | player.age |
+      | "Tim Duncan" | 42         |
     When executing query:
       """
       FETCH PROP ON player "Tony Parker" YIELD player.name, player.age
       """
     Then the result should be, in any order:
-      | VertexID      | player.name   | player.age |
-      | "Tony Parker" | "Tony Parker" | 36         |
+      | player.name   | player.age |
+      | "Tony Parker" | 36         |
     When executing query:
       """
-      LOOKUP ON player WHERE player.name == "Tim Duncan"
+      LOOKUP ON player WHERE player.name == "Tim Duncan" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
-      | VertexID     |
+      | id           |
       | "Tim Duncan" |
     When executing query:
       """
-      LOOKUP ON player WHERE player.name == "Tony Parker"
+      LOOKUP ON player WHERE player.name == "Tony Parker" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
-      | VertexID      |
+      | id            |
       | "Tony Parker" |
     # delete one tag
     When executing query:
@@ -205,25 +209,27 @@ Feature: Delete string vid of tag
       FETCH PROP ON player "Tim Duncan" YIELD player.name, player.age
       """
     Then the result should be, in any order:
-      | VertexID | player.name | player.age |
+      | player.name | player.age |
+      | EMPTY       | EMPTY      |
     When executing query:
       """
       FETCH PROP ON player "Tony Parker" YIELD player.name, player.age
       """
     Then the result should be, in any order:
-      | VertexID | player.name | player.age |
+      | player.name | player.age |
+      | EMPTY       | EMPTY      |
     When executing query:
       """
-      LOOKUP ON player WHERE player.name == "Tim Duncan"
+      LOOKUP ON player WHERE player.name == "Tim Duncan" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
-      | VertexID |
+      | id |
     When executing query:
       """
-      LOOKUP ON player WHERE player.name == "Tony Parker"
+      LOOKUP ON player WHERE player.name == "Tony Parker" YIELD id(vertex) as id
       """
     Then the result should be, in any order:
-      | VertexID |
+      | id |
     Then drop the used space
 
   Scenario: delete string vid from pipe
@@ -242,8 +248,8 @@ Feature: Delete string vid of tag
       FETCH PROP ON team "Spurs" YIELD team.name
       """
     Then the result should be, in any order:
-      | VertexID | team.name |
-      | "Spurs"  | "Spurs"   |
+      | team.name |
+      | "Spurs"   |
     # delete one tag
     When executing query:
       """
@@ -256,7 +262,8 @@ Feature: Delete string vid of tag
       FETCH PROP ON team "Spurs" YIELD team.name
       """
     Then the result should be, in any order:
-      | VertexID | team.name |
+      | team.name |
+      | EMPTY     |
     # delete tag from pipe and normal
     When executing query:
       """
@@ -281,8 +288,8 @@ Feature: Delete string vid of tag
       FETCH PROP ON team "Spurs" YIELD team.name
       """
     Then the result should be, in any order:
-      | VertexID | team.name |
-      | "Spurs"  | "Spurs"   |
+      | team.name |
+      | "Spurs"   |
     # delete one tag
     When executing query:
       """
@@ -295,7 +302,8 @@ Feature: Delete string vid of tag
       FETCH PROP ON team "Spurs" YIELD team.name
       """
     Then the result should be, in any order:
-      | VertexID | team.name |
+      | team.name |
+      | EMPTY     |
     # delete one tag from var and normal
     When executing query:
       """

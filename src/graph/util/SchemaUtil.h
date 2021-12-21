@@ -1,13 +1,11 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_UTIL_SCHEMAUTIL_H_
 #define GRAPH_UTIL_SCHEMAUTIL_H_
 
-#include "common/base/Base.h"
 #include "common/base/StatusOr.h"
 #include "common/datatypes/DataSet.h"
 #include "common/expression/Expression.h"
@@ -52,18 +50,18 @@ class SchemaUtil final {
   static std::string typeToString(const meta::cpp2::ColumnTypeDef& col);
   static std::string typeToString(const meta::cpp2::ColumnDef& col);
 
-  static Value::Type propTypeToValueType(meta::cpp2::PropertyType propType);
+  static Value::Type propTypeToValueType(nebula::cpp2::PropertyType propType);
 
   static bool isValidVid(const Value& value, const meta::cpp2::ColumnTypeDef& type);
 
-  static bool isValidVid(const Value& value, meta::cpp2::PropertyType type);
+  static bool isValidVid(const Value& value, nebula::cpp2::PropertyType type);
 
   static bool isValidVid(const Value& value);
 
   // Fetch all tags in the space and retrieve props from tags
   // only take _tag when withProp is false
   static StatusOr<std::unique_ptr<std::vector<VertexProp>>> getAllVertexProp(QueryContext* qctx,
-                                                                             const SpaceInfo& space,
+                                                                             GraphSpaceID spaceId,
                                                                              bool withProp);
 
   // retrieve prop from specific edgetypes

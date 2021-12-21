@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_COMMON_H_
@@ -17,6 +16,7 @@
 #include "common/stats/StatsManager.h"
 #include "common/utils/MemoryLockWrapper.h"
 #include "interface/gen-cpp2/storage_types.h"
+#include "kvstore/KVEngine.h"
 #include "kvstore/KVStore.h"
 
 namespace nebula {
@@ -61,6 +61,7 @@ using VerticesMemLock = MemoryLockCore<VMLI>;
 using EdgesMemLock = MemoryLockCore<EMLI>;
 
 class TransactionManager;
+class InternalStorageClient;
 
 // unify TagID, EdgeType
 using SchemaID = TagID;
@@ -74,9 +75,12 @@ class StorageEnv {
   std::atomic<int32_t> onFlyingRequest_{0};
   std::unique_ptr<IndexGuard> rebuildIndexGuard_{nullptr};
   meta::MetaClient* metaClient_{nullptr};
+  InternalStorageClient* interClient_{nullptr};
   TransactionManager* txnMan_{nullptr};
   std::unique_ptr<VerticesMemLock> verticesML_{nullptr};
   std::unique_ptr<EdgesMemLock> edgesML_{nullptr};
+  std::unique_ptr<kvstore::KVEngine> adminStore_{nullptr};
+  int32_t adminSeqId_{0};
 
   IndexState getIndexState(GraphSpaceID space, PartitionID part) {
     auto key = std::make_tuple(space, part);
@@ -196,6 +200,9 @@ struct RuntimeContext {
   ObjectPool* objPool() { return &planContext_->objPool_; }
 
   bool isPlanKilled() {
+    if (env() == nullptr) {
+      return false;
+    }
     return env()->metaClient_ &&
            env()->metaClient_->checkIsPlanKilled(planContext_->sessionId_, planContext_->planId_);
   }

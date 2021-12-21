@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "kvstore/DiskManager.h"
@@ -95,12 +94,21 @@ void DiskManager::removePartFromPath(GraphSpaceID spaceId,
   }
 }
 
-StatusOr<PartDiskMap> DiskManager::partDist(GraphSpaceID spaceId) {
-  auto spaceIt = partPath_.find(spaceId);
-  if (spaceIt == partPath_.end()) {
-    return Status::Error("Space not found");
+void DiskManager::getDiskParts(SpaceDiskPartsMap& diskParts) {
+  std::lock_guard<std::mutex> lg(lock_);
+  for (const auto& [space, partDiskMap] : partPath_) {
+    std::unordered_map<std::string, meta::cpp2::PartitionList> tmpPartPaths;
+    for (const auto& [path, partitions] : partDiskMap) {
+      std::vector<PartitionID> tmpPartitions;
+      for (const auto& partition : partitions) {
+        tmpPartitions.emplace_back(partition);
+      }
+      meta::cpp2::PartitionList ps;
+      ps.set_part_list(tmpPartitions);
+      tmpPartPaths[path] = ps;
+    }
+    diskParts.emplace(space, std::move(tmpPartPaths));
   }
-  return spaceIt->second;
 }
 
 bool DiskManager::hasEnoughSpace(GraphSpaceID spaceId, PartitionID partId) {

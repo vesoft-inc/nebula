@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/zone/GetZoneProcessor.h"
@@ -25,7 +24,7 @@ void GetZoneProcessor::process(const cpp2::GetZoneReq& req) {
     return;
   }
 
-  auto zoneKey = MetaServiceUtils::zoneKey(zoneName);
+  auto zoneKey = MetaKeyUtils::zoneKey(zoneName);
   auto zoneValueRet = doGet(std::move(zoneKey));
   if (!nebula::ok(zoneValueRet)) {
     auto retCode = nebula::error(zoneValueRet);
@@ -39,7 +38,7 @@ void GetZoneProcessor::process(const cpp2::GetZoneReq& req) {
     return;
   }
 
-  auto hosts = MetaServiceUtils::parseZoneHosts(std::move(nebula::value(zoneValueRet)));
+  auto hosts = MetaKeyUtils::parseZoneHosts(std::move(nebula::value(zoneValueRet)));
   LOG(INFO) << "Get Zone: " << zoneName << " node size: " << hosts.size();
   resp_.set_hosts(std::move(hosts));
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);

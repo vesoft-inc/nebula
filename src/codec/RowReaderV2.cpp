@@ -1,12 +1,13 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "codec/RowReaderV2.h"
 
 namespace nebula {
+
+using nebula::cpp2::PropertyType;
 
 bool RowReaderV2::resetImpl(meta::SchemaProviderIf const* schema, folly::StringPiece row) noexcept {
   RowReader::resetImpl(schema, row);
@@ -62,47 +63,47 @@ Value RowReaderV2::getValueByIndex(const int64_t index) const noexcept {
   }
 
   switch (field->type()) {
-    case meta::cpp2::PropertyType::BOOL: {
+    case PropertyType::BOOL: {
       if (data_[offset]) {
         return true;
       } else {
         return false;
       }
     }
-    case meta::cpp2::PropertyType::INT8: {
+    case PropertyType::INT8: {
       return static_cast<int8_t>(data_[offset]);
     }
-    case meta::cpp2::PropertyType::INT16: {
+    case PropertyType::INT16: {
       int16_t val;
       memcpy(reinterpret_cast<void*>(&val), &data_[offset], sizeof(int16_t));
       return val;
     }
-    case meta::cpp2::PropertyType::INT32: {
+    case PropertyType::INT32: {
       int32_t val;
       memcpy(reinterpret_cast<void*>(&val), &data_[offset], sizeof(int32_t));
       return val;
     }
-    case meta::cpp2::PropertyType::INT64: {
+    case PropertyType::INT64: {
       int64_t val;
       memcpy(reinterpret_cast<void*>(&val), &data_[offset], sizeof(int64_t));
       return val;
     }
-    case meta::cpp2::PropertyType::VID: {
+    case PropertyType::VID: {
       // This is to be compatible with V1, so we treat it as
       // 8-byte long string
       return std::string(&data_[offset], sizeof(int64_t));
     }
-    case meta::cpp2::PropertyType::FLOAT: {
+    case PropertyType::FLOAT: {
       float val;
       memcpy(reinterpret_cast<void*>(&val), &data_[offset], sizeof(float));
       return val;
     }
-    case meta::cpp2::PropertyType::DOUBLE: {
+    case PropertyType::DOUBLE: {
       double val;
       memcpy(reinterpret_cast<void*>(&val), &data_[offset], sizeof(double));
       return val;
     }
-    case meta::cpp2::PropertyType::STRING: {
+    case PropertyType::STRING: {
       int32_t strOffset;
       int32_t strLen;
       memcpy(reinterpret_cast<void*>(&strOffset), &data_[offset], sizeof(int32_t));
@@ -113,15 +114,15 @@ Value RowReaderV2::getValueByIndex(const int64_t index) const noexcept {
       CHECK_LT(strOffset, data_.size());
       return std::string(&data_[strOffset], strLen);
     }
-    case meta::cpp2::PropertyType::FIXED_STRING: {
+    case PropertyType::FIXED_STRING: {
       return std::string(&data_[offset], field->size());
     }
-    case meta::cpp2::PropertyType::TIMESTAMP: {
+    case PropertyType::TIMESTAMP: {
       Timestamp ts;
       memcpy(reinterpret_cast<void*>(&ts), &data_[offset], sizeof(Timestamp));
       return ts;
     }
-    case meta::cpp2::PropertyType::DATE: {
+    case PropertyType::DATE: {
       Date dt;
       memcpy(reinterpret_cast<void*>(&dt.year), &data_[offset], sizeof(int16_t));
       memcpy(reinterpret_cast<void*>(&dt.month), &data_[offset + sizeof(int16_t)], sizeof(int8_t));
@@ -130,7 +131,7 @@ Value RowReaderV2::getValueByIndex(const int64_t index) const noexcept {
              sizeof(int8_t));
       return dt;
     }
-    case meta::cpp2::PropertyType::TIME: {
+    case PropertyType::TIME: {
       Time t;
       memcpy(reinterpret_cast<void*>(&t.hour), &data_[offset], sizeof(int8_t));
       memcpy(reinterpret_cast<void*>(&t.minute), &data_[offset + sizeof(int8_t)], sizeof(int8_t));
@@ -140,7 +141,7 @@ Value RowReaderV2::getValueByIndex(const int64_t index) const noexcept {
              sizeof(int32_t));
       return t;
     }
-    case meta::cpp2::PropertyType::DATETIME: {
+    case PropertyType::DATETIME: {
       DateTime dt;
       int16_t year;
       int8_t month;
@@ -175,7 +176,36 @@ Value RowReaderV2::getValueByIndex(const int64_t index) const noexcept {
       dt.microsec = microsec;
       return dt;
     }
-    case meta::cpp2::PropertyType::UNKNOWN:
+    case PropertyType::DURATION: {
+      Duration d;
+      memcpy(reinterpret_cast<void*>(&d.seconds), &data_[offset], sizeof(int64_t));
+      memcpy(reinterpret_cast<void*>(&d.microseconds),
+             &data_[offset + sizeof(int64_t)],
+             sizeof(int32_t));
+      memcpy(reinterpret_cast<void*>(&d.months),
+             &data_[offset + sizeof(int64_t) + sizeof(int32_t)],
+             sizeof(int32_t));
+      return d;
+    }
+    case PropertyType::GEOGRAPHY: {
+      int32_t strOffset;
+      int32_t strLen;
+      memcpy(reinterpret_cast<void*>(&strOffset), &data_[offset], sizeof(int32_t));
+      memcpy(reinterpret_cast<void*>(&strLen), &data_[offset + sizeof(int32_t)], sizeof(int32_t));
+      if (static_cast<size_t>(strOffset) == data_.size() && strLen == 0) {
+        return Value::kEmpty;  // Is it ok to return Value::kEmpty?
+      }
+      CHECK_LT(strOffset, data_.size());
+      auto wkb = std::string(&data_[strOffset], strLen);
+      // Parse a geography from the wkb, normalize it and then verify its validity.
+      auto geogRet = Geography::fromWKB(wkb, true, true);
+      if (!geogRet.ok()) {
+        LOG(ERROR) << "Geography::fromWKB failed: " << geogRet.status();
+        return Value::kNullBadData;  // Is it ok to return Value::kNullBadData?
+      }
+      return std::move(geogRet).value();
+    }
+    case PropertyType::UNKNOWN:
       break;
   }
   LOG(FATAL) << "Should not reach here";

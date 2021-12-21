@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_METAJOBEXECUTOR_H_
@@ -22,13 +21,15 @@ using ErrOrHosts = ErrorOr<nebula::cpp2::ErrorCode, std::vector<PartsOfHost>>;
 
 class MetaJobExecutor {
  public:
-  enum class TargetHosts { LEADER = 0, LISTENER, DEFAULT };
+  enum class TargetHosts { LEADER = 0, LISTENER, NONE, DEFAULT };
 
   MetaJobExecutor(JobID jobId,
                   kvstore::KVStore* kvstore,
                   AdminClient* adminClient,
                   const std::vector<std::string>& paras)
-      : jobId_(jobId), kvstore_(kvstore), adminClient_(adminClient), paras_(paras) {}
+      : jobId_(jobId), kvstore_(kvstore), adminClient_(adminClient), paras_(paras) {
+    onFinished_ = [](bool) { return nebula::cpp2::ErrorCode::SUCCEEDED; };
+  }
 
   virtual ~MetaJobExecutor() = default;
 
@@ -55,6 +56,14 @@ class MetaJobExecutor {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
+  virtual bool runInMeta() { return false; }
+
+  virtual nebula::cpp2::ErrorCode recovery() { return nebula::cpp2::ErrorCode::SUCCEEDED; }
+
+  void setFinishCallBack(std::function<nebula::cpp2::ErrorCode(bool ret)> func) {
+    onFinished_ = func;
+  }
+
  protected:
   ErrorOr<nebula::cpp2::ErrorCode, GraphSpaceID> getSpaceIdFromName(const std::string& spaceName);
 
@@ -76,9 +85,10 @@ class MetaJobExecutor {
   std::vector<std::string> paras_;
   TargetHosts toHost_{TargetHosts::DEFAULT};
   int32_t concurrency_{INT_MAX};
-  bool stopped_{false};
+  volatile bool stopped_{false};
   std::mutex muInterrupt_;
   std::condition_variable condInterrupt_;
+  std::function<nebula::cpp2::ErrorCode(bool ret)> onFinished_;
 };
 
 class MetaJobExecutorFactory {

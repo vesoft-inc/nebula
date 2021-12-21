@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "kvstore/PartManager.h"
@@ -186,6 +185,14 @@ void MetaServerBasedPartManager::fetchLeaderInfo(
     std::unordered_map<GraphSpaceID, std::vector<meta::cpp2::LeaderInfo>>& leaderIds) {
   if (handler_ != nullptr) {
     handler_->allLeader(leaderIds);
+  } else {
+    VLOG(1) << "handler_ is nullptr!";
+  }
+}
+
+void MetaServerBasedPartManager::fetchDiskParts(SpaceDiskPartsMap& diskParts) {
+  if (handler_ != nullptr) {
+    handler_->fetchDiskParts(diskParts);
   } else {
     VLOG(1) << "handler_ is nullptr!";
   }

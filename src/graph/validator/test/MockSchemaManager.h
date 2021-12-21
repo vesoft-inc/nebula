@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_VALIDATOR_MOCKSCHEMAMANAGER_H_
@@ -77,7 +76,7 @@ class MockSchemaManager final : public nebula::meta::SchemaManager {
     return allVerTagSchemas;
   }
 
-  // Returns all latest version of schesmas of all tags in the given space
+  // Returns all latest version of schemas of all tags in the given space
   StatusOr<meta::TagSchema> getAllLatestVerTagSchema(GraphSpaceID space) override {
     meta::TagSchema allLatestVerTagSchemas;
     const auto& tagSchemas = tagSchemas_[space];

@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_META_SCHEMAMANAGER_H_
@@ -35,7 +34,7 @@ class SchemaManager {
 
   virtual StatusOr<int32_t> getSpaceVidLen(GraphSpaceID space) = 0;
 
-  virtual StatusOr<cpp2::PropertyType> getSpaceVidType(GraphSpaceID) {
+  virtual StatusOr<nebula::cpp2::PropertyType> getSpaceVidType(GraphSpaceID) {
     return Status::Error("Not implemented");
   }
 
@@ -68,6 +67,8 @@ class SchemaManager {
   virtual StatusOr<std::string> toEdgeName(GraphSpaceID space, EdgeType edgeType) = 0;
 
   virtual StatusOr<std::vector<std::string>> getAllEdge(GraphSpaceID space) = 0;
+
+  StatusOr<std::unordered_map<TagID, std::string>> getAllTags(GraphSpaceID space);
 
   // get all version of all tag schema
   virtual StatusOr<TagSchemas> getAllVerTagSchema(GraphSpaceID space) = 0;

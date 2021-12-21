@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/session/ClientSession.h"
@@ -55,7 +54,7 @@ void ClientSession::deleteQuery(QueryContext* qctx) {
   session_.queries_ref()->erase(epId);
 }
 
-bool ClientSession::findQuery(nebula::ExecutionPlanID epId) {
+bool ClientSession::findQuery(nebula::ExecutionPlanID epId) const {
   folly::RWSpinLock::ReadHolder rHolder(rwSpinLock_);
   auto context = contexts_.find(epId);
   if (context != contexts_.end()) {

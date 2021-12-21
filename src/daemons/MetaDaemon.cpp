@@ -1,9 +1,9 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
+#include <folly/ssl/Init.h>
 #include <thrift/lib/cpp2/server/ThriftServer.h>
 
 #include "common/base/Base.h"
@@ -12,14 +12,15 @@
 #include "common/hdfs/HdfsHelper.h"
 #include "common/network/NetworkUtils.h"
 #include "common/process/ProcessUtils.h"
+#include "common/ssl/SSLConfig.h"
 #include "common/thread/GenericThreadPool.h"
 #include "common/time/TimezoneInfo.h"
+#include "common/utils/MetaKeyUtils.h"
 #include "kvstore/NebulaStore.h"
 #include "kvstore/PartManager.h"
 #include "meta/ActiveHostsMan.h"
 #include "meta/KVBasedClusterIdMan.h"
 #include "meta/MetaServiceHandler.h"
-#include "meta/MetaServiceUtils.h"
 #include "meta/MetaVersionMan.h"
 #include "meta/RootUserMan.h"
 #include "meta/http/MetaHttpDownloadHandler.h"
@@ -33,6 +34,8 @@
 using nebula::operator<<;
 using nebula::ProcessUtils;
 using nebula::Status;
+using nebula::StatusOr;
+using nebula::network::NetworkUtils;
 using nebula::web::PathParams;
 
 DEFINE_string(local_ip, "", "Local ip specified for NetworkUtils::getLocalIP");
@@ -54,9 +57,13 @@ DEFINE_bool(daemonize, true, "Whether run as a daemon process");
 
 static std::unique_ptr<apache::thrift::ThriftServer> gServer;
 static std::unique_ptr<nebula::kvstore::KVStore> gKVStore;
+
 static void signalHandler(int sig);
 static Status setupSignalHandler();
 extern Status setupLogging();
+#if defined(__x86_64__)
+extern Status setupBreakpad();
+#endif
 
 namespace nebula {
 namespace meta {
@@ -70,7 +77,7 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
                                                  nebula::HostAddr localhost) {
   auto partMan = std::make_unique<nebula::kvstore::MemPartManager>();
   // The meta server has only one space (0), one part (0)
-  partMan->addPart(nebula::meta::kDefaultSpaceId, nebula::meta::kDefaultPartId, std::move(peers));
+  partMan->addPart(nebula::kDefaultSpaceId, nebula::kDefaultPartId, std::move(peers));
   // folly IOThreadPoolExecutor
   auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_num_io_threads);
   std::shared_ptr<apache::thrift::concurrency::ThreadManager> threadManager(
@@ -91,7 +98,7 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
   LOG(INFO) << "Waiting for the leader elected...";
   nebula::HostAddr leader;
   while (true) {
-    auto ret = kvstore->partLeader(nebula::meta::kDefaultSpaceId, nebula::meta::kDefaultPartId);
+    auto ret = kvstore->partLeader(nebula::kDefaultSpaceId, nebula::kDefaultPartId);
     if (!nebula::ok(ret)) {
       LOG(ERROR) << "Nebula store init failed";
       return nullptr;
@@ -196,6 +203,14 @@ int main(int argc, char* argv[]) {
     return EXIT_FAILURE;
   }
 
+#if defined(__x86_64__)
+  status = setupBreakpad();
+  if (!status.ok()) {
+    LOG(ERROR) << status;
+    return EXIT_FAILURE;
+  }
+#endif
+
   auto pidPath = FLAGS_pid_file;
   status = ProcessUtils::isPidAvailable(pidPath);
   if (!status.ok()) {
@@ -204,6 +219,9 @@ int main(int argc, char* argv[]) {
   }
 
   folly::init(&argc, &argv, true);
+  if (FLAGS_enable_ssl || FLAGS_enable_meta_ssl) {
+    folly::ssl::init();
+  }
   if (FLAGS_data_path.empty()) {
     LOG(ERROR) << "Meta Data Path should not empty";
     return EXIT_FAILURE;
@@ -229,10 +247,19 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  auto hostIdentity =
-      FLAGS_local_ip == "" ? nebula::network::NetworkUtils::getHostname() : FLAGS_local_ip;
-  nebula::HostAddr localhost{hostIdentity, FLAGS_port};
-  LOG(INFO) << "identify myself as " << localhost;
+  std::string hostName;
+  if (FLAGS_local_ip.empty()) {
+    hostName = nebula::network::NetworkUtils::getHostname();
+  } else {
+    status = NetworkUtils::validateHostOrIp(FLAGS_local_ip);
+    if (!status.ok()) {
+      LOG(ERROR) << status;
+      return EXIT_FAILURE;
+    }
+    hostName = FLAGS_local_ip;
+  }
+  nebula::HostAddr localhost{hostName, FLAGS_port};
+  LOG(INFO) << "localhost = " << localhost;
   auto peersRet = nebula::network::NetworkUtils::toHosts(FLAGS_meta_server_addrs);
   if (!peersRet.ok()) {
     LOG(ERROR) << "Can't get peers address, status:" << peersRet.status();
@@ -269,7 +296,7 @@ int main(int argc, char* argv[]) {
     /**
      *  Only leader part needed.
      */
-    auto ret = gKVStore->partLeader(nebula::meta::kDefaultSpaceId, nebula::meta::kDefaultPartId);
+    auto ret = gKVStore->partLeader(nebula::kDefaultSpaceId, nebula::kDefaultPartId);
     if (!nebula::ok(ret)) {
       LOG(ERROR) << "Part leader get failed";
       return EXIT_FAILURE;
@@ -292,6 +319,13 @@ int main(int argc, char* argv[]) {
     return EXIT_FAILURE;
   }
 
+  // load the time zone data
+  status = nebula::time::Timezone::init();
+  if (!status.ok()) {
+    LOG(ERROR) << status;
+    return EXIT_FAILURE;
+  }
+
   // Initialize the global timezone, it's only used for datetime type compute
   // won't affect the process timezone.
   status = nebula::time::Timezone::initializeGlobalTimezone();
@@ -301,12 +335,15 @@ int main(int argc, char* argv[]) {
   }
 
   auto handler = std::make_shared<nebula::meta::MetaServiceHandler>(gKVStore.get(), gClusterId);
-  LOG(INFO) << "The meta deamon start on " << localhost;
+  LOG(INFO) << "The meta daemon start on " << localhost;
   try {
     gServer = std::make_unique<apache::thrift::ThriftServer>();
     gServer->setPort(FLAGS_port);
     gServer->setIdleTimeout(std::chrono::seconds(0));  // No idle timeout on client connection
     gServer->setInterface(std::move(handler));
+    if (FLAGS_enable_ssl || FLAGS_enable_meta_ssl) {
+      gServer->setSSLConfig(nebula::sslContextConfig());
+    }
     gServer->serve();  // Will wait until the server shuts down
   } catch (const std::exception& e) {
     LOG(ERROR) << "Exception thrown: " << e.what();

@@ -493,14 +493,14 @@ Feature: Basic Aggregate and GroupBy
       | 0     | 0   | NULL | NULL | NULL | NULL | NULL | NULL | NULL |
     When executing query:
       """
-      UNWIND [1,2,3] AS d RETURN d | YIELD 1 IN COLLECT($-.d) AS b
+      UNWIND [1,2,3] AS d RETURN  1 IN COLLECT(d) AS b
       """
     Then the result should be, in order, with relax comparison:
       | b    |
       | True |
     When executing query:
       """
-      UNWIND [1,2,3] AS d RETURN d | YIELD ANY(l IN COLLECT($-.d) WHERE l==1) AS b
+      UNWIND [1,2,3] AS d RETURN ANY(l IN COLLECT(d) WHERE l==1) AS b
       """
     Then the result should be, in order, with relax comparison:
       | b    |
@@ -607,7 +607,7 @@ Feature: Basic Aggregate and GroupBy
   Scenario: Distinct sum
     When executing query:
       """
-      UNWIND [1,2,3,3] AS d RETURN d | YIELD sum(distinct $-.d) AS sum
+      UNWIND [1,2,3,3] AS d RETURN sum(distinct d) AS sum
       """
     Then the result should be, in any order:
       | sum |
@@ -691,10 +691,10 @@ Feature: Basic Aggregate and GroupBy
       """
       GO FROM "Tim Duncan" OVER like YIELD count(*)
       """
-    Then a SemanticError should be raised at runtime: `count(*)', not support aggregate function in go sentence.
+    Then a SemanticError should be raised at runtime: `count(*)' is not support in go sentence.
     When executing query:
       """
-      GO FROM "Tim Duncan" OVER like where COUNT(*) > 2
+      GO FROM "Tim Duncan" OVER like where COUNT(*) > 2 YIELD like._dst
       """
     Then a SemanticError should be raised at runtime: `(COUNT(*)>2)', not support aggregate function in where sentence.
     When executing query:
@@ -767,7 +767,7 @@ Feature: Basic Aggregate and GroupBy
          YIELD $$.team.name AS name,
                COUNT(serve._dst) AS id
       """
-    Then a SemanticError should be raised at runtime: `COUNT(serve._dst) AS id', not support aggregate function in go sentence.
+    Then a SemanticError should be raised at runtime: `COUNT(serve._dst) AS id' is not support in go sentence.
     When executing query:
       """
       MATCH (v:player)

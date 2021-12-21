@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #ifndef GRAPH_VISITOR_EXTRACTFILTEREXPRVISITOR_H_
 #define GRAPH_VISITOR_EXTRACTFILTEREXPRVISITOR_H_
@@ -20,6 +19,24 @@ class ExtractFilterExprVisitor final : public ExprVisitorImpl {
   bool ok() const override { return canBePushed_; }
 
   Expression *remainedExpr() { return remainedExpr_; }
+
+  static ExtractFilterExprVisitor makePushGetNeighbors(ObjectPool *pool) {
+    ExtractFilterExprVisitor visitor(pool);
+    visitor.pushType_ = PushType::kGetNeighbors;
+    return visitor;
+  }
+
+  static ExtractFilterExprVisitor makePushGetVertices(ObjectPool *pool) {
+    ExtractFilterExprVisitor visitor(pool);
+    visitor.pushType_ = PushType::kGetVertices;
+    return visitor;
+  }
+
+  static ExtractFilterExprVisitor makePushGetEdges(ObjectPool *pool) {
+    ExtractFilterExprVisitor visitor(pool);
+    visitor.pushType_ = PushType::kGetEdges;
+    return visitor;
+  }
 
  private:
   using ExprVisitorImpl::visit;
@@ -46,9 +63,16 @@ class ExtractFilterExprVisitor final : public ExprVisitorImpl {
   void visit(SubscriptRangeExpression *) override;
 
  private:
+  enum class PushType {
+    kGetNeighbors,
+    kGetVertices,  // Get/Append/Scan Vertices
+    kGetEdges,     // Get/Append/Scan Edges
+  };
+
   ObjectPool *pool_;
   bool canBePushed_{true};
   Expression *remainedExpr_{nullptr};
+  PushType pushType_{PushType::kGetNeighbors};
 };
 
 }  // namespace graph

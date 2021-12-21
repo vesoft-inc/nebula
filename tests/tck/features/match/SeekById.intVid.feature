@@ -138,6 +138,15 @@ Feature: Match seek by id
     Then the result should be, in any order:
       | Name           |
       | 'James Harden' |
+    When executing query:
+      """
+      MATCH (v:player)
+      WHERE id(v) IN [hash('James Harden'), v.age]
+      RETURN v.name AS Name
+      """
+    Then the result should be, in any order:
+      | Name           |
+      | 'James Harden' |
 
   Scenario: complicate logical
     When executing query:
@@ -213,37 +222,44 @@ Feature: Match seek by id
       WHERE NOT id(v) == hash('Paul Gasol')
       RETURN v.name AS Name, v.age AS Age
       """
-    Then a SemanticError should be raised at runtime:
+    Then a ExecutionError should be raised at runtime: Scan vertices must specify limit number.
     When executing query:
       """
       MATCH (v)
       WHERE NOT id(v) IN [hash('James Harden'), hash('Jonathon Simmons'), hash('Klay Thompson'), hash('Dejounte Murray')]
       RETURN v.name AS Name
       """
-    Then a SemanticError should be raised at runtime:
+    Then a ExecutionError should be raised at runtime: Scan vertices must specify limit number.
     When executing query:
       """
       MATCH (v)
       WHERE id(v) IN [hash('James Harden'), hash('Jonathon Simmons'), hash('Klay Thompson'), hash('Dejounte Murray')]
-            OR v.age == 23
+      OR v.age == 23
       RETURN v.name AS Name
       """
-    Then a SemanticError should be raised at runtime:
+    Then a ExecutionError should be raised at runtime: Scan vertices must specify limit number.
     When executing query:
       """
       MATCH (v)
       WHERE id(v) == hash('James Harden')
-            OR v.age == 23
+      OR v.age == 23
       RETURN v.name AS Name
       """
-    Then a SemanticError should be raised at runtime:
+    Then a ExecutionError should be raised at runtime: Scan vertices must specify limit number.
     When executing query:
       """
       MATCH (v)
       WHERE id(x) == hash('James Harden')
       RETURN v.name AS Name
       """
-    Then a SemanticError should be raised at runtime:
+    Then a SemanticError should be raised at runtime: Alias used but not defined: `x'
+    When executing query:
+      """
+      MATCH (v)
+      WHERE id(v) IN [hash('James Harden'), v.name]
+      RETURN v.name AS Name
+      """
+    Then a ExecutionError should be raised at runtime: Scan vertices must specify limit number.
 
   Scenario: with arithmetic
     When executing query:
@@ -279,22 +295,17 @@ Feature: Match seek by id
       """
       CREATE TAG player(name string, age int);
       """
-    When try to execute query:
-      """
-      INSERT VERTEX player(name, age) VALUES -100:("Tim", 32);
-      """
-    Then the execution should be successful
     When executing query:
       """
       CREATE TAG INDEX player_name_index ON player(name(10));
       """
     Then the execution should be successful
     And wait 6 seconds
-    When submit a job:
+    When try to execute query:
       """
-      REBUILD TAG INDEX player_name_index;
+      INSERT VERTEX player(name, age) VALUES -100:("Tim", 32);
       """
-    Then wait the job to finish
+    Then the execution should be successful
     When executing query:
       """
       MATCH (v) WHERE id(v) == -100 RETURN v;

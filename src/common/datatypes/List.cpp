@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/datatypes/List.h"
@@ -20,6 +19,26 @@ std::string List::toString() const {
   std::stringstream os;
   os << "[" << folly::join(",", value) << "]";
   return os.str();
+}
+
+folly::dynamic List::toJson() const {
+  auto listJsonObj = folly::dynamic::array();
+
+  for (const auto& val : values) {
+    listJsonObj.push_back(val.toJson());
+  }
+
+  return listJsonObj;
+}
+
+folly::dynamic List::getMetaData() const {
+  auto listMetadataObj = folly::dynamic::array();
+
+  for (const auto& val : values) {
+    listMetadataObj.push_back(val.getMetaData());
+  }
+
+  return listMetadataObj;
 }
 
 }  // namespace nebula

@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -11,6 +10,7 @@
 #include "meta/processors/parts/CreateSpaceProcessor.h"
 #include "meta/processors/parts/DropSpaceProcessor.h"
 #include "meta/processors/user/AuthenticationProcessor.h"
+#include "meta/processors/zone/AddHostsProcessor.h"
 #include "meta/test/TestUtils.h"
 
 namespace nebula {
@@ -34,7 +34,7 @@ TEST(AuthProcessorTest, CreateUserTest) {
     std::string userVal;
     std::unique_ptr<kvstore::KVIterator> iter;
     auto retCode =
-        kv->get(kDefaultSpaceId, kDefaultPartId, MetaServiceUtils::userKey("user1"), &userVal);
+        kv->get(kDefaultSpaceId, kDefaultPartId, MetaKeyUtils::userKey("user1"), &userVal);
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, retCode);
   }
   // Test user exists and param 'if_not_exists' == false;
@@ -154,7 +154,7 @@ TEST(AuthProcessorTest, DropUserTest) {
     std::string userVal;
     std::unique_ptr<kvstore::KVIterator> iter;
     auto retCode =
-        kv->get(kDefaultSpaceId, kDefaultPartId, MetaServiceUtils::userKey("user1"), &userVal);
+        kv->get(kDefaultSpaceId, kDefaultPartId, MetaKeyUtils::userKey("user1"), &userVal);
     ASSERT_EQ(nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND, retCode);
   }
 }
@@ -162,7 +162,16 @@ TEST(AuthProcessorTest, DropUserTest) {
 TEST(AuthProcessorTest, GrantRevokeTest) {
   fs::TempDir rootPath("/tmp/GrantRevokeTest.XXXXXX");
   std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
-  TestUtils::createSomeHosts(kv.get());
+  {
+    cpp2::AddHostsReq req;
+    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
+    req.set_hosts(std::move(hosts));
+    auto* processor = AddHostsProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
   GraphSpaceID space1, space2;
   // create space1
   {
@@ -523,7 +532,7 @@ TEST(AuthProcessorTest, GrantRevokeTest) {
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
 
     // check role deleted after drop space
-    auto rolePrefix = MetaServiceUtils::roleSpacePrefix(space1);
+    auto rolePrefix = MetaKeyUtils::roleSpacePrefix(space1);
     std::unique_ptr<kvstore::KVIterator> roleIter;
     auto roleRet = kv->prefix(kDefaultSpaceId, kDefaultPartId, rolePrefix, &roleIter);
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, roleRet);

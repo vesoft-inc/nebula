@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/executor/admin/ConfigExecutor.h"
@@ -9,10 +8,10 @@
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
 #include "common/conf/Configuration.h"
+#include "common/time/ScopedTimer.h"
 #include "graph/context/QueryContext.h"
 #include "graph/planner/plan/Admin.h"
 #include "graph/util/SchemaUtil.h"
-#include "graph/util/ScopedTimer.h"
 
 namespace nebula {
 namespace graph {
@@ -64,9 +63,30 @@ folly::Future<Status> SetConfigExecutor::execute() {
   SCOPED_TIMER(&execTime_);
 
   auto *scNode = asNode<SetConfig>(node());
+  auto module = scNode->getModule();
+  auto name = scNode->getName();
+  auto value = scNode->getValue();
+
+  // This is a workaround for gflag value validation
+  // Currently, only --session_idle_timeout_secs has a gflag validtor
+  if (module == meta::cpp2::ConfigModule::GRAPH) {
+    // Update local cache before sending request
+    // Gflag value will be checked in SetCommandLineOption() if the flag validtor is registed
+    auto valueStr = meta::GflagsManager::ValueToGflagString(value);
+    if (value.isMap() && value.getMap().kvs.empty()) {
+      // Be compatible with previous configuration
+      valueStr = "{}";
+    }
+    // Check result
+    auto setRes = gflags::SetCommandLineOption(name.c_str(), valueStr.c_str());
+    if (setRes.empty()) {
+      return Status::Error("Invalid value %s for gflag --%s", valueStr.c_str(), name.c_str());
+    }
+  }
+
   return qctx()
       ->getMetaClient()
-      ->setConfig(scNode->getModule(), scNode->getName(), scNode->getValue())
+      ->setConfig(module, name, value)
       .via(runner())
       .thenValue([scNode](StatusOr<bool> resp) {
         if (!resp.ok()) {

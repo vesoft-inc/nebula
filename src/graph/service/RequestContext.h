@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_REQUESTCONTEXT_H_
@@ -20,7 +19,7 @@
  *  1. Create a RequestContext, with statement, session, etc.
  *  2. Obtain a Future from the context, which is to be returned back to the
  * Thrift framework.
- *  3. Prepare the Response when the request is complished.
+ *  3. Prepare the Response when the request is completed.
  *  4. Call `finish' to send the response to the client.
  */
 

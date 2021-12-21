@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -88,6 +87,27 @@ TEST_F(ParserTest, TestSchemaCreation) {
   }
   {
     std::string query = "CREATE TAG person(profession string NULL DEFAULT \"HELLO\")";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  // Geo spatial
+  {
+    std::string query = "CREATE TAG any_shape(geo geography)";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "CREATE TAG any_shape(geo geography(point))";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "CREATE TAG any_shape(geo geography(linestring))";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "CREATE TAG any_shape(geo geography(polygon))";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -207,12 +227,24 @@ TEST_F(ParserTest, SpaceOperation) {
   {
     std::string query =
         "CREATE SPACE default_space(partition_num=9, replica_factor=3) "
-        "ON group_0";
+        "ON \"zone_0\"";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "CREATE SPACE default_space ON group_0";
+    std::string query =
+        "CREATE SPACE default_space(partition_num=9, replica_factor=3) "
+        "ON \"zone_0\",\"zone_1\",\"zone_2\"";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "CREATE SPACE default_space ON \"zone_0\"";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "CREATE SPACE default_space ON \"zone_0\",\"zone_1\",\"zone_2\"";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -801,6 +833,20 @@ TEST_F(ParserTest, InsertVertex) {
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
+  {
+    std::string query =
+        "INSERT VERTEX IGNORE_EXISTED_INDEX person(name, age) "
+        "VALUES \"Tom\":(\"Tom\", 30)";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query =
+        "INSERT VERTEX IF NOT EXISTS IGNORE_EXISTED_INDEX person(name, age) "
+        "VALUES \"Tom\":(\"Tom\", 30)";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
   // Test insert empty value
   {
     std::string query =
@@ -999,6 +1045,20 @@ TEST_F(ParserTest, InsertEdge) {
     std::string query =
         "INSERT EDGE IF NOT EXISTS transfer() "
         "VALUES \"12345\"->\"54321@1537408527\":()";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query =
+        "INSERT EDGE IGNORE_EXISTED_INDEX transfer(amount, time_) "
+        "VALUES \"12345\"->\"54321@1537408527\":(3.75, 1537408527)";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query =
+        "INSERT EDGE IF NOT EXISTS IGNORE_EXISTED_INDEX transfer(amount, time_) "
+        "VALUES \"12345\"->\"54321@1537408527\":(3.75, 1537408527)";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -1406,6 +1466,30 @@ TEST_F(ParserTest, subgraph) {
 
 TEST_F(ParserTest, AdminOperation) {
   {
+    GQLParser parser;
+    std::string query = "ADD HOSTS 127.0.0.1:1000";
+    auto result = parser.parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    GQLParser parser;
+    std::string query = "ADD HOSTS 127.0.0.1:1000,127.0.0.1:9000";
+    auto result = parser.parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    GQLParser parser;
+    std::string query = "DROP HOSTS 127.0.0.1:1000";
+    auto result = parser.parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    GQLParser parser;
+    std::string query = "DROP HOSTS 127.0.0.1:1000,127.0.0.1:9000";
+    auto result = parser.parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
     std::string query = "SHOW HOSTS";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
@@ -1639,7 +1723,7 @@ TEST_F(ParserTest, UnreservedKeywords) {
     std::string query =
         "CREATE TAG tag1(space string, spaces string, "
         "email string, password string, roles string, uuid int, "
-        "path string, variables string, leader string, data string)";
+        "paths string, variables string, leader string, data string)";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -1938,22 +2022,12 @@ TEST_F(ParserTest, BalanceOperation) {
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "BALANCE DATA STOP";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
     std::string query = "BALANCE DATA REMOVE 192.168.0.1:50000,192.168.0.1:50001";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
     std::string query = "BALANCE DATA REMOVE 192.168.0.1:50000,\"localhost\":50001";
-    auto result = parse(query);
-    ASSERT_TRUE(result.ok()) << result.status();
-  }
-  {
-    std::string query = "BALANCE DATA RESET PLAN";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -2496,7 +2570,7 @@ TEST_F(ParserTest, Match) {
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "MATCH p = (a) -[m:like*..2]- (b) RETURN p as Path";
+    std::string query = "MATCH p = (a) -[m:like*..2]- (b) RETURN p as PathA";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -2600,6 +2674,41 @@ TEST_F(ParserTest, Match) {
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
+  {
+    std::string query =
+        "MATCH (a)-[b]-(c) "
+        "WITH a,b,c "
+        "RETURN a,b,c";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query =
+        "MATCH (a)-[b]-(c) "
+        "MATCH (c)-[d]-(e) "
+        "RETURN a,b,c,d,e";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query =
+        "MATCH (a)-[b]-(c) "
+        "WITH a,b,c "
+        "MATCH (c)-[d]-(e) "
+        "RETURN a,b,c,d,e";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "MATCH (a),(b),(c) RETURN a,b,c";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "MATCH (a)-[b]-(c), (c)-[d]-(e) RETURN a,b,c,d,e";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
 }
 
 TEST_F(ParserTest, MatchErrorCheck) {
@@ -2648,7 +2757,7 @@ TEST_F(ParserTest, MatchMultipleTags) {
 
 TEST_F(ParserTest, MatchListSubscriptRange) {
   {
-    std::string query = "WITH [0, 1, 2] AS list RETURN list[0..] AS l";
+    std::string query = "WITH [0, 1, 2] AS l RETURN l[0..] AS l2";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -2664,9 +2773,32 @@ TEST_F(ParserTest, MatchListSubscriptRange) {
   }
 }
 
+TEST_F(ParserTest, HOST) {
+  {
+    std::string query = "ADD HOSTS 127.0.0.1:8989";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "ADD HOSTS 127.0.0.1:8988,127.0.0.1:8989";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "DROP HOSTS 127.0.0.1:8989";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "DROP HOSTS 127.0.0.1:8988,127.0.0.1:8989";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+}
+
 TEST_F(ParserTest, Zone) {
   {
-    std::string query = "SHOW GROUPS";
+    std::string query = "SHOW ZONES";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -2676,62 +2808,80 @@ TEST_F(ParserTest, Zone) {
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "ADD ZONE zone_0 127.0.0.1:8989,127.0.0.1:8988,127.0.0.1:8987";
+    std::string query = "ADD HOSTS 127.0.0.1:8989 INTO ZONE \"zone_0\"";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "ADD HOST 127.0.0.1:8989 INTO ZONE zone_0";
+    std::string query = "ADD HOSTS 127.0.0.1:8989 INTO ZONE \"default_zone_127.0.0.1_8988\"";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "DROP HOST 127.0.0.1:8989 FROM ZONE zone_0";
+    std::string query = "ADD HOSTS 127.0.0.1:8988,127.0.0.1:8989 INTO ZONE \"zone_0\"";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "DESC ZONE zone_0";
+    std::string query =
+        "ADD HOSTS 127.0.0.1:8988,127.0.0.1:8989 INTO ZONE"
+        " \"default_zone_127.0.0.1_8988\"";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "DESCRIBE ZONE zone_0";
+    std::string query = "DESC ZONE \"zone_0\"";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "DROP ZONE zone_0";
+    std::string query = "DESCRIBE ZONE \"zone_0\"";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "ADD GROUP group_0 zone_0,zone_1,zone_2";
+    std::string query = "DROP ZONE \"zone_0\"";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "ADD ZONE zone_3 INTO GROUP group_0";
+    std::string query = "MERGE ZONE \"zone_1\",\"zone_2\" INTO \"zone\"";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "DROP ZONE zone_3 FROM GROUP group_0";
+    std::string query = "MERGE ZONE \"zone_1\",\"zone_2\" INTO \"zone_1\"";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "DESC GROUP group_0";
+    std::string query =
+        "MERGE ZONE \"default_zone_127.0.0.1_8988\",\"default_zone_127.0.0.1_8989\""
+        "INTO \"zone_1\"";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "DESCRIBE GROUP group_0";
+    std::string query =
+        "MERGE ZONE \"default_zone_127.0.0.1_8988\",\"default_zone_127.0.0.1_8989\""
+        "INTO \"default_zone_127.0.0.1_8989\"";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+
+  {
+    std::string query = "RENAME ZONE \"default_zone_127.0.0.1_8989\" TO \"new_name\"";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+
+  {
+    std::string query = "RENAME ZONE \"old_name\" TO \"new_name\"";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "DROP GROUP group_0";
+    std::string query = "RENAME ZONE \"default_zone_127.0.0.1_8989\" TO \"new_name\"";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
@@ -2900,11 +3050,36 @@ TEST_F(ParserTest, FullTextServiceTest) {
     std::string query = "SIGN IN TEXT SERVICE (127.0.0.1:9200)";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), query);
+  }
+  {
+    std::string query = "SIGN IN TEXT SERVICE (127.0.0.1:9200, HTTP)";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), query);
+  }
+  {
+    std::string query = "SIGN IN TEXT SERVICE (127.0.0.1:9200, HTTPS)";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), query);
+  }
+  {
+    std::string query = "SIGN IN TEXT SERVICE (127.0.0.1:9200, HTTPS, \"user\")";
+    auto result = parse(query);
+    ASSERT_FALSE(result.ok());
   }
   {
     std::string query = "SIGN IN TEXT SERVICE (127.0.0.1:9200), (127.0.0.1:9300)";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), query);
+  }
+  {
+    std::string query = "SIGN IN TEXT SERVICE (127.0.0.1:9200, HTTPS), (127.0.0.1:9300)";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), query);
   }
   {
     std::string query = "SIGN IN TEXT SERVICE (127.0.0.1:9200, \"user\", \"password\")";
@@ -2912,11 +3087,32 @@ TEST_F(ParserTest, FullTextServiceTest) {
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
+    std::string query = "SIGN IN TEXT SERVICE (127.0.0.1:9200, HTTP, \"user\", \"password\")";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), query);
+  }
+  {
+    std::string query = "SIGN IN TEXT SERVICE (127.0.0.1:9200, HTTPS, \"user\", \"password\")";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), query);
+  }
+  {
     std::string query =
         "SIGN IN TEXT SERVICE (127.0.0.1:9200, \"user\", \"password\"), "
         "(127.0.0.1:9200, \"user\", \"password\")";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), query);
+  }
+  {
+    std::string query =
+        "SIGN IN TEXT SERVICE (127.0.0.1:9200, HTTP, \"user\", \"password\"), "
+        "(127.0.0.1:9200, HTTPS, \"user\", \"password\")";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), query);
   }
   {
     std::string query = "SIGN OUT TEXT SERVICE";
@@ -2957,16 +3153,24 @@ TEST_F(ParserTest, JobTest) {
   checkTest("SUBMIT JOB FLUSH 111", "SUBMIT JOB FLUSH 111");
   checkTest("SUBMIT JOB STATS", "SUBMIT JOB STATS");
   checkTest("SUBMIT JOB STATS 111", "SUBMIT JOB STATS 111");
+  checkTest("SUBMIT JOB BALANCE DATA", "SUBMIT JOB BALANCE DATA");
+  checkTest(
+      "SUBMIT JOB BALANCE DATA REMOVE 192.168.0.1:50000, 192.168.0.1:50001, 192.168.0.1:50002",
+      "SUBMIT JOB BALANCE DATA REMOVE \"192.168.0.1\":50000, \"192.168.0.1\":50001, "
+      "\"192.168.0.1\":50002");
+  checkTest("SUBMIT JOB BALANCE LEADER", "SUBMIT JOB BALANCE LEADER");
   checkTest("SHOW JOBS", "SHOW JOBS");
   checkTest("SHOW JOB 111", "SHOW JOB 111");
   checkTest("STOP JOB 111", "STOP JOB 111");
   checkTest("RECOVER JOB", "RECOVER JOB");
+  checkTest("RECOVER JOB 111, 222, 333", "RECOVER JOB 111, 222, 333");
   checkTest("REBUILD TAG INDEX name_index", "REBUILD TAG INDEX name_index");
   checkTest("REBUILD EDGE INDEX name_index", "REBUILD EDGE INDEX name_index");
   checkTest("REBUILD TAG INDEX", "REBUILD TAG INDEX ");
   checkTest("REBUILD EDGE INDEX", "REBUILD EDGE INDEX ");
   checkTest("REBUILD TAG INDEX name_index, age_index", "REBUILD TAG INDEX name_index,age_index");
   checkTest("REBUILD EDGE INDEX name_index, age_index", "REBUILD EDGE INDEX name_index,age_index");
+  checkTest("SUBMIT JOB COMPACT", "SUBMIT JOB COMPACT");
 }
 
 TEST_F(ParserTest, ShowAndKillQueryTest) {
@@ -3001,4 +3205,64 @@ TEST_F(ParserTest, ShowAndKillQueryTest) {
     ASSERT_EQ(result.value()->toString(), "KILL QUERY (session=123, plan=123)");
   }
 }
+
+TEST_F(ParserTest, DetectMemoryLeakTest) {
+  {
+    std::string query = "YIELD any(n IN [1, 2, 3, 4, 5] WHERE n > 2)";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), "YIELD any(n IN [1,2,3,4,5] WHERE (n>2))");
+  }
+  // 3 is not expr of kLabel
+  {
+    std::string query = "YIELD [3 IN [1, 2] WHERE n > 2]";
+    auto result = parse(query);
+    ASSERT_FALSE(result.ok()) << result.status();
+  }
+  // a+b is not expr of kLabel
+  {
+    std::string query = "YIELD [a+b IN [1, 2] | n + 10]";
+    auto result = parse(query);
+    ASSERT_FALSE(result.ok()) << result.status();
+  }
+  // a+b is not expr of kLabel
+  {
+    std::string query = "YIELD [a+b IN [1, 2] WHERE n > 2 | n + 10]";
+    auto result = parse(query);
+    ASSERT_FALSE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "YIELD EXISTS(v.age)";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(), "YIELD exists(v.age)");
+  }
+  /// 333 is not expr of kLabelAttribute, kAttribute or kSubscript
+  {
+    std::string query = "YIELD EXISTS(233)";
+    auto result = parse(query);
+    ASSERT_FALSE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "YIELD reduce(totalNum = 10, n IN range(1, 3) | totalNum + n)";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+    ASSERT_EQ(result.value()->toString(),
+              "YIELD reduce(totalNum = 10, n IN range(1,3) | (totalNum+n))");
+  }
+}
+
+TEST_F(ParserTest, TestNameLabel) {
+  {
+    std::string query = "CREATE TAG person127.0.0.1(name STRING);";
+    auto result = parse(query);
+    ASSERT_FALSE(result.ok()) << result.status();
+  }
+  {
+    std::string query = "CREATE TAG `person127.0.0.1`(name STRING);";
+    auto result = parse(query);
+    ASSERT_TRUE(result.ok()) << result.status();
+  }
+}
+
 }  // namespace nebula

@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/time/TimezoneInfo.h"
@@ -37,7 +36,6 @@ namespace time {
   }
   if (!FLAGS_timezone_name.empty()) {
     if (FLAGS_timezone_name.front() == ':') {
-      NG_RETURN_IF_ERROR(Timezone::init());
       return globalTimezone.loadFromDb(
           std::string(FLAGS_timezone_name.begin() + 1, FLAGS_timezone_name.end()));
     } else {

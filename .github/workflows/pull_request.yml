@@ -7,6 +7,10 @@ on:
       - master
       - 'v[0-9]+.*'
 
+concurrency:
+  group: ${{ github.head_ref }}
+  cancel-in-progress: true
+
 defaults:
   run:
     shell: bash
@@ -19,27 +23,35 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          fetch-depth: 2
+          ref: ${{ github.event.pull_request.base.sha }}
+      - uses: actions/checkout@v2
+        with:
+          clean: false
+      - name: Check License Header
+        uses: apache/skywalking-eyes@main
+      - name: Ensure clang-format-10 is available
+        run: |
+          command -v clang-format-10 > /dev/null || (apt-get update && apt-get install -y clang-format-10)
       - name: Cpplint
         run: |
           ln -snf $PWD/.linters/cpp/hooks/pre-commit.sh $PWD/.linters/cpp/pre-commit.sh
-          .linters/cpp/pre-commit.sh $(git --no-pager diff --diff-filter=d --name-only HEAD^ HEAD)
+          .linters/cpp/pre-commit.sh $(git --no-pager diff --diff-filter=d --name-only ${{ github.event.pull_request.base.sha }} HEAD)
       - name: Format check
         run: |
-          res=$(git diff -U0 --no-color HEAD^ | /usr/share/clang/clang-format-10/clang-format-diff.py -p1)
-          [[ ! -z "$res" ]] && exit 1 || true
+          git diff -U0 --no-color ${{ github.event.pull_request.base.sha }} HEAD | /usr/share/clang/clang-format-10/clang-format-diff.py -p1 | tee /tmp/.clang-format-diff
+          [ -s /tmp/.clang-format-diff ] && exit 1 || true
       - uses: actions/setup-python@v2
         with:
           python-version: 3.7
       - name: Prepare Gherkin exec environ
         run: make init-all -C tests
       - name: Check Gherkin feature format
-        run: make check -C tests
+        run: make check-and-diff -C tests
 
   build:
     name: build
     needs: lint
-    runs-on: self-hosted
+    runs-on: [self-hosted, nebula]
     strategy:
       fail-fast: false
       matrix:
@@ -52,11 +64,11 @@ jobs:
         exclude:
           - os: centos7
             compiler: clang-10
+    env:
+      CCACHE_DIR: /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
+      CCACHE_MAXSIZE: 8G
     container:
       image: vesoft/nebula-dev:${{ matrix.os }}
-      env:
-        CCACHE_DIR: /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
-        CCACHE_MAXSIZE: 8G
       volumes:
         - /tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}:/tmp/ccache/nebula/${{ matrix.os }}-${{ matrix.compiler }}
       options: --cap-add=SYS_PTRACE
@@ -93,6 +105,7 @@ jobs:
                   -DCMAKE_C_COMPILER=$TOOLSET_CLANG_DIR/bin/gcc \
                   -DCMAKE_BUILD_TYPE=Debug \
                   -DENABLE_TESTING=on \
+                  -DENABLE_COVERAGE=on \
                   -B build
               echo "::set-output name=j::10"
               ;;
@@ -113,7 +126,7 @@ jobs:
       - name: Make
         run: |
           ccache -z
-          cmake --build build/ -j $(($(nproc)/2+1))
+          cmake --build build/ -j $(nproc)
           ccache -s
       - name: CTest
         env:
@@ -123,7 +136,24 @@ jobs:
         timeout-minutes: 20
       - name: Setup cluster
         run: |
-          make up
+          case ${{ matrix.compiler }} in
+          gcc-*)
+            case ${{ matrix.os }} in
+            centos7)
+              # normal cluster
+              make CONTAINERIZED=true up
+              ;;
+            ubuntu2004)
+              # ssl cluster
+              make CONTAINERIZED=true ENABLE_SSL=true CA_SIGNED=true up
+              ;;
+            esac
+            ;;
+          clang-*)
+            # graph ssl only cluster
+            make CONTAINERIZED=true ENABLE_SSL=false ENABLE_GRAPH_SSL=true up
+            ;;
+          esac
         working-directory: tests/
         timeout-minutes: 2
       - name: Pytest
@@ -141,6 +171,15 @@ jobs:
           make RM_DIR=false down
         working-directory: tests/
         timeout-minutes: 2
+      - name: coverage
+        if: ${{ matrix.compiler == 'gcc-9.2' && matrix.os == 'ubuntu2004' }}
+        run: |
+            ~/.local/bin/fastcov -d build -l -o fastcov.info -p --exclude /usr/include --exclude=/opt/vesoft --exclude scanner.lex
+      - uses: codecov/codecov-action@v2
+        if: ${{ matrix.compiler == 'gcc-9.2' && matrix.os == 'ubuntu2004' }}
+        with:
+          files: fastcov.info
+          fail_ci_if_error: false
       - name: Sanitizer
         if: ${{ always() }}
         run: |

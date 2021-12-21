@@ -1,15 +1,17 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "UpdateExecutor.h"
 
+#include "common/time/ScopedTimer.h"
 #include "graph/context/QueryContext.h"
 #include "graph/planner/plan/Mutate.h"
+#include "graph/service/GraphFlags.h"
 #include "graph/util/SchemaUtil.h"
-#include "graph/util/ScopedTimer.h"
+
+using nebula::storage::StorageClient;
 
 namespace nebula {
 namespace graph {
@@ -45,11 +47,13 @@ folly::Future<Status> UpdateVertexExecutor::execute() {
   auto *uvNode = asNode<UpdateVertex>(node());
   yieldNames_ = uvNode->getYieldNames();
   time::Duration updateVertTime;
+  auto plan = qctx()->plan();
+  auto sess = qctx()->rctx()->session();
+  StorageClient::CommonRequestParam param(
+      uvNode->getSpaceId(), sess->id(), plan->id(), plan->isProfileEnabled());
   return qctx()
       ->getStorageClient()
-      ->updateVertex(uvNode->getSpaceId(),
-                     qctx()->rctx()->session()->id(),
-                     qctx()->plan()->id(),
+      ->updateVertex(param,
                      uvNode->getVId(),
                      uvNode->getTagId(),
                      uvNode->getUpdatedProps(),
@@ -95,11 +99,13 @@ folly::Future<Status> UpdateEdgeExecutor::execute() {
   yieldNames_ = ueNode->getYieldNames();
 
   time::Duration updateEdgeTime;
+  auto plan = qctx()->plan();
+  StorageClient::CommonRequestParam param(
+      ueNode->getSpaceId(), qctx()->rctx()->session()->id(), plan->id(), plan->isProfileEnabled());
+  param.useExperimentalFeature = FLAGS_enable_experimental_feature;
   return qctx()
       ->getStorageClient()
-      ->updateEdge(ueNode->getSpaceId(),
-                   qctx()->rctx()->session()->id(),
-                   qctx()->plan()->id(),
+      ->updateEdge(param,
                    edgeKey,
                    ueNode->getUpdatedProps(),
                    ueNode->getInsertable(),

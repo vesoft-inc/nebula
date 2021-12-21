@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/session/GraphSessionManager.h"
@@ -152,7 +151,10 @@ void GraphSessionManager::threadFunc() {
 // TODO(dutor) Now we do a brute-force scanning, of course we could make it more
 // efficient.
 void GraphSessionManager::reclaimExpiredSessions() {
+  DCHECK_GT(FLAGS_session_idle_timeout_secs, 0);
   if (FLAGS_session_idle_timeout_secs == 0) {
+    LOG(ERROR) << "Program should not reach here, session_idle_timeout_secs should be an integer "
+                  "between 1 and 604800";
     return;
   }
 

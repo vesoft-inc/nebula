@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Match By Id
 
   Background:
@@ -602,7 +601,7 @@ Feature: Match By Id
       | [[:like "Dejounte Murray"->"Tim Duncan"@0],[:like "Dejounte Murray"->"Marco Belinelli"@0],[:like "Marco Belinelli"->"Tony Parker"@0]]       | ("Tony Parker")       |
       | [[:like "Danny Green"->"Tim Duncan"@0],[:like "Marco Belinelli"->"Danny Green"@0],[:like "Marco Belinelli"->"Tony Parker"@0]]               | ("Tony Parker")       |
       | [[:like "Danny Green"->"Tim Duncan"@0],[:like "Danny Green"->"Marco Belinelli"@0],[:like "Marco Belinelli"->"Tony Parker"@0]]               | ("Tony Parker")       |
-      | [[:like "Shaquile O'Neal"->"Tim Duncan"@0],[:like "Yao Ming"->"Shaquile O'Neal"@0],[:like "Yao Ming"->"Tracy McGrady"@0]]                   | ("Tracy McGrady")     |
+      | [[:like "Shaquille O'Neal"->"Tim Duncan"@0],[:like "Yao Ming"->"Shaquille O'Neal"@0],[:like "Yao Ming"->"Tracy McGrady"@0]]                 | ("Tracy McGrady")     |
       | [[:like "LaMarcus Aldridge"->"Tim Duncan"@0],[:like "Tony Parker"->"LaMarcus Aldridge"@0],[:like "Boris Diaw"->"Tony Parker"@0]]            | ("Boris Diaw")        |
       | [[:like "LaMarcus Aldridge"->"Tim Duncan"@0],[:like "LaMarcus Aldridge"->"Tony Parker"@0],[:like "Boris Diaw"->"Tony Parker"@0]]            | ("Boris Diaw")        |
       | [[:like "Dejounte Murray"->"Tim Duncan"@0],[:like "Dejounte Murray"->"Tony Parker"@0],[:like "Boris Diaw"->"Tony Parker"@0]]                | ("Boris Diaw")        |
@@ -775,10 +774,10 @@ Feature: Match By Id
       | [[:like "Tim Duncan"->"Manu Ginobili"@0],[:like "Manu Ginobili"->"Tim Duncan"@0],[:like "Marco Belinelli"->"Tim Duncan"@0]]                 | ("Marco Belinelli")   |
       | [[:like "Tony Parker"->"Tim Duncan"@0],[:like "Tim Duncan"->"Tony Parker"@0],[:like "Marco Belinelli"->"Tim Duncan"@0]]                     | ("Marco Belinelli")   |
       | [[:like "Tim Duncan"->"Tony Parker"@0],[:like "Tony Parker"->"Tim Duncan"@0],[:like "Marco Belinelli"->"Tim Duncan"@0]]                     | ("Marco Belinelli")   |
-      | [[:like "Manu Ginobili"->"Tim Duncan"@0],[:like "Tim Duncan"->"Manu Ginobili"@0],[:like "Shaquile O'Neal"->"Tim Duncan"@0]]                 | ("Shaquile O'Neal")   |
-      | [[:like "Tim Duncan"->"Manu Ginobili"@0],[:like "Manu Ginobili"->"Tim Duncan"@0],[:like "Shaquile O'Neal"->"Tim Duncan"@0]]                 | ("Shaquile O'Neal")   |
-      | [[:like "Tony Parker"->"Tim Duncan"@0],[:like "Tim Duncan"->"Tony Parker"@0],[:like "Shaquile O'Neal"->"Tim Duncan"@0]]                     | ("Shaquile O'Neal")   |
-      | [[:like "Tim Duncan"->"Tony Parker"@0],[:like "Tony Parker"->"Tim Duncan"@0],[:like "Shaquile O'Neal"->"Tim Duncan"@0]]                     | ("Shaquile O'Neal")   |
+      | [[:like "Manu Ginobili"->"Tim Duncan"@0],[:like "Tim Duncan"->"Manu Ginobili"@0],[:like "Shaquille O'Neal"->"Tim Duncan"@0]]                | ("Shaquille O'Neal")  |
+      | [[:like "Tim Duncan"->"Manu Ginobili"@0],[:like "Manu Ginobili"->"Tim Duncan"@0],[:like "Shaquille O'Neal"->"Tim Duncan"@0]]                | ("Shaquille O'Neal")  |
+      | [[:like "Tony Parker"->"Tim Duncan"@0],[:like "Tim Duncan"->"Tony Parker"@0],[:like "Shaquille O'Neal"->"Tim Duncan"@0]]                    | ("Shaquille O'Neal")  |
+      | [[:like "Tim Duncan"->"Tony Parker"@0],[:like "Tony Parker"->"Tim Duncan"@0],[:like "Shaquille O'Neal"->"Tim Duncan"@0]]                    | ("Shaquille O'Neal")  |
       | [[:like "Manu Ginobili"->"Tim Duncan"@0],[:like "Tim Duncan"->"Manu Ginobili"@0],[:like "Tiago Splitter"->"Tim Duncan"@0]]                  | ("Tiago Splitter")    |
       | [[:like "Tim Duncan"->"Manu Ginobili"@0],[:like "Manu Ginobili"->"Tim Duncan"@0],[:like "Tiago Splitter"->"Tim Duncan"@0]]                  | ("Tiago Splitter")    |
       | [[:like "Tony Parker"->"Tim Duncan"@0],[:like "Tim Duncan"->"Tony Parker"@0],[:like "Tiago Splitter"->"Tim Duncan"@0]]                      | ("Tiago Splitter")    |
@@ -823,8 +822,8 @@ Feature: Match By Id
       | [[:like "Tim Duncan"->"Manu Ginobili"@0],[:like "Tony Parker"->"Manu Ginobili"@0]]                                                          | ("Tony Parker")       |
       | [[:like "Tim Duncan"->"Manu Ginobili"@0],[:like "Manu Ginobili"->"Tim Duncan"@0]]                                                           | ("Tim Duncan")        |
       | [[:like "Tiago Splitter"->"Tim Duncan"@0],[:like "Tiago Splitter"->"Manu Ginobili"@0]]                                                      | ("Manu Ginobili")     |
-      | [[:like "Shaquile O'Neal"->"Tim Duncan"@0],[:like "Yao Ming"->"Shaquile O'Neal"@0]]                                                         | ("Yao Ming")          |
-      | [[:like "Shaquile O'Neal"->"Tim Duncan"@0],[:like "Shaquile O'Neal"->"JaVale McGee"@0]]                                                     | ("JaVale McGee")      |
+      | [[:like "Shaquille O'Neal"->"Tim Duncan"@0],[:like "Yao Ming"->"Shaquille O'Neal"@0]]                                                       | ("Yao Ming")          |
+      | [[:like "Shaquille O'Neal"->"Tim Duncan"@0],[:like "Shaquille O'Neal"->"JaVale McGee"@0]]                                                   | ("JaVale McGee")      |
       | [[:like "Tony Parker"->"Tim Duncan"@0],[:like "Boris Diaw"->"Tony Parker"@0]]                                                               | ("Boris Diaw")        |
       | [[:like "Tim Duncan"->"Tony Parker"@0],[:like "Boris Diaw"->"Tony Parker"@0]]                                                               | ("Boris Diaw")        |
       | [[:like "Tony Parker"->"Tim Duncan"@0],[:like "Dejounte Murray"->"Tony Parker"@0]]                                                          | ("Dejounte Murray")   |
@@ -905,7 +904,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH (:player{name: "Tim Duncan"})-[e:like*2..3]-(v)
-      RETURN 1 | YIELD count(1)
+      RETURN count(1)
       """
     Then the result should be, in any order, with relax comparison:
       | count(1) |
@@ -913,7 +912,7 @@ Feature: Match By Id
     When executing query:
       """
       MATCH (:player{name:"Tim Duncan"})-[e:serve|like*2..3]-(v)
-      RETURN 1 | YIELD count(1)
+      RETURN count(1)
       """
     Then the result should be, in any order, with relax comparison:
       | count(1) |
@@ -935,8 +934,7 @@ Feature: Match By Id
       """
       MATCH (v1)-[:like]->(v2:player)-[:serve]->(v3)
       WHERE id(v2) == 'Tim Duncan'
-      RETURN v1, v3 |
-      YIELD COUNT(*)
+      RETURN COUNT(*)
       """
     Then the result should be, in any order, with relax comparison:
       | COUNT(*) |
@@ -945,8 +943,7 @@ Feature: Match By Id
       """
       MATCH (v1)-[:like]->(v2:player)-[:serve]->(v3)
       WHERE id(v3) == 'Spurs'
-      RETURN v1 |
-      YIELD COUNT(*)
+      RETURN COUNT(*)
       """
     Then the result should be, in any order, with relax comparison:
       | COUNT(*) |

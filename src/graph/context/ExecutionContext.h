@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_CONTEXT_EXECUTIONCONTEXT_H_
@@ -62,7 +61,7 @@ class ExecutionContext {
 
   void dropResult(const std::string& name);
 
-  // Only keep the last several versoins of the Value
+  // Only keep the last several versions of the Value
   void truncHistory(const std::string& name, size_t numVersionsToKeep);
 
   bool exist(const std::string& name) const { return valueMap_.find(name) != valueMap_.end(); }

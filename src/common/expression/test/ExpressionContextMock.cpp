@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "common/expression/test/ExpressionContextMock.h"
@@ -37,9 +36,9 @@ std::unordered_map<std::string, Value> ExpressionContextMock::vals_ = {
     {"srcProperty", Value(13)},
     {"dstProperty", Value(3)},
 
-    {"path_src", Value("1")},
+    {"path_src", Value(Vertex("1", {}))},
     {"path_edge1", Value(Edge("1", "2", 1, "edge", 0, {}))},
-    {"path_v1", Value("2")},
+    {"path_v1", Value(Vertex("2", {}))},
     {"path_edge2", Value(Edge("2", "3", 1, "edge", 0, {}))},
     {"path_v2", Value(Vertex("3", {}))},
     {"path_edge3", Value(Edge("3", "4", 1, "edge", 0, {}))},

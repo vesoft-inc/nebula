@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/job/AdminJobProcessor.h"
@@ -64,7 +63,7 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
       break;
     }
     case nebula::meta::cpp2::AdminJobOp::SHOW_All: {
-      auto ret = jobMgr->showJobs();
+      auto ret = jobMgr->showJobs(req.get_paras().back());
       if (nebula::ok(ret)) {
         result.set_job_desc(nebula::value(ret));
       } else {
@@ -73,8 +72,9 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
       break;
     }
     case nebula::meta::cpp2::AdminJobOp::SHOW: {
-      if (req.get_paras().empty()) {
-        LOG(ERROR) << "Parameter should be not empty";
+      static const size_t kShowArgsNum = 2;
+      if (req.get_paras().size() != kShowArgsNum) {
+        LOG(ERROR) << "Parameter number not matched";
         errorCode = nebula::cpp2::ErrorCode::E_INVALID_PARM;
         break;
       }
@@ -85,8 +85,7 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
         errorCode = nebula::cpp2::ErrorCode::E_INVALID_PARM;
         break;
       }
-
-      auto ret = jobMgr->showJob(iJob);
+      auto ret = jobMgr->showJob(iJob, req.get_paras().back());
       if (nebula::ok(ret)) {
         result.set_job_desc(std::vector<cpp2::JobDesc>{nebula::value(ret).first});
         result.set_task_desc(nebula::value(ret).second);
@@ -96,8 +95,9 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
       break;
     }
     case nebula::meta::cpp2::AdminJobOp::STOP: {
-      if (req.get_paras().empty()) {
-        LOG(ERROR) << "Parameter should be not empty";
+      static const size_t kStopJobArgsNum = 2;
+      if (req.get_paras().size() != kStopJobArgsNum) {
+        LOG(ERROR) << "Parameter number not matched";
         errorCode = nebula::cpp2::ErrorCode::E_INVALID_PARM;
         break;
       }
@@ -107,11 +107,18 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
         errorCode = nebula::cpp2::ErrorCode::E_INVALID_PARM;
         break;
       }
-      errorCode = jobMgr->stopJob(iJob);
+      errorCode = jobMgr->stopJob(iJob, req.get_paras().back());
       break;
     }
     case nebula::meta::cpp2::AdminJobOp::RECOVER: {
-      auto ret = jobMgr->recoverJob();
+      const std::vector<std::string>& paras = req.get_paras();
+      const std::string& spaceName = req.get_paras().back();
+      std::vector<int32_t> jobIds;
+      jobIds.reserve(paras.size() - 1);
+      for (size_t i = 0; i < paras.size() - 1; i++) {
+        jobIds.push_back(std::stoi(paras[i]));
+      }
+      auto ret = jobMgr->recoverJob(spaceName, adminClient_, jobIds);
       if (nebula::ok(ret)) {
         result.set_recovered_job_num(nebula::value(ret));
       } else {

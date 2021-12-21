@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/http/MetaHttpIngestHandler.h"
@@ -14,9 +13,12 @@
 #include "common/network/NetworkUtils.h"
 #include "common/process/ProcessUtils.h"
 #include "common/thread/GenericThreadPool.h"
-#include "meta/MetaServiceUtils.h"
+#include "common/utils/MetaKeyUtils.h"
 #include "webservice/Common.h"
 #include "webservice/WebService.h"
+
+DECLARE_int32(ws_storage_http_port);
+DECLARE_int32(ws_storage_h2_port);
 
 DEFINE_int32(meta_ingest_thread_num, 3, "Meta daemon's ingest thread number");
 
@@ -103,7 +105,7 @@ void MetaHttpIngestHandler::onError(ProxygenError error) noexcept {
 
 bool MetaHttpIngestHandler::ingestSSTFiles(GraphSpaceID space) {
   std::unique_ptr<kvstore::KVIterator> iter;
-  auto prefix = MetaServiceUtils::partPrefix(space);
+  auto prefix = MetaKeyUtils::partPrefix(space);
 
   static const GraphSpaceID metaSpaceId = 0;
   static const PartitionID metaPartId = 0;
@@ -115,7 +117,7 @@ bool MetaHttpIngestHandler::ingestSSTFiles(GraphSpaceID space) {
 
   std::set<std::string> storageIPs;
   while (iter->valid()) {
-    for (auto &host : MetaServiceUtils::parsePartVal(iter->val())) {
+    for (auto &host : MetaKeyUtils::parsePartVal(iter->val())) {
       if (storageIPs.count(host.host) == 0) {
         storageIPs.insert(std::move(host.host));
       }

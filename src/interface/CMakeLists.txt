@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     add_compile_options(-Wno-maybe-uninitialized)
@@ -23,7 +22,7 @@ thrift_generate("raftex" "RaftexService" ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CUR
 # Target object name : storage_thrift_obj
 thrift_generate(
     "storage"
-    "GraphStorageService;StorageAdminService;GeneralStorageService;InternalStorageService"
+    "GraphStorageService;StorageAdminService;InternalStorageService"
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}
     "interface"

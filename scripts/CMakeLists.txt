@@ -1,7 +1,6 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 install(
     FILES
@@ -66,4 +65,17 @@ install(
         scripts
     COMPONENT
         graph
+)
+
+install(
+    FILES
+        meta-transfer-tools.sh
+    PERMISSIONS
+        OWNER_EXECUTE OWNER_WRITE OWNER_READ
+        GROUP_EXECUTE GROUP_READ
+        WORLD_EXECUTE WORLD_READ
+    DESTINATION
+        scripts
+    COMPONENT
+        meta
 )

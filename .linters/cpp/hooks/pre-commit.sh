@@ -2,8 +2,7 @@
 
 # Copyright (c) 2018 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 CPPLINT=`dirname $0`/../../.linters/cpp/cpplint.py
 CHECKKEYWORD=`dirname $0`/../../.linters/cpp/checkKeyword.py
@@ -57,12 +56,34 @@ fi
 
 echo "Performing C++ code format check..."
 
-CLANG_HOME=/opt/vesoft/toolset/clang/10.0.0/
+CLANG_FALLBACK=/opt/vesoft/toolset/clang/10.0.0/
+if [ -z "$CLANG_HOME" ] && [ -d "$CLANG_FALLBACK" ]; then
+    CLANG_HOME=$CLANG_FALLBACK
+fi
 
-if [ ! -d "$CLANG_HOME" ]; then
-    echo "The $CLANG_HOME directory is not found, and the source changes cannot be automatically formatted."
+CLANG_FORMAT=$(command -v clang-format-10)
+if [ -z "$CLANG_FORMAT" ]; then
+    CLANG_FORMAT=$CLANG_HOME/bin/clang-format
+fi
+
+CLANG_FORMAT_DIFF=$(command -v clang-format-diff-10)
+if [ -z "$CLANG_FORMAT_DIFF" ]; then
+    CLANG_FORMAT_DIFF=$CLANG_HOME/share/clang/clang-format-diff.py
+fi
+
+if [ -z "$CLANG_FORMAT" ] || [ -z "$CLANG_FORMAT_DIFF" ]; then
+    if [ ! -d "$CLANG_HOME" ]; then
+        echo "The $CLANG_HOME directory was not found."
+    fi
+    if [ -z "$CLANG_FORMAT" ]; then
+        echo "Could not find clang-format"
+    fi
+    if [ -z "$CLANG_FORMAT_DIFF" ]; then
+        echo "Could not find clang-format-diff"
+    fi
+    echo "source changes cannot be automatically formatted."
     exit 0
 fi
 
-git diff -U0 --no-color --staged | $CLANG_HOME/share/clang/clang-format-diff.py -i -p1 -binary $CLANG_HOME/bin/clang-format
+git diff -U0 --no-color --staged | "$CLANG_FORMAT_DIFF" -i -p1 -binary "$CLANG_FORMAT"
 git add $CHECK_FILES

@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -437,7 +436,7 @@ TEST(NebulaStoreTest, TransLeaderTest) {
   };
 
   LOG(INFO) << "Transfer leader to first copy";
-  // all parttition tranfer leaders to first replica
+  // all partition transfer leaders to first replica
   GraphSpaceID spaceId = 0;
   for (int i = 0; i < 3; i++) {
     PartitionID partId = i;
@@ -917,6 +916,7 @@ TEST(NebulaStoreTest, BackupRestoreTest) {
   FLAGS_rocksdb_table_format = "PlainTable";
   FLAGS_rocksdb_wal_dir = rocksdbWalPath.path();
   FLAGS_rocksdb_backup_dir = backupPath.path();
+  FLAGS_enable_rocksdb_prefix_filtering = true;
 
   auto waitLeader = [](const std::unique_ptr<NebulaStore>& store) {
     while (true) {
@@ -950,7 +950,7 @@ TEST(NebulaStoreTest, BackupRestoreTest) {
     if (insertData) {
       std::vector<KV> data;
       for (auto tagId = 0; tagId < 10; tagId++) {
-        data.emplace_back(NebulaKeyUtils::vertexKey(vIdLen, partId, "vertex", tagId),
+        data.emplace_back(NebulaKeyUtils::tagKey(vIdLen, partId, "vertex", tagId),
                           folly::stringPrintf("val_%d", tagId));
       }
       folly::Baton<true, std::atomic> baton;
@@ -962,7 +962,7 @@ TEST(NebulaStoreTest, BackupRestoreTest) {
     }
 
     {
-      std::string prefix = NebulaKeyUtils::vertexPrefix(vIdLen, partId, "vertex");
+      std::string prefix = NebulaKeyUtils::tagPrefix(vIdLen, partId, "vertex");
       std::unique_ptr<KVIterator> iter;
       auto code = store->prefix(spaceId, partId, prefix, &iter);
       EXPECT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);

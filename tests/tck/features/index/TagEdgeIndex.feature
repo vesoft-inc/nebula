@@ -80,20 +80,10 @@ Feature: tag and edge index tests from pytest
       CREATE TAG INDEX disorder_tag_index ON tag_1(col3, col2)
       """
     Then the execution should be successful
-    And wait 3 seconds
+    And wait 6 seconds
     When submit a job:
       """
-      REBUILD TAG INDEX single_tag_index
-      """
-    Then wait the job to finish
-    When submit a job:
-      """
-      REBUILD TAG INDEX multi_tag_index
-      """
-    Then wait the job to finish
-    When submit a job:
-      """
-      REBUILD TAG INDEX disorder_tag_index
+      REBUILD TAG INDEX single_tag_index, multi_tag_index, disorder_tag_index
       """
     Then wait the job to finish
     When executing query:
@@ -106,32 +96,30 @@ Feature: tag and edge index tests from pytest
       SHOW TAG INDEX STATUS
       """
     Then the result should contain:
-      | Name                 | Index Status |
-      | 'single_tag_index'   | 'FINISHED'   |
-      | 'multi_tag_index'    | 'FINISHED'   |
-      | 'disorder_tag_index' | 'FINISHED'   |
+      | Name                                                  | Index Status |
+      | 'single_tag_index,multi_tag_index,disorder_tag_index' | 'FINISHED'   |
     When executing query:
       """
       LOOKUP ON tag_1 WHERE tag_1.col2 == 18 YIELD tag_1.col1
       """
     Then the result should be, in any order:
-      | VertexID | tag_1.col1 |
-      | '101'    | 'Tom'      |
+      | tag_1.col1 |
+      | 'Tom'      |
     When executing query:
       """
       LOOKUP ON tag_1 WHERE tag_1.col3 > 35.7 YIELD tag_1.col1
       """
     Then the result should be, in any order:
-      | VertexID | tag_1.col1 |
-      | '102'    | 'Jerry'    |
-      | '103'    | 'Bob'      |
+      | tag_1.col1 |
+      | 'Jerry'    |
+      | 'Bob'      |
     When executing query:
       """
       LOOKUP ON tag_1 WHERE tag_1.col2 > 18 AND tag_1.col3 < 37.2 YIELD tag_1.col1
       """
     Then the result should be, in any order:
-      | VertexID | tag_1.col1 |
-      | '103'    | 'Bob'      |
+      | tag_1.col1 |
+      | 'Bob'      |
     When executing query:
       """
       DESC TAG INDEX single_tag_index
@@ -174,6 +162,12 @@ Feature: tag and edge index tests from pytest
     Then the result should be, in any order:
       | Tag Index Name    | Create Tag Index                                                        |
       | 'multi_tag_index' | 'CREATE TAG INDEX `multi_tag_index` ON `tag_1` (\n `col2`,\n `col3`\n)' |
+    # Check if check tag/edge type before drop index
+    When executing query:
+      """
+      DROP EDGE INDEX multi_tag_index
+      """
+    Then an ExecutionError should be raised at runtime.
     When executing query:
       """
       DROP TAG INDEX multi_tag_index
@@ -326,21 +320,11 @@ Feature: tag and edge index tests from pytest
       CREATE EDGE INDEX disorder_edge_index ON edge_1(col3, col2)
       """
     Then the execution should be successful
-    And wait 3 seconds
+    And wait 6 seconds
     # Rebuild Edge Index
     When submit a job:
       """
-      REBUILD EDGE INDEX single_edge_index
-      """
-    Then wait the job to finish
-    When submit a job:
-      """
-      REBUILD EDGE INDEX multi_edge_index
-      """
-    Then wait the job to finish
-    When submit a job:
-      """
-      REBUILD EDGE INDEX disorder_edge_index
+      REBUILD EDGE INDEX single_edge_index, multi_edge_index, disorder_edge_index
       """
     Then wait the job to finish
     When executing query:
@@ -353,33 +337,31 @@ Feature: tag and edge index tests from pytest
       SHOW EDGE INDEX STATUS
       """
     Then the result should contain:
-      | Name                  | Index Status |
-      | 'single_edge_index'   | 'FINISHED'   |
-      | 'multi_edge_index'    | 'FINISHED'   |
-      | 'disorder_edge_index' | 'FINISHED'   |
+      | Name                                                     | Index Status |
+      | 'single_edge_index,multi_edge_index,disorder_edge_index' | 'FINISHED'   |
     # Lookup
     When executing query:
       """
       LOOKUP ON edge_1 WHERE edge_1.col2 == 22 YIELD edge_1.col2
       """
     Then the result should be, in any order:
-      | SrcVID | DstVID | Ranking | edge_1.col2 |
-      | '102'  | '103'  | 0       | 22          |
+      | edge_1.col2 |
+      | 22          |
     When executing query:
       """
       LOOKUP ON edge_1 WHERE edge_1.col3 > 43.4 YIELD edge_1.col1
       """
     Then the result should be, in any order:
-      | SrcVID | DstVID | Ranking | edge_1.col1 |
-      | '102'  | '103'  | 0       | 'Yellow'    |
-      | '101'  | '102'  | 0       | 'Red'       |
+      | edge_1.col1 |
+      | 'Yellow'    |
+      | 'Red'       |
     When executing query:
       """
       LOOKUP ON edge_1 WHERE edge_1.col2 > 45 AND edge_1.col3 < 44.3 YIELD edge_1.col1
       """
     Then the result should be, in any order:
-      | SrcVID | DstVID | Ranking | edge_1.col1 |
-      | '103'  | '101'  | 0       | 'Blue'      |
+      | edge_1.col1 |
+      | 'Blue'      |
     # Describe Edge Index
     When executing query:
       """
@@ -429,6 +411,12 @@ Feature: tag and edge index tests from pytest
     Then the result should be, in any order:
       | Edge Index Name    | Create Edge Index                                                          |
       | 'multi_edge_index' | 'CREATE EDGE INDEX `multi_edge_index` ON `edge_1` (\n `col2`,\n `col3`\n)' |
+    # Check if check tag/edge type before drop index
+    When executing query:
+      """
+      DROP TAG INDEX multi_edge_index
+      """
+    Then an ExecutionError should be raised at runtime.
     # Check if show create edge index works well
     When executing query:
       """

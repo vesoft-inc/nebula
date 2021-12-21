@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "storage/query/GetNeighborsProcessor.h"
@@ -36,6 +35,9 @@ void GetNeighborsProcessor::doProcess(const cpp2::GetNeighborsRequest& req) {
     }
     onFinished();
     return;
+  }
+  if (req.common_ref().has_value() && req.get_common()->profile_detail_ref().value_or(false)) {
+    profileDetailFlag_ = true;
   }
   this->planContext_ = std::make_unique<PlanContext>(
       this->env_, spaceId_, this->spaceVidLen_, this->isIntId_, req.common_ref());
@@ -100,7 +102,7 @@ void GetNeighborsProcessor::runInSingleThread(const cpp2::GetNeighborsRequest& r
       }
     }
   }
-  if (FLAGS_profile_storage_detail) {
+  if (UNLIKELY(profileDetailFlag_)) {
     profilePlan(plan);
   }
   onProcessFinished();
@@ -168,7 +170,7 @@ folly::Future<std::pair<nebula::cpp2::ErrorCode, PartitionID>> GetNeighborsProce
             return std::make_pair(ret, partId);
           }
         }
-        if (FLAGS_profile_storage_detail) {
+        if (UNLIKELY(this->profileDetailFlag_)) {
           profilePlan(plan);
         }
         return std::make_pair(nebula::cpp2::ErrorCode::SUCCEEDED, partId);
@@ -282,7 +284,13 @@ nebula::cpp2::ErrorCode GetNeighborsProcessor::checkAndBuildContexts(
   if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
     return code;
   }
-  code = buildFilter(req);
+  code = buildFilter(req, [](const cpp2::GetNeighborsRequest& r) -> const std::string* {
+    if (r.get_traverse_spec().filter_ref().has_value()) {
+      return r.get_traverse_spec().get_filter();
+    } else {
+      return nullptr;
+    }
+  });
   if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
     return code;
   }
@@ -437,9 +445,11 @@ nebula::cpp2::ErrorCode GetNeighborsProcessor::checkStatType(
     case cpp2::StatType::AVG:
     case cpp2::StatType::MIN:
     case cpp2::StatType::MAX: {
-      if (fType == meta::cpp2::PropertyType::INT64 || fType == meta::cpp2::PropertyType::INT32 ||
-          fType == meta::cpp2::PropertyType::INT16 || fType == meta::cpp2::PropertyType::INT8 ||
-          fType == meta::cpp2::PropertyType::FLOAT || fType == meta::cpp2::PropertyType::DOUBLE) {
+      if (fType == nebula::cpp2::PropertyType::INT64 ||
+          fType == nebula::cpp2::PropertyType::INT32 ||
+          fType == nebula::cpp2::PropertyType::INT16 || fType == nebula::cpp2::PropertyType::INT8 ||
+          fType == nebula::cpp2::PropertyType::FLOAT ||
+          fType == nebula::cpp2::PropertyType::DOUBLE) {
         return nebula::cpp2::ErrorCode::SUCCEEDED;
       }
       return nebula::cpp2::ErrorCode::E_INVALID_STAT_TYPE;

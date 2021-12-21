@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Insert string vid of vertex and edge
 
   Scenario: insert vertex and edge test
@@ -34,7 +33,7 @@ Feature: Insert string vid of vertex and edge
       INSERT VERTEX person(name, age) VALUES "Tom":("Tom", 22)
       """
     Then the execution should be successful
-    # insert vretex with default property names
+    # insert vertex with default property names
     When executing query:
       """
       INSERT VERTEX person VALUES "Tom":("Tom", 18);
@@ -67,10 +66,10 @@ Feature: Insert string vid of vertex and edge
     Then the execution should be successful
     When executing query:
       """
-      FETCH PROP ON * "Tom"
+      FETCH PROP ON * "Tom" YIELD vertex as node
       """
     Then the result should be, in any order, with relax comparison:
-      | vertices_                                                      |
+      | node                                                           |
       | ("Tom":person{name:"Tom", age:18}:interest{name:"basketball"}) |
     # insert vertex wrong type value
     When executing query:
@@ -144,10 +143,10 @@ Feature: Insert string vid of vertex and edge
     # check vertex result with fetch
     When executing query:
       """
-      FETCH PROP ON person "Conan"
+      FETCH PROP ON person "Conan" YIELD vertex as node
       """
     Then the result should be, in any order, with relax comparison:
-      | vertices_ |
+      | node      |
       | ('Conan') |
     # insert vertex with string timestamp succeeded
     When try to execute query:
@@ -167,8 +166,8 @@ Feature: Insert string vid of vertex and edge
       FETCH PROP ON schoolmate "Tom"->"Bob" YIELD schoolmate.likeness, schoolmate.nickname
       """
     Then the result should be, in any order:
-      | schoolmate._src | schoolmate._dst | schoolmate._rank | schoolmate.likeness | schoolmate.nickname |
-      | 'Tom'           | 'Bob'           | 0                | 87                  | 'Superman'          |
+      | schoolmate.likeness | schoolmate.nickname |
+      | 87                  | 'Superman'          |
     # check edge result with go
     When executing query:
       """
@@ -184,8 +183,8 @@ Feature: Insert string vid of vertex and edge
       FETCH PROP ON school "sun_school" YIELD school.name, school.create_time
       """
     Then the result should be, in any order:
-      | VertexID     | school.name  | school.create_time |
-      | "sun_school" | "sun_school" | 1262340000         |
+      | school.name  | school.create_time |
+      | "sun_school" | 1262340000         |
     # insert one vertex multi tags
     When executing query:
       """
@@ -204,16 +203,16 @@ Feature: Insert string vid of vertex and edge
       FETCH PROP ON person "Bob" YIELD person.name, person.age
       """
     Then the result should be, in any order:
-      | VertexID | person.name | person.age |
-      | 'Bob'    | 'Bob'       | 9          |
+      | person.name | person.age |
+      | 'Bob'       | 9          |
     # check student tag result with fetch
     When executing query:
       """
       FETCH PROP ON student "Bob" YIELD student.grade, student.number
       """
     Then the result should be, in any order:
-      | VertexID | student.grade | student.number |
-      | 'Bob'    | 'four'        | 20191106001    |
+      | student.grade | student.number |
+      | 'four'        | 20191106001    |
     # insert multi vertex multi tags
     When executing query:
       """
@@ -466,6 +465,8 @@ Feature: Insert string vid of vertex and edge
       """
       CREATE TAG student(name string NOT NULL, age int);
       CREATE TAG course(name fixed_string(5) NOT NULL, introduce string DEFAULT NULL);
+      CREATE TAG INDEX student_i ON student(name(30), age);
+      CREATE TAG INDEX course_i ON course(name, introduce(30));
       """
     # test insert with fixed_string
     When try to execute query:
@@ -491,11 +492,6 @@ Feature: Insert string vid of vertex and edge
       INSERT VERTEX student(name, age) VALUES "Tom":(NULL, 12)
       """
     Then a ExecutionError should be raised at runtime: Storage Error: The not null field cannot be null.
-    When executing query:
-      """
-      INSERT VERTEX student(name, age) VALUES "Tom":(NULL, 12)
-      """
-    Then a ExecutionError should be raised at runtime: Storage Error: The not null field cannot be null.
     # out of fixed_string's size
     When executing query:
       """
@@ -505,10 +501,10 @@ Feature: Insert string vid of vertex and edge
     # check result
     When executing query:
       """
-      FETCH PROP ON course "English"
+      FETCH PROP ON course "English" YIELD vertex as node
       """
     Then the result should be, in any order, with relax comparison:
-      | vertices_   |
+      | node        |
       | ('English') |
     # check result
     When executing query:
@@ -516,6 +512,106 @@ Feature: Insert string vid of vertex and edge
       FETCH PROP ON student "" YIELD student.name, student.age
       """
     Then the result should be, in any order:
-      | VertexID | student.name | student.age |
-      | ''       | 'Tom'        | 12          |
+      | student.name | student.age |
+      | 'Tom'        | 12          |
+    # check result
+    When executing query:
+      """
+      LOOKUP on course YIELD course.name, course.introduce
+      """
+    Then the result should be, in any order:
+      | course.name | course.introduce |
+      | 'Engli'     | NULL             |
+      | 'Math'      | NULL             |
+    When executing query:
+      """
+      LOOKUP ON student YIELD student.name, student.age
+      """
+    Then the result should be, in any order:
+      | student.name | student.age |
+      | 'Tom'        | 12          |
+    Then drop the used space
+
+  Scenario: string id ignore existed index
+    Given an empty graph
+    And create a space with following options:
+      | partition_num  | 9                |
+      | replica_factor | 1                |
+      | vid_type       | FIXED_STRING(10) |
+    And having executed:
+      """
+      CREATE TAG person(id int);
+      CREATE TAG INDEX id_index ON person(id);
+      CREATE EDGE like(grade int);
+      CREATE EDGE INDEX grade_index ON like(grade);
+      """
+    And wait 6 seconds
+    # test insert vertex
+    When try to execute query:
+      """
+      INSERT VERTEX person(id) VALUES "100":(1), "200":(1)
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON person WHERE person.id == 1 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id    |
+      | "100" |
+      | "200" |
+    When try to execute query:
+      """
+      INSERT VERTEX IGNORE_EXISTED_INDEX person(id) VALUES "200":(2)
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON person WHERE person.id == 1 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id    |
+      | "100" |
+      | "200" |
+    When executing query:
+      """
+      LOOKUP ON person WHERE person.id == 2 YIELD id(vertex) as id
+      """
+    Then the result should be, in any order:
+      | id    |
+      | "200" |
+    # test insert edge
+    When try to execute query:
+      """
+      INSERT EDGE like(grade) VALUES "100" -> "200":(666), "300" -> "400":(666);
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON like WHERE like.grade == 666 YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src   | dst   |
+      | "100" | "200" |
+      | "300" | "400" |
+    When try to execute query:
+      """
+      INSERT EDGE IGNORE_EXISTED_INDEX like(grade) VALUES "300" -> "400":(888)
+      """
+    Then the execution should be successful
+    When executing query:
+      """
+      LOOKUP ON like WHERE like.grade == 666 YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src   | dst   |
+      | "100" | "200" |
+      | "300" | "400" |
+    When executing query:
+      """
+      LOOKUP ON like WHERE like.grade == 888 YIELD src(edge) as src, dst(edge) as dst
+      """
+    Then the result should be, in any order:
+      | src   | dst   |
+      | "300" | "400" |
     Then drop the used space

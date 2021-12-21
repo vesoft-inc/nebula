@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "meta/processors/job/JobDescription.h"
@@ -150,8 +149,8 @@ std::string JobDescription::archiveKey() {
   return str;
 }
 
-bool JobDescription::setStatus(Status newStatus) {
-  if (JobStatus::laterThan(status_, newStatus)) {
+bool JobDescription::setStatus(Status newStatus, bool force) {
+  if (JobStatus::laterThan(status_, newStatus) && !force) {
     return false;
   }
   status_ = newStatus;

@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_PLANNER_PLAN_SCAN_H_
@@ -29,7 +28,7 @@ class EdgeIndexScan : public IndexScan {
                 bool dedup,
                 std::vector<storage::cpp2::OrderBy> orderBy,
                 int64_t limit,
-                std::string filter,
+                Expression* filter,
                 Kind kind)
       : IndexScan(qctx,
                   input,
@@ -42,9 +41,14 @@ class EdgeIndexScan : public IndexScan {
                   dedup,
                   std::move(orderBy),
                   limit,
-                  std::move(filter),
+                  filter,
                   kind),
         edgeType_(edgeType) {}
+
+  void cloneMembers(const EdgeIndexScan& es) {
+    IndexScan::cloneMembers(es);
+    edgeType_ = es.edgeType_;
+  }
 
   std::string edgeType_;
 };
@@ -62,7 +66,7 @@ class EdgeIndexPrefixScan : public EdgeIndexScan {
                                    bool dedup = false,
                                    std::vector<storage::cpp2::OrderBy> orderBy = {},
                                    int64_t limit = std::numeric_limits<int64_t>::max(),
-                                   std::string filter = "") {
+                                   Expression* filter = nullptr) {
     return qctx->objPool()->add(new EdgeIndexPrefixScan(qctx,
                                                         input,
                                                         edgeType,
@@ -74,7 +78,13 @@ class EdgeIndexPrefixScan : public EdgeIndexScan {
                                                         dedup,
                                                         std::move(orderBy),
                                                         limit,
-                                                        std::move(filter)));
+                                                        filter));
+  }
+
+  PlanNode* clone() const override {
+    auto* newEdgeIndexPrefixScan = EdgeIndexPrefixScan::make(qctx_, nullptr, "");
+    newEdgeIndexPrefixScan->cloneMembers(*this);
+    return newEdgeIndexPrefixScan;
   }
 
  private:
@@ -89,7 +99,7 @@ class EdgeIndexPrefixScan : public EdgeIndexScan {
                       bool dedup,
                       std::vector<storage::cpp2::OrderBy> orderBy,
                       int64_t limit,
-                      std::string filter)
+                      Expression* filter)
       : EdgeIndexScan(qctx,
                       input,
                       edgeType,
@@ -101,7 +111,7 @@ class EdgeIndexPrefixScan : public EdgeIndexScan {
                       dedup,
                       std::move(orderBy),
                       limit,
-                      std::move(filter),
+                      filter,
                       Kind::kEdgeIndexPrefixScan) {}
 };
 
@@ -118,7 +128,7 @@ class EdgeIndexRangeScan : public EdgeIndexScan {
                                   bool dedup = false,
                                   std::vector<storage::cpp2::OrderBy> orderBy = {},
                                   int64_t limit = std::numeric_limits<int64_t>::max(),
-                                  std::string filter = "") {
+                                  Expression* filter = nullptr) {
     return qctx->objPool()->add(new EdgeIndexRangeScan(qctx,
                                                        input,
                                                        edgeType,
@@ -130,7 +140,13 @@ class EdgeIndexRangeScan : public EdgeIndexScan {
                                                        dedup,
                                                        std::move(orderBy),
                                                        limit,
-                                                       std::move(filter)));
+                                                       filter));
+  }
+
+  PlanNode* clone() const override {
+    auto* newEdgeIndexRangeScan = EdgeIndexRangeScan::make(qctx_, nullptr, "");
+    newEdgeIndexRangeScan->cloneMembers(*this);
+    return newEdgeIndexRangeScan;
   }
 
  private:
@@ -145,7 +161,7 @@ class EdgeIndexRangeScan : public EdgeIndexScan {
                      bool dedup,
                      std::vector<storage::cpp2::OrderBy> orderBy,
                      int64_t limit,
-                     std::string filter)
+                     Expression* filter)
       : EdgeIndexScan(qctx,
                       input,
                       edgeType,
@@ -157,7 +173,7 @@ class EdgeIndexRangeScan : public EdgeIndexScan {
                       dedup,
                       std::move(orderBy),
                       limit,
-                      std::move(filter),
+                      filter,
                       Kind::kEdgeIndexRangeScan) {}
 };
 
@@ -174,7 +190,7 @@ class EdgeIndexFullScan final : public EdgeIndexScan {
                                  bool dedup = false,
                                  std::vector<storage::cpp2::OrderBy> orderBy = {},
                                  int64_t limit = std::numeric_limits<int64_t>::max(),
-                                 std::string filter = "") {
+                                 Expression* filter = nullptr) {
     return qctx->objPool()->add(new EdgeIndexFullScan(qctx,
                                                       input,
                                                       edgeType,
@@ -186,7 +202,13 @@ class EdgeIndexFullScan final : public EdgeIndexScan {
                                                       dedup,
                                                       std::move(orderBy),
                                                       limit,
-                                                      std::move(filter)));
+                                                      filter));
+  }
+
+  PlanNode* clone() const override {
+    auto* newEdgeIndexFullScan = EdgeIndexFullScan::make(qctx_, nullptr, "");
+    newEdgeIndexFullScan->cloneMembers(*this);
+    return newEdgeIndexFullScan;
   }
 
  private:
@@ -201,7 +223,7 @@ class EdgeIndexFullScan final : public EdgeIndexScan {
                     bool dedup,
                     std::vector<storage::cpp2::OrderBy> orderBy,
                     int64_t limit,
-                    std::string filter)
+                    Expression* filter)
       : EdgeIndexScan(qctx,
                       input,
                       edgeType,
@@ -213,7 +235,7 @@ class EdgeIndexFullScan final : public EdgeIndexScan {
                       dedup,
                       std::move(orderBy),
                       limit,
-                      std::move(filter),
+                      filter,
                       Kind::kEdgeIndexFullScan) {}
 };
 
@@ -235,7 +257,7 @@ class TagIndexScan : public IndexScan {
                bool dedup,
                std::vector<storage::cpp2::OrderBy> orderBy,
                int64_t limit,
-               std::string filter,
+               Expression* filter,
                Kind kind)
       : IndexScan(qctx,
                   input,
@@ -248,9 +270,14 @@ class TagIndexScan : public IndexScan {
                   dedup,
                   std::move(orderBy),
                   limit,
-                  std::move(filter),
+                  filter,
                   kind),
         tagName_(tagName) {}
+
+  void cloneMembers(const TagIndexScan& ts) {
+    IndexScan::cloneMembers(ts);
+    tagName_ = ts.tagName_;
+  }
 
   std::string tagName_;
 };
@@ -268,7 +295,7 @@ class TagIndexPrefixScan : public TagIndexScan {
                                   bool dedup = false,
                                   std::vector<storage::cpp2::OrderBy> orderBy = {},
                                   int64_t limit = std::numeric_limits<int64_t>::max(),
-                                  std::string filter = "") {
+                                  Expression* filter = nullptr) {
     return qctx->objPool()->add(new TagIndexPrefixScan(qctx,
                                                        input,
                                                        tagName,
@@ -280,7 +307,13 @@ class TagIndexPrefixScan : public TagIndexScan {
                                                        dedup,
                                                        std::move(orderBy),
                                                        limit,
-                                                       std::move(filter)));
+                                                       filter));
+  }
+
+  PlanNode* clone() const {
+    auto* newTagIndexPrefixScan = TagIndexPrefixScan::make(qctx_, nullptr, "");
+    newTagIndexPrefixScan->cloneMembers(*this);
+    return newTagIndexPrefixScan;
   }
 
  private:
@@ -295,7 +328,7 @@ class TagIndexPrefixScan : public TagIndexScan {
                      bool dedup,
                      std::vector<storage::cpp2::OrderBy> orderBy,
                      int64_t limit,
-                     std::string filter)
+                     Expression* filter)
       : TagIndexScan(qctx,
                      input,
                      tagName,
@@ -307,7 +340,7 @@ class TagIndexPrefixScan : public TagIndexScan {
                      dedup,
                      std::move(orderBy),
                      limit,
-                     std::move(filter),
+                     filter,
                      Kind::kTagIndexPrefixScan) {}
 };
 
@@ -324,7 +357,7 @@ class TagIndexRangeScan : public TagIndexScan {
                                  bool dedup = false,
                                  std::vector<storage::cpp2::OrderBy> orderBy = {},
                                  int64_t limit = std::numeric_limits<int64_t>::max(),
-                                 std::string filter = "") {
+                                 Expression* filter = nullptr) {
     return qctx->objPool()->add(new TagIndexRangeScan(qctx,
                                                       input,
                                                       tagName,
@@ -336,7 +369,13 @@ class TagIndexRangeScan : public TagIndexScan {
                                                       dedup,
                                                       std::move(orderBy),
                                                       limit,
-                                                      std::move(filter)));
+                                                      filter));
+  }
+
+  PlanNode* clone() const {
+    auto* newTagIndexRangeScan = TagIndexRangeScan::make(qctx_, nullptr, "");
+    newTagIndexRangeScan->cloneMembers(*this);
+    return newTagIndexRangeScan;
   }
 
  private:
@@ -351,7 +390,7 @@ class TagIndexRangeScan : public TagIndexScan {
                     bool dedup,
                     std::vector<storage::cpp2::OrderBy> orderBy,
                     int64_t limit,
-                    std::string filter)
+                    Expression* filter)
       : TagIndexScan(qctx,
                      input,
                      tagName,
@@ -363,7 +402,7 @@ class TagIndexRangeScan : public TagIndexScan {
                      dedup,
                      std::move(orderBy),
                      limit,
-                     std::move(filter),
+                     filter,
                      Kind::kTagIndexRangeScan) {}
 };
 
@@ -380,7 +419,7 @@ class TagIndexFullScan final : public TagIndexScan {
                                 bool dedup = false,
                                 std::vector<storage::cpp2::OrderBy> orderBy = {},
                                 int64_t limit = std::numeric_limits<int64_t>::max(),
-                                std::string filter = "") {
+                                Expression* filter = nullptr) {
     return qctx->objPool()->add(new TagIndexFullScan(qctx,
                                                      input,
                                                      tagName,
@@ -392,7 +431,13 @@ class TagIndexFullScan final : public TagIndexScan {
                                                      dedup,
                                                      std::move(orderBy),
                                                      limit,
-                                                     std::move(filter)));
+                                                     filter));
+  }
+
+  PlanNode* clone() const {
+    auto* newTagIndexFullScan = TagIndexFullScan::make(qctx_, nullptr, "");
+    newTagIndexFullScan->cloneMembers(*this);
+    return newTagIndexFullScan;
   }
 
  private:
@@ -407,7 +452,7 @@ class TagIndexFullScan final : public TagIndexScan {
                    bool dedup,
                    std::vector<storage::cpp2::OrderBy> orderBy,
                    int64_t limit,
-                   std::string filter)
+                   Expression* filter)
       : TagIndexScan(qctx,
                      input,
                      tagName,
@@ -419,7 +464,7 @@ class TagIndexFullScan final : public TagIndexScan {
                      dedup,
                      std::move(orderBy),
                      limit,
-                     std::move(filter),
+                     filter,
                      Kind::kTagIndexFullScan) {}
 };
 

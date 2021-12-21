@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Reduce
 
   Scenario: yield a reduce
@@ -99,8 +98,8 @@ Feature: Reduce
     Given a graph with space named "nba"
     When executing query:
       """
-      UNWIND [1, 2, 3, 4, 5] AS a RETURN a * 2 AS x
-      | RETURN reduce(totalNum = 10, n in collect($-.x) | totalNum + n * 2) AS total
+      UNWIND [1, 2, 3, 4, 5] AS a WITH a * 2 AS x
+      RETURN reduce(totalNum = 10, n in collect(x) | totalNum + n * 2) AS total
       """
     Then the result should be, in any order:
       | total |

@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef KVSTORE_KVENGINE_H_
@@ -72,6 +71,8 @@ class KVEngine {
                                                   const std::string& prefix,
                                                   std::unique_ptr<KVIterator>* iter) = 0;
 
+  virtual nebula::cpp2::ErrorCode scan(std::unique_ptr<KVIterator>* storageIter) = 0;
+
   // Write a single record
   virtual nebula::cpp2::ErrorCode put(std::string key, std::string value) = 0;
 
@@ -110,6 +111,10 @@ class KVEngine {
   // Set DB Config Option
   virtual nebula::cpp2::ErrorCode setDBOption(const std::string& configKey,
                                               const std::string& configValue) = 0;
+
+  // Get DB Property
+  virtual ErrorOr<nebula::cpp2::ErrorCode, std::string> getProperty(
+      const std::string& property) = 0;
 
   virtual nebula::cpp2::ErrorCode compact() = 0;
 

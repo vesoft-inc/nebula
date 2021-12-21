@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_EXEC_GETNEIGHBORSNODE_H_
@@ -160,7 +159,7 @@ class GetNeighborsSampleNode : public GetNeighborsNode {
     }
 
     RowReaderWrapper reader;
-    auto samples = std::move(*sampler_).samples();
+    auto samples = sampler_->samples();
     for (auto& sample : samples) {
       auto columnIdx = std::get<4>(sample);
       // add edge prop value to the target column

@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_PLANNER_NGQL_GOPLANNER_H_
@@ -12,7 +11,6 @@
 #include "graph/planner/Planner.h"
 #include "graph/planner/plan/PlanNode.h"
 #include "graph/planner/plan/Query.h"
-#include "graph/util/ExpressionUtils.h"
 
 namespace nebula {
 namespace graph {
@@ -65,6 +63,28 @@ class GoPlanner final : public Planner {
 
   PlanNode* buildOneStepJoinPlan(PlanNode* gn);
 
+  template <typename T>
+  PlanNode* buildSampleLimitImpl(PlanNode* input, T sampleLimit);
+  // build step sample limit plan
+  PlanNode* buildSampleLimit(PlanNode* input, std::size_t currentStep) {
+    if (goCtx_->limits.empty()) {
+      // No sample/limit
+      return input;
+    }
+    return buildSampleLimitImpl(input, goCtx_->limits[currentStep - 1]);
+  }
+  // build step sample in loop
+  PlanNode* buildSampleLimit(PlanNode* input) {
+    if (goCtx_->limits.empty()) {
+      // No sample/limit
+      return input;
+    }
+    return buildSampleLimitImpl(input, stepSampleLimit());
+  }
+
+  // Get step sample/limit number
+  Expression* stepSampleLimit();
+
  private:
   GoPlanner() = default;
 
@@ -72,6 +92,8 @@ class GoPlanner final : public Planner {
 
   const int16_t VID_INDEX = 0;
   const int16_t LAST_COL_INDEX = -1;
+
+  std::string loopStepVar_;
 };
 }  // namespace graph
 }  // namespace nebula

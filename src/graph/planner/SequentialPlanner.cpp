@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/planner/SequentialPlanner.h"
@@ -37,6 +36,7 @@ void SequentialPlanner::ifBuildDataCollect(SubPlan& subPlan, QueryContext* qctx)
   switch (subPlan.root->kind()) {
     case PlanNode::Kind::kSort:
     case PlanNode::Kind::kLimit:
+    case PlanNode::Kind::kSample:
     case PlanNode::Kind::kDedup:
     case PlanNode::Kind::kUnion:
     case PlanNode::Kind::kUnionAllVersionVar:

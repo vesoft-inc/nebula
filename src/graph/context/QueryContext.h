@@ -1,14 +1,13 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_CONTEXT_QUERYCONTEXT_H_
 #define GRAPH_CONTEXT_QUERYCONTEXT_H_
 
 #include "clients/meta/MetaClient.h"
-#include "clients/storage/GraphStorageClient.h"
+#include "clients/storage/StorageClient.h"
 #include "common/base/ObjectPool.h"
 #include "common/charset/Charset.h"
 #include "common/cpp/helpers.h"
@@ -46,7 +45,7 @@ class QueryContext {
   QueryContext(RequestContextPtr rctx,
                meta::SchemaManager* sm,
                meta::IndexManager* im,
-               storage::GraphStorageClient* storage,
+               storage::StorageClient* storage,
                meta::MetaClient* metaClient,
                CharsetInfo* charsetInfo);
 
@@ -58,7 +57,7 @@ class QueryContext {
 
   void setIndexManager(meta::IndexManager* im) { im_ = im; }
 
-  void setStorageClient(storage::GraphStorageClient* storage) { storageClient_ = storage; }
+  void setStorageClient(storage::StorageClient* storage) { storageClient_ = storage; }
 
   void setMetaClient(meta::MetaClient* metaClient) { metaClient_ = metaClient; }
 
@@ -76,7 +75,7 @@ class QueryContext {
 
   meta::IndexManager* indexMng() const { return im_; }
 
-  storage::GraphStorageClient* getStorageClient() const { return storageClient_; }
+  storage::StorageClient* getStorageClient() const { return storageClient_; }
 
   meta::MetaClient* getMetaClient() const { return metaClient_; }
 
@@ -106,7 +105,7 @@ class QueryContext {
   std::unique_ptr<ExecutionPlan> ep_;
   meta::SchemaManager* sm_{nullptr};
   meta::IndexManager* im_{nullptr};
-  storage::GraphStorageClient* storageClient_{nullptr};
+  storage::StorageClient* storageClient_{nullptr};
   meta::MetaClient* metaClient_{nullptr};
   CharsetInfo* charsetInfo_{nullptr};
 

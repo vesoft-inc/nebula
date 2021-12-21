@@ -1,7 +1,6 @@
 # Copyright (c) 2018 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 
 # The build can be controlled by defining following variables on the
 # <cmake> command line
@@ -26,6 +25,9 @@ project("Nebula Graph" C CXX)
 
 option(ENABLE_PACK_ONE "Whether to package into one" ON)
 option(ENABLE_VERBOSE_BISON "Enable Bison to report state" OFF)
+option(ENABLE_PACKAGE_TAR "Enable package artifacts to tar." OFF)
+option(ENABLE_CREATE_GIT_HOOKS "Enable create git hooks." ON)
+option(ENABLE_INCLUDE_WHAT_YOU_USE "Enable include-what-you-use find  nouse include files" OFF)
 
 add_definitions(-DNEBULA_HOME=${CMAKE_SOURCE_DIR})
 
@@ -44,13 +46,7 @@ include(SanitizerConfig)
 include(GitHooksConfig)
 include(GitInfoConfig)
 include(NebulaCustomTargets)
-
-add_custom_target(
-    install-all
-    COMMAND $(MAKE) install
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-)
-
+include(IncludeWhatYouUse)
 
 add_custom_target(
   clang-format
@@ -85,6 +81,8 @@ macro(nebula_add_library name type)
         raftex_thrift_generator
         # hbase_thrift_generator
         parser_target
+        wkt_parser_target
+        datetime_parser_target
     )
 endmacro()
 

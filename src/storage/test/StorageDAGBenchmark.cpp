@@ -1,8 +1,7 @@
 
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #include <folly/Benchmark.h>
 #include <gtest/gtest.h>
@@ -28,7 +27,7 @@ class FutureNode {
 
   void addDependency(FutureNode<T>* dep) {
     dependencies_.emplace_back(dep);
-    dep->hasDependents_ = true;
+    dep->isDependent_ = true;
   }
 
   FutureNode() = default;
@@ -40,7 +39,7 @@ class FutureNode {
   std::string name_;
   folly::SharedPromise<nebula::cpp2::ErrorCode> promise_;
   std::vector<FutureNode<T>*> dependencies_;
-  bool hasDependents_ = false;
+  bool isDependent_ = false;
 };
 
 template <typename T>
@@ -57,7 +56,7 @@ class FutureDAG {
           // add dependency of root node
           node->addDependency(input.get());
         }
-        if (!node->hasDependents_) {
+        if (!node->isDependent_) {
           // add dependency of output node
           output->addDependency(node.get());
         }

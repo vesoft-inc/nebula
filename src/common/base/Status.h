@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_BASE_STATUS_H_
@@ -137,7 +136,7 @@ class Status final {
 
   // If some kind of error really needs to be distinguished with others using a
   // specific code, other than a general code and specific msg, you could add a
-  // new code below, e.g. kSomeError, and add the cooresponding
+  // new code below, e.g. kSomeError, and add the corresponding
   // STATUS_GENERATOR(SomeError)
   enum Code : uint16_t {
     // OK

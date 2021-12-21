@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_EXEC_GETPROPNODE_H_
@@ -31,11 +30,19 @@ class GetTagPropNode : public QueryNode<VertexID> {
       return ret;
     }
 
-    // if none of the tag node valid, do not emplace the row
+    // if none of the tag node and vertex valid, do not emplace the row
     if (!std::any_of(tagNodes_.begin(), tagNodes_.end(), [](const auto& tagNode) {
           return tagNode->valid();
         })) {
-      return nebula::cpp2::ErrorCode::SUCCEEDED;
+      auto kvstore = context_->env()->kvstore_;
+      auto vertexKey = NebulaKeyUtils::vertexKey(context_->vIdLen(), partId, vId);
+      std::string value;
+      ret = kvstore->get(context_->spaceId(), partId, vertexKey, &value);
+      if (ret == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
+        return nebula::cpp2::ErrorCode::SUCCEEDED;
+      } else if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
+        return ret;
+      }
     }
 
     List row;

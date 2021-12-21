@@ -1,7 +1,6 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 Feature: Attribute
 
   Background:
@@ -146,3 +145,10 @@ Feature: Attribute
       RETURN (true).attr
       """
     Then a SemanticError should be raised at runtime: `true.attr', expected type with attribute like Date, Time, DateTime, Map, Vertex or Edge but was BOOL: true
+    When executing query:
+      """
+      MATCH (v) WHERE id(v) == 'Tim Duncan' RETURN v.name.not_exists_attr
+      """
+    Then the result should be, in any order:
+      | v.name.not_exists_attr |
+      | BAD_TYPE               |

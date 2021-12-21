@@ -1,7 +1,6 @@
 /* Copyright (c) 2019 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_STORAGESERVER_H_
@@ -17,6 +16,7 @@
 #include "kvstore/NebulaStore.h"
 #include "storage/CommonUtils.h"
 #include "storage/admin/AdminTaskManager.h"
+#include "storage/transaction/TransactionManager.h"
 
 namespace nebula {
 
@@ -39,6 +39,9 @@ class StorageServer final {
 
   void stop();
 
+  // used for signal handler to set an internal stop flag
+  void notifyStop();
+
   void waitUntilStop();
 
  private:
@@ -46,6 +49,10 @@ class StorageServer final {
 
  private:
   std::unique_ptr<kvstore::KVStore> getStoreInstance();
+
+  std::unique_ptr<kvstore::KVEngine> getAdminStoreInstance();
+
+  int32_t getAdminStoreSeqId();
 
   bool initWebService();
 
@@ -81,7 +88,13 @@ class StorageServer final {
   std::string listenerPath_;
 
   AdminTaskManager* taskMgr_{nullptr};
-  std::unique_ptr<TransactionManager> txnMan_;
+  std::unique_ptr<TransactionManager> txnMan_{nullptr};
+  // used for communicate between one storaged to another
+  std::unique_ptr<InternalStorageClient> interClient_;
+
+  ServiceStatus serverStatus_{STATUS_UNINITIALIZED};
+  std::mutex muStop_;
+  std::condition_variable cvStop_;
 };
 
 }  // namespace storage

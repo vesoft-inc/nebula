@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_DATATYPES_VERTEXOPS_H_
@@ -58,7 +57,7 @@ uint32_t Cpp2Ops<nebula::Tag>::write(Protocol* proto, nebula::Tag const* obj) {
   xfer += proto->writeFieldBegin("props", apache::thrift::protocol::T_MAP, 2);
   xfer += detail::pm::protocol_methods<
       type_class::map<type_class::binary, type_class::structure>,
-      std::unordered_map<std::string, nebula::Value> >::write(*proto, obj->props);
+      std::unordered_map<std::string, nebula::Value>>::write(*proto, obj->props);
   xfer += proto->writeFieldEnd();
 
   xfer += proto->writeFieldStop();
@@ -87,8 +86,8 @@ _readField_name : { proto->readBinary(obj->name); }
 _readField_props : {
   obj->props = std::unordered_map<std::string, nebula::Value>();
   detail::pm::protocol_methods<type_class::map<type_class::binary, type_class::structure>,
-                               std::unordered_map<std::string, nebula::Value> >::read(*proto,
-                                                                                      obj->props);
+                               std::unordered_map<std::string, nebula::Value>>::read(*proto,
+                                                                                     obj->props);
 }
 
   if (UNLIKELY(!readState.advanceToNextField(proto, 2, 0, protocol::T_STOP))) {
@@ -146,7 +145,7 @@ uint32_t Cpp2Ops<nebula::Tag>::serializedSize(Protocol const* proto, nebula::Tag
   xfer += proto->serializedFieldSize("props", apache::thrift::protocol::T_MAP, 2);
   xfer += detail::pm::protocol_methods<
       type_class::map<type_class::binary, type_class::structure>,
-      std::unordered_map<std::string, nebula::Value> >::serializedSize<false>(*proto, obj->props);
+      std::unordered_map<std::string, nebula::Value>>::serializedSize<false>(*proto, obj->props);
 
   xfer += proto->serializedSizeStop();
   return xfer;
@@ -163,7 +162,7 @@ uint32_t Cpp2Ops<nebula::Tag>::serializedSizeZC(Protocol const* proto, nebula::T
   xfer += proto->serializedFieldSize("props", apache::thrift::protocol::T_MAP, 2);
   xfer += detail::pm::protocol_methods<
       type_class::map<type_class::binary, type_class::structure>,
-      std::unordered_map<std::string, nebula::Value> >::serializedSize<false>(*proto, obj->props);
+      std::unordered_map<std::string, nebula::Value>>::serializedSize<false>(*proto, obj->props);
 
   xfer += proto->serializedSizeStop();
   return xfer;
@@ -206,7 +205,7 @@ uint32_t Cpp2Ops<nebula::Vertex>::write(Protocol* proto, nebula::Vertex const* o
   xfer += proto->writeFieldEnd();
   xfer += proto->writeFieldBegin("tags", apache::thrift::protocol::T_LIST, 2);
   xfer += detail::pm::protocol_methods<type_class::list<type_class::structure>,
-                                       std::vector<nebula::Tag> >::write(*proto, obj->tags);
+                                       std::vector<nebula::Tag>>::write(*proto, obj->tags);
   xfer += proto->writeFieldEnd();
   xfer += proto->writeFieldStop();
   xfer += proto->writeStructEnd();
@@ -234,7 +233,7 @@ _readField_vid : { ::apache::thrift::Cpp2Ops<nebula::Value>::read(proto, &obj->v
 _readField_tags : {
   obj->tags = std::vector<nebula::Tag>();
   detail::pm::protocol_methods<type_class::list<type_class::structure>,
-                               std::vector<nebula::Tag> >::read(*proto, obj->tags);
+                               std::vector<nebula::Tag>>::read(*proto, obj->tags);
 }
 
   if (UNLIKELY(!readState.advanceToNextField(proto, 2, 0, protocol::T_STOP))) {
@@ -289,8 +288,8 @@ uint32_t Cpp2Ops<nebula::Vertex>::serializedSize(Protocol const* proto, nebula::
   xfer += ::apache::thrift::Cpp2Ops<nebula::Value>::serializedSize(proto, &obj->vid);
   xfer += proto->serializedFieldSize("tags", apache::thrift::protocol::T_LIST, 2);
   xfer += detail::pm::protocol_methods<type_class::list<type_class::structure>,
-                                       std::vector<nebula::Tag> >::serializedSize<false>(*proto,
-                                                                                         obj->tags);
+                                       std::vector<nebula::Tag>>::serializedSize<false>(*proto,
+                                                                                        obj->tags);
   xfer += proto->serializedSizeStop();
   return xfer;
 }
@@ -304,8 +303,8 @@ uint32_t Cpp2Ops<nebula::Vertex>::serializedSizeZC(Protocol const* proto,
   xfer += ::apache::thrift::Cpp2Ops<nebula::Value>::serializedSizeZC(proto, &obj->vid);
   xfer += proto->serializedFieldSize("tags", apache::thrift::protocol::T_LIST, 2);
   xfer += detail::pm::protocol_methods<type_class::list<type_class::structure>,
-                                       std::vector<nebula::Tag> >::serializedSize<false>(*proto,
-                                                                                         obj->tags);
+                                       std::vector<nebula::Tag>>::serializedSize<false>(*proto,
+                                                                                        obj->tags);
   xfer += proto->serializedSizeStop();
   return xfer;
 }

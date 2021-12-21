@@ -1,7 +1,6 @@
 # Copyright (c) 2020 vesoft inc. All rights reserved.
 #
-# This source code is licensed under Apache 2.0 License,
-# attached with Common Clause Condition 1.0, found in the LICENSES directory.
+# This source code is licensed under Apache 2.0 License.
 #
 
 
@@ -10,14 +9,18 @@ macro(package to_one name home_page scripts_dir)
     set(CPACK_PACKAGE_DESCRIPTION ${name})
     set(CPACK_PACKAGE_CONTACT ${name})
     set(CPACK_PACKAGE_VERSION ${NEBULA_BUILD_VERSION})
-    set(CPACK_RPM_PACKAGE_LICENSE "Apache 2.0 + Common Clause 1.0")
+    set(CPACK_RPM_PACKAGE_LICENSE "Apache 2.0")
     set(CPACK_PACKAGE_NAME ${name})
     # set(CPACK_SET_DESTDIR TRUE)
     set(CPACK_PACKAGE_RELOCATABLE ON)
     set(CPACK_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
     set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
     if (EXISTS "/etc/redhat-release")
-        set(CPACK_GENERATOR "RPM")
+        if(ENABLE_PACKAGE_TAR)
+            set(CPACK_GENERATOR "TGZ")
+        else()
+            set(CPACK_GENERATOR "RPM")
+        endif()
         file (STRINGS "/etc/redhat-release" SYSTEM_NAME)
         if (${SYSTEM_NAME} MATCHES "CentOS")
 	    set(HOST_SYSTEM_NAME "el")
@@ -42,7 +45,11 @@ macro(package to_one name home_page scripts_dir)
             set(HOST_SYSTEM_VER "Unknown")
         endif()
     elseif (EXISTS "/etc/lsb-release")
-        set(CPACK_GENERATOR "DEB")
+        if(ENABLE_PACKAGE_TAR)
+            set(CPACK_GENERATOR "TGZ")
+        else()
+            set(CPACK_GENERATOR "DEB")
+        endif()
         file (STRINGS "/etc/lsb-release" SYSTEM_NAME)
         execute_process(
             COMMAND echo "${SYSTEM_NAME}"
@@ -94,7 +101,11 @@ macro(package to_one name home_page scripts_dir)
                 OUTPUT_VARIABLE HOST_SYSTEM_VER
                 OUTPUT_STRIP_TRAILING_WHITESPACE
             )
-            set(CPACK_GENERATOR "DEB")
+            if(ENABLE_PACKAGE_TAR)
+                set(CPACK_GENERATOR "TGZ")
+            else()
+                set(CPACK_GENERATOR "DEB")
+            endif()
         # Adapt the NeoKylin system
         elseif (${HOST_SYSTEM_NAME} MATCHES "NeoKylin" AND ${CMAKE_HOST_SYSTEM_PROCESSOR} MATCHES "mips64")
             execute_process(
@@ -105,7 +116,11 @@ macro(package to_one name home_page scripts_dir)
                 OUTPUT_STRIP_TRAILING_WHITESPACE
             )
             set(CMAKE_HOST_SYSTEM_PROCESSOR "mips64el")
-            set(CPACK_GENERATOR "RPM")
+            if(ENABLE_PACKAGE_TAR)
+                set(CPACK_GENERATOR "TGZ")
+            else()
+                set(CPACK_GENERATOR "RPM")
+            endif()
         endif()
         string(CONCAT HOST_SYSTEM_VER ${HOST_SYSTEM_NAME} ${HOST_SYSTEM_VER})
         set(CMAKE_HOST_SYSTEM_PROCESSOR "mips64el")
@@ -113,10 +128,11 @@ macro(package to_one name home_page scripts_dir)
         set(HOST_SYSTEM_VER "Unknown")
     endif()
 
-    message(STATUS "HOST_SYSTEM_NAME is ${HOST_SYSTEM_NAME}")
-    message(STATUS "HOST_SYSTEM_VER is ${HOST_SYSTEM_VER}")
-    message(STATUS "CPACK_GENERATOR is ${CPACK_GENERATOR}")
-    message(STATUS "CMAKE_HOST_SYSTEM_PROCESSOR is ${CMAKE_HOST_SYSTEM_PROCESSOR}")
+    print_config(NEBULA_BUILD_VERSION)
+    print_config(HOST_SYSTEM_NAME)
+    print_config(HOST_SYSTEM_VER)
+    print_config(CPACK_GENERATOR)
+    print_config(CMAKE_HOST_SYSTEM_PROCESSOR)
 
     set(CPACK_PACKAGE_FILE_NAME ${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}.${HOST_SYSTEM_VER}.${CMAKE_HOST_SYSTEM_PROCESSOR})
     if (${to_one})

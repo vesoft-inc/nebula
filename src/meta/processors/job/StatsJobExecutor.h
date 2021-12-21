@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef META_STATSJOBEXECUTOR_H_
@@ -40,7 +39,7 @@ class StatsJobExecutor : public MetaJobExecutor {
 
  private:
   // Stats job writes an additional data.
-  // The additional data is written when the statis job passes the check
+  // The additional data is written when the stats job passes the check
   // function. Update this additional data when job finishes.
   nebula::cpp2::ErrorCode save(const std::string& key, const std::string& val);
 

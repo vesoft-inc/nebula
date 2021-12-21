@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 #include <gtest/gtest.h>
 
@@ -24,12 +23,13 @@
 #include "meta/processors/schema/CreateTagProcessor.h"
 #include "meta/processors/schema/DropEdgeProcessor.h"
 #include "meta/processors/schema/DropTagProcessor.h"
+#include "meta/processors/zone/AddHostsProcessor.h"
 #include "meta/test/TestUtils.h"
 
 namespace nebula {
 namespace meta {
 
-using cpp2::PropertyType;
+using nebula::cpp2::PropertyType;
 
 TEST(IndexProcessorTest, AlterEdgeWithTTLTest) {
   fs::TempDir rootPath("/tmp/AlterEdgeWithTTLTest.XXXXXX");
@@ -214,20 +214,6 @@ TEST(IndexProcessorTest, TagIndexTest) {
     processor->process(req);
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-  }
-  {
-    // Allow to create tag index on no fields
-    cpp2::CreateTagIndexReq req;
-    req.set_space_id(1);
-    req.set_tag_name("tag_0");
-    std::vector<cpp2::IndexFieldDef> fields{};
-    req.set_fields(std::move(fields));
-    req.set_index_name("no_field_index");
-    auto* processor = CreateTagIndexProcessor::instance(kv.get());
-    auto f = processor->getFuture();
-    processor->process(req);
-    auto resp = std::move(f).get();
-    ASSERT_NE(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
   }
   {
     cpp2::CreateTagIndexReq req;
@@ -591,20 +577,6 @@ TEST(IndexProcessorTest, EdgeIndexTest) {
     processor->process(req);
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
-  }
-  {
-    // Allow to create edge index on no fields
-    cpp2::CreateEdgeIndexReq req;
-    req.set_space_id(1);
-    req.set_edge_name("edge_0");
-    std::vector<cpp2::IndexFieldDef> fields{};
-    req.set_fields(std::move(fields));
-    req.set_index_name("no_field_index");
-    auto* processor = CreateEdgeIndexProcessor::instance(kv.get());
-    auto f = processor->getFuture();
-    processor->process(req);
-    auto resp = std::move(f).get();
-    ASSERT_NE(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
   }
   {
     cpp2::CreateEdgeIndexReq req;
@@ -1564,7 +1536,7 @@ void mockSchemas(kvstore::KVStore* kv) {
   {
     cpp2::ColumnDef col;
     col.set_name("col_fixed_string_1");
-    col.type.set_type(meta::cpp2::PropertyType::FIXED_STRING);
+    col.type.set_type(PropertyType::FIXED_STRING);
     col.type.set_type_length(MAX_INDEX_TYPE_LENGTH);
     (*srcsch.columns_ref()).emplace_back(std::move(col));
   }
@@ -1572,19 +1544,19 @@ void mockSchemas(kvstore::KVStore* kv) {
   {
     cpp2::ColumnDef col;
     col.set_name("col_fixed_string_2");
-    col.type.set_type(meta::cpp2::PropertyType::FIXED_STRING);
+    col.type.set_type(PropertyType::FIXED_STRING);
     col.type.set_type_length(257);
     (*srcsch.columns_ref()).emplace_back(std::move(col));
   }
   auto tagIdVal = std::string(reinterpret_cast<const char*>(&tagId), sizeof(tagId));
-  schemas.emplace_back(MetaServiceUtils::indexTagKey(1, "test_tag"), tagIdVal);
-  schemas.emplace_back(MetaServiceUtils::schemaTagKey(1, tagId, ver),
-                       MetaServiceUtils::schemaVal("test_tag", srcsch));
+  schemas.emplace_back(MetaKeyUtils::indexTagKey(1, "test_tag"), tagIdVal);
+  schemas.emplace_back(MetaKeyUtils::schemaTagKey(1, tagId, ver),
+                       MetaKeyUtils::schemaVal("test_tag", srcsch));
 
   auto edgeTypeVal = std::string(reinterpret_cast<const char*>(&edgeType), sizeof(edgeType));
-  schemas.emplace_back(MetaServiceUtils::indexEdgeKey(1, "test_edge"), edgeTypeVal);
-  schemas.emplace_back(MetaServiceUtils::schemaEdgeKey(1, edgeType, ver),
-                       MetaServiceUtils::schemaVal("test_edge", srcsch));
+  schemas.emplace_back(MetaKeyUtils::indexEdgeKey(1, "test_edge"), edgeTypeVal);
+  schemas.emplace_back(MetaKeyUtils::schemaEdgeKey(1, edgeType, ver),
+                       MetaKeyUtils::schemaVal("test_edge", srcsch));
 
   folly::Baton<true, std::atomic> baton;
   kv->asyncMultiPut(0, 0, std::move(schemas), [&](nebula::cpp2::ErrorCode code) {
@@ -2065,8 +2037,16 @@ TEST(IndexProcessorTest, AlterWithFTIndexTest) {
 TEST(ProcessorTest, IndexIdInSpaceRangeTest) {
   fs::TempDir rootPath("/tmp/IndexIdInSpaceRangeTest.XXXXXX");
   auto kv = MockCluster::initMetaKV(rootPath.path());
-  TestUtils::createSomeHosts(kv.get());
-
+  {
+    cpp2::AddHostsReq req;
+    std::vector<HostAddr> hosts = {{"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}};
+    req.set_hosts(std::move(hosts));
+    auto* processor = AddHostsProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
+  }
   // mock one space and ten tag, ten edge
   {
     // space Id is 1
@@ -2083,7 +2063,7 @@ TEST(ProcessorTest, IndexIdInSpaceRangeTest) {
     // check tag and edge count
     int count = 0;
 
-    auto tagprefix = MetaServiceUtils::schemaTagsPrefix(1);
+    auto tagprefix = MetaKeyUtils::schemaTagsPrefix(1);
     std::unique_ptr<kvstore::KVIterator> iter;
     auto retCode = kv->prefix(kDefaultSpaceId, kDefaultPartId, tagprefix, &iter);
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, retCode);
@@ -2093,7 +2073,7 @@ TEST(ProcessorTest, IndexIdInSpaceRangeTest) {
     }
     ASSERT_EQ(1, count);
 
-    auto edgeprefix = MetaServiceUtils::schemaEdgesPrefix(1);
+    auto edgeprefix = MetaKeyUtils::schemaEdgesPrefix(1);
     retCode = kv->prefix(kDefaultSpaceId, kDefaultPartId, edgeprefix, &iter);
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, retCode);
     while (iter->valid()) {
@@ -2102,7 +2082,7 @@ TEST(ProcessorTest, IndexIdInSpaceRangeTest) {
     }
     ASSERT_EQ(2, count);
 
-    auto indexPrefix = MetaServiceUtils::indexPrefix(1);
+    auto indexPrefix = MetaKeyUtils::indexPrefix(1);
     retCode = kv->prefix(kDefaultSpaceId, kDefaultPartId, indexPrefix, &iter);
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, retCode);
     while (iter->valid()) {

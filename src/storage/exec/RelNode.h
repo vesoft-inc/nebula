@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef STORAGE_EXEC_RELNODE_H_
@@ -69,7 +68,7 @@ class RelNode {
 
   void addDependency(RelNode<T>* dep) {
     dependencies_.emplace_back(dep);
-    dep->hasDependents_ = true;
+    dep->isDependent_ = true;
   }
 
   RelNode() = default;
@@ -78,9 +77,11 @@ class RelNode {
 
   explicit RelNode(const std::string& name) : name_(name) {}
 
+  const std::string& name() const { return name_; }
+
   std::string name_ = "RelNode";
   std::vector<RelNode<T>*> dependencies_;
-  bool hasDependents_ = false;
+  bool isDependent_ = false;
   time::Duration duration_{true};
 };
 

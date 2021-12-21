@@ -1,7 +1,6 @@
 /* Copyright (c) 2021 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include <gtest/gtest.h>
@@ -20,6 +19,9 @@
 
 namespace nebula {
 namespace storage {
+ObjectPool objPool;
+auto pool = &objPool;
+
 class IndexScanLimitTest : public ::testing::Test {
  protected:
   GraphSpaceID spaceId = 1;
@@ -58,8 +60,8 @@ class IndexScanLimitTest : public ::testing::Test {
 
   std::shared_ptr<meta::NebulaSchemaProvider> mockSchema() {
     std::shared_ptr<meta::NebulaSchemaProvider> schema(new meta::NebulaSchemaProvider(0));
-    schema->addField("col1", meta::cpp2::PropertyType::INT64);
-    schema->addField("col2", meta::cpp2::PropertyType::STRING);
+    schema->addField("col1", nebula::cpp2::PropertyType::INT64);
+    schema->addField("col2", nebula::cpp2::PropertyType::STRING);
     return schema;
   }
 
@@ -74,7 +76,7 @@ class IndexScanLimitTest : public ::testing::Test {
     std::vector<nebula::meta::cpp2::ColumnDef> cols;
     meta::cpp2::ColumnDef col;
     col.name = "col1";
-    col.type.set_type(meta::cpp2::PropertyType::INT64);
+    col.type.set_type(nebula::cpp2::PropertyType::INT64);
     cols.emplace_back(std::move(col));
     return cols;
   }
@@ -98,48 +100,51 @@ class IndexScanLimitTest : public ::testing::Test {
     }
 
     // Edge and vertex have the same schema of structure, so it's good to only generate it once.
-    RowWriterV2 writer(tag.get());
-    auto r1 = writer.setValue(0, 888);
-    if (r1 != WriteResult::SUCCEEDED) {
-      LOG(ERROR) << "Invalid prop col1";
-      return false;
-    }
-    auto r2 = writer.setValue(1, "row");
-    if (r2 != WriteResult::SUCCEEDED) {
-      LOG(ERROR) << "Invalid prop col2";
-      return false;
-    }
-    auto ret = writer.finish();
-    if (ret != WriteResult::SUCCEEDED) {
-      LOG(ERROR) << "Failed to write data";
-      return false;
-    }
-    auto val = std::move(writer).moveEncodedStr();
+    RowWriterV2 writer1(tag.get());
+    EXPECT_EQ(WriteResult::SUCCEEDED, writer1.setValue(0, 111));
+    EXPECT_EQ(WriteResult::SUCCEEDED, writer1.setValue(1, "row_111"));
+    EXPECT_EQ(WriteResult::SUCCEEDED, writer1.finish());
+    auto val1 = std::move(writer1).moveEncodedStr();
+    RowWriterV2 writer2(tag.get());
+    EXPECT_EQ(WriteResult::SUCCEEDED, writer2.setValue(0, 222));
+    EXPECT_EQ(WriteResult::SUCCEEDED, writer2.setValue(1, "row_222"));
+    EXPECT_EQ(WriteResult::SUCCEEDED, writer2.finish());
+    auto val2 = std::move(writer2).moveEncodedStr();
 
     for (auto pId : parts) {
       std::vector<kvstore::KV> data;
       for (int64_t vid = pId * 1000; vid < (pId + 1) * 1000; vid++) {
+        int64_t col1Val = vid % 2 == 0 ? 111 : 222;
+        std::string val = vid % 2 == 0 ? val1 : val2;
         auto vertex = folly::to<std::string>(vid);
-        auto edgeKey = NebulaKeyUtils::edgeKey(8, pId, vertex, edgeType, 0, vertex);
-        auto vertexKey = NebulaKeyUtils::vertexKey(8, pId, vertex, tagId);
+        auto edgeKey = NebulaKeyUtils::edgeKey(vertexLen, pId, vertex, edgeType, 0, vertex);
+        auto tagKey = NebulaKeyUtils::tagKey(vertexLen, pId, vertex, tagId);
         data.emplace_back(std::move(edgeKey), val);
-        data.emplace_back(std::move(vertexKey), val);
+        data.emplace_back(std::move(tagKey), std::move(val));
         if (indexMan_ != nullptr) {
           if (indexMan_->getTagIndex(spaceId, tagIndex).ok()) {
-            auto vertexIndexKey = IndexKeyUtils::vertexIndexKey(
-                vertexLen, pId, tagIndex, vertex, IndexKeyUtils::encodeValues({888}, genCols()));
-            data.emplace_back(std::move(vertexIndexKey), "");
+            auto vertexIndexKeys =
+                IndexKeyUtils::vertexIndexKeys(vertexLen,
+                                               pId,
+                                               tagIndex,
+                                               vertex,
+                                               IndexKeyUtils::encodeValues({col1Val}, genCols()));
+            for (auto& vertexIndexKey : vertexIndexKeys) {
+              data.emplace_back(std::move(vertexIndexKey), "");
+            }
           }
           if (indexMan_->getEdgeIndex(spaceId, edgeIndex).ok()) {
-            auto edgeIndexKey =
-                IndexKeyUtils::edgeIndexKey(vertexLen,
-                                            pId,
-                                            edgeIndex,
-                                            vertex,
-                                            0,
-                                            vertex,
-                                            IndexKeyUtils::encodeValues({888}, genCols()));
-            data.emplace_back(std::move(edgeIndexKey), "");
+            auto edgeIndexKeys =
+                IndexKeyUtils::edgeIndexKeys(vertexLen,
+                                             pId,
+                                             edgeIndex,
+                                             vertex,
+                                             0,
+                                             vertex,
+                                             IndexKeyUtils::encodeValues({col1Val}, genCols()));
+            for (auto& edgeIndexKey : edgeIndexKeys) {
+              data.emplace_back(std::move(edgeIndexKey), "");
+            }
           }
         }
       }
@@ -228,9 +233,40 @@ TEST_F(IndexScanLimitTest, LookupTagIndexLimit) {
     EXPECT_EQ(0, resp.get_data()->rows.size());
   }
 
+  // limit == 1
+  {
+    req.set_limit(1);
+    auto* processor = LookupProcessor::instance(storageEnv_.get(), nullptr, nullptr);
+    auto fut = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(fut).get();
+    EXPECT_EQ(0, resp.result.failed_parts.size());
+    EXPECT_EQ(1 * parts.size(), resp.get_data()->rows.size());
+  }
+
   // limit 5 by each part
   {
     req.set_limit(5);
+    auto* processor = LookupProcessor::instance(storageEnv_.get(), nullptr, nullptr);
+    auto fut = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(fut).get();
+    EXPECT_EQ(0, resp.result.failed_parts.size());
+    EXPECT_EQ(5 * parts.size(), resp.get_data()->rows.size());
+  }
+
+  // limit 5 by each part through IndexScanNode->DataNode
+  {
+    req.set_limit(5);
+    cpp2::IndexColumnHint columnHint;
+    columnHint.set_begin_value(Value(111));
+    columnHint.set_column_name("col1");
+    columnHint.set_scan_type(cpp2::ScanType::PREFIX);
+    std::vector<cpp2::IndexColumnHint> columnHints;
+    columnHints.emplace_back(std::move(columnHint));
+    req.return_columns_ref().value().emplace_back("col2");
+    req.indices_ref().value().contexts_ref().value().begin()->set_column_hints(
+        std::move(columnHints));
     auto* processor = LookupProcessor::instance(storageEnv_.get(), nullptr, nullptr);
     auto fut = processor->getFuture();
     processor->process(req);
@@ -243,14 +279,17 @@ TEST_F(IndexScanLimitTest, LookupTagIndexLimit) {
   {
     req.set_limit(5);
     cpp2::IndexColumnHint columnHint;
-    columnHint.set_begin_value(Value(888));
+    columnHint.set_begin_value(Value(111));
     columnHint.set_column_name("col1");
     columnHint.set_scan_type(cpp2::ScanType::PREFIX);
     std::vector<cpp2::IndexColumnHint> columnHints;
     columnHints.emplace_back(std::move(columnHint));
+    auto expr = RelationalExpression::makeNE(pool,
+                                             TagPropertyExpression::make(pool, "100", "col1"),
+                                             ConstantExpression::make(pool, Value(300L)));
+    req.indices_ref().value().contexts_ref().value().begin()->set_filter(expr->encode());
     req.indices_ref().value().contexts_ref().value().begin()->set_column_hints(
         std::move(columnHints));
-
     auto* processor = LookupProcessor::instance(storageEnv_.get(), nullptr, nullptr);
     auto fut = processor->getFuture();
     processor->process(req);
@@ -299,9 +338,41 @@ TEST_F(IndexScanLimitTest, LookupEdgeIndexLimit) {
     EXPECT_EQ(0, resp.get_data()->rows.size());
   }
 
+  // limit == 1
+  {
+    req.set_limit(1);
+    auto* processor = LookupProcessor::instance(storageEnv_.get(), nullptr, nullptr);
+    auto fut = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(fut).get();
+    EXPECT_EQ(0, resp.result.failed_parts.size());
+    EXPECT_EQ(1 * parts.size(), resp.get_data()->rows.size());
+  }
+
   // limit 5 by each part
   {
     req.set_limit(5);
+    auto* processor = LookupProcessor::instance(storageEnv_.get(), nullptr, nullptr);
+    auto fut = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(fut).get();
+    EXPECT_EQ(0, resp.result.failed_parts.size());
+    EXPECT_EQ(5 * parts.size(), resp.get_data()->rows.size());
+  }
+
+  // limit 5 by each part through IndexScanNode->DataNode
+  {
+    req.set_limit(5);
+    cpp2::IndexColumnHint columnHint;
+    columnHint.set_begin_value(Value(111));
+    columnHint.set_column_name("col1");
+    columnHint.set_scan_type(cpp2::ScanType::PREFIX);
+    std::vector<cpp2::IndexColumnHint> columnHints;
+    columnHints.emplace_back(std::move(columnHint));
+    req.return_columns_ref().value().emplace_back("col2");
+    req.indices_ref().value().contexts_ref().value().begin()->set_column_hints(
+        std::move(columnHints));
+
     auto* processor = LookupProcessor::instance(storageEnv_.get(), nullptr, nullptr);
     auto fut = processor->getFuture();
     processor->process(req);
@@ -314,14 +385,17 @@ TEST_F(IndexScanLimitTest, LookupEdgeIndexLimit) {
   {
     req.set_limit(5);
     cpp2::IndexColumnHint columnHint;
-    columnHint.set_begin_value(Value(888));
+    columnHint.set_begin_value(Value(111));
     columnHint.set_column_name("col1");
     columnHint.set_scan_type(cpp2::ScanType::PREFIX);
     std::vector<cpp2::IndexColumnHint> columnHints;
     columnHints.emplace_back(std::move(columnHint));
+    auto expr = RelationalExpression::makeNE(pool,
+                                             EdgePropertyExpression::make(pool, "200", "col1"),
+                                             ConstantExpression::make(pool, Value(300L)));
+    req.indices_ref().value().contexts_ref().value().begin()->set_filter(expr->encode());
     req.indices_ref().value().contexts_ref().value().begin()->set_column_hints(
         std::move(columnHints));
-
     auto* processor = LookupProcessor::instance(storageEnv_.get(), nullptr, nullptr);
     auto fut = processor->getFuture();
     processor->process(req);

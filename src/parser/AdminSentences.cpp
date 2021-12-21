@@ -1,7 +1,6 @@
 /* Copyright (c) 2018 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "parser/AdminSentences.h"
@@ -27,6 +26,10 @@ std::string ShowCreateSpaceSentence::toString() const {
 std::string ShowPartsSentence::toString() const { return std::string("SHOW PARTS"); }
 
 std::string ShowUsersSentence::toString() const { return std::string("SHOW USERS"); }
+
+std::string DescribeUserSentence::toString() const {
+  return folly::stringPrintf("DESCRIBE USER %s", account_.get()->c_str());
+}
 
 std::string ShowRolesSentence::toString() const {
   return folly::stringPrintf("SHOW ROLES IN %s", name_.get()->c_str());
@@ -88,15 +91,20 @@ std::string CreateSpaceSentence::toString() const {
     buf += spaceOpts_->toString();
     buf += ")";
   }
-  if (groupName_ != nullptr) {
+  if (zoneNames_ != nullptr) {
     buf += " ON ";
-    buf += *groupName_;
+    buf += zoneNames_->toString();
   }
   if (comment_ != nullptr) {
     buf += " comment = \"";
     buf += *comment_;
     buf += "\"";
   }
+  return buf;
+}
+
+std::string CreateSpaceAsSentence::toString() const {
+  auto buf = folly::sformat("CREATE SPACE {} AS {}", *newSpaceName_, *oldSpaceName_);
   return buf;
 }
 
@@ -146,36 +154,6 @@ std::string SetConfigSentence::toString() const {
 
 std::string GetConfigSentence::toString() const {
   return std::string("GET CONFIGS ") + configItem_->toString();
-}
-
-std::string BalanceSentence::toString() const {
-  switch (subType_) {
-    case SubType::kUnknown:
-      return "Unknown";
-    case SubType::kLeader:
-      return "BALANCE LEADER";
-    case SubType::kData: {
-      if (hostDel_ == nullptr) {
-        return "BALANCE DATA";
-      } else {
-        std::stringstream ss;
-        ss << "BALANCE DATA REMOVE ";
-        ss << hostDel_->toString();
-        return ss.str();
-      }
-    }
-    case SubType::kDataStop:
-      return "BALANCE DATA STOP";
-    case SubType::kDataReset:
-      return "BALANCE DATA RESET PLAN";
-    case SubType::kShowBalancePlan: {
-      std::stringstream ss;
-      ss << "BALANCE DATA " << balanceId_;
-      return ss.str();
-    }
-  }
-  DLOG(FATAL) << "Type illegal";
-  return "Unknown";
 }
 
 std::string HostList::toString() const {
@@ -259,6 +237,18 @@ std::string AdminJobSentence::toString() const {
         case meta::cpp2::AdminCmd::INGEST:
           return "INGEST";
         case meta::cpp2::AdminCmd::DATA_BALANCE:
+          if (paras_.empty()) {
+            return "SUBMIT JOB BALANCE DATA";
+          } else {
+            std::string str = "SUBMIT JOB BALANCE DATA REMOVE";
+            for (size_t i = 0; i < paras_.size(); i++) {
+              auto &s = paras_[i];
+              str += i == 0 ? " " + s : ", " + s;
+            }
+            return str;
+          }
+        case meta::cpp2::AdminCmd::LEADER_BALANCE:
+          return "SUBMIT JOB BALANCE LEADER";
         case meta::cpp2::AdminCmd::UNKNOWN:
           return folly::stringPrintf("Unsupported AdminCmd: %s",
                                      apache::thrift::util::enumNameSafe(cmd_).c_str());
@@ -273,7 +263,15 @@ std::string AdminJobSentence::toString() const {
       CHECK_EQ(paras_.size(), 1U);
       return folly::stringPrintf("STOP JOB %s", paras_[0].c_str());
     case meta::cpp2::AdminJobOp::RECOVER:
-      return "RECOVER JOB";
+      if (paras_.empty()) {
+        return "RECOVER JOB";
+      } else {
+        std::string str = "RECOVER JOB";
+        for (size_t i = 0; i < paras_.size(); i++) {
+          str += i == 0 ? " " + paras_[i] : ", " + paras_[i];
+        }
+        return str;
+      }
   }
   LOG(FATAL) << "Unknown job operation " << static_cast<uint8_t>(op_);
 }
@@ -305,6 +303,13 @@ std::string SignInTextServiceSentence::toString() const {
     buf += client.get_host().host;
     buf += ":";
     buf += std::to_string(client.get_host().port);
+    if (client.conn_type_ref().has_value()) {
+      std::string connType = *client.get_conn_type();
+      auto toupper = [](auto c) { return ::toupper(c); };
+      std::transform(connType.begin(), connType.end(), connType.begin(), toupper);
+      buf += ", ";
+      buf += connType;
+    }
     if (client.user_ref().has_value() && !(*client.user_ref()).empty()) {
       buf += ", \"";
       buf += *client.get_user();
@@ -316,10 +321,10 @@ std::string SignInTextServiceSentence::toString() const {
       buf += "\"";
     }
     buf += ")";
-    buf += ",";
+    buf += ", ";
   }
   if (!buf.empty()) {
-    buf.resize(buf.size() - 1);
+    buf.resize(buf.size() - 2);
   }
   return buf;
 }

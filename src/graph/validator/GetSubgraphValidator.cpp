@@ -1,19 +1,13 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/validator/GetSubgraphValidator.h"
 
-#include <memory>
-
-#include "common/expression/UnaryExpression.h"
-#include "common/expression/VariableExpression.h"
-#include "common/expression/VertexExpression.h"
-#include "graph/context/QueryExpressionContext.h"
 #include "graph/planner/plan/Logic.h"
 #include "graph/planner/plan/Query.h"
+#include "graph/util/ValidateUtil.h"
 #include "parser/TraverseSentences.h"
 
 namespace nebula {
@@ -24,18 +18,12 @@ Status GetSubgraphValidator::validateImpl() {
   subgraphCtx_ = getContext<SubgraphContext>();
   subgraphCtx_->withProp = gsSentence->withProp();
 
-  NG_RETURN_IF_ERROR(validateStep(gsSentence->step(), subgraphCtx_->steps));
+  NG_RETURN_IF_ERROR(ValidateUtil::validateStep(gsSentence->step(), subgraphCtx_->steps));
   NG_RETURN_IF_ERROR(validateStarts(gsSentence->from(), subgraphCtx_->from));
   NG_RETURN_IF_ERROR(validateInBound(gsSentence->in()));
   NG_RETURN_IF_ERROR(validateOutBound(gsSentence->out()));
   NG_RETURN_IF_ERROR(validateBothInOutBound(gsSentence->both()));
-  // set output col & type
-  if (subgraphCtx_->steps.steps() == 0) {
-    outputs_.emplace_back(kVertices, Value::Type::VERTEX);
-  } else {
-    outputs_.emplace_back(kVertices, Value::Type::VERTEX);
-    outputs_.emplace_back(kEdges, Value::Type::EDGE);
-  }
+  NG_RETURN_IF_ERROR(validateYield(gsSentence->yield()));
   return Status::OK();
 }
 
@@ -102,7 +90,38 @@ Status GetSubgraphValidator::validateBothInOutBound(BothInOutClause* out) {
       edgeTypes.emplace(v);
     }
   }
+  return Status::OK();
+}
 
+Status GetSubgraphValidator::validateYield(YieldClause* yield) {
+  if (yield == nullptr) {
+    return Status::SemanticError("Missing yield clause.");
+  }
+  auto size = yield->columns().size();
+  outputs_.reserve(size);
+  auto pool = qctx_->objPool();
+  YieldColumns* newCols = pool->add(new YieldColumns());
+
+  for (const auto& col : yield->columns()) {
+    const std::string& colStr = col->expr()->toString();
+    if (colStr == "VERTICES") {
+      subgraphCtx_->getVertexProp = true;
+      auto* newCol = new YieldColumn(InputPropertyExpression::make(pool, "VERTICES"), col->name());
+      newCols->addColumn(newCol);
+    } else if (colStr == "EDGES") {
+      if (subgraphCtx_->steps.steps() == 0) {
+        return Status::SemanticError("Get Subgraph 0 STEPS only support YIELD vertices");
+      }
+      subgraphCtx_->getEdgeProp = true;
+      auto* newCol = new YieldColumn(InputPropertyExpression::make(pool, "EDGES"), col->name());
+      newCols->addColumn(newCol);
+    } else {
+      return Status::SemanticError("Get Subgraph only support YIELD vertices OR edges");
+    }
+    outputs_.emplace_back(col->name(), Value::Type::LIST);
+  }
+  subgraphCtx_->yieldExpr = newCols;
+  subgraphCtx_->colNames = getOutColNames();
   return Status::OK();
 }
 

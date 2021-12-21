@@ -1,7 +1,6 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef GRAPH_SCHEDULER_ASYNCMSGNOTIFYBASEDSCHEDULER_H_
@@ -14,7 +13,7 @@
 namespace nebula {
 namespace graph {
 /**
- * This is an scheluder implementation based on asynchronous message
+ * This is an scheduler implementation based on asynchronous message
  * notification and bread first search. Each node in execution plan would be
  * triggered to run when the node itself receives all the messages that send by
  * its dependencies. And once the node is done running, it will send a message

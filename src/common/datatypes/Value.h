@@ -1,15 +1,17 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #ifndef COMMON_DATATYPES_VALUE_H_
 #define COMMON_DATATYPES_VALUE_H_
 
+#include <folly/dynamic.h>
+
 #include <memory>
 
 #include "common/datatypes/Date.h"
+#include "common/datatypes/Duration.h"
 #include "common/thrift/ThriftTypes.h"
 
 namespace apache {
@@ -30,6 +32,7 @@ struct Map;
 struct List;
 struct Set;
 struct DataSet;
+struct Geography;
 
 enum class NullType {
   __NULL__ = 0,
@@ -74,6 +77,8 @@ struct Value {
     MAP = 1UL << 12,
     SET = 1UL << 13,
     DATASET = 1UL << 14,
+    GEOGRAPHY = 1UL << 15,
+    DURATION = 1UL << 16,
     NULLVALUE = 1UL << 63,
   };
 
@@ -125,6 +130,10 @@ struct Value {
   Value(Set&& v);                        // NOLINT
   Value(const DataSet& v);               // NOLINT
   Value(DataSet&& v);                    // NOLINT
+  Value(const Geography& v);             // NOLINT
+  Value(Geography&& v);                  // NOLINT
+  Value(const Duration& v);              // NOLINT
+  Value(Duration&& v);                   // NOLINT
   ~Value() { clear(); }
 
   Type type() const noexcept { return type_; }
@@ -157,6 +166,8 @@ struct Value {
   bool isMap() const { return type_ == Type::MAP; }
   bool isSet() const { return type_ == Type::SET; }
   bool isDataSet() const { return type_ == Type::DATASET; }
+  bool isGeography() const { return type_ == Type::GEOGRAPHY; }
+  bool isDuration() const { return type_ == Type::DURATION; }
 
   void clear();
 
@@ -209,6 +220,12 @@ struct Value {
   void setDataSet(const DataSet& v);
   void setDataSet(DataSet&& v);
   void setDataSet(std::unique_ptr<DataSet>&& v);
+  void setGeography(const Geography& v);
+  void setGeography(Geography&& v);
+  void setGeography(std::unique_ptr<Geography>&& v);
+  void setDuration(const Duration& v);
+  void setDuration(Duration&& v);
+  void setDuration(std::unique_ptr<Duration>&& v);
 
   const NullType& getNull() const;
   const bool& getBool() const;
@@ -232,6 +249,10 @@ struct Value {
   const Set* getSetPtr() const;
   const DataSet& getDataSet() const;
   const DataSet* getDataSetPtr() const;
+  const Geography& getGeography() const;
+  const Geography* getGeographyPtr() const;
+  const Duration& getDuration() const;
+  const Duration* getDurationPtr() const;
 
   NullType moveNull();
   bool moveBool();
@@ -248,6 +269,8 @@ struct Value {
   Map moveMap();
   Set moveSet();
   DataSet moveDataSet();
+  Geography moveGeography();
+  Duration moveDuration();
 
   NullType& mutableNull();
   bool& mutableBool();
@@ -264,10 +287,15 @@ struct Value {
   Map& mutableMap();
   Set& mutableSet();
   DataSet& mutableDataSet();
+  Geography& mutableGeography();
+  Duration& mutableDuration();
 
   static const Value& null() noexcept { return kNullValue; }
 
   std::string toString() const;
+  folly::dynamic toJson() const;
+  // Used in Json form query result
+  folly::dynamic getMetaData() const;
 
   Value toBool() const;
   Value toFloat() const;
@@ -296,6 +324,8 @@ struct Value {
     std::unique_ptr<Map> mVal;
     std::unique_ptr<Set> uVal;
     std::unique_ptr<DataSet> gVal;
+    std::unique_ptr<Geography> ggVal;
+    std::unique_ptr<Duration> duVal;
 
     Storage() {}
     ~Storage() {}
@@ -367,6 +397,16 @@ struct Value {
   void setG(std::unique_ptr<DataSet>&& v);
   void setG(const DataSet& v);
   void setG(DataSet&& v);
+  // Geography value
+  void setGG(const std::unique_ptr<Geography>& v);
+  void setGG(std::unique_ptr<Geography>&& v);
+  void setGG(const Geography& v);
+  void setGG(Geography&& v);
+  // Duration value
+  void setDU(const std::unique_ptr<Duration>& v);
+  void setDU(std::unique_ptr<Duration>&& v);
+  void setDU(const Duration& v);
+  void setDU(Duration&& v);
 };
 
 static_assert(sizeof(Value) == 16UL, "The size of Value should be 16UL");

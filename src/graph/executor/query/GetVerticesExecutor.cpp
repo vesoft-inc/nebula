@@ -1,16 +1,15 @@
 /* Copyright (c) 2020 vesoft inc. All rights reserved.
  *
- * This source code is licensed under Apache 2.0 License,
- * attached with Common Clause Condition 1.0, found in the LICENSES directory.
+ * This source code is licensed under Apache 2.0 License.
  */
 
 #include "graph/executor/query/GetVerticesExecutor.h"
 
+#include "common/time/ScopedTimer.h"
 #include "graph/context/QueryContext.h"
 #include "graph/util/SchemaUtil.h"
-#include "graph/util/ScopedTimer.h"
 
-using nebula::storage::GraphStorageClient;
+using nebula::storage::StorageClient;
 using nebula::storage::StorageRpcResponse;
 using nebula::storage::cpp2::GetPropResponse;
 
@@ -23,10 +22,9 @@ folly::Future<Status> GetVerticesExecutor::getVertices() {
   SCOPED_TIMER(&execTime_);
 
   auto *gv = asNode<GetVertices>(node());
-  GraphStorageClient *storageClient = qctx()->getStorageClient();
+  StorageClient *storageClient = qctx()->getStorageClient();
 
   DataSet vertices = buildRequestDataSet(gv);
-  VLOG(1) << "vertices: " << vertices;
   if (vertices.rows.empty()) {
     // TODO: add test for empty input.
     return finish(
@@ -34,10 +32,12 @@ folly::Future<Status> GetVerticesExecutor::getVertices() {
   }
 
   time::Duration getPropsTime;
+  StorageClient::CommonRequestParam param(gv->space(),
+                                          qctx()->rctx()->session()->id(),
+                                          qctx()->plan()->id(),
+                                          qctx()->plan()->isProfileEnabled());
   return DCHECK_NOTNULL(storageClient)
-      ->getProps(gv->space(),
-                 qctx()->rctx()->session()->id(),
-                 qctx()->plan()->id(),
+      ->getProps(param,
                  std::move(vertices),
                  gv->props(),
                  nullptr,
@@ -49,8 +49,7 @@ folly::Future<Status> GetVerticesExecutor::getVertices() {
       .via(runner())
       .ensure([this, getPropsTime]() {
         SCOPED_TIMER(&execTime_);
-        otherStats_.emplace("total_rpc",
-                            folly::stringPrintf("%lu(us)", getPropsTime.elapsedInUSec()));
+        otherStats_.emplace("total_rpc", folly::sformat("{}(us)", getPropsTime.elapsedInUSec()));
       })
       .thenValue([this, gv](StorageRpcResponse<GetPropResponse> &&rpcResp) {
         SCOPED_TIMER(&execTime_);
