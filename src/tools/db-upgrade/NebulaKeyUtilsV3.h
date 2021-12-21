@@ -9,6 +9,8 @@ class NebulaKeyUtilsV3 {
  public:
   static std::string partTagPrefix(PartitionID partId);
   static std::string getVertexKey(folly::StringPiece tagKey);
+  static std::string dataVersionKey();
+  static std::string dataVersionValue();
 
  private:
   enum NebulaKeyTypeV3 : uint32_t { kTag_ = 0x00000001, kVertex = 0x00000007 };

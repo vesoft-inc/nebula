@@ -24,10 +24,11 @@ DEFINE_string(dst_db_path,
               "multi paths should be split by comma");
 DEFINE_string(upgrade_meta_server, "127.0.0.1:45500", "Meta servers' address.");
 DEFINE_uint32(write_batch_num, 100, "The size of the batch written to rocksdb");
-DEFINE_uint32(upgrade_version,
-              0,
-              "When the value is 1, upgrade the data from 1.x to 2.0 GA. "
-              "When the value is 2, upgrade the data from 2.0 RC to 2.0 GA.");
+DEFINE_string(upgrade_version,
+              "",
+              "When the value is 1:2, upgrade the data from 1.x to 2.0 GA. "
+              "When the value is 2RC:2, upgrade the data from 2.0 RC to 2.0 GA."
+              "When the value is 2:3, upgrade the data from ");
 DEFINE_bool(compactions,
             true,
             "When the upgrade of the space is completed, "
@@ -982,7 +983,7 @@ void UpgraderSpace::doProcessV3() {
   }
   auto code = readEngine_->ingest(ingest_sst_file_, true);
   if (code != ::nebula::cpp2::ErrorCode::SUCCEEDED) {
-    LOG(FATAL) << "Faild upgrade V3 when ingest sst file:" << static_cast<int>(code);
+    LOG(FATAL) << "Faild upgrade 2:3 when ingest sst file:" << static_cast<int>(code);
   }
 }
 std::vector<std::string> UpgraderSpace::indexVertexKeys(
@@ -1197,12 +1198,14 @@ void DbUpgrader::doSpace() {
     LOG(INFO) << "Upgrade from path " << upgraderSpaceIter->srcPath_ << " space id "
               << upgraderSpaceIter->entry_ << " to path " << upgraderSpaceIter->dstPath_
               << " begin";
-    if (FLAGS_upgrade_version == 1) {
+    if (FLAGS_upgrade_version == "1:2") {
       upgraderSpaceIter->doProcessV1();
-    } else if (FLAGS_upgrade_version == 2) {
+    } else if (FLAGS_upgrade_version == "2RC:2") {
       upgraderSpaceIter->doProcessV2();
-    } else {
+    } else if (FLAGS_upgrade_version == "2:3") {
       upgraderSpaceIter->doProcessV3();
+    } else {
+      LOG(FATAL) << "error upgrade version " << FLAGS_upgrade_version;
     }
 
     auto ret = upgraderSpaceIter->copyWal();
