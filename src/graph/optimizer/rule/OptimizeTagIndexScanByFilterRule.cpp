@@ -5,8 +5,6 @@
 
 #include "graph/optimizer/rule/OptimizeTagIndexScanByFilterRule.h"
 
-#include <cstddef>
-
 #include "graph/context/QueryContext.h"
 #include "graph/optimizer/OptContext.h"
 #include "graph/optimizer/OptGroup.h"
