@@ -19,7 +19,6 @@
 #include "graph/util/SchemaUtil.h"
 #include "parser/MaintainSentences.h"
 
-
 namespace nebula {
 namespace graph {
 
@@ -140,9 +139,7 @@ static Status checkColName(const std::vector<ColumnSpecification *> specs) {
   return Status::OK();
 }
 
-void split(const std::string& s,
-           std::vector<std::string>& sv,
-           const char delim = ' ') {
+void split(const std::string &s, std::vector<std::string> &sv, const char delim = ' ') {
   sv.clear();
   std::istringstream iss(s);
   std::string temp;
@@ -170,9 +167,9 @@ Status CreateFunctionValidator::validateImpl() {
   auto name = *sentence->name();
   std::vector<std::string> sv;
   split(name, sv, '_');
-  if(sv.size() == 1){
+  if (sv.size() == 1) {
     functionName = name;
-  }else{
+  } else {
     functionName = sv[0];
     functionHandler = sv[1];
   }
@@ -233,22 +230,34 @@ Status CreateFunctionValidator::validateImpl() {
     std::string prefix2 = "WAT://";
     std::string watBase64Str = funcSource.substr(prefix1.length());
     watBase64Str = funcSource.substr(prefix2.length());
-    wasmFunctionManager.RegisterFunction(
-        inParam, outParam, WasmFunctionManager::TYPE_WAT_MOUDLE, functionName, functionHandler, watBase64Str);
+    wasmFunctionManager.RegisterFunction(inParam,
+                                         outParam,
+                                         WasmFunctionManager::TYPE_WAT_MOUDLE,
+                                         functionName,
+                                         functionHandler,
+                                         watBase64Str);
   } else if (funcType == "WASM") {
     std::string prefix1 = "wasm://";
     std::string prefix2 = "WASM://";
     std::string wasmBase64Str = funcSource.substr(prefix1.length());
     wasmBase64Str = funcSource.substr(prefix2.length());
-    wasmFunctionManager.RegisterFunction(
-        inParam, outParam, WasmFunctionManager::TYPE_WASM_MOUDLE, functionName, functionHandler, wasmBase64Str);
+    wasmFunctionManager.RegisterFunction(inParam,
+                                         outParam,
+                                         WasmFunctionManager::TYPE_WASM_MOUDLE,
+                                         functionName,
+                                         functionHandler,
+                                         wasmBase64Str);
 
   } else if (funcType == "PATH") {
     std::string prefix1 = "path://";
     std::string prefix2 = "PATH://";
     std::string path = funcSource.substr(prefix1.length());
-    wasmFunctionManager.RegisterFunction(
-        inParam, outParam, WasmFunctionManager::TYPE_WASM_PATH, functionName, functionHandler, path);
+    wasmFunctionManager.RegisterFunction(inParam,
+                                         outParam,
+                                         WasmFunctionManager::TYPE_WASM_PATH,
+                                         functionName,
+                                         functionHandler,
+                                         path);
   }
 
   // FIXME(TripleZ): schema should not be needed in create function
@@ -405,6 +414,10 @@ Status DropFunctionValidator::toPlan() {
   auto sentence = static_cast<DropFunctionSentence *>(sentence_);
   auto name = *sentence->name();
   std::cout << " => drop function: name(" + name + ")" << std::endl;
+
+  auto *doNode = DropFunction::make(qctx_, nullptr, *sentence->name(), sentence->isIfExists());
+  root_ = doNode;
+  tail_ = root_;
 
   return Status::OK();
 }
