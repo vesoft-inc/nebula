@@ -15,17 +15,11 @@
 namespace nebula {
 namespace geo {
 
-uint64_t asUint64(int64_t i) {
-  const char* c = reinterpret_cast<const char*>(&i);
-  uint64_t u = *reinterpret_cast<const uint64_t*>(c);
-  return u;
-}
-
 std::vector<uint64_t> asUint64Vec(std::vector<int64_t> expect) {
   std::vector<uint64_t> transformedExpect;
   transformedExpect.reserve(expect.size());
   for (int64_t i : expect) {
-    transformedExpect.push_back(asUint64(i));
+    transformedExpect.push_back(static_cast<uint64_t>(i));
   }
   return transformedExpect;
 }

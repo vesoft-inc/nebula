@@ -1814,9 +1814,8 @@ TEST_F(IndexScanTest, Geography) {
   };
   auto encodeCellId = [](int64_t i) -> std::string {
     // First, reinterpret the int64_t as uint64_t
-    const char* c = reinterpret_cast<const char*>(&i);
+    uint64_t u = static_cast<uint64_t>(i);
     // Then, encode the uint64_t as string
-    uint64_t u = *reinterpret_cast<const uint64_t*>(c);
     return IndexKeyUtils::encodeUint64(u);
   };
   // For the Geography type, there are only two cases: prefix and [x, y].
