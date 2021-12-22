@@ -160,6 +160,20 @@ Feature: Lookup tag index full scan
       | 3  | Project   | 4            |               |
       | 4  | IndexScan | 0            |               |
       | 0  | Start     |              |               |
+    # c AND (a IN b) where b contains only 1 element
+    # (https://github.com/vesoft-inc/nebula/issues/3524)
+    When profiling query:
+      """
+      LOOKUP ON player WHERE player.age IN [40] AND player.name == "Kobe Bryant" YIELD id(vertex) as id, player.age
+      """
+    Then the result should be, in any order:
+      | id            | player.age |
+      | "Kobe Bryant" | 40         |
+    And the execution plan should be:
+      | id | name               | dependencies | operator info |
+      | 3  | Project            | 4            |               |
+      | 4  | TagIndexPrefixScan | 0            |               |
+      | 0  | Start              |              |               |
 
   Scenario: Tag with complex relational IN filter
     Given an empty graph
