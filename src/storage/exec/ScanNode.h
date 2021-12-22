@@ -13,7 +13,9 @@ namespace storage {
 
 using Cursor = std::string;
 
-inline bool vTrue(const Value& v) { return v.isBool() && v.getBool(); }
+inline bool vTrue(const Value& v) {
+  return v.isBool() && v.getBool();
+}
 
 // Node to scan vertices of one partition
 class ScanVertexPropNode : public QueryNode<Cursor> {

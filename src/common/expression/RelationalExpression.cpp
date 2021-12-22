@@ -256,6 +256,8 @@ std::string RelationalExpression::toString() const {
   return out.str();
 }
 
-void RelationalExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void RelationalExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 }  // namespace nebula

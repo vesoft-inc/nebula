@@ -8,9 +8,13 @@
 namespace nebula {
 namespace kvstore {
 
-meta::PartsMap MemPartManager::parts(const HostAddr&) { return partsMap_; }
+meta::PartsMap MemPartManager::parts(const HostAddr&) {
+  return partsMap_;
+}
 
-meta::ListenersMap MemPartManager::listeners(const HostAddr&) { return listenersMap_; }
+meta::ListenersMap MemPartManager::listeners(const HostAddr&) {
+  return listenersMap_;
+}
 
 StatusOr<std::vector<meta::RemoteListenerInfo>> MemPartManager::listenerPeerExist(
     GraphSpaceID spaceId, PartitionID partId) {

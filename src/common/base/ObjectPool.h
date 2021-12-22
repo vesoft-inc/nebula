@@ -43,11 +43,13 @@ class ObjectPool final : private cpp::NonCopyable, private cpp::NonMovable {
   }
 
   template <typename T, typename... Args>
-  T *makeAndAdd(Args &&... args) {
+  T *makeAndAdd(Args &&...args) {
     return add(new T(std::forward<Args>(args)...));
   }
 
-  bool empty() const { return objects_.empty(); }
+  bool empty() const {
+    return objects_.empty();
+  }
 
  private:
   // Holder the ownership of the any object
@@ -57,7 +59,9 @@ class ObjectPool final : private cpp::NonCopyable, private cpp::NonMovable {
     explicit OwnershipHolder(T *obj)
         : obj_(obj), deleteFn_([](void *p) { delete reinterpret_cast<T *>(p); }) {}
 
-    ~OwnershipHolder() { deleteFn_(obj_); }
+    ~OwnershipHolder() {
+      deleteFn_(obj_);
+    }
 
    private:
     void *obj_;

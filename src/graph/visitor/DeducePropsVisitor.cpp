@@ -18,7 +18,9 @@ void ExpressionProps::insertVarProp(const std::string &outputVar, folly::StringP
   props.emplace(prop);
 }
 
-void ExpressionProps::insertInputProp(folly::StringPiece prop) { inputProps_.emplace(prop); }
+void ExpressionProps::insertInputProp(folly::StringPiece prop) {
+  inputProps_.emplace(prop);
+}
 
 void ExpressionProps::insertSrcTagProp(TagID tagId, folly::StringPiece prop) {
   auto &props = srcTagProps_[tagId];
@@ -122,7 +124,9 @@ DeducePropsVisitor::DeducePropsVisitor(QueryContext *qctx,
   DCHECK(userDefinedVarNameList != nullptr);
 }
 
-void DeducePropsVisitor::visit(EdgePropertyExpression *expr) { visitEdgePropExpr(expr); }
+void DeducePropsVisitor::visit(EdgePropertyExpression *expr) {
+  visitEdgePropExpr(expr);
+}
 
 void DeducePropsVisitor::visit(TagPropertyExpression *expr) {
   auto status = qctx_->schemaMng()->toTagID(space_, expr->sym());
@@ -161,27 +165,49 @@ void DeducePropsVisitor::visit(SourcePropertyExpression *expr) {
   exprProps_->insertSrcTagProp(std::move(status).value(), expr->prop());
 }
 
-void DeducePropsVisitor::visit(EdgeSrcIdExpression *expr) { visitEdgePropExpr(expr); }
+void DeducePropsVisitor::visit(EdgeSrcIdExpression *expr) {
+  visitEdgePropExpr(expr);
+}
 
-void DeducePropsVisitor::visit(EdgeTypeExpression *expr) { visitEdgePropExpr(expr); }
+void DeducePropsVisitor::visit(EdgeTypeExpression *expr) {
+  visitEdgePropExpr(expr);
+}
 
-void DeducePropsVisitor::visit(EdgeRankExpression *expr) { visitEdgePropExpr(expr); }
+void DeducePropsVisitor::visit(EdgeRankExpression *expr) {
+  visitEdgePropExpr(expr);
+}
 
-void DeducePropsVisitor::visit(EdgeDstIdExpression *expr) { visitEdgePropExpr(expr); }
+void DeducePropsVisitor::visit(EdgeDstIdExpression *expr) {
+  visitEdgePropExpr(expr);
+}
 
-void DeducePropsVisitor::visit(UUIDExpression *expr) { reportError(expr); }
+void DeducePropsVisitor::visit(UUIDExpression *expr) {
+  reportError(expr);
+}
 
-void DeducePropsVisitor::visit(VariableExpression *expr) { UNUSED(expr); }
+void DeducePropsVisitor::visit(VariableExpression *expr) {
+  UNUSED(expr);
+}
 
-void DeducePropsVisitor::visit(VersionedVariableExpression *expr) { reportError(expr); }
+void DeducePropsVisitor::visit(VersionedVariableExpression *expr) {
+  reportError(expr);
+}
 
-void DeducePropsVisitor::visit(LabelExpression *expr) { reportError(expr); }
+void DeducePropsVisitor::visit(LabelExpression *expr) {
+  reportError(expr);
+}
 
-void DeducePropsVisitor::visit(LabelAttributeExpression *expr) { reportError(expr); }
+void DeducePropsVisitor::visit(LabelAttributeExpression *expr) {
+  reportError(expr);
+}
 
-void DeducePropsVisitor::visit(ConstantExpression *expr) { UNUSED(expr); }
+void DeducePropsVisitor::visit(ConstantExpression *expr) {
+  UNUSED(expr);
+}
 
-void DeducePropsVisitor::visit(ColumnExpression *expr) { UNUSED(expr); }
+void DeducePropsVisitor::visit(ColumnExpression *expr) {
+  UNUSED(expr);
+}
 
 void DeducePropsVisitor::visit(VertexExpression *expr) {
   if (tagIds_ == nullptr) {

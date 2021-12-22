@@ -39,7 +39,9 @@ auto pool = &objPool;
 
 class LookupIndexTest : public ::testing::TestWithParam<bool> {
  public:
-  void SetUp() override { FLAGS_query_concurrently = GetParam(); }
+  void SetUp() override {
+    FLAGS_query_concurrently = GetParam();
+  }
 
   void TearDown() override {}
 };

@@ -338,15 +338,25 @@ void insertVerticesMultIndex() {
   };
 }
 
-BENCHMARK(withoutIndex) { insertVertices(true); }
+BENCHMARK(withoutIndex) {
+  insertVertices(true);
+}
 
-BENCHMARK(unmatchIndex) { insertUnmatchIndex(); }
+BENCHMARK(unmatchIndex) {
+  insertUnmatchIndex();
+}
 
-BENCHMARK(attachIndex) { insertVertices(false); }
+BENCHMARK(attachIndex) {
+  insertVertices(false);
+}
 
-BENCHMARK(duplicateVerticesIndex) { insertDupVertices(); }
+BENCHMARK(duplicateVerticesIndex) {
+  insertDupVertices();
+}
 
-BENCHMARK(multipleIndex) { insertVerticesMultIndex(); }
+BENCHMARK(multipleIndex) {
+  insertVerticesMultIndex();
+}
 
 }  // namespace storage
 }  // namespace nebula

@@ -21,7 +21,7 @@ class ExpressionParsingTest : public ::testing::Test {
 
  protected:
   template <typename T, typename... Args>
-  T *make(Args &&... args) {
+  T *make(Args &&...args) {
     return T::make(pool, std::forward<Args>(args)...);
   }
 
@@ -38,7 +38,9 @@ class ExpressionParsingTest : public ::testing::Test {
     return expr_;
   }
 
-  void add(std::string expr, Expression *ast) { items_.emplace_back(std::move(expr), ast); }
+  void add(std::string expr, Expression *ast) {
+    items_.emplace_back(std::move(expr), ast);
+  }
 
   void run() {
     if (items_.empty()) {

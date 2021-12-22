@@ -184,7 +184,9 @@ class IndexScanLimitTest : public ::testing::Test {
     EXPECT_TRUE(mockData());
   }
 
-  void TearDown() override { delete rootPath_; }
+  void TearDown() override {
+    delete rootPath_;
+  }
 
  protected:
   fs::TempDir* rootPath_;

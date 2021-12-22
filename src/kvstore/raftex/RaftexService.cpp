@@ -98,7 +98,9 @@ void RaftexService::serve() {
     return;
   }
 
-  SCOPE_EXIT { server_->cleanUp(); };
+  SCOPE_EXIT {
+    server_->cleanUp();
+  };
 
   status_.store(STATUS_RUNNING);
   LOG(INFO) << "Start the Raftex Service successfully";

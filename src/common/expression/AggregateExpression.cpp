@@ -79,5 +79,7 @@ std::string AggregateExpression::toString() const {
   return out.str();
 }
 
-void AggregateExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void AggregateExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 }  // namespace nebula

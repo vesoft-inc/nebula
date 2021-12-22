@@ -1407,9 +1407,13 @@ class TestMetaService : public cpp2::MetaServiceSvIf {
 
 class TestMetaServiceRetry : public cpp2::MetaServiceSvIf {
  public:
-  void setLeader(HostAddr leader) { leader_ = leader; }
+  void setLeader(HostAddr leader) {
+    leader_ = leader;
+  }
 
-  void setAddr(HostAddr addr) { addr_ = addr; }
+  void setAddr(HostAddr addr) {
+    addr_ = addr;
+  }
 
   folly::Future<cpp2::HBResp> future_heartBeat(const cpp2::HBReq& req) override {
     UNUSED(req);

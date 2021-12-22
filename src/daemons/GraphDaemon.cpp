@@ -215,7 +215,9 @@ void signalHandler(int sig) {
   }
 }
 
-void printHelp(const char *prog) { fprintf(stderr, "%s --flagfile <config_file>\n", prog); }
+void printHelp(const char *prog) {
+  fprintf(stderr, "%s --flagfile <config_file>\n", prog);
+}
 
 void setupThreadManager() {
   int numThreads =

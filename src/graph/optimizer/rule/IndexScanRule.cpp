@@ -30,7 +30,9 @@ namespace opt {
 std::unique_ptr<OptRule> IndexScanRule::kInstance =
     std::unique_ptr<IndexScanRule>(new IndexScanRule());
 
-IndexScanRule::IndexScanRule() { RuleSet::DefaultRules().addRule(this); }
+IndexScanRule::IndexScanRule() {
+  RuleSet::DefaultRules().addRule(this);
+}
 
 const Pattern& IndexScanRule::pattern() const {
   static Pattern pattern = Pattern::create(graph::PlanNode::Kind::kIndexScan);
@@ -93,7 +95,9 @@ StatusOr<OptRule::TransformResult> IndexScanRule::transform(OptContext* ctx,
   return result;
 }
 
-std::string IndexScanRule::toString() const { return "IndexScanRule"; }
+std::string IndexScanRule::toString() const {
+  return "IndexScanRule";
+}
 
 Status IndexScanRule::createIndexQueryCtx(IndexQueryCtx& iqctx,
                                           ScanKind kind,

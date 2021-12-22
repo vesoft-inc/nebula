@@ -23,7 +23,9 @@ class TestSingleEdgeIterator : public storage::StorageIterator {
   explicit TestSingleEdgeIterator(std::unique_ptr<kvstore::KVIterator> iter)
       : iter_(std::move(iter)) {}
 
-  bool valid() const override { return iter_->valid(); }
+  bool valid() const override {
+    return iter_->valid();
+  }
 
   void next() override {
     do {
@@ -31,15 +33,23 @@ class TestSingleEdgeIterator : public storage::StorageIterator {
     } while (iter_->valid() && !check());
   }
 
-  folly::StringPiece key() const override { return iter_->key(); }
+  folly::StringPiece key() const override {
+    return iter_->key();
+  }
 
-  folly::StringPiece val() const override { return iter_->val(); }
+  folly::StringPiece val() const override {
+    return iter_->val();
+  }
 
-  RowReader* reader() const override { return reader_.get(); }
+  RowReader* reader() const override {
+    return reader_.get();
+  }
 
  private:
   // return true when the value iter to a valid edge value
-  bool check() { return true; }
+  bool check() {
+    return true;
+  }
 
   std::unique_ptr<kvstore::KVIterator> iter_;
   std::unique_ptr<RowReader> reader_;

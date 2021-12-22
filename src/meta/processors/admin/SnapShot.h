@@ -26,7 +26,9 @@ class Snapshot {
 
   ~Snapshot() = default;
 
-  inline void setSpaces(std::unordered_set<GraphSpaceID> spaces) { spaces_ = std::move(spaces); }
+  inline void setSpaces(std::unordered_set<GraphSpaceID> spaces) {
+    spaces_ = std::move(spaces);
+  }
 
   ErrorOr<nebula::cpp2::ErrorCode,
           std::unordered_map<GraphSpaceID, std::vector<cpp2::HostBackupInfo>>>

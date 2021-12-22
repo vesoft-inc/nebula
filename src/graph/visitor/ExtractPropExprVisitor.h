@@ -25,9 +25,13 @@ class ExtractPropExprVisitor final : public ExprVisitorImpl {
 
   ~ExtractPropExprVisitor() = default;
 
-  bool ok() const override { return status_.ok(); }
+  bool ok() const override {
+    return status_.ok();
+  }
 
-  const Status &status() const { return status_; }
+  const Status &status() const {
+    return status_;
+  }
 
  private:
   using ExprVisitorImpl::visit;

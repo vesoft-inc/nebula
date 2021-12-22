@@ -14,6 +14,8 @@ const Value &EdgeExpression::eval(ExpressionContext &ctx) {
   return result_;
 }
 
-void EdgeExpression::accept(ExprVisitor *visitor) { visitor->visit(this); }
+void EdgeExpression::accept(ExprVisitor *visitor) {
+  visitor->visit(this);
+}
 
 }  // namespace nebula

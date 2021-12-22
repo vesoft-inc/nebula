@@ -428,7 +428,9 @@ cpp2::UpdateEdgeRequest buildUpdateEdgeReq(bool isVersionV2) {
 
 void insertVertex(int32_t iters) {
   nebula::storage::cpp2::AddVerticesRequest req;
-  BENCHMARK_SUSPEND { req = nebula::storage::buildAddVertexReq(); }
+  BENCHMARK_SUSPEND {
+    req = nebula::storage::buildAddVertexReq();
+  }
 
   for (decltype(iters) i = 0; i < iters; i++) {
     // Test AddVertexRequest
@@ -446,7 +448,9 @@ void insertVertex(int32_t iters) {
 
 void insertEdge(int32_t iters) {
   nebula::storage::cpp2::AddEdgesRequest req;
-  BENCHMARK_SUSPEND { req = nebula::storage::buildAddEdgeReq(); }
+  BENCHMARK_SUSPEND {
+    req = nebula::storage::buildAddEdgeReq();
+  }
 
   for (decltype(iters) i = 0; i < iters; i++) {
     // Test AddVertexRequest
@@ -463,7 +467,9 @@ void insertEdge(int32_t iters) {
 
 void updateVertex(int32_t iters, bool isVersion2) {
   nebula::storage::cpp2::UpdateVertexRequest req;
-  BENCHMARK_SUSPEND { req = nebula::storage::buildUpdateVertexReq(isVersion2); }
+  BENCHMARK_SUSPEND {
+    req = nebula::storage::buildUpdateVertexReq(isVersion2);
+  }
 
   for (decltype(iters) i = 0; i < iters; i++) {
     // Test UpdateVertexRequest
@@ -481,7 +487,9 @@ void updateVertex(int32_t iters, bool isVersion2) {
 
 void updateEdge(int32_t iters, bool isVersion2) {
   nebula::storage::cpp2::UpdateEdgeRequest req;
-  BENCHMARK_SUSPEND { req = nebula::storage::buildUpdateEdgeReq(isVersion2); }
+  BENCHMARK_SUSPEND {
+    req = nebula::storage::buildUpdateEdgeReq(isVersion2);
+  }
 
   for (decltype(iters) i = 0; i < iters; i++) {
     // Test UpdateEdgeRequest
@@ -497,17 +505,29 @@ void updateEdge(int32_t iters, bool isVersion2) {
   }
 }
 
-BENCHMARK(update_vertexV1, iters) { updateVertex(iters, false); }
+BENCHMARK(update_vertexV1, iters) {
+  updateVertex(iters, false);
+}
 
-BENCHMARK_RELATIVE(update_vertexV2, iters) { updateVertex(iters, true); }
+BENCHMARK_RELATIVE(update_vertexV2, iters) {
+  updateVertex(iters, true);
+}
 
-BENCHMARK(update_edgeV1, iters) { updateEdge(iters, false); }
+BENCHMARK(update_edgeV1, iters) {
+  updateEdge(iters, false);
+}
 
-BENCHMARK_RELATIVE(update_edgeV2, iters) { updateEdge(iters, true); }
+BENCHMARK_RELATIVE(update_edgeV2, iters) {
+  updateEdge(iters, true);
+}
 
-BENCHMARK(insert_vertexV2, iters) { insertVertex(iters); }
+BENCHMARK(insert_vertexV2, iters) {
+  insertVertex(iters);
+}
 
-BENCHMARK(insert_edgeV2, iters) { insertEdge(iters); }
+BENCHMARK(insert_edgeV2, iters) {
+  insertEdge(iters);
+}
 
 int main(int argc, char** argv) {
   folly::init(&argc, &argv, true);

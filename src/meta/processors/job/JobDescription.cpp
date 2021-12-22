@@ -66,7 +66,9 @@ ErrorOr<nebula::cpp2::ErrorCode, JobDescription> JobDescription::makeJobDescript
   return nebula::cpp2::ErrorCode::E_INVALID_JOB;
 }
 
-std::string JobDescription::jobKey() const { return makeJobKey(id_); }
+std::string JobDescription::jobKey() const {
+  return makeJobKey(id_);
+}
 
 std::string JobDescription::makeJobKey(JobID iJob) {
   std::string str;

@@ -71,13 +71,21 @@ class AppendLogsIterator final : public LogIterator {
   AppendLogsIterator& operator=(const AppendLogsIterator&) = delete;
   AppendLogsIterator& operator=(AppendLogsIterator&&) = default;
 
-  bool leadByAtomicOp() const { return leadByAtomicOp_; }
+  bool leadByAtomicOp() const {
+    return leadByAtomicOp_;
+  }
 
-  bool hasNonAtomicOpLogs() const { return hasNonAtomicOpLogs_; }
+  bool hasNonAtomicOpLogs() const {
+    return hasNonAtomicOpLogs_;
+  }
 
-  LogID firstLogId() const { return firstLogId_; }
+  LogID firstLogId() const {
+    return firstLogId_;
+  }
 
-  LogID lastLogId() const { return firstLogId_ + logs_.size() - 1; }
+  LogID lastLogId() const {
+    return firstLogId_ + logs_.size() - 1;
+  }
 
   // Return true if the current log is a AtomicOp, otherwise return false
   bool processAtomicOp() {
@@ -125,14 +133,18 @@ class AppendLogsIterator final : public LogIterator {
 
   // The iterator becomes invalid when exhausting the logs
   // **OR** running into a AtomicOp log
-  bool valid() const override { return valid_; }
+  bool valid() const override {
+    return valid_;
+  }
 
   LogID logId() const override {
     DCHECK(valid());
     return logId_;
   }
 
-  TermID logTerm() const override { return termId_; }
+  TermID logTerm() const override {
+    return termId_;
+  }
 
   ClusterID logSource() const override {
     DCHECK(valid());
@@ -150,7 +162,9 @@ class AppendLogsIterator final : public LogIterator {
   }
 
   // Return true when there is no more log left for processing
-  bool empty() const { return idx_ >= logs_.size(); }
+  bool empty() const {
+    return idx_ >= logs_.size();
+  }
 
   // Resume the iterator so that we can continue to process the remaining logs
   void resume() {
@@ -165,7 +179,9 @@ class AppendLogsIterator final : public LogIterator {
     }
   }
 
-  LogType logType() const { return std::get<1>(logs_.at(idx_)); }
+  LogType logType() const {
+    return std::get<1>(logs_.at(idx_));
+  }
 
  private:
   size_t idx_{0};

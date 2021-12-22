@@ -56,7 +56,9 @@ StorageServer::StorageServer(HostAddr localHost,
       walPath_(std::move(walPath)),
       listenerPath_(std::move(listenerPath)) {}
 
-StorageServer::~StorageServer() { stop(); }
+StorageServer::~StorageServer() {
+  stop();
+}
 
 std::unique_ptr<kvstore::KVStore> StorageServer::getStoreInstance() {
   kvstore::KVOptions options;

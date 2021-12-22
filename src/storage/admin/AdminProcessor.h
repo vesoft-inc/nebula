@@ -20,7 +20,9 @@ namespace storage {
 
 class TransLeaderProcessor : public BaseProcessor<cpp2::AdminExecResp> {
  public:
-  static TransLeaderProcessor* instance(StorageEnv* env) { return new TransLeaderProcessor(env); }
+  static TransLeaderProcessor* instance(StorageEnv* env) {
+    return new TransLeaderProcessor(env);
+  }
 
   void process(const cpp2::TransLeaderReq& req) {
     CHECK_NOTNULL(env_->kvstore_);
@@ -118,7 +120,9 @@ class TransLeaderProcessor : public BaseProcessor<cpp2::AdminExecResp> {
 
 class AddPartProcessor : public BaseProcessor<cpp2::AdminExecResp> {
  public:
-  static AddPartProcessor* instance(StorageEnv* env) { return new AddPartProcessor(env); }
+  static AddPartProcessor* instance(StorageEnv* env) {
+    return new AddPartProcessor(env);
+  }
 
   void process(const cpp2::AddPartReq& req) {
     auto spaceId = req.get_space_id();
@@ -150,7 +154,9 @@ class AddPartProcessor : public BaseProcessor<cpp2::AdminExecResp> {
 
 class RemovePartProcessor : public BaseProcessor<cpp2::AdminExecResp> {
  public:
-  static RemovePartProcessor* instance(StorageEnv* env) { return new RemovePartProcessor(env); }
+  static RemovePartProcessor* instance(StorageEnv* env) {
+    return new RemovePartProcessor(env);
+  }
 
   void process(const cpp2::RemovePartReq& req) {
     auto spaceId = req.get_space_id();
@@ -171,7 +177,9 @@ class RemovePartProcessor : public BaseProcessor<cpp2::AdminExecResp> {
 
 class MemberChangeProcessor : public BaseProcessor<cpp2::AdminExecResp> {
  public:
-  static MemberChangeProcessor* instance(StorageEnv* env) { return new MemberChangeProcessor(env); }
+  static MemberChangeProcessor* instance(StorageEnv* env) {
+    return new MemberChangeProcessor(env);
+  }
 
   void process(const cpp2::MemberChangeReq& req) {
     CHECK_NOTNULL(env_->kvstore_);
@@ -208,7 +216,9 @@ class MemberChangeProcessor : public BaseProcessor<cpp2::AdminExecResp> {
 
 class AddLearnerProcessor : public BaseProcessor<cpp2::AdminExecResp> {
  public:
-  static AddLearnerProcessor* instance(StorageEnv* env) { return new AddLearnerProcessor(env); }
+  static AddLearnerProcessor* instance(StorageEnv* env) {
+    return new AddLearnerProcessor(env);
+  }
 
   void process(const cpp2::AddLearnerReq& req) {
     auto spaceId = req.get_space_id();
@@ -298,7 +308,9 @@ class WaitingForCatchUpDataProcessor : public BaseProcessor<cpp2::AdminExecResp>
 
 class CheckPeersProcessor : public BaseProcessor<cpp2::AdminExecResp> {
  public:
-  static CheckPeersProcessor* instance(StorageEnv* env) { return new CheckPeersProcessor(env); }
+  static CheckPeersProcessor* instance(StorageEnv* env) {
+    return new CheckPeersProcessor(env);
+  }
 
   void process(const cpp2::CheckPeersReq& req) {
     auto spaceId = req.get_space_id();
@@ -325,7 +337,9 @@ class CheckPeersProcessor : public BaseProcessor<cpp2::AdminExecResp> {
 
 class GetLeaderProcessor : public BaseProcessor<cpp2::GetLeaderPartsResp> {
  public:
-  static GetLeaderProcessor* instance(StorageEnv* env) { return new GetLeaderProcessor(env); }
+  static GetLeaderProcessor* instance(StorageEnv* env) {
+    return new GetLeaderProcessor(env);
+  }
 
   void process(const cpp2::GetLeaderReq&) {
     CHECK_NOTNULL(env_->kvstore_);

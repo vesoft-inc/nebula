@@ -30,7 +30,9 @@ class BaseProcessor {
 
   virtual ~BaseProcessor() = default;
 
-  folly::Future<RESP> getFuture() { return promise_.getFuture(); }
+  folly::Future<RESP> getFuture() {
+    return promise_.getFuture();
+  }
 
  protected:
   virtual void onFinished() {

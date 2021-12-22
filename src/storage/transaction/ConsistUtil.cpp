@@ -16,9 +16,13 @@ namespace storage {
 static const std::string kPrimeTable{"__prime__"};              // NOLINT
 static const std::string kDoublePrimeTable{"__prime_prime__"};  // NOLINT
 
-std::string ConsistUtil::primeTable() { return kPrimeTable; }
+std::string ConsistUtil::primeTable() {
+  return kPrimeTable;
+}
 
-std::string ConsistUtil::doublePrimeTable() { return kDoublePrimeTable; }
+std::string ConsistUtil::doublePrimeTable() {
+  return kDoublePrimeTable;
+}
 
 std::string ConsistUtil::primePrefix(PartitionID partId) {
   return kPrimeTable + NebulaKeyUtils::edgePrefix(partId);

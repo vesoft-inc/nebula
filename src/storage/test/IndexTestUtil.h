@@ -27,11 +27,21 @@ class MockKVIterator : public KVIterator {
 
  public:
   MockKVIterator(const KVMap& kv, KVMap::iterator&& iter) : kv_(kv), iter_(std::move(iter)) {}
-  bool valid() const { return iter_ != kv_.end() && validFunc_(iter_); }
-  void next() { iter_++; }
-  void prev() { iter_--; }
-  folly::StringPiece key() const { return folly::StringPiece(iter_->first); }
-  folly::StringPiece val() const { return folly::StringPiece(iter_->second); }
+  bool valid() const {
+    return iter_ != kv_.end() && validFunc_(iter_);
+  }
+  void next() {
+    iter_++;
+  }
+  void prev() {
+    iter_--;
+  }
+  folly::StringPiece key() const {
+    return folly::StringPiece(iter_->first);
+  }
+  folly::StringPiece val() const {
+    return folly::StringPiece(iter_->second);
+  }
   void setValidFunc(const std::function<bool(const KVMap::iterator& iter)> validFunc) {
     validFunc_ = validFunc;
   }
@@ -361,7 +371,9 @@ class MockKVStore : public ::nebula::kvstore::KVStore {
     UNUSED(property);
     return ::nebula::cpp2::ErrorCode::SUCCEEDED;
   }
-  void put(const std::string& key, const std::string& value) { kv_[key] = value; }
+  void put(const std::string& key, const std::string& value) {
+    kv_[key] = value;
+  }
 
  private:
   using ::nebula::kvstore::KVStore::prefix;
@@ -371,16 +383,26 @@ class MockKVStore : public ::nebula::kvstore::KVStore {
 class MockIndexNode : public IndexNode {
  public:
   explicit MockIndexNode(RuntimeContext* context) : IndexNode(context, "MockIndexNode") {}
-  ::nebula::cpp2::ErrorCode init(InitContext& initCtx) override { return initFunc(initCtx); }
-  std::unique_ptr<IndexNode> copy() override { LOG(FATAL) << "Unexpect"; }
+  ::nebula::cpp2::ErrorCode init(InitContext& initCtx) override {
+    return initFunc(initCtx);
+  }
+  std::unique_ptr<IndexNode> copy() override {
+    LOG(FATAL) << "Unexpect";
+  }
   std::function<Result()> nextFunc;
   std::function<::nebula::cpp2::ErrorCode(PartitionID)> executeFunc;
   std::function<::nebula::cpp2::ErrorCode(InitContext& initCtx)> initFunc;
-  std::string identify() override { return "MockIndexNode"; }
+  std::string identify() override {
+    return "MockIndexNode";
+  }
 
  private:
-  Result doNext() override { return nextFunc(); }
-  ::nebula::cpp2::ErrorCode doExecute(PartitionID partId) override { return executeFunc(partId); };
+  Result doNext() override {
+    return nextFunc();
+  }
+  ::nebula::cpp2::ErrorCode doExecute(PartitionID partId) override {
+    return executeFunc(partId);
+  };
 };
 
 class RowParser {
@@ -427,7 +449,9 @@ class RowParser {
       rowList_.emplace_back(std::move(row));
     }
   }
-  const std::vector<Row>& getResult() { return rowList_; }
+  const std::vector<Row>& getResult() {
+    return rowList_;
+  }
 
  private:
   std::stringstream ss;
@@ -484,7 +508,9 @@ class SchemaParser {
       schema->addField(name, type, length, nullable);
     }
   }
-  std::shared_ptr<::nebula::meta::NebulaSchemaProvider> getResult() { return schema; }
+  std::shared_ptr<::nebula::meta::NebulaSchemaProvider> getResult() {
+    return schema;
+  }
 
  private:
   std::stringstream ss;

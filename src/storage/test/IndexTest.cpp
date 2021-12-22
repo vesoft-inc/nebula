@@ -106,7 +106,9 @@ class IndexScanTestHelper {
       return ::nebula::cpp2::ErrorCode::SUCCEEDED;
     };
   }
-  void setFatal(IndexScanNode* node, bool value) { node->fatalOnBaseNotFound_ = value; }
+  void setFatal(IndexScanNode* node, bool value) {
+    node->fatalOnBaseNotFound_ = value;
+  }
 };
 class IndexScanTest : public ::testing::Test {
  protected:
