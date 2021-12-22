@@ -173,11 +173,11 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
                                (*edgeKey.dst_ref()).getStr());
       if (std::find(dummyLock.begin(), dummyLock.end(), l) == dummyLock.end()) {
         if (!env_->edgesML_->try_lock(l)) {
-          LOG(ERROR) << folly::format("edge locked : src {}, type {}, rank {}, dst {}",
-                                      (*edgeKey.src_ref()).getStr(),
-                                      *edgeKey.edge_type_ref(),
-                                      *edgeKey.ranking_ref(),
-                                      (*edgeKey.dst_ref()).getStr());
+          LOG(ERROR) << folly::sformat("edge locked : src {}, type {}, rank {}, dst {}",
+                                       (*edgeKey.src_ref()).getStr(),
+                                       *edgeKey.edge_type_ref(),
+                                       *edgeKey.ranking_ref(),
+                                       (*edgeKey.dst_ref()).getStr());
           code = nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
           break;
         }

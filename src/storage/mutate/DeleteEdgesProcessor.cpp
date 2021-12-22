@@ -97,7 +97,7 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
                                  (*edgeKey.dst_ref()).getStr());
         if (std::find(dummyLock.begin(), dummyLock.end(), l) == dummyLock.end()) {
           if (!env_->edgesML_->try_lock(l)) {
-            LOG(ERROR) << folly::format(
+            LOG(ERROR) << folly::sformat(
                 "The edge locked : src {}, "
                 "type {}, tank {}, dst {}",
                 (*edgeKey.src_ref()).getStr(),
