@@ -331,7 +331,7 @@ std::vector<std::string> AddVerticesProcessor::indexKeys(
     const VertexID& vId,
     RowReader* reader,
     std::shared_ptr<nebula::meta::cpp2::IndexItem> index) {
-  auto values = IndexKeyUtils::collectIndexValues(reader, index->get_fields());
+  auto values = IndexKeyUtils::collectIndexValues(reader, index.get());
   if (!values.ok()) {
     return {};
   }
