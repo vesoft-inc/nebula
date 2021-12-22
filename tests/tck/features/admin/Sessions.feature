@@ -21,7 +21,7 @@ Feature: Test sessions
       USE s1;
       """
     Then the execution should be successful
-    And wait 1 seconds
+    And wait 3 seconds
     When login "graphd[1]" with "user1" and "nebula1"
     And executing query:
       """
