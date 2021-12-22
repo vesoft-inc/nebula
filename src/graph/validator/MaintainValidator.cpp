@@ -162,7 +162,7 @@ Status CreateFunctionValidator::validateImpl() {
 
   // f1_main -> f1 = function name, main = function handler name;
   std::string functionName = "";
-  std::string functionHandler = "";
+  std::string functionHandler = "main";  // default function handler is "main"
 
   auto name = *sentence->name();
   std::vector<std::string> sv;
@@ -260,7 +260,7 @@ Status CreateFunctionValidator::validateImpl() {
                                          path);
   }
 
-  // FIXME(TripleZ): schema should not be needed in create function
+  // schema should not be needed in create function
   meta::cpp2::Schema schema;
   // Save the schema in validateContext
   auto pool = qctx_->objPool();
@@ -271,11 +271,6 @@ Status CreateFunctionValidator::validateImpl() {
 
   return Status::OK();
 }
-
-// Status CreateFunctionValidator::toPlan() {
-//   // TODO: create function plan
-//   return Status::OK();
-// }
 
 Status CreateTagValidator::validateImpl() {
   createCtx_ = getContext<CreateSchemaContext>();
@@ -407,13 +402,22 @@ Status ShowCreateEdgeValidator::toPlan() {
   return Status::OK();
 }
 
-Status DropFunctionValidator::validateImpl() { return Status::OK(); }
+Status DropFunctionValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status DropFunctionValidator::toPlan() {
-  // TODO(TripleZ): add drop function logic
   auto sentence = static_cast<DropFunctionSentence *>(sentence_);
   auto name = *sentence->name();
   std::cout << " => drop function: name(" + name + ")" << std::endl;
+
+  // drop function logic
+  WasmFunctionManager &wasmFunctionManager = WasmFunctionManager::getInstance();
+  auto res = wasmFunctionManager.DeleteFunction(name);
+  if (!res) {
+    LOG(ERROR) << "Cannot delete function " << name;
+    return Status::Error("Cannot delete function \"%s\" ! Please check your function name.", name.c_str());
+  }
 
   auto *doNode = DropFunction::make(qctx_, nullptr, *sentence->name(), sentence->isIfExists());
   root_ = doNode;
