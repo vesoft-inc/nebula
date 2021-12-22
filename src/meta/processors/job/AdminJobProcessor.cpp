@@ -12,7 +12,6 @@
 
 namespace nebula {
 namespace meta {
-stats::CounterId kNumActiveJobs;
 
 void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
   cpp2::AdminJobResult result;
@@ -61,7 +60,6 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
       errorCode = jobMgr->addJob(jobDesc, adminClient_);
       if (errorCode == nebula::cpp2::ErrorCode::SUCCEEDED) {
         result.set_job_id(nebula::value(jobId));
-        stats::StatsManager::addValue(kNumActiveJobs);
       }
       break;
     }
@@ -124,7 +122,6 @@ void AdminJobProcessor::process(const cpp2::AdminJobReq& req) {
       auto ret = jobMgr->recoverJob(spaceName, adminClient_, jobIds);
       if (nebula::ok(ret)) {
         result.set_recovered_job_num(nebula::value(ret));
-        stats::StatsManager::addValue(kNumActiveJobs);
       } else {
         errorCode = nebula::error(ret);
       }

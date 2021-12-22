@@ -12,7 +12,6 @@
 
 namespace nebula {
 namespace meta {
-extern stats::CounterId kNumActiveJobs;
 
 class AdminJobProcessor : public BaseProcessor<cpp2::AdminJobResp> {
  public:

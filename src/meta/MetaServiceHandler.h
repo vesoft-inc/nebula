@@ -25,8 +25,6 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
 
     // Initialize counters
     kHBCounters.init();
-    kNumActiveJobs = stats::StatsManager::registerStats("num_active_jobs", "sum");
-    kNumRunningJobs = stats::StatsManager::registerStats("num_running_jobs", "sum");
   }
 
   /**
