@@ -30,6 +30,7 @@ from tests.common.utils import (
     response,
     resp_ok,
     params,
+    parse_service_index,
 )
 from tests.common.nebula_service import NebulaService
 from tests.tck.utils.table import dataset, table
@@ -338,6 +339,21 @@ def given_nebulacluster_with_param(
     class_fixture_variables["cluster"] = nebula_svc
     class_fixture_variables["pool"] = pool
 
+@when(parse('login "{graph}" with "{user}" and "{password}"'))
+def when_login_graphd(graph, user, password, class_fixture_variables, pytestconfig):
+    index = parse_service_index(graph)
+    assert index is not None, "Invalid graph name, name is {}".format(graph)
+    nebula_svc = class_fixture_variables.get("cluster")
+    assert nebula_svc is not None, "Cannot get the cluster"
+    assert index < len(nebula_svc.graphd_processes)
+    graphd_process = nebula_svc.graphd_processes[index]
+    graph_ip, graph_port = graphd_process.host, graphd_process.tcp_port
+    pool = get_conn_pool(graph_ip, graph_port)
+    sess = pool.get_session(user, password)
+    # do not release original session, as we may have cases to test multiple sessions.
+    # connection could be released after cluster stopped.
+    class_fixture_variables["session"] = sess
+    class_fixture_variables["pool"] = pool
 
 @when(parse("executing query:\n{query}"))
 def executing_query(query, graph_spaces, session, request):
@@ -608,6 +624,19 @@ def result_should_contain(request, result, graph_spaces):
     )
 
 
+@then(parse("the result should contain, replace the holders with cluster info:\n{result}"))
+def then_result_should_contain_replace(request, result, graph_spaces, class_fixture_variables):
+    result = replace_result_with_cluster_info(result, class_fixture_variables)
+    cmp_dataset(
+        request,
+        graph_spaces,
+        result,
+        order=False,
+        strict=True,
+        contains=CmpType.CONTAINS,
+    )
+
+
 @then(parse("the result should not contain:\n{result}"))
 def result_should_not_contain(request, result, graph_spaces):
     cmp_dataset(
@@ -804,3 +833,18 @@ def check_client_compatible(graph_spaces):
     assert (
         resp.error_code == ErrorCode.E_CLIENT_SERVER_INCOMPATIBLE
     ), f'The client was not rejected by server: {resp}'
+
+
+def replace_result_with_cluster_info(result, class_fixture_variables):
+    pattern = r"\$\{.*?\}"
+    holders = set(re.findall(pattern, result))
+    cluster = class_fixture_variables.get("cluster")
+    assert cluster is not None, "Cannot get the cluster"
+    for holder in holders:
+        try:
+            eval_string = holder[2:-1]
+            value = eval(eval_string)
+            result = result.replace(holder, str(value))
+        except:
+            raise
+    return result
