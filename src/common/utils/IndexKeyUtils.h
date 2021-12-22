@@ -7,6 +7,7 @@
 #define COMMON_UTILS_INDEXKEYUTILS_H_
 
 #include <cmath>
+#include <cstdint>
 
 #include "codec/RowReader.h"
 #include "common/base/Base.h"
@@ -185,6 +186,12 @@ class IndexKeyUtils final {
     return raw;
   }
 
+  static uint64_t decodeUint64(const folly::StringPiece& raw) {
+    auto val = *reinterpret_cast<const uint64_t*>(raw.data());
+    val = folly::Endian::big(val);
+    return val;
+  }
+
   static std::string encodeRank(EdgeRanking rank) { return IndexKeyUtils::encodeInt64(rank); }
 
   static EdgeRanking decodeRank(const folly::StringPiece& raw) {
@@ -302,18 +309,22 @@ class IndexKeyUtils final {
     return buf;
   }
 
-  static std::vector<std::string> encodeGeography(const nebula::Geography& gg) {
-    // TODO(jie): Get index params from meta to construct RegionCoverParams
-    geo::RegionCoverParams rc;
-    // TODO(jie): Get schema meta to know if it's point only
-    geo::GeoIndex geoIndex(rc, false);
+  static std::vector<std::string> encodeGeography(const nebula::Geography& gg,
+                                                  const geo::RegionCoverParams& rc) {
+    geo::GeoIndex geoIndex(rc);
     auto cellIds = geoIndex.indexCells(gg);
     std::vector<std::string> bufs;
+    bufs.reserve(cellIds.size());
     for (auto cellId : cellIds) {
       bufs.emplace_back(encodeUint64(cellId));
     }
     return bufs;
   }
+
+  // NOTE(jie): The decoded data is not the original Geography data, but the uint64 type S2CellID.
+  // decodeValue() should not call this function, it should turn for the data table instead.
+  // It's only used for tests.
+  static uint64_t decodeGeography(const folly::StringPiece& raw) { return decodeUint64(raw); }
 
   static nebula::DateTime decodeDateTime(const folly::StringPiece& raw) {
     int16_t year = *reinterpret_cast<const int16_t*>(raw.data());
@@ -496,8 +507,8 @@ class IndexKeyUtils final {
   /**
    * Generate vertex|edge index key for kv store
    **/
-  static std::vector<std::string> encodeValues(
-      std::vector<Value>&& values, const std::vector<nebula::meta::cpp2::ColumnDef>& cols);
+  static std::vector<std::string> encodeValues(std::vector<Value>&& values,
+                                               const meta::cpp2::IndexItem* indexItem);
 
   /**
    * param valueTypes ： column type of each index column. If there are no
@@ -530,7 +541,7 @@ class IndexKeyUtils final {
   static Value parseIndexTTL(const folly::StringPiece& raw);
 
   static StatusOr<std::vector<std::string>> collectIndexValues(
-      RowReader* reader, const std::vector<nebula::meta::cpp2::ColumnDef>& cols);
+      RowReader* reader, const meta::cpp2::IndexItem* indexItem);
 
  private:
   IndexKeyUtils() = delete;
