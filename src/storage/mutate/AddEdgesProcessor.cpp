@@ -82,7 +82,7 @@ void AddEdgesProcessor::doProcess(const cpp2::AddEdgesRequest& req) {
               << ", VertexID: " << *edgeKey.dst_ref();
 
       if (!NebulaKeyUtils::isValidVidLen(
-              spaceVidLen_, (*edgeKey.src_ref()).getStr(), (*edgeKey.dst_ref()).getStr())) {
+              spaceVidLen_, edgeKey.src_ref()->getStr(), edgeKey.dst_ref()->getStr())) {
         LOG(ERROR) << "Space " << spaceId_ << " vertex length invalid, "
                    << "space vid len: " << spaceVidLen_ << ", edge srcVid: " << *edgeKey.src_ref()
                    << ", dstVid: " << *edgeKey.dst_ref();
@@ -92,10 +92,10 @@ void AddEdgesProcessor::doProcess(const cpp2::AddEdgesRequest& req) {
 
       auto key = NebulaKeyUtils::edgeKey(spaceVidLen_,
                                          partId,
-                                         (*edgeKey.src_ref()).getStr(),
+                                         edgeKey.src_ref()->getStr(),
                                          *edgeKey.edge_type_ref(),
                                          *edgeKey.ranking_ref(),
-                                         (*edgeKey.dst_ref()).getStr());
+                                         edgeKey.dst_ref()->getStr());
       if (ifNotExists_) {
         if (!visited.emplace(key).second) {
           continue;
@@ -167,17 +167,17 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
       auto edgeKey = *newEdge.key_ref();
       auto l = std::make_tuple(spaceId_,
                                partId,
-                               (*edgeKey.src_ref()).getStr(),
+                               edgeKey.src_ref()->getStr(),
                                *edgeKey.edge_type_ref(),
                                *edgeKey.ranking_ref(),
-                               (*edgeKey.dst_ref()).getStr());
+                               edgeKey.dst_ref()->getStr());
       if (std::find(dummyLock.begin(), dummyLock.end(), l) == dummyLock.end()) {
         if (!env_->edgesML_->try_lock(l)) {
           LOG(ERROR) << folly::sformat("edge locked : src {}, type {}, rank {}, dst {}",
-                                       (*edgeKey.src_ref()).getStr(),
+                                       edgeKey.src_ref()->getStr(),
                                        *edgeKey.edge_type_ref(),
                                        *edgeKey.ranking_ref(),
-                                       (*edgeKey.dst_ref()).getStr());
+                                       edgeKey.dst_ref()->getStr());
           code = nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
           break;
         }
@@ -189,7 +189,7 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
               << ", VertexID: " << *edgeKey.dst_ref();
 
       if (!NebulaKeyUtils::isValidVidLen(
-              spaceVidLen_, (*edgeKey.src_ref()).getStr(), (*edgeKey.dst_ref()).getStr())) {
+              spaceVidLen_, edgeKey.src_ref()->getStr(), edgeKey.dst_ref()->getStr())) {
         LOG(ERROR) << "Space " << spaceId_ << " vertex length invalid, "
                    << "space vid len: " << spaceVidLen_ << ", edge srcVid: " << *edgeKey.src_ref()
                    << ", dstVid: " << *edgeKey.dst_ref();
@@ -199,10 +199,10 @@ void AddEdgesProcessor::doProcessWithIndex(const cpp2::AddEdgesRequest& req) {
 
       auto key = NebulaKeyUtils::edgeKey(spaceVidLen_,
                                          partId,
-                                         (*edgeKey.src_ref()).getStr(),
+                                         edgeKey.src_ref()->getStr(),
                                          *edgeKey.edge_type_ref(),
                                          *edgeKey.ranking_ref(),
-                                         (*edgeKey.dst_ref()).getStr());
+                                         edgeKey.dst_ref()->getStr());
       if (ifNotExists_ && !visited.emplace(key).second) {
         continue;
       }
