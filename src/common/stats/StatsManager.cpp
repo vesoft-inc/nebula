@@ -261,7 +261,8 @@ void StatsManager::addValue(const CounterId& id, VT value) {
 
   auto& sm = get();
   if (!id.valid()) {
-    LOG(FATAL) << "Invalid counter id";
+    // The counter is not registered
+    return;
   }
   std::string index = id.index();
   bool isHisto = id.isHisto();
