@@ -203,7 +203,7 @@ class Status final {
   //  state_[0..1] length of the error msg, i.e. size() - kHeaderSize
   //  state_[2..3] code
   //  state_[4...] verbose error message
-  std::unique_ptr<const char[]> state_;
+  std::unique_ptr<const char[]> state_{nullptr};
 };
 
 inline std::ostream &operator<<(std::ostream &os, const Status &status) {
