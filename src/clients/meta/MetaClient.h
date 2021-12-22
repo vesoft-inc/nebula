@@ -311,12 +311,14 @@ class MetaClient {
                                                bool ifExists = false);
 
   // Operations for index
-  folly::Future<StatusOr<IndexID>> createTagIndex(GraphSpaceID spaceID,
-                                                  std::string indexName,
-                                                  std::string tagName,
-                                                  std::vector<cpp2::IndexFieldDef> fields,
-                                                  bool ifNotExists = false,
-                                                  const std::string* comment = nullptr);
+  folly::Future<StatusOr<IndexID>> createTagIndex(
+      GraphSpaceID spaceID,
+      std::string indexName,
+      std::string tagName,
+      std::vector<cpp2::IndexFieldDef> fields,
+      bool ifNotExists = false,
+      const meta::cpp2::IndexParams* indexParams = nullptr,
+      const std::string* comment = nullptr);
 
   // Remove the define of tag index
   folly::Future<StatusOr<bool>> dropTagIndex(GraphSpaceID spaceId,
@@ -336,6 +338,7 @@ class MetaClient {
                                                    std::string edgeName,
                                                    std::vector<cpp2::IndexFieldDef> fields,
                                                    bool ifNotExists = false,
+                                                   const cpp2::IndexParams* indexParams = nullptr,
                                                    const std::string* comment = nullptr);
 
   // Remove the definition of edge index

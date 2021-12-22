@@ -15,6 +15,7 @@
 #include "common/meta/NebulaSchemaProvider.h"
 #include "folly/Conv.h"
 #include "folly/String.h"
+#include "interface/gen-cpp2/common_types.h"
 #include "kvstore/KVIterator.h"
 #include "kvstore/KVStore.h"
 #include "storage/exec/IndexNode.h"
@@ -436,7 +437,8 @@ class RowParser {
       {"int", [](const std::string& str) { return Value(std::stol(str)); }},
       {"string", [](const std::string& str) { return Value(str); }},
       {"float", [](const std::string& str) { return Value(folly::to<double>(str)); }},
-      {"bool", [](const std::string& str) { return Value(str == "true" ? true : false); }}};
+      {"bool", [](const std::string& str) { return Value(str == "true" ? true : false); }},
+      {"geography", [](const std::string& str) { return Value(Geography::fromWKT(str).value()); }}};
 };
 
 /**
@@ -491,7 +493,8 @@ class SchemaParser {
       {"int", ::nebula::cpp2::PropertyType::INT64},
       {"double", ::nebula::cpp2::PropertyType::DOUBLE},
       {"string", ::nebula::cpp2::PropertyType::STRING},
-      {"bool", ::nebula::cpp2::PropertyType::BOOL}};
+      {"bool", ::nebula::cpp2::PropertyType::BOOL},
+      {"geography", ::nebula::cpp2::PropertyType::GEOGRAPHY}};
 };
 
 /**
