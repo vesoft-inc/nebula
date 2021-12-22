@@ -11,7 +11,7 @@
 namespace nebula {
 
 const std::string WasmFunctionManager::TYPE_WAT_MOUDLE = "WAT";    // wat str base64
-const std::string WasmFunctionManager::TYPE_WASM_MOUDLE = "WASM";  // wasm str base64
+const std::string WasmFunctionManager::TYPE_WASM_MOUDLE = "WASM";  // wasm str base64bindata
 const std::string WasmFunctionManager::TYPE_WASM_PATH =
     "WASM_PATH";  // wasm path (http or file path)
 
@@ -36,7 +36,6 @@ WasmtimeRunInstance WasmFunctionManager::createInstanceAndFunction(
 
 nebula::List WasmFunctionManager::runWithNebulaDataHandle(std::string functionName,
                                                           nebula::List args) {
-
   // prepostcess
   auto values = args.values;
   std::vector<int> functionArgs;
@@ -56,11 +55,13 @@ nebula::List WasmFunctionManager::runWithNebulaDataHandle(std::string functionNa
 }
 
 std::vector<int> WasmFunctionManager::run(std::string functionName, std::vector<int> args) {
-  if (typeMap.find(functionName) == typeMap.end()) {
+  std::unordered_map<std::string, std::string>::const_iterator gotType = typeMap.find(functionName);
+
+  if (gotType == typeMap.end()) {
+    // TODO(TripleZ): cannot find function type in wasm, should throw an error
     return std::vector<int>();
   }
 
-  std::unordered_map<std::string, std::string>::const_iterator gotType = typeMap.find(functionName);
   if (gotType->second == TYPE_WAT_MOUDLE) {
     auto module = modules.at(functionName);
     return run(module, args);
@@ -183,7 +184,7 @@ bool WasmFunctionManager::DeleteFunction(std::string functionName) {
   if (gotType->second == TYPE_WAT_MOUDLE) {
     modules.erase(functionName);
   }
-  if(gotType->second == TYPE_WASM_MOUDLE){
+  if (gotType->second == TYPE_WASM_MOUDLE) {
     wasmModules.erase(functionName);
   }
   return true;

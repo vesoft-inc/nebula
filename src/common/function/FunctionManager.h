@@ -57,6 +57,7 @@ class FunctionManager final {
    */
   static Status unload(const std::string &soname, const std::vector<std::string> &funcs);
 
+  // TODO(TripleZ): loadWasm and unloadWasm
   /**
    * To obtain the return value type according to the parameter type
    */

@@ -17,6 +17,7 @@
 #include "common/datatypes/Set.h"
 #include "common/datatypes/Vertex.h"
 #include "common/expression/Expression.h"
+#include "common/function/WasmFunctionManager.h"
 #include "common/geo/GeoFunction.h"
 #include "common/geo/io/wkb/WKBReader.h"
 #include "common/geo/io/wkb/WKBWriter.h"
@@ -25,7 +26,6 @@
 #include "common/thrift/ThriftTypes.h"
 #include "common/time/TimeUtils.h"
 #include "common/time/WallClock.h"
-#include "common/function/WasmFunctionManager.h"
 
 namespace nebula {
 
@@ -412,20 +412,28 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
                         Value::Type::FLOAT},
                        Value::Type::LIST),
      }},
-    {"wasm", // wasm function,params([Function Name]  [Function Params])
-     {       // return LIST
-         TypeSignature({Value::Type::STRING, Value::Type::LIST},
-                       Value::Type::LIST),
+    // TODO(TripleZ): maybe change to "UDF" in here
+    {"udf",
+     {
+         TypeSignature({Value::Type::STRING, Value::Type::LIST}, Value::Type::LIST),
      }},
-    {"create_wasm", // wasm function,params([Function Name]  [Function Handler] [Function Content(TODO://base64)])
-     {       //  return BOOL
-         TypeSignature({Value::Type::STRING, Value::Type::STRING,Value::Type::STRING},
+    {"wasm",  // wasm function,params([Function Name]  [Function Params])
+     {
+         // return LIST
+         TypeSignature({Value::Type::STRING, Value::Type::LIST}, Value::Type::LIST),
+     }},
+    {"create_wasm",  // wasm function,params([Function Name]  [Function Handler] [Function
+                     // Content(TODO://base64)])
+     {
+         //  return BOOL
+         TypeSignature({Value::Type::STRING, Value::Type::STRING, Value::Type::STRING},
                        Value::Type::BOOL),
      }},
-    {"delete_wasm", // wasm function,params([Function Name]  [Function Handler] [Function Content(TODO://base64)])
-     {       //  return BOOL
-         TypeSignature({Value::Type::STRING},
-                       Value::Type::BOOL),
+    {"delete_wasm",  // wasm function,params([Function Name]  [Function Handler] [Function
+                     // Content(TODO://base64)])
+     {
+         //  return BOOL
+         TypeSignature({Value::Type::STRING}, Value::Type::BOOL),
      }},
 };
 
@@ -441,7 +449,7 @@ StatusOr<Value::Type> FunctionManager::getReturnType(const std::string &funcName
   if (iter == typeSignature_.end()) {
     return Status::Error("Function `%s' not defined", funcName.c_str());
   }
-  //Hackathon Note: Query the wasm function list
+  // Hackathon Note: Query the wasm function list
   for (const auto &args : iter->second) {
     if (argsType == args.argsType_) {
       return args.returnType_;
@@ -480,8 +488,8 @@ FunctionManager::FunctionManager() {
       auto wasmFunctionName = args[0].get().getStr();
       auto wasmFunctionHandler = args[1].get().getStr();
       auto watStr = args[2].get().getStr();
-//      WasmFunctionManager&  wasmFunctionManager = WasmFunctionManager::getInstance();
-//      wasmFunctionManager.RegisterFunction(wasmFunctionName,wasmFunctionHandler,watStr);
+      //      WasmFunctionManager&  wasmFunctionManager = WasmFunctionManager::getInstance();
+      //      wasmFunctionManager.RegisterFunction(wasmFunctionName,wasmFunctionHandler,watStr);
       return true;
     };
   }
@@ -496,8 +504,8 @@ FunctionManager::FunctionManager() {
         return Value::kNullBadType;
       }
       auto wasmFunctionName = args[0].get().getStr();
-//      WasmFunctionManager&  wasmFunctionManager = WasmFunctionManager::getInstance();
-//      wasmFunctionManager.DeleteFunction(wasmFunctionName);
+      //      WasmFunctionManager&  wasmFunctionManager = WasmFunctionManager::getInstance();
+      //      wasmFunctionManager.DeleteFunction(wasmFunctionName);
       return true;
     };
   }
@@ -513,10 +521,30 @@ FunctionManager::FunctionManager() {
       }
       auto wasmFunctionName = args[0].get().getStr();
       auto &params = args[1].get().getList();
-      WasmFunctionManager&  wasmFunctionManager = WasmFunctionManager::getInstance();
+      WasmFunctionManager &wasmFunctionManager = WasmFunctionManager::getInstance();
       auto wasmRuntimeResult =
           wasmFunctionManager.runWithNebulaDataHandle(wasmFunctionName, params);
       return wasmRuntimeResult;
+    };
+  }
+  {
+    auto &attr = functions_["udf"];
+    attr.minArity_ = 1;
+    attr.maxArity_ = 999;
+    attr.isPure_ = false;
+    attr.body_ = [](const auto &args) -> Value {
+      // [0]: function name
+      // [1]: function params
+      // FIXME(TripleZ): nullptr?
+      if (!args[0].get().isStr() || !args[1].get().isList()) {
+        return Value::kNullBadType;
+      }
+      auto udfName = args[0].get().getStr();
+      auto &udfParams = args[1].get().getList();
+
+      WasmFunctionManager &wasmFunctionManager = WasmFunctionManager::getInstance();
+      auto udfResult = wasmFunctionManager.runWithNebulaDataHandle(udfName, udfParams);
+      return udfResult;
     };
   }
   {
