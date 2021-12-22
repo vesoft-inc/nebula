@@ -25,6 +25,7 @@ class AlterSchemaItem;
 class ColumnDef;
 class Schema;
 class SchemaProp;
+class IndexParams;
 }  // namespace cpp2
 }  // namespace meta
 
@@ -68,6 +69,7 @@ folly::dynamic toJson(const meta::cpp2::SpaceDesc &desc);
 folly::dynamic toJson(const meta::cpp2::ColumnDef &column);
 folly::dynamic toJson(const meta::cpp2::Schema &schema);
 folly::dynamic toJson(const meta::cpp2::SchemaProp &prop);
+folly::dynamic toJson(const meta::cpp2::IndexParams &indexParams);
 folly::dynamic toJson(const meta::cpp2::AlterSchemaItem &item);
 folly::dynamic toJson(const storage::cpp2::EdgeKey &edgeKey);
 folly::dynamic toJson(const storage::cpp2::NewTag &tag);

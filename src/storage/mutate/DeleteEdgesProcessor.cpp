@@ -161,7 +161,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> DeleteEdgesProcessor::deleteEdges(
               return nebula::cpp2::ErrorCode::E_INVALID_DATA;
             }
           }
-          auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(), index->get_fields());
+          auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(), index.get());
           if (!valuesRet.ok()) {
             continue;
           }

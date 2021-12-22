@@ -148,7 +148,7 @@ Feature: Schema Comment
     When executing query:
       """
       CREATE tag index test_comment_tag_index ON test_comment_tag(name(8))
-      comment = 'The tag index of person name.';
+      comment 'The tag index of person name.';
       """
     Then the execution should be successful
     When executing query:
@@ -156,8 +156,8 @@ Feature: Schema Comment
       SHOW CREATE TAG INDEX test_comment_tag_index;
       """
     Then the result should be, in any order:
-      | Tag Index Name           | Create Tag Index                                                                                                             |
-      | "test_comment_tag_index" | 'CREATE TAG INDEX `test_comment_tag_index` ON `test_comment_tag` (\n `name`(8)\n) comment = "The tag index of person name."' |
+      | Tag Index Name           | Create Tag Index                                                                                                           |
+      | "test_comment_tag_index" | 'CREATE TAG INDEX `test_comment_tag_index` ON `test_comment_tag` (\n `name`(8)\n) comment "The tag index of person name."' |
     # edge
     When executing query:
       """
@@ -212,7 +212,7 @@ Feature: Schema Comment
     When executing query:
       """
       CREATE edge index test_comment_edge_index ON test_comment_edge(name(8))
-      comment = 'The edge index of person name.';
+      comment 'The edge index of person name.';
       """
     Then the execution should be successful
     When executing query:
@@ -220,8 +220,8 @@ Feature: Schema Comment
       SHOW CREATE EDGE INDEX test_comment_edge_index;
       """
     Then the result should be, in any order:
-      | Edge Index Name           | Create Edge Index                                                                                                                |
-      | "test_comment_edge_index" | 'CREATE EDGE INDEX `test_comment_edge_index` ON `test_comment_edge` (\n `name`(8)\n) comment = "The edge index of person name."' |
+      | Edge Index Name           | Create Edge Index                                                                                                              |
+      | "test_comment_edge_index" | 'CREATE EDGE INDEX `test_comment_edge_index` ON `test_comment_edge` (\n `name`(8)\n) comment "The edge index of person name."' |
 
     Examples:
       | tag_of_person_comment            | tag_of_person_comment_modified            | edge_of_person_comment            | edge_of_person_comment_modified            |

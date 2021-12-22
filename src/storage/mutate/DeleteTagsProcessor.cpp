@@ -122,8 +122,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> DeleteTagsProcessor::deleteTags(
         if (index->get_schema_id().get_tag_id() == tagId) {
           auto indexId = index->get_index_id();
 
-          const auto& cols = index->get_fields();
-          auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(), cols);
+          auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(), index.get());
           if (!valuesRet.ok()) {
             return nebula::cpp2::ErrorCode::E_INVALID_DATA;
           }
