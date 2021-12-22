@@ -86,7 +86,9 @@ bool GenericWorker::wait() {
   return true;
 }
 
-void GenericWorker::loop() { event_base_dispatch(evbase_); }
+void GenericWorker::loop() {
+  event_base_dispatch(evbase_);
+}
 
 void GenericWorker::notify() {
   if (notifier_ == nullptr) {
@@ -153,7 +155,9 @@ void GenericWorker::onNotify() {
   }
 }
 
-GenericWorker::Timer::Timer(std::function<void(void)> cb) { callback_ = std::move(cb); }
+GenericWorker::Timer::Timer(std::function<void(void)> cb) {
+  callback_ = std::move(cb);
+}
 
 GenericWorker::Timer::~Timer() {
   if (ev_ != nullptr) {

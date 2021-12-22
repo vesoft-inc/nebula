@@ -29,13 +29,17 @@ class SequentialValidator final : public Validator {
 
   Status validateImpl() override;
 
-  AstContext* getAstContext() override { return seqAstCtx_.get(); }
+  AstContext* getAstContext() override {
+    return seqAstCtx_.get();
+  }
 
  private:
   /**
    * Will not check the space from the beginning of a query.
    */
-  bool spaceChosen() override { return true; }
+  bool spaceChosen() override {
+    return true;
+  }
 
   const Sentence* getFirstSentence(const Sentence* sentence) const;
 

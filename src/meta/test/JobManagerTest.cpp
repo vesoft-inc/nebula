@@ -300,7 +300,9 @@ TEST_F(JobManagerTest, showJobsFromMultiSpace) {
   ASSERT_EQ(jobs[0].get_stop_time(), jd2.stopTime_);
 }
 
-HostAddr toHost(std::string strIp) { return HostAddr(strIp, 0); }
+HostAddr toHost(std::string strIp) {
+  return HostAddr(strIp, 0);
+}
 
 TEST_F(JobManagerTest, showJob) {
   std::vector<std::string> paras{"test_space"};

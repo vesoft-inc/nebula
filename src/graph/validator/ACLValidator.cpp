@@ -69,9 +69,13 @@ Status UpdateUserValidator::toPlan() {
 }
 
 // show users
-Status ShowUsersValidator::validateImpl() { return Status::OK(); }
+Status ShowUsersValidator::validateImpl() {
+  return Status::OK();
+}
 
-Status ShowUsersValidator::toPlan() { return genSingleNodePlan<ListUsers>(); }
+Status ShowUsersValidator::toPlan() {
+  return genSingleNodePlan<ListUsers>();
+}
 
 // change password
 Status ChangePasswordValidator::validateImpl() {
@@ -169,7 +173,9 @@ Status ShowRolesInSpaceValidator::checkPermission() {
   return PermissionManager::canReadSpace(qctx_->rctx()->session(), targetSpaceId_);
 }
 
-Status ShowRolesInSpaceValidator::toPlan() { return genSingleNodePlan<ListRoles>(targetSpaceId_); }
+Status ShowRolesInSpaceValidator::toPlan() {
+  return genSingleNodePlan<ListRoles>(targetSpaceId_);
+}
 
 }  // namespace graph
 }  // namespace nebula

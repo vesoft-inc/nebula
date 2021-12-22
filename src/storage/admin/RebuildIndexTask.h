@@ -21,7 +21,9 @@ class RebuildIndexTask : public AdminTask {
  public:
   RebuildIndexTask(StorageEnv* env, TaskContext&& ctx);
 
-  ~RebuildIndexTask() { LOG(INFO) << "Release Rebuild Task"; }
+  ~RebuildIndexTask() {
+    LOG(INFO) << "Release Rebuild Task";
+  }
 
   ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>> genSubTasks() override;
 

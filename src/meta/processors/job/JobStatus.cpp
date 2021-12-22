@@ -26,7 +26,9 @@ int JobStatus::phaseNumber(Status st) {
   return INT_MIN;
 }
 
-bool JobStatus::laterThan(Status lhs, Status rhs) { return phaseNumber(lhs) > phaseNumber(rhs); }
+bool JobStatus::laterThan(Status lhs, Status rhs) {
+  return phaseNumber(lhs) > phaseNumber(rhs);
+}
 
 std::string JobStatus::toString(Status st) {
   switch (st) {

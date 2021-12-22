@@ -22,7 +22,9 @@ class GoValidator final : public Validator {
  private:
   Status validateImpl() override;
 
-  AstContext* getAstContext() override { return goCtx_.get(); }
+  AstContext* getAstContext() override {
+    return goCtx_.get();
+  }
 
   Status validateWhere(WhereClause* where);
 

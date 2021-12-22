@@ -152,7 +152,9 @@ std::string PathBuildExpression::toString() const {
   return buf;
 }
 
-void PathBuildExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void PathBuildExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 Expression* PathBuildExpression::clone() const {
   auto pathBuild = PathBuildExpression::make(pool_);

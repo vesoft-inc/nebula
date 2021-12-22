@@ -30,7 +30,9 @@ class TempDir final {
 
   ~TempDir();
 
-  const char* path() const { return dirPath_.get(); }
+  const char* path() const {
+    return dirPath_.get();
+  }
 
  private:
   std::unique_ptr<char[]> dirPath_;

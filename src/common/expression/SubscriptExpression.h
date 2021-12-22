@@ -65,23 +65,41 @@ class SubscriptRangeExpression final : public Expression {
 
   bool operator==(const Expression& rhs) const override;
 
-  const Expression* list() const { return list_; }
+  const Expression* list() const {
+    return list_;
+  }
 
-  Expression* list() { return list_; }
+  Expression* list() {
+    return list_;
+  }
 
-  void setList(Expression* list) { list_ = list; }
+  void setList(Expression* list) {
+    list_ = list;
+  }
 
-  const Expression* lo() const { return lo_; }
+  const Expression* lo() const {
+    return lo_;
+  }
 
-  Expression* lo() { return lo_; }
+  Expression* lo() {
+    return lo_;
+  }
 
-  void setLo(Expression* lo) { lo_ = lo; }
+  void setLo(Expression* lo) {
+    lo_ = lo;
+  }
 
-  const Expression* hi() const { return hi_; }
+  const Expression* hi() const {
+    return hi_;
+  }
 
-  Expression* hi() { return hi_; }
+  Expression* hi() {
+    return hi_;
+  }
 
-  void setHi(Expression* hi) { hi_ = hi; }
+  void setHi(Expression* hi) {
+    hi_ = hi;
+  }
 
  private:
   // for decode ctor

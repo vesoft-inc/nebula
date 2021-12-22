@@ -47,7 +47,9 @@ class IndexDedupNode : public IndexNode {
   class RowWrapper {
    public:
     RowWrapper(const Row& row, const std::vector<size_t>& posList);
-    inline const List& values() const { return values_; }
+    inline const List& values() const {
+      return values_;
+    }
 
    private:
     List values_;

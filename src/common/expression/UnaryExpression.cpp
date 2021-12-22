@@ -126,6 +126,8 @@ std::string UnaryExpression::toString() const {
   return out.str();
 }
 
-void UnaryExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void UnaryExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 }  // namespace nebula

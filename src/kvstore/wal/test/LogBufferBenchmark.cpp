@@ -95,9 +95,13 @@ void runAtomicLogBufferWriteTestPush2(size_t iters, int32_t len) {
 
 #if TEST_WRTIE
 
-BENCHMARK(InMemoryLogBufferWriteShort, iters) { runInMemoryLogBufferWriteTest(iters, 16); }
+BENCHMARK(InMemoryLogBufferWriteShort, iters) {
+  runInMemoryLogBufferWriteTest(iters, 16);
+}
 
-BENCHMARK_RELATIVE(AtomicLogBufferWriteShort, iters) { runAtomicLogBufferWriteTest(iters, 16); }
+BENCHMARK_RELATIVE(AtomicLogBufferWriteShort, iters) {
+  runAtomicLogBufferWriteTest(iters, 16);
+}
 
 BENCHMARK_RELATIVE(AtomicLogBufferWritePush2Short, iters) {
   runAtomicLogBufferWriteTestPush2(iters, 16);
@@ -105,25 +109,35 @@ BENCHMARK_RELATIVE(AtomicLogBufferWritePush2Short, iters) {
 
 BENCHMARK_DRAW_LINE();
 
-BENCHMARK(InMemoryLogBufferWriteMiddle, iters) { runInMemoryLogBufferWriteTest(iters, 128); }
+BENCHMARK(InMemoryLogBufferWriteMiddle, iters) {
+  runInMemoryLogBufferWriteTest(iters, 128);
+}
 
-BENCHMARK_RELATIVE(AtomicLogBufferWriteMiddle, iters) { runAtomicLogBufferWriteTest(iters, 128); }
+BENCHMARK_RELATIVE(AtomicLogBufferWriteMiddle, iters) {
+  runAtomicLogBufferWriteTest(iters, 128);
+}
 
 BENCHMARK_RELATIVE(AtomicLogBufferWritePush2Middle, iters) {
   runAtomicLogBufferWriteTestPush2(iters, 128);
 }
 BENCHMARK_DRAW_LINE();
 
-BENCHMARK(InMemoryLogBufferWriteLong, iters) { runInMemoryLogBufferWriteTest(iters, 1024); }
+BENCHMARK(InMemoryLogBufferWriteLong, iters) {
+  runInMemoryLogBufferWriteTest(iters, 1024);
+}
 
-BENCHMARK_RELATIVE(AtomicLogBufferWriteLong, iters) { runAtomicLogBufferWriteTest(iters, 1024); }
+BENCHMARK_RELATIVE(AtomicLogBufferWriteLong, iters) {
+  runAtomicLogBufferWriteTest(iters, 1024);
+}
 
 BENCHMARK_RELATIVE(AtomicLogBufferWritePush2Long, iters) {
   runAtomicLogBufferWriteTestPush2(iters, 1024);
 }
 BENCHMARK_DRAW_LINE();
 
-BENCHMARK(InMemoryLogBufferWriteVeryLong, iters) { runInMemoryLogBufferWriteTest(iters, 4096); }
+BENCHMARK(InMemoryLogBufferWriteVeryLong, iters) {
+  runInMemoryLogBufferWriteTest(iters, 4096);
+}
 
 BENCHMARK_RELATIVE(AtomicLogBufferWriteVeryLong, iters) {
   runAtomicLogBufferWriteTest(iters, 4096);
@@ -154,7 +168,9 @@ void runInMemoryLogBufferReadLatestN(int32_t total, int32_t N) {
       }
     }
   }
-  BENCHMARK_SUSPEND { inMemoryLogBuffer.reset(); }
+  BENCHMARK_SUSPEND {
+    inMemoryLogBuffer.reset();
+  }
 }
 
 void runAtomicLogBufferReadLatestN(int32_t total, int32_t N) {
@@ -175,31 +191,47 @@ void runAtomicLogBufferReadLatestN(int32_t total, int32_t N) {
       }
     }
   }
-  BENCHMARK_SUSPEND { logBuffer.reset(); }
+  BENCHMARK_SUSPEND {
+    logBuffer.reset();
+  }
 }
 
 #if TEST_READ
 constexpr int32_t totalLogs = 20000;
 
-BENCHMARK(InMemoryLogBufferReadLatest8) { runInMemoryLogBufferReadLatestN(totalLogs, 8); }
+BENCHMARK(InMemoryLogBufferReadLatest8) {
+  runInMemoryLogBufferReadLatestN(totalLogs, 8);
+}
 
-BENCHMARK_RELATIVE(AtomicLogBufferReadLatest8) { runAtomicLogBufferReadLatestN(totalLogs, 8); }
-
-BENCHMARK_DRAW_LINE();
-
-BENCHMARK(InMemoryLogBufferReadLatest32) { runInMemoryLogBufferReadLatestN(totalLogs, 32); }
-
-BENCHMARK_RELATIVE(AtomicLogBufferReadLatest32) { runAtomicLogBufferReadLatestN(totalLogs, 32); }
+BENCHMARK_RELATIVE(AtomicLogBufferReadLatest8) {
+  runAtomicLogBufferReadLatestN(totalLogs, 8);
+}
 
 BENCHMARK_DRAW_LINE();
 
-BENCHMARK(InMemoryLogBufferReadLatest128) { runInMemoryLogBufferReadLatestN(totalLogs, 128); }
+BENCHMARK(InMemoryLogBufferReadLatest32) {
+  runInMemoryLogBufferReadLatestN(totalLogs, 32);
+}
 
-BENCHMARK_RELATIVE(AtomicLogBufferReadLatest128) { runAtomicLogBufferReadLatestN(totalLogs, 128); }
+BENCHMARK_RELATIVE(AtomicLogBufferReadLatest32) {
+  runAtomicLogBufferReadLatestN(totalLogs, 32);
+}
 
 BENCHMARK_DRAW_LINE();
 
-BENCHMARK(InMemoryLogBufferReadLatest1024) { runInMemoryLogBufferReadLatestN(totalLogs, 1024); }
+BENCHMARK(InMemoryLogBufferReadLatest128) {
+  runInMemoryLogBufferReadLatestN(totalLogs, 128);
+}
+
+BENCHMARK_RELATIVE(AtomicLogBufferReadLatest128) {
+  runAtomicLogBufferReadLatestN(totalLogs, 128);
+}
+
+BENCHMARK_DRAW_LINE();
+
+BENCHMARK(InMemoryLogBufferReadLatest1024) {
+  runInMemoryLogBufferReadLatestN(totalLogs, 1024);
+}
 
 BENCHMARK_RELATIVE(AtomicLogBufferReadLatest1024) {
   runAtomicLogBufferReadLatestN(totalLogs, 1024);
@@ -207,7 +239,9 @@ BENCHMARK_RELATIVE(AtomicLogBufferReadLatest1024) {
 
 BENCHMARK_DRAW_LINE();
 
-BENCHMARK(InMemoryLogBufferReadLatest6000) { runInMemoryLogBufferReadLatestN(totalLogs, 6000); }
+BENCHMARK(InMemoryLogBufferReadLatest6000) {
+  runInMemoryLogBufferReadLatestN(totalLogs, 6000);
+}
 
 BENCHMARK_RELATIVE(AtomicLogBufferReadLatest6000) {
   runAtomicLogBufferReadLatestN(totalLogs, 6000);
@@ -304,7 +338,9 @@ BENCHMARK(InMemoryListBufferRWMixedReadTest) {
     prepareData(logBuffer, 1024, 1000);
   }
   runRWMixedTestRead(logBuffer);
-  BENCHMARK_SUSPEND { logBuffer.reset(); }
+  BENCHMARK_SUSPEND {
+    logBuffer.reset();
+  }
 }
 
 BENCHMARK_RELATIVE(AtomicLogBufferRWMixedReadTest) {
@@ -314,7 +350,9 @@ BENCHMARK_RELATIVE(AtomicLogBufferRWMixedReadTest) {
     prepareData(logBuffer, 1024, 1000);
   }
   runRWMixedTestRead(logBuffer);
-  BENCHMARK_SUSPEND { logBuffer.reset(); }
+  BENCHMARK_SUSPEND {
+    logBuffer.reset();
+  }
 }
 
 BENCHMARK_DRAW_LINE();
@@ -351,7 +389,9 @@ BENCHMARK(InMemoryListBufferRWMixedWriteTest) {
     prepareData(logBuffer, 1024, 1000 * 10);
   }
   runRWMixedTestWrite(logBuffer);
-  BENCHMARK_SUSPEND { logBuffer.reset(); }
+  BENCHMARK_SUSPEND {
+    logBuffer.reset();
+  }
 }
 
 BENCHMARK_RELATIVE(AtomicLogBufferRWMixedWriteTest) {
@@ -362,7 +402,9 @@ BENCHMARK_RELATIVE(AtomicLogBufferRWMixedWriteTest) {
     prepareData(logBuffer, 1024, 1000 * 10);
   }
   runRWMixedTestWrite(logBuffer);
-  BENCHMARK_SUSPEND { logBuffer.reset(); }
+  BENCHMARK_SUSPEND {
+    logBuffer.reset();
+  }
 }
 
 #endif

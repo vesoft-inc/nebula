@@ -305,7 +305,9 @@ void GetPropProcessor::buildEdgeColName(const std::vector<cpp2::EdgeProp>& edgeP
   }
 }
 
-void GetPropProcessor::onProcessFinished() { resp_.props_ref() = std::move(resultDataSet_); }
+void GetPropProcessor::onProcessFinished() {
+  resp_.props_ref() = std::move(resultDataSet_);
+}
 
 }  // namespace storage
 }  // namespace nebula

@@ -41,7 +41,9 @@ class BalancePlan {
         tasks_(plan.tasks_),
         finishedTaskNum_(plan.finishedTaskNum_) {}
 
-  void addTask(BalanceTask task) { tasks_.emplace_back(std::move(task)); }
+  void addTask(BalanceTask task) {
+    tasks_.emplace_back(std::move(task));
+  }
 
   void invoke();
 
@@ -54,17 +56,27 @@ class BalancePlan {
    * */
   void rollback() {}
 
-  meta::cpp2::JobStatus status() { return jobDescription_.getStatus(); }
+  meta::cpp2::JobStatus status() {
+    return jobDescription_.getStatus();
+  }
 
-  void setStatus(meta::cpp2::JobStatus status) { jobDescription_.setStatus(status); }
+  void setStatus(meta::cpp2::JobStatus status) {
+    jobDescription_.setStatus(status);
+  }
 
   nebula::cpp2::ErrorCode saveInStore(bool onlyPlan = false);
 
-  JobID id() const { return jobDescription_.getJobId(); }
+  JobID id() const {
+    return jobDescription_.getJobId();
+  }
 
-  const std::vector<BalanceTask>& tasks() const { return tasks_; }
+  const std::vector<BalanceTask>& tasks() const {
+    return tasks_;
+  }
 
-  int32_t taskSize() const { return tasks_.size(); }
+  int32_t taskSize() const {
+    return tasks_.size();
+  }
 
   void stop() {
     std::lock_guard<std::mutex> lg(lock_);

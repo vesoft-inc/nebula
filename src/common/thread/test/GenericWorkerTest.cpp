@@ -77,7 +77,9 @@ TEST(GenericWorker, addTask) {
   // member function as task
   {
     struct X {
-      std::string itos(size_t i) { return std::to_string(i); }
+      std::string itos(size_t i) {
+        return std::to_string(i);
+      }
     } x;
     ASSERT_EQ("918", worker.addTask(&X::itos, &x, 918).get());
     ASSERT_EQ("918", worker.addTask(&X::itos, std::make_shared<X>(), 918).get());

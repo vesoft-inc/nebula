@@ -20,25 +20,45 @@ ExtractPropExprVisitor::ExtractPropExprVisitor(
       inputPropCols_(inputPropCols),
       propExprColMap_(propExprColMap) {}
 
-void ExtractPropExprVisitor::visit(ConstantExpression* expr) { UNUSED(expr); }
+void ExtractPropExprVisitor::visit(ConstantExpression* expr) {
+  UNUSED(expr);
+}
 
-void ExtractPropExprVisitor::visit(VertexExpression* expr) { UNUSED(expr); }
+void ExtractPropExprVisitor::visit(VertexExpression* expr) {
+  UNUSED(expr);
+}
 
-void ExtractPropExprVisitor::visit(EdgeExpression* expr) { UNUSED(expr); }
+void ExtractPropExprVisitor::visit(EdgeExpression* expr) {
+  UNUSED(expr);
+}
 
-void ExtractPropExprVisitor::visit(VariableExpression* expr) { UNUSED(expr); }
+void ExtractPropExprVisitor::visit(VariableExpression* expr) {
+  UNUSED(expr);
+}
 
-void ExtractPropExprVisitor::visit(SubscriptExpression* expr) { reportError(expr); }
+void ExtractPropExprVisitor::visit(SubscriptExpression* expr) {
+  reportError(expr);
+}
 
-void ExtractPropExprVisitor::visit(LabelExpression* expr) { reportError(expr); }
+void ExtractPropExprVisitor::visit(LabelExpression* expr) {
+  reportError(expr);
+}
 
-void ExtractPropExprVisitor::visit(LabelAttributeExpression* expr) { reportError(expr); }
+void ExtractPropExprVisitor::visit(LabelAttributeExpression* expr) {
+  reportError(expr);
+}
 
-void ExtractPropExprVisitor::visit(VersionedVariableExpression* expr) { reportError(expr); }
+void ExtractPropExprVisitor::visit(VersionedVariableExpression* expr) {
+  reportError(expr);
+}
 
-void ExtractPropExprVisitor::visit(UUIDExpression* expr) { reportError(expr); }
+void ExtractPropExprVisitor::visit(UUIDExpression* expr) {
+  reportError(expr);
+}
 
-void ExtractPropExprVisitor::visit(ColumnExpression* expr) { reportError(expr); }
+void ExtractPropExprVisitor::visit(ColumnExpression* expr) {
+  reportError(expr);
+}
 
 void ExtractPropExprVisitor::visit(UnaryExpression* expr) {
   switch (expr->kind()) {
@@ -87,9 +107,13 @@ void ExtractPropExprVisitor::visitPropertyExpr(PropertyExpression* expr) {
   }
 }
 
-void ExtractPropExprVisitor::visit(VariablePropertyExpression* expr) { visitPropertyExpr(expr); }
+void ExtractPropExprVisitor::visit(VariablePropertyExpression* expr) {
+  visitPropertyExpr(expr);
+}
 
-void ExtractPropExprVisitor::visit(InputPropertyExpression* expr) { visitPropertyExpr(expr); }
+void ExtractPropExprVisitor::visit(InputPropertyExpression* expr) {
+  visitPropertyExpr(expr);
+}
 
 void ExtractPropExprVisitor::visitVertexEdgePropExpr(PropertyExpression* expr) {
   PropertyExpression* propExpr = nullptr;
@@ -135,21 +159,33 @@ void ExtractPropExprVisitor::visitVertexEdgePropExpr(PropertyExpression* expr) {
   }
 }
 
-void ExtractPropExprVisitor::visit(TagPropertyExpression* expr) { visitVertexEdgePropExpr(expr); }
+void ExtractPropExprVisitor::visit(TagPropertyExpression* expr) {
+  visitVertexEdgePropExpr(expr);
+}
 
 void ExtractPropExprVisitor::visit(SourcePropertyExpression* expr) {
   visitVertexEdgePropExpr(expr);
 }
 
-void ExtractPropExprVisitor::visit(EdgePropertyExpression* expr) { visitVertexEdgePropExpr(expr); }
+void ExtractPropExprVisitor::visit(EdgePropertyExpression* expr) {
+  visitVertexEdgePropExpr(expr);
+}
 
-void ExtractPropExprVisitor::visit(EdgeSrcIdExpression* expr) { visitVertexEdgePropExpr(expr); }
+void ExtractPropExprVisitor::visit(EdgeSrcIdExpression* expr) {
+  visitVertexEdgePropExpr(expr);
+}
 
-void ExtractPropExprVisitor::visit(EdgeTypeExpression* expr) { visitVertexEdgePropExpr(expr); }
+void ExtractPropExprVisitor::visit(EdgeTypeExpression* expr) {
+  visitVertexEdgePropExpr(expr);
+}
 
-void ExtractPropExprVisitor::visit(EdgeRankExpression* expr) { visitVertexEdgePropExpr(expr); }
+void ExtractPropExprVisitor::visit(EdgeRankExpression* expr) {
+  visitVertexEdgePropExpr(expr);
+}
 
-void ExtractPropExprVisitor::visit(EdgeDstIdExpression* expr) { visitVertexEdgePropExpr(expr); }
+void ExtractPropExprVisitor::visit(EdgeDstIdExpression* expr) {
+  visitVertexEdgePropExpr(expr);
+}
 
 void ExtractPropExprVisitor::visit(DestPropertyExpression* expr) {
   auto found = propExprColMap_.find(expr->toString());

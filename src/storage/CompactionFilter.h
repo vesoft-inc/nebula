@@ -186,7 +186,9 @@ class StorageCompactionFilterFactory final : public kvstore::KVCompactionFilterF
     return std::make_unique<StorageCompactionFilter>(schemaMan_, indexMan_, vIdLen_);
   }
 
-  const char* Name() const override { return "StorageCompactionFilterFactory"; }
+  const char* Name() const override {
+    return "StorageCompactionFilterFactory";
+  }
 
  private:
   meta::SchemaManager* schemaMan_ = nullptr;

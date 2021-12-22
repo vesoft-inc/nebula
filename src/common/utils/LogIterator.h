@@ -18,7 +18,9 @@ class LogIterator {
   virtual LogIterator& operator++() = 0;
 
   virtual bool valid() const = 0;
-  virtual operator bool() const { return valid(); }
+  virtual operator bool() const {
+    return valid();
+  }
 
   virtual LogID logId() const = 0;
   virtual TermID logTerm() const = 0;

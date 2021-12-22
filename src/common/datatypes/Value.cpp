@@ -269,99 +269,173 @@ Value::Value(const Value& rhs) : type_(Value::Type::__EMPTY__) {
   }
 }
 
-Value::Value(const NullType& v) { setN(v); }
+Value::Value(const NullType& v) {
+  setN(v);
+}
 
-Value::Value(NullType&& v) { setN(std::move(v)); }
+Value::Value(NullType&& v) {
+  setN(std::move(v));
+}
 
-Value::Value(const bool& v) { setB(v); }
+Value::Value(const bool& v) {
+  setB(v);
+}
 
-Value::Value(bool&& v) { setB(std::move(v)); }
+Value::Value(bool&& v) {
+  setB(std::move(v));
+}
 
-Value::Value(const int8_t& v) { setI(v); }
+Value::Value(const int8_t& v) {
+  setI(v);
+}
 
-Value::Value(int8_t&& v) { setI(std::move(v)); }
+Value::Value(int8_t&& v) {
+  setI(std::move(v));
+}
 
-Value::Value(const int16_t& v) { setI(v); }
+Value::Value(const int16_t& v) {
+  setI(v);
+}
 
-Value::Value(int16_t&& v) { setI(std::move(v)); }
+Value::Value(int16_t&& v) {
+  setI(std::move(v));
+}
 
-Value::Value(const int32_t& v) { setI(v); }
+Value::Value(const int32_t& v) {
+  setI(v);
+}
 
-Value::Value(int32_t&& v) { setI(std::move(v)); }
+Value::Value(int32_t&& v) {
+  setI(std::move(v));
+}
 
-Value::Value(const int64_t& v) { setI(v); }
+Value::Value(const int64_t& v) {
+  setI(v);
+}
 
-Value::Value(int64_t&& v) { setI(std::move(v)); }
+Value::Value(int64_t&& v) {
+  setI(std::move(v));
+}
 
-Value::Value(const double& v) { setF(v); }
+Value::Value(const double& v) {
+  setF(v);
+}
 
-Value::Value(double&& v) { setF(std::move(v)); }
+Value::Value(double&& v) {
+  setF(std::move(v));
+}
 
-Value::Value(const std::string& v) { setS(v); }
+Value::Value(const std::string& v) {
+  setS(v);
+}
 
-Value::Value(std::string&& v) { setS(std::move(v)); }
+Value::Value(std::string&& v) {
+  setS(std::move(v));
+}
 
-Value::Value(const char* v) { setS(v); }
+Value::Value(const char* v) {
+  setS(v);
+}
 
-Value::Value(const Date& v) { setD(v); }
+Value::Value(const Date& v) {
+  setD(v);
+}
 
-Value::Value(Date&& v) { setD(std::move(v)); }
+Value::Value(Date&& v) {
+  setD(std::move(v));
+}
 
-Value::Value(const Time& v) { setT(v); }
+Value::Value(const Time& v) {
+  setT(v);
+}
 
-Value::Value(Time&& v) { setT(std::move(v)); }
+Value::Value(Time&& v) {
+  setT(std::move(v));
+}
 
-Value::Value(const DateTime& v) { setDT(v); }
+Value::Value(const DateTime& v) {
+  setDT(v);
+}
 
-Value::Value(DateTime&& v) { setDT(std::move(v)); }
+Value::Value(DateTime&& v) {
+  setDT(std::move(v));
+}
 
-Value::Value(const Vertex& v) { setV(v); }
+Value::Value(const Vertex& v) {
+  setV(v);
+}
 
-Value::Value(Vertex&& v) { setV(std::move(v)); }
+Value::Value(Vertex&& v) {
+  setV(std::move(v));
+}
 
-Value::Value(const Edge& v) { setE(v); }
+Value::Value(const Edge& v) {
+  setE(v);
+}
 
-Value::Value(Edge&& v) { setE(std::move(v)); }
+Value::Value(Edge&& v) {
+  setE(std::move(v));
+}
 
-Value::Value(const Path& v) { setP(v); }
+Value::Value(const Path& v) {
+  setP(v);
+}
 
-Value::Value(Path&& v) { setP(std::move(v)); }
+Value::Value(Path&& v) {
+  setP(std::move(v));
+}
 
 Value::Value(const List& v) {
   auto c = std::make_unique<List>(v);
   setL(std::move(c));
 }
 
-Value::Value(List&& v) { setL(std::make_unique<List>(std::move(v))); }
+Value::Value(List&& v) {
+  setL(std::make_unique<List>(std::move(v)));
+}
 
 Value::Value(const Map& v) {
   auto c = std::make_unique<Map>(v);
   setM(std::move(c));
 }
 
-Value::Value(Map&& v) { setM(std::make_unique<Map>(std::move(v))); }
+Value::Value(Map&& v) {
+  setM(std::make_unique<Map>(std::move(v)));
+}
 
 Value::Value(const Set& v) {
   auto c = std::make_unique<Set>(v);
   setU(std::move(c));
 }
 
-Value::Value(Set&& v) { setU(std::make_unique<Set>(std::move(v))); }
+Value::Value(Set&& v) {
+  setU(std::make_unique<Set>(std::move(v)));
+}
 
 Value::Value(const DataSet& v) {
   auto c = std::make_unique<DataSet>(v);
   setG(std::move(c));
 }
 
-Value::Value(DataSet&& v) { setG(std::make_unique<DataSet>(std::move(v))); }
+Value::Value(DataSet&& v) {
+  setG(std::make_unique<DataSet>(std::move(v)));
+}
 
-Value::Value(const Geography& v) { setGG(std::make_unique<Geography>(v)); }
+Value::Value(const Geography& v) {
+  setGG(std::make_unique<Geography>(v));
+}
 
-Value::Value(Geography&& v) { setGG(std::make_unique<Geography>(std::move(v))); }
+Value::Value(Geography&& v) {
+  setGG(std::make_unique<Geography>(std::move(v)));
+}
 
-Value::Value(const Duration& v) { setDU(std::make_unique<Duration>(v)); }
+Value::Value(const Duration& v) {
+  setDU(std::make_unique<Duration>(v));
+}
 
-Value::Value(Duration&& v) { setDU(std::make_unique<Duration>(std::move(v))); }
+Value::Value(Duration&& v) {
+  setDU(std::make_unique<Duration>(std::move(v)));
+}
 
 const std::string& Value::typeName() const {
   static const std::unordered_map<Type, std::string> typeNames = {
@@ -2865,13 +2939,21 @@ bool operator==(const Value& lhs, const Value& rhs) {
   return false;
 }
 
-bool operator!=(const Value& lhs, const Value& rhs) { return !(lhs == rhs); }
+bool operator!=(const Value& lhs, const Value& rhs) {
+  return !(lhs == rhs);
+}
 
-bool operator>(const Value& lhs, const Value& rhs) { return rhs < lhs; }
+bool operator>(const Value& lhs, const Value& rhs) {
+  return rhs < lhs;
+}
 
-bool operator<=(const Value& lhs, const Value& rhs) { return !(rhs < lhs); }
+bool operator<=(const Value& lhs, const Value& rhs) {
+  return !(rhs < lhs);
+}
 
-bool operator>=(const Value& lhs, const Value& rhs) { return !(lhs < rhs); }
+bool operator>=(const Value& lhs, const Value& rhs) {
+  return !(lhs < rhs);
+}
 
 Value operator&&(const Value& lhs, const Value& rhs) {
   if (lhs.isNull()) {

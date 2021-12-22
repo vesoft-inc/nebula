@@ -50,7 +50,9 @@ class DropUserProcessor : public BaseProcessor<cpp2::ExecResp> {
 
 class GrantProcessor : public BaseProcessor<cpp2::ExecResp> {
  public:
-  static GrantProcessor* instance(kvstore::KVStore* kvstore) { return new GrantProcessor(kvstore); }
+  static GrantProcessor* instance(kvstore::KVStore* kvstore) {
+    return new GrantProcessor(kvstore);
+  }
 
   void process(const cpp2::GrantRoleReq& req);
 

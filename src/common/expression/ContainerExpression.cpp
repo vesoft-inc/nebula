@@ -79,7 +79,9 @@ void ListExpression::resetFrom(Decoder &decoder) {
   }
 }
 
-void ListExpression::accept(ExprVisitor *visitor) { visitor->visit(this); }
+void ListExpression::accept(ExprVisitor *visitor) {
+  visitor->visit(this);
+}
 
 // TODO(jie): toString of set should add `SET` prefix
 std::string SetExpression::toString() const {
@@ -148,7 +150,9 @@ void SetExpression::resetFrom(Decoder &decoder) {
   }
 }
 
-void SetExpression::accept(ExprVisitor *visitor) { visitor->visit(this); }
+void SetExpression::accept(ExprVisitor *visitor) {
+  visitor->visit(this);
+}
 
 // TODO(jie): toString of map should add `MAP` prefix
 std::string MapExpression::toString() const {
@@ -225,6 +229,8 @@ void MapExpression::resetFrom(Decoder &decoder) {
   }
 }
 
-void MapExpression::accept(ExprVisitor *visitor) { visitor->visit(this); }
+void MapExpression::accept(ExprVisitor *visitor) {
+  visitor->visit(this);
+}
 
 }  // namespace nebula

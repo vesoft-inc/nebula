@@ -32,7 +32,9 @@ class KVCompactionFilter final : public rocksdb::CompactionFilter {
                              folly::StringPiece(val.data(), val.size()));
   }
 
-  const char* Name() const override { return "KVCompactionFilter"; }
+  const char* Name() const override {
+    return "KVCompactionFilter";
+  }
 
  private:
   GraphSpaceID spaceId_;
@@ -64,7 +66,9 @@ class KVCompactionFilterFactory : public rocksdb::CompactionFilterFactory {
     }
   }
 
-  const char* Name() const override { return "KVCompactionFilterFactory"; }
+  const char* Name() const override {
+    return "KVCompactionFilterFactory";
+  }
 
   virtual std::unique_ptr<KVFilter> createKVFilter() = 0;
 

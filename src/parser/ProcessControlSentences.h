@@ -16,9 +16,13 @@ class ReturnSentence final : public Sentence {
     condition_.reset(condition);
   }
 
-  std::string* condition() const { return condition_.get(); }
+  std::string* condition() const {
+    return condition_.get();
+  }
 
-  std::string* var() const { return var_.get(); }
+  std::string* var() const {
+    return var_.get();
+  }
 
   std::string toString() const override;
 

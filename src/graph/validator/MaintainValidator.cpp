@@ -188,7 +188,9 @@ Status CreateEdgeValidator::validateImpl() {
   return Status::OK();
 }
 
-Status DescTagValidator::validateImpl() { return Status::OK(); }
+Status DescTagValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status DescTagValidator::toPlan() {
   auto sentence = static_cast<DescribeTagSentence *>(sentence_);
@@ -199,7 +201,9 @@ Status DescTagValidator::toPlan() {
   return Status::OK();
 }
 
-Status DescEdgeValidator::validateImpl() { return Status::OK(); }
+Status DescEdgeValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status DescEdgeValidator::toPlan() {
   auto sentence = static_cast<DescribeEdgeSentence *>(sentence_);
@@ -234,7 +238,9 @@ Status AlterEdgeValidator::validateImpl() {
   return Status::OK();
 }
 
-Status ShowTagsValidator::validateImpl() { return Status::OK(); }
+Status ShowTagsValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status ShowTagsValidator::toPlan() {
   auto *doNode = ShowTags::make(qctx_, nullptr);
@@ -243,7 +249,9 @@ Status ShowTagsValidator::toPlan() {
   return Status::OK();
 }
 
-Status ShowEdgesValidator::validateImpl() { return Status::OK(); }
+Status ShowEdgesValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status ShowEdgesValidator::toPlan() {
   auto *doNode = ShowEdges::make(qctx_, nullptr);
@@ -252,7 +260,9 @@ Status ShowEdgesValidator::toPlan() {
   return Status::OK();
 }
 
-Status ShowCreateTagValidator::validateImpl() { return Status::OK(); }
+Status ShowCreateTagValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status ShowCreateTagValidator::toPlan() {
   auto sentence = static_cast<ShowCreateTagSentence *>(sentence_);
@@ -262,7 +272,9 @@ Status ShowCreateTagValidator::toPlan() {
   return Status::OK();
 }
 
-Status ShowCreateEdgeValidator::validateImpl() { return Status::OK(); }
+Status ShowCreateEdgeValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status ShowCreateEdgeValidator::toPlan() {
   auto sentence = static_cast<ShowCreateEdgeSentence *>(sentence_);
@@ -272,7 +284,9 @@ Status ShowCreateEdgeValidator::toPlan() {
   return Status::OK();
 }
 
-Status DropTagValidator::validateImpl() { return Status::OK(); }
+Status DropTagValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status DropTagValidator::toPlan() {
   auto sentence = static_cast<DropTagSentence *>(sentence_);
@@ -282,7 +296,9 @@ Status DropTagValidator::toPlan() {
   return Status::OK();
 }
 
-Status DropEdgeValidator::validateImpl() { return Status::OK(); }
+Status DropEdgeValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status DropEdgeValidator::toPlan() {
   auto sentence = static_cast<DropEdgeSentence *>(sentence_);
@@ -459,7 +475,9 @@ Status ShowEdgeIndexesValidator::toPlan() {
   return Status::OK();
 }
 
-Status ShowTagIndexStatusValidator::validateImpl() { return Status::OK(); }
+Status ShowTagIndexStatusValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status ShowTagIndexStatusValidator::toPlan() {
   auto *doNode = ShowTagIndexStatus::make(qctx_, nullptr);
@@ -468,7 +486,9 @@ Status ShowTagIndexStatusValidator::toPlan() {
   return Status::OK();
 }
 
-Status ShowEdgeIndexStatusValidator::validateImpl() { return Status::OK(); }
+Status ShowEdgeIndexStatusValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status ShowEdgeIndexStatusValidator::toPlan() {
   auto *doNode = ShowEdgeIndexStatus::make(qctx_, nullptr);
@@ -477,7 +497,9 @@ Status ShowEdgeIndexStatusValidator::toPlan() {
   return Status::OK();
 }
 
-Status MergeZoneValidator::validateImpl() { return Status::OK(); }
+Status MergeZoneValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status MergeZoneValidator::toPlan() {
   auto sentence = static_cast<MergeZoneSentence *>(sentence_);
@@ -488,7 +510,9 @@ Status MergeZoneValidator::toPlan() {
   return Status::OK();
 }
 
-Status RenameZoneValidator::validateImpl() { return Status::OK(); }
+Status RenameZoneValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status RenameZoneValidator::toPlan() {
   auto sentence = static_cast<RenameZoneSentence *>(sentence_);
@@ -499,7 +523,9 @@ Status RenameZoneValidator::toPlan() {
   return Status::OK();
 }
 
-Status DropZoneValidator::validateImpl() { return Status::OK(); }
+Status DropZoneValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status DropZoneValidator::toPlan() {
   auto sentence = static_cast<DropZoneSentence *>(sentence_);
@@ -509,7 +535,9 @@ Status DropZoneValidator::toPlan() {
   return Status::OK();
 }
 
-Status SplitZoneValidator::validateImpl() { return Status::OK(); }
+Status SplitZoneValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status SplitZoneValidator::toPlan() {
   auto sentence = static_cast<SplitZoneSentence *>(sentence_);
@@ -520,7 +548,9 @@ Status SplitZoneValidator::toPlan() {
   return Status::OK();
 }
 
-Status DescribeZoneValidator::validateImpl() { return Status::OK(); }
+Status DescribeZoneValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status DescribeZoneValidator::toPlan() {
   auto sentence = static_cast<DescribeZoneSentence *>(sentence_);
@@ -530,7 +560,9 @@ Status DescribeZoneValidator::toPlan() {
   return Status::OK();
 }
 
-Status ListZonesValidator::validateImpl() { return Status::OK(); }
+Status ListZonesValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status ListZonesValidator::toPlan() {
   auto *doNode = ListZones::make(qctx_, nullptr);
@@ -539,7 +571,9 @@ Status ListZonesValidator::toPlan() {
   return Status::OK();
 }
 
-Status AddHostsIntoZoneValidator::validateImpl() { return Status::OK(); }
+Status AddHostsIntoZoneValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status AddHostsIntoZoneValidator::toPlan() {
   auto sentence = static_cast<AddHostsIntoZoneSentence *>(sentence_);
@@ -602,7 +636,9 @@ Status DropFTIndexValidator::toPlan() {
   return Status::OK();
 }
 
-Status ShowFTIndexesValidator::validateImpl() { return Status::OK(); }
+Status ShowFTIndexesValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status ShowFTIndexesValidator::toPlan() {
   auto *doNode = ShowFTIndexes::make(qctx_, nullptr);

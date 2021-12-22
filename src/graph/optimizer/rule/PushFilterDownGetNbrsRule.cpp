@@ -24,7 +24,9 @@ namespace opt {
 std::unique_ptr<OptRule> PushFilterDownGetNbrsRule::kInstance =
     std::unique_ptr<PushFilterDownGetNbrsRule>(new PushFilterDownGetNbrsRule());
 
-PushFilterDownGetNbrsRule::PushFilterDownGetNbrsRule() { RuleSet::QueryRules().addRule(this); }
+PushFilterDownGetNbrsRule::PushFilterDownGetNbrsRule() {
+  RuleSet::QueryRules().addRule(this);
+}
 
 const Pattern &PushFilterDownGetNbrsRule::pattern() const {
   static Pattern pattern =
@@ -99,7 +101,9 @@ StatusOr<OptRule::TransformResult> PushFilterDownGetNbrsRule::transform(
   return result;
 }
 
-std::string PushFilterDownGetNbrsRule::toString() const { return "PushFilterDownGetNbrsRule"; }
+std::string PushFilterDownGetNbrsRule::toString() const {
+  return "PushFilterDownGetNbrsRule";
+}
 
 }  // namespace opt
 }  // namespace nebula

@@ -51,7 +51,9 @@ struct Date {
     day = 1;
   }
 
-  void __clear() { clear(); }
+  void __clear() {
+    clear();
+  }
 
   void reset(int16_t y, int8_t m, int8_t d) {
     year = y;
@@ -83,7 +85,9 @@ struct Date {
   void subDuration(const Duration& duration);
 
   std::string toString() const;
-  folly::dynamic toJson() const { return toString(); }
+  folly::dynamic toJson() const {
+    return toString();
+  }
 
   // Return the number of days since -32768/1/1
   int64_t toInt() const;
@@ -124,7 +128,9 @@ struct Time {
     microsec = 0;
   }
 
-  void __clear() { clear(); }
+  void __clear() {
+    clear();
+  }
 
   bool operator==(const Time& rhs) const {
     return hour == rhs.hour && minute == rhs.minute && sec == rhs.sec && microsec == rhs.microsec;
@@ -151,7 +157,9 @@ struct Time {
 
   std::string toString() const;
   // 'Z' representing UTC timezone
-  folly::dynamic toJson() const { return toString() + "Z"; }
+  folly::dynamic toJson() const {
+    return toString() + "Z";
+  }
 };
 
 inline std::ostream& operator<<(std::ostream& os, const Time& d) {
@@ -221,9 +229,13 @@ struct DateTime {
     microsec = time.microsec;
   }
 
-  Date date() const { return Date(year, month, day); }
+  Date date() const {
+    return Date(year, month, day);
+  }
 
-  Time time() const { return Time(hour, minute, sec, microsec); }
+  Time time() const {
+    return Time(hour, minute, sec, microsec);
+  }
 
   void clear() {
     year = 0;
@@ -235,7 +247,9 @@ struct DateTime {
     microsec = 0;
   }
 
-  void __clear() { clear(); }
+  void __clear() {
+    clear();
+  }
 
   bool operator==(const DateTime& rhs) const {
     return year == rhs.year && month == rhs.month && day == rhs.day && hour == rhs.hour &&
@@ -271,7 +285,9 @@ struct DateTime {
 
   std::string toString() const;
   // 'Z' representing UTC timezone
-  folly::dynamic toJson() const { return toString() + "Z"; }
+  folly::dynamic toJson() const {
+    return toString() + "Z";
+  }
 };
 
 inline std::ostream& operator<<(std::ostream& os, const DateTime& d) {

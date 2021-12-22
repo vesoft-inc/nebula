@@ -41,11 +41,17 @@ const std::string kJob = "__job_mgr_";  // NOLINT
  * */
 const std::string kJobArchive = "__job_mgr_archive_";  // NOLINT
 
-const std::string& JobUtil::jobPrefix() { return kJob; }
+const std::string& JobUtil::jobPrefix() {
+  return kJob;
+}
 
-const std::string& JobUtil::currJobKey() { return kCurrJob; }
+const std::string& JobUtil::currJobKey() {
+  return kCurrJob;
+}
 
-const std::string& JobUtil::archivePrefix() { return kJobArchive; }
+const std::string& JobUtil::archivePrefix() {
+  return kJobArchive;
+}
 
 std::string JobUtil::parseString(folly::StringPiece rawVal, size_t offset) {
   if (rawVal.size() < offset + sizeof(size_t)) {

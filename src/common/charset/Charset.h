@@ -59,10 +59,14 @@ class CharsetInfo final {
   /**
    * Get all supported charsets description information
    */
-  std::unordered_map<std::string, CharsetDesc> getCharsetDesc() { return charsetDesc_; }
+  std::unordered_map<std::string, CharsetDesc> getCharsetDesc() {
+    return charsetDesc_;
+  }
 
  private:
-  CharsetInfo() { charsetDesc_["utf8"] = {"utf8", "utf8_bin", {"utf8_bin"}, "UTF-8 Unicode", 4}; }
+  CharsetInfo() {
+    charsetDesc_["utf8"] = {"utf8", "utf8_bin", {"utf8_bin"}, "UTF-8 Unicode", 4};
+  }
 
   /**
    * List of supported charsets

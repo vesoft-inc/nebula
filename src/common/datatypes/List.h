@@ -19,12 +19,18 @@ struct List {
   List() = default;
   List(const List&) = default;
   List(List&&) noexcept = default;
-  explicit List(std::vector<Value>&& vals) { values = std::move(vals); }
+  explicit List(std::vector<Value>&& vals) {
+    values = std::move(vals);
+  }
   explicit List(const std::vector<Value>& l) : values(l) {}
 
-  bool empty() const { return values.empty(); }
+  bool empty() const {
+    return values.empty();
+  }
 
-  void reserve(std::size_t n) { values.reserve(n); }
+  void reserve(std::size_t n) {
+    values.reserve(n);
+  }
 
   template <typename T,
             typename = typename std::enable_if<std::is_convertible<T, Value>::value>::type>
@@ -32,9 +38,13 @@ struct List {
     values.emplace_back(std::forward<T>(v));
   }
 
-  void clear() { values.clear(); }
+  void clear() {
+    values.clear();
+  }
 
-  void __clear() { clear(); }
+  void __clear() {
+    clear();
+  }
 
   List& operator=(const List& rhs) {
     if (this == &rhs) {
@@ -51,17 +61,25 @@ struct List {
     return *this;
   }
 
-  bool operator==(const List& rhs) const { return values == rhs.values; }
+  bool operator==(const List& rhs) const {
+    return values == rhs.values;
+  }
 
-  bool operator<(const List& rhs) const { return values < rhs.values; }
+  bool operator<(const List& rhs) const {
+    return values < rhs.values;
+  }
 
-  const Value& operator[](size_t i) const { return values[i]; }
+  const Value& operator[](size_t i) const {
+    return values[i];
+  }
 
   bool contains(const Value& value) const {
     return std::find(values.begin(), values.end(), value) != values.end();
   }
 
-  size_t size() const { return values.size(); }
+  size_t size() const {
+    return values.size();
+  }
 
   std::string toString() const;
   folly::dynamic toJson() const;
@@ -69,7 +87,9 @@ struct List {
   folly::dynamic getMetaData() const;
 };
 
-inline std::ostream& operator<<(std::ostream& os, const List& l) { return os << l.toString(); }
+inline std::ostream& operator<<(std::ostream& os, const List& l) {
+  return os << l.toString();
+}
 
 }  // namespace nebula
 

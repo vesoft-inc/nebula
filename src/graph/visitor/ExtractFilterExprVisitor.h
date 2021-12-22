@@ -16,9 +16,13 @@ class ExtractFilterExprVisitor final : public ExprVisitorImpl {
  public:
   explicit ExtractFilterExprVisitor(ObjectPool *ObjPool) : pool_(ObjPool) {}
 
-  bool ok() const override { return canBePushed_; }
+  bool ok() const override {
+    return canBePushed_;
+  }
 
-  Expression *remainedExpr() { return remainedExpr_; }
+  Expression *remainedExpr() {
+    return remainedExpr_;
+  }
 
   static ExtractFilterExprVisitor makePushGetNeighbors(ObjectPool *pool) {
     ExtractFilterExprVisitor visitor(pool);

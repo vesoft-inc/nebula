@@ -20,7 +20,9 @@ class StatsTask : public AdminTask {
   using AdminTask::finish;
   StatsTask(StorageEnv* env, TaskContext&& ctx) : AdminTask(env, std::move(ctx)) {}
 
-  ~StatsTask() { LOG(INFO) << "Release Stats Task"; }
+  ~StatsTask() {
+    LOG(INFO) << "Release Stats Task";
+  }
 
   ErrorOr<nebula::cpp2::ErrorCode, std::vector<AdminSubTask>> genSubTasks() override;
 

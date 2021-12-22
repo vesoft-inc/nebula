@@ -161,7 +161,9 @@ void TestShard::onElected(TermID term) {
   }
 }
 
-void TestShard::onLeaderReady(TermID term) { UNUSED(term); }
+void TestShard::onLeaderReady(TermID term) {
+  UNUSED(term);
+}
 
 nebula::cpp2::ErrorCode TestShard::commitLogs(std::unique_ptr<LogIterator> iter, bool) {
   LogID firstId = -1;
@@ -240,7 +242,9 @@ void TestShard::cleanup() {
   lastCommittedLogId_ = 0;
 }
 
-size_t TestShard::getNumLogs() const { return data_.size(); }
+size_t TestShard::getNumLogs() const {
+  return data_.size();
+}
 
 bool TestShard::getLogMsg(size_t index, folly::StringPiece& msg) {
   folly::RWSpinLock::ReadHolder rh(&lock_);

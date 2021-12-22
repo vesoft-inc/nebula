@@ -56,9 +56,13 @@ class MemoryLockGuard {
     }
   }
 
-  bool isLocked() const noexcept { return locked_; }
+  bool isLocked() const noexcept {
+    return locked_;
+  }
 
-  operator bool() const noexcept { return isLocked(); }
+  operator bool() const noexcept {
+    return isLocked();
+  }
 
   // return the first conflict key, if any
   // this has to be called iff locked_ is false;
@@ -70,9 +74,13 @@ class MemoryLockGuard {
   // this will manual set the lock to unlocked state
   // which mean will not release all locks automatically
   // please make sure you really know the side effect
-  void forceLock() { locked_ = true; }
+  void forceLock() {
+    locked_ = true;
+  }
 
-  void forceUnlock() { locked_ = false; }
+  void forceUnlock() {
+    locked_ = false;
+  }
 
  protected:
   MemoryLockCore<Key>* lock_;

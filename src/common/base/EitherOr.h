@@ -116,7 +116,9 @@ class EitherOr {
   static constexpr State convert_to_s = TypeConverter<Args...>::state;
 
  public:
-  virtual ~EitherOr() { destruct(); }
+  virtual ~EitherOr() {
+    destruct();
+  }
 
   /***********************************************
    *
@@ -380,11 +382,17 @@ class EitherOr {
    * State check
    *
    **********************************************/
-  bool isVoid() const { return state_ == State::VOID; }
+  bool isVoid() const {
+    return state_ == State::VOID;
+  }
 
-  bool isLeftType() const { return state_ == State::LEFT_TYPE; }
+  bool isLeftType() const {
+    return state_ == State::LEFT_TYPE;
+  }
 
-  bool isRightType() const { return state_ == State::RIGHT_TYPE; }
+  bool isRightType() const {
+    return state_ == State::RIGHT_TYPE;
+  }
 
   /***********************************************
    *

@@ -28,13 +28,17 @@ std::string ColumnExpression::toString() const {
   return out.str();
 }
 
-void ColumnExpression::accept(ExprVisitor *visitor) { visitor->visit(this); }
+void ColumnExpression::accept(ExprVisitor *visitor) {
+  visitor->visit(this);
+}
 
 void ColumnExpression::writeTo(Encoder &encoder) const {
   encoder << kind_;
   encoder << index_;
 }
 
-void ColumnExpression::resetFrom(Decoder &decoder) { index_ = decoder.readValue().getInt(); }
+void ColumnExpression::resetFrom(Decoder &decoder) {
+  index_ = decoder.readValue().getInt();
+}
 
 }  // namespace nebula

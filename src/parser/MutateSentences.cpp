@@ -158,7 +158,9 @@ std::string UpdateItem::toString() const {
   return buf;
 }
 
-StatusOr<std::string> UpdateItem::toEvaledString() const { return Status::Error(std::string("")); }
+StatusOr<std::string> UpdateItem::toEvaledString() const {
+  return Status::Error(std::string(""));
+}
 
 std::string UpdateList::toString() const {
   std::string buf;
@@ -286,6 +288,8 @@ std::string DownloadSentence::toString() const {
       "DOWNLOAD HDFS \"hdfs://%s:%d%s\"", host_.get()->c_str(), port_, path_.get()->c_str());
 }
 
-std::string IngestSentence::toString() const { return "INGEST"; }
+std::string IngestSentence::toString() const {
+  return "INGEST";
+}
 
 }  // namespace nebula

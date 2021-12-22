@@ -176,7 +176,9 @@ class FakeChainUpdateProcessor : public ChainUpdateEdgeProcessorLocal {
     return ChainUpdateEdgeProcessorLocal::processLocal(code);
   }
 
-  void wrapAddUnfinishedEdge(ResumeType type) { addUnfinishedEdge(type); }
+  void wrapAddUnfinishedEdge(ResumeType type) {
+    addUnfinishedEdge(type);
+  }
 
  public:
   folly::Optional<Code> rcPrepareLocal;
@@ -262,7 +264,9 @@ class FakeInternalStorageClient : public InternalStorageClient {
     UNUSED(evb);
   }
 
-  void setErrorCode(Code code) { code_ = code; }
+  void setErrorCode(Code code) {
+    code_ = code;
+  }
 
   void chainAddEdges(cpp2::AddEdgesRequest& req,
                      TermID termId,
@@ -291,7 +295,9 @@ class FakeInternalStorageClient : public InternalStorageClient {
 };
 
 struct ChainUpdateEdgeTestHelper {
-  ChainUpdateEdgeTestHelper() { sEdgeType = std::to_string(std::abs(edgeType_)); }
+  ChainUpdateEdgeTestHelper() {
+    sEdgeType = std::to_string(std::abs(edgeType_));
+  }
 
   cpp2::EdgeKey defaultEdgeKey() {
     cpp2::EdgeKey ret;

@@ -69,7 +69,9 @@ const Value &AttributeExpression::eval(ExpressionContext &ctx) {
   }
 }
 
-void AttributeExpression::accept(ExprVisitor *visitor) { visitor->visit(this); }
+void AttributeExpression::accept(ExprVisitor *visitor) {
+  visitor->visit(this);
+}
 
 std::string AttributeExpression::toString() const {
   CHECK(right()->kind() == Kind::kLabel || right()->kind() == Kind::kConstant);

@@ -42,9 +42,13 @@ using serializer = apache::thrift::CompactSerializer;
  *  class Expression::Encoder
  *
  ***************************************/
-Expression::Encoder::Encoder(size_t bufSizeHint) { buf_.reserve(bufSizeHint); }
+Expression::Encoder::Encoder(size_t bufSizeHint) {
+  buf_.reserve(bufSizeHint);
+}
 
-std::string Expression::Encoder::moveStr() { return std::move(buf_); }
+std::string Expression::Encoder::moveStr() {
+  return std::move(buf_);
+}
 
 Expression::Encoder& Expression::Encoder::operator<<(Kind kind) noexcept {
   buf_.append(reinterpret_cast<const char*>(&kind), sizeof(uint8_t));
@@ -88,9 +92,13 @@ Expression::Encoder& Expression::Encoder::operator<<(const Expression& exp) noex
 Expression::Decoder::Decoder(folly::StringPiece encoded)
     : encoded_(encoded), ptr_(encoded_.begin()) {}
 
-bool Expression::Decoder::finished() const { return ptr_ >= encoded_.end(); }
+bool Expression::Decoder::finished() const {
+  return ptr_ >= encoded_.end();
+}
 
-std::string Expression::Decoder::getHexStr() const { return toHexStr(encoded_); }
+std::string Expression::Decoder::getHexStr() const {
+  return toHexStr(encoded_);
+}
 
 Expression::Kind Expression::Decoder::readKind() noexcept {
   CHECK_LE(ptr_ + sizeof(uint8_t), encoded_.end());
@@ -152,7 +160,9 @@ Expression* Expression::Decoder::readExpression(ObjectPool* pool) noexcept {
 Expression::Expression(ObjectPool* pool, Kind kind) : pool_(DCHECK_NOTNULL(pool)), kind_(kind) {}
 
 // static
-std::string Expression::encode(const Expression& exp) { return exp.encode(); }
+std::string Expression::encode(const Expression& exp) {
+  return exp.encode();
+}
 
 std::string Expression::encode() const {
   Encoder encoder;

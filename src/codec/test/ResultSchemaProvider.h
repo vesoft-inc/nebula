@@ -48,7 +48,9 @@ class ResultSchemaProvider : public meta::SchemaProviderIf {
  public:
   virtual ~ResultSchemaProvider() = default;
 
-  SchemaVer getVersion() const noexcept override { return schemaVer_; }
+  SchemaVer getVersion() const noexcept override {
+    return schemaVer_;
+  }
 
   size_t getNumFields() const noexcept override;
 

@@ -29,7 +29,9 @@ class QueryInstance final : public cpp::NonCopyable, public cpp::NonMovable {
 
   void execute();
 
-  QueryContext* qctx() const { return qctx_.get(); }
+  QueryContext* qctx() const {
+    return qctx_.get();
+  }
 
  private:
   /**

@@ -42,7 +42,9 @@ struct PropContext {
     DST = 0x06,
   };
 
-  explicit PropContext(const char* name) : name_(name) { setPropInKey(); }
+  explicit PropContext(const char* name) : name_(name) {
+    setPropInKey();
+  }
 
   PropContext(const char* name,
               const meta::SchemaProviderIf::Field* field,

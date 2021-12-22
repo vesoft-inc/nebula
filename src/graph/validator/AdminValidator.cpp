@@ -163,7 +163,9 @@ Status CreateSpaceAsValidator::toPlan() {
   return Status::OK();
 }
 
-Status DescSpaceValidator::validateImpl() { return Status::OK(); }
+Status DescSpaceValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status DescSpaceValidator::toPlan() {
   auto sentence = static_cast<DescribeSpaceSentence *>(sentence_);
@@ -173,7 +175,9 @@ Status DescSpaceValidator::toPlan() {
   return Status::OK();
 }
 
-Status ShowSpacesValidator::validateImpl() { return Status::OK(); }
+Status ShowSpacesValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status ShowSpacesValidator::toPlan() {
   auto *doNode = ShowSpaces::make(qctx_, nullptr);
@@ -182,7 +186,9 @@ Status ShowSpacesValidator::toPlan() {
   return Status::OK();
 }
 
-Status DropSpaceValidator::validateImpl() { return Status::OK(); }
+Status DropSpaceValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status DropSpaceValidator::toPlan() {
   auto sentence = static_cast<DropSpaceSentence *>(sentence_);
@@ -192,7 +198,9 @@ Status DropSpaceValidator::toPlan() {
   return Status::OK();
 }
 
-Status ShowCreateSpaceValidator::validateImpl() { return Status::OK(); }
+Status ShowCreateSpaceValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status ShowCreateSpaceValidator::checkPermission() {
   auto sentence = static_cast<ShowCreateSpaceSentence *>(sentence_);
@@ -211,7 +219,9 @@ Status ShowCreateSpaceValidator::toPlan() {
   return Status::OK();
 }
 
-Status CreateSnapshotValidator::validateImpl() { return Status::OK(); }
+Status CreateSnapshotValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status CreateSnapshotValidator::toPlan() {
   auto *doNode = CreateSnapshot::make(qctx_, nullptr);
@@ -220,7 +230,9 @@ Status CreateSnapshotValidator::toPlan() {
   return Status::OK();
 }
 
-Status DropSnapshotValidator::validateImpl() { return Status::OK(); }
+Status DropSnapshotValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status DropSnapshotValidator::toPlan() {
   auto sentence = static_cast<DropSnapshotSentence *>(sentence_);
@@ -230,7 +242,9 @@ Status DropSnapshotValidator::toPlan() {
   return Status::OK();
 }
 
-Status ShowSnapshotsValidator::validateImpl() { return Status::OK(); }
+Status ShowSnapshotsValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status ShowSnapshotsValidator::toPlan() {
   auto *doNode = ShowSnapshots::make(qctx_, nullptr);
@@ -272,7 +286,9 @@ Status AddListenerValidator::toPlan() {
   return Status::OK();
 }
 
-Status RemoveListenerValidator::validateImpl() { return Status::OK(); }
+Status RemoveListenerValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status RemoveListenerValidator::toPlan() {
   auto sentence = static_cast<RemoveListenerSentence *>(sentence_);
@@ -282,7 +298,9 @@ Status RemoveListenerValidator::toPlan() {
   return Status::OK();
 }
 
-Status ShowListenerValidator::validateImpl() { return Status::OK(); }
+Status ShowListenerValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status ShowListenerValidator::toPlan() {
   auto *doNode = ShowListener::make(qctx_, nullptr);
@@ -291,7 +309,9 @@ Status ShowListenerValidator::toPlan() {
   return Status::OK();
 }
 
-Status AddHostsValidator::validateImpl() { return Status::OK(); }
+Status AddHostsValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status AddHostsValidator::toPlan() {
   auto sentence = static_cast<AddHostsSentence *>(sentence_);
@@ -311,7 +331,9 @@ Status AddHostsValidator::toPlan() {
   return Status::OK();
 }
 
-Status DropHostsValidator::validateImpl() { return Status::OK(); }
+Status DropHostsValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status DropHostsValidator::toPlan() {
   auto sentence = static_cast<DropHostsSentence *>(sentence_);
@@ -331,7 +353,9 @@ Status DropHostsValidator::toPlan() {
   return Status::OK();
 }
 
-Status ShowHostsValidator::validateImpl() { return Status::OK(); }
+Status ShowHostsValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status ShowHostsValidator::toPlan() {
   auto sentence = static_cast<ShowHostsSentence *>(sentence_);
@@ -341,7 +365,9 @@ Status ShowHostsValidator::toPlan() {
   return Status::OK();
 }
 
-Status ShowMetaLeaderValidator::validateImpl() { return Status::OK(); }
+Status ShowMetaLeaderValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status ShowMetaLeaderValidator::toPlan() {
   auto *node = ShowMetaLeaderNode::make(qctx_, nullptr);
@@ -350,7 +376,9 @@ Status ShowMetaLeaderValidator::toPlan() {
   return Status::OK();
 }
 
-Status ShowPartsValidator::validateImpl() { return Status::OK(); }
+Status ShowPartsValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status ShowPartsValidator::toPlan() {
   auto sentence = static_cast<ShowPartsSentence *>(sentence_);
@@ -364,7 +392,9 @@ Status ShowPartsValidator::toPlan() {
   return Status::OK();
 }
 
-Status ShowCharsetValidator::validateImpl() { return Status::OK(); }
+Status ShowCharsetValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status ShowCharsetValidator::toPlan() {
   auto *node = ShowCharset::make(qctx_, nullptr);
@@ -373,7 +403,9 @@ Status ShowCharsetValidator::toPlan() {
   return Status::OK();
 }
 
-Status ShowCollationValidator::validateImpl() { return Status::OK(); }
+Status ShowCollationValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status ShowCollationValidator::toPlan() {
   auto *node = ShowCollation::make(qctx_, nullptr);
@@ -382,7 +414,9 @@ Status ShowCollationValidator::toPlan() {
   return Status::OK();
 }
 
-Status ShowConfigsValidator::validateImpl() { return Status::OK(); }
+Status ShowConfigsValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status ShowConfigsValidator::toPlan() {
   auto sentence = static_cast<ShowConfigsSentence *>(sentence_);
@@ -473,7 +507,9 @@ Status GetConfigValidator::toPlan() {
   return Status::OK();
 }
 
-Status ShowStatusValidator::validateImpl() { return Status::OK(); }
+Status ShowStatusValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status ShowStatusValidator::toPlan() {
   auto *node = ShowStats::make(qctx_, nullptr);
@@ -482,7 +518,9 @@ Status ShowStatusValidator::toPlan() {
   return Status::OK();
 }
 
-Status ShowTSClientsValidator::validateImpl() { return Status::OK(); }
+Status ShowTSClientsValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status ShowTSClientsValidator::toPlan() {
   auto *doNode = ShowTSClients::make(qctx_, nullptr);
@@ -491,7 +529,9 @@ Status ShowTSClientsValidator::toPlan() {
   return Status::OK();
 }
 
-Status SignInTSServiceValidator::validateImpl() { return Status::OK(); }
+Status SignInTSServiceValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status SignInTSServiceValidator::toPlan() {
   auto sentence = static_cast<SignInTextServiceSentence *>(sentence_);
@@ -505,7 +545,9 @@ Status SignInTSServiceValidator::toPlan() {
   return Status::OK();
 }
 
-Status SignOutTSServiceValidator::validateImpl() { return Status::OK(); }
+Status SignOutTSServiceValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status SignOutTSServiceValidator::toPlan() {
   auto *node = SignOutTSService::make(qctx_, nullptr);

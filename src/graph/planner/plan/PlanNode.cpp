@@ -316,7 +316,9 @@ void PlanNode::readVariable(Variable* varPtr) {
   qctx_->symTable()->readBy(varPtr->name, this);
 }
 
-void PlanNode::calcCost() { VLOG(1) << "unimplemented cost calculation."; }
+void PlanNode::calcCost() {
+  VLOG(1) << "unimplemented cost calculation.";
+}
 
 void PlanNode::setOutputVar(const std::string& var) {
   DCHECK_EQ(1, outputVars_.size());

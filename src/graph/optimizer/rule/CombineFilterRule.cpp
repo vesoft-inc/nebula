@@ -19,7 +19,9 @@ namespace opt {
 std::unique_ptr<OptRule> CombineFilterRule::kInstance =
     std::unique_ptr<CombineFilterRule>(new CombineFilterRule());
 
-CombineFilterRule::CombineFilterRule() { RuleSet::QueryRules().addRule(this); }
+CombineFilterRule::CombineFilterRule() {
+  RuleSet::QueryRules().addRule(this);
+}
 
 const Pattern& CombineFilterRule::pattern() const {
   static Pattern pattern = Pattern::create(graph::PlanNode::Kind::kFilter,
@@ -62,7 +64,9 @@ bool CombineFilterRule::match(OptContext* octx, const MatchedResult& matched) co
   return OptRule::match(octx, matched);
 }
 
-std::string CombineFilterRule::toString() const { return "CombineFilterRule"; }
+std::string CombineFilterRule::toString() const {
+  return "CombineFilterRule";
+}
 
 }  // namespace opt
 }  // namespace nebula

@@ -61,6 +61,8 @@ std::string ArithmeticExpression::toString() const {
   return out.str();
 }
 
-void ArithmeticExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void ArithmeticExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 }  // namespace nebula

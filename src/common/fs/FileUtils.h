@@ -179,7 +179,9 @@ class FileUtils final {
     ~Iterator();
 
     // Whether this iterator is valid
-    bool valid() const { return status_.ok(); }
+    bool valid() const {
+      return status_.ok();
+    }
 
     // Step to the next line or entry
     void next();
@@ -224,7 +226,9 @@ class FileUtils final {
     }
 
     // Status to indicates the error
-    const Status& status() const { return status_; }
+    const Status& status() const {
+      return status_;
+    }
 
    private:
     void openFileOrDirectory();

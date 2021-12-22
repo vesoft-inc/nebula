@@ -18,7 +18,9 @@ class IdGenerator {
   // The valid id starts from 0.
   static constexpr int64_t INVALID_ID = -1;
 
-  int64_t id() { return counter_++; }
+  int64_t id() {
+    return counter_++;
+  }
 
  private:
   std::atomic<int64_t> counter_{0};
@@ -29,7 +31,9 @@ class EPIdGenerator final : public IdGenerator {
   EPIdGenerator(EPIdGenerator&) = delete;
   EPIdGenerator& operator=(const EPIdGenerator) = delete;
 
-  static EPIdGenerator& instance() { return instance_; }
+  static EPIdGenerator& instance() {
+    return instance_;
+  }
 
  private:
   EPIdGenerator() = default;

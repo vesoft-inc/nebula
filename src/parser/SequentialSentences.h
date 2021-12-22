@@ -24,7 +24,9 @@ class SequentialSentences final : public Sentence {
     sentences_.emplace_back(sentence);
   }
 
-  void addSentence(Sentence *sentence) { sentences_.emplace_back(sentence); }
+  void addSentence(Sentence *sentence) {
+    sentences_.emplace_back(sentence);
+  }
 
   auto sentences() const {
     std::vector<Sentence *> result;

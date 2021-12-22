@@ -26,7 +26,9 @@ class RaftexService : public cpp2::RaftexServiceSvIf {
       uint16_t port = 0);
   virtual ~RaftexService();
 
-  uint32_t getServerPort() const { return serverPort_; }
+  uint32_t getServerPort() const {
+    return serverPort_;
+  }
 
   std::shared_ptr<folly::IOThreadPoolExecutor> getIOThreadPool() const;
 

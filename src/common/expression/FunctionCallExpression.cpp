@@ -89,6 +89,8 @@ std::string FunctionCallExpression::toString() const {
   return out.str();
 }
 
-void FunctionCallExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void FunctionCallExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 }  // namespace nebula

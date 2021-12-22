@@ -81,7 +81,9 @@ void StorageHttpIngestHandler::onUpgrade(UpgradeProtocol) noexcept {
   // Do nothing
 }
 
-void StorageHttpIngestHandler::requestComplete() noexcept { delete this; }
+void StorageHttpIngestHandler::requestComplete() noexcept {
+  delete this;
+}
 
 void StorageHttpIngestHandler::onError(ProxygenError error) noexcept {
   LOG(ERROR) << "Web Service MetaHttpIngestHandler Failed: " << proxygen::getErrorString(error);

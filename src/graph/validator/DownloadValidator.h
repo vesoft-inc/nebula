@@ -17,7 +17,9 @@ class DownloadValidator final : public Validator {
   DownloadValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {}
 
  private:
-  Status validateImpl() override { return Status::OK(); }
+  Status validateImpl() override {
+    return Status::OK();
+  }
 
   Status toPlan() override;
 };

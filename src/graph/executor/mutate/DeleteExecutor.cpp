@@ -135,7 +135,9 @@ folly::Future<Status> DeleteTagsExecutor::deleteTags() {
       });
 }
 
-folly::Future<Status> DeleteEdgesExecutor::execute() { return deleteEdges(); }
+folly::Future<Status> DeleteEdgesExecutor::execute() {
+  return deleteEdges();
+}
 
 folly::Future<Status> DeleteEdgesExecutor::deleteEdges() {
   SCOPED_TIMER(&execTime_);

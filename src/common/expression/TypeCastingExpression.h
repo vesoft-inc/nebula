@@ -32,13 +32,21 @@ class TypeCastingExpression final : public Expression {
     return TypeCastingExpression::make(pool_, type(), operand()->clone());
   }
 
-  const Expression* operand() const { return operand_; }
+  const Expression* operand() const {
+    return operand_;
+  }
 
-  Expression* operand() { return operand_; }
+  Expression* operand() {
+    return operand_;
+  }
 
-  void setOperand(Expression* expr) { operand_ = expr; }
+  void setOperand(Expression* expr) {
+    operand_ = expr;
+  }
 
-  Value::Type type() const { return vType_; }
+  Value::Type type() const {
+    return vType_;
+  }
 
   static bool validateTypeCast(Value::Type operandType, Value::Type type);
 

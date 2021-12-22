@@ -22,7 +22,9 @@ namespace opt {
 std::unique_ptr<OptRule> PushLimitDownProjectRule::kInstance =
     std::unique_ptr<PushLimitDownProjectRule>(new PushLimitDownProjectRule());
 
-PushLimitDownProjectRule::PushLimitDownProjectRule() { RuleSet::QueryRules().addRule(this); }
+PushLimitDownProjectRule::PushLimitDownProjectRule() {
+  RuleSet::QueryRules().addRule(this);
+}
 
 const Pattern &PushLimitDownProjectRule::pattern() const {
   static Pattern pattern = Pattern::create(graph::PlanNode::Kind::kLimit,
@@ -64,7 +66,9 @@ StatusOr<OptRule::TransformResult> PushLimitDownProjectRule::transform(
   return result;
 }
 
-std::string PushLimitDownProjectRule::toString() const { return "PushLimitDownProjectRule"; }
+std::string PushLimitDownProjectRule::toString() const {
+  return "PushLimitDownProjectRule";
+}
 
 }  // namespace opt
 }  // namespace nebula

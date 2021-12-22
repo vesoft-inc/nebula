@@ -80,7 +80,9 @@ class StoragePlan {
     CHECK_LT(idx, nodes_.size());
     return nodes_[idx].get();
   }
-  const std::vector<std::unique_ptr<RelNode<T>>>& getNodes() { return nodes_; }
+  const std::vector<std::unique_ptr<RelNode<T>>>& getNodes() {
+    return nodes_;
+  }
 
  private:
   bool firstLoop_ = true;

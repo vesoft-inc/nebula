@@ -23,7 +23,9 @@ QueryContext::QueryContext(RequestContextPtr rctx,
   init();
 }
 
-QueryContext::QueryContext() { init(); }
+QueryContext::QueryContext() {
+  init();
+}
 
 void QueryContext::init() {
   objPool_ = std::make_unique<ObjectPool>();

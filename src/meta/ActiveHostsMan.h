@@ -28,7 +28,9 @@ struct HostInfo {
     return this->lastHBTimeInMilliSec_ == that.lastHBTimeInMilliSec_;
   }
 
-  bool operator!=(const HostInfo& that) const { return !(*this == that); }
+  bool operator!=(const HostInfo& that) const {
+    return !(*this == that);
+  }
 
   int64_t lastHBTimeInMilliSec_ = 0;
   cpp2::HostRole role_{cpp2::HostRole::UNKNOWN};

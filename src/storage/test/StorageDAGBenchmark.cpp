@@ -187,7 +187,9 @@ StoragePlan<std::string> chainStorageDAG() {
 
 BENCHMARK(future_fanout, iters) {
   FutureDAG<std::string> dag;
-  BENCHMARK_SUSPEND { dag = fanoutFutureDAG(); }
+  BENCHMARK_SUSPEND {
+    dag = fanoutFutureDAG();
+  }
   for (size_t i = 0; i < iters; i++) {
     dag.go(0, "fanoutFutureDAG");
   }
@@ -195,7 +197,9 @@ BENCHMARK(future_fanout, iters) {
 
 BENCHMARK_RELATIVE(recursive_fanout, iters) {
   StoragePlan<std::string> dag;
-  BENCHMARK_SUSPEND { dag = fanoutStorageDAG(); }
+  BENCHMARK_SUSPEND {
+    dag = fanoutStorageDAG();
+  }
   for (size_t i = 0; i < iters; i++) {
     dag.go(0, "fanoutStorageDAG");
   }
@@ -205,7 +209,9 @@ BENCHMARK_DRAW_LINE();
 
 BENCHMARK(future_chain, iters) {
   FutureDAG<std::string> dag;
-  BENCHMARK_SUSPEND { dag = chainFutureDAG(); }
+  BENCHMARK_SUSPEND {
+    dag = chainFutureDAG();
+  }
   for (size_t i = 0; i < iters; i++) {
     dag.go(0, "chainFutureDAG");
   }
@@ -213,7 +219,9 @@ BENCHMARK(future_chain, iters) {
 
 BENCHMARK_RELATIVE(recursive_chain, iters) {
   StoragePlan<std::string> dag;
-  BENCHMARK_SUSPEND { dag = chainStorageDAG(); }
+  BENCHMARK_SUSPEND {
+    dag = chainStorageDAG();
+  }
   for (size_t i = 0; i < iters; i++) {
     dag.go(0, "chainStorageDAG");
   }

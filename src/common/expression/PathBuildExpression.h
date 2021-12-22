@@ -41,11 +41,17 @@ class PathBuildExpression final : public Expression {
     items_[index] = item;
   }
 
-  size_t size() const { return items_.size(); }
+  size_t size() const {
+    return items_.size();
+  }
 
-  size_t length() const { return size() - 1; }
+  size_t length() const {
+    return size() - 1;
+  }
 
-  const auto& items() const { return items_; }
+  const auto& items() const {
+    return items_;
+  }
 
  private:
   explicit PathBuildExpression(ObjectPool* pool) : Expression(pool, Kind::kPathBuild) {}

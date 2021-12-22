@@ -37,7 +37,9 @@ void NotFoundHandler::onUpgrade(UpgradeProtocol) noexcept {
   // Do nothing
 }
 
-void NotFoundHandler::requestComplete() noexcept { delete this; }
+void NotFoundHandler::requestComplete() noexcept {
+  delete this;
+}
 
 void NotFoundHandler::onError(ProxygenError err) noexcept {
   LOG(ERROR) << "Web service NotFoundHandler got error: " << proxygen::getErrorString(err);

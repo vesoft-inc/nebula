@@ -32,11 +32,17 @@ class PropertyExpression : public Expression {
 
   const Value& eval(ExpressionContext& ctx) override;
 
-  const std::string& ref() const { return ref_; }
+  const std::string& ref() const {
+    return ref_;
+  }
 
-  const std::string& sym() const { return sym_; }
+  const std::string& sym() const {
+    return sym_;
+  }
 
-  const std::string& prop() const { return prop_; }
+  const std::string& prop() const {
+    return prop_;
+  }
 
   std::string toString() const override;
 
@@ -72,7 +78,9 @@ class EdgePropertyExpression final : public PropertyExpression {
 
   void accept(ExprVisitor* visitor) override;
 
-  Expression* clone() const override { return EdgePropertyExpression::make(pool_, sym(), prop()); }
+  Expression* clone() const override {
+    return EdgePropertyExpression::make(pool_, sym(), prop());
+  }
 
  private:
   explicit EdgePropertyExpression(ObjectPool* pool,
@@ -100,7 +108,9 @@ class TagPropertyExpression final : public PropertyExpression {
 
   void accept(ExprVisitor* visitor) override;
 
-  Expression* clone() const override { return TagPropertyExpression::make(pool_, sym(), prop()); }
+  Expression* clone() const override {
+    return TagPropertyExpression::make(pool_, sym(), prop());
+  }
 
  private:
   explicit TagPropertyExpression(ObjectPool* pool,
@@ -126,7 +136,9 @@ class InputPropertyExpression final : public PropertyExpression {
 
   void accept(ExprVisitor* visitor) override;
 
-  Expression* clone() const override { return InputPropertyExpression::make(pool_, prop()); }
+  Expression* clone() const override {
+    return InputPropertyExpression::make(pool_, prop());
+  }
 
  private:
   explicit InputPropertyExpression(ObjectPool* pool, const std::string& prop = "")
@@ -208,7 +220,9 @@ class DestPropertyExpression final : public PropertyExpression {
 
   void accept(ExprVisitor* visitor) override;
 
-  Expression* clone() const override { return DestPropertyExpression::make(pool_, sym(), prop()); }
+  Expression* clone() const override {
+    return DestPropertyExpression::make(pool_, sym(), prop());
+  }
 
  private:
   explicit DestPropertyExpression(ObjectPool* pool,
@@ -231,7 +245,9 @@ class EdgeSrcIdExpression final : public PropertyExpression {
 
   void accept(ExprVisitor* visitor) override;
 
-  Expression* clone() const override { return EdgeSrcIdExpression::make(pool_, sym()); }
+  Expression* clone() const override {
+    return EdgeSrcIdExpression::make(pool_, sym());
+  }
 
  private:
   explicit EdgeSrcIdExpression(ObjectPool* pool, const std::string& edge = "")
@@ -255,7 +271,9 @@ class EdgeTypeExpression final : public PropertyExpression {
 
   void accept(ExprVisitor* visitor) override;
 
-  Expression* clone() const override { return EdgeTypeExpression::make(pool_, sym()); }
+  Expression* clone() const override {
+    return EdgeTypeExpression::make(pool_, sym());
+  }
 
  private:
   explicit EdgeTypeExpression(ObjectPool* pool, const std::string& edge = "")
@@ -279,7 +297,9 @@ class EdgeRankExpression final : public PropertyExpression {
 
   void accept(ExprVisitor* visitor) override;
 
-  Expression* clone() const override { return EdgeRankExpression::make(pool_, sym()); }
+  Expression* clone() const override {
+    return EdgeRankExpression::make(pool_, sym());
+  }
 
  private:
   explicit EdgeRankExpression(ObjectPool* pool, const std::string& edge = "")
@@ -303,7 +323,9 @@ class EdgeDstIdExpression final : public PropertyExpression {
 
   void accept(ExprVisitor* visitor) override;
 
-  Expression* clone() const override { return EdgeDstIdExpression::make(pool_, sym()); }
+  Expression* clone() const override {
+    return EdgeDstIdExpression::make(pool_, sym());
+  }
 
  private:
   explicit EdgeDstIdExpression(ObjectPool* pool, const std::string& edge = "")

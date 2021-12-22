@@ -32,7 +32,9 @@ class ChainAddEdgesProcessorLocal : public BaseProcessor<cpp2::ExecResponse>,
 
   folly::SemiFuture<Code> processLocal(Code code) override;
 
-  void setRemotePartId(PartitionID remotePartId) { remotePartId_ = remotePartId; }
+  void setRemotePartId(PartitionID remotePartId) {
+    remotePartId_ = remotePartId;
+  }
 
   void finish() override;
 

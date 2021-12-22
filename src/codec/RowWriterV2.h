@@ -96,9 +96,13 @@ class RowWriterV2 {
   ~RowWriterV2() = default;
 
   // Return the exact length of the encoded binary array
-  int64_t size() const noexcept { return buf_.size(); }
+  int64_t size() const noexcept {
+    return buf_.size();
+  }
 
-  const meta::SchemaProviderIf* schema() const { return schema_; }
+  const meta::SchemaProviderIf* schema() const {
+    return schema_;
+  }
 
   const std::string& getEncodedStr() const noexcept {
     CHECK(finished_) << "You need to call finish() first";

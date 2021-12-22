@@ -112,7 +112,9 @@ void MetaHttpDownloadHandler::onUpgrade(UpgradeProtocol) noexcept {
   // Do nothing
 }
 
-void MetaHttpDownloadHandler::requestComplete() noexcept { delete this; }
+void MetaHttpDownloadHandler::requestComplete() noexcept {
+  delete this;
+}
 
 void MetaHttpDownloadHandler::onError(ProxygenError error) noexcept {
   LOG(ERROR) << "Web Service MetaHttpDownloadHandler got error : "

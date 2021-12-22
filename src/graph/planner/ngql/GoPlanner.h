@@ -21,9 +21,13 @@ class GoPlanner final : public Planner {
   using EdgeProps = std::vector<EdgeProp>;
   using VertexProps = std::vector<VertexProp>;
 
-  static std::unique_ptr<GoPlanner> make() { return std::unique_ptr<GoPlanner>(new GoPlanner()); }
+  static std::unique_ptr<GoPlanner> make() {
+    return std::unique_ptr<GoPlanner>(new GoPlanner());
+  }
 
-  static bool match(AstContext* astCtx) { return astCtx->sentence->kind() == Sentence::Kind::kGo; }
+  static bool match(AstContext* astCtx) {
+    return astCtx->sentence->kind() == Sentence::Kind::kGo;
+  }
 
   StatusOr<SubPlan> transform(AstContext* astCtx) override;
 

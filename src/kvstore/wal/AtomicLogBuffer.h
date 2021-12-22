@@ -26,7 +26,9 @@ struct Record {
   Record(ClusterID clusterId, TermID termId, std::string msg)
       : clusterId_(clusterId), termId_(termId), msg_(std::move(msg)) {}
 
-  int32_t size() const { return sizeof(ClusterID) + sizeof(TermID) + msg_.size(); }
+  int32_t size() const {
+    return sizeof(ClusterID) + sizeof(TermID) + msg_.size();
+  }
 
   ClusterID clusterId_;
   TermID termId_;
@@ -36,7 +38,9 @@ struct Record {
 struct Node {
   Node() = default;
 
-  bool isFull() { return pos_.load(std::memory_order_acquire) == kMaxLength; }
+  bool isFull() {
+    return pos_.load(std::memory_order_acquire) == kMaxLength;
+  }
 
   bool push_back(Record&& rec) {
     if (isFull()) {
@@ -57,7 +61,9 @@ struct Node {
     return &(*records_)[index];
   }
 
-  LogID lastLogId() const { return firstLogId_ + pos_.load(std::memory_order_relaxed); }
+  LogID lastLogId() const {
+    return firstLogId_ + pos_.load(std::memory_order_relaxed);
+  }
 
   LogID firstLogId_{0};
   // total size for current Node.
@@ -98,7 +104,9 @@ class AtomicLogBuffer : public std::enable_shared_from_this<AtomicLogBuffer> {
     FRIEND_TEST(AtomicLogBufferTest, SingleWriterMultiReadersTest);
 
    public:
-    ~Iterator() { logBuffer_->releaseRef(); }
+    ~Iterator() {
+      logBuffer_->releaseRef();
+    }
 
     LogIterator& operator++() override {
       currIndex_++;
@@ -127,18 +135,26 @@ class AtomicLogBuffer : public std::enable_shared_from_this<AtomicLogBuffer> {
       return *this;
     }
 
-    bool valid() const override { return valid_; }
+    bool valid() const override {
+      return valid_;
+    }
 
     LogID logId() const override {
       DCHECK(valid_);
       return currLogId_;
     }
 
-    TermID logTerm() const override { return record()->termId_; }
+    TermID logTerm() const override {
+      return record()->termId_;
+    }
 
-    ClusterID logSource() const override { return record()->clusterId_; }
+    ClusterID logSource() const override {
+      return record()->clusterId_;
+    }
 
-    folly::StringPiece logMsg() const override { return record()->msg_; }
+    folly::StringPiece logMsg() const override {
+      return record()->msg_;
+    }
 
    private:
     // Iterator could only be acquired by AtomicLogBuffer::iterator interface.
@@ -167,9 +183,13 @@ class AtomicLogBuffer : public std::enable_shared_from_this<AtomicLogBuffer> {
       }
     }
 
-    Node* currNode() const { return currNode_; }
+    Node* currNode() const {
+      return currNode_;
+    }
 
-    int32_t currIndex() const { return currIndex_; }
+    int32_t currIndex() const {
+      return currIndex_;
+    }
 
    private:
     std::shared_ptr<AtomicLogBuffer> logBuffer_;
@@ -257,7 +277,9 @@ class AtomicLogBuffer : public std::enable_shared_from_this<AtomicLogBuffer> {
     head->push_back(std::move(record));
   }
 
-  LogID firstLogId() const { return firstLogId_.load(std::memory_order_relaxed); }
+  LogID firstLogId() const {
+    return firstLogId_.load(std::memory_order_relaxed);
+  }
 
   LogID lastLogId() const {
     auto* p = head_.load(std::memory_order_relaxed);
@@ -333,7 +355,9 @@ class AtomicLogBuffer : public std::enable_shared_from_this<AtomicLogBuffer> {
     return p->markDeleted_ ? nullptr : p;
   }
 
-  int32_t addRef() { return refs_.fetch_add(1, std::memory_order_relaxed); }
+  int32_t addRef() {
+    return refs_.fetch_add(1, std::memory_order_relaxed);
+  }
 
   void releaseRef() {
     // All operations following SHOULD NOT reordered before tail.load()

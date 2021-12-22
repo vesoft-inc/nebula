@@ -30,9 +30,13 @@ class RocksRangeIter : public KVIterator {
     return !!iter_ && iter_->Valid() && (iter_->key().compare(end_) < 0);
   }
 
-  void next() override { iter_->Next(); }
+  void next() override {
+    iter_->Next();
+  }
 
-  void prev() override { iter_->Prev(); }
+  void prev() override {
+    iter_->Prev();
+  }
 
   folly::StringPiece key() const override {
     return folly::StringPiece(iter_->key().data(), iter_->key().size());
@@ -58,9 +62,13 @@ class RocksPrefixIter : public KVIterator {
     return !!iter_ && iter_->Valid() && (iter_->key().starts_with(prefix_));
   }
 
-  void next() override { iter_->Next(); }
+  void next() override {
+    iter_->Next();
+  }
 
-  void prev() override { iter_->Prev(); }
+  void prev() override {
+    iter_->Prev();
+  }
 
   folly::StringPiece key() const override {
     return folly::StringPiece(iter_->key().data(), iter_->key().size());
@@ -81,11 +89,17 @@ class RocksCommonIter : public KVIterator {
 
   ~RocksCommonIter() = default;
 
-  bool valid() const override { return !!iter_ && iter_->Valid(); }
+  bool valid() const override {
+    return !!iter_ && iter_->Valid();
+  }
 
-  void next() override { iter_->Next(); }
+  void next() override {
+    iter_->Next();
+  }
 
-  void prev() override { iter_->Prev(); }
+  void prev() override {
+    iter_->Prev();
+  }
 
   folly::StringPiece key() const override {
     return folly::StringPiece(iter_->key().data(), iter_->key().size());
@@ -116,15 +130,21 @@ class RocksEngine : public KVEngine {
               std::shared_ptr<rocksdb::CompactionFilterFactory> cfFactory = nullptr,
               bool readonly = false);
 
-  ~RocksEngine() { LOG(INFO) << "Release rocksdb on " << dataPath_; }
+  ~RocksEngine() {
+    LOG(INFO) << "Release rocksdb on " << dataPath_;
+  }
 
   void stop() override;
 
   // return path to a spaceId, e.g. "/DataPath/nebula/spaceId", usually it should
   // contain two subdir: data and wal.
-  const char* getDataRoot() const override { return dataPath_.c_str(); }
+  const char* getDataRoot() const override {
+    return dataPath_.c_str();
+  }
 
-  const char* getWalRoot() const override { return walPath_.c_str(); }
+  const char* getWalRoot() const override {
+    return walPath_.c_str();
+  }
 
   std::unique_ptr<WriteBatch> startBatchWrite() override;
 

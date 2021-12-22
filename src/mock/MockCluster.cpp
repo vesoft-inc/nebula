@@ -57,7 +57,9 @@ std::unique_ptr<kvstore::MemPartManager> MockCluster::memPartMan(
 }
 
 // static
-std::string MockCluster::localIP() { return "127.0.0.1"; }
+std::string MockCluster::localIP() {
+  return "127.0.0.1";
+}
 
 // static
 std::unique_ptr<kvstore::NebulaStore> MockCluster::initKV(kvstore::KVOptions options,

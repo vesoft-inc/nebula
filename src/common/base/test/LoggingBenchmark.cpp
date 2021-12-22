@@ -30,7 +30,9 @@
 
 class XlogInit {
  public:
-  explicit XlogInit(folly::StringPiece config) { folly::initLogging(config); }
+  explicit XlogInit(folly::StringPiece config) {
+    folly::initLogging(config);
+  }
 };
 
 static void xlogRegistFileHandler() {
@@ -46,7 +48,9 @@ static void xlogRegistFileHandler() {
  *
  **************************/
 #include <glog/logging.h>
-void loggingUsingGlog(int64_t iters) { LOG_SOMETHING(iters); }
+void loggingUsingGlog(int64_t iters) {
+  LOG_SOMETHING(iters);
+}
 
 /***************************
  *
@@ -54,10 +58,14 @@ void loggingUsingGlog(int64_t iters) { LOG_SOMETHING(iters); }
  *
  **************************/
 #include "common/base/Logging.h"
-void loggingOptimized(int64_t iters) { LOG_SOMETHING(iters); }
+void loggingOptimized(int64_t iters) {
+  LOG_SOMETHING(iters);
+}
 
 #include <folly/logging/xlog.h>
-void loggingUsingXlog(int64_t iters) { XLOG_SOMETHING(iters); }
+void loggingUsingXlog(int64_t iters) {
+  XLOG_SOMETHING(iters);
+}
 
 /***************************
  *
@@ -75,7 +83,9 @@ BENCHMARK_RELATIVE(optimized_output_logs, iters) {
 }
 
 BENCHMARK_RELATIVE(xlog_output_logs, iters) {
-  BENCHMARK_SUSPEND { static XlogInit init(".=INFO:default"); }
+  BENCHMARK_SUSPEND {
+    static XlogInit init(".=INFO:default");
+  }
   loggingUsingXlog(iters);
 }
 
@@ -99,7 +109,9 @@ BENCHMARK_RELATIVE(optimized_skip_logs, iters) {
 }
 
 BENCHMARK_RELATIVE(xlog_skip_logs, iters) {
-  BENCHMARK_SUSPEND { static XlogInit init(".=WARN:default"); }
+  BENCHMARK_SUSPEND {
+    static XlogInit init(".=WARN:default");
+  }
   loggingUsingXlog(iters);
 }
 /***************************

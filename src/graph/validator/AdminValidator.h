@@ -349,7 +349,9 @@ class ShowSessionsValidator final : public Validator {
   }
 
  private:
-  Status validateImpl() override { return Status::OK(); }
+  Status validateImpl() override {
+    return Status::OK();
+  }
 
   Status toPlan() override;
 };
@@ -361,7 +363,9 @@ class GetSessionValidator final : public Validator {
   }
 
  private:
-  Status validateImpl() override { return Status::OK(); }
+  Status validateImpl() override {
+    return Status::OK();
+  }
 
   Status toPlan() override;
 

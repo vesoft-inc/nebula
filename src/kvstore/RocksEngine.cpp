@@ -62,7 +62,9 @@ class RocksWriteBatch : public WriteBatch {
     }
   }
 
-  rocksdb::WriteBatch* data() { return &batch_; }
+  rocksdb::WriteBatch* data() {
+    return &batch_;
+  }
 };
 
 }  // Anonymous namespace
@@ -388,7 +390,9 @@ std::vector<PartitionID> RocksEngine::allParts() {
   return parts;
 }
 
-int32_t RocksEngine::totalPartsNum() { return partsNum_; }
+int32_t RocksEngine::totalPartsNum() {
+  return partsNum_;
+}
 
 nebula::cpp2::ErrorCode RocksEngine::ingest(const std::vector<std::string>& files,
                                             bool verifyFileChecksum) {

@@ -31,9 +31,13 @@ BalanceJobExecutor::BalanceJobExecutor(JobID jobId,
   toHost_ = TargetHosts::NONE;
 }
 
-bool BalanceJobExecutor::check() { return !paras_.empty(); }
+bool BalanceJobExecutor::check() {
+  return !paras_.empty();
+}
 
-nebula::cpp2::ErrorCode BalanceJobExecutor::prepare() { return nebula::cpp2::ErrorCode::SUCCEEDED; }
+nebula::cpp2::ErrorCode BalanceJobExecutor::prepare() {
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
+}
 
 nebula::cpp2::ErrorCode BalanceJobExecutor::stop() {
   stopped_ = true;
@@ -47,7 +51,9 @@ folly::Future<Status> BalanceJobExecutor::executeInternal(HostAddr&& address,
   return Status::OK();
 }
 
-bool BalanceJobExecutor::runInMeta() { return true; }
+bool BalanceJobExecutor::runInMeta() {
+  return true;
+}
 
 nebula::cpp2::ErrorCode BalanceJobExecutor::recovery() {
   return nebula::cpp2::ErrorCode::SUCCEEDED;

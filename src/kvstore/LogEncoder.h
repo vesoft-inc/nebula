@@ -80,14 +80,18 @@ class BatchHolder : public nebula::cpp::NonCopyable, public nebula::cpp::NonMova
     batch_.emplace_back(std::move(op));
   }
 
-  void reserve(int32_t size) { batch_.reserve(size); }
+  void reserve(int32_t size) {
+    batch_.reserve(size);
+  }
 
   const std::vector<std::tuple<BatchLogType, std::string, std::string>>& getBatch() {
     return batch_;
   }
 
   // size of the batch, in bytes
-  size_t size() { return size_; }
+  size_t size() {
+    return size_;
+  }
 
  private:
   std::vector<std::tuple<BatchLogType, std::string, std::string>> batch_;

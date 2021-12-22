@@ -44,7 +44,9 @@ class VidExtractVisitor final : public ExprVisitor {
     std::unordered_map<std::string, Vids> nodes;
   };
 
-  VidPattern moveVidPattern() { return std::move(vidPattern_); }
+  VidPattern moveVidPattern() {
+    return std::move(vidPattern_);
+  }
 
   static VidPattern intersect(VidPattern &&left, VidPattern &&right);
 

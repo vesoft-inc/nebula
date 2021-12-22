@@ -24,7 +24,9 @@ namespace opt {
 std::unique_ptr<OptRule> MergeGetNbrsAndProjectRule::kInstance =
     std::unique_ptr<MergeGetNbrsAndProjectRule>(new MergeGetNbrsAndProjectRule());
 
-MergeGetNbrsAndProjectRule::MergeGetNbrsAndProjectRule() { RuleSet::QueryRules().addRule(this); }
+MergeGetNbrsAndProjectRule::MergeGetNbrsAndProjectRule() {
+  RuleSet::QueryRules().addRule(this);
+}
 
 const Pattern &MergeGetNbrsAndProjectRule::pattern() const {
   static Pattern pattern = Pattern::create(graph::PlanNode::Kind::kGetNeighbors,
@@ -74,7 +76,9 @@ StatusOr<OptRule::TransformResult> MergeGetNbrsAndProjectRule::transform(
   return result;
 }
 
-std::string MergeGetNbrsAndProjectRule::toString() const { return "MergeGetNbrsAndProjectRule"; }
+std::string MergeGetNbrsAndProjectRule::toString() const {
+  return "MergeGetNbrsAndProjectRule";
+}
 
 }  // namespace opt
 }  // namespace nebula

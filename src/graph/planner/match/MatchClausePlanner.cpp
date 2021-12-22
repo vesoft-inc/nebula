@@ -41,9 +41,13 @@ static Expression* genNextTraverseStart(ObjectPool* pool, const EdgeInfo& edge) 
   return FunctionCallExpression::make(pool, "none_direct_dst", args);
 }
 
-static Expression* genVertexFilter(const NodeInfo& node) { return node.filter; }
+static Expression* genVertexFilter(const NodeInfo& node) {
+  return node.filter;
+}
 
-static Expression* genEdgeFilter(const EdgeInfo& edge) { return edge.filter; }
+static Expression* genEdgeFilter(const EdgeInfo& edge) {
+  return edge.filter;
+}
 
 static StatusOr<std::unique_ptr<std::vector<VertexProp>>> genVertexProps(const NodeInfo& node,
                                                                          QueryContext* qctx,

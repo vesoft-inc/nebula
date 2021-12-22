@@ -25,7 +25,9 @@ class ValidateContext final {
     anonColGen_ = std::make_unique<AnonColGenerator>();
   }
 
-  void switchToSpace(SpaceInfo space) { spaces_.emplace_back(std::move(space)); }
+  void switchToSpace(SpaceInfo space) {
+    spaces_.emplace_back(std::move(space));
+  }
 
   const ColsDef& getVar(const std::string& var) const {
     static const ColsDef kEmptyCols;
@@ -35,9 +37,13 @@ class ValidateContext final {
     return vars_.at(var);
   }
 
-  bool existVar(const std::string& var) const { return vars_.find(var) != vars_.end(); }
+  bool existVar(const std::string& var) const {
+    return vars_.find(var) != vars_.end();
+  }
 
-  void addSpace(const std::string& spaceName) { createSpaces_.emplace(spaceName); }
+  void addSpace(const std::string& spaceName) {
+    createSpaces_.emplace(spaceName);
+  }
 
   bool hasSpace(const std::string& spaceName) const {
     return createSpaces_.find(spaceName) != createSpaces_.end();
@@ -47,13 +53,21 @@ class ValidateContext final {
     vars_.emplace(std::move(var), std::move(cols));
   }
 
-  bool spaceChosen() const { return !spaces_.empty(); }
+  bool spaceChosen() const {
+    return !spaces_.empty();
+  }
 
-  const SpaceInfo& whichSpace() const { return spaces_.back(); }
+  const SpaceInfo& whichSpace() const {
+    return spaces_.back();
+  }
 
-  AnonVarGenerator* anonVarGen() const { return anonVarGen_.get(); }
+  AnonVarGenerator* anonVarGen() const {
+    return anonVarGen_.get();
+  }
 
-  AnonColGenerator* anonColGen() const { return anonColGen_.get(); }
+  AnonColGenerator* anonColGen() const {
+    return anonColGen_.get();
+  }
 
   void addSchema(const std::string& name,
                  const std::shared_ptr<const meta::NebulaSchemaProvider>& schema) {
@@ -68,9 +82,13 @@ class ValidateContext final {
     return find->second;
   }
 
-  void addIndex(const std::string& indexName) { indexes_.emplace(indexName); }
+  void addIndex(const std::string& indexName) {
+    indexes_.emplace(indexName);
+  }
 
-  bool hasIndex(const std::string& indexName) { return indexes_.find(indexName) != indexes_.end(); }
+  bool hasIndex(const std::string& indexName) {
+    return indexes_.find(indexName) != indexes_.end();
+  }
 
  private:
   // spaces_ is the trace of space switch

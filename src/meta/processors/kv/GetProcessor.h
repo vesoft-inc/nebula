@@ -13,7 +13,9 @@ namespace meta {
 
 class GetProcessor : public BaseProcessor<cpp2::GetResp> {
  public:
-  static GetProcessor* instance(kvstore::KVStore* kvstore) { return new GetProcessor(kvstore); }
+  static GetProcessor* instance(kvstore::KVStore* kvstore) {
+    return new GetProcessor(kvstore);
+  }
 
   void process(const cpp2::GetReq& req);
 

@@ -99,9 +99,13 @@ class TaskDescription {
    * */
   bool setStatus(cpp2::JobStatus newStatus);
 
-  JobID getJobId() { return iJob_; }
+  JobID getJobId() {
+    return iJob_;
+  }
 
-  TaskID getTaskId() { return iTask_; }
+  TaskID getTaskId() {
+    return iTask_;
+  }
 
  private:
   JobID iJob_;

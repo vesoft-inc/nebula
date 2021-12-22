@@ -55,7 +55,9 @@ class BaseProcessor {
 
   virtual ~BaseProcessor() = default;
 
-  folly::Future<RESP> getFuture() { return promise_.getFuture(); }
+  folly::Future<RESP> getFuture() {
+    return promise_.getFuture();
+  }
 
  protected:
   /**
@@ -108,7 +110,9 @@ class BaseProcessor {
     return thriftID;
   }
 
-  HostAddr toThriftHost(const HostAddr& host) { return host; }
+  HostAddr toThriftHost(const HostAddr& host) {
+    return host;
+  }
 
   /**
    * General put function.

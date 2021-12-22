@@ -2311,7 +2311,9 @@ StatusOr<LeaderInfo> MetaClient::getLeaderInfo() {
   return leadersInfo_;
 }
 
-const std::vector<HostAddr>& MetaClient::getAddresses() { return addrs_; }
+const std::vector<HostAddr>& MetaClient::getAddresses() {
+  return addrs_;
+}
 
 std::vector<cpp2::RoleItem> MetaClient::getRolesByUserFromCache(const std::string& user) {
   if (!ready_) {

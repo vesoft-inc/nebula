@@ -53,7 +53,9 @@ class Timezone {
     return Status::OK();
   }
 
-  std::string stdZoneName() const { return DCHECK_NOTNULL(zoneInfo_)->std_zone_name(); }
+  std::string stdZoneName() const {
+    return DCHECK_NOTNULL(zoneInfo_)->std_zone_name();
+  }
 
   // offset in seconds
   int32_t utcOffsetSecs() const {
@@ -66,7 +68,9 @@ class Timezone {
   // https://man7.org/linux/man-pages/man3/tzset.3.html
   static Status initializeGlobalTimezone();
 
-  static const auto &getGlobalTimezone() { return globalTimezone; }
+  static const auto &getGlobalTimezone() {
+    return globalTimezone;
+  }
 
  private:
   static ::boost::local_time::tz_database tzdb;

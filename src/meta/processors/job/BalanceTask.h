@@ -50,18 +50,26 @@ class BalanceTask {
         kv_(kv),
         client_(client) {}
 
-  const std::string& taskIdStr() const { return taskIdStr_; }
+  const std::string& taskIdStr() const {
+    return taskIdStr_;
+  }
 
-  const std::string& taskCommandStr() const { return commandStr_; }
+  const std::string& taskCommandStr() const {
+    return commandStr_;
+  }
 
   void invoke();
 
   void rollback();
 
-  BalanceTaskResult result() const { return ret_; }
+  BalanceTaskResult result() const {
+    return ret_;
+  }
 
  private:
-  std::string buildTaskId() { return folly::stringPrintf("%d, %d:%d", jobId_, spaceId_, partId_); }
+  std::string buildTaskId() {
+    return folly::stringPrintf("%d, %d:%d", jobId_, spaceId_, partId_);
+  }
 
   std::string buildCommand() {
     return folly::stringPrintf(
@@ -70,9 +78,13 @@ class BalanceTask {
 
   bool saveInStore();
 
-  int64_t startTime() const { return startTimeMs_; }
+  int64_t startTime() const {
+    return startTimeMs_;
+  }
 
-  int64_t endTime() const { return endTimeMs_; }
+  int64_t endTime() const {
+    return endTimeMs_;
+  }
 
  private:
   JobID jobId_;

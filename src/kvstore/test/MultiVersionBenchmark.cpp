@@ -70,9 +70,13 @@ void testFn(bool withVersion) {
   }
 }
 
-BENCHMARK(WithVersionTest) { testFn(true); }
+BENCHMARK(WithVersionTest) {
+  testFn(true);
+}
 
-BENCHMARK(WithOutVersionTest) { testFn(false); }
+BENCHMARK(WithOutVersionTest) {
+  testFn(false);
+}
 
 }  // namespace kvstore
 }  // namespace nebula

@@ -47,9 +47,15 @@ class SignalHandler final {
     explicit GeneralSignalInfo(const siginfo_t *info);
     virtual ~GeneralSignalInfo() = default;
     virtual const char *toString() const;
-    int sig() const { return sig_; }
-    pid_t pid() const { return pid_; }
-    uid_t uid() const { return uid_; }
+    int sig() const {
+      return sig_;
+    }
+    pid_t pid() const {
+      return pid_;
+    }
+    uid_t uid() const {
+      return uid_;
+    }
 
    protected:
     int sig_{0};

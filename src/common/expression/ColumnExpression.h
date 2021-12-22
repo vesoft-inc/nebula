@@ -27,7 +27,9 @@ class ColumnExpression final : public Expression {
 
   void accept(ExprVisitor* visitor) override;
 
-  Expression* clone() const override { return ColumnExpression::make(pool_, index_); }
+  Expression* clone() const override {
+    return ColumnExpression::make(pool_, index_);
+  }
 
   std::string toString() const override;
 

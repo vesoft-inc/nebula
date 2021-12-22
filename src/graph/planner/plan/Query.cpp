@@ -281,7 +281,9 @@ void Filter::cloneMembers(const Filter& f) {
   needStableFilter_ = f.needStableFilter();
 }
 
-void SetOp::cloneMembers(const SetOp& s) { BinaryInputNode::cloneMembers(s); }
+void SetOp::cloneMembers(const SetOp& s) {
+  BinaryInputNode::cloneMembers(s);
+}
 
 PlanNode* Union::clone() const {
   auto* newUnion = Union::make(qctx_, nullptr, nullptr);
@@ -289,7 +291,9 @@ PlanNode* Union::clone() const {
   return newUnion;
 }
 
-void Union::cloneMembers(const Union& f) { SetOp::cloneMembers(f); }
+void Union::cloneMembers(const Union& f) {
+  SetOp::cloneMembers(f);
+}
 
 PlanNode* Intersect::clone() const {
   auto* newIntersect = Intersect::make(qctx_, nullptr, nullptr);
@@ -297,7 +301,9 @@ PlanNode* Intersect::clone() const {
   return newIntersect;
 }
 
-void Intersect::cloneMembers(const Intersect& f) { SetOp::cloneMembers(f); }
+void Intersect::cloneMembers(const Intersect& f) {
+  SetOp::cloneMembers(f);
+}
 
 PlanNode* Minus::clone() const {
   auto* newMinus = Minus::make(qctx_, nullptr, nullptr);
@@ -305,7 +311,9 @@ PlanNode* Minus::clone() const {
   return newMinus;
 }
 
-void Minus::cloneMembers(const Minus& f) { SetOp::cloneMembers(f); }
+void Minus::cloneMembers(const Minus& f) {
+  SetOp::cloneMembers(f);
+}
 
 Project::Project(QueryContext* qctx, PlanNode* input, YieldColumns* cols)
     : SingleInputNode(qctx, Kind::kProject, input), cols_(cols) {
@@ -514,7 +522,9 @@ PlanNode* SwitchSpace::clone() const {
   return newSs;
 }
 
-void SwitchSpace::cloneMembers(const SwitchSpace& l) { SingleInputNode::cloneMembers(l); }
+void SwitchSpace::cloneMembers(const SwitchSpace& l) {
+  SingleInputNode::cloneMembers(l);
+}
 
 Dedup::Dedup(QueryContext* qctx, PlanNode* input) : SingleInputNode(qctx, Kind::kDedup, input) {
   copyInputColNames(input);
@@ -526,7 +536,9 @@ PlanNode* Dedup::clone() const {
   return newDedup;
 }
 
-void Dedup::cloneMembers(const Dedup& l) { SingleInputNode::cloneMembers(l); }
+void Dedup::cloneMembers(const Dedup& l) {
+  SingleInputNode::cloneMembers(l);
+}
 
 std::unique_ptr<PlanNodeDescription> DataCollect::explain() const {
   auto desc = VariableDependencyNode::explain();
@@ -635,7 +647,9 @@ PlanNode* LeftJoin::clone() const {
   return newLeftJoin;
 }
 
-void LeftJoin::cloneMembers(const LeftJoin& l) { Join::cloneMembers(l); }
+void LeftJoin::cloneMembers(const LeftJoin& l) {
+  Join::cloneMembers(l);
+}
 
 std::unique_ptr<PlanNodeDescription> InnerJoin::explain() const {
   auto desc = Join::explain();
@@ -649,7 +663,9 @@ PlanNode* InnerJoin::clone() const {
   return newInnerJoin;
 }
 
-void InnerJoin::cloneMembers(const InnerJoin& l) { Join::cloneMembers(l); }
+void InnerJoin::cloneMembers(const InnerJoin& l) {
+  Join::cloneMembers(l);
+}
 
 std::unique_ptr<PlanNodeDescription> Assign::explain() const {
   auto desc = SingleDependencyNode::explain();

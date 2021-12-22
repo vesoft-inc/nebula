@@ -112,7 +112,9 @@ std::string SubscriptExpression::toString() const {
   return buf;
 }
 
-void SubscriptExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void SubscriptExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 // For the positive range bound it start from begin,
 // for the negative range bound it start from end
@@ -199,7 +201,9 @@ std::string SubscriptRangeExpression::toString() const {
   return buf;
 }
 
-void SubscriptRangeExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void SubscriptRangeExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 bool SubscriptRangeExpression::operator==(const Expression& rhs) const {
   if (kind() != rhs.kind()) {

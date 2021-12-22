@@ -37,7 +37,9 @@ class WKTScanner : public yyFlexLexer {
  public:
   // Called by WKTReader to set the `readBuffer' callback, which would be
   // invoked by LexerInput to fill the stream buffer.
-  void setReadBuffer(std::function<int(char *, int)> readBuffer) { readBuffer_ = readBuffer; }
+  void setReadBuffer(std::function<int(char *, int)> readBuffer) {
+    readBuffer_ = readBuffer;
+  }
 
   // Manually invoked by WKTReader to recover from a failure state.
   // This makes the scanner reentrant.
@@ -45,13 +47,19 @@ class WKTScanner : public yyFlexLexer {
     yy_flush_buffer(yy_buffer_stack ? yy_buffer_stack[yy_buffer_stack_top] : nullptr);
   }
 
-  void setWKT(std::string *wkt) { wkt_ = wkt; }
+  void setWKT(std::string *wkt) {
+    wkt_ = wkt;
+  }
 
-  std::string *wkt() { return wkt_; }
+  std::string *wkt() {
+    return wkt_;
+  }
 
  protected:
   // Called when YY_INPUT is invoked
-  int LexerInput(char *buf, int maxSize) override { return readBuffer_(buf, maxSize); }
+  int LexerInput(char *buf, int maxSize) override {
+    return readBuffer_(buf, maxSize);
+  }
 
   using TokenType = nebula::geo::WKTParser::token;
 

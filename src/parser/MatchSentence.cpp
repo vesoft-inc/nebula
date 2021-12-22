@@ -234,9 +234,13 @@ std::string MatchSentence::toString() const {
   return buf;
 }
 
-MatchPathList::MatchPathList(MatchPath* path) { pathList_.emplace_back(path); }
+MatchPathList::MatchPathList(MatchPath* path) {
+  pathList_.emplace_back(path);
+}
 
-void MatchPathList::add(MatchPath* path) { pathList_.emplace_back(path); }
+void MatchPathList::add(MatchPath* path) {
+  pathList_.emplace_back(path);
+}
 
 std::string MatchPathList::toString() const {
   std::string buf;

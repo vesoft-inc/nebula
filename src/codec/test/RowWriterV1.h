@@ -48,7 +48,9 @@ class RowWriterV1 {
   // Calculate the exact length of the encoded binary array
   int64_t size() const noexcept;
 
-  const meta::SchemaProviderIf* schema() const { return schema_; }
+  const meta::SchemaProviderIf* schema() const {
+    return schema_;
+  }
 
   // Data stream
   RowWriterV1& operator<<(bool v) noexcept;

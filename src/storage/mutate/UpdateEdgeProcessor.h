@@ -51,7 +51,9 @@ class UpdateEdgeProcessor
 
   void onProcessFinished() override;
 
-  std::vector<Expression*> getReturnPropsExp() { return returnPropsExp_; }
+  std::vector<Expression*> getReturnPropsExp() {
+    return returnPropsExp_;
+  }
   void profilePlan(StoragePlan<cpp2::EdgeKey>& plan) {
     auto& nodes = plan.getNodes();
     for (auto& node : nodes) {

@@ -16,13 +16,21 @@ class FoldConstantExprVisitor final : public ExprVisitor {
  public:
   explicit FoldConstantExprVisitor(ObjectPool *pool) : pool_(pool) {}
 
-  bool canBeFolded() const { return canBeFolded_; }
+  bool canBeFolded() const {
+    return canBeFolded_;
+  }
 
-  bool isConstant(Expression *expr) const { return expr->kind() == Expression::Kind::kConstant; }
+  bool isConstant(Expression *expr) const {
+    return expr->kind() == Expression::Kind::kConstant;
+  }
 
-  bool ok() const { return status_.ok(); }
+  bool ok() const {
+    return status_.ok();
+  }
 
-  Status status() && { return std::move(status_); }
+  Status status() && {
+    return std::move(status_);
+  }
 
   void visit(ConstantExpression *expr) override;
   void visit(UnaryExpression *expr) override;

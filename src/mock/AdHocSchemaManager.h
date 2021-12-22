@@ -108,7 +108,9 @@ class AdHocSchemaManager final : public nebula::meta::SchemaManager {
     return Status::Error("Unimplemented");
   }
 
-  StatusOr<int32_t> getPartsNum(GraphSpaceID) override { return partNum_; }
+  StatusOr<int32_t> getPartsNum(GraphSpaceID) override {
+    return partNum_;
+  }
 
  protected:
   folly::RWSpinLock tagLock_;

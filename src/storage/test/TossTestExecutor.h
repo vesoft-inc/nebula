@@ -23,7 +23,9 @@ class StorageResponseReader {
         c.begin(), c.end(), [](auto it) { return it.second == cpp2::ErrorCode::E_LEADER_CHANGED; });
   }
 
-  std::vector<Response>& data() { return resp_->responses(); }
+  std::vector<Response>& data() {
+    return resp_->responses();
+  }
 
   cpp2::ErrorCode firstErrCode() {
     for (auto& p : resp_->failedParts()) {
@@ -55,7 +57,9 @@ class GetNeighborsExecutor {
     data_ = run(uniEdges);
   }
 
-  std::vector<std::string> data() { return data_; }
+  std::vector<std::string> data() {
+    return data_;
+  }
 
   std::vector<cpp2::NewEdge> uniqueEdges(const std::vector<cpp2::NewEdge>& __edges) {
     std::vector<cpp2::NewEdge> edges(__edges);
@@ -234,9 +238,13 @@ struct AddEdgeExecutor {
     } while (retry-- > 0);
   }
 
-  bool ok() { return code_ == cpp2::ErrorCode::SUCCEEDED; }
+  bool ok() {
+    return code_ == cpp2::ErrorCode::SUCCEEDED;
+  }
 
-  cpp2::ErrorCode code() { return code_; }
+  cpp2::ErrorCode code() {
+    return code_;
+  }
 };
 
 struct GetPropsExecutor {
@@ -257,7 +265,9 @@ struct GetPropsExecutor {
   GetPropsExecutor(TestSpace* s, std::vector<cpp2::NewEdge> edges)
       : GetPropsExecutor(s, edges[0]) {}
 
-  std::vector<Value> data() { return result_; }
+  std::vector<Value> data() {
+    return result_;
+  }
 
   void rpc() {
     nebula::Row row;

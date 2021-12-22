@@ -37,9 +37,13 @@ class Route final {
     setPath(path);
   }
 
-  void setNext(Route *next) { next_ = next; }
+  void setNext(Route *next) {
+    next_ = next;
+  }
 
-  Route *next() const { return next_; }
+  Route *next() const {
+    return next_;
+  }
 
   bool matches(proxygen::HTTPMethod method, const std::string &path) const;
 
@@ -72,13 +76,21 @@ class Router final : public cpp::NonCopyable, public cpp::NonMovable {
 
   proxygen::RequestHandler *dispatch(const proxygen::HTTPMessage *msg) const;
 
-  Route &get(const std::string &path) { return route(proxygen::HTTPMethod::GET, path); }
+  Route &get(const std::string &path) {
+    return route(proxygen::HTTPMethod::GET, path);
+  }
 
-  Route &post(const std::string &path) { return route(proxygen::HTTPMethod::POST, path); }
+  Route &post(const std::string &path) {
+    return route(proxygen::HTTPMethod::POST, path);
+  }
 
-  Route &put(const std::string &path) { return route(proxygen::HTTPMethod::PUT, path); }
+  Route &put(const std::string &path) {
+    return route(proxygen::HTTPMethod::PUT, path);
+  }
 
-  Route &del(const std::string &path) { return route(proxygen::HTTPMethod::DELETE, path); }
+  Route &del(const std::string &path) {
+    return route(proxygen::HTTPMethod::DELETE, path);
+  }
 
   Route &route(proxygen::HTTPMethod method, const std::string &path);
 

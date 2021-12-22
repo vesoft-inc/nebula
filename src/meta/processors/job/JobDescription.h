@@ -51,22 +51,30 @@ class JobDescription {
   static ErrorOr<nebula::cpp2::ErrorCode, JobDescription> makeJobDescription(
       folly::StringPiece key, folly::StringPiece val);
 
-  JobID getJobId() const { return id_; }
+  JobID getJobId() const {
+    return id_;
+  }
 
   /*
    * return the command for this job. (e.g. compact, flush ...)
    * */
-  cpp2::AdminCmd getCmd() const { return cmd_; }
+  cpp2::AdminCmd getCmd() const {
+    return cmd_;
+  }
 
   /*
    * return the paras for this job. (e.g. space name for compact/flush)
    * */
-  std::vector<std::string> getParas() const { return paras_; }
+  std::vector<std::string> getParas() const {
+    return paras_;
+  }
 
   /*
    * return the status (e.g. Queue, running, finished, failed, stopped);
    * */
-  Status getStatus() const { return status_; }
+  Status getStatus() const {
+    return status_;
+  }
 
   /*
    * return the key write to kv store
@@ -140,7 +148,9 @@ class JobDescription {
     return this->cmd_ == that.cmd_ && this->paras_ == that.paras_ && this->status_ == that.status_;
   }
 
-  bool operator!=(const JobDescription& that) const { return !(*this == that); }
+  bool operator!=(const JobDescription& that) const {
+    return !(*this == that);
+  }
 
  private:
   static bool isSupportedValue(const folly::StringPiece& val);

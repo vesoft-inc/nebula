@@ -63,7 +63,9 @@ class IndexSelectionNode : public IndexNode {
   class ExprContext : public ExpressionContext {
    public:
     explicit ExprContext(const Map<std::string, size_t> &colPos) : colPos_(colPos) {}
-    void setRow(const Row &row) { row_ = &row; }
+    void setRow(const Row &row) {
+      row_ = &row;
+    }
     Value getEdgeProp(const std::string &edgeType, const std::string &prop) const override;
     Value getTagProp(const std::string &tag, const std::string &prop) const override;
     // override
@@ -91,8 +93,12 @@ class IndexSelectionNode : public IndexNode {
       UNUSED(prop);
       return fatal(__FILE__, __LINE__);
     }
-    Value getVertex(const std::string &) const override { return fatal(__FILE__, __LINE__); }
-    Value getEdge() const override { return fatal(__FILE__, __LINE__); }
+    Value getVertex(const std::string &) const override {
+      return fatal(__FILE__, __LINE__);
+    }
+    Value getEdge() const override {
+      return fatal(__FILE__, __LINE__);
+    }
     Value getColumn(int32_t index) const override {
       UNUSED(index);
       return fatal(__FILE__, __LINE__);
@@ -116,14 +122,30 @@ class IndexSelectionNode : public IndexNode {
 
 class SelectionExprVisitor : public ExprVisitorBase {
  public:
-  void visit(EdgeSrcIdExpression *expr) override { requiredColumns_.insert(expr->prop()); }
-  void visit(EdgeTypeExpression *expr) override { requiredColumns_.insert(expr->prop()); }
-  void visit(EdgeRankExpression *expr) override { requiredColumns_.insert(expr->prop()); }
-  void visit(EdgeDstIdExpression *expr) override { requiredColumns_.insert(expr->prop()); }
-  void visit(TagPropertyExpression *expr) override { requiredColumns_.insert(expr->prop()); }
-  void visit(EdgePropertyExpression *expr) override { requiredColumns_.insert(expr->prop()); }
-  const Set<std::string> &getRequiredColumns() { return requiredColumns_; }
-  ::nebula::cpp2::ErrorCode getCode() { return code_; }
+  void visit(EdgeSrcIdExpression *expr) override {
+    requiredColumns_.insert(expr->prop());
+  }
+  void visit(EdgeTypeExpression *expr) override {
+    requiredColumns_.insert(expr->prop());
+  }
+  void visit(EdgeRankExpression *expr) override {
+    requiredColumns_.insert(expr->prop());
+  }
+  void visit(EdgeDstIdExpression *expr) override {
+    requiredColumns_.insert(expr->prop());
+  }
+  void visit(TagPropertyExpression *expr) override {
+    requiredColumns_.insert(expr->prop());
+  }
+  void visit(EdgePropertyExpression *expr) override {
+    requiredColumns_.insert(expr->prop());
+  }
+  const Set<std::string> &getRequiredColumns() {
+    return requiredColumns_;
+  }
+  ::nebula::cpp2::ErrorCode getCode() {
+    return code_;
+  }
 
  private:
   using ExprVisitorBase::visit;

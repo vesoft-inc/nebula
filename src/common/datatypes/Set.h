@@ -18,11 +18,17 @@ struct Set {
   Set() = default;
   Set(const Set&) = default;
   Set(Set&&) noexcept = default;
-  explicit Set(std::unordered_set<Value> value) { values = std::move(value); }
+  explicit Set(std::unordered_set<Value> value) {
+    values = std::move(value);
+  }
 
-  void clear() { values.clear(); }
+  void clear() {
+    values.clear();
+  }
 
-  void __clear() { clear(); }
+  void __clear() {
+    clear();
+  }
 
   std::string toString() const;
   folly::dynamic toJson() const;
@@ -45,14 +51,22 @@ struct Set {
     return *this;
   }
 
-  bool operator==(const Set& rhs) const { return values == rhs.values; }
+  bool operator==(const Set& rhs) const {
+    return values == rhs.values;
+  }
 
-  bool contains(const Value& value) const { return values.count(value) != 0; }
+  bool contains(const Value& value) const {
+    return values.count(value) != 0;
+  }
 
-  size_t size() const { return values.size(); }
+  size_t size() const {
+    return values.size();
+  }
 };
 
-inline std::ostream& operator<<(std::ostream& os, const Set& s) { return os << s.toString(); }
+inline std::ostream& operator<<(std::ostream& os, const Set& s) {
+  return os << s.toString();
+}
 }  // namespace nebula
 
 namespace std {

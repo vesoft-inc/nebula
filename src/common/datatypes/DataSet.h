@@ -49,9 +49,13 @@ struct DataSet {
     return *this;
   }
 
-  const std::vector<std::string>& keys() const { return colNames; }
+  const std::vector<std::string>& keys() const {
+    return colNames;
+  }
 
-  const std::vector<Value>& rowValues(std::size_t index) const { return rows[index].values; }
+  const std::vector<Value>& rowValues(std::size_t index) const {
+    return rows[index].values;
+  }
 
   std::vector<Value> colValues(const std::string& colName) const {
     std::vector<Value> col;
@@ -70,13 +74,21 @@ struct DataSet {
   using iterator = std::vector<Row>::iterator;
   using const_iterator = std::vector<Row>::const_iterator;
 
-  iterator begin() { return rows.begin(); }
+  iterator begin() {
+    return rows.begin();
+  }
 
-  const_iterator begin() const { return rows.begin(); }
+  const_iterator begin() const {
+    return rows.begin();
+  }
 
-  iterator end() { return rows.end(); }
+  iterator end() {
+    return rows.end();
+  }
 
-  const_iterator end() const { return rows.end(); }
+  const_iterator end() const {
+    return rows.end();
+  }
 
   template <typename T,
             typename = typename std::enable_if<std::is_convertible<T, Row>::value, T>::type>
@@ -127,13 +139,21 @@ struct DataSet {
     rows.clear();
   }
 
-  void __clear() { clear(); }
+  void __clear() {
+    clear();
+  }
 
-  std::size_t size() const { return rowSize(); }
+  std::size_t size() const {
+    return rowSize();
+  }
 
-  std::size_t rowSize() const { return rows.size(); }
+  std::size_t rowSize() const {
+    return rows.size();
+  }
 
-  std::size_t colSize() const { return colNames.size(); }
+  std::size_t colSize() const {
+    return colNames.size();
+  }
 
   std::string toString() const {
     std::stringstream os;
@@ -192,10 +212,14 @@ struct DataSet {
     return rowJsonObj;
   }
 
-  bool operator==(const DataSet& rhs) const { return colNames == rhs.colNames && rows == rhs.rows; }
+  bool operator==(const DataSet& rhs) const {
+    return colNames == rhs.colNames && rows == rhs.rows;
+  }
 };
 
-inline std::ostream& operator<<(std::ostream& os, const DataSet& d) { return os << d.toString(); }
+inline std::ostream& operator<<(std::ostream& os, const DataSet& d) {
+  return os << d.toString();
+}
 
 }  // namespace nebula
 #endif  // COMMON_DATATYPES_DATASET_H_

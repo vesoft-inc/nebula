@@ -48,17 +48,25 @@ class MetaJobExecutor {
   // Stop the job when the user cancel it.
   virtual nebula::cpp2::ErrorCode stop() = 0;
 
-  virtual nebula::cpp2::ErrorCode finish(bool) { return nebula::cpp2::ErrorCode::SUCCEEDED; }
+  virtual nebula::cpp2::ErrorCode finish(bool) {
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  }
 
-  void setSpaceId(GraphSpaceID spaceId) { space_ = spaceId; }
+  void setSpaceId(GraphSpaceID spaceId) {
+    space_ = spaceId;
+  }
 
   virtual nebula::cpp2::ErrorCode saveSpecialTaskStatus(const cpp2::ReportTaskReq&) {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
-  virtual bool runInMeta() { return false; }
+  virtual bool runInMeta() {
+    return false;
+  }
 
-  virtual nebula::cpp2::ErrorCode recovery() { return nebula::cpp2::ErrorCode::SUCCEEDED; }
+  virtual nebula::cpp2::ErrorCode recovery() {
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  }
 
   void setFinishCallBack(std::function<nebula::cpp2::ErrorCode(bool ret)> func) {
     onFinished_ = func;

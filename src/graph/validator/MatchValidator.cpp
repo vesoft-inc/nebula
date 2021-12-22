@@ -16,7 +16,9 @@ MatchValidator::MatchValidator(Sentence *sentence, QueryContext *context)
   matchCtx_ = getContext<MatchAstContext>();
 }
 
-AstContext *MatchValidator::getAstContext() { return matchCtx_.get(); }
+AstContext *MatchValidator::getAstContext() {
+  return matchCtx_.get();
+}
 
 Status MatchValidator::validateImpl() {
   auto *sentence = static_cast<MatchSentence *>(sentence_);

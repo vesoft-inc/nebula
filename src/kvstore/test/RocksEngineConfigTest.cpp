@@ -126,7 +126,9 @@ TEST(RocksEngineConfigTest, CompressionConfigTest) {
     ASSERT_EQ(rocksdb::kLZ4Compression, options.compression_per_level[6]);
 
     rocksdb::DB* db = nullptr;
-    SCOPE_EXIT { delete db; };
+    SCOPE_EXIT {
+      delete db;
+    };
     options.create_if_missing = true;
     fs::TempDir rootPath("/tmp/RocksDBCompressionConfigTest.XXXXXX");
     status = rocksdb::DB::Open(options, rootPath.path(), &db);
@@ -149,7 +151,9 @@ TEST(RocksEngineConfigTest, CompressionConfigTest) {
     ASSERT_EQ(rocksdb::kBZip2Compression, options.compression_per_level[6]);
 
     rocksdb::DB* db = nullptr;
-    SCOPE_EXIT { delete db; };
+    SCOPE_EXIT {
+      delete db;
+    };
     options.create_if_missing = true;
     fs::TempDir rootPath("/tmp/RocksDBCompressionConfigTest.XXXXXX");
     status = rocksdb::DB::Open(options, rootPath.path(), &db);
@@ -165,7 +169,9 @@ TEST(RocksEngineConfigTest, KeyValueSeparationTest) {
   ASSERT_TRUE(status.ok()) << status.ToString();
 
   rocksdb::DB* db = nullptr;
-  SCOPE_EXIT { delete db; };
+  SCOPE_EXIT {
+    delete db;
+  };
   options.create_if_missing = true;
   fs::TempDir rootPath("/tmp/RocksDBCompressionConfigTest.XXXXXX");
   status = rocksdb::DB::Open(options, rootPath.path(), &db);

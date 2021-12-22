@@ -82,7 +82,9 @@ std::vector<ScanRange> GeoIndex::intersects(const Geography& g) const noexcept {
 }
 
 // covers degenerates to intersects currently
-std::vector<ScanRange> GeoIndex::covers(const Geography& g) const noexcept { return intersects(g); }
+std::vector<ScanRange> GeoIndex::covers(const Geography& g) const noexcept {
+  return intersects(g);
+}
 
 // coveredBy degenerates to intersects currently
 std::vector<ScanRange> GeoIndex::coveredBy(const Geography& g) const noexcept {

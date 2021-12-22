@@ -29,7 +29,9 @@ TempFile::~TempFile() {
   }
 }
 
-const char* TempFile::path() const { return path_.get(); }
+const char* TempFile::path() const {
+  return path_.get();
+}
 
 }  // namespace fs
 }  // namespace nebula

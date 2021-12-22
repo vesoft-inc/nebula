@@ -49,9 +49,13 @@ class CounterId final {
     return *this;
   }
 
-  bool valid() const { return index_ != 0; }
+  bool valid() const {
+    return index_ != 0;
+  }
 
-  int32_t index() const { return index_; }
+  int32_t index() const {
+    return index_;
+  }
 
  private:
   int32_t index_;

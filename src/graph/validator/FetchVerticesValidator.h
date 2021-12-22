@@ -25,7 +25,9 @@ class FetchVerticesValidator final : public Validator {
 
   Status validateYield(YieldClause* yield);
 
-  AstContext* getAstContext() override { return fetchCtx_.get(); }
+  AstContext* getAstContext() override {
+    return fetchCtx_.get();
+  }
 
   void extractVertexProp(ExpressionProps& exprProps);
 

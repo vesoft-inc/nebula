@@ -175,7 +175,9 @@ bool GeoFunction::covers(const Geography& a, const Geography& b) {
   return false;
 }
 
-bool GeoFunction::coveredBy(const Geography& a, const Geography& b) { return covers(b, a); }
+bool GeoFunction::coveredBy(const Geography& a, const Geography& b) {
+  return covers(b, a);
+}
 
 bool GeoFunction::dWithin(const Geography& a, const Geography& b, double distance, bool exclusive) {
   auto aRegion = a.asS2();

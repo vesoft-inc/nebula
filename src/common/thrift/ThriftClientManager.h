@@ -23,7 +23,9 @@ class ThriftClientManager final {
                                      bool compatibility = false,
                                      uint32_t timeout = 0);
 
-  ~ThriftClientManager() { VLOG(3) << "~ThriftClientManager"; }
+  ~ThriftClientManager() {
+    VLOG(3) << "~ThriftClientManager";
+  }
 
   explicit ThriftClientManager(bool enableSSL = false) : enableSSL_(enableSSL) {
     VLOG(3) << "ThriftClientManager";

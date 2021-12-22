@@ -8,7 +8,9 @@
 namespace nebula {
 namespace meta {
 
-void SplitZoneProcessor::process(const cpp2::SplitZoneReq& req) { UNUSED(req); }
+void SplitZoneProcessor::process(const cpp2::SplitZoneReq& req) {
+  UNUSED(req);
+}
 
 }  // namespace meta
 }  // namespace nebula

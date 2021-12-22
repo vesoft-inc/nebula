@@ -74,7 +74,9 @@ class KVStore {
   virtual ErrorOr<nebula::cpp2::ErrorCode, HostAddr> partLeader(GraphSpaceID spaceId,
                                                                 PartitionID partID) = 0;
 
-  virtual PartManager* partManager() const { return nullptr; }
+  virtual PartManager* partManager() const {
+    return nullptr;
+  }
 
   // Read a single key
   virtual nebula::cpp2::ErrorCode get(GraphSpaceID spaceId,

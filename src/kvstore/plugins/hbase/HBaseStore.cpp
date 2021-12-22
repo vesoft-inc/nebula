@@ -400,7 +400,9 @@ void HBaseStore::asyncRemovePrefix(GraphSpaceID spaceId,
   return cb(removePrefix());
 }
 
-ResultCode HBaseStore::ingest(GraphSpaceID) { LOG(FATAL) << "Unimplement"; }
+ResultCode HBaseStore::ingest(GraphSpaceID) {
+  LOG(FATAL) << "Unimplement";
+}
 
 int32_t HBaseStore::allLeader(std::unordered_map<GraphSpaceID, std::vector<PartitionID>>&) {
   LOG(FATAL) << "Unimplement";

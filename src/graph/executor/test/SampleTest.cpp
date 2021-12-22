@@ -41,11 +41,17 @@ class SampleTest : public QueryTestBase {};
     EXPECT_EQ(proResult.state(), Result::State::kSuccess);                                  \
   } while (false)
 
-TEST_F(SampleTest, SequentialInRange2) { SAMPLE_RESULT_CHECK("sample_in_sequential2", 4, 4); }
+TEST_F(SampleTest, SequentialInRange2) {
+  SAMPLE_RESULT_CHECK("sample_in_sequential2", 4, 4);
+}
 
-TEST_F(SampleTest, SequentialOutRange1) { SAMPLE_RESULT_CHECK("sample_out_sequential3", 7, 6); }
+TEST_F(SampleTest, SequentialOutRange1) {
+  SAMPLE_RESULT_CHECK("sample_out_sequential3", 7, 6);
+}
 
-TEST_F(SampleTest, SequentialOutRange2) { SAMPLE_RESULT_CHECK("sample_out_sequential4", 8, 6); }
+TEST_F(SampleTest, SequentialOutRange2) {
+  SAMPLE_RESULT_CHECK("sample_out_sequential4", 8, 6);
+}
 
 #define SAMPLE_GN_RESULT_CHECK(outputName, count, expect)                                  \
   do {                                                                                     \
@@ -70,11 +76,17 @@ TEST_F(SampleTest, SequentialOutRange2) { SAMPLE_RESULT_CHECK("sample_out_sequen
     EXPECT_EQ(proResult.state(), Result::State::kSuccess);                                 \
   } while (false)
 
-TEST_F(SampleTest, GN2) { SAMPLE_GN_RESULT_CHECK("sample_in_gn2", 4, 4); }
+TEST_F(SampleTest, GN2) {
+  SAMPLE_GN_RESULT_CHECK("sample_in_gn2", 4, 4);
+}
 
-TEST_F(SampleTest, GNOutOfRange1) { SAMPLE_GN_RESULT_CHECK("sample_out_gn1", 6, 4); }
+TEST_F(SampleTest, GNOutOfRange1) {
+  SAMPLE_GN_RESULT_CHECK("sample_out_gn1", 6, 4);
+}
 
-TEST_F(SampleTest, GNOutOfRange2) { SAMPLE_GN_RESULT_CHECK("sample_out_gn2", 7, 4); }
+TEST_F(SampleTest, GNOutOfRange2) {
+  SAMPLE_GN_RESULT_CHECK("sample_out_gn2", 7, 4);
+}
 
 }  // namespace graph
 }  // namespace nebula

@@ -46,7 +46,9 @@ struct Edge {
 
   void clear();
 
-  void __clear() { clear(); }
+  void __clear() {
+    clear();
+  }
 
   std::string toString() const;
   folly::dynamic toJson() const;
@@ -72,7 +74,9 @@ struct Edge {
   bool keyEqual(const Edge& rhs) const;
 };
 
-inline std::ostream& operator<<(std::ostream& os, const Edge& v) { return os << v.toString(); }
+inline std::ostream& operator<<(std::ostream& os, const Edge& v) {
+  return os << v.toString();
+}
 
 }  // namespace nebula
 

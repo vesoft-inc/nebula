@@ -31,11 +31,17 @@ const LookupSentence* LookupValidator::sentence() const {
   return static_cast<LookupSentence*>(sentence_);
 }
 
-int32_t LookupValidator::schemaId() const { return DCHECK_NOTNULL(lookupCtx_)->schemaId; }
+int32_t LookupValidator::schemaId() const {
+  return DCHECK_NOTNULL(lookupCtx_)->schemaId;
+}
 
-GraphSpaceID LookupValidator::spaceId() const { return DCHECK_NOTNULL(lookupCtx_)->space.id; }
+GraphSpaceID LookupValidator::spaceId() const {
+  return DCHECK_NOTNULL(lookupCtx_)->space.id;
+}
 
-AstContext* LookupValidator::getAstContext() { return lookupCtx_.get(); }
+AstContext* LookupValidator::getAstContext() {
+  return lookupCtx_.get();
+}
 
 Status LookupValidator::validateImpl() {
   lookupCtx_ = getContext<LookupContext>();

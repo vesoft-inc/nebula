@@ -88,11 +88,21 @@ class IndexNode {
       this->empty_ = result.empty_;
       return *this;
     }
-    inline bool success() { return code_ == ErrorCode::SUCCEEDED; }
-    inline bool hasData() { return success() && empty_ == false; }
-    inline Row row() && { return std::move(row_); }
-    inline Row& row() & { return row_; }
-    ErrorCode code() { return code_; }
+    inline bool success() {
+      return code_ == ErrorCode::SUCCEEDED;
+    }
+    inline bool hasData() {
+      return success() && empty_ == false;
+    }
+    inline Row row() && {
+      return std::move(row_);
+    }
+    inline Row& row() & {
+      return row_;
+    }
+    ErrorCode code() {
+      return code_;
+    }
 
    private:
     ErrorCode code_{ErrorCode::SUCCEEDED};
@@ -104,8 +114,12 @@ class IndexNode {
   explicit IndexNode(RuntimeContext* context, const std::string& name);
   virtual ~IndexNode() = default;
   virtual std::unique_ptr<IndexNode> copy() = 0;
-  void addChild(std::unique_ptr<IndexNode> child) { children_.emplace_back(std::move(child)); }
-  const std::vector<std::unique_ptr<IndexNode>>& children() { return children_; }
+  void addChild(std::unique_ptr<IndexNode> child) {
+    children_.emplace_back(std::move(child));
+  }
+  const std::vector<std::unique_ptr<IndexNode>>& children() {
+    return children_;
+  }
   virtual ::nebula::cpp2::ErrorCode init(InitContext& initCtx) {
     DCHECK_EQ(children_.size(), 1);
     return children_[0]->init(initCtx);
@@ -116,7 +130,9 @@ class IndexNode {
   // inline nebula::cpp2::ErrorCode finish();
 
   /* assist */
-  const std::string& name() { return name_; }
+  const std::string& name() {
+    return name_;
+  }
   void enableProfileDetail();
   virtual std::string identify() = 0;
   inline const time::Duration& duration();
@@ -186,7 +202,9 @@ inline void IndexNode::enableProfileDetail() {
   }
 }
 
-inline const time::Duration& IndexNode::duration() { return duration_; }
+inline const time::Duration& IndexNode::duration() {
+  return duration_;
+}
 
 }  // namespace storage
 }  // namespace nebula
