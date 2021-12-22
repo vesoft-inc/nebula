@@ -27,6 +27,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:graph_context_obj>
         $<TARGET_OBJECTS:graph_auth_obj>
         $<TARGET_OBJECTS:expression_obj>
+        $<TARGET_OBJECTS:snowflake_obj>
         $<TARGET_OBJECTS:network_obj>
         $<TARGET_OBJECTS:fs_obj>
         $<TARGET_OBJECTS:time_obj>

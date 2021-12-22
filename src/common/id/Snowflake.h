@@ -10,39 +10,42 @@
 #include "common/base/Base.h"
 
 namespace nebula {
-class SnowFlake {
+class Snowflake {
  public:
-  SnowFlake() = default;
+  Snowflake() = default;
 
   static void initWorkerId(meta::MetaClient* client) {
-    LOG(INFO) << "Initializing SnowFlake workerId get Ip";
+    LOG(INFO) << "Initializing Snowflake workerId get Ip";
     const std::string& ip = client->getLocalIp();
-    LOG(INFO) << "Initializing SnowFlake workerId get Ip done, ip: " << ip;
+    LOG(INFO) << "Initializing Snowflake workerId get Ip done, ip: " << ip;
     auto result = client->getWorkerId(ip).get();
     if (!result.ok()) {
       LOG(FATAL) << "Failed to get workerId from meta server";
     }
-    LOG(INFO) << "Initializing SnowFlake workerId done";
-    workerId_ = result.value().get_workerid();
+    LOG(INFO) << "Initializing Snowflake workerId done";
+    workerId_ = result.value();
   }
+
+  static void mockInitWorkerId(int32_t workerId) { workerId_ = workerId; }
 
   int64_t getId();
 
  private:
-  mutable std::mutex lock_;
-
-  static inline int64_t workerId_ = 0;  // 10 bits
+  /*
+   *  Snowflake id: | timestampBit 41 | workerBit 10 | sequenceBit 12 |
+   */
   int64_t lastTimestamp_ = -1;          // 41 bits
+  static inline int64_t workerId_ = 0;  // 10 bits
   std::atomic_int64_t sequence_ = 0;    // 12 bits
 
   int64_t getTimestamp();
 
-  int64_t nextTimestamp_();
+  int64_t nextTimestamp();
 
   // start
   static constexpr int64_t startStmp_ = 1480166465631;
-  static constexpr int64_t sequenceBit_ = 12;
   static constexpr int64_t workerBit_ = 10;
+  static constexpr int64_t sequenceBit_ = 12;
 
   static constexpr int64_t maxMachineId_ = (1 << workerBit_) - 1;
   static constexpr int64_t maxSequenceId_ = (1 << sequenceBit_) - 1;

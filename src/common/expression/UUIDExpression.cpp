@@ -6,7 +6,7 @@
 #include "common/expression/UUIDExpression.h"
 
 #include "common/expression/ExprVisitor.h"
-#include "common/id/SnowFlake.h"
+#include "common/id/Snowflake.h"
 
 namespace nebula {
 
@@ -22,7 +22,7 @@ void UUIDExpression::resetFrom(Decoder& decoder) { UNUSED(decoder); }
 
 const Value& UUIDExpression::eval(ExpressionContext& ctx) {
   UNUSED(ctx);
-  SnowFlake generator;
+  Snowflake generator;
   result_ = generator.getId();
   return result_;
 }

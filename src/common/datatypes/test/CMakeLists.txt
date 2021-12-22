@@ -38,6 +38,7 @@ nebula_add_test(
     OBJECTS
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:expression_obj>
+        $<TARGET_OBJECTS:snowflake_obj>
         $<TARGET_OBJECTS:meta_client_obj>
         $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:thrift_obj>
@@ -123,6 +124,7 @@ nebula_add_test(
     OBJECTS
         $<TARGET_OBJECTS:base_obj>
         $<TARGET_OBJECTS:expression_obj>
+        $<TARGET_OBJECTS:snowflake_obj>
         $<TARGET_OBJECTS:meta_client_obj>
         $<TARGET_OBJECTS:thrift_obj>
         $<TARGET_OBJECTS:meta_thrift_obj>

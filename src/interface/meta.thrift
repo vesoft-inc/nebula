@@ -497,13 +497,13 @@ struct GetPartsAllocResp {
 
 // get workerid for snowflake
 struct GetWorkerIdReq {
-    1: binary ip_address, 
+    1: binary host, 
 }
 
 struct GetWorkerIdResp {
     1: common.ErrorCode code,
     2: common.HostAddr  leader,
-    3: i32              workerid,
+    3: i64              workerid,
 }
 
 struct MultiPutReq {

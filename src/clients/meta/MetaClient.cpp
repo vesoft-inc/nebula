@@ -3501,17 +3501,18 @@ folly::Future<StatusOr<cpp2::ExecResp>> MetaClient::killQuery(
   return future;
 }
 
-folly::Future<StatusOr<cpp2::GetWorkerIdResp>> MetaClient::getWorkerId(std::string ipAddr) {
+folly::Future<StatusOr<int64_t>> MetaClient::getWorkerId(std::string ipAddr) {
   cpp2::GetWorkerIdReq req;
-  req.set_ip_address(std::move(ipAddr));
+  req.set_host(std::move(ipAddr));
 
-  folly::Promise<StatusOr<cpp2::GetWorkerIdResp>> promise;
+  folly::Promise<StatusOr<int64_t>> promise;
   auto future = promise.getFuture();
   getResponse(
       std::move(req),
       [](auto client, auto request) { return client->future_getWorkerId(request); },
-      [](cpp2::GetWorkerIdResp&& resp) -> decltype(auto) { return std::move(resp); },
-      std::move(promise));
+      [](cpp2::GetWorkerIdResp&& resp) -> int64_t { return std::move(resp).get_workerid(); },
+      std::move(promise),
+      true);
   return future;
 }
 

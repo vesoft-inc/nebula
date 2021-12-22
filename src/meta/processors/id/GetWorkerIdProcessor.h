@@ -26,6 +26,8 @@ class GetWorkerIdProcessor : public BaseProcessor<cpp2::GetWorkerIdResp> {
     doPut(data);
   }
 
+  void doPut(std::vector<kvstore::KV> data);
+
   inline static const string idKey = "snowflake_worker_id";
 };
 

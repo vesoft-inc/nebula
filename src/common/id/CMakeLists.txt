@@ -5,5 +5,7 @@
 
 nebula_add_library(
     snowflake_obj OBJECT
-    SnowFlake.cpp
+    Snowflake.cpp
 )
+
+nebula_add_subdirectory(test)
