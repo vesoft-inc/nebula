@@ -28,7 +28,7 @@ class Status final {
   ~Status() = default;
 
   Status(const Status &rhs) {
-    state_ = rhs.state_ == nullptr ? nullptr : copyState(rhs.state_.get());
+    state_ = (!rhs.state_ ? nullptr : copyState(rhs.state_.get()));
   }
 
   Status &operator=(const Status &rhs) {
@@ -203,7 +203,7 @@ class Status final {
   //  state_[0..1] length of the error msg, i.e. size() - kHeaderSize
   //  state_[2..3] code
   //  state_[4...] verbose error message
-  std::unique_ptr<const char[]> state_{nullptr};
+  std::unique_ptr<const char[]> state_;
 };
 
 inline std::ostream &operator<<(std::ostream &os, const Status &status) {
