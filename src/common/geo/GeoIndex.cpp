@@ -30,7 +30,17 @@
 namespace nebula {
 namespace geo {
 
-nebula::storage::cpp2::IndexColumnHint ScanRange::toIndexColumnHint() {
+bool ScanRange::operator==(const ScanRange& rhs) const {
+  if (isRangeScan != rhs.isRangeScan) {
+    return false;
+  }
+  if (isRangeScan) {
+    return rangeMin == rhs.rangeMin && rangeMax == rhs.rangeMax;
+  }
+  return rangeMin == rhs.rangeMin;
+}
+
+nebula::storage::cpp2::IndexColumnHint ScanRange::toIndexColumnHint() const {
   nebula::storage::cpp2::IndexColumnHint hint;
   // column_name should be set by the caller
   if (isRangeScan) {

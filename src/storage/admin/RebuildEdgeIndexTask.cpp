@@ -136,7 +136,7 @@ nebula::cpp2::ErrorCode RebuildEdgeIndexTask::buildIndexGlobal(GraphSpaceID spac
 
     for (const auto& item : items) {
       if (item->get_schema_id().get_edge_type() == edgeType) {
-        auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(), item->get_fields());
+        auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(), item.get());
         if (!valuesRet.ok()) {
           LOG(WARNING) << "Collect index value failed";
           continue;
