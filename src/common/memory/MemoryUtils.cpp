@@ -69,7 +69,7 @@ StatusOr<bool> MemoryUtils::hitsHighWatermark() {
     std::sort(memorySize.begin(), memorySize.end());
     if (memorySize.size() >= 2u) {
       total = memorySize.back();
-      available = memorySize[memorySize.size() - 1];
+      available = memorySize[memorySize.size() - 2];
     } else {
       return false;
     }
