@@ -37,6 +37,7 @@ void DropZoneProcessor::process(const cpp2::DropZoneReq& req) {
   // Check Host contain partition
   for (auto& host : hosts) {
     code = checkHostPartition(host);
+    CHECK_CODE_AND_BREAK();
   }
 
   if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {

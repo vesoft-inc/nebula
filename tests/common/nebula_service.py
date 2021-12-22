@@ -367,7 +367,7 @@ class NebulaService(object):
         # assert client_pool.init([("127.0.0.1", int(self.graphd_port))], config)
         assert client_pool.init([("127.0.0.1", self.graphd_processes[0].tcp_port)], config)
 
-        cmd = "ADD HOSTS 127.0.0.1:" + str(self.storaged_processes[0].tcp_port) + " INTO NEW ZONE default_zone"
+        cmd = "ADD HOSTS 127.0.0.1:" + str(self.storaged_processes[0].tcp_port) + " INTO NEW ZONE \"default_zone\""
         print(cmd)
 
         # get session from the pool

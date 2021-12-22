@@ -9,9 +9,11 @@ namespace nebula {
 namespace meta {
 
 void DivideZoneProcessor::process(const cpp2::DivideZoneReq& req) {
+  folly::SharedMutex::WriteHolder zHolder(LockUtils::zoneLock());
+  folly::SharedMutex::WriteHolder sHolder(LockUtils::spaceLock());
   auto zoneName = req.get_zone_name();
   auto zoneKey = MetaKeyUtils::zoneKey(zoneName);
-  auto zoneValueRet = doGet(std::move(zoneKey));
+  auto zoneValueRet = doGet(zoneKey);
   if (!nebula::ok(zoneValueRet)) {
     LOG(ERROR) << "Zone " << zoneName << " not existed error: "
                << apache::thrift::util::enumNameSafe(nebula::cpp2::ErrorCode::E_ZONE_NOT_FOUND);
@@ -20,57 +22,54 @@ void DivideZoneProcessor::process(const cpp2::DivideZoneReq& req) {
     return;
   }
 
-  auto oneZoneName = req.get_one_zone_name();
-  auto oneZoneValueRet = doGet(MetaKeyUtils::zoneKey(oneZoneName));
-  if (nebula::ok(oneZoneValueRet)) {
-    LOG(ERROR) << "Zone " << oneZoneName << " have existed";
-    handleErrorCode(nebula::cpp2::ErrorCode::E_EXISTED);
-    onFinished();
-    return;
-  }
-
-  auto anotherZoneName = req.get_another_zone_name();
-  auto anotherZoneValueRet = doGet(MetaKeyUtils::zoneKey(anotherZoneName));
-  if (nebula::ok(anotherZoneValueRet)) {
-    LOG(ERROR) << "Zone " << anotherZoneName << " have existed";
-    handleErrorCode(nebula::cpp2::ErrorCode::E_EXISTED);
-    onFinished();
-    return;
-  }
-
-  auto oneZoneHosts = req.get_one_zone_hosts();
-  // Confirm that there are no duplicates in the parameters.
-  if (std::unique(oneZoneHosts.begin(), oneZoneHosts.end()) != oneZoneHosts.end()) {
-    LOG(ERROR) << "Zones have duplicated element";
+  auto& zoneItems = req.get_zone_items();
+  auto zoneHosts = MetaKeyUtils::parseZoneHosts(std::move(nebula::value(zoneValueRet)));
+  if (zoneItems.size() > zoneHosts.size()) {
+    LOG(ERROR) << "Zone Item should not greater than hosts size";
     handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
     onFinished();
     return;
   }
 
-  auto anotherZoneHosts = req.get_another_zone_hosts();
-  // Confirm that there are no duplicates in the parameters.
-  if (std::unique(anotherZoneHosts.begin(), anotherZoneHosts.end()) != anotherZoneHosts.end()) {
-    LOG(ERROR) << "Zones have duplicated element";
-    handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
-    onFinished();
-    return;
-  }
-
-  if (oneZoneHosts.empty() || anotherZoneHosts.empty()) {
-    LOG(ERROR) << "Hosts should not be empty";
-    handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
-    onFinished();
-    return;
-  }
-
+  std::vector<std::string> zoneNames;
+  std::unordered_set<HostAddr> totalHosts;
+  auto batchHolder = std::make_unique<kvstore::BatchHolder>();
   nebula::cpp2::ErrorCode code = nebula::cpp2::ErrorCode::SUCCEEDED;
-  for (auto& host : oneZoneHosts) {
-    auto iter = std::find(anotherZoneHosts.begin(), anotherZoneHosts.end(), host);
-    if (iter != anotherZoneHosts.end()) {
-      LOG(ERROR) << "Host " << host << " repeat with another zone hosts";
-      code = nebula::cpp2::ErrorCode::E_CONFLICT;
+  for (auto iter = zoneItems.begin(); iter != zoneItems.end(); iter++) {
+    auto zone = iter->first;
+    auto hosts = iter->second;
+    auto valueRet = doGet(MetaKeyUtils::zoneKey(zone));
+    if (nebula::ok(valueRet)) {
+      LOG(ERROR) << "Zone " << zone << " have existed";
+      code = nebula::cpp2::ErrorCode::E_EXISTED;
       break;
     }
+
+    auto it = std::find(zoneNames.begin(), zoneNames.end(), zone);
+    if (it == zoneNames.end()) {
+      LOG(ERROR) << "Zone have duplicated name";
+      zoneNames.emplace_back(zone);
+    } else {
+      code = nebula::cpp2::ErrorCode::E_INVALID_PARM;
+      break;
+    }
+
+    if (hosts.empty()) {
+      LOG(ERROR) << "Hosts should not be empty";
+      code = nebula::cpp2::ErrorCode::E_INVALID_PARM;
+    }
+
+    if (std::unique(hosts.begin(), hosts.end()) != hosts.end()) {
+      LOG(ERROR) << "Zone have duplicated host";
+      code = nebula::cpp2::ErrorCode::E_INVALID_PARM;
+      break;
+    }
+
+    std::copy(hosts.begin(), hosts.end(), std::inserter(totalHosts, totalHosts.end()));
+
+    auto key = MetaKeyUtils::zoneKey(std::move(zone));
+    auto val = MetaKeyUtils::zoneVal(std::move(hosts));
+    batchHolder->put(std::move(key), std::move(val));
   }
 
   if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -79,24 +78,14 @@ void DivideZoneProcessor::process(const cpp2::DivideZoneReq& req) {
     return;
   }
 
-  std::vector<HostAddr> unionHosts;
-  std::sort(oneZoneHosts.begin(), oneZoneHosts.end());
-  std::sort(anotherZoneHosts.begin(), anotherZoneHosts.end());
-  std::set_union(oneZoneHosts.begin(),
-                 oneZoneHosts.end(),
-                 anotherZoneHosts.begin(),
-                 anotherZoneHosts.end(),
-                 std::back_inserter(unionHosts));
-
-  auto zoneHosts = MetaKeyUtils::parseZoneHosts(std::move(nebula::value(zoneValueRet)));
-  if (unionHosts.size() != zoneHosts.size()) {
+  if (totalHosts.size() != zoneHosts.size()) {
     LOG(ERROR) << "The total host is not all hosts";
     handleErrorCode(nebula::cpp2::ErrorCode::E_INVALID_PARM);
     onFinished();
     return;
   }
 
-  for (auto& host : unionHosts) {
+  for (auto& host : totalHosts) {
     auto iter = std::find(zoneHosts.begin(), zoneHosts.end(), host);
     if (iter == zoneHosts.end()) {
       LOG(ERROR) << "Host " << host << " not exist in original zone";
@@ -112,48 +101,22 @@ void DivideZoneProcessor::process(const cpp2::DivideZoneReq& req) {
   }
 
   // Remove original zone
-  folly::Baton<true, std::atomic> baton;
-  std::vector<std::string> keys = {zoneKey};
-  auto result = nebula::cpp2::ErrorCode::SUCCEEDED;
-  kvstore_->asyncMultiRemove(kDefaultSpaceId,
-                             kDefaultPartId,
-                             std::move(keys),
-                             [&result, &baton](nebula::cpp2::ErrorCode res) {
-                               if (nebula::cpp2::ErrorCode::SUCCEEDED != res) {
-                                 result = res;
-                                 LOG(ERROR) << "Remove data error on meta server";
-                               }
-                               baton.post();
-                             });
-  baton.wait();
-  if (result != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    this->handleErrorCode(result);
-    this->onFinished();
-    return;
-  }
-
-  std::vector<kvstore::KV> data;
-  code = updateSpacesZone(data, zoneName, oneZoneName, anotherZoneName);
+  batchHolder->remove(std::move(zoneKey));
+  code = updateSpacesZone(batchHolder.get(), zoneName, zoneNames);
   if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
     handleErrorCode(code);
     onFinished();
     return;
   }
 
-  auto oneZoneKey = MetaKeyUtils::zoneKey(std::move(oneZoneName));
-  auto oneZoneVal = MetaKeyUtils::zoneVal(std::move(oneZoneHosts));
-  data.emplace_back(std::move(oneZoneKey), std::move(oneZoneVal));
-
-  auto anotherZoneKey = MetaKeyUtils::zoneKey(std::move(anotherZoneName));
-  auto anotherZoneVal = MetaKeyUtils::zoneVal(std::move(anotherZoneHosts));
-  data.emplace_back(std::move(anotherZoneKey), std::move(anotherZoneVal));
-  doSyncPutAndUpdate(std::move(data));
+  auto batch = encodeBatchValue(std::move(batchHolder)->getBatch());
+  doBatchOperation(std::move(batch));
 }
 
-nebula::cpp2::ErrorCode DivideZoneProcessor::updateSpacesZone(std::vector<kvstore::KV>& data,
-                                                              const std::string& originalZoneName,
-                                                              const std::string& oneZoneName,
-                                                              const std::string& anotherZoneName) {
+nebula::cpp2::ErrorCode DivideZoneProcessor::updateSpacesZone(
+    kvstore::BatchHolder* batchHolder,
+    const std::string& originalZoneName,
+    const std::vector<std::string>& zoneNames) {
   const auto& prefix = MetaKeyUtils::spacePrefix();
   auto ret = doPrefix(prefix);
 
@@ -164,18 +127,21 @@ nebula::cpp2::ErrorCode DivideZoneProcessor::updateSpacesZone(std::vector<kvstor
 
   auto iter = nebula::value(ret).get();
   while (iter->valid()) {
-    auto spaceKey = iter->key();
+    auto id = MetaKeyUtils::spaceId(iter->key());
     auto properties = MetaKeyUtils::parseSpace(iter->val());
     auto zones = properties.get_zone_names();
 
     auto it = std::find(zones.begin(), zones.end(), originalZoneName);
     if (it != zones.end()) {
       zones.erase(it);
-      zones.emplace_back(oneZoneName);
-      zones.emplace_back(anotherZoneName);
-      properties.set_zone_names(zones);
+      for (auto& zone : zoneNames) {
+        zones.emplace_back(zone);
+      }
+
+      properties.zone_names_ref() = zones;
+      auto spaceKey = MetaKeyUtils::spaceKey(id);
       auto spaceVal = MetaKeyUtils::spaceVal(properties);
-      data.emplace_back(spaceKey, std::move(spaceVal));
+      batchHolder->put(std::move(spaceKey), std::move(spaceVal));
     }
     iter->next();
   }

@@ -275,11 +275,11 @@ TEST(BalanceTest, ExpansionZoneTest) {
   }
   {
     cpp2::SpaceDesc properties;
-    properties.set_space_name("default_space");
-    properties.set_partition_num(4);
-    properties.set_replica_factor(3);
+    properties.space_name_ref() = "default_space";
+    properties.partition_num_ref() = 4;
+    properties.replica_factor_ref() = 3;
     std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2", "zone_3"};
-    properties.set_zone_names(std::move(zones));
+    properties.zone_names_ref() = std::move(zones);
     std::vector<kvstore::KV> data;
     data.emplace_back(MetaKeyUtils::spaceKey(1), MetaKeyUtils::spaceVal(properties));
     folly::Baton<true, std::atomic> baton;

@@ -61,14 +61,10 @@ folly::Future<Status> DropZoneExecutor::execute() {
 
 folly::Future<Status> DivideZoneExecutor::execute() {
   SCOPED_TIMER(&execTime_);
-  auto *szNode = asNode<DivideZone>(node());
+  auto *dzNode = asNode<DivideZone>(node());
   return qctx()
       ->getMetaClient()
-      ->divideZone(szNode->zoneName(),
-                   szNode->oneZoneName(),
-                   szNode->oneHosts(),
-                   szNode->anotherZoneName(),
-                   szNode->anotherHosts())
+      ->divideZone(dzNode->zoneName(), dzNode->zoneItems())
       .via(runner())
       .thenValue([](StatusOr<bool> resp) {
         if (!resp.ok()) {

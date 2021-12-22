@@ -1030,53 +1030,32 @@ class DivideZone final : public SingleDependencyNode {
   static DivideZone* make(QueryContext* qctx,
                           PlanNode* input,
                           std::string zoneName,
-                          std::string oneZoneName,
-                          std::vector<HostAddr> oneHost,
-                          std::string anotherZoneName,
-                          std::vector<HostAddr> anotherHost) {
-    return qctx->objPool()->add(new DivideZone(qctx,
-                                               input,
-                                               std::move(zoneName),
-                                               std::move(oneZoneName),
-                                               std::move(oneHost),
-                                               std::move(anotherZoneName),
-                                               std::move(anotherHost)));
+                          std::unordered_map<std::string, std::vector<HostAddr>> zoneItems) {
+    return qctx->objPool()->add(
+        new DivideZone(qctx, input, std::move(zoneName), std::move(zoneItems)));
   }
 
   const std::string& zoneName() const {
     return zoneName_;
   }
 
-  const std::string& oneZoneName() const { return oneZoneName_; }
-
-  const std::vector<HostAddr>& oneHosts() const { return oneHosts_; }
-
-  const std::string& anotherZoneName() const { return anotherZoneName_; }
-
-  const std::vector<HostAddr>& anotherHosts() const { return anotherHosts_; }
+  const std::unordered_map<std::string, std::vector<HostAddr>>& zoneItems() const {
+    return zoneItems_;
+  }
 
  private:
   DivideZone(QueryContext* qctx,
              PlanNode* input,
              std::string zoneName,
-             std::string oneZoneName,
-             std::vector<HostAddr> oneHost,
-             std::string anotherZoneName,
-             std::vector<HostAddr> anotherHost)
+             std::unordered_map<std::string, std::vector<HostAddr>> zoneItems)
       : SingleDependencyNode(qctx, Kind::kDivideZone, input) {
     zoneName_ = std::move(zoneName);
-    oneZoneName_ = std::move(oneZoneName);
-    oneHosts_ = std::move(oneHost);
-    anotherZoneName_ = std::move(anotherZoneName);
-    anotherHosts_ = std::move(anotherHost);
+    zoneItems_ = std::move(zoneItems);
   }
 
  private:
   std::string zoneName_;
-  std::string oneZoneName_;
-  std::vector<HostAddr> oneHosts_;
-  std::string anotherZoneName_;
-  std::vector<HostAddr> anotherHosts_;
+  std::unordered_map<std::string, std::vector<HostAddr>> zoneItems_;
 };
 
 class DescribeZone final : public SingleDependencyNode {
@@ -1199,7 +1178,6 @@ class ShowSessions final : public SingleInputNode {
   }
 
  private:
-
   ShowSessions(QueryContext* qctx,
                PlanNode* input,
                bool isSetSessionID,

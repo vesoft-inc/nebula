@@ -6,6 +6,7 @@
 #ifndef META_DROPHOSTSPROCESSOR_H
 #define META_DROPHOSTSPROCESSOR_H
 
+#include "kvstore/LogEncoder.h"
 #include "meta/processors/BaseProcessor.h"
 
 namespace nebula {
@@ -22,10 +23,8 @@ class DropHostsProcessor : public BaseProcessor<cpp2::ExecResp> {
  private:
   explicit DropHostsProcessor(kvstore::KVStore* kvstore) : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 
-  ErrorOr<nebula::cpp2::ErrorCode, std::vector<kvstore::KV>> checkRelatedSpaceAndCollect(
-      const std::string& zoneName);
-
-  void rewriteSpaceProperties(const std::string& spaceKey, const meta::cpp2::SpaceDesc& properties);
+  nebula::cpp2::ErrorCode checkRelatedSpaceAndCollect(const std::string& zoneName,
+                                                      kvstore::BatchHolder* holder);
 };
 
 }  // namespace meta

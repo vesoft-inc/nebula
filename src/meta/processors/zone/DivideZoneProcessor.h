@@ -6,6 +6,7 @@
 #ifndef META_DIVIDEZONEPROCESSOR_H
 #define META_DIVIDEZONEPROCESSOR_H
 
+#include "kvstore/LogEncoder.h"
 #include "meta/processors/BaseProcessor.h"
 
 namespace nebula {
@@ -23,10 +24,9 @@ class DivideZoneProcessor : public BaseProcessor<cpp2::ExecResp> {
   explicit DivideZoneProcessor(kvstore::KVStore* kvstore)
       : BaseProcessor<cpp2::ExecResp>(kvstore) {}
 
-  nebula::cpp2::ErrorCode updateSpacesZone(std::vector<kvstore::KV>& data,
+  nebula::cpp2::ErrorCode updateSpacesZone(kvstore::BatchHolder* batchHolder,
                                            const std::string& originalZoneName,
-                                           const std::string& oneZoneName,
-                                           const std::string& anotherZoneName);
+                                           const std::vector<std::string>& zoneNames);
 };
 
 }  // namespace meta

@@ -867,11 +867,8 @@ struct DropZoneReq {
 }
 
 struct DivideZoneReq {
-    1: binary                  zone_name,
-    2: binary                  one_zone_name,
-    3: list<common.HostAddr>   one_zone_hosts,
-    4: binary                  another_zone_name,
-    5: list<common.HostAddr>   another_zone_hosts,
+    1: binary                                                                   zone_name,
+    2: map<binary, list<common.HostAddr>> (cpp.template = "std::unordered_map") zone_items,
 }
 
 struct RenameZoneReq {

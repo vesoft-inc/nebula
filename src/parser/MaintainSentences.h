@@ -1018,16 +1018,9 @@ class DropZoneSentence : public Sentence {
 
 class DivideZoneSentence : public Sentence {
  public:
-  DivideZoneSentence(std::string *zoneName,
-                     std::string *oneZoneName,
-                     HostList *oneHosts,
-                     std::string *anotherZoneName,
-                     HostList *anotherHosts) {
+  DivideZoneSentence(std::string *zoneName, ZoneItemList *zoneItems) {
     zoneName_.reset(zoneName);
-    oneZoneName_.reset(oneZoneName);
-    oneHosts_.reset(oneHosts);
-    anotherZoneName_.reset(anotherZoneName);
-    anotherHosts_.reset(anotherHosts);
+    zoneItems_.reset(zoneItems);
     kind_ = Kind::kDivideZone;
   }
 
@@ -1037,20 +1030,13 @@ class DivideZoneSentence : public Sentence {
     return zoneName_.get();
   }
 
-  const std::string *oneZoneName() const { return oneZoneName_.get(); }
-
-  const HostList *oneHosts() const { return oneHosts_.get(); }
-
-  const std::string *anotherZoneName() const { return anotherZoneName_.get(); }
-
-  const HostList *anotherHosts() const { return anotherHosts_.get(); }
+  const ZoneItemList *zoneItems() const {
+    return zoneItems_.get();
+  }
 
  private:
   std::unique_ptr<std::string> zoneName_;
-  std::unique_ptr<std::string> oneZoneName_;
-  std::unique_ptr<HostList> oneHosts_;
-  std::unique_ptr<std::string> anotherZoneName_;
-  std::unique_ptr<HostList> anotherHosts_;
+  std::unique_ptr<ZoneItemList> zoneItems_;
 };
 
 class RenameZoneSentence : public Sentence {

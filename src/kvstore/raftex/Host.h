@@ -89,11 +89,8 @@ class Host final : public std::enable_shared_from_this<Host> {
       TermID lastLogTermSent,  // The last log term being sent
       LogID lastLogIdSent);    // The last log id being sent
 
-  folly::Future<cpp2::HeartbeatResponse> sendHeartbeat(folly::EventBase* eb,
-                                                       TermID term,
-                                                       LogID commitLogId,
-                                                       TermID lastLogTerm,
-                                                       LogID lastLogId);
+  folly::Future<cpp2::HeartbeatResponse> sendHeartbeat(
+      folly::EventBase* eb, TermID term, LogID commitLogId, TermID lastLogTerm, LogID lastLogId);
 
   const HostAddr& address() const {
     return addr_;

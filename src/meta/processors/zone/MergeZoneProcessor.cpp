@@ -5,10 +5,15 @@
 
 #include "meta/processors/zone/MergeZoneProcessor.h"
 
+#include "kvstore/LogEncoder.h"
+
 namespace nebula {
 namespace meta {
 
 void MergeZoneProcessor::process(const cpp2::MergeZoneReq& req) {
+  folly::SharedMutex::WriteHolder zHolder(LockUtils::zoneLock());
+  folly::SharedMutex::WriteHolder sHolder(LockUtils::spaceLock());
+
   auto zones = req.get_zones();
 
   // Confirm that the parameter is not empty.
@@ -95,7 +100,7 @@ void MergeZoneProcessor::process(const cpp2::MergeZoneReq& req) {
     }
 
     auto hostParts = nebula::value(hostPartsRet);
-    std::vector<PartitionID> totalParts;
+    std::unordered_set<PartitionID> totalParts;
     for (auto& zone : intersectionZones) {
       auto zoneKey = MetaKeyUtils::zoneKey(zone);
       auto zoneValueRet = doGet(std::move(zoneKey));
@@ -119,7 +124,7 @@ void MergeZoneProcessor::process(const cpp2::MergeZoneReq& req) {
         }
 
         CHECK_CODE_AND_BREAK();
-        totalParts.insert(totalParts.end(), parts.begin(), parts.end());
+        std::copy(parts.begin(), parts.end(), std::inserter(totalParts, totalParts.end()));
       }
       CHECK_CODE_AND_BREAK();
     }
@@ -134,19 +139,19 @@ void MergeZoneProcessor::process(const cpp2::MergeZoneReq& req) {
     return;
   }
 
+  auto batchHolder = std::make_unique<kvstore::BatchHolder>();
   // Rewrite space properties
   ret = doPrefix(spacePrefix);
   iter = nebula::value(ret).get();
-  std::vector<kvstore::KV> data;
   while (iter->valid()) {
-    auto spaceKey = iter->key();
+    auto id = MetaKeyUtils::spaceId(iter->key());
     auto properties = MetaKeyUtils::parseSpace(iter->val());
     auto spaceZones = properties.get_zone_names();
+
     bool replacement = false;
     for (auto& zone : zones) {
       auto it = std::find(spaceZones.begin(), spaceZones.end(), zone);
       if (it != spaceZones.end()) {
-        LOG(INFO) << "REMOVE ZONE " << zone;
         replacement = true;
         spaceZones.erase(it);
       }
@@ -154,9 +159,10 @@ void MergeZoneProcessor::process(const cpp2::MergeZoneReq& req) {
 
     if (replacement) {
       spaceZones.emplace_back(zoneName);
-      properties.set_zone_names(std::move(spaceZones));
+      properties.zone_names_ref() = spaceZones;
+      auto spaceKey = MetaKeyUtils::spaceKey(id);
       auto spaceVal = MetaKeyUtils::spaceVal(properties);
-      data.emplace_back(std::move(spaceKey), std::move(spaceVal));
+      batchHolder->put(std::move(spaceKey), std::move(spaceVal));
     }
     iter->next();
   }
@@ -170,36 +176,18 @@ void MergeZoneProcessor::process(const cpp2::MergeZoneReq& req) {
     auto hosts = MetaKeyUtils::parseZoneHosts(std::move(nebula::value(zoneValueRet)));
     zoneHosts.insert(zoneHosts.end(), hosts.begin(), hosts.end());
   }
-  auto zoneVal = MetaKeyUtils::zoneVal(std::move(zoneHosts));
 
+  auto zoneVal = MetaKeyUtils::zoneVal(std::move(zoneHosts));
   // Remove original zones
   LOG(INFO) << "Remove original zones size " << zones.size();
-  std::vector<std::string> zoneKeys;
   for (auto& zone : zones) {
     LOG(INFO) << "Remove Zone " << zone;
-    zoneKeys.emplace_back(MetaKeyUtils::zoneKey(zone));
-  }
-  folly::Baton<true, std::atomic> baton;
-  auto result = nebula::cpp2::ErrorCode::SUCCEEDED;
-  kvstore_->asyncMultiRemove(kDefaultSpaceId,
-                             kDefaultPartId,
-                             std::move(zoneKeys),
-                             [&result, &baton](nebula::cpp2::ErrorCode res) {
-                               if (nebula::cpp2::ErrorCode::SUCCEEDED != res) {
-                                 result = res;
-                                 LOG(ERROR) << "Remove data error on meta server";
-                               }
-                               baton.post();
-                             });
-  baton.wait();
-  if (result != nebula::cpp2::ErrorCode::SUCCEEDED) {
-    this->handleErrorCode(result);
-    this->onFinished();
-    return;
+    batchHolder->remove(MetaKeyUtils::zoneKey(zone));
   }
 
-  data.emplace_back(std::move(key), std::move(zoneVal));
-  doSyncPutAndUpdate(std::move(data));
+  batchHolder->put(std::move(key), std::move(zoneVal));
+  auto batch = encodeBatchValue(std::move(batchHolder)->getBatch());
+  doBatchOperation(std::move(batch));
 }
 
 ErrorOr<nebula::cpp2::ErrorCode, HostParts> MergeZoneProcessor::assembleHostParts(

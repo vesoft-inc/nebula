@@ -159,6 +159,11 @@ class BaseProcessor {
   void doMultiRemove(std::vector<std::string> keys);
 
   /**
+   * General batch function.
+   **/
+  void doBatchOperation(std::string batchOp);
+
+  /**
    * Get one auto-increment Id.
    * */
   ErrorOr<nebula::cpp2::ErrorCode, int32_t> autoIncrementId();

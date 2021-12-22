@@ -3651,10 +3651,10 @@ TEST(ProcessorTest, MergeZoneTest) {
     const ClusterID kClusterId = 10;
     for (auto i = 8986; i < 8990; i++) {
       cpp2::HBReq req;
-      req.set_role(cpp2::HostRole::STORAGE);
-      req.set_host(HostAddr("127.0.0.1", i));
-      req.set_cluster_id(kClusterId);
-      req.set_role(cpp2::HostRole::STORAGE);
+      req.role_ref() = cpp2::HostRole::STORAGE;
+      req.host_ref() = HostAddr("127.0.0.1", i);
+      req.cluster_id_ref() = kClusterId;
+      req.role_ref() = cpp2::HostRole::STORAGE;
       auto* processor = HBProcessor::instance(kv.get(), nullptr, kClusterId);
       auto f = processor->getFuture();
       processor->process(req);
@@ -3666,7 +3666,7 @@ TEST(ProcessorTest, MergeZoneTest) {
     cpp2::AddHostsReq req;
     std::vector<HostAddr> hosts = {
         {"127.0.0.1", 8986}, {"127.0.0.1", 8987}, {"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
-    req.set_hosts(std::move(hosts));
+    req.hosts_ref() = std::move(hosts);
     auto* processor = AddHostsProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -3678,10 +3678,9 @@ TEST(ProcessorTest, MergeZoneTest) {
     const ClusterID kClusterId = 10;
     for (auto i = 8986; i < 8990; i++) {
       cpp2::HBReq req;
-      req.set_role(cpp2::HostRole::STORAGE);
-      req.set_host(HostAddr("127.0.0.1", i));
-      req.set_cluster_id(kClusterId);
-      req.set_role(cpp2::HostRole::STORAGE);
+      req.role_ref() = cpp2::HostRole::STORAGE;
+      req.host_ref() = HostAddr("127.0.0.1", i);
+      req.cluster_id_ref() = kClusterId;
       auto* processor = HBProcessor::instance(kv.get(), nullptr, kClusterId);
       auto f = processor->getFuture();
       processor->process(req);
@@ -3706,8 +3705,8 @@ TEST(ProcessorTest, MergeZoneTest) {
   {
     // Merge an empty zone list
     cpp2::MergeZoneReq req;
-    req.set_zones({});
-    req.set_zone_name("new_zone");
+    req.zones_ref() = {};
+    req.zone_name_ref() = "new_zone";
     auto* processor = MergeZoneProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -3717,8 +3716,8 @@ TEST(ProcessorTest, MergeZoneTest) {
   {
     // Merge only one zone
     cpp2::MergeZoneReq req;
-    req.set_zones({"zone_0"});
-    req.set_zone_name("new_zone");
+    req.zones_ref() = {"zone_0"};
+    req.zone_name_ref() = "new_zone";
     auto* processor = MergeZoneProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -3728,8 +3727,8 @@ TEST(ProcessorTest, MergeZoneTest) {
   {
     // Merge zones with duplicate
     cpp2::MergeZoneReq req;
-    req.set_zones({"zone_0", "zone_0"});
-    req.set_zone_name("new_zone");
+    req.zones_ref() = {"zone_0", "zone_0"};
+    req.zone_name_ref() = "new_zone";
     auto* processor = MergeZoneProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -3739,8 +3738,8 @@ TEST(ProcessorTest, MergeZoneTest) {
   {
     // Merge zones which is not exist
     cpp2::MergeZoneReq req;
-    req.set_zones({"zone_0", "zone_not_exist"});
-    req.set_zone_name("new_zone");
+    req.zones_ref() = {"zone_0", "zone_not_exist"};
+    req.zone_name_ref() = "new_zone";
     auto* processor = MergeZoneProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -3750,8 +3749,8 @@ TEST(ProcessorTest, MergeZoneTest) {
   {
     // Merge zones which is not exist
     cpp2::MergeZoneReq req;
-    req.set_zones({"zone_not_exist_0", "zone_not_exist_1"});
-    req.set_zone_name("new_zone");
+    req.zones_ref() = {"zone_not_exist_0", "zone_not_exist_1"};
+    req.zone_name_ref() = "new_zone";
     auto* processor = MergeZoneProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -3760,10 +3759,10 @@ TEST(ProcessorTest, MergeZoneTest) {
   }
   {
     cpp2::MergeZoneReq req;
-    req.set_zones({"default_zone_127.0.0.1_8986",
-                   "default_zone_127.0.0.1_8987",
-                   "default_zone_127.0.0.1_8988"});
-    req.set_zone_name("zone_1");
+    req.zones_ref() = {"default_zone_127.0.0.1_8986",
+                       "default_zone_127.0.0.1_8987",
+                       "default_zone_127.0.0.1_8988"};
+    req.zone_name_ref() = "zone_1";
     auto* processor = MergeZoneProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -3772,8 +3771,8 @@ TEST(ProcessorTest, MergeZoneTest) {
   }
   {
     cpp2::MergeZoneReq req;
-    req.set_zones({"default_zone_127.0.0.1_8989", "zone_1"});
-    req.set_zone_name("zone_1");
+    req.zones_ref() = {"default_zone_127.0.0.1_8989", "zone_1"};
+    req.zone_name_ref() = "zone_1";
     auto* processor = MergeZoneProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -3795,7 +3794,7 @@ TEST(ProcessorTest, MergeZoneTest) {
     // add hosts
     cpp2::AddHostsReq req;
     std::vector<HostAddr> hosts = {{"127.0.0.1", 8976}, {"127.0.0.1", 8977}, {"127.0.0.1", 8978}};
-    req.set_hosts(std::move(hosts));
+    req.hosts_ref() = std::move(hosts);
     auto* processor = AddHostsProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -3806,10 +3805,9 @@ TEST(ProcessorTest, MergeZoneTest) {
     const ClusterID kClusterId = 10;
     for (auto i = 8976; i < 8979; i++) {
       cpp2::HBReq req;
-      req.set_role(cpp2::HostRole::STORAGE);
-      req.set_host(HostAddr("127.0.0.1", i));
-      req.set_cluster_id(kClusterId);
-      req.set_role(cpp2::HostRole::STORAGE);
+      req.role_ref() = cpp2::HostRole::STORAGE;
+      req.host_ref() = HostAddr("127.0.0.1", i);
+      req.cluster_id_ref() = kClusterId;
       auto* processor = HBProcessor::instance(kv.get(), nullptr, kClusterId);
       auto f = processor->getFuture();
       processor->process(req);
@@ -3820,17 +3818,17 @@ TEST(ProcessorTest, MergeZoneTest) {
   {
     // create space
     cpp2::SpaceDesc properties;
-    properties.set_space_name("default_space");
-    properties.set_partition_num(9);
-    properties.set_replica_factor(3);
-    properties.set_charset_name("utf8");
-    properties.set_collate_name("utf8_bin");
+    properties.space_name_ref() = "default_space";
+    properties.partition_num_ref() = 9;
+    properties.replica_factor_ref() = 3;
+    properties.charset_name_ref() = "utf8";
+    properties.collate_name_ref() = "utf8_bin";
     std::vector<std::string> zones = {"default_zone_127.0.0.1_8976",
                                       "default_zone_127.0.0.1_8977",
                                       "default_zone_127.0.0.1_8978"};
-    properties.set_zone_names(std::move(zones));
+    properties.zone_names_ref() = std::move(zones);
     cpp2::CreateSpaceReq req;
-    req.set_properties(std::move(properties));
+    req.properties_ref() = std::move(properties);
     auto* processor = CreateSpaceProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -3840,8 +3838,8 @@ TEST(ProcessorTest, MergeZoneTest) {
   }
   {
     cpp2::MergeZoneReq req;
-    req.set_zones({"default_zone_127.0.0.1_8976", "default_zone_127.0.0.1_8977"});
-    req.set_zone_name("z_1");
+    req.zones_ref() = {"default_zone_127.0.0.1_8976", "default_zone_127.0.0.1_8977"};
+    req.zone_name_ref() = "z_1";
     auto* processor = MergeZoneProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -3851,7 +3849,7 @@ TEST(ProcessorTest, MergeZoneTest) {
   {
     // drop the original space and create another space with single replic
     cpp2::DropSpaceReq req;
-    req.set_space_name("default_space");
+    req.space_name_ref() = "default_space";
     auto* processor = DropSpaceProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -3860,17 +3858,17 @@ TEST(ProcessorTest, MergeZoneTest) {
   }
   {
     cpp2::SpaceDesc properties;
-    properties.set_space_name("default_space");
-    properties.set_partition_num(9);
-    properties.set_replica_factor(1);
-    properties.set_charset_name("utf8");
-    properties.set_collate_name("utf8_bin");
+    properties.space_name_ref() = "default_space_0";
+    properties.partition_num_ref() = 9;
+    properties.replica_factor_ref() = 1;
+    properties.charset_name_ref() = "utf8";
+    properties.collate_name_ref() = "utf8_bin";
     std::vector<std::string> zones = {"default_zone_127.0.0.1_8976",
                                       "default_zone_127.0.0.1_8977",
                                       "default_zone_127.0.0.1_8978"};
-    properties.set_zone_names(std::move(zones));
+    properties.zone_names_ref() = std::move(zones);
     cpp2::CreateSpaceReq req;
-    req.set_properties(std::move(properties));
+    req.properties_ref() = std::move(properties);
     auto* processor = CreateSpaceProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -3880,8 +3878,8 @@ TEST(ProcessorTest, MergeZoneTest) {
   }
   {
     cpp2::MergeZoneReq req;
-    req.set_zones({"default_zone_127.0.0.1_8976", "default_zone_127.0.0.1_8977"});
-    req.set_zone_name("z_1");
+    req.zones_ref() = {"default_zone_127.0.0.1_8976", "default_zone_127.0.0.1_8977"};
+    req.zone_name_ref() = "z_1";
     auto* processor = MergeZoneProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -3889,9 +3887,10 @@ TEST(ProcessorTest, MergeZoneTest) {
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
   }
   {
+    LOG(INFO) << "========================";
     cpp2::MergeZoneReq req;
-    req.set_zones({"default_zone_127.0.0.1_8978", "z_1"});
-    req.set_zone_name("z_1");
+    req.zones_ref() = {"default_zone_127.0.0.1_8978", "z_1"};
+    req.zone_name_ref() = "z_1";
     auto* processor = MergeZoneProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -3900,14 +3899,14 @@ TEST(ProcessorTest, MergeZoneTest) {
   }
   {
     cpp2::GetSpaceReq req;
-    req.set_space_name("default_space");
+    req.space_name_ref() = "default_space_0";
     auto* processor = GetSpaceProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
     auto resp = std::move(f).get();
     ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, resp.get_code());
     auto properties = resp.get_item().get_properties();
-    ASSERT_EQ("default_space", properties.get_space_name());
+    ASSERT_EQ("default_space_0", properties.get_space_name());
     ASSERT_EQ(9, properties.get_partition_num());
     ASSERT_EQ(1, properties.get_replica_factor());
     ASSERT_EQ("utf8", properties.get_charset_name());
@@ -3934,11 +3933,11 @@ TEST(ProcessorTest, DivideZoneTest) {
   auto kv = MockCluster::initMetaKV(rootPath.path());
   {
     cpp2::AddHostsIntoZoneReq req;
-    req.set_zone_name("default_zone");
-    req.set_is_new(true);
+    req.zone_name_ref() = "default_zone";
+    req.is_new_ref() = true;
     std::vector<HostAddr> hosts = {
         {"127.0.0.1", 8986}, {"127.0.0.1", 8987}, {"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
-    req.set_hosts(std::move(hosts));
+    req.hosts_ref() = std::move(hosts);
     auto* processor = AddHostsIntoZoneProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -3958,12 +3957,14 @@ TEST(ProcessorTest, DivideZoneTest) {
   {
     // Split zone which not exist
     cpp2::DivideZoneReq req;
-    req.set_zone_name("zone_not_exist");
-    req.set_one_zone_name("one_zone");
-    req.set_one_zone_hosts({{"127.0.0.1", 8986}, {"127.0.0.1", 8987}});
-    req.set_another_zone_name("another_zone");
-    req.set_another_zone_hosts({{"127.0.0.1", 8988}, {"127.0.0.1", 8989}});
+    req.zone_name_ref() = "zone_not_exist";
 
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {{"127.0.0.1", 8986}, {"127.0.0.1", 8987}};
+    zoneItems.emplace("one_zone", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
+    zoneItems.emplace("another_zone", std::move(anotherHosts));
+    req.zone_items_ref() = std::move(zoneItems);
     auto* processor = DivideZoneProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -3973,12 +3974,13 @@ TEST(ProcessorTest, DivideZoneTest) {
   {
     // Split zone with empty hosts
     cpp2::DivideZoneReq req;
-    req.set_zone_name("default_zone");
-    req.set_one_zone_name("one_zone");
-    req.set_one_zone_hosts({});
-    req.set_another_zone_name("another_zone");
-    req.set_another_zone_hosts({{"127.0.0.1", 8988}, {"127.0.0.1", 8989}});
-
+    req.zone_name_ref() = "default_zone";
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {};
+    zoneItems.emplace("one_zone", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8986}, {"127.0.0.1", 8989}};
+    zoneItems.emplace("another_zone", std::move(anotherHosts));
+    req.zone_items_ref() = std::move(zoneItems);
     auto* processor = DivideZoneProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -3988,11 +3990,13 @@ TEST(ProcessorTest, DivideZoneTest) {
   {
     // Split zone with empty hosts
     cpp2::DivideZoneReq req;
-    req.set_zone_name("default_zone");
-    req.set_one_zone_name("one_zone");
-    req.set_one_zone_hosts({{"127.0.0.1", 8986}, {"127.0.0.1", 8987}});
-    req.set_another_zone_name("another_zone");
-    req.set_another_zone_hosts({});
+    req.zone_name_ref() = "default_zone";
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {{"127.0.0.1", 8986}, {"127.0.0.1", 8987}};
+    zoneItems.emplace("one_zone", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {};
+    zoneItems.emplace("another_zone", std::move(anotherHosts));
+    req.zone_items_ref() = std::move(zoneItems);
 
     auto* processor = DivideZoneProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -4003,11 +4007,13 @@ TEST(ProcessorTest, DivideZoneTest) {
   {
     // Split zone and the sum is not all
     cpp2::DivideZoneReq req;
-    req.set_zone_name("default_zone");
-    req.set_one_zone_name("one_zone");
-    req.set_one_zone_hosts({{"127.0.0.1", 8986}});
-    req.set_another_zone_name("another_zone");
-    req.set_another_zone_hosts({{"127.0.0.1", 8988}, {"127.0.0.1", 8989}});
+    req.zone_name_ref() = "default_zone";
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {{"127.0.0.1", 8986}};
+    zoneItems.emplace("one_zone", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
+    zoneItems.emplace("another_zone", std::move(anotherHosts));
+    req.zone_items_ref() = std::move(zoneItems);
 
     auto* processor = DivideZoneProcessor::instance(kv.get());
     auto f = processor->getFuture();
@@ -4018,11 +4024,14 @@ TEST(ProcessorTest, DivideZoneTest) {
   {
     // Split zone and the hosts is more than the total
     cpp2::DivideZoneReq req;
-    req.set_zone_name("default_zone");
-    req.set_one_zone_name("one_zone");
-    req.set_one_zone_hosts({{"127.0.0.1", 8986}, {"127.0.0.1", 8987}, {"127.0.0.1", 8985}});
-    req.set_another_zone_name("another_zone");
-    req.set_another_zone_hosts({{"127.0.0.1", 8988}, {"127.0.0.1", 8989}});
+    req.zone_name_ref() = "default_zone";
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {
+        {"127.0.0.1", 8986}, {"127.0.0.1", 8987}, {"127.0.0.1", 8985}};
+    zoneItems.emplace("one_zone", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
+    zoneItems.emplace("another_zone", std::move(anotherHosts));
+    req.zone_items_ref() = std::move(zoneItems);
     auto* processor = DivideZoneProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -4030,13 +4039,38 @@ TEST(ProcessorTest, DivideZoneTest) {
     ASSERT_EQ(nebula::cpp2::ErrorCode::E_INVALID_PARM, resp.get_code());
   }
   {
-    // Split empty zone successfully
     cpp2::DivideZoneReq req;
-    req.set_zone_name("default_zone");
-    req.set_one_zone_name("one_zone");
-    req.set_one_zone_hosts({{"127.0.0.1", 8986}, {"127.0.0.1", 8987}});
-    req.set_another_zone_name("another_zone");
-    req.set_another_zone_hosts({{"127.0.0.1", 8988}, {"127.0.0.1", 8989}});
+    req.zone_name_ref() = "default_zone";
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> hosts0 = {};
+    zoneItems.emplace("zone_0", std::move(hosts0));
+    std::vector<HostAddr> hosts1 = {};
+    zoneItems.emplace("zone_1", std::move(hosts1));
+    std::vector<HostAddr> hosts2 = {};
+    zoneItems.emplace("zone_2", std::move(hosts2));
+    std::vector<HostAddr> hosts3 = {};
+    zoneItems.emplace("zone_3", std::move(hosts3));
+    std::vector<HostAddr> hosts4 = {};
+    zoneItems.emplace("zone_4", std::move(hosts4));
+    std::vector<HostAddr> hosts5 = {};
+    zoneItems.emplace("zone_5", std::move(hosts5));
+    req.zone_items_ref() = std::move(zoneItems);
+    auto* processor = DivideZoneProcessor::instance(kv.get());
+    auto f = processor->getFuture();
+    processor->process(req);
+    auto resp = std::move(f).get();
+    ASSERT_EQ(nebula::cpp2::ErrorCode::E_INVALID_PARM, resp.get_code());
+  }
+  {
+    // Split zone successfully
+    cpp2::DivideZoneReq req;
+    req.zone_name_ref() = "default_zone";
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {{"127.0.0.1", 8986}, {"127.0.0.1", 8987}};
+    zoneItems.emplace("one_zone", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
+    zoneItems.emplace("another_zone", std::move(anotherHosts));
+    req.zone_items_ref() = std::move(zoneItems);
     auto* processor = DivideZoneProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -4056,11 +4090,11 @@ TEST(ProcessorTest, DivideZoneTest) {
   }
   {
     cpp2::AddHostsIntoZoneReq req;
-    req.set_zone_name("default_zone");
-    req.set_is_new(true);
+    req.zone_name_ref() = "default_zone";
+    req.is_new_ref() = true;
     std::vector<HostAddr> hosts = {
         {"127.0.0.1", 8976}, {"127.0.0.1", 8977}, {"127.0.0.1", 8978}, {"127.0.0.1", 8979}};
-    req.set_hosts(std::move(hosts));
+    req.hosts_ref() = std::move(hosts);
     auto* processor = AddHostsIntoZoneProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -4081,13 +4115,13 @@ TEST(ProcessorTest, DivideZoneTest) {
   }
   {
     cpp2::SpaceDesc properties;
-    properties.set_space_name("default_space");
-    properties.set_partition_num(9);
-    properties.set_replica_factor(3);
-    properties.set_charset_name("utf8");
-    properties.set_collate_name("utf8_bin");
+    properties.space_name_ref() = "default_space";
+    properties.partition_num_ref() = 9;
+    properties.replica_factor_ref() = 3;
+    properties.charset_name_ref() = "utf8";
+    properties.collate_name_ref() = "utf8_bin";
     cpp2::CreateSpaceReq req;
-    req.set_properties(std::move(properties));
+    req.properties_ref() = std::move(properties);
     auto* processor = CreateSpaceProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -4097,11 +4131,14 @@ TEST(ProcessorTest, DivideZoneTest) {
   }
   {
     cpp2::DivideZoneReq req;
-    req.set_zone_name("default_zone");
-    req.set_one_zone_name("one_zone");
-    req.set_one_zone_hosts({{"127.0.0.1", 8976}, {"127.0.0.1", 8977}});
-    req.set_another_zone_name("another_zone_1");
-    req.set_another_zone_hosts({{"127.0.0.1", 8978}, {"127.0.0.1", 8979}});
+    req.zone_name_ref() = "default_zone";
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {{"127.0.0.1", 8976}, {"127.0.0.1", 8977}};
+    zoneItems.emplace("one_zone", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8978}, {"127.0.0.1", 8979}};
+    zoneItems.emplace("another_zone", std::move(anotherHosts));
+    req.zone_items_ref() = std::move(zoneItems);
+
     auto* processor = DivideZoneProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -4110,11 +4147,13 @@ TEST(ProcessorTest, DivideZoneTest) {
   }
   {
     cpp2::DivideZoneReq req;
-    req.set_zone_name("default_zone");
-    req.set_one_zone_name("one_zone_1");
-    req.set_one_zone_hosts({{"127.0.0.1", 8976}, {"127.0.0.1", 8977}});
-    req.set_another_zone_name("another_zone");
-    req.set_another_zone_hosts({{"127.0.0.1", 8978}, {"127.0.0.1", 8979}});
+    req.zone_name_ref() = "default_zone";
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {{"127.0.0.1", 8976}, {"127.0.0.1", 8977}};
+    zoneItems.emplace("one_zone_1", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8978}, {"127.0.0.1", 8979}};
+    zoneItems.emplace("another_zone", std::move(anotherHosts));
+    req.zone_items_ref() = std::move(zoneItems);
     auto* processor = DivideZoneProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -4123,11 +4162,13 @@ TEST(ProcessorTest, DivideZoneTest) {
   }
   {
     cpp2::DivideZoneReq req;
-    req.set_zone_name("default_zone");
-    req.set_one_zone_name("one_zone_1");
-    req.set_one_zone_hosts({{"127.0.0.1", 8976}, {"127.0.0.1", 8977}});
-    req.set_another_zone_name("another_zone_1");
-    req.set_another_zone_hosts({{"127.0.0.1", 8978}, {"127.0.0.1", 8979}});
+    req.zone_name_ref() = "default_zone";
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {{"127.0.0.1", 8976}, {"127.0.0.1", 8977}};
+    zoneItems.emplace("one_zone_1", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8978}, {"127.0.0.1", 8979}};
+    zoneItems.emplace("another_zone_1", std::move(anotherHosts));
+    req.zone_items_ref() = std::move(zoneItems);
     auto* processor = DivideZoneProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -4154,10 +4195,10 @@ TEST(ProcessorTest, DropZoneTest) {
   auto kv = MockCluster::initMetaKV(rootPath.path());
   {
     cpp2::AddHostsIntoZoneReq req;
-    req.set_zone_name("zone_0");
-    req.set_is_new(true);
+    req.zone_name_ref() = "zone_0";
+    req.is_new_ref() = true;
     std::vector<HostAddr> hosts = {{"127.0.0.1", 8986}};
-    req.set_hosts(std::move(hosts));
+    req.hosts_ref() = std::move(hosts);
     auto* processor = AddHostsIntoZoneProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -4166,10 +4207,10 @@ TEST(ProcessorTest, DropZoneTest) {
   }
   {
     cpp2::AddHostsIntoZoneReq req;
-    req.set_zone_name("zone_1");
-    req.set_is_new(true);
+    req.zone_name_ref() = "zone_1";
+    req.is_new_ref() = true;
     std::vector<HostAddr> hosts = {{"127.0.0.1", 8987}};
-    req.set_hosts(std::move(hosts));
+    req.hosts_ref() = std::move(hosts);
     auto* processor = AddHostsIntoZoneProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -4178,10 +4219,10 @@ TEST(ProcessorTest, DropZoneTest) {
   }
   {
     cpp2::AddHostsIntoZoneReq req;
-    req.set_zone_name("zone_2");
-    req.set_is_new(true);
+    req.zone_name_ref() = "zone_2";
+    req.is_new_ref() = true;
     std::vector<HostAddr> hosts = {{"127.0.0.1", 8988}};
-    req.set_hosts(std::move(hosts));
+    req.hosts_ref() = std::move(hosts);
     auto* processor = AddHostsIntoZoneProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -4190,10 +4231,10 @@ TEST(ProcessorTest, DropZoneTest) {
   }
   {
     cpp2::AddHostsIntoZoneReq req;
-    req.set_zone_name("zone_3");
-    req.set_is_new(true);
+    req.zone_name_ref() = "zone_3";
+    req.is_new_ref() = true;
     std::vector<HostAddr> hosts = {{"127.0.0.1", 8989}};
-    req.set_hosts(std::move(hosts));
+    req.hosts_ref() = std::move(hosts);
     auto* processor = AddHostsIntoZoneProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -4205,10 +4246,9 @@ TEST(ProcessorTest, DropZoneTest) {
     const ClusterID kClusterId = 10;
     for (auto i = 8987; i < 8990; i++) {
       cpp2::HBReq req;
-      req.set_role(cpp2::HostRole::STORAGE);
-      req.set_host(HostAddr("127.0.0.1", i));
-      req.set_cluster_id(kClusterId);
-      req.set_role(cpp2::HostRole::STORAGE);
+      req.role_ref() = cpp2::HostRole::STORAGE;
+      req.host_ref() = HostAddr("127.0.0.1", i);
+      req.cluster_id_ref() = kClusterId;
       auto* processor = HBProcessor::instance(kv.get(), nullptr, kClusterId);
       auto f = processor->getFuture();
       processor->process(req);
@@ -4233,7 +4273,7 @@ TEST(ProcessorTest, DropZoneTest) {
   {
     // Drop zone which is not exist
     cpp2::DropZoneReq req;
-    req.set_zone_name("zone_not_exist");
+    req.zone_name_ref() = "zone_not_exist";
     auto* processor = DropZoneProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -4243,7 +4283,7 @@ TEST(ProcessorTest, DropZoneTest) {
   {
     // Drop zone successfully
     cpp2::DropZoneReq req;
-    req.set_zone_name("zone_0");
+    req.zone_name_ref() = "zone_0";
     auto* processor = DropZoneProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -4253,7 +4293,7 @@ TEST(ProcessorTest, DropZoneTest) {
   {
     // Drop zone which is droped
     cpp2::DropZoneReq req;
-    req.set_zone_name("zone_0");
+    req.zone_name_ref() = "zone_0";
     auto* processor = DropZoneProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -4262,13 +4302,13 @@ TEST(ProcessorTest, DropZoneTest) {
   }
   {
     cpp2::SpaceDesc properties;
-    properties.set_space_name("default_space");
-    properties.set_partition_num(9);
-    properties.set_replica_factor(3);
-    properties.set_charset_name("utf8");
-    properties.set_collate_name("utf8_bin");
+    properties.space_name_ref() = "default_space";
+    properties.partition_num_ref() = 9;
+    properties.replica_factor_ref() = 3;
+    properties.charset_name_ref() = "utf8";
+    properties.collate_name_ref() = "utf8_bin";
     cpp2::CreateSpaceReq req;
-    req.set_properties(std::move(properties));
+    req.properties_ref() = std::move(properties);
     auto* processor = CreateSpaceProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -4279,7 +4319,7 @@ TEST(ProcessorTest, DropZoneTest) {
   {
     // Drop zone which is relation with space
     cpp2::DropZoneReq req;
-    req.set_zone_name("zone_1");
+    req.zone_name_ref() = "zone_1";
     auto* processor = DropZoneProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -4288,7 +4328,7 @@ TEST(ProcessorTest, DropZoneTest) {
   }
   {
     cpp2::DropSpaceReq req;
-    req.set_space_name("default_space");
+    req.space_name_ref() = "default_space";
     auto* processor = DropSpaceProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -4297,13 +4337,13 @@ TEST(ProcessorTest, DropZoneTest) {
   }
   {
     cpp2::SpaceDesc properties;
-    properties.set_space_name("default_space");
-    properties.set_partition_num(9);
-    properties.set_replica_factor(1);
-    properties.set_charset_name("utf8");
-    properties.set_collate_name("utf8_bin");
+    properties.space_name_ref() = "default_space";
+    properties.partition_num_ref() = 9;
+    properties.replica_factor_ref() = 1;
+    properties.charset_name_ref() = "utf8";
+    properties.collate_name_ref() = "utf8_bin";
     cpp2::CreateSpaceReq req;
-    req.set_properties(std::move(properties));
+    req.properties_ref() = std::move(properties);
     auto* processor = CreateSpaceProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);
@@ -4313,7 +4353,7 @@ TEST(ProcessorTest, DropZoneTest) {
   }
   {
     cpp2::DropZoneReq req;
-    req.set_zone_name("zone_1");
+    req.zone_name_ref() = "zone_1";
     auto* processor = DropZoneProcessor::instance(kv.get());
     auto f = processor->getFuture();
     processor->process(req);

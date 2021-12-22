@@ -3124,17 +3124,11 @@ folly::Future<StatusOr<bool>> MetaClient::mergeZone(std::vector<std::string> zon
   return future;
 }
 
-folly::Future<StatusOr<bool>> MetaClient::divideZone(std::string zoneName,
-                                                     std::string oneZoneName,
-                                                     std::vector<HostAddr> oneZoneHosts,
-                                                     std::string anotherZoneName,
-                                                     std::vector<HostAddr> anotherZoneHosts) {
+folly::Future<StatusOr<bool>> MetaClient::divideZone(
+    std::string zoneName, std::unordered_map<std::string, std::vector<HostAddr>> zoneItems) {
   cpp2::DivideZoneReq req;
   req.zone_name_ref() = std::move(zoneName);
-  req.one_zone_name_ref() = std::move(oneZoneName);
-  req.one_zone_hosts_ref() = std::move(oneZoneHosts);
-  req.another_zone_name_ref() = std::move(anotherZoneName);
-  req.another_zone_hosts_ref() = std::move(anotherZoneHosts);
+  req.zone_items_ref() = std::move(zoneItems);
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
   getResponse(

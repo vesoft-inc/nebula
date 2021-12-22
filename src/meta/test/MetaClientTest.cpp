@@ -1998,11 +1998,11 @@ TEST(MetaClientTest, DropHostsTest) {
   {
     // Create Space on cluster, the replica number same with the zone size.
     meta::cpp2::SpaceDesc properties;
-    properties.set_space_name("default_space_0");
-    properties.set_partition_num(9);
-    properties.set_replica_factor(3);
-    properties.set_charset_name("utf8");
-    properties.set_collate_name("utf8_bin");
+    properties.space_name_ref() = "default_space_0";
+    properties.partition_num_ref() = 9;
+    properties.replica_factor_ref() = 3;
+    properties.charset_name_ref() = "utf8";
+    properties.collate_name_ref() = "utf8_bin";
     auto ret = client->createSpace(properties).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
     ASSERT_EQ(1, ret.value());
@@ -2010,11 +2010,11 @@ TEST(MetaClientTest, DropHostsTest) {
   {
     // Create Space on cluster, the replica number less than the zone size.
     cpp2::SpaceDesc properties;
-    properties.set_space_name("default_space_1");
-    properties.set_partition_num(9);
-    properties.set_replica_factor(1);
-    properties.set_charset_name("utf8");
-    properties.set_collate_name("utf8_bin");
+    properties.space_name_ref() = "default_space_1";
+    properties.partition_num_ref() = 9;
+    properties.replica_factor_ref() = 1;
+    properties.charset_name_ref() = "utf8";
+    properties.collate_name_ref() = "utf8_bin";
     auto ret = client->createSpace(properties).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
     ASSERT_EQ(2, ret.value());
@@ -2022,11 +2022,11 @@ TEST(MetaClientTest, DropHostsTest) {
   {
     // Create Space on cluster, the replica number greater than the zone size.
     cpp2::SpaceDesc properties;
-    properties.set_space_name("default_space_2");
-    properties.set_partition_num(9);
-    properties.set_replica_factor(6);
-    properties.set_charset_name("utf8");
-    properties.set_collate_name("utf8_bin");
+    properties.space_name_ref() = "default_space_2";
+    properties.partition_num_ref() = 9;
+    properties.replica_factor_ref() = 6;
+    properties.charset_name_ref() = "utf8";
+    properties.collate_name_ref() = "utf8_bin";
     auto ret = client->createSpace(properties).get();
     ASSERT_FALSE(ret.ok()) << ret.status();
   }
@@ -2062,13 +2062,13 @@ TEST(MetaClientTest, DropHostsTest) {
   {
     // Create Space on cluster, the replica number greater than the zone size.
     cpp2::SpaceDesc properties;
-    properties.set_space_name("default_space_on_zone_3");
-    properties.set_partition_num(9);
-    properties.set_replica_factor(3);
-    properties.set_charset_name("utf8");
-    properties.set_collate_name("utf8_bin");
+    properties.space_name_ref() = "default_space_on_zone_3";
+    properties.partition_num_ref() = 9;
+    properties.replica_factor_ref() = 3;
+    properties.charset_name_ref() = "utf8";
+    properties.collate_name_ref() = "utf8_bin";
     std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2"};
-    properties.set_zone_names(std::move(zones));
+    properties.zone_names_ref() = std::move(zones);
     auto ret = client->createSpace(properties).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
     ASSERT_EQ(4, ret.value());
@@ -2076,13 +2076,13 @@ TEST(MetaClientTest, DropHostsTest) {
   {
     // Create Space on cluster, the replica number less than the zone size
     cpp2::SpaceDesc properties;
-    properties.set_space_name("default_space_on_zone_1");
-    properties.set_partition_num(9);
-    properties.set_replica_factor(1);
-    properties.set_charset_name("utf8");
-    properties.set_collate_name("utf8_bin");
+    properties.space_name_ref() = "default_space_on_zone_1";
+    properties.partition_num_ref() = 9;
+    properties.replica_factor_ref() = 1;
+    properties.charset_name_ref() = "utf8";
+    properties.collate_name_ref() = "utf8_bin";
     std::vector<std::string> zones = {"zone_0"};
-    properties.set_zone_names(std::move(zones));
+    properties.zone_names_ref() = std::move(zones);
     auto ret = client->createSpace(properties).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
     ASSERT_EQ(5, ret.value());
@@ -2090,13 +2090,13 @@ TEST(MetaClientTest, DropHostsTest) {
   {
     // Create Space on cluster, the replica number greater than the zone size
     cpp2::SpaceDesc properties;
-    properties.set_space_name("default_space_on_zone_6");
-    properties.set_partition_num(9);
-    properties.set_replica_factor(6);
-    properties.set_charset_name("utf8");
-    properties.set_collate_name("utf8_bin");
+    properties.space_name_ref() = "default_space_on_zone_6";
+    properties.partition_num_ref() = 9;
+    properties.replica_factor_ref() = 6;
+    properties.charset_name_ref() = "utf8";
+    properties.collate_name_ref() = "utf8_bin";
     std::vector<std::string> zones = {"zone_0"};
-    properties.set_zone_names(std::move(zones));
+    properties.zone_names_ref() = std::move(zones);
     auto ret = client->createSpace(properties).get();
     ASSERT_FALSE(ret.ok()) << ret.status();
   }
@@ -2191,13 +2191,13 @@ TEST(MetaClientTest, RenameZoneTest) {
   }
   {
     cpp2::SpaceDesc properties;
-    properties.set_space_name("default");
-    properties.set_partition_num(9);
-    properties.set_replica_factor(3);
-    properties.set_charset_name("utf8");
-    properties.set_collate_name("utf8_bin");
+    properties.space_name_ref() = "default";
+    properties.partition_num_ref() = 9;
+    properties.replica_factor_ref() = 3;
+    properties.charset_name_ref() = "utf8";
+    properties.collate_name_ref() = "utf8_bin";
     std::vector<std::string> zones = {"zone_0", "zone_1", "zone_2"};
-    properties.set_zone_names(std::move(zones));
+    properties.zone_names_ref() = std::move(zones);
     auto ret = client->createSpace(properties).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
     ASSERT_EQ(1, ret.value());
@@ -2327,15 +2327,15 @@ TEST(MetaClientTest, MergeZoneTest) {
   // Merge zone with space test
   {
     cpp2::SpaceDesc properties;
-    properties.set_space_name("default_space");
-    properties.set_partition_num(9);
-    properties.set_replica_factor(3);
-    properties.set_charset_name("utf8");
-    properties.set_collate_name("utf8_bin");
+    properties.space_name_ref() = "default_space";
+    properties.partition_num_ref() = 9;
+    properties.replica_factor_ref() = 3;
+    properties.charset_name_ref() = "utf8";
+    properties.collate_name_ref() = "utf8_bin";
     std::vector<std::string> zones = {"default_zone_127.0.0.1_8976",
                                       "default_zone_127.0.0.1_8977",
                                       "default_zone_127.0.0.1_8978"};
-    properties.set_zone_names(std::move(zones));
+    properties.zone_names_ref() = std::move(zones);
     auto ret = client->createSpace(properties).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
     ASSERT_EQ(1, ret.value());
@@ -2353,15 +2353,15 @@ TEST(MetaClientTest, MergeZoneTest) {
   }
   {
     cpp2::SpaceDesc properties;
-    properties.set_space_name("default_space");
-    properties.set_partition_num(9);
-    properties.set_replica_factor(1);
-    properties.set_charset_name("utf8");
-    properties.set_collate_name("utf8_bin");
+    properties.space_name_ref() = "default_space";
+    properties.partition_num_ref() = 9;
+    properties.replica_factor_ref() = 1;
+    properties.charset_name_ref() = "utf8";
+    properties.collate_name_ref() = "utf8_bin";
     std::vector<std::string> zones = {"default_zone_127.0.0.1_8976",
                                       "default_zone_127.0.0.1_8977",
                                       "default_zone_127.0.0.1_8978"};
-    properties.set_zone_names(std::move(zones));
+    properties.zone_names_ref() = std::move(zones);
     auto ret = client->createSpace(properties).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
     ASSERT_EQ(2, ret.value());
@@ -2424,68 +2424,81 @@ TEST(MetaClientTest, DivideZoneTest) {
   }
   {
     // Split zone which not exist
-    auto result = client
-                      ->divideZone("zone_not_exist",
-                                   "one_zone",
-                                   {{"127.0.0.1", 8986}, {"127.0.0.1", 8987}},
-                                   "another_zone",
-                                   {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}})
-                      .get();
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {{"127.0.0.1", 8986}, {"127.0.0.1", 8987}};
+    zoneItems.emplace("one_zone", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
+    zoneItems.emplace("another_zone", std::move(anotherHosts));
+    auto result = client->divideZone("zone_not_exist", std::move(zoneItems)).get();
     EXPECT_FALSE(result.ok());
   }
   {
     // Split zone with empty hosts
-    auto result = client
-                      ->divideZone("default_zone",
-                                   "one_zone",
-                                   {},
-                                   "another_zone",
-                                   {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}})
-                      .get();
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {};
+    zoneItems.emplace("one_zone", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
+    zoneItems.emplace("another_zone", std::move(anotherHosts));
+
+    auto result = client->divideZone("default_zone", std::move(zoneItems)).get();
     EXPECT_FALSE(result.ok());
   }
   {
     // Split zone with empty hosts
-    auto result = client
-                      ->divideZone("default_zone",
-                                   "one_zone",
-                                   {{"127.0.0.1", 8986}, {"127.0.0.1", 8987}},
-                                   "another_zone",
-                                   {})
-                      .get();
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {{"127.0.0.1", 8986}, {"127.0.0.1", 8987}};
+    zoneItems.emplace("one_zone", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {};
+    zoneItems.emplace("another_zone", std::move(anotherHosts));
+    auto result = client->divideZone("default_zone", std::move(zoneItems)).get();
     EXPECT_FALSE(result.ok());
   }
   {
     // Split zone and the sum is not all
-    auto result = client
-                      ->divideZone("default_zone",
-                                   "one_zone",
-                                   {{"127.0.0.1", 8986}},
-                                   "another_zone",
-                                   {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}})
-                      .get();
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {{"127.0.0.1", 8986}};
+    zoneItems.emplace("one_zone", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
+    zoneItems.emplace("another_zone", std::move(anotherHosts));
+    auto result = client->divideZone("default_zone", std::move(zoneItems)).get();
     EXPECT_FALSE(result.ok());
   }
   {
     // Split zone and the hosts is more than the total
-    auto result = client
-                      ->divideZone("default_zone",
-                                   "one_zone",
-                                   {{"127.0.0.1", 8986}, {"127.0.0.1", 8987}, {"127.0.0.1", 8985}},
-                                   "another_zone",
-                                   {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}})
-                      .get();
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {
+        {"127.0.0.1", 8986}, {"127.0.0.1", 8987}, {"127.0.0.1", 8985}};
+    zoneItems.emplace("one_zone", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
+    zoneItems.emplace("another_zone", std::move(anotherHosts));
+    auto result = client->divideZone("default_zone", std::move(zoneItems)).get();
     EXPECT_FALSE(result.ok());
   }
   {
-    // Split empty zone successfully
-    auto result = client
-                      ->divideZone("default_zone",
-                                   "one_zone",
-                                   {{{"127.0.0.1", 8986}, {"127.0.0.1", 8987}}},
-                                   "another_zone",
-                                   {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}})
-                      .get();
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> hosts0 = {};
+    zoneItems.emplace("zone_0", std::move(hosts0));
+    std::vector<HostAddr> hosts1 = {};
+    zoneItems.emplace("zone_1", std::move(hosts1));
+    std::vector<HostAddr> hosts2 = {};
+    zoneItems.emplace("zone_2", std::move(hosts2));
+    std::vector<HostAddr> hosts3 = {};
+    zoneItems.emplace("zone_3", std::move(hosts3));
+    std::vector<HostAddr> hosts4 = {};
+    zoneItems.emplace("zone_4", std::move(hosts4));
+    std::vector<HostAddr> hosts5 = {};
+    zoneItems.emplace("zone_5", std::move(hosts5));
+    auto result = client->divideZone("default_zone", std::move(zoneItems)).get();
+    EXPECT_FALSE(result.ok());
+  }
+  {
+    // Split zone successfully
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {{"127.0.0.1", 8986}, {"127.0.0.1", 8987}};
+    zoneItems.emplace("one_zone", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8988}, {"127.0.0.1", 8989}};
+    zoneItems.emplace("another_zone", std::move(anotherHosts));
+    auto result = client->divideZone("default_zone", std::move(zoneItems)).get();
     EXPECT_TRUE(result.ok());
   }
   {
@@ -2515,11 +2528,11 @@ TEST(MetaClientTest, DivideZoneTest) {
   }
   {
     cpp2::SpaceDesc properties;
-    properties.set_space_name("default_space");
-    properties.set_partition_num(9);
-    properties.set_replica_factor(3);
-    properties.set_charset_name("utf8");
-    properties.set_collate_name("utf8_bin");
+    properties.space_name_ref() = "default_space";
+    properties.partition_num_ref() = 9;
+    properties.replica_factor_ref() = 3;
+    properties.charset_name_ref() = "utf8";
+    properties.collate_name_ref() = "utf8_bin";
     auto ret = client->createSpace(properties).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
     ASSERT_EQ(1, ret.value());
@@ -2541,34 +2554,31 @@ TEST(MetaClientTest, DivideZoneTest) {
   }
   {
     // Zone name conflict
-    auto result = client
-                      ->divideZone("default_zone",
-                                   "one_zone",
-                                   {{"127.0.0.1", 8976}, {"127.0.0.1", 8977}},
-                                   "another_zone_1",
-                                   {{"127.0.0.1", 8978}, {"127.0.0.1", 8979}})
-                      .get();
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {{"127.0.0.1", 8976}, {"127.0.0.1", 8977}};
+    zoneItems.emplace("one_zone", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8978}, {"127.0.0.1", 8979}};
+    zoneItems.emplace("another_zone_1", std::move(anotherHosts));
+    auto result = client->divideZone("default_zone", std::move(zoneItems)).get();
     EXPECT_FALSE(result.ok());
   }
   {
     // Zone name conflict
-    auto result = client
-                      ->divideZone("default_zone",
-                                   "one_zone_1",
-                                   {{"127.0.0.1", 8976}, {"127.0.0.1", 8977}},
-                                   "another_zone",
-                                   {{"127.0.0.1", 8978}, {"127.0.0.1", 8979}})
-                      .get();
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {{"127.0.0.1", 8976}, {"127.0.0.1", 8977}};
+    zoneItems.emplace("one_zone_1", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8978}, {"127.0.0.1", 8979}};
+    zoneItems.emplace("another_zone", std::move(anotherHosts));
+    auto result = client->divideZone("default_zone", std::move(zoneItems)).get();
     EXPECT_FALSE(result.ok());
   }
   {
-    auto result = client
-                      ->divideZone("default_zone",
-                                   "one_zone_1",
-                                   {{"127.0.0.1", 8976}, {"127.0.0.1", 8977}},
-                                   "another_zone_1",
-                                   {{"127.0.0.1", 8978}, {"127.0.0.1", 8979}})
-                      .get();
+    std::unordered_map<std::string, std::vector<HostAddr>> zoneItems;
+    std::vector<HostAddr> oneHosts = {{"127.0.0.1", 8976}, {"127.0.0.1", 8977}};
+    zoneItems.emplace("one_zone_1", std::move(oneHosts));
+    std::vector<HostAddr> anotherHosts = {{"127.0.0.1", 8978}, {"127.0.0.1", 8979}};
+    zoneItems.emplace("another_zone_1", std::move(anotherHosts));
+    auto result = client->divideZone("default_zone", std::move(zoneItems)).get();
     EXPECT_TRUE(result.ok());
   }
   {
@@ -2655,11 +2665,11 @@ TEST(MetaClientTest, DropZoneTest) {
   }
   {
     cpp2::SpaceDesc properties;
-    properties.set_space_name("default_space");
-    properties.set_partition_num(9);
-    properties.set_replica_factor(3);
-    properties.set_charset_name("utf8");
-    properties.set_collate_name("utf8_bin");
+    properties.space_name_ref() = "default_space";
+    properties.partition_num_ref() = 9;
+    properties.replica_factor_ref() = 3;
+    properties.charset_name_ref() = "utf8";
+    properties.collate_name_ref() = "utf8_bin";
     auto ret = client->createSpace(properties).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
     ASSERT_EQ(1, ret.value());
@@ -2674,11 +2684,11 @@ TEST(MetaClientTest, DropZoneTest) {
   }
   {
     cpp2::SpaceDesc properties;
-    properties.set_space_name("default_space");
-    properties.set_partition_num(9);
-    properties.set_replica_factor(3);
-    properties.set_charset_name("utf8");
-    properties.set_collate_name("utf8_bin");
+    properties.space_name_ref() = "default_space";
+    properties.partition_num_ref() = 9;
+    properties.replica_factor_ref() = 3;
+    properties.charset_name_ref() = "utf8";
+    properties.collate_name_ref() = "utf8_bin";
     auto ret = client->createSpace(properties).get();
     ASSERT_TRUE(ret.ok()) << ret.status();
     ASSERT_EQ(2, ret.value());
@@ -2736,9 +2746,9 @@ TEST(MetaClientTest, RocksdbOptionsTest) {
     std::vector<HostAddr> hosts = {{"0", 0}};
     TestUtils::registerHB(cluster.metaKV_.get(), hosts);
     meta::cpp2::SpaceDesc spaceDesc;
-    spaceDesc.set_space_name("default_space");
-    spaceDesc.set_partition_num(9);
-    spaceDesc.set_replica_factor(1);
+    spaceDesc.space_name_ref() = "default_space";
+    spaceDesc.partition_num_ref() = 9;
+    spaceDesc.replica_factor_ref() = 1;
     client->createSpace(spaceDesc).get();
     sleep(FLAGS_heartbeat_interval_secs + 1);
   }

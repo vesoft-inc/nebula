@@ -535,17 +535,14 @@ Status DropZoneValidator::toPlan() {
   return Status::OK();
 }
 
-Status DivideZoneValidator::validateImpl() { return Status::OK(); }
+Status DivideZoneValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status DivideZoneValidator::toPlan() {
   auto sentence = static_cast<DivideZoneSentence *>(sentence_);
-  auto *doNode = DivideZone::make(qctx_,
-                                  nullptr,
-                                  *sentence->zoneName(),
-                                  *sentence->oneZoneName(),
-                                  sentence->oneHosts()->hosts(),
-                                  *sentence->anotherZoneName(),
-                                  sentence->anotherHosts()->hosts());
+  auto *doNode =
+      DivideZone::make(qctx_, nullptr, *sentence->zoneName(), sentence->zoneItems()->zoneItems());
   root_ = doNode;
   tail_ = root_;
   return Status::OK();

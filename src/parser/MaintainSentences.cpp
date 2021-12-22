@@ -441,14 +441,8 @@ std::string DivideZoneSentence::toString() const {
   buf.reserve(128);
   buf += "DIVIDE ZONE \"";
   buf += *zoneName_;
-  buf += "\" INTO \"";
-  buf += *oneZoneName_;
-  buf += "\" ";
-  buf += oneHosts_->toString();
-  buf += "\" ";
-  buf += *anotherZoneName_;
-  buf += "\" ";
-  buf += anotherHosts_->toString();
+  buf += "\" INTO ";
+  buf += zoneItems_->toString();
   return buf;
 }
 
