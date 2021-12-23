@@ -37,6 +37,7 @@ class Metric {
   Metric() = default;
   virtual ~Metric() = default;
   virtual std::string name() const { return "fafd"; }
+  virtual void init() = 0;
   // virtual std::string to_string() const = 0;
 };
 
@@ -48,24 +49,28 @@ struct CounterOpts {
 
 class Counter : public Metric {
  public:
-  explicit Counter(const CounterOpts& opts)
-      : name_(opts.name),
-        counter_(60,
-                 std::initializer_list<StatsType::Duration>(
-                     {seconds(5), seconds(60), seconds(600), seconds(3600)})) {
+  explicit Counter(const CounterOpts& opts) : name_(opts.name), opts_(opts) {
     std::vector<std::pair<std::string, double>> tmp;
     parseStats(opts.stats, methods_, tmp);
   }
 
+  void init() override {
+    counter_ = std::make_unique<folly::MultiLevelTimeSeries<VT>>(
+        60,
+        std::initializer_list<StatsType::Duration>(
+            {seconds(5), seconds(60), seconds(600), seconds(3600)}));
+  }
+
   void addValue(VT v = 1) {
     std::lock_guard<std::mutex> g(lock_);
-    counter_.addValue(seconds(time::WallClock::fastNowInSec()), v);
+    counter_->addValue(seconds(time::WallClock::fastNowInSec()), v);
   }
 
  private:
   std::string name_;
+  CounterOpts opts_;
   std::vector<StatsMethod> methods_;
-  StatsType counter_;
+  std::unique_ptr<folly::MultiLevelTimeSeries<VT>> counter_;
   std::mutex lock_;
 };
 
@@ -80,24 +85,33 @@ struct HistogramOpts {
 };
 
 class Histogram : public Metric {
-  using HistogramType = folly::TimeseriesHistogram<VT>;
-
  public:
-  explicit Histogram(const HistogramOpts& opts)
-      : hist_(opts.bucketSize,
-              opts.min,
-              opts.max,
-              StatsType(60, {seconds(5), seconds(60), seconds(600), seconds(3600)})) {
+  explicit Histogram(const HistogramOpts& opts) : name_(opts.name), opts_(opts) {
     parseStats(opts.stats, methods_, percentiles_);
+  }
+
+  void init() override {
+    hist_ = std::make_unique<folly::TimeseriesHistogram<VT>>(
+        opts_.bucketSize,
+        opts_.min,
+        opts_.max,
+        folly::MultiLevelTimeSeries<VT>(
+            60,
+            std::initializer_list<StatsType::Duration>(
+                {seconds(5), seconds(60), seconds(600), seconds(3600)})));
   }
 
   void addValue(VT v) {
     std::lock_guard<std::mutex> g(lock_);
-    hist_.addValue(seconds(time::WallClock::fastNowInSec()), v);
+    if (hist_) {
+      hist_->addValue(seconds(time::WallClock::fastNowInSec()), v);
+    }
   }
 
  private:
-  folly::TimeseriesHistogram<VT> hist_;
+  std::string name_;
+  HistogramOpts opts_;
+  std::unique_ptr<folly::TimeseriesHistogram<VT>> hist_;
   std::vector<StatsMethod> methods_;
   std::vector<std::pair<std::string, double>> percentiles_;
   std::mutex lock_;
@@ -117,9 +131,11 @@ struct LabelValuesHash {
 
 template <typename T>
 class MetricVec {
+  using NewMetric = std::function<std::unique_ptr<T>()>;
+
  public:
-  MetricVec(const std::string& name, const LabelNames& labelNames, std::function<T*()> addMetric)
-      : name_(name), labelNames_(labelNames), addMetric_(addMetric) {}
+  MetricVec(const std::string& name, const LabelNames& labelNames, NewMetric newMetric)
+      : name_(name), labelNames_(labelNames), newMetric_(newMetric) {}
 
   T& getOrCreateMetricWithLabelValues(const LabelValues& labelValues) {
     folly::RWSpinLock::WriteHolder wh(lock_);
@@ -131,7 +147,7 @@ class MetricVec {
     }
 
     // Create a new one if it doesn't exist
-    auto it2 = metricMap_.emplace(labelValues, addMetric_());
+    auto it2 = metricMap_.emplace(labelValues, newMetric_());
     CHECK(it2.second);
     return *it2.first->second;
   }
@@ -146,14 +162,14 @@ class MetricVec {
 
   const std::string name_;
   const LabelNames labelNames_;
-  std::function<T*()> addMetric_;
+  NewMetric newMetric_;
   folly::RWSpinLock lock_;
 };
 
 class CounterVec : public Metric {
  public:
   CounterVec(const CounterOpts& opts, const LabelNames& labelNames)
-      : metricVec_(opts.name, labelNames, [opts]() { return new Counter(opts); }) {}
+      : metricVec_(opts.name, labelNames, [opts]() { return std::make_unique<Counter>(opts); }) {}
 
   Counter& withLabelValues(const LabelValues& labelValues) {
     return metricVec_.getOrCreateMetricWithLabelValues(labelValues);
@@ -170,7 +186,7 @@ class CounterVec : public Metric {
 class HistogramVec : public Metric {
  public:
   HistogramVec(const HistogramOpts& opts, const LabelNames& labelNames)
-      : metricVec_(opts.name, labelNames, [opts]() { return new Histogram(opts); }) {}
+      : metricVec_(opts.name, labelNames, [opts]() { return std::make_unique<Histogram>(opts); }) {}
 
   Histogram& withLabelValues(const LabelValues& labelValues) {
     return metricVec_.getOrCreateMetricWithLabelValues(labelValues);
@@ -186,9 +202,10 @@ class HistogramVec : public Metric {
 
 class MetricRegistry {
  public:
-  static void registerMetric(const Metric* metric) {
+  static void registerMetric(Metric* metric) {
     auto& registry = instance();
     folly::RWSpinLock::WriteHolder wh(registry.lock_);
+    metric->init();
     registry.metrics_.try_emplace(metric->name(), metric);
   }
 
