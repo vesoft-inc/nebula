@@ -28,7 +28,7 @@ class Status final {
   ~Status() = default;
 
   Status(const Status &rhs) {
-    state_ = (!rhs.state_ ? nullptr : copyState(rhs.state_.get()));
+    state_ = (rhs.state_ == nullptr ? nullptr : copyState(rhs.state_.get()));
   }
 
   Status &operator=(const Status &rhs) {

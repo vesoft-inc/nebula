@@ -2455,12 +2455,12 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
   if (!dirInfoReported_) {
     nebula::cpp2::DirInfo dirInfo;
     if (options_.role_ == cpp2::HostRole::GRAPH) {
-      dirInfo.set_root(options_.rootPath_);
+      dirInfo.root_ref() = options_.rootPath_;
     } else if (options_.role_ == cpp2::HostRole::STORAGE) {
-      dirInfo.set_root(options_.rootPath_);
-      dirInfo.set_data(options_.dataPaths_);
+      dirInfo.root_ref() = options_.rootPath_;
+      dirInfo.data_ref() = options_.dataPaths_;
     }
-    req.set_dir(dirInfo);
+    req.dir_ref() = dirInfo;
   }
 
   folly::Promise<StatusOr<bool>> promise;

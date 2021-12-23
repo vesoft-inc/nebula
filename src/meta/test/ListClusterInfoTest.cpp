@@ -42,10 +42,10 @@ TEST(ProcessorTest, ListClusterInfoTest) {
 
   std::vector<kvstore::KV> dirs;
   nebula::cpp2::DirInfo dir;
-  dir.set_root(std::string(root_dir));
+  dir.root_ref() = std::string(root_dir);
   std::vector<std::string> ds;
   ds.push_back(std::string(data_dir));
-  dir.set_data(ds);
+  dir.data_ref() = ds;
   dirs.emplace_back(std::make_pair(MetaKeyUtils::hostDirKey(storageHost.host, storageHost.port),
                                    MetaKeyUtils::hostDirVal(dir)));
   folly::Baton<true, std::atomic> b;
