@@ -25,7 +25,8 @@ folly::Future<Status> ScanEdgesExecutor::scanEdges() {
   auto *se = asNode<ScanEdges>(node());
   if (se->limit() < 0) {
     return Status::Error(
-        "Scan vertices or edges need to specify a limit number, or limit number can't push down.");
+        "Scan vertices or edges need to specify a limit number, "
+        "or limit number can not push down.");
   }
 
   time::Duration scanEdgesTime;

@@ -222,14 +222,14 @@ Feature: Match seek by id
       WHERE NOT id(v) == 'Paul Gasol'
       RETURN v.name AS Name, v.age AS Age
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices must specify limit number.
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
     When executing query:
       """
       MATCH (v)
       WHERE NOT id(v) IN ['James Harden', 'Jonathon Simmons', 'Klay Thompson', 'Dejounte Murray']
       RETURN v.name AS Name
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices must specify limit number.
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
     When executing query:
       """
       MATCH (v)
@@ -237,7 +237,7 @@ Feature: Match seek by id
       OR v.age == 23
       RETURN v.name AS Name
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices must specify limit number.
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
     When executing query:
       """
       MATCH (v)
@@ -245,7 +245,7 @@ Feature: Match seek by id
       OR v.age == 23
       RETURN v.name AS Name
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices must specify limit number.
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
     When executing query:
       """
       MATCH (v)
@@ -266,7 +266,7 @@ Feature: Match seek by id
       WHERE id(v) IN ['James Harden', v.name]
       RETURN v.name AS Name
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices must specify limit number.
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
 
   Scenario: Start from end
     When executing query:

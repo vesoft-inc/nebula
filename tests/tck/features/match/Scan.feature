@@ -84,14 +84,14 @@ Feature: Match seek by scan
       MATCH (v)
       RETURN v.name AS Name
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices must specify limit number.
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
     When executing query:
       """
       MATCH (v{name: "Mary"})
       RETURN v.name AS Name
       LIMIT 3
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices must specify limit number.
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
 
   Scenario: query edge by scan
     When executing query:
@@ -154,4 +154,4 @@ Feature: Match seek by scan
       RETURN v.name, type(e) AS Type
       LIMIT 3
       """
-    Then a ExecutionError should be raised at runtime: Scan vertices must specify limit number.
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
