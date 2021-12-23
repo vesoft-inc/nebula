@@ -141,7 +141,7 @@ struct Geography {
                                      bool needNormalize = false,
                                      bool verifyValidity = false);
 
-  Geography() {}
+  Geography() = default;
   Geography(const Point& v) : geo_(v) {}             // NOLINT
   Geography(Point&& v) : geo_(std::move(v)) {}       // NOLINT
   Geography(const LineString& v) : geo_(v) {}        // NOLINT
