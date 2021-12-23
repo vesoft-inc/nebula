@@ -136,18 +136,6 @@ Status FetchEdgesValidator::validateEdgeKey() {
   return Status::OK();
 }
 
-void FetchEdgesValidator::extractEdgeProp(ExpressionProps &exprProps) {
-  exprProps.insertEdgeProp(edgeType_, kSrc);
-  exprProps.insertEdgeProp(edgeType_, kDst);
-  exprProps.insertEdgeProp(edgeType_, kRank);
-  exprProps.insertEdgeProp(edgeType_, kType);
-
-  for (std::size_t i = 0; i < edgeSchema_->getNumFields(); ++i) {
-    const auto propName = edgeSchema_->getFieldName(i);
-    exprProps.insertEdgeProp(edgeType_, propName);
-  }
-}
-
 Status FetchEdgesValidator::validateYield(const YieldClause *yield) {
   if (yield == nullptr) {
     return Status::SemanticError("Missing yield clause.");
@@ -158,12 +146,6 @@ Status FetchEdgesValidator::validateYield(const YieldClause *yield) {
   exprProps.insertEdgeProp(edgeType_, nebula::kDst);
   exprProps.insertEdgeProp(edgeType_, nebula::kRank);
 
-  for (const auto &col : yield->columns()) {
-    if (ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kEdge})) {
-      extractEdgeProp(exprProps);
-      break;
-    }
-  }
   auto size = yield->columns().size();
   outputs_.reserve(size);
 
@@ -182,8 +164,8 @@ Status FetchEdgesValidator::validateYield(const YieldClause *yield) {
     NG_RETURN_IF_ERROR(typeStatus);
     outputs_.emplace_back(col->name(), typeStatus.value());
     newCols->addColumn(col->clone().release());
-
-    NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps));
+    std::vector<EdgeType> edgeTypes{edgeType_};
+    NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps, nullptr, &edgeTypes));
   }
 
   if (exprProps.hasInputVarProperty()) {

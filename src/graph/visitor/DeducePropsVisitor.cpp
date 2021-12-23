@@ -108,11 +108,15 @@ void ExpressionProps::unionProps(ExpressionProps exprProps) {
 DeducePropsVisitor::DeducePropsVisitor(QueryContext *qctx,
                                        GraphSpaceID space,
                                        ExpressionProps *exprProps,
-                                       std::set<std::string> *userDefinedVarNameList)
+                                       std::set<std::string> *userDefinedVarNameList,
+                                       std::vector<TagID> *tagIds,
+                                       std::vector<EdgeType> *edgeTypes)
     : qctx_(qctx),
       space_(space),
       exprProps_(exprProps),
-      userDefinedVarNameList_(userDefinedVarNameList) {
+      userDefinedVarNameList_(userDefinedVarNameList),
+      tagIds_(tagIds),
+      edgeTypes_(edgeTypes) {
   DCHECK(qctx != nullptr);
   DCHECK(exprProps != nullptr);
   DCHECK(userDefinedVarNameList != nullptr);
@@ -173,17 +177,55 @@ void DeducePropsVisitor::visit(VersionedVariableExpression *expr) { reportError(
 
 void DeducePropsVisitor::visit(LabelExpression *expr) { reportError(expr); }
 
-void DeducePropsVisitor::visit(AttributeExpression *expr) { UNUSED(expr); }
-
 void DeducePropsVisitor::visit(LabelAttributeExpression *expr) { reportError(expr); }
 
 void DeducePropsVisitor::visit(ConstantExpression *expr) { UNUSED(expr); }
 
-void DeducePropsVisitor::visit(VertexExpression *expr) { UNUSED(expr); }
-
-void DeducePropsVisitor::visit(EdgeExpression *expr) { UNUSED(expr); }
-
 void DeducePropsVisitor::visit(ColumnExpression *expr) { UNUSED(expr); }
+
+void DeducePropsVisitor::visit(VertexExpression *expr) {
+  if (tagIds_ == nullptr) {
+    UNUSED(expr);
+    return;
+  }
+  const auto &colName = expr->name();
+  for (const auto &tagID : *tagIds_) {
+    const auto &tagSchema = qctx_->schemaMng()->getTagSchema(space_, tagID);
+    if (colName == "$^") {
+      exprProps_->insertSrcTagProp(tagID, nebula::kTag);
+      for (size_t i = 0; i < tagSchema->getNumFields(); ++i) {
+        exprProps_->insertSrcTagProp(tagID, tagSchema->getFieldName(i));
+      }
+    } else if (colName == "$$") {
+      exprProps_->insertDstTagProp(tagID, nebula::kTag);
+      for (size_t i = 0; i < tagSchema->getNumFields(); ++i) {
+        exprProps_->insertDstTagProp(tagID, tagSchema->getFieldName(i));
+      }
+    } else {
+      exprProps_->insertTagProp(tagID, nebula::kTag);
+      for (size_t i = 0; i < tagSchema->getNumFields(); ++i) {
+        exprProps_->insertTagProp(tagID, tagSchema->getFieldName(i));
+      }
+    }
+  }
+}
+
+void DeducePropsVisitor::visit(EdgeExpression *expr) {
+  if (edgeTypes_ == nullptr) {
+    UNUSED(expr);
+    return;
+  }
+  for (const auto &edgeType : *edgeTypes_) {
+    const auto &edgeSchema = qctx_->schemaMng()->getEdgeSchema(space_, std::abs(edgeType));
+    exprProps_->insertEdgeProp(edgeType, kType);
+    exprProps_->insertEdgeProp(edgeType, kSrc);
+    exprProps_->insertEdgeProp(edgeType, kDst);
+    exprProps_->insertEdgeProp(edgeType, kRank);
+    for (size_t i = 0; i < edgeSchema->getNumFields(); ++i) {
+      exprProps_->insertEdgeProp(edgeType, edgeSchema->getFieldName(i));
+    }
+  }
+}
 
 void DeducePropsVisitor::visitEdgePropExpr(PropertyExpression *expr) {
   auto status = qctx_->schemaMng()->toEdgeType(space_, expr->sym());
