@@ -9,7 +9,6 @@
 #include "graph/context/QueryContext.h"
 #include "graph/context/ast/CypherAstContext.h"
 #include "graph/planner/Planner.h"
-#include "graph/planner/match/InnerJoinStrategy.h"
 #include "graph/planner/plan/PlanNode.h"
 
 namespace nebula {
@@ -20,42 +19,33 @@ namespace graph {
  */
 class SegmentsConnector final {
  public:
-  enum class ConnectStrategy : int8_t {
-    kAddDependency,
-    kInnerJoin,
-    kLeftOuterJoin,
-    kCartesianProduct,
-    kUnion,
-  };
-
   SegmentsConnector() = delete;
 
-  // Analyse the relation of two segments and connect them.
-  static StatusOr<SubPlan> connectSegments(CypherClauseContextBase* leftCtx,
-                                           CypherClauseContextBase* rightCtx,
-                                           SubPlan& left,
-                                           SubPlan& right);
-
-  static PlanNode* innerJoinSegments(
-      QueryContext* qctx,
-      const PlanNode* left,
-      const PlanNode* right,
-      InnerJoinStrategy::JoinPos leftPos = InnerJoinStrategy::JoinPos::kEnd,
-      InnerJoinStrategy::JoinPos rightPos = InnerJoinStrategy::JoinPos::kStart);
-
-  static PlanNode* cartesianProductSegments(QueryContext* qctx,
-                                            const PlanNode* left,
-                                            const PlanNode* right);
+  /**
+   * InnerJoin two plan on node id
+   */
+  static SubPlan innerJoin(QueryContext* qctx,
+                           const SubPlan& left,
+                           const SubPlan& right,
+                           const std::unordered_set<std::string>& intersectedAliases);
 
   /**
-   * left->right
+   * LeftJoin two plan on node id
    */
-  static void addDependency(const PlanNode* left, const PlanNode* right);
+  static SubPlan leftJoin(QueryContext* qctx,
+                          const SubPlan& left,
+                          const SubPlan& right,
+                          const std::unordered_set<std::string>& intersectedAliases);
+
+  /**
+   * Simply do a CartesianProduct of two plan root.
+   */
+  static SubPlan cartesianProduct(QueryContext* qctx, const SubPlan& left, const SubPlan& right);
 
   /*
    * left->right
    */
-  static void addInput(const PlanNode* left, const PlanNode* right, bool copyColNames = false);
+  static SubPlan addInput(const SubPlan& left, const SubPlan& right, bool copyColNames = false);
 };
 }  // namespace graph
 }  // namespace nebula

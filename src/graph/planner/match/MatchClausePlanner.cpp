@@ -17,8 +17,6 @@
 #include "graph/util/SchemaUtil.h"
 #include "graph/visitor/RewriteVisitor.h"
 
-using JoinStrategyPos = nebula::graph::InnerJoinStrategy::JoinPos;
-
 namespace nebula {
 namespace graph {
 static std::vector<std::string> genTraverseColNames(const std::vector<std::string>& inputCols,
@@ -462,8 +460,7 @@ Status MatchClausePlanner::appendFilterPlan(MatchClauseContext* matchClauseCtx, 
   auto wherePlan = std::make_unique<WhereClausePlanner>()->transform(matchClauseCtx->where.get());
   NG_RETURN_IF_ERROR(wherePlan);
   auto plan = std::move(wherePlan).value();
-  SegmentsConnector::addInput(plan.tail, subplan.root, true);
-  subplan.root = plan.root;
+  subplan = SegmentsConnector::addInput(plan, subplan, true);
   VLOG(1) << subplan;
   return Status::OK();
 }
@@ -489,24 +486,12 @@ Status MatchClausePlanner::connectPathPlan(const std::vector<NodeInfo>& nodeInfo
     matchClausePlan = subplan;
   } else {
     if (intersectedAliases.empty()) {
-      matchClausePlan.root =
-          BiCartesianProduct::make(matchClauseCtx->qctx, matchClausePlan.root, subplan.root);
+      matchClausePlan =
+          SegmentsConnector::cartesianProduct(matchClauseCtx->qctx, matchClausePlan, subplan);
     } else {
       // TODO: Actually a natural join would be much easy use.
-      auto innerJoin = BiInnerJoin::make(matchClauseCtx->qctx, matchClausePlan.root, subplan.root);
-      std::vector<Expression*> hashKeys;
-      std::vector<Expression*> probeKeys;
-      auto pool = matchClauseCtx->qctx->objPool();
-      for (auto& alias : intersectedAliases) {
-        auto* args = ArgumentList::make(pool);
-        args->addArgument(InputPropertyExpression::make(pool, alias));
-        auto* expr = FunctionCallExpression::make(pool, "id", args);
-        hashKeys.emplace_back(expr);
-        probeKeys.emplace_back(expr->clone());
-      }
-      innerJoin->setHashKeys(std::move(hashKeys));
-      innerJoin->setProbeKeys(std::move(probeKeys));
-      matchClausePlan.root = innerJoin;
+      matchClausePlan = SegmentsConnector::innerJoin(
+          matchClauseCtx->qctx, matchClausePlan, subplan, intersectedAliases);
     }
   }
   return Status::OK();

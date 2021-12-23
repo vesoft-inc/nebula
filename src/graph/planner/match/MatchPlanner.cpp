@@ -78,29 +78,15 @@ void MatchPlanner::connectMatch(const MatchClauseContext* match,
   }
 
   if (!intersectedAliases.empty()) {
-    std::vector<Expression*> hashKeys;
-    std::vector<Expression*> probeKeys;
-    auto pool = match->qctx->objPool();
-    for (auto& alias : intersectedAliases) {
-      auto* args = ArgumentList::make(pool);
-      args->addArgument(InputPropertyExpression::make(pool, alias));
-      auto* expr = FunctionCallExpression::make(pool, "id", args);
-      hashKeys.emplace_back(expr);
-      probeKeys.emplace_back(expr->clone());
-    }
     if (match->isOptional) {
-      auto leftJoin = BiLeftJoin::make(match->qctx, queryPartPlan.root, matchPlan.root);
-      leftJoin->setHashKeys(std::move(hashKeys));
-      leftJoin->setProbeKeys(std::move(probeKeys));
-      queryPartPlan.root = leftJoin;
+      queryPartPlan =
+          SegmentsConnector::leftJoin(match->qctx, queryPartPlan, matchPlan, intersectedAliases);
     } else {
-      auto innerJoin = BiInnerJoin::make(match->qctx, queryPartPlan.root, matchPlan.root);
-      innerJoin->setHashKeys(std::move(hashKeys));
-      innerJoin->setProbeKeys(std::move(probeKeys));
-      queryPartPlan.root = innerJoin;
+      queryPartPlan =
+          SegmentsConnector::innerJoin(match->qctx, queryPartPlan, matchPlan, intersectedAliases);
     }
   } else {
-    queryPartPlan.root = BiCartesianProduct::make(match->qctx, queryPartPlan.root, matchPlan.root);
+    queryPartPlan = SegmentsConnector::cartesianProduct(match->qctx, queryPartPlan, matchPlan);
   }
 }
 
@@ -114,8 +100,7 @@ Status MatchPlanner::connectQueryParts(const QueryPart& queryPart,
   if (queryPlan.root == nullptr) {
     auto subplan = std::move(boundaryPlan).value();
     if (partPlan.root != nullptr) {
-      SegmentsConnector::addInput(subplan.tail, partPlan.root);
-      subplan.tail = partPlan.tail;
+      subplan = SegmentsConnector::addInput(subplan, partPlan);
     }
     queryPlan = subplan;
     if (queryPlan.tail->isSingleInput()) {
@@ -127,9 +112,7 @@ Status MatchPlanner::connectQueryParts(const QueryPart& queryPart,
   // Otherwise, there might only a with/unwind/return in a query part
   if (partPlan.root == nullptr) {
     auto subplan = std::move(boundaryPlan).value();
-    SegmentsConnector::addInput(subplan.tail, queryPlan.root);
-    subplan.tail = queryPlan.tail;
-    queryPlan = subplan;
+    queryPlan = SegmentsConnector::addInput(subplan, queryPlan);
     return Status::OK();
   }
 
@@ -160,9 +143,7 @@ Status MatchPlanner::connectQueryParts(const QueryPart& queryPart,
     queryPlan.root = BiCartesianProduct::make(qctx, queryPlan.root, partPlan.root);
   }
 
-  SegmentsConnector::addInput(boundaryPlan.value().tail, queryPlan.root);
-  queryPlan.root = boundaryPlan.value().root;
-
+  queryPlan = SegmentsConnector::addInput(boundaryPlan.value(), queryPlan);
   return Status::OK();
 }
 }  // namespace graph
