@@ -23,7 +23,7 @@ class NamedThread final : public std::thread {
   NamedThread() = default;
   NamedThread(NamedThread &&) = default;
   template <typename F, typename... Args>
-  NamedThread(const std::string &name, F &&f, Args &&...args);
+  NamedThread(const std::string &name, F &&f, Args &&... args);
   NamedThread &operator=(NamedThread &&) = default;
   NamedThread(const NamedThread &) = delete;
   NamedThread &operator=(const NamedThread &) = delete;
@@ -64,7 +64,7 @@ class NamedThread final : public std::thread {
 };
 
 template <typename F, typename... Args>
-NamedThread::NamedThread(const std::string &name, F &&f, Args &&...args)
+NamedThread::NamedThread(const std::string &name, F &&f, Args &&... args)
     : std::thread(hook, name, std::bind(std::forward<F>(f), std::forward<Args>(args)...)) {}
 
 }  // namespace thread
