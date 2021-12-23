@@ -197,9 +197,9 @@ class TestSession(NebulaTestSuite):
     def test_out_of_max_connections(self):
         resp = self.execute('SHOW SESSIONS')
         self.check_resp_succeeded(resp)
-        current_sessions = len(resp.rows())
+        sessions = len(resp.rows())
 
-        resp = self.execute('UPDATE CONFIGS graph:max_allowed_connections = {}'.format(current_sessions))
+        resp = self.execute('UPDATE CONFIGS graph:max_allowed_connections = {}'.format(sessions))
         self.check_resp_succeeded(resp)
         time.sleep(3)
 
