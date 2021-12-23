@@ -152,7 +152,7 @@ void split(const std::string &s, std::vector<std::string> &sv, const char delim 
 }
 
 Status CreateFunctionValidator::validateImpl() {
-  // TODO(TripleZ): add create function logic
+  // create function logic
   createCtx_ = getContext<CreateSchemaContext>();
   auto sentence = static_cast<CreateFunctionSentence *>(sentence_);
   createCtx_->ifNotExist = sentence->isIfNotExist();
@@ -225,12 +225,13 @@ Status CreateFunctionValidator::validateImpl() {
       return Status::Error("Function Return Only Support INT32 INT64 FLOAT STRING");
   }
   WasmFunctionManager &wasmFunctionManager = WasmFunctionManager::getInstance();
+  auto isSuccess = false;
   if (funcType == "WAT") {
     std::string prefix1 = "wat://";
     std::string prefix2 = "WAT://";
     std::string watBase64Str = funcSource.substr(prefix1.length());
     watBase64Str = funcSource.substr(prefix2.length());
-    wasmFunctionManager.RegisterFunction(inParam,
+    isSuccess = wasmFunctionManager.RegisterFunction(inParam,
                                          outParam,
                                          WasmFunctionManager::TYPE_WAT_MOUDLE,
                                          functionName,
@@ -241,7 +242,7 @@ Status CreateFunctionValidator::validateImpl() {
     std::string prefix2 = "WASM://";
     std::string wasmBase64Str = funcSource.substr(prefix1.length());
     wasmBase64Str = funcSource.substr(prefix2.length());
-    wasmFunctionManager.RegisterFunction(inParam,
+    isSuccess = wasmFunctionManager.RegisterFunction(inParam,
                                          outParam,
                                          WasmFunctionManager::TYPE_WASM_MOUDLE,
                                          functionName,
@@ -252,12 +253,16 @@ Status CreateFunctionValidator::validateImpl() {
     std::string prefix1 = "path://";
     std::string prefix2 = "PATH://";
     std::string path = funcSource.substr(prefix1.length());
-    wasmFunctionManager.RegisterFunction(inParam,
+    isSuccess = wasmFunctionManager.RegisterFunction(inParam,
                                          outParam,
                                          WasmFunctionManager::TYPE_WASM_PATH,
                                          functionName,
                                          functionHandler,
                                          path);
+  }
+
+  if (!isSuccess) {
+    return Status::Error("Cannot create UDF function, maybe this function exists.");
   }
 
   // schema should not be needed in create function
