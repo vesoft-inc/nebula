@@ -77,6 +77,12 @@ class MatchClausePlanner final : public CypherClausePlanner {
 
   Status appendFilterPlan(MatchClauseContext* matchClauseCtx, SubPlan& subplan);
 
+  Status connectPathPlan(const std::vector<NodeInfo>& nodeInfos,
+                         MatchClauseContext* matchClauseCtx,
+                         const SubPlan& subplan,
+                         std::unordered_set<std::string>& nodeAliasesSeen,
+                         SubPlan& matchClausePlan);
+
  private:
   Expression* initialExpr_{nullptr};
 };

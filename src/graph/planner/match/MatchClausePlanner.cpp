@@ -134,44 +134,8 @@ StatusOr<SubPlan> MatchClausePlanner::transform(CypherClauseContextBase* clauseC
         nodeInfos, edgeInfos, matchClauseCtx, nodeAliasesSeen, startFromEdge, startIndex, subplan));
     NG_RETURN_IF_ERROR(
         expand(nodeInfos, edgeInfos, matchClauseCtx, startFromEdge, startIndex, subplan));
-
-    std::unordered_set<std::string> intersectedAliases;
-    std::for_each(
-        nodeInfos.begin(), nodeInfos.end(), [&intersectedAliases, &nodeAliasesSeen](auto& info) {
-          if (nodeAliasesSeen.find(info.alias) != nodeAliasesSeen.end()) {
-            intersectedAliases.emplace(info.alias);
-          }
-        });
-    std::for_each(nodeInfos.begin(), nodeInfos.end(), [&nodeAliasesSeen](auto& info) {
-      if (!info.anonymous) {
-        nodeAliasesSeen.emplace(info.alias);
-      }
-    });
-    if (matchClausePlan.root == nullptr) {
-      matchClausePlan = subplan;
-    } else {
-      if (intersectedAliases.empty()) {
-        matchClausePlan.root =
-            BiCartesianProduct::make(matchClauseCtx->qctx, matchClausePlan.root, subplan.root);
-      } else {
-        // TODO: Actually a natural join would be much easy use.
-        auto innerJoin =
-            BiInnerJoin::make(matchClauseCtx->qctx, matchClausePlan.root, subplan.root);
-        std::vector<Expression*> hashKeys;
-        std::vector<Expression*> probeKeys;
-        auto pool = matchClauseCtx->qctx->objPool();
-        for (auto& alias : intersectedAliases) {
-          auto* args = ArgumentList::make(pool);
-          args->addArgument(InputPropertyExpression::make(pool, alias));
-          auto* expr = FunctionCallExpression::make(pool, "id", args);
-          hashKeys.emplace_back(expr);
-          probeKeys.emplace_back(expr->clone());
-        }
-        innerJoin->setHashKeys(std::move(hashKeys));
-        innerJoin->setProbeKeys(std::move(probeKeys));
-        matchClausePlan.root = innerJoin;
-      }
-    }
+    NG_RETURN_IF_ERROR(
+        connectPathPlan(nodeInfos, matchClauseCtx, subplan, nodeAliasesSeen, matchClausePlan));
   }
   NG_RETURN_IF_ERROR(projectColumnsBySymbols(matchClauseCtx, matchClausePlan));
   NG_RETURN_IF_ERROR(appendFilterPlan(matchClauseCtx, matchClausePlan));
@@ -501,6 +465,50 @@ Status MatchClausePlanner::appendFilterPlan(MatchClauseContext* matchClauseCtx, 
   SegmentsConnector::addInput(plan.tail, subplan.root, true);
   subplan.root = plan.root;
   VLOG(1) << subplan;
+  return Status::OK();
+}
+
+Status MatchClausePlanner::connectPathPlan(const std::vector<NodeInfo>& nodeInfos,
+                                           MatchClauseContext* matchClauseCtx,
+                                           const SubPlan& subplan,
+                                           std::unordered_set<std::string>& nodeAliasesSeen,
+                                           SubPlan& matchClausePlan) {
+  std::unordered_set<std::string> intersectedAliases;
+  std::for_each(
+      nodeInfos.begin(), nodeInfos.end(), [&intersectedAliases, &nodeAliasesSeen](auto& info) {
+        if (nodeAliasesSeen.find(info.alias) != nodeAliasesSeen.end()) {
+          intersectedAliases.emplace(info.alias);
+        }
+      });
+  std::for_each(nodeInfos.begin(), nodeInfos.end(), [&nodeAliasesSeen](auto& info) {
+    if (!info.anonymous) {
+      nodeAliasesSeen.emplace(info.alias);
+    }
+  });
+  if (matchClausePlan.root == nullptr) {
+    matchClausePlan = subplan;
+  } else {
+    if (intersectedAliases.empty()) {
+      matchClausePlan.root =
+          BiCartesianProduct::make(matchClauseCtx->qctx, matchClausePlan.root, subplan.root);
+    } else {
+      // TODO: Actually a natural join would be much easy use.
+      auto innerJoin = BiInnerJoin::make(matchClauseCtx->qctx, matchClausePlan.root, subplan.root);
+      std::vector<Expression*> hashKeys;
+      std::vector<Expression*> probeKeys;
+      auto pool = matchClauseCtx->qctx->objPool();
+      for (auto& alias : intersectedAliases) {
+        auto* args = ArgumentList::make(pool);
+        args->addArgument(InputPropertyExpression::make(pool, alias));
+        auto* expr = FunctionCallExpression::make(pool, "id", args);
+        hashKeys.emplace_back(expr);
+        probeKeys.emplace_back(expr->clone());
+      }
+      innerJoin->setHashKeys(std::move(hashKeys));
+      innerJoin->setProbeKeys(std::move(probeKeys));
+      matchClausePlan.root = innerJoin;
+    }
+  }
   return Status::OK();
 }
 }  // namespace graph
