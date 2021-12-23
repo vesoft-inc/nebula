@@ -125,7 +125,6 @@ jobs:
           esac
       - name: Make
         run: |
-          ccache -C
           ccache -z
           cmake --build build/ -j $(nproc)
           ccache -s

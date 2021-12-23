@@ -290,16 +290,19 @@ class StatusOr final {
 
   void resetValue() {
     destructValue();
+    new (&variant_) Variant();
     state_ = kVoid;
   }
 
   void resetStatus() {
     destructStatus();
+    new (&variant_) Variant();
     state_ = kVoid;
   }
 
   void destruct() {
     if (isVoid()) {
+      destructStatus();
       return;
     }
     if (hasValue()) {
@@ -311,13 +314,14 @@ class StatusOr final {
 
   void reset() {
     destruct();
+    new (&variant_) Variant();
     state_ = kVoid;
   }
 
  private:
   // Variant type to hold a `Status', or a `T', or nothing
   union Variant {
-    Variant() {}
+    Variant() : status_(Status()) {}
     Variant(const Status &status) : status_(status) {}
     Variant(Status &&status) : status_(std::move(status)) {}
     template <typename U, typename = std::enable_if_t<is_initializable_v<U>>>
