@@ -7,7 +7,6 @@ Feature: LDBC Business Intelligence Workload - Read
     Given a graph with space named "ldbc-v0.3.3"
 
   Scenario: 1. Posting summary
-    # TODO: a bug, the aliases is not pass to the next query part
     When executing query:
     """
     MATCH (message:Message)
@@ -47,7 +46,8 @@ Feature: LDBC Business Intelligence Workload - Read
       isComment ASC,
       lengthCategory ASC
     """
-    Then a SyntaxError should be raised at runtime:
+    Then the result should be, in order:
+    | year | isComment | lengthCategory | messageCount | averageMessageLength | sumMessageLength | percentageOfMessages |
 
   Scenario: 2. Top tags for country, age, gender, time
     When executing query:
@@ -144,7 +144,6 @@ Feature: LDBC Business Intelligence Workload - Read
     | forumId | forum.title | forum.creationDate | person.id | postCount |
 
   Scenario: 5. Top posters in a country
-    # TODO: a bug, the aliases is not pass to the next query part
     When executing query:
     """
     MATCH
@@ -172,7 +171,8 @@ Feature: LDBC Business Intelligence Workload - Read
       personId ASC
     LIMIT 100
     """
-    Then a SyntaxError should be raised at runtime:
+    Then the result should be, in order:
+    | personId | person.firstName | person.lastName | person.creationDate | postCount |
 
   Scenario: 6. Most active posters of a given topic
     When executing query:
@@ -233,11 +233,10 @@ Feature: LDBC Business Intelligence Workload - Read
       relatedTagName ASC
     LIMIT 100
     """
-    Then a SyntaxError should be raised at runtime:
+    Then the result should be, in order:
     | relatedTagName | count |
 
   Scenario: 9. Forum with related tags
-    # TODO: a bug, the aliases is not pass to the next query part
     When executing query:
     """
     MATCH
@@ -255,9 +254,10 @@ Feature: LDBC Business Intelligence Workload - Read
     RETURN
       forum.id AS forumId,
       count1,
-      count2
+      count2,
+      abs(count2-count1) AS diff
     ORDER BY
-      abs(count2-count1) DESC,
+      diff DESC,
       forumId ASC
     LIMIT 100
     """
@@ -410,7 +410,6 @@ Feature: LDBC Business Intelligence Workload - Read
     | personId | person.firstName | person.lastName | threadCount | messageCount |
 
   Scenario: 15. Social normals
-    # TODO: a bug, the aliases is not pass to the next query part
     When executing query:
     """
     MATCH
@@ -438,6 +437,7 @@ Feature: LDBC Business Intelligence Workload - Read
     LIMIT 100
     """
     Then the result should be, in order:
+    | person2Id | count |
 
   Scenario: 16. Experts in social circle
     When executing query:
@@ -505,9 +505,7 @@ Feature: LDBC Business Intelligence Workload - Read
     Then the result should be, in order:
     | messageCount | personCount |
 
-  @skip
   Scenario: 19. Stranger’s interaction
-    # TODO: a bug, the aliases is not pass to the next query part
     # NOTICE: A big rewritten, have to test the correctness
     When executing query:
     """
@@ -527,8 +525,8 @@ Feature: LDBC Business Intelligence Workload - Read
     OPTIONAL MATCH (message)-[replyOf:REPLY_OF*100]->(:Message)-[hasCreator:HAS_CREATOR]->(stranger)
     WHERE person.birthday > "19890101"
       AND person <> stranger
-      AND knows IS NULL 
-      AND replyOf IS NULL OR hasCreator IS NULL
+      AND knows IS NULL
+      AND (replyOf IS NULL OR hasCreator IS NULL)
     RETURN
       person.id AS personId,
       count(DISTINCT stranger) AS strangersCount,
@@ -539,6 +537,7 @@ Feature: LDBC Business Intelligence Workload - Read
     LIMIT 100
     """
     Then the result should be, in order:
+    | personId | strangersCount | interactionCount |
 
   Scenario: 20. High-level topics
     When executing query:
