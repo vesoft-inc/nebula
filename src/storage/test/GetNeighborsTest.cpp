@@ -1039,8 +1039,10 @@ TEST(GetNeighborsTest, TtlTest) {
     ASSERT_EQ(5, (*resp.vertices_ref()).rows[0].values.size());
     ASSERT_EQ("Spurs", (*resp.vertices_ref()).rows[0].values[0].getStr());
     ASSERT_EQ(Value::Type::__EMPTY__, (*resp.vertices_ref()).rows[0].values[1].type());
-    ASSERT_EQ(Value::Type::LIST, (*resp.vertices_ref()).rows[0].values[2].type()); //team still exists (team hasn't set ttl)
-    ASSERT_EQ(Value::Type::__EMPTY__, (*resp.vertices_ref()).rows[0].values[3].type()); //- serve expired
+    // team still exists (team hasn't set ttl)
+    ASSERT_EQ(Value::Type::LIST, (*resp.vertices_ref()).rows[0].values[2].type());
+    // - serve expired
+    ASSERT_EQ(Value::Type::__EMPTY__, (*resp.vertices_ref()).rows[0].values[3].type());
     ASSERT_EQ(Value::Type::__EMPTY__, (*resp.vertices_ref()).rows[0].values[4].type());
   }
   {
