@@ -12,4 +12,5 @@ nebula_add_library(
     FileBasedClusterIdMan.cpp
 )
 
+nebula_add_subdirectory(stats)
 nebula_add_subdirectory(test)

@@ -11,6 +11,8 @@
 #include "kvstore/KVStore.h"
 #include "meta/processors/admin/AdminClient.h"
 #include "meta/processors/admin/HBProcessor.h"
+#include "meta/processors/job/AdminJobProcessor.h"
+#include "meta/processors/job/JobManager.h"
 
 namespace nebula {
 namespace meta {

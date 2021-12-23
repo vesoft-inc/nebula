@@ -11,6 +11,7 @@
 #include "common/base/Base.h"
 #include "kvstore/NebulaStore.h"
 #include "kvstore/Part.h"
+#include "kvstore/stats/KVStats.h"
 #include "storage/BaseProcessor.h"
 #include "storage/StorageFlags.h"
 
@@ -66,6 +67,7 @@ class TransLeaderProcessor : public BaseProcessor<cpp2::AdminExecResp> {
         onFinished();
         return;
       } else if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
+        stats::StatsManager::addValue(kTransferLeaderLatencyUs, part->execTime());
         // To avoid dead lock, we use another ioThreadPool to check the
         // leader information.
         folly::via(folly::getIOExecutor().get(), [this, part, spaceId, partId] {

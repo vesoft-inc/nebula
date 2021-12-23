@@ -8,11 +8,13 @@
 #include <algorithm>
 
 #include "codec/RowWriterV2.h"
+#include "common/stats/StatsManager.h"
 #include "common/time/WallClock.h"
 #include "common/utils/IndexKeyUtils.h"
 #include "common/utils/NebulaKeyUtils.h"
 #include "common/utils/OperationKeyUtils.h"
 #include "storage/StorageFlags.h"
+#include "storage/stats/StorageStats.h"
 
 namespace nebula {
 namespace storage {
@@ -127,6 +129,7 @@ void AddVerticesProcessor::doProcess(const cpp2::AddVerticesRequest& req) {
       handleAsync(spaceId_, partId, code);
     } else {
       doPut(spaceId_, partId, std::move(data));
+      stats::StatsManager::addValue(kNumVerticesInserted, data.size());
     }
   }
 }
@@ -285,6 +288,7 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
          * step 3 , Insert new vertex data
          */
         batchHolder->put(std::move(key), std::move(retEnc.value()));
+        stats::StatsManager::addValue(kNumVerticesInserted);
       }
       if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
         break;

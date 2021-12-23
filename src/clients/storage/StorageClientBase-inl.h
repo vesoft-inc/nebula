@@ -7,7 +7,9 @@
 
 #include <folly/Try.h>
 
+#include "clients/storage/stats/StorageClientStats.h"
 #include "common/ssl/SSLConfig.h"
+#include "common/stats/StatsManager.h"
 #include "common/time/WallClock.h"
 
 namespace nebula {
@@ -230,6 +232,7 @@ void StorageClientBase<ClientType>::getResponseImpl(
     std::pair<HostAddr, Request> request,
     RemoteFunc remoteFunc,
     std::shared_ptr<folly::Promise<StatusOr<Response>>> pro) {
+  stats::StatsManager::addValue(kNumRpcSentToStoraged);
   using TransportException = apache::thrift::transport::TTransportException;
   if (evb == nullptr) {
     DCHECK(!!ioThreadPool_);
@@ -266,6 +269,7 @@ void StorageClientBase<ClientType>::getResponseImpl(
             .thenError(folly::tag_t<TransportException>{},
                        [spaceId, partsId = std::move(partsId), host, pro, this](
                            TransportException&& ex) mutable {
+                         stats::StatsManager::addValue(kNumRpcSentToStoragedFailed);
                          if (ex.getType() == TransportException::TIMED_OUT) {
                            LOG(ERROR) << "Request to " << host << " time out: " << ex.what();
                          } else {
@@ -278,6 +282,7 @@ void StorageClientBase<ClientType>::getResponseImpl(
             .thenError(folly::tag_t<std::exception>{},
                        [spaceId, partsId = std::move(partsId), host, pro, this](
                            std::exception&& ex) mutable {
+                         stats::StatsManager::addValue(kNumRpcSentToStoragedFailed);
                          // exception occurred during RPC
                          pro->setValue(Status::Error(
                              folly::stringPrintf("RPC failure in StorageClient: %s", ex.what())));

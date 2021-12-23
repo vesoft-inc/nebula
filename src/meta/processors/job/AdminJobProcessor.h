@@ -6,6 +6,7 @@
 #ifndef META_ADMINJOBPROCESSOR_H_
 #define META_ADMINJOBPROCESSOR_H_
 
+#include "common/stats/StatsManager.h"
 #include "meta/processors/BaseProcessor.h"
 #include "meta/processors/admin/AdminClient.h"
 
