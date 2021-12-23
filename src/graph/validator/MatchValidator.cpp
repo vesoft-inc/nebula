@@ -43,17 +43,22 @@ Status MatchValidator::validateImpl() {
         for (size_t j = 0; j < matchClause->path()->pathSize(); ++j) {
           NG_RETURN_IF_ERROR(validatePath(matchClause->path()->path(j), *matchClauseCtx));
         }
+
+        // Available aliases include the aliases pass from the with/unwind
+        // And previous aliases are all available to next match
+        auto aliasesTmp = matchClauseCtx->aliasesGenerated;
+        aliasesAvailable.merge(aliasesTmp);
+
         if (matchClause->where() != nullptr) {
           auto whereClauseCtx = getContext<WhereClauseContext>();
-          whereClauseCtx->aliasesAvailable = matchClauseCtx->aliasesGenerated;
+          whereClauseCtx->aliasesAvailable = aliasesAvailable;
           NG_RETURN_IF_ERROR(validateFilter(matchClause->where()->filter(), *whereClauseCtx));
           matchClauseCtx->where = std::move(whereClauseCtx);
         }
 
         // Copy the aliases without delete the origins.
-        auto aliasesTmp = matchClauseCtx->aliasesGenerated;
+        aliasesTmp = matchClauseCtx->aliasesGenerated;
         cypherCtx_->queryParts.back().aliasesGenerated.merge(aliasesTmp);
-        aliasesAvailable = cypherCtx_->queryParts.back().aliasesGenerated;
         cypherCtx_->queryParts.back().matchs.emplace_back(std::move(matchClauseCtx));
 
         break;
@@ -64,7 +69,7 @@ Status MatchValidator::validateImpl() {
         unwindClauseCtx->aliasesAvailable = aliasesAvailable;
         NG_RETURN_IF_ERROR(validateUnwind(unwindClause, *unwindClauseCtx));
 
-        // An unwind bypass all available aliases.
+        // An unwind pass all available aliases.
         aliasesAvailable.insert(unwindClauseCtx->aliasesGenerated.begin(),
                                 unwindClauseCtx->aliasesGenerated.end());
         cypherCtx_->queryParts.back().boundary = std::move(unwindClauseCtx);
@@ -87,6 +92,7 @@ Status MatchValidator::validateImpl() {
           withClauseCtx->where = std::move(whereClauseCtx);
         }
 
+        // A with pass all named aliases to the next query part.
         aliasesAvailable = withClauseCtx->aliasesGenerated;
         cypherCtx_->queryParts.back().boundary = std::move(withClauseCtx);
         cypherCtx_->queryParts.emplace_back();
