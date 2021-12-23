@@ -1,7 +1,6 @@
 # Copyright (c) 2021 vesoft inc. All rights reserved.
 #
 # This source code is licensed under Apache 2.0 License.
-@aiee
 Feature: Test sessions
 
   Background:
@@ -71,17 +70,3 @@ Feature: Test sessions
     Then the result should contain, replace the holders with cluster info:
       | SessionId | UserName | SpaceName    | CreateTime | UpdateTime | GraphAddr                                           | Timezone | ClientIp            |
       | /\d+/     | "root"   | "root_space" | /.*/       | /.*/       | "127.0.0.1:${cluster.graphd_processes[0].tcp_port}" | 0        | /.*(127\.0\.0\.1)$/ |
-    # When executing query with user user1 with password nebula1:
-    #   """
-    #   SHOW LOCAL SESSIONS;
-    #   """
-    # Then the result should contain, replace the holders with cluster info:
-    #   | SessionId | UserName | SpaceName    | CreateTime | UpdateTime | GraphAddr                                           | Timezone | ClientIp            |
-    #   | /\d+/     | "user1"   | "" | /.*/       | /.*/       | "127.0.0.1:${cluster.graphd_processes[1].tcp_port}" | 0        | /.*(127\.0\.0\.1)$/ |
-    # # When executing query with user user2 with password nebula2:
-    #   """
-    #   SHOW LOCAL SESSIONS;
-    #   """
-    # Then the result should contain, replace the holders with cluster info:
-    #   | SessionId | UserName | SpaceName    | CreateTime | UpdateTime | GraphAddr                                           | Timezone | ClientIp            |
-    #   | /\d+/     | "user2"   | "" | /.*/       | /.*/       | "127.0.0.1:${cluster.graphd_processes[2].tcp_port}" | 0        | /.*(127\.0\.0\.1)$/ |
