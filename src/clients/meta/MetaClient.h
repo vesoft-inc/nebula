@@ -634,6 +634,8 @@ class MetaClient {
 
   folly::Future<StatusOr<int64_t>> getWorkerId(std::string ipAddr);
 
+  folly::Future<StatusOr<int64_t>> getSegmentId(int64_t length);
+
   HostAddr getMetaLeader() {
     return leader_;
   }

@@ -3655,5 +3655,21 @@ void MetaClient::clearClientAddrMap() {
     }
   }
 }
+
+folly::Future<StatusOr<int64_t>> MetaClient::getSegmentId(int64_t length) {
+  auto req = cpp2::GetSegmentIdReq();
+  req.length_ref() = length;
+
+  folly::Promise<StatusOr<int64_t>> promise;
+  auto future = promise.getFuture();
+  getResponse(
+      std::move(req),
+      [](auto client, auto request) { return client->future_getSegmentId(request); },
+      [](cpp2::GetSegmentIdResp&& resp) -> int64_t { return std::move(resp).get_segment_id(); },
+      std::move(promise),
+      true);
+  return future;
+}
+
 }  // namespace meta
 }  // namespace nebula

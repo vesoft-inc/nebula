@@ -192,7 +192,7 @@ void DeducePropsVisitor::visit(EdgeDstIdExpression *expr) {
 }
 
 void DeducePropsVisitor::visit(UUIDExpression *expr) {
-  reportError(expr);
+  UNUSED(expr);
 }
 
 void DeducePropsVisitor::visit(VariableExpression *expr) {

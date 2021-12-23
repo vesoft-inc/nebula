@@ -6,6 +6,7 @@
 #include "common/expression/UUIDExpression.h"
 
 #include "common/expression/ExprVisitor.h"
+#include "common/id/SegmentId.h"
 
 namespace nebula {
 
@@ -25,6 +26,8 @@ void UUIDExpression::resetFrom(Decoder& decoder) {
 
 const Value& UUIDExpression::eval(ExpressionContext& ctx) {
   UNUSED(ctx);
+  SegmentId generator = SegmentId(10000);
+  result_ = generator.getId();
   return result_;
 }
 

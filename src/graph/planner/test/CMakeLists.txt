@@ -21,6 +21,7 @@ nebula_add_test(
     OBJECTS
         $<TARGET_OBJECTS:conf_obj>
         $<TARGET_OBJECTS:expression_obj>
+        $<TARGET_OBJECTS:segment_id_obj>
         $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:network_obj>
         $<TARGET_OBJECTS:process_obj>
