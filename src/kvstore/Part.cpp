@@ -5,6 +5,7 @@
 
 #include "kvstore/Part.h"
 
+#include "common/time/ScopedTimer.h"
 #include "common/utils/IndexKeyUtils.h"
 #include "common/utils/NebulaKeyUtils.h"
 #include "common/utils/OperationKeyUtils.h"
@@ -213,6 +214,7 @@ void Part::onDiscoverNewLeader(HostAddr nLeader) {
 }
 
 cpp2::ErrorCode Part::commitLogs(std::unique_ptr<LogIterator> iter, bool wait) {
+  SCOPED_TIMER(&execTime_);
   auto batch = engine_->startBatchWrite();
   LogID lastId = -1;
   TermID lastTerm = -1;
@@ -354,6 +356,7 @@ std::pair<int64_t, int64_t> Part::commitSnapshot(const std::vector<std::string>&
                                                  LogID committedLogId,
                                                  TermID committedLogTerm,
                                                  bool finished) {
+  SCOPED_TIMER(&execTime_);
   auto batch = engine_->startBatchWrite();
   int64_t count = 0;
   int64_t size = 0;

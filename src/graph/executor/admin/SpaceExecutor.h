@@ -40,6 +40,8 @@ class DropSpaceExecutor final : public Executor {
   DropSpaceExecutor(const PlanNode *node, QueryContext *qctx)
       : Executor("DropSpaceExecutor", node, qctx) {}
 
+  void unRegisterSpaceLevelMetrics(const std::string &spaceName);
+
   folly::Future<Status> execute() override;
 };
 

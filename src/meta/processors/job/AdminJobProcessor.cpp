@@ -6,6 +6,7 @@
 #include "meta/processors/job/AdminJobProcessor.h"
 
 #include "common/base/StatusOr.h"
+#include "common/stats/StatsManager.h"
 #include "meta/processors/job/JobDescription.h"
 #include "meta/processors/job/JobManager.h"
 

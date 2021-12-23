@@ -3,7 +3,7 @@
 # This source code is licensed under Apache 2.0 License.
 
 nebula_add_library(
-  stats_def_obj
+  graph_stats_obj
   OBJECT
-  StatsDef.cpp
+  GraphStats.cpp
   )

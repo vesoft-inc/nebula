@@ -89,4 +89,5 @@ nebula_add_library(
     StorageServer.cpp
 )
 
+nebula_add_subdirectory(stats)
 nebula_add_subdirectory(test)

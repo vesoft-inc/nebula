@@ -28,6 +28,7 @@
 #include "meta/http/MetaHttpIngestHandler.h"
 #include "meta/http/MetaHttpReplaceHostHandler.h"
 #include "meta/processors/job/JobManager.h"
+#include "meta/stats/MetaStats.h"
 #include "version/Version.h"
 #include "webservice/Router.h"
 #include "webservice/WebService.h"
@@ -222,6 +223,9 @@ int main(int argc, char* argv[]) {
     LOG(ERROR) << status;
     return EXIT_FAILURE;
   }
+
+  // Init stats
+  nebula::initMetaStats();
 
   folly::init(&argc, &argv, true);
   if (FLAGS_enable_ssl || FLAGS_enable_meta_ssl) {

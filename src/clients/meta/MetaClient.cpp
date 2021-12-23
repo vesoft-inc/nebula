@@ -14,6 +14,7 @@
 #include <boost/filesystem.hpp>
 
 #include "clients/meta/FileBasedClusterIdMan.h"
+#include "clients/meta/stats/MetaClientStats.h"
 #include "common/base/Base.h"
 #include "common/base/MurmurHash2.h"
 #include "common/conf/Configuration.h"
@@ -630,6 +631,7 @@ void MetaClient::getResponse(Request req,
                              bool toLeader,
                              int32_t retry,
                              int32_t retryLimit) {
+  stats::StatsManager::addValue(kNumRpcSentToMetad);
   auto* evb = ioThreadPool_->getEventBase();
   HostAddr host;
   {
@@ -664,6 +666,7 @@ void MetaClient::getResponse(Request req,
                    this](folly::Try<RpcResponse>&& t) mutable {
               // exception occurred during RPC
               if (t.hasException()) {
+                stats::StatsManager::addValue(kNumRpcSentToMetadFailed);
                 if (toLeader) {
                   updateLeader();
                 } else {

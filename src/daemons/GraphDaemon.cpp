@@ -18,7 +18,7 @@
 #include "common/time/TimezoneInfo.h"
 #include "graph/service/GraphFlags.h"
 #include "graph/service/GraphService.h"
-#include "graph/stats/StatsDef.h"
+#include "graph/stats/GraphStats.h"
 #include "version/Version.h"
 #include "webservice/WebService.h"
 
@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
   if (FLAGS_enable_ssl || FLAGS_enable_graph_ssl || FLAGS_enable_meta_ssl) {
     folly::ssl::init();
   }
-  nebula::initCounters();
+  nebula::initGraphStats();
 
   if (FLAGS_flagfile.empty()) {
     printHelp(argv[0]);

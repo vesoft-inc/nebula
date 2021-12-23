@@ -14,6 +14,10 @@ set(RAFTEX_TEST_LIBS
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:ssl_obj>
+    $<TARGET_OBJECTS:stats_obj>
+    $<TARGET_OBJECTS:meta_client_stats_obj>
+    $<TARGET_OBJECTS:storage_client_stats_obj>
+    $<TARGET_OBJECTS:kv_stats_obj>
 )
 
 

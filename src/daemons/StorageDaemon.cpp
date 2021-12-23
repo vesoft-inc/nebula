@@ -13,6 +13,7 @@
 #include "common/process/ProcessUtils.h"
 #include "common/time/TimezoneInfo.h"
 #include "storage/StorageServer.h"
+#include "storage/stats/StorageStats.h"
 #include "version/Version.h"
 
 DEFINE_string(local_ip, "", "IP address which is used to identify this server");
@@ -80,6 +81,9 @@ int main(int argc, char *argv[]) {
     LOG(ERROR) << status;
     return EXIT_FAILURE;
   }
+
+  // Init stats
+  nebula::initStorageStats();
 
   folly::init(&argc, &argv, true);
   if (FLAGS_enable_ssl || FLAGS_enable_meta_ssl) {

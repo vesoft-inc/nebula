@@ -161,8 +161,14 @@ set(meta_test_deps
     $<TARGET_OBJECTS:version_obj>
     $<TARGET_OBJECTS:ssl_obj>
     $<TARGET_OBJECTS:geo_index_obj>
+    $<TARGET_OBJECTS:meta_stats_obj>
+    $<TARGET_OBJECTS:meta_client_stats_obj>
+    $<TARGET_OBJECTS:storage_client_stats_obj>
+    $<TARGET_OBJECTS:kv_stats_obj>
+    $<TARGET_OBJECTS:storage_stats_obj>
 )
 
 nebula_add_subdirectory(http)
 nebula_add_subdirectory(test)
 nebula_add_subdirectory(upgrade)
+nebula_add_subdirectory(stats)

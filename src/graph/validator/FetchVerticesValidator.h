@@ -27,10 +27,9 @@ class FetchVerticesValidator final : public Validator {
 
   AstContext* getAstContext() override { return fetchCtx_.get(); }
 
-  void extractVertexProp(ExpressionProps& exprProps);
-
  private:
   std::map<TagID, std::shared_ptr<const meta::SchemaProviderIf>> tagsSchema_;
+  std::vector<TagID> tagIds_;
 
   std::unique_ptr<FetchVerticesContext> fetchCtx_;
 };

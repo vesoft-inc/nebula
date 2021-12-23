@@ -6,8 +6,10 @@
 #include "graph/session/GraphSessionManager.h"
 
 #include "common/base/Base.h"
+#include "common/stats/StatsManager.h"
 #include "common/time/WallClock.h"
 #include "graph/service/GraphFlags.h"
+#include "graph/stats/GraphStats.h"
 
 namespace nebula {
 namespace graph {
@@ -181,6 +183,8 @@ void GraphSessionManager::reclaimExpiredSessions() {
       LOG(ERROR) << "Remove session `" << iter->first << "' failed: " << resp.status();
     }
     iter = activeSessions_.erase(iter);
+    stats::StatsManager::decValue(kNumActiveSessions);
+    stats::StatsManager::addValue(kNumReclaimedExpiredSessions);
     // TODO: Disconnect the connection of the session
   }
 }

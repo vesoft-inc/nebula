@@ -71,7 +71,9 @@ class DeducePropsVisitor : public ExprVisitorImpl {
   DeducePropsVisitor(QueryContext* qctx,
                      GraphSpaceID space,
                      ExpressionProps* exprProps,
-                     std::set<std::string>* userDefinedVarNameList);
+                     std::set<std::string>* userDefinedVarNameList,
+                     std::vector<TagID>* tagIds,
+                     std::vector<EdgeType>* edgeTypes);
 
   bool ok() const override { return status_.ok(); }
 
@@ -93,7 +95,6 @@ class DeducePropsVisitor : public ExprVisitorImpl {
   void visit(VariableExpression* expr) override;
   void visit(VersionedVariableExpression* expr) override;
   void visit(LabelExpression* expr) override;
-  void visit(AttributeExpression* expr) override;
   void visit(LabelAttributeExpression* expr) override;
   void visit(ConstantExpression* expr) override;
   void visit(VertexExpression* expr) override;
@@ -107,6 +108,8 @@ class DeducePropsVisitor : public ExprVisitorImpl {
   GraphSpaceID space_;
   ExpressionProps* exprProps_{nullptr};
   std::set<std::string>* userDefinedVarNameList_{nullptr};
+  std::vector<TagID>* tagIds_{nullptr};
+  std::vector<EdgeType>* edgeTypes_{nullptr};
   Status status_;
 };
 
