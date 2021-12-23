@@ -32,6 +32,13 @@ class ZoneBalanceJobExecutor : public BalanceJobExecutor {
   folly::Future<Status> executeInternal() override;
   Status buildBalancePlan() override;
   nebula::cpp2::ErrorCode updateMeta();
+  HostAddr insertPartIntoZone(std::map<std::string, std::vector<Host*>>* sortedZoneHosts,
+                              Zone* zone,
+                              PartitionID partId);
+  nebula::cpp2::ErrorCode rebalanceActiveZones(
+      std::vector<Zone*>* sortedActiveZones,
+      std::map<std::string, std::vector<Host*>>* sortedZoneHosts,
+      std::vector<BalanceTask>* tasks);
 
  private:
   std::vector<std::string> lostZones_;
