@@ -59,7 +59,7 @@ jobs:
           - centos7
           - ubuntu2004
         compiler:
-          - gcc-9.2
+          - gcc-9.3
           - clang-10
         exclude:
           - os: centos7
