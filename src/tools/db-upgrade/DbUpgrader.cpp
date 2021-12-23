@@ -28,7 +28,7 @@ DEFINE_string(upgrade_version,
               "",
               "When the value is 1:2, upgrade the data from 1.x to 2.0 GA. "
               "When the value is 2RC:2, upgrade the data from 2.0 RC to 2.0 GA."
-              "When the value is 2:3, upgrade the data from ");
+              "When the value is 2:3, upgrade the data from 2.0 GA to 3.0 .");
 DEFINE_bool(compactions,
             true,
             "When the upgrade of the space is completed, "
