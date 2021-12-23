@@ -616,7 +616,7 @@ Feature: Basic match
       """
       MATCH () -[]-> (v) return *
       """
-    Then a ExecutionError should be raised at runtime: Scan edges must specify limit number.
+    Then a ExecutionError should be raised at runtime: Scan vertices or edges need to specify a limit number, or limit number can not push down.
     When executing query:
       """
       MATCH () --> (v) --> () return *
