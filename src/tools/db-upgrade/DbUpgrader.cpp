@@ -991,7 +991,7 @@ void UpgraderSpace::doProcessV3() {
   if (code != ::nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(FATAL) << "Faild upgrade 2:3 when ingest sst file:" << static_cast<int>(code);
   }
-  readEngine_->put(NebulaKeyUtilsV3::dataVersionKey(), NebulaKeyUtilsV3::dataVersionValue());
+  readEngine_->put(NebulaKeyUtils::dataVersionKey(), NebulaKeyUtilsV3::dataVersionValue());
 }
 std::vector<std::string> UpgraderSpace::indexVertexKeys(
     PartitionID partId,

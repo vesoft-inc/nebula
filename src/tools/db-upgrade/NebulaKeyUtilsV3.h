@@ -9,7 +9,6 @@ class NebulaKeyUtilsV3 {
  public:
   static std::string partTagPrefix(PartitionID partId);
   static std::string getVertexKey(folly::StringPiece tagKey);
-  static std::string dataVersionKey();
   static std::string dataVersionValue();
 
  private:

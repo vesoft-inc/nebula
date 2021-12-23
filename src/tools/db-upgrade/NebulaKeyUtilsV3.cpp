@@ -19,7 +19,6 @@ std::string NebulaKeyUtilsV3::getVertexKey(folly::StringPiece tagKey) {
   key.resize(key.size() - sizeof(TagID));
   return key;
 }
-std::string NebulaKeyUtilsV3::dataVersionKey() { return "\xFF\xFF\xFF\xFF"; }
 std::string NebulaKeyUtilsV3::dataVersionValue() { return "3.0"; }
 
 }  // namespace nebula
