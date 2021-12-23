@@ -5,6 +5,7 @@
 # This source code is licensed under Apache 2.0 License.
 
 import os
+import re
 import random
 import string
 import time
@@ -441,3 +442,11 @@ def get_conn_pool(host: str, port: int):
     if not pool.init([(host, port)], config):
         raise Exception("Fail to init connection pool.")
     return pool
+
+def parse_service_index(name: str):
+    name = name.lower()
+    pattern = r"(graphd|storaged|metad)\[(\d+)\]"
+    m = re.match(pattern, name)
+    if m and len(m.groups()) == 2:
+        return int(m.groups()[1])
+    return None

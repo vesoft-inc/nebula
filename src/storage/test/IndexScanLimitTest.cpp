@@ -122,26 +122,28 @@ class IndexScanLimitTest : public ::testing::Test {
         data.emplace_back(std::move(edgeKey), val);
         data.emplace_back(std::move(tagKey), std::move(val));
         if (indexMan_ != nullptr) {
+          auto indexItem = std::make_unique<meta::cpp2::IndexItem>();
+          indexItem->set_fields(genCols());
           if (indexMan_->getTagIndex(spaceId, tagIndex).ok()) {
-            auto vertexIndexKeys =
-                IndexKeyUtils::vertexIndexKeys(vertexLen,
-                                               pId,
-                                               tagIndex,
-                                               vertex,
-                                               IndexKeyUtils::encodeValues({col1Val}, genCols()));
+            auto vertexIndexKeys = IndexKeyUtils::vertexIndexKeys(
+                vertexLen,
+                pId,
+                tagIndex,
+                vertex,
+                IndexKeyUtils::encodeValues({col1Val}, indexItem.get()));
             for (auto& vertexIndexKey : vertexIndexKeys) {
               data.emplace_back(std::move(vertexIndexKey), "");
             }
           }
           if (indexMan_->getEdgeIndex(spaceId, edgeIndex).ok()) {
-            auto edgeIndexKeys =
-                IndexKeyUtils::edgeIndexKeys(vertexLen,
-                                             pId,
-                                             edgeIndex,
-                                             vertex,
-                                             0,
-                                             vertex,
-                                             IndexKeyUtils::encodeValues({col1Val}, genCols()));
+            auto edgeIndexKeys = IndexKeyUtils::edgeIndexKeys(
+                vertexLen,
+                pId,
+                edgeIndex,
+                vertex,
+                0,
+                vertex,
+                IndexKeyUtils::encodeValues({col1Val}, indexItem.get()));
             for (auto& edgeIndexKey : edgeIndexKeys) {
               data.emplace_back(std::move(edgeIndexKey), "");
             }

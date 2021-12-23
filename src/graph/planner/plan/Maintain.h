@@ -300,12 +300,14 @@ class CreateIndexNode : public SingleDependencyNode {
                   std::string indexName,
                   std::vector<meta::cpp2::IndexFieldDef> fields,
                   bool ifNotExists,
+                  std::unique_ptr<meta::cpp2::IndexParams> indexParams,
                   const std::string* comment)
       : SingleDependencyNode(qctx, kind, input),
         schemaName_(std::move(schemaName)),
         indexName_(std::move(indexName)),
         fields_(std::move(fields)),
         ifNotExists_(ifNotExists),
+        indexParams_(std::move(indexParams)),
         comment_(comment) {}
 
  public:
@@ -317,6 +319,8 @@ class CreateIndexNode : public SingleDependencyNode {
 
   bool getIfNotExists() const { return ifNotExists_; }
 
+  const meta::cpp2::IndexParams* getIndexParams() const { return indexParams_.get(); }
+
   const std::string* getComment() const { return comment_; }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
@@ -326,6 +330,7 @@ class CreateIndexNode : public SingleDependencyNode {
   std::string indexName_;
   std::vector<meta::cpp2::IndexFieldDef> fields_;
   bool ifNotExists_;
+  std::unique_ptr<meta::cpp2::IndexParams> indexParams_;
   const std::string* comment_;
 };
 
@@ -337,6 +342,7 @@ class CreateTagIndex final : public CreateIndexNode {
                               std::string indexName,
                               std::vector<meta::cpp2::IndexFieldDef> fields,
                               bool ifNotExists,
+                              std::unique_ptr<meta::cpp2::IndexParams> indexParams,
                               const std::string* comment) {
     return qctx->objPool()->add(new CreateTagIndex(qctx,
                                                    input,
@@ -344,6 +350,7 @@ class CreateTagIndex final : public CreateIndexNode {
                                                    std::move(indexName),
                                                    std::move(fields),
                                                    ifNotExists,
+                                                   std::move(indexParams),
                                                    comment));
   }
 
@@ -354,6 +361,7 @@ class CreateTagIndex final : public CreateIndexNode {
                  std::string indexName,
                  std::vector<meta::cpp2::IndexFieldDef> fields,
                  bool ifNotExists,
+                 std::unique_ptr<meta::cpp2::IndexParams> indexParams,
                  const std::string* comment)
       : CreateIndexNode(qctx,
                         input,
@@ -362,6 +370,7 @@ class CreateTagIndex final : public CreateIndexNode {
                         std::move(indexName),
                         std::move(fields),
                         ifNotExists,
+                        std::move(indexParams),
                         comment) {}
 };
 
@@ -373,6 +382,7 @@ class CreateEdgeIndex final : public CreateIndexNode {
                                std::string indexName,
                                std::vector<meta::cpp2::IndexFieldDef> fields,
                                bool ifNotExists,
+                               std::unique_ptr<meta::cpp2::IndexParams> indexParams,
                                const std::string* comment) {
     return qctx->objPool()->add(new CreateEdgeIndex(qctx,
                                                     input,
@@ -380,6 +390,7 @@ class CreateEdgeIndex final : public CreateIndexNode {
                                                     std::move(indexName),
                                                     std::move(fields),
                                                     ifNotExists,
+                                                    std::move(indexParams),
                                                     comment));
   }
 
@@ -390,6 +401,7 @@ class CreateEdgeIndex final : public CreateIndexNode {
                   std::string indexName,
                   std::vector<meta::cpp2::IndexFieldDef> fields,
                   bool ifNotExists,
+                  std::unique_ptr<meta::cpp2::IndexParams> indexParams,
                   const std::string* comment)
       : CreateIndexNode(qctx,
                         input,
@@ -398,6 +410,7 @@ class CreateEdgeIndex final : public CreateIndexNode {
                         std::move(indexName),
                         std::move(fields),
                         ifNotExists,
+                        std::move(indexParams),
                         comment) {}
 };
 
