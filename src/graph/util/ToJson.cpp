@@ -96,6 +96,17 @@ folly::dynamic toJson(const meta::cpp2::SchemaProp &prop) {
   return object;
 }
 
+folly::dynamic toJson(const meta::cpp2::IndexParams &params) {
+  folly::dynamic object = folly::dynamic::object();
+  if (params.s2_max_level_ref().has_value()) {
+    object.insert("s2_max_level", *params.s2_max_level_ref());
+  }
+  if (params.s2_max_cells_ref().has_value()) {
+    object.insert("s2_max_cells", *params.s2_max_cells_ref());
+  }
+  return object;
+}
+
 folly::dynamic toJson(const meta::cpp2::AlterSchemaItem &item) {
   folly::dynamic json = folly::dynamic::object();
   if (item.schema_ref().is_set()) {

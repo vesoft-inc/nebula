@@ -318,8 +318,9 @@ TEST(IndexTest, VerticesValueTest) {
     values.emplace_back(Value(date));
     // col_date_null
     values.emplace_back(nullValue);
-    auto indexes =
-        IndexKeyUtils::encodeValues(std::move(values), mock::MockData::mockTypicaIndexColumns());
+    auto indexItem = std::make_unique<meta::cpp2::IndexItem>();
+    indexItem->set_fields(mock::MockData::mockTypicaIndexColumns());
+    auto indexes = IndexKeyUtils::encodeValues(std::move(values), indexItem.get());
 
     for (auto partId = 1; partId <= 6; partId++) {
       auto prefix = IndexKeyUtils::indexPrefix(partId, indexId);

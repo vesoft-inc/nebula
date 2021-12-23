@@ -188,6 +188,9 @@ void CreateTagIndexProcessor::process(const cpp2::CreateTagIndexReq& req) {
   item.set_schema_id(schemaID);
   item.set_schema_name(tagName);
   item.set_fields(std::move(columns));
+  if (req.index_params_ref().has_value()) {
+    item.set_index_params(*req.index_params_ref());
+  }
   if (req.comment_ref().has_value()) {
     item.set_comment(*req.comment_ref());
   }
