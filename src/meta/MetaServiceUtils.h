@@ -43,11 +43,11 @@ class MetaServiceUtils final {
       const std::unordered_set<GraphSpaceID>& spaces,
       std::function<GraphSpaceID(folly::StringPiece rawKey)> parseSpace);
 
-  static ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>> backupSpaces(
+  static ErrorOr<nebula::cpp2::ErrorCode, std::vector<std::string>> backupTables(
       kvstore::KVStore* kvstore,
-      const std::unordered_set<GraphSpaceID>& spaces,
+      const std::unordered_set<GraphSpaceID>& spaceIds,
       const std::string& backupName,
-      const std::vector<std::string>* spaceName);
+      const std::vector<std::string>* spaceNames);
 };
 
 }  // namespace meta

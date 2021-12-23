@@ -32,7 +32,6 @@ TEST(HBProcessorTest, HBTest) {
   {
     for (auto i = 0; i < 5; i++) {
       cpp2::HBReq req;
-      req.set_role(cpp2::HostRole::STORAGE);
       req.set_host(HostAddr(std::to_string(i), i));
       req.set_cluster_id(kClusterId);
       req.set_role(cpp2::HostRole::STORAGE);

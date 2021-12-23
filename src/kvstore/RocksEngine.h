@@ -203,7 +203,7 @@ class RocksEngine : public KVEngine {
   /*********************
    * Checkpoint operation
    ********************/
-  nebula::cpp2::ErrorCode createCheckpoint(const std::string& path) override;
+  nebula::cpp2::ErrorCode createCheckpoint(const std::string& checkpointPath) override;
 
   ErrorOr<nebula::cpp2::ErrorCode, std::string> backupTable(
       const std::string& path,

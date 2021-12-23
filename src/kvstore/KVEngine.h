@@ -120,7 +120,7 @@ class KVEngine {
 
   virtual nebula::cpp2::ErrorCode flush() = 0;
 
-  virtual nebula::cpp2::ErrorCode createCheckpoint(const std::string& name) = 0;
+  virtual nebula::cpp2::ErrorCode createCheckpoint(const std::string& checkpointPath) = 0;
 
   // For meta
   virtual ErrorOr<nebula::cpp2::ErrorCode, std::string> backupTable(

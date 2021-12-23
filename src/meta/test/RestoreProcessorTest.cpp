@@ -100,7 +100,7 @@ TEST(RestoreProcessorTest, RestoreTest) {
   auto backupName = folly::format("BACKUP_{}", MetaKeyUtils::genTimestampStr()).str();
   auto spaceNames = std::make_unique<std::vector<std::string>>();
   spaceNames->emplace_back("test_space");
-  auto backupFiles = MetaServiceUtils::backupSpaces(kv.get(), spaces, backupName, spaceNames.get());
+  auto backupFiles = MetaServiceUtils::backupTables(kv.get(), spaces, backupName, spaceNames.get());
   DCHECK(nebula::hasValue(backupFiles));
   {
     cpp2::RestoreMetaReq req;
@@ -302,7 +302,7 @@ TEST(RestoreProcessorTest, RestoreFullTest) {
 
   std::unordered_set<GraphSpaceID> spaces = {id};
   auto backupName = folly::format("BACKUP_{}", MetaKeyUtils::genTimestampStr()).str();
-  auto backupFiles = MetaServiceUtils::backupSpaces(kv.get(), spaces, backupName, nullptr);
+  auto backupFiles = MetaServiceUtils::backupTables(kv.get(), spaces, backupName, nullptr);
   DCHECK(nebula::hasValue(backupFiles));
   {
     cpp2::RestoreMetaReq req;

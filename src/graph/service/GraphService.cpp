@@ -5,6 +5,8 @@
 
 #include "graph/service/GraphService.h"
 
+#include <boost/filesystem.hpp>
+
 #include "clients/storage/StorageClient.h"
 #include "common/base/Base.h"
 #include "common/encryption/MD5Utils.h"
@@ -34,6 +36,7 @@ Status GraphService::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecuto
   options.role_ = meta::cpp2::HostRole::GRAPH;
   options.localHost_ = hostAddr;
   options.gitInfoSHA_ = gitInfoSha();
+  options.rootPath_ = boost::filesystem::current_path().string();
 
   metaClient_ = std::make_unique<meta::MetaClient>(ioExecutor, std::move(addrs.value()), options);
 

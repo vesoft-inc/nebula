@@ -47,18 +47,17 @@ class TestStorageService : public storage::cpp2::StorageAdminServiceSvIf {
     storage::cpp2::CreateCPResp resp;
     storage::cpp2::ResponseCommon result;
     std::vector<storage::cpp2::PartitionResult> partRetCode;
-    nebula::cpp2::PartitionBackupInfo partitionInfo;
     std::unordered_map<nebula::cpp2::PartitionID, nebula::cpp2::LogInfo> info;
     nebula::cpp2::LogInfo logInfo;
     logInfo.set_log_id(logId);
     logInfo.set_term_id(termId);
     info.emplace(1, std::move(logInfo));
-    partitionInfo.set_info(std::move(info));
     result.set_failed_parts(partRetCode);
     resp.set_result(result);
     nebula::cpp2::CheckpointInfo cpInfo;
     cpInfo.set_path("snapshot_path");
-    cpInfo.set_partition_info(std::move(partitionInfo));
+    cpInfo.set_parts(std::move(info));
+    cpInfo.set_space_id(req.get_space_ids()[0]);
     resp.set_info({cpInfo});
     pro.setValue(std::move(resp));
     return f;
@@ -81,32 +80,24 @@ TEST(ProcessorTest, CreateBackupTest) {
   rpcServer->start("storage-admin", 0, handler);
   LOG(INFO) << "Start storage server on " << rpcServer->port_;
 
-  std::string localIp("127.0.0.1");
-
   LOG(INFO) << "Now test interfaces with retry to leader!";
-
   fs::TempDir rootPath("/tmp/create_backup_test.XXXXXX");
   std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
 
+  // register machines
   std::vector<kvstore::KV> machines;
+  std::string localIp("127.0.0.1");
   machines.emplace_back(nebula::MetaKeyUtils::machineKey(localIp, rpcServer->port_), "");
-
   folly::Baton<true, std::atomic> b;
   kv->asyncMultiPut(kDefaultSpaceId, kDefaultPartId, std::move(machines), [&](auto) { b.post(); });
   b.wait();
 
+  // resgister active hosts, same with heartbeat
   auto now = time::WallClock::fastNowInMilliSec();
   HostAddr host(localIp, rpcServer->port_);
   ActiveHostsMan::updateHostInfo(kv.get(), host, HostInfo(now, meta::cpp2::HostRole::STORAGE, ""));
 
-  HostAddr storageHost = Utils::getStoreAddrFromAdminAddr(host);
-
-  auto client = std::make_unique<AdminClient>(kv.get());
-  std::vector<HostAddr> hosts;
-  hosts.emplace_back(host);
-  meta::TestUtils::registerHB(kv.get(), hosts);
-
-  // mock admin client
+  // mock space 1: test_space
   bool ret = false;
   cpp2::SpaceDesc properties;
   GraphSpaceID id = 1;
@@ -119,6 +110,7 @@ TEST(ProcessorTest, CreateBackupTest) {
                     std::string(reinterpret_cast<const char*>(&id), sizeof(GraphSpaceID)));
   data.emplace_back(MetaKeyUtils::spaceKey(id), MetaKeyUtils::spaceVal(properties));
 
+  // mock space 2: test_space2
   cpp2::SpaceDesc properties2;
   GraphSpaceID id2 = 2;
   properties2.set_space_name("test_space2");
@@ -126,12 +118,12 @@ TEST(ProcessorTest, CreateBackupTest) {
   properties2.set_replica_factor(1);
   spaceVal = MetaKeyUtils::spaceVal(properties2);
   data.emplace_back(MetaKeyUtils::indexSpaceKey("test_space2"),
-                    std::string(reinterpret_cast<const char*>(&id), sizeof(GraphSpaceID)));
+                    std::string(reinterpret_cast<const char*>(&id2), sizeof(GraphSpaceID)));
   data.emplace_back(MetaKeyUtils::spaceKey(id2), MetaKeyUtils::spaceVal(properties2));
 
+  // mock index data
   std::string indexName = "test_space_index";
   int32_t tagIndex = 2;
-
   cpp2::IndexItem item;
   item.set_index_id(tagIndex);
   item.set_index_name(indexName);
@@ -145,9 +137,10 @@ TEST(ProcessorTest, CreateBackupTest) {
                     std::string(reinterpret_cast<const char*>(&tagIndex), sizeof(IndexID)));
   data.emplace_back(MetaKeyUtils::indexKey(id, tagIndex), MetaKeyUtils::indexVal(item));
 
+  // mock partition data
   std::vector<HostAddr> allHosts;
+  HostAddr storageHost = Utils::getStoreAddrFromAdminAddr(host);
   allHosts.emplace_back(storageHost);
-
   for (auto partId = 1; partId <= 1; partId++) {
     std::vector<HostAddr> hosts2;
     size_t idx = partId;
@@ -164,6 +157,7 @@ TEST(ProcessorTest, CreateBackupTest) {
   });
   baton.wait();
 
+  auto client = std::make_unique<AdminClient>(kv.get());
   {
     cpp2::CreateBackupReq req;
     std::vector<std::string> spaces = {"test_space"};
@@ -204,19 +198,19 @@ TEST(ProcessorTest, CreateBackupTest) {
     });
     ASSERT_EQ(it, metaFiles.cend());
 
-    ASSERT_EQ(1, meta.get_backup_info().size());
-    for (auto s : meta.get_backup_info()) {
-      ASSERT_EQ(1, s.first);
-      ASSERT_EQ(1, s.second.get_info().size());
-      ASSERT_EQ(1, s.second.get_info()[0].get_info().size());
+    ASSERT_EQ(1, meta.get_space_backups().size());
+    for (auto s : meta.get_space_backups()) {
+      auto spaceBackup = s.second;
+      ASSERT_EQ(1, spaceBackup.get_host_backups().size());
+      ASSERT_EQ(1, spaceBackup.get_host_backups()[0].get_checkpoints().size());
 
-      auto checkInfo = s.second.get_info()[0].get_info()[0];
+      auto checkInfo = spaceBackup.get_host_backups()[0].get_checkpoints()[0];
       ASSERT_EQ("snapshot_path", checkInfo.get_path());
       ASSERT_TRUE(meta.get_full());
-      ASSERT_FALSE(meta.get_include_system_space());
-      auto partitionInfo = checkInfo.get_partition_info().get_info();
-      ASSERT_EQ(partitionInfo.size(), 1);
-      for (auto p : partitionInfo) {
+      ASSERT_FALSE(meta.get_all_spaces());
+      auto parts = checkInfo.get_parts();
+      ASSERT_EQ(parts.size(), 1);
+      for (auto p : parts) {
         ASSERT_EQ(p.first, 1);
         auto logInfo = p.second;
         ASSERT_EQ(logInfo.get_log_id(), logId);

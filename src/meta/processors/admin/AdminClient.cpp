@@ -618,18 +618,19 @@ folly::Future<Status> AdminClient::getLeaderDist(HostLeaderMap* result) {
   return future;
 }
 
-folly::Future<StatusOr<cpp2::BackupInfo>> AdminClient::createSnapshot(GraphSpaceID spaceId,
-                                                                      const std::string& name,
-                                                                      const HostAddr& host) {
-  folly::Promise<StatusOr<cpp2::BackupInfo>> pro;
+folly::Future<StatusOr<cpp2::HostBackupInfo>> AdminClient::createSnapshot(
+    const std::set<GraphSpaceID>& spaceIds, const std::string& name, const HostAddr& host) {
+  folly::Promise<StatusOr<cpp2::HostBackupInfo>> pro;
   auto f = pro.getFuture();
 
   auto* evb = ioThreadPool_->getEventBase();
   auto storageHost = Utils::getAdminAddrFromStoreAddr(host);
-  folly::via(evb, [evb, storageHost, host, pro = std::move(pro), spaceId, name, this]() mutable {
+  folly::via(evb, [evb, storageHost, host, pro = std::move(pro), spaceIds, name, this]() mutable {
     auto client = clientsMan_->client(storageHost, evb);
     storage::cpp2::CreateCPRequest req;
-    req.set_space_id(spaceId);
+    std::vector<GraphSpaceID> idList;
+    idList.insert(idList.end(), spaceIds.begin(), spaceIds.end());
+    req.set_space_ids(idList);
     req.set_name(name);
     client->future_createCheckpoint(std::move(req))
         .via(evb)
@@ -644,10 +645,10 @@ folly::Future<StatusOr<cpp2::BackupInfo>> AdminClient::createSnapshot(GraphSpace
           auto&& resp = std::move(t).value();
           auto&& result = resp.get_result();
           if (result.get_failed_parts().empty()) {
-            cpp2::BackupInfo backupInfo;
-            backupInfo.set_host(host);
-            backupInfo.set_info(std::move(resp.get_info()));
-            p.setValue(std::move(backupInfo));
+            cpp2::HostBackupInfo hostBackupInfo;
+            hostBackupInfo.set_host(host);
+            hostBackupInfo.set_checkpoints(std::move(resp.get_info()));
+            p.setValue(std::move(hostBackupInfo));
             return;
           }
           p.setValue(Status::Error("create checkpoint failed"));
@@ -657,11 +658,13 @@ folly::Future<StatusOr<cpp2::BackupInfo>> AdminClient::createSnapshot(GraphSpace
   return f;
 }
 
-folly::Future<Status> AdminClient::dropSnapshot(GraphSpaceID spaceId,
+folly::Future<Status> AdminClient::dropSnapshot(const std::set<GraphSpaceID>& spaceIds,
                                                 const std::string& name,
                                                 const HostAddr& host) {
   storage::cpp2::DropCPRequest req;
-  req.set_space_id(spaceId);
+  std::vector<GraphSpaceID> idList;
+  idList.insert(idList.end(), spaceIds.begin(), spaceIds.end());
+  req.set_space_ids(idList);
   req.set_name(name);
   folly::Promise<Status> pro;
   auto f = pro.getFuture();
@@ -676,11 +679,13 @@ folly::Future<Status> AdminClient::dropSnapshot(GraphSpaceID spaceId,
   return f;
 }
 
-folly::Future<Status> AdminClient::blockingWrites(GraphSpaceID spaceId,
+folly::Future<Status> AdminClient::blockingWrites(const std::set<GraphSpaceID>& spaceIds,
                                                   storage::cpp2::EngineSignType sign,
                                                   const HostAddr& host) {
   storage::cpp2::BlockingSignRequest req;
-  req.set_space_id(spaceId);
+  std::vector<GraphSpaceID> idList;
+  idList.insert(idList.end(), spaceIds.begin(), spaceIds.end());
+  req.set_space_ids(idList);
   req.set_sign(sign);
   folly::Promise<Status> pro;
   auto f = pro.getFuture();
@@ -780,38 +785,6 @@ folly::Future<Status> AdminClient::stopTask(const std::vector<HostAddr>& target,
       0,
       std::move(pro),
       1);
-  return f;
-}
-
-folly::Future<StatusOr<nebula::cpp2::DirInfo>> AdminClient::listClusterInfo(const HostAddr& host) {
-  folly::Promise<StatusOr<nebula::cpp2::DirInfo>> pro;
-  auto f = pro.getFuture();
-
-  auto* evb = ioThreadPool_->getEventBase();
-  auto storageHost = Utils::getAdminAddrFromStoreAddr(host);
-  folly::via(evb, [evb, storageHost, pro = std::move(pro), this]() mutable {
-    auto client = clientsMan_->client(storageHost, evb);
-    storage::cpp2::ListClusterInfoReq req;
-    client->future_listClusterInfo(std::move(req))
-        .via(evb)
-        .then([p = std::move(pro),
-               storageHost](folly::Try<storage::cpp2::ListClusterInfoResp>&& t) mutable {
-          if (t.hasException()) {
-            LOG(ERROR) << folly::stringPrintf("RPC failure in AdminClient: %s",
-                                              t.exception().what().c_str());
-            p.setValue(Status::Error("RPC failure in listClusterInfo"));
-            return;
-          }
-          auto&& resp = std::move(t).value();
-          auto&& result = resp.get_result();
-          if (result.get_failed_parts().empty()) {
-            p.setValue(resp.get_dir());
-            return;
-          }
-          p.setValue(Status::Error("list clusterInfo failed"));
-        });
-  });
-
   return f;
 }
 

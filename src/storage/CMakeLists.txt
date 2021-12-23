@@ -21,7 +21,6 @@ nebula_add_library(
     admin/RebuildEdgeIndexTask.cpp
     admin/RebuildFTIndexTask.cpp
     admin/StatsTask.cpp
-    admin/ListClusterInfoProcessor.cpp
 )
 
 nebula_add_library(

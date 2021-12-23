@@ -50,9 +50,6 @@ class StorageAdminServiceHandler final : public cpp2::StorageAdminServiceSvIf {
   folly::Future<cpp2::AdminExecResp> future_stopAdminTask(
       const cpp2::StopAdminTaskRequest& req) override;
 
-  folly::Future<cpp2::ListClusterInfoResp> future_listClusterInfo(
-      const cpp2::ListClusterInfoReq& req) override;
-
  private:
   StorageEnv* env_{nullptr};
 };

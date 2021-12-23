@@ -318,24 +318,28 @@ TEST(AdminClientTest, SnapshotTest) {
   auto client = std::make_unique<AdminClient>(kv.get());
   {
     LOG(INFO) << "Test Blocking Writes On...";
+    std::set<GraphSpaceID> ids{1};
     auto status =
-        client->blockingWrites(1, storage::cpp2::EngineSignType::BLOCK_ON, storageHost).get();
+        client->blockingWrites(ids, storage::cpp2::EngineSignType::BLOCK_ON, storageHost).get();
     ASSERT_TRUE(status.ok());
   }
   {
     LOG(INFO) << "Test Create Snapshot...";
-    auto status = client->createSnapshot(1, "test_snapshot", storageHost).get();
+    std::set<GraphSpaceID> ids{1};
+    auto status = client->createSnapshot(ids, "test_snapshot", storageHost).get();
     ASSERT_TRUE(status.ok());
   }
   {
     LOG(INFO) << "Test Drop Snapshot...";
-    auto status = client->dropSnapshot(1, "test_snapshot", storageHost).get();
+    std::set<GraphSpaceID> ids{1};
+    auto status = client->dropSnapshot(ids, "test_snapshot", storageHost).get();
     ASSERT_TRUE(status.ok());
   }
   {
     LOG(INFO) << "Test Blocking Writes Off...";
+    std::set<GraphSpaceID> ids{1};
     auto status =
-        client->blockingWrites(1, storage::cpp2::EngineSignType::BLOCK_OFF, storageHost).get();
+        client->blockingWrites(ids, storage::cpp2::EngineSignType::BLOCK_OFF, storageHost).get();
     ASSERT_TRUE(status.ok());
   }
 }

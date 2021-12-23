@@ -43,6 +43,7 @@ nebula_add_library(
     processors/kv/RemoveRangeProcessor.cpp
     processors/kv/ScanProcessor.cpp
     processors/admin/HBProcessor.cpp
+    processors/admin/AgentHBProcessor.cpp
     processors/user/AuthenticationProcessor.cpp
     processors/admin/CreateSnapshotProcessor.cpp
     processors/admin/DropSnapshotProcessor.cpp
