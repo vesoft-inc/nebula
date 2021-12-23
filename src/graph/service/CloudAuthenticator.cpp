@@ -12,7 +12,9 @@
 namespace nebula {
 namespace graph {
 
-CloudAuthenticator::CloudAuthenticator(meta::MetaClient* client) { metaClient_ = client; }
+CloudAuthenticator::CloudAuthenticator(meta::MetaClient* client) {
+  metaClient_ = client;
+}
 
 bool CloudAuthenticator::auth(const std::string& user, const std::string& password) {
   // The shadow account on the nebula side has been created

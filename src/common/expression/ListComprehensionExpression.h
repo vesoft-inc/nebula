@@ -31,41 +31,73 @@ class ListComprehensionExpression final : public Expression {
 
   std::string toString() const override;
 
-  std::string rawString() const override { return hasOriginString() ? originString_ : toString(); }
+  std::string rawString() const override {
+    return hasOriginString() ? originString_ : toString();
+  }
 
   void accept(ExprVisitor* visitor) override;
 
   Expression* clone() const override;
 
-  const std::string& innerVar() const { return innerVar_; }
+  const std::string& innerVar() const {
+    return innerVar_;
+  }
 
-  const Expression* collection() const { return collection_; }
+  const Expression* collection() const {
+    return collection_;
+  }
 
-  Expression* collection() { return collection_; }
+  Expression* collection() {
+    return collection_;
+  }
 
-  const Expression* filter() const { return filter_; }
+  const Expression* filter() const {
+    return filter_;
+  }
 
-  Expression* filter() { return filter_; }
+  Expression* filter() {
+    return filter_;
+  }
 
-  const Expression* mapping() const { return mapping_; }
+  const Expression* mapping() const {
+    return mapping_;
+  }
 
-  Expression* mapping() { return mapping_; }
+  Expression* mapping() {
+    return mapping_;
+  }
 
-  void setInnerVar(const std::string& name) { innerVar_ = name; }
+  void setInnerVar(const std::string& name) {
+    innerVar_ = name;
+  }
 
-  void setCollection(Expression* expr) { collection_ = expr; }
+  void setCollection(Expression* expr) {
+    collection_ = expr;
+  }
 
-  void setFilter(Expression* expr) { filter_ = expr; }
+  void setFilter(Expression* expr) {
+    filter_ = expr;
+  }
 
-  void setMapping(Expression* expr) { mapping_ = expr; }
+  void setMapping(Expression* expr) {
+    mapping_ = expr;
+  }
 
-  bool hasFilter() const { return filter_ != nullptr; }
+  bool hasFilter() const {
+    return filter_ != nullptr;
+  }
 
-  bool hasMapping() const { return mapping_ != nullptr; }
+  bool hasMapping() const {
+    return mapping_ != nullptr;
+  }
 
-  void setOriginString(const std::string& s) { originString_ = s; }
+  void setOriginString(const std::string& s) {
+    originString_ = s;
+  }
 
-  bool hasOriginString() const { return !originString_.empty(); }
+  bool hasOriginString() const {
+    return !originString_.empty();
+  }
 
  private:
   explicit ListComprehensionExpression(ObjectPool* pool,

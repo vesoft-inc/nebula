@@ -170,7 +170,9 @@ void Part::asyncRemovePeer(const HostAddr& peer, KVCallback cb) {
       });
 }
 
-void Part::setBlocking(bool sign) { blocking_ = sign; }
+void Part::setBlocking(bool sign) {
+  blocking_ = sign;
+}
 
 void Part::onLostLeadership(TermID term) {
   VLOG(1) << "Lost the leadership for the term " << term;
@@ -202,9 +204,13 @@ void Part::onLeaderReady(TermID term) {
   }
 }
 
-void Part::registerOnLeaderReady(LeaderChangeCB cb) { leaderReadyCB_.emplace_back(std::move(cb)); }
+void Part::registerOnLeaderReady(LeaderChangeCB cb) {
+  leaderReadyCB_.emplace_back(std::move(cb));
+}
 
-void Part::registerOnLeaderLost(LeaderChangeCB cb) { leaderLostCB_.emplace_back(std::move(cb)); }
+void Part::registerOnLeaderLost(LeaderChangeCB cb) {
+  leaderLostCB_.emplace_back(std::move(cb));
+}
 
 void Part::onDiscoverNewLeader(HostAddr nLeader) {
   LOG(INFO) << idStr_ << "Find the new leader " << nLeader;

@@ -33,9 +33,9 @@ TEST_F(FetchEdgesValidatorTest, FetchEdgesProp) {
     ASSERT_TRUE(edgeTypeResult.ok());
     auto edgeType = edgeTypeResult.value();
     storage::cpp2::EdgeProp prop;
-    prop.set_type(edgeType);
+    prop.type_ref() = edgeType;
     std::set<std::string> propNames{kSrc, kDst, kRank, kType, "start", "end", "likeness"};
-    prop.set_props(std::vector<std::string>(propNames.begin(), propNames.end()));
+    prop.props_ref() = std::vector<std::string>(propNames.begin(), propNames.end());
     auto props = std::make_unique<std::vector<storage::cpp2::EdgeProp>>();
     props->emplace_back(std::move(prop));
     auto *ge = GetEdges::make(qctx, start, 1, src, type, rank, dst, std::move(props));
@@ -59,16 +59,16 @@ TEST_F(FetchEdgesValidatorTest, FetchEdgesProp) {
     ASSERT_TRUE(edgeTypeResult.ok());
     auto edgeType = edgeTypeResult.value();
     storage::cpp2::EdgeProp prop;
-    prop.set_type(edgeType);
+    prop.type_ref() = edgeType;
     std::set<std::string> propNames{kSrc, kDst, kRank, "start", "end"};
-    prop.set_props(std::vector<std::string>(propNames.begin(), propNames.end()));
+    prop.props_ref() = std::vector<std::string>(propNames.begin(), propNames.end());
     auto props = std::make_unique<std::vector<storage::cpp2::EdgeProp>>();
     props->emplace_back(std::move(prop));
     auto exprs = std::make_unique<std::vector<storage::cpp2::Expr>>();
     storage::cpp2::Expr expr1;
-    expr1.set_expr(EdgePropertyExpression::make(pool, "like", "start")->encode());
+    expr1.expr_ref() = EdgePropertyExpression::make(pool, "like", "start")->encode();
     storage::cpp2::Expr expr2;
-    expr2.set_expr(EdgePropertyExpression::make(pool, "like", "end")->encode());
+    expr2.expr_ref() = EdgePropertyExpression::make(pool, "like", "end")->encode();
     exprs->emplace_back(std::move(expr1));
     exprs->emplace_back(std::move(expr2));
     auto *ge =
@@ -94,16 +94,16 @@ TEST_F(FetchEdgesValidatorTest, FetchEdgesProp) {
     ASSERT_TRUE(edgeTypeResult.ok());
     auto edgeType = edgeTypeResult.value();
     storage::cpp2::EdgeProp prop;
-    prop.set_type(edgeType);
+    prop.type_ref() = edgeType;
     std::set<std::string> propNames{kSrc, kDst, kRank, "start", "end"};
-    prop.set_props(std::vector<std::string>(propNames.begin(), propNames.end()));
+    prop.props_ref() = std::vector<std::string>(propNames.begin(), propNames.end());
     auto props = std::make_unique<std::vector<storage::cpp2::EdgeProp>>();
     props->emplace_back(std::move(prop));
     auto exprs = std::make_unique<std::vector<storage::cpp2::Expr>>();
     storage::cpp2::Expr expr1;
-    expr1.set_expr(EdgePropertyExpression::make(pool, "like", "start")->encode());
+    expr1.expr_ref() = EdgePropertyExpression::make(pool, "like", "start")->encode();
     storage::cpp2::Expr expr2;
-    expr2.set_expr(EdgePropertyExpression::make(pool, "like", "end")->encode());
+    expr2.expr_ref() = EdgePropertyExpression::make(pool, "like", "end")->encode();
     exprs->emplace_back(std::move(expr1));
     exprs->emplace_back(std::move(expr2));
     auto *ge =
@@ -130,17 +130,18 @@ TEST_F(FetchEdgesValidatorTest, FetchEdgesProp) {
     ASSERT_TRUE(edgeTypeResult.ok());
     auto edgeType = edgeTypeResult.value();
     storage::cpp2::EdgeProp prop;
-    prop.set_type(edgeType);
+    prop.type_ref() = edgeType;
     std::set<std::string> propNames{kSrc, kDst, kRank, "start", "end"};
-    prop.set_props(std::vector<std::string>(propNames.begin(), propNames.end()));
+    prop.props_ref() = std::vector<std::string>(propNames.begin(), propNames.end());
     auto props = std::make_unique<std::vector<storage::cpp2::EdgeProp>>();
     props->emplace_back(std::move(prop));
     auto exprs = std::make_unique<std::vector<storage::cpp2::Expr>>();
     storage::cpp2::Expr expr1;
-    expr1.set_expr(RelationalExpression::makeGT(pool,
-                                                EdgePropertyExpression::make(pool, "like", "start"),
-                                                EdgePropertyExpression::make(pool, "like", "end"))
-                       ->encode());
+    expr1.expr_ref() =
+        RelationalExpression::makeGT(pool,
+                                     EdgePropertyExpression::make(pool, "like", "start"),
+                                     EdgePropertyExpression::make(pool, "like", "end"))
+            ->encode();
     exprs->emplace_back(std::move(expr1));
     auto *ge =
         GetEdges::make(qctx, start, 1, src, type, rank, dst, std::move(props), std::move(exprs));
@@ -166,16 +167,16 @@ TEST_F(FetchEdgesValidatorTest, FetchEdgesProp) {
     ASSERT_TRUE(edgeTypeResult.ok());
     auto edgeType = edgeTypeResult.value();
     storage::cpp2::EdgeProp prop;
-    prop.set_type(edgeType);
+    prop.type_ref() = edgeType;
     std::set<std::string> propNames{kSrc, kDst, kRank, "start", "end"};
-    prop.set_props(std::vector<std::string>(propNames.begin(), propNames.end()));
+    prop.props_ref() = std::vector<std::string>(propNames.begin(), propNames.end());
     auto props = std::make_unique<std::vector<storage::cpp2::EdgeProp>>();
     props->emplace_back(std::move(prop));
     auto exprs = std::make_unique<std::vector<storage::cpp2::Expr>>();
     storage::cpp2::Expr expr1;
-    expr1.set_expr(EdgePropertyExpression::make(pool, "like", "start")->encode());
+    expr1.expr_ref() = EdgePropertyExpression::make(pool, "like", "start")->encode();
     storage::cpp2::Expr expr2;
-    expr2.set_expr(EdgePropertyExpression::make(pool, "like", "end")->encode());
+    expr2.expr_ref() = EdgePropertyExpression::make(pool, "like", "end")->encode();
     exprs->emplace_back(std::move(expr1));
     exprs->emplace_back(std::move(expr2));
     auto *ge =

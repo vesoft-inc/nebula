@@ -21,7 +21,9 @@ StatsManager& StatsManager::get() {
 }
 
 // static
-void StatsManager::setDomain(folly::StringPiece domain) { get().domain_ = domain.toString(); }
+void StatsManager::setDomain(folly::StringPiece domain) {
+  get().domain_ = domain.toString();
+}
 
 // static
 void StatsManager::setReportInfo(HostAddr addr, int32_t interval) {

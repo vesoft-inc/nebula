@@ -98,7 +98,9 @@ void RaftexService::serve() {
     return;
   }
 
-  SCOPE_EXIT { server_->cleanUp(); };
+  SCOPE_EXIT {
+    server_->cleanUp();
+  };
 
   status_.store(STATUS_RUNNING);
   LOG(INFO) << "Start the Raftex Service successfully";
@@ -178,8 +180,8 @@ void RaftexService::getState(cpp2::GetStateResponse& resp, const cpp2::GetStateR
   if (part != nullptr) {
     part->getState(resp);
   } else {
-    resp.set_term(-1);
-    resp.set_error_code(cpp2::ErrorCode::E_UNKNOWN_PART);
+    resp.term_ref() = -1;
+    resp.error_code_ref() = cpp2::ErrorCode::E_UNKNOWN_PART;
   }
 }
 
@@ -187,7 +189,7 @@ void RaftexService::askForVote(cpp2::AskForVoteResponse& resp, const cpp2::AskFo
   auto part = findPart(req.get_space(), req.get_part());
   if (!part) {
     // Not found
-    resp.set_error_code(cpp2::ErrorCode::E_UNKNOWN_PART);
+    resp.error_code_ref() = cpp2::ErrorCode::E_UNKNOWN_PART;
     return;
   }
 
@@ -198,7 +200,7 @@ void RaftexService::appendLog(cpp2::AppendLogResponse& resp, const cpp2::AppendL
   auto part = findPart(req.get_space(), req.get_part());
   if (!part) {
     // Not found
-    resp.set_error_code(cpp2::ErrorCode::E_UNKNOWN_PART);
+    resp.error_code_ref() = cpp2::ErrorCode::E_UNKNOWN_PART;
     return;
   }
 
@@ -210,7 +212,7 @@ void RaftexService::sendSnapshot(cpp2::SendSnapshotResponse& resp,
   auto part = findPart(req.get_space(), req.get_part());
   if (!part) {
     // Not found
-    resp.set_error_code(cpp2::ErrorCode::E_UNKNOWN_PART);
+    resp.error_code_ref() = cpp2::ErrorCode::E_UNKNOWN_PART;
     return;
   }
 
@@ -224,7 +226,7 @@ void RaftexService::async_eb_heartbeat(
   auto part = findPart(req.get_space(), req.get_part());
   if (!part) {
     // Not found
-    resp.set_error_code(cpp2::ErrorCode::E_UNKNOWN_PART);
+    resp.error_code_ref() = cpp2::ErrorCode::E_UNKNOWN_PART;
     callback->result(resp);
     return;
   }

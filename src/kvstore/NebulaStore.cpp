@@ -946,8 +946,8 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<cpp2::CheckpointInfo>> NebulaStore:
       if (p->isLeader()) {
         auto logInfo = p->lastLogInfo();
         cpp2::LogInfo info;
-        info.set_log_id(logInfo.first);
-        info.set_term_id(logInfo.second);
+        info.log_id_ref() = logInfo.first;
+        info.term_id_ref() = logInfo.second;
         partsInfo.emplace(partId, std::move(info));
       }
     }
@@ -959,9 +959,9 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<cpp2::CheckpointInfo>> NebulaStore:
     }
 
     nebula::cpp2::CheckpointInfo cpInfo;
-    cpInfo.set_path(std::move(result.value()));
-    cpInfo.set_parts(std::move(partsInfo));
-    cpInfo.set_space_id(spaceId);
+    cpInfo.path_ref() = std::move(result.value());
+    cpInfo.parts_ref() = std::move(partsInfo);
+    cpInfo.space_id_ref() = spaceId;
     cpInfoList.emplace_back(std::move(cpInfo));
   }
 
@@ -1073,8 +1073,8 @@ int32_t NebulaStore::allLeader(
       auto partId = partIt.first;
       if (partIt.second->isLeader()) {
         meta::cpp2::LeaderInfo partInfo;
-        partInfo.set_part_id(partId);
-        partInfo.set_term(partIt.second->termId());
+        partInfo.part_id_ref() = partId;
+        partInfo.term_ref() = partIt.second->termId();
         leaderIds[spaceId].emplace_back(std::move(partInfo));
         ++count;
       }

@@ -13,7 +13,9 @@ namespace meta {
 
 class ScanProcessor : public BaseProcessor<cpp2::ScanResp> {
  public:
-  static ScanProcessor* instance(kvstore::KVStore* kvstore) { return new ScanProcessor(kvstore); }
+  static ScanProcessor* instance(kvstore::KVStore* kvstore) {
+    return new ScanProcessor(kvstore);
+  }
 
   void process(const cpp2::ScanReq& req);
 

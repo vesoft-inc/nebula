@@ -44,7 +44,7 @@ Snapshot::createSnapshot(const std::string& name) {
       auto it = spaceBackup.find(ck.get_space_id());
       if (it == spaceBackup.cend()) {
         cpp2::HostBackupInfo hostBackup;
-        hostBackup.set_host(host);
+        hostBackup.host_ref() = host;
         hostBackup.checkpoints_ref().value().push_back(ck);
         spaceBackup[ck.get_space_id()] = std::move(hostBackup);
       } else {

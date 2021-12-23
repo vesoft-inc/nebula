@@ -91,9 +91,9 @@ void AgentHBProcessor::process(const cpp2::AgentHBReq& req) {
       }
 
       cpp2::ServiceInfo serviceInfo;
-      serviceInfo.set_addr(addr);
-      serviceInfo.set_dir(it->second);
-      serviceInfo.set_role(role);
+      serviceInfo.addr_ref() = addr;
+      serviceInfo.dir_ref() = it->second;
+      serviceInfo.role_ref() = role;
       serviceList.emplace_back(serviceInfo);
     }
     if (serviceList.size() != services.size() - 1) {
@@ -120,13 +120,13 @@ void AgentHBProcessor::process(const cpp2::AgentHBReq& req) {
       auto metaAddr = Utils::getStoreAddrFromRaftAddr(raftAddr);
       if (metaAddr.host == agentAddr.host) {
         cpp2::ServiceInfo serviceInfo;
-        serviceInfo.set_addr(metaAddr);
-        serviceInfo.set_role(cpp2::HostRole::META);
+        serviceInfo.addr_ref() = metaAddr;
+        serviceInfo.role_ref() = cpp2::HostRole::META;
         serviceList.emplace_back(serviceInfo);
       }
     }
 
-    resp_.set_service_list(serviceList);
+    resp_.service_list_ref() = serviceList;
   } while (false);
 
   handleErrorCode(ret);

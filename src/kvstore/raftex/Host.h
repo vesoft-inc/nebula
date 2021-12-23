@@ -7,6 +7,7 @@
 #define RAFTEX_HOST_H_
 
 #include <folly/futures/Future.h>
+#include <folly/futures/SharedPromise.h>
 
 #include "common/base/Base.h"
 #include "common/base/ErrorOr.h"
@@ -29,9 +30,13 @@ class Host final : public std::enable_shared_from_this<Host> {
  public:
   Host(const HostAddr& addr, std::shared_ptr<RaftPart> part, bool isLearner = false);
 
-  ~Host() { LOG(INFO) << idStr_ << " The host has been destroyed!"; }
+  ~Host() {
+    LOG(INFO) << idStr_ << " The host has been destroyed!";
+  }
 
-  const char* idStr() const { return idStr_.c_str(); }
+  const char* idStr() const {
+    return idStr_.c_str();
+  }
 
   void stop() {
     std::lock_guard<std::mutex> g(lock_);
@@ -52,9 +57,13 @@ class Host final : public std::enable_shared_from_this<Host> {
 
   void waitForStop();
 
-  bool isLearner() const { return isLearner_; }
+  bool isLearner() const {
+    return isLearner_;
+  }
 
-  void setLearner(bool isLearner) { isLearner_ = isLearner; }
+  void setLearner(bool isLearner) {
+    isLearner_ = isLearner;
+  }
 
   folly::Future<cpp2::AskForVoteResponse> askForVote(const cpp2::AskForVoteRequest& req,
                                                      folly::EventBase* eb);
@@ -75,7 +84,9 @@ class Host final : public std::enable_shared_from_this<Host> {
                                                        TermID lastLogTerm,
                                                        LogID lastLogId);
 
-  const HostAddr& address() const { return addr_; }
+  const HostAddr& address() const {
+    return addr_;
+  }
 
  private:
   cpp2::ErrorCode checkStatus() const;

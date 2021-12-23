@@ -74,7 +74,7 @@ folly::Future<StatusOr<std::shared_ptr<ClientSession>>> GraphSessionManager::fin
       auto findPtr = activeSessions_.find(id);
       if (findPtr == activeSessions_.end()) {
         VLOG(1) << "Add session id: " << id << " from metad";
-        session.set_graph_addr(myAddr_);
+        session.graph_addr_ref() = myAddr_;
         auto sessionPtr = ClientSession::create(std::move(session), metaClient_);
         sessionPtr->charge();
         auto ret = activeSessions_.emplace(id, sessionPtr);
@@ -200,8 +200,8 @@ void GraphSessionManager::updateSessionsToMeta() {
       VLOG(3) << "Add Update session id: " << ses.second->getSession().get_session_id();
       auto sessionCopy = ses.second->getSession();
       for (auto& query : *sessionCopy.queries_ref()) {
-        query.second.set_duration(time::WallClock::fastNowInMicroSec() -
-                                  query.second.get_start_time());
+        query.second.duration_ref() =
+            time::WallClock::fastNowInMicroSec() - query.second.get_start_time();
       }
       sessions.emplace_back(std::move(sessionCopy));
     }

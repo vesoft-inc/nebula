@@ -27,7 +27,9 @@ class GetSubgraphValidator final : public Validator {
 
   Status validateYield(YieldClause* yield);
 
-  AstContext* getAstContext() override { return subgraphCtx_.get(); }
+  AstContext* getAstContext() override {
+    return subgraphCtx_.get();
+  }
 
  private:
   std::unique_ptr<SubgraphContext> subgraphCtx_;

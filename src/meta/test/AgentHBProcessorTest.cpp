@@ -34,15 +34,15 @@ TEST(AgentHBProcessorTest, AgentHBTest) {
     const ClusterID kClusterId = 10;
     for (auto i = 0; i < 5; i++) {
       cpp2::HBReq req;
-      req.set_host(HostAddr(std::to_string(i), i));
-      req.set_cluster_id(kClusterId);
-      req.set_role(cpp2::HostRole::STORAGE);
+      req.host_ref() = HostAddr(std::to_string(i), i);
+      req.cluster_id_ref() = kClusterId;
+      req.role_ref() = cpp2::HostRole::STORAGE;
       nebula::cpp2::DirInfo dir;
-      dir.set_root("/tmp/nebula");
+      dir.root_ref() = "/tmp/nebula";
       std::vector<std::string> ds;
       ds.push_back("/tmp/nebula/data");
-      dir.set_data(ds);
-      req.set_dir(dir);
+      dir.data_ref() = ds;
+      req.dir_ref() = dir;
 
       auto* processor = HBProcessor::instance(kv.get(), nullptr, kClusterId);
       auto f = processor->getFuture();
@@ -55,7 +55,7 @@ TEST(AgentHBProcessorTest, AgentHBTest) {
   // mock an agent in each host
   for (auto i = 0; i < 5; i++) {
     cpp2::AgentHBReq req;
-    req.set_host(HostAddr(std::to_string(i), 10 + i));
+    req.host_ref() = HostAddr(std::to_string(i), 10 + i);
     auto* processor = AgentHBProcessor::instance(kv.get(), nullptr);
     auto f = processor->getFuture();
     processor->process(req);

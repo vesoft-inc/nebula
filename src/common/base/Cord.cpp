@@ -14,7 +14,9 @@ Cord::Cord(int32_t blockSize)
       blockContentSize_(blockSize_ - sizeof(char*)),
       blockPt_(blockContentSize_) {}
 
-Cord::~Cord() { clear(); }
+Cord::~Cord() {
+  clear();
+}
 
 void Cord::allocateBlock() {
   DCHECK_EQ(blockPt_, blockContentSize_);
@@ -33,9 +35,13 @@ void Cord::allocateBlock() {
   }
 }
 
-size_t Cord::size() const noexcept { return len_; }
+size_t Cord::size() const noexcept {
+  return len_;
+}
 
-bool Cord::empty() const noexcept { return len_ == 0; }
+bool Cord::empty() const noexcept {
+  return len_ == 0;
+}
 
 void Cord::clear() {
   if (head_) {
@@ -163,9 +169,13 @@ Cord& Cord::operator<<(uint64_t value) {
   return write(reinterpret_cast<char*>(&value), sizeof(uint64_t));
 }
 
-Cord& Cord::operator<<(char value) { return write(&value, sizeof(char)); }
+Cord& Cord::operator<<(char value) {
+  return write(&value, sizeof(char));
+}
 
-Cord& Cord::operator<<(bool value) { return write(reinterpret_cast<char*>(&value), sizeof(bool)); }
+Cord& Cord::operator<<(bool value) {
+  return write(reinterpret_cast<char*>(&value), sizeof(bool));
+}
 
 Cord& Cord::operator<<(float value) {
   return write(reinterpret_cast<char*>(&value), sizeof(float));
@@ -175,9 +185,13 @@ Cord& Cord::operator<<(double value) {
   return write(reinterpret_cast<char*>(&value), sizeof(double));
 }
 
-Cord& Cord::operator<<(const std::string& value) { return write(value.data(), value.size()); }
+Cord& Cord::operator<<(const std::string& value) {
+  return write(value.data(), value.size());
+}
 
-Cord& Cord::operator<<(const char* value) { return write(value, strlen(value)); }
+Cord& Cord::operator<<(const char* value) {
+  return write(value, strlen(value));
+}
 
 Cord& Cord::operator<<(const Cord& rhs) {
   char* next = rhs.head_;

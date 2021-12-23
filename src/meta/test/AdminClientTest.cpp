@@ -21,28 +21,28 @@
     storage::cpp2::AdminExecResp resp;                       \
     storage::cpp2::ResponseCommon result;                    \
     std::vector<storage::cpp2::PartitionResult> partRetCode; \
-    result.set_failed_parts(partRetCode);                    \
-    resp.set_result(result);                                 \
+    result.failed_parts_ref() = partRetCode;                 \
+    resp.result_ref() = result;                              \
     pro.setValue(std::move(resp));                           \
     return f;                                                \
   } while (false)
 
-#define RETURN_LEADER_CHANGED(req, leader)                         \
-  UNUSED(req);                                                     \
-  do {                                                             \
-    folly::Promise<storage::cpp2::AdminExecResp> pro;              \
-    auto f = pro.getFuture();                                      \
-    storage::cpp2::AdminExecResp resp;                             \
-    storage::cpp2::ResponseCommon result;                          \
-    std::vector<storage::cpp2::PartitionResult> partRetCode;       \
-    storage::cpp2::PartitionResult thriftRet;                      \
-    thriftRet.set_code(nebula::cpp2::ErrorCode::E_LEADER_CHANGED); \
-    thriftRet.set_leader(leader);                                  \
-    partRetCode.emplace_back(std::move(thriftRet));                \
-    result.set_failed_parts(partRetCode);                          \
-    resp.set_result(result);                                       \
-    pro.setValue(std::move(resp));                                 \
-    return f;                                                      \
+#define RETURN_LEADER_CHANGED(req, leader)                            \
+  UNUSED(req);                                                        \
+  do {                                                                \
+    folly::Promise<storage::cpp2::AdminExecResp> pro;                 \
+    auto f = pro.getFuture();                                         \
+    storage::cpp2::AdminExecResp resp;                                \
+    storage::cpp2::ResponseCommon result;                             \
+    std::vector<storage::cpp2::PartitionResult> partRetCode;          \
+    storage::cpp2::PartitionResult thriftRet;                         \
+    thriftRet.code_ref() = nebula::cpp2::ErrorCode::E_LEADER_CHANGED; \
+    thriftRet.leader_ref() = leader;                                  \
+    partRetCode.emplace_back(std::move(thriftRet));                   \
+    result.failed_parts_ref() = partRetCode;                          \
+    resp.result_ref() = result;                                       \
+    pro.setValue(std::move(resp));                                    \
+    return f;                                                         \
   } while (false)
 
 DECLARE_int32(max_retry_times_admin_op);
@@ -91,11 +91,11 @@ class TestStorageService : public storage::cpp2::StorageAdminServiceSvIf {
     storage::cpp2::CreateCPResp resp;
     storage::cpp2::ResponseCommon result;
     std::vector<storage::cpp2::PartitionResult> partRetCode;
-    result.set_failed_parts(partRetCode);
-    resp.set_result(result);
+    result.failed_parts_ref() = partRetCode;
+    resp.result_ref() = result;
     nebula::cpp2::CheckpointInfo cpInfo;
-    cpInfo.set_path("snapshot_path");
-    resp.set_info({cpInfo});
+    cpInfo.path_ref() = "snapshot_path";
+    resp.info_ref() = {cpInfo};
     pro.setValue(std::move(resp));
     return f;
   }

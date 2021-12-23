@@ -17,7 +17,7 @@ void SendBlockSignProcessor::process(const cpp2::BlockingSignRequest& req) {
     auto code = env_->kvstore_->setWriteBlocking(spaceId, sign);
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
       cpp2::PartitionResult thriftRet;
-      thriftRet.set_code(code);
+      thriftRet.code_ref() = code;
       codes_.emplace_back(std::move(thriftRet));
       LOG(INFO) << "set block sign failed, error: " << apache::thrift::util::enumNameSafe(code);
       onFinished();

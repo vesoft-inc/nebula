@@ -71,13 +71,21 @@ class AppendLogsIterator final : public LogIterator {
   AppendLogsIterator& operator=(const AppendLogsIterator&) = delete;
   AppendLogsIterator& operator=(AppendLogsIterator&&) = default;
 
-  bool leadByAtomicOp() const { return leadByAtomicOp_; }
+  bool leadByAtomicOp() const {
+    return leadByAtomicOp_;
+  }
 
-  bool hasNonAtomicOpLogs() const { return hasNonAtomicOpLogs_; }
+  bool hasNonAtomicOpLogs() const {
+    return hasNonAtomicOpLogs_;
+  }
 
-  LogID firstLogId() const { return firstLogId_; }
+  LogID firstLogId() const {
+    return firstLogId_;
+  }
 
-  LogID lastLogId() const { return firstLogId_ + logs_.size() - 1; }
+  LogID lastLogId() const {
+    return firstLogId_ + logs_.size() - 1;
+  }
 
   // Return true if the current log is a AtomicOp, otherwise return false
   bool processAtomicOp() {
@@ -125,14 +133,18 @@ class AppendLogsIterator final : public LogIterator {
 
   // The iterator becomes invalid when exhausting the logs
   // **OR** running into a AtomicOp log
-  bool valid() const override { return valid_; }
+  bool valid() const override {
+    return valid_;
+  }
 
   LogID logId() const override {
     DCHECK(valid());
     return logId_;
   }
 
-  TermID logTerm() const override { return termId_; }
+  TermID logTerm() const override {
+    return termId_;
+  }
 
   ClusterID logSource() const override {
     DCHECK(valid());
@@ -150,7 +162,9 @@ class AppendLogsIterator final : public LogIterator {
   }
 
   // Return true when there is no more log left for processing
-  bool empty() const { return idx_ >= logs_.size(); }
+  bool empty() const {
+    return idx_ >= logs_.size();
+  }
 
   // Resume the iterator so that we can continue to process the remaining logs
   void resume() {
@@ -165,7 +179,9 @@ class AppendLogsIterator final : public LogIterator {
     }
   }
 
-  LogType logType() const { return std::get<1>(logs_.at(idx_)); }
+  LogType logType() const {
+    return std::get<1>(logs_.at(idx_));
+  }
 
  private:
   size_t idx_{0};
@@ -991,22 +1007,22 @@ bool RaftPart::prepareElectionRequest(cpp2::AskForVoteRequest& req,
     return false;
   }
 
-  req.set_space(spaceId_);
-  req.set_part(partId_);
-  req.set_candidate_addr(addr_.host);
-  req.set_candidate_port(addr_.port);
+  req.space_ref() = spaceId_;
+  req.part_ref() = partId_;
+  req.candidate_addr_ref() = addr_.host;
+  req.candidate_port_ref() = addr_.port;
   // Use term_ + 1 to check if peers would vote for me in prevote.
   // Only increase the term when prevote succeeeded.
   if (isPreVote) {
-    req.set_term(term_ + 1);
+    req.term_ref() = term_ + 1;
   } else {
-    req.set_term(++term_);
+    req.term_ref() = ++term_;
     // vote for myself
     votedAddr_ = addr_;
     votedTerm_ = term_;
   }
-  req.set_last_log_id(lastLogId_);
-  req.set_last_log_term(lastLogTerm_);
+  req.last_log_id_ref() = lastLogId_;
+  req.last_log_term_ref() = lastLogTerm_;
 
   hosts = followers();
 
@@ -1015,14 +1031,14 @@ bool RaftPart::prepareElectionRequest(cpp2::AskForVoteRequest& req,
 
 void RaftPart::getState(cpp2::GetStateResponse& resp) {
   std::lock_guard<std::mutex> g(raftLock_);
-  resp.set_term(term_);
-  resp.set_role(role_);
-  resp.set_is_leader(role_ == Role::LEADER);
-  resp.set_error_code(cpp2::ErrorCode::SUCCEEDED);
-  resp.set_committed_log_id(committedLogId_);
-  resp.set_last_log_id(lastLogId_);
-  resp.set_last_log_term(lastLogTerm_);
-  resp.set_status(status_);
+  resp.term_ref() = term_;
+  resp.role_ref() = role_;
+  resp.is_leader_ref() = role_ == Role::LEADER;
+  resp.error_code_ref() = cpp2::ErrorCode::SUCCEEDED;
+  resp.committed_log_id_ref() = committedLogId_;
+  resp.last_log_id_ref() = lastLogId_;
+  resp.last_log_term_ref() = lastLogTerm_;
+  resp.status_ref() = status_;
 }
 
 bool RaftPart::processElectionResponses(const RaftPart::ElectionResponses& results,
@@ -1273,19 +1289,19 @@ void RaftPart::processAskForVoteRequest(const cpp2::AskForVoteRequest& req,
   // Make sure the partition is running
   if (UNLIKELY(status_ == Status::STOPPED)) {
     LOG(INFO) << idStr_ << "The part has been stopped, skip the request";
-    resp.set_error_code(cpp2::ErrorCode::E_BAD_STATE);
+    resp.error_code_ref() = cpp2::ErrorCode::E_BAD_STATE;
     return;
   }
 
   if (UNLIKELY(status_ == Status::STARTING)) {
     LOG(INFO) << idStr_ << "The partition is still starting";
-    resp.set_error_code(cpp2::ErrorCode::E_NOT_READY);
+    resp.error_code_ref() = cpp2::ErrorCode::E_NOT_READY;
     return;
   }
 
   if (UNLIKELY(status_ == Status::WAITING_SNAPSHOT)) {
     LOG(INFO) << idStr_ << "The partition is still waiting snapshot";
-    resp.set_error_code(cpp2::ErrorCode::E_WAITING_SNAPSHOT);
+    resp.error_code_ref() = cpp2::ErrorCode::E_WAITING_SNAPSHOT;
     return;
   }
 
@@ -1293,14 +1309,14 @@ void RaftPart::processAskForVoteRequest(const cpp2::AskForVoteRequest& req,
             << lastLogId_ << ", lastLogTerm " << lastLogTerm_ << ", committedLogId "
             << committedLogId_ << ", term " << term_;
   if (role_ == Role::LEARNER) {
-    resp.set_error_code(cpp2::ErrorCode::E_BAD_ROLE);
+    resp.error_code_ref() = cpp2::ErrorCode::E_BAD_ROLE;
     return;
   }
 
   auto candidate = HostAddr(req.get_candidate_addr(), req.get_candidate_port());
   auto code = checkPeer(candidate);
   if (code != cpp2::ErrorCode::SUCCEEDED) {
-    resp.set_error_code(code);
+    resp.error_code_ref() = code;
     return;
   }
 
@@ -1309,7 +1325,7 @@ void RaftPart::processAskForVoteRequest(const cpp2::AskForVoteRequest& req,
     LOG(INFO) << idStr_ << "The partition currently is on term " << term_
               << ", the term proposed by the candidate is " << req.get_term()
               << ", so it will be rejected";
-    resp.set_error_code(cpp2::ErrorCode::E_TERM_OUT_OF_DATE);
+    resp.error_code_ref() = cpp2::ErrorCode::E_TERM_OUT_OF_DATE;
     return;
   }
 
@@ -1327,7 +1343,7 @@ void RaftPart::processAskForVoteRequest(const cpp2::AskForVoteRequest& req,
     LOG(INFO) << idStr_ << "The partition's last term to receive a log is " << lastLogTerm_
               << ", which is newer than the candidate's log " << req.get_last_log_term()
               << ". So the candidate will be rejected";
-    resp.set_error_code(cpp2::ErrorCode::E_TERM_OUT_OF_DATE);
+    resp.error_code_ref() = cpp2::ErrorCode::E_TERM_OUT_OF_DATE;
     return;
   }
 
@@ -1337,7 +1353,7 @@ void RaftPart::processAskForVoteRequest(const cpp2::AskForVoteRequest& req,
       LOG(INFO) << idStr_ << "The partition's last log id is " << lastLogId_
                 << ". The candidate's last log id " << req.get_last_log_id()
                 << " is smaller, so it will be rejected, candidate is " << candidate;
-      resp.set_error_code(cpp2::ErrorCode::E_LOG_STALE);
+      resp.error_code_ref() = cpp2::ErrorCode::E_LOG_STALE;
       return;
     }
   }
@@ -1355,7 +1371,7 @@ void RaftPart::processAskForVoteRequest(const cpp2::AskForVoteRequest& req,
     LOG(INFO) << idStr_ << "We have voted " << votedAddr_ << " on term " << votedTerm_
               << ", so we should reject the candidate " << candidate << " request on term "
               << req.get_term();
-    resp.set_error_code(cpp2::ErrorCode::E_TERM_OUT_OF_DATE);
+    resp.error_code_ref() = cpp2::ErrorCode::E_TERM_OUT_OF_DATE;
     return;
   }
 
@@ -1365,7 +1381,7 @@ void RaftPart::processAskForVoteRequest(const cpp2::AskForVoteRequest& req,
 
   if (req.get_is_pre_vote()) {
     // return succeed if it is prevote, do not change any state
-    resp.set_error_code(cpp2::ErrorCode::SUCCEEDED);
+    resp.error_code_ref() = cpp2::ErrorCode::SUCCEEDED;
     return;
   }
 
@@ -1385,7 +1401,7 @@ void RaftPart::processAskForVoteRequest(const cpp2::AskForVoteRequest& req,
   leader_ = HostAddr("", 0);
   votedAddr_ = candidate;
   votedTerm_ = req.get_term();
-  resp.set_error_code(cpp2::ErrorCode::SUCCEEDED);
+  resp.error_code_ref() = cpp2::ErrorCode::SUCCEEDED;
 
   // Reset the last message time
   lastMsgRecvDur_.reset();
@@ -1415,27 +1431,27 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
                                  << ", wal lastLogId = " << wal_->lastLogId();
   std::lock_guard<std::mutex> g(raftLock_);
 
-  resp.set_current_term(term_);
-  resp.set_leader_addr(leader_.host);
-  resp.set_leader_port(leader_.port);
-  resp.set_committed_log_id(committedLogId_);
-  resp.set_last_log_id(lastLogId_ < committedLogId_ ? committedLogId_ : lastLogId_);
-  resp.set_last_log_term(lastLogTerm_);
+  resp.current_term_ref() = term_;
+  resp.leader_addr_ref() = leader_.host;
+  resp.leader_port_ref() = leader_.port;
+  resp.committed_log_id_ref() = committedLogId_;
+  resp.last_log_id_ref() = lastLogId_ < committedLogId_ ? committedLogId_ : lastLogId_;
+  resp.last_log_term_ref() = lastLogTerm_;
 
   // Check status
   if (UNLIKELY(status_ == Status::STOPPED)) {
     VLOG(2) << idStr_ << "The part has been stopped, skip the request";
-    resp.set_error_code(cpp2::ErrorCode::E_BAD_STATE);
+    resp.error_code_ref() = cpp2::ErrorCode::E_BAD_STATE;
     return;
   }
   if (UNLIKELY(status_ == Status::STARTING)) {
     VLOG(2) << idStr_ << "The partition is still starting";
-    resp.set_error_code(cpp2::ErrorCode::E_NOT_READY);
+    resp.error_code_ref() = cpp2::ErrorCode::E_NOT_READY;
     return;
   }
   if (UNLIKELY(status_ == Status::WAITING_SNAPSHOT)) {
     VLOG(2) << idStr_ << "The partition is waiting for snapshot";
-    resp.set_error_code(cpp2::ErrorCode::E_WAITING_SNAPSHOT);
+    resp.error_code_ref() = cpp2::ErrorCode::E_WAITING_SNAPSHOT;
     return;
   }
   // Check leadership
@@ -1443,7 +1459,7 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
   if (err != cpp2::ErrorCode::SUCCEEDED) {
     // Wrong leadership
     VLOG(2) << idStr_ << "Will not follow the leader";
-    resp.set_error_code(err);
+    resp.error_code_ref() = err;
     return;
   }
 
@@ -1454,7 +1470,7 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
     LOG(INFO) << idStr_ << "Stale log! The log " << req.get_last_log_id_sent() << ", term "
               << req.get_last_log_term_sent() << " i had committed yet. My committedLogId is "
               << committedLogId_ << ", term is " << term_;
-    resp.set_error_code(cpp2::ErrorCode::E_LOG_STALE);
+    resp.error_code_ref() = cpp2::ErrorCode::E_LOG_STALE;
     return;
   } else if (req.get_last_log_id_sent() < committedLogId_) {
     LOG(INFO) << idStr_ << "What?? How it happens! The log id is " << req.get_last_log_id_sent()
@@ -1463,9 +1479,9 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
               << ", to make the cluster stable i will follow the high term"
               << " candidate and cleanup my data";
     reset();
-    resp.set_committed_log_id(committedLogId_);
-    resp.set_last_log_id(lastLogId_);
-    resp.set_last_log_term(lastLogTerm_);
+    resp.committed_log_id_ref() = committedLogId_;
+    resp.last_log_id_ref() = lastLogId_;
+    resp.last_log_term_ref() = lastLogTerm_;
     return;
   }
 
@@ -1476,7 +1492,7 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
   } else if (req.get_last_log_id_sent() > lastLogId_) {
     // There is a gap
     LOG(INFO) << idStr_ << "Local is missing logs from id " << lastLogId_ << ". Need to catch up";
-    resp.set_error_code(cpp2::ErrorCode::E_LOG_GAP);
+    resp.error_code_ref() = cpp2::ErrorCode::E_LOG_GAP;
     return;
   } else {
     // check the last log term is matched or not
@@ -1489,10 +1505,10 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
                 << committedLogId_;
       TermID committedLogTerm = wal_->getLogTerm(committedLogId_);
       if (committedLogTerm > 0) {
-        resp.set_last_log_id(committedLogId_);
-        resp.set_last_log_term(committedLogTerm);
+        resp.last_log_id_ref() = committedLogId_;
+        resp.last_log_term_ref() = committedLogTerm;
       }
-      resp.set_error_code(cpp2::ErrorCode::E_LOG_GAP);
+      resp.error_code_ref() = cpp2::ErrorCode::E_LOG_GAP;
       return;
     }
   }
@@ -1520,8 +1536,8 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
       // stale log
       if (diffIndex == numLogs) {
         // All logs have been received before
-        resp.set_last_log_id(firstId + numLogs - 1);
-        resp.set_last_log_term(req.get_log_term());
+        resp.last_log_id_ref() = firstId + numLogs - 1;
+        resp.last_log_term_ref() = req.get_log_term();
         // nothing to append, goto commit
         break;
       }
@@ -1538,7 +1554,7 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
         LOG(ERROR) << idStr_ << "Rollback fail! lastLogId is" << lastLogId_ << ", logLogTerm is "
                    << lastLogTerm_ << ", committedLogId is " << committedLogId_
                    << ", rollback id is " << firstId + diffIndex - 1;
-        resp.set_error_code(cpp2::ErrorCode::E_WAL_FAIL);
+        resp.error_code_ref() = cpp2::ErrorCode::E_WAL_FAIL;
         return;
       }
 
@@ -1558,10 +1574,10 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
       }
       lastLogId_ = wal_->lastLogId();
       lastLogTerm_ = wal_->lastLogTerm();
-      resp.set_last_log_id(lastLogId_);
-      resp.set_last_log_term(lastLogTerm_);
+      resp.last_log_id_ref() = lastLogId_;
+      resp.last_log_term_ref() = lastLogTerm_;
     } else {
-      resp.set_error_code(cpp2::ErrorCode::E_WAL_FAIL);
+      resp.error_code_ref() = cpp2::ErrorCode::E_WAL_FAIL;
       return;
     }
   } while (false);
@@ -1578,23 +1594,23 @@ void RaftPart::processAppendLogRequest(const cpp2::AppendLogRequest& req,
       VLOG(1) << idStr_ << "Follower succeeded committing log " << committedLogId_ + 1 << " to "
               << lastLogIdCanCommit;
       committedLogId_ = lastLogIdCanCommit;
-      resp.set_committed_log_id(lastLogIdCanCommit);
-      resp.set_error_code(cpp2::ErrorCode::SUCCEEDED);
+      resp.committed_log_id_ref() = lastLogIdCanCommit;
+      resp.error_code_ref() = cpp2::ErrorCode::SUCCEEDED;
     } else if (code == nebula::cpp2::ErrorCode::E_WRITE_STALLED) {
       VLOG(1) << idStr_ << "Follower delay committing log " << committedLogId_ + 1 << " to "
               << lastLogIdCanCommit;
       // Even if log is not applied to state machine, still regard as succeeded:
       // 1. As a follower, upcoming request will try to commit them
       // 2. If it is elected as leader later, it will try to commit them as well
-      resp.set_committed_log_id(committedLogId_);
-      resp.set_error_code(cpp2::ErrorCode::SUCCEEDED);
+      resp.committed_log_id_ref() = committedLogId_;
+      resp.error_code_ref() = cpp2::ErrorCode::SUCCEEDED;
     } else {
       LOG(ERROR) << idStr_ << "Failed to commit log " << committedLogId_ + 1 << " to "
                  << req.get_committed_log_id();
-      resp.set_error_code(cpp2::ErrorCode::E_WAL_FAIL);
+      resp.error_code_ref() = cpp2::ErrorCode::E_WAL_FAIL;
     }
   } else {
-    resp.set_error_code(cpp2::ErrorCode::SUCCEEDED);
+    resp.error_code_ref() = cpp2::ErrorCode::SUCCEEDED;
   }
 
   // Reset the timeout timer again in case wal and commit takes longer time than
@@ -1683,22 +1699,22 @@ void RaftPart::processHeartbeatRequest(const cpp2::HeartbeatRequest& req,
                                  << ", local current term = " << term_;
   std::lock_guard<std::mutex> g(raftLock_);
 
-  resp.set_current_term(term_);
-  resp.set_leader_addr(leader_.host);
-  resp.set_leader_port(leader_.port);
-  resp.set_committed_log_id(committedLogId_);
-  resp.set_last_log_id(lastLogId_ < committedLogId_ ? committedLogId_ : lastLogId_);
-  resp.set_last_log_term(lastLogTerm_);
+  resp.current_term_ref() = term_;
+  resp.leader_addr_ref() = leader_.host;
+  resp.leader_port_ref() = leader_.port;
+  resp.committed_log_id_ref() = committedLogId_;
+  resp.last_log_id_ref() = lastLogId_ < committedLogId_ ? committedLogId_ : lastLogId_;
+  resp.last_log_term_ref() = lastLogTerm_;
 
   // Check status
   if (UNLIKELY(status_ == Status::STOPPED)) {
     VLOG(2) << idStr_ << "The part has been stopped, skip the request";
-    resp.set_error_code(cpp2::ErrorCode::E_BAD_STATE);
+    resp.error_code_ref() = cpp2::ErrorCode::E_BAD_STATE;
     return;
   }
   if (UNLIKELY(status_ == Status::STARTING)) {
     VLOG(2) << idStr_ << "The partition is still starting";
-    resp.set_error_code(cpp2::ErrorCode::E_NOT_READY);
+    resp.error_code_ref() = cpp2::ErrorCode::E_NOT_READY;
     return;
   }
   // Check leadership
@@ -1706,7 +1722,7 @@ void RaftPart::processHeartbeatRequest(const cpp2::HeartbeatRequest& req,
   if (err != cpp2::ErrorCode::SUCCEEDED) {
     // Wrong leadership
     VLOG(2) << idStr_ << "Will not follow the leader";
-    resp.set_error_code(err);
+    resp.error_code_ref() = err;
     return;
   }
 
@@ -1714,7 +1730,7 @@ void RaftPart::processHeartbeatRequest(const cpp2::HeartbeatRequest& req,
   lastMsgRecvDur_.reset();
 
   // As for heartbeat, return ok after verifyLeader
-  resp.set_error_code(cpp2::ErrorCode::SUCCEEDED);
+  resp.error_code_ref() = cpp2::ErrorCode::SUCCEEDED;
   return;
 }
 
@@ -1727,24 +1743,24 @@ void RaftPart::processSendSnapshotRequest(const cpp2::SendSnapshotRequest& req,
   // Check status
   if (UNLIKELY(status_ == Status::STOPPED)) {
     LOG(ERROR) << idStr_ << "The part has been stopped, skip the request";
-    resp.set_error_code(cpp2::ErrorCode::E_BAD_STATE);
+    resp.error_code_ref() = cpp2::ErrorCode::E_BAD_STATE;
     return;
   }
   if (UNLIKELY(status_ == Status::STARTING)) {
     LOG(ERROR) << idStr_ << "The partition is still starting";
-    resp.set_error_code(cpp2::ErrorCode::E_NOT_READY);
+    resp.error_code_ref() = cpp2::ErrorCode::E_NOT_READY;
     return;
   }
   if (UNLIKELY(role_ != Role::FOLLOWER && role_ != Role::LEARNER)) {
     LOG(ERROR) << idStr_ << "Bad role " << roleStr(role_);
-    resp.set_error_code(cpp2::ErrorCode::E_BAD_STATE);
+    resp.error_code_ref() = cpp2::ErrorCode::E_BAD_STATE;
     return;
   }
   if (UNLIKELY(leader_ != HostAddr(req.get_leader_addr(), req.get_leader_port()) ||
                term_ != req.get_term())) {
     LOG(ERROR) << idStr_ << "Term out of date, current term " << term_ << ", received term "
                << req.get_term();
-    resp.set_error_code(cpp2::ErrorCode::E_TERM_OUT_OF_DATE);
+    resp.error_code_ref() = cpp2::ErrorCode::E_TERM_OUT_OF_DATE;
     return;
   }
   if (status_ != Status::WAITING_SNAPSHOT) {
@@ -1763,7 +1779,7 @@ void RaftPart::processSendSnapshotRequest(const cpp2::SendSnapshotRequest& req,
     LOG(ERROR) << idStr_ << "Bad snapshot, total rows received " << lastTotalCount_
                << ", total rows sended " << req.get_total_count() << ", total size received "
                << lastTotalSize_ << ", total size sended " << req.get_total_size();
-    resp.set_error_code(cpp2::ErrorCode::E_PERSIST_SNAPSHOT_FAILED);
+    resp.error_code_ref() = cpp2::ErrorCode::E_PERSIST_SNAPSHOT_FAILED;
     return;
   }
   if (req.get_done()) {
@@ -1778,7 +1794,7 @@ void RaftPart::processSendSnapshotRequest(const cpp2::SendSnapshotRequest& req,
     LOG(INFO) << idStr_ << "Receive all snapshot, committedLogId_ " << committedLogId_
               << ", lastLodId " << lastLogId_ << ", lastLogTermId " << lastLogTerm_;
   }
-  resp.set_error_code(cpp2::ErrorCode::SUCCEEDED);
+  resp.error_code_ref() = cpp2::ErrorCode::SUCCEEDED;
   return;
 }
 

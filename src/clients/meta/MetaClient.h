@@ -644,9 +644,13 @@ class MetaClient {
 
   folly::Future<StatusOr<bool>> ingest(GraphSpaceID spaceId);
 
-  HostAddr getMetaLeader() { return leader_; }
+  HostAddr getMetaLeader() {
+    return leader_;
+  }
 
-  int64_t HeartbeatTime() { return heartbeatTime_; }
+  int64_t HeartbeatTime() {
+    return heartbeatTime_;
+  }
 
  protected:
   // Return true if load succeeded.

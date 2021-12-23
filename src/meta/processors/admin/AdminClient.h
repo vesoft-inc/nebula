@@ -39,7 +39,9 @@ class AdminClient {
 
   virtual ~AdminClient() = default;
 
-  folly::Executor* executor() const { return ioThreadPool_.get(); }
+  folly::Executor* executor() const {
+    return ioThreadPool_.get();
+  }
 
   virtual folly::Future<Status> transLeader(GraphSpaceID spaceId,
                                             PartitionID partId,

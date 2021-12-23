@@ -51,11 +51,17 @@ class CounterId final {
     return *this;
   }
 
-  bool valid() const { return index_ != ""; }
+  bool valid() const {
+    return index_ != "";
+  }
 
-  bool isHisto() const { return isHisto_; }
+  bool isHisto() const {
+    return isHisto_;
+  }
 
-  std::string index() const { return index_; }
+  std::string index() const {
+    return index_;
+  }
 
  private:
   std::string index_;

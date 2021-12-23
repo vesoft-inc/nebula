@@ -271,7 +271,9 @@ nebula::cpp2::ErrorCode UpdateVertexProcessor::buildTagContext(
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
-void UpdateVertexProcessor::onProcessFinished() { resp_.set_props(std::move(resultDataSet_)); }
+void UpdateVertexProcessor::onProcessFinished() {
+  resp_.props_ref() = std::move(resultDataSet_);
+}
 
 }  // namespace storage
 }  // namespace nebula

@@ -88,7 +88,9 @@ class MockCluster {
 
   static std::string localIP();
 
-  int32_t getTotalParts() { return totalParts_; }
+  int32_t getTotalParts() {
+    return totalParts_;
+  }
 
   void stop() {
     if (metaClient_) {

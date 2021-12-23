@@ -21,7 +21,7 @@ void DropCheckpointProcessor::process(const cpp2::DropCPRequest& req) {
 
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
       cpp2::PartitionResult res;
-      res.set_code(code);
+      res.code_ref() = code;
       codes_.emplace_back(std::move(res));
       break;
     }

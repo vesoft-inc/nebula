@@ -159,6 +159,8 @@ std::string ListComprehensionExpression::toString() const {
   return buf;
 }
 
-void ListComprehensionExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void ListComprehensionExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 }  // namespace nebula

@@ -108,22 +108,34 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
     return role_ == Role::LEARNER;
   }
 
-  ClusterID clusterId() const { return clusterId_; }
+  ClusterID clusterId() const {
+    return clusterId_;
+  }
 
-  GraphSpaceID spaceId() const { return spaceId_; }
+  GraphSpaceID spaceId() const {
+    return spaceId_;
+  }
 
-  PartitionID partitionId() const { return partId_; }
+  PartitionID partitionId() const {
+    return partId_;
+  }
 
-  const HostAddr& address() const { return addr_; }
+  const HostAddr& address() const {
+    return addr_;
+  }
 
   HostAddr leader() const {
     std::lock_guard<std::mutex> g(raftLock_);
     return leader_;
   }
 
-  TermID termId() const { return term_; }
+  TermID termId() const {
+    return term_;
+  }
 
-  std::shared_ptr<wal::FileBasedWal> wal() const { return wal_; }
+  std::shared_ptr<wal::FileBasedWal> wal() const {
+    return wal_;
+  }
 
   void addLearner(const HostAddr& learner);
 
@@ -243,7 +255,9 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   using Status = cpp2::Status;
   using Role = cpp2::Role;
 
-  const char* idStr() const { return idStr_.c_str(); }
+  const char* idStr() const {
+    return idStr_.c_str();
+  }
 
   // The method will be invoked by start()
   //

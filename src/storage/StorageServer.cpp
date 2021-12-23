@@ -56,7 +56,9 @@ StorageServer::StorageServer(HostAddr localHost,
       walPath_(std::move(walPath)),
       listenerPath_(std::move(listenerPath)) {}
 
-StorageServer::~StorageServer() { stop(); }
+StorageServer::~StorageServer() {
+  stop();
+}
 
 std::unique_ptr<kvstore::KVStore> StorageServer::getStoreInstance() {
   kvstore::KVOptions options;
@@ -147,7 +149,7 @@ int32_t StorageServer::getAdminStoreSeqId() {
 bool StorageServer::start() {
   ioThreadPool_ = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_num_io_threads);
   workers_ = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
-      FLAGS_num_worker_threads, true /*stats*/);
+      FLAGS_num_worker_threads);
   workers_->setNamePrefix("executor");
   workers_->start();
 

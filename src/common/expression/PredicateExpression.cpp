@@ -260,6 +260,8 @@ std::string PredicateExpression::toString() const {
   return buf;
 }
 
-void PredicateExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void PredicateExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 }  // namespace nebula

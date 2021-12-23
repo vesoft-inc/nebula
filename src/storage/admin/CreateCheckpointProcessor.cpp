@@ -23,7 +23,7 @@ void CreateCheckpointProcessor::process(const cpp2::CreateCPRequest& req) {
 
     if (!ok(ckRet)) {
       cpp2::PartitionResult thriftRet;
-      thriftRet.set_code(error(ckRet));
+      thriftRet.code_ref() = error(ckRet);
       codes_.emplace_back(std::move(thriftRet));
       onFinished();
       return;
@@ -33,7 +33,7 @@ void CreateCheckpointProcessor::process(const cpp2::CreateCPRequest& req) {
     ckInfoList.insert(ckInfoList.end(), spaceCkList.begin(), spaceCkList.end());
   }
 
-  resp_.set_info(ckInfoList);
+  resp_.info_ref() = ckInfoList;
   onFinished();
 }
 
