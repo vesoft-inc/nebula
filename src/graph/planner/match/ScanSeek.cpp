@@ -92,8 +92,11 @@ StatusOr<SubPlan> ScanSeek::transformNode(NodeContext *nodeCtx) {
       prev = notEmpty;
     }
   }
-  auto *filter = Filter::make(qctx, scanVertices, prev);
-  plan.root = filter;
+  if (prev != nullptr) {
+    // prev equals to nullptr happend when there are no tags in whole space
+    auto *filter = Filter::make(qctx, scanVertices, prev);
+    plan.root = filter;
+  }
 
   nodeCtx->initialExpr = InputPropertyExpression::make(pool, kVid);
   return plan;

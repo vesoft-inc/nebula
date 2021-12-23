@@ -43,7 +43,7 @@ StatusOr<OptRule::TransformResult> PushFilterDownScanVerticesRule::transform(
   auto sv = static_cast<const ScanVertices *>(svGroupNode->node());
   auto qctx = ctx->qctx();
   auto pool = qctx->objPool();
-  auto condition = filter->condition()->clone();
+  auto condition = DCHECK_NOTNULL(filter->condition())->clone();
 
   auto visitor = graph::ExtractFilterExprVisitor::makePushGetVertices(pool);
   condition->accept(&visitor);
