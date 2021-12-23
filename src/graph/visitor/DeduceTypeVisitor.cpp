@@ -477,9 +477,7 @@ void DeduceTypeVisitor::visit(ListExpression *) { type_ = Value::Type::LIST; }
 
 void DeduceTypeVisitor::visit(SetExpression *) { type_ = Value::Type::SET; }
 
-void DeduceTypeVisitor::visit(MapExpression *) {
-  type_ = Value::Type::MAP;
-}
+void DeduceTypeVisitor::visit(MapExpression *) { type_ = Value::Type::MAP; }
 
 void DeduceTypeVisitor::visit(TagPropertyExpression *expr) { visitVertexPropertyExpr(expr); }
 
