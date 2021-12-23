@@ -41,7 +41,7 @@ Status LookupValidator::validateImpl() {
   lookupCtx_ = getContext<LookupContext>();
 
   NG_RETURN_IF_ERROR(validateFrom());
-  NG_RETURN_IF_ERROR(validateFilter());
+  NG_RETURN_IF_ERROR(validateWhere());
   NG_RETURN_IF_ERROR(validateYield());
   return Status::OK();
 }
@@ -53,19 +53,7 @@ Status LookupValidator::validateFrom() {
   NG_RETURN_IF_ERROR(ret);
   lookupCtx_->isEdge = ret.value().first;
   lookupCtx_->schemaId = ret.value().second;
-  return Status::OK();
-}
-
-Status LookupValidator::extractSchemaProp() {
-  shared_ptr<const NebulaSchemaProvider> schema;
-  NG_RETURN_IF_ERROR(getSchemaProvider(&schema));
-  for (std::size_t i = 0; i < schema->getNumFields(); ++i) {
-    const auto& propName = schema->getFieldName(i);
-    auto iter = std::find(idxReturnCols_.begin(), idxReturnCols_.end(), propName);
-    if (iter == idxReturnCols_.end()) {
-      idxReturnCols_.emplace_back(propName);
-    }
-  }
+  schemaIds_.emplace_back(ret.value().second);
   return Status::OK();
 }
 
@@ -107,9 +95,6 @@ Status LookupValidator::validateYieldEdge() {
                                 {Expression::Kind::kAggregate, Expression::Kind::kVertex})) {
       return Status::SemanticError("illegal yield clauses `%s'", col->toString().c_str());
     }
-    if (ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kEdge})) {
-      NG_RETURN_IF_ERROR(extractSchemaProp());
-    }
     if (col->expr()->kind() == Expression::Kind::kLabelAttribute) {
       const auto& schemaName = static_cast<LabelAttributeExpression*>(col->expr())->left()->name();
       if (schemaName != sentence()->from()) {
@@ -124,7 +109,7 @@ Status LookupValidator::validateYieldEdge() {
     NG_RETURN_IF_ERROR(typeStatus);
     outputs_.emplace_back(col->name(), typeStatus.value());
     yieldExpr->addColumn(col->clone().release());
-    NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps_));
+    NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps_, nullptr, &schemaIds_));
   }
   return Status::OK();
 }
@@ -136,9 +121,6 @@ Status LookupValidator::validateYieldTag() {
     if (ExpressionUtils::hasAny(col->expr(),
                                 {Expression::Kind::kAggregate, Expression::Kind::kEdge})) {
       return Status::SemanticError("illegal yield clauses `%s'", col->toString().c_str());
-    }
-    if (ExpressionUtils::hasAny(col->expr(), {Expression::Kind::kVertex})) {
-      NG_RETURN_IF_ERROR(extractSchemaProp());
     }
     if (col->expr()->kind() == Expression::Kind::kLabelAttribute) {
       const auto& schemaName = static_cast<LabelAttributeExpression*>(col->expr())->left()->name();
@@ -154,7 +136,7 @@ Status LookupValidator::validateYieldTag() {
     NG_RETURN_IF_ERROR(typeStatus);
     outputs_.emplace_back(col->name(), typeStatus.value());
     yieldExpr->addColumn(col->clone().release());
-    NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps_));
+    NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps_, &schemaIds_));
   }
   return Status::OK();
 }
@@ -187,7 +169,7 @@ Status LookupValidator::validateYield() {
   return Status::OK();
 }
 
-Status LookupValidator::validateFilter() {
+Status LookupValidator::validateWhere() {
   auto whereClause = sentence()->whereClause();
   if (whereClause == nullptr) {
     return Status::OK();
@@ -211,7 +193,11 @@ Status LookupValidator::validateFilter() {
     // Make sure the type of the rewritted filter expr is right
     NG_RETURN_IF_ERROR(deduceExprType(lookupCtx_->filter));
   }
-  NG_RETURN_IF_ERROR(deduceProps(lookupCtx_->filter, exprProps_));
+  if (lookupCtx_->isEdge) {
+    NG_RETURN_IF_ERROR(deduceProps(lookupCtx_->filter, exprProps_, nullptr, &schemaIds_));
+  } else {
+    NG_RETURN_IF_ERROR(deduceProps(lookupCtx_->filter, exprProps_, &schemaIds_));
+  }
   return Status::OK();
 }
 

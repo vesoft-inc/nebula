@@ -32,19 +32,18 @@ class GoValidator final : public Validator {
 
   Status buildColumns();
 
-  void extractPropExprs(const Expression* expr);
+  Status extractTagIds();
+
+  void extractPropExprs(const Expression* expr, std::unordered_set<std::string>& uniqueCols);
 
   Expression* rewrite2VarProp(const Expression* expr);
-
-  Status extractVertexProp(ExpressionProps& exprProps, bool isSrc);
-
-  Status extractEdgeProp(ExpressionProps& exprProps);
 
  private:
   std::unique_ptr<GoContext> goCtx_;
 
   YieldColumns* inputPropCols_{nullptr};
   std::unordered_map<std::string, YieldColumn*> propExprColMap_;
+  std::vector<TagID> tagIds_;
 };
 }  // namespace graph
 }  // namespace nebula
