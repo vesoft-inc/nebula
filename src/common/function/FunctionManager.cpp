@@ -412,7 +412,6 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
                         Value::Type::FLOAT},
                        Value::Type::LIST),
      }},
-    // TODO(TripleZ): maybe change to "UDF" in here
     {"udf",
      {
          TypeSignature({Value::Type::STRING, Value::Type::LIST}, Value::Type::LIST),
@@ -535,7 +534,6 @@ FunctionManager::FunctionManager() {
     attr.body_ = [](const auto &args) -> Value {
       // [0]: function name
       // [1]: function params
-      // FIXME(TripleZ): nullptr?
       if (!args[0].get().isStr() || !args[1].get().isList()) {
         return Value::kNullBadType;
       }
@@ -544,6 +542,10 @@ FunctionManager::FunctionManager() {
 
       WasmFunctionManager &wasmFunctionManager = WasmFunctionManager::getInstance();
       auto udfResult = wasmFunctionManager.runWithNebulaDataHandle(udfName, udfParams);
+      if (udfResult.empty()) {
+        // cannot find udf function
+        return Value::kNullBadData;
+      }
       return udfResult;
     };
   }

@@ -58,8 +58,9 @@ std::vector<int> WasmFunctionManager::run(std::string functionName, std::vector<
   std::unordered_map<std::string, std::string>::const_iterator gotType = typeMap.find(functionName);
 
   if (gotType == typeMap.end()) {
-    // TODO(TripleZ): cannot find function type in wasm, should throw an error
-    return std::vector<int>();
+    // cannot find function type in wasm, should throw an error
+    LOG(ERROR) << "Cannot find function by name \"" << functionName << "\"";
+    return {};
   }
 
   if (gotType->second == TYPE_WAT_MOUDLE) {
@@ -117,6 +118,11 @@ bool WasmFunctionManager::RegisterFunction(std::vector<WasmFunctionParamType> in
                                            std::string functionName,
                                            std::string functionHandler,
                                            const std::string &base64OrOtherString) {
+  if (typeMap.find(functionName) != typeMap.end()) {
+    LOG(ERROR) << "UDF function \"" << functionName << "\" exists!";
+    return false;
+  }
+
   // for WAT
   if (moduleType == TYPE_WAT_MOUDLE) {
     auto watString = myBase64Decode(base64OrOtherString);
@@ -187,6 +193,7 @@ bool WasmFunctionManager::DeleteFunction(std::string functionName) {
   if (gotType->second == TYPE_WASM_MOUDLE) {
     wasmModules.erase(functionName);
   }
+  typeMap.erase(functionName);
   return true;
 }
 
