@@ -13,18 +13,33 @@ ExtractPropExprVisitor::ExtractPropExprVisitor(
     YieldColumns* srcAndEdgePropCols,
     YieldColumns* dstPropCols,
     YieldColumns* inputPropCols,
-    std::unordered_map<std::string, YieldColumn*>& propExprColMap)
+    std::unordered_map<std::string, YieldColumn*>& propExprColMap,
+    std::unordered_set<std::string>& uniqueEdgeVertexCol)
     : vctx_(DCHECK_NOTNULL(vctx)),
       srcAndEdgePropCols_(srcAndEdgePropCols),
       dstPropCols_(dstPropCols),
       inputPropCols_(inputPropCols),
-      propExprColMap_(propExprColMap) {}
+      propExprColMap_(propExprColMap),
+      uniqueEdgeVertexCol_(uniqueEdgeVertexCol) {}
 
 void ExtractPropExprVisitor::visit(ConstantExpression* expr) { UNUSED(expr); }
 
-void ExtractPropExprVisitor::visit(VertexExpression* expr) { UNUSED(expr); }
+void ExtractPropExprVisitor::visit(VertexExpression* expr) {
+  const auto& colName = expr->name();
+  if (uniqueEdgeVertexCol_.emplace(colName).second) {
+    if (colName == "$^") {
+      srcAndEdgePropCols_->addColumn(new YieldColumn(expr->clone(), colName));
+    } else {
+      dstPropCols_->addColumn(new YieldColumn(expr->clone(), colName));
+    }
+  }
+}
 
-void ExtractPropExprVisitor::visit(EdgeExpression* expr) { UNUSED(expr); }
+void ExtractPropExprVisitor::visit(EdgeExpression* expr) {
+  if (uniqueEdgeVertexCol_.emplace(expr->toString()).second) {
+    srcAndEdgePropCols_->addColumn(new YieldColumn(expr->clone(), expr->toString()));
+  }
+}
 
 void ExtractPropExprVisitor::visit(VariableExpression* expr) { UNUSED(expr); }
 

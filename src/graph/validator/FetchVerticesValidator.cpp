@@ -30,6 +30,7 @@ Status FetchVerticesValidator::validateTag(const NameLabelList *nameLabels) {
     NG_RETURN_IF_ERROR(tagStatus);
     for (const auto &tag : tagStatus.value()) {
       tagsSchema_.emplace(tag.first, tag.second);
+      tagIds_.emplace_back(tag.first);
     }
   } else {
     auto labels = nameLabels->labels();
@@ -43,6 +44,7 @@ Status FetchVerticesValidator::validateTag(const NameLabelList *nameLabels) {
         return Status::SemanticError("no schema found for `%s'", label->c_str());
       }
       tagsSchema_.emplace(tagID, tagSchema);
+      tagIds_.emplace_back(tagID);
     }
   }
   return Status::OK();
@@ -76,12 +78,8 @@ Status FetchVerticesValidator::validateYield(YieldClause *yield) {
       col->setAlias(col->name());
       col->setExpr(InputPropertyExpression::make(pool, nebula::kVid));
     }
-    if (ExpressionUtils::hasAny(colExpr, {Expression::Kind::kVertex})) {
-      extractVertexProp(exprProps);
-    }
     newCols->addColumn(col->clone().release());
-
-    NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps));
+    NG_RETURN_IF_ERROR(deduceProps(colExpr, exprProps, &tagIds_));
   }
   if (exprProps.tagProps().empty()) {
     for (const auto &tagSchema : tagsSchema_) {
@@ -103,17 +101,6 @@ Status FetchVerticesValidator::validateYield(YieldClause *yield) {
     }
   }
   return Status::OK();
-}
-
-void FetchVerticesValidator::extractVertexProp(ExpressionProps &exprProps) {
-  for (const auto &tagSchema : tagsSchema_) {
-    auto tagID = tagSchema.first;
-    exprProps.insertTagProp(tagID, nebula::kTag);
-    for (std::size_t i = 0; i < tagSchema.second->getNumFields(); ++i) {
-      const auto propName = tagSchema.second->getFieldName(i);
-      exprProps.insertTagProp(tagID, propName);
-    }
-  }
 }
 
 }  // namespace graph

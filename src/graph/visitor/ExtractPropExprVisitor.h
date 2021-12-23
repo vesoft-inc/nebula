@@ -20,7 +20,8 @@ class ExtractPropExprVisitor final : public ExprVisitorImpl {
                          YieldColumns *srcAndEdgePropCols,
                          YieldColumns *dstPropCols,
                          YieldColumns *inputPropCols,
-                         std::unordered_map<std::string, YieldColumn *> &propExprColMap);
+                         std::unordered_map<std::string, YieldColumn *> &propExprColMap,
+                         std::unordered_set<std::string> &uniqueEdgeVertexCol);
 
   ~ExtractPropExprVisitor() = default;
 
@@ -68,6 +69,7 @@ class ExtractPropExprVisitor final : public ExprVisitorImpl {
   YieldColumns *dstPropCols_{nullptr};
   YieldColumns *inputPropCols_{nullptr};
   std::unordered_map<std::string, YieldColumn *> &propExprColMap_;
+  std::unordered_set<std::string> &uniqueEdgeVertexCol_;
 
   Status status_;
 };

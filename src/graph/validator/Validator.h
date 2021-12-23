@@ -107,7 +107,10 @@ class Validator {
 
   StatusOr<Value::Type> deduceExprType(const Expression* expr) const;
 
-  Status deduceProps(const Expression* expr, ExpressionProps& exprProps);
+  Status deduceProps(const Expression* expr,
+                     ExpressionProps& exprProps,
+                     std::vector<TagID>* tagIds = nullptr,
+                     std::vector<EdgeType>* edgeTypes = nullptr);
 
   static StatusOr<size_t> checkPropNonexistOrDuplicate(const ColsDef& cols,
                                                        folly::StringPiece prop,
