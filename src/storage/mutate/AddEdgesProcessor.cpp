@@ -470,7 +470,7 @@ std::vector<std::string> AddEdgesProcessor::indexKeys(
     RowReader* reader,
     const folly::StringPiece& rawKey,
     std::shared_ptr<nebula::meta::cpp2::IndexItem> index) {
-  auto values = IndexKeyUtils::collectIndexValues(reader, index->get_fields());
+  auto values = IndexKeyUtils::collectIndexValues(reader, index.get());
   if (!values.ok()) {
     return {};
   }

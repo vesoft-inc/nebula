@@ -190,10 +190,12 @@ void CreateEdgeIndexProcessor::process(const cpp2::CreateEdgeIndexReq& req) {
   item.set_schema_id(schemaID);
   item.set_schema_name(edgeName);
   item.set_fields(std::move(columns));
+  if (req.index_params_ref().has_value()) {
+    item.set_index_params(*req.index_params_ref());
+  }
   if (req.comment_ref().has_value()) {
     item.set_comment(*req.comment_ref());
   }
-
   data.emplace_back(MetaKeyUtils::indexIndexKey(space, indexName),
                     std::string(reinterpret_cast<const char*>(&edgeIndex), sizeof(IndexID)));
   data.emplace_back(MetaKeyUtils::indexKey(space, edgeIndex), MetaKeyUtils::indexVal(item));

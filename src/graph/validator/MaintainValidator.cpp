@@ -5,6 +5,9 @@
 
 #include "graph/validator/MaintainValidator.h"
 
+#include <memory>
+
+#include "common/base/Status.h"
 #include "common/charset/Charset.h"
 #include "common/expression/ConstantExpression.h"
 #include "graph/planner/plan/Admin.h"
@@ -15,6 +18,7 @@
 #include "graph/util/FTIndexUtils.h"
 #include "graph/util/IndexUtil.h"
 #include "graph/util/SchemaUtil.h"
+#include "interface/gen-cpp2/meta_types.h"
 #include "parser/MaintainSentences.h"
 
 namespace nebula {
@@ -294,7 +298,12 @@ Status CreateTagIndexValidator::validateImpl() {
   index_ = *sentence->indexName();
   fields_ = sentence->fields();
   ifNotExist_ = sentence->isIfNotExist();
-  // TODO(darion) Save the index
+  auto *indexParamList = sentence->getIndexParamList();
+  if (indexParamList) {
+    meta::cpp2::IndexParams indexParams;
+    NG_RETURN_IF_ERROR(IndexUtil::validateIndexParams(indexParamList->getParams(), indexParams));
+    indexParams_ = std::make_unique<meta::cpp2::IndexParams>(std::move(indexParams));
+  }
   return Status::OK();
 }
 
@@ -306,6 +315,7 @@ Status CreateTagIndexValidator::toPlan() {
                                       *sentence->indexName(),
                                       sentence->fields(),
                                       sentence->isIfNotExist(),
+                                      std::move(indexParams_),
                                       sentence->comment());
   root_ = doNode;
   tail_ = root_;
@@ -319,6 +329,12 @@ Status CreateEdgeIndexValidator::validateImpl() {
   fields_ = sentence->fields();
   ifNotExist_ = sentence->isIfNotExist();
   // TODO(darion) Save the index
+  auto *indexParamList = sentence->getIndexParamList();
+  if (indexParamList) {
+    meta::cpp2::IndexParams indexParams;
+    NG_RETURN_IF_ERROR(IndexUtil::validateIndexParams(indexParamList->getParams(), indexParams));
+    indexParams_ = std::make_unique<meta::cpp2::IndexParams>(std::move(indexParams));
+  }
   return Status::OK();
 }
 
@@ -330,6 +346,7 @@ Status CreateEdgeIndexValidator::toPlan() {
                                        *sentence->indexName(),
                                        sentence->fields(),
                                        sentence->isIfNotExist(),
+                                       std::move(indexParams_),
                                        sentence->comment());
   root_ = doNode;
   tail_ = root_;

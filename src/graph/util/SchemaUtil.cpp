@@ -8,6 +8,7 @@
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
 #include "common/base/Base.h"
+#include "common/base/Status.h"
 #include "graph/context/QueryContext.h"
 #include "graph/context/QueryExpressionContext.h"
 
