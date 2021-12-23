@@ -31,9 +31,16 @@ class BinaryExpression : public Expression {
 
   void setRight(Expression* expr) { rhs_ = expr; }
 
+  void setDepth() override {
+    setDepthFromSubExpr(lhs_);
+    setDepthFromSubExpr(rhs_);
+  }
+
  protected:
   BinaryExpression(ObjectPool* pool, Kind kind, Expression* lhs, Expression* rhs)
-      : Expression(pool, kind), lhs_(lhs), rhs_(rhs) {}
+      : Expression(pool, kind), lhs_(lhs), rhs_(rhs) {
+    setDepth();
+  }
 
   void writeTo(Encoder& encoder) const override;
 

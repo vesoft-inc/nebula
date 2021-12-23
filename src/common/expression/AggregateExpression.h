@@ -60,6 +60,8 @@ class AggregateExpression final : public Expression {
 
   void setAggData(AggData* agg_data) { aggData_ = agg_data; }
 
+  void setDepth() override { setDepthFromSubExpr(arg_); }
+
  private:
   explicit AggregateExpression(ObjectPool* pool,
                                const std::string& name = "",
@@ -71,6 +73,7 @@ class AggregateExpression final : public Expression {
     if (aggFuncResult.ok()) {
       aggFunc_ = std::move(aggFuncResult).value();
     }
+    setDepth();
   }
 
   void writeTo(Encoder& encoder) const override;

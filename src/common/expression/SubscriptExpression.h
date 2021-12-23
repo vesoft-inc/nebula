@@ -88,12 +88,19 @@ class SubscriptRangeExpression final : public Expression {
   explicit SubscriptRangeExpression(ObjectPool* pool)
       : Expression(pool, Kind::kSubscriptRange), list_(nullptr), lo_(nullptr), hi_(nullptr) {}
 
+  void setDepth() override {
+    setDepthFromSubExpr(list_);
+    setDepthFromSubExpr(lo_);
+    setDepthFromSubExpr(hi_);
+  }
+
   explicit SubscriptRangeExpression(ObjectPool* pool,
                                     Expression* list,
                                     Expression* lo,
                                     Expression* hi)
       : Expression(pool, Kind::kSubscriptRange), list_(DCHECK_NOTNULL(list)), lo_(lo), hi_(hi) {
     DCHECK(!(lo_ == nullptr && hi_ == nullptr));
+    setDepth();
   }
   void writeTo(Encoder& encoder) const override;
 

@@ -6,6 +6,8 @@
 #ifndef COMMON_EXPRESSION_EXPRESSION_H_
 #define COMMON_EXPRESSION_EXPRESSION_H_
 
+#include <cstdint>
+
 #include "common/base/Base.h"
 #include "common/base/ObjectPool.h"
 #include "common/context/ExpressionContext.h"
@@ -150,6 +152,12 @@ class Expression {
 
   virtual bool isContainerExpr() const { return false; }
 
+  int32_t getDepth() { return depth_; }
+
+  virtual void setDepth() { return; }
+
+  bool checkDepth() { return depth_ < MAX_DEPTH; }
+
  protected:
   class Encoder final {
    public:
@@ -199,7 +207,15 @@ class Expression {
 
   ObjectPool* pool_{nullptr};
 
+  void setDepthFromSubExpr(Expression* expr) {
+    if (expr != nullptr) {
+      depth_ = std::max(depth_, expr->getDepth() + 1);
+    }
+  }
+
   Kind kind_;
+  int32_t depth_ = 1;
+  const int32_t MAX_DEPTH = 512;
 };
 
 std::ostream& operator<<(std::ostream& os, Expression::Kind kind);

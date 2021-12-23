@@ -79,6 +79,12 @@ class LogicalExpression final : public Expression {
 
   bool isLogicalExpr() const override { return true; }
 
+  void setDepth() override {
+    for (auto& item : operands_) {
+      setDepthFromSubExpr(item);
+    }
+  }
+
  private:
   explicit LogicalExpression(ObjectPool* pool, Kind kind) : Expression(pool, kind) {}
 
@@ -86,6 +92,7 @@ class LogicalExpression final : public Expression {
       : Expression(pool, kind) {
     operands_.emplace_back(lhs);
     operands_.emplace_back(rhs);
+    setDepth();
   }
 
   void writeTo(Encoder& encoder) const override;

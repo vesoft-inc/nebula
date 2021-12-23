@@ -71,6 +71,11 @@ class PredicateExpression final : public Expression {
 
   bool hasFilter() const { return filter_ != nullptr; }
 
+  void setDepth() override {
+    setDepthFromSubExpr(collection_);
+    setDepthFromSubExpr(filter_);
+  }
+
  private:
   explicit PredicateExpression(ObjectPool* pool,
                                const std::string& name = "",
@@ -81,7 +86,9 @@ class PredicateExpression final : public Expression {
         name_(name),
         innerVar_(innerVar),
         collection_(collection),
-        filter_(filter) {}
+        filter_(filter) {
+    setDepth();
+  }
 
   const Value& evalExists(ExpressionContext& ctx);
   void writeTo(Encoder& encoder) const override;

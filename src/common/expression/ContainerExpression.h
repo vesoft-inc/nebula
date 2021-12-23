@@ -98,6 +98,9 @@ class ListExpression final : public Expression {
   explicit ListExpression(ObjectPool *pool) : Expression(pool, Kind::kList) {}
 
   explicit ListExpression(ObjectPool *pool, ExpressionList *items) : Expression(pool, Kind::kList) {
+    for (auto &item : items->get()) {
+      setDepthFromSubExpr(item);
+    }
     items_ = items->get();
   }
 
@@ -155,6 +158,9 @@ class SetExpression final : public Expression {
   explicit SetExpression(ObjectPool *pool) : Expression(pool, Kind::kSet) {}
 
   explicit SetExpression(ObjectPool *pool, ExpressionList *items) : Expression(pool, Kind::kSet) {
+    for (auto &item : items->get()) {
+      setDepthFromSubExpr(item);
+    }
     items_ = items->get();
   }
 
@@ -210,11 +216,18 @@ class MapExpression final : public Expression {
 
   bool isContainerExpr() const override { return true; }
 
+  void setDepth() override {
+    for (auto &item : items_) {
+      setDepthFromSubExpr(item.second);
+    }
+  }
+
  private:
   explicit MapExpression(ObjectPool *pool) : Expression(pool, Kind::kMap) {}
 
   explicit MapExpression(ObjectPool *pool, MapItemList *items) : Expression(pool, Kind::kMap) {
     items_ = items->get();
+    setDepth();
   }
 
   void writeTo(Encoder &encoder) const override;

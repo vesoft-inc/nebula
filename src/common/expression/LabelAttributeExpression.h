@@ -56,6 +56,11 @@ class LabelAttributeExpression final : public Expression {
 
   std::string toString() const override;
 
+  void setDepth() override {
+    setDepthFromSubExpr(lhs_);
+    setDepthFromSubExpr(rhs_);
+  }
+
  private:
   explicit LabelAttributeExpression(ObjectPool* pool,
                                     LabelExpression* lhs = nullptr,
@@ -64,6 +69,7 @@ class LabelAttributeExpression final : public Expression {
     DCHECK(rhs == nullptr || rhs->value().isStr());
     lhs_ = lhs;
     rhs_ = rhs;
+    setDepth();
   }
 
   void writeTo(Encoder&) const override {

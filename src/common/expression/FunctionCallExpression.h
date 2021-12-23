@@ -86,6 +86,12 @@ class FunctionCallExpression final : public Expression {
 
   ArgumentList* args() { return args_; }
 
+  void setDepth() override {
+    for (auto& item : args_->args()) {
+      setDepthFromSubExpr(item);
+    }
+  }
+
  private:
   explicit FunctionCallExpression(ObjectPool* pool, const std::string& name, ArgumentList* args)
       : Expression(pool, Kind::kFunctionCall), name_(name), args_(args) {
@@ -95,6 +101,7 @@ class FunctionCallExpression final : public Expression {
         func_ = funcResult.value();
       }
     }
+    setDepth();
   }
 
   void writeTo(Encoder& encoder) const override;

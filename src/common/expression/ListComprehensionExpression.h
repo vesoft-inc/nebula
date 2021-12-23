@@ -67,6 +67,12 @@ class ListComprehensionExpression final : public Expression {
 
   bool hasOriginString() const { return !originString_.empty(); }
 
+  void setDepth() override {
+    setDepthFromSubExpr(collection_);
+    setDepthFromSubExpr(filter_);
+    setDepthFromSubExpr(mapping_);
+  }
+
  private:
   explicit ListComprehensionExpression(ObjectPool* pool,
                                        const std::string& innerVar = "",
@@ -77,7 +83,9 @@ class ListComprehensionExpression final : public Expression {
         innerVar_(innerVar),
         collection_(collection),
         filter_(filter),
-        mapping_(mapping) {}
+        mapping_(mapping) {
+    setDepth();
+  }
 
   void writeTo(Encoder& encoder) const override;
 

@@ -97,12 +97,20 @@ class CaseExpression final : public Expression {
     return expr;
   }
 
+  void setDepth() override {
+    for (auto& item : cases_) {
+      setDepthFromSubExpr(item.when);
+      setDepthFromSubExpr(item.then);
+    }
+  }
+
  private:
   explicit CaseExpression(ObjectPool* pool) : Expression(pool, Kind::kCase), isGeneric_(true) {}
 
   explicit CaseExpression(ObjectPool* pool, CaseList* cases, bool isGeneric)
       : Expression(pool, Kind::kCase), isGeneric_(isGeneric) {
     cases_ = cases->items();
+    setDepth();
   }
   void writeTo(Encoder& encoder) const override;
 

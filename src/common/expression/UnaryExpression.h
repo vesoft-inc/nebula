@@ -68,9 +68,13 @@ class UnaryExpression final : public Expression {
 
   void setOperand(Expression* expr) { operand_ = expr; }
 
+  void setDepth() override { setDepthFromSubExpr(operand_); }
+
  private:
   explicit UnaryExpression(ObjectPool* pool, Kind kind, Expression* operand = nullptr)
-      : Expression(pool, kind), operand_(operand) {}
+      : Expression(pool, kind), operand_(operand) {
+    setDepth();
+  }
 
   void writeTo(Encoder& encoder) const override;
   void resetFrom(Decoder& decoder) override;

@@ -42,11 +42,15 @@ class TypeCastingExpression final : public Expression {
 
   static bool validateTypeCast(Value::Type operandType, Value::Type type);
 
+  void setDepth() override { setDepthFromSubExpr(operand_); }
+
  private:
   explicit TypeCastingExpression(ObjectPool* pool,
                                  Value::Type vType = Value::Type::__EMPTY__,
                                  Expression* operand = nullptr)
-      : Expression(pool, Kind::kTypeCasting), vType_(vType), operand_(operand) {}
+      : Expression(pool, Kind::kTypeCasting), vType_(vType), operand_(operand) {
+    setDepth();
+  }
 
   void writeTo(Encoder& encoder) const override;
   void resetFrom(Decoder& decoder) override;

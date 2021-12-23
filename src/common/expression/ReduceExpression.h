@@ -66,6 +66,11 @@ class ReduceExpression final : public Expression {
 
   bool hasOriginString() const { return !originString_.empty(); }
 
+  void setDepth() override {
+    setDepthFromSubExpr(collection_);
+    setDepthFromSubExpr(mapping_);
+  }
+
  private:
   explicit ReduceExpression(ObjectPool* pool,
                             const std::string& accumulator = "",
@@ -78,7 +83,9 @@ class ReduceExpression final : public Expression {
         initial_(initial),
         innerVar_(innerVar),
         collection_(collection),
-        mapping_(mapping) {}
+        mapping_(mapping) {
+    setDepth();
+  }
 
   void writeTo(Encoder& encoder) const override;
   void resetFrom(Decoder& decoder) override;
