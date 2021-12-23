@@ -81,10 +81,10 @@ class GenericWorker final : public nebula::cpp::NonCopyable, public nebula::cpp:
    *          for the result of `task'
    */
   template <typename F, typename... Args>
-  auto addTask(F &&task, Args &&...args) ->
+  auto addTask(F &&task, Args &&... args) ->
       typename std::enable_if<std::is_void<ReturnType<F, Args...>>::value, UnitFutureType>::type;
   template <typename F, typename... Args>
-  auto addTask(F &&task, Args &&...args) ->
+  auto addTask(F &&task, Args &&... args) ->
       typename std::enable_if<!std::is_void<ReturnType<F, Args...>>::value,
                               FutureType<F, Args...>>::type;
 
@@ -97,10 +97,10 @@ class GenericWorker final : public nebula::cpp::NonCopyable, public nebula::cpp:
    *          for the result of `task'
    */
   template <typename F, typename... Args>
-  auto addDelayTask(size_t ms, F &&task, Args &&...args) ->
+  auto addDelayTask(size_t ms, F &&task, Args &&... args) ->
       typename std::enable_if<std::is_void<ReturnType<F, Args...>>::value, UnitFutureType>::type;
   template <typename F, typename... Args>
-  auto addDelayTask(size_t ms, F &&task, Args &&...args) ->
+  auto addDelayTask(size_t ms, F &&task, Args &&... args) ->
       typename std::enable_if<!std::is_void<ReturnType<F, Args...>>::value,
                               FutureType<F, Args...>>::type;
 
@@ -112,7 +112,7 @@ class GenericWorker final : public nebula::cpp::NonCopyable, public nebula::cpp:
    * @return  ID of the added task, unique for this worker
    */
   template <typename F, typename... Args>
-  uint64_t addRepeatTask(size_t ms, F &&task, Args &&...args);
+  uint64_t addRepeatTask(size_t ms, F &&task, Args &&... args);
 
   /**
    * To purge or deactivate a repeated task.
@@ -166,7 +166,7 @@ class GenericWorker final : public nebula::cpp::NonCopyable, public nebula::cpp:
 };
 
 template <typename F, typename... Args>
-auto GenericWorker::addTask(F &&f, Args &&...args) ->
+auto GenericWorker::addTask(F &&f, Args &&... args) ->
     typename std::enable_if<std::is_void<ReturnType<F, Args...>>::value, UnitFutureType>::type {
   auto promise = std::make_shared<folly::Promise<folly::Unit>>();
   auto task = std::make_shared<std::function<ReturnType<F, Args...>()>>(
@@ -188,7 +188,7 @@ auto GenericWorker::addTask(F &&f, Args &&...args) ->
 }
 
 template <typename F, typename... Args>
-auto GenericWorker::addTask(F &&f, Args &&...args) ->
+auto GenericWorker::addTask(F &&f, Args &&... args) ->
     typename std::enable_if<!std::is_void<ReturnType<F, Args...>>::value,
                             FutureType<F, Args...>>::type {
   auto promise = std::make_shared<folly::Promise<ReturnType<F, Args...>>>();
@@ -204,7 +204,7 @@ auto GenericWorker::addTask(F &&f, Args &&...args) ->
 }
 
 template <typename F, typename... Args>
-auto GenericWorker::addDelayTask(size_t ms, F &&f, Args &&...args) ->
+auto GenericWorker::addDelayTask(size_t ms, F &&f, Args &&... args) ->
     typename std::enable_if<std::is_void<ReturnType<F, Args...>>::value, UnitFutureType>::type {
   auto promise = std::make_shared<folly::Promise<folly::Unit>>();
   auto task = std::make_shared<std::function<ReturnType<F, Args...>()>>(
@@ -222,7 +222,7 @@ auto GenericWorker::addDelayTask(size_t ms, F &&f, Args &&...args) ->
 }
 
 template <typename F, typename... Args>
-auto GenericWorker::addDelayTask(size_t ms, F &&f, Args &&...args) ->
+auto GenericWorker::addDelayTask(size_t ms, F &&f, Args &&... args) ->
     typename std::enable_if<!std::is_void<ReturnType<F, Args...>>::value,
                             FutureType<F, Args...>>::type {
   auto promise = std::make_shared<folly::Promise<ReturnType<F, Args...>>>();
@@ -234,12 +234,12 @@ auto GenericWorker::addDelayTask(size_t ms, F &&f, Args &&...args) ->
 }
 
 template <typename F, typename... Args>
-uint64_t GenericWorker::addRepeatTask(size_t ms, F &&f, Args &&...args) {
+uint64_t GenericWorker::addRepeatTask(size_t ms, F &&f, Args &&... args) {
   return addTimerTask(ms, ms, std::forward<F>(f), std::forward<Args>(args)...);
 }
 
 template <typename F, typename... Args>
-uint64_t GenericWorker::addTimerTask(size_t delay, size_t interval, F &&f, Args &&...args) {
+uint64_t GenericWorker::addTimerTask(size_t delay, size_t interval, F &&f, Args &&... args) {
   auto timer = std::make_unique<Timer>(std::bind(std::forward<F>(f), std::forward<Args>(args)...));
   timer->delayMSec_ = delay;
   timer->intervalMSec_ = interval;

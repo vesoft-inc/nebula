@@ -21,7 +21,7 @@ class ExpressionParsingTest : public ::testing::Test {
 
  protected:
   template <typename T, typename... Args>
-  T *make(Args &&...args) {
+  T *make(Args &&... args) {
     return T::make(pool, std::forward<Args>(args)...);
   }
 
