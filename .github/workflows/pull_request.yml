@@ -59,7 +59,7 @@ jobs:
           - centos7
           - ubuntu2004
         compiler:
-          - gcc-9.2
+          - gcc-9.3
           - clang-10
         exclude:
           - os: centos7
@@ -91,21 +91,23 @@ jobs:
             centos7)
               # build with Release type
               cmake \
-                  -DCMAKE_CXX_COMPILER=$TOOLSET_CLANG_DIR/bin/g++ \
-                  -DCMAKE_C_COMPILER=$TOOLSET_CLANG_DIR/bin/gcc \
+                  -DCMAKE_CXX_COMPILER=$TOOLSET_GCC_DIR/bin/g++ \
+                  -DCMAKE_C_COMPILER=$TOOLSET_GCC_DIR/bin/gcc \
                   -DCMAKE_BUILD_TYPE=Release \
                   -DENABLE_TESTING=on \
+                  -GNinja \
                   -B build
               echo "::set-output name=j::10"
               ;;
             ubuntu2004)
               # build with Debug type
               cmake \
-                  -DCMAKE_CXX_COMPILER=$TOOLSET_CLANG_DIR/bin/g++ \
-                  -DCMAKE_C_COMPILER=$TOOLSET_CLANG_DIR/bin/gcc \
+                  -DCMAKE_CXX_COMPILER=$TOOLSET_GCC_DIR/bin/g++ \
+                  -DCMAKE_C_COMPILER=$TOOLSET_GCC_DIR/bin/gcc \
                   -DCMAKE_BUILD_TYPE=Debug \
                   -DENABLE_TESTING=on \
                   -DENABLE_COVERAGE=on \
+                  -GNinja \
                   -B build
               echo "::set-output name=j::10"
               ;;
@@ -119,6 +121,7 @@ jobs:
                 -DCMAKE_BUILD_TYPE=RelWithDebInfo \
                 -DENABLE_ASAN=on \
                 -DENABLE_TESTING=on \
+                -GNinja \
                 -B build
             echo "::set-output name=j::6"
             ;;
@@ -126,8 +129,9 @@ jobs:
       - name: Make
         run: |
           ccache -z
-          cmake --build build/ -j $(nproc)
+          ninja -j $(nproc)
           ccache -s
+        working-directory: build/
       - name: CTest
         env:
           ASAN_OPTIONS: fast_unwind_on_malloc=1
