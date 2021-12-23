@@ -95,7 +95,7 @@ Status InsertVerticesValidator::prepareVertices() {
     if (propSize_ != row->values().size()) {
       return Status::SemanticError("Column count doesn't match value count.");
     }
-    if (!ExpressionUtils::isEvaluableExpr(row->id())) {
+    if (!ExpressionUtils::isEvaluableExpr(row->id(), qctx_)) {
       LOG(ERROR) << "Wrong vid expression `" << row->id()->toString() << "\"";
       return Status::SemanticError("Wrong vid expression `%s'", row->id()->toString().c_str());
     }
@@ -105,7 +105,7 @@ Status InsertVerticesValidator::prepareVertices() {
 
     // check value expr
     for (auto &value : row->values()) {
-      if (!ExpressionUtils::isEvaluableExpr(value)) {
+      if (!ExpressionUtils::isEvaluableExpr(value, qctx_)) {
         LOG(ERROR) << "Insert wrong value: `" << value->toString() << "'.";
         return Status::SemanticError("Insert wrong value: `%s'.", value->toString().c_str());
       }
@@ -211,13 +211,13 @@ Status InsertEdgesValidator::prepareEdges() {
     if (propNames_.size() != row->values().size()) {
       return Status::SemanticError("Column count doesn't match value count.");
     }
-    if (!ExpressionUtils::isEvaluableExpr(row->srcid())) {
+    if (!ExpressionUtils::isEvaluableExpr(row->srcid(), qctx_)) {
       LOG(ERROR) << "Wrong src vid expression `" << row->srcid()->toString() << "\"";
       return Status::SemanticError("Wrong src vid expression `%s'",
                                    row->srcid()->toString().c_str());
     }
 
-    if (!ExpressionUtils::isEvaluableExpr(row->dstid())) {
+    if (!ExpressionUtils::isEvaluableExpr(row->dstid(), qctx_)) {
       LOG(ERROR) << "Wrong dst vid expression `" << row->dstid()->toString() << "\"";
       return Status::SemanticError("Wrong dst vid expression `%s'",
                                    row->dstid()->toString().c_str());
@@ -234,7 +234,7 @@ Status InsertEdgesValidator::prepareEdges() {
 
     // check value expr
     for (auto &value : row->values()) {
-      if (!ExpressionUtils::isEvaluableExpr(value)) {
+      if (!ExpressionUtils::isEvaluableExpr(value, qctx_)) {
         LOG(ERROR) << "Insert wrong value: `" << value->toString() << "'.";
         return Status::SemanticError("Insert wrong value: `%s'.", value->toString().c_str());
       }

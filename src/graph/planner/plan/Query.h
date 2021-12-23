@@ -35,7 +35,7 @@ class Explore : public SingleInputNode {
   bool dedup() const { return dedup_; }
 
   // Get the constant limit value
-  int64_t limit() const;
+  int64_t limit(QueryContext* qctx = nullptr) const;
 
   // Get the limit value in runtime
   int64_t limit(QueryExpressionContext& ctx) const {
@@ -796,7 +796,7 @@ class Limit final : public SingleInputNode {
   int64_t offset() const { return offset_; }
 
   // Get constant count value
-  int64_t count() const;
+  int64_t count(QueryContext* qctx = nullptr) const;
   // Get count in runtime
   int64_t count(QueryExpressionContext& ctx) const {
     if (count_ == nullptr) {

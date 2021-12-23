@@ -109,6 +109,8 @@ static constexpr size_t kCommentLengthLimit = 256;
     nebula::SchemaPropItem                 *create_schema_prop_item;
     nebula::SchemaPropList                 *alter_schema_prop_list;
     nebula::SchemaPropItem                 *alter_schema_prop_item;
+    nebula::IndexParamList                 *index_param_list;
+    nebula::IndexParamItem                 *index_param_item;
     nebula::OrderFactor                    *order_factor;
     nebula::OrderFactors                   *order_factors;
     nebula::meta::cpp2::ConfigModule        config_module;
@@ -169,7 +171,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 %token KW_NO KW_OVERWRITE KW_IN KW_DESCRIBE KW_DESC KW_SHOW KW_HOST KW_HOSTS KW_PART KW_PARTS KW_ADD
 %token KW_PARTITION_NUM KW_REPLICA_FACTOR KW_CHARSET KW_COLLATE KW_COLLATION KW_VID_TYPE
 %token KW_ATOMIC_EDGE
-%token KW_COMMENT
+%token KW_COMMENT KW_S2_MAX_LEVEL KW_S2_MAX_CELLS
 %token KW_DROP KW_REMOVE KW_SPACES KW_INGEST KW_INDEX KW_INDEXES
 %token KW_IF KW_NOT KW_EXISTS KW_WITH
 %token KW_BY KW_DOWNLOAD KW_HDFS KW_UUID KW_CONFIGS KW_FORCE
@@ -279,6 +281,8 @@ static constexpr size_t kCommentLengthLimit = 256;
 %type <create_schema_prop_item> create_schema_prop_item
 %type <alter_schema_prop_list> alter_schema_prop_list
 %type <alter_schema_prop_item> alter_schema_prop_item
+%type <index_param_list> opt_with_index_param_list index_param_list
+%type <index_param_item> index_param_item
 %type <order_factor> order_factor
 %type <order_factors> order_factors
 %type <config_module> config_module_enum
@@ -329,7 +333,7 @@ static constexpr size_t kCommentLengthLimit = 256;
 
 %type <intval> legal_integer unary_integer rank port job_concurrency
 
-%type <strval>         opt_comment_prop_assignment comment_prop_assignment comment_prop
+%type <strval>         comment_prop_assignment comment_prop opt_comment_prop
 %type <col_property>   column_property
 %type <col_properties> column_properties
 %type <colspec> column_spec
@@ -525,6 +529,8 @@ unreserved_keyword
     | KW_RESET              { $$ = new std::string("reset"); }
     | KW_PLAN               { $$ = new std::string("plan"); }
     | KW_COMMENT            { $$ = new std::string("comment"); }
+    | KW_S2_MAX_LEVEL       { $$ = new std::string("s2_max_level"); }
+    | KW_S2_MAX_CELLS       { $$ = new std::string("s2_max_cells"); }
     | KW_SESSION            { $$ = new std::string("session"); }
     | KW_SESSIONS           { $$ = new std::string("sessions"); }
     | KW_SAMPLE             { $$ = new std::string("sample"); }
@@ -947,7 +953,12 @@ vertex_prop_expression
 
 var_prop_expression
     : VARIABLE DOT name_label {
-        $$ = VariablePropertyExpression::make(qctx->objPool(), *$1, *$3);
+        if (!qctx->existParameter(*$1)) {
+            $$ = VariablePropertyExpression::make(qctx->objPool(), *$1, *$3);
+        } else {
+            $$ = AttributeExpression::make(qctx->objPool(),
+             VariableExpression::make(qctx->objPool(),*$1), ConstantExpression::make(qctx->objPool(),*$3));
+        }
         delete $1;
         delete $3;
     }
@@ -1306,6 +1317,9 @@ truncate_clause
         $$ = nullptr;
     }
     | KW_SAMPLE expression {
+        if(graph::ExpressionUtils::findAny($2, {Expression::Kind::kVar})) {
+            throw nebula::GraphParser::syntax_error(@2, "Parameter is not supported in sample clause");
+        }
         $$ = new TruncateClause($2, true);
     }
     | KW_LIMIT expression {
@@ -1336,6 +1350,9 @@ from_clause
         $$ = new FromClause($2);
     }
     | KW_FROM vid_ref_expression {
+        if(graph::ExpressionUtils::findAny($2,{Expression::Kind::kVar})) {
+            throw nebula::GraphParser::syntax_error(@2, "Parameter is not supported in from clause");
+        }
         $$ = new FromClause($2);
     }
     ;
@@ -1365,6 +1382,15 @@ vid
         $$ = ConstantExpression::make(qctx->objPool(), *$1);
         delete $1;
     }
+    | VARIABLE {
+        $$ = nullptr;
+        delete($1);
+        if (qctx->existParameter(*$1)) {
+            throw nebula::GraphParser::syntax_error(@1, "Parameter is not supported in vid");
+        } else {
+            throw nebula::GraphParser::syntax_error(@1, "Variable is not supported in vid");
+        } 
+    }
     ;
 
 unary_integer
@@ -1384,6 +1410,9 @@ vid_ref_expression
         $$ = $1;
     }
     | var_prop_expression {
+        if(graph::ExpressionUtils::findAny($1,{Expression::Kind::kVar})) {
+            throw nebula::GraphParser::syntax_error(@1, "Parameter is not supported in vid");
+        }
         $$ = $1;
     }
     ;
@@ -1516,13 +1545,13 @@ yield_column
         delete $3;
     }
     | expression {
-        if (graph::ExpressionUtils::checkVarExprIfExist($1)) {
+        if (graph::ExpressionUtils::checkVarExprIfExist($1, qctx)) {
             throw nebula::GraphParser::syntax_error(@1, "Direct output of variable is prohibited");
         }
         $$ = new YieldColumn($1);
     }
     | expression KW_AS name_label {
-        if (graph::ExpressionUtils::checkVarExprIfExist($1)) {
+        if (graph::ExpressionUtils::checkVarExprIfExist($1, qctx)) {
             delete $3;
             throw nebula::GraphParser::syntax_error(@1, "Direct output of variable is prohibited");
         }
@@ -2242,6 +2271,9 @@ to_clause
         $$ = new ToClause($2);
     }
     | KW_TO vid_ref_expression {
+        if(graph::ExpressionUtils::findAny($2,{Expression::Kind::kVar})) {
+            throw nebula::GraphParser::syntax_error(@2, "Parameter is not supported in to clause");
+        }
         $$ = new ToClause($2);
     }
     ;
@@ -2594,14 +2626,14 @@ opt_index_field_list
     ;
 
 create_tag_index_sentence
-    : KW_CREATE KW_TAG KW_INDEX opt_if_not_exists name_label KW_ON name_label L_PAREN opt_index_field_list R_PAREN opt_comment_prop_assignment {
-        $$ = new CreateTagIndexSentence($5, $7, $9, $4, $11);
+    : KW_CREATE KW_TAG KW_INDEX opt_if_not_exists name_label KW_ON name_label L_PAREN opt_index_field_list R_PAREN opt_with_index_param_list opt_comment_prop {
+        $$ = new CreateTagIndexSentence($5, $7, $9, $4, $11, $12);
     }
     ;
 
 create_edge_index_sentence
-    : KW_CREATE KW_EDGE KW_INDEX opt_if_not_exists name_label KW_ON name_label L_PAREN opt_index_field_list R_PAREN opt_comment_prop_assignment {
-        $$ = new CreateEdgeIndexSentence($5, $7, $9, $4, $11);
+    : KW_CREATE KW_EDGE KW_INDEX opt_if_not_exists name_label KW_ON name_label L_PAREN opt_index_field_list R_PAREN opt_with_index_param_list opt_comment_prop {
+        $$ = new CreateEdgeIndexSentence($5, $7, $9, $4, $11, $12);
     }
     ;
 
@@ -2617,15 +2649,6 @@ create_fulltext_index_sentence
 drop_fulltext_index_sentence
     : KW_DROP KW_FULLTEXT KW_INDEX name_label {
         $$ = new DropFTIndexSentence($4);
-    }
-    ;
-
-opt_comment_prop_assignment
-    : %empty {
-        $$ = nullptr;
-    }
-    | comment_prop_assignment {
-        $$ = $1;
     }
     ;
 
@@ -2656,6 +2679,51 @@ comment_prop
         $$ = $2;
     }
     ;
+
+opt_comment_prop
+    : %empty {
+        $$ = nullptr;
+    }
+    | comment_prop {
+        $$ = $1;
+    }
+    ;
+
+opt_with_index_param_list
+    : %empty {
+        $$ = nullptr;
+    }
+    | KW_WITH L_PAREN index_param_list R_PAREN {
+        $$ = $3;
+    }
+    ;
+
+index_param_list
+    : index_param_item {
+        $$ = new IndexParamList();
+        $$->add($1);
+    }
+    | index_param_list COMMA index_param_item {
+        $$ = $1;
+        $$->add($3);
+    }
+    ;
+
+index_param_item
+    : KW_S2_MAX_LEVEL ASSIGN legal_integer {
+        if ($3 < 0 || $3 > 30) {
+            throw nebula::GraphParser::syntax_error(@3, "'s2_max_level' value must be between 0 and 30 inclusive");
+        }
+        $$ = new IndexParamItem(IndexParamItem::S2_MAX_LEVEL, $3);
+    }
+    | KW_S2_MAX_CELLS ASSIGN legal_integer {
+        if ($3 < 1 || $3 > 32) {
+            throw nebula::GraphParser::syntax_error(@3, "'s2_max_cells' value must be between 1 and 32 inclusive");
+        }
+        $$ = new IndexParamItem(IndexParamItem::S2_MAX_CELLS, $3);
+    }
+    ;
+
 
 drop_tag_index_sentence
     : KW_DROP KW_TAG KW_INDEX opt_if_exists name_label {
@@ -2831,7 +2899,11 @@ match_sentences
 
 assignment_sentence
     : VARIABLE ASSIGN set_sentence {
-        $$ = new AssignmentSentence($1, $3);
+        if (qctx->existParameter(*$1)) {
+            throw nebula::GraphParser::syntax_error(@1, "Variable definition conflicts with a parameter");
+        } else {
+            $$ = new AssignmentSentence($1, $3);
+        }
     }
     ;
 
