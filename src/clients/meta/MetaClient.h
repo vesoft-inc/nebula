@@ -790,7 +790,8 @@ class MetaClient {
 
   // Only report dir info once when started
   bool dirInfoReported_ = false;
-  struct ThreadLocalInfo {
+
+  struct MetaData {
     int64_t localLastUpdateTime_{-2};
     LocalCache localCache_;
     SpaceNameIdMap spaceIndexByName_;
@@ -806,9 +807,12 @@ class MetaClient {
     std::vector<HostAddr> storageHosts_;
     FTIndexMap fulltextIndexMap_;
     UserPasswordMap userPasswordMap_;
-  };
 
-  const ThreadLocalInfo& getThreadLocalInfo();
+    SessionMap sessionMap_;
+    folly::F14FastSet<std::pair<SessionID, ExecutionPlanID>> killedPlans_;
+
+    ServiceClientsList serviceClientList_;
+  };
 
   void addSchemaField(NebulaSchemaProvider* schema, const cpp2::ColumnDef& col, ObjectPool* pool);
 
@@ -837,7 +841,6 @@ class MetaClient {
   ServiceClientsList serviceClientList_;
   FTIndexMap fulltextIndexMap_;
 
-  mutable folly::RWSpinLock localCacheLock_;
   // The listener_ is the NebulaStore
   MetaChangedListener* listener_{nullptr};
   // The lock used to protect listener_
@@ -855,8 +858,9 @@ class MetaClient {
   MetaClientOptions options_;
   std::vector<HostAddr> storageHosts_;
   int64_t heartbeatTime_;
-  std::atomic<SessionMap*> sessionMap_;
-  std::atomic<folly::F14FastSet<std::pair<SessionID, ExecutionPlanID>>*> killedPlans_;
+  SessionMap sessionMap_;
+  folly::F14FastSet<std::pair<SessionID, ExecutionPlanID>> killedPlans_;
+  std::atomic<MetaData*> metadata_;
 };
 
 }  // namespace meta
