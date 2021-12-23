@@ -244,7 +244,6 @@ void DeduceTypeVisitor::visit(TypeCastingExpression *expr) {
 void DeduceTypeVisitor::visit(LabelExpression *) { type_ = Value::Type::__EMPTY__; }
 
 void DeduceTypeVisitor::visit(ArithmeticExpression *expr) {
-  DLOG(ERROR) << "DEBUG POINT: visit ArithmeticExpression";
   switch (expr->kind()) {
     case Expression::Kind::kAdd: {
       DETECT_BIEXPR_TYPE(+);
@@ -434,7 +433,6 @@ void DeduceTypeVisitor::visit(LabelAttributeExpression *expr) {
 }
 
 void DeduceTypeVisitor::visit(FunctionCallExpression *expr) {
-  DLOG(ERROR) << "DEBUG POINT: visit FunctionCallExpression";
   std::vector<Value::Type> argsTypeList;
   argsTypeList.reserve(expr->args()->numArgs());
   for (auto &arg : expr->args()->args()) {
@@ -442,7 +440,6 @@ void DeduceTypeVisitor::visit(FunctionCallExpression *expr) {
     if (!ok()) return;
     argsTypeList.push_back(type_);
   }
-  DLOG(ERROR) << "DEBUG POINT: visit FunctionCallExpression arguments ok.";
   auto funName = expr->name();
   if (funName == "id" || funName == "src" || funName == "dst") {
     type_ = vidType_;
@@ -481,7 +478,6 @@ void DeduceTypeVisitor::visit(ListExpression *) { type_ = Value::Type::LIST; }
 void DeduceTypeVisitor::visit(SetExpression *) { type_ = Value::Type::SET; }
 
 void DeduceTypeVisitor::visit(MapExpression *) {
-  DLOG(ERROR) << "DEBUG POINT: visit MapExpression";
   type_ = Value::Type::MAP;
 }
 

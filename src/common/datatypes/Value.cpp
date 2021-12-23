@@ -2203,7 +2203,6 @@ Value operator+(const Value& lhs, const Value& rhs) {
           return ret;
         }
         case Value::Type::DURATION: {
-          DLOG(ERROR) << "DEBUG POINT: date + duration.";
           return lhs.getDate() + rhs.getDuration();
         }
         default: {
