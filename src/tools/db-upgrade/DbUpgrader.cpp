@@ -923,7 +923,11 @@ void UpgraderSpace::runPartV3() {
                    << s.code();
       }
       for (auto item : data) {
-        sst_file_writer.Put(item.first, item.second);
+        s = sst_file_writer.Put(item.first, item.second);
+        if (!s.ok()) {
+          LOG(FATAL) << "Faild upgrade V3 of space " << spaceId_ << ", part " << partId << ":"
+                     << s.code();
+        }
       }
       s = sst_file_writer.Finish();
       if (!s.ok()) {
@@ -938,6 +942,7 @@ void UpgraderSpace::runPartV3() {
     while (iter && iter->valid()) {
       auto vertex = NebulaKeyUtilsV3::getVertexKey(iter->key());
       if (vertex == lastVertexKey) {
+        iter->next();
         continue;
       }
       data.emplace_back(vertex, "");
@@ -946,6 +951,7 @@ void UpgraderSpace::runPartV3() {
         write_sst(data);
         data.clear();
       }
+      iter->next();
     }
     if (!data.empty()) {
       write_sst(data);
