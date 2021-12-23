@@ -24,7 +24,8 @@ folly::Future<Status> ScanEdgesExecutor::scanEdges() {
   StorageClient *client = qctx()->getStorageClient();
   auto *se = asNode<ScanEdges>(node());
   if (se->limit() < 0) {
-    return Status::Error("Scan edges must specify limit number.");
+    return Status::Error(
+        "Scan vertices or edges need to specify a limit number, or limit number can't push down.");
   }
 
   time::Duration scanEdgesTime;
