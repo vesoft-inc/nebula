@@ -11,6 +11,8 @@
 #include "common/stats/StatsManager.h"
 #include "meta/processors/BaseProcessor.h"
 
+DECLARE_bool(hosts_whitelist_enabled);
+
 namespace nebula {
 namespace meta {
 

@@ -2677,6 +2677,7 @@ TEST(ProcessorTest, TagIdAndEdgeTypeInSpaceRangeTest) {
 }
 
 TEST(ProcessorTest, HostsTest) {
+  FLAGS_hosts_whitelist_enabled = false;
   fs::TempDir rootPath("/tmp/HostsTest.XXXXXX");
   auto kv = MockCluster::initMetaKV(rootPath.path());
   {
@@ -2878,6 +2879,7 @@ TEST(ProcessorTest, HostsTest) {
 }
 
 TEST(ProcessorTest, AddHostsIntoNewZoneTest) {
+  FLAGS_hosts_whitelist_enabled = false;
   fs::TempDir rootPath("/tmp/AddHostsIntoZoneTest.XXXXXX");
   auto kv = MockCluster::initMetaKV(rootPath.path());
   {
@@ -2979,6 +2981,7 @@ TEST(ProcessorTest, AddHostsIntoNewZoneTest) {
 }
 
 TEST(ProcessorTest, AddHostsIntoZoneTest) {
+  FLAGS_hosts_whitelist_enabled = false;
   fs::TempDir rootPath("/tmp/AddHostsIntoZoneTest.XXXXXX");
   auto kv = MockCluster::initMetaKV(rootPath.path());
   {
@@ -3149,6 +3152,7 @@ TEST(ProcessorTest, AddHostsIntoZoneTest) {
 }
 
 TEST(ProcessorTest, DropHostsTest) {
+  FLAGS_hosts_whitelist_enabled = false;
   fs::TempDir rootPath("/tmp/DropHostsTest.XXXXXX");
   auto kv = MockCluster::initMetaKV(rootPath.path());
   {
