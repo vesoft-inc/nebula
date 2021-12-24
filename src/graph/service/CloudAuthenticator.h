@@ -17,7 +17,7 @@ class CloudAuthenticator final : public Authenticator {
  public:
   explicit CloudAuthenticator(meta::MetaClient* client);
 
-  bool auth(const std::string& user, const std::string& password) override;
+  Status auth(const std::string& user, const std::string& password) override;
 
  private:
   meta::MetaClient* metaClient_;

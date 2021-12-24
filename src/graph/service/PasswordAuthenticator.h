@@ -16,10 +16,12 @@ class PasswordAuthenticator final : public Authenticator {
  public:
   explicit PasswordAuthenticator(meta::MetaClient* client);
 
-  bool auth(const std::string& user, const std::string& password) override;
+  Status auth(const std::string& user, const std::string& password) override;
 
  private:
   meta::MetaClient* metaClient_;
+  uint32 maxFailedLoginAttempts_ = 0;
+  uint32 passwordLocalTime_ = 0;
 };
 
 }  // namespace graph

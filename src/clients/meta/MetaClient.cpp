@@ -37,6 +37,13 @@ DEFINE_int32(meta_client_retry_interval_secs, 1, "meta client sleep interval bet
 DEFINE_int32(meta_client_timeout_ms, 60 * 1000, "meta client timeout");
 DEFINE_string(cluster_id_path, "cluster.id", "file path saved clusterId");
 DEFINE_int32(check_plan_killed_frequency, 8, "check plan killed every 1<<n times");
+DEFINE_uint32(failed_login_attempts,
+              5,
+              "how many consecutive incorrect passwords cause the account to become locked");
+DEFINE_uint32(password_lock_time,
+              5,
+              "how long to lock the account after too many consecutive login attempts provide an "
+              "incorrect password.");
 
 namespace nebula {
 namespace meta {
@@ -152,6 +159,7 @@ bool MetaClient::loadUsersAndRoles() {
   }
   decltype(userRolesMap_) userRolesMap;
   decltype(userPasswordMap_) userPasswordMap;
+  decltype(userPasswordAttemptsRemain_) userPasswordAttemptsRemain;
   for (auto& user : userRoleRet.value()) {
     auto rolesRet = getUserRoles(user.first).get();
     if (!rolesRet.ok()) {
@@ -160,11 +168,13 @@ bool MetaClient::loadUsersAndRoles() {
     }
     userRolesMap[user.first] = rolesRet.value();
     userPasswordMap[user.first] = user.second;
+    userPasswordAttemptsRemain[user.first] = FLAGS_failed_login_attempts;
   }
   {
     folly::RWSpinLock::WriteHolder holder(localCacheLock_);
     userRolesMap_ = std::move(userRolesMap);
     userPasswordMap_ = std::move(userPasswordMap);
+    userPasswordAttemptsRemain_ = std::move(userPasswordAttemptsRemain);
   }
   return true;
 }
@@ -575,6 +585,7 @@ const MetaClient::ThreadLocalInfo& MetaClient::getThreadLocalInfo() {
     threadLocalInfo.storageHosts_ = storageHosts_;
     threadLocalInfo.fulltextIndexMap_ = fulltextIndexMap_;
     threadLocalInfo.userPasswordMap_ = userPasswordMap_;
+    threadLocalInfo.userPasswordAttemptsRemain_ = userPasswordAttemptsRemain_;
   }
 
   return threadLocalInfo;
@@ -1369,6 +1380,8 @@ folly::Future<StatusOr<bool>> MetaClient::multiPut(
 
   cpp2::MultiPutReq req;
   std::vector<nebula::KeyValue> data;
+  data.reserve(pairs.size());
+
   for (auto& element : pairs) {
     data.emplace_back(std::move(element));
   }
@@ -2353,16 +2366,32 @@ std::vector<cpp2::RoleItem> MetaClient::getRolesByUserFromCache(const std::strin
   return iter->second;
 }
 
-bool MetaClient::authCheckFromCache(const std::string& account, const std::string& password) {
+Status MetaClient::authCheckFromCache(const std::string& account, const std::string& password) {
   if (!ready_) {
-    return false;
+    return Status::Error("Meta Service not ready");
   }
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
   auto iter = threadLocalInfo.userPasswordMap_.find(account);
   if (iter == threadLocalInfo.userPasswordMap_.end()) {
-    return false;
+    return Status::Error("User not exist");
   }
-  return iter->second == password;
+  auto passwordAttemtRemain =
+      const_cast<ThreadLocalInfo&>(threadLocalInfo).userPasswordAttemptsRemain_[account];
+
+  if (iter->second == password) {
+    return Status::OK();
+  }
+  // If the password is not correct and passwordAttemtRemain > 0,
+  // Allow another trial
+  if (passwordAttemtRemain > 0) {
+    auto remainAttemps =
+        --const_cast<ThreadLocalInfo&>(threadLocalInfo).userPasswordAttemptsRemain_[account];
+    LOG(ERROR) << "Invalid password, remaining attempts: " << remainAttemps;
+    return Status::Error("Invalid password, remaining attempts: %d", remainAttemps);
+  } else {
+    // If the remaining attemps is 0, failed to authenticate
+    return Status::Error("Invalid password");
+  }
 }
 
 bool MetaClient::checkShadowAccountFromCache(const std::string& account) {

@@ -14,6 +14,7 @@
 #include <gtest/gtest_prod.h>
 
 #include <atomic>
+#include <cstdint>
 
 #include "common/base/Base.h"
 #include "common/base/ObjectPool.h"
@@ -143,6 +144,8 @@ using IndexStatus = std::tuple<std::string, std::string, std::string>;
 using UserRolesMap = std::unordered_map<std::string, std::vector<cpp2::RoleItem>>;
 // get user password by account
 using UserPasswordMap = std::unordered_map<std::string, std::string>;
+// Mapping of user name and remaining wrong password attempts
+using UserPasswordAttemptsRemain = std::unordered_map<std::string, uint32>;
 
 // config cache, get config via module and name
 using MetaConfigMap =
@@ -593,7 +596,7 @@ class MetaClient {
 
   std::vector<cpp2::RoleItem> getRolesByUserFromCache(const std::string& user);
 
-  bool authCheckFromCache(const std::string& account, const std::string& password);
+  Status authCheckFromCache(const std::string& account, const std::string& password);
 
   StatusOr<TermID> getTermFromCache(GraphSpaceID spaceId, PartitionID);
 
@@ -794,6 +797,7 @@ class MetaClient {
     std::vector<HostAddr> storageHosts_;
     FTIndexMap fulltextIndexMap_;
     UserPasswordMap userPasswordMap_;
+    UserPasswordAttemptsRemain userPasswordAttemptsRemain_;
   };
 
   const ThreadLocalInfo& getThreadLocalInfo();
@@ -815,6 +819,7 @@ class MetaClient {
 
   UserRolesMap userRolesMap_;
   UserPasswordMap userPasswordMap_;
+  UserPasswordAttemptsRemain userPasswordAttemptsRemain_;
 
   NameIndexMap tagNameIndexMap_;
   NameIndexMap edgeNameIndexMap_;

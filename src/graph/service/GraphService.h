@@ -52,7 +52,7 @@ class GraphService final : public cpp2::GraphServiceSvIf {
       const cpp2::VerifyClientVersionReq& req) override;
 
  private:
-  bool auth(const std::string& username, const std::string& password);
+  Status auth(const std::string& username, const std::string& password);
 
   std::unique_ptr<GraphSessionManager> sessionManager_;
   std::unique_ptr<QueryEngine> queryEngine_;
