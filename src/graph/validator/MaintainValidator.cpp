@@ -183,6 +183,7 @@ Status CreateFunctionValidator::validateImpl() {
   // hehe
   auto funcSource = functionSource.getSource();
 
+  bool hasStringParam = false;
   std::vector<WasmFunctionParamType> inParam;
   for (auto functionParam : functionParams) {
     switch (functionParam->type()) {
@@ -196,7 +197,14 @@ Status CreateFunctionValidator::validateImpl() {
         inParam.push_back(WasmFunctionParamType::FLOAT);
         break;
       case meta::cpp2::PropertyType::STRING:
-        inParam.push_back(WasmFunctionParamType::STRING);
+        // hackathon note: string param must be front at all other type
+        if(inParam.empty()){
+          hasStringParam = true;
+          inParam.push_back(WasmFunctionParamType::STRING);
+        }else{
+          LOG(ERROR) << "If use STRING param, param only one";
+          return Status::Error("If use STRING param, param only one");
+        }
         break;
       default:
         LOG(ERROR) << "Function Params Unknown type: ";
@@ -218,6 +226,11 @@ Status CreateFunctionValidator::validateImpl() {
       outParam = WasmFunctionParamType::STRING;
       break;
     case meta::cpp2::PropertyType::FIXED_STRING:
+      // hackathon note: If you use STRING type only has one return
+      if(hasStringParam){
+        LOG(ERROR) << "If you use STRING type only has one return";
+        return Status::Error("If you use STRING type only has one return");
+      }
       outParam = WasmFunctionParamType::LIST;
       break;
     default:
@@ -227,6 +240,11 @@ Status CreateFunctionValidator::validateImpl() {
   WasmFunctionManager &wasmFunctionManager = WasmFunctionManager::getInstance();
   auto isSuccess = false;
   if (funcType == "WAT") {
+    // hackathon note: only wasmedge support string type
+    if(hasStringParam){
+      LOG(ERROR) << "Only Wasmedge support string type";
+      return Status::Error("Only Wasmedge support string type");
+    }
     std::string prefix1 = "wat://";
     std::string prefix2 = "WAT://";
     std::string watBase64Str = funcSource.substr(prefix1.length());

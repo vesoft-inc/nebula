@@ -415,24 +415,9 @@ std::unordered_map<std::string, std::vector<TypeSignature>> FunctionManager::typ
     {"udf",
      {
          TypeSignature({Value::Type::STRING, Value::Type::LIST}, Value::Type::LIST),
-     }},
-    {"wasm",  // wasm function,params([Function Name]  [Function Params])
-     {
-         // return LIST
-         TypeSignature({Value::Type::STRING, Value::Type::LIST}, Value::Type::LIST),
-     }},
-    {"create_wasm",  // wasm function,params([Function Name]  [Function Handler] [Function
-                     // Content(TODO://base64)])
-     {
-         //  return BOOL
-         TypeSignature({Value::Type::STRING, Value::Type::STRING, Value::Type::STRING},
-                       Value::Type::BOOL),
-     }},
-    {"delete_wasm",  // wasm function,params([Function Name]  [Function Handler] [Function
-                     // Content(TODO://base64)])
-     {
-         //  return BOOL
-         TypeSignature({Value::Type::STRING}, Value::Type::BOOL),
+         TypeSignature({Value::Type::STRING, Value::Type::LIST}, Value::Type::STRING),
+         TypeSignature({Value::Type::STRING, Value::Type::LIST}, Value::Type::INT),
+         TypeSignature({Value::Type::STRING, Value::Type::LIST}, Value::Type::FLOAT),
      }},
 };
 
@@ -469,64 +454,6 @@ StatusOr<Value::Type> FunctionManager::getReturnType(const std::string &funcName
 
 FunctionManager::FunctionManager() {
   {
-    auto &attr = functions_["create_wasm"];
-    attr.minArity_ = 1;
-    attr.maxArity_ = 3;
-    attr.isPure_ = false;
-    // begin wasm call
-    attr.body_ = [](const auto &args) -> Value {
-      if (!args[0].get().isStr()) {
-        return Value::kNullBadType;
-      }
-      if (!args[1].get().isStr()) {
-        return Value::kNullBadType;
-      }
-      if (!args[2].get().isStr()) {
-        return Value::kNullBadType;
-      }
-      auto wasmFunctionName = args[0].get().getStr();
-      auto wasmFunctionHandler = args[1].get().getStr();
-      auto watStr = args[2].get().getStr();
-      //      WasmFunctionManager&  wasmFunctionManager = WasmFunctionManager::getInstance();
-      //      wasmFunctionManager.RegisterFunction(wasmFunctionName,wasmFunctionHandler,watStr);
-      return true;
-    };
-  }
-  {
-    auto &attr = functions_["delete_wasm"];
-    attr.minArity_ = 1;
-    attr.maxArity_ = 2;
-    attr.isPure_ = false;
-    // begin wasm call
-    attr.body_ = [](const auto &args) -> Value {
-      if (!args[0].get().isStr()) {
-        return Value::kNullBadType;
-      }
-      auto wasmFunctionName = args[0].get().getStr();
-      //      WasmFunctionManager&  wasmFunctionManager = WasmFunctionManager::getInstance();
-      //      wasmFunctionManager.DeleteFunction(wasmFunctionName);
-      return true;
-    };
-  }
-  {
-    auto &attr = functions_["wasm"];
-    attr.minArity_ = 1;
-    attr.maxArity_ = 999;
-    attr.isPure_ = false;
-    // begin wasm call
-    attr.body_ = [](const auto &args) -> Value {
-      if (!args[0].get().isStr()) {
-        return Value::kNullBadType;
-      }
-      auto wasmFunctionName = args[0].get().getStr();
-      auto &params = args[1].get().getList();
-      WasmFunctionManager &wasmFunctionManager = WasmFunctionManager::getInstance();
-      auto wasmRuntimeResult =
-          wasmFunctionManager.runWithNebulaDataHandle(wasmFunctionName, params);
-      return wasmRuntimeResult;
-    };
-  }
-  {
     auto &attr = functions_["udf"];
     attr.minArity_ = 1;
     attr.maxArity_ = 999;
@@ -541,12 +468,28 @@ FunctionManager::FunctionManager() {
       auto &udfParams = args[1].get().getList();
 
       WasmFunctionManager &wasmFunctionManager = WasmFunctionManager::getInstance();
-      auto udfResult = wasmFunctionManager.runWithNebulaDataHandle(udfName, udfParams);
-      if (udfResult.empty()) {
-        // cannot find udf function
+      if (!wasmFunctionManager.existFunction(udfName)) {
         return Value::kNullBadData;
       }
-      return udfResult;
+      auto udfResult = wasmFunctionManager.runWithNebulaDataHandle(udfName, udfParams);
+      if (udfResult.empty()) {
+        // cannot find udf function or cal error
+        return Value::kNullBadData;
+      }
+      auto returnType = wasmFunctionManager.getFunctionReturnType(udfName);
+      if (returnType == WasmFunctionParamType::INT32) {
+        return udfResult[0].getInt();
+      } else if (returnType == WasmFunctionParamType::INT64) {
+        return udfResult[0].getInt();
+      } else if (returnType == WasmFunctionParamType::FLOAT) {
+        return udfResult[0].getFloat();
+      } else if (returnType == WasmFunctionParamType::LIST) {
+        return udfResult;
+      } else if (returnType == WasmFunctionParamType::STRING) {
+        return udfResult[0].getStr();
+      } else {
+        return Value::kNullBadData;
+      }
     };
   }
   {
