@@ -127,12 +127,10 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClientBase<ClientType>::c
   auto cache = std::make_unique<nebula::graph::StorageClientCache>();
 
   for (auto& req : requests) {
-    auto cacheResp = cache->getCacheValue<Request, Response>(req.second);
+    auto cacheResp = cache->getCacheValue<Response, Request>(req.second);
     if (cacheResp.ok()) {
-      // if (std::is_same<Response, GetNeighborsResponse>::value) {
       context->resp.addResponse(std::move(cacheResp.value()));
       continue;
-      // }
     }
     auto& host = req.first;
     auto spaceId = req.second.get_space_id();
@@ -181,9 +179,9 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClientBase<ClientType>::c
             auto latency = result.get_latency_in_us();
             context->resp.setLatency(host, latency, time::WallClock::fastNowInMicroSec() - start);
 
+            // (TODO) insert response into graph cache
             // Keep the response
             context->resp.addResponse(std::move(resp));
-            // insert response into graph cache
           })
           .thenError(folly::tag_t<TransportException>{},
                      [this, context, host, spaceId](TransportException&& ex) {

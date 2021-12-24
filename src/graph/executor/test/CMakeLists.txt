@@ -8,7 +8,6 @@ SET(EXEC_QUERY_TEST_OBJS
     $<TARGET_OBJECTS:process_obj>
     $<TARGET_OBJECTS:graph_thrift_obj>
     $<TARGET_OBJECTS:storage_client_base_obj>
-    $<TARGET_OBJECTS:storage_client_obj>
     $<TARGET_OBJECTS:storage_thrift_obj>
     $<TARGET_OBJECTS:meta_client_obj>
     $<TARGET_OBJECTS:stats_obj>
