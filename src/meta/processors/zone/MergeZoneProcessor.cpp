@@ -151,7 +151,6 @@ void MergeZoneProcessor::process(const cpp2::MergeZoneReq& req) {
     for (auto& zone : zones) {
       auto it = std::find(spaceZones.begin(), spaceZones.end(), zone);
       if (it != spaceZones.end()) {
-        LOG(INFO) << "REMOVE ZONE " << zone;
         replacement = true;
         spaceZones.erase(it);
       }

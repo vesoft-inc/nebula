@@ -28,7 +28,7 @@ StatusOr<SubPlan> ScanSeek::transformEdge(EdgeContext *edgeCtx) {
 bool ScanSeek::matchNode(NodeContext *nodeCtx) {
   auto &node = *nodeCtx->info;
   // only require the tag
-  if (node.tids.size() == 0) {
+  if (node.tids.empty()) {
     // empty labels means all labels
     const auto *qctx = nodeCtx->matchClauseCtx->qctx;
     auto allLabels = qctx->schemaMng()->getAllTags(nodeCtx->matchClauseCtx->space.id);
