@@ -145,7 +145,7 @@ std::string ListComprehensionExpression::toString() const {
   buf += "[";
   buf += innerVar_;
   buf += " IN ";
-  buf += collection_->toString();
+  buf += collection_ ? collection_->toString() : "";
   if (hasFilter()) {
     buf += " WHERE ";
     buf += filter_->toString();

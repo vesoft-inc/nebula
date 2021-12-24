@@ -282,7 +282,9 @@ void StatsManager::addValue(const CounterId& id, VT value) {
 }
 
 // static
-void StatsManager::decValue(const CounterId& id, VT value) { addValue(id, -value); }
+void StatsManager::decValue(const CounterId& id, VT value) {
+  addValue(id, -value);
+}
 
 // static
 bool StatsManager::strToPct(folly::StringPiece part, double& pct) {
