@@ -7,6 +7,8 @@
 
 namespace nebula {
 
-void initMetaStats() { initKVStats(); }
+void initMetaStats() {
+  initKVStats();
+}
 
 }  // namespace nebula
