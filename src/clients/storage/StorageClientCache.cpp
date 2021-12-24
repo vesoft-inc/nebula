@@ -79,8 +79,8 @@ Status StorageClientCache::buildEdgeContext(const TraverseSpec& req) {
   return Status::OK();
 }
 
-template <class Request>
-StatusOr<GetNeighborsResponse> StorageClientCache::getCacheValue(const Request& req) {
+template <class Request, class Response>
+StatusOr<Response> StorageClientCache::getCacheValue(const Request& req) {
   if (!std::is_same<Request, GetNeighborsRequest>::value) {
     return Status::Error("Not GetNeighborsRequest");
   }
@@ -127,7 +127,7 @@ StatusOr<GetNeighborsResponse> StorageClientCache::getCacheValue(const Request& 
       resultDataSet_.rows.emplace_back(std::move(row));
     }
   }
-  GetNeighborsResponse resp;
+  Response resp;
   resp.vertices_ref() = std::move(resultDataSet_);
   return resp;
 }

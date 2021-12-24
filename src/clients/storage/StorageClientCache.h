@@ -20,8 +20,8 @@ class StorageClientCache {
  public:
   StorageClientCache();
 
-  template <class Request>
-  StatusOr<GetNeighborsResponse> getCacheValue(const Request& req);
+  template <class Request, class Response>
+  StatusOr<Response> getCacheValue(const Request& req);
 
   void insertResultIntoCache(GetNeighborsResponse& resp);
 

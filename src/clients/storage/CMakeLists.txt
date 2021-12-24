@@ -19,9 +19,9 @@ nebula_add_library(
     InternalStorageClient.cpp
 )
 
-nebula_add_subdirectory(stats)
-
 nebula_add_library(
     storage_client_cache_obj OBJECT
     StorageClientCache.cpp
 )
+
+nebula_add_subdirectory(stats)

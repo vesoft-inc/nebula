@@ -127,20 +127,12 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClientBase<ClientType>::c
   auto cache = std::make_unique<nebula::graph::StorageClientCache>();
 
   for (auto& req : requests) {
-    // if (std::is_same<Request, cpp2::GetNeighborsRequest>::value &&
-    //     std::is_same<Response, cpp2::GetNeighborsResponse>::value) {
-    //   auto status = cache->getCacheValue(req.second);
-    //   if (status.ok()) {
-    //     context->resp.addResponse(std::move(status.value()));
-    //     continue;
-    //   }
-    // }
-    auto cacheResp = cache->getCacheValue(req.second);
+    auto cacheResp = cache->getCacheValue<Request, Response>(req.second);
     if (cacheResp.ok()) {
-      if (std::is_same<Response, GetNeighborsResponse>::value) {
-        context->resp.addResponse(std::move(cacheResp.value()));
-        continue;
-      }
+      // if (std::is_same<Response, GetNeighborsResponse>::value) {
+      context->resp.addResponse(std::move(cacheResp.value()));
+      continue;
+      // }
     }
     auto& host = req.first;
     auto spaceId = req.second.get_space_id();
