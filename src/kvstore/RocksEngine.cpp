@@ -62,7 +62,9 @@ class RocksWriteBatch : public WriteBatch {
     }
   }
 
-  rocksdb::WriteBatch* data() { return &batch_; }
+  rocksdb::WriteBatch* data() {
+    return &batch_;
+  }
 };
 
 }  // Anonymous namespace
@@ -388,7 +390,9 @@ std::vector<PartitionID> RocksEngine::allParts() {
   return parts;
 }
 
-int32_t RocksEngine::totalPartsNum() { return partsNum_; }
+int32_t RocksEngine::totalPartsNum() {
+  return partsNum_;
+}
 
 nebula::cpp2::ErrorCode RocksEngine::ingest(const std::vector<std::string>& files,
                                             bool verifyFileChecksum) {
@@ -523,48 +527,21 @@ void RocksEngine::openBackupEngine(GraphSpaceID spaceId) {
   }
 }
 
-nebula::cpp2::ErrorCode RocksEngine::createCheckpoint(const std::string& name) {
-  LOG(INFO) << "Begin checkpoint : " << dataPath_;
-
-  /*
-   * The default checkpoint directory structure is :
-   *   |--FLAGS_data_path
-   *   |----nebula
-   *   |------space1
-   *   |--------data
-   *   |--------wal
-   *   |--------checkpoints
-   *   |----------snapshot1
-   *   |------------data
-   *   |------------wal
-   *   |----------snapshot2
-   *   |----------snapshot3
-   *
-   */
-
-  auto checkpointPath =
-      folly::stringPrintf("%s/checkpoints/%s/data", dataPath_.c_str(), name.c_str());
-  LOG(INFO) << "Target checkpoint path : " << checkpointPath;
+nebula::cpp2::ErrorCode RocksEngine::createCheckpoint(const std::string& checkpointPath) {
+  LOG(INFO) << "Target checkpoint data path : " << checkpointPath;
   if (fs::FileUtils::exist(checkpointPath) && !fs::FileUtils::remove(checkpointPath.data(), true)) {
-    LOG(ERROR) << "Remove exist dir failed of checkpoint : " << checkpointPath;
+    LOG(ERROR) << "Remove exist checkpoint data dir failed: " << checkpointPath;
     return nebula::cpp2::ErrorCode::E_STORE_FAILURE;
-  }
-
-  auto parent = checkpointPath.substr(0, checkpointPath.rfind('/'));
-  if (!FileUtils::exist(parent)) {
-    if (!FileUtils::makeDir(parent)) {
-      LOG(ERROR) << "Make dir " << parent << " failed";
-      return nebula::cpp2::ErrorCode::E_UNKNOWN;
-    }
   }
 
   rocksdb::Checkpoint* checkpoint;
   rocksdb::Status status = rocksdb::Checkpoint::Create(db_.get(), &checkpoint);
-  std::unique_ptr<rocksdb::Checkpoint> cp(checkpoint);
   if (!status.ok()) {
     LOG(ERROR) << "Init checkpoint Failed: " << status.ToString();
     return nebula::cpp2::ErrorCode::E_FAILED_TO_CHECKPOINT;
   }
+
+  std::unique_ptr<rocksdb::Checkpoint> cp(checkpoint);
   status = cp->CreateCheckpoint(checkpointPath, 0);
   if (!status.ok()) {
     LOG(ERROR) << "Create checkpoint Failed: " << status.ToString();
@@ -590,47 +567,43 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> RocksEngine::backupTable(
     }
   }
 
-  rocksdb::Options options;
-  options.file_checksum_gen_factory = rocksdb::GetFileChecksumGenCrc32cFactory();
-  rocksdb::SstFileWriter sstFileWriter(rocksdb::EnvOptions(), options);
-
   std::unique_ptr<KVIterator> iter;
   auto ret = prefix(tablePrefix, &iter);
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     return nebula::cpp2::ErrorCode::E_BACKUP_EMPTY_TABLE;
   }
-
   if (!iter->valid()) {
     return nebula::cpp2::ErrorCode::E_BACKUP_EMPTY_TABLE;
   }
 
+  rocksdb::Options options;
+  options.file_checksum_gen_factory = rocksdb::GetFileChecksumGenCrc32cFactory();
+  rocksdb::SstFileWriter sstFileWriter(rocksdb::EnvOptions(), options);
   auto s = sstFileWriter.Open(backupPath);
   if (!s.ok()) {
     LOG(ERROR) << "BackupTable failed, path: " << backupPath << ", error: " << s.ToString();
     return nebula::cpp2::ErrorCode::E_BACKUP_TABLE_FAILED;
   }
 
-  while (iter->valid()) {
+  for (; iter->valid(); iter->next()) {
     if (filter && filter(iter->key())) {
-      iter->next();
       continue;
     }
+
     s = sstFileWriter.Put(iter->key().toString(), iter->val().toString());
     if (!s.ok()) {
       LOG(ERROR) << "BackupTable failed, path: " << backupPath << ", error: " << s.ToString();
       sstFileWriter.Finish();
       return nebula::cpp2::ErrorCode::E_BACKUP_TABLE_FAILED;
     }
-    iter->next();
   }
 
   s = sstFileWriter.Finish();
   if (!s.ok()) {
-    LOG(WARNING) << "Failure to insert data when backupTable,  " << backupPath
+    LOG(WARNING) << "Failed to insert data when backupTable,  " << backupPath
                  << ", error: " << s.ToString();
     return nebula::cpp2::ErrorCode::E_BACKUP_EMPTY_TABLE;
   }
-
   if (sstFileWriter.FileSize() == 0) {
     return nebula::cpp2::ErrorCode::E_BACKUP_EMPTY_TABLE;
   }
@@ -638,8 +611,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> RocksEngine::backupTable(
   if (backupPath[0] == '/') {
     return backupPath;
   }
-
-  auto result = nebula::fs::FileUtils::realPath(backupPath.c_str());
+  auto result = FileUtils::realPath(backupPath.c_str());
   if (!result.ok()) {
     return nebula::cpp2::ErrorCode::E_BACKUP_TABLE_FAILED;
   }

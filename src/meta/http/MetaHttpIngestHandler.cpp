@@ -97,7 +97,9 @@ void MetaHttpIngestHandler::onUpgrade(UpgradeProtocol) noexcept {
   // Do nothing
 }
 
-void MetaHttpIngestHandler::requestComplete() noexcept { delete this; }
+void MetaHttpIngestHandler::requestComplete() noexcept {
+  delete this;
+}
 
 void MetaHttpIngestHandler::onError(ProxygenError error) noexcept {
   LOG(ERROR) << "Web Service MetaHttpIngestHandler got error : " << proxygen::getErrorString(error);

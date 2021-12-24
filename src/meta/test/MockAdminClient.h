@@ -29,13 +29,17 @@ class MockAdminClient : public AdminClient {
   MOCK_METHOD2(checkPeers, folly::Future<Status>(GraphSpaceID, PartitionID));
   MOCK_METHOD1(getLeaderDist, folly::Future<Status>(HostLeaderMap*));
   MOCK_METHOD3(createSnapshot,
-               folly::Future<StatusOr<cpp2::BackupInfo>>(GraphSpaceID,
-                                                         const std::string&,
-                                                         const HostAddr&));
+               folly::Future<StatusOr<cpp2::HostBackupInfo>>(const std::set<GraphSpaceID>&,
+                                                             const std::string&,
+                                                             const HostAddr&));
   MOCK_METHOD3(dropSnapshot,
-               folly::Future<Status>(GraphSpaceID, const std::string&, const HostAddr&));
+               folly::Future<Status>(const std::set<GraphSpaceID>&,
+                                     const std::string&,
+                                     const HostAddr&));
   MOCK_METHOD3(blockingWrites,
-               folly::Future<Status>(GraphSpaceID, storage::cpp2::EngineSignType, const HostAddr&));
+               folly::Future<Status>(const std::set<GraphSpaceID>&,
+                                     storage::cpp2::EngineSignType,
+                                     const HostAddr&));
   MOCK_METHOD9(addTask,
                folly::Future<Status>(cpp2::AdminCmd,
                                      int32_t,

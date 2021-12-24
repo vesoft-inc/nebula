@@ -85,7 +85,9 @@ class MurmurHash2 {
   }
 
   // std::thread::id
-  size_t operator()(std::thread::id id) const noexcept { return std::hash<std::thread::id>()(id); }
+  size_t operator()(std::thread::id id) const noexcept {
+    return std::hash<std::thread::id>()(id);
+  }
 
   // literal string(without decay)
   template <size_t N, typename T, typename = std::enable_if_t<is_char_v<T>>>

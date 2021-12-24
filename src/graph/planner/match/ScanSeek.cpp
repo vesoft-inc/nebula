@@ -63,8 +63,8 @@ StatusOr<SubPlan> ScanSeek::transformNode(NodeContext *nodeCtx) {
   for (std::size_t i = 0; i < nodeCtx->scanInfo.schemaIds.size(); ++i) {
     storage::cpp2::VertexProp vProp;
     std::vector<std::string> props{kTag};
-    vProp.set_tag(nodeCtx->scanInfo.schemaIds[i]);
-    vProp.set_props(std::move(props));
+    vProp.tag_ref() = nodeCtx->scanInfo.schemaIds[i];
+    vProp.props_ref() = std::move(props);
     vProps->emplace_back(std::move(vProp));
     colNames.emplace_back(nodeCtx->scanInfo.schemaNames[i] + "." + kTag);
   }

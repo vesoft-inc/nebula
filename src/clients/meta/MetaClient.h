@@ -184,7 +184,9 @@ struct MetaClientOptions {
         serviceName_(opt.serviceName_),
         skipConfig_(opt.skipConfig_),
         role_(opt.role_),
-        gitInfoSHA_(opt.gitInfoSHA_) {}
+        gitInfoSHA_(opt.gitInfoSHA_),
+        dataPaths_(opt.dataPaths_),
+        rootPath_(opt.rootPath_) {}
 
   // Current host address
   HostAddr localHost_{"", 0};
@@ -200,6 +202,10 @@ struct MetaClientOptions {
   cpp2::HostRole role_ = cpp2::HostRole::UNKNOWN;
   // gitInfoSHA of Host using this client
   std::string gitInfoSHA_{""};
+  // data path list, used in storaged
+  std::vector<std::string> dataPaths_;
+  // install path, used in metad/graphd/storaged
+  std::string rootPath_;
 };
 
 class MetaClient {
@@ -311,12 +317,14 @@ class MetaClient {
                                                bool ifExists = false);
 
   // Operations for index
-  folly::Future<StatusOr<IndexID>> createTagIndex(GraphSpaceID spaceID,
-                                                  std::string indexName,
-                                                  std::string tagName,
-                                                  std::vector<cpp2::IndexFieldDef> fields,
-                                                  bool ifNotExists = false,
-                                                  const std::string* comment = nullptr);
+  folly::Future<StatusOr<IndexID>> createTagIndex(
+      GraphSpaceID spaceID,
+      std::string indexName,
+      std::string tagName,
+      std::vector<cpp2::IndexFieldDef> fields,
+      bool ifNotExists = false,
+      const meta::cpp2::IndexParams* indexParams = nullptr,
+      const std::string* comment = nullptr);
 
   // Remove the define of tag index
   folly::Future<StatusOr<bool>> dropTagIndex(GraphSpaceID spaceId,
@@ -336,6 +344,7 @@ class MetaClient {
                                                    std::string edgeName,
                                                    std::vector<cpp2::IndexFieldDef> fields,
                                                    bool ifNotExists = false,
+                                                   const cpp2::IndexParams* indexParams = nullptr,
                                                    const std::string* comment = nullptr);
 
   // Remove the definition of edge index
@@ -635,9 +644,13 @@ class MetaClient {
 
   folly::Future<StatusOr<bool>> ingest(GraphSpaceID spaceId);
 
-  HostAddr getMetaLeader() { return leader_; }
+  HostAddr getMetaLeader() {
+    return leader_;
+  }
 
-  int64_t HeartbeatTime() { return heartbeatTime_; }
+  int64_t HeartbeatTime() {
+    return heartbeatTime_;
+  }
 
  protected:
   // Return true if load succeeded.
@@ -756,6 +769,8 @@ class MetaClient {
   HostAddr leader_;
   HostAddr localHost_;
 
+  // Only report dir info once when started
+  bool dirInfoReported_ = false;
   struct ThreadLocalInfo {
     int64_t localLastUpdateTime_{-2};
     LocalCache localCache_;

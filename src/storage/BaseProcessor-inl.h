@@ -60,8 +60,8 @@ template <typename RESP>
 meta::cpp2::ColumnDef BaseProcessor<RESP>::columnDef(std::string name,
                                                      nebula::cpp2::PropertyType type) {
   nebula::meta::cpp2::ColumnDef column;
-  column.set_name(std::move(name));
-  column.set_type(type);
+  column.name_ref() = std::move(name);
+  column.type_ref() = type;
   return column;
 }
 
@@ -71,10 +71,10 @@ void BaseProcessor<RESP>::pushResultCode(nebula::cpp2::ErrorCode code,
                                          HostAddr leader) {
   if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
     cpp2::PartitionResult thriftRet;
-    thriftRet.set_code(code);
-    thriftRet.set_part_id(partId);
+    thriftRet.code_ref() = code;
+    thriftRet.part_id_ref() = partId;
     if (leader != HostAddr("", 0)) {
-      thriftRet.set_leader(leader);
+      thriftRet.leader_ref() = leader;
     }
     codes_.emplace_back(std::move(thriftRet));
   }

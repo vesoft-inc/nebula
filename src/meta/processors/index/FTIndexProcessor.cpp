@@ -156,7 +156,7 @@ void ListFTIndexesProcessor::process(const cpp2::ListFTIndexesReq&) {
     indexes.emplace(std::move(name), std::move(index));
     iter->next();
   }
-  resp_.set_indexes(std::move(indexes));
+  resp_.indexes_ref() = std::move(indexes);
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
   onFinished();
 }

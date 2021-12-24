@@ -51,9 +51,13 @@ struct HookableTask : public AdminTask {
     subTasks.emplace_back(subTask);
   }
 
-  void setJobId(int id) { ctx_.jobId_ = id; }
+  void setJobId(int id) {
+    ctx_.jobId_ = id;
+  }
 
-  void setTaskId(int id) { ctx_.taskId_ = id; }
+  void setTaskId(int id) {
+    ctx_.taskId_ = id;
+  }
 
   std::function<ErrOrSubTasks()> fGenSubTasks;
   std::vector<AdminSubTask> subTasks;

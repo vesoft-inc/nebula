@@ -92,10 +92,10 @@ folly::Future<Status> UpdateEdgeExecutor::execute() {
   SCOPED_TIMER(&execTime_);
   auto *ueNode = asNode<UpdateEdge>(node());
   storage::cpp2::EdgeKey edgeKey;
-  edgeKey.set_src(ueNode->getSrcId());
-  edgeKey.set_ranking(ueNode->getRank());
-  edgeKey.set_edge_type(ueNode->getEdgeType());
-  edgeKey.set_dst(ueNode->getDstId());
+  edgeKey.src_ref() = ueNode->getSrcId();
+  edgeKey.ranking_ref() = ueNode->getRank();
+  edgeKey.edge_type_ref() = ueNode->getEdgeType();
+  edgeKey.dst_ref() = ueNode->getDstId();
   yieldNames_ = ueNode->getYieldNames();
 
   time::Duration updateEdgeTime;

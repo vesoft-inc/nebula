@@ -34,7 +34,7 @@ void GetConfigProcessor::process(const cpp2::GetConfigReq& req) {
   } while (false);
 
   if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
-    resp_.set_items(std::move(items));
+    resp_.items_ref() = std::move(items);
   }
   handleErrorCode(code);
   onFinished();
@@ -56,8 +56,8 @@ nebula::cpp2::ErrorCode GetConfigProcessor::getOneConfig(const cpp2::ConfigModul
   }
 
   cpp2::ConfigItem item = MetaKeyUtils::parseConfigValue(nebula::value(ret));
-  item.set_module(module);
-  item.set_name(name);
+  item.module_ref() = module;
+  item.name_ref() = name;
   items.emplace_back(std::move(item));
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }

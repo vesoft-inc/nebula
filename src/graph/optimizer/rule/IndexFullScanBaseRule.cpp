@@ -62,11 +62,11 @@ StatusOr<TransformResult> IndexFullScanBaseRule::transform(OptContext* ctx,
       idxId = index->get_index_id();
     }
   }
-  ictx.set_index_id(idxId);
+  ictx.index_id_ref() = idxId;
   idxCtxs.emplace_back(std::move(ictx));
 
   auto scanNode = this->scan(ctx, scan);
-  OptimizerUtils::copyIndexScanData(scan, scanNode);
+  OptimizerUtils::copyIndexScanData(scan, scanNode, ctx->qctx());
   scanNode->setOutputVar(scan->outputVar());
   scanNode->setColNames(scan->colNames());
   scanNode->setIndexQueryContext(std::move(idxCtxs));

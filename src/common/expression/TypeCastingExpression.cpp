@@ -130,6 +130,8 @@ std::string TypeCastingExpression::toString() const {
   return out.str();
 }
 
-void TypeCastingExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void TypeCastingExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 }  // namespace nebula

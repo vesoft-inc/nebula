@@ -107,7 +107,9 @@ class ExpressionContextMock final : public ExpressionContext {
     return Value();
   }
 
-  Value getEdge() const override { return Value(); }
+  Value getEdge() const override {
+    return Value();
+  }
 
   Value getColumn(int32_t index) const override;
 

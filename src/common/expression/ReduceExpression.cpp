@@ -124,6 +124,8 @@ std::string ReduceExpression::toString() const {
   return buf;
 }
 
-void ReduceExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void ReduceExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 }  // namespace nebula

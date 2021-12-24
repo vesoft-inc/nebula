@@ -11,7 +11,9 @@ using nebula::storage::cpp2::GetPropResponse;
 
 namespace nebula {
 namespace graph {
-folly::Future<Status> AppendVerticesExecutor::execute() { return appendVertices(); }
+folly::Future<Status> AppendVerticesExecutor::execute() {
+  return appendVertices();
+}
 
 DataSet AppendVerticesExecutor::buildRequestDataSet(const AppendVertices *av) {
   if (av == nullptr) {
@@ -45,7 +47,7 @@ folly::Future<Status> AppendVerticesExecutor::appendVertices() {
                  av->exprs(),
                  av->dedup(),
                  av->orderBy(),
-                 av->limit(),
+                 av->limit(qctx()),
                  av->filter())
       .via(runner())
       .ensure([this, getPropsTime]() {

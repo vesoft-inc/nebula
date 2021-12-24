@@ -55,13 +55,13 @@ TEST(IndexTest, SimpleVerticesTest) {
   // verify insert
   {
     cpp2::AddVerticesRequest req;
-    req.set_space_id(1);
-    req.set_if_not_exists(true);
+    req.space_id_ref() = 1;
+    req.if_not_exists_ref() = true;
     // mock v2 vertices
     for (auto partId = 1; partId <= 6; partId++) {
       nebula::storage::cpp2::NewVertex newVertex;
       nebula::storage::cpp2::NewTag newTag;
-      newTag.set_tag_id(3);
+      newTag.tag_id_ref() = 3;
       const Date date = {2020, 2, 20};
       const DateTime dt = {2020, 2, 20, 10, 30, 45, 0};
       std::vector<Value> props;
@@ -76,11 +76,11 @@ TEST(IndexTest, SimpleVerticesTest) {
       props.emplace_back(Value(1L));
       props.emplace_back(Value(std::move(date)));
       props.emplace_back(Value(std::move(dt)));
-      newTag.set_props(std::move(props));
+      newTag.props_ref() = std::move(props);
       std::vector<nebula::storage::cpp2::NewTag> newTags;
       newTags.push_back(std::move(newTag));
-      newVertex.set_id(convertVertexId(vIdLen, partId));
-      newVertex.set_tags(std::move(newTags));
+      newVertex.id_ref() = convertVertexId(vIdLen, partId);
+      newVertex.tags_ref() = std::move(newTags);
       (*req.parts_ref())[partId].emplace_back(std::move(newVertex));
     }
     auto* processor = AddVerticesProcessor::instance(env, nullptr);
@@ -107,7 +107,7 @@ TEST(IndexTest, SimpleVerticesTest) {
   {
     auto* processor = DeleteVerticesProcessor::instance(env, nullptr);
     cpp2::DeleteVerticesRequest req;
-    req.set_space_id(1);
+    req.space_id_ref() = 1;
     for (auto partId = 1; partId <= 6; partId++) {
       std::vector<Value> vertices;
       vertices.emplace_back(Value(convertVertexId(vIdLen, partId)));
@@ -144,17 +144,17 @@ TEST(IndexTest, SimpleEdgesTest) {
   // verify insert
   {
     cpp2::AddEdgesRequest req;
-    req.set_space_id(1);
-    req.set_if_not_exists(true);
+    req.space_id_ref() = 1;
+    req.if_not_exists_ref() = true;
     // mock v2 edges
     for (auto partId = 1; partId <= 6; partId++) {
       nebula::storage::cpp2::NewEdge newEdge;
       nebula::storage::cpp2::EdgeKey edgeKey;
-      edgeKey.set_src(convertVertexId(vIdLen, partId));
-      edgeKey.set_edge_type(101);
-      edgeKey.set_ranking(0);
-      edgeKey.set_dst(convertVertexId(vIdLen, partId + 6));
-      newEdge.set_key(std::move(edgeKey));
+      edgeKey.src_ref() = convertVertexId(vIdLen, partId);
+      edgeKey.edge_type_ref() = 101;
+      edgeKey.ranking_ref() = 0;
+      edgeKey.dst_ref() = convertVertexId(vIdLen, partId + 6);
+      newEdge.key_ref() = std::move(edgeKey);
       std::vector<Value> props;
       props.emplace_back(Value("col1"));
       props.emplace_back(Value("col2"));
@@ -163,9 +163,9 @@ TEST(IndexTest, SimpleEdgesTest) {
       props.emplace_back(Value(5L));
       props.emplace_back(Value(6L));
       props.emplace_back(Value(7.7F));
-      newEdge.set_props(std::move(props));
+      newEdge.props_ref() = std::move(props);
       (*req.parts_ref())[partId].emplace_back(newEdge);
-      (*newEdge.key_ref()).set_edge_type(-101);
+      (*newEdge.key_ref()).edge_type_ref() = -101;
       (*req.parts_ref())[partId].emplace_back(std::move(newEdge));
     }
     auto* processor = AddEdgesProcessor::instance(env, nullptr);
@@ -192,15 +192,15 @@ TEST(IndexTest, SimpleEdgesTest) {
   {
     auto* processor = DeleteEdgesProcessor::instance(env, nullptr);
     cpp2::DeleteEdgesRequest req;
-    req.set_space_id(1);
+    req.space_id_ref() = 1;
     for (auto partId = 1; partId <= 6; partId++) {
       nebula::storage::cpp2::EdgeKey edgeKey;
-      edgeKey.set_src(convertVertexId(vIdLen, partId));
-      edgeKey.set_edge_type(101);
-      edgeKey.set_ranking(0);
-      edgeKey.set_dst(convertVertexId(vIdLen, partId + 6));
+      edgeKey.src_ref() = convertVertexId(vIdLen, partId);
+      edgeKey.edge_type_ref() = 101;
+      edgeKey.ranking_ref() = 0;
+      edgeKey.dst_ref() = convertVertexId(vIdLen, partId + 6);
       (*req.parts_ref())[partId].emplace_back(edgeKey);
-      edgeKey.set_edge_type(-101);
+      edgeKey.edge_type_ref() = -101;
       (*req.parts_ref())[partId].emplace_back(std::move(edgeKey));
     }
     auto fut = processor->getFuture();
@@ -252,17 +252,17 @@ TEST(IndexTest, VerticesValueTest) {
   // verify insert
   {
     cpp2::AddVerticesRequest req;
-    req.set_space_id(spaceId);
-    req.set_if_not_exists(true);
+    req.space_id_ref() = spaceId;
+    req.if_not_exists_ref() = true;
     std::unordered_map<int, std::vector<std::string>> propNames;
     propNames[tagId] = {
         "col_bool", "col_int", "col_float", "col_float_null", "col_str", "col_date"};
-    req.set_prop_names(std::move(propNames));
+    req.prop_names_ref() = std::move(propNames);
     // mock v2 vertices
     for (auto partId = 1; partId <= 6; partId++) {
       nebula::storage::cpp2::NewVertex newVertex;
       nebula::storage::cpp2::NewTag newTag;
-      newTag.set_tag_id(tagId);
+      newTag.tag_id_ref() = tagId;
       const Date date = {2020, 1, 20};
       std::vector<Value> props;
       props.emplace_back(Value(true));
@@ -271,11 +271,11 @@ TEST(IndexTest, VerticesValueTest) {
       props.emplace_back(Value(5.5f));
       props.emplace_back(Value("string"));
       props.emplace_back(Value(std::move(date)));
-      newTag.set_props(std::move(props));
+      newTag.props_ref() = std::move(props);
       std::vector<nebula::storage::cpp2::NewTag> newTags;
       newTags.push_back(std::move(newTag));
-      newVertex.set_id(convertVertexId(vIdLen, partId));
-      newVertex.set_tags(std::move(newTags));
+      newVertex.id_ref() = convertVertexId(vIdLen, partId);
+      newVertex.tags_ref() = std::move(newTags);
       (*req.parts_ref())[partId].emplace_back(std::move(newVertex));
     }
     auto* processor = AddVerticesProcessor::instance(env, nullptr);
@@ -318,8 +318,9 @@ TEST(IndexTest, VerticesValueTest) {
     values.emplace_back(Value(date));
     // col_date_null
     values.emplace_back(nullValue);
-    auto indexes =
-        IndexKeyUtils::encodeValues(std::move(values), mock::MockData::mockTypicaIndexColumns());
+    auto indexItem = std::make_unique<meta::cpp2::IndexItem>();
+    indexItem->fields_ref() = mock::MockData::mockTypicaIndexColumns();
+    auto indexes = IndexKeyUtils::encodeValues(std::move(values), indexItem.get());
 
     for (auto partId = 1; partId <= 6; partId++) {
       auto prefix = IndexKeyUtils::indexPrefix(partId, indexId);
@@ -370,24 +371,24 @@ TEST(IndexTest, AlterTagIndexTest) {
   // verify insert
   {
     cpp2::AddVerticesRequest req;
-    req.set_space_id(spaceId);
-    req.set_if_not_exists(true);
+    req.space_id_ref() = spaceId;
+    req.if_not_exists_ref() = true;
     // mock v2 vertices
     for (auto partId = 1; partId <= 6; partId++) {
       nebula::storage::cpp2::NewVertex newVertex;
       nebula::storage::cpp2::NewTag newTag;
-      newTag.set_tag_id(tagId);
+      newTag.tag_id_ref() = tagId;
       std::vector<Value> props;
       props.emplace_back(Value(true));
       props.emplace_back(Value(1L));
       props.emplace_back(Value(1.1f));
       props.emplace_back(Value(1.1f));
       props.emplace_back(Value("string"));
-      newTag.set_props(std::move(props));
+      newTag.props_ref() = std::move(props);
       std::vector<nebula::storage::cpp2::NewTag> newTags;
       newTags.push_back(std::move(newTag));
-      newVertex.set_id(convertVertexId(vIdLen, partId));
-      newVertex.set_tags(std::move(newTags));
+      newVertex.id_ref() = convertVertexId(vIdLen, partId);
+      newVertex.tags_ref() = std::move(newTags);
       (*req.parts_ref())[partId].emplace_back(std::move(newVertex));
     }
     auto* processor = AddVerticesProcessor::instance(env, nullptr);
@@ -424,13 +425,13 @@ TEST(IndexTest, AlterTagIndexTest) {
   // verify insert
   {
     cpp2::AddVerticesRequest req;
-    req.set_space_id(spaceId);
-    req.set_if_not_exists(false);
+    req.space_id_ref() = spaceId;
+    req.if_not_exists_ref() = false;
     // mock v2 vertices
     for (auto partId = 1; partId <= 6; partId++) {
       nebula::storage::cpp2::NewVertex newVertex;
       nebula::storage::cpp2::NewTag newTag;
-      newTag.set_tag_id(tagId);
+      newTag.tag_id_ref() = tagId;
       const Date date = {2020, 2, 20};
       const DateTime dt = {2020, 2, 20, 10, 30, 45, 0};
       std::vector<Value> props;
@@ -445,11 +446,11 @@ TEST(IndexTest, AlterTagIndexTest) {
       props.emplace_back(Value(1L));
       props.emplace_back(Value(std::move(date)));
       props.emplace_back(Value(std::move(dt)));
-      newTag.set_props(std::move(props));
+      newTag.props_ref() = std::move(props);
       std::vector<nebula::storage::cpp2::NewTag> newTags;
       newTags.push_back(std::move(newTag));
-      newVertex.set_id(convertVertexId(vIdLen, partId));
-      newVertex.set_tags(std::move(newTags));
+      newVertex.id_ref() = convertVertexId(vIdLen, partId);
+      newVertex.tags_ref() = std::move(newTags);
       (*req.parts_ref())[partId].emplace_back(std::move(newVertex));
     }
     auto* processor = AddVerticesProcessor::instance(env, nullptr);
