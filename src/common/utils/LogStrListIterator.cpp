@@ -22,7 +22,9 @@ LogIterator& LogStrListIterator::operator++() {
   return *this;
 }
 
-bool LogStrListIterator::valid() const { return idx_ < logEntries_.size(); }
+bool LogStrListIterator::valid() const {
+  return idx_ < logEntries_.size();
+}
 
 LogID LogStrListIterator::logId() const {
   DCHECK(valid());

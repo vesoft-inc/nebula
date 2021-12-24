@@ -12,9 +12,13 @@
 
 class RouterTest : public ::testing::Test {
  public:
-  void SetUp() override { router_ = std::make_unique<nebula::web::Router>("test"); }
+  void SetUp() override {
+    router_ = std::make_unique<nebula::web::Router>("test");
+  }
 
-  void TearDown() override { router_.reset(); }
+  void TearDown() override {
+    router_.reset();
+  }
 
   static void found(const nebula::web::Router* router, const proxygen::HTTPMessage* msg) {
     std::unique_ptr<proxygen::RequestHandler> handler(router->dispatch(msg));
@@ -26,9 +30,13 @@ class RouterTest : public ::testing::Test {
     ASSERT_TRUE(handler);
   }
 
-  void found(const proxygen::HTTPMessage* msg) const { found(router_.get(), msg); }
+  void found(const proxygen::HTTPMessage* msg) const {
+    found(router_.get(), msg);
+  }
 
-  void notFound(const proxygen::HTTPMessage* msg) const { notFound(router_.get(), msg); }
+  void notFound(const proxygen::HTTPMessage* msg) const {
+    notFound(router_.get(), msg);
+  }
 
  protected:
   std::unique_ptr<nebula::web::Router> router_;

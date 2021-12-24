@@ -23,6 +23,7 @@ folly::Future<Status> CreateEdgeIndexExecutor::execute() {
                         ceiNode->getSchemaName(),
                         ceiNode->getFields(),
                         ceiNode->getIfNotExists(),
+                        ceiNode->getIndexParams(),
                         ceiNode->getComment())
       .via(runner())
       .thenValue([ceiNode, spaceId](StatusOr<IndexID> resp) {

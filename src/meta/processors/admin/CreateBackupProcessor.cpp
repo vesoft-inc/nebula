@@ -18,11 +18,10 @@ CreateBackupProcessor::spaceNameToId(const std::vector<std::string>* backupSpace
   folly::SharedMutex::ReadHolder rHolder(LockUtils::spaceLock());
   std::unordered_set<GraphSpaceID> spaces;
 
-  if (backupSpaces != nullptr) {
-    DCHECK(!backupSpaces->empty());
+  bool allSpaces = backupSpaces == nullptr || backupSpaces->empty();
+  if (!allSpaces) {
     std::vector<std::string> keys;
     keys.reserve(backupSpaces->size());
-
     std::transform(
         backupSpaces->begin(), backupSpaces->end(), std::back_inserter(keys), [](auto& name) {
           return MetaKeyUtils::indexSpaceKey(name);
@@ -84,6 +83,7 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
   }
   JobManager* jobMgr = JobManager::getInstance();
 
+  // make sure there is no index job
   auto result = jobMgr->checkIndexJobRunning();
   if (!nebula::ok(result)) {
     LOG(ERROR) << "get Index status failed, not allowed to create backup.";
@@ -91,7 +91,6 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
     onFinished();
     return;
   }
-
   if (nebula::value(result)) {
     LOG(ERROR) << "Index is rebuilding, not allowed to create backup.";
     handleErrorCode(nebula::cpp2::ErrorCode::E_BACKUP_BUILDING_INDEX);
@@ -101,6 +100,7 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
 
   folly::SharedMutex::WriteHolder wHolder(LockUtils::snapshotLock());
 
+  // get active storage host list
   auto activeHostsRet = ActiveHostsMan::getActiveHosts(kvstore_);
   if (!nebula::ok(activeHostsRet)) {
     handleErrorCode(nebula::error(activeHostsRet));
@@ -108,7 +108,6 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
     return;
   }
   auto hosts = std::move(nebula::value(activeHostsRet));
-
   if (hosts.empty()) {
     LOG(ERROR) << "There has some offline hosts";
     handleErrorCode(nebula::cpp2::ErrorCode::E_NO_HOSTS);
@@ -116,25 +115,32 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
     return;
   }
 
+  // transform space names to id list
   auto spaceIdRet = spaceNameToId(backupSpaces);
   if (!nebula::ok(spaceIdRet)) {
     handleErrorCode(nebula::error(spaceIdRet));
     onFinished();
     return;
   }
-
   auto spaces = nebula::value(spaceIdRet);
 
   // The entire process follows mostly snapshot logic.
+  // step 1 : write a flag key to handle backup failed
   std::vector<kvstore::KV> data;
   auto backupName = folly::format("BACKUP_{}", MetaKeyUtils::genTimestampStr()).str();
-
   data.emplace_back(
       MetaKeyUtils::snapshotKey(backupName),
       MetaKeyUtils::snapshotVal(cpp2::SnapshotStatus::INVALID, NetworkUtils::toHostsStr(hosts)));
-  Snapshot::instance(kvstore_, client_)->setSpaces(spaces);
+  auto putRet = doSyncPut(data);
+  if (putRet != nebula::cpp2::ErrorCode::SUCCEEDED) {
+    LOG(ERROR) << "Write backup meta error";
+    handleErrorCode(putRet);
+    onFinished();
+    return;
+  }
 
-  // step 1 : Blocking all writes action for storage engines.
+  Snapshot::instance(kvstore_, client_)->setSpaces(spaces);
+  // step 2 : Blocking all writes action for storage engines.
   auto ret = Snapshot::instance(kvstore_, client_)->blockingWrites(SignType::BLOCK_ON);
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << "Send blocking sign to storage engine error";
@@ -150,7 +156,8 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
   // step 3 : Create checkpoint for all storage engines.
   auto sret = Snapshot::instance(kvstore_, client_)->createSnapshot(backupName);
   if (!nebula::ok(sret)) {
-    LOG(ERROR) << "Checkpoint create error on storage engine";
+    LOG(ERROR) << "Checkpoint create error on storage engine: "
+               << apache::thrift::util::enumNameSafe(nebula::error(sret));
     handleErrorCode(nebula::error(sret));
     ret = Snapshot::instance(kvstore_, client_)->blockingWrites(SignType::BLOCK_OFF);
     if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -161,7 +168,7 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
   }
 
   // step 4 created backup for meta(export sst).
-  auto backupFiles = MetaServiceUtils::backupSpaces(kvstore_, spaces, backupName, backupSpaces);
+  auto backupFiles = MetaServiceUtils::backupTables(kvstore_, spaces, backupName, backupSpaces);
   if (!nebula::ok(backupFiles)) {
     LOG(ERROR) << "Failed backup meta";
     handleErrorCode(nebula::cpp2::ErrorCode::E_BACKUP_FAILED);
@@ -178,12 +185,12 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
     return;
   }
 
-  // step 6 : update snapshot status from INVALID to VALID.
+  // step 6 : update backup status from INVALID to VALID.
+  data.clear();
   data.emplace_back(
       MetaKeyUtils::snapshotKey(backupName),
       MetaKeyUtils::snapshotVal(cpp2::SnapshotStatus::VALID, NetworkUtils::toHostsStr(hosts)));
-
-  auto putRet = doSyncPut(std::move(data));
+  putRet = doSyncPut(std::move(data));
   if (putRet != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << "All checkpoint creations are done, "
                   "but update checkpoint status error. "
@@ -194,13 +201,20 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
     return;
   }
 
-  std::unordered_map<GraphSpaceID, cpp2::SpaceBackupInfo> backupInfo;
-
-  // set backup info
+  // space backup info:
+  //  - space desc
+  //  - backup info list:
+  //    - backup info:
+  //      - host
+  //      - checkpoint info:
+  //        - space id
+  //        - parts
+  //        - path
+  std::unordered_map<GraphSpaceID, cpp2::SpaceBackupInfo> backups;
   auto snapshotInfo = std::move(nebula::value(sret));
   for (auto id : spaces) {
     LOG(INFO) << "backup space " << id;
-    cpp2::SpaceBackupInfo spaceInfo;
+    cpp2::SpaceBackupInfo spaceBackup;
     auto spaceKey = MetaKeyUtils::spaceKey(id);
     auto spaceRet = doGet(spaceKey);
     if (!nebula::ok(spaceRet)) {
@@ -208,29 +222,32 @@ void CreateBackupProcessor::process(const cpp2::CreateBackupReq& req) {
       onFinished();
       return;
     }
-    auto properties = MetaKeyUtils::parseSpace(nebula::value(spaceRet));
+    auto spaceDesc = MetaKeyUtils::parseSpace(nebula::value(spaceRet));
     // todo we should save partition info.
     auto it = snapshotInfo.find(id);
     DCHECK(it != snapshotInfo.end());
-    spaceInfo.set_info(std::move(it->second));
-    spaceInfo.set_space(std::move(properties));
-    backupInfo.emplace(id, std::move(spaceInfo));
+
+    spaceBackup.host_backups_ref() = std::move(it->second);
+    spaceBackup.space_ref() = std::move(spaceDesc);
+    backups.emplace(id, std::move(spaceBackup));
   }
+
   cpp2::BackupMeta backup;
   LOG(INFO) << "sst files count was:" << nebula::value(backupFiles).size();
-  backup.set_meta_files(std::move(nebula::value(backupFiles)));
-  backup.set_backup_info(std::move(backupInfo));
-  backup.set_backup_name(std::move(backupName));
-  backup.set_full(true);
-  if (backupSpaces == nullptr) {
-    backup.set_include_system_space(true);
+  backup.meta_files_ref() = std::move(nebula::value(backupFiles));
+  backup.space_backups_ref() = std::move(backups);
+  backup.backup_name_ref() = std::move(backupName);
+  backup.full_ref() = true;
+  bool allSpaces = backupSpaces == nullptr || backupSpaces->empty();
+  if (allSpaces) {
+    backup.all_spaces_ref() = true;
   } else {
-    backup.set_include_system_space(false);
+    backup.all_spaces_ref() = false;
   }
-  backup.set_create_time(time::WallClock::fastNowInMilliSec());
+  backup.create_time_ref() = time::WallClock::fastNowInMilliSec();
 
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
-  resp_.set_meta(std::move(backup));
+  resp_.meta_ref() = std::move(backup);
   LOG(INFO) << "backup done";
 
   onFinished();

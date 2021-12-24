@@ -6,6 +6,7 @@
 #include "meta/MetaServiceHandler.h"
 
 #include "common/utils/MetaKeyUtils.h"
+#include "meta/processors/admin/AgentHBProcessor.h"
 #include "meta/processors/admin/CreateBackupProcessor.h"
 #include "meta/processors/admin/CreateSnapshotProcessor.h"
 #include "meta/processors/admin/DropSnapshotProcessor.h"
@@ -334,6 +335,12 @@ folly::Future<cpp2::HBResp> MetaServiceHandler::future_heartBeat(const cpp2::HBR
   RETURN_FUTURE(processor);
 }
 
+folly::Future<cpp2::AgentHBResp> MetaServiceHandler::future_agentHeartbeat(
+    const cpp2::AgentHBReq& req) {
+  auto* processor = AgentHBProcessor::instance(kvstore_);
+  RETURN_FUTURE(processor);
+}
+
 folly::Future<cpp2::ExecResp> MetaServiceHandler::future_createUser(
     const cpp2::CreateUserReq& req) {
   auto* processor = CreateUserProcessor::instance(kvstore_);
@@ -501,7 +508,7 @@ folly::Future<cpp2::GetStatsResp> MetaServiceHandler::future_getStats(
 
 folly::Future<cpp2::ListClusterInfoResp> MetaServiceHandler::future_listCluster(
     const cpp2::ListClusterInfoReq& req) {
-  auto* processor = ListClusterInfoProcessor::instance(kvstore_, adminClient_.get());
+  auto* processor = ListClusterInfoProcessor::instance(kvstore_);
   RETURN_FUTURE(processor);
 }
 

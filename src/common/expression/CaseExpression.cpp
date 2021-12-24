@@ -158,6 +158,8 @@ void CaseExpression::resetFrom(Decoder& decoder) {
   }
 }
 
-void CaseExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void CaseExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 }  // namespace nebula

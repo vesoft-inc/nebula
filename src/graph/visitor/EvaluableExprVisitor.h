@@ -15,7 +15,9 @@ class QueryContext;
 class EvaluableExprVisitor : public ExprVisitorImpl {
  public:
   explicit EvaluableExprVisitor(const QueryContext *qctx = nullptr);
-  bool ok() const override { return isEvaluable_; }
+  bool ok() const override {
+    return isEvaluable_;
+  }
 
  private:
   using ExprVisitorImpl::visit;

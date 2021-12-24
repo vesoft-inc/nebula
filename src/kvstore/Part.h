@@ -36,9 +36,13 @@ class Part : public raftex::RaftPart {
        std::shared_ptr<DiskManager> diskMan,
        int32_t vIdLen);
 
-  virtual ~Part() { LOG(INFO) << idStr_ << "~Part()"; }
+  virtual ~Part() {
+    LOG(INFO) << idStr_ << "~Part()";
+  }
 
-  KVEngine* engine() { return engine_; }
+  KVEngine* engine() {
+    return engine_;
+  }
 
   void asyncPut(folly::StringPiece key, folly::StringPiece value, KVCallback cb);
   void asyncMultiPut(const std::vector<KV>& keyValues, KVCallback cb);
@@ -64,9 +68,13 @@ class Part : public raftex::RaftPart {
   // Sync the information committed on follower.
   void sync(KVCallback cb);
 
-  void registerNewLeaderCb(NewLeaderCallback cb) { newLeaderCb_ = std::move(cb); }
+  void registerNewLeaderCb(NewLeaderCallback cb) {
+    newLeaderCb_ = std::move(cb);
+  }
 
-  void unRegisterNewLeaderCb() { newLeaderCb_ = nullptr; }
+  void unRegisterNewLeaderCb() {
+    newLeaderCb_ = nullptr;
+  }
 
   // clean up all data about this part.
   void resetPart() {

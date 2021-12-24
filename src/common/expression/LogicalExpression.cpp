@@ -131,7 +131,9 @@ std::string LogicalExpression::toString() const {
   return buf;
 }
 
-void LogicalExpression::accept(ExprVisitor *visitor) { visitor->visit(this); }
+void LogicalExpression::accept(ExprVisitor *visitor) {
+  visitor->visit(this);
+}
 
 void LogicalExpression::writeTo(Encoder &encoder) const {
   encoder << kind();

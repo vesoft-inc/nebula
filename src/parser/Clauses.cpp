@@ -206,7 +206,9 @@ std::string YieldClause::toString() const {
   return buf;
 }
 
-std::string GroupClause::toString() const { return groupColumns_->toString(); }
+std::string GroupClause::toString() const {
+  return groupColumns_->toString();
+}
 
 std::string BoundClause::toString() const {
   std::string buf;

@@ -93,7 +93,9 @@ void go(int32_t iters,
         const std::vector<std::string>& playerProps,
         const std::vector<std::string>& serveProps) {
   nebula::storage::cpp2::GetNeighborsRequest req;
-  BENCHMARK_SUSPEND { req = nebula::storage::buildRequest(vertex, playerProps, serveProps); }
+  BENCHMARK_SUSPEND {
+    req = nebula::storage::buildRequest(vertex, playerProps, serveProps);
+  }
   auto* env = gCluster->storageEnv_.get();
   for (decltype(iters) i = 0; i < iters; i++) {
     auto* processor = nebula::storage::GetNeighborsProcessor::instance(env, nullptr, nullptr);
@@ -121,7 +123,7 @@ void goFilter(int32_t iters,
           pool,
           nebula::EdgePropertyExpression::make(pool, folly::to<std::string>(serve), "startYear"),
           nebula::ConstantExpression::make(pool, nebula::Value(value)));
-      (*req.traverse_spec_ref()).set_filter(nebula::Expression::encode(exp));
+      (*req.traverse_spec_ref()).filter_ref() = nebula::Expression::encode(exp);
     } else {
       // where serve.startYear < value && serve.endYear < value
       // since startYear always equal to endYear, the data of which can pass
@@ -137,7 +139,7 @@ void goFilter(int32_t iters,
               pool,
               nebula::EdgePropertyExpression::make(pool, folly::to<std::string>(serve), "endYear"),
               nebula::ConstantExpression::make(pool, nebula::Value(value))));
-      (*req.traverse_spec_ref()).set_filter(nebula::Expression::encode(exp));
+      (*req.traverse_spec_ref()).filter_ref() = nebula::Expression::encode(exp);
     }
   }
   auto* env = gCluster->storageEnv_.get();
@@ -200,8 +202,8 @@ void goEdgeNode(int32_t iters,
     }
     CHECK_EQ(vertex.size(), resultDataSet.rowSize());
     nebula::storage::cpp2::ResponseCommon result;
-    resp.set_result(std::move(result));
-    resp.set_vertices(std::move(resultDataSet));
+    resp.result_ref() = std::move(result);
+    resp.vertices_ref() = std::move(resultDataSet);
     auto encoded = encode(resp);
     folly::doNotOptimizeAway(encoded);
   }
@@ -214,7 +216,9 @@ void prefix(int32_t iters,
   std::unique_ptr<nebula::storage::PlanContext> planCtx;
   std::unique_ptr<nebula::storage::RuntimeContext> context;
   nebula::storage::EdgeContext edgeContext;
-  BENCHMARK_SUSPEND { initContext(planCtx, context, edgeContext, serveProps); }
+  BENCHMARK_SUSPEND {
+    initContext(planCtx, context, edgeContext, serveProps);
+  }
   for (decltype(iters) i = 0; i < iters; i++) {
     nebula::storage::cpp2::GetNeighborsResponse resp;
     nebula::DataSet resultDataSet;
@@ -292,8 +296,8 @@ void prefix(int32_t iters,
     }
     CHECK_EQ(vertex.size(), resultDataSet.rowSize());
     nebula::storage::cpp2::ResponseCommon result;
-    resp.set_result(std::move(result));
-    resp.set_vertices(std::move(resultDataSet));
+    resp.result_ref() = std::move(result);
+    resp.vertices_ref() = std::move(resultDataSet);
     auto encoded = encode(resp);
     folly::doNotOptimizeAway(encoded);
   }
@@ -318,7 +322,9 @@ void encodeBench(int32_t iters,
   }
 }
 
-BENCHMARK(EncodeOneProperty, iters) { encodeBench(iters, {"Tim Duncan"}, {"name"}, {"teamName"}); }
+BENCHMARK(EncodeOneProperty, iters) {
+  encodeBench(iters, {"Tim Duncan"}, {"name"}, {"teamName"});
+}
 BENCHMARK_RELATIVE(EncodeThreeProperty, iters) {
   encodeBench(iters, {"Tim Duncan"}, {"name"}, {"teamName", "startYear", "endYear"});
 }
@@ -334,8 +340,12 @@ BENCHMARK_DRAW_LINE();
 // Players may serve more than one team, the total edges = teamCount * maxRank,
 // which would effect the final result, so select some player only serve one
 // team
-BENCHMARK(OneVertexOneProperty, iters) { go(iters, {"Tim Duncan"}, {"name"}, {"teamName"}); }
-BENCHMARK_RELATIVE(OneVertexOnlyId, iters) { go(iters, {"Tim Duncan"}, {"name"}, {nebula::kDst}); }
+BENCHMARK(OneVertexOneProperty, iters) {
+  go(iters, {"Tim Duncan"}, {"name"}, {"teamName"});
+}
+BENCHMARK_RELATIVE(OneVertexOnlyId, iters) {
+  go(iters, {"Tim Duncan"}, {"name"}, {nebula::kDst});
+}
 BENCHMARK_RELATIVE(OneVertexThreeProperty, iters) {
   go(iters, {"Tim Duncan"}, {"name"}, {"teamName", "startYear", "endYear"});
 }
@@ -354,7 +364,9 @@ BENCHMARK_RELATIVE(OneVertexOnePropertyOnlyKV, iters) {
 
 BENCHMARK_DRAW_LINE();
 
-BENCHMARK(NoFilter, iters) { go(iters, {"Tim Duncan"}, {"name"}, {"teamName"}); }
+BENCHMARK(NoFilter, iters) {
+  go(iters, {"Tim Duncan"}, {"name"}, {"teamName"});
+}
 BENCHMARK_RELATIVE(OneFilterNonePass, iters) {
   goFilter(iters, {"Tim Duncan"}, {"name"}, {"teamName"}, FLAGS_max_rank * 0);
 }

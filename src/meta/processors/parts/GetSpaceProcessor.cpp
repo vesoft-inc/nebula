@@ -41,9 +41,9 @@ void GetSpaceProcessor::process(const cpp2::GetSpaceReq& req) {
           << folly::join(",", properties.get_zone_names());
 
   cpp2::SpaceItem item;
-  item.set_space_id(spaceId);
-  item.set_properties(std::move(properties));
-  resp_.set_item(std::move(item));
+  item.space_id_ref() = spaceId;
+  item.properties_ref() = std::move(properties);
+  resp_.item_ref() = std::move(item);
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
   onFinished();
 }

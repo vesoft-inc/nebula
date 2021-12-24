@@ -7,6 +7,7 @@
 #define STORAGE_MUTATE_ADDEDGESPROCESSOR_H_
 
 #include "common/base/Base.h"
+#include "common/stats/StatsManager.h"
 #include "kvstore/LogEncoder.h"
 #include "storage/BaseProcessor.h"
 #include "storage/StorageFlags.h"

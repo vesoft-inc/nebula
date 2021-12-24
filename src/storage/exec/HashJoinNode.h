@@ -108,7 +108,9 @@ class HashJoinNode : public IterateNode<VertexID> {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
-  bool valid() const override { return iter_->valid(); }
+  bool valid() const override {
+    return iter_->valid();
+  }
 
   void next() override {
     iter_->next();
@@ -117,12 +119,18 @@ class HashJoinNode : public IterateNode<VertexID> {
     }
   }
 
-  folly::StringPiece key() const override { return iter_->key(); }
+  folly::StringPiece key() const override {
+    return iter_->key();
+  }
 
-  folly::StringPiece val() const override { return iter_->val(); }
+  folly::StringPiece val() const override {
+    return iter_->val();
+  }
 
   // return the edge row reader which could pass filter
-  RowReader* reader() const override { return iter_->reader(); }
+  RowReader* reader() const override {
+    return iter_->reader();
+  }
 
  private:
   // return true when the value iter points to a value which can pass ttl and

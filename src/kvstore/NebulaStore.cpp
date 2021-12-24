@@ -887,61 +887,85 @@ nebula::cpp2::ErrorCode NebulaStore::flush(GraphSpaceID spaceId) {
 
 ErrorOr<nebula::cpp2::ErrorCode, std::vector<cpp2::CheckpointInfo>> NebulaStore::createCheckpoint(
     GraphSpaceID spaceId, const std::string& name) {
+  /*
+   * The default checkpoint directory structure is :
+   *   |--FLAGS_data_path
+   *   |----nebula
+   *   |------space1
+   *   |--------data
+   *   |--------wal
+   *   |--------checkpoints
+   *   |----------snapshot1
+   *   |------------data
+   *   |------------wal
+   *   |----------snapshot2
+   *   |----------snapshot3
+   *
+   */
   auto spaceRet = space(spaceId);
   if (!ok(spaceRet)) {
     return error(spaceRet);
   }
-
   auto space = nebula::value(spaceRet);
-  std::string cpPath;
-  std::unordered_map<PartitionID, cpp2::LogInfo> partitionInfo;
-  std::vector<cpp2::CheckpointInfo> cpInfo;
+  std::vector<cpp2::CheckpointInfo> cpInfoList;
 
   DCHECK(!space->engines_.empty());
-
   for (auto& engine : space->engines_) {
-    auto code = engine->createCheckpoint(name);
+    std::string path = folly::sformat("{}/checkpoints/{}", engine->getDataRoot(), name);
+    if (!fs::FileUtils::exist(path)) {
+      if (!fs::FileUtils::makeDir(path)) {
+        LOG(ERROR) << "Make checkpoint dir: " << path << " failed";
+        return nebula::cpp2::ErrorCode::E_UNKNOWN;
+      }
+    }
+
+    // create data checkpoint
+    std::string dataPath = folly::sformat("{}/data", path);
+    auto code = engine->createCheckpoint(dataPath);
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
       return code;
     }
-    // Maybe there's a judgment call here.
-    cpPath = folly::stringPrintf("%s/checkpoints/%s", engine->getDataRoot(), name.c_str());
-    // create wal hard link for all parts
+
+    // create wal checkpoints: make hard link for all parts
+    std::unordered_map<PartitionID, cpp2::LogInfo> partsInfo;
     auto parts = engine->allParts();
-    for (auto& part : parts) {
-      auto ret = this->part(spaceId, part);
+    for (auto& partId : parts) {
+      auto ret = this->part(spaceId, partId);
       if (!ok(ret)) {
-        LOG(ERROR) << "Part not found. space : " << spaceId << " Part : " << part;
+        LOG(ERROR) << "Part not found. space : " << spaceId << " Part : " << partId;
         return error(ret);
       }
-      auto walPath =
-          folly::stringPrintf("%s/checkpoints/%s/wal/%d", engine->getWalRoot(), name.c_str(), part);
+
       auto p = nebula::value(ret);
+      auto walPath = folly::sformat("{}/wal/{}", path, partId);
       if (!p->linkCurrentWAL(walPath.data())) {
         return nebula::cpp2::ErrorCode::E_FAILED_TO_CHECKPOINT;
       }
 
+      // return last wal info of each part
       if (p->isLeader()) {
         auto logInfo = p->lastLogInfo();
         cpp2::LogInfo info;
-        info.set_log_id(logInfo.first);
-        info.set_term_id(logInfo.second);
-        partitionInfo.emplace(part, std::move(info));
+        info.log_id_ref() = logInfo.first;
+        info.term_id_ref() = logInfo.second;
+        partsInfo.emplace(partId, std::move(info));
       }
     }
-    auto result = nebula::fs::FileUtils::realPath(cpPath.c_str());
+
+    auto result = nebula::fs::FileUtils::realPath(path.c_str());
     if (!result.ok()) {
+      LOG(ERROR) << "Failed to get path:" << path << "'s real path";
       return nebula::cpp2::ErrorCode::E_FAILED_TO_CHECKPOINT;
     }
-    nebula::cpp2::PartitionBackupInfo backupInfo;
-    nebula::cpp2::CheckpointInfo info;
-    backupInfo.set_info(std::move(partitionInfo));
-    info.set_path(std::move(result.value()));
-    info.set_partition_info(std::move(backupInfo));
-    cpInfo.emplace_back(std::move(info));
+
+    nebula::cpp2::CheckpointInfo cpInfo;
+    cpInfo.path_ref() = std::move(result.value());
+    cpInfo.parts_ref() = std::move(partsInfo);
+    cpInfo.space_id_ref() = spaceId;
+    cpInfoList.emplace_back(std::move(cpInfo));
   }
 
-  return cpInfo;
+  return cpInfoList;
 }
 
 nebula::cpp2::ErrorCode NebulaStore::dropCheckpoint(GraphSpaceID spaceId, const std::string& name) {
@@ -954,12 +978,12 @@ nebula::cpp2::ErrorCode NebulaStore::dropCheckpoint(GraphSpaceID spaceId, const 
     /**
      * Drop checkpoint and wal together
      **/
-    auto checkpointPath =
-        folly::stringPrintf("%s/checkpoints/%s", engine->getDataRoot(), name.c_str());
+    auto checkpointPath = folly::sformat("{}/checkpoints/{}", engine->getDataRoot(), name);
     LOG(INFO) << "Drop checkpoint : " << checkpointPath;
     if (!fs::FileUtils::exist(checkpointPath)) {
       continue;
     }
+
     if (!fs::FileUtils::remove(checkpointPath.data(), true)) {
       LOG(ERROR) << "Drop checkpoint dir failed : " << checkpointPath;
       return nebula::cpp2::ErrorCode::E_STORE_FAILURE;
@@ -1049,8 +1073,8 @@ int32_t NebulaStore::allLeader(
       auto partId = partIt.first;
       if (partIt.second->isLeader()) {
         meta::cpp2::LeaderInfo partInfo;
-        partInfo.set_part_id(partId);
-        partInfo.set_term(partIt.second->termId());
+        partInfo.part_id_ref() = partId;
+        partInfo.term_ref() = partIt.second->termId();
         leaderIds[spaceId].emplace_back(std::move(partInfo));
         ++count;
       }

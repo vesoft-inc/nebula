@@ -1,21 +1,20 @@
-execute_process(
-    COMMAND
-        ld --version
-    COMMAND
-        head -1
-    COMMAND
-        cut -d " " -f2
-    OUTPUT_VARIABLE default_linker_type
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-)
+set(NEBULA_USE_LINKER
+  "bfd"
+  CACHE STRING "Linker to be used")
+set(USER_LINKER_OPTION_VALUES "lld" "gold" "bfd")
+set_property(CACHE NEBULA_USE_LINKER PROPERTY STRINGS ${USER_LINKER_OPTION_VALUES})
+list(
+  FIND
+  USER_LINKER_OPTION_VALUES
+  ${NEBULA_USE_LINKER}
+  USER_LINKER_OPTION_INDEX)
 
-if ("${default_linker_type}" STREQUAL "ld")
-    set(default_linker_type "bfd")
+if(${USER_LINKER_OPTION_INDEX} EQUAL -1)
+  message(
+    STATUS
+    "Using custom linker: '${NEBULA_USE_LINKER}', explicitly supported entries are ${USER_LINKER_OPTION_VALUES}")
 endif()
 
-if (NOT DEFINED NEBULA_USE_LINKER)
-    set(NEBULA_USE_LINKER ${default_linker_type})
-endif()
 print_config(NEBULA_USE_LINKER)
 
 nebula_add_exe_linker_flag(-fuse-ld=${NEBULA_USE_LINKER})
