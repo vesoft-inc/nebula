@@ -17,6 +17,7 @@
 #include "clients/meta/stats/MetaClientStats.h"
 #include "common/base/Base.h"
 #include "common/base/MurmurHash2.h"
+#include "common/base/Status.h"
 #include "common/conf/Configuration.h"
 #include "common/http/HttpClient.h"
 #include "common/meta/NebulaSchemaProvider.h"
@@ -2367,31 +2368,54 @@ std::vector<cpp2::RoleItem> MetaClient::getRolesByUserFromCache(const std::strin
 }
 
 Status MetaClient::authCheckFromCache(const std::string& account, const std::string& password) {
+  // Check meta service status
   if (!ready_) {
     return Status::Error("Meta Service not ready");
   }
+
   const ThreadLocalInfo& threadLocalInfo = getThreadLocalInfo();
+  // Check user existence
   auto iter = threadLocalInfo.userPasswordMap_.find(account);
   if (iter == threadLocalInfo.userPasswordMap_.end()) {
     return Status::Error("User not exist");
   }
+
   auto passwordAttemtRemain =
       const_cast<ThreadLocalInfo&>(threadLocalInfo).userPasswordAttemptsRemain_[account];
+  // If the remaining attempts is 0 and login retry is limitied, the user should be blocked
+  bool isUserBlocked = passwordAttemtRemain == 0 && FLAGS_failed_login_attempts != 0;
 
-  if (iter->second == password) {
-    return Status::OK();
-  }
-  // If the password is not correct and passwordAttemtRemain > 0,
-  // Allow another trial
-  if (passwordAttemtRemain > 0) {
-    auto remainAttemps =
-        --const_cast<ThreadLocalInfo&>(threadLocalInfo).userPasswordAttemptsRemain_[account];
-    LOG(ERROR) << "Invalid password, remaining attempts: " << remainAttemps;
-    return Status::Error("Invalid password, remaining attempts: %d", remainAttemps);
-  } else {
+  if (isUserBlocked) {
     // If the remaining attemps is 0, failed to authenticate
-    return Status::Error("Invalid password");
+    // Block user login
+    return Status::Error(
+        "%d times consecutive incorrect passwords has been input, user name: %s has been "
+        "blocked",
+        FLAGS_failed_login_attempts,
+        account.c_str());
   }
+
+  if (iter->second != password) {
+    // By default there is no limit of login attempts
+    if (FLAGS_failed_login_attempts == 0) {
+      return Status::Error("Invalid password");
+    }
+
+    // If the password is not correct and passwordAttemtRemain > 0,
+    // Allow another trial
+    if (passwordAttemtRemain > 0) {
+      auto remainAttemps =
+          --const_cast<ThreadLocalInfo&>(threadLocalInfo).userPasswordAttemptsRemain_[account];
+      LOG(ERROR) << "Invalid password, remaining attempts: " << remainAttemps;
+      return Status::Error("Invalid password, remaining attempts: %d", remainAttemps);
+    }
+  }
+
+  // Authentication succeed
+  // Reset password attempts remained
+  const_cast<ThreadLocalInfo&>(threadLocalInfo).userPasswordAttemptsRemain_[account] =
+      FLAGS_failed_login_attempts;
+  return Status::OK();
 }
 
 bool MetaClient::checkShadowAccountFromCache(const std::string& account) {
