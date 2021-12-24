@@ -112,3 +112,15 @@
 --rocksdb_column_family_options={"write_buffer_size":"67108864","max_write_buffer_number":"4","max_bytes_for_level_base":"268435456"}
 # rocksdb BlockBasedTableOptions in json, each name and value of option is string, given as "option_name":"option_value" separated by comma
 --rocksdb_block_based_table_options={"block_size":"8192"}
+
+############## storage cache ##############
+# Whether to enable storage cache
+--enable_storage_cache=false
+# Total capacity reservered for storage in memory cache in MB
+--storage_cache_capacity=0
+# Number of buckets in base 2 logarithm. E.g., in case of 10, the total number of buckets will be 2^10.
+--storage_cache_buckets_power=10
+# Number of locks in base 2 logarithm. E.g., in case of 5, the total number of buckets will be 2^5.
+--storage_cache_locks_power=5
+# Vertex pool size in MB
+--vertex_pool_capacity=50

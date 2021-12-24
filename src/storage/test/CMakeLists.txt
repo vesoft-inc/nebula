@@ -758,3 +758,19 @@ nebula_add_executable(
         gtest
 )
 
+nebula_add_executable(
+    NAME
+        storage_cache_test
+    SOURCES
+        StorageCacheTest.cpp
+    OBJECTS
+        $<TARGET_OBJECTS:storage_cache_obj>
+        ${storage_test_deps}
+    LIBRARIES
+        ${ROCKSDB_LIBRARIES}
+        ${THRIFT_LIBRARIES}
+        ${PROXYGEN_LIBRARIES}
+        ${CACHELIB_LIBRARIES}
+        wangle
+        gtest
+)

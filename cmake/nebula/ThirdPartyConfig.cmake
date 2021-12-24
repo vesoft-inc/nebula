@@ -109,6 +109,7 @@ find_package(Sodium REQUIRED)
 if (${CMAKE_HOST_SYSTEM_PROCESSOR} MATCHES "x86_64")
     find_package(Breakpad REQUIRED)
 endif()
+find_package(CacheLib REQUIRED)
 
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L ${NEBULA_THIRDPARTY_ROOT}/lib")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -L ${NEBULA_THIRDPARTY_ROOT}/lib64")
@@ -138,6 +139,7 @@ set(PROXYGEN_LIBRARIES
 )
 
 set(ROCKSDB_LIBRARIES ${Rocksdb_LIBRARY})
+set(CACHELIB_LIBRARIES ${CacheLib_LIBRARIES})
 
 # All compression libraries
 set(COMPRESSION_LIBRARIES bz2 snappy zstd z lz4)

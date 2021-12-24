@@ -9,6 +9,7 @@
 #include "common/memory/MemoryUtils.h"
 #include "common/meta/ServerBasedIndexManager.h"
 #include "common/meta/ServerBasedSchemaManager.h"
+#include "graph/cache/GraphCache.h"
 #include "graph/context/QueryContext.h"
 #include "graph/optimizer/OptRule.h"
 #include "graph/planner/PlannersRegister.h"
@@ -31,6 +32,10 @@ Status QueryEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor
   indexManager_ = meta::ServerBasedIndexManager::create(metaClient_);
   storage_ = std::make_unique<storage::StorageClient>(ioExecutor, metaClient_);
   charsetInfo_ = CharsetInfo::instance();
+  auto cache = GraphCache::instance();
+  if (!cache->init()) {
+    return Status::Error("Fail to init graph cache.");
+  }
 
   PlannersRegister::registerPlanners();
 

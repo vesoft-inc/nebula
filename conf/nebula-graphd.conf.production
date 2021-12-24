@@ -86,3 +86,20 @@
 --enable_experimental_feature=false
 
 --enable_space_level_metrics=false
+############## graph cache ##############
+# Whether to enable graph cache
+--enable_graph_cache=false
+# Total capacity reservered for graph in memory cache in MB
+--graph_cache_capacity=0
+# Number of buckets in base 2 logarithm. E.g., in case of 10, the total number of buckets will be 2^10.
+--graph_cache_buckets_power=10
+# Number of locks in base 2 logarithm. E.g., in case of 5, the total number of buckets will be 2^5.
+--graph_cache_locks_power=5
+# Edge pool size in MB
+--edge_pool_capacity=50
+# Vertex pool size in MB
+--vertex_pool_capacity=50
+# Vertex item ttl in seconds
+--vertex_item_ttl=300
+# Edge item ttl in seconds
+--edge_item_ttl=300

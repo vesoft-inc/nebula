@@ -135,6 +135,8 @@ nebula_add_executable(
         $<TARGET_OBJECTS:graph_auth_obj>
         $<TARGET_OBJECTS:graph_thrift_obj>
         $<TARGET_OBJECTS:storage_client_base_obj>
+        $<TARGET_OBJECTS:storage_client_cache_obj>
+        $<TARGET_OBJECTS:graph_cache_obj>
         $<TARGET_OBJECTS:storage_client_obj>
         $<TARGET_OBJECTS:concurrent_obj>
         $<TARGET_OBJECTS:charset_obj>
@@ -145,6 +147,7 @@ nebula_add_executable(
     LIBRARIES
         ${PROXYGEN_LIBRARIES}
         ${THRIFT_LIBRARIES}
+        ${CACHELIB_LIBRARIES}
         wangle
 )
 

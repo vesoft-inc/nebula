@@ -7,6 +7,7 @@
 
 #include <folly/Try.h>
 
+#include "clients/storage/StorageClientCache.h"
 #include "clients/storage/stats/StorageClientStats.h"
 #include "common/ssl/SSLConfig.h"
 #include "common/stats/StatsManager.h"
@@ -123,12 +124,30 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClientBase<ClientType>::c
 
   DCHECK(!!ioThreadPool_);
 
+  auto cache = std::make_unique<nebula::graph::StorageClientCache>();
+
   for (auto& req : requests) {
+    // if (std::is_same<Request, cpp2::GetNeighborsRequest>::value &&
+    //     std::is_same<Response, cpp2::GetNeighborsResponse>::value) {
+    //   auto status = cache->getCacheValue(req.second);
+    //   if (status.ok()) {
+    //     context->resp.addResponse(std::move(status.value()));
+    //     continue;
+    //   }
+    // }
+    auto cacheResp = cache->getCacheValue(req.second);
+    if (cacheResp.ok()) {
+      if (std::is_same<Response, GetNeighborsResponse>::value) {
+        context->resp.addResponse(std::move(cacheResp.value()));
+        continue;
+      }
+    }
     auto& host = req.first;
     auto spaceId = req.second.get_space_id();
     auto res = context->insertRequest(host, std::move(req.second));
     DCHECK(res.second);
     evb = ioThreadPool_->getEventBase();
+
     // Invoke the remote method
     folly::via(evb, [this, evb, context, host, spaceId, res]() mutable {
       auto client = clientsMan_->client(host, evb, false, FLAGS_storage_client_timeout_ms);
@@ -172,6 +191,7 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClientBase<ClientType>::c
 
             // Keep the response
             context->resp.addResponse(std::move(resp));
+            // insert response into graph cache
           })
           .thenError(folly::tag_t<TransportException>{},
                      [this, context, host, spaceId](TransportException&& ex) {
