@@ -471,7 +471,7 @@ FunctionManager::FunctionManager() {
       if (!wasmFunctionManager.existFunction(udfName)) {
         return Value::kNullBadData;
       }
-      auto udfResult = wasmFunctionManager.runWithNebulaDataHandle(udfName, udfParams);
+      std::vector<nebula::Value> udfResult = wasmFunctionManager.runWithNebulaDataHandle(udfName, udfParams.values);
       if (udfResult.empty()) {
         // cannot find udf function or cal error
         return Value::kNullBadData;
@@ -484,7 +484,7 @@ FunctionManager::FunctionManager() {
       } else if (returnType == WasmFunctionParamType::FLOAT) {
         return udfResult[0].getFloat();
       } else if (returnType == WasmFunctionParamType::LIST) {
-        return udfResult;
+        return nebula::List(udfResult);
       } else if (returnType == WasmFunctionParamType::STRING) {
         return udfResult[0].getStr();
       } else {
