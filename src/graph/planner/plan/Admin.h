@@ -1174,8 +1174,8 @@ class ShowSessions final : public SingleInputNode {
   bool isSetSessionID() const {
     return isSetSessionID_;
   }
-  bool isLocalCommand() const { 
-    return isLocalCommand_; 
+  bool isLocalCommand() const {
+    return isLocalCommand_;
   }
   SessionID getSessionId() const {
     return sessionId_;

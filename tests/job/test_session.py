@@ -9,7 +9,6 @@ import sys
 import time
 import pytest
 import concurrent
-import pdb
 
 from nebula2.fbthrift.transport import TSocket
 from nebula2.fbthrift.transport import TTransport
