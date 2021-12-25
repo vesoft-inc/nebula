@@ -78,10 +78,10 @@ macro(nebula_link_libraries target)
         ${target}
         ${ARGN}
         folly
-        iberty
         fmt
         glog
         gflags
+	rt
         boost_context
         boost_system
         boost_regex
