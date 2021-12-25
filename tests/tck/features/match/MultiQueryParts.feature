@@ -192,15 +192,15 @@ Feature: Multi Query Parts
       | "Boris Diaw"  | "Suns"       |
       | "Boris Diaw"  | "Tim Duncan" |
     When executing query:
-    """
-    MATCH (m:player{name:"Tim Duncan"})-[:like]-(n)--()
-    WITH  m,count(*) AS lcount
-    MATCH (m)--(n)
-    RETURN count(*) AS scount, lcount
-    """
+      """
+      MATCH (m:player{name:"Tim Duncan"})-[:like]-(n)--()
+      WITH  m,count(*) AS lcount
+      MATCH (m)--(n)
+      RETURN count(*) AS scount, lcount
+      """
     Then the result should be, in order:
-    | scount | lcount |
-    | 19     | 110    |
+      | scount | lcount |
+      | 19     | 110    |
     # Below scenario is not suppoted for the execution plan has a scan.
     When executing query:
       """
