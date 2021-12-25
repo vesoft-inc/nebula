@@ -30,9 +30,9 @@ StorageClient::CommonRequestParam::CommonRequestParam(GraphSpaceID space_,
 
 cpp2::RequestCommon StorageClient::CommonRequestParam::toReqCommon() const {
   cpp2::RequestCommon common;
-  common.set_session_id(session);
-  common.set_plan_id(plan);
-  common.set_profile_detail(profile);
+  common.session_id_ref() = session;
+  common.plan_id_ref() = plan;
+  common.profile_detail_ref() = profile;
   return common;
 }
 
@@ -69,35 +69,35 @@ StorageRpcRespFuture<cpp2::GetNeighborsResponse> StorageClient::getNeighbors(
   for (auto& c : clusters) {
     auto& host = c.first;
     auto& req = requests[host];
-    req.set_space_id(param.space);
-    req.set_column_names(colNames);
-    req.set_parts(std::move(c.second));
-    req.set_common(common);
+    req.space_id_ref() = param.space;
+    req.column_names_ref() = colNames;
+    req.parts_ref() = std::move(c.second);
+    req.common_ref() = common;
     cpp2::TraverseSpec spec;
-    spec.set_edge_types(edgeTypes);
-    spec.set_edge_direction(edgeDirection);
-    spec.set_dedup(dedup);
-    spec.set_random(random);
+    spec.edge_types_ref() = edgeTypes;
+    spec.edge_direction_ref() = edgeDirection;
+    spec.dedup_ref() = dedup;
+    spec.random_ref() = random;
     if (statProps != nullptr) {
-      spec.set_stat_props(*statProps);
+      spec.stat_props_ref() = *statProps;
     }
     if (vertexProps != nullptr) {
-      spec.set_vertex_props(*vertexProps);
+      spec.vertex_props_ref() = *vertexProps;
     }
     if (edgeProps != nullptr) {
-      spec.set_edge_props(*edgeProps);
+      spec.edge_props_ref() = *edgeProps;
     }
     if (expressions != nullptr) {
-      spec.set_expressions(*expressions);
+      spec.expressions_ref() = *expressions;
     }
     if (!orderBy.empty()) {
-      spec.set_order_by(orderBy);
+      spec.order_by_ref() = orderBy;
     }
-    spec.set_limit(limit);
+    spec.limit_ref() = limit;
     if (filter != nullptr) {
-      spec.set_filter(filter->encode());
+      spec.filter_ref() = filter->encode();
     }
-    req.set_traverse_spec(std::move(spec));
+    req.traverse_spec_ref() = std::move(spec);
   }
 
   return collectResponse(
@@ -132,12 +132,12 @@ StorageRpcRespFuture<cpp2::ExecResponse> StorageClient::addVertices(
   for (auto& c : clusters) {
     auto& host = c.first;
     auto& req = requests[host];
-    req.set_space_id(param.space);
-    req.set_if_not_exists(ifNotExists);
-    req.set_ignore_existed_index(ignoreExistedIndex);
-    req.set_parts(std::move(c.second));
-    req.set_prop_names(propNames);
-    req.set_common(common);
+    req.space_id_ref() = param.space;
+    req.if_not_exists_ref() = ifNotExists;
+    req.ignore_existed_index_ref() = ignoreExistedIndex;
+    req.parts_ref() = std::move(c.second);
+    req.prop_names_ref() = propNames;
+    req.common_ref() = common;
   }
 
   return collectResponse(
@@ -171,12 +171,12 @@ StorageRpcRespFuture<cpp2::ExecResponse> StorageClient::addEdges(const CommonReq
   for (auto& c : clusters) {
     auto& host = c.first;
     auto& req = requests[host];
-    req.set_space_id(param.space);
-    req.set_if_not_exists(ifNotExists);
-    req.set_ignore_existed_index(ignoreExistedIndex);
-    req.set_parts(std::move(c.second));
-    req.set_prop_names(propNames);
-    req.set_common(common);
+    req.space_id_ref() = param.space;
+    req.if_not_exists_ref() = ifNotExists;
+    req.ignore_existed_index_ref() = ignoreExistedIndex;
+    req.parts_ref() = std::move(c.second);
+    req.prop_names_ref() = propNames;
+    req.common_ref() = common;
   }
   return collectResponse(
       param.evb,
@@ -215,26 +215,26 @@ StorageRpcRespFuture<cpp2::GetPropResponse> StorageClient::getProps(
   for (auto& c : clusters) {
     auto& host = c.first;
     auto& req = requests[host];
-    req.set_space_id(param.space);
-    req.set_parts(std::move(c.second));
-    req.set_dedup(dedup);
+    req.space_id_ref() = param.space;
+    req.parts_ref() = std::move(c.second);
+    req.dedup_ref() = dedup;
     if (vertexProps != nullptr) {
-      req.set_vertex_props(*vertexProps);
+      req.vertex_props_ref() = *vertexProps;
     }
     if (edgeProps != nullptr) {
-      req.set_edge_props(*edgeProps);
+      req.edge_props_ref() = *edgeProps;
     }
     if (expressions != nullptr) {
-      req.set_expressions(*expressions);
+      req.expressions_ref() = *expressions;
     }
     if (!orderBy.empty()) {
-      req.set_order_by(orderBy);
+      req.order_by_ref() = orderBy;
     }
-    req.set_limit(limit);
+    req.limit_ref() = limit;
     if (filter != nullptr) {
-      req.set_filter(filter->encode());
+      req.filter_ref() = filter->encode();
     }
-    req.set_common(common);
+    req.common_ref() = common;
   }
 
   return collectResponse(param.evb,
@@ -263,9 +263,9 @@ StorageRpcRespFuture<cpp2::ExecResponse> StorageClient::deleteEdges(
   for (auto& c : clusters) {
     auto& host = c.first;
     auto& req = requests[host];
-    req.set_space_id(param.space);
-    req.set_parts(std::move(c.second));
-    req.set_common(common);
+    req.space_id_ref() = param.space;
+    req.parts_ref() = std::move(c.second);
+    req.common_ref() = common;
   }
 
   return collectResponse(
@@ -296,9 +296,9 @@ StorageRpcRespFuture<cpp2::ExecResponse> StorageClient::deleteVertices(
   for (auto& c : clusters) {
     auto& host = c.first;
     auto& req = requests[host];
-    req.set_space_id(param.space);
-    req.set_parts(std::move(c.second));
-    req.set_common(common);
+    req.space_id_ref() = param.space;
+    req.parts_ref() = std::move(c.second);
+    req.common_ref() = common;
   }
 
   return collectResponse(
@@ -329,9 +329,9 @@ StorageRpcRespFuture<cpp2::ExecResponse> StorageClient::deleteTags(
   for (auto& c : clusters) {
     auto& host = c.first;
     auto& req = requests[host];
-    req.set_space_id(param.space);
-    req.set_parts(std::move(c.second));
-    req.set_common(common);
+    req.space_id_ref() = param.space;
+    req.parts_ref() = std::move(c.second);
+    req.common_ref() = common;
   }
 
   return collectResponse(
@@ -375,16 +375,16 @@ folly::Future<StatusOr<storage::cpp2::UpdateResponse>> StorageClient::updateVert
   }
   request.first = std::move(host).value();
   cpp2::UpdateVertexRequest req;
-  req.set_space_id(param.space);
-  req.set_vertex_id(vertexId);
-  req.set_tag_id(tagId);
-  req.set_part_id(part);
-  req.set_updated_props(std::move(updatedProps));
-  req.set_return_props(std::move(returnProps));
-  req.set_insertable(insertable);
-  req.set_common(param.toReqCommon());
+  req.space_id_ref() = param.space;
+  req.vertex_id_ref() = vertexId;
+  req.tag_id_ref() = tagId;
+  req.part_id_ref() = part;
+  req.updated_props_ref() = std::move(updatedProps);
+  req.return_props_ref() = std::move(returnProps);
+  req.insertable_ref() = insertable;
+  req.common_ref() = param.toReqCommon();
   if (condition.size() > 0) {
-    req.set_condition(std::move(condition));
+    req.condition_ref() = std::move(condition);
   }
   request.second = std::move(req);
 
@@ -429,15 +429,15 @@ folly::Future<StatusOr<storage::cpp2::UpdateResponse>> StorageClient::updateEdge
   }
   request.first = std::move(host).value();
   cpp2::UpdateEdgeRequest req;
-  req.set_space_id(space);
-  req.set_edge_key(edgeKey);
-  req.set_part_id(part);
-  req.set_updated_props(std::move(updatedProps));
-  req.set_return_props(std::move(returnProps));
-  req.set_insertable(insertable);
-  req.set_common(param.toReqCommon());
+  req.space_id_ref() = space;
+  req.edge_key_ref() = edgeKey;
+  req.part_id_ref() = part;
+  req.updated_props_ref() = std::move(updatedProps);
+  req.return_props_ref() = std::move(returnProps);
+  req.insertable_ref() = insertable;
+  req.common_ref() = param.toReqCommon();
   if (condition.size() > 0) {
-    req.set_condition(std::move(condition));
+    req.condition_ref() = std::move(condition);
   }
   request.second = std::move(req);
 
@@ -473,9 +473,9 @@ folly::Future<StatusOr<cpp2::GetUUIDResp>> StorageClient::getUUID(GraphSpaceID s
   }
   request.first = std::move(host).value();
   cpp2::GetUUIDReq req;
-  req.set_space_id(space);
-  req.set_part_id(part);
-  req.set_name(name);
+  req.space_id_ref() = space;
+  req.part_id_ref() = part;
+  req.name_ref() = name;
   request.second = std::move(req);
 
   return getResponse(evb,
@@ -501,9 +501,9 @@ StorageRpcRespFuture<cpp2::LookupIndexResp> StorageClient::lookupIndex(
   }
   nebula::cpp2::SchemaID schemaId;
   if (isEdge) {
-    schemaId.set_edge_type(tagOrEdge);
+    schemaId.edge_type_ref() = tagOrEdge;
   } else {
-    schemaId.set_tag_id(tagOrEdge);
+    schemaId.tag_id_ref() = tagOrEdge;
   }
 
   auto& clusters = status.value();
@@ -512,16 +512,16 @@ StorageRpcRespFuture<cpp2::LookupIndexResp> StorageClient::lookupIndex(
   for (auto& c : clusters) {
     auto& host = c.first;
     auto& req = requests[host];
-    req.set_space_id(space);
-    req.set_parts(std::move(c.second));
-    req.set_return_columns(returnCols);
+    req.space_id_ref() = space;
+    req.parts_ref() = std::move(c.second);
+    req.return_columns_ref() = returnCols;
 
     cpp2::IndexSpec spec;
-    spec.set_contexts(contexts);
-    spec.set_schema_id(schemaId);
-    req.set_indices(spec);
-    req.set_common(common);
-    req.set_limit(limit);
+    spec.contexts_ref() = contexts;
+    spec.schema_id_ref() = schemaId;
+    req.indices_ref() = spec;
+    req.common_ref() = common;
+    req.limit_ref() = limit;
   }
 
   return collectResponse(
@@ -547,11 +547,11 @@ StorageRpcRespFuture<cpp2::GetNeighborsResponse> StorageClient::lookupAndTravers
   for (auto& c : clusters) {
     auto& host = c.first;
     auto& req = requests[host];
-    req.set_space_id(space);
-    req.set_parts(std::move(c.second));
-    req.set_indices(indexSpec);
-    req.set_traverse_spec(traverseSpec);
-    req.set_common(common);
+    req.space_id_ref() = space;
+    req.parts_ref() = std::move(c.second);
+    req.indices_ref() = indexSpec;
+    req.traverse_spec_ref() = traverseSpec;
+    req.common_ref() = common;
   }
 
   return collectResponse(
@@ -577,14 +577,14 @@ StorageRpcRespFuture<cpp2::ScanResponse> StorageClient::scanEdge(
   for (const auto& c : clusters) {
     auto& host = c.first;
     auto& req = requests[host];
-    req.set_space_id(param.space);
-    req.set_parts(std::move(c.second));
-    req.set_return_columns(edgeProp);
-    req.set_limit(limit);
+    req.space_id_ref() = param.space;
+    req.parts_ref() = std::move(c.second);
+    req.return_columns_ref() = edgeProp;
+    req.limit_ref() = limit;
     if (filter != nullptr) {
-      req.set_filter(filter->encode());
+      req.filter_ref() = filter->encode();
     }
-    req.set_common(param.toReqCommon());
+    req.common_ref() = param.toReqCommon();
   }
 
   return collectResponse(param.evb,
@@ -608,14 +608,14 @@ StorageRpcRespFuture<cpp2::ScanResponse> StorageClient::scanVertex(
   for (const auto& c : clusters) {
     auto& host = c.first;
     auto& req = requests[host];
-    req.set_space_id(param.space);
-    req.set_parts(std::move(c.second));
-    req.set_return_columns(vertexProp);
-    req.set_limit(limit);
+    req.space_id_ref() = param.space;
+    req.parts_ref() = std::move(c.second);
+    req.return_columns_ref() = vertexProp;
+    req.limit_ref() = limit;
     if (filter != nullptr) {
-      req.set_filter(filter->encode());
+      req.filter_ref() = filter->encode();
     }
-    req.set_common(param.toReqCommon());
+    req.common_ref() = param.toReqCommon();
   }
 
   return collectResponse(
@@ -641,9 +641,9 @@ folly::SemiFuture<StorageRpcResponse<cpp2::KVGetResponse>> StorageClient::get(
   for (auto& c : clusters) {
     auto& host = c.first;
     auto& req = requests[host];
-    req.set_space_id(space);
-    req.set_parts(std::move(c.second));
-    req.set_return_partly(returnPartly);
+    req.space_id_ref() = space;
+    req.parts_ref() = std::move(c.second);
+    req.return_partly_ref() = returnPartly;
   }
 
   return collectResponse(evb,
@@ -667,8 +667,8 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::put(
   for (auto& c : clusters) {
     auto& host = c.first;
     auto& req = requests[host];
-    req.set_space_id(space);
-    req.set_parts(std::move(c.second));
+    req.space_id_ref() = space;
+    req.parts_ref() = std::move(c.second);
   }
 
   return collectResponse(evb,
@@ -692,8 +692,8 @@ folly::SemiFuture<StorageRpcResponse<cpp2::ExecResponse>> StorageClient::remove(
   for (auto& c : clusters) {
     auto& host = c.first;
     auto& req = requests[host];
-    req.set_space_id(space);
-    req.set_parts(std::move(c.second));
+    req.space_id_ref() = space;
+    req.parts_ref() = std::move(c.second);
   }
 
   return collectResponse(evb,
@@ -761,7 +761,8 @@ StatusOr<std::function<const VertexID&(const cpp2::NewVertex&)>> StorageClient::
     cb = [](const cpp2::NewVertex& v) -> const VertexID& {
       DCHECK_EQ(Value::Type::INT, v.get_id().type());
       auto& mutableV = const_cast<cpp2::NewVertex&>(v);
-      mutableV.set_id(Value(std::string(reinterpret_cast<const char*>(&v.get_id().getInt()), 8)));
+      mutableV.id_ref() =
+          Value(std::string(reinterpret_cast<const char*>(&v.get_id().getInt()), 8));
       return mutableV.get_id().getStr();
     };
   } else if (vidType == PropertyType::FIXED_STRING) {
@@ -825,10 +826,10 @@ StatusOr<std::function<const VertexID&(const cpp2::EdgeKey&)>> StorageClient::ge
       DCHECK_EQ(Value::Type::INT, eKey.get_src().type());
       DCHECK_EQ(Value::Type::INT, eKey.get_dst().type());
       auto& mutableEK = const_cast<cpp2::EdgeKey&>(eKey);
-      mutableEK.set_src(
-          Value(std::string(reinterpret_cast<const char*>(&eKey.get_src().getInt()), 8)));
-      mutableEK.set_dst(
-          Value(std::string(reinterpret_cast<const char*>(&eKey.get_dst().getInt()), 8)));
+      mutableEK.src_ref() =
+          Value(std::string(reinterpret_cast<const char*>(&eKey.get_src().getInt()), 8));
+      mutableEK.dst_ref() =
+          Value(std::string(reinterpret_cast<const char*>(&eKey.get_dst().getInt()), 8));
       return mutableEK.get_src().getStr();
     };
   } else if (vidType == PropertyType::FIXED_STRING) {

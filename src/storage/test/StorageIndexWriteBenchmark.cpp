@@ -112,16 +112,16 @@ std::vector<NewVertex> genVertices(size_t vLen, int32_t& vId) {
   for (auto i = 0; i < FLAGS_bulk_insert_size; i++) {
     NewVertex newVertex;
     NewTag newTag;
-    newTag.set_tag_id(tagId);
+    newTag.tag_id_ref() = tagId;
     std::vector<Value> props;
     props.emplace_back(Value(1L + i));
     props.emplace_back(Value(2L + i));
     props.emplace_back(Value(3L + i));
-    newTag.set_props(std::move(props));
+    newTag.props_ref() = std::move(props);
     std::vector<nebula::storage::cpp2::NewTag> newTags;
     newTags.push_back(std::move(newTag));
-    newVertex.set_id(toVertexId(vLen, vId++));
-    newVertex.set_tags(std::move(newTags));
+    newVertex.id_ref() = toVertexId(vLen, vId++);
+    newVertex.tags_ref() = std::move(newTags);
     vertices.emplace_back(std::move(newVertex));
   }
   return vertices;
@@ -130,8 +130,8 @@ std::vector<NewVertex> genVertices(size_t vLen, int32_t& vId) {
 bool processVertices(StorageEnv* env, int32_t& vId) {
   cpp2::AddVerticesRequest req;
   BENCHMARK_SUSPEND {
-    req.set_space_id(1);
-    req.set_if_not_exists(true);
+    req.space_id_ref() = 1;
+    req.if_not_exists_ref() = true;
     auto newVertex = genVertices(32, vId);
     (*req.parts_ref())[1] = std::move(newVertex);
   };
@@ -338,15 +338,25 @@ void insertVerticesMultIndex() {
   };
 }
 
-BENCHMARK(withoutIndex) { insertVertices(true); }
+BENCHMARK(withoutIndex) {
+  insertVertices(true);
+}
 
-BENCHMARK(unmatchIndex) { insertUnmatchIndex(); }
+BENCHMARK(unmatchIndex) {
+  insertUnmatchIndex();
+}
 
-BENCHMARK(attachIndex) { insertVertices(false); }
+BENCHMARK(attachIndex) {
+  insertVertices(false);
+}
 
-BENCHMARK(duplicateVerticesIndex) { insertDupVertices(); }
+BENCHMARK(duplicateVerticesIndex) {
+  insertDupVertices();
+}
 
-BENCHMARK(multipleIndex) { insertVerticesMultIndex(); }
+BENCHMARK(multipleIndex) {
+  insertVerticesMultIndex();
+}
 
 }  // namespace storage
 }  // namespace nebula

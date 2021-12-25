@@ -18,7 +18,9 @@ namespace storage {
 
 class AdminTaskProcessor : public BaseProcessor<cpp2::AdminExecResp> {
  public:
-  static AdminTaskProcessor* instance(StorageEnv* env) { return new AdminTaskProcessor(env); }
+  static AdminTaskProcessor* instance(StorageEnv* env) {
+    return new AdminTaskProcessor(env);
+  }
 
   void process(const cpp2::AddAdminTaskRequest& req);
 

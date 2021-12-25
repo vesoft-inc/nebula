@@ -2,8 +2,9 @@ set(RAFTEX_TEST_LIBS
     $<TARGET_OBJECTS:raftex_obj>
     $<TARGET_OBJECTS:wal_obj>
     $<TARGET_OBJECTS:disk_man_obj>
-    $<TARGET_OBJECTS:common_thrift_obj>
     $<TARGET_OBJECTS:raftex_thrift_obj>
+    $<TARGET_OBJECTS:common_thrift_obj>
+    $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:log_str_list_iterator_obj>
     $<TARGET_OBJECTS:datatypes_obj>
@@ -14,6 +15,10 @@ set(RAFTEX_TEST_LIBS
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:ssl_obj>
+    $<TARGET_OBJECTS:stats_obj>
+    $<TARGET_OBJECTS:meta_client_stats_obj>
+    $<TARGET_OBJECTS:storage_client_stats_obj>
+    $<TARGET_OBJECTS:kv_stats_obj>
 )
 
 

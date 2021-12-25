@@ -5,10 +5,12 @@
 
 #include "storage/mutate/DeleteTagsProcessor.h"
 
+#include "common/stats/StatsManager.h"
 #include "common/utils/IndexKeyUtils.h"
 #include "common/utils/NebulaKeyUtils.h"
 #include "common/utils/OperationKeyUtils.h"
 #include "storage/StorageFlags.h"
+#include "storage/stats/StorageStats.h"
 
 namespace nebula {
 namespace storage {
@@ -60,6 +62,7 @@ void DeleteTagsProcessor::process(const cpp2::DeleteTagsRequest& req) {
         }
       }
       doRemove(spaceId_, partId, std::move(keys));
+      stats::StatsManager::addValue(kNumTagsDeleted, keys.size());
     }
   } else {
     for (const auto& part : parts) {
@@ -146,6 +149,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> DeleteTagsProcessor::deleteTags(
         }
       }
       batchHolder->remove(std::move(key));
+      stats::StatsManager::addValue(kNumTagsDeleted);
     }
   }
   return encodeBatchValue(batchHolder->getBatch());

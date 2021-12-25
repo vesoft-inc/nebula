@@ -225,13 +225,13 @@ cpp2::UpdateEdgeRequest ChainUpdateEdgeProcessorLocal::reverseRequest(
     const cpp2::UpdateEdgeRequest& req) {
   cpp2::UpdateEdgeRequest reversedRequest(req);
   auto reversedEdgeKey = ConsistUtil::reverseEdgeKey(req.get_edge_key());
-  reversedRequest.set_edge_key(reversedEdgeKey);
+  reversedRequest.edge_key_ref() = reversedEdgeKey;
 
   auto partsNum = env_->metaClient_->partsNum(req.get_space_id());
   CHECK(partsNum.ok());
   auto srcVid = reversedRequest.get_edge_key().get_src().getStr();
   auto partId = env_->metaClient_->partId(partsNum.value(), srcVid);
-  reversedRequest.set_part_id(partId);
+  reversedRequest.part_id_ref() = partId;
 
   return reversedRequest;
 }

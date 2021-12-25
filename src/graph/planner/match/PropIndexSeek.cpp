@@ -56,7 +56,7 @@ StatusOr<SubPlan> PropIndexSeek::transformEdge(EdgeContext* edgeCtx) {
       << "Not supported multiple edge properties seek.";
   using IQC = nebula::storage::cpp2::IndexQueryContext;
   IQC iqctx;
-  iqctx.set_filter(Expression::encode(*edgeCtx->scanInfo.filter));
+  iqctx.filter_ref() = Expression::encode(*edgeCtx->scanInfo.filter);
   std::vector<std::string> columns, columnsName;
   switch (edgeCtx->scanInfo.direction) {
     case MatchEdge::Direction::OUT_EDGE:
@@ -165,7 +165,7 @@ StatusOr<SubPlan> PropIndexSeek::transformNode(NodeContext* nodeCtx) {
   DCHECK_EQ(nodeCtx->scanInfo.schemaIds.size(), 1) << "Not supported multiple tag properties seek.";
   using IQC = nebula::storage::cpp2::IndexQueryContext;
   IQC iqctx;
-  iqctx.set_filter(Expression::encode(*nodeCtx->scanInfo.filter));
+  iqctx.filter_ref() = Expression::encode(*nodeCtx->scanInfo.filter);
   auto scan = IndexScan::make(matchClauseCtx->qctx,
                               nullptr,
                               matchClauseCtx->space.id,

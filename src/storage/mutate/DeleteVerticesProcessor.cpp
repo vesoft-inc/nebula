@@ -9,6 +9,7 @@
 #include "common/utils/NebulaKeyUtils.h"
 #include "common/utils/OperationKeyUtils.h"
 #include "storage/StorageFlags.h"
+#include "storage/stats/StorageStats.h"
 
 namespace nebula {
 namespace storage {
@@ -80,6 +81,7 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
         continue;
       }
       doRemove(spaceId_, partId, std::move(keys));
+      stats::StatsManager::addValue(kNumVerticesDeleted, keys.size());
     }
   } else {
     for (auto& pv : partVertices) {
@@ -170,6 +172,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> DeleteVerticesProcessor::deleteVer
         }
       }
       batchHolder->remove(key.str());
+      stats::StatsManager::addValue(kNumVerticesDeleted);
       iter->next();
     }
   }

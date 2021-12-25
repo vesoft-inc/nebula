@@ -244,19 +244,11 @@ struct DirInfo {
     2: list<binary>             data,
 }
 
-struct NodeInfo {
-    1: HostAddr      host,
-    2: DirInfo       dir,
-}
-
-struct PartitionBackupInfo {
-    1: map<PartitionID, LogInfo> (cpp.template = "std::unordered_map")  info,
-}
-
 struct CheckpointInfo {
-    1: PartitionBackupInfo   partition_info,
+    1: GraphSpaceID          space_id,
+    2: map<PartitionID, LogInfo> (cpp.template = "std::unordered_map") parts,
     // storage checkpoint directory name
-    2: binary                path,
+    3: binary                path,
 }
 
 // used for raft and drainer
@@ -410,6 +402,7 @@ enum ErrorCode {
     E_GET_META_DIR_FAILURE              = -2072,
 
     E_QUERY_NOT_FOUND                 = -2073,
+    E_AGENT_HB_FAILUE                 = -2074,
 
     // 3xxx for storaged
     E_CONSENSUS_ERROR                 = -3001,

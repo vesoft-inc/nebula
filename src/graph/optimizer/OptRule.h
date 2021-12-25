@@ -99,7 +99,9 @@ class RuleSet final {
 
   void merge(const RuleSet &ruleset);
 
-  const std::vector<const OptRule *> &rules() const { return rules_; }
+  const std::vector<const OptRule *> &rules() const {
+    return rules_;
+  }
 
  private:
   explicit RuleSet(const std::string &name);

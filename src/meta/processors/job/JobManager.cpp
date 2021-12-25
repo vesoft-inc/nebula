@@ -12,6 +12,7 @@
 #include <boost/stacktrace.hpp>
 
 #include "common/http/HttpClient.h"
+#include "common/stats/StatsManager.h"
 #include "common/time/WallClock.h"
 #include "common/utils/MetaKeyUtils.h"
 #include "interface/gen-cpp2/common_types.h"
@@ -33,6 +34,7 @@ using nebula::kvstore::KVIterator;
 
 namespace nebula {
 namespace meta {
+stats::CounterId kNumRunningJobs;
 
 JobManager* JobManager::getInstance() {
   static JobManager inst;
@@ -61,7 +63,9 @@ bool JobManager::init(nebula::kvstore::KVStore* store) {
   return true;
 }
 
-JobManager::~JobManager() { shutDown(); }
+JobManager::~JobManager() {
+  shutDown();
+}
 
 nebula::cpp2::ErrorCode JobManager::handleRemainingJobs() {
   std::unique_ptr<kvstore::KVIterator> iter;
@@ -174,7 +178,9 @@ bool JobManager::runJobInternal(const JobDescription& jobDesc, JbOp op) {
   }
   if (jobExec->runInMeta()) {
     jobExec->setFinishCallBack([this, &jobDesc](bool ret) {
-      SCOPE_EXIT { cleanJob(jobDesc.getJobId()); };
+      SCOPE_EXIT {
+        cleanJob(jobDesc.getJobId());
+      };
       if (ret) {
         JobDescription jd = jobDesc;
         if (!jd.setStatus(cpp2::JobStatus::FINISHED)) {
@@ -212,7 +218,9 @@ nebula::cpp2::ErrorCode JobManager::jobFinished(JobID jobId, cpp2::JobStatus job
       "{}, jobId={}, result={}", __func__, jobId, apache::thrift::util::enumNameSafe(jobStatus));
   // normal job finish may race to job stop
   std::lock_guard<std::mutex> lk(muJobFinished_);
-  SCOPE_EXIT { cleanJob(jobId); };
+  SCOPE_EXIT {
+    cleanJob(jobId);
+  };
   auto optJobDescRet = JobDescription::loadJobDescription(jobId, kvStore_);
   if (!nebula::ok(optJobDescRet)) {
     LOG(WARNING) << folly::sformat("can't load job, jobId={}", jobId);

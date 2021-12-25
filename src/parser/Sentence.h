@@ -134,7 +134,9 @@ class Sentence {
     kShowMetaLeader,
   };
 
-  Kind kind() const { return kind_; }
+  Kind kind() const {
+    return kind_;
+  }
 
  protected:
   Sentence() = default;
@@ -148,7 +150,9 @@ class CreateSentence : public Sentence {
   explicit CreateSentence(bool ifNotExist) : ifNotExist_{ifNotExist} {}
   virtual ~CreateSentence() {}
 
-  bool isIfNotExist() const { return ifNotExist_; }
+  bool isIfNotExist() const {
+    return ifNotExist_;
+  }
 
  private:
   bool ifNotExist_{false};
@@ -159,7 +163,9 @@ class DropSentence : public Sentence {
   explicit DropSentence(bool ifExists) : ifExists_{ifExists} {}
   virtual ~DropSentence() = default;
 
-  bool isIfExists() { return ifExists_; }
+  bool isIfExists() {
+    return ifExists_;
+  }
 
  private:
   bool ifExists_{false};
@@ -167,7 +173,9 @@ class DropSentence : public Sentence {
 
 class HostList final {
  public:
-  void addHost(HostAddr *addr) { hosts_.emplace_back(addr); }
+  void addHost(HostAddr *addr) {
+    hosts_.emplace_back(addr);
+  }
 
   std::string toString() const;
 
@@ -192,7 +200,9 @@ class ZoneNameList final {
  public:
   ZoneNameList() = default;
 
-  void addZone(std::string *zone) { zones_.emplace_back(zone); }
+  void addZone(std::string *zone) {
+    zones_.emplace_back(zone);
+  }
 
   std::vector<std::string> zoneNames() const {
     std::vector<std::string> result;

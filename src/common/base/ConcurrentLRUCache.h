@@ -58,7 +58,9 @@ class ConcurrentLRUCache final {
     return buckets_[bucketIndex(key, hint)].putIfAbsent(std::move(key), std::move(val));
   }
 
-  void evict(const K& key, int32_t hint = -1) { buckets_[bucketIndex(key, hint)].evict(key); }
+  void evict(const K& key, int32_t hint = -1) {
+    buckets_[bucketIndex(key, hint)].evict(key);
+  }
 
   void clear() {
     for (uint32_t i = 0; i < bucketsNum_; i++) {
@@ -179,13 +181,21 @@ class LRU {
 
   ~LRU() = default;
 
-  size_t size() const { return map_.size(); }
+  size_t size() const {
+    return map_.size();
+  }
 
-  size_t capacity() const { return capacity_; }
+  size_t capacity() const {
+    return capacity_;
+  }
 
-  bool empty() const { return map_.empty(); }
+  bool empty() const {
+    return map_.empty();
+  }
 
-  bool contains(const key_type& key) { return map_.find(key) != map_.end(); }
+  bool contains(const key_type& key) {
+    return map_.find(key) != map_.end();
+  }
 
   void insert(key_type&& key, value_type&& value) {
     typename map_type::iterator it = map_.find(key);
@@ -250,11 +260,17 @@ class LRU {
     evicts_ = 0;
   }
 
-  uint64_t total() { return total_; }
+  uint64_t total() {
+    return total_;
+  }
 
-  uint64_t hits() { return hits_; }
+  uint64_t hits() {
+    return hits_;
+  }
 
-  uint64_t evicts() { return evicts_; }
+  uint64_t evicts() {
+    return evicts_;
+  }
 
  private:
   void evict() {

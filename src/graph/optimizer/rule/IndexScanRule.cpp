@@ -30,7 +30,9 @@ namespace opt {
 std::unique_ptr<OptRule> IndexScanRule::kInstance =
     std::unique_ptr<IndexScanRule>(new IndexScanRule());
 
-IndexScanRule::IndexScanRule() { RuleSet::DefaultRules().addRule(this); }
+IndexScanRule::IndexScanRule() {
+  RuleSet::DefaultRules().addRule(this);
+}
 
 const Pattern& IndexScanRule::pattern() const {
   static Pattern pattern = Pattern::create(graph::PlanNode::Kind::kIndexScan);
@@ -93,7 +95,9 @@ StatusOr<OptRule::TransformResult> IndexScanRule::transform(OptContext* ctx,
   return result;
 }
 
-std::string IndexScanRule::toString() const { return "IndexScanRule"; }
+std::string IndexScanRule::toString() const {
+  return "IndexScanRule";
+}
 
 Status IndexScanRule::createIndexQueryCtx(IndexQueryCtx& iqctx,
                                           ScanKind kind,
@@ -175,7 +179,7 @@ Status IndexScanRule::appendIQCtx(const IndexItem& index,
     if (it != filterItems.items.end()) {
       // TODO (sky) : rewrite filter expr. NE expr should be add filter expr .
       if (filter != nullptr) {
-        ctx.set_filter(Expression::encode(*filter));
+        ctx.filter_ref() = Expression::encode(*filter);
       }
       break;
     }
@@ -185,22 +189,22 @@ Status IndexScanRule::appendIQCtx(const IndexItem& index,
       break;
     }
   }
-  ctx.set_index_id(index->get_index_id());
+  ctx.index_id_ref() = index->get_index_id();
   if (hc > 0) {
     // TODO (sky) : rewrite expr and set filter
     if (filter != nullptr) {
-      ctx.set_filter(Expression::encode(*filter));
+      ctx.filter_ref() = Expression::encode(*filter);
     }
   }
-  ctx.set_column_hints(std::move(hints));
+  ctx.column_hints_ref() = std::move(hints);
   iqctx.emplace_back(std::move(ctx));
   return Status::OK();
 }
 
 Status IndexScanRule::appendIQCtx(const IndexItem& index, IndexQueryCtx& iqctx) const {
   IndexQueryContext ctx;
-  ctx.set_index_id(index->get_index_id());
-  ctx.set_filter("");
+  ctx.index_id_ref() = index->get_index_id();
+  ctx.filter_ref() = "";
   iqctx.emplace_back(std::move(ctx));
   return Status::OK();
 }
@@ -291,19 +295,19 @@ Status IndexScanRule::appendColHint(std::vector<IndexColumnHint>& hints,
 
   if (isRangeScan) {
     if (!begin.first.empty()) {
-      hint.set_begin_value(begin.first);
-      hint.set_include_begin(begin.second);
+      hint.begin_value_ref() = begin.first;
+      hint.include_begin_ref() = begin.second;
     }
     if (!end.first.empty()) {
-      hint.set_end_value(end.first);
-      hint.set_include_end(end.second);
+      hint.end_value_ref() = end.first;
+      hint.include_end_ref() = end.second;
     }
-    hint.set_scan_type(storage::cpp2::ScanType::RANGE);
+    hint.scan_type_ref() = storage::cpp2::ScanType::RANGE;
   } else {
-    hint.set_begin_value(begin.first);
-    hint.set_scan_type(storage::cpp2::ScanType::PREFIX);
+    hint.begin_value_ref() = begin.first;
+    hint.scan_type_ref() = storage::cpp2::ScanType::PREFIX;
   }
-  hint.set_column_name(col.get_name());
+  hint.column_name_ref() = col.get_name();
   hints.emplace_back(std::move(hint));
   return Status::OK();
 }

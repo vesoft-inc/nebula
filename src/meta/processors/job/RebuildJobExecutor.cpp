@@ -17,7 +17,9 @@ DECLARE_int32(heartbeat_interval_secs);
 namespace nebula {
 namespace meta {
 
-bool RebuildJobExecutor::check() { return paras_.size() >= 1; }
+bool RebuildJobExecutor::check() {
+  return paras_.size() >= 1;
+}
 
 nebula::cpp2::ErrorCode RebuildJobExecutor::prepare() {
   // the last value of paras_ is the space name, others are index name

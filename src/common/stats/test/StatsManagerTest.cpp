@@ -107,6 +107,14 @@ TEST(StatsManager, ReadAllTest) {
   StatsManager::addValue(statId2, 1);
   StatsManager::addValue(statId2, 2);
 
+  // Dynamically register some metrics
+  auto statId3 = StatsManager::counterWithLabels(statId1, {{"space", "test"}});
+  auto statId4 = StatsManager::histoWithLabels(statId2, {{"space", "test"}});
+  StatsManager::addValue(statId3, 1);
+  StatsManager::addValue(statId3, 2);
+  StatsManager::addValue(statId4, 1);
+  StatsManager::addValue(statId4, 2);
+
   auto stats = folly::dynamic::array();
   StatsManager::readAllValue(stats);
 
@@ -128,6 +136,31 @@ TEST(StatsManager, ReadAllTest) {
   EXPECT_FALSE(counterExists(stats, "stat04.count.60", val));
   EXPECT_FALSE(counterExists(stats, "stat04.avg.3600", val));
   EXPECT_FALSE(counterExists(stats, "stat04.p75.5", val));
+
+  EXPECT_TRUE(counterExists(stats, "space_test_stat04.sum.5", val));
+  EXPECT_EQ(3, val);
+  EXPECT_TRUE(counterExists(stats, "space_test_stat04.p95.5", val));
+  EXPECT_EQ(2, val);
+  EXPECT_TRUE(counterExists(stats, "space_test_stat04.p99.3600", val));
+  EXPECT_EQ(2, val);
+
+  EXPECT_TRUE(counterExists(stats, "space_test_stat03.sum.3600", val));
+  EXPECT_EQ(3, val);
+
+  EXPECT_FALSE(counterExists(stats, "space_test_stat03.count.600", val));
+  EXPECT_FALSE(counterExists(stats, "space_test_stat03.avg.3600", val));
+
+  EXPECT_FALSE(counterExists(stats, "space_test_stat04.rate.600", val));
+  EXPECT_FALSE(counterExists(stats, "space_test_stat04.count.60", val));
+  EXPECT_FALSE(counterExists(stats, "space_test_stat04.avg.3600", val));
+  EXPECT_FALSE(counterExists(stats, "space_test_stat04.p75.5", val));
+  // Remove the dynamically registered metrics
+  StatsManager::removeCounterWithLabels(statId1, {{"space", "test"}});
+  StatsManager::removeHistoWithLabels(statId2, {{"space", "test"}});
+  auto stats2 = folly::dynamic::array();
+  StatsManager::readAllValue(stats2);
+  EXPECT_FALSE(counterExists(stats2, "space_test_stat03.sum.3600", val));
+  EXPECT_FALSE(counterExists(stats2, "space_test_stat04.p95.5", val));
 }
 
 }  // namespace stats

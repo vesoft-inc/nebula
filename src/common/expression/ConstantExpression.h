@@ -29,15 +29,21 @@ class ConstantExpression : public Expression {
     return val_;
   }
 
-  const Value& value() const { return val_; }
+  const Value& value() const {
+    return val_;
+  }
 
-  void setValue(Value val) { val_ = std::move(val); }
+  void setValue(Value val) {
+    val_ = std::move(val);
+  }
 
   void accept(ExprVisitor* visitor) override;
 
   std::string toString() const override;
 
-  Expression* clone() const override { return ConstantExpression::make(pool_, val_); }
+  Expression* clone() const override {
+    return ConstantExpression::make(pool_, val_);
+  }
 
  private:
   explicit ConstantExpression(ObjectPool* pool, Value v = Value(NullType::__NULL__))

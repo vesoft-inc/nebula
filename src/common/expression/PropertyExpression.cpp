@@ -54,67 +54,87 @@ const Value& EdgePropertyExpression::eval(ExpressionContext& ctx) {
   return result_;
 }
 
-void EdgePropertyExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void EdgePropertyExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 const Value& TagPropertyExpression::eval(ExpressionContext& ctx) {
   result_ = ctx.getTagProp(sym_, prop_);
   return result_;
 }
 
-void TagPropertyExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void TagPropertyExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 const Value& InputPropertyExpression::eval(ExpressionContext& ctx) {
   return ctx.getInputProp(prop_);
 }
 
-void InputPropertyExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void InputPropertyExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 const Value& VariablePropertyExpression::eval(ExpressionContext& ctx) {
   return ctx.getVarProp(sym_, prop_);
 }
 
-void VariablePropertyExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void VariablePropertyExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 const Value& SourcePropertyExpression::eval(ExpressionContext& ctx) {
   result_ = ctx.getSrcProp(sym_, prop_);
   return result_;
 }
 
-void SourcePropertyExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void SourcePropertyExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 const Value& DestPropertyExpression::eval(ExpressionContext& ctx) {
   return ctx.getDstProp(sym_, prop_);
 }
 
-void DestPropertyExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void DestPropertyExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 const Value& EdgeSrcIdExpression::eval(ExpressionContext& ctx) {
   result_ = ctx.getEdgeProp(sym_, prop_);
   return result_;
 }
 
-void EdgeSrcIdExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void EdgeSrcIdExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 const Value& EdgeTypeExpression::eval(ExpressionContext& ctx) {
   result_ = ctx.getEdgeProp(sym_, prop_);
   return result_;
 }
 
-void EdgeTypeExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void EdgeTypeExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 const Value& EdgeRankExpression::eval(ExpressionContext& ctx) {
   result_ = ctx.getEdgeProp(sym_, prop_);
   return result_;
 }
 
-void EdgeRankExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void EdgeRankExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 const Value& EdgeDstIdExpression::eval(ExpressionContext& ctx) {
   result_ = ctx.getEdgeProp(sym_, prop_);
   return result_;
 }
 
-void EdgeDstIdExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void EdgeDstIdExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 std::string PropertyExpression::toString() const {
   std::string buf;

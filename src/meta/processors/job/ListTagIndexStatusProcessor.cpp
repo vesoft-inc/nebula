@@ -69,11 +69,11 @@ void ListTagIndexStatusProcessor::process(const cpp2::ListIndexStatusReq& req) {
   }
   for (auto& kv : tmp) {
     cpp2::IndexStatus status;
-    status.set_name(std::move(kv.first));
-    status.set_status(apache::thrift::util::enumNameSafe(kv.second));
+    status.name_ref() = std::move(kv.first);
+    status.status_ref() = apache::thrift::util::enumNameSafe(kv.second);
     statuses.emplace_back(std::move(status));
   }
-  resp_.set_statuses(std::move(statuses));
+  resp_.statuses_ref() = std::move(statuses);
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
   onFinished();
 }

@@ -18,9 +18,13 @@ class StringValue final {
  public:
   explicit StringValue(std::string str) : str_(std::move(str)) {}
 
-  const std::string& str() const& { return str_; }
+  const std::string& str() const& {
+    return str_;
+  }
 
-  std::string&& str() && { return std::move(str_); }
+  std::string&& str() && {
+    return std::move(str_);
+  }
 
  private:
   std::string str_;

@@ -14,8 +14,12 @@ namespace nebula {
 using graph::QueryContext;
 class ParserTest : public ::testing::Test {
  public:
-  void SetUp() override { qctx_ = std::make_unique<graph::QueryContext>(); }
-  void TearDown() override { qctx_.reset(); }
+  void SetUp() override {
+    qctx_ = std::make_unique<graph::QueryContext>();
+  }
+  void TearDown() override {
+    qctx_.reset();
+  }
 
  protected:
   StatusOr<std::unique_ptr<Sentence>> parse(const std::string& query) {

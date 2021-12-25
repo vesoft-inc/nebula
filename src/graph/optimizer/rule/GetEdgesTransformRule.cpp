@@ -27,7 +27,9 @@ namespace opt {
 std::unique_ptr<OptRule> GetEdgesTransformRule::kInstance =
     std::unique_ptr<GetEdgesTransformRule>(new GetEdgesTransformRule());
 
-GetEdgesTransformRule::GetEdgesTransformRule() { RuleSet::QueryRules().addRule(this); }
+GetEdgesTransformRule::GetEdgesTransformRule() {
+  RuleSet::QueryRules().addRule(this);
+}
 
 const Pattern &GetEdgesTransformRule::pattern() const {
   static Pattern pattern =
@@ -93,7 +95,9 @@ StatusOr<OptRule::TransformResult> GetEdgesTransformRule::transform(
   return result;
 }
 
-std::string GetEdgesTransformRule::toString() const { return "GetEdgesTransformRule"; }
+std::string GetEdgesTransformRule::toString() const {
+  return "GetEdgesTransformRule";
+}
 
 /*static*/ graph::ScanEdges *GetEdgesTransformRule::traverseToScanEdges(
     const graph::Traverse *traverse) {

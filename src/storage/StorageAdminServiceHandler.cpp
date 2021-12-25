@@ -9,7 +9,6 @@
 #include "storage/admin/AdminTaskProcessor.h"
 #include "storage/admin/CreateCheckpointProcessor.h"
 #include "storage/admin/DropCheckpointProcessor.h"
-#include "storage/admin/ListClusterInfoProcessor.h"
 #include "storage/admin/SendBlockSignProcessor.h"
 #include "storage/admin/StopAdminTaskProcessor.h"
 
@@ -96,12 +95,6 @@ folly::Future<cpp2::AdminExecResp> StorageAdminServiceHandler::future_addAdminTa
 folly::Future<cpp2::AdminExecResp> StorageAdminServiceHandler::future_stopAdminTask(
     const cpp2::StopAdminTaskRequest& req) {
   auto* processor = StopAdminTaskProcessor::instance(env_);
-  RETURN_FUTURE(processor);
-}
-
-folly::Future<cpp2::ListClusterInfoResp> StorageAdminServiceHandler::future_listClusterInfo(
-    const cpp2::ListClusterInfoReq& req) {
-  auto* processor = ListClusterInfoProcessor::instance(env_);
   RETURN_FUTURE(processor);
 }
 
