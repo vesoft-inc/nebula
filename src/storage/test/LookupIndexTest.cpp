@@ -2925,7 +2925,7 @@ TEST_P(LookupIndexTest, DedupEdgeIndexTest) {
   }
 }
 
-INSTANTIATE_TEST_CASE_P(Lookup_concurrently, LookupIndexTest, ::testing::Values(false, true));
+INSTANTIATE_TEST_SUITE_P(Lookup_concurrently, LookupIndexTest, ::testing::Values(false, true));
 
 }  // namespace storage
 }  // namespace nebula
