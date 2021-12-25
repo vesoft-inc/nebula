@@ -58,7 +58,7 @@ std::string VersionedVariableExpression::toString() const {
   std::stringstream out;
   out << "$" << var_;
   if (version_ != nullptr) {
-    out << "{" << version_->toString() << "}";
+    out << "{" << (version_ ? version_->toString() : "") << "}";
   }
   return out.str();
 }

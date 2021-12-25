@@ -165,7 +165,7 @@ void AddVerticesProcessor::doProcessWithIndex(const cpp2::AddVerticesRequest& re
         auto l = std::make_tuple(spaceId_, partId, tagId, vid);
         if (std::find(dummyLock.begin(), dummyLock.end(), l) == dummyLock.end()) {
           if (!env_->verticesML_->try_lock(l)) {
-            LOG(ERROR) << folly::format("The vertex locked : tag {}, vid {}", tagId, vid);
+            LOG(ERROR) << folly::sformat("The vertex locked : tag {}, vid {}", tagId, vid);
             code = nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
             break;
           }

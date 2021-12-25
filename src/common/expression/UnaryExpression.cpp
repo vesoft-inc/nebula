@@ -111,18 +111,18 @@ std::string UnaryExpression::toString() const {
       op = "--";
       break;
     case Kind::kIsNull:
-      return operand_->toString() + " IS NULL";
+      return (operand_ ? operand_->toString() : "") + " IS NULL";
     case Kind::kIsNotNull:
-      return operand_->toString() + " IS NOT NULL";
+      return (operand_ ? operand_->toString() : "") + " IS NOT NULL";
     case Kind::kIsEmpty:
-      return operand_->toString() + " IS EMPTY";
+      return (operand_ ? operand_->toString() : "") + " IS EMPTY";
     case Kind::kIsNotEmpty:
-      return operand_->toString() + " IS NOT EMPTY";
+      return (operand_ ? operand_->toString() : "") + " IS NOT EMPTY";
     default:
       op = "illegal symbol ";
   }
   std::stringstream out;
-  out << op << "(" << operand_->toString() << ")";
+  out << op << "(" << (operand_ ? operand_->toString() : "") << ")";
   return out.str();
 }
 

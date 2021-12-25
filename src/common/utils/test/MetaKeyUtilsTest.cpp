@@ -89,7 +89,7 @@ TEST(MetaKeyUtilsTest, storeStrIpCodecTest) {
     auto decodedVal = MetaKeyUtils::parsePartVal(encodedVal);
     ASSERT_EQ(hosts.size(), decodedVal.size());
     for (int i = 0; i < N; i++) {
-      LOG(INFO) << folly::format("hosts[{}]={}:{}", i, hostnames[i], ports[i]);
+      LOG(INFO) << folly::sformat("hosts[{}]={}:{}", i, hostnames[i], ports[i]);
       ASSERT_EQ(hostnames[i], decodedVal[i].host);
       ASSERT_EQ(ports[i], decodedVal[i].port);
     }

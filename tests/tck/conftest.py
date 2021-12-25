@@ -130,6 +130,9 @@ def preload_parameters(
     except:
         raise ValueError("preload parameters failed!")
 
+@then("clear the used parameters")
+def clear_parameters():
+    params = {}
 
 # construct python-type to nebula.Value
 def value(any):

@@ -236,7 +236,9 @@ class RaftPart : public std::enable_shared_from_this<RaftPart> {
   // Reset the part, clean up all data and WALs.
   void reset();
 
-  uint64_t execTime() const { return execTime_; }
+  uint64_t execTime() const {
+    return execTime_;
+  }
 
  protected:
   // Protected constructor to prevent from instantiating directly
