@@ -24,7 +24,9 @@ struct ColDef {
     type = std::move(t);
   }
 
-  bool operator==(const ColDef& rhs) const { return name == rhs.name && type == rhs.type; }
+  bool operator==(const ColDef& rhs) const {
+    return name == rhs.name && type == rhs.type;
+  }
 
   std::string name;
   Value::Type type;

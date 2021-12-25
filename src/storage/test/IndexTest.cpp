@@ -106,7 +106,9 @@ class IndexScanTestHelper {
       return ::nebula::cpp2::ErrorCode::SUCCEEDED;
     };
   }
-  void setFatal(IndexScanNode* node, bool value) { node->fatalOnBaseNotFound_ = value; }
+  void setFatal(IndexScanNode* node, bool value) {
+    node->fatalOnBaseNotFound_ = value;
+  }
 };
 class IndexScanTest : public ::testing::Test {
  protected:
@@ -115,38 +117,38 @@ class IndexScanTest : public ::testing::Test {
   using ColumnHint = ::nebula::storage::cpp2::IndexColumnHint;
   static ColumnHint makeColumnHint(const std::string& name, const Value& value) {
     ColumnHint hint;
-    hint.set_column_name(name);
-    hint.set_begin_value(value);
-    hint.set_scan_type(cpp2::ScanType::PREFIX);
+    hint.column_name_ref() = name;
+    hint.begin_value_ref() = value;
+    hint.scan_type_ref() = cpp2::ScanType::PREFIX;
     return hint;
   }
   template <bool includeBegin, bool includeEnd>
   static ColumnHint makeColumnHint(const std::string& name, const Value& begin, const Value& end) {
     ColumnHint hint;
-    hint.set_column_name(name);
-    hint.set_scan_type(cpp2::ScanType::RANGE);
-    hint.set_begin_value(begin);
-    hint.set_end_value(end);
-    hint.set_include_begin(includeBegin);
-    hint.set_include_end(includeEnd);
+    hint.column_name_ref() = name;
+    hint.scan_type_ref() = cpp2::ScanType::RANGE;
+    hint.begin_value_ref() = begin;
+    hint.end_value_ref() = end;
+    hint.include_begin_ref() = includeBegin;
+    hint.include_end_ref() = includeEnd;
     return hint;
   }
   template <bool include>
   static ColumnHint makeBeginColumnHint(const std::string& name, const Value& begin) {
     ColumnHint hint;
-    hint.set_column_name(name);
-    hint.set_scan_type(cpp2::ScanType::RANGE);
-    hint.set_begin_value(begin);
-    hint.set_include_begin(include);
+    hint.column_name_ref() = name;
+    hint.scan_type_ref() = cpp2::ScanType::RANGE;
+    hint.begin_value_ref() = begin;
+    hint.include_begin_ref() = include;
     return hint;
   }
   template <bool include>
   static ColumnHint makeEndColumnHint(const std::string& name, const Value& end) {
     ColumnHint hint;
-    hint.set_column_name(name);
-    hint.set_scan_type(cpp2::ScanType::RANGE);
-    hint.set_end_value(end);
-    hint.set_include_end(include);
+    hint.column_name_ref() = name;
+    hint.scan_type_ref() = cpp2::ScanType::RANGE;
+    hint.end_value_ref() = end;
+    hint.include_end_ref() = include;
     return hint;
   }
   static std::vector<std::map<std::string, std::string>> encodeTag(
@@ -223,7 +225,7 @@ class IndexScanTest : public ::testing::Test {
 };
 TEST_F(IndexScanTest, Base) {
   auto rows = R"(
-    int | int 
+    int | int
     1   | 2
     1   | 3
   )"_row;
@@ -969,7 +971,7 @@ TEST_F(IndexScanTest, Bool) {
     true  | false
     false | <null>
     false | false
-    true  | <null> 
+    true  | <null>
   )"_row;
   auto schema = R"(
     a | bool  | |
@@ -1905,7 +1907,7 @@ class IndexTest : public ::testing::Test {
 
 TEST_F(IndexTest, Selection) {
   const auto rows = R"(
-    int     | int 
+    int     | int
     1       | 2
     <null>  | <null>
     8       | 10
@@ -2005,7 +2007,7 @@ TEST_F(IndexTest, Limit) {
 }
 TEST_F(IndexTest, Dedup) {
   auto rows1 = R"(
-    int | int 
+    int | int
     1   | 2
     1   | 3
     2   | 2

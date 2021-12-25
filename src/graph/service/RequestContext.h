@@ -37,13 +37,21 @@ class RequestContext final : public cpp::NonCopyable, public cpp::NonMovable {
     }
   }
 
-  void setQuery(std::string query) { query_ = std::move(query); }
+  void setQuery(std::string query) {
+    query_ = std::move(query);
+  }
 
-  const std::string& query() const { return query_; }
+  const std::string& query() const {
+    return query_;
+  }
 
-  Response& resp() { return resp_; }
+  Response& resp() {
+    return resp_;
+  }
 
-  folly::Future<Response> future() { return promise_.getFuture(); }
+  folly::Future<Response> future() {
+    return promise_.getFuture();
+  }
 
   void setSession(std::shared_ptr<ClientSession> session) {
     session_ = std::move(session);
@@ -53,25 +61,41 @@ class RequestContext final : public cpp::NonCopyable, public cpp::NonMovable {
     }
   }
 
-  ClientSession* session() const { return session_.get(); }
+  ClientSession* session() const {
+    return session_.get();
+  }
 
-  folly::Executor* runner() const { return runner_; }
+  folly::Executor* runner() const {
+    return runner_;
+  }
 
-  void setRunner(folly::Executor* runner) { runner_ = runner; }
+  void setRunner(folly::Executor* runner) {
+    runner_ = runner;
+  }
 
-  const time::Duration& duration() const { return duration_; }
+  const time::Duration& duration() const {
+    return duration_;
+  }
 
-  void finish() { promise_.setValue(std::move(resp_)); }
+  void finish() {
+    promise_.setValue(std::move(resp_));
+  }
 
-  void setSessionMgr(GraphSessionManager* mgr) { sessionMgr_ = mgr; }
+  void setSessionMgr(GraphSessionManager* mgr) {
+    sessionMgr_ = mgr;
+  }
 
-  GraphSessionManager* sessionMgr() const { return sessionMgr_; }
+  GraphSessionManager* sessionMgr() const {
+    return sessionMgr_;
+  }
 
   void setParameterMap(std::unordered_map<std::string, Value> parameterMap) {
     parameterMap_ = std::move(parameterMap);
   }
 
-  const std::unordered_map<std::string, Value>& parameterMap() const { return parameterMap_; }
+  const std::unordered_map<std::string, Value>& parameterMap() const {
+    return parameterMap_;
+  }
 
  private:
   time::Duration duration_;

@@ -8,6 +8,7 @@
 
 #include "common/base/Base.h"
 #include "common/base/SignalHandler.h"
+#include "common/fs/FileUtils.h"
 #include "common/hdfs/HdfsCommandHelper.h"
 #include "common/hdfs/HdfsHelper.h"
 #include "common/network/NetworkUtils.h"
@@ -27,6 +28,7 @@
 #include "meta/http/MetaHttpIngestHandler.h"
 #include "meta/http/MetaHttpReplaceHostHandler.h"
 #include "meta/processors/job/JobManager.h"
+#include "meta/stats/MetaStats.h"
 #include "version/Version.h"
 #include "webservice/Router.h"
 #include "webservice/WebService.h"
@@ -83,11 +85,14 @@ std::unique_ptr<nebula::kvstore::KVStore> initKV(std::vector<nebula::HostAddr> p
   auto ioPool = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_num_io_threads);
   std::shared_ptr<apache::thrift::concurrency::ThreadManager> threadManager(
       apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
-          FLAGS_num_worker_threads, true /*stats*/));
+          FLAGS_num_worker_threads));
   threadManager->setNamePrefix("executor");
   threadManager->start();
   nebula::kvstore::KVOptions options;
-  options.dataPaths_ = {FLAGS_data_path};
+
+  auto absolute = boost::filesystem::absolute(FLAGS_data_path);
+  options.dataPaths_ = {absolute.string()};
+
   options.partMan_ = std::move(partMan);
   auto kvstore = std::make_unique<nebula::kvstore::NebulaStore>(
       std::move(options), ioPool, localhost, threadManager);
@@ -218,6 +223,9 @@ int main(int argc, char* argv[]) {
     LOG(ERROR) << status;
     return EXIT_FAILURE;
   }
+
+  // Init stats
+  nebula::initMetaStats();
 
   folly::init(&argc, &argv, true);
   if (FLAGS_enable_ssl || FLAGS_enable_meta_ssl) {

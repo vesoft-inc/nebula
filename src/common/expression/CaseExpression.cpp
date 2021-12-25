@@ -93,9 +93,9 @@ std::string CaseExpression::toString() const {
     }
     for (const auto& whenThen : cases_) {
       buf += " WHEN ";
-      buf += whenThen.when->toString();
+      buf += whenThen.when ? whenThen.when->toString() : "";
       buf += " THEN ";
-      buf += whenThen.then->toString();
+      buf += whenThen.then ? whenThen.then->toString() : "";
     }
     if (default_ != nullptr) {
       buf += " ELSE ";
@@ -104,11 +104,13 @@ std::string CaseExpression::toString() const {
     buf += " END";
   } else {
     buf += "(";
-    buf += cases_.front().when->toString();
+    auto casesWhen = cases_.front().when;
+    auto casesThen = cases_.front().then;
+    buf += casesWhen ? casesWhen->toString() : "";
     buf += " ? ";
-    buf += cases_.front().then->toString();
+    buf += casesThen ? casesThen->toString() : "";
     buf += " : ";
-    buf += default_->toString();
+    buf += default_ ? default_->toString() : "";
     buf += ")";
   }
 
@@ -158,6 +160,8 @@ void CaseExpression::resetFrom(Decoder& decoder) {
   }
 }
 
-void CaseExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void CaseExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 }  // namespace nebula

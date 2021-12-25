@@ -58,26 +58,18 @@ void AggregateExpression::apply(AggData* aggData, const Value& val) {
 }
 
 std::string AggregateExpression::toString() const {
-  // TODO fix it
-  std::string arg;
-  if (arg_->kind() == Expression::Kind::kConstant) {
-    const auto* argExpr = static_cast<const ConstantExpression*>(arg_);
-    if (argExpr->value().isStr()) {
-      arg = argExpr->value().getStr();
-    } else {
-      arg = arg_->toString();
-    }
-  } else {
-    arg = arg_->toString();
-  }
-  std::string isDistinct;
-  if (distinct_) {
-    isDistinct = "distinct ";
-  }
   std::stringstream out;
-  out << name_ << "(" << isDistinct << arg << ")";
+  DCHECK(!!arg_);
+  auto argStr = arg_->toString();
+  if (arg_->kind() == Expression::Kind::kConstant &&
+      static_cast<ConstantExpression*>(arg_)->value().isStr()) {
+    argStr = static_cast<ConstantExpression*>(arg_)->value().getStr();
+  }
+  out << name_ << "(" << (distinct_ ? "distinct " : "") << argStr << ")";
   return out.str();
 }
 
-void AggregateExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void AggregateExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 }  // namespace nebula

@@ -29,9 +29,13 @@ class ScopedTimer final {
     if (!paused) start();
   }
 
-  ~ScopedTimer() { stop(); }
+  ~ScopedTimer() {
+    stop();
+  }
 
-  void start() { duration_.reset(); }
+  void start() {
+    duration_.reset();
+  }
 
   void stop() {
     if (stopped_) return;

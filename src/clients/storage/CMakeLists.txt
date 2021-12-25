@@ -19,3 +19,5 @@ nebula_add_library(
     InternalStorageClient.cpp
 )
 
+nebula_add_subdirectory(stats)
+

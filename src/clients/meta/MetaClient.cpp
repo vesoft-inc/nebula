@@ -11,7 +11,10 @@
 #include <folly/hash/Hash.h>
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
+#include <boost/filesystem.hpp>
+
 #include "clients/meta/FileBasedClusterIdMan.h"
+#include "clients/meta/stats/MetaClientStats.h"
 #include "common/base/Base.h"
 #include "common/base/MurmurHash2.h"
 #include "common/conf/Configuration.h"
@@ -55,6 +58,8 @@ MetaClient::MetaClient(std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool
   updateLeader();
   bgThread_ = std::make_unique<thread::GenericWorker>();
   LOG(INFO) << "Create meta client to " << active_;
+  LOG(INFO) << folly::sformat(
+      "root path: {}, data path size: {}", options_.rootPath_, options_.dataPaths_.size());
 }
 
 MetaClient::~MetaClient() {
@@ -626,6 +631,7 @@ void MetaClient::getResponse(Request req,
                              bool toLeader,
                              int32_t retry,
                              int32_t retryLimit) {
+  stats::StatsManager::addValue(kNumRpcSentToMetad);
   auto* evb = ioThreadPool_->getEventBase();
   HostAddr host;
   {
@@ -660,6 +666,7 @@ void MetaClient::getResponse(Request req,
                    this](folly::Try<RpcResponse>&& t) mutable {
               // exception occurred during RPC
               if (t.hasException()) {
+                stats::StatsManager::addValue(kNumRpcSentToMetadFailed);
                 if (toLeader) {
                   updateLeader();
                 } else {
@@ -1106,9 +1113,9 @@ PartitionID MetaClient::partId(int32_t numParts, const VertexID id) const {
 folly::Future<StatusOr<cpp2::AdminJobResult>> MetaClient::submitJob(
     cpp2::AdminJobOp op, cpp2::AdminCmd cmd, std::vector<std::string> paras) {
   cpp2::AdminJobReq req;
-  req.set_op(op);
-  req.set_cmd(cmd);
-  req.set_paras(std::move(paras));
+  req.op_ref() = op;
+  req.cmd_ref() = cmd;
+  req.paras_ref() = std::move(paras);
   folly::Promise<StatusOr<cpp2::AdminJobResult>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -1122,8 +1129,8 @@ folly::Future<StatusOr<cpp2::AdminJobResult>> MetaClient::submitJob(
 folly::Future<StatusOr<GraphSpaceID>> MetaClient::createSpace(meta::cpp2::SpaceDesc spaceDesc,
                                                               bool ifNotExists) {
   cpp2::CreateSpaceReq req;
-  req.set_properties(std::move(spaceDesc));
-  req.set_if_not_exists(ifNotExists);
+  req.properties_ref() = std::move(spaceDesc);
+  req.if_not_exists_ref() = ifNotExists;
   folly::Promise<StatusOr<GraphSpaceID>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -1137,8 +1144,8 @@ folly::Future<StatusOr<GraphSpaceID>> MetaClient::createSpace(meta::cpp2::SpaceD
 folly::Future<StatusOr<GraphSpaceID>> MetaClient::createSpaceAs(const std::string& oldSpaceName,
                                                                 const std::string& newSpaceName) {
   cpp2::CreateSpaceAsReq req;
-  req.set_old_space_name(oldSpaceName);
-  req.set_new_space_name(newSpaceName);
+  req.old_space_name_ref() = oldSpaceName;
+  req.new_space_name_ref() = newSpaceName;
   folly::Promise<StatusOr<GraphSpaceID>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -1165,7 +1172,7 @@ folly::Future<StatusOr<std::vector<SpaceIdName>>> MetaClient::listSpaces() {
 
 folly::Future<StatusOr<cpp2::SpaceItem>> MetaClient::getSpace(std::string name) {
   cpp2::GetSpaceReq req;
-  req.set_space_name(std::move(name));
+  req.space_name_ref() = std::move(name);
   folly::Promise<StatusOr<cpp2::SpaceItem>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -1178,8 +1185,8 @@ folly::Future<StatusOr<cpp2::SpaceItem>> MetaClient::getSpace(std::string name) 
 
 folly::Future<StatusOr<bool>> MetaClient::dropSpace(std::string name, const bool ifExists) {
   cpp2::DropSpaceReq req;
-  req.set_space_name(std::move(name));
-  req.set_if_exists(ifExists);
+  req.space_name_ref() = std::move(name);
+  req.if_exists_ref() = ifExists;
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -1194,7 +1201,7 @@ folly::Future<StatusOr<bool>> MetaClient::dropSpace(std::string name, const bool
 
 folly::Future<StatusOr<std::vector<cpp2::HostItem>>> MetaClient::listHosts(cpp2::ListHostType tp) {
   cpp2::ListHostsReq req;
-  req.set_type(tp);
+  req.type_ref() = tp;
 
   folly::Promise<StatusOr<std::vector<cpp2::HostItem>>> promise;
   auto future = promise.getFuture();
@@ -1209,8 +1216,8 @@ folly::Future<StatusOr<std::vector<cpp2::HostItem>>> MetaClient::listHosts(cpp2:
 folly::Future<StatusOr<std::vector<cpp2::PartItem>>> MetaClient::listParts(
     GraphSpaceID spaceId, std::vector<PartitionID> partIds) {
   cpp2::ListPartsReq req;
-  req.set_space_id(spaceId);
-  req.set_part_ids(std::move(partIds));
+  req.space_id_ref() = spaceId;
+  req.part_ids_ref() = std::move(partIds);
   folly::Promise<StatusOr<std::vector<cpp2::PartItem>>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -1224,7 +1231,7 @@ folly::Future<StatusOr<std::vector<cpp2::PartItem>>> MetaClient::listParts(
 folly::Future<StatusOr<std::unordered_map<PartitionID, std::vector<HostAddr>>>>
 MetaClient::getPartsAlloc(GraphSpaceID spaceId, PartTerms* partTerms) {
   cpp2::GetPartsAllocReq req;
-  req.set_space_id(spaceId);
+  req.space_id_ref() = spaceId;
   folly::Promise<StatusOr<std::unordered_map<PartitionID, std::vector<HostAddr>>>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -1346,8 +1353,8 @@ folly::Future<StatusOr<bool>> MetaClient::multiPut(
   for (auto& element : pairs) {
     data.emplace_back(std::move(element));
   }
-  req.set_segment(std::move(segment));
-  req.set_pairs(std::move(data));
+  req.segment_ref() = std::move(segment);
+  req.pairs_ref() = std::move(data);
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -1366,8 +1373,8 @@ folly::Future<StatusOr<std::string>> MetaClient::get(std::string segment, std::s
   }
 
   cpp2::GetReq req;
-  req.set_segment(std::move(segment));
-  req.set_key(std::move(key));
+  req.segment_ref() = std::move(segment);
+  req.key_ref() = std::move(key);
   folly::Promise<StatusOr<std::string>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -1385,8 +1392,8 @@ folly::Future<StatusOr<std::vector<std::string>>> MetaClient::multiGet(
   }
 
   cpp2::MultiGetReq req;
-  req.set_segment(std::move(segment));
-  req.set_keys(std::move(keys));
+  req.segment_ref() = std::move(segment);
+  req.keys_ref() = std::move(keys);
   folly::Promise<StatusOr<std::vector<std::string>>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -1405,9 +1412,9 @@ folly::Future<StatusOr<std::vector<std::string>>> MetaClient::scan(std::string s
   }
 
   cpp2::ScanReq req;
-  req.set_segment(std::move(segment));
-  req.set_start(std::move(start));
-  req.set_end(std::move(end));
+  req.segment_ref() = std::move(segment);
+  req.start_ref() = std::move(start);
+  req.end_ref() = std::move(end);
   folly::Promise<StatusOr<std::vector<std::string>>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -1424,8 +1431,8 @@ folly::Future<StatusOr<bool>> MetaClient::remove(std::string segment, std::strin
   }
 
   cpp2::RemoveReq req;
-  req.set_segment(std::move(segment));
-  req.set_key(std::move(key));
+  req.segment_ref() = std::move(segment);
+  req.key_ref() = std::move(key);
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -1446,9 +1453,9 @@ folly::Future<StatusOr<bool>> MetaClient::removeRange(std::string segment,
   }
 
   cpp2::RemoveRangeReq req;
-  req.set_segment(std::move(segment));
-  req.set_start(std::move(start));
-  req.set_end(std::move(end));
+  req.segment_ref() = std::move(segment);
+  req.start_ref() = std::move(start);
+  req.end_ref() = std::move(end);
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -1533,10 +1540,10 @@ folly::Future<StatusOr<TagID>> MetaClient::createTagSchema(GraphSpaceID spaceId,
                                                            cpp2::Schema schema,
                                                            bool ifNotExists) {
   cpp2::CreateTagReq req;
-  req.set_space_id(spaceId);
-  req.set_tag_name(std::move(name));
-  req.set_schema(std::move(schema));
-  req.set_if_not_exists(ifNotExists);
+  req.space_id_ref() = spaceId;
+  req.tag_name_ref() = std::move(name);
+  req.schema_ref() = std::move(schema);
+  req.if_not_exists_ref() = ifNotExists;
   folly::Promise<StatusOr<TagID>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -1552,10 +1559,10 @@ folly::Future<StatusOr<bool>> MetaClient::alterTagSchema(GraphSpaceID spaceId,
                                                          std::vector<cpp2::AlterSchemaItem> items,
                                                          cpp2::SchemaProp schemaProp) {
   cpp2::AlterTagReq req;
-  req.set_space_id(spaceId);
-  req.set_tag_name(std::move(name));
-  req.set_tag_items(std::move(items));
-  req.set_schema_prop(std::move(schemaProp));
+  req.space_id_ref() = spaceId;
+  req.tag_name_ref() = std::move(name);
+  req.tag_items_ref() = std::move(items);
+  req.schema_prop_ref() = std::move(schemaProp);
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -1571,7 +1578,7 @@ folly::Future<StatusOr<bool>> MetaClient::alterTagSchema(GraphSpaceID spaceId,
 folly::Future<StatusOr<std::vector<cpp2::TagItem>>> MetaClient::listTagSchemas(
     GraphSpaceID spaceId) {
   cpp2::ListTagsReq req;
-  req.set_space_id(spaceId);
+  req.space_id_ref() = spaceId;
   folly::Promise<StatusOr<std::vector<cpp2::TagItem>>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -1586,9 +1593,9 @@ folly::Future<StatusOr<bool>> MetaClient::dropTagSchema(GraphSpaceID spaceId,
                                                         std::string tagName,
                                                         const bool ifExists) {
   cpp2::DropTagReq req;
-  req.set_space_id(spaceId);
-  req.set_tag_name(std::move(tagName));
-  req.set_if_exists(ifExists);
+  req.space_id_ref() = spaceId;
+  req.tag_name_ref() = std::move(tagName);
+  req.if_exists_ref() = ifExists;
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -1605,9 +1612,9 @@ folly::Future<StatusOr<cpp2::Schema>> MetaClient::getTagSchema(GraphSpaceID spac
                                                                std::string name,
                                                                int64_t version) {
   cpp2::GetTagReq req;
-  req.set_space_id(spaceId);
-  req.set_tag_name(std::move(name));
-  req.set_version(version);
+  req.space_id_ref() = spaceId;
+  req.tag_name_ref() = std::move(name);
+  req.version_ref() = version;
   folly::Promise<StatusOr<cpp2::Schema>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -1623,10 +1630,10 @@ folly::Future<StatusOr<EdgeType>> MetaClient::createEdgeSchema(GraphSpaceID spac
                                                                cpp2::Schema schema,
                                                                bool ifNotExists) {
   cpp2::CreateEdgeReq req;
-  req.set_space_id(spaceId);
-  req.set_edge_name(std::move(name));
-  req.set_schema(schema);
-  req.set_if_not_exists(ifNotExists);
+  req.space_id_ref() = spaceId;
+  req.edge_name_ref() = std::move(name);
+  req.schema_ref() = schema;
+  req.if_not_exists_ref() = ifNotExists;
 
   folly::Promise<StatusOr<EdgeType>> promise;
   auto future = promise.getFuture();
@@ -1643,10 +1650,10 @@ folly::Future<StatusOr<bool>> MetaClient::alterEdgeSchema(GraphSpaceID spaceId,
                                                           std::vector<cpp2::AlterSchemaItem> items,
                                                           cpp2::SchemaProp schemaProp) {
   cpp2::AlterEdgeReq req;
-  req.set_space_id(spaceId);
-  req.set_edge_name(std::move(name));
-  req.set_edge_items(std::move(items));
-  req.set_schema_prop(std::move(schemaProp));
+  req.space_id_ref() = spaceId;
+  req.edge_name_ref() = std::move(name);
+  req.edge_items_ref() = std::move(items);
+  req.schema_prop_ref() = std::move(schemaProp);
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -1662,7 +1669,7 @@ folly::Future<StatusOr<bool>> MetaClient::alterEdgeSchema(GraphSpaceID spaceId,
 folly::Future<StatusOr<std::vector<cpp2::EdgeItem>>> MetaClient::listEdgeSchemas(
     GraphSpaceID spaceId) {
   cpp2::ListEdgesReq req;
-  req.set_space_id(spaceId);
+  req.space_id_ref() = spaceId;
   folly::Promise<StatusOr<std::vector<cpp2::EdgeItem>>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -1677,9 +1684,9 @@ folly::Future<StatusOr<cpp2::Schema>> MetaClient::getEdgeSchema(GraphSpaceID spa
                                                                 std::string name,
                                                                 SchemaVer version) {
   cpp2::GetEdgeReq req;
-  req.set_space_id(spaceId);
-  req.set_edge_name(std::move(name));
-  req.set_version(version);
+  req.space_id_ref() = spaceId;
+  req.edge_name_ref() = std::move(name);
+  req.version_ref() = version;
   folly::Promise<StatusOr<cpp2::Schema>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -1694,9 +1701,9 @@ folly::Future<StatusOr<bool>> MetaClient::dropEdgeSchema(GraphSpaceID spaceId,
                                                          std::string name,
                                                          const bool ifExists) {
   cpp2::DropEdgeReq req;
-  req.set_space_id(spaceId);
-  req.set_edge_name(std::move(name));
-  req.set_if_exists(ifExists);
+  req.space_id_ref() = spaceId;
+  req.edge_name_ref() = std::move(name);
+  req.if_exists_ref() = ifExists;
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -1717,16 +1724,16 @@ folly::Future<StatusOr<IndexID>> MetaClient::createTagIndex(GraphSpaceID spaceID
                                                             const cpp2::IndexParams* indexParams,
                                                             const std::string* comment) {
   cpp2::CreateTagIndexReq req;
-  req.set_space_id(spaceID);
-  req.set_index_name(std::move(indexName));
-  req.set_tag_name(std::move(tagName));
-  req.set_fields(std::move(fields));
-  req.set_if_not_exists(ifNotExists);
+  req.space_id_ref() = spaceID;
+  req.index_name_ref() = std::move(indexName);
+  req.tag_name_ref() = std::move(tagName);
+  req.fields_ref() = std::move(fields);
+  req.if_not_exists_ref() = ifNotExists;
   if (indexParams != nullptr) {
-    req.set_index_params(*indexParams);
+    req.index_params_ref() = *indexParams;
   }
   if (comment != nullptr) {
-    req.set_comment(*comment);
+    req.comment_ref() = *comment;
   }
 
   folly::Promise<StatusOr<IndexID>> promise;
@@ -1743,9 +1750,9 @@ folly::Future<StatusOr<bool>> MetaClient::dropTagIndex(GraphSpaceID spaceID,
                                                        std::string name,
                                                        bool ifExists) {
   cpp2::DropTagIndexReq req;
-  req.set_space_id(spaceID);
-  req.set_index_name(std::move(name));
-  req.set_if_exists(ifExists);
+  req.space_id_ref() = (spaceID);
+  req.index_name_ref() = (std::move(name));
+  req.if_exists_ref() = (ifExists);
 
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
@@ -1762,8 +1769,8 @@ folly::Future<StatusOr<bool>> MetaClient::dropTagIndex(GraphSpaceID spaceID,
 folly::Future<StatusOr<cpp2::IndexItem>> MetaClient::getTagIndex(GraphSpaceID spaceID,
                                                                  std::string name) {
   cpp2::GetTagIndexReq req;
-  req.set_space_id(spaceID);
-  req.set_index_name(std::move(name));
+  req.space_id_ref() = spaceID;
+  req.index_name_ref() = std::move(name);
 
   folly::Promise<StatusOr<cpp2::IndexItem>> promise;
   auto future = promise.getFuture();
@@ -1778,7 +1785,7 @@ folly::Future<StatusOr<cpp2::IndexItem>> MetaClient::getTagIndex(GraphSpaceID sp
 folly::Future<StatusOr<std::vector<cpp2::IndexItem>>> MetaClient::listTagIndexes(
     GraphSpaceID spaceId) {
   cpp2::ListTagIndexesReq req;
-  req.set_space_id(spaceId);
+  req.space_id_ref() = spaceId;
 
   folly::Promise<StatusOr<std::vector<cpp2::IndexItem>>> promise;
   auto future = promise.getFuture();
@@ -1792,8 +1799,8 @@ folly::Future<StatusOr<std::vector<cpp2::IndexItem>>> MetaClient::listTagIndexes
 
 folly::Future<StatusOr<bool>> MetaClient::rebuildTagIndex(GraphSpaceID spaceID, std::string name) {
   cpp2::RebuildIndexReq req;
-  req.set_space_id(spaceID);
-  req.set_index_name(std::move(name));
+  req.space_id_ref() = spaceID;
+  req.index_name_ref() = std::move(name);
 
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
@@ -1810,7 +1817,7 @@ folly::Future<StatusOr<bool>> MetaClient::rebuildTagIndex(GraphSpaceID spaceID, 
 folly::Future<StatusOr<std::vector<cpp2::IndexStatus>>> MetaClient::listTagIndexStatus(
     GraphSpaceID spaceID) {
   cpp2::ListIndexStatusReq req;
-  req.set_space_id(spaceID);
+  req.space_id_ref() = spaceID;
 
   folly::Promise<StatusOr<std::vector<cpp2::IndexStatus>>> promise;
   auto future = promise.getFuture();
@@ -1833,16 +1840,16 @@ folly::Future<StatusOr<IndexID>> MetaClient::createEdgeIndex(
     const cpp2::IndexParams* indexParams,
     const std::string* comment) {
   cpp2::CreateEdgeIndexReq req;
-  req.set_space_id(spaceID);
-  req.set_index_name(std::move(indexName));
-  req.set_edge_name(std::move(edgeName));
-  req.set_fields(std::move(fields));
-  req.set_if_not_exists(ifNotExists);
+  req.space_id_ref() = spaceID;
+  req.index_name_ref() = std::move(indexName);
+  req.edge_name_ref() = std::move(edgeName);
+  req.fields_ref() = std::move(fields);
+  req.if_not_exists_ref() = ifNotExists;
   if (indexParams != nullptr) {
-    req.set_index_params(*indexParams);
+    req.index_params_ref() = *indexParams;
   }
   if (comment != nullptr) {
-    req.set_comment(*comment);
+    req.comment_ref() = *comment;
   }
 
   folly::Promise<StatusOr<IndexID>> promise;
@@ -1860,9 +1867,9 @@ folly::Future<StatusOr<bool>> MetaClient::dropEdgeIndex(GraphSpaceID spaceId,
                                                         std::string name,
                                                         bool ifExists) {
   cpp2::DropEdgeIndexReq req;
-  req.set_space_id(spaceId);
-  req.set_index_name(std::move(name));
-  req.set_if_exists(ifExists);
+  req.space_id_ref() = spaceId;
+  req.index_name_ref() = std::move(name);
+  req.if_exists_ref() = ifExists;
 
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
@@ -1879,8 +1886,8 @@ folly::Future<StatusOr<bool>> MetaClient::dropEdgeIndex(GraphSpaceID spaceId,
 folly::Future<StatusOr<cpp2::IndexItem>> MetaClient::getEdgeIndex(GraphSpaceID spaceId,
                                                                   std::string name) {
   cpp2::GetEdgeIndexReq req;
-  req.set_space_id(spaceId);
-  req.set_index_name(std::move(name));
+  req.space_id_ref() = spaceId;
+  req.index_name_ref() = std::move(name);
 
   folly::Promise<StatusOr<cpp2::IndexItem>> promise;
   auto future = promise.getFuture();
@@ -1895,7 +1902,7 @@ folly::Future<StatusOr<cpp2::IndexItem>> MetaClient::getEdgeIndex(GraphSpaceID s
 folly::Future<StatusOr<std::vector<cpp2::IndexItem>>> MetaClient::listEdgeIndexes(
     GraphSpaceID spaceId) {
   cpp2::ListEdgeIndexesReq req;
-  req.set_space_id(spaceId);
+  req.space_id_ref() = spaceId;
 
   folly::Promise<StatusOr<std::vector<cpp2::IndexItem>>> promise;
   auto future = promise.getFuture();
@@ -2072,8 +2079,8 @@ StatusOr<EdgeSchema> MetaClient::getAllLatestVerEdgeSchemaFromCache(const GraphS
 
 folly::Future<StatusOr<bool>> MetaClient::rebuildEdgeIndex(GraphSpaceID spaceID, std::string name) {
   cpp2::RebuildIndexReq req;
-  req.set_space_id(spaceID);
-  req.set_index_name(std::move(name));
+  req.space_id_ref() = spaceID;
+  req.index_name_ref() = std::move(name);
 
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
@@ -2090,7 +2097,7 @@ folly::Future<StatusOr<bool>> MetaClient::rebuildEdgeIndex(GraphSpaceID spaceID,
 folly::Future<StatusOr<std::vector<cpp2::IndexStatus>>> MetaClient::listEdgeIndexStatus(
     GraphSpaceID spaceID) {
   cpp2::ListIndexStatusReq req;
-  req.set_space_id(spaceID);
+  req.space_id_ref() = spaceID;
 
   folly::Promise<StatusOr<std::vector<cpp2::IndexStatus>>> promise;
   auto future = promise.getFuture();
@@ -2311,7 +2318,9 @@ StatusOr<LeaderInfo> MetaClient::getLeaderInfo() {
   return leadersInfo_;
 }
 
-const std::vector<HostAddr>& MetaClient::getAddresses() { return addrs_; }
+const std::vector<HostAddr>& MetaClient::getAddresses() {
+  return addrs_;
+}
 
 std::vector<cpp2::RoleItem> MetaClient::getRolesByUserFromCache(const std::string& user) {
   if (!ready_) {
@@ -2401,14 +2410,14 @@ StatusOr<SchemaVer> MetaClient::getLatestEdgeVersionFromCache(const GraphSpaceID
 
 folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
   cpp2::HBReq req;
-  req.set_host(options_.localHost_);
-  req.set_role(options_.role_);
-  req.set_git_info_sha(options_.gitInfoSHA_);
+  req.host_ref() = options_.localHost_;
+  req.role_ref() = options_.role_;
+  req.git_info_sha_ref() = options_.gitInfoSHA_;
   if (options_.role_ == cpp2::HostRole::STORAGE) {
     if (options_.clusterId_.load() == 0) {
       options_.clusterId_ = FileBasedClusterIdMan::getClusterIdFromFile(FLAGS_cluster_id_path);
     }
-    req.set_cluster_id(options_.clusterId_.load());
+    req.cluster_id_ref() = options_.clusterId_.load();
     std::unordered_map<GraphSpaceID, std::vector<cpp2::LeaderInfo>> leaderIds;
     if (listener_ != nullptr) {
       listener_->fetchLeaderInfo(leaderIds);
@@ -2419,9 +2428,9 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
           leaderIds_ = leaderIds;
         }
       }
-      req.set_leader_partIds(std::move(leaderIds));
+      req.leader_partIds_ref() = std::move(leaderIds);
     } else {
-      req.set_leader_partIds(std::move(leaderIds));
+      req.leader_partIds_ref() = std::move(leaderIds);
     }
 
     kvstore::SpaceDiskPartsMap diskParts;
@@ -2433,11 +2442,25 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
           diskParts_.clear();
           diskParts_ = diskParts;
         }
-        req.set_disk_parts(diskParts);
+        req.disk_parts_ref() = diskParts;
       }
     } else {
-      req.set_disk_parts(diskParts);
+      req.disk_parts_ref() = diskParts;
     }
+  }
+
+  // info used in the agent, only set once
+  // TOOD(spw): if we could add data path(disk) dynamicly in the future, it should be
+  // reported every time it changes
+  if (!dirInfoReported_) {
+    nebula::cpp2::DirInfo dirInfo;
+    if (options_.role_ == cpp2::HostRole::GRAPH) {
+      dirInfo.root_ref() = options_.rootPath_;
+    } else if (options_.role_ == cpp2::HostRole::STORAGE) {
+      dirInfo.root_ref() = options_.rootPath_;
+      dirInfo.data_ref() = options_.dataPaths_;
+    }
+    req.dir_ref() = dirInfo;
   }
 
   folly::Promise<StatusOr<bool>> promise;
@@ -2459,7 +2482,12 @@ folly::Future<StatusOr<bool>> MetaClient::heartbeat() {
         metadLastUpdateTime_ = resp.get_last_update_time_in_ms();
         VLOG(1) << "Metad last update time: " << metadLastUpdateTime_;
         metaServerVersion_ = resp.get_meta_version();
-        return resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
+
+        bool succeeded = resp.get_code() == nebula::cpp2::ErrorCode::SUCCEEDED;
+        if (succeeded) {
+          dirInfoReported_ = true;
+        }
+        return succeeded;
       },
       std::move(promise),
       true);
@@ -2470,9 +2498,9 @@ folly::Future<StatusOr<bool>> MetaClient::createUser(std::string account,
                                                      std::string password,
                                                      bool ifNotExists) {
   cpp2::CreateUserReq req;
-  req.set_account(std::move(account));
-  req.set_encoded_pwd(std::move(password));
-  req.set_if_not_exists(ifNotExists);
+  req.account_ref() = std::move(account);
+  req.encoded_pwd_ref() = std::move(password);
+  req.if_not_exists_ref() = ifNotExists;
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -2487,8 +2515,8 @@ folly::Future<StatusOr<bool>> MetaClient::createUser(std::string account,
 
 folly::Future<StatusOr<bool>> MetaClient::dropUser(std::string account, bool ifExists) {
   cpp2::DropUserReq req;
-  req.set_account(std::move(account));
-  req.set_if_exists(ifExists);
+  req.account_ref() = std::move(account);
+  req.if_exists_ref() = ifExists;
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -2503,8 +2531,8 @@ folly::Future<StatusOr<bool>> MetaClient::dropUser(std::string account, bool ifE
 
 folly::Future<StatusOr<bool>> MetaClient::alterUser(std::string account, std::string password) {
   cpp2::AlterUserReq req;
-  req.set_account(std::move(account));
-  req.set_encoded_pwd(std::move(password));
+  req.account_ref() = std::move(account);
+  req.encoded_pwd_ref() = std::move(password);
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -2519,7 +2547,7 @@ folly::Future<StatusOr<bool>> MetaClient::alterUser(std::string account, std::st
 
 folly::Future<StatusOr<bool>> MetaClient::grantToUser(cpp2::RoleItem roleItem) {
   cpp2::GrantRoleReq req;
-  req.set_role_item(std::move(roleItem));
+  req.role_item_ref() = std::move(roleItem);
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -2534,7 +2562,7 @@ folly::Future<StatusOr<bool>> MetaClient::grantToUser(cpp2::RoleItem roleItem) {
 
 folly::Future<StatusOr<bool>> MetaClient::revokeFromUser(cpp2::RoleItem roleItem) {
   cpp2::RevokeRoleReq req;
-  req.set_role_item(std::move(roleItem));
+  req.role_item_ref() = std::move(roleItem);
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -2561,7 +2589,7 @@ folly::Future<StatusOr<std::unordered_map<std::string, std::string>>> MetaClient
 
 folly::Future<StatusOr<std::vector<cpp2::RoleItem>>> MetaClient::listRoles(GraphSpaceID space) {
   cpp2::ListRolesReq req;
-  req.set_space_id(std::move(space));
+  req.space_id_ref() = std::move(space);
   folly::Promise<StatusOr<std::vector<cpp2::RoleItem>>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -2576,9 +2604,9 @@ folly::Future<StatusOr<bool>> MetaClient::changePassword(std::string account,
                                                          std::string newPwd,
                                                          std::string oldPwd) {
   cpp2::ChangePasswordReq req;
-  req.set_account(std::move(account));
-  req.set_new_encoded_pwd(std::move(newPwd));
-  req.set_old_encoded_pwd(std::move(oldPwd));
+  req.account_ref() = std::move(account);
+  req.new_encoded_pwd_ref() = std::move(newPwd);
+  req.old_encoded_pwd_ref() = std::move(oldPwd);
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -2593,7 +2621,7 @@ folly::Future<StatusOr<bool>> MetaClient::changePassword(std::string account,
 
 folly::Future<StatusOr<std::vector<cpp2::RoleItem>>> MetaClient::getUserRoles(std::string account) {
   cpp2::GetUserRolesReq req;
-  req.set_account(std::move(account));
+  req.account_ref() = std::move(account);
   folly::Promise<StatusOr<std::vector<cpp2::RoleItem>>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -2609,13 +2637,13 @@ folly::Future<StatusOr<std::string>> MetaClient::getTagDefaultValue(GraphSpaceID
                                                                     const std::string& field) {
   cpp2::GetReq req;
   static std::string defaultKey = "__default__";
-  req.set_segment(defaultKey);
+  req.segment_ref() = defaultKey;
   std::string key;
   key.reserve(64);
   key.append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
   key.append(reinterpret_cast<const char*>(&tagId), sizeof(TagID));
   key.append(field);
-  req.set_key(std::move(key));
+  req.key_ref() = std::move(key);
   folly::Promise<StatusOr<std::string>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -2631,13 +2659,13 @@ folly::Future<StatusOr<std::string>> MetaClient::getEdgeDefaultValue(GraphSpaceI
                                                                      const std::string& field) {
   cpp2::GetReq req;
   static std::string defaultKey = "__default__";
-  req.set_segment(defaultKey);
+  req.segment_ref() = defaultKey;
   std::string key;
   key.reserve(64);
   key.append(reinterpret_cast<const char*>(&spaceId), sizeof(GraphSpaceID));
   key.append(reinterpret_cast<const char*>(&edgeType), sizeof(EdgeType));
   key.append(field);
-  req.set_key(std::move(key));
+  req.key_ref() = std::move(key);
   folly::Promise<StatusOr<std::string>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -2650,7 +2678,7 @@ folly::Future<StatusOr<std::string>> MetaClient::getEdgeDefaultValue(GraphSpaceI
 
 folly::Future<StatusOr<bool>> MetaClient::regConfig(const std::vector<cpp2::ConfigItem>& items) {
   cpp2::RegConfigReq req;
-  req.set_items(items);
+  req.items_ref() = items;
   folly::Promise<StatusOr<int64_t>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -2669,10 +2697,10 @@ folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>> MetaClient::getConfig(
     return Status::Error("Not ready!");
   }
   cpp2::ConfigItem item;
-  item.set_module(module);
-  item.set_name(name);
+  item.module_ref() = module;
+  item.name_ref() = name;
   cpp2::GetConfigReq req;
-  req.set_item(item);
+  req.item_ref() = item;
   folly::Promise<StatusOr<std::vector<cpp2::ConfigItem>>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -2687,12 +2715,12 @@ folly::Future<StatusOr<bool>> MetaClient::setConfig(const cpp2::ConfigModule& mo
                                                     const std::string& name,
                                                     const Value& value) {
   cpp2::ConfigItem item;
-  item.set_module(module);
-  item.set_name(name);
-  item.set_value(value);
+  item.module_ref() = module;
+  item.name_ref() = name;
+  item.value_ref() = value;
 
   cpp2::SetConfigReq req;
-  req.set_item(item);
+  req.item_ref() = item;
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -2708,7 +2736,7 @@ folly::Future<StatusOr<bool>> MetaClient::setConfig(const cpp2::ConfigModule& mo
 folly::Future<StatusOr<std::vector<cpp2::ConfigItem>>> MetaClient::listConfigs(
     const cpp2::ConfigModule& module) {
   cpp2::ListConfigsReq req;
-  req.set_module(module);
+  req.module_ref() = module;
   folly::Promise<StatusOr<std::vector<cpp2::ConfigItem>>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -2735,7 +2763,7 @@ folly::Future<StatusOr<bool>> MetaClient::createSnapshot() {
 
 folly::Future<StatusOr<bool>> MetaClient::dropSnapshot(const std::string& name) {
   cpp2::DropSnapshotReq req;
-  req.set_name(name);
+  req.name_ref() = name;
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -2766,9 +2794,9 @@ folly::Future<StatusOr<bool>> MetaClient::addListener(GraphSpaceID spaceId,
                                                       cpp2::ListenerType type,
                                                       std::vector<HostAddr> hosts) {
   cpp2::AddListenerReq req;
-  req.set_space_id(spaceId);
-  req.set_type(type);
-  req.set_hosts(std::move(hosts));
+  req.space_id_ref() = spaceId;
+  req.type_ref() = type;
+  req.hosts_ref() = std::move(hosts);
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -2784,8 +2812,8 @@ folly::Future<StatusOr<bool>> MetaClient::addListener(GraphSpaceID spaceId,
 folly::Future<StatusOr<bool>> MetaClient::removeListener(GraphSpaceID spaceId,
                                                          cpp2::ListenerType type) {
   cpp2::RemoveListenerReq req;
-  req.set_space_id(spaceId);
-  req.set_type(type);
+  req.space_id_ref() = spaceId;
+  req.type_ref() = type;
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -2801,7 +2829,7 @@ folly::Future<StatusOr<bool>> MetaClient::removeListener(GraphSpaceID spaceId,
 folly::Future<StatusOr<std::vector<cpp2::ListenerInfo>>> MetaClient::listListener(
     GraphSpaceID spaceId) {
   cpp2::ListListenerReq req;
-  req.set_space_id(spaceId);
+  req.space_id_ref() = spaceId;
   folly::Promise<StatusOr<std::vector<cpp2::ListenerInfo>>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -3049,7 +3077,7 @@ void MetaClient::loadLeader(const std::vector<cpp2::HostItem>& hostItems,
 
 folly::Future<StatusOr<bool>> MetaClient::addHosts(std::vector<HostAddr> hosts) {
   cpp2::AddHostsReq req;
-  req.set_hosts(std::move(hosts));
+  req.hosts_ref() = std::move(hosts);
 
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
@@ -3065,7 +3093,7 @@ folly::Future<StatusOr<bool>> MetaClient::addHosts(std::vector<HostAddr> hosts) 
 
 folly::Future<StatusOr<bool>> MetaClient::dropHosts(std::vector<HostAddr> hosts) {
   cpp2::DropHostsReq req;
-  req.set_hosts(std::move(hosts));
+  req.hosts_ref() = std::move(hosts);
 
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
@@ -3082,8 +3110,8 @@ folly::Future<StatusOr<bool>> MetaClient::dropHosts(std::vector<HostAddr> hosts)
 folly::Future<StatusOr<bool>> MetaClient::mergeZone(std::vector<std::string> zones,
                                                     std::string zoneName) {
   cpp2::MergeZoneReq req;
-  req.set_zone_name(zoneName);
-  req.set_zones(zones);
+  req.zone_name_ref() = zoneName;
+  req.zones_ref() = zones;
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -3099,8 +3127,8 @@ folly::Future<StatusOr<bool>> MetaClient::mergeZone(std::vector<std::string> zon
 folly::Future<StatusOr<bool>> MetaClient::renameZone(std::string originalZoneName,
                                                      std::string zoneName) {
   cpp2::RenameZoneReq req;
-  req.set_original_zone_name(originalZoneName);
-  req.set_zone_name(zoneName);
+  req.original_zone_name_ref() = originalZoneName;
+  req.zone_name_ref() = zoneName;
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -3115,7 +3143,7 @@ folly::Future<StatusOr<bool>> MetaClient::renameZone(std::string originalZoneNam
 
 folly::Future<StatusOr<bool>> MetaClient::dropZone(std::string zoneName) {
   cpp2::DropZoneReq req;
-  req.set_zone_name(std::move(zoneName));
+  req.zone_name_ref() = std::move(zoneName);
 
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
@@ -3132,7 +3160,7 @@ folly::Future<StatusOr<bool>> MetaClient::dropZone(std::string zoneName) {
 folly::Future<StatusOr<bool>> MetaClient::splitZone(
     std::string zoneName, std::unordered_map<std::string, std::vector<HostAddr>>) {
   cpp2::SplitZoneReq req;
-  req.set_zone_name(zoneName);
+  req.zone_name_ref() = zoneName;
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -3149,9 +3177,9 @@ folly::Future<StatusOr<bool>> MetaClient::addHostsIntoZone(std::vector<HostAddr>
                                                            std::string zoneName,
                                                            bool isNew) {
   cpp2::AddHostsIntoZoneReq req;
-  req.set_hosts(hosts);
-  req.set_zone_name(zoneName);
-  req.set_is_new(isNew);
+  req.hosts_ref() = hosts;
+  req.zone_name_ref() = zoneName;
+  req.is_new_ref() = isNew;
 
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
@@ -3167,7 +3195,7 @@ folly::Future<StatusOr<bool>> MetaClient::addHostsIntoZone(std::vector<HostAddr>
 
 folly::Future<StatusOr<std::vector<HostAddr>>> MetaClient::getZone(std::string zoneName) {
   cpp2::GetZoneReq req;
-  req.set_zone_name(std::move(zoneName));
+  req.zone_name_ref() = std::move(zoneName);
 
   folly::Promise<StatusOr<std::vector<HostAddr>>> promise;
   auto future = promise.getFuture();
@@ -3193,7 +3221,7 @@ folly::Future<StatusOr<std::vector<cpp2::Zone>>> MetaClient::listZones() {
 
 folly::Future<StatusOr<cpp2::StatsItem>> MetaClient::getStats(GraphSpaceID spaceId) {
   cpp2::GetStatsReq req;
-  req.set_space_id(spaceId);
+  req.space_id_ref() = (spaceId);
   folly::Promise<StatusOr<cpp2::StatsItem>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -3211,11 +3239,11 @@ folly::Future<StatusOr<nebula::cpp2::ErrorCode>> MetaClient::reportTaskFinish(
     nebula::cpp2::ErrorCode taskErrCode,
     cpp2::StatsItem* statisticItem) {
   cpp2::ReportTaskReq req;
-  req.set_code(taskErrCode);
-  req.set_job_id(jobId);
-  req.set_task_id(taskId);
+  req.code_ref() = taskErrCode;
+  req.job_id_ref() = jobId;
+  req.task_id_ref() = taskId;
   if (statisticItem) {
-    req.set_stats(*statisticItem);
+    req.stats_ref() = *statisticItem;
   }
   folly::Promise<StatusOr<nebula::cpp2::ErrorCode>> pro;
   auto fut = pro.getFuture();
@@ -3231,8 +3259,8 @@ folly::Future<StatusOr<nebula::cpp2::ErrorCode>> MetaClient::reportTaskFinish(
 folly::Future<StatusOr<bool>> MetaClient::signInFTService(
     cpp2::FTServiceType type, const std::vector<cpp2::FTClient>& clients) {
   cpp2::SignInFTServiceReq req;
-  req.set_type(type);
-  req.set_clients(clients);
+  req.type_ref() = type;
+  req.clients_ref() = clients;
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -3285,8 +3313,8 @@ StatusOr<std::vector<cpp2::FTClient>> MetaClient::getFTClientsFromCache() {
 folly::Future<StatusOr<bool>> MetaClient::createFTIndex(const std::string& name,
                                                         const cpp2::FTIndex& index) {
   cpp2::CreateFTIndexReq req;
-  req.set_fulltext_index_name(name);
-  req.set_index(index);
+  req.fulltext_index_name_ref() = name;
+  req.index_ref() = index;
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -3303,8 +3331,8 @@ folly::Future<StatusOr<bool>> MetaClient::createFTIndex(const std::string& name,
 folly::Future<StatusOr<bool>> MetaClient::dropFTIndex(GraphSpaceID spaceId,
                                                       const std::string& name) {
   cpp2::DropFTIndexReq req;
-  req.set_fulltext_index_name(name);
-  req.set_space_id(spaceId);
+  req.fulltext_index_name_ref() = name;
+  req.space_id_ref() = spaceId;
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -3389,9 +3417,9 @@ StatusOr<cpp2::FTIndex> MetaClient::getFTIndexByNameFromCache(GraphSpaceID space
 folly::Future<StatusOr<cpp2::CreateSessionResp>> MetaClient::createSession(
     const std::string& userName, const HostAddr& graphAddr, const std::string& clientIp) {
   cpp2::CreateSessionReq req;
-  req.set_user(userName);
-  req.set_graph_addr(graphAddr);
-  req.set_client_ip(clientIp);
+  req.user_ref() = userName;
+  req.graph_addr_ref() = graphAddr;
+  req.client_ip_ref() = clientIp;
   folly::Promise<StatusOr<cpp2::CreateSessionResp>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -3406,7 +3434,7 @@ folly::Future<StatusOr<cpp2::CreateSessionResp>> MetaClient::createSession(
 folly::Future<StatusOr<cpp2::UpdateSessionsResp>> MetaClient::updateSessions(
     const std::vector<cpp2::Session>& sessions) {
   cpp2::UpdateSessionsReq req;
-  req.set_sessions(sessions);
+  req.sessions_ref() = sessions;
   folly::Promise<StatusOr<cpp2::UpdateSessionsResp>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -3432,7 +3460,7 @@ folly::Future<StatusOr<cpp2::ListSessionsResp>> MetaClient::listSessions() {
 
 folly::Future<StatusOr<cpp2::GetSessionResp>> MetaClient::getSession(SessionID sessionId) {
   cpp2::GetSessionReq req;
-  req.set_session_id(sessionId);
+  req.session_id_ref() = sessionId;
   folly::Promise<StatusOr<cpp2::GetSessionResp>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -3445,7 +3473,7 @@ folly::Future<StatusOr<cpp2::GetSessionResp>> MetaClient::getSession(SessionID s
 
 folly::Future<StatusOr<cpp2::ExecResp>> MetaClient::removeSession(SessionID sessionId) {
   cpp2::RemoveSessionReq req;
-  req.set_session_id(sessionId);
+  req.session_id_ref() = sessionId;
   folly::Promise<StatusOr<cpp2::ExecResp>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -3460,7 +3488,7 @@ folly::Future<StatusOr<cpp2::ExecResp>> MetaClient::removeSession(SessionID sess
 folly::Future<StatusOr<cpp2::ExecResp>> MetaClient::killQuery(
     std::unordered_map<SessionID, std::unordered_set<ExecutionPlanID>> killQueries) {
   cpp2::KillQueryReq req;
-  req.set_kill_queries(std::move(killQueries));
+  req.kill_queries_ref() = std::move(killQueries);
   folly::Promise<StatusOr<cpp2::ExecResp>> promise;
   auto future = promise.getFuture();
   getResponse(
@@ -3565,8 +3593,8 @@ bool MetaClient::checkIsPlanKilled(SessionID sessionId, ExecutionPlanID planId) 
 
 Status MetaClient::verifyVersion() {
   auto req = cpp2::VerifyClientVersionReq();
-  req.set_build_version(getOriginVersion());
-  req.set_host(options_.localHost_);
+  req.build_version_ref() = getOriginVersion();
+  req.host_ref() = options_.localHost_;
   folly::Promise<StatusOr<cpp2::VerifyClientVersionResp>> promise;
   auto future = promise.getFuture();
   getResponse(

@@ -30,43 +30,81 @@ class AggData final {
     }
   }
 
-  const Value& cnt() const { return cnt_; }
+  const Value& cnt() const {
+    return cnt_;
+  }
 
-  Value& cnt() { return cnt_; }
+  Value& cnt() {
+    return cnt_;
+  }
 
-  void setCnt(Value&& cnt) { cnt_ = std::move(cnt); }
+  void setCnt(Value&& cnt) {
+    cnt_ = std::move(cnt);
+  }
 
-  const Value& sum() const { return sum_; }
+  const Value& sum() const {
+    return sum_;
+  }
 
-  Value& sum() { return sum_; }
+  Value& sum() {
+    return sum_;
+  }
 
-  void setSum(Value&& sum) { sum_ = std::move(sum); }
+  void setSum(Value&& sum) {
+    sum_ = std::move(sum);
+  }
 
-  const Value& avg() const { return avg_; }
+  const Value& avg() const {
+    return avg_;
+  }
 
-  Value& avg() { return avg_; }
+  Value& avg() {
+    return avg_;
+  }
 
-  void setAvg(Value&& avg) { avg_ = std::move(avg); }
+  void setAvg(Value&& avg) {
+    avg_ = std::move(avg);
+  }
 
-  const Value& deviation() const { return deviation_; }
+  const Value& deviation() const {
+    return deviation_;
+  }
 
-  Value& deviation() { return deviation_; }
+  Value& deviation() {
+    return deviation_;
+  }
 
-  void setDeviation(Value&& deviation) { deviation_ = std::move(deviation); }
+  void setDeviation(Value&& deviation) {
+    deviation_ = std::move(deviation);
+  }
 
-  const Value& result() const { return result_; }
+  const Value& result() const {
+    return result_;
+  }
 
-  Value& result() { return result_; }
+  Value& result() {
+    return result_;
+  }
 
-  void setResult(Value&& res) { result_ = std::move(res); }
+  void setResult(Value&& res) {
+    result_ = std::move(res);
+  }
 
-  void setResult(const Value& res) { result_ = res; }
+  void setResult(const Value& res) {
+    result_ = res;
+  }
 
-  const Set* uniques() const { return uniques_.get(); }
+  const Set* uniques() const {
+    return uniques_.get();
+  }
 
-  Set* uniques() { return uniques_.get(); }
+  Set* uniques() {
+    return uniques_.get();
+  }
 
-  void setUniques(Set* uniques) { uniques_.reset(uniques); }
+  void setUniques(Set* uniques) {
+    uniques_.reset(uniques);
+  }
 
  private:
   Value cnt_;

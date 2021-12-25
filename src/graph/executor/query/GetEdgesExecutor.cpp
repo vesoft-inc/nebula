@@ -17,7 +17,9 @@ using nebula::storage::cpp2::GetPropResponse;
 namespace nebula {
 namespace graph {
 
-folly::Future<Status> GetEdgesExecutor::execute() { return getEdges(); }
+folly::Future<Status> GetEdgesExecutor::execute() {
+  return getEdges();
+}
 
 DataSet GetEdgesExecutor::buildRequestDataSet(const GetEdges *ge) {
   auto valueIter = ectx_->getResult(ge->inputVar()).iter();

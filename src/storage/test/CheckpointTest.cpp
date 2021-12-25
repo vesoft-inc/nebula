@@ -37,8 +37,9 @@ TEST(CheckpointTest, simpleTest) {
   {
     auto* processor = CreateCheckpointProcessor::instance(env);
     cpp2::CreateCPRequest req;
-    req.set_space_id(1);
-    req.set_name("checkpoint_test");
+    std::vector<GraphSpaceID> ids{1};
+    req.space_ids_ref() = ids;
+    req.name_ref() = "checkpoint_test";
     auto fut = processor->getFuture();
     processor->process(req);
     auto resp = std::move(fut).get();
