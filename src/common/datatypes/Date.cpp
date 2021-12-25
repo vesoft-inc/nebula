@@ -25,7 +25,9 @@ int8_t dayOfMonth(int16_t year, int8_t month) {
                           : kDaysSoFar[month] - kDaysSoFar[month - 1];
 }
 
-Date::Date(uint64_t days) { fromInt(days); }
+Date::Date(uint64_t days) {
+  fromInt(days);
+}
 
 int64_t Date::toInt() const {
   // Year
@@ -144,7 +146,9 @@ void Date::addDuration(const Duration& duration) {
   day = tmp;
 }
 
-void Date::subDuration(const Duration& duration) { return addDuration(-duration); }
+void Date::subDuration(const Duration& duration) {
+  return addDuration(-duration);
+}
 
 std::string Date::toString() const {
   // It's in current timezone already
@@ -202,7 +206,9 @@ void Time::addDuration(const Duration& duration) {
   }
 }
 
-void Time::subDuration(const Duration& duration) { addDuration(-duration); }
+void Time::subDuration(const Duration& duration) {
+  addDuration(-duration);
+}
 
 std::string Time::toString() const {
   auto microsecStr = folly::stringPrintf("%.9f", static_cast<uint32_t>(microsec) / 1000000.0);
@@ -320,7 +326,9 @@ void DateTime::addDuration(const Duration& duration) {
   day = tmp;
 }
 
-void DateTime::subDuration(const Duration& duration) { return addDuration(-duration); }
+void DateTime::subDuration(const Duration& duration) {
+  return addDuration(-duration);
+}
 
 std::string DateTime::toString() const {
   auto microsecStr = folly::stringPrintf("%.9f", static_cast<uint32_t>(microsec) / 1000000.0);

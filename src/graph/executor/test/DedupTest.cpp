@@ -15,7 +15,9 @@ namespace graph {
 
 class DedupTest : public QueryTestBase {
  public:
-  void SetUp() override { QueryTestBase::SetUp(); }
+  void SetUp() override {
+    QueryTestBase::SetUp();
+  }
 };
 
 #define DEDUP_RESULT_CHECK(inputName, outputName, sentence, expected)                   \

@@ -39,37 +39,65 @@ class PredicateExpression final : public Expression {
 
   std::string toString() const override;
 
-  std::string rawString() const override { return hasOriginString() ? originString_ : toString(); }
+  std::string rawString() const override {
+    return hasOriginString() ? originString_ : toString();
+  }
 
   void accept(ExprVisitor* visitor) override;
 
   Expression* clone() const override;
 
-  const std::string& name() const { return name_; }
+  const std::string& name() const {
+    return name_;
+  }
 
-  const std::string& innerVar() const { return innerVar_; }
+  const std::string& innerVar() const {
+    return innerVar_;
+  }
 
-  const Expression* collection() const { return collection_; }
+  const Expression* collection() const {
+    return collection_;
+  }
 
-  Expression* collection() { return collection_; }
+  Expression* collection() {
+    return collection_;
+  }
 
-  const Expression* filter() const { return filter_; }
+  const Expression* filter() const {
+    return filter_;
+  }
 
-  Expression* filter() { return filter_; }
+  Expression* filter() {
+    return filter_;
+  }
 
-  void setInnerVar(const std::string& name) { innerVar_ = name; }
+  void setInnerVar(const std::string& name) {
+    innerVar_ = name;
+  }
 
-  void setCollection(Expression* expr) { collection_ = expr; }
+  void setCollection(Expression* expr) {
+    collection_ = expr;
+  }
 
-  void setFilter(Expression* expr) { filter_ = expr; }
+  void setFilter(Expression* expr) {
+    filter_ = expr;
+  }
 
-  void setOriginString(const std::string& s) { originString_ = s; }
+  void setOriginString(const std::string& s) {
+    originString_ = s;
+  }
 
-  bool hasOriginString() const { return !originString_.empty(); }
+  bool hasOriginString() const {
+    return !originString_.empty();
+  }
 
-  bool hasInnerVar() const { return !innerVar_.empty(); }
+  bool hasInnerVar() const {
+    return !innerVar_.empty();
+  }
 
-  bool hasFilter() const { return filter_ != nullptr; }
+  bool hasFilter() const {
+    return filter_ != nullptr;
+  }
 
  private:
   explicit PredicateExpression(ObjectPool* pool,

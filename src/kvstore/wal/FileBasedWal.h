@@ -60,17 +60,27 @@ class FileBasedWal final : public Wal, public std::enable_shared_from_this<FileB
   virtual ~FileBasedWal();
 
   // Signal all WAL holders to stop using this WAL
-  void stop() { stopped_ = true; }
-  bool isStopped() const { return stopped_.load(); }
+  void stop() {
+    stopped_ = true;
+  }
+  bool isStopped() const {
+    return stopped_.load();
+  }
 
   // Return the ID of the first log message in the WAL
-  LogID firstLogId() const override { return firstLogId_; }
+  LogID firstLogId() const override {
+    return firstLogId_;
+  }
 
   // Return the ID of the last log message in the WAL
-  LogID lastLogId() const override { return lastLogId_; }
+  LogID lastLogId() const override {
+    return lastLogId_;
+  }
 
   // Return the term when the the last log is received
-  TermID lastLogTerm() const override { return lastLogTerm_; }
+  TermID lastLogTerm() const override {
+    return lastLogTerm_;
+  }
 
   // Return the term of specified logId, if not exist，return -1
   TermID getLogTerm(LogID id) override;
@@ -114,7 +124,9 @@ class FileBasedWal final : public Wal, public std::enable_shared_from_this<FileB
   // The method returns the number of wal file info being accessed
   size_t accessAllWalInfo(std::function<bool(WalFileInfoPtr info)> fn) const;
 
-  std::shared_ptr<AtomicLogBuffer> buffer() { return logBuffer_; }
+  std::shared_ptr<AtomicLogBuffer> buffer() {
+    return logBuffer_;
+  }
 
  private:
   /***************************************

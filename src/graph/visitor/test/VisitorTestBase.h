@@ -102,7 +102,9 @@ class VisitorTestBase : public ::testing::Test {
     return TypeCastingExpression::make(pool, type, expr);
   }
 
-  UnaryExpression *notExpr(Expression *expr) { return UnaryExpression::makeNot(pool, expr); }
+  UnaryExpression *notExpr(Expression *expr) {
+    return UnaryExpression::makeNot(pool, expr);
+  }
 
   LogicalExpression *andExpr(Expression *lhs, Expression *rhs) {
     return LogicalExpression::makeAnd(pool, lhs, rhs);
@@ -164,7 +166,9 @@ class VisitorTestBase : public ::testing::Test {
     return expr;
   }
 
-  LabelExpression *labelExpr(const std::string &name) { return LabelExpression::make(pool, name); }
+  LabelExpression *labelExpr(const std::string &name) {
+    return LabelExpression::make(pool, name);
+  }
 
   LabelAttributeExpression *laExpr(const std::string &name, Value value) {
     return LabelAttributeExpression::make(

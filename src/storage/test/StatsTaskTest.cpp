@@ -65,14 +65,14 @@ TEST_F(StatsTaskTest, StatsTagAndEdgeData) {
 
   {
     cpp2::TaskPara parameter;
-    parameter.set_space_id(spaceId);
-    parameter.set_parts(parts);
+    parameter.space_id_ref() = spaceId;
+    parameter.parts_ref() = parts;
 
     cpp2::AddAdminTaskRequest request;
-    request.set_cmd(meta::cpp2::AdminCmd::STATS);
-    request.set_job_id(++gJobId);
-    request.set_task_id(13);
-    request.set_para(std::move(parameter));
+    request.cmd_ref() = meta::cpp2::AdminCmd::STATS;
+    request.job_id_ref() = ++gJobId;
+    request.task_id_ref() = 13;
+    request.para_ref() = std::move(parameter);
 
     nebula::meta::cpp2::StatsItem statsItem;
     auto callback = [&](nebula::cpp2::ErrorCode ret, nebula::meta::cpp2::StatsItem& result) {
@@ -130,14 +130,14 @@ TEST_F(StatsTaskTest, StatsTagAndEdgeData) {
     EXPECT_EQ(0, resp.result.failed_parts.size());
 
     cpp2::TaskPara parameter;
-    parameter.set_space_id(spaceId);
-    parameter.set_parts(parts);
+    parameter.space_id_ref() = spaceId;
+    parameter.parts_ref() = parts;
 
     cpp2::AddAdminTaskRequest request;
-    request.set_cmd(meta::cpp2::AdminCmd::STATS);
-    request.set_job_id(++gJobId);
-    request.set_task_id(14);
-    request.set_para(std::move(parameter));
+    request.cmd_ref() = meta::cpp2::AdminCmd::STATS;
+    request.job_id_ref() = ++gJobId;
+    request.task_id_ref() = 14;
+    request.para_ref() = std::move(parameter);
 
     nebula::meta::cpp2::StatsItem statsItem;
     auto callback = [&](nebula::cpp2::ErrorCode ret, nebula::meta::cpp2::StatsItem& result) {
@@ -201,14 +201,14 @@ TEST_F(StatsTaskTest, StatsTagAndEdgeData) {
     EXPECT_EQ(0, resp.result.failed_parts.size());
 
     cpp2::TaskPara parameter;
-    parameter.set_space_id(spaceId);
-    parameter.set_parts(parts);
+    parameter.space_id_ref() = spaceId;
+    parameter.parts_ref() = parts;
 
     cpp2::AddAdminTaskRequest request;
-    request.set_cmd(meta::cpp2::AdminCmd::STATS);
-    request.set_job_id(++gJobId);
-    request.set_task_id(15);
-    request.set_para(std::move(parameter));
+    request.cmd_ref() = meta::cpp2::AdminCmd::STATS;
+    request.job_id_ref() = ++gJobId;
+    request.task_id_ref() = 15;
+    request.para_ref() = std::move(parameter);
 
     nebula::meta::cpp2::StatsItem statsItem;
     auto callback = [&](nebula::cpp2::ErrorCode ret, nebula::meta::cpp2::StatsItem& result) {

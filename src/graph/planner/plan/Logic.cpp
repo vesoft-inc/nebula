@@ -16,7 +16,9 @@ PlanNode* StartNode::clone() const {
   return newStart;
 }
 
-void StartNode::cloneMembers(const StartNode& s) { PlanNode::cloneMembers(s); }
+void StartNode::cloneMembers(const StartNode& s) {
+  PlanNode::cloneMembers(s);
+}
 
 PlanNode* Select::clone() const {
   auto* newSelect = Select::make(qctx_, nullptr);
@@ -24,7 +26,9 @@ PlanNode* Select::clone() const {
   return newSelect;
 }
 
-void Select::cloneMembers(const Select& s) { BinarySelect::cloneMembers(s); }
+void Select::cloneMembers(const Select& s) {
+  BinarySelect::cloneMembers(s);
+}
 
 PlanNode* Loop::clone() const {
   auto* newLoop = Loop::make(qctx_, nullptr);
@@ -32,7 +36,9 @@ PlanNode* Loop::clone() const {
   return newLoop;
 }
 
-void Loop::cloneMembers(const Loop& s) { BinarySelect::cloneMembers(s); }
+void Loop::cloneMembers(const Loop& s) {
+  BinarySelect::cloneMembers(s);
+}
 
 PlanNode* PassThroughNode::clone() const {
   auto* newPt = PassThroughNode::make(qctx_, nullptr);
@@ -40,7 +46,9 @@ PlanNode* PassThroughNode::clone() const {
   return newPt;
 }
 
-void PassThroughNode::cloneMembers(const PassThroughNode& s) { SingleInputNode::cloneMembers(s); }
+void PassThroughNode::cloneMembers(const PassThroughNode& s) {
+  SingleInputNode::cloneMembers(s);
+}
 
 std::unique_ptr<PlanNodeDescription> BinarySelect::explain() const {
   auto desc = SingleInputNode::explain();

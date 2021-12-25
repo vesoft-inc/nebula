@@ -112,18 +112,20 @@ std::string ReduceExpression::toString() const {
   buf += "(";
   buf += accumulator_;
   buf += " = ";
-  buf += initial_->toString();
+  buf += initial_ ? initial_->toString() : "";
   buf += ", ";
   buf += innerVar_;
   buf += " IN ";
-  buf += collection_->toString();
+  buf += collection_ ? collection_->toString() : "";
   buf += " | ";
-  buf += mapping_->toString();
+  buf += mapping_ ? mapping_->toString() : "";
   buf += ")";
 
   return buf;
 }
 
-void ReduceExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void ReduceExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 }  // namespace nebula

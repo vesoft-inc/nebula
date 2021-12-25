@@ -241,7 +241,9 @@ void DeduceTypeVisitor::visit(TypeCastingExpression *expr) {
   status_ = Status::OK();
 }
 
-void DeduceTypeVisitor::visit(LabelExpression *) { type_ = Value::Type::__EMPTY__; }
+void DeduceTypeVisitor::visit(LabelExpression *) {
+  type_ = Value::Type::__EMPTY__;
+}
 
 void DeduceTypeVisitor::visit(ArithmeticExpression *expr) {
   switch (expr->kind()) {
@@ -461,7 +463,9 @@ void DeduceTypeVisitor::visit(AggregateExpression *expr) {
   type_ = Value::Type::__EMPTY__;
 }
 
-void DeduceTypeVisitor::visit(UUIDExpression *) { type_ = Value::Type::STRING; }
+void DeduceTypeVisitor::visit(UUIDExpression *) {
+  type_ = Value::Type::STRING;
+}
 
 void DeduceTypeVisitor::visit(VariableExpression *) {
   // Will not deduce the actual value type of variable expression.
@@ -473,13 +477,21 @@ void DeduceTypeVisitor::visit(VersionedVariableExpression *) {
   type_ = Value::Type::__EMPTY__;
 }
 
-void DeduceTypeVisitor::visit(ListExpression *) { type_ = Value::Type::LIST; }
+void DeduceTypeVisitor::visit(ListExpression *) {
+  type_ = Value::Type::LIST;
+}
 
-void DeduceTypeVisitor::visit(SetExpression *) { type_ = Value::Type::SET; }
+void DeduceTypeVisitor::visit(SetExpression *) {
+  type_ = Value::Type::SET;
+}
 
-void DeduceTypeVisitor::visit(MapExpression *) { type_ = Value::Type::MAP; }
+void DeduceTypeVisitor::visit(MapExpression *) {
+  type_ = Value::Type::MAP;
+}
 
-void DeduceTypeVisitor::visit(TagPropertyExpression *expr) { visitVertexPropertyExpr(expr); }
+void DeduceTypeVisitor::visit(TagPropertyExpression *expr) {
+  visitVertexPropertyExpr(expr);
+}
 
 void DeduceTypeVisitor::visit(EdgePropertyExpression *expr) {
   const auto &edge = expr->sym();
@@ -536,23 +548,41 @@ void DeduceTypeVisitor::visit(VariablePropertyExpression *expr) {
   type_ = found->type;
 }
 
-void DeduceTypeVisitor::visit(DestPropertyExpression *expr) { visitVertexPropertyExpr(expr); }
+void DeduceTypeVisitor::visit(DestPropertyExpression *expr) {
+  visitVertexPropertyExpr(expr);
+}
 
-void DeduceTypeVisitor::visit(SourcePropertyExpression *expr) { visitVertexPropertyExpr(expr); }
+void DeduceTypeVisitor::visit(SourcePropertyExpression *expr) {
+  visitVertexPropertyExpr(expr);
+}
 
-void DeduceTypeVisitor::visit(EdgeSrcIdExpression *) { type_ = vidType_; }
+void DeduceTypeVisitor::visit(EdgeSrcIdExpression *) {
+  type_ = vidType_;
+}
 
-void DeduceTypeVisitor::visit(EdgeTypeExpression *) { type_ = Value::Type::INT; }
+void DeduceTypeVisitor::visit(EdgeTypeExpression *) {
+  type_ = Value::Type::INT;
+}
 
-void DeduceTypeVisitor::visit(EdgeRankExpression *) { type_ = Value::Type::INT; }
+void DeduceTypeVisitor::visit(EdgeRankExpression *) {
+  type_ = Value::Type::INT;
+}
 
-void DeduceTypeVisitor::visit(EdgeDstIdExpression *) { type_ = vidType_; }
+void DeduceTypeVisitor::visit(EdgeDstIdExpression *) {
+  type_ = vidType_;
+}
 
-void DeduceTypeVisitor::visit(VertexExpression *) { type_ = Value::Type::VERTEX; }
+void DeduceTypeVisitor::visit(VertexExpression *) {
+  type_ = Value::Type::VERTEX;
+}
 
-void DeduceTypeVisitor::visit(EdgeExpression *) { type_ = Value::Type::EDGE; }
+void DeduceTypeVisitor::visit(EdgeExpression *) {
+  type_ = Value::Type::EDGE;
+}
 
-void DeduceTypeVisitor::visit(ColumnExpression *) { type_ = Value::Type::__EMPTY__; }
+void DeduceTypeVisitor::visit(ColumnExpression *) {
+  type_ = Value::Type::__EMPTY__;
+}
 
 void DeduceTypeVisitor::visit(CaseExpression *expr) {
   if (expr->hasCondition()) {
@@ -727,7 +757,9 @@ void DeduceTypeVisitor::visitVertexPropertyExpr(PropertyExpression *expr) {
   type_ = SchemaUtil::propTypeToValueType(field->type());
 }
 
-void DeduceTypeVisitor::visit(PathBuildExpression *) { type_ = Value::Type::PATH; }
+void DeduceTypeVisitor::visit(PathBuildExpression *) {
+  type_ = Value::Type::PATH;
+}
 #undef DETECT_NARYEXPR_TYPE
 #undef DETECT_UNARYEXPR_TYPE
 #undef DETECT_BIEXPR_TYPE

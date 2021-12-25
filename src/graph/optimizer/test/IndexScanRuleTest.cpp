@@ -35,12 +35,12 @@ TEST(IndexScanRuleTest, IQCtxTest) {
       std::vector<meta::cpp2::ColumnDef> cols;
       for (int8_t i = 0; i < 5; i++) {
         meta::cpp2::ColumnDef col;
-        col.set_name(folly::stringPrintf("col%d", i));
-        col.type.set_type(PropertyType::INT64);
+        col.name_ref() = folly::stringPrintf("col%d", i);
+        col.type.type_ref() = PropertyType::INT64;
         cols.emplace_back(std::move(col));
       }
-      index->set_fields(std::move(cols));
-      index->set_index_id(1);
+      index->fields_ref() = std::move(cols);
+      index->index_id_ref() = 1;
     }
     // setup FilterItems col0 < 1 and col0 <= 6
     {
@@ -188,8 +188,8 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
 
   {
     meta::cpp2::ColumnDef col;
-    col.set_name("col_int");
-    col.type.set_type(PropertyType::INT64);
+    col.name_ref() = "col_int";
+    col.type.type_ref() = PropertyType::INT64;
     {
       std::vector<storage::cpp2::IndexColumnHint> hints;
       // col_int < 2
@@ -287,8 +287,8 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
   }
   {
     meta::cpp2::ColumnDef col;
-    col.set_name("col_bool");
-    col.type.set_type(PropertyType::BOOL);
+    col.name_ref() = "col_bool";
+    col.type.type_ref() = PropertyType::BOOL;
     {
       std::vector<storage::cpp2::IndexColumnHint> hints;
       // col_bool < true
@@ -308,8 +308,8 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
   }
   {
     meta::cpp2::ColumnDef col;
-    col.set_name("col_double");
-    col.type.set_type(PropertyType::DOUBLE);
+    col.name_ref() = "col_double";
+    col.type.type_ref() = PropertyType::DOUBLE;
     {
       std::vector<storage::cpp2::IndexColumnHint> hints;
       // col_double < 1.0
@@ -376,9 +376,9 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
   {
     meta::cpp2::ColumnDef col;
     size_t len = 10;
-    col.set_name("col_str");
-    col.type.set_type(PropertyType::STRING);
-    col.type.set_type_length(len);
+    col.name_ref() = "col_str";
+    col.type.type_ref() = PropertyType::STRING;
+    col.type.type_length_ref() = len;
     {
       std::vector<storage::cpp2::IndexColumnHint> hints;
       // col_str < "ccc"

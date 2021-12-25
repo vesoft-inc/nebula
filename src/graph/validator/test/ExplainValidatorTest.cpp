@@ -11,7 +11,9 @@ namespace graph {
 
 class ExplainValidatorTest : public ValidatorTestBase {
  public:
-  void SetUp() override { ValidatorTestBase::SetUp(); }
+  void SetUp() override {
+    ValidatorTestBase::SetUp();
+  }
 };
 
 TEST_F(ExplainValidatorTest, TestExplainSingleStmt) {
