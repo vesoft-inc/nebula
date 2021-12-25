@@ -139,17 +139,18 @@ class CacheLibLRU {
       if (!parentItemHandle) {
         return Status::Error("Cache write error. Too many pending writes.");
       }
+      nCache_->insert(parentItemHandle);
+
+      VLOG(3) << "++++ Write key: " << key;
       for (auto& item : values) {
         auto itemHandle = nCache_->allocateChainedItem(parentItemHandle, item.size());
         if (!itemHandle) {
           return Status::Error("Cache write error. Too many pending writes.");
         }
         std::memcpy(itemHandle->getMemory(), item.data(), item.size());
-        LOG(INFO) << "+++++ Write Data Into Cache: " << item;
+        VLOG(3) << "+++++ Write Data Into Cache: " << item;
         nCache_->addChainedItem(parentItemHandle, std::move(itemHandle));
       }
-
-      nCache_->insertOrReplace(parentItemHandle);
     }
     return Status::OK();
   }
@@ -164,11 +165,12 @@ class CacheLibLRU {
     std::shared_lock<std::shared_mutex> guard(lock_);
     auto parentItemHandle = nCache_->find(key);
     if (parentItemHandle) {
+      VLOG(3) << "---- Read key: " << key;
       std::vector<std::string> chainToReturn;
       auto chained_allocs = nCache_->viewAsChainedAllocs(parentItemHandle);
       for (const auto& c : chained_allocs.getChain()) {
         auto data = reinterpret_cast<const char*>(c.getMemory());
-        LOG(INFO) << "----- Read Data From Cache:" << data;
+        VLOG(3) << "----- Read Data From Cache:" << data;
         chainToReturn.emplace_back(reinterpret_cast<const char*>(c.getMemory()));
       }
       return chainToReturn;

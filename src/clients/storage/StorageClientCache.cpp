@@ -5,6 +5,8 @@
 
 #include "clients/storage/StorageClientCache.h"
 
+DEFINE_bool(enable_graph_cache, false, "enable graph cache");
+
 namespace nebula {
 namespace graph {
 
@@ -83,6 +85,7 @@ Status StorageClientCache::buildEdgeContext(const TraverseSpec& req, GraphSpaceI
 }
 
 StatusOr<GetNeighborsResponse> StorageClientCache::getCacheValue(const GetNeighborsRequest& req) {
+  if (!FLAGS_enable_graph_cache) return Status::Error();
   auto spaceId = req.get_space_id();
   NG_RETURN_IF_ERROR(checkCondition(req));
   NG_RETURN_IF_ERROR(buildEdgeContext(req.get_traverse_spec(), spaceId));
@@ -131,6 +134,7 @@ StatusOr<GetNeighborsResponse> StorageClientCache::getCacheValue(const GetNeighb
 }
 
 void StorageClientCache::insertResultIntoCache(GetNeighborsResponse& resp) {
+  if (!FLAGS_enable_graph_cache) return;
   auto dataset = resp.get_vertices();
   if (dataset == nullptr) {
     LOG(INFO) << "GraphCache Empty dataset in response";
