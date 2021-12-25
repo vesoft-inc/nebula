@@ -12,8 +12,8 @@ Feature: Test sessions
       SHOW SESSIONS;
       """
     Then the result should contain:
-      | SessionId | UserName | SpaceName | CreateTime | UpdateTime | GraphAddr | Timezone | ClientIp    |
-      | /\d+/     | "root"   | ""        | /.*/       | /.*/       | /.*/      | 0        | "127.0.0.1" |
+      | SessionId | UserName | SpaceName | CreateTime | UpdateTime | GraphAddr | Timezone | ClientIp         |
+      | /\d+/     | "root"   | ""        | /.*/       | /.*/       | /.*/      | 0        | /.*(127.0.0.1)$/ |
     When executing query:
       """
       CREATE USER user1 WITH PASSWORD 'nebula1';
@@ -28,6 +28,6 @@ Feature: Test sessions
       SHOW SESSIONS;
       """
     Then the result should contain, replace the holders with cluster info:
-      | SessionId | UserName | SpaceName | CreateTime | UpdateTime | GraphAddr                                           | Timezone | ClientIp    |
-      | /\d+/     | "root"   | "s1"      | /.*/       | /.*/       | "127.0.0.1:${cluster.graphd_processes[0].tcp_port}" | 0        | "127.0.0.1" |
-      | /\d+/     | "user1"  | ""        | /.*/       | /.*/       | "127.0.0.1:${cluster.graphd_processes[1].tcp_port}" | 0        | "127.0.0.1" |
+      | SessionId | UserName | SpaceName | CreateTime | UpdateTime | GraphAddr                                           | Timezone | ClientIp         |
+      | /\d+/     | "root"   | "s1"      | /.*/       | /.*/       | "127.0.0.1:${cluster.graphd_processes[0].tcp_port}" | 0        | /.*(127.0.0.1)$/ |
+      | /\d+/     | "user1"  | ""        | /.*/       | /.*/       | "127.0.0.1:${cluster.graphd_processes[1].tcp_port}" | 0        | /.*(127.0.0.1)$/ |
