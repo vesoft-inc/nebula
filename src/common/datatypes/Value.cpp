@@ -2086,86 +2086,70 @@ void swap(Value& a, Value& b) {
   b = std::move(temp);
 }
 
-std::ostream& operator<<(std::ostream& os, const Value::Type& type) {
+/*static*/ const std::string Value::toString(Type type) {
   switch (type) {
     case Value::Type::__EMPTY__: {
-      os << "__EMPTY__";
-      break;
+      return "__EMPTY__";
     }
     case Value::Type::NULLVALUE: {
-      os << "NULL";
-      break;
+      return "NULL";
     }
     case Value::Type::BOOL: {
-      os << "BOOL";
-      break;
+      return "BOOL";
     }
     case Value::Type::INT: {
-      os << "INT";
-      break;
+      return "INT";
     }
     case Value::Type::FLOAT: {
-      os << "FLOAT";
-      break;
+      return "FLOAT";
     }
     case Value::Type::STRING: {
-      os << "STRING";
-      break;
+      return "STRING";
     }
     case Value::Type::DATE: {
-      os << "DATE";
-      break;
+      return "DATE";
     }
     case Value::Type::TIME: {
-      os << "TIME";
-      break;
+      return "TIME";
     }
     case Value::Type::DATETIME: {
-      os << "DATETIME";
-      break;
+      return "DATETIME";
     }
     case Value::Type::VERTEX: {
-      os << "VERTEX";
-      break;
+      return "VERTEX";
     }
     case Value::Type::EDGE: {
-      os << "EDGE";
-      break;
+      return "EDGE";
     }
     case Value::Type::PATH: {
-      os << "PATH";
-      break;
+      return "PATH";
     }
     case Value::Type::LIST: {
-      os << "LIST";
-      break;
+      return "LIST";
     }
     case Value::Type::MAP: {
-      os << "MAP";
-      break;
+      return "MAP";
     }
     case Value::Type::SET: {
-      os << "SET";
-      break;
+      return "SET";
     }
     case Value::Type::DATASET: {
-      os << "DATASET";
-      break;
+      return "DATASET";
     }
     case Value::Type::GEOGRAPHY: {
-      os << "GEOGRAPHY";
-      break;
+      return "GEOGRAPHY";
     }
     case Value::Type::DURATION: {
-      os << "DURATION";
-      break;
+      return "DURATION";
     }
     default: {
-      os << "__UNKNOWN__";
-      break;
+      return "__UNKNOWN__";
     }
   }
+}
 
+std::ostream& operator<<(std::ostream& os, const Value::Type& type) {
+  os << Value::toString(type);
   return os;
 }
 
