@@ -4,7 +4,6 @@
 
 #ifndef NEBULA_GRAPH_WASMFUNCTIONMANAGER_H
 #define NEBULA_GRAPH_WASMFUNCTIONMANAGER_H
-#include <wasmedge/wasmedge.h>
 
 #include <cassert>
 #include <cctype>
@@ -12,10 +11,10 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include <wasmtime.hh>
-
 #include "common/datatypes/Value.h"
 #include "common/function/FunctionManager.h"
+#include <wasmtime.hh>
+#include <wasmedge/wasmedge.h>
 
 namespace nebula {
 
@@ -41,9 +40,9 @@ struct WasmEdgeRunInstance {
   std::vector<WasmFunctionParamType> inParam;
   WasmFunctionParamType outParam;
 
-  WasmEdge_String funcHandlerName;
+  std::string funcHandlerName;
   std::vector<uint8_t> wasmBuffer;
-  WasmEdgeRunInstance(const WasmEdge_String &funcHandlerName,
+  WasmEdgeRunInstance(const std::string &funcHandlerName,
                       const std::vector<uint8_t> &wasmBuffer)
       : funcHandlerName(funcHandlerName), wasmBuffer(wasmBuffer) {}
 };
@@ -61,27 +60,16 @@ class WasmFunctionManager {
   std::unordered_map<std::string, WasmtimeRunInstance> modules;
 
   // wasmedge
-  WasmEdge_ConfigureContext *ConfCxt;
-  WasmEdge_VMContext *VMCxt;
   std::unordered_map<std::string, WasmEdgeRunInstance> wasmModules;
 
   WasmFunctionManager() {
     engine = new wasmtime::Engine;
     store = new wasmtime::Store(*engine);
-    /* 创建配置上下文以及 WASI 支持。 */
-    /* 除非你需要使用 WASI，否则这步不是必须的。 */
-    ConfCxt = WasmEdge_ConfigureCreate();
-    WasmEdge_ConfigureAddHostRegistration(ConfCxt, WasmEdge_HostRegistration_Wasi);
-    /* 创建VM的时候可以提供空的配置。*/
-    VMCxt = WasmEdge_VMCreate(ConfCxt, NULL);
   }
 
   ~WasmFunctionManager() {
     delete (store);
     delete (engine);
-    /* 资源析构。 */
-    WasmEdge_VMDelete(VMCxt);
-    WasmEdge_ConfigureDelete(ConfCxt);
   }
   WasmFunctionManager(const WasmFunctionManager &);
   WasmFunctionManager &operator=(const WasmFunctionManager &);

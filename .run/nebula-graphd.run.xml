@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="nebula-graphd" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="--flagfile $PROJECT_DIR$/conf/nebula-graphd.conf.debug" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="nebula-graphd" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="nebula-graphd">
+  <configuration default="false" name="nebula-graphd" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="--flagfile $PROJECT_DIR$/conf/nebula-graphd-debug.conf" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" PASS_PARENT_ENVS_2="true" PROJECT_NAME="Nebula Graph" TARGET_NAME="nebula-graphd" CONFIG_NAME="Debug" RUN_TARGET_PROJECT_NAME="Nebula Graph" RUN_TARGET_NAME="nebula-graphd">
     <envs>
       <env name="LD_LIBRARY_PATH" value="$PROJECT_DIR$/wasmedge/lib/" />
     </envs>

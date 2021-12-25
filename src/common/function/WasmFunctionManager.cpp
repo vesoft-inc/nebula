@@ -68,7 +68,7 @@ std::vector<Value> WasmFunctionManager::run(const WasmtimeRunInstance &wasmTimeR
   for (size_t i = 0; i < wasmTimeRunInstance.inParam.size(); ++i) {
     switch (wasmTimeRunInstance.inParam[i]) {
       case WasmFunctionParamType::INT32: {
-        functionArgs.emplace_back(args[i].getInt());
+        functionArgs.emplace_back(static_cast<int32>(args[i].getInt()));
         break;
       }
       case WasmFunctionParamType::INT64: {
@@ -76,7 +76,7 @@ std::vector<Value> WasmFunctionManager::run(const WasmtimeRunInstance &wasmTimeR
         break;
       }
       case WasmFunctionParamType::FLOAT: {
-        functionArgs.emplace_back(args[i].getFloat());
+        functionArgs.emplace_back(static_cast<float >(args[i].getFloat()));
         break;
       }
       default:
@@ -84,10 +84,9 @@ std::vector<Value> WasmFunctionManager::run(const WasmtimeRunInstance &wasmTimeR
         return {};
     }
   }
-
   // the return
   std::vector<Value> result;
-  auto results = wasmTimeRunInstance.func.call(store, functionArgs).unwrap();
+  auto results = wasmTimeRunInstance.func.call(store,functionArgs).unwrap();
 
   switch (wasmTimeRunInstance.outParam) {
     case WasmFunctionParamType::INT32: {
@@ -139,7 +138,12 @@ std::vector<Value> WasmFunctionManager::run(const WasmEdgeRunInstance &wasmEdgeR
   uint8_t buf[wasmEdgeRunInstance.wasmBuffer.size()];
   std::copy(wasmEdgeRunInstance.wasmBuffer.begin(), wasmEdgeRunInstance.wasmBuffer.end(), buf);
 
-  // 1. register wasmedge file
+  // 1. register wasmedge
+  // 1.1 wasmedge vm register
+  auto ConfCxt = WasmEdge_ConfigureCreate();
+  WasmEdge_ConfigureAddHostRegistration(ConfCxt, WasmEdge_HostRegistration_Wasi);
+  auto VMCxt = WasmEdge_VMCreate(ConfCxt, NULL);
+  // 1.2 wasm file load
   WasmEdge_Result Res;
   Res = WasmEdge_VMLoadWasmFromBuffer(VMCxt, buf, sizeof(buf));
   if (!WasmEdge_ResultOK(Res)) {
@@ -231,8 +235,7 @@ std::vector<Value> WasmFunctionManager::run(const WasmEdgeRunInstance &wasmEdgeR
     // 3. the return
     WasmEdge_Value Ret;
     // 4. run the function
-    WasmEdge_String FuncHanderName = wasmEdgeRunInstance.funcHandlerName;
-
+    WasmEdge_String FuncHanderName = WasmEdge_StringCreateByCString(wasmEdgeRunInstance.funcHandlerName.data());
     Res = WasmEdge_VMExecute(VMCxt, FuncHanderName, Args.data(), Args.size(), &Ret, 1);
     WasmEdge_StringDelete(FuncHanderName);
     if (!WasmEdge_ResultOK(Res)) {
@@ -259,7 +262,7 @@ std::vector<Value> WasmFunctionManager::run(const WasmEdgeRunInstance &wasmEdgeR
     int paramNum = 3;
     WasmEdge_Value Ret[paramNum];
     // 4. run the function
-    WasmEdge_String FuncHanderName = wasmEdgeRunInstance.funcHandlerName;
+    WasmEdge_String FuncHanderName = WasmEdge_StringCreateByCString(wasmEdgeRunInstance.funcHandlerName.data());
     Res = WasmEdge_VMExecute(VMCxt, FuncHanderName, Args.data(), Args.size(), Ret, paramNum);
     WasmEdge_StringDelete(FuncHanderName);
     if (!WasmEdge_ResultOK(Res)) {
@@ -284,13 +287,19 @@ std::vector<Value> WasmFunctionManager::run(const WasmEdgeRunInstance &wasmEdgeR
           break;
         default:
           LOG(ERROR) << "Return Param not Support ";
+          WasmEdge_VMDelete(VMCxt);
+          VMCxt = nullptr;
+          Store = nullptr;
+          WasmEdge_ConfigureDelete(ConfCxt);
+          ConfCxt = nullptr;
+          MemInst = nullptr;
           return {};
       }
     }
 
   } else {  // the string type
             // 4. run the function
-    WasmEdge_String FuncHanderName = wasmEdgeRunInstance.funcHandlerName;
+    WasmEdge_String FuncHanderName = WasmEdge_StringCreateByCString(wasmEdgeRunInstance.funcHandlerName.data());
 
     WasmEdge_Value Ret;
 
@@ -315,6 +324,13 @@ std::vector<Value> WasmFunctionManager::run(const WasmEdgeRunInstance &wasmEdgeR
           ResultMem[4] | (ResultMem[5] << 8) | (ResultMem[6] << 16) | (ResultMem[7] << 24);
     } else {
       printf("get data return failed: %s\n", WasmEdge_ResultGetMessage(Res));
+      WasmEdge_VMDelete(VMCxt);
+      VMCxt = nullptr;
+      Store = nullptr;
+      WasmEdge_ConfigureDelete(ConfCxt);
+      ConfCxt = nullptr;
+      MemInst = nullptr;
+
       return {};
     }
     // 5.2 get the data
@@ -322,14 +338,47 @@ std::vector<Value> WasmFunctionManager::run(const WasmEdgeRunInstance &wasmEdgeR
     auto getFinalRes =
         WasmEdge_MemoryInstanceGetData(MemInst, ResultData.data(), ResultDataAddr, ResultDataLen);
     if (WasmEdge_ResultOK(getFinalRes)) {
-      printf("get final data success\n");
+      LOG(INFO) << "get final data success\n";
+      // begin clean the memory
+      WasmEdge_Value cleanParams[2] = {WasmEdge_ValueGenI32(ResultDataAddr),
+                                  WasmEdge_ValueGenI32(ResultDataLen)};
+      WasmEdge_String cleanFuncName =
+          WasmEdge_StringCreateByCString("__wbindgen_free");
+      Res =
+          WasmEdge_VMExecute(VMCxt, cleanFuncName, cleanParams, 2, nullptr, 0);
+      WasmEdge_StringDelete(cleanFuncName);
+      if (!WasmEdge_ResultOK(Res)) {
+        LOG(ERROR) << "clean failed %s" << WasmEdge_ResultGetMessage(Res);
+        WasmEdge_VMDelete(VMCxt);
+        VMCxt = nullptr;
+        Store = nullptr;
+        WasmEdge_ConfigureDelete(ConfCxt);
+        ConfCxt = nullptr;
+        MemInst = nullptr;
+        return {};
+      }
     } else {
-      printf("get final data return failed: %s\n", WasmEdge_ResultGetMessage(getFinalRes));
+      LOG(ERROR) << "get final data return failed:" << WasmEdge_ResultGetMessage(getFinalRes);
+      WasmEdge_VMDelete(VMCxt);
+      VMCxt = nullptr;
+      Store = nullptr;
+      WasmEdge_ConfigureDelete(ConfCxt);
+      ConfCxt = nullptr;
+      MemInst = nullptr;
+
       return {};
     }
     std::string ResultString(ResultData.begin(), ResultData.end());
 
     result.push_back(ResultString);
+
+    WasmEdge_VMDelete(VMCxt);
+    VMCxt = nullptr;
+    Store = nullptr;
+    WasmEdge_ConfigureDelete(ConfCxt);
+    ConfCxt = nullptr;
+    MemInst = nullptr;
+
     return result;
   }
   return {};
@@ -360,7 +409,6 @@ bool WasmFunctionManager::RegisterFunction(std::vector<WasmFunctionParamType> in
 
   // for WASM-PATH
   std::string wasmString;
-  WasmEdge_String functionHandlerName = WasmEdge_StringCreateByCString(functionHandler.data());
   if (moduleType == TYPE_WASM_PATH) {
     // still file to this map
     if (base64OrOtherString.rfind("http://", 0) == 0) {
@@ -368,7 +416,7 @@ bool WasmFunctionManager::RegisterFunction(std::vector<WasmFunctionParamType> in
       if (bufVector.empty()) {
         return false;
       }
-      auto wasmEdgeRunInstance = WasmEdgeRunInstance(functionHandlerName, bufVector);
+      auto wasmEdgeRunInstance = WasmEdgeRunInstance(functionHandler, bufVector);
       wasmEdgeRunInstance.inParam = inParam;
       wasmEdgeRunInstance.outParam = outParam;
       wasmModules.emplace(functionName, wasmEdgeRunInstance);
@@ -380,7 +428,7 @@ bool WasmFunctionManager::RegisterFunction(std::vector<WasmFunctionParamType> in
         return false;
       }
       std::vector<uint8_t> bufVector(wasmString.begin(), wasmString.end());
-      auto wasmEdgeRunInstance = WasmEdgeRunInstance(functionHandlerName, bufVector);
+      auto wasmEdgeRunInstance = WasmEdgeRunInstance(functionHandler, bufVector);
       wasmEdgeRunInstance.inParam = inParam;
       wasmEdgeRunInstance.outParam = outParam;
       wasmModules.emplace(functionName, wasmEdgeRunInstance);
@@ -394,7 +442,7 @@ bool WasmFunctionManager::RegisterFunction(std::vector<WasmFunctionParamType> in
   if (moduleType == TYPE_WASM_MOUDLE) {
     wasmString = myBase64Decode(base64OrOtherString);
     std::vector<uint8_t> bufVector(wasmString.begin(), wasmString.end());
-    auto wasmEdgeRunInstance = WasmEdgeRunInstance(functionHandlerName, bufVector);
+    auto wasmEdgeRunInstance = WasmEdgeRunInstance(functionHandler, bufVector);
     wasmEdgeRunInstance.inParam = inParam;
     wasmEdgeRunInstance.outParam = outParam;
     wasmModules.emplace(functionName, wasmEdgeRunInstance);
