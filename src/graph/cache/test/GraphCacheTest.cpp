@@ -36,7 +36,7 @@ class GraphCacheTest : public ::testing::Test {
   void TearDown() override {}
 
   std::string graphKey1 = "test key";
-  std::vector<std::string> edges1 = {"edge1", "edge2", "edge3"};
+  std::vector<std::string> edges1 = {"edge1", "Tony Parker", "Tim Duncan", "Tim Duncan"};
   std::string vertexKeyNotExist = "key not exist";
   // std::unique_ptr<GraphCache> cache;
   GraphCache* cache{nullptr};
@@ -62,7 +62,11 @@ TEST_F(GraphCacheTest, SimpleTest) {
   // get edges
   auto status = cache->getEdges(graphKey1);
   EXPECT_TRUE(status.ok());
-  EXPECT_EQ(status.value().size(), 3);
+  EXPECT_EQ(status.value().size(), edges1.size());
+  auto values = status.value();
+  for (size_t i = 0; i < edges1.size(); ++i) {
+    EXPECT_EQ(values[i], edges1[i]);
+  }
 }
 
 TEST_F(GraphCacheTest, TestTTL) {
@@ -86,7 +90,7 @@ TEST_F(GraphCacheTest, TestTTL) {
   std::vector<std::string> edges;
   auto status = cache->getEdges(graphKey1);
   EXPECT_TRUE(status.ok());
-  EXPECT_EQ(status.value().size(), 3);
+  EXPECT_EQ(status.value().size(), edges1.size());
 
   // sleep 3s and get again
   std::this_thread::sleep_for(std::chrono::seconds(3));

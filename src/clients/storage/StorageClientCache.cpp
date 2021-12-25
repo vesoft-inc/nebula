@@ -24,11 +24,7 @@ std::string StorageClientCache::tagKey(const std::string& vId, TagID tagId) {
 }
 
 std::string StorageClientCache::edgeKey(const std::string& srcVid, EdgeType type) {
-  std::string key;
-  key.reserve(srcVid.size() + sizeof(EdgeType));
-  key.append(srcVid.data(), srcVid.size())
-      .append(reinterpret_cast<const char*>(&type), sizeof(EdgeType));
-  return key;
+  return srcVid + "__EDGE__" + std::to_string(type);
 }
 
 Status StorageClientCache::checkCondition(const GetNeighborsRequest& req) {
@@ -78,7 +74,6 @@ Status StorageClientCache::buildEdgeContext(const TraverseSpec& req, GraphSpaceI
         return Status::Error("Cache: Edge : %s contain %s", edgeName.c_str(), name.c_str());
       }
     }
-    // todo fix it
     colName += ":" + std::string(nebula::kDst);
     resultDataSet_.colNames.emplace_back(std::move(colName));
   }
@@ -141,10 +136,6 @@ void StorageClientCache::insertResultIntoCache(GetNeighborsResponse& resp) {
     LOG(INFO) << "GraphCache Empty dataset in response";
     return;
   }
-  //  list.values.emplace_back(std::move(*dataset));
-  //  ResultBuilder builder;
-  //  builder.state(Result::State::kSuccess);
-  //  builder.value(Value(std::move(list))).iter(Iterator::Kind::kGetNeighbors);
 
   auto colSize = dataset->colNames.size();
   if (edgeTypes_.size() + 3 != colSize) {
@@ -159,16 +150,22 @@ void StorageClientCache::insertResultIntoCache(GetNeighborsResponse& resp) {
     for (size_t i = 2; i < row.values.size() - 1; ++i) {
       auto edgeType = edgeTypes_[i - 2];
       auto& cell = row.values[i];
-      // DCHECK(nebula::List, cell);
+      if (cell.type() != Value::Type::LIST) {
+        continue;
+      }
       auto& cellList = cell.getList();
       std::vector<std::string> edgeDsts;
       edgeDsts.reserve(cellList.size());
       for (const auto& propList : cellList.values) {
+        if (propList.type() != Value::Type::LIST) {
+          continue;
+        }
         auto dstList = propList.getList();
         for (const auto& dst : dstList.values) {
           edgeDsts.emplace_back(dst.getStr());
         }
       }
+      auto eKey = edgeKey(vId, edgeType);
       if (!cache_->addAllEdges(edgeKey(vId, edgeType), edgeDsts)) {
         LOG(INFO) << "Cache vid : " << vId << " edgeType: " << edgeType << " fail.";
       }

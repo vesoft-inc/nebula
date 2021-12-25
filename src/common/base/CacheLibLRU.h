@@ -132,20 +132,20 @@ class CacheLibLRU {
     if (poolIdMap_.find(poolName) == poolIdMap_.end()) {
       return Status::Error("Cache write error. Pool does not exist: %s", poolName.data());
     }
-    auto parentItemHandle =
-        nCache_->allocate(poolIdMap_[poolName], key, sizeof(kParentItemValue), ttl);
-    if (!parentItemHandle) {
-      return Status::Error("Cache write error. Too many pending writes.");
-    }
-
     {
       std::unique_lock<std::shared_mutex> guard(lock_);
+      auto parentItemHandle =
+          nCache_->allocate(poolIdMap_[poolName], key, sizeof(kParentItemValue), ttl);
+      if (!parentItemHandle) {
+        return Status::Error("Cache write error. Too many pending writes.");
+      }
       for (auto& item : values) {
         auto itemHandle = nCache_->allocateChainedItem(parentItemHandle, item.size());
         if (!itemHandle) {
           return Status::Error("Cache write error. Too many pending writes.");
         }
         std::memcpy(itemHandle->getMemory(), item.data(), item.size());
+        LOG(INFO) << "+++++ Write Data Into Cache: " << item;
         nCache_->addChainedItem(parentItemHandle, std::move(itemHandle));
       }
 
@@ -167,6 +167,8 @@ class CacheLibLRU {
       std::vector<std::string> chainToReturn;
       auto chained_allocs = nCache_->viewAsChainedAllocs(parentItemHandle);
       for (const auto& c : chained_allocs.getChain()) {
+        auto data = reinterpret_cast<const char*>(c.getMemory());
+        LOG(INFO) << "----- Read Data From Cache:" << data;
         chainToReturn.emplace_back(reinterpret_cast<const char*>(c.getMemory()));
       }
       return chainToReturn;

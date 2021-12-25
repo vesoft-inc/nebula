@@ -4,15 +4,24 @@ SET(CACHE_TEST_LIBS
     $<TARGET_OBJECTS:process_obj>
     $<TARGET_OBJECTS:graph_thrift_obj>
     $<TARGET_OBJECTS:storage_client_base_obj>
+    $<TARGET_OBJECTS:storage_client_obj>
+    $<TARGET_OBJECTS:storage_client_cache_obj>
     $<TARGET_OBJECTS:storage_thrift_obj>
-    $<TARGET_OBJECTS:meta_client_obj>
     $<TARGET_OBJECTS:stats_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:meta_thrift_obj>
     $<TARGET_OBJECTS:common_thrift_obj>
+    $<TARGET_OBJECTS:graph_stats_obj>
+    $<TARGET_OBJECTS:storage_stats_obj>
+    $<TARGET_OBJECTS:meta_client_stats_obj>
+    $<TARGET_OBJECTS:storage_client_stats_obj>
+    $<TARGET_OBJECTS:kv_stats_obj>
+    $<TARGET_OBJECTS:datetime_parser_obj>
     $<TARGET_OBJECTS:thrift_obj>
     $<TARGET_OBJECTS:meta_obj>
     $<TARGET_OBJECTS:thread_obj>
+    $<TARGET_OBJECTS:meta_client_obj>
+    $<TARGET_OBJECTS:executor_obj>
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:base_obj>
     $<TARGET_OBJECTS:memory_obj>
@@ -38,7 +47,6 @@ SET(CACHE_TEST_LIBS
     $<TARGET_OBJECTS:planner_obj>
     $<TARGET_OBJECTS:plan_obj>
     $<TARGET_OBJECTS:scheduler_obj>
-    $<TARGET_OBJECTS:executor_obj>
     $<TARGET_OBJECTS:util_obj>
     $<TARGET_OBJECTS:idgenerator_obj>
     $<TARGET_OBJECTS:graph_context_obj>
