@@ -222,7 +222,7 @@ class StorageClientBase {
  private:
   std::shared_ptr<folly::IOThreadPoolExecutor> ioThreadPool_;
   std::unique_ptr<thrift::ThriftClientManager<ClientType>> clientsMan_;
-  std::unique_ptr<nebula::graph::StorageClientCache> clientCache_;
+  // std::unique_ptr<nebula::graph::StorageClientCache> clientCache_;
 };
 
 }  // namespace storage

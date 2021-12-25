@@ -35,13 +35,18 @@ Status StorageClientCache::checkCondition(const GetNeighborsRequest& req) {
   if (req.get_traverse_spec().filter_ref().has_value()) {
     return Status::Error("GetNeighbor contain filter expression");
   }
-  if ((*req.traverse_spec_ref()).random_ref().has_value()) {
-    return Status::Error("GetNeighbor contain random");
+  if ((*req.traverse_spec_ref()).limit_ref().has_value()) {
+    if (*(*req.traverse_spec_ref()).limit_ref() >= 0) {
+      return Status::Error("GetNeighbor contain limit");
+    }
+    if ((*req.traverse_spec_ref()).random_ref().has_value()) {
+      auto random = *(*req.traverse_spec_ref()).random_ref();
+      if (random) {
+        return Status::Error("GetNeighbor contain random");
+      }
+    }
   }
-  if ((*req.traverse_spec_ref()).random_ref().has_value()) {
-    return Status::Error("GetNeighbor contain limit");
-  }
-  if (!req.get_traverse_spec().vertex_props_ref().has_value()) {
+  if (req.get_traverse_spec().vertex_props_ref().has_value()) {
     return Status::Error("GetNeighbor contain vertexProps");
   }
   if (metaClient_ == nullptr) {
@@ -110,15 +115,13 @@ StatusOr<GetNeighborsResponse> StorageClientCache::getCacheValue(const GetNeighb
         NG_RETURN_IF_ERROR(status);
         auto dstRes = status.value();
 
-        nebula::List dstList;
-        dstList.values.reserve(dstRes.size());
+        nebula::List cell;
+        cell.values.reserve(dstRes.size());
         for (const auto& dst : dstRes) {
           nebula::List propList;
           propList.values.emplace_back(std::move(dst));
-          dstList.values.emplace_back(std::move(propList));
+          cell.values.emplace_back(std::move(propList));
         }
-        nebula::List cell;
-        cell.values.emplace_back(std::move(dstList));
         row.emplace_back(std::move(cell));
       }
       // col : expr
@@ -126,6 +129,7 @@ StatusOr<GetNeighborsResponse> StorageClientCache::getCacheValue(const GetNeighb
       resultDataSet_.rows.emplace_back(std::move(row));
     }
   }
+  LOG(INFO) << "Get Value From Cache Success.";
   GetNeighborsResponse resp;
   resp.vertices_ref() = std::move(resultDataSet_);
   return resp;
@@ -159,8 +163,11 @@ void StorageClientCache::insertResultIntoCache(GetNeighborsResponse& resp) {
       auto& cellList = cell.getList();
       std::vector<std::string> edgeDsts;
       edgeDsts.reserve(cellList.size());
-      for (const auto& dst : cellList.values) {
-        edgeDsts.emplace_back(dst.getStr());
+      for (const auto& propList : cellList.values) {
+        auto dstList = propList.getList();
+        for (const auto& dst : dstList.values) {
+          edgeDsts.emplace_back(dst.getStr());
+        }
       }
       if (!cache_->addAllEdges(edgeKey(vId, edgeType), edgeDsts)) {
         LOG(INFO) << "Cache vid : " << vId << " edgeType: " << edgeType << " fail.";

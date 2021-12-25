@@ -76,7 +76,7 @@ StorageClientBase<ClientType>::StorageClientBase(
     std::shared_ptr<folly::IOThreadPoolExecutor> threadPool, meta::MetaClient* metaClient)
     : metaClient_(metaClient), ioThreadPool_(threadPool) {
   clientsMan_ = std::make_unique<thrift::ThriftClientManager<ClientType>>(FLAGS_enable_ssl);
-  clientCache_ = std::make_unique<nebula::graph::StorageClientCache>(metaClient);
+  // clientCache_ = std::make_unique<nebula::graph::StorageClientCache>(metaClient);
 }
 
 template <typename ClientType>
@@ -126,12 +126,13 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClientBase<ClientType>::c
   DCHECK(!!ioThreadPool_);
 
   for (auto& req : requests) {
+    auto clientCache = std::make_unique<nebula::graph::StorageClientCache>(metaClient_);
     auto& host = req.first;
     auto spaceId = req.second.get_space_id();
     if constexpr (std::is_same_v<Request, cpp2::GetNeighborsRequest>) {
       if constexpr (std::is_same_v<Response, cpp2::GetNeighborsResponse>) {
         auto cacheStartTime = time::WallClock::fastNowInMicroSec();
-        auto cacheResp = clientCache_->getCacheValue(req.second);
+        auto cacheResp = clientCache->getCacheValue(req.second);
         if (cacheResp.ok()) {
           auto cacheLatency = cacheResp.value().get_result().get_latency_in_us();
           context->resp.setLatency(
@@ -146,84 +147,87 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClientBase<ClientType>::c
     evb = ioThreadPool_->getEventBase();
 
     // Invoke the remote method
-    folly::via(evb, [this, evb, context, host, spaceId, res]() mutable {
-      auto client = clientsMan_->client(host, evb, false, FLAGS_storage_client_timeout_ms);
-      // Result is a pair of <Request&, bool>
-      auto start = time::WallClock::fastNowInMicroSec();
-      context
-          ->serverMethod(client.get(), *res.first)
-          // Future process code will be executed on the IO thread
-          // Since all requests are sent using the same eventbase, all
-          // then-callback will be executed on the same IO thread
-          .via(evb)
-          .thenValue([this, context, host, spaceId, start](Response&& resp) {
-            auto& result = resp.get_result();
-            bool hasFailure{false};
-            for (auto& code : result.get_failed_parts()) {
-              VLOG(3) << "Failure! Failed part " << code.get_part_id() << ", failed code "
-                      << static_cast<int32_t>(code.get_code());
-              hasFailure = true;
-              context->resp.emplaceFailedPart(code.get_part_id(), code.get_code());
-              if (code.get_code() == nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
-                auto* leader = code.get_leader();
-                if (isValidHostPtr(leader)) {
-                  updateLeader(spaceId, code.get_part_id(), *leader);
-                } else {
-                  invalidLeader(spaceId, code.get_part_id());
+    folly::via(
+        evb, [this, evb, context, host, spaceId, res, cc = std::move(clientCache)]() mutable {
+          auto client = clientsMan_->client(host, evb, false, FLAGS_storage_client_timeout_ms);
+          // Result is a pair of <Request&, bool>
+          auto start = time::WallClock::fastNowInMicroSec();
+          context
+              ->serverMethod(client.get(), *res.first)
+              // Future process code will be executed on the IO thread
+              // Since all requests are sent using the same eventbase, all
+              // then-callback will be executed on the same IO thread
+              .via(evb)
+              .thenValue(
+                  [this, context, host, spaceId, start, cca = std::move(cc)](Response&& resp) {
+                    auto& result = resp.get_result();
+                    bool hasFailure{false};
+                    for (auto& code : result.get_failed_parts()) {
+                      VLOG(3) << "Failure! Failed part " << code.get_part_id() << ", failed code "
+                              << static_cast<int32_t>(code.get_code());
+                      hasFailure = true;
+                      context->resp.emplaceFailedPart(code.get_part_id(), code.get_code());
+                      if (code.get_code() == nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
+                        auto* leader = code.get_leader();
+                        if (isValidHostPtr(leader)) {
+                          updateLeader(spaceId, code.get_part_id(), *leader);
+                        } else {
+                          invalidLeader(spaceId, code.get_part_id());
+                        }
+                      } else if (code.get_code() == nebula::cpp2::ErrorCode::E_PART_NOT_FOUND ||
+                                 code.get_code() == nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND) {
+                        invalidLeader(spaceId, code.get_part_id());
+                      } else {
+                        // do nothing
+                      }
+                    }
+                    if (hasFailure) {
+                      context->resp.markFailure();
+                    }
+
+                    // Adjust the latency
+                    auto latency = result.get_latency_in_us();
+                    context->resp.setLatency(
+                        host, latency, time::WallClock::fastNowInMicroSec() - start);
+
+                    // insert response into graph cache
+                    if constexpr (std::is_same_v<Response, cpp2::GetNeighborsResponse>) {
+                      cca->insertResultIntoCache(resp);
+                    }
+                    // Keep the response
+                    context->resp.addResponse(std::move(resp));
+                  })
+              .thenError(folly::tag_t<TransportException>{},
+                         [this, context, host, spaceId](TransportException&& ex) {
+                           auto& r = context->findRequest(host);
+                           auto parts = getReqPartsId(r);
+                           if (ex.getType() == TransportException::TIMED_OUT) {
+                             LOG(ERROR) << "Request to " << host << " time out: " << ex.what();
+                           } else {
+                             invalidLeader(spaceId, parts);
+                             LOG(ERROR) << "Request to " << host << " failed: " << ex.what();
+                           }
+                           context->resp.appendFailedParts(parts,
+                                                           nebula::cpp2::ErrorCode::E_RPC_FAILURE);
+                           context->resp.markFailure();
+                         })
+              .thenError(folly::tag_t<std::exception>{},
+                         [this, context, host, spaceId](std::exception&& ex) {
+                           auto& r = context->findRequest(host);
+                           auto parts = getReqPartsId(r);
+                           LOG(ERROR) << "Request to " << host << " failed: " << ex.what();
+                           invalidLeader(spaceId, parts);
+                           context->resp.appendFailedParts(parts,
+                                                           nebula::cpp2::ErrorCode::E_RPC_FAILURE);
+                           context->resp.markFailure();
+                         })
+              .ensure([context, host] {
+                if (context->removeRequest(host)) {
+                  // Received all responses
+                  context->promise.setValue(std::move(context->resp));
                 }
-              } else if (code.get_code() == nebula::cpp2::ErrorCode::E_PART_NOT_FOUND ||
-                         code.get_code() == nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND) {
-                invalidLeader(spaceId, code.get_part_id());
-              } else {
-                // do nothing
-              }
-            }
-            if (hasFailure) {
-              context->resp.markFailure();
-            }
-
-            // Adjust the latency
-            auto latency = result.get_latency_in_us();
-            context->resp.setLatency(host, latency, time::WallClock::fastNowInMicroSec() - start);
-
-            // insert response into graph cache
-            if constexpr (std::is_same_v<Response, cpp2::GetNeighborsResponse>) {
-              clientCache_->insertResultIntoCache(resp);
-            }
-            // Keep the response
-            context->resp.addResponse(std::move(resp));
-          })
-          .thenError(folly::tag_t<TransportException>{},
-                     [this, context, host, spaceId](TransportException&& ex) {
-                       auto& r = context->findRequest(host);
-                       auto parts = getReqPartsId(r);
-                       if (ex.getType() == TransportException::TIMED_OUT) {
-                         LOG(ERROR) << "Request to " << host << " time out: " << ex.what();
-                       } else {
-                         invalidLeader(spaceId, parts);
-                         LOG(ERROR) << "Request to " << host << " failed: " << ex.what();
-                       }
-                       context->resp.appendFailedParts(parts,
-                                                       nebula::cpp2::ErrorCode::E_RPC_FAILURE);
-                       context->resp.markFailure();
-                     })
-          .thenError(folly::tag_t<std::exception>{},
-                     [this, context, host, spaceId](std::exception&& ex) {
-                       auto& r = context->findRequest(host);
-                       auto parts = getReqPartsId(r);
-                       LOG(ERROR) << "Request to " << host << " failed: " << ex.what();
-                       invalidLeader(spaceId, parts);
-                       context->resp.appendFailedParts(parts,
-                                                       nebula::cpp2::ErrorCode::E_RPC_FAILURE);
-                       context->resp.markFailure();
-                     })
-          .ensure([context, host] {
-            if (context->removeRequest(host)) {
-              // Received all responses
-              context->promise.setValue(std::move(context->resp));
-            }
-          });
-    });  // via
+              });
+        });  // via
   }      // for
 
   if (context->finishSending()) {
