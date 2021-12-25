@@ -143,6 +143,7 @@ struct Value {
   }
 
   const std::string& typeName() const;
+  static const std::string toString(Type type);
 
   bool empty() const {
     return type_ == Type::__EMPTY__;
