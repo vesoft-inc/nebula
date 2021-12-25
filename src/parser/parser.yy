@@ -1382,9 +1382,12 @@ vid
         $$ = ConstantExpression::make(qctx->objPool(), *$1);
         delete $1;
     }
+    // This reduce rule aim to report more friendly error message
     | VARIABLE {
         $$ = nullptr;
-        delete($1);
+        SCOPE_EXIT {
+            delete($1);
+        };
         if (qctx->existParameter(*$1)) {
             throw nebula::GraphParser::syntax_error(@1, "Parameter is not supported in vid");
         } else {
