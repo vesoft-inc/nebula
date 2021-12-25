@@ -104,6 +104,7 @@ macro(nebula_link_libraries target)
         z
         ${COVERAGES}
         ${Breakpad_LIBRARY}
+        iberty
     )
 endmacro(nebula_link_libraries)
 

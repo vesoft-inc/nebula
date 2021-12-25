@@ -347,7 +347,7 @@ TEST_F(JoinTest, LeftJoinTwice) {
     if (i < 2) {
       row.values.emplace_back(folly::to<std::string>(11));
     } else {
-      row.values.emplace_back(Value::kEmpty);
+      row.values.emplace_back(Value::kNullValue);
     }
     expected.rows.emplace_back(std::move(row));
   }
@@ -365,8 +365,8 @@ TEST_F(JoinTest, LeftJoinEmpty) {
       row.values.emplace_back(i);
       row.values.emplace_back(i + 1);
       row.values.emplace_back(folly::to<std::string>(i / 2 + 5 + i % 2));
-      row.values.emplace_back(Value::kEmpty);
-      row.values.emplace_back(Value::kEmpty);
+      row.values.emplace_back(Value::kNullValue);
+      row.values.emplace_back(Value::kNullValue);
       expected.rows.emplace_back(std::move(row));
     }
     testLeftJoin("var1", "empty_var2", expected, __LINE__);
@@ -517,7 +517,7 @@ TEST_F(JoinTest, InnerJoinAndLeftjoin) {
     if (i < 2) {
       row.values.emplace_back(folly::to<std::string>(11));
     } else {
-      row.values.emplace_back(Value::kEmpty);
+      row.values.emplace_back(Value::kNullValue);
     }
     expected.rows.emplace_back(std::move(row));
   }
