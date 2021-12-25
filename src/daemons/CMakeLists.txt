@@ -72,18 +72,18 @@ nebula_add_executable(
         $<TARGET_OBJECTS:storage_http_handler>
         $<TARGET_OBJECTS:storage_transaction_executor>
         $<TARGET_OBJECTS:internal_storage_client_obj>
-        $<TARGET_OBJECTS:graph_cache_obj>
         $<TARGET_OBJECTS:storage_client_obj>
         $<TARGET_OBJECTS:storage_client_base_obj>
         $<TARGET_OBJECTS:storage_client_cache_obj>
+        $<TARGET_OBJECTS:graph_cache_obj>
         $<TARGET_OBJECTS:storage_common_obj>
         ${common_deps}
         ${storage_meta_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
-        ${CACHELIB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
+        ${CACHELIB_LIBRARIES}
         wangle
 )
 
@@ -100,12 +100,15 @@ nebula_add_executable(
         $<TARGET_OBJECTS:meta_version_man_obj>
         $<TARGET_OBJECTS:meta_data_upgrade_obj>
         $<TARGET_OBJECTS:meta_v1_thrift_obj>
+        $<TARGET_OBJECTS:graph_cache_obj>
+        $<TARGET_OBJECTS:storage_client_cache_obj>
         ${common_deps}
         ${storage_meta_deps}
     LIBRARIES
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
+        ${CACHELIB_LIBRARIES}
         wangle
 )
 

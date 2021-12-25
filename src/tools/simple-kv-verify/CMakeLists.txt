@@ -23,6 +23,8 @@ nebula_add_executable(
         $<TARGET_OBJECTS:ws_common_obj>
         $<TARGET_OBJECTS:storage_client_base_obj>
         $<TARGET_OBJECTS:storage_client_obj>
+        $<TARGET_OBJECTS:storage_client_cache_obj>
+        $<TARGET_OBJECTS:graph_cache_obj>
         $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:storage_thrift_obj>
         $<TARGET_OBJECTS:meta_client_obj>
@@ -61,6 +63,7 @@ nebula_add_executable(
         ${ROCKSDB_LIBRARIES}
         ${THRIFT_LIBRARIES}
         ${PROXYGEN_LIBRARIES}
+        ${CACHELIB_LIBRARIES}
         wangle
         gtest
 )

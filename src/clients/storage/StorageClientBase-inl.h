@@ -76,6 +76,7 @@ StorageClientBase<ClientType>::StorageClientBase(
     std::shared_ptr<folly::IOThreadPoolExecutor> threadPool, meta::MetaClient* metaClient)
     : metaClient_(metaClient), ioThreadPool_(threadPool) {
   clientsMan_ = std::make_unique<thrift::ThriftClientManager<ClientType>>(FLAGS_enable_ssl);
+  clientCache_ = std::make_unique<nebula::graph::StorageClientCache>();
 }
 
 template <typename ClientType>
@@ -124,13 +125,16 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClientBase<ClientType>::c
 
   DCHECK(!!ioThreadPool_);
 
-  auto cache = std::make_unique<nebula::graph::StorageClientCache>();
 
   for (auto& req : requests) {
-    auto cacheResp = cache->getCacheValue<Response, Request>(req.second);
-    if (cacheResp.ok()) {
-      context->resp.addResponse(std::move(cacheResp.value()));
-      continue;
+    if constexpr (std::is_same_v<Request, cpp2::GetNeighborsRequest>) {
+      if constexpr (std::is_same_v<Response, cpp2::GetNeighborsResponse>) {
+        auto cacheResp = clientCache_->getCacheValue(req.second);
+        if (cacheResp.ok()) {
+          context->resp.addResponse(std::move(cacheResp.value()));
+          continue;
+        }
+      }
     }
     auto& host = req.first;
     auto spaceId = req.second.get_space_id();
