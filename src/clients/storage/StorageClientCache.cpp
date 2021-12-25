@@ -8,7 +8,8 @@
 namespace nebula {
 namespace graph {
 
-StorageClientCache::StorageClientCache() {
+StorageClientCache::StorageClientCache(nebula::meta::MetaClient* metaClient) {
+  metaClient_ = metaClient;
   cache_ = GraphCache::instance();
   // init colNames
   resultDataSet_.colNames.emplace_back(nebula::kVid);
@@ -43,10 +44,13 @@ Status StorageClientCache::checkCondition(const GetNeighborsRequest& req) {
   if (!req.get_traverse_spec().vertex_props_ref().has_value()) {
     return Status::Error("GetNeighbor contain vertexProps");
   }
+  if (metaClient_ == nullptr) {
+    return Status::Error("Cache meta client is nullptr");
+  }
   return Status::OK();
 }
 
-Status StorageClientCache::buildEdgeContext(const TraverseSpec& req) {
+Status StorageClientCache::buildEdgeContext(const TraverseSpec& req, GraphSpaceID spaceId) {
   if (!req.edge_props_ref().has_value()) {
     return Status::Error("GetNeighbor does not contain edgeProps");
   }
@@ -54,18 +58,19 @@ Status StorageClientCache::buildEdgeContext(const TraverseSpec& req) {
   for (const auto& edgeProp : edgeProps) {
     auto edgeType = edgeProp.get_type();
     edgeTypes_.push_back(edgeType);
-    // TODO getEdgeName throught edgeSchema
-    std::string edgeName = "test";
+    auto edgeNameStatus = metaClient_->getEdgeNameByTypeFromCache(spaceId, std::abs(edgeType));
+    NG_RETURN_IF_ERROR(edgeNameStatus);
+    const auto& edgeName = edgeNameStatus.value();
     std::string colName = "_edge:";
     colName.append(edgeType > 0 ? "+" : "-").append(edgeName);
     if ((*edgeProp.props_ref()).empty()) {
       // should contain dst
-      return Status::Error("%s 's prop is nullptr", edgeName.c_str());
+      return Status::Error("Cache: %s 's prop is nullptr", edgeName.c_str());
     }
     for (const auto& name : (*edgeProp.props_ref())) {
       if (name != nebula::kDst) {
         // must contain dst
-        return Status::Error("Edge : %s contain %s", edgeName.c_str(), name.c_str());
+        return Status::Error("Cache: Edge : %s contain %s", edgeName.c_str(), name.c_str());
       }
     }
     // todo fix it
@@ -78,9 +83,9 @@ Status StorageClientCache::buildEdgeContext(const TraverseSpec& req) {
 }
 
 StatusOr<GetNeighborsResponse> StorageClientCache::getCacheValue(const GetNeighborsRequest& req) {
+  auto spaceId = req.get_space_id();
   NG_RETURN_IF_ERROR(checkCondition(req));
-
-  NG_RETURN_IF_ERROR(buildEdgeContext(req.get_traverse_spec()));
+  NG_RETURN_IF_ERROR(buildEdgeContext(req.get_traverse_spec(), spaceId));
 
   for (const auto& partEntry : req.get_parts()) {
     // auto partId = partEntry.first;

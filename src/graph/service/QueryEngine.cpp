@@ -36,6 +36,9 @@ Status QueryEngine::init(std::shared_ptr<folly::IOThreadPoolExecutor> ioExecutor
   if (!cache->init()) {
     return Status::Error("Fail to init graph cache.");
   }
+  if (!cache->createEdgePool()) {
+    return Status::Error("Create Edge Pool Fail.");
+  }
 
   PlannersRegister::registerPlanners();
 

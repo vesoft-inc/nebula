@@ -76,7 +76,7 @@ StorageClientBase<ClientType>::StorageClientBase(
     std::shared_ptr<folly::IOThreadPoolExecutor> threadPool, meta::MetaClient* metaClient)
     : metaClient_(metaClient), ioThreadPool_(threadPool) {
   clientsMan_ = std::make_unique<thrift::ThriftClientManager<ClientType>>(FLAGS_enable_ssl);
-  clientCache_ = std::make_unique<nebula::graph::StorageClientCache>();
+  clientCache_ = std::make_unique<nebula::graph::StorageClientCache>(metaClient);
 }
 
 template <typename ClientType>
@@ -125,19 +125,22 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClientBase<ClientType>::c
 
   DCHECK(!!ioThreadPool_);
 
-
   for (auto& req : requests) {
+    auto& host = req.first;
+    auto spaceId = req.second.get_space_id();
     if constexpr (std::is_same_v<Request, cpp2::GetNeighborsRequest>) {
       if constexpr (std::is_same_v<Response, cpp2::GetNeighborsResponse>) {
+        auto cacheStartTime = time::WallClock::fastNowInMicroSec();
         auto cacheResp = clientCache_->getCacheValue(req.second);
         if (cacheResp.ok()) {
+          auto cacheLatency = cacheResp.value().get_result().get_latency_in_us();
+          context->resp.setLatency(
+              host, cacheLatency, time::WallClock::fastNowInMicroSec() - cacheStartTime);
           context->resp.addResponse(std::move(cacheResp.value()));
           continue;
         }
       }
     }
-    auto& host = req.first;
-    auto spaceId = req.second.get_space_id();
     auto res = context->insertRequest(host, std::move(req.second));
     DCHECK(res.second);
     evb = ioThreadPool_->getEventBase();
@@ -183,7 +186,10 @@ folly::SemiFuture<StorageRpcResponse<Response>> StorageClientBase<ClientType>::c
             auto latency = result.get_latency_in_us();
             context->resp.setLatency(host, latency, time::WallClock::fastNowInMicroSec() - start);
 
-            // (TODO) insert response into graph cache
+            // insert response into graph cache
+            if constexpr (std::is_same_v<Response, cpp2::GetNeighborsResponse>) {
+              clientCache_->insertResultIntoCache(resp);
+            }
             // Keep the response
             context->resp.addResponse(std::move(resp));
           })

@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "clients/meta/MetaClient.h"
 #include "common/base/Base.h"
 #include "graph/cache/GraphCache.h"
 #include "interface/gen-cpp2/storage_types.h"
@@ -18,33 +19,23 @@ namespace graph {
 // Only the topological structure is stored, not the attribute of the vertices and edges
 class StorageClientCache {
  public:
-  StorageClientCache();
-
-//  template <class Response, class Request>
-//  StatusOr<Response> getCacheValue(const Request& req) {
-//    UNUSED(req);
-//    return Status::Error("No GetNeightbors");
-//  }
-//
-//  template <class Response>
-//  void insertResultIntoCache(Response& resp) {
-//    UNUSED(resp);
-//  }
+  explicit StorageClientCache(nebula::meta::MetaClient* metaClient);
 
   StatusOr<GetNeighborsResponse> getCacheValue(const GetNeighborsRequest& req);
 
   void insertResultIntoCache(GetNeighborsResponse& resp);
 
  private:
-  Status buildEdgeContext(const nebula::storage::cpp2::TraverseSpec& req);
+  Status buildEdgeContext(const TraverseSpec& req, GraphSpaceID spaceId);
 
   std::string tagKey(const std::string& vId, TagID tagId);
 
   std::string edgeKey(const std::string& srcVid, EdgeType edgeType);
 
-  Status checkCondition(const nebula::storage::cpp2::GetNeighborsRequest& req);
+  Status checkCondition(const GetNeighborsRequest& req);
 
  private:
+  nebula::meta::MetaClient* metaClient_{nullptr};
   GraphCache* cache_{nullptr};
   std::vector<EdgeType> edgeTypes_;
   nebula::DataSet resultDataSet_;
