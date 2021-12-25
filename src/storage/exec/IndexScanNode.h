@@ -338,7 +338,9 @@ class Path {
                                     const std::vector<cpp2::IndexColumnHint>& hints,
                                     int64_t vidLen);
   QualifiedStrategy::Result qualified(const folly::StringPiece& key);
-  virtual bool isRange() { return false; }
+  virtual bool isRange() {
+    return false;
+  }
 
   virtual QualifiedStrategy::Result qualified(const Map<std::string, Value>& rowData) = 0;
   virtual void resetPart(PartitionID partId) = 0;
@@ -369,7 +371,9 @@ class PrefixPath : public Path {
   QualifiedStrategy::Result qualified(const Map<std::string, Value>& rowData) override;
   void resetPart(PartitionID partId) override;
 
-  const std::string& getPrefixKey() { return prefix_; }
+  const std::string& getPrefixKey() {
+    return prefix_;
+  }
 
  private:
   std::string prefix_;
@@ -384,11 +388,21 @@ class RangePath : public Path {
   QualifiedStrategy::Result qualified(const Map<std::string, Value>& rowData) override;
   void resetPart(PartitionID partId) override;
 
-  inline bool includeStart() { return includeStart_; }
-  inline bool includeEnd() { return includeEnd_; }
-  inline const std::string& getStartKey() { return startKey_; }
-  inline const std::string& getEndKey() { return endKey_; }
-  bool isRange() override { return true; }
+  inline bool includeStart() {
+    return includeStart_;
+  }
+  inline bool includeEnd() {
+    return includeEnd_;
+  }
+  inline const std::string& getStartKey() {
+    return startKey_;
+  }
+  inline const std::string& getEndKey() {
+    return endKey_;
+  }
+  bool isRange() override {
+    return true;
+  }
 
  private:
   std::string startKey_, endKey_;

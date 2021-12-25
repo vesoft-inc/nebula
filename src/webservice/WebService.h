@@ -44,7 +44,9 @@ class WebService final {
   NG_MUST_USE_RESULT Status start();
 
   // Check whether web service is started
-  bool started() const { return started_; }
+  bool started() const {
+    return started_;
+  }
 
  private:
   bool started_{false};

@@ -25,6 +25,7 @@ cpp_include "common/datatypes/DataSetOps-inl.h"
 cpp_include "common/datatypes/KeyValueOps-inl.h"
 cpp_include "common/datatypes/HostAddrOps-inl.h"
 cpp_include "common/datatypes/GeographyOps-inl.h"
+cpp_include "common/datatypes/DurationOps-inl.h"
 
 /*
  *
@@ -225,6 +226,12 @@ struct KeyValue {
     2: binary value,
 } (cpp.type = "nebula::KeyValue")
 
+struct Duration {
+    1: i64 seconds;
+    2: i32 microseconds;
+    3: i32 months;
+} (cpp.type = "nebula::Duration")
+
 struct LogInfo {
     1: LogID  log_id;
     2: TermID term_id;
@@ -237,19 +244,11 @@ struct DirInfo {
     2: list<binary>             data,
 }
 
-struct NodeInfo {
-    1: HostAddr      host,
-    2: DirInfo       dir,
-}
-
-struct PartitionBackupInfo {
-    1: map<PartitionID, LogInfo> (cpp.template = "std::unordered_map")  info,
-}
-
 struct CheckpointInfo {
-    1: PartitionBackupInfo   partition_info,
+    1: GraphSpaceID          space_id,
+    2: map<PartitionID, LogInfo> (cpp.template = "std::unordered_map") parts,
     // storage checkpoint directory name
-    2: binary                path,
+    3: binary                path,
 }
 
 // used for raft and drainer
@@ -278,6 +277,7 @@ enum PropertyType {
 
     // Date time
     TIMESTAMP = 21,
+    DURATION = 23,
     DATE = 24,
     DATETIME = 25,
     TIME = 26,
@@ -402,6 +402,7 @@ enum ErrorCode {
     E_GET_META_DIR_FAILURE              = -2072,
 
     E_QUERY_NOT_FOUND                 = -2073,
+    E_AGENT_HB_FAILUE                 = -2074,
 
     // 3xxx for storaged
     E_CONSENSUS_ERROR                 = -3001,

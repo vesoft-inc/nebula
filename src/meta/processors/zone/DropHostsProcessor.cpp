@@ -141,7 +141,7 @@ void DropHostsProcessor::process(const cpp2::DropHostsReq& req) {
     return;
   }
 
-  resp_.set_code(nebula::cpp2::ErrorCode::SUCCEEDED);
+  resp_.code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
   folly::Baton<true, std::atomic> baton;
   kvstore_->asyncMultiRemove(kDefaultSpaceId,
                              kDefaultPartId,
@@ -178,7 +178,7 @@ DropHostsProcessor::checkRelatedSpaceAndCollect(const std::string& zoneName) {
         return nebula::cpp2::ErrorCode::E_CONFLICT;
       } else {
         zones.erase(it);
-        properties.set_zone_names(zones);
+        properties.zone_names_ref() = zones;
 
         auto spaceKey = iter->key().data();
         auto spaceVal = MetaKeyUtils::spaceVal(properties);

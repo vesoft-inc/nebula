@@ -102,7 +102,9 @@ std::string Path::encodeValue(const Value& value,
   return val;
 }
 
-const std::string& Path::toString() { return serializeString_; }
+const std::string& Path::toString() {
+  return serializeString_;
+}
 
 // End of Path
 

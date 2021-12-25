@@ -157,24 +157,24 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<cpp2::BalanceTask>> BalancePlan::sh
   std::vector<cpp2::BalanceTask> thriftTasks;
   for (auto& task : tasks) {
     cpp2::BalanceTask t;
-    t.set_id(task.taskIdStr());
-    t.set_command(task.taskCommandStr());
+    t.id_ref() = task.taskIdStr();
+    t.command_ref() = task.taskCommandStr();
     switch (task.result()) {
       case BalanceTaskResult::SUCCEEDED:
-        t.set_result(cpp2::TaskResult::SUCCEEDED);
+        t.result_ref() = cpp2::TaskResult::SUCCEEDED;
         break;
       case BalanceTaskResult::FAILED:
-        t.set_result(cpp2::TaskResult::FAILED);
+        t.result_ref() = cpp2::TaskResult::FAILED;
         break;
       case BalanceTaskResult::IN_PROGRESS:
-        t.set_result(cpp2::TaskResult::IN_PROGRESS);
+        t.result_ref() = cpp2::TaskResult::IN_PROGRESS;
         break;
       case BalanceTaskResult::INVALID:
-        t.set_result(cpp2::TaskResult::INVALID);
+        t.result_ref() = cpp2::TaskResult::INVALID;
         break;
     }
-    t.set_start_time(task.startTime());
-    t.set_stop_time(task.endTime());
+    t.start_time_ref() = task.startTime();
+    t.stop_time_ref() = task.endTime();
     thriftTasks.emplace_back(std::move(t));
   }
   return thriftTasks;

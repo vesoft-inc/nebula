@@ -72,7 +72,9 @@ TEST(ProcessUtils, isPidAvailable) {
       }
     };
     auto pidFile = folly::stringPrintf("/tmp/process_test-%d.pid", ::getpid());
-    SCOPE_EXIT { ::unlink(pidFile.c_str()); };
+    SCOPE_EXIT {
+      ::unlink(pidFile.c_str());
+    };
     auto status = ProcessUtils::makePidFile(pidFile, genPid());
     ASSERT_TRUE(status.ok()) << status;
     // there are chances that the chosen pid was occupied already,

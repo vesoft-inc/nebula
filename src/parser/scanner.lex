@@ -267,6 +267,8 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 "RESET"                     { return TokenType::KW_RESET; }
 "PLAN"                      { return TokenType::KW_PLAN; }
 "COMMENT"                   { return TokenType::KW_COMMENT; }
+"S2_MAX_LEVEL"              { return TokenType::KW_S2_MAX_LEVEL; }
+"S2_MAX_CELLS"              { return TokenType::KW_S2_MAX_CELLS; }
 "SESSIONS"                  { return TokenType::KW_SESSIONS; }
 "SESSION"                   { return TokenType::KW_SESSION; }
 "SAMPLE"                    { return TokenType::KW_SAMPLE; }
@@ -278,6 +280,7 @@ LABEL_FULL_WIDTH            {CN_EN_FULL_WIDTH}{CN_EN_NUM_FULL_WIDTH}*
 "POINT"                     { return TokenType::KW_POINT; }
 "LINESTRING"                { return TokenType::KW_LINESTRING; }
 "POLYGON"                   { return TokenType::KW_POLYGON; }
+"DURATION"                  { return TokenType::KW_DURATION; }
 "MERGE"                     { return TokenType::KW_MERGE; }
 "RENAME"                    { return TokenType::KW_RENAME; }
 

@@ -29,7 +29,9 @@ class QueryInstance final : public cpp::NonCopyable, public cpp::NonMovable {
 
   void execute();
 
-  QueryContext* qctx() const { return qctx_.get(); }
+  QueryContext* qctx() const {
+    return qctx_.get();
+  }
 
  private:
   /**
@@ -49,7 +51,7 @@ class QueryInstance final : public cpp::NonCopyable, public cpp::NonMovable {
   Status validateAndOptimize();
   // return true if continue to execute
   bool explainOrContinue();
-  void addSlowQueryStats(uint64_t latency) const;
+  void addSlowQueryStats(uint64_t latency, const std::string& spaceName) const;
   void fillRespData(ExecutionResponse* resp);
   Status findBestPlan();
 

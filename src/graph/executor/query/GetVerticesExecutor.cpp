@@ -16,7 +16,9 @@ using nebula::storage::cpp2::GetPropResponse;
 namespace nebula {
 namespace graph {
 
-folly::Future<Status> GetVerticesExecutor::execute() { return getVertices(); }
+folly::Future<Status> GetVerticesExecutor::execute() {
+  return getVertices();
+}
 
 folly::Future<Status> GetVerticesExecutor::getVertices() {
   SCOPED_TIMER(&execTime_);
@@ -44,7 +46,7 @@ folly::Future<Status> GetVerticesExecutor::getVertices() {
                  gv->exprs(),
                  gv->dedup(),
                  gv->orderBy(),
-                 gv->limit(),
+                 gv->limit(qctx()),
                  gv->filter())
       .via(runner())
       .ensure([this, getPropsTime]() {

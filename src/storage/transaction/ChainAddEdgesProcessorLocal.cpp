@@ -398,9 +398,9 @@ cpp2::AddEdgesRequest ChainAddEdgesProcessorLocal::reverseRequest(
       ConsistUtil::reverseEdgeKeyInplace(*newEdgeRef.key_ref());
     }
   }
-  reversedRequest.set_space_id(req.get_space_id());
-  reversedRequest.set_prop_names(req.get_prop_names());
-  reversedRequest.set_if_not_exists(req.get_if_not_exists());
+  reversedRequest.space_id_ref() = (req.get_space_id());
+  reversedRequest.prop_names_ref() = (req.get_prop_names());
+  reversedRequest.if_not_exists_ref() = (req.get_if_not_exists());
   return reversedRequest;
 }
 
@@ -414,14 +414,14 @@ void ChainAddEdgesProcessorLocal::finish() {
 cpp2::AddEdgesRequest ChainAddEdgesProcessorLocal::makeSingleEdgeRequest(
     PartitionID partId, const cpp2::NewEdge& edge) {
   cpp2::AddEdgesRequest req;
-  req.set_space_id(req_.get_space_id());
-  req.set_prop_names(req_.get_prop_names());
-  req.set_if_not_exists(req_.get_if_not_exists());
+  req.space_id_ref() = (req_.get_space_id());
+  req.prop_names_ref() = (req_.get_prop_names());
+  req.if_not_exists_ref() = (req_.get_if_not_exists());
 
   std::unordered_map<PartitionID, std::vector<cpp2::NewEdge>> newParts;
   newParts[partId].emplace_back(edge);
 
-  req.set_parts(newParts);
+  req.parts_ref() = (newParts);
   return req;
 }
 

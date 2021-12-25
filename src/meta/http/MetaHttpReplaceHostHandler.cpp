@@ -97,7 +97,9 @@ void MetaHttpReplaceHostHandler::onUpgrade(UpgradeProtocol) noexcept {
   // Do nothing
 }
 
-void MetaHttpReplaceHostHandler::requestComplete() noexcept { delete this; }
+void MetaHttpReplaceHostHandler::requestComplete() noexcept {
+  delete this;
+}
 
 void MetaHttpReplaceHostHandler::onError(ProxygenError error) noexcept {
   LOG(ERROR) << "Web Service MetaHttpReplaceHostHandler got error : "

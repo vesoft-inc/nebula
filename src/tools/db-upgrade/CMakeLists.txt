@@ -43,6 +43,10 @@ nebula_add_executable(
         $<TARGET_OBJECTS:network_obj>
         $<TARGET_OBJECTS:charset_obj>
         $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:storage_stats_obj>
+        $<TARGET_OBJECTS:meta_client_stats_obj>
+        $<TARGET_OBJECTS:storage_client_stats_obj>
+        $<TARGET_OBJECTS:kv_stats_obj>
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:conf_obj>
         $<TARGET_OBJECTS:datatypes_obj>

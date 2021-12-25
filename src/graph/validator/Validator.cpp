@@ -305,7 +305,9 @@ Status Validator::appendPlan(PlanNode* node, PlanNode* appended) {
   return Status::OK();
 }
 
-Status Validator::appendPlan(PlanNode* root) { return appendPlan(tail_, root); }
+Status Validator::appendPlan(PlanNode* root) {
+  return appendPlan(tail_, root);
+}
 
 Status Validator::validate() {
   if (!vctx_) {
@@ -347,7 +349,9 @@ Status Validator::validate() {
   return Status::OK();
 }
 
-bool Validator::spaceChosen() { return vctx_->spaceChosen(); }
+bool Validator::spaceChosen() {
+  return vctx_->spaceChosen();
+}
 
 StatusOr<Value::Type> Validator::deduceExprType(const Expression* expr) const {
   DeduceTypeVisitor visitor(qctx_, vctx_, inputs_, space_.id);
@@ -358,8 +362,12 @@ StatusOr<Value::Type> Validator::deduceExprType(const Expression* expr) const {
   return visitor.type();
 }
 
-Status Validator::deduceProps(const Expression* expr, ExpressionProps& exprProps) {
-  DeducePropsVisitor visitor(qctx_, space_.id, &exprProps, &userDefinedVarNameList_);
+Status Validator::deduceProps(const Expression* expr,
+                              ExpressionProps& exprProps,
+                              std::vector<TagID>* tagIds,
+                              std::vector<EdgeType>* edgeTypes) {
+  DeducePropsVisitor visitor(
+      qctx_, space_.id, &exprProps, &userDefinedVarNameList_, tagIds, edgeTypes);
   const_cast<Expression*>(expr)->accept(&visitor);
   return std::move(visitor).status();
 }
@@ -443,7 +451,7 @@ Status Validator::validateStarts(const VerticesClause* clause, Starts& starts) {
     auto vidList = clause->vidList();
     QueryExpressionContext ctx;
     for (auto* expr : vidList) {
-      if (!ExpressionUtils::isEvaluableExpr(expr)) {
+      if (!ExpressionUtils::isEvaluableExpr(expr, qctx_)) {
         return Status::SemanticError("`%s' is not an evaluable expression.",
                                      expr->toString().c_str());
       }

@@ -95,7 +95,7 @@ Status InsertVerticesValidator::prepareVertices() {
     if (propSize_ != row->values().size()) {
       return Status::SemanticError("Column count doesn't match value count.");
     }
-    if (!ExpressionUtils::isEvaluableExpr(row->id())) {
+    if (!ExpressionUtils::isEvaluableExpr(row->id(), qctx_)) {
       LOG(ERROR) << "Wrong vid expression `" << row->id()->toString() << "\"";
       return Status::SemanticError("Wrong vid expression `%s'", row->id()->toString().c_str());
     }
@@ -105,7 +105,7 @@ Status InsertVerticesValidator::prepareVertices() {
 
     // check value expr
     for (auto &value : row->values()) {
-      if (!ExpressionUtils::isEvaluableExpr(value)) {
+      if (!ExpressionUtils::isEvaluableExpr(value, qctx_)) {
         LOG(ERROR) << "Insert wrong value: `" << value->toString() << "'.";
         return Status::SemanticError("Insert wrong value: `%s'.", value->toString().c_str());
       }
@@ -127,13 +127,13 @@ Status InsertVerticesValidator::prepareVertices() {
         handleValueNum++;
       }
       auto &tag = tags[count];
-      tag.set_tag_id(tagId);
-      tag.set_props(std::move(props));
+      tag.tag_id_ref() = tagId;
+      tag.props_ref() = std::move(props);
     }
 
     storage::cpp2::NewVertex vertex;
-    vertex.set_id(vertexId);
-    vertex.set_tags(std::move(tags));
+    vertex.id_ref() = vertexId;
+    vertex.tags_ref() = std::move(tags);
     vertices_.emplace_back(std::move(vertex));
   }
   return Status::OK();
@@ -211,13 +211,13 @@ Status InsertEdgesValidator::prepareEdges() {
     if (propNames_.size() != row->values().size()) {
       return Status::SemanticError("Column count doesn't match value count.");
     }
-    if (!ExpressionUtils::isEvaluableExpr(row->srcid())) {
+    if (!ExpressionUtils::isEvaluableExpr(row->srcid(), qctx_)) {
       LOG(ERROR) << "Wrong src vid expression `" << row->srcid()->toString() << "\"";
       return Status::SemanticError("Wrong src vid expression `%s'",
                                    row->srcid()->toString().c_str());
     }
 
-    if (!ExpressionUtils::isEvaluableExpr(row->dstid())) {
+    if (!ExpressionUtils::isEvaluableExpr(row->dstid(), qctx_)) {
       LOG(ERROR) << "Wrong dst vid expression `" << row->dstid()->toString() << "\"";
       return Status::SemanticError("Wrong dst vid expression `%s'",
                                    row->dstid()->toString().c_str());
@@ -234,7 +234,7 @@ Status InsertEdgesValidator::prepareEdges() {
 
     // check value expr
     for (auto &value : row->values()) {
-      if (!ExpressionUtils::isEvaluableExpr(value)) {
+      if (!ExpressionUtils::isEvaluableExpr(value, qctx_)) {
         LOG(ERROR) << "Insert wrong value: `" << value->toString() << "'.";
         return Status::SemanticError("Insert wrong value: `%s'.", value->toString().c_str());
       }
@@ -274,19 +274,19 @@ Status InsertEdgesValidator::prepareEdges() {
     storage::cpp2::NewEdge edge;
     storage::cpp2::EdgeKey key;
 
-    key.set_src(srcId);
-    key.set_dst(dstId);
-    key.set_edge_type(edgeType_);
-    key.set_ranking(rank);
-    edge.set_key(key);
-    edge.set_props(std::move(entirePropValues));
+    key.src_ref() = srcId;
+    key.dst_ref() = dstId;
+    key.edge_type_ref() = edgeType_;
+    key.ranking_ref() = rank;
+    edge.key_ref() = key;
+    edge.props_ref() = std::move(entirePropValues);
     edges_.emplace_back(edge);
     if (!FLAGS_enable_experimental_feature) {
       // inbound
-      key.set_src(dstId);
-      key.set_dst(srcId);
-      key.set_edge_type(-edgeType_);
-      edge.set_key(key);
+      key.src_ref() = dstId;
+      key.dst_ref() = srcId;
+      key.edge_type_ref() = -edgeType_;
+      edge.key_ref() = key;
       edges_.emplace_back(std::move(edge));
     }
   }
@@ -374,14 +374,14 @@ Status DeleteVerticesValidator::toPlan() {
       edgeKeyRefs_.emplace_back(edgeKeyRef);
 
       storage::cpp2::EdgeProp edgeProp;
-      edgeProp.set_type(edgeTypes_[index]);
+      edgeProp.type_ref() = edgeTypes_[index];
       edgeProp.props_ref().value().emplace_back(kSrc);
       edgeProp.props_ref().value().emplace_back(kDst);
       edgeProp.props_ref().value().emplace_back(kType);
       edgeProp.props_ref().value().emplace_back(kRank);
       edgeProps.emplace_back(edgeProp);
 
-      edgeProp.set_type(-edgeTypes_[index]);
+      edgeProp.type_ref() = -edgeTypes_[index];
       edgeProps.emplace_back(std::move(edgeProp));
       index++;
     }
@@ -684,8 +684,8 @@ Status UpdateValidator::getUpdateProps() {
     std::string encodeStr;
     auto copyValueExpr = valueExpr->clone();
     NG_LOG_AND_RETURN_IF_ERROR(checkAndResetSymExpr(copyValueExpr, symName, encodeStr));
-    updatedProp.set_value(std::move(encodeStr));
-    updatedProp.set_name(fieldName);
+    updatedProp.value_ref() = std::move(encodeStr);
+    updatedProp.name_ref() = fieldName;
     updatedProps_.emplace_back(std::move(updatedProp));
   }
 

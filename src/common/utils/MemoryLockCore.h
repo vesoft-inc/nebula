@@ -22,11 +22,17 @@ class MemoryLockCore {
   // but may not necessary sort any time.
   // this may be useful while first lock attempt failed,
   // and try to retry.
-  auto try_lockSortedBatch(const std::vector<Key>& keys) { return lockBatch(keys); }
+  auto try_lockSortedBatch(const std::vector<Key>& keys) {
+    return lockBatch(keys);
+  }
 
-  bool try_lock(const Key& key) { return hashMap_.insert(std::make_pair(key, 0)).second; }
+  bool try_lock(const Key& key) {
+    return hashMap_.insert(std::make_pair(key, 0)).second;
+  }
 
-  void unlock(const Key& key) { hashMap_.erase(key); }
+  void unlock(const Key& key) {
+    hashMap_.erase(key);
+  }
 
   template <class Iter>
   std::pair<Iter, bool> lockBatch(Iter begin, Iter end) {
@@ -60,9 +66,13 @@ class MemoryLockCore {
     return unlockBatch(collection.begin(), collection.end());
   }
 
-  void clear() { hashMap_.clear(); }
+  void clear() {
+    hashMap_.clear();
+  }
 
-  size_t size() { return hashMap_.size(); }
+  size_t size() {
+    return hashMap_.size();
+  }
 
  protected:
   folly::ConcurrentHashMap<Key, int> hashMap_;

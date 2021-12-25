@@ -7,9 +7,11 @@
 
 #include <algorithm>
 
+#include "common/stats/StatsManager.h"
 #include "common/utils/IndexKeyUtils.h"
 #include "common/utils/NebulaKeyUtils.h"
 #include "common/utils/OperationKeyUtils.h"
+#include "storage/stats/StorageStats.h"
 
 namespace nebula {
 namespace storage {
@@ -76,6 +78,7 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
         continue;
       }
       doRemove(spaceId_, partId, std::move(keys));
+      stats::StatsManager::addValue(kNumEdgesDeleted, keys.size());
     }
   } else {
     for (auto& part : partEdges) {
@@ -161,7 +164,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> DeleteEdgesProcessor::deleteEdges(
               return nebula::cpp2::ErrorCode::E_INVALID_DATA;
             }
           }
-          auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(), index->get_fields());
+          auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(), index.get());
           if (!valuesRet.ok()) {
             continue;
           }
@@ -185,6 +188,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> DeleteEdgesProcessor::deleteEdges(
         }
       }
       batchHolder->remove(std::move(key));
+      stats::StatsManager::addValue(kNumEdgesDeleted);
     } else if (ret == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
       continue;
     } else {
