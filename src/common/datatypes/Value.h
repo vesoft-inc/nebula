@@ -11,6 +11,7 @@
 #include <memory>
 
 #include "common/datatypes/Date.h"
+#include "common/datatypes/Duration.h"
 #include "common/thrift/ThriftTypes.h"
 
 namespace apache {
@@ -77,6 +78,7 @@ struct Value {
     SET = 1UL << 13,
     DATASET = 1UL << 14,
     GEOGRAPHY = 1UL << 15,
+    DURATION = 1UL << 16,
     NULLVALUE = 1UL << 63,
   };
 
@@ -130,14 +132,24 @@ struct Value {
   Value(DataSet&& v);                    // NOLINT
   Value(const Geography& v);             // NOLINT
   Value(Geography&& v);                  // NOLINT
-  ~Value() { clear(); }
+  Value(const Duration& v);              // NOLINT
+  Value(Duration&& v);                   // NOLINT
+  ~Value() {
+    clear();
+  }
 
-  Type type() const noexcept { return type_; }
+  Type type() const noexcept {
+    return type_;
+  }
 
   const std::string& typeName() const;
 
-  bool empty() const { return type_ == Type::__EMPTY__; }
-  bool isNull() const { return type_ == Type::NULLVALUE; }
+  bool empty() const {
+    return type_ == Type::__EMPTY__;
+  }
+  bool isNull() const {
+    return type_ == Type::NULLVALUE;
+  }
   bool isBadNull() const {
     if (!isNull()) {
       return false;
@@ -147,26 +159,63 @@ struct Value {
            null == NullType::ERR_OVERFLOW || null == NullType::UNKNOWN_PROP ||
            null == NullType::DIV_BY_ZERO || null == NullType::OUT_OF_RANGE;
   }
-  bool isNumeric() const { return type_ == Type::INT || type_ == Type::FLOAT; }
-  bool isBool() const { return type_ == Type::BOOL; }
-  bool isInt() const { return type_ == Type::INT; }
-  bool isFloat() const { return type_ == Type::FLOAT; }
-  bool isStr() const { return type_ == Type::STRING; }
-  bool isDate() const { return type_ == Type::DATE; }
-  bool isTime() const { return type_ == Type::TIME; }
-  bool isDateTime() const { return type_ == Type::DATETIME; }
-  bool isVertex() const { return type_ == Type::VERTEX; }
-  bool isEdge() const { return type_ == Type::EDGE; }
-  bool isPath() const { return type_ == Type::PATH; }
-  bool isList() const { return type_ == Type::LIST; }
-  bool isMap() const { return type_ == Type::MAP; }
-  bool isSet() const { return type_ == Type::SET; }
-  bool isDataSet() const { return type_ == Type::DATASET; }
-  bool isGeography() const { return type_ == Type::GEOGRAPHY; }
+  bool isNumeric() const {
+    return type_ == Type::INT || type_ == Type::FLOAT;
+  }
+  bool isBool() const {
+    return type_ == Type::BOOL;
+  }
+  bool isInt() const {
+    return type_ == Type::INT;
+  }
+  bool isFloat() const {
+    return type_ == Type::FLOAT;
+  }
+  bool isStr() const {
+    return type_ == Type::STRING;
+  }
+  bool isDate() const {
+    return type_ == Type::DATE;
+  }
+  bool isTime() const {
+    return type_ == Type::TIME;
+  }
+  bool isDateTime() const {
+    return type_ == Type::DATETIME;
+  }
+  bool isVertex() const {
+    return type_ == Type::VERTEX;
+  }
+  bool isEdge() const {
+    return type_ == Type::EDGE;
+  }
+  bool isPath() const {
+    return type_ == Type::PATH;
+  }
+  bool isList() const {
+    return type_ == Type::LIST;
+  }
+  bool isMap() const {
+    return type_ == Type::MAP;
+  }
+  bool isSet() const {
+    return type_ == Type::SET;
+  }
+  bool isDataSet() const {
+    return type_ == Type::DATASET;
+  }
+  bool isGeography() const {
+    return type_ == Type::GEOGRAPHY;
+  }
+  bool isDuration() const {
+    return type_ == Type::DURATION;
+  }
 
   void clear();
 
-  void __clear() { clear(); }
+  void __clear() {
+    clear();
+  }
 
   Value& operator=(Value&& rhs) noexcept;
   Value& operator=(const Value& rhs);
@@ -218,6 +267,9 @@ struct Value {
   void setGeography(const Geography& v);
   void setGeography(Geography&& v);
   void setGeography(std::unique_ptr<Geography>&& v);
+  void setDuration(const Duration& v);
+  void setDuration(Duration&& v);
+  void setDuration(std::unique_ptr<Duration>&& v);
 
   const NullType& getNull() const;
   const bool& getBool() const;
@@ -243,6 +295,8 @@ struct Value {
   const DataSet* getDataSetPtr() const;
   const Geography& getGeography() const;
   const Geography* getGeographyPtr() const;
+  const Duration& getDuration() const;
+  const Duration* getDurationPtr() const;
 
   NullType moveNull();
   bool moveBool();
@@ -260,6 +314,7 @@ struct Value {
   Set moveSet();
   DataSet moveDataSet();
   Geography moveGeography();
+  Duration moveDuration();
 
   NullType& mutableNull();
   bool& mutableBool();
@@ -277,8 +332,11 @@ struct Value {
   Set& mutableSet();
   DataSet& mutableDataSet();
   Geography& mutableGeography();
+  Duration& mutableDuration();
 
-  static const Value& null() noexcept { return kNullValue; }
+  static const Value& null() noexcept {
+    return kNullValue;
+  }
 
   std::string toString() const;
   folly::dynamic toJson() const;
@@ -313,6 +371,7 @@ struct Value {
     std::unique_ptr<Set> uVal;
     std::unique_ptr<DataSet> gVal;
     std::unique_ptr<Geography> ggVal;
+    std::unique_ptr<Duration> duVal;
 
     Storage() {}
     ~Storage() {}
@@ -389,6 +448,11 @@ struct Value {
   void setGG(std::unique_ptr<Geography>&& v);
   void setGG(const Geography& v);
   void setGG(Geography&& v);
+  // Duration value
+  void setDU(const std::unique_ptr<Duration>& v);
+  void setDU(std::unique_ptr<Duration>&& v);
+  void setDU(const Duration& v);
+  void setDU(Duration&& v);
 };
 
 static_assert(sizeof(Value) == 16UL, "The size of Value should be 16UL");

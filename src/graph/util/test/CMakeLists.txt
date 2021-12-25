@@ -28,6 +28,7 @@ nebula_add_test(
         $<TARGET_OBJECTS:http_client_obj>
         $<TARGET_OBJECTS:process_obj>
         $<TARGET_OBJECTS:time_utils_obj>
+        $<TARGET_OBJECTS:datetime_parser_obj>
         $<TARGET_OBJECTS:graph_obj>
         $<TARGET_OBJECTS:ft_es_graph_adapter_obj>
         $<TARGET_OBJECTS:ws_common_obj>
@@ -44,6 +45,10 @@ nebula_add_test(
         $<TARGET_OBJECTS:graph_context_obj>
         $<TARGET_OBJECTS:memory_obj>
         $<TARGET_OBJECTS:version_obj>
+        $<TARGET_OBJECTS:stats_obj>
+        $<TARGET_OBJECTS:graph_stats_obj>
+        $<TARGET_OBJECTS:meta_client_stats_obj>
+        $<TARGET_OBJECTS:storage_client_stats_obj>
     LIBRARIES
         gtest
         gtest_main

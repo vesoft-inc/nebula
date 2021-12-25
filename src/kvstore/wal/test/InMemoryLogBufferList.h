@@ -47,7 +47,9 @@ class InMemoryBufferList : public std::enable_shared_from_this<InMemoryBufferLis
       }
     }
 
-    bool valid() const override { return valid_; }
+    bool valid() const override {
+      return valid_;
+    }
 
     LogIterator& operator++() override {
       ++currId_;

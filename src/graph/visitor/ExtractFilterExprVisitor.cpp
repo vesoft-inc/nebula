@@ -8,43 +8,135 @@
 namespace nebula {
 namespace graph {
 
-void ExtractFilterExprVisitor::visit(ConstantExpression *) { canBePushed_ = true; }
+void ExtractFilterExprVisitor::visit(ConstantExpression *) {
+  canBePushed_ = true;
+}
 
-void ExtractFilterExprVisitor::visit(LabelExpression *) { canBePushed_ = false; }
+void ExtractFilterExprVisitor::visit(LabelExpression *) {
+  canBePushed_ = false;
+}
 
-void ExtractFilterExprVisitor::visit(UUIDExpression *) { canBePushed_ = false; }
+void ExtractFilterExprVisitor::visit(UUIDExpression *) {
+  canBePushed_ = false;
+}
 
 void ExtractFilterExprVisitor::visit(VariableExpression *expr) {
   canBePushed_ = static_cast<VariableExpression *>(expr)->isInner();
 }
 
-void ExtractFilterExprVisitor::visit(VersionedVariableExpression *) { canBePushed_ = false; }
+void ExtractFilterExprVisitor::visit(VersionedVariableExpression *) {
+  canBePushed_ = false;
+}
 
-void ExtractFilterExprVisitor::visit(TagPropertyExpression *) { canBePushed_ = false; }
+void ExtractFilterExprVisitor::visit(TagPropertyExpression *) {
+  switch (pushType_) {
+    case PushType::kGetNeighbors:
+      canBePushed_ = false;
+      break;
+    case PushType::kGetVertices:
+      canBePushed_ = true;
+      break;
+    case PushType::kGetEdges:
+      canBePushed_ = false;
+      break;
+  }
+}
 
-void ExtractFilterExprVisitor::visit(EdgePropertyExpression *) { canBePushed_ = true; }
+void ExtractFilterExprVisitor::visit(EdgePropertyExpression *) {
+  switch (pushType_) {
+    case PushType::kGetNeighbors:
+    case PushType::kGetEdges:
+      canBePushed_ = true;
+      break;
+    case PushType::kGetVertices:
+      canBePushed_ = false;
+      break;
+  }
+}
 
-void ExtractFilterExprVisitor::visit(InputPropertyExpression *) { canBePushed_ = false; }
+void ExtractFilterExprVisitor::visit(InputPropertyExpression *) {
+  canBePushed_ = false;
+}
 
-void ExtractFilterExprVisitor::visit(VariablePropertyExpression *) { canBePushed_ = false; }
+void ExtractFilterExprVisitor::visit(VariablePropertyExpression *) {
+  canBePushed_ = false;
+}
 
-void ExtractFilterExprVisitor::visit(DestPropertyExpression *) { canBePushed_ = false; }
+void ExtractFilterExprVisitor::visit(DestPropertyExpression *) {
+  canBePushed_ = false;
+}
 
-void ExtractFilterExprVisitor::visit(SourcePropertyExpression *) { canBePushed_ = true; }
+void ExtractFilterExprVisitor::visit(SourcePropertyExpression *) {
+  switch (pushType_) {
+    case PushType::kGetNeighbors:
+      canBePushed_ = true;
+      break;
+    case PushType::kGetVertices:
+    case PushType::kGetEdges:
+      canBePushed_ = false;
+      break;
+  }
+}
 
-void ExtractFilterExprVisitor::visit(EdgeSrcIdExpression *) { canBePushed_ = true; }
+void ExtractFilterExprVisitor::visit(EdgeSrcIdExpression *) {
+  switch (pushType_) {
+    case PushType::kGetNeighbors:
+    case PushType::kGetEdges:
+      canBePushed_ = true;
+      break;
+    case PushType::kGetVertices:
+      canBePushed_ = false;
+      break;
+  }
+}
 
-void ExtractFilterExprVisitor::visit(EdgeTypeExpression *) { canBePushed_ = true; }
+void ExtractFilterExprVisitor::visit(EdgeTypeExpression *) {
+  switch (pushType_) {
+    case PushType::kGetNeighbors:
+    case PushType::kGetEdges:
+      canBePushed_ = true;
+      break;
+    case PushType::kGetVertices:
+      canBePushed_ = false;
+      break;
+  }
+}
 
-void ExtractFilterExprVisitor::visit(EdgeRankExpression *) { canBePushed_ = true; }
+void ExtractFilterExprVisitor::visit(EdgeRankExpression *) {
+  switch (pushType_) {
+    case PushType::kGetNeighbors:
+    case PushType::kGetEdges:
+      canBePushed_ = true;
+      break;
+    case PushType::kGetVertices:
+      canBePushed_ = false;
+      break;
+  }
+}
 
-void ExtractFilterExprVisitor::visit(EdgeDstIdExpression *) { canBePushed_ = true; }
+void ExtractFilterExprVisitor::visit(EdgeDstIdExpression *) {
+  switch (pushType_) {
+    case PushType::kGetNeighbors:
+    case PushType::kGetEdges:
+      canBePushed_ = true;
+      break;
+    case PushType::kGetVertices:
+      canBePushed_ = false;
+      break;
+  }
+}
 
-void ExtractFilterExprVisitor::visit(VertexExpression *) { canBePushed_ = false; }
+void ExtractFilterExprVisitor::visit(VertexExpression *) {
+  canBePushed_ = false;
+}
 
-void ExtractFilterExprVisitor::visit(EdgeExpression *) { canBePushed_ = false; }
+void ExtractFilterExprVisitor::visit(EdgeExpression *) {
+  canBePushed_ = false;
+}
 
-void ExtractFilterExprVisitor::visit(ColumnExpression *) { canBePushed_ = false; }
+void ExtractFilterExprVisitor::visit(ColumnExpression *) {
+  canBePushed_ = false;
+}
 
 void ExtractFilterExprVisitor::visit(LogicalExpression *expr) {
   if (expr->kind() != Expression::Kind::kLogicalAnd) {
@@ -84,7 +176,9 @@ void ExtractFilterExprVisitor::visit(LogicalExpression *expr) {
   }
 }
 
-void ExtractFilterExprVisitor::visit(SubscriptRangeExpression *) { canBePushed_ = false; }
+void ExtractFilterExprVisitor::visit(SubscriptRangeExpression *) {
+  canBePushed_ = false;
+}
 
 }  // namespace graph
 }  // namespace nebula

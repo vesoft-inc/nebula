@@ -3,7 +3,9 @@
  * This source code is licensed under Apache 2.0 License.
  */
 
+#include <folly/String.h>
 #include <gtest/gtest.h>
+#include <s2/base/integral_types.h>
 
 #include <limits>
 #include <string>
@@ -14,6 +16,8 @@
 #include "common/expression/ConstantExpression.h"
 #include "common/expression/PropertyExpression.h"
 #include "common/expression/RelationalExpression.h"
+#include "common/geo/GeoIndex.h"
+#include "common/utils/IndexKeyUtils.h"
 #include "common/utils/NebulaKeyUtils.h"
 #include "kvstore/KVEngine.h"
 #include "kvstore/KVIterator.h"
@@ -38,7 +42,7 @@ using std::string_literals::operator""s;
  * 1. Vertex/Edge
  * 2. back to table or not
  * 3. different value type
- *    a. int/float/bool/fix_string/time/date/datetime
+ *    a. int/float/bool/fix_string/time/date/datetime/geography
  *    b. compound index
  * 4. range/prefix
  *    a. prefix(equal)
@@ -102,7 +106,9 @@ class IndexScanTestHelper {
       return ::nebula::cpp2::ErrorCode::SUCCEEDED;
     };
   }
-  void setFatal(IndexScanNode* node, bool value) { node->fatalOnBaseNotFound_ = value; }
+  void setFatal(IndexScanNode* node, bool value) {
+    node->fatalOnBaseNotFound_ = value;
+  }
 };
 class IndexScanTest : public ::testing::Test {
  protected:
@@ -111,38 +117,38 @@ class IndexScanTest : public ::testing::Test {
   using ColumnHint = ::nebula::storage::cpp2::IndexColumnHint;
   static ColumnHint makeColumnHint(const std::string& name, const Value& value) {
     ColumnHint hint;
-    hint.set_column_name(name);
-    hint.set_begin_value(value);
-    hint.set_scan_type(cpp2::ScanType::PREFIX);
+    hint.column_name_ref() = name;
+    hint.begin_value_ref() = value;
+    hint.scan_type_ref() = cpp2::ScanType::PREFIX;
     return hint;
   }
   template <bool includeBegin, bool includeEnd>
   static ColumnHint makeColumnHint(const std::string& name, const Value& begin, const Value& end) {
     ColumnHint hint;
-    hint.set_column_name(name);
-    hint.set_scan_type(cpp2::ScanType::RANGE);
-    hint.set_begin_value(begin);
-    hint.set_end_value(end);
-    hint.set_include_begin(includeBegin);
-    hint.set_include_end(includeEnd);
+    hint.column_name_ref() = name;
+    hint.scan_type_ref() = cpp2::ScanType::RANGE;
+    hint.begin_value_ref() = begin;
+    hint.end_value_ref() = end;
+    hint.include_begin_ref() = includeBegin;
+    hint.include_end_ref() = includeEnd;
     return hint;
   }
   template <bool include>
   static ColumnHint makeBeginColumnHint(const std::string& name, const Value& begin) {
     ColumnHint hint;
-    hint.set_column_name(name);
-    hint.set_scan_type(cpp2::ScanType::RANGE);
-    hint.set_begin_value(begin);
-    hint.set_include_begin(include);
+    hint.column_name_ref() = name;
+    hint.scan_type_ref() = cpp2::ScanType::RANGE;
+    hint.begin_value_ref() = begin;
+    hint.include_begin_ref() = include;
     return hint;
   }
   template <bool include>
   static ColumnHint makeEndColumnHint(const std::string& name, const Value& end) {
     ColumnHint hint;
-    hint.set_column_name(name);
-    hint.set_scan_type(cpp2::ScanType::RANGE);
-    hint.set_end_value(end);
-    hint.set_include_end(include);
+    hint.column_name_ref() = name;
+    hint.scan_type_ref() = cpp2::ScanType::RANGE;
+    hint.end_value_ref() = end;
+    hint.include_end_ref() = include;
     return hint;
   }
   static std::vector<std::map<std::string, std::string>> encodeTag(
@@ -163,10 +169,12 @@ class IndexScanTest : public ::testing::Test {
       RowReaderWrapper reader(schema.get(), folly::StringPiece(value), schemaVer);
       for (size_t j = 0; j < indices.size(); j++) {
         auto& index = indices[j];
-        auto indexValue = IndexKeyUtils::collectIndexValues(&reader, index->get_fields()).value();
-        auto indexKey = IndexKeyUtils::vertexIndexKeys(
-            8, 0, index->get_index_id(), std::to_string(i), std::move(indexValue))[0];
-        CHECK(ret[j + 1].insert({indexKey, ""}).second);
+        auto indexValue = IndexKeyUtils::collectIndexValues(&reader, index.get()).value();
+        auto indexKeys = IndexKeyUtils::vertexIndexKeys(
+            8, 0, index->get_index_id(), std::to_string(i), std::move(indexValue));
+        for (auto& indexKey : indexKeys) {
+          CHECK(ret[j + 1].insert({indexKey, ""}).second);
+        }
       }
     }
     return ret;
@@ -189,15 +197,17 @@ class IndexScanTest : public ::testing::Test {
       RowReaderWrapper reader(schema.get(), folly::StringPiece(value), schemaVer);
       for (size_t j = 0; j < indices.size(); j++) {
         auto& index = indices[j];
-        auto indexValue = IndexKeyUtils::collectIndexValues(&reader, index->get_fields()).value();
-        auto indexKey = IndexKeyUtils::edgeIndexKeys(8,
-                                                     0,
-                                                     index->get_index_id(),
-                                                     std::to_string(i),
-                                                     i,
-                                                     std::to_string(i),
-                                                     std::move(indexValue))[0];
-        CHECK(ret[j + 1].insert({indexKey, ""}).second);
+        auto indexValue = IndexKeyUtils::collectIndexValues(&reader, index.get()).value();
+        auto indexKeys = IndexKeyUtils::edgeIndexKeys(8,
+                                                      0,
+                                                      index->get_index_id(),
+                                                      std::to_string(i),
+                                                      i,
+                                                      std::to_string(i),
+                                                      std::move(indexValue));
+        for (auto& indexKey : indexKeys) {
+          CHECK(ret[j + 1].insert({indexKey, ""}).second);
+        }
       }
     }
     return ret;
@@ -215,7 +225,7 @@ class IndexScanTest : public ::testing::Test {
 };
 TEST_F(IndexScanTest, Base) {
   auto rows = R"(
-    int | int 
+    int | int
     1   | 2
     1   | 3
   )"_row;
@@ -961,7 +971,7 @@ TEST_F(IndexScanTest, Bool) {
     true  | false
     false | <null>
     false | false
-    true  | <null> 
+    true  | <null>
   )"_row;
   auto schema = R"(
     a | bool  | |
@@ -1730,6 +1740,131 @@ TEST_F(IndexScanTest, Date) {
 TEST_F(IndexScanTest, DateTime) {
   // TODO(hs.zhang): add unittest
 }
+
+TEST_F(IndexScanTest, Geography) {
+  auto rows = R"(
+    geography
+    POINT(108.1 32.5)
+    POINT(103.8 32.3)
+    LINESTRING(68.9 48.9,76.1 35.5,125.7 28.2)
+    POLYGON((91.2 38.6,99.7 41.9,111.2 38.9,115.6 33.2,109.5 29.0,105.8 24.1,102.9 30.5,93.0 28.1,95.4 32.8,86.1 33.6,85.3 38.8,91.2 38.6))
+    POLYGON((88.9 42.2,92.5 39.5,104.2 39.6,115.5 36.5,114.4 24.4,98.9 20.3,109.5 31.3,91.4 25.6,95.4 33.1,88.9 42.2))
+  )"_row;
+  /* Format: WKT:[CellID...]. The expected result comes from BigQuery.
+  POINT(108.1 32.5): [0x368981adc0392fe3]
+  POINT(103.8 32.3): [0x36f0b347378c3683]
+  LINESTRING(68.9 48.9,76.1 35.5,125.7 28.2):
+    [0x3440000000000000,0x34ff000000000000,0x3640000000000000,0x3684000000000000,
+     0x37c0000000000000,0x3840000000000000,0x38c0000000000000,0x4240000000000000]
+  POLYGON((91.2 38.6,99.7 41.9,111.2 38.9,115.6 33.2,109.5 29.0,
+           105.8 24.1,102.9 30.5,93.0 28.1,95.4 32.8,86.1 33.6,85.3 38.8,91.2 38.6)):
+    [0x342b000000000000,0x35d0000000000000,0x3700000000000000,0x3830000000000000,
+     0x39d0000000000000]
+  POLYGON((88.9 42.2,92.5 39.5,104.2 39.6,115.5 36.5,114.4 24.4,98.9 20.3,
+           109.5 31.3,91.4 25.6,95.4 33.1,88.9 42.2)):
+    [0x30d4000000000000,0x3130000000000000,0x341c000000000000,0x3430000000000000,
+     0x35d4000000000000,0x35dc000000000000,0x3700000000000000,0x381c000000000000]
+  */
+  auto schema = R"(
+    geo   | geography | | false
+  )"_schema;
+  auto indices = R"(
+    TAG(t,1)
+    (i1,2):geo
+  )"_index(schema);
+  auto kv = encodeTag(rows, 1, schema, indices);
+  auto kvstore = std::make_unique<MockKVStore>();
+  for (auto& iter : kv) {
+    for (auto& item : iter) {
+      kvstore->put(item.first, item.second);
+    }
+  }
+  auto actual = [&](std::shared_ptr<IndexItem> index,
+                    const std::vector<ColumnHint>& columnHints) -> auto {
+    auto context = makeContext(1, 0);
+    auto scanNode =
+        std::make_unique<IndexVertexScanNode>(context.get(), 0, columnHints, kvstore.get());
+    IndexScanTestHelper helper;
+    helper.setIndex(scanNode.get(), index);
+    helper.setTag(scanNode.get(), schema);
+    InitContext initCtx;
+    initCtx.requiredColumns = {kVid};
+    scanNode->init(initCtx);
+    scanNode->execute(0);
+
+    std::vector<Row> result;
+    while (true) {
+      auto res = scanNode->next();
+      ASSERT(res.success());
+      if (!res.hasData()) {
+        break;
+      }
+      result.emplace_back(std::move(res).row());
+    }
+    return result;
+  };
+  auto expect = [](auto... vidList) {
+    std::vector<Row> ret;
+    std::vector<Value> value;
+    (value.push_back(std::to_string(vidList)), ...);
+    for (auto& v : value) {
+      Row row;
+      row.emplace_back(v);
+      ret.emplace_back(std::move(row));
+    }
+    return ret;
+  };
+  auto encodeCellId = [](int64_t i) -> std::string {
+    // First, reinterpret the int64_t as uint64_t
+    uint64_t u = static_cast<uint64_t>(i);
+    // Then, encode the uint64_t as string
+    return IndexKeyUtils::encodeUint64(u);
+  };
+  // For the Geography type, there are only two cases: prefix and [x, y].
+  /* Case 1: Prefix */
+  // Explicitly specify the index column hints
+  {
+    std::vector<ColumnHint> columnHints;
+    columnHints = {makeColumnHint("geo", encodeCellId(0x368981adc0392fe3))};
+    EXPECT_EQ(expect(0), actual(indices[0], columnHints));
+    columnHints = {makeColumnHint("geo", encodeCellId(0x36f0b347378c3683))};
+    EXPECT_EQ(expect(1), actual(indices[0], columnHints));
+    columnHints = {makeColumnHint("geo", encodeCellId(0x381c000000000000))};
+    EXPECT_EQ(expect(4), actual(indices[0], columnHints));
+    columnHints = {makeColumnHint("geo", encodeCellId(0x3440000000000000))};
+    EXPECT_EQ(expect(2), actual(indices[0], columnHints));
+    columnHints = {makeColumnHint("geo", encodeCellId(0x4240000000000000))};
+    EXPECT_EQ(expect(2), actual(indices[0], columnHints));
+    columnHints = {makeColumnHint("geo", encodeCellId(0x342b000000000000))};
+    EXPECT_EQ(expect(3), actual(indices[0], columnHints));
+    columnHints = {makeColumnHint("geo", encodeCellId(0x3700000000000000))};
+    EXPECT_EQ(expect(3, 4), actual(indices[0], columnHints));
+  }
+  // Let GeoIndex generates the index column hints
+  {
+      // TODO(jie)
+  } /* Case 2: [x, y] */
+  // Explicitly specify the index column hints
+  {
+    auto hint = [&encodeCellId](const char* name, int64_t begin, int64_t end) {
+      return std::vector<ColumnHint>{
+          makeColumnHint<true, true>(name, encodeCellId(begin), encodeCellId(end))};
+    };
+    auto columnHint = hint("geo", 0x36f0b347378c3683, 0x36f0b347378c3683);
+    EXPECT_EQ(expect(1), actual(indices[0], columnHint));
+    columnHint = hint("geo", 0x35d0000000000000, 0x35dfffffffffffff);
+    EXPECT_EQ(expect(3, 4), actual(indices[0], columnHint));
+    columnHint = hint("geo", 0x3600000000000000, 0x38ffffffffffffff);
+    EXPECT_EQ(expect(2, 0, 1, 3, 4), actual(indices[0], columnHint));
+    columnHint = hint("geo", 0x36f0b00000000000, 0x3700000000000000);
+    EXPECT_EQ(expect(1, 3, 4), actual(indices[0], columnHint));
+  }
+  // Let GeoIndex generates the index column hints
+  {
+    // TODO(jie)
+  }
+}
+
 TEST_F(IndexScanTest, Compound) {
   // TODO(hs.zhang): add unittest
 }
@@ -1772,7 +1907,7 @@ class IndexTest : public ::testing::Test {
 
 TEST_F(IndexTest, Selection) {
   const auto rows = R"(
-    int     | int 
+    int     | int
     1       | 2
     <null>  | <null>
     8       | 10
@@ -1872,7 +2007,7 @@ TEST_F(IndexTest, Limit) {
 }
 TEST_F(IndexTest, Dedup) {
   auto rows1 = R"(
-    int | int 
+    int | int
     1   | 2
     1   | 3
     2   | 2

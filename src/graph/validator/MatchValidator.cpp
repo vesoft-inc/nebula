@@ -16,7 +16,9 @@ MatchValidator::MatchValidator(Sentence *sentence, QueryContext *context)
   matchCtx_ = getContext<MatchAstContext>();
 }
 
-AstContext *MatchValidator::getAstContext() { return matchCtx_.get(); }
+AstContext *MatchValidator::getAstContext() {
+  return matchCtx_.get();
+}
 
 Status MatchValidator::validateImpl() {
   auto *sentence = static_cast<MatchSentence *>(sentence_);
@@ -503,6 +505,10 @@ Status MatchValidator::validateUnwind(const UnwindClause *unwindClause,
   }
   unwindCtx.alias = unwindClause->alias();
   unwindCtx.unwindExpr = unwindClause->expr()->clone();
+  if (ExpressionUtils::hasAny(unwindCtx.unwindExpr, {Expression::Kind::kAggregate})) {
+    return Status::SemanticError("Can't use aggregating expressions in unwind clause, `%s'",
+                                 unwindCtx.unwindExpr->toString().c_str());
+  }
 
   auto labelExprs = ExpressionUtils::collectAll(unwindCtx.unwindExpr, {Expression::Kind::kLabel});
   for (auto *labelExpr : labelExprs) {
@@ -531,7 +537,7 @@ StatusOr<Expression *> MatchValidator::makeEdgeSubFilter(MapExpression *map) con
   auto foldStatus = ExpressionUtils::foldConstantExpr(items[0].second);
   NG_RETURN_IF_ERROR(foldStatus);
   auto foldExpr = foldStatus.value();
-  if (!ExpressionUtils::isEvaluableExpr(foldExpr)) {
+  if (!ExpressionUtils::isEvaluableExpr(foldExpr, qctx_)) {
     return Status::SemanticError("Props must be evaluable: `%s'",
                                  items[0].second->toString().c_str());
   }
@@ -542,7 +548,7 @@ StatusOr<Expression *> MatchValidator::makeEdgeSubFilter(MapExpression *map) con
     foldStatus = ExpressionUtils::foldConstantExpr(items[i].second);
     NG_RETURN_IF_ERROR(foldStatus);
     foldExpr = foldStatus.value();
-    if (!ExpressionUtils::isEvaluableExpr(foldExpr)) {
+    if (!ExpressionUtils::isEvaluableExpr(foldExpr, qctx_)) {
       return Status::SemanticError("Props must be evaluable: `%s'",
                                    items[i].second->toString().c_str());
     }
@@ -574,7 +580,7 @@ StatusOr<Expression *> MatchValidator::makeNodeSubFilter(MapExpression *map,
   auto foldStatus = ExpressionUtils::foldConstantExpr(items[0].second);
   NG_RETURN_IF_ERROR(foldStatus);
   auto foldExpr = foldStatus.value();
-  if (!ExpressionUtils::isEvaluableExpr(foldExpr)) {
+  if (!ExpressionUtils::isEvaluableExpr(foldExpr, qctx_)) {
     return Status::SemanticError("Props must be evaluable: `%s'",
                                  items[0].second->toString().c_str());
   }
@@ -585,7 +591,7 @@ StatusOr<Expression *> MatchValidator::makeNodeSubFilter(MapExpression *map,
     foldStatus = ExpressionUtils::foldConstantExpr(items[i].second);
     NG_RETURN_IF_ERROR(foldStatus);
     foldExpr = foldStatus.value();
-    if (!ExpressionUtils::isEvaluableExpr(foldExpr)) {
+    if (!ExpressionUtils::isEvaluableExpr(foldExpr, qctx_)) {
       return Status::SemanticError("Props must be evaluable: `%s'",
                                    items[i].second->toString().c_str());
     }
@@ -642,11 +648,10 @@ Status MatchValidator::validatePagination(const Expression *skipExpr,
   int64_t skip = 0;
   int64_t limit = std::numeric_limits<int64_t>::max();
   if (skipExpr != nullptr) {
-    if (!ExpressionUtils::isEvaluableExpr(skipExpr)) {
+    if (!ExpressionUtils::isEvaluableExpr(skipExpr, qctx_)) {
       return Status::SemanticError("SKIP should be instantly evaluable");
     }
-    QueryExpressionContext ctx;
-    auto value = const_cast<Expression *>(skipExpr)->eval(ctx);
+    auto value = const_cast<Expression *>(skipExpr)->eval(QueryExpressionContext(qctx_->ectx())());
     if (!value.isInt()) {
       return Status::SemanticError("SKIP should be of type integer");
     }
@@ -657,11 +662,10 @@ Status MatchValidator::validatePagination(const Expression *skipExpr,
   }
 
   if (limitExpr != nullptr) {
-    if (!ExpressionUtils::isEvaluableExpr(limitExpr)) {
+    if (!ExpressionUtils::isEvaluableExpr(limitExpr, qctx_)) {
       return Status::SemanticError("SKIP should be instantly evaluable");
     }
-    QueryExpressionContext ctx;
-    auto value = const_cast<Expression *>(limitExpr)->eval(ctx);
+    auto value = const_cast<Expression *>(limitExpr)->eval(QueryExpressionContext(qctx_->ectx())());
     if (!value.isInt()) {
       return Status::SemanticError("LIMIT should be of type integer");
     }
@@ -693,7 +697,9 @@ Status MatchValidator::validateOrderBy(const OrderFactors *factors,
     }
 
     for (auto &factor : factors->factors()) {
-      if (factor->expr()->kind() != Expression::Kind::kLabel) {
+      auto factorExpr = factor->expr();
+      if (ExpressionUtils::isEvaluableExpr(factorExpr, qctx_)) continue;
+      if (factorExpr->kind() != Expression::Kind::kLabel) {
         return Status::SemanticError("Only column name can be used as sort item");
       }
       auto &name = static_cast<const LabelExpression *>(factor->expr())->name();
@@ -742,7 +748,7 @@ Status MatchValidator::validateGroup(YieldClauseContext &yieldCtx) const {
     if (colExpr->kind() == Expression::Kind::kAggregate) {
       auto *aggExpr = static_cast<AggregateExpression *>(colExpr);
       NG_RETURN_IF_ERROR(ExpressionUtils::checkAggExpr(aggExpr));
-    } else if (!ExpressionUtils::isEvaluableExpr(colExpr)) {
+    } else if (!ExpressionUtils::isEvaluableExpr(colExpr, qctx_)) {
       yieldCtx.groupKeys_.emplace_back(colExpr);
     }
 

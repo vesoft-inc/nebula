@@ -26,6 +26,8 @@ project("Nebula Graph" C CXX)
 option(ENABLE_PACK_ONE "Whether to package into one" ON)
 option(ENABLE_VERBOSE_BISON "Enable Bison to report state" OFF)
 option(ENABLE_PACKAGE_TAR "Enable package artifacts to tar." OFF)
+option(ENABLE_CREATE_GIT_HOOKS "Enable create git hooks." ON)
+option(ENABLE_INCLUDE_WHAT_YOU_USE "Enable include-what-you-use find  nouse include files" OFF)
 
 add_definitions(-DNEBULA_HOME=${CMAKE_SOURCE_DIR})
 
@@ -44,6 +46,7 @@ include(SanitizerConfig)
 include(GitHooksConfig)
 include(GitInfoConfig)
 include(NebulaCustomTargets)
+include(IncludeWhatYouUse)
 
 add_custom_target(
   clang-format
@@ -79,6 +82,7 @@ macro(nebula_add_library name type)
         # hbase_thrift_generator
         parser_target
         wkt_parser_target
+        datetime_parser_target
     )
 endmacro()
 

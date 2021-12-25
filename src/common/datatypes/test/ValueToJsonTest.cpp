@@ -136,7 +136,7 @@ TEST(ValueToJson, list) {
                            Time(13, 30, 15, 0),                       // time
                            DateTime(2021, 12, 21, 13, 30, 15, 0)}));  // datetime
   dynamic expectedListJsonObj = dynamic::array(
-      2, 2.33, true, "str", "2021-12-21", "13:30:15.000000Z", "2021-12-21T13:30:15.0Z");
+      2, 2.33, true, "str", "2021-12-21", "13:30:15.000000000Z", "2021-12-21T13:30:15.000000000Z");
   ASSERT_EQ(expectedListJsonObj, list1.toJson());
 
   dynamic expectedListMetaObj = dynamic::array(nullptr,
@@ -158,7 +158,7 @@ TEST(ValueToJson, Set) {
                         Time(13, 30, 15, 0),                       // time
                         DateTime(2021, 12, 21, 13, 30, 15, 0)}));  // datetime
   dynamic expectedSetJsonObj = dynamic::array(
-      2, 2.33, true, "str", "2021-12-21", "13:30:15.000000Z", "2021-12-21T13:30:15.0Z");
+      2, 2.33, true, "str", "2021-12-21", "13:30:15.000000000Z", "2021-12-21T13:30:15.000000000Z");
   // The underlying data structure is unordered_set, so sort before the comparison
   auto actualJson = set.toJson();
   std::sort(actualJson.begin(), actualJson.end());
@@ -179,7 +179,7 @@ TEST(ValueToJson, map) {
                         {"key7", DateTime(2021, 12, 21, 13, 30, 15, 0)}}));  // datetime
   dynamic expectedMapJsonObj =
       dynamic::object("key1", 2)("key2", 2.33)("key3", true)("key4", "str")("key5", "2021-12-21")(
-          "key6", "13:30:15.000000Z")("key7", "2021-12-21T13:30:15.0Z");
+          "key6", "13:30:15.000000000Z")("key7", "2021-12-21T13:30:15.000000000Z");
   ASSERT_EQ(expectedMapJsonObj, map.toJson());
   // Skip meta json comparison since nested dynamic objects cannot be sorted. i.g. dynamic::object
   // inside dynamic::array
@@ -194,18 +194,23 @@ TEST(ValueToJson, dataset) {
                              Date(2021, 12, 21),   // date
                              Time(13, 30, 15, 0),  // time
                              DateTime(2021, 12, 21, 13, 30, 15, 0)}));
-  dynamic expectedDatasetJsonObj = dynamic::array(dynamic::object(
-      "row",
-      dynamic::array(
-          2, 2.33, true, "str", "2021-12-21", "13:30:15.000000Z", "2021-12-21T13:30:15.0Z"))(
-      "meta",
-      dynamic::array(nullptr,
-                     nullptr,
-                     nullptr,
-                     nullptr,
-                     dynamic::object("type", "date"),
-                     dynamic::object("type", "time"),
-                     dynamic::object("type", "datetime"))));
+  dynamic expectedDatasetJsonObj =
+      dynamic::array(dynamic::object("row",
+                                     dynamic::array(2,
+                                                    2.33,
+                                                    true,
+                                                    "str",
+                                                    "2021-12-21",
+                                                    "13:30:15.000000000Z",
+                                                    "2021-12-21T13:30:15.000000000Z"))(
+          "meta",
+          dynamic::array(nullptr,
+                         nullptr,
+                         nullptr,
+                         nullptr,
+                         dynamic::object("type", "date"),
+                         dynamic::object("type", "time"),
+                         dynamic::object("type", "datetime"))));
   ASSERT_EQ(expectedDatasetJsonObj, dataset.toJson());
 }
 

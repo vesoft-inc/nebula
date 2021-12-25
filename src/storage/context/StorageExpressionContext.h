@@ -72,10 +72,14 @@ class StorageExpressionContext final : public ExpressionContext {
   }
 
   // Get the specified property from the input, such as $-.prop_name
-  const Value& getInputProp(const std::string&) const override { return Value::kNullValue; }
+  const Value& getInputProp(const std::string&) const override {
+    return Value::kNullValue;
+  }
 
   // Get the value by column index
-  Value getColumn(int32_t) const override { return Value::kNullValue; }
+  Value getColumn(int32_t) const override {
+    return Value::kNullValue;
+  }
 
   // Get the specified property from the tag, such as tag.prop_name
   Value getTagProp(const std::string& tagName, const std::string& prop) const override;
@@ -87,11 +91,17 @@ class StorageExpressionContext final : public ExpressionContext {
   // such as $^.tagName.prop_name
   Value getSrcProp(const std::string& tagName, const std::string& prop) const override;
 
-  size_t vIdLen() const { return vIdLen_; }
+  size_t vIdLen() const {
+    return vIdLen_;
+  }
 
-  bool hasNullableCol() const { return hasNullableCol_; }
+  bool hasNullableCol() const {
+    return hasNullableCol_;
+  }
 
-  const std::vector<meta::cpp2::ColumnDef>& indexCols() const { return fields_; }
+  const std::vector<meta::cpp2::ColumnDef>& indexCols() const {
+    return fields_;
+  }
 
   void setVar(const std::string& name, Value val) override {
     valueMap_[name].emplace_back(std::move(val));
@@ -102,10 +112,14 @@ class StorageExpressionContext final : public ExpressionContext {
     LOG(FATAL) << "Unimplemented";
   }
 
-  Value getEdge() const override { LOG(FATAL) << "Unimplemented"; }
+  Value getEdge() const override {
+    LOG(FATAL) << "Unimplemented";
+  }
 
   // index key
-  void reset(const std::string& key) { key_ = key; }
+  void reset(const std::string& key) {
+    key_ = key;
+  }
 
   // isEdge_ set in ctor
   void reset(RowReader* reader, const std::string& key) {

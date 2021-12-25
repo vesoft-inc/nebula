@@ -7,6 +7,8 @@
 
 #include <thrift/lib/cpp/concurrency/ThreadManager.h>
 
+#include <boost/filesystem.hpp>
+
 #include "clients/storage/InternalStorageClient.h"
 #include "common/hdfs/HdfsCommandHelper.h"
 #include "common/meta/ServerBasedIndexManager.h"
@@ -54,7 +56,9 @@ StorageServer::StorageServer(HostAddr localHost,
       walPath_(std::move(walPath)),
       listenerPath_(std::move(listenerPath)) {}
 
-StorageServer::~StorageServer() { stop(); }
+StorageServer::~StorageServer() {
+  stop();
+}
 
 std::unique_ptr<kvstore::KVStore> StorageServer::getStoreInstance() {
   kvstore::KVOptions options;
@@ -145,7 +149,7 @@ int32_t StorageServer::getAdminStoreSeqId() {
 bool StorageServer::start() {
   ioThreadPool_ = std::make_shared<folly::IOThreadPoolExecutor>(FLAGS_num_io_threads);
   workers_ = apache::thrift::concurrency::PriorityThreadManager::newPriorityThreadManager(
-      FLAGS_num_worker_threads, true /*stats*/);
+      FLAGS_num_worker_threads);
   workers_->setNamePrefix("executor");
   workers_->start();
 
@@ -160,6 +164,8 @@ bool StorageServer::start() {
     options.role_ = nebula::meta::cpp2::HostRole::LISTENER;
   }
   options.gitInfoSHA_ = gitInfoSha();
+  options.rootPath_ = boost::filesystem::current_path().string();
+  options.dataPaths_ = dataPaths_;
 
   metaClient_ = std::make_unique<meta::MetaClient>(ioThreadPool_, metaAddrs_, options);
   if (!metaClient_->waitForMetadReady()) {
@@ -305,13 +311,38 @@ bool StorageServer::start() {
       internalStorageSvcStatus_.load() != STATUS_RUNNING) {
     return false;
   }
+  {
+    std::lock_guard<std::mutex> lkStop(muStop_);
+    if (serverStatus_ != STATUS_UNINITIALIZED) {
+      // stop() called during start()
+      return false;
+    }
+    serverStatus_ = STATUS_RUNNING;
+  }
   return true;
 }
 
 void StorageServer::waitUntilStop() {
+  {
+    std::unique_lock<std::mutex> lkStop(muStop_);
+    while (serverStatus_ == STATUS_RUNNING) {
+      cvStop_.wait(lkStop);
+    }
+  }
+
+  this->stop();
+
   adminThread_->join();
   storageThread_->join();
   internalStorageThread_->join();
+}
+
+void StorageServer::notifyStop() {
+  std::unique_lock<std::mutex> lkStop(muStop_);
+  if (serverStatus_ == STATUS_RUNNING) {
+    serverStatus_ = STATUS_STOPPED;
+    cvStop_.notify_one();
+  }
 }
 
 void StorageServer::stop() {

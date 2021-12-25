@@ -96,9 +96,13 @@ class ConsistUtil final {
 
   static void reverseEdgeKeyInplace(cpp2::EdgeKey& edgeKey);
 
-  static std::string insertIdentifier() noexcept { return "a"; }
+  static std::string insertIdentifier() noexcept {
+    return "a";
+  }
 
-  static std::string updateIdentifier() noexcept { return "u"; }
+  static std::string updateIdentifier() noexcept {
+    return "u";
+  }
 
   static std::pair<int64_t, nebula::cpp2::ErrorCode> versionOfUpdateReq(
       StorageEnv* env, const cpp2::UpdateEdgeRequest& req);

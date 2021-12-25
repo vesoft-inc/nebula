@@ -41,9 +41,13 @@ static Expression* genNextTraverseStart(ObjectPool* pool, const EdgeInfo& edge) 
   return FunctionCallExpression::make(pool, "none_direct_dst", args);
 }
 
-static Expression* genVertexFilter(const NodeInfo& node) { return node.filter; }
+static Expression* genVertexFilter(const NodeInfo& node) {
+  return node.filter;
+}
 
-static Expression* genEdgeFilter(const EdgeInfo& edge) { return edge.filter; }
+static Expression* genEdgeFilter(const EdgeInfo& edge) {
+  return edge.filter;
+}
 
 static StatusOr<std::unique_ptr<std::vector<VertexProp>>> genVertexProps(const NodeInfo& node,
                                                                          QueryContext* qctx,
@@ -76,23 +80,23 @@ static std::unique_ptr<std::vector<storage::cpp2::EdgeProp>> genEdgeProps(const 
       }
       case Direction::BOTH: {
         EdgeProp edgeProp;
-        edgeProp.set_type(-edgeType);
+        edgeProp.type_ref() = -edgeType;
         std::vector<std::string> props{kSrc, kType, kRank, kDst};
         for (std::size_t i = 0; i < edgeSchema->getNumFields(); ++i) {
           props.emplace_back(edgeSchema->getFieldName(i));
         }
-        edgeProp.set_props(std::move(props));
+        edgeProp.props_ref() = std::move(props);
         edgeProps->emplace_back(std::move(edgeProp));
         break;
       }
     }
     EdgeProp edgeProp;
-    edgeProp.set_type(edgeType);
+    edgeProp.type_ref() = edgeType;
     std::vector<std::string> props{kSrc, kType, kRank, kDst};
     for (std::size_t i = 0; i < edgeSchema->getNumFields(); ++i) {
       props.emplace_back(edgeSchema->getFieldName(i));
     }
-    edgeProp.set_props(std::move(props));
+    edgeProp.props_ref() = std::move(props);
     edgeProps->emplace_back(std::move(edgeProp));
   }
   return edgeProps;

@@ -45,17 +45,29 @@ class Executor : private cpp::NonCopyable, private cpp::NonMovable {
 
   Status checkMemoryWatermark();
 
-  QueryContext *qctx() const { return qctx_; }
+  QueryContext *qctx() const {
+    return qctx_;
+  }
 
-  int64_t id() const { return id_; }
+  int64_t id() const {
+    return id_;
+  }
 
-  const std::string &name() const { return name_; }
+  const std::string &name() const {
+    return name_;
+  }
 
-  const PlanNode *node() const { return node_; }
+  const PlanNode *node() const {
+    return node_;
+  }
 
-  const std::set<Executor *> &depends() const { return depends_; }
+  const std::set<Executor *> &depends() const {
+    return depends_;
+  }
 
-  const std::set<Executor *> &successors() const { return successors_; }
+  const std::set<Executor *> &successors() const {
+    return successors_;
+  }
 
   Executor *dependsOn(Executor *dep) {
     depends_.emplace(dep);

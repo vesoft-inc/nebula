@@ -17,7 +17,7 @@ Feature: Truncated string index
       create tag index p1 on person(name(3));
       """
     Then the execution should be successful
-    And wait 4 seconds
+    And wait 6 seconds
     When executing query:
       """
       insert vertex person(name) values "1":("abc1"),"2":("abc2");

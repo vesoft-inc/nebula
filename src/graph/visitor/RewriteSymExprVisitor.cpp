@@ -51,9 +51,13 @@ void RewriteSymExprVisitor::visit(LabelAttributeExpression *expr) {
   }
 }
 
-void RewriteSymExprVisitor::visit(ArithmeticExpression *expr) { visitBinaryExpr(expr); }
+void RewriteSymExprVisitor::visit(ArithmeticExpression *expr) {
+  visitBinaryExpr(expr);
+}
 
-void RewriteSymExprVisitor::visit(RelationalExpression *expr) { visitBinaryExpr(expr); }
+void RewriteSymExprVisitor::visit(RelationalExpression *expr) {
+  visitBinaryExpr(expr);
+}
 
 void RewriteSymExprVisitor::visit(SubscriptExpression *expr) {
   UNUSED(expr);

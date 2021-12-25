@@ -18,11 +18,13 @@ using folly::stringPrintf;
 namespace nebula {
 namespace graph {
 
-int64_t Explore::limit() const {
-  QueryExpressionContext ctx;
-  DCHECK(ExpressionUtils::isEvaluableExpr(limit_));
-  return DCHECK_NOTNULL(limit_)->eval(ctx).getInt();
+int64_t Explore::limit(QueryContext* qctx) const {
+  DCHECK(ExpressionUtils::isEvaluableExpr(limit_, qctx));
+  return DCHECK_NOTNULL(limit_)
+      ->eval(QueryExpressionContext(qctx ? qctx->ectx() : nullptr)())
+      .getInt();
 }
+
 std::unique_ptr<PlanNodeDescription> Explore::explain() const {
   auto desc = SingleInputNode::explain();
   addDescription("space", folly::to<std::string>(space_), desc.get());
@@ -194,6 +196,64 @@ void IndexScan::cloneMembers(const IndexScan& g) {
   isEmptyResultSet_ = g.isEmptyResultSet();
 }
 
+std::unique_ptr<PlanNodeDescription> ScanVertices::explain() const {
+  auto desc = Explore::explain();
+  addDescription("props", props_ ? folly::toJson(util::toJson(*props_)) : "", desc.get());
+  addDescription("exprs", exprs_ ? folly::toJson(util::toJson(*exprs_)) : "", desc.get());
+  return desc;
+}
+
+PlanNode* ScanVertices::clone() const {
+  auto* newGV = ScanVertices::make(qctx_, nullptr, space_);
+  newGV->cloneMembers(*this);
+  return newGV;
+}
+
+void ScanVertices::cloneMembers(const ScanVertices& gv) {
+  Explore::cloneMembers(gv);
+
+  if (gv.props_) {
+    auto vertexProps = *gv.props_;
+    auto vertexPropsPtr = std::make_unique<decltype(vertexProps)>(std::move(vertexProps));
+    setVertexProps(std::move(vertexPropsPtr));
+  }
+
+  if (gv.exprs_) {
+    auto exprs = *gv.exprs_;
+    auto exprsPtr = std::make_unique<decltype(exprs)>(std::move(exprs));
+    setExprs(std::move(exprsPtr));
+  }
+}
+
+std::unique_ptr<PlanNodeDescription> ScanEdges::explain() const {
+  auto desc = Explore::explain();
+  addDescription("props", props_ ? folly::toJson(util::toJson(*props_)) : "", desc.get());
+  addDescription("exprs", exprs_ ? folly::toJson(util::toJson(*exprs_)) : "", desc.get());
+  return desc;
+}
+
+PlanNode* ScanEdges::clone() const {
+  auto* newGE = ScanEdges::make(qctx_, nullptr, space_);
+  newGE->cloneMembers(*this);
+  return newGE;
+}
+
+void ScanEdges::cloneMembers(const ScanEdges& ge) {
+  Explore::cloneMembers(ge);
+
+  if (ge.props_) {
+    auto edgeProps = *ge.props_;
+    auto edgePropsPtr = std::make_unique<decltype(edgeProps)>(std::move(edgeProps));
+    setEdgeProps(std::move(edgePropsPtr));
+  }
+
+  if (ge.exprs_) {
+    auto exprs = *ge.exprs_;
+    auto exprsPtr = std::make_unique<decltype(exprs)>(std::move(exprs));
+    setExprs(std::move(exprsPtr));
+  }
+}
+
 Filter::Filter(QueryContext* qctx, PlanNode* input, Expression* condition, bool needStableFilter)
     : SingleInputNode(qctx, Kind::kFilter, input) {
   condition_ = condition;
@@ -221,7 +281,9 @@ void Filter::cloneMembers(const Filter& f) {
   needStableFilter_ = f.needStableFilter();
 }
 
-void SetOp::cloneMembers(const SetOp& s) { BinaryInputNode::cloneMembers(s); }
+void SetOp::cloneMembers(const SetOp& s) {
+  BinaryInputNode::cloneMembers(s);
+}
 
 PlanNode* Union::clone() const {
   auto* newUnion = Union::make(qctx_, nullptr, nullptr);
@@ -229,7 +291,9 @@ PlanNode* Union::clone() const {
   return newUnion;
 }
 
-void Union::cloneMembers(const Union& f) { SetOp::cloneMembers(f); }
+void Union::cloneMembers(const Union& f) {
+  SetOp::cloneMembers(f);
+}
 
 PlanNode* Intersect::clone() const {
   auto* newIntersect = Intersect::make(qctx_, nullptr, nullptr);
@@ -237,7 +301,9 @@ PlanNode* Intersect::clone() const {
   return newIntersect;
 }
 
-void Intersect::cloneMembers(const Intersect& f) { SetOp::cloneMembers(f); }
+void Intersect::cloneMembers(const Intersect& f) {
+  SetOp::cloneMembers(f);
+}
 
 PlanNode* Minus::clone() const {
   auto* newMinus = Minus::make(qctx_, nullptr, nullptr);
@@ -245,7 +311,9 @@ PlanNode* Minus::clone() const {
   return newMinus;
 }
 
-void Minus::cloneMembers(const Minus& f) { SetOp::cloneMembers(f); }
+void Minus::cloneMembers(const Minus& f) {
+  SetOp::cloneMembers(f);
+}
 
 Project::Project(QueryContext* qctx, PlanNode* input, YieldColumns* cols)
     : SingleInputNode(qctx, Kind::kProject, input), cols_(cols) {
@@ -325,16 +393,16 @@ void Sort::cloneMembers(const Sort& p) {
 }
 
 // Get constant count value
-int64_t Limit::count() const {
+int64_t Limit::count(QueryContext* qctx) const {
   if (count_ == nullptr) {
     return -1;
   }
-  DCHECK(ExpressionUtils::isEvaluableExpr(count_));
-  QueryExpressionContext ctx;
-  auto s = count_->eval(ctx).getInt();
+  DCHECK(ExpressionUtils::isEvaluableExpr(count_, qctx));
+  auto s = count_->eval(QueryExpressionContext(qctx ? qctx->ectx() : nullptr)()).getInt();
   DCHECK_GE(s, 0);
   return s;
 }
+
 std::unique_ptr<PlanNodeDescription> Limit::explain() const {
   auto desc = SingleInputNode::explain();
   addDescription("offset", folly::to<std::string>(offset_), desc.get());
@@ -454,7 +522,9 @@ PlanNode* SwitchSpace::clone() const {
   return newSs;
 }
 
-void SwitchSpace::cloneMembers(const SwitchSpace& l) { SingleInputNode::cloneMembers(l); }
+void SwitchSpace::cloneMembers(const SwitchSpace& l) {
+  SingleInputNode::cloneMembers(l);
+}
 
 Dedup::Dedup(QueryContext* qctx, PlanNode* input) : SingleInputNode(qctx, Kind::kDedup, input) {
   copyInputColNames(input);
@@ -466,7 +536,9 @@ PlanNode* Dedup::clone() const {
   return newDedup;
 }
 
-void Dedup::cloneMembers(const Dedup& l) { SingleInputNode::cloneMembers(l); }
+void Dedup::cloneMembers(const Dedup& l) {
+  SingleInputNode::cloneMembers(l);
+}
 
 std::unique_ptr<PlanNodeDescription> DataCollect::explain() const {
   auto desc = VariableDependencyNode::explain();
@@ -575,7 +647,9 @@ PlanNode* LeftJoin::clone() const {
   return newLeftJoin;
 }
 
-void LeftJoin::cloneMembers(const LeftJoin& l) { Join::cloneMembers(l); }
+void LeftJoin::cloneMembers(const LeftJoin& l) {
+  Join::cloneMembers(l);
+}
 
 std::unique_ptr<PlanNodeDescription> InnerJoin::explain() const {
   auto desc = Join::explain();
@@ -589,7 +663,9 @@ PlanNode* InnerJoin::clone() const {
   return newInnerJoin;
 }
 
-void InnerJoin::cloneMembers(const InnerJoin& l) { Join::cloneMembers(l); }
+void InnerJoin::cloneMembers(const InnerJoin& l) {
+  Join::cloneMembers(l);
+}
 
 std::unique_ptr<PlanNodeDescription> Assign::explain() const {
   auto desc = SingleDependencyNode::explain();
@@ -664,7 +740,11 @@ AppendVertices* AppendVertices::clone() const {
 void AppendVertices::cloneMembers(const AppendVertices& a) {
   GetVertices::cloneMembers(a);
 
-  setVertexFilter(a.vFilter_->clone());
+  if (a.vFilter_ != nullptr) {
+    setVertexFilter(a.vFilter_->clone());
+  } else {
+    setVertexFilter(nullptr);
+  }
 }
 
 std::unique_ptr<PlanNodeDescription> AppendVertices::explain() const {

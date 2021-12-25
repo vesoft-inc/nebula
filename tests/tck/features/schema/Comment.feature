@@ -15,15 +15,15 @@ Feature: Schema Comment
       SHOW CREATE SPACE <space_name>;
       """
     Then the result should be, in any order:
-      | Space          | Create Space                                                                                                                                                                                        |
-      | "<space_name>" | "CREATE SPACE `<space_name>` (partition_num = 100, replica_factor = 1, charset = utf8, collate = utf8_bin, vid_type = FIXED_STRING(8), atomic_edge = false) ON default comment = '<space_comment>'" |
+      | Space          | Create Space                                                                                                                                                                                             |
+      | "<space_name>" | "CREATE SPACE `<space_name>` (partition_num = 100, replica_factor = 1, charset = utf8, collate = utf8_bin, vid_type = FIXED_STRING(8), atomic_edge = false) ON default_zone comment = '<space_comment>'" |
     When executing query:
       """
       DESC SPACE <space_name>;
       """
     Then the result should be, in any order:
-      | ID    | Name           | Partition Number | Replica Factor | Charset | Collate    | Vid Type          | Atomic Edge | Group     | Comment           |
-      | /\d+/ | "<space_name>" | 100              | 1              | "utf8"  | "utf8_bin" | "FIXED_STRING(8)" | false       | "default" | "<space_comment>" |
+      | ID    | Name           | Partition Number | Replica Factor | Charset | Collate    | Vid Type          | Atomic Edge | Zones          | Comment           |
+      | /\d+/ | "<space_name>" | 100              | 1              | "utf8"  | "utf8_bin" | "FIXED_STRING(8)" | false       | "default_zone" | "<space_comment>" |
     When executing query:
       """
       DROP SPACE <space_name>;
@@ -47,15 +47,15 @@ Feature: Schema Comment
       SHOW CREATE SPACE test_comment_not_set;
       """
     Then the result should be, in any order:
-      | Space                  | Create Space                                                                                                                                                                    |
-      | "test_comment_not_set" | "CREATE SPACE `test_comment_not_set` (partition_num = 100, replica_factor = 1, charset = utf8, collate = utf8_bin, vid_type = FIXED_STRING(8), atomic_edge = false) ON default" |
+      | Space                  | Create Space                                                                                                                                                                         |
+      | "test_comment_not_set" | "CREATE SPACE `test_comment_not_set` (partition_num = 100, replica_factor = 1, charset = utf8, collate = utf8_bin, vid_type = FIXED_STRING(8), atomic_edge = false) ON default_zone" |
     When executing query:
       """
       DESC SPACE test_comment_not_set;
       """
     Then the result should be, in any order:
-      | ID    | Name                   | Partition Number | Replica Factor | Charset | Collate    | Vid Type          | Atomic Edge | Group     | Comment |
-      | /\d+/ | "test_comment_not_set" | 100              | 1              | "utf8"  | "utf8_bin" | "FIXED_STRING(8)" | false       | "default" | EMPTY   |
+      | ID    | Name                   | Partition Number | Replica Factor | Charset | Collate    | Vid Type          | Atomic Edge | Zones          | Comment |
+      | /\d+/ | "test_comment_not_set" | 100              | 1              | "utf8"  | "utf8_bin" | "FIXED_STRING(8)" | false       | "default_zone" | EMPTY   |
     When executing query:
       """
       DROP SPACE test_comment_not_set;
@@ -74,15 +74,15 @@ Feature: Schema Comment
       SHOW CREATE SPACE test_comment_empty;
       """
     Then the result should be, in any order:
-      | Space                | Create Space                                                                                                                                                                               |
-      | "test_comment_empty" | "CREATE SPACE `test_comment_empty` (partition_num = 100, replica_factor = 1, charset = utf8, collate = utf8_bin, vid_type = FIXED_STRING(8), atomic_edge = false) ON default comment = ''" |
+      | Space                | Create Space                                                                                                                                                                                    |
+      | "test_comment_empty" | "CREATE SPACE `test_comment_empty` (partition_num = 100, replica_factor = 1, charset = utf8, collate = utf8_bin, vid_type = FIXED_STRING(8), atomic_edge = false) ON default_zone comment = ''" |
     When executing query:
       """
       DESC SPACE test_comment_empty;
       """
     Then the result should be, in any order:
-      | ID    | Name                 | Partition Number | Replica Factor | Charset | Collate    | Vid Type          | Atomic Edge | Group     | Comment |
-      | /\d+/ | "test_comment_empty" | 100              | 1              | "utf8"  | "utf8_bin" | "FIXED_STRING(8)" | false       | "default" | ""      |
+      | ID    | Name                 | Partition Number | Replica Factor | Charset | Collate    | Vid Type          | Atomic Edge | Zones          | Comment |
+      | /\d+/ | "test_comment_empty" | 100              | 1              | "utf8"  | "utf8_bin" | "FIXED_STRING(8)" | false       | "default_zone" | ""      |
     When executing query:
       """
       DROP SPACE test_comment_empty;
@@ -148,7 +148,7 @@ Feature: Schema Comment
     When executing query:
       """
       CREATE tag index test_comment_tag_index ON test_comment_tag(name(8))
-      comment = 'The tag index of person name.';
+      comment 'The tag index of person name.';
       """
     Then the execution should be successful
     When executing query:
@@ -156,8 +156,8 @@ Feature: Schema Comment
       SHOW CREATE TAG INDEX test_comment_tag_index;
       """
     Then the result should be, in any order:
-      | Tag Index Name           | Create Tag Index                                                                                                             |
-      | "test_comment_tag_index" | 'CREATE TAG INDEX `test_comment_tag_index` ON `test_comment_tag` (\n `name`(8)\n) comment = "The tag index of person name."' |
+      | Tag Index Name           | Create Tag Index                                                                                                           |
+      | "test_comment_tag_index" | 'CREATE TAG INDEX `test_comment_tag_index` ON `test_comment_tag` (\n `name`(8)\n) comment "The tag index of person name."' |
     # edge
     When executing query:
       """
@@ -212,7 +212,7 @@ Feature: Schema Comment
     When executing query:
       """
       CREATE edge index test_comment_edge_index ON test_comment_edge(name(8))
-      comment = 'The edge index of person name.';
+      comment 'The edge index of person name.';
       """
     Then the execution should be successful
     When executing query:
@@ -220,8 +220,8 @@ Feature: Schema Comment
       SHOW CREATE EDGE INDEX test_comment_edge_index;
       """
     Then the result should be, in any order:
-      | Edge Index Name           | Create Edge Index                                                                                                                |
-      | "test_comment_edge_index" | 'CREATE EDGE INDEX `test_comment_edge_index` ON `test_comment_edge` (\n `name`(8)\n) comment = "The edge index of person name."' |
+      | Edge Index Name           | Create Edge Index                                                                                                              |
+      | "test_comment_edge_index" | 'CREATE EDGE INDEX `test_comment_edge_index` ON `test_comment_edge` (\n `name`(8)\n) comment "The edge index of person name."' |
 
     Examples:
       | tag_of_person_comment            | tag_of_person_comment_modified            | edge_of_person_comment            | edge_of_person_comment_modified            |

@@ -127,7 +127,9 @@ void StorageHttpDownloadHandler::onUpgrade(UpgradeProtocol) noexcept {
   // Do nothing
 }
 
-void StorageHttpDownloadHandler::requestComplete() noexcept { delete this; }
+void StorageHttpDownloadHandler::requestComplete() noexcept {
+  delete this;
+}
 
 void StorageHttpDownloadHandler::onError(ProxygenError error) noexcept {
   LOG(ERROR) << "Web Service StorageHttpDownloadHandler got error: "

@@ -62,7 +62,7 @@ TEST_F(ThreeRaftTest, LeaderCrashReboot) {
   waitUntilLeaderElected(copies_, leader_);
 
   LOG(INFO) << "=====> Now all copy rejoin, should not disrupt leader";
-  rebootOneCopy(services_, copies_, allHosts_, idx);
+  rebootOneCopy(services_, copies_, allHosts_, (idx + 1) % copies_.size());
   sleep(FLAGS_raft_heartbeat_interval_secs);
   waitUntilAllHasLeader(copies_);
   checkLeadership(copies_, leader_);

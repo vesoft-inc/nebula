@@ -19,9 +19,9 @@ Status CreateSpaceValidator::validateImpl() {
   auto sentence = static_cast<CreateSpaceSentence *>(sentence_);
   ifNotExist_ = sentence->isIfNotExist();
   auto status = Status::OK();
-  spaceDesc_.set_space_name(std::move(*(sentence->spaceName())));
-  if (sentence->groupName()) {
-    spaceDesc_.set_group_name(std::move(*(sentence->groupName())));
+  spaceDesc_.space_name_ref() = std::move(*(sentence->spaceName()));
+  if (sentence->zoneNames()) {
+    spaceDesc_.zone_names_ref() = sentence->zoneNames()->zoneNames();
   }
   StatusOr<std::string> retStatusOr;
   std::string result;
@@ -33,14 +33,14 @@ Status CreateSpaceValidator::validateImpl() {
   for (auto &item : sentence->getOpts()) {
     switch (item->getOptType()) {
       case SpaceOptItem::PARTITION_NUM: {
-        spaceDesc_.set_partition_num(item->getPartitionNum());
+        spaceDesc_.partition_num_ref() = item->getPartitionNum();
         if (*spaceDesc_.partition_num_ref() <= 0) {
           return Status::SemanticError("Partition_num value should be greater than zero");
         }
         break;
       }
       case SpaceOptItem::REPLICA_FACTOR: {
-        spaceDesc_.set_replica_factor(item->getReplicaFactor());
+        spaceDesc_.replica_factor_ref() = item->getReplicaFactor();
         if (*spaceDesc_.replica_factor_ref() <= 0) {
           return Status::SemanticError("Replica_factor value should be greater than zero");
         }
@@ -55,10 +55,10 @@ Status CreateSpaceValidator::validateImpl() {
              << apache::thrift::util::enumNameSafe(typeDef.type);
           return Status::SemanticError(ss.str());
         }
-        spaceDesc_.vid_type_ref().value().set_type(typeDef.type);
+        spaceDesc_.vid_type_ref().value().type_ref() = typeDef.type;
 
         if (typeDef.type == nebula::cpp2::PropertyType::INT64) {
-          spaceDesc_.vid_type_ref().value().set_type_length(8);
+          spaceDesc_.vid_type_ref().value().type_length_ref() = 8;
         } else {
           if (!typeDef.type_length_ref().has_value()) {
             return Status::SemanticError("type length is not set for fixed string type");
@@ -67,7 +67,7 @@ Status CreateSpaceValidator::validateImpl() {
             return Status::SemanticError("Vid size should be a positive number: %d",
                                          *typeDef.type_length_ref());
           }
-          spaceDesc_.vid_type_ref().value().set_type_length(*typeDef.type_length_ref());
+          spaceDesc_.vid_type_ref().value().type_length_ref() = *typeDef.type_length_ref();
         }
         break;
       }
@@ -75,21 +75,21 @@ Status CreateSpaceValidator::validateImpl() {
         result = item->getCharset();
         folly::toLowerAscii(result);
         NG_RETURN_IF_ERROR(charsetInfo->isSupportCharset(result));
-        spaceDesc_.set_charset_name(std::move(result));
+        spaceDesc_.charset_name_ref() = std::move(result);
         break;
       }
       case SpaceOptItem::COLLATE: {
         result = item->getCollate();
         folly::toLowerAscii(result);
         NG_RETURN_IF_ERROR(charsetInfo->isSupportCollate(result));
-        spaceDesc_.set_collate_name(std::move(result));
+        spaceDesc_.collate_name_ref() = std::move(result);
         break;
       }
       case SpaceOptItem::ATOMIC_EDGE: {
         if (item->getAtomicEdge()) {
-          spaceDesc_.set_isolation_level(meta::cpp2::IsolationLevel::TOSS);
+          spaceDesc_.isolation_level_ref() = meta::cpp2::IsolationLevel::TOSS;
         } else {
-          spaceDesc_.set_isolation_level(meta::cpp2::IsolationLevel::DEFAULT);
+          spaceDesc_.isolation_level_ref() = meta::cpp2::IsolationLevel::DEFAULT;
         }
         break;
       }
@@ -100,11 +100,7 @@ Status CreateSpaceValidator::validateImpl() {
   }
   // check comment
   if (sentence->comment() != nullptr) {
-    spaceDesc_.set_comment(*sentence->comment());
-  }
-
-  if (sentence->groupName() != nullptr && *sentence->groupName() == "default") {
-    return Status::SemanticError("Group default conflict");
+    spaceDesc_.comment_ref() = *sentence->comment();
   }
 
   // if charset and collate are not specified, set default value
@@ -116,13 +112,13 @@ Status CreateSpaceValidator::validateImpl() {
     if (!retStatusOr.ok()) {
       return retStatusOr.status();
     }
-    spaceDesc_.set_collate_name(std::move(retStatusOr.value()));
+    spaceDesc_.collate_name_ref() = std::move(retStatusOr.value());
   } else if (!(*spaceDesc_.collate_name_ref()).empty()) {
     retStatusOr = charsetInfo->getCharsetbyCollation(*spaceDesc_.collate_name_ref());
     if (!retStatusOr.ok()) {
       return retStatusOr.status();
     }
-    spaceDesc_.set_charset_name(std::move(retStatusOr.value()));
+    spaceDesc_.charset_name_ref() = std::move(retStatusOr.value());
   }
 
   if ((*spaceDesc_.charset_name_ref()).empty() && (*spaceDesc_.collate_name_ref()).empty()) {
@@ -134,8 +130,8 @@ Status CreateSpaceValidator::validateImpl() {
     folly::toLowerAscii(collateName);
     NG_RETURN_IF_ERROR(charsetInfo->isSupportCollate(collateName));
 
-    spaceDesc_.set_charset_name(std::move(charsetName));
-    spaceDesc_.set_collate_name(std::move(collateName));
+    spaceDesc_.charset_name_ref() = std::move(charsetName);
+    spaceDesc_.collate_name_ref() = std::move(collateName);
 
     NG_RETURN_IF_ERROR(charsetInfo->charsetAndCollateMatch(*spaceDesc_.charset_name_ref(),
                                                            *spaceDesc_.collate_name_ref()));
@@ -167,7 +163,9 @@ Status CreateSpaceAsValidator::toPlan() {
   return Status::OK();
 }
 
-Status DescSpaceValidator::validateImpl() { return Status::OK(); }
+Status DescSpaceValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status DescSpaceValidator::toPlan() {
   auto sentence = static_cast<DescribeSpaceSentence *>(sentence_);
@@ -177,7 +175,9 @@ Status DescSpaceValidator::toPlan() {
   return Status::OK();
 }
 
-Status ShowSpacesValidator::validateImpl() { return Status::OK(); }
+Status ShowSpacesValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status ShowSpacesValidator::toPlan() {
   auto *doNode = ShowSpaces::make(qctx_, nullptr);
@@ -186,7 +186,9 @@ Status ShowSpacesValidator::toPlan() {
   return Status::OK();
 }
 
-Status DropSpaceValidator::validateImpl() { return Status::OK(); }
+Status DropSpaceValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status DropSpaceValidator::toPlan() {
   auto sentence = static_cast<DropSpaceSentence *>(sentence_);
@@ -196,7 +198,9 @@ Status DropSpaceValidator::toPlan() {
   return Status::OK();
 }
 
-Status ShowCreateSpaceValidator::validateImpl() { return Status::OK(); }
+Status ShowCreateSpaceValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status ShowCreateSpaceValidator::checkPermission() {
   auto sentence = static_cast<ShowCreateSpaceSentence *>(sentence_);
@@ -215,7 +219,9 @@ Status ShowCreateSpaceValidator::toPlan() {
   return Status::OK();
 }
 
-Status CreateSnapshotValidator::validateImpl() { return Status::OK(); }
+Status CreateSnapshotValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status CreateSnapshotValidator::toPlan() {
   auto *doNode = CreateSnapshot::make(qctx_, nullptr);
@@ -224,7 +230,9 @@ Status CreateSnapshotValidator::toPlan() {
   return Status::OK();
 }
 
-Status DropSnapshotValidator::validateImpl() { return Status::OK(); }
+Status DropSnapshotValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status DropSnapshotValidator::toPlan() {
   auto sentence = static_cast<DropSnapshotSentence *>(sentence_);
@@ -234,7 +242,9 @@ Status DropSnapshotValidator::toPlan() {
   return Status::OK();
 }
 
-Status ShowSnapshotsValidator::validateImpl() { return Status::OK(); }
+Status ShowSnapshotsValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status ShowSnapshotsValidator::toPlan() {
   auto *doNode = ShowSnapshots::make(qctx_, nullptr);
@@ -276,7 +286,9 @@ Status AddListenerValidator::toPlan() {
   return Status::OK();
 }
 
-Status RemoveListenerValidator::validateImpl() { return Status::OK(); }
+Status RemoveListenerValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status RemoveListenerValidator::toPlan() {
   auto sentence = static_cast<RemoveListenerSentence *>(sentence_);
@@ -286,7 +298,9 @@ Status RemoveListenerValidator::toPlan() {
   return Status::OK();
 }
 
-Status ShowListenerValidator::validateImpl() { return Status::OK(); }
+Status ShowListenerValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status ShowListenerValidator::toPlan() {
   auto *doNode = ShowListener::make(qctx_, nullptr);
@@ -295,7 +309,53 @@ Status ShowListenerValidator::toPlan() {
   return Status::OK();
 }
 
-Status ShowHostsValidator::validateImpl() { return Status::OK(); }
+Status AddHostsValidator::validateImpl() {
+  return Status::OK();
+}
+
+Status AddHostsValidator::toPlan() {
+  auto sentence = static_cast<AddHostsSentence *>(sentence_);
+  auto hosts = sentence->hosts()->hosts();
+  if (hosts.empty()) {
+    return Status::SemanticError("Host is empty");
+  }
+
+  auto it = std::unique(hosts.begin(), hosts.end());
+  if (it != hosts.end()) {
+    return Status::SemanticError("Host have duplicated");
+  }
+
+  auto *addHost = AddHosts::make(qctx_, nullptr, hosts);
+  root_ = addHost;
+  tail_ = root_;
+  return Status::OK();
+}
+
+Status DropHostsValidator::validateImpl() {
+  return Status::OK();
+}
+
+Status DropHostsValidator::toPlan() {
+  auto sentence = static_cast<DropHostsSentence *>(sentence_);
+  auto hosts = sentence->hosts()->hosts();
+  if (hosts.empty()) {
+    return Status::SemanticError("Host is empty");
+  }
+
+  auto it = std::unique(hosts.begin(), hosts.end());
+  if (it != hosts.end()) {
+    return Status::SemanticError("Host have duplicated");
+  }
+
+  auto *dropHost = DropHosts::make(qctx_, nullptr, hosts);
+  root_ = dropHost;
+  tail_ = root_;
+  return Status::OK();
+}
+
+Status ShowHostsValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status ShowHostsValidator::toPlan() {
   auto sentence = static_cast<ShowHostsSentence *>(sentence_);
@@ -305,7 +365,9 @@ Status ShowHostsValidator::toPlan() {
   return Status::OK();
 }
 
-Status ShowMetaLeaderValidator::validateImpl() { return Status::OK(); }
+Status ShowMetaLeaderValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status ShowMetaLeaderValidator::toPlan() {
   auto *node = ShowMetaLeaderNode::make(qctx_, nullptr);
@@ -314,7 +376,9 @@ Status ShowMetaLeaderValidator::toPlan() {
   return Status::OK();
 }
 
-Status ShowPartsValidator::validateImpl() { return Status::OK(); }
+Status ShowPartsValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status ShowPartsValidator::toPlan() {
   auto sentence = static_cast<ShowPartsSentence *>(sentence_);
@@ -328,7 +392,9 @@ Status ShowPartsValidator::toPlan() {
   return Status::OK();
 }
 
-Status ShowCharsetValidator::validateImpl() { return Status::OK(); }
+Status ShowCharsetValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status ShowCharsetValidator::toPlan() {
   auto *node = ShowCharset::make(qctx_, nullptr);
@@ -337,7 +403,9 @@ Status ShowCharsetValidator::toPlan() {
   return Status::OK();
 }
 
-Status ShowCollationValidator::validateImpl() { return Status::OK(); }
+Status ShowCollationValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status ShowCollationValidator::toPlan() {
   auto *node = ShowCollation::make(qctx_, nullptr);
@@ -346,7 +414,9 @@ Status ShowCollationValidator::toPlan() {
   return Status::OK();
 }
 
-Status ShowConfigsValidator::validateImpl() { return Status::OK(); }
+Status ShowConfigsValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status ShowConfigsValidator::toPlan() {
   auto sentence = static_cast<ShowConfigsSentence *>(sentence_);
@@ -437,7 +507,9 @@ Status GetConfigValidator::toPlan() {
   return Status::OK();
 }
 
-Status ShowStatusValidator::validateImpl() { return Status::OK(); }
+Status ShowStatusValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status ShowStatusValidator::toPlan() {
   auto *node = ShowStats::make(qctx_, nullptr);
@@ -446,7 +518,9 @@ Status ShowStatusValidator::toPlan() {
   return Status::OK();
 }
 
-Status ShowTSClientsValidator::validateImpl() { return Status::OK(); }
+Status ShowTSClientsValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status ShowTSClientsValidator::toPlan() {
   auto *doNode = ShowTSClients::make(qctx_, nullptr);
@@ -455,7 +529,9 @@ Status ShowTSClientsValidator::toPlan() {
   return Status::OK();
 }
 
-Status SignInTSServiceValidator::validateImpl() { return Status::OK(); }
+Status SignInTSServiceValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status SignInTSServiceValidator::toPlan() {
   auto sentence = static_cast<SignInTextServiceSentence *>(sentence_);
@@ -469,7 +545,9 @@ Status SignInTSServiceValidator::toPlan() {
   return Status::OK();
 }
 
-Status SignOutTSServiceValidator::validateImpl() { return Status::OK(); }
+Status SignOutTSServiceValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status SignOutTSServiceValidator::toPlan() {
   auto *node = SignOutTSService::make(qctx_, nullptr);

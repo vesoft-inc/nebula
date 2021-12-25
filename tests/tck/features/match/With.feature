@@ -158,6 +158,24 @@ Feature: With clause
       RETURN *
       """
     Then a SemanticError should be raised at runtime: RETURN * is not allowed when there are no variables in scope
+    When executing query:
+      """
+      MATCH (:player {name:"Chris Paul"})-[:serve]->(b)
+      WITH collect(b) as teams
+      RETURN teams
+      """
+    Then the result should be, in any order, with relax comparison:
+      | teams                                                                                                          |
+      | [("Rockets" :team{name: "Rockets"}), ("Clippers" :team{name: "Clippers"}), ("Hornets" :team{name: "Hornets"})] |
+    When executing query:
+      """
+      MATCH (:player {name:"Chris Paul"})-[e:like]->(b)
+      WITH avg(e.likeness) as avg, max(e.likeness) as max
+      RETURN avg, max
+      """
+    Then the result should be, in any order, with relax comparison:
+      | avg  | max |
+      | 90.0 | 90  |
 
   @skip
   Scenario: with match return

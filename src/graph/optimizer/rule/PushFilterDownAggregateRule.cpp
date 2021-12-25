@@ -22,7 +22,9 @@ namespace opt {
 std::unique_ptr<OptRule> PushFilterDownAggregateRule::kInstance =
     std::unique_ptr<PushFilterDownAggregateRule>(new PushFilterDownAggregateRule());
 
-PushFilterDownAggregateRule::PushFilterDownAggregateRule() { RuleSet::QueryRules().addRule(this); }
+PushFilterDownAggregateRule::PushFilterDownAggregateRule() {
+  RuleSet::QueryRules().addRule(this);
+}
 
 const Pattern& PushFilterDownAggregateRule::pattern() const {
   static Pattern pattern = Pattern::create(graph::PlanNode::Kind::kFilter,
@@ -109,7 +111,9 @@ StatusOr<OptRule::TransformResult> PushFilterDownAggregateRule::transform(
   return result;
 }
 
-std::string PushFilterDownAggregateRule::toString() const { return "PushFilterDownAggregateRule"; }
+std::string PushFilterDownAggregateRule::toString() const {
+  return "PushFilterDownAggregateRule";
+}
 
 }  // namespace opt
 }  // namespace nebula

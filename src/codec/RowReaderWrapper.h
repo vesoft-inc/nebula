@@ -143,21 +143,37 @@ class RowReaderWrapper : public RowReader {
 
   static void getVersions(const folly::StringPiece& row, SchemaVer& schemaVer, int32_t& readerVer);
 
-  operator bool() const noexcept { return operator!=(nullptr); }
+  operator bool() const noexcept {
+    return operator!=(nullptr);
+  }
 
-  bool operator==(std::nullptr_t) const noexcept { return !operator!=(nullptr); }
+  bool operator==(std::nullptr_t) const noexcept {
+    return !operator!=(nullptr);
+  }
 
-  bool operator!=(std::nullptr_t) const noexcept { return currReader_ != nullptr; }
+  bool operator!=(std::nullptr_t) const noexcept {
+    return currReader_ != nullptr;
+  }
 
-  RowReaderWrapper* operator->() const noexcept { return get(); }
+  RowReaderWrapper* operator->() const noexcept {
+    return get();
+  }
 
-  RowReaderWrapper* get() const noexcept { return const_cast<RowReaderWrapper*>(this); }
+  RowReaderWrapper* get() const noexcept {
+    return const_cast<RowReaderWrapper*>(this);
+  }
 
-  RowReaderWrapper* get() noexcept { return this; }
+  RowReaderWrapper* get() noexcept {
+    return this;
+  }
 
-  RowReaderWrapper& operator*() const noexcept { return *get(); }
+  RowReaderWrapper& operator*() const noexcept {
+    return *get();
+  }
 
-  void reset() noexcept { currReader_ = nullptr; }
+  void reset() noexcept {
+    currReader_ = nullptr;
+  }
 
  private:
   RowReaderV1 readerV1_;

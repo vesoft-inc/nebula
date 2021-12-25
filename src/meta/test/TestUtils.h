@@ -38,7 +38,6 @@ using mock::MockCluster;
 using nebula::cpp2::PropertyType;
 
 using ZoneInfo = std::unordered_map<std::string, std::vector<HostAddr>>;
-using GroupInfo = std::unordered_map<std::string, std::vector<std::string>>;
 
 ObjectPool metaTestPool;
 auto metaPool = &metaTestPool;
@@ -51,18 +50,18 @@ class TestUtils {
                                    bool isNull = true,
                                    int16_t typeLen = 0) {
     cpp2::ColumnDef column;
-    column.set_name(folly::stringPrintf("col_%d", index));
+    column.name_ref() = folly::stringPrintf("col_%d", index);
     if (!defaultValue.empty()) {
       const auto& defaultExpr = *ConstantExpression::make(metaPool, defaultValue);
-      column.set_default_value(Expression::encode(defaultExpr));
+      column.default_value_ref() = Expression::encode(defaultExpr);
     }
-    column.set_nullable(isNull);
+    column.nullable_ref() = isNull;
     cpp2::ColumnTypeDef typeDef;
-    typeDef.set_type(type);
+    typeDef.type_ref() = type;
     if (type == PropertyType::FIXED_STRING) {
-      typeDef.set_type_length(typeLen);
+      typeDef.type_length_ref() = typeLen;
     }
-    column.set_type(std::move(typeDef));
+    column.type_ref() = std::move(typeDef);
     return column;
   }
 
@@ -84,11 +83,22 @@ class TestUtils {
   static int32_t createSomeHosts(kvstore::KVStore* kv,
                                  std::vector<HostAddr> hosts = {
                                      {"0", 0}, {"1", 1}, {"2", 2}, {"3", 3}}) {
+    // Record machine information
+    std::vector<kvstore::KV> machines;
+    for (auto& host : hosts) {
+      VLOG(3) << "Registe machine: " << host;
+      machines.emplace_back(nebula::MetaKeyUtils::machineKey(host.host, host.port), "");
+    }
+    folly::Baton<true, std::atomic> baton;
+    kv->asyncMultiPut(
+        kDefaultSpaceId, kDefaultPartId, std::move(machines), [&](auto) { baton.post(); });
+    baton.wait();
+
     std::vector<HostAddr> thriftHosts(hosts);
     registerHB(kv, hosts);
     {
       cpp2::ListHostsReq req;
-      req.set_type(cpp2::ListHostType::STORAGE);
+      req.type_ref() = cpp2::ListHostType::STORAGE;
 
       auto* processor = ListHostsProcessor::instance(kv);
       auto f = processor->getFuture();
@@ -102,23 +112,13 @@ class TestUtils {
     return hosts.size();
   }
 
-  static void assembleGroupAndZone(kvstore::KVStore* kv,
-                                   const ZoneInfo& zoneInfo,
-                                   const GroupInfo& groupInfo) {
+  static void assembleZone(kvstore::KVStore* kv, const ZoneInfo& zoneInfo) {
     std::vector<kvstore::KV> data;
     int32_t id = 10;
     for (auto iter = zoneInfo.begin(); iter != zoneInfo.end(); iter++) {
       data.emplace_back(MetaKeyUtils::indexZoneKey(iter->first),
                         std::string(reinterpret_cast<const char*>(&id), sizeof(ZoneID)));
       data.emplace_back(MetaKeyUtils::zoneKey(iter->first), MetaKeyUtils::zoneVal(iter->second));
-      id += 1;
-    }
-
-    id = 100;
-    for (auto iter = groupInfo.begin(); iter != groupInfo.end(); iter++) {
-      data.emplace_back(MetaKeyUtils::indexGroupKey(iter->first),
-                        std::string(reinterpret_cast<const char*>(&id), sizeof(GroupID)));
-      data.emplace_back(MetaKeyUtils::groupKey(iter->first), MetaKeyUtils::groupVal(iter->second));
       id += 1;
     }
 
@@ -171,46 +171,6 @@ class TestUtils {
     return ret;
   }
 
-  static bool modifyZoneAboutGroup(kvstore::KVStore* kv,
-                                   const std::string& groupName,
-                                   const std::string& zoneName,
-                                   bool isAdd) {
-    auto groupKey = MetaKeyUtils::groupKey(groupName);
-    std::string groupValue;
-    auto retCode = kv->get(kDefaultSpaceId, kDefaultPartId, groupKey, &groupValue);
-    if (retCode != nebula::cpp2::ErrorCode::SUCCEEDED) {
-      LOG(ERROR) << "Get group " << groupName << " failed";
-      return false;
-    }
-
-    auto zoneNames = MetaKeyUtils::parseZoneNames(std::move(groupValue));
-    auto iter = std::find(zoneNames.begin(), zoneNames.end(), zoneName);
-    if (isAdd) {
-      if (iter != zoneNames.end()) {
-        LOG(ERROR) << "Zone " << zoneName << " have existed";
-        return false;
-      }
-      zoneNames.emplace_back(std::move(zoneName));
-    } else {
-      if (iter == zoneNames.end()) {
-        LOG(ERROR) << "Zone " << zoneName << " not existed";
-        return false;
-      }
-      zoneNames.erase(iter);
-    }
-
-    std::vector<kvstore::KV> data;
-    data.emplace_back(std::move(groupKey), MetaKeyUtils::groupVal(zoneNames));
-
-    folly::Baton<true, std::atomic> baton;
-    kv->asyncMultiPut(0, 0, std::move(data), [&](nebula::cpp2::ErrorCode code) {
-      ASSERT_EQ(nebula::cpp2::ErrorCode::SUCCEEDED, code);
-      baton.post();
-    });
-    baton.wait();
-    return true;
-  }
-
   static void assembleSpace(kvstore::KVStore* kv,
                             GraphSpaceID id,
                             int32_t partitionNum,
@@ -218,9 +178,9 @@ class TestUtils {
                             int32_t totalHost = 1) {
     // mock the part distribution like create space
     cpp2::SpaceDesc properties;
-    properties.set_space_name("test_space");
-    properties.set_partition_num(partitionNum);
-    properties.set_replica_factor(replica);
+    properties.space_name_ref() = "test_space";
+    properties.partition_num_ref() = partitionNum;
+    properties.replica_factor_ref() = replica;
     auto spaceVal = MetaKeyUtils::spaceVal(properties);
     std::vector<nebula::kvstore::KV> data;
     data.emplace_back(MetaKeyUtils::indexSpaceKey("test_space"),
@@ -261,15 +221,15 @@ class TestUtils {
       cpp2::Schema srcsch;
       for (auto i = 0; i < 2; i++) {
         cpp2::ColumnDef column;
-        column.set_name(folly::stringPrintf("tag_%d_col_%d", tagId, i));
+        column.name_ref() = folly::stringPrintf("tag_%d_col_%d", tagId, i);
         if (i < 1) {
-          column.type.set_type(PropertyType::INT64);
+          column.type.type_ref() = PropertyType::INT64;
         } else {
-          column.type.set_type(PropertyType::FIXED_STRING);
-          column.type.set_type_length(MAX_INDEX_TYPE_LENGTH);
+          column.type.type_ref() = PropertyType::FIXED_STRING;
+          column.type.type_length_ref() = MAX_INDEX_TYPE_LENGTH;
         }
         if (nullable) {
-          column.set_nullable(nullable);
+          column.nullable_ref() = nullable;
         }
         (*srcsch.columns_ref()).emplace_back(std::move(column));
       }
@@ -295,13 +255,13 @@ class TestUtils {
                            std::vector<cpp2::ColumnDef> columns) {
     GraphSpaceID space = 1;
     cpp2::IndexItem item;
-    item.set_index_id(indexID);
-    item.set_index_name(indexName);
+    item.index_id_ref() = indexID;
+    item.index_name_ref() = indexName;
     nebula::cpp2::SchemaID schemaID;
-    schemaID.set_tag_id(tagID);
-    item.set_schema_id(std::move(schemaID));
-    item.set_schema_name(std::move(tagName));
-    item.set_fields(std::move(columns));
+    schemaID.tag_id_ref() = tagID;
+    item.schema_id_ref() = std::move(schemaID);
+    item.schema_name_ref() = std::move(tagName);
+    item.fields_ref() = std::move(columns);
 
     std::vector<nebula::kvstore::KV> data;
     data.emplace_back(MetaKeyUtils::indexIndexKey(space, indexName),
@@ -323,13 +283,13 @@ class TestUtils {
                             std::vector<cpp2::ColumnDef> columns) {
     GraphSpaceID space = 1;
     cpp2::IndexItem item;
-    item.set_index_id(indexID);
-    item.set_index_name(indexName);
+    item.index_id_ref() = indexID;
+    item.index_name_ref() = indexName;
     nebula::cpp2::SchemaID schemaID;
-    schemaID.set_edge_type(edgeType);
-    item.set_schema_id(std::move(schemaID));
-    item.set_schema_name(std::move(edgeName));
-    item.set_fields(std::move(columns));
+    schemaID.edge_type_ref() = edgeType;
+    item.schema_id_ref() = std::move(schemaID);
+    item.schema_name_ref() = std::move(edgeName);
+    item.fields_ref() = std::move(columns);
 
     std::vector<nebula::kvstore::KV> data;
     data.emplace_back(MetaKeyUtils::indexIndexKey(space, indexName),
@@ -358,13 +318,13 @@ class TestUtils {
         cpp2::ColumnDef column;
         column.name = folly::stringPrintf("edge_%d_col_%d", edgeType, i);
         if (i < 1) {
-          column.type.set_type(PropertyType::INT64);
+          column.type.type_ref() = PropertyType::INT64;
         } else {
-          column.type.set_type(PropertyType::FIXED_STRING);
-          column.type.set_type_length(MAX_INDEX_TYPE_LENGTH);
+          column.type.type_ref() = PropertyType::FIXED_STRING;
+          column.type.type_length_ref() = MAX_INDEX_TYPE_LENGTH;
         }
         if (nullable) {
-          column.set_nullable(nullable);
+          column.nullable_ref() = nullable;
         }
         (*srcsch.columns_ref()).emplace_back(std::move(column));
       }
@@ -399,7 +359,7 @@ class TestUtils {
     cols.emplace_back(TestUtils::columnDef(9, PropertyType::TIMESTAMP, Value(123456), true));
     cols.emplace_back(TestUtils::columnDef(10, PropertyType::DATE, Value(Date()), true));
     cols.emplace_back(TestUtils::columnDef(11, PropertyType::DATETIME, Value(DateTime()), true));
-    schema.set_columns(std::move(cols));
+    schema.columns_ref() = std::move(cols);
     return schema;
   }
 

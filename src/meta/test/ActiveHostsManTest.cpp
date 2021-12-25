@@ -8,6 +8,7 @@
 
 #include "common/base/Base.h"
 #include "common/fs/TempDir.h"
+#include "common/utils/MetaKeyUtils.h"
 #include "meta/ActiveHostsMan.h"
 #include "meta/test/TestUtils.h"
 
@@ -20,7 +21,7 @@ namespace meta {
 TEST(ActiveHostsManTest, EncodeDecodeHostInfoV2) {
   auto now = time::WallClock::fastNowInMilliSec();
   auto role = cpp2::HostRole::STORAGE;
-  std::string strGitInfoSHA = gitInfoSha();
+  auto strGitInfoSHA = gitInfoSha();
   {
     HostInfo hostInfo(now, role, strGitInfoSHA);
     auto encodeHostInfo = HostInfo::encodeV2(hostInfo);
@@ -52,6 +53,15 @@ TEST(ActiveHostsManTest, NormalTest) {
   fs::TempDir rootPath("/tmp/ActiveHostsManTest.XXXXXX");
   FLAGS_heartbeat_interval_secs = 1;
   std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
+
+  std::vector<kvstore::KV> data;
+  data.emplace_back(nebula::MetaKeyUtils::machineKey("0", 0), "");
+  data.emplace_back(nebula::MetaKeyUtils::machineKey("0", 1), "");
+  data.emplace_back(nebula::MetaKeyUtils::machineKey("0", 2), "");
+  folly::Baton<true, std::atomic> baton;
+  kv->asyncMultiPut(kDefaultSpaceId, kDefaultPartId, std::move(data), [&](auto) { baton.post(); });
+  baton.wait();
+
   auto now = time::WallClock::fastNowInMilliSec();
   HostInfo info1(now, cpp2::HostRole::STORAGE, gitInfoSha());
   ActiveHostsMan::updateHostInfo(kv.get(), HostAddr("0", 0), info1);
@@ -98,8 +108,16 @@ TEST(ActiveHostsManTest, LeaderTest) {
   fs::TempDir rootPath("/tmp/ActiveHostsManTest.XXXXXX");
   FLAGS_heartbeat_interval_secs = 1;
   std::unique_ptr<kvstore::KVStore> kv(MockCluster::initMetaKV(rootPath.path()));
-  auto now = time::WallClock::fastNowInMilliSec();
 
+  std::vector<kvstore::KV> data;
+  data.emplace_back(nebula::MetaKeyUtils::machineKey("0", 0), "");
+  data.emplace_back(nebula::MetaKeyUtils::machineKey("0", 1), "");
+  data.emplace_back(nebula::MetaKeyUtils::machineKey("0", 2), "");
+  folly::Baton<true, std::atomic> baton;
+  kv->asyncMultiPut(kDefaultSpaceId, kDefaultPartId, std::move(data), [&](auto) { baton.post(); });
+  baton.wait();
+
+  auto now = time::WallClock::fastNowInMilliSec();
   HostInfo hInfo1(now, cpp2::HostRole::STORAGE, gitInfoSha());
   HostInfo hInfo2(now + 2000, cpp2::HostRole::STORAGE, gitInfoSha());
   ActiveHostsMan::updateHostInfo(kv.get(), HostAddr("0", 0), hInfo1);
@@ -111,8 +129,8 @@ TEST(ActiveHostsManTest, LeaderTest) {
 
   auto makePartInfo = [](int partId) {
     cpp2::LeaderInfo part;
-    part.set_part_id(partId);
-    part.set_term(partId * 1024);
+    part.part_id_ref() = partId;
+    part.term_ref() = partId * 1024;
     return part;
   };
 

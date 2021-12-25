@@ -167,6 +167,30 @@ class ShowListenerValidator final : public Validator {
   Status toPlan() override;
 };
 
+class AddHostsValidator final : public Validator {
+ public:
+  AddHostsValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
+    setNoSpaceRequired();
+  }
+
+ private:
+  Status validateImpl() override;
+
+  Status toPlan() override;
+};
+
+class DropHostsValidator final : public Validator {
+ public:
+  DropHostsValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
+    setNoSpaceRequired();
+  }
+
+ private:
+  Status validateImpl() override;
+
+  Status toPlan() override;
+};
+
 class ShowHostsValidator final : public Validator {
  public:
   ShowHostsValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {
@@ -325,7 +349,9 @@ class ShowSessionsValidator final : public Validator {
   }
 
  private:
-  Status validateImpl() override { return Status::OK(); }
+  Status validateImpl() override {
+    return Status::OK();
+  }
 
   Status toPlan() override;
 };
@@ -337,7 +363,9 @@ class GetSessionValidator final : public Validator {
   }
 
  private:
-  Status validateImpl() override { return Status::OK(); }
+  Status validateImpl() override {
+    return Status::OK();
+  }
 
   Status toPlan() override;
 

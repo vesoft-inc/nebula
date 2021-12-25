@@ -41,7 +41,7 @@ GraphStorageServiceHandler::GraphStorageServiceHandler(StorageEnv* env) : env_(e
       LOG(WARNING) << "Unknown value for --reader_handlers_type, using `cpu'";
     }
     using TM = apache::thrift::concurrency::PriorityThreadManager;
-    auto pool = TM::newPriorityThreadManager(FLAGS_reader_handlers, true);
+    auto pool = TM::newPriorityThreadManager(FLAGS_reader_handlers);
     pool->setNamePrefix("reader-pool");
     pool->start();
     readerPool_ = std::move(pool);
@@ -135,13 +135,13 @@ folly::Future<cpp2::LookupIndexResp> GraphStorageServiceHandler::future_lookupIn
   RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::ScanVertexResponse> GraphStorageServiceHandler::future_scanVertex(
+folly::Future<cpp2::ScanResponse> GraphStorageServiceHandler::future_scanVertex(
     const cpp2::ScanVertexRequest& req) {
   auto* processor = ScanVertexProcessor::instance(env_, &kScanVertexCounters, readerPool_.get());
   RETURN_FUTURE(processor);
 }
 
-folly::Future<cpp2::ScanEdgeResponse> GraphStorageServiceHandler::future_scanEdge(
+folly::Future<cpp2::ScanResponse> GraphStorageServiceHandler::future_scanEdge(
     const cpp2::ScanEdgeRequest& req) {
   auto* processor = ScanEdgeProcessor::instance(env_, &kScanEdgeCounters, readerPool_.get());
   RETURN_FUTURE(processor);

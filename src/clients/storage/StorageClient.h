@@ -81,12 +81,14 @@ class StorageClient : public StorageClientBase<cpp2::GraphStorageServiceAsyncCli
       const CommonRequestParam& param,
       std::vector<cpp2::NewVertex> vertices,
       std::unordered_map<TagID, std::vector<std::string>> propNames,
-      bool ifNotExists);
+      bool ifNotExists,
+      bool ignoreExistedIndex);
 
   StorageRpcRespFuture<cpp2::ExecResponse> addEdges(const CommonRequestParam& param,
                                                     std::vector<cpp2::NewEdge> edges,
                                                     std::vector<std::string> propNames,
-                                                    bool ifNotExists);
+                                                    bool ifNotExists,
+                                                    bool ignoreExistedIndex);
 
   StorageRpcRespFuture<cpp2::ExecResponse> deleteEdges(const CommonRequestParam& param,
                                                        std::vector<storage::cpp2::EdgeKey> edges);
@@ -129,12 +131,12 @@ class StorageClient : public StorageClientBase<cpp2::GraphStorageServiceAsyncCli
   StorageRpcRespFuture<cpp2::GetNeighborsResponse> lookupAndTraverse(
       const CommonRequestParam& param, cpp2::IndexSpec indexSpec, cpp2::TraverseSpec traverseSpec);
 
-  StorageRpcRespFuture<cpp2::ScanEdgeResponse> scanEdge(const CommonRequestParam& param,
-                                                        const cpp2::EdgeProp& vertexProp,
-                                                        int64_t limit,
-                                                        const Expression* filter);
+  StorageRpcRespFuture<cpp2::ScanResponse> scanEdge(const CommonRequestParam& param,
+                                                    const std::vector<cpp2::EdgeProp>& vertexProp,
+                                                    int64_t limit,
+                                                    const Expression* filter);
 
-  StorageRpcRespFuture<cpp2::ScanVertexResponse> scanVertex(
+  StorageRpcRespFuture<cpp2::ScanResponse> scanVertex(
       const CommonRequestParam& param,
       const std::vector<cpp2::VertexProp>& vertexProp,
       int64_t limit,

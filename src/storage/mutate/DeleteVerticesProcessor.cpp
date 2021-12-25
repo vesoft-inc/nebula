@@ -9,6 +9,7 @@
 #include "common/utils/NebulaKeyUtils.h"
 #include "common/utils/OperationKeyUtils.h"
 #include "storage/StorageFlags.h"
+#include "storage/stats/StorageStats.h"
 
 namespace nebula {
 namespace storage {
@@ -61,7 +62,7 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
           code = nebula::cpp2::ErrorCode::E_INVALID_VID;
           break;
         }
-
+        keys.emplace_back(NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vid.getStr()));
         auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen_, partId, vid.getStr());
         std::unique_ptr<kvstore::KVIterator> iter;
         code = env_->kvstore_->prefix(spaceId_, partId, prefix, &iter);
@@ -80,6 +81,7 @@ void DeleteVerticesProcessor::process(const cpp2::DeleteVerticesRequest& req) {
         continue;
       }
       doRemove(spaceId_, partId, std::move(keys));
+      stats::StatsManager::addValue(kNumVerticesDeleted, keys.size());
     }
   } else {
     for (auto& pv : partVertices) {
@@ -112,6 +114,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> DeleteVerticesProcessor::deleteVer
   target.reserve(vertices.size());
   std::unique_ptr<kvstore::BatchHolder> batchHolder = std::make_unique<kvstore::BatchHolder>();
   for (auto& vertex : vertices) {
+    batchHolder->remove(NebulaKeyUtils::vertexKey(spaceVidLen_, partId, vertex.getStr()));
     auto prefix = NebulaKeyUtils::tagPrefix(spaceVidLen_, partId, vertex.getStr());
     std::unique_ptr<kvstore::KVIterator> iter;
     auto ret = env_->kvstore_->prefix(spaceId_, partId, prefix, &iter);
@@ -126,7 +129,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> DeleteVerticesProcessor::deleteVer
       auto l = std::make_tuple(spaceId_, partId, tagId, vertex.getStr());
       if (std::find(target.begin(), target.end(), l) == target.end()) {
         if (!env_->verticesML_->try_lock(l)) {
-          LOG(ERROR) << folly::format("The vertex locked : tag {}, vid {}", tagId, vertex.getStr());
+          LOG(ERROR) << folly::sformat("The vertex locked: tag {}, vid {}", tagId, vertex.getStr());
           return nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
         }
         target.emplace_back(std::move(l));
@@ -144,8 +147,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> DeleteVerticesProcessor::deleteVer
               return nebula::cpp2::ErrorCode::E_INVALID_DATA;
             }
           }
-          const auto& cols = index->get_fields();
-          auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(), cols);
+          auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(), index.get());
           if (!valuesRet.ok()) {
             continue;
           }
@@ -170,6 +172,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> DeleteVerticesProcessor::deleteVer
         }
       }
       batchHolder->remove(key.str());
+      stats::StatsManager::addValue(kNumVerticesDeleted);
       iter->next();
     }
   }

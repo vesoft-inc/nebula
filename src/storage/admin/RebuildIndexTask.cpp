@@ -118,10 +118,15 @@ nebula::cpp2::ErrorCode RebuildIndexTask::buildIndexOnOperations(
     GraphSpaceID space, PartitionID part, kvstore::RateLimiter* rateLimiter) {
   if (canceled_) {
     LOG(INFO) << folly::sformat("Rebuild index canceled, space={}, part={}", space, part);
-    return nebula::cpp2::ErrorCode::SUCCEEDED;
+    return nebula::cpp2::ErrorCode::E_USER_CANCEL;
   }
 
   while (true) {
+    if (UNLIKELY(canceled_)) {
+      LOG(INFO) << folly::sformat("Rebuild index canceled, space={}, part={}", space, part);
+      return nebula::cpp2::ErrorCode::E_USER_CANCEL;
+    }
+
     std::unique_ptr<kvstore::KVIterator> operationIter;
     auto operationPrefix = OperationKeyUtils::operationPrefix(part);
     auto operationRet = env_->kvstore_->prefix(space, part, operationPrefix, &operationIter);

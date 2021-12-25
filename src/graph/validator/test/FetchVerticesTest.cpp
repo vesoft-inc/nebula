@@ -32,7 +32,7 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     ASSERT_TRUE(tagIdResult.ok());
     auto tagId = tagIdResult.value();
     storage::cpp2::VertexProp prop;
-    prop.set_tag(tagId);
+    prop.tag_ref() = tagId;
     auto props = std::make_unique<std::vector<storage::cpp2::VertexProp>>();
     props->emplace_back(std::move(prop));
     auto *gv = GetVertices::make(qctx, start, 1, src, std::move(props));
@@ -55,13 +55,13 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     ASSERT_TRUE(tagIdResult.ok());
     auto tagId = tagIdResult.value();
     storage::cpp2::VertexProp personProp;
-    personProp.set_tag(tagId);
+    personProp.tag_ref() = tagId;
     // book
     tagIdResult = schemaMng_->toTagID(1, "book");
     ASSERT_TRUE(tagIdResult.ok());
     tagId = tagIdResult.value();
     storage::cpp2::VertexProp bookProp;
-    bookProp.set_tag(tagId);
+    bookProp.tag_ref() = tagId;
     auto props = std::make_unique<std::vector<storage::cpp2::VertexProp>>();
     props->emplace_back(std::move(personProp));
     props->emplace_back(std::move(bookProp));
@@ -84,14 +84,14 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     ASSERT_TRUE(tagIdResult.ok());
     auto tagId = tagIdResult.value();
     storage::cpp2::VertexProp prop;
-    prop.set_tag(tagId);
-    prop.set_props(std::vector<std::string>{"name", "age"});
+    prop.tag_ref() = tagId;
+    prop.props_ref() = std::vector<std::string>{"name", "age"};
     auto props = std::make_unique<std::vector<storage::cpp2::VertexProp>>();
     props->emplace_back(std::move(prop));
     storage::cpp2::Expr expr1;
-    expr1.set_expr(TagPropertyExpression::make(pool, "person", "name")->encode());
+    expr1.expr_ref() = TagPropertyExpression::make(pool, "person", "name")->encode();
     storage::cpp2::Expr expr2;
-    expr2.set_expr(TagPropertyExpression::make(pool, "person", "age")->encode());
+    expr2.expr_ref() = TagPropertyExpression::make(pool, "person", "age")->encode();
     auto exprs = std::make_unique<std::vector<storage::cpp2::Expr>>();
     exprs->emplace_back(std::move(expr1));
     exprs->emplace_back(std::move(expr2));
@@ -121,24 +121,24 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     ASSERT_TRUE(tagIdResult.ok());
     auto tagId = tagIdResult.value();
     storage::cpp2::VertexProp personProp;
-    personProp.set_tag(tagId);
-    personProp.set_props(std::vector<std::string>{"name", "age"});
+    personProp.tag_ref() = tagId;
+    personProp.props_ref() = std::vector<std::string>{"name", "age"};
     // book
     tagIdResult = schemaMng_->toTagID(1, "book");
     ASSERT_TRUE(tagIdResult.ok());
     tagId = tagIdResult.value();
     storage::cpp2::VertexProp bookProp;
-    bookProp.set_tag(tagId);
-    bookProp.set_props(std::vector<std::string>{"name"});
+    bookProp.tag_ref() = tagId;
+    bookProp.props_ref() = std::vector<std::string>{"name"};
     auto props = std::make_unique<std::vector<storage::cpp2::VertexProp>>();
     props->emplace_back(std::move(personProp));
     props->emplace_back(std::move(bookProp));
     storage::cpp2::Expr expr1;
-    expr1.set_expr(TagPropertyExpression::make(pool, "person", "name")->encode());
+    expr1.expr_ref() = TagPropertyExpression::make(pool, "person", "name")->encode();
     storage::cpp2::Expr expr2;
-    expr2.set_expr(TagPropertyExpression::make(pool, "person", "age")->encode());
+    expr2.expr_ref() = TagPropertyExpression::make(pool, "person", "age")->encode();
     storage::cpp2::Expr expr3;
-    expr3.set_expr(TagPropertyExpression::make(pool, "book", "name")->encode());
+    expr3.expr_ref() = TagPropertyExpression::make(pool, "book", "name")->encode();
     auto exprs = std::make_unique<std::vector<storage::cpp2::Expr>>();
     exprs->emplace_back(std::move(expr1));
     exprs->emplace_back(std::move(expr2));
@@ -168,14 +168,14 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     ASSERT_TRUE(tagIdResult.ok());
     auto tagId = tagIdResult.value();
     storage::cpp2::VertexProp prop;
-    prop.set_tag(tagId);
-    prop.set_props(std::vector<std::string>{"name", "age"});
+    prop.tag_ref() = tagId;
+    prop.props_ref() = std::vector<std::string>{"name", "age"};
     auto props = std::make_unique<std::vector<storage::cpp2::VertexProp>>();
     props->emplace_back(std::move(prop));
     storage::cpp2::Expr expr1;
-    expr1.set_expr(TagPropertyExpression::make(pool, "person", "name")->encode());
+    expr1.expr_ref() = TagPropertyExpression::make(pool, "person", "name")->encode();
     storage::cpp2::Expr expr2;
-    expr2.set_expr(TagPropertyExpression::make(pool, "person", "age")->encode());
+    expr2.expr_ref() = TagPropertyExpression::make(pool, "person", "age")->encode();
     auto exprs = std::make_unique<std::vector<storage::cpp2::Expr>>();
     exprs->emplace_back(std::move(expr1));
     exprs->emplace_back(std::move(expr2));
@@ -208,25 +208,25 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     ASSERT_TRUE(tagIdResult.ok());
     auto tagId = tagIdResult.value();
     storage::cpp2::VertexProp personProp;
-    personProp.set_tag(tagId);
-    personProp.set_props(std::vector<std::string>{"name", "age"});
+    personProp.tag_ref() = tagId;
+    personProp.props_ref() = std::vector<std::string>{"name", "age"};
     // book
     tagIdResult = schemaMng_->toTagID(1, "book");
     ASSERT_TRUE(tagIdResult.ok());
     tagId = tagIdResult.value();
     storage::cpp2::VertexProp bookProp;
-    bookProp.set_tag(tagId);
-    bookProp.set_props(std::vector<std::string>{"name"});
+    bookProp.tag_ref() = tagId;
+    bookProp.props_ref() = std::vector<std::string>{"name"};
     auto props = std::make_unique<std::vector<storage::cpp2::VertexProp>>();
     props->emplace_back(std::move(personProp));
     props->emplace_back(std::move(bookProp));
 
     storage::cpp2::Expr expr1;
-    expr1.set_expr(TagPropertyExpression::make(pool, "person", "name")->encode());
+    expr1.expr_ref() = TagPropertyExpression::make(pool, "person", "name")->encode();
     storage::cpp2::Expr expr2;
-    expr2.set_expr(TagPropertyExpression::make(pool, "book", "name")->encode());
+    expr2.expr_ref() = TagPropertyExpression::make(pool, "book", "name")->encode();
     storage::cpp2::Expr expr3;
-    expr3.set_expr(TagPropertyExpression::make(pool, "person", "age")->encode());
+    expr3.expr_ref() = TagPropertyExpression::make(pool, "person", "age")->encode();
     auto exprs = std::make_unique<std::vector<storage::cpp2::Expr>>();
     exprs->emplace_back(std::move(expr1));
     exprs->emplace_back(std::move(expr2));
@@ -257,16 +257,16 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     ASSERT_TRUE(tagIdResult.ok());
     auto tagId = tagIdResult.value();
     storage::cpp2::VertexProp prop;
-    prop.set_tag(tagId);
-    prop.set_props(std::vector<std::string>{"name", "age"});
+    prop.tag_ref() = tagId;
+    prop.props_ref() = std::vector<std::string>{"name", "age"};
     auto props = std::make_unique<std::vector<storage::cpp2::VertexProp>>();
     props->emplace_back(std::move(prop));
     storage::cpp2::Expr expr1;
-    expr1.set_expr(
+    expr1.expr_ref() =
         ArithmeticExpression::makeAdd(pool,
                                       TagPropertyExpression::make(pool, "person", "name"),
                                       TagPropertyExpression::make(pool, "person", "age"))
-            ->encode());
+            ->encode();
     auto exprs = std::make_unique<std::vector<storage::cpp2::Expr>>();
     exprs->emplace_back(std::move(expr1));
 
@@ -296,25 +296,25 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     ASSERT_TRUE(tagIdResult.ok());
     auto tagId = tagIdResult.value();
     storage::cpp2::VertexProp personProp;
-    personProp.set_tag(tagId);
-    personProp.set_props(std::vector<std::string>{"name"});
+    personProp.tag_ref() = tagId;
+    personProp.props_ref() = std::vector<std::string>{"name"};
     // book
     tagIdResult = schemaMng_->toTagID(1, "book");
     ASSERT_TRUE(tagIdResult.ok());
     tagId = tagIdResult.value();
     storage::cpp2::VertexProp bookProp;
-    bookProp.set_tag(tagId);
-    bookProp.set_props(std::vector<std::string>{"name"});
+    bookProp.tag_ref() = tagId;
+    bookProp.props_ref() = std::vector<std::string>{"name"};
     auto props = std::make_unique<std::vector<storage::cpp2::VertexProp>>();
     props->emplace_back(std::move(personProp));
     props->emplace_back(std::move(bookProp));
 
     storage::cpp2::Expr expr1;
-    expr1.set_expr(
+    expr1.expr_ref() =
         ArithmeticExpression::makeAdd(pool,
                                       TagPropertyExpression::make(pool, "person", "name"),
                                       TagPropertyExpression::make(pool, "book", "name"))
-            ->encode());
+            ->encode();
     auto exprs = std::make_unique<std::vector<storage::cpp2::Expr>>();
     exprs->emplace_back(std::move(expr1));
     auto *gv = GetVertices::make(qctx, start, 1, src, std::move(props), std::move(exprs));
@@ -342,14 +342,14 @@ TEST_F(FetchVerticesValidatorTest, FetchVerticesProp) {
     ASSERT_TRUE(tagIdResult.ok());
     auto tagId = tagIdResult.value();
     storage::cpp2::VertexProp prop;
-    prop.set_tag(tagId);
-    prop.set_props(std::vector<std::string>{"name", "age"});
+    prop.tag_ref() = tagId;
+    prop.props_ref() = std::vector<std::string>{"name", "age"};
     auto props = std::make_unique<std::vector<storage::cpp2::VertexProp>>();
     props->emplace_back(std::move(prop));
     storage::cpp2::Expr expr1;
-    expr1.set_expr(TagPropertyExpression::make(pool, "person", "name")->encode());
+    expr1.expr_ref() = TagPropertyExpression::make(pool, "person", "name")->encode();
     storage::cpp2::Expr expr2;
-    expr2.set_expr(TagPropertyExpression::make(pool, "person", "age")->encode());
+    expr2.expr_ref() = TagPropertyExpression::make(pool, "person", "age")->encode();
     auto exprs = std::make_unique<std::vector<storage::cpp2::Expr>>();
     exprs->emplace_back(std::move(expr1));
     exprs->emplace_back(std::move(expr2));

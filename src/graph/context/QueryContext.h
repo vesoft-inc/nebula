@@ -51,50 +51,94 @@ class QueryContext {
 
   virtual ~QueryContext() = default;
 
-  void setRCtx(RequestContextPtr rctx) { rctx_ = std::move(rctx); }
+  void setRCtx(RequestContextPtr rctx) {
+    rctx_ = std::move(rctx);
+  }
 
-  void setSchemaManager(meta::SchemaManager* sm) { sm_ = sm; }
+  void setSchemaManager(meta::SchemaManager* sm) {
+    sm_ = sm;
+  }
 
-  void setIndexManager(meta::IndexManager* im) { im_ = im; }
+  void setIndexManager(meta::IndexManager* im) {
+    im_ = im;
+  }
 
-  void setStorageClient(storage::StorageClient* storage) { storageClient_ = storage; }
+  void setStorageClient(storage::StorageClient* storage) {
+    storageClient_ = storage;
+  }
 
-  void setMetaClient(meta::MetaClient* metaClient) { metaClient_ = metaClient; }
+  void setMetaClient(meta::MetaClient* metaClient) {
+    metaClient_ = metaClient;
+  }
 
-  void setCharsetInfo(CharsetInfo* charsetInfo) { charsetInfo_ = charsetInfo; }
+  void setCharsetInfo(CharsetInfo* charsetInfo) {
+    charsetInfo_ = charsetInfo;
+  }
 
-  RequestContext<ExecutionResponse>* rctx() const { return rctx_.get(); }
+  RequestContext<ExecutionResponse>* rctx() const {
+    return rctx_.get();
+  }
 
-  ValidateContext* vctx() const { return vctx_.get(); }
+  ValidateContext* vctx() const {
+    return vctx_.get();
+  }
 
-  ExecutionContext* ectx() const { return ectx_.get(); }
+  ExecutionContext* ectx() const {
+    return ectx_.get();
+  }
 
-  ExecutionPlan* plan() const { return ep_.get(); }
+  ExecutionPlan* plan() const {
+    return ep_.get();
+  }
 
-  meta::SchemaManager* schemaMng() const { return sm_; }
+  meta::SchemaManager* schemaMng() const {
+    return sm_;
+  }
 
-  meta::IndexManager* indexMng() const { return im_; }
+  meta::IndexManager* indexMng() const {
+    return im_;
+  }
 
-  storage::StorageClient* getStorageClient() const { return storageClient_; }
+  storage::StorageClient* getStorageClient() const {
+    return storageClient_;
+  }
 
-  meta::MetaClient* getMetaClient() const { return metaClient_; }
+  meta::MetaClient* getMetaClient() const {
+    return metaClient_;
+  }
 
-  CharsetInfo* getCharsetInfo() const { return charsetInfo_; }
+  CharsetInfo* getCharsetInfo() const {
+    return charsetInfo_;
+  }
 
-  ObjectPool* objPool() const { return objPool_.get(); }
+  ObjectPool* objPool() const {
+    return objPool_.get();
+  }
 
-  int64_t genId() const { return idGen_->id(); }
+  int64_t genId() const {
+    return idGen_->id();
+  }
 
-  SymbolTable* symTable() const { return symTable_.get(); }
+  SymbolTable* symTable() const {
+    return symTable_.get();
+  }
 
   void setPartialSuccess() {
     DCHECK(rctx_ != nullptr);
     rctx_->resp().errorCode = ErrorCode::E_PARTIAL_SUCCEEDED;
   }
 
-  void markKilled() { killed_.exchange(true); }
+  void markKilled() {
+    killed_.exchange(true);
+  }
 
-  bool isKilled() const { return killed_.load(); }
+  bool isKilled() const {
+    return killed_.load();
+  }
+
+  bool existParameter(const std::string& param) const {
+    return ectx_->exist(param) && (ectx_->getValue(param).type() != Value::Type::DATASET);
+  }
 
  private:
   void init();

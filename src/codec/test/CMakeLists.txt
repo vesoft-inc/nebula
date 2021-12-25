@@ -22,6 +22,9 @@ set(CODEC_TEST_LIBS
     $<TARGET_OBJECTS:fs_obj>
     $<TARGET_OBJECTS:thread_obj>
     $<TARGET_OBJECTS:stats_obj>
+    $<TARGET_OBJECTS:meta_client_stats_obj>
+    $<TARGET_OBJECTS:storage_client_stats_obj>
+    $<TARGET_OBJECTS:kv_stats_obj>
     $<TARGET_OBJECTS:time_obj>
     $<TARGET_OBJECTS:conf_obj>
     $<TARGET_OBJECTS:meta_obj>
@@ -31,6 +34,7 @@ set(CODEC_TEST_LIBS
     $<TARGET_OBJECTS:wkt_wkb_io_obj>
     $<TARGET_OBJECTS:agg_function_manager_obj>
     $<TARGET_OBJECTS:time_utils_obj>
+    $<TARGET_OBJECTS:datetime_parser_obj>
     $<TARGET_OBJECTS:version_obj>
     $<TARGET_OBJECTS:ssl_obj>
 )

@@ -35,6 +35,8 @@ void VertexExpression::resetFrom(Decoder& decoder) {
   name_ = decoder.readStr();
 }
 
-void VertexExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void VertexExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 }  // namespace nebula

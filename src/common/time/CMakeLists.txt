@@ -16,4 +16,6 @@ nebula_add_library(
     TimeConversion.cpp
 )
 
+nebula_add_subdirectory(parser)
+
 nebula_add_subdirectory(test)

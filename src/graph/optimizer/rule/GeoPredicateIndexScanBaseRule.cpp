@@ -80,10 +80,25 @@ StatusOr<TransformResult> GeoPredicateIndexScanBaseRule::transform(
   DCHECK(secondVal.isGeography());
   const auto& geog = secondVal.getGeography();
 
-  // TODO(jie): Get index params from meta to construct RegionCoverParams
+  auto indexItem = indexItems.back();
+  const auto& fields = indexItem->get_fields();
+  DCHECK_EQ(fields.size(), 1);  // geo field
+  auto& geoField = fields.back();
+  auto& geoColumnTypeDef = geoField.get_type();
+  bool isPointColumn = geoColumnTypeDef.geo_shape_ref().has_value() &&
+                       geoColumnTypeDef.geo_shape_ref().value() == meta::cpp2::GeoShape::POINT;
+
   geo::RegionCoverParams rc;
-  // TODO(jie): Get schema meta to know if it's point only
-  geo::GeoIndex geoIndex(rc, false);
+  const auto* indexParams = indexItem->get_index_params();
+  if (indexParams) {
+    if (indexParams->s2_max_level_ref().has_value()) {
+      rc.maxCellLevel_ = indexParams->s2_max_level_ref().value();
+    }
+    if (indexParams->s2_max_cells_ref().has_value()) {
+      rc.maxCellNum_ = indexParams->s2_max_cells_ref().value();
+    }
+  }
+  geo::GeoIndex geoIndex(rc, isPointColumn);
   std::vector<geo::ScanRange> scanRanges;
   if (geoPredicateName == "st_intersects") {
     scanRanges = geoIndex.intersects(geog);
@@ -102,22 +117,19 @@ StatusOr<TransformResult> GeoPredicateIndexScanBaseRule::transform(
   }
   std::vector<IndexQueryContext> idxCtxs;
   idxCtxs.reserve(scanRanges.size());
-  auto indexItem = indexItems.back();
-  const auto& fields = indexItem->get_fields();
-  DCHECK_EQ(fields.size(), 1);  // geo field
-  auto fieldName = fields.back().get_name();
+  auto fieldName = geoField.get_name();
   for (auto& scanRange : scanRanges) {
     IndexQueryContext ictx;
     auto indexColumnHint = scanRange.toIndexColumnHint();
-    indexColumnHint.set_column_name(fieldName);
-    ictx.set_filter(condition->encode());
-    ictx.set_index_id(indexItem->get_index_id());
-    ictx.set_column_hints({indexColumnHint});
+    indexColumnHint.column_name_ref() = fieldName;
+    ictx.filter_ref() = condition->encode();
+    ictx.index_id_ref() = indexItem->get_index_id();
+    ictx.column_hints_ref() = {indexColumnHint};
     idxCtxs.emplace_back(std::move(ictx));
   }
 
   auto scanNode = IndexScan::make(ctx->qctx(), nullptr);
-  OptimizerUtils::copyIndexScanData(scan, scanNode);
+  OptimizerUtils::copyIndexScanData(scan, scanNode, ctx->qctx());
   scanNode->setIndexQueryContext(std::move(idxCtxs));
   // TODO(jie): geo predicate's calculation is a little heavy,
   // which is not suitable to push down to the storage

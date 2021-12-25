@@ -23,5 +23,17 @@ StatusOr<std::pair<bool, int32_t>> SchemaManager::getSchemaIDByName(GraphSpaceID
   return Status::Error("Schema not exist: %s", schemaName.str().c_str());
 }
 
+StatusOr<std::unordered_map<TagID, std::string>> SchemaManager::getAllTags(GraphSpaceID space) {
+  std::unordered_map<TagID, std::string> tags;
+  auto tagSchemas = getAllLatestVerTagSchema(space);
+  NG_RETURN_IF_ERROR(tagSchemas);
+  for (auto& tagSchema : tagSchemas.value()) {
+    auto tagName = toTagName(space, tagSchema.first);
+    NG_RETURN_IF_ERROR(tagName);
+    tags.emplace(tagSchema.first, tagName.value());
+  }
+  return tags;
+}
+
 }  // namespace meta
 }  // namespace nebula

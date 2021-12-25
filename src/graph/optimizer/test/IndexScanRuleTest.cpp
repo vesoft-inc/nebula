@@ -17,6 +17,8 @@ namespace opt {
 TEST(IndexScanRuleTest, IQCtxTest) {
   auto* inst = std::move(IndexScanRule::kInstance).get();
   auto* instance = static_cast<IndexScanRule*>(inst);
+  auto objPoolPtr = std::make_unique<ObjectPool>();
+  auto* pool = objPoolPtr.get();
   {
     IndexItem index = std::make_unique<meta::cpp2::IndexItem>();
     IndexScanRule::FilterItems items;
@@ -33,12 +35,12 @@ TEST(IndexScanRuleTest, IQCtxTest) {
       std::vector<meta::cpp2::ColumnDef> cols;
       for (int8_t i = 0; i < 5; i++) {
         meta::cpp2::ColumnDef col;
-        col.set_name(folly::stringPrintf("col%d", i));
-        col.type.set_type(PropertyType::INT64);
+        col.name_ref() = folly::stringPrintf("col%d", i);
+        col.type.type_ref() = PropertyType::INT64;
         cols.emplace_back(std::move(col));
       }
-      index->set_fields(std::move(cols));
-      index->set_index_id(1);
+      index->fields_ref() = std::move(cols);
+      index->index_id_ref() = 1;
     }
     // setup FilterItems col0 < 1 and col0 <= 6
     {
@@ -141,13 +143,15 @@ TEST(IndexScanRuleTest, IQCtxTest) {
       items.addItem("col3", RelationalExpression::Kind::kRelGT, Value(3L));
       items.addItem("col4", RelationalExpression::Kind::kRelLT, Value(4L));
 
-      auto ret = instance->appendIQCtx(index, items, iqctx, "col4 < 4");
+      auto* expr = RelationalExpression::makeLT(
+          pool, ConstantExpression::make(pool, "col4"), ConstantExpression::make(pool, 4));
+      auto ret = instance->appendIQCtx(index, items, iqctx, expr);
       ASSERT_TRUE(ret.ok());
 
       ASSERT_EQ(1, iqctx.size());
       ASSERT_EQ(4, iqctx.begin()->get_column_hints().size());
       ASSERT_EQ(1, iqctx.begin()->get_index_id());
-      ASSERT_EQ("col4 < 4", iqctx.begin()->get_filter());
+      ASSERT_EQ("(\"col4\"<4)", Expression::decode(pool, iqctx.begin()->get_filter())->toString());
       const auto& colHints = iqctx.begin()->get_column_hints();
       {
         auto hint = colHints[0];
@@ -184,8 +188,8 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
 
   {
     meta::cpp2::ColumnDef col;
-    col.set_name("col_int");
-    col.type.set_type(PropertyType::INT64);
+    col.name_ref() = "col_int";
+    col.type.type_ref() = PropertyType::INT64;
     {
       std::vector<storage::cpp2::IndexColumnHint> hints;
       // col_int < 2
@@ -283,8 +287,8 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
   }
   {
     meta::cpp2::ColumnDef col;
-    col.set_name("col_bool");
-    col.type.set_type(PropertyType::BOOL);
+    col.name_ref() = "col_bool";
+    col.type.type_ref() = PropertyType::BOOL;
     {
       std::vector<storage::cpp2::IndexColumnHint> hints;
       // col_bool < true
@@ -304,8 +308,8 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
   }
   {
     meta::cpp2::ColumnDef col;
-    col.set_name("col_double");
-    col.type.set_type(PropertyType::DOUBLE);
+    col.name_ref() = "col_double";
+    col.type.type_ref() = PropertyType::DOUBLE;
     {
       std::vector<storage::cpp2::IndexColumnHint> hints;
       // col_double < 1.0
@@ -372,9 +376,9 @@ TEST(IndexScanRuleTest, BoundValueRangeTest) {
   {
     meta::cpp2::ColumnDef col;
     size_t len = 10;
-    col.set_name("col_str");
-    col.type.set_type(PropertyType::STRING);
-    col.type.set_type_length(len);
+    col.name_ref() = "col_str";
+    col.type.type_ref() = PropertyType::STRING;
+    col.type.type_length_ref() = len;
     {
       std::vector<storage::cpp2::IndexColumnHint> hints;
       // col_str < "ccc"
