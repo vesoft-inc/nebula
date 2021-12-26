@@ -81,7 +81,9 @@ PlanNode* Argument::clone() const {
   return newArg;
 }
 
-void Argument::cloneMembers(const Argument& arg) { PlanNode::cloneMembers(arg); }
+void Argument::cloneMembers(const Argument& arg) {
+  PlanNode::cloneMembers(arg);
+}
 
 std::unique_ptr<PlanNodeDescription> Argument::explain() const {
   auto desc = PlanNode::explain();

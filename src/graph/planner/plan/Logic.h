@@ -152,7 +152,9 @@ class Argument final : public PlanNode {
 
   PlanNode* clone() const override;
 
-  const std::string& getAlias() const { return alias_; }
+  const std::string& getAlias() const {
+    return alias_;
+  }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 

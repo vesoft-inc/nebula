@@ -809,7 +809,9 @@ PlanNode* BiLeftJoin::clone() const {
   return newLeftJoin;
 }
 
-void BiLeftJoin::cloneMembers(const BiLeftJoin& l) { BiJoin::cloneMembers(l); }
+void BiLeftJoin::cloneMembers(const BiLeftJoin& l) {
+  BiJoin::cloneMembers(l);
+}
 
 std::unique_ptr<PlanNodeDescription> BiInnerJoin::explain() const {
   auto desc = BiJoin::explain();
@@ -823,7 +825,9 @@ PlanNode* BiInnerJoin::clone() const {
   return newInnerJoin;
 }
 
-void BiInnerJoin::cloneMembers(const BiInnerJoin& l) { BiJoin::cloneMembers(l); }
+void BiInnerJoin::cloneMembers(const BiInnerJoin& l) {
+  BiJoin::cloneMembers(l);
+}
 
 }  // namespace graph
 }  // namespace nebula
