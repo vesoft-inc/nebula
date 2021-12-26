@@ -119,6 +119,7 @@ union Value {
     14: NSet (cpp.type = "nebula::Set")         uVal (cpp.ref_type = "unique");
     15: DataSet (cpp.type = "nebula::DataSet")  gVal (cpp.ref_type = "unique");
     16: Geography (cpp.type = "nebula::Geography")   ggVal (cpp.ref_type = "unique");
+    17: Duration (cpp.type = "nebula::Duration")     duVal (cpp.ref_type = "unique");
 } (cpp.type = "nebula::Value")
 
 
@@ -226,6 +227,8 @@ struct KeyValue {
     2: binary value,
 } (cpp.type = "nebula::KeyValue")
 
+// !! Struct Duration has a shadow data type defined in the Duration.h
+// So any change here needs to be reflected to the shadow type there
 struct Duration {
     1: i64 seconds;
     2: i32 microseconds;

@@ -18,8 +18,8 @@ std::string ListExpression::toString() const {
   buf.reserve(256);
 
   buf += '[';
-  for (auto &expr : items_) {
-    buf += expr->toString();
+  for (auto *expr : items_) {
+    buf += expr ? expr->toString() : "";
     buf += ",";
   }
   if (items_.empty()) {
@@ -89,8 +89,8 @@ std::string SetExpression::toString() const {
   buf.reserve(256);
 
   buf += '{';
-  for (auto &expr : items_) {
-    buf += expr->toString();
+  for (auto *expr : items_) {
+    buf += expr ? expr->toString() : "";
     buf += ",";
   }
   if (items_.empty()) {
@@ -163,7 +163,7 @@ std::string MapExpression::toString() const {
   for (auto &kv : items_) {
     buf += kv.first;
     buf += ":";
-    buf += kv.second->toString();
+    buf += kv.second ? kv.second->toString() : "";
     buf += ",";
   }
   if (items_.empty()) {

@@ -36,7 +36,9 @@ class SequentialSentences final : public Sentence {
     return result;
   }
 
-  size_t numSentences() const { return sentences_.size(); }
+  size_t numSentences() const {
+    return sentences_.size();
+  }
 
   std::string toString() const override;
 

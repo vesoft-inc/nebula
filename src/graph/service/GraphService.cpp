@@ -160,9 +160,13 @@ folly::Future<ExecutionResponse> GraphService::future_executeWithParameter(
           new std::string(folly::stringPrintf("SessionId[%ld] does not exist", sessionId)));
       return ctx->finish();
     }
+    stats::StatsManager::addValue(kNumQueries);
+    stats::StatsManager::addValue(
+        stats::StatsManager::counterWithLabels(kNumQueries, {{"space", sessionPtr->space().name}}));
     ctx->setSession(std::move(sessionPtr));
     ctx->setParameterMap(parameterMap);
     queryEngine_->execute(std::move(ctx));
+    stats::StatsManager::decValue(kNumActiveQueries);
   };
   sessionManager_->findSession(sessionId, getThreadManager()).thenValue(std::move(cb));
   return future;
@@ -170,46 +174,7 @@ folly::Future<ExecutionResponse> GraphService::future_executeWithParameter(
 
 folly::Future<ExecutionResponse> GraphService::future_execute(int64_t sessionId,
                                                               const std::string& query) {
-  auto ctx = std::make_unique<RequestContext<ExecutionResponse>>();
-  ctx->setQuery(query);
-  ctx->setRunner(getThreadManager());
-  ctx->setSessionMgr(sessionManager_.get());
-  auto future = ctx->future();
-  stats::StatsManager::addValue(kNumQueries);
-  stats::StatsManager::addValue(kNumActiveQueries);
-  // When the sessionId is 0, it means the clients to ping the connection is ok
-  if (sessionId == 0) {
-    ctx->resp().errorCode = ErrorCode::E_SESSION_INVALID;
-    ctx->resp().errorMsg = std::make_unique<std::string>("Invalid session id");
-    ctx->finish();
-    return future;
-  }
-  auto cb = [this, sessionId, ctx = std::move(ctx)](
-                StatusOr<std::shared_ptr<ClientSession>> ret) mutable {
-    if (!ret.ok()) {
-      LOG(ERROR) << "Get session for sessionId: " << sessionId << " failed: " << ret.status();
-      ctx->resp().errorCode = ErrorCode::E_SESSION_INVALID;
-      ctx->resp().errorMsg.reset(new std::string(folly::stringPrintf(
-          "Get sessionId[%ld] failed: %s", sessionId, ret.status().toString().c_str())));
-      return ctx->finish();
-    }
-    auto sessionPtr = std::move(ret).value();
-    if (sessionPtr == nullptr) {
-      LOG(ERROR) << "Get session for sessionId: " << sessionId << " is nullptr";
-      ctx->resp().errorCode = ErrorCode::E_SESSION_INVALID;
-      ctx->resp().errorMsg.reset(
-          new std::string(folly::stringPrintf("SessionId[%ld] does not exist", sessionId)));
-      return ctx->finish();
-    }
-    stats::StatsManager::addValue(kNumQueries);
-    stats::StatsManager::addValue(
-        stats::StatsManager::counterWithLabels(kNumQueries, {{"space", sessionPtr->space().name}}));
-    ctx->setSession(std::move(sessionPtr));
-    queryEngine_->execute(std::move(ctx));
-    stats::StatsManager::decValue(kNumActiveQueries);
-  };
-  sessionManager_->findSession(sessionId, getThreadManager()).thenValue(std::move(cb));
-  return future;
+  return future_executeWithParameter(sessionId, query, std::unordered_map<std::string, Value>{});
 }
 
 folly::Future<std::string> GraphService::future_executeJson(int64_t sessionId,

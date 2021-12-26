@@ -74,7 +74,7 @@ bool MetaVersionMan::setMetaVersionToKV(kvstore::KVStore* kv) {
 // static
 Status MetaVersionMan::updateMetaV1ToV2(kvstore::KVStore* kv) {
   CHECK_NOTNULL(kv);
-  auto snapshot = folly::format("META_UPGRADE_SNAPSHOT_{}", MetaKeyUtils::genTimestampStr()).str();
+  auto snapshot = folly::sformat("META_UPGRADE_SNAPSHOT_{}", MetaKeyUtils::genTimestampStr());
   auto meteRet = kv->createCheckpoint(kDefaultSpaceId, snapshot);
   if (meteRet.isLeftType()) {
     LOG(ERROR) << "Create snapshot failed: " << snapshot;

@@ -61,7 +61,7 @@ meta::cpp2::ColumnDef BaseProcessor<RESP>::columnDef(std::string name,
                                                      nebula::cpp2::PropertyType type) {
   nebula::meta::cpp2::ColumnDef column;
   column.name_ref() = std::move(name);
-  column.type_ref() = type;
+  column.type_ref()->type_ref() = type;
   return column;
 }
 
