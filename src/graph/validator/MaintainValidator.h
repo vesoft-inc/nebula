@@ -19,7 +19,9 @@ class CreateTagValidator final : public Validator {
  public:
   CreateTagValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {}
 
-  AstContext* getAstContext() override { return createCtx_.get(); }
+  AstContext* getAstContext() override {
+    return createCtx_.get();
+  }
 
  private:
   Status validateImpl() override;
@@ -31,7 +33,9 @@ class CreateEdgeValidator final : public Validator {
  public:
   CreateEdgeValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {}
 
-  AstContext* getAstContext() override { return createCtx_.get(); }
+  AstContext* getAstContext() override {
+    return createCtx_.get();
+  }
 
  private:
   Status validateImpl() override;
@@ -85,7 +89,9 @@ class AlterTagValidator final : public Validator {
  public:
   AlterTagValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {}
 
-  AstContext* getAstContext() override { return alterCtx_.get(); }
+  AstContext* getAstContext() override {
+    return alterCtx_.get();
+  }
 
  private:
   Status validateImpl() override;
@@ -97,7 +103,9 @@ class AlterEdgeValidator final : public Validator {
  public:
   AlterEdgeValidator(Sentence* sentence, QueryContext* context) : Validator(sentence, context) {}
 
-  AstContext* getAstContext() override { return alterCtx_.get(); }
+  AstContext* getAstContext() override {
+    return alterCtx_.get();
+  }
 
  private:
   Status validateImpl() override;

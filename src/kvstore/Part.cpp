@@ -5,6 +5,7 @@
 
 #include "kvstore/Part.h"
 
+#include "common/time/ScopedTimer.h"
 #include "common/utils/IndexKeyUtils.h"
 #include "common/utils/NebulaKeyUtils.h"
 #include "common/utils/OperationKeyUtils.h"
@@ -169,7 +170,9 @@ void Part::asyncRemovePeer(const HostAddr& peer, KVCallback cb) {
       });
 }
 
-void Part::setBlocking(bool sign) { blocking_ = sign; }
+void Part::setBlocking(bool sign) {
+  blocking_ = sign;
+}
 
 void Part::onLostLeadership(TermID term) {
   VLOG(1) << "Lost the leadership for the term " << term;
@@ -201,9 +204,13 @@ void Part::onLeaderReady(TermID term) {
   }
 }
 
-void Part::registerOnLeaderReady(LeaderChangeCB cb) { leaderReadyCB_.emplace_back(std::move(cb)); }
+void Part::registerOnLeaderReady(LeaderChangeCB cb) {
+  leaderReadyCB_.emplace_back(std::move(cb));
+}
 
-void Part::registerOnLeaderLost(LeaderChangeCB cb) { leaderLostCB_.emplace_back(std::move(cb)); }
+void Part::registerOnLeaderLost(LeaderChangeCB cb) {
+  leaderLostCB_.emplace_back(std::move(cb));
+}
 
 void Part::onDiscoverNewLeader(HostAddr nLeader) {
   LOG(INFO) << idStr_ << "Find the new leader " << nLeader;
@@ -212,10 +219,12 @@ void Part::onDiscoverNewLeader(HostAddr nLeader) {
   }
 }
 
-cpp2::ErrorCode Part::commitLogs(std::unique_ptr<LogIterator> iter, bool wait) {
+std::tuple<nebula::cpp2::ErrorCode, LogID, TermID> Part::commitLogs(
+    std::unique_ptr<LogIterator> iter, bool wait) {
+  SCOPED_TIMER(&execTime_);
   auto batch = engine_->startBatchWrite();
-  LogID lastId = -1;
-  TermID lastTerm = -1;
+  LogID lastId = kNoCommitLogId;
+  TermID lastTerm = kNoCommitLogTerm;
   while (iter->valid()) {
     lastId = iter->logId();
     lastTerm = iter->logTerm();
@@ -234,7 +243,7 @@ cpp2::ErrorCode Part::commitLogs(std::unique_ptr<LogIterator> iter, bool wait) {
         auto code = batch->put(pieces[0], pieces[1]);
         if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
           LOG(ERROR) << idStr_ << "Failed to call WriteBatch::put()";
-          return code;
+          return {code, kNoCommitLogId, kNoCommitLogTerm};
         }
         break;
       }
@@ -248,7 +257,7 @@ cpp2::ErrorCode Part::commitLogs(std::unique_ptr<LogIterator> iter, bool wait) {
           auto code = batch->put(kvs[i], kvs[i + 1]);
           if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
             LOG(ERROR) << idStr_ << "Failed to call WriteBatch::put()";
-            return code;
+            return {code, kNoCommitLogId, kNoCommitLogTerm};
           }
         }
         break;
@@ -258,7 +267,7 @@ cpp2::ErrorCode Part::commitLogs(std::unique_ptr<LogIterator> iter, bool wait) {
         auto code = batch->remove(key);
         if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
           LOG(ERROR) << idStr_ << "Failed to call WriteBatch::remove()";
-          return code;
+          return {code, kNoCommitLogId, kNoCommitLogTerm};
         }
         break;
       }
@@ -268,7 +277,7 @@ cpp2::ErrorCode Part::commitLogs(std::unique_ptr<LogIterator> iter, bool wait) {
           auto code = batch->remove(k);
           if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
             LOG(ERROR) << idStr_ << "Failed to call WriteBatch::remove()";
-            return code;
+            return {code, kNoCommitLogId, kNoCommitLogTerm};
           }
         }
         break;
@@ -279,7 +288,7 @@ cpp2::ErrorCode Part::commitLogs(std::unique_ptr<LogIterator> iter, bool wait) {
         auto code = batch->removeRange(range[0], range[1]);
         if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
           LOG(ERROR) << idStr_ << "Failed to call WriteBatch::removeRange()";
-          return code;
+          return {code, kNoCommitLogId, kNoCommitLogTerm};
         }
         break;
       }
@@ -298,7 +307,7 @@ cpp2::ErrorCode Part::commitLogs(std::unique_ptr<LogIterator> iter, bool wait) {
           }
           if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
             LOG(ERROR) << idStr_ << "Failed to call WriteBatch";
-            return code;
+            return {code, kNoCommitLogId, kNoCommitLogTerm};
           }
         }
         break;
@@ -343,17 +352,24 @@ cpp2::ErrorCode Part::commitLogs(std::unique_ptr<LogIterator> iter, bool wait) {
     auto code = putCommitMsg(batch.get(), lastId, lastTerm);
     if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
       LOG(ERROR) << idStr_ << "Commit msg failed";
-      return code;
+      return {code, kNoCommitLogId, kNoCommitLogTerm};
     }
   }
-  return engine_->commitBatchWrite(
+
+  auto code = engine_->commitBatchWrite(
       std::move(batch), FLAGS_rocksdb_disable_wal, FLAGS_rocksdb_wal_sync, wait);
+  if (code == nebula::cpp2::ErrorCode::SUCCEEDED) {
+    return {code, lastId, lastTerm};
+  } else {
+    return {code, kNoCommitLogId, kNoCommitLogTerm};
+  }
 }
 
 std::pair<int64_t, int64_t> Part::commitSnapshot(const std::vector<std::string>& rows,
                                                  LogID committedLogId,
                                                  TermID committedLogTerm,
                                                  bool finished) {
+  SCOPED_TIMER(&execTime_);
   auto batch = engine_->startBatchWrite();
   int64_t count = 0;
   int64_t size = 0;
@@ -454,50 +470,53 @@ bool Part::preProcessLog(LogID logId, TermID termId, ClusterID clusterId, const 
   return true;
 }
 
-void Part::cleanup() {
+nebula::cpp2::ErrorCode Part::cleanup() {
   LOG(INFO) << idStr_ << "Clean rocksdb part data";
+  auto batch = engine_->startBatchWrite();
   // Remove the vertex, edge, index, systemCommitKey, operation data under the part
   const auto& vertexPre = NebulaKeyUtils::tagPrefix(partId_);
-  auto ret = engine_->removeRange(NebulaKeyUtils::firstKey(vertexPre, vIdLen_),
-                                  NebulaKeyUtils::lastKey(vertexPre, vIdLen_));
+  auto ret = batch->removeRange(NebulaKeyUtils::firstKey(vertexPre, vIdLen_),
+                                NebulaKeyUtils::lastKey(vertexPre, vIdLen_));
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << idStr_ << "Remove the part vertex data failed, error "
                << static_cast<int32_t>(ret);
-    return;
+    return ret;
   }
 
   const auto& edgePre = NebulaKeyUtils::edgePrefix(partId_);
-  ret = engine_->removeRange(NebulaKeyUtils::firstKey(edgePre, vIdLen_),
-                             NebulaKeyUtils::lastKey(edgePre, vIdLen_));
+  ret = batch->removeRange(NebulaKeyUtils::firstKey(edgePre, vIdLen_),
+                           NebulaKeyUtils::lastKey(edgePre, vIdLen_));
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << idStr_ << "Remove the part edge data failed, error" << static_cast<int32_t>(ret);
-    return;
+    return ret;
   }
 
   const auto& indexPre = IndexKeyUtils::indexPrefix(partId_);
-  ret = engine_->removeRange(NebulaKeyUtils::firstKey(indexPre, sizeof(IndexID)),
-                             NebulaKeyUtils::lastKey(indexPre, sizeof(IndexID)));
+  ret = batch->removeRange(NebulaKeyUtils::firstKey(indexPre, sizeof(IndexID)),
+                           NebulaKeyUtils::lastKey(indexPre, sizeof(IndexID)));
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << idStr_ << "Remove the part index data failed, error "
                << static_cast<int32_t>(ret);
-    return;
+    return ret;
   }
 
   const auto& operationPre = OperationKeyUtils::operationPrefix(partId_);
-  ret = engine_->removeRange(NebulaKeyUtils::firstKey(operationPre, sizeof(int64_t)),
-                             NebulaKeyUtils::lastKey(operationPre, sizeof(int64_t)));
+  ret = batch->removeRange(NebulaKeyUtils::firstKey(operationPre, sizeof(int64_t)),
+                           NebulaKeyUtils::lastKey(operationPre, sizeof(int64_t)));
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << idStr_ << "Remove the part operation data failed, error "
                << static_cast<int32_t>(ret);
-    return;
+    return ret;
   }
 
-  ret = engine_->remove(NebulaKeyUtils::systemCommitKey(partId_));
+  ret = batch->remove(NebulaKeyUtils::systemCommitKey(partId_));
   if (ret != nebula::cpp2::ErrorCode::SUCCEEDED) {
     LOG(ERROR) << idStr_ << "Remove the part system commit data failed, error "
                << static_cast<int32_t>(ret);
+    return ret;
   }
-  return;
+  return engine_->commitBatchWrite(
+      std::move(batch), FLAGS_rocksdb_disable_wal, FLAGS_rocksdb_wal_sync, true);
 }
 
 // TODO(pandasheep) unify raft errorcode

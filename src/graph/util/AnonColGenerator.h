@@ -24,9 +24,13 @@ constexpr char kCostStr[] = "_cost";
  */
 class AnonColGenerator final {
  public:
-  AnonColGenerator() { idGen_ = std::make_unique<IdGenerator>(); }
+  AnonColGenerator() {
+    idGen_ = std::make_unique<IdGenerator>();
+  }
 
-  std::string getCol() const { return folly::stringPrintf("__COL_%ld", idGen_->id()); }
+  std::string getCol() const {
+    return folly::stringPrintf("__COL_%ld", idGen_->id());
+  }
 
  private:
   std::unique_ptr<IdGenerator> idGen_;

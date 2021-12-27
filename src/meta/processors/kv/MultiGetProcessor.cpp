@@ -24,7 +24,7 @@ void MultiGetProcessor::process(const cpp2::MultiGetReq& req) {
   }
 
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
-  resp_.set_values(std::move(nebula::value(result)));
+  resp_.values_ref() = std::move(nebula::value(result));
   onFinished();
 }
 

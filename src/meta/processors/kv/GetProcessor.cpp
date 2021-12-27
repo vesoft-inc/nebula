@@ -21,7 +21,7 @@ void GetProcessor::process(const cpp2::GetReq& req) {
   }
 
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
-  resp_.set_value(std::move(nebula::value(result)));
+  resp_.value_ref() = std::move(nebula::value(result));
   onFinished();
 }
 

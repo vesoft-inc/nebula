@@ -7,6 +7,7 @@
 #define RAFTEX_HOST_H_
 
 #include <folly/futures/Future.h>
+#include <folly/futures/SharedPromise.h>
 
 #include "common/base/Base.h"
 #include "common/base/ErrorOr.h"
@@ -29,9 +30,25 @@ class Host final : public std::enable_shared_from_this<Host> {
  public:
   Host(const HostAddr& addr, std::shared_ptr<RaftPart> part, bool isLearner = false);
 
-  ~Host() { LOG(INFO) << idStr_ << " The host has been destroyed!"; }
+  ~Host() {
+    LOG(INFO) << idStr_ << " The host has been destroyed!";
+  }
 
-  const char* idStr() const { return idStr_.c_str(); }
+  const char* idStr() const {
+    return idStr_.c_str();
+  }
+
+  // This will be called when the shard lost its leadership
+  void pause() {
+    std::lock_guard<std::mutex> g(lock_);
+    paused_ = true;
+  }
+
+  // This will be called when the shard becomes the leader
+  void resume() {
+    std::lock_guard<std::mutex> g(lock_);
+    paused_ = false;
+  }
 
   void stop() {
     std::lock_guard<std::mutex> g(lock_);
@@ -52,9 +69,13 @@ class Host final : public std::enable_shared_from_this<Host> {
 
   void waitForStop();
 
-  bool isLearner() const { return isLearner_; }
+  bool isLearner() const {
+    return isLearner_;
+  }
 
-  void setLearner(bool isLearner) { isLearner_ = isLearner; }
+  void setLearner(bool isLearner) {
+    isLearner_ = isLearner;
+  }
 
   folly::Future<cpp2::AskForVoteResponse> askForVote(const cpp2::AskForVoteRequest& req,
                                                      folly::EventBase* eb);
@@ -70,15 +91,16 @@ class Host final : public std::enable_shared_from_this<Host> {
 
   folly::Future<cpp2::HeartbeatResponse> sendHeartbeat(folly::EventBase* eb,
                                                        TermID term,
-                                                       LogID latestLogId,
                                                        LogID commitLogId,
                                                        TermID lastLogTerm,
                                                        LogID lastLogId);
 
-  const HostAddr& address() const { return addr_; }
+  const HostAddr& address() const {
+    return addr_;
+  }
 
  private:
-  cpp2::ErrorCode checkStatus() const;
+  cpp2::ErrorCode canAppendLog() const;
 
   folly::Future<cpp2::AppendLogResponse> sendAppendLogRequest(
       folly::EventBase* eb, std::shared_ptr<cpp2::AppendLogRequest> req);
@@ -89,6 +111,8 @@ class Host final : public std::enable_shared_from_this<Host> {
       folly::EventBase* eb, std::shared_ptr<cpp2::HeartbeatRequest> req);
 
   ErrorOr<cpp2::ErrorCode, std::shared_ptr<cpp2::AppendLogRequest>> prepareAppendLogRequest();
+
+  cpp2::ErrorCode startSendSnapshot();
 
   bool noRequest() const;
 
@@ -107,6 +131,7 @@ class Host final : public std::enable_shared_from_this<Host> {
 
   mutable std::mutex lock_;
 
+  bool paused_{false};
   bool stopped_{false};
 
   // whether there is a batch of logs for target host in on going

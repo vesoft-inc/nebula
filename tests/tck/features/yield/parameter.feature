@@ -145,3 +145,4 @@ Feature: Parameter
       MATCH (v:player) WHERE $var RETURN  v,$var LIMIT $p6
       """
     Then a SyntaxError should be raised at runtime: Direct output of variable is prohibited near `$var'
+    Then clear the used parameters

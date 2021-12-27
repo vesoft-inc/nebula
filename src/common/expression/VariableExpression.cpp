@@ -9,9 +9,13 @@
 #include "common/expression/ExprVisitor.h"
 
 namespace nebula {
-const Value& VariableExpression::eval(ExpressionContext& ctx) { return ctx.getVar(var_); }
+const Value& VariableExpression::eval(ExpressionContext& ctx) {
+  return ctx.getVar(var_);
+}
 
-void VariableExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void VariableExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 void VariableExpression::writeTo(Encoder& encoder) const {
   encoder << kind_;
@@ -54,11 +58,13 @@ std::string VersionedVariableExpression::toString() const {
   std::stringstream out;
   out << "$" << var_;
   if (version_ != nullptr) {
-    out << "{" << version_->toString() << "}";
+    out << "{" << (version_ ? version_->toString() : "") << "}";
   }
   return out.str();
 }
 
-void VersionedVariableExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void VersionedVariableExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 }  // namespace nebula

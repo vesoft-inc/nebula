@@ -33,35 +33,63 @@ class Validator {
 
   NG_MUST_USE_RESULT Status appendPlan(PlanNode* tail);
 
-  void setInputVarName(std::string name) { inputVarName_ = std::move(name); }
+  void setInputVarName(std::string name) {
+    inputVarName_ = std::move(name);
+  }
 
-  QueryContext* qctx() { return qctx_; }
+  QueryContext* qctx() {
+    return qctx_;
+  }
 
-  PlanNode* root() const { return root_; }
+  PlanNode* root() const {
+    return root_;
+  }
 
-  PlanNode* tail() const { return tail_; }
+  PlanNode* tail() const {
+    return tail_;
+  }
 
-  ColsDef outputCols() const { return outputs_; }
+  ColsDef outputCols() const {
+    return outputs_;
+  }
 
-  void setOutputCols(const ColsDef&& outputCols) { outputs_ = std::move(outputCols); }
+  void setOutputCols(const ColsDef&& outputCols) {
+    outputs_ = std::move(outputCols);
+  }
 
-  void setOutputCols(ColsDef& outputCols) { outputs_ = outputCols; }
+  void setOutputCols(ColsDef& outputCols) {
+    outputs_ = outputCols;
+  }
 
   std::vector<std::string> getOutColNames() const;
 
-  ColsDef inputCols() const { return inputs_; }
+  ColsDef inputCols() const {
+    return inputs_;
+  }
 
-  void setInputCols(ColsDef&& inputCols) { inputs_ = std::move(inputCols); }
+  void setInputCols(ColsDef&& inputCols) {
+    inputs_ = std::move(inputCols);
+  }
 
-  void setInputCols(const ColsDef& inputCols) { inputs_ = inputCols; }
+  void setInputCols(const ColsDef& inputCols) {
+    inputs_ = inputCols;
+  }
 
-  ExpressionProps exprProps() const { return exprProps_; }
+  ExpressionProps exprProps() const {
+    return exprProps_;
+  }
 
-  void setExprProps(ExpressionProps&& exprProps) { exprProps_ = std::move(exprProps); }
+  void setExprProps(ExpressionProps&& exprProps) {
+    exprProps_ = std::move(exprProps);
+  }
 
-  void setExprProps(const ExpressionProps& exprProps) { exprProps_ = exprProps; }
+  void setExprProps(const ExpressionProps& exprProps) {
+    exprProps_ = exprProps;
+  }
 
-  const std::set<std::string>& userDefinedVarNameList() const { return userDefinedVarNameList_; }
+  const std::set<std::string>& userDefinedVarNameList() const {
+    return userDefinedVarNameList_;
+  }
 
   void setUserDefinedVarNameList(std::set<std::string>&& userDefinedVarNameList) {
     userDefinedVarNameList_ = std::move(userDefinedVarNameList);
@@ -71,12 +99,18 @@ class Validator {
     userDefinedVarNameList_ = userDefinedVarNameList;
   }
 
-  void setNoSpaceRequired() { noSpaceRequired_ = true; }
+  void setNoSpaceRequired() {
+    noSpaceRequired_ = true;
+  }
 
   // Whether require chosen space
-  bool noSpaceRequired() const { return noSpaceRequired_; }
+  bool noSpaceRequired() const {
+    return noSpaceRequired_;
+  }
 
-  const Sentence* sentence() const { return sentence_; }
+  const Sentence* sentence() const {
+    return sentence_;
+  }
 
  protected:
   Validator(Sentence* sentence, QueryContext* qctx);
@@ -103,7 +137,9 @@ class Validator {
    */
   virtual Status toPlan();
 
-  virtual AstContext* getAstContext() { return nullptr; }
+  virtual AstContext* getAstContext() {
+    return nullptr;
+  }
 
   StatusOr<Value::Type> deduceExprType(const Expression* expr) const;
 
