@@ -11,7 +11,7 @@
 
 DEFINE_int32(listener_commit_interval_secs, 1, "Listener commit interval");
 DEFINE_int32(listener_commit_batch_size, 1000, "Max batch size when listener commit");
-DEFINE_int32(ft_request_retry_times, 3, "Retry times if fulltext request failed");
+DEFINE_uint32(ft_request_retry_times, 3, "Retry times if fulltext request failed");
 DEFINE_int32(ft_bulk_batch_size, 100, "Max batch size when bulk insert");
 DEFINE_int32(listener_pursue_leader_threshold, 1000, "Catch up with the leader's threshold");
 
