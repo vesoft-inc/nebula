@@ -4,16 +4,21 @@
  */
 #include "common/id/SegmentId.h"
 
+#include "common/base/Logging.h"
+
 namespace nebula {
 
 int64_t SegmentId::getId() {
   if (cur_ < segmentStart_ + step_ - 1) {
     // prefetch next segment
-    if (cur_ < segmentStart_ + (step_ / 2) - 1) asyncFetchSegment();
+    LOG(INFO) << "segmentId +1 directly";
+    if (cur_ == segmentStart_ + (step_ / 2) - 1) asyncFetchSegment();
     cur_ += 1;
   } else {  // cur == segment end
+    LOG(INFO) << "segmentId switch to next segment";
     if (segmentStart_ >= nextSegmentStart_) {
       // indicate asyncFetchSegment failed
+      LOG(ERROR) << "segmentId asyncFetchSegment failed";
       nextSegmentStart_ = fetchSegment();
     }
     segmentStart_ = nextSegmentStart_;
@@ -24,14 +29,22 @@ int64_t SegmentId::getId() {
 }
 
 void SegmentId::asyncFetchSegment() {
+  LOG(INFO) << "asyncFetchSegment";
   auto future = client_->getSegmentId(step_);
-  // TODO
-  std::move(future).via(runner_).then();
+  std::move(future).via(runner_).thenValue([this](StatusOr<int64_t> resp) {
+    NG_RETURN_IF_ERROR(resp);
+    if (!resp.value()) {
+      return Status::Error("asyncFetchSegment failed!");
+    }
+    this->nextSegmentStart_ = resp.value();
+    return Status::OK();
+  });
 }
 
 int64_t SegmentId::fetchSegment() {
   auto result = client_->getSegmentId(step_).get();
   if (result.ok()) {
+    LOG(INFO) << "fetchSegment success " << result.value();
     return result.value();
   } else {
     LOG(ERROR) << "Failed to fetch segment id from meta server";

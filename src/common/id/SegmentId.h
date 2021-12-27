@@ -13,10 +13,13 @@ namespace nebula {
 // Segment auto-increase id
 class SegmentId {
  public:
-  explicit SegmentId(int64_t step) : step_(step) {
-    segmentStart_ = fetchSegment();
-    cur_ = segmentStart_ - 1;
+  static SegmentId& getInstance(int64_t step) {
+    static SegmentId instance(step);
+    return instance;
   }
+
+  SegmentId(const SegmentId&) = delete;
+  SegmentId& operator=(const SegmentId&) = delete;
 
   static void initClientAndRunner(meta::MetaClient* client, folly::Executor* runner) {
     client_ = client;
@@ -26,6 +29,11 @@ class SegmentId {
   int64_t getId();
 
  private:
+  explicit SegmentId(int64_t step) : step_(step) {
+    segmentStart_ = fetchSegment();
+    cur_ = segmentStart_ - 1;
+  }
+  ~SegmentId() = default;
   // when get id fast or fetchSegment() slow, we use all id in segment but nextSegmentStart_
   // isn't updated. In this case, we will getSegmentId() directly. In case this function update
   // after getSegmentId(), adding che here.
