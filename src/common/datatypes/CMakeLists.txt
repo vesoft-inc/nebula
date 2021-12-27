@@ -14,6 +14,7 @@ nebula_add_library(
     List.cpp
     Set.cpp
     Geography.cpp
+    Duration.cpp
 )
 
 nebula_add_subdirectory(test)

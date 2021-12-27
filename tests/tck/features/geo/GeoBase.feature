@@ -220,17 +220,17 @@ Feature: Geo base
     # Create index on geo column
     When executing query:
       """
-      CREATE TAG INDEX any_shape_geo_index ON any_shape(geo);
+      CREATE TAG INDEX any_shape_geo_index ON any_shape(geo) with (s2_max_level=30, s2_max_cells=8) comment "test";
       """
     Then the execution should be successful
     When executing query:
       """
-      CREATE TAG INDEX only_point_geo_index ON only_point(geo);
+      CREATE TAG INDEX only_point_geo_index ON only_point(geo) comment "test2";
       """
     Then the execution should be successful
     When executing query:
       """
-      CREATE TAG INDEX only_linestring_geo_index ON only_linestring(geo);
+      CREATE TAG INDEX only_linestring_geo_index ON only_linestring(geo) with (s2_max_cells=12) comment "test3";
       """
     Then the execution should be successful
     When executing query:
@@ -240,10 +240,18 @@ Feature: Geo base
     Then the execution should be successful
     When executing query:
       """
-      CREATE EDGE INDEX any_shape_edge_geo_index ON any_shape_edge(geo);
+      CREATE EDGE INDEX any_shape_edge_geo_index ON any_shape_edge(geo) with (s2_max_level=23);
       """
     Then the execution should be successful
     And wait 3 seconds
+    # Show create tag index
+    When executing query:
+      """
+      SHOW CREATE TAG INDEX any_shape_geo_index;
+      """
+    Then the result should be, in any order:
+      | Tag Index Name        | Create Tag Index                                                                                                                 |
+      | "any_shape_geo_index" | "CREATE TAG INDEX `any_shape_geo_index` ON `any_shape` (\n `geo`\n) WITH (s2_max_level = 30, s2_max_cells = 8) comment \"test\"" |
     # Rebuild the geo index
     When submit a job:
       """

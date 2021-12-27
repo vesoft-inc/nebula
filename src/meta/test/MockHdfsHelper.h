@@ -35,7 +35,9 @@ class MockHdfsOKHelper : public nebula::hdfs::HdfsHelper {
     return "";
   }
 
-  bool checkHadoopPath() override { return true; }
+  bool checkHadoopPath() override {
+    return true;
+  }
 };
 
 class MockHdfsNotExistHelper : public nebula::hdfs::HdfsHelper {
@@ -60,7 +62,9 @@ class MockHdfsNotExistHelper : public nebula::hdfs::HdfsHelper {
     return Status::Error(folly::stringPrintf("HDFS Path %s Not Exist", hdfsPath.c_str()));
   }
 
-  bool checkHadoopPath() override { return true; }
+  bool checkHadoopPath() override {
+    return true;
+  }
 };
 
 }  // namespace meta

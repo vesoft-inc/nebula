@@ -24,8 +24,8 @@ folly::Future<Status> AdminClient::transLeader(GraphSpaceID spaceId,
                                                const HostAddr& leader,
                                                const HostAddr& dst) {
   storage::cpp2::TransLeaderReq req;
-  req.set_space_id(spaceId);
-  req.set_part_id(partId);
+  req.space_id_ref() = spaceId;
+  req.part_id_ref() = partId;
   auto ret = getPeers(spaceId, partId);
   if (!nebula::ok(ret)) {
     LOG(ERROR) << "Get peers failed: " << static_cast<int32_t>(nebula::error(ret));
@@ -53,7 +53,7 @@ folly::Future<Status> AdminClient::transLeader(GraphSpaceID spaceId,
       }
     }
   }
-  req.set_new_leader(std::move(target));
+  req.new_leader_ref() = std::move(target);
   return getResponse(
       Utils::getAdminAddrFromStoreAddr(leader),
       std::move(req),
@@ -78,16 +78,16 @@ folly::Future<Status> AdminClient::addPart(GraphSpaceID spaceId,
                                            const HostAddr& host,
                                            bool asLearner) {
   storage::cpp2::AddPartReq req;
-  req.set_space_id(spaceId);
-  req.set_part_id(partId);
-  req.set_as_learner(asLearner);
+  req.space_id_ref() = spaceId;
+  req.part_id_ref() = partId;
+  req.as_learner_ref() = asLearner;
   auto ret = getPeers(spaceId, partId);
   if (!nebula::ok(ret)) {
     LOG(ERROR) << "Get peers failed: " << static_cast<int32_t>(nebula::error(ret));
     return Status::Error("Get peers failed");
   }
 
-  req.set_peers(std::move(nebula::value(ret)));
+  req.peers_ref() = std::move(nebula::value(ret));
   return getResponse(
       Utils::getAdminAddrFromStoreAddr(host),
       std::move(req),
@@ -105,9 +105,9 @@ folly::Future<Status> AdminClient::addLearner(GraphSpaceID spaceId,
                                               PartitionID partId,
                                               const HostAddr& learner) {
   storage::cpp2::AddLearnerReq req;
-  req.set_space_id(spaceId);
-  req.set_part_id(partId);
-  req.set_learner(learner);
+  req.space_id_ref() = spaceId;
+  req.part_id_ref() = partId;
+  req.learner_ref() = learner;
   auto ret = getPeers(spaceId, partId);
   if (!nebula::ok(ret)) {
     LOG(ERROR) << "Get peers failed: " << static_cast<int32_t>(nebula::error(ret));
@@ -132,9 +132,9 @@ folly::Future<Status> AdminClient::waitingForCatchUpData(GraphSpaceID spaceId,
                                                          PartitionID partId,
                                                          const HostAddr& target) {
   storage::cpp2::CatchUpDataReq req;
-  req.set_space_id(spaceId);
-  req.set_part_id(partId);
-  req.set_target(target);
+  req.space_id_ref() = spaceId;
+  req.part_id_ref() = partId;
+  req.target_ref() = target;
   auto ret = getPeers(spaceId, partId);
   if (!nebula::ok(ret)) {
     LOG(ERROR) << "Get peers failed: " << static_cast<int32_t>(nebula::error(ret));
@@ -160,10 +160,10 @@ folly::Future<Status> AdminClient::memberChange(GraphSpaceID spaceId,
                                                 const HostAddr& peer,
                                                 bool added) {
   storage::cpp2::MemberChangeReq req;
-  req.set_space_id(spaceId);
-  req.set_part_id(partId);
-  req.set_add(added);
-  req.set_peer(peer);
+  req.space_id_ref() = spaceId;
+  req.part_id_ref() = partId;
+  req.add_ref() = added;
+  req.peer_ref() = peer;
   auto ret = getPeers(spaceId, partId);
   if (!nebula::ok(ret)) {
     LOG(ERROR) << "Get peers failed: " << static_cast<int32_t>(nebula::error(ret));
@@ -245,8 +245,8 @@ folly::Future<Status> AdminClient::removePart(GraphSpaceID spaceId,
                                               PartitionID partId,
                                               const HostAddr& host) {
   storage::cpp2::RemovePartReq req;
-  req.set_space_id(spaceId);
-  req.set_part_id(partId);
+  req.space_id_ref() = spaceId;
+  req.part_id_ref() = partId;
   return getResponse(
       Utils::getAdminAddrFromStoreAddr(host),
       std::move(req),
@@ -263,8 +263,8 @@ folly::Future<Status> AdminClient::removePart(GraphSpaceID spaceId,
 
 folly::Future<Status> AdminClient::checkPeers(GraphSpaceID spaceId, PartitionID partId) {
   storage::cpp2::CheckPeersReq req;
-  req.set_space_id(spaceId);
-  req.set_part_id(partId);
+  req.space_id_ref() = spaceId;
+  req.part_id_ref() = partId;
   auto peerRet = getPeers(spaceId, partId);
   if (!nebula::ok(peerRet)) {
     LOG(ERROR) << "Get peers failed: " << static_cast<int32_t>(nebula::error(peerRet));
@@ -272,7 +272,7 @@ folly::Future<Status> AdminClient::checkPeers(GraphSpaceID spaceId, PartitionID 
   }
 
   auto peers = std::move(nebula::value(peerRet));
-  req.set_peers(peers);
+  req.peers_ref() = peers;
   folly::Promise<Status> pro;
   auto fut = pro.getFuture();
   std::vector<folly::Future<Status>> futures;
@@ -360,8 +360,8 @@ folly::Future<Status> AdminClient::getResponse(const HostAddr& host,
               auto&& result = std::move(t).value().get_result();
               if (result.get_failed_parts().empty()) {
                 storage::cpp2::PartitionResult resultCode;
-                resultCode.set_code(nebula::cpp2::ErrorCode::SUCCEEDED);
-                resultCode.set_part_id(partId);
+                resultCode.code_ref() = nebula::cpp2::ErrorCode::SUCCEEDED;
+                resultCode.part_id_ref() = partId;
                 p.setValue(respGen(resultCode));
               } else {
                 auto resp = result.get_failed_parts().front();
@@ -618,19 +618,20 @@ folly::Future<Status> AdminClient::getLeaderDist(HostLeaderMap* result) {
   return future;
 }
 
-folly::Future<StatusOr<cpp2::BackupInfo>> AdminClient::createSnapshot(GraphSpaceID spaceId,
-                                                                      const std::string& name,
-                                                                      const HostAddr& host) {
-  folly::Promise<StatusOr<cpp2::BackupInfo>> pro;
+folly::Future<StatusOr<cpp2::HostBackupInfo>> AdminClient::createSnapshot(
+    const std::set<GraphSpaceID>& spaceIds, const std::string& name, const HostAddr& host) {
+  folly::Promise<StatusOr<cpp2::HostBackupInfo>> pro;
   auto f = pro.getFuture();
 
   auto* evb = ioThreadPool_->getEventBase();
   auto storageHost = Utils::getAdminAddrFromStoreAddr(host);
-  folly::via(evb, [evb, storageHost, host, pro = std::move(pro), spaceId, name, this]() mutable {
+  folly::via(evb, [evb, storageHost, host, pro = std::move(pro), spaceIds, name, this]() mutable {
     auto client = clientsMan_->client(storageHost, evb);
     storage::cpp2::CreateCPRequest req;
-    req.set_space_id(spaceId);
-    req.set_name(name);
+    std::vector<GraphSpaceID> idList;
+    idList.insert(idList.end(), spaceIds.begin(), spaceIds.end());
+    req.space_ids_ref() = idList;
+    req.name_ref() = name;
     client->future_createCheckpoint(std::move(req))
         .via(evb)
         .then([p = std::move(pro), storageHost, host](
@@ -644,10 +645,10 @@ folly::Future<StatusOr<cpp2::BackupInfo>> AdminClient::createSnapshot(GraphSpace
           auto&& resp = std::move(t).value();
           auto&& result = resp.get_result();
           if (result.get_failed_parts().empty()) {
-            cpp2::BackupInfo backupInfo;
-            backupInfo.set_host(host);
-            backupInfo.set_info(std::move(resp.get_info()));
-            p.setValue(std::move(backupInfo));
+            cpp2::HostBackupInfo hostBackupInfo;
+            hostBackupInfo.host_ref() = host;
+            hostBackupInfo.checkpoints_ref() = std::move(resp.get_info());
+            p.setValue(std::move(hostBackupInfo));
             return;
           }
           p.setValue(Status::Error("create checkpoint failed"));
@@ -657,12 +658,14 @@ folly::Future<StatusOr<cpp2::BackupInfo>> AdminClient::createSnapshot(GraphSpace
   return f;
 }
 
-folly::Future<Status> AdminClient::dropSnapshot(GraphSpaceID spaceId,
+folly::Future<Status> AdminClient::dropSnapshot(const std::set<GraphSpaceID>& spaceIds,
                                                 const std::string& name,
                                                 const HostAddr& host) {
   storage::cpp2::DropCPRequest req;
-  req.set_space_id(spaceId);
-  req.set_name(name);
+  std::vector<GraphSpaceID> idList;
+  idList.insert(idList.end(), spaceIds.begin(), spaceIds.end());
+  req.space_ids_ref() = idList;
+  req.name_ref() = name;
   folly::Promise<Status> pro;
   auto f = pro.getFuture();
   getResponse(
@@ -676,12 +679,14 @@ folly::Future<Status> AdminClient::dropSnapshot(GraphSpaceID spaceId,
   return f;
 }
 
-folly::Future<Status> AdminClient::blockingWrites(GraphSpaceID spaceId,
+folly::Future<Status> AdminClient::blockingWrites(const std::set<GraphSpaceID>& spaceIds,
                                                   storage::cpp2::EngineSignType sign,
                                                   const HostAddr& host) {
   storage::cpp2::BlockingSignRequest req;
-  req.set_space_id(spaceId);
-  req.set_sign(sign);
+  std::vector<GraphSpaceID> idList;
+  idList.insert(idList.end(), spaceIds.begin(), spaceIds.end());
+  req.space_ids_ref() = idList;
+  req.sign_ref() = sign;
   folly::Promise<Status> pro;
   auto f = pro.getFuture();
   getResponse(
@@ -700,7 +705,7 @@ folly::Future<Status> AdminClient::addTask(cpp2::AdminCmd cmd,
                                            int32_t taskId,
                                            GraphSpaceID spaceId,
                                            const std::vector<HostAddr>& targetHost,
-                                           const std::vector<std::string>& taskSpecficParas,
+                                           const std::vector<std::string>& taskSpecificParas,
                                            std::vector<PartitionID> parts,
                                            int concurrency,
                                            cpp2::StatsItem* statsResult) {
@@ -720,16 +725,16 @@ folly::Future<Status> AdminClient::addTask(cpp2::AdminCmd cmd,
   }
 
   storage::cpp2::AddAdminTaskRequest req;
-  req.set_cmd(cmd);
-  req.set_job_id(jobId);
-  req.set_task_id(taskId);
-  req.set_concurrency(concurrency);
+  req.cmd_ref() = cmd;
+  req.job_id_ref() = jobId;
+  req.task_id_ref() = taskId;
+  req.concurrency_ref() = concurrency;
 
   storage::cpp2::TaskPara para;
-  para.set_space_id(spaceId);
-  para.set_parts(std::move(parts));
-  para.set_task_specific_paras(taskSpecficParas);
-  req.set_para(std::move(para));
+  para.space_id_ref() = spaceId;
+  para.parts_ref() = std::move(parts);
+  para.task_specific_paras_ref() = taskSpecificParas;
+  req.para_ref() = std::move(para);
 
   std::function<void(storage::cpp2::AdminExecResp && resp)> respGen =
       [statsResult](storage::cpp2::AdminExecResp&& resp) -> void {
@@ -769,8 +774,8 @@ folly::Future<Status> AdminClient::stopTask(const std::vector<HostAddr>& target,
   }
 
   storage::cpp2::StopAdminTaskRequest req;
-  req.set_job_id(jobId);
-  req.set_task_id(taskId);
+  req.job_id_ref() = jobId;
+  req.task_id_ref() = taskId;
 
   getResponse(
       hosts,
@@ -780,38 +785,6 @@ folly::Future<Status> AdminClient::stopTask(const std::vector<HostAddr>& target,
       0,
       std::move(pro),
       1);
-  return f;
-}
-
-folly::Future<StatusOr<nebula::cpp2::DirInfo>> AdminClient::listClusterInfo(const HostAddr& host) {
-  folly::Promise<StatusOr<nebula::cpp2::DirInfo>> pro;
-  auto f = pro.getFuture();
-
-  auto* evb = ioThreadPool_->getEventBase();
-  auto storageHost = Utils::getAdminAddrFromStoreAddr(host);
-  folly::via(evb, [evb, storageHost, pro = std::move(pro), this]() mutable {
-    auto client = clientsMan_->client(storageHost, evb);
-    storage::cpp2::ListClusterInfoReq req;
-    client->future_listClusterInfo(std::move(req))
-        .via(evb)
-        .then([p = std::move(pro),
-               storageHost](folly::Try<storage::cpp2::ListClusterInfoResp>&& t) mutable {
-          if (t.hasException()) {
-            LOG(ERROR) << folly::stringPrintf("RPC failure in AdminClient: %s",
-                                              t.exception().what().c_str());
-            p.setValue(Status::Error("RPC failure in listClusterInfo"));
-            return;
-          }
-          auto&& resp = std::move(t).value();
-          auto&& result = resp.get_result();
-          if (result.get_failed_parts().empty()) {
-            p.setValue(resp.get_dir());
-            return;
-          }
-          p.setValue(Status::Error("list clusterInfo failed"));
-        });
-  });
-
   return f;
 }
 

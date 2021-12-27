@@ -19,15 +19,15 @@ then
     exit $?
 fi
 
-[[ -z $version ]] && version=2.0
+[[ -z $version ]] && version=3.0
 url_base=https://oss-cdn.nebula-graph.com.cn/third-party/$version
 this_dir=$(dirname $(readlink -f $0))
 cxx_cmd=${CXX:-g++}
 
 # We consider two derivatives: Red Hat and Debian
 # Place preset libc versions of each from newer to older
-libc_preset_versions=( 2.32 2.31 2.28 2.27 2.23 2.17 )
-gcc_preset_versions=( 10.1.0 9.3.0 9.2.0 9.1.0 8.3.0 7.5.0 7.1.0 )
+libc_preset_versions=( 2.34 2.32 2.31 2.29 2.28 2.27 2.23 2.17 )
+gcc_preset_versions=( 11.2.0 10.1.0 9.3.0 9.2.0 9.1.0 8.3.0 7.5.0 7.1.0 )
 
 selected_libc_version=
 selected_gcc_version=

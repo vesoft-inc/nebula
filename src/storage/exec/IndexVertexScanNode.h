@@ -38,7 +38,9 @@ class IndexVertexScanNode final : public IndexScanNode {
   Map<std::string, Value> decodeFromBase(const std::string& key, const std::string& value) override;
 
   using TagSchemas = std::vector<std::shared_ptr<const nebula::meta::NebulaSchemaProvider>>;
-  const TagSchemas& getSchema() override { return tag_; }
+  const TagSchemas& getSchema() override {
+    return tag_;
+  }
   TagSchemas tag_;
   using IndexItem = ::nebula::meta::cpp2::IndexItem;
   // Convenient for testing

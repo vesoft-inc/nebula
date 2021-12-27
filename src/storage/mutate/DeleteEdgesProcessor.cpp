@@ -7,9 +7,11 @@
 
 #include <algorithm>
 
+#include "common/stats/StatsManager.h"
 #include "common/utils/IndexKeyUtils.h"
 #include "common/utils/NebulaKeyUtils.h"
 #include "common/utils/OperationKeyUtils.h"
+#include "storage/stats/StorageStats.h"
 
 namespace nebula {
 namespace storage {
@@ -55,7 +57,7 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
       auto code = nebula::cpp2::ErrorCode::SUCCEEDED;
       for (auto& edgeKey : part.second) {
         if (!NebulaKeyUtils::isValidVidLen(
-                spaceVidLen_, (*edgeKey.src_ref()).getStr(), (*edgeKey.dst_ref()).getStr())) {
+                spaceVidLen_, edgeKey.src_ref()->getStr(), edgeKey.dst_ref()->getStr())) {
           LOG(ERROR) << "Space " << spaceId_ << " vertex length invalid, "
                      << "space vid len: " << spaceVidLen_ << ", edge srcVid: " << *edgeKey.src_ref()
                      << " dstVid: " << *edgeKey.dst_ref();
@@ -65,10 +67,10 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
         // todo(doodle): delete lock in toss
         auto edge = NebulaKeyUtils::edgeKey(spaceVidLen_,
                                             partId,
-                                            (*edgeKey.src_ref()).getStr(),
+                                            edgeKey.src_ref()->getStr(),
                                             *edgeKey.edge_type_ref(),
                                             *edgeKey.ranking_ref(),
-                                            (*edgeKey.dst_ref()).getStr());
+                                            edgeKey.dst_ref()->getStr());
         keys.emplace_back(edge.data(), edge.size());
       }
       if (code != nebula::cpp2::ErrorCode::SUCCEEDED) {
@@ -76,6 +78,7 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
         continue;
       }
       doRemove(spaceId_, partId, std::move(keys));
+      stats::StatsManager::addValue(kNumEdgesDeleted, keys.size());
     }
   } else {
     for (auto& part : partEdges) {
@@ -88,19 +91,17 @@ void DeleteEdgesProcessor::process(const cpp2::DeleteEdgesRequest& req) {
       for (const auto& edgeKey : part.second) {
         auto l = std::make_tuple(spaceId_,
                                  partId,
-                                 (*edgeKey.src_ref()).getStr(),
+                                 edgeKey.src_ref()->getStr(),
                                  *edgeKey.edge_type_ref(),
                                  *edgeKey.ranking_ref(),
-                                 (*edgeKey.dst_ref()).getStr());
+                                 edgeKey.dst_ref()->getStr());
         if (std::find(dummyLock.begin(), dummyLock.end(), l) == dummyLock.end()) {
           if (!env_->edgesML_->try_lock(l)) {
-            LOG(ERROR) << folly::format(
-                "The edge locked : src {}, "
-                "type {}, tank {}, dst {}",
-                (*edgeKey.src_ref()).getStr(),
-                *edgeKey.edge_type_ref(),
-                *edgeKey.ranking_ref(),
-                (*edgeKey.dst_ref()).getStr());
+            LOG(ERROR) << folly::sformat("The edge locked : src {}, type {}, tank {}, dst {}",
+                                         edgeKey.src_ref()->getStr(),
+                                         *edgeKey.edge_type_ref(),
+                                         *edgeKey.ranking_ref(),
+                                         edgeKey.dst_ref()->getStr());
             err = nebula::cpp2::ErrorCode::E_DATA_CONFLICT_ERROR;
             break;
           }
@@ -161,7 +162,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> DeleteEdgesProcessor::deleteEdges(
               return nebula::cpp2::ErrorCode::E_INVALID_DATA;
             }
           }
-          auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(), index->get_fields());
+          auto valuesRet = IndexKeyUtils::collectIndexValues(reader.get(), index.get());
           if (!valuesRet.ok()) {
             continue;
           }
@@ -185,6 +186,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::string> DeleteEdgesProcessor::deleteEdges(
         }
       }
       batchHolder->remove(std::move(key));
+      stats::StatsManager::addValue(kNumEdgesDeleted);
     } else if (ret == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {
       continue;
     } else {

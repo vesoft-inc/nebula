@@ -16,6 +16,7 @@
 #include "common/base/Status.h"
 #include "common/base/StatusOr.h"
 #include "common/datatypes/Date.h"
+#include "common/datatypes/Duration.h"
 #include "common/datatypes/Map.h"
 #include "common/fs/FileUtils.h"
 #include "common/time/TimeConversion.h"
@@ -39,7 +40,7 @@ class TimeUtils {
       typename D,
       typename = std::enable_if_t<std::is_same<D, Date>::value || std::is_same<D, DateTime>::value>>
   static Status validateDate(const D &date) {
-    const int64_t *p = TimeConversion::isLeapYear(date.year) ? kLeapDaysSoFar : kDaysSoFar;
+    const int64_t *p = isLeapYear(date.year) ? kLeapDaysSoFar : kDaysSoFar;
     if ((p[date.month] - p[date.month - 1]) < date.day) {
       return Status::Error("`%s' is not a valid date.", date.toString().c_str());
     }
@@ -194,6 +195,8 @@ class TimeUtils {
   }
 
   static StatusOr<Value> toTimestamp(const Value &val);
+
+  static StatusOr<Duration> durationFromMap(const Map &m);
 
  private:
   struct UnixTime {

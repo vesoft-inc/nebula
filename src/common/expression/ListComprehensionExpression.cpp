@@ -145,7 +145,7 @@ std::string ListComprehensionExpression::toString() const {
   buf += "[";
   buf += innerVar_;
   buf += " IN ";
-  buf += collection_->toString();
+  buf += collection_ ? collection_->toString() : "";
   if (hasFilter()) {
     buf += " WHERE ";
     buf += filter_->toString();
@@ -159,6 +159,8 @@ std::string ListComprehensionExpression::toString() const {
   return buf;
 }
 
-void ListComprehensionExpression::accept(ExprVisitor* visitor) { visitor->visit(this); }
+void ListComprehensionExpression::accept(ExprVisitor* visitor) {
+  visitor->visit(this);
+}
 
 }  // namespace nebula

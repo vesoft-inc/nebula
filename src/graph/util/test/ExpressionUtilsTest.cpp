@@ -23,7 +23,9 @@ class ExpressionUtilsTest : public ::testing::Test {
     pool = qctx_->objPool();
   }
 
-  void TearDown() override { qctx_.reset(); }
+  void TearDown() override {
+    qctx_.reset();
+  }
 
   Expression *parse(const std::string &expr) {
     std::string query = "LOOKUP on t1 WHERE " + expr;

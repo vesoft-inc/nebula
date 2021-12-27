@@ -38,7 +38,9 @@ std::string WKBWriter::write(const Geography& geog, ByteOrder byteOrder) {
   }
 }
 
-void WKBWriter::writePoint(const Point& point) { writeCoordinate(point.coord); }
+void WKBWriter::writePoint(const Point& point) {
+  writeCoordinate(point.coord);
+}
 
 void WKBWriter::writeLineString(const LineString& line) {
   auto coordList = line.coordList;

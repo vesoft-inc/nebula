@@ -21,13 +21,19 @@ class ProduceSemiShortestPathExecutor final : public Executor {
     double cost_;
     std::vector<Path> paths_;
     CostPaths() = default;
-    CostPaths(double cost, std::vector<Path>& paths) : cost_(cost) { paths_.swap(paths); }
-    CostPaths(double cost, std::vector<Path>&& paths) : cost_(cost) { paths_.swap(paths); }
+    CostPaths(double cost, std::vector<Path>& paths) : cost_(cost) {
+      paths_.swap(paths);
+    }
+    CostPaths(double cost, std::vector<Path>&& paths) : cost_(cost) {
+      paths_.swap(paths);
+    }
   };
 
   struct CostPathsPtr {
     CostPathsPtr() = default;
-    CostPathsPtr(double cost, std::vector<const Path*>& paths) : cost_(cost) { paths_.swap(paths); }
+    CostPathsPtr(double cost, std::vector<const Path*>& paths) : cost_(cost) {
+      paths_.swap(paths);
+    }
     double cost_;
     std::vector<const Path*> paths_;
   };

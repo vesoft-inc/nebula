@@ -27,7 +27,9 @@ namespace opt {
 std::unique_ptr<OptRule> GetEdgesTransformRule::kInstance =
     std::unique_ptr<GetEdgesTransformRule>(new GetEdgesTransformRule());
 
-GetEdgesTransformRule::GetEdgesTransformRule() { RuleSet::QueryRules().addRule(this); }
+GetEdgesTransformRule::GetEdgesTransformRule() {
+  RuleSet::QueryRules().addRule(this);
+}
 
 const Pattern &GetEdgesTransformRule::pattern() const {
   static Pattern pattern =
@@ -71,6 +73,9 @@ StatusOr<OptRule::TransformResult> GetEdgesTransformRule::transform(
       OptGroupNode::create(ctx, newAppendVertices, appendVerticesGroupNode->group());
 
   auto *newScanEdges = traverseToScanEdges(traverse);
+  if (newScanEdges == nullptr) {
+    return TransformResult::noTransform();
+  }
   auto newScanEdgesGroup = OptGroup::create(ctx);
   auto newScanEdgesGroupNode = newScanEdgesGroup->makeGroupNode(newScanEdges);
 
@@ -93,11 +98,25 @@ StatusOr<OptRule::TransformResult> GetEdgesTransformRule::transform(
   return result;
 }
 
-std::string GetEdgesTransformRule::toString() const { return "GetEdgesTransformRule"; }
+std::string GetEdgesTransformRule::toString() const {
+  return "GetEdgesTransformRule";
+}
 
 /*static*/ graph::ScanEdges *GetEdgesTransformRule::traverseToScanEdges(
     const graph::Traverse *traverse) {
   const auto *edgeProps = traverse->edgeProps();
+  if (edgeProps == nullptr) {
+    return nullptr;
+  }
+  for (std::size_t i = 0; i < edgeProps->size(); i++) {
+    auto type = (*edgeProps)[i].get_type();
+    for (std::size_t j = i + 1; j < edgeProps->size(); j++) {
+      if (type == -((*edgeProps)[j].get_type())) {
+        // Don't support to retrieve edges of the inbound/outbound together
+        return nullptr;
+      }
+    }
+  }
   auto scanEdges = ScanEdges::make(
       traverse->qctx(),
       nullptr,

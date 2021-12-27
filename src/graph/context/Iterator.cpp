@@ -441,7 +441,6 @@ Value GetNeighborsIter::getVertex(const std::string& name) const {
 
 List GetNeighborsIter::getVertices() {
   List vertices;
-  vertices.values.reserve(size());
   valid_ = true;
   colIdx_ = -2;
   for (currentDs_ = dsIndices_.begin(); currentDs_ < dsIndices_.end(); ++currentDs_) {
@@ -513,7 +512,6 @@ Value GetNeighborsIter::getEdge() const {
 
 List GetNeighborsIter::getEdges() {
   List edges;
-  edges.values.reserve(size());
   for (; valid(); next()) {
     auto edge = getEdge();
     if (edge.isEdge()) {
@@ -612,7 +610,9 @@ void SequentialIter::init(std::vector<std::unique_ptr<Iterator>>&& iterators) {
   iter_ = rows_->begin();
 }
 
-bool SequentialIter::valid() const { return Iterator::valid() && iter_ < rows_->end(); }
+bool SequentialIter::valid() const {
+  return Iterator::valid() && iter_ < rows_->end();
+}
 
 void SequentialIter::next() {
   if (valid()) {
@@ -621,7 +621,9 @@ void SequentialIter::next() {
   }
 }
 
-void SequentialIter::erase() { iter_ = rows_->erase(iter_); }
+void SequentialIter::erase() {
+  iter_ = rows_->erase(iter_);
+}
 
 void SequentialIter::unstableErase() {
   std::swap(rows_->back(), *iter_);
@@ -649,9 +651,13 @@ const Value& SequentialIter::getColumn(int32_t index) const {
   return getColumnByIndex(index, iter_);
 }
 
-Value SequentialIter::getVertex(const std::string& name) const { return getColumn(name); }
+Value SequentialIter::getVertex(const std::string& name) const {
+  return getColumn(name);
+}
 
-Value SequentialIter::getEdge() const { return getColumn("EDGE"); }
+Value SequentialIter::getEdge() const {
+  return getColumn("EDGE");
+}
 
 PropIter::PropIter(std::shared_ptr<Value> value, bool checkMemory)
     : SequentialIter(value, checkMemory) {
@@ -854,7 +860,6 @@ Value PropIter::getEdge() const {
 List PropIter::getVertices() {
   DCHECK(iter_ == rows_->begin());
   List vertices;
-  vertices.values.reserve(size());
   for (; valid(); next()) {
     vertices.values.emplace_back(getVertex());
   }
@@ -877,7 +882,9 @@ List PropIter::getEdges() {
   return edges;
 }
 
-const Value& PropIter::getColumn(int32_t index) const { return getColumnByIndex(index, iter_); }
+const Value& PropIter::getColumn(int32_t index) const {
+  return getColumnByIndex(index, iter_);
+}
 
 std::ostream& operator<<(std::ostream& os, Iterator::Kind kind) {
   switch (kind) {

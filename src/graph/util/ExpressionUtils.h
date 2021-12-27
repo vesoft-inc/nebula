@@ -44,7 +44,7 @@ class ExpressionUtils {
   static std::vector<const Expression*> collectAll(
       const Expression* self, const std::unordered_set<Expression::Kind>& expected);
 
-  static bool checkVarExprIfExist(const Expression* expr);
+  static bool checkVarExprIfExist(const Expression* expr, const QueryContext* qctx);
 
   static std::vector<const Expression*> findAllStorage(const Expression* expr);
 
@@ -53,7 +53,7 @@ class ExpressionUtils {
   // **Expression type check**
   static bool isConstExpr(const Expression* expr);
 
-  static bool isEvaluableExpr(const Expression* expr);
+  static bool isEvaluableExpr(const Expression* expr, const QueryContext* qctx = nullptr);
 
   static Expression* rewriteLabelAttr2TagProp(const Expression* expr);
 
@@ -62,6 +62,8 @@ class ExpressionUtils {
   static Expression* rewriteAgg2VarProp(const Expression* expr);
 
   static Expression* rewriteInnerVar(const Expression* expr, std::string newVar);
+
+  static Expression* rewriteParameter(const Expression* expr, QueryContext* qctx);
 
   // Rewrite relational expression, gather evaluable expressions to one side
   static Expression* rewriteRelExpr(const Expression* expr);

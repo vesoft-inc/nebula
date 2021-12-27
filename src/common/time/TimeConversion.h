@@ -9,6 +9,7 @@
 #include <cstdint>
 
 #include "common/datatypes/Date.h"
+#include "common/time/Constants.h"
 
 namespace nebula {
 namespace time {
@@ -81,27 +82,7 @@ class TimeConversion {
     return t;
   }
 
-  // https://en.wikipedia.org/wiki/Leap_year#Leap_day
-  static bool isLeapYear(int16_t year) {
-    if (year % 4 != 0) {
-      return false;
-    } else if (year % 100 != 0) {
-      return true;
-    } else if (year % 400 != 0) {
-      return false;
-    } else {
-      return true;
-    }
-  }
-
   static const DateTime kEpoch;
-
-  static constexpr int kDayOfLeapYear = 366;
-  static constexpr int kDayOfCommonYear = 365;
-
-  static constexpr int64_t kSecondsOfMinute = 60;
-  static constexpr int64_t kSecondsOfHour = 60 * kSecondsOfMinute;
-  static constexpr int64_t kSecondsOfDay = 24 * kSecondsOfHour;
 
  private:
   // The result of a right-shift of a signed negative number is

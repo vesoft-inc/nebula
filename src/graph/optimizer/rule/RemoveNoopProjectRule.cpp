@@ -19,7 +19,9 @@ namespace opt {
 std::unique_ptr<OptRule> RemoveNoopProjectRule::kInstance =
     std::unique_ptr<RemoveNoopProjectRule>(new RemoveNoopProjectRule());
 
-RemoveNoopProjectRule::RemoveNoopProjectRule() { RuleSet::QueryRules().addRule(this); }
+RemoveNoopProjectRule::RemoveNoopProjectRule() {
+  RuleSet::QueryRules().addRule(this);
+}
 
 const Pattern& RemoveNoopProjectRule::pattern() const {
   static Pattern pattern = Pattern::create(graph::PlanNode::Kind::kProject);
@@ -93,7 +95,9 @@ bool RemoveNoopProjectRule::match(OptContext* octx, const MatchedResult& matched
   return true;
 }
 
-std::string RemoveNoopProjectRule::toString() const { return "RemoveNoopProjectRule"; }
+std::string RemoveNoopProjectRule::toString() const {
+  return "RemoveNoopProjectRule";
+}
 
 }  // namespace opt
 }  // namespace nebula

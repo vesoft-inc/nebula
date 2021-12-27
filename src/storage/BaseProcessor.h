@@ -30,7 +30,9 @@ class BaseProcessor {
 
   virtual ~BaseProcessor() = default;
 
-  folly::Future<RESP> getFuture() { return promise_.getFuture(); }
+  folly::Future<RESP> getFuture() {
+    return promise_.getFuture();
+  }
 
  protected:
   virtual void onFinished() {
@@ -41,12 +43,12 @@ class BaseProcessor {
       }
     }
 
-    this->result_.set_latency_in_us(this->duration_.elapsedInUSec());
+    this->result_.latency_in_us_ref() = this->duration_.elapsedInUSec();
     if (!profileDetail_.empty()) {
-      this->result_.set_latency_detail_us(std::move(profileDetail_));
+      this->result_.latency_detail_us_ref() = std::move(profileDetail_);
     }
-    this->result_.set_failed_parts(this->codes_);
-    this->resp_.set_result(std::move(this->result_));
+    this->result_.failed_parts_ref() = this->codes_;
+    this->resp_.result_ref() = std::move(this->result_);
     this->promise_.setValue(std::move(this->resp_));
 
     if (counters_) {

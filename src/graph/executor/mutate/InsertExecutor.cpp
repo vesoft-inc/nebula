@@ -15,7 +15,9 @@ using nebula::storage::StorageClient;
 namespace nebula {
 namespace graph {
 
-folly::Future<Status> InsertVerticesExecutor::execute() { return insertVertices(); }
+folly::Future<Status> InsertVerticesExecutor::execute() {
+  return insertVertices();
+}
 
 folly::Future<Status> InsertVerticesExecutor::insertVertices() {
   SCOPED_TIMER(&execTime_);
@@ -27,7 +29,11 @@ folly::Future<Status> InsertVerticesExecutor::insertVertices() {
       ivNode->getSpace(), qctx()->rctx()->session()->id(), plan->id(), plan->isProfileEnabled());
   return qctx()
       ->getStorageClient()
-      ->addVertices(param, ivNode->getVertices(), ivNode->getPropNames(), ivNode->getIfNotExists())
+      ->addVertices(param,
+                    ivNode->getVertices(),
+                    ivNode->getPropNames(),
+                    ivNode->getIfNotExists(),
+                    ivNode->getIgnoreExistedIndex())
       .via(runner())
       .ensure([addVertTime]() {
         VLOG(1) << "Add vertices time: " << addVertTime.elapsedInUSec() << "us";
@@ -39,7 +45,9 @@ folly::Future<Status> InsertVerticesExecutor::insertVertices() {
       });
 }
 
-folly::Future<Status> InsertEdgesExecutor::execute() { return insertEdges(); }
+folly::Future<Status> InsertEdgesExecutor::execute() {
+  return insertEdges();
+}
 
 folly::Future<Status> InsertEdgesExecutor::insertEdges() {
   SCOPED_TIMER(&execTime_);
@@ -52,7 +60,11 @@ folly::Future<Status> InsertEdgesExecutor::insertEdges() {
   param.useExperimentalFeature = FLAGS_enable_experimental_feature;
   return qctx()
       ->getStorageClient()
-      ->addEdges(param, ieNode->getEdges(), ieNode->getPropNames(), ieNode->getIfNotExists())
+      ->addEdges(param,
+                 ieNode->getEdges(),
+                 ieNode->getPropNames(),
+                 ieNode->getIfNotExists(),
+                 ieNode->getIgnoreExistedIndex())
       .via(runner())
       .ensure(
           [addEdgeTime]() { VLOG(1) << "Add edge time: " << addEdgeTime.elapsedInUSec() << "us"; })

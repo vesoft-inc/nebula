@@ -24,7 +24,9 @@ struct PartHosts {
            this->hosts_ == rhs.hosts_;
   }
 
-  bool operator!=(const PartHosts& rhs) const { return !(*this == rhs); }
+  bool operator!=(const PartHosts& rhs) const {
+    return !(*this == rhs);
+  }
 };
 
 // ListenerHosts saves the listener type and the peers of the data replica
