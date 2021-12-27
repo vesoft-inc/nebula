@@ -62,7 +62,7 @@ void GetTagProcessor::process(const cpp2::GetTagReq& req) {
   VLOG(3) << "Get Tag SpaceID: " << spaceId << ", tagName: " << tagName << ", version " << ver;
 
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
-  resp_.set_schema(MetaKeyUtils::parseSchema(schemaValue));
+  resp_.schema_ref() = MetaKeyUtils::parseSchema(schemaValue);
   onFinished();
 }
 

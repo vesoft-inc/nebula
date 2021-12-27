@@ -39,7 +39,9 @@ class AdminClient {
 
   virtual ~AdminClient() = default;
 
-  folly::Executor* executor() const { return ioThreadPool_.get(); }
+  folly::Executor* executor() const {
+    return ioThreadPool_.get();
+  }
 
   virtual folly::Future<Status> transLeader(GraphSpaceID spaceId,
                                             PartitionID partId,
@@ -81,15 +83,14 @@ class AdminClient {
 
   virtual folly::Future<Status> getLeaderDist(HostLeaderMap* result);
 
-  virtual folly::Future<StatusOr<cpp2::BackupInfo>> createSnapshot(GraphSpaceID spaceId,
-                                                                   const std::string& name,
-                                                                   const HostAddr& host);
+  virtual folly::Future<StatusOr<cpp2::HostBackupInfo>> createSnapshot(
+      const std::set<GraphSpaceID>& spaceIds, const std::string& name, const HostAddr& host);
 
-  virtual folly::Future<Status> dropSnapshot(GraphSpaceID spaceId,
+  virtual folly::Future<Status> dropSnapshot(const std::set<GraphSpaceID>& spaceIds,
                                              const std::string& name,
                                              const HostAddr& host);
 
-  virtual folly::Future<Status> blockingWrites(GraphSpaceID spaceId,
+  virtual folly::Future<Status> blockingWrites(const std::set<GraphSpaceID>& spaceIds,
                                                storage::cpp2::EngineSignType sign,
                                                const HostAddr& host);
 
@@ -106,8 +107,6 @@ class AdminClient {
   virtual folly::Future<Status> stopTask(const std::vector<HostAddr>& target,
                                          int32_t jobId,
                                          int32_t taskId);
-
-  virtual folly::Future<StatusOr<nebula::cpp2::DirInfo>> listClusterInfo(const HostAddr& host);
 
  private:
   template <class Request, class RemoteFunc, class RespGenerator>

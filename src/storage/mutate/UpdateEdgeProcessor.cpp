@@ -289,7 +289,9 @@ nebula::cpp2::ErrorCode UpdateEdgeProcessor::buildEdgeContext(const cpp2::Update
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
-void UpdateEdgeProcessor::onProcessFinished() { resp_.set_props(std::move(resultDataSet_)); }
+void UpdateEdgeProcessor::onProcessFinished() {
+  resp_.props_ref() = std::move(resultDataSet_);
+}
 
 }  // namespace storage
 }  // namespace nebula

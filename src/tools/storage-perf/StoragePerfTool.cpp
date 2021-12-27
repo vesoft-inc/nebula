@@ -80,7 +80,7 @@ class Perf {
       nebula::meta::cpp2::Schema schema;
       nebula::meta::cpp2::ColumnDef column;
       column.name = "col_1";
-      column.type.set_type(nebula::cpp2::PropertyType::STRING);
+      column.type.type_ref() = nebula::cpp2::PropertyType::STRING;
       (*schema.columns_ref()).emplace_back(std::move(column));
       auto ret = mClient_->createTagSchema(spaceId_, FLAGS_tag_name, schema).get();
       if (!ret.ok()) {
@@ -108,7 +108,7 @@ class Perf {
       nebula::meta::cpp2::Schema schema;
       nebula::meta::cpp2::ColumnDef column;
       column.name = "col_1";
-      column.type.set_type(nebula::cpp2::PropertyType::STRING);
+      column.type.type_ref() = nebula::cpp2::PropertyType::STRING;
       (*schema.columns_ref()).emplace_back(std::move(column));
       auto ret = mClient_->createEdgeSchema(spaceId_, FLAGS_edge_name, schema).get();
       if (!ret.ok()) {
@@ -195,8 +195,8 @@ class Perf {
   std::vector<cpp2::VertexProp> vertexProps() {
     std::vector<cpp2::VertexProp> vertexProps;
     cpp2::VertexProp vertexProp;
-    vertexProp.set_tag(tagId_);
-    vertexProp.set_props(tagProps_[tagId_]);
+    vertexProp.tag_ref() = tagId_;
+    vertexProp.props_ref() = tagProps_[tagId_];
     vertexProps.emplace_back(std::move(vertexProp));
     return vertexProps;
   }
@@ -204,8 +204,8 @@ class Perf {
   std::vector<cpp2::EdgeProp> edgeProps() {
     std::vector<cpp2::EdgeProp> edgeProps;
     cpp2::EdgeProp edgeProp;
-    edgeProp.set_type(edgeType_);
-    edgeProp.set_props(edgeProps_);
+    edgeProp.type_ref() = edgeType_;
+    edgeProp.props_ref() = edgeProps_;
     edgeProps.emplace_back(std::move(edgeProp));
     return edgeProps;
   }
@@ -243,15 +243,15 @@ class Perf {
 
     for (int32_t i = 0; i < FLAGS_batch_num; i++) {
       storage::cpp2::NewVertex v;
-      v.set_id(std::to_string(vintId));
+      v.id_ref() = std::to_string(vintId);
       vintId++;
       std::vector<nebula::storage::cpp2::NewTag> newTags;
       storage::cpp2::NewTag newTag;
-      newTag.set_tag_id(tagId_);
+      newTag.tag_id_ref() = tagId_;
       auto props = genData(tagProps_[tagId_].size());
-      newTag.set_props(std::move(props));
+      newTag.props_ref() = std::move(props);
       newTags.emplace_back(std::move(newTag));
-      v.set_tags(std::move(newTags));
+      v.tags_ref() = std::move(newTags);
       newVertices.emplace_back(std::move(v));
     }
     return newVertices;
@@ -264,13 +264,13 @@ class Perf {
     for (int32_t i = 0; i < FLAGS_batch_num; i++) {
       cpp2::NewEdge edge;
       cpp2::EdgeKey eKey;
-      eKey.set_src(std::to_string(vintId));
-      eKey.set_edge_type(edgeType_);
-      eKey.set_dst(std::to_string(vintId + 1));
-      eKey.set_ranking(0);
-      edge.set_key(std::move(eKey));
+      eKey.src_ref() = std::to_string(vintId);
+      eKey.edge_type_ref() = edgeType_;
+      eKey.dst_ref() = std::to_string(vintId + 1);
+      eKey.ranking_ref() = 0;
+      edge.key_ref() = std::move(eKey);
       auto props = genData(edgeProps_.size());
-      edge.set_props(std::move(props));
+      edge.props_ref() = std::move(props);
       edges.emplace_back(std::move(edge));
       vintId++;
     }
@@ -333,7 +333,7 @@ class Perf {
     for (auto i = 0; i < tokens; i++) {
       auto start = time::WallClock::fastNowInMicroSec();
       StorageClient::CommonRequestParam param(spaceId_, 0, 0);
-      storageClient_->addVertices(param, genVertices(), tagProps_, true)
+      storageClient_->addVertices(param, genVertices(), tagProps_, true, false)
           .via(evb)
           .thenValue([this, start](auto&& resps) {
             if (!resps.succeeded()) {
@@ -362,7 +362,7 @@ class Perf {
     for (auto i = 0; i < tokens; i++) {
       auto start = time::WallClock::fastNowInMicroSec();
       StorageClient::CommonRequestParam param(spaceId_, 0, 0);
-      storageClient_->addEdges(param, genEdges(), edgeProps_, true)
+      storageClient_->addEdges(param, genEdges(), edgeProps_, true, false)
           .via(evb)
           .thenValue([this, start](auto&& resps) {
             if (!resps.succeeded()) {

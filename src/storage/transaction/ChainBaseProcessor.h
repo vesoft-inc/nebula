@@ -23,13 +23,21 @@ class ChainBaseProcessor {
  public:
   virtual ~ChainBaseProcessor() = default;
 
-  virtual folly::SemiFuture<Code> prepareLocal() { return Code::SUCCEEDED; }
+  virtual folly::SemiFuture<Code> prepareLocal() {
+    return Code::SUCCEEDED;
+  }
 
-  virtual folly::SemiFuture<Code> processRemote(Code code) { return code; }
+  virtual folly::SemiFuture<Code> processRemote(Code code) {
+    return code;
+  }
 
-  virtual folly::SemiFuture<Code> processLocal(Code code) { return code; }
+  virtual folly::SemiFuture<Code> processLocal(Code code) {
+    return code;
+  }
 
-  virtual folly::Future<Code> getFinished() { return finished_.getFuture(); }
+  virtual folly::Future<Code> getFinished() {
+    return finished_.getFuture();
+  }
 
   virtual void finish() = 0;
 

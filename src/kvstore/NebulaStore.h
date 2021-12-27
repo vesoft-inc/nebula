@@ -87,25 +87,41 @@ class NebulaStore : public KVStore, public Handler {
 
   void stop() override;
 
-  uint32_t capability() const override { return 0; }
+  uint32_t capability() const override {
+    return 0;
+  }
 
-  HostAddr address() const { return storeSvcAddr_; }
+  HostAddr address() const {
+    return storeSvcAddr_;
+  }
 
-  std::shared_ptr<folly::IOThreadPoolExecutor> getIoPool() const { return ioPool_; }
+  std::shared_ptr<folly::IOThreadPoolExecutor> getIoPool() const {
+    return ioPool_;
+  }
 
-  std::shared_ptr<thread::GenericThreadPool> getBgWorkers() const { return bgWorkers_; }
+  std::shared_ptr<thread::GenericThreadPool> getBgWorkers() const {
+    return bgWorkers_;
+  }
 
-  std::shared_ptr<folly::Executor> getExecutors() const { return workers_; }
+  std::shared_ptr<folly::Executor> getExecutors() const {
+    return workers_;
+  }
 
   // Return the current leader
   ErrorOr<nebula::cpp2::ErrorCode, HostAddr> partLeader(GraphSpaceID spaceId,
                                                         PartitionID partId) override;
 
-  PartManager* partManager() const override { return options_.partMan_.get(); }
+  PartManager* partManager() const override {
+    return options_.partMan_.get();
+  }
 
-  bool isListener() const { return !options_.listenerPath_.empty(); }
+  bool isListener() const {
+    return !options_.listenerPath_.empty();
+  }
 
-  std::vector<std::string> getDataRoot() const override { return options_.dataPaths_; }
+  std::vector<std::string> getDataRoot() const override {
+    return options_.dataPaths_;
+  }
 
   nebula::cpp2::ErrorCode get(GraphSpaceID spaceId,
                               PartitionID partId,
@@ -283,7 +299,17 @@ class NebulaStore : public KVStore, public Handler {
                               std::function<void(std::shared_ptr<Part>&)> func,
                               std::vector<std::pair<GraphSpaceID, PartitionID>>& existParts);
 
-  void unregisterOnNewPartAdded(const std::string& funcName) { onNewPartAdded_.erase(funcName); }
+  void unregisterOnNewPartAdded(const std::string& funcName) {
+    onNewPartAdded_.erase(funcName);
+  }
+
+  void registerBeforeRemoveSpace(std::function<void(GraphSpaceID)> func) {
+    beforeRemoveSpace_ = func;
+  }
+
+  void unregisterBeforeRemoveSpace() {
+    beforeRemoveSpace_ = nullptr;
+  }
 
  private:
   void loadPartFromDataPath();
@@ -343,6 +369,7 @@ class NebulaStore : public KVStore, public Handler {
   std::shared_ptr<DiskManager> diskMan_;
   folly::ConcurrentHashMap<std::string, std::function<void(std::shared_ptr<Part>&)>>
       onNewPartAdded_;
+  std::function<void(GraphSpaceID)> beforeRemoveSpace_{nullptr};
 };
 
 }  // namespace kvstore

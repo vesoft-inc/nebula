@@ -36,11 +36,11 @@ template <typename T>
 class StoragePlan {
  public:
   nebula::cpp2::ErrorCode go(PartitionID partId, const T& input) {
-    // find all leaf nodes, and a dummy output node depends on all leaf node.
+    // find all end nodes (without dependents), and a dummy output node depends on all those nodes.
     if (firstLoop_) {
       auto output = std::make_unique<RelNode<T>>();
       for (const auto& node : nodes_) {
-        if (!node->hasDependents_) {
+        if (!node->isDependent_) {
           // add dependency of output node
           output->addDependency(node.get());
         }
@@ -54,11 +54,11 @@ class StoragePlan {
   }
 
   nebula::cpp2::ErrorCode go(PartitionID partId) {
-    // find all leaf nodes, and a dummy output node depends on all leaf node.
+    // find all end nodes (without dependents), and a dummy output node depends on all those nodes.
     if (firstLoop_) {
       auto output = std::make_unique<RelNode<T>>();
       for (const auto& node : nodes_) {
-        if (!node->hasDependents_) {
+        if (!node->isDependent_) {
           // add dependency of output node
           output->addDependency(node.get());
         }
@@ -80,7 +80,9 @@ class StoragePlan {
     CHECK_LT(idx, nodes_.size());
     return nodes_[idx].get();
   }
-  const std::vector<std::unique_ptr<RelNode<T>>>& getNodes() { return nodes_; }
+  const std::vector<std::unique_ptr<RelNode<T>>>& getNodes() {
+    return nodes_;
+  }
 
  private:
   bool firstLoop_ = true;

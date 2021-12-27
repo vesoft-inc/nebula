@@ -44,6 +44,8 @@ nebula_add_library(
     algo/ProduceAllPathsExecutor.cpp
     algo/CartesianProductExecutor.cpp
     algo/SubgraphExecutor.cpp
+    admin/AddHostsExecutor.cpp
+    admin/DropHostsExecutor.cpp
     admin/SwitchSpaceExecutor.cpp
     admin/CreateUserExecutor.cpp
     admin/DropUserExecutor.cpp

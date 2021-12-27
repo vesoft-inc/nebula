@@ -231,7 +231,7 @@ Feature: Go Yield Vertex And Edge Sentence
       """
       GO FROM $var OVER like YIELD edge as e
       """
-    Then a SyntaxError should be raised at runtime: syntax error near `OVER'
+    Then a SyntaxError should be raised at runtime: Variable is not supported in vid near `$var'
 
   Scenario: distinct map and set
     When executing query:
@@ -1809,3 +1809,117 @@ Feature: Go Yield Vertex And Edge Sentence
       | "Grant Hill"         | "Grant Hill"         | [:like "Grant Hill"->"Tracy McGrady" @0 {likeness: 90}]       | ("Grant Hill" :player{age: 46, name: "Grant Hill"})                 | ("Tracy McGrady" :player{age: 39, name: "Tracy McGrady"}) |
       | "Vince Carter"       | "Vince Carter"       | [:like "Vince Carter"->"Tracy McGrady" @0 {likeness: 90}]     | ("Vince Carter" :player{age: 42, name: "Vince Carter"})             | ("Tracy McGrady" :player{age: 39, name: "Tracy McGrady"}) |
       | "Yao Ming"           | "Yao Ming"           | [:like "Yao Ming"->"Tracy McGrady" @0 {likeness: 90}]         | ("Yao Ming" :player{age: 38, name: "Yao Ming"})                     | ("Tracy McGrady" :player{age: 39, name: "Tracy McGrady"}) |
+
+  Scenario: support properties function in where
+    When executing query:
+      """
+      GO FROM 'Tim Duncan' OVER like WHERE properties($$).age > 38 YIELD edge as e,  $$ as dst
+      """
+    Then the result should be, in any order, with relax comparison:
+      | e                                                       | dst                                                       |
+      | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}] | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"}) |
+    When executing query:
+      """
+      GO FROM 'Tim Duncan' OVER like WHERE properties(edge).age > 38 YIELD edge as e,  $$ as dst
+      """
+    Then the result should be, in any order, with relax comparison:
+      | e | dst |
+    When executing query:
+      """
+      GO FROM 'Tim Duncan' OVER like WHERE properties(edge).likeness > 80 YIELD edge as e,  $$ as dst
+      """
+    Then the result should be, in any order, with relax comparison:
+      | e                                                       | dst                                                       |
+      | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}] | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"}) |
+      | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]   | ("Tony Parker" :player{age: 36, name: "Tony Parker"})     |
+    When executing query:
+      """
+      GO 1 TO 2 STEPS FROM 'Russell Westbrook' OVER * where properties($$).age > 20 YIELD $$ as dst
+      """
+    Then the result should be, in any order, with relax comparison:
+      | dst                                                               |
+      | ("James Harden" :player{age: 29, name: "James Harden"})           |
+      | ("Paul George" :player{age: 28, name: "Paul George"})             |
+      | ("Russell Westbrook" :player{age: 30, name: "Russell Westbrook"}) |
+      | ("Russell Westbrook" :player{age: 30, name: "Russell Westbrook"}) |
+    When executing query:
+      """
+      GO 1 TO 2 STEPS FROM 'Tony Parker' OVER like BIDIRECT where properties($$).age > 30  YIELD DISTINCT properties(edge) as props, edge as e
+      """
+    Then the result should be, in any order, with relax comparison:
+      | props          | e                                                              |
+      | {likeness: 80} | [:like "Boris Diaw"->"Tony Parker" @0 {likeness: 80}]          |
+      | {likeness: 95} | [:like "Tony Parker"->"Tim Duncan" @0 {likeness: 95}]          |
+      | {likeness: 75} | [:like "LaMarcus Aldridge"->"Tony Parker" @0 {likeness: 75}]   |
+      | {likeness: 50} | [:like "Marco Belinelli"->"Tony Parker" @0 {likeness: 50}]     |
+      | {likeness: 95} | [:like "Tim Duncan"->"Tony Parker" @0 {likeness: 95}]          |
+      | {likeness: 90} | [:like "Tony Parker"->"LaMarcus Aldridge" @0 {likeness: 90}]   |
+      | {likeness: 95} | [:like "Tony Parker"->"Manu Ginobili" @0 {likeness: 95}]       |
+      | {likeness: 83} | [:like "Danny Green"->"Marco Belinelli" @0 {likeness: 83}]     |
+      | {likeness: 90} | [:like "Manu Ginobili"->"Tim Duncan" @0 {likeness: 90}]        |
+      | {likeness: 60} | [:like "Marco Belinelli"->"Danny Green" @0 {likeness: 60}]     |
+      | {likeness: 55} | [:like "Marco Belinelli"->"Tim Duncan" @0 {likeness: 55}]      |
+      | {likeness: 90} | [:like "Tiago Splitter"->"Manu Ginobili" @0 {likeness: 90}]    |
+      | {likeness: 80} | [:like "Aron Baynes"->"Tim Duncan" @0 {likeness: 80}]          |
+      | {likeness: 80} | [:like "Boris Diaw"->"Tim Duncan" @0 {likeness: 80}]           |
+      | {likeness: 70} | [:like "Danny Green"->"Tim Duncan" @0 {likeness: 70}]          |
+      | {likeness: 99} | [:like "Dejounte Murray"->"Danny Green" @0 {likeness: 99}]     |
+      | {likeness: 75} | [:like "LaMarcus Aldridge"->"Tim Duncan" @0 {likeness: 75}]    |
+      | {likeness: 99} | [:like "Dejounte Murray"->"Marco Belinelli" @0 {likeness: 99}] |
+      | {likeness: 99} | [:like "Dejounte Murray"->"Manu Ginobili" @0 {likeness: 99}]   |
+      | {likeness: 80} | [:like "Shaquille O'Neal"->"Tim Duncan" @0 {likeness: 80}]     |
+      | {likeness: 80} | [:like "Tiago Splitter"->"Tim Duncan" @0 {likeness: 80}]       |
+      | {likeness: 99} | [:like "Dejounte Murray"->"Chris Paul" @0 {likeness: 99}]      |
+      | {likeness: 95} | [:like "Tim Duncan"->"Manu Ginobili" @0 {likeness: 95}]        |
+      | {likeness: 99} | [:like "Dejounte Murray"->"Tony Parker" @0 {likeness: 99}]     |
+      | {likeness: 99} | [:like "Dejounte Murray"->"LeBron James" @0 {likeness: 99}]    |
+      | {likeness: 70} | [:like "Rudy Gay"->"LaMarcus Aldridge" @0 {likeness: 70}]      |
+      | {likeness: 99} | [:like "Dejounte Murray"->"Tim Duncan" @0 {likeness: 99}]      |
+    When executing query:
+      """
+      GO FROM 'Danny Green' OVER like YIELD src(edge) AS src, dst(edge) AS dst |
+      GO FROM $-.dst OVER teammate where properties($$).age > 35 YIELD $-.src AS src, $-.dst, $$ as dst
+      """
+    Then the result should be, in any order, with relax comparison:
+      | src           | $-.dst       | dst                                                       |
+      | "Danny Green" | "Tim Duncan" | ("Tony Parker" :player{age: 36, name: "Tony Parker"})     |
+      | "Danny Green" | "Tim Duncan" | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"}) |
+    When executing query:
+      """
+      GO FROM 'Danny Green' OVER like YIELD src(edge) AS src, dst(edge) AS dst |
+      GO FROM $-.dst OVER teammate where properties($^).age > 35 YIELD $-.src AS src, $-.dst, $$ as dst
+      """
+    Then the result should be, in any order, with relax comparison:
+      | src           | $-.dst       | dst                                                               |
+      | "Danny Green" | "Tim Duncan" | ("Danny Green" :player{age: 31, name: "Danny Green"})             |
+      | "Danny Green" | "Tim Duncan" | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"}) |
+      | "Danny Green" | "Tim Duncan" | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})         |
+      | "Danny Green" | "Tim Duncan" | ("Tony Parker" :player{age: 36, name: "Tony Parker"})             |
+    When executing query:
+      """
+      GO 2 STEPS FROM 'Kobe Bryant' OVER like REVERSELY WHERE properties(edge).likeness != 80 YIELD $$ as dst, edge as e
+      """
+    Then the result should be, in any order, with relax comparison:
+      | dst                                                     | e                                                         |
+      | ("Marc Gasol" :player{age: 34, name: "Marc Gasol"})     | [:like "Marc Gasol"->"Paul Gasol" @0 {likeness: 99}]      |
+      | ("Grant Hill" :player{age: 46, name: "Grant Hill"})     | [:like "Grant Hill"->"Tracy McGrady" @0 {likeness: 90}]   |
+      | ("Vince Carter" :player{age: 42, name: "Vince Carter"}) | [:like "Vince Carter"->"Tracy McGrady" @0 {likeness: 90}] |
+      | ("Yao Ming" :player{age: 38, name: "Yao Ming"})         | [:like "Yao Ming"->"Tracy McGrady" @0 {likeness: 90}]     |
+    When executing query:
+      """
+      $var = GO FROM "Tim Duncan", "Chris Paul" OVER like WHERE properties($$).age > 20 YIELD id($$) as id;
+      GO FROM $var.id OVER * WHERE properties(edge).likeness > 80 YIELD $$ as dst
+      """
+    Then the result should be, in any order, with relax comparison:
+      | dst                                                                                                         |
+      | ("LaMarcus Aldridge" :player{age: 33, name: "LaMarcus Aldridge"})                                           |
+      | ("Manu Ginobili" :player{age: 41, name: "Manu Ginobili"})                                                   |
+      | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+      | ("LeBron James" :player{age: 34, name: "LeBron James"})                                                     |
+      | ("Chris Paul" :player{age: 33, name: "Chris Paul"})                                                         |
+      | ("Carmelo Anthony" :player{age: 34, name: "Carmelo Anthony"})                                               |
+      | ("Tim Duncan" :bachelor{name: "Tim Duncan", speciality: "psychology"} :player{age: 42, name: "Tim Duncan"}) |
+      | ("Ray Allen" :player{age: 43, name: "Ray Allen"})                                                           |
+      | ("LeBron James" :player{age: 34, name: "LeBron James"})                                                     |
+      | ("Chris Paul" :player{age: 33, name: "Chris Paul"})                                                         |
+      | ("Dwyane Wade" :player{age: 37, name: "Dwyane Wade"})                                                       |

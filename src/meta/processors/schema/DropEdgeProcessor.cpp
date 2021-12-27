@@ -21,7 +21,7 @@ void DropEdgeProcessor::process(const cpp2::DropEdgeReq& req) {
   auto iRet = doGet(indexKey);
   if (nebula::ok(iRet)) {
     edgeType = *reinterpret_cast<const EdgeType*>(nebula::value(iRet).c_str());
-    resp_.set_id(to(edgeType, EntryType::EDGE));
+    resp_.id_ref() = to(edgeType, EntryType::EDGE);
   } else {
     auto retCode = nebula::error(iRet);
     if (retCode == nebula::cpp2::ErrorCode::E_KEY_NOT_FOUND) {

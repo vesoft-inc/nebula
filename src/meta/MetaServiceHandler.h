@@ -10,7 +10,10 @@
 #include "interface/gen-cpp2/MetaService.h"
 #include "kvstore/KVStore.h"
 #include "meta/processors/admin/AdminClient.h"
+#include "meta/processors/admin/AgentHBProcessor.h"
 #include "meta/processors/admin/HBProcessor.h"
+#include "meta/processors/job/AdminJobProcessor.h"
+#include "meta/processors/job/JobManager.h"
 
 namespace nebula {
 namespace meta {
@@ -23,6 +26,7 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
 
     // Initialize counters
     kHBCounters.init();
+    kAgentHBCounters.init();
   }
 
   /**
@@ -37,6 +41,10 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
   folly::Future<cpp2::ListSpacesResp> future_listSpaces(const cpp2::ListSpacesReq& req) override;
 
   folly::Future<cpp2::GetSpaceResp> future_getSpace(const cpp2::GetSpaceReq& req) override;
+
+  folly::Future<cpp2::ExecResp> future_addHosts(const cpp2::AddHostsReq& req) override;
+
+  folly::Future<cpp2::ExecResp> future_dropHosts(const cpp2::DropHostsReq& req) override;
 
   folly::Future<cpp2::ListHostsResp> future_listHosts(const cpp2::ListHostsReq& req) override;
 
@@ -154,6 +162,8 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
    * */
   folly::Future<cpp2::HBResp> future_heartBeat(const cpp2::HBReq& req) override;
 
+  folly::Future<cpp2::AgentHBResp> future_agentHeartbeat(const cpp2::AgentHBReq& req) override;
+
   folly::Future<cpp2::ExecResp> future_regConfig(const cpp2::RegConfigReq& req) override;
 
   folly::Future<cpp2::GetConfigResp> future_getConfig(const cpp2::GetConfigReq& req) override;
@@ -176,19 +186,20 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
   /**
    * Zone manager
    **/
-  folly::Future<cpp2::ExecResp> future_addZone(const cpp2::AddZoneReq& req) override;
-
   folly::Future<cpp2::ExecResp> future_dropZone(const cpp2::DropZoneReq& req) override;
+
+  folly::Future<cpp2::ExecResp> future_renameZone(const cpp2::RenameZoneReq& req) override;
 
   folly::Future<cpp2::GetZoneResp> future_getZone(const cpp2::GetZoneReq& req) override;
 
+  folly::Future<cpp2::ExecResp> future_mergeZone(const cpp2::MergeZoneReq& req) override;
+
+  folly::Future<cpp2::ExecResp> future_splitZone(const cpp2::SplitZoneReq& req) override;
+
   folly::Future<cpp2::ListZonesResp> future_listZones(const cpp2::ListZonesReq& req) override;
 
-  folly::Future<cpp2::ExecResp> future_addHostIntoZone(
-      const cpp2::AddHostIntoZoneReq& req) override;
-
-  folly::Future<cpp2::ExecResp> future_dropHostFromZone(
-      const cpp2::DropHostFromZoneReq& req) override;
+  folly::Future<cpp2::ExecResp> future_addHostsIntoZone(
+      const cpp2::AddHostsIntoZoneReq& req) override;
 
   // listener
   folly::Future<cpp2::ExecResp> future_addListener(const cpp2::AddListenerReq& req) override;
@@ -209,6 +220,7 @@ class MetaServiceHandler final : public cpp2::MetaServiceSvIf {
 
   folly::Future<cpp2::GetMetaDirInfoResp> future_getMetaDirInfo(
       const cpp2::GetMetaDirInfoReq& req) override;
+
   folly::Future<cpp2::CreateSessionResp> future_createSession(
       const cpp2::CreateSessionReq& req) override;
 

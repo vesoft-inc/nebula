@@ -29,15 +29,15 @@ void ListSnapshotsProcessor::process(const cpp2::ListSnapshotsReq&) {
     auto status = MetaKeyUtils::parseSnapshotStatus(val);
     auto hosts = MetaKeyUtils::parseSnapshotHosts(val);
     cpp2::Snapshot snapshot;
-    snapshot.set_name(std::move(name));
-    snapshot.set_status(std::move(status));
-    snapshot.set_hosts(std::move(hosts));
+    snapshot.name_ref() = std::move(name);
+    snapshot.status_ref() = std::move(status);
+    snapshot.hosts_ref() = std::move(hosts);
     snapshots.emplace_back(std::move(snapshot));
     iter->next();
   }
 
   handleErrorCode(nebula::cpp2::ErrorCode::SUCCEEDED);
-  resp_.set_snapshots(std::move(snapshots));
+  resp_.snapshots_ref() = std::move(snapshots);
   onFinished();
 }
 

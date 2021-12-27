@@ -63,7 +63,9 @@ BENCHMARK_DRAW_LINE();
 
 BENCHMARK(Test3_RangeTestInt) {
   std::vector<int32_t> v;
-  BENCHMARK_SUSPEND { v.resize(1000, 0); }
+  BENCHMARK_SUSPEND {
+    v.resize(1000, 0);
+  }
   for (auto& i : v) {
     (void)(i);
     int a{0};
@@ -73,7 +75,9 @@ BENCHMARK(Test3_RangeTestInt) {
 
 BENCHMARK_RELATIVE(Test3_ForEachInt) {
   std::vector<int32_t> v;
-  BENCHMARK_SUSPEND { v.resize(1000, 0); }
+  BENCHMARK_SUSPEND {
+    v.resize(1000, 0);
+  }
   std::for_each(v.begin(), v.end(), [](const auto&) {
     int a{0};
     folly::doNotOptimizeAway(a);

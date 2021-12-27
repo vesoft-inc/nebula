@@ -8,6 +8,7 @@
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
 #include "common/base/Base.h"
+#include "common/base/Status.h"
 #include "graph/context/QueryContext.h"
 #include "graph/context/QueryExpressionContext.h"
 
@@ -80,7 +81,7 @@ Status SchemaUtil::setTTLDuration(SchemaPropItem *schemaProp, meta::cpp2::Schema
   }
 
   auto ttlDuration = ret.value();
-  schema.schema_prop_ref().value().set_ttl_duration(ttlDuration);
+  schema.schema_prop_ref().value().ttl_duration_ref() = ttlDuration;
   return Status::OK();
 }
 
@@ -93,7 +94,7 @@ Status SchemaUtil::setTTLCol(SchemaPropItem *schemaProp, meta::cpp2::Schema &sch
 
   auto ttlColName = ret.value();
   if (ttlColName.empty()) {
-    schema.schema_prop_ref().value().set_ttl_col("");
+    schema.schema_prop_ref().value().ttl_col_ref() = "";
     return Status::OK();
   }
   // Check the legality of the ttl column name
@@ -105,7 +106,7 @@ Status SchemaUtil::setTTLCol(SchemaPropItem *schemaProp, meta::cpp2::Schema &sch
           col.type.type != nebula::cpp2::PropertyType::TIMESTAMP) {
         return Status::Error("Ttl column type illegal");
       }
-      schema.schema_prop_ref().value().set_ttl_col(ttlColName);
+      schema.schema_prop_ref().value().ttl_col_ref() = ttlColName;
       return Status::OK();
     }
   }
@@ -116,7 +117,7 @@ Status SchemaUtil::setTTLCol(SchemaPropItem *schemaProp, meta::cpp2::Schema &sch
 Status SchemaUtil::setComment(SchemaPropItem *schemaProp, meta::cpp2::Schema &schema) {
   auto ret = schemaProp->getComment();
   if (ret.ok()) {
-    schema.schema_prop_ref()->set_comment(std::move(ret).value());
+    schema.schema_prop_ref()->comment_ref() = std::move(ret).value();
   }
   return Status::OK();
 }
@@ -302,6 +303,8 @@ Value::Type SchemaUtil::propTypeToValueType(nebula::cpp2::PropertyType propType)
       return Value::Type::DATETIME;
     case nebula::cpp2::PropertyType::GEOGRAPHY:
       return Value::Type::GEOGRAPHY;
+    case nebula::cpp2::PropertyType::DURATION:
+      return Value::Type::DURATION;
     case nebula::cpp2::PropertyType::UNKNOWN:
       return Value::Type::__EMPTY__;
   }
@@ -346,9 +349,9 @@ StatusOr<std::unique_ptr<std::vector<storage::cpp2::VertexProp>>> SchemaUtil::ge
     }
     storage::cpp2::VertexProp vProp;
     const auto tagId = tag.first;
-    vProp.set_tag(tagId);
+    vProp.tag_ref() = tagId;
     propNames.emplace_back(nebula::kTag);  // "_tag"
-    vProp.set_props(std::move(propNames));
+    vProp.props_ref() = std::move(propNames);
     vertexProps->emplace_back(std::move(vProp));
   }
   return vertexProps;
@@ -370,8 +373,8 @@ StatusOr<std::unique_ptr<std::vector<storage::cpp2::EdgeProp>>> SchemaUtil::getE
       }
     }
     storage::cpp2::EdgeProp prop;
-    prop.set_type(edgeType);
-    prop.set_props(std::move(propNames));
+    prop.type_ref() = edgeType;
+    prop.props_ref() = std::move(propNames);
     edgeProps->emplace_back(std::move(prop));
   }
   return edgeProps;
