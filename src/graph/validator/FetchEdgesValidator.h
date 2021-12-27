@@ -26,11 +26,11 @@ class FetchEdgesValidator final : public Validator {
 
   Status validateEdgeKey();
 
-  void extractEdgeProp(ExpressionProps& exprProps);
-
   Status validateYield(const YieldClause* yieldClause);
 
-  AstContext* getAstContext() override { return fetchCtx_.get(); }
+  AstContext* getAstContext() override {
+    return fetchCtx_.get();
+  }
 
  private:
   std::string edgeName_;

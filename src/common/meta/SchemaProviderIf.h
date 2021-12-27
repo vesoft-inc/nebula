@@ -50,9 +50,13 @@ class SchemaProviderIf {
     friend class SchemaProviderIf;
 
    public:
-    const Field& operator*() const { return *field_; }
+    const Field& operator*() const {
+      return *field_;
+    }
 
-    const Field* operator->() const { return field_; }
+    const Field* operator->() const {
+      return field_;
+    }
 
     Iterator& operator++() {
       if (field_) {
@@ -70,7 +74,9 @@ class SchemaProviderIf {
       return *this;
     }
 
-    operator bool() const { return static_cast<bool>(field_); }
+    operator bool() const {
+      return static_cast<bool>(field_);
+    }
 
     bool operator==(const Iterator& rhs) const {
       return schema_ == rhs.schema_ && (index_ == rhs.index_ || (!field_ && !rhs.field_));
@@ -114,9 +120,13 @@ class SchemaProviderIf {
    * Iterator implementation
    *
    *****************************************/
-  Iterator begin() const { return Iterator(this, 0); }
+  Iterator begin() const {
+    return Iterator(this, 0);
+  }
 
-  Iterator end() const { return Iterator(this, getNumFields()); }
+  Iterator end() const {
+    return Iterator(this, getNumFields());
+  }
 };
 
 }  // namespace meta

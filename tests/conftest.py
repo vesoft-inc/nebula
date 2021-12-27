@@ -115,14 +115,18 @@ def class_fixture_variables():
     """save class scope fixture, used for session update.
     """
     # cluster is the instance of NebulaService
+    # current_session is the session currently using
+    # sessions is a list of all sessions in the cluster
     res = dict(
         pool=None,
-        session=None,
+        current_session=None,
         cluster=None,
+        sessions=[],
     )
     yield res
-    if res["session"] is not None:
-        res["session"].release()
+    for sess in res["sessions"]:
+        if sess is not None:
+            sess.release()
     if res["pool"] is not None:
         res["pool"].close()
     if res["cluster"] is not None:
@@ -176,8 +180,8 @@ def session_from_second_conn_pool(conn_pool_to_second_graph_service, pytestconfi
 
 @pytest.fixture(scope="class")
 def session(session_from_first_conn_pool, class_fixture_variables):
-    if class_fixture_variables.get('session', None) is not None:
-        return class_fixture_variables.get('session')
+    if class_fixture_variables.get('current_session', None) is not None:
+        return class_fixture_variables.get('current_session')
     return session_from_first_conn_pool
 
 

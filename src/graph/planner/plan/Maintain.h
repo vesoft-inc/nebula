@@ -27,11 +27,17 @@ class CreateSchemaNode : public SingleDependencyNode {
         ifNotExists_(ifNotExists) {}
 
  public:
-  const std::string& getName() const { return name_; }
+  const std::string& getName() const {
+    return name_;
+  }
 
-  const meta::cpp2::Schema& getSchema() const { return schema_; }
+  const meta::cpp2::Schema& getSchema() const {
+    return schema_;
+  }
 
-  bool getIfNotExists() const { return ifNotExists_; }
+  bool getIfNotExists() const {
+    return ifNotExists_;
+  }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
@@ -99,13 +105,21 @@ class AlterSchemaNode : public SingleDependencyNode {
         schemaProp_(std::move(schemaProp)) {}
 
  public:
-  const std::string& getName() const { return name_; }
+  const std::string& getName() const {
+    return name_;
+  }
 
-  const std::vector<meta::cpp2::AlterSchemaItem>& getSchemaItems() const { return schemaItems_; }
+  const std::vector<meta::cpp2::AlterSchemaItem>& getSchemaItems() const {
+    return schemaItems_;
+  }
 
-  const meta::cpp2::SchemaProp& getSchemaProp() const { return schemaProp_; }
+  const meta::cpp2::SchemaProp& getSchemaProp() const {
+    return schemaProp_;
+  }
 
-  GraphSpaceID space() const { return space_; }
+  GraphSpaceID space() const {
+    return space_;
+  }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
@@ -178,7 +192,9 @@ class DescSchemaNode : public SingleDependencyNode {
       : SingleDependencyNode(qctx, kind, input), name_(std::move(name)) {}
 
  public:
-  const std::string& getName() const { return name_; }
+  const std::string& getName() const {
+    return name_;
+  }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
@@ -258,9 +274,13 @@ class DropSchemaNode : public SingleDependencyNode {
       : SingleDependencyNode(qctx, kind, input), name_(std::move(name)), ifExists_(ifExists) {}
 
  public:
-  const std::string& getName() const { return name_; }
+  const std::string& getName() const {
+    return name_;
+  }
 
-  GraphSpaceID getIfExists() const { return ifExists_; }
+  GraphSpaceID getIfExists() const {
+    return ifExists_;
+  }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
@@ -311,17 +331,29 @@ class CreateIndexNode : public SingleDependencyNode {
         comment_(comment) {}
 
  public:
-  const std::string& getSchemaName() const { return schemaName_; }
+  const std::string& getSchemaName() const {
+    return schemaName_;
+  }
 
-  const std::string& getIndexName() const { return indexName_; }
+  const std::string& getIndexName() const {
+    return indexName_;
+  }
 
-  const std::vector<meta::cpp2::IndexFieldDef>& getFields() const { return fields_; }
+  const std::vector<meta::cpp2::IndexFieldDef>& getFields() const {
+    return fields_;
+  }
 
-  bool getIfNotExists() const { return ifNotExists_; }
+  bool getIfNotExists() const {
+    return ifNotExists_;
+  }
 
-  const meta::cpp2::IndexParams* getIndexParams() const { return indexParams_.get(); }
+  const meta::cpp2::IndexParams* getIndexParams() const {
+    return indexParams_.get();
+  }
 
-  const std::string* getComment() const { return comment_; }
+  const std::string* getComment() const {
+    return comment_;
+  }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
@@ -420,7 +452,9 @@ class DescIndexNode : public SingleDependencyNode {
       : SingleDependencyNode(qctx, kind, input), indexName_(std::move(indexName)) {}
 
  public:
-  const std::string& getIndexName() const { return indexName_; }
+  const std::string& getIndexName() const {
+    return indexName_;
+  }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
@@ -459,9 +493,13 @@ class DropIndexNode : public SingleDependencyNode {
         ifExists_(ifExists) {}
 
  public:
-  const std::string& getIndexName() const { return indexName_; }
+  const std::string& getIndexName() const {
+    return indexName_;
+  }
 
-  GraphSpaceID getIfExists() const { return ifExists_; }
+  GraphSpaceID getIfExists() const {
+    return ifExists_;
+  }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
@@ -526,7 +564,9 @@ class ShowTagIndexes final : public SingleDependencyNode {
     return qctx->objPool()->add(new ShowTagIndexes(qctx, input, std::move(name)));
   }
 
-  const std::string& name() const { return name_; }
+  const std::string& name() const {
+    return name_;
+  }
 
  private:
   ShowTagIndexes(QueryContext* qctx, PlanNode* input, std::string name)
@@ -544,7 +584,9 @@ class ShowEdgeIndexes final : public SingleDependencyNode {
     return qctx->objPool()->add(new ShowEdgeIndexes(qctx, input, std::move(name)));
   }
 
-  const std::string& name() const { return name_; }
+  const std::string& name() const {
+    return name_;
+  }
 
  private:
   ShowEdgeIndexes(QueryContext* qctx, PlanNode* input, std::string name)
@@ -590,9 +632,13 @@ class CreateFTIndexNode : public SingleInputNode {
         index_(std::move(index)) {}
 
  public:
-  const std::string& getIndexName() const { return indexName_; }
+  const std::string& getIndexName() const {
+    return indexName_;
+  }
 
-  const meta::cpp2::FTIndex& getIndex() const { return index_; }
+  const meta::cpp2::FTIndex& getIndex() const {
+    return index_;
+  }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 
@@ -625,7 +671,9 @@ class DropFTIndexNode : public SingleInputNode {
       : SingleInputNode(qctx, kind, input), name_(std::move(name)) {}
 
  public:
-  const std::string& getName() const { return name_; }
+  const std::string& getName() const {
+    return name_;
+  }
 
   std::unique_ptr<PlanNodeDescription> explain() const override;
 

@@ -134,14 +134,23 @@ struct Value {
   Value(Geography&& v);                  // NOLINT
   Value(const Duration& v);              // NOLINT
   Value(Duration&& v);                   // NOLINT
-  ~Value() { clear(); }
+  ~Value() {
+    clear();
+  }
 
-  Type type() const noexcept { return type_; }
+  Type type() const noexcept {
+    return type_;
+  }
 
   const std::string& typeName() const;
+  static const std::string toString(Type type);
 
-  bool empty() const { return type_ == Type::__EMPTY__; }
-  bool isNull() const { return type_ == Type::NULLVALUE; }
+  bool empty() const {
+    return type_ == Type::__EMPTY__;
+  }
+  bool isNull() const {
+    return type_ == Type::NULLVALUE;
+  }
   bool isBadNull() const {
     if (!isNull()) {
       return false;
@@ -151,27 +160,63 @@ struct Value {
            null == NullType::ERR_OVERFLOW || null == NullType::UNKNOWN_PROP ||
            null == NullType::DIV_BY_ZERO || null == NullType::OUT_OF_RANGE;
   }
-  bool isNumeric() const { return type_ == Type::INT || type_ == Type::FLOAT; }
-  bool isBool() const { return type_ == Type::BOOL; }
-  bool isInt() const { return type_ == Type::INT; }
-  bool isFloat() const { return type_ == Type::FLOAT; }
-  bool isStr() const { return type_ == Type::STRING; }
-  bool isDate() const { return type_ == Type::DATE; }
-  bool isTime() const { return type_ == Type::TIME; }
-  bool isDateTime() const { return type_ == Type::DATETIME; }
-  bool isVertex() const { return type_ == Type::VERTEX; }
-  bool isEdge() const { return type_ == Type::EDGE; }
-  bool isPath() const { return type_ == Type::PATH; }
-  bool isList() const { return type_ == Type::LIST; }
-  bool isMap() const { return type_ == Type::MAP; }
-  bool isSet() const { return type_ == Type::SET; }
-  bool isDataSet() const { return type_ == Type::DATASET; }
-  bool isGeography() const { return type_ == Type::GEOGRAPHY; }
-  bool isDuration() const { return type_ == Type::DURATION; }
+  bool isNumeric() const {
+    return type_ == Type::INT || type_ == Type::FLOAT;
+  }
+  bool isBool() const {
+    return type_ == Type::BOOL;
+  }
+  bool isInt() const {
+    return type_ == Type::INT;
+  }
+  bool isFloat() const {
+    return type_ == Type::FLOAT;
+  }
+  bool isStr() const {
+    return type_ == Type::STRING;
+  }
+  bool isDate() const {
+    return type_ == Type::DATE;
+  }
+  bool isTime() const {
+    return type_ == Type::TIME;
+  }
+  bool isDateTime() const {
+    return type_ == Type::DATETIME;
+  }
+  bool isVertex() const {
+    return type_ == Type::VERTEX;
+  }
+  bool isEdge() const {
+    return type_ == Type::EDGE;
+  }
+  bool isPath() const {
+    return type_ == Type::PATH;
+  }
+  bool isList() const {
+    return type_ == Type::LIST;
+  }
+  bool isMap() const {
+    return type_ == Type::MAP;
+  }
+  bool isSet() const {
+    return type_ == Type::SET;
+  }
+  bool isDataSet() const {
+    return type_ == Type::DATASET;
+  }
+  bool isGeography() const {
+    return type_ == Type::GEOGRAPHY;
+  }
+  bool isDuration() const {
+    return type_ == Type::DURATION;
+  }
 
   void clear();
 
-  void __clear() { clear(); }
+  void __clear() {
+    clear();
+  }
 
   Value& operator=(Value&& rhs) noexcept;
   Value& operator=(const Value& rhs);
@@ -290,7 +335,9 @@ struct Value {
   Geography& mutableGeography();
   Duration& mutableDuration();
 
-  static const Value& null() noexcept { return kNullValue; }
+  static const Value& null() noexcept {
+    return kNullValue;
+  }
 
   std::string toString() const;
   folly::dynamic toJson() const;

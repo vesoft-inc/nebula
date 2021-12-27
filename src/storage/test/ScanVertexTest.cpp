@@ -23,32 +23,32 @@ cpp2::ScanVertexRequest buildRequest(
     int64_t endTime = std::numeric_limits<int64_t>::max(),
     bool onlyLatestVer = false) {
   cpp2::ScanVertexRequest req;
-  req.set_space_id(1);
+  req.space_id_ref() = 1;
   cpp2::ScanCursor c;
   CHECK_EQ(partIds.size(), cursors.size());
   std::unordered_map<PartitionID, cpp2::ScanCursor> parts;
   for (std::size_t i = 0; i < partIds.size(); ++i) {
     if (!cursors[i].empty()) {
-      c.set_next_cursor(cursors[i]);
+      c.next_cursor_ref() = cursors[i];
     }
     parts.emplace(partIds[i], c);
   }
-  req.set_parts(std::move(parts));
+  req.parts_ref() = std::move(parts);
   std::vector<cpp2::VertexProp> vertexProps;
   for (const auto& tag : tags) {
     TagID tagId = tag.first;
     cpp2::VertexProp vertexProp;
-    vertexProp.set_tag(tagId);
+    vertexProp.tag_ref() = tagId;
     for (const auto& prop : tag.second) {
       (*vertexProp.props_ref()).emplace_back(std::move(prop));
     }
     vertexProps.emplace_back(std::move(vertexProp));
   }
-  req.set_return_columns(std::move(vertexProps));
-  req.set_limit(rowLimit);
-  req.set_start_time(startTime);
-  req.set_end_time(endTime);
-  req.set_only_latest_version(onlyLatestVer);
+  req.return_columns_ref() = std::move(vertexProps);
+  req.limit_ref() = rowLimit;
+  req.start_time_ref() = startTime;
+  req.end_time_ref() = endTime;
+  req.only_latest_version_ref() = onlyLatestVer;
   return req;
 }
 
@@ -459,7 +459,7 @@ TEST(ScanVertexTest, FilterTest) {
     Expression* filter = TagPropertyExpression::make(&pool, "1", "name");
     filter =
         RelationalExpression::makeEQ(&pool, filter, ConstantExpression::make(&pool, "Kobe Bryant"));
-    req.set_filter(filter->encode());
+    req.filter_ref() = filter->encode();
     auto* processor = ScanVertexProcessor::instance(env, nullptr);
     auto f = processor->getFuture();
     processor->process(req);
@@ -486,7 +486,7 @@ TEST(ScanVertexTest, FilterTest) {
         &pool,
         filter,
         UnaryExpression::makeIsEmpty(&pool, TagPropertyExpression::make(&pool, "2", "name")));
-    req.set_filter(filter->encode());
+    req.filter_ref() = filter->encode();
     auto* processor = ScanVertexProcessor::instance(env, nullptr);
     auto f = processor->getFuture();
     processor->process(req);

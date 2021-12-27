@@ -19,13 +19,21 @@ void ExprVisitorImpl::visit(TypeCastingExpression *expr) {
 }
 
 // binary expression
-void ExprVisitorImpl::visit(ArithmeticExpression *expr) { visitBinaryExpr(expr); }
+void ExprVisitorImpl::visit(ArithmeticExpression *expr) {
+  visitBinaryExpr(expr);
+}
 
-void ExprVisitorImpl::visit(RelationalExpression *expr) { visitBinaryExpr(expr); }
+void ExprVisitorImpl::visit(RelationalExpression *expr) {
+  visitBinaryExpr(expr);
+}
 
-void ExprVisitorImpl::visit(SubscriptExpression *expr) { visitBinaryExpr(expr); }
+void ExprVisitorImpl::visit(SubscriptExpression *expr) {
+  visitBinaryExpr(expr);
+}
 
-void ExprVisitorImpl::visit(AttributeExpression *expr) { visitBinaryExpr(expr); }
+void ExprVisitorImpl::visit(AttributeExpression *expr) {
+  visitBinaryExpr(expr);
+}
 
 void ExprVisitorImpl::visit(LogicalExpression *expr) {
   for (auto &operand : expr->operands()) {

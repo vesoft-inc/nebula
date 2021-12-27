@@ -58,8 +58,8 @@ void ListPartsProcessor::process(const cpp2::ListPartsReq& req) {
 
   for (auto& partEntry : partHostsMap) {
     cpp2::PartItem partItem;
-    partItem.set_part_id(partEntry.first);
-    partItem.set_peers(std::move(partEntry.second));
+    partItem.part_id_ref() = partEntry.first;
+    partItem.peers_ref() = std::move(partEntry.second);
     std::vector<HostAddr> losts;
     for (auto& host : partItem.get_peers()) {
       if (std::find(activeHosts.begin(), activeHosts.end(), HostAddr(host.host, host.port)) ==
@@ -67,7 +67,7 @@ void ListPartsProcessor::process(const cpp2::ListPartsReq& req) {
         losts.emplace_back(host.host, host.port);
       }
     }
-    partItem.set_losts(std::move(losts));
+    partItem.losts_ref() = std::move(losts);
     partItems.emplace_back(std::move(partItem));
   }
   if (partItems.size() != partHostsMap.size()) {
@@ -75,7 +75,7 @@ void ListPartsProcessor::process(const cpp2::ListPartsReq& req) {
   }
   auto retCode = getLeaderDist(partItems);
   if (retCode == nebula::cpp2::ErrorCode::SUCCEEDED) {
-    resp_.set_parts(std::move(partItems));
+    resp_.parts_ref() = std::move(partItems);
   }
   handleErrorCode(retCode);
   onFinished();
@@ -144,7 +144,7 @@ nebula::cpp2::ErrorCode ListPartsProcessor::getLeaderDist(std::vector<cpp2::Part
       LOG(INFO) << "ignore inactive host: " << host;
       continue;
     }
-    partItems[i].set_leader(host);
+    partItems[i].leader_ref() = host;
   }
 
   return nebula::cpp2::ErrorCode::SUCCEEDED;

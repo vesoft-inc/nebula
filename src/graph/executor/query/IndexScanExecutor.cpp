@@ -18,7 +18,9 @@ using nebula::storage::cpp2::LookupIndexResp;
 namespace nebula {
 namespace graph {
 
-folly::Future<Status> IndexScanExecutor::execute() { return indexScan(); }
+folly::Future<Status> IndexScanExecutor::execute() {
+  return indexScan();
+}
 
 folly::Future<Status> IndexScanExecutor::indexScan() {
   StorageClient *storageClient = qctx_->getStorageClient();
