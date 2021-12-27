@@ -12,6 +12,7 @@
 #include <thrift/lib/cpp/util/EnumUtils.h>
 
 #include <boost/filesystem.hpp>
+#include <unordered_set>
 
 #include "clients/meta/FileBasedClusterIdMan.h"
 #include "clients/meta/stats/MetaClientStats.h"
@@ -161,6 +162,10 @@ bool MetaClient::loadUsersAndRoles() {
   decltype(userRolesMap_) userRolesMap;
   decltype(userPasswordMap_) userPasswordMap;
   decltype(userPasswordAttemptsRemain_) userPasswordAttemptsRemain;
+  decltype(userLoginLockTime_) userLoginLockTime;
+  // List of username
+  std::unordered_set<std::string> userNameList;
+
   for (auto& user : userRoleRet.value()) {
     auto rolesRet = getUserRoles(user.first).get();
     if (!rolesRet.ok()) {
@@ -170,12 +175,39 @@ bool MetaClient::loadUsersAndRoles() {
     userRolesMap[user.first] = rolesRet.value();
     userPasswordMap[user.first] = user.second;
     userPasswordAttemptsRemain[user.first] = FLAGS_failed_login_attempts;
+    userLoginLockTime[user.first] = 0;
+    userNameList.emplace(user.first);
   }
   {
     folly::RWSpinLock::WriteHolder holder(localCacheLock_);
     userRolesMap_ = std::move(userRolesMap);
     userPasswordMap_ = std::move(userPasswordMap);
+
+    // This method is called periodically by the heartbeat thread, but we don't want to reset the
+    // failed login attempts every time. Remove expired users from cache
+    for (auto& ele : userPasswordAttemptsRemain) {
+      if (userNameList.count(ele.first) == 0) {
+        userPasswordAttemptsRemain.erase(ele.first);
+      }
+    }
+    for (auto& ele : userLoginLockTime) {
+      if (userNameList.count(ele.first) == 0) {
+        userLoginLockTime.erase(ele.first);
+      }
+    }
+
+    // If the user is not in the map, insert value with the default value
+    for (const auto& user : userNameList) {
+      if (userPasswordAttemptsRemain.count(user) == 0) {
+        userPasswordAttemptsRemain[user] = FLAGS_failed_login_attempts;
+      }
+      if (userLoginLockTime.count(user) == 0) {
+        userLoginLockTime[user] = 0;
+      }
+    }
+
     userPasswordAttemptsRemain_ = std::move(userPasswordAttemptsRemain);
+    userLoginLockTime_ = std::move(userLoginLockTime);
   }
   return true;
 }
@@ -2380,19 +2412,25 @@ Status MetaClient::authCheckFromCache(const std::string& account, const std::str
     return Status::Error("User not exist");
   }
 
-  auto passwordAttemtRemain =
-      const_cast<ThreadLocalInfo&>(threadLocalInfo).userPasswordAttemptsRemain_[account];
-  // If the remaining attempts is 0 and login retry is limitied, the user should be blocked
-  bool isUserBlocked = passwordAttemtRemain == 0 && FLAGS_failed_login_attempts != 0;
+  folly::RWSpinLock::WriteHolder holder(localCacheLock_);
 
-  if (isUserBlocked) {
-    // If the remaining attemps is 0, failed to authenticate
-    // Block user login
+  auto& passwordAttemtRemain =
+      const_cast<ThreadLocalInfo&>(threadLocalInfo).userPasswordAttemptsRemain_[account];
+  // // If the remaining attempts is 0 and login retry is limitied, the user should be blocked
+  // bool isUserLocked = passwordAttemtRemain == 0 && FLAGS_failed_login_attempts != 0;
+
+  auto& lockedSince = const_cast<ThreadLocalInfo&>(threadLocalInfo).userLoginLockTime_[account];
+
+  // lockedSince is non-zero means the account has been locked
+  if (lockedSince != 0) {
+    auto remainingLockTime =
+        (lockedSince + FLAGS_password_lock_time * 3600) - time::WallClock::fastNowInSec();
     return Status::Error(
         "%d times consecutive incorrect passwords has been input, user name: %s has been "
-        "blocked",
+        "locked, try again in %ld seconds",
         FLAGS_failed_login_attempts,
-        account.c_str());
+        account.c_str(),
+        remainingLockTime);
   }
 
   if (iter->second != password) {
@@ -2402,19 +2440,38 @@ Status MetaClient::authCheckFromCache(const std::string& account, const std::str
     }
 
     // If the password is not correct and passwordAttemtRemain > 0,
-    // Allow another trial
+    // Allow another attemp
     if (passwordAttemtRemain > 0) {
-      auto remainAttemps =
-          --const_cast<ThreadLocalInfo&>(threadLocalInfo).userPasswordAttemptsRemain_[account];
-      LOG(ERROR) << "Invalid password, remaining attempts: " << remainAttemps;
-      return Status::Error("Invalid password, remaining attempts: %d", remainAttemps);
+      --passwordAttemtRemain;
+      if (passwordAttemtRemain == 0) {
+        // If the remaining attemps is 0, failed to authenticate
+        // Block user login
+        lockedSince = time::WallClock::fastNowInSec();
+        return Status::Error(
+            "%d times consecutive incorrect passwords has been input, user name: %s has been "
+            "blocked, try again in %d seconds",
+            FLAGS_failed_login_attempts,
+            account.c_str(),
+            lockedSince + FLAGS_password_lock_time * 3600);
+      }
+      LOG(ERROR) << "Invalid password, remaining attempts: " << passwordAttemtRemain;
+      return Status::Error("Invalid password, remaining attempts: %d", passwordAttemtRemain);
     }
   }
 
-  // Authentication succeed
+  // Authentication succeed, check if the account has been locked
+  auto curTimestamp = time::WallClock::fastNowInSec();
+  if (curTimestamp < lockedSince + FLAGS_password_lock_time * 3600) {
+    return Status::Error(
+        "%d times consecutive incorrect passwords has been input, user name: %s has been "
+        "locked",
+        FLAGS_failed_login_attempts,
+        account.c_str());
+  }
+
   // Reset password attempts remained
-  const_cast<ThreadLocalInfo&>(threadLocalInfo).userPasswordAttemptsRemain_[account] =
-      FLAGS_failed_login_attempts;
+  passwordAttemtRemain = FLAGS_failed_login_attempts;
+  lockedSince = 0;
   return Status::OK();
 }
 
