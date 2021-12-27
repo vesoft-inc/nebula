@@ -505,10 +505,8 @@ cpp2::DeleteEdgesRequest FakeChainDeleteEdgesProcessor::makeDelRequest(cpp2::Add
                                                                        int32_t limit) {
   cpp2::DeleteEdgesRequest ret;
   int32_t num = 0;
-  // if (limit <= 0) {
-  //   limit = std::numeric_limit<int>::max();
-  // }
-  ret.set_space_id(req.get_space_id());
+  // ret.set_space_id(req.get_space_id());
+  ret.space_id_ref() = req.get_space_id();
   for (auto& partAndEdges : req.get_parts()) {
     auto partId = partAndEdges.first;
     for (auto& newEdge : partAndEdges.second) {

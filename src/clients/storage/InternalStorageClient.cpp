@@ -88,7 +88,8 @@ void InternalStorageClient::chainAddEdges(cpp2::AddEdgesRequest& directReq,
   auto partId = directReq.get_parts().begin()->first;
   auto optLeader = getLeader(directReq.get_space_id(), partId);
   if (!optLeader.ok()) {
-    LOG(WARNING) << folly::sformat("failed to get leader, space {}, part {}", spaceId, partId);
+    LOG(WARNING) << folly::sformat("failed to get leader, space {}, part {}", spaceId, partId)
+                 << optLeader.status();
     p.setValue(::nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND);
     return;
   }
@@ -140,7 +141,8 @@ void InternalStorageClient::chainDeleteEdges(cpp2::DeleteEdgesRequest& req,
   auto partId = req.get_parts().begin()->first;
   auto optLeader = getLeader(req.get_space_id(), partId);
   if (!optLeader.ok()) {
-    LOG(WARNING) << folly::sformat("failed to get leader, space {}, part {}", spaceId, partId);
+    LOG(WARNING) << folly::sformat("failed to get leader, space {}, part {}", spaceId, partId)
+                 << optLeader.status();
     p.setValue(::nebula::cpp2::ErrorCode::E_SPACE_NOT_FOUND);
     return;
   }
