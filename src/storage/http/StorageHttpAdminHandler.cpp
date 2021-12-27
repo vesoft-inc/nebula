@@ -102,7 +102,9 @@ void StorageHttpAdminHandler::onUpgrade(UpgradeProtocol) noexcept {
   // Do nothing
 }
 
-void StorageHttpAdminHandler::requestComplete() noexcept { delete this; }
+void StorageHttpAdminHandler::requestComplete() noexcept {
+  delete this;
+}
 
 void StorageHttpAdminHandler::onError(ProxygenError error) noexcept {
   LOG(ERROR) << "Web service StorageHttpHandler got error: " << proxygen::getErrorString(error);

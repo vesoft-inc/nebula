@@ -5,7 +5,9 @@
 
 #include "common/stats/StatsManager.h"
 
+#include <folly/Range.h>
 #include <folly/String.h>
+#include <glog/logging.h>
 
 #include "common/base/Base.h"
 
@@ -19,7 +21,9 @@ StatsManager& StatsManager::get() {
 }
 
 // static
-void StatsManager::setDomain(folly::StringPiece domain) { get().domain_ = domain.toString(); }
+void StatsManager::setDomain(folly::StringPiece domain) {
+  get().domain_ = domain.toString();
+}
 
 // static
 void StatsManager::setReportInfo(HostAddr addr, int32_t interval) {
@@ -51,7 +55,7 @@ void StatsManager::parseStats(const folly::StringPiece stats,
       // Percentile
       double pct;
       if (strToPct(trimmedPart, pct)) {
-        percentiles.push_back(std::make_pair(trimmedPart, pct));
+        percentiles.emplace_back(trimmedPart, pct);
       } else {
         LOG(ERROR) << "\"" << trimmedPart << "\" is not a valid percentile form";
       }
@@ -63,38 +67,45 @@ void StatsManager::parseStats(const folly::StringPiece stats,
 
 // static
 CounterId StatsManager::registerStats(folly::StringPiece counterName, std::string stats) {
-  using std::chrono::seconds;
-
-  auto& sm = get();
   std::vector<StatsMethod> methods;
   std::vector<std::pair<std::string, double>> percentiles;
   parseStats(stats, methods, percentiles);
+  return registerStats(counterName, methods);
+}
+
+CounterId StatsManager::registerStats(folly::StringPiece counterName,
+                                      std::vector<StatsMethod> methods) {
+  using std::chrono::seconds;
+
+  auto& sm = get();
 
   std::string name = counterName.toString();
   folly::RWSpinLock::WriteHolder wh(sm.nameMapLock_);
   auto it = sm.nameMap_.find(name);
   if (it != sm.nameMap_.end()) {
-    DCHECK_GT(it->second.id_.index(), 0);
+    DCHECK(!it->second.id_.isHisto());
     VLOG(2) << "The counter \"" << name << "\" already exists";
     it->second.methods_ = methods;
-    return it->second.id_.index();
+    return it->second.id_;
   }
 
   // Insert the Stats
-  sm.stats_.emplace_back(std::make_pair(
-      std::make_unique<std::mutex>(),
-      std::make_unique<StatsType>(60,
-                                  std::initializer_list<StatsType::Duration>(
-                                      {seconds(5), seconds(60), seconds(600), seconds(3600)}))));
-  int32_t index = sm.stats_.size();
-  sm.nameMap_.emplace(
+  sm.stats_.emplace(
+      counterName,
+      std::make_pair(std::make_unique<std::mutex>(),
+                     std::make_unique<StatsType>(
+                         60,
+                         std::initializer_list<StatsType::Duration>(
+                             {seconds(5), seconds(60), seconds(600), seconds(3600)}))));
+  std::string index(counterName);
+  auto it2 = sm.nameMap_.emplace(
       std::piecewise_construct,
       std::forward_as_tuple(std::move(name)),
       std::forward_as_tuple(
-          index, std::move(methods), std::vector<std::pair<std::string, double>>()));
+          index, std::move(methods), std::vector<std::pair<std::string, double>>(), false));
 
   VLOG(1) << "Registered stats " << counterName.toString();
-  return index;
+  return it2.first->second.id_;
 }
 
 // static
@@ -103,39 +114,147 @@ CounterId StatsManager::registerHisto(folly::StringPiece counterName,
                                       StatsManager::VT min,
                                       StatsManager::VT max,
                                       std::string stats) {
-  using std::chrono::seconds;
   std::vector<StatsMethod> methods;
   std::vector<std::pair<std::string, double>> percentiles;
   parseStats(stats, methods, percentiles);
+  return registerHisto(counterName, bucketSize, min, max, methods, percentiles);
+}
 
+// static
+CounterId StatsManager::registerHisto(folly::StringPiece counterName,
+                                      StatsManager::VT bucketSize,
+                                      StatsManager::VT min,
+                                      StatsManager::VT max,
+                                      std::vector<StatsMethod> methods,
+                                      std::vector<std::pair<std::string, double>> percentiles) {
+  using std::chrono::seconds;
   auto& sm = get();
   std::string name = counterName.toString();
   folly::RWSpinLock::WriteHolder wh(sm.nameMapLock_);
   auto it = sm.nameMap_.find(name);
   if (it != sm.nameMap_.end()) {
-    DCHECK_LT(it->second.id_.index(), 0);
+    DCHECK(it->second.id_.isHisto());
     VLOG(2) << "The counter \"" << name << "\" already exists";
     it->second.methods_ = methods;
     it->second.percentiles_ = percentiles;
-    return it->second.id_.index();
+    return it->second.id_;
   }
 
   // Insert the Histogram
-  sm.histograms_.emplace_back(
+  sm.histograms_.emplace(
+      counterName,
       std::make_pair(std::make_unique<std::mutex>(),
                      std::make_unique<HistogramType>(
                          bucketSize,
                          min,
                          max,
                          StatsType(60, {seconds(5), seconds(60), seconds(600), seconds(3600)}))));
-  int32_t index = -sm.histograms_.size();
-  sm.nameMap_.emplace(std::piecewise_construct,
-                      std::forward_as_tuple(std::move(name)),
-                      std::forward_as_tuple(index, std::move(methods), std::move(percentiles)));
+  std::string index(counterName);
+  auto it2 = sm.nameMap_.emplace(
+      std::piecewise_construct,
+      std::forward_as_tuple(std::move(name)),
+      std::forward_as_tuple(
+          index, std::move(methods), std::move(percentiles), true, bucketSize, min, max));
 
   VLOG(1) << "Registered histogram " << counterName.toString() << " [bucketSize: " << bucketSize
           << ", min value: " << min << ", max value: " << max << "]";
-  return index;
+  return it2.first->second.id_;
+}
+
+// static
+CounterId StatsManager::counterWithLabels(const CounterId& id,
+                                          const std::vector<LabelPair>& labels) {
+  using std::chrono::seconds;
+
+  auto& sm = get();
+  auto index = id.index();
+  CHECK(!labels.empty());
+  std::string newIndex;
+  for (auto& [k, v] : labels) {
+    newIndex.append(k).append("_").append(v).append("_");
+  }
+  newIndex.append(index);
+  auto it = sm.nameMap_.find(newIndex);
+  // Get the counter if it already exists
+  if (it != sm.nameMap_.end()) {
+    return it->second.id_;
+  }
+
+  // Register a new counter if it doesn't exist
+  auto it2 = sm.nameMap_.find(index);
+  DCHECK(it2 != sm.nameMap_.end());
+  auto& methods = it2->second.methods_;
+
+  return registerStats(newIndex, methods);
+}
+
+// static
+CounterId StatsManager::histoWithLabels(const CounterId& id, const std::vector<LabelPair>& labels) {
+  using std::chrono::seconds;
+
+  auto& sm = get();
+  auto index = id.index();
+  CHECK(!labels.empty());
+  std::string newIndex;
+  for (auto& [k, v] : labels) {
+    newIndex.append(k).append("_").append(v).append("_");
+  }
+  newIndex.append(index);
+  auto it = sm.nameMap_.find(newIndex);
+  // Get the counter if it already exists
+  if (it != sm.nameMap_.end()) {
+    return it->second.id_;
+  }
+
+  auto it2 = sm.nameMap_.find(index);
+  DCHECK(it2 != sm.nameMap_.end());
+  auto& methods = it2->second.methods_;
+  auto& percentiles = it2->second.percentiles_;
+
+  return registerHisto(
+      newIndex, it2->second.bucketSize_, it2->second.min_, it2->second.max_, methods, percentiles);
+}
+
+// static
+void StatsManager::removeCounterWithLabels(const CounterId& id,
+                                           const std::vector<LabelPair>& labels) {
+  using std::chrono::seconds;
+
+  auto& sm = get();
+  auto index = id.index();
+  CHECK(!labels.empty());
+  std::string newIndex;
+  for (auto& [k, v] : labels) {
+    newIndex.append(k).append("_").append(v).append("_");
+  }
+  newIndex.append(index);
+  folly::RWSpinLock::WriteHolder wh(sm.nameMapLock_);
+  auto it = sm.nameMap_.find(newIndex);
+  if (it != sm.nameMap_.end()) {
+    sm.nameMap_.erase(it);
+  }
+  sm.stats_.erase(newIndex);
+}
+
+// static
+void StatsManager::removeHistoWithLabels(const CounterId& id,
+                                         const std::vector<LabelPair>& labels) {
+  using std::chrono::seconds;
+
+  auto& sm = get();
+  auto index = id.index();
+  CHECK(!labels.empty());
+  std::string newIndex;
+  for (auto& [k, v] : labels) {
+    newIndex.append(k).append("_").append(v).append("_");
+  }
+  newIndex.append(index);
+  folly::RWSpinLock::WriteHolder wh(sm.nameMapLock_);
+  auto it = sm.nameMap_.find(newIndex);
+  if (it != sm.nameMap_.end()) {
+    sm.nameMap_.erase(it);
+  }
+  sm.histograms_.erase(newIndex);
 }
 
 // static
@@ -143,22 +262,28 @@ void StatsManager::addValue(const CounterId& id, VT value) {
   using std::chrono::seconds;
 
   auto& sm = get();
-  int32_t index = id.index();
-  if (index > 0) {
+  if (!id.valid()) {
+    // The counter is not registered
+    return;
+  }
+  std::string index = id.index();
+  bool isHisto = id.isHisto();
+  if (!isHisto) {
     // Stats
-    --index;
-    DCHECK_LT(index, sm.stats_.size());
+    DCHECK(sm.stats_.find(index) != sm.stats_.end());
     std::lock_guard<std::mutex> g(*(sm.stats_[index].first));
     sm.stats_[index].second->addValue(seconds(time::WallClock::fastNowInSec()), value);
-  } else if (index < 0) {
+  } else {
     // Histogram
-    index = -(index + 1);
-    DCHECK_LT(index, sm.histograms_.size());
+    DCHECK(sm.histograms_.find(index) != sm.histograms_.end());
     std::lock_guard<std::mutex> g(*(sm.histograms_[index].first));
     sm.histograms_[index].second->addValue(seconds(time::WallClock::fastNowInSec()), value);
-  } else {
-    LOG(FATAL) << "Invalid counter id";
   }
+}
+
+// static
+void StatsManager::decValue(const CounterId& id, VT value) {
+  addValue(id, -value);
 }
 
 // static
@@ -322,23 +447,21 @@ StatusOr<StatsManager::VT> StatsManager::readStats(const CounterId& id,
                                                    StatsManager::StatsMethod method) {
   using std::chrono::seconds;
   auto& sm = get();
-  int32_t index = id.index();
+  std::string index = id.index();
 
-  if (index == 0) {
+  if (index == "") {
     return Status::Error("Invalid stats");
   }
 
-  if (index > 0) {
+  if (!id.isHisto()) {
     // stats
-    --index;
-    DCHECK_LT(index, sm.stats_.size());
+    DCHECK(sm.stats_.find(index) != sm.stats_.end());
     std::lock_guard<std::mutex> g(*(sm.stats_[index].first));
     sm.stats_[index].second->update(seconds(time::WallClock::fastNowInSec()));
     return readValue(*(sm.stats_[index].second), range, method);
   } else {
     // histograms_
-    index = -(index + 1);
-    DCHECK_LT(index, sm.histograms_.size());
+    DCHECK(sm.histograms_.find(index) != sm.histograms_.end());
     std::lock_guard<std::mutex> g(*(sm.histograms_[index].first));
     sm.histograms_[index].second->update(seconds(time::WallClock::fastNowInSec()));
     return readValue(*(sm.histograms_[index].second), range, method);
@@ -373,13 +496,14 @@ StatusOr<StatsManager::VT> StatsManager::readHisto(const CounterId& id,
                                                    double pct) {
   using std::chrono::seconds;
   auto& sm = get();
-  int32_t index = id.index();
+  std::string index = id.index();
 
-  if (index >= 0) {
+  if (!id.isHisto()) {
     return Status::Error("Invalid stats");
   }
-  index = -(index + 1);
-  if (static_cast<size_t>(index) >= sm.histograms_.size()) {
+
+  auto it = sm.histograms_.find(index);
+  if (it == sm.histograms_.end()) {
     return Status::Error("Invalid stats");
   }
 

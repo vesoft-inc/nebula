@@ -55,13 +55,13 @@ void DropEdgeIndexProcessor::process(const cpp2::DropEdgeIndexReq& req) {
   auto item = MetaKeyUtils::parseIndex(nebula::value(indexItemRet));
   if (item.get_schema_id().getType() != nebula::cpp2::SchemaID::Type::edge_type) {
     LOG(ERROR) << "Drop Edge Index Failed: Index Name " << indexName << " is not EdgeIndex";
-    resp_.set_code(nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND);
+    resp_.code_ref() = nebula::cpp2::ErrorCode::E_INDEX_NOT_FOUND;
     onFinished();
     return;
   }
 
   LOG(INFO) << "Drop Edge Index " << indexName;
-  resp_.set_id(to(edgeIndexID, EntryType::INDEX));
+  resp_.id_ref() = to(edgeIndexID, EntryType::INDEX);
   doSyncMultiRemoveAndUpdate(std::move(keys));
 }
 

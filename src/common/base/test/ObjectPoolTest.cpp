@@ -13,8 +13,12 @@ static int instances = 0;
 
 class MyClass {
  public:
-  MyClass() { instances++; }
-  ~MyClass() { instances--; }
+  MyClass() {
+    instances++;
+  }
+  ~MyClass() {
+    instances--;
+  }
 };
 
 TEST(ObjectPoolTest, TestPooling) {

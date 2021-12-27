@@ -65,9 +65,13 @@ class TestShard : public RaftPart {
     return std::make_pair(committedLogId_, term_);
   }
 
-  std::shared_ptr<RaftexService> getService() const { return service_; }
+  std::shared_ptr<RaftexService> getService() const {
+    return service_;
+  }
 
-  size_t index() const { return idx_; }
+  size_t index() const {
+    return idx_;
+  }
 
   void onLostLeadership(TermID term) override;
   void onElected(TermID term) override;
@@ -143,7 +147,9 @@ class NebulaSnapshotManager : public SnapshotManager {
     CHECK_NOTNULL(service);
   }
 
-  ~NebulaSnapshotManager() { LOG(INFO) << "~NebulaSnapshotManager()"; }
+  ~NebulaSnapshotManager() {
+    LOG(INFO) << "~NebulaSnapshotManager()";
+  }
 
   void accessAllRowsInSnapshot(GraphSpaceID spaceId,
                                PartitionID partId,

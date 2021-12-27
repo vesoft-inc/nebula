@@ -55,7 +55,9 @@ class BaseProcessor {
 
   virtual ~BaseProcessor() = default;
 
-  folly::Future<RESP> getFuture() { return promise_.getFuture(); }
+  folly::Future<RESP> getFuture() {
+    return promise_.getFuture();
+  }
 
  protected:
   /**
@@ -69,7 +71,7 @@ class BaseProcessor {
   void handleErrorCode(nebula::cpp2::ErrorCode code,
                        GraphSpaceID spaceId = kDefaultSpaceId,
                        PartitionID partId = kDefaultPartId) {
-    resp_.set_code(code);
+    resp_.code_ref() = code;
     if (code == nebula::cpp2::ErrorCode::E_LEADER_CHANGED) {
       handleLeaderChanged(spaceId, partId);
     }
@@ -78,9 +80,9 @@ class BaseProcessor {
   void handleLeaderChanged(GraphSpaceID spaceId, PartitionID partId) {
     auto leaderRet = kvstore_->partLeader(spaceId, partId);
     if (ok(leaderRet)) {
-      resp_.set_leader(toThriftHost(nebula::value(leaderRet)));
+      resp_.leader_ref() = toThriftHost(nebula::value(leaderRet));
     } else {
-      resp_.set_code(nebula::error(leaderRet));
+      resp_.code_ref() = nebula::error(leaderRet);
     }
   }
 
@@ -89,16 +91,16 @@ class BaseProcessor {
     cpp2::ID thriftID;
     switch (type) {
       case EntryType::SPACE:
-        thriftID.set_space_id(static_cast<GraphSpaceID>(id));
+        thriftID.space_id_ref() = static_cast<GraphSpaceID>(id);
         break;
       case EntryType::TAG:
-        thriftID.set_tag_id(static_cast<TagID>(id));
+        thriftID.tag_id_ref() = static_cast<TagID>(id);
         break;
       case EntryType::EDGE:
-        thriftID.set_edge_type(static_cast<EdgeType>(id));
+        thriftID.edge_type_ref() = static_cast<EdgeType>(id);
         break;
       case EntryType::INDEX:
-        thriftID.set_index_id(static_cast<IndexID>(id));
+        thriftID.index_id_ref() = static_cast<IndexID>(id);
         break;
       case EntryType::CONFIG:
       case EntryType::GROUP:
@@ -108,7 +110,9 @@ class BaseProcessor {
     return thriftID;
   }
 
-  HostAddr toThriftHost(const HostAddr& host) { return host; }
+  HostAddr toThriftHost(const HostAddr& host) {
+    return host;
+  }
 
   /**
    * General put function.
@@ -150,11 +154,6 @@ class BaseProcessor {
   void doMultiRemove(std::vector<std::string> keys);
 
   /**
-   * Get all hosts
-   * */
-  ErrorOr<nebula::cpp2::ErrorCode, std::vector<HostAddr>> allHosts();
-
-  /**
    * Get one auto-increment Id.
    * */
   ErrorOr<nebula::cpp2::ErrorCode, int32_t> autoIncrementId();
@@ -180,9 +179,14 @@ class BaseProcessor {
   nebula::cpp2::ErrorCode userExist(const std::string& account);
 
   /**
-   * Check host has been registered or not.
+   * Check machine has been registered or not.
    * */
-  nebula::cpp2::ErrorCode hostExist(const std::string& hostKey);
+  nebula::cpp2::ErrorCode machineExist(const std::string& machineKey);
+
+  /**
+   * Check hosts has been include by zone or not.
+   * */
+  nebula::cpp2::ErrorCode includeByZone(const std::vector<HostAddr>& hosts);
 
   /**
    * Return the spaceId for name.
@@ -240,8 +244,6 @@ class BaseProcessor {
                                                              int32_t tagOrEdge);
 
   bool checkIndexExist(const std::vector<cpp2::IndexFieldDef>& fields, const cpp2::IndexItem& item);
-
-  ErrorOr<nebula::cpp2::ErrorCode, GroupID> getGroupId(const std::string& groupName);
 
   ErrorOr<nebula::cpp2::ErrorCode, ZoneID> getZoneId(const std::string& zoneName);
 

@@ -21,7 +21,9 @@ namespace graph {
 
 class SetExecutorTest : public ::testing::Test {
  public:
-  void SetUp() override { qctx_ = std::make_unique<QueryContext>(); }
+  void SetUp() override {
+    qctx_ = std::make_unique<QueryContext>();
+  }
 
   static bool diffDataSet(const DataSet& lhs, const DataSet& rhs) {
     if (lhs.colNames != rhs.colNames) return false;

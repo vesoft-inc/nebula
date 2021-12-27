@@ -90,8 +90,8 @@ StatusOr<TransformResult> UnionAllIndexScanBaseRule::transform(OptContext* ctx,
   auto filter = static_cast<const Filter*>(matched.planNode());
   auto node = matched.planNode({0, 0});
   auto scan = static_cast<const IndexScan*>(node);
-
-  auto metaClient = ctx->qctx()->getMetaClient();
+  auto* qctx = ctx->qctx();
+  auto metaClient = qctx->getMetaClient();
   auto status = node->kind() == graph::PlanNode::Kind::kTagIndexFullScan
                     ? metaClient->getTagIndexesFromCache(scan->space())
                     : metaClient->getEdgeIndexesFromCache(scan->space());
@@ -170,8 +170,8 @@ StatusOr<TransformResult> UnionAllIndexScanBaseRule::transform(OptContext* ctx,
     idxCtxs.emplace_back(std::move(ictx));
   }
 
-  auto scanNode = IndexScan::make(ctx->qctx(), nullptr);
-  OptimizerUtils::copyIndexScanData(scan, scanNode);
+  auto scanNode = IndexScan::make(qctx, nullptr);
+  OptimizerUtils::copyIndexScanData(scan, scanNode, qctx);
   scanNode->setIndexQueryContext(std::move(idxCtxs));
   scanNode->setOutputVar(filter->outputVar());
   scanNode->setColNames(filter->colNames());

@@ -83,6 +83,16 @@ TEST(DatetimeReader, DateTimeFailed) {
     auto result = parser.readDatetime("2019-01-03T22:22:3.2333x");
     EXPECT_FALSE(result.ok()) << result.value();
   }
+  {
+    auto parser = time::DatetimeReader::makeDateTimeReader();
+    auto result = parser.readDatetime("2019-01-03T22:22:3.2333\n");
+    EXPECT_FALSE(result.ok()) << result.value();
+  }
+  {
+    auto parser = time::DatetimeReader::makeDateTimeReader();
+    auto result = parser.readDatetime("\t2019-01-03T22:22:3.2333");
+    EXPECT_FALSE(result.ok()) << result.value();
+  }
   // not ending delimiter
   {
     auto parser = time::DatetimeReader::makeDateTimeReader();
@@ -148,6 +158,16 @@ TEST(DatetimeReader, DateFailed) {
   {
     auto parser = time::DatetimeReader::makeDateReader();
     auto result = parser.readDate("2019-01-03*");
+    EXPECT_FALSE(result.ok()) << result.value();
+  }
+  {
+    auto parser = time::DatetimeReader::makeDateReader();
+    auto result = parser.readDate("2019-01-03\n");
+    EXPECT_FALSE(result.ok()) << result.value();
+  }
+  {
+    auto parser = time::DatetimeReader::makeDateReader();
+    auto result = parser.readDate("\t2019-01-03");
     EXPECT_FALSE(result.ok()) << result.value();
   }
   // extra components
@@ -225,6 +245,16 @@ TEST(DatetimeReader, TimeFailed) {
   {
     auto parser = time::DatetimeReader::makeTimeReader();
     auto result = parser.readTime("22:22:3.2333x");
+    EXPECT_FALSE(result.ok()) << result.value();
+  }
+  {
+    auto parser = time::DatetimeReader::makeTimeReader();
+    auto result = parser.readTime("22:22:3.2333\n");
+    EXPECT_FALSE(result.ok()) << result.value();
+  }
+  {
+    auto parser = time::DatetimeReader::makeTimeReader();
+    auto result = parser.readTime("\t22:22:3.2333\n");
     EXPECT_FALSE(result.ok()) << result.value();
   }
   // extra components

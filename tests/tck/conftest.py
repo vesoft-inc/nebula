@@ -10,8 +10,9 @@ import io
 import csv
 import re
 import threading
+import json
 
-from nebula2.common.ttypes import Value, ErrorCode
+from nebula2.common.ttypes import NList, NMap, Value, ErrorCode
 from nebula2.data.DataObject import ValueWrapper
 from pytest_bdd import given, parsers, then, when
 
@@ -28,6 +29,8 @@ from tests.common.utils import (
     check_resp,
     response,
     resp_ok,
+    params,
+    parse_service_index,
 )
 from tests.common.nebula_service import NebulaService
 from tests.tck.utils.table import dataset, table
@@ -116,6 +119,53 @@ def wait_indexes_ready(sess):
 def graph_spaces():
     return dict(result_set=None)
 
+@given(parse('parameters: {parameters}'))
+def preload_parameters(
+    parameters
+):
+    try:
+        paramMap = json.loads(parameters)
+        for (k,v) in paramMap.items():
+            params[k]=value(v)
+    except:
+        raise ValueError("preload parameters failed!")
+
+@then("clear the used parameters")
+def clear_parameters():
+    params = {}
+
+# construct python-type to nebula.Value
+def value(any):
+    v = Value()
+    if (isinstance(any, bool)):
+        v.set_bVal(any)
+    elif (isinstance(any, int)):
+        v.set_iVal(any)
+    elif (isinstance(any, str)):
+        v.set_sVal(any)
+    elif (isinstance(any, float)):
+        v.set_fVal(any)
+    elif (isinstance(any, list)):
+        v.set_lVal(list2Nlist(any))
+    elif (isinstance(any, dict)):
+        v.set_mVal(map2NMap(any))
+    else:
+        raise TypeError("Do not support convert "+str(type(any))+" to nebula.Value")
+    return v
+
+def list2Nlist(list):
+    nlist = NList()
+    nlist.values = []
+    for item in list:
+        nlist.values.append(value(item))
+    return nlist
+
+def map2NMap(map):
+    nmap = NMap()
+    nmap.kvs={}
+    for k,v in map.items():
+        nmap.kvs[k]=value(v)
+    return nmap
 
 @given(parse('a graph with space named "{space}"'))
 def preload_space(
@@ -248,14 +298,14 @@ def given_nebulacluster_with_param(
     class_fixture_variables,
     pytestconfig,
 ):
-    grpahd_param, metad_param, storaged_param = {}, {}, {}
+    graphd_param, metad_param, storaged_param = {}, {}, {}
     if params is not None:
         for param in params.splitlines():
             module, config = param.strip().split(":")
             assert module.lower() in ["graphd", "storaged", "metad"]
             key, value = config.strip().split("=")
             if module.lower() == "graphd":
-                grpahd_param[key] = value
+                graphd_param[key] = value
             elif module.lower() == "storaged":
                 storaged_param[key] = value
             else:
@@ -273,7 +323,7 @@ def given_nebulacluster_with_param(
         int(graphd_num),
     )
     for process in nebula_svc.graphd_processes:
-        process.update_param(grpahd_param)
+        process.update_param(graphd_param)
     for process in nebula_svc.storaged_processes:
         process.update_param(storaged_param)
     for process in nebula_svc.metad_processes:
@@ -288,10 +338,27 @@ def given_nebulacluster_with_param(
     graph_port = nebula_svc.graphd_processes[0].tcp_port
     pool = get_conn_pool(graph_ip, graph_port)
     sess = pool.get_session(user, password)
-    class_fixture_variables["session"] = sess
+    class_fixture_variables["current_session"] = sess
+    class_fixture_variables["sessions"].append(sess)
     class_fixture_variables["cluster"] = nebula_svc
     class_fixture_variables["pool"] = pool
 
+@when(parse('login "{graph}" with "{user}" and "{password}"'))
+def when_login_graphd(graph, user, password, class_fixture_variables, pytestconfig):
+    index = parse_service_index(graph)
+    assert index is not None, "Invalid graph name, name is {}".format(graph)
+    nebula_svc = class_fixture_variables.get("cluster")
+    assert nebula_svc is not None, "Cannot get the cluster"
+    assert index < len(nebula_svc.graphd_processes)
+    graphd_process = nebula_svc.graphd_processes[index]
+    graph_ip, graph_port = graphd_process.host, graphd_process.tcp_port
+    pool = get_conn_pool(graph_ip, graph_port)
+    sess = pool.get_session(user, password)
+    # do not release original session, as we may have cases to test multiple sessions.
+    # connection could be released after cluster stopped.
+    class_fixture_variables["current_session"] = sess
+    class_fixture_variables["sessions"].append(sess)
+    class_fixture_variables["pool"] = pool
 
 @when(parse("executing query:\n{query}"))
 def executing_query(query, graph_spaces, session, request):
@@ -562,6 +629,19 @@ def result_should_contain(request, result, graph_spaces):
     )
 
 
+@then(parse("the result should contain, replace the holders with cluster info:\n{result}"))
+def then_result_should_contain_replace(request, result, graph_spaces, class_fixture_variables):
+    result = replace_result_with_cluster_info(result, class_fixture_variables)
+    cmp_dataset(
+        request,
+        graph_spaces,
+        result,
+        order=False,
+        strict=True,
+        contains=CmpType.CONTAINS,
+    )
+
+
 @then(parse("the result should not contain:\n{result}"))
 def result_should_not_contain(request, result, graph_spaces):
     cmp_dataset(
@@ -758,3 +838,18 @@ def check_client_compatible(graph_spaces):
     assert (
         resp.error_code == ErrorCode.E_CLIENT_SERVER_INCOMPATIBLE
     ), f'The client was not rejected by server: {resp}'
+
+
+def replace_result_with_cluster_info(result, class_fixture_variables):
+    pattern = r"\$\{.*?\}"
+    holders = set(re.findall(pattern, result))
+    cluster = class_fixture_variables.get("cluster")
+    assert cluster is not None, "Cannot get the cluster"
+    for holder in holders:
+        try:
+            eval_string = holder[2:-1]
+            value = eval(eval_string)
+            result = result.replace(holder, str(value))
+        except:
+            raise
+    return result

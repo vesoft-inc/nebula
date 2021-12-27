@@ -152,23 +152,6 @@ class MetaDumper {
       }
     }
     {
-      LOG(INFO) << "Group info";
-      prefix = "__groups__";
-      iter->Seek(rocksdb::Slice(prefix));
-      while (iter->Valid() && iter->key().starts_with(prefix)) {
-        auto key = folly::StringPiece(iter->key().data(), iter->key().size());
-        auto val = folly::StringPiece(iter->value().data(), iter->value().size());
-        auto group = MetaKeyUtils::parseGroupName(key);
-        auto zones = MetaKeyUtils::parseZoneNames(val);
-        std::stringstream ss;
-        for (const auto& zone : zones) {
-          ss << zone << " ";
-        }
-        LOG(INFO) << folly::sformat("group name: {}, contain zones: {}", group, ss.str());
-        iter->Next();
-      }
-    }
-    {
       LOG(INFO) << "Zone info";
       prefix = "__zones__";
       iter->Seek(rocksdb::Slice(prefix));

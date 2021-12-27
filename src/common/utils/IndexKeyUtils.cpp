@@ -7,11 +7,14 @@
 
 #include <thrift/lib/cpp2/protocol/Serializer.h>
 
+#include "common/geo/GeoIndex.h"
+
 namespace nebula {
 
 // static
-std::vector<std::string> IndexKeyUtils::encodeValues(
-    std::vector<Value>&& values, const std::vector<nebula::meta::cpp2::ColumnDef>& cols) {
+std::vector<std::string> IndexKeyUtils::encodeValues(std::vector<Value>&& values,
+                                                     const meta::cpp2::IndexItem* indexItem) {
+  auto& cols = indexItem->get_fields();
   bool hasNullCol = false;
   // An index has a maximum of 16 columns. 2 byte (16 bit) is enough.
   u_short nullableBitSet = 0;
@@ -52,7 +55,17 @@ std::vector<std::string> IndexKeyUtils::encodeValues(
     const auto& value = values.back();
     if (!value.isNull()) {
       DCHECK(value.type() == Value::Type::GEOGRAPHY);
-      indexes = encodeGeography(value.getGeography());
+      geo::RegionCoverParams rc;
+      const auto* indexParams = indexItem->get_index_params();
+      if (indexParams) {
+        if (indexParams->s2_max_level_ref().has_value()) {
+          rc.maxCellLevel_ = indexParams->s2_max_level_ref().value();
+        }
+        if (indexParams->s2_max_cells_ref().has_value()) {
+          rc.maxCellNum_ = indexParams->s2_max_cells_ref().value();
+        }
+      }
+      indexes = encodeGeography(value.getGeography(), rc);
     } else {
       nullableBitSet |= 0x8000;
       auto type = IndexKeyUtils::toValueType(cols.back().type.get_type());
@@ -157,10 +170,11 @@ Value IndexKeyUtils::parseIndexTTL(const folly::StringPiece& raw) {
 
 // static
 StatusOr<std::vector<std::string>> IndexKeyUtils::collectIndexValues(
-    RowReader* reader, const std::vector<nebula::meta::cpp2::ColumnDef>& cols) {
+    RowReader* reader, const meta::cpp2::IndexItem* indexItem) {
   if (reader == nullptr) {
     return Status::Error("Invalid row reader");
   }
+  auto& cols = indexItem->get_fields();
   std::vector<Value> values;
   for (const auto& col : cols) {
     auto v = reader->getValueByName(col.get_name());
@@ -172,7 +186,7 @@ StatusOr<std::vector<std::string>> IndexKeyUtils::collectIndexValues(
     }
     values.emplace_back(std::move(v));
   }
-  return encodeValues(std::move(values), cols);
+  return encodeValues(std::move(values), indexItem);
 }
 
 // static

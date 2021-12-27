@@ -18,7 +18,9 @@ folly::Future<Status> LeftJoinExecutor::execute() {
   return join();
 }
 
-Status LeftJoinExecutor::close() { return Executor::close(); }
+Status LeftJoinExecutor::close() {
+  return Executor::close();
+}
 
 folly::Future<Status> LeftJoinExecutor::join() {
   auto* join = asNode<Join>(node());

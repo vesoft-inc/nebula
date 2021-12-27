@@ -76,22 +76,34 @@ class TagNode final : public IterateNode<VertexID> {
     return valueHandler(key_, reader_.get(), props_);
   }
 
-  bool valid() const override { return valid_; }
+  bool valid() const override {
+    return valid_;
+  }
 
   void next() override {
     // tag only has one valid record, so stop iterate
     valid_ = false;
   }
 
-  folly::StringPiece key() const override { return key_; }
+  folly::StringPiece key() const override {
+    return key_;
+  }
 
-  folly::StringPiece val() const override { return value_; }
+  folly::StringPiece val() const override {
+    return value_;
+  }
 
-  RowReader* reader() const override { return reader_.get(); }
+  RowReader* reader() const override {
+    return reader_.get();
+  }
 
-  const std::string& getTagName() const { return tagName_; }
+  const std::string& getTagName() const {
+    return tagName_;
+  }
 
-  TagID tagId() const { return tagId_; }
+  TagID tagId() const {
+    return tagId_;
+  }
 
   void clear() {
     valid_ = false;

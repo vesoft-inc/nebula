@@ -27,13 +27,21 @@ class OptContext final : private cpp::NonCopyable, private cpp::NonMovable {
  public:
   explicit OptContext(graph::QueryContext *qctx);
 
-  graph::QueryContext *qctx() const { return qctx_; }
+  graph::QueryContext *qctx() const {
+    return qctx_;
+  }
 
-  ObjectPool *objPool() const { return objPool_.get(); }
+  ObjectPool *objPool() const {
+    return objPool_.get();
+  }
 
-  bool changed() const { return changed_; }
+  bool changed() const {
+    return changed_;
+  }
 
-  void setChanged(bool changed) { changed_ = changed; }
+  void setChanged(bool changed) {
+    changed_ = changed;
+  }
 
   void addPlanNodeAndOptGroupNode(int64_t planNodeId, const OptGroupNode *optGroupNode);
   const OptGroupNode *findOptGroupNodeByPlanNodeId(int64_t planNodeId) const;

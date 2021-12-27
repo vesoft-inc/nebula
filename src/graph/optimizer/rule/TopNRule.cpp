@@ -21,7 +21,9 @@ namespace opt {
 
 std::unique_ptr<OptRule> TopNRule::kInstance = std::unique_ptr<TopNRule>(new TopNRule());
 
-TopNRule::TopNRule() { RuleSet::QueryRules().addRule(this); }
+TopNRule::TopNRule() {
+  RuleSet::QueryRules().addRule(this);
+}
 
 const Pattern &TopNRule::pattern() const {
   static Pattern pattern = Pattern::create(graph::PlanNode::Kind::kLimit,
@@ -43,7 +45,7 @@ StatusOr<OptRule::TransformResult> TopNRule::transform(OptContext *ctx,
   }
 
   auto qctx = ctx->qctx();
-  auto topn = TopN::make(qctx, nullptr, sort->factors(), limit->offset(), limit->count());
+  auto topn = TopN::make(qctx, nullptr, sort->factors(), limit->offset(), limit->count(qctx));
   topn->setOutputVar(limit->outputVar());
   topn->setInputVar(sort->inputVar());
   topn->setColNames(sort->colNames());
@@ -58,7 +60,9 @@ StatusOr<OptRule::TransformResult> TopNRule::transform(OptContext *ctx,
   return result;
 }
 
-std::string TopNRule::toString() const { return "TopNRule"; }
+std::string TopNRule::toString() const {
+  return "TopNRule";
+}
 
 }  // namespace opt
 }  // namespace nebula

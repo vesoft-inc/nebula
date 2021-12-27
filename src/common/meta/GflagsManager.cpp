@@ -128,10 +128,10 @@ std::vector<cpp2::ConfigItem> GflagsManager::declareGflags(const cpp2::ConfigMod
       continue;
     }
     cpp2::ConfigItem item;
-    item.set_name(name);
-    item.set_module(module);
-    item.set_mode(mode);
-    item.set_value(std::move(value));
+    item.name_ref() = name;
+    item.module_ref() = module;
+    item.mode_ref() = mode;
+    item.value_ref() = std::move(value);
     configItems.emplace_back(std::move(item));
   }
   LOG(INFO) << "Prepare to register " << configItems.size() << " gflags to meta";

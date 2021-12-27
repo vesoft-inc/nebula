@@ -18,7 +18,7 @@
 #include "common/time/TimezoneInfo.h"
 #include "graph/service/GraphFlags.h"
 #include "graph/service/GraphService.h"
-#include "graph/stats/StatsDef.h"
+#include "graph/stats/GraphStats.h"
 #include "version/Version.h"
 #include "webservice/WebService.h"
 #include "daemons/SetupLogging.h"
@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
   if (FLAGS_enable_ssl || FLAGS_enable_graph_ssl || FLAGS_enable_meta_ssl) {
     folly::ssl::init();
   }
-  nebula::initCounters();
+  nebula::initGraphStats();
 
   if (FLAGS_flagfile.empty()) {
     printHelp(argv[0]);
@@ -215,13 +215,15 @@ void signalHandler(int sig) {
   }
 }
 
-void printHelp(const char *prog) { fprintf(stderr, "%s --flagfile <config_file>\n", prog); }
+void printHelp(const char *prog) {
+  fprintf(stderr, "%s --flagfile <config_file>\n", prog);
+}
 
 void setupThreadManager() {
   int numThreads =
       FLAGS_num_worker_threads > 0 ? FLAGS_num_worker_threads : gServer->getNumIOWorkerThreads();
   std::shared_ptr<apache::thrift::concurrency::ThreadManager> threadManager(
-      PriorityThreadManager::newPriorityThreadManager(numThreads, false /*stats*/));
+      PriorityThreadManager::newPriorityThreadManager(numThreads));
   threadManager->setNamePrefix("executor");
   threadManager->start();
   gServer->setThreadManager(threadManager);

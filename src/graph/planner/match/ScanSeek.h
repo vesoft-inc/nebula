@@ -16,7 +16,9 @@ namespace graph {
  */
 class ScanSeek final : public StartVidFinder {
  public:
-  static std::unique_ptr<ScanSeek> make() { return std::unique_ptr<ScanSeek>(new ScanSeek()); }
+  static std::unique_ptr<ScanSeek> make() {
+    return std::unique_ptr<ScanSeek>(new ScanSeek());
+  }
 
   bool matchNode(NodeContext* nodeCtx) override;
 

@@ -55,6 +55,8 @@ class Sentence {
     kUpdateVertex,
     kInsertEdges,
     kUpdateEdge,
+    kAddHosts,
+    kDropHosts,
     kShowHosts,
     kShowSpaces,
     kShowParts,
@@ -112,12 +114,13 @@ class Sentence {
     kAdminJob,
     kAdminShowJobs,
     kGetSubgraph,
-    kAddZone,
+    kMergeZone,
+    kRenameZone,
     kDropZone,
+    kSplitZone,
     kDescribeZone,
     kListZones,
-    kAddHostIntoZone,
-    kDropHostFromZone,
+    kAddHostsIntoZone,
     kAddListener,
     kRemoveListener,
     kShowListener,
@@ -131,7 +134,9 @@ class Sentence {
     kShowMetaLeader,
   };
 
-  Kind kind() const { return kind_; }
+  Kind kind() const {
+    return kind_;
+  }
 
  protected:
   Sentence() = default;
@@ -145,7 +150,9 @@ class CreateSentence : public Sentence {
   explicit CreateSentence(bool ifNotExist) : ifNotExist_{ifNotExist} {}
   virtual ~CreateSentence() {}
 
-  bool isIfNotExist() const { return ifNotExist_; }
+  bool isIfNotExist() const {
+    return ifNotExist_;
+  }
 
  private:
   bool ifNotExist_{false};
@@ -156,7 +163,9 @@ class DropSentence : public Sentence {
   explicit DropSentence(bool ifExists) : ifExists_{ifExists} {}
   virtual ~DropSentence() = default;
 
-  bool isIfExists() { return ifExists_; }
+  bool isIfExists() {
+    return ifExists_;
+  }
 
  private:
   bool ifExists_{false};
@@ -164,7 +173,9 @@ class DropSentence : public Sentence {
 
 class HostList final {
  public:
-  void addHost(HostAddr *addr) { hosts_.emplace_back(addr); }
+  void addHost(HostAddr *addr) {
+    hosts_.emplace_back(addr);
+  }
 
   std::string toString() const;
 
@@ -184,6 +195,40 @@ class HostList final {
 inline std::ostream &operator<<(std::ostream &os, Sentence::Kind kind) {
   return os << static_cast<uint32_t>(kind);
 }
+
+class ZoneNameList final {
+ public:
+  ZoneNameList() = default;
+
+  void addZone(std::string *zone) {
+    zones_.emplace_back(zone);
+  }
+
+  std::vector<std::string> zoneNames() const {
+    std::vector<std::string> result;
+    result.resize(zones_.size());
+    auto get = [](auto &ptr) { return *ptr.get(); };
+    std::transform(zones_.begin(), zones_.end(), result.begin(), get);
+    return result;
+  }
+
+  std::string toString() const {
+    std::string buf;
+    for (const auto &zone : zones_) {
+      buf += "\"";
+      buf += *zone;
+      buf += "\"";
+      buf += ",";
+    }
+    if (!zones_.empty()) {
+      buf.pop_back();
+    }
+    return buf;
+  }
+
+ private:
+  std::vector<std::unique_ptr<std::string>> zones_;
+};
 
 }  // namespace nebula
 

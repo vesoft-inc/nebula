@@ -43,6 +43,7 @@ nebula_add_library(
     processors/kv/RemoveRangeProcessor.cpp
     processors/kv/ScanProcessor.cpp
     processors/admin/HBProcessor.cpp
+    processors/admin/AgentHBProcessor.cpp
     processors/user/AuthenticationProcessor.cpp
     processors/admin/CreateSnapshotProcessor.cpp
     processors/admin/DropSnapshotProcessor.cpp
@@ -80,11 +81,15 @@ nebula_add_library(
     processors/job/GetStatsProcessor.cpp
     processors/job/ListTagIndexStatusProcessor.cpp
     processors/job/ListEdgeIndexStatusProcessor.cpp
-    processors/zone/AddZoneProcessor.cpp
+    processors/zone/AddHostsProcessor.cpp
+    processors/zone/AddHostsIntoZoneProcessor.cpp
+    processors/zone/DropHostsProcessor.cpp
     processors/zone/DropZoneProcessor.cpp
+    processors/zone/RenameZoneProcessor.cpp
     processors/zone/GetZoneProcessor.cpp
+    processors/zone/MergeZoneProcessor.cpp
+    processors/zone/SplitZoneProcessor.cpp
     processors/zone/ListZonesProcessor.cpp
-    processors/zone/UpdateZoneProcessor.cpp
     processors/listener/ListenerProcessor.cpp
     processors/session/SessionManagerProcessor.cpp
 )
@@ -156,8 +161,14 @@ set(meta_test_deps
     $<TARGET_OBJECTS:version_obj>
     $<TARGET_OBJECTS:ssl_obj>
     $<TARGET_OBJECTS:geo_index_obj>
+    $<TARGET_OBJECTS:meta_stats_obj>
+    $<TARGET_OBJECTS:meta_client_stats_obj>
+    $<TARGET_OBJECTS:storage_client_stats_obj>
+    $<TARGET_OBJECTS:kv_stats_obj>
+    $<TARGET_OBJECTS:storage_stats_obj>
 )
 
 nebula_add_subdirectory(http)
 nebula_add_subdirectory(test)
 nebula_add_subdirectory(upgrade)
+nebula_add_subdirectory(stats)

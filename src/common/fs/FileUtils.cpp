@@ -198,13 +198,21 @@ int64_t FileUtils::fileLastUpdateTime(const char* path) {
   return st.st_mtime;
 }
 
-bool FileUtils::isStdinTTY() { return isFdTTY(::fileno(stdin)); }
+bool FileUtils::isStdinTTY() {
+  return isFdTTY(::fileno(stdin));
+}
 
-bool FileUtils::isStdoutTTY() { return isFdTTY(::fileno(stdout)); }
+bool FileUtils::isStdoutTTY() {
+  return isFdTTY(::fileno(stdout));
+}
 
-bool FileUtils::isStderrTTY() { return isFdTTY(::fileno(stderr)); }
+bool FileUtils::isStderrTTY() {
+  return isFdTTY(::fileno(stderr));
+}
 
-bool FileUtils::isFdTTY(int fd) { return ::isatty(fd) == 1; }
+bool FileUtils::isFdTTY(int fd) {
+  return ::isatty(fd) == 1;
+}
 
 std::string FileUtils::joinPath(const folly::StringPiece dir, const folly::StringPiece filename) {
   std::string buf;
