@@ -65,7 +65,7 @@ TEST(GetNeighborsTest, PropertyTest) {
     auto resp = std::move(fut).get();
 
     ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
-    // vId, stat, player, serve, expr
+    // vId, stat, player, expr
     size_t expectRowCount = 1;
     size_t expectColumnCount = 4;
     QueryTestUtils::checkResponse(
@@ -186,7 +186,7 @@ TEST(GetNeighborsTest, PropertyTest) {
     auto resp = std::move(fut).get();
 
     ASSERT_EQ(0, (*resp.result_ref()).failed_parts.size());
-    // vId, stat, player, serve, teammate, expr
+    // vId, stat, player, expr
     size_t expectColumnCount = 4;
     QueryTestUtils::checkResponse(
         *resp.vertices_ref(), vertices, over, tags, edges, 1, expectColumnCount);
