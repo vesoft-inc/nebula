@@ -43,6 +43,11 @@ class GraphScanner;
 static constexpr size_t MAX_ABS_INTEGER = 9223372036854775808ULL;
 static constexpr size_t kCommentLengthLimit = 256;
 
+#define CHECK_DEPTH(EXPR,LOCATION)               \
+        if(!EXPR->checkDepth()){        \
+            throw nebula::GraphParser::syntax_error(LOCATION, "The above expression's depth exceeds the maximum depth!"); \
+        }
+
 }
 
 %code {
@@ -555,9 +560,7 @@ expression
     }
     | compound_expression {
         $$ = $1;
-        if(!$$->checkDepth()){
-            throw nebula::GraphParser::syntax_error(@1, "The above expression is not a valid expression, because its depth exceeds the maximum depth!");
-        }
+        CHECK_DEPTH($$, @1);
     }
     | MINUS {
         scanner.setUnaryMinus(true);
@@ -569,220 +572,148 @@ expression
             $$ = UnaryExpression::makeNegate(qctx->objPool(), $3);
         }
         scanner.setUnaryMinus(false);
-        if(!$$->checkDepth()){
-            throw nebula::GraphParser::syntax_error(@1, "The above expression is not a valid expression, because its depth exceeds the maximum depth!");
-        }
+        CHECK_DEPTH($$, @1);
     }
     | PLUS expression %prec UNARY_PLUS {
         $$ = UnaryExpression::makePlus(qctx->objPool(), $2);
-        if(!$$->checkDepth()){
-            throw nebula::GraphParser::syntax_error(@1, "The above expression is not a valid expression, because its depth exceeds the maximum depth!");
-        }
+        CHECK_DEPTH($$, @1);
     }
     | NOT expression {
         $$ = UnaryExpression::makeNot(qctx->objPool(), $2);
-        if(!$$->checkDepth()){
-            throw nebula::GraphParser::syntax_error(@1, "The above expression is not a valid expression, because its depth exceeds the maximum depth!");
-        }
+        CHECK_DEPTH($$, @1);
     }
     | KW_NOT expression {
         $$ = UnaryExpression::makeNot(qctx->objPool(), $2);
-        if(!$$->checkDepth()){
-            throw nebula::GraphParser::syntax_error(@1, "The above expression is not a valid expression, because its depth exceeds the maximum depth!");
-        }
+        CHECK_DEPTH($$, @1);
     }
     | L_PAREN type_spec R_PAREN expression %prec CASTING {
         $$ = TypeCastingExpression::make(qctx->objPool(), graph::SchemaUtil::propTypeToValueType($2->type), $4);
         delete $2;
-        if(!$$->checkDepth()){
-            throw nebula::GraphParser::syntax_error(@1, "The above expression is not a valid expression, because its depth exceeds the maximum depth!");
-        }
+        CHECK_DEPTH($$, @1);
     }
     | expression STAR expression {
         $$ = ArithmeticExpression::makeMultiply(qctx->objPool(), $1, $3);
-        if(!$$->checkDepth()){
-            throw nebula::GraphParser::syntax_error(@1, "The above expression is not a valid expression, because its depth exceeds the maximum depth!");
-        }
+        CHECK_DEPTH($$, @1);
     }
     | expression DIV expression {
         $$ = ArithmeticExpression::makeDivision(qctx->objPool(), $1, $3);
-        if(!$$->checkDepth()){
-            throw nebula::GraphParser::syntax_error(@1, "The above expression is not a valid expression, because its depth exceeds the maximum depth!");
-        }
+        CHECK_DEPTH($$, @1);
     }
     | expression MOD expression {
         $$ = ArithmeticExpression::makeMod(qctx->objPool(), $1, $3);
-        if(!$$->checkDepth()){
-            throw nebula::GraphParser::syntax_error(@1, "The above expression is not a valid expression, because its depth exceeds the maximum depth!");
-        }
+        CHECK_DEPTH($$, @1);
     }
     | expression PLUS expression {
         $$ = ArithmeticExpression::makeAdd(qctx->objPool(), $1, $3);
-        if(!$$->checkDepth()){
-            throw nebula::GraphParser::syntax_error(@1, "The above expression is not a valid expression, because its depth exceeds the maximum depth!");
-        }
+        CHECK_DEPTH($$, @1);
     }
     | expression MINUS expression {
         $$ = ArithmeticExpression::makeMinus(qctx->objPool(), $1, $3);
-        if(!$$->checkDepth()){
-            throw nebula::GraphParser::syntax_error(@1, "The above expression is not a valid expression, because its depth exceeds the maximum depth!");
-        }
+        CHECK_DEPTH($$, @1);
     }
     | expression LT expression {
         $$ = RelationalExpression::makeLT(qctx->objPool(), $1, $3);
-        if(!$$->checkDepth()){
-            throw nebula::GraphParser::syntax_error(@1, "The above expression is not a valid expression, because its depth exceeds the maximum depth!");
-        }
+        CHECK_DEPTH($$, @1);
     }
     | expression GT expression {
         $$ = RelationalExpression::makeGT(qctx->objPool(), $1, $3);
-        if(!$$->checkDepth()){
-            throw nebula::GraphParser::syntax_error(@1, "The above expression is not a valid expression, because its depth exceeds the maximum depth!");
-        }
+        CHECK_DEPTH($$, @1);
     }
     | expression LE expression {
         $$ = RelationalExpression::makeLE(qctx->objPool(), $1, $3);
-        if(!$$->checkDepth()){
-            throw nebula::GraphParser::syntax_error(@1, "The above expression is not a valid expression, because its depth exceeds the maximum depth!");
-        }
+        CHECK_DEPTH($$, @1);
     }
     | expression GE expression {
         $$ = RelationalExpression::makeGE(qctx->objPool(), $1, $3);
-        if(!$$->checkDepth()){
-            throw nebula::GraphParser::syntax_error(@1, "The above expression is not a valid expression, because its depth exceeds the maximum depth!");
-        }
+        CHECK_DEPTH($$, @1);
     }
     | expression REG expression {
         $$ = RelationalExpression::makeREG(qctx->objPool(), $1, $3);
-        if(!$$->checkDepth()){
-            throw nebula::GraphParser::syntax_error(@1, "The above expression is not a valid expression, because its depth exceeds the maximum depth!");
-        }
+        CHECK_DEPTH($$, @1);
     }
     | expression KW_IN expression {
         $$ = RelationalExpression::makeIn(qctx->objPool(), $1, $3);
-        if(!$$->checkDepth()){
-            throw nebula::GraphParser::syntax_error(@1, "The above expression is not a valid expression, because its depth exceeds the maximum depth!");
-        }
+        CHECK_DEPTH($$, @1);
     }
     | expression KW_NOT_IN expression {
         $$ = RelationalExpression::makeNotIn(qctx->objPool(), $1, $3);
-        if(!$$->checkDepth()){
-            throw nebula::GraphParser::syntax_error(@1, "The above expression is not a valid expression, because its depth exceeds the maximum depth!");
-        }
+        CHECK_DEPTH($$, @1);
     }
     | expression KW_CONTAINS expression {
         $$ = RelationalExpression::makeContains(qctx->objPool(), $1, $3);
-        if(!$$->checkDepth()){
-            throw nebula::GraphParser::syntax_error(@1, "The above expression is not a valid expression, because its depth exceeds the maximum depth!");
-        }
+        CHECK_DEPTH($$, @1);
     }
     | expression KW_NOT_CONTAINS expression {
         $$ = RelationalExpression::makeNotContains(qctx->objPool(), $1, $3);
-        if(!$$->checkDepth()){
-            throw nebula::GraphParser::syntax_error(@1, "The above expression is not a valid expression, because its depth exceeds the maximum depth!");
-        }
+        CHECK_DEPTH($$, @1);
     }
     | expression KW_STARTS_WITH expression {
         $$ = RelationalExpression::makeStartsWith(qctx->objPool(), $1, $3);
-        if(!$$->checkDepth()){
-            throw nebula::GraphParser::syntax_error(@1, "The above expression is not a valid expression, because its depth exceeds the maximum depth!");
-        }
+        CHECK_DEPTH($$, @1);
     }
     | expression KW_NOT_STARTS_WITH expression {
         $$ = RelationalExpression::makeNotStartsWith(qctx->objPool(), $1, $3);
-        if(!$$->checkDepth()){
-            throw nebula::GraphParser::syntax_error(@1, "The above expression is not a valid expression, because its depth exceeds the maximum depth!");
-        }
+        CHECK_DEPTH($$, @1);
     }
     | expression KW_ENDS_WITH expression {
         $$ = RelationalExpression::makeEndsWith(qctx->objPool(), $1, $3);
-        if(!$$->checkDepth()){
-            throw nebula::GraphParser::syntax_error(@1, "The above expression is not a valid expression, because its depth exceeds the maximum depth!");
-        }
+        CHECK_DEPTH($$, @1);
     }
     | expression KW_NOT_ENDS_WITH expression {
         $$ = RelationalExpression::makeNotEndsWith(qctx->objPool(), $1, $3);
-        if(!$$->checkDepth()){
-            throw nebula::GraphParser::syntax_error(@1, "The above expression is not a valid expression, because its depth exceeds the maximum depth!");
-        }
+        CHECK_DEPTH($$, @1);
     }
     | expression KW_IS_NULL {
         $$ = UnaryExpression::makeIsNull(qctx->objPool(), $1);
-        if(!$$->checkDepth()){
-            throw nebula::GraphParser::syntax_error(@1, "The above expression is not a valid expression, because its depth exceeds the maximum depth!");
-        }
+        CHECK_DEPTH($$, @1);
     }
     | expression KW_IS_NOT_NULL {
         $$ = UnaryExpression::makeIsNotNull(qctx->objPool(), $1);
-        if(!$$->checkDepth()){
-            throw nebula::GraphParser::syntax_error(@1, "The above expression is not a valid expression, because its depth exceeds the maximum depth!");
-        }
+        CHECK_DEPTH($$, @1);
     }
     | expression KW_IS_EMPTY {
         $$ = UnaryExpression::makeIsEmpty(qctx->objPool(), $1);
-        if(!$$->checkDepth()){
-            throw nebula::GraphParser::syntax_error(@1, "The above expression is not a valid expression, because its depth exceeds the maximum depth!");
-        }
+        CHECK_DEPTH($$, @1);
     }
     | expression KW_IS_NOT_EMPTY {
         $$ = UnaryExpression::makeIsNotEmpty(qctx->objPool(), $1);
-        if(!$$->checkDepth()){
-            throw nebula::GraphParser::syntax_error(@1, "The above expression is not a valid expression, because its depth exceeds the maximum depth!");
-        }
+        CHECK_DEPTH($$, @1);
     }
     | expression EQ expression {
         $$ = RelationalExpression::makeEQ(qctx->objPool(), $1, $3);
-        if(!$$->checkDepth()){
-            throw nebula::GraphParser::syntax_error(@1, "The above expression is not a valid expression, because its depth exceeds the maximum depth!");
-        }
+        CHECK_DEPTH($$, @1);
     }
     | expression NE expression {
         $$ = RelationalExpression::makeNE(qctx->objPool(), $1, $3);
-        if(!$$->checkDepth()){
-            throw nebula::GraphParser::syntax_error(@1, "The above expression is not a valid expression, because its depth exceeds the maximum depth!");
-        }
+        CHECK_DEPTH($$, @1);
     }
     | expression KW_AND expression {
         $$ = LogicalExpression::makeAnd(qctx->objPool(), $1, $3);
-        if(!$$->checkDepth()){
-            throw nebula::GraphParser::syntax_error(@1, "The above expression is not a valid expression, because its depth exceeds the maximum depth!");
-        }
+        CHECK_DEPTH($$, @1);
     }
     | expression KW_OR expression {
         $$ = LogicalExpression::makeOr(qctx->objPool(), $1, $3);
-        if(!$$->checkDepth()){
-            throw nebula::GraphParser::syntax_error(@1, "The above expression is not a valid expression, because its depth exceeds the maximum depth!");
-        }
+        CHECK_DEPTH($$, @1);
     }
     | expression KW_XOR expression {
         $$ = LogicalExpression::makeXor(qctx->objPool(), $1, $3);
-        if(!$$->checkDepth()){
-            throw nebula::GraphParser::syntax_error(@1, "The above expression is not a valid expression, because its depth exceeds the maximum depth!");
-        }
+        CHECK_DEPTH($$, @1);
     }
     | case_expression {
         $$ = $1;
-        if(!$$->checkDepth()){
-            throw nebula::GraphParser::syntax_error(@1, "The above expression is not a valid expression, because its depth exceeds the maximum depth!");
-        }
+        CHECK_DEPTH($$, @1);
     }
     | predicate_expression {
         $$ = $1;
-        if(!$$->checkDepth()){
-            throw nebula::GraphParser::syntax_error(@1, "The above expression is not a valid expression, because its depth exceeds the maximum depth!");
-        }
+        CHECK_DEPTH($$, @1);
     }
     | list_comprehension_expression {
         $$ = $1;
-        if(!$$->checkDepth()){
-            throw nebula::GraphParser::syntax_error(@1, "The above expression is not a valid expression, because its depth exceeds the maximum depth!");
-        }
+        CHECK_DEPTH($$, @1);
     }
     | reduce_expression {
         $$ = $1;
-        if(!$$->checkDepth()){
-            throw nebula::GraphParser::syntax_error(@1, "The above expression is not a valid expression, because its depth exceeds the maximum depth!");
-        }
+        CHECK_DEPTH($$, @1);
     }
     ;
 
