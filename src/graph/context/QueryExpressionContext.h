@@ -15,7 +15,9 @@ namespace graph {
 
 class QueryExpressionContext final : public ExpressionContext {
  public:
-  explicit QueryExpressionContext(ExecutionContext* ectx = nullptr) { ectx_ = ectx; }
+  explicit QueryExpressionContext(ExecutionContext* ectx = nullptr) {
+    ectx_ = ectx;
+  }
 
   // Get the latest version value for the given variable name, such as $a, $b
   const Value& getVar(const std::string& var) const override;

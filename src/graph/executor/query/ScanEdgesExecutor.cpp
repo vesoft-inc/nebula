@@ -17,7 +17,9 @@ using nebula::storage::cpp2::ScanResponse;
 namespace nebula {
 namespace graph {
 
-folly::Future<Status> ScanEdgesExecutor::execute() { return scanEdges(); }
+folly::Future<Status> ScanEdgesExecutor::execute() {
+  return scanEdges();
+}
 
 folly::Future<Status> ScanEdgesExecutor::scanEdges() {
   SCOPED_TIMER(&execTime_);

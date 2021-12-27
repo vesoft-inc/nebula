@@ -32,9 +32,13 @@ class RowReaderV2 : public RowReader {
   Value getValueByIndex(const int64_t index) const noexcept override;
   int64_t getTimestamp() const noexcept override;
 
-  int32_t readerVer() const noexcept override { return 2; }
+  int32_t readerVer() const noexcept override {
+    return 2;
+  }
 
-  size_t headerLen() const noexcept override { return headerLen_; }
+  size_t headerLen() const noexcept override {
+    return headerLen_;
+  }
 
  protected:
   bool resetImpl(meta::SchemaProviderIf const* schema, folly::StringPiece row) noexcept override;

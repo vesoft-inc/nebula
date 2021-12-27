@@ -69,7 +69,7 @@ std::string TextSearchExpression::toString() const {
       LOG(FATAL) << "Unimplemented";
     }
   }
-  buf += arg_->toString();
+  buf += arg_ ? arg_->toString() : "";
   buf += ")";
   return buf;
 }

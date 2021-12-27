@@ -26,9 +26,12 @@ class Snapshot {
 
   ~Snapshot() = default;
 
-  inline void setSpaces(std::unordered_set<GraphSpaceID> spaces) { spaces_ = std::move(spaces); }
+  inline void setSpaces(std::unordered_set<GraphSpaceID> spaces) {
+    spaces_ = std::move(spaces);
+  }
 
-  ErrorOr<nebula::cpp2::ErrorCode, std::unordered_map<GraphSpaceID, std::vector<cpp2::BackupInfo>>>
+  ErrorOr<nebula::cpp2::ErrorCode,
+          std::unordered_map<GraphSpaceID, std::vector<cpp2::HostBackupInfo>>>
   createSnapshot(const std::string& name);
 
   nebula::cpp2::ErrorCode dropSnapshot(const std::string& name, const std::vector<HostAddr>& hosts);
@@ -40,7 +43,7 @@ class Snapshot {
     executor_.reset(new folly::CPUThreadPoolExecutor(1));
   }
 
-  ErrorOr<nebula::cpp2::ErrorCode, std::map<GraphSpaceID, std::set<HostAddr>>> getSpacesHosts();
+  ErrorOr<nebula::cpp2::ErrorCode, std::map<HostAddr, std::set<GraphSpaceID>>> getHostSpaces();
 
  private:
   kvstore::KVStore* kv_{nullptr};

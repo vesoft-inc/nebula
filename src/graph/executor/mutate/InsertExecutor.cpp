@@ -15,7 +15,9 @@ using nebula::storage::StorageClient;
 namespace nebula {
 namespace graph {
 
-folly::Future<Status> InsertVerticesExecutor::execute() { return insertVertices(); }
+folly::Future<Status> InsertVerticesExecutor::execute() {
+  return insertVertices();
+}
 
 folly::Future<Status> InsertVerticesExecutor::insertVertices() {
   SCOPED_TIMER(&execTime_);
@@ -43,7 +45,9 @@ folly::Future<Status> InsertVerticesExecutor::insertVertices() {
       });
 }
 
-folly::Future<Status> InsertEdgesExecutor::execute() { return insertEdges(); }
+folly::Future<Status> InsertEdgesExecutor::execute() {
+  return insertEdges();
+}
 
 folly::Future<Status> InsertEdgesExecutor::insertEdges() {
   SCOPED_TIMER(&execTime_);

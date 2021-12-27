@@ -31,13 +31,13 @@ Status IndexUtil::validateIndexParams(const std::vector<IndexParamItem *> &param
       case IndexParamItem::S2_MAX_LEVEL: {
         auto ret = param->getS2MaxLevel();
         NG_RETURN_IF_ERROR(ret);
-        indexParams.set_s2_max_level(std::move(ret).value());
+        indexParams.s2_max_level_ref() = std::move(ret).value();
         break;
       }
       case IndexParamItem::S2_MAX_CELLS: {
         auto ret2 = param->getS2MaxCells();
         NG_RETURN_IF_ERROR(ret2);
-        indexParams.set_s2_max_cells(std::move(ret2).value());
+        indexParams.s2_max_cells_ref() = std::move(ret2).value();
         break;
       }
     }

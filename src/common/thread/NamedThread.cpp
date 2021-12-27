@@ -14,11 +14,17 @@ namespace detail {
 
 class TLSThreadID {
  public:
-  TLSThreadID() { tid_ = ::syscall(SYS_gettid); }
+  TLSThreadID() {
+    tid_ = ::syscall(SYS_gettid);
+  }
 
-  ~TLSThreadID() { tid_ = 0; }
+  ~TLSThreadID() {
+    tid_ = 0;
+  }
 
-  pid_t tid() { return tid_; }
+  pid_t tid() {
+    return tid_;
+  }
 
  private:
   pid_t tid_;

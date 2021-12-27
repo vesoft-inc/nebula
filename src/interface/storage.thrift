@@ -750,14 +750,14 @@ struct GetLeaderReq {
 }
 
 struct CreateCPRequest {
-    1: common.GraphSpaceID  space_id,
-    2: binary               name,
+    1: list<common.GraphSpaceID>  space_ids,
+    2: binary                     name,
 }
 
 
 struct DropCPRequest {
-    1: common.GraphSpaceID  space_id,
-    2: binary               name,
+    1: list<common.GraphSpaceID>  space_ids,
+    2: binary                     name,
 }
 
 
@@ -768,8 +768,8 @@ enum EngineSignType {
 
 
 struct BlockingSignRequest {
-    1: common.GraphSpaceID      space_id,
-    2: required EngineSignType  sign,
+    1: list<common.GraphSpaceID>    space_ids,
+    2: required EngineSignType      sign,
 }
 
 
@@ -845,8 +845,6 @@ service StorageAdminService {
 
     AdminExecResp addAdminTask(1: AddAdminTaskRequest req);
     AdminExecResp stopAdminTask(1: StopAdminTaskRequest req);
-
-    ListClusterInfoResp listClusterInfo(1: ListClusterInfoReq req);
 }
 
 

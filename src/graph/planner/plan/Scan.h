@@ -14,7 +14,9 @@ namespace graph {
 // Logical Plan
 class EdgeIndexScan : public IndexScan {
  public:
-  const std::string& edgeType() const { return edgeType_; }
+  const std::string& edgeType() const {
+    return edgeType_;
+  }
 
  protected:
   EdgeIndexScan(QueryContext* qctx,
@@ -243,7 +245,9 @@ class EdgeIndexFullScan final : public EdgeIndexScan {
 
 class TagIndexScan : public IndexScan {
  public:
-  const std::string& tagName() const { return tagName_; }
+  const std::string& tagName() const {
+    return tagName_;
+  }
 
  protected:
   TagIndexScan(QueryContext* qctx,

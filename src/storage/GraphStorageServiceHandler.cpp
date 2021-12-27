@@ -41,7 +41,7 @@ GraphStorageServiceHandler::GraphStorageServiceHandler(StorageEnv* env) : env_(e
       LOG(WARNING) << "Unknown value for --reader_handlers_type, using `cpu'";
     }
     using TM = apache::thrift::concurrency::PriorityThreadManager;
-    auto pool = TM::newPriorityThreadManager(FLAGS_reader_handlers, true);
+    auto pool = TM::newPriorityThreadManager(FLAGS_reader_handlers);
     pool->setNamePrefix("reader-pool");
     pool->start();
     readerPool_ = std::move(pool);

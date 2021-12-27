@@ -23,11 +23,17 @@ class ExplainSentence final : public Sentence {
 
   std::string toString() const override;
 
-  bool isProfile() const { return isProfile_; }
+  bool isProfile() const {
+    return isProfile_;
+  }
 
-  const std::string& formatType() const { return *formatType_; }
+  const std::string& formatType() const {
+    return *formatType_;
+  }
 
-  SequentialSentences* seqSentences() const { return seqSentences_.get(); }
+  SequentialSentences* seqSentences() const {
+    return seqSentences_.get();
+  }
 
  private:
   bool isProfile_{false};
