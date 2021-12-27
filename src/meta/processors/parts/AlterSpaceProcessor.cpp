@@ -47,6 +47,7 @@ nebula::cpp2::ErrorCode AlterSpaceProcessor::addZones(const std::string& spaceNa
   meta::cpp2::SpaceDesc properties = MetaKeyUtils::parseSpace(spaceVal);
   const std::vector<std::string>& curZones = properties.get_zone_names();
   std::set<std::string> zm(curZones.begin(), curZones.end());
+  // zone_list may has duplicate zone
   std::set<std::string> distinctZones(zones.begin(), zones.end());
   std::vector<std::string> newZones = curZones;
   newZones.reserve(curZones.size() + distinctZones.size());
@@ -60,12 +61,15 @@ nebula::cpp2::ErrorCode AlterSpaceProcessor::addZones(const std::string& spaceNa
                  ? nebula::cpp2::ErrorCode::E_ZONE_NOT_FOUND
                  : zoneRet;
     }
+    // if zone_list has a zone that already exist in current space, return error
     if (zm.count(z)) {
       return nebula::cpp2::ErrorCode::E_CONFLICT;
     }
     newZones.emplace_back(z);
   }
-  properties.set_zone_names(newZones);
+
+  // update zones then put it into kv
+  properties.zone_names_ref() = newZones;
   std::vector<kvstore::KV> data;
   data.emplace_back(MetaKeyUtils::spaceKey(spaceId), MetaKeyUtils::spaceVal(properties));
   folly::Baton<true, std::atomic> baton;

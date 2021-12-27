@@ -445,13 +445,21 @@ class AlterSpaceSentence final : public Sentence {
       : op_(op), spaceName_(spaceName) {
     kind_ = Kind::kAlterSpace;
   }
-  void addPara(const std::string& para) { paras_.push_back(para); }
+  void addPara(const std::string& para) {
+    paras_.push_back(para);
+  }
 
-  std::string spaceName() const { return *spaceName_; }
+  std::string spaceName() const {
+    return *spaceName_;
+  }
 
-  const std::vector<std::string>& paras() const { return paras_; }
+  const std::vector<std::string>& paras() const {
+    return paras_;
+  }
 
-  meta::cpp2::AlterSpaceOp alterSpaceOp() const { return op_; }
+  meta::cpp2::AlterSpaceOp alterSpaceOp() const {
+    return op_;
+  }
 
   std::string toString() const override;
 

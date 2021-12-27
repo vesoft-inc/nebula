@@ -73,7 +73,7 @@ nebula::cpp2::ErrorCode ZoneBalanceJobExecutor::updateMeta() {
   for (auto& zoneMapEntry : spaceInfo_.zones_) {
     zones.emplace_back(zoneMapEntry.first);
   }
-  properties.set_zone_names(std::move(zones));
+  properties.zone_names_ref() = std::move(zones);
   std::vector<kvstore::KV> data;
   data.emplace_back(MetaKeyUtils::spaceKey(spaceInfo_.spaceId_),
                     MetaKeyUtils::spaceVal(properties));

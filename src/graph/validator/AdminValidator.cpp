@@ -163,7 +163,9 @@ Status CreateSpaceAsValidator::toPlan() {
   return Status::OK();
 }
 
-Status AlterSpaceValidator::validateImpl() { return Status::OK(); }
+Status AlterSpaceValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status AlterSpaceValidator::toPlan() {
   auto sentence = static_cast<AlterSpaceSentence *>(sentence_);
@@ -174,7 +176,9 @@ Status AlterSpaceValidator::toPlan() {
   return Status::OK();
 }
 
-Status DescSpaceValidator::validateImpl() { return Status::OK(); }
+Status DescSpaceValidator::validateImpl() {
+  return Status::OK();
+}
 
 Status DescSpaceValidator::toPlan() {
   auto sentence = static_cast<DescribeSpaceSentence *>(sentence_);

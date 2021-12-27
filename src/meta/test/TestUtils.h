@@ -215,9 +215,9 @@ class TestUtils {
                                     int32_t zoneNum,
                                     int32_t totalHost) {
     cpp2::SpaceDesc properties;
-    properties.set_space_name("test_space");
-    properties.set_partition_num(partitionNum);
-    properties.set_replica_factor(replica);
+    properties.space_name_ref() = "test_space";
+    properties.partition_num_ref() = partitionNum;
+    properties.replica_factor_ref() = replica;
     auto spaceVal = MetaKeyUtils::spaceVal(properties);
     std::vector<nebula::kvstore::KV> data;
     data.emplace_back(MetaKeyUtils::indexSpaceKey("test_space"),
@@ -230,7 +230,7 @@ class TestUtils {
       zonePartNum[std::to_string(i + 1)] = 0;
       zoneNames.push_back(std::to_string(i + 1));
     }
-    properties.set_zone_names(zoneNames);
+    properties.zone_names_ref() = zoneNames;
     data.emplace_back(MetaKeyUtils::spaceKey(id), MetaKeyUtils::spaceVal(properties));
     std::vector<HostAddr> allHosts;
     for (int32_t i = 0; i < totalHost; i++) {

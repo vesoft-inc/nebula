@@ -225,11 +225,17 @@ class AlterSpace final : public SingleDependencyNode {
                           const std::vector<std::string>& paras) {
     return qctx->objPool()->add(new AlterSpace(qctx, input, spaceName, op, paras));
   }
-  const std::string& getSpaceName() const { return spaceName_; }
+  const std::string& getSpaceName() const {
+    return spaceName_;
+  }
 
-  meta::cpp2::AlterSpaceOp getAlterSpaceOp() const { return op_; }
+  meta::cpp2::AlterSpaceOp getAlterSpaceOp() const {
+    return op_;
+  }
 
-  const std::vector<std::string>& getParas() const { return paras_; }
+  const std::vector<std::string>& getParas() const {
+    return paras_;
+  }
 
  private:
   AlterSpace(QueryContext* qctx,

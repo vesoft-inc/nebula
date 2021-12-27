@@ -23,10 +23,13 @@ struct Host {
   HostAddr host_;
   std::set<PartitionID> parts_;
 };
+
 struct Zone {
   Zone() = default;
   explicit Zone(const std::string name) : zoneName_(name) {}
-  bool hasHost(const HostAddr& ha) { return hosts_.find(ha) != hosts_.end(); }
+  bool hasHost(const HostAddr& ha) {
+    return hosts_.find(ha) != hosts_.end();
+  }
   int32_t calPartNum();
   bool partExist(PartitionID partId);
 
@@ -34,6 +37,7 @@ struct Zone {
   std::map<HostAddr, Host> hosts_;
   int32_t partNum_;
 };
+
 struct SpaceInfo {
   nebula::cpp2::ErrorCode loadInfo(GraphSpaceID spaceId, kvstore::KVStore* kvstore);
   bool hasHost(const HostAddr& ha);
@@ -65,7 +69,9 @@ class BalanceJobExecutor : public MetaJobExecutor {
  protected:
   nebula::cpp2::ErrorCode save(const std::string& k, const std::string& v);
 
-  virtual Status buildBalancePlan() { return Status::OK(); }
+  virtual Status buildBalancePlan() {
+    return Status::OK();
+  }
 
  protected:
   std::unique_ptr<BalancePlan> plan_;

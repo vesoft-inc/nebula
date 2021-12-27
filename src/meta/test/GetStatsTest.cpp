@@ -62,11 +62,11 @@ struct JobCallBack {
     req.task_id_ref() = taskId_;
 
     cpp2::StatsItem item;
-    item.set_tag_vertices({{"t1", n_}, {"t2", n_}});
-    item.set_edges({{"e1", n_}, {"e2", n_}});
-    item.set_space_vertices(2 * n_);
-    item.set_space_edges(2 * n_);
-    req.set_stats(item);
+    item.tag_vertices_ref() = {{"t1", n_}, {"t2", n_}};
+    item.edges_ref() = {{"e1", n_}, {"e2", n_}};
+    item.space_vertices_ref() = 2 * n_;
+    item.space_edges_ref() = 2 * n_;
+    req.stats_ref() = item;
     jobMgr_->muJobFinished_.unlock();
     jobMgr_->reportTaskFinish(req);
     return folly::Future<Status>(Status::OK());

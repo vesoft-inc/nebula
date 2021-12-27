@@ -230,7 +230,7 @@ ErrorOr<nebula::cpp2::ErrorCode, std::vector<BalanceTask>> BalancePlan::getBalan
       task.startTimeMs_ = std::get<2>(tup);
       task.endTimeMs_ = std::get<3>(tup);
       if (resume && task.ret_ != BalanceTaskResult::SUCCEEDED) {
-        // Resume the failed task, skip the in-progress and invalid tasks
+        // Resume the failed or invalid task, skip the in-progress tasks
         if (task.ret_ == BalanceTaskResult::FAILED || task.ret_ == BalanceTaskResult::INVALID) {
           task.ret_ = BalanceTaskResult::IN_PROGRESS;
         }

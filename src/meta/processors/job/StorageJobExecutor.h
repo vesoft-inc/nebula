@@ -33,10 +33,14 @@ class StorageJobExecutor : public JobExecutor {
   virtual ~StorageJobExecutor() = default;
 
   // Check the arguments about the job.
-  bool check() override { return true; }
+  bool check() override {
+    return true;
+  }
 
   // Prepare the Job info from the arguments.
-  nebula::cpp2::ErrorCode prepare() override { return nebula::cpp2::ErrorCode::SUCCEEDED; }
+  nebula::cpp2::ErrorCode prepare() override {
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  }
 
   // The skeleton to run the job.
   // You should rewrite the executeInternal to trigger the calling.
@@ -45,19 +49,29 @@ class StorageJobExecutor : public JobExecutor {
   void interruptExecution(JobID jobId);
 
   // Stop the job when the user cancel it.
-  nebula::cpp2::ErrorCode stop() override { return nebula::cpp2::ErrorCode::SUCCEEDED; }
+  nebula::cpp2::ErrorCode stop() override {
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  }
 
-  nebula::cpp2::ErrorCode finish(bool) override { return nebula::cpp2::ErrorCode::SUCCEEDED; }
+  nebula::cpp2::ErrorCode finish(bool) override {
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  }
 
-  void setSpaceId(GraphSpaceID spaceId) override { space_ = spaceId; }
+  void setSpaceId(GraphSpaceID spaceId) override {
+    space_ = spaceId;
+  }
 
   nebula::cpp2::ErrorCode saveSpecialTaskStatus(const cpp2::ReportTaskReq&) override {
     return nebula::cpp2::ErrorCode::SUCCEEDED;
   }
 
-  bool isMetaJob() override { return false; }
+  bool isMetaJob() override {
+    return false;
+  }
 
-  nebula::cpp2::ErrorCode recovery() override { return nebula::cpp2::ErrorCode::SUCCEEDED; }
+  nebula::cpp2::ErrorCode recovery() override {
+    return nebula::cpp2::ErrorCode::SUCCEEDED;
+  }
 
  protected:
   ErrOrHosts getTargetHost(GraphSpaceID space);

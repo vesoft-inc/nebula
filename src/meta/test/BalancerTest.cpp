@@ -1285,7 +1285,7 @@ TEST(BalanceTest, LeaderBalanceWithLargerZoneTest) {
   }
 }
 
-TEST(BalanceTest, DISABLED_LeaderBalanceWithComplexZoneTest) {
+TEST(BalanceTest, LeaderBalanceWithComplexZoneTest) {
   fs::TempDir rootPath("/tmp/LeaderBalanceWithComplexZoneTest.XXXXXX");
   auto store = MockCluster::initMetaKV(rootPath.path());
   auto* kv = dynamic_cast<kvstore::KVStore*>(store.get());

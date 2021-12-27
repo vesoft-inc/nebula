@@ -1217,9 +1217,9 @@ folly::Future<StatusOr<bool>> MetaClient::alterSpace(const std::string& spaceNam
                                                      meta::cpp2::AlterSpaceOp op,
                                                      const std::vector<std::string>& paras) {
   cpp2::AlterSpaceReq req;
-  req.set_op(op);
-  req.set_space_name(spaceName);
-  req.set_paras(paras);
+  req.op_ref() = op;
+  req.space_name_ref() = spaceName;
+  req.paras_ref() = paras;
   folly::Promise<StatusOr<bool>> promise;
   auto future = promise.getFuture();
   getResponse(

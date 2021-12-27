@@ -2016,22 +2016,22 @@ TEST_F(ParserTest, BalanceOperation) {
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "BALANCE DATA";
+    std::string query = "BALANCE IN ZONE";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "BALANCE DATA 1234567890";
+    std::string query = "BALANCE ACROSS ZONE";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "BALANCE DATA REMOVE 192.168.0.1:50000,192.168.0.1:50001";
+    std::string query = "BALANCE IN ZONE REMOVE 192.168.0.1:50000,192.168.0.1:50001";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }
   {
-    std::string query = "BALANCE DATA REMOVE 192.168.0.1:50000,\"localhost\":50001";
+    std::string query = "BALANCE IN ZONE REMOVE 192.168.0.1:50000,\"localhost\":50001";
     auto result = parse(query);
     ASSERT_TRUE(result.ok()) << result.status();
   }

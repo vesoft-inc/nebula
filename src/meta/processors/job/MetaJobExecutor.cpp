@@ -12,10 +12,14 @@ DECLARE_uint32(expired_time_factor);
 
 namespace nebula {
 namespace meta {
-bool MetaJobExecutor::check() { return true; }
+bool MetaJobExecutor::check() {
+  return true;
+}
 
 // Prepare the Job info from the arguments.
-nebula::cpp2::ErrorCode MetaJobExecutor::prepare() { return nebula::cpp2::ErrorCode::SUCCEEDED; }
+nebula::cpp2::ErrorCode MetaJobExecutor::prepare() {
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
+}
 
 // The skeleton to run the job.
 // You should rewrite the executeInternal to trigger the calling.
@@ -31,15 +35,25 @@ nebula::cpp2::ErrorCode MetaJobExecutor::execute() {
 }
 
 // Stop the job when the user cancel it.
-nebula::cpp2::ErrorCode MetaJobExecutor::stop() { return nebula::cpp2::ErrorCode::SUCCEEDED; }
+nebula::cpp2::ErrorCode MetaJobExecutor::stop() {
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
+}
 
-nebula::cpp2::ErrorCode MetaJobExecutor::finish(bool) { return nebula::cpp2::ErrorCode::SUCCEEDED; }
+nebula::cpp2::ErrorCode MetaJobExecutor::finish(bool) {
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
+}
 
-void MetaJobExecutor::setSpaceId(GraphSpaceID spaceId) { space_ = spaceId; }
+void MetaJobExecutor::setSpaceId(GraphSpaceID spaceId) {
+  space_ = spaceId;
+}
 
-bool MetaJobExecutor::isMetaJob() { return true; }
+bool MetaJobExecutor::isMetaJob() {
+  return true;
+}
 
-nebula::cpp2::ErrorCode MetaJobExecutor::recovery() { return nebula::cpp2::ErrorCode::SUCCEEDED; }
+nebula::cpp2::ErrorCode MetaJobExecutor::recovery() {
+  return nebula::cpp2::ErrorCode::SUCCEEDED;
+}
 
 void MetaJobExecutor::setFinishCallBack(
     std::function<nebula::cpp2::ErrorCode(meta::cpp2::JobStatus)> func) {
@@ -50,7 +64,9 @@ nebula::cpp2::ErrorCode MetaJobExecutor::saveSpecialTaskStatus(const cpp2::Repor
   return nebula::cpp2::ErrorCode::SUCCEEDED;
 }
 
-folly::Future<Status> MetaJobExecutor::executeInternal() { return Status::OK(); }
+folly::Future<Status> MetaJobExecutor::executeInternal() {
+  return Status::OK();
+}
 
 }  // namespace meta
 }  // namespace nebula

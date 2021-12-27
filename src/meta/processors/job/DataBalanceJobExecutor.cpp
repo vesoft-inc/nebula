@@ -36,8 +36,10 @@ Status DataBalanceJobExecutor::buildBalancePlan() {
   std::map<std::string, std::vector<Host*>> lostZoneHost;
   std::map<std::string, std::vector<Host*>> activeSortedHost;
   for (auto& zoneMapEntry : spaceInfo_.zones_) {
-    for (auto& hostMapEntry : zoneMapEntry.second.hosts_) {
-      activeSortedHost[zoneMapEntry.first].push_back(&hostMapEntry.second);
+    const auto& zoneName = zoneMapEntry.first;
+    auto& zone = zoneMapEntry.second;
+    for (auto& [addr, host] : zone.hosts_) {
+      activeSortedHost[zoneName].push_back(&host);
     }
   }
   for (HostAddr host : lostHosts_) {
@@ -64,10 +66,12 @@ Status DataBalanceJobExecutor::buildBalancePlan() {
   plan_.reset(new BalancePlan(jobDescription_, kvstore_, adminClient_));
   // move parts of lost hosts to active hosts in the same zone
   for (auto& zoneHostEntry : lostZoneHost) {
-    std::vector<Host*>& hvec = activeSortedHost[zoneHostEntry.first];
-    for (Host* host : zoneHostEntry.second) {
+    const std::string& zoneName = zoneHostEntry.first;
+    std::vector<Host*>& lostHostVec = zoneHostEntry.second;
+    std::vector<Host*>& activeVec = activeSortedHost[zoneName];
+    for (Host* host : lostHostVec) {
       for (PartitionID partId : host->parts_) {
-        Host* dstHost = hvec.front();
+        Host* dstHost = activeVec.front();
         dstHost->parts_.insert(partId);
         plan_->addTask(BalanceTask(jobId_,
                                    spaceInfo_.spaceId_,
@@ -76,9 +80,9 @@ Status DataBalanceJobExecutor::buildBalancePlan() {
                                    dstHost->host_,
                                    kvstore_,
                                    adminClient_));
-        for (size_t i = 0; i < hvec.size() - 1; i++) {
-          if (hvec[i]->parts_.size() > hvec[i + 1]->parts_.size()) {
-            std::swap(hvec[i], hvec[i + 1]);
+        for (size_t i = 0; i < activeVec.size() - 1; i++) {
+          if (activeVec[i]->parts_.size() > activeVec[i + 1]->parts_.size()) {
+            std::swap(activeVec[i], activeVec[i + 1]);
           } else {
             break;
           }
