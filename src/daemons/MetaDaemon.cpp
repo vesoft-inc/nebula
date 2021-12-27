@@ -17,6 +17,7 @@
 #include "common/thread/GenericThreadPool.h"
 #include "common/time/TimezoneInfo.h"
 #include "common/utils/MetaKeyUtils.h"
+#include "daemons/SetupLogging.h"
 #include "kvstore/NebulaStore.h"
 #include "kvstore/PartManager.h"
 #include "meta/ActiveHostsMan.h"
@@ -32,7 +33,6 @@
 #include "version/Version.h"
 #include "webservice/Router.h"
 #include "webservice/WebService.h"
-#include "daemons/SetupLogging.h"
 
 using nebula::operator<<;
 using nebula::ProcessUtils;

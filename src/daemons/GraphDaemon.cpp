@@ -16,12 +16,12 @@
 #include "common/process/ProcessUtils.h"
 #include "common/ssl/SSLConfig.h"
 #include "common/time/TimezoneInfo.h"
+#include "daemons/SetupLogging.h"
 #include "graph/service/GraphFlags.h"
 #include "graph/service/GraphService.h"
 #include "graph/stats/GraphStats.h"
 #include "version/Version.h"
 #include "webservice/WebService.h"
-#include "daemons/SetupLogging.h"
 
 using nebula::ProcessUtils;
 using nebula::Status;

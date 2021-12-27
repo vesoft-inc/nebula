@@ -12,10 +12,10 @@
 #include "common/network/NetworkUtils.h"
 #include "common/process/ProcessUtils.h"
 #include "common/time/TimezoneInfo.h"
+#include "daemons/SetupLogging.h"
 #include "storage/StorageServer.h"
 #include "storage/stats/StorageStats.h"
 #include "version/Version.h"
-#include "daemons/SetupLogging.h"
 
 DEFINE_string(local_ip, "", "IP address which is used to identify this server");
 DEFINE_string(data_path,
